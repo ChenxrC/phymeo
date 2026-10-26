@@ -1,14 +1,33 @@
 """Discrete, frictionless, zero-restitution contact for COM-centered spheres."""
 
 from dataclasses import dataclass, replace
+from math import fsum
 
 import numpy as np
 
+from ..core.numerics import normalized_error
 from ..core.result import StepReport, StepResult
 from ..core.validation import finite_real, validate_rigid_step
 from ..geometry.plane import Plane
 from ..geometry.sphere import SpherePlaneSignature, SphereShapes
 from .rigid_semi_implicit import RigidSemiImplicitSolver
+
+
+def _sphere_gap(centers, radii, height):
+    """Compensated center - radius - height for the represented input values."""
+    gaps = np.empty(len(centers), dtype=np.float64)
+    for index, (center, radius) in enumerate(zip(centers, radii, strict=True)):
+        center, radius = float(center), float(radius)
+        # Cancel opposite signs first so fsum need not overflow an intermediate
+        # when the exact three-term sum is representable.
+        terms = (
+            (center, -height, -radius) if center < 0 and height < 0 else (center, -radius, -height)
+        )
+        try:
+            gaps[index] = fsum(terms)
+        except (OverflowError, ValueError):
+            gaps[index] = np.nan
+    return gaps
 
 
 @dataclass(frozen=True, eq=False)
@@ -59,11 +78,11 @@ class RigidSpherePlaneSolver:
         radii64 = radii.astype(np.float64)
         with np.errstate(over="ignore", invalid="ignore", under="ignore", divide="ignore"):
             floor = (self.plane.height + radii64).astype(dtype)
-            # Checking (height_at_center - plane_height) - radius also detects a
-            # tiny radius lost by the initial addition, including FP64 rounding.
-            rounded_gap = (floor.astype(np.float64) - self.plane.height) - radii64
+            # Compensated subtraction retains both a small plane offset at a
+            # large radius and a small radius at a large plane height.
+            rounded_gap = _sphere_gap(floor, radii64, self.plane.height)
             np.nextafter(floor, dtype.type(np.inf), out=floor, where=rounded_gap < 0)
-            rounded_gap = (floor.astype(np.float64) - self.plane.height) - radii64
+            rounded_gap = _sphere_gap(floor, radii64, self.plane.height)
             if (
                 not np.isfinite(floor).all()
                 or not np.isfinite(rounded_gap).all()
@@ -80,11 +99,11 @@ class RigidSpherePlaneSolver:
             )
             active = dynamic & (candidate.position[:, 1] <= floor)
             candidate.velocity[active, 1] = np.maximum(candidate.velocity[active, 1], 0.0)
-            gap = (candidate.position[:, 1].astype(np.float64) - self.plane.height) - radii64
+            gap = _sphere_gap(candidate.position[:, 1], radii64, self.plane.height)
             if not np.isfinite(gap).all():
                 return self._failure(snapshot, "non-finite sphere contact gap")
             penetration = float(np.max(np.maximum(-gap, 0.0), initial=0.0))
-            residual = penetration / self.reference_length
+            residual = float(normalized_error(penetration, self.reference_length))
             if not np.isfinite(residual):
                 return self._failure(snapshot, "non-finite sphere contact residual")
         accepted = residual <= self.tolerance

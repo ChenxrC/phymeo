@@ -285,3 +285,40 @@ def test_numpy_scalar_settings_do_not_round_away_small_fp64_penetration(options)
     )
     assert not result.report.accepted
     assert result.report.max_residual == pytest.approx(1e-48, rel=1e-10, abs=0)
+
+
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("fixed", [False, True])
+def test_large_radius_cannot_cancel_a_small_plane_offset(dtype, fixed):
+    _, state, inputs = scene(dtype=dtype)
+    radius = dtype(1e16)
+    state.position[:] = 0
+    state.position[0, 1] = radius
+    state.velocity[:] = state.angular_velocity[:] = 0
+    model = RigidBodyModel(
+        np.array([0 if fixed else 1], dtype), np.ones((1, 3), dtype), np.zeros(3)
+    )
+    result = api("RigidSpherePlaneSolver")(
+        shapes((radius,), dtype), plane=Plane(height=0.6), tolerance=0
+    ).step(model, state, inputs, 0.1)
+    if fixed:
+        assert not result.report.accepted
+        assert result.report.max_constraint_error == pytest.approx(0.6)
+    else:
+        assert result.report.accepted
+        # Difference from the represented radius is exact here, before removing the offset.
+        assert (float(result.state.position[0, 1]) - float(radius)) - 0.6 >= 0
+        assert result.state.position[0, 1] == np.nextafter(radius, dtype(np.inf))
+
+
+def test_positive_penetration_normalization_cannot_underflow_to_zero_tolerance_success():
+    _, state, inputs = scene()
+    state.position[:] = state.velocity[:] = state.angular_velocity[:] = 0
+    model = RigidBodyModel(np.zeros(1), np.ones((1, 3)), np.zeros(3))
+    smallest = np.nextafter(0.0, 1.0)
+    result = Stepper(
+        api("RigidSpherePlaneSolver")(shapes((smallest,)), reference_length=2, tolerance=0)
+    ).step(model, state, inputs, 0.1)
+    assert not result.report.accepted
+    assert result.report.max_constraint_error == smallest
+    assert result.report.max_residual > 0

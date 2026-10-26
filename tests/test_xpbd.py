@@ -296,3 +296,21 @@ def test_numpy_scalar_settings_cannot_hide_fp64_plane_penetration(options):
     result = solver.step(ParticleModel(np.zeros(1)), state, StepInputs.zeros(1), 0.1)
     assert not result.report.accepted
     assert result.report.max_residual == pytest.approx(1e-48, rel=1e-10, abs=0)
+
+
+@pytest.mark.parametrize("kind", ["distance", "plane"])
+def test_positive_residual_normalization_cannot_underflow_to_false_success(kind):
+    smallest = np.nextafter(0.0, 1.0)
+    state = ParticleState(np.zeros((2, 3)), np.zeros((2, 3)))
+    options = {}
+    if kind == "distance":
+        options["constraints"] = edge(rest=smallest)
+    else:
+        options["plane"] = api("Plane")()
+        state.position[0, 1] = -smallest
+    result = api("XPBDSolver")(reference_length=2, tolerance=0, **options).step(
+        ParticleModel(np.zeros(2)), state, StepInputs.zeros(2), 0.1
+    )
+    assert not result.report.accepted
+    assert result.report.max_constraint_error == smallest
+    assert result.report.max_residual > 0

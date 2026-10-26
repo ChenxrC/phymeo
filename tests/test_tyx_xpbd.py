@@ -326,3 +326,16 @@ def test_valid_noncontiguous_state_uses_validated_owned_snapshot(tyx_mode, cache
     np.testing.assert_allclose(result.state.velocity, reference.state.velocity, atol=1e-6)
     np.testing.assert_array_equal(state.position, before.position)
     assert result.state.position.flags.c_contiguous
+
+
+def test_host_normalization_underflow_cannot_accept_nonzero_residual(tyx_mode, cache):
+    smallest = np.nextafter(np.float32(0), np.float32(1))
+    model, state, inputs, edges = pair(rest=smallest)
+    model = ParticleModel(np.zeros(2, np.float32), np.zeros(3))
+    state.position[:] = 0
+    with implementation()(
+        edges, mode=tyx_mode, cache_root=cache, reference_length=1e308, tolerance=0, iterations=1
+    ) as solver:
+        result = solver.step(model, state, inputs, 0.1)
+    assert not result.report.accepted
+    assert result.report.max_residual > 0

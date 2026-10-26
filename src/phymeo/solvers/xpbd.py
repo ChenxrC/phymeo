@@ -11,6 +11,7 @@ import numpy as np
 from ..constraints.distance import DistanceConstraints, distance_residual, project_distances
 from ..core.capabilities import ProblemSignature, SolverCapabilities
 from ..core.model import ParticleModel
+from ..core.numerics import normalized_error
 from ..core.result import StepReport, StepResult
 from ..core.state import ParticleState, StepInputs
 from ..core.validation import finite_real, validate_step
@@ -155,7 +156,7 @@ class XPBDSolver:
             penetration = float(
                 np.max(np.maximum(self.plane.height - position[:, 1], 0.0), initial=0.0)
             )
-            residual = max(residual, penetration / self.reference_length)
+            residual = max(residual, float(normalized_error(penetration, self.reference_length)))
             geometric = max(geometric, penetration)
         return residual, geometric
 

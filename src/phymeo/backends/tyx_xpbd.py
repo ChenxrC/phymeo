@@ -6,6 +6,7 @@ from dataclasses import replace
 import numpy as np
 
 from ..constraints.coloring import color_edges
+from ..core.numerics import normalized_error
 from ..core.result import StepReport, StepResult
 from ..core.state import ParticleState
 from ..core.validation import validate_step
@@ -213,11 +214,13 @@ class TyxXPBDSolver(TyxSemiImplicitSolver):
             rest = constraints.rest_length.astype(np.float64)
             c = np.hypot.reduce(delta, axis=1) - rest
             scale = np.maximum(rest, config.reference_length)
-            residual = float(np.max(np.abs(c + alpha * multipliers) / scale, initial=0.0))
+            residual = float(
+                np.max(normalized_error(np.abs(c + alpha * multipliers), scale), initial=0.0)
+            )
             geometric = float(np.max(np.abs(c), initial=0.0))
         if config.plane is not None:
             penetration = float(np.max(config.plane.height - geometry[:, 1], initial=0.0))
-            residual = max(residual, penetration / config.reference_length)
+            residual = max(residual, float(normalized_error(penetration, config.reference_length)))
             geometric = max(geometric, penetration)
         return residual, geometric
 

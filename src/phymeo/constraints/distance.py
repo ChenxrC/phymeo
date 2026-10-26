@@ -5,6 +5,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from ..core._arrays import float_array
+from ..core.numerics import normalized_error
 
 
 @dataclass(frozen=True, eq=False)
@@ -71,5 +72,5 @@ def distance_residual(position, constraints, alpha, multipliers, reference_lengt
     c = np.hypot.reduce(delta, axis=1) - constraints.rest_length
     # A finite Python scale may exceed FP32 range; keep normalization in FP64.
     scale = np.maximum(constraints.rest_length.astype(np.float64), reference_length)
-    residual = np.abs(c + alpha * multipliers) / scale
+    residual = normalized_error(np.abs(c + alpha * multipliers), scale)
     return float(np.max(residual, initial=0.0)), float(np.max(np.abs(c), initial=0.0))

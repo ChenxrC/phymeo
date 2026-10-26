@@ -29,7 +29,7 @@ def main():
     if not constrained.report.accepted:
         raise RuntimeError("Installed constrained solver failed")
     np.testing.assert_allclose(constrained.state.position[1], [1.0, 0.0, 0.0])
-    rigid = phymeo.RigidSemiImplicitSolver().step(
+    rigid = phymeo.Stepper(phymeo.RigidSemiImplicitSolver()).step(
         phymeo.RigidBodyModel(np.ones(1), np.ones((1, 3)), np.zeros(3)),
         phymeo.RigidBodyState(
             np.zeros((1, 3)),

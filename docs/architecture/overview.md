@@ -109,7 +109,7 @@ XPBD 距离约束：`C = ||x_i-x_j|| - rest_length`，`alpha_tilde = compliance/
 
 先把世界角速度和力矩转入体坐标，用 `omega_dot_body = (tau_body - omega_body × (I_body * omega_body)) / I_body` 得到角加速度，再转回世界坐标更新角速度。新世界角速度构成旋转向量，指数映射增量从左侧复合旧四元数。该实现从刚体方程独立编写，参考 [Baraff 刚体动力学讲义](https://www.cs.cmu.edu/~baraff/sigcourse/notesd1.pdf) 的物理定义，以及 [SciPy 旋转向量定义](https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.transform.Rotation.from_rotvec.html)；运行时不依赖 SciPy。它是一阶自由运动基线，非球形惯量不精确保持能量/角动量，须用步长收敛检查控制误差。
 
-`StepResult` 已参数化状态类型；当前 `Stepper` 仍只处理粒子，构造时明确拒绝 `state_kind="rigid_bodies"`，防止遗漏姿态/角速度的验收与回滚。刚体接触、关节、机器人和 GPU 刚体内核需要后续独立验收。
+`StepResult` 和 `Solver` protocol 已参数化状态类型；共用 `Stepper` 按显式 `state_kind` 选择粒子或刚体合同，入口检查 model/state/inputs 类型匹配。刚体候选额外检查单位四元数、角速度和固定姿态；快照/回退额外复制 orientation、angular_velocity、torque，避免只恢复平移。未知状态族不自动通过鸭子类型接入。刚体接触、关节、机器人和 GPU 刚体内核需要后续独立验收。
 
 布片起点为 `cloth_grid(rows, columns, ...) -> ClothPatch`：在 XZ 平面生成 +Y 朝向的三角形，顶点编号 `row*columns+column`。每个三角形的 `area*density` 质量各分给三个顶点；三角形划分导致边界/对角顶点质量不同，不按顶点数均分。固定点逆质量为 0，但只读 `vertex_mass` 保留真实面积质量。行/列邻接和每格两条对角线分别形成结构、剪切距离约束，柔度按两组赋值；初始静止长度由实际可表示的位置计算，量化后退化几何与不可表示物理参数显式拒绝。
 
@@ -145,7 +145,9 @@ XPBD 距离约束：`C = ||x_i-x_j|| - rest_length`，`alpha_tilde = compliance/
 
 `Solver` protocol 声明 `capabilities`、`problem_signature()` 和 `step(...)`。`SolverCapabilities` 包含 state_kind、features、dtypes、backend、gradient 和 history。`Stepper(primary, fallback=None, required_features=..., gradient="unsupported", max_residual=1e-5)` 在调用前检查同一物理签名与精度/能力；signature 后续改变也会被拒绝。
 
-每次尝试独立复制位置/速度和外力；不可变 model 共用。验收独立检查 shape/dtype/有限性/固定点，再检查 solver 自报 accepted 和归一化残差阈值。柔顺几何伸长不与零比较。成功候选再次复制，避免返回 solver 内部存储的别名；全部失败则返回原快照。`report.fallback_used` 与 `report.primary_failure` 记录是否重算及原失败原因。预期域外拒绝可抛 `SolverFailure`；其他程序/配置异常原样传播，便于诊断。
+每次尝试独立复制对应状态族的全部可变字段和输入；不可变 model 共用。粒子复制位置/速度/外力，刚体另含姿态/角速度/力矩。验收独立检查 shape/dtype/有限性/固定配置与零固定速度，刚体还检查单位四元数；再检查 solver 自报 accepted 和归一化残差阈值。柔顺几何伸长不与零比较。成功候选再次复制，避免返回 solver 内部存储的别名；全部失败则返回原快照。`report.fallback_used` 与 `report.primary_failure` 记录是否重算及原失败原因。预期域外拒绝可抛 `SolverFailure`；其他程序/配置异常原样传播，便于诊断。
+
+`runtime/state_contract.py` 持有当前两种状态族的类型/复制/固定字段规则；所有尝试共享 `Stepper` 的报告检查、一次回退预算与物理签名门禁。两 solver 的 state_kind 必须一致且在构造后保持不变。新增状态族应先提供完整合同和回滚测试，再接入；该模块只依赖 core，不依赖具体数学或学习 solver。
 
 | 当前 solver | features | 精度 | 梯度 / 物理历史 |
 | --- | --- | --- | --- |

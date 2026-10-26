@@ -2,13 +2,11 @@
 
 from dataclasses import dataclass
 from numbers import Integral, Real
-from typing import Protocol
+from typing import Protocol, TypeVar
 
 import numpy as np
 
-from .model import ParticleModel
 from .result import StepResult
-from .state import ParticleState, StepInputs
 
 
 @dataclass(frozen=True)
@@ -87,12 +85,17 @@ class SolverFailure(Exception):
     """An expected domain/execution rejection that permits a configured fallback."""
 
 
-class Solver(Protocol):
+ModelT = TypeVar("ModelT", contravariant=True)
+StateT = TypeVar("StateT")
+InputsT = TypeVar("InputsT", contravariant=True)
+
+
+class Solver(Protocol[ModelT, StateT, InputsT]):
     @property
     def capabilities(self) -> SolverCapabilities: ...
 
     def problem_signature(self) -> ProblemSignature: ...
 
     def step(
-        self, model: ParticleModel, state_in: ParticleState, inputs: StepInputs, dt: float
-    ) -> StepResult: ...
+        self, model: ModelT, state_in: StateT, inputs: InputsT, dt: float
+    ) -> StepResult[StateT]: ...

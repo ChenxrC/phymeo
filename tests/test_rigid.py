@@ -216,11 +216,11 @@ def test_rotation_overflow_is_rejected_without_altering_input():
     np.testing.assert_array_equal(result.state.angular_velocity, current.angular_velocity)
 
 
-def test_particle_stepper_explicitly_rejects_rigid_state_capability():
+def test_stepper_accepts_rigid_capability_with_explicit_rigid_inputs():
     solver = api("RigidSemiImplicitSolver")()
     assert solver.capabilities.state_kind == "rigid_bodies"
-    with pytest.raises(ValueError, match="state"):
-        phymeo.Stepper(solver)
+    result = phymeo.Stepper(solver).step(model(), state(), api("RigidBodyInputs").zeros(1), 0.1)
+    assert result.report.accepted
 
 
 def test_near_unit_input_is_interpreted_as_the_normalized_rotation():

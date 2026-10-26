@@ -1,4 +1,4 @@
-"""Transactional particle stepping with one optional same-problem fallback."""
+"""Transactional particle or rigid stepping with one optional same-problem fallback."""
 
 from dataclasses import replace
 from numbers import Real
@@ -7,15 +7,14 @@ import numpy as np
 
 from ..core.capabilities import ProblemSignature, Solver, SolverCapabilities, SolverFailure
 from ..core.result import StepReport, StepResult
-from ..core.state import ParticleState, StepInputs
-from ..core.validation import validate_step
+from .state_contract import state_contract
 
 
 class Stepper:
     """Commit valid owned candidates, or return the unchanged original snapshot.
 
-    This v0 gate independently checks shape, precision, finiteness and fixed-point
-    invariants. Other physics residuals are still supplied by the solver. A future
+    This v0 gate independently checks shape, precision, finiteness, unit rigid
+    quaternions and fixed-state invariants. Other physics residuals come from the solver. A future
     learned solver needs independent physical validation, not just a matching signature.
     Hidden-state solvers are rejected until a snapshot/restore contract exists.
     """
@@ -40,6 +39,10 @@ class Stepper:
         self._required_features = frozenset(required_features)
         self._gradient = gradient
         self._max_residual = float(max_residual)
+        capabilities = primary.capabilities
+        if not isinstance(capabilities, SolverCapabilities):
+            raise TypeError("solver must declare SolverCapabilities")
+        self._contract = state_contract(capabilities.state_kind)
         self._signature = primary.problem_signature()
         if not isinstance(self._signature, ProblemSignature):
             raise TypeError("solver must return a ProblemSignature")
@@ -52,8 +55,8 @@ class Stepper:
             capabilities = solver.capabilities
             if not isinstance(capabilities, SolverCapabilities):
                 raise TypeError("solver must declare SolverCapabilities")
-            if capabilities.state_kind != "particles":
-                raise ValueError("unsupported state capability")
+            if capabilities.state_kind != self._contract.kind:
+                raise ValueError("primary and fallback must retain the same state capability")
             if not self._required_features <= capabilities.features:
                 raise ValueError("required capabilities are not supported by every solver")
             if self._gradient != "unsupported" and capabilities.gradient != self._gradient:
@@ -66,11 +69,11 @@ class Stepper:
                 raise ValueError("state dtype is not supported by every solver")
 
     def step(self, model, state_in, inputs, dt) -> StepResult:
-        snapshot, force, h = validate_step(model, state_in, inputs, dt)
+        snapshot, owned_inputs, h = self._contract.snapshot(model, state_in, inputs, dt)
         self._check_solvers(snapshot.position.dtype)
         primary_failure = None
         for index, solver in enumerate(self._solvers):
-            candidate, report = self._attempt(solver, model, snapshot, force, h)
+            candidate, report = self._attempt(solver, model, snapshot, owned_inputs, h)
             report = replace(report, fallback_used=index == 1, primary_failure=primary_failure)
             if candidate is not None:
                 return StepResult(candidate, report)
@@ -78,9 +81,9 @@ class Stepper:
                 primary_failure = report.reason
         return StepResult(snapshot, report)
 
-    def _attempt(self, solver, model, snapshot, force, dt):
+    def _attempt(self, solver, model, snapshot, inputs, dt):
         try:
-            result = solver.step(model, snapshot.copy(), StepInputs(force), dt)
+            result = solver.step(model, snapshot.copy(), inputs.copy(), dt)
         except SolverFailure as error:
             return self._reject(str(error) or "solver rejected the step")
         if not isinstance(result, StepResult) or not isinstance(result.report, StepReport):
@@ -110,21 +113,9 @@ class Stepper:
             return None, replace(
                 report, accepted=False, reason="residual exceeds acceptance threshold"
             )
-        if not isinstance(result.state, ParticleState):
-            return self._reject("invalid state type")
-        try:
-            candidate = result.state.copy()
-        except (TypeError, ValueError) as error:
-            return self._reject(f"invalid candidate: {error}")
-        if candidate.position.shape != snapshot.position.shape:
-            return self._reject("candidate state shape changed")
-        if candidate.position.dtype != snapshot.position.dtype:
-            return self._reject("candidate state dtype changed")
-        fixed = model.inverse_mass == 0
-        if not np.array_equal(candidate.position[fixed], snapshot.position[fixed]) or np.any(
-            candidate.velocity[fixed] != 0
-        ):
-            return self._reject("candidate violates fixed-particle invariants")
+        candidate, reason = self._contract.candidate(result.state, snapshot, model)
+        if candidate is None:
+            return self._reject(reason)
         return candidate, report
 
     @staticmethod

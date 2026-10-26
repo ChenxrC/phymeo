@@ -41,6 +41,9 @@ class StepInputs:
     def __post_init__(self):
         self.force = float_array(self.force, "force", ndim=2, columns=3)
 
+    def copy(self) -> "StepInputs":
+        return StepInputs(self.force)
+
     @classmethod
     def zeros(cls, count: int, *, dtype=np.float64) -> "StepInputs":
         if isinstance(count, (bool, np.bool_)) or not isinstance(count, (int, np.integer)):

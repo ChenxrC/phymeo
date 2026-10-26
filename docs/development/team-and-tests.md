@@ -14,6 +14,7 @@
 | geometry 接触 schema、基础平面/球体 | A | A+B | B 提供粒子/布料接触需求 |
 | constraints 距离/弯曲、布料与软体 | B | solver/runtime | A 审阅量纲、缓存与并行写入 |
 | builders 布片拓扑/面积质量/初始条件 | B | A+B 示例与场景 | A 审阅总质量、固定点、精度与静态数据所有权 |
+| runtime 状态族合同/候选事务 | A | B 的粒子/刚体 solver | B 审阅姿态、角速度、力矩回滚与固定对象不变量 |
 | learning provider、数据和训练边界 | B（数学基线后） | runtime | A 审阅回退与状态所有权 |
 | runtime 步进/提交/回滚/耦合 | A 主写 | A+B | B 提供柔体端口与失败用例 |
 | GPU 驻留/图执行与性能 | A 主写、B 场景验证 | A+B | 首批 CPU 正确后启动 |

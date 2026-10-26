@@ -4,7 +4,7 @@ import json
 
 import numpy as np
 
-from phymeo import RigidBodyInputs, RigidBodyModel, RigidBodyState, RigidSemiImplicitSolver
+from phymeo import RigidBodyInputs, RigidBodyModel, RigidBodyState, RigidSemiImplicitSolver, Stepper
 from phymeo.dynamics.rotation import quaternion_matrix
 
 
@@ -24,7 +24,7 @@ def main():
         np.array([[0.0, 2.0, 0.0], [1.0, 2.0, 3.0]]),
     )
     initial_energy = kinetic_energy(model, state)
-    solver, inputs = RigidSemiImplicitSolver(), RigidBodyInputs.zeros(2)
+    solver, inputs = Stepper(RigidSemiImplicitSolver()), RigidBodyInputs.zeros(2)
     for _ in range(steps):
         result = solver.step(model, state, inputs, dt)
         if not result.report.accepted:

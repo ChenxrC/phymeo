@@ -25,3 +25,12 @@
 - Windows / Python 3.12.14：直接 Python、uv 0.11.2 和原生 venv/pip 25.0.1 三条入口均通过文档检查（7 文档、24 本地链接）。检查不覆盖外部链接/Markdown 锚点。
 - venv 初次 ensurepip 受沙箱临时目录写权限影响；改用被 gitignore 的项目 artifacts/tmp 后成功。这是本机执行环境处理，不改变普通用户的 venv 命令。
 - 当前无 GPU 执行；GitHub Actions 仅已配置，尚未取得远程执行结果。
+
+## 2026-10-27 00:55 左右：Task 2 基础包
+
+- Task 1 已提交并推送：`f39ae22f3063ce80264befc97c2ba1b86aa69195`，远程 SHA 一致。
+- 新增 ParticleModel/ParticleState/StepInputs/StepReport/StepResult，浮点类型、形状、有限性、质量和复制边界。
+- TDD：17 项合同测试先因缺失实现失败，实施后 `python -m pytest -q` 为 17 passed；独立 pip 环境也为 17 passed，pip check 无破损依赖。
+- 已生成 uv.lock 与含 hash 的 requirements/dev.lock；Python 3.12.14 下 NumPy 2.5.4、pytest 9.1.1；锁文件为 Python 3.11 保留对应依赖分支。
+- `python -m build --no-isolation` 构建 sdist/wheel；干净 `.venv-wheel`、源码树外、`python -I scripts/smoke_installed.py` 确认从该环境 site-packages 导入。
+- 当前只有数据基础，无积分/XPBD/真实 GPU 能力。下一步 Task 3 半隐式积分。

@@ -1,6 +1,6 @@
 # 环境构建与 CI 部署计划
 
-日期：2026-10-27。当前已有文档检查工作流；引擎包、锁文件、CPU/GPU 工作流在[首版计划](../superpowers/plans/2026-10-27-v0-foundation.md)对应任务完成后启用。以下区分“现在可执行”与“包骨架后可执行”，不把未来目录当成交付物。
+日期：2026-10-27。当前已有文档检查工作流和基础包/锁文件；CPU/GPU 工作流在[首版计划](../superpowers/plans/2026-10-27-v0-foundation.md)对应任务完成后启用。安装基础包已在本机 uv/pip 验证；tyx/GPU 等附加路径以进度记录为准。
 
 ## 1. 支持层级
 
@@ -50,7 +50,7 @@ python3.11 -m venv .venv-docs
 
 以 `pyproject.toml` 声明公开依赖，`uv.lock` 保存解析结果；从它导出 `requirements/dev.lock` 给原生 pip。不要手写第二套版本范围。
 
-计划中的文件：`pyproject.toml`、`uv.lock`、`requirements/dev.lock`、`requirements/tyx.txt`。CPU 核心仅依赖 NumPy；dev 组包含 pytest、构建与静态检查工具。tyx 私有 Git 依赖单独安装，避免无权限的贡献者连核心测试都无法运行。
+已交付 `pyproject.toml`、`uv.lock`、`requirements/dev.lock`；`requirements/tyx.txt` 在适配任务中加入。CPU 核心仅依赖 NumPy；dev 组包含 pytest、构建与静态检查工具。tyx 私有 Git 依赖单独安装，避免无权限的贡献者连核心测试都无法运行。
 
 ### uv 开发路径
 

@@ -36,10 +36,10 @@
 
 **Interfaces:** 产生本计划和图表；不产生物理运行时 API。
 
-- [ ] 完成离线 HTML/SVG/PNG 与模板许可，移动端和桌面检查标签/连线。
-- [ ] 实现标准库文档检查，运行并检查所有本地链接与 SVG 引用。
-- [ ] 新建专用分支、配置用户指定 remote，提交设计包并推送。
-- [ ] 记录验证方式；只有获取远程运行证据才声称 Actions 通过。
+- [x] 完成离线 HTML/SVG/PNG 与模板许可，移动端和桌面检查标签/连线。
+- [x] 实现标准库文档检查，运行并检查所有本地链接与 SVG 引用。
+- [x] 新建专用分支、配置用户指定 remote，提交设计包并推送。
+- [x] 记录验证方式；尚未获取远程 Actions 证据，不声称通过。
 
 ## Task 2: 包、状态与数据合同
 
@@ -47,10 +47,10 @@
 
 **Interfaces:** `ParticleModel(inverse_mass, gravity)`；`ParticleState(position, velocity)`；`StepInputs(force)`；`StepReport` 与 `StepResult(state, report)`。数组 `(n,3)`，逆质量 `(n,)`；模型和输入 shape/dtype 约束统一。
 
-- [ ] 先写 `test_rejects_invalid_mass_shape_and_nan`、`test_empty_system_is_valid`、`test_state_copy_does_not_alias`；确认缺能力导致失败。
-- [ ] 实现验证与复制合同，固定点语义按 spec；不引入 solver 依赖。
-- [ ] 建立公开依赖锁与 pip 导出，uv/pip 分别安装并运行全套现有测试。
-- [ ] 从源码树外验证 wheel 导入；提交此独立交付。
+- [x] 先写非法质量/形状/NaN、空系统、状态复制无别名等 17 项细分测试；观察缺失实现导致失败。
+- [x] 实现验证与复制合同，固定点模型语义按 spec；不引入 solver 依赖。
+- [x] 建立公开依赖锁与 pip 导出，uv/pip 分别安装并运行全套现有测试。
+- [x] 从源码树外验证 wheel 导入；提交此独立交付。
 
 ## Task 3: 半隐式积分与首个可运行例子
 

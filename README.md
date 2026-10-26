@@ -22,7 +22,24 @@
 
 GitHub 文件页不直接运行 HTML；下载后用浏览器打开即可，无网络字体或脚本依赖。
 
-## 当前文档检查
+## 当前基础包与验证
+
+已提供经过验证的粒子模型、状态、外力与结果数据合同。具体积分与约束求解按[进度记录](docs/progress.md)逐批加入。
+
+```sh
+uv sync --locked --group dev
+uv run --no-sync python -m pytest
+```
+
+原生 pip 用户在激活的 Python 3.11+ 虚拟环境中执行：
+
+```sh
+python -m pip install --require-hashes -r requirements/dev.lock
+python -m pip install --no-deps --no-build-isolation -e .
+python -m pytest
+```
+
+## 文档检查
 
 需要 Python 3.11+，不需要安装第三方包。
 
@@ -30,7 +47,7 @@ GitHub 文件页不直接运行 HTML；下载后用浏览器打开即可，无�
 python scripts/check_docs.py
 ```
 
-uv 与 pip/venv 的隔离环境命令见[环境说明](docs/development/environment-and-ci.md)。引擎安装与运行命令将在包骨架通过验证后补充，避免把计划命令误写为当前已可用功能。
+uv 与 pip/venv 的隔离环境、可选 tyx 安装和后续 GPU 计划见[环境说明](docs/development/environment-and-ci.md)。
 
 ## 来源与实现原则
 

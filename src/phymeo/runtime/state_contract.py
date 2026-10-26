@@ -22,6 +22,14 @@ class StateContract:
     validator: Callable
     configuration_fields: tuple[str, ...]
     velocity_fields: tuple[str, ...]
+    input_fields: tuple[str, ...]
+
+    def _copy_state(self, state):
+        # Extension providers may override copy() with a shallow/cache copy.
+        # Reconstruct the known family so validation and ownership stay ours.
+        return self.state_type(
+            **{name: getattr(state, name) for name in self.configuration_fields + self.velocity_fields}
+        )
 
     def snapshot(self, model, state, inputs, dt):
         for name, value, expected in (
@@ -31,7 +39,11 @@ class StateContract:
         ):
             if not isinstance(value, expected):
                 raise TypeError(f"{name} type must be {expected.__name__} for {self.kind}")
-        snapshot, owned_inputs, h = self.validator(model, state, inputs, dt)
+        canonical_state = self._copy_state(state)
+        canonical_inputs = self.inputs_type(
+            **{name: getattr(inputs, name) for name in self.input_fields}
+        )
+        snapshot, owned_inputs, h = self.validator(model, canonical_state, canonical_inputs, dt)
         if self.kind == "particles":
             owned_inputs = StepInputs(owned_inputs)  # legacy validator returns the owned force
         return snapshot, owned_inputs, h
@@ -40,7 +52,7 @@ class StateContract:
         if not isinstance(result_state, self.state_type):
             return None, "invalid state type"
         try:
-            candidate = result_state.copy()
+            candidate = self._copy_state(result_state)
         except (TypeError, ValueError) as error:
             return None, f"invalid candidate: {error}"
         # Constructors validate matching counts/dtypes of every array, quaternion
@@ -67,6 +79,7 @@ _PARTICLES = StateContract(
     validate_step,
     ("position",),
     ("velocity",),
+    ("force",),
 )
 _RIGID = StateContract(
     "rigid_bodies",
@@ -76,6 +89,7 @@ _RIGID = StateContract(
     validate_rigid_step,
     ("position", "orientation"),
     ("velocity", "angular_velocity"),
+    ("force", "torque"),
 )
 
 

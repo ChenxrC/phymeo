@@ -12,6 +12,7 @@ from phymeo import (
     RigidBodyModel,
     RigidBodyState,
     RigidSemiImplicitSolver,
+    SemiImplicitSolver,
     StepInputs,
     Stepper,
     StepReport,
@@ -251,3 +252,74 @@ def test_particle_input_copy_is_owned_and_revalidates_mutated_values():
     inputs.force[0, 0] = np.nan
     with pytest.raises(ValueError):
         inputs.copy()
+
+
+@pytest.mark.parametrize("kind", ["particles", "rigid_bodies"])
+@pytest.mark.parametrize("bad", [False, True])
+def test_provider_subclass_copy_override_cannot_bypass_validation_or_ownership(kind, bad):
+    if kind == "rigid_bodies":
+        model, state, inputs = scene()
+        solver, fields = RigidSemiImplicitSolver(), STATE_FIELDS
+    else:
+        model = ParticleModel(np.ones(1), np.zeros(3))
+        state, inputs = ParticleState(np.zeros((1, 3)), np.zeros((1, 3))), StepInputs.zeros(1)
+        solver, fields = SemiImplicitSolver(), ("position", "velocity")
+
+    class CachedState(type(state)):
+        def copy(self):
+            return self
+
+    retained = CachedState(**{field: getattr(state, field) for field in fields})
+    if bad:
+        retained.velocity[:] = np.nan
+        if kind == "rigid_bodies":
+            retained.orientation *= 2
+            retained.angular_velocity[:] = np.nan
+    provider = Candidate(lambda *args: StepResult(retained, StepReport(accepted=True)))
+    provider.capabilities, provider.signature = solver.capabilities, solver.problem_signature()
+    result = Stepper(provider).step(model, state, inputs, 0.1)
+    assert result.report.accepted == (not bad)
+    assert result.state is not retained
+    retained.position[:] = 999
+    for field in fields:
+        np.testing.assert_array_equal(getattr(result.state, field), getattr(state, field))
+
+
+@pytest.mark.parametrize("kind", ["particles", "rigid_bodies"])
+def test_input_subclass_copy_overrides_cannot_leak_mutations_to_caller_or_fallback(kind):
+    if kind == "rigid_bodies":
+        model, original, original_inputs = scene()
+        solver, fields, input_fields = RigidSemiImplicitSolver(), STATE_FIELDS, ("force", "torque")
+    else:
+        model = ParticleModel(np.ones(1), np.zeros(3))
+        original = ParticleState(np.zeros((1, 3)), np.zeros((1, 3)))
+        original_inputs = StepInputs.zeros(1)
+        solver, fields, input_fields = SemiImplicitSolver(), ("position", "velocity"), ("force",)
+
+    class CachedState(type(original)):
+        def copy(self):
+            return self
+
+    class CachedInputs(type(original_inputs)):
+        def copy(self):
+            return self
+
+    state = CachedState(**{field: getattr(original, field) for field in fields})
+    inputs = CachedInputs(**{field: getattr(original_inputs, field) for field in input_fields})
+
+    def corrupt(model, working, working_inputs, dt):
+        working.position[:] = 999
+        for field in input_fields:
+            getattr(working_inputs, field)[:] = 888
+        return StepResult(working, StepReport(accepted=False, reason="retry"))
+
+    provider = Candidate(corrupt)
+    provider.capabilities, provider.signature = solver.capabilities, solver.problem_signature()
+    expected = solver.step(model, original, original_inputs, 0.1)
+    result = Stepper(provider, solver).step(model, state, inputs, 0.1)
+    assert result.report.accepted and result.report.fallback_used
+    for field in fields:
+        np.testing.assert_array_equal(getattr(state, field), getattr(original, field))
+        np.testing.assert_array_equal(getattr(result.state, field), getattr(expected.state, field))
+    for field in input_fields:
+        np.testing.assert_array_equal(getattr(inputs, field), getattr(original_inputs, field))

@@ -264,3 +264,24 @@ def test_constraint_precision_must_match_state():
     model, state, inputs = pair()
     with pytest.raises(ValueError, match="dtype"):
         solver.step(model, state, inputs, 0.1)
+
+
+def test_compliance_scaling_avoids_overflow_of_intermediate_dt_squared():
+    # All inputs and the exact scaled compliance are finite: alpha = 1e-100.
+    model = ParticleModel(np.full(2, 1e-100), np.zeros(3))
+    state = ParticleState(np.array([[0.0, 0.0, 0.0], [2.0, 0.0, 0.0]]), np.zeros((2, 3)))
+    result = api("XPBDSolver")(edge(compliance=1e300), iterations=1).step(
+        model, state, StepInputs.zeros(2), 1e200
+    )
+    assert result.report.accepted
+    np.testing.assert_allclose(result.state.position[:, 0], [1 / 3, 5 / 3], atol=1e-14)
+
+
+def test_fp32_normalization_does_not_turn_finite_residual_into_zero():
+    model = ParticleModel(np.zeros(2, dtype=np.float32), np.zeros(3))
+    _, state, inputs = pair(np.float32)
+    result = api("XPBDSolver")(
+        edge(dtype=np.float32), reference_length=1e40, tolerance=0.0, iterations=1
+    ).step(model, state, inputs, 0.1)
+    assert not result.report.accepted
+    assert result.report.max_residual == pytest.approx(1e-40, rel=1e-6, abs=0.0)

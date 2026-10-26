@@ -100,12 +100,14 @@ class XPBDSolver:
         multipliers = np.zeros_like(alpha)
         with np.errstate(over="ignore", invalid="ignore", divide="ignore", under="ignore"):
             if constraints is not None:
+                # Successive divisions avoid h*h overflowing when the final ratio is finite.
                 np.divide(
                     constraints.compliance,
-                    np.square(np.float64(h)),
+                    np.float64(h),
                     out=alpha,
                     where=constraints.compliance > 0,
                 )
+                np.divide(alpha, np.float64(h), out=alpha)
             if not np.isfinite(alpha).all():
                 return self._numerical_failure(state_in, 0)
             residual, geometric = 0.0, 0.0

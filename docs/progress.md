@@ -81,3 +81,11 @@
 - 新增由 uv.lock 导出的 runtime.lock；dev/runtime 两份锁文件再次导出的 SHA256 与原文件一致。CI YAML 用独立 YAML 解析器读取成功；这不代替 Actions 执行。
 - 重新构建 sdist/wheel；`scripts/verify_wheel.py` 在源码目录外的全新原生 pip 环境中只安装 NumPy 与 wheel，pip check 通过，`-I` smoke 验证 site-packages 导入、自由积分、XPBD 与可选依赖隔离。
 - 下一步独立全分支审阅；尚未取得远程 Actions 结果。
+
+## 2026-10-27 01:46 左右：审阅修正数值边界
+
+- CI 配置已提交并推送：`19e7cd2b91996765eb8368021d304be4a346a1af`。
+- 在独立 Python 3.11.15 / NumPy 2.4.6 环境运行初始 CPU 套件 116 passed，悬挂链通过；原 Python 3.12/CUDA 环境保持不变。
+- 独立审阅发现两个已复现的静默数值错误：`dt²` 先溢出导致有限柔顺比值变零；FP32 归一化尺度溢出导致非零残差变零。新增两个先失败的回归测试，然后改为逐次除 dt、FP64 归一化。
+- 修复后 Python 3.12 含 tyx 解释器全套 125 passed；Python 3.11 CPU 118 passed, 7 deselected；ruff 通过。审阅尚未结束。
+- 电脑操作工具初始化失败（failed to write kernel assets / 系统找不到指定的路径），无法借助已登录浏览器核验远程 Actions；Git 推送正常，远程 CI 仍标未核验。

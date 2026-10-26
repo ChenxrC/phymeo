@@ -69,6 +69,7 @@ def distance_residual(position, constraints, alpha, multipliers, reference_lengt
     """Return dimensionless constitutive residual and geometric error in metres."""
     delta = position[constraints.indices[:, 0]] - position[constraints.indices[:, 1]]
     c = np.hypot.reduce(delta, axis=1) - constraints.rest_length
-    scale = np.maximum(constraints.rest_length, reference_length)
+    # A finite Python scale may exceed FP32 range; keep normalization in FP64.
+    scale = np.maximum(constraints.rest_length.astype(np.float64), reference_length)
     residual = np.abs(c + alpha * multipliers) / scale
     return float(np.max(residual, initial=0.0)), float(np.max(np.abs(c), initial=0.0))

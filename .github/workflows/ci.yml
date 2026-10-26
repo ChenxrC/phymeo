@@ -99,6 +99,7 @@ jobs:
           ${{ steps.environment.outputs.python }} examples/cloth_patch.py
           ${{ steps.environment.outputs.python }} examples/falling_spheres.py
           ${{ steps.environment.outputs.python }} examples/learned_free_particles.py
+          ${{ steps.environment.outputs.python }} examples/point_impulse.py
 
   wheel:
     name: wheel / ${{ matrix.os }}

@@ -139,6 +139,14 @@ XPBD 距离约束：`C = ||x_i-x_j|| - rest_length`，`alpha_tilde = compliance/
 
 端口传递同一作用点与坐标系中的运动、冲量/力矩及有效质量。对象只有一个状态写入者；同一接触只有一个响应所有者。多子步必须按时间区间累计冲量，不能把瞬时力直接重复使用。先交替迭代+松弛，再按验证需求扩展强耦合算法。
 
+当前落地的最小算子为 `ParticleRigidPorts(particle_indices, body_indices)`。两组等长只读 int64 索引允许重复；世界作用点取粒子当前位置。`apply_impulses(particle_model, particle_state, rigid_model, rigid_state, impulses)` 向粒子分配 J，向刚体分配 -J 与关于质心的 `r×(-J)`。用世界线冲量和体坐标主惯量计算速度／角速度响应，不积分位置和姿态。
+
+全部累计与响应使用 FP64，重复端口用补偿求和保留抵消中的小项，最终回写共同的 FP32 或 FP64 状态精度。`ImpulseExchangeResult` 同时返回两组拥有独立存储的状态；任何响应或转换数值失败，两边都返回原始副本并给出原因，ledger 为空。成功的只读 `ImpulseLedger` 分别记录粒子线冲量、刚体线／角冲量；固定对象速度保持零，ledger 中的载荷由外部固定约束吸收，不能当作其实际动量变化。
+
+`effective_inverse_mass(...)` 返回每端口的 `(w_particle+w_body)I - skew(r)I_world_inverse*skew(r)`，单位 kg⁻¹，描述本端口冲量造成的相对点速度变化。实现用等价 Gram 形式 `K=(wp+wb)I+A Aᵀ`、`A=skew(r)R/sqrt(I_body)`，避免零／小力臂下显式倒惯量的无谓溢出。共享对象的多个端口存在交叉响应，此数组不是全局块矩阵。双固定端口自响应为零；不可表示的数值通过 `SolverFailure` 拒绝。
+
+该算子不决定冲量、不检测碰撞，也不执行位置投影或约束迭代；任意输入冲量可以做功，不能声称能量守恒。接口没有 dt，力应由上游按物理时间积分后送入；多速率区间累计、完整耦合 Stepper 和 GPU 耦合仍待实现。示例 `point_impulse.py` 独立检查偏离质心冲量的线／角动量及有效质量响应。
+
 ## 8. 学习模型与可微能力
 
 可插拔角色依次为 warm start、材料响应、残差修正、局部代理和完整候选状态。面向真实任务的首个 AI 加速功能仍优先 warm start，保持数学终止容差不变，验证总耗时而非只看网络推理。当前小型自由粒子回归例子用于验证候选入口，不承担生产加速角色。

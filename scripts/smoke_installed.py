@@ -66,6 +66,20 @@ def main():
     if not sphere.report.accepted or sphere.state.velocity[0, 1] != 0:
         raise RuntimeError("Installed rigid sphere contact failed")
     np.testing.assert_allclose(sphere.state.position, [[0.0, 0.2, 0.0]])
+    exchange = phymeo.ParticleRigidPorts(np.array([1]), np.array([0])).apply_impulses(
+        model,
+        state,
+        phymeo.RigidBodyModel(np.ones(1), np.ones((1, 3))),
+        phymeo.RigidBodyState(
+            np.zeros((1, 3)), np.array([[0.0, 0.0, 0.0, 1.0]]), np.zeros((1, 3)), np.zeros((1, 3))
+        ),
+        np.array([[0.0, 1.0, 0.0]]),
+    )
+    if not exchange.accepted:
+        raise RuntimeError("Installed point impulse port failed")
+    np.testing.assert_allclose(exchange.particle_state.velocity[1], [0, 1, 0])
+    np.testing.assert_allclose(exchange.rigid_state.velocity, [[0, -1, 0]])
+    np.testing.assert_allclose(exchange.rigid_state.angular_velocity, [[0, 0, -2]])
     cloth = phymeo.cloth_grid(2, 2, spacing=1.0, density=6.0, pinned=[0])
     np.testing.assert_allclose(cloth.vertex_mass, [1.0, 2.0, 2.0, 1.0])
     if cloth.model.inverse_mass[0] != 0 or cloth.triangles.shape != (2, 3):

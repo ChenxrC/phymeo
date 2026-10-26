@@ -247,13 +247,13 @@
 
 **Effective mass:** `K=(w_particle+w_body)*I - skew(r)*I_world_inverse*skew(r)`，只计算本端口相对点速度对本端口冲量的响应；多个端口共享对象时仍有交叉项，本函数不声称返回全局耦合矩阵。双固定端口 K=0，动态情形用解析值、对称半正定和单冲量实测响应检验。不可表示的数值计算显式报 SolverFailure，不输出 NaN。
 
-**Atomic result:** `ImpulseLedger(particle, rigid_linear, rigid_angular)` 拥有 FP64 只读累计载荷数组；`ImpulseExchangeResult(particle_state, rigid_state, accepted, ledger=None, reason=None)` 拥有两组状态副本。重复索引使用补偿累计避免大冲量抵消吞掉小冲量；全部响应在 FP64 计算，回写原 dtype 后检查有限性。任何响应/转换数值失败同时返回两组原始快照、accepted=False、ledger=None，不能只提交一边。非法输入仍抛 TypeError/ValueError。调用者状态和输入不变。
+**Atomic result:** `ImpulseLedger(particle, rigid_linear, rigid_angular)` 拥有 FP64 只读累计载荷数组；端口返回的 `ImpulseExchangeResult(particle_state, rigid_state, accepted, ledger=None, reason=None)` 拥有两组状态副本。结果数据类本身保存传入引用，与 StepResult 一样由生产者保证所有权。重复索引使用补偿累计避免大冲量抵消吞掉小冲量；全部响应在 FP64 计算，回写原 dtype 后检查有限性。任何响应/转换数值失败同时返回两组原始快照、accepted=False、ledger=None，不能只提交一边。非法输入仍抛 TypeError/ValueError。调用者状态和输入不变。
 
 **Boundary:** 本算子消费已知冲量，不求接触法向、摩擦、约束乘子、位置修正、能量守恒或连续碰撞。没有 dt 参数；力必须由上游按时间积分成冲量，多子步累计与时间区间去重另立合同。尚无整体耦合 Stepper、GPU 耦合 kernel 或学习耦合模型。当前 FP64 中间计算和输出舍入的误差有正常浮点容差，不声称任意尺度精确守恒。
 
 - [ ] 写端口/ledger 所有权和非法输入、同作用点线/角动量、主轴旋转、固定反力、重复/空端口、有效质量解析值、双方数值失败原子回滚测试，观察缺失接口失败。
 - [ ] 实现公开端口和 FP64 补偿累计/响应，不改变现有单状态族 Stepper。
-- [ ] 提供离心作用点冲量示例和独立动量审计，加入 CI 与安装包 smoke；更新物理边界及 A/B 分工。
+- [ ] 提供偏离质心作用点的冲量示例和独立动量审计，加入 CI 与安装包 smoke；更新物理边界及 A/B 分工。
 - [ ] 独立审阅符号/坐标/惯量/事务性，完成全套、多环境、当前源码 wheel 验证，提交推送。
 
 ## 后续候选（有余量才按完整验证单独立项）

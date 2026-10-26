@@ -1,8 +1,9 @@
 """Observable solver outcomes; numerical failure is separate from invalid input."""
 
 from dataclasses import dataclass
+from typing import Generic, TypeVar
 
-from .state import ParticleState
+StateT = TypeVar("StateT")
 
 
 @dataclass(frozen=True)
@@ -20,6 +21,6 @@ class StepReport:
 
 
 @dataclass(frozen=True)
-class StepResult:
-    state: ParticleState
+class StepResult(Generic[StateT]):
+    state: StateT
     report: StepReport

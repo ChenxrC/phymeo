@@ -66,7 +66,7 @@ tests/           # 合同、数学、集成、设备、打包与回归
 | 名称 | 语义 | 首版范围 |
 | --- | --- | --- |
 | SceneSpec / CompiledScene | 可编辑描述 / 验证后拓扑、参数、资源 | 先用简单不可变模型，后续独立编译步骤 |
-| SimulationState | 随时间变化的物理量与内部变量 | 粒子位置/速度；刚体姿态按后续里程碑扩展 |
+| SimulationState | 随时间变化的物理量与内部变量 | 粒子位置/速度；独立刚体位置/姿态/线速度/角速度 |
 | StepInputs | 外力、控制、边界驱动 | 有量纲的外力，不与冲量混用 |
 | PhysicsOperator | 质量、力、能量、约束及导数能力 | 质量逆、距离约束、平面接触 |
 | SolverCapabilities | 对象、后端、精度、梯度和历史要求 | 显式拒绝不支持组合 |
@@ -102,6 +102,12 @@ XPBD 距离约束：`C = ||x_i-x_j|| - rest_length`，`alpha_tilde = compliance/
 
 独立刚体采用最大坐标；机器人后续采用广义坐标动力学。布料先用有明确局限的距离/弯曲模型，再升级应变能；软体采用材料模型与隐式积分。CG/PCG 仅用于满足正定等条件的系统，不能代替一般接触互补/KKT 求解。
 
+已实现的独立刚体基线为 `RigidBodyModel / RigidBodyState / RigidBodyInputs / RigidSemiImplicitSolver`。惯量是质心处体坐标主轴对角量；body-to-world 姿态为 xyzw 四元数，所有速度与外力/力矩在世界坐标。动态主惯量必须为正且满足三角不等式；0 逆质量同时固定平移和旋转。四元数输入允许 1e-6 的单位长度舍入误差，坐标变换时先在 FP64 归一化；动态姿态更新也归一化，固定姿态保留原值。
+
+先把世界角速度和力矩转入体坐标，用 `omega_dot_body = (tau_body - omega_body × (I_body * omega_body)) / I_body` 得到角加速度，再转回世界坐标更新角速度。新世界角速度构成旋转向量，指数映射增量从左侧复合旧四元数。该实现从刚体方程独立编写，参考 [Baraff 刚体动力学讲义](https://www.cs.cmu.edu/~baraff/sigcourse/notesd1.pdf) 的物理定义，以及 [SciPy 旋转向量定义](https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.transform.Rotation.from_rotvec.html)；运行时不依赖 SciPy。它是一阶自由运动基线，非球形惯量不精确保持能量/角动量，须用步长收敛检查控制误差。
+
+`StepResult` 已参数化状态类型；当前 `Stepper` 仍只处理粒子，构造时明确拒绝 `state_kind="rigid_bodies"`，防止遗漏姿态/角速度的验收与回滚。刚体接触、关节、机器人和 GPU 刚体内核需要后续独立验收。
+
 ### 7.3 双向耦合
 
 端口传递同一作用点与坐标系中的运动、冲量/力矩及有效质量。对象只有一个状态写入者；同一接触只有一个响应所有者。多子步必须按时间区间累计冲量，不能把瞬时力直接重复使用。先交替迭代+松弛，再按验证需求扩展强耦合算法。
@@ -129,6 +135,7 @@ XPBD 距离约束：`C = ||x_i-x_j|| - rest_length`，`alpha_tilde = compliance/
 | SemiImplicitSolver | particles, free_dynamics | FP32/FP64 | unsupported / none |
 | XPBDSolver | 基础 + 按配置 distance、plane_contact | FP32/FP64（乘子 FP64） | unsupported / none |
 | TyxSemiImplicitSolver | particles, free_dynamics | FP32 | unsupported / none |
+| RigidSemiImplicitSolver | rigid_bodies, free_dynamics, rotation | FP32/FP64（旋转算术 FP64） | unsupported / none |
 
 这是学习候选未来接入的协议基础，不是已经完成 AI 物理验收。当前残差仍由 solver 计算，不能据此信任任意神经网络的自报数值；后续学习 provider 必须增加独立物理残差/适用域检验。`history != "none"` 当前拒绝，防止隐藏状态未回滚；模型随机状态、材料历史和学习缓存的完整事务协议尚未实现。
 

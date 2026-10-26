@@ -1,13 +1,17 @@
-"""Velocity-first particle integration, independent of constraint algorithms."""
+"""Velocity-first translation, independent of rotation and constraint algorithms."""
 
 import numpy as np
 
 from ..core.model import ParticleModel
+from ..core.rigid import RigidBodyModel, RigidBodyState
 from ..core.state import ParticleState
 
 
 def predict(
-    model: ParticleModel, candidate: ParticleState, force: np.ndarray, h: np.floating
+    model: ParticleModel | RigidBodyModel,
+    candidate: ParticleState | RigidBodyState,
+    force: np.ndarray,
+    h: np.floating,
 ) -> bool:
     """Update an owned candidate in place; return whether every value remains finite."""
     dynamic = model.inverse_mass > 0

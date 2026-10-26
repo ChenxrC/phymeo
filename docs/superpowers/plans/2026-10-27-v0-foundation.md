@@ -68,10 +68,10 @@
 
 **Interfaces:** `DistanceConstraints(indices, rest_length, compliance)`；`XPBDSolver(constraints, iterations, ...)` 使用同一 step 边界。Plane 明确 height/normal；首批可限定 y-up 并显式拒绝不支持的选项。
 
-- [ ] 先写单约束解析 delta_lambda、逆质量分配、固定点、零长度端点、compliance/h²、未收敛报告测试；非零伸长的正确柔顺解必须可被接受。
-- [ ] 实现每子步清零、子步内累计乘子的 XPBD；约束顺序确定；投影后用 (x_corrected-x_start)/dt 重建速度，以 C+alpha_tilde*lambda 而非 C 评估柔顺收敛。
-- [ ] 加入平面非穿透基线与固定对象测试；活动平面接触截去负法向速度，保留切向速度，说明无摩擦/CCD 局限。
-- [ ] 运行链示例和全套测试，确认输入不变；提交。
+- [x] 先写单约束解析 delta_lambda、逆质量分配、固定点、零长度端点、compliance/h²、未收敛报告测试；非零伸长的正确柔顺解必须可被接受。
+- [x] 实现每子步清零、子步内累计乘子的 XPBD；约束顺序确定；投影后用 (x_corrected-x_start)/dt 重建速度，以 C+alpha_tilde*lambda 而非 C 评估柔顺收敛。
+- [x] 加入平面非穿透基线与固定对象测试；活动平面接触截去负法向速度，保留切向速度，说明无摩擦/CCD 局限。
+- [x] 运行链示例和全套测试，确认输入不变；提交。
 
 ## Task 5: tyx 公共 API 适配
 

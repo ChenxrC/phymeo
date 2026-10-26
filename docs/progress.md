@@ -42,3 +42,12 @@
 - TDD：18 项积分测试先因接口缺失失败，实施后全套 `python -m pytest -q` 为 35 passed；ruff 检查通过。
 - Python 3.12.14 / NumPy FP64：`python examples/free_fall.py` 运行 100 步，最终高度 5.045950000000004 m，与独立离散解析解误差 4.45e-15 m 以内。FP32 也通过十步解析测试。
 - 当前尚无接触或约束；下一步 Task 4 XPBD 距离约束与简单平面接触。
+
+## 2026-10-27 01:12 左右：Task 4 XPBD 与平面
+
+- Task 3 已提交并推送：`2dae01f05ab150f5c46dd9c719c4508c44afe0c0`。
+- 新增 DistanceConstraints、Plane、XPBDSolver：串行确定顺序投影，子步内累计乘子，投影后重建速度，动态点平面接触截去负法向速度。
+- TDD：33 项 XPBD/数据合同测试先因缺失实现失败；实现后补查距离与平面联立、空约束和精度边界，共 36 项 XPBD 测试。全套 `python -m pytest -q` 为 71 passed；ruff 通过。
+- `python examples/hanging_chain.py`：8 点、200 步、dt=0.01 s，全部接受；最大归一化本构残差 9.96e-9，最大迭代 171；最终几何伸长 6.87e-5 m 属于允许的材料柔顺响应。
+- NumPy FP32/FP64 验证；没有摩擦、CCD、自碰撞、完整刚体或 GPU 声明。固定点与硬约束冲突、预算不足均显式拒绝。
+- 下一步 Task 5：固定 tyx 提交安装及公开 API 真实执行适配。

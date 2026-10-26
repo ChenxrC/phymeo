@@ -24,11 +24,12 @@ GitHub 文件页不直接运行 HTML；下载后用浏览器打开即可，无�
 
 ## 当前基础包与验证
 
-已提供经过验证的粒子模型、状态、外力与结果数据合同。具体积分与约束求解按[进度记录](docs/progress.md)逐批加入。
+已提供经过验证的粒子数据合同和 NumPy 半隐式 Euler 积分器，支持 FP32/FP64、外力与固定点。约束和后端按[进度记录](docs/progress.md)逐批加入。
 
 ```sh
 uv sync --locked --group dev
 uv run --no-sync python -m pytest
+uv run --no-sync python examples/free_fall.py
 ```
 
 原生 pip 用户在激活的 Python 3.11+ 虚拟环境中执行：

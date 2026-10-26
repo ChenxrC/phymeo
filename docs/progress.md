@@ -34,3 +34,11 @@
 - 已生成 uv.lock 与含 hash 的 requirements/dev.lock；Python 3.12.14 下 NumPy 2.5.4、pytest 9.1.1；锁文件为 Python 3.11 保留对应依赖分支。
 - `python -m build --no-isolation` 构建 sdist/wheel；干净 `.venv-wheel`、源码树外、`python -I scripts/smoke_installed.py` 确认从该环境 site-packages 导入。
 - 当前只有数据基础，无积分/XPBD/真实 GPU 能力。下一步 Task 3 半隐式积分。
+
+## 2026-10-27 01:03 左右：Task 3 自由积分
+
+- Task 2 已提交并推送：`f919fa3fb8414e4b0efbe1cca1af2380e320bcc6`。
+- 新增共享输入验证、NumPy 半隐式 Euler 求解器以及无图形自由落体示例；固定点保持位置且速度归零；候选溢出会返回拒绝报告与原状态副本。
+- TDD：18 项积分测试先因接口缺失失败，实施后全套 `python -m pytest -q` 为 35 passed；ruff 检查通过。
+- Python 3.12.14 / NumPy FP64：`python examples/free_fall.py` 运行 100 步，最终高度 5.045950000000004 m，与独立离散解析解误差 4.45e-15 m 以内。FP32 也通过十步解析测试。
+- 当前尚无接触或约束；下一步 Task 4 XPBD 距离约束与简单平面接触。

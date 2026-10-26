@@ -58,9 +58,9 @@
 
 **Interfaces:** `SemiImplicitSolver.step(model, state_in, inputs, dt) -> StepResult`，消费 Task 2，返回独立候选。
 
-- [ ] 写并运行自由落体离散解析解、外力/质量、固定点、非法 dt、输入不变测试，观察预期失败。
-- [ ] 实现 NumPy 数学基线；不把显式 Euler 混入速度优先的更新。
-- [ ] 运行完整测试与无图形 free-fall 示例，核对有限结果；提交。
+- [x] 写并运行自由落体离散解析解、外力/质量、固定点、非法 dt、输入不变测试，观察预期失败。
+- [x] 实现 NumPy 数学基线；不把显式 Euler 混入速度优先的更新。
+- [x] 运行完整测试与无图形 free-fall 示例，核对有限结果；提交。
 
 ## Task 4: XPBD 距离与简化平面接触
 

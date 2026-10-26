@@ -230,10 +230,31 @@
 
 **Boundary / review:** verifier 本身是维护者信任的物理逻辑，不是执行不受信代码的沙箱；provider_kind 是显式能力声明，不靠 backend 名称猜测。没有 compliant XPBD 的独立动力学证据、刚体 verifier、学习隐状态/RNG 回滚或梯度支持。重点验收伪造零残差、错误物理签名、验证器篡改副本、错误报告、正常候选和 fallback 同等校验、FP32/64/极端尺度与空场景。
 
-- [ ] 写独立合同、伪造候选拒绝/同问题回退、所有权和解析误差测试，观察缺失接口失败。
-- [ ] 实现 verifier 协议、学习能力门禁和自由粒子验收；保留数学 provider 无 verifier 的兼容行为。
-- [ ] 编写可复现回归训练/留出验证/故障与域外回退示例，加入公共 CPU CI 与包 smoke。
-- [ ] 独立审阅学习候选边界，完成多环境/真实 CUDA 回归、文档、提交和推送。
+- [x] 写独立合同、伪造候选拒绝/同问题回退、所有权和解析误差测试，观察缺失接口失败。
+- [x] 实现 verifier 协议、学习能力门禁和自由粒子验收；保留数学 provider 无 verifier 的兼容行为。
+- [x] 编写可复现回归训练/留出验证/故障与域外回退示例，加入公共 CPU CI 与包 smoke。
+- [x] 独立审阅学习候选边界，完成多环境/真实 CUDA 回归、文档、提交和推送。
+
+## Task 15: 粒子—刚体同作用点冲量端口
+
+**进入条件：** Task 14 完成；按既有后续候选推进耦合端口。先提供可验证的瞬时交换算子，不把尚未实现的接触/约束求解或多速率调度混进接口。
+
+**Files:** coupling/point_port.py、core/coupling.py、tests/test_point_port.py、examples/point_impulse.py；导出、CI/wheel smoke、架构与分工文档。
+
+**Interfaces:** `ParticleRigidPorts(particle_indices, body_indices)` 拥有等长只读非负 int64 索引；允许重复端口、空集合。`ports.effective_inverse_mass(particle_model, particle_state, rigid_model, rigid_state)` 返回每端口 FP64 `(m,3,3)` 自响应矩阵。`ports.apply_impulses(..., impulses)` 接收每端口世界坐标冲量 `(m,3)`（单位 kg·m/s），冲量施加给粒子，刚体接受反冲量；两状态族必须同 FP32/FP64 dtype，索引和冲量行数匹配。
+
+**Point / response:** 世界作用点取当前粒子位置，刚体力臂 `r=x_particle-x_body_COM`。`J_body=-J_particle`，`L_body=r×J_body`；线速度增量为逆质量乘线冲量，角速度增量为 `R * ((R^T * L_body) / inertia_diagonal)`。姿态与位置均不积分。固定对象的速度/角速度为零、配置不变，其交换载荷仍进入 ledger，代表外部固定约束吸收的反力。
+
+**Effective mass:** `K=(w_particle+w_body)*I - skew(r)*I_world_inverse*skew(r)`，只计算本端口相对点速度对本端口冲量的响应；多个端口共享对象时仍有交叉项，本函数不声称返回全局耦合矩阵。双固定端口 K=0，动态情形用解析值、对称半正定和单冲量实测响应检验。不可表示的数值计算显式报 SolverFailure，不输出 NaN。
+
+**Atomic result:** `ImpulseLedger(particle, rigid_linear, rigid_angular)` 拥有 FP64 只读累计载荷数组；`ImpulseExchangeResult(particle_state, rigid_state, accepted, ledger=None, reason=None)` 拥有两组状态副本。重复索引使用补偿累计避免大冲量抵消吞掉小冲量；全部响应在 FP64 计算，回写原 dtype 后检查有限性。任何响应/转换数值失败同时返回两组原始快照、accepted=False、ledger=None，不能只提交一边。非法输入仍抛 TypeError/ValueError。调用者状态和输入不变。
+
+**Boundary:** 本算子消费已知冲量，不求接触法向、摩擦、约束乘子、位置修正、能量守恒或连续碰撞。没有 dt 参数；力必须由上游按时间积分成冲量，多子步累计与时间区间去重另立合同。尚无整体耦合 Stepper、GPU 耦合 kernel 或学习耦合模型。当前 FP64 中间计算和输出舍入的误差有正常浮点容差，不声称任意尺度精确守恒。
+
+- [ ] 写端口/ledger 所有权和非法输入、同作用点线/角动量、主轴旋转、固定反力、重复/空端口、有效质量解析值、双方数值失败原子回滚测试，观察缺失接口失败。
+- [ ] 实现公开端口和 FP64 补偿累计/响应，不改变现有单状态族 Stepper。
+- [ ] 提供离心作用点冲量示例和独立动量审计，加入 CI 与安装包 smoke；更新物理边界及 A/B 分工。
+- [ ] 独立审阅符号/坐标/惯量/事务性，完成全套、多环境、当前源码 wheel 验证，提交推送。
 
 ## 后续候选（有余量才按完整验证单独立项）
 

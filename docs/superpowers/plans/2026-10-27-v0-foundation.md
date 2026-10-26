@@ -79,10 +79,10 @@
 
 **Interfaces:** 与 Task 3 相同的积分语义；显式 mode 与 availability；缺依赖时有清晰错误，参考路径仍可用。
 
-- [ ] 在安装固定 tyx 后，先写 NumPy 解析对照、FP32 限制、空数组绕过、可选依赖缺失测试并观察失败。
-- [ ] 用 `tyx.kernel` 等公开 API 实现真实积分；不使用伪后端或私有模块。
-- [ ] 分开报告 interpreter、CPU 编译和 CUDA；仅实际执行的路径算通过。
-- [ ] 完整 suite + public-import guard；提交并记录 tyx SHA、工具链和 skip 原因。
+- [x] 在安装固定 tyx 后，先写 NumPy 解析对照、FP32 限制、空数组绕过、可选依赖缺失测试并观察失败。
+- [x] 用 `tyx.kernel` 等公开 API 实现真实积分；不使用伪后端或私有模块。
+- [x] 分开报告 interpreter、CPU 编译和 CUDA；仅实际执行的路径算通过。
+- [x] 完整 suite + public-import guard；提交并记录 tyx SHA、工具链和 skip 原因。
 
 ## Task 6: 候选验收与数学回退协议
 

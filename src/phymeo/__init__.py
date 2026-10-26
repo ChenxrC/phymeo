@@ -1,5 +1,6 @@
 """Explicit physical models and independently implemented simulation solvers."""
 
+from .backends.tyx import TyxSemiImplicitSolver
 from .constraints.distance import DistanceConstraints
 from .core.model import ParticleModel
 from .core.result import StepReport, StepResult
@@ -20,4 +21,5 @@ __all__ = [
     "DistanceConstraints",
     "Plane",
     "XPBDSolver",
+    "TyxSemiImplicitSolver",
 ]

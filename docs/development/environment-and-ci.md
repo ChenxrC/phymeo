@@ -50,7 +50,7 @@ python3.11 -m venv .venv-docs
 
 以 `pyproject.toml` 声明公开依赖，`uv.lock` 保存解析结果；从它导出 `requirements/dev.lock` 给原生 pip。不要手写第二套版本范围。
 
-已交付 `pyproject.toml`、`uv.lock`、`requirements/dev.lock`；`requirements/tyx.txt` 在适配任务中加入。CPU 核心仅依赖 NumPy；dev 组包含 pytest、构建与静态检查工具。tyx 私有 Git 依赖单独安装，避免无权限的贡献者连核心测试都无法运行。
+已交付 `pyproject.toml`、`uv.lock`、`requirements/dev.lock` 和独立的 `requirements/tyx.txt`。CPU 核心仅依赖 NumPy；dev 组包含 pytest、构建与静态检查工具。tyx 私有 Git 依赖单独安装，避免无权限的贡献者连核心测试都无法运行。
 
 ### uv 开发路径
 
@@ -86,7 +86,7 @@ CI 重新导出到临时文件并比较内容，发现漂移即失败。项目�
 
 初始研究基线固定：`99f6df7c0fd8fdeef77f97df83914da27b64b7ee`。更新必须提交配对测试证据。
 
-`requirements/tyx.txt` 的拟议内容：
+`requirements/tyx.txt` 固定内容：
 
 ```text
 tyx-compute @ git+ssh://git@github.com/ChenxrC/tyx.git@99f6df7c0fd8fdeef77f97df83914da27b64b7ee
@@ -97,18 +97,36 @@ tyx-compute @ git+ssh://git@github.com/ChenxrC/tyx.git@99f6df7c0fd8fdeef77f97df8
 ```sh
 # uv 管理的环境
 uv pip install --python .venv --no-deps -r requirements/tyx.txt
-uv run --no-sync python -m pytest -m tyx
+uv run --no-sync python -m pytest -m tyx --require-tyx --tyx-mode=interpret
 
 # 已激活的原生 pip 环境
 python -m pip install --no-deps -r requirements/tyx.txt
-python -m pytest -m tyx
+python -m pytest -m tyx --require-tyx --tyx-mode=interpret
 ```
 
-`--no-deps` 仅因该固定 tyx 版本的核心运行时依赖 NumPy，且前面已安装核心环境；LLVM/CUDA extras 需要另外维护已锁定 profile，不能套用此命令声称已装好 GPU。安装后运行 `pip check`。uv 之后若执行精确 sync 会移除未声明的 tyx，故集成步骤使用 `uv run --no-sync`；重新 sync 后重新安装 overlay。
+`--no-deps` 仅因该固定 tyx 版本的核心运行时依赖 NumPy，且前面已安装核心环境；LLVM/CUDA extras 需要另外维护已锁定 profile，不能套用此命令声称已装好 GPU。安装后运行 `uv pip check --python .venv` 或原生 `python -m pip check`（uv 创建的环境不默认内置 pip）。uv 之后若执行精确 sync 会移除未声明的 tyx，故集成步骤使用 `uv run --no-sync`；重新 sync 后重新安装 overlay。
 
 本地通过 SSH agent/系统 Git 认证，不把私钥复制到仓库。CI 默认 `GITHUB_TOKEN` 不能假定能读取另一个私有仓库。受信任 tyx job 使用限定仓库的只读 deploy key 或短期 GitHub App token，host key 从 GitHub 官方发布的密钥材料固定，而不是无校验信任网络扫描结果。fork PR 仅运行无私密依赖的 CPU 参考测试。
 
 tyx 最终交付建议由受信任上游流水线构建 wheel，记录源码 SHA、wheel SHA256、Python ABI 和工具链，再上传私有制品存储；phymeo 消费该制品。不要把 SSH Git URL 固化到面向公众发布的包依赖中。
+
+### 已验证的可选模式与 CUDA profile
+
+`TyxSemiImplicitSolver(mode="interpret" | "cpu_cpp" | "cpu_llvm" | "cuda")` 支持显式选择，不使用自动静默回退；用 `with` 或 `close()` 结束其独立 runtime。当前已实测 interpret、cpu_cpp 和 cuda，cpu_llvm 尚未安装/验证。公开 API 边界由 `python scripts/check_public_tyx_imports.py` 检查。
+
+已有 CUDA 驱动、NVRTC 工具链及上述 tyx 基础安装后：
+
+```sh
+# uv 管理环境；原生 pip 使用下一行替代此行
+uv pip install --python .venv --no-deps --require-hashes -r requirements/tyx-cuda.lock
+# python -m pip install --no-deps --require-hashes -r requirements/tyx-cuda.lock
+uv run --no-sync python scripts/check_tyx.py --mode=cuda --require-device
+uv run --no-sync python -m pytest -m tyx --tyx-mode=cuda --require-tyx
+```
+
+原生 pip 环境直接使用 `python` 运行后两条。探针必须执行非空 kernel 并核对数值；缺依赖、缺设备、编译失败都返回非零。`--require-tyx` 把缺包的 skip 变为失败，所选后端执行失败不会被跳过。CPU C++ 将 mode 换为 cpu_cpp；不加 require-device。
+
+`requirements/tyx-cuda.in` 使用固定 tyx 所声明的依赖范围，`tyx-cuda.lock` 为单独带 hash 的解析结果。更新命令见 lock 顶部。此次本机组合：cuda-python/bindings 12.9.10、cuda-pathfinder 1.8.4、CUDA runtime headers 12.9.79，系统 Toolkit/NVRTC 12.6，驱动 566.07，RTX 4060 Laptop；Python 3.12.14。这条验证不代表其他驱动/OS 组合已通过。CUDA 当前每步主机/设备传输，未做设备常驻优化。
 
 ## 5. GitHub Actions 分阶段启用
 

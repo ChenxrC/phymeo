@@ -43,7 +43,7 @@
 - Python 3.12.14 / NumPy FP64：`python examples/free_fall.py` 运行 100 步，最终高度 5.045950000000004 m，与独立离散解析解误差 4.45e-15 m 以内。FP32 也通过十步解析测试。
 - 当前尚无接触或约束；下一步 Task 4 XPBD 距离约束与简单平面接触。
 
-## 2026-10-27 01:12 左右：Task 4 XPBD 与平面
+## 2026-10-27 01:08 左右：Task 4 XPBD 与平面
 
 - Task 3 已提交并推送：`2dae01f05ab150f5c46dd9c719c4508c44afe0c0`。
 - 新增 DistanceConstraints、Plane、XPBDSolver：串行确定顺序投影，子步内累计乘子，投影后重建速度，动态点平面接触截去负法向速度。
@@ -51,3 +51,14 @@
 - `python examples/hanging_chain.py`：8 点、200 步、dt=0.01 s，全部接受；最大归一化本构残差 9.96e-9，最大迭代 171；最终几何伸长 6.87e-5 m 属于允许的材料柔顺响应。
 - NumPy FP32/FP64 验证；没有摩擦、CCD、自碰撞、完整刚体或 GPU 声明。固定点与硬约束冲突、预算不足均显式拒绝。
 - 下一步 Task 5：固定 tyx 提交安装及公开 API 真实执行适配。
+
+## 2026-10-27 01:22 左右：Task 5 真实 tyx 路径
+
+- Task 4 已提交并推送：`2018111ca8860a9c0ed960cc26a551811283cd69`。
+- 安装并核验 tyx direct_url 元数据固定在 `99f6df7c0fd8fdeef77f97df83914da27b64b7ee`；新增延迟导入的 FP32 TyxSemiImplicitSolver、公开 root API kernel、独立 runtime/close 生命周期。无静默 NumPy 回退。
+- TDD：13 项后端/依赖边界测试先因缺失实现失败。之后 interpret、cpu_cpp、cuda 分别运行 `pytest tests/test_tyx_backend.py -q --tyx-mode=<mode> --require-tyx`，各为 13 passed；其中 6 项为所选后端合同，其他为通用配置与依赖隔离。
+- 全套含 tyx 解释器 `pytest -q --require-tyx`：91 passed；独立原生 pip 核心环境：85 passed, 6 skipped（明确因未安装 tyx），pip check 无问题。uv 环境用 `uv pip check`：17 packages compatible；uv 环境不内置 pip。
+- CPU C++ 实际工具链：MSVC 14.50.35717。CUDA：RTX 4060 Laptop，驱动 566.07，实测 NVRTC 12.6；可选 hash profile 为 cuda-python/bindings 12.9.10、pathfinder 1.8.4、runtime headers 12.9.79。cpu_llvm 未验证。
+- `scripts/check_tyx.py --mode=cuda --require-device` 与 `--mode=cpu_cpp` 均执行非空 kernel 并通过解析检查；public-import guard 与 ruff 通过。
+- CUDA 每步传输主机数组，XPBD 仍是 NumPy 参考路径；不宣称 GPU XPBD、设备常驻性能或梯度能力。没有 GitHub GPU runner 配置或远程 CI 通过证据。
+- 下一步 Task 6：相同物理问题签名、能力合同、候选验收和最多一次数学回退。

@@ -1,0 +1,5 @@
+# Optional CUDA profile matching the extras declared by the pinned tyx version.
+# Resolve separately; this does not change the NumPy-only core environment.
+cuda-python>=12.8,<13
+cuda-pathfinder>=1.2.2,<2
+nvidia-cuda-runtime-cu12>=12.8,<13

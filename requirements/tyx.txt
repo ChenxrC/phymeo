@@ -1,0 +1,3 @@
+# Optional private dependency; requires authorized Git/SSH access.
+# Keep separate from the public, hash-locked core dependency set.
+tyx-compute @ git+ssh://git@github.com/ChenxrC/tyx.git@99f6df7c0fd8fdeef77f97df83914da27b64b7ee

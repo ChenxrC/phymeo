@@ -285,3 +285,14 @@ def test_fp32_normalization_does_not_turn_finite_residual_into_zero():
     ).step(model, state, inputs, 0.1)
     assert not result.report.accepted
     assert result.report.max_residual == pytest.approx(1e-40, rel=1e-6, abs=0.0)
+
+
+@pytest.mark.parametrize(
+    "options", [{"reference_length": np.float32(1)}, {"tolerance": np.float32(0)}]
+)
+def test_numpy_scalar_settings_cannot_hide_fp64_plane_penetration(options):
+    state = ParticleState(np.array([[0.0, -1e-48, 0.0]]), np.zeros((1, 3)))
+    solver = api("XPBDSolver")(plane=api("Plane")(), **{"tolerance": 0.0, **options})
+    result = solver.step(ParticleModel(np.zeros(1)), state, StepInputs.zeros(1), 0.1)
+    assert not result.report.accepted
+    assert result.report.max_residual == pytest.approx(1e-48, rel=1e-10, abs=0)

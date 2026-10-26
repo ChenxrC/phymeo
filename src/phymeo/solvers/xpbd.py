@@ -5,7 +5,6 @@ This baseline implements neither friction nor continuous collision detection.
 """
 
 from dataclasses import dataclass
-from numbers import Real
 
 import numpy as np
 
@@ -14,7 +13,7 @@ from ..core.capabilities import ProblemSignature, SolverCapabilities
 from ..core.model import ParticleModel
 from ..core.result import StepReport, StepResult
 from ..core.state import ParticleState, StepInputs
-from ..core.validation import validate_step
+from ..core.validation import finite_real, validate_step
 from ..dynamics.integrate import predict
 from ..geometry.plane import Plane
 
@@ -45,12 +44,7 @@ class XPBDSolver:
             ("tolerance", self.tolerance),
             ("reference_length", self.reference_length),
         ]:
-            if (
-                isinstance(value, (bool, np.bool_))
-                or not isinstance(value, Real)
-                or not np.isfinite(value)
-            ):
-                raise ValueError(f"{name} must be a finite real scalar")
+            object.__setattr__(self, name, finite_real(value, name))
         if self.tolerance < 0 or self.reference_length <= 0:
             raise ValueError("tolerance must be non-negative and reference_length positive")
         if self.constraints is not None and not isinstance(self.constraints, DistanceConstraints):

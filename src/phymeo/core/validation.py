@@ -9,6 +9,20 @@ from .rigid import RigidBodyInputs, RigidBodyModel, RigidBodyState
 from .state import ParticleState, StepInputs
 
 
+def finite_real(value, name):
+    """Canonical Python scalar without NumPy scalar promotion or silent underflow."""
+    if isinstance(value, (bool, np.bool_)) or not isinstance(value, Real):
+        raise ValueError(f"{name} must be a finite real scalar")
+    original = value
+    try:
+        value = float(value)
+    except OverflowError as error:
+        raise ValueError(f"{name} is not representable in FP64") from error
+    if not np.isfinite(value) or (value == 0 and original != 0):
+        raise ValueError(f"{name} must be finite and representable in FP64")
+    return value
+
+
 def validate_dt(dt, dtype):
     """Return a positive finite scalar in the requested state precision."""
     if isinstance(dt, (bool, np.bool_)) or not isinstance(dt, Real):

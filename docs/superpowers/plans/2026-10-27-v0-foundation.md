@@ -209,10 +209,31 @@
 
 **Performance boundary:** 比较同场景 graph on/off，逐步断言状态、迭代数和残差一致；计时包含每步分配、传输、捕获和 host 验收，编译/首步单列。记录实际设备与工作量，不承诺通用加速；没有测得收益则保留实验结论而不把默认路径切换过去。尚无跨步驻留、批量残差检查、GPU 刚体或训练模型。
 
-- [ ] 为配置、真实图/单轮等价、变化输入重复步、空/自由系统、非有限拒绝与捕获/重放失败资源清理编写测试，先观察缺失接口失败。
-- [ ] 实现显式公开 API 图路径及生命周期；运行真实 CUDA 和既有全套，保持默认模式行为。
-- [ ] 增加可复现同场景比较，报告完整步耗时与结果一致性；更新示例/文档。
-- [ ] 独立审阅图边界，完成多环境/包验证、提交并推送。
+- [x] 为配置、真实图/单轮等价、变化输入重复步、空/自由系统、非有限拒绝与捕获/重放失败资源清理编写测试，先观察缺失接口失败。
+- [x] 实现显式公开 API 图路径及生命周期；运行真实 CUDA 和既有全套，保持默认模式行为。
+- [x] 增加可复现同场景比较，报告完整步耗时与结果一致性；更新示例/文档。
+- [x] 独立审阅图边界，完成多环境/包验证、提交并推送。
+
+## Task 14: 学习候选的独立物理验收与自由粒子回归示例
+
+**进入条件：** Task 13 完成；已有 Stepper 只独立检查结构与固定状态，物理残差仍来自 provider 自报。为架构的学习候选入口增加可执行的验收合同，先覆盖一个有独立离散方程的小问题。
+
+**Files:** core/capabilities.py、core/verification.py、runtime/stepper.py、validation/free_particle.py、导出、tests/test_verification.py、examples/learned_free_particles.py；CI/wheel smoke 与能力文档。
+
+**Interfaces:** `SolverCapabilities.provider_kind` 默认 `"mathematical"`，只允许 `"mathematical" | "learned"`。`CandidateVerifier` 声明 state_kind、problem_signature()，实现 `verify(model, state_in, inputs, dt, candidate) -> VerificationReport`。不可变报告含 accepted、max_residual、max_constraint_error、reason；残差无量纲、几何误差米制。`Stepper(..., verifier=None)` 的任何 learned provider 必须配独立 verifier；所有尝试（含数学 fallback）使用同一 verifier。
+
+**Runtime contract:** 初始化及每步检查 verifier 与冻结的状态族/物理签名一致；先完成既有候选结构与报告检查，再将原始状态、输入和候选的独立副本交给 verifier。验收不得改写要提交的候选或原始快照。验证报告非法、拒绝或超过 Stepper 阈值则不提交，按既有规则从原快照最多回退一次；SolverFailure 属于预期拒绝，其他代码异常传播。成功报告取 provider/verifier 残差与米制误差的较大值，不覆盖 backend/iterations 等来源信息。
+
+**Concrete verifier:** `FreeParticleVerifier(tolerance=1e-5, reference_length=1.0, reference_speed=1.0)`，只匹配无约束粒子 force/gravity 物理签名。用 FP64 独立重算速度优先离散方程 `v'=v+h*(g+w*f)`、`x'=x+h*v'`，固定点保持位置且速度为零；不调用现有 solver。按各粒子的欧氏位置/速度误差分别除以长度/速度尺度，再取最大无量纲误差；非有限与下溢保护沿用已验证数值规则。大坐标或低精度舍入超过指定物理容差时允许拒绝，不能为了放行扩大阈值。
+
+**Learning demonstration:** 示例用 NumPy 最小二乘拟合自由粒子训练样本中的重力/外力响应系数，训练样本由数学基线生成。provider 声明 learned，限定 dt 训练域，持有只读系数且无隐藏状态；预测候选交给独立 verifier。留出初态/力测试正常接受，再注入错误系数和域外 dt 验证数学回退。只是低维数据回归与接入示范，不是完整神经网络、通用 AI 求解器、训练系统或速度优势声明。
+
+**Boundary / review:** verifier 本身是维护者信任的物理逻辑，不是执行不受信代码的沙箱；provider_kind 是显式能力声明，不靠 backend 名称猜测。没有 compliant XPBD 的独立动力学证据、刚体 verifier、学习隐状态/RNG 回滚或梯度支持。重点验收伪造零残差、错误物理签名、验证器篡改副本、错误报告、正常候选和 fallback 同等校验、FP32/64/极端尺度与空场景。
+
+- [ ] 写独立合同、伪造候选拒绝/同问题回退、所有权和解析误差测试，观察缺失接口失败。
+- [ ] 实现 verifier 协议、学习能力门禁和自由粒子验收；保留数学 provider 无 verifier 的兼容行为。
+- [ ] 编写可复现回归训练/留出验证/故障与域外回退示例，加入公共 CPU CI 与包 smoke。
+- [ ] 独立审阅学习候选边界，完成多环境/真实 CUDA 回归、文档、提交和推送。
 
 ## 后续候选（有余量才按完整验证单独立项）
 

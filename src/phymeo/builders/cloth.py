@@ -25,12 +25,15 @@ class ClothPatch:
 def _number(value, name, *, positive=False):
     if isinstance(value, (bool, np.bool_)) or not isinstance(value, Real):
         raise ValueError(f"{name} must be a finite real scalar")
+    negative, zero = value < 0, value == 0
     try:
         value = float(value)
     except OverflowError as error:
         raise ValueError(f"{name} is not representable") from error
-    if not np.isfinite(value) or value < 0 or (positive and value == 0):
+    if not np.isfinite(value) or negative or (positive and zero):
         raise ValueError(f"{name} must be finite and {'positive' if positive else 'non-negative'}")
+    if not zero and value == 0:
+        raise ValueError(f"{name} is not representable")
     return value
 
 
@@ -69,6 +72,9 @@ def cloth_grid(
     )
     structural = _number(structural_compliance, "structural_compliance")
     shear = _number(shear_compliance, "shear_compliance")
+    origin = np.asarray(origin)
+    if np.iscomplexobj(origin):
+        raise ValueError("origin must be a finite real three-vector")
     origin = np.asarray(origin, dtype=np.float64)
     if origin.shape != (3,) or not np.isfinite(origin).all():
         raise ValueError("origin must be a finite three-vector")

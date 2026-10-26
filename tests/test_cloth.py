@@ -1,5 +1,7 @@
 """Mesh topology and area-mass conservation for the independent cloth builder."""
 
+from fractions import Fraction
+
 import numpy as np
 import pytest
 
@@ -154,3 +156,17 @@ def test_unrepresentable_physics_or_degenerate_geometry_is_rejected(options):
     assert builder is not None, "cloth_grid is not implemented"
     with pytest.raises(ValueError):
         builder(2, 2, **options)
+@pytest.mark.parametrize(
+    "origin",
+    [np.array([1 + 2j, 3, 4]), np.array([complex(1, np.nan), 3, 4])],
+)
+def test_complex_origin_is_rejected_before_discarding_imaginary_part(origin):
+    with pytest.raises((ValueError, TypeError)):
+        phymeo.cloth_grid(2, 2, origin=origin)
+
+
+@pytest.mark.parametrize("name", ["structural_compliance", "shear_compliance"])
+@pytest.mark.parametrize("sign", [1, -1])
+def test_fraction_underflow_must_not_silently_become_zero_compliance(name, sign):
+    with pytest.raises(ValueError):
+        phymeo.cloth_grid(2, 2, **{name: Fraction(sign, 10**400)})

@@ -251,10 +251,29 @@
 
 **Boundary:** 本算子消费已知冲量，不求接触法向、摩擦、约束乘子、位置修正、能量守恒或连续碰撞。没有 dt 参数；力必须由上游按时间积分成冲量，多子步累计与时间区间去重另立合同。尚无整体耦合 Stepper、GPU 耦合 kernel 或学习耦合模型。当前 FP64 中间计算和输出舍入的误差有正常浮点容差，不声称任意尺度精确守恒。
 
-- [ ] 写端口/ledger 所有权和非法输入、同作用点线/角动量、主轴旋转、固定反力、重复/空端口、有效质量解析值、双方数值失败原子回滚测试，观察缺失接口失败。
-- [ ] 实现公开端口和 FP64 补偿累计/响应，不改变现有单状态族 Stepper。
-- [ ] 提供偏离质心作用点的冲量示例和独立动量审计，加入 CI 与安装包 smoke；更新物理边界及 A/B 分工。
-- [ ] 独立审阅符号/坐标/惯量/事务性，完成全套、多环境、当前源码 wheel 验证，提交推送。
+- [x] 写端口/ledger 所有权和非法输入、同作用点线/角动量、主轴旋转、固定反力、重复/空端口、有效质量解析值、双方数值失败原子回滚测试，观察缺失接口失败。
+- [x] 实现公开端口和 FP64 补偿累计/响应，不改变现有单状态族 Stepper。
+- [x] 提供偏离质心作用点的冲量示例和独立动量审计，加入 CI 与安装包 smoke；更新物理边界及 A/B 分工。
+- [x] 独立审阅符号/坐标/惯量/事务性，完成全套、多环境、当前源码 wheel 验证，提交推送。
+
+## Task 16: tyx FP32 刚体自由运动后端
+
+**进入条件：** Task 15 完成且仍有截止前验证余量。扩展已建立的 tyx 公开 API 适配到刚体自由运动，保持刚体 core、物理签名和 Stepper 合同一致；不顺带扩展 GPU 接触。
+
+**Files:** backends/tyx_rigid.py、backends/_tyx_rigid_kernels.py、tests/test_tyx_rigid.py、examples/tyx_spinning_bodies.py；导出、公开导入检查覆盖、文档和进度。
+
+**Interfaces:** `TyxRigidSemiImplicitSolver(mode="interpret", cache_root=None)`，模式与既有 adapter 一致，拥有独立 Runtime，可用 with/close；只支持 FP32 状态/模型/输入。capabilities 为 rigid_bodies/free_dynamics/rotation、history=none、gradient=unsupported；物理签名与 RigidSemiImplicitSolver 相同，可用共用 Stepper 数学回退。空系统不启动 kernel；关闭后拒绝调用。
+
+**Numerics:** 一个公开 tyx kernel 按刚体并行，速度优先更新平移；规范化输入四元数后构造 body-to-world R，把世界 omega/torque 转到主轴坐标。Euler 陀螺项可用等价分量式 `alpha_x=tau_x/Ix + ((Iy-Iz)/Ix)*omega_y*omega_z` 及循环分量，避免先构造大角动量再相减；转回世界后更新 omega。以新世界 omega 的指数映射四元数左乘原姿态并归一化。角范数按缩放计算避免平方溢出。固定配置保留，固定线／角速度清零。
+
+**Failure / lifetime:** 主机入口通过已有刚体类型合同构造规范化副本，不虚调用扩展 copy。kernel 保留非有限/不可表示中间量失败标记，不能被后续归一化掩盖；失败返回原始独立快照。输出必须有限且四元数在已有单位长度合同内。CUDA 缓冲全部由一次 step 拥有，异常退出先同步后释放；工具链/设备错误传播，不自动转解释器或 NumPy。合法同签名 Stepper 才能执行显式数学 fallback。
+
+**Accuracy boundary:** CPU 刚体参考的旋转中间量为 FP64，新 kernel 中间量为 FP32；以解析主轴转动、世界/体坐标映射、非球形陀螺响应和一阶能量误差趋势验收，不要求任意极端尺度逐位一致。大转角的 FP32 相位误差与可表示范围须明确，未声称能量精确守恒。每步仍主机/设备传输，没有跨步驻留、刚体图优化或 GPU 接触/耦合。
+
+- [ ] 写主轴力矩解析解、随机非球形/姿态参考、固定体、空/关闭/精度错误、非连续输入、失败快照和同签名回退测试，先观察缺失接口失败。
+- [ ] 实现真实 tyx 刚体 kernel 与资源适配，在 interpreter、实际 C++ 和 CUDA 上验证；补非有限中间量和资源异常回归。
+- [ ] 提供多步旋转示例与 NumPy 参考对照，分别报告姿态/角速度/单位长度误差，不作性能承诺。
+- [ ] 独立审阅坐标、数值与设备生命周期，运行全套、多环境、当前源码 wheel 检查，更新文档并提交推送。
 
 ## 后续候选（有余量才按完整验证单独立项）
 

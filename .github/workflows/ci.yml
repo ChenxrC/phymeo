@@ -96,6 +96,7 @@ jobs:
           ${{ steps.environment.outputs.python }} examples/hanging_chain.py
           ${{ steps.environment.outputs.python }} examples/guarded_step.py
           ${{ steps.environment.outputs.python }} examples/spinning_body.py
+          ${{ steps.environment.outputs.python }} examples/cloth_patch.py
 
   wheel:
     name: wheel / ${{ matrix.os }}

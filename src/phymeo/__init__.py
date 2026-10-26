@@ -1,6 +1,7 @@
 """Explicit physical models and independently implemented simulation solvers."""
 
 from .backends.tyx import TyxSemiImplicitSolver
+from .builders.cloth import ClothPatch, cloth_grid
 from .constraints.distance import DistanceConstraints
 from .core.capabilities import ProblemSignature, SolverCapabilities, SolverFailure
 from .core.model import ParticleModel
@@ -34,4 +35,6 @@ __all__ = [
     "RigidBodyState",
     "RigidBodyInputs",
     "RigidSemiImplicitSolver",
+    "ClothPatch",
+    "cloth_grid",
 ]

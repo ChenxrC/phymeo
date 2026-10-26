@@ -43,6 +43,10 @@ def main():
     if not rigid.report.accepted:
         raise RuntimeError("Installed rigid solver failed")
     np.testing.assert_allclose(rigid.state.orientation, [[0.0, 0.0, np.sin(0.5), np.cos(0.5)]])
+    cloth = phymeo.cloth_grid(2, 2, spacing=1.0, density=6.0, pinned=[0])
+    np.testing.assert_allclose(cloth.vertex_mass, [1.0, 2.0, 2.0, 1.0])
+    if cloth.model.inverse_mass[0] != 0 or cloth.triangles.shape != (2, 3):
+        raise RuntimeError("Installed cloth builder failed")
     if {"tyx", "torch", "warp"} & set(sys.modules):
         raise RuntimeError("The base wheel imported an optional runtime")
     print(f"Installed-wheel smoke passed: {installed}")

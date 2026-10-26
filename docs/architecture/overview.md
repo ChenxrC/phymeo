@@ -47,6 +47,7 @@ tyx 部分旧支持矩阵与较新的源码不一致，例如多设备接口；�
 
 ```text
 src/phymeo/
+  builders/      # 场景构建；布片拓扑、面积质量与初始条件
   core/          # 模型、状态、输入、能力、报告；不含具体算法
   backends/      # NumPy 参考与 tyx 公共 API 适配
   geometry/      # 接触数据、基本形状、后续宽相/窄相
@@ -60,6 +61,8 @@ tests/           # 合同、数学、集成、设备、打包与回归
 ```
 
 导入方向：`runtime -> solver protocols/core`；具体 solver 使用 `dynamics/constraints/geometry/backends`；各实现依赖 `core`。core 不导入具体 solver、tyx、torch。learning 不绕过 runtime 直接提交状态。训练控制策略通过输入接口进入，不冒充物理求解器。
+
+`builders -> core/constraints`；solver 不依赖 builder。构建返回明确的静态模型与初始状态，后续修改动态状态不改写静态质量、连接或材料参数。
 
 ## 6. 数据与接口契约
 
@@ -107,6 +110,10 @@ XPBD 距离约束：`C = ||x_i-x_j|| - rest_length`，`alpha_tilde = compliance/
 先把世界角速度和力矩转入体坐标，用 `omega_dot_body = (tau_body - omega_body × (I_body * omega_body)) / I_body` 得到角加速度，再转回世界坐标更新角速度。新世界角速度构成旋转向量，指数映射增量从左侧复合旧四元数。该实现从刚体方程独立编写，参考 [Baraff 刚体动力学讲义](https://www.cs.cmu.edu/~baraff/sigcourse/notesd1.pdf) 的物理定义，以及 [SciPy 旋转向量定义](https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.transform.Rotation.from_rotvec.html)；运行时不依赖 SciPy。它是一阶自由运动基线，非球形惯量不精确保持能量/角动量，须用步长收敛检查控制误差。
 
 `StepResult` 已参数化状态类型；当前 `Stepper` 仍只处理粒子，构造时明确拒绝 `state_kind="rigid_bodies"`，防止遗漏姿态/角速度的验收与回滚。刚体接触、关节、机器人和 GPU 刚体内核需要后续独立验收。
+
+布片起点为 `cloth_grid(rows, columns, ...) -> ClothPatch`：在 XZ 平面生成 +Y 朝向的三角形，顶点编号 `row*columns+column`。每个三角形的 `area*density` 质量各分给三个顶点；三角形划分导致边界/对角顶点质量不同，不按顶点数均分。固定点逆质量为 0，但只读 `vertex_mass` 保留真实面积质量。行/列邻接和每格两条对角线分别形成结构、剪切距离约束，柔度按两组赋值；初始静止长度由实际可表示的位置计算，量化后退化几何与不可表示物理参数显式拒绝。
+
+这是拉伸/剪切网络，逐边柔度尚未标定为连续材料的 Young/Poisson 参数。它没有弯曲能、自碰撞、面积守恒或 FEM，当前使用 NumPy XPBD；不能把悬挂示例解释为完整布料材料或 GPU 布料。
 
 ### 7.3 双向耦合
 

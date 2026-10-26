@@ -12,9 +12,12 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dtype", choices=["float32", "float64"], default="float64")
     parser.add_argument("--steps", type=int, default=60)
+    parser.add_argument("--iterations", type=int, default=400, help="XPBD budget per step")
     args = parser.parse_args()
     if args.steps < 1:
         parser.error("--steps must be positive")
+    if args.iterations < 1:
+        parser.error("--iterations must be positive")
     dtype = np.dtype(args.dtype)
     dt, pins = 0.02, [0, 3]
     patch = cloth_grid(
@@ -28,7 +31,9 @@ def main():
         origin=(0.0, 0.3, 0.0),
         dtype=dtype,
     )
-    solver = XPBDSolver(patch.constraints, plane=Plane(), iterations=400, tolerance=1e-6)
+    solver = XPBDSolver(
+        patch.constraints, plane=Plane(), iterations=args.iterations, tolerance=1e-6
+    )
     current, inputs = patch.initial_state.copy(), StepInputs.zeros(16, dtype=dtype)
     iterations, max_residual = [], 0.0
     for frame in range(args.steps):

@@ -113,7 +113,17 @@ XPBD 距离约束：`C = ||x_i-x_j|| - rest_length`，`alpha_tilde = compliance/
 
 布片起点为 `cloth_grid(rows, columns, ...) -> ClothPatch`：在 XZ 平面生成 +Y 朝向的三角形，顶点编号 `row*columns+column`。每个三角形的 `area*density` 质量各分给三个顶点；三角形划分导致边界/对角顶点质量不同，不按顶点数均分。固定点逆质量为 0，但只读 `vertex_mass` 保留真实面积质量。行/列邻接和每格两条对角线分别形成结构、剪切距离约束，柔度按两组赋值；初始静止长度由实际可表示的位置计算，量化后退化几何与不可表示物理参数显式拒绝。
 
-这是拉伸/剪切网络，逐边柔度尚未标定为连续材料的 Young/Poisson 参数。它没有弯曲能、自碰撞、面积守恒或 FEM，当前使用 NumPy XPBD；不能把悬挂示例解释为完整布料材料或 GPU 布料。
+这是拉伸/剪切网络，逐边柔度尚未标定为连续材料的 Young/Poisson 参数。它没有弯曲能、自碰撞、面积守恒或 FEM；可使用 NumPy XPBD 或下述 tyx 着色求解。GPU 上执行同一网络并不意味着完整布料本构或性能已达标。
+
+### 7.2.1 tyx 着色约束路径
+
+`TyxXPBDSolver` 采用稳定贪心边着色：每边恰好分入一色，同色边没有共享顶点；颜色按顺序执行，同色通过 `tyx.range` 批量投影。位置没有并发写争抢，不依赖原子加的执行顺序。重复边保留为独立约束并分开颜色；着色不是最少颜色优化。
+
+当前状态和乘子均为 FP32；每步清零乘子。缩放柔度先在主机 FP64 计算，若转换到 FP32 下溢成零或非有限，则显式拒绝，避免将柔顺问题变成硬约束。距离范数通过缩放计算避免平方溢出；非有限中间量保留失败标记，不能被后续平面夹取掩盖。平面高度使用不低于真实高度的最近 FP32 值，主机用真实参数与 FP64 几何验收本构残差和穿透。位置修正后由真实 tyx 内核重建速度。
+
+该 solver 与同配置 `XPBDSolver` 的物理签名一致，可以在粒子 Stepper 中做一次数学回退。非线性约束的着色顺序与 NumPy 串行输入顺序不同，加上 FP32 乘子舍入，不能要求多步轨迹逐位相同。小解析解、归一化本构残差、固定点和接触不变量为验收基础，另报告相对 FP64 参考的轨迹差。
+
+一步内部设备缓冲保持存活，每迭代同步位置/乘子到主机验收；跨步重新分配/传输，尚无设备常驻场景、图捕获、设备残差归约或 GPU 刚体。该实现证明公开 tyx API 可以承担约束计算，不据此宣称速度提升。
 
 ### 7.3 双向耦合
 
@@ -142,6 +152,7 @@ XPBD 距离约束：`C = ||x_i-x_j|| - rest_length`，`alpha_tilde = compliance/
 | SemiImplicitSolver | particles, free_dynamics | FP32/FP64 | unsupported / none |
 | XPBDSolver | 基础 + 按配置 distance、plane_contact | FP32/FP64（乘子 FP64） | unsupported / none |
 | TyxSemiImplicitSolver | particles, free_dynamics | FP32 | unsupported / none |
+| TyxXPBDSolver | 基础 + 按配置 distance、plane_contact | FP32（乘子 FP32，验收 FP64） | unsupported / none |
 | RigidSemiImplicitSolver | rigid_bodies, free_dynamics, rotation | FP32/FP64（旋转算术 FP64） | unsupported / none |
 
 这是学习候选未来接入的协议基础，不是已经完成 AI 物理验收。当前残差仍由 solver 计算，不能据此信任任意神经网络的自报数值；后续学习 provider 必须增加独立物理残差/适用域检验。`history != "none"` 当前拒绝，防止隐藏状态未回滚；模型随机状态、材料历史和学习缓存的完整事务协议尚未实现。

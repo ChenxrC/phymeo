@@ -136,8 +136,9 @@ def test_base_import_does_not_load_optional_runtimes():
     subprocess.run([sys.executable, "-c", code], check=True)
 
 
-def test_missing_tyx_dependency_has_actionable_error(monkeypatch):
-    cls = implementation()
+@pytest.mark.parametrize("name", ["TyxSemiImplicitSolver", "TyxXPBDSolver"])
+def test_missing_tyx_dependency_has_actionable_error(monkeypatch, name):
+    cls = getattr(phymeo, name)
     real_import = builtins.__import__
     real_import_module = importlib.import_module
 

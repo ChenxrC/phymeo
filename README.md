@@ -24,7 +24,7 @@ GitHub 文件页不直接运行 HTML；下载后用浏览器打开即可，无�
 
 ## 当前基础包与验证
 
-已提供粒子数据合同、NumPy 半隐式 Euler、XPBD 距离/平面约束、带一次同问题回退的粒子 Stepper，以及布片结构/剪切网格与面积质量构建器；另有独立刚体自由平移/旋转基线，包含四元数与陀螺项。NumPy 支持 FP32/FP64；可选 tyx 粒子积分已验证解释器、C++ CPU 和本机 CUDA 的 FP32 路径，安装见[环境说明](docs/development/environment-and-ci.md)。目前仍无刚体接触/关节、机器人、布料弯曲/自碰撞、摩擦或已训练 AI 求解器；粒子 Stepper 尚不接收刚体状态，详见[进度记录](docs/progress.md)。
+已提供粒子数据合同、NumPy 半隐式 Euler、XPBD 距离/平面约束、带一次同问题回退的粒子 Stepper，以及布片结构/剪切网格与面积质量构建器；另有独立刚体自由平移/旋转基线，包含四元数与陀螺项。NumPy 支持 FP32/FP64；可选 tyx 已实现 FP32 粒子积分和着色 XPBD 距离/平面投影，后者含每迭代主机残差检查，尚未做性能优化。安装及已验证模式见[环境说明](docs/development/environment-and-ci.md)。目前仍无刚体接触/关节、机器人、布料弯曲/自碰撞、摩擦或已训练 AI 求解器；粒子 Stepper 尚不接收刚体状态，详见[进度记录](docs/progress.md)。
 
 ```sh
 uv sync --locked --group dev
@@ -35,6 +35,8 @@ uv run --no-sync python examples/guarded_step.py
 uv run --no-sync python examples/spinning_body.py
 uv run --no-sync python examples/cloth_patch.py
 ```
+
+安装可选 tyx/CUDA 环境后，可执行 `uv run --no-sync python examples/tyx_cloth.py --mode cuda`，与独立 FP64 参考做 30 步对照。`--mode cpu_cpp` 使用实际 C++ 编译；解释器使用 `--mode interpret`。输出包含残差、轨迹差异及含同步/传输的耗时，不把小布片示例作为 GPU 加速比基准。
 
 原生 pip 用户在激活的 Python 3.11+ 虚拟环境中执行：
 

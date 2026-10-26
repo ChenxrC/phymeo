@@ -115,6 +115,8 @@ tyx 最终交付建议由受信任上游流水线构建 wheel，记录源码 SHA
 
 `TyxSemiImplicitSolver(mode="interpret" | "cpu_cpp" | "cpu_llvm" | "cuda")` 支持显式选择，不使用自动静默回退；用 `with` 或 `close()` 结束其独立 runtime。当前已实测 interpret、cpu_cpp 和 cuda，cpu_llvm 尚未安装/验证。公开 API 边界由 `python scripts/check_public_tyx_imports.py` 检查。
 
+`TyxXPBDSolver(constraints, mode=..., plane=...)` 使用相同模式与生命周期，执行 FP32 着色距离约束、平面投影及速度重建；其测试同样属于 `-m tyx`，不会因编译/设备异常自动 skip。着色器本身是纯 CPU 公共依赖测试。每迭代主机检查残差使小场景同步成本显著，性能优化另立验收；LLVM 仍未验证。
+
 已有 CUDA 驱动、NVRTC 工具链及上述 tyx 基础安装后：
 
 ```sh

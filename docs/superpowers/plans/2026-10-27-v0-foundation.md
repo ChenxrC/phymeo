@@ -101,8 +101,8 @@
 
 **Interfaces:** CPU 套件、wheel smoke、依赖导出与文档检查是实际命令；GPU 工作流只有硬件和授权配置齐备才启用。
 
-- [ ] 增加 Windows/Linux 与 uv/pip 的 CPU 检查，固定 Action SHA。
-- [ ] 验证导出一致、wheel 隔离安装；GPU 需求用显式 require-device，不能全 skip 过关。
+- [x] 增加 Windows/Linux 与 uv/pip 的 CPU 检查，固定 Action SHA。
+- [x] 验证导出一致、wheel 隔离安装；GPU 需求用显式 require-device，不能全 skip 过关。
 - [ ] 做一次独立全分支审阅；修复重要缺陷时先添加会失败的回归测试。
 - [ ] 运行完整验证，推送并比较远程 SHA；记录不可访问的远程 CI，不猜测状态。
 

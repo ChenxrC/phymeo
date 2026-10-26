@@ -72,3 +72,12 @@
 - `examples/guarded_step.py` 真实 XPBD 链：一次低预算失败后，高预算解在 31 次迭代达到残差 9.32e-10，原状态未改变。ruff 与公开 tyx 导入检查通过。
 - runtime 仅依赖 core；共享入口验证从 dynamics 移入 core/validation。尚无带隐藏状态的学习 provider 或独立 AI 物理验收器，当前明确拒绝历史状态能力。
 - 下一步 Task 7：CPU CI、安装包/锁文件一致性以及独立分支审阅。
+
+## 2026-10-27 01:37 左右：Task 7 CI 与安装验证
+
+- Task 6 已提交并推送：`898b193f5de847d3567b747728bd891969fad94a`。
+- 新增 CI：quality、8 组 Windows/Linux × Python 3.11/3.12 × uv/pip CPU、2 组 wheel、required 汇总；所有外部 Action 固定 SHA。未配置私有 tyx 凭证、GPU runner、分支保护或发布。
+- 原生 pip 公开 CPU 测试 `pytest -m 'not tyx' -q`：116 passed, 7 deselected；pip check、ruff、compileall 通过。
+- 新增由 uv.lock 导出的 runtime.lock；dev/runtime 两份锁文件再次导出的 SHA256 与原文件一致。CI YAML 用独立 YAML 解析器读取成功；这不代替 Actions 执行。
+- 重新构建 sdist/wheel；`scripts/verify_wheel.py` 在源码目录外的全新原生 pip 环境中只安装 NumPy 与 wheel，pip check 通过，`-I` smoke 验证 site-packages 导入、自由积分、XPBD 与可选依赖隔离。
+- 下一步独立全分支审阅；尚未取得远程 Actions 结果。

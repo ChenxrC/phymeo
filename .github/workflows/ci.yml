@@ -1,0 +1,140 @@
+name: CI
+
+"on":
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  quality:
+    name: lint, docs and dependency exports
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - uses: astral-sh/setup-uv@d0d8abe699bfb85fec6de9f7adb5ae17292296ff # v6
+        with:
+          version: '0.11.2'
+          enable-cache: false
+      - name: Install locked public dependencies
+        run: uv sync --locked --group dev --python python
+      - name: Check source and documentation
+        run: |
+          uv run --no-sync ruff check src tests examples scripts
+          uv run --no-sync python scripts/check_docs.py
+          uv run --no-sync python scripts/check_public_tyx_imports.py
+          uv run --no-sync python -m compileall -q src
+      - name: Check uv and native-pip dependency parity
+        run: |
+          uv export --locked --group dev --no-emit-project --format requirements-txt --output-file requirements/dev.lock > /dev/null
+          uv export --locked --no-dev --no-emit-project --format requirements-txt --output-file requirements/runtime.lock > /dev/null
+          git diff --exit-code -- requirements/dev.lock requirements/runtime.lock
+
+  cpu:
+    name: cpu / ${{ matrix.os }} / py${{ matrix.python }} / ${{ matrix.installer }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python: ['3.11', '3.12']
+        installer: [uv, pip]
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: ${{ matrix.python }}
+      - uses: astral-sh/setup-uv@d0d8abe699bfb85fec6de9f7adb5ae17292296ff # v6
+        if: matrix.installer == 'uv'
+        with:
+          version: '0.11.2'
+          enable-cache: false
+      - name: Select virtual-environment executable
+        id: environment
+        run: |
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            echo "python=.venv/Scripts/python.exe" >> "$GITHUB_OUTPUT"
+          else
+            echo "python=.venv/bin/python" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Install with uv
+        if: matrix.installer == 'uv'
+        run: |
+          uv sync --locked --group dev --python python
+          uv pip check --python .venv
+      - name: Install with native pip
+        if: matrix.installer == 'pip'
+        run: |
+          python -m venv .venv
+          ${{ steps.environment.outputs.python }} -m pip install --require-hashes -r requirements/dev.lock
+          ${{ steps.environment.outputs.python }} -m pip install --no-deps --no-build-isolation -e .
+          ${{ steps.environment.outputs.python }} -m pip check
+      - name: Run CPU contracts and numerical tests
+        run: ${{ steps.environment.outputs.python }} -m pytest -m "not tyx" -q
+      - name: Run headless examples
+        run: |
+          ${{ steps.environment.outputs.python }} examples/free_fall.py
+          ${{ steps.environment.outputs.python }} examples/hanging_chain.py
+          ${{ steps.environment.outputs.python }} examples/guarded_step.py
+
+  wheel:
+    name: wheel / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.11'
+      - uses: astral-sh/setup-uv@d0d8abe699bfb85fec6de9f7adb5ae17292296ff # v6
+        with:
+          version: '0.11.2'
+          enable-cache: false
+      - name: Build locked sdist and wheel
+        run: |
+          uv sync --locked --group dev --python python
+          uv run --no-sync python -m build --no-isolation
+      - name: Install wheel outside checkout with native pip
+        run: uv run --no-sync python scripts/verify_wheel.py
+
+  required:
+    name: CI required
+    if: always()
+    needs: [quality, cpu, wheel]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      QUALITY_RESULT: ${{ needs.quality.result }}
+      CPU_RESULT: ${{ needs.cpu.result }}
+      WHEEL_RESULT: ${{ needs.wheel.result }}
+    steps:
+      - name: Require every configured CPU gate
+        run: |
+          test "$QUALITY_RESULT" = success
+          test "$CPU_RESULT" = success
+          test "$WHEEL_RESULT" = success

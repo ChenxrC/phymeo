@@ -1,6 +1,6 @@
 # 环境构建与 CI 部署计划
 
-日期：2026-10-27。当前已有文档检查工作流和基础包/锁文件；CPU/GPU 工作流在[首版计划](../superpowers/plans/2026-10-27-v0-foundation.md)对应任务完成后启用。安装基础包已在本机 uv/pip 验证；tyx/GPU 等附加路径以进度记录为准。
+日期：2026-10-27。当前已有文档、CPU 和 wheel 检查工作流与基础包/锁文件；尚未取得远程 Actions 结果或配置分支保护。安装基础包已在本机 uv/pip 验证，tyx 解释器/C++ CPU/本机 CUDA 也已运行；远程 GPU runner 尚未配置。证据见[进度记录](../progress.md)。
 
 ## 1. 支持层级
 
@@ -78,9 +78,10 @@ python scripts/check_docs.py
 ```sh
 uv lock
 uv export --locked --group dev --no-emit-project --format requirements-txt --output-file requirements/dev.lock
+uv export --locked --no-dev --no-emit-project --format requirements-txt --output-file requirements/runtime.lock
 ```
 
-CI 重新导出到临时文件并比较内容，发现漂移即失败。项目自身以 editable 或 wheel 安装，不放入带 hash 的第三方清单。私有 VCS 依赖不能假装具备 pip artifact hash 校验：使用下一节的固定 SHA 通道；正式部署改用带 SHA256 的构建 wheel。
+CI 用同样命令重新导出 dev/runtime 文件并执行 `git diff --exit-code`，发现漂移即失败。runtime.lock 只包含安装 wheel 所需的公开依赖。项目自身以 editable 或 wheel 安装，不放入带 hash 的第三方清单。私有 VCS 依赖不能假装具备 pip artifact hash 校验：使用下一节的固定 SHA 通道；正式部署改用带 SHA256 的构建 wheel。
 
 ## 4. tyx 安装、认证与版本
 
@@ -134,18 +135,18 @@ uv run --no-sync python -m pytest -m tyx --tyx-mode=cuda --require-tyx
 
 `.github/workflows/docs.yml`：push/PR；Windows + Ubuntu，uv + pip/venv 两种入口；Python 3.11；运行本地链接、SVG 结构和离线 HTML 检查。只读 contents 权限、固定 Action commit、超时、同分支取消旧运行。没有 tyx secret，没有 GPU 需求。
 
-### C1：CPU 与包（包骨架后启用）
+### C1：CPU 与包（工作流已配置，远程结果待核验）
 
-建议 `.github/workflows/ci.yml`：
+`.github/workflows/ci.yml` 实际配置如下；不需要 tyx 私有凭证：
 
 | job | 矩阵/触发 | 验收 |
 | --- | --- | --- |
-| lint/docs | 每个 PR | 文档链接、ruff、编译检查 |
+| quality | 每个 push/PR 或手动运行 | 文档链接、ruff、编译检查、公开导入边界、dev/runtime 导出一致 |
 | cpu | Ubuntu/Windows × Python 3.11/3.12 × uv/pip | 数学、合同、失败路径；不能空收集 |
-| wheel | Ubuntu/Windows × Python 3.11 | build；新环境、源码目录外安装和 smoke |
-| dependency-parity | Ubuntu 3.11 | uv.lock 导出一致；pip check；核心无 torch/warp 强依赖 |
-| tyx-cpu | 受信任分支或维护者调度 | 固定 SHA、真实导入与 kernel 执行；无权限不冒充通过 |
-| required | 上述当前必需 job 汇总 | 任一失败/取消都失败；可选 job 的 skip 单独说明 |
+| wheel | Ubuntu/Windows × Python 3.11 | build sdist/wheel；新原生 pip 环境、源码目录外安装和求解 smoke |
+| required | quality、cpu、wheel 汇总 | 任一失败/取消/跳过都失败 |
+
+CPU 套件使用 `-m "not tyx"`，明确只验证公开依赖路径。私有 tyx-cpu 集成 job 仍待受信任凭证配置；本机已经分别运行 interpret/cpu_cpp/cuda，不能把本机证据写作云端结果。`scripts/verify_wheel.py` 会创建全新环境，只安装 runtime.lock 与构建 wheel，执行 `pip check` 和 `python -I` 求解 smoke，确认导入来自 site-packages 且没有导入 tyx/torch/warp。
 
 不要用 `paths` 过滤必需的总体检查导致 PR 一直 pending；可以让 job 内部决定范围。分支保护由维护者在首次成功运行后设置，不能将“已提交 YAML”写成“已配置保护”。
 

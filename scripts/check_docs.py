@@ -1,11 +1,11 @@
 """Check local documentation links and offline SVG/HTML structure (stdlib only)."""
 
-from html.parser import HTMLParser
-from pathlib import Path
 import re
 import sys
-from urllib.parse import unquote, urlsplit
 import xml.etree.ElementTree as ET
+from html.parser import HTMLParser
+from pathlib import Path
+from urllib.parse import unquote, urlsplit
 
 ROOT = Path(__file__).resolve().parents[1]
 

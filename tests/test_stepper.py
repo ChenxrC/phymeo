@@ -299,3 +299,14 @@ def test_accepted_output_is_detached_from_solver_owned_storage():
     result = api("Stepper")(candidate).step(model, state, inputs, 0.1)
     retained.position[:] = 999.0
     np.testing.assert_array_equal(result.state.position, state.position)
+
+
+def test_nested_mutation_cannot_change_saved_signature_baseline():
+    plane = [0.0, "y-up-frictionless-e0-v1"]
+    candidate = Candidate(lambda *args: pytest.fail("changed physical problem must not execute"))
+    candidate.signature = phymeo.ProblemSignature(plane=plane)
+    stepper = api("Stepper")(candidate)
+    plane[0] = 1.0
+    candidate.signature = phymeo.ProblemSignature(plane=plane)
+    with pytest.raises(ValueError, match="physical problem"):
+        stepper.step(*scene(), 0.1)

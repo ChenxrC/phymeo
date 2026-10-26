@@ -1,0 +1,37 @@
+# phymeo
+
+面向机器人、刚体接触、布料与柔性体的物理仿真引擎设计与首版开发。
+
+**定位：** phymeo 拥有物理模型、状态、碰撞、数学/学习求解器和耦合调度；[tyx](https://github.com/ChenxrC/tyx) 拥有通用计算、编译、数组、自动微分和设备执行。
+
+> 当前处于设计与基础实现阶段。图中描述的是目标架构，不能据此推断全部模块已实现、GPU 已通过验证或整体可微。实际交付以[进度记录](docs/progress.md)为准。
+
+![phymeo 架构图](docs/architecture/phymeo.png)
+
+## 设计与实施入口
+
+| 内容 | 入口 |
+| --- | --- |
+| 离线 HTML 架构图 | [下载/打开 phymeo.html](docs/architecture/phymeo.html) |
+| 可编辑矢量图 | [phymeo.svg](docs/architecture/phymeo.svg) |
+| 物理模型、接口与算法边界 | [架构说明](docs/architecture/overview.md) |
+| 两人并行分工、里程碑与测试建议 | [开发与测试](docs/development/team-and-tests.md) |
+| uv/pip、私有依赖、CPU/GPU CI 与发布计划 | [环境与 CI](docs/development/environment-and-ci.md) |
+| 首版可执行大纲 | [v0 实施计划](docs/superpowers/plans/2026-10-27-v0-foundation.md) |
+| 已验证结果与下一步 | [进度记录](docs/progress.md) |
+
+GitHub 文件页不直接运行 HTML；下载后用浏览器打开即可，无网络字体或脚本依赖。
+
+## 当前文档检查
+
+需要 Python 3.11+，不需要安装第三方包。
+
+```sh
+python scripts/check_docs.py
+```
+
+uv 与 pip/venv 的隔离环境命令见[环境说明](docs/development/environment-and-ci.md)。引擎安装与运行命令将在包骨架通过验证后补充，避免把计划命令误写为当前已可用功能。
+
+## 来源与实现原则
+
+借鉴 Newton 的公开架构与算法论文，独立定义物理数据、接口与实现，不复制其求解器源码。对照来源和 tyx 固定提交见[架构说明](docs/architecture/overview.md)。图表样式基于 Cocoon AI 的 MIT 模板改编，保留[许可声明](docs/architecture/template-LICENSE.txt)；该声明仅覆盖模板，不为整个项目指定许可证。

@@ -149,6 +149,8 @@ XPBD 距离约束：`C = ||x_i-x_j|| - rest_length`，`alpha_tilde = compliance/
 
 `runtime/state_contract.py` 持有当前两种状态族的类型/复制/固定字段规则；所有尝试共享 `Stepper` 的报告检查、一次回退预算与物理签名门禁。两 solver 的 state_kind 必须一致且在构造后保持不变。新增状态族应先提供完整合同和回滚测试，再接入；该模块只依赖 core，不依赖具体数学或学习 solver。
 
+入口和候选都按合同字段用内置数据构造器规范化，不信任扩展子类覆盖的 `copy()`；这样普通缓存/浅拷贝实现不会绕过有限性、四元数或所有权验证。子类可作为已有字段的载体，但新增物理字段/历史必须明确扩展状态合同，不能假定会随 Python 子类自动保存。
+
 | 当前 solver | features | 精度 | 梯度 / 物理历史 |
 | --- | --- | --- | --- |
 | SemiImplicitSolver | particles, free_dynamics | FP32/FP64 | unsupported / none |

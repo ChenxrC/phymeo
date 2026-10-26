@@ -1,13 +1,24 @@
 """Unconstrained particle dynamics baseline."""
 
+from ..core.capabilities import ProblemSignature, SolverCapabilities
 from ..core.model import ParticleModel
 from ..core.result import StepReport, StepResult
 from ..core.state import ParticleState, StepInputs
-from ..dynamics.integrate import predict, validate_step
+from ..core.validation import validate_step
+from ..dynamics.integrate import predict
 
 
 class SemiImplicitSolver:
     """Advance v first, then x using the new v; fixed particles have zero velocity."""
+
+    capabilities = SolverCapabilities(
+        backend="numpy",
+        dtypes=frozenset(["float32", "float64"]),
+        features=frozenset(["particles", "free_dynamics"]),
+    )
+
+    def problem_signature(self) -> ProblemSignature:
+        return ProblemSignature()
 
     def step(
         self, model: ParticleModel, state_in: ParticleState, inputs: StepInputs, dt: float

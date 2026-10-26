@@ -10,10 +10,12 @@ from numbers import Real
 import numpy as np
 
 from ..constraints.distance import DistanceConstraints, distance_residual, project_distances
+from ..core.capabilities import ProblemSignature, SolverCapabilities
 from ..core.model import ParticleModel
 from ..core.result import StepReport, StepResult
 from ..core.state import ParticleState, StepInputs
-from ..dynamics.integrate import predict, validate_step
+from ..core.validation import validate_step
+from ..dynamics.integrate import predict
 from ..geometry.plane import Plane
 
 
@@ -55,6 +57,31 @@ class XPBDSolver:
             raise TypeError("constraints must be DistanceConstraints or None")
         if self.plane is not None and not isinstance(self.plane, Plane):
             raise TypeError("plane must be Plane or None")
+
+    @property
+    def capabilities(self):
+        features = {"particles", "free_dynamics"}
+        if self.constraints is not None and len(self.constraints.indices):
+            features.add("distance")
+        if self.plane is not None:
+            features.add("plane_contact")
+        return SolverCapabilities(
+            backend="numpy", dtypes=frozenset(["float32", "float64"]), features=frozenset(features)
+        )
+
+    def problem_signature(self) -> ProblemSignature:
+        distance = ()
+        if self.constraints is not None:
+            distance = tuple(
+                (int(i), int(j), float(rest), float(compliance))
+                for (i, j), rest, compliance in zip(
+                    self.constraints.indices,
+                    self.constraints.rest_length,
+                    self.constraints.compliance,
+                )
+            )
+        plane = None if self.plane is None else (self.plane.height, "y-up-frictionless-e0-v1")
+        return ProblemSignature(distance=distance, plane=plane)
 
     def step(
         self, model: ParticleModel, state_in: ParticleState, inputs: StepInputs, dt: float

@@ -118,6 +118,20 @@ XPBD 距离约束：`C = ||x_i-x_j|| - rest_length`，`alpha_tilde = compliance/
 
 梯度分为 unsupported、smooth、custom、fixed-active-set、smoothed-surrogate；训练者必须显式选择。接触切换处不承诺真实导数。自定义 VJP/隐式微分要有独立梯度测试；普通浮点容差通过不代表梯度正确。
 
+### 当前实现的协议边界
+
+`Solver` protocol 声明 `capabilities`、`problem_signature()` 和 `step(...)`。`SolverCapabilities` 包含 state_kind、features、dtypes、backend、gradient 和 history。`Stepper(primary, fallback=None, required_features=..., gradient="unsupported", max_residual=1e-5)` 在调用前检查同一物理签名与精度/能力；signature 后续改变也会被拒绝。
+
+每次尝试独立复制位置/速度和外力；不可变 model 共用。验收独立检查 shape/dtype/有限性/固定点，再检查 solver 自报 accepted 和归一化残差阈值。柔顺几何伸长不与零比较。成功候选再次复制，避免返回 solver 内部存储的别名；全部失败则返回原快照。`report.fallback_used` 与 `report.primary_failure` 记录是否重算及原失败原因。预期域外拒绝可抛 `SolverFailure`；其他程序/配置异常原样传播，便于诊断。
+
+| 当前 solver | features | 精度 | 梯度 / 物理历史 |
+| --- | --- | --- | --- |
+| SemiImplicitSolver | particles, free_dynamics | FP32/FP64 | unsupported / none |
+| XPBDSolver | 基础 + 按配置 distance、plane_contact | FP32/FP64（乘子 FP64） | unsupported / none |
+| TyxSemiImplicitSolver | particles, free_dynamics | FP32 | unsupported / none |
+
+这是学习候选未来接入的协议基础，不是已经完成 AI 物理验收。当前残差仍由 solver 计算，不能据此信任任意神经网络的自报数值；后续学习 provider 必须增加独立物理残差/适用域检验。`history != "none"` 当前拒绝，防止隐藏状态未回滚；模型随机状态、材料历史和学习缓存的完整事务协议尚未实现。
+
 ## 9. 首版验收场景和后续边界
 
 首批：空场景、自由落体、固定点、受力粒子、两点柔顺约束、悬挂链/布片、平面碰撞；后续：旋转刚体、球体接触、夹爪压软块、机械臂抓布。

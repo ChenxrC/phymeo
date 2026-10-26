@@ -2,10 +2,12 @@
 
 from .backends.tyx import TyxSemiImplicitSolver
 from .constraints.distance import DistanceConstraints
+from .core.capabilities import ProblemSignature, SolverCapabilities, SolverFailure
 from .core.model import ParticleModel
 from .core.result import StepReport, StepResult
 from .core.state import ParticleState, StepInputs
 from .geometry.plane import Plane
+from .runtime.stepper import Stepper
 from .solvers.semi_implicit import SemiImplicitSolver
 from .solvers.xpbd import XPBDSolver
 
@@ -22,4 +24,8 @@ __all__ = [
     "Plane",
     "XPBDSolver",
     "TyxSemiImplicitSolver",
+    "ProblemSignature",
+    "SolverCapabilities",
+    "SolverFailure",
+    "Stepper",
 ]

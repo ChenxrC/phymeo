@@ -4,10 +4,11 @@ from contextlib import ExitStack
 
 import numpy as np
 
+from ..core.capabilities import ProblemSignature, SolverCapabilities
 from ..core.model import ParticleModel
 from ..core.result import StepReport, StepResult
 from ..core.state import ParticleState, StepInputs
-from ..dynamics.integrate import validate_step
+from ..core.validation import validate_step
 
 
 class TyxSemiImplicitSolver:
@@ -55,6 +56,17 @@ class TyxSemiImplicitSolver:
 
     def close(self):
         self._runtime.close()
+
+    @property
+    def capabilities(self):
+        return SolverCapabilities(
+            backend=f"tyx:{self.mode}",
+            dtypes=frozenset(["float32"]),
+            features=frozenset(["particles", "free_dynamics"]),
+        )
+
+    def problem_signature(self) -> ProblemSignature:
+        return ProblemSignature()
 
     def step(
         self, model: ParticleModel, state_in: ParticleState, inputs: StepInputs, dt: float

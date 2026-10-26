@@ -24,13 +24,14 @@ GitHub 文件页不直接运行 HTML；下载后用浏览器打开即可，无�
 
 ## 当前基础包与验证
 
-已提供经过验证的粒子数据合同、NumPy 半隐式 Euler 积分器，以及 XPBD 距离约束与 y-up 静态平面接触，支持 FP32/FP64、外力与固定点。可选 tyx 自由积分适配已验证解释器、C++ CPU 和本机 CUDA 的 FP32 路径，安装见[环境说明](docs/development/environment-and-ci.md)。调度按[进度记录](docs/progress.md)逐批加入；此时尚无完整刚体旋转、机器人、自碰撞或摩擦。
+已提供经过验证的粒子数据合同、NumPy 半隐式 Euler 积分器、XPBD 距离/平面约束，以及带候选验收与一次同问题回退的 Stepper。NumPy 支持 FP32/FP64；可选 tyx 自由积分已验证解释器、C++ CPU 和本机 CUDA 的 FP32 路径，安装见[环境说明](docs/development/environment-and-ci.md)。此时尚无完整刚体旋转、机器人、自碰撞、摩擦或已训练 AI 求解器，详见[进度记录](docs/progress.md)。
 
 ```sh
 uv sync --locked --group dev
 uv run --no-sync python -m pytest
 uv run --no-sync python examples/free_fall.py
 uv run --no-sync python examples/hanging_chain.py
+uv run --no-sync python examples/guarded_step.py
 ```
 
 原生 pip 用户在激活的 Python 3.11+ 虚拟环境中执行：

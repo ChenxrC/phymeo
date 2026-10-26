@@ -62,3 +62,13 @@
 - `scripts/check_tyx.py --mode=cuda --require-device` 与 `--mode=cpu_cpp` 均执行非空 kernel 并通过解析检查；public-import guard 与 ruff 通过。
 - CUDA 每步传输主机数组，XPBD 仍是 NumPy 参考路径；不宣称 GPU XPBD、设备常驻性能或梯度能力。没有 GitHub GPU runner 配置或远程 CI 通过证据。
 - 下一步 Task 6：相同物理问题签名、能力合同、候选验收和最多一次数学回退。
+
+## 2026-10-27 01:30 左右：Task 6 步进事务
+
+- Task 5 已提交并推送：`862d2568f65105f35cd9093c8c6ca3b6da3a89fe`。
+- 新增 SolverCapabilities / ProblemSignature / SolverFailure 与 Solver protocol；三个已实现 solver 声明物理身份、精度、功能与梯度/历史边界。
+- Stepper 为每次尝试复制状态和外力，检查候选数据与固定点，再验收报告；同问题 fallback 最多一次。全部失败返回原快照；受控域错误可回退，程序异常继续暴露。
+- TDD：29 项新测试先失败，实施后补查配置变更、非法输入不重试、成功输出别名；全套 `pytest -q --require-tyx` 为 123 passed。`pytest -m tyx --tyx-mode=cuda --require-tyx -q` 为 7 passed, 116 deselected。
+- `examples/guarded_step.py` 真实 XPBD 链：一次低预算失败后，高预算解在 31 次迭代达到残差 9.32e-10，原状态未改变。ruff 与公开 tyx 导入检查通过。
+- runtime 仅依赖 core；共享入口验证从 dynamics 移入 core/validation。尚无带隐藏状态的学习 provider 或独立 AI 物理验收器，当前明确拒绝历史状态能力。
+- 下一步 Task 7：CPU CI、安装包/锁文件一致性以及独立分支审阅。

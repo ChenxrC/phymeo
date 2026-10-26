@@ -95,7 +95,7 @@ class TyxXPBDSolver(TyxSemiImplicitSolver):
                 if not np.isfinite(height):
                     return self._failure(state_in, 0, "plane height is outside FP32 range")
             with self._tx.use_runtime(self._runtime), ExitStack() as resources:
-                return self._execute(model, state_in, force, h, alpha, alpha64, height, resources)
+                return self._execute(model, candidate, force, h, alpha, alpha64, height, resources)
 
     def _execute(self, model, state_in, force, h, alpha, alpha64, height, resources):
         config, constraints = self._config, self._config.constraints

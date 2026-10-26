@@ -309,3 +309,20 @@ def test_distance_and_plane_alternation_satisfies_both(tyx_mode, cache):
     )
     assert result.state.velocity[1, 1] >= 0
     np.testing.assert_array_equal(result.state.position[0], state.position[0])
+
+
+def test_valid_noncontiguous_state_uses_validated_owned_snapshot(tyx_mode, cache):
+    model, state, inputs, edges = pair()
+    state.position = state.position[::-1]
+    state.velocity = state.velocity[::-1]
+    inputs.force = inputs.force[::-1]
+    assert not state.position.flags.c_contiguous
+    before = state.copy()
+    reference = XPBDSolver(edges).step(model, state, inputs, 0.1)
+    with implementation()(edges, mode=tyx_mode, cache_root=cache) as solver:
+        result = solver.step(model, state, inputs, 0.1)
+    assert result.report.accepted and reference.report.accepted
+    np.testing.assert_allclose(result.state.position, reference.state.position, atol=1e-6)
+    np.testing.assert_allclose(result.state.velocity, reference.state.velocity, atol=1e-6)
+    np.testing.assert_array_equal(state.position, before.position)
+    assert result.state.position.flags.c_contiguous

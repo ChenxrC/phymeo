@@ -155,7 +155,24 @@
 - [x] 先验证颜色覆盖/互斥/确定性/所有权/非法索引；编写单边解析、柔度与 dt、耦合链、重合点、固定点/接触、空集合、dtype、失败回滚和 Stepper 同物理回退测试，观察缺失实现失败。
 - [x] 实现颜色数据与公开 tyx 内核、生命周期/空数组/数值检查；解释器测试通过。
 - [x] 实测 CPU C++ 和 CUDA 的全部新增后端测试，运行小布片多步对照并记录容差、迭代/传输成本及限制。
-- [ ] 全套、多 Python/包、公开导入检查和独立新增切片审阅；更新文档、提交、推送并核对远程 SHA。
+- [x] 全套、多 Python/包、公开导入检查和独立新增切片审阅；更新文档、提交、推送并核对远程 SHA。
+
+## Task 11: 粒子与刚体共用的事务步进边界
+
+**进入条件：** Task 10 审阅完成；从架构中的统一候选接受/回退目标继续，先补齐真实刚体的状态合同，不把刚体当作缺失角状态的粒子处理。
+
+**Files:** runtime/state_contract.py、runtime/stepper.py、core/state.py、core/capabilities.py、tests/test_rigid_stepper.py；旋转示例和 wheel smoke 使用共用 Stepper。
+
+**Interfaces:** 保持 `Stepper(primary, fallback=None, ...).step(model, state, inputs, dt)`。按 primary 的 `state_kind` 选择明确的内置状态合同，当前只允许 particles / rigid_bodies；两 solver 必须始终声明相同 kind、物理签名与支持的精度。入口验证 model/state/inputs 类型匹配。Solver protocol 以模型/状态/输入类型参数描述，不能继续把所有实现标注成粒子。
+
+**Ownership:** 粒子快照为 position/velocity/force；刚体快照另包含 orientation/angular_velocity/torque。每次尝试独立复制全部状态和输入；固定刚体同时保持位置/姿态、两种速度归零；候选四元数必须满足已有单位长度合同。失败后从完全相同快照重算一次，接受结果再次复制，杜绝缓存别名。
+
+**Boundary:** 不修改刚体动力学算法；不在此任务添加接触、关节或训练模型。残差仍由数学 solver 报告，未知学习模型的独立物理验证与隐藏状态事务仍未实现。未知 state_kind/历史/梯度组合继续显式拒绝，禁止依赖字段相似来猜测状态类型。
+
+- [ ] 先写真实刚体步进/空集合、姿态与角速度非法候选、固定姿态、力矩/全部状态回滚、返回无别名、类型/kind 误配和粒子兼容测试，观察既有粒子专用门禁失败。
+- [ ] 实现独立状态合同和共用事务机制；旧粒子行为保持通过，刚体协议不丢字段。
+- [ ] 旋转示例和 wheel smoke 走共用 Stepper；多 Python/原生 pip/全套检查。
+- [ ] 审阅新增状态边界，更新能力与分工、提交并推送。
 
 ## 后续候选（有余量才按完整验证单独立项）
 

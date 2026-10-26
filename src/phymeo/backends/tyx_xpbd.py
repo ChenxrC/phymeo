@@ -32,7 +32,13 @@ class TyxXPBDSolver(TyxSemiImplicitSolver):
         plane=None,
         reference_length=1.0,
         cache_root=None,
+        cuda_graph=False,
     ):
+        if not isinstance(cuda_graph, bool):
+            raise ValueError("cuda_graph must be bool")
+        if cuda_graph and mode != "cuda":
+            raise ValueError("cuda_graph requires mode='cuda'")
+        self._cuda_graph = cuda_graph
         self._config = XPBDSolver(constraints, iterations, tolerance, plane, reference_length)
         if constraints is not None and constraints.rest_length.dtype != np.float32:
             raise ValueError("the tyx adapter supports FP32 constraints only")
@@ -143,7 +149,8 @@ class TyxXPBDSolver(TyxSemiImplicitSolver):
             scaled = buffer(alpha)
             multipliers = buffer(np.zeros(edge_count, np.float32))
             failed = buffer(np.zeros(edge_count, np.int32))
-        for iteration in range(1, config.iterations + 1):
+
+        def sweep(stream=None):
             if edge_count:
                 for begin, end in zip(self._colors.offsets[:-1], self._colors.offsets[1:]):
                     self._project(
@@ -158,9 +165,31 @@ class TyxXPBDSolver(TyxSemiImplicitSolver):
                         multipliers,
                         failed,
                         mode=self.mode,
+                        stream=stream,
                     )
             if config.plane is not None:
-                self._plane(count, height, weights, position, mode=self.mode)
+                self._plane(count, height, weights, position, mode=self.mode, stream=stream)
+
+        graph = None
+        if self._cuda_graph and (edge_count or config.plane is not None):
+            # Registered after every array: synchronize and release graph references
+            # before buffers, including capture/replay/readback exception paths.
+            graph_resources = resources.enter_context(ExitStack())
+            stream = self._tx.cuda_stream()
+            graph_resources.callback(stream.destroy)
+            graph = self._tx.Graph(stream=stream, mode="cuda", optimize=False)
+            graph_resources.callback(graph.destroy)
+            graph_resources.callback(stream.synchronize)
+            with graph:
+                sweep(stream)
+            if graph.backend != "cuda":
+                raise RuntimeError("explicit CUDA graph capture did not produce a CUDA graph")
+
+        for iteration in range(1, config.iterations + 1):
+            if graph is None:
+                sweep()
+            else:
+                graph.replay()
             self._runtime.sync()
             host_position = read(position)
             host_lambda = read(multipliers) if edge_count else multipliers

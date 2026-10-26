@@ -26,7 +26,7 @@ GitHub 文件页不直接运行 HTML；下载后用浏览器打开即可，无�
 
 已提供粒子数据合同、NumPy 半隐式 Euler、XPBD 距离/平面约束，以及布片结构/剪切网格与面积质量构建器。刚体支持自由平移/旋转、四元数与陀螺项，并新增球形边界对静态平面的无摩擦、零恢复接触。粒子与刚体均可通过共用 Stepper 验收候选并做一次同物理问题回退，刚体快照包含姿态、角速度与力矩。
 
-NumPy 支持 FP32/FP64；可选 tyx 已实现 FP32 粒子积分和着色 XPBD 距离/平面投影，后者含每迭代主机残差检查，尚未做性能优化。安装及已验证模式见[环境说明](docs/development/environment-and-ci.md)。
+NumPy 支持 FP32/FP64；可选 tyx 已实现 FP32 粒子积分和着色 XPBD 距离/平面投影。CUDA 可选择图重放一轮投影，仍保留每迭代主机残差检查。安装及已验证模式见[环境说明](docs/development/environment-and-ci.md)。
 
 目前仍无球球/任意形状碰撞、关节、机器人、布料弯曲/自碰撞、摩擦、CCD 或已训练 AI 求解器，详见[进度记录](docs/progress.md)。
 
@@ -42,6 +42,8 @@ uv run --no-sync python examples/falling_spheres.py
 ```
 
 安装可选 tyx/CUDA 环境后，可执行 `uv run --no-sync python examples/tyx_cloth.py --mode cuda`，与独立 FP64 参考做 30 步对照。`--mode cpu_cpp` 使用实际 C++ 编译；解释器使用 `--mode interpret`。输出包含残差、轨迹差异及含同步/传输的耗时，不把小布片示例作为 GPU 加速比基准。
+
+加 `--cuda-graph` 可启用显式 CUDA 图路径。`python examples/compare_cuda_graph.py` 在相同精度、阈值和迭代规则下逐步核对图/直接启动的状态及报告，并计量完整 step；本机小场景结果见[进度记录](docs/progress.md)，不代表其他场景或机器的加速比。
 
 原生 pip 用户在激活的 Python 3.11+ 虚拟环境中执行：
 

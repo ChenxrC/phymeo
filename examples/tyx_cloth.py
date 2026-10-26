@@ -23,7 +23,10 @@ def main():
     parser.add_argument("--mode", choices=TyxXPBDSolver.MODES, required=True)
     parser.add_argument("--steps", type=int, default=30)
     parser.add_argument("--iterations", type=int, default=400)
+    parser.add_argument("--cuda-graph", action="store_true")
     args = parser.parse_args()
+    if args.cuda_graph and args.mode != "cuda":
+        parser.error("--cuda-graph requires --mode cuda")
     if args.steps < 1 or args.iterations < 1:
         parser.error("--steps and --iterations must be positive")
     pins, dt, tolerance = [0, 3], 0.02, 1e-5
@@ -61,6 +64,7 @@ def main():
         tolerance=tolerance,
         plane=Plane(),
         cache_root=".tyx-cache",
+        cuda_graph=args.cuda_graph,
     ) as solver:
         for frame in range(args.steps):
             start = perf_counter()
@@ -87,6 +91,7 @@ def main():
         json.dumps(
             {
                 "backend": f"tyx:{args.mode}",
+                "cuda_graph": args.cuda_graph,
                 "dtype": "float32",
                 "steps": args.steps,
                 "dt": dt,

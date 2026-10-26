@@ -115,7 +115,7 @@ tyx 最终交付建议由受信任上游流水线构建 wheel，记录源码 SHA
 
 `TyxSemiImplicitSolver(mode="interpret" | "cpu_cpp" | "cpu_llvm" | "cuda")` 支持显式选择，不使用自动静默回退；用 `with` 或 `close()` 结束其独立 runtime。当前已实测 interpret、cpu_cpp 和 cuda，cpu_llvm 尚未安装/验证。公开 API 边界由 `python scripts/check_public_tyx_imports.py` 检查。
 
-`TyxXPBDSolver(constraints, mode=..., plane=...)` 使用相同模式与生命周期，执行 FP32 着色距离约束、平面投影及速度重建；其测试同样属于 `-m tyx`，不会因编译/设备异常自动 skip。着色器本身是纯 CPU 公共依赖测试。每迭代主机检查残差使小场景同步成本显著，性能优化另立验收；LLVM 仍未验证。
+`TyxXPBDSolver(constraints, mode=..., plane=...)` 使用相同模式与生命周期，执行 FP32 着色距离约束、平面投影及速度重建；其测试同样属于 `-m tyx`，不会因编译/设备异常自动 skip。着色器本身是纯 CPU 公共依赖测试。可选 `cuda_graph=True` 将一轮颜色/平面 kernel 记录为显式 CUDA 图，保留逐迭代 host 验收；其他模式下请求图直接报配置错误。LLVM 仍未验证。
 
 已有 CUDA 驱动、NVRTC 工具链及上述 tyx 基础安装后：
 
@@ -125,9 +125,13 @@ uv pip install --python .venv --no-deps --require-hashes -r requirements/tyx-cud
 # python -m pip install --no-deps --require-hashes -r requirements/tyx-cuda.lock
 uv run --no-sync python scripts/check_tyx.py --mode=cuda --require-device
 uv run --no-sync python -m pytest -m tyx --tyx-mode=cuda --require-tyx
+uv run --no-sync python examples/tyx_cloth.py --mode cuda --cuda-graph
+uv run --no-sync python examples/compare_cuda_graph.py --steps 30
 ```
 
-原生 pip 环境直接使用 `python` 运行后两条。探针必须执行非空 kernel 并核对数值；缺依赖、缺设备、编译失败都返回非零。`--require-tyx` 把缺包的 skip 变为失败，所选后端执行失败不会被跳过。CPU C++ 将 mode 换为 cpu_cpp；不加 require-device。
+原生 pip 环境直接使用 `python` 运行上述探针、测试和示例。探针必须执行非空 kernel 并核对数值；缺依赖、缺设备、编译失败都返回非零。`--require-tyx` 把缺包的 skip 变为失败，所选后端执行失败不会被跳过。CPU C++ 将 mode 换为 cpu_cpp；不加 require-device。
+
+图专用测试同时标记 `tyx` 与 `cuda`。选择 interpret/CPU 时它们明确 skip；选择 `--tyx-mode cuda --require-tyx` 时必须真实执行，不能因图构建/重放错误跳过。相同场景的图/直接启动比较交替执行顺序，首步单列，其余报告均值、中位数和 p95；计时包括分配、传输、捕获、主机验收与释放，不只统计 GPU kernel 时间。
 
 `requirements/tyx-cuda.in` 使用固定 tyx 所声明的依赖范围，`tyx-cuda.lock` 为单独带 hash 的解析结果。更新命令见 lock 顶部。此次本机组合：cuda-python/bindings 12.9.10、cuda-pathfinder 1.8.4、CUDA runtime headers 12.9.79，系统 Toolkit/NVRTC 12.6，驱动 566.07，RTX 4060 Laptop；Python 3.12.14。这条验证不代表其他驱动/OS 组合已通过。CUDA 当前每步主机/设备传输，未做设备常驻优化。
 

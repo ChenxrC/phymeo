@@ -121,7 +121,24 @@
 - [x] 先写惯量/四元数合同、球形惯量常角速度解析解、主轴恒力矩离散解、旋转坐标系力矩、陀螺项、固定刚体及非有限结果回归；观察缺失实现失败。
 - [x] 实现独立数据与旋转数学、角动力学基线；保持已有粒子 API/测试通过。
 - [x] 运行无图形旋转示例，核对单位四元数和解析误差；更新能力说明及 CI 示例。
-- [ ] 验证 Python 3.11/3.12 CPU 与包、代码审阅新增切片；提交并推送。
+- [x] 验证 Python 3.11/3.12 CPU 与包、代码审阅新增切片；提交并推送。
+
+## Task 9: 布片拓扑、面积质量与 XPBD 演示
+
+**进入条件：** Task 8 完成并独立审阅无阻断；来自已有“布片拓扑/弯曲”候选中的拓扑小切片。
+
+**Files:** builders/cloth.py、tests/test_cloth.py、examples/cloth_patch.py、相关 README/CI/能力说明。
+
+**Interfaces:** `cloth_grid(rows, columns, spacing=..., density=..., structural_compliance=..., shear_compliance=..., pinned=..., origin=..., dtype=...) -> ClothPatch`。输入尺寸至少 2×2，点按 row*columns+column 编号，在 XZ 平面展开、+Y 法向。每格两三角形，三角形面积质量按三等份集中到顶点；返回只读 triangles/vertex_mass、ParticleModel、初始 ParticleState 和 DistanceConstraints。固定点逆质量为 0，但 vertex_mass 保留物理面积质量以便审计总质量。
+
+**Constraints:** 相邻行/列为 structural，格子两条对角线为 shear；无重复边，顺序确定。静止长度来自可表示的初始几何；量化后退化的网格、非有限或不能表示的正质量/逆质量/柔度明确拒绝。柔度是逐边参数，不冒充由 Young/Poisson 标定的连续材料。
+
+**Boundary:** 首批仅拉伸/剪切网络，没有弯曲能、自碰撞、面积/体积保持、FEM 或刚柔耦合。使用现有 NumPy XPBD 和平面接触；不把它声明为 GPU 布料或完整布料本构。
+
+- [ ] 先写三角形方向/数量、边去重/静止长度、面积质量守恒、固定点、dtype/输入范围、退化几何和复制边界测试，观察缺失接口失败。
+- [ ] 实现独立 builder 与明确的结构/剪切柔度分配，保持 solver 不依赖 builder。
+- [ ] 运行小布片悬挂/平面接触实例，逐步检查 accepted、固定点与有限性；记录容差、步长及迭代成本。
+- [ ] 跑全套、多 Python、wheel 与新增切片审阅；更新两人模块分工并提交推送。
 
 ## 后续候选（有余量才按完整验证单独立项）
 

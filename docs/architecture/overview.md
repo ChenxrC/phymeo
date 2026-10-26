@@ -141,7 +141,7 @@ XPBD 距离约束：`C = ||x_i-x_j|| - rest_length`，`alpha_tilde = compliance/
 
 ## 8. 学习模型与可微能力
 
-可插拔角色依次为 warm start、材料响应、残差修正、局部代理和完整候选状态。首个 AI 功能优先 warm start，保持数学终止容差不变，验证总耗时而非只看网络推理。
+可插拔角色依次为 warm start、材料响应、残差修正、局部代理和完整候选状态。面向真实任务的首个 AI 加速功能仍优先 warm start，保持数学终止容差不变，验证总耗时而非只看网络推理。当前小型自由粒子回归例子用于验证候选入口，不承担生产加速角色。
 
 学习 provider 声明模型版本、训练域、单位、归一化、拓扑/步长要求、隐状态、随机种子和梯度能力。PyTorch 管训练与网络，tyx 管计算；共享数组必须约定 stream、ownership、mutation 与生命周期。
 
@@ -153,7 +153,7 @@ XPBD 距离约束：`C = ||x_i-x_j|| - rest_length`，`alpha_tilde = compliance/
 
 ### 当前实现的协议边界
 
-`Solver` protocol 声明 `capabilities`、`problem_signature()` 和 `step(...)`。`SolverCapabilities` 包含 state_kind、features、dtypes、backend、gradient 和 history。`Stepper(primary, fallback=None, required_features=..., gradient="unsupported", max_residual=1e-5)` 在调用前检查同一物理签名与精度/能力；signature 后续改变也会被拒绝。
+`Solver` protocol 声明 `capabilities`、`problem_signature()` 和 `step(...)`。`SolverCapabilities` 包含 state_kind、features、dtypes、backend、gradient、history 和 provider_kind。provider_kind 只允许 mathematical（默认）或 learned，不从 backend 名称推断。`Stepper(primary, fallback=None, required_features=..., gradient="unsupported", max_residual=1e-5, verifier=None)` 在调用前检查同一物理签名与精度/能力；signature 后续改变也会被拒绝。
 
 每次尝试独立复制对应状态族的全部可变字段和输入；不可变 model 共用。粒子复制位置/速度/外力，刚体另含姿态/角速度/力矩。验收独立检查 shape/dtype/有限性/固定配置与零固定速度，刚体还检查单位四元数；再检查 solver 自报 accepted 和归一化残差阈值。柔顺几何伸长不与零比较。成功候选再次复制，避免返回 solver 内部存储的别名；全部失败则返回原快照。`report.fallback_used` 与 `report.primary_failure` 记录是否重算及原失败原因。预期域外拒绝可抛 `SolverFailure`；其他程序/配置异常原样传播，便于诊断。
 
@@ -172,7 +172,13 @@ XPBD 距离约束：`C = ||x_i-x_j|| - rest_length`，`alpha_tilde = compliance/
 | RigidSemiImplicitSolver | rigid_bodies, free_dynamics, rotation | FP32/FP64（旋转算术 FP64） | unsupported / none |
 | RigidSpherePlaneSolver | 刚体基础 + sphere_plane_contact | FP32/FP64（间隙验收 FP64） | unsupported / none |
 
-这是学习候选未来接入的协议基础，不是已经完成 AI 物理验收。当前残差仍由 solver 计算，不能据此信任任意神经网络的自报数值；后续学习 provider 必须增加独立物理残差/适用域检验。`history != "none"` 当前拒绝，防止隐藏状态未回滚；模型随机状态、材料历史和学习缓存的完整事务协议尚未实现。
+`CandidateVerifier` 声明 state_kind、problem_signature() 和 `verify(model, state_in, inputs, dt, candidate) -> VerificationReport`。任一 learned provider（含 fallback）必须配置同状态族、同物理签名的 verifier，且初始化与每步都检查匹配。原始状态、输入和已规范化候选的副本交给 verifier；验证器修改这些副本不能改变待提交状态或下一次尝试。所有尝试，包括数学 fallback，都要通过相同独立验收。成功报告取自报/独立残差和米制误差的较大值；拒绝或非法验证报告触发已有的一次回退规则。
+
+已实现 `FreeParticleVerifier(tolerance=1e-5, reference_length=1.0, reference_speed=1.0)`，仅支持无约束粒子 force/gravity 签名。用独立 FP64 算术展开速度优先离散方程，并以补偿求和直接计算位置/速度方程残差，避免大基值吞掉小运动贡献；不调用数学 solver。位置/速度欧氏误差分别以米和米/秒尺度归一化，取最大值。无法安全表示的参考乘积/和、乘法触发的不精确下溢（包括非零次正规结果）会保守拒绝；精确次正规结果保留。浮点算术仍有舍入误差，容差须按实际物理尺度设定。这是正确性参考，不是免费或通用物理验收器。
+
+`examples/learned_free_particles.py` 用 NumPy 最小二乘从数学标签拟合重力/外力两个响应系数，报告版本、种子、SI 单位及 dt 适用区间；64 训练场景与 64 留出场景分开。正常候选独立验收，损坏系数和域外 dt 通过同签名数学回退处理。它是无隐藏状态的低维回归示例，不是神经网络、通用 AI 求解器或完整训练域检测系统。
+
+数学 provider 未配置 verifier 时仍沿用自报物理残差；对 compliant XPBD、接触与刚体尚无独立动力学 verifier。verifier 本身是维护者信任的、物理上无历史依赖的检查代码，这个合同不隔离任意恶意 Python。`history != "none"` 当前拒绝；模型随机状态、材料历史和学习缓存的完整事务协议尚未实现。
 
 ## 9. 首版验收场景和后续边界
 

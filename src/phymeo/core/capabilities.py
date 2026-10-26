@@ -17,8 +17,11 @@ class SolverCapabilities:
     state_kind: str = "particles"
     gradient: str = "unsupported"
     history: str = "none"
+    provider_kind: str = "mathematical"
 
     def __post_init__(self):
+        if self.provider_kind not in ("mathematical", "learned"):
+            raise ValueError("provider_kind must be 'mathematical' or 'learned'")
         object.__setattr__(self, "dtypes", frozenset(self.dtypes))
         object.__setattr__(self, "features", frozenset(self.features))
 

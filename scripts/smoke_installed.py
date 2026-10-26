@@ -1,6 +1,7 @@
 """Run with an isolated, non-editable wheel environment: python -I this_file.py."""
 
 import sys
+from dataclasses import replace
 from pathlib import Path
 
 import numpy as np
@@ -17,7 +18,13 @@ def main():
     inputs = phymeo.StepInputs.zeros(model.particle_count)
     if state.particle_count != 2 or inputs.force.shape != (2, 3):
         raise RuntimeError("Installed data contract failed")
-    free = phymeo.Stepper(phymeo.SemiImplicitSolver()).step(model, state, inputs, 0.1)
+
+    class CandidateProvider(phymeo.SemiImplicitSolver):
+        capabilities = replace(phymeo.SemiImplicitSolver.capabilities, provider_kind="learned")
+
+    free = phymeo.Stepper(CandidateProvider(), verifier=phymeo.FreeParticleVerifier()).step(
+        model, state, inputs, 0.1
+    )
     if not free.report.accepted:
         raise RuntimeError("Installed free solver failed")
     np.testing.assert_allclose(free.state.position[1, 1], -0.0981)

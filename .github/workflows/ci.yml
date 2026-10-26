@@ -98,6 +98,7 @@ jobs:
           ${{ steps.environment.outputs.python }} examples/spinning_body.py
           ${{ steps.environment.outputs.python }} examples/cloth_patch.py
           ${{ steps.environment.outputs.python }} examples/falling_spheres.py
+          ${{ steps.environment.outputs.python }} examples/learned_free_particles.py
 
   wheel:
     name: wheel / ${{ matrix.os }}

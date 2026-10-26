@@ -9,6 +9,7 @@ from .core.model import ParticleModel
 from .core.result import StepReport, StepResult
 from .core.rigid import RigidBodyInputs, RigidBodyModel, RigidBodyState
 from .core.state import ParticleState, StepInputs
+from .core.verification import CandidateVerifier, VerificationReport
 from .geometry.plane import Plane
 from .geometry.sphere import SphereShapes
 from .runtime.stepper import Stepper
@@ -16,6 +17,7 @@ from .solvers.rigid_semi_implicit import RigidSemiImplicitSolver
 from .solvers.rigid_sphere_plane import RigidSpherePlaneSolver
 from .solvers.semi_implicit import SemiImplicitSolver
 from .solvers.xpbd import XPBDSolver
+from .validation.free_particle import FreeParticleVerifier
 
 __version__ = "0.1.0a0"
 
@@ -35,6 +37,9 @@ __all__ = [
     "SolverCapabilities",
     "SolverFailure",
     "Stepper",
+    "CandidateVerifier",
+    "VerificationReport",
+    "FreeParticleVerifier",
     "RigidBodyModel",
     "RigidBodyState",
     "RigidBodyInputs",

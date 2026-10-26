@@ -6,6 +6,33 @@ import subprocess
 import tempfile
 import venv
 from pathlib import Path
+from zipfile import ZipFile
+
+
+def check_source_parity(wheel, root):
+    """Reject stale, missing, extra or duplicate packaged Python source files."""
+    source = root / "src"
+    expected = {
+        path.relative_to(source).as_posix(): path for path in (source / "phymeo").rglob("*.py")
+    }
+    with ZipFile(wheel) as archive:
+        names = [
+            name
+            for name in archive.namelist()
+            if name.startswith("phymeo/") and name.endswith(".py")
+        ]
+        if len(names) != len(set(names)) or set(names) != set(expected):
+            raise SystemExit(
+                "Wheel source file set differs from this checkout; rebuild before verification"
+            )
+        changed = [
+            name for name, path in expected.items() if archive.read(name) != path.read_bytes()
+        ]
+        if changed:
+            raise SystemExit(
+                f"Wheel source differs from this checkout ({', '.join(changed)}); rebuild before verification"
+            )
+    return len(expected)
 
 
 def main():
@@ -16,6 +43,8 @@ def main():
     wheels = sorted(args.dist_dir.resolve().glob("phymeo-*.whl"))
     if len(wheels) != 1:
         raise SystemExit(f"Expected exactly one phymeo wheel, found {len(wheels)}")
+    count = check_source_parity(wheels[0], root)
+    print(f"Wheel source parity passed: {count} Python files match the checkout.", flush=True)
     with tempfile.TemporaryDirectory(prefix="phymeo-wheel-") as temporary:
         outside = Path(temporary).resolve()
         if outside.is_relative_to(root):

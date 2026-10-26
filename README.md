@@ -54,7 +54,7 @@ python -m pip install --no-deps --no-build-isolation -e .
 python -m pytest
 ```
 
-构建与独立安装验证：`python -m build --no-isolation`，然后 `python scripts/verify_wheel.py`。后者使用系统临时目录中新建的原生 pip 环境，需要读取公开包索引。CI 配置覆盖 Windows/Linux × Python 3.11/3.12 × uv/pip；工作流是否实际成功以 Actions 结果为准。
+构建与独立安装验证：`python -m build --no-isolation`，然后 `python scripts/verify_wheel.py`。后者先检查 wheel 的 Python 源码与当前 checkout 一致，再使用系统临时目录中新建的原生 pip 环境安装，需要读取公开包索引；它不会自动构建旧 wheel。CI 配置覆盖 Windows/Linux × Python 3.11/3.12 × uv/pip；工作流是否实际成功以 Actions 结果为准。
 
 ## 文档检查
 

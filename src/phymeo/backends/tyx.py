@@ -97,7 +97,7 @@ class TyxSemiImplicitSolver:
                 self._kernel(count, h, *host_inputs, position, velocity, mode=self.mode)
         if not (np.isfinite(position).all() and np.isfinite(velocity).all()):
             return StepResult(
-                state_in.copy(),
+                ParticleState.copy(state_in),
                 StepReport(
                     accepted=False,
                     reason="non-finite integration result",

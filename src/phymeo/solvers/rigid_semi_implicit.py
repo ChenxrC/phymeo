@@ -58,6 +58,6 @@ class RigidSemiImplicitSolver:
     @staticmethod
     def _failure(state_in):
         return StepResult(
-            state_in.copy(),
+            RigidBodyState.copy(state_in),
             StepReport(accepted=False, reason="non-finite rigid integration result"),
         )

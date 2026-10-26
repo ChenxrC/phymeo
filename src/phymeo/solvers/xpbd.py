@@ -162,7 +162,7 @@ class XPBDSolver:
     @staticmethod
     def _numerical_failure(state_in, iterations):
         return StepResult(
-            state_in.copy(),
+            ParticleState.copy(state_in),
             StepReport(
                 accepted=False,
                 iterations=iterations,

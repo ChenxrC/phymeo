@@ -43,6 +43,22 @@ def main():
     if not rigid.report.accepted:
         raise RuntimeError("Installed rigid solver failed")
     np.testing.assert_allclose(rigid.state.orientation, [[0.0, 0.0, np.sin(0.5), np.cos(0.5)]])
+    sphere = phymeo.Stepper(
+        phymeo.RigidSpherePlaneSolver(phymeo.SphereShapes(np.array([0.2])))
+    ).step(
+        phymeo.RigidBodyModel(np.ones(1), np.ones((1, 3)), np.zeros(3)),
+        phymeo.RigidBodyState(
+            np.array([[0.0, 1.0, 0.0]]),
+            np.array([[0.0, 0.0, 0.0, 1.0]]),
+            np.array([[0.0, -20.0, 0.0]]),
+            np.zeros((1, 3)),
+        ),
+        phymeo.RigidBodyInputs.zeros(1),
+        0.1,
+    )
+    if not sphere.report.accepted or sphere.state.velocity[0, 1] != 0:
+        raise RuntimeError("Installed rigid sphere contact failed")
+    np.testing.assert_allclose(sphere.state.position, [[0.0, 0.2, 0.0]])
     cloth = phymeo.cloth_grid(2, 2, spacing=1.0, density=6.0, pinned=[0])
     np.testing.assert_allclose(cloth.vertex_mass, [1.0, 2.0, 2.0, 1.0])
     if cloth.model.inverse_mass[0] != 0 or cloth.triangles.shape != (2, 3):

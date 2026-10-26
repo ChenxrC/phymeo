@@ -40,7 +40,13 @@ def validate_step(
     model: ParticleModel, state: ParticleState, inputs: StepInputs, dt: float
 ) -> tuple[ParticleState, np.ndarray, np.floating]:
     """Validate mutable input buffers and return owned data for one attempted step."""
-    candidate = state.copy()
+    if (
+        not isinstance(model, ParticleModel)
+        or not isinstance(state, ParticleState)
+        or not isinstance(inputs, StepInputs)
+    ):
+        raise TypeError("model, state and inputs must use particle types")
+    candidate = ParticleState(state.position, state.velocity)
     force = StepInputs(inputs.force).force
     if model.particle_count != candidate.particle_count or force.shape != candidate.position.shape:
         raise ValueError("model, state and force must have the same particle count")
@@ -53,7 +59,16 @@ def validate_step(
 def validate_rigid_step(
     model: RigidBodyModel, state: RigidBodyState, inputs: RigidBodyInputs, dt: float
 ):
-    candidate, owned_inputs = state.copy(), inputs.copy()
+    if (
+        not isinstance(model, RigidBodyModel)
+        or not isinstance(state, RigidBodyState)
+        or not isinstance(inputs, RigidBodyInputs)
+    ):
+        raise TypeError("model, state and inputs must use rigid body types")
+    candidate = RigidBodyState(
+        state.position, state.orientation, state.velocity, state.angular_velocity
+    )
+    owned_inputs = RigidBodyInputs(inputs.force, inputs.torque)
     if (
         model.body_count != candidate.body_count
         or owned_inputs.force.shape != candidate.position.shape

@@ -109,7 +109,7 @@ XPBD 距离约束：`C = ||x_i-x_j|| - rest_length`，`alpha_tilde = compliance/
 
 先把世界角速度和力矩转入体坐标，用 `omega_dot_body = (tau_body - omega_body × (I_body * omega_body)) / I_body` 得到角加速度，再转回世界坐标更新角速度。新世界角速度构成旋转向量，指数映射增量从左侧复合旧四元数。该实现从刚体方程独立编写，参考 [Baraff 刚体动力学讲义](https://www.cs.cmu.edu/~baraff/sigcourse/notesd1.pdf) 的物理定义，以及 [SciPy 旋转向量定义](https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.transform.Rotation.from_rotvec.html)；运行时不依赖 SciPy。它是一阶自由运动基线，非球形惯量不精确保持能量/角动量，须用步长收敛检查控制误差。
 
-`StepResult` 和 `Solver` protocol 已参数化状态类型；共用 `Stepper` 按显式 `state_kind` 选择粒子或刚体合同，入口检查 model/state/inputs 类型匹配。刚体候选额外检查单位四元数、角速度和固定姿态；快照/回退额外复制 orientation、angular_velocity、torque，避免只恢复平移。未知状态族不自动通过鸭子类型接入。刚体接触、关节、机器人和 GPU 刚体内核需要后续独立验收。
+`StepResult` 和 `Solver` protocol 已参数化状态类型；共用 `Stepper` 按显式 `state_kind` 选择粒子或刚体合同，入口检查 model/state/inputs 类型匹配。刚体候选额外检查单位四元数、角速度和固定姿态；快照/回退额外复制 orientation、angular_velocity、torque，避免只恢复平移。未知状态族不自动通过鸭子类型接入。当前刚体接触限于下述球/静态平面；关节、机器人、通用碰撞和 GPU 刚体内核需要后续独立验收。
 
 布片起点为 `cloth_grid(rows, columns, ...) -> ClothPatch`：在 XZ 平面生成 +Y 朝向的三角形，顶点编号 `row*columns+column`。每个三角形的 `area*density` 质量各分给三个顶点；三角形划分导致边界/对角顶点质量不同，不按顶点数均分。固定点逆质量为 0，但只读 `vertex_mass` 保留真实面积质量。行/列邻接和每格两条对角线分别形成结构、剪切距离约束，柔度按两组赋值；初始静止长度由实际可表示的位置计算，量化后退化几何与不可表示物理参数显式拒绝。
 
@@ -124,6 +124,14 @@ XPBD 距离约束：`C = ||x_i-x_j|| - rest_length`，`alpha_tilde = compliance/
 该 solver 与同配置 `XPBDSolver` 的物理签名一致，可以在粒子 Stepper 中做一次数学回退。非线性约束的着色顺序与 NumPy 串行输入顺序不同，加上 FP32 乘子舍入，不能要求多步轨迹逐位相同。小解析解、归一化本构残差、固定点和接触不变量为验收基础，另报告相对 FP64 参考的轨迹差。
 
 一步内部设备缓冲保持存活，每迭代同步位置/乘子到主机验收；跨步重新分配/传输，尚无设备常驻场景、图捕获、设备残差归约或 GPU 刚体。该实现证明公开 tyx API 可以承担约束计算，不据此宣称速度提升。
+
+### 7.2.2 球形刚体与静态平面
+
+`SphereShapes(radii)` 拥有只读正半径数组，球心等于模型质心；形状本身不假设均匀质量分布，惯量仍由 RigidBodyModel 提供。`RigidSpherePlaneSolver` 先调用已验证的自由刚体积分，再对动态球做平面去穿透，接触时仅去除朝向平面的法向速度。恢复系数固定为 0，切向无摩擦；法向冲量经过质心，角速度与自由预测姿态保持不变。冲量与角冲量定义参考 [Baraff 非穿透/碰撞讲义](https://www.cs.cmu.edu/~baraff/sigcourse/notesd2.pdf) 的物理方程，独立实现此限定响应。
+
+位置稳定化与速度冲量分开：不能将去穿透位移除以 dt 加入法向速度，避免产生人为弹开。已经向上分离的速度保留。中心最低高度按状态精度向上取整，并用 `(center_y - plane_height) - radius` 复核间隙，避免小半径在高度相加时消失。固定物体不投影；穿透超出归一化阈值则返回未接受候选。数值设置统一为有限 Python/FP64 标量，避免 NumPy FP32 设置把很小的 FP64 残差比较或除法降精度为零。
+
+`SpherePlaneSignature` 扩展通用 ProblemSignature，冻结全部半径、平面高度与接触定律；同形状不同容差可比较，无接触自由刚体或不同半径不能作为回退。碰撞按离散步末检测，没有求精确碰撞时刻，也没有球球/任意形状/宽相、摩擦、恢复反弹或 CCD。去穿透可改变势能，不宣称总能量严格守恒。
 
 ### 7.3 双向耦合
 
@@ -151,6 +159,8 @@ XPBD 距离约束：`C = ||x_i-x_j|| - rest_length`，`alpha_tilde = compliance/
 
 入口和候选都按合同字段用内置数据构造器规范化，不信任扩展子类覆盖的 `copy()`；这样普通缓存/浅拷贝实现不会绕过有限性、四元数或所有权验证。子类可作为已有字段的载体，但新增物理字段/历史必须明确扩展状态合同，不能假定会随 Python 子类自动保存。
 
+直接调用数学 solver 时也通过 core 验证器检查明确的数据类型并构造自有基类快照；数值失败回传同样使用内置复制实现。这个要求覆盖绕过 Stepper 的分析/测试入口，防止普通子类的缓存 copy 修改调用者状态，或把另一状态族的角字段/力矩悄悄丢掉。
+
 | 当前 solver | features | 精度 | 梯度 / 物理历史 |
 | --- | --- | --- | --- |
 | SemiImplicitSolver | particles, free_dynamics | FP32/FP64 | unsupported / none |
@@ -158,12 +168,13 @@ XPBD 距离约束：`C = ||x_i-x_j|| - rest_length`，`alpha_tilde = compliance/
 | TyxSemiImplicitSolver | particles, free_dynamics | FP32 | unsupported / none |
 | TyxXPBDSolver | 基础 + 按配置 distance、plane_contact | FP32（乘子 FP32，验收 FP64） | unsupported / none |
 | RigidSemiImplicitSolver | rigid_bodies, free_dynamics, rotation | FP32/FP64（旋转算术 FP64） | unsupported / none |
+| RigidSpherePlaneSolver | 刚体基础 + sphere_plane_contact | FP32/FP64（间隙验收 FP64） | unsupported / none |
 
 这是学习候选未来接入的协议基础，不是已经完成 AI 物理验收。当前残差仍由 solver 计算，不能据此信任任意神经网络的自报数值；后续学习 provider 必须增加独立物理残差/适用域检验。`history != "none"` 当前拒绝，防止隐藏状态未回滚；模型随机状态、材料历史和学习缓存的完整事务协议尚未实现。
 
 ## 9. 首版验收场景和后续边界
 
-首批：空场景、自由落体、固定点、受力粒子、两点柔顺约束、悬挂链/布片、平面碰撞；后续：旋转刚体、球体接触、夹爪压软块、机械臂抓布。
+已实现的首批：空场景、自由落体、固定点、受力粒子、两点柔顺约束、悬挂链/布片、粒子平面碰撞、旋转刚体、球形刚体对静态平面；后续：球球/通用接触、夹爪压软块、机械臂抓布。
 
 每条能力记录模型假设、后端、dtype、时间步、容差和已执行测试。GPU、完整机器人、自碰撞、四面体 FEM、AI 训练与长时可微 rollout 都必须另过验收，不能从架构图推断实现。
 

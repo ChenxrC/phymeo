@@ -26,7 +26,7 @@ class SemiImplicitSolver:
         candidate, force, h = validate_step(model, state_in, inputs, dt)
         if not predict(model, candidate, force, h):
             return StepResult(
-                state_in.copy(),
+                ParticleState.copy(state_in),
                 StepReport(accepted=False, reason="non-finite integration result"),
             )
         return StepResult(candidate, StepReport(accepted=True))

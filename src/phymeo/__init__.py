@@ -10,8 +10,10 @@ from .core.result import StepReport, StepResult
 from .core.rigid import RigidBodyInputs, RigidBodyModel, RigidBodyState
 from .core.state import ParticleState, StepInputs
 from .geometry.plane import Plane
+from .geometry.sphere import SphereShapes
 from .runtime.stepper import Stepper
 from .solvers.rigid_semi_implicit import RigidSemiImplicitSolver
+from .solvers.rigid_sphere_plane import RigidSpherePlaneSolver
 from .solvers.semi_implicit import SemiImplicitSolver
 from .solvers.xpbd import XPBDSolver
 
@@ -37,6 +39,8 @@ __all__ = [
     "RigidBodyState",
     "RigidBodyInputs",
     "RigidSemiImplicitSolver",
+    "SphereShapes",
+    "RigidSpherePlaneSolver",
     "ClothPatch",
     "cloth_grid",
 ]

@@ -223,7 +223,7 @@ class TyxXPBDSolver(TyxSemiImplicitSolver):
 
     def _failure(self, state, iteration, reason):
         return StepResult(
-            state.copy(),
+            ParticleState.copy(state),
             StepReport(
                 accepted=False,
                 iterations=iteration,

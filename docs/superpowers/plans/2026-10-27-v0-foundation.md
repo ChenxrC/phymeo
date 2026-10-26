@@ -103,9 +103,26 @@
 
 - [x] 增加 Windows/Linux 与 uv/pip 的 CPU 检查，固定 Action SHA。
 - [x] 验证导出一致、wheel 隔离安装；GPU 需求用显式 require-device，不能全 skip 过关。
-- [ ] 做一次独立全分支审阅；修复重要缺陷时先添加会失败的回归测试。
-- [ ] 运行完整验证，推送并比较远程 SHA；记录不可访问的远程 CI，不猜测状态。
+- [x] 做一次独立全分支审阅；修复重要缺陷时先添加会失败的回归测试。
+- [x] 运行完整验证，推送并比较远程 SHA；记录不可访问的远程 CI，不猜测状态。
+
+## Task 8: 独立刚体姿态与角动力学基础
+
+**进入条件：** Task 1–7 完成，审阅三个 P2 已修复且复核；01:55 距截止仍有约六小时。该任务来自既有后续候选“真实刚体旋转”，保持单独可验证交付。
+
+**Files:** core/rigid.py、dynamics/rotation.py、solvers/rigid_semi_implicit.py、tests/test_rigid.py、examples/spinning_body.py；StepResult 改为状态泛型，保持已有粒子运行行为。
+
+**Interfaces:** `RigidBodyModel(inverse_mass, inertia_diagonal, gravity)`；`RigidBodyState(position, orientation, velocity, angular_velocity)`；`RigidBodyInputs(force, torque)`；`RigidSemiImplicitSolver.step(...) -> StepResult[RigidBodyState]`。数组都是拥有的 FP32/FP64 缓冲；orientation `(n,4)` 为 `(x,y,z,w)`、body-to-world；线速度、角速度、外力和力矩均在世界坐标系，惯量为质心处体坐标主轴对角量，单位 kg·m²。动态惯量正且满足主惯量三角不等式；固定物体位置/姿态不变、两种速度归零。
+
+**Numerics:** 平移沿用速度优先积分；角加速度在体坐标按 Euler 刚体方程计算，包含陀螺项，再转回世界坐标更新角速度。新世界角速度产生指数映射四元数并左乘旧姿态，归一化输出；不对四元数直接加欧氏位移。数值非有限时拒绝并保留原状态副本。一般非球形自由转动是第一阶离散近似，不宣称能量/角动量精确守恒。
+
+**Boundary:** 先验证独立刚体自由运动，无接触/关节/广义坐标/耦合或 GPU 刚体承诺。capabilities 的 state_kind 为 rigid_bodies；现有粒子 Stepper 在调用前明确拒绝该类，不通过鸭子类型丢弃角状态。后续统一调度需另扩展完整姿态验收/回退合同。
+
+- [ ] 先写惯量/四元数合同、球形惯量常角速度解析解、主轴恒力矩离散解、旋转坐标系力矩、陀螺项、固定刚体及非有限结果回归；观察缺失实现失败。
+- [ ] 实现独立数据与旋转数学、角动力学基线；保持已有粒子 API/测试通过。
+- [ ] 运行无图形旋转示例，核对单位四元数和解析误差；更新能力说明及 CI 示例。
+- [ ] 验证 Python 3.11/3.12 CPU 与包、代码审阅新增切片；提交并推送。
 
 ## 后续候选（有余量才按完整验证单独立项）
 
-真实刚体旋转、球体碰撞、布片拓扑/弯曲、耦合端口是下一批。广义坐标机器人、FEM、本构学习、GPU 图捕获和机械臂抓布不属于本夜间任务保证完成的范围。需要时可推进一个已明确合同的小切片，必须先更新计划与测试，不临时堆砌完整子系统。
+球体碰撞、布片拓扑/弯曲、耦合端口是下一批。广义坐标机器人、FEM、本构学习、GPU 图捕获和机械臂抓布不属于本夜间任务保证完成的范围。需要时可推进一个已明确合同的小切片，必须先更新计划与测试，不临时堆砌完整子系统。

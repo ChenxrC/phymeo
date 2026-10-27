@@ -27,6 +27,6 @@ class SemiImplicitSolver:
         if not predict(model, candidate, force, h):
             return StepResult(
                 ParticleState.copy(state_in),
-                StepReport(accepted=False, reason="non-finite integration result"),
+                StepReport(accepted=False, reason="non-finite or underflowed integration result"),
             )
         return StepResult(candidate, StepReport(accepted=True))

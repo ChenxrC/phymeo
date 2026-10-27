@@ -13,12 +13,17 @@ def predict(
     force: np.ndarray,
     h: np.floating,
 ) -> bool:
-    """Update an owned candidate in place; return whether every value remains finite."""
+    """Update a candidate; reject non-finite values or lossy intermediate underflow."""
     dynamic = model.inverse_mass > 0
     # Do not evaluate forces on fixed particles: even unused arithmetic may overflow.
-    with np.errstate(over="ignore", invalid="ignore"):
-        acceleration = model.gravity + model.inverse_mass[dynamic, None] * force[dynamic]
-        candidate.velocity[dynamic] += h * acceleration
-        candidate.position[dynamic] += h * candidate.velocity[dynamic]
+    try:
+        with np.errstate(over="ignore", invalid="ignore", under="raise"):
+            acceleration = model.gravity + model.inverse_mass[dynamic, None] * force[dynamic]
+            candidate.velocity[dynamic] += h * acceleration
+            candidate.position[dynamic] += h * candidate.velocity[dynamic]
+    except FloatingPointError:
+        # A later h can amplify a lost nonzero force into a finite displacement.
+        # The caller owns rollback; never publish a false stationary success.
+        return False
     candidate.velocity[~dynamic] = 0
     return bool(np.isfinite(candidate.position).all() and np.isfinite(candidate.velocity).all())

@@ -109,3 +109,15 @@ def test_numerical_overflow_is_rejected_without_destroying_original_state():
     assert result.report.reason
     np.testing.assert_array_equal(result.state.position, state.position)
     assert np.isfinite(state.position).all()
+
+
+@pytest.mark.parametrize("dtype,scale", [(np.float32, 1e30), (np.float64, 1e300)])
+def test_underflow_before_timestep_amplification_is_explicitly_rejected(dtype, scale):
+    model = ParticleModel(np.array([1 / scale], dtype=dtype), np.zeros(3))
+    state = ParticleState(np.zeros((1, 3), dtype=dtype), np.zeros((1, 3), dtype=dtype))
+    inputs = StepInputs(np.array([[1 / scale, 0, 0]], dtype=dtype))
+    # In exact arithmetic h^2 * inverse_mass * force is about one metre.
+    result = solver().step(model, state, inputs, scale)
+    assert not result.report.accepted and result.report.reason
+    np.testing.assert_array_equal(result.state.position, state.position)
+    np.testing.assert_array_equal(result.state.velocity, state.velocity)

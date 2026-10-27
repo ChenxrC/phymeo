@@ -59,5 +59,5 @@ class RigidSemiImplicitSolver:
     def _failure(state_in):
         return StepResult(
             RigidBodyState.copy(state_in),
-            StepReport(accepted=False, reason="non-finite rigid integration result"),
+            StepReport(accepted=False, reason="non-finite or underflowed rigid integration result"),
         )

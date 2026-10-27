@@ -5,6 +5,7 @@ from .backends.tyx_xpbd import TyxXPBDSolver
 from .builders.cloth import ClothPatch, cloth_grid
 from .constraints.distance import DistanceConstraints
 from .core.capabilities import ProblemSignature, SolverCapabilities, SolverFailure
+from .core.coupled import CoupledInputs, CoupledState, CoupledStepReport, CoupledStepResult
 from .core.coupling import ImpulseExchangeResult, ImpulseLedger
 from .core.model import ParticleModel
 from .core.result import StepReport, StepResult
@@ -16,6 +17,7 @@ from .geometry.particle_sphere import ParticleSphereGeometry, particle_sphere_ge
 from .geometry.plane import Plane
 from .geometry.sphere import SphereShapes
 from .runtime.stepper import Stepper
+from .solvers.coupled_xpbd import CoupledXPBDSolver
 from .solvers.rigid_semi_implicit import RigidSemiImplicitSolver
 from .solvers.rigid_sphere_plane import RigidSpherePlaneSolver
 from .solvers.semi_implicit import SemiImplicitSolver
@@ -30,6 +32,11 @@ __all__ = [
     "StepInputs",
     "StepReport",
     "StepResult",
+    "CoupledState",
+    "CoupledInputs",
+    "CoupledStepReport",
+    "CoupledStepResult",
+    "CoupledXPBDSolver",
     "SemiImplicitSolver",
     "DistanceConstraints",
     "Plane",

@@ -81,15 +81,17 @@ modify public exports only when the module is verified.
 - `CoupledInputs(particles: StepInputs, rigid: RigidBodyInputs)` owns normalized copies.
 - `CoupledStepResult(state: CoupledState, report: CoupledStepReport)`; report includes accepted,
   completed_substeps, iterations, distance_residual, contact_residual, velocity_residual, reason.
+  Per-substep reports include assigned position/velocity impulse ledgers; optional `substep_states`
+  are independent copies, exposed only if the whole frame succeeds.
 - `CoupledXPBDSolver(particle_model, rigid_model, constraints, spheres, *, substeps=4,
-  iterations=200, tolerance=1e-7, reference_length=1.0)`;
+  iterations=200, tolerance=1e-7, reference_length=1.0, reference_speed=1.0, record_substeps=False)`;
   `step(state: CoupledState, inputs: CoupledInputs, dt: float) -> CoupledStepResult`.
 
-- [ ] 测试拥有副本、错精度/类型/数量、空族、固定对象、无接触与原积分器一致；观察失败。
-- [ ] 测试距离/接触交替时两者同时达标；多子步运动、旋转、无重复重力/冲量。
-- [ ] 实现统一预测、每子步乘子初始化、距离/接触迭代、速度重建与法向投影。
-- [ ] 在第 2 个子步注入预算失败和数值失败，断言整个外层输入逐元素恢复且不别名。
-- [ ] 全核心回归和针对极端质量/穿透/共享体的审查；提交并推送。
+- [x] 首批 28 项测试先因缺少实现失败；覆盖副本、错精度/类型/数量、空族、固定对象、独立自由运动对照。
+- [x] 距离/接触联合残差、解析外力、多子步旋转、分开冲量记账与非重复施加；补速度预算拒绝、柔顺几何误差和快照隔离测试。
+- [x] 实现统一预测、每子步乘子初始化、位置联合迭代、校正自由度速度重建与法向投影；未校正自由度保留预测速度。
+- [x] 第 2 子步真实预算失败、预测溢出和异常注入均恢复整帧双方全字段，失败候选不保留部分状态。
+- [x] 31 项混合状态/步进测试通过；包含 M2 关键字接口修复的全套真实 CUDA 588 passed；Python 3.11/原生 pip 核心各 533 passed / 55 deselected。7×7 场景 12 帧短程通过，记录后提交推送。
 
 ## Task 4: M4 固定基准、双向对照与证据输出
 
@@ -153,7 +155,7 @@ with local HTML canvas, time scrub/pause and two comparison panels. No external 
 
 ## 执行台账
 
-- M1–M2 已完成；下一项 M3 联合步进。M3–M7 尚未完成。基线核心测试 431 passed / 55 deselected。
+- M1–M3 已完成；下一项 M4 固定基准与对照。M4–M7 尚未完成。基线核心测试 431 passed / 55 deselected。
 - 新 goal 已激活；原聊天续跑已更新到新目标，每 30 分钟可继续，不新建重复任务。
 - 继续使用本聊天的干净专用 checkout 和新分支，保留前一交付分支；不额外创建会改变环境路径的 worktree。
 - 具体测试和决策追加到 `docs/progress.md`；详细临时执行台账保存在本计划独立的 `.superpowers` 目录。

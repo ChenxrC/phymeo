@@ -10,6 +10,8 @@
 
 当前长程目标：**一个可重复验证的刚柔双向交互场景**。在 `codex/rigid-cloth-coupling` 分支实现布片与动态球接触、联合回滚、双向/单向对照与离线回放，先 CPU 参考再验收 tyx。见[场景与验收设计](docs/superpowers/specs/2026-10-27-rigid-cloth-coupling-design.md)和[七个里程碑](docs/superpowers/plans/2026-10-27-rigid-cloth-coupling.md)。这是一项正在实施的新目标，不代表场景已经完成。
 
+当前已完成 M1–M3：点/球几何、双向接触响应，以及 `CoupledXPBDSolver` 的 CPU 联合步进和整帧回滚。提供每子步冲量记账与可选状态快照；完整 240 帧对照、设备耦合与回放仍按后续里程碑推进。
+
 ![phymeo 架构图](docs/architecture/phymeo.png)
 
 ## 设计与实施入口

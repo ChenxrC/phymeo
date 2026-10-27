@@ -404,3 +404,13 @@
 - S0两个240帧/960子步实际运行均通过，各22数值数组与旧同后端参考逐元素一致；报告为artifacts/p5-s0-{numpy,cuda}-verification-1aa83e7.json。CUDA启动时存在文档/工具测试未提交改动，包源码仍为354be059；本批与工具准备重叠，耗时不作无竞争性能基线。最终工程/阶段性能/独立审阅仍未完成。
 
 - T8a 性能记录器与联合解析 wheel smoke：9项先失败→通过；补充构造/close错误不得遗留complete的2项失败用例后修复。当前相关22passed，Python3.11与原生pip3.12各11passed；新增CI五组2帧实际场景＋回放命令本地执行通过。性能工具固定完整轨迹第100帧，每次完整step保留两子步质量/接触/迭代/计时，先2次预热再3×100；实际正式计时尚待冻结后串行运行。ruff/docs/公开tyx边界86文件通过。独立YAML解析因当前venv没有PyYAML未执行，远程CI结果单独核验。
+
+## 2026-10-28 01:20：P3–P5 最终证据收齐，接续 P6
+
+- 唯一整分支独立审阅的两项Important已按RED→GREEN修复：负泊松比接近-1时体积响应消去；命名场景目录未绑定实际variant/interaction。没有Critical或延期Minor。[审阅及全部裁定](benchmarks/p3-p5-review.md)保存9项实施裁定、8项reviewer未评判边界及代价，无第二次审阅。
+- 当前产品源码e9ee2e75，修复提交7ca2001/c8a7972；实际CUDA全套1138passed/391.51s，Python3.11与原生pip3.12核心各1014passed/124deselected。uv/pip锁和依赖检查通过；86文件wheel与源码一致，源码外新pip机器人/材料/联合解析smoke通过。
+- 当前源码隔离MuJoCo96状态及S1 1000步/精确重复通过。干净7e8ae2f重新执行P4完整400步两遍，10数组一致；P5五组200帧两遍共287数组完全相同；S0 NumPy及实际CUDA各240帧/960子步，各22数组匹配冻结旧参考。全部物理门槛未变。
+- 最终串行S2/S3/S4各3×100完整step，900计时样本均接受并独立审计，两个子步及末状态与保存轨迹精确相同。批次中位数约299–313/126–133/1115–1161ms；S4位置阶段每子步中位数515.6ms。完整原始压缩JSON、质量/迭代/分项与限制已保存到[性能报告](performance-bottlenecks/measurements/p5-full.md)，未优化、未测Warp。
+- 最终数据更新[真实回放](demos/articulated.html)，Chromium153检查三场景、播放/暂停/逐帧及390px通过，截图已目检。一次固定240ms播放探针失败，改为等待实际帧变化的检查后通过；未改产品逻辑，不把失败计通过。
+- c8a7972远程CI及Documentation均成功；最后文档/证据提交继续按精确SHA核验后才关闭当前goal。[逐项验收与后续](benchmarks/p3-p5-acceptance.md)已保存。
+- P6[设计](superpowers/specs/2026-10-28-p6-tyx-chain-design.md)/[计划](superpowers/plans/2026-10-28-p6-tyx-chain.md)完成一次独立builder check，无重要缺项。选择保留FP64主机容器、显式FP32设备计算及独立FP64审计；三模式与完整CUDA门槛在代码前固定。P6产品实现尚未开始，随后建立专用分支继续；截止仍为北京时间08:00，P6.5排在P6之后。

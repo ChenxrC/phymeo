@@ -9,6 +9,10 @@
 位置阶段约 42.8 ms。单对只需一次 sweep、完整 step 约 5.7–6.2 ms。
 该对比同时改变接触数与收敛次数，不能当作纯域数量缩放，也不能称为 tyx 性能问题。
 
+最终完整活动接触测量补充见[P5全场景记录](measurements/p5-full.md)：S2/S3/S4各300个完整step均通过独立审计。
+S4完整step批次中位数约1.115–1.161s，每子步位置阶段中位数515.631ms；每子步12次位置sweep。
+这加强了位置迭代阶段占主要时间的证据，但没有替代逐函数profiler，仍不把复制/几何/质量分别排定占比。
+
 - [NodeRobotConstraints](../../src/phymeo/constraints/node_robot.py)：每次 sweep/metrics 重新读取几何和端口，活动接触再次求质量响应；逐事件留存前态/增量。
 - [参与者](../../src/phymeo/coupling/participant.py)：返回有所有权的端口、把世界点映射回连杆，位置载荷再次计算当前 J/M。
 - [RobotPointPort](../../src/phymeo/coupling/robot_port.py)：构建模型/状态副本，查询 FK/J，应用载荷求解质量矩阵。

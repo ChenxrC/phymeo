@@ -1,0 +1,541 @@
+{
+  "status": "complete",
+  "provenance": {
+    "git_revision": "7e8ae2f329fbb686474e13db679cb53956aa43a7",
+    "git_dirty": false,
+    "source_sha256": "e9ee2e75f4f64fef03ac7c26ea2ec0a207816135f34f2517eae3a294bb5e4a66",
+    "python": "3.12.14",
+    "numpy": "2.5.4",
+    "platform": "Windows-11-10.0.26200-SP0"
+  },
+  "measurement_script_sha256": "4237ba251397e1307cef26f5f8b7f9cb5b59aba2dae33d33ef826b0a5078d13c",
+  "processor": "Intel64 Family 6 Model 183 Stepping 1, GenuineIntel",
+  "logical_cpus": 32,
+  "protocol": {
+    "serial": true,
+    "frame": 100,
+    "warmups": 2,
+    "repeats": 3,
+    "calls_per_repeat": 100,
+    "timing": "full runtime.step including production checks/diagnostics, independent audit after timer",
+    "state": "restore validated frame100 for every call, compare both substeps and frame101 exactly"
+  },
+  "limitations": [
+    "fixed active-contact state microbenchmark, not continuous trajectory throughput",
+    "first call after imports and saved-trace validation, not independent-process cold start",
+    "no peak memory, allocation counts, per-function profiling or controlled OS/BLAS scheduling",
+    "no tyx/Warp comparison or performance optimization"
+  ],
+  "trace_sources": {
+    "S2": {
+      "git_revision": "7e8ae2f329fbb686474e13db679cb53956aa43a7",
+      "git_dirty": false,
+      "source_sha256": "e9ee2e75f4f64fef03ac7c26ea2ec0a207816135f34f2517eae3a294bb5e4a66",
+      "python": "3.12.14",
+      "numpy": "2.5.4",
+      "platform": "Windows-11-10.0.26200-SP0"
+    },
+    "S3": {
+      "git_revision": "7e8ae2f329fbb686474e13db679cb53956aa43a7",
+      "git_dirty": false,
+      "source_sha256": "e9ee2e75f4f64fef03ac7c26ea2ec0a207816135f34f2517eae3a294bb5e4a66",
+      "python": "3.12.14",
+      "numpy": "2.5.4",
+      "platform": "Windows-11-10.0.26200-SP0"
+    },
+    "S4": {
+      "git_revision": "7e8ae2f329fbb686474e13db679cb53956aa43a7",
+      "git_dirty": false,
+      "source_sha256": "e9ee2e75f4f64fef03ac7c26ea2ec0a207816135f34f2517eae3a294bb5e4a66",
+      "python": "3.12.14",
+      "numpy": "2.5.4",
+      "platform": "Windows-11-10.0.26200-SP0"
+    }
+  },
+  "raw_evidence": {
+    "file": "p5-full-raw.json.gz",
+    "sha256": "dac2e458adf4a21870e345b31b2715dd29ca60ab88c1ace7943273e7a7a7a984",
+    "gzip_sha256": "9e66ddfc52685439c51b85132aa27e235eeddac403139f3663b3346b407ff505",
+    "bytes": 2603555
+  },
+  "workloads": [
+    {
+      "trace_validation_ms": 271.3496000505984,
+      "status": "complete",
+      "scene": "S2",
+      "frame": 100,
+      "config": {
+        "scene": "P5-articulated-v1",
+        "variant": "S2",
+        "interaction": "two_way",
+        "dt": 0.0005,
+        "substeps": 2,
+        "h": 0.00025,
+        "dtype": "float64",
+        "backend": "numpy",
+        "position_iterations": 200,
+        "velocity_iterations": 200,
+        "tolerance": 1e-08,
+        "reference_length": 1.0,
+        "reference_speed": 1.0,
+        "node_domains": [
+          "cloth"
+        ],
+        "robot": {
+          "root": [
+            0,
+            0.06,
+            0
+          ],
+          "joint": "Y-prismatic",
+          "mass": 0.5,
+          "inertia_diagonal": [
+            0.01,
+            0.01,
+            0.01
+          ],
+          "q0": 0.0,
+          "v0": -0.2,
+          "effort": -1.0,
+          "gravity": [
+            0,
+            0,
+            0
+          ]
+        },
+        "cloth": {
+          "shape": [
+            3,
+            3
+          ],
+          "spacing": 0.05,
+          "density": 0.4,
+          "compliance": 0.0001,
+          "origin": [
+            -0.2,
+            0,
+            -0.05
+          ],
+          "fixed": [
+            0,
+            2,
+            6,
+            8
+          ],
+          "gravity": [
+            0,
+            0,
+            0
+          ]
+        },
+        "soft": null,
+        "contact": "explicit discrete node/link sphere; frictionless; zero restitution",
+        "frames": 200,
+        "duration": 0.1
+      },
+      "source_trajectory_sha256": "4bd3d37e0c627cc6c0fbea83f51a2a91c7f2587c508fb494786ec28860910284",
+      "acceptance_protocol": true,
+      "warmup_calls": 2,
+      "accepted_measured_steps": 300,
+      "failed_calls": 0,
+      "repeats": [
+        {
+          "repeat": 1,
+          "calls": 100,
+          "median_ms": 312.5855000689626,
+          "p95_ms": 349.3119999533519
+        },
+        {
+          "repeat": 2,
+          "calls": 100,
+          "median_ms": 298.87329996563494,
+          "p95_ms": 332.8027601237409
+        },
+        {
+          "repeat": 3,
+          "calls": 100,
+          "median_ms": 308.87629999779165,
+          "p95_ms": 346.38446493772784
+        }
+      ],
+      "construction_ms": 1.0242999996989965,
+      "workload": {
+        "robot_dof": 1,
+        "node_counts": {
+          "cloth": 9
+        },
+        "declared_pairs": 9,
+        "cloth_edges": 20,
+        "tetrahedra": 0
+      },
+      "phase_timings_per_substep": {
+        "setup": {
+          "median_ms": 0.2443999983370304,
+          "p95_ms": 0.30800013337284315
+        },
+        "predict": {
+          "median_ms": 1.176849938929081,
+          "p95_ms": 1.454530016053468
+        },
+        "position": {
+          "median_ms": 138.2540501654148,
+          "p95_ms": 160.51371999783441
+        },
+        "prepare_velocity": {
+          "median_ms": 0.02359994687139988,
+          "p95_ms": 0.03381002461537718
+        },
+        "velocity": {
+          "median_ms": 10.279049980454147,
+          "p95_ms": 12.510385096538807
+        },
+        "validation": {
+          "median_ms": 0.18355005886405706,
+          "p95_ms": 0.23263513576239345
+        },
+        "verification": {
+          "median_ms": 0.000600004568696022,
+          "p95_ms": 0.000800006091594696
+        },
+        "diagnostics": {
+          "median_ms": 0.9843000443652272,
+          "p95_ms": 1.2216898729093368
+        },
+        "close": {
+          "median_ms": 0.007899943739175797,
+          "p95_ms": 0.010009855031967154
+        }
+      },
+      "exact_saved_state": true,
+      "first_step_ms": 329.32729995809495
+    },
+    {
+      "trace_validation_ms": 105.61729990877211,
+      "status": "complete",
+      "scene": "S3",
+      "frame": 100,
+      "config": {
+        "scene": "P5-articulated-v1",
+        "variant": "S3",
+        "interaction": "two_way",
+        "dt": 0.0005,
+        "substeps": 2,
+        "h": 0.00025,
+        "dtype": "float64",
+        "backend": "numpy",
+        "position_iterations": 200,
+        "velocity_iterations": 200,
+        "tolerance": 1e-08,
+        "reference_length": 1.0,
+        "reference_speed": 1.0,
+        "node_domains": [
+          "soft"
+        ],
+        "robot": {
+          "root": [
+            0,
+            0.06,
+            0
+          ],
+          "joint": "Y-prismatic",
+          "mass": 0.5,
+          "inertia_diagonal": [
+            0.01,
+            0.01,
+            0.01
+          ],
+          "q0": 0.0,
+          "v0": -0.2,
+          "effort": -1.0,
+          "gravity": [
+            0,
+            0,
+            0
+          ]
+        },
+        "cloth": null,
+        "soft": {
+          "shape": [
+            3,
+            2,
+            3
+          ],
+          "origin": [
+            0.1,
+            -0.1,
+            -0.05
+          ],
+          "size": [
+            0.1,
+            0.1,
+            0.1
+          ],
+          "density": 200,
+          "young_modulus": 500,
+          "poisson_ratio": 0.3,
+          "gravity": [
+            0,
+            0,
+            0
+          ],
+          "fixed": "bottom_y"
+        },
+        "contact": "explicit discrete node/link sphere; frictionless; zero restitution",
+        "frames": 200,
+        "duration": 0.1
+      },
+      "source_trajectory_sha256": "29c9862d8cb258fcd98bd94808e4d861445861ead608251d2a09a79cb1f491f2",
+      "acceptance_protocol": true,
+      "warmup_calls": 2,
+      "accepted_measured_steps": 300,
+      "failed_calls": 0,
+      "repeats": [
+        {
+          "repeat": 1,
+          "calls": 100,
+          "median_ms": 125.73490000795573,
+          "p95_ms": 139.05557504622263
+        },
+        {
+          "repeat": 2,
+          "calls": 100,
+          "median_ms": 128.49170004483312,
+          "p95_ms": 151.36401515919712
+        },
+        {
+          "repeat": 3,
+          "calls": 100,
+          "median_ms": 133.36780003737658,
+          "p95_ms": 151.38322510756552
+        }
+      ],
+      "construction_ms": 1.5765998978167772,
+      "workload": {
+        "robot_dof": 1,
+        "node_counts": {
+          "soft": 18
+        },
+        "declared_pairs": 18,
+        "cloth_edges": 0,
+        "tetrahedra": 24
+      },
+      "phase_timings_per_substep": {
+        "setup": {
+          "median_ms": 0.46885001938790083,
+          "p95_ms": 0.6425300030969082
+        },
+        "predict": {
+          "median_ms": 1.29544991068542,
+          "p95_ms": 1.6786198713816702
+        },
+        "position": {
+          "median_ms": 31.16120002232492,
+          "p95_ms": 37.065595120657214
+        },
+        "prepare_velocity": {
+          "median_ms": 0.022500054910779,
+          "p95_ms": 0.03189990529790521
+        },
+        "velocity": {
+          "median_ms": 29.837400070391595,
+          "p95_ms": 36.36673495639114
+        },
+        "validation": {
+          "median_ms": 0.35640003625303507,
+          "p95_ms": 0.511194940190762
+        },
+        "verification": {
+          "median_ms": 0.0006998889148235321,
+          "p95_ms": 0.00090012326836586
+        },
+        "diagnostics": {
+          "median_ms": 0.6519999587908387,
+          "p95_ms": 0.8582051144912829
+        },
+        "close": {
+          "median_ms": 0.0075499992817640305,
+          "p95_ms": 0.009999843314290047
+        }
+      },
+      "exact_saved_state": true,
+      "first_step_ms": 125.70789991877973
+    },
+    {
+      "trace_validation_ms": 563.4417999535799,
+      "status": "complete",
+      "scene": "S4",
+      "frame": 100,
+      "config": {
+        "scene": "P5-articulated-v1",
+        "variant": "S4",
+        "interaction": "two_way",
+        "dt": 0.0005,
+        "substeps": 2,
+        "h": 0.00025,
+        "dtype": "float64",
+        "backend": "numpy",
+        "position_iterations": 200,
+        "velocity_iterations": 200,
+        "tolerance": 1e-08,
+        "reference_length": 1.0,
+        "reference_speed": 1.0,
+        "node_domains": [
+          "cloth",
+          "soft"
+        ],
+        "robot": {
+          "root": [
+            0,
+            0.06,
+            0
+          ],
+          "joint": "Y-prismatic",
+          "mass": 0.5,
+          "inertia_diagonal": [
+            0.01,
+            0.01,
+            0.01
+          ],
+          "q0": 0.0,
+          "v0": -0.2,
+          "effort": -1.0,
+          "gravity": [
+            0,
+            0,
+            0
+          ]
+        },
+        "cloth": {
+          "shape": [
+            3,
+            3
+          ],
+          "spacing": 0.05,
+          "density": 0.4,
+          "compliance": 0.0001,
+          "origin": [
+            -0.2,
+            0,
+            -0.05
+          ],
+          "fixed": [
+            0,
+            2,
+            6,
+            8
+          ],
+          "gravity": [
+            0,
+            0,
+            0
+          ]
+        },
+        "soft": {
+          "shape": [
+            3,
+            2,
+            3
+          ],
+          "origin": [
+            0.1,
+            -0.1,
+            -0.05
+          ],
+          "size": [
+            0.1,
+            0.1,
+            0.1
+          ],
+          "density": 200,
+          "young_modulus": 500,
+          "poisson_ratio": 0.3,
+          "gravity": [
+            0,
+            0,
+            0
+          ],
+          "fixed": "bottom_y"
+        },
+        "contact": "explicit discrete node/link sphere; frictionless; zero restitution",
+        "frames": 200,
+        "duration": 0.1
+      },
+      "source_trajectory_sha256": "f9560308de98c82213eed5c4251381d75b40e13123a94f2e5654a797230a02f4",
+      "acceptance_protocol": true,
+      "warmup_calls": 2,
+      "accepted_measured_steps": 300,
+      "failed_calls": 0,
+      "repeats": [
+        {
+          "repeat": 1,
+          "calls": 100,
+          "median_ms": 1123.7942500738427,
+          "p95_ms": 1259.8511850810607
+        },
+        {
+          "repeat": 2,
+          "calls": 100,
+          "median_ms": 1114.605849958025,
+          "p95_ms": 1294.3493748316541
+        },
+        {
+          "repeat": 3,
+          "calls": 100,
+          "median_ms": 1160.8346500433981,
+          "p95_ms": 1298.8566550659016
+        }
+      ],
+      "construction_ms": 2.0620999857783318,
+      "workload": {
+        "robot_dof": 1,
+        "node_counts": {
+          "cloth": 9,
+          "soft": 18
+        },
+        "declared_pairs": 27,
+        "cloth_edges": 20,
+        "tetrahedra": 24
+      },
+      "phase_timings_per_substep": {
+        "setup": {
+          "median_ms": 0.5690499674528837,
+          "p95_ms": 0.7926449761725962
+        },
+        "predict": {
+          "median_ms": 1.347400015220046,
+          "p95_ms": 1.7535898485220967
+        },
+        "position": {
+          "median_ms": 515.6309499870986,
+          "p95_ms": 606.5336799947545
+        },
+        "prepare_velocity": {
+          "median_ms": 0.03550003748387098,
+          "p95_ms": 0.05143992602825161
+        },
+        "velocity": {
+          "median_ms": 41.29465005826205,
+          "p95_ms": 51.78346509346738
+        },
+        "validation": {
+          "median_ms": 0.3989500692114234,
+          "p95_ms": 0.5426850519143042
+        },
+        "verification": {
+          "median_ms": 0.000600004568696022,
+          "p95_ms": 0.000800006091594696
+        },
+        "diagnostics": {
+          "median_ms": 1.9831499084830284,
+          "p95_ms": 2.5794899673201135
+        },
+        "close": {
+          "median_ms": 0.008500181138515472,
+          "p95_ms": 0.012519978918135149
+        }
+      },
+      "exact_saved_state": true,
+      "first_step_ms": 1167.151700006798
+    }
+  ]
+}

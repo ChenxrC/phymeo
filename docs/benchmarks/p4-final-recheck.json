@@ -1,0 +1,129 @@
+{
+  "status": "passed",
+  "arrays": {
+    "position": true,
+    "velocity": true,
+    "energy": true,
+    "deformation": true,
+    "support_force": true,
+    "time": true,
+    "external_force": true,
+    "fixed": true,
+    "tetrahedra": true,
+    "mass": true
+  },
+  "first": {
+    "status": "complete",
+    "config": {
+      "scene": "P4-soft-block",
+      "steps": 400,
+      "dt": 0.00025,
+      "substeps": 1,
+      "integrator": "explicit_stvk_semi_implicit_euler",
+      "shape": [
+        3,
+        2,
+        3
+      ],
+      "size": [
+        0.1,
+        0.1,
+        0.1
+      ],
+      "origin": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "density": 200.0,
+      "young_modulus": 500.0,
+      "poisson_ratio": 0.3,
+      "load_y": -0.05,
+      "gravity": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "dtype": "float64",
+      "domain": {
+        "det_f_min_exclusive": 0.2,
+        "singular_min": 0.6,
+        "singular_max": 1.4
+      }
+    },
+    "metrics": {
+      "accepted_steps": 400,
+      "compression": 0.0016118376963860325,
+      "max_integration_residual": 6.938893903907228e-18,
+      "min_det_f": 0.9857819803883808,
+      "min_singular_value": 0.9796132906637063,
+      "max_singular_value": 1.0090314732605423,
+      "trajectory_sha256": "2d4fdb0cc6c1080229e4485d7b59f22c79d77a21e61ea69244285530796cd624"
+    },
+    "provenance": {
+      "git_revision": "7e8ae2f329fbb686474e13db679cb53956aa43a7",
+      "git_dirty": false,
+      "source_sha256": "e9ee2e75f4f64fef03ac7c26ea2ec0a207816135f34f2517eae3a294bb5e4a66",
+      "python": "3.12.14",
+      "numpy": "2.5.4",
+      "platform": "Windows-11-10.0.26200-SP0"
+    }
+  },
+  "repeat": {
+    "status": "complete",
+    "config": {
+      "scene": "P4-soft-block",
+      "steps": 400,
+      "dt": 0.00025,
+      "substeps": 1,
+      "integrator": "explicit_stvk_semi_implicit_euler",
+      "shape": [
+        3,
+        2,
+        3
+      ],
+      "size": [
+        0.1,
+        0.1,
+        0.1
+      ],
+      "origin": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "density": 200.0,
+      "young_modulus": 500.0,
+      "poisson_ratio": 0.3,
+      "load_y": -0.05,
+      "gravity": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "dtype": "float64",
+      "domain": {
+        "det_f_min_exclusive": 0.2,
+        "singular_min": 0.6,
+        "singular_max": 1.4
+      }
+    },
+    "metrics": {
+      "accepted_steps": 400,
+      "compression": 0.0016118376963860325,
+      "max_integration_residual": 6.938893903907228e-18,
+      "min_det_f": 0.9857819803883808,
+      "min_singular_value": 0.9796132906637063,
+      "max_singular_value": 1.0090314732605423,
+      "trajectory_sha256": "2d4fdb0cc6c1080229e4485d7b59f22c79d77a21e61ea69244285530796cd624"
+    },
+    "provenance": {
+      "git_revision": "7e8ae2f329fbb686474e13db679cb53956aa43a7",
+      "git_dirty": false,
+      "source_sha256": "e9ee2e75f4f64fef03ac7c26ea2ec0a207816135f34f2517eae3a294bb5e4a66",
+      "python": "3.12.14",
+      "numpy": "2.5.4",
+      "platform": "Windows-11-10.0.26200-SP0"
+    }
+  }
+}

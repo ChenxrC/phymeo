@@ -96,12 +96,55 @@ def test_uniform_extension_has_analytic_stress_energy_and_support_force():
     assert np.linalg.norm(force[model.fixed]) > 1  # Support load is retained before BCs.
 
 
-def test_isochoric_simple_shear_has_nonzero_independent_energy_and_forces():
-    model, law = unit_tetra(), material()
+@pytest.mark.parametrize("nu", [-0.9, -1 + 1e-10, np.nextafter(-1.0, 0.0)])
+@pytest.mark.parametrize("stretch", [0.75, 1.1, 1.25])
+def test_auxetic_hydrostatic_response_does_not_cancel_to_false_equilibrium(nu, stretch):
+    model, law = unit_tetra(poisson_ratio=nu), material()
+    strain = (stretch * stretch - 1) / 2
+    # Independent bulk modulus expression avoids the implementation's Lame terms.
+    bulk = 1000.0 / (3 * (1 - 2 * nu))
+    expected_energy = (1 / 6) * bulk / 2 * (3 * strain) ** 2
+    traction = stretch * (1000.0 / (1 - 2 * nu)) * strain
+    expected_force = np.array([[1.0, 1, 1], [-1.0, 0, 0], [0.0, -1, 0], [0.0, 0, -1]]) * (
+        traction / 6
+    )
+    position = model.rest_position * stretch
+    assert law.elastic_energy(model, position) == pytest.approx(expected_energy, rel=1e-12)
+    np.testing.assert_allclose(law.elastic_forces(model, position), expected_force, rtol=1e-12)
+
+
+def test_auxetic_stretched_tetra_runtime_must_not_accept_zero_response():
+    from phymeo import (
+        ParticleState,
+        SceneInputs,
+        SceneState,
+        StepInputs,
+        make_tetrahedral_runtime,
+    )
+
+    model = unit_tetra(poisson_ratio=np.nextafter(-1.0, 0.0))
+    state = ParticleState(model.rest_position * 1.25, np.zeros((4, 3)))
+    dt = 1e-12
+    with make_tetrahedral_runtime(model) as runtime:
+        result = runtime.step(
+            SceneState({"soft": state}), SceneInputs({"soft": StepInputs.zeros(4)}), dt
+        )
+    assert result.report.accepted
+    expected_v = np.zeros((4, 3))
+    expected_v[1:] = -np.eye(3) * 19.53125 * 4 * dt
+    np.testing.assert_allclose(
+        result.state.domains["soft"].velocity, expected_v, rtol=1e-12, atol=0
+    )
+    assert material().elastic_energy(model, state.position) == pytest.approx(6.591796875)
+
+
+@pytest.mark.parametrize("nu", [-0.95, -0.4, 0.3])
+def test_isochoric_simple_shear_has_nonzero_independent_energy_and_forces(nu):
+    model, law = unit_tetra(poisson_ratio=nu), material()
     shear = 0.2
     transform = np.array([[1.0, shear, 0], [0.0, 1, 0], [0.0, 0, 1]])
     points = model.rest_position @ transform.T
-    mu, lam = 1000 / 2.6, 1000 * 0.3 / (1.3 * 0.4)
+    mu, lam = 1000 / (2 * (1 + nu)), 1000 * nu / ((1 + nu) * (1 - 2 * nu))
     expected_energy = (mu * (shear**2 / 2 + shear**4 / 4) + lam * shear**4 / 8) / 6
     # Explicit Piola components from simple shear, not the tested tensor function.
     p = np.array(
@@ -117,8 +160,9 @@ def test_isochoric_simple_shear_has_nonzero_independent_energy_and_forces():
     np.testing.assert_allclose(law.elastic_forces(model, points), expected, atol=1e-12)
 
 
-def test_internal_force_matches_energy_gradient_and_balances_force_and_torque():
-    model, law = unit_tetra(), material()
+@pytest.mark.parametrize("nu", [-0.95, -0.4, 0.3])
+def test_internal_force_matches_energy_gradient_and_balances_force_and_torque(nu):
+    model, law = unit_tetra(poisson_ratio=nu), material()
     transform = np.array([[1.07, 0.1, 0.02], [0.03, 0.92, -0.04], [0.01, 0.06, 1.03]])
     points = model.rest_position @ transform.T + [0.1, -0.2, 0.3]
     original = points.copy()

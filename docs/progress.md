@@ -484,3 +484,11 @@
 - 75b5e23已推送且远程SHA一致，准确提交的CI与Documentation均success；13个CI作业全部成功，包含Windows/Linux、Python3.11/3.12、uv/pip及wheel。最终汇总文档提交在交付时另核验。
 - [P6验收](benchmarks/p6-acceptance.md)、[工程记录](benchmarks/p6-engineering.json)、[全部审阅裁定](benchmarks/p6-review.md)已整理。无延期Minor；不再第二次审阅或重复完成的套件。
 - 当前总goal包含P6→P6.5，不能在P6处标complete。用户窗口仍到2026-10-28 08:00北京时间；P6.5尚未实现，后续先冻结详细模型/接触/摩擦/控制和验收，再小切片实施。
+
+## 2026-10-28：P6最终交付完成，进入P6.5分层基础
+
+- P6最终`6dd5372dd8784c481c0c5eed90db93c7efcb86c2`已推送，远程SHA一致；准确提交CI [40579375584](https://github.com/ChenxrC/phymeo/actions/runs/40579375584)与Documentation [40579375610](https://github.com/ChenxrC/phymeo/actions/runs/40579375610)均success，数值/工程/审阅/性能门禁全部完成。总goal继续active，未在P6处终止。
+- 从该提交创建`codex/p6-5-handoff`，续跑自动任务已更新当前分支与P6完成证据。截止仍为2026-10-28 08:00北京时间。
+- P6.5唯一初次builder check指出预紧力、腕限位、非线性载荷撤回、连续碰撞响应和独立多关节审计问题；[逐项裁定](superpowers/specs/2026-10-28-p65-design-review.md)已保存，没有把候选模型当作可运行场景。
+- 决定分层冻结：先实现独立的[H1a表面点端口](superpowers/specs/2026-10-28-p65-surface-ports-design.md)和[计划](superpowers/plans/2026-10-28-p65-surface-ports.md)，后续几何/摩擦/控制各自冻结后继续。H1a不依赖未决的非线性时间积分选择，不改变完整P6.5验收要求。
+- 当前H1a尚无产品实现；Three.js/esbuild候选固定版本0.180.0/0.25.10的npm元数据已核验（仅只读，无安装/渲染完成声明）。

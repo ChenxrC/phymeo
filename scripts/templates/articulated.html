@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Phymeo · 机器人与柔体数值回放</title>
+<style>
+:root{color-scheme:dark;--bg:#0b121b;--panel:#111e2b;--line:#293c50;--text:#e8eef5;--muted:#a6b7c9;--green:#64d9cf;--amber:#ffbd75;--cloth:#82cbe3;--soft:#bc9aee}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.6 system-ui,"Microsoft YaHei",sans-serif}main{max-width:1440px;margin:auto;padding:32px}.eyebrow{font:12px ui-monospace,monospace;letter-spacing:.16em;color:var(--green)}h1{font-size:32px;letter-spacing:-.02em;margin:9px 0 8px}p{margin:6px 0;color:var(--muted)}.intro{max-width:960px}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;margin:22px 0}.stat{border-top:1px solid var(--line);padding-top:12px}.stat strong{display:block;font-size:24px}.stat span{font-size:12px;color:var(--muted)}.controls{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:15px;background:var(--panel);border:1px solid var(--line);border-radius:10px;margin:18px 0}button,select{font:inherit;background:#1c3043;color:var(--text);border:1px solid #46627b;border-radius:6px;padding:7px 12px;cursor:pointer}button:hover,select:hover{border-color:var(--green)}button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--green);outline-offset:3px}#play{background:var(--green);color:#09272b;font-weight:700;min-width:78px;border:0}#timeline{flex:1;min-width:140px;accent-color:var(--green)}#clock{font:12px ui-monospace,monospace;min-width:166px}.panels{display:grid;grid-template-columns:1fr 1fr;gap:16px}.panels.single{grid-template-columns:1fr}.panel{min-width:0;background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}.panel header{padding:17px 20px 5px}.panel h2{font-size:18px;margin:0}.tag{margin-left:10px;font-size:11px;color:var(--green);border:1px solid #345a5d;border-radius:18px;padding:2px 9px;font-weight:400}.one .tag{color:var(--amber);border-color:#66523b}.panel p{font-size:12px}canvas{display:block;width:100%;height:390px}.single canvas{height:440px}.hud{display:flex;gap:20px;flex-wrap:wrap;font:12px/1.6 ui-monospace,monospace;padding:13px 20px;border-top:1px solid var(--line)}.hud b{color:var(--green)}.one .hud b{color:var(--amber)}.legend{display:flex;gap:22px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin:12px 0}.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}#status{font-size:13px;min-height:24px;color:var(--amber)}.notes{display:grid;grid-template-columns:1fr 1fr;gap:32px;border-top:1px solid var(--line);padding-top:18px;margin-top:20px}.notes h3{font-size:14px;margin:0}.notes p{font-size:13px}.hash{font:11px/1.7 ui-monospace,monospace;overflow-wrap:anywhere;color:var(--muted)}details{margin-top:18px;color:var(--muted);font-size:12px}summary{cursor:pointer}pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:11px}[hidden]{display:none!important}@media(max-width:800px){main{padding:20px 14px}h1{font-size:26px}.stats{grid-template-columns:1fr 1fr}.panels,.notes{grid-template-columns:1fr}canvas,.single canvas{height:340px}#timeline{order:3;flex-basis:100%}}
+</style>
+</head>
+<body><main>
+<div class="eyebrow">PHY MEO / P5 · NUMERICAL REPLAY</div>
+<h1>一个关节系统，接收两种柔体的反馈。</h1>
+<p class="intro">切换机器人—布料、机器人—软体和三域共存场景。画面直接读取真实求解结果；单向对照把自由机器人轨迹作为外部驱动边界，由驱动吸收接触反力。</p>
+<div class="stats"><div class="stat"><strong id="frames-stat"></strong><span>帧数 / 物理时域</span></div><div class="stat"><strong id="contacts-stat"></strong><span>布 / 软体接触子步</span></div><div class="stat"><strong id="penetration-stat"></strong><span>双向最大节点穿透 · m</span></div><div class="stat"><strong id="balance-stat"></strong><span>关节动量平衡误差 · kg·m/s</span></div></div>
+<div class="controls"><label for="scene-select">场景</label><select id="scene-select"><option value="S4">S4 · 三域共存</option><option value="S2">S2 · 机器人与布料</option><option value="S3">S3 · 机器人与软体</option></select><button id="play" type="button" aria-label="播放轨迹">播放</button><button id="step" type="button">下一帧</button><button id="reset" type="button">起点</button><label for="timeline">帧</label><input id="timeline" type="range" min="0" step="1" value="0" aria-label="时间轴帧数"><output id="clock" for="timeline"></output><label for="speed">慢放</label><select id="speed"><option value="0.01">0.01×</option><option value="0.02" selected>0.02×</option><option value="0.05">0.05×</option><option value="1">1×</option></select></div>
+<div class="panels single" id="panels"><section class="panel"><header><h2>双向交互<span class="tag">动力学机器人</span></h2><p>刚体关节、布料与体积材料共用子步和全局事务</p></header><canvas id="two-canvas" aria-label="真实机器人布料和软体轨迹的三维投影"></canvas><div id="two-hud" class="hud"></div></section><section class="panel one" id="one-panel" hidden><header><h2>单向反事实<span class="tag">外部驱动边界</span></h2><p>自由轨迹只读重放，节点反力由外部驱动吸收</p></header><canvas id="one-canvas" aria-label="外部驱动边界与柔体的对照投影"></canvas><div id="one-hud" class="hud"></div></section></div>
+<div class="legend"><span><i class="dot" style="background:var(--green)"></i>机器人球形附件</span><span><i class="dot" style="background:var(--cloth)"></i>布料三角网格</span><span><i class="dot" style="background:var(--soft)"></i>四面体软体表面</span><span><i class="dot" style="background:#f5f7ff"></i>固定节点</span><span>Y 向上 · 对照共用相机与尺度</span></div><p id="status" role="status"></p>
+<div class="notes"><div><h3>如何读图</h3><p>慢放默认为真实时间的 0.02 倍。可拖动时间轴、用方向键或“下一帧”查看离散结果；画面不会补算、平滑或插值物理状态。</p><p>机器人为固定基座的 Y 轴移动关节；连杆线表示连接关系，球形附件才是这里的碰撞代理。当前只处理节点/球离散无摩擦接触，网格表面可视化不代表完整面碰撞或 CCD。</p></div><div><h3>数值证据与范围</h3><p id="scope"></p><p id="evidence"></p><p id="comparison"></p><div class="hash" id="source"></div><div class="hash" id="hash"></div></div></div>
+<details><summary>展开配置、验收指标与源码来源</summary><pre id="metadata"></pre></details><noscript>离线回放需要 JavaScript；原始数据保存在 NPZ 和 JSON 实验记录中。</noscript>
+</main><script id="scene-data" type="application/json">__SCENE_DATA__</script>
+<script>
+"use strict";
+const data=JSON.parse(document.getElementById("scene-data").textContent),el=id=>document.getElementById(id);
+const select=el("scene-select"),timeline=el("timeline"),play=el("play"),frames=data.scenes.S4.two_way.config.frames;
+let frame=0,playing=false,lastTime=0,playTime=0,animation=0;
+timeline.max=frames;
+const basis={right:[Math.SQRT1_2,0,-Math.SQRT1_2],up:[-.3535533905932738,.8660254037844386,-.3535533905932738],depth:[.6123724356957945,.5,.6123724356957945]};
+const dot=(a,b)=>a.reduce((sum,x,i)=>sum+x*b[i],0);
+const state=(r,f)=>{const prefix=r.config.interaction==="two_way"?"robot":"driver";return [r.arrays[prefix+"_q"][f][0],r.arrays[prefix+"_v"][f][0]];};
+function active(r,domain){return frame>0&&r.arrays["substep_"+domain+"_contact"].slice((frame-1)*2,frame*2).some(Boolean);}
+function draw(canvas,r,color){
+ const rect=canvas.getBoundingClientRect(),w=rect.width,h=rect.height,ratio=window.devicePixelRatio||1;
+ if(canvas.width!==Math.round(w*ratio)||canvas.height!==Math.round(h*ratio)){canvas.width=Math.round(w*ratio);canvas.height=Math.round(h*ratio);}
+ const ctx=canvas.getContext("2d");ctx.setTransform(ratio,0,0,ratio,0,0);ctx.clearRect(0,0,w,h);canvas.dataset.frame=frame;
+ const scale=Math.min((w-50)/.53,(h-70)/.30),center=[0,.015,0],project=p=>[w/2+(dot(p,basis.right)-dot(center,basis.right))*scale,h/2-(dot(p,basis.up)-dot(center,basis.up))*scale,dot(p,basis.depth)];
+ function line(a,b,c,width=1){const p=project(a),q=project(b);ctx.beginPath();ctx.moveTo(p[0],p[1]);ctx.lineTo(q[0],q[1]);ctx.strokeStyle=c;ctx.lineWidth=width;ctx.stroke();}
+ for(let x=-.25;x<=.251;x+=.05)line([x,-.1,-.1],[x,-.1,.1],"#243749");
+ for(let z=-.1;z<=.101;z+=.05)line([-.25,-.1,z],[.25,-.1,z],"#243749");
+ const [q]=state(r,frame),root=r.config.robot.root,body=[root[0],root[1]+q,root[2]];
+ const centers=r.arrays.attachment_centers.map(p=>p.map((v,j)=>v+body[j]));
+ line([0,-.02,0],[0,.14,0],"#7890a7",3);line([-.012,.14,0],[.012,.14,0],"#b7c5d3",5);
+ for(const c of centers)line(body,c,color,4);
+ const slider=project(body);ctx.fillStyle=color;ctx.fillRect(slider[0]-5,slider[1]-7,10,14);
+ const objects=[];
+ for(const domain of r.config.node_domains){const points=r.arrays[domain+"_position"][frame],faces=domain==="cloth"?r.arrays.cloth_triangles:r.soft_surface;for(const ids of faces)objects.push({kind:"face",domain,points,ids,depth:ids.reduce((s,i)=>s+dot(points[i],basis.depth),0)/3});}
+ centers.forEach((c,i)=>objects.push({kind:"sphere",center:c,radius:r.arrays.attachment_radii[i],depth:dot(c,basis.depth)}));objects.sort((a,b)=>a.depth-b.depth);
+ for(const object of objects){if(object.kind==="sphere"){const [x,y]=project(object.center),radius=object.radius*scale;const gradient=ctx.createRadialGradient(x-radius*.3,y-radius*.35,radius*.04,x,y,radius);gradient.addColorStop(0,"#ecfff3");gradient.addColorStop(.45,color);gradient.addColorStop(1,color==="#64d9cf"?"#226b73":"#9b6236");ctx.beginPath();ctx.arc(x,y,radius,0,Math.PI*2);ctx.fillStyle=gradient;ctx.fill();ctx.strokeStyle=color;ctx.lineWidth=1;ctx.stroke();}else{const points=object.ids.map(i=>project(object.points[i]));ctx.beginPath();points.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.closePath();ctx.fillStyle=object.domain==="cloth"?"rgba(130,203,227,.24)":"rgba(188,154,238,.17)";ctx.strokeStyle=object.domain==="cloth"?"#82cbe3":"#b394d8";ctx.fill();ctx.lineWidth=.75;ctx.stroke();}}
+ for(const domain of r.config.node_domains){const points=r.arrays[domain+"_position"][frame],fixed=r.arrays[domain+"_fixed"];points.forEach((point,i)=>{const [x,y]=project(point);ctx.beginPath();ctx.arc(x,y,fixed[i]?3:1.7,0,Math.PI*2);ctx.fillStyle=fixed[i]?"#f5f7ff":domain==="cloth"?"#82cbe3":"#bc9aee";ctx.fill();});}
+ ctx.fillStyle="#a6b7c9";ctx.font="11px ui-monospace,monospace";ctx.fillText("同尺度三维投影 · 球半径 0.05 m",16,24);
+ const ox=26,oy=h-24;ctx.strokeStyle="#a6b7c9";ctx.beginPath();ctx.moveTo(ox,oy);ctx.lineTo(ox,oy-24);ctx.lineTo(ox-3,oy-19);ctx.stroke();ctx.fillText("Y",ox+7,oy-18);
+}
+function hud(id,r){const box=el(id),[q,v]=state(r,frame);box.replaceChildren();const items=[["q",q.toFixed(5)+" m"],["v",v.toFixed(5)+" m/s"],...r.config.node_domains.map(name=>[name==="cloth"?"布接触":"软体接触",active(r,name)?"是":"否"])];for(const [label,value] of items){const span=document.createElement("span"),b=document.createElement("b");span.textContent=label+" ";b.textContent=value;span.append(b);box.append(span);}}
+function render(){
+ const group=data.scenes[select.value],two=group.two_way,one=group.prescribed,time=two.arrays.time[frame];timeline.value=frame;el("clock").textContent=`${frame} / ${frames} · ${time.toFixed(4)} s`;
+ el("one-panel").hidden=!one;el("panels").classList.toggle("single",!one);draw(el("two-canvas"),two,"#64d9cf");hud("two-hud",two);if(one){draw(el("one-canvas"),one,"#ffbd75");hud("one-hud",one);}
+ el("frames-stat").textContent=`${frames} / ${two.config.duration.toFixed(3)} s`;el("contacts-stat").textContent=`${two.metrics.contact_substeps.cloth??"—"} / ${two.metrics.contact_substeps.soft??"—"}`;el("penetration-stat").textContent=two.metrics.max_penetration.toExponential(2);el("balance-stat").textContent=two.metrics.max_robot_balance_error.toExponential(2);
+ el("scope").textContent=data.complete_horizon?"每组 200 帧、400 子步的真实轨迹，包含独立的接触、固定点与载荷审计。":"短时域调试轨迹，不代表完整场景验收。";
+ el("evidence").textContent=two.config.node_domains.includes("soft")?`软体最小 det(F)=${two.metrics.min_det_f.toFixed(4)}；奇异值范围 [${two.metrics.min_singular_value.toFixed(4)}, ${two.metrics.max_singular_value.toFixed(4)}]。`:`固定节点漂移 ${two.metrics.max_fixed_position_error} m；位置等效冲量仅计入一次。`;
+ el("comparison").textContent=one?`当前帧双向与外部驱动的 q 差 ${Math.abs(state(two,frame)[0]-state(one,frame)[0]).toExponential(3)} m。外部驱动不作为动态机器人域。`:"布料与软体同时作用于同一个关节系统；当前视图为三域共存实际结果。";
+ el("status").textContent=two.config.node_domains.some(name=>active(two,name))?"当前帧有实际接触子步；显示状态直接取自保存的求解结果。":"当前帧无接触子步；画面没有额外运行物理求解。";
+ el("source").textContent=`源码 ${two.source.source_sha256} · ${two.config.backend}/${two.config.dtype} · Python ${two.source.python}`;el("hash").textContent=`轨迹 SHA256: ${two.metrics.trajectory_sha256}`;
+ el("metadata").textContent=JSON.stringify(Object.fromEntries(Object.entries(group).map(([key,value])=>[key,{config:value.config,metrics:value.metrics,source:value.source}])),null,2);
+}
+function pause(){playing=false;cancelAnimationFrame(animation);play.textContent="播放";play.setAttribute("aria-label","播放轨迹");}
+function tick(now){if(!playing)return;playTime+=(now-lastTime)/1000*Number(el("speed").value);lastTime=now;const record=data.scenes[select.value].two_way;frame=Math.min(frames,Math.floor(playTime/record.config.dt));render();if(frame===frames)pause();else animation=requestAnimationFrame(tick);}
+play.addEventListener("click",()=>{if(playing){pause();return;}if(frame===frames)frame=0;playing=true;playTime=data.scenes[select.value].two_way.arrays.time[frame];lastTime=performance.now();play.textContent="暂停";play.setAttribute("aria-label","暂停轨迹");animation=requestAnimationFrame(tick);});
+el("step").addEventListener("click",()=>{pause();frame=Math.min(frames,frame+1);render();});el("reset").addEventListener("click",()=>{pause();frame=0;render();});timeline.addEventListener("input",()=>{pause();frame=Number(timeline.value);render();});select.addEventListener("change",()=>{pause();render();});window.addEventListener("resize",render);render();
+</script></body></html>

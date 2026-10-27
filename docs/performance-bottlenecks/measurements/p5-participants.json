@@ -1,0 +1,175 @@
+{
+  "provenance": {
+    "git_revision": "77e953285c390772d2176daf24f833955daea1e6",
+    "git_dirty": false,
+    "source_sha256": "097b1f7a2adab056186943eb4ba8b5be87b9bd74512e722c47639ae6923c20a5",
+    "python": "3.12.14",
+    "numpy": "2.5.4",
+    "platform": "Windows-11-10.0.26200-SP0"
+  },
+  "measurement_script_sha256": "d659429ac94acc5d3a9023a2f466848dab1a3e354b965a71943235ef3fa7074b",
+  "processor": "Intel64 Family 6 Model 183 Stepping 1, GenuineIntel",
+  "logical_cpus": 32,
+  "protocol": {
+    "serial": true,
+    "warmups": 200,
+    "repeats": 3,
+    "calls_per_repeat": 100,
+    "dt": 0.01,
+    "substeps": 1,
+    "tolerance": 1e-11,
+    "input": "restore same initial state per call; robot mass2; each node mass1; y=.09; radius=.1; zero forces/gravity/velocities",
+    "timing": "full production step includes all checks and diagnostics; independent analytic check follows timer"
+  },
+  "limitations": [
+    "no continuous scene throughput",
+    "no standalone profiling or peak memory/allocation counts",
+    "no controlled BLAS threads or OS background scheduling",
+    "no tyx/Warp comparison",
+    "first call is after Python imports"
+  ],
+  "workloads": [
+    {
+      "node_domains": 1,
+      "dof": 1,
+      "pairs": 1,
+      "construction_ms": 1.5628000255674124,
+      "first_step_ms": 16.98339986614883,
+      "repeats": [
+        {
+          "repeat": 1,
+          "calls": 100,
+          "median_ms": 5.761349922977388,
+          "p95_ms": 6.3374449498951435
+        },
+        {
+          "repeat": 2,
+          "calls": 100,
+          "median_ms": 6.191449938341975,
+          "p95_ms": 6.6591499373316765
+        },
+        {
+          "repeat": 3,
+          "calls": 100,
+          "median_ms": 5.696850013919175,
+          "p95_ms": 6.298670032992958
+        }
+      ],
+      "phase_timings": {
+        "setup": {
+          "median_ms": 0.222250004298985,
+          "p95_ms": 0.24840502301231027
+        },
+        "predict": {
+          "median_ms": 1.097399857826531,
+          "p95_ms": 1.2507500941865148
+        },
+        "position": {
+          "median_ms": 2.2372999228537083,
+          "p95_ms": 2.5430248235352337
+        },
+        "prepare_velocity": {
+          "median_ms": 0.018700025975704193,
+          "p95_ms": 0.02170504303649068
+        },
+        "velocity": {
+          "median_ms": 1.288750092498958,
+          "p95_ms": 1.4419400366023183
+        },
+        "validation": {
+          "median_ms": 0.15029998030513525,
+          "p95_ms": 0.18006019527092576
+        },
+        "verification": {
+          "median_ms": 0.000500120222568512,
+          "p95_ms": 0.000700121745467186
+        },
+        "diagnostics": {
+          "median_ms": 0.35909994039684534,
+          "p95_ms": 0.41886493563652044
+        },
+        "close": {
+          "median_ms": 0.004400033503770828,
+          "p95_ms": 0.006199826020747423
+        }
+      },
+      "accepted_measured_steps": 300,
+      "max_residual": 0.0,
+      "max_analytic_error": 2.220446049250313e-16,
+      "max_position_iterations": 1,
+      "max_velocity_iterations": 1
+    },
+    {
+      "node_domains": 2,
+      "dof": 1,
+      "pairs": 2,
+      "construction_ms": 0.7786999922245741,
+      "first_step_ms": 49.6934000402689,
+      "repeats": [
+        {
+          "repeat": 1,
+          "calls": 100,
+          "median_ms": 48.659499967470765,
+          "p95_ms": 52.21791981020942
+        },
+        {
+          "repeat": 2,
+          "calls": 100,
+          "median_ms": 49.252850003540516,
+          "p95_ms": 52.44136007968336
+        },
+        {
+          "repeat": 3,
+          "calls": 100,
+          "median_ms": 49.00959995575249,
+          "p95_ms": 53.290899842977524
+        }
+      ],
+      "phase_timings": {
+        "setup": {
+          "median_ms": 0.295699923299253,
+          "p95_ms": 0.3306150669232011
+        },
+        "predict": {
+          "median_ms": 1.1296500451862812,
+          "p95_ms": 1.314734888728708
+        },
+        "position": {
+          "median_ms": 42.81995014753193,
+          "p95_ms": 46.26759001985192
+        },
+        "prepare_velocity": {
+          "median_ms": 0.02944993320852518,
+          "p95_ms": 0.035425031092017896
+        },
+        "velocity": {
+          "median_ms": 2.4739501532167196,
+          "p95_ms": 2.9009300749748945
+        },
+        "validation": {
+          "median_ms": 0.21410011686384678,
+          "p95_ms": 0.25460984325036407
+        },
+        "verification": {
+          "median_ms": 0.000600004568696022,
+          "p95_ms": 0.000800006091594696
+        },
+        "diagnostics": {
+          "median_ms": 1.2396500678732991,
+          "p95_ms": 1.4022598625160754
+        },
+        "close": {
+          "median_ms": 0.007300172001123428,
+          "p95_ms": 0.009405077435076238
+        }
+      },
+      "accepted_measured_steps": 300,
+      "max_residual": 5.7359533789380635e-12,
+      "max_analytic_error": 4.301965450537182e-10,
+      "max_position_iterations": 10,
+      "max_velocity_iterations": 1
+    }
+  ],
+  "status": "complete",
+  "failed_calls": 0
+}

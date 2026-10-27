@@ -71,18 +71,22 @@ def particle_sphere_geometry(particle_position, rigid_position, spheres):
         raise ValueError("each rigid position must have one sphere radius")
     particle_indices = np.repeat(np.arange(len(particles), dtype=np.int64), len(bodies))
     body_indices = np.tile(np.arange(len(bodies), dtype=np.int64), len(particles))
-    count = len(particle_indices)
+    normal, gap, degenerate = _sphere_values(
+        particles[particle_indices], bodies[body_indices], spheres.radii[body_indices]
+    )
+    return ParticleSphereGeometry(particle_indices, body_indices, normal, gap, degenerate)
+
+
+def _sphere_values(particles, bodies, radii):
+    """Paired geometric values for validated arrays, also used during live sweeps."""
+    count = len(particles)
     normal = np.zeros((count, 3), dtype=np.float64)
     normal[:, 0] = 1.0
     if count == 0:
-        return ParticleSphereGeometry(
-            particle_indices, body_indices, normal, np.empty(0), np.empty(0, dtype=bool)
-        )
+        return normal, np.empty(0), np.empty(0, dtype=bool)
     try:
         with np.errstate(over="raise", invalid="raise", divide="raise", under="ignore"):
-            delta = particles[particle_indices].astype(np.float64) - bodies[body_indices].astype(
-                np.float64
-            )
+            delta = particles.astype(np.float64) - bodies.astype(np.float64)
             scale = np.max(np.abs(delta), axis=1)
             distinct = scale > 0
             # Normalize before taking a norm: squaring coordinates can overflow
@@ -95,11 +99,9 @@ def particle_sphere_geometry(particle_position, rigid_position, spheres):
             # that lost evidence; exact subnormal axis distances remain valid.
             with np.errstate(under="raise"):
                 distance[distinct] = scale[distinct] * unit_length
-                gap = distance - spheres.radii[body_indices].astype(np.float64)
+                gap = distance - radii.astype(np.float64)
             if not (np.isfinite(normal).all() and np.isfinite(gap).all()):
                 raise FloatingPointError("non-finite geometry")
     except (FloatingPointError, OverflowError) as error:
         raise SolverFailure(f"particle/sphere geometry is not representable: {error}") from error
-    return ParticleSphereGeometry(
-        particle_indices, body_indices, normal, gap, np.logical_not(distinct)
-    )
+    return normal, gap, np.logical_not(distinct)

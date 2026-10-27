@@ -50,16 +50,26 @@ modify public exports only when the module is verified.
 **Interfaces:**
 - Consumes M1 geometry plus model inverse masses and stable per-pair multipliers.
 - Produces `project_particle_spheres(particle_position, rigid_position, particle_inverse_mass,
-  rigid_inverse_mass, spheres, multipliers) -> None`, in-place on explicitly owned candidate arrays;
-  `particle_sphere_residual(...) -> float` with the spec's complementarity equation.
-- Produces `project_particle_sphere_velocities(..., impulses) -> None` and separately checked velocity residual.
-  The velocity function owns a persistent per-solve nonnegative normal impulse vector so release is possible.
+  rigid_inverse_mass, spheres, multipliers) -> ContactTransfer`, in-place on explicitly owned candidate arrays;
+  `particle_sphere_residual(particle_position, rigid_position, particle_inverse_mass,
+  rigid_inverse_mass, spheres, multipliers, *, reference_length=1.0) -> float`.
+- `ContactTransfer(particle, rigid, kind)` owns readonly FP64 assigned-load sums; kind is `position`
+  (kg·m) or `velocity` (kg·m/s). Position loads divided by the substep duration are the effective
+  impulses already included by velocity reconstruction; they must not be applied again.
+- Produces `project_particle_sphere_velocities(particle_velocity, rigid_velocity,
+  particle_inverse_mass, rigid_inverse_mass, geometry, impulses, *, contact_tolerance=0.0)
+  -> ContactTransfer`, plus `particle_sphere_velocity_residual` with the same arguments
+  and `reference_speed=1.0` (m/s).
+- Geometry is frozen throughout a velocity solve; caller owns and retains its nonnegative FP64
+  impulse vector between sweeps, and resets it when starting a new solve. Inactive rows release
+  previous impulses. Each projection owns only the supplied candidate mutations; on SolverFailure
+  a caller must discard all of that sweep's work (M3 provides whole-step atomicity).
 
-- [ ] 先写单点/球不同质量的解析修正、法向碰撞共同速度、固定体/固定点、无碰撞、中心退化测试并观察失败。
-- [ ] 测试两点共享一球、多轮新增/释放接触、固定-固定穿透拒绝、近零逆质量、非有限中间量。
-- [ ] 实现位置投影、投影互补残差及速度互补求解；分别累计位置有效冲量和速度冲量，禁止重复作用。
-- [ ] 验证无外力单对线动量 <=1e-10、无初始穿透碰撞动能增量 <=1e-10、法向零力矩；解析误差 <=1e-12。
-- [ ] 跑新测试与核心回归，记录边界和推导，提交并推送。
+- [x] 首批 34 项单对/共享体/校验/解析测试先因缺实现失败，再实现通过。
+- [x] 覆盖多轮新增/释放接触、固定-固定正残差、极小正逆质量、无法表示的乘子、输入不变。
+- [x] 实现位置投影、稳定互补残差和固定几何速度投影；ContactTransfer 区分 kg·m 与 kg·m/s，不重复施加。
+- [x] 单对质量比、无外力线动量、碰撞动能不增加、法向零力矩和切向保持均通过；另补无用溢出、相消/下溢与释放测试。
+- [x] 新增 38 项通过；真实 CUDA 全套 556 passed；Python 3.11/原生 pip 各 501 passed / 55 deselected；质量检查通过，记录后提交推送。
 
 ## Task 3: M3 混合状态与原子联合步进
 
@@ -143,7 +153,7 @@ with local HTML canvas, time scrub/pause and two comparison panels. No external 
 
 ## 执行台账
 
-- M1 已完成；下一项 M2 接触投影。M2–M7 尚未完成。基线核心测试 431 passed / 55 deselected。
+- M1–M2 已完成；下一项 M3 联合步进。M3–M7 尚未完成。基线核心测试 431 passed / 55 deselected。
 - 新 goal 已激活；原聊天续跑已更新到新目标，每 30 分钟可继续，不新建重复任务。
 - 继续使用本聊天的干净专用 checkout 和新分支，保留前一交付分支；不额外创建会改变环境路径的 worktree。
 - 具体测试和决策追加到 `docs/progress.md`；详细临时执行台账保存在本计划独立的 `.superpowers` 目录。

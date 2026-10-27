@@ -185,3 +185,138 @@ def test_bottom_solver_failure_propagates_and_candidate_is_validated():
         port.response(np.ones((1, 3)))
     with pytest.raises(ValueError, match="configuration"):
         port.apply_impulses(np.ones((1, 3)))
+
+
+def test_pair_shared_node_cross_terms_and_single_candidate():
+    class Counted:
+        def __init__(self, base):
+            self.base, self.calls = base, 0
+
+        def __getattr__(self, name):
+            return getattr(self.base, name)
+
+        def apply_impulses(self, impulses):
+            self.calls += 1
+            return self.base.apply_impulses(impulses)
+
+    base = Counted(particles(np.array([0, 0, 1, 2]), np.array([1.0, 2, 4])))
+    b = np.array([[0.25, 0.25, 0.5, 0], [0, 0, 0.5, 0.5], [0.5, 0.5, 0, 0]])
+    port = api().WeightedPointPort(base, b)
+    pair = api().PointPairOperator(port, np.array([[0, 1], [1, 2]]))
+    # Combined signed weights on the three physical nodes, derived by hand.
+    a = np.array([[0.5, 0, -0.5], [-1, 0.5, 0.5]])
+    p = np.array([[2.0, -1, 3], [0.5, 4, -2]])
+    before = base.snapshot()
+    response = a @ np.diag([1.0, 2, 4]) @ a.T @ p
+    np.testing.assert_allclose(pair.relative_positions(), a @ before.position, atol=1e-12)
+    np.testing.assert_allclose(pair.relative_velocities(), a @ before.velocity, atol=1e-12)
+    np.testing.assert_allclose(pair.response(p), response, atol=1e-12)
+    candidate = pair.apply_impulses(p)
+    assert base.calls == 1
+    delta = candidate.velocity - before.velocity
+    np.testing.assert_allclose(delta, np.diag([1.0, 2, 4]) @ a.T @ p, atol=1e-12)
+    np.testing.assert_allclose(np.sum(delta / [[1], [2], [4]], axis=0), 0, atol=1e-12)
+    np.testing.assert_array_equal(candidate.position, before.position)
+    np.testing.assert_array_equal(base.snapshot().velocity, before.velocity)
+    assert not hasattr(pair, "positions")
+    assert pair.domain == "cloth" and pair.dtype == np.dtype(np.float64)
+
+
+@pytest.mark.parametrize("same", [False, True])
+def test_pair_zero_net_load_reversed_or_identical_endpoints(same):
+    port = particles(inverse_mass=np.array([1.0, 2, 4]))
+    pairs = np.array([[1, 1], [1, 1]]) if same else np.array([[0, 1], [1, 0]])
+    pair = api().PointPairOperator(port, pairs)
+    p = np.ones((2, 3))
+    np.testing.assert_array_equal(pair.response(p), np.zeros((2, 3)))
+    np.testing.assert_array_equal(pair.apply_impulses(p).velocity, port.snapshot().velocity)
+    if same:
+        np.testing.assert_array_equal(pair.relative_positions(), np.zeros((2, 3)))
+        np.testing.assert_array_equal(pair.relative_velocities(), np.zeros((2, 3)))
+
+
+def test_pair_repeated_loads_accumulate_and_cancellation_is_retained():
+    port = particles(inverse_mass=np.array([1.0, 2, 4]))
+    pair = api().PointPairOperator(port, np.array([[0, 1]] * 3))
+    p = np.array([[1e16, 0, 0], [1.0, 0, 0], [-1e16, 0, 0]])
+    np.testing.assert_array_equal(pair.response(p), [[3, 0, 0]] * 3)
+    after = pair.apply_impulses(p)
+    np.testing.assert_allclose(
+        after.velocity - port.snapshot().velocity, [[1, 0, 0], [-2, 0, 0], [0, 0, 0]], atol=1e-12
+    )
+
+
+@pytest.mark.parametrize(
+    "pairs",
+    [
+        np.array([[0.0, 1]]),
+        np.array([[False, True]]),
+        np.array([[0, 3]]),
+        np.array([[-1, 0]]),
+        np.array([0, 1]),
+        np.array([[0, 1, 2]]),
+        np.array([[0, 2**64 - 1]], np.uint64),
+    ],
+)
+def test_invalid_pairs_rejected(pairs):
+    with pytest.raises((ValueError, TypeError)):
+        api().PointPairOperator(particles(), pairs)
+
+
+def test_pair_empty_ownership_and_impulse_validation():
+    base = particles()
+    pair = api().PointPairOperator(base, np.empty((0, 2), dtype=int))
+    assert pair.response(np.empty((0, 3))).shape == (0, 3)
+    np.testing.assert_array_equal(
+        pair.apply_impulses(np.empty((0, 3))).velocity, base.snapshot().velocity
+    )
+    indices = np.array([[0, 1]])
+    pair = api().PointPairOperator(base, indices)
+    indices[:] = 2
+    pair.pairs[:] = 2
+    np.testing.assert_array_equal(pair.pairs, [[0, 1]])
+    before = pair.relative_positions()
+    pair.relative_positions()[:] = 100
+    np.testing.assert_array_equal(pair.relative_positions(), before)
+    pair.snapshot().velocity[:] = 10
+    np.testing.assert_array_equal(pair.snapshot().velocity, base.snapshot().velocity)
+    for p in (np.ones((1, 3), np.float32), np.ones((2, 3)), np.full((1, 3), np.nan)):
+        with pytest.raises((TypeError, ValueError)):
+            pair.response(p)
+        with pytest.raises((TypeError, ValueError)):
+            pair.apply_impulses(p)
+
+
+def test_pair_robot_shared_ancestor_analytic_response():
+    from test_robot_dynamics import planar_mass
+    from test_robot_kinematics import robot_model
+
+    from phymeo.core.robot import RobotState
+    from phymeo.coupling.robot_port import RobotPointPort
+
+    base = RobotPointPort(
+        robot_model(),
+        RobotState(np.zeros(2), np.zeros(2)),
+        [0, 1],
+        np.array([[0.0, -0.5, 0], [0.0, -0.5, 0]]),
+    )
+    b = np.array([[1.0, 0], [0.25, 0.75]])
+    pair = api().PointPairOperator(api().WeightedPointPort(base, b), np.array([[0, 1]]))
+    # First endpoint minus the barycentric second endpoint: .75*(J0-J1).
+    relative_jacobian = np.array([-0.375, -0.375])
+    delta = np.linalg.solve(planar_mass(np.zeros(2)), relative_jacobian * 2)
+    p = np.array([[2.0, 0, 0]])
+    np.testing.assert_allclose(pair.response(p), [[relative_jacobian @ delta, 0, 0]], atol=1e-12)
+    candidate = pair.apply_impulses(p)
+    np.testing.assert_allclose(candidate.v, delta, atol=1e-12)
+    np.testing.assert_array_equal(candidate.q, np.zeros(2))
+    np.testing.assert_array_equal(base.snapshot().v, np.zeros(2))
+
+
+@pytest.mark.parametrize("method", ["response", "apply_impulses"])
+def test_pair_overflow_never_returns_partial_candidate(method):
+    pair = api().PointPairOperator(particles(), np.array([[0, 1], [0, 1]]))
+    before = pair.snapshot()
+    with pytest.raises(SolverFailure):
+        getattr(pair, method)(np.full((2, 3), 1e308))
+    np.testing.assert_array_equal(pair.snapshot().velocity, before.velocity)

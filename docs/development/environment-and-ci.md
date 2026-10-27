@@ -1,6 +1,6 @@
 # 环境构建与 CI 部署计划
 
-日期：2026-10-27。当前已有文档、CPU 和 wheel 检查工作流与基础包/锁文件；尚未取得远程 Actions 结果或配置分支保护。安装基础包已在本机 uv/pip 验证，tyx 解释器/C++ CPU/本机 CUDA 也已运行；远程 GPU runner 尚未配置。证据见[进度记录](../progress.md)。
+日期：2026-10-27。当前已有文档、CPU 和 wheel 检查工作流与基础包/锁文件；提交 `ba09760` 的[远程 CI](https://github.com/ChenxrC/phymeo/actions/runs/40451453287)与[文档检查](https://github.com/ChenxrC/phymeo/actions/runs/40451453267)均通过，分支保护未配置。安装基础包已在本机 uv/pip 验证，tyx 解释器/C++ CPU/本机 CUDA 也已运行；远程 GPU runner 尚未配置。后续版本需核对各自 Actions 结果，证据见[进度记录](../progress.md)。
 
 ## 1. 支持层级
 
@@ -137,11 +137,33 @@ uv run --no-sync python examples/compare_cuda_graph.py --steps 30
 
 ## 5. GitHub Actions 分阶段启用
 
+### 刚柔场景的复现顺序
+
+在上述 uv 或原生 pip 环境安装完毕后，先运行 CPU 完整实验与离线回放。uv 环境使用以下命令；已激活的原生 pip 环境将每行开头的 `uv run --no-sync ` 去掉即可。
+
+```sh
+uv run --no-sync python -m pytest -m "not tyx" -q
+uv run --no-sync python examples/rigid_cloth.py --suite --output artifacts/rigid-cloth-reference
+uv run --no-sync python scripts/render_rigid_cloth.py --two-way artifacts/rigid-cloth-reference/two_way --one-way artifacts/rigid-cloth-reference/one_way --output artifacts/rigid-cloth.html
+```
+
+安装固定 tyx 与 CUDA profile 后，再进行真机验证：
+
+```sh
+uv run --no-sync python scripts/check_tyx.py --mode cuda --require-device
+uv run --no-sync python -m pytest -q --require-tyx --tyx-mode cuda
+uv run --no-sync python examples/compare_rigid_cloth.py --mode cuda --output artifacts/rigid-cloth-device --fp64-reference artifacts/rigid-cloth-reference/two_way
+```
+
+CPU 参考与 GPU 实验均需要保留配置、源代码指纹、NPZ 与 JSON；输出目录必须全新。完整门槛和精度区别见[刚柔实验说明](../benchmarks/rigid-cloth.md)。`TyxCoupledXPBDSolver` 支持 interpret、cpu_cpp、cuda，使用 FP32 状态；通过 context manager 或 `close()` 释放两个预测 runtime。它目前按子步分配与同步，没有持久设备状态、图重放或 GPU 性能承诺。
+
+CPU CI 在 Windows/Linux × Python 3.11/3.12 × uv/pip 上执行短程双向/单向与回放生成 smoke；核心测试另有真实 12 帧接触与数值验收。wheel 的隔离安装 smoke 增加质量 1:3 的孤立接触对，验证双方位移、共同速度与输入不变。完整 240 帧及 CUDA 证据单独运行，短 smoke 不替代长程验收。
+
 ### C0：文档检查（本批实际配置）
 
 `.github/workflows/docs.yml`：push/PR；Windows + Ubuntu，uv + pip/venv 两种入口；Python 3.11；运行本地链接、SVG 结构和离线 HTML 检查。只读 contents 权限、固定 Action commit、超时、同分支取消旧运行。没有 tyx secret，没有 GPU 需求。
 
-### C1：CPU 与包（工作流已配置，远程结果待核验）
+### C1：CPU 与包（已取得远程通过记录）
 
 `.github/workflows/ci.yml` 实际配置如下；不需要 tyx 私有凭证：
 
@@ -153,6 +175,8 @@ uv run --no-sync python examples/compare_cuda_graph.py --steps 30
 | required | quality、cpu、wheel 汇总 | 任一失败/取消/跳过都失败 |
 
 CPU 套件使用 `-m "not tyx"`，明确只验证公开依赖路径。私有 tyx-cpu 集成 job 仍待受信任凭证配置；本机已经分别运行 interpret/cpu_cpp/cuda，不能把本机证据写作云端结果。`scripts/verify_wheel.py` 会创建全新环境，只安装 runtime.lock 与构建 wheel，执行 `pip check` 和 `python -I` 求解 smoke，确认导入来自 site-packages 且没有导入 tyx/torch/warp。
+
+提交 `ba09760c09eabcb609747755e5eeb1147f922b53` 的 CI 12 个 job（8 组 CPU、2 个 wheel、quality 和 required）均实际完成并通过。该版本包含离线回放，后续新增的 CI 回放命令和 wheel 联合接触 smoke 需要在其新提交上再次核验。
 
 不要用 `paths` 过滤必需的总体检查导致 PR 一直 pending；可以让 job 内部决定范围。分支保护由维护者在首次成功运行后设置，不能将“已提交 YAML”写成“已配置保护”。
 

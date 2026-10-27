@@ -147,9 +147,9 @@ modify README, `scripts/smoke_installed.py`,
 with local HTML canvas, time scrub/pause and two comparison panels. No external service required.
 
 - [x] 输出来自真实轨迹的回放；检查帧/点/球数、数值有限、JSON 可解析、指标与实验一致；实际浏览器检查暂停、时间轴和桌面/移动布局。
-- [ ] 提供 uv 与原生 pip 两套复现命令，明确 CUDA 依赖和顶点接触局限。
+- [x] 提供 uv 与原生 pip 两套复现命令，明确 CUDA 依赖和顶点接触局限。
 - [ ] 验证 Python 3.11/3.12 核心、真实 CUDA 全套、ruff、docs、当前源码 sdist/wheel 和源码外安装 smoke。
-- [ ] 检查远程 Actions；未能访问则记录为未核验，不能假报绿色；GPU CI 缺凭据不阻断已有真机证据交付。
+- [x] 检查远程 Actions；`ba09760` 的 12 个 CI job 和文档工作流通过；后续提交仍须核对，不把本机 CUDA 结果当 GPU CI。
 - [ ] 对整个分支进行新上下文审阅，处理实质问题；按 spec 逐项对照验收、提交推送并核对 SHA。
 - [ ] 全部目标能力和证据完成后标记 goal complete，暂停续跑；交付可看结果、复现命令与限制。
 

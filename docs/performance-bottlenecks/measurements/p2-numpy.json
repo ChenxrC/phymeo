@@ -1,0 +1,248 @@
+{
+  "status": "passed",
+  "provenance": {
+    "git_revision": "b946c1924389efcf52f0a57ad6e85e34317cff21",
+    "git_dirty": false,
+    "source_sha256": "dd1dcd12f14ee1ccc11839dbc3cc5a54516e38f2d4d858109257ce46a2177669",
+    "python": "3.12.14",
+    "numpy": "2.5.4",
+    "platform": "Windows-11-10.0.26200-SP0"
+  },
+  "hardware": {
+    "processor": "Intel64 Family 6 Model 183 Stepping 1, GenuineIntel",
+    "logical_cpus": 32,
+    "gpu": "NVIDIA GeForce RTX 4060 Laptop GPU, 566.07, 8188 MiB"
+  },
+  "tyx": null,
+  "workload": {
+    "mode": "numpy",
+    "dtype": "float64",
+    "particles": 1,
+    "bodies": 1,
+    "distance_constraints": 0,
+    "potential_contacts": 1,
+    "dt": 0.1,
+    "substeps": 4,
+    "iterations": 200,
+    "tolerance": 1e-07,
+    "warmups": 2,
+    "repeats": 3,
+    "samples_per_repeat": 100,
+    "state_policy": "reset to same closing-contact initial state on every call; not an evolving trajectory"
+  },
+  "cache": {
+    "path": "artifacts\\runtime-measure-cache\\20261027-194517-181169",
+    "initial_state": "new directory; process/toolchain/OS caches may already be warm"
+  },
+  "model_build_ms": 0.3083,
+  "results": [
+    {
+      "repeat": 1,
+      "accepted": 100,
+      "median_ms": 6.15155,
+      "p95_ms": 6.6141749999999995,
+      "total_ms": 608.759,
+      "phases": {
+        "setup": {
+          "median_ms": 0.8826501434668899,
+          "p95_ms": 0.9776148945093155,
+          "total_ms": 87.85069943405688
+        },
+        "predict": {
+          "median_ms": 1.0718000121414661,
+          "p95_ms": 1.1490601231344044,
+          "total_ms": 106.74190148711205
+        },
+        "position": {
+          "median_ms": 1.3156002387404442,
+          "p95_ms": 1.430494838859886,
+          "total_ms": 130.2753014024347
+        },
+        "prepare_velocity": {
+          "median_ms": 0.3823500592261553,
+          "p95_ms": 0.41809523245319724,
+          "total_ms": 38.29889721237123
+        },
+        "velocity": {
+          "median_ms": 0.6648001726716757,
+          "p95_ms": 0.7037401082925498,
+          "total_ms": 65.43859862722456
+        },
+        "validation": {
+          "median_ms": 0.6188501138240099,
+          "p95_ms": 0.6731099914759396,
+          "total_ms": 61.9279989041388
+        },
+        "verification": {
+          "median_ms": 0.002100132405757904,
+          "p95_ms": 0.002400018274784088,
+          "total_ms": 0.2117995172739029
+        },
+        "diagnostics": {
+          "median_ms": 0.3855000250041485,
+          "p95_ms": 0.4578700056299567,
+          "total_ms": 38.936701603233814
+        },
+        "close": {
+          "median_ms": 0.001300126314163208,
+          "p95_ms": 0.001600012183189392,
+          "total_ms": 0.13380218297243118
+        },
+        "outer_remainder": {
+          "median_ms": 0.7848501634880902,
+          "p95_ms": 0.8940996650533375,
+          "total_ms": 78.94329962918162
+        }
+      },
+      "max_momentum_error_kg_m_s": 6.661338147750939e-16,
+      "max_weighted_position_error_m": 0.0,
+      "max_contact_gap_error_m": 2.220446049250313e-16,
+      "max_residual": 0.0,
+      "position_iterations": 400,
+      "velocity_iterations": 400,
+      "tyx_counters": null
+    },
+    {
+      "repeat": 2,
+      "accepted": 100,
+      "median_ms": 6.1282,
+      "p95_ms": 6.649725,
+      "total_ms": 606.894,
+      "phases": {
+        "setup": {
+          "median_ms": 0.875749858096242,
+          "p95_ms": 0.9910298744216561,
+          "total_ms": 86.91540197469294
+        },
+        "predict": {
+          "median_ms": 1.0688999900594354,
+          "p95_ms": 1.2790898443199694,
+          "total_ms": 107.04230051487684
+        },
+        "position": {
+          "median_ms": 1.3120498042553663,
+          "p95_ms": 1.517149806022644,
+          "total_ms": 131.5312955994159
+        },
+        "prepare_velocity": {
+          "median_ms": 0.3793999785557389,
+          "p95_ms": 0.42524009477347136,
+          "total_ms": 38.175499299541116
+        },
+        "velocity": {
+          "median_ms": 0.6612999131903052,
+          "p95_ms": 0.731719983741641,
+          "total_ms": 65.36989961750805
+        },
+        "validation": {
+          "median_ms": 0.6172499852254987,
+          "p95_ms": 0.6822746247053145,
+          "total_ms": 61.1933006439358
+        },
+        "verification": {
+          "median_ms": 0.002100132405757904,
+          "p95_ms": 0.002400029916316271,
+          "total_ms": 0.21300138905644417
+        },
+        "diagnostics": {
+          "median_ms": 0.38554996717721224,
+          "p95_ms": 0.455684878397733,
+          "total_ms": 38.50400261580944
+        },
+        "close": {
+          "median_ms": 0.001350068487226963,
+          "p95_ms": 0.001800013706088066,
+          "total_ms": 0.1428008545190096
+        },
+        "outer_remainder": {
+          "median_ms": 0.7850499946191909,
+          "p95_ms": 0.879214916820973,
+          "total_ms": 77.80649749064446
+        }
+      },
+      "max_momentum_error_kg_m_s": 6.661338147750939e-16,
+      "max_weighted_position_error_m": 0.0,
+      "max_contact_gap_error_m": 2.220446049250313e-16,
+      "max_residual": 0.0,
+      "position_iterations": 400,
+      "velocity_iterations": 400,
+      "tyx_counters": null
+    },
+    {
+      "repeat": 3,
+      "accepted": 100,
+      "median_ms": 6.098,
+      "p95_ms": 7.151835,
+      "total_ms": 611.08,
+      "phases": {
+        "setup": {
+          "median_ms": 0.8645998314023018,
+          "p95_ms": 1.00504495203495,
+          "total_ms": 86.43060084432364
+        },
+        "predict": {
+          "median_ms": 1.0646497830748558,
+          "p95_ms": 1.2487798463553188,
+          "total_ms": 110.08480121381581
+        },
+        "position": {
+          "median_ms": 1.3091498985886574,
+          "p95_ms": 1.6141999512910843,
+          "total_ms": 131.50930078700185
+        },
+        "prepare_velocity": {
+          "median_ms": 0.37905003409832716,
+          "p95_ms": 0.4733398905955255,
+          "total_ms": 38.31539815291762
+        },
+        "velocity": {
+          "median_ms": 0.6603501969948411,
+          "p95_ms": 0.7961698924191296,
+          "total_ms": 66.20029732584953
+        },
+        "validation": {
+          "median_ms": 0.6177496397867799,
+          "p95_ms": 0.715619744732976,
+          "total_ms": 62.360398937016726
+        },
+        "verification": {
+          "median_ms": 0.00209989957511425,
+          "p95_ms": 0.002600031439214945,
+          "total_ms": 0.21119904704391956
+        },
+        "diagnostics": {
+          "median_ms": 0.38305006455630064,
+          "p95_ms": 0.4433599999174475,
+          "total_ms": 38.263798924162984
+        },
+        "close": {
+          "median_ms": 0.0013997778296470642,
+          "p95_ms": 0.0017051119357347486,
+          "total_ms": 0.13809907250106335
+        },
+        "outer_remainder": {
+          "median_ms": 0.7754004781663419,
+          "p95_ms": 0.8674549729873235,
+          "total_ms": 77.56610569536686
+        }
+      },
+      "max_momentum_error_kg_m_s": 6.661338147750939e-16,
+      "max_weighted_position_error_m": 0.0,
+      "max_contact_gap_error_m": 2.220446049250313e-16,
+      "max_residual": 0.0,
+      "position_iterations": 400,
+      "velocity_iterations": 400,
+      "tyx_counters": null
+    }
+  ],
+  "failures": 0,
+  "limits": [
+    "phase timers are host wall time and retain validation; not kernel-only profiling",
+    "full step includes synchronized workspace close and adapter conversion",
+    "peak host/device memory and allocation timing unmeasured",
+    "phase remainder includes outer ownership/identity/report work, not a measured pure-copy category",
+    "no Warp comparison; NumPy FP64 and tyx FP32 are not a matched-arithmetic speedup comparison"
+  ],
+  "runtime_construction_ms": 0.441,
+  "first_step_ms": 11.7242
+}

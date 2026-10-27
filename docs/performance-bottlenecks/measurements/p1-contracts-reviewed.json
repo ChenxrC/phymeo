@@ -1,0 +1,45 @@
+{
+  "stage": "P1-T1",
+  "scope": "contract snapshot only; no physical step or GPU work",
+  "provenance": {
+    "git_revision": "b946c1924389efcf52f0a57ad6e85e34317cff21",
+    "git_dirty": false,
+    "source_sha256": "dd1dcd12f14ee1ccc11839dbc3cc5a54516e38f2d4d858109257ce46a2177669",
+    "python": "3.12.14",
+    "numpy": "2.5.4",
+    "platform": "Windows-11-10.0.26200-SP0"
+  },
+  "workload": {
+    "particles": 49,
+    "history_values": 49,
+    "dtype": "float64",
+    "warmup_batches": 2,
+    "samples_per_batch": 100,
+    "repeats": 3
+  },
+  "results": [
+    {
+      "repeat": 1,
+      "samples": 100,
+      "median_ms": 0.0554,
+      "p95_ms": 0.062209999999999994
+    },
+    {
+      "repeat": 2,
+      "samples": 100,
+      "median_ms": 0.0585,
+      "p95_ms": 0.06840500000000001
+    },
+    {
+      "repeat": 3,
+      "samples": 100,
+      "median_ms": 0.04965,
+      "p95_ms": 0.060429999999999984
+    }
+  ],
+  "limitations": [
+    "timer overhead not subtracted",
+    "peak memory and phase attribution unmeasured",
+    "recorded source hash identifies measured code; no speedup claim"
+  ]
+}

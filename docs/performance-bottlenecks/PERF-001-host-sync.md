@@ -1,13 +1,17 @@
 # PERF-001：逐轮同步与主机残差检查
 
-- 状态：结构候选，未进行可靠分项计时；2026-10-27，定位源码 `67371f9`。
+- 状态：结构与新路径阶段/传输计数已确认，单独同步占比未测；2026-10-27，原定位 `67371f9`，新运行器测量 `b946c19`。
 - 本轮决策：测量并记录，不提前移除独立验证。
 
 ## 现象与代码
 
 [tyx_coupled.py](../../src/phymeo/backends/tyx_coupled.py) 的 `_substep`（153 行）每次位置/速度迭代读取设备数组，主机重新检查残差与有限性；`read` 在 213 行，显式同步位于 273、336、362 行。这里既有物理门禁，也有 Python/设备往返成本。
 
-当前完整场景耗时见[报告](../benchmarks/rigid-cloth.md)，但不存在该阶段的可靠耗时占比。不能据此断言“主要时间都花在同步”。
+原路径完整场景耗时见[报告](../benchmarks/rigid-cloth.md)，它没有独立同步占比。不能据此断言“主要时间都花在同步”。
+
+## P1/P2 新路径观测
+
+[tyx_coupled_program.py](../../src/phymeo/backends/tyx_coupled_program.py) 的 `_DeviceWorkspace.position_sweep`、`position_metrics`、`velocity_sweep`、`velocity_metrics` 保留显式同步和主机读回。[最终测量](measurements/p2-runtime.md)单对、4 子步的每个外层 step 有 28 次 launch、144 次上传、88 次下载，统计来自公开 tyx 计数器。完整 49 节点场景的位置阶段为 CPU 386.175 s、CUDA 282.347 s，是各自最大的已测阶段；它包含投影、同步/读回和残差，不能把整个阶段算成同步耗时。未进行优化或同条件 Warp 对比。
 
 ## 定位与后续方向
 

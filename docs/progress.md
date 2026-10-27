@@ -362,3 +362,12 @@
 - 用户补充的 [tyx_flaw 台账](../tyx_flaw/README.md)和模板已上传并纳入自动续跑。至 T4 尚无已定位的 tyx 实现缺陷；Warp 未安装/未测，不推断性能差距。P2 保留原主机同步与每子步分配，最终性能归因和 240 帧证据仍待 T5。
 - T5 公开入口、`examples/coupled_runtime.py` 和实验的显式 `runtime="scene"` 入口已通过 5 项新测试；原默认入口仍用于对照。实际 CUDA 全回归 818 passed，新增入口在 Python 3.11/原生 pip 3.12 各通过 5 项验证；62 文件 wheel 与源码一致，源码外原生 pip 安装及新运行器 smoke 通过，uv/pip 锁与依赖一致。完整轨迹、串行性能和最终审阅尚未完成。
 - tyx 已记录首项独立复现的能力缺口 [TYX-001](../tyx_flaw/TYX-001-fp64-compute.md)：内置 f64 缺失，自定义 FP64 描述符的加法在三个模式均被 lowering 拒绝，但实际 CUDA FP64 数组往返成功。它属于后续类型/编译能力需求，不是当前 FP32 支持承诺的回归；复现器、固定版本原始 JSON、代码位置与接手建议均已保存。CI 增加该目录文档链接检查与复现器 lint。
+
+## 2026-10-27：P1/P2 最终验收
+
+- 独立整分支审阅提出两项 Important：派生状态新增字段被静默丢弃、约束重排后可能复用失效着色。13 个失败用例先复现后修复；实现提交 77d66af / b946c19 已上传。状态字段完整性和带顺序/dtype 的绑定在进入工作区前检查，物理多重集签名保持可比较。
+- 修复后实际 CUDA 全套 831 passed；Python 3.11 与原生 pip Python 3.12 核心各 707 passed / 124 deselected。uv/pip 锁不变、依赖/ruff/文档/公共 tyx 边界通过；62 文件 wheel 与源码一致，源码外全新 pip 环境安装和求解 smoke 通过。
+- 干净 b946c19（包源码 dd1dcd12f14ee1ccc11839dbc3cc5a54516e38f2d4d858109257ce46a2177669）的 CPU/CUDA 各 240 帧、960 子步全部独立审计通过，22 数值数组分别与冻结旧同后端参考逐元素一致。串行全程分别 392.151 / 293.077 秒，含审计，不能算不同算术语义之间的加速比。
+- 合同快照及两后端各 3×100 次小负载 step 串行测量完成，全部接受。NumPy 批次中位数 6.098–6.152 ms，CUDA 21.431–22.676 ms；后者每步 28 次 launch、144 次上传、88 次下载。这是小规模集成观测，未分离纯内核/同步/分配成本，没有 Warp 对比或速度优化。
+- tyx_flaw 已包含 TYX-001 FP64 计算缺口的独立复现和建议；没有因集成计数擅自添加依赖性能缺陷。修复实现 b946c19 的 GitHub CI 与 Documentation 均成功；最终文档提交将另核验。
+- [逐项验收与后续](benchmarks/p1-p2-acceptance.md)、[完整迁移](benchmarks/p1-p2-runtime.md)、[性能](performance-bottlenecks/measurements/p2-runtime.md)、[审阅及全部实施判断](benchmarks/p1-p2-review.md)已保存。P1/P2 冻结范围各 100%；P3 机器人和 P4 体积软体算法未开始，完成本轮交付后停止续跑。

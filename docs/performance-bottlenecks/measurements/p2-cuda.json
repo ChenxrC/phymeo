@@ -1,0 +1,303 @@
+{
+  "status": "passed",
+  "provenance": {
+    "git_revision": "b946c1924389efcf52f0a57ad6e85e34317cff21",
+    "git_dirty": false,
+    "source_sha256": "dd1dcd12f14ee1ccc11839dbc3cc5a54516e38f2d4d858109257ce46a2177669",
+    "python": "3.12.14",
+    "numpy": "2.5.4",
+    "platform": "Windows-11-10.0.26200-SP0"
+  },
+  "hardware": {
+    "processor": "Intel64 Family 6 Model 183 Stepping 1, GenuineIntel",
+    "logical_cpus": 32,
+    "gpu": "NVIDIA GeForce RTX 4060 Laptop GPU, 566.07, 8188 MiB"
+  },
+  "tyx": {
+    "version": "0.1.0a0",
+    "source": {
+      "url": "ssh://git@github.com/ChenxrC/tyx.git",
+      "vcs_info": {
+        "vcs": "git",
+        "commit_id": "99f6df7c0fd8fdeef77f97df83914da27b64b7ee",
+        "requested_revision": "99f6df7c0fd8fdeef77f97df83914da27b64b7ee"
+      }
+    }
+  },
+  "workload": {
+    "mode": "cuda",
+    "dtype": "float32",
+    "particles": 1,
+    "bodies": 1,
+    "distance_constraints": 0,
+    "potential_contacts": 1,
+    "dt": 0.1,
+    "substeps": 4,
+    "iterations": 200,
+    "tolerance": 1e-06,
+    "warmups": 2,
+    "repeats": 3,
+    "samples_per_repeat": 100,
+    "state_policy": "reset to same closing-contact initial state on every call; not an evolving trajectory"
+  },
+  "cache": {
+    "path": "artifacts\\runtime-measure-cache\\20261027-194520-265650",
+    "initial_state": "new directory; process/toolchain/OS caches may already be warm"
+  },
+  "model_build_ms": 0.3745,
+  "results": [
+    {
+      "repeat": 1,
+      "accepted": 100,
+      "median_ms": 21.63665,
+      "p95_ms": 29.964219999999997,
+      "total_ms": 2294.7485,
+      "phases": {
+        "setup": {
+          "median_ms": 0.8674501441419125,
+          "p95_ms": 0.9794850135222077,
+          "total_ms": 87.57319930009544
+        },
+        "predict": {
+          "median_ms": 11.033699847757816,
+          "p95_ms": 19.037174864206463,
+          "total_ms": 1206.498100887984
+        },
+        "position": {
+          "median_ms": 2.159200026653707,
+          "p95_ms": 2.7929247240535915,
+          "total_ms": 223.6978008877486
+        },
+        "prepare_velocity": {
+          "median_ms": 2.6770004769787192,
+          "p95_ms": 3.208375163376331,
+          "total_ms": 282.4282047804445
+        },
+        "velocity": {
+          "median_ms": 1.6983499517664313,
+          "p95_ms": 2.0179350045509636,
+          "total_ms": 173.41209715232253
+        },
+        "validation": {
+          "median_ms": 0.7427502423524857,
+          "p95_ms": 0.9234501514583826,
+          "total_ms": 77.07880297675729
+        },
+        "verification": {
+          "median_ms": 0.002300133928656578,
+          "p95_ms": 0.003000255674123764,
+          "total_ms": 0.24439836852252483
+        },
+        "diagnostics": {
+          "median_ms": 0.3679997753351927,
+          "p95_ms": 0.4424399812705815,
+          "total_ms": 38.206698605790734
+        },
+        "close": {
+          "median_ms": 0.9791498305276036,
+          "p95_ms": 1.1637296760454774,
+          "total_ms": 98.57170190662146
+        },
+        "outer_remainder": {
+          "median_ms": 1.0406997798159718,
+          "p95_ms": 1.250835485628694,
+          "total_ms": 107.0374951337129
+        }
+      },
+      "max_momentum_error_kg_m_s": 9.5367431640625e-07,
+      "max_weighted_position_error_m": 9.536743161842054e-08,
+      "max_contact_gap_error_m": 0.0,
+      "max_residual": 0.0,
+      "position_iterations": 400,
+      "velocity_iterations": 400,
+      "tyx_counters": {
+        "cuda_kernel_launches": 2800,
+        "graph_builds": 0,
+        "graph_replays": 0,
+        "graph_updates": 0,
+        "cuda_h2d_transfers": 14400,
+        "cuda_h2d_bytes": 144000,
+        "cuda_d2h_transfers": 8800,
+        "cuda_d2h_bytes": 84800,
+        "cuda_d2d_transfers": 0,
+        "cuda_d2d_bytes": 0,
+        "cuda_memsets": 0,
+        "cuda_memset_bytes": 0,
+        "arg_pack_build_count": 2800,
+        "prepared_launch_count": 2800
+      }
+    },
+    {
+      "repeat": 2,
+      "accepted": 100,
+      "median_ms": 21.4311,
+      "p95_ms": 31.100555,
+      "total_ms": 2285.934,
+      "phases": {
+        "setup": {
+          "median_ms": 0.8703498169779778,
+          "p95_ms": 1.0637251660227776,
+          "total_ms": 89.29530484601855
+        },
+        "predict": {
+          "median_ms": 10.981049621477723,
+          "p95_ms": 17.21863977145403,
+          "total_ms": 1205.0949975382537
+        },
+        "position": {
+          "median_ms": 2.10679997690022,
+          "p95_ms": 2.850344765465706,
+          "total_ms": 221.74390009604394
+        },
+        "prepare_velocity": {
+          "median_ms": 2.6517498772591352,
+          "p95_ms": 3.325814707204699,
+          "total_ms": 276.0693009477109
+        },
+        "velocity": {
+          "median_ms": 1.6953001031652093,
+          "p95_ms": 2.179089840501547,
+          "total_ms": 176.13360309042037
+        },
+        "validation": {
+          "median_ms": 0.7418998284265399,
+          "p95_ms": 1.0211195447482169,
+          "total_ms": 78.16969556733966
+        },
+        "verification": {
+          "median_ms": 0.002400018274784088,
+          "p95_ms": 0.0030999071896076202,
+          "total_ms": 0.2414034679532051
+        },
+        "diagnostics": {
+          "median_ms": 0.37029990926384926,
+          "p95_ms": 0.4639697959646582,
+          "total_ms": 38.41949952766299
+        },
+        "close": {
+          "median_ms": 0.9048001375049353,
+          "p95_ms": 1.1810296913608909,
+          "total_ms": 93.27219822444022
+        },
+        "outer_remainder": {
+          "median_ms": 1.0395998565882447,
+          "p95_ms": 1.334695421466975,
+          "total_ms": 107.49409669415653
+        }
+      },
+      "max_momentum_error_kg_m_s": 9.5367431640625e-07,
+      "max_weighted_position_error_m": 9.536743161842054e-08,
+      "max_contact_gap_error_m": 0.0,
+      "max_residual": 0.0,
+      "position_iterations": 400,
+      "velocity_iterations": 400,
+      "tyx_counters": {
+        "cuda_kernel_launches": 2800,
+        "graph_builds": 0,
+        "graph_replays": 0,
+        "graph_updates": 0,
+        "cuda_h2d_transfers": 14400,
+        "cuda_h2d_bytes": 144000,
+        "cuda_d2h_transfers": 8800,
+        "cuda_d2h_bytes": 84800,
+        "cuda_d2d_transfers": 0,
+        "cuda_d2d_bytes": 0,
+        "cuda_memsets": 0,
+        "cuda_memset_bytes": 0,
+        "arg_pack_build_count": 2800,
+        "prepared_launch_count": 2800
+      }
+    },
+    {
+      "repeat": 3,
+      "accepted": 100,
+      "median_ms": 22.67625,
+      "p95_ms": 28.809315,
+      "total_ms": 2338.7386,
+      "phases": {
+        "setup": {
+          "median_ms": 0.8668999653309584,
+          "p95_ms": 0.9763298789039254,
+          "total_ms": 87.87309983745217
+        },
+        "predict": {
+          "median_ms": 11.707950150594115,
+          "p95_ms": 17.203409725334495,
+          "total_ms": 1235.3035020641983
+        },
+        "position": {
+          "median_ms": 2.2472002310678363,
+          "p95_ms": 2.8204048983752723,
+          "total_ms": 232.41820000112057
+        },
+        "prepare_velocity": {
+          "median_ms": 2.798049827106297,
+          "p95_ms": 3.307885013055056,
+          "total_ms": 285.15779902227223
+        },
+        "velocity": {
+          "median_ms": 1.7481498653069139,
+          "p95_ms": 2.0718848216347396,
+          "total_ms": 178.52009809575975
+        },
+        "validation": {
+          "median_ms": 0.7599997334182262,
+          "p95_ms": 0.9121602866798638,
+          "total_ms": 77.59110070765018
+        },
+        "verification": {
+          "median_ms": 0.002300133928656578,
+          "p95_ms": 0.0028052250854670997,
+          "total_ms": 0.23639877326786518
+        },
+        "diagnostics": {
+          "median_ms": 0.37649995647370815,
+          "p95_ms": 0.4406798630952835,
+          "total_ms": 38.367198780179024
+        },
+        "close": {
+          "median_ms": 0.9566000662744045,
+          "p95_ms": 1.101280003786087,
+          "total_ms": 96.5067995712161
+        },
+        "outer_remainder": {
+          "median_ms": 1.0424502674341198,
+          "p95_ms": 1.2554149409514679,
+          "total_ms": 106.76440314688385
+        }
+      },
+      "max_momentum_error_kg_m_s": 9.5367431640625e-07,
+      "max_weighted_position_error_m": 9.536743161842054e-08,
+      "max_contact_gap_error_m": 0.0,
+      "max_residual": 0.0,
+      "position_iterations": 400,
+      "velocity_iterations": 400,
+      "tyx_counters": {
+        "cuda_kernel_launches": 2800,
+        "graph_builds": 0,
+        "graph_replays": 0,
+        "graph_updates": 0,
+        "cuda_h2d_transfers": 14400,
+        "cuda_h2d_bytes": 144000,
+        "cuda_d2h_transfers": 8800,
+        "cuda_d2h_bytes": 84800,
+        "cuda_d2d_transfers": 0,
+        "cuda_d2d_bytes": 0,
+        "cuda_memsets": 0,
+        "cuda_memset_bytes": 0,
+        "arg_pack_build_count": 2800,
+        "prepared_launch_count": 2800
+      }
+    }
+  ],
+  "failures": 0,
+  "limits": [
+    "phase timers are host wall time and retain validation; not kernel-only profiling",
+    "full step includes synchronized workspace close and adapter conversion",
+    "peak host/device memory and allocation timing unmeasured",
+    "phase remainder includes outer ownership/identity/report work, not a measured pure-copy category",
+    "no Warp comparison; NumPy FP64 and tyx FP32 are not a matched-arithmetic speedup comparison"
+  ],
+  "runtime_construction_ms": 190.7658,
+  "first_step_ms": 1391.6415
+}

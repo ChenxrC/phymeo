@@ -24,6 +24,14 @@ def verify(first_root, repeat_root):
         pair = []
         for root in (first_root, repeat_root):
             run = loader(root / name, require_complete=True)
+            expected_mode = "prescribed_driver" if name.endswith("-driver") else "two_way"
+            if (
+                run.config["variant"] != name.split("-")[0]
+                or run.config["interaction"] != expected_mode
+            ):
+                raise ValueError(
+                    f"{name}: scene variant or interaction does not match the required slot"
+                )
             metadata = json.loads((root / name / "run.json").read_text(encoding="utf-8"))
             source = metadata["provenance"]
             sources.add(

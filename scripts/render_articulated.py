@@ -21,9 +21,14 @@ def surface_triangles(cells):
     return np.array([values[0] for values in faces.values() if len(values) == 1], dtype=np.int64)
 
 
-def record(directory, prescribed):
+def record(directory, prescribed, expected_scene):
     loader = load_prescribed_run if prescribed else load_articulated_run
     run = loader(directory)
+    expected_mode = "prescribed_driver" if prescribed else "two_way"
+    if run.config["variant"] != expected_scene or run.config["interaction"] != expected_mode:
+        raise ValueError(
+            f"{expected_scene}: scene variant or interaction does not match the replay slot"
+        )
     source = json.loads((Path(directory) / "run.json").read_text(encoding="utf-8"))["provenance"]
     prefix = "driver" if prescribed else "robot"
     fields = [
@@ -61,9 +66,9 @@ def render(root, output):
     root = Path(root)
     scenes, all_records = {}, []
     for name in ("S2", "S3", "S4"):
-        groups = {"two_way": record(root / name, False)}
+        groups = {"two_way": record(root / name, False, name)}
         if name != "S4":
-            groups["prescribed"] = record(root / (name + "-driver"), True)
+            groups["prescribed"] = record(root / (name + "-driver"), True, name)
         scenes[name] = groups
         all_records.extend(groups.values())
     environment = {

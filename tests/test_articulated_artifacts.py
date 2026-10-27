@@ -3,6 +3,8 @@
 import importlib.util
 import json
 import re
+import shutil
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -100,3 +102,48 @@ def test_acceptance_verifier_refuses_short_smoke_as_complete(traces):
     root, _ = traces
     with pytest.raises(ValueError, match="complete|200"):
         script("verify_articulated_runs").verify(root, root)
+
+
+@pytest.mark.parametrize("source,target", [("S2", "S4"), ("S3", "S2"), ("S3-driver", "S2-driver")])
+def test_replay_rejects_a_valid_scene_in_the_wrong_named_slot(traces, tmp_path, source, target):
+    root, _ = traces
+    shutil.copytree(root / source, root / target, dirs_exist_ok=True)
+    with pytest.raises(ValueError, match="variant"):
+        script("render_articulated").render(root, tmp_path / "wrong-scene.html")
+
+
+def test_repeat_verifier_binds_required_variants_before_certifying_them(
+    traces, tmp_path, monkeypatch
+):
+    root, _ = traces
+    shutil.copytree(root / "S2", root / "S4", dirs_exist_ok=True)
+    repeat = tmp_path / "repeat"
+    shutil.copytree(root, repeat)
+    module = script("verify_articulated_runs")
+    # Isolate the named-slot contract using real validated small traces. Complete
+    # horizon enforcement is tested separately; do not run ten full scenes here.
+    two, driver = module.load_articulated_run, module.load_prescribed_run
+    monkeypatch.setattr(module, "load_articulated_run", lambda path, **_: two(path))
+    monkeypatch.setattr(module, "load_prescribed_run", lambda path, **_: driver(path))
+    with pytest.raises(ValueError, match="variant"):
+        module.verify(root, repeat)
+
+
+def test_benchmark_refuses_wrong_variant_before_timing(traces, tmp_path, monkeypatch):
+    root, _ = traces
+    shutil.copytree(root / "S4", root / "S2", dirs_exist_ok=True)
+    module = script("measure_articulated")
+    load = module.load_articulated_run
+    monkeypatch.setattr(module, "load_articulated_run", lambda path, **_: load(path))
+
+    def must_not_measure(*args, **kwargs):
+        raise AssertionError("a wrong-scene record reached the timer")
+
+    monkeypatch.setattr(module, "measure", must_not_measure)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["measure_articulated", "--input", str(root), "--output", str(tmp_path / "out.json")],
+    )
+    with pytest.raises(ValueError, match="variant"):
+        module.main()

@@ -223,6 +223,10 @@ def main():
             report["trace_sources"][scene] = stored["provenance"]
             start = perf_counter()
             run = load_articulated_run(directory, require_complete=True)
+            if run.config["variant"] != scene or run.config["interaction"] != "two_way":
+                raise ValueError(
+                    f"{scene}: scene variant or interaction does not match the benchmark slot"
+                )
             validation_ms = (perf_counter() - start) * 1000
             workload = {"trace_validation_ms": validation_ms}
             report["workloads"].append(workload)

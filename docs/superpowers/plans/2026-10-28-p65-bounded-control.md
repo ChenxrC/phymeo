@@ -27,8 +27,10 @@ Expected: 配置错误明确抛TypeError/ValueError，数值/预算失败SolverF
 
 Files: Create `tests/test_tyx_bounded_pd.py`; Modify公共导出/README/进度；性能观测单独记录。
 
-- [ ] 公共导出RED→GREEN；NumPy实际自由预测和tyx三模式实际M/b+predict验证，资源关闭、输入不变、后端launch证据。
-- [ ] 新控制小负载串行观测和范围记录；旧模块保持回归，不测Warp、不优化。
-- [ ] 本新范围一次独立审阅、修复、必要全回归、两Python、wheel、准确Git/CI；未执行不勾选。
+- [x] 公共导出RED→GREEN；NumPy实际自由预测和tyx三模式实际M/b+predict验证，资源关闭、输入不变、后端launch证据。
+- [x] 新控制小负载串行观测和范围记录；旧模块保持回归，不测Warp、不优化。
+- [x] 本新范围一次独立审阅、修复、必要全回归、两Python、wheel、准确Git/CI；未执行不勾选。
 
 Expected: 实际tyx预设mass_tolerance=2e-5，状态/控制比较atol=rtol2e-5；不修改已冻结接触容差，不写回本函数预测。
+
+收口：源码c7935e3，CUDA1521、两CPU核心各1249、实际C++2、核心/解释器37、107文件源码外wheel、600次串行主机观测通过；准确提交CI40600274542、Documentation40600274559成功。一次审阅1Important已按正负坐标反例修复，无延期Minor。证据见[工程记录](../../benchmarks/p65-control-engineering.json)与[审阅裁定](../../benchmarks/p65-control-review.md)。完整P6.5目标仍未完成，本计划仅H3a自由预测控制核心。

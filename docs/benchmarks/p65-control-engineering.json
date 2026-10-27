@@ -1,0 +1,74 @@
+{
+  "status": "complete_local_and_exact_source_ci",
+  "scope": "P6.5 H3a bounded free-prediction effort core; full handoff NOT implemented",
+  "source": {
+    "git_revision": "c7935e3af6fe8d727aa17b4fde0684427ed49136",
+    "source_sha256": "13062ec22aba1758ab3397c922d5e3bb5e0ffb69ca986a20e0ab1159f290fd15",
+    "python_files": 107,
+    "python": "3.12.14",
+    "numpy": "2.5.4",
+    "platform": "Windows-11-10.0.26200-SP0"
+  },
+  "tyx": {
+    "version": "0.1.0a0",
+    "revision": "99f6df7c0fd8fdeef77f97df83914da27b64b7ee",
+    "cuda_device": "NVIDIA GeForce RTX 4060 Laptop GPU",
+    "driver": "566.07"
+  },
+  "cuda_full_suite": {
+    "passed": 1521,
+    "seconds": 521.43,
+    "command": ".venv/Scripts/python.exe -m pytest -q --tyx-mode cuda --require-tyx"
+  },
+  "core311": {"passed": 1249, "tyx_deselected": 272, "seconds": 341.33},
+  "core_native_pip312": {"passed": 1249, "tyx_deselected": 272, "seconds": 354.73},
+  "interpret_core_and_actual": {"passed": 37, "seconds": 1.17},
+  "cpp_actual_control": {"passed": 2, "seconds": 44.79},
+  "wheel": {
+    "python_files": 107,
+    "exact_source_parity": true,
+    "fresh_native_pip_outside_checkout": true,
+    "pip_check": true,
+    "installed_smoke": true,
+    "build": "uv build --python .venv/Scripts/python.exe --no-build-isolation --offline --out-dir artifacts/p65-control-reviewed-dist",
+    "artifacts": {
+      "phymeo-0.1.0a0-py3-none-any.whl": "d907ef4b971e00f475e33e3d9b9ce47b76c165999fe4617e0ebf3aeae8cd2612",
+      "phymeo-0.1.0a0.tar.gz": "8a6658d489eb69133b86a3d1a7f0d332cff63418b8f3a09c42e5182a8e9478a5"
+    }
+  },
+  "quality": {"ruff": true, "public_import_boundary_files": 107, "compileall": true},
+  "review": {
+    "count": 1,
+    "base": "6fb29ff2a8798d0d5e72459ed971764d79c17fa8",
+    "reviewed_head": "f8284b962c86f6c08a106aea8b365db529156964",
+    "critical": 0,
+    "important": 1,
+    "minor": 0,
+    "all_findings_fixed": true,
+    "deferred_minor": [],
+    "fix_revision": "c7935e3af6fe8d727aa17b4fde0684427ed49136",
+    "fix": "validate original clipped PD law on the actual rounded returned configuration and velocity; refuse unrepresentable candidates"
+  },
+  "performance": {
+    "serial_after_numerical_test_processes_exited": true,
+    "scope": "host FP64 control law plus independent assertions; frozen two-DOF mass and bias",
+    "measured_calls": 600,
+    "failures": 0,
+    "raw_file": "../performance-bottlenecks/measurements/p65-reviewed-bounded-control.json",
+    "Warp_measured": false
+  },
+  "ci": {
+    "head_sha": "c7935e3af6fe8d727aa17b4fde0684427ed49136",
+    "CI": {"id": 40600274542, "status": "completed", "conclusion": "success"},
+    "Documentation": {"id": 40600274559, "status": "completed", "conclusion": "success"}
+  },
+  "not_claimed": [
+    "full dynamic contact integration",
+    "multi-step articulated control stability with contact",
+    "target scheduling, IK, controller history or limit enforcement",
+    "mesh CCD, bending and self-contact",
+    "actual grasp, handoff and platform placement",
+    "full trajectory, refinement and failure validation",
+    "Three.js playback or browser acceptance"
+  ]
+}

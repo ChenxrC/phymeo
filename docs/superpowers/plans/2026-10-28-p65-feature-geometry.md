@@ -28,21 +28,21 @@
 
 **Files:** Create `src/phymeo/geometry/surface_features.py`、`tests/test_surface_features.py`。
 
-- [ ] 先写解析内部/边/顶点、KKT、重心重建、刚体变换/尺度、所有权及非法/退化输入测试，运行文件确认缺实现RED。
-- [ ] 实现`ClosestFeaturePair`与`closest_point_triangle`，FP64平移缩放、正交面基、边界枚举；验证GREEN及ruff，小提交。
+- [x] 先写解析内部/边/顶点、KKT、重心重建、刚体变换/尺度、所有权及非法/退化输入测试，运行文件确认缺实现RED。
+- [x] 实现`ClosestFeaturePair`与`closest_point_triangle`，FP64平移缩放、正交面基、边界枚举；验证GREEN及ruff，小提交。
 
 ## Task2：两条有限边
 
 **Files:** Modify上述源/测试文件。
 
-- [ ] 先写交叉/偏斜/平行/共线重叠/端点钳制、交换对称、KKT、近平行拒绝和溢出测试；Task1保持通过，Task2缺实现RED。
-- [ ] 实现`closest_segment_segment`的内点/四边界候选；所有权及输入域检查；全文件和相关旧几何回归GREEN，ruff，小提交。
+- [x] 先写交叉/偏斜/平行/共线重叠/端点钳制、交换对称、KKT、近平行拒绝和溢出测试；Task1保持通过，Task2缺实现RED。
+- [x] 实现`closest_segment_segment`的内点/四边界候选；所有权及输入域检查；全文件和相关旧几何回归GREEN，ruff，小提交。
 
 ## Task3：物理组合和交付
 
 **Files:** Modify `src/phymeo/__init__.py`、`tests/test_surface_features.py`、README/进度/性能台账。
 
-- [ ] 公开导出RED与三角几何→H1a实际端口的独立载荷/功率测试；实现导出并GREEN。
+- [x] 公开导出RED与三角几何→H1a实际端口的独立载荷/功率测试；实现导出并GREEN。
 - [ ] 记录静态小负载耗时、全部拒绝限制与后续CCD/接触程序入口；本轮切片全回归、wheel源码外smoke、CI、一次整分支审阅与Git交付。尚未执行的检查不可勾选。
 
 ## 自查

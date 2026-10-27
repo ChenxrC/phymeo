@@ -50,6 +50,8 @@ GitHub 文件页不直接运行 HTML；下载后用浏览器打开即可，无�
 
 `ParticleRigidPorts` 提供同作用点的粒子／刚体冲量交换、角冲量记账及每端口有效逆质量，两组状态数值失败时同时回滚。它是耦合响应算子，尚不负责求接触或约束冲量。
 
+P6.5新增`WeightedPointPort`和`PointPairOperator`：面/边重心作用点保留共享节点/关节交叉响应，同域正负载荷合并后只产生一个候选。新增点/三角、边/边静态最近点查询，返回可组合的凸权重；主机FP64映射/几何与底层实际tyx模式明确分开。它们尚未构成双臂接触求解器；近平行边等明确拒绝条件见[几何合同](docs/superpowers/specs/2026-10-28-p65-feature-geometry-design.md)，不得捕获异常后跳过接触对。[小负载性能](docs/performance-bottlenecks/measurements/p65-foundation.md)只作集成观测。
+
 NumPy 支持 FP32/FP64；可选 tyx 已实现 FP32 粒子/自由刚体积分和着色 XPBD 距离/平面投影。`TyxRigidSemiImplicitSolver` 验证了 interpret、实际 C++ 和 CUDA 的平移、四元数、陀螺项与异常回滚。`TyxCoupledXPBDSolver` 已执行真实设备刚柔接触并通过完整 240 帧对照与独立重复。独立的粒子 `TyxXPBDSolver` 可选择图重放一轮投影；联合驱动暂未采用 CUDA 图，均保留主机残差检查。安装及已验证模式见[环境说明](docs/development/environment-and-ci.md)。
 
 学习型 provider 必须配置独立物理验收器。目前 `FreeParticleVerifier` 验证自由粒子的离散运动方程；附有两系数数据回归、留出验证和错误候选回退示例。机器人已支持固定基座单自由度旋转/移动关节树、完整共享祖先响应与离散节点/球接触。仍无浮动基座、闭环、球球/任意形状碰撞、布料弯曲/自碰撞、摩擦、CCD 或通用 AI 求解器，详见[进度记录](docs/progress.md)。

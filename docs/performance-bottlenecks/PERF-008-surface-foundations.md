@@ -1,0 +1,11 @@
+# PERF-008：表面映射和特征查询的集成成本
+
+状态：模块级串行端到端观测已完成，细项根因未剖析；不开展优化。
+
+- 证据：[P6.5基础测量](measurements/p65-foundation.md)及四份原始JSON，480对端口调用和60组合几何调用全部解析检查通过。
+- 位置：`src/phymeo/coupling/surface_port.py`的`WeightedPointPort`、`PointPairOperator`，`src/phymeo/geometry/surface_features.py`的两种closest函数；底层`backends/tyx_participants.py`的快照端口。
+- 已确认：主机FP64映射、所有权复制/候选验证保留；机器人响应/候选分别查询共享质量/Jacobian，实际CUDA执行与传输计数增长。候选阶段同时包含host与backend工作。
+- 未证实：哪一项是主要瓶颈；小配置不能说明较大网格或多臂接触图的吞吐，也不能说明tyx与Warp差距。
+- 排查方向：记录特征/接触数、端口点数、共享关节数；分别测纯映射、端口建立、底层响应、候选验证与host返回，同时保存调用次数/质量。分项总和不应被误称GPU利用率。
+- 后续候选：稀疏权重、固定快照复用或批量响应；只有剖析证明确有必要后开展。不能用按点独立质量近似、跳过同域反作用或移除异常验证换速度。
+- 重测条件：新接触图/网格接入、tyx版本变化或上述实现调整后，以同物理算子和误差门槛重测；当前仅记录，不优化。

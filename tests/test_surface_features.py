@@ -12,6 +12,35 @@ def api():
     return importlib.import_module("phymeo.geometry.surface_features")
 
 
+def test_geometry_public_exports():
+    import phymeo
+
+    assert phymeo.ClosestFeaturePair is api().ClosestFeaturePair
+    assert phymeo.closest_point_triangle is api().closest_point_triangle
+    assert phymeo.closest_segment_segment is api().closest_segment_segment
+
+
+def test_triangle_feature_weights_drive_physical_impulse_and_power():
+    from phymeo import ParticleModel, ParticlePointPort, ParticleState, WeightedPointPort
+
+    tri = triangle()
+    contact = api().closest_point_triangle(np.array([0.5, 0.5, 0.0]), tri)
+    state = ParticleState(tri, np.array([[1.0, -1, 0], [2.0, 0, 1], [-1.0, 2, 0]]))
+    base = ParticlePointPort(ParticleModel(np.array([1.0, 2, 4]), np.zeros(3)), state, [0, 1, 2])
+    port = WeightedPointPort(base, contact.second_weights[None])
+    np.testing.assert_allclose(port.positions(), [contact.first], atol=1e-12)
+    impulse = np.array([[0.0, 0, 2.0]])
+    # Barycentric weights at (.5,.5) in the 2m right triangle are .5,.25,.25.
+    candidate = port.apply_impulses(impulse)
+    np.testing.assert_allclose(
+        candidate.velocity - state.velocity, [[0, 0, 1], [0, 0, 1], [0, 0, 2]], atol=1e-12
+    )
+    assert np.sum(impulse * port.velocities()) == pytest.approx(
+        np.sum(np.array([[0, 0, 1], [0, 0, 0.5], [0, 0, 0.5]]) * state.velocity), abs=1e-12
+    )
+    np.testing.assert_array_equal(candidate.position, state.position)
+
+
 def triangle():
     return np.array([[0.0, 0, 0], [2.0, 0, 0], [0.0, 2, 0]])
 

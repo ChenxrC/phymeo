@@ -47,11 +47,17 @@ from .coupling.participant import (
 from .coupling.point_port import ParticleRigidPorts
 from .coupling.ports import ParticlePointPort, PointPort, RigidPointPort, exchange_impulses
 from .coupling.robot_port import RobotPointPort
+from .coupling.surface_port import PointPairOperator, WeightedPointPort
 from .coupling.tetrahedral_port import TetrahedralPointPort
 from .geometry.particle_sphere import ParticleSphereGeometry, particle_sphere_geometry
 from .geometry.plane import Plane
 from .geometry.robot_sphere import RobotSphereAttachments
 from .geometry.sphere import SphereShapes
+from .geometry.surface_features import (
+    ClosestFeaturePair,
+    closest_point_triangle,
+    closest_segment_segment,
+)
 from .runtime.program import (
     ProgramCapabilities,
     SceneProgram,
@@ -84,6 +90,11 @@ from .validation.free_particle import FreeParticleVerifier
 __version__ = "0.1.0a0"
 
 __all__ = [
+    "ClosestFeaturePair",
+    "closest_point_triangle",
+    "closest_segment_segment",
+    "WeightedPointPort",
+    "PointPairOperator",
     "TyxRobotParticipant",
     "TyxClothParticipant",
     "TyxTetrahedralParticipant",

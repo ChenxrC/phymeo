@@ -13,6 +13,13 @@ def api():
     return importlib.import_module("phymeo.coupling.surface_port")
 
 
+def test_surface_operators_are_public_without_requiring_tyx():
+    import phymeo
+
+    assert phymeo.WeightedPointPort is api().WeightedPointPort
+    assert phymeo.PointPairOperator is api().PointPairOperator
+
+
 def particles(indices=None, inverse_mass=None):
     inverse_mass = np.array([1.0, 2.0, 0.0]) if inverse_mass is None else inverse_mass
     n = len(inverse_mass)

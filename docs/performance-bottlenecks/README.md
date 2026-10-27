@@ -13,6 +13,7 @@
 | [PERF-005](PERF-005-solid-validation.md) | 软体材料域重复检查与事务快照 | P4 阶段时间及调用结构；细项占比未测 | 先 profiling，不移除门禁 |
 | [PERF-006](PERF-006-participant-point-queries.md) | 机器人/节点组合反复建立端口、查询几何与质量 | P5 解析小负载阶段与调用结构；细项占比未测 | 完整场景重测并归因，不优化 |
 | [PERF-007](PERF-007-p6-device-boundaries.md) | P6全链路小kernel与端口反复查询 | [正式180step串行测量](measurements/p6-full.md)、阶段时间和公开计数；细项归因未测 | 先拆分分配/缓存/传输/算术/校验，区分集成与依赖成本 |
+| [PERF-008](PERF-008-surface-foundations.md) | P6.5重心映射、成对响应与静态几何 | [480端口＋60组合几何调用](measurements/p65-foundation.md)串行观测；未定位细项 | 接入代表网格后分项剖析，保留交叉响应与候选门禁 |
 
 这些条目是候选热点，不是假装已经经过 profiler 确认的排名。已有完整 CUDA 运行 465.178 s、重复 397.141 s 的记录包含主机审计且同时有其他实验运行，只可作为诊断，不能作为性能基线或加速比。原始背景见[场景报告](../benchmarks/rigid-cloth.md)。
 

@@ -101,6 +101,7 @@ jobs:
           ${{ steps.environment.outputs.python }} examples/learned_free_particles.py
           ${{ steps.environment.outputs.python }} examples/point_impulse.py
           ${{ steps.environment.outputs.python }} examples/robot_pendulum.py --steps 2 --output artifacts/robot-smoke
+          ${{ steps.environment.outputs.python }} examples/softbody_block.py --steps 3 --output artifacts/softbody-smoke
           ${{ steps.environment.outputs.python }} examples/coupled_runtime.py --frames 1 --output artifacts/coupled-runtime-smoke
           ${{ steps.environment.outputs.python }} examples/rigid_cloth.py --frames 1 --output artifacts/rigid-cloth-smoke
           ${{ steps.environment.outputs.python }} examples/rigid_cloth.py --frames 1 --one-way --output artifacts/rigid-cloth-one-way-smoke

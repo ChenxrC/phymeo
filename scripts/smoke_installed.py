@@ -152,6 +152,34 @@ def main():
     np.testing.assert_allclose(robot.state.domains["robot"].q, [0.000012], atol=1e-12)
     point = phymeo.RobotPointPort(robot_model, robot_state, [0], np.array([[0.0, -0.5, 0]]))
     np.testing.assert_allclose(point.response(np.array([[2.0, 0, 0]])), [[6, 0, 0]], atol=1e-12)
+    solid_model = phymeo.TetrahedralModel(
+        np.array([[0.0, 0, 0], [1.0, 0, 0], [0.0, 1, 0], [0.0, 0, 1]]),
+        np.array([[0, 1, 2, 3]]),
+        6.0,
+        1000.0,
+        0.3,
+        np.array([True, False, False, False]),
+        np.zeros(3),
+    )
+    solid_state = phymeo.ParticleState(solid_model.rest_position, np.zeros((4, 3)))
+    solid_inputs = phymeo.StepInputs.zeros(4)
+    solid_inputs.force[1, 0] = 1
+    with phymeo.make_tetrahedral_runtime(solid_model) as runtime:
+        solid = runtime.step(
+            phymeo.SceneState({"soft": solid_state}),
+            phymeo.SceneInputs({"soft": solid_inputs}),
+            0.001,
+        )
+    if not solid.report.accepted:
+        raise RuntimeError("Installed solid program failed")
+    np.testing.assert_allclose(solid.state.domains["soft"].velocity[1], [0.004, 0, 0], atol=1e-12)
+    np.testing.assert_allclose(
+        solid.state.domains["soft"].position[1], [1.000004, 0, 0], atol=1e-12
+    )
+    solid_port = phymeo.TetrahedralPointPort(solid_model, solid_state, [1])
+    np.testing.assert_allclose(
+        solid_port.response(np.array([[1.0, 0, 0]])), [[4, 0, 0]], atol=1e-12
+    )
     if {"tyx", "torch", "warp", "mujoco"} & set(sys.modules):
         raise RuntimeError("The base wheel imported an optional runtime")
     print(f"Installed-wheel smoke passed: {installed}")

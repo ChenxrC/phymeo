@@ -6,6 +6,7 @@ from .backends.tyx_rigid import TyxRigidSemiImplicitSolver
 from .backends.tyx_xpbd import TyxXPBDSolver
 from .builders.cloth import ClothPatch, cloth_grid
 from .builders.robot import pendulum_chain
+from .builders.tetrahedral import tetrahedral_block
 from .constraints.distance import DistanceConstraints
 from .core.capabilities import ProblemSignature, SolverCapabilities, SolverFailure
 from .core.coupled import CoupledInputs, CoupledState, CoupledStepReport, CoupledStepResult
@@ -25,10 +26,12 @@ from .core.scene import (
     StepSettings,
 )
 from .core.state import ParticleState, StepInputs
+from .core.tetrahedral import TetrahedralModel
 from .core.verification import CandidateVerifier, VerificationReport
 from .coupling.point_port import ParticleRigidPorts
 from .coupling.ports import ParticlePointPort, PointPort, RigidPointPort, exchange_impulses
 from .coupling.robot_port import RobotPointPort
+from .coupling.tetrahedral_port import TetrahedralPointPort
 from .geometry.particle_sphere import ParticleSphereGeometry, particle_sphere_geometry
 from .geometry.plane import Plane
 from .geometry.sphere import SphereShapes
@@ -44,6 +47,7 @@ from .runtime.program import (
 from .runtime.registry import StateFamily, StateRegistry
 from .runtime.scene_stepper import SceneStepper
 from .runtime.stepper import Stepper
+from .solvers.cloth import ClothProgram, make_cloth_runtime
 from .solvers.coupled_program import (
     CoupledRuntimeAdapter,
     NumpyCoupledProgram,
@@ -55,12 +59,20 @@ from .solvers.rigid_semi_implicit import RigidSemiImplicitSolver
 from .solvers.rigid_sphere_plane import RigidSpherePlaneSolver
 from .solvers.robot import RobotProgram, make_robot_runtime
 from .solvers.semi_implicit import SemiImplicitSolver
+from .solvers.tetrahedral import TetrahedralProgram, make_tetrahedral_runtime
 from .solvers.xpbd import XPBDSolver
 from .validation.free_particle import FreeParticleVerifier
 
 __version__ = "0.1.0a0"
 
 __all__ = [
+    "TetrahedralModel",
+    "TetrahedralProgram",
+    "TetrahedralPointPort",
+    "ClothProgram",
+    "make_tetrahedral_runtime",
+    "make_cloth_runtime",
+    "tetrahedral_block",
     "RobotModel",
     "RobotState",
     "RobotInputs",

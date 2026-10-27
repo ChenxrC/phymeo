@@ -142,8 +142,16 @@ def _residual(errors, scale):
     return result
 
 
-def project_particle_spheres(p, b, wp, wb, spheres, multipliers):
+def project_particle_spheres(
+    particle_position,
+    rigid_position,
+    particle_inverse_mass,
+    rigid_inverse_mass,
+    spheres,
+    multipliers,
+):
     """One live position sweep; retain multipliers across sweeps in a substep."""
+    p, b, wp, wb = particle_position, rigid_position, particle_inverse_mass, rigid_inverse_mass
     _validate(p, b, wp, wb, multipliers, len(p) * len(b), mutate=True)
     geometry = particle_sphere_geometry(p, b, spheres)
     if any(np.shares_memory(spheres.radii, value) for value in (p, b, multipliers)):
@@ -167,8 +175,18 @@ def project_particle_spheres(p, b, wp, wb, spheres, multipliers):
         raise SolverFailure(f"contact position sweep is not representable: {error}") from error
 
 
-def particle_sphere_residual(p, b, wp, wb, spheres, multipliers, *, reference_length=1.0):
+def particle_sphere_residual(
+    particle_position,
+    rigid_position,
+    particle_inverse_mass,
+    rigid_inverse_mass,
+    spheres,
+    multipliers,
+    *,
+    reference_length=1.0,
+):
     """Dimensionless projected complementarity residual, including fixed pairs."""
+    p, b, wp, wb = particle_position, rigid_position, particle_inverse_mass, rigid_inverse_mass
     reference_length = _scale(reference_length, "reference_length")
     _validate(p, b, wp, wb, multipliers, len(p) * len(b), mutate=False)
     geometry = particle_sphere_geometry(p, b, spheres)
@@ -206,13 +224,21 @@ def _normal_velocity(pv, bv, normal):
 
 
 def project_particle_sphere_velocities(
-    pv, bv, wp, wb, geometry, impulses, *, contact_tolerance=0.0
+    particle_velocity,
+    rigid_velocity,
+    particle_inverse_mass,
+    rigid_inverse_mass,
+    geometry,
+    impulses,
+    *,
+    contact_tolerance=0.0,
 ):
     """One plastic normal-velocity sweep on frozen geometry; no tangential load.
 
     Zero inverse mass preserves the supplied velocity, allowing prescribed
     boundary velocities. A physical fixed-body integrator supplies zero velocity.
     """
+    pv, bv, wp, wb = particle_velocity, rigid_velocity, particle_inverse_mass, rigid_inverse_mass
     active = _velocity_inputs(pv, bv, wp, wb, geometry, impulses, True, contact_tolerance)
     loads = np.zeros((len(impulses), 3), dtype=np.float64)
     try:
@@ -234,9 +260,18 @@ def project_particle_sphere_velocities(
 
 
 def particle_sphere_velocity_residual(
-    pv, bv, wp, wb, geometry, impulses, *, contact_tolerance=0.0, reference_speed=1.0
+    particle_velocity,
+    rigid_velocity,
+    particle_inverse_mass,
+    rigid_inverse_mass,
+    geometry,
+    impulses,
+    *,
+    contact_tolerance=0.0,
+    reference_speed=1.0,
 ):
     """Dimensionless velocity complementarity error; length band is independent."""
+    pv, bv, wp, wb = particle_velocity, rigid_velocity, particle_inverse_mass, rigid_inverse_mass
     speed = _scale(reference_speed, "reference_speed")
     active = _velocity_inputs(pv, bv, wp, wb, geometry, impulses, False, contact_tolerance)
     try:

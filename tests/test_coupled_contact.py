@@ -39,6 +39,31 @@ def test_position_projection_uses_both_masses_and_records_opposite_loads(dtype, 
     assert api().particle_sphere_residual(p, b, wp, wb, shapes, multipliers) <= atol
 
 
+def test_documented_keyword_arguments_select_the_physical_buffers():
+    p, b, wp, wb, shapes, multipliers = position_problem()
+    arguments = dict(
+        particle_position=p,
+        rigid_position=b,
+        particle_inverse_mass=wp,
+        rigid_inverse_mass=wb,
+        spheres=shapes,
+        multipliers=multipliers,
+    )
+    api().project_particle_spheres(**arguments)
+    assert api().particle_sphere_residual(**arguments) < 1e-12
+    pv, bv, wp, wb, geometry, impulses = velocity_problem()
+    arguments = dict(
+        particle_velocity=pv,
+        rigid_velocity=bv,
+        particle_inverse_mass=wp,
+        rigid_inverse_mass=wb,
+        geometry=geometry,
+        impulses=impulses,
+    )
+    api().project_particle_sphere_velocities(**arguments)
+    assert api().particle_sphere_velocity_residual(**arguments) == 0
+
+
 @pytest.mark.parametrize("weights,want_p,want_b", [((1, 0), 1, 0), ((0, 1), 0.5, -0.5)])
 def test_fixed_object_receives_load_but_does_not_move(weights, want_p, want_b):
     p, b, wp, wb, shapes, multipliers = position_problem(weights=weights)

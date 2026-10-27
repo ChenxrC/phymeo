@@ -29,7 +29,7 @@ class Links(HTMLParser):
 def main():
     errors = []
     checked = 0
-    files = [ROOT / "README.md", *sorted((ROOT / "docs").rglob("*.md")), *sorted((ROOT / "docs").rglob("*.html"))]
+    files = [ROOT / "README.md", *sorted((ROOT / "docs").rglob("*.md")), *sorted((ROOT / "docs").rglob("*.html")), *sorted((ROOT / "tyx_flaw").rglob("*.md"))]
     for path in files:
         source = path.read_text(encoding="utf-8")
         if path.suffix == ".html":

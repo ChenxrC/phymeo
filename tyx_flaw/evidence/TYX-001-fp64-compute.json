@@ -1,0 +1,55 @@
+{
+  "python": "3.12.14",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "numpy": "2.5.4",
+  "tyx_version": "0.1.0a0",
+  "tyx_source": {
+    "url": "ssh://git@github.com/ChenxrC/tyx.git",
+    "vcs_info": {
+      "vcs": "git",
+      "commit_id": "99f6df7c0fd8fdeef77f97df83914da27b64b7ee",
+      "requested_revision": "99f6df7c0fd8fdeef77f97df83914da27b64b7ee"
+    }
+  },
+  "builtin_f64_present": false,
+  "results": [
+    {
+      "mode": "interpret",
+      "input": [
+        16777217.0
+      ],
+      "expected": [
+        33554434.0
+      ],
+      "status": "rejected",
+      "error_type": "LoweringError",
+      "error": "numeric operation requires i32/f32 (f16/bf16 storage promotes to f32), got f64 and f64 at line 20, column 20"
+    },
+    {
+      "mode": "cpu_cpp",
+      "input": [
+        16777217.0
+      ],
+      "expected": [
+        33554434.0
+      ],
+      "status": "rejected",
+      "error_type": "LoweringError",
+      "error": "numeric operation requires i32/f32 (f16/bf16 storage promotes to f32), got f64 and f64 at line 20, column 20"
+    },
+    {
+      "mode": "cuda",
+      "input": [
+        16777217.0
+      ],
+      "expected": [
+        33554434.0
+      ],
+      "fp64_storage_roundtrip": true,
+      "status": "rejected",
+      "error_type": "LoweringError",
+      "error": "numeric operation requires i32/f32 (f16/bf16 storage promotes to f32), got f64 and f64 at line 20, column 20"
+    }
+  ],
+  "scope": "unsupported custom ScalarType probe; builtin absence is a capability request, not a broken support promise; Warp unmeasured"
+}

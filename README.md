@@ -8,7 +8,9 @@
 
 上一轮基础开发已收口：交付分支 `codex/architecture-v0` 完成计划 Task 1–15。Task 16 的原始 tyx 刚体原型保留在独立[草稿分支](https://github.com/ChenxrC/phymeo/tree/codex/tyx-rigid-wip)；本分支已选择性修复并验证刚体预测，整分支独立审阅及问题修复已完成。
 
-本轮长程目标已完成验收：**一个可重复验证的刚柔双向交互场景**。`codex/rigid-cloth-coupling` 分支提供布片与动态球接触、联合回滚、双向/单向对照、离线回放及实际 tyx CUDA 路径。见[场景与验收设计](docs/superpowers/specs/2026-10-27-rigid-cloth-coupling-design.md)、[七个里程碑](docs/superpowers/plans/2026-10-27-rigid-cloth-coupling.md)与[逐项验收证据](docs/benchmarks/rigid-cloth-acceptance.md)。这只表示所述固定场景完成，不代表整个目标架构已实现。
+刚柔场景目标已完成验收：**一个可重复验证的刚柔双向交互场景**。`codex/rigid-cloth-coupling` 分支提供布片与动态球接触、联合回滚、双向/单向对照、离线回放及实际 tyx CUDA 路径。见[场景与验收设计](docs/superpowers/specs/2026-10-27-rigid-cloth-coupling-design.md)、[七个里程碑](docs/superpowers/plans/2026-10-27-rigid-cloth-coupling.md)与[逐项验收证据](docs/benchmarks/rigid-cloth-acceptance.md)。这只表示所述固定场景完成，不代表整个目标架构已实现。
+
+当前 P1/P2 长程任务在 `codex/p1-p2-runtime` 推进：类型/历史合同、世界点端口、统一阶段运行器和 NumPy/tyx 刚柔迁移已实现。完整实验、性能与最终审阅仍在验收中，见[实施计划](docs/superpowers/plans/2026-10-27-p1-p2-runtime.md)和[接入合同](docs/development/runtime-contracts.md)。
 
 独立整分支审阅发现的一个速度重建问题已修复。最终版本六组 CPU 与三组设备实验共 **9,600 个子步全部通过**；CPU 和 CUDA 各两次 240 帧的 22 个数值数组均逐元素一致。CUDA 与同顺序参考的球/布最大位置差为 **0.111/0.020 mm**，低于 2 mm 门槛。[离线回放](docs/demos/rigid-cloth.html)与[完整报告](docs/benchmarks/rigid-cloth.md)均来自修复版；半步长实验仍显示约 0.145 m 的球轨迹差，保留时间步敏感性限制。
 
@@ -19,6 +21,8 @@
 | 内容 | 入口 |
 | --- | --- |
 | 下一轮机器人＋布料＋最小体积软体的范围与里程碑（大纲） | [集成框架行动大纲](docs/superpowers/plans/2026-10-27-integrated-framework-outline.md) |
+| P1/P2 已实现的类型、阶段、事务和扩展规则 | [运行器合同与示例](docs/development/runtime-contracts.md) |
+| 可复现的 tyx 性能/能力问题与 agent 交接 | [tyx_flaw](tyx_flaw/README.md) |
 | 可延期问题、原因、代码定位与 agent 交接 | [遗留问题](docs/legacy-issues/README.md) |
 | 每阶段性能记录协议与待剖析热点 | [性能瓶颈台账](docs/performance-bottlenecks/README.md) |
 | 离线 HTML 架构图 | [下载/打开 phymeo.html](docs/architecture/phymeo.html) |

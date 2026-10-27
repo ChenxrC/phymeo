@@ -1,0 +1,68 @@
+{
+  "status": "complete",
+  "scope": "unconstrained fixed-base CPU dynamics; no contact or performance comparison",
+  "provenance": {
+    "git_revision": "1b0d1c7d1b5200a3d92458f9075d3d38230102ba",
+    "git_dirty": false,
+    "source_sha256": "e46b55d5aa80353b32cd777c67219fc404ac8aab58c6fb4847ac94596acdf294",
+    "python": "3.12.14",
+    "numpy": "2.5.4",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "mujoco": "3.3.7",
+    "comparison_script_sha256": "348f8cfa3003b314d1eb562c2bf9ff297cb960f511f5deff9f667f01200a64dc",
+    "oracle_lock_sha256": "d04f16b4854b0c369be5bdc6be04eb552cef4e8e63e2b03ca16af482f61fd4d1"
+  },
+  "seed": 20261027,
+  "sample_atol": 5e-10,
+  "sample_rtol": 1e-09,
+  "trace_atol": 1e-07,
+  "cases": {
+    "rod": {
+      "samples": 32,
+      "dof": 1,
+      "max_abs_error": {
+        "origin": 0.0,
+        "rotation": 2.220446049250313e-16,
+        "com": 5.551115123125783e-17,
+        "mass": 4.163336342344337e-17,
+        "bias": 4.440892098500626e-16,
+        "qacc": 7.105427357601002e-15
+      }
+    },
+    "two_rods": {
+      "samples": 32,
+      "dof": 2,
+      "max_abs_error": {
+        "origin": 5.551115123125783e-17,
+        "rotation": 2.220446049250313e-16,
+        "com": 1.1102230246251565e-16,
+        "mass": 3.3306690738754696e-16,
+        "bias": 1.7763568394002505e-15,
+        "qacc": 4.973799150320701e-14
+      }
+    },
+    "mixed_branch": {
+      "samples": 32,
+      "dof": 4,
+      "max_abs_error": {
+        "origin": 4.440892098500626e-16,
+        "rotation": 5.551115123125783e-16,
+        "com": 4.440892098500626e-16,
+        "mass": 3.552713678800501e-15,
+        "bias": 8.881784197001252e-15,
+        "qacc": 2.1316282072803006e-14
+      }
+    }
+  },
+  "s1": {
+    "steps": 1000,
+    "dt": 0.0005,
+    "max_abs_error": {
+      "q": 9.71445146547012e-17,
+      "v": 8.881784197001252e-16
+    },
+    "repeat_exact": true,
+    "phymeo_trajectory_sha256": "415f77b6510b76ecc55cbfda2f119296b7c474911e66ce79afa6b7cff7bf6809"
+  },
+  "arrays_sha256": "1e651086ca1e00462c6268e5de32c94e1248b0b2cf06bdf6a579f52cc42d9567"
+}

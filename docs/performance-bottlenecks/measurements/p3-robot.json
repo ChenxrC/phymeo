@@ -1,0 +1,520 @@
+{
+  "status": "complete",
+  "failed_calls": 0,
+  "stage": "P3",
+  "provenance": {
+    "git_revision": "1b0d1c7d1b5200a3d92458f9075d3d38230102ba",
+    "git_dirty": false,
+    "source_sha256": "e46b55d5aa80353b32cd777c67219fc404ac8aab58c6fb4847ac94596acdf294",
+    "python": "3.12.14",
+    "numpy": "2.5.4",
+    "platform": "Windows-11-10.0.26200-SP0"
+  },
+  "measurement_script_sha256": "59375f74c323acff87e7c6c42c528b6d9b75f1bb83a58fd979deb45c55700267",
+  "hardware": {
+    "processor": "Intel64 Family 6 Model 183 Stepping 1, GenuineIntel",
+    "logical_cpus": 32,
+    "blas_config": "{\n  \"Compilers\": {\n    \"c\": {\n      \"name\": \"msvc\",\n      \"linker\": \"link\",\n      \"version\": \"19.44.35229\",\n      \"commands\": \"cl\"\n    },\n    \"cython\": {\n      \"name\": \"cython\",\n      \"linker\": \"cython\",\n      \"version\": \"3.3.0\",\n      \"commands\": \"cython\"\n    },\n    \"c++\": {\n      \"name\": \"msvc\",\n      \"linker\": \"link\",\n      \"version\": \"19.44.35229\",\n      \"commands\": \"cl\"\n    }\n  },\n  \"Machine Information\": {\n    \"host\": {\n      \"cpu\": \"x86_64\",\n      \"family\": \"x86_64\",\n      \"endian\": \"little\",\n      \"system\": \"windows\"\n    },\n    \"build\": {\n      \"cpu\": \"x86_64\",\n      \"family\": \"x86_64\",\n      \"endian\": \"little\",\n      \"system\": \"windows\"\n    }\n  },\n  \"Build Dependencies\": {\n    \"blas\": {\n      \"name\": \"scipy-openblas\",\n      \"found\": true,\n      \"version\": \"0.3.34.106.0\",\n      \"detection method\": \"pkgconfig\",\n      \"include directory\": \"C:/Users/runneradmin/AppData/Local/Temp/cibw-run-j3umgqti/cp312-win_amd64/build/venv/Lib/site-packages/scipy_openblas64/include\",\n      \"lib directory\": \"C:/Users/runneradmin/AppData/Local/Temp/cibw-run-j3umgqti/cp312-win_amd64/build/venv/Lib/site-packages/scipy_openblas64/lib\",\n      \"openblas configuration\": \"OpenBLAS 0.3.34.106.0  USE64BITINT DYNAMIC_ARCH NO_AFFINITY Haswell MAX_THREADS=24\",\n      \"pc file directory\": \"D:/a/numpy-release/numpy-release/.openblas\"\n    },\n    \"lapack\": {\n      \"name\": \"scipy-openblas\",\n      \"found\": true,\n      \"version\": \"0.3.34.106.0\",\n      \"detection method\": \"pkgconfig\",\n      \"include directory\": \"C:/Users/runneradmin/AppData/Local/Temp/cibw-run-j3umgqti/cp312-win_amd64/build/venv/Lib/site-packages/scipy_openblas64/include\",\n      \"lib directory\": \"C:/Users/runneradmin/AppData/Local/Temp/cibw-run-j3umgqti/cp312-win_amd64/build/venv/Lib/site-packages/scipy_openblas64/lib\",\n      \"openblas configuration\": \"OpenBLAS 0.3.34.106.0  USE64BITINT DYNAMIC_ARCH NO_AFFINITY Haswell MAX_THREADS=24\",\n      \"pc file directory\": \"D:/a/numpy-release/numpy-release/.openblas\"\n    }\n  },\n  \"Python Information\": {\n    \"path\": \"C:\\\\Users\\\\runneradmin\\\\AppData\\\\Local\\\\Temp\\\\build-env-1rr8oud1\\\\Scripts\\\\python.exe\",\n    \"version\": \"3.12\"\n  },\n  \"SIMD Extensions\": {\n    \"baseline\": [\n      \"X86_V2\"\n    ],\n    \"found\": [\n      \"X86_V3\"\n    ]\n  }\n}\n",
+    "thread_environment": {
+      "OMP_NUM_THREADS": null,
+      "OPENBLAS_NUM_THREADS": null,
+      "MKL_NUM_THREADS": null
+    }
+  },
+  "protocol": {
+    "serial": true,
+    "warmup_batches": 2,
+    "warmup_calls_per_batch": 100,
+    "repeats": 3,
+    "calls_per_repeat": 100,
+    "dt": 0.0005,
+    "substeps": 1,
+    "dtype": "float64",
+    "step_input": "same initial snapshot on each call, zero applied loads",
+    "quality": "full production checks and diagnostics, no constraints, one sweep per stage"
+  },
+  "workloads": [
+    {
+      "dof": 1,
+      "build_ms": 0.6723,
+      "q": [
+        0.35
+      ],
+      "v": [
+        0.1
+      ],
+      "operations": {
+        "fk": {
+          "first_call_ms": 0.6323,
+          "repeats": [
+            {
+              "repeat": 1,
+              "calls": 100,
+              "median_ms": 0.0451,
+              "p95_ms": 0.05788499999999999
+            },
+            {
+              "repeat": 2,
+              "calls": 100,
+              "median_ms": 0.0436,
+              "p95_ms": 0.054605
+            },
+            {
+              "repeat": 3,
+              "calls": 100,
+              "median_ms": 0.046450000000000005,
+              "p95_ms": 0.055994999999999996
+            }
+          ],
+          "phase_timings": {},
+          "accepted_steps": null,
+          "max_equation_residual": null
+        },
+        "mass": {
+          "first_call_ms": 0.3267,
+          "repeats": [
+            {
+              "repeat": 1,
+              "calls": 100,
+              "median_ms": 0.16825,
+              "p95_ms": 0.25230999999999976
+            },
+            {
+              "repeat": 2,
+              "calls": 100,
+              "median_ms": 0.1729,
+              "p95_ms": 0.19943
+            },
+            {
+              "repeat": 3,
+              "calls": 100,
+              "median_ms": 0.16595,
+              "p95_ms": 0.187425
+            }
+          ],
+          "phase_timings": {},
+          "accepted_steps": null,
+          "max_equation_residual": null
+        },
+        "bias": {
+          "first_call_ms": 0.3461,
+          "repeats": [
+            {
+              "repeat": 1,
+              "calls": 100,
+              "median_ms": 0.2613,
+              "p95_ms": 0.279205
+            },
+            {
+              "repeat": 2,
+              "calls": 100,
+              "median_ms": 0.2632,
+              "p95_ms": 0.274515
+            },
+            {
+              "repeat": 3,
+              "calls": 100,
+              "median_ms": 0.2659,
+              "p95_ms": 0.27622
+            }
+          ],
+          "phase_timings": {},
+          "accepted_steps": null,
+          "max_equation_residual": null
+        },
+        "step": {
+          "first_call_ms": 2.2589,
+          "repeats": [
+            {
+              "repeat": 1,
+              "calls": 100,
+              "median_ms": 2.09405,
+              "p95_ms": 2.26985
+            },
+            {
+              "repeat": 2,
+              "calls": 100,
+              "median_ms": 2.01215,
+              "p95_ms": 2.342025
+            },
+            {
+              "repeat": 3,
+              "calls": 100,
+              "median_ms": 1.9583,
+              "p95_ms": 2.252385
+            }
+          ],
+          "phase_timings": {
+            "setup": {
+              "median_ms": 0.09229988791048527,
+              "p95_ms": 0.10950501309707761
+            },
+            "predict": {
+              "median_ms": 1.1834498727694154,
+              "p95_ms": 1.3787149102427065
+            },
+            "position": {
+              "median_ms": 0.014899997040629387,
+              "p95_ms": 0.01901992363855243
+            },
+            "prepare_velocity": {
+              "median_ms": 0.0002998858690261841,
+              "p95_ms": 0.00030011869966983795
+            },
+            "velocity": {
+              "median_ms": 0.012799864634871483,
+              "p95_ms": 0.014314986765384678
+            },
+            "validation": {
+              "median_ms": 0.09290000889450312,
+              "p95_ms": 0.10760989971458912
+            },
+            "verification": {
+              "median_ms": 0.000400003045797348,
+              "p95_ms": 0.000500120222568512
+            },
+            "diagnostics": {
+              "median_ms": 0.3090000245720148,
+              "p95_ms": 0.3632399719208479
+            },
+            "close": {
+              "median_ms": 0.000400003045797348,
+              "p95_ms": 0.0004998873919248581
+            }
+          },
+          "accepted_steps": 300,
+          "max_equation_residual": 0.0
+        }
+      }
+    },
+    {
+      "dof": 2,
+      "build_ms": 0.3331,
+      "q": [
+        0.35,
+        -0.2
+      ],
+      "v": [
+        0.1,
+        -0.05
+      ],
+      "operations": {
+        "fk": {
+          "first_call_ms": 0.1159,
+          "repeats": [
+            {
+              "repeat": 1,
+              "calls": 100,
+              "median_ms": 0.0586,
+              "p95_ms": 0.06402
+            },
+            {
+              "repeat": 2,
+              "calls": 100,
+              "median_ms": 0.060950000000000004,
+              "p95_ms": 0.08034499999999999
+            },
+            {
+              "repeat": 3,
+              "calls": 100,
+              "median_ms": 0.0599,
+              "p95_ms": 0.06411499999999999
+            }
+          ],
+          "phase_timings": {},
+          "accepted_steps": null,
+          "max_equation_residual": null
+        },
+        "mass": {
+          "first_call_ms": 0.2806,
+          "repeats": [
+            {
+              "repeat": 1,
+              "calls": 100,
+              "median_ms": 0.21705000000000002,
+              "p95_ms": 0.23371499999999998
+            },
+            {
+              "repeat": 2,
+              "calls": 100,
+              "median_ms": 0.21775,
+              "p95_ms": 0.241025
+            },
+            {
+              "repeat": 3,
+              "calls": 100,
+              "median_ms": 0.2161,
+              "p95_ms": 0.2465
+            }
+          ],
+          "phase_timings": {},
+          "accepted_steps": null,
+          "max_equation_residual": null
+        },
+        "bias": {
+          "first_call_ms": 0.4321,
+          "repeats": [
+            {
+              "repeat": 1,
+              "calls": 100,
+              "median_ms": 0.43665,
+              "p95_ms": 0.47603999999999996
+            },
+            {
+              "repeat": 2,
+              "calls": 100,
+              "median_ms": 0.4206,
+              "p95_ms": 0.43852
+            },
+            {
+              "repeat": 3,
+              "calls": 100,
+              "median_ms": 0.4195,
+              "p95_ms": 0.44814
+            }
+          ],
+          "phase_timings": {},
+          "accepted_steps": null,
+          "max_equation_residual": null
+        },
+        "step": {
+          "first_call_ms": 2.5945,
+          "repeats": [
+            {
+              "repeat": 1,
+              "calls": 100,
+              "median_ms": 2.65405,
+              "p95_ms": 2.86711
+            },
+            {
+              "repeat": 2,
+              "calls": 100,
+              "median_ms": 2.8192500000000003,
+              "p95_ms": 3.2490650000000003
+            },
+            {
+              "repeat": 3,
+              "calls": 100,
+              "median_ms": 2.614,
+              "p95_ms": 2.857635
+            }
+          ],
+          "phase_timings": {
+            "setup": {
+              "median_ms": 0.09869993664324284,
+              "p95_ms": 0.11062991106882691
+            },
+            "predict": {
+              "median_ms": 1.7588000046089292,
+              "p95_ms": 1.9854199839755893
+            },
+            "position": {
+              "median_ms": 0.01610000617802143,
+              "p95_ms": 0.02013003686442972
+            },
+            "prepare_velocity": {
+              "median_ms": 0.0002998858690261841,
+              "p95_ms": 0.000400003045797348
+            },
+            "velocity": {
+              "median_ms": 0.013400102034211159,
+              "p95_ms": 0.015404890291392805
+            },
+            "validation": {
+              "median_ms": 0.09975000284612179,
+              "p95_ms": 0.11610506335273385
+            },
+            "verification": {
+              "median_ms": 0.0004998873919248581,
+              "p95_ms": 0.000600004568696022
+            },
+            "diagnostics": {
+              "median_ms": 0.4010000266134739,
+              "p95_ms": 0.47470988938584924
+            },
+            "close": {
+              "median_ms": 0.000400003045797348,
+              "p95_ms": 0.000500120222568512
+            }
+          },
+          "accepted_steps": 300,
+          "max_equation_residual": 1.855063718461208e-17
+        }
+      }
+    },
+    {
+      "dof": 8,
+      "build_ms": 0.3492,
+      "q": [
+        0.35,
+        -0.2,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "v": [
+        0.1,
+        -0.05,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "operations": {
+        "fk": {
+          "first_call_ms": 0.1784,
+          "repeats": [
+            {
+              "repeat": 1,
+              "calls": 100,
+              "median_ms": 0.1383,
+              "p95_ms": 0.146895
+            },
+            {
+              "repeat": 2,
+              "calls": 100,
+              "median_ms": 0.139,
+              "p95_ms": 0.154135
+            },
+            {
+              "repeat": 3,
+              "calls": 100,
+              "median_ms": 0.1371,
+              "p95_ms": 0.146915
+            }
+          ],
+          "phase_timings": {},
+          "accepted_steps": null,
+          "max_equation_residual": null
+        },
+        "mass": {
+          "first_call_ms": 0.919,
+          "repeats": [
+            {
+              "repeat": 1,
+              "calls": 100,
+              "median_ms": 0.79105,
+              "p95_ms": 0.839725
+            },
+            {
+              "repeat": 2,
+              "calls": 100,
+              "median_ms": 0.79775,
+              "p95_ms": 0.9179099999999999
+            },
+            {
+              "repeat": 3,
+              "calls": 100,
+              "median_ms": 0.8052999999999999,
+              "p95_ms": 0.9547399999999999
+            }
+          ],
+          "phase_timings": {},
+          "accepted_steps": null,
+          "max_equation_residual": null
+        },
+        "bias": {
+          "first_call_ms": 1.49,
+          "repeats": [
+            {
+              "repeat": 1,
+              "calls": 100,
+              "median_ms": 1.6695,
+              "p95_ms": 1.784125
+            },
+            {
+              "repeat": 2,
+              "calls": 100,
+              "median_ms": 1.56055,
+              "p95_ms": 1.75922
+            },
+            {
+              "repeat": 3,
+              "calls": 100,
+              "median_ms": 1.56385,
+              "p95_ms": 1.8065
+            }
+          ],
+          "phase_timings": {},
+          "accepted_steps": null,
+          "max_equation_residual": null
+        },
+        "step": {
+          "first_call_ms": 7.9818,
+          "repeats": [
+            {
+              "repeat": 1,
+              "calls": 100,
+              "median_ms": 8.3353,
+              "p95_ms": 8.989925
+            },
+            {
+              "repeat": 2,
+              "calls": 100,
+              "median_ms": 8.153649999999999,
+              "p95_ms": 8.750525
+            },
+            {
+              "repeat": 3,
+              "calls": 100,
+              "median_ms": 8.32165,
+              "p95_ms": 8.757579999999999
+            }
+          ],
+          "phase_timings": {
+            "setup": {
+              "median_ms": 0.11370005086064339,
+              "p95_ms": 0.1282200450077653
+            },
+            "predict": {
+              "median_ms": 6.489450111985207,
+              "p95_ms": 6.946240027900785
+            },
+            "position": {
+              "median_ms": 0.019700033590197563,
+              "p95_ms": 0.024415180087089542
+            },
+            "prepare_velocity": {
+              "median_ms": 0.000300002284348011,
+              "p95_ms": 0.000400003045797348
+            },
+            "velocity": {
+              "median_ms": 0.013899989426136017,
+              "p95_ms": 0.015205109957605602
+            },
+            "validation": {
+              "median_ms": 0.12894999235868454,
+              "p95_ms": 0.15270499279722574
+            },
+            "verification": {
+              "median_ms": 0.000500120222568512,
+              "p95_ms": 0.0006998889148235321
+            },
+            "diagnostics": {
+              "median_ms": 1.1084999423474073,
+              "p95_ms": 1.2495700735598805
+            },
+            "close": {
+              "median_ms": 0.000400003045797348,
+              "p95_ms": 0.000600004568696022
+            }
+          },
+          "accepted_steps": 300,
+          "max_equation_residual": 2.8152619673342155e-17
+        }
+      }
+    }
+  ],
+  "limitations": [
+    "fresh process import latency unmeasured; first call follows construction and earlier operation measurements",
+    "peak memory and allocation counts unmeasured",
+    "phase timings exclude outer snapshot and report construction; total step includes them",
+    "no optimized CRBA/ABA, GPU, Warp or MuJoCo speed comparison",
+    "no concurrent benchmark/development process intentionally launched; background OS scheduling uncontrolled"
+  ]
+}

@@ -8,6 +8,7 @@ from .builders.cloth import ClothPatch, cloth_grid
 from .builders.robot import pendulum_chain
 from .builders.tetrahedral import tetrahedral_block
 from .constraints.distance import DistanceConstraints
+from .constraints.node_robot import NodeRobotContact
 from .core.capabilities import ProblemSignature, SolverCapabilities, SolverFailure
 from .core.coupled import CoupledInputs, CoupledState, CoupledStepReport, CoupledStepResult
 from .core.coupling import ImpulseExchangeResult, ImpulseLedger
@@ -28,12 +29,19 @@ from .core.scene import (
 from .core.state import ParticleState, StepInputs
 from .core.tetrahedral import TetrahedralModel
 from .core.verification import CandidateVerifier, VerificationReport
+from .coupling.participant import (
+    ClothParticipant,
+    ParticipantWorkspace,
+    RobotParticipant,
+    TetrahedralParticipant,
+)
 from .coupling.point_port import ParticleRigidPorts
 from .coupling.ports import ParticlePointPort, PointPort, RigidPointPort, exchange_impulses
 from .coupling.robot_port import RobotPointPort
 from .coupling.tetrahedral_port import TetrahedralPointPort
 from .geometry.particle_sphere import ParticleSphereGeometry, particle_sphere_geometry
 from .geometry.plane import Plane
+from .geometry.robot_sphere import RobotSphereAttachments
 from .geometry.sphere import SphereShapes
 from .runtime.program import (
     ProgramCapabilities,
@@ -47,6 +55,7 @@ from .runtime.program import (
 from .runtime.registry import StateFamily, StateRegistry
 from .runtime.scene_stepper import SceneStepper
 from .runtime.stepper import Stepper
+from .solvers.articulated_coupling import ArticulatedCouplingProgram, make_articulated_runtime
 from .solvers.cloth import ClothProgram, make_cloth_runtime
 from .solvers.coupled_program import (
     CoupledRuntimeAdapter,
@@ -66,6 +75,14 @@ from .validation.free_particle import FreeParticleVerifier
 __version__ = "0.1.0a0"
 
 __all__ = [
+    "RobotParticipant",
+    "ClothParticipant",
+    "TetrahedralParticipant",
+    "ParticipantWorkspace",
+    "RobotSphereAttachments",
+    "NodeRobotContact",
+    "ArticulatedCouplingProgram",
+    "make_articulated_runtime",
     "TetrahedralModel",
     "TetrahedralProgram",
     "TetrahedralPointPort",

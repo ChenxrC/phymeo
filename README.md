@@ -10,7 +10,7 @@
 
 当前长程目标：**一个可重复验证的刚柔双向交互场景**。在 `codex/rigid-cloth-coupling` 分支实现布片与动态球接触、联合回滚、双向/单向对照与离线回放，先 CPU 参考再验收 tyx。见[场景与验收设计](docs/superpowers/specs/2026-10-27-rigid-cloth-coupling-design.md)和[七个里程碑](docs/superpowers/plans/2026-10-27-rigid-cloth-coupling.md)。这是一项正在实施的新目标，不代表场景已经完成。
 
-点/球几何、双向响应、联合步进与整帧回滚已实现。独立整分支审阅发现的一个速度重建问题已修复；最终版本的 CPU 基准/重复，以及实际 CUDA 两次 240 帧均通过，设备重复的 22 个数值数组逐元素一致。与同顺序参考相比，球/布的最大位置差为 0.111/0.020 mm，见[设备报告](docs/benchmarks/rigid-cloth-device.json)。修复版其余 CPU 对照仍在复验，之后更新[报告](docs/benchmarks/rigid-cloth.md)与[离线回放](docs/demos/rigid-cloth.html)；当前回放明确保留原已验证版本来源，最终目标尚未全部收口。
+点/球几何、双向响应、联合步进与整帧回滚已实现。独立整分支审阅发现的一个速度重建问题已修复；最终版本的 CPU 基准/重复/单向对照，以及实际 CUDA 两次 240 帧均通过，设备重复的 22 个数值数组逐元素一致。与同顺序参考相比，球/布的最大位置差为 0.111/0.020 mm，见[设备报告](docs/benchmarks/rigid-cloth-device.json)。[离线回放](docs/demos/rigid-cloth.html)已更新为修复版同源轨迹；半步长和质量对照仍在复验，之后更新完整[报告](docs/benchmarks/rigid-cloth.md)并收口。
 
 ![phymeo 架构图](docs/architecture/phymeo.png)
 

@@ -1,6 +1,6 @@
 # 刚柔双向交互参考实验
 
-本实验按[场景设计](../superpowers/specs/2026-10-27-rigid-cloth-coupling-design.md)推进。原版六组完整 CPU 实验及回放见[参考报告](rigid-cloth-reference.json)和[离线交互回放](../demos/rigid-cloth.html)。独立审阅修复后，`027e7cd` 的 FP64 基准/重复与完整 tyx 对照均已通过，见[设备原始报告](rigid-cloth-device.json)；该版本其余 CPU 对照仍在复验，之后更新 CPU 报告与回放。
+本实验按[场景设计](../superpowers/specs/2026-10-27-rigid-cloth-coupling-design.md)推进。原版六组完整 CPU 实验见[参考报告](rigid-cloth-reference.json)。独立审阅修复后，`027e7cd` 的 FP64 基准/重复/单向和完整 tyx 对照均已通过，[离线交互回放](../demos/rigid-cloth.html)已更新为同源修复版数据，[设备原始报告](rigid-cloth-device.json)也已保存；半步长与质量对照仍在复验，之后更新完整 CPU 报告。
 
 ## 参数与物理含义
 
@@ -98,3 +98,5 @@ uv run --no-sync python scripts/render_rigid_cloth.py --two-way artifacts/rigid-
 ```
 
 生成器先校验 NPZ 数值指纹、帧数、拓扑索引、时域、物理配置和子步摘要，拒绝损坏记录及覆盖已有文件。内嵌元数据按数据转义；页面没有外部字体、脚本或网络请求。桌面 1440 px 与移动端 390 px 的实际 Chromium 画面已经检查，暂停、逐帧、重置、视图切换均通过。
+
+当前交付回放来自 `027e7cd` 的两组 240 帧轨迹，已逐数组与原 NPZ 核对，配置和指标完全一致。双向/单向球轨迹最大差为 2.096078555946087 m，布为 0.10760331699156321 m；单向自由落体解析位置误差为 4.62e-14 m。刷新数据后再次执行实际浏览器的全部控制检查，桌面及移动画面无溢出或脚本错误。

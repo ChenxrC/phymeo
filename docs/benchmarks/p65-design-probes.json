@@ -1,0 +1,76 @@
+{
+  "status": "design_only_not_product_or_scene_acceptance",
+  "scalar_control": {
+    "mass_inertia": 1e-06,
+    "kp": 2.0,
+    "kd": 0.06,
+    "h": 0.001,
+    "explicit_spectral_radius": 60.96772513440405,
+    "implicit_spectral_radius": 0.9677245734530697
+  },
+  "static_grip_capacity": {
+    "jaw_kp_N_per_m": 60.0,
+    "compression_m": 0.002,
+    "per_finger_normal_N": 0.12,
+    "two_finger_static_capacity_N": 0.192,
+    "cloth_weight_N": 0.04905,
+    "ratio": 3.914373088685015
+  },
+  "planar_ik": [
+    {
+      "arm": "A",
+      "target_xy_m": [
+        -0.095,
+        0.0705
+      ],
+      "q1_rad": 1.0990936876855835,
+      "q2_rad": -1.834961505456901,
+      "wrist_rz_rad": 0.7358678177713176,
+      "fk_error_m": 5.003707553108401e-17
+    },
+    {
+      "arm": "A",
+      "target_xy_m": [
+        -0.095,
+        0.28
+      ],
+      "q1_rad": 1.3619864705763072,
+      "q2_rad": -1.2092366942774107,
+      "wrist_rz_rad": -0.15274977629889652,
+      "fk_error_m": 2.7755575615628914e-17
+    },
+    {
+      "arm": "B",
+      "target_xy_m": [
+        0.2,
+        0.3
+      ],
+      "q1_rad": 1.3381423023114725,
+      "q2_rad": 1.5566181580208318,
+      "wrist_rz_rad": -2.8947604603323045,
+      "fk_error_m": 6.206335383118183e-17
+    },
+    {
+      "arm": "B",
+      "target_xy_m": [
+        0.095,
+        0.28
+      ],
+      "q1_rad": 1.7796061830134864,
+      "q2_rad": 1.2092366942774107,
+      "wrist_rz_rad": -2.988842877290897,
+      "fk_error_m": 1.2412670766236366e-16
+    },
+    {
+      "arm": "B",
+      "target_xy_m": [
+        0.16,
+        0.085
+      ],
+      "q1_rad": 1.768876450059379,
+      "q2_rad": 2.145090065400604,
+      "wrist_rz_rad": -3.9139665154599834,
+      "fk_error_m": 3.1031676915590914e-17
+    }
+  ]
+}

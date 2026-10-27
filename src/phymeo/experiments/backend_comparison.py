@@ -51,7 +51,7 @@ def compare_backend_runs(reference, candidate):
 
 
 def _device_environment(mode):
-    result = {"tyx_version": importlib.metadata.version("tyx"), "mode": mode}
+    result = {"tyx_version": importlib.metadata.version("tyx-compute"), "mode": mode}
     if mode == "cuda":
         try:
             output = subprocess.run(

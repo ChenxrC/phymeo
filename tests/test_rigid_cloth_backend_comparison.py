@@ -9,6 +9,17 @@ import pytest
 from phymeo.experiments.rigid_cloth import SceneRun, run_scene, save_run
 
 
+@pytest.mark.tyx
+def test_device_environment_records_the_installed_distribution():
+    from importlib.metadata import version
+
+    from phymeo.experiments.backend_comparison import _device_environment
+
+    pytest.importorskip("tyx")
+    result = _device_environment("interpret")
+    assert result == {"tyx_version": version("tyx-compute"), "mode": "interpret"}
+
+
 def test_loaded_numeric_trace_is_verified_against_its_record(tmp_path):
     api = importlib.import_module("phymeo.experiments.rigid_cloth")
     original = run_scene(frames=1)

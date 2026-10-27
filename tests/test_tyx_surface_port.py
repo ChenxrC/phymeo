@@ -21,6 +21,38 @@ from phymeo.core.scene import BackendContext, StepSettings
 pytestmark = pytest.mark.tyx
 
 
+def test_real_node_port_friction_impulse_energy_and_execution(tyx_mode):
+    from phymeo import solve_friction_disk
+
+    model = ParticleModel(np.array([1.0, 2]), np.zeros(3))
+    state = ParticleState(
+        np.array([[0.0, 0, 0], [1.0, 0, 0]]), np.array([[2.0, 1, 0], [1.0, -1, 0]])
+    )
+    ws = workspace(TyxClothParticipant(model, None, tyx_mode), state, StepInputs.zeros(2), tyx_mode)
+    try:
+        ws.predict()
+        port = WeightedPointPort(ws.point_port(np.arange(2)), np.array([[0.5, 0.5]]))
+        launches = ws.diagnostics()["execution"]["completed_launches"]
+        k = np.column_stack([port.response(np.eye(3)[axis][None])[0, :2] for axis in range(2)])
+        result = solve_friction_disk(
+            k, port.velocities()[0, :2], 2.0, mu_static=0.6, mu_dynamic=0.5
+        )
+        assert result.regime == "sliding"
+        after = port.apply_impulses(np.array([[*result.impulse, 0.0]]))
+        delta = after.velocity - state.velocity
+        np.testing.assert_allclose(
+            np.sum(delta / [[1], [2]], axis=0), [*result.impulse, 0.0], atol=2e-5, rtol=2e-5
+        )
+        energy = float(np.sum((after.velocity**2 - state.velocity**2) / [[1], [2]]) / 2)
+        assert energy == pytest.approx(result.energy_change, abs=2e-5, rel=2e-5)
+        assert energy < 0
+        np.testing.assert_array_equal(after.position, port.snapshot().position)
+        np.testing.assert_array_equal(ws.velocity(), state.velocity)
+        assert ws.diagnostics()["execution"]["completed_launches"] > launches
+    finally:
+        ws.close()
+
+
 def workspace(factory, state, inputs, mode):
     return factory.create_workspace(
         "surface",

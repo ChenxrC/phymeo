@@ -28,15 +28,15 @@
 
 **Files:** Create `src/phymeo/constraints/friction.py`、`tests/test_friction_disk.py`。
 
-- [ ] 先写静态、开接触、动摩擦已知非对角KKT解、坐标旋转、随机正定样本、非法/病态/预算/溢出与所有权测试；运行确认缺实现RED。
-- [ ] 实现纯值`FrictionImpulseResult`与`solve_friction_disk`，包括独立返回验收；全文件GREEN及ruff后小提交。
+- [x] 先写静态、开接触、动摩擦已知非对角KKT解、坐标旋转、随机正定样本、非法/病态/预算/溢出与所有权测试；运行确认缺实现RED。
+- [x] 实现纯值`FrictionImpulseResult`与`solve_friction_disk`，包括独立返回验收；全文件GREEN及ruff后小提交。
 
 ## Task2：物理端口组合与公开
 
 **Files:** Modify上述测试、`src/phymeo/__init__.py`、README/进度/性能记录；按实际后端需要补`tests/test_tyx_surface_port.py`。
 
-- [ ] 导出缺失RED；真实节点/共享关节端口形成切向响应后施加总冲量，独立核对速度、动量、耗散和构型不变；实际设备测试不以导入代替。
-- [ ] 公共导出和解析/旧回归GREEN，记录固定小负载延迟/迭代/失败与范围；不优化。
+- [x] 导出缺失RED；真实节点/共享关节端口形成切向响应后施加总冲量，独立核对速度、动量、耗散和构型不变；实际设备测试不以导入代替。
+- [x] 公共导出和解析/旧回归GREEN，记录固定小负载延迟/迭代/失败与范围；不优化。
 - [ ] 与H1a/H1b一起完成本轮末整分支审阅、必要回归、打包/源码外smoke、准确提交CI和远程SHA；未执行项保留。
 
 ## 自查

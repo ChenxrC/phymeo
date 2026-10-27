@@ -17,6 +17,7 @@ from .builders.cloth import ClothPatch, cloth_grid
 from .builders.robot import pendulum_chain
 from .builders.tetrahedral import tetrahedral_block
 from .constraints.distance import DistanceConstraints
+from .constraints.friction import FrictionImpulseResult, solve_friction_disk
 from .constraints.node_robot import NodeRobotContact
 from .core.capabilities import ProblemSignature, SolverCapabilities, SolverFailure
 from .core.coupled import CoupledInputs, CoupledState, CoupledStepReport, CoupledStepResult
@@ -90,6 +91,8 @@ from .validation.free_particle import FreeParticleVerifier
 __version__ = "0.1.0a0"
 
 __all__ = [
+    "FrictionImpulseResult",
+    "solve_friction_disk",
     "ClosestFeaturePair",
     "closest_point_triangle",
     "closest_segment_segment",

@@ -23,6 +23,61 @@ def check_energy(result, k, v):
     np.testing.assert_allclose(result.velocity_after, v + k @ result.impulse, atol=1e-12)
 
 
+def test_friction_solver_public_exports():
+    import phymeo
+
+    module = importlib.import_module("phymeo.constraints.friction")
+    assert phymeo.solve_friction_disk is module.solve_friction_disk
+    assert phymeo.FrictionImpulseResult is module.FrictionImpulseResult
+
+
+def test_physical_nodes_receive_total_tangent_impulse_once():
+    from phymeo import ParticleModel, ParticlePointPort, ParticleState, WeightedPointPort
+
+    state = ParticleState(
+        np.array([[0.0, 0, 0], [1.0, 0, 0]]), np.array([[2.0, 1, 0], [1.0, -1, 0]])
+    )
+    base = ParticlePointPort(ParticleModel(np.array([1.0, 2]), np.zeros(3)), state, [0, 1])
+    port = WeightedPointPort(base, np.array([[0.5, 0.5]]))
+    k = np.column_stack([port.response(np.eye(3)[axis][None])[0, :2] for axis in range(2)])
+    result = solve(k, port.velocities()[0, :2])
+    world = np.array([[*result.impulse, 0.0]])
+    after = port.apply_impulses(world)
+    delta = after.velocity - state.velocity
+    np.testing.assert_allclose(np.sum(delta / [[1], [2]], axis=0), world[0], atol=1e-12)
+    energy = float(np.sum((after.velocity**2 - state.velocity**2) / [[1], [2]]) / 2)
+    assert energy == pytest.approx(result.energy_change, abs=1e-12)
+    assert energy <= 0
+    np.testing.assert_array_equal(after.position, state.position)
+    np.testing.assert_array_equal(base.snapshot().velocity, state.velocity)
+
+
+def test_physical_shared_robot_response_and_generalized_energy():
+    from test_robot_dynamics import planar_mass
+    from test_robot_kinematics import robot_model
+
+    from phymeo import RobotPointPort, RobotState
+
+    q, velocity = np.array([0.2, -0.5]), np.array([0.8, -1.2])
+    state = RobotState(q, velocity)
+    port = RobotPointPort(robot_model(), state, [1], np.array([[0.0, -0.5, 0]]))
+    mass = planar_mass(q)
+    j = np.array(
+        [
+            [0.5 * (np.cos(q[0]) + np.cos(q.sum())), 0.5 * np.cos(q.sum())],
+            [0.5 * (np.sin(q[0]) + np.sin(q.sum())), 0.5 * np.sin(q.sum())],
+        ]
+    )
+    k = np.column_stack([port.response(np.eye(3)[axis][None])[0, :2] for axis in range(2)])
+    np.testing.assert_allclose(k, j @ np.linalg.solve(mass, j.T), atol=2e-12)
+    result = solve(k, port.velocities()[0, :2], mu_static=0.01, mu_dynamic=0.005)
+    after = port.apply_impulses(np.array([[*result.impulse, 0.0]]))
+    np.testing.assert_allclose(mass @ (after.v - velocity), j.T @ result.impulse, atol=1e-12)
+    change = float((after.v @ mass @ after.v - velocity @ mass @ velocity) / 2)
+    assert change == pytest.approx(result.energy_change, abs=1e-12)
+    np.testing.assert_array_equal(after.q, q)
+
+
 def test_sticking_cancels_velocity_with_full_response():
     k = np.array([[2.0, 0.5], [0.5, 1.0]])
     expected = np.array([-0.2, 0.3])

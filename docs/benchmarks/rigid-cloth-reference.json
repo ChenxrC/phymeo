@@ -1,33 +1,33 @@
 {
   "status": "complete",
   "provenance": {
-    "git_revision": "b79cd9f8f0fdaeba8c5966fe9a68aee7cc708588",
+    "git_revision": "027e7cdef3b7a97e802277ca496936e29fb1f680",
     "git_dirty": false,
-    "source_sha256": "b70b038f97299c14f83138c7e457347b149970265ad4057daccaa751866ac192",
+    "source_sha256": "74d38ca64a0e70bd1601010e93f1ae527f9729ca9870df60bee884a186d4d75d",
     "python": "3.12.14",
     "numpy": "2.5.4",
     "platform": "Windows-11-10.0.26200-SP0"
   },
   "deterministic_repetition": true,
   "comparison": {
-    "max_sphere_position_difference_m": 2.0960785559466033,
-    "max_cloth_position_difference_m": 0.10760331699155777,
+    "max_sphere_position_difference_m": 2.096078555946087,
+    "max_cloth_position_difference_m": 0.10760331699156321,
     "one_way_discrete_free_fall_error_m": 4.618527782440651e-14
   },
   "mass_sensitivity": {
     "mass_half": {
       "sphere_mass_kg": 0.025,
-      "max_sphere_position_difference_m": 0.6310465677614399
+      "max_sphere_position_difference_m": 0.6310465677613806
     },
     "mass_double": {
       "sphere_mass_kg": 0.1,
-      "max_sphere_position_difference_m": 0.568467317231113
+      "max_sphere_position_difference_m": 0.5684673172309489
     }
   },
   "step_halving": {
     "duration_seconds": 2.0,
-    "max_sphere_position_difference_m": 0.1450599459808719,
-    "max_cloth_position_difference_m": 0.016785209427083853
+    "max_sphere_position_difference_m": 0.14505994598137828,
+    "max_cloth_position_difference_m": 0.016785209427110277
   },
   "analytic_free_fall": {
     "coarse_position_error_m": 0.0204374999999537,
@@ -84,24 +84,27 @@
         "iterations": 200,
         "tolerance": 1e-07,
         "backend": "numpy",
+        "distance_order": "original",
+        "projection_arithmetic": "fp64",
         "interaction": "two_way_dynamic"
       },
       "metrics": {
+        "execution_backend": "numpy",
         "accepted_frames": 240,
         "audited_substeps": 960,
         "contact_substeps": 17,
-        "runtime_seconds_including_audits": 862.9383107000031,
+        "runtime_seconds_including_audits": 1056.9390400999691,
         "max_position_iterations": 171,
         "max_velocity_iterations": 1,
-        "max_vertex_penetration_m": 8.326672684688674e-17,
+        "max_vertex_penetration_m": 2.7755575615628914e-17,
         "max_pin_displacement_m": 0.0,
         "max_quaternion_norm_error": 0.0,
-        "max_reported_residual": 9.999752790594655e-08,
-        "max_normal_velocity_violation_mps": 0.0,
+        "max_reported_residual": 9.999752793118813e-08,
+        "max_normal_velocity_violation_mps": 9.929690657954607e-17,
         "max_contact_ledger_imbalance_kg_mps": 0.0,
-        "max_rigid_motion_balance_error_kg_mps": 1.0221858082193336e-14,
+        "max_rigid_motion_balance_error_kg_mps": 8.836681386625855e-15,
         "max_rigid_balance_limit_kg_mps": 1e-10,
-        "trajectory_sha256": "a44e0e07847a2dcb2491b7fc80c0b5852f533c9af5505b6e5170f766bdcf7241"
+        "trajectory_sha256": "1416f05763fa3ba1c8bb2aaa810a197ccd5b28254b557e9b4b8d090419216ef3"
       }
     },
     "repeat": {
@@ -151,24 +154,27 @@
         "iterations": 200,
         "tolerance": 1e-07,
         "backend": "numpy",
+        "distance_order": "original",
+        "projection_arithmetic": "fp64",
         "interaction": "two_way_dynamic"
       },
       "metrics": {
+        "execution_backend": "numpy",
         "accepted_frames": 240,
         "audited_substeps": 960,
         "contact_substeps": 17,
-        "runtime_seconds_including_audits": 410.34425619989634,
+        "runtime_seconds_including_audits": 734.428304299945,
         "max_position_iterations": 171,
         "max_velocity_iterations": 1,
-        "max_vertex_penetration_m": 8.326672684688674e-17,
+        "max_vertex_penetration_m": 2.7755575615628914e-17,
         "max_pin_displacement_m": 0.0,
         "max_quaternion_norm_error": 0.0,
-        "max_reported_residual": 9.999752790594655e-08,
-        "max_normal_velocity_violation_mps": 0.0,
+        "max_reported_residual": 9.999752793118813e-08,
+        "max_normal_velocity_violation_mps": 9.929690657954607e-17,
         "max_contact_ledger_imbalance_kg_mps": 0.0,
-        "max_rigid_motion_balance_error_kg_mps": 1.0221858082193336e-14,
+        "max_rigid_motion_balance_error_kg_mps": 8.836681386625855e-15,
         "max_rigid_balance_limit_kg_mps": 1e-10,
-        "trajectory_sha256": "a44e0e07847a2dcb2491b7fc80c0b5852f533c9af5505b6e5170f766bdcf7241"
+        "trajectory_sha256": "1416f05763fa3ba1c8bb2aaa810a197ccd5b28254b557e9b4b8d090419216ef3"
       }
     },
     "one_way": {
@@ -218,24 +224,27 @@
         "iterations": 200,
         "tolerance": 1e-07,
         "backend": "numpy",
+        "distance_order": "original",
+        "projection_arithmetic": "fp64",
         "interaction": "one_way_prescribed_sphere"
       },
       "metrics": {
+        "execution_backend": "numpy",
         "accepted_frames": 240,
         "audited_substeps": 960,
         "contact_substeps": 132,
-        "runtime_seconds_including_audits": 403.0960987000726,
+        "runtime_seconds_including_audits": 340.97221160004847,
         "max_position_iterations": 190,
         "max_velocity_iterations": 1,
         "max_vertex_penetration_m": 8.326672684688674e-17,
         "max_pin_displacement_m": 0.0,
         "max_quaternion_norm_error": 0.0,
-        "max_reported_residual": 9.999597002868508e-08,
+        "max_reported_residual": 9.999597004134483e-08,
         "max_normal_velocity_violation_mps": 0.0,
         "max_contact_ledger_imbalance_kg_mps": 1.3985787785349405e-17,
         "max_rigid_motion_balance_error_kg_mps": 8.326672684688674e-17,
         "max_rigid_balance_limit_kg_mps": 1e-10,
-        "trajectory_sha256": "827a6c08a58d004f77ff046e493c3b81c02714e0df1d9bbb76116a8c700ebc33"
+        "trajectory_sha256": "5f35f33204c694f0a5e64cdae341eea32442ebbe57676bb8e3a492b7c1cbb208"
       }
     },
     "half_step": {
@@ -285,24 +294,27 @@
         "iterations": 200,
         "tolerance": 1e-07,
         "backend": "numpy",
+        "distance_order": "original",
+        "projection_arithmetic": "fp64",
         "interaction": "two_way_dynamic"
       },
       "metrics": {
+        "execution_backend": "numpy",
         "accepted_frames": 480,
         "audited_substeps": 1920,
         "contact_substeps": 29,
-        "runtime_seconds_including_audits": 232.529338600114,
+        "runtime_seconds_including_audits": 219.59836989990436,
         "max_position_iterations": 48,
         "max_velocity_iterations": 1,
-        "max_vertex_penetration_m": 2.7755575615628914e-17,
+        "max_vertex_penetration_m": 5.551115123125783e-17,
         "max_pin_displacement_m": 0.0,
         "max_quaternion_norm_error": 0.0,
-        "max_reported_residual": 9.999709819348112e-08,
-        "max_normal_velocity_violation_mps": 1.1943113261232575e-16,
+        "max_reported_residual": 9.999709820023028e-08,
+        "max_normal_velocity_violation_mps": 6.392552574976284e-17,
         "max_contact_ledger_imbalance_kg_mps": 0.0,
-        "max_rigid_motion_balance_error_kg_mps": 9.008635851182056e-15,
+        "max_rigid_motion_balance_error_kg_mps": 9.596923949972691e-15,
         "max_rigid_balance_limit_kg_mps": 1e-10,
-        "trajectory_sha256": "a5e09f9f15e411d4d39c8dadad76f05021ee69ebe5d8f70636cfbac7ba6c7881"
+        "trajectory_sha256": "a9380131b05079bd1325d4223eb2c29d8f1796c53600c1093e3bf4d3ba78646b"
       }
     },
     "mass_half": {
@@ -352,24 +364,27 @@
         "iterations": 200,
         "tolerance": 1e-07,
         "backend": "numpy",
+        "distance_order": "original",
+        "projection_arithmetic": "fp64",
         "interaction": "two_way_dynamic"
       },
       "metrics": {
+        "execution_backend": "numpy",
         "accepted_frames": 240,
         "audited_substeps": 960,
         "contact_substeps": 13,
-        "runtime_seconds_including_audits": 828.8873745000456,
+        "runtime_seconds_including_audits": 356.5647241000552,
         "max_position_iterations": 169,
         "max_velocity_iterations": 1,
         "max_vertex_penetration_m": 8.326672684688674e-17,
         "max_pin_displacement_m": 0.0,
         "max_quaternion_norm_error": 0.0,
-        "max_reported_residual": 9.999862947824401e-08,
-        "max_normal_velocity_violation_mps": 0.0,
+        "max_reported_residual": 9.999862947400885e-08,
+        "max_normal_velocity_violation_mps": 8.346488119379809e-17,
         "max_contact_ledger_imbalance_kg_mps": 0.0,
-        "max_rigid_motion_balance_error_kg_mps": 5.440526501532261e-15,
+        "max_rigid_motion_balance_error_kg_mps": 7.683957636839267e-15,
         "max_rigid_balance_limit_kg_mps": 1e-10,
-        "trajectory_sha256": "106c5116d50fd823521d6cdb78454e82aa504ebfd5067ff97e2cbb66860065ed"
+        "trajectory_sha256": "c37c23f4b0bbb500dbb43d60bfebbd9183ada0991405fc938cebe82097c8ee83"
       }
     },
     "mass_double": {
@@ -419,24 +434,27 @@
         "iterations": 200,
         "tolerance": 1e-07,
         "backend": "numpy",
+        "distance_order": "original",
+        "projection_arithmetic": "fp64",
         "interaction": "two_way_dynamic"
       },
       "metrics": {
+        "execution_backend": "numpy",
         "accepted_frames": 240,
         "audited_substeps": 960,
         "contact_substeps": 27,
-        "runtime_seconds_including_audits": 831.991861899849,
+        "runtime_seconds_including_audits": 350.59337730007246,
         "max_position_iterations": 175,
         "max_velocity_iterations": 1,
         "max_vertex_penetration_m": 8.326672684688674e-17,
         "max_pin_displacement_m": 0.0,
         "max_quaternion_norm_error": 0.0,
-        "max_reported_residual": 9.997468140216431e-08,
-        "max_normal_velocity_violation_mps": 1.5885297676090958e-16,
+        "max_reported_residual": 9.997468141278271e-08,
+        "max_normal_velocity_violation_mps": 1.6233345332945745e-16,
         "max_contact_ledger_imbalance_kg_mps": 0.0,
-        "max_rigid_motion_balance_error_kg_mps": 2.0988853016712383e-14,
+        "max_rigid_motion_balance_error_kg_mps": 2.419749513607461e-14,
         "max_rigid_balance_limit_kg_mps": 1e-10,
-        "trajectory_sha256": "ef4c4f3e5d68166947b96f630c8f6d65b34377a3d4708db0e6a5347fd208f6af"
+        "trajectory_sha256": "24848c6c3877ba395b82f49992fc5b047c04009b4163f68906b50ddfda91f077"
       }
     }
   }

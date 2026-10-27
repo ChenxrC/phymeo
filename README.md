@@ -6,11 +6,11 @@
 
 > 当前处于设计与基础实现阶段。图中描述的是目标架构，不能据此推断全部模块已实现、GPU 已通过验证或整体可微。实际交付以[进度记录](docs/progress.md)为准。
 
-上一轮基础开发已收口：交付分支 `codex/architecture-v0` 完成计划 Task 1–15。Task 16 的原始 tyx 刚体原型保留在独立[草稿分支](https://github.com/ChenxrC/phymeo/tree/codex/tyx-rigid-wip)；本分支已选择性修复并验证刚体预测，整分支独立审阅在最终交付前执行。
+上一轮基础开发已收口：交付分支 `codex/architecture-v0` 完成计划 Task 1–15。Task 16 的原始 tyx 刚体原型保留在独立[草稿分支](https://github.com/ChenxrC/phymeo/tree/codex/tyx-rigid-wip)；本分支已选择性修复并验证刚体预测，整分支独立审阅及问题修复已完成。
 
-当前长程目标：**一个可重复验证的刚柔双向交互场景**。在 `codex/rigid-cloth-coupling` 分支实现布片与动态球接触、联合回滚、双向/单向对照与离线回放，先 CPU 参考再验收 tyx。见[场景与验收设计](docs/superpowers/specs/2026-10-27-rigid-cloth-coupling-design.md)和[七个里程碑](docs/superpowers/plans/2026-10-27-rigid-cloth-coupling.md)。这是一项正在实施的新目标，不代表场景已经完成。
+本轮长程目标已完成验收：**一个可重复验证的刚柔双向交互场景**。`codex/rigid-cloth-coupling` 分支提供布片与动态球接触、联合回滚、双向/单向对照、离线回放及实际 tyx CUDA 路径。见[场景与验收设计](docs/superpowers/specs/2026-10-27-rigid-cloth-coupling-design.md)、[七个里程碑](docs/superpowers/plans/2026-10-27-rigid-cloth-coupling.md)与[逐项验收证据](docs/benchmarks/rigid-cloth-acceptance.md)。这只表示所述固定场景完成，不代表整个目标架构已实现。
 
-点/球几何、双向响应、联合步进与整帧回滚已实现。独立整分支审阅发现的一个速度重建问题已修复；最终版本的 CPU 基准/重复/单向对照，以及实际 CUDA 两次 240 帧均通过，设备重复的 22 个数值数组逐元素一致。与同顺序参考相比，球/布的最大位置差为 0.111/0.020 mm，见[设备报告](docs/benchmarks/rigid-cloth-device.json)。[离线回放](docs/demos/rigid-cloth.html)已更新为修复版同源轨迹；半步长和质量对照仍在复验，之后更新完整[报告](docs/benchmarks/rigid-cloth.md)并收口。
+独立整分支审阅发现的一个速度重建问题已修复。最终版本六组 CPU 与三组设备实验共 **9,600 个子步全部通过**；CPU 和 CUDA 各两次 240 帧的 22 个数值数组均逐元素一致。CUDA 与同顺序参考的球/布最大位置差为 **0.111/0.020 mm**，低于 2 mm 门槛。[离线回放](docs/demos/rigid-cloth.html)与[完整报告](docs/benchmarks/rigid-cloth.md)均来自修复版；半步长实验仍显示约 0.145 m 的球轨迹差，保留时间步敏感性限制。
 
 ![phymeo 架构图](docs/architecture/phymeo.png)
 

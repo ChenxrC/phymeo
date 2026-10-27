@@ -1,6 +1,6 @@
 # 环境构建与 CI 部署计划
 
-日期：2026-10-27。当前已有文档、CPU 和 wheel 检查工作流与基础包/锁文件；提交 `ba09760` 的[远程 CI](https://github.com/ChenxrC/phymeo/actions/runs/40451453287)与[文档检查](https://github.com/ChenxrC/phymeo/actions/runs/40451453267)均通过，分支保护未配置。安装基础包已在本机 uv/pip 验证，tyx 解释器/C++ CPU/本机 CUDA 也已运行；远程 GPU runner 尚未配置。后续版本需核对各自 Actions 结果，证据见[进度记录](../progress.md)。
+日期：2026-10-27。当前已有文档、CPU 和 wheel 工作流与基础包/锁文件；修复源码提交 `027e7cd` 的[远程 CI](https://github.com/ChenxrC/phymeo/actions/runs/40453491359)与[文档检查](https://github.com/ChenxrC/phymeo/actions/runs/40453491328)均通过，同源回放提交 `7ccfaa3` 的[CI](https://github.com/ChenxrC/phymeo/actions/runs/40457355249)也通过。分支保护及远程 GPU runner 未配置。本机 uv/pip、tyx 解释器/C++/CUDA 与完整刚柔场景已实际验证；后续版本需核对各自 Actions，证据见[进度记录](../progress.md)。
 
 ## 1. 支持层级
 
@@ -176,7 +176,7 @@ CPU CI 在 Windows/Linux × Python 3.11/3.12 × uv/pip 上执行短程双向/单
 
 CPU 套件使用 `-m "not tyx"`，明确只验证公开依赖路径。私有 tyx-cpu 集成 job 仍待受信任凭证配置；本机已经分别运行 interpret/cpu_cpp/cuda，不能把本机证据写作云端结果。`scripts/verify_wheel.py` 会创建全新环境，只安装 runtime.lock 与构建 wheel，执行 `pip check` 和 `python -I` 求解 smoke，确认导入来自 site-packages 且没有导入 tyx/torch/warp。
 
-提交 `ba09760c09eabcb609747755e5eeb1147f922b53` 的 CI 12 个 job（8 组 CPU、2 个 wheel、quality 和 required）均实际完成并通过。该版本包含离线回放，后续新增的 CI 回放命令和 wheel 联合接触 smoke 需要在其新提交上再次核验。
+CI 12 个 job（8 组 CPU、2 个 wheel、quality 和 required）已在多个提交实际完成并通过；其中 `027e7cd` 包含审阅修复、回放生成命令和 wheel 联合接触 smoke，`7ccfaa3` 更新了最终来源的回放。这些代码与脚本此后未改变，后续实验报告保存的是同一已验证源码的完整时域结果。
 
 不要用 `paths` 过滤必需的总体检查导致 PR 一直 pending；可以让 job 内部决定范围。分支保护由维护者在首次成功运行后设置，不能将“已提交 YAML”写成“已配置保护”。
 

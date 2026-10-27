@@ -136,7 +136,23 @@ def main():
         if not staged_free.report.accepted:
             raise RuntimeError("Installed generic state registry failed")
         np.testing.assert_allclose(staged_free.state.domains["dust"].velocity[1, 1], -0.981)
-    if {"tyx", "torch", "warp"} & set(sys.modules):
+    robot_model, _ = phymeo.pendulum_chain(1)
+    robot_state = phymeo.RobotState(np.zeros(1), np.zeros(1))
+    robot_inputs = phymeo.RobotInputs.zeros(1)
+    robot_inputs.effort[:] = 1
+    with phymeo.make_robot_runtime(robot_model) as runtime:
+        robot = runtime.step(
+            phymeo.SceneState({"robot": robot_state}),
+            phymeo.SceneInputs({"robot": robot_inputs}),
+            0.001,
+        )
+    if not robot.report.accepted:
+        raise RuntimeError("Installed robot program failed")
+    np.testing.assert_allclose(robot.state.domains["robot"].v, [0.012], atol=1e-12)
+    np.testing.assert_allclose(robot.state.domains["robot"].q, [0.000012], atol=1e-12)
+    point = phymeo.RobotPointPort(robot_model, robot_state, [0], np.array([[0.0, -0.5, 0]]))
+    np.testing.assert_allclose(point.response(np.array([[2.0, 0, 0]])), [[6, 0, 0]], atol=1e-12)
+    if {"tyx", "torch", "warp", "mujoco"} & set(sys.modules):
         raise RuntimeError("The base wheel imported an optional runtime")
     print(f"Installed-wheel smoke passed: {installed}")
 

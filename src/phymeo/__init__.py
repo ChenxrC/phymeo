@@ -5,6 +5,7 @@ from .backends.tyx_coupled import TyxCoupledXPBDSolver
 from .backends.tyx_rigid import TyxRigidSemiImplicitSolver
 from .backends.tyx_xpbd import TyxXPBDSolver
 from .builders.cloth import ClothPatch, cloth_grid
+from .builders.robot import pendulum_chain
 from .constraints.distance import DistanceConstraints
 from .core.capabilities import ProblemSignature, SolverCapabilities, SolverFailure
 from .core.coupled import CoupledInputs, CoupledState, CoupledStepReport, CoupledStepResult
@@ -12,6 +13,7 @@ from .core.coupling import ImpulseExchangeResult, ImpulseLedger
 from .core.model import ParticleModel
 from .core.result import StepReport, StepResult
 from .core.rigid import RigidBodyInputs, RigidBodyModel, RigidBodyState
+from .core.robot import RobotInputs, RobotModel, RobotState
 from .core.scene import (
     BackendContext,
     DomainBinding,
@@ -26,6 +28,7 @@ from .core.state import ParticleState, StepInputs
 from .core.verification import CandidateVerifier, VerificationReport
 from .coupling.point_port import ParticleRigidPorts
 from .coupling.ports import ParticlePointPort, PointPort, RigidPointPort, exchange_impulses
+from .coupling.robot_port import RobotPointPort
 from .geometry.particle_sphere import ParticleSphereGeometry, particle_sphere_geometry
 from .geometry.plane import Plane
 from .geometry.sphere import SphereShapes
@@ -50,6 +53,7 @@ from .solvers.coupled_xpbd import CoupledXPBDSolver
 from .solvers.free_scene import FreeSceneProgram
 from .solvers.rigid_semi_implicit import RigidSemiImplicitSolver
 from .solvers.rigid_sphere_plane import RigidSpherePlaneSolver
+from .solvers.robot import RobotProgram, make_robot_runtime
 from .solvers.semi_implicit import SemiImplicitSolver
 from .solvers.xpbd import XPBDSolver
 from .validation.free_particle import FreeParticleVerifier
@@ -57,6 +61,13 @@ from .validation.free_particle import FreeParticleVerifier
 __version__ = "0.1.0a0"
 
 __all__ = [
+    "RobotModel",
+    "RobotState",
+    "RobotInputs",
+    "RobotPointPort",
+    "RobotProgram",
+    "make_robot_runtime",
+    "pendulum_chain",
     "BackendContext",
     "DomainBinding",
     "HistoryField",

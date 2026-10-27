@@ -229,3 +229,20 @@ def test_segment_nonrepresentable_difference_and_ownership():
     a = np.array([[-1e308, 0, 0], [1e308, 0, 0]])
     with pytest.raises(SolverFailure):
         api().closest_segment_segment(a, b)
+
+
+def test_large_normal_separation_does_not_hide_unique_triangle_minimum():
+    tri = np.array([[0.0, 0, 0], [1.0, 0, 0], [0.0, 1, 0]])
+    p = np.array([0.5, 2.0, 1e10])
+    result = api().closest_point_triangle(p, tri)
+    np.testing.assert_allclose(result.second, [0, 1, 0], atol=1e-12)
+    assert np.max((tri - result.second) @ (p - result.second)) <= 1e-12
+
+
+def test_large_normal_separation_does_not_hide_unique_segment_minimum():
+    a = np.array([[0.0, 0, 0], [1.0, 0, 0]])
+    b = np.array([[0.5, 2, 1e8], [0.5, 3, 1e8]])
+    result = api().closest_segment_segment(a, b)
+    np.testing.assert_allclose(result.first, [0.5, 0, 0], atol=1e-12)
+    np.testing.assert_allclose(result.second, b[0], atol=1e-12)
+    assert_convex_optimal(result, a, b, atol=1e-12)

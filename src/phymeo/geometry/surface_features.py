@@ -1,6 +1,7 @@
 """Static convex-feature distances; not a collider, normal selector or CCD test."""
 
 from dataclasses import dataclass, field
+from fractions import Fraction
 from functools import wraps
 
 import numpy as np
@@ -81,6 +82,34 @@ def _segment_parameter(point, first, second):
     return float(np.clip(((point - first) @ edge) / length, 0, 1))
 
 
+def _certify(result, first, second):
+    """Exact FP64-input KKT signs, with a feature-size (not separation) budget.
+
+    Rational products are validation only. They never replace candidate points.
+    A large common normal offset must not hide an incorrect in-plane minimum.
+    """
+
+    def vector(value):
+        return tuple(Fraction(float(x)) for x in value)
+
+    def sub(a, b):
+        return tuple(x - y for x, y in zip(a, b, strict=True))
+
+    def dot(a, b):
+        return sum(x * y for x, y in zip(a, b, strict=True))
+
+    a, b = vector(result.first), vector(result.second)
+    delta = sub(a, b)
+    groups = [tuple(map(vector, points)) for points in (first, second)]
+    extent = max(dot(sub(x, y), sub(x, y)) for group in groups for x in group for y in group)
+    budget = Fraction(1e-12) * extent
+    if any(dot(delta, sub(x, a)) < -budget for x in groups[0]) or any(
+        dot(delta, sub(x, b)) > budget for x in groups[1]
+    ):
+        raise SolverFailure("closest feature candidate fails independent optimality certificate")
+    return result
+
+
 @_numerical
 def closest_point_triangle(point, triangle):
     """Closest point on a nondegenerate closed triangle, including its boundary."""
@@ -109,8 +138,11 @@ def closest_point_triangle(point, triangle):
         weights = np.zeros(3)
         weights[first], weights[second] = 1 - parameter, parameter
         candidates.append((weights, weights @ tri))
-    weights, closest = min(candidates, key=lambda item: _norm(p - item[1]))
-    return ClosestFeaturePair(point, origin + scale * closest, np.ones(1), weights)
+    # Drop the common perpendicular distance before comparing candidates.
+    projected = s * edge1 + t * edge2
+    weights, closest = min(candidates, key=lambda item: _norm(projected - item[1]))
+    result = ClosestFeaturePair(point, origin + scale * closest, np.ones(1), weights)
+    return _certify(result, point[None], triangle)
 
 
 @_numerical
@@ -142,10 +174,15 @@ def closest_segment_segment(first, second):
         candidates.append((s, _segment_parameter(a[0] + s * u, b[0], b[1])))
     for t in (0.0, 1.0):
         candidates.append((_segment_parameter(b[0] + t * v, a[0], a[1]), t))
-    s, t = min(candidates, key=lambda st: _norm(a[0] + st[0] * u - b[0] - st[1] * v))
-    return ClosestFeaturePair(
+    axes = [u / length_u]
+    if sine_scale != 0:
+        axes.append(np.cross(cross / sine_scale, axes[0]))
+    axes = np.array(axes)
+    s, t = min(candidates, key=lambda st: _norm(axes @ (a[0] + st[0] * u - b[0] - st[1] * v)))
+    result = ClosestFeaturePair(
         origin + scale * (a[0] + s * u),
         origin + scale * (b[0] + t * v),
         np.array([1 - s, s]),
         np.array([1 - t, t]),
     )
+    return _certify(result, first, second)

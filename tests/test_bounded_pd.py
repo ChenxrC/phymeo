@@ -37,6 +37,21 @@ def test_scalar_implicit_equation_has_closed_form():
     assert result.residual_effort <= 1e-10 and result.equation_residual <= 1e-12
 
 
+def test_bounded_control_public_exports():
+    import phymeo
+
+    module = importlib.import_module("phymeo.control.bounded_pd")
+    assert phymeo.solve_bounded_pd is module.solve_bounded_pd
+    assert phymeo.BoundedPDResult is module.BoundedPDResult
+
+
+def test_installed_bounded_control_smoke():
+    from test_articulated_measurement import script
+
+    result = script("smoke_installed").check_bounded_control()
+    np.testing.assert_allclose(result.effort, [0.25], atol=1e-12)
+
+
 @pytest.mark.parametrize("target,sign", [(100.0, 1), (-100.0, -1)])
 def test_effort_saturates_inside_coupled_solution(target, sign):
     result = solve(target=np.array([target]), effort_limit=np.array([0.2]))
@@ -191,3 +206,68 @@ def test_budget_is_not_silent_approximate_success():
             h=0.1,
             max_iterations=1,
         )
+
+
+@pytest.mark.parametrize(
+    "matrix",
+    [np.array([[1.0, 0.1], [0.2, 1.0]]), np.diag([1.0, 1e-14]), np.array([[1.0, 2.0], [2.0, 1.0]])],
+)
+def test_asymmetric_indefinite_or_ill_conditioned_mass_refused(matrix):
+    with pytest.raises(SolverFailure):
+        solve(
+            mass=matrix,
+            bias=np.zeros(2),
+            q=np.zeros(2),
+            velocity=np.zeros(2),
+            target=np.ones(2),
+            target_velocity=np.zeros(2),
+            kp=np.ones(2),
+            kd=np.ones(2),
+            effort_limit=np.ones(2),
+        )
+
+
+@pytest.mark.parametrize("limit", [0.1, 2.0])
+def test_numpy_participant_uses_effort_and_owns_actual_prediction(limit):
+    from test_robot_kinematics import robot_model
+
+    from phymeo import BackendContext, RobotInputs, RobotParticipant, RobotState, StepSettings
+    from phymeo.dynamics.robot_dynamics import bias_forces, mass_matrix
+
+    model = robot_model()
+    state = RobotState(np.array([0.2, -0.3]), np.array([-0.1, 0.2]))
+    target = np.array([0.25, -0.2])
+    kp = np.full(2, 6.0)
+    kd = np.full(2, 0.4)
+    h = 0.001
+    mass, bias = mass_matrix(model, state.q), bias_forces(model, state)
+    command = solve(
+        mass=mass,
+        bias=bias,
+        q=state.q,
+        velocity=state.v,
+        target=target,
+        target_velocity=np.zeros(2),
+        kp=kp,
+        kd=kd,
+        effort_limit=np.full(2, limit),
+        h=h,
+    )
+    ws = RobotParticipant(model).create_workspace(
+        "arm",
+        state,
+        RobotInputs(command.effort, np.zeros((2, 3)), np.zeros((2, 3))),
+        h,
+        StepSettings(),
+        BackendContext(),
+    )
+    try:
+        ws.predict()
+        expected = np.clip(kp * (target - ws.configuration()) - kd * ws.velocity(), -limit, limit)
+        np.testing.assert_allclose(command.effort, expected, atol=1e-10, rtol=0)
+        np.testing.assert_allclose(
+            mass @ ((ws.velocity() - state.v) / h) + bias, command.effort, atol=1e-12
+        )
+        np.testing.assert_array_equal(state.q, [0.2, -0.3])
+    finally:
+        ws.close()

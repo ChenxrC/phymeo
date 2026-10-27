@@ -114,6 +114,27 @@ def check_surface_contact():
     return {"velocity": result.states["body"].velocity, "impulse": result.world_impulses}
 
 
+def check_bounded_control():
+    import phymeo
+
+    result = phymeo.solve_bounded_pd(
+        np.eye(1),
+        np.zeros(1),
+        np.zeros(1),
+        np.zeros(1),
+        np.ones(1),
+        np.zeros(1),
+        np.array([10.0]),
+        np.ones(1),
+        np.array([0.25]),
+        0.1,
+    )
+    np.testing.assert_allclose(result.effort, [0.25], atol=1e-12)
+    np.testing.assert_allclose(result.predicted_velocity, [0.025], atol=1e-12)
+    np.testing.assert_allclose(result.predicted_configuration, [0.0025], atol=1e-12)
+    return result
+
+
 def main():
     installed = Path(phymeo.__file__).resolve()
     if not installed.is_relative_to(Path(sys.prefix).resolve()):
@@ -287,6 +308,7 @@ def main():
     )
     check_articulated_pair()
     check_surface_contact()
+    check_bounded_control()
     for name in (
         "TyxRobotParticipant",
         "TyxClothParticipant",

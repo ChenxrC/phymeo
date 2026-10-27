@@ -20,6 +20,7 @@ from .constraints.contact_impulse import ContactImpulseResult, solve_contact_imp
 from .constraints.distance import DistanceConstraints
 from .constraints.friction import FrictionImpulseResult, solve_friction_disk
 from .constraints.node_robot import NodeRobotContact
+from .control.bounded_pd import BoundedPDResult, solve_bounded_pd
 from .core.capabilities import ProblemSignature, SolverCapabilities, SolverFailure
 from .core.coupled import CoupledInputs, CoupledState, CoupledStepReport, CoupledStepResult
 from .core.coupling import ImpulseExchangeResult, ImpulseLedger
@@ -155,6 +156,8 @@ __all__ = [
     "make_coupled_runtime",
     "PointPort",
     "PointCandidateAudit",
+    "BoundedPDResult",
+    "solve_bounded_pd",
     "ParticlePointPort",
     "RigidPointPort",
     "exchange_impulses",

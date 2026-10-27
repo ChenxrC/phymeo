@@ -539,3 +539,10 @@
 - 实际CUDA全1484通过；核心Py3.11/原生pip3.12各1214通过、270设备明确排除；相关C++22通过；105文件wheel逐字节一致及源码外pip安装通过。完整[工程记录](benchmarks/p65-foundation-engineering.json)保存环境/源码与包哈希、命令和时长。
 - 全部数值测试退出后[修复后串行观测](performance-bottlenecks/measurements/p65-reviewed-foundations.md)通过：120次联合冲量、120次NumPy端口、60次组合几何；新增验证成本如实记录，无优化/Warp比较。
 - 五个独立基础计划完成工程门禁，完整H0/H1/H2/H3/H4/H5仍不能以这些小切片代替。[基础验收](benchmarks/p65-foundation-acceptance.md)与[审阅裁定](benchmarks/p65-foundation-review.md)明确未完成内容。用户截止仍为08:00，总goal未完成。
+
+## P6.5 H3a：有限驱动的独立后续切片
+
+- 前五个基础阶段验收关闭后，剩余窗口继续[H3a计划](superpowers/plans/2026-10-28-p65-bounded-control.md)，不重审旧修复。该新范围只实现有界隐式自由预测effort，针对初次检查的轻腕显式PD风险；完整接触、history、IK、关节限位仍未实现。
+- 数学核心26项先缺模块RED后GREEN；公共导出与wheel入口2项RED后补齐，扩展至33项核心（含独立活动集oracle、真实NumPy参与者、病态质量拒绝）。实际tyx interpret组合35项通过、CUDA新2项通过，C++还在运行。
+- [600次串行主机控制观测](performance-bottlenecks/measurements/p65-bounded-control.md)全部验收通过；不包含设备积分，不宣称完整动态稳定或GPU控制执行。
+- 新控制范围仍须完成其唯一独立审阅、必要全回归/打包及准确CI；这些不是前阶段已修复代码的二次审阅。完整P6.5和08:00截止保持不变。

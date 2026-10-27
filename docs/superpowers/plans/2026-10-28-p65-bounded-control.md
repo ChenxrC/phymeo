@@ -18,8 +18,8 @@
 
 Files: Create `src/phymeo/control/__init__.py`, `src/phymeo/control/bounded_pd.py`, `tests/test_bounded_pd.py`。
 
-- [ ] 先写单轴解析/饱和/零增益/耦合活动集oracle/拒绝/所有权测试，运行确认缺模块RED。
-- [ ] 实现严格输入合同、盒QP、独立控制律和原M方程验收；运行整个新测试文件GREEN及ruff，提交。
+- [x] 先写单轴解析/饱和/零增益/耦合活动集oracle/拒绝/所有权测试，运行确认缺模块RED。
+- [x] 实现严格输入合同、盒QP、独立控制律和原M方程验收；运行整个新测试文件GREEN及ruff，提交。
 
 Expected: 配置错误明确抛TypeError/ValueError，数值/预算失败SolverFailure；无裁切物理状态。
 

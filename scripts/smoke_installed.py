@@ -9,6 +9,55 @@ import numpy as np
 import phymeo
 
 
+def check_articulated_pair():
+    """A mass2 Y slider and mass1 node share a closed normal contact."""
+    robot = phymeo.RobotModel(
+        parents=np.array([-1]),
+        joint_types=("prismatic",),
+        joint_position=np.zeros((1, 3)),
+        joint_orientation=np.array([[0.0, 0, 0, 1]]),
+        joint_axis=np.array([[0.0, 1, 0]]),
+        mass=np.array([2.0]),
+        com=np.zeros((1, 3)),
+        inertia_diagonal=np.full((1, 3), 0.01),
+        gravity=np.zeros(3),
+    )
+    node = phymeo.ParticleModel(np.ones(1), np.zeros(3))
+    state = phymeo.SceneState(
+        {
+            "robot": phymeo.RobotState(np.zeros(1), np.zeros(1)),
+            "cloth": phymeo.ParticleState(np.array([[0.0, 0.09, 0.0]]), np.zeros((1, 3))),
+        }
+    )
+    program = phymeo.ArticulatedCouplingProgram(
+        phymeo.SceneModel(
+            (
+                phymeo.DomainBinding("robot", "robot", robot),
+                phymeo.DomainBinding("cloth", "particles", node),
+            )
+        ),
+        {"robot": phymeo.RobotParticipant(robot), "cloth": phymeo.ClothParticipant(node, None)},
+        phymeo.RobotSphereAttachments(np.array([0]), np.zeros((1, 3)), np.array([0.1])),
+        [phymeo.NodeRobotContact("cloth", np.array([0]), np.array([0]))],
+    )
+    inputs = phymeo.SceneInputs(
+        {"robot": phymeo.RobotInputs.zeros(1), "cloth": phymeo.StepInputs.zeros(1)}
+    )
+    with phymeo.make_articulated_runtime(program) as runtime:
+        result = runtime.step(state, inputs, 0.01)
+    if not result.report.accepted:
+        raise RuntimeError("Installed articulated contact program failed")
+    after_robot, after_node = result.state.domains["robot"], result.state.domains["cloth"]
+    np.testing.assert_allclose(after_robot.q, [-0.01 / 3], atol=1e-12)
+    np.testing.assert_allclose(after_robot.v, [-1 / 3], atol=1e-12)
+    np.testing.assert_allclose(after_node.position, [[0, 0.1 - 0.01 / 3, 0]], atol=1e-12)
+    np.testing.assert_allclose(after_node.velocity, [[0, 2 / 3, 0]], atol=1e-12)
+    np.testing.assert_allclose(2 * after_robot.v + after_node.velocity[:, 1], [0], atol=1e-12)
+    np.testing.assert_array_equal(state.domains["robot"].q, np.zeros(1))
+    np.testing.assert_array_equal(state.domains["cloth"].position, [[0, 0.09, 0]])
+    return {"robot_q": after_robot.q, "robot_v": after_robot.v, "node_v": after_node.velocity}
+
+
 def main():
     installed = Path(phymeo.__file__).resolve()
     if not installed.is_relative_to(Path(sys.prefix).resolve()):
@@ -180,6 +229,7 @@ def main():
     np.testing.assert_allclose(
         solid_port.response(np.array([[1.0, 0, 0]])), [[4, 0, 0]], atol=1e-12
     )
+    check_articulated_pair()
     if {"tyx", "torch", "warp", "mujoco"} & set(sys.modules):
         raise RuntimeError("The base wheel imported an optional runtime")
     print(f"Installed-wheel smoke passed: {installed}")

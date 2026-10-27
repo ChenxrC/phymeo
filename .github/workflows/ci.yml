@@ -106,6 +106,13 @@ jobs:
           ${{ steps.environment.outputs.python }} examples/rigid_cloth.py --frames 1 --output artifacts/rigid-cloth-smoke
           ${{ steps.environment.outputs.python }} examples/rigid_cloth.py --frames 1 --one-way --output artifacts/rigid-cloth-one-way-smoke
           ${{ steps.environment.outputs.python }} scripts/render_rigid_cloth.py --two-way artifacts/rigid-cloth-smoke --one-way artifacts/rigid-cloth-one-way-smoke --output artifacts/rigid-cloth-smoke.html
+          for scene in S2 S3 S4; do
+            ${{ steps.environment.outputs.python }} examples/articulated_scene.py --scene "$scene" --frames 2 --output "artifacts/articulated-smoke/$scene"
+          done
+          for scene in S2 S3; do
+            ${{ steps.environment.outputs.python }} examples/articulated_scene.py --scene "$scene" --frames 2 --experiment prescribed --output "artifacts/articulated-smoke/$scene-driver"
+          done
+          ${{ steps.environment.outputs.python }} scripts/render_articulated.py --input artifacts/articulated-smoke --output artifacts/articulated-smoke.html
 
   wheel:
     name: wheel / ${{ matrix.os }}

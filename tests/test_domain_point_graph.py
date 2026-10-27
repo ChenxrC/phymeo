@@ -14,6 +14,15 @@ def graph(ports, left, right):
     )
 
 
+def test_multidomain_graph_public_export():
+    import phymeo
+
+    assert (
+        phymeo.MultiDomainPointOperator
+        is importlib.import_module("phymeo.coupling.domain_graph").MultiDomainPointOperator
+    )
+
+
 def particle(domain, inverse_mass, velocity=None):
     weights = np.atleast_1d(np.array(inverse_mass, dtype=float))
     velocity = np.zeros((len(weights), 3)) if velocity is None else np.array(velocity, dtype=float)

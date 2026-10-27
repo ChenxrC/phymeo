@@ -28,14 +28,14 @@
 
 **Files:** Create `src/phymeo/coupling/domain_graph.py`、`tests/test_domain_point_graph.py`。
 
-- [ ] 三质量解析、共享节点/机器人、功率/动量、每域一次apply、自环/重复/空/固定、非法输入/溢出与最后域失败测试先RED。
-- [ ] 实现规格中完整API，复用现有端口，不改P6求解器；全文件与相关端口回归GREEN、ruff后小提交。
+- [x] 三质量解析、共享节点/机器人、功率/动量、每域一次apply、自环/重复/空/固定、非法输入/溢出与最后域失败测试先RED。
+- [x] 实现规格中完整API，复用现有端口，不改P6求解器；全文件与相关端口回归GREEN、ruff后小提交。
 
 ## Task2：实际后端与交接
 
 **Files:** Create `tests/test_tyx_domain_point_graph.py`；Modify `src/phymeo/__init__.py`、README/进度/性能记录。
 
-- [ ] 公共导出RED、实际多域参与者测试；分别interpret/C++/CUDA，逐域完成launch与解析状态证据。
+- [x] 公共导出RED、实际多域参与者测试；分别interpret/C++/CUDA，逐域完成launch与解析状态证据。
 - [ ] 固定小负载性能观察、明确局部算子限制；与本轮其他切片统一必要回归/打包/CI/独立审阅及推送。
 
 ## 自查

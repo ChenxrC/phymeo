@@ -508,3 +508,11 @@
 - 真实tyx节点摩擦＋旧表面组合各3项在interpret/C++/CUDA通过（.99/38.85/1.28s）；局部解明确主机FP64，底层响应/候选调用有实际launch增长。尚未认证任意FP32机器人响应的摩擦图跨精度策略。
 - [局部算子600调用串行观测](performance-bottlenecks/measurements/p65-friction.md)全部解析验收通过；只观察，不优化、不归因为tyx缺陷。
 - 下一切片[H1c多域瞬时图](superpowers/plans/2026-10-28-p65-domain-point-graph.md)合同已冻结，A/B/布全部接触的每域载荷先合并、每域一个候选，所有验证通过才返回。它仍不是法向接触或完整时间步；全场景未决项和截止不变。
+
+## 2026-10-28 05:44：多域瞬时图实现，基础检查点CI成功
+
+- `MultiDomainPointOperator`的20项测试通过：三质量独立响应矩阵、共享布交叉项、功率/共点动量、共享祖先、重复/自环/空/固定支持、每域一次候选及最后域失败隔离。
+- 两个真实tyx机器人工作区＋一个布节点工作区的组合，interpret/C++/CUDA各1项通过（1.16/30.79/1.32s）；每个域均有调用期间完成launch增长，所有配置/输入保持不变。它是瞬时图查询/冲量候选，不是完整双臂动态接触step。
+- [串行三单节点域测量](performance-bottlenecks/measurements/p65-domain-graph.md)120次计时调用全部解析验收通过，数据/哈希/执行计数保留；没有新依赖缺陷归因。
+- 已推送基础`a416369`准确提交的CI [40586415804](https://github.com/ChenxrC/phymeo/actions/runs/40586415804)与Documentation [40586415779](https://github.com/ChenxrC/phymeo/actions/runs/40586415779)都success。后续新增摩擦/多域源码尚不能沿用该CI为最终通过。
+- 接下来冻结固定构型联合接触冲量子问题，将法向非穿透、切向摩擦与同域反作用联合迭代，验证双侧夹持冲量平衡/低摩擦滑移；仍不替代非线性时间积分、CCD、完整递布和Three.js验收。最终整分支审阅、当前源码全回归/打包/CI尚待统一收口。

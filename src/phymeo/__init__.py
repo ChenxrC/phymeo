@@ -39,6 +39,7 @@ from .core.scene import (
 from .core.state import ParticleState, StepInputs
 from .core.tetrahedral import TetrahedralModel
 from .core.verification import CandidateVerifier, VerificationReport
+from .coupling.domain_graph import MultiDomainPointOperator
 from .coupling.participant import (
     ClothParticipant,
     ParticipantWorkspace,
@@ -91,6 +92,7 @@ from .validation.free_particle import FreeParticleVerifier
 __version__ = "0.1.0a0"
 
 __all__ = [
+    "MultiDomainPointOperator",
     "FrictionImpulseResult",
     "solve_friction_disk",
     "ClosestFeaturePair",

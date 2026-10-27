@@ -1,0 +1,159 @@
+{
+  "python": "3.12.14",
+  "numpy": "2.5.4",
+  "mode": "cuda",
+  "scope": "3 independent one-node domains/2 edges; response+candidate+assertions",
+  "source_hashes": {
+    "src/phymeo/coupling/domain_graph.py": "29a36b72dc3f3b4d8a8586206a7e1c76b5dd60c44bedb585c3c0304aafc0887d",
+    "src/phymeo/coupling/surface_port.py": "d25572dfddaf0bb05508b77415dc820421f5ea5b4623985a18226381abebaf08",
+    "src/phymeo/coupling/point_port.py": "d2af0f2627b233a4b8056cf68325cbb1222d8e3ccc57b58c099dd4223c2decda",
+    "src/phymeo/backends/tyx_participants.py": "8eeff92f1dacf9d4dea345e482126dbbfa5390ec628646f96d2ae458b1ab4f3f",
+    "scripts/benchmark_domain_point_graph.py": "784bf655683ba3fe1cd48db89c61fc719e91fb33c4bd7769840ca37cb66f65e5",
+    "scripts/benchmark_surface_foundation.py": "9c05ad8c1870727318a0f36d65f0e1870a1f4cb549a61bc6d399af9bdd9059e0"
+  },
+  "measurement": {
+    "first_call_seconds": 1.5332072000019252,
+    "warmups": 2,
+    "batches": [
+      {
+        "seconds": [
+          0.009208600036799908,
+          0.007866400061175227,
+          0.007987200049683452,
+          0.008345700101926923,
+          0.008466399973258376,
+          0.007973599946126342,
+          0.010047600138932467,
+          0.01796719990670681,
+          0.008853500010445714,
+          0.008342599961906672,
+          0.008756699971854687,
+          0.008021800080314279,
+          0.007937699789181352,
+          0.008089300012215972,
+          0.007874799892306328,
+          0.00731480005197227,
+          0.007992699975147843,
+          0.007398900110274553,
+          0.00799040007404983,
+          0.008010700112208724
+        ],
+        "median": 0.008016250096261501,
+        "p95": 0.01044358012732119
+      },
+      {
+        "seconds": [
+          0.017581599997356534,
+          0.007664900040253997,
+          0.008738699834793806,
+          0.007567900000140071,
+          0.008085000095888972,
+          0.007578900083899498,
+          0.007840599864721298,
+          0.007353900000452995,
+          0.008253799984231591,
+          0.007192600052803755,
+          0.012349399970844388,
+          0.0068883998319506645,
+          0.012182499980553985,
+          0.0070634998846799135,
+          0.007667700061574578,
+          0.007511399919167161,
+          0.007255400065332651,
+          0.007575199939310551,
+          0.007136500207707286,
+          0.007404299918562174
+        ],
+        "median": 0.007577050011605024,
+        "p95": 0.012611009972169998
+      },
+      {
+        "seconds": [
+          0.007258599856868386,
+          0.007045299978926778,
+          0.007211199961602688,
+          0.006947300164029002,
+          0.006643299944698811,
+          0.007318000076338649,
+          0.007142700022086501,
+          0.006656500045210123,
+          0.0083534000441432,
+          0.00736530008725822,
+          0.0076286999974399805,
+          0.0069136000238358974,
+          0.007398799993097782,
+          0.00672800000756979,
+          0.007522400002926588,
+          0.007083500036969781,
+          0.006914400029927492,
+          0.009387199999764562,
+          0.007384599884971976,
+          0.007276099873706698
+        ],
+        "median": 0.007234899909235537,
+        "p95": 0.008405090041924268
+      }
+    ],
+    "accepted_measured_calls": 60,
+    "failed_calls": 0
+  },
+  "execution_before": {
+    "A": {
+      "launches": 1,
+      "completed_launches": 1,
+      "uploads": 7,
+      "downloads": 2,
+      "mode": "cuda",
+      "compute_dtype": "float32"
+    },
+    "B": {
+      "launches": 1,
+      "completed_launches": 1,
+      "uploads": 7,
+      "downloads": 2,
+      "mode": "cuda",
+      "compute_dtype": "float32"
+    },
+    "cloth": {
+      "launches": 1,
+      "completed_launches": 1,
+      "uploads": 7,
+      "downloads": 2,
+      "mode": "cuda",
+      "compute_dtype": "float32"
+    }
+  },
+  "execution_after": {
+    "A": {
+      "launches": 190,
+      "completed_launches": 190,
+      "uploads": 700,
+      "downloads": 191,
+      "mode": "cuda",
+      "compute_dtype": "float32"
+    },
+    "B": {
+      "launches": 190,
+      "completed_launches": 190,
+      "uploads": 700,
+      "downloads": 191,
+      "mode": "cuda",
+      "compute_dtype": "float32"
+    },
+    "cloth": {
+      "launches": 190,
+      "completed_launches": 190,
+      "uploads": 700,
+      "downloads": 191,
+      "mode": "cuda",
+      "compute_dtype": "float32"
+    }
+  },
+  "not_measured": [
+    "full step",
+    "cold process",
+    "peak memory",
+    "bytes",
+    "Warp"
+  ]
+}

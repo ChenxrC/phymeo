@@ -1,27 +1,27 @@
 {
   "status": "passed",
   "browser": "Chrome/153.0.8010.12",
-  "page": "file:///C:/Users/38347/Documents/ChatGPT/phymeo/artifacts/p5-articulated-preview-5634436.html",
+  "page": "file:///C:/Users/38347/Documents/ChatGPT/phymeo/artifacts/p3p5-final-7e8ae2f/articulated.html",
   "checks": {
     "first": {
-      "clock": "0 / 200 \u00b7 0.0000 s",
+      "clock": "0 / 200 · 0.0000 s",
       "overflow": false,
-      "scope": "\u6bcf\u7ec4 200 \u5e27\u3001400 \u5b50\u6b65\u7684\u771f\u5b9e\u8f68\u8ff9\uff0c\u5305\u542b\u72ec\u7acb\u7684\u63a5\u89e6\u3001\u56fa\u5b9a\u70b9\u4e0e\u8f7d\u8377\u5ba1\u8ba1\u3002"
+      "scope": "每组 200 帧、400 子步的真实轨迹，包含独立的接触、固定点与载荷审计。"
     },
     "step": true,
     "final_frame": true,
     "scenes": {
       "S2": {
-        "clock": "200 / 200 \u00b7 0.1000 s",
-        "two": "q -0.02224 mv 0.11595 m/s\u5e03\u63a5\u89e6 \u662f",
-        "one": "q -0.03003 mv -0.40000 m/s\u5e03\u63a5\u89e6 \u662f",
-        "comparison": "\u5f53\u524d\u5e27\u53cc\u5411\u4e0e\u5916\u90e8\u9a71\u52a8\u7684 q \u5dee 7.790e-3 m\u3002\u5916\u90e8\u9a71\u52a8\u4e0d\u4f5c\u4e3a\u52a8\u6001\u673a\u5668\u4eba\u57df\u3002"
+        "clock": "200 / 200 · 0.1000 s",
+        "two": "q -0.02224 mv 0.11595 m/s布接触 是",
+        "one": "q -0.03003 mv -0.40000 m/s布接触 是",
+        "comparison": "当前帧双向与外部驱动的 q 差 7.790e-3 m。外部驱动不作为动态机器人域。"
       },
       "S3": {
-        "clock": "200 / 200 \u00b7 0.1000 s",
-        "two": "q -0.02827 mv -0.34359 m/s\u8f6f\u4f53\u63a5\u89e6 \u662f",
-        "one": "q -0.03003 mv -0.40000 m/s\u8f6f\u4f53\u63a5\u89e6 \u662f",
-        "comparison": "\u5f53\u524d\u5e27\u53cc\u5411\u4e0e\u5916\u90e8\u9a71\u52a8\u7684 q \u5dee 1.758e-3 m\u3002\u5916\u90e8\u9a71\u52a8\u4e0d\u4f5c\u4e3a\u52a8\u6001\u673a\u5668\u4eba\u57df\u3002"
+        "clock": "200 / 200 · 0.1000 s",
+        "two": "q -0.02827 mv -0.34359 m/s软体接触 是",
+        "one": "q -0.03003 mv -0.40000 m/s软体接触 是",
+        "comparison": "当前帧双向与外部驱动的 q 差 1.758e-3 m。外部驱动不作为动态机器人域。"
       }
     },
     "played_frame": 9,
@@ -40,7 +40,10 @@
     "s3-last.png",
     "mobile.png"
   ],
-  "published_artifact": "docs/demos/articulated.html",
-  "html_sha256": "f1877f4df5bdadcd0c84233d6c0e41eb29e611bede812e1f48e0c8b40df05db7",
-  "published_copy_byte_identical_to_tested_page": true
+  "html_sha256": "2c9f3e1f6614b12b460e6c897dfaea99138d530b3fb357f1c54d9e570cd17a01",
+  "screenshot": "docs/demos/articulated-s4.png",
+  "source_sha256": "e9ee2e75f4f64fef03ac7c26ea2ec0a207816135f34f2517eae3a294bb5e4a66",
+  "harness_note": "Initial sandbox browser launch exited without endpoint; elevated launch succeeded. One fixed-240ms playback probe failed without captured frame value. A fresh run with bounded frame-condition wait passed, observed frame 9 at 240ms. No product change; no initial failure counted as passing.",
+  "html_sha256_lf_normalized": "c24002fc03b520679f06c389d6fdc8a6247d3b22529dc07ddaf44420401ac107",
+  "html_hash_scope": "html_sha256 hashes browser-tested working-copy bytes; LF-normalized hash also provided for Git newline normalization"
 }

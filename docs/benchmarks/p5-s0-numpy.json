@@ -1,7 +1,7 @@
 {
   "status": "passed",
   "reference_path": "artifacts\\rigid-cloth-reference-reviewed\\two_way",
-  "candidate_path": "artifacts\\p5-s0-numpy-1aa83e7",
+  "candidate_path": "artifacts\\p3p5-final-7e8ae2f\\s0-numpy",
   "array_comparisons": {
     "particle_position": {
       "same_shape_dtype": true,
@@ -195,9 +195,9 @@
   },
   "candidate": {
     "provenance": {
-      "git_revision": "1aa83e7f439ef3c72b9ecf7068ec0ad7fd3b0ffe",
+      "git_revision": "7e8ae2f329fbb686474e13db679cb53956aa43a7",
       "git_dirty": false,
-      "source_sha256": "354be059215711712bcc7a6e1c92de0c6585f2392a464a1647e66c9805d67937",
+      "source_sha256": "e9ee2e75f4f64fef03ac7c26ea2ec0a207816135f34f2517eae3a294bb5e4a66",
       "python": "3.12.14",
       "numpy": "2.5.4",
       "platform": "Windows-11-10.0.26200-SP0"
@@ -258,7 +258,7 @@
       "accepted_frames": 240,
       "audited_substeps": 960,
       "contact_substeps": 17,
-      "runtime_seconds_including_audits": 548.0339196000714,
+      "runtime_seconds_including_audits": 358.36299809999764,
       "max_position_iterations": 171,
       "max_velocity_iterations": 1,
       "max_vertex_penetration_m": 2.7755575615628914e-17,
@@ -271,15 +271,15 @@
       "max_rigid_balance_limit_kg_mps": 1e-10,
       "trajectory_sha256": "1416f05763fa3ba1c8bb2aaa810a197ccd5b28254b557e9b4b8d090419216ef3",
       "stage_seconds": {
-        "setup": 0.4883985994383693,
-        "predict": 0.42780549568124115,
-        "position": 540.6245805970393,
-        "prepare_velocity": 0.1641167993657291,
-        "velocity": 0.8604000946506858,
-        "validation": 0.26592799625359476,
-        "verification": 0.0007706948090344667,
-        "diagnostics": 2.9026065026409924,
-        "close": 0.0006516964640468359
+        "setup": 0.37275169510394335,
+        "predict": 0.31032679812051356,
+        "position": 352.63707019761205,
+        "prepare_velocity": 0.11452989582903683,
+        "velocity": 0.5827336984220892,
+        "validation": 0.20910870051011443,
+        "verification": 0.0006572012789547443,
+        "diagnostics": 2.3311519047711045,
+        "close": 0.0005963030271232128
       }
     }
   }

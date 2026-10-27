@@ -1,6 +1,6 @@
 # 刚柔双向交互参考实验
 
-本实验按[场景设计](../superpowers/specs/2026-10-27-rigid-cloth-coupling-design.md)推进。M1–M4 的 CPU 参考及六组完整实验已通过。完整配置、环境、指标与数据指纹见[原始 JSON 报告](rigid-cloth-reference.json)。tyx 同场景耦合和可视回放在后续里程碑验收，CPU 结果不能代替 GPU 或整项验收。
+本实验按[场景设计](../superpowers/specs/2026-10-27-rigid-cloth-coupling-design.md)推进。M1–M4 的 CPU 参考及六组完整实验已通过。完整配置、环境、指标与数据指纹见[原始 JSON 报告](rigid-cloth-reference.json)。[离线交互回放](../demos/rigid-cloth.html)已经嵌入同一份 FP64 双向/单向轨迹；完整 tyx 对照和最终审阅尚待验收。
 
 ## 参数与物理含义
 
@@ -67,3 +67,16 @@ python examples/compare_rigid_cloth.py --mode cuda --output artifacts/rigid-clot
 ```
 
 双方默认 240 帧、200 次迭代、1e-6 容差，位置差验收上限 2e-3 m。CPU 对照的几何和乘子保持 FP64 算术，设备算术为 FP32；配置会分别记录，不能把它表述为双方全部运算均为 FP32。设备每次子步仍包含主机传输和独立审计，不据此宣称性能加速。完整设备结果正在验收，此入口与 12 帧测试通过不代表 240 帧已完成。
+
+## 离线可视回放
+
+下载[rigid-cloth.html](../demos/rigid-cloth.html)，直接用浏览器打开。无需服务或网络，支持播放/暂停、方向键与拖动时间轴、0.25×/0.5×/1× 速度，以及接触区域/完整下落视图。左右相机尺度一致，动态球离开局部视野会显示实际高度；所有显示位置均读取保存帧，没有另外运行或手写替代物理动画。
+
+从自己的实验目录生成新回放：
+
+```bash
+uv run --no-sync python scripts/render_rigid_cloth.py --two-way artifacts/rigid-cloth-reference/two_way --one-way artifacts/rigid-cloth-reference/one_way --output artifacts/rigid-cloth-replay.html
+# 激活的原生 pip 环境使用相同参数，省略 uv run --no-sync
+```
+
+生成器先校验 NPZ 数值指纹、帧数、拓扑索引、时域、物理配置和子步摘要，拒绝损坏记录及覆盖已有文件。内嵌元数据按数据转义；页面没有外部字体、脚本或网络请求。桌面 1440 px 与移动端 390 px 的实际 Chromium 画面已经检查，暂停、逐帧、重置、视图切换均通过。

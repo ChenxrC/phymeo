@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Phymeo · 刚柔双向交互实验</title>
+<style>
+:root{color-scheme:dark;--bg:#0b121b;--panel:#111e2b;--line:#28394b;--text:#e8eef5;--muted:#9eafc1;--cyan:#64d9cf;--amber:#ffbd75}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.6 system-ui,"Microsoft YaHei",sans-serif}main{max-width:1460px;margin:auto;padding:36px 36px 48px}.eyebrow{font:12px/1.4 ui-monospace,monospace;letter-spacing:.18em;color:var(--cyan)}h1{font-size:32px;letter-spacing:-.03em;margin:10px 0 8px}p{margin:7px 0;color:var(--muted)}.intro{max-width:900px}.summary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:26px 0 20px}.stat{border-top:1px solid var(--line);padding:13px 0}.stat strong{display:block;font-size:25px;font-weight:600}.stat span{color:var(--muted);font-size:12px}.controls{display:flex;align-items:center;flex-wrap:wrap;gap:14px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 18px;margin-bottom:16px}button,select{font:inherit;color:var(--text);background:#1c3043;border:1px solid #426078;border-radius:6px;padding:7px 12px;cursor:pointer}button:hover,select:hover{border-color:var(--cyan)}button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--cyan);outline-offset:3px}#play{min-width:84px;background:var(--cyan);color:#0b2427;border:0;font-weight:700}#timeline{flex:1;min-width:150px;accent-color:var(--cyan)}#clock{font:13px ui-monospace,monospace;min-width:150px}.panels{display:grid;grid-template-columns:1fr 1fr;gap:16px}.panel{min-width:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--panel)}.panel header{padding:18px 20px 8px}h2{margin:0;font-size:18px}.tag{display:inline-block;margin-left:8px;font-size:11px;font-weight:400;color:var(--cyan);border:1px solid #345a5d;border-radius:20px;padding:1px 9px}.one .tag{color:var(--amber);border-color:#66523b}.panel p{font-size:12px}.viewport{position:relative}canvas{display:block;width:100%;height:390px}.hud{font:12px/1.7 ui-monospace,monospace;padding:12px 20px;border-top:1px solid var(--line);display:flex;gap:16px;flex-wrap:wrap}.hud b{color:var(--cyan)}.one .hud b{color:var(--amber)}.legend{display:flex;gap:22px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:13px}.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:7px}.notes{display:grid;grid-template-columns:1.1fr 1fr;gap:28px;margin-top:27px;border-top:1px solid var(--line);padding-top:20px}h3{font-size:14px;margin:0 0 6px}.notes p{font-size:13px}.hash{font:11px/1.7 ui-monospace,monospace;overflow-wrap:anywhere;color:var(--muted)}details{margin-top:18px;color:var(--muted);font-size:12px}summary{cursor:pointer}pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:11px}#status{color:var(--amber)}@media(max-width:780px){main{padding:22px 16px}.summary{grid-template-columns:1fr 1fr}.panels,.notes{grid-template-columns:1fr}h1{font-size:26px}canvas{height:330px}.controls{gap:10px}#timeline{order:3;flex-basis:100%}}
+</style>
+</head>
+<body><main>
+<div class="eyebrow">PHY MEO / EXPERIMENT 01</div>
+<h1>同一块布，同一个球。反作用改变轨迹。</h1>
+<p class="intro">左侧由布片与球共同响应接触，右侧让球按自由落体运动、由外部驱动抵消布的反馈。画面读取已验收的数值轨迹；播放过程不运行求解器。</p>
+<div class="summary">
+<div class="stat"><strong id="frames-stat"></strong><span>每组接受帧数 / 时域</span></div>
+<div class="stat"><strong id="contact-stat"></strong><span>双向 / 单向接触子步</span></div>
+<div class="stat"><strong id="delta-stat"></strong><span>球轨迹最大差 · m</span></div>
+<div class="stat"><strong id="penetration-stat"></strong><span>双向最大顶点穿透 · m</span></div>
+</div>
+<div class="controls">
+<button id="play" type="button" aria-label="播放轨迹">播放</button>
+<button id="reset" type="button">回到起点</button>
+<label for="timeline">帧</label><input id="timeline" type="range" min="0" step="1" value="0" aria-label="时间轴帧数">
+<output id="clock" for="timeline"></output>
+<label for="speed">速度</label><select id="speed"><option value="0.25">0.25×</option><option value="0.5" selected>0.5×</option><option value="1">1×</option></select>
+<label for="view-mode">视图</label><select id="view-mode"><option value="contact">接触区域</option><option value="whole">完整下落轨迹</option></select>
+</div>
+<div class="panels">
+<section class="panel"><header><h2>双向交互<span class="tag">动态球</span></h2><p>布与球接受同一接触约束的相反作用</p></header><div class="viewport"><canvas id="two-canvas" aria-label="双向布片与动态球三维投影"></canvas></div><div class="hud" id="two-hud"></div></section>
+<section class="panel one"><header><h2>单向对照<span class="tag">外部驱动</span></h2><p>球运动影响布；布的反馈由驱动抵消</p></header><div class="viewport"><canvas id="one-canvas" aria-label="单向运动球面与布片三维投影"></canvas></div><div class="hud" id="one-hud"></div></section>
+</div>
+<div class="legend"><span><i class="dot" style="background:#82cbe3"></i>布片三角网格</span><span><i class="dot" style="background:#eef4ff"></i>四角固定点</span><span><i class="dot" style="background:var(--cyan)"></i>双向球</span><span><i class="dot" style="background:var(--amber)"></i>单向球</span><span>相同相机、相同尺度；Y 轴向上</span></div>
+<p id="status" role="status"></p>
+<div class="notes"><div><h3>读图提示</h3><p>接触发生在前段。可用方向键逐帧移动时间轴，或将速度设为 0.25×。球离开接触区域后会显示其真实高度；切换“完整下落轨迹”可查看两秒内的全部运动。</p><p>离散顶点 / 球接触，无摩擦、无弯曲、无自碰撞。布片固定点与外界交换动量；右侧为有外部驱动的对照，不是封闭物理系统。显示连线不代表实现了三角面碰撞。</p></div><div><h3>可重复的数值证据</h3><p id="evidence"></p><p id="source"></p><div class="hash" id="hash"></div><p>减半时间步会改变接触轨迹；此演示不宣称时间步无关或性能加速。</p></div></div>
+<details><summary>展开配置、指标与来源记录</summary><pre id="metadata"></pre></details>
+<noscript>此离线回放需要 JavaScript；数值结果可直接读取同目录实验报告和 NPZ。</noscript>
+</main>
+<script id="scene-data" type="application/json">__SCENE_DATA__</script>
+<script>
+"use strict";
+const data=JSON.parse(document.getElementById("scene-data").textContent);
+const two=data.two_way,one=data.one_way,records=[two,one];
+const el=id=>document.getElementById(id),slider=el("timeline"),play=el("play"),frames=two.config.frames,times=two.arrays.time;
+let frame=0,playing=false,lastTime=0,playTime=0;
+slider.max=frames;
+el("frames-stat").textContent=`${frames} / ${times.at(-1).toFixed(2)} s`;
+el("contact-stat").textContent=`${two.metrics.contact_substeps} / ${one.metrics.contact_substeps}`;
+let maxDifference=0;
+for(let i=0;i<=frames;i++)maxDifference=Math.max(maxDifference,Math.hypot(...two.arrays.rigid_position[i][0].map((v,j)=>v-one.arrays.rigid_position[i][0][j])));
+el("delta-stat").textContent=maxDifference.toFixed(4);
+el("penetration-stat").textContent=two.metrics.max_vertex_penetration_m.toExponential(2);
+el("evidence").textContent=`每组 ${two.metrics.audited_substeps} 个子步已独立审计。双向固定点漂移 ${two.metrics.max_pin_displacement_m} m；最大报告残差 ${two.metrics.max_reported_residual.toExponential(3)}。`;
+el("source").textContent=`来源 ${two.source.git_revision?.slice(0,12)||"无 Git 信息"} · ${two.config.dtype} · ${two.config.backend} · Python ${two.source.python}`;
+el("hash").textContent=`双向轨迹 SHA256: ${two.metrics.trajectory_sha256}`;
+el("metadata").textContent=JSON.stringify(Object.fromEntries(Object.entries(data).filter(([k])=>k!=="schema").map(([k,r])=>[k,{config:r.config,metrics:r.metrics,source:r.source}])),null,2);
+const basis={right:[Math.SQRT1_2,0,-Math.SQRT1_2],up:[-.3535533905932738,.8660254037844386,-.3535533905932738],depth:[.6123724356957945,.5,.6123724356957945]};
+const dot=(a,b)=>a.reduce((s,x,i)=>s+x*b[i],0);
+let fullMin=Infinity,fullMax=-Infinity;
+for(const r of records)for(const positions of r.arrays.rigid_position)for(const p of positions){const y=dot(p,basis.up);fullMin=Math.min(fullMin,y-r.config.sphere_radius_m);fullMax=Math.max(fullMax,y+r.config.sphere_radius_m);}
+for(const p of two.arrays.particle_position[0])fullMax=Math.max(fullMax,dot(p,basis.up)+.1);
+function drawPanel(canvas,record,color){
+ const ratio=window.devicePixelRatio||1,rect=canvas.getBoundingClientRect(),w=rect.width,h=rect.height;
+ if(canvas.width!==Math.round(w*ratio)||canvas.height!==Math.round(h*ratio)){canvas.width=Math.round(w*ratio);canvas.height=Math.round(h*ratio);}
+ const ctx=canvas.getContext("2d");ctx.setTransform(ratio,0,0,ratio,0,0);ctx.clearRect(0,0,w,h);
+ const whole=el("view-mode").value==="whole",centerY=whole?(fullMin+fullMax)/2:dot([0,.38,0],basis.up);
+ const scale=whole?Math.min(w/1.2,(h-52)/(fullMax-fullMin)):Math.min((w-64)/1.05,(h-46)/.92);
+ const project=p=>[w/2+dot(p,basis.right)*scale,h/2-(dot(p,basis.up)-centerY)*scale,dot(p,basis.depth)];
+ function line(a,b,c,width=1){const pa=project(a),pb=project(b);ctx.strokeStyle=c;ctx.lineWidth=width;ctx.beginPath();ctx.moveTo(pa[0],pa[1]);ctx.lineTo(pb[0],pb[1]);ctx.stroke();}
+ for(let v=-.4;v<=.401;v+=.1){line([v,0,-.4],[v,0,.4],"#233447");line([-.4,0,v],[.4,0,v],"#233447");}
+ const particles=record.arrays.particle_position[frame],sphere=record.arrays.rigid_position[frame][0];
+ const objects=record.arrays.triangles.map(ids=>({kind:"triangle",ids,depth:ids.reduce((s,i)=>s+dot(particles[i],basis.depth),0)/3}));
+ objects.push({kind:"sphere",depth:dot(sphere,basis.depth)});objects.sort((a,b)=>a.depth-b.depth);
+ for(const obj of objects){
+  if(obj.kind==="sphere"){
+   const [x,y]=project(sphere),r=record.config.sphere_radius_m*scale;
+   const grad=ctx.createRadialGradient(x-r*.32,y-r*.35,r*.06,x,y,r);grad.addColorStop(0,"#e6f9ef");grad.addColorStop(.45,color);grad.addColorStop(1,color==="#64d9cf"?"#226b73":"#a06535");
+   ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fillStyle=grad;ctx.fill();ctx.strokeStyle=color;ctx.lineWidth=1;ctx.stroke();
+  }else{
+   const pts=obj.ids.map(i=>project(particles[i]));ctx.beginPath();pts.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.closePath();ctx.fillStyle="rgba(92,163,191,.20)";ctx.fill();ctx.strokeStyle="rgba(130,203,227,.65)";ctx.lineWidth=.75;ctx.stroke();
+  }
+ }
+ for(const i of record.arrays.pinned){const [x,y]=project(particles[i]);ctx.beginPath();ctx.arc(x,y,3.5,0,2*Math.PI);ctx.fillStyle="#eef4ff";ctx.fill();}
+ const [sx,sy]=project(sphere),radius=record.config.sphere_radius_m*scale;
+ if(sy-radius>h||sy+radius<0||sx+radius<0||sx-radius>w){ctx.font="13px system-ui";ctx.fillStyle=color;ctx.textAlign="center";ctx.fillText(`球已离开局部视野 · y = ${sphere[1].toFixed(3)} m`,w/2,h-19);}
+ ctx.textAlign="left";ctx.font="11px ui-monospace,monospace";ctx.fillStyle="#9eafc1";ctx.fillText(whole?"全时域共同尺度":"接触区域共同尺度",15,22);
+ const ox=26,oy=h-44;ctx.strokeStyle="#9eafc1";ctx.beginPath();ctx.moveTo(ox,oy+15);ctx.lineTo(ox,oy-10);ctx.lineTo(ox-3,oy-5);ctx.stroke();ctx.fillText("Y",ox+6,oy-6);
+}
+function render(){
+ slider.value=frame;el("clock").textContent=`${frame} / ${frames} · ${times[frame].toFixed(4)} s`;
+ const contacts=[];
+ records.forEach((r,i)=>{
+  const prefix=i?"one":"two",begin=Math.max(0,(frame-1)*r.config.substeps),end=frame*r.config.substeps;
+  const active=r.arrays.substep_contact.slice(begin,end).some(Boolean);contacts.push(active);
+  const h=el(prefix+"-hud");h.replaceChildren();
+  for(const [label,value] of [["球 y",r.arrays.rigid_position[frame][0][1].toFixed(4)+" m"],["球 vy",r.arrays.rigid_velocity[frame][0][1].toFixed(4)+" m/s"],["本帧接触",active?"是":"否"]]){const s=document.createElement("span"),b=document.createElement("b");s.textContent=label+" ";b.textContent=value;s.append(b);h.append(s);}
+  drawPanel(el(prefix+"-canvas"),r,i?"#ffbd75":"#64d9cf");
+ });
+ el("status").textContent=contacts.some(Boolean)?"当前帧包含接触子步；双方轨迹直接取自保存的求解结果。":"当前帧无接触子步；画面不额外修正或插值物理状态。";
+}
+function stop(){playing=false;play.textContent="播放";play.setAttribute("aria-label","播放轨迹");}
+play.addEventListener("click",()=>{if(playing){stop();return;}if(frame===frames)frame=0;playTime=times[frame];lastTime=performance.now();playing=true;play.textContent="暂停";play.setAttribute("aria-label","暂停轨迹");render();});
+slider.addEventListener("input",()=>{stop();frame=Number(slider.value);render();});
+el("reset").addEventListener("click",()=>{stop();frame=0;render();});
+el("view-mode").addEventListener("change",render);window.addEventListener("resize",render);
+function tick(now){if(playing){playTime+=Math.max(0,Math.min((now-lastTime)/1000,.1))*Number(el("speed").value);while(frame<frames&&times[frame+1]<=playTime)frame++;if(frame===frames)stop();render();}lastTime=now;requestAnimationFrame(tick);}
+render();requestAnimationFrame(tick);
+</script></body></html>

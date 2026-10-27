@@ -146,7 +146,7 @@ modify README, `scripts/smoke_installed.py`,
 **Interfaces:** offline renderer consumes M4 configuration/NPZ/JSON; embeds trajectory and draws it
 with local HTML canvas, time scrub/pause and two comparison panels. No external service required.
 
-- [ ] 输出来自真实轨迹的回放；检查帧/点/球数、数值有限、JSON 可解析、指标与实验一致。
+- [x] 输出来自真实轨迹的回放；检查帧/点/球数、数值有限、JSON 可解析、指标与实验一致；实际浏览器检查暂停、时间轴和桌面/移动布局。
 - [ ] 提供 uv 与原生 pip 两套复现命令，明确 CUDA 依赖和顶点接触局限。
 - [ ] 验证 Python 3.11/3.12 核心、真实 CUDA 全套、ruff、docs、当前源码 sdist/wheel 和源码外安装 smoke。
 - [ ] 检查远程 Actions；未能访问则记录为未核验，不能假报绿色；GPU CI 缺凭据不阻断已有真机证据交付。

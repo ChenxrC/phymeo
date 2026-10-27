@@ -6,7 +6,9 @@
 
 > 当前处于设计与基础实现阶段。图中描述的是目标架构，不能据此推断全部模块已实现、GPU 已通过验证或整体可微。实际交付以[进度记录](docs/progress.md)为准。
 
-本次持续开发已收口：交付分支 `codex/architecture-v0` 完成计划 Task 1–15。Task 16 的 tyx 刚体原型保存在独立[草稿分支](https://github.com/ChenxrC/phymeo/tree/codex/tyx-rigid-wip)，尚未完成审阅与数值边界验收。
+上一轮基础开发已收口：交付分支 `codex/architecture-v0` 完成计划 Task 1–15。Task 16 的 tyx 刚体原型保存在独立[草稿分支](https://github.com/ChenxrC/phymeo/tree/codex/tyx-rigid-wip)，尚未完成审阅与数值边界验收。
+
+当前长程目标：**一个可重复验证的刚柔双向交互场景**。在 `codex/rigid-cloth-coupling` 分支实现布片与动态球接触、联合回滚、双向/单向对照与离线回放，先 CPU 参考再验收 tyx。见[场景与验收设计](docs/superpowers/specs/2026-10-27-rigid-cloth-coupling-design.md)和[七个里程碑](docs/superpowers/plans/2026-10-27-rigid-cloth-coupling.md)。这是一项正在实施的新目标，不代表场景已经完成。
 
 ![phymeo 架构图](docs/architecture/phymeo.png)
 

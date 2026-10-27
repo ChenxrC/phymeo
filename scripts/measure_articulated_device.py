@@ -214,6 +214,12 @@ def main():
         "measurement_script_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
         "processor": platform.processor(),
         "logical_cpus": os.cpu_count(),
+        "cache_environment": {
+            "TYX_CACHE_DIR": os.environ.get("TYX_CACHE_DIR"),
+            "TEMP": os.environ.get("TEMP"),
+            "TMP": os.environ.get("TMP"),
+            "runtime_lifetime": "new participant runtimes each substep; persistent artifact cache shared",
+        },
         "protocol": {
             "serial": True,
             "frame": 100,

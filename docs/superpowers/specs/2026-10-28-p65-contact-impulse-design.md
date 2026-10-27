@@ -36,6 +36,16 @@
 
 `ContactImpulseResult`包含states（只读域映射、各状态自有）、world_impulses(k,3)、relative_velocity_after(k,3)、contact_basis(k,3,3)、normal_impulses(k)、tangent_impulses(k,2)、regimes(tuple)、iterations、residual_mps、energy_change、response_asymmetry及response_tolerance。数组自有只读。返回的接触冲量是整个局部问题的总值，而非再叠加一次的迭代增量。
 
+### 审阅修复：实际候选审计扩展
+
+response成功不保证大基准速度上的实际更新可表示。认证求解要求各PointPort另提供`candidate_audit(state) -> PointCandidateAudit(initial_velocities, candidate_velocities, energy_change)`，两个速度数组均为世界坐标(m,3) FP64自有只读；energy_change为该物理状态域全部自由度的真实动能差，不是各挂接点质量能量之和。原有瞬时端口查询/交换仍可独立使用，无审计扩展的端口不能参与认证的联合接触求解。
+
+粒子/软体按节点质量，刚体按世界姿态下的惯量，机器人按同构型完整质量矩阵与点Jacobian独立核对。tyx候选保持原有设备路径，主机FP64审计仅接受/拒绝，不提供状态或响应的替换答案。重心端口映射两个速度数组，域能量原样传递且只计一次。
+
+每域分别核对原速和候选速度与该域实际响应，欧氏误差不得超velocity_tolerance；候选动能差与该域冲量做功的误差不得超`velocity_tolerance*sum(norm(domain_point_impulse))+1e-12J`。各域能量允许物理转移，但全图仍满足原能量不增门禁。全图再次核对速度/能量及Signorini/摩擦。两个域相同的错误不能在相对速度中抵消；未挂接自由度也计入能量。
+
+任何候选不符立即SolverFailure，所有部分候选保留局部、原快照不变。返回的relative_velocity_after与energy_change取实际候选审计结果。空接触也验证零冲量候选，无边不能绕过验证。新门禁不放宽之前的物理门槛；明确可表示范围见[NUM-004](../../legacy-issues/NUM-004-candidate-representability.md)。
+
 ## 验收与范围
 
 1. 单粒子闭合静态平面：无摩擦速度投影解析、分离零冲量、斜滑动静/动边界、能量不增。

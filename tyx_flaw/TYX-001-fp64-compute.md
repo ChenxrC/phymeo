@@ -48,3 +48,9 @@ python tyx_flaw/repros/fp64_compute.py --output artifacts/tyx-fp64-recheck.json
 ## 修复验收
 
 正式内置 f64 后，用该内置类型替换探针描述符，解释器、C++、CUDA 均得到精确结果；覆盖混合类型转换、极值、数学函数及 FP32 无回归。再增加 phymeo FP64 设备小场景，保持独立物理验证与当前 FP32 路径。性能须另用同精度、同质量门禁的稳态协议测量。
+
+## P6.5 集成影响补充（2026-10-28）
+
+同一固定tyx版本下，实际节点 `response(p)` 可表示小增量，但在较大初速上形成FP32候选时更新可能量化或消失。[NUM-004](../docs/legacy-issues/NUM-004-candidate-representability.md)保存参数、集成最小复现和代码位置；`tests/test_tyx_contact_impulse.py::test_actual_candidate_rounding_is_rejected_atomically`覆盖1e2/1e4/1e8速度与明确拒绝/状态不变。
+
+证据等级：实际集成行为已复现；这是正常FP32舍入及phymeo此前漏验候选的组合，不是新发现的tyx加法错误。phymeo已补逐域真实候选速度/全域动能审计，不放宽容差、不CPU替换设备答案。该证据说明FP64能力需求的具体使用场景，但尚未在tyx FP64执行上证明它足以解决完整动态抓布问题；不能把存储改FP64当修复。新路径多出的主机校验和端口查询属于phymeo集成开销，未归因tyx性能，也未测Warp。

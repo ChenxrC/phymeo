@@ -11,9 +11,11 @@ from phymeo import (
     BackendContext,
     MultiDomainPointOperator,
     ParticleModel,
+    ParticlePointPort,
     ParticleState,
     RobotInputs,
     RobotState,
+    SolverFailure,
     StepInputs,
     StepSettings,
     TyxClothParticipant,
@@ -99,3 +101,39 @@ def test_actual_two_robot_closed_contact_impulses_and_low_mu(mu, expected_vertic
         assert energy < 0
         energy_tolerance = 2e-5 * sum(np.linalg.norm(row) for row in result.world_impulses) + 1e-12
         assert abs(energy - result.energy_change) <= energy_tolerance
+
+
+@pytest.mark.parametrize("speed", [1e2, 1e4, 1e8])
+def test_actual_candidate_rounding_is_rejected_atomically(speed, tyx_mode):
+    model = ParticleModel(np.ones(1), np.zeros(3))
+    initial = ParticleState(np.zeros((1, 3)), np.zeros((1, 3)))
+    factory = TyxClothParticipant(model, None, tyx_mode)
+    context = BackendContext("tyx:" + tyx_mode, np.float64)
+    ws = factory.create_workspace(
+        "cloth", initial, StepInputs.zeros(1), 0.01, StepSettings(), context
+    )
+    try:
+        ws.predict()
+        ws.prepare_velocity()
+        ws.apply_velocity_impulses(np.array([0]), None, np.array([[speed, -0.03, 0]]))
+        port = ws.point_port(np.array([0]), None)
+        before = port.snapshot()
+        floor = ParticlePointPort(
+            ParticleModel(np.zeros(1), np.zeros(3)), initial, [0], domain="floor"
+        )
+        graph = MultiDomainPointOperator(
+            {"cloth": port, "floor": floor}, [("cloth", 0)], [("floor", 0)]
+        )
+        with pytest.raises(SolverFailure, match="candidate"):
+            solve_contact_impulses(
+                graph,
+                np.array([[0.0, 1, 0]]),
+                np.array([0.3]),
+                np.array([0.3]),
+                velocity_tolerance=2e-5,
+                response_tolerance=2e-5,
+            )
+        np.testing.assert_array_equal(port.snapshot().velocity, before.velocity)
+        np.testing.assert_array_equal(ws.velocity(), before.velocity)
+    finally:
+        ws.close()

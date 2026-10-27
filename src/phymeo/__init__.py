@@ -40,6 +40,7 @@ from .core.scene import (
 from .core.state import ParticleState, StepInputs
 from .core.tetrahedral import TetrahedralModel
 from .core.verification import CandidateVerifier, VerificationReport
+from .coupling.candidate_audit import PointCandidateAudit
 from .coupling.domain_graph import MultiDomainPointOperator
 from .coupling.participant import (
     ClothParticipant,
@@ -153,6 +154,7 @@ __all__ = [
     "CoupledRuntimeAdapter",
     "make_coupled_runtime",
     "PointPort",
+    "PointCandidateAudit",
     "ParticlePointPort",
     "RigidPointPort",
     "exchange_impulses",

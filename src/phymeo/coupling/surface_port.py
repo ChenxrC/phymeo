@@ -67,6 +67,19 @@ class WeightedPointPort:
     def validate_candidate(self, state):
         return self._base.validate_candidate(state)
 
+    def candidate_audit(self, state):
+        from .candidate_audit import PointCandidateAudit
+
+        audit = getattr(self._base, "candidate_audit", None)
+        if not callable(audit):
+            raise SolverFailure("base port lacks candidate audit")
+        result = audit(state)
+        return PointCandidateAudit(
+            self._map(result.initial_velocities),
+            self._map(result.candidate_velocities),
+            result.energy_change,
+        )
+
     def _map(self, values):
         return _result(self._weights @ _result(values, self._base_shape), self._shape)
 

@@ -1,11 +1,15 @@
 """Atomic instantaneous point loads across uniquely owned physical state domains."""
 
 from collections.abc import Mapping
+from math import fsum
 from numbers import Integral
 from types import MappingProxyType
 
 import numpy as np
 
+from ..core.capabilities import SolverFailure
+from ..core.validation import finite_real
+from .candidate_audit import PointCandidateAudit
 from .point_port import _group_sum
 from .ports import _numerical
 from .surface_port import _array, _result
@@ -88,6 +92,47 @@ class MultiDomainPointOperator:
             raise ValueError("candidate domains must exactly match the graph")
         return MappingProxyType(
             {name: self._ports[name].validate_candidate(states[name]) for name in self._domains}
+        )
+
+    @_numerical
+    def audit_candidates(self, states, *, impulses=None, velocity_tolerance=1e-10):
+        states = self.validate_candidates(states)
+        tolerance = finite_real(velocity_tolerance, "velocity_tolerance")
+        if tolerance <= 0:
+            raise ValueError("candidate velocity tolerance must be positive")
+        loads = None if impulses is None else self.domain_impulses(impulses)
+        audits = {}
+        for name in self._domains:
+            audit = getattr(self._ports[name], "candidate_audit", None)
+            if not callable(audit):
+                raise SolverFailure(f"domain {name} lacks candidate audit")
+            result = audit(states[name])
+            if not isinstance(result, PointCandidateAudit):
+                raise TypeError("candidate audit must return PointCandidateAudit")
+            if loads is not None:
+                initial = _result(self._ports[name].velocities(), self._shapes[name])
+                delta = _result(self._ports[name].response(loads[name].copy()), self._shapes[name])
+                errors = (
+                    result.initial_velocities - initial,
+                    result.candidate_velocities - (initial + delta),
+                )
+                if any(np.any(np.hypot.reduce(error, axis=1) > tolerance) for error in errors):
+                    raise SolverFailure(f"domain {name} candidate velocity disagrees with response")
+                work = fsum((loads[name] * (initial + delta * 0.5)).flat)
+                budget = tolerance * fsum(np.hypot.reduce(loads[name], axis=1)) + 1e-12
+                if (
+                    not np.isfinite(work)
+                    or not np.isfinite(budget)
+                    or abs(result.energy_change - work) > budget
+                ):
+                    raise SolverFailure(
+                        f"domain {name} candidate energy disagrees with impulse work"
+                    )
+            audits[name] = result
+        return PointCandidateAudit(
+            self._relative({name: value.initial_velocities for name, value in audits.items()}),
+            self._relative({name: value.candidate_velocities for name, value in audits.items()}),
+            fsum(value.energy_change for value in audits.values()),
         )
 
     def _relative(self, values):

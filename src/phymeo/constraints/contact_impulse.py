@@ -144,8 +144,14 @@ def solve_contact_impulses(
     basis = _basis(normals)
     free_world = _actual(graph.relative_velocities(), (count, 3))
     if count == 0:
+        states = graph.apply_impulses(np.empty((0, 3)))
+        audit = graph.audit_candidates(
+            states, impulses=np.empty((0, 3)), velocity_tolerance=velocity_tolerance
+        )
+        if abs(audit.energy_change) > 1e-12:
+            raise SolverFailure("empty contact candidate changes kinetic energy")
         return ContactImpulseResult(
-            graph.apply_impulses(np.empty((0, 3))),
+            states,
             np.empty((0, 3)),
             free_world,
             basis,
@@ -240,6 +246,29 @@ def solve_contact_impulses(
         if not np.isfinite(energy) or not np.isfinite(budget) or energy > budget:
             raise SolverFailure("contact impulses increase kinetic energy")
         states = graph.apply_impulses(world_impulse)
+        audit = graph.audit_candidates(
+            states, impulses=world_impulse, velocity_tolerance=velocity_tolerance
+        )
+        if any(
+            _norm(row) > velocity_tolerance for row in audit.initial_velocities - free_world
+        ) or any(
+            _norm(row) > velocity_tolerance for row in audit.candidate_velocities - actual_velocity
+        ):
+            raise SolverFailure("actual candidate velocity disagrees with impulse response")
+        if abs(audit.energy_change - energy) > budget or audit.energy_change > budget:
+            raise SolverFailure("actual candidate energy disagrees with impulse work")
+        actual_velocity, energy = audit.candidate_velocities, audit.energy_change
+        residual, regimes = _audit(
+            _local(basis, actual_velocity),
+            values,
+            normal_response,
+            tangent_scale,
+            static,
+            dynamic,
+            velocity_tolerance,
+        )
+        if residual > velocity_tolerance:
+            raise SolverFailure("actual candidate violates contact laws")
         return ContactImpulseResult(
             states,
             world_impulse,

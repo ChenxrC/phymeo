@@ -41,6 +41,8 @@ class PointPort(Protocol):
     Geometry and point velocities use world coordinates. response returns m/s for
     supplied world impulses in kg m/s. apply_impulses returns an owned state and
     must not mutate the port, its input, or any external history.
+    Certified contact solving additionally requires candidate_audit(state),
+    returning PointCandidateAudit from the actual candidate and full-domain KE.
     """
 
     @property
@@ -124,6 +126,13 @@ class ParticlePointPort(_PointPortBase):
     def velocities(self):
         return self._state.velocity[self._indices].astype(np.float64)
 
+    def candidate_audit(self, state):
+        from .candidate_audit import particle_audit
+
+        return particle_audit(
+            self._model, self._state, self.validate_candidate(state), self._indices
+        )
+
     def _delta(self, impulses):
         loads = _group_sum(self._indices, self._impulses(impulses), self._model.particle_count)
         delta = np.zeros_like(loads)
@@ -171,6 +180,13 @@ class RigidPointPort(_PointPortBase):
             "nij,nj->ni",
             quaternion_matrix(self._state.orientation[self._indices]),
             self._local.astype(np.float64),
+        )
+
+    def candidate_audit(self, state):
+        from .candidate_audit import rigid_audit
+
+        return rigid_audit(
+            self._model, self._state, self.validate_candidate(state), self._indices, self._local
         )
 
     @_numerical

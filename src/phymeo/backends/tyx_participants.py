@@ -403,6 +403,14 @@ class _Port:
 class _RobotPort(_Port):
     configuration_field = "q"
 
+    def candidate_audit(self, state):
+        from ..coupling.candidate_audit import robot_audit
+
+        self._engine._check_open()
+        return robot_audit(
+            self._model, self._state, self.validate_candidate(state), self._indices, self._local
+        )
+
     def __init__(self, workspace, indices, local_points):
         self._setup(workspace, indices, workspace.model.dof_count)
         self._local = robot_array(local_points, "local_points", ndim=2, columns=3)
@@ -471,6 +479,14 @@ class _RobotPort(_Port):
 
 class _NodePort(_Port):
     configuration_field = "position"
+
+    def candidate_audit(self, state):
+        from ..coupling.candidate_audit import particle_audit
+
+        self._engine._check_open()
+        return particle_audit(
+            self._model, self._state, self.validate_candidate(state), self._indices
+        )
 
     def __init__(self, workspace, indices, local_points):
         self._setup(workspace, indices, workspace.model.particle_count)

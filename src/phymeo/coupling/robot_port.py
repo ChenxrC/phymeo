@@ -58,6 +58,13 @@ class RobotPointPort:
     def _jacobian(self):
         return point_jacobians(self._model, self._state.q, self._indices, self._local)[0]
 
+    def candidate_audit(self, state):
+        from .candidate_audit import robot_audit
+
+        return robot_audit(
+            self._model, self._state, self.validate_candidate(state), self._indices, self._local
+        )
+
     @_numerical
     def positions(self):
         geometry = forward_kinematics(self._model, self._state.q)

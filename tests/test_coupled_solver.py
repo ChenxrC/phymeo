@@ -56,6 +56,35 @@ def arrays(state):
     )
 
 
+@pytest.mark.parametrize("dtype,origin", [(np.float32, 1e8), (np.float64, 1e16)])
+@pytest.mark.parametrize("moving", ["particle", "rigid"])
+def test_normal_correction_preserves_untouched_large_origin_tangential_motion(
+    dtype, origin, moving
+):
+    api = types()
+    pm, bm, ps, bs, shapes = problem(dtype)
+    ps.position[:] = [origin, 0, 0]
+    bs.position[:] = [origin, 0, 0]
+    mobile = ps if moving == "particle" else bs
+    mobile.position[0, 1] = 1
+    mobile.velocity[:] = [1, -1, 0]
+    if moving == "particle":
+        bm = RigidBodyModel(np.zeros(1, dtype), bm.inertia_diagonal, bm.gravity)
+    else:
+        pm = ParticleModel(np.zeros(1, dtype), pm.gravity)
+    state = api.CoupledState(ps, bs)
+    result = solver_type()(pm, bm, None, shapes, substeps=1).step(
+        state,
+        api.CoupledInputs(StepInputs.zeros(1, dtype=dtype), RigidBodyInputs.zeros(1, dtype=dtype)),
+        0.1,
+    )
+    assert result.report.accepted
+    after = result.state.particles if moving == "particle" else result.state.rigid
+    np.testing.assert_allclose(after.velocity, [[1, 0, 0]], atol=1e-6, rtol=0)
+    for original, expected in zip(arrays(state), arrays(api.CoupledState(ps, bs)), strict=True):
+        np.testing.assert_array_equal(original, expected)
+
+
 def test_mixed_state_and_inputs_own_copies_without_virtual_copy_calls():
     pm, bm, ps, bs, shapes = problem()
 

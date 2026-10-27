@@ -308,3 +308,11 @@
 - CPU CI 新增单向/双向一帧输出和离线回放生成，三条命令本机执行通过；uv 与原生 pip 的完整场景复现顺序已写入环境文档。已核实固定 tyx 安装源提交为 `99f6df7c0fd8fdeef77f97df83914da27b64b7ee`。
 - GitHub 提交 `ba09760c09eabcb609747755e5eeb1147f922b53` 的 [CI 12 个 job](https://github.com/ChenxrC/phymeo/actions/runs/40451453287)和[文档工作流](https://github.com/ChenxrC/phymeo/actions/runs/40451453267)均 completed/success；新 CI smoke 修改上传后还需核对其对应版本。GPU 证据来自本机真卡，远程 GPU runner 仍未配置。
 - 完整 240 帧设备对照由原进程继续运行，最终独立整分支审阅尚未完成；本检查点不提前宣布长程目标完成。
+
+## 2026-10-27：独立审阅修复与最终场景重验
+
+- 一次新上下文整分支审阅完成，范围 `b4cbc6b..f3b31e5`；发现一个 Important/P2、无 Critical/Minor。审阅者独立运行 104 项已有 CPU 测试，并核验六份 M4 数值轨迹、摘要和内嵌回放数据。详情见[审阅记录](benchmarks/rigid-cloth-review.md)。
+- 问题是按整行重建速度会在大坐标下误抹另一轴的自由切向速度。CPU/设备均改为按坐标分量选择；粒子与刚体 × FP32/FP64 及真实 CUDA 六项回归由数值失败转为通过，设备新增两项在解释器与实际 C++ 也通过。
+- 修复后的真实 CUDA 全套 **688 passed**；Python 3.11/原生 pip 3.12 核心各 **577 passed / 111 deselected**；当前源码 sdist/wheel 重新构建、54 文件逐字节一致，源码外原生 pip 安装与联合接触解析 smoke 通过。质量检查通过。
+- `f3b31e5` 的[远程 CI](https://github.com/ChenxrC/phymeo/actions/runs/40452092795)及[文档工作流](https://github.com/ChenxrC/phymeo/actions/runs/40452092838)已通过；此为修复前版本，后续需核对修复提交。M5 代码/三模式/安装/独立审阅现已完成。
+- 旧设备长实验在保存 240 帧着色参考后停止，不算作设备验收。因为修复改变求解器，将从干净修复提交重新运行六组 CPU 及三组设备对照，保留原报告和回放作为明确版本的历史证据。最终完成仍以[逐项验收表](benchmarks/rigid-cloth-acceptance.md)为准；不再派发重复审阅。

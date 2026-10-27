@@ -44,7 +44,7 @@ def _impulse_ledger(transfers, divisor, particle_count, body_count):
 def _reconstruct(candidate, predicted, initial, inverse_mass, h):
     # An untouched predicted coordinate can round back to a large initial
     # coordinate. Preserve its predicted velocity rather than erase that motion.
-    corrected = np.any(candidate.position != predicted.position, axis=1) & (inverse_mass > 0)
+    corrected = (candidate.position != predicted.position) & (inverse_mass[:, None] > 0)
     candidate.velocity[corrected] = (
         (candidate.position[corrected].astype(np.float64) - initial.position[corrected]) / h
     ).astype(candidate.velocity.dtype)

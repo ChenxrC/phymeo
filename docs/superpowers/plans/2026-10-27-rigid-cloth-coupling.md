@@ -121,7 +121,7 @@ integrate only corrected `src/phymeo/backends/tyx_rigid.py`, `_tyx_rigid_kernels
 - [x] 先复现 torque/inertia 下溢后被大 dt 放大的差异；有效有限响应须正确或明确拒绝，不能假零成功。
 - [x] 审查 FP32 转换、四元数、陀螺项、空体、资源构造/释放失败与多步轨迹。
 - [x] interpreter、真实 C++、真实 CUDA 分别运行；旋转/角速度与 NumPy 参考对照。
-- [ ] 修复后独立审阅、当前源码 wheel 验证、全回归；提交推送才计入交付能力。
+- [x] 修复后独立整分支审阅、当前源码 wheel 验证、全回归；已分批提交推送。
 
 ## Task 6: M6 同场景 tyx 联合路径
 
@@ -148,9 +148,10 @@ with local HTML canvas, time scrub/pause and two comparison panels. No external 
 
 - [x] 输出来自真实轨迹的回放；检查帧/点/球数、数值有限、JSON 可解析、指标与实验一致；实际浏览器检查暂停、时间轴和桌面/移动布局。
 - [x] 提供 uv 与原生 pip 两套复现命令，明确 CUDA 依赖和顶点接触局限。
-- [ ] 验证 Python 3.11/3.12 核心、真实 CUDA 全套、ruff、docs、当前源码 sdist/wheel 和源码外安装 smoke。
+- [x] 审阅修复后验证 Python 3.11/3.12 核心、真实 CUDA 全套、ruff、docs、当前源码 sdist/wheel 和源码外安装 smoke。
 - [x] 检查远程 Actions；`ba09760` 的 12 个 CI job 和文档工作流通过；后续提交仍须核对，不把本机 CUDA 结果当 GPU CI。
-- [ ] 对整个分支进行新上下文审阅，处理实质问题；按 spec 逐项对照验收、提交推送并核对 SHA。
+- [x] 对整个分支进行一次新上下文审阅；一个 P2 以六项回归先失败后修复，688 项真实 CUDA 全回归通过。
+- [ ] 按 spec 逐项对照修复后的完整场景验收、提交推送并核对 SHA。
 - [ ] 全部目标能力和证据完成后标记 goal complete，暂停续跑；交付可看结果、复现命令与限制。
 
 ## 执行台账

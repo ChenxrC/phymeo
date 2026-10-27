@@ -188,13 +188,9 @@ def reconstruct_velocity(
     failed: tx.ndarray(tx.i32, 1),
 ):
     for i in tx.range(count):
-        changed = (
-            predicted[i, 0] != corrected[i, 0]
-            or predicted[i, 1] != corrected[i, 1]
-            or predicted[i, 2] != corrected[i, 2]
-        )
-        if changed and weights[i] > 0.0:
+        if weights[i] > 0.0:
             for axis in tx.static_range(3):
-                velocity[i, axis] = _div(_add(corrected[i, axis], -initial[i, axis]), h)
-                if not tx.isfinite(velocity[i, axis]):
-                    failed[i] = 1
+                if predicted[i, axis] != corrected[i, axis]:
+                    velocity[i, axis] = _div(_add(corrected[i, axis], -initial[i, axis]), h)
+                    if not tx.isfinite(velocity[i, axis]):
+                        failed[i] = 1

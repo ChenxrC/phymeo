@@ -51,6 +51,47 @@ def position_arrays(particle=(0.8, 0, 0), body=(0, 0, 0), wp=1.0, wb=0.5):
     ]
 
 
+@pytest.mark.parametrize("moving", ["particle", "rigid"])
+def test_normal_correction_preserves_large_origin_tangent_on_device(tyx_mode, cache, moving):
+    import phymeo as api
+
+    dtype = np.float32
+    gravity = np.zeros(3, dtype)
+    pm = api.ParticleModel(np.array([moving == "particle"], dtype), gravity)
+    bm = api.RigidBodyModel(np.array([moving == "rigid"], dtype), np.ones((1, 3), dtype), gravity)
+    ps = api.ParticleState(np.array([[1e8, 0, 0]], dtype), np.zeros((1, 3), dtype))
+    bs = api.RigidBodyState(
+        np.array([[1e8, 0, 0]], dtype),
+        np.array([[0, 0, 0, 1]], dtype),
+        np.zeros((1, 3), dtype),
+        np.zeros((1, 3), dtype),
+    )
+    mobile = ps if moving == "particle" else bs
+    mobile.position[0, 1] = 1
+    mobile.velocity[:] = [1, -1, 0]
+    state = api.CoupledState(ps, bs)
+    with api.TyxCoupledXPBDSolver(
+        pm,
+        bm,
+        None,
+        api.SphereShapes(np.ones(1, dtype)),
+        substeps=1,
+        mode=tyx_mode,
+        cache_root=cache,
+    ) as solver:
+        result = solver.step(
+            state,
+            api.CoupledInputs(
+                api.StepInputs.zeros(1, dtype=dtype), api.RigidBodyInputs.zeros(1, dtype=dtype)
+            ),
+            0.1,
+        )
+    assert result.report.accepted
+    after = result.state.particles if moving == "particle" else result.state.rigid
+    np.testing.assert_allclose(after.velocity, [[1, 0, 0]], atol=1e-6, rtol=0)
+    np.testing.assert_array_equal(mobile.velocity, [[1, -1, 0]])
+
+
 def test_device_position_projection_splits_response_by_mass(tyx_mode, cache):
     values = execute("project_contacts", [1, 1], position_arrays(), tyx_mode, cache)
     p, b, _, _, _, multipliers, loads, failed = values

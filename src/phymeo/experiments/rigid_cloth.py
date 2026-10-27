@@ -69,6 +69,7 @@ def run_scene(
     sphere_mass=0.05,
     progress=None,
     cache_root=None,
+    runtime="legacy",
 ):
     """Return numeric data and audits; rejected frames never enter a success trace."""
     if (
@@ -81,6 +82,10 @@ def run_scene(
         raise ValueError("unsupported scene execution mode")
     if not isinstance(reaction, (bool, np.bool_)):
         raise TypeError("reaction must be a boolean")
+    if runtime not in ("legacy", "scene"):
+        raise ValueError("runtime must be legacy or scene")
+    if runtime == "scene" and not reaction:
+        raise ValueError("prescribed one-way motion is an experiment-only legacy driver")
     if not reaction and mode != "numpy":
         raise ValueError("the prescribed one-way experiment currently requires mode='numpy'")
     scene = rigid_cloth_scene(dtype, sphere_mass=sphere_mass)
@@ -103,7 +108,11 @@ def run_scene(
         tolerance=tolerance,
         record_substeps=True,
     )
-    if mode == "numpy":
+    if runtime == "scene":
+        from ..solvers.coupled_program import make_coupled_runtime
+
+        solver = make_coupled_runtime(**arguments, mode=mode, cache_root=cache_root)
+    elif mode == "numpy":
         solver = (
             CoupledXPBDSolver(**arguments)
             if reaction
@@ -115,8 +124,17 @@ def run_scene(
         from ..backends.tyx_coupled import TyxCoupledXPBDSolver
 
         solver = TyxCoupledXPBDSolver(**arguments, mode=mode, cache_root=cache_root)
+    phase_totals = {}
+
+    def observe(frame, report):
+        for substep in solver.last_scene_result.report.substeps:
+            for name, seconds in substep.timings.items():
+                phase_totals[name] = phase_totals.get(name, 0.0) + seconds
+        if progress is not None:
+            progress(frame, report)
+
     try:
-        return _record_scene(
+        run = _record_scene(
             scene,
             solver,
             frames=frames,
@@ -127,8 +145,15 @@ def run_scene(
             dtype=dtype,
             iterations=iterations,
             tolerance=tolerance,
-            progress=progress,
+            progress=observe if runtime == "scene" else progress,
         )
+        if runtime == "scene":
+            run = SceneRun(
+                dict(run.config, scheduler="scene"),
+                dict(run.metrics, stage_seconds=phase_totals),
+                run.arrays,
+            )
+        return run
     finally:
         if hasattr(solver, "close"):
             solver.close()

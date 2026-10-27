@@ -113,6 +113,29 @@ def main():
     np.testing.assert_allclose(pair.state.particles.velocity, [[0.25, 0, 0]], atol=1e-12)
     np.testing.assert_allclose(pair.state.rigid.velocity, [[0.25, 0, 0]], atol=1e-12)
     np.testing.assert_array_equal(pair_state.particles.position, np.zeros((1, 3)))
+    with phymeo.make_coupled_runtime(
+        phymeo.ParticleModel(np.ones(1), np.zeros(3)),
+        phymeo.RigidBodyModel(np.array([1 / 3]), np.ones((1, 3)), np.zeros(3)),
+        None,
+        phymeo.SphereShapes(np.ones(1)),
+        substeps=1,
+        tolerance=1e-10,
+    ) as runtime:
+        staged = runtime.step(pair_state, phymeo.CoupledInputs.zeros(1, 1), 0.1)
+        if not staged.report.accepted:
+            raise RuntimeError("Installed phased contact program failed")
+        np.testing.assert_allclose(staged.state.particles.velocity, [[0.25, 0, 0]], atol=1e-12)
+        np.testing.assert_allclose(staged.state.rigid.velocity, [[0.25, 0, 0]], atol=1e-12)
+    scene = phymeo.SceneModel((phymeo.DomainBinding("dust", "particles", model),))
+    with phymeo.SceneStepper(
+        scene, phymeo.FreeSceneProgram(), phymeo.StepSettings(substeps=2)
+    ) as runtime:
+        staged_free = runtime.step(
+            phymeo.SceneState({"dust": state}), phymeo.SceneInputs({"dust": inputs}), 0.1
+        )
+        if not staged_free.report.accepted:
+            raise RuntimeError("Installed generic state registry failed")
+        np.testing.assert_allclose(staged_free.state.domains["dust"].velocity[1, 1], -0.981)
     if {"tyx", "torch", "warp"} & set(sys.modules):
         raise RuntimeError("The base wheel imported an optional runtime")
     print(f"Installed-wheel smoke passed: {installed}")

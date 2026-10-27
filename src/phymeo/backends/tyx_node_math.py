@@ -130,6 +130,7 @@ class TyxNodeMath(TyxMath):
         return self._restore_fixed(position, x, w), result.astype(np.float64)
 
     def material(self, model, x):
+        from ..validation.material_device import validate_device_material
         from ._tyx_node_kernels import stvk_material
 
         self._check_open()
@@ -145,16 +146,22 @@ class TyxNodeMath(TyxMath):
         volume = as_compute(model.volume, "reference volume")
         bulk = model.young_modulus / (3 * (1 - 2 * model.poisson_ratio))
         # In the bounded F domain, entries are <=1.4. This conservative static
-        # bound covers omitted subnormal quadratic products, stress propagation,
-        # reference-gradient multiplication and assembly across every element.
+        # bound covers quadratic omission propagated through stiffness. Direct
+        # Piola and final-gradient omissions also need stiffness-independent
+        # terms: 3 omitted products/entry, then 3 origin-node force columns.
         # It is smaller than the frozen material absolute error gate (2e-4).
         # Reject unsafe stiffness/scale combinations; never correct a force here.
+        tiny = float(np.finfo(np.float32).tiny)
+        volume_sum = float(np.sum(model.volume))
+        inverse_scale = float(np.max(np.abs(model.rest_inverse)))
         loss_bound = (
             1000.0
-            * np.finfo(np.float32).tiny
+            * tiny
             * (model.lame_mu + abs(model.lame_lambda) + bulk)
-            * float(np.sum(model.volume))
-            * (1.0 + 9.0 * float(np.max(np.abs(model.rest_inverse))))
+            * volume_sum
+            * (1.0 + 9.0 * inverse_scale)
+            + 27.0 * tiny * volume_sum * inverse_scale
+            + 9.0 * tiny * volume_sum
         )
         if not np.isfinite(loss_bound) or loss_bound > 1e-6:
             raise SolverFailure("material quadratic underflow error budget is not representable")
@@ -175,4 +182,6 @@ class TyxNodeMath(TyxMath):
         )
         if energy[0] < 0:
             raise SolverFailure("device material energy lost positivity")
-        return force.astype(np.float64), float(energy[0])
+        force, energy = force.astype(np.float64), float(energy[0])
+        validate_device_material(model, np.asarray(x, dtype=np.float64), force, energy)
+        return force, energy

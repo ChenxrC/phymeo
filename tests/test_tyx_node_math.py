@@ -247,3 +247,58 @@ def test_material_rejects_scale_with_unsafe_omitted_term_error_bound(tyx_mode, t
     with implementation()(tyx_mode, cache_root=tmp_path) as engine:
         with pytest.raises(SolverFailure, match="error budget"):
             engine.material(model, model.rest_position * 1.1)
+
+
+@pytest.mark.parametrize("strict", [False, True])
+def test_material_rejects_volume_amplified_omitted_products(tyx_mode, tmp_path, strict):
+    from dataclasses import replace
+
+    base = unit_tetra(young_modulus=1e-25)
+    model = replace(base, rest_position=base.rest_position * 3e12)
+    position = model.rest_position * 1.1
+    expected = stvk.elastic_forces(model, position)
+    assert np.max(np.abs(expected)) > 0.04
+    before = position.copy()
+    with implementation()(tyx_mode, cache_root=tmp_path) as engine:
+        with np.errstate(under="raise" if strict else "ignore"):
+            with pytest.raises(SolverFailure, match="error budget"):
+                engine.material(model, position)
+    np.testing.assert_array_equal(position, before)
+
+
+def test_material_rejects_stiff_rigid_motion_spurious_device_force(tyx_mode, tmp_path):
+    model = unit_tetra(young_modulus=1e6)
+    c, s = np.cos(0.4), np.sin(0.4)
+    rotation = np.array([[c, -s, 0], [s, c, 0], [0, 0, 1]])
+    position = model.rest_position @ rotation.T + np.array([0.2, -0.1, 0.3])
+    assert np.max(np.abs(stvk.elastic_forces(model, position))) < 1e-8
+    before = position.copy()
+    with implementation()(tyx_mode, cache_root=tmp_path) as engine:
+        with np.errstate(over="raise", invalid="raise", divide="raise", under="raise"):
+            with pytest.raises(SolverFailure, match="independent.*material"):
+                engine.material(model, position)
+        assert engine.stats()["completed_launches"] > 0
+    np.testing.assert_array_equal(position, before)
+
+
+@pytest.mark.parametrize("field", ["force", "energy", "nonfinite_force", "nonfinite_energy"])
+def test_material_rejects_finite_but_wrong_kernel_output(tyx_mode, tmp_path, monkeypatch, field):
+    model = unit_tetra()
+    position = model.rest_position.copy()
+    position[1, 0] *= 1.02
+    with implementation()(tyx_mode, cache_root=tmp_path) as engine:
+        call = engine.call
+
+        def corrupted(*args, **kwargs):
+            values = call(*args, **kwargs)
+            error = np.nan if field.startswith("nonfinite") else 1.0
+            if field.endswith("force"):
+                values[0][0, 0] += error
+            else:
+                values[1][0] += error
+            return values
+
+        monkeypatch.setattr(engine, "call", corrupted)
+        with pytest.raises(SolverFailure, match="independent.*material"):
+            engine.material(model, position)
+        assert engine.stats()["completed_launches"] > 0

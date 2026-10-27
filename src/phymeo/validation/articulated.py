@@ -44,6 +44,9 @@ AUDIT_FIELDS = (
     "min_singular_value",
     "max_singular_value",
 )
+PRESCRIBED_AUDIT_FIELDS = tuple(
+    "driver_trajectory_error" if name == "robot_balance_error" else name for name in AUDIT_FIELDS
+)
 
 
 def compact_event(event, domain, substep):
@@ -84,13 +87,21 @@ def _max_error(left, right):
     return float(np.max(np.abs(np.asarray(left) - right), initial=0))
 
 
-def audit_slider_substep(fixture, before, after, events, predicted_q, predicted_v, *, h):
-    """Check actual states and signed events, including the position/h impulse."""
+def audit_slider_substep(
+    fixture, before, after, events, predicted_q, predicted_v, *, h, prescribed=None
+):
+    """Audit dynamics, or an explicitly supplied pair of external driver samples.
+
+    The prescribed case has no robot domain and checks trajectory identity instead
+    of inventing a momentum balance for the externally driven boundary.
+    """
     names = fixture.node_names
     model = fixture.program.participants["robot"].model
     attachments = fixture.program.attachments
     mass = float(model.mass[0])
-    before_robot, after_robot = before.domains["robot"], after.domains["robot"]
+    before_robot, after_robot = (
+        (before.domains["robot"], after.domains["robot"]) if prescribed is None else prescribed
+    )
     expected_v = before_robot.v + h * fixture.inputs.domains["robot"].effort / mass
     expected_q = before_robot.q + h * expected_v
     response_error = max(_max_error(predicted_q, expected_q), _max_error(predicted_v, expected_v))
@@ -136,6 +147,13 @@ def audit_slider_substep(fixture, before, after, events, predicted_q, predicted_
         response_error = max(
             response_error, _max_error(event["robot_generalized_load"], [generalized])
         )
+        if prescribed is not None:
+            response_error = max(
+                response_error,
+                _max_error(event["robot_configuration_before"], after_robot.q),
+                _max_error(event["robot_velocity_before"], after_robot.v),
+            )
+        expected_robot_delta = generalized / mass if prescribed is None else 0.0
         if np.any(load != 0):
             contact[name] = 1
         if phase == 0:
@@ -143,7 +161,7 @@ def audit_slider_substep(fixture, before, after, events, predicted_q, predicted_
             actual_q_delta += event["robot_configuration_delta"][0]
             response_error = max(
                 response_error,
-                _max_error(event["robot_configuration_delta"], [generalized / mass]),
+                _max_error(event["robot_configuration_delta"], [expected_robot_delta]),
                 _max_error(event["robot_velocity_delta"], [0]),
                 _max_error(event["node_position_delta"], node_model.inverse_mass[node] * load),
                 _max_error(event["node_velocity_delta"], np.zeros(3)),
@@ -152,7 +170,7 @@ def audit_slider_substep(fixture, before, after, events, predicted_q, predicted_
             velocity_generalized += generalized
             response_error = max(
                 response_error,
-                _max_error(event["robot_velocity_delta"], [generalized / mass]),
+                _max_error(event["robot_velocity_delta"], [expected_robot_delta]),
                 _max_error(event["robot_configuration_delta"], [0]),
                 _max_error(event["node_velocity_delta"], node_model.inverse_mass[node] * load),
                 _max_error(event["node_position_delta"], np.zeros(3)),
@@ -162,6 +180,10 @@ def audit_slider_substep(fixture, before, after, events, predicted_q, predicted_
         - position_generalized / h
         - velocity_generalized
     )
+    if prescribed is not None:
+        balance = max(
+            _max_error(after_robot.q, predicted_q), _max_error(after_robot.v, predicted_v)
+        )
     response_error = max(response_error, _max_error(after_robot.q, expected_q + actual_q_delta))
     penetration, closing, fixed_position, fixed_velocity = 0.0, 0.0, 0.0, 0.0
     min_det, min_sv, max_sv = 1.0, 1.0, 1.0
@@ -205,7 +227,7 @@ def audit_slider_substep(fixture, before, after, events, predicted_q, predicted_
         closing = max(closing, float(np.max(-normal_speed[active], initial=0)))
     values = dict(
         zip(
-            AUDIT_FIELDS,
+            AUDIT_FIELDS if prescribed is None else PRESCRIBED_AUDIT_FIELDS,
             (
                 penetration,
                 closing,

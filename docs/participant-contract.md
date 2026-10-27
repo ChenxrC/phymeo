@@ -60,3 +60,23 @@ contact_events 逐事件保存阶段、域/节点/球/连杆、作用点、本�
 [解析/事务测试](../tests/test_articulated_coupling.py)开始。
 完整场景/反事实/回放按 [P5 规格](superpowers/specs/2026-10-27-p5-cpu-integration-design.md)另行验收，
 仅通过这些接口测试不代表 P5 已完成。
+
+## 外部驱动反事实实验
+
+[prescribed_articulated.py](../src/phymeo/experiments/prescribed_articulated.py)提供独立实验程序：
+先用 RobotProgram 计算自由 q/v，再复制为不可变的边界轨迹。
+其 SceneModel 只有布料/软体动态域，`history.driver_index` 明确保存已消费的子步数；
+统一运行器失败时恢复所有域和索引。边界从下一个样本读取运动，不再积分或响应接触。
+每个接触仍记录等大反向载荷，位置载荷除 h 后与速度冲量一起进入 driver_contact_impulse，
+driver_supplied_impulse 是外部驱动为维持轨迹所提供的相反冲量。
+
+轨迹使用 driver_q/v 字段，审计使用 driver_trajectory_error，
+不会报告虚假的动态机器人动量守恒。源轨迹步长/长度/自由方程、耗尽和运行中变更均显式检查。
+普通 ArticulatedCouplingProgram 没有忽略反作用的配置。
+
+```powershell
+python examples/articulated_scene.py --scene S3 --experiment prescribed --frames 200 --output artifacts/prescribed-s3-new
+```
+
+这个命令是明确的外部驱动实验；双向路径使用默认的 `--experiment two-way`。
+完整反馈差异仍需冻结的 200 帧成对运行验证，入口和 100 帧测试不替代这一门槛。

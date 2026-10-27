@@ -229,7 +229,7 @@ def _state_at(fixture, arrays, index):
     return SceneState(states)
 
 
-def _summary(fixture, arrays, frames):
+def _summary(fixture, arrays, frames, *, audit_fields=AUDIT_FIELDS):
     metrics = {
         "accepted_frames": frames,
         "audited_substeps": frames * 2,
@@ -240,7 +240,7 @@ def _summary(fixture, arrays, frames):
         },
         "trajectory_sha256": trajectory_digest(arrays),
     }
-    for field in AUDIT_FIELDS:
+    for field in audit_fields:
         reduction = np.min if field in ("min_det_f", "min_singular_value") else np.max
         key = (
             field
@@ -394,13 +394,17 @@ def save_articulated_run(run, destination, *, source=None):
     save_run(run, destination, source=source)
 
 
-def load_articulated_run(directory, *, require_complete=False):
+def _check_source_record(directory):
     record = json.loads((Path(directory) / "run.json").read_text(encoding="utf-8"))
     source = record.get("provenance", {})
     if not re.fullmatch(r"[0-9a-f]{64}", source.get("source_sha256", "")) or not all(
         source.get(key) for key in ("python", "numpy", "platform")
     ):
         raise ValueError("missing or malformed source provenance")
+
+
+def load_articulated_run(directory, *, require_complete=False):
+    _check_source_record(directory)
     run = load_run(directory)
     validate_articulated_run(run, require_complete=require_complete)
     return run

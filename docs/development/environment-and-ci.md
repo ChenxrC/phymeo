@@ -172,13 +172,43 @@ CPU CI 在 Windows/Linux × Python 3.11/3.12 × uv/pip 上执行短程双向/单
 | quality | 每个 push/PR 或手动运行 | 文档链接、ruff、编译检查、公开导入边界、dev/runtime 导出一致 |
 | cpu | Ubuntu/Windows × Python 3.11/3.12 × uv/pip | 数学、合同、失败路径；不能空收集 |
 | wheel | Ubuntu/Windows × Python 3.11 | build sdist/wheel；新原生 pip 环境、源码目录外安装和求解 smoke |
-| required | quality、cpu、wheel 汇总 | 任一失败/取消/跳过都失败 |
+| robot-oracle | Ubuntu × Python 3.12，独立 MuJoCo 3.3.7 哈希锁 | 3 种机构各 32 状态，以及 S1 1000 步完整轨迹对照 |
+| required | quality、cpu、wheel、robot-oracle 汇总 | 任一失败/取消/跳过都失败 |
 
 CPU 套件使用 `-m "not tyx"`，明确只验证公开依赖路径。私有 tyx-cpu 集成 job 仍待受信任凭证配置；本机已经分别运行 interpret/cpu_cpp/cuda，不能把本机证据写作云端结果。`scripts/verify_wheel.py` 会创建全新环境，只安装 runtime.lock 与构建 wheel，执行 `pip check` 和 `python -I` 求解 smoke，确认导入来自 site-packages 且没有导入 tyx/torch/warp。
 
-CI 12 个 job（8 组 CPU、2 个 wheel、quality 和 required）已在多个提交实际完成并通过；其中 `027e7cd` 包含审阅修复、回放生成命令和 wheel 联合接触 smoke，`7ccfaa3` 更新了最终来源的回放。这些代码与脚本此后未改变，后续实验报告保存的是同一已验证源码的完整时域结果。
+此前 12 个 job（8 组 CPU、2 个 wheel、quality 和 required）已在多个提交实际完成并通过；其中 `027e7cd` 包含审阅修复、回放生成命令和 wheel 联合接触 smoke，`7ccfaa3` 更新了当时的同源回放。P3 新增 robot-oracle 后共有 13 个 job，需核验新提交，不能用旧通过记录代替。
 
 不要用 `paths` 过滤必需的总体检查导致 PR 一直 pending；可以让 job 内部决定范围。分支保护由维护者在首次成功运行后设置，不能将“已提交 YAML”写成“已配置保护”。
+
+### C1a：隔离机器人对照环境
+
+P3 新增的 robot-oracle 作业与核心 CPU 环境分开，MuJoCo 只作公开 API 数值对照，
+不会被 `import phymeo` 导入。该新增作业的远程结果需按对应提交核验，不能沿用上述旧提交的通过记录。
+本地可以按下面任一路径复现（在仓库根目录，输出目录必须全新）。
+
+```powershell
+# uv；将 Python 路径替换为本机已安装的 Python 3.12。
+uv venv .venv-mujoco --python 3.12
+uv pip install --python .venv-mujoco --require-hashes -r requirements/mujoco.lock
+uv pip install --python .venv-mujoco --no-deps --no-build-isolation -e .
+.venv-mujoco/Scripts/python.exe scripts/compare_robot_mujoco.py --output artifacts/robot-oracle
+```
+
+```powershell
+# 原生 pip；独立环境避免覆盖正在开发的 .venv。
+py -3.12 -m venv .venv-mujoco-pip
+.venv-mujoco-pip/Scripts/python.exe -m pip install --require-hashes -r requirements/mujoco.lock
+.venv-mujoco-pip/Scripts/python.exe -m pip install --no-deps --no-build-isolation -e .
+.venv-mujoco-pip/Scripts/python.exe -m pip check
+.venv-mujoco-pip/Scripts/python.exe scripts/compare_robot_mujoco.py --output artifacts/robot-oracle-pip
+```
+
+Linux 对应解释器为环境下的 `bin/python`。独立锁由 `requirements/mujoco.in`
+经 `uv pip compile --universal --generate-hashes --no-header --output-file requirements/mujoco.lock requirements/mujoco.in`
+生成，包含本地包构建所需 setuptools；不修改核心 uv/dev/runtime 锁。脚本保存完整数值、XML、
+版本/源码指纹和误差，缺依赖或越过阈值以非零状态退出。性能脚本
+`scripts/measure_robot.py --output artifacts/robot-performance.json` 应独立串行运行。
 
 ### C2：GPU 真机（runner 就绪后）
 

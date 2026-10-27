@@ -100,6 +100,7 @@ jobs:
           ${{ steps.environment.outputs.python }} examples/falling_spheres.py
           ${{ steps.environment.outputs.python }} examples/learned_free_particles.py
           ${{ steps.environment.outputs.python }} examples/point_impulse.py
+          ${{ steps.environment.outputs.python }} examples/robot_pendulum.py --steps 2 --output artifacts/robot-smoke
           ${{ steps.environment.outputs.python }} examples/coupled_runtime.py --frames 1 --output artifacts/coupled-runtime-smoke
           ${{ steps.environment.outputs.python }} examples/rigid_cloth.py --frames 1 --output artifacts/rigid-cloth-smoke
           ${{ steps.environment.outputs.python }} examples/rigid_cloth.py --frames 1 --one-way --output artifacts/rigid-cloth-one-way-smoke
@@ -131,19 +132,45 @@ jobs:
       - name: Install wheel outside checkout with native pip
         run: uv run --no-sync python scripts/verify_wheel.py
 
+  robot-oracle:
+    name: robot / isolated MuJoCo 3.3.7
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - uses: astral-sh/setup-uv@d0d8abe699bfb85fec6de9f7adb5ae17292296ff # v6
+        with:
+          version: '0.11.2'
+          enable-cache: false
+      - name: Install isolated oracle and local package
+        run: |
+          uv venv --python python
+          uv pip install --require-hashes -r requirements/mujoco.lock
+          uv pip install --no-deps --no-build-isolation -e .
+          uv pip check
+      - name: Compare 96 states and complete S1 trajectory
+        run: .venv/bin/python scripts/compare_robot_mujoco.py --output artifacts/robot-oracle
+
   required:
     name: CI required
     if: always()
-    needs: [quality, cpu, wheel]
+    needs: [quality, cpu, wheel, robot-oracle]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
       QUALITY_RESULT: ${{ needs.quality.result }}
       CPU_RESULT: ${{ needs.cpu.result }}
       WHEEL_RESULT: ${{ needs.wheel.result }}
+      ORACLE_RESULT: ${{ needs.robot-oracle.result }}
     steps:
       - name: Require every configured CPU gate
         run: |
           test "$QUALITY_RESULT" = success
           test "$CPU_RESULT" = success
           test "$WHEEL_RESULT" = success
+          test "$ORACLE_RESULT" = success

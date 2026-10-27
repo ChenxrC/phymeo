@@ -1,0 +1,5 @@
+# Optional independent P3 oracle; never installed by the core runtime.
+mujoco==3.3.7
+numpy==2.5.4
+# Build the local phymeo package without altering the core/dev locks.
+setuptools==82.0.1

@@ -221,7 +221,7 @@ def _record_scene(
     }
     for name in audits[0]:
         if name not in ("contact", "position_iterations", "velocity_iterations"):
-            metrics["max_" + name] = max(row[name] for row in audits)
+            metrics["max_" + name] = float(max(row[name] for row in audits))
     metrics["trajectory_sha256"] = trajectory_digest(arrays)
     return SceneRun(config, metrics, arrays)
 

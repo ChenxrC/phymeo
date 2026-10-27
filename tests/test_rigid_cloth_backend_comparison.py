@@ -37,6 +37,21 @@ def test_loaded_numeric_trace_is_verified_against_its_record(tmp_path):
         api.load_run(output)
 
 
+def test_fp32_run_has_json_serializable_metrics_and_saves_exactly(tmp_path):
+    import json
+
+    from phymeo.experiments.rigid_cloth import load_run
+
+    run = run_scene(frames=1, mode="numpy_colored", dtype=np.float32, tolerance=1e-6)
+    encoded = json.loads(json.dumps(run.metrics, allow_nan=False))
+    assert encoded == run.metrics
+    save_run(run, tmp_path / "fp32")
+    restored = load_run(tmp_path / "fp32")
+    assert restored.metrics == run.metrics
+    for name, value in run.arrays.items():
+        np.testing.assert_array_equal(restored.arrays[name], value)
+
+
 def comparison_records():
     config = dict(
         backend="numpy_colored",

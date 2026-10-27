@@ -1,0 +1,46 @@
+{
+  "status": "passed",
+  "browser": "Chrome/153.0.8010.12",
+  "page": "file:///C:/Users/38347/Documents/ChatGPT/phymeo/artifacts/p5-articulated-preview-5634436.html",
+  "checks": {
+    "first": {
+      "clock": "0 / 200 \u00b7 0.0000 s",
+      "overflow": false,
+      "scope": "\u6bcf\u7ec4 200 \u5e27\u3001400 \u5b50\u6b65\u7684\u771f\u5b9e\u8f68\u8ff9\uff0c\u5305\u542b\u72ec\u7acb\u7684\u63a5\u89e6\u3001\u56fa\u5b9a\u70b9\u4e0e\u8f7d\u8377\u5ba1\u8ba1\u3002"
+    },
+    "step": true,
+    "final_frame": true,
+    "scenes": {
+      "S2": {
+        "clock": "200 / 200 \u00b7 0.1000 s",
+        "two": "q -0.02224 mv 0.11595 m/s\u5e03\u63a5\u89e6 \u662f",
+        "one": "q -0.03003 mv -0.40000 m/s\u5e03\u63a5\u89e6 \u662f",
+        "comparison": "\u5f53\u524d\u5e27\u53cc\u5411\u4e0e\u5916\u90e8\u9a71\u52a8\u7684 q \u5dee 7.790e-3 m\u3002\u5916\u90e8\u9a71\u52a8\u4e0d\u4f5c\u4e3a\u52a8\u6001\u673a\u5668\u4eba\u57df\u3002"
+      },
+      "S3": {
+        "clock": "200 / 200 \u00b7 0.1000 s",
+        "two": "q -0.02827 mv -0.34359 m/s\u8f6f\u4f53\u63a5\u89e6 \u662f",
+        "one": "q -0.03003 mv -0.40000 m/s\u8f6f\u4f53\u63a5\u89e6 \u662f",
+        "comparison": "\u5f53\u524d\u5e27\u53cc\u5411\u4e0e\u5916\u90e8\u9a71\u52a8\u7684 q \u5dee 1.758e-3 m\u3002\u5916\u90e8\u9a71\u52a8\u4e0d\u4f5c\u4e3a\u52a8\u6001\u673a\u5668\u4eba\u57df\u3002"
+      }
+    },
+    "played_frame": 9,
+    "paused_frame": 9,
+    "mobile": {
+      "width": 390,
+      "scrollWidth": 390,
+      "panels": "362px"
+    },
+    "script_errors": []
+  },
+  "screenshots": [
+    "s4-first.png",
+    "s4-last.png",
+    "s2-last.png",
+    "s3-last.png",
+    "mobile.png"
+  ],
+  "published_artifact": "docs/demos/articulated.html",
+  "html_sha256": "f1877f4df5bdadcd0c84233d6c0e41eb29e611bede812e1f48e0c8b40df05db7",
+  "published_copy_byte_identical_to_tested_page": true
+}

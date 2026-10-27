@@ -43,8 +43,10 @@
 **Files:** Modify `src/phymeo/__init__.py`、`tests/test_surface_features.py`、README/进度/性能台账。
 
 - [x] 公开导出RED与三角几何→H1a实际端口的独立载荷/功率测试；实现导出并GREEN。
-- [ ] 记录静态小负载耗时、全部拒绝限制与后续CCD/接触程序入口；本轮切片全回归、wheel源码外smoke、CI、一次整分支审阅与Git交付。尚未执行的检查不可勾选。
+- [x] 记录静态小负载耗时、全部拒绝限制与后续CCD/接触程序入口；本轮切片全回归、wheel源码外smoke、CI、一次整分支审阅与Git交付。尚未执行的检查不可勾选。
 
 ## 自查
 
 Task1返回自有数据类，Task2复用同合同；Task3使用现有WeightedPointPort权重机制，不向SceneStepper加入几何特例。两算子既不读取隐藏状态也不改变同域反作用聚合。后续网格层必须处理本设计明确拒绝的几何，不得捕获后跳过接触对。
+
+阶段工程收口：修复源码1e5314248fea397ca14038fe953cfc9dc7d115bd完整测试、唯一审阅修复、源码外wheel、串行观测和准确CI/Documentation均通过，见[基础验收](../../benchmarks/p65-foundation-acceptance.md)。这里只勾选本独立基础计划，不表示完整P6.5完成。

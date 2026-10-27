@@ -56,8 +56,10 @@
 - [x] RED：公开导出缺失；新增实际节点/机器人加权与成对解析测试，atol=rtol2e-5、完成launch>0、快照不变，所有资源finally关闭。
 - [x] 三模式运行 `pytest tests/test_tyx_surface_port.py -q --require-tyx --tyx-mode <mode>`；Expected：各真实后端通过。CPU依赖隔离与相关旧端口/参与者回归保持通过。
 - [x] 记录构造/查询小负载观测、成功/失败、主机映射/底层执行口径；无等价Warp不作比较，不优化。
-- [ ] 完成本轮切片必要全回归/打包/源码外wheel/CI与一次阶段末整分支审阅；未完成项保留，不提前称P6.5通过。小提交推送并核对远程SHA。
+- [x] 完成本轮切片必要全回归/打包/源码外wheel/CI与一次阶段末整分支审阅；未完成项保留，不提前称P6.5通过。小提交推送并核对远程SHA。
 
 ## 自查
 
 Task1输出PointPort给Task2，Task2仍委托同一base snapshot；Task3只验证/公开上述接口。两类都不承担接触检测、非线性位置load撤回、摩擦或完整时间步，因此不依赖尚未冻结的综合场景候选参数。完整H0/H1几何/H2–H5仍需继续，不能以此计划完成替代总goal。
+
+阶段工程收口：修复源码1e5314248fea397ca14038fe953cfc9dc7d115bd完整测试、唯一审阅修复、源码外wheel、串行观测和准确CI/Documentation均通过，见[基础验收](../../benchmarks/p65-foundation-acceptance.md)。这里只勾选本独立基础计划，不表示完整P6.5完成。

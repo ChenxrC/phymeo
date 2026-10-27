@@ -1,0 +1,125 @@
+{
+  "status": "complete_foundation_local_and_exact_source_ci",
+  "scope": "P6.5 five foundation slices; full handoff NOT implemented",
+  "source": {
+    "git_revision": "1e5314248fea397ca14038fe953cfc9dc7d115bd",
+    "git_dirty": true,
+    "source_sha256": "ceeb38c10cfce15a725da9d7347281daf363a66193cbf08408ff9f6907e85ea2",
+    "python": "3.12.14",
+    "numpy": "2.5.4",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "python_files": 105
+  },
+  "tyx": {
+    "version": "0.1.0a0",
+    "revision": "99f6df7c0fd8fdeef77f97df83914da27b64b7ee"
+  },
+  "cuda_full_suite": {
+    "passed": 1484,
+    "seconds": 494.7,
+    "command": "python -m pytest --tyx-mode cuda -q"
+  },
+  "core311": {
+    "passed": 1214,
+    "tyx_deselected": 270,
+    "seconds": 334.86
+  },
+  "core_native_pip312": {
+    "passed": 1214,
+    "tyx_deselected": 270,
+    "seconds": 345.1
+  },
+  "cpp_affected_participants": {
+    "passed": 22,
+    "seconds": 306.04,
+    "files": [
+      "test_tyx_contact_impulse.py",
+      "test_tyx_surface_port.py",
+      "test_tyx_domain_point_graph.py",
+      "test_tyx_participants.py"
+    ]
+  },
+  "interpret_focused": {
+    "passed": 91,
+    "seconds": 3.1,
+    "scope": "candidate audit, geometry, contact, actual tyx contact"
+  },
+  "numpy_focused": {
+    "passed": 200,
+    "seconds": 1.1
+  },
+  "wheel": {
+    "python_files": 105,
+    "exact_source_parity": true,
+    "fresh_native_pip_outside_checkout": true,
+    "build": "uv build --python .venv/Scripts/python.exe --no-build-isolation --offline --out-dir artifacts/p65-reviewed-dist",
+    "artifacts": {
+      "phymeo-0.1.0a0-py3-none-any.whl": "77d765f10213e2b839257b826b3042f3f886a60ff162c99f724d0ef4a22b82fa",
+      "phymeo-0.1.0a0.tar.gz": "675961cf4b37e113da72000a5167bfa0045c7df0d9d4684835b9ad0385f7f9dc"
+    }
+  },
+  "quality": {
+    "ruff": true,
+    "public_import_boundary_files": 105,
+    "uv_pip_check": true,
+    "native_pip_check": true,
+    "docs_at_fix": {
+      "documents": 83,
+      "local_links": 410
+    }
+  },
+  "review": {
+    "count": 1,
+    "base": "6dd5372dd8784c481c0c5eed90db93c7efcb86c2",
+    "reviewed_head": "635ba74b144aa19e3ea43f272f9365fc6bbf3c24",
+    "critical": 0,
+    "important": 2,
+    "minor": 1,
+    "all_findings_fixed": true,
+    "deferred_minor": [],
+    "fix_revision": "1e5314248fea397ca14038fe953cfc9dc7d115bd"
+  },
+  "performance": {
+    "serial_after_test_processes_exited": true,
+    "contact_measured_solves": 120,
+    "contact_failures": 0,
+    "foundation_port_calls": 120,
+    "combined_geometry_calls": 60,
+    "failures": 0,
+    "raw_files": [
+      "p65-reviewed-foundation-numpy.json",
+      "p65-reviewed-contact-numpy.json",
+      "p65-reviewed-contact-cuda.json"
+    ],
+    "Warp_measured": false
+  },
+  "ci": {
+    "head_sha": "1e5314248fea397ca14038fe953cfc9dc7d115bd",
+    "CI": {
+      "id": 40595805121,
+      "status": "completed",
+      "conclusion": "success"
+    },
+    "Documentation": {
+      "id": 40595805153,
+      "conclusion": "success",
+      "status": "completed"
+    }
+  },
+  "environment": {
+    "TYX_CACHE_DIR": "artifacts/tyx-cache",
+    "TEMP_TMP": "artifacts/tmp",
+    "UV_CACHE_DIR": "artifacts/uv-cache",
+    "build_retry": "default sandbox uv cache denied; empty local offline cache lacked isolated setuptools; final build used installed setuptools with --no-build-isolation and succeeded"
+  },
+  "incomplete": [
+    "full scene model and integration freeze",
+    "nonlinear configuration-load journal",
+    "mesh contact and CCD",
+    "cloth bending and self-contact",
+    "finite drive controller",
+    "dynamic grasp/handoff/place",
+    "full trajectories/refinement/failure cases",
+    "Three.js playback and browser validation"
+  ]
+}

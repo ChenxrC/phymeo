@@ -36,8 +36,10 @@
 **Files:** Create `tests/test_tyx_domain_point_graph.py`；Modify `src/phymeo/__init__.py`、README/进度/性能记录。
 
 - [x] 公共导出RED、实际多域参与者测试；分别interpret/C++/CUDA，逐域完成launch与解析状态证据。
-- [ ] 固定小负载性能观察、明确局部算子限制；与本轮其他切片统一必要回归/打包/CI/独立审阅及推送。
+- [x] 固定小负载性能观察、明确局部算子限制；与本轮其他切片统一必要回归/打包/CI/独立审阅及推送。
 
 ## 自查
 
 Task2只导出/验证Task1，不新增控制或接触规则；各域状态始终由其端口候选验证。完整双臂案例未实现部分继续留在总目标，不将本图替代SceneStepper的后段子步回滚验收。
+
+阶段工程收口：修复源码1e5314248fea397ca14038fe953cfc9dc7d115bd完整测试、唯一审阅修复、源码外wheel、串行观测和准确CI/Documentation均通过，见[基础验收](../../benchmarks/p65-foundation-acceptance.md)。这里只勾选本独立基础计划，不表示完整P6.5完成。

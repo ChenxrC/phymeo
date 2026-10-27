@@ -532,3 +532,10 @@
 - 实际tyx候选舍入反例先失败后修复：公开PointCandidateAudit，逐域实际作用点速度与全域动能审计，再做全图接触定律复核；两个域相同错误不能在相对速度中抵消。FP64仅验证、不替换设备候选；未更改原容差。
 - 修复后200项针对性回归通过，解释器候选/几何/冲量组合91项通过；当前源码全回归/C++/两CPU环境、wheel、串行观测和准确提交CI还在收齐，[基础验收记录](benchmarks/p65-foundation-acceptance.md)会写实际结果。完整P6.5仍未完成。
 - 新边界登记[NUM-004](legacy-issues/NUM-004-candidate-representability.md)，依赖侧补充既有[TYX-001](../tyx_flaw/TYX-001-fp64-compute.md)具体影响，不将正常FP32舍入误报新tyx实现错误或Warp性能差距。
+
+## 2026-10-28 06:48：P6.5五个基础切片验收收齐
+
+- 修复源码1e5314248fea397ca14038fe953cfc9dc7d115bd已推送，远程相同；准确CI40595805121及Documentation40595805153均success。
+- 实际CUDA全1484通过；核心Py3.11/原生pip3.12各1214通过、270设备明确排除；相关C++22通过；105文件wheel逐字节一致及源码外pip安装通过。完整[工程记录](benchmarks/p65-foundation-engineering.json)保存环境/源码与包哈希、命令和时长。
+- 全部数值测试退出后[修复后串行观测](performance-bottlenecks/measurements/p65-reviewed-foundations.md)通过：120次联合冲量、120次NumPy端口、60次组合几何；新增验证成本如实记录，无优化/Warp比较。
+- 五个独立基础计划完成工程门禁，完整H0/H1/H2/H3/H4/H5仍不能以这些小切片代替。[基础验收](benchmarks/p65-foundation-acceptance.md)与[审阅裁定](benchmarks/p65-foundation-review.md)明确未完成内容。用户截止仍为08:00，总goal未完成。

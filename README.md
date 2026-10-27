@@ -10,7 +10,9 @@
 
 刚柔场景目标已完成验收：**一个可重复验证的刚柔双向交互场景**。`codex/rigid-cloth-coupling` 分支提供布片与动态球接触、联合回滚、双向/单向对照、离线回放及实际 tyx CUDA 路径。见[场景与验收设计](docs/superpowers/specs/2026-10-27-rigid-cloth-coupling-design.md)、[七个里程碑](docs/superpowers/plans/2026-10-27-rigid-cloth-coupling.md)与[逐项验收证据](docs/benchmarks/rigid-cloth-acceptance.md)。这只表示所述固定场景完成，不代表整个目标架构已实现。
 
-P1/P2 已在 `codex/p1-p2-runtime` 完成：类型/历史合同、世界点端口、统一阶段运行器和 NumPy/tyx 刚柔迁移通过验收。修复后实际 CUDA 全回归 831 项；CPU/CUDA 各 240 帧、960 个审计子步，22 个数组分别与旧同后端参考完全一致。见[逐项验收与后续](docs/benchmarks/p1-p2-acceptance.md)、[完整实验](docs/benchmarks/p1-p2-runtime.md)和[接入合同](docs/development/runtime-contracts.md)。机器人关节树和体积软体仍属后续阶段。
+P1/P2 已在 `codex/p1-p2-runtime` 完成：类型/历史合同、世界点端口、统一阶段运行器和 NumPy/tyx 刚柔迁移通过验收。修复后实际 CUDA 全回归 831 项；CPU/CUDA 各 240 帧、960 个审计子步，22 个数组分别与旧同后端参考完全一致。见[逐项验收与后续](docs/benchmarks/p1-p2-acceptance.md)、[完整实验](docs/benchmarks/p1-p2-runtime.md)和[接入合同](docs/development/runtime-contracts.md)。
+
+P3–P5 已实现固定基座关节树、受限 StVK 四面体材料及机器人—布料—软体 CPU 双向组合。五组完整场景与重复的287个数组完全一致；S4布料/软体分别发生235/207个接触子步，见[真实回放](docs/demos/articulated.html)与[物理报告](docs/benchmarks/p5-coupling.md)。审阅修复后实际CUDA回归1138项通过，两个独立CPU环境各1014项通过；最终性能和工程交付正在收口。新机器人/软体计算目前是NumPy FP64，随后P6负责真正的tyx新算法链路，再进入P6.5双臂递布。
 
 独立整分支审阅发现的一个速度重建问题已修复。最终版本六组 CPU 与三组设备实验共 **9,600 个子步全部通过**；CPU 和 CUDA 各两次 240 帧的 22 个数值数组均逐元素一致。CUDA 与同顺序参考的球/布最大位置差为 **0.111/0.020 mm**，低于 2 mm 门槛。[离线回放](docs/demos/rigid-cloth.html)与[完整报告](docs/benchmarks/rigid-cloth.md)均来自修复版；半步长实验仍显示约 0.145 m 的球轨迹差，保留时间步敏感性限制。
 
@@ -20,8 +22,9 @@ P1/P2 已在 `codex/p1-p2-runtime` 完成：类型/历史合同、世界点端�
 
 | 内容 | 入口 |
 | --- | --- |
-| 下一轮机器人＋布料＋最小体积软体的范围与里程碑（大纲） | [集成框架行动大纲](docs/superpowers/plans/2026-10-27-integrated-framework-outline.md) |
+| 机器人＋布料＋最小体积软体及后续设备链路的范围与里程碑 | [集成框架行动大纲](docs/superpowers/plans/2026-10-27-integrated-framework-outline.md) |
 | P6 后新增：A 夹起软布→交给 B→平台放置，Three.js 三维回放 | [P6.5 综合案例目标](docs/superpowers/plans/2026-10-27-dual-arm-cloth-handoff-milestone.md) |
+| 新机器人/软体核心真实 tyx 执行、明确 FP32 门槛 | [P6 设计](docs/superpowers/specs/2026-10-28-p6-tyx-chain-design.md)与[实施计划](docs/superpowers/plans/2026-10-28-p6-tyx-chain.md) |
 | P1/P2 已实现的类型、阶段、事务和扩展规则 | [运行器合同与示例](docs/development/runtime-contracts.md) |
 | P1/P2 完成度、迁移证据与下一阶段交接 | [逐项验收](docs/benchmarks/p1-p2-acceptance.md) |
 | 可复现的 tyx 性能/能力问题与 agent 交接 | [tyx_flaw](tyx_flaw/README.md) |
@@ -47,7 +50,7 @@ GitHub 文件页不直接运行 HTML；下载后用浏览器打开即可，无�
 
 NumPy 支持 FP32/FP64；可选 tyx 已实现 FP32 粒子/自由刚体积分和着色 XPBD 距离/平面投影。`TyxRigidSemiImplicitSolver` 验证了 interpret、实际 C++ 和 CUDA 的平移、四元数、陀螺项与异常回滚。`TyxCoupledXPBDSolver` 已执行真实设备刚柔接触并通过完整 240 帧对照与独立重复。独立的粒子 `TyxXPBDSolver` 可选择图重放一轮投影；联合驱动暂未采用 CUDA 图，均保留主机残差检查。安装及已验证模式见[环境说明](docs/development/environment-and-ci.md)。
 
-学习型 provider 必须配置独立物理验收器。目前 `FreeParticleVerifier` 验证自由粒子的离散运动方程；附有两系数数据回归、留出验证和错误候选回退示例。仍无球球/任意形状碰撞、关节、机器人、布料弯曲/自碰撞、摩擦、CCD 或通用 AI 求解器，详见[进度记录](docs/progress.md)。
+学习型 provider 必须配置独立物理验收器。目前 `FreeParticleVerifier` 验证自由粒子的离散运动方程；附有两系数数据回归、留出验证和错误候选回退示例。机器人已支持固定基座单自由度旋转/移动关节树、完整共享祖先响应与离散节点/球接触。仍无浮动基座、闭环、球球/任意形状碰撞、布料弯曲/自碰撞、摩擦、CCD 或通用 AI 求解器，详见[进度记录](docs/progress.md)。
 
 ```sh
 uv sync --locked --group dev

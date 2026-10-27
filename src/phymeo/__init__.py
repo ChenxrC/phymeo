@@ -1,6 +1,7 @@
 """Explicit physical models and independently implemented simulation solvers."""
 
 from .backends.tyx import TyxSemiImplicitSolver
+from .backends.tyx_rigid import TyxRigidSemiImplicitSolver
 from .backends.tyx_xpbd import TyxXPBDSolver
 from .builders.cloth import ClothPatch, cloth_grid
 from .constraints.distance import DistanceConstraints
@@ -34,6 +35,7 @@ __all__ = [
     "Plane",
     "XPBDSolver",
     "TyxSemiImplicitSolver",
+    "TyxRigidSemiImplicitSolver",
     "TyxXPBDSolver",
     "ProblemSignature",
     "SolverCapabilities",

@@ -414,3 +414,10 @@
 - 最终数据更新[真实回放](demos/articulated.html)，Chromium153检查三场景、播放/暂停/逐帧及390px通过，截图已目检。一次固定240ms播放探针失败，改为等待实际帧变化的检查后通过；未改产品逻辑，不把失败计通过。
 - c8a7972远程CI及Documentation均成功；最后文档/证据提交继续按精确SHA核验后才关闭当前goal。[逐项验收与后续](benchmarks/p3-p5-acceptance.md)已保存。
 - P6[设计](superpowers/specs/2026-10-28-p6-tyx-chain-design.md)/[计划](superpowers/plans/2026-10-28-p6-tyx-chain.md)完成一次独立builder check，无重要缺项。选择保留FP64主机容器、显式FP32设备计算及独立FP64审计；三模式与完整CUDA门槛在代码前固定。P6产品实现尚未开始，随后建立专用分支继续；截止仍为北京时间08:00，P6.5排在P6之后。
+
+## 2026-10-28 01:32：P6 T1 设备计算边界
+
+- P3–P5最终验收包已推送`f74c7dc81221aed2624f3b6162cd51d387b4a214`，远程SHA相同；Documentation成功，CI仍运行，当前旧goal保持active直到最终CI核验。新分支`codex/p6-tyx-chain`从该提交建立，先推进独立P6算术切片。
+- T1增加显式TyxMath资源边界、FP32/i32转换检查、axpy/dot/matmul与有门槛的Cholesky质量求解。22项先因实现缺失失败，再在interpret/cpu_cpp/实际CUDA均通过；扩展到27项覆盖拓扑溢出、非有限运算和有限但错误的解。
+- 当前格式化源码与原后端/能力套件合计，C++65passed/35.22s、实际CUDA65passed/4.10s；解释器新增27项通过。无主机solve/cholesky替代，分配/kernel/同步/下载故障释放受管资源，输入不改动；ruff、docs、88文件公开tyx边界检查通过。
+- 每次call保留显式分配/上传/下载与启动计数，这属于phymeo集成选择，暂未做速度/内存profile，也没有新的tyx实现缺陷或Warp差距证据。机器人/材料核心移植与完整P6场景尚未实现，不能把基础矩阵kernel通过算作P6完成。下一步T2机器人FK/J/M/bias。

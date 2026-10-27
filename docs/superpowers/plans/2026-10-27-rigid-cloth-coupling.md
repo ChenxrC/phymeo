@@ -131,9 +131,9 @@ integrate only corrected `src/phymeo/backends/tyx_rigid.py`, `_tyx_rigid_kernels
 **Interfaces:** `TyxCoupledXPBDSolver` has M3's bound model/settings and step/result contract;
 supports `mode="interpret"|"cpu_cpp"|"cuda"`, FP32 only, explicit resource close.
 
-- [ ] 先写单对解析、多个共享体、约束竞争、接触释放、子步回滚、设备异常和空族测试。
-- [ ] 实现真实设备距离/接触/预测/速度更新；共享球采用确定的串行设备接触轮，避免竞态。
-- [ ] 提供同着色/接触顺序的 NumPy FP32 对照，避免拿不同迭代次序当精度缺陷。
+- [x] 先写单对解析、多个共享体、约束竞争、接触释放、子步回滚、设备异常和空族测试。
+- [x] 实现真实设备距离/接触/预测/速度更新；共享球采用确定的串行设备接触轮，避免竞态。
+- [x] 提供同着色/接触顺序的 NumPy FP32 存储对照；CPU 几何/乘子仍以 FP64 计算，并在记录中明确区分算术精度。
 - [ ] 运行三模式；真实 CUDA 240 帧与 NumPy FP32 最大位置差 <=2e-3 m，另报 FP64 差与完整步耗时。
 - [ ] 独立审阅资源/数值/调度，跑全套与包验证，提交推送。
 
@@ -155,7 +155,7 @@ with local HTML canvas, time scrub/pause and two comparison panels. No external 
 
 ## 执行台账
 
-- M1–M4 已完成；六组完整 CPU 实验验证 6,720 子步。M5 实现与三模式/包验证通过，独立审阅并入 M7 整分支审阅。M6 算子已通过三模式，联合驱动开发中；M5–M7 尚未整体完成。基线核心测试 431 passed / 55 deselected。
+- M1–M4 已完成；六组完整 CPU 实验验证 6,720 子步。M5 实现与三模式/包验证通过，独立审阅并入 M7 整分支审阅。M6 联合驱动短场景已通过三模式，完整 240 帧设备对照待验收；M5–M7 尚未整体完成。基线核心测试 431 passed / 55 deselected。
 - 新 goal 已激活；原聊天续跑已更新到新目标，每 30 分钟可继续，不新建重复任务。
 - 继续使用本聊天的干净专用 checkout 和新分支，保留前一交付分支；不额外创建会改变环境路径的 worktree。
 - 具体测试和决策追加到 `docs/progress.md`；详细临时执行台账保存在本计划独立的 `.superpowers` 目录。

@@ -18,6 +18,12 @@ def main():
     parser.add_argument("--iterations", type=int, default=200)
     parser.add_argument("--tolerance", type=float, default=1e-7)
     parser.add_argument("--dtype", choices=("float64", "float32"), default="float64")
+    parser.add_argument(
+        "--mode",
+        choices=("numpy", "numpy_colored", "interpret", "cpu_cpp", "cuda"),
+        default="numpy",
+    )
+    parser.add_argument("--cache-root", type=Path, default=Path("artifacts/tyx-cache"))
     parser.add_argument("--sphere-mass", type=float, default=0.05)
     parser.add_argument("--one-way", action="store_true")
     parser.add_argument(
@@ -32,7 +38,7 @@ def main():
     )
     if destination.exists():
         parser.error(f"output already exists: {destination}")
-    if args.suite and (args.one_way or args.dtype != "float64"):
+    if args.suite and (args.one_way or args.dtype != "float64" or args.mode != "numpy"):
         parser.error("--suite requires float64 and selects its own one-way control")
     source = provenance()
 
@@ -51,6 +57,8 @@ def main():
             iterations=args.iterations,
             tolerance=args.tolerance,
             dtype=np.dtype(args.dtype),
+            mode=args.mode,
+            cache_root=args.cache_root,
             sphere_mass=args.sphere_mass,
         )
         if args.suite:

@@ -14,6 +14,7 @@ from ..builders.rigid_cloth import rigid_cloth_scene
 from ..core.coupled import CoupledState
 from ..core.rigid import RigidBodyModel
 from ..core.validation import validate_dt
+from ..solvers.colored_coupled import ColoredCoupledXPBDSolver
 from ..solvers.coupled_xpbd import CoupledXPBDSolver
 from ..solvers.rigid_semi_implicit import RigidSemiImplicitSolver
 from ..validation.rigid_cloth import audit_substep
@@ -67,6 +68,7 @@ def run_scene(
     tolerance=1e-7,
     sphere_mass=0.05,
     progress=None,
+    cache_root=None,
 ):
     """Return numeric data and audits; rejected frames never enter a success trace."""
     if (
@@ -75,10 +77,12 @@ def run_scene(
         or frames < 1
     ):
         raise ValueError("frames must be a positive integer")
-    if mode != "numpy":
-        raise ValueError("only the validated numpy scene path is implemented")
+    if mode not in ("numpy", "numpy_colored", "interpret", "cpu_cpp", "cuda"):
+        raise ValueError("unsupported scene execution mode")
     if not isinstance(reaction, (bool, np.bool_)):
         raise TypeError("reaction must be a boolean")
+    if not reaction and mode != "numpy":
+        raise ValueError("the prescribed one-way experiment currently requires mode='numpy'")
     scene = rigid_cloth_scene(dtype, sphere_mass=sphere_mass)
     bound_model = (
         scene.rigid_model
@@ -99,14 +103,40 @@ def run_scene(
         tolerance=tolerance,
         record_substeps=True,
     )
-    solver = (
-        CoupledXPBDSolver(**arguments)
-        if reaction
-        else _PrescribedSphereSolver(
-            **arguments,
-            driver_model=scene.rigid_model,
+    if mode == "numpy":
+        solver = (
+            CoupledXPBDSolver(**arguments)
+            if reaction
+            else _PrescribedSphereSolver(**arguments, driver_model=scene.rigid_model)
         )
-    )
+    elif mode == "numpy_colored":
+        solver = ColoredCoupledXPBDSolver(**arguments)
+    else:
+        from ..backends.tyx_coupled import TyxCoupledXPBDSolver
+
+        solver = TyxCoupledXPBDSolver(**arguments, mode=mode, cache_root=cache_root)
+    try:
+        return _record_scene(
+            scene,
+            solver,
+            frames=frames,
+            dt=dt,
+            substeps=substeps,
+            mode=mode,
+            reaction=reaction,
+            dtype=dtype,
+            iterations=iterations,
+            tolerance=tolerance,
+            progress=progress,
+        )
+    finally:
+        if hasattr(solver, "close"):
+            solver.close()
+
+
+def _record_scene(
+    scene, solver, *, frames, dt, substeps, mode, reaction, dtype, iterations, tolerance, progress
+):
     h = float(validate_dt(float(validate_dt(dt, np.dtype(dtype))) / substeps, np.dtype(dtype)))
     config = dict(
         scene.config,
@@ -118,6 +148,8 @@ def run_scene(
         iterations=int(iterations),
         tolerance=float(tolerance),
         backend=mode,
+        distance_order="original" if mode == "numpy" else "stable_colors",
+        projection_arithmetic="fp64" if mode in ("numpy", "numpy_colored") else "fp32",
         interaction="two_way_dynamic" if reaction else "one_way_prescribed_sphere",
     )
     current = CoupledState(scene.initial_state.particles, scene.initial_state.rigid)
@@ -144,6 +176,8 @@ def run_scene(
     started = time.perf_counter()
     for frame in range(int(frames)):
         result = solver.step(current, scene.inputs, dt)
+        if mode in ("interpret", "cpu_cpp", "cuda") and result.report.backend != f"tyx:{mode}":
+            raise SceneRunFailure("requested device backend did not execute")
         if not result.report.accepted:
             raise SceneRunFailure(
                 f"frame {frame + 1}: {result.report.reason}; residual {result.report.max_residual}"
@@ -177,6 +211,7 @@ def run_scene(
     for name in audits[0]:
         arrays["substep_" + name] = np.array([row[name] for row in audits])
     metrics = {
+        "execution_backend": result.report.backend,
         "accepted_frames": int(frames),
         "audited_substeps": len(audits),
         "contact_substeps": sum(row["contact"] for row in audits),
@@ -443,3 +478,18 @@ def save_run(run, destination, *, source=None):
     (destination / "run.json").write_text(
         json.dumps(record, ensure_ascii=False, indent=2, allow_nan=False) + "\n", encoding="utf-8"
     )
+
+
+def load_run(directory):
+    """Load a completed numeric trace and reject corruption before comparison."""
+    directory = Path(directory)
+    record = json.loads((directory / "run.json").read_text(encoding="utf-8"))
+    if record.get("status") != "complete":
+        raise ValueError("trace record is not complete")
+    with np.load(directory / "trajectory.npz", allow_pickle=False) as archive:
+        arrays = dict(archive)
+    if not all(np.isfinite(value).all() for value in arrays.values()):
+        raise ValueError("trace contains non-finite numeric data")
+    if trajectory_digest(arrays) != record["metrics"]["trajectory_sha256"]:
+        raise ValueError("trace digest does not match the recorded data")
+    return SceneRun(record["config"], record["metrics"], arrays)

@@ -164,10 +164,17 @@ def solve_bounded_pd(
         equation_residual = float(np.max(np.abs(equation)) / equation_scale)
         if equation_residual > mass_tolerance:
             raise SolverFailure("original mass equation disagrees with control prediction")
+        configuration = _finite(q + h * u)
+        original_law = _finite(
+            np.clip(kp * (target - configuration) + kd * (target_velocity - u) + ff, -limit, limit)
+        )
+        residual = max(residual, float(np.max(np.abs(effort - original_law))))
+        if residual > effort_tolerance:
+            raise SolverFailure("rounded prediction violates original state-based control law")
         return BoundedPDResult(
             effort,
             u,
-            _finite(q + h * u),
+            configuration,
             iteration if len(active) else 0,
             residual,
             equation_residual,

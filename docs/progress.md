@@ -546,3 +546,9 @@
 - 数学核心26项先缺模块RED后GREEN；公共导出与wheel入口2项RED后补齐，扩展至33项核心（含独立活动集oracle、真实NumPy参与者、病态质量拒绝）。实际tyx interpret组合35项通过、CUDA新2项通过，C++还在运行。
 - [600次串行主机控制观测](performance-bottlenecks/measurements/p65-bounded-control.md)全部验收通过；不包含设备积分，不宣称完整动态稳定或GPU控制执行。
 - 新控制范围仍须完成其唯一独立审阅、必要全回归/打包及准确CI；这些不是前阶段已修复代码的二次审阅。完整P6.5和08:00截止保持不变。
+
+## H3a审阅修复检查点
+
+- 新控制范围唯一独立审阅1 Important、无Critical/Minor：[逐项裁定](benchmarks/p65-control-review.md)。大坐标下展开控制式与实际舍入预测的原始PD式不符；正负两项反例先失败后补齐原式验证，保持原容差。37项核心/解释器组合通过，不安排重复审阅。
+- 修复前107文件源码外wheel通过；核心Py3.11/原生pip3.12各1247通过，272设备排除。修复前全CUDA未完成即主动停止，不计通过。修复后全CUDA/两CPU/C++、重建wheel和准确CI仍待收齐。
+- [续作入口](development/p65-continuation.md)记录厚度作用点/力偶、非线性位置账本和连续路径下界这三项完整案例前置选择，以及两人模块边界；均不冒称已实现。

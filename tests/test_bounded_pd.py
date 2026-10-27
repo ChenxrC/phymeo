@@ -191,6 +191,24 @@ def test_nonrepresentable_control_is_explicit_failure():
         solve(kp=np.array([1e308]), target=np.array([1e308]))
 
 
+@pytest.mark.parametrize("sign", [-1.0, 1.0])
+def test_rounded_prediction_must_satisfy_original_state_based_control_law(sign):
+    q = sign * 1e8
+    with pytest.raises(SolverFailure, match="prediction|control law"):
+        solve(
+            mass=np.ones((1, 1)),
+            bias=np.zeros(1),
+            q=np.array([q]),
+            velocity=np.zeros(1),
+            target=np.array([q + sign * 1e-8]),
+            target_velocity=np.zeros(1),
+            kp=np.array([1e8]),
+            kd=np.zeros(1),
+            effort_limit=np.array([10.0]),
+            h=0.001,
+        )
+
+
 def test_budget_is_not_silent_approximate_success():
     with pytest.raises(SolverFailure, match="budget|converg"):
         solve(

@@ -28,6 +28,8 @@ D=0的轴先固定tau=clip(a)。其他轴A构成有界严格凸QP。令v_free=v-
 
 默认effort_tolerance=1e-10（各轴自身effort单位），max_iterations=512；支持配置但本轮测试不根据结果放宽。每轮由完整解重算自由预测速度，`max(abs(tau-clip(a-D*u)))<=effort_tolerance`。原始M方程按`max(1,||M||inf*||u-v||inf,||h*(tau-b)||inf)`归一化，残差<=mass_tolerance。所有effort严格在盒内，零D/零限幅不绕过检查。
 
+两种容差均限于(0,1e-3]。独立审阅修复后，返回前还用实际舍入后的q_free与u验证原始状态形式`clip(kp*(target-q_free)+kd*(target_velocity-u)+ff)`；展开式通过而原式不符必须SolverFailure。residual_effort取两者较大值，不隐藏大坐标或大增益带来的不可表示性。
+
 ## API与数据边界
 
 `solve_bounded_pd(mass, bias, q, velocity, target, target_velocity, kp, kd, effort_limit, h, *, feedforward=None, effort_tolerance=1e-10, mass_tolerance=1e-12, max_iterations=512)`。

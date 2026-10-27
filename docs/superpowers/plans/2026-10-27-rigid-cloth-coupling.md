@@ -38,10 +38,10 @@ modify public exports only when the module is verified.
 - Produces: `particle_sphere_geometry(particle_position, rigid_position, spheres) -> ParticleSphereGeometry`;
   readonly `particle_indices`, `body_indices`, `normal`, `gap`, `degenerate` arrays for all pairs.
 
-- [ ] 写内/外/切触解析间隙、粒子优先行序、中心 +X、空集合、FP32 提升、非法输入和无别名测试；运行后确认缺实现失败。
-- [ ] 实现 FP64 几何与稳定范数，几何不修改输入、不响应接触；有限输入计算溢出报 SolverFailure。
-- [ ] 运行 `python -m pytest tests/test_particle_sphere.py -q`，预期全部通过；全核心回归与 ruff。
-- [ ] 更新进度，提交 `feat(geometry): evaluate particle sphere contact geometry` 并推送。
+- [x] 写内/外/切触解析间隙、粒子优先行序、中心 +X、空集合、FP32 提升、非法输入和无别名测试；31 项先因缺少模块失败。
+- [x] 实现 FP64 几何与稳定范数，几何不修改输入、不响应接触；有限输入计算溢出报 SolverFailure。另补不精确次正规距离假零间隙回归，先失败再修复；精确次正规轴向距离保留。
+- [x] `python -m pytest tests/test_particle_sphere.py -q`：32 passed；真实 CUDA 全套 518 passed，Python 3.11/原生 pip 核心各 463 passed / 55 deselected；ruff 与文档检查通过。
+- [x] 更新进度，提交 `feat(geometry): evaluate particle sphere contact geometry` 并推送。
 
 ## Task 2: M2 接触投影与独立单对验证
 
@@ -143,7 +143,7 @@ with local HTML canvas, time scrub/pause and two comparison panels. No external 
 
 ## 执行台账
 
-- 初始状态：M1–M7 均未完成。基线核心测试 431 passed / 55 deselected。
+- M1 已完成；下一项 M2 接触投影。M2–M7 尚未完成。基线核心测试 431 passed / 55 deselected。
 - 新 goal 已激活；原聊天续跑已更新到新目标，每 30 分钟可继续，不新建重复任务。
 - 继续使用本聊天的干净专用 checkout 和新分支，保留前一交付分支；不额外创建会改变环境路径的 worktree。
 - 具体测试和决策追加到 `docs/progress.md`；详细临时执行台账保存在本计划独立的 `.superpowers` 目录。

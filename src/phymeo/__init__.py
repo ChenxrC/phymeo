@@ -12,6 +12,7 @@ from .core.rigid import RigidBodyInputs, RigidBodyModel, RigidBodyState
 from .core.state import ParticleState, StepInputs
 from .core.verification import CandidateVerifier, VerificationReport
 from .coupling.point_port import ParticleRigidPorts
+from .geometry.particle_sphere import ParticleSphereGeometry, particle_sphere_geometry
 from .geometry.plane import Plane
 from .geometry.sphere import SphereShapes
 from .runtime.stepper import Stepper
@@ -50,6 +51,8 @@ __all__ = [
     "RigidBodyInputs",
     "RigidSemiImplicitSolver",
     "SphereShapes",
+    "ParticleSphereGeometry",
+    "particle_sphere_geometry",
     "RigidSpherePlaneSolver",
     "ClothPatch",
     "cloth_grid",

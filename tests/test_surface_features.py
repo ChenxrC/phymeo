@@ -113,3 +113,90 @@ def test_unrepresentable_geometry_difference_is_solver_failure():
     tri = np.array([[1e308, 0, 0], [0, 1e308, 0], [0, 0, 1e308]])
     with pytest.raises(SolverFailure):
         api().closest_point_triangle(p, tri)
+
+
+@pytest.mark.parametrize(
+    "second,distance",
+    [
+        ([[0.0, -1, 0], [0.0, 1, 0]], 0.0),
+        ([[0.0, -1, 1], [0.0, 1, 1]], 1.0),
+        ([[-0.5, 1, 0], [0.5, 1, 0]], 1.0),
+        ([[0.5, 0, 0], [2.0, 0, 0]], 0.0),
+        ([[2.0, 1, 0], [3.0, 2, 0]], np.sqrt(2)),
+        ([[2.0, 0, 0], [3.0, 0, 0]], 1.0),
+        ([[1.0, 0, 0], [-1.0, 0, 0]], 0.0),
+    ],
+)
+def test_segment_interior_boundary_parallel_and_overlap(second, distance):
+    first = np.array([[-1.0, 0, 0], [1.0, 0, 0]])
+    second = np.array(second)
+    result = api().closest_segment_segment(first, second)
+    assert result.distance == pytest.approx(distance, abs=1e-12)
+    assert_convex_optimal(result, first, second)
+    swapped = api().closest_segment_segment(second, first)
+    assert swapped.distance == pytest.approx(distance, abs=1e-12)
+    repeated = api().closest_segment_segment(first, second)
+    np.testing.assert_array_equal(repeated.first_weights, result.first_weights)
+    np.testing.assert_array_equal(repeated.second_weights, result.second_weights)
+
+
+def test_segment_rigid_transform_and_unique_weights():
+    first = np.array([[-1.0, 0, 0], [1.0, 0, 0]])
+    second = np.array([[0.0, -1, 1], [0.0, 3, 1]])
+    q, _ = np.linalg.qr(np.array([[1.0, 2, 3], [-2.0, 3, 1], [4.0, 1, -1]]))
+    shift = np.array([4.0, -2, 1])
+    result = api().closest_segment_segment(first @ q.T + shift, second @ q.T + shift)
+    np.testing.assert_allclose(result.first, shift, atol=1e-12)
+    np.testing.assert_allclose(result.second, np.array([0.0, 0, 1]) @ q.T + shift, atol=1e-12)
+    np.testing.assert_allclose(result.first_weights, [0.5, 0.5], atol=1e-12)
+    np.testing.assert_allclose(result.second_weights, [0.75, 0.25], atol=1e-12)
+    assert result.distance == pytest.approx(1, abs=1e-12)
+
+
+@pytest.mark.parametrize("scale", [1e-120, 1e120])
+def test_segment_normalization_preserves_tiny_and_large_scale(scale):
+    a = np.array([[-1.0, 0, 0], [1.0, 0, 0]]) * scale
+    b = np.array([[0.0, -1, 1], [0.0, 1, 1]]) * scale
+    result = api().closest_segment_segment(a, b)
+    assert result.distance / scale == pytest.approx(1, abs=1e-12)
+    np.testing.assert_allclose(result.first_weights, [0.5, 0.5], atol=1e-12)
+
+
+def test_segments_random_convex_optimality_independent_of_candidate_enumeration():
+    rng = np.random.default_rng(741)
+    for _ in range(64):
+        a, b = rng.normal(size=(2, 2, 3))
+        result = api().closest_segment_segment(a, b)
+        assert_convex_optimal(result, a, b, atol=2e-12)
+
+
+@pytest.mark.parametrize(
+    "bad", [np.ones((2, 3), np.float32), np.ones((1, 3)), np.full((2, 3), np.nan), np.zeros((2, 3))]
+)
+def test_invalid_or_zero_length_segment_is_rejected(bad):
+    valid = np.array([[-1.0, 0, 0], [1.0, 0, 0]])
+    with pytest.raises((TypeError, ValueError)):
+        api().closest_segment_segment(valid, bad)
+    with pytest.raises((TypeError, ValueError)):
+        api().closest_segment_segment(bad, valid)
+
+
+def test_nonzero_near_parallel_conditioning_is_not_silently_accepted():
+    a = np.array([[-1.0, 0, 0], [1.0, 0, 0]])
+    b = np.array([[-1.0, 1, 0], [1.0, 1 + 1e-13, 0]])
+    with pytest.raises(SolverFailure, match="parallel"):
+        api().closest_segment_segment(a, b)
+
+
+def test_segment_nonrepresentable_difference_and_ownership():
+    a = np.array([[-1.0, 0, 0], [1.0, 0, 0]])
+    b = np.array([[0.0, -1, 1], [0.0, 1, 1]])
+    result = api().closest_segment_segment(a, b)
+    saved = result.second.copy()
+    a[:] = b[:] = 40
+    np.testing.assert_array_equal(result.second, saved)
+    assert not result.first_weights.flags.writeable
+    assert not result.second_weights.flags.writeable
+    a = np.array([[-1e308, 0, 0], [1e308, 0, 0]])
+    with pytest.raises(SolverFailure):
+        api().closest_segment_segment(a, b)

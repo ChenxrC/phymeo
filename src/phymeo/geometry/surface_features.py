@@ -111,3 +111,41 @@ def closest_point_triangle(point, triangle):
         candidates.append((weights, weights @ tri))
     weights, closest = min(candidates, key=lambda item: _norm(p - item[1]))
     return ClosestFeaturePair(point, origin + scale * closest, np.ones(1), weights)
+
+
+@_numerical
+def closest_segment_segment(first, second):
+    """Closest pair on two nonzero closed segments, with explicit conditioning limits."""
+    first = _input(first, "first segment", (2, 3))
+    second = _input(second, "second segment", (2, 3))
+    origin, scale, values = _scaled(np.vstack((first, second)))
+    a, b = values[:2], values[2:]
+    u, v = a[1] - a[0], b[1] - b[0]
+    length_u, length_v = _norm(u), _norm(v)
+    if length_u == 0 or length_v == 0:
+        raise ValueError("zero length segment")
+    cross = np.cross(u, v)
+    sine_scale = _norm(cross)
+    candidates = []
+    if sine_scale != 0:
+        if sine_scale <= 1e-12 * length_u * length_v:
+            raise SolverFailure("near-parallel segment conditioning is unsupported")
+        # Cross-product form avoids subtracting nearly equal Gram products.
+        denominator = sine_scale * sine_scale
+        offset = b[0] - a[0]
+        s = float(np.cross(offset, v) @ cross / denominator)
+        t = float(np.cross(offset, u) @ cross / denominator)
+        if 0 <= s <= 1 and 0 <= t <= 1:
+            candidates.append((s, t))
+    # For parallel lines a minimum is attained on this rectangle's boundary.
+    for s in (0.0, 1.0):
+        candidates.append((s, _segment_parameter(a[0] + s * u, b[0], b[1])))
+    for t in (0.0, 1.0):
+        candidates.append((_segment_parameter(b[0] + t * v, a[0], a[1]), t))
+    s, t = min(candidates, key=lambda st: _norm(a[0] + st[0] * u - b[0] - st[1] * v))
+    return ClosestFeaturePair(
+        origin + scale * (a[0] + s * u),
+        origin + scale * (b[0] + t * v),
+        np.array([1 - s, s]),
+        np.array([1 - t, t]),
+    )

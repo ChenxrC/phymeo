@@ -252,6 +252,57 @@ def test_failed_call_clears_previous_scene_diagnostics():
         assert runner.last_scene_result is None
 
 
+def ordered_constraint_case(dtype=np.float64):
+    from phymeo import DistanceConstraints
+
+    pm = ParticleModel(np.ones(4, dtype), np.zeros(3, dtype))
+    bm = RigidBodyModel(np.empty(0, dtype), np.empty((0, 3), dtype), np.zeros(3, dtype))
+    constraints = DistanceConstraints(
+        np.array([[0, 1], [2, 3], [1, 2]]), np.ones(3, dtype), np.zeros(3, dtype)
+    )
+    state = CoupledState(
+        ParticleState(
+            np.array([[0, 0, 0], [1, 0, 0], [2, 0, 0], [3, 0, 0]], dtype), np.zeros((4, 3), dtype)
+        ),
+        RigidBodyState(
+            np.empty((0, 3), dtype),
+            np.empty((0, 4), dtype),
+            np.empty((0, 3), dtype),
+            np.empty((0, 3), dtype),
+        ),
+    )
+    return (
+        pm,
+        bm,
+        constraints,
+        SphereShapes(np.empty(0, dtype)),
+        state,
+        CoupledInputs.zeros(4, 0, dtype=dtype),
+    )
+
+
+@pytest.mark.parametrize("mode", ["numpy", "numpy_colored"])
+def test_reordering_bound_constraints_is_rejected_before_workspace_creation(mode):
+    pm, bm, constraints, spheres, state, inputs = ordered_constraint_case()
+    with api().make_coupled_runtime(pm, bm, constraints, spheres, mode=mode) as runner:
+        config = runner.program._config
+        physical = fingerprint(runner.program.problem_signature())
+        indices = config.constraints.indices
+        indices.flags.writeable = True
+        indices[[1, 2]] = indices[[2, 1]]
+        indices.flags.writeable = False
+        assert fingerprint(api().coupled_signature(config)) == physical
+
+        def forbidden(*args):
+            raise AssertionError("changed binding reached a workspace")
+
+        runner.program.create_workspace = forbidden
+        with pytest.raises(ValueError, match="configuration"):
+            runner.step(state, inputs, 0.1)
+    with api().make_coupled_runtime(pm, bm, config.constraints, spheres, mode=mode) as rebound:
+        assert rebound.step(state, inputs, 0.1).report.accepted
+
+
 @pytest.mark.parametrize("counts", [(0, 0), (0, 1), (1, 0)])
 def test_empty_domains_preserve_shapes(counts):
     np_count, nb_count = counts

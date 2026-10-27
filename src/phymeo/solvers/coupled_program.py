@@ -25,6 +25,7 @@ from ..core.scene import (
     SceneState,
     StageMetrics,
     StepSettings,
+    fingerprint,
 )
 from ..geometry.particle_sphere import particle_sphere_geometry
 from ..runtime.program import ProgramCapabilities
@@ -68,6 +69,13 @@ def coupled_scene(config):
     )
 
 
+def coupled_configuration(config, colors=None):
+    """Bind ordered, typed buffers and derived schedules separately from physical identity."""
+    return fingerprint(
+        (config.particle_model, config.rigid_model, config.constraints, config.spheres, colors)
+    )
+
+
 class NumpyCoupledProgram:
     capabilities = ProgramCapabilities(
         "numpy",
@@ -84,11 +92,17 @@ class NumpyCoupledProgram:
         cls = ColoredCoupledXPBDSolver if colored else CoupledXPBDSolver
         self._config = cls(particle_model, rigid_model, constraints, spheres)
         self.scene = coupled_scene(self._config)
+        self._configuration = coupled_configuration(self._config)
 
     def problem_signature(self):
+        if coupled_configuration(self._config) != self._configuration:
+            raise ValueError(
+                "coupled configuration changed physical problem or layout; bind a new program"
+            )
         return coupled_signature(self._config)
 
     def create_workspace(self, scene, state, inputs, h, settings, context):
+        self.problem_signature()
         self.scene.assert_unchanged()
         if scene.identity != self.scene.identity:
             raise ValueError("coupled program must use its bound physical models")

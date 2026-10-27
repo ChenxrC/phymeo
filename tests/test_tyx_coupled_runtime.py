@@ -5,7 +5,7 @@ from contextlib import ExitStack
 
 import numpy as np
 import pytest
-from test_coupled_runtime import arrays, compare_results, pair
+from test_coupled_runtime import arrays, compare_results, ordered_constraint_case, pair
 
 from phymeo.backends.tyx_coupled import TyxCoupledXPBDSolver
 from phymeo.builders.rigid_cloth import rigid_cloth_scene
@@ -262,3 +262,32 @@ def test_sync_failure_during_close_still_runs_all_free_callbacks(tyx_mode, cache
             assert evidence["registered"] > 0
         evidence["fail"] = False
         assert new.step(state, inputs, 0.1).report.accepted
+
+
+def test_reordered_device_constraints_cannot_reuse_stale_color_cache(tyx_mode, cache):
+    from phymeo.solvers.coupled_program import coupled_signature
+
+    pm, bm, constraints, spheres, state, inputs = ordered_constraint_case(np.float32)
+    with make_coupled_runtime(
+        pm, bm, constraints, spheres, mode=tyx_mode, cache_root=cache
+    ) as runner:
+        physical = fingerprint(runner.program.problem_signature())
+        indices = constraints.indices
+        indices.flags.writeable = True
+        indices[[1, 2]] = indices[[2, 1]]
+        indices.flags.writeable = False
+        assert fingerprint(coupled_signature(runner.program.engine._frame)) == physical
+        colors = runner.program.engine._colors
+        first = indices[colors.order[colors.offsets[0] : colors.offsets[1]]]
+        assert len(np.unique(first)) < first.size  # Old color now contains shared endpoints.
+
+        def forbidden(*args):
+            raise AssertionError("stale colors reached a workspace")
+
+        runner.program.create_workspace = forbidden
+        with pytest.raises(ValueError, match="configuration"):
+            runner.step(state, inputs, 0.1)
+    with make_coupled_runtime(
+        pm, bm, constraints, spheres, mode=tyx_mode, cache_root=cache
+    ) as rebound:
+        assert rebound.step(state, inputs, 0.1).report.accepted

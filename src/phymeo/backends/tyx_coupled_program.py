@@ -16,7 +16,7 @@ from ..core.scene import SceneState, StageMetrics
 from ..core.state import ParticleState
 from ..geometry.particle_sphere import particle_sphere_geometry
 from ..runtime.program import ProgramCapabilities
-from ..solvers.coupled_program import coupled_scene, coupled_signature
+from ..solvers.coupled_program import coupled_configuration, coupled_scene, coupled_signature
 from ..solvers.coupled_xpbd import _impulse_ledger
 from .tyx_coupled import TyxCoupledXPBDSolver, _assigned_loads
 
@@ -50,6 +50,7 @@ class TyxCoupledProgram:
         )
         try:
             self.scene = coupled_scene(self.engine._frame)
+            self._configuration = coupled_configuration(self.engine._frame, self.engine._colors)
             self.capabilities = ProgramCapabilities(
                 f"tyx:{mode}",
                 {"float32"},
@@ -61,11 +62,16 @@ class TyxCoupledProgram:
             raise
 
     def problem_signature(self):
+        if coupled_configuration(self.engine._frame, self.engine._colors) != self._configuration:
+            raise ValueError(
+                "coupled configuration changed physical problem or layout; bind a new program"
+            )
         return coupled_signature(self.engine._frame)
 
     def create_workspace(self, scene, state, inputs, h, settings, context):
         if self.engine._runtime.closed:
             raise RuntimeError("tyx coupled program is closed")
+        self.problem_signature()
         self.scene.assert_unchanged()
         if scene.identity != self.scene.identity:
             raise ValueError("coupled program must use its bound physical models")

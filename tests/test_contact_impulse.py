@@ -25,6 +25,22 @@ def solve(graph, normals, mu=0.5, **kwargs):
     )
 
 
+def test_contact_impulse_public_exports():
+    import phymeo
+
+    module = importlib.import_module("phymeo.constraints.contact_impulse")
+    assert phymeo.solve_contact_impulses is module.solve_contact_impulses
+    assert phymeo.ContactImpulseResult is module.ContactImpulseResult
+
+
+def test_installed_surface_contact_smoke_uses_public_physical_apis():
+    from test_articulated_measurement import script
+
+    result = script("smoke_installed").check_surface_contact()
+    np.testing.assert_allclose(result["velocity"], [[1.5, 0, 0]], atol=2e-9)
+    np.testing.assert_allclose(result["impulse"], [[-1, 2, 0]], atol=2e-9)
+
+
 def node(name, inverse_mass, velocity, position=None):
     position = np.zeros((1, 3)) if position is None else np.array([position], dtype=float)
     return ParticlePointPort(

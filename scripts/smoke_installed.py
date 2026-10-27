@@ -58,6 +58,62 @@ def check_articulated_pair():
     return {"robot_q": after_robot.q, "robot_v": after_robot.v, "node_v": after_node.velocity}
 
 
+def check_surface_contact():
+    """Exercise P6.5 public foundations from the installed wheel without tyx."""
+    for name in (
+        "WeightedPointPort",
+        "PointPairOperator",
+        "MultiDomainPointOperator",
+        "ClosestFeaturePair",
+        "closest_point_triangle",
+        "closest_segment_segment",
+        "FrictionImpulseResult",
+        "solve_friction_disk",
+        "ContactImpulseResult",
+        "solve_contact_impulses",
+    ):
+        if name not in phymeo.__all__ or not callable(getattr(phymeo, name, None)):
+            raise RuntimeError("Installed wheel is missing P6.5 public API: " + name)
+    tri = np.array([[0.0, 0, 0], [2.0, 0, 0], [0.0, 2, 0]])
+    feature = phymeo.closest_point_triangle(np.array([0.5, 0.5, 1.0]), tri)
+    np.testing.assert_allclose(feature.second_weights, [0.5, 0.25, 0.25], atol=1e-12)
+    segment = phymeo.closest_segment_segment(
+        np.array([[-1.0, 0, 0], [1.0, 0, 0]]), np.array([[0.0, -1, 1], [0.0, 1, 1]])
+    )
+    np.testing.assert_allclose(segment.distance, 1, atol=1e-12)
+    points = phymeo.ParticlePointPort(
+        phymeo.ParticleModel(np.ones(3), np.zeros(3)),
+        phymeo.ParticleState(tri, np.zeros((3, 3))),
+        [0, 1, 2],
+        domain="surface",
+    )
+    weighted = phymeo.WeightedPointPort(points, feature.second_weights[None])
+    np.testing.assert_allclose(weighted.response(np.ones((1, 3))), [[0.375] * 3], atol=1e-12)
+    pair = phymeo.PointPairOperator(points, np.array([[0, 1]]))
+    np.testing.assert_allclose(pair.response(np.ones((1, 3))), [[2] * 3], atol=1e-12)
+    body = phymeo.ParticlePointPort(
+        phymeo.ParticleModel(np.array([0.5]), np.zeros(3)),
+        phymeo.ParticleState(np.zeros((1, 3)), np.array([[2.0, -1, 0]])),
+        [0],
+        domain="body",
+    )
+    floor = phymeo.ParticlePointPort(
+        phymeo.ParticleModel(np.zeros(1), np.zeros(3)),
+        phymeo.ParticleState(np.zeros((1, 3)), np.zeros((1, 3))),
+        [0],
+        domain="floor",
+    )
+    graph = phymeo.MultiDomainPointOperator(
+        {"body": body, "floor": floor}, [("body", 0)], [("floor", 0)]
+    )
+    result = phymeo.solve_contact_impulses(
+        graph, np.array([[0.0, 1, 0]]), np.array([0.5]), np.array([0.5])
+    )
+    np.testing.assert_allclose(result.states["body"].velocity, [[1.5, 0, 0]], atol=2e-9)
+    np.testing.assert_allclose(result.world_impulses, [[-1, 2, 0]], atol=2e-9)
+    return {"velocity": result.states["body"].velocity, "impulse": result.world_impulses}
+
+
 def main():
     installed = Path(phymeo.__file__).resolve()
     if not installed.is_relative_to(Path(sys.prefix).resolve()):
@@ -230,6 +286,7 @@ def main():
         solid_port.response(np.array([[1.0, 0, 0]])), [[4, 0, 0]], atol=1e-12
     )
     check_articulated_pair()
+    check_surface_contact()
     for name in (
         "TyxRobotParticipant",
         "TyxClothParticipant",

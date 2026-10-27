@@ -56,6 +56,8 @@ P6.5新增`WeightedPointPort`和`PointPairOperator`：面/边重心作用点保�
 
 `MultiDomainPointOperator`把A/B/布等域的全部点载荷合并后，每域只求一次候选，全部验证成功才返回。两个实际tyx机器人＋布域的三模式共享响应已测试；图不自行判定接触成立，也不代替全场景时间事务，见[H1c合同](docs/superpowers/specs/2026-10-28-p65-domain-point-graph-design.md)。
 
+`solve_contact_impulses`联合求已共点、固定构型、零恢复系数下的法向与库仑切向冲量，最终使用实际端口响应复核互补、摩擦和能量，再从原快照施加一次总冲量。两实际tyx机器人＋节点的高/低摩擦小例已在三模式通过；它尚未推进时间或实现布面碰撞、持续夹持，见[H2b范围](docs/superpowers/specs/2026-10-28-p65-contact-impulse-design.md)。
+
 NumPy 支持 FP32/FP64；可选 tyx 已实现 FP32 粒子/自由刚体积分和着色 XPBD 距离/平面投影。`TyxRigidSemiImplicitSolver` 验证了 interpret、实际 C++ 和 CUDA 的平移、四元数、陀螺项与异常回滚。`TyxCoupledXPBDSolver` 已执行真实设备刚柔接触并通过完整 240 帧对照与独立重复。独立的粒子 `TyxXPBDSolver` 可选择图重放一轮投影；联合驱动暂未采用 CUDA 图，均保留主机残差检查。安装及已验证模式见[环境说明](docs/development/environment-and-ci.md)。
 
 学习型 provider 必须配置独立物理验收器。目前 `FreeParticleVerifier` 验证自由粒子的离散运动方程；附有两系数数据回归、留出验证和错误候选回退示例。机器人已支持固定基座单自由度旋转/移动关节树、完整共享祖先响应与离散节点/球接触。仍无浮动基座、闭环、球球/任意形状碰撞、布料弯曲/自碰撞、摩擦、CCD 或通用 AI 求解器，详见[进度记录](docs/progress.md)。

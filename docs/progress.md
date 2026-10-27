@@ -354,3 +354,5 @@
 - 用户授权按大纲执行 P1/P2；新 goal 与原聊天续跑已切换为统一合同、运行框架和旧刚柔迁移，完成后停止，不进入 P3/P4。
 - 专用分支 `codex/p1-p2-runtime` 从 `bf6c41a` 开始；复用已验证工具链目录，当前真实 CUDA 基线 688 passed。
 - [细化设计](superpowers/specs/2026-10-27-p1-p2-runtime-design.md)与[五项实施任务](superpowers/plans/2026-10-27-p1-p2-runtime.md)已建立。采用局部状态族注册、显式历史状态和分阶段工作区，运行器拥有子步与全局提交，避免只包装旧整帧 step。
+- T1 有类型场景、设置、残差、局部状态族注册和显式历史校验已实现；29 项测试先失败后通过，覆盖 q/v 自定义状态与额外内部字段、缺/多域、精度/形状、固定体、模型变化和副本隔离。真实 CUDA 全回归 717 passed；ruff、文档和公共 tyx 边界检查通过。
+- [P1 合同测量](performance-bottlenecks/measurements/p1-contracts.md)记录快照/校验开销，未将其当作物理吞吐；没有性能优化。P1 端口/阶段合同与 P2 调度、迁移仍需继续实施。

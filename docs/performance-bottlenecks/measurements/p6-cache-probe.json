@@ -1,0 +1,181 @@
+{
+  "scope": "public API cache diagnostics; concurrent workload, not performance baseline; no Warp comparison",
+  "results": [
+    {
+      "label": "default",
+      "runtime": 0,
+      "cache_root": "C:\\Users\\38347\\AppData\\Local\\Packages\\sandbox.{ac1316bd-560e-4931-b00e-d24ede2fe058}\\AC\\tyx\\cache",
+      "profiles": [
+        {
+          "kernel": "probe",
+          "backend": "cpu_cpp",
+          "cache_status": "cold_compile",
+          "status": "ok",
+          "frontend_ms": 1.388,
+          "lowering_ms": 0.2107,
+          "optimization_ms": 0.0,
+          "codegen_ms": 0.3716,
+          "link_load_ms": 2854.571,
+          "first_launch_ms": 20.7177,
+          "cache_hit_ms": 38.6006,
+          "source_bytes": 1170,
+          "artifact_bytes": 101376,
+          "toolchain": "msvc:14.50.35717:C:\\Program Files (x86)\\Microsoft Visual Studio\\18\\BuildTools\\VC\\Auxiliary\\Build\\vcvars64.bat",
+          "cache_reason_codes": [
+            "cache_write_failed"
+          ],
+          "error_type": ""
+        },
+        {
+          "kernel": "probe",
+          "backend": "cpu_cpp",
+          "cache_status": "process_hit",
+          "status": "ok",
+          "frontend_ms": 0.0,
+          "lowering_ms": 0.0,
+          "optimization_ms": 0.0,
+          "codegen_ms": 0.0,
+          "link_load_ms": 0.0,
+          "first_launch_ms": 0.0,
+          "cache_hit_ms": 0.0091,
+          "source_bytes": 0,
+          "artifact_bytes": 0,
+          "toolchain": "msvc:14.50.35717:C:\\Program Files (x86)\\Microsoft Visual Studio\\18\\BuildTools\\VC\\Auxiliary\\Build\\vcvars64.bat",
+          "cache_reason_codes": [],
+          "error_type": ""
+        }
+      ]
+    },
+    {
+      "label": "default",
+      "runtime": 1,
+      "cache_root": "C:\\Users\\38347\\AppData\\Local\\Packages\\sandbox.{ac1316bd-560e-4931-b00e-d24ede2fe058}\\AC\\tyx\\cache",
+      "profiles": [
+        {
+          "kernel": "probe",
+          "backend": "cpu_cpp",
+          "cache_status": "cold_compile",
+          "status": "ok",
+          "frontend_ms": 1.388,
+          "lowering_ms": 0.174,
+          "optimization_ms": 0.0,
+          "codegen_ms": 0.2956,
+          "link_load_ms": 2742.1882,
+          "first_launch_ms": 0.1916,
+          "cache_hit_ms": 35.5262,
+          "source_bytes": 1170,
+          "artifact_bytes": 101376,
+          "toolchain": "msvc:14.50.35717:C:\\Program Files (x86)\\Microsoft Visual Studio\\18\\BuildTools\\VC\\Auxiliary\\Build\\vcvars64.bat",
+          "cache_reason_codes": [
+            "cache_write_failed"
+          ],
+          "error_type": ""
+        },
+        {
+          "kernel": "probe",
+          "backend": "cpu_cpp",
+          "cache_status": "process_hit",
+          "status": "ok",
+          "frontend_ms": 0.0,
+          "lowering_ms": 0.0,
+          "optimization_ms": 0.0,
+          "codegen_ms": 0.0,
+          "link_load_ms": 0.0,
+          "first_launch_ms": 0.0,
+          "cache_hit_ms": 0.0064,
+          "source_bytes": 0,
+          "artifact_bytes": 0,
+          "toolchain": "msvc:14.50.35717:C:\\Program Files (x86)\\Microsoft Visual Studio\\18\\BuildTools\\VC\\Auxiliary\\Build\\vcvars64.bat",
+          "cache_reason_codes": [],
+          "error_type": ""
+        }
+      ]
+    },
+    {
+      "label": "workspace",
+      "runtime": 0,
+      "cache_root": "C:\\Users\\38347\\Documents\\ChatGPT\\phymeo\\artifacts\\p6-cache-probe",
+      "profiles": [
+        {
+          "kernel": "probe",
+          "backend": "cpu_cpp",
+          "cache_status": "cold_compile",
+          "status": "ok",
+          "frontend_ms": 1.388,
+          "lowering_ms": 0.1226,
+          "optimization_ms": 0.0,
+          "codegen_ms": 0.2421,
+          "link_load_ms": 2647.2239,
+          "first_launch_ms": 0.196,
+          "cache_hit_ms": 73.9564,
+          "source_bytes": 1170,
+          "artifact_bytes": 101376,
+          "toolchain": "msvc:14.50.35717:C:\\Program Files (x86)\\Microsoft Visual Studio\\18\\BuildTools\\VC\\Auxiliary\\Build\\vcvars64.bat",
+          "cache_reason_codes": [],
+          "error_type": ""
+        },
+        {
+          "kernel": "probe",
+          "backend": "cpu_cpp",
+          "cache_status": "process_hit",
+          "status": "ok",
+          "frontend_ms": 0.0,
+          "lowering_ms": 0.0,
+          "optimization_ms": 0.0,
+          "codegen_ms": 0.0,
+          "link_load_ms": 0.0,
+          "first_launch_ms": 0.0,
+          "cache_hit_ms": 0.0065,
+          "source_bytes": 0,
+          "artifact_bytes": 0,
+          "toolchain": "msvc:14.50.35717:C:\\Program Files (x86)\\Microsoft Visual Studio\\18\\BuildTools\\VC\\Auxiliary\\Build\\vcvars64.bat",
+          "cache_reason_codes": [],
+          "error_type": ""
+        }
+      ]
+    },
+    {
+      "label": "workspace",
+      "runtime": 1,
+      "cache_root": "C:\\Users\\38347\\Documents\\ChatGPT\\phymeo\\artifacts\\p6-cache-probe",
+      "profiles": [
+        {
+          "kernel": "probe",
+          "backend": "cpu_cpp",
+          "cache_status": "artifact_hit",
+          "status": "ok",
+          "frontend_ms": 1.388,
+          "lowering_ms": 0.1177,
+          "optimization_ms": 0.0,
+          "codegen_ms": 0.2236,
+          "link_load_ms": 53.9325,
+          "first_launch_ms": 0.1666,
+          "cache_hit_ms": 9.6827,
+          "source_bytes": 1170,
+          "artifact_bytes": 101376,
+          "toolchain": "msvc:14.50.35717:C:\\Program Files (x86)\\Microsoft Visual Studio\\18\\BuildTools\\VC\\Auxiliary\\Build\\vcvars64.bat",
+          "cache_reason_codes": [],
+          "error_type": ""
+        },
+        {
+          "kernel": "probe",
+          "backend": "cpu_cpp",
+          "cache_status": "process_hit",
+          "status": "ok",
+          "frontend_ms": 0.0,
+          "lowering_ms": 0.0,
+          "optimization_ms": 0.0,
+          "codegen_ms": 0.0,
+          "link_load_ms": 0.0,
+          "first_launch_ms": 0.0,
+          "cache_hit_ms": 0.0062,
+          "source_bytes": 0,
+          "artifact_bytes": 0,
+          "toolchain": "msvc:14.50.35717:C:\\Program Files (x86)\\Microsoft Visual Studio\\18\\BuildTools\\VC\\Auxiliary\\Build\\vcvars64.bat",
+          "cache_reason_codes": [],
+          "error_type": ""
+        }
+      ]
+    }
+  ]
+}

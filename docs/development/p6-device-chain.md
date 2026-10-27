@@ -12,9 +12,12 @@
 
 ## 可复现命令
 
-在已安装环境中执行，下列目录必须不存在。Windows若默认临时目录不允许编译缓存写入，可将`TEMP`和`TMP`显式设到工作区内`artifacts/tmp`。
+在已安装环境中执行，下列输出目录必须不存在。受限Windows环境应显式设置可写的临时目录与tyx编译缓存；默认缓存写入失败会导致每个新Runtime重复编译，已由公开JIT诊断确认，见[PERF-007](../performance-bottlenecks/PERF-007-p6-device-boundaries.md)。
 
 ```powershell
+$env:TEMP = Join-Path (Get-Location) 'artifacts/tmp'
+$env:TMP = $env:TEMP
+$env:TYX_CACHE_DIR = Join-Path (Get-Location) 'artifacts/tyx-cache'
 python -m pytest tests/test_tyx_math.py tests/test_tyx_robot_math.py tests/test_tyx_node_math.py tests/test_tyx_participants.py tests/test_tyx_articulated.py -q --require-tyx --tyx-mode cuda
 python examples/articulated_device.py --scene S2 --mode cuda --frames 200 --output artifacts/p6/device/S2
 python examples/articulated_device.py --scene S2 --mode cuda --frames 200 --output artifacts/p6/repeat/S2

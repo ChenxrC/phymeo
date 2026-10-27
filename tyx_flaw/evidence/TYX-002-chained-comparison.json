@@ -1,0 +1,158 @@
+{
+  "python": "3.12.14",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "numpy": "2.5.4",
+  "tyx_version": "0.1.0a0",
+  "tyx_source": {
+    "url": "ssh://git@github.com/ChenxrC/tyx.git",
+    "vcs_info": {
+      "vcs": "git",
+      "commit_id": "99f6df7c0fd8fdeef77f97df83914da27b64b7ee",
+      "requested_revision": "99f6df7c0fd8fdeef77f97df83914da27b64b7ee"
+    }
+  },
+  "scope": "syntax capability request, not a promised support regression; Warp unmeasured",
+  "results": [
+    {
+      "mode": "interpret",
+      "syntax": "chained",
+      "input": [
+        -1.0,
+        0.0,
+        0.5,
+        1.0,
+        2.0
+      ],
+      "expected": [
+        0,
+        0,
+        1,
+        0,
+        0
+      ],
+      "status": "rejected",
+      "error_type": "LoweringError",
+      "error": "chained comparisons are unsupported"
+    },
+    {
+      "mode": "interpret",
+      "syntax": "expanded",
+      "input": [
+        -1.0,
+        0.0,
+        0.5,
+        1.0,
+        2.0
+      ],
+      "expected": [
+        0,
+        0,
+        1,
+        0,
+        0
+      ],
+      "status": "passed",
+      "actual": [
+        0,
+        0,
+        1,
+        0,
+        0
+      ]
+    },
+    {
+      "mode": "cpu_cpp",
+      "syntax": "chained",
+      "input": [
+        -1.0,
+        0.0,
+        0.5,
+        1.0,
+        2.0
+      ],
+      "expected": [
+        0,
+        0,
+        1,
+        0,
+        0
+      ],
+      "status": "rejected",
+      "error_type": "LoweringError",
+      "error": "chained comparisons are unsupported"
+    },
+    {
+      "mode": "cpu_cpp",
+      "syntax": "expanded",
+      "input": [
+        -1.0,
+        0.0,
+        0.5,
+        1.0,
+        2.0
+      ],
+      "expected": [
+        0,
+        0,
+        1,
+        0,
+        0
+      ],
+      "status": "passed",
+      "actual": [
+        0,
+        0,
+        1,
+        0,
+        0
+      ]
+    },
+    {
+      "mode": "cuda",
+      "syntax": "chained",
+      "input": [
+        -1.0,
+        0.0,
+        0.5,
+        1.0,
+        2.0
+      ],
+      "expected": [
+        0,
+        0,
+        1,
+        0,
+        0
+      ],
+      "status": "rejected",
+      "error_type": "LoweringError",
+      "error": "chained comparisons are unsupported"
+    },
+    {
+      "mode": "cuda",
+      "syntax": "expanded",
+      "input": [
+        -1.0,
+        0.0,
+        0.5,
+        1.0,
+        2.0
+      ],
+      "expected": [
+        0,
+        0,
+        1,
+        0,
+        0
+      ],
+      "status": "passed",
+      "actual": [
+        0,
+        0,
+        1,
+        0,
+        0
+      ]
+    }
+  ]
+}

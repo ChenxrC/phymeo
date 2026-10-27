@@ -18,6 +18,9 @@
 
 | 内容 | 入口 |
 | --- | --- |
+| 下一轮机器人＋布料＋最小体积软体的范围与里程碑（大纲） | [集成框架行动大纲](docs/superpowers/plans/2026-10-27-integrated-framework-outline.md) |
+| 可延期问题、原因、代码定位与 agent 交接 | [遗留问题](docs/legacy-issues/README.md) |
+| 每阶段性能记录协议与待剖析热点 | [性能瓶颈台账](docs/performance-bottlenecks/README.md) |
 | 离线 HTML 架构图 | [下载/打开 phymeo.html](docs/architecture/phymeo.html) |
 | 可编辑矢量图 | [phymeo.svg](docs/architecture/phymeo.svg) |
 | 物理模型、接口与算法边界 | [架构说明](docs/architecture/overview.md) |

@@ -1,0 +1,22 @@
+{
+  "revision": "75b5e23ed9d10c6a1db4ea208d6e71b1e6c3f901",
+  "runs": [
+    {
+      "name": "CI",
+      "head_sha": "75b5e23ed9d10c6a1db4ea208d6e71b1e6c3f901",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/ChenxrC/phymeo/actions/runs/40577376565",
+      "updated_at": "2026-10-27T20:33:00Z"
+    },
+    {
+      "name": "Documentation",
+      "head_sha": "75b5e23ed9d10c6a1db4ea208d6e71b1e6c3f901",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/ChenxrC/phymeo/actions/runs/40577376547",
+      "updated_at": "2026-10-27T20:22:20Z"
+    }
+  ],
+  "scope": "Verified evidence checkpoint; final documentation commit checked again at delivery"
+}

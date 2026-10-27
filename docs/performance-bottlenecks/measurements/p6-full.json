@@ -1,0 +1,810 @@
+{
+  "status": "complete",
+  "provenance": {
+    "git_revision": "96d39f9e42c16b83f15e738f46766e3dc308b9a2",
+    "git_dirty": false,
+    "source_sha256": "fff627ec0a22ff7e89fbd287e120bd7bd51f1b30af8bc4a88b6fc63a666dfe65",
+    "python": "3.12.14",
+    "numpy": "2.5.4",
+    "platform": "Windows-11-10.0.26200-SP0"
+  },
+  "measurement_script_sha256": "adb3c044a95f9f3ee257c6c9f4161647ad5b6c19ff1c2579cc28e31d9d55d8fe",
+  "processor": "Intel64 Family 6 Model 183 Stepping 1, GenuineIntel",
+  "logical_cpus": 32,
+  "cache_environment": {
+    "TYX_CACHE_DIR": "C:\\Users\\38347\\Documents\\ChatGPT\\phymeo\\artifacts\\tyx-cache",
+    "TEMP": "C:\\Users\\38347\\Documents\\ChatGPT\\phymeo\\artifacts\\tmp",
+    "TMP": "C:\\Users\\38347\\Documents\\ChatGPT\\phymeo\\artifacts\\tmp",
+    "runtime_lifetime": "new participant runtimes each substep; persistent artifact cache shared"
+  },
+  "protocol": {
+    "serial": true,
+    "frame": 100,
+    "warmups": 2,
+    "repeats": 3,
+    "calls_per_repeat": 20,
+    "timing": "full runtime.step including production checks/diagnostics, independent audit after timer",
+    "state": "restore validated frame100 for every call, compare both substeps and frame101 exactly"
+  },
+  "limitations": [
+    "fixed active-contact state microbenchmark, not continuous trajectory throughput",
+    "first call after imports and saved-trace validation, not independent-process cold start",
+    "launch and array upload/download counts retained; no bytes, peak memory, per-kernel timing or controlled OS scheduling",
+    "actual tyx CUDA only; no equivalent Warp comparison or performance optimization"
+  ],
+  "trace_sources": {
+    "S2": {
+      "git_revision": "fc79020758d01a2410ed2e821eb421f4d35e0fc4",
+      "git_dirty": false,
+      "source_sha256": "fff627ec0a22ff7e89fbd287e120bd7bd51f1b30af8bc4a88b6fc63a666dfe65",
+      "python": "3.12.14",
+      "numpy": "2.5.4",
+      "platform": "Windows-11-10.0.26200-SP0"
+    },
+    "S3": {
+      "git_revision": "68cb3d5bb24a25c6d92f908b572aee10fcb3d920",
+      "git_dirty": false,
+      "source_sha256": "fff627ec0a22ff7e89fbd287e120bd7bd51f1b30af8bc4a88b6fc63a666dfe65",
+      "python": "3.12.14",
+      "numpy": "2.5.4",
+      "platform": "Windows-11-10.0.26200-SP0"
+    },
+    "S4": {
+      "git_revision": "68cb3d5bb24a25c6d92f908b572aee10fcb3d920",
+      "git_dirty": false,
+      "source_sha256": "fff627ec0a22ff7e89fbd287e120bd7bd51f1b30af8bc4a88b6fc63a666dfe65",
+      "python": "3.12.14",
+      "numpy": "2.5.4",
+      "platform": "Windows-11-10.0.26200-SP0"
+    }
+  },
+  "raw_evidence": {
+    "file": "p6-full-raw.json.gz",
+    "bytes": 623736,
+    "sha256": "27ff8adf80c81758ee8a3bc85a7190f3c9a6cd01f64abd97d8be780227bf2048",
+    "gzip_sha256": "cbb0fdcfca4bc684c613d8677d3b64047910363abdab8b5b869e47c8f4385827"
+  },
+  "workloads": [
+    {
+      "trace_validation_ms": 197.01300002634525,
+      "status": "complete",
+      "scene": "S2",
+      "frame": 100,
+      "config": {
+        "scene": "P6-articulated-v1",
+        "variant": "S2",
+        "interaction": "two_way",
+        "dt": 0.0005,
+        "substeps": 2,
+        "h": 0.00025,
+        "dtype": "float64",
+        "backend": "tyx:cuda",
+        "position_iterations": 200,
+        "velocity_iterations": 200,
+        "tolerance": 2e-06,
+        "reference_length": 1.0,
+        "reference_speed": 1.0,
+        "node_domains": [
+          "cloth"
+        ],
+        "robot": {
+          "root": [
+            0,
+            0.06,
+            0
+          ],
+          "joint": "Y-prismatic",
+          "mass": 0.5,
+          "inertia_diagonal": [
+            0.01,
+            0.01,
+            0.01
+          ],
+          "q0": 0.0,
+          "v0": -0.2,
+          "effort": -1.0,
+          "gravity": [
+            0,
+            0,
+            0
+          ]
+        },
+        "cloth": {
+          "shape": [
+            3,
+            3
+          ],
+          "spacing": 0.05,
+          "density": 0.4,
+          "compliance": 0.0001,
+          "origin": [
+            -0.2,
+            0,
+            -0.05
+          ],
+          "fixed": [
+            0,
+            2,
+            6,
+            8
+          ],
+          "gravity": [
+            0,
+            0,
+            0
+          ]
+        },
+        "soft": null,
+        "contact": "explicit discrete node/link sphere; frictionless; zero restitution",
+        "mode": "cuda",
+        "storage_dtype": "float64",
+        "compute_dtype": "float32",
+        "host_validation": "float64",
+        "ordered_serial": true,
+        "tyx_sha": "99f6df7c0fd8fdeef77f97df83914da27b64b7ee",
+        "frames": 200,
+        "duration": 0.1
+      },
+      "source_trajectory_sha256": "d56c8e1511f3454a3cc414621baf207fca90cf207950b40432323d5ef2e9b11f",
+      "acceptance_protocol": true,
+      "warmup_calls": 2,
+      "accepted_measured_steps": 60,
+      "failed_calls": 0,
+      "repeats": [
+        {
+          "repeat": 1,
+          "calls": 20,
+          "median_ms": 2436.5164000773802,
+          "p95_ms": 2712.169755087234
+        },
+        {
+          "repeat": 2,
+          "calls": 20,
+          "median_ms": 2521.1707999696955,
+          "p95_ms": 2898.56764995493
+        },
+        {
+          "repeat": 3,
+          "calls": 20,
+          "median_ms": 2704.787850030698,
+          "p95_ms": 2960.778825113084
+        }
+      ],
+      "construction_ms": 4.560199799016118,
+      "workload": {
+        "robot_dof": 1,
+        "node_counts": {
+          "cloth": 9
+        },
+        "declared_pairs": 9,
+        "cloth_edges": 20,
+        "tetrahedra": 0
+      },
+      "first_sample": {
+        "step_ms": 2773.0227999854833,
+        "audit_ms": 1.2652999721467495,
+        "substeps": [
+          {
+            "execution": {
+              "launches": 866,
+              "completed_launches": 866,
+              "uploads": 6480,
+              "downloads": 2092
+            },
+            "position_iterations": 6,
+            "velocity_iterations": 1,
+            "max_residual": 1.0530789973908685e-06,
+            "quality": {
+              "penetration": 0.0,
+              "closing_speed": 1.265385080010225e-10,
+              "load_pair_error": 0.0,
+              "robot_balance_error": 4.3939278304705454e-07,
+              "fixed_position_error": 0.0,
+              "fixed_velocity_error": 0.0,
+              "response_error": 1.192217202748305e-07,
+              "min_det_f": 1.0,
+              "min_singular_value": 1.0,
+              "max_singular_value": 1.0
+            },
+            "contacts": {
+              "cloth": 1
+            },
+            "event_count": 7,
+            "timings_ms": {
+              "setup": 35.77050007879734,
+              "predict": 672.0807999372482,
+              "position": 853.9911999832839,
+              "prepare_velocity": 16.191500006243587,
+              "velocity": 125.14919997192919,
+              "validation": 0.24860003031790257,
+              "verification": 0.0010998919606208801,
+              "diagnostics": 4.600899992510676,
+              "close": 1.2268999125808477
+            }
+          },
+          {
+            "execution": {
+              "launches": 838,
+              "completed_launches": 838,
+              "uploads": 6295,
+              "downloads": 2038
+            },
+            "position_iterations": 6,
+            "velocity_iterations": 1,
+            "max_residual": 1.0868580660999133e-06,
+            "quality": {
+              "penetration": 0.0,
+              "closing_speed": 0.0,
+              "load_pair_error": 0.0,
+              "robot_balance_error": 5.837037519995647e-07,
+              "fixed_position_error": 0.0,
+              "fixed_velocity_error": 0.0,
+              "response_error": 1.1922274367439459e-07,
+              "min_det_f": 1.0,
+              "min_singular_value": 1.0,
+              "max_singular_value": 1.0
+            },
+            "contacts": {
+              "cloth": 1
+            },
+            "event_count": 6,
+            "timings_ms": {
+              "setup": 1.6180998645722866,
+              "predict": 150.33500012941658,
+              "position": 795.5366000533104,
+              "prepare_velocity": 14.721899991855025,
+              "velocity": 94.0857999958098,
+              "validation": 0.25180005468428135,
+              "verification": 0.001200009137392044,
+              "diagnostics": 4.50519984588027,
+              "close": 1.268200110644102
+            }
+          }
+        ]
+      },
+      "phase_timings_per_substep": {
+        "setup": {
+          "median_ms": 1.5790000325068831,
+          "p95_ms": 1.833769993390888
+        },
+        "predict": {
+          "median_ms": 154.9838500795886,
+          "p95_ms": 175.7642348180525
+        },
+        "position": {
+          "median_ms": 965.7291999319568,
+          "p95_ms": 1143.8428899389692
+        },
+        "prepare_velocity": {
+          "median_ms": 15.648299944587052,
+          "p95_ms": 19.5396100403741
+        },
+        "velocity": {
+          "median_ms": 135.08749997708946,
+          "p95_ms": 176.522785006091
+        },
+        "validation": {
+          "median_ms": 0.2587999915704131,
+          "p95_ms": 0.326304929330945
+        },
+        "verification": {
+          "median_ms": 0.0006998889148235321,
+          "p95_ms": 0.0010050018317997453
+        },
+        "diagnostics": {
+          "median_ms": 5.252799950540066,
+          "p95_ms": 7.224560179747641
+        },
+        "close": {
+          "median_ms": 1.2984001077711582,
+          "p95_ms": 1.5126700978726149
+        }
+      },
+      "exact_saved_state": true
+    },
+    {
+      "trace_validation_ms": 196.34469994343817,
+      "status": "complete",
+      "scene": "S3",
+      "frame": 100,
+      "config": {
+        "scene": "P6-articulated-v1",
+        "variant": "S3",
+        "interaction": "two_way",
+        "dt": 0.0005,
+        "substeps": 2,
+        "h": 0.00025,
+        "dtype": "float64",
+        "backend": "tyx:cuda",
+        "position_iterations": 200,
+        "velocity_iterations": 200,
+        "tolerance": 2e-06,
+        "reference_length": 1.0,
+        "reference_speed": 1.0,
+        "node_domains": [
+          "soft"
+        ],
+        "robot": {
+          "root": [
+            0,
+            0.06,
+            0
+          ],
+          "joint": "Y-prismatic",
+          "mass": 0.5,
+          "inertia_diagonal": [
+            0.01,
+            0.01,
+            0.01
+          ],
+          "q0": 0.0,
+          "v0": -0.2,
+          "effort": -1.0,
+          "gravity": [
+            0,
+            0,
+            0
+          ]
+        },
+        "cloth": null,
+        "soft": {
+          "shape": [
+            3,
+            2,
+            3
+          ],
+          "origin": [
+            0.1,
+            -0.1,
+            -0.05
+          ],
+          "size": [
+            0.1,
+            0.1,
+            0.1
+          ],
+          "density": 200,
+          "young_modulus": 500,
+          "poisson_ratio": 0.3,
+          "gravity": [
+            0,
+            0,
+            0
+          ],
+          "fixed": "bottom_y"
+        },
+        "contact": "explicit discrete node/link sphere; frictionless; zero restitution",
+        "mode": "cuda",
+        "storage_dtype": "float64",
+        "compute_dtype": "float32",
+        "host_validation": "float64",
+        "ordered_serial": true,
+        "tyx_sha": "99f6df7c0fd8fdeef77f97df83914da27b64b7ee",
+        "frames": 200,
+        "duration": 0.1
+      },
+      "source_trajectory_sha256": "4ed28492bac239a94d0dad78744f44cf5b43686994b119f69b3da10c8fc97e13",
+      "acceptance_protocol": true,
+      "warmup_calls": 2,
+      "accepted_measured_steps": 60,
+      "failed_calls": 0,
+      "repeats": [
+        {
+          "repeat": 1,
+          "calls": 20,
+          "median_ms": 1659.7031999845058,
+          "p95_ms": 1946.369790181052
+        },
+        {
+          "repeat": 2,
+          "calls": 20,
+          "median_ms": 1688.5913499863818,
+          "p95_ms": 1778.4645298845135
+        },
+        {
+          "repeat": 3,
+          "calls": 20,
+          "median_ms": 1651.7261000117287,
+          "p95_ms": 1784.6008948865347
+        }
+      ],
+      "construction_ms": 7.262000115588307,
+      "workload": {
+        "robot_dof": 1,
+        "node_counts": {
+          "soft": 18
+        },
+        "declared_pairs": 18,
+        "cloth_edges": 0,
+        "tetrahedra": 24
+      },
+      "first_sample": {
+        "step_ms": 1971.9549999572337,
+        "audit_ms": 0.9353000205010176,
+        "substeps": [
+          {
+            "execution": {
+              "launches": 423,
+              "completed_launches": 423,
+              "uploads": 3245,
+              "downloads": 1057
+            },
+            "position_iterations": 1,
+            "velocity_iterations": 1,
+            "max_residual": 1.0728836059153979e-08,
+            "quality": {
+              "penetration": 0.0,
+              "closing_speed": 0.0,
+              "load_pair_error": 0.0,
+              "robot_balance_error": 8.869740497630119e-07,
+              "fixed_position_error": 0.0,
+              "fixed_velocity_error": 0.0,
+              "response_error": 1.1922538032196634e-07,
+              "min_det_f": 0.9753891420550642,
+              "min_singular_value": 0.9607826080323917,
+              "max_singular_value": 1.034724544606417
+            },
+            "contacts": {
+              "soft": 1
+            },
+            "event_count": 1,
+            "timings_ms": {
+              "setup": 43.598399963229895,
+              "predict": 204.1281999554485,
+              "position": 414.94320007041097,
+              "prepare_velocity": 16.86639990657568,
+              "velocity": 286.7992001120001,
+              "validation": 0.6669000722467899,
+              "verification": 0.000800006091594696,
+              "diagnostics": 16.13910007290542,
+              "close": 2.061299979686737
+            }
+          },
+          {
+            "execution": {
+              "launches": 451,
+              "completed_launches": 451,
+              "uploads": 3430,
+              "downloads": 1111
+            },
+            "position_iterations": 1,
+            "velocity_iterations": 1,
+            "max_residual": 1.3046644653513795e-08,
+            "quality": {
+              "penetration": 0.0,
+              "closing_speed": 1.3449077151329522e-08,
+              "load_pair_error": 0.0,
+              "robot_balance_error": 2.62942180029313e-07,
+              "fixed_position_error": 0.0,
+              "fixed_velocity_error": 0.0,
+              "response_error": 1.1922852078747443e-07,
+              "min_det_f": 0.9746753321960566,
+              "min_singular_value": 0.9596710535999758,
+              "max_singular_value": 1.0357092649521569
+            },
+            "contacts": {
+              "soft": 1
+            },
+            "event_count": 2,
+            "timings_ms": {
+              "setup": 3.164200112223625,
+              "predict": 221.0287000052631,
+              "position": 406.1347998213023,
+              "prepare_velocity": 18.07120000012219,
+              "velocity": 316.97500008158386,
+              "validation": 0.6415999960154295,
+              "verification": 0.000600004568696022,
+              "diagnostics": 16.6060000192374,
+              "close": 1.8619999755173922
+            }
+          }
+        ]
+      },
+      "phase_timings_per_substep": {
+        "setup": {
+          "median_ms": 2.093750052154064,
+          "p95_ms": 2.572255115956068
+        },
+        "predict": {
+          "median_ms": 191.3906999398023,
+          "p95_ms": 209.0438051498495
+        },
+        "position": {
+          "median_ms": 355.98755010869354,
+          "p95_ms": 432.52428008709103
+        },
+        "prepare_velocity": {
+          "median_ms": 15.749350073747337,
+          "p95_ms": 18.84185493690893
+        },
+        "velocity": {
+          "median_ms": 242.95295006595552,
+          "p95_ms": 308.9526401250623
+        },
+        "validation": {
+          "median_ms": 0.5430501187220216,
+          "p95_ms": 0.7310799788683653
+        },
+        "verification": {
+          "median_ms": 0.0006998889148235321,
+          "p95_ms": 0.00090012326836586
+        },
+        "diagnostics": {
+          "median_ms": 14.334950014017522,
+          "p95_ms": 22.376585076563057
+        },
+        "close": {
+          "median_ms": 1.5963999321684241,
+          "p95_ms": 1.9256100989878178
+        }
+      },
+      "exact_saved_state": true
+    },
+    {
+      "trace_validation_ms": 297.86050016991794,
+      "status": "complete",
+      "scene": "S4",
+      "frame": 100,
+      "config": {
+        "scene": "P6-articulated-v1",
+        "variant": "S4",
+        "interaction": "two_way",
+        "dt": 0.0005,
+        "substeps": 2,
+        "h": 0.00025,
+        "dtype": "float64",
+        "backend": "tyx:cuda",
+        "position_iterations": 200,
+        "velocity_iterations": 200,
+        "tolerance": 2e-06,
+        "reference_length": 1.0,
+        "reference_speed": 1.0,
+        "node_domains": [
+          "cloth",
+          "soft"
+        ],
+        "robot": {
+          "root": [
+            0,
+            0.06,
+            0
+          ],
+          "joint": "Y-prismatic",
+          "mass": 0.5,
+          "inertia_diagonal": [
+            0.01,
+            0.01,
+            0.01
+          ],
+          "q0": 0.0,
+          "v0": -0.2,
+          "effort": -1.0,
+          "gravity": [
+            0,
+            0,
+            0
+          ]
+        },
+        "cloth": {
+          "shape": [
+            3,
+            3
+          ],
+          "spacing": 0.05,
+          "density": 0.4,
+          "compliance": 0.0001,
+          "origin": [
+            -0.2,
+            0,
+            -0.05
+          ],
+          "fixed": [
+            0,
+            2,
+            6,
+            8
+          ],
+          "gravity": [
+            0,
+            0,
+            0
+          ]
+        },
+        "soft": {
+          "shape": [
+            3,
+            2,
+            3
+          ],
+          "origin": [
+            0.1,
+            -0.1,
+            -0.05
+          ],
+          "size": [
+            0.1,
+            0.1,
+            0.1
+          ],
+          "density": 200,
+          "young_modulus": 500,
+          "poisson_ratio": 0.3,
+          "gravity": [
+            0,
+            0,
+            0
+          ],
+          "fixed": "bottom_y"
+        },
+        "contact": "explicit discrete node/link sphere; frictionless; zero restitution",
+        "mode": "cuda",
+        "storage_dtype": "float64",
+        "compute_dtype": "float32",
+        "host_validation": "float64",
+        "ordered_serial": true,
+        "tyx_sha": "99f6df7c0fd8fdeef77f97df83914da27b64b7ee",
+        "frames": 200,
+        "duration": 0.1
+      },
+      "source_trajectory_sha256": "6e963bb0b4ee18f84f42d426f9fd488c09c07f0ad5a390b2407d14f25c6c9f9e",
+      "acceptance_protocol": true,
+      "warmup_calls": 2,
+      "accepted_measured_steps": 60,
+      "failed_calls": 0,
+      "repeats": [
+        {
+          "repeat": 1,
+          "calls": 20,
+          "median_ms": 5345.963049912825,
+          "p95_ms": 5547.062809916679
+        },
+        {
+          "repeat": 2,
+          "calls": 20,
+          "median_ms": 5368.285850039683,
+          "p95_ms": 5890.698664833326
+        },
+        {
+          "repeat": 3,
+          "calls": 20,
+          "median_ms": 5508.337899926119,
+          "p95_ms": 6675.569274986628
+        }
+      ],
+      "construction_ms": 3.489400027319789,
+      "workload": {
+        "robot_dof": 1,
+        "node_counts": {
+          "cloth": 9,
+          "soft": 18
+        },
+        "declared_pairs": 27,
+        "cloth_edges": 20,
+        "tetrahedra": 24
+      },
+      "first_sample": {
+        "step_ms": 5157.295599812642,
+        "audit_ms": 1.9397998694330454,
+        "substeps": [
+          {
+            "execution": {
+              "launches": 1954,
+              "completed_launches": 1954,
+              "uploads": 14845,
+              "downloads": 4852
+            },
+            "position_iterations": 5,
+            "velocity_iterations": 1,
+            "max_residual": 1.960362356570383e-06,
+            "quality": {
+              "penetration": 0.0,
+              "closing_speed": 0.0,
+              "load_pair_error": 0.0,
+              "robot_balance_error": 1.6407464551448925e-06,
+              "fixed_position_error": 0.0,
+              "fixed_velocity_error": 0.0,
+              "response_error": 1.192298940234178e-07,
+              "min_det_f": 0.9754461948759852,
+              "min_singular_value": 0.9608729108043876,
+              "max_singular_value": 1.0346424967249255
+            },
+            "contacts": {
+              "cloth": 1,
+              "soft": 1
+            },
+            "event_count": 9,
+            "timings_ms": {
+              "setup": 2.172200009226799,
+              "predict": 208.00320012494922,
+              "position": 1828.519199974835,
+              "prepare_velocity": 30.28959990479052,
+              "velocity": 339.28670012392104,
+              "validation": 0.6811998318880796,
+              "verification": 0.000700121745467186,
+              "diagnostics": 13.920299941673875,
+              "close": 1.6389999072998762
+            }
+          },
+          {
+            "execution": {
+              "launches": 2267,
+              "completed_launches": 2267,
+              "uploads": 17234,
+              "downloads": 5637
+            },
+            "position_iterations": 6,
+            "velocity_iterations": 1,
+            "max_residual": 1.0083072661114679e-06,
+            "quality": {
+              "penetration": 0.0,
+              "closing_speed": 8.889627481920569e-10,
+              "load_pair_error": 0.0,
+              "robot_balance_error": 2.172510189524246e-07,
+              "fixed_position_error": 0.0,
+              "fixed_velocity_error": 0.0,
+              "response_error": 1.1923740356181906e-07,
+              "min_det_f": 0.9747352534905074,
+              "min_singular_value": 0.9597658190316142,
+              "max_singular_value": 1.03562308941245
+            },
+            "contacts": {
+              "cloth": 1,
+              "soft": 1
+            },
+            "event_count": 10,
+            "timings_ms": {
+              "setup": 2.5453001726418734,
+              "predict": 205.19999996758997,
+              "position": 2140.3214999008924,
+              "prepare_velocity": 27.561299968510866,
+              "velocity": 339.1414999496192,
+              "validation": 0.5997000262141228,
+              "verification": 0.000600004568696022,
+              "diagnostics": 13.921299949288368,
+              "close": 1.5221000649034977
+            }
+          }
+        ]
+      },
+      "phase_timings_per_substep": {
+        "setup": {
+          "median_ms": 2.6287499349564314,
+          "p95_ms": 2.981139882467687
+        },
+        "predict": {
+          "median_ms": 203.6095999646932,
+          "p95_ms": 225.63115508528426
+        },
+        "position": {
+          "median_ms": 2155.7727000908926,
+          "p95_ms": 2556.116740067955
+        },
+        "prepare_velocity": {
+          "median_ms": 27.6281499536708,
+          "p95_ms": 34.236615092959255
+        },
+        "velocity": {
+          "median_ms": 352.07799985073507,
+          "p95_ms": 429.55313499551266
+        },
+        "validation": {
+          "median_ms": 0.6064500194042921,
+          "p95_ms": 0.7279800600372254
+        },
+        "verification": {
+          "median_ms": 0.000700005330145359,
+          "p95_ms": 0.00090012326836586
+        },
+        "diagnostics": {
+          "median_ms": 14.252949971705675,
+          "p95_ms": 17.39332489669323
+        },
+        "close": {
+          "median_ms": 1.6273499932140112,
+          "p95_ms": 1.9291297998279333
+        }
+      },
+      "exact_saved_state": true
+    }
+  ]
+}

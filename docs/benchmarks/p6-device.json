@@ -1,6 +1,6 @@
 {
   "status": "complete",
-  "scope": "P6 full numeric gates; final engineering/performance/CI acceptance recorded separately",
+  "scope": "P6 full numeric gates; final CI recorded separately",
   "verification": {
     "status": "complete",
     "scenes": {

@@ -1,0 +1,81 @@
+{
+  "status": "complete_local_and_checkpoint_ci",
+  "source": {
+    "git_revision": "fc79020758d01a2410ed2e821eb421f4d35e0fc4",
+    "git_dirty": true,
+    "source_sha256": "fff627ec0a22ff7e89fbd287e120bd7bd51f1b30af8bc4a88b6fc63a666dfe65",
+    "python": "3.12.14",
+    "numpy": "2.5.4",
+    "platform": "Windows-11-10.0.26200-SP0"
+  },
+  "current_remote_revision": "75b5e23ed9d10c6a1db4ea208d6e71b1e6c3f901",
+  "cuda_full_suite": {
+    "passed": 1287,
+    "seconds": 666.41
+  },
+  "core311": {
+    "passed": 1026,
+    "tyx_deselected": 261,
+    "seconds": 450.13
+  },
+  "core_native_pip312": {
+    "passed": 1026,
+    "tyx_deselected": 261,
+    "seconds": 458.98
+  },
+  "wheel": {
+    "python_files": 99,
+    "exact_source_parity": true,
+    "fresh_native_pip_outside_checkout": true
+  },
+  "ci": {
+    "revision": "75b5e23ed9d10c6a1db4ea208d6e71b1e6c3f901",
+    "runs": [
+      {
+        "name": "CI",
+        "head_sha": "75b5e23ed9d10c6a1db4ea208d6e71b1e6c3f901",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/ChenxrC/phymeo/actions/runs/40577376565",
+        "updated_at": "2026-10-27T20:33:00Z"
+      },
+      {
+        "name": "Documentation",
+        "head_sha": "75b5e23ed9d10c6a1db4ea208d6e71b1e6c3f901",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/ChenxrC/phymeo/actions/runs/40577376547",
+        "updated_at": "2026-10-27T20:22:20Z"
+      }
+    ],
+    "scope": "Verified evidence checkpoint; final documentation commit checked again at delivery"
+  },
+  "pending": [],
+  "cache_environment": {
+    "TYX_CACHE_DIR": "C:/Users/38347/Documents/ChatGPT/phymeo/artifacts/tyx-cache",
+    "TEMP_TMP": "C:/Users/38347/Documents/ChatGPT/phymeo/artifacts/tmp"
+  },
+  "scope": "current package engineering and full numeric/performance gates; final documentation commit CI checked at delivery",
+  "cpp_node_contact": {
+    "passed": 65,
+    "seconds": 1137.85,
+    "cache": "writable workspace cache"
+  },
+  "interpret_node_contact": {
+    "passed": 65,
+    "seconds": 15.84
+  },
+  "full_physical": {
+    "runs": 9,
+    "frames_per_run": 200,
+    "audited_substeps_per_run": 400,
+    "exact_repeat_arrays": 186,
+    "evidence": "p6-device.json"
+  },
+  "serial_performance": {
+    "accepted_measured_steps": 180,
+    "audited_measured_substeps": 360,
+    "failed_calls": 0,
+    "evidence": "../performance-bottlenecks/measurements/p6-full.json"
+  }
+}

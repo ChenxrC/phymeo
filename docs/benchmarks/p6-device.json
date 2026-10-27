@@ -1,0 +1,1275 @@
+{
+  "status": "complete",
+  "scope": "P6 full numeric gates; final engineering/performance/CI acceptance recorded separately",
+  "verification": {
+    "status": "complete",
+    "scenes": {
+      "S2": {
+        "exact_repeat_arrays": 59,
+        "max_q_error_m": 4.417605299754379e-06,
+        "max_node_position_error_m": 4.418923936761931e-06,
+        "max_velocity_error_m_s": 0.0010140389818450307,
+        "contact_substeps": {
+          "cloth": 235
+        },
+        "artifacts": [
+          "C:\\Users\\38347\\Documents\\ChatGPT\\phymeo\\artifacts\\p6-final-fc79020\\device\\S2",
+          "C:\\Users\\38347\\Documents\\ChatGPT\\phymeo\\artifacts\\p6-final-fc79020\\repeat\\S2",
+          "C:\\Users\\38347\\Documents\\ChatGPT\\phymeo\\artifacts\\p6-final-fc79020\\reference\\S2"
+        ],
+        "sources": [
+          {
+            "git_revision": "fc79020758d01a2410ed2e821eb421f4d35e0fc4",
+            "git_dirty": false,
+            "source_sha256": "fff627ec0a22ff7e89fbd287e120bd7bd51f1b30af8bc4a88b6fc63a666dfe65",
+            "python": "3.12.14",
+            "numpy": "2.5.4",
+            "platform": "Windows-11-10.0.26200-SP0"
+          },
+          {
+            "git_revision": "96d39f9e42c16b83f15e738f46766e3dc308b9a2",
+            "git_dirty": false,
+            "source_sha256": "fff627ec0a22ff7e89fbd287e120bd7bd51f1b30af8bc4a88b6fc63a666dfe65",
+            "python": "3.12.14",
+            "numpy": "2.5.4",
+            "platform": "Windows-11-10.0.26200-SP0"
+          },
+          {
+            "git_revision": "fc79020758d01a2410ed2e821eb421f4d35e0fc4",
+            "git_dirty": false,
+            "source_sha256": "fff627ec0a22ff7e89fbd287e120bd7bd51f1b30af8bc4a88b6fc63a666dfe65",
+            "python": "3.12.14",
+            "numpy": "2.5.4",
+            "platform": "Windows-11-10.0.26200-SP0"
+          }
+        ]
+      },
+      "S3": {
+        "exact_repeat_arrays": 59,
+        "max_q_error_m": 4.168528469038202e-07,
+        "max_node_position_error_m": 1.0902043761253275e-05,
+        "max_velocity_error_m_s": 0.0008313668107921257,
+        "contact_substeps": {
+          "soft": 235
+        },
+        "artifacts": [
+          "C:\\Users\\38347\\Documents\\ChatGPT\\phymeo\\artifacts\\p6-final-fc79020\\device\\S3",
+          "C:\\Users\\38347\\Documents\\ChatGPT\\phymeo\\artifacts\\p6-final-fc79020\\repeat\\S3",
+          "C:\\Users\\38347\\Documents\\ChatGPT\\phymeo\\artifacts\\p6-final-fc79020\\reference\\S3"
+        ],
+        "sources": [
+          {
+            "git_revision": "68cb3d5bb24a25c6d92f908b572aee10fcb3d920",
+            "git_dirty": false,
+            "source_sha256": "fff627ec0a22ff7e89fbd287e120bd7bd51f1b30af8bc4a88b6fc63a666dfe65",
+            "python": "3.12.14",
+            "numpy": "2.5.4",
+            "platform": "Windows-11-10.0.26200-SP0"
+          },
+          {
+            "git_revision": "96d39f9e42c16b83f15e738f46766e3dc308b9a2",
+            "git_dirty": false,
+            "source_sha256": "fff627ec0a22ff7e89fbd287e120bd7bd51f1b30af8bc4a88b6fc63a666dfe65",
+            "python": "3.12.14",
+            "numpy": "2.5.4",
+            "platform": "Windows-11-10.0.26200-SP0"
+          },
+          {
+            "git_revision": "fc79020758d01a2410ed2e821eb421f4d35e0fc4",
+            "git_dirty": false,
+            "source_sha256": "fff627ec0a22ff7e89fbd287e120bd7bd51f1b30af8bc4a88b6fc63a666dfe65",
+            "python": "3.12.14",
+            "numpy": "2.5.4",
+            "platform": "Windows-11-10.0.26200-SP0"
+          }
+        ]
+      },
+      "S4": {
+        "exact_repeat_arrays": 68,
+        "max_q_error_m": 2.9875985249096237e-06,
+        "max_node_position_error_m": 2.4205643039675862e-05,
+        "max_velocity_error_m_s": 0.0013435328792640606,
+        "contact_substeps": {
+          "cloth": 235,
+          "soft": 208
+        },
+        "artifacts": [
+          "C:\\Users\\38347\\Documents\\ChatGPT\\phymeo\\artifacts\\p6-final-fc79020\\device\\S4",
+          "C:\\Users\\38347\\Documents\\ChatGPT\\phymeo\\artifacts\\p6-final-fc79020\\repeat\\S4",
+          "C:\\Users\\38347\\Documents\\ChatGPT\\phymeo\\artifacts\\p6-final-fc79020\\reference\\S4"
+        ],
+        "sources": [
+          {
+            "git_revision": "68cb3d5bb24a25c6d92f908b572aee10fcb3d920",
+            "git_dirty": false,
+            "source_sha256": "fff627ec0a22ff7e89fbd287e120bd7bd51f1b30af8bc4a88b6fc63a666dfe65",
+            "python": "3.12.14",
+            "numpy": "2.5.4",
+            "platform": "Windows-11-10.0.26200-SP0"
+          },
+          {
+            "git_revision": "96d39f9e42c16b83f15e738f46766e3dc308b9a2",
+            "git_dirty": false,
+            "source_sha256": "fff627ec0a22ff7e89fbd287e120bd7bd51f1b30af8bc4a88b6fc63a666dfe65",
+            "python": "3.12.14",
+            "numpy": "2.5.4",
+            "platform": "Windows-11-10.0.26200-SP0"
+          },
+          {
+            "git_revision": "fc79020758d01a2410ed2e821eb421f4d35e0fc4",
+            "git_dirty": true,
+            "source_sha256": "fff627ec0a22ff7e89fbd287e120bd7bd51f1b30af8bc4a88b6fc63a666dfe65",
+            "python": "3.12.14",
+            "numpy": "2.5.4",
+            "platform": "Windows-11-10.0.26200-SP0"
+          }
+        ]
+      }
+    },
+    "limits": {
+      "q_m": 0.0005,
+      "node_position_m": 0.001,
+      "velocity_m_s": 0.02
+    },
+    "scope": "trusted-producer numeric/provenance audit; not a certificate against a malicious trace producer"
+  },
+  "runs": {
+    "device/S2": {
+      "status": "complete",
+      "config": {
+        "scene": "P6-articulated-v1",
+        "variant": "S2",
+        "interaction": "two_way",
+        "dt": 0.0005,
+        "substeps": 2,
+        "h": 0.00025,
+        "dtype": "float64",
+        "backend": "tyx:cuda",
+        "position_iterations": 200,
+        "velocity_iterations": 200,
+        "tolerance": 2e-06,
+        "reference_length": 1.0,
+        "reference_speed": 1.0,
+        "node_domains": [
+          "cloth"
+        ],
+        "robot": {
+          "root": [
+            0,
+            0.06,
+            0
+          ],
+          "joint": "Y-prismatic",
+          "mass": 0.5,
+          "inertia_diagonal": [
+            0.01,
+            0.01,
+            0.01
+          ],
+          "q0": 0.0,
+          "v0": -0.2,
+          "effort": -1.0,
+          "gravity": [
+            0,
+            0,
+            0
+          ]
+        },
+        "cloth": {
+          "shape": [
+            3,
+            3
+          ],
+          "spacing": 0.05,
+          "density": 0.4,
+          "compliance": 0.0001,
+          "origin": [
+            -0.2,
+            0,
+            -0.05
+          ],
+          "fixed": [
+            0,
+            2,
+            6,
+            8
+          ],
+          "gravity": [
+            0,
+            0,
+            0
+          ]
+        },
+        "soft": null,
+        "contact": "explicit discrete node/link sphere; frictionless; zero restitution",
+        "mode": "cuda",
+        "storage_dtype": "float64",
+        "compute_dtype": "float32",
+        "host_validation": "float64",
+        "ordered_serial": true,
+        "tyx_sha": "99f6df7c0fd8fdeef77f97df83914da27b64b7ee",
+        "frames": 200,
+        "duration": 0.1
+      },
+      "metrics": {
+        "accepted_frames": 200,
+        "audited_substeps": 400,
+        "complete_horizon": true,
+        "contact_substeps": {
+          "cloth": 235
+        },
+        "trajectory_sha256": "d56c8e1511f3454a3cc414621baf207fca90cf207950b40432323d5ef2e9b11f",
+        "max_penetration": 2.5344692664019952e-09,
+        "max_closing_speed": 2.98023223876951e-08,
+        "max_load_pair_error": 0.0,
+        "max_robot_balance_error": 9.941993859285958e-06,
+        "max_fixed_position_error": 0.0,
+        "max_fixed_velocity_error": 0.0,
+        "max_response_error": 1.2018438980342615e-07,
+        "min_det_f": 1.0,
+        "min_singular_value": 1.0,
+        "max_singular_value": 1.0,
+        "end_to_end_seconds": 601.1026657000184,
+        "stage_seconds": {
+          "setup": 0.9640073031187057,
+          "predict": 100.03997250343673,
+          "position": 414.4521407999564,
+          "prepare_velocity": 9.651734801009297,
+          "velocity": 71.20044010062702,
+          "validation": 0.15684779966250062,
+          "verification": 0.00039540184661746025,
+          "diagnostics": 3.172648298088461,
+          "close": 0.7033404037356377
+        }
+      },
+      "provenance": {
+        "git_revision": "fc79020758d01a2410ed2e821eb421f4d35e0fc4",
+        "git_dirty": false,
+        "source_sha256": "fff627ec0a22ff7e89fbd287e120bd7bd51f1b30af8bc4a88b6fc63a666dfe65",
+        "python": "3.12.14",
+        "numpy": "2.5.4",
+        "platform": "Windows-11-10.0.26200-SP0"
+      }
+    },
+    "device/S3": {
+      "status": "complete",
+      "config": {
+        "scene": "P6-articulated-v1",
+        "variant": "S3",
+        "interaction": "two_way",
+        "dt": 0.0005,
+        "substeps": 2,
+        "h": 0.00025,
+        "dtype": "float64",
+        "backend": "tyx:cuda",
+        "position_iterations": 200,
+        "velocity_iterations": 200,
+        "tolerance": 2e-06,
+        "reference_length": 1.0,
+        "reference_speed": 1.0,
+        "node_domains": [
+          "soft"
+        ],
+        "robot": {
+          "root": [
+            0,
+            0.06,
+            0
+          ],
+          "joint": "Y-prismatic",
+          "mass": 0.5,
+          "inertia_diagonal": [
+            0.01,
+            0.01,
+            0.01
+          ],
+          "q0": 0.0,
+          "v0": -0.2,
+          "effort": -1.0,
+          "gravity": [
+            0,
+            0,
+            0
+          ]
+        },
+        "cloth": null,
+        "soft": {
+          "shape": [
+            3,
+            2,
+            3
+          ],
+          "origin": [
+            0.1,
+            -0.1,
+            -0.05
+          ],
+          "size": [
+            0.1,
+            0.1,
+            0.1
+          ],
+          "density": 200,
+          "young_modulus": 500,
+          "poisson_ratio": 0.3,
+          "gravity": [
+            0,
+            0,
+            0
+          ],
+          "fixed": "bottom_y"
+        },
+        "contact": "explicit discrete node/link sphere; frictionless; zero restitution",
+        "mode": "cuda",
+        "storage_dtype": "float64",
+        "compute_dtype": "float32",
+        "host_validation": "float64",
+        "ordered_serial": true,
+        "tyx_sha": "99f6df7c0fd8fdeef77f97df83914da27b64b7ee",
+        "frames": 200,
+        "duration": 0.1
+      },
+      "metrics": {
+        "accepted_frames": 200,
+        "audited_substeps": 400,
+        "complete_horizon": true,
+        "contact_substeps": {
+          "soft": 235
+        },
+        "trajectory_sha256": "4ed28492bac239a94d0dad78744f44cf5b43686994b119f69b3da10c8fc97e13",
+        "max_penetration": 4.238543085954838e-09,
+        "max_closing_speed": 2.8121677271980544e-08,
+        "max_load_pair_error": 0.0,
+        "max_robot_balance_error": 1.8202525851052087e-06,
+        "max_fixed_position_error": 0.0,
+        "max_fixed_velocity_error": 0.0,
+        "max_response_error": 1.219614451826445e-07,
+        "min_det_f": 0.8175063543021677,
+        "min_singular_value": 0.7590478361658519,
+        "max_singular_value": 1.1599431211919455,
+        "end_to_end_seconds": 367.9415440999437,
+        "stage_seconds": {
+          "setup": 1.1790881995111704,
+          "predict": 91.63850019872189,
+          "position": 148.94900039606728,
+          "prepare_velocity": 7.8290559011511505,
+          "velocity": 110.71139030251652,
+          "validation": 0.27035980205982924,
+          "verification": 0.0002910986077040434,
+          "diagnostics": 6.090348897734657,
+          "close": 0.6375384994316846
+        }
+      },
+      "provenance": {
+        "git_revision": "68cb3d5bb24a25c6d92f908b572aee10fcb3d920",
+        "git_dirty": false,
+        "source_sha256": "fff627ec0a22ff7e89fbd287e120bd7bd51f1b30af8bc4a88b6fc63a666dfe65",
+        "python": "3.12.14",
+        "numpy": "2.5.4",
+        "platform": "Windows-11-10.0.26200-SP0"
+      }
+    },
+    "device/S4": {
+      "status": "complete",
+      "config": {
+        "scene": "P6-articulated-v1",
+        "variant": "S4",
+        "interaction": "two_way",
+        "dt": 0.0005,
+        "substeps": 2,
+        "h": 0.00025,
+        "dtype": "float64",
+        "backend": "tyx:cuda",
+        "position_iterations": 200,
+        "velocity_iterations": 200,
+        "tolerance": 2e-06,
+        "reference_length": 1.0,
+        "reference_speed": 1.0,
+        "node_domains": [
+          "cloth",
+          "soft"
+        ],
+        "robot": {
+          "root": [
+            0,
+            0.06,
+            0
+          ],
+          "joint": "Y-prismatic",
+          "mass": 0.5,
+          "inertia_diagonal": [
+            0.01,
+            0.01,
+            0.01
+          ],
+          "q0": 0.0,
+          "v0": -0.2,
+          "effort": -1.0,
+          "gravity": [
+            0,
+            0,
+            0
+          ]
+        },
+        "cloth": {
+          "shape": [
+            3,
+            3
+          ],
+          "spacing": 0.05,
+          "density": 0.4,
+          "compliance": 0.0001,
+          "origin": [
+            -0.2,
+            0,
+            -0.05
+          ],
+          "fixed": [
+            0,
+            2,
+            6,
+            8
+          ],
+          "gravity": [
+            0,
+            0,
+            0
+          ]
+        },
+        "soft": {
+          "shape": [
+            3,
+            2,
+            3
+          ],
+          "origin": [
+            0.1,
+            -0.1,
+            -0.05
+          ],
+          "size": [
+            0.1,
+            0.1,
+            0.1
+          ],
+          "density": 200,
+          "young_modulus": 500,
+          "poisson_ratio": 0.3,
+          "gravity": [
+            0,
+            0,
+            0
+          ],
+          "fixed": "bottom_y"
+        },
+        "contact": "explicit discrete node/link sphere; frictionless; zero restitution",
+        "mode": "cuda",
+        "storage_dtype": "float64",
+        "compute_dtype": "float32",
+        "host_validation": "float64",
+        "ordered_serial": true,
+        "tyx_sha": "99f6df7c0fd8fdeef77f97df83914da27b64b7ee",
+        "frames": 200,
+        "duration": 0.1
+      },
+      "metrics": {
+        "accepted_frames": 200,
+        "audited_substeps": 400,
+        "complete_horizon": true,
+        "contact_substeps": {
+          "cloth": 235,
+          "soft": 208
+        },
+        "trajectory_sha256": "6e963bb0b4ee18f84f42d426f9fd488c09c07f0ad5a390b2407d14f25c6c9f9e",
+        "max_penetration": 4.789565202778512e-09,
+        "max_closing_speed": 2.4237487351731464e-08,
+        "max_load_pair_error": 0.0,
+        "max_robot_balance_error": 1.1587951776581562e-05,
+        "max_fixed_position_error": 0.0,
+        "max_fixed_velocity_error": 0.0,
+        "max_response_error": 1.214777976578374e-07,
+        "min_det_f": 0.8783478420227764,
+        "min_singular_value": 0.838587275928973,
+        "max_singular_value": 1.1142850191187852,
+        "end_to_end_seconds": 1011.2193713998422,
+        "stage_seconds": {
+          "setup": 1.1809202029835433,
+          "predict": 93.21891729906201,
+          "position": 749.3608031007461,
+          "prepare_velocity": 13.05457870173268,
+          "velocity": 146.8325352014508,
+          "validation": 0.27047630143351853,
+          "verification": 0.00032389769330620766,
+          "diagnostics": 5.776481400011107,
+          "close": 0.6640302974265069
+        }
+      },
+      "provenance": {
+        "git_revision": "68cb3d5bb24a25c6d92f908b572aee10fcb3d920",
+        "git_dirty": false,
+        "source_sha256": "fff627ec0a22ff7e89fbd287e120bd7bd51f1b30af8bc4a88b6fc63a666dfe65",
+        "python": "3.12.14",
+        "numpy": "2.5.4",
+        "platform": "Windows-11-10.0.26200-SP0"
+      }
+    },
+    "repeat/S2": {
+      "status": "complete",
+      "config": {
+        "scene": "P6-articulated-v1",
+        "variant": "S2",
+        "interaction": "two_way",
+        "dt": 0.0005,
+        "substeps": 2,
+        "h": 0.00025,
+        "dtype": "float64",
+        "backend": "tyx:cuda",
+        "position_iterations": 200,
+        "velocity_iterations": 200,
+        "tolerance": 2e-06,
+        "reference_length": 1.0,
+        "reference_speed": 1.0,
+        "node_domains": [
+          "cloth"
+        ],
+        "robot": {
+          "root": [
+            0,
+            0.06,
+            0
+          ],
+          "joint": "Y-prismatic",
+          "mass": 0.5,
+          "inertia_diagonal": [
+            0.01,
+            0.01,
+            0.01
+          ],
+          "q0": 0.0,
+          "v0": -0.2,
+          "effort": -1.0,
+          "gravity": [
+            0,
+            0,
+            0
+          ]
+        },
+        "cloth": {
+          "shape": [
+            3,
+            3
+          ],
+          "spacing": 0.05,
+          "density": 0.4,
+          "compliance": 0.0001,
+          "origin": [
+            -0.2,
+            0,
+            -0.05
+          ],
+          "fixed": [
+            0,
+            2,
+            6,
+            8
+          ],
+          "gravity": [
+            0,
+            0,
+            0
+          ]
+        },
+        "soft": null,
+        "contact": "explicit discrete node/link sphere; frictionless; zero restitution",
+        "mode": "cuda",
+        "storage_dtype": "float64",
+        "compute_dtype": "float32",
+        "host_validation": "float64",
+        "ordered_serial": true,
+        "tyx_sha": "99f6df7c0fd8fdeef77f97df83914da27b64b7ee",
+        "frames": 200,
+        "duration": 0.1
+      },
+      "metrics": {
+        "accepted_frames": 200,
+        "audited_substeps": 400,
+        "complete_horizon": true,
+        "contact_substeps": {
+          "cloth": 235
+        },
+        "trajectory_sha256": "d56c8e1511f3454a3cc414621baf207fca90cf207950b40432323d5ef2e9b11f",
+        "max_penetration": 2.5344692664019952e-09,
+        "max_closing_speed": 2.98023223876951e-08,
+        "max_load_pair_error": 0.0,
+        "max_robot_balance_error": 9.941993859285958e-06,
+        "max_fixed_position_error": 0.0,
+        "max_fixed_velocity_error": 0.0,
+        "max_response_error": 1.2018438980342615e-07,
+        "min_det_f": 1.0,
+        "min_singular_value": 1.0,
+        "max_singular_value": 1.0,
+        "end_to_end_seconds": 423.2267245000694,
+        "stage_seconds": {
+          "setup": 0.6675202033948153,
+          "predict": 66.44061099761166,
+          "position": 294.4958295985125,
+          "prepare_velocity": 6.400909201707691,
+          "velocity": 51.808569700457156,
+          "validation": 0.10842580255120993,
+          "verification": 0.0002809979487210512,
+          "diagnostics": 2.2735547984484583,
+          "close": 0.49198539881035686
+        }
+      },
+      "provenance": {
+        "git_revision": "96d39f9e42c16b83f15e738f46766e3dc308b9a2",
+        "git_dirty": false,
+        "source_sha256": "fff627ec0a22ff7e89fbd287e120bd7bd51f1b30af8bc4a88b6fc63a666dfe65",
+        "python": "3.12.14",
+        "numpy": "2.5.4",
+        "platform": "Windows-11-10.0.26200-SP0"
+      }
+    },
+    "repeat/S3": {
+      "status": "complete",
+      "config": {
+        "scene": "P6-articulated-v1",
+        "variant": "S3",
+        "interaction": "two_way",
+        "dt": 0.0005,
+        "substeps": 2,
+        "h": 0.00025,
+        "dtype": "float64",
+        "backend": "tyx:cuda",
+        "position_iterations": 200,
+        "velocity_iterations": 200,
+        "tolerance": 2e-06,
+        "reference_length": 1.0,
+        "reference_speed": 1.0,
+        "node_domains": [
+          "soft"
+        ],
+        "robot": {
+          "root": [
+            0,
+            0.06,
+            0
+          ],
+          "joint": "Y-prismatic",
+          "mass": 0.5,
+          "inertia_diagonal": [
+            0.01,
+            0.01,
+            0.01
+          ],
+          "q0": 0.0,
+          "v0": -0.2,
+          "effort": -1.0,
+          "gravity": [
+            0,
+            0,
+            0
+          ]
+        },
+        "cloth": null,
+        "soft": {
+          "shape": [
+            3,
+            2,
+            3
+          ],
+          "origin": [
+            0.1,
+            -0.1,
+            -0.05
+          ],
+          "size": [
+            0.1,
+            0.1,
+            0.1
+          ],
+          "density": 200,
+          "young_modulus": 500,
+          "poisson_ratio": 0.3,
+          "gravity": [
+            0,
+            0,
+            0
+          ],
+          "fixed": "bottom_y"
+        },
+        "contact": "explicit discrete node/link sphere; frictionless; zero restitution",
+        "mode": "cuda",
+        "storage_dtype": "float64",
+        "compute_dtype": "float32",
+        "host_validation": "float64",
+        "ordered_serial": true,
+        "tyx_sha": "99f6df7c0fd8fdeef77f97df83914da27b64b7ee",
+        "frames": 200,
+        "duration": 0.1
+      },
+      "metrics": {
+        "accepted_frames": 200,
+        "audited_substeps": 400,
+        "complete_horizon": true,
+        "contact_substeps": {
+          "soft": 235
+        },
+        "trajectory_sha256": "4ed28492bac239a94d0dad78744f44cf5b43686994b119f69b3da10c8fc97e13",
+        "max_penetration": 4.238543085954838e-09,
+        "max_closing_speed": 2.8121677271980544e-08,
+        "max_load_pair_error": 0.0,
+        "max_robot_balance_error": 1.8202525851052087e-06,
+        "max_fixed_position_error": 0.0,
+        "max_fixed_velocity_error": 0.0,
+        "max_response_error": 1.219614451826445e-07,
+        "min_det_f": 0.8175063543021677,
+        "min_singular_value": 0.7590478361658519,
+        "max_singular_value": 1.1599431211919455,
+        "end_to_end_seconds": 321.21243260009214,
+        "stage_seconds": {
+          "setup": 0.911380500998348,
+          "predict": 77.08980530244298,
+          "position": 131.18541419925168,
+          "prepare_velocity": 6.532751501305029,
+          "velocity": 98.3755899022799,
+          "validation": 0.23558870004490018,
+          "verification": 0.0003084000200033188,
+          "diagnostics": 5.751625498291105,
+          "close": 0.562272698385641
+        }
+      },
+      "provenance": {
+        "git_revision": "96d39f9e42c16b83f15e738f46766e3dc308b9a2",
+        "git_dirty": false,
+        "source_sha256": "fff627ec0a22ff7e89fbd287e120bd7bd51f1b30af8bc4a88b6fc63a666dfe65",
+        "python": "3.12.14",
+        "numpy": "2.5.4",
+        "platform": "Windows-11-10.0.26200-SP0"
+      }
+    },
+    "repeat/S4": {
+      "status": "complete",
+      "config": {
+        "scene": "P6-articulated-v1",
+        "variant": "S4",
+        "interaction": "two_way",
+        "dt": 0.0005,
+        "substeps": 2,
+        "h": 0.00025,
+        "dtype": "float64",
+        "backend": "tyx:cuda",
+        "position_iterations": 200,
+        "velocity_iterations": 200,
+        "tolerance": 2e-06,
+        "reference_length": 1.0,
+        "reference_speed": 1.0,
+        "node_domains": [
+          "cloth",
+          "soft"
+        ],
+        "robot": {
+          "root": [
+            0,
+            0.06,
+            0
+          ],
+          "joint": "Y-prismatic",
+          "mass": 0.5,
+          "inertia_diagonal": [
+            0.01,
+            0.01,
+            0.01
+          ],
+          "q0": 0.0,
+          "v0": -0.2,
+          "effort": -1.0,
+          "gravity": [
+            0,
+            0,
+            0
+          ]
+        },
+        "cloth": {
+          "shape": [
+            3,
+            3
+          ],
+          "spacing": 0.05,
+          "density": 0.4,
+          "compliance": 0.0001,
+          "origin": [
+            -0.2,
+            0,
+            -0.05
+          ],
+          "fixed": [
+            0,
+            2,
+            6,
+            8
+          ],
+          "gravity": [
+            0,
+            0,
+            0
+          ]
+        },
+        "soft": {
+          "shape": [
+            3,
+            2,
+            3
+          ],
+          "origin": [
+            0.1,
+            -0.1,
+            -0.05
+          ],
+          "size": [
+            0.1,
+            0.1,
+            0.1
+          ],
+          "density": 200,
+          "young_modulus": 500,
+          "poisson_ratio": 0.3,
+          "gravity": [
+            0,
+            0,
+            0
+          ],
+          "fixed": "bottom_y"
+        },
+        "contact": "explicit discrete node/link sphere; frictionless; zero restitution",
+        "mode": "cuda",
+        "storage_dtype": "float64",
+        "compute_dtype": "float32",
+        "host_validation": "float64",
+        "ordered_serial": true,
+        "tyx_sha": "99f6df7c0fd8fdeef77f97df83914da27b64b7ee",
+        "frames": 200,
+        "duration": 0.1
+      },
+      "metrics": {
+        "accepted_frames": 200,
+        "audited_substeps": 400,
+        "complete_horizon": true,
+        "contact_substeps": {
+          "cloth": 235,
+          "soft": 208
+        },
+        "trajectory_sha256": "6e963bb0b4ee18f84f42d426f9fd488c09c07f0ad5a390b2407d14f25c6c9f9e",
+        "max_penetration": 4.789565202778512e-09,
+        "max_closing_speed": 2.4237487351731464e-08,
+        "max_load_pair_error": 0.0,
+        "max_robot_balance_error": 1.1587951776581562e-05,
+        "max_fixed_position_error": 0.0,
+        "max_fixed_velocity_error": 0.0,
+        "max_response_error": 1.214777976578374e-07,
+        "min_det_f": 0.8783478420227764,
+        "min_singular_value": 0.838587275928973,
+        "max_singular_value": 1.1142850191187852,
+        "end_to_end_seconds": 969.3790293999482,
+        "stage_seconds": {
+          "setup": 1.110713101690635,
+          "predict": 85.27091019926593,
+          "position": 720.4512740019709,
+          "prepare_velocity": 12.06991770118475,
+          "velocity": 143.08165180007927,
+          "validation": 0.26082970085553825,
+          "verification": 0.0002778004854917526,
+          "diagnostics": 5.664594804635271,
+          "close": 0.6459569004364312
+        }
+      },
+      "provenance": {
+        "git_revision": "96d39f9e42c16b83f15e738f46766e3dc308b9a2",
+        "git_dirty": false,
+        "source_sha256": "fff627ec0a22ff7e89fbd287e120bd7bd51f1b30af8bc4a88b6fc63a666dfe65",
+        "python": "3.12.14",
+        "numpy": "2.5.4",
+        "platform": "Windows-11-10.0.26200-SP0"
+      }
+    },
+    "reference/S2": {
+      "status": "complete",
+      "config": {
+        "scene": "P6-articulated-v1",
+        "variant": "S2",
+        "interaction": "two_way",
+        "dt": 0.0005,
+        "substeps": 2,
+        "h": 0.00025,
+        "dtype": "float64",
+        "backend": "numpy",
+        "position_iterations": 200,
+        "velocity_iterations": 200,
+        "tolerance": 2e-06,
+        "reference_length": 1.0,
+        "reference_speed": 1.0,
+        "node_domains": [
+          "cloth"
+        ],
+        "robot": {
+          "root": [
+            0,
+            0.06,
+            0
+          ],
+          "joint": "Y-prismatic",
+          "mass": 0.5,
+          "inertia_diagonal": [
+            0.01,
+            0.01,
+            0.01
+          ],
+          "q0": 0.0,
+          "v0": -0.2,
+          "effort": -1.0,
+          "gravity": [
+            0,
+            0,
+            0
+          ]
+        },
+        "cloth": {
+          "shape": [
+            3,
+            3
+          ],
+          "spacing": 0.05,
+          "density": 0.4,
+          "compliance": 0.0001,
+          "origin": [
+            -0.2,
+            0,
+            -0.05
+          ],
+          "fixed": [
+            0,
+            2,
+            6,
+            8
+          ],
+          "gravity": [
+            0,
+            0,
+            0
+          ]
+        },
+        "soft": null,
+        "contact": "explicit discrete node/link sphere; frictionless; zero restitution",
+        "mode": "reference",
+        "storage_dtype": "float64",
+        "compute_dtype": "float64",
+        "host_validation": "float64",
+        "ordered_serial": true,
+        "tyx_sha": null,
+        "frames": 200,
+        "duration": 0.1
+      },
+      "metrics": {
+        "accepted_frames": 200,
+        "audited_substeps": 400,
+        "complete_horizon": true,
+        "contact_substeps": {
+          "cloth": 235
+        },
+        "trajectory_sha256": "5f1b2ef8e03f4e509e1f621e07a78e6080f6a7f7c96ea010c16935ff60945dec",
+        "max_penetration": 1.3877787807814457e-17,
+        "max_closing_speed": 0.0,
+        "max_load_pair_error": 0.0,
+        "max_robot_balance_error": 1.585060208086908e-14,
+        "max_fixed_position_error": 0.0,
+        "max_fixed_velocity_error": 0.0,
+        "max_response_error": 1.6479873021779667e-17,
+        "min_det_f": 1.0,
+        "min_singular_value": 1.0,
+        "max_singular_value": 1.0,
+        "end_to_end_seconds": 39.03107969998382,
+        "stage_seconds": {
+          "setup": 0.1361064980737865,
+          "predict": 0.6876739000435919,
+          "position": 31.669057502411306,
+          "prepare_velocity": 0.012679097475484014,
+          "velocity": 5.58276209840551,
+          "validation": 0.09326849738135934,
+          "verification": 0.0003241987433284521,
+          "diagnostics": 0.32089499896392226,
+          "close": 0.0035166998859494925
+        }
+      },
+      "provenance": {
+        "git_revision": "fc79020758d01a2410ed2e821eb421f4d35e0fc4",
+        "git_dirty": false,
+        "source_sha256": "fff627ec0a22ff7e89fbd287e120bd7bd51f1b30af8bc4a88b6fc63a666dfe65",
+        "python": "3.12.14",
+        "numpy": "2.5.4",
+        "platform": "Windows-11-10.0.26200-SP0"
+      }
+    },
+    "reference/S3": {
+      "status": "complete",
+      "config": {
+        "scene": "P6-articulated-v1",
+        "variant": "S3",
+        "interaction": "two_way",
+        "dt": 0.0005,
+        "substeps": 2,
+        "h": 0.00025,
+        "dtype": "float64",
+        "backend": "numpy",
+        "position_iterations": 200,
+        "velocity_iterations": 200,
+        "tolerance": 2e-06,
+        "reference_length": 1.0,
+        "reference_speed": 1.0,
+        "node_domains": [
+          "soft"
+        ],
+        "robot": {
+          "root": [
+            0,
+            0.06,
+            0
+          ],
+          "joint": "Y-prismatic",
+          "mass": 0.5,
+          "inertia_diagonal": [
+            0.01,
+            0.01,
+            0.01
+          ],
+          "q0": 0.0,
+          "v0": -0.2,
+          "effort": -1.0,
+          "gravity": [
+            0,
+            0,
+            0
+          ]
+        },
+        "cloth": null,
+        "soft": {
+          "shape": [
+            3,
+            2,
+            3
+          ],
+          "origin": [
+            0.1,
+            -0.1,
+            -0.05
+          ],
+          "size": [
+            0.1,
+            0.1,
+            0.1
+          ],
+          "density": 200,
+          "young_modulus": 500,
+          "poisson_ratio": 0.3,
+          "gravity": [
+            0,
+            0,
+            0
+          ],
+          "fixed": "bottom_y"
+        },
+        "contact": "explicit discrete node/link sphere; frictionless; zero restitution",
+        "mode": "reference",
+        "storage_dtype": "float64",
+        "compute_dtype": "float64",
+        "host_validation": "float64",
+        "ordered_serial": true,
+        "tyx_sha": null,
+        "frames": 200,
+        "duration": 0.1
+      },
+      "metrics": {
+        "accepted_frames": 200,
+        "audited_substeps": 400,
+        "complete_horizon": true,
+        "contact_substeps": {
+          "soft": 235
+        },
+        "trajectory_sha256": "bfba698f4d77f8a25b515f80a67f052441c687f912dc09d0010cbf48ab92ef53",
+        "max_penetration": 1.3877787807814457e-17,
+        "max_closing_speed": 0.0,
+        "max_load_pair_error": 0.0,
+        "max_robot_balance_error": 3.448115274209962e-15,
+        "max_fixed_position_error": 0.0,
+        "max_fixed_velocity_error": 0.0,
+        "max_response_error": 1.3840041902102437e-17,
+        "min_det_f": 0.8175043499193401,
+        "min_singular_value": 0.7591212910312172,
+        "max_singular_value": 1.1599639873410135,
+        "end_to_end_seconds": 40.39128029998392,
+        "stage_seconds": {
+          "setup": 0.3014827985316515,
+          "predict": 0.8345660001505166,
+          "position": 19.450762099120766,
+          "prepare_velocity": 0.014836100628599524,
+          "velocity": 18.596188598312438,
+          "validation": 0.2141094987746328,
+          "verification": 0.0004333998076617718,
+          "diagnostics": 0.3845984977670014,
+          "close": 0.0037579985801130533
+        }
+      },
+      "provenance": {
+        "git_revision": "fc79020758d01a2410ed2e821eb421f4d35e0fc4",
+        "git_dirty": false,
+        "source_sha256": "fff627ec0a22ff7e89fbd287e120bd7bd51f1b30af8bc4a88b6fc63a666dfe65",
+        "python": "3.12.14",
+        "numpy": "2.5.4",
+        "platform": "Windows-11-10.0.26200-SP0"
+      }
+    },
+    "reference/S4": {
+      "status": "complete",
+      "config": {
+        "scene": "P6-articulated-v1",
+        "variant": "S4",
+        "interaction": "two_way",
+        "dt": 0.0005,
+        "substeps": 2,
+        "h": 0.00025,
+        "dtype": "float64",
+        "backend": "numpy",
+        "position_iterations": 200,
+        "velocity_iterations": 200,
+        "tolerance": 2e-06,
+        "reference_length": 1.0,
+        "reference_speed": 1.0,
+        "node_domains": [
+          "cloth",
+          "soft"
+        ],
+        "robot": {
+          "root": [
+            0,
+            0.06,
+            0
+          ],
+          "joint": "Y-prismatic",
+          "mass": 0.5,
+          "inertia_diagonal": [
+            0.01,
+            0.01,
+            0.01
+          ],
+          "q0": 0.0,
+          "v0": -0.2,
+          "effort": -1.0,
+          "gravity": [
+            0,
+            0,
+            0
+          ]
+        },
+        "cloth": {
+          "shape": [
+            3,
+            3
+          ],
+          "spacing": 0.05,
+          "density": 0.4,
+          "compliance": 0.0001,
+          "origin": [
+            -0.2,
+            0,
+            -0.05
+          ],
+          "fixed": [
+            0,
+            2,
+            6,
+            8
+          ],
+          "gravity": [
+            0,
+            0,
+            0
+          ]
+        },
+        "soft": {
+          "shape": [
+            3,
+            2,
+            3
+          ],
+          "origin": [
+            0.1,
+            -0.1,
+            -0.05
+          ],
+          "size": [
+            0.1,
+            0.1,
+            0.1
+          ],
+          "density": 200,
+          "young_modulus": 500,
+          "poisson_ratio": 0.3,
+          "gravity": [
+            0,
+            0,
+            0
+          ],
+          "fixed": "bottom_y"
+        },
+        "contact": "explicit discrete node/link sphere; frictionless; zero restitution",
+        "mode": "reference",
+        "storage_dtype": "float64",
+        "compute_dtype": "float64",
+        "host_validation": "float64",
+        "ordered_serial": true,
+        "tyx_sha": null,
+        "frames": 200,
+        "duration": 0.1
+      },
+      "metrics": {
+        "accepted_frames": 200,
+        "audited_substeps": 400,
+        "complete_horizon": true,
+        "contact_substeps": {
+          "cloth": 235,
+          "soft": 207
+        },
+        "trajectory_sha256": "62a19dd30b8197f8f57d3f74b27684a63495391116834d64275d7ff1762885d9",
+        "max_penetration": 3.760784739181844e-11,
+        "max_closing_speed": 4.462312265131077e-17,
+        "max_load_pair_error": 0.0,
+        "max_robot_balance_error": 2.0514301939969907e-14,
+        "max_fixed_position_error": 0.0,
+        "max_fixed_velocity_error": 0.0,
+        "max_response_error": 2.7755575615628914e-17,
+        "min_det_f": 0.8783683625110726,
+        "min_singular_value": 0.8387544470452595,
+        "max_singular_value": 1.1142102011720958,
+        "end_to_end_seconds": 159.93805200001225,
+        "stage_seconds": {
+          "setup": 0.381952500436455,
+          "predict": 0.8998371991328895,
+          "position": 129.66162670310587,
+          "prepare_velocity": 0.02328349929302931,
+          "velocity": 26.89168039499782,
+          "validation": 0.2544505971018225,
+          "verification": 0.00041980319656431675,
+          "diagnostics": 0.6829899000003934,
+          "close": 0.004627699730917811
+        }
+      },
+      "provenance": {
+        "git_revision": "fc79020758d01a2410ed2e821eb421f4d35e0fc4",
+        "git_dirty": true,
+        "source_sha256": "fff627ec0a22ff7e89fbd287e120bd7bd51f1b30af8bc4a88b6fc63a666dfe65",
+        "python": "3.12.14",
+        "numpy": "2.5.4",
+        "platform": "Windows-11-10.0.26200-SP0"
+      }
+    }
+  }
+}

@@ -12,7 +12,9 @@
 
 P1/P2 已在 `codex/p1-p2-runtime` 完成：类型/历史合同、世界点端口、统一阶段运行器和 NumPy/tyx 刚柔迁移通过验收。修复后实际 CUDA 全回归 831 项；CPU/CUDA 各 240 帧、960 个审计子步，22 个数组分别与旧同后端参考完全一致。见[逐项验收与后续](docs/benchmarks/p1-p2-acceptance.md)、[完整实验](docs/benchmarks/p1-p2-runtime.md)和[接入合同](docs/development/runtime-contracts.md)。
 
-P3–P5 已实现固定基座关节树、受限 StVK 四面体材料及机器人—布料—软体 CPU 双向组合。五组完整场景与重复的287个数组完全一致；S4布料/软体分别发生235/207个接触子步，见[真实回放](docs/demos/articulated.html)与[物理报告](docs/benchmarks/p5-coupling.md)。审阅修复后实际CUDA回归1138项通过，两个独立CPU环境各1014项通过；最终性能观测和工程验收见[逐项验收](docs/benchmarks/p3-p5-acceptance.md)。新机器人/软体计算目前是NumPy FP64，随后P6负责真正的tyx新算法链路，再进入P6.5双臂递布。
+P3–P5 已实现固定基座关节树、受限 StVK 四面体材料及机器人—布料—软体 CPU 双向组合。五组完整场景与重复的287个数组完全一致；S4布料/软体分别发生235/207个接触子步，见[真实回放](docs/demos/articulated.html)与[物理报告](docs/benchmarks/p5-coupling.md)。审阅修复后实际CUDA回归1138项通过，两个独立CPU环境各1014项通过；最终性能观测和工程验收见[逐项验收](docs/benchmarks/p3-p5-acceptance.md)。
+
+P6 正在接通新机器人、布料、体积材料与联合接触的真实 tyx 路径：状态容器保留 FP64，设备算术明确为 FP32；各模块与短场景已在实际设备验证，完整轨迹、最终工程和独立审阅仍待验收。使用方式与冻结门槛见[P6 运行说明](docs/development/p6-device-chain.md)。P6 完成后才进入 P6.5 双臂递布，现有球接触案例不能证明夹爪、摩擦或复杂联合碰撞已支持。
 
 独立整分支审阅发现的一个速度重建问题已修复。最终版本六组 CPU 与三组设备实验共 **9,600 个子步全部通过**；CPU 和 CUDA 各两次 240 帧的 22 个数值数组均逐元素一致。CUDA 与同顺序参考的球/布最大位置差为 **0.111/0.020 mm**，低于 2 mm 门槛。[离线回放](docs/demos/rigid-cloth.html)与[完整报告](docs/benchmarks/rigid-cloth.md)均来自修复版；半步长实验仍显示约 0.145 m 的球轨迹差，保留时间步敏感性限制。
 

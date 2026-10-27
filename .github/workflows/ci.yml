@@ -108,6 +108,7 @@ jobs:
           ${{ steps.environment.outputs.python }} scripts/render_rigid_cloth.py --two-way artifacts/rigid-cloth-smoke --one-way artifacts/rigid-cloth-one-way-smoke --output artifacts/rigid-cloth-smoke.html
           for scene in S2 S3 S4; do
             ${{ steps.environment.outputs.python }} examples/articulated_scene.py --scene "$scene" --frames 2 --output "artifacts/articulated-smoke/$scene"
+            ${{ steps.environment.outputs.python }} examples/articulated_device.py --scene "$scene" --mode reference --frames 1 --output "artifacts/p6-reference-smoke/$scene"
           done
           for scene in S2 S3; do
             ${{ steps.environment.outputs.python }} examples/articulated_scene.py --scene "$scene" --frames 2 --experiment prescribed --output "artifacts/articulated-smoke/$scene-driver"

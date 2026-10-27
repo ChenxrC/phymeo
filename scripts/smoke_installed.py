@@ -230,6 +230,15 @@ def main():
         solid_port.response(np.array([[1.0, 0, 0]])), [[4, 0, 0]], atol=1e-12
     )
     check_articulated_pair()
+    for name in (
+        "TyxRobotParticipant",
+        "TyxClothParticipant",
+        "TyxTetrahedralParticipant",
+        "TyxArticulatedCouplingProgram",
+        "make_tyx_articulated_runtime",
+    ):
+        if name not in phymeo.__all__ or not callable(getattr(phymeo, name, None)):
+            raise RuntimeError("Installed wheel is missing P6 public factory: " + name)
     if {"tyx", "torch", "warp", "mujoco"} & set(sys.modules):
         raise RuntimeError("The base wheel imported an optional runtime")
     print(f"Installed-wheel smoke passed: {installed}")

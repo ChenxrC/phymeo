@@ -1,7 +1,16 @@
 """Explicit physical models and independently implemented simulation solvers."""
 
 from .backends.tyx import TyxSemiImplicitSolver
+from .backends.tyx_articulated import (
+    TyxArticulatedCouplingProgram,
+    make_tyx_articulated_runtime,
+)
 from .backends.tyx_coupled import TyxCoupledXPBDSolver
+from .backends.tyx_participants import (
+    TyxClothParticipant,
+    TyxRobotParticipant,
+    TyxTetrahedralParticipant,
+)
 from .backends.tyx_rigid import TyxRigidSemiImplicitSolver
 from .backends.tyx_xpbd import TyxXPBDSolver
 from .builders.cloth import ClothPatch, cloth_grid
@@ -75,6 +84,11 @@ from .validation.free_particle import FreeParticleVerifier
 __version__ = "0.1.0a0"
 
 __all__ = [
+    "TyxRobotParticipant",
+    "TyxClothParticipant",
+    "TyxTetrahedralParticipant",
+    "TyxArticulatedCouplingProgram",
+    "make_tyx_articulated_runtime",
     "RobotParticipant",
     "ClothParticipant",
     "TetrahedralParticipant",

@@ -21,6 +21,7 @@ P1/P2 已在 `codex/p1-p2-runtime` 完成：类型/历史合同、世界点端�
 | 内容 | 入口 |
 | --- | --- |
 | 下一轮机器人＋布料＋最小体积软体的范围与里程碑（大纲） | [集成框架行动大纲](docs/superpowers/plans/2026-10-27-integrated-framework-outline.md) |
+| P5 后新增：A 夹起软布→交给 B→平台放置，Three.js 三维回放 | [P5.5 综合案例目标](docs/superpowers/plans/2026-10-27-dual-arm-cloth-handoff-milestone.md) |
 | P1/P2 已实现的类型、阶段、事务和扩展规则 | [运行器合同与示例](docs/development/runtime-contracts.md) |
 | P1/P2 完成度、迁移证据与下一阶段交接 | [逐项验收](docs/benchmarks/p1-p2-acceptance.md) |
 | 可复现的 tyx 性能/能力问题与 agent 交接 | [tyx_flaw](tyx_flaw/README.md) |

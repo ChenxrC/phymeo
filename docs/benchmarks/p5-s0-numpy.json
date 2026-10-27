@@ -1,0 +1,286 @@
+{
+  "status": "passed",
+  "reference_path": "artifacts\\rigid-cloth-reference-reviewed\\two_way",
+  "candidate_path": "artifacts\\p5-s0-numpy-1aa83e7",
+  "array_comparisons": {
+    "particle_position": {
+      "same_shape_dtype": true,
+      "exactly_equal": true,
+      "max_absolute_difference": 0.0
+    },
+    "particle_velocity": {
+      "same_shape_dtype": true,
+      "exactly_equal": true,
+      "max_absolute_difference": 0.0
+    },
+    "rigid_position": {
+      "same_shape_dtype": true,
+      "exactly_equal": true,
+      "max_absolute_difference": 0.0
+    },
+    "rigid_velocity": {
+      "same_shape_dtype": true,
+      "exactly_equal": true,
+      "max_absolute_difference": 0.0
+    },
+    "rigid_orientation": {
+      "same_shape_dtype": true,
+      "exactly_equal": true,
+      "max_absolute_difference": 0.0
+    },
+    "rigid_angular_velocity": {
+      "same_shape_dtype": true,
+      "exactly_equal": true,
+      "max_absolute_difference": 0.0
+    },
+    "time": {
+      "same_shape_dtype": true,
+      "exactly_equal": true,
+      "max_absolute_difference": 0.0
+    },
+    "triangles": {
+      "same_shape_dtype": true,
+      "exactly_equal": true,
+      "max_absolute_difference": 0.0
+    },
+    "edges": {
+      "same_shape_dtype": true,
+      "exactly_equal": true,
+      "max_absolute_difference": 0.0
+    },
+    "pinned": {
+      "same_shape_dtype": true,
+      "exactly_equal": true,
+      "max_absolute_difference": 0.0
+    },
+    "vertex_mass": {
+      "same_shape_dtype": true,
+      "exactly_equal": true,
+      "max_absolute_difference": 0.0
+    },
+    "substep_vertex_penetration_m": {
+      "same_shape_dtype": true,
+      "exactly_equal": true,
+      "max_absolute_difference": 0.0
+    },
+    "substep_pin_displacement_m": {
+      "same_shape_dtype": true,
+      "exactly_equal": true,
+      "max_absolute_difference": 0.0
+    },
+    "substep_quaternion_norm_error": {
+      "same_shape_dtype": true,
+      "exactly_equal": true,
+      "max_absolute_difference": 0.0
+    },
+    "substep_reported_residual": {
+      "same_shape_dtype": true,
+      "exactly_equal": true,
+      "max_absolute_difference": 0.0
+    },
+    "substep_normal_velocity_violation_mps": {
+      "same_shape_dtype": true,
+      "exactly_equal": true,
+      "max_absolute_difference": 0.0
+    },
+    "substep_contact_ledger_imbalance_kg_mps": {
+      "same_shape_dtype": true,
+      "exactly_equal": true,
+      "max_absolute_difference": 0.0
+    },
+    "substep_rigid_motion_balance_error_kg_mps": {
+      "same_shape_dtype": true,
+      "exactly_equal": true,
+      "max_absolute_difference": 0.0
+    },
+    "substep_rigid_balance_limit_kg_mps": {
+      "same_shape_dtype": true,
+      "exactly_equal": true,
+      "max_absolute_difference": 0.0
+    },
+    "substep_contact": {
+      "same_shape_dtype": true,
+      "exactly_equal": true,
+      "max_absolute_difference": 0.0
+    },
+    "substep_position_iterations": {
+      "same_shape_dtype": true,
+      "exactly_equal": true,
+      "max_absolute_difference": 0.0
+    },
+    "substep_velocity_iterations": {
+      "same_shape_dtype": true,
+      "exactly_equal": true,
+      "max_absolute_difference": 0.0
+    }
+  },
+  "comparison_script_sha256": "02bf54552a4aece95f8d3a54f6f1300bc56cd6572e0db7a438ff8f9abb5dc153",
+  "reference": {
+    "provenance": {
+      "git_revision": "027e7cdef3b7a97e802277ca496936e29fb1f680",
+      "git_dirty": false,
+      "source_sha256": "74d38ca64a0e70bd1601010e93f1ae527f9729ca9870df60bee884a186d4d75d",
+      "python": "3.12.14",
+      "numpy": "2.5.4",
+      "platform": "Windows-11-10.0.26200-SP0"
+    },
+    "config": {
+      "scene": "pinned_cloth_dynamic_sphere_v1",
+      "dtype": "float64",
+      "rows": 7,
+      "columns": 7,
+      "spacing_m": 0.1,
+      "density_kg_m2": 0.4,
+      "structural_compliance_m_N": 0.0001,
+      "shear_compliance_m_N": 0.0001,
+      "cloth_origin_m": [
+        -0.3,
+        0.6,
+        -0.3
+      ],
+      "pinned": [
+        0,
+        6,
+        42,
+        48
+      ],
+      "sphere_mass_kg": 0.05,
+      "sphere_radius_m": 0.18,
+      "sphere_position_m": [
+        0.02,
+        0.3,
+        0
+      ],
+      "sphere_velocity_mps": [
+        0,
+        2,
+        0
+      ],
+      "gravity_mps2": [
+        0,
+        -9.81,
+        0
+      ],
+      "contact": "discrete_vertices_frictionless_e0",
+      "frames": 240,
+      "requested_frame_dt": 0.008333333333333333,
+      "effective_substep_dt": 0.0020833333333333333,
+      "substeps": 4,
+      "duration_seconds": 2.0,
+      "iterations": 200,
+      "tolerance": 1e-07,
+      "backend": "numpy",
+      "distance_order": "original",
+      "projection_arithmetic": "fp64",
+      "interaction": "two_way_dynamic"
+    },
+    "metrics": {
+      "execution_backend": "numpy",
+      "accepted_frames": 240,
+      "audited_substeps": 960,
+      "contact_substeps": 17,
+      "runtime_seconds_including_audits": 1056.9390400999691,
+      "max_position_iterations": 171,
+      "max_velocity_iterations": 1,
+      "max_vertex_penetration_m": 2.7755575615628914e-17,
+      "max_pin_displacement_m": 0.0,
+      "max_quaternion_norm_error": 0.0,
+      "max_reported_residual": 9.999752793118813e-08,
+      "max_normal_velocity_violation_mps": 9.929690657954607e-17,
+      "max_contact_ledger_imbalance_kg_mps": 0.0,
+      "max_rigid_motion_balance_error_kg_mps": 8.836681386625855e-15,
+      "max_rigid_balance_limit_kg_mps": 1e-10,
+      "trajectory_sha256": "1416f05763fa3ba1c8bb2aaa810a197ccd5b28254b557e9b4b8d090419216ef3"
+    }
+  },
+  "candidate": {
+    "provenance": {
+      "git_revision": "1aa83e7f439ef3c72b9ecf7068ec0ad7fd3b0ffe",
+      "git_dirty": false,
+      "source_sha256": "354be059215711712bcc7a6e1c92de0c6585f2392a464a1647e66c9805d67937",
+      "python": "3.12.14",
+      "numpy": "2.5.4",
+      "platform": "Windows-11-10.0.26200-SP0"
+    },
+    "config": {
+      "scene": "pinned_cloth_dynamic_sphere_v1",
+      "dtype": "float64",
+      "rows": 7,
+      "columns": 7,
+      "spacing_m": 0.1,
+      "density_kg_m2": 0.4,
+      "structural_compliance_m_N": 0.0001,
+      "shear_compliance_m_N": 0.0001,
+      "cloth_origin_m": [
+        -0.3,
+        0.6,
+        -0.3
+      ],
+      "pinned": [
+        0,
+        6,
+        42,
+        48
+      ],
+      "sphere_mass_kg": 0.05,
+      "sphere_radius_m": 0.18,
+      "sphere_position_m": [
+        0.02,
+        0.3,
+        0
+      ],
+      "sphere_velocity_mps": [
+        0,
+        2,
+        0
+      ],
+      "gravity_mps2": [
+        0,
+        -9.81,
+        0
+      ],
+      "contact": "discrete_vertices_frictionless_e0",
+      "frames": 240,
+      "requested_frame_dt": 0.008333333333333333,
+      "effective_substep_dt": 0.0020833333333333333,
+      "substeps": 4,
+      "duration_seconds": 2.0,
+      "iterations": 200,
+      "tolerance": 1e-07,
+      "backend": "numpy",
+      "distance_order": "original",
+      "projection_arithmetic": "fp64",
+      "interaction": "two_way_dynamic",
+      "scheduler": "scene"
+    },
+    "metrics": {
+      "execution_backend": "numpy",
+      "accepted_frames": 240,
+      "audited_substeps": 960,
+      "contact_substeps": 17,
+      "runtime_seconds_including_audits": 548.0339196000714,
+      "max_position_iterations": 171,
+      "max_velocity_iterations": 1,
+      "max_vertex_penetration_m": 2.7755575615628914e-17,
+      "max_pin_displacement_m": 0.0,
+      "max_quaternion_norm_error": 0.0,
+      "max_reported_residual": 9.999752793118813e-08,
+      "max_normal_velocity_violation_mps": 9.929690657954607e-17,
+      "max_contact_ledger_imbalance_kg_mps": 0.0,
+      "max_rigid_motion_balance_error_kg_mps": 8.836681386625855e-15,
+      "max_rigid_balance_limit_kg_mps": 1e-10,
+      "trajectory_sha256": "1416f05763fa3ba1c8bb2aaa810a197ccd5b28254b557e9b4b8d090419216ef3",
+      "stage_seconds": {
+        "setup": 0.4883985994383693,
+        "predict": 0.42780549568124115,
+        "position": 540.6245805970393,
+        "prepare_velocity": 0.1641167993657291,
+        "velocity": 0.8604000946506858,
+        "validation": 0.26592799625359476,
+        "verification": 0.0007706948090344667,
+        "diagnostics": 2.9026065026409924,
+        "close": 0.0006516964640468359
+      }
+    }
+  }
+}

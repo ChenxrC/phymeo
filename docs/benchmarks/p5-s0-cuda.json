@@ -1,0 +1,286 @@
+{
+  "status": "passed",
+  "reference_path": "artifacts\\rigid-cloth-device-reviewed\\device",
+  "candidate_path": "artifacts\\p5-s0-cuda-1aa83e7",
+  "array_comparisons": {
+    "particle_position": {
+      "same_shape_dtype": true,
+      "exactly_equal": true,
+      "max_absolute_difference": 0.0
+    },
+    "particle_velocity": {
+      "same_shape_dtype": true,
+      "exactly_equal": true,
+      "max_absolute_difference": 0.0
+    },
+    "rigid_position": {
+      "same_shape_dtype": true,
+      "exactly_equal": true,
+      "max_absolute_difference": 0.0
+    },
+    "rigid_velocity": {
+      "same_shape_dtype": true,
+      "exactly_equal": true,
+      "max_absolute_difference": 0.0
+    },
+    "rigid_orientation": {
+      "same_shape_dtype": true,
+      "exactly_equal": true,
+      "max_absolute_difference": 0.0
+    },
+    "rigid_angular_velocity": {
+      "same_shape_dtype": true,
+      "exactly_equal": true,
+      "max_absolute_difference": 0.0
+    },
+    "time": {
+      "same_shape_dtype": true,
+      "exactly_equal": true,
+      "max_absolute_difference": 0.0
+    },
+    "triangles": {
+      "same_shape_dtype": true,
+      "exactly_equal": true,
+      "max_absolute_difference": 0.0
+    },
+    "edges": {
+      "same_shape_dtype": true,
+      "exactly_equal": true,
+      "max_absolute_difference": 0.0
+    },
+    "pinned": {
+      "same_shape_dtype": true,
+      "exactly_equal": true,
+      "max_absolute_difference": 0.0
+    },
+    "vertex_mass": {
+      "same_shape_dtype": true,
+      "exactly_equal": true,
+      "max_absolute_difference": 0.0
+    },
+    "substep_vertex_penetration_m": {
+      "same_shape_dtype": true,
+      "exactly_equal": true,
+      "max_absolute_difference": 0.0
+    },
+    "substep_pin_displacement_m": {
+      "same_shape_dtype": true,
+      "exactly_equal": true,
+      "max_absolute_difference": 0.0
+    },
+    "substep_quaternion_norm_error": {
+      "same_shape_dtype": true,
+      "exactly_equal": true,
+      "max_absolute_difference": 0.0
+    },
+    "substep_reported_residual": {
+      "same_shape_dtype": true,
+      "exactly_equal": true,
+      "max_absolute_difference": 0.0
+    },
+    "substep_normal_velocity_violation_mps": {
+      "same_shape_dtype": true,
+      "exactly_equal": true,
+      "max_absolute_difference": 0.0
+    },
+    "substep_contact_ledger_imbalance_kg_mps": {
+      "same_shape_dtype": true,
+      "exactly_equal": true,
+      "max_absolute_difference": 0.0
+    },
+    "substep_rigid_motion_balance_error_kg_mps": {
+      "same_shape_dtype": true,
+      "exactly_equal": true,
+      "max_absolute_difference": 0.0
+    },
+    "substep_rigid_balance_limit_kg_mps": {
+      "same_shape_dtype": true,
+      "exactly_equal": true,
+      "max_absolute_difference": 0.0
+    },
+    "substep_contact": {
+      "same_shape_dtype": true,
+      "exactly_equal": true,
+      "max_absolute_difference": 0.0
+    },
+    "substep_position_iterations": {
+      "same_shape_dtype": true,
+      "exactly_equal": true,
+      "max_absolute_difference": 0.0
+    },
+    "substep_velocity_iterations": {
+      "same_shape_dtype": true,
+      "exactly_equal": true,
+      "max_absolute_difference": 0.0
+    }
+  },
+  "comparison_script_sha256": "02bf54552a4aece95f8d3a54f6f1300bc56cd6572e0db7a438ff8f9abb5dc153",
+  "reference": {
+    "provenance": {
+      "git_revision": "027e7cdef3b7a97e802277ca496936e29fb1f680",
+      "git_dirty": false,
+      "source_sha256": "74d38ca64a0e70bd1601010e93f1ae527f9729ca9870df60bee884a186d4d75d",
+      "python": "3.12.14",
+      "numpy": "2.5.4",
+      "platform": "Windows-11-10.0.26200-SP0"
+    },
+    "config": {
+      "scene": "pinned_cloth_dynamic_sphere_v1",
+      "dtype": "float32",
+      "rows": 7,
+      "columns": 7,
+      "spacing_m": 0.1,
+      "density_kg_m2": 0.4,
+      "structural_compliance_m_N": 0.0001,
+      "shear_compliance_m_N": 0.0001,
+      "cloth_origin_m": [
+        -0.3,
+        0.6,
+        -0.3
+      ],
+      "pinned": [
+        0,
+        6,
+        42,
+        48
+      ],
+      "sphere_mass_kg": 0.05,
+      "sphere_radius_m": 0.18,
+      "sphere_position_m": [
+        0.02,
+        0.3,
+        0
+      ],
+      "sphere_velocity_mps": [
+        0,
+        2,
+        0
+      ],
+      "gravity_mps2": [
+        0,
+        -9.81,
+        0
+      ],
+      "contact": "discrete_vertices_frictionless_e0",
+      "frames": 240,
+      "requested_frame_dt": 0.008333333333333333,
+      "effective_substep_dt": 0.0020833334419876337,
+      "substeps": 4,
+      "duration_seconds": 2.0000001043081284,
+      "iterations": 200,
+      "tolerance": 1e-06,
+      "backend": "cuda",
+      "distance_order": "stable_colors",
+      "projection_arithmetic": "fp32",
+      "interaction": "two_way_dynamic"
+    },
+    "metrics": {
+      "execution_backend": "tyx:cuda",
+      "accepted_frames": 240,
+      "audited_substeps": 960,
+      "contact_substeps": 16,
+      "runtime_seconds_including_audits": 465.17843739991076,
+      "max_position_iterations": 130,
+      "max_velocity_iterations": 1,
+      "max_vertex_penetration_m": 2.5573745565665718e-08,
+      "max_pin_displacement_m": 0.0,
+      "max_quaternion_norm_error": 0.0,
+      "max_reported_residual": 9.99998656382587e-07,
+      "max_normal_velocity_violation_mps": 2.8855833173339506e-08,
+      "max_contact_ledger_imbalance_kg_mps": 0.0,
+      "max_rigid_motion_balance_error_kg_mps": 4.09242269451516e-06,
+      "max_rigid_balance_limit_kg_mps": 0.003190138842910528,
+      "trajectory_sha256": "29adf9a60bd3c00c3cca4b4c38564c3136bd20ffb58f09e845d840a4cbd80db7"
+    }
+  },
+  "candidate": {
+    "provenance": {
+      "git_revision": "1aa83e7f439ef3c72b9ecf7068ec0ad7fd3b0ffe",
+      "git_dirty": true,
+      "source_sha256": "354be059215711712bcc7a6e1c92de0c6585f2392a464a1647e66c9805d67937",
+      "python": "3.12.14",
+      "numpy": "2.5.4",
+      "platform": "Windows-11-10.0.26200-SP0"
+    },
+    "config": {
+      "scene": "pinned_cloth_dynamic_sphere_v1",
+      "dtype": "float32",
+      "rows": 7,
+      "columns": 7,
+      "spacing_m": 0.1,
+      "density_kg_m2": 0.4,
+      "structural_compliance_m_N": 0.0001,
+      "shear_compliance_m_N": 0.0001,
+      "cloth_origin_m": [
+        -0.3,
+        0.6,
+        -0.3
+      ],
+      "pinned": [
+        0,
+        6,
+        42,
+        48
+      ],
+      "sphere_mass_kg": 0.05,
+      "sphere_radius_m": 0.18,
+      "sphere_position_m": [
+        0.02,
+        0.3,
+        0
+      ],
+      "sphere_velocity_mps": [
+        0,
+        2,
+        0
+      ],
+      "gravity_mps2": [
+        0,
+        -9.81,
+        0
+      ],
+      "contact": "discrete_vertices_frictionless_e0",
+      "frames": 240,
+      "requested_frame_dt": 0.008333333333333333,
+      "effective_substep_dt": 0.0020833334419876337,
+      "substeps": 4,
+      "duration_seconds": 2.0000001043081284,
+      "iterations": 200,
+      "tolerance": 1e-06,
+      "backend": "cuda",
+      "distance_order": "stable_colors",
+      "projection_arithmetic": "fp32",
+      "interaction": "two_way_dynamic",
+      "scheduler": "scene"
+    },
+    "metrics": {
+      "execution_backend": "tyx:cuda",
+      "accepted_frames": 240,
+      "audited_substeps": 960,
+      "contact_substeps": 16,
+      "runtime_seconds_including_audits": 373.54692620015703,
+      "max_position_iterations": 130,
+      "max_velocity_iterations": 1,
+      "max_vertex_penetration_m": 2.5573745565665718e-08,
+      "max_pin_displacement_m": 0.0,
+      "max_quaternion_norm_error": 0.0,
+      "max_reported_residual": 9.99998656382587e-07,
+      "max_normal_velocity_violation_mps": 2.8855833173339506e-08,
+      "max_contact_ledger_imbalance_kg_mps": 0.0,
+      "max_rigid_motion_balance_error_kg_mps": 4.09242269451516e-06,
+      "max_rigid_balance_limit_kg_mps": 0.003190138842910528,
+      "trajectory_sha256": "29adf9a60bd3c00c3cca4b4c38564c3136bd20ffb58f09e845d840a4cbd80db7",
+      "stage_seconds": {
+        "setup": 0.5766618005000055,
+        "predict": 5.734895901987329,
+        "position": 358.8476949960459,
+        "prepare_velocity": 1.1282556024380028,
+        "velocity": 0.948885599616915,
+        "validation": 0.3369980996940285,
+        "verification": 0.000787296099588275,
+        "diagnostics": 2.4490031970199198,
+        "close": 0.5679887982551008
+      }
+    }
+  }
+}

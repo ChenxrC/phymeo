@@ -48,7 +48,8 @@ def _reconstruct(candidate, predicted, initial, inverse_mass, h):
     candidate.velocity[corrected] = (
         (candidate.position[corrected].astype(np.float64) - initial.position[corrected]) / h
     ).astype(candidate.velocity.dtype)
-    candidate.velocity[inverse_mass == 0] = 0
+    # Prediction owns boundary velocity: normal fixed bodies predict zero;
+    # prescribed-motion experiments retain their externally supplied velocity.
 
 
 @dataclass(frozen=True, eq=False)
@@ -139,6 +140,10 @@ class CoupledXPBDSolver:
             current, CoupledStepReport(True, self.substeps, tuple(reports)), tuple(snapshots)
         )
 
+    def _predict_rigid(self, state, inputs, h):
+        """Free prediction, separated from contact for controlled experiments."""
+        return RigidSemiImplicitSolver().step(self.rigid_model, state, inputs, h)
+
     def _substep(self, initial, inputs, h):
         iteration = velocity_iteration = 0
         distance = contact = velocity = float("inf")
@@ -160,7 +165,7 @@ class CoupledXPBDSolver:
             p = SemiImplicitSolver().step(
                 self.particle_model, initial.particles, inputs.particles, h
             )
-            b = RigidSemiImplicitSolver().step(self.rigid_model, initial.rigid, inputs.rigid, h)
+            b = self._predict_rigid(initial.rigid, inputs.rigid, h)
             if not p.report.accepted or not b.report.accepted:
                 return reject("non-finite coupled free prediction", numerical=True)
             candidate = CoupledState(p.state, b.state)

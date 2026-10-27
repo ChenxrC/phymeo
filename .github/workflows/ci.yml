@@ -100,6 +100,7 @@ jobs:
           ${{ steps.environment.outputs.python }} examples/falling_spheres.py
           ${{ steps.environment.outputs.python }} examples/learned_free_particles.py
           ${{ steps.environment.outputs.python }} examples/point_impulse.py
+          ${{ steps.environment.outputs.python }} examples/rigid_cloth.py --frames 1 --output artifacts/rigid-cloth-smoke
 
   wheel:
     name: wheel / ${{ matrix.os }}

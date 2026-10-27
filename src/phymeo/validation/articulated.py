@@ -90,6 +90,33 @@ def _max_error(left, right):
 def audit_slider_substep(
     fixture, before, after, events, predicted_q, predicted_v, *, h, prescribed=None
 ):
+    return _audit_slider_substep(
+        fixture,
+        before,
+        after,
+        events,
+        predicted_q,
+        predicted_v,
+        h=h,
+        prescribed=prescribed,
+        limits=(2e-7, 2e-7, 1e-12, 1e-10, 1e-10),
+        label="P5",
+    )
+
+
+def _audit_slider_substep(
+    fixture,
+    before,
+    after,
+    events,
+    predicted_q,
+    predicted_v,
+    *,
+    h,
+    prescribed=None,
+    limits,
+    label,
+):
     """Audit dynamics, or an explicitly supplied pair of external driver samples.
 
     The prescribed case has no robot domain and checks trajectory identity instead
@@ -250,13 +277,13 @@ def audit_slider_substep(
     ):
         raise SceneRunFailure("non-finite physical audit")
     if (
-        penetration > 2e-7
-        or closing > 2e-7
-        or pair_error > 1e-12
-        or balance > 1e-10
-        or response_error > 1e-10
+        penetration > limits[0]
+        or closing > limits[1]
+        or pair_error > limits[2]
+        or balance > limits[3]
+        or response_error > limits[4]
     ):
-        raise SceneRunFailure(f"independent P5 contact/load audit failed: {values}")
+        raise SceneRunFailure(f"independent {label} contact/load audit failed: {values}")
     if fixed_position != 0 or fixed_velocity != 0 or min_det <= 0.2 or min_sv < 0.6 or max_sv > 1.4:
-        raise SceneRunFailure(f"independent P5 fixed/material audit failed: {values}")
+        raise SceneRunFailure(f"independent {label} fixed/material audit failed: {values}")
     return values, contact

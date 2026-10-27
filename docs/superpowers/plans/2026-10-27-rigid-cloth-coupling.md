@@ -105,8 +105,8 @@ modify public exports only when the module is verified.
 - CLI `python examples/rigid_cloth.py --output artifacts/rigid-cloth` writes configuration,
   environment/commit metadata, NPZ trajectory and JSON metrics; rejected steps cause nonzero exit.
 
-- [ ] 固定 spec 场景，先写接触发生、双方响应、固定点、每步接受、顶点穿透 <=2e-6 的失败测试。
-- [ ] 实现单向球自由轨迹对照；球轨迹差 >=1e-3 m，布片也有接触响应，不调参制造假成功。
+- [x] 固定 spec 场景，先写接触发生、双方响应、固定点、每步接受、顶点穿透 <=2e-6 的失败测试。
+- [x] 实现单向球自由轨迹对照；球轨迹差 >=1e-3 m，布片也有接触响应，不调参制造假成功。
 - [ ] 独立重复两次逐元素比较；补 h/2 与两种质量的实验，记录收敛和精度限制。
 - [ ] 冻结参数和阈值，保存可再生成报告；新增核心 CI 的短 smoke；全回归后提交推送。
 
@@ -118,9 +118,9 @@ integrate only corrected `src/phymeo/backends/tyx_rigid.py`, `_tyx_rigid_kernels
 
 **Interfaces:** `TyxRigidSemiImplicitSolver` matches the existing CPU free-rigid solver contract.
 
-- [ ] 先复现 torque/inertia 下溢后被大 dt 放大的差异；有效有限响应须正确或明确拒绝，不能假零成功。
-- [ ] 审查 FP32 转换、四元数、陀螺项、空体、资源构造/释放失败与多步轨迹。
-- [ ] interpreter、真实 C++、真实 CUDA 分别运行；旋转/角速度与 NumPy 参考对照。
+- [x] 先复现 torque/inertia 下溢后被大 dt 放大的差异；有效有限响应须正确或明确拒绝，不能假零成功。
+- [x] 审查 FP32 转换、四元数、陀螺项、空体、资源构造/释放失败与多步轨迹。
+- [x] interpreter、真实 C++、真实 CUDA 分别运行；旋转/角速度与 NumPy 参考对照。
 - [ ] 修复后独立审阅、当前源码 wheel 验证、全回归；提交推送才计入交付能力。
 
 ## Task 6: M6 同场景 tyx 联合路径
@@ -155,7 +155,7 @@ with local HTML canvas, time scrub/pause and two comparison panels. No external 
 
 ## 执行台账
 
-- M1–M3 已完成；下一项 M4 固定基准与对照。M4–M7 尚未完成。基线核心测试 431 passed / 55 deselected。
+- M1–M3 已完成；M4 完整基准、重复与单向对照已通过，其余实验运行中。M5 实现与三模式/包验证通过，独立审阅并入 M7 整分支审阅。M4–M7 尚未整体完成。基线核心测试 431 passed / 55 deselected。
 - 新 goal 已激活；原聊天续跑已更新到新目标，每 30 分钟可继续，不新建重复任务。
 - 继续使用本聊天的干净专用 checkout 和新分支，保留前一交付分支；不额外创建会改变环境路径的 worktree。
 - 具体测试和决策追加到 `docs/progress.md`；详细临时执行台账保存在本计划独立的 `.superpowers` 目录。

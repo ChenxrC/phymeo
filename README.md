@@ -6,11 +6,11 @@
 
 > 当前处于设计与基础实现阶段。图中描述的是目标架构，不能据此推断全部模块已实现、GPU 已通过验证或整体可微。实际交付以[进度记录](docs/progress.md)为准。
 
-上一轮基础开发已收口：交付分支 `codex/architecture-v0` 完成计划 Task 1–15。Task 16 的 tyx 刚体原型保存在独立[草稿分支](https://github.com/ChenxrC/phymeo/tree/codex/tyx-rigid-wip)，尚未完成审阅与数值边界验收。
+上一轮基础开发已收口：交付分支 `codex/architecture-v0` 完成计划 Task 1–15。Task 16 的原始 tyx 刚体原型保留在独立[草稿分支](https://github.com/ChenxrC/phymeo/tree/codex/tyx-rigid-wip)；本分支已选择性修复并验证刚体预测，整分支独立审阅在最终交付前执行。
 
 当前长程目标：**一个可重复验证的刚柔双向交互场景**。在 `codex/rigid-cloth-coupling` 分支实现布片与动态球接触、联合回滚、双向/单向对照与离线回放，先 CPU 参考再验收 tyx。见[场景与验收设计](docs/superpowers/specs/2026-10-27-rigid-cloth-coupling-design.md)和[七个里程碑](docs/superpowers/plans/2026-10-27-rigid-cloth-coupling.md)。这是一项正在实施的新目标，不代表场景已经完成。
 
-当前已完成 M1–M3：点/球几何、双向接触响应，以及 `CoupledXPBDSolver` 的 CPU 联合步进和整帧回滚。提供每子步冲量记账与可选状态快照；完整 240 帧对照、设备耦合与回放仍按后续里程碑推进。
+当前已完成 M1–M3：点/球几何、双向接触响应，以及 `CoupledXPBDSolver` 的 CPU 联合步进和整帧回滚。M4 已有完整 240 帧基准及相同数值数组的重复结果，其余对照正在验收；M5 刚体设备预测已通过三模式测试。设备耦合、可视回放与整分支审阅仍未完成。
 
 ![phymeo 架构图](docs/architecture/phymeo.png)
 
@@ -25,6 +25,7 @@
 | uv/pip、私有依赖、CPU/GPU CI 与发布计划 | [环境与 CI](docs/development/environment-and-ci.md) |
 | 首版可执行大纲 | [v0 实施计划](docs/superpowers/plans/2026-10-27-v0-foundation.md) |
 | 已验证结果与下一步 | [进度记录](docs/progress.md) |
+| 刚柔固定场景、数值轨迹与对照命令 | [复现实验](docs/benchmarks/rigid-cloth.md) |
 
 GitHub 文件页不直接运行 HTML；下载后用浏览器打开即可，无网络字体或脚本依赖。
 
@@ -34,7 +35,7 @@ GitHub 文件页不直接运行 HTML；下载后用浏览器打开即可，无�
 
 `ParticleRigidPorts` 提供同作用点的粒子／刚体冲量交换、角冲量记账及每端口有效逆质量，两组状态数值失败时同时回滚。它是耦合响应算子，尚不负责求接触或约束冲量。
 
-NumPy 支持 FP32/FP64；可选 tyx 已实现 FP32 粒子积分和着色 XPBD 距离/平面投影。CUDA 可选择图重放一轮投影，仍保留每迭代主机残差检查。安装及已验证模式见[环境说明](docs/development/environment-and-ci.md)。
+NumPy 支持 FP32/FP64；可选 tyx 已实现 FP32 粒子/自由刚体积分和着色 XPBD 距离/平面投影。`TyxRigidSemiImplicitSolver` 验证了 interpret、实际 C++ 和 CUDA 的平移、四元数、陀螺项与异常回滚，尚不含 GPU 刚柔接触。CUDA 可选择图重放一轮 XPBD 投影，仍保留每迭代主机残差检查。安装及已验证模式见[环境说明](docs/development/environment-and-ci.md)。
 
 学习型 provider 必须配置独立物理验收器。目前 `FreeParticleVerifier` 验证自由粒子的离散运动方程；附有两系数数据回归、留出验证和错误候选回退示例。仍无球球/任意形状碰撞、关节、机器人、布料弯曲/自碰撞、摩擦、CCD 或通用 AI 求解器，详见[进度记录](docs/progress.md)。
 

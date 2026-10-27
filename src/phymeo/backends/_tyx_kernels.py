@@ -2,6 +2,8 @@
 
 import tyx as tx
 
+from ._tyx_numeric import _add, _mul
+
 
 @tx.kernel
 def integrate_particles(
@@ -18,10 +20,10 @@ def integrate_particles(
     for i in tx.range(n):
         for axis in tx.static_range(3):
             if inverse_mass[i] > 0.0:
-                acceleration = gravity[axis] + inverse_mass[i] * force[i, axis]
-                value = velocity[i, axis] + dt * acceleration
+                acceleration = _add(gravity[axis], _mul(inverse_mass[i], force[i, axis]))
+                value = _add(velocity[i, axis], _mul(dt, acceleration))
                 next_velocity[i, axis] = value
-                next_position[i, axis] = position[i, axis] + dt * value
+                next_position[i, axis] = _add(position[i, axis], _mul(dt, value))
             else:
                 next_velocity[i, axis] = 0.0
                 next_position[i, axis] = position[i, axis]

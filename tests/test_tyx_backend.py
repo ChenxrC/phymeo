@@ -110,6 +110,17 @@ def test_tyx_nonfinite_output_is_rejected(tyx_mode, tmp_path):
 
 
 @pytest.mark.tyx
+def test_force_underflow_before_large_step_does_not_become_stationary_success(tyx_mode, tmp_path):
+    model = ParticleModel(np.array([1e-30], np.float32), np.zeros(3))
+    state = ParticleState(np.zeros((1, 3), np.float32), np.zeros((1, 3), np.float32))
+    inputs = StepInputs(np.array([[1e-30, 0, 0]], np.float32))
+    with implementation()(mode=tyx_mode, cache_root=tmp_path) as solver:
+        result = solver.step(model, state, inputs, 1e30)
+    assert not result.report.accepted and result.report.reason
+    np.testing.assert_array_equal(result.state.position, state.position)
+
+
+@pytest.mark.tyx
 def test_closed_solver_rejects_step_and_close_is_idempotent(tyx_mode, tmp_path):
     solver = implementation()(mode=tyx_mode, cache_root=tmp_path)
     solver.close()
@@ -136,7 +147,9 @@ def test_base_import_does_not_load_optional_runtimes():
     subprocess.run([sys.executable, "-c", code], check=True)
 
 
-@pytest.mark.parametrize("name", ["TyxSemiImplicitSolver", "TyxXPBDSolver"])
+@pytest.mark.parametrize(
+    "name", ["TyxSemiImplicitSolver", "TyxXPBDSolver", "TyxRigidSemiImplicitSolver"]
+)
 def test_missing_tyx_dependency_has_actionable_error(monkeypatch, name):
     cls = getattr(phymeo, name)
     real_import = builtins.__import__

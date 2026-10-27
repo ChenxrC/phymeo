@@ -6,6 +6,8 @@
 
 > 当前处于设计与基础实现阶段。图中描述的是目标架构，不能据此推断全部模块已实现、GPU 已通过验证或整体可微。实际交付以[进度记录](docs/progress.md)为准。
 
+本次持续开发已收口：交付分支 `codex/architecture-v0` 完成计划 Task 1–15。Task 16 的 tyx 刚体原型保存在独立[草稿分支](https://github.com/ChenxrC/phymeo/tree/codex/tyx-rigid-wip)，尚未完成审阅与数值边界验收。
+
 ![phymeo 架构图](docs/architecture/phymeo.png)
 
 ## 设计与实施入口

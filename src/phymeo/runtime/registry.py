@@ -15,6 +15,16 @@ from ..core.validation import validate_rigid_step, validate_step
 def _copy_fields(value, expected, names):
     if not isinstance(value, expected):
         raise TypeError(f"expected {expected.__name__}")
+    declared = {field.name for field in fields(value)} if is_dataclass(value) else set()
+    declared.update(getattr(value, "__dict__", {}))
+    for cls in type(value).__mro__:
+        slots = cls.__dict__.get("__slots__", ())
+        declared.update((slots,) if isinstance(slots, str) else slots)
+    extra = declared - set(names) - {"__dict__", "__weakref__"}
+    if extra:
+        raise TypeError(
+            f"unregistered state/input fields: {sorted(extra)}; register a complete StateFamily"
+        )
     copied = {}
     for name in names:
         array = np.asarray(getattr(value, name))

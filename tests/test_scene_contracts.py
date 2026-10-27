@@ -242,3 +242,72 @@ def test_fingerprint_distinguishes_configuration_precision_and_order():
     assert a.fingerprint(x) != a.fingerprint(x.astype(np.float32))
     with pytest.raises(TypeError):
         a.fingerprint(object())
+
+
+@pytest.mark.parametrize("boundary", ["state", "inputs", "candidate"])
+@pytest.mark.parametrize("storage", ["dataclass", "dynamic", "slots"])
+def test_unregistered_extension_fields_cannot_be_silently_discarded(boundary, storage):
+    a, registry = api(), registry_api().StateRegistry()
+    scene, state, inputs, context = scene_data()
+    parent = StepInputs if boundary == "inputs" else ParticleState
+    args = (np.zeros((2, 3)),) if boundary == "inputs" else (np.zeros((2, 3)), np.zeros((2, 3)))
+    if storage == "dataclass":
+
+        @dataclass
+        class Extension(parent):
+            plastic: np.ndarray
+
+        extended = Extension(*args, np.ones(2))
+    elif storage == "slots":
+
+        class Extension(parent):
+            __slots__ = ("plastic",)
+
+        extended = Extension(*args)
+        extended.plastic = np.ones(2)
+    else:
+        extended = parent(*args)
+        extended.plastic = np.ones(2)
+    with pytest.raises((TypeError, ValueError), match="unregistered"):
+        if boundary == "inputs":
+            registry.snapshot(scene, state, a.SceneInputs({"cloth": extended}), context)
+        elif boundary == "state":
+            registry.snapshot(scene, a.SceneState({"cloth": extended}), inputs, context)
+        else:
+            registry.validate_candidate(scene, state, a.SceneState({"cloth": extended}), context)
+
+
+def test_third_party_registered_family_rejects_further_unregistered_fields():
+    a, r = api(), registry_api()
+
+    @dataclass(frozen=True)
+    class Model:
+        mass: float = 1.0
+
+    @dataclass
+    class State:
+        q: np.ndarray
+        v: np.ndarray
+
+    @dataclass
+    class Extended(State):
+        internal: np.ndarray
+
+    @dataclass
+    class Inputs:
+        force: np.ndarray
+
+    registry = r.StateRegistry()
+    registry.register(
+        r.StateFamily(
+            "custom", Model, State, Inputs, ("q", "v"), ("force",), "q", lambda *args: None
+        )
+    )
+    scene = a.SceneModel((a.DomainBinding("custom", "custom", Model()),))
+    with pytest.raises((TypeError, ValueError), match="unregistered"):
+        registry.snapshot(
+            scene,
+            a.SceneState({"custom": Extended(np.zeros(1), np.zeros(1), np.ones(1))}),
+            a.SceneInputs({"custom": Inputs(np.zeros(1))}),
+            a.BackendContext(),
+        )

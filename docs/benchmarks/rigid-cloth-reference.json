@@ -1,0 +1,443 @@
+{
+  "status": "complete",
+  "provenance": {
+    "git_revision": "b79cd9f8f0fdaeba8c5966fe9a68aee7cc708588",
+    "git_dirty": false,
+    "source_sha256": "b70b038f97299c14f83138c7e457347b149970265ad4057daccaa751866ac192",
+    "python": "3.12.14",
+    "numpy": "2.5.4",
+    "platform": "Windows-11-10.0.26200-SP0"
+  },
+  "deterministic_repetition": true,
+  "comparison": {
+    "max_sphere_position_difference_m": 2.0960785559466033,
+    "max_cloth_position_difference_m": 0.10760331699155777,
+    "one_way_discrete_free_fall_error_m": 4.618527782440651e-14
+  },
+  "mass_sensitivity": {
+    "mass_half": {
+      "sphere_mass_kg": 0.025,
+      "max_sphere_position_difference_m": 0.6310465677614399
+    },
+    "mass_double": {
+      "sphere_mass_kg": 0.1,
+      "max_sphere_position_difference_m": 0.568467317231113
+    }
+  },
+  "step_halving": {
+    "duration_seconds": 2.0,
+    "max_sphere_position_difference_m": 0.1450599459808719,
+    "max_cloth_position_difference_m": 0.016785209427083853
+  },
+  "analytic_free_fall": {
+    "coarse_position_error_m": 0.0204374999999537,
+    "fine_position_error_m": 0.01021874999992356,
+    "error_ratio": 2.00000000001043,
+    "fine_velocity_error_mps": 9.237055564881302e-14,
+    "duration_seconds": 2.0
+  },
+  "runs": {
+    "two_way": {
+      "config": {
+        "scene": "pinned_cloth_dynamic_sphere_v1",
+        "dtype": "float64",
+        "rows": 7,
+        "columns": 7,
+        "spacing_m": 0.1,
+        "density_kg_m2": 0.4,
+        "structural_compliance_m_N": 0.0001,
+        "shear_compliance_m_N": 0.0001,
+        "cloth_origin_m": [
+          -0.3,
+          0.6,
+          -0.3
+        ],
+        "pinned": [
+          0,
+          6,
+          42,
+          48
+        ],
+        "sphere_mass_kg": 0.05,
+        "sphere_radius_m": 0.18,
+        "sphere_position_m": [
+          0.02,
+          0.3,
+          0
+        ],
+        "sphere_velocity_mps": [
+          0,
+          2,
+          0
+        ],
+        "gravity_mps2": [
+          0,
+          -9.81,
+          0
+        ],
+        "contact": "discrete_vertices_frictionless_e0",
+        "frames": 240,
+        "requested_frame_dt": 0.008333333333333333,
+        "effective_substep_dt": 0.0020833333333333333,
+        "substeps": 4,
+        "duration_seconds": 2.0,
+        "iterations": 200,
+        "tolerance": 1e-07,
+        "backend": "numpy",
+        "interaction": "two_way_dynamic"
+      },
+      "metrics": {
+        "accepted_frames": 240,
+        "audited_substeps": 960,
+        "contact_substeps": 17,
+        "runtime_seconds_including_audits": 862.9383107000031,
+        "max_position_iterations": 171,
+        "max_velocity_iterations": 1,
+        "max_vertex_penetration_m": 8.326672684688674e-17,
+        "max_pin_displacement_m": 0.0,
+        "max_quaternion_norm_error": 0.0,
+        "max_reported_residual": 9.999752790594655e-08,
+        "max_normal_velocity_violation_mps": 0.0,
+        "max_contact_ledger_imbalance_kg_mps": 0.0,
+        "max_rigid_motion_balance_error_kg_mps": 1.0221858082193336e-14,
+        "max_rigid_balance_limit_kg_mps": 1e-10,
+        "trajectory_sha256": "a44e0e07847a2dcb2491b7fc80c0b5852f533c9af5505b6e5170f766bdcf7241"
+      }
+    },
+    "repeat": {
+      "config": {
+        "scene": "pinned_cloth_dynamic_sphere_v1",
+        "dtype": "float64",
+        "rows": 7,
+        "columns": 7,
+        "spacing_m": 0.1,
+        "density_kg_m2": 0.4,
+        "structural_compliance_m_N": 0.0001,
+        "shear_compliance_m_N": 0.0001,
+        "cloth_origin_m": [
+          -0.3,
+          0.6,
+          -0.3
+        ],
+        "pinned": [
+          0,
+          6,
+          42,
+          48
+        ],
+        "sphere_mass_kg": 0.05,
+        "sphere_radius_m": 0.18,
+        "sphere_position_m": [
+          0.02,
+          0.3,
+          0
+        ],
+        "sphere_velocity_mps": [
+          0,
+          2,
+          0
+        ],
+        "gravity_mps2": [
+          0,
+          -9.81,
+          0
+        ],
+        "contact": "discrete_vertices_frictionless_e0",
+        "frames": 240,
+        "requested_frame_dt": 0.008333333333333333,
+        "effective_substep_dt": 0.0020833333333333333,
+        "substeps": 4,
+        "duration_seconds": 2.0,
+        "iterations": 200,
+        "tolerance": 1e-07,
+        "backend": "numpy",
+        "interaction": "two_way_dynamic"
+      },
+      "metrics": {
+        "accepted_frames": 240,
+        "audited_substeps": 960,
+        "contact_substeps": 17,
+        "runtime_seconds_including_audits": 410.34425619989634,
+        "max_position_iterations": 171,
+        "max_velocity_iterations": 1,
+        "max_vertex_penetration_m": 8.326672684688674e-17,
+        "max_pin_displacement_m": 0.0,
+        "max_quaternion_norm_error": 0.0,
+        "max_reported_residual": 9.999752790594655e-08,
+        "max_normal_velocity_violation_mps": 0.0,
+        "max_contact_ledger_imbalance_kg_mps": 0.0,
+        "max_rigid_motion_balance_error_kg_mps": 1.0221858082193336e-14,
+        "max_rigid_balance_limit_kg_mps": 1e-10,
+        "trajectory_sha256": "a44e0e07847a2dcb2491b7fc80c0b5852f533c9af5505b6e5170f766bdcf7241"
+      }
+    },
+    "one_way": {
+      "config": {
+        "scene": "pinned_cloth_dynamic_sphere_v1",
+        "dtype": "float64",
+        "rows": 7,
+        "columns": 7,
+        "spacing_m": 0.1,
+        "density_kg_m2": 0.4,
+        "structural_compliance_m_N": 0.0001,
+        "shear_compliance_m_N": 0.0001,
+        "cloth_origin_m": [
+          -0.3,
+          0.6,
+          -0.3
+        ],
+        "pinned": [
+          0,
+          6,
+          42,
+          48
+        ],
+        "sphere_mass_kg": 0.05,
+        "sphere_radius_m": 0.18,
+        "sphere_position_m": [
+          0.02,
+          0.3,
+          0
+        ],
+        "sphere_velocity_mps": [
+          0,
+          2,
+          0
+        ],
+        "gravity_mps2": [
+          0,
+          -9.81,
+          0
+        ],
+        "contact": "discrete_vertices_frictionless_e0",
+        "frames": 240,
+        "requested_frame_dt": 0.008333333333333333,
+        "effective_substep_dt": 0.0020833333333333333,
+        "substeps": 4,
+        "duration_seconds": 2.0,
+        "iterations": 200,
+        "tolerance": 1e-07,
+        "backend": "numpy",
+        "interaction": "one_way_prescribed_sphere"
+      },
+      "metrics": {
+        "accepted_frames": 240,
+        "audited_substeps": 960,
+        "contact_substeps": 132,
+        "runtime_seconds_including_audits": 403.0960987000726,
+        "max_position_iterations": 190,
+        "max_velocity_iterations": 1,
+        "max_vertex_penetration_m": 8.326672684688674e-17,
+        "max_pin_displacement_m": 0.0,
+        "max_quaternion_norm_error": 0.0,
+        "max_reported_residual": 9.999597002868508e-08,
+        "max_normal_velocity_violation_mps": 0.0,
+        "max_contact_ledger_imbalance_kg_mps": 1.3985787785349405e-17,
+        "max_rigid_motion_balance_error_kg_mps": 8.326672684688674e-17,
+        "max_rigid_balance_limit_kg_mps": 1e-10,
+        "trajectory_sha256": "827a6c08a58d004f77ff046e493c3b81c02714e0df1d9bbb76116a8c700ebc33"
+      }
+    },
+    "half_step": {
+      "config": {
+        "scene": "pinned_cloth_dynamic_sphere_v1",
+        "dtype": "float64",
+        "rows": 7,
+        "columns": 7,
+        "spacing_m": 0.1,
+        "density_kg_m2": 0.4,
+        "structural_compliance_m_N": 0.0001,
+        "shear_compliance_m_N": 0.0001,
+        "cloth_origin_m": [
+          -0.3,
+          0.6,
+          -0.3
+        ],
+        "pinned": [
+          0,
+          6,
+          42,
+          48
+        ],
+        "sphere_mass_kg": 0.05,
+        "sphere_radius_m": 0.18,
+        "sphere_position_m": [
+          0.02,
+          0.3,
+          0
+        ],
+        "sphere_velocity_mps": [
+          0,
+          2,
+          0
+        ],
+        "gravity_mps2": [
+          0,
+          -9.81,
+          0
+        ],
+        "contact": "discrete_vertices_frictionless_e0",
+        "frames": 480,
+        "requested_frame_dt": 0.004166666666666667,
+        "effective_substep_dt": 0.0010416666666666667,
+        "substeps": 4,
+        "duration_seconds": 2.0,
+        "iterations": 200,
+        "tolerance": 1e-07,
+        "backend": "numpy",
+        "interaction": "two_way_dynamic"
+      },
+      "metrics": {
+        "accepted_frames": 480,
+        "audited_substeps": 1920,
+        "contact_substeps": 29,
+        "runtime_seconds_including_audits": 232.529338600114,
+        "max_position_iterations": 48,
+        "max_velocity_iterations": 1,
+        "max_vertex_penetration_m": 2.7755575615628914e-17,
+        "max_pin_displacement_m": 0.0,
+        "max_quaternion_norm_error": 0.0,
+        "max_reported_residual": 9.999709819348112e-08,
+        "max_normal_velocity_violation_mps": 1.1943113261232575e-16,
+        "max_contact_ledger_imbalance_kg_mps": 0.0,
+        "max_rigid_motion_balance_error_kg_mps": 9.008635851182056e-15,
+        "max_rigid_balance_limit_kg_mps": 1e-10,
+        "trajectory_sha256": "a5e09f9f15e411d4d39c8dadad76f05021ee69ebe5d8f70636cfbac7ba6c7881"
+      }
+    },
+    "mass_half": {
+      "config": {
+        "scene": "pinned_cloth_dynamic_sphere_v1",
+        "dtype": "float64",
+        "rows": 7,
+        "columns": 7,
+        "spacing_m": 0.1,
+        "density_kg_m2": 0.4,
+        "structural_compliance_m_N": 0.0001,
+        "shear_compliance_m_N": 0.0001,
+        "cloth_origin_m": [
+          -0.3,
+          0.6,
+          -0.3
+        ],
+        "pinned": [
+          0,
+          6,
+          42,
+          48
+        ],
+        "sphere_mass_kg": 0.025,
+        "sphere_radius_m": 0.18,
+        "sphere_position_m": [
+          0.02,
+          0.3,
+          0
+        ],
+        "sphere_velocity_mps": [
+          0,
+          2,
+          0
+        ],
+        "gravity_mps2": [
+          0,
+          -9.81,
+          0
+        ],
+        "contact": "discrete_vertices_frictionless_e0",
+        "frames": 240,
+        "requested_frame_dt": 0.008333333333333333,
+        "effective_substep_dt": 0.0020833333333333333,
+        "substeps": 4,
+        "duration_seconds": 2.0,
+        "iterations": 200,
+        "tolerance": 1e-07,
+        "backend": "numpy",
+        "interaction": "two_way_dynamic"
+      },
+      "metrics": {
+        "accepted_frames": 240,
+        "audited_substeps": 960,
+        "contact_substeps": 13,
+        "runtime_seconds_including_audits": 828.8873745000456,
+        "max_position_iterations": 169,
+        "max_velocity_iterations": 1,
+        "max_vertex_penetration_m": 8.326672684688674e-17,
+        "max_pin_displacement_m": 0.0,
+        "max_quaternion_norm_error": 0.0,
+        "max_reported_residual": 9.999862947824401e-08,
+        "max_normal_velocity_violation_mps": 0.0,
+        "max_contact_ledger_imbalance_kg_mps": 0.0,
+        "max_rigid_motion_balance_error_kg_mps": 5.440526501532261e-15,
+        "max_rigid_balance_limit_kg_mps": 1e-10,
+        "trajectory_sha256": "106c5116d50fd823521d6cdb78454e82aa504ebfd5067ff97e2cbb66860065ed"
+      }
+    },
+    "mass_double": {
+      "config": {
+        "scene": "pinned_cloth_dynamic_sphere_v1",
+        "dtype": "float64",
+        "rows": 7,
+        "columns": 7,
+        "spacing_m": 0.1,
+        "density_kg_m2": 0.4,
+        "structural_compliance_m_N": 0.0001,
+        "shear_compliance_m_N": 0.0001,
+        "cloth_origin_m": [
+          -0.3,
+          0.6,
+          -0.3
+        ],
+        "pinned": [
+          0,
+          6,
+          42,
+          48
+        ],
+        "sphere_mass_kg": 0.1,
+        "sphere_radius_m": 0.18,
+        "sphere_position_m": [
+          0.02,
+          0.3,
+          0
+        ],
+        "sphere_velocity_mps": [
+          0,
+          2,
+          0
+        ],
+        "gravity_mps2": [
+          0,
+          -9.81,
+          0
+        ],
+        "contact": "discrete_vertices_frictionless_e0",
+        "frames": 240,
+        "requested_frame_dt": 0.008333333333333333,
+        "effective_substep_dt": 0.0020833333333333333,
+        "substeps": 4,
+        "duration_seconds": 2.0,
+        "iterations": 200,
+        "tolerance": 1e-07,
+        "backend": "numpy",
+        "interaction": "two_way_dynamic"
+      },
+      "metrics": {
+        "accepted_frames": 240,
+        "audited_substeps": 960,
+        "contact_substeps": 27,
+        "runtime_seconds_including_audits": 831.991861899849,
+        "max_position_iterations": 175,
+        "max_velocity_iterations": 1,
+        "max_vertex_penetration_m": 8.326672684688674e-17,
+        "max_pin_displacement_m": 0.0,
+        "max_quaternion_norm_error": 0.0,
+        "max_reported_residual": 9.997468140216431e-08,
+        "max_normal_velocity_violation_mps": 1.5885297676090958e-16,
+        "max_contact_ledger_imbalance_kg_mps": 0.0,
+        "max_rigid_motion_balance_error_kg_mps": 2.0988853016712383e-14,
+        "max_rigid_balance_limit_kg_mps": 1e-10,
+        "trajectory_sha256": "ef4c4f3e5d68166947b96f630c8f6d65b34377a3d4708db0e6a5347fd208f6af"
+      }
+    }
+  }
+}

@@ -225,3 +225,25 @@ def test_bad_loads_reject_without_mutating_caller(weights, indices, loads, tyx_m
         with pytest.raises(ValueError):
             engine.apply_load(x, indices, loads, weights)
     np.testing.assert_array_equal(x, np.ones((2, 3)))
+
+
+def test_material_keeps_resolved_response_with_tiny_transverse_perturbation(tyx_mode, tmp_path):
+    model, state = tetrahedral_block([-0.05, 0.0, -0.05], [0.1, 0.1, 0.1])
+    x = state.position.copy()
+    x[~model.fixed, 1] *= 0.98
+    x[8, 0] += 1e-24
+    # Node 8 has x=0 in the builder; the perturbation survives quantization.
+    assert x[8, 0] != state.position[8, 0]
+    expected_force, expected_energy = stvk.elastic_forces(model, x), stvk.elastic_energy(model, x)
+    with implementation()(tyx_mode, cache_root=tmp_path) as engine:
+        with np.errstate(over="raise", invalid="raise", divide="raise", under="raise"):
+            force, energy = engine.material(model, x)
+        np.testing.assert_allclose(force, expected_force, atol=2e-4, rtol=5e-4)
+        assert energy == pytest.approx(expected_energy, abs=2e-4, rel=5e-4)
+
+
+def test_material_rejects_scale_with_unsafe_omitted_term_error_bound(tyx_mode, tmp_path):
+    model = unit_tetra(young_modulus=1e35)
+    with implementation()(tyx_mode, cache_root=tmp_path) as engine:
+        with pytest.raises(SolverFailure, match="error budget"):
+            engine.material(model, model.rest_position * 1.1)

@@ -144,6 +144,20 @@ class TyxNodeMath(TyxMath):
         inverse = as_compute(model.rest_inverse, "reference inverse")
         volume = as_compute(model.volume, "reference volume")
         bulk = model.young_modulus / (3 * (1 - 2 * model.poisson_ratio))
+        # In the bounded F domain, entries are <=1.4. This conservative static
+        # bound covers omitted subnormal quadratic products, stress propagation,
+        # reference-gradient multiplication and assembly across every element.
+        # It is smaller than the frozen material absolute error gate (2e-4).
+        # Reject unsafe stiffness/scale combinations; never correct a force here.
+        loss_bound = (
+            1000.0
+            * np.finfo(np.float32).tiny
+            * (model.lame_mu + abs(model.lame_lambda) + bulk)
+            * float(np.sum(model.volume))
+            * (1.0 + 9.0 * float(np.max(np.abs(model.rest_inverse))))
+        )
+        if not np.isfinite(loss_bound) or loss_bound > 1e-6:
+            raise SolverFailure("material quadratic underflow error budget is not representable")
         force, energy = self.call(
             stvk_material,
             len(cells),

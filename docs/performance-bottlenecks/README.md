@@ -12,6 +12,7 @@
 | [PERF-004](PERF-004-robot-dense-reference.md) | 机器人稠密参考重复几何/载荷计算 | P3 阶段时间及调用结构；细项占比未测 | 记录并在 P5 接触负载下定位，不优化 |
 | [PERF-005](PERF-005-solid-validation.md) | 软体材料域重复检查与事务快照 | P4 阶段时间及调用结构；细项占比未测 | 先 profiling，不移除门禁 |
 | [PERF-006](PERF-006-participant-point-queries.md) | 机器人/节点组合反复建立端口、查询几何与质量 | P5 解析小负载阶段与调用结构；细项占比未测 | 完整场景重测并归因，不优化 |
+| [PERF-007](PERF-007-p6-device-boundaries.md) | P6全链路小kernel与端口反复查询 | 实际CUDA解析step公开计数；细项计时未测 | T7串行测量，区分集成与依赖成本 |
 
 这些条目是候选热点，不是假装已经经过 profiler 确认的排名。已有完整 CUDA 运行 465.178 s、重复 397.141 s 的记录包含主机审计且同时有其他实验运行，只可作为诊断，不能作为性能基线或加速比。原始背景见[场景报告](../benchmarks/rigid-cloth.md)。
 

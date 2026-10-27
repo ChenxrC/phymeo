@@ -5,6 +5,21 @@ import tyx as tx
 from ._tyx_numeric import _add, _div, _mul
 
 
+@tx.func
+def _bounded_material_product(a: tx.f32, b: tx.f32) -> tx.f32:
+    # Used only in material matrix and energy reductions, whose worst-case propagated
+    # absolute loss is independently bounded from the static model on the host.
+    return (
+        0.0
+        if tx.abs(a) > 0.0
+        and tx.abs(a) < 1.0
+        and tx.abs(b) > 0.0
+        and tx.abs(b) < 1.0
+        and tx.abs(a) < 1.1754943508222875e-38 / tx.abs(b)
+        else _mul(a, b)
+    )
+
+
 @tx.kernel
 def reconstruct_nodes(
     n: tx.i32,
@@ -113,13 +128,15 @@ def stvk_material(
                     value = 0.0
                     for k in range(3):
                         edge = _add(x[cells[e, k + 1], a], -x[cells[e, 0], a])
-                        value = _add(value, _mul(edge, inverse[e, k, b]))
+                        value = _add(value, _bounded_material_product(edge, inverse[e, k, b]))
                     gradient[e, a, b] = value
             for a in range(3):
                 for b in range(3):
                     value = 0.0
                     for k in range(3):
-                        value = _add(value, _mul(gradient[e, k, a], gradient[e, k, b]))
+                        value = _add(
+                            value, _bounded_material_product(gradient[e, k, a], gradient[e, k, b])
+                        )
                     if a == b:
                         value = _add(value, -1.0)
                     strain[e, a, b] = _mul(0.5, value)
@@ -132,7 +149,7 @@ def stvk_material(
                         first = _add(value, -strain[e, (a + 1) % 3, (a + 1) % 3])
                         second = _add(value, -strain[e, (a + 2) % 3, (a + 2) % 3])
                         value = _div(_add(first, second), 3.0)
-                    square = _add(square, _mul(value, value))
+                    square = _add(square, _bounded_material_product(value, value))
                     stress_value = _mul(_mul(2.0, mu), value)
                     if a == b:
                         coefficient = lam
@@ -143,20 +160,27 @@ def stvk_material(
             coefficient = lam
             if lam < 0.0:
                 coefficient = bulk
-            density = _add(_mul(mu, square), _mul(_mul(0.5, coefficient), _mul(trace, trace)))
+            density = _add(
+                _mul(mu, square),
+                _mul(_mul(0.5, coefficient), _bounded_material_product(trace, trace)),
+            )
             total_energy = _add(total_energy, _mul(volume[e], density))
             for a in range(3):
                 for b in range(3):
                     value = 0.0
                     for k in range(3):
-                        value = _add(value, _mul(gradient[e, a, k], stress[e, k, b]))
+                        value = _add(
+                            value, _bounded_material_product(gradient[e, a, k], stress[e, k, b])
+                        )
                     piola[e, a, b] = value
             for a in range(3):
                 origin_force = 0.0
                 for b in range(3):
                     value = 0.0
                     for k in range(3):
-                        value = _add(value, _mul(piola[e, a, k], inverse[e, b, k]))
+                        value = _add(
+                            value, _bounded_material_product(piola[e, a, k], inverse[e, b, k])
+                        )
                     value = -_mul(volume[e], value)
                     i = cells[e, b + 1]
                     force[i, a] = _add(force[i, a], value)

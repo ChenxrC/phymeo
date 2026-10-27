@@ -22,6 +22,8 @@ def _capability_signature(capabilities):
 
 class ArticulatedCouplingProgram:
     history_fields = ()
+    _backend = "numpy"
+    _contact_type = NodeRobotConstraints
 
     def __init__(self, scene, participants, attachments, contacts, robot_domain="robot"):
         scene.assert_unchanged()
@@ -42,7 +44,7 @@ class ArticulatedCouplingProgram:
             ):
                 raise ValueError("participant family and model must match its domain")
             if (
-                caps.backend != "numpy"
+                caps.backend != self._backend
                 or "float64" not in caps.dtypes
                 or family.kind not in caps.families
             ):
@@ -73,7 +75,10 @@ class ArticulatedCouplingProgram:
         self.attachments, self.contacts, self.robot_domain = attachments, contacts, robot_domain
         self.registry = registry
         self.capabilities = ProgramCapabilities(
-            "numpy", {"float64"}, set(families), {"node_sphere", "two_way", "staged_participants"}
+            self._backend,
+            {"float64"},
+            set(families),
+            {"node_sphere", "two_way", "staged_participants"},
         )
 
     def problem_signature(self):
@@ -116,7 +121,7 @@ class ArticulatedWorkspace:
                 )
                 stack.callback(workspace.close)
                 self.participants[name] = workspace
-            self.contact = NodeRobotConstraints(
+            self.contact = program._contact_type(
                 self.participants,
                 program.robot_domain,
                 program.attachments,

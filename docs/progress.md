@@ -371,3 +371,10 @@
 - 合同快照及两后端各 3×100 次小负载 step 串行测量完成，全部接受。NumPy 批次中位数 6.098–6.152 ms，CUDA 21.431–22.676 ms；后者每步 28 次 launch、144 次上传、88 次下载。这是小规模集成观测，未分离纯内核/同步/分配成本，没有 Warp 对比或速度优化。
 - tyx_flaw 已包含 TYX-001 FP64 计算缺口的独立复现和建议；没有因集成计数擅自添加依赖性能缺陷。修复实现 b946c19 的 GitHub CI 与 Documentation 均成功；最终文档提交将另核验。
 - [逐项验收与后续](benchmarks/p1-p2-acceptance.md)、[完整迁移](benchmarks/p1-p2-runtime.md)、[性能](performance-bottlenecks/measurements/p2-runtime.md)、[审阅及全部实施判断](benchmarks/p1-p2-review.md)已保存。P1/P2 冻结范围各 100%；P3 机器人和 P4 体积软体算法未开始，完成本轮交付后停止续跑。
+
+## 2026-10-27：P3–P5 长程任务启动
+
+- 用户明确授权继续 P3–P5。新专用分支 `codex/p3-p5-dynamics` 从已交付 `2993614` 开始，长程 goal 与 `phymeo-p3-p5` 半小时续跑已启用；无截止时间，验收完成后停止。
+- [实施计划](superpowers/plans/2026-10-27-p3-p5-dynamics.md)拆为八个可验证切片，配套机器人、四面体材料、CPU 组合三份设计；新算法设备链路按大纲留 P6。继续保留原 tyx 回归、tyx_flaw、遗留/性能台账，不做优化。
+- 一次设计 builder check 指出的广义冲量量纲和单附件位置已在实施前澄清；无需改变用户目标。机器人采用独立稠密质量参考及世界惯性载荷，软体采用受限形变 StVK，不宣称完整 CRBA 或大形变稳定性。
+- 当前真实 CUDA 基线 831 passed（491.80 s，仅验证耗时）；没有新增动力学实现，随后从 T1 数据、FK 和局部状态族的失败用例开始。

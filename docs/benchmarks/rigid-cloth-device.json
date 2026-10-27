@@ -1,0 +1,315 @@
+{
+  "status": "complete",
+  "provenance": {
+    "git_revision": "027e7cdef3b7a97e802277ca496936e29fb1f680",
+    "git_dirty": false,
+    "source_sha256": "74d38ca64a0e70bd1601010e93f1ae527f9729ca9870df60bee884a186d4d75d",
+    "python": "3.12.14",
+    "numpy": "2.5.4",
+    "platform": "Windows-11-10.0.26200-SP0"
+  },
+  "device_environment": {
+    "tyx_version": "0.1.0a0",
+    "mode": "cuda",
+    "nvidia_smi": "NVIDIA GeForce RTX 4060 Laptop GPU, 566.07, 8188 MiB"
+  },
+  "matched_fp32": {
+    "max_sphere_position_difference_m": 0.00011062667499877722,
+    "max_cloth_position_difference_m": 1.9502432328117168e-05
+  },
+  "device_repetition_identical": true,
+  "fp64_difference": {
+    "max_sphere_position_difference_m": 0.0007201278027485944,
+    "max_cloth_position_difference_m": 0.0006280032468340784
+  },
+  "fp64_reference": {
+    "config": {
+      "scene": "pinned_cloth_dynamic_sphere_v1",
+      "dtype": "float64",
+      "rows": 7,
+      "columns": 7,
+      "spacing_m": 0.1,
+      "density_kg_m2": 0.4,
+      "structural_compliance_m_N": 0.0001,
+      "shear_compliance_m_N": 0.0001,
+      "cloth_origin_m": [
+        -0.3,
+        0.6,
+        -0.3
+      ],
+      "pinned": [
+        0,
+        6,
+        42,
+        48
+      ],
+      "sphere_mass_kg": 0.05,
+      "sphere_radius_m": 0.18,
+      "sphere_position_m": [
+        0.02,
+        0.3,
+        0
+      ],
+      "sphere_velocity_mps": [
+        0,
+        2,
+        0
+      ],
+      "gravity_mps2": [
+        0,
+        -9.81,
+        0
+      ],
+      "contact": "discrete_vertices_frictionless_e0",
+      "frames": 240,
+      "requested_frame_dt": 0.008333333333333333,
+      "effective_substep_dt": 0.0020833333333333333,
+      "substeps": 4,
+      "duration_seconds": 2.0,
+      "iterations": 200,
+      "tolerance": 1e-07,
+      "backend": "numpy",
+      "distance_order": "original",
+      "projection_arithmetic": "fp64",
+      "interaction": "two_way_dynamic"
+    },
+    "metrics": {
+      "execution_backend": "numpy",
+      "accepted_frames": 240,
+      "audited_substeps": 960,
+      "contact_substeps": 17,
+      "runtime_seconds_including_audits": 1056.9390400999691,
+      "max_position_iterations": 171,
+      "max_velocity_iterations": 1,
+      "max_vertex_penetration_m": 2.7755575615628914e-17,
+      "max_pin_displacement_m": 0.0,
+      "max_quaternion_norm_error": 0.0,
+      "max_reported_residual": 9.999752793118813e-08,
+      "max_normal_velocity_violation_mps": 9.929690657954607e-17,
+      "max_contact_ledger_imbalance_kg_mps": 0.0,
+      "max_rigid_motion_balance_error_kg_mps": 8.836681386625855e-15,
+      "max_rigid_balance_limit_kg_mps": 1e-10,
+      "trajectory_sha256": "1416f05763fa3ba1c8bb2aaa810a197ccd5b28254b557e9b4b8d090419216ef3"
+    },
+    "provenance": {
+      "git_revision": "027e7cdef3b7a97e802277ca496936e29fb1f680",
+      "git_dirty": false,
+      "source_sha256": "74d38ca64a0e70bd1601010e93f1ae527f9729ca9870df60bee884a186d4d75d",
+      "python": "3.12.14",
+      "numpy": "2.5.4",
+      "platform": "Windows-11-10.0.26200-SP0"
+    }
+  },
+  "runs": {
+    "numpy_colored": {
+      "config": {
+        "scene": "pinned_cloth_dynamic_sphere_v1",
+        "dtype": "float32",
+        "rows": 7,
+        "columns": 7,
+        "spacing_m": 0.1,
+        "density_kg_m2": 0.4,
+        "structural_compliance_m_N": 0.0001,
+        "shear_compliance_m_N": 0.0001,
+        "cloth_origin_m": [
+          -0.3,
+          0.6,
+          -0.3
+        ],
+        "pinned": [
+          0,
+          6,
+          42,
+          48
+        ],
+        "sphere_mass_kg": 0.05,
+        "sphere_radius_m": 0.18,
+        "sphere_position_m": [
+          0.02,
+          0.3,
+          0
+        ],
+        "sphere_velocity_mps": [
+          0,
+          2,
+          0
+        ],
+        "gravity_mps2": [
+          0,
+          -9.81,
+          0
+        ],
+        "contact": "discrete_vertices_frictionless_e0",
+        "frames": 240,
+        "requested_frame_dt": 0.008333333333333333,
+        "effective_substep_dt": 0.0020833334419876337,
+        "substeps": 4,
+        "duration_seconds": 2.0000001043081284,
+        "iterations": 200,
+        "tolerance": 1e-06,
+        "backend": "numpy_colored",
+        "distance_order": "stable_colors",
+        "projection_arithmetic": "fp64",
+        "interaction": "two_way_dynamic"
+      },
+      "metrics": {
+        "execution_backend": "numpy",
+        "accepted_frames": 240,
+        "audited_substeps": 960,
+        "contact_substeps": 16,
+        "runtime_seconds_including_audits": 873.0553162998985,
+        "max_position_iterations": 130,
+        "max_velocity_iterations": 1,
+        "max_vertex_penetration_m": 2.8016334974179102e-08,
+        "max_pin_displacement_m": 0.0,
+        "max_quaternion_norm_error": 0.0,
+        "max_reported_residual": 9.999511822875244e-07,
+        "max_normal_velocity_violation_mps": 0.0,
+        "max_contact_ledger_imbalance_kg_mps": 0.0,
+        "max_rigid_motion_balance_error_kg_mps": 2.542721267525215e-06,
+        "max_rigid_balance_limit_kg_mps": 0.003190159099176526,
+        "trajectory_sha256": "5527045a9f173eb4844fd4162e38f1dd19fdcf3d6734e147b0df02befba5b867"
+      }
+    },
+    "device": {
+      "config": {
+        "scene": "pinned_cloth_dynamic_sphere_v1",
+        "dtype": "float32",
+        "rows": 7,
+        "columns": 7,
+        "spacing_m": 0.1,
+        "density_kg_m2": 0.4,
+        "structural_compliance_m_N": 0.0001,
+        "shear_compliance_m_N": 0.0001,
+        "cloth_origin_m": [
+          -0.3,
+          0.6,
+          -0.3
+        ],
+        "pinned": [
+          0,
+          6,
+          42,
+          48
+        ],
+        "sphere_mass_kg": 0.05,
+        "sphere_radius_m": 0.18,
+        "sphere_position_m": [
+          0.02,
+          0.3,
+          0
+        ],
+        "sphere_velocity_mps": [
+          0,
+          2,
+          0
+        ],
+        "gravity_mps2": [
+          0,
+          -9.81,
+          0
+        ],
+        "contact": "discrete_vertices_frictionless_e0",
+        "frames": 240,
+        "requested_frame_dt": 0.008333333333333333,
+        "effective_substep_dt": 0.0020833334419876337,
+        "substeps": 4,
+        "duration_seconds": 2.0000001043081284,
+        "iterations": 200,
+        "tolerance": 1e-06,
+        "backend": "cuda",
+        "distance_order": "stable_colors",
+        "projection_arithmetic": "fp32",
+        "interaction": "two_way_dynamic"
+      },
+      "metrics": {
+        "execution_backend": "tyx:cuda",
+        "accepted_frames": 240,
+        "audited_substeps": 960,
+        "contact_substeps": 16,
+        "runtime_seconds_including_audits": 465.17843739991076,
+        "max_position_iterations": 130,
+        "max_velocity_iterations": 1,
+        "max_vertex_penetration_m": 2.5573745565665718e-08,
+        "max_pin_displacement_m": 0.0,
+        "max_quaternion_norm_error": 0.0,
+        "max_reported_residual": 9.99998656382587e-07,
+        "max_normal_velocity_violation_mps": 2.8855833173339506e-08,
+        "max_contact_ledger_imbalance_kg_mps": 0.0,
+        "max_rigid_motion_balance_error_kg_mps": 4.09242269451516e-06,
+        "max_rigid_balance_limit_kg_mps": 0.003190138842910528,
+        "trajectory_sha256": "29adf9a60bd3c00c3cca4b4c38564c3136bd20ffb58f09e845d840a4cbd80db7"
+      }
+    },
+    "repeat": {
+      "config": {
+        "scene": "pinned_cloth_dynamic_sphere_v1",
+        "dtype": "float32",
+        "rows": 7,
+        "columns": 7,
+        "spacing_m": 0.1,
+        "density_kg_m2": 0.4,
+        "structural_compliance_m_N": 0.0001,
+        "shear_compliance_m_N": 0.0001,
+        "cloth_origin_m": [
+          -0.3,
+          0.6,
+          -0.3
+        ],
+        "pinned": [
+          0,
+          6,
+          42,
+          48
+        ],
+        "sphere_mass_kg": 0.05,
+        "sphere_radius_m": 0.18,
+        "sphere_position_m": [
+          0.02,
+          0.3,
+          0
+        ],
+        "sphere_velocity_mps": [
+          0,
+          2,
+          0
+        ],
+        "gravity_mps2": [
+          0,
+          -9.81,
+          0
+        ],
+        "contact": "discrete_vertices_frictionless_e0",
+        "frames": 240,
+        "requested_frame_dt": 0.008333333333333333,
+        "effective_substep_dt": 0.0020833334419876337,
+        "substeps": 4,
+        "duration_seconds": 2.0000001043081284,
+        "iterations": 200,
+        "tolerance": 1e-06,
+        "backend": "cuda",
+        "distance_order": "stable_colors",
+        "projection_arithmetic": "fp32",
+        "interaction": "two_way_dynamic"
+      },
+      "metrics": {
+        "execution_backend": "tyx:cuda",
+        "accepted_frames": 240,
+        "audited_substeps": 960,
+        "contact_substeps": 16,
+        "runtime_seconds_including_audits": 397.140914699994,
+        "max_position_iterations": 130,
+        "max_velocity_iterations": 1,
+        "max_vertex_penetration_m": 2.5573745565665718e-08,
+        "max_pin_displacement_m": 0.0,
+        "max_quaternion_norm_error": 0.0,
+        "max_reported_residual": 9.99998656382587e-07,
+        "max_normal_velocity_violation_mps": 2.8855833173339506e-08,
+        "max_contact_ledger_imbalance_kg_mps": 0.0,
+        "max_rigid_motion_balance_error_kg_mps": 4.09242269451516e-06,
+        "max_rigid_balance_limit_kg_mps": 0.003190138842910528,
+        "trajectory_sha256": "29adf9a60bd3c00c3cca4b4c38564c3136bd20ffb58f09e845d840a4cbd80db7"
+      }
+    }
+  }
+}

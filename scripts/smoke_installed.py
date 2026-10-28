@@ -420,6 +420,20 @@ def check_initial_robot_material_contact():
     )
 
 
+def check_linear_feature_sweep():
+    plate = np.array([[0., 0, 0], [2., 0, 0], [0., 2, 0]])
+    start = np.array([[.5, .5, 1.]])
+    for height, expected in ((-1., "violation"), (2., "certified")):
+        result = phymeo.linear_feature_sweep(
+            start, np.array([[.5, .5, height]]), plate, plate, clearance_m=.25
+        )
+        if result.status != expected or not isinstance(result, phymeo.FeatureSweepResult):
+            raise RuntimeError("Installed affine feature sweep failed")
+    for name in ("linear_feature_sweep", "FeatureSweepResult"):
+        if name not in phymeo.__all__:
+            raise RuntimeError("Installed wheel is missing sweep export: " + name)
+
+
 def main():
     installed = Path(phymeo.__file__).resolve()
     if not installed.is_relative_to(Path(sys.prefix).resolve()):
@@ -595,6 +609,7 @@ def main():
     check_articulated_pair()
     check_surface_contact()
     check_feature_distance_bounds()
+    check_linear_feature_sweep()
     check_bounded_control()
     check_offset_attachment()
     check_load_replay()

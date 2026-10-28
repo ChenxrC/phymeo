@@ -20,7 +20,7 @@
 
 ## 当前立即续作
 
-上一准确f259e69的CI40662503851与Documentation40662503807已success，旧自由节点计划交付框已关闭，不重做该修复。现在先核对本次交付准确head的CI（续跑提示提供ID），失败先修；成功后闭环[材料路径实施计划](../superpowers/plans/2026-10-28-p65-material-path.md)最后交付框。
+上一准确f259e69的CI40662503851与Documentation40662503807已success，旧自由节点计划交付框已关闭，不重做该修复。材料路径准确交付69b866a的CI40671540301与Documentation40671540325现均success，[材料路径实施计划](../superpowers/plans/2026-10-28-p65-material-path.md)最后交付框已关闭。
 
 第12项有限基础[原生材料路径](../benchmarks/p65-material-path-acceptance.md)已实现，产品dc245f7/120文件hash09a3bd9819cb75fdf5bf463adea9397c452cf07365039707e11a5e057c91d624。修复后CUDA1827、两CPU各1522、interpret+核心47、C++短4、Ubuntu30、源码外wheel120和1800次串行观测通过。一次fresh审阅1Important经5RED修复，不再重审或重做原探针。零分母方向为无施加方向的零哨兵；tyx真实设备FP32记录升FP64，不是host反算。
 

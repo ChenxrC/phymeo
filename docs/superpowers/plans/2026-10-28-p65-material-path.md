@@ -38,6 +38,6 @@
 - [x] 旋转硬边h=.1/.05/.025核对Lz=2/sqrt(1+h²)，原反例保持；软材料同时统计K与U，不把释放应变能当增能。actual interpret/CUDA与有界C++短例，C++长循环未验收明确记录。
 - [x] 单次fresh最终review，Critical/Important一轮TDD修；必要全量CUDA/core311/nativepip312、interpret/短C++、ruff/docs/公开导入边界/compileall、uvpipcheck、build及源码外wheel。Expected命令全部读结果，失败不计通过。
 - [x] 数值测试退出后，用同一小材料负载、相同初态、开关两配置各3x100，NumPy→interpret→CUDA串行计量并保留每次计数/失败；不是完整时域性能。不做优化。Expected真实路径及bitwise前提持续成立。
-- [ ] 保存源码hash/工程/NUM-005范围/性能/续作，提交push、核对准确SHA/CI并更新既有ACTIVE自动任务。完整P6.5继续，不关闭全goal。
+- [x] 保存源码hash/工程/NUM-005范围/性能/续作，提交push、核对准确SHA/CI并更新既有ACTIVE自动任务。完整P6.5继续，不关闭全goal。
 
-执行状态：Task1完成；独立物理证据完成，单次fresh审阅1Important经5RED修复。记录API已实现，生产共同账本/联合接触未实现。修复后的全量工程、源码外wheel与1800次串行观测已收齐。最后交付框待准确远程CI闭环；不重复旧探针或已关闭审阅。
+执行状态：Task1完成；独立物理证据完成，单次fresh审阅1Important经5RED修复。记录API已实现，生产共同账本/联合接触未实现。修复后的全量工程、源码外wheel与1800次串行观测已收齐。准确69b866a的CI40671540301与Documentation40671540325均success，最后交付框已闭环；不重复旧探针或已关闭审阅。

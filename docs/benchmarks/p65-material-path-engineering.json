@@ -261,6 +261,16 @@
   },
   "delivery": {
     "branch": "codex/p6-5-handoff",
-    "status": "pending_push_and_exact_ci"
+    "status": "exact_delivery_ci_success",
+    "head": "69b866ae285bc5daeca4d0109d1e0c6f3e7556e6",
+    "remote_sha_matches": true,
+    "ci": {
+      "id": 40671540301,
+      "conclusion": "success"
+    },
+    "documentation": {
+      "id": 40671540325,
+      "conclusion": "success"
+    }
   }
 }

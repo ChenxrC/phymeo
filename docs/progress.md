@@ -8,7 +8,7 @@
 
 [1800次串行观测](performance-bottlenecks/measurements/p65-material-path.md)全部成功，PERF-014只记录不优化。没有新tyx实现缺陷证据，未测Warp；C++长期TYX-003仍开放。原NUM-005角动量损失和“最终lambda不能代替实际路径”的反例保持，**生产材料/接触共同账本、机器人布接触、真实夹爪与双臂Three.js仍未完成**。
 
-下一切片认证同域input/预测/逐边材料/速度重建与接触相反输入的完整共同账本，并建立能量外功/角动量离散误差/步长门槛，再接小布片与单关节/共享多点；不得删除FreeParticleLedger门禁或把记录存在当成认证。随后几何/保守CCD、弯曲自碰撞、单爪/低mu滑落、目标IK/history、真实A→B→平台及同源Three.js。上一准确f259e69的CI40662503851与Documentation40662503807已success；本次交付head的远程状态待推送核对，见续跑提示。
+下一切片认证同域input/预测/逐边材料/速度重建与接触相反输入的完整共同账本，并建立能量外功/角动量离散误差/步长门槛，再接小布片与单关节/共享多点；不得删除FreeParticleLedger门禁或把记录存在当成认证。随后几何/保守CCD、弯曲自碰撞、单爪/低mu滑落、目标IK/history、真实A→B→平台及同源Three.js。上一准确f259e69的CI40662503851与Documentation40662503807已success；本次准确交付69b866a的CI40671540301与Documentation40671540325也已success，材料路径阶段交付闭环；全P6.5继续。
 
 ## 当前状态：2026-10-28 用户恢复 P6.5
 

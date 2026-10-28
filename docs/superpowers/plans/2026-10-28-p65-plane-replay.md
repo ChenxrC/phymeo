@@ -24,17 +24,19 @@
 **Files:** Create src/phymeo/constraints/particle_plane.py、src/phymeo/solvers/particle_plane_contact.py；Modify src/phymeo/__init__.py；Test tests/test_particle_plane_contact.py。
 **Interfaces:** ParticlePlaneContacts及ParticlePlaneContactProgram按spec精确签名；SceneStepper输入输出不变，inner_settings.substeps必须1，history schema继承base。
 
-- [ ] 写缺失公开API、参数所有权/合法性、无摩擦接近/支撑/分离、mu静置/滑移、双平面聚合、全帧失败与factory关闭测试；运行新测试Expected缺失实现失败。
-- [ ] 实现固定绑定、借用base wrapper、GS与最终独立门禁，接触位置阶段重算，速度阶段不再施冲量。Expected上述测试通过。
-- [ ] 跑SceneStepper与load_replay回归、ruff；Expected通过。提交，记录RED/GREEN。
+- [x] 写缺失公开API、参数所有权/合法性、无摩擦接近/支撑/分离、mu静置/滑移、双平面聚合、全帧失败与factory关闭测试；运行新测试Expected缺失实现失败。
+- [x] 实现固定绑定、借用base wrapper、GS与最终独立门禁，接触位置阶段重算，速度阶段不再施冲量。Expected上述测试通过。
+- [x] 跑SceneStepper与load_replay回归、ruff；Expected通过。提交，记录RED/GREEN。
 
 ### Task 2: 材料、实际tyx及工程验收
 
 **Files:** 扩展tests/test_particle_plane_contact.py；Create tests/test_tyx_particle_plane_contact.py、scripts/benchmark_particle_plane_contact.py；Modify scripts/smoke_installed.py；新增docs/benchmarks/p65-plane-*、性能记录和续作入口。
 **Interfaces:** Task1自动接触载荷；复用ArticulatedCouplingProgram/TyxArticulatedCouplingProgram空旧接触，节点force和原机器人自由状态共同真实推进。
 
-- [ ] 增加真实布距离材料、两个dt解析完整时域、隐藏history、最后子步失败/close重试、大坐标拒绝、实际tyx静置/滑动/material；先RED后实现必要补充，Expected全部门禁成立。
-- [ ] 一次fresh最终review审阅本计划BASE后全范围；Critical/Important一次TDD修复，重新必要测试，旧阶段不重复审阅。
-- [ ] 全量CUDA、core3.11与nativepip3.12、interpret、短C++（不超过已知生命周期边界且不冒称长期）、uv build/源码外wheel/ruff/public imports/docs，Expected通过；已知C++长期失败持续记录。
-- [ ] 全数值进程退出后NumPy/interpret/CUDA各至少2预热和3×100次串行小负载；记录迭代/重放次数、真实launch和全部失败，不优化。
+- [x] 增加真实布距离材料、两个dt解析完整时域、隐藏history、最后子步失败/close重试、大坐标拒绝、实际tyx静置/滑动/material；先RED后实现必要补充，Expected全部门禁成立。
+- [x] 一次fresh最终review审阅本计划BASE后全范围；Critical/Important一次TDD修复，重新必要测试，旧阶段不重复审阅。
+- [x] 全量CUDA、core3.11与nativepip3.12、interpret、短C++（不超过已知生命周期边界且不冒称长期）、uv build/源码外wheel/ruff/public imports/docs，Expected通过；已知C++长期失败持续记录。
+- [x] 全数值进程退出后NumPy/interpret/CUDA各至少2预热和3×100次串行小负载；记录迭代/重放次数、真实launch和全部失败，不优化。
 - [ ] 更新进度/工程manifest/续作，提交push专用分支，核对准确远程SHA/CI；只宣布本限定平面阶段结果，完整P6.5继续。
+
+本地工程/900次串行观测已通过；详见动态平面验收及工程记录。最后一项准确交付CI待推送后检查，C++长期TYX-003保持开放，不等于完整P6.5验收。

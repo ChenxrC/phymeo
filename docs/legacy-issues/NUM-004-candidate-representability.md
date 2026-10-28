@@ -52,3 +52,13 @@
 一次独立审阅用量化构造器复现：原tau=2、dt=.2、积分请求=.1，临时2.5构造成2；旧账本记.1但实际零增量。四个RED→GREEN回归见`tests/test_load_replay.py`末四项（量化、未声明字段、输入复制、额外状态复制），产品修复`3f23378`。这是Phymeo插件合同检查问题，不是tyx缺陷。扩大数值可表示范围仍未实施；不能改大背景误差地板掩盖载荷丢失。
 
 后续agent注册新求解器时，构造器/validator须保持快照值；真实持久物理记忆进入注册state/history。输入是率的字段由channels显式声明。该账本记录host FP64输入表示，原tyx program仍在FP32执行，其实际状态/物理残差门禁不可省略。完整接触外层、几何与CCD仍是P6.5必需能力。
+
+## 节点平面动态接触补充（2026-10-28）
+
+位置：`solvers/particle_plane_contact.py::_evaluate`、`_input_velocity_error`、`_prediction_roundoff`；失败回归位于`tests/test_particle_plane_contact.py`末七项和`tests/test_tyx_particle_plane_contact.py`范围门禁。完整复现参数和判定见[阶段审阅](../benchmarks/p65-plane-review.md)。
+
+已修复的正确性问题：FP64账本先减再乘h可能把真实积分误差舍去；巨大初速/载荷相消可能让末q与v共同变错却通过运动学检查。现在用存储值有理积分审计、并限制canonical自由速度预测的保守舍入预算，拒绝超域候选并全帧恢复。没有放宽既有容差，原积分器不变。
+
+遗留范围：此gamma16预算基于NumPy FP64与当前tyx FP32预测路径，可能拒绝一些无实际误差的大尺度输入；未知计算精度后端不接受。后续先量化目标场景实际尺度，再研究局部坐标、精确/补偿运算或正式FP64计算。新后端要证明相同原式门槛，不能仅声明FP64存储。该范围检查不代替材料迭代的物理残差与全部计算误差审计。
+
+主机审计漏洞属于Phymeo集成问题，不移入tyx_flaw。FP64能力请求继续引用TYX-001；Windows C++持续运行继续引用TYX-003。若实际双臂输入落在拒绝范围，应升级为该场景阻塞；不得通过删除门禁或放宽阈值绕过。

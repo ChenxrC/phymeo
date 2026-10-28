@@ -41,3 +41,5 @@ P1/P2 最终新增[修复版串行小负载测量](measurements/p2-runtime.md)�
 每个候选热点写明：观测事实 → 未证实假设 → 定位方法 → 后续优化候选 → 正确性风险 → 重测条件。复制 [TEMPLATE.md](TEMPLATE.md)。只在真实分项测量后标记“已定位瓶颈”。
 
 新增[PERF-010 载荷重放](PERF-010-load-replay.md)：NumPy/interpret/CUDA三模式900次串行观测通过；Windows C++长循环失败，独立依赖生命周期证据见TYX-003。
+
+新增[PERF-011 动态平面接触](PERF-011-plane-replay.md)：原程序重复重放、host精确载荷/范围审计与实际tyx端到端小负载；细项占比未定位，C++长期TYX-003仍开放。

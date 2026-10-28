@@ -1,0 +1,200 @@
+{
+  "status": "local_function_and_package_passed_cpp_endurance_open",
+  "scope": "dynamic particle versus fixed plane, native material replay; no robot contact or full handoff",
+  "source": {
+    "git_revision": "c0218852f1c777d21e1f3ab4aa92d1d928fa691e",
+    "git_dirty": true,
+    "source_sha256": "2df1ec407cae54a8b24d6fccac92aaf5a6725526c1b5dacb159f41fda8a10e1c",
+    "python": "3.12.14",
+    "numpy": "2.5.4",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "product_revision": "c6390f463c4efbc3883b8c64050b17d870c1d6ca",
+    "python_files": 111
+  },
+  "tyx": {
+    "version": "0.1.0a0",
+    "revision": "99f6df7c0fd8fdeef77f97df83914da27b64b7ee",
+    "cuda_device": "NVIDIA GeForce RTX 4060 Laptop GPU",
+    "driver": "566.07"
+  },
+  "cuda_full_suite": {
+    "passed": 1664,
+    "seconds": 615.59
+  },
+  "core311": {
+    "passed": 1383,
+    "deselected": 281,
+    "seconds": 486.95
+  },
+  "core_native_pip312": {
+    "passed": 1383,
+    "deselected": 281,
+    "seconds": 494.83
+  },
+  "interpret_and_core": {
+    "passed": 59,
+    "seconds": 9.82
+  },
+  "focused_regressions": {
+    "passed": 184,
+    "seconds": 11.3
+  },
+  "cpp_actual_short": {
+    "passed": 4,
+    "seconds": 117.06,
+    "not_long_run": true
+  },
+  "supplemental_multinode_order": {
+    "commit": "c021885",
+    "note": "two additional core cases added after full-suite collection; checked separately in all three environments without product changes",
+    "py312": {
+      "passed": 2,
+      "seconds": 0.26
+    },
+    "py311": {
+      "passed": 2,
+      "seconds": 0.21
+    },
+    "native_pip312": {
+      "passed": 2,
+      "seconds": 0.21
+    }
+  },
+  "wheel": {
+    "exact_source_parity": true,
+    "python_files": 111,
+    "fresh_native_pip_outside_checkout": true,
+    "installed_smoke": true,
+    "pip_check": true,
+    "artifacts": {
+      "phymeo-0.1.0a0-py3-none-any.whl": "19307c8a50850a996f0d7933a872beb74ef5329c87687321d1f56797e71eb8cd",
+      "phymeo-0.1.0a0.tar.gz": "2f919b9d7ec84baa5c0b0f0143074c959ee14be7dd63ec156e68c00d57057dfd"
+    }
+  },
+  "quality": {
+    "ruff": true,
+    "public_tyx_import_boundary_files": 111,
+    "compileall": true,
+    "uv_and_pip_dependency_checks": true
+  },
+  "review": {
+    "count": 1,
+    "base": "1ce5c03383f6ccbe524cdc3400dce011ecbee85d",
+    "reviewed_head": "2bd6f274a66a3242a048980af9cab4079779fa8d",
+    "critical": 0,
+    "important": 2,
+    "minor": 0,
+    "findings_fixed": true,
+    "fix_revision": "c6390f463c4efbc3883b8c64050b17d870c1d6ca",
+    "original_regression_red": 4,
+    "extra_red": 4
+  },
+  "performance": {
+    "serial_after_numerical_tests_exited": true,
+    "rows": [
+      {
+        "mode": "numpy",
+        "median_ms": 8.347650058567524,
+        "p95_ms": 9.315255121327937,
+        "first_seconds": 0.03379720007069409,
+        "accepted": 300,
+        "counters": {
+          "replays": [
+            2
+          ],
+          "position_iterations": [
+            1
+          ],
+          "launches": [
+            0
+          ],
+          "completed_launches": [
+            0
+          ],
+          "uploads": [
+            0
+          ],
+          "downloads": [
+            0
+          ]
+        },
+        "max_residual": 3.485212118903298e-16
+      },
+      {
+        "mode": "interpret",
+        "median_ms": 96.97095002047718,
+        "p95_ms": 104.59750480949879,
+        "first_seconds": 0.27830890007317066,
+        "accepted": 300,
+        "counters": {
+          "replays": [
+            2
+          ],
+          "position_iterations": [
+            1
+          ],
+          "launches": [
+            44
+          ],
+          "completed_launches": [
+            44
+          ],
+          "uploads": [
+            0
+          ],
+          "downloads": [
+            0
+          ]
+        },
+        "max_residual": 1.8711109163707537e-07
+      },
+      {
+        "mode": "cuda",
+        "median_ms": 214.21194996219128,
+        "p95_ms": 236.80492490530014,
+        "first_seconds": 0.5014563000295311,
+        "accepted": 300,
+        "counters": {
+          "replays": [
+            2
+          ],
+          "position_iterations": [
+            1
+          ],
+          "launches": [
+            44
+          ],
+          "completed_launches": [
+            44
+          ],
+          "uploads": [
+            338
+          ],
+          "downloads": [
+            88
+          ]
+        },
+        "max_residual": 1.8711109163707537e-07
+      }
+    ],
+    "accepted_measured_calls": 900,
+    "cpp_status": "not_rerun_known_dependency_failure",
+    "issue": "TYX-003",
+    "Warp_measured": false
+  },
+  "ci": {
+    "status": "awaiting_exact_delivery_head_check"
+  },
+  "not_claimed": [
+    "robot contact",
+    "mesh CCD",
+    "bending/self collision",
+    "single gripper",
+    "dual-arm handoff",
+    "Three.js viewer",
+    "C++ sustained acceptance",
+    "GPU-native outer solver",
+    "complete material roundoff proof",
+    "Warp comparison"
+  ]
+}

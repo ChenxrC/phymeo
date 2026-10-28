@@ -1,0 +1,467 @@
+{
+  "status": "counterexamples_confirmed",
+  "source": {
+    "git_revision": "937ca594388fe00d02d2d793bfab6513d69918b5",
+    "git_dirty": true,
+    "source_sha256": "da5b54842e3256ef20b6eb5d27bfdcded77543f656330603f2ce7975d5989123",
+    "python": "3.12.14",
+    "numpy": "2.5.4",
+    "platform": "Windows-11-10.0.26200-SP0"
+  },
+  "rows": [
+    {
+      "name": "rotating_hard_edge",
+      "mode": "interpret",
+      "h": 0.1,
+      "iterations": 1,
+      "tolerance": 2e-05,
+      "residual": 5.15612021967371e-08,
+      "initial_position": [
+        [
+          -1.0,
+          0.0,
+          0.0
+        ],
+        [
+          1.0,
+          0.0,
+          0.0
+        ]
+      ],
+      "initial_velocity": [
+        [
+          0.0,
+          -1.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.0,
+          0.0
+        ]
+      ],
+      "final_position": [
+        [
+          -0.9950371384620667,
+          -0.09950371831655502,
+          0.0
+        ],
+        [
+          0.9950371384620667,
+          0.09950371831655502,
+          0.0
+        ]
+      ],
+      "final_velocity": [
+        [
+          0.049628615379333496,
+          -0.9950371980667114,
+          0.0
+        ],
+        [
+          -0.049628615379333496,
+          0.9950371980667114,
+          0.0
+        ]
+      ],
+      "initial_linear": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "final_linear": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "initial_angular": [
+        0.0,
+        0.0,
+        2.0
+      ],
+      "final_angular": [
+        0.0,
+        0.0,
+        1.990074395985518
+      ],
+      "initial_energy": {
+        "kinetic": 1.0,
+        "elastic": null
+      },
+      "final_energy": {
+        "kinetic": 0.9925620250009217,
+        "elastic": null
+      },
+      "final_gradient_impulse_error": 1.6572156259775372e-07,
+      "velocity_reconstruction_error": 2.9802322387695312e-08,
+      "edges": [
+        [
+          0,
+          1
+        ]
+      ],
+      "rest": [
+        2
+      ],
+      "compliance": [
+        0
+      ],
+      "execution": {
+        "launches": 5,
+        "completed_launches": 5,
+        "uploads": 0,
+        "downloads": 0,
+        "mode": "interpret",
+        "compute_dtype": "float32"
+      },
+      "independent_expected_final_Lz": 1.9900743804199785
+    },
+    {
+      "name": "rotating_hard_edge",
+      "mode": "interpret",
+      "h": 0.05,
+      "iterations": 1,
+      "tolerance": 2e-05,
+      "residual": 1.6867401697595596e-08,
+      "initial_position": [
+        [
+          -1.0,
+          0.0,
+          0.0
+        ],
+        [
+          1.0,
+          0.0,
+          0.0
+        ]
+      ],
+      "initial_velocity": [
+        [
+          0.0,
+          -1.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.0,
+          0.0
+        ]
+      ],
+      "final_position": [
+        [
+          -0.9987523555755615,
+          -0.049937620759010315,
+          0.0
+        ],
+        [
+          0.9987523555755615,
+          0.049937620759010315,
+          0.0
+        ]
+      ],
+      "final_velocity": [
+        [
+          0.02495288848876953,
+          -0.9987524151802063,
+          0.0
+        ],
+        [
+          -0.02495288848876953,
+          0.9987524151802063,
+          0.0
+        ]
+      ],
+      "initial_linear": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "final_linear": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "initial_angular": [
+        0.0,
+        0.0,
+        2.0
+      ],
+      "final_angular": [
+        0.0,
+        0.0,
+        1.9975048303604126
+      ],
+      "initial_energy": {
+        "kinetic": 1.0,
+        "elastic": null
+      },
+      "final_energy": {
+        "kinetic": 0.9981290334722281,
+        "elastic": null
+      },
+      "final_gradient_impulse_error": 1.7700781027377155e-07,
+      "velocity_reconstruction_error": 1.4901161193847656e-08,
+      "edges": [
+        [
+          0,
+          1
+        ]
+      ],
+      "rest": [
+        2
+      ],
+      "compliance": [
+        0
+      ],
+      "execution": {
+        "launches": 5,
+        "completed_launches": 5,
+        "uploads": 0,
+        "downloads": 0,
+        "mode": "interpret",
+        "compute_dtype": "float32"
+      },
+      "independent_expected_final_Lz": 1.9975046777556893
+    },
+    {
+      "name": "rotating_hard_edge",
+      "mode": "interpret",
+      "h": 0.025,
+      "iterations": 1,
+      "tolerance": 2e-05,
+      "residual": 2.5270455061843222e-08,
+      "initial_position": [
+        [
+          -1.0,
+          0.0,
+          0.0
+        ],
+        [
+          1.0,
+          0.0,
+          0.0
+        ]
+      ],
+      "initial_velocity": [
+        [
+          0.0,
+          -1.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.0,
+          0.0
+        ]
+      ],
+      "final_position": [
+        [
+          -0.999687671661377,
+          -0.024992192164063454,
+          0.0
+        ],
+        [
+          0.999687671661377,
+          0.024992192164063454,
+          0.0
+        ]
+      ],
+      "final_velocity": [
+        [
+          0.012493133544921875,
+          -0.999687671661377,
+          0.0
+        ],
+        [
+          -0.012493133544921875,
+          0.999687671661377,
+          0.0
+        ]
+      ],
+      "initial_linear": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "final_linear": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "initial_angular": [
+        0.0,
+        0.0,
+        2.0
+      ],
+      "final_angular": [
+        0.0,
+        0.0,
+        1.999375343332062
+      ],
+      "initial_energy": {
+        "kinetic": 1.0,
+        "elastic": null
+      },
+      "final_energy": {
+        "kinetic": 0.9995315192575163,
+        "elastic": null
+      },
+      "final_gradient_impulse_error": 8.646069111564736e-07,
+      "velocity_reconstruction_error": 0.0,
+      "edges": [
+        [
+          0,
+          1
+        ]
+      ],
+      "rest": [
+        2
+      ],
+      "compliance": [
+        0
+      ],
+      "execution": {
+        "launches": 5,
+        "completed_launches": 5,
+        "uploads": 0,
+        "downloads": 0,
+        "mode": "interpret",
+        "compute_dtype": "float32"
+      },
+      "independent_expected_final_Lz": 1.9993752928162452
+    },
+    {
+      "name": "shared_nonlinear_edges",
+      "mode": "interpret",
+      "h": 0.1,
+      "iterations": 4,
+      "tolerance": 2e-05,
+      "residual": 1.1832375748754842e-05,
+      "initial_position": [
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          1.2,
+          0.2,
+          0.0
+        ],
+        [
+          1.5,
+          1.4,
+          0.0
+        ]
+      ],
+      "initial_velocity": [
+        [
+          0.2,
+          0.8,
+          0.0
+        ],
+        [
+          -0.3,
+          0.1,
+          0.0
+        ],
+        [
+          0.1,
+          -0.5,
+          0.0
+        ]
+      ],
+      "final_position": [
+        [
+          0.11846636980772018,
+          0.09324052184820175,
+          0.0
+        ],
+        [
+          1.1077162027359009,
+          0.2966897189617157,
+          0.0
+        ],
+        [
+          1.4738175868988037,
+          1.2500698566436768,
+          0.0
+        ]
+      ],
+      "final_velocity": [
+        [
+          1.1846636533737183,
+          0.9324051737785339,
+          0.0
+        ],
+        [
+          -0.9228387475013733,
+          0.9668971300125122,
+          0.0
+        ],
+        [
+          -0.2618240416049957,
+          -1.4993016719818115,
+          0.0
+        ]
+      ],
+      "initial_linear": [
+        2.7755575615628914e-17,
+        0.4,
+        0.0
+      ],
+      "final_linear": [
+        8.642673492431641e-07,
+        0.4000006318092346,
+        0.0
+      ],
+      "initial_angular": [
+        0.0,
+        0.0,
+        -0.71
+      ],
+      "final_angular": [
+        0.0,
+        0.0,
+        -0.5375544452693686
+      ],
+      "initial_energy": {
+        "kinetic": 0.52,
+        "elastic": 37.48165009770697
+      },
+      "final_energy": {
+        "kinetic": 3.187893062999955,
+        "elastic": 0.16249457324407923
+      },
+      "final_gradient_impulse_error": 0.07501095016282133,
+      "velocity_reconstruction_error": 3.3527612686157227e-08,
+      "edges": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          2
+        ]
+      ],
+      "rest": [
+        1,
+        1
+      ],
+      "compliance": [
+        0.001,
+        0.002
+      ],
+      "execution": {
+        "launches": 8,
+        "completed_launches": 8,
+        "uploads": 0,
+        "downloads": 0,
+        "mode": "interpret",
+        "compute_dtype": "float32"
+      }
+    }
+  ],
+  "scope": "one native material substep, no contacts or robot; not a performance measurement"
+}

@@ -20,6 +20,8 @@
 
 ## 当前立即续作
 
+先关闭[上一阶段Ubuntu CI修复](../benchmarks/p65-initial-pair-ci-repair.md)：937ca59的CI实际失败，1ae0d217仅修测试前提。当前准确远程head的状态见续跑提示，不能用本机通过冒充远端。材料后续先读[NUM-005](../legacy-issues/NUM-005-xpbd-material-path.md)与已builder check的[路径记录设计](../superpowers/specs/2026-10-28-p65-material-path-design.md)；已有[材料路径实施计划](../superpowers/plans/2026-10-28-p65-material-path.md)，尚未实施，从Task1 TDD开始，不重做反例。
+
 先读[步初双向接触验收](../benchmarks/p65-initial-pair-acceptance.md)、[工程JSON](../benchmarks/p65-initial-pair-engineering.json)和[冻结合同](../superpowers/specs/2026-10-28-p65-initial-robot-node-design.md)。第11项有限基础InitialRobotNodeContactProgram已完成；产品aef9b257，118源码文件。完整CUDA1778、两个CPU核心环境各1490、interpret4、C++有限短例1、源码外wheel及900次串行观测通过。一次fresh审阅2Important经五RED修复并补四正常控制，不再次派审阅或重写本切片。
 
 初态节点与机器人局部平面闭合，步初J0/共点冲量求积，原native机器人和自由节点完整重放，末非穿透独立检查。移动Py与独立单转子真实整步Lz已经验证，不能扩为任意多关节世界守恒证明。最终实际材料速度另有诊断，不能当成步初求积速度。初态开放/超容差穿透拒绝；切向共同运动仍可能造成末曲面穿透并显式拒绝，因此尚不支持自动新接触或持续旋转夹持。旧[最终J1候选反例](p65-robot-node-candidate.md)仍有效，不能再用被否定路线。

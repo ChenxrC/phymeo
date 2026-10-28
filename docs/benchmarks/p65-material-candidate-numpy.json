@@ -1,0 +1,439 @@
+{
+  "status": "counterexamples_confirmed",
+  "source": {
+    "git_revision": "937ca594388fe00d02d2d793bfab6513d69918b5",
+    "git_dirty": true,
+    "source_sha256": "da5b54842e3256ef20b6eb5d27bfdcded77543f656330603f2ce7975d5989123",
+    "python": "3.12.14",
+    "numpy": "2.5.4",
+    "platform": "Windows-11-10.0.26200-SP0"
+  },
+  "rows": [
+    {
+      "name": "rotating_hard_edge",
+      "mode": "numpy",
+      "h": 0.1,
+      "iterations": 1,
+      "tolerance": 1e-08,
+      "residual": 0.0,
+      "initial_position": [
+        [
+          -1.0,
+          0.0,
+          0.0
+        ],
+        [
+          1.0,
+          0.0,
+          0.0
+        ]
+      ],
+      "initial_velocity": [
+        [
+          0.0,
+          -1.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.0,
+          0.0
+        ]
+      ],
+      "final_position": [
+        [
+          -0.9950371902099893,
+          -0.09950371902099893,
+          0.0
+        ],
+        [
+          0.9950371902099893,
+          0.09950371902099893,
+          0.0
+        ]
+      ],
+      "final_velocity": [
+        [
+          0.04962809790010736,
+          -0.9950371902099893,
+          0.0
+        ],
+        [
+          -0.04962809790010736,
+          0.9950371902099893,
+          0.0
+        ]
+      ],
+      "initial_linear": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "final_linear": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "initial_angular": [
+        0.0,
+        0.0,
+        2.0
+      ],
+      "final_angular": [
+        0.0,
+        0.0,
+        1.9900743804199785
+      ],
+      "initial_energy": {
+        "kinetic": 1.0,
+        "elastic": null
+      },
+      "final_energy": {
+        "kinetic": 0.992561958002173,
+        "elastic": null
+      },
+      "final_gradient_impulse_error": 5.273559366969494e-16,
+      "velocity_reconstruction_error": 2.7755575615628914e-17,
+      "edges": [
+        [
+          0,
+          1
+        ]
+      ],
+      "rest": [
+        2
+      ],
+      "compliance": [
+        0
+      ],
+      "execution": {},
+      "independent_expected_final_Lz": 1.9900743804199785
+    },
+    {
+      "name": "rotating_hard_edge",
+      "mode": "numpy",
+      "h": 0.05,
+      "iterations": 1,
+      "tolerance": 1e-08,
+      "residual": 1.1102230246251565e-16,
+      "initial_position": [
+        [
+          -1.0,
+          0.0,
+          0.0
+        ],
+        [
+          1.0,
+          0.0,
+          0.0
+        ]
+      ],
+      "initial_velocity": [
+        [
+          0.0,
+          -1.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.0,
+          0.0
+        ]
+      ],
+      "final_position": [
+        [
+          -0.9987523388778446,
+          -0.04993761694389223,
+          0.0
+        ],
+        [
+          0.9987523388778446,
+          0.04993761694389223,
+          0.0
+        ]
+      ],
+      "final_velocity": [
+        [
+          0.024953222443107048,
+          -0.9987523388778445,
+          0.0
+        ],
+        [
+          -0.024953222443107048,
+          0.9987523388778445,
+          0.0
+        ]
+      ],
+      "initial_linear": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "final_linear": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "initial_angular": [
+        0.0,
+        0.0,
+        2.0
+      ],
+      "final_angular": [
+        0.0,
+        0.0,
+        1.997504677755689
+      ],
+      "initial_energy": {
+        "kinetic": 1.0,
+        "elastic": null
+      },
+      "final_energy": {
+        "kinetic": 0.99812889772426,
+        "elastic": null
+      },
+      "final_gradient_impulse_error": 3.2959746043559335e-16,
+      "velocity_reconstruction_error": 5.551115123125783e-17,
+      "edges": [
+        [
+          0,
+          1
+        ]
+      ],
+      "rest": [
+        2
+      ],
+      "compliance": [
+        0
+      ],
+      "execution": {},
+      "independent_expected_final_Lz": 1.9975046777556893
+    },
+    {
+      "name": "rotating_hard_edge",
+      "mode": "numpy",
+      "h": 0.025,
+      "iterations": 1,
+      "tolerance": 1e-08,
+      "residual": 2.220446049250313e-16,
+      "initial_position": [
+        [
+          -1.0,
+          0.0,
+          0.0
+        ],
+        [
+          1.0,
+          0.0,
+          0.0
+        ]
+      ],
+      "initial_velocity": [
+        [
+          0.0,
+          -1.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.0,
+          0.0
+        ]
+      ],
+      "final_position": [
+        [
+          -0.9996876464081226,
+          -0.024992191160203066,
+          0.0
+        ],
+        [
+          0.9996876464081226,
+          0.024992191160203066,
+          0.0
+        ]
+      ],
+      "final_velocity": [
+        [
+          0.012494143675096936,
+          -0.9996876464081226,
+          0.0
+        ],
+        [
+          -0.012494143675096936,
+          0.9996876464081226,
+          0.0
+        ]
+      ],
+      "initial_linear": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "final_linear": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "initial_angular": [
+        0.0,
+        0.0,
+        2.0
+      ],
+      "final_angular": [
+        0.0,
+        0.0,
+        1.9993752928162452
+      ],
+      "initial_energy": {
+        "kinetic": 1.0,
+        "elastic": null
+      },
+      "final_energy": {
+        "kinetic": 0.9995314940071856,
+        "elastic": null
+      },
+      "final_gradient_impulse_error": 1.5178830414797062e-15,
+      "velocity_reconstruction_error": 2.7755575615628914e-17,
+      "edges": [
+        [
+          0,
+          1
+        ]
+      ],
+      "rest": [
+        2
+      ],
+      "compliance": [
+        0
+      ],
+      "execution": {},
+      "independent_expected_final_Lz": 1.9993752928162452
+    },
+    {
+      "name": "shared_nonlinear_edges",
+      "mode": "numpy",
+      "h": 0.1,
+      "iterations": 7,
+      "tolerance": 1e-08,
+      "residual": 2.903810589552358e-09,
+      "initial_position": [
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          1.2,
+          0.2,
+          0.0
+        ],
+        [
+          1.5,
+          1.4,
+          0.0
+        ]
+      ],
+      "initial_velocity": [
+        [
+          0.2,
+          0.8,
+          0.0
+        ],
+        [
+          -0.3,
+          0.1,
+          0.0
+        ],
+        [
+          0.1,
+          -0.5,
+          0.0
+        ]
+      ],
+      "final_position": [
+        [
+          0.11847218689775996,
+          0.09324171386454068,
+          0.0
+        ],
+        [
+          1.1077107594363402,
+          0.2966898861470665,
+          0.0
+        ],
+        [
+          1.4738170536659,
+          1.2500683999883924,
+          0.0
+        ]
+      ],
+      "final_velocity": [
+        [
+          1.1847218689775996,
+          0.9324171386454067,
+          0.0
+        ],
+        [
+          -0.922892405636597,
+          0.9668988614706646,
+          0.0
+        ],
+        [
+          -0.2618294633409991,
+          -1.499316000116075,
+          0.0
+        ]
+      ],
+      "initial_linear": [
+        2.7755575615628914e-17,
+        0.4,
+        0.0
+      ],
+      "final_linear": [
+        3.4416913763379853e-15,
+        0.39999999999999636,
+        0.0
+      ],
+      "initial_angular": [
+        0.0,
+        0.0,
+        -0.71
+      ],
+      "final_angular": [
+        0.0,
+        0.0,
+        -0.5375556366045968
+      ],
+      "initial_energy": {
+        "kinetic": 0.52,
+        "elastic": 37.48165009770697
+      },
+      "final_energy": {
+        "kinetic": 3.1880472820229695,
+        "elastic": 0.16238539085767426
+      },
+      "final_gradient_impulse_error": 0.07501380507125699,
+      "velocity_reconstruction_error": 1.1102230246251565e-16,
+      "edges": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          2
+        ]
+      ],
+      "rest": [
+        1,
+        1
+      ],
+      "compliance": [
+        0.001,
+        0.002
+      ],
+      "execution": {}
+    }
+  ],
+  "scope": "one native material substep, no contacts or robot; not a performance measurement"
+}

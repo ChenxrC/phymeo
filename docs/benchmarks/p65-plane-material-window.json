@@ -1,0 +1,41 @@
+{
+  "scope": "NumPy two-second unpinned two-node material/plane dynamics, independent implicit-Euler oscillator recurrence; not timing, robot contact or CCD",
+  "source": {
+    "git_revision": "c6390f463c4efbc3883b8c64050b17d870c1d6ca",
+    "git_dirty": true,
+    "source_sha256": "2df1ec407cae54a8b24d6fccac92aaf5a6725526c1b5dacb159f41fda8a10e1c",
+    "python": "3.12.14",
+    "numpy": "2.5.4",
+    "platform": "Windows-11-10.0.26200-SP0"
+  },
+  "records": [
+    {
+      "h": 0.01,
+      "T": 2.0,
+      "steps": 200,
+      "maxima": {
+        "position_error": 6.501466032204917e-13,
+        "velocity_error": 1.9012560623088426e-11,
+        "plane_impulse_error": 2.0740478778868976e-11,
+        "residual": 4.56440657839452e-11
+      },
+      "max_outer_sweeps": 9,
+      "final_upper_y": 0.9901899960257154,
+      "final_upper_v": 2.2510944811689317e-05
+    },
+    {
+      "h": 0.005,
+      "T": 2.0,
+      "steps": 400,
+      "maxima": {
+        "position_error": 1.9917401061775308e-13,
+        "velocity_error": 8.935706341528515e-12,
+        "plane_impulse_error": 9.153858226973455e-12,
+        "residual": 2.4260510267382074e-11
+      },
+      "max_outer_sweeps": 6,
+      "final_upper_y": 0.9902598989895495,
+      "final_upper_v": 0.00023424269797364878
+    }
+  ]
+}

@@ -89,7 +89,29 @@ jobs:
           ${{ steps.environment.outputs.python }} -m pip install --no-deps --no-build-isolation -e .
           ${{ steps.environment.outputs.python }} -m pip check
       - name: Run CPU contracts and numerical tests
-        run: ${{ steps.environment.outputs.python }} -m pytest -m "not tyx" -q
+        run: ${{ steps.environment.outputs.python }} -m pytest -m "not tyx" -q --junitxml=artifacts/pytest.xml
+      - name: Identify failed public-source tests
+        if: ${{ failure() }}
+        run: |
+          ${{ steps.environment.outputs.python }} - <<'PY'
+          from pathlib import Path
+          import re
+          import xml.etree.ElementTree as ET
+          # Only identifiers already present in this public checkout may leave
+          # the runner. Never publish assertion text, parameters, paths or logs.
+          known = set()
+          for source in Path("tests").glob("test_*.py"):
+              known.update(re.findall(r"^def (test_[A-Za-z0-9_]+)\(", source.read_text(encoding="utf-8"), re.M))
+          report = Path("artifacts/pytest.xml")
+          failed = set()
+          if report.exists():
+              for case in ET.parse(report).iter("testcase"):
+                  name = case.get("name", "").split("[", 1)[0]
+                  if name in known and (case.find("failure") is not None or case.find("error") is not None):
+                      failed.add(name)
+          for name in sorted(failed):
+              print(f"::error::{name}: failed; details remain in the CI job log")
+          PY
       - name: Run headless examples
         run: |
           ${{ steps.environment.outputs.python }} examples/free_fall.py

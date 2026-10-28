@@ -21,6 +21,7 @@ from .constraints.distance import DistanceConstraints
 from .constraints.friction import FrictionImpulseResult, solve_friction_disk
 from .constraints.node_robot import NodeRobotContact
 from .constraints.particle_plane import ParticlePlaneContacts
+from .constraints.robot_node_plane import RobotNodePlaneContacts
 from .constraints.robot_plane import RobotPlaneContacts
 from .control.bounded_pd import BoundedPDResult, solve_bounded_pd
 from .core.capabilities import ProblemSignature, SolverCapabilities, SolverFailure
@@ -88,6 +89,7 @@ from .solvers.coupled_program import (
 )
 from .solvers.coupled_xpbd import CoupledXPBDSolver
 from .solvers.free_scene import FreeSceneProgram
+from .solvers.initial_robot_node_contact import InitialRobotNodeContactProgram
 from .solvers.particle_plane_contact import ParticlePlaneContactProgram
 from .solvers.rigid_semi_implicit import RigidSemiImplicitSolver
 from .solvers.rigid_sphere_plane import RigidSpherePlaneSolver
@@ -104,6 +106,8 @@ __all__ = [
     "ParticlePlaneContacts",
     "ParticlePlaneContactProgram",
     "RobotPlaneContactProgram",
+    "RobotNodePlaneContacts",
+    "InitialRobotNodeContactProgram",
     "RobotPlaneContacts",
     "SceneLoadReplay",
     "ReplayTrial",
@@ -213,3 +217,4 @@ __all__ = [
     "ClothPatch",
     "cloth_grid",
 ]
+

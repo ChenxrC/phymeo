@@ -28,10 +28,15 @@
 
 ## 当前立即续作
 
-当前设计提交fa11031，Task1交付记录3ebe88e。先读[冻结设计](../superpowers/specs/2026-10-29-p65-dynamic-normal-design.md)、[实施计划](../superpowers/plans/2026-10-29-p65-dynamic-normal.md)、[预设冲量实验](p65-dynamic-normal-candidate.md)和.superpowers/sdd/2026-10-29-p65-dynamic-normal/progress.md。
-Task1由terminal_impulse_implementer完成并提交24c99615d364cc58e751fdc40e3d7588d72df484，报告在同一SDD目录task-1-report.md；不要重派或重做该组件。最终新NumPy42/interpret2/CUDA2，相关回归200（当时新41+旧159）与interpret60（新2+旧58），末metrics补漏后新版新测例重验；不能合并成一次新201/62全量。独立阶段finalreview未派。Task2已派dynamic_normal_implementer（fresh gpt-6.1-sol/high），先看agent和task-2-report，不重复分派；实施自动求解/history/物理与事务，主agent仅文档/基准，不并发改owner源码，数值串行。Task1源128文件hash8ade74cc8cb9daddf8ee24889f5a3b94cdc03608cf2ef695a368ff1c717d4e73。最新3ebe88eb8967fe4ee72aa4ef6b56b9e6f076f40e已推送且远程SHA一致；其准确CI40765852221最终failure（8个CPU矩阵），Documentation40765852269success。失败为旧prescribed工作区自建构造未初始化继承close所需_closed；本地1个旧例RED和新增3个生命周期RED后，仅补齐该子类生命周期标志并显式禁止动态末冲量，72项旧prescribed/artifacts与terminal回归通过53.81s。修复提交2f50c1f4a0c3ce6b208b44818ee2a681778c9d42已推送且远程SHA一致；准确CI40769531720与Documentation40769531685均success，兼容回归已闭环。这不是物理门槛调整，也不代表Task2或整个动态法向阶段完成。
-实验六例与builder检查已经结束，不重做。已有材料路径与FrozenRobotLedger仍只认证pre阶段，post必须独立速度跳跃账，不能用总p+η改原整步输入。Task1提交并验收API后，按计划分派Task2完成自动反作用/生命周期，而不是停在边界模块。完整阶段仅一次fresh最终审阅；不可沿用旧initial门禁删除法。
-没有新截止；旧goal暂停显示非停止。新阶段全部生产/物理/事务/工程/精确Git/CI通过才能记录有限能力完成；H1和完整双臂目标仍保持开放。
+当前产品4ff19ea7975145fe9d44450164b906f01fe0527d，131源码hash `ac777319d0b8fbc03adab92286656a5572df05bca403e913912500908e991060`。Task1/Task2均已实现并完成各自定向验收，两个实现者及数值进程已退出；不要重派或重做。先读[阶段验收进度](../benchmarks/p65-dynamic-normal-acceptance.md)、[工程记录](../benchmarks/p65-dynamic-normal-engineering.json)、[设计](../superpowers/specs/2026-10-29-p65-dynamic-normal-design.md)、[计划](../superpowers/plans/2026-10-29-p65-dynamic-normal.md)及.superpowers/sdd/2026-10-29-p65-dynamic-normal/progress.md。
+
+唯一fresh最终审阅 `dynamic_normal_final_review` 已派，BASE fa11031..4ff19ea。审阅者独占小规模数值探针，父agent仅文档，不并发数值；先核对agent状态与结论，不重派第二次审阅。Important先独立RED后修复，物理/数值门槛不改。NumPy基准最小smoke已通过2计时+6warmup，free/chain各1；脚本hash338768ffd42c2e7749f38779e20d2563ec56cd435ba2fceef8cc604f58545a75。它不是正式性能结果。
+
+审阅闭环且其他数值进程退出后，取最终src/tests/scripts摘要并启动已准备但未运行的artifacts/run_dynamic_normal_acceptance.py。它以全新tag顺序执行两个完整CPU、完整CUDA、Ubuntu新核心、一次boundedCPP、quality/build/源码外wheel、三模式各300正式观测；失败或源码变化即停止。启动不等于通过，需核对status、各日志/退出码、源码/脚本hash及raw。旧CPP长期问题无依赖修复不重跑压力。最终工程、正式计量、准确新HEAD远程CI均未完成。
+
+Task2新CUDA7通过1055.23s；NumPy462和interpret37是cap-only元数据修复前物理同版，之后补NumPy3/interpret2受影响控制，精确版本见工程记录。Task1旧prescribed兼容回归已在2f50c1f修复并推送，准确CI40769531720/Documentation40769531685均success，816a1f3已记录；不再查询或重复修复。当前阶段HEAD尚未推送。
+
+实验六例和builder均结束，不再运行。旧MaterialPathLedger/FrozenRobotLedger只认证pre，post使用独立末速度账；p+eta不能放回held输入。没有新截止；旧goal暂停显示非停止。完整阶段验收/推送闭环才记录有限法向能力完成，H1和真实双臂目标仍开放。
 
 ## 最近交付：仿射路径净距
 
@@ -39,13 +44,13 @@ Task1由terminal_impulse_implementer完成并提交24c99615d364cc58e751fdc40e3d7
 
 一次builder已无重要未决；唯一fresh最终review 0Critical0Important0Minor，无修复轮。最终main及两CPU相关各241、Ubuntu新host67、actualinterpret/CUDA各2及126文件源码外wheel通过；三个host路径各300正式计量成功，源/脚本hash一致，PERF-018只观测。准确新SHA/CI已闭环，工程JSON记录必要元数据。相关选测不是新全量，准确CI另承担全分支CPU矩阵。
 
-下一阶段应向能产生真实反作用的自动建立/分离闭环推进，侧/法向/身份history/特征切换及FK保守路径须与现有材料/机器人原式账本一起冻结。新两阶段法向合同现已冻结并进入Task1；旧有限局部平面程序的初态闭合门禁保留。至少两个非递布独立场景后交实现子agent，继续同一长程任务，不止于几何判断。
+下一阶段应向能产生真实反作用的自动建立/分离闭环推进，侧/法向/身份history/特征切换及FK保守路径须与现有材料/机器人原式账本一起冻结。新两阶段法向生产实现现已完成，正在Task3审阅/工程验收；旧有限局部平面程序的初态闭合门禁保留。至少两个非递布独立场景后交实现子agent，继续同一长程任务，不止于几何判断。
 
 上一静态距离证书e63a1bf两CI成功并已c1e9f47闭环；旧材料接触也已交付。NUM-005、TYX-003/004仍开放。整体P6.5没有完成，不把任何前置切片当真实双臂或Three.js。
 
 ## 下一框架切片
 
-[静态距离证书](../superpowers/specs/2026-10-29-p65-distance-certificate-design.md)已经实施验收，builder和唯一最终review均结束，不再分派同一实现/审阅。下一需求必须沿H1推进可复用厚度/碰撞侧及零距离法向、拓扑身份/特征切换、接触建立/分离与history，以及最终接受路径上的保守CCD；不能止于距离工具或把静态下界当动态碰撞。
+[静态距离证书](../superpowers/specs/2026-10-29-p65-distance-certificate-design.md)已经实施验收，builder和唯一最终review均结束，不再分派同一实现/审阅。当前有限法向实现关闭后，下一需求继续沿H1推进可复用摩擦、有限特征厚度/碰撞侧及零距离法向、拓扑身份/特征切换、接触建立/分离与history，以及最终接受路径上的保守CCD；不能止于距离工具或把静态下界当动态碰撞。
 
 先结合现有端口和局部平面材料接触的真实限制冻结生产接口、单位、支持域、所有权/回滚和明确独立测例，再派实现子agent。至少两个非递布小场景，必须包含初始分离后建立/分离、无残留拉力与摩擦history、特征切换、后段失败恢复和正常对照。连续路径明确布节点线性与机器人FK旋转弧；有限采样不是安全证明，预算耗尽不可冒称安全。弯曲/自碰撞、有限单爪/低mu失败、目标IK/history、双臂和Three.js继续既定顺序，不扩P7/P8。
 

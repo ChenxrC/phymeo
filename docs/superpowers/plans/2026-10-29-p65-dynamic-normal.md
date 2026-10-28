@@ -45,13 +45,13 @@
 **Files:** Create src/phymeo/constraints/robot_plane_collider.py、src/phymeo/solvers/dynamic_robot_normal_contact.py，以及必要时最多两个私有辅助模块 _dynamic_normal_geometry.py、_dynamic_normal_balance.py；Create tests/test_dynamic_robot_normal_contact.py、tests/test_dynamic_robot_normal_physics.py、tests/test_dynamic_robot_normal_transaction.py、tests/test_dynamic_robot_normal_tyx.py。Modify src/phymeo/solvers/_material_contact_balance.py默认保持的terminal项、src/phymeo/__init__.py、scripts/smoke_installed.py。不得改Task1文件和其他旧算法；实际缺口先报告主agent。
 **Interfaces:** Consume Task1 terminal API/ledger；produce spec RobotPlaneCollider/DynamicRobotNormalContactProgram和initial_history()、稳定row诊断。base.native能力必须真实调用，不type-check一个特定demo。selected所有节点自动生成rows，owned材料/预算和history规则严格按spec。
 
-- [ ] 缺API RED与scope/schema/owned tests先行；实现collider与程序绑定、签名、自动候选和base history合并/隔离。空节点域、反向顺序、键冲突、radius/side/μ/revolute旁支/fixed/trace缺失正常和失败对照。
-- [ ] 自由探头解析RED：h1/4,g0=1/8,v=-1,m1,M2，自动求p1/3与η1/3；检查中间状态、末状态、P=-1、K1/6和全部候选反作用一次。实现held原生重放与分阶段独立审计；预算不足和只位置律负控制必须拒绝。
-- [ ] 两节点材料链解析RED（spec所有分数值不改）：p3/7/η1/3，B响应证明同域材料；完整pre native/path重复一致性、末账和原输入功/角动量末矩。旧balance默认输出回归保持；故意按x0记η、有效输入混入外功、FP64展示舍入代替精确预算的负控制要RED。
-- [ ] 同一free程序连续三阶段：enter→无载persist→+1N节点拉离exit，再一步inactive且冲量history严格0；另更远接近但未闭合不施η。拒绝脏history、闭合区间不确定、深穿透，不允许epsilon推开或host修位置。
-- [ ] 两非递布独立物理窗与共享响应：spec明确T2support两个h、自由碰撞三个h解析终点，及新增材料链T=.5三个h独立implicit-Euler/连续弹簧参照（NumPy三h与tyx最细h，误差界见spec末尾）；三角材料、共享robot祖先、同节点两个不平行平面，行/域顺序和可表示共同变换；独立质量系统/动量oracle。数值预算失败不吞掉，不能只复述实现当oracle。
-- [ ] 至少两outer子步的trace/terminal/close后段失败，真实basehistory递增且每子步只提交一次，state/input/history全帧恢复retry=fresh；normal对照确保注入触发。终阶段即使已有best candidate也不得吞native/trace/close错误。
-- [ ] actualinterpret/CUDA解析+生命周期短集成并断言真实launch/两个阶段输入；有界CPP一个短例由Task3统一执行，不重复压力。源码smoke新增可重用free collision与解析输出；运行相关新/旧initial/free/material/LoadReplay/terminal tests，ruff/diff，自查提交并交主agent，不派review、不正式计量。
+- [x] 缺API RED与scope/schema/owned tests先行；实现collider与程序绑定、签名、自动候选和base history合并/隔离。空节点域、反向顺序、键冲突、radius/side/μ/revolute旁支/fixed/trace缺失正常和失败对照。
+- [x] 自由探头解析RED：h1/4,g0=1/8,v=-1,m1,M2，自动求p1/3与η1/3；检查中间状态、末状态、P=-1、K1/6和全部候选反作用一次。实现held原生重放与分阶段独立审计；预算不足和只位置律负控制必须拒绝。
+- [x] 两节点材料链解析RED（spec所有分数值不改）：p3/7/η1/3，B响应证明同域材料；完整pre native/path重复一致性、末账和原输入功/角动量末矩。旧balance默认输出回归保持；故意按x0记η、有效输入混入外功、FP64展示舍入代替精确预算的负控制要RED。
+- [x] 同一free程序连续三阶段：enter→无载persist→+1N节点拉离exit，再一步inactive且冲量history严格0；另更远接近但未闭合不施η。拒绝脏history、闭合区间不确定、深穿透，不允许epsilon推开或host修位置。
+- [x] 两非递布独立物理窗与共享响应：spec明确T2support两个h、自由碰撞三个h解析终点，及新增材料链T=.5三个h独立implicit-Euler/连续弹簧参照（NumPy三h与tyx最细h，误差界见spec末尾）；三角材料、共享robot祖先、同节点两个不平行平面，行/域顺序和可表示共同变换；独立质量系统/动量oracle。数值预算失败不吞掉，不能只复述实现当oracle。
+- [x] 至少两outer子步的trace/terminal/close后段失败，真实basehistory递增且每子步只提交一次，state/input/history全帧恢复retry=fresh；normal对照确保注入触发。终阶段即使已有best candidate也不得吞native/trace/close错误。
+- [x] actualinterpret/CUDA解析+生命周期短集成并断言真实launch/两个阶段输入；有界CPP一个短例由Task3统一执行，不重复压力。源码smoke新增可重用free collision与解析输出；运行相关新/旧initial/free/material/LoadReplay/terminal tests，ruff/diff，自查提交并交主agent，不派review、不正式计量。
 
 ### Task 3: 一次独立审阅、工程证据与交付
 

@@ -1,0 +1,85 @@
+{
+  "status": "implemented_final_review_in_progress",
+  "source": {
+    "commit": "4ff19ea7975145fe9d44450164b906f01fe0527d",
+    "python_files": 131,
+    "sha256": "ac777319d0b8fbc03adab92286656a5572df05bca403e913912500908e991060"
+  },
+  "review": {
+    "agent": "dynamic_normal_final_review",
+    "base": "fa11031",
+    "head": "4ff19ea7975145fe9d44450164b906f01fe0527d",
+    "status": "in_progress",
+    "count": 1
+  },
+  "implementation_tests": {
+    "numpy_related_pre_cap": {
+      "passed": 462,
+      "seconds": 135.99,
+      "source_sha256": "f10defca3492fa2e1adf68cc603860f1d66dc766514292d24dc123d0b1d71516",
+      "note": "new50 plus old412; before metadata-only capability restriction"
+    },
+    "inner_budget_appended": {
+      "passed": 1,
+      "seconds": 0.5,
+      "note": "separate run; not a 463-test full suite"
+    },
+    "interpret_related_pre_cap": {
+      "passed": 37,
+      "deselected": 4,
+      "seconds": 262.87,
+      "note": "new7 plus old30; only old duplicate long support/friction deselected"
+    },
+    "cap_fix": {
+      "red": 1,
+      "numpy_green": 3,
+      "interpret_green": 2,
+      "interpret_seconds": 1.37
+    },
+    "cuda_final_cap": {
+      "passed": 7,
+      "seconds": 1055.23,
+      "exit_code": 0,
+      "formal_performance": false
+    }
+  },
+  "ci_regression": {
+    "bad_commit": "3ebe88eb8967fe4ee72aa4ef6b56b9e6f076f40e",
+    "bad_run": 40765852221,
+    "conclusion": "failure",
+    "fix_commit": "2f50c1f4a0c3ce6b208b44818ee2a681778c9d42",
+    "red_existing": 1,
+    "red_new": 3,
+    "green_related": 72,
+    "seconds": 53.81,
+    "fixed_ci": 40769531720,
+    "fixed_docs": 40769531685,
+    "fixed_conclusion": "success",
+    "note": "not current stage HEAD remote CI"
+  },
+  "benchmark": {
+    "formal_status": "not_run",
+    "smoke": {
+      "mode": "numpy",
+      "measured": 2,
+      "warmups": 6,
+      "status": "complete",
+      "path": "artifacts/dynamic-normal-benchmark-smoke-4ff19ea.json"
+    },
+    "script_sha256": "338768ffd42c2e7749f38779e20d2563ec56cd435ba2fceef8cc604f58545a75"
+  },
+  "final_engineering": {
+    "cpu311": "not_run",
+    "nativepip": "not_run",
+    "cuda_full": "not_run",
+    "ubuntu": "not_run",
+    "cpp_bounded": "not_run",
+    "wheel": "not_run",
+    "current_remote_ci": "not_run"
+  },
+  "limitations": [
+    "normal-only infinite-plane all-prismatic framework",
+    "not finite-feature collision, friction, rotating FK CCD or grasping",
+    "NUM-005, TYX-003 and TYX-004 remain open"
+  ]
+}

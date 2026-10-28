@@ -1,0 +1,1078 @@
+{
+  "experimental": true,
+  "production_law": false,
+  "mode": "numpy",
+  "status": "passed",
+  "evidence_revision": "formatted-provenance-rerun-v1",
+  "source": {
+    "git_revision": "1fa44eb8adc829a27cfbb381f6e0e27acc84d35a",
+    "git_dirty": true,
+    "source_sha256": "67ae299638326bf2018ee781a3bceadb5f54fbd84a7238f0740d9c27be3a6b60",
+    "python": "3.12.14",
+    "numpy": "2.5.4",
+    "platform": "Windows-11-10.0.26200-SP0"
+  },
+  "runtime": {
+    "python": "3.12.14",
+    "numpy": "2.5.4",
+    "tyx_distribution": "tyx-compute",
+    "tyx_version": "0.1.0a0",
+    "tyx_direct_url": {
+      "url": "ssh://git@github.com/ChenxrC/tyx.git",
+      "vcs_info": {
+        "vcs": "git",
+        "commit_id": "99f6df7c0fd8fdeef77f97df83914da27b64b7ee",
+        "requested_revision": "99f6df7c0fd8fdeef77f97df83914da27b64b7ee"
+      }
+    },
+    "requested_tyx_pin": "# Optional private dependency; requires authorized Git/SSH access.\n# Keep separate from the public, hash-locked core dependency set.\ntyx-compute @ git+ssh://git@github.com/ChenxrC/tyx.git@99f6df7c0fd8fdeef77f97df83914da27b64b7ee"
+  },
+  "development_history": {
+    "prior_numpy_wiring_failures": [
+      {
+        "attempted_cases": 2,
+        "passed_cases": 0,
+        "error_type": "TypeError",
+        "error": "unsupported configuration type: Fraction",
+        "phase": "configuration signature binding; before native workspace creation"
+      },
+      {
+        "attempted_cases": 2,
+        "passed_cases": 0,
+        "error_type": "AttributeError",
+        "error": "'RobotState' object has no attribute 'copy'",
+        "phase": "owned pre-impulse snapshot; before terminal impulse"
+      }
+    ],
+    "corrected_initial_probe": {
+      "script_sha256": "58a0a3a6b2db05d877fd13c3a16dda3a6713b894c23ebe50d8daa20569292515",
+      "passed_cases_by_mode": {
+        "numpy": 2,
+        "interpret": 2,
+        "cuda": 2
+      },
+      "cases_per_mode": 2,
+      "scope": "Initial API-closure results before formatting and provenance enrichment; not the final rerun cases counted below"
+    }
+  },
+  "script_sha256": "9b21867792a8b502c92badf24b652b288d687739eacc6ba8eb457b8070b94dae",
+  "scope": "API closure only: one held-load native replay and prescribed live terminal eta",
+  "excluded": [
+    "automatic eta/p solution",
+    "contact generation",
+    "history/control proof",
+    "CCD",
+    "rotation",
+    "performance",
+    "production acceptance"
+  ],
+  "passed_cases": 2,
+  "attempted_cases": 2,
+  "cases": [
+    {
+      "case": "free_node",
+      "status": "passed",
+      "analytic": {
+        "h": "1/4",
+        "eta": "1/3",
+        "p": "1/3",
+        "stage1_x": [
+          "-1/24"
+        ],
+        "stage1_q": "-1/24",
+        "stage1_v": [
+          "-2/3"
+        ],
+        "stage1_robot_v": "-1/6",
+        "post_v": [
+          "-1/3"
+        ],
+        "post_robot_v": "-1/3",
+        "material_multiplier": "0",
+        "potential": "0",
+        "kinetic": "1/6",
+        "total_energy": "1/6",
+        "total_momentum": "-1"
+      },
+      "actual_backend": "numpy",
+      "absolute_tolerance": 2e-13,
+      "observed_total_momentum": -1.0,
+      "observed_kinetic": 0.16666666666666669,
+      "observed_potential": 0.0,
+      "observed_total_energy": 0.16666666666666669,
+      "integrated_loads": {
+        "robot": {
+          "effort": [
+            -0.3333333333333333
+          ]
+        },
+        "nodes": {
+          "force": [
+            [
+              0.0,
+              0.3333333333333333,
+              0.0
+            ]
+          ]
+        }
+      },
+      "effective_inputs": {
+        "robot_effort": [
+          -1.3333333333333333
+        ],
+        "node_force": [
+          [
+            0.0,
+            1.3333333333333333,
+            0.0
+          ]
+        ]
+      },
+      "native_position_sweeps": 1,
+      "workspace_close_calls": 1,
+      "events": [
+        "base_velocity_converged",
+        "stage1_material_certified",
+        "live_prescribed_eta_applied",
+        "close"
+      ],
+      "evidence": {
+        "before": {
+          "robot_q": [
+            -0.041666666666666664
+          ],
+          "robot_v": [
+            -0.16666666666666666
+          ],
+          "node_position": [
+            [
+              0.0,
+              -0.041666666666666685,
+              0.0
+            ]
+          ],
+          "node_velocity": [
+            [
+              0.0,
+              -0.6666666666666667,
+              0.0
+            ]
+          ]
+        },
+        "after": {
+          "robot_q": [
+            -0.041666666666666664
+          ],
+          "robot_v": [
+            -0.3333333333333333
+          ],
+          "node_position": [
+            [
+              0.0,
+              -0.041666666666666685,
+              0.0
+            ]
+          ],
+          "node_velocity": [
+            [
+              0.0,
+              -0.3333333333333334,
+              0.0
+            ]
+          ]
+        },
+        "material_path": {
+          "schema": "xpbd-distance-path-v1",
+          "columns": [
+            "before_i_x",
+            "before_i_y",
+            "before_i_z",
+            "before_j_x",
+            "before_j_y",
+            "before_j_z",
+            "after_i_x",
+            "after_i_y",
+            "after_i_z",
+            "after_j_x",
+            "after_j_y",
+            "after_j_z",
+            "lambda_before",
+            "lambda_after",
+            "direction_x",
+            "direction_y",
+            "direction_z",
+            "delta_lambda"
+          ],
+          "frames": [
+            []
+          ],
+          "predicted_position": [
+            [
+              0.0,
+              -0.041666666666666685,
+              0.0
+            ]
+          ],
+          "predicted_velocity": [
+            [
+              0.0,
+              -0.6666666666666667,
+              0.0
+            ]
+          ],
+          "alpha": [],
+          "h": 0.25
+        },
+        "material_certificate": {
+          "scope": "distance-material-equations-v1",
+          "residuals": {
+            "input": 1.8503717077085944e-17,
+            "prediction_velocity": 5.551115123125783e-17,
+            "prediction_position": 0.0,
+            "alpha": 0.0,
+            "edge_equation": 0.0,
+            "lambda_update": 0.0,
+            "direction": 0.0,
+            "projection": 0.0,
+            "rounding_budget": 0.0,
+            "velocity": 0.0,
+            "constitutive": 0.0
+          },
+          "max_residual": 5.551115123125783e-17,
+          "conversion_displacement": [
+            [
+              0.0,
+              0.0,
+              0.0
+            ]
+          ],
+          "projection_rounding_displacement": [
+            [
+              0.0,
+              0.0,
+              0.0
+            ]
+          ],
+          "fixed_restoration_displacement": [
+            [
+              0.0,
+              0.0,
+              0.0
+            ]
+          ],
+          "material_impulses": [
+            [
+              0.0,
+              0.0,
+              0.0
+            ]
+          ],
+          "support_impulses": [
+            [
+              0.0,
+              0.0,
+              0.0
+            ]
+          ],
+          "energy": {
+            "kinetic_before": 0.5,
+            "kinetic_after": 0.22222222222222227,
+            "elastic_before": [
+              0.0,
+              0.0
+            ],
+            "elastic_after": [
+              0.0,
+              0.0
+            ],
+            "gravity_before": 0.0,
+            "gravity_after": 0.0,
+            "total_before": [
+              0.5,
+              0.5
+            ],
+            "total_after": [
+              0.22222222222222227,
+              0.2222222222222223
+            ],
+            "endpoint_work": -0.22222222222222224,
+            "original_input_work": 0.0,
+            "requested_input_work": -0.22222222222222224,
+            "input_work_discrepancy": 1.2335811384723962e-17,
+            "change_minus_work": [
+              -0.0555555555555555,
+              -0.05555555555555549
+            ]
+          },
+          "momentum": {
+            "linear_change": [
+              0.0,
+              0.33333333333333326,
+              0.0
+            ],
+            "external_impulse": [
+              0.0,
+              0.3333333333333333,
+              0.0
+            ],
+            "material_impulse": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "linear_balance_error": [
+              0.0,
+              -5.551115123125783e-17,
+              0.0
+            ],
+            "angular_change": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "external_angular_impulse": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "material_angular_impulse": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "angular_balance_error": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        },
+        "original_ledger_post_rejection": "material velocity exceeds original tolerance",
+        "participant_diagnostics_before": {
+          "robot": {
+            "acceleration": [
+              -0.6666666666666666
+            ],
+            "applied": [
+              -1.3333333333333333
+            ],
+            "bias": [
+              0.0
+            ],
+            "equation_residual": 0.0,
+            "kinetic_energy": 0.027777777777777776,
+            "potential_energy": -0.0,
+            "predicted_q": [
+              -0.041666666666666664
+            ],
+            "predicted_v": [
+              -0.16666666666666666
+            ]
+          },
+          "nodes": {
+            "distance_multipliers": [],
+            "material_path": {
+              "schema": "xpbd-distance-path-v1",
+              "columns": [
+                "before_i_x",
+                "before_i_y",
+                "before_i_z",
+                "before_j_x",
+                "before_j_y",
+                "before_j_z",
+                "after_i_x",
+                "after_i_y",
+                "after_i_z",
+                "after_j_x",
+                "after_j_y",
+                "after_j_z",
+                "lambda_before",
+                "lambda_after",
+                "direction_x",
+                "direction_y",
+                "direction_z",
+                "delta_lambda"
+              ],
+              "frames": [
+                []
+              ],
+              "predicted_position": [
+                [
+                  0.0,
+                  -0.041666666666666685,
+                  0.0
+                ]
+              ],
+              "predicted_velocity": [
+                [
+                  0.0,
+                  -0.6666666666666667,
+                  0.0
+                ]
+              ],
+              "alpha": [],
+              "h": 0.25
+            }
+          }
+        },
+        "participant_diagnostics_after": {
+          "robot": {
+            "acceleration": [
+              -0.6666666666666666
+            ],
+            "applied": [
+              -1.3333333333333333
+            ],
+            "bias": [
+              0.0
+            ],
+            "equation_residual": 0.0,
+            "kinetic_energy": 0.1111111111111111,
+            "potential_energy": -0.0,
+            "predicted_q": [
+              -0.041666666666666664
+            ],
+            "predicted_v": [
+              -0.16666666666666666
+            ]
+          },
+          "nodes": {
+            "distance_multipliers": [],
+            "material_path": {
+              "schema": "xpbd-distance-path-v1",
+              "columns": [
+                "before_i_x",
+                "before_i_y",
+                "before_i_z",
+                "before_j_x",
+                "before_j_y",
+                "before_j_z",
+                "after_i_x",
+                "after_i_y",
+                "after_i_z",
+                "after_j_x",
+                "after_j_y",
+                "after_j_z",
+                "lambda_before",
+                "lambda_after",
+                "direction_x",
+                "direction_y",
+                "direction_z",
+                "delta_lambda"
+              ],
+              "frames": [
+                []
+              ],
+              "predicted_position": [
+                [
+                  0.0,
+                  -0.041666666666666685,
+                  0.0
+                ]
+              ],
+              "predicted_velocity": [
+                [
+                  0.0,
+                  -0.6666666666666667,
+                  0.0
+                ]
+              ],
+              "alpha": [],
+              "h": 0.25
+            }
+          }
+        },
+        "bitwise_configuration_preserved": true,
+        "terminal_impulse_calls": 1
+      }
+    },
+    {
+      "case": "distance_chain",
+      "status": "passed",
+      "analytic": {
+        "h": "1/4",
+        "eta": "1/3",
+        "p": "3/7",
+        "stage1_x": [
+          "-3/56",
+          "51/56"
+        ],
+        "stage1_q": "-3/56",
+        "stage1_v": [
+          "-5/7",
+          "-6/7"
+        ],
+        "stage1_robot_v": "-3/14",
+        "post_v": [
+          "-8/21",
+          "-6/7"
+        ],
+        "post_robot_v": "-8/21",
+        "material_multiplier": "1/28",
+        "potential": "1/98",
+        "kinetic": "86/147",
+        "total_energy": "25/42",
+        "total_momentum": "-2"
+      },
+      "actual_backend": "numpy",
+      "absolute_tolerance": 2e-13,
+      "observed_total_momentum": -2.0,
+      "observed_kinetic": 0.5850340136054423,
+      "observed_potential": 0.010204081632653052,
+      "observed_total_energy": 0.5952380952380953,
+      "integrated_loads": {
+        "robot": {
+          "effort": [
+            -0.42857142857142855
+          ]
+        },
+        "nodes": {
+          "force": [
+            [
+              0.0,
+              0.42857142857142855,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.0
+            ]
+          ]
+        }
+      },
+      "effective_inputs": {
+        "robot_effort": [
+          -1.7142857142857142
+        ],
+        "node_force": [
+          [
+            0.0,
+            1.7142857142857142,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0
+          ]
+        ]
+      },
+      "native_position_sweeps": 1,
+      "workspace_close_calls": 1,
+      "events": [
+        "base_velocity_converged",
+        "stage1_material_certified",
+        "live_prescribed_eta_applied",
+        "close"
+      ],
+      "evidence": {
+        "before": {
+          "robot_q": [
+            -0.05357142857142857
+          ],
+          "robot_v": [
+            -0.21428571428571427
+          ],
+          "node_position": [
+            [
+              0.0,
+              -0.05357142857142858,
+              0.0
+            ],
+            [
+              0.0,
+              0.9107142857142857,
+              0.0
+            ]
+          ],
+          "node_velocity": [
+            [
+              0.0,
+              -0.7142857142857143,
+              0.0
+            ],
+            [
+              0.0,
+              -0.8571428571428572,
+              0.0
+            ]
+          ]
+        },
+        "after": {
+          "robot_q": [
+            -0.05357142857142857
+          ],
+          "robot_v": [
+            -0.38095238095238093
+          ],
+          "node_position": [
+            [
+              0.0,
+              -0.05357142857142858,
+              0.0
+            ],
+            [
+              0.0,
+              0.9107142857142857,
+              0.0
+            ]
+          ],
+          "node_velocity": [
+            [
+              0.0,
+              -0.380952380952381,
+              0.0
+            ],
+            [
+              0.0,
+              -0.8571428571428572,
+              0.0
+            ]
+          ]
+        },
+        "material_path": {
+          "schema": "xpbd-distance-path-v1",
+          "columns": [
+            "before_i_x",
+            "before_i_y",
+            "before_i_z",
+            "before_j_x",
+            "before_j_y",
+            "before_j_z",
+            "after_i_x",
+            "after_i_y",
+            "after_i_z",
+            "after_j_x",
+            "after_j_y",
+            "after_j_z",
+            "lambda_before",
+            "lambda_after",
+            "direction_x",
+            "direction_y",
+            "direction_z",
+            "delta_lambda"
+          ],
+          "frames": [
+            [
+              [
+                0.0,
+                -0.01785714285714285,
+                0.0,
+                0.0,
+                0.875,
+                0.0,
+                0.0,
+                -0.05357142857142858,
+                0.0,
+                0.0,
+                0.9107142857142857,
+                0.0,
+                0.0,
+                0.03571428571428573,
+                0.0,
+                -1.0,
+                0.0,
+                0.03571428571428573
+              ]
+            ]
+          ],
+          "predicted_position": [
+            [
+              0.0,
+              -0.01785714285714285,
+              0.0
+            ],
+            [
+              0.0,
+              0.875,
+              0.0
+            ]
+          ],
+          "predicted_velocity": [
+            [
+              0.0,
+              -0.5714285714285714,
+              0.0
+            ],
+            [
+              0.0,
+              -1.0,
+              0.0
+            ]
+          ],
+          "alpha": [
+            1.0
+          ],
+          "h": 0.25
+        },
+        "material_certificate": {
+          "scope": "distance-material-equations-v1",
+          "residuals": {
+            "input": 2.3790493384824785e-17,
+            "prediction_velocity": 5.551115123125783e-17,
+            "prediction_position": 0.0,
+            "alpha": 0.0,
+            "edge_equation": 4.85722573273506e-17,
+            "lambda_update": 0.0,
+            "direction": 0.0,
+            "projection": 1.3877787807814457e-16,
+            "rounding_budget": 2.0354088784794538e-16,
+            "velocity": 2.7755575615628914e-17,
+            "constitutive": 1.3877787807814457e-17
+          },
+          "max_residual": 2.0354088784794538e-16,
+          "conversion_displacement": [
+            [
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.0
+            ]
+          ],
+          "projection_rounding_displacement": [
+            [
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              -3.469446951953614e-17,
+              0.0
+            ]
+          ],
+          "fixed_restoration_displacement": [
+            [
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.0
+            ]
+          ],
+          "material_impulses": [
+            [
+              0.0,
+              -0.14285714285714293,
+              0.0
+            ],
+            [
+              0.0,
+              0.14285714285714293,
+              0.0
+            ]
+          ],
+          "support_impulses": [
+            [
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.0
+            ]
+          ],
+          "energy": {
+            "kinetic_before": 1.0,
+            "kinetic_after": 0.6224489795918368,
+            "elastic_before": [
+              0.0,
+              0.0
+            ],
+            "elastic_after": [
+              0.010204081632653064,
+              0.010204081632653066
+            ],
+            "gravity_before": 0.0,
+            "gravity_after": 0.0,
+            "total_before": [
+              1.0,
+              1.0
+            ],
+            "total_after": [
+              0.6326530612244898,
+              0.6326530612244899
+            ],
+            "endpoint_work": -0.30612244897959184,
+            "original_input_work": 0.0,
+            "requested_input_work": -0.30612244897959184,
+            "input_work_discrepancy": 1.699320956058913e-17,
+            "change_minus_work": [
+              -0.061224489795918303,
+              -0.0612244897959183
+            ]
+          },
+          "momentum": {
+            "linear_change": [
+              0.0,
+              0.4285714285714285,
+              0.0
+            ],
+            "external_impulse": [
+              0.0,
+              0.42857142857142855,
+              0.0
+            ],
+            "material_impulse": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "linear_balance_error": [
+              0.0,
+              -5.551115123125783e-17,
+              0.0
+            ],
+            "angular_change": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "external_angular_impulse": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "material_angular_impulse": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "angular_balance_error": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        },
+        "original_ledger_post_rejection": "material velocity exceeds original tolerance",
+        "participant_diagnostics_before": {
+          "robot": {
+            "acceleration": [
+              -0.8571428571428571
+            ],
+            "applied": [
+              -1.7142857142857142
+            ],
+            "bias": [
+              0.0
+            ],
+            "equation_residual": 0.0,
+            "kinetic_energy": 0.04591836734693877,
+            "potential_energy": -0.0,
+            "predicted_q": [
+              -0.05357142857142857
+            ],
+            "predicted_v": [
+              -0.21428571428571427
+            ]
+          },
+          "nodes": {
+            "distance_multipliers": [
+              0.03571428571428573
+            ],
+            "material_path": {
+              "schema": "xpbd-distance-path-v1",
+              "columns": [
+                "before_i_x",
+                "before_i_y",
+                "before_i_z",
+                "before_j_x",
+                "before_j_y",
+                "before_j_z",
+                "after_i_x",
+                "after_i_y",
+                "after_i_z",
+                "after_j_x",
+                "after_j_y",
+                "after_j_z",
+                "lambda_before",
+                "lambda_after",
+                "direction_x",
+                "direction_y",
+                "direction_z",
+                "delta_lambda"
+              ],
+              "frames": [
+                [
+                  [
+                    0.0,
+                    -0.01785714285714285,
+                    0.0,
+                    0.0,
+                    0.875,
+                    0.0,
+                    0.0,
+                    -0.05357142857142858,
+                    0.0,
+                    0.0,
+                    0.9107142857142857,
+                    0.0,
+                    0.0,
+                    0.03571428571428573,
+                    0.0,
+                    -1.0,
+                    0.0,
+                    0.03571428571428573
+                  ]
+                ]
+              ],
+              "predicted_position": [
+                [
+                  0.0,
+                  -0.01785714285714285,
+                  0.0
+                ],
+                [
+                  0.0,
+                  0.875,
+                  0.0
+                ]
+              ],
+              "predicted_velocity": [
+                [
+                  0.0,
+                  -0.5714285714285714,
+                  0.0
+                ],
+                [
+                  0.0,
+                  -1.0,
+                  0.0
+                ]
+              ],
+              "alpha": [
+                1.0
+              ],
+              "h": 0.25
+            }
+          }
+        },
+        "participant_diagnostics_after": {
+          "robot": {
+            "acceleration": [
+              -0.8571428571428571
+            ],
+            "applied": [
+              -1.7142857142857142
+            ],
+            "bias": [
+              0.0
+            ],
+            "equation_residual": 0.0,
+            "kinetic_energy": 0.14512471655328796,
+            "potential_energy": -0.0,
+            "predicted_q": [
+              -0.05357142857142857
+            ],
+            "predicted_v": [
+              -0.21428571428571427
+            ]
+          },
+          "nodes": {
+            "distance_multipliers": [
+              0.03571428571428573
+            ],
+            "material_path": {
+              "schema": "xpbd-distance-path-v1",
+              "columns": [
+                "before_i_x",
+                "before_i_y",
+                "before_i_z",
+                "before_j_x",
+                "before_j_y",
+                "before_j_z",
+                "after_i_x",
+                "after_i_y",
+                "after_i_z",
+                "after_j_x",
+                "after_j_y",
+                "after_j_z",
+                "lambda_before",
+                "lambda_after",
+                "direction_x",
+                "direction_y",
+                "direction_z",
+                "delta_lambda"
+              ],
+              "frames": [
+                [
+                  [
+                    0.0,
+                    -0.01785714285714285,
+                    0.0,
+                    0.0,
+                    0.875,
+                    0.0,
+                    0.0,
+                    -0.05357142857142858,
+                    0.0,
+                    0.0,
+                    0.9107142857142857,
+                    0.0,
+                    0.0,
+                    0.03571428571428573,
+                    0.0,
+                    -1.0,
+                    0.0,
+                    0.03571428571428573
+                  ]
+                ]
+              ],
+              "predicted_position": [
+                [
+                  0.0,
+                  -0.01785714285714285,
+                  0.0
+                ],
+                [
+                  0.0,
+                  0.875,
+                  0.0
+                ]
+              ],
+              "predicted_velocity": [
+                [
+                  0.0,
+                  -0.5714285714285714,
+                  0.0
+                ],
+                [
+                  0.0,
+                  -1.0,
+                  0.0
+                ]
+              ],
+              "alpha": [
+                1.0
+              ],
+              "h": 0.25
+            }
+          }
+        },
+        "bitwise_configuration_preserved": true,
+        "terminal_impulse_calls": 1
+      }
+    }
+  ],
+  "independent_fraction_verification": "2/2 passed before backend trials",
+  "source_after": {
+    "git_revision": "1fa44eb8adc829a27cfbb381f6e0e27acc84d35a",
+    "git_dirty": true,
+    "source_sha256": "67ae299638326bf2018ee781a3bceadb5f54fbd84a7238f0740d9c27be3a6b60",
+    "python": "3.12.14",
+    "numpy": "2.5.4",
+    "platform": "Windows-11-10.0.26200-SP0"
+  },
+  "script_sha256_after": "9b21867792a8b502c92badf24b652b288d687739eacc6ba8eb457b8070b94dae"
+}

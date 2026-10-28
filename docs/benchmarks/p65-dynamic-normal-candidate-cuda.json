@@ -1,0 +1,1174 @@
+{
+  "experimental": true,
+  "production_law": false,
+  "mode": "cuda",
+  "status": "passed",
+  "evidence_revision": "formatted-provenance-rerun-v1",
+  "source": {
+    "git_revision": "1fa44eb8adc829a27cfbb381f6e0e27acc84d35a",
+    "git_dirty": true,
+    "source_sha256": "67ae299638326bf2018ee781a3bceadb5f54fbd84a7238f0740d9c27be3a6b60",
+    "python": "3.12.14",
+    "numpy": "2.5.4",
+    "platform": "Windows-11-10.0.26200-SP0"
+  },
+  "runtime": {
+    "python": "3.12.14",
+    "numpy": "2.5.4",
+    "tyx_distribution": "tyx-compute",
+    "tyx_version": "0.1.0a0",
+    "tyx_direct_url": {
+      "url": "ssh://git@github.com/ChenxrC/tyx.git",
+      "vcs_info": {
+        "vcs": "git",
+        "commit_id": "99f6df7c0fd8fdeef77f97df83914da27b64b7ee",
+        "requested_revision": "99f6df7c0fd8fdeef77f97df83914da27b64b7ee"
+      }
+    },
+    "requested_tyx_pin": "# Optional private dependency; requires authorized Git/SSH access.\n# Keep separate from the public, hash-locked core dependency set.\ntyx-compute @ git+ssh://git@github.com/ChenxrC/tyx.git@99f6df7c0fd8fdeef77f97df83914da27b64b7ee"
+  },
+  "development_history": {
+    "prior_numpy_wiring_failures": [
+      {
+        "attempted_cases": 2,
+        "passed_cases": 0,
+        "error_type": "TypeError",
+        "error": "unsupported configuration type: Fraction",
+        "phase": "configuration signature binding; before native workspace creation"
+      },
+      {
+        "attempted_cases": 2,
+        "passed_cases": 0,
+        "error_type": "AttributeError",
+        "error": "'RobotState' object has no attribute 'copy'",
+        "phase": "owned pre-impulse snapshot; before terminal impulse"
+      }
+    ],
+    "corrected_initial_probe": {
+      "script_sha256": "58a0a3a6b2db05d877fd13c3a16dda3a6713b894c23ebe50d8daa20569292515",
+      "passed_cases_by_mode": {
+        "numpy": 2,
+        "interpret": 2,
+        "cuda": 2
+      },
+      "cases_per_mode": 2,
+      "scope": "Initial API-closure results before formatting and provenance enrichment; not the final rerun cases counted below"
+    }
+  },
+  "script_sha256": "9b21867792a8b502c92badf24b652b288d687739eacc6ba8eb457b8070b94dae",
+  "scope": "API closure only: one held-load native replay and prescribed live terminal eta",
+  "excluded": [
+    "automatic eta/p solution",
+    "contact generation",
+    "history/control proof",
+    "CCD",
+    "rotation",
+    "performance",
+    "production acceptance"
+  ],
+  "passed_cases": 2,
+  "attempted_cases": 2,
+  "cases": [
+    {
+      "case": "free_node",
+      "status": "passed",
+      "analytic": {
+        "h": "1/4",
+        "eta": "1/3",
+        "p": "1/3",
+        "stage1_x": [
+          "-1/24"
+        ],
+        "stage1_q": "-1/24",
+        "stage1_v": [
+          "-2/3"
+        ],
+        "stage1_robot_v": "-1/6",
+        "post_v": [
+          "-1/3"
+        ],
+        "post_robot_v": "-1/3",
+        "material_multiplier": "0",
+        "potential": "0",
+        "kinetic": "1/6",
+        "total_energy": "1/6",
+        "total_momentum": "-1"
+      },
+      "actual_backend": "tyx:cuda",
+      "absolute_tolerance": 2e-06,
+      "observed_total_momentum": -1.0000000298023224,
+      "observed_kinetic": 0.16666667660077694,
+      "observed_potential": 0.0,
+      "observed_total_energy": 0.16666667660077694,
+      "integrated_loads": {
+        "robot": {
+          "effort": [
+            -0.3333333333333333
+          ]
+        },
+        "nodes": {
+          "force": [
+            [
+              0.0,
+              0.3333333333333333,
+              0.0
+            ]
+          ]
+        }
+      },
+      "effective_inputs": {
+        "robot_effort": [
+          -1.3333333333333333
+        ],
+        "node_force": [
+          [
+            0.0,
+            1.3333333333333333,
+            0.0
+          ]
+        ]
+      },
+      "native_position_sweeps": 1,
+      "workspace_close_calls": 1,
+      "events": [
+        "base_velocity_converged",
+        "stage1_material_certified",
+        "live_prescribed_eta_applied",
+        "close"
+      ],
+      "evidence": {
+        "before": {
+          "robot_q": [
+            -0.0416666716337204
+          ],
+          "robot_v": [
+            -0.1666666865348816
+          ],
+          "node_position": [
+            [
+              0.0,
+              -0.041666656732559204,
+              0.0
+            ]
+          ],
+          "node_velocity": [
+            [
+              0.0,
+              -0.6666666269302368,
+              0.0
+            ]
+          ]
+        },
+        "after": {
+          "robot_q": [
+            -0.0416666716337204
+          ],
+          "robot_v": [
+            -0.3333333730697632
+          ],
+          "node_position": [
+            [
+              0.0,
+              -0.041666656732559204,
+              0.0
+            ]
+          ],
+          "node_velocity": [
+            [
+              0.0,
+              -0.333333283662796,
+              0.0
+            ]
+          ]
+        },
+        "material_path": {
+          "schema": "xpbd-distance-path-v1",
+          "columns": [
+            "before_i_x",
+            "before_i_y",
+            "before_i_z",
+            "before_j_x",
+            "before_j_y",
+            "before_j_z",
+            "after_i_x",
+            "after_i_y",
+            "after_i_z",
+            "after_j_x",
+            "after_j_y",
+            "after_j_z",
+            "lambda_before",
+            "lambda_after",
+            "direction_x",
+            "direction_y",
+            "direction_z",
+            "delta_lambda"
+          ],
+          "frames": [
+            []
+          ],
+          "predicted_position": [
+            [
+              0.0,
+              -0.041666656732559204,
+              0.0
+            ]
+          ],
+          "predicted_velocity": [
+            [
+              0.0,
+              -0.6666666269302368,
+              0.0
+            ]
+          ],
+          "alpha": [],
+          "h": 0.25
+        },
+        "material_certificate": {
+          "scope": "distance-material-equations-v1",
+          "residuals": {
+            "input": 1.8503717077085944e-17,
+            "prediction_velocity": 3.9736429868764134e-08,
+            "prediction_position": 0.0,
+            "alpha": 0.0,
+            "edge_equation": 0.0,
+            "lambda_update": 0.0,
+            "direction": 0.0,
+            "projection": 0.0,
+            "rounding_budget": 0.0,
+            "velocity": 0.0,
+            "constitutive": 0.0
+          },
+          "max_residual": 3.9736429868764134e-08,
+          "conversion_displacement": [
+            [
+              0.0,
+              0.0,
+              0.0
+            ]
+          ],
+          "projection_rounding_displacement": [
+            [
+              0.0,
+              0.0,
+              0.0
+            ]
+          ],
+          "fixed_restoration_displacement": [
+            [
+              0.0,
+              0.0,
+              0.0
+            ]
+          ],
+          "material_impulses": [
+            [
+              0.0,
+              0.0,
+              0.0
+            ]
+          ],
+          "support_impulses": [
+            [
+              0.0,
+              0.0,
+              0.0
+            ]
+          ],
+          "energy": {
+            "kinetic_before": 0.5,
+            "kinetic_after": 0.22222219573126978,
+            "elastic_before": [
+              0.0,
+              0.0
+            ],
+            "elastic_after": [
+              0.0,
+              0.0
+            ],
+            "gravity_before": 0.0,
+            "gravity_after": 0.0,
+            "total_before": [
+              0.5,
+              0.5
+            ],
+            "total_after": [
+              0.22222219573126978,
+              0.22222219573126978
+            ],
+            "endpoint_work": -0.2222222089767456,
+            "original_input_work": 0.0,
+            "requested_input_work": -0.2222222089767456,
+            "input_work_discrepancy": 1.2335810649452306e-17,
+            "change_minus_work": [
+              -0.05555559529198463,
+              -0.05555559529198462
+            ]
+          },
+          "momentum": {
+            "linear_change": [
+              0.0,
+              0.3333333730697632,
+              0.0
+            ],
+            "external_impulse": [
+              0.0,
+              0.3333333333333333,
+              0.0
+            ],
+            "material_impulse": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "linear_balance_error": [
+              0.0,
+              3.9736429868764134e-08,
+              0.0
+            ],
+            "angular_change": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "external_angular_impulse": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "material_angular_impulse": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "angular_balance_error": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        },
+        "original_ledger_post_rejection": "material velocity exceeds original tolerance",
+        "participant_diagnostics_before": {
+          "robot": {
+            "storage_dtype": "float64",
+            "compute_dtype": "float32",
+            "host_validation": "float64",
+            "ordered_serial": true,
+            "acceleration": [
+              -0.6666667461395264
+            ],
+            "applied": [
+              -1.3333333730697632
+            ],
+            "bias": [
+              0.0
+            ],
+            "equation_residual": 8.940695650494617e-08,
+            "predicted_q": [
+              -0.0416666716337204
+            ],
+            "predicted_v": [
+              -0.1666666865348816
+            ],
+            "kinetic_energy": 0.02777778440051648,
+            "potential_energy": -0.0,
+            "execution": {
+              "launches": 20,
+              "completed_launches": 20,
+              "uploads": 157,
+              "downloads": 41,
+              "mode": "cuda",
+              "compute_dtype": "float32"
+            }
+          },
+          "nodes": {
+            "storage_dtype": "float64",
+            "compute_dtype": "float32",
+            "host_validation": "float64",
+            "ordered_serial": true,
+            "distance_multipliers": [],
+            "material_path": {
+              "schema": "xpbd-distance-path-v1",
+              "columns": [
+                "before_i_x",
+                "before_i_y",
+                "before_i_z",
+                "before_j_x",
+                "before_j_y",
+                "before_j_z",
+                "after_i_x",
+                "after_i_y",
+                "after_i_z",
+                "after_j_x",
+                "after_j_y",
+                "after_j_z",
+                "lambda_before",
+                "lambda_after",
+                "direction_x",
+                "direction_y",
+                "direction_z",
+                "delta_lambda"
+              ],
+              "frames": [
+                []
+              ],
+              "predicted_position": [
+                [
+                  0.0,
+                  -0.041666656732559204,
+                  0.0
+                ]
+              ],
+              "predicted_velocity": [
+                [
+                  0.0,
+                  -0.6666666269302368,
+                  0.0
+                ]
+              ],
+              "alpha": [],
+              "h": 0.25
+            },
+            "execution": {
+              "launches": 2,
+              "completed_launches": 2,
+              "uploads": 12,
+              "downloads": 3,
+              "mode": "cuda",
+              "compute_dtype": "float32"
+            }
+          }
+        },
+        "participant_diagnostics_after": {
+          "robot": {
+            "storage_dtype": "float64",
+            "compute_dtype": "float32",
+            "host_validation": "float64",
+            "ordered_serial": true,
+            "acceleration": [
+              -0.6666667461395264
+            ],
+            "applied": [
+              -1.3333333730697632
+            ],
+            "bias": [
+              0.0
+            ],
+            "equation_residual": 8.940695650494617e-08,
+            "predicted_q": [
+              -0.0416666716337204
+            ],
+            "predicted_v": [
+              -0.1666666865348816
+            ],
+            "kinetic_energy": 0.11111113760206592,
+            "potential_energy": -0.0,
+            "execution": {
+              "launches": 32,
+              "completed_launches": 32,
+              "uploads": 256,
+              "downloads": 69,
+              "mode": "cuda",
+              "compute_dtype": "float32"
+            }
+          },
+          "nodes": {
+            "storage_dtype": "float64",
+            "compute_dtype": "float32",
+            "host_validation": "float64",
+            "ordered_serial": true,
+            "distance_multipliers": [],
+            "material_path": {
+              "schema": "xpbd-distance-path-v1",
+              "columns": [
+                "before_i_x",
+                "before_i_y",
+                "before_i_z",
+                "before_j_x",
+                "before_j_y",
+                "before_j_z",
+                "after_i_x",
+                "after_i_y",
+                "after_i_z",
+                "after_j_x",
+                "after_j_y",
+                "after_j_z",
+                "lambda_before",
+                "lambda_after",
+                "direction_x",
+                "direction_y",
+                "direction_z",
+                "delta_lambda"
+              ],
+              "frames": [
+                []
+              ],
+              "predicted_position": [
+                [
+                  0.0,
+                  -0.041666656732559204,
+                  0.0
+                ]
+              ],
+              "predicted_velocity": [
+                [
+                  0.0,
+                  -0.6666666269302368,
+                  0.0
+                ]
+              ],
+              "alpha": [],
+              "h": 0.25
+            },
+            "execution": {
+              "launches": 4,
+              "completed_launches": 4,
+              "uploads": 19,
+              "downloads": 5,
+              "mode": "cuda",
+              "compute_dtype": "float32"
+            }
+          }
+        },
+        "bitwise_configuration_preserved": true,
+        "terminal_impulse_calls": 1
+      }
+    },
+    {
+      "case": "distance_chain",
+      "status": "passed",
+      "analytic": {
+        "h": "1/4",
+        "eta": "1/3",
+        "p": "3/7",
+        "stage1_x": [
+          "-3/56",
+          "51/56"
+        ],
+        "stage1_q": "-3/56",
+        "stage1_v": [
+          "-5/7",
+          "-6/7"
+        ],
+        "stage1_robot_v": "-3/14",
+        "post_v": [
+          "-8/21",
+          "-6/7"
+        ],
+        "post_robot_v": "-8/21",
+        "material_multiplier": "1/28",
+        "potential": "1/98",
+        "kinetic": "86/147",
+        "total_energy": "25/42",
+        "total_momentum": "-2"
+      },
+      "actual_backend": "tyx:cuda",
+      "absolute_tolerance": 2e-06,
+      "observed_total_momentum": -2.000000089406967,
+      "observed_kinetic": 0.5850340801031462,
+      "observed_potential": 0.010204095317397521,
+      "observed_total_energy": 0.5952381754205437,
+      "integrated_loads": {
+        "robot": {
+          "effort": [
+            -0.42857142857142855
+          ]
+        },
+        "nodes": {
+          "force": [
+            [
+              0.0,
+              0.42857142857142855,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.0
+            ]
+          ]
+        }
+      },
+      "effective_inputs": {
+        "robot_effort": [
+          -1.7142857142857142
+        ],
+        "node_force": [
+          [
+            0.0,
+            1.7142857142857142,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0
+          ]
+        ]
+      },
+      "native_position_sweeps": 1,
+      "workspace_close_calls": 1,
+      "events": [
+        "base_velocity_converged",
+        "stage1_material_certified",
+        "live_prescribed_eta_applied",
+        "close"
+      ],
+      "evidence": {
+        "before": {
+          "robot_q": [
+            -0.0535714328289032
+          ],
+          "robot_v": [
+            -0.2142857313156128
+          ],
+          "node_position": [
+            [
+              0.0,
+              -0.0535714216530323,
+              0.0
+            ],
+            [
+              0.0,
+              0.9107142686843872,
+              0.0
+            ]
+          ],
+          "node_velocity": [
+            [
+              0.0,
+              -0.714285671710968,
+              0.0
+            ],
+            [
+              0.0,
+              -0.8571429252624512,
+              0.0
+            ]
+          ]
+        },
+        "after": {
+          "robot_q": [
+            -0.0535714328289032
+          ],
+          "robot_v": [
+            -0.3809524178504944
+          ],
+          "node_position": [
+            [
+              0.0,
+              -0.0535714216530323,
+              0.0
+            ],
+            [
+              0.0,
+              0.9107142686843872,
+              0.0
+            ]
+          ],
+          "node_velocity": [
+            [
+              0.0,
+              -0.3809523284435272,
+              0.0
+            ],
+            [
+              0.0,
+              -0.8571429252624512,
+              0.0
+            ]
+          ]
+        },
+        "material_path": {
+          "schema": "xpbd-distance-path-v1",
+          "columns": [
+            "before_i_x",
+            "before_i_y",
+            "before_i_z",
+            "before_j_x",
+            "before_j_y",
+            "before_j_z",
+            "after_i_x",
+            "after_i_y",
+            "after_i_z",
+            "after_j_x",
+            "after_j_y",
+            "after_j_z",
+            "lambda_before",
+            "lambda_after",
+            "direction_x",
+            "direction_y",
+            "direction_z",
+            "delta_lambda"
+          ],
+          "frames": [
+            [
+              [
+                0.0,
+                -0.017857134342193604,
+                0.0,
+                0.0,
+                0.875,
+                0.0,
+                0.0,
+                -0.0535714216530323,
+                0.0,
+                0.0,
+                0.9107142686843872,
+                0.0,
+                0.0,
+                0.0357142873108387,
+                0.0,
+                -1.0,
+                0.0,
+                0.0357142873108387
+              ]
+            ]
+          ],
+          "predicted_position": [
+            [
+              0.0,
+              -0.017857134342193604,
+              0.0
+            ],
+            [
+              0.0,
+              0.875,
+              0.0
+            ]
+          ],
+          "predicted_velocity": [
+            [
+              0.0,
+              -0.5714285373687744,
+              0.0
+            ],
+            [
+              0.0,
+              -1.0,
+              0.0
+            ]
+          ],
+          "alpha": [
+            1.0
+          ],
+          "h": 0.25
+        },
+        "material_certificate": {
+          "scope": "distance-material-equations-v1",
+          "residuals": {
+            "input": 2.3790493384824785e-17,
+            "prediction_velocity": 3.405979703829942e-08,
+            "prediction_position": 0.0,
+            "alpha": 0.0,
+            "edge_equation": 3.725290298461914e-09,
+            "lambda_update": 0.0,
+            "direction": 0.0,
+            "projection": 7.450580596923828e-08,
+            "rounding_budget": 7.947285970052084e-08,
+            "velocity": 1.4901161193847656e-08,
+            "constitutive": 2.2351741790771484e-08
+          },
+          "max_residual": 7.947285970052084e-08,
+          "conversion_displacement": [
+            [
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.0
+            ]
+          ],
+          "projection_rounding_displacement": [
+            [
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              -1.862645149230957e-08,
+              0.0
+            ]
+          ],
+          "fixed_restoration_displacement": [
+            [
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.0
+            ]
+          ],
+          "material_impulses": [
+            [
+              0.0,
+              -0.1428571492433548,
+              0.0
+            ],
+            [
+              0.0,
+              0.1428571492433548,
+              0.0
+            ]
+          ],
+          "support_impulses": [
+            [
+              0.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              0.0
+            ]
+          ],
+          "energy": {
+            "kinetic_before": 1.0,
+            "kinetic_after": 0.6224490075695304,
+            "elastic_before": [
+              0.0,
+              0.0
+            ],
+            "elastic_after": [
+              0.010204095317397521,
+              0.010204095317397521
+            ],
+            "gravity_before": 0.0,
+            "gravity_after": 0.0,
+            "total_before": [
+              1.0,
+              1.0
+            ],
+            "total_after": [
+              0.6326531028869279,
+              0.6326531028869279
+            ],
+            "endpoint_work": -0.30612243711948395,
+            "original_input_work": 0.0,
+            "requested_input_work": -0.30612243711948395,
+            "input_work_discrepancy": 1.6993208902220888e-17,
+            "change_minus_work": [
+              -0.061224459993588186,
+              -0.06122445999358818
+            ]
+          },
+          "momentum": {
+            "linear_change": [
+              0.0,
+              0.4285714030265808,
+              0.0
+            ],
+            "external_impulse": [
+              0.0,
+              0.42857142857142855,
+              0.0
+            ],
+            "material_impulse": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "linear_balance_error": [
+              0.0,
+              -2.5544847737091203e-08,
+              0.0
+            ],
+            "angular_change": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "external_angular_impulse": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "material_angular_impulse": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "angular_balance_error": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        },
+        "original_ledger_post_rejection": "material velocity exceeds original tolerance",
+        "participant_diagnostics_before": {
+          "robot": {
+            "storage_dtype": "float64",
+            "compute_dtype": "float32",
+            "host_validation": "float64",
+            "ordered_serial": true,
+            "acceleration": [
+              -0.8571429252624512
+            ],
+            "applied": [
+              -1.7142857313156128
+            ],
+            "bias": [
+              0.0
+            ],
+            "equation_residual": 6.953874671151267e-08,
+            "predicted_q": [
+              -0.0535714328289032
+            ],
+            "predicted_v": [
+              -0.2142857313156128
+            ],
+            "kinetic_energy": 0.045918374645467,
+            "potential_energy": -0.0,
+            "execution": {
+              "launches": 20,
+              "completed_launches": 20,
+              "uploads": 157,
+              "downloads": 41,
+              "mode": "cuda",
+              "compute_dtype": "float32"
+            }
+          },
+          "nodes": {
+            "storage_dtype": "float64",
+            "compute_dtype": "float32",
+            "host_validation": "float64",
+            "ordered_serial": true,
+            "distance_multipliers": [
+              0.0357142873108387
+            ],
+            "material_path": {
+              "schema": "xpbd-distance-path-v1",
+              "columns": [
+                "before_i_x",
+                "before_i_y",
+                "before_i_z",
+                "before_j_x",
+                "before_j_y",
+                "before_j_z",
+                "after_i_x",
+                "after_i_y",
+                "after_i_z",
+                "after_j_x",
+                "after_j_y",
+                "after_j_z",
+                "lambda_before",
+                "lambda_after",
+                "direction_x",
+                "direction_y",
+                "direction_z",
+                "delta_lambda"
+              ],
+              "frames": [
+                [
+                  [
+                    0.0,
+                    -0.017857134342193604,
+                    0.0,
+                    0.0,
+                    0.875,
+                    0.0,
+                    0.0,
+                    -0.0535714216530323,
+                    0.0,
+                    0.0,
+                    0.9107142686843872,
+                    0.0,
+                    0.0,
+                    0.0357142873108387,
+                    0.0,
+                    -1.0,
+                    0.0,
+                    0.0357142873108387
+                  ]
+                ]
+              ],
+              "predicted_position": [
+                [
+                  0.0,
+                  -0.017857134342193604,
+                  0.0
+                ],
+                [
+                  0.0,
+                  0.875,
+                  0.0
+                ]
+              ],
+              "predicted_velocity": [
+                [
+                  0.0,
+                  -0.5714285373687744,
+                  0.0
+                ],
+                [
+                  0.0,
+                  -1.0,
+                  0.0
+                ]
+              ],
+              "alpha": [
+                1.0
+              ],
+              "h": 0.25
+            },
+            "execution": {
+              "launches": 5,
+              "completed_launches": 5,
+              "uploads": 25,
+              "downloads": 8,
+              "mode": "cuda",
+              "compute_dtype": "float32"
+            }
+          }
+        },
+        "participant_diagnostics_after": {
+          "robot": {
+            "storage_dtype": "float64",
+            "compute_dtype": "float32",
+            "host_validation": "float64",
+            "ordered_serial": true,
+            "acceleration": [
+              -0.8571429252624512
+            ],
+            "applied": [
+              -1.7142857313156128
+            ],
+            "bias": [
+              0.0
+            ],
+            "equation_residual": 6.953874671151267e-08,
+            "predicted_q": [
+              -0.0535714328289032
+            ],
+            "predicted_v": [
+              -0.2142857313156128
+            ],
+            "kinetic_energy": 0.14512474466613767,
+            "potential_energy": -0.0,
+            "execution": {
+              "launches": 32,
+              "completed_launches": 32,
+              "uploads": 256,
+              "downloads": 69,
+              "mode": "cuda",
+              "compute_dtype": "float32"
+            }
+          },
+          "nodes": {
+            "storage_dtype": "float64",
+            "compute_dtype": "float32",
+            "host_validation": "float64",
+            "ordered_serial": true,
+            "distance_multipliers": [
+              0.0357142873108387
+            ],
+            "material_path": {
+              "schema": "xpbd-distance-path-v1",
+              "columns": [
+                "before_i_x",
+                "before_i_y",
+                "before_i_z",
+                "before_j_x",
+                "before_j_y",
+                "before_j_z",
+                "after_i_x",
+                "after_i_y",
+                "after_i_z",
+                "after_j_x",
+                "after_j_y",
+                "after_j_z",
+                "lambda_before",
+                "lambda_after",
+                "direction_x",
+                "direction_y",
+                "direction_z",
+                "delta_lambda"
+              ],
+              "frames": [
+                [
+                  [
+                    0.0,
+                    -0.017857134342193604,
+                    0.0,
+                    0.0,
+                    0.875,
+                    0.0,
+                    0.0,
+                    -0.0535714216530323,
+                    0.0,
+                    0.0,
+                    0.9107142686843872,
+                    0.0,
+                    0.0,
+                    0.0357142873108387,
+                    0.0,
+                    -1.0,
+                    0.0,
+                    0.0357142873108387
+                  ]
+                ]
+              ],
+              "predicted_position": [
+                [
+                  0.0,
+                  -0.017857134342193604,
+                  0.0
+                ],
+                [
+                  0.0,
+                  0.875,
+                  0.0
+                ]
+              ],
+              "predicted_velocity": [
+                [
+                  0.0,
+                  -0.5714285373687744,
+                  0.0
+                ],
+                [
+                  0.0,
+                  -1.0,
+                  0.0
+                ]
+              ],
+              "alpha": [
+                1.0
+              ],
+              "h": 0.25
+            },
+            "execution": {
+              "launches": 7,
+              "completed_launches": 7,
+              "uploads": 32,
+              "downloads": 10,
+              "mode": "cuda",
+              "compute_dtype": "float32"
+            }
+          }
+        },
+        "bitwise_configuration_preserved": true,
+        "terminal_impulse_calls": 1
+      }
+    }
+  ],
+  "independent_fraction_verification": "2/2 passed before backend trials",
+  "source_after": {
+    "git_revision": "1fa44eb8adc829a27cfbb381f6e0e27acc84d35a",
+    "git_dirty": true,
+    "source_sha256": "67ae299638326bf2018ee781a3bceadb5f54fbd84a7238f0740d9c27be3a6b60",
+    "python": "3.12.14",
+    "numpy": "2.5.4",
+    "platform": "Windows-11-10.0.26200-SP0"
+  },
+  "script_sha256_after": "9b21867792a8b502c92badf24b652b288d687739eacc6ba8eb457b8070b94dae"
+}

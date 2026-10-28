@@ -1,7 +1,7 @@
 """Exact stored-value arithmetic for material audits; no state generation."""
 
 from fractions import Fraction
-from numbers import Real
+from numbers import Integral, Real
 
 import numpy as np
 
@@ -16,6 +16,8 @@ def q(value):
         return value
     if isinstance(value, (bool, np.bool_)) or not isinstance(value, Real):
         raise SolverFailure("material ledger requires finite real values")
+    if isinstance(value, Integral):
+        return Fraction(int(value))
     value = float(value)
     if not np.isfinite(value):
         raise SolverFailure("material ledger requires finite real values")

@@ -552,3 +552,15 @@ def test_boolean_impulse_request_is_not_a_physical_scalar():
     c = collect()
     with pytest.raises(ph.SolverFailure):
         require(c, expected=np.zeros((3, 3), bool))
+
+
+def test_integer_request_is_not_silently_rounded_through_float():
+    setup = (
+        ph.ParticleModel(np.ones(1), np.zeros(3)),
+        ph.ParticleState(np.zeros((1, 3)), np.zeros((1, 3))),
+        None,
+    )
+    c = collect(setup=setup, force=np.array([[float(2**53), 0, 0]]), h=1.0)
+    book = ledger(c, ph.StepInputs.zeros(1))
+    with pytest.raises(ph.SolverFailure, match="input"):
+        require(c, book=book, expected=[[2**53 + 1, 0, 0]])

@@ -23,6 +23,12 @@
 
 静态距离证书框架前置已准确交付e63a1bf，两CI成功；[实施任务单](superpowers/plans/2026-10-29-p65-distance-certificate.md)最后交付框已关闭。它不完成动态接触或CCD，下一项继续厚度/法向、特征身份/history与自动建立分离及连续路径。
 
+## 正在实施：仿射特征整段净距认证（2026-10-29）
+
+[设计](superpowers/specs/2026-10-29-p65-linear-sweep-design.md)经一次builder核对无重要未决，[任务单](superpowers/plans/2026-10-29-p65-linear-sweep.md)已冻结并交给实现子agent执行Task1/TDD。目标是在声明的线性顶点路径整个区间证明distance>=正净距，或返回严格违例/未决；不是端点采样检测，也不把预算耗尽当安全。板穿越、杆件穿越、等号滑动、安全但必须细分和全局事务是独立验收输入。
+
+当前尚无本阶段验收结论或正式性能数据。它属于H1有限动态几何，机器人FK曲线、接触身份/history、自动建立分离与反作用集成仍待交付，不能代替真实抓取或双臂完成。
+
 ## 已交付：静态凸特征距离证书（2026-10-29）
 
 第15项有限基础`feature_distance_bounds`已实现点/三角和边/边严格上下界、退化与次正规边界、独立几何oracle及薄事务。最终125文件hash `4079424eeaed5a2ca307c42af4f3a13f014231e5c0e8a743e7c1b2bc31260e04`，产品修复`2838c90`、最终测试快照`6a9a81b`。一次fresh review 0Critical/0Important/1Minor经6RED修复；另修原生测试tyx标记。详见[验收](benchmarks/p65-distance-certificate-acceptance.md)与[工程记录](benchmarks/p65-distance-certificate-engineering.json)。

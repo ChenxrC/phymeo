@@ -28,11 +28,13 @@
 
 ## 当前立即续作
 
-静态距离证书Task1及本地工程已完成，准确e63a1bf远程SHA及CI40748652046/Documentation40748652139均success，已关闭[计划](../superpowers/plans/2026-10-29-p65-distance-certificate.md)最后交付框。读[验收](../benchmarks/p65-distance-certificate-acceptance.md)、[工程](../benchmarks/p65-distance-certificate-engineering.json)和[唯一review](../benchmarks/p65-distance-certificate-review.md)。最终产品2838c90、测试快照6a9a81b，125源码hash4079424eeaed5a2ca307c42af4f3a13f014231e5c0e8a743e7c1b2bc31260e04。无仍运行数值/审阅进程，不重启旧pipeline或重复900观测/已关闭review。
+先读[仿射特征整段净距设计](../superpowers/specs/2026-10-29-p65-linear-sweep-design.md)、[实施计划](../superpowers/plans/2026-10-29-p65-linear-sweep.md)及对应`.superpowers/sdd/2026-10-29-p65-linear-sweep/progress.md`。设计/计划提交29de9db；实现者linear_sweep_implementer正在Task1，从真正缺API/解析RED开始。检查其报告/状态后承接，不重复分派。唯一builder linear_sweep_contract_check已返回nothing important left，不再重查。新阶段最终fresh code review尚未派。
 
-两CPU修复前完整各1695/2skip/338未选，最终相关各174；Ubuntu最终host89、actualinterpret/CUDA各2、最终125文件源码外wheel均过。一次review 0Critical0Important1Minor经6RED修复method可变别名；另补tyx标记。最终900host串行计量成功，PERF-017只记录。该阶段准确远程交付已闭环，直接推进下一项线性整段净距认证设计/计划，不重做此阶段。
+主agent准备scripts/benchmark_linear_sweep.py，仅ruff通过；数值smoke和正式900观测都未运行。它不与实现者测试并发计量，正式计量须所有数值/reviewer退出。下一阶段只支持声明仿射轨迹的正净距认证，不是机器人FK曲线/TOI/接触响应。实现者只编辑冻结范围，父agent负责工程/唯一review/性能/准确远程交付。
 
-旧材料接触9e0a432的CI40734015151及Documentation40734015075均success，已闭环；1950CUDA与900重放观测等证据保持原版本，不重做。NUM-005、TYX-003、TYX-004仍开放，不把静态证书当修复这些问题。
+上一静态距离证书e63a1bf远程SHA及CI40748652046/Documentation40748652139均success，c1e9f47闭环；该阶段所有任务已勾，旧builder/实现/review/900观测和工程不再重做。源125hash4079424eeaed5a2ca307c42af4f3a13f014231e5c0e8a743e7c1b2bc31260e04是旧阶段快照，不能冒充新产品hash。
+
+旧材料接触9e0a432的两CI也成功；NUM-005、TYX-003/004仍开放。完整P6.5继续，不把任何前置切片当真实双臂完成。
 
 ## 下一框架切片
 

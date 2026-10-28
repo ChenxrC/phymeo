@@ -38,8 +38,10 @@ BASE cfa76bd，沿用用户指定codex/p6-5-handoff；不改旧积分器、容�
 - [x] actual interpret/CUDA静置与转动，Windows C++仅有限2次重放的支撑短测，明确长期门禁未通过；源码外wheel增加公开API smoke。Expected非零真实launch，native候选不覆盖。
 - [x] 一次fresh最终review BASE后全范围，Critical/Important一次TDD修复；修复后必要全量CUDA/core311/nativepip312、interpret/短C++、uv构建/源码外wheel、ruff/公共边界/docs/compileall/dependency check。Expected通过。
 - [x] 全数值进程退出后NumPy/interpret/CUDA各3×100串行小负载，记录真实replay/launch和全部失败；不重试旧C++长期，不优化。Expected成功或如实阻塞记录。
-- [ ] 更新进度/工程/遗留/续作与唯一审阅结论，提交push用户专用分支，核对远程SHA/准确CI。完整P6.5仍继续，下一步机器人-节点双向碰撞。
+- [x] 更新进度/工程/遗留/续作与唯一审阅结论，提交push用户专用分支，核对远程SHA/准确CI。完整P6.5仍继续，下一步机器人-节点双向碰撞。
 
 Self-check: Task2只消费Task1公开包装器与原base合同，无SceneStepper修改；全局审计、量纲、生命周期、实际后端都有明确测试归属。用户已选持续自主执行，采用inline加一次fresh final review，不重复请求许可。
 
 本地验收：产品a4b1ad4；CUDA1725，core311/nativepip312各1441，actualinterpret3，boundedCPP1，114文件wheel，900次串行观测。新交付head的远程SHA/CI等待推送后核对；不把尚未执行CI标成功。
+
+最终续跑核对：eb4010a远程SHA一致，CI40644899057/Documentation40644898897均success。两任务完成，本计划关闭；转入机器人—节点下一切片，不复做本审阅。

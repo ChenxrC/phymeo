@@ -46,3 +46,5 @@
 下一步先冻结机器人—节点双向冲量作用点的时间积分合同，再做同域多点、构型/特征变化和事务。[独立角动量反例](../development/p65-robot-node-candidate.md)说明直接把本阶段最终J1反冲量配给节点会产生O(h)角动量漂移，尽管末点共点、做功和动能都耗散。它否定候选扩展，并非当前固定环境的产品失败。
 
 之后仍须几何/保守CCD、弯曲/自碰撞、有限驱动单爪承重与低mu滑落、目标/IK/history、真实A取布→B接布→平台、同源Three.js暂停/逐帧/力回放，以及完整步长/网格/扰动/重复/事务门槛。P6.5继续，不宣布完整验收。
+
+续跑核对：准确交付eb4010ac44ef63e020b0bac2dbdc4d1ecc921739的[CI40644899057](https://github.com/ChenxrC/phymeo/actions/runs/40644899057)和[Documentation40644898897](https://github.com/ChenxrC/phymeo/actions/runs/40644898897)均success；限定机器人固定平面阶段远程工程门禁闭环，完整P6.5与TYX-003范围不变。

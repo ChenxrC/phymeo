@@ -171,11 +171,15 @@
     "Warp_measured": false
   },
   "ci": {
-    "status": "new_delivery_head_pending_push_and_query",
-    "previous_closed_head": "cfa76bd03f3c860d8f556b7e939d03508b1c00c0",
-    "previous_CI": 40628653434,
-    "previous_Documentation": 40628653412,
-    "previous_conclusions": "success"
+    "head_sha": "eb4010ac44ef63e020b0bac2dbdc4d1ecc921739",
+    "CI": {
+      "id": 40644899057,
+      "conclusion": "success"
+    },
+    "Documentation": {
+      "id": 40644898897,
+      "conclusion": "success"
+    }
   },
   "not_claimed": [
     "robot-node bidirectional contact",

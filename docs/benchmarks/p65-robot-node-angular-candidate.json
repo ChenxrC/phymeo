@@ -1,0 +1,33 @@
+{
+  "status": "candidate_scheme_refuted_not_product_failure",
+  "assumption": "constant scalar I=m=1, q1=q0+h*w1, x1=x0+h*v1, equal_opposite impulse at final robot J1",
+  "rows": [
+    {
+      "h": 0.1,
+      "initial_gap": 0.09983341664682815,
+      "final_gap": 0.0,
+      "angular_change": -0.09950041652780262,
+      "analytic_angular_change": -0.09950041652780259,
+      "contact_work": -1.0998334166468282,
+      "kinetic_change": -2.0998334166468284
+    },
+    {
+      "h": 0.05,
+      "initial_gap": 0.04997916927067833,
+      "final_gap": 0.0,
+      "angular_change": -0.04993751301974836,
+      "analytic_angular_change": -0.04993751301974832,
+      "contact_work": -1.0499791692706784,
+      "kinetic_change": -2.0499791692706784
+    },
+    {
+      "h": 0.025,
+      "initial_gap": 0.024997395914712332,
+      "final_gap": 0.0,
+      "angular_change": -0.024992187906892394,
+      "analytic_angular_change": -0.024992187906892567,
+      "contact_work": -1.0249973959147125,
+      "kinetic_change": -2.0249973959147125
+    }
+  ]
+}

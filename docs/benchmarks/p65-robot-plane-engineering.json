@@ -1,0 +1,193 @@
+{
+  "status": "local_physics_engineering_and_serial_measurement_passed_cpp_endurance_open",
+  "scope": "rotating/prismatic robot material point versus fixed infinite plane; no robot-node bidirectional dynamics or full handoff",
+  "source": {
+    "git_revision": "a4b1ad4da6c7b60744f88fa9182e088fbb6b0a9c",
+    "git_dirty": true,
+    "source_sha256": "230f2470e71b72a2098afb7a83e10db2170bbc4b05067ce757fa79434e751b14",
+    "python": "3.12.14",
+    "numpy": "2.5.4",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "product_revision": "a4b1ad4da6c7b60744f88fa9182e088fbb6b0a9c",
+    "python_files": 114
+  },
+  "tyx": {
+    "version": "0.1.0a0",
+    "revision": "99f6df7c0fd8fdeef77f97df83914da27b64b7ee",
+    "cuda_device": "NVIDIA GeForce RTX 4060 Laptop GPU",
+    "driver": "566.07"
+  },
+  "cuda_full_suite": {
+    "passed": 1725,
+    "seconds": 481.37
+  },
+  "core311": {
+    "passed": 1441,
+    "deselected": 284,
+    "seconds": 345.04
+  },
+  "core_native_pip312": {
+    "passed": 1441,
+    "deselected": 284,
+    "seconds": 348.79
+  },
+  "focused_after_fix": {
+    "passed": 55,
+    "seconds": 21.46,
+    "note": "includes3actualinterpret; subsequent4controls separately passed then included in all full suites"
+  },
+  "actual_interpret_final": {
+    "passed": 3,
+    "seconds": 1.76
+  },
+  "cpp_actual_bounded_final": {
+    "passed": 1,
+    "deselected": 2,
+    "seconds": 15.69,
+    "replays": 2,
+    "not_long_run": true
+  },
+  "wheel": {
+    "exact_source_parity": true,
+    "python_files": 114,
+    "fresh_native_pip_outside_checkout": true,
+    "installed_smoke": true,
+    "pip_check": true,
+    "artifacts": {
+      ".gitignore": "684888c0ebb17f374298b65ee2807526c066094c701bcc7ebbe1c1095f494fc1",
+      "phymeo-0.1.0a0-py3-none-any.whl": "3e5d12828c830f5b29cae84f394474255f311c12b97c777b0d03c801089fd663",
+      "phymeo-0.1.0a0.tar.gz": "1e4240a249ca9f67aa1ac9e07efffb2bbd9953ba5531b1f7ce49d62274ffe060"
+    }
+  },
+  "quality": {
+    "ruff": true,
+    "public_tyx_import_boundary_files": 114,
+    "compileall": true,
+    "uv_and_pip_dependency_checks": true
+  },
+  "review": {
+    "count": 1,
+    "base": "cfa76bd03f3c860d8f556b7e939d03508b1c00c0",
+    "reviewed_head": "8de7d6812dc999103ef6bfac06806f84ce7c6738",
+    "critical": 0,
+    "important": 1,
+    "minor": 0,
+    "findings_fixed": true,
+    "fix_revision": "a4b1ad4da6c7b60744f88fa9182e088fbb6b0a9c",
+    "regression_red": 4,
+    "supplemental_controls": 4
+  },
+  "performance": {
+    "serial_after_numerical_tests_exited": true,
+    "rows": [
+      {
+        "mode": "numpy",
+        "median_ms": 11.84475002810359,
+        "p95_ms": 13.09941508807242,
+        "first_seconds": 0.03555180015973747,
+        "accepted": 300,
+        "counters": {
+          "replays": [
+            2
+          ],
+          "position_iterations": [
+            1
+          ],
+          "launches": [
+            0
+          ],
+          "completed_launches": [
+            0
+          ],
+          "uploads": [
+            0
+          ],
+          "downloads": [
+            0
+          ]
+        },
+        "max_residual": 3.767819389821626e-19
+      },
+      {
+        "mode": "interpret",
+        "median_ms": 59.60004997905344,
+        "p95_ms": 65.18169504124671,
+        "first_seconds": 0.24349540006369352,
+        "accepted": 300,
+        "counters": {
+          "replays": [
+            2
+          ],
+          "position_iterations": [
+            1
+          ],
+          "launches": [
+            40
+          ],
+          "completed_launches": [
+            40
+          ],
+          "uploads": [
+            0
+          ],
+          "downloads": [
+            0
+          ]
+        },
+        "max_residual": 1.9237399051519333e-09
+      },
+      {
+        "mode": "cuda",
+        "median_ms": 183.79859998822212,
+        "p95_ms": 204.6450350084342,
+        "first_seconds": 0.5210973001085222,
+        "accepted": 300,
+        "counters": {
+          "replays": [
+            2
+          ],
+          "position_iterations": [
+            1
+          ],
+          "launches": [
+            40
+          ],
+          "completed_launches": [
+            40
+          ],
+          "uploads": [
+            314
+          ],
+          "downloads": [
+            82
+          ]
+        },
+        "max_residual": 1.9237399051519333e-09
+      }
+    ],
+    "accepted_measured_calls": 900,
+    "cpp_status": "not_rerun_known_dependency_failure",
+    "issue": "TYX-003",
+    "Warp_measured": false
+  },
+  "ci": {
+    "status": "new_delivery_head_pending_push_and_query",
+    "previous_closed_head": "cfa76bd03f3c860d8f556b7e939d03508b1c00c0",
+    "previous_CI": 40628653434,
+    "previous_Documentation": 40628653412,
+    "previous_conclusions": "success"
+  },
+  "not_claimed": [
+    "robot-node bidirectional contact",
+    "mesh CCD",
+    "bending/self collision",
+    "finite gripper",
+    "dual-arm handoff",
+    "Three.js viewer",
+    "C++ sustained acceptance",
+    "GPU-native outer solver",
+    "infinite precision trigonometry or complete M/b rounding proof",
+    "full variable-mass robot energy conservation",
+    "Warp comparison"
+  ]
+}

@@ -26,7 +26,17 @@
 
 [串行观测](performance-bottlenecks/measurements/p65-plane.md)三模式各300共900次全部接受；每次2次原重放，tyx44个completed_launches。性能只记录，新增PERF-011；精度范围补NUM-004，不把host审计问题冒充tyx缺陷。Windows C++长期TYX-003仍开放，未改pin或重复无修复的压力失败。PPT保留已交付厚度源码快照，不冒充新递布画面。
 
-下一切片从机器人单关节/节点动态接触开始，冻结M/J构型、作用点材料速度和广义载荷映射，再同域交叉响应、几何/CCD、弯曲/自碰撞、有限驱动单爪、双臂与Three.js。不要重做已验收平面或旧P6轨迹。准确交付head的CI在推送后检查，尚不能以旧CI替代；完整P6.5继续。
+该节点平面交付时安排下一切片从机器人单关节/节点动态接触开始；机器人固定平面现已完成，后续以紧接下方最新记录为准。不要重做已验收平面或旧P6轨迹。准确交付head的CI在推送后检查，尚不能以旧CI替代；完整P6.5继续。
+
+## 2026-10-28 续作：机器人固定平面与最终构型载荷
+
+新增[机器人固定平面接触](benchmarks/p65-robot-plane-acceptance.md)，产品`a4b1ad4da6c7b60744f88fa9182e088fbb6b0a9c`。冻结M0/b0、最终J1广义载荷、实际材料速度与原积分器完整重放形成闭环；host有理账本不覆盖native tyx状态。单转动独立解析、共享祖先双点、T2s两步长静置/低mu滑动、布材料旁域、history与后段失败事务通过。第10项有限基础，不是机器人—布双向接触或动态夹持。
+
+一次fresh审阅1Important经4RED修复：世界原点很远时局部点/COM臂长丢失的错误接受。新增独立仿射点/祖先臂长/速度范围门禁，原物理容差与候选不变。修复后全量CUDA1725、核心Python3.11与native-pip3.12各1441，actual interpret3、C++有限短测1（另2未执行），114文件源码外wheel和uv/pip质量检查通过。三个全量环境本次均收集同一完整集合；测试耗时不是性能基线。
+
+[串行观测](performance-bottlenecks/measurements/p65-robot-plane.md)三模式各300共900次全接受，2次重放、tyx40launch；PERF-012只记录不优化。源码hash230f2470e71b72a2098afb7a83e10db2170bbc4b05067ce757fa79434e751b14。[工程记录](benchmarks/p65-robot-plane-engineering.json)保留原始计数，新交付head远程CI推送后核对。TYX-003仍使C++长期门禁开放；未改pin或重新跑已知失败压力，仍可推进NumPy/CUDA独立工作。PPT仍是此前厚度源码快照，真实递布/Three.js未交付。
+
+下一步先冻结机器人—节点双向离散作用点/力矩合同。[独立反例](development/p65-robot-node-candidate.md)否定直接把最终J1反冲量配给节点就称守恒：虽共点且耗散，总角动量仍漂移-h*cos(h)。这不是当前固定平面产品失败；必须加独立线/角动量门禁再实施。之后几何/保守CCD、弯曲/自碰撞、有限驱动单爪、目标/IK/history、完整双臂与Three.js及原全套验收继续。
 
 以下按时间保留历史记录，旧截止与旧状态只描述当时窗口。
 

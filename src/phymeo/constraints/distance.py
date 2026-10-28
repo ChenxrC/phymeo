@@ -71,10 +71,11 @@ def project_distances(position, inverse_mass, constraints, alpha, multipliers, *
         direction = (
             delta / length if length > 0 else np.array([1.0, 0.0, 0.0], dtype=position.dtype)
         )
-        if trace is not None:
-            trace[k, 14:17] = direction
         wi, wj = float(inverse_mass[i]), float(inverse_mass[j])
         denominator = wi + wj + alpha[k]
+        if trace is not None:
+            # Zero denotes no applied direction when this projection is skipped.
+            trace[k, 14:17] = 0 if denominator == 0 else direction
         if denominator == 0:
             continue  # A fixed, inconsistent hard edge is rejected by the residual check.
         c = length - float(constraints.rest_length[k])

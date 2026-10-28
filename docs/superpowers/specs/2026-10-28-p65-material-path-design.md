@@ -16,7 +16,7 @@
 
 ClothProgram(model,constraints,domain='cloth',*,record_material_path=False)、ClothParticipant(model,constraints,*,record_material_path=False)、TyxClothParticipant(model,constraints,mode,*,record_material_path=False)。make_cloth_runtime也转发该可选参数。只允许bool/np.bool_，快照签名包含此开关。默认不产生新诊断、不改变旧数学或旧tyx调用路径。
 
-启用后每个临时workspace拥有本子步的frames列表；predict初始化为空，每次position_sweep追加一个(num_edges,18) FP64存储数组。零边/None的sweep记录形状(0,18)，与调用次数相符。字段顺序冻结：before_i_xyz(0:3)、before_j_xyz(3:6)、after_i_xyz(6:9)、after_j_xyz(9:12)、lambda_before(12)、lambda_after(13)、direction_xyz(14:17)、delta_lambda(17)。包含denominator=0时的零delta与实际未变状态；coincident采用原X轴分支。
+启用后每个临时workspace拥有本子步的frames列表；predict初始化为空，每次position_sweep追加一个(num_edges,18) FP64存储数组。零边/None的sweep记录形状(0,18)，与调用次数相符。字段顺序冻结：before_i_xyz(0:3)、before_j_xyz(3:6)、after_i_xyz(6:9)、after_j_xyz(9:12)、lambda_before(12)、lambda_after(13)、direction_xyz(14:17)、delta_lambda(17)。包含denominator=0时的零delta与实际未变状态；此时direction三列为零哨兵，表示没有施加投影方向，不冒充未使用的中间计算值。非零denominator的coincident采用原X轴分支。
 
 诊断键material_path：schema='xpbd-distance-path-v1'、columns字段名、frames元组、predicted_position、predicted_velocity、alpha、h。所有返回数组为owned只读快照，多次diagnostics或新的trial/substep不能污染前次结果。记录是临时候选数据，不是新增持久history；外层提交/回滚仍用原SceneStepper。
 
@@ -36,6 +36,8 @@ NumPy project_distances(...,*,trace=None)写入调用者提供的FP64可写(coun
 
 真正material/contact outer仍未实现。后续需独立原式核对input、prediction、每条材料投影、速度重建、external/contact work与总机械能，单独报告/门控离散角动量损失与步长收敛；不能将轨迹相关误差直接命名为物理摩擦。保持原FreeParticleLedger拒绝材料域，直到新合同通过，再做几何/CCD、弯曲/自碰撞、单爪、双臂与Three.js完整验收。性能只观测，缺陷分层记录。
 
-Builder check：material_path_design_check返回nothing important left。当前为设计与反例，尚未写产品API；执行前先关闭上一head的Ubuntu CI回归，后续按writing-plans形成TDD实施清单。
+Builder check：material_path_design_check返回nothing important left。产品记录API已在0bf0619实现；上一准确f259e69的CI40662503851与Documentation40662503807均success。验收结果以材料路径阶段文档为准，不扩大为联合接触。
 
 实施者补充：直接trace目标要求C-contiguous且不与position/weights/alpha/lambda/约束数组共享存储，验证在任何修改前完成，避免诊断写入改变物理结果或重叠行吞记录。
+
+审阅修订：零分母固定边的未使用方向运算可能产生NaN。traced kernel仍保留原算术路径，但不将未使用中间量作为必需有限物理输出；以明确零哨兵表示跳过投影。NumPy同一语义，18列不变；future ledger须结合weights/alpha核对跳过条件，不能把零哨兵当合法单位法线。此为记录表示修正，不改变原无记录路径或全局非有限门禁。

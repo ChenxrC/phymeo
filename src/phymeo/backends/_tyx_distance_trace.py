@@ -46,11 +46,16 @@ def project_node_distances_traced(
                 nx = _div(sx, unit)
                 ny = _div(sy, unit)
                 nz = _div(sz, unit)
-            trace[k, 14] = nx
-            trace[k, 15] = ny
-            trace[k, 16] = nz
+            # Zero is a skipped-projection sentinel, not a computed direction.
+            # Unused direction arithmetic may be non-finite on a no-op edge.
+            trace[k, 14] = 0.0
+            trace[k, 15] = 0.0
+            trace[k, 16] = 0.0
             denominator = _add(_add(weights[i], weights[j]), alpha[k])
             if denominator > 0.0:
+                trace[k, 14] = nx
+                trace[k, 15] = ny
+                trace[k, 16] = nz
                 residual = _add(_add(length, -rest[k]), _mul(alpha[k], multipliers[k]))
                 delta = _div(-residual, denominator)
                 trace[k, 17] = delta

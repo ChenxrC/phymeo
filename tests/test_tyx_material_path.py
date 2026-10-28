@@ -55,7 +55,7 @@ def test_actual_zero_denominator_and_coincident_path(tyx_mode):
         x, lam = engine.project_distances(
             np.zeros((2, 3)), np.zeros(2), constraints, np.zeros(1), np.array([0.25]), trace=target
         )
-    np.testing.assert_array_equal(target[0], [0] * 12 + [0.25, 0.25, 1, 0, 0, 0])
+    np.testing.assert_array_equal(target[0], [0] * 12 + [0.25, 0.25, 0, 0, 0, 0])
     np.testing.assert_array_equal(x, np.zeros((2, 3)))
     np.testing.assert_array_equal(lam, [0.25])
 
@@ -94,3 +94,62 @@ def test_actual_traced_late_failure_and_retry(tyx_mode, failure):
     from test_material_path import check_scene_failure
 
     check_scene_failure(tyx_mode, failure)
+
+
+@pytest.mark.parametrize("point", [[2.0, 1.2e-38, 0], [1e30, 1e-20, 0]])
+def test_actual_skipped_edge_records_no_applied_direction(tyx_mode, point):
+    x = np.array([[0.0, 0, 0], point])
+    constraints = DistanceConstraints(np.array([[0, 1]]), np.array([point[0]]), np.zeros(1))
+    target = np.full((1, 18), np.nan)
+    with TyxNodeMath(tyx_mode) as engine:
+        plain, lam0 = engine.project_distances(
+            x, np.zeros(2), constraints, np.zeros(1), np.zeros(1)
+        )
+        traced, lam1 = engine.project_distances(
+            x, np.zeros(2), constraints, np.zeros(1), np.zeros(1), trace=target
+        )
+        assert engine.stats()["completed_launches"] == 2
+    np.testing.assert_array_equal(traced, plain)
+    np.testing.assert_array_equal(lam0, lam1)
+    np.testing.assert_array_equal(target[0, 14:18], np.zeros(4))
+    np.testing.assert_array_equal(target[0, :6], target[0, 6:12])
+
+
+def test_actual_fixed_workspace_trace_does_not_introduce_rejection(tyx_mode):
+    from phymeo import (
+        BackendContext,
+        ParticleModel,
+        ParticleState,
+        StepInputs,
+        StepSettings,
+        TyxClothParticipant,
+    )
+
+    model = ParticleModel(np.zeros(2), np.zeros(3))
+    initial = ParticleState(np.array([[0.0, 0, 0], [2.0, 1.2e-38, 0]]), np.zeros((2, 3)))
+    constraints = DistanceConstraints(np.array([[0, 1]]), np.array([2.0]), np.zeros(1))
+    results = []
+    for trace in (False, True):
+        factory = TyxClothParticipant(model, constraints, tyx_mode, record_material_path=trace)
+        ws = factory.create_workspace(
+            "cloth",
+            initial,
+            StepInputs.zeros(2),
+            0.1,
+            StepSettings(substeps=1),
+            BackendContext(factory.capabilities.backend),
+        )
+        try:
+            ws.predict()
+            ws.position_sweep()
+            assert ws.position_metrics().max_residual == 0
+            ws.prepare_velocity()
+            results.append(ws.result())
+            if trace:
+                np.testing.assert_array_equal(
+                    ws.diagnostics()["material_path"]["frames"][0][0, 14:18], np.zeros(4)
+                )
+        finally:
+            ws.close()
+    np.testing.assert_array_equal(results[0].position, results[1].position)
+    np.testing.assert_array_equal(results[0].velocity, results[1].velocity)

@@ -1,4 +1,8 @@
-"""Storage contract for native distance-projection observations, not a solver."""
+"""Native projection observations, not a solver.
+
+Direction columns are zero sentinels for a zero-denominator skipped projection;
+otherwise they contain the actual applied direction (including coincident X).
+"""
 
 import numpy as np
 

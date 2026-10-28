@@ -126,7 +126,7 @@ def test_zero_denominator_records_no_mutation_and_coincident_direction():
     trace = np.full((1, 18), np.nan)
     constraints = DistanceConstraints(np.array([[0, 1]]), np.ones(1), np.zeros(1))
     project_distances(x, np.zeros(2), constraints, np.zeros(1), lam, trace=trace)
-    np.testing.assert_array_equal(trace[0], [0] * 12 + [0.3, 0.3, 1, 0, 0, 0])
+    np.testing.assert_array_equal(trace[0], [0] * 12 + [0.3, 0.3, 0, 0, 0, 0])
     np.testing.assert_array_equal(lam, [0.3])
 
 

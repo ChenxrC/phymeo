@@ -236,6 +236,7 @@ def test_last_substep_host_certificate_transaction_rollback_and_retry(fault):
     run_transaction("numpy", fault)
 
 
+@pytest.mark.tyx
 @pytest.mark.parametrize("fault", ["certificate", "close"])
 def test_actual_tyx_snapshot_host_certificate_and_transaction(tyx_mode, fault):
     run_transaction(tyx_mode, fault)

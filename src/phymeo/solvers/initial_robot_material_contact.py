@@ -105,8 +105,9 @@ class InitialRobotMaterialContactProgram(InitialRobotNodeContactProgram):
 
 
 class _MaterialPairWorkspace(_InitialPairWorkspace):
-    def __init__(self, *args):
-        super().__init__(*args)
+    def __init__(self, program, state, inputs, h, settings, inner, context):
+        self._inner_settings = inner
+        super().__init__(program, state, inputs, h, settings, inner, context)
         self._sweeps = 0
         self._best = None
         self._refinement_done = False
@@ -166,7 +167,7 @@ class _MaterialPairWorkspace(_InitialPairWorkspace):
                 state.domains[name],
                 inputs.domains[name],
                 h,
-                settings,
+                self._inner_settings,
                 context,
             )
             for name in self.node_domains

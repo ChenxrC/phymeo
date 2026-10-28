@@ -32,6 +32,7 @@ def material_case(
     rotor=False,
     edge_pairs=((0, 1),),
     extra_normals=(),
+    inner_settings=None,
 ):
     # Failure mutations: omit paired robot load, substitute free velocity,
     # count material energy per contact, or bypass the path/physical budgets.
@@ -113,6 +114,7 @@ def material_case(
             materials=materials if materials_override else {"nodes": edges},
             budgets=budgets or ph.MaterialContactBudgets(1e-6, 0.001),
             registry=base.registry,
+            inner_settings=inner_settings,
         )
     settings = settings or ph.StepSettings(
         substeps=1, tolerance=1e-8 if mode == "numpy" else 2e-5, position_iterations=60
@@ -740,3 +742,32 @@ def test_same_material_node_two_planes_aggregates_original_input_once():
         [0, -2 / 64, -2 / 64 + np.sum(d["world_impulses"][:, 2])],
         atol=1e-9,
     )
+
+
+def check_independent_inner_iteration_budget(mode, outer):
+    x = np.array([[-0.4, 0, 0], [0.6, 0, 0], [0.2, 0.7, 0]])
+    tolerance = 1e-8 if mode == "numpy" else 2e-5
+    runtime, state, inputs = material_case(
+        mode=mode,
+        position=x,
+        edge_pairs=((0, 1), (1, 2), (2, 0)),
+        rest=np.array([1.0, np.sqrt(0.65), np.sqrt(0.85)]) * 1.01,
+        compliance=0.1,
+        normal=(0.0, 0.0, 1.0),
+        indices=(0, 1),
+        settings=ph.StepSettings(substeps=1, tolerance=tolerance, position_iterations=outer),
+        inner_settings=ph.StepSettings(substeps=1, tolerance=tolerance, position_iterations=60),
+    )
+    with runtime:
+        result = runtime.step(state, inputs, 1 / 32)
+    assert result.report.accepted, result.report.reason
+    d = diag(result)
+    assert d["inner_report"].substeps[0].position_iterations > outer
+    assert result.report.substeps[0].position_iterations <= outer
+    np.testing.assert_array_equal(d["world_impulses"], 0)
+    assert d["replays"] == 1
+
+
+@pytest.mark.parametrize("outer", [1, 2])
+def test_inner_material_schedule_independent_of_outer_contact_budget(outer):
+    check_independent_inner_iteration_budget("numpy", outer)

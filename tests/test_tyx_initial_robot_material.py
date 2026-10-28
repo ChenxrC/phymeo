@@ -52,3 +52,9 @@ def test_prismatic_translation_does_not_evaluate_unused_rotation(tyx_mode, coord
             geometry = engine.geometry(np.array([coordinate]))
         np.testing.assert_array_equal(geometry.rotation, np.eye(3)[None])
         np.testing.assert_array_equal(geometry.position, [[0, float(np.float32(coordinate)), 0]])
+
+
+def test_actual_inner_material_schedule_independent_of_outer(tyx_mode):
+    from test_initial_robot_material import check_independent_inner_iteration_budget
+
+    check_independent_inner_iteration_budget(tyx_mode, 1)

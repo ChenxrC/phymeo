@@ -398,3 +398,127 @@ def test_actual_xpbd_hidden_multipliers_are_rebuilt_for_each_trial():
                 "distance_multipliers"
             ]
             np.testing.assert_allclose(multipliers, [-0.005 / (1 + alpha)], atol=1e-14)
+
+
+def test_input_constructor_quantization_is_checked_before_any_workspace():
+    from dataclasses import dataclass, replace
+
+    from test_scene_stepper import ScalarInputs
+
+    from phymeo import StateRegistry
+
+    @dataclass
+    class QuantizedInputs(ScalarInputs):
+        def __post_init__(self):
+            self.tau = np.round(self.tau).astype(np.float64)
+
+    scene, state, _, original_registry = scalar_case()
+    registry = StateRegistry()
+    registry.register(replace(original_registry.get("scalar"), inputs_type=QuantizedInputs))
+    program = ScalarProgram()
+    with api().SceneLoadReplay(
+        scene,
+        program,
+        state,
+        SceneInputs({"osc": QuantizedInputs(np.array([2.0]))}),
+        0.2,
+        channels={"osc": ("tau",)},
+        registry=registry,
+    ) as replay:
+        with pytest.raises(SolverFailure, match="represent|integral|input"):
+            replay.evaluate({"osc": {"tau": np.array([0.1])}})
+        assert program.created == 0
+        # A represented load still works after the rejected quantized attempt.
+        trial = replay.evaluate({"osc": {"tau": np.array([0.4])}})
+        assert trial.result.report.accepted
+        np.testing.assert_allclose(trial.integrated_loads["osc"]["tau"], [0.4])
+
+
+def test_input_constructor_cannot_change_undeclared_rate_fields():
+    from dataclasses import dataclass, replace
+
+    from phymeo import StateRegistry
+
+    @dataclass
+    class LinkedInputs:
+        tau: np.ndarray
+        other: np.ndarray
+
+        def __post_init__(self):
+            self.tau = self.tau.copy()
+            self.other = self.tau.copy()
+
+    scene, state, _, original_registry = scalar_case()
+    registry = StateRegistry()
+    registry.register(
+        replace(
+            original_registry.get("scalar"), inputs_type=LinkedInputs, input_fields=("tau", "other")
+        )
+    )
+    program = ScalarProgram()
+    inputs = SceneInputs({"osc": LinkedInputs(np.array([2.0]), np.array([2.0]))})
+    with api().SceneLoadReplay(
+        scene, program, state, inputs, 0.2, channels={"osc": ("tau",)}, registry=registry
+    ) as replay:
+        with pytest.raises(SolverFailure, match="input|channel"):
+            replay.evaluate({"osc": {"tau": np.array([0.4])}})
+        assert program.created == 0
+
+
+def test_registered_input_copy_must_preserve_original_values():
+    from dataclasses import dataclass, replace
+
+    from test_scene_stepper import ScalarInputs
+
+    from phymeo import StateRegistry
+
+    @dataclass
+    class GrowingInputs(ScalarInputs):
+        def __post_init__(self):
+            self.tau = self.tau + 1
+
+    scene, state, _, original_registry = scalar_case()
+    registry = StateRegistry()
+    registry.register(replace(original_registry.get("scalar"), inputs_type=GrowingInputs))
+    inputs = SceneInputs({"osc": GrowingInputs(np.array([1.0]))})
+    with pytest.raises((ValueError, SolverFailure), match="copy|input|snapshot"):
+        api().SceneLoadReplay(
+            scene,
+            ScalarProgram(),
+            state,
+            inputs,
+            0.2,
+            channels={"osc": ("tau",)},
+            registry=registry,
+        )
+
+
+def test_registered_state_copy_must_preserve_extra_state_values():
+    from dataclasses import dataclass, replace
+
+    from test_scene_stepper import ScalarState
+
+    from phymeo import StateRegistry
+
+    @dataclass
+    class GrowingState(ScalarState):
+        def __post_init__(self):
+            self.plastic = self.plastic + 1
+
+    scene, _, inputs, original_registry = scalar_case()
+    registry = StateRegistry()
+    registry.register(replace(original_registry.get("scalar"), state_type=GrowingState))
+    state = SceneState(
+        {"osc": GrowingState(np.array([1.0]), np.zeros(1), np.array([2.0]))},
+        {"count": np.array([0], np.int64)},
+    )
+    with pytest.raises((ValueError, SolverFailure), match="copy|state|snapshot"):
+        api().SceneLoadReplay(
+            scene,
+            ScalarProgram(),
+            state,
+            inputs,
+            0.2,
+            channels={"osc": ("tau",)},
+            registry=registry,
+        )

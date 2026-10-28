@@ -15,9 +15,33 @@ from .registry import StateRegistry
 from .scene_stepper import SceneStepper
 
 
+def _same_array(left, right):
+    left, right = np.asarray(left), np.asarray(right)
+    return left.dtype == right.dtype and left.shape == right.shape and np.array_equal(left, right)
+
+
+def _check_snapshot_copy(scene, registry, state, inputs, copied_state, copied_inputs):
+    for binding in scene.domains:
+        family = registry.get(binding.family)
+        for kind, before, after, names in (
+            ("state", state, copied_state, family.state_fields),
+            ("input", inputs, copied_inputs, family.input_fields),
+        ):
+            for name in names:
+                if not _same_array(
+                    getattr(before.domains[binding.name], name),
+                    getattr(after.domains[binding.name], name),
+                ):
+                    raise ValueError(
+                        f"registered {kind} snapshot copy changed {binding.name}.{name}"
+                    )
+
+
 @dataclass(frozen=True)
 class ReplayTrial:
-    """Owned trial data; inner acceptance does not certify an outer contact law.
+    """Trial data; inner acceptance does not certify an outer contact law.
+
+    evaluate() returns owned data. Direct dataclass construction borrows arguments.
 
     integrated_loads contains the actual represented input difference * duration,
     in native input units times seconds. A rejected result commits no load/state.
@@ -63,6 +87,7 @@ class SceneLoadReplay:
         registry = StateRegistry() if registry is None else registry.copy()
         schema = tuple(program.history_fields)
         initial, original_inputs = registry.snapshot(scene, state, inputs, context, schema)
+        _check_snapshot_copy(scene, registry, state, inputs, initial, original_inputs)
         if not isinstance(channels, Mapping):
             raise TypeError("channels must map domains to registered input fields")
         bindings = {domain.name: domain for domain in scene.domains}
@@ -106,8 +131,7 @@ class SceneLoadReplay:
             family = self._registry.get(binding.family)
             original = self._original_inputs.domains[domain]
             fields = {name: getattr(original, name).copy() for name in family.input_fields}
-            if domain in self._channels:
-                represented[domain] = {}
+            requests = {}
             for name in self._channels.get(domain, ()):
                 before = fields[name]
                 requested = float_array(
@@ -118,20 +142,41 @@ class SceneLoadReplay:
                 if requested.dtype != np.dtype(np.float64) or requested.shape != before.shape:
                     raise ValueError("integrated load shape/float64 precision must match input")
                 with np.errstate(over="raise", invalid="raise", divide="raise", under="raise"):
-                    combined = before + requested / self.duration
-                    delivered = (combined - before) * self.duration
+                    fields[name] = before + requested / self.duration
+                requests[name] = requested
+            actual = family.inputs_type(**fields)
+            if domain in self._channels:
+                represented[domain] = {}
+            for name in family.input_fields:
+                before = getattr(original, name)
+                after = np.asarray(getattr(actual, name))
+                if (
+                    after.dtype != before.dtype
+                    or after.shape != before.shape
+                    or not np.isfinite(after).all()
+                ):
+                    raise SolverFailure("constructed input changed shape, precision or finiteness")
+                if name not in requests:
+                    if not _same_array(after, before):
+                        raise SolverFailure("constructed input changed an undeclared channel")
+                    continue
+                requested = requests[name]
+                with np.errstate(over="raise", invalid="raise", divide="raise", under="raise"):
+                    delivered = (after - before) * self.duration
                     error = np.abs(delivered - requested)
                     budget = 1e-10 * np.abs(requested)
-                if (
-                    not np.isfinite(combined).all()
-                    or not np.isfinite(delivered).all()
-                    or np.any(error > budget)
-                ):
+                if not np.isfinite(delivered).all() or np.any(error > budget):
                     raise SolverFailure("integrated load is not representable in the actual input")
-                fields[name] = combined
                 represented[domain][name] = delivered
-            inputs[domain] = family.inputs_type(**fields)
-        return SceneInputs(inputs), own_diagnostics(represented)
+            inputs[domain] = actual
+        effective = SceneInputs(inputs)
+        copied_state, copied_inputs = self._registry.snapshot(
+            self._scene, self._initial, effective, self._context, self._schema
+        )
+        _check_snapshot_copy(
+            self._scene, self._registry, self._initial, effective, copied_state, copied_inputs
+        )
+        return copied_inputs, own_diagnostics(represented)
 
     def evaluate(self, integrated_loads):
         if self._closed:

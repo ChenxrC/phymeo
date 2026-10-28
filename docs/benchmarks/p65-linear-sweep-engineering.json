@@ -1,5 +1,5 @@
 {
-  "status": "local_accepted_pending_exact_remote_ci",
+  "status": "accepted_and_delivered",
   "product_commit": "700fd325c3a61b20202a4994c25336e3bfe9524a",
   "source": {
     "git_revision": "61ea634087798f64c4f073d52d9d3035c5c6910d",
@@ -149,9 +149,12 @@
     "robot FK/TOI/response/lifecycle"
   ],
   "delivery": {
-    "head": null,
-    "remote_sha": null,
-    "ci": null,
-    "documentation": null
+    "head": "5c352006442641c21faf1684fe6427b10960a930",
+    "remote_sha": "5c352006442641c21faf1684fe6427b10960a930",
+    "ci": 40756643301,
+    "documentation": 40756643278,
+    "ci_conclusion": "success",
+    "documentation_conclusion": "success",
+    "verification": "GitHub API exact head_sha, completed success for both workflows"
   }
 }

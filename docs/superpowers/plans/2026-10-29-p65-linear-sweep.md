@@ -45,6 +45,6 @@
 - [x] 主agent核对spec覆盖与任务报告后，连同计量脚本仅派一次fresh最终code review；重要问题先独立RED再修，必要复验，不另派第二次review。
 - [x] 两CPU环境相关回归、Ubuntu新host、实际interpret/CUDA短集成、ruff/docs/边界/compile、uvpip/锁导出一致及最终源码外wheel。无新增tyx kernel，不重跑旧1950CUDA/已完成静态距离900观测；准确最终远程CI承担全分支CPU矩阵，不将选测称全量。
 - [x] 所有数值/review探针退出后，三个独立host路径（简单安全、途中穿越、安全细分）各3×100串行计量，记录status/区间计数/实际源与脚本hash，排除fixture。未测GPU/Warp不作比较，不优化。
-- [ ] 更新框架线“声明仿射路径的净距认证”、案例线“尚未接入动态接触/机器人旋转”，记录遗留与支持边界。commit/push专用分支、核对远程SHA/准确CI，然后继续厚度侧/法向/接触身份history/自动建立分离与FK保守路径。不合主分支/发布包/扩P7P8。
+- [x] 更新框架线“声明仿射路径的净距认证”、案例线“尚未接入动态接触/机器人旋转”，记录遗留与支持边界。commit/push专用分支、核对远程SHA/准确CI，然后继续厚度侧/法向/接触身份history/自动建立分离与FK保守路径。不合主分支/发布包/扩P7P8。
 
-计划自查：spec的接口/精确阈值/整段证明/候选/分区/预算/退化/两独立场景/事务/后端均落入Task1，工程观测与交付属于Task2。builder一次nothing important left；Task1与Task2前三项已本地验收；唯一review无发现，工程/900观测通过。最后准确远程交付项待新SHA/CI闭环。
+计划自查：spec的接口/精确阈值/整段证明/候选/分区/预算/退化/两独立场景/事务/后端均落入Task1，工程观测与交付属于Task2。builder一次nothing important left；Task1与Task2前三项已本地验收；唯一review无发现，工程/900观测通过。准确交付5c352006442641c21faf1684fe6427b10960a930的CI40756643301及Documentation40756643278均success，全部交付项闭环。

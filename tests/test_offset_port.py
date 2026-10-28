@@ -273,3 +273,28 @@ def test_robot_surface_agrees_with_direct_rigid_attachment():
     assert mapped.candidate_audit(after).energy_change == pytest.approx(
         direct.candidate_audit(after).energy_change, abs=3e-14
     )
+
+
+def test_tiny_lost_offsets_cannot_create_a_couple_at_identical_actual_points():
+    source = base(X + [0, 0, 1e8])
+    with pytest.raises(SolverFailure, match="offset|represent"):
+        port(
+            source,
+            triangles=np.repeat(T, 2, axis=0),
+            weights=np.repeat(B, 2, axis=0),
+            offsets=np.array([1e-12, -1e-12]),
+        )
+    np.testing.assert_array_equal(source.snapshot().velocity, np.zeros((3, 3)))
+
+
+@pytest.mark.parametrize("operation", ["velocities", "apply_impulses"])
+def test_nonzero_block_products_cannot_silently_underflow(operation):
+    velocity = np.zeros((3, 3))
+    velocity[1, 0] = 1e-200
+    p = port(base(v=velocity), weights=np.array([[1.0, 1e-200, 0.0]]), offsets=np.zeros(1))
+    with pytest.raises(SolverFailure, match="represent"):
+        if operation == "velocities":
+            p.velocities()
+        else:
+            p.apply_impulses(np.array([[1e-200, 0, 0]]))
+    np.testing.assert_array_equal(p.snapshot().velocity, velocity)

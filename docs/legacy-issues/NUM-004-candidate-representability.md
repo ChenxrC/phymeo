@@ -34,3 +34,13 @@
 独立控制切片也出现同类问题：q=1e8、target=q+1e-8、kp=1e8时，展开后的隐式PD方程可收敛，但返回的q+h*u舍入到target，使原始位置反馈控制律不再成立。该问题发生在主机FP64，不属于tyx缺陷。
 
 现于`control/bounded_pd.py`返回前检查实际预测q/v上的原式，正负大坐标反例先失败后修复。超effort_tolerance明确拒绝，不调整控制增益/命令或覆盖真实状态。后续选择坐标中心化或其他数值表示策略时，必须保持原始物理方程与输出坐标的可审计关系，不能仅验证一个代数展开式。
+
+## 面厚度端口补充（2026-10-28）
+
+`coupling/offset_port.py::TriangleOffsetPointPort`在固定面材料点上使用完整块Jacobian。非退化/可表示域内，法向偏置的速度和切向载荷反力矩已由独立解析及旋转/虚功例覆盖。实现对缩放后面积<=1e-10的面明确拒绝；它没有给退化面自动选法向。
+
+实际世界点仍存在FP64表示边界：三角面整体z=1e8m、偏置1e-8m时，存储点实际增量不等于1e-8m。构造阶段检查关于实际点的力矩恒等式，不满足冻结门槛则SolverFailure。最小复现位于`tests/test_offset_port.py::test_lost_world_offset_is_refused_by_actual_point_moment_check`。这是phymeo主机坐标/数值域限制，不是tyx缺陷。
+
+后续agent先读取[冻结合同](../superpowers/specs/2026-10-28-p65-offset-port-design.md)。边/顶点厚度包络、接触侧和动态材料点重建仍属于P6.5必要开发，不能因记录在此而从完整验收中删除。极端尺度扩域可后续研究局部坐标，但对外返回点、速度、载荷与矩必须保持同一物理语义。
+
+审阅另发现更小的±1e-12m偏置在z=1e8m时可落在同一个存储点，却对相反1e12冲量产生2N·m·s力偶；它小于原面尺度门槛。现补偏置自身相对表示门禁，保持原门槛不变。对应回归`test_tiny_lost_offsets_cannot_create_a_couple_at_identical_actual_points`。另以显式受浮点陷阱保护的乘积替代einsum，拒绝1e-200乘1e-200静默下溢；这是NumPy调用语义和phymeo检查边界问题，不新增tyx_flaw条目。

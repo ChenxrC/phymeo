@@ -78,7 +78,15 @@ class TriangleOffsetPointPort:
             cross_derivatives = (_skew(b - a), -_skew(b), _skew(a))
             for i in range(3):
                 blocks[j, i] = bary[i] * eye + normal_derivative @ cross_derivatives[i]
-            points[j] = nodes[0] + bary[1] * edges[0] + bary[2] * edges[1] + offset * normal
+            middle = nodes[0] + bary[1] * edges[0] + bary[2] * edges[1]
+            displacement = offset * normal
+            points[j] = middle + displacement
+            # The moment budget scales with the face, so it alone cannot detect
+            # a small thickness lost in world-coordinate rounding.
+            if offset != 0 and np.max(np.abs((points[j] - middle) - displacement)) > (
+                1e-10 * abs(offset)
+            ):
+                raise SolverFailure("normal offset is not representable at the stored world point")
             if not np.isfinite(blocks[j]).all() or not np.isfinite(points[j]).all():
                 raise SolverFailure("offset attachment is not representable")
             translation_error = np.max(np.abs(np.sum(blocks[j], axis=0) - eye))
@@ -137,11 +145,14 @@ class TriangleOffsetPointPort:
 
     def _map(self, values):
         nodes = _result(values, self._base_shape)[self._triangles]
-        return _result(np.einsum("kaij,kaj->ki", self._blocks, nodes), self._shape)
+        # Explicit products honor NumPy's underflow/overflow traps; einsum can
+        # silently return zero for nonzero subnormal products.
+        products = self._blocks * nodes[:, :, None, :]
+        return _result(np.sum(products, axis=(1, 3)), self._shape)
 
     def _loads(self, impulses):
         impulses = _array(impulses, "impulses", self._shape)
-        loads = np.einsum("kaij,ki->kaj", self._blocks, impulses)
+        loads = np.sum(self._blocks * impulses[:, None, :, None], axis=2)
         if not np.isfinite(loads).all():
             raise SolverFailure("offset attachment load is not representable")
         return _result(

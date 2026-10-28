@@ -58,6 +58,7 @@ from .coupling.ports import ParticlePointPort, PointPort, RigidPointPort, exchan
 from .coupling.robot_port import RobotPointPort
 from .coupling.surface_port import PointPairOperator, WeightedPointPort
 from .coupling.tetrahedral_port import TetrahedralPointPort
+from .geometry.feature_distance_bound import FeatureDistanceBounds, feature_distance_bounds
 from .geometry.particle_sphere import ParticleSphereGeometry, particle_sphere_geometry
 from .geometry.plane import Plane
 from .geometry.robot_sphere import RobotSphereAttachments
@@ -109,6 +110,8 @@ __version__ = "0.1.0a0"
 from .validation.material_path import MaterialPathLedger
 
 __all__ = [
+    "FeatureDistanceBounds",
+    "feature_distance_bounds",
     "MaterialPathLedger",
     "ParticlePlaneContacts",
     "ParticlePlaneContactProgram",

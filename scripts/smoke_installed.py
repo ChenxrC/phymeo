@@ -90,6 +90,39 @@ def check_articulated_pair():
     return {"robot_q": after_robot.q, "robot_v": after_robot.v, "node_v": after_node.velocity}
 
 
+def check_feature_distance_bounds():
+    """Host-only exact static distances through the installed public API."""
+    from fractions import Fraction
+
+    for name in ("FeatureDistanceBounds", "feature_distance_bounds"):
+        if name not in phymeo.__all__ or not callable(getattr(phymeo, name, None)):
+            raise RuntimeError("Installed wheel is missing distance API: " + name)
+    plate = np.array([[0.0, 0, 0], [2.0, 0, 0], [0.0, 2, 0]])
+    probe = np.array([[0.5, 0.5, 3.0]])
+    exact = phymeo.feature_distance_bounds(
+        probe, plate, first_weights=[1.0], second_weights=[0.5, 0.25, 0.25]
+    )
+    if exact != phymeo.FeatureDistanceBounds(3.0, 3.0):
+        raise RuntimeError("Installed probe/plate distance certificate failed")
+    loose = phymeo.feature_distance_bounds(
+        plate, probe, first_weights=[1.0, 0.0, 0.0], second_weights=[1.0]
+    )
+    if not (
+        Fraction(loose.lower_m) ** 2 <= Fraction(15, 2)
+        and Fraction(loose.upper_m) ** 2 >= Fraction(19, 2)
+    ):
+        raise RuntimeError("Installed nonoptimal witness certificate failed")
+    rods = phymeo.feature_distance_bounds(
+        np.array([[-1.0, 0, 0], [1.0, 0, 0]]),
+        np.array([[0.0, -1, 2], [0.0, 1, 2]]),
+        first_weights=[0.5, 0.5],
+        second_weights=[0.5, 0.5],
+    )
+    if rods.lower_m != 2.0 or rods.upper_m != 2.0:
+        raise RuntimeError("Installed independent rods certificate failed")
+    return exact, loose, rods
+
+
 def check_surface_contact():
     """Exercise P6.5 public foundations from the installed wheel without tyx."""
     for name in (
@@ -561,6 +594,7 @@ def main():
     check_material_path()
     check_articulated_pair()
     check_surface_contact()
+    check_feature_distance_bounds()
     check_bounded_control()
     check_offset_attachment()
     check_load_replay()

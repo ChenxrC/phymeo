@@ -622,7 +622,10 @@ def test_candidate_entering_unresolved_world_geometry_rolls_back():
     np.testing.assert_array_equal(result.state.domains["robot"].v, [1e16, 0])
 
 
-def test_affine_guard_checks_the_sum_path_used_by_robot_plane_positions():
+@pytest.mark.parametrize("orientation_ulp", [0, 1, 2])
+def test_affine_guard_checks_the_sum_path_used_by_robot_plane_positions(orientation_ulp):
+    from fractions import Fraction
+
     from phymeo.dynamics.robot_kinematics import forward_kinematics
 
     model = replace(
@@ -632,11 +635,28 @@ def test_affine_guard_checks_the_sum_path_used_by_robot_plane_positions():
         ),
         gravity=np.zeros(3),
     )
+    orientation = model.joint_orientation.copy()
+    for _ in range(orientation_ulp):
+        orientation[0, 0] = np.nextafter(orientation[0, 0], np.inf)
+    model = replace(model, joint_orientation=orientation)
     local = np.array([[102011162.88264461, -29070837.842375822, -2703980.560245362]])
     rotation = forward_kinematics(model, np.zeros(1)).rotation[0]
     normal = rotation @ np.array([0.876333392445091, -0.37449663626426416, -0.3029720361888696])
     normal /= np.linalg.norm(normal)
-    position = np.sum(rotation * local, axis=1)
+    # Last-bit frame evaluation depends on the platform. Establish the actual
+    # out-of-budget precondition, instead of requiring a supported point to fail.
+    # Exact powers of two change only the input scale, never the physical tolerance.
+    for _ in range(16):
+        position = np.sum(rotation * local, axis=1)
+        reference = [
+            sum(Fraction(float(rotation[k, j])) * Fraction(float(local[0, j])) for j in range(3))
+            for k in range(3)
+        ]
+        error = sum(abs(Fraction(float(position[k])) - reference[k]) for k in range(3))
+        if error > Fraction(1e-8):
+            break
+        local *= 2
+    assert error > Fraction(1e-8), "fixture must actually exceed the unchanged absolute budget"
     binding = contact(
         local_points=local, normals=normal[None], offsets=np.array([normal @ position])
     )

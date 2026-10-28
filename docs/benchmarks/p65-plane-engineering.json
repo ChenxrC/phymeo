@@ -183,7 +183,15 @@
     "Warp_measured": false
   },
   "ci": {
-    "status": "awaiting_exact_delivery_head_check"
+    "head_sha": "cfa76bd03f3c860d8f556b7e939d03508b1c00c0",
+    "CI": {
+      "id": 40628653434,
+      "conclusion": "success"
+    },
+    "Documentation": {
+      "id": 40628653412,
+      "conclusion": "success"
+    }
   },
   "not_claimed": [
     "robot contact",

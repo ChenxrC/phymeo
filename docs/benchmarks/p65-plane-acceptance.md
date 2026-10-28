@@ -45,3 +45,5 @@ Windows C++长期运行的[TYX-003](../../tyx_flaw/TYX-003-windows-cpp-library-l
 ## 后续推进
 
 下一切片应补机器人单关节动态接触，再同域多点/交叉响应与构型变化；显式冻结M/J/作用点速度和广义输入映射，不能把本节点J=I直接套用旋转机器人。其后接几何特征/厚度包络和保守CCD、弯曲/自碰撞、有限驱动单爪承重及低mu滑落、控制目标/IK/history，最后真实双臂递布、完整步长/网格/扰动/重复/失败门槛与同源Three.js暂停/逐帧/力回放。P6.5继续，不能以本页结果宣布完成。
+
+续跑核对：准确交付cfa76bd03f3c860d8f556b7e939d03508b1c00c0的[CI40628653434](https://github.com/ChenxrC/phymeo/actions/runs/40628653434)和[Documentation40628653412](https://github.com/ChenxrC/phymeo/actions/runs/40628653412)均success；本地限定平面阶段的远程工程门禁闭环。TYX-003与完整P6.5未完成范围不变。

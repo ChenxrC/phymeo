@@ -37,6 +37,6 @@
 - [x] 一次fresh最终review审阅本计划BASE后全范围；Critical/Important一次TDD修复，重新必要测试，旧阶段不重复审阅。
 - [x] 全量CUDA、core3.11与nativepip3.12、interpret、短C++（不超过已知生命周期边界且不冒称长期）、uv build/源码外wheel/ruff/public imports/docs，Expected通过；已知C++长期失败持续记录。
 - [x] 全数值进程退出后NumPy/interpret/CUDA各至少2预热和3×100次串行小负载；记录迭代/重放次数、真实launch和全部失败，不优化。
-- [ ] 更新进度/工程manifest/续作，提交push专用分支，核对准确远程SHA/CI；只宣布本限定平面阶段结果，完整P6.5继续。
+- [x] 更新进度/工程manifest/续作，提交push专用分支，核对准确远程SHA/CI；只宣布本限定平面阶段结果，完整P6.5继续。
 
-本地工程/900次串行观测已通过；详见动态平面验收及工程记录。最后一项准确交付CI待推送后检查，C++长期TYX-003保持开放，不等于完整P6.5验收。
+本地工程/900次串行观测已通过；详见动态平面验收及工程记录。准确交付cfa76bd的CI40628653434与Documentation40628653412均success，C++长期TYX-003保持开放，不等于完整P6.5验收。

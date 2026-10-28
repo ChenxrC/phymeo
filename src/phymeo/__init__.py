@@ -20,6 +20,7 @@ from .constraints.contact_impulse import ContactImpulseResult, solve_contact_imp
 from .constraints.distance import DistanceConstraints
 from .constraints.friction import FrictionImpulseResult, solve_friction_disk
 from .constraints.node_robot import NodeRobotContact
+from .constraints.particle_plane import ParticlePlaneContacts
 from .control.bounded_pd import BoundedPDResult, solve_bounded_pd
 from .core.capabilities import ProblemSignature, SolverCapabilities, SolverFailure
 from .core.coupled import CoupledInputs, CoupledState, CoupledStepReport, CoupledStepResult
@@ -86,6 +87,7 @@ from .solvers.coupled_program import (
 )
 from .solvers.coupled_xpbd import CoupledXPBDSolver
 from .solvers.free_scene import FreeSceneProgram
+from .solvers.particle_plane_contact import ParticlePlaneContactProgram
 from .solvers.rigid_semi_implicit import RigidSemiImplicitSolver
 from .solvers.rigid_sphere_plane import RigidSpherePlaneSolver
 from .solvers.robot import RobotProgram, make_robot_runtime
@@ -97,6 +99,8 @@ from .validation.free_particle import FreeParticleVerifier
 __version__ = "0.1.0a0"
 
 __all__ = [
+    "ParticlePlaneContacts",
+    "ParticlePlaneContactProgram",
     "SceneLoadReplay",
     "ReplayTrial",
     "ContactImpulseResult",
@@ -205,8 +209,3 @@ __all__ = [
     "ClothPatch",
     "cloth_grid",
 ]
-
-from .constraints.particle_plane import ParticlePlaneContacts
-from .solvers.particle_plane_contact import ParticlePlaneContactProgram
-
-__all__ += ["ParticlePlaneContacts", "ParticlePlaneContactProgram"]

@@ -406,3 +406,113 @@ def test_tangent_frame_keeps_the_stored_plane_equation_exact():
     assert result.report.accepted
     expected = float(Fraction(float(binding.normals[0, 0])) * Fraction(100000000))
     assert diagnostic(result)["gaps"][0] == expected
+
+
+@pytest.mark.parametrize("h", [0.01, 0.005])
+@pytest.mark.parametrize("mu, acceleration", [(0.6, 0.0), (0.2, -5.81)])
+def test_two_second_static_and_sliding_windows_match_independent_discrete_solution(
+    h, mu, acceleration
+):
+    binding = contact(normals=np.array([[1.0, 0, 0]]), friction=np.array([mu]))
+    runtime, state, inputs = case(gravity=[0, -9.81, 0], force=[[-20, 0, 0]], contacts=(binding,))
+    count = round(2 / h)
+    with runtime:
+        for step in range(1, count + 1):
+            result = runtime.step(state, inputs, h)
+            assert result.report.accepted, result.report.reason
+            state = result.state
+            np.testing.assert_allclose(
+                state.domains["body"].velocity, [[0, acceleration * step * h, 0]], atol=3e-10
+            )
+            np.testing.assert_allclose(
+                state.domains["body"].position,
+                [[0, acceleration * h * h * step * (step + 1) / 2, 0]],
+                atol=3e-10,
+            )
+            impulse = diagnostic(result)["world_impulses"][0]
+            assert impulse[0] == pytest.approx(20 * h, abs=1e-10)
+            assert diagnostic(result)["contact_work_j"] <= 1e-12
+    # The known first-order time error is checked, not mistaken for an exact-time trajectory.
+    continuous = 0.5 * acceleration * 2**2
+    expected_error = abs(acceleration) * 2 * h / 2
+    assert abs(state.domains["body"].position[0, 1] - continuous) == pytest.approx(
+        expected_error, abs=3e-10
+    )
+
+
+def test_two_dynamic_nodes_material_and_contact_satisfy_independent_equilibrium():
+    import phymeo
+    from phymeo import ClothProgram, DistanceConstraints
+
+    h = 0.01
+    model = ParticleModel(np.ones(2), np.array([0.0, -9.81, 0]))
+    constraints = DistanceConstraints(np.array([[0, 1]]), np.ones(1), np.array([0.001]))
+    native = ClothProgram(model, constraints, domain="body")
+    state = SceneState(
+        {"body": ParticleState(np.array([[0.0, 0, 0], [0, 1.0, 0]]), np.zeros((2, 3)))}
+    )
+    inputs = SceneInputs({"body": StepInputs.zeros(2)})
+    program = phymeo.ParticlePlaneContactProgram(native.scene, native, (contact(),))
+    with SceneStepper(native.scene, program, StepSettings(substeps=1, tolerance=1e-10)) as runtime:
+        result = runtime.step(state, inputs, h)
+    assert result.report.accepted, result.report.reason
+    alpha = 0.001 / h**2
+    multiplier = 9.81 * h * h / (1 + alpha)
+    upper = 1 - 9.81 * h * h + multiplier
+    contact_impulse = 9.81 * h * (2 + alpha) / (1 + alpha)
+    actual = result.state.domains["body"]
+    np.testing.assert_allclose(actual.position, [[0, 0, 0], [0, upper, 0]], atol=2e-12)
+    np.testing.assert_allclose(actual.velocity, [[0, 0, 0], [0, (upper - 1) / h, 0]], atol=2e-10)
+    diag = diagnostic(result)
+    np.testing.assert_allclose(diag["world_impulses"], [[0, contact_impulse, 0]], atol=2e-10)
+    native_diag = diag["inner_report"].substeps[0].diagnostics
+    np.testing.assert_allclose(native_diag["distance_multipliers"], [multiplier], atol=2e-12)
+    # Full two-node momentum: gravity and plane impulse appear once, internal forces cancel.
+    np.testing.assert_allclose(
+        np.sum(actual.velocity, axis=0), [0, contact_impulse - 2 * 9.81 * h, 0], atol=2e-10
+    )
+    energy = (
+        0.5 * np.sum(actual.velocity**2)
+        + 9.81 * np.sum(actual.position[:, 1])
+        + 0.5 * (np.linalg.norm(actual.position[1] - actual.position[0]) - 1) ** 2 / 0.001
+    )
+    assert energy <= 9.81 + 1e-10
+
+
+def test_returned_state_and_contact_ledger_cannot_pollute_a_fresh_trial():
+    runtime, state, inputs = case(gravity=[0, -1, 0])
+    with runtime:
+        first = runtime.step(state, inputs, 0.1)
+        assert first.report.accepted
+        first.state.domains["body"].position[:] = 100
+        impulses = diagnostic(first)["world_impulses"]
+        impulses.flags.writeable = True
+        impulses[:] = 100
+        second = runtime.step(state, inputs, 0.1)
+    assert second.report.accepted
+    np.testing.assert_allclose(second.state.domains["body"].position, [[0, 0, 0]], atol=1e-14)
+    np.testing.assert_allclose(diagnostic(second)["world_impulses"], [[0, 0.1, 0]], atol=1e-14)
+
+
+def test_inner_velocity_postprocessing_incompatible_with_displacement_is_rejected():
+    class WrongVelocity(FreeSceneProgram):
+        def create_workspace(self, *args):
+            native = super().create_workspace(*args)
+            original = native.result
+
+            def result():
+                state = original()
+                state.domains["body"].velocity[:, 1] += 0.1
+                return state
+
+            native.result = result
+            return native
+
+    runtime, state, inputs = case(
+        base=WrongVelocity(),
+        settings=StepSettings(substeps=1, position_iterations=2, tolerance=1e-10),
+    )
+    with runtime:
+        result = runtime.step(state, inputs, 0.1)
+    assert not result.report.accepted
+    np.testing.assert_array_equal(result.state.domains["body"].velocity, [[0, 0, 0]])

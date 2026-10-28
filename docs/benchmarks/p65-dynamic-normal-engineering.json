@@ -1,5 +1,5 @@
 {
-  "status": "implemented_final_review_in_progress",
+  "status": "review_passed_final_engineering_pending",
   "source": {
     "commit": "4ff19ea7975145fe9d44450164b906f01fe0527d",
     "python_files": 131,
@@ -9,8 +9,23 @@
     "agent": "dynamic_normal_final_review",
     "base": "fa11031",
     "head": "4ff19ea7975145fe9d44450164b906f01fe0527d",
-    "status": "in_progress",
-    "count": 1
+    "status": "complete",
+    "count": 1,
+    "critical": 0,
+    "important": 0,
+    "minor": 0,
+    "probes_exited": true,
+    "probe_evidence": {
+      "focused_tests_passed": 7,
+      "oblique_two_plane_held_and_terminal": [
+        "1/9",
+        "5/18"
+      ],
+      "actual_interpret_launches": 176,
+      "held_replays": 3,
+      "terminal_replays": 3,
+      "participant_engines_closed": 12
+    }
   },
   "implementation_tests": {
     "numpy_related_pre_cap": {
@@ -66,7 +81,27 @@
       "status": "complete",
       "path": "artifacts/dynamic-normal-benchmark-smoke-4ff19ea.json"
     },
-    "script_sha256": "338768ffd42c2e7749f38779e20d2563ec56cd435ba2fceef8cc604f58545a75"
+    "script_sha256": "338768ffd42c2e7749f38779e20d2563ec56cd435ba2fceef8cc604f58545a75",
+    "backend_smokes": {
+      "numpy": {
+        "measured": 2,
+        "warmups": 6,
+        "per_case_measured": 1,
+        "status": "complete"
+      },
+      "interpret": {
+        "measured": 2,
+        "warmups": 6,
+        "per_case_measured": 1,
+        "status": "complete"
+      },
+      "cuda": {
+        "measured": 2,
+        "warmups": 6,
+        "per_case_measured": 1,
+        "status": "complete"
+      }
+    }
   },
   "final_engineering": {
     "cpu311": "not_run",
@@ -75,7 +110,8 @@
     "ubuntu": "not_run",
     "cpp_bounded": "not_run",
     "wheel": "not_run",
-    "current_remote_ci": "not_run"
+    "current_remote_ci": "not_run",
+    "frozen_src_tests_scripts_digest": "f1e36fe05f6022618de94c8d20638911c6c8383e73e65a8c7b35f2a6e93e305f"
   },
   "limitations": [
     "normal-only infinite-plane all-prismatic framework",

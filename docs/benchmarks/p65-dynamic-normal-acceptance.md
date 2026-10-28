@@ -1,6 +1,6 @@
 # P6.5 自动法向接触：生产实现与验收进度
 
-状态：生产实现已提交，本阶段独立审阅和最终工程验收进行中，尚未交付整个阶段，更未完成H1/P6.5。产品提交4ff19ea7975145fe9d44450164b906f01fe0527d，131个源码文件hash `ac777319d0b8fbc03adab92286656a5572df05bca403e913912500908e991060`。
+状态：生产实现已提交，本阶段唯一独立审阅0Critical/0Important/0Minor，最终工程验收待执行，尚未交付整个阶段，更未完成H1/P6.5。产品提交4ff19ea7975145fe9d44450164b906f01fe0527d，131个源码文件hash `ac777319d0b8fbc03adab92286656a5572df05bca403e913912500908e991060`。
 
 ## 可复用支持域
 
@@ -18,10 +18,10 @@ held阶段从原状态/输入完整原生重放，节点p与机器人反作用�
 - 后段子步history/trace/末冲量/close失败整帧回滚，retry等于fresh。已有best candidate之后的真实执行失败仍拒绝，半构造失败清理已创建参与者。
 - 实际interpret/CUDA检查真实模式、FP32计算、原生launch和末阶段执行。开放零eta路径的FP64 nextafter篡改也拒绝。
 
-精确测试数量与版本边界见[工程记录](p65-dynamic-normal-engineering.json)。新CUDA7通过1055.23秒是验收耗时，不能用作正式性能结果。基准脚本仅完成NumPy最小smoke（2计时调用、6warmup），900次正式观测尚未执行。
+精确测试数量与版本边界见[工程记录](p65-dynamic-normal-engineering.json)。新CUDA7通过1055.23秒是验收耗时，不能用作正式性能结果。基准脚本已分别完成NumPy/actual interpret/CUDA最小smoke（每模式2计时调用、6warmup），900次正式观测尚未执行。
 
 ## 未完成范围与下一步
 
-[唯一审阅](p65-dynamic-normal-review.md)进行中；随后必要修复、完整两个CPU/CUDA套件、Ubuntu、有界CPP、源码外wheel、串行正式性能与准确新提交CI。旧2f50c1f生命周期兼容修复的CI已成功，不能借此声称当前4ff19ea已完成远程验收。
+[唯一审阅](p65-dynamic-normal-review.md)已结束且探针全部退出；随后进行完整两个CPU/CUDA套件、Ubuntu、有界CPP、源码外wheel、串行正式性能与准确新提交CI。旧2f50c1f生命周期兼容修复的CI已成功，不能借此声称当前4ff19ea已完成远程验收。
 
 本能力不是摩擦、有限三角/边特征切换、旋转FK保守CCD或真实夹持。之后仍须这些框架能力、弯曲/自碰撞、单爪承重与低摩擦滑落、目标/IK/history、双臂交接及同源Three.js。NUM-005积分器角动量损失未被修复；TYX-003长期CPP和TYX-004严格解释器cos仍开放。保持[冻结合同](../superpowers/specs/2026-10-29-p65-dynamic-normal-design.md)与[实施计划](../superpowers/plans/2026-10-29-p65-dynamic-normal.md)的门槛，不扩P7/P8。

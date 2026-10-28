@@ -58,7 +58,7 @@
 **Files:** 新stage acceptance/engineering/review、PERF019及serial benchmark；更新progress/continuation/framework两条线和原NUM005边界。主agent负责，不并发改Task1/2文件。
 **Interfaces:** Consume全生产API和两任务报告；输出最终版本真实测试/build/perf/远程证据。
 
-- [ ] 核对两个实现报告和接口/物理范围；建立基准脚本后，整阶段产品+tests+script一次fresh最终review。Important先独立RED后修；只重复受影响验收，不派第二次review。
+- [x] 核对两个实现报告和接口/物理范围；建立基准脚本后，整阶段产品+tests+script一次fresh最终review。Important先独立RED后修；只重复受影响验收，不派第二次review。
 - [ ] 最终完整CPU两环境、最终CUDA全量（逐套串行）、Ubuntu新核心、interpret相关、有界CPP一个短例；每suite全新受核对basetemp。实际失败准确记录、不把挂起/中止算通过。
 - [ ] ruff/docs/边界/compile/uvpip/锁导出与最终源码外wheel源码一致、新nativepip安装smoke。源码或测试改变只重验受影响证据，不伪造全量版本。
 - [ ] 数值及review探针均退出后NumPy→interpret→CUDA分别3x100串行正式观测，取free establish与链建立小负载（每样本明确一个case，至少覆盖两case计量口径），记录held/terminal replay数、实际launch/上传下载、耗时及源/script hashes。迭代精度不同不作速度比；未测Warp不声称差距，不优化。

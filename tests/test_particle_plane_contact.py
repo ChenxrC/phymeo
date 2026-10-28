@@ -572,3 +572,28 @@ def test_unregistered_compute_precision_is_rejected():
 
     with pytest.raises(ValueError, match="compute precision"):
         case(base=UnknownPrecision())
+
+
+@pytest.mark.parametrize("order", [[0, 1, 2, 3], [3, 2, 1, 0]])
+def test_two_nodes_two_planes_keep_loads_separate_and_order_independent(order):
+    ids = np.array([0, 0, 1, 1])[order]
+    normals = np.array([[1.0, 0, 0], [0, 1.0, 0], [1.0, 0, 0], [0, 1.0, 0]])[order]
+    binding = contact(indices=ids, normals=normals, offsets=np.zeros(4), friction=np.zeros(4))
+    runtime, state, inputs = case(
+        positions=np.zeros((2, 3)),
+        inverse_mass=[1.0, 2.0],
+        force=[[-2.0, -3.0, 0], [-5.0, -7.0, 0]],
+        contacts=(binding,),
+    )
+    with runtime:
+        result = runtime.step(state, inputs, 0.1)
+    assert result.report.accepted, result.report.reason
+    np.testing.assert_allclose(result.state.domains["body"].position, np.zeros((2, 3)), atol=1e-14)
+    np.testing.assert_allclose(result.state.domains["body"].velocity, np.zeros((2, 3)), atol=1e-14)
+    expected = np.array([[0.2, 0, 0], [0, 0.3, 0], [0.5, 0, 0], [0, 0.7, 0]])[order]
+    diag = diagnostic(result)
+    np.testing.assert_allclose(diag["world_impulses"], expected, atol=1e-14)
+    np.testing.assert_allclose(diag["environment_impulses"], -expected, atol=1e-14)
+    np.testing.assert_allclose(
+        diag["input_integrals"]["body"]["force"], [[0.2, 0.3, 0], [0.5, 0.7, 0]], atol=1e-14
+    )

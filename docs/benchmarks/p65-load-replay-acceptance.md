@@ -37,3 +37,5 @@
 [TYX-003](../../tyx_flaw/TYX-003-windows-cpp-library-lifetime.md)独立公开API复现表明显式close+GC后DLL仍线性留存；需要tyx修复后重测。没有更改依赖pin、没有静默CPU替代或关闭物理门禁。功能/安装验证已完成，C++长期运行这一外部阻塞保持开放；不能把整个切片描述为所有后端完整闭环，更不能标完整P6.5完成。可继续NumPy/CUDA动态接触与几何的独立开发。
 
 远程CI在本报告推送后按准确head另核对；旧8223c74两项CI均成功，但不能替代本次新head。
+
+续跑核对：准确交付1ce5c03383f6ccbe524cdc3400dce011ecbee85d的[CI40619180656](https://github.com/ChenxrC/phymeo/actions/runs/40619180656)与[Documentation40619180666](https://github.com/ChenxrC/phymeo/actions/runs/40619180666)均success。远程CPU/工程门禁闭环；TYX-003本机C++长期阻塞仍未修复。

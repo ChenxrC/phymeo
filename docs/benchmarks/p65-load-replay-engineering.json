@@ -95,11 +95,15 @@
     }
   },
   "ci": {
-    "status": "pending_exact_documentation_head_push",
-    "previous_head": "8223c7457781c93269565ae2374f4811b77efc02",
-    "previous_CI": 40611577823,
-    "previous_Documentation": 40611577859,
-    "previous_conclusion": "success"
+    "head_sha": "1ce5c03383f6ccbe524cdc3400dce011ecbee85d",
+    "CI": {
+      "id": 40619180656,
+      "conclusion": "success"
+    },
+    "Documentation": {
+      "id": 40619180666,
+      "conclusion": "success"
+    }
   },
   "not_claimed": [
     "C++ sustained replay acceptance",

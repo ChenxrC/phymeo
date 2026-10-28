@@ -102,7 +102,10 @@ from .validation.free_particle import FreeParticleVerifier
 
 __version__ = "0.1.0a0"
 
+from .validation.material_path import MaterialPathLedger
+
 __all__ = [
+    "MaterialPathLedger",
     "ParticlePlaneContacts",
     "ParticlePlaneContactProgram",
     "RobotPlaneContactProgram",
@@ -217,4 +220,3 @@ __all__ = [
     "ClothPatch",
     "cloth_grid",
 ]
-

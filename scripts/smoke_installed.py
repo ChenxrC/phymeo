@@ -28,6 +28,18 @@ def check_material_path():
         path["frames"][0][0], [0, 0, 0, 2, 0, 0, 0.5, 0, 0, 1.5, 0, 0, 0, -0.5, -1, 0, 0, -0.5]
     )
 
+    ledger = phymeo.MaterialPathLedger(
+        model, edges, state, phymeo.StepInputs.zeros(2), 0.1, phymeo.StepSettings(substeps=1)
+    )
+    audit = ledger.require(
+        result.state.domains["cloth"],
+        phymeo.StepInputs.zeros(2),
+        np.zeros((2, 3)),
+        result.report.substeps[0].diagnostics,
+        sweeps=result.report.substeps[0].position_iterations,
+    )
+    np.testing.assert_allclose(audit["material_impulses"], [[5, 0, 0], [-5, 0, 0]], atol=1e-12)
+
 
 def check_articulated_pair():
     """A mass2 Y slider and mass1 node share a closed normal contact."""

@@ -15,6 +15,8 @@
 | [PERF-007](PERF-007-p6-device-boundaries.md) | P6全链路小kernel与端口反复查询 | [正式180step串行测量](measurements/p6-full.md)、阶段时间和公开计数；细项归因未测 | 先拆分分配/缓存/传输/算术/校验，区分集成与依赖成本 |
 | [PERF-008](PERF-008-surface-foundations.md) | P6.5重心映射、成对响应与静态几何 | [480端口＋60组合几何调用](measurements/p65-foundation.md)串行观测；未定位细项 | 接入代表网格后分项剖析，保留交叉响应与候选门禁 |
 
+新增[PERF-009 厚度映射](PERF-009-thickness-map.md)：7200次串行固定快照观测，构造/响应/候选分开；尚未定位细项，不宣称tyx/Warp性能差距。
+
 这些条目是候选热点，不是假装已经经过 profiler 确认的排名。已有完整 CUDA 运行 465.178 s、重复 397.141 s 的记录包含主机审计且同时有其他实验运行，只可作为诊断，不能作为性能基线或加速比。原始背景见[场景报告](../benchmarks/rigid-cloth.md)。
 
 P1/P2 最终新增[修复版串行小负载测量](measurements/p2-runtime.md)和[完整迁移阶段报告](../benchmarks/p1-p2-runtime.md)。它们与上述旧诊断记录分开，保留源码、质量、计数和未测项；没有执行性能优化。

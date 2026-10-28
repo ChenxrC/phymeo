@@ -1,0 +1,100 @@
+{
+  "status": "local_acceptance_complete_remote_status_to_be_checked_after_push",
+  "scope": "fixed-configuration finite-thickness face material port; full P6.5 handoff NOT complete",
+  "source": {
+    "git_revision": "fbcbe2cc8029693b737424be6805ea5121f97ac4",
+    "git_dirty": true,
+    "source_sha256": "eac7e6ccc0c2052fcf54c59adeed74237c3b5b1a5fe8fa4962301bed4557edc6",
+    "python": "3.12.14",
+    "numpy": "2.5.4",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "product_revision": "10f8cdd72ee4c4d009386267f8adab35ed427255",
+    "python_files": 108
+  },
+  "tyx": {
+    "version": "0.1.0a0",
+    "revision": "99f6df7c0fd8fdeef77f97df83914da27b64b7ee",
+    "cuda_device": "NVIDIA GeForce RTX 4060 Laptop GPU",
+    "driver": "566.07"
+  },
+  "cuda_full_suite": {
+    "passed": 1559,
+    "deselected": 0,
+    "seconds": 511.32
+  },
+  "core311": {
+    "passed": 1284,
+    "deselected": 275,
+    "seconds": 374.63
+  },
+  "core_native_pip312": {
+    "passed": 1284,
+    "deselected": 275,
+    "seconds": 378.04
+  },
+  "cpp_actual": {
+    "passed": 3,
+    "deselected": 0,
+    "seconds": 18.57
+  },
+  "interpret_and_core": {
+    "passed": 38,
+    "seconds": 0.55
+  },
+  "wheel": {
+    "exact_source_parity": true,
+    "python_files": 108,
+    "fresh_native_pip_outside_checkout": true,
+    "installed_smoke": true,
+    "pip_check": true,
+    "artifacts": {
+      ".gitignore": "684888c0ebb17f374298b65ee2807526c066094c701bcc7ebbe1c1095f494fc1",
+      "phymeo-0.1.0a0-py3-none-any.whl": "2677ccd0f71415e631ccd95541f1da709448194eb54d61c8db5c377c5f2d395d",
+      "phymeo-0.1.0a0.tar.gz": "63a05197d5687eecbb36d54ae367e16bcf2931f8a2afc00f93155d737056f227"
+    }
+  },
+  "quality": {
+    "ruff": true,
+    "public_import_boundary_files": 108,
+    "compileall": true,
+    "uv_and_pip_dependency_checks": true
+  },
+  "review": {
+    "count": 1,
+    "base": "73bcda611b5ed6dfe189aa78c28bc9cf31164abe",
+    "reviewed_head": "f56775f",
+    "critical": 0,
+    "important": 2,
+    "minor": 0,
+    "all_findings_fixed": true,
+    "fix_revision": "10f8cdd72ee4c4d009386267f8adab35ed427255",
+    "regression_red": 3,
+    "focused_green": 134
+  },
+  "performance": {
+    "serial_after_test_processes_exited": true,
+    "modes": [
+      "numpy",
+      "interpret",
+      "cpu_cpp",
+      "cuda"
+    ],
+    "measured_calls": 7200,
+    "failures": 0,
+    "Warp_measured": false
+  },
+  "ci": {
+    "status": "not_claimed_before_push",
+    "source_gate": "GitHub Actions exact final head; remote result recorded in handoff receipt"
+  },
+  "not_claimed": [
+    "dynamic contact integration",
+    "mesh CCD",
+    "bending and self collision",
+    "single-gripper load-bearing",
+    "dual-arm handoff and placement",
+    "Three.js viewer",
+    "GPU-native offset geometry",
+    "Warp performance comparison"
+  ]
+}

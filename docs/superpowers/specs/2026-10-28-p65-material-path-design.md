@@ -37,3 +37,5 @@ NumPy project_distances(...,*,trace=None)写入调用者提供的FP64可写(coun
 真正material/contact outer仍未实现。后续需独立原式核对input、prediction、每条材料投影、速度重建、external/contact work与总机械能，单独报告/门控离散角动量损失与步长收敛；不能将轨迹相关误差直接命名为物理摩擦。保持原FreeParticleLedger拒绝材料域，直到新合同通过，再做几何/CCD、弯曲/自碰撞、单爪、双臂与Three.js完整验收。性能只观测，缺陷分层记录。
 
 Builder check：material_path_design_check返回nothing important left。当前为设计与反例，尚未写产品API；执行前先关闭上一head的Ubuntu CI回归，后续按writing-plans形成TDD实施清单。
+
+实施者补充：直接trace目标要求C-contiguous且不与position/weights/alpha/lambda/约束数组共享存储，验证在任何修改前完成，避免诊断写入改变物理结果或重叠行吞记录。

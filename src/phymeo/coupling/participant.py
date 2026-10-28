@@ -78,14 +78,24 @@ class RobotParticipant(_Participant):
 class ClothParticipant(_Participant):
     point_role = "node"
 
-    def __init__(self, model, constraints):
-        self.program, self.family = ClothProgram(model, constraints), _PARTICLES
+    def __init__(self, model, constraints, *, record_material_path=False):
+        self.program, self.family = (
+            ClothProgram(model, constraints, record_material_path=record_material_path),
+            _PARTICLES,
+        )
 
     def create_workspace(self, domain, state, inputs, h, settings, context):
         state, inputs = self._snapshot(state, inputs, context)
         return NodeParticipantWorkspace(
             ClothWorkspace(
-                self.model, self.program.constraints, domain, state, inputs, h, settings
+                self.model,
+                self.program.constraints,
+                domain,
+                state,
+                inputs,
+                h,
+                settings,
+                record_material_path=self.program.record_material_path,
             ),
             ParticlePointPort,
         )

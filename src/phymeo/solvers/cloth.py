@@ -3,6 +3,7 @@
 import numpy as np
 
 from ..constraints.distance import DistanceConstraints, distance_residual, project_distances
+from ..constraints.distance_trace import path_diagnostics, trace_flag
 from ..core.capabilities import SolverFailure
 from ..core.model import ParticleModel
 from ..core.scene import DomainBinding, SceneModel, SceneState, StageMetrics, StepSettings
@@ -15,7 +16,8 @@ class ClothProgram:
     capabilities = ProgramCapabilities("numpy", {"float64"}, {"particles"}, {"distance", "cloth"})
     history_fields = ()
 
-    def __init__(self, model, constraints, domain="cloth"):
+    def __init__(self, model, constraints, domain="cloth", *, record_material_path=False):
+        self.record_material_path = trace_flag(record_material_path)
         if not isinstance(model, ParticleModel) or model.inverse_mass.dtype != np.float64:
             raise TypeError("ClothProgram requires a float64 ParticleModel")
         if constraints is not None:
@@ -34,6 +36,7 @@ class ClothProgram:
             "model": self.model,
             "ordered_constraints": self.constraints,
             "domain": self.domain,
+            "record_material_path": self.record_material_path,
         }
 
     def create_workspace(self, scene, state, inputs, h, settings, context):
@@ -48,6 +51,7 @@ class ClothProgram:
             inputs.domains[self.domain],
             h,
             settings,
+            record_material_path=self.record_material_path,
         )
 
     def close(self):
@@ -55,7 +59,10 @@ class ClothProgram:
 
 
 class ClothWorkspace:
-    def __init__(self, model, constraints, domain, state, inputs, h, settings):
+    def __init__(
+        self, model, constraints, domain, state, inputs, h, settings, *, record_material_path=False
+    ):
+        self.record_material_path = trace_flag(record_material_path)
         self.model, self.constraints, self.domain = model, constraints, domain
         self.initial, self.inputs, self.h, self.settings = state, inputs, h, settings
         self.candidate, self.velocity_ready = None, False
@@ -67,6 +74,7 @@ class ClothWorkspace:
         if not predict(self.model, self.candidate, self.inputs.force, self.h):
             raise SolverFailure("cloth free prediction failed")
         self.predicted = self.candidate.copy()
+        self.material_frames = []
         count = 0 if self.constraints is None else len(self.constraints.indices)
         self.alpha, self.multipliers = np.zeros(count), np.zeros(count)
         if self.constraints is not None:
@@ -81,6 +89,9 @@ class ClothWorkspace:
                 raise SolverFailure("cloth compliance is not representable at this step")
 
     def position_sweep(self):
+        frame = None
+        if self.record_material_path:
+            frame = np.empty((0 if self.constraints is None else len(self.constraints.indices), 18))
         if self.constraints is not None:
             project_distances(
                 self.candidate.position,
@@ -88,7 +99,10 @@ class ClothWorkspace:
                 self.constraints,
                 self.alpha,
                 self.multipliers,
+                trace=frame,
             )
+        if frame is not None:
+            self.material_frames.append(frame)
 
     def position_metrics(self):
         if self.constraints is None:
@@ -127,14 +141,21 @@ class ClothWorkspace:
         return SceneState({self.domain: self.candidate})
 
     def diagnostics(self):
-        return {"distance_multipliers": self.multipliers}
+        data = {"distance_multipliers": self.multipliers}
+        if self.record_material_path:
+            data["material_path"] = path_diagnostics(
+                self.material_frames, self.predicted, self.alpha, self.h
+            )
+        return data
 
     def close(self):
         pass
 
 
-def make_cloth_runtime(model, constraints, *, domain="cloth", settings=None):
-    program = ClothProgram(model, constraints, domain)
+def make_cloth_runtime(
+    model, constraints, *, domain="cloth", settings=None, record_material_path=False
+):
+    program = ClothProgram(model, constraints, domain, record_material_path=record_material_path)
     return SceneStepper(
         program.scene, program, StepSettings(substeps=1) if settings is None else settings
     )

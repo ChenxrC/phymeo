@@ -6,6 +6,7 @@ import numpy as np
 
 from ..core._arrays import float_array
 from ..core.numerics import normalized_error
+from .distance_trace import validate_trace
 
 
 @dataclass(frozen=True, eq=False)
@@ -44,15 +45,34 @@ class DistanceConstraints:
             object.__setattr__(self, name, value)
 
 
-def project_distances(position, inverse_mass, constraints, alpha, multipliers):
+def project_distances(position, inverse_mass, constraints, alpha, multipliers, *, trace=None):
     """One deterministic Gauss-Seidel sweep; multipliers persist within this step."""
+    if trace is not None:
+        validate_trace(
+            trace,
+            len(constraints.indices),
+            position,
+            inverse_mass,
+            alpha,
+            multipliers,
+            constraints.indices,
+            constraints.rest_length,
+            constraints.compliance,
+        )
     for k, (i, j) in enumerate(constraints.indices):
+        if trace is not None:
+            trace[k, :3], trace[k, 3:6] = position[i], position[j]
+            trace[k, 6:9], trace[k, 9:12] = position[i], position[j]
+            trace[k, 12:14] = multipliers[k]
+            trace[k, 17] = 0
         delta = position[i] - position[j]
         length = float(np.hypot.reduce(delta))
         # Coincident endpoints have no unique gradient. Choose the first world axis.
         direction = (
             delta / length if length > 0 else np.array([1.0, 0.0, 0.0], dtype=position.dtype)
         )
+        if trace is not None:
+            trace[k, 14:17] = direction
         wi, wj = float(inverse_mass[i]), float(inverse_mass[j])
         denominator = wi + wj + alpha[k]
         if denominator == 0:
@@ -64,6 +84,9 @@ def project_distances(position, inverse_mass, constraints, alpha, multipliers):
             position[i] += wi * dlambda * direction
         if wj > 0:
             position[j] -= wj * dlambda * direction
+        if trace is not None:
+            trace[k, 6:9], trace[k, 9:12] = position[i], position[j]
+            trace[k, 13], trace[k, 17] = multipliers[k], dlambda
 
 
 def distance_residual(position, constraints, alpha, multipliers, reference_length):

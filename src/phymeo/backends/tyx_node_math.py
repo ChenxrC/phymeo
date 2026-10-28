@@ -3,6 +3,7 @@
 import numpy as np
 
 from ..constraints.distance import DistanceConstraints
+from ..constraints.distance_trace import validate_trace
 from ..core.capabilities import SolverFailure
 from ..core.tetrahedral import TetrahedralModel
 from ..materials.stvk import deformation_gradient
@@ -99,7 +100,21 @@ class TyxNodeMath(TyxMath):
         (result,) = self.call(apply_node_loads, len(indices), indices, loads, w, x, outputs=(4,))
         return self._restore_fixed(result, state, w)
 
-    def project_distances(self, x, weights, constraints, alpha, multipliers):
+    def project_distances(self, x, weights, constraints, alpha, multipliers, *, trace=None):
+        if trace is not None:
+            if not isinstance(constraints, DistanceConstraints):
+                raise TypeError("distance projection requires DistanceConstraints")
+            validate_trace(
+                trace,
+                len(constraints.indices),
+                x,
+                weights,
+                alpha,
+                multipliers,
+                constraints.indices,
+                constraints.rest_length,
+                constraints.compliance,
+            )
         from ._tyx_node_kernels import project_node_distances
 
         position, w = self._nodes(x, weights)
@@ -116,6 +131,23 @@ class TyxNodeMath(TyxMath):
             raise ValueError("alpha must be non-negative")
         if not count:
             return np.array(x, dtype=np.float64, copy=True), multipliers.astype(np.float64)
+        if trace is not None:
+            from ._tyx_distance_trace import project_node_distances_traced
+
+            position, result, path = self.call(
+                project_node_distances_traced,
+                count,
+                edges,
+                rest,
+                alpha,
+                w,
+                position,
+                multipliers,
+                np.zeros((count, 18), np.float32),
+                outputs=(5, 6, 7),
+            )
+            trace[:] = path
+            return self._restore_fixed(position, x, w), result.astype(np.float64)
         position, result = self.call(
             project_node_distances,
             count,

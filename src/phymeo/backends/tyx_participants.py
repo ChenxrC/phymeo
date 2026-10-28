@@ -5,6 +5,7 @@ from dataclasses import replace
 import numpy as np
 
 from ..constraints.distance import distance_residual
+from ..constraints.distance_trace import path_diagnostics
 from ..core.robot import RobotState, robot_array
 from ..core.scene import StageMetrics, _name
 from ..core.state import ParticleState
@@ -69,8 +70,12 @@ class TyxRobotParticipant(_Participant):
 class TyxClothParticipant(_Participant):
     point_role = "node"
 
-    def __init__(self, model, constraints, mode):
-        self._setup(ClothProgram(model, constraints), _PARTICLES, mode)
+    def __init__(self, model, constraints, mode, *, record_material_path=False):
+        self._setup(
+            ClothProgram(model, constraints, record_material_path=record_material_path),
+            _PARTICLES,
+            mode,
+        )
 
     @property
     def workspace_type(self):
@@ -216,6 +221,7 @@ class _NodeWorkspace(_Workspace):
     def __init__(self, factory, domain, state, inputs, h, settings, context):
         self._setup(factory, domain, state, inputs, h, settings, context)
         self.is_solid = factory.family.kind == "tetrahedra"
+        self.record_material_path = not self.is_solid and factory.program.record_material_path
         self.constraints = None if self.is_solid else factory.program.constraints
         self.engine = TyxNodeMath(factory.mode)
 
@@ -238,6 +244,7 @@ class _NodeWorkspace(_Workspace):
         self.candidate, self.predicted = ParticleState(x, v), ParticleState(x, v)
         count = 0 if self.constraints is None else len(self.constraints.indices)
         self.alpha, self.multipliers = np.zeros(count), np.zeros(count)
+        self.material_frames = []
         if self.constraints is not None:
             self.alpha = self.engine.axpy(self.alpha, self.constraints.compliance, 1 / self.h)
             self.alpha = self.engine.axpy(np.zeros(count), self.alpha, 1 / self.h).astype(
@@ -287,6 +294,9 @@ class _NodeWorkspace(_Workspace):
 
     def position_sweep(self):
         self._ready()
+        frame = None
+        if self.record_material_path:
+            frame = np.empty((0 if self.constraints is None else len(self.constraints.indices), 18))
         if self.constraints is not None:
             self.candidate.position, self.multipliers = self.engine.project_distances(
                 self.candidate.position,
@@ -294,7 +304,10 @@ class _NodeWorkspace(_Workspace):
                 self.constraints,
                 self.alpha,
                 self.multipliers,
+                trace=frame,
             )
+        if frame is not None:
+            self.material_frames.append(frame)
 
     def position_metrics(self):
         self._ready()
@@ -332,6 +345,10 @@ class _NodeWorkspace(_Workspace):
     def diagnostics(self):
         self._ready()
         data = dict(PRECISION, distance_multipliers=self.multipliers)
+        if self.record_material_path:
+            data["material_path"] = path_diagnostics(
+                self.material_frames, self.predicted, self.alpha, self.h
+            )
         if self.is_solid:
             gradient = deformation_gradient(self.model, self.candidate.position)
             singular = np.linalg.svd(gradient, compute_uv=False)

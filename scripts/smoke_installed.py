@@ -9,6 +9,26 @@ import numpy as np
 import phymeo
 
 
+def check_material_path():
+    model = phymeo.ParticleModel(np.ones(2), np.zeros(3))
+    state = phymeo.ParticleState(np.array([[0.0, 0, 0], [2.0, 0, 0]]), np.zeros((2, 3)))
+    edges = phymeo.DistanceConstraints(np.array([[0, 1]]), np.ones(1), np.zeros(1))
+    with phymeo.make_cloth_runtime(model, edges, record_material_path=True) as runtime:
+        result = runtime.step(
+            phymeo.SceneState({"cloth": state}),
+            phymeo.SceneInputs({"cloth": phymeo.StepInputs.zeros(2)}),
+            0.1,
+        )
+    if not result.report.accepted:
+        raise RuntimeError("Installed material path failed")
+    path = result.report.substeps[0].diagnostics["material_path"]
+    if path["schema"] != "xpbd-distance-path-v1" or path["frames"][0].flags.writeable:
+        raise RuntimeError("Installed material snapshot contract failed")
+    np.testing.assert_array_equal(
+        path["frames"][0][0], [0, 0, 0, 2, 0, 0, 0.5, 0, 0, 1.5, 0, 0, 0, -0.5, -1, 0, 0, -0.5]
+    )
+
+
 def check_articulated_pair():
     """A mass2 Y slider and mass1 node share a closed normal contact."""
     robot = phymeo.RobotModel(
@@ -458,6 +478,7 @@ def main():
     np.testing.assert_allclose(
         solid_port.response(np.array([[1.0, 0, 0]])), [[4, 0, 0]], atol=1e-12
     )
+    check_material_path()
     check_articulated_pair()
     check_surface_contact()
     check_bounded_control()

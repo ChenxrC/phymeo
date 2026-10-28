@@ -1,5 +1,5 @@
 {
-  "status": "review_fixed_final_cuda_and_serial_observation_pending",
+  "status": "local_acceptance_complete_exact_remote_delivery_pending",
   "source": {
     "git_revision": "0657c98cb43779facdd3577fb91d74d5447fc144",
     "git_dirty": false,
@@ -37,12 +37,8 @@
       "passed": 8,
       "seconds": 649.23,
       "revision": "9f504bb",
-      "note": "before inner-settings review fix"
-    },
-    "actual_cuda": {
-      "status": "superseded targeted run explicitly cancelled before completion; no result claimed",
-      "revision": "9f504bb",
-      "next": "full final source suite"
+      "note": "before inner-settings review fix",
+      "coverage_note": "eight original physical cases before inner-settings fix; new actualinterpret inner-budget regression passed within final 86-focused suite; not a claimed single final nine-test run"
     },
     "ubuntu_core": {
       "passed": 47,
@@ -64,6 +60,18 @@
       "deselected": 18,
       "seconds": 22.28,
       "includes": "actualinterpret new inner-budget regression"
+    },
+    "superseded_actual_cuda": {
+      "status": "superseded targeted run explicitly cancelled before completion; no result claimed",
+      "revision": "9f504bb",
+      "next": "full final source suite"
+    },
+    "actual_cuda": {
+      "passed": 1950,
+      "seconds": 4194.04,
+      "revision": "0657c98cb43779facdd3577fb91d74d5447fc144",
+      "log": "artifacts/material-contact-cuda-full-final.txt",
+      "exit_code": 0
     }
   },
   "unsuccessful_attempts": [
@@ -90,7 +98,7 @@
       "passed": 2,
       "seconds": 415.59,
       "error": "cos underflow",
-      "subsequent": "two isolated RED then GREEN; full focused rerun pending"
+      "subsequent": "two isolated RED then GREEN; corrected focused actualinterpret eight passed649.23s before review fix; new inner-budget regression later passed"
     }
   ],
   "review": {
@@ -114,15 +122,204 @@
     "lock_exports_match": true
   },
   "benchmark": {
-    "status": "one-sample harness smoke only; concurrent validation, not formal measurement",
-    "log": "artifacts/material-contact-benchmark-smoke.json"
+    "status": "complete",
+    "order": [
+      "numpy",
+      "interpret",
+      "cuda"
+    ],
+    "samples_per_mode": 300,
+    "warmups_per_mode": 3,
+    "source_revision_at_start": "884019d33f707d1549317aa450e5b454400f17a2",
+    "script_sha256": "5dacf5de24c858bd17fee4293e3a59a5e6ba7738111e269bb2df7cd37a9e1e11",
+    "scope": "full step including replays, audits, owned reports, numerical assertions and workspace close; excludes factory/final close",
+    "modes": {
+      "numpy": {
+        "samples": 300,
+        "median_ms": 149.07704992219806,
+        "p95_ms": 159.14448995608836,
+        "first_ms": 196.06409990228713,
+        "batch_medians_ms": [
+          150.3959499532357,
+          148.82800006307662,
+          148.22205004747957
+        ],
+        "batch_p95_ms": [
+          162.29161015944555,
+          155.71441511856392,
+          156.4696448855102
+        ],
+        "counters": {
+          "outer_iterations": [
+            24
+          ],
+          "replays": [
+            25
+          ],
+          "tolerance": [
+            1e-08
+          ],
+          "completed_launches": [
+            0
+          ],
+          "uploads": [
+            0
+          ],
+          "downloads": [
+            0
+          ]
+        },
+        "phase_medians_ms": {
+          "setup": 2.308050054125488,
+          "predict": 4.055549972690642,
+          "position": 136.65839994791895,
+          "prepare_velocity": 1.3046999229118228,
+          "velocity": 1.3194000348448753,
+          "validation": 0.1478500198572874,
+          "verification": 0.000500120222568512,
+          "diagnostics": 2.29114992544055,
+          "close": 0.001600012183189392
+        },
+        "source": {
+          "git_revision": "884019d33f707d1549317aa450e5b454400f17a2",
+          "git_dirty": false,
+          "source_sha256": "b56bafcac102b696ebf1a180bb2946bd7ab2a8d103b9a3a4b6bffc5a85645dce",
+          "python": "3.12.14",
+          "numpy": "2.5.4",
+          "platform": "Windows-11-10.0.26200-SP0"
+        },
+        "file_sha256": "3b172b1dfd6548dc753bc62be7f0179a0e7e21279fa552b7c439245fc2b6b7a4"
+      },
+      "interpret": {
+        "samples": 300,
+        "median_ms": 433.377500041388,
+        "p95_ms": 458.9302548323758,
+        "first_ms": 677.2620000410825,
+        "batch_medians_ms": [
+          436.3103500800207,
+          432.5516000390053,
+          431.02504999842495
+        ],
+        "batch_p95_ms": [
+          463.63812003983185,
+          447.41266483906657,
+          456.44163992255926
+        ],
+        "counters": {
+          "outer_iterations": [
+            11
+          ],
+          "replays": [
+            12
+          ],
+          "tolerance": [
+            2e-05
+          ],
+          "completed_launches": [
+            300
+          ],
+          "uploads": [
+            0
+          ],
+          "downloads": [
+            0
+          ]
+        },
+        "phase_medians_ms": {
+          "setup": 2.2933499421924353,
+          "predict": 33.22429989930242,
+          "position": 392.0053499750793,
+          "prepare_velocity": 1.2471999507397413,
+          "velocity": 1.2535001151263714,
+          "validation": 0.14869996812194586,
+          "verification": 0.000600004568696022,
+          "diagnostics": 2.273299964144826,
+          "close": 0.0016499543562531471
+        },
+        "source": {
+          "git_revision": "884019d33f707d1549317aa450e5b454400f17a2",
+          "git_dirty": true,
+          "source_sha256": "b56bafcac102b696ebf1a180bb2946bd7ab2a8d103b9a3a4b6bffc5a85645dce",
+          "python": "3.12.14",
+          "numpy": "2.5.4",
+          "platform": "Windows-11-10.0.26200-SP0"
+        },
+        "file_sha256": "9cad8753411e40b957c53652f3f4f6b0e128d84174b1a9384d4f1390ad23efd1"
+      },
+      "cuda": {
+        "samples": 300,
+        "median_ms": 2266.4658001158386,
+        "p95_ms": 2422.9125250596553,
+        "first_ms": 2595.26320011355,
+        "batch_medians_ms": [
+          2258.898949949071,
+          2288.4137500077486,
+          2261.9679500348866
+        ],
+        "batch_p95_ms": [
+          2401.8911198712885,
+          2441.4421748253517,
+          2394.9662999715656
+        ],
+        "counters": {
+          "outer_iterations": [
+            11
+          ],
+          "replays": [
+            12
+          ],
+          "tolerance": [
+            2e-05
+          ],
+          "completed_launches": [
+            300
+          ],
+          "uploads": [
+            2184
+          ],
+          "downloads": [
+            588
+          ]
+        },
+        "phase_medians_ms": {
+          "setup": 2.4094999535009265,
+          "predict": 186.70215003658086,
+          "position": 2071.239700075239,
+          "prepare_velocity": 1.23559997882694,
+          "velocity": 1.2486999621614814,
+          "validation": 0.15365006402134895,
+          "verification": 0.000500120222568512,
+          "diagnostics": 2.3029500152915716,
+          "close": 0.001700129359960556
+        },
+        "source": {
+          "git_revision": "884019d33f707d1549317aa450e5b454400f17a2",
+          "git_dirty": true,
+          "source_sha256": "b56bafcac102b696ebf1a180bb2946bd7ab2a8d103b9a3a4b6bffc5a85645dce",
+          "python": "3.12.14",
+          "numpy": "2.5.4",
+          "platform": "Windows-11-10.0.26200-SP0"
+        },
+        "file_sha256": "075aab5d31f2b4470df0184fd3432e15307556dc8e2f6040898636d840cc1f0f"
+      }
+    },
+    "notes": [
+      "source hash unchanged; interpret/cuda git_dirty reflects earlier untracked measurement outputs, not modified production code",
+      "no competing task numerical process or numerical review probe; subsequent next-stage design work only text/read-only",
+      "different precision/iterations: not equal-accuracy speed comparison",
+      "first call used existing caches; not cold JIT",
+      "stage timing does not separate pure kernel/native math/audit costs"
+    ]
   },
   "not_run": [
-    "final full CUDA suite",
-    "formal serial3x100 per mode"
+    "C++ endurance repair/retest (TYX-003 unresolved)",
+    "Warp equivalent comparison",
+    "cold cache performance",
+    "peak memory",
+    "complete P6.5 handoff acceptance"
   ],
   "unresolved": [
-    "review findings and required engineering acceptance",
+    "exact new remote SHA and CI delivery",
     "NUM-005 native angular loss",
     "TYX-003 Windows CPP endurance",
     "TYX-004 interpreter cosine errstate contract",
@@ -139,13 +336,19 @@
     }
   },
   "final_pipeline": {
-    "status": "running_full_cuda",
+    "status": "complete",
     "session": 73318,
     "source_revision": "0657c98cb43779facdd3577fb91d74d5447fc144",
     "log": "artifacts/material-contact-cuda-full-final.txt",
     "exit_file": "artifacts/material-contact-cuda-full-final.exit",
     "phase_file": "artifacts/material-contact-final-pipeline-status.txt",
     "serial_after_cuda_success": true,
-    "source_hash_guard": true
+    "source_hash_guard": true,
+    "exit_code": 0,
+    "successful_measured_calls": 900
+  },
+  "delivery": {
+    "status": "not_pushed_yet",
+    "branch": "codex/p6-5-handoff"
   }
 }

@@ -1,6 +1,6 @@
-# P6.5 机器人—距离材料接触：验收进行中
+# P6.5 机器人—距离材料接触：本地验收完成，远程交付待闭环
 
-本阶段实现`InitialRobotMaterialContactProgram`和显式`MaterialContactBudgets`。生产初稿9f504bb、唯一review修复0657c98；124源码hash b56bafcac102b696ebf1a180bb2946bd7ab2a8d103b9a3a4b6bffc5a85645dce。未完成所有设备/计量/交付门禁，不算完整P6.5或新增已交付能力。
+本阶段实现`InitialRobotMaterialContactProgram`和显式`MaterialContactBudgets`。生产初稿9f504bb、唯一review修复0657c98；124源码hash b56bafcac102b696ebf1a180bb2946bd7ab2a8d103b9a3a4b6bffc5a85645dce。2026-10-29本地功能、完整CUDA和正式串行计量已完成；精确远程SHA/CI尚待闭环，不算完整P6.5。
 
 ## 行为与边界
 
@@ -18,6 +18,10 @@
 
 版本区分：初稿actualinterpret8通过649.23s和有界C++1通过/7未选27.19s；review修复新增inner配置已实际interpret通过。旧CUDA定向运行被最终版全量替代而中止，不报其通过数。修复前interpret曾2pass3fail（cos underflow）与最初共享接触31pass2fail均保留在[工程记录](p65-material-contact-engineering.json)，不删除失败历史。
 
-## 剩余验收
+## 最终工程验收与交付
 
-完整最终CUDA及通过后NumPy→interpret→CUDA串行各3×100正在pipeline执行。性能只观察，不能用并发测试耗时当加速比；此前1sample只是脚本smoke。须完成结果核对、性能记录、提交推送、精确SHA/CI闭环。TYX-003长期C++门禁不以短测替代；TYX-004解释器cos异常合同仍待依赖维护者确认。之后才推进几何/CCD与真实夹持，双臂与Three.js仍未完成。
+完整最终CUDA **1950通过，4194.04s**，退出码0。其后自动串行NumPy→interpret→CUDA各3×100，共900次成功，另各3次warmup；每个记录均核对原源码hash和脚本hash未变。源码仍为0657c98的124文件，不将文档HEAD当成新产品实现。耗时为测试耗时，不作性能比较。
+
+正式观测端到端中位数分别149.077/433.378/2266.466ms，P95为159.144/458.930/2422.913ms。NumPy25次replay、tyx12次replay/300次完成launch；CUDA每次2184上传/588下载。容差/计算精度不同，不是等精度速度比较；包含主机精确审计/重放/数值断言，不是纯kernel性能。详见[PERF-016](../performance-bottlenecks/PERF-016-material-contact.md)和原始[NumPy](../performance-bottlenecks/measurements/p65-material-contact-numpy.json)、[interpret](../performance-bottlenecks/measurements/p65-material-contact-interpret.json)、[CUDA](../performance-bottlenecks/measurements/p65-material-contact-cuda.json)。未做优化，没有新tyx实现缺陷归因。
+
+剩余为本阶段提交推送、精确SHA及CI核验。TYX-003长期C++门禁不以短测替代；TYX-004解释器cos异常合同仍开放，NUM-005仍为离散积分误差。随后按[框架交付规则](../development/p65-framework-capabilities.md)推进可复用几何/接触生命周期/CCD，再弯曲/自碰撞、真实夹持、双臂与同源Three.js；P6.5整体未完成。

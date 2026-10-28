@@ -30,13 +30,15 @@
 - [x] 对能量/角动量预算与语义写RED：原始外功、单域计数、错误effective功、跨域抵消、display数值舍入边界；先原式通过再物理拒绝的不相容硬边；固定.001Nms角动量限额下旋转硬边h=.1拒绝/.025接受。最小精确helper实现，不改原tol。
 - [x] 冻结T2静置与mu1/mu.1双接触材料场景，h1/16与1/32；独立离散低mu递推及连续cos参照、真实Py/Lz/能量外功/反作用次数；满足spec数值门槛再算通过。交换接触顺序、同节点多平面与共享祖先，不能仅断言solver内部residual。
 - [x] 先RED后实现：missing/mismatched material_path、参数/请求/精度损坏与后子步预算拒绝、trace/close故障，完整state/history rollback及retry=fresh；所有权与base关闭一次。
-- [ ] actualinterpret/CUDA覆盖压缩材料、T2支持/低mu与事务；boundedC++只一次小例。安装包smoke引用新公共API。完成测试后commit，不把实验脚本当生产交付。
+- [x] actualinterpret/CUDA覆盖压缩材料、T2支持/低mu与事务；boundedC++只一次小例。安装包smoke引用新公共API。完成测试后commit，不把实验脚本当生产交付。
 
 ### Task 2: 独立审阅、工程与串行观测
 
 **Files:** 新阶段acceptance/engineering/review、`scripts/benchmark_material_contact.py`；更新PERF-016、NUM-005、progress/continuation。
 **Interfaces:** 仅使用Task1公共程序和真实参与者，不重复旧材料路径/账本阶段验证。
 
-- [ ] 唯一fresh最终review（实际新阶段完整diff），Important/Critical按独立RED最小修复，不派第二轮。完整CUDA、两CPU、actualinterpret与boundedCPP、Ubuntu新核心、ruff/docs/import/compile/uvpip/exports、build/源码外wheel。原始失败与修复后结果分开记录；源码hash必须最终版。
-- [ ] 数值/review全部退出后NumPy→interpret→CUDA串行各3×100，压缩边同初态完整outer、native执行、物理门禁与关闭都计时；记录迭代/replay/launch/传输及预算范围。精度不同不称加速比，性能只观测。
+- [x] 唯一fresh最终review（实际新阶段完整diff），Important/Critical按独立RED最小修复，不派第二轮。完整CUDA、两CPU、actualinterpret与boundedCPP、Ubuntu新核心、ruff/docs/import/compile/uvpip/exports、build/源码外wheel。原始失败与修复后结果分开记录；源码hash必须最终版。
+- [x] 数值/review全部退出后NumPy→interpret→CUDA串行各3×100，压缩边同初态完整outer、native执行、物理门禁与关闭都计时；记录迭代/replay/launch/传输及预算范围。精度不同不称加速比，性能只观测。
 - [ ] 更新真实边界和后续几何/CCD路线，commit/push核对远程SHA和准确CI，更新既有heartbeat。完整P6.5仍需后续弯曲/自碰撞/有限单爪/控制/双臂回放，不提前complete。
+
+2026-10-29最终验收：CUDA1950通过4194.04s；NumPy/interpret/CUDA正式串行各300成功，源码hash相同。review仅原一次，未新增审阅；actualinterpret版本覆盖与boundedCPP边界见工程报告。最后交付框待精确push/SHA/CI，不能用本地通过提前勾选。

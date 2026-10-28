@@ -6,7 +6,7 @@
 
 | 顺序 | 阶段与里程碑对应 | 当前状态 |
 | --- | --- | --- |
-| 1 | 同域材料/机器人接触验收并推送，H1/H2的前置切片 | 实现及审阅修复完成；完整CUDA、串行观测和远程交付尚待闭环 |
+| 1 | 同域材料/机器人接触验收并推送，H1/H2的前置切片 | 本地验收完整：CUDA1950、900次串行观测完成；精确远程交付待闭环 |
 | 2 | 自动接触建立/分离、特征切换、几何覆盖与保守CCD（H1） | 后续必须实施 |
 | 3 | 弯曲和自碰撞，有限驱动单爪承重及低摩擦滑落对照（H2） | 后续必须实施 |
 | 4 | 目标/IK/控制history，A夹取→B接布→平台放置（H3） | 后续必须实施 |
@@ -21,13 +21,13 @@
 
 用户要求接触生命周期/CCD/弯曲/自碰撞形成可复用框架能力。后续缺口先给子 agent 明确接口、支持边界与独立测例，经框架验收后再接综合案例；生产实现不嵌入案例坐标/名称/时间特判。每项能力至少两个非递布独立小场景，分别跟踪“框架能力验收”和“案例接入”；具体规则与当前双线状态见[框架交付合同](development/p65-framework-capabilities.md)。该要求属于现有P6.5，不另建任务，也不以通用化为由扩展P7/P8。
 
-## 当前实施：同域材料接触，验收进行中（2026-10-28）
+## 当前实施：同域材料接触，本地验收完成（2026-10-29）
 
-已实现`InitialRobotMaterialContactProgram`与`MaterialContactBudgets`，本地产品修复提交`0657c98`，尚未推送本阶段。真实材料路径、机器人相反输入、法向/摩擦接触与末几何共同审核；增加精确冻结模型能量和材料角动量绝对预算。旧自由节点规则保留。详见[验收状态](benchmarks/p65-material-contact-acceptance.md)、[工程证据](benchmarks/p65-material-contact-engineering.json)与[唯一审阅](benchmarks/p65-material-contact-review.md)。**完整设备/性能/交付门禁尚未闭环，不计为第14项已交付能力。**
+已实现`InitialRobotMaterialContactProgram`与`MaterialContactBudgets`，本地产品修复提交`0657c98`，尚未推送本阶段。真实材料路径、机器人相反输入、法向/摩擦接触与末几何共同审核；增加精确冻结模型能量和材料角动量绝对预算。旧自由节点规则保留。详见[验收状态](benchmarks/p65-material-contact-acceptance.md)、[工程证据](benchmarks/p65-material-contact-engineering.json)与[唯一审阅](benchmarks/p65-material-contact-review.md)。**完整CUDA与正式观测已通过；精确远程交付待闭环，不提前计为第14项已交付能力。**
 
 最终源码124文件，两套CPU环境各1612项通过、338项设备未选；Ubuntu新核心47项通过；源码外native-pip wheel安装和数值smoke通过。一次fresh review的1Important由3RED回归修复，相关86通过。修复前actualinterpret8项通过，修复的新内外迭代配置也已实际interpret验证；不能混写成新版一次完整interpret9项。旧版CUDA定向运行因被最终版全量替代而中止，不计为通过。
 
-完整最终CUDA在运行，成功且源码hash不变后自动串行执行NumPy→interpret→CUDA各3×100观测。失败即停后续计量，保留原始结果。原生双节点支撑、共享摩擦/低mu、三角/单转子、精确物理预算、后段trace/close/物理拒绝回滚已有测试；仍仅步初闭合局部平面，不是一般碰撞、CCD、真实夹爪或双臂递布。
+完整最终CUDA1950通过4194.04s；其后NumPy→interpret→CUDA各3×100共900成功，源码与脚本hash不变。正式单步中位149.077/433.378/2266.466ms，计完整重放与host审计，精度/迭代不同不作加速比；PERF-016只记录不优化。原生双节点支撑、共享摩擦/低mu、三角/单转子、精确物理预算、后段trace/close/物理拒绝回滚已有测试；仍仅步初闭合局部平面，不是一般碰撞、CCD、真实夹爪或双臂递布。
 
 新增[TYX-004](../tyx_flaw/TYX-004-cosine-errstate.md)：解释器cos的宿主异常策略差异已独立复现；phymeo仅修复prismatic不需要的三角计算，不关闭严格异常门禁。TYX-003 C++长期资源问题与NUM-005材料积分误差仍开放。
 

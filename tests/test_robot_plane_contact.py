@@ -554,3 +554,69 @@ def test_two_second_rotating_contact_matches_scalar_stop(h):
                 diag(result)["world_impulses"], [[0, expected, 0]], atol=3e-8
             )
             previous, previous_v = q, v
+
+
+@pytest.mark.parametrize("origin", [1e16, -1e16])
+def test_world_translation_cannot_erase_local_rotating_contact(origin):
+    model = replace(
+        rod(),
+        joint_position=np.array([[origin, origin, 0.0]]),
+        com=np.zeros((1, 3)),
+        inertia_diagonal=np.ones((1, 3)),
+    )
+    binding = contact(local_points=np.array([[1.0, 0, 0]]), offsets=np.array([origin]))
+    runtime, state, inputs = case(model=model, q=[0.25], v=[-1.0], contacts=(binding,))
+    # Relative geometry is independent of the world translation: free gap flips sign.
+    assert np.sin(0.25) > 0 > np.sin(-0.25)
+    with runtime:
+        result = runtime.step(state, inputs, 0.5)
+    assert not result.report.accepted
+    assert "geometry" in result.report.reason
+    np.testing.assert_array_equal(result.state.domains["robot"].q, [0.25])
+    np.testing.assert_array_equal(result.state.domains["robot"].v, [-1.0])
+
+
+@pytest.mark.parametrize("origin", [1e16, -1e16])
+def test_world_translation_cannot_erase_com_lever_in_empty_contact_program(origin):
+    model = replace(rod(), joint_position=np.array([[origin, origin, 0.0]]))
+    runtime, state, inputs = case(model=model, q=[0.25], v=[-1.0], contacts=())
+    with runtime:
+        result = runtime.step(state, inputs, 0.5)
+    assert not result.report.accepted
+    assert "geometry" in result.report.reason
+    np.testing.assert_array_equal(result.state.domains["robot"].q, [0.25])
+
+
+@pytest.mark.parametrize("origin", [0.0, 1.0, -1.0])
+def test_resolved_translated_rotor_retains_physical_contact(origin):
+    model = replace(
+        rod(),
+        joint_position=np.array([[origin, origin, 0.0]]),
+        com=np.zeros((1, 3)),
+        inertia_diagonal=np.ones((1, 3)),
+    )
+    binding = contact(local_points=np.array([[1.0, 0, 0]]), offsets=np.array([origin]))
+    runtime, state, inputs = case(model=model, q=[0.25], v=[-1.0], contacts=(binding,))
+    with runtime:
+        result = runtime.step(state, inputs, 0.5)
+    assert result.report.accepted, result.report.reason
+    np.testing.assert_allclose(result.state.domains["robot"].q, [0], atol=1e-10)
+    np.testing.assert_allclose(result.state.domains["robot"].v, [-0.5], atol=1e-10)
+    np.testing.assert_allclose(diag(result)["world_impulses"], [[0, 0.5, 0]], atol=1e-10)
+
+
+def test_candidate_entering_unresolved_world_geometry_rolls_back():
+    model = replace(
+        cartesian(),
+        joint_types=("prismatic", "revolute"),
+        joint_axis=np.array([[1.0, 0, 0], [0, 0, 1.0]]),
+        gravity=np.zeros(3),
+    )
+    binding = contact(indices=np.array([1]), local_points=np.array([[1.0, 0, 0]]))
+    runtime, state, inputs = case(model=model, v=[1e16, 0], contacts=(binding,))
+    with runtime:
+        result = runtime.step(state, inputs, 1.0)
+    assert not result.report.accepted
+    assert "geometry" in result.report.reason
+    np.testing.assert_array_equal(result.state.domains["robot"].q, [0, 0])
+    np.testing.assert_array_equal(result.state.domains["robot"].v, [1e16, 0])

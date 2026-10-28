@@ -17,7 +17,14 @@ from ..runtime.load_replay import SceneLoadReplay
 from ..runtime.program import ProgramCapabilities
 from ..runtime.registry import StateRegistry
 from ..runtime.robot_family import robot_family
-from ._robot_replay_ledger import FrozenRobotLedger, dot, exact_float, rational, upper_float
+from ._robot_replay_ledger import (
+    FrozenRobotLedger,
+    audit_affine_geometry,
+    dot,
+    exact_float,
+    rational,
+    upper_float,
+)
 from .particle_plane_contact import _BorrowedProgram, _disk, _gap
 from .robot import robot_energy
 
@@ -170,6 +177,7 @@ class _RobotPlaneWorkspace:
         self.basis = _basis(self.normals)
         self.basis[:, :, 0] = self.normals
         self.impulses = np.zeros((len(self.indices), 3))
+        self._geometry(state)  # Audit coefficient geometry before freezing M0/b0.
         self.ledger = FrozenRobotLedger(
             self.model,
             state.domains[self.domain],
@@ -199,6 +207,7 @@ class _RobotPlaneWorkspace:
 
     def _geometry(self, state):
         robot = state.domains[self.domain]
+        audit_affine_geometry(self.model, robot, self.indices, self.local, self.h, self.settings)
         geometry = forward_kinematics(self.model, robot.q)
         positions = geometry.position[self.indices] + np.sum(
             geometry.rotation[self.indices] * self.local[:, None, :], axis=2

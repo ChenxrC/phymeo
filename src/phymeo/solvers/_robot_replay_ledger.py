@@ -6,7 +6,7 @@ import numpy as np
 
 from ..core.capabilities import SolverFailure
 from ..dynamics.robot_dynamics import bias_forces, mass_matrix
-from ..dynamics.robot_kinematics import point_jacobians
+from ..dynamics.robot_kinematics import forward_kinematics, point_jacobians
 
 
 def rational(value):
@@ -34,6 +34,68 @@ def upper_float(value):
     if not np.isfinite(result):
         raise SolverFailure("robot residual overflow")
     return result
+
+
+def audit_affine_geometry(model, state, indices, local, h, settings):
+    """Reject lost translations/levers using exact stored-rotation affine arithmetic.
+
+    This is a supported-range check, not a certification of trigonometry or the
+    native mass/bias algorithm. It never replaces native geometry or candidates.
+    """
+    geometry = forward_kinematics(model, state.q)
+    origin = []
+    for i, parent in enumerate(model.parents):
+        rotation = np.eye(3) if parent == -1 else geometry.rotation[parent]
+        before = [Fraction(0)] * 3 if parent == -1 else origin[parent]
+        point = [before[k] + dot(rotation[k], model.joint_position[i]) for k in range(3)]
+        if model.joint_types[i] == "prismatic":
+            point = [
+                point[k] + rational(geometry.axis[i, k]) * rational(state.q[i]) for k in range(3)
+            ]
+        origin.append(point)
+    # Include COMs even for empty contacts: these levers feed M0, b0 and inputs.
+    links = np.r_[np.arange(model.dof_count), indices]
+    points = np.concatenate((model.com, local))
+    jacobian = point_jacobians(model, state.q, links, points)[0]
+    length_budget = rational(settings.tolerance) * min(
+        rational(settings.reference_length), rational(h) * rational(settings.reference_speed)
+    )
+    speed_budget = rational(settings.tolerance) * rational(settings.reference_speed)
+    relative_budget = rational(min(settings.tolerance, 1e-10))
+    for row, link in enumerate(links):
+        expected = [
+            origin[link][k] + dot(geometry.rotation[link, k], points[row]) for k in range(3)
+        ]
+        actual = geometry.position[link] + geometry.rotation[link] @ points[row]
+        error = sum(abs(rational(actual[k]) - expected[k]) for k in range(3))
+        if error > length_budget:
+            raise SolverFailure("robot affine geometry point exceeds absolute tolerance")
+        reference_velocity = [Fraction(0)] * 3
+        ancestor = int(link)
+        while ancestor != -1:
+            axis = list(map(rational, geometry.axis[ancestor]))
+            if model.joint_types[ancestor] == "revolute":
+                lever = [expected[k] - origin[ancestor][k] for k in range(3)]
+                stored = actual - geometry.position[ancestor]
+                lost = sum(abs(rational(stored[k]) - lever[k]) for k in range(3))
+                magnitude = sum(map(abs, lever))
+                if lost > relative_budget * magnitude:
+                    raise SolverFailure("robot affine geometry loses an ancestor lever")
+                column = [
+                    axis[1] * lever[2] - axis[2] * lever[1],
+                    axis[2] * lever[0] - axis[0] * lever[2],
+                    axis[0] * lever[1] - axis[1] * lever[0],
+                ]
+            else:
+                column = axis
+            for k in range(3):
+                reference_velocity[k] += column[k] * rational(state.v[ancestor])
+            ancestor = int(model.parents[ancestor])
+        speed_error = sum(
+            abs(dot(jacobian[row, k], state.v) - reference_velocity[k]) for k in range(3)
+        )
+        if speed_error > speed_budget:
+            raise SolverFailure("robot affine geometry material velocity exceeds tolerance")
 
 
 class FrozenRobotLedger:

@@ -135,6 +135,29 @@ def check_bounded_control():
     return result
 
 
+def check_offset_attachment():
+    """Known finite-thickness impulse from the installed package."""
+    x = np.array([[0.0, 0, 0], [1.0, 0, 0], [0.0, 1, 0]])
+    base = phymeo.ParticlePointPort(
+        phymeo.ParticleModel(np.array([1.0, 2, 3]), np.zeros(3)),
+        phymeo.ParticleState(x, np.zeros((3, 3))),
+        np.arange(3),
+    )
+    port = phymeo.TriangleOffsetPointPort(
+        base,
+        np.array([[0, 1, 2]]),
+        np.array([[0.2, 0.3, 0.5]]),
+        np.array([0.2]),
+    )
+    force = np.array([[1.0, 0, 0]])
+    np.testing.assert_allclose(port.response(force), [[1.09, 0.04, -0.08]], atol=1e-14)
+    result = port.apply_impulses(force)
+    np.testing.assert_allclose(
+        result.velocity, [[0.2, 0, 0.2], [0.6, 0, -0.4], [1.5, 0, 0]], atol=1e-14
+    )
+    np.testing.assert_allclose(port.candidate_audit(result).energy_change, 0.545, atol=1e-14)
+
+
 def main():
     installed = Path(phymeo.__file__).resolve()
     if not installed.is_relative_to(Path(sys.prefix).resolve()):
@@ -309,6 +332,7 @@ def main():
     check_articulated_pair()
     check_surface_contact()
     check_bounded_control()
+    check_offset_attachment()
     for name in (
         "TyxRobotParticipant",
         "TyxClothParticipant",

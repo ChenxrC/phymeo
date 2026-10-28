@@ -17,6 +17,10 @@
 
 执行状态：现有heartbeat `phymeo-p3-p5`（名称“Phymeo 完成 P6.5”）ACTIVE；旧App goal卡仍保留过期截止和paused状态，现有goal工具不能resume/修改objective。该旧显示不是用户新停止指令，也不是已同步状态；当前按用户后续明确恢复及本次范围确认执行，不新建重复goal。
 
+## 框架复用与子 agent 交付（2026-10-29补充）
+
+用户要求接触生命周期/CCD/弯曲/自碰撞形成可复用框架能力。后续缺口先给子 agent 明确接口、支持边界与独立测例，经框架验收后再接综合案例；生产实现不嵌入案例坐标/名称/时间特判。每项能力至少两个非递布独立小场景，分别跟踪“框架能力验收”和“案例接入”；具体规则与当前双线状态见[框架交付合同](development/p65-framework-capabilities.md)。该要求属于现有P6.5，不另建任务，也不以通用化为由扩展P7/P8。
+
 ## 当前实施：同域材料接触，验收进行中（2026-10-28）
 
 已实现`InitialRobotMaterialContactProgram`与`MaterialContactBudgets`，本地产品修复提交`0657c98`，尚未推送本阶段。真实材料路径、机器人相反输入、法向/摩擦接触与末几何共同审核；增加精确冻结模型能量和材料角动量绝对预算。旧自由节点规则保留。详见[验收状态](benchmarks/p65-material-contact-acceptance.md)、[工程证据](benchmarks/p65-material-contact-engineering.json)与[唯一审阅](benchmarks/p65-material-contact-review.md)。**完整设备/性能/交付门禁尚未闭环，不计为第14项已交付能力。**

@@ -22,6 +22,10 @@
 
 当前材料接触验收只是P6.5中间切片。后续几何/CCD→弯曲/自碰撞→有限驱动单爪承重及低摩擦失败→双臂交接放台→同源Three.js，均已获用户持续授权，不等用户逐项重发请求。按[总进度阶段表](../progress.md)和[双臂总验收](../superpowers/plans/2026-10-27-dual-arm-cloth-handoff-milestone.md)推进；前一切片验收/推送闭环后自动进入下一项详细设计与TDD实施。阶段review只审该阶段，不重开已关闭审阅。完整物理/回放/重复与数值/工程门槛全部通过才complete并停止续跑，不以单个solver或测试进度代替总进度。
 
+## 框架能力开发与分派
+
+2026-10-29用户明确要求后续能力可复用，不做双臂专用demo实现。每次发现必要框架缺口，先按[框架交付合同](p65-framework-capabilities.md)冻结需求/输入输出/支持边界/状态事务/后端与独立测例，交给子 agent 实现，验收其结果后再接综合案例。主 agent 保留集成与验收责任；当前材料接触pipeline源码仍冻结，下一阶段可先只读准备需求，不能并发修改冻结产品或污染正式计量。
+
 ## 当前立即续作
 
 **材料接触主体已实现，继续工程验收，不重做设计、原型或已关闭审阅。** 本地产品`0657c98`，124源码hash`b56bafcac102b696ebf1a180bb2946bd7ab2a8d103b9a3a4b6bffc5a85645dce`。读[设计](../superpowers/specs/2026-10-28-p65-material-contact-design.md)、[计划](../superpowers/plans/2026-10-28-p65-material-contact.md)、[阶段验收](../benchmarks/p65-material-contact-acceptance.md)与[唯一review](../benchmarks/p65-material-contact-review.md)。具体运行句柄见本计划`.superpowers/sdd` ledger；不要重复启动已有进程。

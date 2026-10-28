@@ -28,13 +28,13 @@
 
 ## 当前立即续作
 
-先读[仿射特征整段净距设计](../superpowers/specs/2026-10-29-p65-linear-sweep-design.md)、[实施计划](../superpowers/plans/2026-10-29-p65-linear-sweep.md)及对应`.superpowers/sdd/2026-10-29-p65-linear-sweep/progress.md`。设计/计划提交29de9db；实现者linear_sweep_implementer正在Task1，从真正缺API/解析RED开始。检查其报告/状态后承接，不重复分派。唯一builder linear_sweep_contract_check已返回nothing important left，不再重查。新阶段最终fresh code review尚未派。
+仿射特征整段净距Task1与本地工程已全部完成。先核对新交付SHA/CI并关闭[计划](../superpowers/plans/2026-10-29-p65-linear-sweep.md)最后交付框；读[验收](../benchmarks/p65-linear-sweep-acceptance.md)、[工程](../benchmarks/p65-linear-sweep-engineering.json)及[唯一review](../benchmarks/p65-linear-sweep-review.md)。产品700fd32，最终测试/计量快照61ea634，126源码hash67ae299638326bf2018ee781a3bceadb5f54fbd84a7238f0740d9c27be3a6b60。全部实现/数值/审阅进程已退出，不重新分派旧builder/实现/review或900观测。
 
-主agent准备scripts/benchmark_linear_sweep.py，仅ruff通过；数值smoke和正式900观测都未运行。它不与实现者测试并发计量，正式计量须所有数值/reviewer退出。下一阶段只支持声明仿射轨迹的正净距认证，不是机器人FK曲线/TOI/接触响应。实现者只编辑冻结范围，父agent负责工程/唯一review/性能/准确远程交付。
+一次builder已无重要未决；唯一fresh最终review 0Critical0Important0Minor，无修复轮。最终main及两CPU相关各241、Ubuntu新host67、actualinterpret/CUDA各2及126文件源码外wheel通过；三个host路径各300正式计量成功，源/脚本hash一致，PERF-018只观测。交付新SHA/CI尚待核对，工程JSON为准。相关选测不是新全量，准确CI另承担全分支CPU矩阵。
 
-上一静态距离证书e63a1bf远程SHA及CI40748652046/Documentation40748652139均success，c1e9f47闭环；该阶段所有任务已勾，旧builder/实现/review/900观测和工程不再重做。源125hash4079424eeaed5a2ca307c42af4f3a13f014231e5c0e8a743e7c1b2bc31260e04是旧阶段快照，不能冒充新产品hash。
+下一阶段应向能产生真实反作用的自动建立/分离闭环推进，侧/法向/身份history/特征切换及FK保守路径须与现有材料/机器人原式账本一起冻结。新的生产合同尚未冻结，不能直接把有限局部平面程序的初态闭合门禁删除。至少两个非递布独立场景后交实现子agent，继续同一长程任务，不止于几何判断。
 
-旧材料接触9e0a432的两CI也成功；NUM-005、TYX-003/004仍开放。完整P6.5继续，不把任何前置切片当真实双臂完成。
+上一静态距离证书e63a1bf两CI成功并已c1e9f47闭环；旧材料接触也已交付。NUM-005、TYX-003/004仍开放。整体P6.5没有完成，不把任何前置切片当真实双臂或Three.js。
 
 ## 下一框架切片
 

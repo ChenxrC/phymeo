@@ -1,0 +1,157 @@
+{
+  "status": "local_accepted_pending_exact_remote_ci",
+  "product_commit": "700fd325c3a61b20202a4994c25336e3bfe9524a",
+  "source": {
+    "git_revision": "61ea634087798f64c4f073d52d9d3035c5c6910d",
+    "git_dirty": false,
+    "source_sha256": "67ae299638326bf2018ee781a3bceadb5f54fbd84a7238f0740d9c27be3a6b60",
+    "python": "3.12.14",
+    "numpy": "2.5.4",
+    "platform": "Windows-11-10.0.26200-SP0"
+  },
+  "python_files": 126,
+  "scope": "exact affine feature clearance over normalized time; host proof, not FK/TOI/contact response/lifecycle",
+  "prior_delivery": {
+    "head": "e63a1bf9e30c306d84e52ed4362f5ea23801d021",
+    "ci": 40748652046,
+    "documentation": 40748652139,
+    "conclusions": "success",
+    "closure_commit": "c1e9f47"
+  },
+  "review": {
+    "base": "29de9dbfc25d20cc31cdcbf9c4b19b1e2faa8ec4",
+    "head": "61ea634087798f64c4f073d52d9d3035c5c6910d",
+    "critical": 0,
+    "important": 0,
+    "minor": 0,
+    "independent_affine_probe_cases": 48,
+    "extra_cases": [
+      "certified prefix plus pending suffix at violation",
+      "right-half dyadic depth 52"
+    ],
+    "host_transaction_passed": 4,
+    "host_transaction_deselected": 2,
+    "host_transaction_seconds": 0.57,
+    "all_probes_exited": true,
+    "second_review": false
+  },
+  "tdd": {
+    "missing_api_red": 2,
+    "subdivision_red": 2,
+    "smoke_red": 1,
+    "mutation_controls": {
+      "float_threshold_square_red": 1,
+      "rounded_rational_witness_red": 2,
+      "removed_verifier_rejection_red": 2
+    },
+    "note": "58 boundary and initial 4 transaction tests passed immediately; not counted as initial RED"
+  },
+  "tests": {
+    "main_directed": {
+      "passed": 241,
+      "deselected": 4,
+      "seconds": 0.71
+    },
+    "core311_directed": {
+      "passed": 241,
+      "deselected": 4,
+      "seconds": 0.9,
+      "log": "artifacts/linear-sweep-core311-61ea634-final.txt"
+    },
+    "nativepip_directed": {
+      "passed": 241,
+      "deselected": 4,
+      "seconds": 0.83,
+      "log": "artifacts/linear-sweep-nativepip-61ea634-final.txt"
+    },
+    "ubuntu_new_host": {
+      "passed": 67,
+      "deselected": 2,
+      "seconds": 5.66,
+      "clean_install": false,
+      "log": "artifacts/linear-sweep-ubuntu-61ea634-final.txt"
+    },
+    "actual_interpret": {
+      "passed": 2,
+      "deselected": 4,
+      "seconds": 0.42
+    },
+    "actual_cuda": {
+      "passed": 2,
+      "deselected": 4,
+      "seconds": 1.09
+    }
+  },
+  "quality": {
+    "ruff": "passed",
+    "public_tyx_boundary": "126 files passed",
+    "compileall": "passed",
+    "uv_and_native_pip_check": "passed",
+    "lock_exports": "matched excluding generated comment header",
+    "docs": {
+      "passed": true,
+      "documents": 158,
+      "local_links": 718
+    }
+  },
+  "wheel": {
+    "path": "artifacts/linear-sweep-dist-61ea634-final/phymeo-0.1.0a0-py3-none-any.whl",
+    "sha256": "c0a71e858a3535df3740f27ba2dbe75971c9b90df82a59e59311befa5479e175",
+    "source_parity_files": 126,
+    "outside_source_native_pip_install_and_smoke": "passed",
+    "log": "artifacts/linear-sweep-wheel-61ea634-final.txt"
+  },
+  "performance": {
+    "raw": "docs/performance-bottlenecks/measurements/p65-linear-sweep.json",
+    "script_sha256": "3c87c97d88eec49efb4fededc5241c31dda5e5839d7029df5b16c265daca265c",
+    "accepted_measured_calls": 900,
+    "successful_including_warmups": 909,
+    "serial": true,
+    "cases": [
+      {
+        "name": "separated_probe",
+        "status": "certified",
+        "checked_intervals": 1,
+        "accepted": 300,
+        "median_ms": 0.3699500812217593,
+        "p95_ms": 0.5022249883040786
+      },
+      {
+        "name": "crossing_probe",
+        "status": "violation",
+        "checked_intervals": 1,
+        "accepted": 300,
+        "median_ms": 0.8567000040784478,
+        "p95_ms": 1.0152001515962183
+      },
+      {
+        "name": "subdivided_safe_rods",
+        "status": "certified",
+        "checked_intervals": 15,
+        "accepted": 300,
+        "median_ms": 22.0262500224635,
+        "p95_ms": 24.58187519805506
+      }
+    ],
+    "scope": "sweep plus analytic/partition/repetition checks; excludes fixture setup",
+    "not_measured": [
+      "contact response",
+      "robot FK arcs",
+      "GPU CCD",
+      "Warp",
+      "peak memory"
+    ]
+  },
+  "not_run": [
+    "new local full legacy CPU suite: directed tests run, exact remote CI independently required",
+    "old material-contact full CUDA",
+    "unfixed TYX-003 C++ endurance",
+    "robot FK/TOI/response/lifecycle"
+  ],
+  "delivery": {
+    "head": null,
+    "remote_sha": null,
+    "ci": null,
+    "documentation": null
+  }
+}

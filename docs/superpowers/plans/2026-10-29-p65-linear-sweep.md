@@ -29,22 +29,22 @@
 **Files:** Create `src/phymeo/geometry/linear_sweep.py`（公开校验/报告/有界遍历）；若证明与候选部分需独立组织，允许create `src/phymeo/geometry/_linear_sweep_math.py`（仅本模块内部精确算术/候选），不拆新公共通用库。Create `tests/test_linear_sweep.py`、`tests/test_linear_sweep_transaction.py`；modify `src/phymeo/__init__.py`公共导出与`scripts/smoke_installed.py`。不能改其他生产/旧测试语义。
 **Interfaces:** Consume旧closest公开函数只作候选；produce `linear_feature_sweep(first_start, first_end, second_start, second_end, *, clearance_m, max_intervals=128, max_depth=20) -> FeatureSweepResult`，字段严格按spec。
 
-- [ ] 写缺API RED（测试体内断言公开API存在，不以collection error代替RED），然后加入板穿越/安全/等号滑动解析例RED。最小实现输入/冻结报告/精确同步方向证明，真正运行确认GREEN。
-- [ ] 写两根独立杆件穿越/安全对照、错过根中点的t=.25板穿越、max_intervals=1未决RED，加入有界左优先细分。先冻结128/20正常预算，不因看到结果放宽。
-- [ ] 加入安全但必须细分的转向杆解析例（spec第5项），独立验证distance²>=.5而r=.5；预算1未决、128/20必须certified，不能靠始终未决满足保守性。
-- [ ] Review Focus逐项RED：最小正clearance/ULP中点、类型/shape/NaN/Inf、深度0/52及计数不超预算、初/末违例、所有pending分区覆盖、共同运动/互换/置换/可表示变换、退化/近平行/候选失败/异常传播、owned结果与失败重试。独立oracle用解析或单独有理几何推导，不调用生产私有证明作oracle。
-- [ ] 薄SceneVerifier用before/after真实多域端点认证，正常接受、末子步violation与unresolved拒绝、验证通过后close失败；state/history/输入全恢复、retry=fresh。至少两子步，不改变运行时或覆盖物理状态。测试侧负控制去掉拒绝应RED，防止注入未触发。
-- [ ] actualinterpret/CUDA各短例生成原生端点并断言后端执行计数和实际位置；标记tyx，host证书不称GPU CCD。相关新模块/旧surface_features、feature_distance_bound/事务/SceneStepper一次定向回归，记录实际命令/版本/RED/GREEN。
-- [ ] 补公开导出和installed smoke中板穿越+安全对照（源码smoke不冒充安装）。ruff/diff检查、自查文件范围，提交产品测试；写task report给主agent。源码外最终wheel由Task2主agent负责，Task1不重复旧全量/长期CPP/正式性能/最终审阅。
+- [x] 写缺API RED（测试体内断言公开API存在，不以collection error代替RED），然后加入板穿越/安全/等号滑动解析例RED。最小实现输入/冻结报告/精确同步方向证明，真正运行确认GREEN。
+- [x] 写两根独立杆件穿越/安全对照、错过根中点的t=.25板穿越、max_intervals=1未决RED，加入有界左优先细分。先冻结128/20正常预算，不因看到结果放宽。
+- [x] 加入安全但必须细分的转向杆解析例（spec第5项），独立验证distance²>=.5而r=.5；预算1未决、128/20必须certified，不能靠始终未决满足保守性。
+- [x] Review Focus逐项RED：最小正clearance/ULP中点、类型/shape/NaN/Inf、深度0/52及计数不超预算、初/末违例、所有pending分区覆盖、共同运动/互换/置换/可表示变换、退化/近平行/候选失败/异常传播、owned结果与失败重试。独立oracle用解析或单独有理几何推导，不调用生产私有证明作oracle。
+- [x] 薄SceneVerifier用before/after真实多域端点认证，正常接受、末子步violation与unresolved拒绝、验证通过后close失败；state/history/输入全恢复、retry=fresh。至少两子步，不改变运行时或覆盖物理状态。测试侧负控制去掉拒绝应RED，防止注入未触发。
+- [x] actualinterpret/CUDA各短例生成原生端点并断言后端执行计数和实际位置；标记tyx，host证书不称GPU CCD。相关新模块/旧surface_features、feature_distance_bound/事务/SceneStepper一次定向回归，记录实际命令/版本/RED/GREEN。
+- [x] 补公开导出和installed smoke中板穿越+安全对照（源码smoke不冒充安装）。ruff/diff检查、自查文件范围，提交产品测试；写task report给主agent。源码外最终wheel由Task2主agent负责，Task1不重复旧全量/长期CPP/正式性能/最终审阅。
 
 ### Task 2: 单次审阅、工程验证与后续接入
 
 **Files:** 新stage acceptance/engineering/review与PERF、可选小型serial benchmark；更新progress/continuation/framework双线状态。不修改Task1算法以省性能。
 **Interfaces:** 消费Task1API；输出版本化工程/性能/准确Git与CI证据，继续后续生命周期/机器人FK路径，而非勾完整H1。
 
-- [ ] 主agent核对spec覆盖与任务报告后，连同计量脚本仅派一次fresh最终code review；重要问题先独立RED再修，必要复验，不另派第二次review。
-- [ ] 两CPU环境相关回归、Ubuntu新host、实际interpret/CUDA短集成、ruff/docs/边界/compile、uvpip/锁导出一致及最终源码外wheel。无新增tyx kernel，不重跑旧1950CUDA/已完成静态距离900观测；准确最终远程CI承担全分支CPU矩阵，不将选测称全量。
-- [ ] 所有数值/review探针退出后，三个独立host路径（简单安全、途中穿越、安全细分）各3×100串行计量，记录status/区间计数/实际源与脚本hash，排除fixture。未测GPU/Warp不作比较，不优化。
+- [x] 主agent核对spec覆盖与任务报告后，连同计量脚本仅派一次fresh最终code review；重要问题先独立RED再修，必要复验，不另派第二次review。
+- [x] 两CPU环境相关回归、Ubuntu新host、实际interpret/CUDA短集成、ruff/docs/边界/compile、uvpip/锁导出一致及最终源码外wheel。无新增tyx kernel，不重跑旧1950CUDA/已完成静态距离900观测；准确最终远程CI承担全分支CPU矩阵，不将选测称全量。
+- [x] 所有数值/review探针退出后，三个独立host路径（简单安全、途中穿越、安全细分）各3×100串行计量，记录status/区间计数/实际源与脚本hash，排除fixture。未测GPU/Warp不作比较，不优化。
 - [ ] 更新框架线“声明仿射路径的净距认证”、案例线“尚未接入动态接触/机器人旋转”，记录遗留与支持边界。commit/push专用分支、核对远程SHA/准确CI，然后继续厚度侧/法向/接触身份history/自动建立分离与FK保守路径。不合主分支/发布包/扩P7P8。
 
-计划自查：spec的接口/精确阈值/整段证明/候选/分区/预算/退化/两独立场景/事务/后端均落入Task1，工程观测与交付属于Task2。builder一次nothing important left；Task1/2尚未开始。
+计划自查：spec的接口/精确阈值/整段证明/候选/分区/预算/退化/两独立场景/事务/后端均落入Task1，工程观测与交付属于Task2。builder一次nothing important left；Task1与Task2前三项已本地验收；唯一review无发现，工程/900观测通过。最后准确远程交付项待新SHA/CI闭环。

@@ -28,11 +28,11 @@
 
 **Interfaces:** SceneLoadReplay构造、evaluate、snapshot、close；ReplayTrial.result/integrated_loads/effective_inputs/duration，按Spec精确语义。
 
-- [ ] 写解析单/多域、p→0→p、所有权、channels错误、输入表示丢失、自定义字段/history、后段failure/close/重试测试。
-- [ ] 跑pytest新测试，Expected:缺少模块/公开API失败。
-- [ ] 实现原输入快照、显式字段合成、表示检查、调用既有SceneStepper和owned账本。
-- [ ] 新测试、旧SceneStepper和participant相关回归，Expected:全部通过；ruff通过。
-- [ ] 提交Task1，记录RED/GREEN及实际覆盖范围。
+- [x] 写解析单/多域、p→0→p、所有权、channels错误、输入表示丢失、自定义字段/history、后段failure/close/重试测试。
+- [x] 跑pytest新测试，Expected:缺少模块/公开API失败。
+- [x] 实现原输入快照、显式字段合成、表示检查、调用既有SceneStepper和owned账本。
+- [x] 新测试、旧SceneStepper和participant相关回归，Expected:全部通过；ruff通过。
+- [x] 提交Task1，记录RED/GREEN及实际覆盖范围。
 
 ### Task 2: 动态解析例、实际tyx与工程验收
 
@@ -40,8 +40,12 @@
 
 **Interfaces:** Task1 evaluate持有整个dt的积分输入；使用原ArticulatedCouplingProgram/TyxArticulatedCouplingProgram空接触模型验证真实机器人/节点输入，不改变其点接触规律。
 
-- [ ] h=.01/.005、T=2s解析平面静摩擦/低μ滑动；布XPBD、非线性机器人基准重放对照；实际tyx三模式载荷与launch。
-- [ ] 核心全量/全量CUDA、3.11与nativepip3.12、uv build、源码外wheel、公用边界和docs检查，Expected:通过。
-- [ ] 对本计划BASE后的新代码做一次fresh review，重要问题一次TDD修复及复验，保留证据；不重审旧阶段。
+- [x] h=.01/.005、T=2s解析平面静摩擦/低μ滑动；布XPBD、非线性机器人基准重放对照；实际tyx三模式载荷与launch。
+- [x] 核心全量/全量CUDA、3.11与nativepip3.12、uv build、源码外wheel、公用边界和docs检查，Expected:通过。
+- [x] 对本计划BASE后的新代码做一次fresh review，重要问题一次TDD修复及复验，保留证据；不重审旧阶段。
 - [ ] 数值测试进程退出后串行计时：小单域/双域重放，明确包括构造/原program/关闭/验算；不优化，不声称Warp差距。
 - [ ] 更新续作入口并push、核对准确SHA/CI。只有本切片验收完成，完整P6.5继续动态接触外层和几何，不能标整体complete。
+
+## 实施结果及外部阻塞
+
+产品3f23378，验收与机器记录见docs/benchmarks/p65-load-replay-*。全部功能/安装测试完成，一次独立review及4个RED回归修复完成。正式计时限定双域小负载（单域解析由单元测试覆盖），NumPy/interpret/CUDA各300次完成；C++在长循环加载DLL失败，未完成原300次门禁，故上方长期计量项仍未勾选。TYX-003保存独立资源生命周期复现及集成诊断，不能以C++2项短测试替代。提交/推送条目在实际核对后才完成；完整P6.5继续独立动态/几何工作，本阶段全后端长期验收仍open。

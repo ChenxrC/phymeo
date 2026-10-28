@@ -6,7 +6,17 @@
 
 已核对基础提交 `73bcda611b5ed6dfe189aa78c28bc9cf31164abe`、工作区干净、最终CI成功。新增[架构汇报](reports/2026-10-28-architecture/README.md)。后续从布厚度作用点的块Jacobian端口开始，再接动态接触账本、CCD、弯曲/自碰撞、有限驱动单爪、双臂递布及Three.js。完整P6.5尚未验收。
 
-本轮已完成[厚度材料点端口](benchmarks/p65-offset-acceptance.md)，产品源码`10f8cdd`。完整CUDA1559、两个核心环境各1284、interpret与核心38、C++3、108文件源码外wheel和7200次串行观测通过；一次审阅的2项Important均TDD修复。当前共7项基础模块，不等于完整动态夹持。PPT已更新为这个源码快照。后续优先动态接触位置/速度账本，再CCD、弯曲/自碰撞、单爪、双臂与Three.js；不再重做厚度端口。此段生成时尚待push及准确head远程CI核对，不能从本地通过推断远程通过。
+本轮已完成[厚度材料点端口](benchmarks/p65-offset-acceptance.md)，产品源码`10f8cdd`。完整CUDA1559、两个核心环境各1284、interpret与核心38、C++3、108文件源码外wheel和7200次串行观测通过；一次审阅的2项Important均TDD修复。当前共7项基础模块，不等于完整动态夹持。PPT已更新为这个源码快照。后续优先动态接触位置/速度账本，再CCD、弯曲/自碰撞、单爪、双臂与Three.js；不再重做厚度端口。厚度交付8223c7457781c93269565ae2374f4811b77efc02的CI40611577823及Documentation40611577859已success。
+
+## 2026-10-28 续作：固定区间重放及C++依赖阻塞
+
+新增[载荷重放](benchmarks/p65-load-replay-acceptance.md)，产品`3f2337850e130e56172e957a4696ceb93cb738ed`、109文件源码hash`bbc798c78fedc222192fdd557a72000d02f52f0caa0d13b3f5daf4a11bcbff0c`。每次候选从同一完整state/history/input重算，积分载荷只通过原输入率施加一次。静置/低摩擦解析例、非线性机器人、布XPBD、隐藏状态及后段失败已覆盖；第8项基础已实现，完整自动接触与双臂仍未完成。
+
+一次独立审阅1项Important经4个RED→GREEN回归修复。修复后全量CUDA1605、两个核心环境各1328、解释器＋核心46、actual C++短测2、源码外109文件wheel、uv/pip/质量检查通过。原PPT保留厚度端口源码快照，不冒充新的完整递布演示。
+
+[性能观测](performance-bottlenecks/measurements/p65-load-replay.md)：NumPy/interpret/CUDA各300次计量成功；**Windows C++长期循环失败，尚未闭环**。已登记[TYX-003](../tyx_flaw/TYX-003-windows-cpp-library-lifetime.md)：公开tyx独立new1200显式close后仍留存1200库；另一次真实重放诊断226次成功、第227次DLL初始化失败，2036库留存。未改依赖pin、未用回退/子进程重启掩盖；具体Windows耗尽机制仍待tyx agent。性能不优化，失败不写成通过。
+
+下一步继续NumPy/CUDA动态接触外层与几何/保守CCD的独立工作，再弯曲/自碰撞、有限驱动单爪及低μ对照、目标/IK/history、真实双臂与Three.js。C++长循环修复后须按原规模重测；不重复已经通过的厚度端口、旧P6轨迹或已关闭审阅。完整P6.5与本切片全后端长期门禁均不能标complete。此段提交后的准确远程SHA/CI另核对。
 
 以下按时间保留历史记录，旧截止与旧状态只描述当时窗口。
 

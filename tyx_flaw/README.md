@@ -21,6 +21,7 @@
 | [TYX-001](TYX-001-fp64-compute.md) | FP64 存储往返通过，但内置类型缺失，三条计算路径均在 lowering 拒绝；独立复现与原始 JSON 已保存 | tyx agent 确认类型路线并贯通编译/执行合同 |
 | [TYX-002](TYX-002-chained-comparison.md) | 连续比较在三模式入口均被 lowering 拒绝；显式 `and` 独立实测通过 | 低优先级语法能力请求，保留短路及中间表达式单次求值语义 |
 | [TYX-003](TYX-003-windows-cpp-library-lifetime.md) | Windows显式关闭Runtime后DLL留存：独立new1200留下1200库；集成长循环DLL初始化失败 | 高优先级生命周期排查；C++长循环验收受阻，不能以短测替代 |
+| [TYX-004](TYX-004-cosine-errstate.md) | interpret的cos(±1e-25)继承NumPy严格异常策略而拒绝，CUDA返回1；独立四组实测 | 明确解释器异常合同；phymeo仅修复prismatic不需要的三角计算 |
 
 现有主机同步、串行共享体接触和缓冲区生命周期条目仍属于 phymeo 集成候选热点，不能据此断言 tyx 比 Warp 慢。当前没有已实测的同条件 Warp 性能差距。
 

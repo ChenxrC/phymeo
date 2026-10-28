@@ -89,6 +89,10 @@ from .solvers.coupled_program import (
 )
 from .solvers.coupled_xpbd import CoupledXPBDSolver
 from .solvers.free_scene import FreeSceneProgram
+from .solvers.initial_robot_material_contact import (
+    InitialRobotMaterialContactProgram,
+    MaterialContactBudgets,
+)
 from .solvers.initial_robot_node_contact import InitialRobotNodeContactProgram
 from .solvers.particle_plane_contact import ParticlePlaneContactProgram
 from .solvers.rigid_semi_implicit import RigidSemiImplicitSolver
@@ -111,6 +115,8 @@ __all__ = [
     "RobotPlaneContactProgram",
     "RobotNodePlaneContacts",
     "InitialRobotNodeContactProgram",
+    "InitialRobotMaterialContactProgram",
+    "MaterialContactBudgets",
     "RobotPlaneContacts",
     "SceneLoadReplay",
     "ReplayTrial",

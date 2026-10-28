@@ -1,0 +1,94 @@
+{
+  "python": "3.12.14",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "numpy": "2.5.4",
+  "tyx": "0.1.0a0",
+  "source": {
+    "url": "ssh://git@github.com/ChenxrC/tyx.git",
+    "vcs_info": {
+      "vcs": "git",
+      "commit_id": "99f6df7c0fd8fdeef77f97df83914da27b64b7ee",
+      "requested_revision": "99f6df7c0fd8fdeef77f97df83914da27b64b7ee"
+    }
+  },
+  "scope": "functional errstate sensitivity; no performance or Warp comparison",
+  "cases": [
+    {
+      "mode": "interpret",
+      "numpy_errstate": "raise",
+      "input": [
+        0.0,
+        1e-25,
+        -1e-25
+      ],
+      "expected": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "status": "rejected",
+      "error_type": "FloatingPointError",
+      "error": "underflow encountered in cos"
+    },
+    {
+      "mode": "interpret",
+      "numpy_errstate": "ignore",
+      "input": [
+        0.0,
+        1e-25,
+        -1e-25
+      ],
+      "expected": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "status": "passed",
+      "actual": [
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    {
+      "mode": "cuda",
+      "numpy_errstate": "raise",
+      "input": [
+        0.0,
+        1e-25,
+        -1e-25
+      ],
+      "expected": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "status": "passed",
+      "actual": [
+        1.0,
+        1.0,
+        1.0
+      ]
+    },
+    {
+      "mode": "cuda",
+      "numpy_errstate": "ignore",
+      "input": [
+        0.0,
+        1e-25,
+        -1e-25
+      ],
+      "expected": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "status": "passed",
+      "actual": [
+        1.0,
+        1.0,
+        1.0
+      ]
+    }
+  ]
+}

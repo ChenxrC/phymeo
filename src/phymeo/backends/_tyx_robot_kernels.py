@@ -50,8 +50,11 @@ def robot_geometry(
                 for k in tx.static_range(3):
                     value = _add(value, _mul(frame[i, a, k], local_axis[i, k]))
                 axis[i, a] = value
-            cosine = tx.cos(q[i])
-            sine = tx.sin(q[i])
+            cosine = 1.0
+            sine = 0.0
+            if kinds[i] == 0:
+                cosine = tx.cos(q[i])
+                sine = tx.sin(q[i])
             for a in tx.static_range(3):
                 if kinds[i] == 1:
                     position[i, a] = _add(position[i, a], _mul(axis[i, a], q[i]))

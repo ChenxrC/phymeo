@@ -24,7 +24,7 @@
 
 每次重放同时执行FrozenRobotLedger和所有选中域MaterialPathLedger.require（真实participant diagnostics与全局sweep数），任何内层accepted不等于外层收敛。接触速度采用v_node1-J0*v_robot1，最终真实材料速度J1*v1另名记录；不能混称。法向/摩擦圆盘与contact_residual沿用精确世界p投影合同，normal/friction/original-input/材料/最终gap都在原StepSettings容差内才接受。
 
-GS预条件仍用wI+J0*M0^-1*J0.T，明确它只是free response预条件，不是材料精确切线；每次更新后全域native重放保留同域交叉响应。没有收敛保证，超迭代预算显式拒绝，不能减少残差门禁或增大tol。**不能仅因当前接触速度小于tol就停止；最终几何与下述物理预算也必须一起通过。** 原始储存单位的最终gap保守下界>=-tol*min(reference_length,h*reference_speed)，初态正间隙/穿透超限拒绝。不是自动新接触/CCD，旋转末穿透仍可拒绝。
+GS预条件仍用wI+J0*M0^-1*J0.T，明确它只是free response预条件，不是材料精确切线；每次更新后全域native重放保留同域交叉响应。没有收敛保证，超迭代预算显式拒绝，不能减少残差门禁或增大tol。**不能仅因当前接触速度小于tol就停止；最终几何与下述物理预算也必须一起通过。** 为避免容差内的单向速度偏差在持续窗口累积，首个合格候选后可在原position_iterations预算内继续GS，直到法向/摩擦残差不再改善，保留整个最佳且原式/物理均合格的native trial；诊断计入全部重放。该迭代细化不引入gap反馈、位置稳定化、改tol或替换native状态，末分离仍按原规则允许。原始储存单位的最终gap保守下界>=-tol*min(reference_length,h*reference_speed)，初态正间隙/穿透超限拒绝。不是自动新接触/CCD，旋转末穿透仍可拒绝。
 
 ## 独立物理预算
 

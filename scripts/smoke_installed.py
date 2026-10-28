@@ -319,6 +319,74 @@ def check_initial_robot_node_contact():
     np.testing.assert_allclose(result.state.domains["nodes"].velocity, [[0, -1 / 3, 0]], atol=1e-10)
 
 
+def check_initial_robot_material_contact():
+    robot = phymeo.RobotModel(
+        np.array([-1]),
+        ("prismatic",),
+        np.zeros((1, 3)),
+        np.array([[0.0, 0, 0, 1]]),
+        np.array([[0.0, 1, 0]]),
+        np.array([2.0]),
+        np.zeros((1, 3)),
+        np.ones((1, 3)),
+        np.zeros(3),
+    )
+    nodes = phymeo.ParticleModel(np.ones(2), np.zeros(3))
+    edges = phymeo.DistanceConstraints(np.array([[0, 1]]), np.ones(1), np.array([0.01]))
+    scene = phymeo.SceneModel(
+        (
+            phymeo.DomainBinding("robot", "robot", robot),
+            phymeo.DomainBinding("nodes", "particles", nodes),
+        )
+    )
+    base = phymeo.ArticulatedCouplingProgram(
+        scene,
+        {
+            "robot": phymeo.RobotParticipant(robot),
+            "nodes": phymeo.ClothParticipant(nodes, edges, record_material_path=True),
+        },
+        phymeo.RobotSphereAttachments(np.empty(0, int), np.empty((0, 3)), np.empty(0)),
+        [],
+    )
+    contact = phymeo.RobotNodePlaneContacts(
+        "nodes",
+        np.array([0]),
+        np.array([0]),
+        np.array([[1.0, 0, 0]]),
+        np.array([[0.0, 1, 0]]),
+        np.zeros(1),
+    )
+    program = phymeo.InitialRobotMaterialContactProgram(
+        scene,
+        base,
+        (contact,),
+        materials={"nodes": edges},
+        budgets=phymeo.MaterialContactBudgets(1e-6, 0.001),
+        registry=base.registry,
+    )
+    state = phymeo.SceneState(
+        {
+            "robot": phymeo.RobotState(np.zeros(1), np.zeros(1)),
+            "nodes": phymeo.ParticleState(
+                np.array([[1.0, 0.0, 0.0], [1.0, 0.8, 0.0]]), np.zeros((2, 3))
+            ),
+        }
+    )
+    inputs = phymeo.SceneInputs(
+        {"robot": phymeo.RobotInputs.zeros(1), "nodes": phymeo.StepInputs.zeros(2)}
+    )
+    with phymeo.SceneStepper(
+        scene, program, phymeo.StepSettings(substeps=1, tolerance=1e-10), registry=base.registry
+    ) as runtime:
+        result = runtime.step(state, inputs, 0.1)
+    if not result.report.accepted:
+        raise RuntimeError("Installed initial robot-material contact failed")
+    np.testing.assert_allclose(result.state.domains["robot"].v, [-2 / 7], atol=1e-10)
+    np.testing.assert_allclose(
+        result.state.domains["nodes"].velocity, [[0, -2 / 7, 0], [0, 6 / 7, 0]], atol=1e-10
+    )
+
+
 def main():
     installed = Path(phymeo.__file__).resolve()
     if not installed.is_relative_to(Path(sys.prefix).resolve()):
@@ -499,6 +567,7 @@ def main():
     check_particle_plane_contact()
     check_robot_plane_contact()
     check_initial_robot_node_contact()
+    check_initial_robot_material_contact()
     for name in (
         "TyxRobotParticipant",
         "TyxClothParticipant",

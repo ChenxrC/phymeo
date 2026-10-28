@@ -107,6 +107,9 @@ class InitialRobotNodeContactProgram(RobotPlaneContactProgram):
             for k in ("tolerance", "reference_length", "reference_speed")
         ):
             raise ValueError("inner tolerance and scales must match outer")
+        return self._make_workspace(state, inputs, h, settings, inner, context)
+
+    def _make_workspace(self, state, inputs, h, settings, inner, context):
         return _InitialPairWorkspace(self, state, inputs, h, settings, inner, context)
 
 
@@ -131,13 +134,8 @@ class _InitialPairWorkspace:
         self.local_normals = np.array([row[4] for row in self.rows]).reshape(-1, 3)
         self.mu = np.array([row[5] for row in self.rows])
         self.models = {d.name: d.model for d in program.scene.domains}
-        self.node_domains = tuple(sorted({row[0] for row in self.rows}))
-        self.node_ledgers = {
-            name: FreeParticleLedger(
-                self.models[name], state.domains[name], inputs.domains[name], h, settings
-            )
-            for name in self.node_domains
-        }
+        self.node_domains = self._selected_domains()
+        self.node_ledgers = self._make_node_ledgers(state, inputs, h, settings, context)
         self.gap_scale = min(settings.reference_length, h * settings.reference_speed)
         robot = state.domains[self.domain]
         geometry = forward_kinematics(self.model, robot.q)
@@ -195,6 +193,39 @@ class _InitialPairWorkspace:
             context=context,
             registry=program.registry,
         )
+
+    def _selected_domains(self):
+        return tuple(sorted({row[0] for row in self.rows}))
+
+    def _make_node_ledgers(self, state, inputs, h, settings, context):
+        return {
+            name: FreeParticleLedger(
+                self.models[name], state.domains[name], inputs.domains[name], h, settings
+            )
+            for name in self.node_domains
+        }
+
+    def _audit_nodes(self, trial, node, audit):
+        state, effective = trial.result.state, trial.effective_inputs
+        for name, ledger in self.node_ledgers.items():
+            for key, value in ledger.require(
+                state.domains[name], effective.domains[name], node[name], self.settings.tolerance
+            ).items():
+                audit[key] = max(audit.get(key, Fraction(0)), value)
+
+    def _remember_free_energy(self, state):
+        if self.free_energy is None:
+            self.free_energy = self._kinetic(state)
+
+    def _energy_audit(self, state, magnitude, residual):
+        energy = self._kinetic(state) - self.free_energy
+        if magnitude:
+            residual["frozen_energy"] = upper_float(
+                max(energy, Fraction(0)) / (magnitude * rational(self.settings.reference_speed))
+            )
+        elif energy != 0:
+            raise SolverFailure("zero contact changed native free kinetic energy")
+        return energy
 
     def _node_points(self, state):
         return (
@@ -256,7 +287,11 @@ class _InitialPairWorkspace:
         loads = {self.domain: {"effort": np.array([exact_float(x) for x in generalized])}}
         loads.update(
             {
-                name: {"force": np.array([[exact_float(x) for x in row] for row in values])}
+                name: {
+                    "force": np.array([[exact_float(x) for x in row] for row in values]).reshape(
+                        -1, 3
+                    )
+                }
                 for name, values in node.items()
             }
         )
@@ -279,15 +314,10 @@ class _InitialPairWorkspace:
         )
         if max(audit.values()) > rational(self.settings.tolerance):
             raise SolverFailure("native robot dynamics/input/configuration exceeds tolerance")
-        for name, ledger in self.node_ledgers.items():
-            for key, value in ledger.require(
-                state.domains[name], effective.domains[name], node[name], self.settings.tolerance
-            ).items():
-                audit[key] = max(audit.get(key, Fraction(0)), value)
+        self._audit_nodes(trial, node, audit)
         self.native_audit = audit
         self.trial = trial
-        if self.free_energy is None:
-            self.free_energy = self._kinetic(state)
+        self._remember_free_energy(state)
         self.replays += 1
         for report in trial.result.report.substeps:
             execution = report.diagnostics.get("execution", {})
@@ -368,7 +398,6 @@ class _InitialPairWorkspace:
             ),
             Fraction(0),
         )
-        energy = self._kinetic(state) - self.free_energy
         magnitude = sum((abs(rational(v)) for v in world.flat), Fraction(0))
         moment = Fraction(0)
         for node, point, p in zip(self.node_points0, self.robot_points0, world, strict=True):
@@ -388,12 +417,8 @@ class _InitialPairWorkspace:
             residual["contact_work"] = upper_float(
                 max(work, Fraction(0)) / (magnitude * rational(scale))
             )
-            residual["frozen_energy"] = upper_float(
-                max(energy, Fraction(0)) / (magnitude * rational(scale))
-            )
             residual["paired_moment"] = upper_float(moment / (magnitude * rational(self.gap_scale)))
-        elif energy != 0:
-            raise SolverFailure("zero contact changed native free kinetic energy")
+        energy = self._energy_audit(state, magnitude, residual)
         return (
             StageMetrics(residual, penetration=upper_float(penetration)),
             positions,

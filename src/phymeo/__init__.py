@@ -64,6 +64,7 @@ from .geometry.surface_features import (
     closest_point_triangle,
     closest_segment_segment,
 )
+from .runtime.load_replay import ReplayTrial, SceneLoadReplay
 from .runtime.program import (
     ProgramCapabilities,
     SceneProgram,
@@ -96,6 +97,8 @@ from .validation.free_particle import FreeParticleVerifier
 __version__ = "0.1.0a0"
 
 __all__ = [
+    "SceneLoadReplay",
+    "ReplayTrial",
     "ContactImpulseResult",
     "solve_contact_impulses",
     "MultiDomainPointOperator",

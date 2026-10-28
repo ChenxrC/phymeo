@@ -227,3 +227,31 @@ def test_prescribed_cli_names_the_external_driver_experiment(tmp_path):
     run = api().load_prescribed_run(tmp_path / "driver")
     assert run.config["interaction"] == "prescribed_driver"
     assert run.config["dynamic_domains"] == ["soft"]
+
+
+@pytest.mark.parametrize("phase", ["new", "prepared", "closed"])
+def test_prescribed_workspace_never_exposes_terminal_dynamic_response(phase):
+    from phymeo.core.scene import BackendContext
+
+    _, trajectory, program, initial, inputs = setup()
+    workspace = program.create_workspace(
+        program.scene, initial, inputs, trajectory.h, StepSettings(), BackendContext()
+    )
+    try:
+        if phase != "new":
+            workspace.predict()
+            workspace.prepare_velocity()
+        if phase == "closed":
+            workspace.close()
+        error, message = (
+            (ValueError, "empty native contact set")
+            if phase == "prepared"
+            else (RuntimeError, "closed|prepare_velocity")
+        )
+        with pytest.raises(error, match=message):
+            workspace.apply_point_velocity_impulses(())
+        workspace.close()
+        workspace.close()
+    finally:
+        # Also release resources when a lifecycle assertion fails.
+        workspace.resources.close()

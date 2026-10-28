@@ -239,6 +239,10 @@ class PrescribedArticulatedProgram:
 
 class _PrescribedWorkspace(ArticulatedWorkspace):
     def __init__(self, program, state, inputs, index, h, settings, context):
+        # This external-boundary subclass builds participants itself. It shares
+        # the base lifecycle, but never supports a dynamic terminal response.
+        self._terminal_allowed = False
+        self._velocity_prepared = self._closed = False
         fixture = program.fixture
         self.node_names = fixture.node_names
         self.index = index

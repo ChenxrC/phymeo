@@ -43,6 +43,7 @@ from .core.tetrahedral import TetrahedralModel
 from .core.verification import CandidateVerifier, VerificationReport
 from .coupling.candidate_audit import PointCandidateAudit
 from .coupling.domain_graph import MultiDomainPointOperator
+from .coupling.offset_port import TriangleOffsetPointPort
 from .coupling.participant import (
     ClothParticipant,
     ParticipantWorkspace,
@@ -103,6 +104,7 @@ __all__ = [
     "ClosestFeaturePair",
     "closest_point_triangle",
     "closest_segment_segment",
+    "TriangleOffsetPointPort",
     "WeightedPointPort",
     "PointPairOperator",
     "TyxRobotParticipant",

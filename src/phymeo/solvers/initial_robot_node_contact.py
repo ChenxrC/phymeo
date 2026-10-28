@@ -6,13 +6,13 @@ from fractions import Fraction
 import numpy as np
 
 from ..constraints.contact_impulse import _basis
-from ..constraints.friction import _norm
 from ..constraints.robot_node_plane import RobotNodePlaneContacts
 from ..core.capabilities import SolverFailure
 from ..core.model import ParticleModel
 from ..core.scene import StageMetrics
 from ..dynamics.robot_kinematics import forward_kinematics, point_jacobians
 from ..runtime.load_replay import SceneLoadReplay
+from ._contact_replay_audit import contact_residual
 from ._particle_replay_ledger import FreeParticleLedger
 from ._robot_replay_ledger import (
     FrozenRobotLedger,
@@ -149,12 +149,15 @@ class _InitialPairWorkspace:
             )
             self.local.append(local - normal * float(normal @ (local - anchor)))
         self.local = np.array(self.local).reshape(-1, 3)
-        self.robot_points0, self.j0, self.normals0, self.gaps0 = self._geometry(state)
+        self.robot_points0, self.j0, self.normals0, self.gaps0, initial_bounds = self._geometry(
+            state
+        )
         self.node_points0 = self._node_points(state)[0]
         length = settings.tolerance * self.gap_scale
-        if np.any(np.abs(self.gaps0) > length) or np.any(
-            np.sum(np.abs(self.node_points0 - self.robot_points0), axis=1) > length
-        ):
+        if any(
+            max(abs(lo), abs(hi)) > rational(settings.tolerance) * rational(self.gap_scale)
+            for lo, hi in initial_bounds
+        ) or np.any(np.sum(np.abs(self.node_points0 - self.robot_points0), axis=1) > length):
             raise SolverFailure("initial robot-node contact must be closed")
         self.basis = _basis(self.normals0)
         self.basis[:, :, 0] = self.normals0
@@ -201,7 +204,7 @@ class _InitialPairWorkspace:
 
     def _geometry(self, state):
         robot = state.domains[self.domain]
-        audit_affine_geometry(
+        references = audit_affine_geometry(
             self.model,
             robot,
             np.r_[self.indices, self.indices],
@@ -221,18 +224,19 @@ class _InitialPairWorkspace:
             normals /= np.hypot.reduce(normals, axis=1)[:, None]
         jac = point_jacobians(self.model, robot.q, self.indices, self.local)[0]
         nodes = self._node_points(state)[0]
-        gaps = np.array(
-            [
-                exact_float(
-                    sum(
-                        (rational(n[k]) * (rational(x[k]) - rational(a[k])) for k in range(3)),
-                        Fraction(0),
-                    )
-                )
-                for n, x, a in zip(normals, nodes, anchors, strict=True)
-            ]
-        )
-        return positions, jac, normals, gaps
+        actual_gaps, bounds = [], []
+        for n, x, a, reference in zip(
+            normals, nodes, anchors, references[len(self.rows) :], strict=True
+        ):
+            actual = sum(
+                (rational(n[k]) * (rational(x[k]) - rational(a[k])) for k in range(3)), Fraction(0)
+            )
+            affine = sum(
+                (rational(n[k]) * (rational(x[k]) - reference[k]) for k in range(3)), Fraction(0)
+            )
+            actual_gaps.append(exact_float(actual))
+            bounds.append((min(actual, affine), max(actual, affine)))
+        return positions, jac, normals, np.array(actual_gaps), tuple(bounds)
 
     def _world(self):
         return np.sum(self.basis * self.impulses[:, None, :], axis=2)
@@ -290,16 +294,31 @@ class _InitialPairWorkspace:
             for key in self.execution:
                 self.execution[key] += execution.get(key, 0)
 
-    def _relative(self):
+    def _relative_exact(self):
         state = self.trial.result.state
         robot = state.domains[self.domain]
         node = self._node_points(state)[1]
-        return np.array(
-            [
-                [exact_float(rational(v[k]) - dot(jac[k], robot.v)) for k in range(3)]
-                for v, jac in zip(node, self.j0, strict=True)
-            ]
-        ).reshape(-1, 3)
+        return tuple(
+            tuple(rational(v[k]) - dot(jac[k], robot.v) for k in range(3))
+            for v, jac in zip(node, self.j0, strict=True)
+        )
+
+    def _relative(self):
+        return np.array([[exact_float(v) for v in row] for row in self._relative_exact()]).reshape(
+            -1, 3
+        )
+
+    def _local_velocity(self, index):
+        relative = self._relative_exact()[index]
+        exact = [
+            sum((rational(self.basis[index, k, a]) * relative[k] for k in range(3)), Fraction(0))
+            for a in range(3)
+        ]
+        result = np.array([exact_float(v) for v in exact])
+        error = sum(abs(rational(a) - b) for a, b in zip(result, exact, strict=True))
+        if error > rational(self.settings.tolerance) * rational(self.settings.reference_speed):
+            raise SolverFailure("contact velocity projection exceeds absolute precision budget")
+        return result
 
     def predict(self):
         if self.trial is not None:
@@ -308,7 +327,7 @@ class _InitialPairWorkspace:
 
     def position_sweep(self):
         for i, (kn, kt) in enumerate(self.responses):
-            u = self.basis[i].T @ self._relative()[i]
+            u = self._local_velocity(i)
             old = self.impulses[i].copy()
             normal = max(0.0, old[0] - u[0] / kn)
             tangent = _disk(old[1:] - u[1:] / kt, self.mu[i] * normal)
@@ -318,38 +337,25 @@ class _InitialPairWorkspace:
 
     def _audit(self):
         state = self.trial.result.state
-        positions, jac, normals, gaps = self._geometry(state)
+        positions, jac, normals, gaps, bounds = self._geometry(state)
         relative, world = self._relative(), self._world()
         scale = self.settings.reference_speed
         residual = {key: upper_float(value) for key, value in self.native_audit.items()}
+        penetration = max((max(-lo, Fraction(0)) for lo, _ in bounds), default=Fraction(0))
         residual.update(
             native=self.trial.result.report.max_residual,
             normal=0.0,
             friction=0.0,
-            final_penetration=max((max(-g, 0.0) for g in gaps), default=0.0) / self.gap_scale,
+            final_penetration=upper_float(penetration / rational(self.gap_scale)),
         )
-        for i, ((kn, kt), p, basis, v, mu) in enumerate(
-            zip(self.responses, self.impulses, self.basis, relative, self.mu, strict=True)
+        for (kn, kt), basis, v, p, mu in zip(
+            self.responses, self.basis, self._relative_exact(), world, self.mu, strict=True
         ):
-            u = basis.T @ v
-            normal = max(0.0, p[0] - u[0] / kn)
-            tangent = _disk(p[1:] - u[1:] / kt, mu * p[0])
-            residual["normal"] = max(
-                residual["normal"],
-                abs(p[0] - normal) * kn / scale,
-                max(-p[0], 0.0) * kn / scale,
-                max(-u[0], 0.0) / scale,
+            normal, friction = contact_residual(
+                v, p, basis, kn, kt, mu, scale, self.settings.tolerance
             )
-            residual["friction"] = max(
-                residual["friction"],
-                _norm(p[1:] - tangent) * kt / scale,
-                max(_norm(p[1:]) - mu * p[0], 0.0) * kt / scale,
-            )
-            speed = _norm(u[1:])
-            if speed > self.settings.tolerance * scale:
-                residual["friction"] = max(
-                    residual["friction"], _norm(p[1:] + mu * p[0] * u[1:] / speed) * kt / scale
-                )
+            residual["normal"] = max(residual["normal"], normal)
+            residual["friction"] = max(residual["friction"], friction)
         work = sum(
             (
                 rational(p[k])
@@ -389,7 +395,7 @@ class _InitialPairWorkspace:
         elif energy != 0:
             raise SolverFailure("zero contact changed native free kinetic energy")
         return (
-            StageMetrics(residual, penetration=max((max(-g, 0.0) for g in gaps), default=0.0)),
+            StageMetrics(residual, penetration=upper_float(penetration)),
             positions,
             jac,
             normals,

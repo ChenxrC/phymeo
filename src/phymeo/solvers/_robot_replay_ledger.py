@@ -62,14 +62,21 @@ def audit_affine_geometry(model, state, indices, local, h, settings):
     )
     speed_budget = rational(settings.tolerance) * rational(settings.reference_speed)
     relative_budget = rational(min(settings.tolerance, 1e-10))
+    reference_points = []
     for row, link in enumerate(links):
         expected = [
             origin[link][k] + dot(geometry.rotation[link, k], points[row]) for k in range(3)
         ]
         actual = geometry.position[link] + geometry.rotation[link] @ points[row]
-        error = sum(abs(rational(actual[k]) - expected[k]) for k in range(3))
-        if error > length_budget:
-            raise SolverFailure("robot affine geometry point exceeds absolute tolerance")
+        summed = geometry.position[link] + np.sum(geometry.rotation[link] * points[row], axis=1)
+        # Both paths are used by consumers: Jacobian matmul and reported sum.
+        # Certify each actual evaluated value, not an algebraically similar one.
+        for evaluated in (actual, summed):
+            error = sum(abs(rational(evaluated[k]) - expected[k]) for k in range(3))
+            if error > length_budget:
+                raise SolverFailure("robot affine geometry point exceeds absolute tolerance")
+        if row >= model.dof_count:
+            reference_points.append(tuple(expected))
         reference_velocity = [Fraction(0)] * 3
         ancestor = int(link)
         while ancestor != -1:
@@ -96,6 +103,8 @@ def audit_affine_geometry(model, state, indices, local, h, settings):
         )
         if speed_error > speed_budget:
             raise SolverFailure("robot affine geometry material velocity exceeds tolerance")
+
+    return tuple(reference_points)
 
 
 class FrozenRobotLedger:

@@ -532,3 +532,95 @@ def test_native_material_side_domain_is_preserved():
     from test_tyx_initial_robot_node import verify_material_side
 
     verify_material_side("numpy")
+
+
+@pytest.mark.parametrize("sign", [1.0, -1.0])
+def test_oblique_normal_cancellation_cannot_hide_closing_velocity(sign):
+    normal = sign * np.array([[0.19674150922189773, 0.3172187008334264, -0.9277203643289518]])
+    velocity = sign * np.array(
+        [[2.2527291247240276e16, -1.9156455579583004e16, -1772875465609671.0]]
+    )
+    contact = binding(local_points=np.zeros((1, 3)), local_normals=normal)
+    runtime, state, inputs = pair_case(
+        rotor=True, points=(0.0,), robot_v=-1.0, node_v=velocity, bindings=(contact,)
+    )
+    with runtime:
+        result = runtime.step(state, inputs, 1.0)
+    assert not result.report.accepted
+    np.testing.assert_array_equal(result.state.domains["nodes"].velocity, velocity)
+
+
+@pytest.mark.parametrize("sign", [1.0, -1.0])
+def test_actual_affine_sum_path_cannot_hide_plane_penetration(sign):
+    quaternion = np.array(
+        [[-0.6936968752508276, -0.5423304147828774, 0.4539085407869848, 0.13648957128403663]]
+    )
+    anchor = sign * np.array([[102011162.88264461, -29070837.842375822, -2703980.560245362]])
+    normal = sign * np.array([[0.876333392445091, -0.37449663626426416, -0.3029720361888696]])
+    node = sign * np.array([[-16200083.482525293, 101101949.91772296, -27832633.62297558]])
+    model = ph.RobotModel(
+        np.array([-1]),
+        ("prismatic",),
+        np.zeros((1, 3)),
+        quaternion,
+        np.array([[0.0, 1, 0]]),
+        np.array([2.0]),
+        np.zeros((1, 3)),
+        np.ones((1, 3)),
+        np.zeros(3),
+    )
+    contact = binding(local_points=anchor, local_normals=normal)
+    runtime, state, inputs = pair_case(
+        model=model,
+        node_v=[[0, 0, 0]],
+        bindings=(contact,),
+        settings=ph.StepSettings(substeps=1, tolerance=1e-8),
+    )
+    state.domains["nodes"].position[:] = node
+    with runtime:
+        result = runtime.step(state, inputs, 1.0)
+    assert not result.report.accepted
+    np.testing.assert_array_equal(result.state.domains["nodes"].position, node)
+
+
+@pytest.mark.parametrize("angle", [0.0, 0.35, -0.7])
+def test_oblique_rotor_contact_uses_initial_normal_and_keeps_angular_momentum(angle):
+    runtime, state, inputs = pair_case(rotor=True, robot_q=angle)
+    c, s = np.cos(angle), np.sin(angle)
+    rotation = np.array([[c, -s, 0.0], [s, c, 0.0], [0.0, 0.0, 1.0]])
+    point = rotation @ np.array([1.0, 0, 0])
+    normal = rotation @ np.array([0.0, 1, 0])
+    state.domains["nodes"].position[:] = point
+    state.domains["nodes"].velocity[:] = -normal
+    with runtime:
+        result = runtime.step(state, inputs, 0.05)
+    assert result.report.accepted, result.report.reason
+    node, robot = result.state.domains["nodes"], result.state.domains["robot"]
+    np.testing.assert_allclose(diag(result)["world_impulses"], [0.5 * normal], atol=1e-10)
+    assert abs(robot.v[0] + np.cross(node.position[0], node.velocity[0])[2] + 1) < 1e-10
+
+
+def test_rational_contact_audit_preserves_oblique_sliding_law():
+    from fractions import Fraction
+
+    from phymeo.constraints.contact_impulse import _basis
+    from phymeo.solvers._contact_replay_audit import contact_residual, sqrt_bounds
+
+    for value in (Fraction(2), Fraction(1, 2**900), Fraction(2**900), Fraction(9, 4)):
+        lo, hi = sqrt_bounds(value)
+        assert lo * lo <= value <= hi * hi
+    basis = _basis(np.array([[0.6, 0.8, 0.0]]))[0]
+    # One nonzero tangent coefficient gives an independently known sliding load.
+    world_v = basis[:, 1] * 2
+    world_p = basis[:, 0] * 3 - basis[:, 1] * 0.6
+    normal, friction = contact_residual(
+        tuple(Fraction(x) for x in world_v), world_p, basis, 1.0, 1.0, 0.2, 1.0, 1e-10
+    )
+    assert max(normal, friction) < 1e-10
+    bad = world_p + basis[:, 1] * 0.01
+    assert (
+        contact_residual(
+            tuple(Fraction(x) for x in world_v), bad, basis, 1.0, 1.0, 0.2, 1.0, 1e-10
+        )[1]
+        > 0.009
+    )

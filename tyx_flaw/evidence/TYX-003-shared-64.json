@@ -1,0 +1,153 @@
+{
+  "scope": "public API lifecycle diagnostic, no Phymeo import; not a speed benchmark; Warp unmeasured",
+  "python": "3.12.14",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "numpy": "2.5.4",
+  "tyx_version": "0.1.0a0",
+  "tyx_source": {
+    "url": "ssh://git@github.com/ChenxrC/tyx.git",
+    "vcs_info": {
+      "vcs": "git",
+      "commit_id": "99f6df7c0fd8fdeef77f97df83914da27b64b7ee",
+      "requested_revision": "99f6df7c0fd8fdeef77f97df83914da27b64b7ee"
+    }
+  },
+  "lifetime": "shared",
+  "requested_cycles": 64,
+  "cache_root": "C:\\Users\\38347\\Documents\\ChatGPT\\phymeo\\artifacts\\tyx-lifecycle-cache",
+  "temp_root": "C:\\Users\\38347\\Documents\\ChatGPT\\phymeo\\artifacts\\tmp",
+  "before_count": 0,
+  "checkpoints": [
+    {
+      "cycle": 16,
+      "loaded_count": 1
+    },
+    {
+      "cycle": 32,
+      "loaded_count": 1
+    },
+    {
+      "cycle": 48,
+      "loaded_count": 1
+    },
+    {
+      "cycle": 64,
+      "loaded_count": 1
+    }
+  ],
+  "successful_calls": 64,
+  "closed_runtimes": 1,
+  "seconds": [
+    2.7948338000569493,
+    0.0017630001530051231,
+    0.0006442999001592398,
+    0.0004507000558078289,
+    0.00045299995690584183,
+    0.0005038999952375889,
+    0.0006448000203818083,
+    0.00042099994607269764,
+    0.0004194001667201519,
+    0.0003621999640017748,
+    0.00047309999354183674,
+    0.0005620999727398157,
+    0.0006552000995725393,
+    0.00043460004962980747,
+    0.00043569994159042835,
+    0.0006038998253643513,
+    0.0006095001008361578,
+    0.0005411999300122261,
+    0.0004241000860929489,
+    0.00042619998566806316,
+    0.0005191001109778881,
+    0.0003917000722140074,
+    0.0003704000264406204,
+    0.00043499981984496117,
+    0.0003923999611288309,
+    0.00038039986975491047,
+    0.0004259999841451645,
+    0.0003712000325322151,
+    0.00033059995621442795,
+    0.0003557000309228897,
+    0.00037269992753863335,
+    0.0005121000576764345,
+    0.0006150000263005495,
+    0.0003816999960690737,
+    0.0003983001224696636,
+    0.000336499884724617,
+    0.00031340005807578564,
+    0.0003486000932753086,
+    0.0004096000920981169,
+    0.000399300130084157,
+    0.00044350000098347664,
+    0.0004298000130802393,
+    0.0004279001150280237,
+    0.0004463999066501856,
+    0.0005775000900030136,
+    0.0004031001590192318,
+    0.0004588000010699034,
+    0.00045779999345541,
+    0.0005849001463502645,
+    0.00042390008457005024,
+    0.0004298000130802393,
+    0.00035200011916458607,
+    0.00040459982119500637,
+    0.0004229999613016844,
+    0.00037409993819892406,
+    0.00034200004301965237,
+    0.0003271999303251505,
+    0.00033379998058080673,
+    0.00038860016502439976,
+    0.00036019994877278805,
+    0.0003996000159531832,
+    0.00036390009336173534,
+    0.00037189992144703865,
+    0.0003816999960690737
+  ],
+  "cache_statuses": {
+    "cold_compile": 1,
+    "process_hit": 63
+  },
+  "status": "all_calls_correct",
+  "sample_profiles": [
+    {
+      "kernel": "twice",
+      "backend": "cpu_cpp",
+      "cache_status": "cold_compile",
+      "status": "ok",
+      "frontend_ms": 0.8418,
+      "lowering_ms": 0.2443,
+      "optimization_ms": 0.0,
+      "codegen_ms": 0.3056,
+      "link_load_ms": 2353.0052,
+      "first_launch_ms": 410.4514,
+      "cache_hit_ms": 31.0538,
+      "source_bytes": 1190,
+      "artifact_bytes": 101376,
+      "toolchain": "msvc:14.50.35717:C:\\Program Files (x86)\\Microsoft Visual Studio\\18\\BuildTools\\VC\\Auxiliary\\Build\\vcvars64.bat",
+      "cache_reason_codes": [],
+      "error_type": ""
+    },
+    {
+      "kernel": "twice",
+      "backend": "cpu_cpp",
+      "cache_status": "process_hit",
+      "status": "ok",
+      "frontend_ms": 0.0,
+      "lowering_ms": 0.0,
+      "optimization_ms": 0.0,
+      "codegen_ms": 0.0,
+      "link_load_ms": 0.0,
+      "first_launch_ms": 0.0,
+      "cache_hit_ms": 0.0028,
+      "source_bytes": 0,
+      "artifact_bytes": 0,
+      "toolchain": "msvc:14.50.35717:C:\\Program Files (x86)\\Microsoft Visual Studio\\18\\BuildTools\\VC\\Auxiliary\\Build\\vcvars64.bat",
+      "cache_reason_codes": [],
+      "error_type": ""
+    }
+  ],
+  "after_close_gc_count": 1,
+  "remaining_path_sample": [
+    "C:\\Users\\38347\\Documents\\ChatGPT\\phymeo\\artifacts\\tmp\\tyx-cpu-cpp-load-xija7jli\\kernel.dll"
+  ]
+}

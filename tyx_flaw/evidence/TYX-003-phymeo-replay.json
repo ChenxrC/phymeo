@@ -1,0 +1,77 @@
+{
+  "scope": "instrumented Phymeo replay reproduction, not formal timing; public tyx-only controls separate",
+  "source": {
+    "git_revision": "3f2337850e130e56172e957a4696ceb93cb738ed",
+    "git_dirty": true,
+    "source_sha256": "bbc798c78fedc222192fdd557a72000d02f52f0caa0d13b3f5daf4a11bcbff0c",
+    "python": "3.12.14",
+    "numpy": "2.5.4",
+    "platform": "Windows-11-10.0.26200-SP0"
+  },
+  "requested_calls": 303,
+  "successful_calls": 226,
+  "before_count": 0,
+  "checkpoints": [
+    {
+      "call": 16,
+      "loaded_count": 144
+    },
+    {
+      "call": 32,
+      "loaded_count": 288
+    },
+    {
+      "call": 48,
+      "loaded_count": 432
+    },
+    {
+      "call": 64,
+      "loaded_count": 576
+    },
+    {
+      "call": 80,
+      "loaded_count": 720
+    },
+    {
+      "call": 96,
+      "loaded_count": 864
+    },
+    {
+      "call": 112,
+      "loaded_count": 1008
+    },
+    {
+      "call": 128,
+      "loaded_count": 1152
+    },
+    {
+      "call": 144,
+      "loaded_count": 1296
+    },
+    {
+      "call": 160,
+      "loaded_count": 1440
+    },
+    {
+      "call": 176,
+      "loaded_count": 1584
+    },
+    {
+      "call": 192,
+      "loaded_count": 1728
+    },
+    {
+      "call": 208,
+      "loaded_count": 1872
+    },
+    {
+      "call": 224,
+      "loaded_count": 2016
+    }
+  ],
+  "status": "failed",
+  "error_type": "CpuCppBackendError",
+  "error": "cpu_cpp artifact cache failed\nmodule: robot_project_loads\nstage: load_verified\ncache_key: 78a7f11632d22ad4421d3d47d8b3b64abcbdbe88d43c878da2480b7d810ddec5\ncache_root: C:\\Users\\38347\\Documents\\ChatGPT\\phymeo\\artifacts\\tyx-cache\nerror: OSError: [WinError 1114] 动态链接库(DLL)初始化例程失败。",
+  "traceback": "Traceback (most recent call last):\n  File \"C:\\Users\\38347\\Documents\\ChatGPT\\phymeo\\.venv\\Lib\\site-packages\\tyx\\backends\\cpu_cpp.py\", line 591, in compile_cpu_cpp\n    compiled = _load_verified_cpu_cpp_library(\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\38347\\Documents\\ChatGPT\\phymeo\\.venv\\Lib\\site-packages\\tyx\\backends\\cpu_cpp.py\", line 717, in _load_verified_cpu_cpp_library\n    compiled = _load_compiled_kernel(\n               ^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\38347\\Documents\\ChatGPT\\phymeo\\.venv\\Lib\\site-packages\\tyx\\backends\\cpu_cpp.py\", line 744, in _load_compiled_kernel\n    compiled = CompiledKernel(\n               ^^^^^^^^^^^^^^^\n  File \"C:\\Users\\38347\\Documents\\ChatGPT\\phymeo\\.venv\\Lib\\site-packages\\tyx\\backends\\cpu_cpp.py\", line 227, in __init__\n    self.library = ctypes.CDLL(str(dll_path))\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\38347\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\python\\Lib\\ctypes\\__init__.py\", line 379, in __init__\n    self._handle = _dlopen(self._name, mode)\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^\nOSError: [WinError 1114] 动态链接库(DLL)初始化例程失败。\n\nThe above exception was the direct cause of the following exception:\n\nTraceback (most recent call last):\n  File \"C:\\Users\\38347\\Documents\\ChatGPT\\phymeo\\artifacts\\tmp\\p65-cpp-lifecycle-replay.py\", line 19, in <module>\n    trial=replay.evaluate({'robot': {'effort': np.array([.04])}, 'node': {'force':np.array([[.1,0,0]])}})\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\38347\\Documents\\ChatGPT\\phymeo\\src\\phymeo\\runtime\\load_replay.py\", line 188, in evaluate\n    result = self._runtime.step(self._initial, effective, self.duration)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\38347\\Documents\\ChatGPT\\phymeo\\src\\phymeo\\runtime\\scene_stepper.py\", line 246, in step\n    current, report = self._substep(current, forces, h, index)\n                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\38347\\Documents\\ChatGPT\\phymeo\\src\\phymeo\\runtime\\scene_stepper.py\", line 170, in _substep\n    workspace.predict()\n  File \"C:\\Users\\38347\\Documents\\ChatGPT\\phymeo\\src\\phymeo\\solvers\\articulated_coupling.py\", line 136, in predict\n    participant.predict()\n  File \"C:\\Users\\38347\\Documents\\ChatGPT\\phymeo\\src\\phymeo\\backends\\tyx_participants.py\", line 129, in predict\n    self.applied = engine.generalized(\n                   ^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\38347\\Documents\\ChatGPT\\phymeo\\src\\phymeo\\backends\\tyx_robot_math.py\", line 173, in generalized\n    return self._project(self._com_jacobians(self._geometry(q)), effort, force, torque)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\38347\\Documents\\ChatGPT\\phymeo\\src\\phymeo\\backends\\tyx_robot_math.py\", line 137, in _project\n    (result,) = self.call(\n                ^^^^^^^^^^\n  File \"C:\\Users\\38347\\Documents\\ChatGPT\\phymeo\\src\\phymeo\\backends\\tyx_math.py\", line 116, in call\n    kernel(*actual, mode=self.mode)\n  File \"C:\\Users\\38347\\Documents\\ChatGPT\\phymeo\\.venv\\Lib\\site-packages\\tyx\\kernel.py\", line 698, in __call__\n    compiled = self._compile_cpu_module(\n               ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\38347\\Documents\\ChatGPT\\phymeo\\.venv\\Lib\\site-packages\\tyx\\kernel.py\", line 482, in _compile_cpu_module\n    compiled = compile_cpu(\n               ^^^^^^^^^^^^\n  File \"C:\\Users\\38347\\Documents\\ChatGPT\\phymeo\\.venv\\Lib\\site-packages\\tyx\\backends\\cpu.py\", line 66, in compile_cpu\n    return compile_cpu_cpp(\n           ^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\38347\\Documents\\ChatGPT\\phymeo\\.venv\\Lib\\site-packages\\tyx\\backends\\cpu_cpp.py\", line 611, in compile_cpu_cpp\n    raise error from exc\ntyx.backends.cpu.CpuCppBackendError: cpu_cpp artifact cache failed\nmodule: robot_project_loads\nstage: load_verified\ncache_key: 78a7f11632d22ad4421d3d47d8b3b64abcbdbe88d43c878da2480b7d810ddec5\ncache_root: C:\\Users\\38347\\Documents\\ChatGPT\\phymeo\\artifacts\\tyx-cache\nerror: OSError: [WinError 1114] 动态链接库(DLL)初始化例程失败。\n",
+  "after_close_count": 2036
+}

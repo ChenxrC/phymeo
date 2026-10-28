@@ -20,7 +20,11 @@
 
 ## 当前立即续作
 
-先关闭[上一阶段Ubuntu CI修复](../benchmarks/p65-initial-pair-ci-repair.md)：937ca59的CI实际失败，1ae0d217仅修测试前提。当前准确远程head的状态见续跑提示，不能用本机通过冒充远端。材料后续先读[NUM-005](../legacy-issues/NUM-005-xpbd-material-path.md)与已builder check的[路径记录设计](../superpowers/specs/2026-10-28-p65-material-path-design.md)；已有[材料路径实施计划](../superpowers/plans/2026-10-28-p65-material-path.md)，尚未实施，从Task1 TDD开始，不重做反例。
+上一准确f259e69的CI40662503851与Documentation40662503807已success，旧自由节点计划交付框已关闭，不重做该修复。现在先核对本次交付准确head的CI（续跑提示提供ID），失败先修；成功后闭环[材料路径实施计划](../superpowers/plans/2026-10-28-p65-material-path.md)最后交付框。
+
+第12项有限基础[原生材料路径](../benchmarks/p65-material-path-acceptance.md)已实现，产品dc245f7/120文件hash09a3bd9819cb75fdf5bf463adea9397c452cf07365039707e11a5e057c91d624。修复后CUDA1827、两CPU各1522、interpret+核心47、C++短4、Ubuntu30、源码外wheel120和1800次串行观测通过。一次fresh审阅1Important经5RED修复，不再重审或重做原探针。零分母方向为无施加方向的零哨兵；tyx真实设备FP32记录升FP64，不是host反算。
+
+下一切片：冻结并TDD实现生产共同材料账本，独立认证原input→prediction→逐边材料→速度重建；完整记录转换/舍入、固定点host恢复、额外load边界，不能只检查帧格式。结合完整replay候选冻结接触相反输入各一次、M0/b0/J0作用点与最终几何。先用未固定两节点/小三角、单关节和共享多点独立线角动量/材料能量外功、低mu和失败事务例，明确原离散角动量损失及步长门槛；记录没有修复NUM-005，不能当无关遗留跳过。不得删除FreeParticleLedger以把材料当黑盒放行。
 
 先读[步初双向接触验收](../benchmarks/p65-initial-pair-acceptance.md)、[工程JSON](../benchmarks/p65-initial-pair-engineering.json)和[冻结合同](../superpowers/specs/2026-10-28-p65-initial-robot-node-design.md)。第11项有限基础InitialRobotNodeContactProgram已完成；产品aef9b257，118源码文件。完整CUDA1778、两个CPU核心环境各1490、interpret4、C++有限短例1、源码外wheel及900次串行观测通过。一次fresh审阅2Important经五RED修复并补四正常控制，不再次派审阅或重写本切片。
 

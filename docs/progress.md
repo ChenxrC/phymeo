@@ -1,5 +1,15 @@
 # 开发进度
 
+## 最新续作：原生材料投影路径（2026-10-28）
+
+第12项有限基础[材料路径记录](benchmarks/p65-material-path-acceptance.md)已通过本地工程验收。产品`dc245f74e2a2877c1137f46dabb4638367eb5c2a`，120文件hash`09a3bd9819cb75fdf5bf463adea9397c452cf07365039707e11a5e057c91d624`。新增opt-in真实NumPy逐边记录及tyx设备traced kernel，关闭时原路径不变；状态/乘子/迭代次数逐位一致，快照独立只读，后段速度与关闭失败恢复状态/history并重试=fresh。
+
+一次fresh审阅1Important经5RED修复：零分母固定边未使用的NaN方向不能因记录而新增拒绝。方向零哨兵明确表示没有施加投影，原数学和非有限门禁不变。修复后完整CUDA1827、两个CPU核心环境各1522（各305未选）、核心+actual interpret47、C++有界4/13未选、Ubuntu新核心30、120文件源码外wheel及uv/pip质量通过；旧修复前结果不混用。准确证据见[工程JSON](benchmarks/p65-material-path-engineering.json)。
+
+[1800次串行观测](performance-bottlenecks/measurements/p65-material-path.md)全部成功，PERF-014只记录不优化。没有新tyx实现缺陷证据，未测Warp；C++长期TYX-003仍开放。原NUM-005角动量损失和“最终lambda不能代替实际路径”的反例保持，**生产材料/接触共同账本、机器人布接触、真实夹爪与双臂Three.js仍未完成**。
+
+下一切片认证同域input/预测/逐边材料/速度重建与接触相反输入的完整共同账本，并建立能量外功/角动量离散误差/步长门槛，再接小布片与单关节/共享多点；不得删除FreeParticleLedger门禁或把记录存在当成认证。随后几何/保守CCD、弯曲自碰撞、单爪/低mu滑落、目标IK/history、真实A→B→平台及同源Three.js。上一准确f259e69的CI40662503851与Documentation40662503807已success；本次交付head的远程状态待推送核对，见续跑提示。
+
 ## 当前状态：2026-10-28 用户恢复 P6.5
 
 用户新指令要求先交付3页架构与效果PPT，再继续完成P6.5；该明确恢复授权替代旧08:00停止条件，本次未指定新截止。继续专用分支 `codex/p6-5-handoff`，已恢复 heartbeat `phymeo-p3-p5`。旧goal仍显示paused，当前工具无法修改为active；不重复建goal，不把此工具状态当成新的用户停止指令。

@@ -47,3 +47,5 @@ P1/P2 最终新增[修复版串行小负载测量](measurements/p2-runtime.md)�
 新增[PERF-012 机器人动态平面](PERF-012-robot-plane-replay.md)：最终构型映射、精确动力学/仿射审计与两次完整native重放；三模式900次串行观测，细项占比未定位。
 
 新增[PERF-013 步初机器人—自由节点](PERF-013-initial-pair-replay.md)：相反载荷一次记账、完整native重放与精确接触/能量审计；三模式900次串行观测，非完整布接触，C++长期问题仍开放。
+
+新增[PERF-014 材料投影路径](PERF-014-material-path.md)：记录开关六配置1800次串行观察，actual CUDA每sweep增加一上传/一下载、launch数不变。未做细项归因、优化或Warp比较。

@@ -1,0 +1,266 @@
+{
+  "status": "local_observation_contract_engineering_and_serial_measurement_passed_cpp_endurance_open",
+  "scope": "opt-in native XPBD projection observations; no production material/contact ledger or full handoff",
+  "source": {
+    "git_revision": "dc245f74e2a2877c1137f46dabb4638367eb5c2a",
+    "git_dirty": true,
+    "source_sha256": "09a3bd9819cb75fdf5bf463adea9397c452cf07365039707e11a5e057c91d624",
+    "python": "3.12.14",
+    "numpy": "2.5.4",
+    "platform": "Windows-11-10.0.26200-SP0"
+  },
+  "python_files": 120,
+  "tyx": {
+    "version": "0.1.0a0",
+    "revision": "99f6df7c0fd8fdeef77f97df83914da27b64b7ee"
+  },
+  "review": {
+    "count": 1,
+    "base": "f259e690946c612a93a793989ee1e5b50d3995e8",
+    "head": "0bf06195b02b00a8791c5382127d63e3cf5371e6",
+    "critical": 0,
+    "important": 1,
+    "minor": 0,
+    "regression_red": 5,
+    "fix_revision": "dc245f74e2a2877c1137f46dabb4638367eb5c2a"
+  },
+  "focused_interpret": {
+    "passed": 47,
+    "seconds": 0.77
+  },
+  "focused_cuda": {
+    "passed": 47,
+    "seconds": 1.66
+  },
+  "bounded_cpp": {
+    "passed": 4,
+    "deselected": 13,
+    "seconds": 38.85,
+    "long_run": false
+  },
+  "cuda_full_suite": {
+    "passed": 1827,
+    "seconds": 529.42
+  },
+  "core311": {
+    "passed": 1522,
+    "deselected": 305,
+    "seconds": 391.04
+  },
+  "core_native_pip312": {
+    "passed": 1522,
+    "deselected": 305,
+    "seconds": 379.65
+  },
+  "wheel": {
+    "python_files": 120,
+    "artifacts": {
+      ".gitignore": "684888c0ebb17f374298b65ee2807526c066094c701bcc7ebbe1c1095f494fc1",
+      "phymeo-0.1.0a0-py3-none-any.whl": "cc0b7f84bae9cb6a28a8f035280bf14d453b60c14e18c45f5026d510621cf12d",
+      "phymeo-0.1.0a0.tar.gz": "cf3a3c67929f601f6ca8e7f53d7a259a8d4c5d286e9427687153e9869d0d5b3e"
+    },
+    "exact_source_parity": true,
+    "fresh_native_pip_outside_checkout": true,
+    "installed_smoke": true,
+    "pip_check": true
+  },
+  "performance": {
+    "serial_after_numerical_and_reviewer_processes_exited": true,
+    "total_accepted_measured_calls": 1800,
+    "rows": [
+      {
+        "mode": "numpy",
+        "trace": false,
+        "median_ms": 0.36640011239796877,
+        "p95_ms": 0.39308497216552496,
+        "accepted": 300,
+        "first_seconds": 0.0005498998798429966,
+        "counts": {
+          "sweeps": [
+            7
+          ],
+          "trace_bytes": [
+            0
+          ]
+        }
+      },
+      {
+        "mode": "numpy",
+        "trace": true,
+        "median_ms": 0.5666000070050359,
+        "p95_ms": 0.612625014036894,
+        "accepted": 300,
+        "first_seconds": 0.0007142999675124884,
+        "counts": {
+          "sweeps": [
+            7
+          ],
+          "trace_bytes": [
+            2016
+          ]
+        }
+      },
+      {
+        "mode": "interpret",
+        "trace": false,
+        "median_ms": 12.651549885049462,
+        "p95_ms": 13.743964955210688,
+        "accepted": 300,
+        "first_seconds": 0.25449700001627207,
+        "counts": {
+          "sweeps": [
+            4
+          ],
+          "trace_bytes": [
+            0
+          ],
+          "launches": [
+            8
+          ],
+          "completed_launches": [
+            8
+          ],
+          "uploads": [
+            0
+          ],
+          "downloads": [
+            0
+          ],
+          "mode": [
+            "interpret"
+          ],
+          "compute_dtype": [
+            "float32"
+          ]
+        }
+      },
+      {
+        "mode": "interpret",
+        "trace": true,
+        "median_ms": 13.449550024233758,
+        "p95_ms": 14.787665021140128,
+        "accepted": 300,
+        "first_seconds": 0.017941800178959966,
+        "counts": {
+          "sweeps": [
+            4
+          ],
+          "trace_bytes": [
+            1152
+          ],
+          "launches": [
+            8
+          ],
+          "completed_launches": [
+            8
+          ],
+          "uploads": [
+            0
+          ],
+          "downloads": [
+            0
+          ],
+          "mode": [
+            "interpret"
+          ],
+          "compute_dtype": [
+            "float32"
+          ]
+        }
+      },
+      {
+        "mode": "cuda",
+        "trace": false,
+        "median_ms": 36.68159991502762,
+        "p95_ms": 45.10661994572729,
+        "accepted": 300,
+        "first_seconds": 0.3111298999283463,
+        "counts": {
+          "sweeps": [
+            4
+          ],
+          "trace_bytes": [
+            0
+          ],
+          "launches": [
+            8
+          ],
+          "completed_launches": [
+            8
+          ],
+          "uploads": [
+            42
+          ],
+          "downloads": [
+            13
+          ],
+          "mode": [
+            "cuda"
+          ],
+          "compute_dtype": [
+            "float32"
+          ]
+        }
+      },
+      {
+        "mode": "cuda",
+        "trace": true,
+        "median_ms": 40.78599996864796,
+        "p95_ms": 51.62842987338082,
+        "accepted": 300,
+        "first_seconds": 0.046217700000852346,
+        "counts": {
+          "sweeps": [
+            4
+          ],
+          "trace_bytes": [
+            1152
+          ],
+          "launches": [
+            8
+          ],
+          "completed_launches": [
+            8
+          ],
+          "uploads": [
+            46
+          ],
+          "downloads": [
+            17
+          ],
+          "mode": [
+            "cuda"
+          ],
+          "compute_dtype": [
+            "float32"
+          ]
+        }
+      }
+    ]
+  },
+  "unresolved": [
+    "NUM-005 angular momentum loss and production ledger",
+    "TYX-003 Windows C++ library lifetime/endurance",
+    "robot cloth coupled contact and full P6.5"
+  ],
+  "linux_focused": {
+    "passed": 30,
+    "seconds": 3.34,
+    "python": "3.12.3",
+    "numpy": "2.5.4",
+    "clean_install": false,
+    "scope": "WSL Ubuntu system Python, hash-verified Linux NumPy plus existing pure Python test dependencies"
+  },
+  "quality": {
+    "ruff": true,
+    "docs": true,
+    "public_tyx_import_boundary_files": 120,
+    "compileall": true,
+    "uv_and_native_pip_check": true,
+    "exports_match_locks": true
+  },
+  "delivery": {
+    "branch": "codex/p6-5-handoff",
+    "status": "pending_push_and_exact_ci"
+  }
+}

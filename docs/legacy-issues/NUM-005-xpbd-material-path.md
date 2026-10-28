@@ -4,7 +4,7 @@
 
 ## 问题与根因
 
-每条边的配置修正由当次方向和增量乘子决定。方向随迭代改变时，sum(delta_lambda * n)一般不等于lambda_final * n_final。当前诊断只给最终distance_multipliers，因此不足以独立重建实际材料冲量。原position/velocity约束残差合格并不等于该替代式成立。
+每条边的配置修正由当次方向和增量乘子决定。方向随迭代改变时，sum(delta_lambda * n)一般不等于lambda_final * n_final。旧诊断只给最终distance_multipliers，不足以独立重建实际材料冲量。现已增加opt-in真实逐边路径，尚未构成材料/接触认证。原position/velocity约束残差合格并不等于该替代式成立。
 
 此外，现有半隐式预测、位置投影和速度重建不保证孤立材料的整步角动量严格守恒。x0=(+-1,0,0)、v0=(0,+-1,0)、等质量1、硬边rest2、零外力的一次步进，预测端点为(+-1,+-h,0)，投影长度恢复为2，重建速度给Lz1=2/sqrt(1+h²)。初值Lz0=2；h=.1/.05/.025时分别为1.9900743804/1.9975046778/1.9993752928。此例一次步长损失收敛，不能外推完整长程误差已合格。
 
@@ -22,6 +22,6 @@
 - `_tyx_node_kernels.py::project_node_distances`、`tyx_node_math.py::project_distances`、`tyx_participants.py::_NodeWorkspace`。
 - `solvers/_particle_replay_ledger.py`目前正确拒绝材料域；不能直接删此限制。
 
-先实现[实际材料路径记录设计](../superpowers/specs/2026-10-28-p65-material-path-design.md)：native写每条边前后状态、方向与delta_lambda，保留输入转换/舍入差；不能在host反算后冒充设备记录。随后独立验证实际预测、增量原式、速度重建、材料能量与外功，并明确角动量离散误差与步长门槛。若选新守恒积分器或速度修正，需显式新算法合同与机器人/接触时序，不能悄悄覆盖native结果。当前仅完成反例与设计，未实现记录API或联合接触。
+先实现[实际材料路径记录设计](../superpowers/specs/2026-10-28-p65-material-path-design.md)：native写每条边前后状态、方向与delta_lambda，保留输入转换/舍入差；不能在host反算后冒充设备记录。随后独立验证实际预测、增量原式、速度重建、材料能量与外功，并明确角动量离散误差与步长门槛。若选新守恒积分器或速度修正，需显式新算法合同与机器人/接触时序，不能悄悄覆盖native结果。记录API已在0bf0619实现，NumPy与actual tyx记录每条边的操作前后/方向/dlambda；独立单步测试匹配增量式，原角动量损失仍存在。尚未实现生产共同账本、长时误差门禁或联合材料接触；不能关闭本问题。
 
 相关原始研究：[XPBD](https://matthias-research.github.io/pages/publications/XPBD.pdf)、[Global Momentum Preservation](https://sealab.cs.utah.edu/Papers/Dahl-2019-GMP/Dahl-2019-GMP.pdf)。本地公式与代码独立推导；不宣称已采用论文修正算法。

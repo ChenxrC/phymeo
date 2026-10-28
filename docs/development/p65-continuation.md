@@ -28,11 +28,18 @@
 
 ## 当前立即续作
 
+当前设计提交fa11031。先读[冻结设计](../superpowers/specs/2026-10-29-p65-dynamic-normal-design.md)、[实施计划](../superpowers/plans/2026-10-29-p65-dynamic-normal.md)、[预设冲量实验](p65-dynamic-normal-candidate.md)和.superpowers/sdd/2026-10-29-p65-dynamic-normal/progress.md。
+Task1已派terminal_impulse_implementer，独占原生末冲量机制/ledger和对应测试/导出；先读取现有agent与task-1-report，不重复分派。全部数值串行，主agent只写文档/基准。Task2尚未开始，unique最终code review未派。
+实验六例与builder检查已经结束，不重做。已有材料路径与FrozenRobotLedger仍只认证pre阶段，post必须独立速度跳跃账，不能用总p+η改原整步输入。Task1提交并验收API后，按计划分派Task2完成自动反作用/生命周期，而不是停在边界模块。完整阶段仅一次fresh最终审阅；不可沿用旧initial门禁删除法。
+没有新截止；旧goal暂停显示非停止。新阶段全部生产/物理/事务/工程/精确Git/CI通过才能记录有限能力完成；H1和完整双臂目标仍保持开放。
+
+## 最近交付：仿射路径净距
+
 仿射特征整段净距已交付5c352006442641c21faf1684fe6427b10960a930，准确CI40756643301与Documentation40756643278均success，已关闭[计划](../superpowers/plans/2026-10-29-p65-linear-sweep.md)最后交付框；读[验收](../benchmarks/p65-linear-sweep-acceptance.md)、[工程](../benchmarks/p65-linear-sweep-engineering.json)及[唯一review](../benchmarks/p65-linear-sweep-review.md)。产品700fd32，最终测试/计量快照61ea634，126源码hash67ae299638326bf2018ee781a3bceadb5f54fbd84a7238f0740d9c27be3a6b60。全部实现/数值/审阅进程已退出，不重新分派旧builder/实现/review或900观测。
 
 一次builder已无重要未决；唯一fresh最终review 0Critical0Important0Minor，无修复轮。最终main及两CPU相关各241、Ubuntu新host67、actualinterpret/CUDA各2及126文件源码外wheel通过；三个host路径各300正式计量成功，源/脚本hash一致，PERF-018只观测。准确新SHA/CI已闭环，工程JSON记录必要元数据。相关选测不是新全量，准确CI另承担全分支CPU矩阵。
 
-下一阶段应向能产生真实反作用的自动建立/分离闭环推进，侧/法向/身份history/特征切换及FK保守路径须与现有材料/机器人原式账本一起冻结。新的生产合同尚未冻结，不能直接把有限局部平面程序的初态闭合门禁删除。至少两个非递布独立场景后交实现子agent，继续同一长程任务，不止于几何判断。
+下一阶段应向能产生真实反作用的自动建立/分离闭环推进，侧/法向/身份history/特征切换及FK保守路径须与现有材料/机器人原式账本一起冻结。新两阶段法向合同现已冻结并进入Task1；旧有限局部平面程序的初态闭合门禁保留。至少两个非递布独立场景后交实现子agent，继续同一长程任务，不止于几何判断。
 
 上一静态距离证书e63a1bf两CI成功并已c1e9f47闭环；旧材料接触也已交付。NUM-005、TYX-003/004仍开放。整体P6.5没有完成，不把任何前置切片当真实双臂或Three.js。
 

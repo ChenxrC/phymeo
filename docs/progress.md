@@ -25,9 +25,17 @@
 
 ## 本地验收：仿射特征整段净距认证（2026-10-29）
 
+## 正在实施：自动法向接触建立与分离（2026-10-29）
+
+已冻结[两阶段生产合同](superpowers/specs/2026-10-29-p65-dynamic-normal-design.md)和[实施计划](superpowers/plans/2026-10-29-p65-dynamic-normal.md)，一次builder无重要未决。闭合前后的原生边界实验在NumPy/interpret/CUDA各2例通过，详见[设计证据](development/p65-dynamic-normal-candidate.md)；它们预先给定冲量，不是自动求解器完成证据。
+
+Task1已交terminal_impulse_implementer：可复用关闭前末冲量机制和独立方程账本。之后Task2实现自动生成候选、held位置载荷与末速度冲量求解、显式history及全局事务；Task3一次fresh审阅和最终工程验收。当前生产新API尚未验收，未新增已完成能力项。
+
+首个动态支持域固定为全prismatic机器人、全动态距离材料节点、固定朝向无限平面、法向无摩擦；材料/机器人原生计算与两个输入阶段分账。摩擦、有限特征切换、FK旋转CCD、弯曲/自碰撞和夹持继续属于后续必做，不降低整个P6.5目标。
+
 第16项有限能力已实现并完成本地验收，产品700fd32、最终快照61ea634，126源码hash `67ae299638326bf2018ee781a3bceadb5f54fbd84a7238f0740d9c27be3a6b60`。整段同步投影证明声明线性路径distance>=正净距，或返回严格违例/未决；预算不足不能当安全。详见[验收](benchmarks/p65-linear-sweep-acceptance.md)、[工程](benchmarks/p65-linear-sweep-engineering.json)与[唯一审阅](benchmarks/p65-linear-sweep-review.md)。
 
-一次fresh review 0Critical/0Important/0Minor；main及两CPU环境相关各241通过，Ubuntu新host67、实际interpret/CUDA各2、最终126文件源码外wheel通过。三个host路径各300，共900正式观测成功；安全细分杆件15区间中位22.026ms，记PERF-018不优化。准确新远程交付待核对，不能把相关选测冒称全分支全量。
+一次fresh review 0Critical/0Important/0Minor；main及两CPU环境相关各241通过，Ubuntu新host67、实际interpret/CUDA各2、最终126文件源码外wheel通过。三个host路径各300，共900正式观测成功；安全细分杆件15区间中位22.026ms，记PERF-018不优化。准确5c35200两CI已success闭环；相关本地选测不冒称新全分支全量。
 
 板/杆途中穿越、接触等号滑动、安全但必须细分、极端精度及后段事务均有独立测例。这个能力不产生接触反作用/身份history，不认证机器人FK弧或TOI；自动建立分离、弯曲自碰撞、真实抓取/双臂和Three.js仍后续。下一阶段优先把几何与真实反作用接成闭环，不以基础模块数替代总进度。
 

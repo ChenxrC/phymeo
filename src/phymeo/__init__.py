@@ -205,3 +205,8 @@ __all__ = [
     "ClothPatch",
     "cloth_grid",
 ]
+
+from .constraints.particle_plane import ParticlePlaneContacts
+from .solvers.particle_plane_contact import ParticlePlaneContactProgram
+
+__all__ += ["ParticlePlaneContacts", "ParticlePlaneContactProgram"]

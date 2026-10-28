@@ -1,0 +1,175 @@
+{
+  "status": "material_equations_certified_no_contact_acceptance_cpp_endurance_open",
+  "source": {
+    "git_revision": "07b23d64450723f2742962962ce268968e30810c",
+    "git_dirty": true,
+    "source_sha256": "80831f04b59587c1805b141c26a73a659f4b5b0a399f0f5f954f4c7371de683d",
+    "python": "3.12.14",
+    "numpy": "2.5.4",
+    "platform": "Windows-11-10.0.26200-SP0"
+  },
+  "python_files": 122,
+  "tyx": {
+    "version": "0.1.0a0",
+    "revision": "99f6df7c0fd8fdeef77f97df83914da27b64b7ee"
+  },
+  "review": {
+    "count": 1,
+    "base": "69b866ae285bc5daeca4d0109d1e0c6f3e7556e6",
+    "head": "9be8f8ce1842a6bb15e956d030f171fb833c449f",
+    "critical": 0,
+    "important": 1,
+    "minor": 1,
+    "regression_red": 12,
+    "fix_revision": "07b23d64450723f2742962962ce268968e30810c"
+  },
+  "focused_interpret": {
+    "passed": 67,
+    "seconds": 1.23
+  },
+  "bounded_cpp": {
+    "passed": 1,
+    "deselected": 23,
+    "seconds": 9.48,
+    "long_run": false
+  },
+  "linux_focused": {
+    "passed": 43,
+    "seconds": 3.88,
+    "python": "3.12.3",
+    "numpy": "2.5.4",
+    "clean_install": false,
+    "scope": "existing Ubuntu system Python, hash-verified Linux NumPy and existing pure Python test dependencies"
+  },
+  "cuda_full_suite": {
+    "passed": 1894,
+    "deselected": 0,
+    "seconds": 526.35,
+    "log": "artifacts/material-ledger-cuda-verified.log"
+  },
+  "core311": {
+    "passed": 1565,
+    "deselected": 329,
+    "seconds": 364.01,
+    "log": "artifacts/material-ledger-core311-verified.log"
+  },
+  "nativepip312": {
+    "passed": 1565,
+    "deselected": 329,
+    "seconds": 364.25,
+    "log": "artifacts/material-ledger-nativepip312-verified.log"
+  },
+  "nativepip_environment": {
+    "path": ".venv-material-ledger-nativepip",
+    "python": "3.12.14",
+    "numpy": "2.5.4",
+    "created": "python -m venv; pip install --require-hashes -r requirements/dev.lock; pip install --no-deps --no-build-isolation -e ."
+  },
+  "first_unsuccessful_runs": {
+    "reason": "Windows default pytest temp-root PermissionError during fixture setup; no product assertion failures; retried unchanged source with explicit new per-suite basetemp",
+    "cuda": {
+      "passed": 1654,
+      "errors": 240,
+      "seconds": 391.65
+    },
+    "core311": {
+      "passed": 1523,
+      "errors": 42,
+      "seconds": 279.66
+    },
+    "nativepip312": {
+      "passed": 1523,
+      "errors": 42,
+      "seconds": 290.8
+    }
+  },
+  "wheel": {
+    "python_files": 122,
+    "exact_source_parity": true,
+    "fresh_native_pip_outside_checkout": true,
+    "installed_smoke": true,
+    "pip_check": true,
+    "artifacts": {
+      "phymeo-0.1.0a0-py3-none-any.whl": "dbb92c1cff9d4963af528db2c22c4467083ca6968c005c8a0dfaf9ee03bc0392",
+      "phymeo-0.1.0a0.tar.gz": "4ab907861a9537caf145054066da5f448a21a003bf6b920b84b6091d3facf30e"
+    }
+  },
+  "quality": {
+    "ruff": true,
+    "docs": true,
+    "public_tyx_import_boundary_files": 122,
+    "compileall": true,
+    "uv_and_native_pip_check": true,
+    "exports_match_locks": true
+  },
+  "performance": {
+    "serial_after_task_numerical_and_reviewer_processes_exited": true,
+    "total_accepted_measured_calls": 900,
+    "rows": [
+      {
+        "mode": "numpy",
+        "accepted": 300,
+        "median_ms": 7.923850091174245,
+        "p95_ms": 8.789964986499399,
+        "first_seconds": 0.035532299894839525,
+        "native_median_ms": 0.6006499752402306,
+        "audit_median_ms": 7.173300022259355,
+        "sweeps": [
+          7
+        ],
+        "completed_launches": [
+          0
+        ]
+      },
+      {
+        "mode": "interpret",
+        "accepted": 300,
+        "median_ms": 18.366949865594506,
+        "p95_ms": 20.56467500515282,
+        "first_seconds": 0.18224200000986457,
+        "native_median_ms": 13.67605000268668,
+        "audit_median_ms": 4.436150076799095,
+        "sweeps": [
+          4
+        ],
+        "completed_launches": [
+          8
+        ]
+      },
+      {
+        "mode": "cuda",
+        "accepted": 300,
+        "median_ms": 70.68715000059456,
+        "p95_ms": 80.98435488063842,
+        "first_seconds": 0.36335469991900027,
+        "native_median_ms": 65.84014999680221,
+        "audit_median_ms": 4.303000052459538,
+        "sweeps": [
+          4
+        ],
+        "completed_launches": [
+          8
+        ]
+      }
+    ]
+  },
+  "unresolved": [
+    "material/contact outer and independent energy/angular-momentum refinement budgets",
+    "NUM-005 native angular-momentum loss",
+    "TYX-003 Windows C++ endurance",
+    "robot cloth gripping and full P6.5"
+  ],
+  "delivery": {
+    "branch": "codex/p6-5-handoff",
+    "status": "pending_push_and_exact_ci"
+  },
+  "hardware": {
+    "cpu": "13th Gen Intel(R) Core(TM) i9-13980HX",
+    "gpu": "NVIDIA GeForce RTX 4060 Laptop GPU",
+    "driver": "566.07",
+    "thread_policy": "default process/runtime settings; no explicit thread tuning or CPU affinity",
+    "batch_size": 1,
+    "peak_memory": "not measured",
+    "first_call_cache": "existing caches after validation; not cold JIT"
+  }
+}

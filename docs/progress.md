@@ -1,5 +1,13 @@
 # 开发进度
 
+## 最新续作：材料原式认证（2026-10-28）
+
+第13项有限基础[MaterialPathLedger](benchmarks/p65-material-ledger-acceptance.md)已通过本地验收。产品`07b23d64450723f2742962962ce268968e30810c`，122文件hash`80831f04b59587c1805b141c26a73a659f4b5b0a399f0f5f954f4c7371de683d`。独立认证原输入、预测、真实逐边材料、最终状态和速度重建；精确请求、FP32输出/转换、fixed host恢复、累计预算与owned报告均有门禁。报告能量/线角动量及材料离散贡献，**不是能量守恒、接触收敛或完整P6.5接受**。
+
+一次fresh审阅1Important1Minor经12RED修复，完整CUDA1894通过，两CPU各1565通过/329未选；核心+actualinterpret67、C++有界1/23未选、Ubuntu核心43、122源码外wheel与uv/pip质量通过。最初Windows默认pytest临时目录权限导致setup错误，另用新basetemp重跑同源码全部通过，错误记录保留。准确结果见[工程JSON](benchmarks/p65-material-ledger-engineering.json)。
+
+[900次串行测量](performance-bottlenecks/measurements/p65-material-ledger.md)全部成功；PERF-015记录主机认证成本，不优化、不冒充tyx缺陷，未测Warp。NUM-005材料角动量损失与TYX-003 C++长期资源问题保持开放。下一步为新的同域材料/机器人接触outer与能量/角动量离散误差、步长细化门槛；旧FreeParticleLedger不删，禁止把预先指定相反输入测试称为真实接触。双臂夹布和Three.js仍未完成。专用分支交付及准确CI状态另行核对。
+
 ## 最新续作：原生材料投影路径（2026-10-28）
 
 第12项有限基础[材料路径记录](benchmarks/p65-material-path-acceptance.md)已通过本地工程验收。产品`dc245f74e2a2877c1137f46dabb4638367eb5c2a`，120文件hash`09a3bd9819cb75fdf5bf463adea9397c452cf07365039707e11a5e057c91d624`。新增opt-in真实NumPy逐边记录及tyx设备traced kernel，关闭时原路径不变；状态/乘子/迭代次数逐位一致，快照独立只读，后段速度与关闭失败恢复状态/history并重试=fresh。

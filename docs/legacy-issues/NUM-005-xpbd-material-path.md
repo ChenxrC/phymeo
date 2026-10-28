@@ -25,3 +25,7 @@
 先实现[实际材料路径记录设计](../superpowers/specs/2026-10-28-p65-material-path-design.md)：native写每条边前后状态、方向与delta_lambda，保留输入转换/舍入差；不能在host反算后冒充设备记录。随后独立验证实际预测、增量原式、速度重建、材料能量与外功，并明确角动量离散误差与步长门槛。若选新守恒积分器或速度修正，需显式新算法合同与机器人/接触时序，不能悄悄覆盖native结果。记录API已在0bf0619实现，NumPy与actual tyx记录每条边的操作前后/方向/dlambda；独立单步测试匹配增量式，原角动量损失仍存在。尚未实现生产共同账本、长时误差门禁或联合材料接触；不能关闭本问题。
 
 相关原始研究：[XPBD](https://matthias-research.github.io/pages/publications/XPBD.pdf)、[Global Momentum Preservation](https://sealab.cs.utah.edu/Papers/Dahl-2019-GMP/Dahl-2019-GMP.pdf)。本地公式与代码独立推导；不宣称已采用论文修正算法。
+
+## 2026-10-28 更新：账本已实现，物理问题保持开放
+
+[MaterialPathLedger](../benchmarks/p65-material-ledger-acceptance.md)现独立认证native材料原式并核算实际路径冲量、K/U/端点位移功和线角动量，含FP32转换/固定host恢复。记录不足的工程缺口已推进；原XPBD角动量损失没有被修正，不能关闭NUM-005。下一outer仍须独立能量/离散角动量预算与步长细化，禁止仅凭equations-v1通过接受接触。没有修改积分器或用host候选覆盖设备。

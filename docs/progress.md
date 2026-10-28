@@ -18,7 +18,7 @@
 
 下一步继续NumPy/CUDA动态接触外层与几何/保守CCD的独立工作，再弯曲/自碰撞、有限驱动单爪及低μ对照、目标/IK/history、真实双臂与Three.js。C++长循环修复后须按原规模重测；不重复已经通过的厚度端口、旧P6轨迹或已关闭审阅。完整P6.5与本切片全后端长期门禁均不能标complete。此段提交后的准确远程SHA/CI另核对。
 
-## 2026-10-28 续作：自动节点平面接触（当前）
+## 2026-10-28 续作：自动节点平面接触
 
 新增[动态平面验收](benchmarks/p65-plane-acceptance.md)：第9项有限基础为ParticlePlaneContactProgram，自动求法向/摩擦冲量并完整重放原材料/机器人程序。T=2s两步长静置/低mu滑移、未固定两节点布材料振子、同节点/多节点多平面、隐藏history与末子步失败回滚通过。机器人域目前只是自由推进，尚未施加新动态接触；完整递布与Three.js仍未交付。
 
@@ -37,6 +37,16 @@
 [串行观测](performance-bottlenecks/measurements/p65-robot-plane.md)三模式各300共900次全接受，2次重放、tyx40launch；PERF-012只记录不优化。源码hash230f2470e71b72a2098afb7a83e10db2170bbc4b05067ce757fa79434e751b14。[工程记录](benchmarks/p65-robot-plane-engineering.json)保留原始计数，新交付head远程CI推送后核对。TYX-003仍使C++长期门禁开放；未改pin或重新跑已知失败压力，仍可推进NumPy/CUDA独立工作。PPT仍是此前厚度源码快照，真实递布/Three.js未交付。
 
 下一步先冻结机器人—节点双向离散作用点/力矩合同。[独立反例](development/p65-robot-node-candidate.md)否定直接把最终J1反冲量配给节点就称守恒：虽共点且耗散，总角动量仍漂移-h*cos(h)。这不是当前固定平面产品失败；必须加独立线/角动量门禁再实施。之后几何/保守CCD、弯曲/自碰撞、有限驱动单爪、目标/IK/history、完整双臂与Three.js及原全套验收继续。
+
+## 2026-10-28 当前续作：步初机器人—自由节点双向接触
+
+新增第11项有限基础：[RobotNodePlaneContacts/InitialRobotNodeContactProgram](benchmarks/p65-initial-pair-acceptance.md)。初态共点冻结J0，节点p与机器人-J0.T*p经完整native输入各施加一次；移动线动量、单转子实际整步Lz、共享祖先多点、T2s两步长静置/低mu滑移和完整history事务通过。末gap独立审计；不是自动新接触或CCD。所选接触粒子域必须全动态并满足自由节点方程，独立材料旁域可继续演化；**完整机器人—布材料联合求解、夹爪、双臂递布与Three.js仍未完成**。
+
+最终产品`aef9b257ccec30246675a9fcca32c7c478d7158b`，118文件源码hash`da5b54842e3256ef20b6eb5d27bfdcded77543f656330603f2ce7975d5989123`。一次fresh审阅2Important经五项RED修复，精确法切原式和两种实际仿射路径均认证；补四个正常控制，不覆盖native状态或放宽tol。完整CUDA1778、core311/nativepip312各1490（各288未选）、actual interpret4、C++有限短测1通过/3未执行、118文件源码外wheel与uv/pip质量通过。[工程记录](benchmarks/p65-initial-pair-engineering.json)给出准确计数。
+
+[串行观测](performance-bottlenecks/measurements/p65-initial-pair.md)NumPy/interpret/CUDA各300共900次接受，2次replay；PERF-013只记录，NUM-004补精确接触/仿射范围，无新tyx缺陷。TYX-003的C++长期门禁仍开放，无修复不重跑压力。前一交付eb4010a的CI40644899057与Documentation40644898897已success；新文档head推送后另查。PPT保留此前厚度快照。
+
+下一步先定义材料内力、位置/速度重建和接触反作用的共同原式账本；不能把自由域限制当成布已接入。随后几何生成/接触建立与切换/保守CCD，弯曲自碰撞、有限驱动单爪和低mu失败、控制/IK/history，最终真实双臂与同源Three.js；保留完整步长/网格/扰动/重复/事务门槛。继续专用分支，不重做已关闭本阶段审阅或旧P6轨迹。
 
 以下按时间保留历史记录，旧截止与旧状态只描述当时窗口。
 

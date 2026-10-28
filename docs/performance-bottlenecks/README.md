@@ -45,3 +45,5 @@ P1/P2 最终新增[修复版串行小负载测量](measurements/p2-runtime.md)�
 新增[PERF-011 动态平面接触](PERF-011-plane-replay.md)：原程序重复重放、host精确载荷/范围审计与实际tyx端到端小负载；细项占比未定位，C++长期TYX-003仍开放。
 
 新增[PERF-012 机器人动态平面](PERF-012-robot-plane-replay.md)：最终构型映射、精确动力学/仿射审计与两次完整native重放；三模式900次串行观测，细项占比未定位。
+
+新增[PERF-013 步初机器人—自由节点](PERF-013-initial-pair-replay.md)：相反载荷一次记账、完整native重放与精确接触/能量审计；三模式900次串行观测，非完整布接触，C++长期问题仍开放。

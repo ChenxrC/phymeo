@@ -1,0 +1,201 @@
+{
+  "status": "local_physics_engineering_and_serial_measurement_passed_cpp_endurance_open",
+  "scope": "initially closed robot-local infinite plane versus free dynamic node domains; initial J0 impulse quadrature; no material-contact dynamics, automatic contact creation, CCD or full handoff",
+  "source": {
+    "git_revision": "aef9b257ccec30246675a9fcca32c7c478d7158b",
+    "git_dirty": true,
+    "source_sha256": "da5b54842e3256ef20b6eb5d27bfdcded77543f656330603f2ce7975d5989123",
+    "python": "3.12.14",
+    "numpy": "2.5.4",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "product_revision": "aef9b257ccec30246675a9fcca32c7c478d7158b",
+    "python_files": 118
+  },
+  "environment": {
+    "cpu": "13th Gen Intel(R) Core(TM) i9-13980HX",
+    "physical_cores": 24,
+    "logical_processors": 32,
+    "cuda_device": "NVIDIA GeForce RTX 4060 Laptop GPU",
+    "driver": "566.07",
+    "thread_affinity": "not pinned; existing process defaults",
+    "precision": "host FP64 / stored-coefficient rational audits; actual tyx backend path"
+  },
+  "tyx": {
+    "version": "0.1.0a0",
+    "revision": "99f6df7c0fd8fdeef77f97df83914da27b64b7ee"
+  },
+  "cuda_full_suite": {
+    "passed": 1778,
+    "seconds": 515.08
+  },
+  "core311": {
+    "passed": 1490,
+    "deselected": 288,
+    "seconds": 373.87
+  },
+  "core_native_pip312": {
+    "passed": 1490,
+    "deselected": 288,
+    "seconds": 382.18
+  },
+  "actual_interpret_final": {
+    "passed": 4,
+    "seconds": 2.29
+  },
+  "cpp_actual_bounded_final": {
+    "passed": 1,
+    "deselected": 3,
+    "seconds": 20.02,
+    "replays": 2,
+    "not_long_run": true
+  },
+  "review": {
+    "count": 1,
+    "base": "eb4010ac44ef63e020b0bac2dbdc4d1ecc921739",
+    "reviewed_head": "6927adc5c3607c133f1c5b3e8a762c979d4ec3f3",
+    "critical": 0,
+    "important": 2,
+    "minor": 0,
+    "findings_fixed": true,
+    "fix_revision": "aef9b257ccec30246675a9fcca32c7c478d7158b",
+    "regression_red": 5,
+    "supplemental_controls": 4,
+    "focused_intermediate_note": "106 passed with3 test-helper failures; helper corrected,4 controls passed; all included in final full suites"
+  },
+  "wheel": {
+    "exact_source_parity": true,
+    "python_files": 118,
+    "fresh_native_pip_outside_checkout": true,
+    "installed_smoke": true,
+    "pip_check": true,
+    "artifacts": {
+      "phymeo-0.1.0a0-py3-none-any.whl": "bb799737e1237bbd051e9cdff83be1a0cde99b67d9350836b7bf9d7d41bf75dd",
+      "phymeo-0.1.0a0.tar.gz": "313c5b947816b8dbf2f231a1493c3bbf43b19e638b4df1fe55e64029d902bced"
+    }
+  },
+  "quality": {
+    "ruff": true,
+    "public_tyx_import_boundary_files": 118,
+    "compileall": true,
+    "uv_and_pip_dependency_checks": true
+  },
+  "performance": {
+    "serial_after_numerical_tests_exited": true,
+    "rows": [
+      {
+        "mode": "numpy",
+        "median_ms": 12.992499978281558,
+        "p95_ms": 14.678524876944723,
+        "first_seconds": 0.036467500030994415,
+        "accepted": 300,
+        "counters": {
+          "replays": [
+            2
+          ],
+          "position_iterations": [
+            1
+          ],
+          "launches": [
+            0
+          ],
+          "completed_launches": [
+            0
+          ],
+          "uploads": [
+            0
+          ],
+          "downloads": [
+            0
+          ]
+        },
+        "max_residual": 8.673617379884035e-17
+      },
+      {
+        "mode": "interpret",
+        "median_ms": 64.65140008367598,
+        "p95_ms": 71.36699997354299,
+        "first_seconds": 0.27506219991482794,
+        "accepted": 300,
+        "counters": {
+          "replays": [
+            2
+          ],
+          "position_iterations": [
+            1
+          ],
+          "launches": [
+            44
+          ],
+          "completed_launches": [
+            44
+          ],
+          "uploads": [
+            0
+          ],
+          "downloads": [
+            0
+          ]
+        },
+        "max_residual": 6.984919309616089e-08
+      },
+      {
+        "mode": "cuda",
+        "median_ms": 221.02235001511872,
+        "p95_ms": 239.8806400015019,
+        "first_seconds": 0.49169389996677637,
+        "accepted": 300,
+        "counters": {
+          "replays": [
+            2
+          ],
+          "position_iterations": [
+            1
+          ],
+          "launches": [
+            44
+          ],
+          "completed_launches": [
+            44
+          ],
+          "uploads": [
+            338
+          ],
+          "downloads": [
+            88
+          ]
+        },
+        "max_residual": 6.984919309616089e-08
+      }
+    ],
+    "accepted_measured_calls": 900,
+    "cpp_status": "not_rerun_known_dependency_failure",
+    "issue": "TYX-003",
+    "Warp_measured": false
+  },
+  "ci": {
+    "status": "exact_delivery_head_to_be_checked_after_push",
+    "previous_head": "eb4010ac44ef63e020b0bac2dbdc4d1ecc921739",
+    "previous_CI": {
+      "id": 40644899057,
+      "conclusion": "success"
+    },
+    "previous_Documentation": {
+      "id": 40644898897,
+      "conclusion": "success"
+    }
+  },
+  "not_claimed": [
+    "cloth material bidirectional contact",
+    "automatic new contact / feature switches",
+    "mesh CCD",
+    "sustained rotating grip",
+    "bending/self collision",
+    "finite gripper",
+    "dual-arm handoff",
+    "Three.js handoff viewer",
+    "C++ sustained acceptance",
+    "GPU-native outer solver",
+    "general multijoint world momentum / true mechanical energy proof",
+    "Warp comparison"
+  ]
+}

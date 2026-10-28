@@ -1,0 +1,78 @@
+{
+  "source": {
+    "git_revision": "cd6f1a565c4d731ec3aee89a6b725ad5e5f872b4",
+    "git_dirty": true,
+    "source_sha256": "80831f04b59587c1805b141c26a73a659f4b5b0a399f0f5f954f4c7371de683d",
+    "python": "3.12.14",
+    "numpy": "2.5.4",
+    "platform": "Windows-11-10.0.26200-SP0"
+  },
+  "mode": "cuda",
+  "scope": "experimental prototype reuse only; a rejected persistence window is evidence against immediate production promotion, not a failure of the already shipped free-node program",
+  "cases": [
+    {
+      "h": 0.0625,
+      "target_time": 2.0,
+      "target_steps": 32,
+      "length_tolerance": 1.25e-06,
+      "expected_impulse_per_step": 0.125,
+      "frames": [
+        {
+          "step": 0,
+          "impulse": 0.12498495018856677,
+          "replays": 7,
+          "relative_velocity": -1.7490057416580385e-05,
+          "gap": -1.093128588536274e-06,
+          "robot_q": 4.703066167621728e-07,
+          "max_node_drift": 6.228219717741013e-07,
+          "material_residual": 3.849466641743978e-07
+        },
+        {
+          "step": 1,
+          "impulse": 0.12499703617747097,
+          "replays": 7,
+          "relative_velocity": -1.7485577700426802e-05,
+          "gap": -2.1859772232346586e-06,
+          "robot_q": 1.03323270650435e-06,
+          "max_node_drift": 1.1527445167303085e-06,
+          "material_residual": 3.1789143880208337e-07
+        }
+      ],
+      "status": "final_penetration_rejected",
+      "failed_step": 1,
+      "completed_steps": 1
+    },
+    {
+      "h": 0.03125,
+      "target_time": 2.0,
+      "target_steps": 64,
+      "length_tolerance": 6.25e-07,
+      "expected_impulse_per_step": 0.0625,
+      "frames": [
+        {
+          "step": 0,
+          "impulse": 0.0624904630506838,
+          "replays": 5,
+          "relative_velocity": -1.2716381661448395e-05,
+          "gap": -3.9738692692026234e-07,
+          "robot_q": 1.4901483780249691e-07,
+          "max_node_drift": 2.4837208911776543e-07,
+          "material_residual": 3.19133202234904e-07
+        },
+        {
+          "step": 1,
+          "impulse": 0.06249851802325187,
+          "replays": 5,
+          "relative_velocity": -1.2714174772554543e-05,
+          "gap": -7.947048743517371e-07,
+          "robot_q": 3.2118555282067973e-07,
+          "max_node_drift": 4.7351932153105736e-07,
+          "material_residual": 3.5328169663747155e-07
+        }
+      ],
+      "status": "final_penetration_rejected",
+      "failed_step": 1,
+      "completed_steps": 1
+    }
+  ]
+}

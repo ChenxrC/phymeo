@@ -1,0 +1,997 @@
+{
+  "source": {
+    "git_revision": "cd6f1a565c4d731ec3aee89a6b725ad5e5f872b4",
+    "git_dirty": true,
+    "source_sha256": "80831f04b59587c1805b141c26a73a659f4b5b0a399f0f5f954f4c7371de683d",
+    "python": "3.12.14",
+    "numpy": "2.5.4",
+    "platform": "Windows-11-10.0.26200-SP0"
+  },
+  "mode": "cuda",
+  "stopping_rule": "geometry",
+  "scope": "experimental prototype reuse only; a rejected persistence window is evidence against immediate production promotion, not a failure of the already shipped free-node program",
+  "cases": [
+    {
+      "h": 0.0625,
+      "target_time": 2.0,
+      "target_steps": 32,
+      "length_tolerance": 1.25e-06,
+      "expected_impulse_per_step": 0.125,
+      "frames": [
+        {
+          "step": 0,
+          "impulse": 0.12498495018856677,
+          "replays": 7,
+          "relative_velocity": -1.7490057416580385e-05,
+          "gap": -1.093128588536274e-06,
+          "robot_q": 4.703066167621728e-07,
+          "max_node_drift": 6.228219717741013e-07,
+          "material_residual": 3.849466641743978e-07
+        },
+        {
+          "step": 1,
+          "impulse": 0.12501123925630966,
+          "replays": 9,
+          "relative_velocity": -9.59053522819886e-07,
+          "gap": -1.153069433712517e-06,
+          "robot_q": 5.893864454264985e-07,
+          "max_node_drift": 5.960464477539062e-07,
+          "material_residual": 3.6135315895080566e-07
+        },
+        {
+          "step": 2,
+          "impulse": 0.12500191028478488,
+          "replays": 9,
+          "relative_velocity": -9.575854846843868e-07,
+          "gap": -1.212918505189009e-06,
+          "robot_q": 6.487698556156829e-07,
+          "max_node_drift": 7.152557373046875e-07,
+          "material_residual": 1.4776984850565594e-07
+        },
+        {
+          "step": 3,
+          "impulse": 0.1250019146318285,
+          "replays": 10,
+          "relative_velocity": -3.2064451715996256e-07,
+          "gap": -1.2329587661952246e-06,
+          "robot_q": 6.48321019980358e-07,
+          "max_node_drift": 7.152557373046875e-07,
+          "material_residual": 4.731118679046631e-07
+        },
+        {
+          "step": 4,
+          "impulse": 0.12500084795102673,
+          "replays": 11,
+          "relative_velocity": -9.771099485078594e-10,
+          "gap": -1.233019816027081e-06,
+          "robot_q": 6.213737151483656e-07,
+          "max_node_drift": 6.556510925292969e-07,
+          "material_residual": 8.319814999898276e-08
+        },
+        {
+          "step": 5,
+          "impulse": 0.12499978895167867,
+          "replays": 11,
+          "relative_velocity": 1.5321575119742192e-09,
+          "gap": -1.2329240348663006e-06,
+          "robot_q": 6.010216679896985e-07,
+          "max_node_drift": 6.319023668766022e-07,
+          "material_residual": 3.3651789029439294e-07
+        },
+        {
+          "step": 6,
+          "impulse": 0.12499936291745446,
+          "replays": 10,
+          "relative_velocity": -4.0847396576282335e-09,
+          "gap": -1.2331793186604045e-06,
+          "robot_q": 6.005784598528408e-07,
+          "max_node_drift": 6.326008588075638e-07,
+          "material_residual": 1.2293457984924316e-07
+        },
+        {
+          "step": 7,
+          "impulse": 0.12499979206706748,
+          "replays": 11,
+          "relative_velocity": -1.779199010343291e-11,
+          "gap": -1.2331804555287817e-06,
+          "robot_q": 6.066331934562186e-07,
+          "max_node_drift": 6.265472620725632e-07,
+          "material_residual": 3.650784492492676e-07
+        },
+        {
+          "step": 8,
+          "impulse": 0.12499979058698804,
+          "replays": 10,
+          "relative_velocity": 3.309111207272508e-09,
+          "gap": -1.2329736591709661e-06,
+          "robot_q": 6.192320824993658e-07,
+          "max_node_drift": 6.137415766716003e-07,
+          "material_residual": 4.333754380544027e-07
+        },
+        {
+          "step": 9,
+          "impulse": 0.12499999952941229,
+          "replays": 11,
+          "relative_velocity": 6.799112384214823e-09,
+          "gap": -1.2325486977715627e-06,
+          "robot_q": 6.318456371445791e-07,
+          "max_node_drift": 6.007030606269836e-07,
+          "material_residual": 2.483526865641276e-08
+        },
+        {
+          "step": 10,
+          "impulse": 0.12499999624393845,
+          "replays": 11,
+          "relative_velocity": -2.5295037175965263e-09,
+          "gap": -1.2327067793194146e-06,
+          "robot_q": 6.4457657344974e-07,
+          "max_node_drift": 5.960464477539062e-07,
+          "material_residual": 4.2219956715901695e-08
+        },
+        {
+          "step": 11,
+          "impulse": 0.1250000004128348,
+          "replays": 10,
+          "relative_velocity": -2.323091052858217e-09,
+          "gap": -1.2328519574111851e-06,
+          "robot_q": 6.572946062988194e-07,
+          "max_node_drift": 5.960464477539062e-07,
+          "material_residual": 1.0927518208821615e-07
+        },
+        {
+          "step": 12,
+          "impulse": 0.12500021475174586,
+          "replays": 11,
+          "relative_velocity": -6.7059247044198855e-09,
+          "gap": -1.2332710639384459e-06,
+          "robot_q": 6.63301648273773e-07,
+          "max_node_drift": 5.960464477539062e-07,
+          "material_residual": 3.948807716369629e-07
+        },
+        {
+          "step": 13,
+          "impulse": 0.12500022131190275,
+          "replays": 11,
+          "relative_velocity": 7.0924883743828104e-09,
+          "gap": -1.2328277989581693e-06,
+          "robot_q": 6.623927220061887e-07,
+          "max_node_drift": 5.960464477539062e-07,
+          "material_residual": 3.973642985026042e-07
+        },
+        {
+          "step": 14,
+          "impulse": 0.1249999968901155,
+          "replays": 10,
+          "relative_velocity": 5.537545533229604e-09,
+          "gap": -1.2324816793807258e-06,
+          "robot_q": 6.615809411414375e-07,
+          "max_node_drift": 5.960464477539062e-07,
+          "material_residual": 1.341104507446289e-07
+        },
+        {
+          "step": 15,
+          "impulse": 0.12499999711892922,
+          "replays": 10,
+          "relative_velocity": 4.097009842496391e-09,
+          "gap": -1.232225599778758e-06,
+          "robot_q": 6.608592002521618e-07,
+          "max_node_drift": 5.960464477539062e-07,
+          "material_residual": 1.3162692387898764e-07
+        },
+        {
+          "step": 16,
+          "impulse": 0.12499999769340775,
+          "replays": 10,
+          "relative_velocity": 2.943713717229457e-09,
+          "gap": -1.2320415976319055e-06,
+          "robot_q": 6.602095368180017e-07,
+          "max_node_drift": 5.960464477539062e-07,
+          "material_residual": 1.2914339701334637e-07
+        },
+        {
+          "step": 17,
+          "impulse": 0.12500000023419489,
+          "replays": 10,
+          "relative_velocity": 3.0608111600827215e-09,
+          "gap": -1.2318503195274388e-06,
+          "robot_q": 6.595525974262273e-07,
+          "max_node_drift": 5.960464477539062e-07,
+          "material_residual": 1.2665987014770508e-07
+        },
+        {
+          "step": 18,
+          "impulse": 0.12500000002269948,
+          "replays": 10,
+          "relative_velocity": 3.0721611921080694e-09,
+          "gap": -1.231658302458527e-06,
+          "robot_q": 6.588949190700077e-07,
+          "max_node_drift": 5.960464477539062e-07,
+          "material_residual": 1.241763432820638e-07
+        },
+        {
+          "step": 19,
+          "impulse": 0.12499999577124754,
+          "replays": 10,
+          "relative_velocity": -6.492795634471804e-09,
+          "gap": -1.2320641076257743e-06,
+          "robot_q": 6.583694016626396e-07,
+          "max_node_drift": 5.960464477539062e-07,
+          "material_residual": 1.1920928955078125e-07
+        },
+        {
+          "step": 20,
+          "impulse": 0.12500000472952402,
+          "replays": 10,
+          "relative_velocity": -4.128033914696516e-09,
+          "gap": -1.2323221199039835e-06,
+          "robot_q": 6.576960913662333e-07,
+          "max_node_drift": 5.960464477539062e-07,
+          "material_residual": 1.142422358194987e-07
+        },
+        {
+          "step": 21,
+          "impulse": 0.12500000185110594,
+          "replays": 10,
+          "relative_velocity": -3.2024809470954096e-09,
+          "gap": -1.2325222655817925e-06,
+          "robot_q": 6.569649144694267e-07,
+          "max_node_drift": 5.960464477539062e-07,
+          "material_residual": 1.0927518208821615e-07
+        },
+        {
+          "step": 22,
+          "impulse": 0.12500000289537636,
+          "replays": 10,
+          "relative_velocity": -1.7547927555483511e-09,
+          "gap": -1.232631916536775e-06,
+          "robot_q": 6.561432428497938e-07,
+          "max_node_drift": 5.960464477539062e-07,
+          "material_residual": 1.043081283569336e-07
+        },
+        {
+          "step": 23,
+          "impulse": 0.1250000014904534,
+          "replays": 10,
+          "relative_velocity": -1.0095657643205413e-09,
+          "gap": -1.2326950127317104e-06,
+          "robot_q": 6.552750164701138e-07,
+          "max_node_drift": 5.960464477539062e-07,
+          "material_residual": 9.934107462565105e-08
+        },
+        {
+          "step": 24,
+          "impulse": 0.12500000004778636,
+          "replays": 10,
+          "relative_velocity": -9.856728766521883e-10,
+          "gap": -1.2327566309977556e-06,
+          "robot_q": 6.544053121615434e-07,
+          "max_node_drift": 5.960464477539062e-07,
+          "material_residual": 9.43740208943685e-08
+        },
+        {
+          "step": 25,
+          "impulse": 0.1250000000077307,
+          "replays": 10,
+          "relative_velocity": -9.818075241696533e-10,
+          "gap": -1.2328180218901252e-06,
+          "robot_q": 6.535353804792976e-07,
+          "max_node_drift": 5.960464477539062e-07,
+          "material_residual": 8.940696716308594e-08
+        },
+        {
+          "step": 26,
+          "impulse": 0.1249999988948313,
+          "replays": 10,
+          "relative_velocity": -1.5343921688781847e-09,
+          "gap": -1.2329139167377434e-06,
+          "robot_q": 6.526999527523003e-07,
+          "max_node_drift": 5.960464477539062e-07,
+          "material_residual": 8.443991343180339e-08
+        },
+        {
+          "step": 27,
+          "impulse": 0.12499999997146463,
+          "replays": 10,
+          "relative_velocity": -1.5486598670122476e-09,
+          "gap": -1.2330107210800634e-06,
+          "robot_q": 6.518654345200048e-07,
+          "max_node_drift": 5.960464477539062e-07,
+          "material_residual": 7.947285970052084e-08
+        },
+        {
+          "step": 28,
+          "impulse": 0.12500000000092845,
+          "replays": 10,
+          "relative_velocity": -1.5481953496987444e-09,
+          "gap": -1.2331074685789645e-06,
+          "robot_q": 6.510308594442904e-07,
+          "max_node_drift": 5.960464477539062e-07,
+          "material_residual": 7.450580596923828e-08
+        },
+        {
+          "step": 29,
+          "impulse": 0.12500000000024633,
+          "replays": 10,
+          "relative_velocity": -1.548071892898406e-09,
+          "gap": -1.2332042160778656e-06,
+          "robot_q": 6.50196284368576e-07,
+          "max_node_drift": 5.960464477539062e-07,
+          "material_residual": 6.953875223795573e-08
+        },
+        {
+          "step": 30,
+          "impulse": 0.12500000000003791,
+          "replays": 10,
+          "relative_velocity": -1.5480532411515924e-09,
+          "gap": -1.2333009635767667e-06,
+          "robot_q": 6.493617092928616e-07,
+          "max_node_drift": 5.960464477539062e-07,
+          "material_residual": 6.457169850667319e-08
+        },
+        {
+          "step": 31,
+          "impulse": 0.12500000000001896,
+          "replays": 10,
+          "relative_velocity": -1.5480434711889757e-09,
+          "gap": -1.2333977110756678e-06,
+          "robot_q": 6.485271342171472e-07,
+          "max_node_drift": 5.960464477539062e-07,
+          "material_residual": 5.960464477539063e-08
+        }
+      ],
+      "status": "completed_window",
+      "completed_steps": 32
+    },
+    {
+      "h": 0.03125,
+      "target_time": 2.0,
+      "target_steps": 64,
+      "length_tolerance": 6.25e-07,
+      "expected_impulse_per_step": 0.0625,
+      "frames": [
+        {
+          "step": 0,
+          "impulse": 0.0624904630506838,
+          "replays": 5,
+          "relative_velocity": -1.2716381661448395e-05,
+          "gap": -3.9738692692026234e-07,
+          "robot_q": 1.4901483780249691e-07,
+          "max_node_drift": 2.4837208911776543e-07,
+          "material_residual": 3.19133202234904e-07
+        },
+        {
+          "step": 1,
+          "impulse": 0.0625069941397669,
+          "replays": 6,
+          "relative_velocity": -1.2695420537056634e-06,
+          "gap": -4.370601232039917e-07,
+          "robot_q": 1.8874624174713972e-07,
+          "max_node_drift": 2.4831388145685196e-07,
+          "material_residual": 1.0598450899124146e-06
+        },
+        {
+          "step": 2,
+          "impulse": 0.06249957569828742,
+          "replays": 6,
+          "relative_velocity": -1.587863721397298e-06,
+          "gap": -4.866808609449436e-07,
+          "robot_q": 2.3510735047693743e-07,
+          "max_node_drift": 2.5157351046800613e-07,
+          "material_residual": 4.411364595095317e-07
+        },
+        {
+          "step": 3,
+          "impulse": 0.06249999965226985,
+          "replays": 6,
+          "relative_velocity": -1.5880375485721743e-06,
+          "gap": -5.363070272323966e-07,
+          "robot_q": 2.8147388775323634e-07,
+          "max_node_drift": 2.548331394791603e-07,
+          "material_residual": 8.754432201385498e-08
+        },
+        {
+          "step": 4,
+          "impulse": 0.06250021029760924,
+          "replays": 6,
+          "relative_velocity": -1.5909221247056848e-06,
+          "gap": -5.860233329713083e-07,
+          "robot_q": 3.2455452014801267e-07,
+          "max_node_drift": 2.980232238769531e-07,
+          "material_residual": 3.855675458908081e-07
+        },
+        {
+          "step": 5,
+          "impulse": 0.06250148554484744,
+          "replays": 7,
+          "relative_velocity": -2.5087842914217617e-09,
+          "gap": -5.861017200459173e-07,
+          "robot_q": 3.4442351193320064e-07,
+          "max_node_drift": 3.5762786865234375e-07,
+          "material_residual": 7.245689630508423e-07
+        },
+        {
+          "step": 6,
+          "impulse": 0.06250063658914465,
+          "replays": 7,
+          "relative_velocity": -3.2123884352586174e-07,
+          "gap": -5.961404383469926e-07,
+          "robot_q": 3.54345814912449e-07,
+          "max_node_drift": 3.5762786865234375e-07,
+          "material_residual": 7.599592208862305e-07
+        },
+        {
+          "step": 7,
+          "impulse": 0.06250063874025122,
+          "replays": 7,
+          "relative_velocity": 1.856591325122281e-09,
+          "gap": -5.960824296380451e-07,
+          "robot_q": 3.5428780620350153e-07,
+          "max_node_drift": 3.5762786865234375e-07,
+          "material_residual": 7.23948081334432e-07
+        },
+        {
+          "step": 8,
+          "impulse": 0.06250042289824856,
+          "replays": 7,
+          "relative_velocity": 9.641638598623103e-10,
+          "gap": -5.960523026260489e-07,
+          "robot_q": 3.4762200584737e-07,
+          "max_node_drift": 3.5762786865234375e-07,
+          "material_residual": 6.885578234990438e-07
+        },
+        {
+          "step": 9,
+          "impulse": 0.06250021142776063,
+          "replays": 7,
+          "relative_velocity": -3.217303401470417e-07,
+          "gap": -6.061063686502166e-07,
+          "robot_q": 3.3765263651730493e-07,
+          "max_node_drift": 3.5762786865234375e-07,
+          "material_residual": 6.922831137975057e-07
+        },
+        {
+          "step": 10,
+          "impulse": 0.06250042487202259,
+          "replays": 7,
+          "relative_velocity": -1.2609007171704434e-09,
+          "gap": -6.061457611394871e-07,
+          "robot_q": 3.210446379853238e-07,
+          "max_node_drift": 3.5762786865234375e-07,
+          "material_residual": 4.3958425521850586e-07
+        },
+        {
+          "step": 11,
+          "impulse": 0.06250000146997081,
+          "replays": 7,
+          "relative_velocity": -3.171755906805629e-07,
+          "gap": -6.160574912428274e-07,
+          "robot_q": 3.044136747121229e-07,
+          "max_node_drift": 3.5762786865234375e-07,
+          "material_residual": 3.3527612686157227e-07
+        },
+        {
+          "step": 12,
+          "impulse": 0.0625002112369657,
+          "replays": 7,
+          "relative_velocity": -2.9408511181827635e-09,
+          "gap": -6.161494070511253e-07,
+          "robot_q": 2.84482155166188e-07,
+          "max_node_drift": 3.5762786865234375e-07,
+          "material_residual": 1.3845662275950116e-07
+        },
+        {
+          "step": 13,
+          "impulse": 0.062500003093002,
+          "replays": 7,
+          "relative_velocity": -1.3943690646556206e-09,
+          "gap": -6.161929775316821e-07,
+          "robot_q": 2.6450229029251204e-07,
+          "max_node_drift": 3.5762786865234375e-07,
+          "material_residual": 3.166496753692627e-08
+        },
+        {
+          "step": 14,
+          "impulse": 0.06250000182728854,
+          "replays": 8,
+          "relative_velocity": -4.807247933058534e-10,
+          "gap": -6.162080126159708e-07,
+          "robot_q": 2.4449389002256794e-07,
+          "max_node_drift": 3.7171412259340286e-07,
+          "material_residual": 7.51266876856486e-08
+        },
+        {
+          "step": 15,
+          "impulse": 0.06249978744979974,
+          "replays": 7,
+          "relative_velocity": -5.850324669154361e-10,
+          "gap": -6.162262877751346e-07,
+          "robot_q": 2.2780656649956654e-07,
+          "max_node_drift": 3.88419721275568e-07,
+          "material_residual": 4.1971604029337567e-07
+        },
+        {
+          "step": 16,
+          "impulse": 0.06249978777483041,
+          "replays": 7,
+          "relative_velocity": -5.268532277113991e-10,
+          "gap": -6.162427581557495e-07,
+          "robot_q": 2.1443527487008396e-07,
+          "max_node_drift": 4.018074832856655e-07,
+          "material_residual": 3.4831464290618896e-07
+        },
+        {
+          "step": 17,
+          "impulse": 0.0624997887464455,
+          "replays": 8,
+          "relative_velocity": 1.7138290786533616e-11,
+          "gap": -6.162422181432703e-07,
+          "robot_q": 2.0436480951957492e-07,
+          "max_node_drift": 4.118774086236954e-07,
+          "material_residual": 3.4241626660029095e-07
+        },
+        {
+          "step": 18,
+          "impulse": 0.062499788151692805,
+          "replays": 8,
+          "relative_velocity": 2.637534635141492e-10,
+          "gap": -6.162339758475355e-07,
+          "robot_q": 1.9760447855787788e-07,
+          "max_node_drift": 4.186294972896576e-07,
+          "material_residual": 3.7842740615208947e-07
+        },
+        {
+          "step": 19,
+          "impulse": 0.06249978648812278,
+          "replays": 8,
+          "relative_velocity": -3.214211119484389e-10,
+          "gap": -6.162440229218191e-07,
+          "robot_q": 1.9418027363826695e-07,
+          "max_node_drift": 4.2206374928355217e-07,
+          "material_residual": 3.9674341678619385e-07
+        },
+        {
+          "step": 20,
+          "impulse": 0.06249978845083131,
+          "replays": 8,
+          "relative_velocity": 7.477041208403534e-11,
+          "gap": -6.162416923416458e-07,
+          "robot_q": 1.9406152773626673e-07,
+          "max_node_drift": 4.221801646053791e-07,
+          "material_residual": 3.973642985026042e-07
+        },
+        {
+          "step": 21,
+          "impulse": 0.062499787661086735,
+          "replays": 8,
+          "relative_velocity": 7.607781071783393e-11,
+          "gap": -6.162393191289084e-07,
+          "robot_q": 1.9726057587377e-07,
+          "max_node_drift": 4.189787432551384e-07,
+          "material_residual": 3.8029005130132043e-07
+        },
+        {
+          "step": 22,
+          "impulse": 0.06249978774413497,
+          "replays": 8,
+          "relative_velocity": 1.1891643225681037e-10,
+          "gap": -6.162356100958277e-07,
+          "robot_q": 2.0377612486299768e-07,
+          "max_node_drift": 4.1245948523283005e-07,
+          "material_residual": 3.4552067518234253e-07
+        },
+        {
+          "step": 23,
+          "impulse": 0.06249978639887861,
+          "replays": 7,
+          "relative_velocity": -5.10880227011512e-10,
+          "gap": -6.162515688856729e-07,
+          "robot_q": 2.1362917834721884e-07,
+          "max_node_drift": 4.0262239053845406e-07,
+          "material_residual": 3.4396847089131677e-07
+        },
+        {
+          "step": 24,
+          "impulse": 0.062499787313072375,
+          "replays": 7,
+          "relative_velocity": 1.1790746157203102e-09,
+          "gap": -6.162147201393964e-07,
+          "robot_q": 2.2680546862829942e-07,
+          "max_node_drift": 3.8940925151109695e-07,
+          "material_residual": 4.1443854570388794e-07
+        },
+        {
+          "step": 25,
+          "impulse": 0.06250000041878442,
+          "replays": 8,
+          "relative_velocity": 3.2511024983250536e-09,
+          "gap": -6.161131125281827e-07,
+          "robot_q": 2.399752077053563e-07,
+          "max_node_drift": 3.761379048228264e-07,
+          "material_residual": 9.872019290924072e-08
+        },
+        {
+          "step": 26,
+          "impulse": 0.06249999662160614,
+          "replays": 8,
+          "relative_velocity": -2.163375256714062e-09,
+          "gap": -6.161807277749176e-07,
+          "robot_q": 2.5319775431853486e-07,
+          "max_node_drift": 3.6298297345638275e-07,
+          "material_residual": 2.8560558954874676e-08
+        },
+        {
+          "step": 27,
+          "impulse": 0.06250000172356825,
+          "replays": 7,
+          "relative_velocity": -1.301600605074782e-09,
+          "gap": -6.162213992411125e-07,
+          "robot_q": 2.663933571511734e-07,
+          "max_node_drift": 3.5762786865234375e-07,
+          "material_residual": 4.159907499949138e-08
+        },
+        {
+          "step": 28,
+          "impulse": 0.062500001362082,
+          "replays": 7,
+          "relative_velocity": -6.205596037034411e-10,
+          "gap": -6.162407828469441e-07,
+          "robot_q": 2.795676721234486e-07,
+          "max_node_drift": 3.5762786865234375e-07,
+          "material_residual": 1.1175870895385742e-07
+        },
+        {
+          "step": 29,
+          "impulse": 0.06250021132217398,
+          "replays": 8,
+          "relative_velocity": -2.992891268149833e-09,
+          "gap": -6.163343186926795e-07,
+          "robot_q": 2.8944009500264656e-07,
+          "max_node_drift": 3.5762786865234375e-07,
+          "material_residual": 4.166116317113241e-07
+        },
+        {
+          "step": 30,
+          "impulse": 0.06250021404874435,
+          "replays": 8,
+          "relative_velocity": 3.4486475897210767e-09,
+          "gap": -6.162265435705194e-07,
+          "robot_q": 2.9596799322462175e-07,
+          "max_node_drift": 3.5762786865234375e-07,
+          "material_residual": 3.812213738759359e-07
+        },
+        {
+          "step": 31,
+          "impulse": 0.0625002097651001,
+          "replays": 8,
+          "relative_velocity": 2.97788460557058e-10,
+          "gap": -6.162172496715357e-07,
+          "robot_q": 2.992183283367922e-07,
+          "max_node_drift": 3.5762786865234375e-07,
+          "material_residual": 3.6383668581644696e-07
+        },
+        {
+          "step": 32,
+          "impulse": 0.06250021130007137,
+          "replays": 8,
+          "relative_velocity": -2.0855921434304037e-09,
+          "gap": -6.162824206512596e-07,
+          "robot_q": 2.9916708399468916e-07,
+          "max_node_drift": 3.5762786865234375e-07,
+          "material_residual": 3.644575675328573e-07
+        },
+        {
+          "step": 33,
+          "impulse": 0.06250021415212832,
+          "replays": 8,
+          "relative_velocity": 4.4076386984670535e-09,
+          "gap": -6.161446890473599e-07,
+          "robot_q": 2.9576972337963525e-07,
+          "max_node_drift": 3.5762786865234375e-07,
+          "material_residual": 3.818422555923462e-07
+        },
+        {
+          "step": 34,
+          "impulse": 0.06250020905862641,
+          "replays": 8,
+          "relative_velocity": 9.035403536472586e-10,
+          "gap": -6.161164662898955e-07,
+          "robot_q": 2.891058272780356e-07,
+          "max_node_drift": 3.5762786865234375e-07,
+          "material_residual": 4.172325134277344e-07
+        },
+        {
+          "step": 35,
+          "impulse": 0.06249999965493202,
+          "replays": 7,
+          "relative_velocity": 7.310063665499911e-10,
+          "gap": -6.160936152355134e-07,
+          "robot_q": 2.8244730287951825e-07,
+          "max_node_drift": 3.5762786865234375e-07,
+          "material_residual": 1.2790163358052572e-07
+        },
+        {
+          "step": 36,
+          "impulse": 0.06250000073703177,
+          "replays": 7,
+          "relative_velocity": 1.0995222510246094e-09,
+          "gap": -6.160592533888121e-07,
+          "robot_q": 2.757772676886816e-07,
+          "max_node_drift": 3.5762786865234375e-07,
+          "material_residual": 9.251137574513754e-08
+        },
+        {
+          "step": 37,
+          "impulse": 0.06250000023029163,
+          "replays": 7,
+          "relative_velocity": 1.2146728067818913e-09,
+          "gap": -6.16021281985013e-07,
+          "robot_q": 2.691036229407473e-07,
+          "max_node_drift": 3.5762786865234375e-07,
+          "material_residual": 5.712111790974935e-08
+        },
+        {
+          "step": 38,
+          "impulse": 0.06249999949784524,
+          "replays": 7,
+          "relative_velocity": 9.635954256737023e-10,
+          "gap": -6.159911833947262e-07,
+          "robot_q": 2.624378510063252e-07,
+          "max_node_drift": 3.5762786865234375e-07,
+          "material_residual": 2.1730860074361168e-08
+        },
+        {
+          "step": 39,
+          "impulse": 0.062499998266541,
+          "replays": 8,
+          "relative_velocity": 9.686118573881686e-11,
+          "gap": -6.159881422718172e-07,
+          "robot_q": 2.557991365392809e-07,
+          "max_node_drift": 3.601890057325363e-07,
+          "material_residual": 1.365939776102702e-08
+        },
+        {
+          "step": 40,
+          "impulse": 0.062499999508091264,
+          "replays": 8,
+          "relative_velocity": -1.4910028767189942e-10,
+          "gap": -6.159928034321638e-07,
+          "robot_q": 2.491681243554922e-07,
+          "max_node_drift": 3.668246790766716e-07,
+          "material_residual": 4.9049655596415206e-08
+        },
+        {
+          "step": 41,
+          "impulse": 0.062499999664434355,
+          "replays": 8,
+          "relative_velocity": -3.168878492942895e-10,
+          "gap": -6.160026941870456e-07,
+          "robot_q": 2.425423417662387e-07,
+          "max_node_drift": 3.734603524208069e-07,
+          "material_residual": 8.443991343180339e-08
+        },
+        {
+          "step": 42,
+          "impulse": 0.062499999754137996,
+          "replays": 8,
+          "relative_velocity": -4.39825953435502e-10,
+          "gap": -6.160164360835552e-07,
+          "robot_q": 2.35920410318613e-07,
+          "max_node_drift": 3.8009602576494217e-07,
+          "material_residual": 1.1983017126719159e-07
+        },
+        {
+          "step": 43,
+          "impulse": 0.06249978751329385,
+          "replays": 7,
+          "relative_velocity": -5.124149993207539e-10,
+          "gap": -6.160324517168192e-07,
+          "robot_q": 2.3261858927980938e-07,
+          "max_node_drift": 3.834138624370098e-07,
+          "material_residual": 4.464139540990194e-07
+        },
+        {
+          "step": 44,
+          "impulse": 0.06249978747861936,
+          "replays": 7,
+          "relative_velocity": -6.023341825311945e-10,
+          "gap": -6.160512810993168e-07,
+          "robot_q": 2.3263741866230703e-07,
+          "max_node_drift": 3.834138624370098e-07,
+          "material_residual": 4.464139540990194e-07
+        },
+        {
+          "step": 45,
+          "impulse": 0.06249978779968994,
+          "replays": 7,
+          "relative_velocity": -5.317204454513558e-10,
+          "gap": -6.160678935884789e-07,
+          "robot_q": 2.3597186782353674e-07,
+          "max_node_drift": 3.8009602576494217e-07,
+          "material_residual": 4.641090830167135e-07
+        },
+        {
+          "step": 46,
+          "impulse": 0.06250000027040414,
+          "replays": 8,
+          "relative_velocity": -2.259163522921881e-09,
+          "gap": -6.16138493114704e-07,
+          "robot_q": 2.3930209636091604e-07,
+          "max_node_drift": 3.76836396753788e-07,
+          "material_residual": 1.0244548320770264e-07
+        },
+        {
+          "step": 47,
+          "impulse": 0.06250000029509314,
+          "replays": 8,
+          "relative_velocity": -2.111619323841296e-09,
+          "gap": -6.162044883240014e-07,
+          "robot_q": 2.426277205813676e-07,
+          "max_node_drift": 3.735767677426338e-07,
+          "material_residual": 8.506079514821371e-08
+        },
+        {
+          "step": 48,
+          "impulse": 0.06250000250336522,
+          "replays": 8,
+          "relative_velocity": -8.599343459536612e-10,
+          "gap": -6.162313752611226e-07,
+          "robot_q": 2.4591423652964295e-07,
+          "max_node_drift": 3.7031713873147964e-07,
+          "material_residual": 6.767610708872478e-08
+        },
+        {
+          "step": 49,
+          "impulse": 0.06250000075915334,
+          "replays": 8,
+          "relative_velocity": -4.803553110832581e-10,
+          "gap": -6.162463819237018e-07,
+          "robot_q": 2.491888722033764e-07,
+          "max_node_drift": 3.6705750972032547e-07,
+          "material_residual": 5.029141902923584e-08
+        },
+        {
+          "step": 50,
+          "impulse": 0.06250000006158983,
+          "replays": 8,
+          "relative_velocity": -4.495603889154154e-10,
+          "gap": -6.162604222481605e-07,
+          "robot_q": 2.5246254153898917e-07,
+          "max_node_drift": 3.637978807091713e-07,
+          "material_residual": 3.290673096974691e-08
+        },
+        {
+          "step": 51,
+          "impulse": 0.06250000000546643,
+          "replays": 8,
+          "relative_velocity": -4.46824799382739e-10,
+          "gap": -6.162743773074908e-07,
+          "robot_q": 2.557361256094737e-07,
+          "max_node_drift": 3.605382516980171e-07,
+          "material_residual": 1.5522042910257976e-08
+        },
+        {
+          "step": 52,
+          "impulse": 0.06250000000092844,
+          "replays": 8,
+          "relative_velocity": -4.4636294660449494e-10,
+          "gap": -6.162883323668211e-07,
+          "robot_q": 2.590097096799582e-07,
+          "max_node_drift": 3.5762786865234375e-07,
+          "material_residual": 1.862645149230957e-09
+        },
+        {
+          "step": 53,
+          "impulse": 0.06249999955502972,
+          "replays": 7,
+          "relative_velocity": -6.688480880256975e-10,
+          "gap": -6.163092223232525e-07,
+          "robot_q": 2.622902286475437e-07,
+          "max_node_drift": 3.5762786865234375e-07,
+          "material_residual": 1.924733320871989e-08
+        },
+        {
+          "step": 54,
+          "impulse": 0.06249999994770405,
+          "replays": 7,
+          "relative_velocity": -6.949960607016692e-10,
+          "gap": -6.163309365092573e-07,
+          "robot_q": 2.655715718447027e-07,
+          "max_node_drift": 3.5762786865234375e-07,
+          "material_residual": 3.6632021268208824e-08
+        },
+        {
+          "step": 55,
+          "impulse": 0.0624999999896166,
+          "replays": 7,
+          "relative_velocity": -7.001901281000755e-10,
+          "gap": -6.163528212255187e-07,
+          "robot_q": 2.688530855721183e-07,
+          "max_node_drift": 3.5762786865234375e-07,
+          "material_residual": 5.4016709327697754e-08
+        },
+        {
+          "step": 56,
+          "impulse": 0.06249999999670308,
+          "replays": 7,
+          "relative_velocity": -7.01838587247039e-10,
+          "gap": -6.16374762785199e-07,
+          "robot_q": 2.7213465614295274e-07,
+          "max_node_drift": 3.5762786865234375e-07,
+          "material_residual": 7.140139738718669e-08
+        },
+        {
+          "step": 57,
+          "impulse": 0.06249999999962104,
+          "replays": 7,
+          "relative_velocity": -7.020304337856942e-10,
+          "gap": -6.163967043448793e-07,
+          "robot_q": 2.754162267137872e-07,
+          "max_node_drift": 3.5762786865234375e-07,
+          "material_residual": 8.878608544667563e-08
+        },
+        {
+          "step": 58,
+          "impulse": 0.0624999999999242,
+          "replays": 7,
+          "relative_velocity": -7.020659609224822e-10,
+          "gap": -6.164186459045595e-07,
+          "robot_q": 2.7869779728462163e-07,
+          "max_node_drift": 3.5762786865234375e-07,
+          "material_residual": 1.0617077350616455e-07
+        },
+        {
+          "step": 59,
+          "impulse": 0.06249999966019005,
+          "replays": 7,
+          "relative_velocity": -8.719709398974373e-10,
+          "gap": -6.164459023239033e-07,
+          "robot_q": 2.8198468271511956e-07,
+          "max_node_drift": 3.5762786865234375e-07,
+          "material_residual": 1.235554615656535e-07
+        },
+        {
+          "step": 60,
+          "impulse": 0.06249999996305178,
+          "replays": 7,
+          "relative_velocity": -8.904450510272e-10,
+          "gap": -6.164737271774356e-07,
+          "robot_q": 2.852721365798061e-07,
+          "max_node_drift": 3.5762786865234375e-07,
+          "material_residual": 1.4094014962514242e-07
+        },
+        {
+          "step": 61,
+          "impulse": 0.062499999995604114,
+          "replays": 7,
+          "relative_velocity": -8.926406280806987e-10,
+          "gap": -6.165016088743869e-07,
+          "robot_q": 2.885596472879115e-07,
+          "max_node_drift": 3.5762786865234375e-07,
+          "material_residual": 1.5832483768463135e-07
+        },
+        {
+          "step": 62,
+          "impulse": 0.06250021132130239,
+          "replays": 8,
+          "relative_velocity": -3.2654057235959044e-09,
+          "gap": -6.16603642811242e-07,
+          "robot_q": 2.885452659029397e-07,
+          "max_node_drift": 3.5762786865234375e-07,
+          "material_residual": 4.2282044887542725e-07
+        },
+        {
+          "step": 63,
+          "impulse": 0.06250000257430581,
+          "replays": 7,
+          "relative_velocity": -1.978252783807477e-09,
+          "gap": -6.166654600292532e-07,
+          "robot_q": 2.884906677991239e-07,
+          "max_node_drift": 3.5762786865234375e-07,
+          "material_residual": 1.5708307425181073e-07
+        }
+      ],
+      "status": "completed_window",
+      "completed_steps": 64
+    }
+  ]
+}

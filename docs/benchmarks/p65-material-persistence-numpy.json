@@ -1,0 +1,118 @@
+{
+  "source": {
+    "git_revision": "cd6f1a565c4d731ec3aee89a6b725ad5e5f872b4",
+    "git_dirty": true,
+    "source_sha256": "80831f04b59587c1805b141c26a73a659f4b5b0a399f0f5f954f4c7371de683d",
+    "python": "3.12.14",
+    "numpy": "2.5.4",
+    "platform": "Windows-11-10.0.26200-SP0"
+  },
+  "mode": "numpy",
+  "scope": "experimental prototype reuse only; a rejected persistence window is evidence against immediate production promotion, not a failure of the already shipped free-node program",
+  "cases": [
+    {
+      "h": 0.0625,
+      "target_time": 2.0,
+      "target_steps": 32,
+      "length_tolerance": 6.25e-10,
+      "expected_impulse_per_step": 0.125,
+      "frames": [
+        {
+          "step": 0,
+          "impulse": 0.12499999184221305,
+          "replays": 12,
+          "relative_velocity": -9.517417971782738e-09,
+          "gap": -5.948386232364211e-10,
+          "robot_q": 2.549308420612961e-10,
+          "max_node_drift": 3.39907781175125e-10,
+          "material_residual": 7.216449660063518e-16
+        },
+        {
+          "step": 1,
+          "impulse": 0.12499999844613581,
+          "replays": 12,
+          "relative_velocity": -9.517418554649826e-09,
+          "gap": -1.1896772829020352e-09,
+          "robot_q": 5.584199400630874e-10,
+          "max_node_drift": 6.312573428389479e-10,
+          "material_residual": 5.921189464667502e-16
+        }
+      ],
+      "status": "final_penetration_rejected",
+      "failed_step": 1,
+      "completed_steps": 1
+    },
+    {
+      "h": 0.03125,
+      "target_time": 2.0,
+      "target_steps": 64,
+      "length_tolerance": 3.125e-10,
+      "expected_impulse_per_step": 0.0625,
+      "frames": [
+        {
+          "step": 0,
+          "impulse": 0.062499998548089214,
+          "replays": 9,
+          "relative_velocity": -1.9358807855363036e-09,
+          "gap": -6.049627454800949e-11,
+          "robot_q": 2.2686106031927222e-11,
+          "max_node_drift": 3.7810168516082265e-11,
+          "material_residual": 8.557969148152249e-16
+        },
+        {
+          "step": 1,
+          "impulse": 0.0624999997580148,
+          "replays": 9,
+          "relative_velocity": -1.9358813857506263e-09,
+          "gap": -1.2099256785271656e-10,
+          "robot_q": 4.915323085618456e-11,
+          "max_node_drift": 7.1839336996532e-11,
+          "material_residual": 1.3183898417423734e-16
+        },
+        {
+          "step": 2,
+          "impulse": 0.0624999997580152,
+          "replays": 9,
+          "relative_velocity": -1.9358813822811793e-09,
+          "gap": -1.8148886104900341e-10,
+          "robot_q": 7.940136818439941e-11,
+          "max_node_drift": 1.02087492864604e-10,
+          "material_residual": 2.3071822230491534e-16
+        },
+        {
+          "step": 3,
+          "impulse": 0.062499999818511204,
+          "replays": 9,
+          "relative_velocity": -1.9358813788117324e-09,
+          "gap": -2.4198515413687005e-10,
+          "robot_q": 1.1248526795345354e-10,
+          "max_node_drift": 1.294998861834165e-10,
+          "material_residual": 6.603514031885046e-16
+        },
+        {
+          "step": 4,
+          "impulse": 0.062499999909255796,
+          "replays": 9,
+          "relative_velocity": -1.9358813822811793e-09,
+          "gap": -3.024814473331569e-10,
+          "robot_q": 1.4698704590716122e-10,
+          "max_node_drift": 1.554944014259957e-10,
+          "material_residual": 1.4149561152384158e-15
+        },
+        {
+          "step": 5,
+          "impulse": 0.062499999999999604,
+          "replays": 9,
+          "relative_velocity": -1.9358813822811793e-09,
+          "gap": -3.6297774052944376e-10,
+          "robot_q": 1.8148883004082128e-10,
+          "max_node_drift": 1.8148891048862248e-10,
+          "material_residual": 6.262351748276274e-16
+        }
+      ],
+      "status": "final_penetration_rejected",
+      "failed_step": 5,
+      "completed_steps": 5
+    }
+  ]
+}

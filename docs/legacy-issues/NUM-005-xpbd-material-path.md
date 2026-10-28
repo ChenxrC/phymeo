@@ -29,3 +29,5 @@
 ## 2026-10-28 更新：账本已实现，物理问题保持开放
 
 [MaterialPathLedger](../benchmarks/p65-material-ledger-acceptance.md)现独立认证native材料原式并核算实际路径冲量、K/U/端点位移功和线角动量，含FP32转换/固定host恢复。记录不足的工程缺口已推进；原XPBD角动量损失没有被修正，不能关闭NUM-005。下一outer仍须独立能量/离散角动量预算与步长细化，禁止仅凭equations-v1通过接受接触。没有修改积分器或用host候选覆盖设备。
+
+材料接触前置实验进一步确认：压缩软边接触后K可高于free而K+U降低，纯K-free门槛不能沿用；新的含U/原外功与角动量预算已写入[材料接触设计](../superpowers/specs/2026-10-28-p65-material-contact-design.md)。这仍未修正积分器，也未交付新的生产接触程序。

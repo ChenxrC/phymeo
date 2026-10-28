@@ -1,5 +1,13 @@
 # 开发进度
 
+## 当前准备：同域材料接触（2026-10-28）
+
+材料账本准确249234a的两项CI已success，交付闭环。下一[材料接触设计](superpowers/specs/2026-10-28-p65-material-contact-design.md)与[实施计划](superpowers/plans/2026-10-28-p65-material-contact.md)已冻结，builder check无重要未决问题；生产InitialRobotMaterialContactProgram尚未实现，不计为新增已交付模块。
+
+[原生候选证据](development/p65-material-contact-candidate.md)三模式共9个压缩边解析例通过；确认材料释放弹性能时，旧自由节点K-free门槛会误拒合法结果。2秒支撑两步长的速度-only停止负例均失败；加末gap共同停止后，三模式六个窗口全部完成。最大节点漂移NumPy约3.84e-10m、tyx约7.16e-7m，只是这个normal-only原型的观测，不代表生产能量/角动量/摩擦/事务合同已验收。
+
+PERF-016仅记replay计数，正式性能未测。接下来按Task1先RED后实现新程序，保留旧free合同，采用原式认证＋显式能量/材料角动量预算，并继续完整T2/低mu/共享点与失败事务。不得从本探针直接跳到夹爪或声称双臂递布完成。
+
 ## 最新续作：材料原式认证（2026-10-28）
 
 第13项有限基础[MaterialPathLedger](benchmarks/p65-material-ledger-acceptance.md)已通过本地验收。产品`07b23d64450723f2742962962ce268968e30810c`，122文件hash`80831f04b59587c1805b141c26a73a659f4b5b0a399f0f5f954f4c7371de683d`。独立认证原输入、预测、真实逐边材料、最终状态和速度重建；精确请求、FP32输出/转换、fixed host恢复、累计预算与owned报告均有门禁。报告能量/线角动量及材料离散贡献，**不是能量守恒、接触收敛或完整P6.5接受**。

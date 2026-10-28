@@ -1,0 +1,175 @@
+{
+  "source": {
+    "git_revision": "cd6f1a565c4d731ec3aee89a6b725ad5e5f872b4",
+    "git_dirty": true,
+    "source_sha256": "80831f04b59587c1805b141c26a73a659f4b5b0a399f0f5f954f4c7371de683d",
+    "python": "3.12.14",
+    "numpy": "2.5.4",
+    "platform": "Windows-11-10.0.26200-SP0"
+  },
+  "mode": "cuda",
+  "scope": "experimental compressed two-node edge against one prismatic plane; normal-only prototype, not a production contact program or full physical certification",
+  "cases": [
+    {
+      "h": 0.1,
+      "impulse": 0.5714131991068523,
+      "exact_impulse": 0.5714285714285714,
+      "node_velocities": [
+        -0.2857244610786438,
+        0.8571374416351318
+      ],
+      "robot_velocity": -0.28570660948753357,
+      "replays": 8,
+      "gap": -1.7825514078140259e-06,
+      "linear_momentum": -2.384185791015625e-07,
+      "initial_total_energy": 2.0,
+      "final_total_energy_upper": 0.8571325733500472,
+      "final_kinetic": 0.48978979746061224,
+      "free_kinetic": 0.44444439146253956,
+      "kinetic_change_from_free": 0.045345405998072685,
+      "material_residual": 2.6077032091810687e-07,
+      "completed_launches": 25,
+      "iterations": [
+        {
+          "impulse": 0.0,
+          "relative_velocity": -0.6666666269302368,
+          "kinetic": 0.44444439146253956
+        },
+        {
+          "impulse": 0.4444444179534912,
+          "relative_velocity": -0.14814817905426025,
+          "kinetic": 0.44993121208644027
+        },
+        {
+          "impulse": 0.5432098706563314,
+          "relative_velocity": -0.03292173147201538,
+          "kinetic": 0.47946617213225906
+        },
+        {
+          "impulse": 0.565157691637675,
+          "relative_velocity": -0.007315903902053833,
+          "kinetic": 0.4874276597755296
+        },
+        {
+          "impulse": 0.5700349609057109,
+          "relative_velocity": -0.0016257762908935547,
+          "kinetic": 0.4892661650689263
+        },
+        {
+          "impulse": 0.5711188117663066,
+          "relative_velocity": -0.0003611743450164795,
+          "kinetic": 0.489678012575852
+        },
+        {
+          "impulse": 0.5713595946629842,
+          "relative_velocity": -8.040666580200195e-05,
+          "kinetic": 0.4897693810015529
+        },
+        {
+          "impulse": 0.5714131991068523,
+          "relative_velocity": -1.7851591110229492e-05,
+          "kinetic": 0.48978979746061224
+        }
+      ]
+    },
+    {
+      "h": 0.05,
+      "impulse": 0.49999141693115234,
+      "exact_impulse": 0.5,
+      "node_velocities": [
+        -0.2500070333480835,
+        0.7499980926513672
+      ],
+      "robot_velocity": -0.24999573826789856,
+      "replays": 6,
+      "gap": -5.6438148021698e-07,
+      "linear_momentum": -4.172325134277344e-07,
+      "initial_total_energy": 2.0,
+      "final_total_energy_upper": 1.4999941792822111,
+      "final_kinetic": 0.3749981970042109,
+      "free_kinetic": 0.444444788826992,
+      "kinetic_change_from_free": -0.06944659182278112,
+      "material_residual": 4.4082601869642924e-07,
+      "completed_launches": 25,
+      "iterations": [
+        {
+          "impulse": 0.0,
+          "relative_velocity": -0.6666666269302368,
+          "kinetic": 0.444444788826992
+        },
+        {
+          "impulse": 0.4444444179534912,
+          "relative_velocity": -0.07407402992248535,
+          "kinetic": 0.36762653620328223
+        },
+        {
+          "impulse": 0.49382710456848145,
+          "relative_velocity": -0.008230447769165039,
+          "kinetic": 0.3739948368842576
+        },
+        {
+          "impulse": 0.4993140697479248,
+          "relative_velocity": -0.0009145438671112061,
+          "kinetic": 0.37488624888008903
+        },
+        {
+          "impulse": 0.4999237656593323,
+          "relative_velocity": -0.00010147690773010254,
+          "kinetic": 0.37498730775064626
+        },
+        {
+          "impulse": 0.49999141693115234,
+          "relative_velocity": -1.1295080184936523e-05,
+          "kinetic": 0.3749981970042109
+        }
+      ]
+    },
+    {
+      "h": 0.025,
+      "impulse": 0.3076916833718618,
+      "exact_impulse": 0.3076923076923077,
+      "node_velocities": [
+        -0.1538466513156891,
+        0.46153783798217773
+      ],
+      "robot_velocity": -0.15384584665298462,
+      "replays": 5,
+      "gap": -2.0489096641540527e-08,
+      "linear_momentum": -5.066394805908203e-07,
+      "initial_total_energy": 2.0,
+      "final_total_energy_upper": 1.846153371609591,
+      "final_kinetic": 0.14201152853753074,
+      "free_kinetic": 0.19753031083169503,
+      "kinetic_change_from_free": -0.05551878229416429,
+      "material_residual": 5.6293275624903e-07,
+      "completed_launches": 25,
+      "iterations": [
+        {
+          "impulse": 0.0,
+          "relative_velocity": -0.4444444179534912,
+          "kinetic": 0.19753031083169503
+        },
+        {
+          "impulse": 0.2962962786356608,
+          "relative_velocity": -0.016460895538330078,
+          "kinetic": 0.14171312660807933
+        },
+        {
+          "impulse": 0.30727020899454754,
+          "relative_velocity": -0.0006095767021179199,
+          "kinetic": 0.1419970450670731
+        },
+        {
+          "impulse": 0.30767659346262616,
+          "relative_velocity": -2.263486385345459e-05,
+          "kinetic": 0.1420114140838986
+        },
+        {
+          "impulse": 0.3076916833718618,
+          "relative_velocity": -8.046627044677734e-07,
+          "kinetic": 0.14201152853753074
+        }
+      ]
+    }
+  ]
+}

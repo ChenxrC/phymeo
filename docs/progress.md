@@ -23,15 +23,15 @@
 
 静态距离证书框架前置已准确交付e63a1bf，两CI成功；[实施任务单](superpowers/plans/2026-10-29-p65-distance-certificate.md)最后交付框已关闭。它不完成动态接触或CCD，下一项继续厚度/法向、特征身份/history与自动建立分离及连续路径。
 
-## 本地验收：仿射特征整段净距认证（2026-10-29）
-
 ## 正在实施：自动法向接触建立与分离（2026-10-29）
 
 已冻结[两阶段生产合同](superpowers/specs/2026-10-29-p65-dynamic-normal-design.md)和[实施计划](superpowers/plans/2026-10-29-p65-dynamic-normal.md)，一次builder无重要未决。闭合前后的原生边界实验在NumPy/interpret/CUDA各2例通过，详见[设计证据](development/p65-dynamic-normal-candidate.md)；它们预先给定冲量，不是自动求解器完成证据。
 
-Task1已交terminal_impulse_implementer：可复用关闭前末冲量机制和独立方程账本。之后Task2实现自动生成候选、held位置载荷与末速度冲量求解、显式history及全局事务；Task3一次fresh审阅和最终工程验收。当前生产新API尚未验收，未新增已完成能力项。
+Task1产品24c9961已完成定向验收：关闭前原生末冲量机制、独立方程账本、只读诊断修复和完整事务；最终新NumPy42、interpret2、CUDA2通过，旧相关回归版本详见续作记录。接下来Task2实现自动生成候选、held位置载荷与末速度冲量求解、显式history及全局事务；Task3一次fresh审阅和最终工程验收。全阶段自动求解/生命周期和一次最终审阅尚未完成，未新增已完成动态能力项。
 
 首个动态支持域固定为全prismatic机器人、全动态距离材料节点、固定朝向无限平面、法向无摩擦；材料/机器人原生计算与两个输入阶段分账。摩擦、有限特征切换、FK旋转CCD、弯曲/自碰撞和夹持继续属于后续必做，不降低整个P6.5目标。
+
+## 已交付：仿射特征整段净距认证（2026-10-29）
 
 第16项有限能力已实现并完成本地验收，产品700fd32、最终快照61ea634，126源码hash `67ae299638326bf2018ee781a3bceadb5f54fbd84a7238f0740d9c27be3a6b60`。整段同步投影证明声明线性路径distance>=正净距，或返回严格违例/未决；预算不足不能当安全。详见[验收](benchmarks/p65-linear-sweep-acceptance.md)、[工程](benchmarks/p65-linear-sweep-engineering.json)与[唯一审阅](benchmarks/p65-linear-sweep-review.md)。
 

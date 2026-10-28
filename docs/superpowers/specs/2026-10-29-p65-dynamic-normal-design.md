@@ -133,3 +133,5 @@ TerminalImpulseLedger(scene,before,requests,settings,context=BackendContext(),*,
 
 T2 support固定：机器人gravity0、effort+2N，两个单位节点gravityY=-1，A=0、B=255/256，rest1,c=1/256，零初速；平面0。解析held p_A=2h、p_B=0、terminalη=0，全位置速度保持。h=1/16与1/32，完整T2，两模式容许漂移上限按第5节，不调tol。
 free impact三个h固定相同初态，T=1真实非弹性参照位置node=q=-7/24、速度均-1/3。此一维无加速度方法端点可能恰好重合连续解；要求每个h终点误差<=NumPy1e-7m/tyx1e-5m且重复一致，不强造非零误差或声明收敛阶。后续真实材料/网格/旋转综合步长门槛仍必须另做。
+
+末冲量时刻力矩的独立非退化控制：在free解析例保持法向数据不变，只将节点vx从0改1、x0=0。stageA/post节点x坐标均1/4，p与eta仍1/3；末冲量的z矩为x1*eta=1/12 Nms，而错误x0*eta=0。精确材料角动量缺陷减末矩后应为0；按初态位置错记eta须超过固定1e-6预算拒绝。平面为无限面且robot只沿Y运动，基座可承担未表示的力矩，不能把本控制宣称全系统世界角动量守恒。这个控制必须用于Task2时刻记账负测试，全Y一维例无法区分两个记矩时刻。

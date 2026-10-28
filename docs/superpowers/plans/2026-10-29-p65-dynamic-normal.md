@@ -33,12 +33,12 @@
 **Interfaces:** 按spec提供 PointVelocityImpulses、TerminalImpulseProgram、TerminalPointImpulseWorkspace；新增 TerminalImpulseLedger(scene, before, requests, settings, context=BackendContext(), *, registry=None, history_fields=())，require(after)返回owned只读报告。Ledger选择requested particles/全prismatic robot，其他域只验未改变；history_fields显式用于完整copy/validation，默认空。返回max_residual、by_domain速度单位化方程误差、输入映射误差、配置保持与compute_precision；不负责接触互补或全步能量。
 **Ownership:** Task1 child独占上述文件；完成后Task2依赖此API，不改Task1实现除已证正确性缺口并获主agent裁定。
 
-- [ ] API断言RED，测试PointVelocityImpulses所有权、非法shape/type/NaN/Inf/indices/local points、空请求、重复索引、source数组突变不影响signature；最小实现immutable校验。
-- [ ] 真实NumPy自由节点+prismatic机器人给定held p后的terminalη：捕获pre、配置bitwise不变、速度按解析改变；wrapper base完整阶段次数与末调用一次，重复metrics不重复apply。先RED后实现关闭前阶段包装。非收敛base/未prepare调用/未知domain/部分域失败/close正常与失败对照。
-- [ ] ledger独立RED：篡改q/x、重复η、漏掉robot反作用、未请求域或history变化、请求聚合丢小量、非SPD/非支持模型、unknownprecision；精确速度残差归一规则按spec新增节。保留原请求快照，不能只检查已舍入batch。
-- [ ] actualinterpret/CUDA两个预设解析例（free与chain，使用实验脚本的独立Fraction参考）及FP64 nextafter篡改输出必须拒绝；真实compute dtype/launch增加、原MaterialPathLedger只接受pre、要求显式tyx marker。六例实验不是新生产测试，实际运行新tests。
-- [ ] 透明显式history wrapper透传、两子步后段terminal故障与close失败state/history/input恢复+retry=fresh；empty requests不改变base数值/迭代输出。材料路径diagnostics不得在末阶段重算/假造。
-- [ ] 相关Articulated/SceneStepper/LoadReplay/participant定向回归一次；ruff/diffcheck，自查范围，提交产品测试。记录真实RED/GREEN/退出码和已知限制，不跑完整旧CUDA/900性能/独立review。报告路径写入本plan SDD目录，告知主agent最终SHA。
+- [x] API断言RED，测试PointVelocityImpulses所有权、非法shape/type/NaN/Inf/indices/local points、空请求、重复索引、source数组突变不影响signature；最小实现immutable校验。
+- [x] 真实NumPy自由节点+prismatic机器人给定held p后的terminalη：捕获pre、配置bitwise不变、速度按解析改变；wrapper base完整阶段次数与末调用一次，重复metrics不重复apply。先RED后实现关闭前阶段包装。非收敛base/未prepare调用/未知domain/部分域失败/close正常与失败对照。
+- [x] ledger独立RED：篡改q/x、重复η、漏掉robot反作用、未请求域或history变化、请求聚合丢小量、非SPD/非支持模型、unknownprecision；精确速度残差归一规则按spec新增节。保留原请求快照，不能只检查已舍入batch。
+- [x] actualinterpret/CUDA两个预设解析例（free与chain，使用实验脚本的独立Fraction参考）及FP64 nextafter篡改输出必须拒绝；真实compute dtype/launch增加、原MaterialPathLedger只接受pre、要求显式tyx marker。六例实验不是新生产测试，实际运行新tests。
+- [x] 透明显式history wrapper透传、两子步后段terminal故障与close失败state/history/input恢复+retry=fresh；empty requests不改变base数值/迭代输出。材料路径diagnostics不得在末阶段重算/假造。
+- [x] 相关Articulated/SceneStepper/LoadReplay/participant定向回归一次；ruff/diffcheck，自查范围，提交产品测试。记录真实RED/GREEN/退出码和已知限制，不跑完整旧CUDA/900性能/独立review。报告路径写入本plan SDD目录，告知主agent最终SHA。
 
 ### Task 2: 自动两阶段法向接触、生命周期和物理验收
 

@@ -29,7 +29,7 @@
 ## 当前立即续作
 
 当前设计提交fa11031。先读[冻结设计](../superpowers/specs/2026-10-29-p65-dynamic-normal-design.md)、[实施计划](../superpowers/plans/2026-10-29-p65-dynamic-normal.md)、[预设冲量实验](p65-dynamic-normal-candidate.md)和.superpowers/sdd/2026-10-29-p65-dynamic-normal/progress.md。
-Task1已派terminal_impulse_implementer，独占原生末冲量机制/ledger和对应测试/导出；先读取现有agent与task-1-report，不重复分派。全部数值串行，主agent只写文档/基准。Task2尚未开始，unique最终code review未派。
+Task1由terminal_impulse_implementer完成并提交24c99615d364cc58e751fdc40e3d7588d72df484，报告在同一SDD目录task-1-report.md；不要重派或重做该组件。最终新NumPy42/interpret2/CUDA2，相关回归200（当时新41+旧159）与interpret60（新2+旧58），末metrics补漏后新版新测例重验；不能合并成一次新201/62全量。独立阶段finalreview未派。继续Task2自动求解/history/物理与事务，主agent仅文档/基准，不并发改owner源码，数值串行。
 实验六例与builder检查已经结束，不重做。已有材料路径与FrozenRobotLedger仍只认证pre阶段，post必须独立速度跳跃账，不能用总p+η改原整步输入。Task1提交并验收API后，按计划分派Task2完成自动反作用/生命周期，而不是停在边界模块。完整阶段仅一次fresh最终审阅；不可沿用旧initial门禁删除法。
 没有新截止；旧goal暂停显示非停止。新阶段全部生产/物理/事务/工程/精确Git/CI通过才能记录有限能力完成；H1和完整双臂目标仍保持开放。
 

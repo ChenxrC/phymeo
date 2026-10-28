@@ -81,3 +81,34 @@ def test_actual_triangle_robot_prescribed_pair_ledger(tyx_mode):
     from test_material_ledger import check_triangle_robot_requested_pair
 
     check_triangle_robot_requested_pair(tyx_mode)
+
+
+@pytest.mark.parametrize(
+    ("kind", "field"),
+    [("shared", "alpha")]
+    + [
+        (kind, field)
+        for kind in ("shared", "none", "empty")
+        for field in ("predicted_velocity", "predicted_position", "candidate_velocity")
+    ],
+)
+def test_actual_output_fields_require_exact_fp32_promotion(tyx_mode, kind, field):
+    import numpy as np
+    from test_material_ledger import mutable
+
+    import phymeo as ph
+
+    c = collect(tyx_mode, kind)
+    require(c)  # The unmodified native evidence remains accepted.
+    diag = mutable(c["diag"])
+    final = c["final"].copy()
+    value = final.velocity if field == "candidate_velocity" else diag["material_path"][field]
+    index = (0,) if field == "alpha" else (0, 0)
+    value[index] = np.nextafter(value[index], np.inf)
+    assert value[index] != np.float64(np.float32(value[index]))
+    if field == "predicted_position" and kind in ("none", "empty"):
+        # No projection: keep the final-position identity, isolating the
+        # impossible device storage rather than a broken path endpoint.
+        final.position[0, 0] = value[0, 0]
+    with pytest.raises(ph.SolverFailure, match="stored FP32"):
+        require(c, diag=diag, final=final)

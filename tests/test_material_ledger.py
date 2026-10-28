@@ -564,3 +564,31 @@ def test_integer_request_is_not_silently_rounded_through_float():
     book = ledger(c, ph.StepInputs.zeros(1))
     with pytest.raises(ph.SolverFailure, match="input"):
         require(c, book=book, expected=[[2**53 + 1, 0, 0]])
+
+
+@pytest.mark.parametrize("empty_constraints", [False, True])
+def test_zero_particle_report_preserves_per_node_vector_shape(empty_constraints):
+    constraints = (
+        ph.DistanceConstraints(np.empty((0, 2), dtype=int), np.empty(0), np.empty(0))
+        if empty_constraints
+        else None
+    )
+    c = collect(
+        setup=(
+            ph.ParticleModel(np.empty(0), np.zeros(3)),
+            ph.ParticleState(np.empty((0, 3)), np.empty((0, 3))),
+            constraints,
+        )
+    )
+    report = require(c)
+    for name in (
+        "material_impulses",
+        "support_impulses",
+        "conversion_displacement",
+        "projection_rounding_displacement",
+        "fixed_restoration_displacement",
+    ):
+        assert report[name].shape == (0, 3)
+        assert report[name].dtype == np.float64
+        assert not report[name].flags.writeable
+        np.testing.assert_array_equal(report[name].sum(axis=0), np.zeros(3))

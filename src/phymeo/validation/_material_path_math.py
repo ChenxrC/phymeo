@@ -77,9 +77,11 @@ def display(value):
     return result
 
 
-def display_array(values):
+def display_array(values, *, shape=None):
     source = np.asarray(values, dtype=object)
-    return np.array([display(v) for v in source.flat]).reshape(source.shape)
+    return np.array([display(v) for v in source.flat]).reshape(
+        source.shape if shape is None else shape
+    )
 
 
 def interval_float(bounds):
@@ -181,8 +183,8 @@ def bookkeeping(model, constraints, initial, final, effective, original, expecte
         ).items()
     }
     return dict(
-        material_impulses=display_array(impulse),
-        support_impulses=display_array(support),
+        material_impulses=display_array(impulse, shape=(len(load), 3)),
+        support_impulses=display_array(support, shape=(len(load), 3)),
         energy=energy,
         momentum=momentum,
     )

@@ -131,6 +131,19 @@ class MaterialPathLedger:
                 or launches <= 0
             ):
                 raise SolverFailure("material execution contract mismatch")
+            dynamic = model.inverse_mass > 0
+            # Native device outputs are exact FP32 promotions. Only fixed
+            # positions are restored from FP64 host storage by the participant.
+            for value in (
+                alpha,
+                final_lambda,
+                pv,
+                candidate.velocity,
+                px[dynamic],
+                candidate.position[dynamic],
+            ):
+                if not np.array_equal(value, compute(value)):
+                    raise SolverFailure("device material output is not stored FP32")
         residual = {
             name: ZERO
             for name in (
@@ -306,9 +319,9 @@ class MaterialPathLedger:
                 scope="distance-material-equations-v1",
                 residuals={k: upper_float(v) for k, v in residual.items()},
                 max_residual=upper_float(max(residual.values())),
-                conversion_displacement=display_array(conversion),
-                projection_rounding_displacement=display_array(rounding),
-                fixed_restoration_displacement=display_array(restoration),
+                conversion_displacement=display_array(conversion, shape=(n, 3)),
+                projection_rounding_displacement=display_array(rounding, shape=(n, 3)),
+                fixed_restoration_displacement=display_array(restoration, shape=(n, 3)),
                 **quantities,
             )
         )

@@ -234,6 +234,59 @@ def check_robot_plane_contact():
     )
 
 
+def check_initial_robot_node_contact():
+    robot = phymeo.RobotModel(
+        np.array([-1]),
+        ("prismatic",),
+        np.zeros((1, 3)),
+        np.array([[0.0, 0, 0, 1]]),
+        np.array([[0.0, 1, 0]]),
+        np.array([2.0]),
+        np.zeros((1, 3)),
+        np.ones((1, 3)),
+        np.zeros(3),
+    )
+    nodes = phymeo.ParticleModel(np.ones(1), np.zeros(3))
+    scene = phymeo.SceneModel(
+        (
+            phymeo.DomainBinding("robot", "robot", robot),
+            phymeo.DomainBinding("nodes", "particles", nodes),
+        )
+    )
+    base = phymeo.ArticulatedCouplingProgram(
+        scene,
+        {"robot": phymeo.RobotParticipant(robot), "nodes": phymeo.ClothParticipant(nodes, None)},
+        phymeo.RobotSphereAttachments(np.empty(0, int), np.empty((0, 3)), np.empty(0)),
+        [],
+    )
+    contact = phymeo.RobotNodePlaneContacts(
+        "nodes",
+        np.array([0]),
+        np.array([0]),
+        np.array([[1.0, 0, 0]]),
+        np.array([[0.0, 1, 0]]),
+        np.zeros(1),
+    )
+    program = phymeo.InitialRobotNodeContactProgram(scene, base, (contact,), registry=base.registry)
+    state = phymeo.SceneState(
+        {
+            "robot": phymeo.RobotState(np.zeros(1), np.zeros(1)),
+            "nodes": phymeo.ParticleState(np.array([[1.0, 0, 0]]), np.array([[0.0, -1, 0]])),
+        }
+    )
+    inputs = phymeo.SceneInputs(
+        {"robot": phymeo.RobotInputs.zeros(1), "nodes": phymeo.StepInputs.zeros(1)}
+    )
+    with phymeo.SceneStepper(
+        scene, program, phymeo.StepSettings(substeps=1, tolerance=1e-10), registry=base.registry
+    ) as runtime:
+        result = runtime.step(state, inputs, 0.1)
+    if not result.report.accepted:
+        raise RuntimeError("Installed initial robot-node contact failed")
+    np.testing.assert_allclose(result.state.domains["robot"].v, [-1 / 3], atol=1e-10)
+    np.testing.assert_allclose(result.state.domains["nodes"].velocity, [[0, -1 / 3, 0]], atol=1e-10)
+
+
 def main():
     installed = Path(phymeo.__file__).resolve()
     if not installed.is_relative_to(Path(sys.prefix).resolve()):
@@ -412,6 +465,7 @@ def main():
     check_load_replay()
     check_particle_plane_contact()
     check_robot_plane_contact()
+    check_initial_robot_node_contact()
     for name in (
         "TyxRobotParticipant",
         "TyxClothParticipant",

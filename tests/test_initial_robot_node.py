@@ -34,6 +34,7 @@ def pair_case(
     effort=0.0,
     settings=None,
     order=None,
+    side_material=False,
     node_constraints=None,
     inverse_mass=None,
     base_transform=None,
@@ -58,9 +59,15 @@ def pair_case(
         np.ones(n) if inverse_mass is None else np.array(inverse_mass, float),
         np.zeros(3) if gravity is None else np.array(gravity, float),
     )
-    scene = ph.SceneModel(
-        (ph.DomainBinding("robot", "robot", model), ph.DomainBinding("nodes", "particles", nodes))
-    )
+    domains = [
+        ph.DomainBinding("robot", "robot", model),
+        ph.DomainBinding("nodes", "particles", nodes),
+    ]
+    if side_material:
+        cloth = ph.ParticleModel(np.ones(2), np.array([0.0, -9.81, 0]))
+        constraints = ph.DistanceConstraints(np.array([[0, 1]]), np.ones(1), np.array([0.001]))
+        domains.append(ph.DomainBinding("cloth", "particles", cloth))
+    scene = ph.SceneModel(tuple(domains))
     if mode == "numpy":
         participants = {
             "robot": ph.RobotParticipant(model),
@@ -73,6 +80,12 @@ def pair_case(
             "nodes": ph.TyxClothParticipant(nodes, node_constraints, mode),
         }
         factory = ph.TyxArticulatedCouplingProgram
+    if side_material:
+        participants["cloth"] = (
+            ph.ClothParticipant(cloth, constraints)
+            if mode == "numpy"
+            else ph.TyxClothParticipant(cloth, constraints, mode)
+        )
     attachments = ph.RobotSphereAttachments(np.empty(0, int), np.empty((0, 3)), np.empty(0))
     base = factory(scene, participants, attachments, [])
     if base_transform is not None:
@@ -115,6 +128,14 @@ def pair_case(
     ri = ph.RobotInputs.zeros(1)
     ri.effort[:] = effort
     inputs = ph.SceneInputs({"robot": ri, "nodes": ph.StepInputs.zeros(n)})
+    if side_material:
+        state = ph.SceneState(
+            {
+                **state.domains,
+                "cloth": ph.ParticleState(np.array([[0.0, 0, 0], [0, 1.1, 0]]), np.zeros((2, 3))),
+            }
+        )
+        inputs = ph.SceneInputs({**inputs.domains, "cloth": ph.StepInputs.zeros(2)})
     return runtime, state, inputs
 
 
@@ -505,3 +526,9 @@ def test_exact_node_free_audit_catches_large_velocity_force_cancellation():
     assert not result.report.accepted
     assert "free dynamics" in result.report.reason
     np.testing.assert_array_equal(result.state.domains["nodes"].velocity, [[-1e16, 0, 0]])
+
+
+def test_native_material_side_domain_is_preserved():
+    from test_tyx_initial_robot_node import verify_material_side
+
+    verify_material_side("numpy")

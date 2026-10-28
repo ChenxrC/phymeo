@@ -21,6 +21,7 @@ from .constraints.distance import DistanceConstraints
 from .constraints.friction import FrictionImpulseResult, solve_friction_disk
 from .constraints.node_robot import NodeRobotContact
 from .constraints.particle_plane import ParticlePlaneContacts
+from .constraints.robot_plane import RobotPlaneContacts
 from .control.bounded_pd import BoundedPDResult, solve_bounded_pd
 from .core.capabilities import ProblemSignature, SolverCapabilities, SolverFailure
 from .core.coupled import CoupledInputs, CoupledState, CoupledStepReport, CoupledStepResult
@@ -91,6 +92,7 @@ from .solvers.particle_plane_contact import ParticlePlaneContactProgram
 from .solvers.rigid_semi_implicit import RigidSemiImplicitSolver
 from .solvers.rigid_sphere_plane import RigidSpherePlaneSolver
 from .solvers.robot import RobotProgram, make_robot_runtime
+from .solvers.robot_plane_contact import RobotPlaneContactProgram
 from .solvers.semi_implicit import SemiImplicitSolver
 from .solvers.tetrahedral import TetrahedralProgram, make_tetrahedral_runtime
 from .solvers.xpbd import XPBDSolver
@@ -101,6 +103,8 @@ __version__ = "0.1.0a0"
 __all__ = [
     "ParticlePlaneContacts",
     "ParticlePlaneContactProgram",
+    "RobotPlaneContactProgram",
+    "RobotPlaneContacts",
     "SceneLoadReplay",
     "ReplayTrial",
     "ContactImpulseResult",

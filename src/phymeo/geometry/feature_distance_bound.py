@@ -39,6 +39,8 @@ class FeatureDistanceBounds:
                 raise ValueError(f"{name} must be finite and non-negative")
         if self.lower_m > self.upper_m:
             raise ValueError("lower_m must not exceed upper_m")
+        if type(self.method) is not str:
+            raise TypeError("method must be a Python str")
         if self.method != _METHOD:
             raise ValueError(f"method must be {_METHOD}")
 

@@ -392,3 +392,33 @@ def test_source_installed_smoke_checks_public_distance_api():
     smoke = run_path(str(Path(__file__).resolve().parents[1] / "scripts" / "smoke_installed.py"))
     assert callable(smoke.get("check_feature_distance_bounds")), "missing public distance smoke"
     smoke["check_feature_distance_bounds"]()
+
+
+@pytest.mark.parametrize(
+    "method",
+    [
+        np.array("convex-kkt-distance-v1"),
+        np.array(["convex-kkt-distance-v1"]),
+        np.str_("convex-kkt-distance-v1"),
+        None,
+        1,
+    ],
+    ids=["zero-dimensional-array", "one-dimensional-array", "numpy-string", "none", "integer"],
+)
+def test_scalar_record_rejects_non_builtin_string_method(method):
+    with pytest.raises(TypeError, match="method"):
+        ph.FeatureDistanceBounds(0.0, 1.0, method=method)
+
+
+def test_scalar_record_rejects_mutable_object_equal_to_fixed_method():
+    class MutableMethod:
+        def __init__(self):
+            self.value = "convex-kkt-distance-v1"
+
+        def __eq__(self, other):
+            return self.value == other
+
+    method = MutableMethod()
+    assert method == "convex-kkt-distance-v1"
+    with pytest.raises(TypeError, match="method"):
+        ph.FeatureDistanceBounds(0.0, 1.0, method=method)

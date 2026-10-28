@@ -1,5 +1,5 @@
 {
-  "status": "local_acceptance_complete_remote_status_to_be_checked_after_push",
+  "status": "complete_local_and_exact_head_ci",
   "scope": "fixed-configuration finite-thickness face material port; full P6.5 handoff NOT complete",
   "source": {
     "git_revision": "fbcbe2cc8029693b737424be6805ea5121f97ac4",
@@ -84,8 +84,15 @@
     "Warp_measured": false
   },
   "ci": {
-    "status": "not_claimed_before_push",
-    "source_gate": "GitHub Actions exact final head; remote result recorded in handoff receipt"
+    "head_sha": "8223c7457781c93269565ae2374f4811b77efc02",
+    "CI": {
+      "id": 40611577823,
+      "conclusion": "success"
+    },
+    "Documentation": {
+      "id": 40611577859,
+      "conclusion": "success"
+    }
   },
   "not_claimed": [
     "dynamic contact integration",

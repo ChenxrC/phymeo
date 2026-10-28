@@ -31,3 +31,5 @@
 ## 后续顺序
 
 参见[续作入口](../development/p65-continuation.md)及[动态账本反例](../development/p65-dynamic-ledger-candidate.md)。先冻结和实现动态位置/速度/接触冲量的统一账本，验证重力静置、静摩擦与滑移、单关节、特征切换及最后子步回滚；再接保守CCD、弯曲/自碰撞、有限驱动单爪、双臂递布及同源Three.js回放。边/顶点厚度包络和材料点更新仍是必要范围，不能把本端口当作完整碰撞系统。
+
+2026-10-28续跑核验：准确交付提交`8223c7457781c93269565ae2374f4811b77efc02`的[CI40611577823](https://github.com/ChenxrC/phymeo/actions/runs/40611577823)与[Documentation40611577859](https://github.com/ChenxrC/phymeo/actions/runs/40611577859)均success。厚度端口切片远程门禁闭环，不再重复该切片验收；完整P6.5继续。

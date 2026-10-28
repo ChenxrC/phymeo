@@ -1,6 +1,6 @@
-# P6.5 机器人—距离材料接触：本地验收完成，远程交付待闭环
+# P6.5 机器人—距离材料接触：已验收并交付
 
-本阶段实现`InitialRobotMaterialContactProgram`和显式`MaterialContactBudgets`。生产初稿9f504bb、唯一review修复0657c98；124源码hash b56bafcac102b696ebf1a180bb2946bd7ab2a8d103b9a3a4b6bffc5a85645dce。2026-10-29本地功能、完整CUDA和正式串行计量已完成；精确远程SHA/CI尚待闭环，不算完整P6.5。
+本阶段实现`InitialRobotMaterialContactProgram`和显式`MaterialContactBudgets`。生产初稿9f504bb、唯一review修复0657c98；124源码hash b56bafcac102b696ebf1a180bb2946bd7ab2a8d103b9a3a4b6bffc5a85645dce。2026-10-29本地功能、完整CUDA和正式串行计量已完成；准确交付9e0a432远程SHA一致，CI40734015151和Documentation40734015075均success；本切片闭环，不等于完整P6.5。
 
 ## 行为与边界
 
@@ -24,4 +24,4 @@
 
 正式观测端到端中位数分别149.077/433.378/2266.466ms，P95为159.144/458.930/2422.913ms。NumPy25次replay、tyx12次replay/300次完成launch；CUDA每次2184上传/588下载。容差/计算精度不同，不是等精度速度比较；包含主机精确审计/重放/数值断言，不是纯kernel性能。详见[PERF-016](../performance-bottlenecks/PERF-016-material-contact.md)和原始[NumPy](../performance-bottlenecks/measurements/p65-material-contact-numpy.json)、[interpret](../performance-bottlenecks/measurements/p65-material-contact-interpret.json)、[CUDA](../performance-bottlenecks/measurements/p65-material-contact-cuda.json)。未做优化，没有新tyx实现缺陷归因。
 
-剩余为本阶段提交推送、精确SHA及CI核验。TYX-003长期C++门禁不以短测替代；TYX-004解释器cos异常合同仍开放，NUM-005仍为离散积分误差。随后按[框架交付规则](../development/p65-framework-capabilities.md)推进可复用几何/接触生命周期/CCD，再弯曲/自碰撞、真实夹持、双臂与同源Three.js；P6.5整体未完成。
+本阶段准确提交推送/SHA/CI已核验，不重复本阶段验收。TYX-003长期C++门禁不以短测替代；TYX-004解释器cos异常合同仍开放，NUM-005仍为离散积分误差。随后按[框架交付规则](../development/p65-framework-capabilities.md)推进可复用几何/接触生命周期/CCD，再弯曲/自碰撞、真实夹持、双臂与同源Three.js；P6.5整体未完成。

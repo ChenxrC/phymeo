@@ -1,5 +1,5 @@
 {
-  "status": "local_acceptance_complete_exact_remote_delivery_pending",
+  "status": "delivered_exact_remote_ci_success",
   "source": {
     "git_revision": "0657c98cb43779facdd3577fb91d74d5447fc144",
     "git_dirty": false,
@@ -319,7 +319,6 @@
     "complete P6.5 handoff acceptance"
   ],
   "unresolved": [
-    "exact new remote SHA and CI delivery",
     "NUM-005 native angular loss",
     "TYX-003 Windows CPP endurance",
     "TYX-004 interpreter cosine errstate contract",
@@ -348,7 +347,22 @@
     "successful_measured_calls": 900
   },
   "delivery": {
-    "status": "not_pushed_yet",
-    "branch": "codex/p6-5-handoff"
+    "status": "complete",
+    "branch": "codex/p6-5-handoff",
+    "head_sha": "9e0a432a697f7201990bde3c18d92ace45860b43",
+    "remote_sha_verified": true,
+    "ci": {
+      "id": 40734015151,
+      "head_sha": "9e0a432a697f7201990bde3c18d92ace45860b43",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    "documentation": {
+      "id": 40734015075,
+      "head_sha": "9e0a432a697f7201990bde3c18d92ace45860b43",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    "verification": "exact CI public API; documentation exact commit link in public Actions HTML"
   }
 }

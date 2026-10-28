@@ -28,15 +28,15 @@
 
 ## 当前立即续作
 
-**材料接触本地验收已完成，继续准确Git/CI交付，不重做设计、原型、全量或已关闭审阅。** 本地产品`0657c98`，124源码hash`b56bafcac102b696ebf1a180bb2946bd7ab2a8d103b9a3a4b6bffc5a85645dce`。读[设计](../superpowers/specs/2026-10-28-p65-material-contact-design.md)、[计划](../superpowers/plans/2026-10-28-p65-material-contact.md)、[阶段验收](../benchmarks/p65-material-contact-acceptance.md)与[唯一review](../benchmarks/p65-material-contact-review.md)。具体运行句柄见本计划`.superpowers/sdd` ledger；不要重复启动已有进程。
+**材料接触准确交付已闭环：9e0a432远程SHA一致、CI40734015151及Documentation40734015075均success。不重做其设计、原型、全量、观测或已关闭审阅。下一步执行下方框架距离证书Task1。** 本地产品`0657c98`，124源码hash`b56bafcac102b696ebf1a180bb2946bd7ab2a8d103b9a3a4b6bffc5a85645dce`。读[设计](../superpowers/specs/2026-10-28-p65-material-contact-design.md)、[计划](../superpowers/plans/2026-10-28-p65-material-contact.md)、[阶段验收](../benchmarks/p65-material-contact-acceptance.md)与[唯一review](../benchmarks/p65-material-contact-review.md)。具体运行句柄见本计划`.superpowers/sdd` ledger；不要重复启动已有进程。
 
-两CPU全量各1612通过、Ubuntu最终新核心47、124源码外wheel已过。唯一review发现inner材料记录误用outer迭代上限，3RED后修复，86相关回归通过。最终CUDA1950通过4194.04s，随后NumPy/interpret/CUDA各300共900串行观测全部成功，pipeline退出0；状态在`artifacts/material-contact-final-pipeline-status.txt`，CUDA日志`artifacts/material-contact-cuda-full-final.txt`及`.exit`。最终原始结果和hash已核对；旧版CUDA定向运行已明确中止，不重跑。三模式中位149.077/433.378/2266.466ms、NumPy25/tyx12replay，实际tyx300launch，CUDA2184上传/588下载，成本记PERF-016不优化或归因依赖。下一步提交推送并核对精确远程SHA与CI。
+两CPU全量各1612通过、Ubuntu最终新核心47、124源码外wheel已过。唯一review发现inner材料记录误用outer迭代上限，3RED后修复，86相关回归通过。最终CUDA1950通过4194.04s，随后NumPy/interpret/CUDA各300共900串行观测全部成功，pipeline退出0；状态在`artifacts/material-contact-final-pipeline-status.txt`，CUDA日志`artifacts/material-contact-cuda-full-final.txt`及`.exit`。最终原始结果和hash已核对；旧版CUDA定向运行已明确中止，不重跑。三模式中位149.077/433.378/2266.466ms、NumPy25/tyx12replay，实际tyx300launch，CUDA2184上传/588下载，成本记PERF-016不优化或归因依赖。该阶段精确交付已核验，所有本地和远程门槛闭环；依赖长期限制仍保留。
 
 新程序仅初态闭合全动态距离材料；精确原式/物理门禁不修改native积分，末分离仍允许。为了持续窗口收敛，首个合格候选后在原outer预算内细化并保留完整最佳native trial；无gap反馈/位置修补/改tol，全replay计数。NUM-005本征损失只被固定预算约束，未修积分器。一般几何、CCD、弯曲、自碰撞、有限驱动夹持、双臂流程仍后续。
 
 ## 下一框架切片准备
 
-[静态距离证书设计](../superpowers/specs/2026-10-29-p65-distance-certificate-design.md)和[实施任务单](../superpowers/plans/2026-10-29-p65-distance-certificate.md)已明确API、严格上下界、退化/舍入边界、两个非递布独立场景及事务接入。唯一builder `distance_certificate_design_check`返回nothing important left，无测试/数值探针，不再重复builder。待当前材料接触准确远程交付闭环，直接按Task1分派实现子agent，先缺API/解析/舍入RED；该新独立阶段最终code review尚未派。静态证书只是CCD前置能力，自动接触生命周期/厚度侧/特征history/动态连续路径及H1完整验收仍未完成。
+[静态距离证书设计](../superpowers/specs/2026-10-29-p65-distance-certificate-design.md)和[实施任务单](../superpowers/plans/2026-10-29-p65-distance-certificate.md)已明确API、严格上下界、退化/舍入边界、两个非递布独立场景及事务接入。唯一builder `distance_certificate_design_check`返回nothing important left，无测试/数值探针，不再重复builder。当前材料接触准确远程交付已闭环，直接按Task1分派实现子agent，先缺API/解析/舍入RED；该新独立阶段最终code review尚未派。静态证书只是CCD前置能力，自动接触生命周期/厚度侧/特征history/动态连续路径及H1完整验收仍未完成。
 
 ## 已交付阶段与历史交接（只供溯源，不作为当前待办）
 

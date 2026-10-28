@@ -39,6 +39,8 @@
 
 - [x] 唯一fresh最终review（实际新阶段完整diff），Important/Critical按独立RED最小修复，不派第二轮。完整CUDA、两CPU、actualinterpret与boundedCPP、Ubuntu新核心、ruff/docs/import/compile/uvpip/exports、build/源码外wheel。原始失败与修复后结果分开记录；源码hash必须最终版。
 - [x] 数值/review全部退出后NumPy→interpret→CUDA串行各3×100，压缩边同初态完整outer、native执行、物理门禁与关闭都计时；记录迭代/replay/launch/传输及预算范围。精度不同不称加速比，性能只观测。
-- [ ] 更新真实边界和后续几何/CCD路线，commit/push核对远程SHA和准确CI，更新既有heartbeat。完整P6.5仍需后续弯曲/自碰撞/有限单爪/控制/双臂回放，不提前complete。
+- [x] 更新真实边界和后续几何/CCD路线，commit/push核对远程SHA和准确CI，更新既有heartbeat。完整P6.5仍需后续弯曲/自碰撞/有限单爪/控制/双臂回放，不提前complete。
 
 2026-10-29最终验收：CUDA1950通过4194.04s；NumPy/interpret/CUDA正式串行各300成功，源码hash相同。review仅原一次，未新增审阅；actualinterpret版本覆盖与boundedCPP边界见工程报告。最后交付框待精确push/SHA/CI，不能用本地通过提前勾选。
+
+准确交付9e0a432远程SHA已核对，CI40734015151和Documentation40734015075均success。本切片交付闭环，不重做原测试/观测/review；下一框架距离证书按新计划Task1执行。P6.5整体尚未完成。

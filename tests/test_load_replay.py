@@ -245,3 +245,156 @@ def test_changed_binding_cannot_be_replayed():
         with pytest.raises(ValueError, match="changed"):
             replay.evaluate({})
         assert program.created == 0
+
+
+@pytest.mark.parametrize("h", [0.01, 0.005])
+@pytest.mark.parametrize("mu", [0.6, 0.2])
+def test_prescribed_plane_friction_has_no_static_drift_and_analytic_sliding(h, mu):
+    from phymeo import solve_friction_disk
+
+    model = ParticleModel(np.ones(1), np.array([0.0, -9.81, 0]))
+    scene = SceneModel((DomainBinding("body", "particles", model),))
+    current = SceneState({"body": ParticleState(np.zeros((1, 3)), np.zeros((1, 3)))})
+    inputs = SceneInputs({"body": StepInputs(np.array([[-20.0, 0, 0]]))})
+    total = np.zeros(3)
+    n = round(2.0 / h)
+    for _ in range(n):
+        free = current.domains["body"].velocity[0] + np.array([-20.0, -9.81, 0]) * h
+        normal = max(0.0, -free[0])
+        friction = solve_friction_disk(np.eye(2), free[1:], normal, mu_static=mu, mu_dynamic=mu)
+        impulse = np.array([[normal, *friction.impulse]])
+        with api().SceneLoadReplay(
+            scene, FreeSceneProgram(), current, inputs, h, channels={"body": ("force",)}
+        ) as replay:
+            trial = replay.evaluate({"body": {"force": impulse}})
+            assert trial.result.report.accepted
+            current = trial.result.state
+            total += trial.integrated_loads["body"]["force"][0]
+    state = current.domains["body"]
+    acceleration = max(0.0, 9.81 - mu * 20)
+    expected_velocity = -acceleration * n * h
+    expected_y = -acceleration * h**2 * n * (n + 1) / 2
+    np.testing.assert_allclose(state.velocity, [[0, expected_velocity, 0]], atol=3e-11, rtol=0)
+    np.testing.assert_allclose(state.position, [[0, expected_y, 0]], atol=3e-11, rtol=0)
+    np.testing.assert_allclose(total + np.array([-20, -9.81, 0]) * 2, state.velocity[0], atol=3e-11)
+    if mu == 0.6:
+        assert np.linalg.norm(state.position) < 3e-11  # no g*T*h static creep
+    else:
+        # The remaining sliding displacement error is the stated Euler truncation.
+        assert abs(state.position[0, 1] + acceleration * 2**2 / 2) == pytest.approx(
+            acceleration * h, abs=3e-11
+        )
+
+
+def mixed_replay(mode="numpy", material=False):
+    from test_robot_kinematics import robot_model
+
+    from phymeo import (
+        ArticulatedCouplingProgram,
+        ClothParticipant,
+        DistanceConstraints,
+        RobotInputs,
+        RobotParticipant,
+        RobotSphereAttachments,
+        RobotState,
+        TyxArticulatedCouplingProgram,
+        TyxClothParticipant,
+        TyxRobotParticipant,
+    )
+
+    robot = robot_model(gravity=np.zeros(3))
+    cloth = ParticleModel(np.array([0.0 if material else 1.0, 1.0]), np.zeros(3))
+    constraints = (
+        DistanceConstraints(np.array([[0, 1]]), np.ones(1), np.array([0.001])) if material else None
+    )
+    scene = SceneModel(
+        (DomainBinding("robot", "robot", robot), DomainBinding("cloth", "particles", cloth))
+    )
+    state = SceneState(
+        {
+            "robot": RobotState(np.array([0.2, -0.3]), np.zeros(2)),
+            "cloth": ParticleState(np.array([[0.0, 0, 0], [1.0, 0, 0]]), np.zeros((2, 3))),
+        }
+    )
+    inputs = SceneInputs({"robot": RobotInputs.zeros(2), "cloth": StepInputs.zeros(2)})
+    attachments = RobotSphereAttachments(np.empty(0, int), np.empty((0, 3)), np.empty(0))
+    if mode == "numpy":
+        participants = {
+            "robot": RobotParticipant(robot),
+            "cloth": ClothParticipant(cloth, constraints),
+        }
+        program = ArticulatedCouplingProgram(scene, participants, attachments, [])
+    else:
+        participants = {
+            "robot": TyxRobotParticipant(robot, mode),
+            "cloth": TyxClothParticipant(cloth, constraints, mode),
+        }
+        program = TyxArticulatedCouplingProgram(scene, participants, attachments, [])
+    return api().SceneLoadReplay(
+        scene,
+        program,
+        state,
+        inputs,
+        0.05,
+        channels={"robot": ("effort",), "cloth": ("force",)},
+        registry=program.registry,
+        context=BackendContext(program.capabilities.backend),
+        settings=StepSettings(substeps=1, tolerance=2e-6 if mode != "numpy" else 1e-11),
+    )
+
+
+def test_nonlinear_robot_mass_and_two_domains_replay_from_original_configuration():
+    from test_robot_dynamics import planar_mass
+
+    request = {
+        "robot": {"effort": np.array([0.02, -0.01])},
+        "cloth": {"force": np.array([[0.0, 0, 0], [0.1, 0, 0]])},
+    }
+    expected_v = np.linalg.solve(planar_mass(np.array([0.2, -0.3])), [0.02, -0.01])
+    with mixed_replay() as replay:
+        first = replay.evaluate(request)
+        free = replay.evaluate({})
+        again = replay.evaluate(request)
+        assert all(t.result.report.accepted for t in (first, free, again))
+        np.testing.assert_allclose(first.result.state.domains["robot"].v, expected_v, atol=1e-14)
+        np.testing.assert_allclose(
+            first.result.state.domains["robot"].q,
+            np.array([0.2, -0.3]) + 0.05 * expected_v,
+            atol=1e-14,
+        )
+        np.testing.assert_allclose(
+            first.result.state.domains["cloth"].position, [[0, 0, 0], [1.005, 0, 0]], atol=1e-14
+        )
+        np.testing.assert_array_equal(free.result.state.domains["robot"].q, [0.2, -0.3])
+        np.testing.assert_array_equal(
+            again.result.state.domains["robot"].q, first.result.state.domains["robot"].q
+        )
+
+
+def test_actual_xpbd_hidden_multipliers_are_rebuilt_for_each_trial():
+    request = {"cloth": {"force": np.array([[0.0, 0, 0], [0.1, 0, 0]])}}
+    with mixed_replay(material=True) as replay:
+        first = replay.evaluate(request)
+        free = replay.evaluate({})
+        again = replay.evaluate(request)
+        assert all(t.result.report.accepted for t in (first, free, again))
+        alpha = 0.001 / 0.05**2
+        displacement = 0.005 * alpha / (1 + alpha)
+        np.testing.assert_allclose(
+            first.result.state.domains["cloth"].position[1], [1 + displacement, 0, 0], atol=1e-14
+        )
+        np.testing.assert_allclose(
+            first.result.state.domains["cloth"].velocity[1], [displacement / 0.05, 0, 0], atol=1e-14
+        )
+        np.testing.assert_array_equal(
+            free.result.state.domains["cloth"].position, [[0, 0, 0], [1, 0, 0]]
+        )
+        np.testing.assert_array_equal(
+            again.result.state.domains["cloth"].position,
+            first.result.state.domains["cloth"].position,
+        )
+        for trial in (first, again):
+            multipliers = trial.result.report.substeps[0].diagnostics["participants"]["cloth"][
+                "distance_multipliers"
+            ]
+            np.testing.assert_allclose(multipliers, [-0.005 / (1 + alpha)], atol=1e-14)

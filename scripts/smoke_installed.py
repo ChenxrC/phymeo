@@ -158,6 +158,28 @@ def check_offset_attachment():
     np.testing.assert_allclose(port.candidate_audit(result).energy_change, 0.545, atol=1e-14)
 
 
+def check_load_replay():
+    model = phymeo.ParticleModel(np.ones(1), np.zeros(3))
+    scene = phymeo.SceneModel((phymeo.DomainBinding("node", "particles", model),))
+    state = phymeo.SceneState({"node": phymeo.ParticleState(np.zeros((1, 3)), np.zeros((1, 3)))})
+    inputs = phymeo.SceneInputs({"node": phymeo.StepInputs.zeros(1)})
+    with phymeo.SceneLoadReplay(
+        scene, phymeo.FreeSceneProgram(), state, inputs, 0.2, channels={"node": ("force",)}
+    ) as replay:
+        trial = replay.evaluate({"node": {"force": np.array([[1.0, 0, 0]])}})
+        if not trial.result.report.accepted:
+            raise RuntimeError("Installed load replay failed")
+        np.testing.assert_allclose(
+            trial.result.state.domains["node"].velocity, [[1, 0, 0]], atol=1e-14
+        )
+        np.testing.assert_allclose(
+            trial.result.state.domains["node"].position, [[0.2, 0, 0]], atol=1e-14
+        )
+        np.testing.assert_array_equal(
+            replay.evaluate({}).result.state.domains["node"].position, np.zeros((1, 3))
+        )
+
+
 def main():
     installed = Path(phymeo.__file__).resolve()
     if not installed.is_relative_to(Path(sys.prefix).resolve()):
@@ -333,6 +355,7 @@ def main():
     check_surface_contact()
     check_bounded_control()
     check_offset_attachment()
+    check_load_replay()
     for name in (
         "TyxRobotParticipant",
         "TyxClothParticipant",

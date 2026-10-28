@@ -1,0 +1,162 @@
+{
+  "status": "local_accepted_pending_exact_remote_ci",
+  "source": {
+    "git_revision": "6a9a81b7913832f09b08c6019fd5e269ba77d54e",
+    "git_dirty": false,
+    "source_sha256": "4079424eeaed5a2ca307c42af4f3a13f014231e5c0e8a743e7c1b2bc31260e04",
+    "python": "3.12.14",
+    "numpy": "2.5.4",
+    "platform": "Windows-11-10.0.26200-SP0"
+  },
+  "product_commit": "2838c9028f94df65ff7400dd3c4c92bf257a63c7",
+  "python_files": 125,
+  "scope": "host-fp64 exact-rational static convex-feature distance certificate; not contact lifecycle or CCD",
+  "prior_delivery": {
+    "head": "9e0a432a697f7201990bde3c18d92ace45860b43",
+    "ci": 40734015151,
+    "documentation": 40734015075,
+    "conclusions": "success"
+  },
+  "review": {
+    "base": "bab34e4757ba2a469bcbb13cc52a4f30d75164ca",
+    "head": "0ba866c2d3500ea47bd807eff51bfe420d0b40c7",
+    "critical": 0,
+    "important": 0,
+    "minor": 1,
+    "fix": "2838c9028f94df65ff7400dd3c4c92bf257a63c7",
+    "red_regressions": 6,
+    "second_review": false
+  },
+  "tests": {
+    "pre_fix_core311_full": {
+      "revision": "0ba866c",
+      "passed": 1695,
+      "skipped": 2,
+      "deselected": 338,
+      "seconds": 406.68,
+      "log": "artifacts/distance-core311-0ba866c-full.txt"
+    },
+    "pre_fix_nativepip_full": {
+      "revision": "0ba866c",
+      "passed": 1695,
+      "skipped": 2,
+      "deselected": 338,
+      "seconds": 416.83,
+      "log": "artifacts/distance-nativepip-0ba866c-full.txt"
+    },
+    "pre_fix_ubuntu": {
+      "revision": "0ba866c",
+      "passed": 85,
+      "seconds": 4.55,
+      "note": "83 host plus 2 actual interpret; native tests not yet marked tyx; existing dependencies, not clean install"
+    },
+    "final_core311_related": {
+      "revision": "6a9a81b",
+      "passed": 174,
+      "deselected": 2,
+      "seconds": 0.52,
+      "log": "artifacts/distance-core311-6a9a81b-final.txt"
+    },
+    "final_nativepip_related": {
+      "revision": "6a9a81b",
+      "passed": 174,
+      "deselected": 2,
+      "seconds": 0.51,
+      "log": "artifacts/distance-nativepip-6a9a81b-final.txt"
+    },
+    "final_ubuntu_host": {
+      "revision": "6a9a81b",
+      "passed": 89,
+      "deselected": 2,
+      "seconds": 3.92,
+      "clean_install": false,
+      "log": "artifacts/distance-linux-6a9a81b-final.txt"
+    },
+    "final_actual_interpret": {
+      "revision": "6a9a81b",
+      "passed": 2,
+      "deselected": 2,
+      "seconds": 0.53
+    },
+    "final_actual_cuda": {
+      "revision": "6a9a81b",
+      "passed": 2,
+      "deselected": 2,
+      "seconds": 1.06
+    },
+    "review_independent": {
+      "passed": 83,
+      "deselected": 2,
+      "seconds": 0.68,
+      "additional_seeded_probes": 90,
+      "seed": 652029
+    }
+  },
+  "version_ruling": "Broad CPU suites ran before two-line scalar-method type guard and native-test marker. Final affected tests and rebuilt wheel were rerun; do not describe the earlier full suites as final-version full suites. New final remote CI is separately required.",
+  "quality": {
+    "ruff": "passed final",
+    "public_tyx_boundary": "passed final: 125 files",
+    "compileall": "passed final",
+    "uv_and_native_pip_check": "passed before scalar fix; dependency files unchanged",
+    "lock_exports": "passed before scalar fix: content matches excluding generated header",
+    "docs": {
+      "passed": true,
+      "documents": 153,
+      "local_links": 705
+    }
+  },
+  "wheel": {
+    "revision": "6a9a81b",
+    "path": "artifacts/distance-dist-6a9a81b-final/phymeo-0.1.0a0-py3-none-any.whl",
+    "sha256": "95de74e7798cb74d06ef77ab9796214cfbb9fa6763520491392bcd39823f207f",
+    "source_parity_files": 125,
+    "outside_source_native_pip_install_and_smoke": "passed",
+    "log": "artifacts/distance-wheel-6a9a81b-final.txt"
+  },
+  "performance": {
+    "raw": "docs/performance-bottlenecks/measurements/p65-distance-certificate.json",
+    "script_sha256": "a7a33ae6449f6d99e439721e2d5c1131fff6e16dc2b0cafc38c154cbf828683f",
+    "accepted_measured_calls": 900,
+    "successful_including_warmups": 909,
+    "cases": [
+      {
+        "name": "probe_triangle",
+        "accepted": 300,
+        "median_ms": 0.26279990561306477,
+        "p95_ms": 0.3201799932867289
+      },
+      {
+        "name": "skew_rods",
+        "accepted": 300,
+        "median_ms": 0.2661000471562147,
+        "p95_ms": 0.28002480976283556
+      },
+      {
+        "name": "subnormal_point_hull",
+        "accepted": 300,
+        "median_ms": 0.36204990465193987,
+        "p95_ms": 0.39668999379500747
+      }
+    ],
+    "serial": true,
+    "scope": "certificate plus analytic/repetition checks; excludes case setup and closest witness generation",
+    "not_measured": [
+      "GPU geometry",
+      "CCD",
+      "continuous trajectory",
+      "Warp",
+      "peak memory"
+    ]
+  },
+  "not_rerun": [
+    "old material-contact 1950 CUDA suite",
+    "Windows C++ endurance without TYX-003 fix",
+    "old closed reviews"
+  ],
+  "delivery": {
+    "head": null,
+    "remote_sha": null,
+    "ci": null,
+    "documentation": null
+  }
+}

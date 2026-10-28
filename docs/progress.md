@@ -6,7 +6,7 @@
 
 一次fresh审阅1Important1Minor经12RED修复，完整CUDA1894通过，两CPU各1565通过/329未选；核心+actualinterpret67、C++有界1/23未选、Ubuntu核心43、122源码外wheel与uv/pip质量通过。最初Windows默认pytest临时目录权限导致setup错误，另用新basetemp重跑同源码全部通过，错误记录保留。准确结果见[工程JSON](benchmarks/p65-material-ledger-engineering.json)。
 
-[900次串行测量](performance-bottlenecks/measurements/p65-material-ledger.md)全部成功；PERF-015记录主机认证成本，不优化、不冒充tyx缺陷，未测Warp。NUM-005材料角动量损失与TYX-003 C++长期资源问题保持开放。下一步为新的同域材料/机器人接触outer与能量/角动量离散误差、步长细化门槛；旧FreeParticleLedger不删，禁止把预先指定相反输入测试称为真实接触。双臂夹布和Three.js仍未完成。专用分支交付及准确CI状态另行核对。
+[900次串行测量](performance-bottlenecks/measurements/p65-material-ledger.md)全部成功；PERF-015记录主机认证成本，不优化、不冒充tyx缺陷，未测Warp。NUM-005材料角动量损失与TYX-003 C++长期资源问题保持开放。下一步为新的同域材料/机器人接触outer与能量/角动量离散误差、步长细化门槛；旧FreeParticleLedger不删，禁止把预先指定相反输入测试称为真实接触。双臂夹布和Three.js仍未完成。准确交付249234a的CI40687305106与Documentation40687305085均success，材料账本阶段闭环，继续材料接触outer。
 
 ## 最新续作：原生材料投影路径（2026-10-28）
 

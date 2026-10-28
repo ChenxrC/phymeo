@@ -161,7 +161,17 @@
   ],
   "delivery": {
     "branch": "codex/p6-5-handoff",
-    "status": "pending_push_and_exact_ci"
+    "status": "exact_delivery_ci_success",
+    "head": "249234a641c322aecf99bf9f13cb147104604264",
+    "remote_sha_matches": true,
+    "ci": {
+      "id": 40687305106,
+      "conclusion": "success"
+    },
+    "documentation": {
+      "id": 40687305085,
+      "conclusion": "success"
+    }
   },
   "hardware": {
     "cpu": "13th Gen Intel(R) Core(TM) i9-13980HX",

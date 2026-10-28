@@ -37,6 +37,6 @@
 
 - [x] 唯一fresh最终review，Important/Critical先RED后修复；必要核心/actualinterpret/CUDA全量、两CPU、Linux新核心、boundedCPP、ruff/docs/import/compile/uvpip、build/源码外wheel；记录准确版本与实际计数。
 - [x] 所有数值进程退出后NumPy→interpret→CUDA串行同一三节点两边路径与认证，各3×100；记录端到端及审计分项（相同请求/范围），不优化/不宣称Warp差距。
-- [ ] 遗留/性能/tyx问题分目录，提交push核对SHA/精确CI、更新既有ACTIVE自动任务。后续先确定材料/接触outer反作用各一次、能量/角动量误差及细化门槛，不直接放行旧自由节点程序。
+- [x] 遗留/性能/tyx问题分目录，提交push核对SHA/精确CI、更新既有ACTIVE自动任务。后续先确定材料/接触outer反作用各一次、能量/角动量误差及细化门槛，不直接放行旧自由节点程序。
 
 Builder check缺项已裁定并写回spec：每条边每sweep累计edge residual/L_e与D_e*lambda更新差/L_e，固定点也不能豁免。没有待用户决定项。

@@ -22,7 +22,7 @@
 
 第13项有限基础[生产材料账本](../benchmarks/p65-material-ledger-acceptance.md)已完成本地验收，产品07b23d6、122源码，完整CUDA1894/两CPU各1565、interpret+核心67、boundedCPP1、Ubuntu43和源码外wheel通过，900次串行观测完成。唯一review的1Important1Minor经12RED修复，不重审；精确FP32输出检查保留fixed host位置例外，空域报告保持(N,3)。本地失败的默认pytest临时目录权限尝试已记录，同源码独立basetemp全量重跑通过。
 
-**最新下一步是新的材料接触outer，不能再把MaterialPathLedger列为未实现。** 先冻结M0/b0/J0、相反输入各一次、材料真实速度/末几何及能量外功、离散角动量/步长门槛；预先指定三角布/单关节相反输入仅证明账本，不是求接触。FreeParticleLedger保留；NUM-005原离散损失与TYX-003 C++长期仍开放。之后才几何建立/分离/切换/CCD、弯曲自碰撞、有限单爪/低mu滑落、目标IK/history与真实双臂/同源Three.js。以下旧切片记录用于溯源，不重做已验收功能或旧review。最新交付SHA/CI见工程记录，未核对不得把旧CI当新CI。
+**最新下一步是新的材料接触outer，不能再把MaterialPathLedger列为未实现。** 先冻结M0/b0/J0、相反输入各一次、材料真实速度/末几何及能量外功、离散角动量/步长门槛；预先指定三角布/单关节相反输入仅证明账本，不是求接触。FreeParticleLedger保留；NUM-005原离散损失与TYX-003 C++长期仍开放。之后才几何建立/分离/切换/CCD、弯曲自碰撞、有限单爪/低mu滑落、目标IK/history与真实双臂/同源Three.js。以下旧切片记录用于溯源，不重做已验收功能或旧review。准确249234a的CI40687305106及Documentation40687305085均success，账本交付框已关闭；不再重做此阶段。
 
 上一准确f259e69的CI40662503851与Documentation40662503807已success，旧自由节点计划交付框已关闭，不重做该修复。材料路径准确交付69b866a的CI40671540301与Documentation40671540325现均success，[材料路径实施计划](../superpowers/plans/2026-10-28-p65-material-path.md)最后交付框已关闭。
 

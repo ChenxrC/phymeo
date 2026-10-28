@@ -34,6 +34,10 @@
 
 新程序仅初态闭合全动态距离材料；精确原式/物理门禁不修改native积分，末分离仍允许。为了持续窗口收敛，首个合格候选后在原outer预算内细化并保留完整最佳native trial；无gap反馈/位置修补/改tol，全replay计数。NUM-005本征损失只被固定预算约束，未修积分器。一般几何、CCD、弯曲、自碰撞、有限驱动夹持、双臂流程仍后续。
 
+## 下一框架切片准备
+
+[静态距离证书设计](../superpowers/specs/2026-10-29-p65-distance-certificate-design.md)和[实施任务单](../superpowers/plans/2026-10-29-p65-distance-certificate.md)已明确API、严格上下界、退化/舍入边界、两个非递布独立场景及事务接入。唯一builder `distance_certificate_design_check`返回nothing important left，无测试/数值探针，不再重复builder。待当前材料接触准确远程交付闭环，直接按Task1分派实现子agent，先缺API/解析/舍入RED；该新独立阶段最终code review尚未派。静态证书只是CCD前置能力，自动接触生命周期/厚度侧/特征history/动态连续路径及H1完整验收仍未完成。
+
 ## 已交付阶段与历史交接（只供溯源，不作为当前待办）
 
 第13项有限基础[生产材料账本](../benchmarks/p65-material-ledger-acceptance.md)已完成本地验收，产品07b23d6、122源码，完整CUDA1894/两CPU各1565、interpret+核心67、boundedCPP1、Ubuntu43和源码外wheel通过，900次串行观测完成。唯一review的1Important1Minor经12RED修复，不重审；精确FP32输出检查保留fixed host位置例外，空域报告保持(N,3)。本地失败的默认pytest临时目录权限尝试已记录，同源码独立basetemp全量重跑通过。

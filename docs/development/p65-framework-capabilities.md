@@ -56,7 +56,7 @@
 
 ## 下一框架任务的只读需求准备
 
-子 agent `framework_capability_brief`已完成只读代码核对，没有修改代码或运行数值测试。结果是后续设计输入，不是新的已验收能力，也未冻结下一实现方案。
+子 agent `framework_capability_brief`已完成只读代码核对，没有修改代码或运行数值测试。该结果是设计输入，不是已验收能力。随后[距离证书设计](../superpowers/specs/2026-10-29-p65-distance-certificate-design.md)已明确合同，唯一builder检查返回nothing important left；[实施任务单](../superpowers/plans/2026-10-29-p65-distance-certificate.md)已准备，产品尚未实施。
 
 - [surface_features](../../src/phymeo/geometry/surface_features.py)已有点/三角、边/边最近点和精确KKT容差门禁；其distance不能直接视为严格距离下界。[已有距离下界候选](p65-distance-bound-candidate.md)仍无生产API。
 - 现有[材料接触程序](../../src/phymeo/solvers/initial_robot_material_contact.py)仅支持初态闭合接触，[机器人平面程序](../../src/phymeo/solvers/robot_plane_contact.py)继承base的history，尚没有通用动态接触身份、侧和活动集历史。现有端口及全局事务可复用，不能把这些缺口留给案例脚本。

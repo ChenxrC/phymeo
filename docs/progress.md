@@ -21,6 +21,8 @@
 
 用户要求接触生命周期/CCD/弯曲/自碰撞形成可复用框架能力。后续缺口先给子 agent 明确接口、支持边界与独立测例，经框架验收后再接综合案例；生产实现不嵌入案例坐标/名称/时间特判。每项能力至少两个非递布独立小场景，分别跟踪“框架能力验收”和“案例接入”；具体规则与当前双线状态见[框架交付合同](development/p65-framework-capabilities.md)。该要求属于现有P6.5，不另建任务，也不以通用化为由扩展P7/P8。
 
+下一框架任务已准备：[静态距离证书设计](superpowers/specs/2026-10-29-p65-distance-certificate-design.md)经一次builder检查无重要未决，[实施任务单](superpowers/plans/2026-10-29-p65-distance-certificate.md)待材料接触精确交付后分派子agent。仅为需求/计划完成，未新增产品API、未执行新阶段测试，不算动态接触或CCD完成。
+
 ## 当前实施：同域材料接触，本地验收完成（2026-10-29）
 
 已实现`InitialRobotMaterialContactProgram`与`MaterialContactBudgets`，本地产品修复提交`0657c98`，尚未推送本阶段。真实材料路径、机器人相反输入、法向/摩擦接触与末几何共同审核；增加精确冻结模型能量和材料角动量绝对预算。旧自由节点规则保留。详见[验收状态](benchmarks/p65-material-contact-acceptance.md)、[工程证据](benchmarks/p65-material-contact-engineering.json)与[唯一审阅](benchmarks/p65-material-contact-review.md)。**完整CUDA与正式观测已通过；精确远程交付待闭环，不提前计为第14项已交付能力。**

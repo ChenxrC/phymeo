@@ -54,3 +54,13 @@ prepare_velocity不再重建或施冲量，确认接触已收敛后保留内层�
 4. 累计launch/upload/download诊断只统计成功返回的重放report。失败内层诊断会按原事务清空，失败尝试的实际launch总数不可由该计数推断；性能记录另外保留失败事实。不得把未记录失败执行写成零执行。
 
 公开诊断schema：外层每子步`diagnostics["plane_contact"]`包含world_impulses/world_forces/environment_impulses、input_integrals、gaps、relative_velocities、contact_work_j、replays及inner_report；`diagnostics["execution"]`累加成功重放的原执行计数。输入顺序为contacts绑定顺序及其indices顺序。
+
+## 最终审阅后的数值范围修复
+
+一次独立最终审阅复现两项Important。第一项：以FP64先算完的integrated_loads不能再拿来证明精确输入积分。现在从original/effective实际存储force与h逐分量用Fraction计算差值积分，减去同节点各接触的实际世界冲量之精确和，乘逆质量；以L1速度误差/reference_speed在有理数域直接比较原容差。L1保守覆盖原Euclidean检查，不能被输入减法、乘h或fsum末位舍入掩盖。Replay原账本仍是FP64显示量，没有因此变成精确数值对象。
+
+第二项：v1≈Δx/h可能让两个共同舍入错误相互掩盖。此有限包装器增加canonical自由速度预测器的保守输入尺度门禁：每个有接触的particles域中所有动态节点，令S=sum_axis(|v0|+|h*g|+|h*d*effective_force|)，gamma16=16u/(1-16u)，要求gamma16*S <= tolerance*reference_speed。u=2^-53用于NumPy，u=2^-24用于当前实际tyx FP32路径；全部以存储数的有理值计算和比较。该预算涵盖自由预测运算及输入转换，是支持范围限制，会拒绝一些恰好能精确相消的大输入；不是测量误差，也不是材料迭代全过程的误差证明。现有材料、实际运动学和最终接触原式检查仍不可删除。
+
+首版仅接受已登记计算精度的numpy、tyx:interpret、tyx:cpu_cpp、tyx:cuda；不根据FP64存储推断未知后端的计算精度。未来后端需要明确登记并独立验证。每子步metrics包含prediction_roundoff预算；这不改原积分器、实际tyx执行或物理容差。
+
+独立反例：d=1e20、F=-10、h=.1、p=1的精确积分速度差5551.115m/s；d=1、F=-1e16时为.05551m/s。h=.125、v0=-1e16、d=3时FP64候选p=3333333333333333.5隐含末速度.5m/s；d=1e20、p=.0001时约.4792m/s。原版本都能错误接受零状态，修复后拒绝并恢复原帧；actual tyx大速度范围反例也拒绝。正常T=2s支撑/滑移及布材料例仍按原标准验收。

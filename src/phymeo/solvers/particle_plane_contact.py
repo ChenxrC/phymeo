@@ -41,6 +41,34 @@ def _gap(normal, point, offset):
     return result
 
 
+def _input_velocity_error(before, after, h, impulses, inverse_mass):
+    # Audit stored inputs and each reported contact impulse before any FP64
+    # subtraction, time multiplication or same-node aggregation can hide error.
+    error = Fraction(0)
+    for axis in range(3):
+        delivered = (Fraction(float(after[axis])) - Fraction(float(before[axis]))) * Fraction(h)
+        requested = sum((Fraction(float(p[axis])) for p in impulses), Fraction(0))
+        error += abs(delivered - requested)
+    return Fraction(float(inverse_mass)) * error
+
+
+def _prediction_roundoff(velocity, gravity, force, inverse_mass, h, unit_roundoff):
+    # Conservative supported-range restriction for the canonical free velocity
+    # predictor, including input casts; not an error estimate for material solves.
+    d, dt = Fraction(float(inverse_mass)), Fraction(h)
+    size = sum(
+        (
+            abs(Fraction(float(v)))
+            + abs(dt * Fraction(float(g)))
+            + abs(dt * d * Fraction(float(f)))
+            for v, g, f in zip(velocity, gravity, force, strict=True)
+        ),
+        Fraction(0),
+    )
+    gamma = 16 * unit_roundoff / (1 - 16 * unit_roundoff)
+    return gamma * size
+
+
 class _BorrowedProgram:
     def __init__(self, base):
         self.base = base
@@ -66,6 +94,10 @@ class ParticlePlaneContactProgram:
             raise TypeError("plane replay requires a mathematical base program")
         if "float64" not in caps.dtypes:
             raise ValueError("plane replay requires float64 storage")
+        precision_bits = {"numpy": 53, "tyx:interpret": 24, "tyx:cpu_cpp": 24, "tyx:cuda": 24}
+        if caps.backend not in precision_bits:
+            raise ValueError("plane replay requires a registered compute precision")
+        self.unit_roundoff = Fraction(1, 2 ** precision_bits[caps.backend])
         if registry is not None and not isinstance(registry, StateRegistry):
             raise TypeError("expected StateRegistry")
         registry = StateRegistry() if registry is None else registry.copy()
@@ -122,6 +154,7 @@ class ParticlePlaneContactProgram:
         }
         return dict(
             law="particle-plane-position-coulomb-replay-v1",
+            arithmetic="exact-load-l1-and-gamma16-predictor-v1",
             scene=self.scene.identity,
             base=self.base.problem_signature(),
             base_capabilities=capability,
@@ -189,7 +222,8 @@ class _PlaneWorkspace:
         self.replays = 0
         self.execution = dict(launches=0, completed_launches=0, uploads=0, downloads=0)
         self.trial, self.velocity_ready = None, False
-        self.ledger_residual = 0.0
+        self.ledger_residual = self.prediction_residual = 0.0
+        self.original_force = {d: inputs.domains[d].force.copy() for d in set(self.domains)}
         self.replay = SceneLoadReplay(
             program.scene,
             _BorrowedProgram(program.base),
@@ -247,15 +281,48 @@ class _PlaneWorkspace:
         trial = self.replay.evaluate(requested)
         if not trial.result.report.accepted:
             raise SolverFailure("native replay failed: " + str(trial.result.report.reason))
-        self.ledger_residual = 0.0
-        for domain, input_fields in requested.items():
-            difference = trial.integrated_loads[domain]["force"] - input_fields["force"]
-            for d, error in zip(self.models[domain].inverse_mass, difference, strict=True):
-                self.ledger_residual = max(
-                    self.ledger_residual, d * _norm(error) / self.settings.reference_speed
+        self.ledger_residual = self.prediction_residual = 0.0
+        world = self._world()
+        scale = Fraction(self.settings.reference_speed)
+        tolerance = Fraction(self.settings.tolerance)
+        for domain in requested:
+            model = self.models[domain]
+            effective = trial.effective_inputs.domains[domain].force
+            for node, d in enumerate(model.inverse_mass):
+                if d == 0:
+                    continue
+                rows = [
+                    k
+                    for k, (name, index) in enumerate(zip(self.domains, self.indices, strict=True))
+                    if name == domain and index == node
+                ]
+                error = (
+                    _input_velocity_error(
+                        self.original_force[domain][node], effective[node], self.h, world[rows], d
+                    )
+                    / scale
                 )
-        if self.ledger_residual > self.settings.tolerance:
-            raise SolverFailure("actual contact input integral exceeds absolute load tolerance")
+                if error > tolerance:
+                    raise SolverFailure(
+                        "actual contact input integral exceeds absolute load tolerance"
+                    )
+                self.ledger_residual = max(self.ledger_residual, float(error))
+                budget = (
+                    _prediction_roundoff(
+                        self.initial.domains[domain].velocity[node],
+                        model.gravity,
+                        effective[node],
+                        d,
+                        self.h,
+                        self.program.unit_roundoff,
+                    )
+                    / scale
+                )
+                if budget > tolerance:
+                    raise SolverFailure(
+                        "native prediction roundoff budget exceeds absolute tolerance"
+                    )
+                self.prediction_residual = max(self.prediction_residual, float(budget))
         self.trial = trial
         self.replays += 1
         for report in trial.result.report.substeps:
@@ -293,6 +360,7 @@ class _PlaneWorkspace:
             motion=0.0,
             contact_work=0.0,
             input_integral=self.ledger_residual,
+            prediction_roundoff=self.prediction_residual,
             native=self.trial.result.report.max_residual,
         )
         work = np.sum(self._world() * displacement_rate, axis=1)

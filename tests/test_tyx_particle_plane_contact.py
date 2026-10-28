@@ -132,3 +132,14 @@ def test_short_actual_material_and_plane_joint_residual(tyx_mode):
     np.testing.assert_allclose(
         native.diagnostics["participants"]["cloth"]["distance_multipliers"], [multiplier], atol=2e-6
     )
+
+
+def test_actual_fp32_prediction_range_gate_rolls_back(tyx_mode):
+    runtime, state, inputs = actual_case(tyx_mode)
+    state.domains["cloth"].velocity[0, 1] = -1e8
+    with runtime:
+        result = runtime.step(state, inputs, 0.01)
+    assert not result.report.accepted
+    assert "roundoff budget" in result.report.reason
+    np.testing.assert_array_equal(result.state.domains["cloth"].velocity, [[0, -1e8, 0]])
+    np.testing.assert_array_equal(result.state.domains["robot"].q, [0.2])

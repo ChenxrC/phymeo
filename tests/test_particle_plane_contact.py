@@ -516,3 +516,59 @@ def test_inner_velocity_postprocessing_incompatible_with_displacement_is_rejecte
         result = runtime.step(state, inputs, 0.1)
     assert not result.report.accepted
     np.testing.assert_array_equal(result.state.domains["body"].velocity, [[0, 0, 0]])
+
+
+@pytest.mark.parametrize("inverse_mass,force", [(1e20, -10.0), (1.0, -1e16)])
+def test_hidden_exact_input_integral_error_is_rejected(inverse_mass, force):
+    from fractions import Fraction
+
+    # FP64 rounds this integral to its requested value, hiding a large velocity error.
+    h = 0.1
+    requested = -force * h
+    hidden = (Fraction(-force) * Fraction(h) - Fraction(requested)) * Fraction(inverse_mass)
+    assert abs(hidden) > Fraction(1e-10)
+    runtime, state, inputs = case(inverse_mass=[inverse_mass], force=[[0, force, 0]])
+    with runtime:
+        result = runtime.step(state, inputs, h)
+    assert not result.report.accepted
+    np.testing.assert_array_equal(result.state.domains["body"].velocity, [[0, 0, 0]])
+
+
+@pytest.mark.parametrize("inverse_mass", [3.0, 1e20])
+def test_large_velocity_cancellation_cannot_fake_closed_contact(inverse_mass):
+    from fractions import Fraction
+
+    h = 0.125
+    p = 3333333333333333.5 if inverse_mass == 3.0 else 0.0001
+    # Binary-exact duration removes the first defect: the impulse itself is representable.
+    hidden = Fraction(-1e16) + Fraction(inverse_mass) * Fraction(p)
+    assert abs(hidden) > Fraction(0.1)
+    runtime, state, inputs = case(inverse_mass=[inverse_mass], velocities=[[0, -1e16, 0]])
+    with runtime:
+        result = runtime.step(state, inputs, h)
+    assert not result.report.accepted
+    np.testing.assert_array_equal(result.state.domains["body"].velocity, [[0, -1e16, 0]])
+
+
+@pytest.mark.parametrize("inverse_mass,force,minimum", [(1e20, -10.0, 5551.0), (1.0, -1e16, 0.055)])
+def test_exact_integral_audit_sees_error_erased_by_rounded_ledger(inverse_mass, force, minimum):
+    from phymeo.solvers.particle_plane_contact import _input_velocity_error
+
+    h = 0.1
+    impulse = np.array([[-force * h, 0.0, 0.0]])
+    # Both ordinary float operations claim perfect delivery.
+    assert (0.0 - force) * h == impulse[0, 0]
+    error = _input_velocity_error(
+        np.array([force, 0.0, 0.0]), np.zeros(3), h, impulse, inverse_mass
+    )
+    assert minimum < float(error) < minimum + 1.0
+
+
+def test_unregistered_compute_precision_is_rejected():
+    class UnknownPrecision(FreeSceneProgram):
+        @property
+        def capabilities(self):
+            return replace(super().capabilities, backend="unknown:fp16")
+
+    with pytest.raises(ValueError, match="compute precision"):
+        case(base=UnknownPrecision())

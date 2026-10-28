@@ -78,7 +78,8 @@ class ArticulatedCouplingProgram:
             self._backend,
             {"float64"},
             set(families),
-            {"node_sphere", "two_way", "staged_participants"},
+            {"node_sphere", "two_way", "staged_participants"}
+            | ({"terminal_point_impulses"} if not contacts else set()),
         )
 
     def problem_signature(self):
@@ -112,6 +113,8 @@ class ArticulatedCouplingProgram:
 class ArticulatedWorkspace:
     def __init__(self, program, state, inputs, h, settings, context):
         self.participants = {}
+        self._terminal_allowed = not program.contacts
+        self._velocity_prepared = self._closed = False
         self.history = {name: value.copy() for name, value in state.history.items()}
         # Register each successful construction before starting the next one.
         with ExitStack() as stack:
@@ -162,6 +165,28 @@ class ArticulatedWorkspace:
     def prepare_velocity(self):
         for participant in self.participants.values():
             participant.prepare_velocity()
+        self._velocity_prepared = True
+
+    def apply_point_velocity_impulses(self, requests):
+        from ..runtime.terminal_impulse import _batch_requests, _own_requests
+
+        if self._closed:
+            raise RuntimeError("articulated workspace is closed")
+        if not self._velocity_prepared:
+            raise RuntimeError("terminal impulses require prepare_velocity")
+        if not self._terminal_allowed:
+            raise ValueError("terminal impulses require an empty native contact set")
+        requests = _own_requests(requests)
+        # Validate every original request through its actual port before mutation.
+        for request in requests:
+            if request.domain not in self.participants:
+                raise ValueError("terminal impulse domain is not a participant")
+            self.participants[request.domain].point_port(request.indices, request.local_points)
+        for request in _batch_requests(requests):
+            if len(request.indices):
+                self.participants[request.domain].apply_velocity_impulses(
+                    request.indices, request.local_points, request.impulses
+                )
 
     def velocity_sweep(self):
         for participant in self.participants.values():
@@ -188,7 +213,9 @@ class ArticulatedWorkspace:
         }
 
     def close(self):
-        self.resources.close()
+        if not self._closed:
+            self._closed = True
+            self.resources.close()
 
 
 def make_articulated_runtime(program, *, settings=None, context=None):

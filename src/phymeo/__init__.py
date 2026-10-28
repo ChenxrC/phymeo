@@ -78,10 +78,12 @@ from .runtime.program import (
     SceneSubstepReport,
     SceneVerifier,
     SubstepWorkspace,
+    TerminalPointImpulseWorkspace,
 )
 from .runtime.registry import StateFamily, StateRegistry
 from .runtime.scene_stepper import SceneStepper
 from .runtime.stepper import Stepper
+from .runtime.terminal_impulse import PointVelocityImpulses, TerminalImpulseProgram
 from .solvers.articulated_coupling import ArticulatedCouplingProgram, make_articulated_runtime
 from .solvers.cloth import ClothProgram, make_cloth_runtime
 from .solvers.coupled_program import (
@@ -109,8 +111,13 @@ from .validation.free_particle import FreeParticleVerifier
 __version__ = "0.1.0a0"
 
 from .validation.material_path import MaterialPathLedger
+from .validation.terminal_impulse import TerminalImpulseLedger
 
 __all__ = [
+    "PointVelocityImpulses",
+    "TerminalImpulseProgram",
+    "TerminalImpulseLedger",
+    "TerminalPointImpulseWorkspace",
     "FeatureSweepResult",
     "linear_feature_sweep",
     "FeatureDistanceBounds",

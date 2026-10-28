@@ -57,6 +57,12 @@ class SubstepWorkspace(Protocol):
     def close(self) -> None: ...
 
 
+class TerminalPointImpulseWorkspace(Protocol):
+    """Optional live operation; only available after prepare_velocity."""
+
+    def apply_point_velocity_impulses(self, requests) -> None: ...
+
+
 class SceneProgram(Protocol):
     capabilities: ProgramCapabilities
     history_fields: tuple[HistoryField, ...]
@@ -75,6 +81,21 @@ def own_diagnostics(value):
     """Copy only explicit finite data, retaining typed load ledgers for audit clients."""
     fingerprint(value)
 
+    def freeze_arrays(item):
+        # Dataclass constructors may defensively copy arrays again. Freeze the
+        # final owned fields, without ever touching the borrowed source object.
+        if isinstance(item, np.ndarray):
+            item.flags.writeable = False
+        elif isinstance(item, Mapping):
+            for value in item.values():
+                freeze_arrays(value)
+        elif is_dataclass(item) and not isinstance(item, type):
+            for entry in fields(item):
+                freeze_arrays(getattr(item, entry.name))
+        elif isinstance(item, (tuple, list)):
+            for value in item:
+                freeze_arrays(value)
+
     def clone(item):
         if isinstance(item, np.ndarray):
             result = item.copy()
@@ -83,7 +104,9 @@ def own_diagnostics(value):
         if isinstance(item, Mapping):
             return MappingProxyType({k: clone(v) for k, v in item.items()})
         if is_dataclass(item) and not isinstance(item, type):
-            return type(item)(**{f.name: clone(getattr(item, f.name)) for f in fields(item)})
+            result = type(item)(**{f.name: clone(getattr(item, f.name)) for f in fields(item)})
+            freeze_arrays(result)
+            return result
         if isinstance(item, (tuple, list)):
             return tuple(clone(v) for v in item)
         return item

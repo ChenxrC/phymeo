@@ -35,7 +35,7 @@ class MaterialContactBalance:
         self.robot_v0 = state.domains[robot_domain].v.copy()
         self.h, self.budgets = q(h), budgets
 
-    def require_metrics(self, final, robot_ledger, requests, tolerance):
+    def require_metrics(self, final, robot_ledger, requests, tolerance, *, terminal=None):
         r0 = robot_ledger.kinetic(self.robot_v0)
         r1 = robot_ledger.kinetic(final.domains[self.robot_domain].v)
         e0, e1 = [r0, r0], [r1, r1]
@@ -73,6 +73,11 @@ class MaterialContactBalance:
                 before = cross(x0[i], [mass * v for v in v0[i]])
                 after = cross(x1[i], [mass * v for v in v1[i]])
                 external = cross(x0[i], expected)
+                terminal_moment = (
+                    [ZERO] * 3
+                    if terminal is None
+                    else cross(x1[i], list(map(q, terminal[name][i])))
+                )
                 for k in range(3):
                     first = mass * (v0[i][k] ** 2 / 2 - q(model.gravity[k]) * x0[i][k])
                     last = mass * (v1[i][k] ** 2 / 2 - q(model.gravity[k]) * x1[i][k])
@@ -80,7 +85,7 @@ class MaterialContactBalance:
                         e0[j] += first
                         e1[j] += last
                     work += force[i][k] * (x1[i][k] - x0[i][k])
-                    angular[k] += after[k] - before[k] - external[k]
+                    angular[k] += after[k] - before[k] - external[k] - terminal_moment[k]
             u0 = elastic(model, self.materials[name], x0)
             u1 = elastic(model, self.materials[name], x1)
             for j in range(2):
@@ -112,7 +117,11 @@ class MaterialContactBalance:
                     limit_j=self.budgets.max_energy_gain_j,
                 ),
                 material_angular_defect=dict(
-                    scope="particle-initial-external-moment-defect-v1",
+                    scope=(
+                        "particle-initial-external-moment-defect-v1"
+                        if terminal is None
+                        else "particle-initial-held-final-terminal-moment-defect-v1"
+                    ),
                     by_domain_nms={name: display_array(row) for name, row in defects.items()},
                     l1_sum_nms=upper_float(angular),
                     limit_nms=self.budgets.max_material_angular_defect_nms,

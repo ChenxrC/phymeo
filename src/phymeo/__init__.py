@@ -23,6 +23,7 @@ from .constraints.node_robot import NodeRobotContact
 from .constraints.particle_plane import ParticlePlaneContacts
 from .constraints.robot_node_plane import RobotNodePlaneContacts
 from .constraints.robot_plane import RobotPlaneContacts
+from .constraints.robot_plane_collider import RobotPlaneCollider
 from .control.bounded_pd import BoundedPDResult, solve_bounded_pd
 from .core.capabilities import ProblemSignature, SolverCapabilities, SolverFailure
 from .core.coupled import CoupledInputs, CoupledState, CoupledStepReport, CoupledStepResult
@@ -92,6 +93,7 @@ from .solvers.coupled_program import (
     make_coupled_runtime,
 )
 from .solvers.coupled_xpbd import CoupledXPBDSolver
+from .solvers.dynamic_robot_normal_contact import DynamicRobotNormalContactProgram
 from .solvers.free_scene import FreeSceneProgram
 from .solvers.initial_robot_material_contact import (
     InitialRobotMaterialContactProgram,
@@ -114,6 +116,8 @@ from .validation.material_path import MaterialPathLedger
 from .validation.terminal_impulse import TerminalImpulseLedger
 
 __all__ = [
+    "RobotPlaneCollider",
+    "DynamicRobotNormalContactProgram",
     "PointVelocityImpulses",
     "TerminalImpulseProgram",
     "TerminalImpulseLedger",

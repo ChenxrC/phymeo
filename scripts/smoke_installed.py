@@ -420,12 +420,82 @@ def check_initial_robot_material_contact():
     )
 
 
+def check_dynamic_robot_normal_contact():
+    """A reusable automatic free impact with both held and terminal reactions."""
+    robot = phymeo.RobotModel(
+        np.array([-1]),
+        ("prismatic",),
+        np.zeros((1, 3)),
+        np.array([[0.0, 0.0, 0.0, 1.0]]),
+        np.array([[0.0, 1.0, 0.0]]),
+        np.array([2.0]),
+        np.zeros((1, 3)),
+        np.ones((1, 3)),
+        np.zeros(3),
+    )
+    nodes = phymeo.ParticleModel(np.ones(1), np.zeros(3))
+    scene = phymeo.SceneModel(
+        (
+            phymeo.DomainBinding("robot", "robot", robot),
+            phymeo.DomainBinding("nodes", "particles", nodes),
+        )
+    )
+    base = phymeo.ArticulatedCouplingProgram(
+        scene,
+        {
+            "robot": phymeo.RobotParticipant(robot),
+            "nodes": phymeo.ClothParticipant(nodes, None, record_material_path=True),
+        },
+        phymeo.RobotSphereAttachments(np.empty(0, int), np.empty((0, 3)), np.empty(0)),
+        (),
+    )
+    program = phymeo.DynamicRobotNormalContactProgram(
+        scene,
+        base,
+        (phymeo.RobotPlaneCollider("floor", 0, np.zeros(3), np.array([0.0, 1.0, 0.0])),),
+        materials={"nodes": None},
+        budgets=phymeo.MaterialContactBudgets(1e-6, 1e-6),
+    )
+    state = phymeo.SceneState(
+        {
+            "robot": phymeo.RobotState(np.zeros(1), np.zeros(1)),
+            "nodes": phymeo.ParticleState(
+                np.array([[0.0, 1 / 8, 0.0]]), np.array([[0.0, -1.0, 0.0]])
+            ),
+        },
+        program.initial_history(),
+    )
+    inputs = phymeo.SceneInputs(
+        {"robot": phymeo.RobotInputs.zeros(1), "nodes": phymeo.StepInputs.zeros(1)}
+    )
+    with phymeo.SceneStepper(
+        scene,
+        program,
+        phymeo.StepSettings(
+            substeps=1, position_iterations=128, velocity_iterations=128, tolerance=1e-8
+        ),
+        registry=program.registry,
+    ) as runtime:
+        result = runtime.step(state, inputs, 0.25)
+    if not result.report.accepted:
+        raise RuntimeError("Installed automatic normal impact failed: " + str(result.report.reason))
+    diagnostic = result.report.substeps[0].diagnostics["dynamic_robot_normal_contact"]
+    np.testing.assert_allclose(diagnostic["held_impulses"], [1 / 3], atol=1e-8, rtol=0)
+    np.testing.assert_allclose(diagnostic["terminal_impulses"], [1 / 3], atol=1e-8, rtol=0)
+    np.testing.assert_allclose(result.state.domains["robot"].q, [-1 / 24], atol=1e-8, rtol=0)
+    np.testing.assert_allclose(result.state.domains["robot"].v, [-1 / 3], atol=1e-8, rtol=0)
+    np.testing.assert_allclose(
+        result.state.domains["nodes"].velocity, [[0.0, -1 / 3, 0.0]], atol=1e-8, rtol=0
+    )
+    print("Automatic normal impact: held=1/3 Ns, terminal=1/3 Ns, final speed=-1/3 m/s")
+
+
 def check_linear_feature_sweep():
-    plate = np.array([[0., 0, 0], [2., 0, 0], [0., 2, 0]])
-    start = np.array([[.5, .5, 1.]])
-    for height, expected in ((-1., "violation"), (2., "certified")):
+    plate = np.array([[0.0, 0, 0], [2.0, 0, 0], [0.0, 2, 0]])
+    start = np.array([[0.5, 0.5, 1.0]])
+    for height, expected in ((-1.0, "violation"), (2.0, "certified")):
         result = phymeo.linear_feature_sweep(
-            start, np.array([[.5, .5, height]]), plate, plate, clearance_m=.25
+            start, np.array([[0.5, 0.5, height]]), plate, plate, clearance_m=0.25
         )
         if result.status != expected or not isinstance(result, phymeo.FeatureSweepResult):
             raise RuntimeError("Installed affine feature sweep failed")
@@ -617,6 +687,7 @@ def main():
     check_robot_plane_contact()
     check_initial_robot_node_contact()
     check_initial_robot_material_contact()
+    check_dynamic_robot_normal_contact()
     for name in (
         "TyxRobotParticipant",
         "TyxClothParticipant",

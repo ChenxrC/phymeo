@@ -104,9 +104,23 @@
     }
   },
   "final_engineering": {
-    "cpu311": "running",
-    "nativepip": "not_run",
-    "cuda_full": "not_run",
+    "cpu311": {
+      "status": "passed",
+      "passed": 1865,
+      "deselected": 351,
+      "pytest_seconds": 416.07,
+      "exit_code": 0,
+      "source_commit": "4ff19ea7975145fe9d44450164b906f01fe0527d"
+    },
+    "nativepip": {
+      "status": "passed",
+      "passed": 1865,
+      "deselected": 351,
+      "pytest_seconds": 399.69,
+      "exit_code": 0,
+      "source_commit": "4ff19ea7975145fe9d44450164b906f01fe0527d"
+    },
+    "cuda_full": "running",
     "ubuntu": "not_run",
     "cpp_bounded": "not_run",
     "wheel": "not_run",
@@ -115,10 +129,13 @@
     "pipeline": {
       "session_id": 7480,
       "directory": "artifacts/dynamic-normal-final-4ff19ea-a",
-      "phase_at_record": "core311",
+      "phase_at_record": "cuda-full",
       "status_file": "artifacts/dynamic-normal-final-4ff19ea-a/status.json",
       "runner_sha256": "335cb8fde761abdf3659e4d12ffa15861220472a33fecf423cb948935394e224",
-      "completed_at_record": [],
+      "completed_at_record": [
+        "core311",
+        "nativepip"
+      ],
       "note": "read live status/log/exit; start is not acceptance; do not restart already successful phases"
     }
   },

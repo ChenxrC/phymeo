@@ -32,7 +32,7 @@
 
 唯一fresh最终审阅 `dynamic_normal_final_review` 已结束，BASE fa11031..4ff19ea，0Critical/0Important/0Minor；全部探针退出，不重派或重复。独立斜向双平面p/eta=(1/9,5/18)、actual interpret176launch/3held+3terminal/12engines关闭及7项定向测试通过。主agent接数值槽执行后续工程，物理/数值门槛不改。NumPy/actual interpret/CUDA基准最小smoke各通过2计时+6warmup，free/chain各1；脚本hash338768ffd42c2e7749f38779e20d2563ec56cd435ba2fceef8cc604f58545a75。它不是正式性能结果。
 
-审阅已闭环、其他数值进程全部退出，artifacts/run_dynamic_normal_acceptance.py现已启动，唯一工具session7480。先读artifacts/dynamic-normal-final-4ff19ea-a/status.json及当前阶段日志/退出码，再承接现有session，勿重启。冻结src/tests/scripts摘要f1e36fe05f6022618de94c8d20638911c6c8383e73e65a8c7b35f2a6e93e305f；进行中不得改源/tests/scripts。它以全新tag顺序执行两个完整CPU、完整CUDA、Ubuntu新核心、一次boundedCPP、quality/build/源码外wheel、三模式各300正式观测；失败或源码变化即停止。启动不等于通过，需核对status、各日志/退出码、源码/脚本hash及raw。旧CPP长期问题无依赖修复不重跑压力。记录时首个core311套件正在运行；启动不算通过。最终工程、正式计量、准确新HEAD远程CI均未完成。若环境步骤失败而源码未改，应从失败步骤继续，不无理由重跑已成功的长套件。
+审阅已闭环、其他数值进程全部退出，artifacts/run_dynamic_normal_acceptance.py现已启动，唯一工具session7480。先读artifacts/dynamic-normal-final-4ff19ea-a/status.json及当前阶段日志/退出码，再承接现有session，勿重启。冻结src/tests/scripts摘要f1e36fe05f6022618de94c8d20638911c6c8383e73e65a8c7b35f2a6e93e305f；进行中不得改源/tests/scripts。它以全新tag顺序执行两个完整CPU、完整CUDA、Ubuntu新核心、一次boundedCPP、quality/build/源码外wheel、三模式各300正式观测；失败或源码变化即停止。启动不等于通过，需核对status、各日志/退出码、源码/脚本hash及raw。旧CPP长期问题无依赖修复不重跑压力。最新核对core311/nativepip完整套件均1865passed/351deselected，pytest耗时416.07/399.69s且退出0；同一pipeline已进入完整CUDA，尚未完成。不要重复已通过两CPU套件；启动不算通过。最终工程、正式计量、准确新HEAD远程CI均未完成。若环境步骤失败而源码未改，应从失败步骤继续，不无理由重跑已成功的长套件。
 
 Task2新CUDA7通过1055.23s；NumPy462和interpret37是cap-only元数据修复前物理同版，之后补NumPy3/interpret2受影响控制，精确版本见工程记录。Task1旧prescribed兼容回归已在2f50c1f修复并推送，准确CI40769531720/Documentation40769531685均success，816a1f3已记录；不再查询或重复修复。当前阶段HEAD尚未推送。
 

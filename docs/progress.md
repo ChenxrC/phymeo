@@ -1,12 +1,14 @@
 # 开发进度
 
-## 当前准备：同域材料接触（2026-10-28）
+## 当前实施：同域材料接触，验收进行中（2026-10-28）
 
-材料账本准确249234a的两项CI已success，交付闭环。下一[材料接触设计](superpowers/specs/2026-10-28-p65-material-contact-design.md)与[实施计划](superpowers/plans/2026-10-28-p65-material-contact.md)已冻结，builder check无重要未决问题；生产InitialRobotMaterialContactProgram尚未实现，不计为新增已交付模块。
+已实现`InitialRobotMaterialContactProgram`与`MaterialContactBudgets`，本地产品修复提交`0657c98`，尚未推送本阶段。真实材料路径、机器人相反输入、法向/摩擦接触与末几何共同审核；增加精确冻结模型能量和材料角动量绝对预算。旧自由节点规则保留。详见[验收状态](benchmarks/p65-material-contact-acceptance.md)、[工程证据](benchmarks/p65-material-contact-engineering.json)与[唯一审阅](benchmarks/p65-material-contact-review.md)。**完整设备/性能/交付门禁尚未闭环，不计为第14项已交付能力。**
 
-[原生候选证据](development/p65-material-contact-candidate.md)三模式共9个压缩边解析例通过；确认材料释放弹性能时，旧自由节点K-free门槛会误拒合法结果。2秒支撑两步长的速度-only停止负例均失败；加末gap共同停止后，三模式六个窗口全部完成。最大节点漂移NumPy约3.84e-10m、tyx约7.16e-7m，只是这个normal-only原型的观测，不代表生产能量/角动量/摩擦/事务合同已验收。
+最终源码124文件，两套CPU环境各1612项通过、338项设备未选；Ubuntu新核心47项通过；源码外native-pip wheel安装和数值smoke通过。一次fresh review的1Important由3RED回归修复，相关86通过。修复前actualinterpret8项通过，修复的新内外迭代配置也已实际interpret验证；不能混写成新版一次完整interpret9项。旧版CUDA定向运行因被最终版全量替代而中止，不计为通过。
 
-PERF-016仅记replay计数，正式性能未测。接下来按Task1先RED后实现新程序，保留旧free合同，采用原式认证＋显式能量/材料角动量预算，并继续完整T2/低mu/共享点与失败事务。不得从本探针直接跳到夹爪或声称双臂递布完成。
+完整最终CUDA在运行，成功且源码hash不变后自动串行执行NumPy→interpret→CUDA各3×100观测。失败即停后续计量，保留原始结果。原生双节点支撑、共享摩擦/低mu、三角/单转子、精确物理预算、后段trace/close/物理拒绝回滚已有测试；仍仅步初闭合局部平面，不是一般碰撞、CCD、真实夹爪或双臂递布。
+
+新增[TYX-004](../tyx_flaw/TYX-004-cosine-errstate.md)：解释器cos的宿主异常策略差异已独立复现；phymeo仅修复prismatic不需要的三角计算，不关闭严格异常门禁。TYX-003 C++长期资源问题与NUM-005材料积分误差仍开放。
 
 ## 最新续作：材料原式认证（2026-10-28）
 

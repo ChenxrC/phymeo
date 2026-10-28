@@ -25,11 +25,11 @@
 **Files:** Create `src/phymeo/solvers/initial_robot_material_contact.py`、可选`_material_contact_balance.py`、`tests/test_initial_robot_material.py`、`tests/test_tyx_initial_robot_material.py`；Modify `src/phymeo/__init__.py`、必要的旧initial_robot_node_contact私有共用方法与`tests/test_initial_robot_node.py`、`scripts/smoke_installed.py`。
 **Interfaces:** MaterialContactBudgets与InitialRobotMaterialContactProgram严格按spec；消费MaterialPathLedger/FrozenRobotLedger/SceneLoadReplay/RobotNodePlaneContacts；产生owned initial_robot_material_contact诊断与正常SceneStepResult。
 
-- [ ] 先写公开类缺失RED：显式budgets/materials构造验证，压缩双节点三h独立p/状态/K+U/original-input反作用，旧K-free误拒负例；少量同域三角/共享点和无材料控制。builder check未裁定的重要问题先写进spec，不猜。
-- [ ] 实现owned配置/签名、独立原始快照、每候选robot+material审计、法切GS完整重放；预条件不是材料切线。实现末gap联合收敛，不使用速度-only提前退出。保持旧free回归与执行计数。
-- [ ] 对能量/角动量预算与语义写RED：原始外功、单域计数、错误effective功、跨域抵消、display数值舍入边界；先原式通过再物理拒绝的不相容硬边；固定.001Nms角动量限额下旋转硬边h=.1拒绝/.025接受。最小精确helper实现，不改原tol。
-- [ ] 冻结T2静置与mu1/mu.1双接触材料场景，h1/16与1/32；独立离散低mu递推及连续cos参照、真实Py/Lz/能量外功/反作用次数；满足spec数值门槛再算通过。交换接触顺序、同节点多平面与共享祖先，不能仅断言solver内部residual。
-- [ ] 先RED后实现：missing/mismatched material_path、参数/请求/精度损坏与后子步预算拒绝、trace/close故障，完整state/history rollback及retry=fresh；所有权与base关闭一次。
+- [x] 先写公开类缺失RED：显式budgets/materials构造验证，压缩双节点三h独立p/状态/K+U/original-input反作用，旧K-free误拒负例；少量同域三角/共享点和无材料控制。builder check未裁定的重要问题先写进spec，不猜。
+- [x] 实现owned配置/签名、独立原始快照、每候选robot+material审计、法切GS完整重放；预条件不是材料切线。实现末gap联合收敛，不使用速度-only提前退出。保持旧free回归与执行计数。
+- [x] 对能量/角动量预算与语义写RED：原始外功、单域计数、错误effective功、跨域抵消、display数值舍入边界；先原式通过再物理拒绝的不相容硬边；固定.001Nms角动量限额下旋转硬边h=.1拒绝/.025接受。最小精确helper实现，不改原tol。
+- [x] 冻结T2静置与mu1/mu.1双接触材料场景，h1/16与1/32；独立离散低mu递推及连续cos参照、真实Py/Lz/能量外功/反作用次数；满足spec数值门槛再算通过。交换接触顺序、同节点多平面与共享祖先，不能仅断言solver内部residual。
+- [x] 先RED后实现：missing/mismatched material_path、参数/请求/精度损坏与后子步预算拒绝、trace/close故障，完整state/history rollback及retry=fresh；所有权与base关闭一次。
 - [ ] actualinterpret/CUDA覆盖压缩材料、T2支持/低mu与事务；boundedC++只一次小例。安装包smoke引用新公共API。完成测试后commit，不把实验脚本当生产交付。
 
 ### Task 2: 独立审阅、工程与串行观测

@@ -1,0 +1,151 @@
+{
+  "status": "review_fixed_final_cuda_and_serial_observation_pending",
+  "source": {
+    "git_revision": "0657c98cb43779facdd3577fb91d74d5447fc144",
+    "git_dirty": false,
+    "source_sha256": "b56bafcac102b696ebf1a180bb2946bd7ab2a8d103b9a3a4b6bffc5a85645dce",
+    "python": "3.12.14",
+    "numpy": "2.5.4",
+    "platform": "Windows-11-10.0.26200-SP0"
+  },
+  "python_files": 124,
+  "prior_delivery": {
+    "head": "d32199e96836cf6f53348d4d1720d5d287cd5e0c",
+    "ci": {
+      "id": 40705968333,
+      "conclusion": "success"
+    },
+    "documentation": {
+      "id": 40705968828,
+      "conclusion": "success"
+    }
+  },
+  "tests": {
+    "core_and_old_free": {
+      "passed": 93,
+      "seconds": 77.52,
+      "log": "artifacts/material-contact-core-fixed.txt"
+    },
+    "bounded_cpp": {
+      "passed": 1,
+      "deselected": 7,
+      "seconds": 27.19,
+      "log": "artifacts/material-contact-cpp-bounded.txt",
+      "endurance": false
+    },
+    "actual_interpret": {
+      "passed": 8,
+      "seconds": 649.23,
+      "revision": "9f504bb",
+      "note": "before inner-settings review fix"
+    },
+    "actual_cuda": {
+      "status": "superseded targeted run explicitly cancelled before completion; no result claimed",
+      "revision": "9f504bb",
+      "next": "full final source suite"
+    },
+    "ubuntu_core": {
+      "passed": 47,
+      "seconds": 62.27,
+      "clean_install": false
+    },
+    "core311": {
+      "passed": 1612,
+      "deselected": 338,
+      "seconds": 430.67
+    },
+    "nativepip": {
+      "passed": 1612,
+      "deselected": 338,
+      "seconds": 428.28
+    },
+    "review_fix": {
+      "passed": 86,
+      "deselected": 18,
+      "seconds": 22.28,
+      "includes": "actualinterpret new inner-budget regression"
+    }
+  },
+  "unsuccessful_attempts": [
+    {
+      "scope": "missing public API",
+      "failed": 25,
+      "passed": 1
+    },
+    {
+      "scope": "shared-contact persistent positive gap",
+      "failed": 2,
+      "passed": 31,
+      "subsequent": "refine admissible candidates within existing outer budget;33 passed154.75s"
+    },
+    {
+      "scope": "empty selected domain load shape",
+      "failed": 1,
+      "passed": 3,
+      "subsequent": "reshape empty load to(0,3)"
+    },
+    {
+      "scope": "actual interpret before prismatic branch fix",
+      "failed": 3,
+      "passed": 2,
+      "seconds": 415.59,
+      "error": "cos underflow",
+      "subsequent": "two isolated RED then GREEN; full focused rerun pending"
+    }
+  ],
+  "review": {
+    "count": 1,
+    "agent": "material_contact_final_review",
+    "base": "d32199e96836cf6f53348d4d1720d5d287cd5e0c",
+    "head": "7e004ac3882e4ce21aebb315831452713e02c4e5",
+    "status": "one Important fixed with3RED thenGREEN",
+    "critical": 0,
+    "important": 1,
+    "minor": 0,
+    "fix_revision": "0657c98cb43779facdd3577fb91d74d5447fc144"
+  },
+  "quality": {
+    "ruff": true,
+    "docs_documents": 147,
+    "docs_local_links": 671,
+    "public_tyx_boundary_files": 124,
+    "compileall": true,
+    "uv_and_native_pip_check": true,
+    "lock_exports_match": true
+  },
+  "benchmark": {
+    "status": "one-sample harness smoke only; concurrent validation, not formal measurement",
+    "log": "artifacts/material-contact-benchmark-smoke.json"
+  },
+  "not_run": [
+    "final full CUDA suite",
+    "formal serial3x100 per mode"
+  ],
+  "unresolved": [
+    "review findings and required engineering acceptance",
+    "NUM-005 native angular loss",
+    "TYX-003 Windows CPP endurance",
+    "TYX-004 interpreter cosine errstate contract",
+    "full P6.5 geometric/gripper/handoff acceptance"
+  ],
+  "wheel": {
+    "python_files": 124,
+    "exact_source_parity": true,
+    "outside_checkout_native_pip_smoke": true,
+    "dist": "artifacts/material-contact-dist-0657c98",
+    "sha256": {
+      "phymeo-0.1.0a0-py3-none-any.whl": "0bb0e880a79efd21ebfeae271550a4d8ff7b81b99bab050b472d4a644d13917f",
+      "phymeo-0.1.0a0.tar.gz": "80baf8f558306cbd6ec3f7daaefab950254968db39d3241ee70858a0ee81a75d"
+    }
+  },
+  "final_pipeline": {
+    "status": "running_full_cuda",
+    "session": 73318,
+    "source_revision": "0657c98cb43779facdd3577fb91d74d5447fc144",
+    "log": "artifacts/material-contact-cuda-full-final.txt",
+    "exit_file": "artifacts/material-contact-cuda-full-final.exit",
+    "phase_file": "artifacts/material-contact-final-pipeline-status.txt",
+    "serial_after_cuda_success": true,
+    "source_hash_guard": true
+  }
+}

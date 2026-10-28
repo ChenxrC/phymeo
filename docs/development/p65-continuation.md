@@ -20,7 +20,11 @@
 
 ## 当前立即续作
 
-**下一设计/计划已冻结，不再从零讨论材料接触路线。** 读[新设计](../superpowers/specs/2026-10-28-p65-material-contact-design.md)、[TDD计划](../superpowers/plans/2026-10-28-p65-material-contact.md)与[原型证据](p65-material-contact-candidate.md)。builder material_contact_design_check返回nothing important left；正式API尚未开始。9个压缩材料解析例通过；速度-only持续停止负例失败，联合末gap三模式六个T2窗口通过。新物理预算使用含U的冻结模型能量/原非接触功及独立材料角动量缺陷；不能照搬旧K-free，也不能把预算后的报告叫一般机器人世界守恒。先执行Task1 TDD，不重跑已验收账本阶段或原型全套。
+**材料接触主体已实现，继续工程验收，不重做设计、原型或已关闭审阅。** 本地产品`0657c98`，124源码hash`b56bafcac102b696ebf1a180bb2946bd7ab2a8d103b9a3a4b6bffc5a85645dce`。读[设计](../superpowers/specs/2026-10-28-p65-material-contact-design.md)、[计划](../superpowers/plans/2026-10-28-p65-material-contact.md)、[阶段验收](../benchmarks/p65-material-contact-acceptance.md)与[唯一review](../benchmarks/p65-material-contact-review.md)。具体运行句柄见本计划`.superpowers/sdd` ledger；不要重复启动已有进程。
+
+两CPU全量各1612通过、Ubuntu最终新核心47、124源码外wheel已过。唯一review发现inner材料记录误用outer迭代上限，3RED后修复，86相关回归通过。当前完整最终CUDA与成功后串行900次观测由同一个有失败门禁的pipeline执行；状态在`artifacts/material-contact-final-pipeline-status.txt`，CUDA日志`artifacts/material-contact-cuda-full-final.txt`及`.exit`。必须查实际结果，不把启动等同通过；旧版CUDA定向运行已明确中止，不重跑。观察完成后更新工程JSON/验收/性能/进度、提交推送并核对精确远程SHA与CI。
+
+新程序仅初态闭合全动态距离材料；精确原式/物理门禁不修改native积分，末分离仍允许。为了持续窗口收敛，首个合格候选后在原outer预算内细化并保留完整最佳native trial；无gap反馈/位置修补/改tol，全replay计数。NUM-005本征损失只被固定预算约束，未修积分器。一般几何、CCD、弯曲、自碰撞、有限驱动夹持、双臂流程仍后续。
 
 第13项有限基础[生产材料账本](../benchmarks/p65-material-ledger-acceptance.md)已完成本地验收，产品07b23d6、122源码，完整CUDA1894/两CPU各1565、interpret+核心67、boundedCPP1、Ubuntu43和源码外wheel通过，900次串行观测完成。唯一review的1Important1Minor经12RED修复，不重审；精确FP32输出检查保留fixed host位置例外，空域报告保持(N,3)。本地失败的默认pytest临时目录权限尝试已记录，同源码独立basetemp全量重跑通过。
 

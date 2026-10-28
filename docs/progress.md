@@ -27,7 +27,7 @@
 
 已冻结[两阶段生产合同](superpowers/specs/2026-10-29-p65-dynamic-normal-design.md)和[实施计划](superpowers/plans/2026-10-29-p65-dynamic-normal.md)，一次builder无重要未决。闭合前后的原生边界实验在NumPy/interpret/CUDA各2例通过，详见[设计证据](development/p65-dynamic-normal-candidate.md)；它们预先给定冲量，不是自动求解器完成证据。
 
-Task1产品24c9961已完成定向验收：关闭前原生末冲量机制、独立方程账本、只读诊断修复和完整事务；最终新NumPy42、interpret2、CUDA2通过，旧相关回归版本详见续作记录。接下来Task2实现自动生成候选、held位置载荷与末速度冲量求解、显式history及全局事务；Task3一次fresh审阅和最终工程验收。全阶段自动求解/生命周期和一次最终审阅尚未完成，未新增已完成动态能力项。
+Task1产品24c9961已完成定向验收：关闭前原生末冲量机制、独立方程账本、只读诊断修复和完整事务；最终新NumPy42、interpret2、CUDA2通过，旧相关回归版本详见续作记录。Task2已交dynamic_normal_implementer，正在实现自动生成候选、held位置载荷与末速度冲量求解、显式history及全局事务；Task3一次fresh审阅和最终工程验收。全阶段自动求解/生命周期和一次最终审阅尚未完成，未新增已完成动态能力项。
 
 首个动态支持域固定为全prismatic机器人、全动态距离材料节点、固定朝向无限平面、法向无摩擦；材料/机器人原生计算与两个输入阶段分账。摩擦、有限特征切换、FK旋转CCD、弯曲/自碰撞和夹持继续属于后续必做，不降低整个P6.5目标。
 

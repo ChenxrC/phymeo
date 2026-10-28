@@ -18,3 +18,5 @@
 产品源码仍aef9b257/118文件hash da5b54842e3256ef20b6eb5d27bfdcded77543f656330603f2ce7975d5989123；不重跑未变化产品的CUDA全量/性能/wheel或伪造新计数。修复后的准确head远程CI待验证；最终审阅结果另补。
 
 单次fresh修复审阅：BASE937ca59..HEAD1ae0d217，0Critical/0Important/0Minor。审阅者独立3用例和ruff通过；内存中删除sum路径认证时原orientation_ulp=0用例失败，证实原回归价值保留。+1/+2ULP输入缩放分别2/4，额外价值为前提可移植性，不宣称这两例单独区分sum/matmul。安全注释的合成测试排除了参数/断言/未知名和注入后缀。未重开前阶段物理审阅，未宣称远端修复已通过。
+
+准确交付f259e690946c612a93a793989ee1e5b50d3995e8：CI40662503851与Documentation40662503807均已success，修复远程闭环。

@@ -37,6 +37,8 @@ BASE eb4010ac44ef63e020b0bac2dbdc4d1ecc921739；用户已授权持续P6.5与专�
 - [x] 实际interpret/CUDA移动/转子/共享接触与独立材料旁域；C++仅移动短例；安装smoke加公开接口。Expected实际launch>0，无host覆盖。
 - [x] 一次fresh最终review BASE到当前HEAD；Critical/Important一次RED→GREEN。修复后必要全量CUDA、core311/pip312、interpret/短C++、ruff/docs/边界/compileall/uvpipcheck、build与源码外wheel。Expected通过。
 - [x] 数值进程退出后NumPy/interpret/CUDA各3×100串行观测，保留失败与计数；不优化/不测无修复C++压力。Expected如实报告。
-- [ ] 更新工程/性能/遗留/续作，提交push专用分支、核对SHA/CI、更新自动续作。完整P6.5继续；未实现范围不能删除。
+- [x] 更新工程/性能/遗留/续作，提交push专用分支、核对SHA/CI、更新自动续作。完整P6.5继续；未实现范围不能删除。
 
 执行证据：产品aef9b257，单次最终review两Important经五RED修复，四正常控制；完整CUDA1778/core311与pip312各1490、interpret4、boundedCPP1、118源码外wheel、900串行观测通过。见[验收](../../benchmarks/p65-initial-pair-acceptance.md)及其工程/审阅链接。最后交付项在push及自动续作更新后核对，不以旧CI代替新head。
+
+远程闭环：准确f259e69的CI40662503851/Documentation40662503807均success，见CI修复记录。

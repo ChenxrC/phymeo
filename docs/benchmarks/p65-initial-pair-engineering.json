@@ -173,7 +173,7 @@
     "Warp_measured": false
   },
   "ci": {
-    "status": "delivery_failed_ubuntu_fixture_repair_pending_exact_head",
+    "status": "repaired_delivery_verified_success",
     "previous_head": "eb4010ac44ef63e020b0bac2dbdc4d1ecc921739",
     "previous_CI": {
       "id": 40644899057,
@@ -192,7 +192,18 @@
       "id": 40654507845,
       "conclusion": "success"
     },
-    "repair": "p65-initial-pair-ci-repair.md"
+    "repair": "p65-initial-pair-ci-repair.md",
+    "repaired_delivery": {
+      "head_sha": "f259e690946c612a93a793989ee1e5b50d3995e8",
+      "CI": {
+        "id": 40662503851,
+        "conclusion": "success"
+      },
+      "Documentation": {
+        "id": 40662503807,
+        "conclusion": "success"
+      }
+    }
   },
   "not_claimed": [
     "cloth material bidirectional contact",

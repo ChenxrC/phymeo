@@ -50,7 +50,7 @@
 
 ## 2026-10-28 续作：Ubuntu CI修复与材料反例
 
-937ca59的CI现确认四个Ubuntu CPU失败；文档成功。失败由安全注释定位到仿射回归测试。邻近最后位框架使固定样本的误差落到原tol内，测试却仍要求拒绝；2RED后修复测试前提，产品算法与tol不变。见[CI修复证据](benchmarks/p65-initial-pair-ci-repair.md)。Windows相关107及Ubuntu三个修复控制通过，新准确head的CI仍待核对；不重开旧物理审阅。
+937ca59的CI现确认四个Ubuntu CPU失败；文档成功。失败由安全注释定位到仿射回归测试。邻近最后位框架使固定样本的误差落到原tol内，测试却仍要求拒绝；2RED后修复测试前提，产品算法与tol不变。见[CI修复证据](benchmarks/p65-initial-pair-ci-repair.md)。Windows相关107及Ubuntu三个修复控制通过，准确修复head f259e69的CI40662503851与Documentation40662503807现均success；不重开旧物理审阅。
 
 材料接入前新增[NUM-005](legacy-issues/NUM-005-xpbd-material-path.md)和三模式12个原生探针：最终lambda*末梯度无法重建实际增量载荷；孤立硬边Lz有明确的步长相关损失，不能用自由节点的精确守恒合同直接套材料。实际投影路径记录设计已通过builder check，产品API尚未实现；先关闭CI，再TDD实现native路径证据，随后共同材料/接触原式。不是tyx缺陷，不宣称布接触完成。
 

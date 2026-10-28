@@ -501,3 +501,56 @@ def test_inner_physical_scales_cannot_be_silently_looser(field, value):
     with pytest.raises(ValueError, match="inner tolerance"):
         with runtime:
             runtime.step(state, inputs, 0.01)
+
+
+@pytest.mark.parametrize("h", [0.01, 0.005])
+@pytest.mark.parametrize("mu,acceleration", [(0.6, 0.0), (0.2, -5.81)])
+def test_two_second_robot_static_and_sliding_windows(h, mu, acceleration):
+    binding = contact(
+        indices=np.array([1]), normals=np.array([[1.0, 0, 0]]), friction=np.array([mu])
+    )
+    runtime, state, inputs = case(model=cartesian(), effort=[-20.0, 0.0], contacts=(binding,))
+    with runtime:
+        for k in range(1, round(2 / h) + 1):
+            result = runtime.step(state, inputs, h)
+            assert result.report.accepted, (k, result.report.reason)
+            state = result.state
+            np.testing.assert_allclose(
+                state.domains["robot"].q, [0, acceleration * h * h * k * (k + 1) / 2], atol=2e-9
+            )
+            np.testing.assert_allclose(
+                state.domains["robot"].v, [0, acceleration * h * k], atol=2e-9
+            )
+            np.testing.assert_allclose(
+                diag(result)["world_impulses"],
+                [[20 * h, (9.81 if mu == 0.6 else 4) * h, 0]],
+                atol=2e-9,
+            )
+    assert result.report.max_residual <= 1e-10
+
+
+def test_robot_contact_preserves_native_cloth_material_side_domain():
+    from test_tyx_robot_plane_contact import verify_material_side
+
+    verify_material_side("numpy")
+
+
+@pytest.mark.parametrize("h", [0.02, 0.01])
+def test_two_second_rotating_contact_matches_scalar_stop(h):
+    runtime, state, inputs = rotating_case()
+    previous = -0.3
+    previous_v = 1.0
+    with runtime:
+        for k in range(1, round(2 / h) + 1):
+            q = min(-0.3 + k * h, -0.2)
+            v = (q - previous) / h
+            expected = (1 / 3) * (v - previous_v) / np.sin(q)
+            result = runtime.step(state, inputs, h)
+            assert result.report.accepted, (k, result.report.reason)
+            state = result.state
+            np.testing.assert_allclose(state.domains["robot"].q, [q], atol=2e-9)
+            np.testing.assert_allclose(state.domains["robot"].v, [v], atol=2e-8)
+            np.testing.assert_allclose(
+                diag(result)["world_impulses"], [[0, expected, 0]], atol=3e-8
+            )
+            previous, previous_v = q, v

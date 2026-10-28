@@ -203,6 +203,37 @@ def check_particle_plane_contact():
     )
 
 
+def check_robot_plane_contact():
+    model, _ = phymeo.pendulum_chain(1)
+    base = phymeo.RobotProgram(model)
+    contact = phymeo.RobotPlaneContacts(
+        "robot",
+        np.array([0]),
+        np.array([[0.0, -0.5, 0]]),
+        np.array([[0.0, 1, 0]]),
+        np.array([-0.5 * np.cos(0.35)]),
+        np.zeros(1),
+    )
+    program = phymeo.RobotPlaneContactProgram(base.scene, base, (contact,))
+    state = phymeo.SceneState({"robot": phymeo.RobotState(np.array([0.35]), np.zeros(1))})
+    inputs = phymeo.SceneInputs({"robot": phymeo.RobotInputs.zeros(1)})
+    with phymeo.SceneStepper(
+        base.scene,
+        program,
+        phymeo.StepSettings(substeps=1, tolerance=1e-10),
+        registry=program.registry,
+    ) as runtime:
+        result = runtime.step(state, inputs, 0.01)
+    if not result.report.accepted:
+        raise RuntimeError("Installed robot-plane contact failed")
+    np.testing.assert_allclose(result.state.domains["robot"].q, [0.35], atol=2e-10)
+    np.testing.assert_allclose(
+        result.report.substeps[0].diagnostics["robot_plane_contact"]["world_impulses"],
+        [[0, 0.04905, 0]],
+        atol=2e-9,
+    )
+
+
 def main():
     installed = Path(phymeo.__file__).resolve()
     if not installed.is_relative_to(Path(sys.prefix).resolve()):
@@ -380,6 +411,7 @@ def main():
     check_offset_attachment()
     check_load_replay()
     check_particle_plane_contact()
+    check_robot_plane_contact()
     for name in (
         "TyxRobotParticipant",
         "TyxClothParticipant",

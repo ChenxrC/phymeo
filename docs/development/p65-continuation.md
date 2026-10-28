@@ -18,6 +18,10 @@
 | 法向＋摩擦联合冲量 | [contact_impulse](../../src/phymeo/constraints/contact_impulse.py) | 共点、固定构型、零恢复；实际候选逐域审计后才返回 |
 | 有限驱动核心 | [bounded_pd](../../src/phymeo/control/bounded_pd.py) | 主机求自由预测effort；完整目标/IK/限速/history/接触稳定性未实现 |
 
+## 总目标与切片边界
+
+当前材料接触验收只是P6.5中间切片。后续几何/CCD→弯曲/自碰撞→有限驱动单爪承重及低摩擦失败→双臂交接放台→同源Three.js，均已获用户持续授权，不等用户逐项重发请求。按[总进度阶段表](../progress.md)和[双臂总验收](../superpowers/plans/2026-10-27-dual-arm-cloth-handoff-milestone.md)推进；前一切片验收/推送闭环后自动进入下一项详细设计与TDD实施。阶段review只审该阶段，不重开已关闭审阅。完整物理/回放/重复与数值/工程门槛全部通过才complete并停止续跑，不以单个solver或测试进度代替总进度。
+
 ## 当前立即续作
 
 **材料接触主体已实现，继续工程验收，不重做设计、原型或已关闭审阅。** 本地产品`0657c98`，124源码hash`b56bafcac102b696ebf1a180bb2946bd7ab2a8d103b9a3a4b6bffc5a85645dce`。读[设计](../superpowers/specs/2026-10-28-p65-material-contact-design.md)、[计划](../superpowers/plans/2026-10-28-p65-material-contact.md)、[阶段验收](../benchmarks/p65-material-contact-acceptance.md)与[唯一review](../benchmarks/p65-material-contact-review.md)。具体运行句柄见本计划`.superpowers/sdd` ledger；不要重复启动已有进程。
@@ -26,21 +30,23 @@
 
 新程序仅初态闭合全动态距离材料；精确原式/物理门禁不修改native积分，末分离仍允许。为了持续窗口收敛，首个合格候选后在原outer预算内细化并保留完整最佳native trial；无gap反馈/位置修补/改tol，全replay计数。NUM-005本征损失只被固定预算约束，未修积分器。一般几何、CCD、弯曲、自碰撞、有限驱动夹持、双臂流程仍后续。
 
+## 已交付阶段与历史交接（只供溯源，不作为当前待办）
+
 第13项有限基础[生产材料账本](../benchmarks/p65-material-ledger-acceptance.md)已完成本地验收，产品07b23d6、122源码，完整CUDA1894/两CPU各1565、interpret+核心67、boundedCPP1、Ubuntu43和源码外wheel通过，900次串行观测完成。唯一review的1Important1Minor经12RED修复，不重审；精确FP32输出检查保留fixed host位置例外，空域报告保持(N,3)。本地失败的默认pytest临时目录权限尝试已记录，同源码独立basetemp全量重跑通过。
 
-**最新下一步是新的材料接触outer，不能再把MaterialPathLedger列为未实现。** 先冻结M0/b0/J0、相反输入各一次、材料真实速度/末几何及能量外功、离散角动量/步长门槛；预先指定三角布/单关节相反输入仅证明账本，不是求接触。FreeParticleLedger保留；NUM-005原离散损失与TYX-003 C++长期仍开放。之后才几何建立/分离/切换/CCD、弯曲自碰撞、有限单爪/低mu滑落、目标IK/history与真实双臂/同源Three.js。以下旧切片记录用于溯源，不重做已验收功能或旧review。准确249234a的CI40687305106及Documentation40687305085均success，账本交付框已关闭；不再重做此阶段。
+**历史后续计划：当时拟实现材料接触outer；该程序现已实现，当前工作以顶部验收队列为准。** 先冻结M0/b0/J0、相反输入各一次、材料真实速度/末几何及能量外功、离散角动量/步长门槛；预先指定三角布/单关节相反输入仅证明账本，不是求接触。FreeParticleLedger保留；NUM-005原离散损失与TYX-003 C++长期仍开放。之后才几何建立/分离/切换/CCD、弯曲自碰撞、有限单爪/低mu滑落、目标IK/history与真实双臂/同源Three.js。以下旧切片记录用于溯源，不重做已验收功能或旧review。准确249234a的CI40687305106及Documentation40687305085均success，账本交付框已关闭；不再重做此阶段。
 
 上一准确f259e69的CI40662503851与Documentation40662503807已success，旧自由节点计划交付框已关闭，不重做该修复。材料路径准确交付69b866a的CI40671540301与Documentation40671540325现均success，[材料路径实施计划](../superpowers/plans/2026-10-28-p65-material-path.md)最后交付框已关闭。
 
 第12项有限基础[原生材料路径](../benchmarks/p65-material-path-acceptance.md)已实现，产品dc245f7/120文件hash09a3bd9819cb75fdf5bf463adea9397c452cf07365039707e11a5e057c91d624。修复后CUDA1827、两CPU各1522、interpret+核心47、C++短4、Ubuntu30、源码外wheel120和1800次串行观测通过。一次fresh审阅1Important经5RED修复，不再重审或重做原探针。零分母方向为无施加方向的零哨兵；tyx真实设备FP32记录升FP64，不是host反算。
 
-下一切片：冻结并TDD实现生产共同材料账本，独立认证原input→prediction→逐边材料→速度重建；完整记录转换/舍入、固定点host恢复、额外load边界，不能只检查帧格式。结合完整replay候选冻结接触相反输入各一次、M0/b0/J0作用点与最终几何。先用未固定两节点/小三角、单关节和共享多点独立线角动量/材料能量外功、低mu和失败事务例，明确原离散角动量损失及步长门槛；记录没有修复NUM-005，不能当无关遗留跳过。不得删除FreeParticleLedger以把材料当黑盒放行。
+当时后续计划（非当前待办）：冻结并TDD实现生产共同材料账本，独立认证原input→prediction→逐边材料→速度重建；完整记录转换/舍入、固定点host恢复、额外load边界，不能只检查帧格式。结合完整replay候选冻结接触相反输入各一次、M0/b0/J0作用点与最终几何。先用未固定两节点/小三角、单关节和共享多点独立线角动量/材料能量外功、低mu和失败事务例，明确原离散角动量损失及步长门槛；记录没有修复NUM-005，不能当无关遗留跳过。不得删除FreeParticleLedger以把材料当黑盒放行。
 
 先读[步初双向接触验收](../benchmarks/p65-initial-pair-acceptance.md)、[工程JSON](../benchmarks/p65-initial-pair-engineering.json)和[冻结合同](../superpowers/specs/2026-10-28-p65-initial-robot-node-design.md)。第11项有限基础InitialRobotNodeContactProgram已完成；产品aef9b257，118源码文件。完整CUDA1778、两个CPU核心环境各1490、interpret4、C++有限短例1、源码外wheel及900次串行观测通过。一次fresh审阅2Important经五RED修复并补四正常控制，不再次派审阅或重写本切片。
 
 初态节点与机器人局部平面闭合，步初J0/共点冲量求积，原native机器人和自由节点完整重放，末非穿透独立检查。移动Py与独立单转子真实整步Lz已经验证，不能扩为任意多关节世界守恒证明。最终实际材料速度另有诊断，不能当成步初求积速度。初态开放/超容差穿透拒绝；切向共同运动仍可能造成末曲面穿透并显式拒绝，因此尚不支持自动新接触或持续旋转夹持。旧[最终J1候选反例](p65-robot-node-candidate.md)仍有效，不能再用被否定路线。
 
-**下一切片：接触粒子域的材料共同账本。** 当前FreeParticleLedger明确要求所选域全动态、遵守自由节点方程；只有独立旁域可有材料。需先从实际XPBD材料位置修正、速度重建与内力/冲量推导同域接触账本，独立核对机器人/全布线与角动量、材料能量/外功以及反作用只记一次。先用未固定两节点/小三角材料、单关节/同域多接触、低mu与失败事务做反例，再扩展。不能删除自由节点原式门禁后直接把材料当黑盒通过；需要新的明确合同。随后几何生成/接触建立与分离/特征切换和保守CCD，才接持续旋转单爪。
+**当时后续计划（非当前待办）：接触粒子域的材料共同账本。** 当前FreeParticleLedger明确要求所选域全动态、遵守自由节点方程；只有独立旁域可有材料。需先从实际XPBD材料位置修正、速度重建与内力/冲量推导同域接触账本，独立核对机器人/全布线与角动量、材料能量/外功以及反作用只记一次。先用未固定两节点/小三角材料、单关节/同域多接触、低mu与失败事务做反例，再扩展。不能删除自由节点原式门禁后直接把材料当黑盒通过；需要新的明确合同。随后几何生成/接触建立与分离/特征切换和保守CCD，才接持续旋转单爪。
 
 修复后的完整接触原式使用真实node速度/J0v/世界冲量的有理投影与sqrt包络；共享仿射门禁同时检查matmul与sum实际求值，初末gap独立保守验收。NUM-004记录限制，若目标场景触发需修复，不能放宽tol；不代表无限精度三角函数或全部M/b误差证明。PERF-013仅观测，无新tyx缺陷。Windows C++长期TYX-003仍开放。
 

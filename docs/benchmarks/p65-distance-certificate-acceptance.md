@@ -1,6 +1,6 @@
 # P6.5 静态凸特征距离证书验收
 
-状态2026-10-29：第15项有限基础已完成本地验收，准确远程交付待闭环。产品修复`2838c90`，测试标记修复后验收快照`6a9a81b`；125文件源码hash `4079424eeaed5a2ca307c42af4f3a13f014231e5c0e8a743e7c1b2bc31260e04`。详见[工程记录](p65-distance-certificate-engineering.json)、[唯一审阅与裁定](p65-distance-certificate-review.md)、[设计](../superpowers/specs/2026-10-29-p65-distance-certificate-design.md)。
+状态2026-10-29：第15项有限基础已验收并交付：准确e63a1bf远程SHA一致，CI40748652046及Documentation40748652139均success。产品修复`2838c90`，测试标记修复后验收快照`6a9a81b`；125文件源码hash `4079424eeaed5a2ca307c42af4f3a13f014231e5c0e8a743e7c1b2bc31260e04`。详见[工程记录](p65-distance-certificate-engineering.json)、[唯一审阅与裁定](p65-distance-certificate-review.md)、[设计](../superpowers/specs/2026-10-29-p65-distance-certificate-design.md)。
 
 ## 已验收能力
 

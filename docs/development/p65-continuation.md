@@ -28,9 +28,9 @@
 
 ## 当前立即续作
 
-静态距离证书Task1及本地工程已完成，先核对新交付SHA/CI并关闭[计划](../superpowers/plans/2026-10-29-p65-distance-certificate.md)最后交付框。读[验收](../benchmarks/p65-distance-certificate-acceptance.md)、[工程](../benchmarks/p65-distance-certificate-engineering.json)和[唯一review](../benchmarks/p65-distance-certificate-review.md)。最终产品2838c90、测试快照6a9a81b，125源码hash4079424eeaed5a2ca307c42af4f3a13f014231e5c0e8a743e7c1b2bc31260e04。无仍运行数值/审阅进程，不重启旧pipeline或重复900观测/已关闭review。
+静态距离证书Task1及本地工程已完成，准确e63a1bf远程SHA及CI40748652046/Documentation40748652139均success，已关闭[计划](../superpowers/plans/2026-10-29-p65-distance-certificate.md)最后交付框。读[验收](../benchmarks/p65-distance-certificate-acceptance.md)、[工程](../benchmarks/p65-distance-certificate-engineering.json)和[唯一review](../benchmarks/p65-distance-certificate-review.md)。最终产品2838c90、测试快照6a9a81b，125源码hash4079424eeaed5a2ca307c42af4f3a13f014231e5c0e8a743e7c1b2bc31260e04。无仍运行数值/审阅进程，不重启旧pipeline或重复900观测/已关闭review。
 
-两CPU修复前完整各1695/2skip/338未选，最终相关各174；Ubuntu最终host89、actualinterpret/CUDA各2、最终125文件源码外wheel均过。一次review 0Critical0Important1Minor经6RED修复method可变别名；另补tyx标记。最终900host串行计量成功，PERF-017只记录。新head准确远程交付待核对，具体状态以工程JSON为准。
+两CPU修复前完整各1695/2skip/338未选，最终相关各174；Ubuntu最终host89、actualinterpret/CUDA各2、最终125文件源码外wheel均过。一次review 0Critical0Important1Minor经6RED修复method可变别名；另补tyx标记。最终900host串行计量成功，PERF-017只记录。该阶段准确远程交付已闭环，直接推进下一项线性整段净距认证设计/计划，不重做此阶段。
 
 旧材料接触9e0a432的CI40734015151及Documentation40734015075均success，已闭环；1950CUDA与900重放观测等证据保持原版本，不重做。NUM-005、TYX-003、TYX-004仍开放，不把静态证书当修复这些问题。
 

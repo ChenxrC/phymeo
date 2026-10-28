@@ -46,6 +46,6 @@
 - [x] 主agent核对Task1 spec覆盖，派一次fresh最终code review，Critical/Important按独立RED修复，不再派第二轮。保留原始失败、适用范围与CPU/host定位。
 - [x] 必要core311/nativepip回归、Ubuntu新核心、ruff/docs/边界/compile、锁文件导出一致、源码外wheel；实际tyx薄集成单独记录。选测与未执行必须明示，不复用旧全量计数冒充新结果。
 - [x] 数值和review探针退出后串行计量独立证书；若含closest见证生成，分开报告。样本/批次/精度/源码与脚本hash固定，观察极端输入成本，不做优化/不归因tyx/不声明Warp差距。
-- [ ] 更新能力“静态距离证书已验收”与案例“动态接触/CCD尚未接入”两栏，commit/push并核对精确SHA/CI；下一任务必须继续接触生命周期/厚度侧/特征/history和连续路径，不把总目标改成只交数学工具。
+- [x] 更新能力“静态距离证书已验收”与案例“动态接触/CCD尚未接入”两栏，commit/push并核对精确SHA/CI；下一任务必须继续接触生命周期/厚度侧/特征/history和连续路径，不把总目标改成只交数学工具。
 
-计划自查：spec接口/支持组合/错误与最紧包围/退化/所有权、两独立场景、精度攻击、薄事务和后端声明分别落入Task1；工程/性能/交接落入Task2。builder已返回nothing important left。Task1及Task2前三项已完成本地验收；最后准确远程交付项待核对新SHA/CI，见阶段acceptance/engineering/review。
+计划自查：spec接口/支持组合/错误与最紧包围/退化/所有权、两独立场景、精度攻击、薄事务和后端声明分别落入Task1；工程/性能/交接落入Task2。builder已返回nothing important left。Task1及Task2前三项已完成本地验收；准确e63a1bf远程SHA一致，CI40748652046/Documentation40748652139均success，最后交付框已闭环。

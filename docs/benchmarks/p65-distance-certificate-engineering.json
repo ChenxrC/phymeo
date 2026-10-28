@@ -1,5 +1,5 @@
 {
-  "status": "local_accepted_pending_exact_remote_ci",
+  "status": "delivered_exact_remote_ci_success",
   "source": {
     "git_revision": "6a9a81b7913832f09b08c6019fd5e269ba77d54e",
     "git_dirty": false,
@@ -154,9 +154,15 @@
     "old closed reviews"
   ],
   "delivery": {
-    "head": null,
-    "remote_sha": null,
-    "ci": null,
-    "documentation": null
+    "head": "e63a1bf9e30c306d84e52ed4362f5ea23801d021",
+    "remote_sha": "e63a1bf9e30c306d84e52ed4362f5ea23801d021",
+    "ci": {
+      "id": 40748652046,
+      "conclusion": "success"
+    },
+    "documentation": {
+      "id": 40748652139,
+      "conclusion": "success"
+    }
   }
 }

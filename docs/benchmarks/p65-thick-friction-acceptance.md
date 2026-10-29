@@ -1,6 +1,6 @@
 # 有限厚度棱柱与有限面摩擦验收
 
-修复产品 `33ec9ea`（I2 `e8c821d`）、最终报告 `a59182a` 已提交并释放数值/index。唯一 fresh review 的 0 Critical / 2 Important / 0 Minor 已由原实现者定向修复，父核对关闭。修复版实际 tyx interpret/CUDA 各 10 项通过；父 C++ 短例、构建和源码外 wheel 均已通过，新产品尚待推送与准确 CI。
+修复产品 `33ec9ea`（I2 `e8c821d`）、最终报告 `a59182a` 已提交并释放数值/index。唯一 fresh review 的 0 Critical / 2 Important / 0 Minor 已由原实现者定向修复，父核对关闭。修复版实际 tyx interpret/CUDA 各 10 项通过；父 C++ 短例、构建和源码外 wheel 均已通过，产品5150c3e已推送，准确CI因CPU任务超时取消，交付尚未通过。
 
 依据：[冻结合同](../superpowers/specs/2026-10-29-p65-thick-friction-design.md)、[选测计划](../superpowers/plans/2026-10-29-p65-thick-friction.md)、[验收政策](../development/p65-validation-policy.md)、[工程证据](p65-thick-friction-engineering.json)、[唯一审阅](p65-thick-friction-review.md)。
 
@@ -35,6 +35,12 @@ Host 7 passed/13.10s、后段及事务 17 passed/433.27s、actual interpret 10 p
 
 ## 尚待交付
 
-唯一 review 两项发现已关闭；实际 C++ 短例、build、源码外新 native-pip 环境按未变 runtime.lock 安装及完整 installed smoke 均已通过，三个 raw exit 为 0。C++ 短例实际完成 52 launch、FP32 断言通过；153 个 wheel 源码文件由父独立逐字节复核相同，wheel SHA256 `7298fd1e2ff7429c8ff8a1cd0edf1f56b93840654bbb0497e12cfb011a359d68`。runner 墙钟分别 34.9892111 / 2.7996965 / 14.7534786 s，是工程耗时而非 pytest 或正式性能。工程前后冻结摘要相同。下一步推送专用分支并核对该 SHA 的准确 CI。合同 `6e818f5` 的两项 CI 已成功，但不代表新产品 CI。
+唯一 review 两项发现已关闭；实际 C++ 短例、build、源码外新 native-pip 环境按未变 runtime.lock 安装及完整 installed smoke 均已通过，三个 raw exit 为 0。C++ 短例实际完成 52 launch、FP32 断言通过；153 个 wheel 源码文件由父独立逐字节复核相同，wheel SHA256 `7298fd1e2ff7429c8ff8a1cd0edf1f56b93840654bbb0497e12cfb011a359d68`。runner 墙钟分别 34.9892111 / 2.7996965 / 14.7534786 s，是工程耗时而非 pytest 或正式性能。工程前后冻结摘要相同。5150c3e已推送且远程SHA相同；其准确CI40950637127的8个CPU任务30分钟超时取消，required失败，Documentation40950637280成功。合同 `6e818f5` 的两项 CI 已成功，但不代表新产品 CI。
 
 本切片不完成 H1。一般机器人、弯曲/自碰撞、真实有限驱动单爪承重/低μ滑落、IK/双臂交接放台和同源 Three.js 仍须推进。NUM005、TYX003、TYX004 仍开放；此阶段没有正式性能测量。
+
+## 远程 CI 时限阻塞
+
+产品 `5150c3e` 已推送并核对远程 SHA。准确 CI `40950637127` 已结束为 cancelled：8 个 CPU 矩阵任务均由 GitHub 确认超过现有 30 分钟时限，required 因 CPU 未成功而 failure；Documentation `40950637280` success。不能计为产品交付通过。已准备仅将 CPU job 时限 30→90 分钟的补丁，完整矩阵、测试和 required 门槛不变；因现行政策冻结 CI 配置，等待用户批准该例外，尚未修改 workflow。不得盲重试同配置、重跑本地已过集合或推进下一生产合同。
+
+原始最小元数据及仅分类诊断分别留在 `artifacts/ci-5150c3e-checkpoint.json`、`ci-5150c3e-cancellation-metadata.json`、`ci-5150c3e-cancellation-classification.json`。未公开完整断言、参数或日志。该诊断只证明时限取消，既不证明数值断言失败，也不证明未完成的全量测试通过。建议补丁 `artifacts/ci-cpu-timeout-90m-proposal.patch` 仅变更一个运行时限和解释注释，未应用。

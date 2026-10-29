@@ -1,6 +1,8 @@
 # P6.5 综合案例的续作入口
 
-当前厚度阶段唯一审阅已结束，0Critical/2Important/0Minor：侧接触 signed gap 和独立映射合力审核均已在 e8c821d / 33ec9ea 定向修复并由父核对关闭，详见[审阅记录](../benchmarks/p65-thick-friction-review.md)。修复前数值证据保留原版本；修复版 interpret/CUDA 各10项已过，C++/wheel工程已通过，产品推送/准确CI待，不重复fresh review。
+产品 `5150c3e` 已推送并核对远程 SHA。准确 CI `40950637127` 已结束为 cancelled：8 个 CPU 矩阵任务均由 GitHub 确认超过现有 30 分钟时限，required 因 CPU 未成功而 failure；Documentation `40950637280` success。不能计为产品交付通过。已准备仅将 CPU job 时限 30→90 分钟的补丁，完整矩阵、测试和 required 门槛不变；因现行政策冻结 CI 配置，等待用户批准该例外，尚未修改 workflow。不得盲重试同配置、重跑本地已过集合或推进下一生产合同。
+
+当前厚度阶段唯一审阅已结束，0Critical/2Important/0Minor：侧接触 signed gap 和独立映射合力审核均已在 e8c821d / 33ec9ea 定向修复并由父核对关闭，详见[审阅记录](../benchmarks/p65-thick-friction-review.md)。修复前数值证据保留原版本；修复版 interpret/CUDA 各10项已过，C++/wheel工程已通过，产品已推送，准确CI因CPU任务30分钟超时取消，交付待处理，不重复fresh review。
 
 状态日期2026-10-28。P6已完整验收；P6.5原六项基础加厚度材料点端口共七项已完成本地验收，详见[本窗口交付](../benchmarks/p65-window-delivery.md)。**实际双臂递布、综合碰撞与Three.js尚未交付。** 旧用户窗口截止08:00北京时间；用户现已明确恢复P6.5开发，本轮没有指定新截止。
 
@@ -30,7 +32,7 @@
 
 ## 当前立即续作
 
-有限厚度摩擦唯一审阅两项发现已在e8c821d/33ec9ea修复，最终报告a59182a；父核对307source/tests/scripts和73证据文件hash均相同，摘要cd6d77917dee8af09f13a430f4fdd4a5b744461874364a142aff0d8e6722d84b。先读[验收](../benchmarks/p65-thick-friction-acceptance.md)、[工程](../benchmarks/p65-thick-friction-engineering.json)、[审阅](../benchmarks/p65-thick-friction-review.md)及SDD task-1-review-fixes.md。实现者/reviewer已退出，父唯一工程session75126已exit0，tag33ec9ea-a短CPP/build/源码外wheel三步全部成功，153源码逐字节匹配，禁止重复启动。修复版host7+17、实际interpret10/CUDA10全部exit0；原版本长窗按版本复用。R4diagonal可达性限制明确保留，不称任意点收敛。父已独立核对全部exit/源码wheel/前后摘要，下一步commit/push并核对准确产品CI；文档形成时尚未push新产品，不以合同6e818f5成功替代。
+有限厚度摩擦唯一审阅两项发现已在e8c821d/33ec9ea修复，最终报告a59182a；父核对307source/tests/scripts和73证据文件hash均相同，摘要cd6d77917dee8af09f13a430f4fdd4a5b744461874364a142aff0d8e6722d84b。先读[验收](../benchmarks/p65-thick-friction-acceptance.md)、[工程](../benchmarks/p65-thick-friction-engineering.json)、[审阅](../benchmarks/p65-thick-friction-review.md)及SDD task-1-review-fixes.md。实现者/reviewer已退出，父唯一工程session75126已exit0，tag33ec9ea-a短CPP/build/源码外wheel三步全部成功，153源码逐字节匹配，禁止重复启动。修复版host7+17、实际interpret10/CUDA10全部exit0；原版本长窗按版本复用。R4diagonal可达性限制明确保留，不称任意点收敛。父已独立核对全部exit/源码wheel/前后摘要，5150c3e已push，准确产品CI超时取消；现先处理上方CI时限决定，不以合同6e818f5成功替代。
 
 ### 历史已交付阶段（不重跑）
 

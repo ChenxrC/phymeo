@@ -1,6 +1,8 @@
 # 开发进度
 
-当前厚度阶段唯一审阅已结束，0Critical/2Important/0Minor：侧接触 signed gap 和独立映射合力审核均已在 e8c821d / 33ec9ea 定向修复并由父核对关闭，详见[审阅记录](benchmarks/p65-thick-friction-review.md)。修复前数值证据保留原版本；修复版 interpret/CUDA 各10项已过，C++/wheel工程已通过，产品推送/准确CI待，不重复fresh review。
+产品 `5150c3e` 已推送并核对远程 SHA。准确 CI `40950637127` 已结束为 cancelled：8 个 CPU 矩阵任务均由 GitHub 确认超过现有 30 分钟时限，required 因 CPU 未成功而 failure；Documentation `40950637280` success。不能计为产品交付通过。已准备仅将 CPU job 时限 30→90 分钟的补丁，完整矩阵、测试和 required 门槛不变；因现行政策冻结 CI 配置，等待用户批准该例外，尚未修改 workflow。不得盲重试同配置、重跑本地已过集合或推进下一生产合同。
+
+当前厚度阶段唯一审阅已结束，0Critical/2Important/0Minor：侧接触 signed gap 和独立映射合力审核均已在 e8c821d / 33ec9ea 定向修复并由父核对关闭，详见[审阅记录](benchmarks/p65-thick-friction-review.md)。修复前数值证据保留原版本；修复版 interpret/CUDA 各10项已过，C++/wheel工程已通过，产品已推送，准确CI因CPU任务30分钟超时取消，交付待处理，不重复fresh review。
 
 2026-10-29用户要求减少重复长回归：后续执行[按影响范围分层验收](development/p65-validation-policy.md)，日常只测受影响关键集合，新能力必要物理/事务测例完整验收一次，整分支全量留给公共底层改动和集成里程碑。正式大样本性能不再每个小切片必跑，整体P6.5门槛不减。当前摩擦完整CUDA已2307通过6196.34s，两CPU、Ubuntu、有界CPP、wheel均已退出0，三模式900计量也已完成并独立核对；7960b47远程SHA一致，准确CI40843093401与Documentation40843093367均completed success，有限摩擦交付已闭环。
 

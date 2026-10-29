@@ -1,6 +1,8 @@
 # P6.5 框架能力与子 agent 交付规则
 
-当前厚度阶段唯一审阅已结束，0Critical/2Important/0Minor：侧接触 signed gap 和独立映射合力审核均已在 e8c821d / 33ec9ea 定向修复并由父核对关闭，详见[审阅记录](../benchmarks/p65-thick-friction-review.md)。修复前数值证据保留原版本；修复版 interpret/CUDA 各10项已过，C++/wheel工程已通过，产品推送/准确CI待，不重复fresh review。
+产品 `5150c3e` 已推送并核对远程 SHA。准确 CI `40950637127` 已结束为 cancelled：8 个 CPU 矩阵任务均由 GitHub 确认超过现有 30 分钟时限，required 因 CPU 未成功而 failure；Documentation `40950637280` success。不能计为产品交付通过。已准备仅将 CPU job 时限 30→90 分钟的补丁，完整矩阵、测试和 required 门槛不变；因现行政策冻结 CI 配置，等待用户批准该例外，尚未修改 workflow。不得盲重试同配置、重跑本地已过集合或推进下一生产合同。
+
+当前厚度阶段唯一审阅已结束，0Critical/2Important/0Minor：侧接触 signed gap 和独立映射合力审核均已在 e8c821d / 33ec9ea 定向修复并由父核对关闭，详见[审阅记录](../benchmarks/p65-thick-friction-review.md)。修复前数值证据保留原版本；修复版 interpret/CUDA 各10项已过，C++/wheel工程已通过，产品已推送，准确CI因CPU任务30分钟超时取消，交付待处理，不重复fresh review。
 
 2026-10-29验收频率更新：按[分层验收规则](p65-validation-policy.md)为每个子agent冻结受影响集合；新能力的两个独立场景和全部必要失败/物理门槛保持，避免把未改旧功能全量和正式900计量复制到每个小切片。
 

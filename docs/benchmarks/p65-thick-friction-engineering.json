@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "stage": "p65-thick-friction",
-  "status": "local_acceptance_complete_pending_push_and_exact_ci",
+  "status": "local_acceptance_complete_product_ci_cancelled_timeout",
   "base": "6e818f574d097ce415940289a58847d4c8ba49fb",
   "product_head": "33ec9ea52dc15ee5b8050adb0a73d1591aea11f5",
   "implementation_report_head": "a59182aae19b1caa8020e3802bce6f6756ad5fac",
@@ -973,13 +973,41 @@
     "parent_frozen_digest_after": "cd6d77917dee8af09f13a430f4fdd4a5b744461874364a142aff0d8e6722d84b"
   },
   "delivery": {
-    "status": "pending_push_and_exact_ci",
-    "product_ci": null,
+    "status": "pushed_ci_cancelled_pending_timeout_exception",
+    "product_ci": {
+      "head": "5150c3efb12cfdcf81dea2923ff627c7915ca036",
+      "ci": 40950637127,
+      "ci_status": "completed",
+      "ci_conclusion": "cancelled",
+      "documentation": 40950637280,
+      "documentation_conclusion": "success",
+      "required_conclusion": "failure",
+      "checked_at_utc": "2026-10-29T21:32:28.003058+00:00",
+      "checkpoint": "artifacts/ci-5150c3e-checkpoint.json"
+    },
     "contract_ci_only": {
       "head": "6e818f574d097ce415940289a58847d4c8ba49fb",
       "ci": 40909862598,
       "documentation": 40909862611,
       "conclusion": "success"
+    },
+    "pushed_head": "5150c3efb12cfdcf81dea2923ff627c7915ca036",
+    "remote_sha_verified": true,
+    "timeout_diagnosis": {
+      "cpu_matrix_jobs": 8,
+      "all_execution_timeout_markers_confirmed": true,
+      "timeout_minutes": 30,
+      "metadata": "artifacts/ci-5150c3e-cancellation-metadata.json",
+      "classification": "artifacts/ci-5150c3e-cancellation-classification.json",
+      "test_failure_or_pass_not_inferred": true
+    },
+    "proposed_resolution": {
+      "status": "awaiting_user_exception_to_ci_configuration_freeze",
+      "cpu_timeout_minutes": 90,
+      "patch": "artifacts/ci-cpu-timeout-90m-proposal.patch",
+      "workflow_modified": false,
+      "matrix_tests_and_required_unchanged": true,
+      "no_same_configuration_retry": true
     }
   },
   "limits": [

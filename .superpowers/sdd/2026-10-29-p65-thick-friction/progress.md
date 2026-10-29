@@ -2,7 +2,7 @@
 
 ## Current review and repair status
 
-Sole fresh review completed: 0 Critical / 2 Important / 0 Minor. Main verified I1 selected supporting feature gap and I2 independent force/impulse-weighted mapping audit against frozen contract and probes. Both closed by main after e8c821d/33ec9ea directed repairs and a59182a evidence handoff, no second fresh review. Reviewer released numerical slot, 0 probe processes. Parent engineering session75126 completed exit0, tag33ec9ea-a all three steps passed: boundedCPP52launch/FP32, build, external fresh native-pip full smoke. Wheel153source byte parity independently checked; digest unchanged. Never duplicate. Push/exact-product-CI pending. Previous product evidence remains versioned.
+Sole fresh review completed: 0 Critical / 2 Important / 0 Minor. Main verified I1 selected supporting feature gap and I2 independent force/impulse-weighted mapping audit against frozen contract and probes. Both closed by main after e8c821d/33ec9ea directed repairs and a59182a evidence handoff, no second fresh review. Reviewer released numerical slot, 0 probe processes. Parent engineering session75126 completed exit0, tag33ec9ea-a all three steps passed: boundedCPP52launch/FP32, build, external fresh native-pip full smoke. Wheel153source byte parity independently checked; digest unchanged. Never duplicate. Product5150c3e pushed; exact CI40950637127 cancelled by 30-minute CPU timeouts, Documentation40950637280 success. Delivery remains open. Previous product evidence remains versioned.
 
 ## Task1 pre-review status
 
@@ -63,3 +63,7 @@ Reviewfix33ec9ea/e8c821d: host-tail05 all17passed433.27s exit0; sixfaults and pr
 Actualinterpret05 10passed134.13s exit0;13same-run actual C state/fullhistory audit exit0 maxerror1.88350677e-6<=2e-5, FP32/force/budgets/CCD passed. Starting actualCUDA05 identical10source and verifiedpin, numeric/index retained; no CUDA result yet.
 
 Task1 review-fix implementation/verification COMPLETE: e8c821d(I2),33ec9ea(I1/R4), final307file cd6d7791/source153 df8c2ad9. Focusedhost7/13.10s+tail17/433.27s, actualinterpret10/134.13s+CUDA10/327.19s all exit0;26unaffected host03passes versioned reuse. Same-run39C actual state/fullhistory independent audits originaltol/budgets/FP32/force/CCD passed; probes/smoke/statics passed. Diagonal limitation and withdrawn new universal-convergence assertion retained, no epsilon/union. Final process inventory0; clean report commit releases production/numerical/index to main. Parent closes original findings and owns C++/wheel/CI/push; no second review or fullP6.5 completion claim.
+
+## Parent exact CI checkpoint
+
+产品 `5150c3e` 已推送并核对远程 SHA。准确 CI `40950637127` 已结束为 cancelled：8 个 CPU 矩阵任务均由 GitHub 确认超过现有 30 分钟时限，required 因 CPU 未成功而 failure；Documentation `40950637280` success。不能计为产品交付通过。已准备仅将 CPU job 时限 30→90 分钟的补丁，完整矩阵、测试和 required 门槛不变；因现行政策冻结 CI 配置，等待用户批准该例外，尚未修改 workflow。不得盲重试同配置、重跑本地已过集合或推进下一生产合同。

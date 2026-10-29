@@ -106,6 +106,78 @@ def _distance_bounds(vertices, x, weights, d):
     return lower, upper
 
 
+def _diagnostic_feature(vertices, exact_witness, rounded_local, node, ideal, actual):
+    """Classify only a label using the existing FK/inverse error enclosure.
+
+    Ideal FK is orthogonal, so world edge dot products and the exact local
+    Gram inverse enclose z*, the local planar projection of the stored node.
+    zhat is the exact planar projection of the actual rounded inverse input;
+    zs uses the actual stored FK vertices in that same exact Gram expression.
+    The two existing precision stages give E = ||zhat-zs|| + sup||zs-z*||.
+    This sum avoids assuming cancellation of the stored/inverse and ideal FK
+    errors. Convex projection is nonexpansive, so E also bounds the difference
+    of the exact _closest witness and ideal closest point. Directed rational
+    roots and squared edge comparisons add no epsilon or witness snapping.
+    """
+    a, b = _sub(vertices[1], vertices[0]), _sub(vertices[2], vertices[0])
+    aa, ab, bb = _dot(a, a), _dot(a, b), _dot(b, b)
+    determinant = aa * bb - ab * ab
+    if determinant <= 0:
+        raise SolverFailure("finite diagnostic projection Gram is unresolved")
+    origin = vertices[0]
+    raw = _sub(tuple(F(float(x)) for x in rounded_local), origin)
+    ru, rv = _dot(a, raw), _dot(b, raw)
+    uhat, vhat = (bb * ru - ab * rv) / determinant, (aa * rv - ab * ru) / determinant
+    zhat = tuple(origin[k] + a[k] * uhat + b[k] * vhat for k in range(3))
+    delta = tuple(sub(interval(x), y) for x, y in zip(node, ideal[0], strict=True))
+    world_a = tuple(sub(y, x) for x, y in zip(ideal[0], ideal[1], strict=True))
+    world_b = tuple(sub(y, x) for x, y in zip(ideal[0], ideal[2], strict=True))
+    ru, rv = idot(world_a, delta), idot(world_b, delta)
+    u = scale(sub(scale(ru, bb), scale(rv, ab)), 1 / determinant)
+    v = scale(sub(scale(rv, aa), scale(ru, ab)), 1 / determinant)
+    projected = tuple(
+        add(interval(origin[k]), add(scale(u, a[k]), scale(v, b[k]))) for k in range(3)
+    )
+    stored = tuple(tuple(coordinate[0] for coordinate in row) for row in actual)
+    stored_delta = _sub(tuple(F(float(x)) for x in node), stored[0])
+    stored_u = _dot(_sub(stored[1], stored[0]), stored_delta)
+    stored_v = _dot(_sub(stored[2], stored[0]), stored_delta)
+    u = (bb * stored_u - ab * stored_v) / determinant
+    v = (aa * stored_v - ab * stored_u) / determinant
+    zs = tuple(origin[k] + a[k] * u + b[k] * v for k in range(3))
+    inverse_error_squared = sum((x - y) ** 2 for x, y in zip(zhat, zs, strict=True))
+    fk_error_squared = sum(
+        max(abs(z - lo), abs(z - hi)) ** 2 for z, (lo, hi) in zip(zs, projected, strict=True)
+    )
+    error = sqrt_bounds(inverse_error_squared)[1] + sqrt_bounds(fk_error_squared)[1]
+    error_squared = error * error
+
+    near_vertices = set()
+    near_edges = []
+    for j, point in enumerate(vertices):
+        delta = _sub(exact_witness, point)
+        if _dot(delta, delta) <= error_squared:
+            near_vertices.add(j)
+        edge = _sub(vertices[(j + 1) % len(vertices)], point)
+        extent = _dot(edge, edge)
+        t = max(ZERO, min(F(1), _dot(delta, edge) / extent))
+        separation = tuple(x - t * e for x, e in zip(delta, edge, strict=True))
+        if _dot(separation, separation) <= error_squared:
+            near_edges.append(j)
+    if not near_edges:
+        return (1, 0)
+    common = set.intersection(*({j, (j + 1) % len(vertices)} for j in near_edges))
+    if not common or len(near_vertices) > 1 or (near_vertices and not near_vertices <= common):
+        raise SolverFailure("finite diagnostic topology unresolved: no unique common boundary")
+    if len(common) == 1:
+        return (3, common.pop())
+    if near_vertices:
+        return (3, near_vertices.pop())
+    if len(near_edges) == 1:
+        return (2, near_edges[0])
+    raise SolverFailure("finite diagnostic topology unresolved: no common feature")
+
+
 @dataclass(frozen=True)
 class PatchGeometry:
     local_point: np.ndarray
@@ -159,20 +231,13 @@ def patch_geometry(model, q, collider, node):
     )
     norm = np.hypot.reduce(node - world)
     normal = None if norm == 0 else _owned((node - world) / norm)
-    # Physical topology uses patch boundaries, never fan triangles. Exact
-    # boundary incidence of the local witness classifies canonical IDs.
+    # Diagnostic topology uses only physical patch boundaries, never fan
+    # seams. It cannot modify any physical witness, weight, normal or bound.
     v = tuple(tuple(F(float(x)) for x in row) for row in collider.local_vertices)
     exact_local = tuple(
         sum((w * a[k] for w, a in zip(weights, v, strict=True)), ZERO) for k in range(3)
     )
-    feature = (1, 0)
-    for j, a in enumerate(v):
-        if exact_local == a:
-            feature = (3, j)
-            break
-        e = _sub(v[(j + 1) % len(v)], a)
-        if not any(_cross(e, _sub(exact_local, a))):
-            feature = (2, j)
+    feature = _diagnostic_feature(v, exact_local, local, node, ideal, actual)
     n = _cross(_sub(v[1], v[0]), _sub(v[2], v[0]))
     side = _dot(n, _sub(tuple(F(float(a)) for a in local), v[0]))
     # The root-branch side is certified from the ideal plane, never guessed

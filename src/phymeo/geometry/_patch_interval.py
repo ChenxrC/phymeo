@@ -14,7 +14,11 @@ ZERO = F(0)
 
 
 def interval(x):
-    return (F(float(x)),) * 2
+    # Exact internal path samples are Fractions, not new FP64 endpoints.
+    # Rounding them through float can invalidate both primal upper and dual
+    # lower bounds. Stored floating inputs still denote their exact FP value.
+    value = x if isinstance(x, F) else F(float(x))
+    return (value, value)
 
 
 def add(a, b):

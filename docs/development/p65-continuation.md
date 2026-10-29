@@ -32,7 +32,7 @@
 
 两CPU各1945通过/362未选，完整CUDA2307通过6196.34s，Ubuntu新核心80通过223.65s、有界CPP1通过23.15s，quality/build和134源码外wheel全部exit0。NumPy/interpret/CUDA依次各300计时/306总调用，共900/918成功；只读汇总器artifacts/summarize_dynamic_friction_evidence.py最终exit0，全部退出码/源码脚本摘要/wheel逐文件/raw计数和中位P95独立核对。最终汇总artifacts/dynamic-friction-final-summary.json。
 
-摩擦已交付7960b47a644385b2cc768b662317dd2ca9327481，远程SHA一致，准确CI40843093401与Documentation40843093367均completed success，最后交付框已关闭；不再查询旧CI或重复任何已通过数值。有限特征/FK实现已提交736fb21/2e222d1，父已核对选测证据；唯一fresh review两项finding已由d6b302e修复闭环，父已完成外部wheel/有界CPP，session46580退出0，下一动作推送新产品并核对准确CI。此后顺序仍为弯曲/自碰撞、真实单爪、高低摩擦承重、目标IK/history、双臂交接放台和同源Three.js。
+摩擦已交付7960b47a644385b2cc768b662317dd2ca9327481，远程SHA一致，准确CI40843093401与Documentation40843093367均completed success，最后交付框已关闭；不再查询旧CI或重复任何已通过数值。有限特征/FK实现已提交736fb21/2e222d1，父已核对选测证据；唯一fresh review两项finding已由d6b302e修复闭环，父已完成外部wheel/有界CPP，session46580退出0，131855f已推送且远程SHA一致，准确CI40884138347/Documentation40884138390均success，交付闭环。下一动作冻结有限厚度摩擦/一般机器人集成合同，随后仍为弯曲/自碰撞、真实单爪、高低摩擦承重、目标IK/history、双臂交接放台和同源Three.js。
 
 优先执行用户2026-10-29最新[分层验收要求](p65-validation-policy.md)：后续小切片先写影响/选测清单，再派实现；不再例行两套本地CPU/整分支CUDA/900性能。新能力自身必要物理、步长/重复和事务门槛完整保留；全量留公共底层变更、集成里程碑及最终交付。旧摩擦实现/reviewer/pipeline均已退出；reviewer和修复实现者均已退出，工程session46580已退出0，当前无数值/reviewer进程，不重派review或重复旧全量。
 

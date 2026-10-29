@@ -1,6 +1,6 @@
 # 有限凸面与旋转 FK 接触验收
 
-当前状态：Task1 已提交 `736fb21` / `2e222d1`，父已核对原始日志、退出码、142 个源码逐文件摘要与测试/smoke 摘要。唯一 fresh review 的 1 Important / 1 Minor 已由 `d6b302e` 定向修复并经父核对闭环；源码外 wheel、有界 C++ 均已退出0；新产品推送/准确 CI 尚未完成。合同提交 `542c5a1` 的两项 CI success 只覆盖合同基线。
+当前状态：Task1 已提交 `736fb21` / `2e222d1`，父已核对原始日志、退出码、142 个源码逐文件摘要与测试/smoke 摘要。唯一 fresh review 的 1 Important / 1 Minor 已由 `d6b302e` 定向修复并经父核对闭环；源码外 wheel、有界 C++ 均已退出0；已交付 `131855f91f941c451af029340c9f16eb7a583238`，远程 SHA 一致，准确 CI40884138347 和 Documentation40884138390 均 completed success。合同基线的成功记录与本次产品交付分开。
 
 依据：[冻结设计](../superpowers/specs/2026-10-29-p65-finite-fk-design.md)、[计划与选测](../superpowers/plans/2026-10-29-p65-finite-fk.md)、[分层验收政策](../development/p65-validation-policy.md)、[工程记录](p65-finite-fk-engineering.json)、[唯一审阅](p65-finite-fk-review.md)。
 
@@ -28,4 +28,4 @@
 
 本切片不完成 H1。有限厚度合法摩擦/一般机器人、弯曲自碰撞、真实单爪承重/低摩擦滑落、IK/history、双臂交接放台和 Three.js 尚未接入。NUM005、TYX003、TYX004 仍开放。
 
-工程三步 session46580 已退出0（C++/build/wheel），冻结摘要18484522e01c15c4d921eec91acb4b46299b1a95de06d503b38eb37abcc9040e始终相同。wheel SHA256 `2c280f6df1a591e9ab2844c0ba7f9f193a840585ba9f78e956f919c8dffb0e2f`。阶段本地验收闭环；最终专用分支推送及准确CI仍待完成。
+工程三步 session46580 已退出0（C++/build/wheel），冻结摘要18484522e01c15c4d921eec91acb4b46299b1a95de06d503b38eb37abcc9040e始终相同。wheel SHA256 `2c280f6df1a591e9ab2844c0ba7f9f193a840585ba9f78e956f919c8dffb0e2f`。本阶段本地与远程交付均闭环；2026-10-29按公开Actions完整commit link核对上述两项准确CI成功。后续推进有限厚度摩擦/一般机器人合同，不重复本阶段验收。

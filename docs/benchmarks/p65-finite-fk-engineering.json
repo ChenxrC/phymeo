@@ -1,6 +1,6 @@
 {
   "stage": "p65-finite-fk",
-  "status": "local_acceptance_complete_remote_delivery_pending",
+  "status": "delivered",
   "baseline": "542c5a18a1f10b59250c89a459e09e73b42b4254",
   "implementation_commits": [
     "736fb21c86f79ff06445e37a5f97940887c3db8d",
@@ -769,12 +769,32 @@
     }
   },
   "delivery": {
-    "status": "pending_push_and_exact_ci",
+    "status": "complete",
     "contract_only_ci": [
       40856643919,
       40856643939
     ],
-    "contract_only_conclusion": "success"
+    "contract_only_conclusion": "success",
+    "head_sha": "131855f91f941c451af029340c9f16eb7a583238",
+    "remote_sha": "131855f91f941c451af029340c9f16eb7a583238",
+    "checked_at_utc": "2026-10-29T14:37:19.154515+00:00",
+    "source": "public_actions_html_full_commit_link",
+    "ci": [
+      {
+        "id": 40884138390,
+        "name": "Documentation",
+        "head_sha": "131855f91f941c451af029340c9f16eb7a583238",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 40884138347,
+        "name": "CI",
+        "head_sha": "131855f91f941c451af029340c9f16eb7a583238",
+        "status": "completed",
+        "conclusion": "success"
+      }
+    ]
   },
   "not_run": [
     "old full local CPU suites",

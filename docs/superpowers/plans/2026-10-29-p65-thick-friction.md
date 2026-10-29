@@ -55,16 +55,16 @@
 
 **Interfaces:** consumes public `TriangleOffsetPointPort`, `SceneLoadReplay`, `FiniteContactTerminalProgram/Ledger`, node/robot PointVelocityImpulses, MaterialPath/FrozenRobot及MaterialContactBudgets。Produces spec中surface/patch/program/manifold/sweep公开API及owned diagnostics/history。不得通过私有native kernel绕过这些接口。所有新模块一起进入唯一review，以下小步不另派review。
 
-- [ ] **1. 先写schema/完整几何RED。** `test_owned_surface_and_patch_schema`检查owned/canonical/no-radius及非法域；`test_patch_inside_triangle_has_complete_four_corner_manifold`使用C方形，三个cloth角全在patch外但四patch角进入；`test_side_edge_vertex_and_true_edge_edge`独立SAT/原始不等式；`test_quadratic_field_sign_and_negative_gap_order`覆盖sqrt非有理、恰零、负gap排序和Fraction精确保留。运行单文件看到真实缺API/行为RED，保留日志。
-- [ ] **2. 实现两个schema、专用exact/clip和manifold。** 有效几何报告实际全凸集的支持证据、clipping极点和owned材料坐标；不能把采样点集当覆盖。重新运行上述单文件应GREEN；未实现CCD用例不得计通过。
-- [ ] **3. 写并实现CCD RED/GREEN。** `test_translation_contact_certifies_whole_prism`；`test_changing_normal_safe_path_and_interior_crossing`；`test_area_collapse_and_budget_exhaustion_are_not_safe`；`test_exact_time_and_candidate_fingerprint`。两端点之间法向变化不能线性插值；独立解析安全/违例和有理面积多项式验证。新增`prism_patch_sweep`，不改旧robot_patch_sweep。
-- [ ] **4. 写mapping及原生两相位RED。** `test_full_offset_mapping_preserves_actual_force_moment_power`、`test_shared_nodes_and_robot_keep_cross_terms`、`test_missing_thickness_block_and_centroid_only_are_rejected`、`test_fp32_requests_and_actual_native_response_are_independent`、`test_phase_normal_capacity_exact_sum_and_row_scale_invariance`（n0!=n1，pbar1+etabar2^-53；新增零行不改变原行门槛）。删除厚度块负控制须触发完整力矩或映射门槛，单centroid B末角closing须失败。实现新mapping账及replay glue，不能用port自report自证。
-- [ ] **5. 写公开program和A/B自动响应RED。** `test_two_jaws_static_and_low_friction_single_step`两mu、`test_open_impact_full_three_corner_oracle`、`test_distance_material_pre_ledger_and_terminal_post`。期望严格采用spec的Fraction值；不给solver预填p/t/eta，含世界和节点冲量、独立K/U/Py/末速度。实现零初值、统一alpha/synchronous replay及终末总聚合。
-- [ ] **6. 完整材料身份/有限生命周期。** `test_anchor_birth_never_copies_held_capacity`验证新terminal点p0、旧closed只mu*eta、消失行严格零；`test_partial_overlap_exit_and_input_driven_reentry`执行C：初normal非零、随后真实Fx反向，不改state；`test_exact_grazing_reentry_prefers_patch_face_axis`用spec R2的3倍XZ/X4精确边界，held/terminal零，normal为patch-face；`test_reordering_and_shared_ancestor_are_equivalent`检查域/triangle/patch顺序、反向、刚体frame与共享ancestor。
-- [ ] **7. 规定窗口仅完整一次。** `test_two_jaw_window_halving_and_rebuild`：CPU T.5 h1/8、1/16两mu、每档2重建；C T2+T1、两h和2重建。保存每step独立oracle/预算而不是只末图。首次测试即GREEN如实写，不制造RED。若产品修复只重测受影响窗口，已覆盖未改的版本按delta解释复用。
-- [ ] **8. 真实执行和事务RED/GREEN。** `test_late_failure_rollback_and_retry_fresh`参数native/path/terminal/mapping/CCD/close × 第2/末子步；`test_best_does_not_hide_execution_or_unknown_failure`、`test_terminal_pre_replay_matches_full_selected_held`、`test_anchor_capacity_and_geometry_rebuild_budget_fail_closed`、`test_partial_construction_closes_workspaces`、`test_all_actual_trials_count_once`。真实执行错误立即整帧失败；只有已定义有限物理bad candidate按原合同允许完整best回验。
-- [ ] **9. 实际后端关键功能。** `test_actual_two_jaw_support_and_slip`，`test_actual_three_corner_impact_and_material`，`test_actual_partial_overlap_lifecycle`，`test_actual_thickness_window_and_rebuild`，`test_actual_failure_and_all_trials_count`。interpret→CUDA严格串行，`--require-tyx`且backend标签/FP32提升断言。设备A T.25两h两mu与重建、C h.25整窗与重建；normal负控制及后段故障保持。没有Graph/性能声明。
-- [ ] **10. 最终受影响集合及交付。** 合并同源已过证据，按下表补直接consumers；ruff/format新模块和tests、source smoke、publictyxboundary/diff；记录source/tests/script逐文件hash、每命令/rawexit/精确nodeids/RED和初测GREEN、版本delta及未跑理由。小步commit到专用branch，报告Task1并释放数值/index，不push。
+- [x] **1. 先写schema/完整几何RED。** `test_owned_surface_and_patch_schema`检查owned/canonical/no-radius及非法域；`test_patch_inside_triangle_has_complete_four_corner_manifold`使用C方形，三个cloth角全在patch外但四patch角进入；`test_side_edge_vertex_and_true_edge_edge`独立SAT/原始不等式；`test_quadratic_field_sign_and_negative_gap_order`覆盖sqrt非有理、恰零、负gap排序和Fraction精确保留。运行单文件看到真实缺API/行为RED，保留日志。
+- [x] **2. 实现两个schema、专用exact/clip和manifold。** 有效几何报告实际全凸集的支持证据、clipping极点和owned材料坐标；不能把采样点集当覆盖。重新运行上述单文件应GREEN；未实现CCD用例不得计通过。
+- [x] **3. 写并实现CCD RED/GREEN。** `test_translation_contact_certifies_whole_prism`；`test_changing_normal_safe_path_and_interior_crossing`；`test_area_collapse_and_budget_exhaustion_are_not_safe`；`test_exact_time_and_candidate_fingerprint`。两端点之间法向变化不能线性插值；独立解析安全/违例和有理面积多项式验证。新增`prism_patch_sweep`，不改旧robot_patch_sweep。
+- [x] **4. 写mapping及原生两相位RED。** `test_full_offset_mapping_preserves_actual_force_moment_power`、`test_shared_nodes_and_robot_keep_cross_terms`、`test_missing_thickness_block_and_centroid_only_are_rejected`、`test_fp32_requests_and_actual_native_response_are_independent`、`test_phase_normal_capacity_exact_sum_and_row_scale_invariance`（n0!=n1，pbar1+etabar2^-53；新增零行不改变原行门槛）。删除厚度块负控制须触发完整力矩或映射门槛，单centroid B末角closing须失败。实现新mapping账及replay glue，不能用port自report自证。
+- [x] **5. 写公开program和A/B自动响应RED。** `test_two_jaws_static_and_low_friction_single_step`两mu、`test_open_impact_full_three_corner_oracle`、`test_distance_material_pre_ledger_and_terminal_post`。期望严格采用spec的Fraction值；不给solver预填p/t/eta，含世界和节点冲量、独立K/U/Py/末速度。实现零初值、统一alpha/synchronous replay及终末总聚合。
+- [x] **6. 完整材料身份/有限生命周期。** `test_anchor_birth_never_copies_held_capacity`验证新terminal点p0、旧closed只mu*eta、消失行严格零；`test_partial_overlap_exit_and_input_driven_reentry`执行C：初normal非零、随后真实Fx反向，不改state；`test_exact_grazing_reentry_prefers_patch_face_axis`用spec R2的3倍XZ/X4精确边界，held/terminal零，normal为patch-face；`test_reordering_and_shared_ancestor_are_equivalent`检查域/triangle/patch顺序、反向、刚体frame与共享ancestor。
+- [x] **7. 规定窗口仅完整一次。** `test_two_jaw_window_halving_and_rebuild`：CPU T.5 h1/8、1/16两mu、每档2重建；C T2+T1、两h和2重建。保存每step独立oracle/预算而不是只末图。首次测试即GREEN如实写，不制造RED。若产品修复只重测受影响窗口，已覆盖未改的版本按delta解释复用。
+- [x] **8. 真实执行和事务RED/GREEN。** `test_late_failure_rollback_and_retry_fresh`参数native/path/terminal/mapping/CCD/close × 第2/末子步；`test_best_does_not_hide_execution_or_unknown_failure`、`test_terminal_pre_replay_matches_full_selected_held`、`test_anchor_capacity_and_geometry_rebuild_budget_fail_closed`、`test_partial_construction_closes_workspaces`、`test_all_actual_trials_count_once`。真实执行错误立即整帧失败；只有已定义有限物理bad candidate按原合同允许完整best回验。
+- [x] **9. 实际后端关键功能。** `test_actual_two_jaw_support_and_slip`，`test_actual_three_corner_impact_and_material`，`test_actual_partial_overlap_lifecycle`，`test_actual_thickness_window_and_rebuild`，`test_actual_failure_and_all_trials_count`。interpret→CUDA严格串行，`--require-tyx`且backend标签/FP32提升断言。设备A T.25两h两mu与重建、C h.25整窗与重建；normal负控制及后段故障保持。没有Graph/性能声明。
+- [x] **10. 最终受影响集合及交付。** 合并同源已过证据，按下表补直接consumers；ruff/format新模块和tests、source smoke、publictyxboundary/diff；记录source/tests/script逐文件hash、每命令/rawexit/精确nodeids/RED和初测GREEN、版本delta及未跑理由。小步commit到专用branch，报告Task1并释放数值/index，不push。
 
 ## 影响与选测清单
 
@@ -86,11 +86,13 @@
 
 ## Task 2: 父核对、一次fresh review、工程交付
 
-**Files:** `docs/benchmarks/p65-thick-friction-acceptance.md`、engineering.json、review.md及progress/continuation/framework；本阶段SDD报告。这里只是未来要创建的路径。
+**Files:** `docs/benchmarks/p65-thick-friction-acceptance.md`、engineering.json、review.md及progress/continuation/framework；本阶段SDD报告。证据路径已创建，审阅与工程状态分别记录。
 
 **Interfaces:** consume Task1源码/测试/原日志/摘要；produce明确支持矩阵、唯一review闭环、源码外wheel、准确远程交付。不是H1/P6.5完成。
 
-- [ ] 逐文件核对hash、diff、原式和rawexit；复用同冻结快照通过证据，不把旧版本设备窗说成新hash全量。
+- [x] 逐文件核对hash、diff、原式和rawexit；复用同冻结快照通过证据，不把旧版本设备窗说成新hash全量。
 - [ ] 一次fresh全阶段review，限定BASE冻结合同..Task1最终产品；问题交原实现者先精确RED再修。父核对关闭原findings，不派第二次review。
 - [ ] 所有数值进程结束后，最终冻结digest跑一个实际C++三角厚度短例、build、源码外新nativepip完整installed smoke及wheel逐文件匹配；不跑正式900，不宣称P95。
 - [ ] 更新框架/案例两线，commit/push核对SHA和该提交准确CI。随后一般机器人/弯曲自碰撞等继续，整体门槛不删。
+
+Task1报告 f2d4999 已交付父，数值/index释放；原版本 host60/严格窗口与最终 interpret13/CUDA13 的摘要、退出码已核对。唯一 fresh review thick_friction_final_review 正在审阅 BASE6e818f5..HEADf2d4999，工程及最终交付未勾。

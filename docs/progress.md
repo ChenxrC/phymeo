@@ -25,11 +25,15 @@
 
 静态距离证书框架前置已准确交付e63a1bf，两CI成功；[实施任务单](superpowers/plans/2026-10-29-p65-distance-certificate.md)最后交付框已关闭。它不完成动态接触或CCD，下一项继续厚度/法向、特征身份/history与自动建立分离及连续路径。
 
+## 当前：有限厚度摩擦 Task1 完成，独立审阅进行中
+
+产品 `1fcd0e7`、报告 `f2d4999` 已在专用分支提交；父核对307文件和原始证据，版本化host60/严格CPU窗口通过，最终同源实际 interpret13（328.57s）与CUDA13（764.24s）通过。详见[验收](benchmarks/p65-thick-friction-acceptance.md)、[工程](benchmarks/p65-thick-friction-engineering.json)与[唯一审阅](benchmarks/p65-thick-friction-review.md)。`thick_friction_final_review` 已分派且独占必要探针数值槽；实现者退出，父只整理文档/工程脚本。C++短例、wheel、新产品push/准确CI仍待，不勾完整H1。
+
 ## 已交付有限凸面/FK，继续有限厚度摩擦与一般机器人
 
 [有限凸面/旋转FK集成合同](superpowers/specs/2026-10-29-p65-finite-fk-design.md)的实现已提交 `736fb21` / `2e222d1`。父已核对新功能与消费者 CPU 117 + 3 项、完整新 interpret/CUDA 各 10 项和最终受影响消费者各 13 项的日志/退出码与快照；精确版本见[验收](benchmarks/p65-finite-fk-acceptance.md)和[工程记录](benchmarks/p65-finite-fk-engineering.json)。范围为正半径双面凸 patch、全 prismatic 或单恒 I 转子，自动反作用、特征切换和最终接受 FK 路径认证已集成。
 
-唯一 fresh review `finite_fk_final_review` 已结束，1Important/1Minor经d6b302e定向修复并由父核对关闭。几何23/受影响host22/actual interpret与CUDA各4通过；父已完成一次有界C++、构建与源码外wheel，三步exit0，142源码逐字节匹配。已交付 `131855f91f941c451af029340c9f16eb7a583238`，远程 SHA 相同，准确 CI40884138347/Documentation40884138390 均 completed success。下一阶段已形成[厚度摩擦集成候选](development/p65-thick-friction-candidate.md)：完整块 Jacobian/native 入口、双面夹压与三顶点斜撞 oracle、变形棱柱曲率界已只读推导核对；已写[生产设计稿](superpowers/specs/2026-10-29-p65-thick-friction-design.md)与[实施计划稿](superpowers/plans/2026-10-29-p65-thick-friction.md)，唯一thick_friction_design_check已完成，R1/R2/R3已写入并冻结；下一步派单一实现者。当前尚无新产品数值验收。候选16a752a准确CI40898036250/Documentation40898036288均success，不当新产品验收。当前不重复旧长回归或 900 计量，不以局部结果勾完整 H1。原高速转子细步增能按预算拒绝，另固定低滑速窗口通过；一般机器人/有限摩擦、单爪、双臂和 Three.js 仍后续。
+唯一 fresh review `finite_fk_final_review` 已结束，1Important/1Minor经d6b302e定向修复并由父核对关闭。几何23/受影响host22/actual interpret与CUDA各4通过；父已完成一次有界C++、构建与源码外wheel，三步exit0，142源码逐字节匹配。已交付 `131855f91f941c451af029340c9f16eb7a583238`，远程 SHA 相同，准确 CI40884138347/Documentation40884138390 均 completed success。下一阶段已形成[厚度摩擦集成候选](development/p65-thick-friction-candidate.md)：完整块 Jacobian/native 入口、双面夹压与三顶点斜撞 oracle、变形棱柱曲率界已只读推导核对；已写[生产设计稿](superpowers/specs/2026-10-29-p65-thick-friction-design.md)与[实施计划稿](superpowers/plans/2026-10-29-p65-thick-friction.md)，唯一thick_friction_design_check已完成，R1/R2/R3已写入并冻结；Task1与实际后端选测现已完成，当前以本页上方厚度摩擦验收状态为准。候选16a752a准确CI40898036250/Documentation40898036288均success，不当新产品验收。当前不重复旧长回归或 900 计量，不以局部结果勾完整 H1。原高速转子细步增能按预算拒绝，另固定低滑速窗口通过；一般机器人/有限摩擦、单爪、双臂和 Three.js 仍后续。
 
 ## 已交付：可复用分阶段摩擦（2026-10-29）
 

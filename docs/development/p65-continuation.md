@@ -28,13 +28,17 @@
 
 ## 当前立即续作
 
+有限厚度摩擦 Task1 已完成，产品1fcd0e7、报告f2d4999，307文件冻结摘要e3ee006f6ae79baa808b679ce4958464b5af28aef928f815a7dc685b603e8637。先读[本阶段验收](../benchmarks/p65-thick-friction-acceptance.md)、[工程](../benchmarks/p65-thick-friction-engineering.json)、[审阅](../benchmarks/p65-thick-friction-review.md)及本阶段SDD报告。CPU/interpret/CUDA数值进程已退出；唯一fresh审阅thick_friction_final_review正在运行并独占数值槽，父不并发工程或重派审阅。审阅发现交原实现者定向修复；闭环及资源释放后父执行一次短CPP/build/源码外wheel，再专用分支push并核对准确CI。当前未push新产品，合同6e818f5准确CI40909862598/Documentation40909862611均success仅作合同记录。不重跑已过窗口/旧全量/900，不将此切片当完整H1。
+
+### 历史已交付阶段（不重跑）
+
 动态摩擦本地实现/唯一审阅/最终工程/三模式正式计量均已完成；pipeline session27196已exit0、status complete，禁止重启或重跑已通过套件/900计量。产品6df5b14、回归dc59c39、134源码hashd18e557c…；全部src/tests/scripts冻结摘要ea6e07e3d6a5eb49e04d017908748b56f3b17ad8ab094edeebce6ac654fba57c不变。完整记录见[验收](../benchmarks/p65-dynamic-friction-acceptance.md)、[工程](../benchmarks/p65-dynamic-friction-engineering.json)、[唯一审阅](../benchmarks/p65-dynamic-friction-review.md)。审阅0Critical/0Important/1Minor已关闭，不派第二次。
 
 两CPU各1945通过/362未选，完整CUDA2307通过6196.34s，Ubuntu新核心80通过223.65s、有界CPP1通过23.15s，quality/build和134源码外wheel全部exit0。NumPy/interpret/CUDA依次各300计时/306总调用，共900/918成功；只读汇总器artifacts/summarize_dynamic_friction_evidence.py最终exit0，全部退出码/源码脚本摘要/wheel逐文件/raw计数和中位P95独立核对。最终汇总artifacts/dynamic-friction-final-summary.json。
 
-摩擦已交付7960b47a644385b2cc768b662317dd2ca9327481，远程SHA一致，准确CI40843093401与Documentation40843093367均completed success，最后交付框已关闭；不再查询旧CI或重复任何已通过数值。有限特征/FK实现已提交736fb21/2e222d1，父已核对选测证据；唯一fresh review两项finding已由d6b302e修复闭环，父已完成外部wheel/有界CPP，session46580退出0，131855f已推送且远程SHA一致，准确CI40884138347/Documentation40884138390均success，交付闭环。已据[厚度摩擦集成候选](p65-thick-friction-candidate.md)写[生产设计稿](../superpowers/specs/2026-10-29-p65-thick-friction-design.md)和[实施计划稿](../superpowers/plans/2026-10-29-p65-thick-friction.md)。唯一thick_friction_design_check已结束，三项重要歧义按spec R1/R2/R3关闭并冻结；下一动作派唯一Task1实现者，不得重复builder。候选16a752a准确CI40898036250/Documentation40898036288均success，不再查询。只读thick_contact_contract_probe已结束，无实现/数值进程；不重复端口旧验收或本轮解析研究。一般机器人另需质量/能量合同，随后仍为弯曲/自碰撞、真实单爪、高低摩擦承重、目标IK/history、双臂交接放台和同源Three.js。
+摩擦已交付7960b47a644385b2cc768b662317dd2ca9327481，远程SHA一致，准确CI40843093401与Documentation40843093367均completed success，最后交付框已关闭；不再查询旧CI或重复任何已通过数值。有限特征/FK实现已提交736fb21/2e222d1，父已核对选测证据；唯一fresh review两项finding已由d6b302e修复闭环，父已完成外部wheel/有界CPP，session46580退出0，131855f已推送且远程SHA一致，准确CI40884138347/Documentation40884138390均success，交付闭环。已据[厚度摩擦集成候选](p65-thick-friction-candidate.md)写[生产设计稿](../superpowers/specs/2026-10-29-p65-thick-friction-design.md)和[实施计划稿](../superpowers/plans/2026-10-29-p65-thick-friction.md)。唯一thick_friction_design_check已结束，三项重要歧义按spec R1/R2/R3关闭并冻结；后续Task1已完成，当前动作以上方审阅入口为准；不得重复builder或实现。候选16a752a准确CI40898036250/Documentation40898036288均success，不再查询。只读thick_contact_contract_probe已结束，无实现/数值进程；不重复端口旧验收或本轮解析研究。一般机器人另需质量/能量合同，随后仍为弯曲/自碰撞、真实单爪、高低摩擦承重、目标IK/history、双臂交接放台和同源Three.js。
 
-优先执行用户2026-10-29最新[分层验收要求](p65-validation-policy.md)：后续小切片先写影响/选测清单，再派实现；不再例行两套本地CPU/整分支CUDA/900性能。新能力自身必要物理、步长/重复和事务门槛完整保留；全量留公共底层变更、集成里程碑及最终交付。旧摩擦实现/reviewer/pipeline均已退出；reviewer和修复实现者均已退出，工程session46580已退出0，当前无数值/reviewer进程，不重派review或重复旧全量。
+优先执行用户2026-10-29最新[分层验收要求](p65-validation-policy.md)：后续小切片先写影响/选测清单，再派实现；不再例行两套本地CPU/整分支CUDA/900性能。新能力自身必要物理、步长/重复和事务门槛完整保留；全量留公共底层变更、集成里程碑及最终交付。旧摩擦实现/reviewer/pipeline均已退出；reviewer和修复实现者均已退出，工程session46580已退出0，这些旧阶段无数值/reviewer进程；新厚度审阅状态见上方，不重派旧review或重复旧全量。
 
 ### 已关闭的上一阶段：有限法向
 

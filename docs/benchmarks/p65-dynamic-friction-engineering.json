@@ -116,7 +116,120 @@
     "session_id": 27196,
     "launch_commit": "fa1e84b7b87ffddebbe5a14ebb746fc88c2d1392",
     "initial_phase": "core311",
-    "completed_suites_at_launch": []
+    "completed_suites_at_launch": [],
+    "completed_suites": {
+      "core311": {
+        "passed": 1945,
+        "deselected": 362,
+        "pytest_seconds": 665.54,
+        "runner_seconds": 665.8504183001351,
+        "exit_code": 0,
+        "log": "artifacts/dynamic-friction-final-dc59c39-a/core311.txt",
+        "slowest": [
+          {
+            "seconds": 187.58,
+            "phase": "call",
+            "test": "tests/test_dynamic_robot_friction_physics.py::test_two_second_window_and_halving_error[2.0]"
+          },
+          {
+            "seconds": 34.67,
+            "phase": "call",
+            "test": "tests/test_coupled_runtime.py::test_twelve_frame_full_scene_preserves_every_state_and_load[True-float32]"
+          },
+          {
+            "seconds": 31.75,
+            "phase": "call",
+            "test": "tests/test_coupled_runtime.py::test_twelve_frame_full_scene_preserves_every_state_and_load[False-float32]"
+          },
+          {
+            "seconds": 30.8,
+            "phase": "call",
+            "test": "tests/test_coupled_runtime.py::test_twelve_frame_full_scene_preserves_every_state_and_load[True-float64]"
+          },
+          {
+            "seconds": 30.67,
+            "phase": "call",
+            "test": "tests/test_articulated_experiment.py::test_three_domain_trace_records_both_actual_interactions_and_balanced_loads"
+          },
+          {
+            "seconds": 30.16,
+            "phase": "call",
+            "test": "tests/test_prescribed_articulated.py::test_prescribed_trace_records_real_absorbed_reaction_and_loaded_nodes"
+          },
+          {
+            "seconds": 27.82,
+            "phase": "call",
+            "test": "tests/test_coupled_runtime.py::test_twelve_frame_full_scene_preserves_every_state_and_load[False-float64]"
+          },
+          {
+            "seconds": 26.76,
+            "phase": "setup",
+            "test": "tests/test_rigid_cloth_scene.py::test_two_way_scene_contacts_and_changes_both_trajectories"
+          },
+          {
+            "seconds": 21.61,
+            "phase": "call",
+            "test": "tests/test_initial_robot_material.py::test_shared_material_friction_two_seconds_and_step_refinement[0.1]"
+          },
+          {
+            "seconds": 21.37,
+            "phase": "call",
+            "test": "tests/test_initial_robot_material.py::test_shared_material_friction_two_seconds_and_step_refinement[1.0]"
+          },
+          {
+            "seconds": 15.3,
+            "phase": "call",
+            "test": "tests/test_dynamic_robot_normal_physics.py::test_fixed_two_second_material_support[0.03125]"
+          },
+          {
+            "seconds": 10.48,
+            "phase": "call",
+            "test": "tests/test_dynamic_robot_normal_physics.py::test_fixed_two_second_material_support[0.0625]"
+          },
+          {
+            "seconds": 9.5,
+            "phase": "call",
+            "test": "tests/test_dynamic_robot_friction_physics.py::test_two_second_window_and_halving_error[0.25]"
+          },
+          {
+            "seconds": 7.54,
+            "phase": "call",
+            "test": "tests/test_initial_robot_material.py::test_material_support_two_seconds_needs_velocity_and_final_gap[0.03125]"
+          },
+          {
+            "seconds": 6.01,
+            "phase": "call",
+            "test": "tests/test_robot_plane_contact.py::test_two_second_robot_static_and_sliding_windows[0.2--5.81-0.005]"
+          },
+          {
+            "seconds": 5.89,
+            "phase": "call",
+            "test": "tests/test_robot_plane_contact.py::test_two_second_robot_static_and_sliding_windows[0.6-0.0-0.005]"
+          },
+          {
+            "seconds": 5.55,
+            "phase": "call",
+            "test": "tests/test_initial_robot_node.py::test_two_second_finite_actuator_support_and_low_friction_sliding[0.2-7.848-0.005]"
+          },
+          {
+            "seconds": 5.45,
+            "phase": "call",
+            "test": "tests/test_initial_robot_node.py::test_two_second_finite_actuator_support_and_low_friction_sliding[1.2-0.0-0.005]"
+          },
+          {
+            "seconds": 4.97,
+            "phase": "call",
+            "test": "tests/test_initial_robot_material.py::test_material_support_two_seconds_needs_velocity_and_final_gap[0.0625]"
+          },
+          {
+            "seconds": 4.76,
+            "phase": "call",
+            "test": "tests/test_dynamic_robot_friction_transaction.py::test_after_best_physical_budget_requires_audited_fallback[best_budget]"
+          }
+        ]
+      }
+    },
+    "last_observed_phase": "cuda-full"
   },
   "formal_performance": {
     "status": "not_started"

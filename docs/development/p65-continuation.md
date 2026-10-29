@@ -28,6 +28,12 @@
 
 ## 当前立即续作
 
+正在执行[分阶段摩擦计划](../superpowers/plans/2026-10-29-p65-dynamic-friction.md)Task1；先读对应冻结spec、.superpowers/sdd/2026-10-29-p65-dynamic-friction/progress.md和task-1-report.md（若已存在），核对agent/Git，不重复分派。实现者dynamic_friction_implementer是源码/tests/smoke与唯一数值owner，BASE b7dd5b55451295434191eecc0bbedf3a1c46f712；最近正在缺API/schema/解析RED，未交付新生产能力。父新benchmark脚本仅format/ruff静态通过，未执行；不得并发smoke或完整套件。
+
+唯一builder已结束，无重要未决；全阶段最终code review尚未派。产品交付后主agent先核对报告/差异和最小基准smoke，再派一次fresh review及必要TDD修复、工程与串行观测。不得重做18个预设native研究例、旧normal全部验收或已关闭审阅。设计/研究b7dd5b5已推送且SHA一致，准确CI40807534775初查in_progress、Documentation40807534785success，之后核对准确状态。
+
+### 已关闭的上一阶段：有限法向
+
 当前产品4ff19ea7975145fe9d44450164b906f01fe0527d，131源码hash `ac777319d0b8fbc03adab92286656a5572df05bca403e913912500908e991060`。Task1/Task2均已实现并完成各自定向验收，两个实现者及数值进程已退出；不要重派或重做。先读[阶段验收进度](../benchmarks/p65-dynamic-normal-acceptance.md)、[工程记录](../benchmarks/p65-dynamic-normal-engineering.json)、[设计](../superpowers/specs/2026-10-29-p65-dynamic-normal-design.md)、[计划](../superpowers/plans/2026-10-29-p65-dynamic-normal.md)及.superpowers/sdd/2026-10-29-p65-dynamic-normal/progress.md。
 
 唯一fresh最终审阅 `dynamic_normal_final_review` 已结束，BASE fa11031..4ff19ea，0Critical/0Important/0Minor；全部探针退出，不重派或重复。独立斜向双平面p/eta=(1/9,5/18)、actual interpret176launch/3held+3terminal/12engines关闭及7项定向测试通过。主agent接数值槽执行后续工程，物理/数值门槛不改。NumPy/actual interpret/CUDA基准最小smoke各通过2计时+6warmup，free/chain各1；脚本hash338768ffd42c2e7749f38779e20d2563ec56cd435ba2fceef8cc604f58545a75。它不是正式性能结果。

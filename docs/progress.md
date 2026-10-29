@@ -23,6 +23,14 @@
 
 静态距离证书框架前置已准确交付e63a1bf，两CI成功；[实施任务单](superpowers/plans/2026-10-29-p65-distance-certificate.md)最后交付框已关闭。它不完成动态接触或CCD，下一项继续厚度/法向、特征身份/history与自动建立分离及连续路径。
 
+## 当前推进：可复用分阶段摩擦（2026-10-29）
+
+[冻结设计](superpowers/specs/2026-10-29-p65-dynamic-friction-design.md)和[实施计划](superpowers/plans/2026-10-29-p65-dynamic-friction.md)已写入；唯一builder dynamic_friction_design_check无重要未决。静支撑、低μ滑动、terminal-only漂移、材料斜撞及多面A/B反例通过公开native API在NumPy/interpret/CUDA各6例核对，共18例；这是预设向量研究，不是自动摩擦已完成。
+
+实现子agent dynamic_friction_implementer已接Task1，从缺API/独立解析测试开始TDD；主agent负责后续一次fresh整阶段审阅和工程。新程序使用显式friction_by_collider、零厚度/全prismatic/无限平面支持域，原normal程序和μ0门禁保持。基准脚本仅静态准备、尚未smoke或正式计量。当前框架能力仍为实施中，双臂案例尚未接入，不把本阶段研究或测试数换算整体百分比。
+
+设计与研究提交b7dd5b55451295434191eecc0bbedf3a1c46f712已推送、远程SHA一致；其CI40807534775初查in_progress、Documentation40807534785success，未声称准确新CI通过。上一法向aa8ec42两CI均成功已闭环，不重新验收旧阶段。
+
 ## 已交付：自动法向接触建立与分离（2026-10-29）
 
 已冻结[两阶段生产合同](superpowers/specs/2026-10-29-p65-dynamic-normal-design.md)和[实施计划](superpowers/plans/2026-10-29-p65-dynamic-normal.md)，一次builder无重要未决。闭合前后的原生边界实验在NumPy/interpret/CUDA各2例通过，详见[设计证据](development/p65-dynamic-normal-candidate.md)；它们预先给定冲量，不是自动求解器完成证据。

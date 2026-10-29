@@ -52,7 +52,7 @@ Task2新CUDA7通过1055.23s；NumPy462和interpret37是cap-only元数据修复�
 
 ## 下一框架切片
 
-2026-10-29新增[动态摩擦解析候选](p65-dynamic-friction-candidate.md)：独立Fraction核对静支撑/低μ滑动、材料斜撞和分阶段/总末律反例；没有native新摩擦执行或生产实现。只读dynamic_friction_law_probe已结束，勿重复同一纸面研究。当前优先验证分阶段候选A，尚未冻结spec/plan；准确CI闭环后先用公开native两场景预设向量核对，再冻结可复用合同并派实现。
+2026-10-29新增[动态摩擦解析候选](p65-dynamic-friction-candidate.md)：独立Fraction核对静支撑/低μ滑动、材料斜撞和分阶段/总末律反例；随后公开native预设向量在NumPy/interpret/CUDA各6例共18例通过，仍无自动摩擦生产实现。只读dynamic_friction_law_probe已结束，勿重复同一纸面研究。当前优先验证分阶段候选A，尚未冻结spec/plan；准确法向CI已闭环，原生候选也已核对；下一步冻结可复用分阶段摩擦合同并派实现，勿重复纸面或原生预设探针。
 
 [静态距离证书](../superpowers/specs/2026-10-29-p65-distance-certificate-design.md)已经实施验收，builder和唯一最终review均结束，不再分派同一实现/审阅。当前有限法向实现关闭后，下一需求继续沿H1推进可复用摩擦、有限特征厚度/碰撞侧及零距离法向、拓扑身份/特征切换、接触建立/分离与history，以及最终接受路径上的保守CCD；不能止于距离工具或把静态下界当动态碰撞。
 

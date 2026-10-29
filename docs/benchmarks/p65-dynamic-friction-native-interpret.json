@@ -1,0 +1,484 @@
+{
+  "status": "complete",
+  "mode": "interpret",
+  "scope": "six prescribed native scene checks, not automatic contact or friction acceptance and not a performance measurement",
+  "source": {
+    "git_revision": "4b8f6232d005a479330b012d30dcb0c3b92558f9",
+    "git_dirty": true,
+    "source_sha256": "ac777319d0b8fbc03adab92286656a5572df05bca403e913912500908e991060",
+    "python": "3.12.14",
+    "numpy": "2.5.4",
+    "platform": "Windows-11-10.0.26200-SP0"
+  },
+  "script_sha256": "b2a4b229a0d3408e85f7ae3786217a679e4d4438c0be46a913e8a206a7f1fecf",
+  "cases": [
+    {
+      "case": "support_stick",
+      "status": "prescribed_native_verified",
+      "h": 0.25,
+      "held_world_ns": [
+        [
+          -0.25,
+          0.25,
+          0.0
+        ]
+      ],
+      "terminal_world_ns": [
+        [
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      "position": [
+        [
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      "velocity": [
+        [
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      "robot_q": [
+        0.0
+      ],
+      "robot_v": [
+        0.0
+      ],
+      "pre_position_sweeps": 1,
+      "robot_pre_residuals": {
+        "dynamics": 0.0,
+        "input_integral": 0.0,
+        "configuration": 0.0
+      },
+      "material_scope": "distance-material-equations-v1",
+      "terminal_residual": 0.0,
+      "configuration_preserved": true,
+      "replays": 2,
+      "final_replay_execution": {
+        "robot": {
+          "launches": 32,
+          "completed_launches": 32,
+          "uploads": 0,
+          "downloads": 0,
+          "mode": "interpret",
+          "compute_dtype": "float32"
+        },
+        "nodes": {
+          "launches": 4,
+          "completed_launches": 4,
+          "uploads": 0,
+          "downloads": 0,
+          "mode": "interpret",
+          "compute_dtype": "float32"
+        }
+      },
+      "checks": {
+        "terminal_energy_change_j": 0.0
+      }
+    },
+    {
+      "case": "support_slide",
+      "status": "prescribed_native_verified",
+      "h": 0.25,
+      "held_world_ns": [
+        [
+          -0.0625,
+          0.25,
+          0.0
+        ]
+      ],
+      "terminal_world_ns": [
+        [
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      "position": [
+        [
+          0.046875,
+          0.0,
+          0.0
+        ]
+      ],
+      "velocity": [
+        [
+          0.1875,
+          0.0,
+          0.0
+        ]
+      ],
+      "robot_q": [
+        0.0
+      ],
+      "robot_v": [
+        0.0
+      ],
+      "pre_position_sweeps": 1,
+      "robot_pre_residuals": {
+        "dynamics": 0.0,
+        "input_integral": 0.0,
+        "configuration": 0.0
+      },
+      "material_scope": "distance-material-equations-v1",
+      "terminal_residual": 0.0,
+      "configuration_preserved": true,
+      "replays": 2,
+      "final_replay_execution": {
+        "robot": {
+          "launches": 32,
+          "completed_launches": 32,
+          "uploads": 0,
+          "downloads": 0,
+          "mode": "interpret",
+          "compute_dtype": "float32"
+        },
+        "nodes": {
+          "launches": 4,
+          "completed_launches": 4,
+          "uploads": 0,
+          "downloads": 0,
+          "mode": "interpret",
+          "compute_dtype": "float32"
+        }
+      },
+      "checks": {
+        "terminal_energy_change_j": 0.0
+      }
+    },
+    {
+      "case": "support_terminal_only",
+      "status": "prescribed_native_verified",
+      "h": 0.25,
+      "held_world_ns": [
+        [
+          0.0,
+          0.25,
+          0.0
+        ]
+      ],
+      "terminal_world_ns": [
+        [
+          -0.25,
+          0.0,
+          0.0
+        ]
+      ],
+      "position": [
+        [
+          0.0625,
+          0.0,
+          0.0
+        ]
+      ],
+      "velocity": [
+        [
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      "robot_q": [
+        0.0
+      ],
+      "robot_v": [
+        0.0
+      ],
+      "pre_position_sweeps": 1,
+      "robot_pre_residuals": {
+        "dynamics": 0.0,
+        "input_integral": 0.0,
+        "configuration": 0.0
+      },
+      "material_scope": "distance-material-equations-v1",
+      "terminal_residual": 0.0,
+      "configuration_preserved": true,
+      "replays": 2,
+      "final_replay_execution": {
+        "robot": {
+          "launches": 32,
+          "completed_launches": 32,
+          "uploads": 0,
+          "downloads": 0,
+          "mode": "interpret",
+          "compute_dtype": "float32"
+        },
+        "nodes": {
+          "launches": 4,
+          "completed_launches": 4,
+          "uploads": 0,
+          "downloads": 0,
+          "mode": "interpret",
+          "compute_dtype": "float32"
+        }
+      },
+      "checks": {
+        "terminal_energy_change_j": -0.03125
+      }
+    },
+    {
+      "case": "material_impact",
+      "status": "prescribed_native_verified",
+      "h": 0.25,
+      "held_world_ns": [
+        [
+          0.0,
+          0.42857142857142855,
+          0.0
+        ]
+      ],
+      "terminal_world_ns": [
+        [
+          -0.38095238095238093,
+          0.3333333333333333,
+          0.0
+        ]
+      ],
+      "position": [
+        [
+          0.25,
+          -0.0535714216530323,
+          0.0
+        ],
+        [
+          0.25,
+          0.9107142686843872,
+          0.0
+        ]
+      ],
+      "velocity": [
+        [
+          0.6190476417541504,
+          -0.3809523284435272,
+          0.0
+        ],
+        [
+          1.0,
+          -0.8571429252624512,
+          0.0
+        ]
+      ],
+      "robot_q": [
+        -0.0535714328289032
+      ],
+      "robot_v": [
+        -0.3809524178504944
+      ],
+      "pre_position_sweeps": 1,
+      "robot_pre_residuals": {
+        "dynamics": 1.702989851914971e-08,
+        "input_integral": 0.0,
+        "configuration": 0.0
+      },
+      "material_scope": "distance-material-equations-v1",
+      "terminal_residual": 2.2706531321858847e-08,
+      "configuration_preserved": true,
+      "replays": 2,
+      "final_replay_execution": {
+        "robot": {
+          "launches": 32,
+          "completed_launches": 32,
+          "uploads": 0,
+          "downloads": 0,
+          "mode": "interpret",
+          "compute_dtype": "float32"
+        },
+        "nodes": {
+          "launches": 7,
+          "completed_launches": 7,
+          "uploads": 0,
+          "downloads": 0,
+          "mode": "interpret",
+          "compute_dtype": "float32"
+        }
+      },
+      "checks": {
+        "terminal_energy_change_j": -0.39172331073116373,
+        "energy_with_material_j": 1.286848166801231,
+        "y_momentum_ns": -2.000000089406967
+      }
+    },
+    {
+      "case": "cross_phasewise",
+      "status": "prescribed_native_verified",
+      "h": 1.0,
+      "held_world_ns": [
+        [
+          -0.5,
+          1.0,
+          0.0
+        ],
+        [
+          -0.6,
+          0.8,
+          0.0
+        ]
+      ],
+      "terminal_world_ns": [
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          -1.68,
+          2.2399999999999998,
+          0.0
+        ]
+      ],
+      "position": [
+        [
+          0.9999998807907104,
+          0.0,
+          0.0
+        ]
+      ],
+      "velocity": [
+        [
+          -0.6800000667572021,
+          2.240000009536743,
+          0.0
+        ]
+      ],
+      "robot_q": [
+        0.0,
+        5.0
+      ],
+      "robot_v": [
+        0.0,
+        2.1999998092651367
+      ],
+      "pre_position_sweeps": 1,
+      "robot_pre_residuals": {
+        "dynamics": 0.0,
+        "input_integral": 0.0,
+        "configuration": 0.0
+      },
+      "material_scope": "distance-material-equations-v1",
+      "terminal_residual": 1.9073486344112213e-07,
+      "configuration_preserved": true,
+      "replays": 2,
+      "final_replay_execution": {
+        "robot": {
+          "launches": 32,
+          "completed_launches": 32,
+          "uploads": 0,
+          "downloads": 0,
+          "mode": "interpret",
+          "compute_dtype": "float32"
+        },
+        "nodes": {
+          "launches": 4,
+          "completed_launches": 4,
+          "uploads": 0,
+          "downloads": 0,
+          "mode": "interpret",
+          "compute_dtype": "float32"
+        }
+      },
+      "checks": {
+        "terminal_energy_change_j": -7.840000233650194,
+        "held_tangent_dot_pre_slip": -0.4999999403953552,
+        "total_tangent_dot_final_slip": 0.3400000333786011
+      }
+    },
+    {
+      "case": "cross_endpoint",
+      "status": "prescribed_native_verified",
+      "h": 1.0,
+      "held_world_ns": [
+        [
+          0.3654545454545455,
+          0.8763636363636363,
+          0.0
+        ],
+        [
+          -0.7854545454545454,
+          1.0472727272727274,
+          0.0
+        ]
+      ],
+      "terminal_world_ns": [
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          -1.68,
+          2.2399999999999998,
+          0.0
+        ]
+      ],
+      "position": [
+        [
+          1.6799999475479126,
+          0.12363636493682861,
+          0.0
+        ]
+      ],
+      "velocity": [
+        [
+          0.0,
+          2.3636364936828613,
+          0.0
+        ]
+      ],
+      "robot_q": [
+        0.12363636493682861,
+        4.690909385681152
+      ],
+      "robot_v": [
+        0.12363636493682861,
+        1.890909194946289
+      ],
+      "pre_position_sweeps": 1,
+      "robot_pre_residuals": {
+        "dynamics": 2.9477206142658474e-07,
+        "input_integral": 0.0,
+        "configuration": 0.0
+      },
+      "material_scope": "distance-material-equations-v1",
+      "terminal_residual": 1.9073486344112213e-07,
+      "configuration_preserved": true,
+      "replays": 2,
+      "final_replay_execution": {
+        "robot": {
+          "launches": 32,
+          "completed_launches": 32,
+          "uploads": 0,
+          "downloads": 0,
+          "mode": "interpret",
+          "compute_dtype": "float32"
+        },
+        "nodes": {
+          "launches": 4,
+          "completed_launches": 4,
+          "uploads": 0,
+          "downloads": 0,
+          "mode": "interpret",
+          "compute_dtype": "float32"
+        }
+      },
+      "checks": {
+        "terminal_energy_change_j": -7.840000790682737,
+        "held_tangent_dot_pre_slip": 0.6139636171947827,
+        "total_tangent_dot_final_slip": 0.0
+      }
+    }
+  ],
+  "source_after": {
+    "git_revision": "4b8f6232d005a479330b012d30dcb0c3b92558f9",
+    "git_dirty": true,
+    "source_sha256": "ac777319d0b8fbc03adab92286656a5572df05bca403e913912500908e991060",
+    "python": "3.12.14",
+    "numpy": "2.5.4",
+    "platform": "Windows-11-10.0.26200-SP0"
+  }
+}

@@ -51,3 +51,11 @@ B在同一初态可给t=201/550、p1=241/275、p2=72/55、同一η2，末地面�
 - 明确正/低μ、材料、共享/非平行多面、变换顺序、输入非法/退化、预算失败、已有best后的native/trace/terminal/close失败和后段全帧history恢复retry=fresh测例；一个实现owner、阶段一次fresh review和必要工程证据。
 
 新的spec/plan尚未写，不派生产实现。有限摩擦切片不完成H1/H2或双臂；有限特征与FK CCD、弯曲/自碰撞、真实承重、控制/交接和同源Three.js仍在同一持续任务范围。
+
+## 原生执行核对（2026-10-29）
+
+[scripts/probe_dynamic_friction_native.py](../../scripts/probe_dynamic_friction_native.py)使用现有公开SceneLoadReplay/TerminalImpulseProgram，依次在NumPy、actual interpret、actual CUDA核对各6例，共18例成功。每例先完整held replay，再以实际末配置投影作用点完整重算并施加给定terminal向量；不是求解摩擦冲量。预设值来自上面的独立分数解，不调用任何新自动摩擦程序。
+
+三种模式均覆盖：高μ静支撑、低μ滑动、terminal-only漂移反例、材料斜撞、非平行多面候选A与B。真实native状态匹配解析位置/速度，末阶段前后位置bitwise一致，第二次pre状态/history与选中held一致，原输入不变；MaterialPathLedger/FrozenRobotLedger只验pre，TerminalImpulseLedger验post。真实tyx模式/FP32提升/launch均检查。A的总切向冲量点乘最终滑速仍为17/50>0，B的held切向功仍为4221/6875>0，验证不能混称两种定律。
+
+原始记录：[NumPy](../benchmarks/p65-dynamic-friction-native-numpy.json)、[interpret](../benchmarks/p65-dynamic-friction-native-interpret.json)、[CUDA](../benchmarks/p65-dynamic-friction-native-cuda.json)。每例两次重放，记录的execution仅最终一次；不冒称全尝试汇总，不作为性能或长轨迹。全部原生操作在未改产品131文件hash ac777319d0b8fbc03adab92286656a5572df05bca403e913912500908e991060上执行，脚本与source前后hash一致。首次NumPy探针与准确CI查询独立并行；随后interpret/CUDA串行，无第二本地数值进程。尚无新的自动摩擦求解器、生产合同或最终code review；原法向程序和μ0门禁保持原样。

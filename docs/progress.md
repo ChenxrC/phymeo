@@ -29,7 +29,7 @@
 
 [有限凸面/旋转FK集成合同](superpowers/specs/2026-10-29-p65-finite-fk-design.md)的实现已提交 `736fb21` / `2e222d1`。父已核对新功能与消费者 CPU 117 + 3 项、完整新 interpret/CUDA 各 10 项和最终受影响消费者各 13 项的日志/退出码与快照；精确版本见[验收](benchmarks/p65-finite-fk-acceptance.md)和[工程记录](benchmarks/p65-finite-fk-engineering.json)。范围为正半径双面凸 patch、全 prismatic 或单恒 I 转子，自动反作用、特征切换和最终接受 FK 路径认证已集成。
 
-唯一 fresh review `finite_fk_final_review` 已结束，1Important/1Minor经d6b302e定向修复并由父核对关闭。几何23/受影响host22/actual interpret与CUDA各4通过；父已完成一次有界C++、构建与源码外wheel，三步exit0，142源码逐字节匹配。已交付 `131855f91f941c451af029340c9f16eb7a583238`，远程 SHA 相同，准确 CI40884138347/Documentation40884138390 均 completed success。下一阶段先复用已交付厚度材料点完整块 Jacobian，冻结摩擦力偶、两阶段原生反作用与最终路径认证合同。当前不重复旧长回归或 900 计量，不以局部结果勾完整 H1。原高速转子细步增能按预算拒绝，另固定低滑速窗口通过；一般机器人/有限摩擦、单爪、双臂和 Three.js 仍后续。
+唯一 fresh review `finite_fk_final_review` 已结束，1Important/1Minor经d6b302e定向修复并由父核对关闭。几何23/受影响host22/actual interpret与CUDA各4通过；父已完成一次有界C++、构建与源码外wheel，三步exit0，142源码逐字节匹配。已交付 `131855f91f941c451af029340c9f16eb7a583238`，远程 SHA 相同，准确 CI40884138347/Documentation40884138390 均 completed success。下一阶段已形成[厚度摩擦集成候选](development/p65-thick-friction-candidate.md)：完整块 Jacobian/native 入口、双面夹压与三顶点斜撞 oracle、变形棱柱曲率界已只读推导核对；完整有限流形与跨阶段身份仍须冻结，没有新生产实现或数值验收。当前不重复旧长回归或 900 计量，不以局部结果勾完整 H1。原高速转子细步增能按预算拒绝，另固定低滑速窗口通过；一般机器人/有限摩擦、单爪、双臂和 Three.js 仍后续。
 
 ## 已交付：可复用分阶段摩擦（2026-10-29）
 

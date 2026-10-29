@@ -257,3 +257,11 @@ __all__ += ["RobotFinitePatchCollider", "RobotPatchSweepResult", "robot_patch_sw
 __all__ += ["FiniteContactTerminalProgram", "FiniteContactTerminalLedger"]
 
 __all__ += ["DynamicRobotFiniteContactProgram"]
+
+from .constraints.triangle_prism_surface import TrianglePrismSurface
+from .constraints.robot_contact_patch import RobotContactPatch
+from .geometry.prism_patch_manifold import PrismPatchManifold, triangle_prism_patch_manifold
+__all__ += ['TrianglePrismSurface', 'RobotContactPatch', 'PrismPatchManifold', 'triangle_prism_patch_manifold']
+
+from .geometry.prism_patch_sweep import PrismPatchSweepResult, triangle_prism_patch_sweep
+__all__ += ['PrismPatchSweepResult', 'triangle_prism_patch_sweep']

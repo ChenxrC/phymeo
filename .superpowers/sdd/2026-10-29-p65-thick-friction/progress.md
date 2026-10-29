@@ -16,3 +16,14 @@ Commit the frozen contract and launch a single scoped implementer with TDD, raw 
 - Ruling R2: among exactly tied maximal SAT gaps with valid clipping, prefer patch-face normal before initial-axis preference; a scaled X4 exact grazing reentry control must stay unloaded. No epsilon/history/velocity normal selection.
 - Ruling R3: per-phase Wii gives k=nTWn/(n.n), kappa=trace(Wii), Vref/Lgap acceptance scales as old world audit; common alpha only generates candidates. Capacity separately projects actual P on n0 and E on n1, then exact Fraction/sqrt interval sum. Different normals and 1+2^-53 controls mandatory; no old combined_capacity shortcut.
 - Builder final: exactly three important ambiguities, now closed; no numerical probes/files by builder. No second builder. Source unchanged during design; no new code-review claims.
+## Preflight before Task1 dispatch
+
+| Pair/task | Producer / consumer and scope | Scan and ruling |
+| --- | --- | --- |
+| Task1 / Task2 | Task1 produces new API/modules/tests/raw hashes; Task2 consumes frozen product for one review/wheel/CI | No concurrent numeric/index ownership. Task2 does not implement shared paths or rerun same-snapshot selected suites. User requires one whole-stage review; no extra per-substep reviews. |
+| Task1 self | Eleven enumerated new modules, five new tests, exports and new smoke entry | File scope and required A/B/C/material/CCD/transaction/backend selections match spec; R1/R2/R3 controls included. Unspecified minor private report layout can be implemented without changing law. Shared edits require original-law RED and main ruling. |
+| Task2 self | Review and final C++ short/nativepip wheel + docs | Uses final product digest after all numerical processes exit; no premature installation/performance claims and no 900 default. Exact remote CI is new product only. |
+
+Frozen contract 6e818f574d097ce415940289a58847d4c8ba49fb pushed; remote SHA exactly equal. Docs180/828local links and diffcheck passed; src/tests/scripts unchanged. Preflight appended by main before dispatch; implementer must retain this main-owned entry and may include it in its next coherent report commit. After dispatch the implementer owns production/numerical/index; main does not edit/stage concurrently.
+
+Task1 active: thick_friction_implementer exclusively owns production/numerical/index. Geometry RED preparation; no active numerical session. Main preflight retained.

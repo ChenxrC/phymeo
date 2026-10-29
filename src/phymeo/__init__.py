@@ -21,6 +21,7 @@ from .constraints.distance import DistanceConstraints
 from .constraints.friction import FrictionImpulseResult, solve_friction_disk
 from .constraints.node_robot import NodeRobotContact
 from .constraints.particle_plane import ParticlePlaneContacts
+from .constraints.robot_finite_patch_collider import RobotFinitePatchCollider
 from .constraints.robot_node_plane import RobotNodePlaneContacts
 from .constraints.robot_plane import RobotPlaneContacts
 from .constraints.robot_plane_collider import RobotPlaneCollider
@@ -63,6 +64,7 @@ from .geometry.feature_distance_bound import FeatureDistanceBounds, feature_dist
 from .geometry.linear_sweep import FeatureSweepResult, linear_feature_sweep
 from .geometry.particle_sphere import ParticleSphereGeometry, particle_sphere_geometry
 from .geometry.plane import Plane
+from .geometry.robot_patch_sweep import RobotPatchSweepResult, robot_patch_sweep
 from .geometry.robot_sphere import RobotSphereAttachments
 from .geometry.sphere import SphereShapes
 from .geometry.surface_features import (
@@ -70,6 +72,7 @@ from .geometry.surface_features import (
     closest_point_triangle,
     closest_segment_segment,
 )
+from .runtime.finite_contact_terminal import FiniteContactTerminalProgram
 from .runtime.load_replay import ReplayTrial, SceneLoadReplay
 from .runtime.program import (
     ProgramCapabilities,
@@ -93,6 +96,7 @@ from .solvers.coupled_program import (
     make_coupled_runtime,
 )
 from .solvers.coupled_xpbd import CoupledXPBDSolver
+from .solvers.dynamic_robot_finite_contact import DynamicRobotFiniteContactProgram
 from .solvers.dynamic_robot_friction_contact import DynamicRobotFrictionContactProgram
 from .solvers.dynamic_robot_normal_contact import DynamicRobotNormalContactProgram
 from .solvers.free_scene import FreeSceneProgram
@@ -109,6 +113,7 @@ from .solvers.robot_plane_contact import RobotPlaneContactProgram
 from .solvers.semi_implicit import SemiImplicitSolver
 from .solvers.tetrahedral import TetrahedralProgram, make_tetrahedral_runtime
 from .solvers.xpbd import XPBDSolver
+from .validation.finite_contact_terminal import FiniteContactTerminalLedger
 from .validation.free_particle import FreeParticleVerifier
 
 __version__ = "0.1.0a0"
@@ -245,3 +250,10 @@ __all__ = [
     "ClothPatch",
     "cloth_grid",
 ]
+
+
+__all__ += ["RobotFinitePatchCollider", "RobotPatchSweepResult", "robot_patch_sweep"]
+
+__all__ += ["FiniteContactTerminalProgram", "FiniteContactTerminalLedger"]
+
+__all__ += ["DynamicRobotFiniteContactProgram"]

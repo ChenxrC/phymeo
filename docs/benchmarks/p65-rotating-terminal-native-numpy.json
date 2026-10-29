@@ -1,0 +1,67 @@
+{
+  "status": "prescribed_native_boundary_complete_not_automatic_contact",
+  "source": {
+    "git_revision": "7b0049cc4fa68f936771bca5f2689a3fed984bd8",
+    "git_dirty": true,
+    "source_sha256": "d18e557c49b9711647d7b5218f9706739227eab84073c9a6a309e6276c44b33d",
+    "python": "3.12.14",
+    "numpy": "2.5.4",
+    "platform": "Windows-11-10.0.26200-SP0"
+  },
+  "source_after": {
+    "git_revision": "7b0049cc4fa68f936771bca5f2689a3fed984bd8",
+    "git_dirty": true,
+    "source_sha256": "d18e557c49b9711647d7b5218f9706739227eab84073c9a6a309e6276c44b33d",
+    "python": "3.12.14",
+    "numpy": "2.5.4",
+    "platform": "Windows-11-10.0.26200-SP0"
+  },
+  "cases": [
+    {
+      "case": "single_rotor",
+      "backend": "numpy",
+      "h": 0.25,
+      "tolerance": 1e-08,
+      "max_errors": {
+        "pre_q": 0.0,
+        "pre_v": 0.0,
+        "native_point": 0.0,
+        "paired_point": 0.0,
+        "robot_velocity": 0.0,
+        "node_velocity": 0.0,
+        "terminal_energy": 1.1102230246251565e-16,
+        "paired_axis_momentum": 0.0
+      },
+      "endpoint_mass_change": 0.0,
+      "predicted_terminal_energy": 0.7459363098437533,
+      "observed_terminal_energy": 0.7459363098437534,
+      "execution": [],
+      "applications_per_domain": 1,
+      "duplicate_rows_per_domain": 2,
+      "workspaces_closed": 2
+    },
+    {
+      "case": "two_revolute_mass_change",
+      "backend": "numpy",
+      "h": 0.125,
+      "tolerance": 1e-08,
+      "max_errors": {
+        "pre_q": 0.0,
+        "pre_v": 0.0,
+        "native_point": 0.0,
+        "paired_point": 0.0,
+        "robot_velocity": 2.220446049250313e-16,
+        "node_velocity": 0.0,
+        "terminal_energy": 0.0,
+        "paired_axis_momentum": 2.220446049250313e-16
+      },
+      "endpoint_mass_change": 0.05349697403077336,
+      "predicted_terminal_energy": 0.48940685656830785,
+      "observed_terminal_energy": 0.48940685656830785,
+      "execution": [],
+      "applications_per_domain": 1,
+      "duplicate_rows_per_domain": 2,
+      "workspaces_closed": 2
+    }
+  ]
+}

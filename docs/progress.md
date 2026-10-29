@@ -25,6 +25,10 @@
 
 静态距离证书框架前置已准确交付e63a1bf，两CI成功；[实施任务单](superpowers/plans/2026-10-29-p65-distance-certificate.md)最后交付框已关闭。它不完成动态接触或CCD，下一项继续厚度/法向、特征身份/history与自动建立分离及连续路径。
 
+## 当前推进：有限特征与机器人FK保守CCD
+
+[合同准备](development/p65-finite-fk-candidate.md)已经开始，已核对原生执行/账本限制并形成一个独立解析反例：有限旋转面的路径全程合法、初末力矩均平衡，整步仍可能增能，故CCD不能替代已有能量门槛。新stdlib区间脚本可复现；单转子和双关节M1/J1变化的两个新原生短例已在NumPy/interpret/CUDA各通过，共6例，未运行旧回归。下一步冻结集成合同/选测清单并交一次builder。当前尚未派生产实现或builder，不将研究称作有限几何/旋转接触完成。
+
 ## 已交付：可复用分阶段摩擦（2026-10-29）
 
 [冻结设计](superpowers/specs/2026-10-29-p65-dynamic-friction-design.md)和[实施计划](superpowers/plans/2026-10-29-p65-dynamic-friction.md)已写入；唯一builder dynamic_friction_design_check无重要未决。静支撑、低μ滑动、terminal-only漂移、材料斜撞及多面A/B反例通过公开native API在NumPy/interpret/CUDA各6例核对，共18例；这是预设向量研究，不是自动摩擦已完成。

@@ -1,0 +1,101 @@
+{
+  "status": "prescribed_native_boundary_complete_not_automatic_contact",
+  "source": {
+    "git_revision": "7b0049cc4fa68f936771bca5f2689a3fed984bd8",
+    "git_dirty": true,
+    "source_sha256": "d18e557c49b9711647d7b5218f9706739227eab84073c9a6a309e6276c44b33d",
+    "python": "3.12.14",
+    "numpy": "2.5.4",
+    "platform": "Windows-11-10.0.26200-SP0"
+  },
+  "source_after": {
+    "git_revision": "7b0049cc4fa68f936771bca5f2689a3fed984bd8",
+    "git_dirty": true,
+    "source_sha256": "d18e557c49b9711647d7b5218f9706739227eab84073c9a6a309e6276c44b33d",
+    "python": "3.12.14",
+    "numpy": "2.5.4",
+    "platform": "Windows-11-10.0.26200-SP0"
+  },
+  "cases": [
+    {
+      "case": "single_rotor",
+      "backend": "tyx:interpret",
+      "h": 0.25,
+      "tolerance": 2e-05,
+      "max_errors": {
+        "pre_q": 0.0,
+        "pre_v": 0.0,
+        "native_point": 2.1604849687051342e-08,
+        "paired_point": 2.1604849687051342e-08,
+        "robot_velocity": 8.982623533881906e-10,
+        "node_velocity": 0.0,
+        "terminal_energy": 9.493033026330977e-10,
+        "paired_axis_momentum": 7.450580596923828e-09
+      },
+      "endpoint_mass_change": 0.0,
+      "predicted_terminal_energy": 0.7459363098437533,
+      "observed_terminal_energy": 0.74593630889445,
+      "execution": [
+        {
+          "launches": 26,
+          "completed_launches": 26,
+          "uploads": 0,
+          "downloads": 0,
+          "mode": "interpret",
+          "compute_dtype": "float32"
+        },
+        {
+          "launches": 4,
+          "completed_launches": 4,
+          "uploads": 0,
+          "downloads": 0,
+          "mode": "interpret",
+          "compute_dtype": "float32"
+        }
+      ],
+      "applications_per_domain": 1,
+      "duplicate_rows_per_domain": 2,
+      "workspaces_closed": 2
+    },
+    {
+      "case": "two_revolute_mass_change",
+      "backend": "tyx:interpret",
+      "h": 0.125,
+      "tolerance": 2e-05,
+      "max_errors": {
+        "pre_q": 1.0168623498785223e-08,
+        "pre_v": 5.163027450016955e-08,
+        "native_point": 1.1222041629288526e-08,
+        "paired_point": 1.1222041629288526e-08,
+        "robot_velocity": 7.228154508265305e-08,
+        "node_velocity": 0.0,
+        "terminal_energy": 1.0099463310098145e-07,
+        "paired_axis_momentum": 1.8599474538305572e-07
+      },
+      "endpoint_mass_change": 0.053496977112513555,
+      "predicted_terminal_energy": 0.48940689914769,
+      "observed_terminal_energy": 0.4894067981530569,
+      "execution": [
+        {
+          "launches": 26,
+          "completed_launches": 26,
+          "uploads": 0,
+          "downloads": 0,
+          "mode": "interpret",
+          "compute_dtype": "float32"
+        },
+        {
+          "launches": 4,
+          "completed_launches": 4,
+          "uploads": 0,
+          "downloads": 0,
+          "mode": "interpret",
+          "compute_dtype": "float32"
+        }
+      ],
+      "applications_per_domain": 1,
+      "duplicate_rows_per_domain": 2,
+      "workspaces_closed": 2
+    }
+  ]
+}

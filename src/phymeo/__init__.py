@@ -93,6 +93,7 @@ from .solvers.coupled_program import (
     make_coupled_runtime,
 )
 from .solvers.coupled_xpbd import CoupledXPBDSolver
+from .solvers.dynamic_robot_friction_contact import DynamicRobotFrictionContactProgram
 from .solvers.dynamic_robot_normal_contact import DynamicRobotNormalContactProgram
 from .solvers.free_scene import FreeSceneProgram
 from .solvers.initial_robot_material_contact import (
@@ -118,6 +119,7 @@ from .validation.terminal_impulse import TerminalImpulseLedger
 __all__ = [
     "RobotPlaneCollider",
     "DynamicRobotNormalContactProgram",
+    "DynamicRobotFrictionContactProgram",
     "PointVelocityImpulses",
     "TerminalImpulseProgram",
     "TerminalImpulseLedger",

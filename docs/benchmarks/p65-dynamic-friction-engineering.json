@@ -1,5 +1,5 @@
 {
-  "status": "review_closed_final_acceptance_running",
+  "status": "local_acceptance_complete_remote_delivery_pending",
   "source": {
     "commit": "6df5b14e60bb8661f1dcaa295fe7161bfd44e6e8",
     "python_files": 134,
@@ -103,7 +103,7 @@
     }
   },
   "final_acceptance": {
-    "status": "numerical_quality_wheel_complete_measurement_cuda_running",
+    "status": "complete",
     "frozen_snapshot": {
       "snapshot_commit": "dc59c3968b305833e941e68ac1170c695a15bbcb",
       "digest": "ea6e07e3d6a5eb49e04d017908748b56f3b17ad8ab094edeebce6ac654fba57c",
@@ -525,18 +525,27 @@
         "runner_seconds": 1163.023064600071,
         "log": "artifacts/dynamic-friction-final-dc59c39-a/measurement-interpret.txt",
         "slowest": []
+      },
+      "measurement-cuda": {
+        "exit_code": 0,
+        "runner_seconds": 3410.597951799864,
+        "log": "artifacts/dynamic-friction-final-dc59c39-a/measurement-cuda.txt",
+        "slowest": []
       }
     },
-    "last_observed_phase": "measurement-cuda",
+    "last_observed_phase": "complete",
     "wheel": {
       "path": "artifacts/dynamic-friction-final-dc59c39-a/dist/phymeo-0.1.0a0-py3-none-any.whl",
       "sha256": "93e8d659b438afee09a2591312be7b27ba9846c3e9b191e3c26df5bd1cacd88a",
       "source_files": 134
     },
-    "independent_evidence_check": "artifacts/summarize_dynamic_friction_evidence.py --partial; exit0; all completed exits, frozen digest, 134 packaged sources, two raw sample distributions verified"
+    "independent_evidence_check": "artifacts/summarize_dynamic_friction_evidence.py; exit0; all16 exits/full summaries, frozen digest, 134 packaged sources and all3 raw sample distributions verified",
+    "summary": "artifacts/dynamic-friction-final-summary.json"
   },
   "formal_performance": {
-    "status": "numpy_interpret_complete_cuda_running",
+    "status": "complete",
+    "measured_calls": 900,
+    "including_warmups": 918,
     "completed_modes": {
       "numpy": {
         "raw": "docs/performance-bottlenecks/measurements/p65-dynamic-friction-numpy.json",
@@ -695,13 +704,92 @@
             }
           }
         }
+      },
+      "cuda": {
+        "raw": "docs/performance-bottlenecks/measurements/p65-dynamic-friction-cuda.json",
+        "measured": 300,
+        "including_warmups": 306,
+        "source": {
+          "git_revision": "afcb5d1c85d33bc707a240fb0979ed0902828e3c",
+          "git_dirty": true,
+          "source_sha256": "d18e557c49b9711647d7b5218f9706739227eab84073c9a6a309e6276c44b33d",
+          "python": "3.12.14",
+          "numpy": "2.5.4",
+          "platform": "Windows-11-10.0.26200-SP0"
+        },
+        "source_after": {
+          "git_revision": "6d74846e0fbccc4ac586a6917ddb1ded09e70823",
+          "git_dirty": true,
+          "source_sha256": "d18e557c49b9711647d7b5218f9706739227eab84073c9a6a309e6276c44b33d",
+          "python": "3.12.14",
+          "numpy": "2.5.4",
+          "platform": "Windows-11-10.0.26200-SP0"
+        },
+        "by_case": {
+          "support": {
+            "samples": 150,
+            "median": 18.587778999935836,
+            "p95": 19.372535995114593,
+            "observed_counts": {
+              "held_replays": [
+                110
+              ],
+              "terminal_replays": [
+                1
+              ],
+              "launches": [
+                2886
+              ],
+              "completed_launches": [
+                2886
+              ],
+              "uploads": [
+                23088
+              ],
+              "downloads": [
+                6105
+              ],
+              "tolerance": [
+                2e-05
+              ]
+            }
+          },
+          "chain": {
+            "samples": 150,
+            "median": 3.5619484500493854,
+            "p95": 3.719895484915469,
+            "observed_counts": {
+              "held_replays": [
+                13
+              ],
+              "terminal_replays": [
+                4
+              ],
+              "launches": [
+                523
+              ],
+              "completed_launches": [
+                523
+              ],
+              "uploads": [
+                3958
+              ],
+              "downloads": [
+                1077
+              ],
+              "tolerance": [
+                2e-05
+              ]
+            }
+          }
+        }
       }
     },
-    "note": "600 measured/612 including warmups verified; CUDA unfinished; do not call all900 complete. NumPy recordedHEAD784adf0 clean; interpret start784adf0/endafcb5d1 plus earlier raw/docs dirty, source/script/frozen digest unchanged."
+    "note": "Strict serial NumPy then interpret then CUDA; each300 measured/306 total, eachcase150+3 warmups; fixed initial states, not a900-step trajectory. NumPy HEAD784adf0 clean; interpret784adf0->afcb5d1, CUDAafcb5d1->6d74846; latter dirty/history changes are docs and preceding raw only. Source/script/frozen digest unchanged. No equal-precision speedup claim or failure-performance measurement."
   },
   "delivery": {
-    "status": "product_not_pushed",
-    "last_remote": "b7dd5b55451295434191eecc0bbedf3a1c46f712",
-    "note": "research/design head CI40807534775 and Documentation40807534785 success; not product CI"
+    "status": "remote_delivery_pending",
+    "last_verified_remote": "b7dd5b55451295434191eecc0bbedf3a1c46f712",
+    "note": "This record precedes push; verify new full HEAD and exact CI before closing delivery. Old research CI is not current product acceptance."
   }
 }

@@ -28,15 +28,13 @@
 
 ## 当前立即续作
 
-优先执行用户2026-10-29最新[分层验收要求](p65-validation-policy.md)：后续小切片按影响范围选测，不再例行重跑整分支CUDA/两套本地CPU/900性能；新能力自身必要物理与事务门槛保持。旧计划中的默认频率以此规则为准。当前dc59c39-a重套件已全部结束且exit0，正在CUDA正式计量，前两模式各300已完成；承接同一session27196完成，不重启或改冻结文件。
+动态摩擦本地实现/唯一审阅/最终工程/三模式正式计量均已完成；pipeline session27196已exit0、status complete，禁止重启或重跑已通过套件/900计量。产品6df5b14、回归dc59c39、134源码hashd18e557c…；全部src/tests/scripts冻结摘要ea6e07e3d6a5eb49e04d017908748b56f3b17ad8ab094edeebce6ac654fba57c不变。完整记录见[验收](../benchmarks/p65-dynamic-friction-acceptance.md)、[工程](../benchmarks/p65-dynamic-friction-engineering.json)、[唯一审阅](../benchmarks/p65-dynamic-friction-review.md)。审阅0Critical/0Important/1Minor已关闭，不派第二次。
 
-Task1实现已交付：产品6df5b14、报告cb209b8，数值槽/index已归还父；先读[验收](../benchmarks/p65-dynamic-friction-acceptance.md)、[工程](../benchmarks/p65-dynamic-friction-engineering.json)及对应SDD ledger/report，不重派实现或重复已完成定向。父三模式最小基准各2计时+6warmup成功，源码/脚本hash不变；只是脚本自检。
+两CPU各1945通过/362未选，完整CUDA2307通过6196.34s，Ubuntu新核心80通过223.65s、有界CPP1通过23.15s，quality/build和134源码外wheel全部exit0。NumPy/interpret/CUDA依次各300计时/306总调用，共900/918成功；只读汇总器artifacts/summarize_dynamic_friction_evidence.py最终exit0，全部退出码/源码脚本摘要/wheel逐文件/raw计数和中位P95独立核对。最终汇总artifacts/dynamic-friction-final-summary.json。
 
-唯一fresh reviewer dynamic_friction_final_review已完成0Critical/0Important/1Minor，BASEb7dd5b5..HEADcb209b8；M1明确有限不合格候选可回选完整合法best并重验，执行异常/最终best越限仍全帧拒绝，未改任何门槛。新增回归dc59c39：4项直接GREEN，transaction27通过；生产134源码hash d18e557c…不变，父已核对，勿派第二次fresh审阅。实现者/reviewer数值均退出，index/numeric槽回父。
+下一动作是提交推送摩擦交付记录与三raw，核对远程完整SHA和该准确提交CI；记录形成时尚未推送，先读实时Git/Actions，不能拿旧b7dd5b5研究CI作新产品验收。若准确CI失败排查；若成功关闭本阶段最后交付框，进入有限特征建立/分离/切换与机器人FK保守CCD的框架合同。此后顺序仍为弯曲/自碰撞、真实单爪、高低摩擦承重、目标IK/history、双臂交接放台和同源Three.js。
 
-最终串行runner现已启动，唯一数值进程session27196，tag dc59c39-a，最近核对core311/nativepip完整各1945passed/362deselected，pytest665.54/657.52s，两exit0；runner墙钟665.850418/658.166479s另记；完整CUDA已2307passed/6196.34s，exit0（runner6196.840740s另记）；随后Ubuntu、有界CPP、quality/build/wheel均exit0，NumPy/interpret正式各300计时/306总调用已完成并由只读summary独立核对，当前phase measurement-cuda，CUDA计量尚未完成。读取artifacts/dynamic-friction-final-dc59c39-a/status.json及当前log/.exit，再承接现有session；句柄不可用先核对日志和精确进程，绝不重复启动。冻结src/tests/scripts摘要ea6e07e3d6a5eb49e04d017908748b56f3b17ad8ab094edeebce6ac654fba57c，runnerhash7439fe13944195cf83a8918245015a047e12271c6c87202246edf48676576b01，启动HEADfa1e84b。
-
-顺序两CPU完整→完整CUDA→Ubuntu新核心→一个有界CPP→quality/build/源码外wheel→三后端各300正式观测；失败或摘要变化即停。全部实现/reviewer已退出，不重派/重跑已完成定向。运行期间不改源码/tests/scripts，文档可更新；必须修复先停止确认过身份的pipeline并准确记录未执行。后段环境失败且摘要未变从失败步继续，不重跑已完成长suite。两CPU/fullCUDA附pytest durations20用于观测慢测试，仍非正式性能。当前摩擦产品尚未push，准确旧b7dd5b5研究CI已成功不再查询；全部本地工程成功后再交付核对新SHA/CI。
+优先执行用户2026-10-29最新[分层验收要求](p65-validation-policy.md)：后续小切片先写影响/选测清单，再派实现；不再例行两套本地CPU/整分支CUDA/900性能。新能力自身必要物理、步长/重复和事务门槛完整保留；全量留公共底层变更、集成里程碑及最终交付。全部实现/reviewer及当前pipeline已经退出，暂无本任务数值owner；不因空闲重复旧研究或旧review。
 
 ### 已关闭的上一阶段：有限法向
 

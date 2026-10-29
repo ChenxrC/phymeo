@@ -32,7 +32,9 @@ Task1实现已交付：产品6df5b14、报告cb209b8，数值槽/index已归还�
 
 唯一fresh reviewer dynamic_friction_final_review已完成0Critical/0Important/1Minor，BASEb7dd5b5..HEADcb209b8；M1明确有限不合格候选可回选完整合法best并重验，执行异常/最终best越限仍全帧拒绝，未改任何门槛。新增回归dc59c39：4项直接GREEN，transaction27通过；生产134源码hash d18e557c…不变，父已核对，勿派第二次fresh审阅。实现者/reviewer数值均退出，index/numeric槽回父。
 
-最终串行runner已准备但此提交点尚未启动，快照artifacts/dynamic-friction-final-snapshot-dc59c39.json。下一步只按冻结摘要/--review-closed和全新tag启动一次，随后承接status/log/exit，不重复已有定向/旧阶段。两CPU/fullCUDA附pytest durations20帮助定位慢测试，但套件耗时不是正式性能。研究头b7dd5b5准确CI/Doc均success，仅覆盖研究/设计；当前摩擦产品未push，最终工程成功后再交付。
+最终串行runner现已启动，唯一数值进程session27196，tag dc59c39-a，初次核对phase core311、results为空，不能算整套通过。读取artifacts/dynamic-friction-final-dc59c39-a/status.json及当前log/.exit，再承接现有session；句柄不可用先核对日志和精确进程，绝不重复启动。冻结src/tests/scripts摘要ea6e07e3d6a5eb49e04d017908748b56f3b17ad8ab094edeebce6ac654fba57c，runnerhash7439fe13944195cf83a8918245015a047e12271c6c87202246edf48676576b01，启动HEADfa1e84b。
+
+顺序两CPU完整→完整CUDA→Ubuntu新核心→一个有界CPP→quality/build/源码外wheel→三后端各300正式观测；失败或摘要变化即停。全部实现/reviewer已退出，不重派/重跑已完成定向。运行期间不改源码/tests/scripts，文档可更新；必须修复先停止确认过身份的pipeline并准确记录未执行。后段环境失败且摘要未变从失败步继续，不重跑已完成长suite。两CPU/fullCUDA附pytest durations20用于观测慢测试，仍非正式性能。当前摩擦产品尚未push，准确旧b7dd5b5研究CI已成功不再查询；全部本地工程成功后再交付核对新SHA/CI。
 
 ### 已关闭的上一阶段：有限法向
 

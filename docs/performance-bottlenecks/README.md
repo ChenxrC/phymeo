@@ -52,4 +52,6 @@ P1/P2 最终新增[修复版串行小负载测量](measurements/p2-runtime.md)�
 
 新增[PERF-015 材料原式账本](PERF-015-material-ledger.md)：三模式900次串行小材料求解与精确账本观测，原生/认证分阶段计时，保留完整正确性门禁；未优化或归因tyx/Warp差距。
 
-新增[PERF-016 材料接触候选](PERF-016-material-contact.md)：当前仅2秒normal-only原型的完整replay计数；正式生产程序和串行时间测量尚未完成，不优化、不归因tyx。
+新增[PERF-016 材料接触](PERF-016-material-contact.md)：生产材料接触和三模式900次正式观测已交付，端到端重放/审计成本未分项归因，不优化。
+
+新增[PERF-019 自动法向接触](PERF-019-dynamic-normal-contact.md)：两个非递布解析场景，三模式900计时/918总调用成功，真实held/terminal重放、执行与传输计数及host认证成本；未做优化或Warp比较。

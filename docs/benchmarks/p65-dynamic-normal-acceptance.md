@@ -1,6 +1,6 @@
 # P6.5 自动法向接触：生产实现与验收进度
 
-状态：生产实现已提交，本阶段唯一独立审阅0Critical/0Important/0Minor，最终串行工程验收已启动，正在执行，尚未交付整个阶段，更未完成H1/P6.5。产品提交4ff19ea7975145fe9d44450164b906f01fe0527d，131个源码文件hash `ac777319d0b8fbc03adab92286656a5572df05bca403e913912500908e991060`。
+状态：生产实现、本阶段唯一独立审阅0Critical/0Important/0Minor、最终本地工程验收与正式串行观测均完成；待本次提交推送及准确远程CI闭环。完整H1/P6.5仍未完成。产品提交4ff19ea7975145fe9d44450164b906f01fe0527d，131个源码文件hash `ac777319d0b8fbc03adab92286656a5572df05bca403e913912500908e991060`。
 
 ## 可复用支持域
 
@@ -18,10 +18,14 @@ held阶段从原状态/输入完整原生重放，节点p与机器人反作用�
 - 后段子步history/trace/末冲量/close失败整帧回滚，retry等于fresh。已有best candidate之后的真实执行失败仍拒绝，半构造失败清理已创建参与者。
 - 实际interpret/CUDA检查真实模式、FP32计算、原生launch和末阶段执行。开放零eta路径的FP64 nextafter篡改也拒绝。
 
-精确测试数量与版本边界见[工程记录](p65-dynamic-normal-engineering.json)。新CUDA7通过1055.23秒是验收耗时，不能用作正式性能结果。基准脚本已分别完成NumPy/actual interpret/CUDA最小smoke（每模式2计时调用、6warmup），900次正式观测尚未执行。
+最终同一冻结版本：两套CPU完整各1865通过/351未选（416.07/399.69s）；完整actual CUDA2216通过（9148.75s）；Ubuntu新核心112通过（103.42s）；有界CPP解析1通过（28.97s）。CUDA低摩擦长窗最终通过，具体耗时原因未定位，未据此认定依赖缺陷。Ubuntu沿用已验证依赖，不是干净安装；CPP短例不替代TYX-003长期门禁。
+
+最终131文件源码外wheel与新native-pip安装smoke通过，ruff/docs/公开tyx边界/compile/uvpip检查及未改变的锁导出核对通过。源码、测试、脚本摘要与runner哈希在全流程后复核一致；历史pre-cap的局部结果另列，不冒称新版全量。
+
+随后NumPy→interpret→CUDA严格串行，各300计时/306含warmup，共900计时/918调用成功；每模式free/chain各150。精确版本、执行计数、原始记录见[工程记录](p65-dynamic-normal-engineering.json)及[PERF-019](../performance-bottlenecks/PERF-019-dynamic-normal-contact.md)。容差/迭代不同，不构成后端加速比；完整套件耗时不能当正式性能。
 
 ## 未完成范围与下一步
 
-[唯一审阅](p65-dynamic-normal-review.md)已结束且探针全部退出；随后进行完整两个CPU/CUDA套件、Ubuntu、有界CPP、源码外wheel、串行正式性能与准确新提交CI。旧2f50c1f生命周期兼容修复的CI已成功，不能借此声称当前4ff19ea已完成远程验收。
+[唯一审阅](p65-dynamic-normal-review.md)、所有本地测试和正式计量已结束，不再重复旧pipeline、全量或审阅。当前只待本次专用分支推送、远程SHA与准确新提交CI核对；旧2f50c1f成功CI不能作为本次远程验收。
 
 本能力不是摩擦、有限三角/边特征切换、旋转FK保守CCD或真实夹持。之后仍须这些框架能力、弯曲/自碰撞、单爪承重与低摩擦滑落、目标/IK/history、双臂交接及同源Three.js。NUM-005积分器角动量损失未被修复；TYX-003长期CPP和TYX-004严格解释器cos仍开放。保持[冻结合同](../superpowers/specs/2026-10-29-p65-dynamic-normal-design.md)与[实施计划](../superpowers/plans/2026-10-29-p65-dynamic-normal.md)的门槛，不扩P7/P8。

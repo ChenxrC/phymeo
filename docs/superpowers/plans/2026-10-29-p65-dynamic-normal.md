@@ -59,9 +59,9 @@
 **Interfaces:** Consume全生产API和两任务报告；输出最终版本真实测试/build/perf/远程证据。
 
 - [x] 核对两个实现报告和接口/物理范围；建立基准脚本后，整阶段产品+tests+script一次fresh最终review。Important先独立RED后修；只重复受影响验收，不派第二次review。
-- [ ] 最终完整CPU两环境、最终CUDA全量（逐套串行）、Ubuntu新核心、interpret相关、有界CPP一个短例；每suite全新受核对basetemp。实际失败准确记录、不把挂起/中止算通过。
-- [ ] ruff/docs/边界/compile/uvpip/锁导出与最终源码外wheel源码一致、新nativepip安装smoke。源码或测试改变只重验受影响证据，不伪造全量版本。
-- [ ] 数值及review探针均退出后NumPy→interpret→CUDA分别3x100串行正式观测，取free establish与链建立小负载（每样本明确一个case，至少覆盖两case计量口径），记录held/terminal replay数、实际launch/上传下载、耗时及源/script hashes。迭代精度不同不作速度比；未测Warp不声称差距，不优化。
+- [x] 最终完整CPU两环境、最终CUDA全量（逐套串行）、Ubuntu新核心、interpret相关、有界CPP一个短例；每suite全新受核对basetemp。实际失败准确记录、不把挂起/中止算通过。
+- [x] ruff/docs/边界/compile/uvpip/锁导出与最终源码外wheel源码一致、新nativepip安装smoke。源码或测试改变只重验受影响证据，不伪造全量版本。
+- [x] 数值及review探针均退出后NumPy→interpret→CUDA分别3x100串行正式观测，取free establish与链建立小负载（每样本明确一个case，至少覆盖两case计量口径），记录held/terminal replay数、实际launch/上传下载、耗时及源/script hashes。迭代精度不同不作速度比；未测Warp不声称差距，不优化。
 - [ ] 更新框架线有限法向生命周期验收与案例线未接入；保持摩擦/有限特征/FK CCD/弯曲/自碰撞/夹持/双臂/Three.js后续。记录遗留/host瓶颈/tyx区别；commit/push专用分支核对远程SHA/准确CI，不能将P6.5整体勾完成。
 
 计划自查：spec所有API/阶段原式/所有权/后端/接触生成/history/物理与事务对应Task1/2，工程对应Task3。Task1 native机制独立可测，Task2求解器独立可拒收；单次review合并整阶段，避免重复审阅。主agent采用用户已授权的持续执行与技术裁定，不等待逐项许可。

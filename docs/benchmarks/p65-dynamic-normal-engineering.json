@@ -1,5 +1,5 @@
 {
-  "status": "final_engineering_running",
+  "status": "local_acceptance_complete_remote_delivery_pending",
   "source": {
     "commit": "4ff19ea7975145fe9d44450164b906f01fe0527d",
     "python_files": 131,
@@ -73,7 +73,7 @@
     "note": "not current stage HEAD remote CI"
   },
   "benchmark": {
-    "formal_status": "not_run",
+    "formal_status": "complete",
     "smoke": {
       "mode": "numpy",
       "measured": 2,
@@ -101,7 +101,367 @@
         "per_case_measured": 1,
         "status": "complete"
       }
-    }
+    },
+    "accepted_measured_calls": 900,
+    "successful_calls_including_warmups": 918,
+    "serial_order": [
+      "numpy",
+      "interpret",
+      "cuda"
+    ],
+    "modes": {
+      "numpy": {
+        "source": {
+          "git_revision": "d2eb887f042cfde181f8c5cf625724d92dc012bb",
+          "git_dirty": false,
+          "source_sha256": "ac777319d0b8fbc03adab92286656a5572df05bca403e913912500908e991060",
+          "python": "3.12.14",
+          "numpy": "2.5.4",
+          "platform": "Windows-11-10.0.26200-SP0"
+        },
+        "source_after": {
+          "git_revision": "d2eb887f042cfde181f8c5cf625724d92dc012bb",
+          "git_dirty": false,
+          "source_sha256": "ac777319d0b8fbc03adab92286656a5572df05bca403e913912500908e991060",
+          "python": "3.12.14",
+          "numpy": "2.5.4",
+          "platform": "Windows-11-10.0.26200-SP0"
+        },
+        "first_call_seconds": {
+          "free": 0.11038510012440383,
+          "chain": 0.43853499996475875
+        },
+        "raw_sha256": "f3d7476047477d0c84a8da9c2c777776ac252cc9473c235e3333c7dce25417ee",
+        "cases": {
+          "free": {
+            "samples": 150,
+            "median_ms": 71.87089999206364,
+            "p95_ms": 80.9269200428389,
+            "counts": {
+              "held_replays": [
+                4
+              ],
+              "terminal_replays": [
+                3
+              ],
+              "launches": [
+                0
+              ],
+              "completed_launches": [
+                0
+              ],
+              "uploads": [
+                0
+              ],
+              "downloads": [
+                0
+              ],
+              "position_iterations": [
+                3
+              ],
+              "velocity_iterations": [
+                2
+              ],
+              "tolerance": [
+                1e-08
+              ]
+            },
+            "outer_stage_median_ms": {
+              "setup": 1.6706001479178667,
+              "predict": 5.558450007811189,
+              "position": 25.773100089281797,
+              "prepare_velocity": 8.529399987310171,
+              "velocity": 23.83494994137436,
+              "validation": 0.17699983436614275,
+              "verification": 0.000600004568696022,
+              "diagnostics": 4.6389499912038445,
+              "close": 0.000700121745467186
+            }
+          },
+          "chain": {
+            "samples": 150,
+            "median_ms": 367.8388500120491,
+            "p95_ms": 411.78550499025727,
+            "counts": {
+              "held_replays": [
+                27
+              ],
+              "terminal_replays": [
+                3
+              ],
+              "launches": [
+                0
+              ],
+              "completed_launches": [
+                0
+              ],
+              "uploads": [
+                0
+              ],
+              "downloads": [
+                0
+              ],
+              "position_iterations": [
+                27
+              ],
+              "velocity_iterations": [
+                2
+              ],
+              "tolerance": [
+                1e-08
+              ]
+            },
+            "outer_stage_median_ms": {
+              "setup": 1.9963999511674047,
+              "predict": 6.187249906361103,
+              "position": 313.7115000281483,
+              "prepare_velocity": 10.389099945314229,
+              "velocity": 27.686050045304,
+              "validation": 0.1853499561548233,
+              "verification": 0.000600004568696022,
+              "diagnostics": 6.0406000120565295,
+              "close": 0.000700121745467186
+            }
+          }
+        }
+      },
+      "interpret": {
+        "source": {
+          "git_revision": "d2eb887f042cfde181f8c5cf625724d92dc012bb",
+          "git_dirty": true,
+          "source_sha256": "ac777319d0b8fbc03adab92286656a5572df05bca403e913912500908e991060",
+          "python": "3.12.14",
+          "numpy": "2.5.4",
+          "platform": "Windows-11-10.0.26200-SP0"
+        },
+        "source_after": {
+          "git_revision": "d2eb887f042cfde181f8c5cf625724d92dc012bb",
+          "git_dirty": true,
+          "source_sha256": "ac777319d0b8fbc03adab92286656a5572df05bca403e913912500908e991060",
+          "python": "3.12.14",
+          "numpy": "2.5.4",
+          "platform": "Windows-11-10.0.26200-SP0"
+        },
+        "first_call_seconds": {
+          "free": 0.45211299997754395,
+          "chain": 0.760378299979493
+        },
+        "raw_sha256": "b821ed806944324c620b4b62a1781b9e3c707bd016326349e23c1763e6eda66d",
+        "cases": {
+          "free": {
+            "samples": 150,
+            "median_ms": 269.7728999191895,
+            "p95_ms": 300.4756649839692,
+            "counts": {
+              "held_replays": [
+                3
+              ],
+              "terminal_replays": [
+                3
+              ],
+              "launches": [
+                176
+              ],
+              "completed_launches": [
+                176
+              ],
+              "uploads": [
+                0
+              ],
+              "downloads": [
+                0
+              ],
+              "position_iterations": [
+                2
+              ],
+              "velocity_iterations": [
+                2
+              ],
+              "tolerance": [
+                2e-05
+              ]
+            },
+            "outer_stage_median_ms": {
+              "setup": 1.6639000969007611,
+              "predict": 37.83299995120615,
+              "position": 81.5592500148341,
+              "prepare_velocity": 40.73744989000261,
+              "velocity": 101.45919991191477,
+              "validation": 0.17230003140866756,
+              "verification": 0.000600004568696022,
+              "diagnostics": 4.672099952585995,
+              "close": 0.00100000761449337
+            }
+          },
+          "chain": {
+            "samples": 150,
+            "median_ms": 729.8933001002297,
+            "p95_ms": 807.7534849522635,
+            "counts": {
+              "held_replays": [
+                13
+              ],
+              "terminal_replays": [
+                2
+              ],
+              "launches": [
+                445
+              ],
+              "completed_launches": [
+                445
+              ],
+              "uploads": [
+                0
+              ],
+              "downloads": [
+                0
+              ],
+              "position_iterations": [
+                12
+              ],
+              "velocity_iterations": [
+                1
+              ],
+              "tolerance": [
+                2e-05
+              ]
+            },
+            "outer_stage_median_ms": {
+              "setup": 1.994699938222766,
+              "predict": 41.991100064478815,
+              "position": 577.9115998884663,
+              "prepare_velocity": 46.555800014175475,
+              "velocity": 55.589849944226444,
+              "validation": 0.17664988990873098,
+              "verification": 0.000600004568696022,
+              "diagnostics": 5.994950071908534,
+              "close": 0.0010998919606208801
+            }
+          }
+        }
+      },
+      "cuda": {
+        "source": {
+          "git_revision": "d2eb887f042cfde181f8c5cf625724d92dc012bb",
+          "git_dirty": true,
+          "source_sha256": "ac777319d0b8fbc03adab92286656a5572df05bca403e913912500908e991060",
+          "python": "3.12.14",
+          "numpy": "2.5.4",
+          "platform": "Windows-11-10.0.26200-SP0"
+        },
+        "source_after": {
+          "git_revision": "d2eb887f042cfde181f8c5cf625724d92dc012bb",
+          "git_dirty": true,
+          "source_sha256": "ac777319d0b8fbc03adab92286656a5572df05bca403e913912500908e991060",
+          "python": "3.12.14",
+          "numpy": "2.5.4",
+          "platform": "Windows-11-10.0.26200-SP0"
+        },
+        "first_call_seconds": {
+          "free": 1.4268597001209855,
+          "chain": 2.7223205999471247
+        },
+        "raw_sha256": "95b46cdde0042d8f1fe7f80da574fc4bbe079cbe6c5c781c09603b3c0127e45d",
+        "cases": {
+          "free": {
+            "samples": 150,
+            "median_ms": 1139.6454999921843,
+            "p95_ms": 1232.0529550896024,
+            "counts": {
+              "held_replays": [
+                3
+              ],
+              "terminal_replays": [
+                3
+              ],
+              "launches": [
+                176
+              ],
+              "completed_launches": [
+                176
+              ],
+              "uploads": [
+                1382
+              ],
+              "downloads": [
+                368
+              ],
+              "position_iterations": [
+                2
+              ],
+              "velocity_iterations": [
+                2
+              ],
+              "tolerance": [
+                2e-05
+              ]
+            },
+            "outer_stage_median_ms": {
+              "setup": 1.7476498614996672,
+              "predict": 164.90490001160651,
+              "position": 343.68875005748123,
+              "prepare_velocity": 168.8131500268355,
+              "velocity": 442.68570002168417,
+              "validation": 0.17815001774579287,
+              "verification": 0.0006499467417597771,
+              "diagnostics": 4.810350015759468,
+              "close": 0.00100000761449337
+            }
+          },
+          "chain": {
+            "samples": 150,
+            "median_ms": 3157.3263000464067,
+            "p95_ms": 3342.788049892988,
+            "counts": {
+              "held_replays": [
+                13
+              ],
+              "terminal_replays": [
+                2
+              ],
+              "launches": [
+                445
+              ],
+              "completed_launches": [
+                445
+              ],
+              "uploads": [
+                3382
+              ],
+              "downloads": [
+                919
+              ],
+              "position_iterations": [
+                12
+              ],
+              "velocity_iterations": [
+                1
+              ],
+              "tolerance": [
+                2e-05
+              ]
+            },
+            "outer_stage_median_ms": {
+              "setup": 2.049349946901202,
+              "predict": 199.99849994201213,
+              "position": 2492.4257500097156,
+              "prepare_velocity": 203.47034989390522,
+              "velocity": 241.47314997389913,
+              "validation": 0.1770000671967864,
+              "verification": 0.000600004568696022,
+              "diagnostics": 6.113299983553588,
+              "close": 0.0010998919606208801
+            }
+          }
+        }
+      }
+    },
+    "scope": "Fresh-state full step including native replays, audits, diagnostics, analytic/bitwise assertions and workspace close; factory and final close excluded",
+    "limitations": [
+      "Unequal tolerances/iterations, not a cross-backend equal-accuracy speed ratio",
+      "First call used existing caches, not cold JIT",
+      "No isolated kernel/native/Fraction timing, Warp, peak memory, full continuous trajectory or C++ endurance measurement"
+    ]
   },
   "final_engineering": {
     "cpu311": {
@@ -120,28 +480,188 @@
       "exit_code": 0,
       "source_commit": "4ff19ea7975145fe9d44450164b906f01fe0527d"
     },
-    "cuda_full": "running",
-    "ubuntu": "not_run",
-    "cpp_bounded": "not_run",
-    "wheel": "not_run",
+    "cuda_full": {
+      "status": "passed",
+      "passed": 2216,
+      "deselected": 0,
+      "pytest_seconds": 9148.75,
+      "exit_code": 0,
+      "source_commit": "4ff19ea7975145fe9d44450164b906f01fe0527d"
+    },
+    "ubuntu": {
+      "status": "passed",
+      "passed": 112,
+      "deselected": 0,
+      "pytest_seconds": 103.42,
+      "exit_code": 0,
+      "source_commit": "4ff19ea7975145fe9d44450164b906f01fe0527d",
+      "note": "WSL Ubuntu /usr/bin/python3.12.3, verified Linux NumPy with existing test dependencies; not a clean installation"
+    },
+    "cpp_bounded": {
+      "status": "passed",
+      "passed": 1,
+      "deselected": 0,
+      "pytest_seconds": 28.97,
+      "exit_code": 0,
+      "source_commit": "4ff19ea7975145fe9d44450164b906f01fe0527d",
+      "note": "one bounded analytic case only; TYX-003 endurance remains open"
+    },
+    "wheel": {
+      "status": "passed",
+      "python_files": 131,
+      "clean_native_pip_install": true,
+      "source_outside_checkout_smoke": true,
+      "path": "artifacts\\dynamic-normal-final-4ff19ea-a\\dist\\phymeo-0.1.0a0-py3-none-any.whl",
+      "sha256": "491142e28d22f659d2c60707c37a2dc45e97276e0257fbaf1dc66d80a13cdda8"
+    },
     "current_remote_ci": "not_run",
     "frozen_src_tests_scripts_digest": "f1e36fe05f6022618de94c8d20638911c6c8383e73e65a8c7b35f2a6e93e305f",
     "pipeline": {
       "session_id": 7480,
       "directory": "artifacts/dynamic-normal-final-4ff19ea-a",
-      "phase_at_record": "cuda-full",
+      "phase_at_record": "complete",
       "status_file": "artifacts/dynamic-normal-final-4ff19ea-a/status.json",
       "runner_sha256": "335cb8fde761abdf3659e4d12ffa15861220472a33fecf423cb948935394e224",
       "completed_at_record": [
         "core311",
-        "nativepip"
+        "nativepip",
+        "cuda-full",
+        "ubuntu-new",
+        "cpp-bounded",
+        "ruff",
+        "docs",
+        "public-boundary",
+        "compile",
+        "uv-pip-check",
+        "nativepip-check",
+        "build",
+        "wheel",
+        "measurement-numpy",
+        "measurement-interpret",
+        "measurement-cuda"
       ],
-      "note": "read live status/log/exit; start is not acceptance; do not restart already successful phases"
+      "note": "All exit codes zero; frozen source/tests/scripts digest and runner hash verified after completion; do not restart closed pipeline",
+      "results": [
+        {
+          "name": "core311",
+          "exit_code": 0,
+          "runner_wall_seconds": 416.7968959999271
+        },
+        {
+          "name": "nativepip",
+          "exit_code": 0,
+          "runner_wall_seconds": 400.2330096999649
+        },
+        {
+          "name": "cuda-full",
+          "exit_code": 0,
+          "runner_wall_seconds": 9149.192600400187
+        },
+        {
+          "name": "ubuntu-new",
+          "exit_code": 0,
+          "runner_wall_seconds": 114.30550739984028
+        },
+        {
+          "name": "cpp-bounded",
+          "exit_code": 0,
+          "runner_wall_seconds": 29.384262699866667
+        },
+        {
+          "name": "ruff",
+          "exit_code": 0,
+          "runner_wall_seconds": 0.32090510008856654
+        },
+        {
+          "name": "docs",
+          "exit_code": 0,
+          "runner_wall_seconds": 0.21167870005592704
+        },
+        {
+          "name": "public-boundary",
+          "exit_code": 0,
+          "runner_wall_seconds": 0.3093246000353247
+        },
+        {
+          "name": "compile",
+          "exit_code": 0,
+          "runner_wall_seconds": 0.08780370000749826
+        },
+        {
+          "name": "uv-pip-check",
+          "exit_code": 0,
+          "runner_wall_seconds": 0.25837349984794855
+        },
+        {
+          "name": "nativepip-check",
+          "exit_code": 0,
+          "runner_wall_seconds": 0.7993626999668777
+        },
+        {
+          "name": "build",
+          "exit_code": 0,
+          "runner_wall_seconds": 2.597784499870613
+        },
+        {
+          "name": "wheel",
+          "exit_code": 0,
+          "runner_wall_seconds": 10.307262799935415
+        },
+        {
+          "name": "measurement-numpy",
+          "exit_code": 0,
+          "runner_wall_seconds": 68.9502752001863
+        },
+        {
+          "name": "measurement-interpret",
+          "exit_code": 0,
+          "runner_wall_seconds": 155.467763800174
+        },
+        {
+          "name": "measurement-cuda",
+          "exit_code": 0,
+          "runner_wall_seconds": 658.2805989999324
+        }
+      ]
+    },
+    "quality": {
+      "ruff": {
+        "exit_code": 0
+      },
+      "docs": {
+        "exit_code": 0
+      },
+      "public-boundary": {
+        "exit_code": 0
+      },
+      "compile": {
+        "exit_code": 0
+      },
+      "uv-pip-check": {
+        "exit_code": 0
+      },
+      "nativepip-check": {
+        "exit_code": 0
+      },
+      "build": {
+        "exit_code": 0
+      }
+    },
+    "lock_exports": {
+      "status": "passed_before_final_pipeline",
+      "note": "Exact CI export commands for both unchanged locks yielded no diff; no dependency changes in this stage"
     }
   },
   "limitations": [
     "normal-only infinite-plane all-prismatic framework",
     "not finite-feature collision, friction, rotating FK CCD or grasping",
     "NUM-005, TYX-003 and TYX-004 remain open"
-  ]
+  ],
+  "delivery": {
+    "status": "not_pushed_yet",
+    "branch": "codex/p6-5-handoff",
+    "head": null,
+    "remote_sha_verified": false,
+    "workflow_runs": []
+  }
 }

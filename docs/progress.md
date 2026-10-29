@@ -27,7 +27,9 @@
 
 ## 当前推进：有限特征与机器人FK保守CCD
 
-[合同准备](development/p65-finite-fk-candidate.md)已经开始，已核对原生执行/账本限制并形成一个独立解析反例：有限旋转面的路径全程合法、初末力矩均平衡，整步仍可能增能，故CCD不能替代已有能量门槛。新stdlib区间脚本可复现；单转子和双关节M1/J1变化的两个新原生短例已在NumPy/interpret/CUDA各通过，共6例，未运行旧回归。下一步冻结集成合同/选测清单并交一次builder。当前尚未派生产实现或builder，不将研究称作有限几何/旋转接触完成。
+[有限凸面/旋转FK集成合同](superpowers/specs/2026-10-29-p65-finite-fk-design.md)与[实施/选测计划](superpowers/plans/2026-10-29-p65-finite-fk.md)已冻结，唯一builder finite_fk_design_check已结束，5个重要歧义和主agent源码接入裁定均关闭。范围为正半径双面凸patch、全prismatic或单恒I转子、自动反作用与最终接受曲线CCD；不是再交孤立静态工具。Task1下一步由一个有明确文件范围的实现者完成，按用户分层规则选测，不默认旧全量/900。
+
+已在冻结前发现原高速旋转滑动例后续细步会增能，保留为失败控制；另固定低滑速窗口作必要通过对照，物理预算不变。上一研究f611ce2362b7d0af019e0e4c462d6904e8436f30准确CI40851079576和Documentation40851079344均success（API限流后公开Actions按完整commit link核对，raw artifacts/ci-f611ce2-checkpoint.json）。研究/native6例已结束，不重复；生产有限接触尚未实现，完整H1/双臂/Three.js仍开放。
 
 ## 已交付：可复用分阶段摩擦（2026-10-29）
 

@@ -32,7 +32,7 @@
 
 两CPU各1945通过/362未选，完整CUDA2307通过6196.34s，Ubuntu新核心80通过223.65s、有界CPP1通过23.15s，quality/build和134源码外wheel全部exit0。NumPy/interpret/CUDA依次各300计时/306总调用，共900/918成功；只读汇总器artifacts/summarize_dynamic_friction_evidence.py最终exit0，全部退出码/源码脚本摘要/wheel逐文件/raw计数和中位P95独立核对。最终汇总artifacts/dynamic-friction-final-summary.json。
 
-摩擦已交付7960b47a644385b2cc768b662317dd2ca9327481，远程SHA一致，准确CI40843093401与Documentation40843093367均completed success，最后交付框已关闭；不再查询旧CI或重复任何已通过数值。下一动作是冻结有限特征建立/分离/切换与机器人FK保守CCD的框架合同。此后顺序仍为弯曲/自碰撞、真实单爪、高低摩擦承重、目标IK/history、双臂交接放台和同源Three.js。
+摩擦已交付7960b47a644385b2cc768b662317dd2ca9327481，远程SHA一致，准确CI40843093401与Documentation40843093367均completed success，最后交付框已关闭；不再查询旧CI或重复任何已通过数值。有限特征/FK框架合同与选测计划现已冻结、唯一builder闭环，下一动作是Task1明确范围实现。此后顺序仍为弯曲/自碰撞、真实单爪、高低摩擦承重、目标IK/history、双臂交接放台和同源Three.js。
 
 优先执行用户2026-10-29最新[分层验收要求](p65-validation-policy.md)：后续小切片先写影响/选测清单，再派实现；不再例行两套本地CPU/整分支CUDA/900性能。新能力自身必要物理、步长/重复和事务门槛完整保留；全量留公共底层变更、集成里程碑及最终交付。全部实现/reviewer及当前pipeline已经退出，暂无本任务数值owner；不因空闲重复旧研究或旧review。
 
@@ -62,13 +62,13 @@ Task2新CUDA7通过1055.23s；NumPy462和interpret37是cap-only元数据修复�
 
 ## 下一框架切片
 
-当前[有限特征/FK合同准备](p65-finite-fk-candidate.md)已记录代码边界、两条路线和独立有理区间反例：CCD安全与成对力矩正确仍可能整步增能，已有能量门槛必须保留。两个必要旋转末冲量原生短例已在NumPy/interpret/CUDA各通过，共6例，全部workspace已关闭，仍不是自动接触。生产spec尚未冻结；下一步写具体合同/选测单并交一次builder，不重复本轮研究和旧阶段测试。
+已冻结[有限凸面/旋转FK设计](../superpowers/specs/2026-10-29-p65-finite-fk-design.md)和[实施/选测计划](../superpowers/plans/2026-10-29-p65-finite-fk.md)。一次builder finite_fk_design_check结束，5个重要问题按spec R1-R5关闭；源码preflight R6新增独立FiniteContactTerminalProgram，旧wrapper硬编码的prismatic ledger保持。新计划SDD目录.superpowers/sdd/2026-10-29-p65-finite-fk，接力先读progress.md。下一步Task1单实现者，未交付生产能力；不重派builder或旧probe。
 
-已交付的有限摩擦只覆盖all-prismatic机器人与无限平面。下一合同必须把有限特征身份/切换、允许侧与零距离法向、建立分离、最终接受路径保守CCD和真实反作用共同界定；布节点路径为原生候选端点间仿射路径，机器人路径为真实q0到q1对应FK曲线。端点直线或有限采样不能代替曲线证明，预算耗尽未知必须拒绝。
+范围为全prismatic或单COM0/坐标轴revolute恒I转子、正半径双面有限凸patch、mu/rest0，支持真实自动反作用、feature/history及最终accepted FK曲线证书。原高速X1.5旋转例后续细步增能不可作为通过窗口，保持失败/回滚控制；另固定X1低滑速T1/三h窗口并在实际三后端验，预算不变。signed-support仅为有限投影内的求根生成器，中间试算零距允许，最终原unsigned距离/真实normal/CCD/能量门槛都必须过。
 
-先核对旧有限几何、仿射证书和接触账本，写出生产输入/单位/支持域/状态事务、至少两个非递布场景、独立物理oracle和明确选测nodeids，再交一次builder及明确文件范围的实现者。不可直接删除prismatic门禁：旋转机器人接触还需独立冻结作用点求积、反作用与能量/力矩审计，旧最终J1配相反节点冲量路线已否定。TYX-004真实revolute异常合同仍开放，不得静默回退。
+研究f611ce2362b7d0af019e0e4c462d6904e8436f30准确CI40851079576/Documentation40851079344均success，API限流后公开HTML按完整commit link核对；raw artifacts/ci-f611ce2-checkpoint.json。旧paper/6native短例都结束，不重做。同快照实现者选测证据复用，父不重跑旧完整CUDA/两CPU/900；共享路径变化或失败再扩大范围。
 
-已有摩擦候选研究、实现者、builder和唯一review全部结束，不再派旧任务；当前下一合同仍在准备，尚未派实现。后续按分层验收减少重复全量，保留新能力完整必要物理/事务门槛。弯曲/自碰撞、有限单爪/低mu失败、目标IK/history、双臂和Three.js继续既定顺序，不扩P7/P8。
+后续仍有限厚度合法摩擦/一般机器人、弯曲自碰撞、真实单爪/低mu、目标IK/history、双臂交接放台和Three.js；当前限制不能冒称完整H1，不按对象/坐标/时间硬编码物理。
 
 ## 已交付阶段与历史交接（只供溯源，不作为当前待办）
 

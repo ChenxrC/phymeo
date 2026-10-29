@@ -133,3 +133,61 @@ def test_phase_audit_keeps_exact_relative_velocity_and_paired_moment():
         paired_moment_residual([[0.0, 0.01, 0.0]], [[0.0, 0.0, 0.0]], [[1.0, 0.0, 0.0]], 1e-8, 1e-8)
         > 1e-8
     )
+
+
+def review_force_data(shared=False):
+    positions = np.array([[-1.0, 0.0, -1.0], [0.0, 0.0, 2.0], [1.0, 0.0, -1.0]])
+    triangles = np.tile([0, 1, 2], (2 if shared else 1, 1))
+    weights = np.tile([0.25, 0.5, 0.25], (len(triangles), 1))
+    ledger = ledger_api()(positions, triangles, weights, np.zeros(len(triangles)))
+    blocks = weights[:, :, None, None] * np.eye(3)[None, None, :, :]
+    world = np.tile([2.0**20, 0.0, 0.0], (len(triangles), 1))
+    return ledger, blocks, world
+
+
+@pytest.mark.parametrize("defect", ["translation", "canceling"])
+def test_review_resultant_and_weighted_mapping(defect):
+    ledger, blocks, world = review_force_data()
+    delta = 2.0**-36
+    if defect == "translation":
+        blocks += delta * np.eye(3)[None, None, :, :]
+    else:
+        blocks[0, 0, 0, 0] += delta
+        blocks[0, 2, 0, 0] -= delta
+    actual = ledger.aggregate(blocks, world, 3)
+    force = actual.sum(axis=0) - world.sum(axis=0)
+    if defect == "translation":
+        assert abs(force[0]) > 1e-5
+    else:
+        np.testing.assert_array_equal(force, 0.0)
+    with pytest.raises(ph.SolverFailure, match="mapping|force"):
+        ledger.require(blocks, world, actual, np.zeros((3, 3)), tolerance=1e-8)
+
+
+def test_review_valid_large_impulse_and_shared_nodes():
+    for shared in (False, True):
+        ledger, blocks, world = review_force_data(shared)
+        actual = ledger.aggregate(blocks, world, 3)
+        report = ledger.require(blocks, world, actual, np.zeros((3, 3)), tolerance=1e-8)
+        assert max(report.values()) == 0.0
+
+
+def test_review_shared_nodes_canceling_weighted_mapping():
+    ledger, blocks, world = review_force_data(True)
+    bad = blocks.copy()
+    bad[0, 0, 0, 0] += 2.0**-36
+    bad[1, 2, 0, 0] -= 2.0**-36
+    actual = ledger.aggregate(bad, world, 3)
+    np.testing.assert_array_equal(actual.sum(axis=0), world.sum(axis=0))
+    with pytest.raises(ph.SolverFailure, match="mapping|force"):
+        ledger.require(bad, world, actual, np.zeros((3, 3)), tolerance=1e-8)
+
+
+def test_review_zero_impulse_keeps_coefficient_guard():
+    ledger, blocks, world = review_force_data()
+    world[:] = 0.0
+    blocks[0, 0, 0, 0] += 1e-6
+    with pytest.raises(ph.SolverFailure, match="mapping"):
+        ledger.require(
+            blocks, world, ledger.aggregate(blocks, world, 3), np.zeros((3, 3)), tolerance=1e-8
+        )

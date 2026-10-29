@@ -111,7 +111,9 @@ class ThickContactMappingLedger:
             raise SolverFailure("actual native state is not an FP32 promotion")
 
     def require(self, blocks, world, node_requests, velocity, *, tolerance, speed=1.0, length=1.0):
-        map_error = Q(0)
+        map_error = ZERO
+        expected_lower = np.full((len(self.positions), 3), ZERO, object)
+        expected_upper = np.full((len(self.positions), 3), ZERO, object)
         moment = [Q(0)] * 3
         power = Q(0)
         exact = self.aggregate_exact(blocks, world, len(self.positions))
@@ -120,7 +122,13 @@ class ThickContactMappingLedger:
             blocks, self.expected, world, self.points, self.triangles, strict=True
         ):
             for index in np.ndindex(3, 3, 3):
-                map_error = max(map_error, abs(Q(q(stored[index])) - expected[index]))
+                map_error = max(map_error, abs(Q(q(stored[index])) - expected[index]).bounds()[1])
+            for i, node in enumerate(ids):
+                for k in range(3):
+                    weighted = sum((expected[i, j, k] * q(impulse[j]) for j in range(3)), Q(0))
+                    lo, hi = weighted.bounds()
+                    expected_lower[node, k] += lo
+                    expected_upper[node, k] += hi
             target = cross(point, vector(impulse))
             for k in range(3):
                 moment[k] -= target[k]
@@ -140,7 +148,13 @@ class ThickContactMappingLedger:
             zip(self.positions, node_requests, velocity, strict=True)
         ):
             for k in range(3):
-                mapping = max(mapping, abs(q(load[k]) - exact[i, k]))
+                actual = q(load[k])
+                mapping = max(
+                    mapping,
+                    abs(actual - exact[i, k]),
+                    abs(actual - expected_lower[i, k]),
+                    abs(actual - expected_upper[i, k]),
+                )
             m = cross(vector(position), vector(load))
             for k in range(3):
                 moment[k] += m[k]
@@ -149,13 +163,24 @@ class ThickContactMappingLedger:
         def upper(value):
             return upper_float(Q.coerce(value).bounds()[1])
 
+        force = max(
+            (
+                abs(
+                    sum((q(load[k]) for load in node_requests), ZERO)
+                    - sum((q(s[k]) for s in world), ZERO)
+                )
+                for k in range(3)
+            ),
+            default=ZERO,
+        )
         report = dict(
-            mapping=max(upper(map_error), upper(mapping)) / speed,
-            moment=upper(sum((abs(v) for v in moment), Q(0))) / (speed * length),
-            power=upper(abs(power)) / (speed * speed),
+            mapping=upper(max(map_error, mapping) / q(speed)),
+            force=upper(force / q(speed)),
+            moment=upper(sum((abs(v) for v in moment), Q(0)) / (q(speed) * q(length))),
+            power=upper(abs(power) / (q(speed) * q(speed))),
         )
         if max(report.values()) > tolerance:
-            raise SolverFailure("independent thick mapping/moment/power audit failed")
+            raise SolverFailure("independent thick mapping/force/moment/power audit failed")
         return report
 
 

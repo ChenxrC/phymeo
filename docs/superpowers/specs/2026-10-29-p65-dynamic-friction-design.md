@@ -77,6 +77,8 @@ DynamicRobotFrictionContactProgram(
 
 保留原outer迭代预算内的best合法trial细化，以法向+切向+间距共同score单调改进；只保存完整trial/全部载荷/审计，不只保存数值摘要。末阶段审计held摩擦永远使用选中z-，不能因调用通用_position_metrics而误用z+。达到预算可接受已完全合格的best；未知/失败不算安全。
 
+审阅后明确候选选择语义：完整native计算返回有限、已定义的物理残差超门槛，表示该试算候选不合格，可丢弃并恢复此前完整合法best；恢复后仍须重新通过全部法则/物理/几何门槛。接受的是旧合法候选，不是接受越限状态。native/trace/terminal/close/ledger执行异常或非有限/未知计算结果仍拒绝整帧，不能回选掩盖；最终选定best本身物理越限也拒绝并回滚。成本是有限越限的后续候选可能结束进一步细化，不改变任何阈值。
+
 ## 独立精确接受门槛
 
 继承旧法向版本所有input-once、robot/material原式、native收敛、末gap、FP32提升、world映射与成对作用点力矩门槛。新阶段不能只以投影迭代停机误差当摩擦原式证明。

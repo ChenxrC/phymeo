@@ -1,5 +1,5 @@
 {
-  "status": "implementation_delivered_review_running_final_acceptance_not_started",
+  "status": "review_closed_final_acceptance_ready",
   "source": {
     "commit": "6df5b14e60bb8661f1dcaa295fe7161bfd44e6e8",
     "python_files": 134,
@@ -9,8 +9,29 @@
     "agent": "dynamic_friction_final_review",
     "base": "b7dd5b55451295434191eecc0bbedf3a1c46f712",
     "head": "cb209b8c5f5738d2527ef6e03dbe685b6cecf763",
-    "status": "running",
-    "count": 1
+    "status": "complete",
+    "count": 1,
+    "critical": 0,
+    "important": 0,
+    "minor": 1,
+    "probes_exited": true,
+    "minor_status": "closed_documentation_and_regressions",
+    "independent_evidence": {
+      "cpu_oblique_cases": 3,
+      "interpret_workspaces": 23,
+      "interpret_launches": 798,
+      "physical_best_fault_probes": "finite rejection fallback, selected-best rejection rollback, ledger exception rollback; all exit0"
+    },
+    "minor_fix_commit": "dc59c3968b305833e941e68ac1170c695a15bbcb",
+    "minor_regressions": {
+      "new_passed": 4,
+      "new_deselected": 23,
+      "new_seconds": 11.6,
+      "transaction_passed": 27,
+      "transaction_seconds": 23.92,
+      "expected_existing_behavior": true,
+      "production_unchanged": true
+    }
   },
   "implementation_tests": {
     "cpu_related": {
@@ -82,7 +103,15 @@
     }
   },
   "final_acceptance": {
-    "status": "not_started"
+    "status": "not_started",
+    "frozen_snapshot": {
+      "snapshot_commit": "dc59c3968b305833e941e68ac1170c695a15bbcb",
+      "digest": "ea6e07e3d6a5eb49e04d017908748b56f3b17ad8ab094edeebce6ac654fba57c",
+      "runner_sha256": "7439fe13944195cf83a8918245015a047e12271c6c87202246edf48676576b01",
+      "product_commit": "6df5b14e60bb8661f1dcaa295fe7161bfd44e6e8",
+      "source_sha256": "d18e557c49b9711647d7b5218f9706739227eab84073c9a6a309e6276c44b33d",
+      "script_sha256": "c9426b7ae7589adca3918c92a3dc5c6e7ac4bdddd823cbcfeead8de35a73d2e3"
+    }
   },
   "formal_performance": {
     "status": "not_started"

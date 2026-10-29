@@ -30,7 +30,9 @@
 
 Task1实现已交付：产品6df5b14、报告cb209b8，数值槽/index已归还父；先读[验收](../benchmarks/p65-dynamic-friction-acceptance.md)、[工程](../benchmarks/p65-dynamic-friction-engineering.json)及对应SDD ledger/report，不重派实现或重复已完成定向。父三模式最小基准各2计时+6warmup成功，源码/脚本hash不变；只是脚本自检。
 
-唯一fresh reviewer dynamic_friction_final_review现运行，BASEb7dd5b5..HEADcb209b8；它独占数值probe槽，父不得并发测试。审阅尚无结论，最终acceptance runner尚未启动。待审阅结果和必要TDD修复闭环后，按Task2冻结最终src/tests/scripts并启动全新tag的串行工程与正式观测；已有旧normal/研究CI都已关闭，不重复。研究头b7dd5b5准确CI40807534775和Documentation40807534785均success，只覆盖旧研究/设计，当前产品还未push。
+唯一fresh reviewer dynamic_friction_final_review已完成0Critical/0Important/1Minor，BASEb7dd5b5..HEADcb209b8；M1明确有限不合格候选可回选完整合法best并重验，执行异常/最终best越限仍全帧拒绝，未改任何门槛。新增回归dc59c39：4项直接GREEN，transaction27通过；生产134源码hash d18e557c…不变，父已核对，勿派第二次fresh审阅。实现者/reviewer数值均退出，index/numeric槽回父。
+
+最终串行runner已准备但此提交点尚未启动，快照artifacts/dynamic-friction-final-snapshot-dc59c39.json。下一步只按冻结摘要/--review-closed和全新tag启动一次，随后承接status/log/exit，不重复已有定向/旧阶段。两CPU/fullCUDA附pytest durations20帮助定位慢测试，但套件耗时不是正式性能。研究头b7dd5b5准确CI/Doc均success，仅覆盖研究/设计；当前摩擦产品未push，最终工程成功后再交付。
 
 ### 已关闭的上一阶段：有限法向
 

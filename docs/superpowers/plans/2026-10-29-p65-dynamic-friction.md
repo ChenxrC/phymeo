@@ -50,7 +50,7 @@
 
 **Interfaces:** Consume Task1公共API与诊断、全部报告；produce准确版本审阅/测试/wheel/CI/性能证据。benchmark固定静支撑与材料斜撞两小case，各mode3x100交替，各case150+3warmup；不把研究预设向量当自动摩擦性能。
 
-- [ ] 接Task1报告、核对diff和物理范围，准备原生自动基准最小smoke；全部实现数值退出后派本阶段唯一fresh最终review覆盖Task1+benchmark。Important先独立RED后修，原门槛不变；不重复task/branch review，不重开旧normal审阅。
+- [x] 接Task1报告、核对diff和物理范围，准备原生自动基准最小smoke；全部实现数值退出后派本阶段唯一fresh最终review覆盖Task1+benchmark。Important先独立RED后修，原门槛不变；不重复task/branch review，不重开旧normal审阅。
 - [ ] 冻结最终src/tests/scripts快照，串行最终完整core311/nativepip/CUDA、Ubuntu新核心、actualinterpret受影响集和一个boundedCPP短例。仅按真实变化重复必要证据，不把前版数量混成最终全量；每个套件新basetemp。旧CUDA长低μ已通过，只有新产品改变才由一次最终全集承担回归，不额外跑旧专项。
 - [ ] 质量ruff/docs/publictyxboundary/compile、uvpip/nativepip/锁导出，构建wheel并全部源码比对，源码外新nativepip安装smoke。只修改文档或计量不造成物理证据失效；真实失败先分类，未执行不能算通过。
 - [ ] 所有本地数值/reviewer退出后，NumPy→interpret→CUDA各3x100正式串行，记录各case真实counts/tol/源码脚本hash/native执行与上传下载。初态每次重置非连续轨迹，整step含审计/断言/close排除factory/finalclose；不同精度/迭代不称速度比，只记录不优化。

@@ -28,9 +28,9 @@
 
 ## 当前立即续作
 
-正在执行[分阶段摩擦计划](../superpowers/plans/2026-10-29-p65-dynamic-friction.md)Task1；先读对应冻结spec、.superpowers/sdd/2026-10-29-p65-dynamic-friction/progress.md和task-1-report.md（若已存在），核对agent/Git，不重复分派。实现者dynamic_friction_implementer是源码/tests/smoke与唯一数值owner，BASE b7dd5b55451295434191eecc0bbedf3a1c46f712；最近正在缺API/schema/解析RED，未交付新生产能力。父新benchmark脚本仅format/ruff静态通过，未执行；不得并发smoke或完整套件。
+正在执行[分阶段摩擦计划](../superpowers/plans/2026-10-29-p65-dynamic-friction.md)Task1；先读对应冻结spec、.superpowers/sdd/2026-10-29-p65-dynamic-friction/progress.md和task-1-report.md（若已存在），核对agent/Git，不重复分派。实现者dynamic_friction_implementer是源码/tests/smoke与唯一数值owner，BASE b7dd5b55451295434191eecc0bbedf3a1c46f712；已完成首15RED→15GREEN、NumPy窗口32通过及actual interpret首8通过229.31s；仍在控制修复与后端验收，未交付新生产能力。精确P+E容量舍入的真实RED已修；旋转纯terminal切向末位负normal的真实RED按主agent裁定修复构造表示，原定律/tol/物理预算不变，详见实现报告。父新benchmark脚本仅format/ruff静态通过，未执行；不得并发smoke或完整套件。
 
-唯一builder已结束，无重要未决；全阶段最终code review尚未派。产品交付后主agent先核对报告/差异和最小基准smoke，再派一次fresh review及必要TDD修复、工程与串行观测。不得重做18个预设native研究例、旧normal全部验收或已关闭审阅。设计/研究b7dd5b5已推送且SHA一致，准确CI40807534775初查in_progress、Documentation40807534785success，之后核对准确状态。
+唯一builder已结束，无重要未决；全阶段最终code review尚未派。产品交付后主agent先核对报告/差异和最小基准smoke，再派一次fresh review及必要TDD修复、工程与串行观测。不得重做18个预设native研究例、旧normal全部验收或已关闭审阅。设计/研究b7dd5b5已推送且SHA一致，准确CI40807534775与Documentation40807534785均completed success；CI于02:59:49Z按完整head_sha复核。无需再查该研究/设计CI，也不能把它当尚未提交的摩擦生产代码通过。
 
 ### 已关闭的上一阶段：有限法向
 
@@ -58,7 +58,7 @@ Task2新CUDA7通过1055.23s；NumPy462和interpret37是cap-only元数据修复�
 
 ## 下一框架切片
 
-2026-10-29新增[动态摩擦解析候选](p65-dynamic-friction-candidate.md)：独立Fraction核对静支撑/低μ滑动、材料斜撞和分阶段/总末律反例；随后公开native预设向量在NumPy/interpret/CUDA各6例共18例通过，仍无自动摩擦生产实现。只读dynamic_friction_law_probe已结束，勿重复同一纸面研究。分阶段A已形成[冻结设计](../superpowers/specs/2026-10-29-p65-dynamic-friction-design.md)与[实施计划](../superpowers/plans/2026-10-29-p65-dynamic-friction.md)，唯一builder dynamic_friction_design_check返回nothing important left；准确法向CI已闭环，原生候选也已核对；下一步直接按Task1给实现子agent明确brief/测试/文件范围，勿重复builder、纸面或原生预设探针。
+2026-10-29新增[动态摩擦解析候选](p65-dynamic-friction-candidate.md)：独立Fraction核对静支撑/低μ滑动、材料斜撞和分阶段/总末律反例；随后公开native预设向量在NumPy/interpret/CUDA各6例共18例通过，随后已派唯一实现者按冻结Task1开发；研究本身不构成生产自动摩擦。只读dynamic_friction_law_probe已结束，勿重复同一纸面研究。分阶段A已形成[冻结设计](../superpowers/specs/2026-10-29-p65-dynamic-friction-design.md)与[实施计划](../superpowers/plans/2026-10-29-p65-dynamic-friction.md)，唯一builder dynamic_friction_design_check返回nothing important left；准确法向CI已闭环，原生候选也已核对；当前直接承接Task1实现者及报告，不重复分派、builder、纸面或原生预设探针。
 
 [静态距离证书](../superpowers/specs/2026-10-29-p65-distance-certificate-design.md)已经实施验收，builder和唯一最终review均结束，不再分派同一实现/审阅。当前有限法向实现关闭后，下一需求继续沿H1推进可复用摩擦、有限特征厚度/碰撞侧及零距离法向、拓扑身份/特征切换、接触建立/分离与history，以及最终接受路径上的保守CCD；不能止于距离工具或把静态下界当动态碰撞。
 

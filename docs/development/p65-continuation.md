@@ -32,7 +32,7 @@
 
 两CPU各1945通过/362未选，完整CUDA2307通过6196.34s，Ubuntu新核心80通过223.65s、有界CPP1通过23.15s，quality/build和134源码外wheel全部exit0。NumPy/interpret/CUDA依次各300计时/306总调用，共900/918成功；只读汇总器artifacts/summarize_dynamic_friction_evidence.py最终exit0，全部退出码/源码脚本摘要/wheel逐文件/raw计数和中位P95独立核对。最终汇总artifacts/dynamic-friction-final-summary.json。
 
-下一动作是提交推送摩擦交付记录与三raw，核对远程完整SHA和该准确提交CI；记录形成时尚未推送，先读实时Git/Actions，不能拿旧b7dd5b5研究CI作新产品验收。若准确CI失败排查；若成功关闭本阶段最后交付框，进入有限特征建立/分离/切换与机器人FK保守CCD的框架合同。此后顺序仍为弯曲/自碰撞、真实单爪、高低摩擦承重、目标IK/history、双臂交接放台和同源Three.js。
+摩擦已交付7960b47a644385b2cc768b662317dd2ca9327481，远程SHA一致，准确CI40843093401与Documentation40843093367均completed success，最后交付框已关闭；不再查询旧CI或重复任何已通过数值。下一动作是冻结有限特征建立/分离/切换与机器人FK保守CCD的框架合同。此后顺序仍为弯曲/自碰撞、真实单爪、高低摩擦承重、目标IK/history、双臂交接放台和同源Three.js。
 
 优先执行用户2026-10-29最新[分层验收要求](p65-validation-policy.md)：后续小切片先写影响/选测清单，再派实现；不再例行两套本地CPU/整分支CUDA/900性能。新能力自身必要物理、步长/重复和事务门槛完整保留；全量留公共底层变更、集成里程碑及最终交付。全部实现/reviewer及当前pipeline已经退出，暂无本任务数值owner；不因空闲重复旧研究或旧review。
 
@@ -62,11 +62,11 @@ Task2新CUDA7通过1055.23s；NumPy462和interpret37是cap-only元数据修复�
 
 ## 下一框架切片
 
-2026-10-29新增[动态摩擦解析候选](p65-dynamic-friction-candidate.md)：独立Fraction核对静支撑/低μ滑动、材料斜撞和分阶段/总末律反例；随后公开native预设向量在NumPy/interpret/CUDA各6例共18例通过，随后已派唯一实现者按冻结Task1开发；研究本身不构成生产自动摩擦。只读dynamic_friction_law_probe已结束，勿重复同一纸面研究。分阶段A已形成[冻结设计](../superpowers/specs/2026-10-29-p65-dynamic-friction-design.md)与[实施计划](../superpowers/plans/2026-10-29-p65-dynamic-friction.md)，唯一builder dynamic_friction_design_check返回nothing important left；准确法向CI已闭环，原生候选也已核对；当前直接承接Task1实现者及报告，不重复分派、builder、纸面或原生预设探针。
+已交付的有限摩擦只覆盖all-prismatic机器人与无限平面。下一合同必须把有限特征身份/切换、允许侧与零距离法向、建立分离、最终接受路径保守CCD和真实反作用共同界定；布节点路径为原生候选端点间仿射路径，机器人路径为真实q0到q1对应FK曲线。端点直线或有限采样不能代替曲线证明，预算耗尽未知必须拒绝。
 
-[静态距离证书](../superpowers/specs/2026-10-29-p65-distance-certificate-design.md)已经实施验收，builder和唯一最终review均结束，不再分派同一实现/审阅。当前有限法向实现关闭后，下一需求继续沿H1推进可复用摩擦、有限特征厚度/碰撞侧及零距离法向、拓扑身份/特征切换、接触建立/分离与history，以及最终接受路径上的保守CCD；不能止于距离工具或把静态下界当动态碰撞。
+先核对旧有限几何、仿射证书和接触账本，写出生产输入/单位/支持域/状态事务、至少两个非递布场景、独立物理oracle和明确选测nodeids，再交一次builder及明确文件范围的实现者。不可直接删除prismatic门禁：旋转机器人接触还需独立冻结作用点求积、反作用与能量/力矩审计，旧最终J1配相反节点冲量路线已否定。TYX-004真实revolute异常合同仍开放，不得静默回退。
 
-先结合现有端口和局部平面材料接触的真实限制冻结生产接口、单位、支持域、所有权/回滚和明确独立测例，再派实现子agent。至少两个非递布小场景，必须包含初始分离后建立/分离、无残留拉力与摩擦history、特征切换、后段失败恢复和正常对照。连续路径明确布节点线性与机器人FK旋转弧；有限采样不是安全证明，预算耗尽不可冒称安全。弯曲/自碰撞、有限单爪/低mu失败、目标IK/history、双臂和Three.js继续既定顺序，不扩P7/P8。
+已有摩擦候选研究、实现者、builder和唯一review全部结束，不再派旧任务；当前下一合同仍在准备，尚未派实现。后续按分层验收减少重复全量，保留新能力完整必要物理/事务门槛。弯曲/自碰撞、有限单爪/低mu失败、目标IK/history、双臂和Three.js继续既定顺序，不扩P7/P8。
 
 ## 已交付阶段与历史交接（只供溯源，不作为当前待办）
 

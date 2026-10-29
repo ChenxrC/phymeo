@@ -1,5 +1,5 @@
 {
-  "status": "local_acceptance_complete_remote_delivery_pending",
+  "status": "delivered",
   "source": {
     "commit": "6df5b14e60bb8661f1dcaa295fe7161bfd44e6e8",
     "python_files": 134,
@@ -788,8 +788,26 @@
     "note": "Strict serial NumPy then interpret then CUDA; each300 measured/306 total, eachcase150+3 warmups; fixed initial states, not a900-step trajectory. NumPy HEAD784adf0 clean; interpret784adf0->afcb5d1, CUDAafcb5d1->6d74846; latter dirty/history changes are docs and preceding raw only. Source/script/frozen digest unchanged. No equal-precision speedup claim or failure-performance measurement."
   },
   "delivery": {
-    "status": "remote_delivery_pending",
-    "last_verified_remote": "b7dd5b55451295434191eecc0bbedf3a1c46f712",
-    "note": "This record precedes push; verify new full HEAD and exact CI before closing delivery. Old research CI is not current product acceptance."
+    "status": "complete",
+    "commit": "7960b47a644385b2cc768b662317dd2ca9327481",
+    "remote_sha": "7960b47a644385b2cc768b662317dd2ca9327481",
+    "checked_at_utc": "2026-10-29T09:05:23.878182+00:00",
+    "workflow_runs": [
+      {
+        "id": 40843093401,
+        "name": "CI",
+        "head_sha": "7960b47a644385b2cc768b662317dd2ca9327481",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 40843093367,
+        "name": "Documentation",
+        "head_sha": "7960b47a644385b2cc768b662317dd2ca9327481",
+        "status": "completed",
+        "conclusion": "success"
+      }
+    ],
+    "note": "Exact pushed product/evidence head verified against remote branch and API head_sha. Both workflows completed success. This closes only the finite friction slice, not H1/P6.5."
   }
 }

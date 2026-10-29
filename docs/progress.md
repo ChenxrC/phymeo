@@ -1,6 +1,6 @@
 # 开发进度
 
-2026-10-29用户要求减少重复长回归：后续执行[按影响范围分层验收](development/p65-validation-policy.md)，日常只测受影响关键集合，新能力必要物理/事务测例完整验收一次，整分支全量留给公共底层改动和集成里程碑。正式大样本性能不再每个小切片必跑，整体P6.5门槛不减。当前摩擦完整CUDA已2307通过6196.34s，两CPU、Ubuntu、有界CPP、wheel均已退出0，三模式900计量也已完成并独立核对；本地验收闭环，最终交付待新准确远程SHA/CI。
+2026-10-29用户要求减少重复长回归：后续执行[按影响范围分层验收](development/p65-validation-policy.md)，日常只测受影响关键集合，新能力必要物理/事务测例完整验收一次，整分支全量留给公共底层改动和集成里程碑。正式大样本性能不再每个小切片必跑，整体P6.5门槛不减。当前摩擦完整CUDA已2307通过6196.34s，两CPU、Ubuntu、有界CPP、wheel均已退出0，三模式900计量也已完成并独立核对；7960b47远程SHA一致，准确CI40843093401与Documentation40843093367均completed success，有限摩擦交付已闭环。
 
 ## 长程总目标与阶段对齐（2026-10-29确认）
 
@@ -9,7 +9,7 @@
 | 顺序 | 阶段与里程碑对应 | 当前状态 |
 | --- | --- | --- |
 | 1 | 同域材料/机器人接触验收并推送，H1/H2的前置切片 | 交付闭环：CUDA1950、900次观测，准确9e0a432远程SHA及两CI成功 |
-| 2 | 自动接触建立/分离、特征切换、几何覆盖与保守CCD（H1） | 静态距离证书与仿射整段净距已交付；有限法向生命周期4ff19ea已完成独立审阅、完整本地工程与900次串行观测，准确aa8ec42两项CI成功，已交付；摩擦实现/唯一审阅/完整本地工程与900正式计量已闭环，准确产品远程交付待核验；有限特征切换及FK CCD仍待实现 |
+| 2 | 自动接触建立/分离、特征切换、几何覆盖与保守CCD（H1） | 静态距离证书与仿射整段净距已交付；有限法向生命周期4ff19ea已完成独立审阅、完整本地工程与900次串行观测，准确aa8ec42两项CI成功，已交付；摩擦实现/唯一审阅/完整本地工程与900正式计量已闭环，7960b47准确远程SHA/两CI成功，已交付；有限特征切换及FK CCD仍待实现 |
 | 3 | 弯曲和自碰撞，有限驱动单爪承重及低摩擦滑落对照（H2） | 后续必须实施 |
 | 4 | 目标/IK/控制history，A夹取→B接布→平台放置（H3） | 后续必须实施 |
 | 5 | 同一真实轨迹的Three.js暂停、逐帧、接触力回放（H4） | 后续必须实施 |
@@ -25,13 +25,13 @@
 
 静态距离证书框架前置已准确交付e63a1bf，两CI成功；[实施任务单](superpowers/plans/2026-10-29-p65-distance-certificate.md)最后交付框已关闭。它不完成动态接触或CCD，下一项继续厚度/法向、特征身份/history与自动建立分离及连续路径。
 
-## 当前推进：可复用分阶段摩擦（2026-10-29）
+## 已交付：可复用分阶段摩擦（2026-10-29）
 
 [冻结设计](superpowers/specs/2026-10-29-p65-dynamic-friction-design.md)和[实施计划](superpowers/plans/2026-10-29-p65-dynamic-friction.md)已写入；唯一builder dynamic_friction_design_check无重要未决。静支撑、低μ滑动、terminal-only漂移、材料斜撞及多面A/B反例通过公开native API在NumPy/interpret/CUDA各6例核对，共18例；这是预设向量研究，不是自动摩擦已完成。
 
-实现子agent已交付产品6df5b14及报告cb209b8；134源码、相关CPU483通过、CUDA11通过（其后仅构造类型guard）及最终interpret核心7通过。主agent三模式最小基准自检完成；唯一fresh整阶段审阅dynamic_friction_final_review已完成0Critical/0Important/1Minor，M1合同澄清及4项控制/27项事务回归已闭环；生产未改。冻结版本串行最终验收已启动，session27196，两CPU完整各1945通过/362未选，完整CUDA运行中；后续wheel/正式计量/产品CI仍待完成。详见[本阶段验收](benchmarks/p65-dynamic-friction-acceptance.md)与[工程记录](benchmarks/p65-dynamic-friction-engineering.json)。框架仍待阶段交付，双臂案例未接入，测试数不换算整体百分比。
+实现子agent已交付产品6df5b14及报告cb209b8；134源码、相关CPU483通过、CUDA11通过（其后仅构造类型guard）及最终interpret核心7通过。主agent三模式最小基准自检完成；唯一fresh整阶段审阅dynamic_friction_final_review已完成0Critical/0Important/1Minor，M1合同澄清及4项控制/27项事务回归已闭环；生产未改。冻结版本串行最终验收session27196已exit0：两CPU各1945通过/362未选、完整CUDA2307通过，Ubuntu80/有界CPP1、134源码外wheel和三模式900正式计量均完成。7960b47远程SHA一致，准确CI40843093401及Documentation40843093367均completed success。详见[本阶段验收](benchmarks/p65-dynamic-friction-acceptance.md)与[工程记录](benchmarks/p65-dynamic-friction-engineering.json)。有限摩擦框架已交付，双臂案例未接入；下一工作是有限特征与机器人FK保守CCD合同，测试数不换算整体百分比。
 
-设计与研究提交b7dd5b55451295434191eecc0bbedf3a1c46f712已推送、远程SHA一致；准确CI40807534775与Documentation40807534785均completed success（CI于2026-10-29 02:59:49Z复核）。这只闭环研究/设计提交，不是尚未交付的摩擦生产版本CI。上一法向aa8ec42两CI均成功已闭环，不重新验收旧阶段。
+设计与研究提交b7dd5b55451295434191eecc0bbedf3a1c46f712已推送、远程SHA一致；准确CI40807534775与Documentation40807534785均completed success（CI于2026-10-29 02:59:49Z复核）。这只闭环当时研究/设计提交；后续摩擦生产版本已由7960b47准确两CI独立闭环。上一法向aa8ec42两CI均成功已闭环，不重新验收旧阶段。
 
 ## 已交付：自动法向接触建立与分离（2026-10-29）
 

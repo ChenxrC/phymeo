@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "stage": "p65-thick-friction",
-  "status": "implementation_validated_review_in_progress",
+  "status": "review_complete_two_important_repairs_pending",
   "base": "6e818f574d097ce415940289a58847d4c8ba49fb",
   "product_head": "1fcd0e7a60b209dda6cd24eda7d4dba863d4d728",
   "implementation_report_head": "f2d499914e109fdc9194a8f64c5e56544475ca8c",
@@ -861,14 +861,42 @@
     "agent": "thick_friction_final_review",
     "base": "6e818f574d097ce415940289a58847d4c8ba49fb",
     "head": "f2d499914e109fdc9194a8f64c5e56544475ca8c",
-    "status": "in_progress",
-    "findings": null
+    "status": "completed_findings_open",
+    "findings": {
+      "critical": 0,
+      "important": 2,
+      "minor": 0
+    },
+    "parent_ruling": "Both findings verified against frozen contract and independent probes; original implementer targeted TDD repair, no second fresh review.",
+    "numerical_processes_remaining": 0,
+    "items": [
+      {
+        "id": "I1",
+        "status": "open",
+        "scope": "supported side contact false rejection",
+        "function": "_current",
+        "evidence": "artifacts/p65-thick-friction-review/side-feature-probe-02",
+        "raw_exit": 0
+      },
+      {
+        "id": "I2",
+        "status": "open",
+        "scope": "independent mapping audit false acceptance; no end-to-end wrong-step proof",
+        "function": "ThickContactMappingLedger.require",
+        "evidence": "artifacts/p65-thick-friction-review/mapping-force-probe",
+        "raw_exit": 0
+      }
+    ]
   },
   "engineering": {
     "status": "not_run",
     "cpp_bounded": null,
     "build": null,
-    "wheel": null
+    "wheel": null,
+    "blocked_by": [
+      "I1",
+      "I2"
+    ]
   },
   "delivery": {
     "status": "not_pushed",

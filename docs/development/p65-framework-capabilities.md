@@ -1,5 +1,7 @@
 # P6.5 框架能力与子 agent 交付规则
 
+当前厚度阶段唯一审阅已结束，0Critical/2Important/0Minor：侧接触 signed gap 和独立映射合力审核均需定向修复，详见[审阅记录](../benchmarks/p65-thick-friction-review.md)。修复前数值证据保留原版本；C++/wheel/产品CI待两项闭环，不重复fresh review。
+
 2026-10-29验收频率更新：按[分层验收规则](p65-validation-policy.md)为每个子agent冻结受影响集合；新能力的两个独立场景和全部必要失败/物理门槛保持，避免把未改旧功能全量和正式900计量复制到每个小切片。
 
 状态：2026-10-29 用户明确补充。本文落实现有P6.5范围的复用性要求，不新增P7/P8，也不表示下列能力已经实现。总目标仍为[双臂递布里程碑](../superpowers/plans/2026-10-27-dual-arm-cloth-handoff-milestone.md)，实际推进点见[续作入口](p65-continuation.md)。
@@ -51,7 +53,7 @@
 | 声明仿射路径的正净距认证（H1有限子集） | 已交付5c35200，两CI成功；唯一review无发现、900观测通过 | 薄事务/真实端点已验收；尚未接入完整案例，不覆盖FK曲线或接触响应 |
 | 两阶段动态摩擦（H1有限切片） | 产品6df5b14及唯一审阅闭环；两CPU各1945、完整CUDA2307、Ubuntu80、源码外wheel和三模式900正式计量通过；7960b47远程SHA一致，准确CI40843093401/Documentation40843093367均成功，交付关闭。仅all-prismatic/零半径/无限固定平面 | 未接入完整案例，不等于有限特征或旋转CCD |
 | 有限凸面与机器人FK路径接触（H1有限切片） | [集成合同](../superpowers/specs/2026-10-29-p65-finite-fk-design.md)/选测计划已实现于736fb21/2e222d1；新host42项和设备每模式10项及直接旧消费者已覆盖，唯一review两项finding已由d6b302e定向修复闭环，本地安装/C++短程验证已通过，131855f远程SHA一致，准确CI40884138347/Documentation40884138390均success，交付闭环。正半径双面无摩擦、全prismatic或单恒I转子；原能量/CCD门槛保持 | 未接入完整案例；不等于一般树/有限厚度摩擦或完整H1 |
-| 有限厚度体与有限面摩擦（H1集成切片） | [生产合同](../superpowers/specs/2026-10-29-p65-thick-friction-design.md)已实现于1fcd0e7；[验收](../benchmarks/p65-thick-friction-acceptance.md)记录版本化host60/严格窗口、最终实际interpret13/CUDA13通过。唯一fresh review进行中，C++/wheel/新产品准确CI待。支持坐标local轴prismatic树和完整厚度棱柱/有限patch、材料anchor/真实J.T反作用 | 未接入完整案例，不称一般机器人或完整H1 |
+| 有限厚度体与有限面摩擦（H1集成切片） | [生产合同](../superpowers/specs/2026-10-29-p65-thick-friction-design.md)已实现于1fcd0e7；[验收](../benchmarks/p65-thick-friction-acceptance.md)记录版本化host60/严格窗口、最终实际interpret13/CUDA13通过。唯一fresh review已结束，2Important待原实现者定向修复，C++/wheel/新产品准确CI待。支持坐标local轴prismatic树和完整厚度棱柱/有限patch、材料anchor/真实J.T反作用 | 未接入完整案例，不称一般机器人或完整H1 |
 | 弯曲与自碰撞 | 待合同冻结与实现验收 | 未接入完整案例 |
 | 有限驱动单爪与低摩擦失败 | 已有有限驱动核心；完整控制/接触承重待验收 | 未接入完整案例 |
 | 双臂流程与同源Three.js | 依赖上述能力；回放消费真实数值记录 | 未完成 |

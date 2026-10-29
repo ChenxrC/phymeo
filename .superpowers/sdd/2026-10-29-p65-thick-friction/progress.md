@@ -1,6 +1,10 @@
 # SDD ledger — plan: docs/superpowers/plans/2026-10-29-p65-thick-friction.md
 
-## Current Task1 status
+## Current review and repair status
+
+Sole fresh review completed: 0 Critical / 2 Important / 0 Minor. Main verified I1 selected supporting feature gap and I2 independent force/impulse-weighted mapping audit against frozen contract and probes. Both remain open; original implementer targeted TDD followup next, no second fresh review. Reviewer released numerical slot, 0 probe processes. Parent engineering has not run. Previous product evidence remains versioned.
+
+## Task1 pre-review status
 
 Task1 COMPLETE; numerical/index released to main with final report commit. Product1fcd0e7, source/tests/scripts digest e3ee006f6ae79baa808b679ce4958464b5af28aef928f815a7dc685b603e8637. Actual interpret13passed328.57s/exit0; CUDA13passed764.24s/exit0, exact same307files, no skips/fallback. CPU60 and strict124-record window are versioned with parent-approved influence reuse; directed new controls passed. Actual100records/full history/FP32/read-only audits passed;0 numerical children remain. Parent Task2 owns one fresh review/C++short/wheel/docs/CI/push. No overall H1/P6.5 completion claimed. Historical preflight/rulings below retained.
 
@@ -46,6 +50,6 @@ Active90648 actualinterpret13-case selection, committed1fcd0e7 source/test diges
 
 Task1: complete (BASE6e818f5..product1fcd0e7; host60+strictwindow/directfixes, actualinterpret13/CUDA13 rawexit0; final-manifest-01 and task-1-report.md). Numerical/index ownership released with final report commit; no child/numerical process remains. Parent Task2 next; no reviewer/push/CPP/wheel by implementer.
 
-## Parent Task2 handoff
+## Historical parent Task2 review handoff
 
 Task1 f2d4999 complete; main independently verified307source/tests/scripts plus evidence-file hashes and raw exit summaries. Sole fresh reviewer thick_friction_final_review dispatched BASE6e818f5..HEADf2d4999, owns numerical slot for bounded independent probes. Implementer released resources/index; parent owns docs/index only. Parent C++/wheel/delivery not run. Frozen contract exact CI40909862598/Documentation40909862611 both success; no new-product CI.

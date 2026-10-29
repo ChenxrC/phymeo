@@ -1,6 +1,6 @@
 # 有限厚度棱柱与有限面摩擦验收
 
-Task1 已完成并释放数值/index；产品提交 `1fcd0e7`，报告提交 `f2d4999`。父已核对 307 个源码/测试/scripts 文件及原始证据摘要，实际 tyx interpret/CUDA 选测均通过。唯一 fresh review `thick_friction_final_review` 正在进行，C++ 短例、源码外 wheel 和新产品远程 CI 尚未执行；本切片尚未交付。
+Task1 已完成并释放数值/index；产品提交 `1fcd0e7`，报告提交 `f2d4999`。父已核对 307 个源码/测试/scripts 文件及原始证据摘要，实际 tyx interpret/CUDA 选测均通过。唯一 fresh review `thick_friction_final_review` 已结束，0 Critical / 2 Important / 0 Minor，两项发现待原实现者定向修复，C++ 短例、源码外 wheel 和新产品远程 CI 尚未执行；本切片尚未交付。
 
 依据：[冻结合同](../superpowers/specs/2026-10-29-p65-thick-friction-design.md)、[选测计划](../superpowers/plans/2026-10-29-p65-thick-friction.md)、[验收政策](../development/p65-validation-policy.md)、[工程证据](p65-thick-friction-engineering.json)、[唯一审阅](p65-thick-friction-review.md)。
 
@@ -29,6 +29,6 @@ Task1 已完成并释放数值/index；产品提交 `1fcd0e7`，报告提交 `f2
 
 ## 尚待交付
 
-唯一 review 及其发现闭环，随后一次实际 C++ 短例、build、源码外 native-pip 安装与完整 smoke、wheel 源码匹配，再推送专用分支并核对该 SHA 的准确 CI。合同 `6e818f5` 的两项 CI 已成功，但不代表新产品 CI。
+唯一 review 已结束；先关闭侧接触误拒绝与独立映射账本合力漏检两项发现，随后一次实际 C++ 短例、build、源码外 native-pip 安装与完整 smoke、wheel 源码匹配，再推送专用分支并核对该 SHA 的准确 CI。合同 `6e818f5` 的两项 CI 已成功，但不代表新产品 CI。
 
 本切片不完成 H1。一般机器人、弯曲/自碰撞、真实有限驱动单爪承重/低μ滑落、IK/双臂交接放台和同源 Three.js 仍须推进。NUM005、TYX003、TYX004 仍开放；此阶段没有正式性能测量。

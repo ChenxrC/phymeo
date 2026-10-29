@@ -1,5 +1,7 @@
 # P6.5 综合案例的续作入口
 
+当前厚度阶段唯一审阅已结束，0Critical/2Important/0Minor：侧接触 signed gap 和独立映射合力审核均需定向修复，详见[审阅记录](../benchmarks/p65-thick-friction-review.md)。修复前数值证据保留原版本；C++/wheel/产品CI待两项闭环，不重复fresh review。
+
 状态日期2026-10-28。P6已完整验收；P6.5原六项基础加厚度材料点端口共七项已完成本地验收，详见[本窗口交付](../benchmarks/p65-window-delivery.md)。**实际双臂递布、综合碰撞与Three.js尚未交付。** 旧用户窗口截止08:00北京时间；用户现已明确恢复P6.5开发，本轮没有指定新截止。
 
 新增固定区间载荷重放为第8项已实现基础，功能与安装验证通过，但Windows C++长期运行受TYX-003阻塞；详见[重放验收](../benchmarks/p65-load-replay-acceptance.md)。不能把这项或此前七项基础写成真实夹持。
@@ -28,7 +30,7 @@
 
 ## 当前立即续作
 
-有限厚度摩擦 Task1 已完成，产品1fcd0e7、报告f2d4999，307文件冻结摘要e3ee006f6ae79baa808b679ce4958464b5af28aef928f815a7dc685b603e8637。先读[本阶段验收](../benchmarks/p65-thick-friction-acceptance.md)、[工程](../benchmarks/p65-thick-friction-engineering.json)、[审阅](../benchmarks/p65-thick-friction-review.md)及本阶段SDD报告。CPU/interpret/CUDA数值进程已退出；唯一fresh审阅thick_friction_final_review正在运行并独占数值槽，父不并发工程或重派审阅。审阅发现交原实现者定向修复；闭环及资源释放后父执行一次短CPP/build/源码外wheel，再专用分支push并核对准确CI。当前未push新产品，合同6e818f5准确CI40909862598/Documentation40909862611均success仅作合同记录。不重跑已过窗口/旧全量/900，不将此切片当完整H1。
+有限厚度摩擦 Task1 已完成，产品1fcd0e7、报告f2d4999，307文件冻结摘要e3ee006f6ae79baa808b679ce4958464b5af28aef928f815a7dc685b603e8637。先读[本阶段验收](../benchmarks/p65-thick-friction-acceptance.md)、[工程](../benchmarks/p65-thick-friction-engineering.json)、[审阅](../benchmarks/p65-thick-friction-review.md)及本阶段SDD报告。CPU/interpret/CUDA数值进程已退出；唯一fresh审阅thick_friction_final_review已结束并释放数值槽，0Critical/2Important/0Minor；父确认侧接触误拒绝及独立映射合力漏检，交原实现者定向TDD修复，不派第二次review。闭环及资源释放后父执行一次短CPP/build/源码外wheel，再专用分支push并核对准确CI。当前未push新产品，合同6e818f5准确CI40909862598/Documentation40909862611均success仅作合同记录。不重跑已过窗口/旧全量/900，不将此切片当完整H1。
 
 ### 历史已交付阶段（不重跑）
 

@@ -95,4 +95,4 @@
 - [ ] 所有数值进程结束后，最终冻结digest跑一个实际C++三角厚度短例、build、源码外新nativepip完整installed smoke及wheel逐文件匹配；不跑正式900，不宣称P95。
 - [ ] 更新框架/案例两线，commit/push核对SHA和该提交准确CI。随后一般机器人/弯曲自碰撞等继续，整体门槛不删。
 
-Task1报告 f2d4999 已交付父，数值/index释放；原版本 host60/严格窗口与最终 interpret13/CUDA13 的摘要、退出码已核对。唯一 fresh review thick_friction_final_review 正在审阅 BASE6e818f5..HEADf2d4999，工程及最终交付未勾。
+Task1报告 f2d4999 已交付父，数值/index释放；原版本 host60/严格窗口与最终 interpret13/CUDA13 的摘要、退出码已核对。唯一 fresh review thick_friction_final_review 已完成 BASE6e818f5..HEADf2d4999：0Critical/2Important/0Minor；I1/I2交原实现者定向TDD修复，父核对闭环，不再fresh review。该复合review/修复框及工程/交付框仍未勾。

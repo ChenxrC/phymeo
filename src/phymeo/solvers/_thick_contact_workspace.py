@@ -24,7 +24,7 @@ from ._dynamic_friction_law import projected
 from ._dynamic_normal_geometry import normal_projection_bounds
 from ._material_contact_balance import MaterialContactBalance
 from ._robot_replay_ledger import FrozenRobotLedger, upper_float
-from ._thick_contact_geometry import discover, manifolds, maps, relative, response
+from ._thick_contact_geometry import discover, held_feature_gap, manifolds, maps, relative, response
 from ._thick_contact_replay import ThickReplay, require_selected_pre
 
 ZERO = F(0)
@@ -152,16 +152,11 @@ class ThickContactWorkspace(ThickReplay):
     def _current(self, state):
         current = maps(self, state)
         blocks, points, local, rjac, samples, _ = current
-        gaps = []
-        for n, p, s in zip(self.n0, points, samples, strict=True):
-            if s.projection_inside:
-                gaps.append(
-                    normal_projection_bounds(
-                        n, [q(a) - q(b) for a, b in zip(p, s.world_point, strict=True)]
-                    )
-                )
-            else:
-                gaps.append(s.exact_distance_bounds)
+        full = manifolds(self, state)
+        gaps = [
+            held_feature_gap(self, a, p, full[a.pair], sample.exact_distance_bounds)
+            for a, p, sample in zip(self.anchors, points, samples, strict=True)
+        ]
         return current, tuple(gaps)
 
     def _friction(self, terminal=False):

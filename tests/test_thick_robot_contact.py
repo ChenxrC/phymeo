@@ -592,3 +592,138 @@ def test_rejected_trial_retains_new_penetrating_extremes():
     finally:
         w.close()
         p.close()
+
+
+def review_side_case(mode="numpy", feature="edge"):
+    if feature == "edge":
+        x = np.array([[0.5, 0.0, -1.0], [0.5, 0.0, 1.0], [1.5, 0.0, 0.0]])
+        velocity = np.tile([-0.25, 0.0, 0.0], (3, 1))
+    elif feature == "point":
+        return build(
+            mode,
+            scenario="C",
+            mu=0.0,
+            start_position=[[0.5, 0.0, -1.0], [0.5, 0.0, 1.0], [1.5, 0.0, 0.0]],
+            start_velocity=np.tile([-0.25, 0.0, 0.0], (3, 1)),
+            patch_vertices=[[0.5, 0.0, 0.0], [-0.5, 0.0, -0.5], [-0.5, 0.0, 0.5]],
+        )
+    else:
+        x = np.array([[0.0, 0.0, 1.0], [1.0, 0.0, 0.0], [1.0, 0.0, 1.0]])
+        velocity = np.tile([-0.125, 0.0, -0.125], (3, 1))
+    return build(mode, scenario="C", mu=0.0, start_position=x, start_velocity=velocity)
+
+
+@pytest.mark.parametrize("feature", ["edge", "point"])
+def test_review_side_feature_automatic(feature):
+    case = review_side_case(feature=feature)
+    scene, state, inputs, program, settings, context = case
+    w = program.create_workspace(scene, state, inputs, 0.25, settings, context)
+    advanced = False
+    try:
+        if feature == "point":
+            assert len(w.initial_manifolds[0].selected_axis.patch_support) == 1
+            assert len(w.anchors) == 1 and w.anchors[0].material == (0.5, 0.5, 0.0, 0.0)
+        w.predict()
+        w.position_sweep()
+        w.position_sweep()
+        assert np.any(w.p > 0), (
+            "closing selected finite support must generate a positive normal impulse from zero"
+        )
+        advanced = True
+    finally:
+        w.close()
+        if not advanced:
+            program.close()
+    r = step(case)
+    d = diag(r)
+    expected = case[1].domains["nodes"].velocity.copy()
+    expected[:2] = 0.0
+    np.testing.assert_allclose(r.state.domains["nodes"].velocity, expected, atol=1e-8, rtol=0)
+    np.testing.assert_allclose(
+        r.state.domains["nodes"].position,
+        case[1].domains["nodes"].position + 0.25 * expected,
+        atol=1e-8,
+        rtol=0,
+    )
+    np.testing.assert_allclose(r.state.domains["robot"].q, 0.0, atol=1e-8, rtol=0)
+    np.testing.assert_allclose(r.state.domains["robot"].v, 0.0, atol=1e-8, rtol=0)
+    assert d["held_replays"] > 1 and all(c["status"] == "certified" for c in d["ccd"])
+    np.testing.assert_allclose(d["terminal_world"], 0.0, atol=1e-8, rtol=0)
+    assert abs(np.sum(d["held_impulses"]) - 0.5) <= 1e-8
+
+
+def test_review_independent_legal_side_candidate():
+    # Independent reviewer candidate; automatic regression above never presets impulses.
+    case = review_side_case()
+    scene, state, inputs, p, settings, context = case
+    w = p.create_workspace(scene, state, inputs, 0.25, settings, context)
+    try:
+        w.predict()
+        w.p[:] = 0.25
+        w._evaluate()
+        assert w.position_metrics().max_residual <= settings.tolerance
+        w.prepare_velocity()
+        assert w.velocity_metrics().max_residual <= settings.tolerance
+        result = w.result()
+        np.testing.assert_array_equal(
+            result.domains["nodes"].velocity, [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [-0.25, 0.0, 0.0]]
+        )
+        assert all(c.status == "certified" for c in w.ccd)
+    finally:
+        w.close()
+        p.close()
+
+
+@pytest.mark.parametrize("feature", ["edge", "corner"])
+def test_review_selected_feature_finite_fallback(feature):
+    case = review_side_case(feature=feature)
+    scene, state, inputs, p, settings, context = case
+    w = p.create_workspace(scene, state, inputs, 0.25, settings, context)
+    try:
+        shift = (
+            np.array([-1 / 16, 0.0, 1 / 4])
+            if feature == "edge"
+            else np.array([7 / 32, 0.0, -9 / 32])
+        )
+        current = ph.SceneState(
+            {
+                **state.domains,
+                "nodes": ph.ParticleState(
+                    state.domains["nodes"].position + shift, state.domains["nodes"].velocity
+                ),
+            },
+            state.history,
+        )
+        maps_now, gaps = w._current(current)
+        for point, gap in zip(maps_now[1], gaps, strict=True):
+            if feature == "edge" and abs(point[2]) <= 0.5:
+                assert gap == (-F(1, 16), -F(1, 16))
+            else:
+                assert gap[0] > 0, (
+                    "projection outside finite support must not use its infinite plane"
+                )
+    finally:
+        w.close()
+        p.close()
+
+
+def test_review_diagonal_corner_actual_projection_is_inactive():
+    # R4 preserves this input and its failed-512 evidence: no global convergence claim.
+    scene, state, inputs, p, settings, context = review_side_case(feature="corner")
+    w = p.create_workspace(scene, state, inputs, 0.25, settings, context)
+    try:
+        w.predict()
+        w.position_sweep()
+        w.position_sweep()
+        current, gaps = w._current(w.trial.result.state)
+        actual = current[1][0]
+        nodes = w.trial.result.state.domains["nodes"].position
+        ideal_x = (F(nodes[0, 0]) + F(nodes[1, 0])) / 2
+        ideal_z = (F(nodes[0, 2]) + F(nodes[1, 2])) / 2
+        assert ideal_x == ideal_z
+        assert F(actual[0]) != F(actual[2])  # Exact actual projection misses (X=Z).
+        assert gaps[0] == current[4][0].exact_distance_bounds
+        assert gaps[0][0] >= 0  # Strict finite-inactive; ideal-inside cannot add a ghost row.
+    finally:
+        w.close()
+        p.close()

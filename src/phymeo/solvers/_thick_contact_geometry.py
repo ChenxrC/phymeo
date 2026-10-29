@@ -11,8 +11,9 @@ from ..core.scene import fingerprint
 from ..coupling.offset_port import TriangleOffsetPointPort
 from ..coupling.ports import ParticlePointPort
 from ..dynamics.robot_kinematics import point_jacobians
+from ..geometry._prism_clip import hull, inside
 from ..geometry._prism_exact import Quadratic as Q
-from ..geometry._prism_exact import vector
+from ..geometry._prism_exact import dot, normalized_bounds, scale, sub, vector
 from ..geometry.prism_patch_manifold import prefer_initial_axis, triangle_prism_patch_manifold
 from ..geometry.robot_patch_sweep import patch_geometry
 from ..validation._material_path_math import q
@@ -247,3 +248,47 @@ def relative(w, state, blocks, jac):
             ]
         )
     return np.array(output, object).reshape(-1, 3)
+
+
+def held_feature_gap(w, anchor, point, current_manifold, fallback):
+    """Signed initial-side support plane only inside its true finite projection.
+
+    All supported robot frames have constant orientation: current FK translates
+    the initial selected patch support feature without changing its vertex IDs.
+    The free trial's opposite maximal SAT axis cannot rename the held side.
+    """
+    selected = w.initial_manifolds[anchor.pair].selected_axis
+    direction = selected.direction
+    norm2 = dot(direction, direction)
+    vertices = current_manifold.exact_patch_vertices
+    levels = tuple(dot(direction, p) for p in vertices)
+    level = max(levels)
+    support = tuple(i for i, value in enumerate(levels) if value == level)
+    if support != selected.patch_support:
+        raise SolverFailure("held finite support feature changed under prismatic translation")
+    kept = tuple(i for i in range(3) if i != next(k for k, v in enumerate(direction) if v))
+
+    def project(p):
+        projected = sub(p, scale(direction, dot(direction, p) / norm2))
+        return tuple(projected[i] for i in kept)
+
+    feature = hull([project(vertices[i]) for i in support])
+    actual = vector(point)
+    # R4: g_gen queries the actual discrete port point. Independently audit its
+    # representation against current owned B/s; ideal body certification is separate.
+    prism = current_manifold.exact_vertices
+    rho = q(w.program.pairs[anchor.pair][0].half_thickness_m)
+    normal = tuple((a - b) / (2 * rho) for a, b in zip(prism[3], prism[0], strict=True))
+    ideal = tuple(
+        sum((q(anchor.material[i]) * (prism[i][k] + prism[i + 3][k]) / 2 for i in range(3)), Q(0))
+        + q(anchor.material[3]) * normal[k]
+        for k in range(3)
+    )
+    error = sum((abs(a - b).bounds()[1] for a, b in zip(actual, ideal, strict=True)), F(0))
+    if error > w.bound:
+        raise SolverFailure("held material representation exceeds geometry budget")
+    if inside(project(actual), feature):
+        ideal_gap = normalized_bounds(dot(direction, ideal) - level, norm2)
+        actual_gap = normalized_bounds(dot(direction, actual) - level, norm2)
+        return min(ideal_gap[0], actual_gap[0]), max(ideal_gap[1], actual_gap[1])
+    return fallback

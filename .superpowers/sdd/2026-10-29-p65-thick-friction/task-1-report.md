@@ -6,7 +6,7 @@ Implementer owns production/numerical/index. No helper/reviewer dispatched. Main
 
 ## Active execution
 
-Task1 I1/I2 review fixes ACTIVE from a2ba474 (unique fresh review complete0C/2I/0M). Implementer owns production/numerical/index; currently no numerical process active. I2 committed e8c821d; focused host16passed6.37s rawexit0. Broader host31passed/1failed59.04s rawexit1 found C anchor-birth finite-boundary representation conflict; main has exact rational/quadratic diagnostic evidence and a semantic ruling is pending. Actual interpret/CUDA and remaining host/transaction selections have not started for the fix source. See task-1-review-fixes.md. Historical1fcd0e7 product acceptance below retains its original source versions and is not a post-fix full-suite claim. Parent owns review finding closure and later C++/wheel/CI/push.
+Task1 I1/I2 review fixes ACTIVE. R4 main ruling clarifies exact actual-port g_gen membership; ideal body certification unchanged. I2 e8c821d verified; I1 focused7passed13.10s rawexit0 restores frozen C birth and exact edge/point controls. Earlier diagonal failed512 remains a disclosed convergence limitation; no union/epsilon fix. Active session32901 host-tail05 (final-fix-manifest05 cd6d77917dee8af09f13a430f4fdd4a5b744461874364a142aff0d8e6722d84b); lifecycle/oblique/candidate branch passed, transaction tail still running. Interpret/CUDA not started for fixes. Implementer holds production/numerical/index. Historical1fcd full results below remain versioned; parent owns finding closure and C++/wheel/CI/push.
 
 ## Geometry unit (step 1-3)
 

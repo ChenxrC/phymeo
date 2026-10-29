@@ -5,7 +5,7 @@ from dataclasses import replace
 import numpy as np
 import pytest
 from test_terminal_impulse import ObservedProgram, ObservedWorkspace
-from test_thick_robot_contact import build, diag, jaw_window, lifecycle, step
+from test_thick_robot_contact import build, diag, jaw_window, lifecycle, review_side_case, step
 from test_thick_robot_transaction import FaultProgram
 
 import phymeo as ph
@@ -120,3 +120,27 @@ def test_actual_failure_and_all_trials_count(tyx_mode, monkeypatch):
         retried = runtime.step(state, inputs, 0.5)
         assert retried.report.accepted, retried.report.reason
     assert fingerprint((state, inputs)) == before
+
+
+@pytest.mark.parametrize("feature", ["edge", "point"])
+def test_review_actual_side_feature(tyx_mode, feature):
+    case = review_side_case(tyx_mode, feature)
+    r = step(case)
+    d = diag(r)
+    expected = case[1].domains["nodes"].velocity.copy()
+    expected[:2] = 0.0
+    assert r.report.backend == "tyx:" + tyx_mode
+    np.testing.assert_allclose(r.state.domains["nodes"].velocity, expected, atol=2e-5, rtol=0)
+    np.testing.assert_allclose(
+        r.state.domains["nodes"].position,
+        case[1].domains["nodes"].position + 0.25 * expected,
+        atol=2e-5,
+        rtol=0,
+    )
+    for name, fields in (("robot", ("q", "v")), ("nodes", ("position", "velocity"))):
+        for field in fields:
+            value = getattr(r.state.domains[name], field)
+            np.testing.assert_array_equal(value, value.astype(np.float32).astype(np.float64))
+    np.testing.assert_allclose(d["terminal_world"], 0.0, atol=2e-5, rtol=0)
+    assert d["held_replays"] > 1 and all(c["status"] == "certified" for c in d["ccd"])
+    assert d["terminal_ledger"]["ledger"]["compute_precision"] == "float32"

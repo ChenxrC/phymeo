@@ -682,6 +682,98 @@ def check_dynamic_robot_finite_contact(mode="numpy"):
     return result
 
 
+def check_dynamic_robot_thick_contact(mode="numpy"):
+    """Small three-corner thickness impact through both native phases."""
+    robot = phymeo.RobotModel(
+        np.array([-1]),
+        ("prismatic",),
+        np.zeros((1, 3)),
+        np.array([[0.0, 0.0, 0.0, 1.0]]),
+        np.array([[0.0, 1.0, 0.0]]),
+        np.array([2.0]),
+        np.zeros((1, 3)),
+        np.ones((1, 3)),
+        np.zeros(3),
+    )
+    nodes = phymeo.ParticleModel(np.ones(3), np.zeros(3))
+    scene = phymeo.SceneModel(
+        (
+            phymeo.DomainBinding("robot", "robot", robot),
+            phymeo.DomainBinding("nodes", "particles", nodes),
+        )
+    )
+    if mode == "numpy":
+        participants = {
+            "robot": phymeo.RobotParticipant(robot),
+            "nodes": phymeo.ClothParticipant(nodes, None, record_material_path=True),
+        }
+        factory = phymeo.ArticulatedCouplingProgram
+    else:
+        participants = {
+            "robot": phymeo.TyxRobotParticipant(robot, mode),
+            "nodes": phymeo.TyxClothParticipant(nodes, None, mode, record_material_path=True),
+        }
+        factory = phymeo.TyxArticulatedCouplingProgram
+    base = factory(
+        scene,
+        participants,
+        phymeo.RobotSphereAttachments(np.empty(0, int), np.empty((0, 3)), np.empty(0)),
+        (),
+    )
+    program = phymeo.DynamicRobotThickContactProgram(
+        scene,
+        base,
+        (phymeo.TrianglePrismSurface("sheet", "nodes", (0, 1, 2), half_thickness_m=0.125),),
+        (
+            phymeo.RobotContactPatch(
+                "patch",
+                0,
+                np.array([[-4.0, 0.0, -4.0], [4.0, 0.0, -4.0], [4.0, 0.0, 4.0], [-4.0, 0.0, 4.0]]),
+            ),
+        ),
+        friction_by_collider={"patch": 0.0},
+        materials={"nodes": None},
+        budgets=phymeo.MaterialContactBudgets(
+            1e-8 if mode == "numpy" else 1e-5, 1e-8 if mode == "numpy" else 1e-5
+        ),
+    )
+    state = phymeo.SceneState(
+        {
+            "robot": phymeo.RobotState(np.zeros(1), np.zeros(1)),
+            "nodes": phymeo.ParticleState(
+                np.array([[-1.0, 0.25, -1.0], [0.0, 0.25, 2.0], [1.0, 0.25, -1.0]]),
+                np.tile([0.0, -1.0, 0.0], (3, 1)),
+            ),
+        },
+        {f.name: np.zeros(f.shape, f.dtype) for f in program.history_fields},
+    )
+    inputs = phymeo.SceneInputs(
+        {"robot": phymeo.RobotInputs.zeros(1), "nodes": phymeo.StepInputs.zeros(3)}
+    )
+    settings = phymeo.StepSettings(
+        position_iterations=512,
+        velocity_iterations=512,
+        tolerance=1e-8 if mode == "numpy" else 2e-5,
+    )
+    with phymeo.SceneStepper(
+        scene,
+        program,
+        settings,
+        phymeo.BackendContext(program.capabilities.backend),
+        program.registry,
+    ) as runtime:
+        result = runtime.step(state, inputs, 0.25)
+    if not result.report.accepted:
+        raise RuntimeError("Installed thick contact failed: " + str(result.report.reason))
+    np.testing.assert_allclose(
+        result.state.domains["nodes"].velocity[:, 1], -0.6, atol=settings.tolerance, rtol=0
+    )
+    np.testing.assert_allclose(
+        result.state.domains["robot"].v, -0.6, atol=settings.tolerance, rtol=0
+    )
+    return result
+
+
 def main():
     installed = Path(phymeo.__file__).resolve()
     if not installed.is_relative_to(Path(sys.prefix).resolve()):
@@ -868,6 +960,7 @@ def main():
     check_dynamic_robot_normal_contact()
     check_dynamic_robot_friction_contact()
     check_dynamic_robot_finite_contact()
+    check_dynamic_robot_thick_contact()
     for name in (
         "TyxRobotParticipant",
         "TyxClothParticipant",

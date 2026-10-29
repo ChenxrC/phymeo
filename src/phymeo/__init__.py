@@ -118,8 +118,14 @@ from .validation.free_particle import FreeParticleVerifier
 
 __version__ = "0.1.0a0"
 
+from .constraints.robot_contact_patch import RobotContactPatch
+from .constraints.triangle_prism_surface import TrianglePrismSurface
+from .geometry.prism_patch_manifold import PrismPatchManifold, triangle_prism_patch_manifold
+from .geometry.prism_patch_sweep import PrismPatchSweepResult, triangle_prism_patch_sweep
+from .solvers.dynamic_robot_thick_contact import DynamicRobotThickContactProgram
 from .validation.material_path import MaterialPathLedger
 from .validation.terminal_impulse import TerminalImpulseLedger
+from .validation.thick_contact_mapping import ThickContactMappingLedger
 
 __all__ = [
     "RobotPlaneCollider",
@@ -258,10 +264,15 @@ __all__ += ["FiniteContactTerminalProgram", "FiniteContactTerminalLedger"]
 
 __all__ += ["DynamicRobotFiniteContactProgram"]
 
-from .constraints.triangle_prism_surface import TrianglePrismSurface
-from .constraints.robot_contact_patch import RobotContactPatch
-from .geometry.prism_patch_manifold import PrismPatchManifold, triangle_prism_patch_manifold
-__all__ += ['TrianglePrismSurface', 'RobotContactPatch', 'PrismPatchManifold', 'triangle_prism_patch_manifold']
+__all__ += [
+    "TrianglePrismSurface",
+    "RobotContactPatch",
+    "PrismPatchManifold",
+    "triangle_prism_patch_manifold",
+]
 
-from .geometry.prism_patch_sweep import PrismPatchSweepResult, triangle_prism_patch_sweep
-__all__ += ['PrismPatchSweepResult', 'triangle_prism_patch_sweep']
+__all__ += ["PrismPatchSweepResult", "triangle_prism_patch_sweep"]
+
+__all__ += ["DynamicRobotThickContactProgram"]
+
+__all__ += ["ThickContactMappingLedger"]

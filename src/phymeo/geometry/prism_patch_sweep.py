@@ -56,6 +56,26 @@ class PrismPatchSweepResult:
     area_coefficients: tuple
 
 
+def candidate_fingerprint(model, q0, q1, collider, x0, x1, rho, budget, max_intervals, max_depth):
+    def token(values):
+        a = np.asarray(values, dtype=object)
+        return (a.shape, tuple((rational(v).numerator, rational(v).denominator) for v in a.flat))
+
+    return fingerprint(
+        (
+            model,
+            token(q0),
+            token(q1),
+            collider,
+            token(x0),
+            token(x1),
+            token([rho, budget]),
+            max_intervals,
+            max_depth,
+        )
+    )
+
+
 def triangle_prism_patch_sweep(
     model,
     q0,
@@ -80,22 +100,8 @@ def triangle_prism_patch_sweep(
     q0 = tuple(rational(v) for v in q0)
     q1 = tuple(rational(v) for v in q1)
 
-    def token(values):
-        a = np.asarray(values, dtype=object)
-        return (a.shape, tuple((rational(v).numerator, rational(v).denominator) for v in a.flat))
-
-    sig = fingerprint(
-        (
-            model,
-            token(q0),
-            token(q1),
-            collider,
-            token(x0),
-            token(x1),
-            token([rho, budget]),
-            max_intervals,
-            max_depth,
-        )
+    sig = candidate_fingerprint(
+        model, q0, q1, collider, x0, x1, rho, budget, max_intervals, max_depth
     )
     coeff = area_polynomial(x0, x1)
 

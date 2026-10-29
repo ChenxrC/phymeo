@@ -27,3 +27,5 @@ Commit the frozen contract and launch a single scoped implementer with TDD, raw 
 Frozen contract 6e818f574d097ce415940289a58847d4c8ba49fb pushed; remote SHA exactly equal. Docs180/828local links and diffcheck passed; src/tests/scripts unchanged. Preflight appended by main before dispatch; implementer must retain this main-owned entry and may include it in its next coherent report commit. After dispatch the implementer owns production/numerical/index; main does not edit/stage concurrently.
 
 Task1 active: thick_friction_implementer exclusively owns production/numerical/index. Geometry RED preparation; no active numerical session. Main preflight retained.
+
+Task1 still active, implementer owns numerical/index. Geometry/mapping and initial A/B/material/C evidence in task-1-report.md. Interrupted23719 has no whole-transaction pass; current session7922 exact tie/equivalence first execution. Required full host windows and actual interpret/CUDA not started. Source/test snapshot equivalence-manifest-01.json b27fb0a7d0e98938425de83f3fa6e465a0b4fd541329ff02a50f7c04787abb06. No push/reviewer; parent contract CI is not new-product CI.

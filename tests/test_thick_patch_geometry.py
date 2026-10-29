@@ -225,3 +225,29 @@ def test_exact_time_and_candidate_fingerprint():
     t = F(1, 3)
     x = (1 - t) * a + t * b
     np.testing.assert_array_equal(np.cross(x[1] - x[0], x[2] - x[0]), np.array(c[0], object))
+
+
+def test_arbitrary_fixed_frame_uses_exact_rational_rotation():
+    robot = replace(
+        model(),
+        joint_orientation=np.array([[1.0, 2.0, 3.0, 4.0]]) / np.sqrt(30.0),
+        joint_position=np.array([[2.0, -3.0, 1.0]]),
+    )
+    x, y, z, w = map(F, robot.joint_orientation[0])
+    n = x * x + y * y + z * z + w * w
+    rotation = np.array(
+        [
+            [1 - 2 * (y * y + z * z) / n, 2 * (x * y - z * w) / n, 2 * (x * z + y * w) / n],
+            [2 * (x * y + z * w) / n, 1 - 2 * (x * x + z * z) / n, 2 * (y * z - x * w) / n],
+            [2 * (x * z - y * w) / n, 2 * (y * z + x * w) / n, 1 - 2 * (x * x + y * y) / n],
+        ],
+        object,
+    )
+    triangle = np.array([[F(v) for v in p] for p in TRI], object) @ rotation.T + np.array(
+        [2, -3, 1], object
+    )
+    r = ph.triangle_prism_patch_manifold(
+        robot, np.zeros(1), patch(), triangle, half_thickness_m=0.125, geometric_budget_m=0.0
+    )
+    assert r.status == "contact" and len(r.points) == 4 and r.exact_gap_bounds == (F(0), F(0))
+    np.testing.assert_allclose(r.normal, np.array(rotation[:, 1], float), atol=1e-15, rtol=0)

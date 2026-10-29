@@ -300,3 +300,150 @@ def test_late_physical_budget_rejection_rolls_back_and_retry_matches(substeps, m
         expected = runtime.step(fresh[1], fresh[2], 0.25 * substeps)
     assert expected.report.accepted, expected.report.reason
     assert fingerprint(retry.state) == fingerprint(expected.state)
+
+
+@pytest.mark.parametrize("fault", [None, "new_candidate_budget", "best_budget", "ledger_exception"])
+def test_after_best_physical_budget_requires_audited_fallback(monkeypatch, fault):
+    """A finite trial rejection may restore best; invalid/unknown best may not commit."""
+    import numpy as np
+
+    from phymeo.solvers._dynamic_friction_workspace import _DynamicFrictionWorkspace as W
+    from phymeo.solvers._material_contact_balance import MaterialContactBalance
+
+    enabled = [True]
+    current = [None]
+    observed = dict(workspace=None, candidate=None, best=None, injected=0, best_audits=[])
+    velocity_metrics = W._velocity_metrics
+    physical_metrics = MaterialContactBalance.require_metrics
+
+    def ledger(self, *args, **kwargs):
+        workspace = current[0]
+        if (
+            enabled[0]
+            and fault == "ledger_exception"
+            and workspace is observed["workspace"]
+            and workspace.trial is observed["candidate"]
+        ):
+            observed["injected"] += 1
+            raise ph.SolverFailure("injected physical ledger exception after admitted best")
+        return physical_metrics(self, *args, **kwargs)
+
+    def audited(workspace):
+        # Locate the first new native trial after an admitted best by identity,
+        # never by a hard-coded replay number, score or trajectory coefficient.
+        if (
+            enabled[0]
+            and observed["candidate"] is None
+            and workspace.vbest is not None
+            and workspace.trial is not workspace.vbest[3]
+        ):
+            observed.update(workspace=workspace, candidate=workspace.trial, best=workspace.vbest[3])
+        current[0] = workspace
+        try:
+            metrics = velocity_metrics(workspace)
+        finally:
+            current[0] = None
+        if workspace is observed["workspace"] and workspace.trial is observed["best"]:
+            observed["best_audits"].append((metrics, fingerprint(workspace.physical_report)))
+        new_trial = workspace.trial is observed["candidate"]
+        restored_best = workspace.trial is observed["best"]
+        if (
+            enabled[0]
+            and workspace is observed["workspace"]
+            and (
+                (fault == "new_candidate_budget" and new_trial)
+                or (fault == "best_budget" and (new_trial or restored_best))
+            )
+        ):
+            observed["injected"] += 1
+            return ph.StageMetrics(
+                {**metrics.residuals, "frozen_model_energy": 2 * workspace.settings.tolerance},
+                geometric_error=metrics.geometric_error,
+                penetration=metrics.penetration,
+            )
+        return metrics
+
+    monkeypatch.setattr(MaterialContactBalance, "require_metrics", ledger)
+    monkeypatch.setattr(W, "_velocity_metrics", audited)
+
+    def make_case():
+        case = custom(
+            mu=0.5,
+            position=[[0.0, 1 / 8, 0.0]],
+            velocity=[[1.0, -1.0, 0.0]],
+            base_transform=ObservedProgram,
+        )
+        case[3].relaxation = 0.5
+        return case
+
+    case = make_case()
+    scene, state, inputs, program, settings, context = case
+    initial = fingerprint((state, inputs))
+    rejected = fault in ("best_budget", "ledger_exception")
+    with ph.SceneStepper(scene, program, settings, context, program.registry) as runtime:
+        result = runtime.step(state, inputs, 0.25)
+        assert observed["candidate"] is not None, "must reach a new native trial after best"
+        assert observed["candidate"] is not observed["best"]
+        assert result.report.accepted == (not rejected), result.report.reason
+        assert fingerprint((state, inputs)) == initial
+        if fault is None:
+            assert observed["injected"] == 0
+        elif fault == "new_candidate_budget":
+            assert observed["injected"] == 1, "only the new candidate is polluted once"
+            assert observed["workspace"].trial is observed["best"]
+            assert fingerprint(result.state.domains) == fingerprint(
+                observed["best"].result.state.domains
+            )
+            assert observed["best_audits"], "restored best must undergo physical re-audit"
+            assert all(
+                metrics.max_residual <= settings.tolerance for metrics, _ in observed["best_audits"]
+            )
+            diagnostic = result.report.substeps[0].diagnostics["dynamic_robot_friction_contact"]
+            assert observed["best_audits"][-1][1] == fingerprint(diagnostic["physical_budgets"])
+        else:
+            assert observed["injected"] > 0
+            if fault == "best_budget":
+                assert observed["best_audits"], "must also reject the re-audited saved best"
+            else:
+                assert "physical ledger exception" in result.report.reason
+            assert fingerprint(result.state) == fingerprint(state)
+            assert result.report.completed_substeps == 0 and result.substep_states == ()
+            enabled[0] = False
+            result = runtime.step(state, inputs, 0.25)
+            assert result.report.accepted, result.report.reason
+
+        # Independent free-impact fractions and real final audits still hold
+        # for normal completion, accepted best fallback and fault-free retry.
+        np.testing.assert_allclose(
+            result.state.domains["nodes"].position,
+            [[1 / 4, -1 / 24, 0.0]],
+            atol=settings.tolerance,
+            rtol=0,
+        )
+        np.testing.assert_allclose(
+            result.state.domains["nodes"].velocity,
+            [[2 / 3, -1 / 3, 0.0]],
+            atol=settings.tolerance,
+            rtol=0,
+        )
+        diagnostic = result.report.substeps[0].diagnostics["dynamic_robot_friction_contact"]
+        physical = diagnostic["physical_budgets"]
+        assert (
+            physical["frozen_model_energy"]["positive_gain_upper_j"]
+            <= program.budgets.max_energy_gain_j
+        )
+        assert (
+            physical["material_angular_defect"]["l1_sum_nms"]
+            <= program.budgets.max_material_angular_defect_nms
+        )
+        assert result.report.max_residual <= settings.tolerance
+        assert result.state.history["base/count"][0] == 1
+    assert fingerprint((state, inputs)) == initial
+    assert all(workspace.counts["close"] == 1 for workspace in program.base.workspaces)
+
+    if rejected:
+        fresh = make_case()
+        with ph.SceneStepper(fresh[0], fresh[3], fresh[4], fresh[5], fresh[3].registry) as runtime:
+            expected = runtime.step(fresh[1], fresh[2], 0.25)
+        assert expected.report.accepted, expected.report.reason
+        assert fingerprint(result.state) == fingerprint(expected.state)

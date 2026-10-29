@@ -103,7 +103,7 @@
     }
   },
   "final_acceptance": {
-    "status": "running",
+    "status": "numerical_quality_wheel_complete_measurement_cuda_running",
     "frozen_snapshot": {
       "snapshot_commit": "dc59c3968b305833e941e68ac1170c695a15bbcb",
       "digest": "ea6e07e3d6a5eb49e04d017908748b56f3b17ad8ab094edeebce6ac654fba57c",
@@ -119,12 +119,12 @@
     "completed_suites_at_launch": [],
     "completed_suites": {
       "core311": {
+        "exit_code": 0,
+        "runner_seconds": 665.8504183001351,
+        "log": "artifacts/dynamic-friction-final-dc59c39-a/core311.txt",
         "passed": 1945,
         "deselected": 362,
         "pytest_seconds": 665.54,
-        "runner_seconds": 665.8504183001351,
-        "exit_code": 0,
-        "log": "artifacts/dynamic-friction-final-dc59c39-a/core311.txt",
         "slowest": [
           {
             "seconds": 187.58,
@@ -229,12 +229,12 @@
         ]
       },
       "nativepip": {
+        "exit_code": 0,
+        "runner_seconds": 658.1664789998904,
+        "log": "artifacts/dynamic-friction-final-dc59c39-a/nativepip.txt",
         "passed": 1945,
         "deselected": 362,
         "pytest_seconds": 657.52,
-        "runner_seconds": 658.1664789998904,
-        "exit_code": 0,
-        "log": "artifacts/dynamic-friction-final-dc59c39-a/nativepip.txt",
         "slowest": [
           {
             "seconds": 168.85,
@@ -337,12 +337,367 @@
             "test": "tests/test_dynamic_robot_friction_transaction.py::test_after_best_physical_budget_requires_audited_fallback[best_budget]"
           }
         ]
+      },
+      "cuda-full": {
+        "exit_code": 0,
+        "runner_seconds": 6196.840739799896,
+        "log": "artifacts/dynamic-friction-final-dc59c39-a/cuda-full.txt",
+        "passed": 2307,
+        "deselected": 0,
+        "pytest_seconds": 6196.34,
+        "slowest": [
+          {
+            "seconds": 1206.55,
+            "phase": "call",
+            "test": "tests/test_tyx_initial_robot_material.py::test_actual_material_friction_step_refinement[1.0]"
+          },
+          {
+            "seconds": 1062.46,
+            "phase": "call",
+            "test": "tests/test_tyx_initial_robot_material.py::test_actual_material_friction_step_refinement[0.1]"
+          },
+          {
+            "seconds": 1052.5,
+            "phase": "call",
+            "test": "tests/test_dynamic_robot_normal_tyx.py::test_actual_lifecycle_and_fixed_support"
+          },
+          {
+            "seconds": 656.79,
+            "phase": "call",
+            "test": "tests/test_tyx_initial_robot_material.py::test_actual_material_support_two_seconds[0.03125]"
+          },
+          {
+            "seconds": 595.01,
+            "phase": "call",
+            "test": "tests/test_dynamic_robot_friction_tyx.py::test_actual_half_second_window[0.03125-2.0]"
+          },
+          {
+            "seconds": 332.87,
+            "phase": "call",
+            "test": "tests/test_tyx_initial_robot_material.py::test_actual_material_support_two_seconds[0.0625]"
+          },
+          {
+            "seconds": 298.16,
+            "phase": "call",
+            "test": "tests/test_dynamic_robot_friction_tyx.py::test_actual_half_second_window[0.0625-2.0]"
+          },
+          {
+            "seconds": 175.19,
+            "phase": "call",
+            "test": "tests/test_dynamic_robot_friction_physics.py::test_two_second_window_and_halving_error[2.0]"
+          },
+          {
+            "seconds": 51.87,
+            "phase": "call",
+            "test": "tests/test_tyx_initial_robot_material.py::test_actual_late_material_evidence_rollback"
+          },
+          {
+            "seconds": 39.36,
+            "phase": "call",
+            "test": "tests/test_coupled_runtime.py::test_twelve_frame_full_scene_preserves_every_state_and_load[True-float32]"
+          },
+          {
+            "seconds": 36.77,
+            "phase": "call",
+            "test": "tests/test_coupled_runtime.py::test_twelve_frame_full_scene_preserves_every_state_and_load[False-float32]"
+          },
+          {
+            "seconds": 34.69,
+            "phase": "call",
+            "test": "tests/test_coupled_runtime.py::test_twelve_frame_full_scene_preserves_every_state_and_load[True-float64]"
+          },
+          {
+            "seconds": 32.98,
+            "phase": "call",
+            "test": "tests/test_articulated_experiment.py::test_three_domain_trace_records_both_actual_interactions_and_balanced_loads"
+          },
+          {
+            "seconds": 32.03,
+            "phase": "call",
+            "test": "tests/test_coupled_runtime.py::test_twelve_frame_full_scene_preserves_every_state_and_load[False-float64]"
+          },
+          {
+            "seconds": 30.21,
+            "phase": "call",
+            "test": "tests/test_prescribed_articulated.py::test_prescribed_trace_records_real_absorbed_reaction_and_loaded_nodes"
+          },
+          {
+            "seconds": 29.79,
+            "phase": "setup",
+            "test": "tests/test_rigid_cloth_scene.py::test_two_way_scene_contacts_and_changes_both_trajectories"
+          },
+          {
+            "seconds": 26.0,
+            "phase": "call",
+            "test": "tests/test_tyx_coupled.py::test_joint_scene_matches_same_color_reference_and_independent_audits"
+          },
+          {
+            "seconds": 24.73,
+            "phase": "call",
+            "test": "tests/test_tyx_coupled_runtime.py::test_device_twelve_frame_full_scene_matches_old_with_independent_audits"
+          },
+          {
+            "seconds": 22.5,
+            "phase": "call",
+            "test": "tests/test_dynamic_robot_normal_tyx.py::test_actual_three_free_toi_endpoint_windows"
+          },
+          {
+            "seconds": 21.72,
+            "phase": "call",
+            "test": "tests/test_dynamic_robot_friction_tyx.py::test_actual_half_second_window[0.03125-0.25]"
+          }
+        ]
+      },
+      "ubuntu-new": {
+        "exit_code": 0,
+        "runner_seconds": 239.90160979982466,
+        "log": "artifacts/dynamic-friction-final-dc59c39-a/ubuntu-new.txt",
+        "passed": 80,
+        "deselected": 0,
+        "pytest_seconds": 223.65,
+        "slowest": []
+      },
+      "cpp-bounded": {
+        "exit_code": 0,
+        "runner_seconds": 23.54905529995449,
+        "log": "artifacts/dynamic-friction-final-dc59c39-a/cpp-bounded.txt",
+        "passed": 1,
+        "deselected": 0,
+        "pytest_seconds": 23.15,
+        "slowest": []
+      },
+      "ruff": {
+        "exit_code": 0,
+        "runner_seconds": 0.3336420999839902,
+        "log": "artifacts/dynamic-friction-final-dc59c39-a/ruff.txt",
+        "slowest": []
+      },
+      "docs": {
+        "exit_code": 0,
+        "runner_seconds": 0.3174698001239449,
+        "log": "artifacts/dynamic-friction-final-dc59c39-a/docs.txt",
+        "slowest": []
+      },
+      "public-boundary": {
+        "exit_code": 0,
+        "runner_seconds": 0.33982400014065206,
+        "log": "artifacts/dynamic-friction-final-dc59c39-a/public-boundary.txt",
+        "slowest": []
+      },
+      "compile": {
+        "exit_code": 0,
+        "runner_seconds": 0.0859381000045687,
+        "log": "artifacts/dynamic-friction-final-dc59c39-a/compile.txt",
+        "slowest": []
+      },
+      "uv-pip-check": {
+        "exit_code": 0,
+        "runner_seconds": 0.1689929999411106,
+        "log": "artifacts/dynamic-friction-final-dc59c39-a/uv-pip-check.txt",
+        "slowest": []
+      },
+      "nativepip-check": {
+        "exit_code": 0,
+        "runner_seconds": 0.6982263999525458,
+        "log": "artifacts/dynamic-friction-final-dc59c39-a/nativepip-check.txt",
+        "slowest": []
+      },
+      "build": {
+        "exit_code": 0,
+        "runner_seconds": 2.629616899881512,
+        "log": "artifacts/dynamic-friction-final-dc59c39-a/build.txt",
+        "slowest": []
+      },
+      "wheel": {
+        "exit_code": 0,
+        "runner_seconds": 11.740409899968654,
+        "log": "artifacts/dynamic-friction-final-dc59c39-a/wheel.txt",
+        "slowest": []
+      },
+      "measurement-numpy": {
+        "exit_code": 0,
+        "runner_seconds": 203.28802350000478,
+        "log": "artifacts/dynamic-friction-final-dc59c39-a/measurement-numpy.txt",
+        "slowest": []
+      },
+      "measurement-interpret": {
+        "exit_code": 0,
+        "runner_seconds": 1163.023064600071,
+        "log": "artifacts/dynamic-friction-final-dc59c39-a/measurement-interpret.txt",
+        "slowest": []
       }
     },
-    "last_observed_phase": "cuda-full"
+    "last_observed_phase": "measurement-cuda",
+    "wheel": {
+      "path": "artifacts/dynamic-friction-final-dc59c39-a/dist/phymeo-0.1.0a0-py3-none-any.whl",
+      "sha256": "93e8d659b438afee09a2591312be7b27ba9846c3e9b191e3c26df5bd1cacd88a",
+      "source_files": 134
+    },
+    "independent_evidence_check": "artifacts/summarize_dynamic_friction_evidence.py --partial; exit0; all completed exits, frozen digest, 134 packaged sources, two raw sample distributions verified"
   },
   "formal_performance": {
-    "status": "not_started"
+    "status": "numpy_interpret_complete_cuda_running",
+    "completed_modes": {
+      "numpy": {
+        "raw": "docs/performance-bottlenecks/measurements/p65-dynamic-friction-numpy.json",
+        "measured": 300,
+        "including_warmups": 306,
+        "source": {
+          "git_revision": "784adf007fe8cf33f48cadf940041d817fb470bc",
+          "git_dirty": false,
+          "source_sha256": "d18e557c49b9711647d7b5218f9706739227eab84073c9a6a309e6276c44b33d",
+          "python": "3.12.14",
+          "numpy": "2.5.4",
+          "platform": "Windows-11-10.0.26200-SP0"
+        },
+        "source_after": {
+          "git_revision": "784adf007fe8cf33f48cadf940041d817fb470bc",
+          "git_dirty": false,
+          "source_sha256": "d18e557c49b9711647d7b5218f9706739227eab84073c9a6a309e6276c44b33d",
+          "python": "3.12.14",
+          "numpy": "2.5.4",
+          "platform": "Windows-11-10.0.26200-SP0"
+        },
+        "by_case": {
+          "support": {
+            "samples": 150,
+            "median": 0.9165466000558808,
+            "p95": 0.954413560021203,
+            "observed_counts": {
+              "held_replays": [
+                110
+              ],
+              "terminal_replays": [
+                1
+              ],
+              "launches": [
+                0
+              ],
+              "completed_launches": [
+                0
+              ],
+              "uploads": [
+                0
+              ],
+              "downloads": [
+                0
+              ],
+              "tolerance": [
+                1e-08
+              ]
+            }
+          },
+          "chain": {
+            "samples": 150,
+            "median": 0.3977648498257622,
+            "p95": 0.4180496200220659,
+            "observed_counts": {
+              "held_replays": [
+                27
+              ],
+              "terminal_replays": [
+                7
+              ],
+              "launches": [
+                0
+              ],
+              "completed_launches": [
+                0
+              ],
+              "uploads": [
+                0
+              ],
+              "downloads": [
+                0
+              ],
+              "tolerance": [
+                1e-08
+              ]
+            }
+          }
+        }
+      },
+      "interpret": {
+        "raw": "docs/performance-bottlenecks/measurements/p65-dynamic-friction-interpret.json",
+        "measured": 300,
+        "including_warmups": 306,
+        "source": {
+          "git_revision": "784adf007fe8cf33f48cadf940041d817fb470bc",
+          "git_dirty": true,
+          "source_sha256": "d18e557c49b9711647d7b5218f9706739227eab84073c9a6a309e6276c44b33d",
+          "python": "3.12.14",
+          "numpy": "2.5.4",
+          "platform": "Windows-11-10.0.26200-SP0"
+        },
+        "source_after": {
+          "git_revision": "afcb5d1c85d33bc707a240fb0979ed0902828e3c",
+          "git_dirty": true,
+          "source_sha256": "d18e557c49b9711647d7b5218f9706739227eab84073c9a6a309e6276c44b33d",
+          "python": "3.12.14",
+          "numpy": "2.5.4",
+          "platform": "Windows-11-10.0.26200-SP0"
+        },
+        "by_case": {
+          "support": {
+            "samples": 150,
+            "median": 4.520627000019886,
+            "p95": 11.657570334989577,
+            "observed_counts": {
+              "held_replays": [
+                110
+              ],
+              "terminal_replays": [
+                1
+              ],
+              "launches": [
+                2886
+              ],
+              "completed_launches": [
+                2886
+              ],
+              "uploads": [
+                0
+              ],
+              "downloads": [
+                0
+              ],
+              "tolerance": [
+                2e-05
+              ]
+            }
+          },
+          "chain": {
+            "samples": 150,
+            "median": 0.8486572499386966,
+            "p95": 2.364151759899687,
+            "observed_counts": {
+              "held_replays": [
+                13
+              ],
+              "terminal_replays": [
+                4
+              ],
+              "launches": [
+                523
+              ],
+              "completed_launches": [
+                523
+              ],
+              "uploads": [
+                0
+              ],
+              "downloads": [
+                0
+              ],
+              "tolerance": [
+                2e-05
+              ]
+            }
+          }
+        }
+      }
+    },
+    "note": "600 measured/612 including warmups verified; CUDA unfinished; do not call all900 complete. NumPy recordedHEAD784adf0 clean; interpret start784adf0/endafcb5d1 plus earlier raw/docs dirty, source/script/frozen digest unchanged."
   },
   "delivery": {
     "status": "product_not_pushed",

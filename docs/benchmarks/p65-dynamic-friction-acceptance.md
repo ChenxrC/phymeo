@@ -1,6 +1,6 @@
 # P6.5 两阶段自动摩擦：实现与验收进度
 
-状态：生产实现6df5b14已提交、实现报告cb209b8已交付；唯一fresh审阅已完成0Critical/0Important/1Minor，M1已通过合同澄清与4项定向控制/27项事务回归闭环，最终串行验收已启动（session27196、完整core311/nativepip各1945通过/362未选，665.54/657.52s；完整CUDA仍运行中）；后续源码外wheel、正式900计量和准确产品CI尚未执行。不是完整H1/P6.5完成。134源码hash `d18e557c49b9711647d7b5218f9706739227eab84073c9a6a309e6276c44b33d`。
+状态：生产实现6df5b14已提交、实现报告cb209b8已交付；唯一fresh审阅已完成0Critical/0Important/1Minor，M1已通过合同澄清与4项定向控制/27项事务回归闭环，最终串行验收已启动（session27196、完整core311/nativepip各1945通过/362未选，665.54/657.52s；完整CUDA2307通过6196.34s、Ubuntu新核心80通过223.65s、有界CPP1通过23.15s，全部exit0）；质量、134源码外wheel和新nativepip安装smoke通过。正式NumPy/interpret各300计时已独立核对，CUDA计量仍运行，完整900和准确产品CI尚未闭环。不是完整H1/P6.5完成。134源码hash `d18e557c49b9711647d7b5218f9706739227eab84073c9a6a309e6276c44b33d`。
 
 ## 框架能力与边界
 
@@ -16,7 +16,7 @@
 - 新actual CUDA11通过1020.29s，覆盖两解析、两面/生命周期、T0.5两μ两步长重建、FP32拒绝与真实计数。其后仅新增非法collider构造类型guard；不能称该次运行包含后加guard。
 - 最终源码actual interpret核心7通过、4未选，12.10s；早版interpret完整8通过229.31s含设备T0.5窗。NumPy窗口为T2，设备窗口为T0.5，范围不混写。
 - 独立支撑/滑动、材料斜撞、非平行A/B、共享祖先、三维三角、变换顺序与故障事务已有控制。容量中间舍入、旋转纯切向的负normal表示、非法对象构造均经历真实RED修复；立即GREEN的新增测试不称RED。
-- 源码有限smoke与九文件ruff通过。首次运行完整installed-smoke入口被既有源码位置保护拒绝，后runpy仅调用新增函数；这是source smoke，尚非wheel验收。
+- 源码有限smoke与九文件ruff通过。首次运行完整installed-smoke入口被既有源码位置保护拒绝，后runpy仅调用新增函数；这是实现阶段source smoke；最终pipeline已另外完成134源码外wheel与安装smoke，不能混为同次执行。
 - 父NumPy→interpret→CUDA最小基准各2计时+6warmup成功，源和脚本hash前后相同，仅验证基准程序，不作为正式性能样本。
 
 精确日志和版本在[工程记录](p65-dynamic-friction-engineering.json)；[唯一审阅](p65-dynamic-friction-review.md)已结束，M1回归已核对关闭。成功帧累计所有真实trial，含未选best；既有失败report清空diagnostics，不提供部分launch总数，故障调用/关闭/回滚由独立探针验证，不冒称失败性能已计量。成本观测入口见[PERF-020](../performance-bottlenecks/PERF-020-dynamic-friction-contact.md)。

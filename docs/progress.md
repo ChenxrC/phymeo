@@ -701,3 +701,11 @@ Task1引入的旧预设驱动关闭状态兼容回归已在2f50c1f修复：原�
 - 新控制范围唯一独立审阅1 Important、无Critical/Minor：[逐项裁定](benchmarks/p65-control-review.md)。大坐标下展开控制式与实际舍入预测的原始PD式不符；正负两项反例先失败后补齐原式验证，保持原容差。37项核心/解释器组合通过，不安排重复审阅。
 - 修复前107文件源码外wheel通过；核心Py3.11/原生pip3.12各1247通过，272设备排除。修复前全CUDA未完成即主动停止，不计通过。修复后全CUDA/两CPU/C++、重建wheel和准确CI仍待收齐。
 - [续作入口](development/p65-continuation.md)记录厚度作用点/力偶、非线性位置账本和连续路径下界这三项完整案例前置选择，以及两人模块边界；均不冒称已实现。
+
+
+## 2026-10-29 摩擦最终数值/安装完成，计量继续
+
+- 同一冻结pipeline：core311/nativepip各1945通过/362未选（665.54/657.52s）；完整CUDA2307通过6196.34s；Ubuntu新host80通过223.65s；boundedCPP1通过23.15s；各exit0。未重启旧suite。
+- quality/build及源码外wheel全部通过；wheel134文件与产品逐字节一致，SHA93e8d659b438afee09a2591312be7b27ba9846c3e9b191e3c26df5bd1cacd88a，新nativepip安装及自动摩擦smoke通过。Ubuntu为既有依赖、CPP仅短例。
+- NumPy/interpret各300计时/306含warmup已独立重算样本数、中位/P95和source/script摘要；CUDA正式计量仍运行，唯一session27196/phase measurement-cuda。完整900和推送/准确CI待闭环。
+- interpret期间afcb5d1仅提交用户要求的分层回归文档，源码/tests/scripts摘要未变；后续按影响选测，保留新能力物理/事务验收与整体里程碑全量。

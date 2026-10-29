@@ -51,7 +51,9 @@
 **Interfaces:** Consume Task1公共API与诊断、全部报告；produce准确版本审阅/测试/wheel/CI/性能证据。benchmark固定静支撑与材料斜撞两小case，各mode3x100交替，各case150+3warmup；不把研究预设向量当自动摩擦性能。
 
 - [x] 接Task1报告、核对diff和物理范围，准备原生自动基准最小smoke；全部实现数值退出后派本阶段唯一fresh最终review覆盖Task1+benchmark。Important先独立RED后修，原门槛不变；不重复task/branch review，不重开旧normal审阅。
-- [ ] 冻结最终src/tests/scripts快照，串行最终完整core311/nativepip/CUDA、Ubuntu新核心、actualinterpret受影响集和一个boundedCPP短例。仅按真实变化重复必要证据，不把前版数量混成最终全量；每个套件新basetemp。旧CUDA长低μ已通过，只有新产品改变才由一次最终全集承担回归，不额外跑旧专项。
-- [ ] 质量ruff/docs/publictyxboundary/compile、uvpip/nativepip/锁导出，构建wheel并全部源码比对，源码外新nativepip安装smoke。只修改文档或计量不造成物理证据失效；真实失败先分类，未执行不能算通过。
+- [x] 冻结最终src/tests/scripts快照，串行最终完整core311/nativepip/CUDA、Ubuntu新核心、actualinterpret受影响集和一个boundedCPP短例。仅按真实变化重复必要证据，不把前版数量混成最终全量；每个套件新basetemp。旧CUDA长低μ已通过，只有新产品改变才由一次最终全集承担回归，不额外跑旧专项。
+- [x] 质量ruff/docs/publictyxboundary/compile、uvpip/nativepip/锁导出，构建wheel并全部源码比对，源码外新nativepip安装smoke。只修改文档或计量不造成物理证据失效；真实失败先分类，未执行不能算通过。
 - [ ] 所有本地数值/reviewer退出后，NumPy→interpret→CUDA各3x100正式串行，记录各case真实counts/tol/源码脚本hash/native执行与上传下载。初态每次重置非连续轨迹，整step含审计/断言/close排除factory/finalclose；不同精度/迭代不称速度比，只记录不优化。
 - [ ] 更新框架摩擦有限支持与综合案例未接入双线，分开legacy/perf/tyx问题，提交push专用分支核对远程SHA及准确CI。30分钟CPU timeout已实际aa8ec42验收成功；若新阶段触及时限另凭证据判断，不skip测试。完成此切片后继续有限特征/FK保守CCD，不把完整H1/P6.5勾完成。
+
+本次完整数值与质量/源码外wheel已全部exit0，见工程JSON；锁导出沿用同未变锁文件此前核对，不冒称pipeline重做。正式NumPy/interpret完成、CUDA仍运行，最后两交付框未勾。后续切片执行用户最新[分层验收规则](../../development/p65-validation-policy.md)，不照抄本计划的每切片全量模板。

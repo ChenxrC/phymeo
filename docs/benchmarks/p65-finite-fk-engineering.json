@@ -1,0 +1,724 @@
+{
+  "stage": "p65-finite-fk",
+  "status": "review_in_progress",
+  "baseline": "542c5a18a1f10b59250c89a459e09e73b42b4254",
+  "implementation_commits": [
+    "736fb21c86f79ff06445e37a5f97940887c3db8d",
+    "2e222d153dfbc1ee107fe1c7eb9f6e52e644b971"
+  ],
+  "source_count": 142,
+  "source_sha256": "febd4beed24a4c08bc20b6c92ae1c7ae2c5cca8bd3a7d82e67c38ac70973d890",
+  "source_manifest": [
+    {
+      "path": "src/phymeo/__init__.py",
+      "sha256": "06d777563aa2eb0e58f6b87b1f906e3e3f27ad62a7d877e69518bfb00d317ec8"
+    },
+    {
+      "path": "src/phymeo/backends/__init__.py",
+      "sha256": "953efe6513109198155f3673207a6e9c745a5c3fc85120bafe2294f1de57f2bf"
+    },
+    {
+      "path": "src/phymeo/backends/_tyx_contact_kernels.py",
+      "sha256": "0bdff4ef88a395dc16cf41ee7cfced3ab11ad02a352690c30e4684109dcc1d76"
+    },
+    {
+      "path": "src/phymeo/backends/_tyx_coupled_kernels.py",
+      "sha256": "43090ed890acafaa526ea71dbd82424ff85c4c0f3ffed4410af0778be1318fdd"
+    },
+    {
+      "path": "src/phymeo/backends/_tyx_distance_trace.py",
+      "sha256": "41e94f8ff256a12d7fb300064cc59e7cb968aff62aff65a771718d06a2e6e582"
+    },
+    {
+      "path": "src/phymeo/backends/_tyx_kernels.py",
+      "sha256": "a2f6788e12a902bc6b84c150fabd47d2bf1b7bf4bdf7745bb757b97c98ada948"
+    },
+    {
+      "path": "src/phymeo/backends/_tyx_math_kernels.py",
+      "sha256": "5232dd0b51ee1025b5a8c5998f9718130a290a87a5aeefc2a5eceb0508f0dacd"
+    },
+    {
+      "path": "src/phymeo/backends/_tyx_node_kernels.py",
+      "sha256": "f0468170ae984d26bcfb262a22fddc046ad5dd4209efe54543baeaae182b78c0"
+    },
+    {
+      "path": "src/phymeo/backends/_tyx_numeric.py",
+      "sha256": "610bab3d5d6e121a11f5b6abd3f03343e762c02c1b4d27f508ed00a2bddead2e"
+    },
+    {
+      "path": "src/phymeo/backends/_tyx_point_kernels.py",
+      "sha256": "589d8917a919e22a07c26de2ef82d6c5f87f8c46fc130a90be01ab5291545377"
+    },
+    {
+      "path": "src/phymeo/backends/_tyx_rigid_kernels.py",
+      "sha256": "e7c984b329c93792a8d285d98bea1b9be842769d2515abe9e916b36132ac3af2"
+    },
+    {
+      "path": "src/phymeo/backends/_tyx_robot_kernels.py",
+      "sha256": "d81272cf63cb0334fd59a563b4c1ae3bd8325c3b6105d064591005f931cdb968"
+    },
+    {
+      "path": "src/phymeo/backends/tyx.py",
+      "sha256": "7e7d62081a3415af205e912db54de76f827afbfd0358923fc5f42929786e430b"
+    },
+    {
+      "path": "src/phymeo/backends/tyx_articulated.py",
+      "sha256": "5d63bdf5399dcb39fbeba51aa6967344a1dd02c240eb15e0cf7de616f8127b97"
+    },
+    {
+      "path": "src/phymeo/backends/tyx_coupled.py",
+      "sha256": "f440a1d406826a559b0671242957f8291c95eea1b8cb33d023b049b66b77f68b"
+    },
+    {
+      "path": "src/phymeo/backends/tyx_coupled_program.py",
+      "sha256": "761792c4abd9a0d149928f2eade669e028709ff46eb25b39483d1bdc4fbef7dd"
+    },
+    {
+      "path": "src/phymeo/backends/tyx_math.py",
+      "sha256": "ee8cd611e65b3641d294b8ff628523bb37371a77ac9670609fbbf13a5aa4694b"
+    },
+    {
+      "path": "src/phymeo/backends/tyx_node_math.py",
+      "sha256": "9c537a34d316b65ed13641fd9727e2b3f0108a7c806da0d124de2ab7946f9a0f"
+    },
+    {
+      "path": "src/phymeo/backends/tyx_participants.py",
+      "sha256": "ec966137f15594420dd62d3c90e41b811bc6aa5fc74e6ecd50176b7175af70fc"
+    },
+    {
+      "path": "src/phymeo/backends/tyx_rigid.py",
+      "sha256": "64532e8bea8d08d9cf6d9eb58be2018a36c0377af4368a7377938ff5828d6770"
+    },
+    {
+      "path": "src/phymeo/backends/tyx_robot_math.py",
+      "sha256": "67ad1c28024f95c3048a28b3e85438b289efc0a19e4d442cbb723546a50b0700"
+    },
+    {
+      "path": "src/phymeo/backends/tyx_xpbd.py",
+      "sha256": "115e71955c6f097d37ee8608f0ca87978972271c67f3aa52a43507d4b4bf0b0d"
+    },
+    {
+      "path": "src/phymeo/builders/__init__.py",
+      "sha256": "14622161c533cedb798fdfdacd2315c0f3f8cf25ba4bcf8846b43e54c61f653b"
+    },
+    {
+      "path": "src/phymeo/builders/cloth.py",
+      "sha256": "c0cae02ff93dc5263891504b90e81f9091ce4131a8848c8b4c1fee67b53a80f8"
+    },
+    {
+      "path": "src/phymeo/builders/rigid_cloth.py",
+      "sha256": "d5b14e1ba841c88101956a510eefd06522b09a58161db204239b39b078d0ef90"
+    },
+    {
+      "path": "src/phymeo/builders/robot.py",
+      "sha256": "098812d29dbabadb32894beae8ead76043eb8a5967afcb3b2999cfdea3ebcf31"
+    },
+    {
+      "path": "src/phymeo/builders/tetrahedral.py",
+      "sha256": "3de5138d660193690962567f0275e21b26b8583c5eed9e4c0d9f9497737d61f1"
+    },
+    {
+      "path": "src/phymeo/constraints/__init__.py",
+      "sha256": "8047622e033295fdfba169c447a4c66e1e9e7eebdea542e59b1b74329e9b7620"
+    },
+    {
+      "path": "src/phymeo/constraints/coloring.py",
+      "sha256": "b38987cab7f5edfcdb60f78fa7f10415ecf7ae52f50d34956d1460fbcea51acb"
+    },
+    {
+      "path": "src/phymeo/constraints/contact_impulse.py",
+      "sha256": "02342967c621f31ca072937242b455dac90d3fa6e8d5d233c1aa960ef49fada1"
+    },
+    {
+      "path": "src/phymeo/constraints/distance.py",
+      "sha256": "995877c1d000a40b79888d9c1be716484af0abbde37bdf6adc3f424377863554"
+    },
+    {
+      "path": "src/phymeo/constraints/distance_trace.py",
+      "sha256": "05945ff668ed2310c2ce8b6d94c04f9ea3996a590bf4f3312d13ea703a9a6219"
+    },
+    {
+      "path": "src/phymeo/constraints/friction.py",
+      "sha256": "5ab58d2e41ceb52935eb43405538b9d2df757ad297cbb51bca20fe65935c1bf4"
+    },
+    {
+      "path": "src/phymeo/constraints/node_robot.py",
+      "sha256": "010ebfb9b1dc42fac3a797f2e9b40b437ae870814d8cd6fc72d4206bdcc14666"
+    },
+    {
+      "path": "src/phymeo/constraints/particle_plane.py",
+      "sha256": "5c248205f7dff0c9dccd3d612e27ef11b1f717d048f3577dff045e587d1ad18d"
+    },
+    {
+      "path": "src/phymeo/constraints/particle_sphere.py",
+      "sha256": "129823211839a296913329006b801446892086aec91d6ceb902b882c22fcdeaa"
+    },
+    {
+      "path": "src/phymeo/constraints/robot_finite_patch_collider.py",
+      "sha256": "8c77f8904df802eeba868761c15197c501a2e0e525c6ab24f6f3bf6f3b24c4ca"
+    },
+    {
+      "path": "src/phymeo/constraints/robot_node_plane.py",
+      "sha256": "93a7e129e8365d2d3985ace7800bc19eb40f67b70b3c48d4f56b2a84755ab4f5"
+    },
+    {
+      "path": "src/phymeo/constraints/robot_plane.py",
+      "sha256": "f2fcdd8a8c114262c827050315a65ab4f0f432b01547731da8fd6f157446109b"
+    },
+    {
+      "path": "src/phymeo/constraints/robot_plane_collider.py",
+      "sha256": "a5dea7e763fdfa12717f2a5a4626eac0902ee1a5aca66bbb512e383e5333045a"
+    },
+    {
+      "path": "src/phymeo/control/__init__.py",
+      "sha256": "b75fd39922e973d6db4489f89e058518b5f61a935fb04aa69d04acfa8cf8e0ca"
+    },
+    {
+      "path": "src/phymeo/control/bounded_pd.py",
+      "sha256": "8079fadca380c1cc1841ba0a34d1de8e774e3c00c27b137c743acf8e7bff3b31"
+    },
+    {
+      "path": "src/phymeo/core/__init__.py",
+      "sha256": "a6ca749baa006645d050ebe1444b271e1095c4cdf25eb3e48744bcb5deae3639"
+    },
+    {
+      "path": "src/phymeo/core/_arrays.py",
+      "sha256": "8dc74a8b15f842109554a042267040c3fbf2b685ff43ba4ed0b2e6890d6dc1b3"
+    },
+    {
+      "path": "src/phymeo/core/capabilities.py",
+      "sha256": "9e07a4a02693f19c60c2ba30b0d0e29fb1d45968b06cd1a93cce3c7bab0d3b36"
+    },
+    {
+      "path": "src/phymeo/core/coupled.py",
+      "sha256": "d0c012dcfd8f9768b618441fb5a870ea87a72365a49494ee3c4e6f89e5e3e78e"
+    },
+    {
+      "path": "src/phymeo/core/coupling.py",
+      "sha256": "df88de7eed03f0ff5b64e9df8ff65a4d72abc740a45992c1e8aadd8410ff39e2"
+    },
+    {
+      "path": "src/phymeo/core/model.py",
+      "sha256": "73716c7289898809e261df34e82104d259ad13b1ba8e51c71f323c19006bedba"
+    },
+    {
+      "path": "src/phymeo/core/numerics.py",
+      "sha256": "083a2fc03011fd2f4e9d9cd084bc5c09fe73dd0d41b0cf996ee42a3c72afe8f4"
+    },
+    {
+      "path": "src/phymeo/core/result.py",
+      "sha256": "0ba0b8092ecf0c86f2de439bb96e2ece133cd5950d6cca99e88d24406587928d"
+    },
+    {
+      "path": "src/phymeo/core/rigid.py",
+      "sha256": "c4d2f0ae29589b00e715228cf474c11516f189696bd0f98dbc92685737562c08"
+    },
+    {
+      "path": "src/phymeo/core/robot.py",
+      "sha256": "e66b232b6130dff64620ba24a59f9397cc15114e240521a58ce6150eb857f5a9"
+    },
+    {
+      "path": "src/phymeo/core/scene.py",
+      "sha256": "30440fce82f80faee351fa1294664aa15bb994d803ce16e869413bf6ebd534ae"
+    },
+    {
+      "path": "src/phymeo/core/state.py",
+      "sha256": "4d20bccc711c200c34f96f2fb15c16c7ad499da214f35b52f0a93a8d4efbcc86"
+    },
+    {
+      "path": "src/phymeo/core/tetrahedral.py",
+      "sha256": "b1359a02a462903bec750be417eb845c2a43dddb28ca460454f693746a10d5f7"
+    },
+    {
+      "path": "src/phymeo/core/validation.py",
+      "sha256": "8146980a60fa0a7a3759d24070aa391ec55f4ecdddd70490752174a98938cfdd"
+    },
+    {
+      "path": "src/phymeo/core/verification.py",
+      "sha256": "4250a589b7975578c4e40e2c00b5ad731241cc2c2e9feb706a0e8e8d7e470f7f"
+    },
+    {
+      "path": "src/phymeo/coupling/__init__.py",
+      "sha256": "093e7a87678df12178b2de9833eb974d8f637566adb418f382e9e6ddb6b0359e"
+    },
+    {
+      "path": "src/phymeo/coupling/candidate_audit.py",
+      "sha256": "bda2679c573b92801585896ba4226b90a4830444f6464cbe94ad5bbfcd68ff55"
+    },
+    {
+      "path": "src/phymeo/coupling/domain_graph.py",
+      "sha256": "59ac8db44fef5f96d7c3bb61bd6ffdb7185c3cdacda3e5bda22112eca66594dd"
+    },
+    {
+      "path": "src/phymeo/coupling/offset_port.py",
+      "sha256": "debea69318ffcf2f2d9a59d73cd85a6b416ff5c2c71c94fa38e17939475994e0"
+    },
+    {
+      "path": "src/phymeo/coupling/participant.py",
+      "sha256": "a22b0d35b74166d69527daedff7c6c6fde2a9e42f0f441cbeafea1cac3ed4e66"
+    },
+    {
+      "path": "src/phymeo/coupling/point_port.py",
+      "sha256": "d2af0f2627b233a4b8056cf68325cbb1222d8e3ccc57b58c099dd4223c2decda"
+    },
+    {
+      "path": "src/phymeo/coupling/ports.py",
+      "sha256": "929a9a18180a6969e38c24c7244650fb2c19e5bca5fadb94b0ddc20a2270b523"
+    },
+    {
+      "path": "src/phymeo/coupling/robot_port.py",
+      "sha256": "fe94922dcd3609749301417aff22263b4275353254dee884a96eb964f2812908"
+    },
+    {
+      "path": "src/phymeo/coupling/surface_port.py",
+      "sha256": "8859ebc33ae02868fc07e31dae4bc5a0b54fc0fe7aa70bd8adca73a0bab22337"
+    },
+    {
+      "path": "src/phymeo/coupling/tetrahedral_port.py",
+      "sha256": "edc1a7602488ca6b858447acb723a09a7d93d676c53cbc9e3fa7e5f400dfc272"
+    },
+    {
+      "path": "src/phymeo/dynamics/__init__.py",
+      "sha256": "d55b4f0dfc31647ce8bc4266d3a11cd5422ec7fb30c37e315c050de4bec6dfc5"
+    },
+    {
+      "path": "src/phymeo/dynamics/integrate.py",
+      "sha256": "83cedcc80d0aa80fe19cf1777e954e922ed0715f2133b300bd21d2b185a13bde"
+    },
+    {
+      "path": "src/phymeo/dynamics/robot_dynamics.py",
+      "sha256": "c5eca8447d100dd8f8ccd0e543a91e00a7960f88e5ea30c4b857dce703b68106"
+    },
+    {
+      "path": "src/phymeo/dynamics/robot_kinematics.py",
+      "sha256": "ec9ddd19db85e9dd48c006e92d70f9ff0e6a832cd00a3cb123fef050ec55d21a"
+    },
+    {
+      "path": "src/phymeo/dynamics/rotation.py",
+      "sha256": "a4f68f3afc3b49fa7efddafe7a81eef8831352896d8e6cae4364c6ac86785cfb"
+    },
+    {
+      "path": "src/phymeo/experiments/__init__.py",
+      "sha256": "962481caf11cd9388c52b50d659a45943da570b2684c034cc50639d260f5d30f"
+    },
+    {
+      "path": "src/phymeo/experiments/articulated.py",
+      "sha256": "ad42dc75d96ccbbbb27b01646537b1dc60deb26dbaa1f8f05ce26abec525b65b"
+    },
+    {
+      "path": "src/phymeo/experiments/articulated_device.py",
+      "sha256": "0e56afb721addacdd4a88ae9f332190749c4d9fc22a61bd09ef4bc03441d703a"
+    },
+    {
+      "path": "src/phymeo/experiments/backend_comparison.py",
+      "sha256": "46f949d5a0733d77c521fa4269820ef2a3f9742fe0d484343c457a456f8b3e48"
+    },
+    {
+      "path": "src/phymeo/experiments/prescribed_articulated.py",
+      "sha256": "22512632fc69a053858b301642cd5d46f0b14d45e4919dcf777e6e0b71699167"
+    },
+    {
+      "path": "src/phymeo/experiments/rigid_cloth.py",
+      "sha256": "0b5d4e4bfa54c8d5fe6dbaab04db803c55e5deba3f5332271e4b0cc4021db792"
+    },
+    {
+      "path": "src/phymeo/experiments/robot.py",
+      "sha256": "234ad9fa000527d6704e113e4066a55f54b3fea6b9ba734e38da4928bd742a92"
+    },
+    {
+      "path": "src/phymeo/experiments/softbody.py",
+      "sha256": "93dbe22176e4931aa1c4706964b518ac1f621dfcfc4b4aed9b67670221cf4c5b"
+    },
+    {
+      "path": "src/phymeo/geometry/__init__.py",
+      "sha256": "598caaf72cba2ef041db310cc3bea0ae7feeed2bf81ab432d89d282915737c2f"
+    },
+    {
+      "path": "src/phymeo/geometry/_patch_interval.py",
+      "sha256": "c9d40b874e547f5f6b70a414b71af34efb40f97dfd5734015b19eca85188184f"
+    },
+    {
+      "path": "src/phymeo/geometry/feature_distance_bound.py",
+      "sha256": "1026d0f275b85f6bf50a52994abc043c9d0348f2acec574effda15b93dc0e784"
+    },
+    {
+      "path": "src/phymeo/geometry/linear_sweep.py",
+      "sha256": "08c865d625cafa3745f3d0f99bc4e0e58076bbdc24d5cea2764625152361227e"
+    },
+    {
+      "path": "src/phymeo/geometry/particle_sphere.py",
+      "sha256": "932faa60325f5376cdc8cd8f7dc1841c69f5ead447e1557f1db55882488216a3"
+    },
+    {
+      "path": "src/phymeo/geometry/plane.py",
+      "sha256": "fd8e9db3be157eb45ac394817860637619014ae33126e8b2c3875373e74779c1"
+    },
+    {
+      "path": "src/phymeo/geometry/robot_patch_sweep.py",
+      "sha256": "5430c9c7522797c919bff76da0328ea038761aa3aaed80883dc898ae198e4efe"
+    },
+    {
+      "path": "src/phymeo/geometry/robot_sphere.py",
+      "sha256": "a409ef23dd66b00bc226b50626d7ec8ffacb012a1bdce5f2fa70e2b2c8e1903f"
+    },
+    {
+      "path": "src/phymeo/geometry/sphere.py",
+      "sha256": "64ae893e52d8edcc6edb0443d87fadcdb4382ed81e0e019735e9a7a1141f0e0b"
+    },
+    {
+      "path": "src/phymeo/geometry/surface_features.py",
+      "sha256": "a78332cfad0d455fc9f4a99031fef4ba740d446c9107ca7c1d45845ba663d968"
+    },
+    {
+      "path": "src/phymeo/materials/__init__.py",
+      "sha256": "71c6733a96913c5681173624708d96ec01398662cfd0783ecd369269d9f8ad7d"
+    },
+    {
+      "path": "src/phymeo/materials/stvk.py",
+      "sha256": "69a00331d8f4215ea59915e0683e6354c89ee46e478a7602b9d775ff17e03ea3"
+    },
+    {
+      "path": "src/phymeo/runtime/__init__.py",
+      "sha256": "0056b89b5d9207e3b494dcb44630a2c092e032881ada052b92575bfd20488c35"
+    },
+    {
+      "path": "src/phymeo/runtime/finite_contact_terminal.py",
+      "sha256": "c640b699b970e69764623bfc6f628ad389ad5d4fefa1e676dc52ef4f1d97f972"
+    },
+    {
+      "path": "src/phymeo/runtime/load_replay.py",
+      "sha256": "f91834f8600f8f101ae22a11884c3dd4d8593869e1618b1cf4f741a83aad3082"
+    },
+    {
+      "path": "src/phymeo/runtime/program.py",
+      "sha256": "39a6382a8ef77555718b2abe054c2077fb2f118e5039007a624f9f9cde1f92dd"
+    },
+    {
+      "path": "src/phymeo/runtime/registry.py",
+      "sha256": "1b387093c79b1f06f858f3e7f7bb9efffbb13a91348b14a52be15e287af164af"
+    },
+    {
+      "path": "src/phymeo/runtime/robot_family.py",
+      "sha256": "faa90056fbfc8671a4833c884f9996cf9a477e6d2626733ed0fc13328103ca1b"
+    },
+    {
+      "path": "src/phymeo/runtime/scene_stepper.py",
+      "sha256": "1658cb766e81a994def798badf8f00bc961c8cd549c8d7b5523ab5be0fd6aebf"
+    },
+    {
+      "path": "src/phymeo/runtime/state_contract.py",
+      "sha256": "22d29973aed3ad46418f5e4ff6269274fe2f9354f8e2a61167737354bc44cbca"
+    },
+    {
+      "path": "src/phymeo/runtime/stepper.py",
+      "sha256": "824151dcbf3f9f94f6fcd774270464d9050cf5d57d82bd3ab11c981677693530"
+    },
+    {
+      "path": "src/phymeo/runtime/terminal_impulse.py",
+      "sha256": "874318d7b88ac0974f1cb5ba1c687974acd0df04fbcfe24a06b4fd052e5a3bd2"
+    },
+    {
+      "path": "src/phymeo/runtime/tetrahedral_family.py",
+      "sha256": "95af8752206783e6235ca755a79feb8c20aab6a5f7672fcf22a55448b3526838"
+    },
+    {
+      "path": "src/phymeo/solvers/__init__.py",
+      "sha256": "4a1474b61e1b748e6d74682e1984c2ae3b6fc250b006f091e97a0598005beb44"
+    },
+    {
+      "path": "src/phymeo/solvers/_contact_replay_audit.py",
+      "sha256": "fc290e292e26df570665eaf6c3987a1104b0041208d2f45f79aca856e12c91c9"
+    },
+    {
+      "path": "src/phymeo/solvers/_dynamic_friction_law.py",
+      "sha256": "ba979b48d3d166d2322a2310b3cd3b28b1a7600573ba326dcef2640549bce4bb"
+    },
+    {
+      "path": "src/phymeo/solvers/_dynamic_friction_workspace.py",
+      "sha256": "773d0669b9e972cecde1e615500a3c5a19b9ec0048c0deb98bfe513fbccb1f77"
+    },
+    {
+      "path": "src/phymeo/solvers/_dynamic_normal_geometry.py",
+      "sha256": "81d71c3d322d22ebaf7aa580c24767c4febd737ffe224e9b6e3ad2207460591d"
+    },
+    {
+      "path": "src/phymeo/solvers/_finite_contact_geometry.py",
+      "sha256": "75807469498f9bff377a7ed3f47f05aa438e869bee51147cf90450e4674042c6"
+    },
+    {
+      "path": "src/phymeo/solvers/_finite_contact_replay.py",
+      "sha256": "41e4f7fcb41a4ac9561eab82735d036e82be0ed98b0493c4a8206caf01efde37"
+    },
+    {
+      "path": "src/phymeo/solvers/_material_contact_balance.py",
+      "sha256": "1e458967e003e424bb71d6b7a0513d8f5bf57e72c270a2a957978dc154299ac2"
+    },
+    {
+      "path": "src/phymeo/solvers/_particle_replay_ledger.py",
+      "sha256": "e7eb8c2307fe3c6f7ad9b9b3ccc02a24ce62f1dbdf152f3a92805d4d36a82221"
+    },
+    {
+      "path": "src/phymeo/solvers/_robot_replay_ledger.py",
+      "sha256": "84ed93eee3dddd2ae98130dab27de9a960744b6f72a0153e2fbcee9b1b6ccc9b"
+    },
+    {
+      "path": "src/phymeo/solvers/articulated_coupling.py",
+      "sha256": "8c878661ea9eb9e6e86e30a31ba4e0aaca0a578678f213209147dacb1b67b408"
+    },
+    {
+      "path": "src/phymeo/solvers/cloth.py",
+      "sha256": "3de365408c21b6b73ff9bf307e578927b60eb646dd5e7c9af400029916a83df7"
+    },
+    {
+      "path": "src/phymeo/solvers/colored_coupled.py",
+      "sha256": "342662b6c162adb25d51478df30cd3615649e4b833e8b3a23156c98696011e18"
+    },
+    {
+      "path": "src/phymeo/solvers/coupled_program.py",
+      "sha256": "7f907ded7f945c7151df78bb19527953501166afb0ba86cfa4b7e5520bee3c82"
+    },
+    {
+      "path": "src/phymeo/solvers/coupled_xpbd.py",
+      "sha256": "ad4fe0a69a77c52003430370e2d71534ef9447989c3504c53f8927d985e46c4b"
+    },
+    {
+      "path": "src/phymeo/solvers/dynamic_robot_finite_contact.py",
+      "sha256": "081e2362f09832c23fea8e9060e6d53ca36ac0fa90c51bbe7c9bac4417fdb598"
+    },
+    {
+      "path": "src/phymeo/solvers/dynamic_robot_friction_contact.py",
+      "sha256": "05e83ac62b322ba56103553955c7ebf5901e2bf3e5ebed7ad1b8003b9ea63d73"
+    },
+    {
+      "path": "src/phymeo/solvers/dynamic_robot_normal_contact.py",
+      "sha256": "219d91b8ae46f2912c05de7438e8dd454c120ea7eb406fb90421f1cfff3e7633"
+    },
+    {
+      "path": "src/phymeo/solvers/free_scene.py",
+      "sha256": "869e9b1d2f6f165ec48b7956e4c077750cc6bc9a31fd40f34d230d28b5ace81e"
+    },
+    {
+      "path": "src/phymeo/solvers/initial_robot_material_contact.py",
+      "sha256": "7599d4e7811df784566de76f74ab910625014f9a535ed660d95ba2637fda31a1"
+    },
+    {
+      "path": "src/phymeo/solvers/initial_robot_node_contact.py",
+      "sha256": "d1cfb73e65532428dde5a75d1665a8a58f3e0541bfcfb932689cf79533e666e0"
+    },
+    {
+      "path": "src/phymeo/solvers/particle_plane_contact.py",
+      "sha256": "a591444a9ed27bffd91bc27cc82e8def15d7066d7e6587d0236288530be81f31"
+    },
+    {
+      "path": "src/phymeo/solvers/rigid_semi_implicit.py",
+      "sha256": "a4462fe9623d92df592e07e4e33fe6856716427454a10a74f9b9972db94c2f1a"
+    },
+    {
+      "path": "src/phymeo/solvers/rigid_sphere_plane.py",
+      "sha256": "59c787fae700a27dec95cbd9fef787d22d4c57d3d33215469b0df845e648ab11"
+    },
+    {
+      "path": "src/phymeo/solvers/robot.py",
+      "sha256": "52b87b47fa4ca8e063da54eb64423796fe66af2426bfed3b0ec8f0f96c0fdcba"
+    },
+    {
+      "path": "src/phymeo/solvers/robot_plane_contact.py",
+      "sha256": "588832878da7347f7bb9b939926092fa879750db47c5897fb5d185a5e7219790"
+    },
+    {
+      "path": "src/phymeo/solvers/semi_implicit.py",
+      "sha256": "c16dfeda78058b64131c855985f534e6dda02916662ae2daf19033d6661019af"
+    },
+    {
+      "path": "src/phymeo/solvers/tetrahedral.py",
+      "sha256": "8c1a44e74ca86dfd100d7e0b95c4c9083a277da101713f57668c6709d3d3bc5c"
+    },
+    {
+      "path": "src/phymeo/solvers/xpbd.py",
+      "sha256": "78cfe89f26fc137f907c6db4967abf9e8e3ab211643553fb9702c2e5f82f05d3"
+    },
+    {
+      "path": "src/phymeo/validation/__init__.py",
+      "sha256": "ed04981b1f4803f9151eeeafac1314d47f1cc6c25c8cb8a6a31a375c1452720c"
+    },
+    {
+      "path": "src/phymeo/validation/_material_path_math.py",
+      "sha256": "92a8681a823aa1fda0ef08c4675ef152467dcd5e9744e3c28b798fb70c9bcaed"
+    },
+    {
+      "path": "src/phymeo/validation/articulated.py",
+      "sha256": "0827a5f615f52435daac075757c9834c04bf044cb34c3bbe7b4b4e2722b2cb28"
+    },
+    {
+      "path": "src/phymeo/validation/articulated_device.py",
+      "sha256": "966ef29ec74739b559b210880369726f7f948e4d055de8bbf6ac3deab431e5b6"
+    },
+    {
+      "path": "src/phymeo/validation/finite_contact_terminal.py",
+      "sha256": "2437a2799cbe9a1d24a488bcab3ee5e3dcb565b8431191ea56d1b43d853f0302"
+    },
+    {
+      "path": "src/phymeo/validation/free_particle.py",
+      "sha256": "06902efe012f0ee9a430fd6de5ab25a5f76690b2d0e85fbd9bee7bf457bb7f5c"
+    },
+    {
+      "path": "src/phymeo/validation/material_device.py",
+      "sha256": "6f2de336597ab09815771a3b39054fbcd0bf749f05a7261c1816047a240b7a54"
+    },
+    {
+      "path": "src/phymeo/validation/material_path.py",
+      "sha256": "802e23a2d411586db41485d4e273883996762413cdf6ceda434e35c72c8d96e3"
+    },
+    {
+      "path": "src/phymeo/validation/rigid_cloth.py",
+      "sha256": "43c21598849ec52bac2e294c72e9eaf443cf0e12aa270b31ebd304a7f0a5ab16"
+    },
+    {
+      "path": "src/phymeo/validation/terminal_impulse.py",
+      "sha256": "ef3686a10f06796e573e213885791b410f564dc1c788eab847fe9b2cbb9084c7"
+    }
+  ],
+  "test_manifest": [
+    {
+      "path": "tests/test_finite_patch_geometry.py",
+      "sha256": "0109c5cb028207fda256fbdcb67c3f31c6012ed83dcaec893c1aaefc9d4a66a9"
+    },
+    {
+      "path": "tests/test_finite_robot_contact.py",
+      "sha256": "9152cfeeb2dfd096c3c8840c17beebf95e273f503ce0b66ece3804f77a6cfaa8"
+    },
+    {
+      "path": "tests/test_finite_robot_physics.py",
+      "sha256": "24312abb734f243ffe0bf35bfee909444ad84336d4dc0e3b666eb766b5973c13"
+    },
+    {
+      "path": "tests/test_finite_robot_transaction.py",
+      "sha256": "2c1664ed6fddb373bdcad9d9b9c6c46a8a513c2973a25004dda90c037f5ac0de"
+    },
+    {
+      "path": "tests/test_finite_robot_tyx.py",
+      "sha256": "607bd4253c2f2d9a3a13c20dc5d0c90d21ede234f1f9acd76081582901bc99f7"
+    }
+  ],
+  "smoke_manifest": {
+    "path": "scripts/smoke_installed.py",
+    "sha256": "42b6bdffa9e472f1c892984e9ce76d4db14edb2f6cac05496babdb0054095168"
+  },
+  "parent_evidence_audit_utc": "2026-10-29T12:38:42.940410+00:00",
+  "verification": "Read-only parent checks of exact log summaries, exit codes and final per-file hashes; no duplicate physical tests.",
+  "selected_results": [
+    {
+      "name": "selected-host-01",
+      "exit_code": 0,
+      "passed": 117,
+      "pytest_seconds": 61.64,
+      "source_sha256": "789075e0830cc1968e987adbfedffd5bd5fb3b20f5b77a2218c664b705095c12",
+      "log": "artifacts/p65-finite-fk/selected-host-01.log",
+      "log_sha256": "9f33f9452f135242e2ef387a6cb6603a4de873754dc9c6b01ce4cf0a6f7501ac"
+    },
+    {
+      "name": "extra-self-review-01",
+      "exit_code": 0,
+      "passed": 2,
+      "pytest_seconds": 4.4,
+      "source_sha256": "febd4beed24a4c08bc20b6c92ae1c7ae2c5cca8bd3a7d82e67c38ac70973d890",
+      "log": "artifacts/p65-finite-fk/extra-self-review-01.log",
+      "log_sha256": "798bed7c2358ebcdbf2de77a85edb9394c08c10a6769781942cf09e1524aa539"
+    },
+    {
+      "name": "two-sided-observer-01",
+      "exit_code": 0,
+      "passed": 1,
+      "pytest_seconds": 0.42,
+      "source_sha256": "febd4beed24a4c08bc20b6c92ae1c7ae2c5cca8bd3a7d82e67c38ac70973d890",
+      "log": "artifacts/p65-finite-fk/two-sided-observer-01.log",
+      "log_sha256": "18d7ed42ae2657f5e655109e8219c4de53db53651e2cb8b297569b3b68056dcb"
+    },
+    {
+      "name": "interpret-01",
+      "exit_code": 0,
+      "passed": 10,
+      "pytest_seconds": 55.82,
+      "source_sha256": "47b845bbc9b23420c75e270232b296e47d8aefa0d6f92690a7f174b74880185f",
+      "log": "artifacts/p65-finite-fk/interpret-01.log",
+      "log_sha256": "d5eb8db08aafe7e7a20ae5047f5c558bb934ec099b69045e89d8e91d2448a15b"
+    },
+    {
+      "name": "cuda-01",
+      "exit_code": 0,
+      "passed": 10,
+      "pytest_seconds": 184.58,
+      "source_sha256": "47b845bbc9b23420c75e270232b296e47d8aefa0d6f92690a7f174b74880185f",
+      "log": "artifacts/p65-finite-fk/cuda-01.log",
+      "log_sha256": "7eaa001e48014529891fbf8aa43054d8f4c6bbc324392ea73877bfb5847685fd"
+    },
+    {
+      "name": "selected-interpret-final-01",
+      "exit_code": 0,
+      "passed": 13,
+      "pytest_seconds": 22.61,
+      "source_sha256": "febd4beed24a4c08bc20b6c92ae1c7ae2c5cca8bd3a7d82e67c38ac70973d890",
+      "log": "artifacts/p65-finite-fk/selected-interpret-final-01.log",
+      "log_sha256": "4194e3b27b5d2af4d329a7e6a0a60a6b6b005be1ddace5e08d96702dad8d4b3e"
+    },
+    {
+      "name": "selected-cuda-final-01",
+      "exit_code": 0,
+      "passed": 13,
+      "pytest_seconds": 69.94,
+      "source_sha256": "febd4beed24a4c08bc20b6c92ae1c7ae2c5cca8bd3a7d82e67c38ac70973d890",
+      "log": "artifacts/p65-finite-fk/selected-cuda-final-01.log",
+      "log_sha256": "6f40ad89c53860429f89c091f1994ef80da3d0c3d959a3efb79c1d4f063f8019"
+    }
+  ],
+  "snapshot_delta_from_full_native": [
+    "src/phymeo/constraints/robot_finite_patch_collider.py",
+    "src/phymeo/geometry/robot_patch_sweep.py",
+    "src/phymeo/validation/finite_contact_terminal.py"
+  ],
+  "snapshot_delta_reason": "Keyword-only radius; rational partition sorting equivalent for default exactly-representable dyadics; ledger docstring. Final affected native controls rerun; unchanged windows retained at original snapshot.",
+  "coverage": {
+    "new_host": 42,
+    "new_device_per_mode": 10,
+    "selected_host_total": 120,
+    "selected_native_final_per_mode": 13
+  },
+  "review": {
+    "agent": "finite_fk_final_review",
+    "base": "542c5a18a1f10b59250c89a459e09e73b42b4254",
+    "head": "2e222d153dfbc1ee107fe1c7eb9f6e52e644b971",
+    "status": "in_progress"
+  },
+  "engineering": {
+    "wheel": "pending",
+    "bounded_cpp": "pending"
+  },
+  "delivery": {
+    "status": "not_pushed",
+    "contract_only_ci": [
+      40856643919,
+      40856643939
+    ],
+    "contract_only_conclusion": "success"
+  },
+  "not_run": [
+    "old full local CPU suites",
+    "old full CUDA suite",
+    "old material/friction/normal long windows",
+    "second local CPU matrix",
+    "formal 900 performance measurements",
+    "C++ endurance"
+  ],
+  "selection_reason": "Shared old integration, participants, kernels, runtime and dependency pin unchanged; explicit consumer checks and required new physics/transaction windows covered. Whole milestone/final gates retained.",
+  "limits": [
+    "all-prismatic tree or one COM0 coordinate-axis constant-I rotor",
+    "positive-radius two-sided convex patch; friction/restitution zero",
+    "accepted rotor q in [-4,4]",
+    "not complete H1, general robot, finite friction, gripper, dual-arm or Three.js"
+  ],
+  "open_issues": [
+    "NUM005",
+    "TYX003",
+    "TYX004"
+  ]
+}

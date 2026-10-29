@@ -1,6 +1,6 @@
 # 有限凸面与旋转 FK 接触验收
 
-当前状态：Task1 已提交 `736fb21` / `2e222d1`，父已核对原始日志、退出码、142 个源码逐文件摘要与测试/smoke 摘要。唯一 fresh review `finite_fk_final_review` 正在执行；源码外 wheel、有界 C++ 和新产品推送/准确 CI 尚未完成。合同提交 `542c5a1` 的两项 CI success 只覆盖合同基线。
+当前状态：Task1 已提交 `736fb21` / `2e222d1`，父已核对原始日志、退出码、142 个源码逐文件摘要与测试/smoke 摘要。唯一 fresh review 的 1 Important / 1 Minor 已由 `d6b302e` 定向修复并经父核对闭环；源码外 wheel、有界 C++ 均已退出0；新产品推送/准确 CI 尚未完成。合同提交 `542c5a1` 的两项 CI success 只覆盖合同基线。
 
 依据：[冻结设计](../superpowers/specs/2026-10-29-p65-finite-fk-design.md)、[计划与选测](../superpowers/plans/2026-10-29-p65-finite-fk.md)、[分层验收政策](../development/p65-validation-policy.md)、[工程记录](p65-finite-fk-engineering.json)、[唯一审阅](p65-finite-fk-review.md)。
 
@@ -22,8 +22,10 @@
 
 两个独立非递布场景为有限平台和有限转子。平台 T2 / 三步长、内部缝/退出/外力反向再进入及重复重建通过；低滑速转子固定初态 T1 / 三档显式 outer 子步与设备两档窗口通过。高速转子后续细步增能仍按原预算拒绝，不能和低滑速窗口合并为同一轨迹。材料分数解析、端点安全中途碰撞、持续等号、预算未知、真实执行故障及 retry=fresh 保持。
 
-父复用实现者同快照证据；不重复未受影响旧长套件或 900 次计量。本切片无新的可靠 P95/后端速度比结论。源码外安装、C++ 短例和审阅尚待闭环。
+父复用实现者同快照证据；不重复未受影响旧长套件或 900 次计量。本切片无新的可靠 P95/后端速度比结论。审阅修复后的源142为 `943f4f8a…`，几何23项、受影响host22项和actual interpret/CUDA各4项全部通过；历史完整窗口仍属于表中原快照。源码外新 native-pip 环境按原 runtime lock 安装、完整 installed smoke 已通过；142 个 wheel 源码逐字节匹配。实际 cpu_cpp 有界转子一次 accepted，436 completed launches；该短例不是长期压力或性能样本。
 
 ## 总目标边界
 
 本切片不完成 H1。有限厚度合法摩擦/一般机器人、弯曲自碰撞、真实单爪承重/低摩擦滑落、IK/history、双臂交接放台和 Three.js 尚未接入。NUM005、TYX003、TYX004 仍开放。
+
+工程三步 session46580 已退出0（C++/build/wheel），冻结摘要18484522e01c15c4d921eec91acb4b46299b1a95de06d503b38eb37abcc9040e始终相同。wheel SHA256 `2c280f6df1a591e9ab2844c0ba7f9f193a840585ba9f78e956f919c8dffb0e2f`。阶段本地验收闭环；最终专用分支推送及准确CI仍待完成。

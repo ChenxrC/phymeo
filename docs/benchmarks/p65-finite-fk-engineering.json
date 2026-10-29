@@ -1,13 +1,13 @@
 {
   "stage": "p65-finite-fk",
-  "status": "review_in_progress",
+  "status": "local_acceptance_complete_remote_delivery_pending",
   "baseline": "542c5a18a1f10b59250c89a459e09e73b42b4254",
   "implementation_commits": [
     "736fb21c86f79ff06445e37a5f97940887c3db8d",
     "2e222d153dfbc1ee107fe1c7eb9f6e52e644b971"
   ],
   "source_count": 142,
-  "source_sha256": "febd4beed24a4c08bc20b6c92ae1c7ae2c5cca8bd3a7d82e67c38ac70973d890",
+  "source_sha256": "943f4f8a703947f9040a8b1fd3ed3e52e127beac663203c18f53e6ba564c0afc",
   "source_manifest": [
     {
       "path": "src/phymeo/__init__.py",
@@ -335,7 +335,7 @@
     },
     {
       "path": "src/phymeo/geometry/_patch_interval.py",
-      "sha256": "c9d40b874e547f5f6b70a414b71af34efb40f97dfd5734015b19eca85188184f"
+      "sha256": "ea4cdceb96efc2bf4fde0245e5f1d8910bd5fa3a7a5461bb901e6960923c95e6"
     },
     {
       "path": "src/phymeo/geometry/feature_distance_bound.py",
@@ -355,7 +355,7 @@
     },
     {
       "path": "src/phymeo/geometry/robot_patch_sweep.py",
-      "sha256": "5430c9c7522797c919bff76da0328ea038761aa3aaed80883dc898ae198e4efe"
+      "sha256": "58d5c58b52e7dc3481fac3a794d93306dc6a613ab4b65f4af040ffd4106a97fa"
     },
     {
       "path": "src/phymeo/geometry/robot_sphere.py",
@@ -581,7 +581,7 @@
   "test_manifest": [
     {
       "path": "tests/test_finite_patch_geometry.py",
-      "sha256": "0109c5cb028207fda256fbdcb67c3f31c6012ed83dcaec893c1aaefc9d4a66a9"
+      "sha256": "569bda5db808feb728ab1400074e4e6e2aa123bb8dfe94bccaa2916a4b0fcaf4"
     },
     {
       "path": "tests/test_finite_robot_contact.py",
@@ -671,30 +671,105 @@
       "log_sha256": "6f40ad89c53860429f89c091f1994ef80da3d0c3d959a3efb79c1d4f063f8019"
     }
   ],
-  "snapshot_delta_from_full_native": [
-    "src/phymeo/constraints/robot_finite_patch_collider.py",
-    "src/phymeo/geometry/robot_patch_sweep.py",
-    "src/phymeo/validation/finite_contact_terminal.py"
-  ],
-  "snapshot_delta_reason": "Keyword-only radius; rational partition sorting equivalent for default exactly-representable dyadics; ledger docstring. Final affected native controls rerun; unchanged windows retained at original snapshot.",
-  "coverage": {
-    "new_host": 42,
-    "new_device_per_mode": 10,
-    "selected_host_total": 120,
-    "selected_native_final_per_mode": 13
-  },
   "review": {
     "agent": "finite_fk_final_review",
     "base": "542c5a18a1f10b59250c89a459e09e73b42b4254",
     "head": "2e222d153dfbc1ee107fe1c7eb9f6e52e644b971",
-    "status": "in_progress"
+    "status": "closed_after_targeted_repairs",
+    "initial_counts": {
+      "critical": 0,
+      "important": 1,
+      "minor": 1
+    },
+    "closure_commit": "d6b302ecccccdfd1d6ed5f3ec6d2f6cf6df58e7a",
+    "second_fresh_review": false,
+    "reviewed_source_sha256": "febd4beed24a4c08bc20b6c92ae1c7ae2c5cca8bd3a7d82e67c38ac70973d890",
+    "parent_closure": "Equation inspection and exact raw RED/GREEN exits plus final source/test manifest; no duplicate numerical suites.",
+    "findings": [
+      {
+        "id": "I1",
+        "severity": "important",
+        "issue": "Fraction midpoint rounded to float before interval proof, allowing false violation witness.",
+        "fix": "Keep Fraction exact; stored floating input behavior unchanged.",
+        "status": "closed"
+      },
+      {
+        "id": "M1",
+        "severity": "minor",
+        "issue": "Rounded inverse exact-incidence classification unstable near finite boundaries.",
+        "fix": "Exact Gram projection plus sum of independently bounded stored/inverse and ideal-FK errors; diagnostic-only lower-dimensional common feature, no physical snapping.",
+        "status": "closed"
+      }
+    ],
+    "probe_hashes": {
+      "independent_probe.py": "4066d8c549c285e7e2a40ae954ca3cd6c8293c9ff199b2aba3ef4ae5464ef26d",
+      "false_violation_probe.py": "c7a4ed11da770c865173aba1bb4f36d2d2420acfcce947786e063a0ee2e048aa"
+    }
   },
   "engineering": {
-    "wheel": "pending",
-    "bounded_cpp": "pending"
+    "status": "complete",
+    "session": 46580,
+    "artifact_directory": "artifacts\\finite-fk-engineering-d6b302e-a",
+    "runner_sha256": "2ec5e7241b17fbdd6cc9ea8855ba893393c41ef1a800152d2712f81f82c03400",
+    "frozen_digest": "18484522e01c15c4d921eec91acb4b46299b1a95de06d503b38eb37abcc9040e",
+    "results": [
+      {
+        "name": "cpp-bounded",
+        "command": [
+          "C:\\Users\\38347\\Documents\\ChatGPT\\phymeo\\.venv\\Scripts\\python.exe",
+          "-u",
+          "-c",
+          "import json,runpy; f=runpy.run_path('scripts/smoke_installed.py')['check_dynamic_robot_finite_contact']; r=f('cpu_cpp'); assert r.report.backend=='tyx:cpu_cpp'; d=r.report.substeps[0].diagnostics; assert d['execution']['completed_launches']>0; assert d['dynamic_robot_finite_contact']['terminal_ledger']['ledger']['compute_precision']=='float32'; print(json.dumps({'backend':r.report.backend,'completed_launches':d['execution']['completed_launches'],'accepted':r.report.accepted}))"
+        ],
+        "exit_code": 0,
+        "runner_seconds": 31.301363500067964,
+        "log_sha256": "ed0e5d2f515e306a2667bffd25831b2f32866ea6d03e6b79220c7393bdc9d8eb",
+        "log": "artifacts\\finite-fk-engineering-d6b302e-a\\cpp-bounded.log"
+      },
+      {
+        "name": "build",
+        "command": [
+          "C:\\Users\\38347\\Documents\\ChatGPT\\phymeo\\.venv\\Scripts\\python.exe",
+          "-m",
+          "build",
+          "--no-isolation",
+          "--outdir",
+          "C:\\Users\\38347\\Documents\\ChatGPT\\phymeo\\artifacts\\finite-fk-engineering-d6b302e-a\\dist"
+        ],
+        "exit_code": 0,
+        "runner_seconds": 2.5901383999735117,
+        "log_sha256": "5c03c062407fe3239345a645cd08c8cd51e1fd2596f5a0b96599daa6c43ca9c4",
+        "log": "artifacts\\finite-fk-engineering-d6b302e-a\\build.log"
+      },
+      {
+        "name": "wheel",
+        "command": [
+          "C:\\Users\\38347\\Documents\\ChatGPT\\phymeo\\.venv\\Scripts\\python.exe",
+          "scripts/verify_wheel.py",
+          "--dist-dir",
+          "C:\\Users\\38347\\Documents\\ChatGPT\\phymeo\\artifacts\\finite-fk-engineering-d6b302e-a\\dist"
+        ],
+        "exit_code": 0,
+        "runner_seconds": 12.129847700009122,
+        "log_sha256": "a3a5dad31421fe96ed369c3ba05b4153aac8227b8ae165a3caad7e5416219987",
+        "log": "artifacts\\finite-fk-engineering-d6b302e-a\\wheel.log"
+      }
+    ],
+    "wheel": {
+      "path": "C:\\Users\\38347\\Documents\\ChatGPT\\phymeo\\artifacts\\finite-fk-engineering-d6b302e-a\\dist\\phymeo-0.1.0a0-py3-none-any.whl",
+      "sha256": "2c280f6df1a591e9ab2844c0ba7f9f193a840585ba9f78e956f919c8dffb0e2f"
+    },
+    "wheel_source_file_count": 142,
+    "wheel_source_bytes_match": true,
+    "cpp": {
+      "backend": "tyx:cpu_cpp",
+      "completed_launches": 436,
+      "accepted": true,
+      "scope": "one bounded rotor invocation; not endurance or performance"
+    }
   },
   "delivery": {
-    "status": "not_pushed",
+    "status": "pending_push_and_exact_ci",
     "contract_only_ci": [
       40856643919,
       40856643939
@@ -720,5 +795,53 @@
     "NUM005",
     "TYX003",
     "TYX004"
+  ],
+  "repair_commit": "d6b302ecccccdfd1d6ed5f3ec6d2f6cf6df58e7a",
+  "frozen_digest": "18484522e01c15c4d921eec91acb4b46299b1a95de06d503b38eb37abcc9040e",
+  "repair_results": [
+    {
+      "name": "geometry-final-05",
+      "passed": 23,
+      "pytest_seconds": 0.44,
+      "exit_code": 0,
+      "log_sha256": "29b08b0260f9f9d6918374afb39593a1d86bb2572b4e36306010986d51bc8d2f"
+    },
+    {
+      "name": "affected-host-01",
+      "passed": 22,
+      "pytest_seconds": 23.04,
+      "exit_code": 0,
+      "log_sha256": "7f994c341287fe0c028dd0a0cd5dba9d2887eefdf210cc89fe14c1b300caedba"
+    },
+    {
+      "name": "affected-interpret-01",
+      "passed": 4,
+      "pytest_seconds": 14.89,
+      "exit_code": 0,
+      "log_sha256": "3a5a53fe80daecb918c7be6af95227b76f9c8ea75e5e7518dece3a13a5c5bc08"
+    },
+    {
+      "name": "affected-cuda-01",
+      "passed": 4,
+      "pytest_seconds": 37.46,
+      "exit_code": 0,
+      "log_sha256": "fe95fee24ad17b22fc6505510fa6d9ec194d326529de22db2dbd4006a8b6be20"
+    }
+  ],
+  "coverage_before_review": {
+    "new_host": 42,
+    "new_device_per_mode": 10,
+    "selected_host_total": 120,
+    "selected_native_final_per_mode": 13
+  },
+  "snapshot_delta_before_review_from_full_native": [
+    "src/phymeo/constraints/robot_finite_patch_collider.py",
+    "src/phymeo/geometry/robot_patch_sweep.py",
+    "src/phymeo/validation/finite_contact_terminal.py"
+  ],
+  "snapshot_delta_reason_before_review": "Keyword-only radius; rational partition sorting equivalent for default exactly-representable dyadics; ledger docstring. Final affected native controls rerun; unchanged windows retained at original snapshot.",
+  "repair_delta_from_reviewed_source": [
+    "src/phymeo/geometry/_patch_interval.py",
+    "src/phymeo/geometry/robot_patch_sweep.py"
   ]
 }

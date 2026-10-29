@@ -32,9 +32,9 @@
 
 两CPU各1945通过/362未选，完整CUDA2307通过6196.34s，Ubuntu新核心80通过223.65s、有界CPP1通过23.15s，quality/build和134源码外wheel全部exit0。NumPy/interpret/CUDA依次各300计时/306总调用，共900/918成功；只读汇总器artifacts/summarize_dynamic_friction_evidence.py最终exit0，全部退出码/源码脚本摘要/wheel逐文件/raw计数和中位P95独立核对。最终汇总artifacts/dynamic-friction-final-summary.json。
 
-摩擦已交付7960b47a644385b2cc768b662317dd2ca9327481，远程SHA一致，准确CI40843093401与Documentation40843093367均completed success，最后交付框已关闭；不再查询旧CI或重复任何已通过数值。有限特征/FK实现已提交736fb21/2e222d1，父已核对选测证据；当前唯一fresh reviewer finite_fk_final_review持数值槽，之后完成外部wheel/有界CPP/新产品准确CI。此后顺序仍为弯曲/自碰撞、真实单爪、高低摩擦承重、目标IK/history、双臂交接放台和同源Three.js。
+摩擦已交付7960b47a644385b2cc768b662317dd2ca9327481，远程SHA一致，准确CI40843093401与Documentation40843093367均completed success，最后交付框已关闭；不再查询旧CI或重复任何已通过数值。有限特征/FK实现已提交736fb21/2e222d1，父已核对选测证据；唯一fresh review两项finding已由d6b302e修复闭环，父已完成外部wheel/有界CPP，session46580退出0，下一动作推送新产品并核对准确CI。此后顺序仍为弯曲/自碰撞、真实单爪、高低摩擦承重、目标IK/history、双臂交接放台和同源Three.js。
 
-优先执行用户2026-10-29最新[分层验收要求](p65-validation-policy.md)：后续小切片先写影响/选测清单，再派实现；不再例行两套本地CPU/整分支CUDA/900性能。新能力自身必要物理、步长/重复和事务门槛完整保留；全量留公共底层变更、集成里程碑及最终交付。旧摩擦实现/reviewer/pipeline均已退出；当前finite_fk_final_review独占新阶段数值槽，父不得并发物理或重派review。
+优先执行用户2026-10-29最新[分层验收要求](p65-validation-policy.md)：后续小切片先写影响/选测清单，再派实现；不再例行两套本地CPU/整分支CUDA/900性能。新能力自身必要物理、步长/重复和事务门槛完整保留；全量留公共底层变更、集成里程碑及最终交付。旧摩擦实现/reviewer/pipeline均已退出；reviewer和修复实现者均已退出，工程session46580已退出0，当前无数值/reviewer进程，不重派review或重复旧全量。
 
 ### 已关闭的上一阶段：有限法向
 
@@ -62,7 +62,7 @@ Task2新CUDA7通过1055.23s；NumPy462和interpret37是cap-only元数据修复�
 
 ## 下一框架切片
 
-已冻结[有限凸面/旋转FK设计](../superpowers/specs/2026-10-29-p65-finite-fk-design.md)和[实施/选测计划](../superpowers/plans/2026-10-29-p65-finite-fk.md)。一次builder finite_fk_design_check结束，5个重要问题按spec R1-R5关闭；源码preflight R6新增独立FiniteContactTerminalProgram，旧wrapper硬编码的prismatic ledger保持。新计划SDD目录.superpowers/sdd/2026-10-29-p65-finite-fk，接力先读progress.md。Task1已提交并释放槽，当前父验收/唯一review，最终源142 hash febd4beed24a4c08bc20b6c92ae1c7ae2c5cca8bd3a7d82e67c38ac70973d890。读[验收](../benchmarks/p65-finite-fk-acceptance.md)与[工程](../benchmarks/p65-finite-fk-engineering.json)，不重派实现者/builder/旧probe或已覆盖测试。
+已冻结[有限凸面/旋转FK设计](../superpowers/specs/2026-10-29-p65-finite-fk-design.md)和[实施/选测计划](../superpowers/plans/2026-10-29-p65-finite-fk.md)。一次builder finite_fk_design_check结束，5个重要问题按spec R1-R5关闭；源码preflight R6新增独立FiniteContactTerminalProgram，旧wrapper硬编码的prismatic ledger保持。新计划SDD目录.superpowers/sdd/2026-10-29-p65-finite-fk，接力先读progress.md。Task1已提交并释放槽，当前唯一review修复已闭环，最终源142 hash 943f4f8a703947f9040a8b1fd3ed3e52e127beac663203c18f53e6ba564c0afc，父本地工程已通过，等待推送及准确CI。读[验收](../benchmarks/p65-finite-fk-acceptance.md)与[工程](../benchmarks/p65-finite-fk-engineering.json)，不重派实现者/builder/旧probe或已覆盖测试。
 
 范围为全prismatic或单COM0/坐标轴revolute恒I转子、正半径双面有限凸patch、mu/rest0，支持真实自动反作用、feature/history及最终accepted FK曲线证书。原高速X1.5旋转例后续细步增能不可作为通过窗口，保持失败/回滚控制；另固定X1低滑速T1/三h窗口并在实际三后端验，预算不变。signed-support仅为有限投影内的求根生成器，中间试算零距允许，最终原unsigned距离/真实normal/CCD/能量门槛都必须过。
 

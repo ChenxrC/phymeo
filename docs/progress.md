@@ -27,7 +27,7 @@
 
 [冻结设计](superpowers/specs/2026-10-29-p65-dynamic-friction-design.md)和[实施计划](superpowers/plans/2026-10-29-p65-dynamic-friction.md)已写入；唯一builder dynamic_friction_design_check无重要未决。静支撑、低μ滑动、terminal-only漂移、材料斜撞及多面A/B反例通过公开native API在NumPy/interpret/CUDA各6例核对，共18例；这是预设向量研究，不是自动摩擦已完成。
 
-实现子agent已交付产品6df5b14及报告cb209b8；134源码、相关CPU483通过、CUDA11通过（其后仅构造类型guard）及最终interpret核心7通过。主agent三模式最小基准自检完成；唯一fresh整阶段审阅dynamic_friction_final_review已完成0Critical/0Important/1Minor，M1合同澄清及4项控制/27项事务回归已闭环；生产未改。冻结版本串行最终验收已启动，session27196，core311完整1945通过/362未选，nativepip运行中；后续wheel/正式计量/产品CI仍待完成。详见[本阶段验收](benchmarks/p65-dynamic-friction-acceptance.md)与[工程记录](benchmarks/p65-dynamic-friction-engineering.json)。框架仍待阶段交付，双臂案例未接入，测试数不换算整体百分比。
+实现子agent已交付产品6df5b14及报告cb209b8；134源码、相关CPU483通过、CUDA11通过（其后仅构造类型guard）及最终interpret核心7通过。主agent三模式最小基准自检完成；唯一fresh整阶段审阅dynamic_friction_final_review已完成0Critical/0Important/1Minor，M1合同澄清及4项控制/27项事务回归已闭环；生产未改。冻结版本串行最终验收已启动，session27196，两CPU完整各1945通过/362未选，完整CUDA运行中；后续wheel/正式计量/产品CI仍待完成。详见[本阶段验收](benchmarks/p65-dynamic-friction-acceptance.md)与[工程记录](benchmarks/p65-dynamic-friction-engineering.json)。框架仍待阶段交付，双臂案例未接入，测试数不换算整体百分比。
 
 设计与研究提交b7dd5b55451295434191eecc0bbedf3a1c46f712已推送、远程SHA一致；准确CI40807534775与Documentation40807534785均completed success（CI于2026-10-29 02:59:49Z复核）。这只闭环研究/设计提交，不是尚未交付的摩擦生产版本CI。上一法向aa8ec42两CI均成功已闭环，不重新验收旧阶段。
 

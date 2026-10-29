@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
   "stage": "p65-thick-friction",
-  "status": "review_complete_two_important_repairs_pending",
+  "status": "local_acceptance_complete_pending_push_and_exact_ci",
   "base": "6e818f574d097ce415940289a58847d4c8ba49fb",
-  "product_head": "1fcd0e7a60b209dda6cd24eda7d4dba863d4d728",
-  "implementation_report_head": "f2d499914e109fdc9194a8f64c5e56544475ca8c",
-  "source_tests_scripts_digest": "e3ee006f6ae79baa808b679ce4958464b5af28aef928f815a7dc685b603e8637",
+  "product_head": "33ec9ea52dc15ee5b8050adb0a73d1591aea11f5",
+  "implementation_report_head": "a59182aae19b1caa8020e3802bce6f6756ad5fac",
+  "source_tests_scripts_digest": "cd6d77917dee8af09f13a430f4fdd4a5b744461874364a142aff0d8e6722d84b",
   "source_count": 153,
-  "source_sha256": "14c69ce1b64661639d382e8dbe08576ebc507909707f429a0640e291599c0bdd",
+  "source_sha256": "df8c2ad9698f3f4c958b75ad9eee4135162fac1be490e56dd29cfce3df1f8d94",
   "source_files": [
     {
       "path": "src/phymeo/__init__.py",
@@ -487,7 +487,7 @@
     },
     {
       "path": "src/phymeo/solvers/_thick_contact_geometry.py",
-      "sha256": "8ee9398634566444df693bce4297db9f0b399765c80b90da44883ac68d71a0a8"
+      "sha256": "dcb3c5c048b6ca0832f50a0f12be6c46449392ca06cafc8b49b99d329c6d1ee0"
     },
     {
       "path": "src/phymeo/solvers/_thick_contact_replay.py",
@@ -495,7 +495,7 @@
     },
     {
       "path": "src/phymeo/solvers/_thick_contact_workspace.py",
-      "sha256": "fcd145d8e9a0934d6dc9c532824639e5d6b12a19580ccead32a13a9144a113a2"
+      "sha256": "e90e4ecb0e24d19a0df7bbd496fff228b4c4513e87cdd98bb2a04a9dce77fbea"
     },
     {
       "path": "src/phymeo/solvers/articulated_coupling.py",
@@ -619,7 +619,7 @@
     },
     {
       "path": "src/phymeo/validation/thick_contact_mapping.py",
-      "sha256": "c2a3ac7fa39b90fc36d77bc2d840ec661b02db6f683148d4e80051e9413922fb"
+      "sha256": "e8b7e4e9b01b4d8a3b95076cefb5e5f489badf814cd6620b682c793a7c366bfe"
     }
   ],
   "parent_evidence_audit": {
@@ -849,57 +849,131 @@
   "version_reuse": {
     "host60": "9530d25138b66b39224a903ca0221fc5220ec93fd7a7dbd5698b06cb558ed475",
     "strict_host_window": "428cb4f4a9e7be51019ed5ef8ae26bcd8f6c5aae78d13e7e25f0f55fe2f9f096",
-    "final_native_both": "e3ee006f6ae79baa808b679ce4958464b5af28aef928f815a7dc685b603e8637",
     "notes": [
       "CPU snapshots remain versioned; not final-source full reruns.",
       "Canonical A/B complete initial/free support and C zero-load lifecycle reuse; birth and newly retained candidate anchors retested.",
       "Theta .3 is an empirical rounded-input robustness control, not an exact algebraic congruence theorem.",
       "CPU raw omits full padded history; native raw retains it."
-    ]
+    ],
+    "final_native_both_before_review": "e3ee006f6ae79baa808b679ce4958464b5af28aef928f815a7dc685b603e8637",
+    "final_native_directed_repairs": "cd6d77917dee8af09f13a430f4fdd4a5b744461874364a142aff0d8e6722d84b"
   },
   "review": {
     "agent": "thick_friction_final_review",
     "base": "6e818f574d097ce415940289a58847d4c8ba49fb",
     "head": "f2d499914e109fdc9194a8f64c5e56544475ca8c",
-    "status": "completed_findings_open",
+    "status": "closed_by_parent_after_targeted_repairs",
     "findings": {
       "critical": 0,
       "important": 2,
       "minor": 0
     },
-    "parent_ruling": "Both findings verified against frozen contract and independent probes; original implementer targeted TDD repair, no second fresh review.",
+    "parent_ruling": "I1 and I2 closed after source, original probe controls, exact manifests and directed host/native/transaction raw exits were verified; no second fresh review.",
     "numerical_processes_remaining": 0,
     "items": [
       {
         "id": "I1",
-        "status": "open",
+        "status": "closed",
         "scope": "supported side contact false rejection",
         "function": "_current",
         "evidence": "artifacts/p65-thick-friction-review/side-feature-probe-02",
-        "raw_exit": 0
+        "raw_exit": 0,
+        "repair_commit": "33ec9ea52dc15ee5b8050adb0a73d1591aea11f5"
       },
       {
         "id": "I2",
-        "status": "open",
+        "status": "closed",
         "scope": "independent mapping audit false acceptance; no end-to-end wrong-step proof",
         "function": "ThickContactMappingLedger.require",
         "evidence": "artifacts/p65-thick-friction-review/mapping-force-probe",
-        "raw_exit": 0
+        "raw_exit": 0,
+        "repair_commit": "e8c821d23b9f238120517754e745b2fc88ebd482"
       }
     ]
   },
   "engineering": {
-    "status": "not_run",
-    "cpp_bounded": null,
-    "build": null,
-    "wheel": null,
-    "blocked_by": [
-      "I1",
-      "I2"
-    ]
+    "status": "complete",
+    "directory": "artifacts/thick-friction-engineering-33ec9ea-a",
+    "session": 75126,
+    "session_exit": 0,
+    "frozen_digest": "cd6d77917dee8af09f13a430f4fdd4a5b744461874364a142aff0d8e6722d84b",
+    "runner_sha256": "fce8c709c70d98afabc9adc55d62a4ea02fd49b00ac8f26d540b0dd3210db587",
+    "results": [
+      {
+        "name": "cpp-bounded",
+        "command": [
+          "C:\\Users\\38347\\Documents\\ChatGPT\\phymeo\\.venv\\Scripts\\python.exe",
+          "-u",
+          "-c",
+          "import json,runpy; f=runpy.run_path('scripts/smoke_installed.py')['check_dynamic_robot_thick_contact']; r=f('cpu_cpp'); assert r.report.backend=='tyx:cpu_cpp'; d=r.report.substeps[0].diagnostics; assert d['execution']['completed_launches']>0; assert d['dynamic_robot_thick_contact']['terminal_ledger']['ledger']['compute_precision']=='float32'; print(json.dumps({'backend':r.report.backend,'completed_launches':d['execution']['completed_launches'],'accepted':r.report.accepted}))"
+        ],
+        "exit_code": 0,
+        "runner_seconds": 34.989211099920794
+      },
+      {
+        "name": "build",
+        "command": [
+          "C:\\Users\\38347\\Documents\\ChatGPT\\phymeo\\.venv\\Scripts\\python.exe",
+          "-m",
+          "build",
+          "--no-isolation",
+          "--outdir",
+          "C:\\Users\\38347\\Documents\\ChatGPT\\phymeo\\artifacts\\thick-friction-engineering-33ec9ea-a\\dist"
+        ],
+        "exit_code": 0,
+        "runner_seconds": 2.799696500180289
+      },
+      {
+        "name": "wheel",
+        "command": [
+          "C:\\Users\\38347\\Documents\\ChatGPT\\phymeo\\.venv\\Scripts\\python.exe",
+          "scripts/verify_wheel.py",
+          "--dist-dir",
+          "C:\\Users\\38347\\Documents\\ChatGPT\\phymeo\\artifacts\\thick-friction-engineering-33ec9ea-a\\dist"
+        ],
+        "exit_code": 0,
+        "runner_seconds": 14.753478599945083
+      }
+    ],
+    "raw_receipts": {
+      "cpp-bounded": {
+        "raw_exit": 0,
+        "log_sha256": "64732dbcca55eaec8dd69007951e5b58e1c5ab557c676f84084323440159ebe3",
+        "exit_sha256": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9"
+      },
+      "build": {
+        "raw_exit": 0,
+        "log_sha256": "733ce7e5eb1a42a8eb3fcea6a5765ef06837a089381464ff65d51962bc79c97b",
+        "exit_sha256": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9"
+      },
+      "wheel": {
+        "raw_exit": 0,
+        "log_sha256": "51204fe442e83e5fd895a91a6a794194ddd47f630382a07fdd947a5ffb262ef2",
+        "exit_sha256": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9"
+      }
+    },
+    "cpp_bounded": {
+      "backend": "tyx:cpu_cpp",
+      "completed_launches": 52,
+      "accepted": true,
+      "compute_precision": "float32",
+      "scope": "one bounded short native case; no endurance claim"
+    },
+    "wheel": {
+      "path": "C:\\Users\\38347\\Documents\\ChatGPT\\phymeo\\artifacts\\thick-friction-engineering-33ec9ea-a\\dist\\phymeo-0.1.0a0-py3-none-any.whl",
+      "sha256": "7298fd1e2ff7429c8ff8a1cd0edf1f56b93840654bbb0497e12cfb011a359d68",
+      "source_files": 153,
+      "source_byte_parity": true,
+      "independent_parent_zip_check": true,
+      "fresh_native_pip": true,
+      "outside_checkout": true,
+      "runtime_lock_unchanged": true,
+      "installed_smoke_complete": true
+    },
+    "parent_frozen_digest_after": "cd6d77917dee8af09f13a430f4fdd4a5b744461874364a142aff0d8e6722d84b"
   },
   "delivery": {
-    "status": "not_pushed",
+    "status": "pending_push_and_exact_ci",
     "product_ci": null,
     "contract_ci_only": {
       "head": "6e818f574d097ce415940289a58847d4c8ba49fb",
@@ -913,6 +987,126 @@
     "No general articulated or thick rotor support in this slice.",
     "Host geometry/certification with direct native CUDA; no graph claim.",
     "No formal performance sampling or speed-ratio claim.",
-    "NUM005/TYX003/TYX004 remain open."
-  ]
+    "NUM005/TYX003/TYX004 remain open.",
+    "Preserved diagonal square-corner input has actual-outside/ideal-inside candidate reachability limitation; failed512 history and final bounded inactivity control retained. Exact point control passing is not universal point convergence."
+  ],
+  "pre_review_snapshot": {
+    "product_head": "1fcd0e7a60b209dda6cd24eda7d4dba863d4d728",
+    "implementation_report_head": "f2d499914e109fdc9194a8f64c5e56544475ca8c",
+    "source_tests_scripts_digest": "e3ee006f6ae79baa808b679ce4958464b5af28aef928f815a7dc685b603e8637",
+    "source_count": 153,
+    "source_sha256": "14c69ce1b64661639d382e8dbe08576ebc507909707f429a0640e291599c0bdd"
+  },
+  "directed_review_repairs": {
+    "baseline": "a2ba4745bc750ac858a61965221cd893561ee97f",
+    "product": "33ec9ea52dc15ee5b8050adb0a73d1591aea11f5",
+    "I2_commit": "e8c821d",
+    "source_tests_scripts_manifest": "final-fix-manifest-05.json",
+    "source_tests_scripts_digest": "cd6d77917dee8af09f13a430f4fdd4a5b744461874364a142aff0d8e6722d84b",
+    "version_delta": {
+      "old_reference": "1fcd0e7/final-manifest-01",
+      "new_reference": "final-fix-manifest-05",
+      "counts": {
+        "all": 307,
+        "source": 153
+      },
+      "added": [],
+      "removed": [],
+      "changed": [
+        "src/phymeo/solvers/_thick_contact_geometry.py",
+        "src/phymeo/solvers/_thick_contact_workspace.py",
+        "src/phymeo/validation/thick_contact_mapping.py",
+        "tests/test_thick_contact_mapping.py",
+        "tests/test_thick_robot_contact.py",
+        "tests/test_thick_robot_tyx.py"
+      ],
+      "source_digest": "df8c2ad9698f3f4c958b75ad9eee4135162fac1be490e56dd29cfce3df1f8d94"
+    },
+    "raw_passing_checks": [
+      "r4-green-04",
+      "host-tail-05",
+      "native-interpret-05",
+      "native-cuda-05",
+      "mapping-original-closure-01",
+      "side-original-closure-05",
+      "source-new-smoke-05",
+      "lifecycle-audit-numpy-05",
+      "lifecycle-audit-interpret-05",
+      "lifecycle-audit-cuda-05",
+      "public-boundary-05",
+      "ruff-final-05",
+      "format-final-05"
+    ],
+    "test_summaries": {
+      "r4-green-04": {
+        "passed": 7,
+        "seconds": 13.1,
+        "raw_exit": 0
+      },
+      "host-tail-05": {
+        "passed": 17,
+        "seconds": 433.27,
+        "raw_exit": 0
+      },
+      "native-interpret-05": {
+        "passed": 10,
+        "seconds": 134.13,
+        "raw_exit": 0
+      },
+      "native-cuda-05": {
+        "passed": 10,
+        "seconds": 327.19,
+        "raw_exit": 0
+      }
+    },
+    "same_run_actual_C_records": 39,
+    "audits": {
+      "numpy": {
+        "mode": "numpy",
+        "snapshot": "final-fix-manifest-05",
+        "run_id": 1793304350556526700,
+        "records": 13,
+        "source_manifest": "cd6d77917dee8af09f13a430f4fdd4a5b744461874364a142aff0d8e6722d84b",
+        "actual_max_analytic_error": 8.595465450511597e-10,
+        "tolerance": 1e-08,
+        "full_history_present": true,
+        "fp32_checked": false,
+        "budgets_residuals_force_finite_lifecycle_checked": true
+      },
+      "interpret": {
+        "mode": "interpret",
+        "snapshot": "native-interpret-05/final-fix-manifest-05",
+        "run_id": 1793304860755513800,
+        "records": 13,
+        "source_manifest": "cd6d77917dee8af09f13a430f4fdd4a5b744461874364a142aff0d8e6722d84b",
+        "actual_max_analytic_error": 1.8835067748801393e-06,
+        "tolerance": 2e-05,
+        "full_history_present": true,
+        "fp32_checked": true,
+        "budgets_residuals_force_finite_lifecycle_checked": true
+      },
+      "cuda": {
+        "mode": "cuda",
+        "snapshot": "native-cuda-05/final-fix-manifest-05",
+        "run_id": 1793305055521014700,
+        "records": 13,
+        "source_manifest": "cd6d77917dee8af09f13a430f4fdd4a5b744461874364a142aff0d8e6722d84b",
+        "actual_max_analytic_error": 1.8835067748801393e-06,
+        "tolerance": 2e-05,
+        "full_history_present": true,
+        "fp32_checked": true,
+        "budgets_residuals_force_finite_lifecycle_checked": true
+      }
+    },
+    "reused_host03_unaffected_passes": 26,
+    "diagonal_corner_limit": "original failed512 source retained; R4 exact actual-outside inactive; no universal point convergence claim",
+    "not_run": "host60/unaffected long windows/old full/900/C++/wheel/CI/push; final engineering belongs to main"
+  },
+  "parent_repair_audit": {
+    "source_tests_scripts_files": 307,
+    "evidence_files": 73,
+    "mismatches": 0,
+    "actual_lifecycle_records": 39,
+    "mode": "read-only hashes, original raw exits/pytest summaries and code/formula inspection; no repeated physics"
+  }
 }

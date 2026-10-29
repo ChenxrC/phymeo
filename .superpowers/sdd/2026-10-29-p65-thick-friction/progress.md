@@ -2,7 +2,7 @@
 
 ## Current review and repair status
 
-Sole fresh review completed: 0 Critical / 2 Important / 0 Minor. Main verified I1 selected supporting feature gap and I2 independent force/impulse-weighted mapping audit against frozen contract and probes. Both remain open; original implementer targeted TDD followup next, no second fresh review. Reviewer released numerical slot, 0 probe processes. Parent engineering has not run. Previous product evidence remains versioned.
+Sole fresh review completed: 0 Critical / 2 Important / 0 Minor. Main verified I1 selected supporting feature gap and I2 independent force/impulse-weighted mapping audit against frozen contract and probes. Both closed by main after e8c821d/33ec9ea directed repairs and a59182a evidence handoff, no second fresh review. Reviewer released numerical slot, 0 probe processes. Parent engineering session75126 completed exit0, tag33ec9ea-a all three steps passed: boundedCPP52launch/FP32, build, external fresh native-pip full smoke. Wheel153source byte parity independently checked; digest unchanged. Never duplicate. Push/exact-product-CI pending. Previous product evidence remains versioned.
 
 ## Task1 pre-review status
 

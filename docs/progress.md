@@ -1,6 +1,6 @@
 # 开发进度
 
-当前厚度阶段唯一审阅已结束，0Critical/2Important/0Minor：侧接触 signed gap 和独立映射合力审核均需定向修复，详见[审阅记录](benchmarks/p65-thick-friction-review.md)。修复前数值证据保留原版本；C++/wheel/产品CI待两项闭环，不重复fresh review。
+当前厚度阶段唯一审阅已结束，0Critical/2Important/0Minor：侧接触 signed gap 和独立映射合力审核均已在 e8c821d / 33ec9ea 定向修复并由父核对关闭，详见[审阅记录](benchmarks/p65-thick-friction-review.md)。修复前数值证据保留原版本；修复版 interpret/CUDA 各10项已过，C++/wheel工程已通过，产品推送/准确CI待，不重复fresh review。
 
 2026-10-29用户要求减少重复长回归：后续执行[按影响范围分层验收](development/p65-validation-policy.md)，日常只测受影响关键集合，新能力必要物理/事务测例完整验收一次，整分支全量留给公共底层改动和集成里程碑。正式大样本性能不再每个小切片必跑，整体P6.5门槛不减。当前摩擦完整CUDA已2307通过6196.34s，两CPU、Ubuntu、有界CPP、wheel均已退出0，三模式900计量也已完成并独立核对；7960b47远程SHA一致，准确CI40843093401与Documentation40843093367均completed success，有限摩擦交付已闭环。
 
@@ -27,9 +27,9 @@
 
 静态距离证书框架前置已准确交付e63a1bf，两CI成功；[实施任务单](superpowers/plans/2026-10-29-p65-distance-certificate.md)最后交付框已关闭。它不完成动态接触或CCD，下一项继续厚度/法向、特征身份/history与自动建立分离及连续路径。
 
-## 当前：有限厚度摩擦唯一审阅完成，两项 Important 待定向修复
+## 当前：有限厚度摩擦两项审阅修复闭环，父本地工程已通过，待推送与准确CI
 
-产品 `1fcd0e7`、报告 `f2d4999` 已在专用分支提交；父核对307文件和原始证据，版本化host60/严格CPU窗口通过，最终同源实际 interpret13（328.57s）与CUDA13（764.24s）通过。详见[验收](benchmarks/p65-thick-friction-acceptance.md)、[工程](benchmarks/p65-thick-friction-engineering.json)与[唯一审阅](benchmarks/p65-thick-friction-review.md)。`thick_friction_final_review` 已结束并释放数值槽；0Critical/2Important/0Minor，父确认两项发现，下一动作是原实现者定向TDD修复。C++短例、wheel、新产品push/准确CI仍待，不勾完整H1。
+产品 `1fcd0e7`、报告 `f2d4999` 已在专用分支提交；父核对307文件和原始证据，版本化host60/严格CPU窗口通过，最终同源实际 interpret13（328.57s）与CUDA13（764.24s）通过。详见[验收](benchmarks/p65-thick-friction-acceptance.md)、[工程](benchmarks/p65-thick-friction-engineering.json)与[唯一审阅](benchmarks/p65-thick-friction-review.md)。`thick_friction_final_review` 已结束并释放数值槽；0Critical/2Important/0Minor，父已核对 e8c821d/33ec9ea 修复及定向 host/interpret/CUDA，报告 a59182a；当前父三步工程已全部退出0，153源码wheel匹配，待push和准确CI。C++短例与wheel已通过，新产品push/准确CI仍待，不勾完整H1。
 
 ## 已交付有限凸面/FK，继续有限厚度摩擦与一般机器人
 

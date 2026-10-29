@@ -91,8 +91,8 @@
 **Interfaces:** consume Task1源码/测试/原日志/摘要；produce明确支持矩阵、唯一review闭环、源码外wheel、准确远程交付。不是H1/P6.5完成。
 
 - [x] 逐文件核对hash、diff、原式和rawexit；复用同冻结快照通过证据，不把旧版本设备窗说成新hash全量。
-- [ ] 一次fresh全阶段review，限定BASE冻结合同..Task1最终产品；问题交原实现者先精确RED再修。父核对关闭原findings，不派第二次review。
-- [ ] 所有数值进程结束后，最终冻结digest跑一个实际C++三角厚度短例、build、源码外新nativepip完整installed smoke及wheel逐文件匹配；不跑正式900，不宣称P95。
+- [x] 一次fresh全阶段review，限定BASE冻结合同..Task1最终产品；问题交原实现者先精确RED再修。父核对关闭原findings，不派第二次review。
+- [x] 所有数值进程结束后，最终冻结digest跑一个实际C++三角厚度短例、build、源码外新nativepip完整installed smoke及wheel逐文件匹配；不跑正式900，不宣称P95。
 - [ ] 更新框架/案例两线，commit/push核对SHA和该提交准确CI。随后一般机器人/弯曲自碰撞等继续，整体门槛不删。
 
-Task1报告 f2d4999 已交付父，数值/index释放；原版本 host60/严格窗口与最终 interpret13/CUDA13 的摘要、退出码已核对。唯一 fresh review thick_friction_final_review 已完成 BASE6e818f5..HEADf2d4999：0Critical/2Important/0Minor；I1/I2交原实现者定向TDD修复，父核对闭环，不再fresh review。该复合review/修复框及工程/交付框仍未勾。
+Task1报告 f2d4999 已交付父，数值/index释放；原版本 host60/严格窗口与最终 interpret13/CUDA13 的摘要、退出码已核对。唯一 fresh review thick_friction_final_review 已完成 BASE6e818f5..HEADf2d4999：0Critical/2Important/0Minor；I1/I2已在e8c821d/33ec9ea经原实现者定向TDD修复，父核对闭环，不再fresh review。review/修复框已勾；父工程三步已exit0且153源码wheel匹配，工程框已勾；准确推送/CI交付框未勾。

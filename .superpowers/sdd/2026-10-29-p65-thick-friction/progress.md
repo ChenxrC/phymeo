@@ -1,5 +1,11 @@
 # SDD ledger â€” plan: docs/superpowers/plans/2026-10-29-p65-thick-friction.md
 
+## Current Task1 status
+
+Task1 COMPLETE; numerical/index released to main with final report commit. Product1fcd0e7, source/tests/scripts digest e3ee006f6ae79baa808b679ce4958464b5af28aef928f815a7dc685b603e8637. Actual interpret13passed328.57s/exit0; CUDA13passed764.24s/exit0, exact same307files, no skips/fallback. CPU60 and strict124-record window are versioned with parent-approved influence reuse; directed new controls passed. Actual100records/full history/FP32/read-only audits passed;0 numerical children remain. Parent Task2 owns one fresh review/C++short/wheel/docs/CI/push. No overall H1/P6.5 completion claimed. Historical preflight/rulings below retained.
+
+## Historical dispatch ledger
+
 ## Identity and status
 
 P6.5 finite thickness friction, BASE16a752a87994940b0aee9b5a9751d63e90d196ad, branch codex/p6-5-handoff. Main owns docs/index. The one builder thick_friction_design_check completed; R1/R2/R3 are closed by main and the spec is frozen. No implementer, numerical process, final code reviewer, or Task1 result exists yet. Old finite/FK and prior probe are finished; do not re-dispatch.
@@ -34,4 +40,8 @@ Task1 numerical/index retained; active session98159 required full newhost/direct
 
 Host-required01 complete60passed1140.40s exit0; active40557 strict-oracle host-window02, manifest428cb4f4a9e7be51019ed5ef8ae26bcd8f6c5aae78d13e7e25f0f55fe2f9f096. Numerical/index retained. Parent agreed targeted window rerun for original4tol verification gap. No actualbackend run yet; no review/push.
 
-Task1 host/focused repairs checkpoint: no active numeric process; full60+strictwindow124records passed at labeled snapshots, candidate coverage originalRED¡úGREEN and ¦È.3/rebuild budget controls passed, source smoke16passed. final-host-manifest-01 e3ee006f6ae79baa808b679ce4958464b5af28aef928f815a7dc685b603e8637. Actualinterpret/CUDA selection13cases each pending; numeric/index retained; parent review/wheel/C++/CI not started here.
+Task1 host/focused repairs checkpoint: no active numeric process; full60+strictwindow124records passed at labeled snapshots, candidate coverage originalREDâ†’GREEN and Î¸.3/rebuild budget controls passed, source smoke16passed. final-host-manifest-01 e3ee006f6ae79baa808b679ce4958464b5af28aef928f815a7dc685b603e8637. Actualinterpret/CUDA selection13cases each pending; numeric/index retained; parent review/wheel/C++/CI not started here.
+
+Active90648 actualinterpret13-case selection, committed1fcd0e7 source/test digest e3ee006f6ae79baa808b679ce4958464b5af28aef928f815a7dc685b603e8637; native-interpret-manifest-01, fresh basetemp, --require-tyx. No pass claim; CUDA not started; numeric/index retained.
+
+Task1: complete (BASE6e818f5..product1fcd0e7; host60+strictwindow/directfixes, actualinterpret13/CUDA13 rawexit0; final-manifest-01 and task-1-report.md). Numerical/index ownership released with final report commit; no child/numerical process remains. Parent Task2 next; no reviewer/push/CPP/wheel by implementer.

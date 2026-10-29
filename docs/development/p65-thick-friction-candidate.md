@@ -75,3 +75,5 @@ held 使用初态真实 B0/s0/J0：先按所有接触精确聚合节点载荷，
 5. 编辑范围与影响选测：优先新集成模块，不重写已交付 offset port/native participant。若确需共享改动，先提供原式 RED 并按分层政策扩大直接消费者。旧全量、900和旧 review 不默认重做；新功能必要窗口/重建/故障与真实 interpret/CUDA仍须一次完整覆盖。
 
 只读 thick_contact_contract_probe 已结束并释放资源，未写文件、未运行数值、未进行 code review。下一步直接完成这些 geometry/identity 规则并写一份完整生产 spec/计划，经过一次 builder 再派实现。不能把本页纯解析结论标为生产支持、实际 CUDA 通过或完整 H1。
+
+后续入口：[生产设计稿](../superpowers/specs/2026-10-29-p65-thick-friction-design.md)和[实施计划稿](../superpowers/plans/2026-10-29-p65-thick-friction.md)已完成唯一builder检查，R1/R2/R3已裁定并冻结，下一步分派实现。本页保留纯解析候选历史，不代替生产合同。

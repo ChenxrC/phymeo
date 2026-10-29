@@ -35,14 +35,14 @@
 
 **Interfaces:** Consume现有SceneLoadReplay、TerminalImpulseProgram/PointVelocityImpulses、MaterialPathLedger、FrozenRobotLedger、MaterialContactBalance、_dynamic_normal_geometry。Produce spec签名的DynamicRobotFrictionContactProgram、initial_history、features/history/problem_signature和dynamic_robot_friction_contact诊断。旧几何collider不承载新μ；新owned映射是唯一摩擦参数源。若复用旧workspace继承，必须显式防止held审计误用post；不能为复用而改旧模块。
 
-- [ ] 缺API/schema/owned RED：明确μ键集合、builtinfloat非负/NaN/bool、collider key/radius0、allprismatic旁支/全动态材料/trace、empty selected node domain、history冲突。实现新绑定、签名和稳定rows。源数据修改不影响owned模型；不新增案例专用分支。
-- [ ] 静支撑/低μ解析RED后实现held联合法切求解和精确原式：spec h1/4,m1,M2，p1/4，μ2→t=-X/4全静；μ1/4→t=-X/16,vx3/16,x3/64。native terminal-only x1/16/vx0应不能作为高μ生产接受；至少一个真实负控制不只assert相同实现公式。
-- [ ] 未固定材料斜撞RED后实现terminal联合法切求解：p3/7、t0、eta1/3、tau=-8X/21及spec全部分数位置/速度、K+U1135/882、Py=-2，B保持open。验证给定系数由新程序自动解出，不调用研究脚本填冲量。全pre/path/metrics/history与selected held一致，actualterminal只施一次。
-- [ ] 多面A/B和实际world审核RED：A自动p1=p2=1,t1=-.5X,eta2=14/5以及post(-17/25,56/25)，允许总t·u+17/50；注入B的held正功4221/6875须拒绝。normal+切向交叉响应、实际world cone/最大耗散sqrt包围、方向/1ULP/负容量等控制；独立聚合terminal质量响应和全world成对力矩，不用观测dv自证。
-- [ ] 稳定生命周期/history与共享耦合：enter→persist→exit→inactive→reenter、冷closed不依赖旧active；分离phase_world和initial_closed严格0；旧history only record不warmstart。共享祖先双节点、同节点斜面、未固定材料三角、三维滑动、变换及域/面/节点顺序，含正常/失败/退化对照。原式预算用actualworld，原非接触输入功不能混入接触输入，按域角动量不得相消。
-- [ ] 连续/步长独立参照：NumPy T2静/滑两μ、h1/16与1/32，v=3T/4,x=3(T²+Th)/8及连续误差减半；actualinterpret/CUDA为T.5、两h同参照，不混称设备T2。至少两outer子步，模型/输入不变，多次重新建程序重复结果；不是整体递布精度证明。
-- [ ] 事务及故障RED：第2/末子步材料trace、terminal、ledger预算或close失败全帧state/input/basehistory/自身history恢复，retry=fresh；已有best后失败不吞，半构造资源释放，所有actualtrials正确计数。终阶段pre故意微改、错x0末作用点（非纯Y切向运动控制）、能力借名/FP64nextafter要有正常对照。
-- [ ] 单次相关回归与真实后端：运行新四文件及旧normal/initial/free/material/load/terminal/SceneStepper受影响集合；actualinterpret/CUDA包含新两解析、两面、生命周期和上述短窗并检查真实mode/launch/FP32；一个boundedCPP留Task2统一。旧normal程序测试及期望不改；新μ全0安全例与旧normal状态原tol内一致。ruff/diff与source smoke，真实命令/RED/GREEN/未执行/版本写报告，自查后提交本任务，释放唯一数值槽。不要跑旧完整CUDA2216或900性能、不要自行review。
+- [x] 缺API/schema/owned RED：明确μ键集合、builtinfloat非负/NaN/bool、collider key/radius0、allprismatic旁支/全动态材料/trace、empty selected node domain、history冲突。实现新绑定、签名和稳定rows。源数据修改不影响owned模型；不新增案例专用分支。
+- [x] 静支撑/低μ解析RED后实现held联合法切求解和精确原式：spec h1/4,m1,M2，p1/4，μ2→t=-X/4全静；μ1/4→t=-X/16,vx3/16,x3/64。native terminal-only x1/16/vx0应不能作为高μ生产接受；至少一个真实负控制不只assert相同实现公式。
+- [x] 未固定材料斜撞RED后实现terminal联合法切求解：p3/7、t0、eta1/3、tau=-8X/21及spec全部分数位置/速度、K+U1135/882、Py=-2，B保持open。验证给定系数由新程序自动解出，不调用研究脚本填冲量。全pre/path/metrics/history与selected held一致，actualterminal只施一次。
+- [x] 多面A/B和实际world审核RED：A自动p1=p2=1,t1=-.5X,eta2=14/5以及post(-17/25,56/25)，允许总t·u+17/50；注入B的held正功4221/6875须拒绝。normal+切向交叉响应、实际world cone/最大耗散sqrt包围、方向/1ULP/负容量等控制；独立聚合terminal质量响应和全world成对力矩，不用观测dv自证。
+- [x] 稳定生命周期/history与共享耦合：enter→persist→exit→inactive→reenter、冷closed不依赖旧active；分离phase_world和initial_closed严格0；旧history only record不warmstart。共享祖先双节点、同节点斜面、未固定材料三角、三维滑动、变换及域/面/节点顺序，含正常/失败/退化对照。原式预算用actualworld，原非接触输入功不能混入接触输入，按域角动量不得相消。
+- [x] 连续/步长独立参照：NumPy T2静/滑两μ、h1/16与1/32，v=3T/4,x=3(T²+Th)/8及连续误差减半；actualinterpret/CUDA为T.5、两h同参照，不混称设备T2。至少两outer子步，模型/输入不变，多次重新建程序重复结果；不是整体递布精度证明。
+- [x] 事务及故障RED：第2/末子步材料trace、terminal、ledger预算或close失败全帧state/input/basehistory/自身history恢复，retry=fresh；已有best后失败不吞，半构造资源释放，所有actualtrials正确计数。终阶段pre故意微改、错x0末作用点（非纯Y切向运动控制）、能力借名/FP64nextafter要有正常对照。
+- [x] 单次相关回归与真实后端：运行新四文件及旧normal/initial/free/material/load/terminal/SceneStepper受影响集合；actualinterpret/CUDA包含新两解析、两面、生命周期和上述短窗并检查真实mode/launch/FP32；一个boundedCPP留Task2统一。旧normal程序测试及期望不改；新μ全0安全例与旧normal状态原tol内一致。ruff/diff与source smoke，真实命令/RED/GREEN/未执行/版本写报告，自查后提交本任务，释放唯一数值槽。不要跑旧完整CUDA2216或900性能、不要自行review。
 
 ## Task 2: 主agent一次review、工程与交付
 

@@ -28,9 +28,9 @@
 
 ## 当前立即续作
 
-正在执行[分阶段摩擦计划](../superpowers/plans/2026-10-29-p65-dynamic-friction.md)Task1；先读对应冻结spec、.superpowers/sdd/2026-10-29-p65-dynamic-friction/progress.md和task-1-report.md（若已存在），核对agent/Git，不重复分派。实现者dynamic_friction_implementer是源码/tests/smoke与唯一数值owner，BASE b7dd5b55451295434191eecc0bbedf3a1c46f712；已完成首15RED→15GREEN、NumPy窗口32通过及actual interpret首8通过229.31s；仍在控制修复与后端验收，未交付新生产能力。精确P+E容量舍入的真实RED已修；旋转纯terminal切向末位负normal的真实RED按主agent裁定修复构造表示，原定律/tol/物理预算不变，详见实现报告。父新benchmark脚本仅format/ruff静态通过，未执行；不得并发smoke或完整套件。
+Task1实现已交付：产品6df5b14、报告cb209b8，数值槽/index已归还父；先读[验收](../benchmarks/p65-dynamic-friction-acceptance.md)、[工程](../benchmarks/p65-dynamic-friction-engineering.json)及对应SDD ledger/report，不重派实现或重复已完成定向。父三模式最小基准各2计时+6warmup成功，源码/脚本hash不变；只是脚本自检。
 
-唯一builder已结束，无重要未决；全阶段最终code review尚未派。产品交付后主agent先核对报告/差异和最小基准smoke，再派一次fresh review及必要TDD修复、工程与串行观测。不得重做18个预设native研究例、旧normal全部验收或已关闭审阅。设计/研究b7dd5b5已推送且SHA一致，准确CI40807534775与Documentation40807534785均completed success；CI于02:59:49Z按完整head_sha复核。无需再查该研究/设计CI，也不能把它当尚未提交的摩擦生产代码通过。
+唯一fresh reviewer dynamic_friction_final_review现运行，BASEb7dd5b5..HEADcb209b8；它独占数值probe槽，父不得并发测试。审阅尚无结论，最终acceptance runner尚未启动。待审阅结果和必要TDD修复闭环后，按Task2冻结最终src/tests/scripts并启动全新tag的串行工程与正式观测；已有旧normal/研究CI都已关闭，不重复。研究头b7dd5b5准确CI40807534775和Documentation40807534785均success，只覆盖旧研究/设计，当前产品还未push。
 
 ### 已关闭的上一阶段：有限法向
 

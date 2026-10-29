@@ -1,0 +1,95 @@
+{
+  "status": "implementation_delivered_review_running_final_acceptance_not_started",
+  "source": {
+    "commit": "6df5b14e60bb8661f1dcaa295fe7161bfd44e6e8",
+    "python_files": 134,
+    "sha256": "d18e557c49b9711647d7b5218f9706739227eab84073c9a6a309e6276c44b33d"
+  },
+  "review": {
+    "agent": "dynamic_friction_final_review",
+    "base": "b7dd5b55451295434191eecc0bbedf3a1c46f712",
+    "head": "cb209b8c5f5738d2527ef6e03dbe685b6cecf763",
+    "status": "running",
+    "count": 1
+  },
+  "implementation_tests": {
+    "cpu_related": {
+      "passed": 483,
+      "deselected": 11,
+      "seconds": 394.21,
+      "log": "artifacts/friction-related-cpu-016.log"
+    },
+    "cuda_new": {
+      "passed": 11,
+      "seconds": 1020.29,
+      "log": "artifacts/friction-cuda-013.log",
+      "version_note": "before only constructor invalid-object guard; final-source CPU and interpret cover guard"
+    },
+    "interpret_final_core": {
+      "passed": 7,
+      "deselected": 4,
+      "seconds": 12.1,
+      "log": "artifacts/friction-final-interpret-017.log"
+    },
+    "interpret_earlier_full": {
+      "passed": 8,
+      "seconds": 229.31,
+      "log": "artifacts/friction-interpret-007.log",
+      "version_note": "before final world representation helper; includes T0.5 windows"
+    },
+    "source_smoke": {
+      "status": "passed",
+      "log": "artifacts/friction-source-smoke-019.log",
+      "note": "runpy calls new finite function; full installed entry initially rejected source path as designed, not wheel validation"
+    }
+  },
+  "benchmark_smoke": {
+    "numpy": {
+      "status": "complete",
+      "measured": 2,
+      "including_warmups": 8,
+      "by_case": {
+        "support": 1,
+        "chain": 1
+      },
+      "raw": "artifacts/dynamic-friction-benchmark-numpy-smoke-6df5b14.json",
+      "script_sha256": "c9426b7ae7589adca3918c92a3dc5c6e7ac4bdddd823cbcfeead8de35a73d2e3",
+      "note": "script correctness only, not formal performance"
+    },
+    "interpret": {
+      "status": "complete",
+      "measured": 2,
+      "including_warmups": 8,
+      "by_case": {
+        "support": 1,
+        "chain": 1
+      },
+      "raw": "artifacts/dynamic-friction-benchmark-interpret-smoke-6df5b14.json",
+      "script_sha256": "c9426b7ae7589adca3918c92a3dc5c6e7ac4bdddd823cbcfeead8de35a73d2e3",
+      "note": "script correctness only, not formal performance"
+    },
+    "cuda": {
+      "status": "complete",
+      "measured": 2,
+      "including_warmups": 8,
+      "by_case": {
+        "support": 1,
+        "chain": 1
+      },
+      "raw": "artifacts/dynamic-friction-benchmark-cuda-smoke-6df5b14.json",
+      "script_sha256": "c9426b7ae7589adca3918c92a3dc5c6e7ac4bdddd823cbcfeead8de35a73d2e3",
+      "note": "script correctness only, not formal performance"
+    }
+  },
+  "final_acceptance": {
+    "status": "not_started"
+  },
+  "formal_performance": {
+    "status": "not_started"
+  },
+  "delivery": {
+    "status": "product_not_pushed",
+    "last_remote": "b7dd5b55451295434191eecc0bbedf3a1c46f712",
+    "note": "research/design head CI40807534775 and Documentation40807534785 success; not product CI"
+  }
+}

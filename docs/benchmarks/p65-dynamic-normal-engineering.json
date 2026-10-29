@@ -1,5 +1,5 @@
 {
-  "status": "local_acceptance_complete_remote_delivery_pending",
+  "status": "local_acceptance_complete_remote_ci_timeout_repair",
   "source": {
     "commit": "4ff19ea7975145fe9d44450164b906f01fe0527d",
     "python_files": 131,
@@ -514,7 +514,7 @@
       "path": "artifacts\\dynamic-normal-final-4ff19ea-a\\dist\\phymeo-0.1.0a0-py3-none-any.whl",
       "sha256": "491142e28d22f659d2c60707c37a2dc45e97276e0257fbaf1dc66d80a13cdda8"
     },
-    "current_remote_ci": "not_run",
+    "current_remote_ci": "cancelled_timeout_repair_pending",
     "frozen_src_tests_scripts_digest": "f1e36fe05f6022618de94c8d20638911c6c8383e73e65a8c7b35f2a6e93e305f",
     "pipeline": {
       "session_id": 7480,
@@ -658,10 +658,34 @@
     "NUM-005, TYX-003 and TYX-004 remain open"
   ],
   "delivery": {
-    "status": "not_pushed_yet",
+    "status": "pushed_exact_ci_cancelled_timeout",
     "branch": "codex/p6-5-handoff",
-    "head": null,
-    "remote_sha_verified": false,
-    "workflow_runs": []
+    "head": "29165ca81ae6f545f45850ea6ff8973741c99ec5",
+    "remote_sha_verified": true,
+    "workflow_runs": [
+      {
+        "id": 40799694665,
+        "name": "CI",
+        "status": "completed",
+        "conclusion": "cancelled"
+      },
+      {
+        "id": 40799694655,
+        "name": "Documentation",
+        "status": "completed",
+        "conclusion": "success"
+      }
+    ],
+    "timeout_evidence": "p65-dynamic-normal-ci-timeout.json",
+    "repair": "CPU job time limit only, 15 to 30 minutes; numerical tests, examples and required aggregation unchanged; new exact CI not run yet",
+    "ci_repair_review": {
+      "agent": "dynamic_normal_ci_timeout_review",
+      "scope": "one CPU-job timeout 15 to 30 and explanatory comment; not physics review",
+      "critical": 0,
+      "important": 0,
+      "minor": 0,
+      "workflow_command_matrix_gate_comparison": "identical after reverting only timeout and comment",
+      "new_exact_ci": "not_run"
+    }
   }
 }

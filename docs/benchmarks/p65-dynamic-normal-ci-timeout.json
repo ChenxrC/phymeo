@@ -1,0 +1,29 @@
+{
+  "head_sha": "29165ca81ae6f545f45850ea6ff8973741c99ec5",
+  "workflow_run_id": 40799694665,
+  "conclusion": "cancelled",
+  "documentation_run_id": 40799694655,
+  "documentation_conclusion": "success",
+  "affected_job": {
+    "id": 123204557626,
+    "name": "cpu / windows-latest / py3.11 / uv",
+    "conclusion": "cancelled",
+    "started_at": "2026-10-29T01:19:17Z",
+    "completed_at": "2026-10-29T01:34:31Z",
+    "annotation": "The job has exceeded the maximum execution time of 15m0s",
+    "tests": {
+      "conclusion": "success",
+      "started_at": "2026-10-29T01:19:34Z",
+      "completed_at": "2026-10-29T01:34:12Z"
+    },
+    "examples": {
+      "conclusion": "cancelled",
+      "started_at": "2026-10-29T01:34:12Z",
+      "completed_at": "2026-10-29T01:34:27Z"
+    }
+  },
+  "other_cpu_matrix_successes": 7,
+  "aggregate_required_conclusion": "failure",
+  "newer_run_or_head_observed": false,
+  "local_production_evidence_unchanged": true
+}

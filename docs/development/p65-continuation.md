@@ -34,9 +34,9 @@
 
 最终pipeline session7480已经完成且全部exit0，status为complete；禁止重启旧pipeline、CPU/CUDA全量、900观测或唯一review。冻结src/tests/scripts摘要f1e36fe05f6022618de94c8d20638911c6c8383e73e65a8c7b35f2a6e93e305f及runnerhash335cb8fde761abdf3659e4d12ffa15861220472a33fecf423cb948935394e224已最终复核一致。两CPU各1865pass/351未选，pytest416.07/399.69s；完整CUDA2216pass9148.75s；Ubuntu新112pass103.42s（既有依赖非clean install）；boundedCPP1pass28.97s（非长期）；131文件源码外wheel及新native-pip安装smoke通过，质量与锁导出核对已通过。
 
-NumPy→interpret→CUDA各300计时/306含warmup严格串行，共900/918成功；free/chain各150，每case3warmup，source/script前后相同。原始记录及分case中位/P95、重放与launch/传输计数见PERF-019和工程JSON。旧低mu长窗最终通过，未定位单项耗时/调用栈；全CUDA耗时不能冒称正式性能或tyx缺陷。当前仅待专用分支push、远程SHA与准确新CI；成功后勾计划最后交付项，继续下一个可复用物理能力合同，不把完整H1/P6.5称完成。
+NumPy→interpret→CUDA各300计时/306含warmup严格串行，共900/918成功；free/chain各150，每case3warmup，source/script前后相同。原始记录及分case中位/P95、重放与launch/传输计数见PERF-019和工程JSON。旧低mu长窗最终通过，未定位单项耗时/调用栈；全CUDA耗时不能冒称正式性能或tyx缺陷。已推送29165ca且远程SHA一致；准确CI40799694665最终cancelled，Documentation40799694655success。Windows3.11uv数值测试步骤成功878秒，但headless examples触及15分钟job上限取消，其余7CPU成功。详见[时限修复证据](../benchmarks/p65-dynamic-normal-ci-timeout.md)。当前仅改CPU job预算15→30分钟，所有测试/示例/required门槛不变；修复后准确CI成功才能勾最后交付框，不能重跑已验收本地物理或误称旧CI成功。
 
-Task2新CUDA7通过1055.23s；NumPy462和interpret37是cap-only元数据修复前物理同版，之后补NumPy3/interpret2受影响控制，精确版本见工程记录。Task1旧prescribed兼容回归已在2f50c1f修复并推送，准确CI40769531720/Documentation40769531685均success，816a1f3已记录；不再查询或重复修复。当前阶段HEAD尚未推送。
+Task2新CUDA7通过1055.23s；NumPy462和interpret37是cap-only元数据修复前物理同版，之后补NumPy3/interpret2受影响控制，精确版本见工程记录。Task1旧prescribed兼容回归已在2f50c1f修复并推送，准确CI40769531720/Documentation40769531685均success，816a1f3已记录；不再查询或重复修复。阶段证据已在29165ca推送；新的CI配置修复另核对准确HEAD。
 
 实验六例和builder均结束，不再运行。旧MaterialPathLedger/FrozenRobotLedger只认证pre，post使用独立末速度账；p+eta不能放回held输入。没有新截止；旧goal暂停显示非停止。完整阶段验收/推送闭环才记录有限法向能力完成，H1和真实双臂目标仍开放。
 
@@ -46,7 +46,7 @@ Task2新CUDA7通过1055.23s；NumPy462和interpret37是cap-only元数据修复�
 
 一次builder已无重要未决；唯一fresh最终review 0Critical0Important0Minor，无修复轮。最终main及两CPU相关各241、Ubuntu新host67、actualinterpret/CUDA各2及126文件源码外wheel通过；三个host路径各300正式计量成功，源/脚本hash一致，PERF-018只观测。准确新SHA/CI已闭环，工程JSON记录必要元数据。相关选测不是新全量，准确CI另承担全分支CPU矩阵。
 
-下一阶段应向能产生真实反作用的自动建立/分离闭环推进，侧/法向/身份history/特征切换及FK保守路径须与现有材料/机器人原式账本一起冻结。新两阶段法向生产实现现已完成，正在Task3审阅/工程验收；旧有限局部平面程序的初态闭合门禁保留。至少两个非递布独立场景后交实现子agent，继续同一长程任务，不止于几何判断。
+下一阶段应向能产生真实反作用的自动建立/分离闭环推进，侧/法向/身份history/特征切换及FK保守路径须与现有材料/机器人原式账本一起冻结。新两阶段法向生产实现及唯一审阅、本地工程验收已完成，正在闭环CI作业时限修复；旧有限局部平面程序的初态闭合门禁保留。至少两个非递布独立场景后交实现子agent，继续同一长程任务，不止于几何判断。
 
 上一静态距离证书e63a1bf两CI成功并已c1e9f47闭环；旧材料接触也已交付。NUM-005、TYX-003/004仍开放。整体P6.5没有完成，不把任何前置切片当真实双臂或Three.js。
 

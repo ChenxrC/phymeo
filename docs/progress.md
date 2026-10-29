@@ -29,7 +29,7 @@
 
 Task1产品24c9961已完成定向验收：关闭前原生末冲量机制、独立方程账本、只读诊断修复和完整事务；最终新NumPy42、interpret2、CUDA2通过，旧相关回归版本详见续作记录。Task2已提交4ff19ea：自动生成候选、held位置载荷与末速度冲量求解、显式history及全局事务已实现；最终实际CUDA新7项通过。Task3唯一fresh审阅已结束（0Critical/0Important/0Minor）；最终两CPU各1865、完整CUDA2216、Ubuntu112、有界CPP1及131文件源码外wheel通过；三模式共900计时/918调用成功。详见[阶段验收](benchmarks/p65-dynamic-normal-acceptance.md)与[PERF-019](performance-bottlenecks/PERF-019-dynamic-normal-contact.md)。当前待准确新提交远程交付，不能据局部能力勾完整H1/P6.5。
 
-Task1引入的旧预设驱动关闭状态兼容回归已在2f50c1f修复：原失败及3个新增生命周期控制先RED，72项针对性回归通过；准确CI40769531720和Documentation40769531685均success。本次Task2本地验收已完成，但其远程交付仍须本次准确提交CI；旧CI不替代本阶段与P6.5总验收。
+Task1引入的旧预设驱动关闭状态兼容回归已在2f50c1f修复：原失败及3个新增生命周期控制先RED，72项针对性回归通过；准确CI40769531720和Documentation40769531685均success。本次Task2本地验收已完成，但其远程交付仍须本次准确提交CI；旧CI不替代本阶段与P6.5总验收。 准确29165ca的CI40799694665因Windows3.11uv达到15分钟job上限而cancelled：该矩阵数值测试成功、示例取消，另7CPU成功。正在最小调整CPU job时限至30分钟，保留全部测试/示例/required门槛；详见[修复证据](benchmarks/p65-dynamic-normal-ci-timeout.md)。
 
 首个动态支持域固定为全prismatic机器人、全动态距离材料节点、固定朝向无限平面、法向无摩擦；材料/机器人原生计算与两个输入阶段分账。摩擦、有限特征切换、FK旋转CCD、弯曲/自碰撞和夹持继续属于后续必做，不降低整个P6.5目标。
 

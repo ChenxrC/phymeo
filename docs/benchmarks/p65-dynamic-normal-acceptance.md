@@ -1,6 +1,6 @@
 # P6.5 自动法向接触：生产实现与验收进度
 
-状态：生产实现、本阶段唯一独立审阅0Critical/0Important/0Minor、最终本地工程验收与正式串行观测均完成；已推送29165ca，准确CI因Windows3.11uv触及15分钟作业上限而取消；数值步骤成功、示例被中断，见[CI时限修复](p65-dynamic-normal-ci-timeout.md)。修复后的准确CI仍待闭环。完整H1/P6.5仍未完成。产品提交4ff19ea7975145fe9d44450164b906f01fe0527d，131个源码文件hash `ac777319d0b8fbc03adab92286656a5572df05bca403e913912500908e991060`。
+状态：生产实现、本阶段唯一独立审阅0Critical/0Important/0Minor、最终本地工程验收与正式串行观测均完成；已推送29165ca，准确CI因Windows3.11uv触及15分钟作业上限而取消；数值步骤成功、示例被中断，见[CI时限修复](p65-dynamic-normal-ci-timeout.md)。时限修复aa8ec4282e4baefd23ff8a396ae7d92bac011ca0已推送且远程SHA一致，准确CI40802849502与Documentation40802849436均completed success，本阶段交付闭环。完整H1/P6.5仍未完成。产品提交4ff19ea7975145fe9d44450164b906f01fe0527d，131个源码文件hash `ac777319d0b8fbc03adab92286656a5572df05bca403e913912500908e991060`。
 
 ## 可复用支持域
 
@@ -26,6 +26,6 @@ held阶段从原状态/输入完整原生重放，节点p与机器人反作用�
 
 ## 未完成范围与下一步
 
-[唯一审阅](p65-dynamic-normal-review.md)、所有本地测试和正式计量已结束，不再重复旧pipeline、全量或审阅。当前只待本次专用分支推送、远程SHA与准确新提交CI核对；旧2f50c1f成功CI不能作为本次远程验收。
+[唯一审阅](p65-dynamic-normal-review.md)、所有本地测试和正式计量已结束，不再重复旧pipeline、全量或审阅。本次专用分支远程SHA与准确aa8ec42的两项CI已核对成功；下一步继续摩擦框架的原生候选和生产合同，不重复本阶段验收。
 
 本能力不是摩擦、有限三角/边特征切换、旋转FK保守CCD或真实夹持。之后仍须这些框架能力、弯曲/自碰撞、单爪承重与低摩擦滑落、目标/IK/history、双臂交接及同源Three.js。NUM-005积分器角动量损失未被修复；TYX-003长期CPP和TYX-004严格解释器cos仍开放。保持[冻结合同](../superpowers/specs/2026-10-29-p65-dynamic-normal-design.md)与[实施计划](../superpowers/plans/2026-10-29-p65-dynamic-normal.md)的门槛，不扩P7/P8。

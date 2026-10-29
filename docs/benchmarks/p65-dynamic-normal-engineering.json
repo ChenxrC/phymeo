@@ -658,26 +658,58 @@
     "NUM-005, TYX-003 and TYX-004 remain open"
   ],
   "delivery": {
-    "status": "pushed_exact_ci_cancelled_timeout",
+    "status": "pushed_exact_ci_success",
     "branch": "codex/p6-5-handoff",
-    "head": "29165ca81ae6f545f45850ea6ff8973741c99ec5",
+    "head": "aa8ec4282e4baefd23ff8a396ae7d92bac011ca0",
     "remote_sha_verified": true,
     "workflow_runs": [
       {
-        "id": 40799694665,
+        "id": 40802849502,
         "name": "CI",
         "status": "completed",
-        "conclusion": "cancelled"
+        "conclusion": "success",
+        "head_sha": "aa8ec4282e4baefd23ff8a396ae7d92bac011ca0"
       },
       {
-        "id": 40799694655,
+        "id": 40802849436,
         "name": "Documentation",
         "status": "completed",
-        "conclusion": "success"
+        "conclusion": "success",
+        "head_sha": "aa8ec4282e4baefd23ff8a396ae7d92bac011ca0"
       }
     ],
-    "timeout_evidence": "p65-dynamic-normal-ci-timeout.json",
-    "repair": "CPU job time limit only, 15 to 30 minutes; numerical tests, examples and required aggregation unchanged; new exact CI not run yet",
+    "previous_cancelled_delivery": {
+      "status": "pushed_exact_ci_cancelled_timeout",
+      "branch": "codex/p6-5-handoff",
+      "head": "29165ca81ae6f545f45850ea6ff8973741c99ec5",
+      "remote_sha_verified": true,
+      "workflow_runs": [
+        {
+          "id": 40799694665,
+          "name": "CI",
+          "status": "completed",
+          "conclusion": "cancelled"
+        },
+        {
+          "id": 40799694655,
+          "name": "Documentation",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ],
+      "timeout_evidence": "p65-dynamic-normal-ci-timeout.json",
+      "repair": "CPU job time limit only, 15 to 30 minutes; numerical tests, examples and required aggregation unchanged; new exact CI not run yet",
+      "ci_repair_review": {
+        "agent": "dynamic_normal_ci_timeout_review",
+        "scope": "one CPU-job timeout 15 to 30 and explanatory comment; not physics review",
+        "critical": 0,
+        "important": 0,
+        "minor": 0,
+        "workflow_command_matrix_gate_comparison": "identical after reverting only timeout and comment",
+        "new_exact_ci": "not_run"
+      }
+    },
+    "repair_scope": "CPU job timeout 15 to 30 minutes only; all tests, examples and required checks retained",
     "ci_repair_review": {
       "agent": "dynamic_normal_ci_timeout_review",
       "scope": "one CPU-job timeout 15 to 30 and explanatory comment; not physics review",
@@ -685,7 +717,7 @@
       "important": 0,
       "minor": 0,
       "workflow_command_matrix_gate_comparison": "identical after reverting only timeout and comment",
-      "new_exact_ci": "not_run"
+      "new_exact_ci": "success"
     }
   }
 }

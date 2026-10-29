@@ -25,5 +25,26 @@
   "other_cpu_matrix_successes": 7,
   "aggregate_required_conclusion": "failure",
   "newer_run_or_head_observed": false,
-  "local_production_evidence_unchanged": true
+  "local_production_evidence_unchanged": true,
+  "repair_delivery": {
+    "head_sha": "aa8ec4282e4baefd23ff8a396ae7d92bac011ca0",
+    "remote_sha_verified": true,
+    "workflow_runs": [
+      {
+        "id": 40802849502,
+        "name": "CI",
+        "status": "completed",
+        "conclusion": "success",
+        "head_sha": "aa8ec4282e4baefd23ff8a396ae7d92bac011ca0"
+      },
+      {
+        "id": 40802849436,
+        "name": "Documentation",
+        "status": "completed",
+        "conclusion": "success",
+        "head_sha": "aa8ec4282e4baefd23ff8a396ae7d92bac011ca0"
+      }
+    ],
+    "status": "closed"
+  }
 }

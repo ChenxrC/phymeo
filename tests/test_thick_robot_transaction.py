@@ -145,11 +145,24 @@ def test_terminal_pre_replay_matches_full_selected_held():
 
 @pytest.mark.parametrize(
     "options",
-    [{"max_anchors_per_pair": 2}, {"max_manifold_rebuilds": 1, "max_anchors_per_pair": 3}],
+    [
+        {"max_anchors_per_pair": 2},
+        {"max_manifold_rebuilds": 1, "max_anchors_per_pair": 3},
+        {"max_manifold_rebuilds": 1},
+    ],
 )
 def test_anchor_capacity_and_geometry_rebuild_budget_fail_closed(options):
-    r = step(build(scenario="C", program_options=options), accepted=False)
-    assert "anchor" in r.report.reason
+    oblique = options == {"max_manifold_rebuilds": 1}
+    r = step(
+        build(
+            scenario="A" if oblique else "C",
+            mu=1.0 if oblique else 0.0,
+            rotate="oblique" if oblique else False,
+            program_options=options,
+        ),
+        accepted=False,
+    )
+    assert ("rebuild" if oblique else "anchor") in r.report.reason
 
 
 def test_partial_construction_closes_workspaces(monkeypatch):
@@ -189,3 +202,19 @@ def test_all_actual_trials_count_once():
         w.counts["predict"] == w.counts["terminal"] == w.counts["close"] == 1
         for w in observed.workspaces
     )
+
+
+def test_terminal_only_replay_rechecks_complete_selected_pre_evidence():
+    from phymeo.solvers._thick_contact_replay import require_selected_pre
+
+    case = build()
+    r = step(case)
+    e = diag(r)["terminal_ledger"]
+    require_selected_pre(e, e, case[2], case[2])
+    altered = dict(e)
+    altered["pre_impulse_diagnostics"] = {
+        **e["pre_impulse_diagnostics"],
+        "corrupted_path_metadata": True,
+    }
+    with pytest.raises(ph.SolverFailure, match="complete held pre"):
+        require_selected_pre(altered, e, case[2], case[2])

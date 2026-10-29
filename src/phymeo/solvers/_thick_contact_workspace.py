@@ -25,7 +25,7 @@ from ._dynamic_normal_geometry import normal_projection_bounds
 from ._material_contact_balance import MaterialContactBalance
 from ._robot_replay_ledger import FrozenRobotLedger, upper_float
 from ._thick_contact_geometry import discover, manifolds, maps, relative, response
-from ._thick_contact_replay import ThickReplay
+from ._thick_contact_replay import ThickReplay, require_selected_pre
 
 ZERO = F(0)
 
@@ -271,6 +271,11 @@ class ThickContactWorkspace(ThickReplay):
             self._evaluate(terminal)
             if power:
                 self.line_search_replays += 1
+            if not terminal:
+                _, added = discover(self, self.trial.result.state, penetrating_only=True)
+                if added:
+                    self._rebuild(added)
+                    return
             score = (
                 self._velocity_metrics().max_residual
                 if terminal
@@ -284,19 +289,20 @@ class ThickContactWorkspace(ThickReplay):
             self.p, self.t = oldp, oldt
         self.trial, self.native_audit, self.material_reports, self.mapping_report = saved
 
+    def _rebuild(self, added):
+        self.rebuilds += 1
+        if self.rebuilds > self.program.max_manifold_rebuilds:
+            raise SolverFailure("manifold rebuild budget exhausted")
+        self.anchors = tuple(sorted((*self.anchors, *added), key=lambda a: a.token))
+        self._initialize_anchors()
+        self._evaluate()
+
     def position_sweep(self):
         self.ps += 1
         self._improve()
-        _, _, full = self._position_metrics()
-        if any(m.exact_gap_bounds[0] < -self.bound for m in full):
-            _, added = discover(self, self.trial.result.state)
-            if added:
-                self.rebuilds += 1
-                if self.rebuilds > self.program.max_manifold_rebuilds:
-                    raise SolverFailure("manifold rebuild budget exhausted")
-                self.anchors = tuple(sorted((*self.anchors, *added), key=lambda a: a.token))
-                self._initialize_anchors()
-                self._evaluate()
+        _, added = discover(self, self.trial.result.state, penetrating_only=True)
+        if added:
+            self._rebuild(added)
 
     def prepare_velocity(self):
         if not self.pdone:
@@ -311,8 +317,12 @@ class ThickContactWorkspace(ThickReplay):
                 if a.token in old:
                     self.p[i], self.t[i] = old[a.token]
             self._evaluate()
-            if fingerprint(self.trial.result.state) != fingerprint(self.held_trial.result.state):
-                raise SolverFailure("terminal-only anchor changed held pre state")
+            require_selected_pre(
+                self.trial.result.report.substeps[0].diagnostics["terminal_impulse"],
+                self.held_trial.result.report.substeps[0].diagnostics["terminal_impulse"],
+                self.trial.effective_inputs,
+                self.held_trial.effective_inputs,
+            )
             self.held_trial = self.trial
         self.j1, self.points1, self.local1, self.rj1, samples, self.mapping1 = maps(
             self, self.held_trial.result.state
@@ -557,10 +567,28 @@ class ThickContactWorkspace(ThickReplay):
             )
             for r in self.ccd
         )
+        ideal_manifolds = tuple(
+            dict(
+                pair_keys=self.program.pair_keys[i],
+                status=m.status,
+                normal=m.normal,
+                gap_bounds=m.gap_bounds,
+                prism_points=np.array([p.prism_point for p in m.points]).reshape(-1, 3),
+                robot_points=np.array([p.robot_point for p in m.points]).reshape(-1, 3),
+                material_exact=tuple(tuple(str(v) for v in p.material) for p in m.points),
+                features=tuple((p.prism_feature, p.patch_feature) for p in m.points),
+            )
+            for i, m in enumerate(manifolds(self, self.trial.result.state))
+        )
         return own_diagnostics(
             dict(
                 dynamic_robot_thick_contact=dict(
                     pair_keys=self.program.pair_keys,
+                    anchor_features=tuple(a.feature for a in self.anchors),
+                    representation_error_m=np.array(
+                        [a.representation_error_m for a in self.anchors]
+                    ),
+                    ideal_manifolds=ideal_manifolds,
                     anchor_material=np.array([a.material for a in self.anchors]),
                     initial_closed=self.initial_closed,
                     terminal_only=np.array([a.terminal_only for a in self.anchors]),

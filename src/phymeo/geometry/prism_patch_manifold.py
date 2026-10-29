@@ -161,6 +161,10 @@ def triangle_prism_patch_manifold(
         if clipped:
             best = selected
             break
+    return _assemble(collider, x, n, av, bv, axes, best, clipped, budget)
+
+
+def _assemble(collider, x, n, av, bv, axes, best, clipped, budget):
     bounds = normalized_bounds(best.numerator, best.norm_squared)
     status = "open" if bounds[0] > budget else "contact"
     if not clipped and status == "contact":
@@ -189,3 +193,33 @@ def triangle_prism_patch_manifold(
     return PrismPatchManifold(
         status, normal, tuple(points), axes, outward_float(bounds), bounds, av, bv, best
     )
+
+
+def prefer_initial_axis(
+    manifold, initial_direction, collider, half_thickness_m, geometric_budget_m
+):
+    """Preserve a fixed initial axis only after valid exact patch-face priority."""
+    if manifold.selected_axis.patch_face:
+        return manifold
+    initial = tuple(Q.coerce(v) for v in initial_direction)
+    best = manifold.selected_axis
+    for axis in sorted(manifold.axes, key=lambda a: a.direction):
+        if any(cross(axis.direction, initial)) or dot(axis.direction, initial) <= 0:
+            continue
+        if compare_gaps(axis.numerator, axis.norm_squared, best.numerator, best.norm_squared) != 0:
+            continue
+        av, bv = manifold.exact_vertices, manifold.exact_patch_vertices
+        clipped = clip_support(
+            tuple(av[i] for i in axis.prism_support),
+            tuple(bv[i] for i in axis.patch_support),
+            axis.direction,
+        )
+        if not clipped:
+            continue
+        rho = rational(half_thickness_m)
+        x = tuple(scale(add(av[i], av[i + 3]), F(1, 2)) for i in range(3))
+        n = scale(sub(av[3], av[0]), 1 / (2 * rho))
+        return _assemble(
+            collider, x, n, av, bv, manifold.axes, axis, clipped, rational(geometric_budget_m)
+        )
+    return manifold

@@ -251,3 +251,39 @@ def test_arbitrary_fixed_frame_uses_exact_rational_rotation():
     )
     assert r.status == "contact" and len(r.points) == 4 and r.exact_gap_bounds == (F(0), F(0))
     np.testing.assert_allclose(r.normal, np.array(rotation[:, 1], float), atol=1e-15, rtol=0)
+
+
+def test_exact_nonpatch_tie_retains_fixed_initial_axis():
+    from phymeo.geometry.prism_patch_manifold import prefer_initial_axis
+
+    x = np.array([[0.5, 0.0, 0.5], [1.5, 0.0, 0.5], [0.5, 0.0, 1.5]])
+    m = ph.triangle_prism_patch_manifold(
+        model(), np.zeros(1), patch(), x, half_thickness_m=0.125, geometric_budget_m=0.0
+    )
+    assert not m.selected_axis.patch_face and m.gap_bounds == (0.0, 0.0)
+    selected = prefer_initial_axis(m, (1, 0, 0), patch(), 0.125, 0.0)
+    np.testing.assert_array_equal(selected.normal, [1.0, 0.0, 0.0])
+    assert selected.exact_gap_bounds == m.exact_gap_bounds
+    # Patch face still wins before this preference when it is a valid exact maximum.
+    cap = manifold()
+    np.testing.assert_array_equal(
+        prefer_initial_axis(cap, (1, 0, 0), patch(), 0.125, 0.0).normal, [0.0, 1.0, 0.0]
+    )
+
+
+def test_true_physical_edge_edge_has_independent_support_plane():
+    x = np.array([[0.0, 0.0, 0.0], [2.0, 0.0, 0.0], [0.0, 2.0, 0.0]])
+    vertices = np.array([[1.0, -0.5, -0.375], [1.0, 0.5, 0.625], [2.0, -1.0, 1.125]])
+    p = patch(vertices)
+    m = ph.triangle_prism_patch_manifold(
+        model(), np.zeros(1), p, x, half_thickness_m=0.125, geometric_budget_m=0.0
+    )
+    assert m.gap_bounds == (0.0, 0.0) and len(m.points) == 1
+    contact = m.points[0]
+    assert len(contact.prism_feature) == len(contact.patch_feature) == 2
+    np.testing.assert_array_equal(contact.prism_point, [1.0, 0.0, 0.125])
+    np.testing.assert_array_equal(contact.robot_point, [1.0, 0.0, 0.125])
+    d = np.array([0.0, 1.0, -1.0])
+    av = np.vstack((x - [0.0, 0.0, 0.125], x + [0.0, 0.0, 0.125]))
+    assert np.min(av @ d) == np.max(vertices @ d) == -0.125
+    np.testing.assert_allclose(m.normal, d / np.sqrt(2.0), atol=1e-15, rtol=0)

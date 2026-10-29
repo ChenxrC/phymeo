@@ -59,8 +59,8 @@ def test_actual_partial_overlap_lifecycle(tyx_mode):
 def test_actual_thickness_window_and_rebuild(tyx_mode):
     for mu in (1.0, 0.25):
         for h in (0.125, 0.0625):
-            for _ in range(2):
-                jaw_window(tyx_mode, h, mu)
+            for rebuild in range(2):
+                jaw_window(tyx_mode, h, mu, rebuild)
     # One fresh C rebuild in addition to the complete lifecycle test.
     lifecycle(tyx_mode, 0.25, 1)
 

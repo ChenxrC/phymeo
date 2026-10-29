@@ -13,7 +13,7 @@ from ..coupling.ports import ParticlePointPort
 from ..dynamics.robot_kinematics import point_jacobians
 from ..geometry._prism_exact import Quadratic as Q
 from ..geometry._prism_exact import vector
-from ..geometry.prism_patch_manifold import triangle_prism_patch_manifold
+from ..geometry.prism_patch_manifold import prefer_initial_axis, triangle_prism_patch_manifold
 from ..geometry.robot_patch_sweep import patch_geometry
 from ..validation._material_path_math import q
 from ..validation.thick_contact_mapping import ThickContactMappingLedger
@@ -80,6 +80,17 @@ def manifolds(w, state):
             )
         except (ValueError, ZeroDivisionError) as error:
             raise SolverFailure("whole-prism geometry unresolved: " + str(error)) from error
+    if w.initial_manifolds is not None:
+        results = [
+            prefer_initial_axis(
+                m,
+                w.initial_manifolds[i].selected_axis.direction,
+                w.program.pairs[i][1],
+                w.program.pairs[i][0].half_thickness_m,
+                w.bound,
+            )
+            for i, m in enumerate(results)
+        ]
     if len(cache) > 6:
         cache.clear()
     cache[key] = tuple(results)
@@ -87,11 +98,13 @@ def manifolds(w, state):
     return cache[key]
 
 
-def discover(w, state, terminal_only=False):
+def discover(w, state, terminal_only=False, penetrating_only=False):
     result = manifolds(w, state)
     added = []
     old = {a.token for a in w.anchors}
     for pair, m in enumerate(result):
+        if penetrating_only and m.exact_gap_bounds[0] >= -w.bound:
+            continue
         # A free trial may cross the patch. Keep the initial support side for
         # held root generation; final whole-body geometry remains independent.
         if (

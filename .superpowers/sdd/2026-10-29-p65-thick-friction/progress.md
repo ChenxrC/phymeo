@@ -29,3 +29,9 @@ Frozen contract 6e818f574d097ce415940289a58847d4c8ba49fb pushed; remote SHA exac
 Task1 active: thick_friction_implementer exclusively owns production/numerical/index. Geometry RED preparation; no active numerical session. Main preflight retained.
 
 Task1 still active, implementer owns numerical/index. Geometry/mapping and initial A/B/material/C evidence in task-1-report.md. Interrupted23719 has no whole-transaction pass; current session7922 exact tie/equivalence first execution. Required full host windows and actual interpret/CUDA not started. Source/test snapshot equivalence-manifest-01.json b27fb0a7d0e98938425de83f3fa6e465a0b4fd541329ff02a50f7c04787abb06. No push/reviewer; parent contract CI is not new-product CI.
+
+Task1 numerical/index retained; active session98159 required full newhost/directconsumers. HEAD00dc8ec, host-required-manifest-01.json digest9530d25138b66b39224a903ca0221fc5220ec93fd7a7dbd5698b06cb558ed475. No result claimed; no actualbackend session running.
+
+Host-required01 complete60passed1140.40s exit0; active40557 strict-oracle host-window02, manifest428cb4f4a9e7be51019ed5ef8ae26bcd8f6c5aae78d13e7e25f0f55fe2f9f096. Numerical/index retained. Parent agreed targeted window rerun for original4tol verification gap. No actualbackend run yet; no review/push.
+
+Task1 host/focused repairs checkpoint: no active numeric process; full60+strictwindow124records passed at labeled snapshots, candidate coverage originalRED¡úGREEN and ¦È.3/rebuild budget controls passed, source smoke16passed. final-host-manifest-01 e3ee006f6ae79baa808b679ce4958464b5af28aef928f815a7dc685b603e8637. Actualinterpret/CUDA selection13cases each pending; numeric/index retained; parent review/wheel/C++/CI not started here.

@@ -4,6 +4,8 @@ from fractions import Fraction as F
 
 import numpy as np
 
+from ..core.capabilities import SolverFailure
+from ..core.scene import fingerprint
 from ..runtime.terminal_impulse import PointVelocityImpulses
 from ..validation._material_path_math import q
 from ._dynamic_friction_law import nonnegative_world
@@ -137,3 +139,18 @@ class ThickReplay(FiniteReplay):
                 q(self.settings.tolerance) * max(max(change, ZERO), defect) / limit
             )
         }
+
+
+def require_selected_pre(actual, selected, actual_inputs, selected_inputs):
+    for key in (
+        "pre_impulse_state",
+        "pre_impulse_diagnostics",
+        "pre_position_iterations",
+        "pre_velocity_iterations",
+        "pre_position_metrics",
+        "pre_velocity_metrics",
+    ):
+        if fingerprint(actual[key]) != fingerprint(selected[key]):
+            raise SolverFailure("terminal-only replay changed complete held pre evidence: " + key)
+    if fingerprint(actual_inputs) != fingerprint(selected_inputs):
+        raise SolverFailure("terminal-only replay changed complete held pre inputs")

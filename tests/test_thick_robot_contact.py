@@ -1,7 +1,12 @@
 """Automatic native thick contact: independent A/B/C and material oracles."""
 
+import json
+import os
+import time
 from dataclasses import replace
 from fractions import Fraction as F
+from functools import lru_cache
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -70,14 +75,29 @@ def build(
         links = [1, 2]
         effort = np.array([0.0, 2.0, -2.0])
     if rotate:
-        rotation = np.array([[0.0, -1.0, 0.0], [1.0, 0.0, 0.0], [0.0, 0.0, 1.0]])
+        angle = 0.3 if rotate == "oblique" else np.pi / 2
+        rotation = (
+            np.array(
+                [
+                    [np.cos(angle), -np.sin(angle), 0.0],
+                    [np.sin(angle), np.cos(angle), 0.0],
+                    [0.0, 0.0, 1.0],
+                ]
+            )
+            if rotate == "oblique"
+            else np.array([[0.0, -1.0, 0.0], [1.0, 0.0, 0.0], [0.0, 0.0, 1.0]])
+        )
         position = position @ rotation.T + np.array([2.0, -3.0, 1.0])
         velocity = velocity @ rotation.T
         gravity = rotation @ gravity
         robot = replace(
             robot,
             joint_position=robot.joint_position @ rotation.T + np.array([2.0, -3.0, 1.0]),
-            joint_orientation=np.tile([0.0, 0.0, np.sqrt(0.5), np.sqrt(0.5)], (robot.dof_count, 1)),
+            joint_orientation=np.tile(
+                [0.0, 0.0, np.sin(angle / 2), np.cos(angle / 2)], (robot.dof_count, 1)
+            )
+            if rotate == "oblique"
+            else np.tile([0.0, 0.0, np.sqrt(0.5), np.sqrt(0.5)], (robot.dof_count, 1)),
         )
     if reorder:
         position = position[::-1].copy()
@@ -273,15 +293,28 @@ def test_anchor_birth_never_copies_held_capacity():
         assert len({tuple(m) for m in e["anchor_material"]}) == len(e["anchor_material"])
 
 
+@lru_cache(maxsize=8)
 def lifecycle(mode="numpy", h=0.25, rebuild=0):
     scene, state, inputs, program, settings, context = build(mode, scenario="C", mu=0.0)
     tol = 1e-8 if mode == "numpy" else 2e-5
+    run_id = time.time_ns()
     with ph.SceneStepper(scene, program, settings, context, program.registry) as runtime:
         impact = runtime.step(state, inputs, 0.25)
         assert impact.report.accepted, impact.report.reason
         d = diag(impact)
-        assert abs(np.sum(d["held_impulses"]) - 0.6) < 4 * tol
-        assert abs(np.sum(d["terminal_impulses"]) - 0.6) < 4 * tol
+        _record_window(
+            mode,
+            "C",
+            h,
+            0.0,
+            rebuild,
+            run_id,
+            0,
+            impact,
+            {"sumP": "3/5", "sumE": "3/5", "vy": "-3/5"},
+        )
+        assert abs(np.sum(d["held_impulses"]) - 0.6) < tol
+        assert abs(np.sum(d["terminal_impulses"]) - 0.6) < tol
         state = impact.state
         origin = state.domains["nodes"].position.copy()
         events = []
@@ -298,30 +331,61 @@ def lifecycle(mode="numpy", h=0.25, rebuild=0):
             t = (i + 1) * h
             x = t if t <= 2 else 4 - t
             np.testing.assert_allclose(
-                state.domains["nodes"].position[:, 0], origin[:, 0] + x, atol=4 * tol, rtol=0
+                state.domains["nodes"].position[:, 0], origin[:, 0] + x, atol=tol, rtol=0
             )
             np.testing.assert_allclose(
-                state.domains["nodes"].velocity[:, 1], -0.6, atol=4 * tol, rtol=0
+                state.domains["nodes"].velocity[:, 1], -0.6, atol=tol, rtol=0
             )
-            np.testing.assert_allclose(state.domains["robot"].v, -0.6, atol=4 * tol, rtol=0)
-            assert np.max(np.abs(d["held_world"])) < 4 * tol if d["held_world"].size else True
-            assert (
-                np.max(np.abs(d["terminal_world"])) < 4 * tol if d["terminal_world"].size else True
-            )
+            np.testing.assert_allclose(state.domains["robot"].v, -0.6, atol=tol, rtol=0)
+            assert np.max(np.abs(d["held_world"])) < tol if d["held_world"].size else True
+            assert np.max(np.abs(d["terminal_world"])) < tol if d["terminal_world"].size else True
             # Independent triangle half-planes against the square: max admissible X is4/3.
             if x > 4 / 3 + tol:
                 assert not np.any(d["anchor_active"])
             if x < 4 / 3 - tol:
                 assert np.any(d["anchor_active"])
+            _record_window(
+                mode,
+                "C",
+                h,
+                0.0,
+                rebuild,
+                run_id,
+                i + 1,
+                r,
+                {
+                    "x": str(F(x)),
+                    "vy": "-3/5",
+                    "node_y": str(F(1, 20) - F(3, 5) * F(t)),
+                    "robot_q": str(-F(3, 40) - F(3, 5) * F(t)),
+                },
+            )
+            np.testing.assert_allclose(
+                state.domains["nodes"].position[:, 1],
+                float(F(1, 20) - F(3, 5) * F(t)),
+                atol=tol,
+                rtol=0,
+            )
+            np.testing.assert_allclose(
+                state.domains["nodes"].position[:, 2], origin[:, 2], atol=tol, rtol=0
+            )
+            np.testing.assert_allclose(
+                state.domains["robot"].q, float(-F(3, 40) - F(3, 5) * F(t)), atol=tol, rtol=0
+            )
             events.extend(d["transitions"])
-            states.append((x, tuple(d["transitions"])))
+            states.append(
+                (
+                    float(state.domains["nodes"].position[0, 0] - origin[0, 0]),
+                    tuple(d["transitions"]),
+                )
+            )
         assert "exit" in events and "enter" in events
         assert np.any(diag(r)["anchor_active"])
-    return states
+    return tuple(states)
 
 
 def test_partial_overlap_exit_and_input_driven_reentry():
-    lifecycle()
+    lifecycle("numpy", 0.25, 0)
 
 
 def test_exact_grazing_reentry_prefers_patch_face_axis():
@@ -378,11 +442,12 @@ def test_reordering_and_shared_ancestor_are_equivalent():
         )
 
 
-def jaw_window(mode, h, mu):
+def jaw_window(mode, h, mu, rebuild=0):
     scene, state, inputs, program, settings, context = build(mode, scenario="A", mu=mu)
     total = 0.5 if mode == "numpy" else 0.25
     tol = 1e-8 if mode == "numpy" else 2e-5
     original = state.domains["nodes"].position.copy()
+    run_id = time.time_ns()
     with ph.SceneStepper(scene, program, settings, context, program.registry) as runtime:
         for i in range(round(total / h)):
             r = runtime.step(state, inputs, h)
@@ -393,32 +458,137 @@ def jaw_window(mode, h, mu):
             vz = F(0) if mu == 1.0 else -2 * t / 3
             dz = F(0) if mu == 1.0 else -(t * t + t * hz) / 3
             np.testing.assert_allclose(
-                state.domains["nodes"].velocity[:, 2], float(vz), atol=4 * tol, rtol=0
+                state.domains["nodes"].velocity[:, 2], float(vz), atol=tol, rtol=0
             )
             np.testing.assert_allclose(
                 state.domains["nodes"].position,
                 original + [0.0, 0.0, float(dz)],
-                atol=4 * tol,
+                atol=tol,
                 rtol=0,
             )
-            np.testing.assert_allclose(state.domains["robot"].v, 0.0, atol=4 * tol, rtol=0)
+            np.testing.assert_allclose(state.domains["robot"].v, 0.0, atol=tol, rtol=0)
             d = diag(r)
+            _record_window(
+                mode,
+                "A",
+                h,
+                mu,
+                rebuild,
+                run_id,
+                i + 1,
+                r,
+                {
+                    "p_per_row": str(2 * hz / 3),
+                    "tz_per_row": str(hz / 2 if mu == 1.0 else hz / 6),
+                    "vz": str(vz),
+                    "dz": str(dz),
+                },
+            )
+            np.testing.assert_allclose(d["held_impulses"], float(2 * hz / 3), atol=tol, rtol=0)
+            np.testing.assert_allclose(
+                d["held_tangent"][:, 2], float(hz / 2 if mu == 1.0 else hz / 6), atol=tol, rtol=0
+            )
             assert (
                 d["physical_budgets"]["frozen_model_energy"]["positive_gain_upper_j"]
                 <= program.budgets.max_energy_gain_j
             )
-    return abs(float(dz) + (0 if mu == 1.0 else total * total / 3))
+    actual_dz = float(state.domains["nodes"].position[0, 2] - original[0, 2])
+    return abs(actual_dz + (0 if mu == 1.0 else total * total / 3))
 
 
 def test_two_jaw_window_halving_and_rebuild():
     for mu in (1.0, 0.25):
         errors = []
         for h in (0.125, 0.0625):
-            values = [jaw_window("numpy", h, mu) for _ in range(2)]
+            values = [jaw_window("numpy", h, mu, rebuild) for rebuild in range(2)]
             assert values[0] == values[1]
             errors.append(values[0])
         if mu == 0.25:
-            assert abs(errors[0] - 2 * errors[1]) < 1e-15
+            assert abs(errors[0] - 2 * errors[1]) <= 3e-8
     for h in (0.25, 0.125):
         for rebuild in range(2):
             lifecycle("numpy", h, rebuild)
+
+
+def _record_window(mode, scenario, h, mu, rebuild, run_id, step, result, oracle):
+    root = Path("artifacts/p65-thick-friction/window-evidence")
+    root.mkdir(parents=True, exist_ok=True)
+    d = diag(result)
+    physical = d["physical_budgets"]
+    sub = result.report.substeps[0]
+    row = dict(
+        snapshot=os.environ.get("P65_SNAPSHOT", "unspecified"),
+        run_id=run_id,
+        mode=mode,
+        scenario=scenario,
+        h=h,
+        mu=mu,
+        rebuild=rebuild,
+        step=step,
+        oracle=oracle,
+        actual_nodes_position=result.state.domains["nodes"].position.tolist(),
+        actual_nodes_velocity=result.state.domains["nodes"].velocity.tolist(),
+        actual_robot_q=result.state.domains["robot"].q.tolist(),
+        actual_robot_v=result.state.domains["robot"].v.tolist(),
+        actual_history={name: value.tolist() for name, value in result.state.history.items()},
+        anchor_material=d["anchor_material"].tolist(),
+        anchor_active=d["anchor_active"].tolist(),
+        initial_closed=d["initial_closed"].tolist(),
+        held_world=d["held_world"].tolist(),
+        terminal_world=d["terminal_world"].tolist(),
+        position_residuals=dict(sub.position.residuals),
+        velocity_residuals=dict(sub.velocity.residuals),
+        positive_energy_upper_j=physical["frozen_model_energy"]["positive_gain_upper_j"],
+        energy_limit_j=physical["frozen_model_energy"]["limit_j"],
+        angular_l1_nms=physical["material_angular_defect"]["l1_sum_nms"],
+        angular_limit_nms=physical["material_angular_defect"]["limit_nms"],
+        mapping=dict(d["mapping"]),
+        ccd=tuple(
+            dict(status=c["status"], checked_intervals=c["checked_intervals"]) for c in d["ccd"]
+        ),
+        native_trials=d["held_replays"] + d["terminal_replays"],
+    )
+    path = root / f"{mode}-{scenario}-h{h}-mu{mu}-rebuild{rebuild}.jsonl"
+    with path.open("a", encoding="utf-8") as out:
+        out.write(json.dumps(row, allow_nan=False) + "\n")
+
+
+def test_oblique_rigid_frame_preserves_static_jaw_oracle():
+    """Empirical FP64 frame-rounding control; not an assertion of algebraic congruence."""
+    case = build(scenario="A", mu=1.0, rotate="oblique")
+    initial = case[1]
+    r = step(case)
+    np.testing.assert_allclose(r.state.domains["nodes"].velocity, 0.0, atol=1e-8, rtol=0)
+    np.testing.assert_allclose(
+        r.state.domains["nodes"].position, initial.domains["nodes"].position, atol=1e-8, rtol=0
+    )
+    np.testing.assert_allclose(r.state.domains["robot"].v, 0.0, atol=1e-8, rtol=0)
+
+
+def test_rejected_trial_retains_new_penetrating_extremes():
+    from phymeo.solvers._thick_contact_geometry import discover
+
+    case = build(scenario="A", mu=1.0, rotate="oblique")
+    scene, state, inputs, p, settings, context = case
+    w = p.create_workspace(scene, state, inputs, 0.25, settings, context)
+    seen = []
+    try:
+        w.predict()
+        original = w._evaluate
+
+        def observed(terminal=False):
+            original(terminal)
+            full, added = discover(w, w.trial.result.state)
+            if added and any(m.exact_gap_bounds[0] < -w.bound for m in full):
+                seen.append(tuple(a.token for a in added))
+
+        w._evaluate = observed
+        w.position_sweep()
+        assert seen, "control must expose a missing extreme on an actual native candidate"
+        assert w.rebuilds > 0, (
+            "a rejected residual trial discarded penetrating geometry before anchor discovery"
+        )
+        assert set(seen[0]) <= {a.token for a in w.anchors}
+    finally:
+        w.close()
+        p.close()

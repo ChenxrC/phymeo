@@ -53,3 +53,5 @@ Task1: complete (BASE6e818f5..product1fcd0e7; host60+strictwindow/directfixes, a
 ## Historical parent Task2 review handoff
 
 Task1 f2d4999 complete; main independently verified307source/tests/scripts plus evidence-file hashes and raw exit summaries. Sole fresh reviewer thick_friction_final_review dispatched BASE6e818f5..HEADf2d4999, owns numerical slot for bounded independent probes. Implementer released resources/index; parent owns docs/index only. Parent C++/wheel/delivery not run. Frozen contract exact CI40909862598/Documentation40909862611 both success; no new-product CI.
+
+Task1 review fixes ACTIVE, exclusive implementer production/numerical/index. I2 e8c821d committed; focused16passed rawexit0. host-03 31passed/1failed rawexit1 at C birth; later host/transactions/native unexecuted. Exact boundary-probe02 shows opposite actual/ideal finite membership at C face and corner point. Main has evidence/ruling request; no physics tolerance or budget changes. No numerical process active at report checkpoint. See task-1-review-fixes.md.

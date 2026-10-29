@@ -202,3 +202,11 @@ def test_rotor_trial_outside_supported_angle_rejects_transactionally():
     result = step(case, 1.0, False)
     assert "[-4,4]" in result.report.reason
     assert fingerprint(result.state) == fingerprint(case[1])
+
+
+def test_actual_unknown_certificate_rejects_held_best():
+    case = build(rotor=True)
+    case[3].max_ccd_intervals = 1
+    result = step(case, 1.0, False)
+    assert "CCD unresolved" in result.report.reason
+    assert fingerprint(result.state) == fingerprint(case[1])

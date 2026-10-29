@@ -581,6 +581,107 @@ def check_linear_feature_sweep():
             raise RuntimeError("Installed wheel is missing sweep export: " + name)
 
 
+def check_dynamic_robot_finite_contact(mode="numpy"):
+    """Bounded new installed entry; also callable once with actual cpu_cpp."""
+    import math
+
+    alpha, theta, rho = 0.25, math.atan(0.1), 0.125
+    c = 10 / math.sqrt(101)
+    value = 0.15 + rho * (1 / c - 1)
+    rotation = np.array(
+        [
+            [math.cos(alpha), -math.sin(alpha), 0.0],
+            [math.sin(alpha), math.cos(alpha), 0.0],
+            [0.0, 0.0, 1.0],
+        ]
+    )
+    robot = phymeo.RobotModel(
+        np.array([-1]),
+        ("revolute",),
+        np.zeros((1, 3)),
+        np.array([[0.0, 0.0, 0.0, 1.0]]),
+        np.array([[0.0, 0.0, 1.0]]),
+        np.ones(1),
+        np.zeros((1, 3)),
+        np.ones((1, 3)),
+        np.zeros(3),
+    )
+    node = phymeo.ParticleModel(np.ones(1), np.zeros(3))
+    scene = phymeo.SceneModel(
+        (
+            phymeo.DomainBinding("robot", "robot", robot),
+            phymeo.DomainBinding("nodes", "particles", node),
+        )
+    )
+    state = phymeo.SceneState(
+        {
+            "robot": phymeo.RobotState(np.array([alpha]), np.array([theta + 1 / 16])),
+            "nodes": phymeo.ParticleState(
+                np.array([rotation @ np.array([1.0, rho, 0.0])]),
+                np.array([rotation @ np.array([0.5, value - 1 / 16, 0.0])]),
+            ),
+        }
+    )
+    inputs = phymeo.SceneInputs(
+        {"robot": phymeo.RobotInputs.zeros(1), "nodes": phymeo.StepInputs.zeros(1)}
+    )
+    if mode == "numpy":
+        participants = {
+            "robot": phymeo.RobotParticipant(robot),
+            "nodes": phymeo.ClothParticipant(node, None, record_material_path=True),
+        }
+        factory = phymeo.ArticulatedCouplingProgram
+    else:
+        participants = {
+            "robot": phymeo.TyxRobotParticipant(robot, mode),
+            "nodes": phymeo.TyxClothParticipant(node, None, mode, record_material_path=True),
+        }
+        factory = phymeo.TyxArticulatedCouplingProgram
+    base = factory(
+        scene,
+        participants,
+        phymeo.RobotSphereAttachments(np.empty(0, int), np.empty((0, 3)), np.empty(0)),
+        (),
+    )
+    patch = phymeo.RobotFinitePatchCollider(
+        "rotor", 0, np.array([[0.0, 0.0, -1.0], [3.0, 0.0, 0.0], [0.0, 0.0, 1.0]]), radius_m=rho
+    )
+    tol = 1e-8 if mode == "numpy" else 2e-5
+    budget = 1e-8 if mode == "numpy" else 1e-5
+    program = phymeo.DynamicRobotFiniteContactProgram(
+        scene,
+        base,
+        (patch,),
+        materials={"nodes": None},
+        budgets=phymeo.MaterialContactBudgets(budget, budget),
+    )
+    state = phymeo.SceneState(state.domains, program.initial_history())
+    settings = phymeo.StepSettings(
+        substeps=1,
+        position_iterations=128,
+        velocity_iterations=128,
+        tolerance=tol,
+        record_substeps=True,
+    )
+    context = phymeo.BackendContext(program.capabilities.backend)
+    with phymeo.SceneStepper(scene, program, settings, context, program.registry) as runtime:
+        with np.errstate(all="raise"):
+            result = runtime.step(state, inputs, 1.0)
+    if not result.report.accepted:
+        raise RuntimeError("Installed finite rotor failed: " + str(result.report.reason))
+    ell = 1.5 / c + rho / 10
+    u = (-0.5 + 10 * value) / math.sqrt(101) - ell * theta
+    eta = -u / (1 + ell * ell)
+    np.testing.assert_allclose(result.state.domains["robot"].q, [alpha + theta], atol=tol, rtol=0)
+    np.testing.assert_allclose(
+        result.state.domains["robot"].v, [theta - ell * eta], atol=tol, rtol=0
+    )
+    d = result.report.substeps[0].diagnostics["dynamic_robot_finite_contact"]
+    if d["ccd"][0].status != "certified":
+        raise RuntimeError("Installed finite rotor lacks accepted-path certificate")
+    return result
+
+
 def main():
     installed = Path(phymeo.__file__).resolve()
     if not installed.is_relative_to(Path(sys.prefix).resolve()):
@@ -766,6 +867,7 @@ def main():
     check_initial_robot_material_contact()
     check_dynamic_robot_normal_contact()
     check_dynamic_robot_friction_contact()
+    check_dynamic_robot_finite_contact()
     for name in (
         "TyxRobotParticipant",
         "TyxClothParticipant",

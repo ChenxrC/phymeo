@@ -25,7 +25,7 @@ from .terminal_impulse import _compute, _PositiveMass, _same
 class FiniteContactTerminalLedger:
     """Audit original requests in speed units; never derive a replacement state.
 
-    The host mass/Jacobians describe the current all-prismatic model. Device
+    The current host mass/Jacobians support the bounded finite-contact domain. Device
     candidates must additionally be exact FP32 promotions in FP64 storage.
     """
 

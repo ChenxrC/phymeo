@@ -356,3 +356,86 @@ def test_shared_ancestor_branches_and_fixed_world_frame():
         atol=1e-8,
         rtol=0,
     )
+
+
+def test_domain_mapping_and_scene_order_invariance():
+    results = []
+    for names in (("a", "b"), ("b", "a")):
+        robot = model()
+        node = ph.ParticleModel(np.ones(1), np.zeros(3))
+        bindings = {
+            "robot": ph.DomainBinding("robot", "robot", robot),
+            **{name: ph.DomainBinding(name, "particles", node) for name in names},
+        }
+        scene = ph.SceneModel(tuple(bindings.values()))
+        state = ph.SceneState(
+            {
+                "robot": ph.RobotState(np.zeros(1), np.zeros(1)),
+                **{
+                    name: ph.ParticleState(
+                        np.array([[-0.5 if name == "a" else 0.5, 0.25, 0.25]]),
+                        np.array([[0.0, -1.0, 0.0]]),
+                    )
+                    for name in names
+                },
+            }
+        )
+        inputs = ph.SceneInputs(
+            {"robot": ph.RobotInputs.zeros(1), **{name: ph.StepInputs.zeros(1) for name in names}}
+        )
+        participants = {
+            "robot": ph.RobotParticipant(robot),
+            **{name: ph.ClothParticipant(node, None, record_material_path=True) for name in names},
+        }
+        base = ph.ArticulatedCouplingProgram(
+            scene,
+            participants,
+            ph.RobotSphereAttachments(np.empty(0, int), np.empty((0, 3)), np.empty(0)),
+            (),
+        )
+        program = ph.DynamicRobotFiniteContactProgram(
+            scene,
+            base,
+            (patch(),),
+            materials={name: None for name in names},
+            budgets=ph.MaterialContactBudgets(1e-8, 1e-8),
+        )
+        state = ph.SceneState(state.domains, program.initial_history())
+        settings = ph.StepSettings(
+            substeps=1,
+            position_iterations=128,
+            velocity_iterations=128,
+            tolerance=1e-8,
+            record_substeps=True,
+        )
+        results.append(step((scene, state, inputs, program, settings, ph.BackendContext())))
+    np.testing.assert_array_equal(
+        results[0].state.domains["robot"].q, results[1].state.domains["robot"].q
+    )
+    for name in ("a", "b"):
+        np.testing.assert_array_equal(
+            results[0].state.domains[name].position, results[1].state.domains[name].position
+        )
+        np.testing.assert_array_equal(
+            results[0].state.domains[name].velocity, results[1].state.domains[name].velocity
+        )
+
+
+def test_two_sided_patch_and_no_ghost_support_outside_boundary():
+    backside = step(build(position=[[-0.75, -0.25, 0.25]], velocity=[[1.0, 1.0, 0.0]]))
+    d = backside.report.substeps[0].diagnostics["dynamic_robot_finite_contact"]
+    np.testing.assert_allclose(d["held_impulses"], [1 / 3], atol=1e-8, rtol=0)
+    np.testing.assert_allclose(d["terminal_impulses"], [1 / 3], atol=1e-8, rtol=0)
+    np.testing.assert_allclose(backside.state.domains["robot"].q, [1 / 24], atol=1e-8, rtol=0)
+    np.testing.assert_allclose(
+        backside.state.domains["nodes"].position, [[-0.5, -1 / 12, 0.25]], atol=1e-8, rtol=0
+    )
+    np.testing.assert_allclose(d["held_normal"], [[0.0, -1.0, 0.0]], atol=1e-8, rtol=0)
+    for x, z, kind in ((1.25, 0.0, 2), (1.25, 1.25, 3)):
+        result = step(build(position=[[x, 0.0, z]], velocity=[[0.0, -1.0, 0.0]]))
+        report = result.report.substeps[0].diagnostics["dynamic_robot_finite_contact"]
+        assert report["initial_feature"][0, 0] == kind
+        assert not np.any(report["held_world"]) and not np.any(report["terminal_world"])
+        np.testing.assert_array_equal(result.state.domains["robot"].q, [0.0])
+        np.testing.assert_array_equal(result.state.domains["nodes"].position, [[x, -0.25, z]])
+        assert not np.any(result.state.history["finite_contact/phase_world"])

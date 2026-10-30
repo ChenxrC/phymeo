@@ -6,7 +6,7 @@
 **Architecture:** Reuse the original B/S worktrees and implementers; parent G2-P in the integration tree. One state owner per physical domain; one global execution queue. New modules stay additive until their versioned validation and shared integration are complete.
 **Tech Stack:** Existing Python/NumPy/Fraction and tyx pin99f6df7c0fd8fdeef77f97df83914da27b64b7ee; no dependency change.
 **Spec:** ../specs/2026-10-30-p65-material-self-gripper-integration-design.md
-**State:** G2-P local scoped validation complete; S2-LG host69/static passed and integratedf9c9e7ab after parent saved-evidence audit. B2 host75 passed but native publication/accumulation remains unresolved; documentation-only representation proposal pending parent ruling. No child executable slot currently granted. Task4 remains open.
+**State:** G2-P local scoped validation complete; S2-LG host69/static passed and integratedf9c9e7ab after parent saved-evidence audit. B2 host75 passed but native publication/accumulation remains unresolved; R7 representation revision frozen; original owner code-only under the separate representation spec/plan. No child executable slot currently granted. Task4 remains open.
 
 ## Global constraints
 

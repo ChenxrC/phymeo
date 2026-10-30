@@ -75,3 +75,5 @@ Current child execution owner is NONE. B2 remains solely documentation-only for 
 ## B2 R7 representation adjudication and code-only continuation
 
 Documentation-only proposal4b060ed was completed clean with no numerical execution and cherry-picked as033e438. Parent read its full reasoning and existing native owner/path/test factories. R7 selects option A, immutable original per-node reference plus actual FP32 displacement with explicit RN64 world decoding; old v1 publication is not falsely preserved. Exact codec, conservative noncancelling world-projection charge, v2 wire/identity, optional dispatch, physical-test factory migration and13-file scope are frozen in the new representation spec/plan. All original tolerances, h/windows, physics and failed receipts remain. Current grant is code/tests only to the original B2 owner; no child executable slot.
+
+Original B2 received the R7 code-only followup at parent e6acb55; original S2 received the documentation-only response proposal followup at e2dec901. Both have no executable slot. Parent completed S2 saved-evidence merge and scoped documentation checks; remote remains untouched.

@@ -120,7 +120,7 @@ class ClothSelfContactWorkspace:
             raise SolverFailure("candidate pair resource exhausted")
         return tuple(
             PrismPairIdentity(
-                self.domain, np.array(pair, np.int64), self.program.topology.triangles[pair]
+                self.domain, np.array(pair, np.int64), self.program.topology.triangles[list(pair)]
             )
             for pair in pairs
         )

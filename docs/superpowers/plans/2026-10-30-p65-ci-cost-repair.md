@@ -1,5 +1,7 @@
 # P6.5 CI cost repair implementation plan
 
+最新人工覆盖：本地验收/打包/原产品推送已完成，远程CI暂缓到用户提供新机器。所有远程全绿交付框保留延期，不冒称通过；不再把这些框作为新模块本地测试的前置。现转入已授权并行模块的串行验证，停止仅为当前托管runner限时而追加成本修复。
+
 > Use the existing original implementer for this directed delivery repair. Keep one numerical/index owner and do not repeat old Task1, builder or whole-stage review.
 
 Spec: [exact arithmetic equivalence](../specs/2026-10-30-p65-ci-cost-repair-design.md). Physical authority remains the [thick friction specification](../specs/2026-10-29-p65-thick-friction-design.md). Validation policy: [affected consumers](../../development/p65-validation-policy.md).

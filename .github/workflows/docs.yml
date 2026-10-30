@@ -1,8 +1,9 @@
 name: Documentation
 
-on:
-  push:
-  pull_request:
+# Remote automatic CI is temporarily paused by user decision (2026-10-30).
+# Keep the full jobs below for manual execution or future CI-machine migration.
+"on":
+  workflow_dispatch:
 
 permissions:
   contents: read

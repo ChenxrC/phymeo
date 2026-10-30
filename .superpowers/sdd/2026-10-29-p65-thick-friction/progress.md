@@ -1,5 +1,11 @@
 # SDD ledger — plan: docs/superpowers/plans/2026-10-29-p65-thick-friction.md
 
+## Current release policy: remote CI deferred by user
+
+Explicit user decision pauses remote automatic CI pending a new CI machine. CI and Documentation become manual-only; unchanged jobs/matrix/timeout/pin preserved. Local Task3/4 evidence and product push complete; remote e211138 remains cancelled (3CPU success/5timeout), never relabeled passing. Stop CI polling and extra cost repairs for hosted timeout. Parent releases local queue to new modules serially; full P6.5 remains open.
+
+## Historical status
+
 ## Current parent delivery after Task3 release
 
 Task3 product7e68154/reportc72cdc3 complete, process0/clean confirmed; parent now owns original checkout/index/execution. Host195/interpret19/CUDA19 and224actual records passed. Parent309+126 hash audit and fresh packaging interval-7e68154-a complete, two exits0/wheel153byteparity. Pending new dedicatedbranch push/exact30minute8CPU/examples/required+Documentation. No second fresh review or duplicate physical suite. In separate managed worktrees user authorized parallel B1/S1/G1 code-only, tests pending serial queue; original numerical ownership rule does not prevent isolated editing.

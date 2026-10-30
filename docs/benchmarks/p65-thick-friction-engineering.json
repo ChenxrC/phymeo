@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "stage": "p65-thick-friction",
-  "status": "interval_repair_local_complete_pending_new_exact_ci",
+  "status": "local_acceptance_delivered_remote_ci_deferred_by_user",
   "base": "6e818f574d097ce415940289a58847d4c8ba49fb",
   "product_head": "33ec9ea52dc15ee5b8050adb0a73d1591aea11f5",
   "implementation_report_head": "a59182aae19b1caa8020e3802bce6f6756ad5fac",
@@ -973,26 +973,18 @@
     "parent_frozen_digest_after": "cd6d77917dee8af09f13a430f4fdd4a5b744461874364a142aff0d8e6722d84b"
   },
   "delivery": {
-    "status": "interval_repair_local_complete_pending_push_and_exact_ci",
+    "status": "local_delivery_complete_remote_ci_deferred_by_user",
     "product_ci": {
-      "head": "a478828aa6ab8c59dc310cd4639e6f7a55704bec",
-      "ci": 40991186564,
-      "ci_status": "completed",
-      "ci_conclusion": "cancelled",
-      "documentation": 40991186517,
-      "documentation_conclusion": "success",
-      "required_job": 123863116796,
+      "head": "e21113837b4b0731e471baa03bbc4bb10b38cf86",
+      "ci": 41007037491,
+      "conclusion": "cancelled",
+      "cpu_success": 3,
+      "cpu_timeout": 5,
+      "required": 123913087395,
       "required_conclusion": "failure",
-      "checked_at_utc": "2026-10-30T03:09:28.921381+00:00",
-      "checkpoint": "artifacts/ci-a478828-checkpoint.json",
-      "jobs_metadata": "artifacts/ci-a478828-jobs-01.json",
-      "classification": "artifacts/ci-a478828-cancellation-classification.json",
-      "cpu_success": 1,
-      "cpu_timeout": 7,
-      "successful_cpu_job": 123853718500,
-      "successful_cpu_job_seconds": 1357,
-      "successful_cpu_examples": true,
-      "timeout_minutes": 30
+      "documentation": 41007037548,
+      "documentation_conclusion": "success",
+      "evidence": "artifacts/ci-e211138-cancellation-classification.json"
     },
     "contract_ci_only": {
       "head": "6e818f574d097ce415940289a58847d4c8ba49fb",
@@ -1000,7 +992,7 @@
       "documentation": 40909862611,
       "conclusion": "success"
     },
-    "pushed_head": "a478828aa6ab8c59dc310cd4639e6f7a55704bec",
+    "pushed_head": "e21113837b4b0731e471baa03bbc4bb10b38cf86",
     "remote_sha_verified": true,
     "proposed_resolution": {
       "status": "declined_by_user_keep_30_minutes",
@@ -1037,6 +1029,26 @@
         "required_conclusion": "failure",
         "checked_at_utc": "2026-10-29T21:32:28.003058+00:00",
         "checkpoint": "artifacts/ci-5150c3e-checkpoint.json"
+      },
+      {
+        "head": "a478828aa6ab8c59dc310cd4639e6f7a55704bec",
+        "ci": 40991186564,
+        "ci_status": "completed",
+        "ci_conclusion": "cancelled",
+        "documentation": 40991186517,
+        "documentation_conclusion": "success",
+        "required_job": 123863116796,
+        "required_conclusion": "failure",
+        "checked_at_utc": "2026-10-30T03:09:28.921381+00:00",
+        "checkpoint": "artifacts/ci-a478828-checkpoint.json",
+        "jobs_metadata": "artifacts/ci-a478828-jobs-01.json",
+        "classification": "artifacts/ci-a478828-cancellation-classification.json",
+        "cpu_success": 1,
+        "cpu_timeout": 7,
+        "successful_cpu_job": 123853718500,
+        "successful_cpu_job_seconds": 1357,
+        "successful_cpu_examples": true,
+        "timeout_minutes": 30
       }
     ],
     "historical_timeout_diagnosis": {
@@ -1055,8 +1067,15 @@
       "classification": "artifacts/ci-a478828-cancellation-classification.json",
       "incomplete_tests_not_claimed": true
     },
-    "pending_product_head": "7e68154a286bff65a7cdd727b63ffd58e676f88c",
-    "record_note": "Historical product_ci/pushed_head are a478828. New interval product has local acceptance and new wheel; push and exact CI pending when this document is formed."
+    "record_note": "Local product evidence and exact remote SHA complete. Remote full matrix is deferred by explicit user decision, not counted as passing.",
+    "remote_ci_policy": {
+      "automatic_triggers": false,
+      "manual_dispatch_retained": true,
+      "full_job_definitions_unchanged": true,
+      "future_runner": "user will provide new CI machine",
+      "no_remote_success_claim": true,
+      "local_progress_blocked_by_ci": false
+    }
   },
   "limits": [
     "Not complete H1 or integrated handoff.",

@@ -1,6 +1,6 @@
 {
   "stage": "P6.5 existing thick friction CI cost repair",
-  "status": "interval_local_acceptance_and_packaging_complete_pending_push_and_exact_ci",
+  "status": "local_acceptance_delivered_remote_ci_deferred_by_user",
   "user_decision": "Keep CPU timeout30 minutes; optimize runtime. No workflow/matrix/tests/required changes.",
   "baseline_head": "127cd28af155ad23ff289a1ad9fb7e5d1c78b775",
   "product_head": "0065200d6253cbb703d752aac3e0d1b9dfe80890",
@@ -335,35 +335,56 @@
     "scope": "independent saved-data/hash/raw-exit and narrow one-file arithmetic inspection; no repeated whole-stage review or physics"
   },
   "delivery": {
-    "status": "interval_local_complete_pending_push_and_exact_ci",
+    "status": "local_delivery_complete_remote_ci_deferred_by_user",
     "historical_cancelled_head": "5150c3efb12cfdcf81dea2923ff627c7915ca036",
     "historical_cancelled_ci": 40950637127,
     "historical_successful_documentation": 40950637280,
     "must_keep_timeout_minutes": 30,
     "product_ci": {
-      "head": "a478828aa6ab8c59dc310cd4639e6f7a55704bec",
-      "ci": 40991186564,
-      "ci_status": "completed",
-      "ci_conclusion": "cancelled",
-      "documentation": 40991186517,
-      "documentation_conclusion": "success",
-      "required_job": 123863116796,
+      "head": "e21113837b4b0731e471baa03bbc4bb10b38cf86",
+      "ci": 41007037491,
+      "conclusion": "cancelled",
+      "cpu_success": 3,
+      "cpu_timeout": 5,
+      "required": 123913087395,
       "required_conclusion": "failure",
-      "checked_at_utc": "2026-10-30T03:09:28.921381+00:00",
-      "checkpoint": "artifacts/ci-a478828-checkpoint.json",
-      "jobs_metadata": "artifacts/ci-a478828-jobs-01.json",
-      "classification": "artifacts/ci-a478828-cancellation-classification.json",
-      "cpu_success": 1,
-      "cpu_timeout": 7,
-      "successful_cpu_job": 123853718500,
-      "successful_cpu_job_seconds": 1357,
-      "successful_cpu_examples": true,
-      "timeout_minutes": 30
+      "documentation": 41007037548,
+      "documentation_conclusion": "success",
+      "evidence": "artifacts/ci-e211138-cancellation-classification.json"
     },
-    "pushed_head": "a478828aa6ab8c59dc310cd4639e6f7a55704bec",
+    "pushed_head": "e21113837b4b0731e471baa03bbc4bb10b38cf86",
     "remote_sha_verified": true,
-    "pending_product_head": "7e68154a286bff65a7cdd727b63ffd58e676f88c",
-    "record_note": "pushed_head/product_ci below are historical a478828; a new delivery head is pending at document formation."
+    "record_note": "Local product evidence and exact remote SHA complete. Remote full matrix is deferred by explicit user decision, not counted as passing.",
+    "historical_product_ci": [
+      {
+        "head": "a478828aa6ab8c59dc310cd4639e6f7a55704bec",
+        "ci": 40991186564,
+        "ci_status": "completed",
+        "ci_conclusion": "cancelled",
+        "documentation": 40991186517,
+        "documentation_conclusion": "success",
+        "required_job": 123863116796,
+        "required_conclusion": "failure",
+        "checked_at_utc": "2026-10-30T03:09:28.921381+00:00",
+        "checkpoint": "artifacts/ci-a478828-checkpoint.json",
+        "jobs_metadata": "artifacts/ci-a478828-jobs-01.json",
+        "classification": "artifacts/ci-a478828-cancellation-classification.json",
+        "cpu_success": 1,
+        "cpu_timeout": 7,
+        "successful_cpu_job": 123853718500,
+        "successful_cpu_job_seconds": 1357,
+        "successful_cpu_examples": true,
+        "timeout_minutes": 30
+      }
+    ],
+    "remote_ci_policy": {
+      "automatic_triggers": false,
+      "manual_dispatch_retained": true,
+      "full_job_definitions_unchanged": true,
+      "future_runner": "user will provide new CI machine",
+      "no_remote_success_claim": true,
+      "local_progress_blocked_by_ci": false
+    }
   },
   "limits": [
     "SingleA bounded cost observation only, no formal P95/cross-backend/whole-CI speed claim.",
@@ -374,7 +395,7 @@
   ],
   "followup": {
     "baseline_head": "a478828aa6ab8c59dc310cd4639e6f7a55704bec",
-    "status": "local_acceptance_and_packaging_complete_pending_push_and_exact_ci",
+    "status": "local_acceptance_and_packaging_complete_remote_ci_deferred",
     "production_scope": [
       "src/phymeo/geometry/_patch_interval.py"
     ],

@@ -1,5 +1,7 @@
 # P6.5 有限厚度摩擦集成实施计划
 
+最新人工覆盖：本地验收/打包/原产品推送已完成，远程CI暂缓到用户提供新机器。所有远程全绿交付框保留延期，不冒称通过；不再把这些框作为新模块本地测试的前置。现转入已授权并行模块的串行验证，停止仅为当前托管runner限时而追加成本修复。
+
 当前第二轮成本修复产品7e68154及报告c72cdc3的受影响host195/interpret19/CUDA19、224实际记录和新源码外wheel153字节一致均通过，原30分钟workflow不变。详细版本化证据见现有CI成本修复记录；推送与新准确完整CI待闭环，最后交付框保持未勾。用户已授权隔离工作树并行编写弯曲/自碰撞/有限夹爪代码，所有测试串行；未验证代码不混入本交付head。
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.

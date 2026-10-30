@@ -119,11 +119,13 @@ def test_off_range_remainder_and_uncertainty_are_retained():
 
 
 def test_full_inverse_mass_cross_terms_and_quadratic_identity():
-    c = issue(((1, 0),), ((2, 1), (1, 2)), (0, 2))
+    c = issue(((1, 0),), ((2, 1), (1, 2)), (0, 2), (F(1, 4), F(1, 8)))
     assert c.response_matrix == ((2,),)
     assert c.pressure_map == ((1, F(1, 2)),)
     assert c.pressure == (1,)
     assert c.remainder == (-1, 2)
+    assert c.pressure_uncertainty == (F(5, 16),)
+    assert c.remainder_uncertainty == (F(1, 16), F(1, 8))
     # Hand-expanded independent identity: 8 = 2 + (2 - 4 + 8).
     assert 8 == 2 + 2 * c.remainder[0] ** 2 + 2 * c.remainder[0] * c.remainder[1] + 2 * c.remainder[1] ** 2
     assert check(c)
@@ -378,3 +380,48 @@ def test_equivalent_fraction_spellings_have_identical_binding():
     assert a.input_fingerprint == b.input_fingerprint
     assert a == b
     assert check(a) and check(b)
+
+def test_incomplete_nullspace_with_valid_forged_shapes_rejects():
+    c = issue(((1, 0), (1, 0), (1, 0)), ((1, 0), (0, 1)), (6, 3))
+    bad = replace(c, rank=2, nullspace_basis=((-1,), (1,), (0,)))
+    with pytest.raises(QuotientUnresolved, match="rank"):
+        check(bad)
+
+
+def test_verifier_accepts_mixed_complete_nullspace_basis():
+    c = issue(((1, 0), (1, 0), (1, 0)), ((1, 0), (0, 1)), (6, 3))
+    alternate = replace(c, nullspace_basis=((-2, -1), (1, 2), (1, -1)))
+    assert c.pressure == (2, 2, 2)
+    assert c.remainder == (0, 3)
+    assert c.gauged_response == ((1, 0, 0), (0, 1, 0), (0, 0, 1))
+    assert check(alternate)
+
+
+def test_verifier_has_a_fresh_metered_budget_each_time(monkeypatch):
+    c = duplicate()
+    original = quotient._Budget
+    counters = []
+
+    class TrackingBudget(original):
+        def __init__(self, limits):
+            super().__init__(limits)
+            counters.append(self)
+
+    monkeypatch.setattr(quotient, "_Budget", TrackingBudget)
+    assert check(c)
+    assert len(counters) == 1
+    assert 0 < counters[0].operations <= c.limits.max_scalar_operations
+    first_count = counters[0].operations
+    assert check(c)
+    assert len(counters) == 2
+    assert counters[0] is not counters[1]
+    assert counters[1].operations == first_count
+
+
+@pytest.mark.parametrize("limits", [None, {}, 1], ids=["none", "mapping", "integer"])
+def test_nonpolicy_objects_reject(limits):
+    with pytest.raises(QuotientUnresolved, match="policy"):
+        certify_contact_quotient(
+            ((1,),), ((1,),), (0,), (0,),
+            owner_ids=("a",), coordinate_ids=("x",), limits=limits,
+        )

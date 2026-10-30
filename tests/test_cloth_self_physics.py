@@ -32,7 +32,6 @@ from phymeo.core.scene import (
 from phymeo.core.state import ParticleState, StepInputs
 from phymeo.coupling.participant import ClothParticipant
 from phymeo.runtime.point_participant_program import PointParticipantProgram
-from phymeo.runtime.registry import StateRegistry
 from phymeo.runtime.scene_stepper import SceneStepper
 from phymeo.solvers.cloth_self_contact import ClothSelfContactProgram
 
@@ -131,7 +130,6 @@ def fixture(case, *, material=False, u=35 / 64, variant="identity"):
 def configured(data, h, *, backend="numpy", outer_substeps=1):
     model, material = data["model"], data["material"]
     scene = SceneModel((DomainBinding("cloth", "particles", model),))
-    registry = StateRegistry()
     if backend == "numpy":
         factory = ClothParticipant(model, material, record_material_path=True)
     else:
@@ -140,7 +138,8 @@ def configured(data, h, *, backend="numpy", outer_substeps=1):
         factory = TyxClothParticipant(
             model, material, backend.removeprefix("tyx:"), record_material_path=True
         )
-    base = PointParticipantProgram(scene, {"cloth": factory}, registry=registry)
+    base = PointParticipantProgram(scene, {"cloth": factory})
+    registry = base.registry
     tau, physical = (1e-8, 1e-8) if backend == "numpy" else (2e-5, 1e-5)
     inner = StepSettings(
         substeps=1,

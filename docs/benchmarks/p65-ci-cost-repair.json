@@ -1,6 +1,6 @@
 {
   "stage": "P6.5 existing thick friction CI cost repair",
-  "status": "local_validation_complete_pending_exact_ci",
+  "status": "exact_ci_seven_timeouts_interval_repair_planned",
   "user_decision": "Keep CPU timeout30 minutes; optimize runtime. No workflow/matrix/tests/required changes.",
   "baseline_head": "127cd28af155ad23ff289a1ad9fb7e5d1c78b775",
   "product_head": "0065200d6253cbb703d752aac3e0d1b9dfe80890",
@@ -335,11 +335,33 @@
     "scope": "independent saved-data/hash/raw-exit and narrow one-file arithmetic inspection; no repeated whole-stage review or physics"
   },
   "delivery": {
-    "status": "awaiting_push_and_new_exact_ci_at_document_creation",
+    "status": "exact_ci_cancelled_7_of_8_cpu_timeout",
     "historical_cancelled_head": "5150c3efb12cfdcf81dea2923ff627c7915ca036",
     "historical_cancelled_ci": 40950637127,
     "historical_successful_documentation": 40950637280,
-    "must_keep_timeout_minutes": 30
+    "must_keep_timeout_minutes": 30,
+    "product_ci": {
+      "head": "a478828aa6ab8c59dc310cd4639e6f7a55704bec",
+      "ci": 40991186564,
+      "ci_status": "completed",
+      "ci_conclusion": "cancelled",
+      "documentation": 40991186517,
+      "documentation_conclusion": "success",
+      "required_job": 123863116796,
+      "required_conclusion": "failure",
+      "checked_at_utc": "2026-10-30T03:09:28.921381+00:00",
+      "checkpoint": "artifacts/ci-a478828-checkpoint.json",
+      "jobs_metadata": "artifacts/ci-a478828-jobs-01.json",
+      "classification": "artifacts/ci-a478828-cancellation-classification.json",
+      "cpu_success": 1,
+      "cpu_timeout": 7,
+      "successful_cpu_job": 123853718500,
+      "successful_cpu_job_seconds": 1357,
+      "successful_cpu_examples": true,
+      "timeout_minutes": 30
+    },
+    "pushed_head": "a478828aa6ab8c59dc310cd4639e6f7a55704bec",
+    "remote_sha_verified": true
   },
   "limits": [
     "SingleA bounded cost observation only, no formal P95/cross-backend/whole-CI speed claim.",
@@ -347,5 +369,21 @@
     "No old full/900 or whole-stage review repeated.",
     "CPP native boundary unchanged; boundedCPP52 launch evidence remains explicitly on33ec9ea, not a new CPP run.",
     "Full P6.5 remains in progress."
-  ]
+  ],
+  "followup": {
+    "baseline_head": "a478828aa6ab8c59dc310cd4639e6f7a55704bec",
+    "status": "parent_frozen_interval_repair",
+    "production_scope": [
+      "src/phymeo/geometry/_patch_interval.py"
+    ],
+    "tests": [
+      "tests/test_patch_interval.py"
+    ],
+    "profile_reused": "artifacts/p65-ci-optimization/optimized-A.prof",
+    "shared_geometry_consumers": [
+      "finite contact",
+      "thick contact"
+    ],
+    "no_physical_or_workflow_change": true
+  }
 }

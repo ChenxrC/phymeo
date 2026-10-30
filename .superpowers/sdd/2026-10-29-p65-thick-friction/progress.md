@@ -2,7 +2,9 @@
 
 ## Current CI cost repair
 
-Human decision2026-10-30: keep30minutes, optimize runtime. Main completed profile69618 exit0, found1,275,544 Quadratic constructions/18.3744s cumulative within46.5556s profiled A step. Exact state/report captured. Plan: docs/superpowers/plans/2026-10-30-p65-ci-cost-repair.md. No production modification yet; main holds index/numerical until original implementer followup. Old reviewer/builder/physics implementation are complete.
+优化版本 `a478828aa6ab8c59dc310cd4639e6f7a55704bec` 已推送；准确 CI `40991186564` 于 2026-10-30 02:51:45Z 结束为 cancelled，Documentation `40991186517` success。8 格 CPU 中 Ubuntu/Python3.12/pip 的测试与示例全部 success，job 共 1357s；其余 7 格均由公开完整 commit 页面确认超过 30m0s，测试 cancelled、示例 skipped，required failure。完整矩阵未通过，不能据此推断未完成测试的物理断言结果。用户已明确保留 30 分钟；90 分钟方案不再考虑。第一轮 0065200 的本地等价优化、host96/实际两后端各9及新 wheel 证据保持原版本。现从已完成 optimized-A.prof 继续诊断，父冻结下一轮有理区间重复计算优化；不重跑该已结束 CI，不提前进入下一生产合同。
+
+Ruling R6: expand only to shared pure geometry/_patch_interval.py and new tests/test_patch_interval.py after evidence of remaining interval/FK duplicate work. No integrator/participant/kernel/port/physics/cache/pin/workflow edit. All finite and thick direct consumers must be covered; new functional initial GREEN and true deterministic duplicate-work RED distinguished. Parent holds numerical/index until dispatch; old implementer completed, no fresh reviewer/builder.
 
 ## Current review and repair status
 

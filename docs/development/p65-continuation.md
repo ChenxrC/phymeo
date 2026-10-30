@@ -1,6 +1,6 @@
 # P6.5 综合案例的续作入口
 
-产品 `5150c3e` 已推送并核对远程 SHA。准确 CI `40950637127` 已结束为 cancelled：8 个 CPU 矩阵任务均由 GitHub 确认超过现有 30 分钟时限，required 因 CPU 未成功而 failure；Documentation `40950637280` success。不能计为产品交付通过。2026-10-30 用户明确选择“保持 30 分钟，另行优化耗时”。90 分钟建议未应用并已撤回；完整矩阵、测试、required 和 fail-fast 保持。已以0065200完成一个厚度精确算术文件的等价优化，报告d2cacff；受影响host96、actual interpret/CUDA各9、224条同次实际轨迹审计及新源码wheel153逐字节校验均通过。三个相同A负载的新进程约5.9s，对照原版约12.3–12.6s，仅为该负载成本观察。接下来推送优化版本并取得新head准确CI；原30分钟配置不变，不提前推进下一生产合同。
+优化版本 `a478828aa6ab8c59dc310cd4639e6f7a55704bec` 已推送；准确 CI `40991186564` 于 2026-10-30 02:51:45Z 结束为 cancelled，Documentation `40991186517` success。8 格 CPU 中 Ubuntu/Python3.12/pip 的测试与示例全部 success，job 共 1357s；其余 7 格均由公开完整 commit 页面确认超过 30m0s，测试 cancelled、示例 skipped，required failure。完整矩阵未通过，不能据此推断未完成测试的物理断言结果。用户已明确保留 30 分钟；90 分钟方案不再考虑。第一轮 0065200 的本地等价优化、host96/实际两后端各9及新 wheel 证据保持原版本。现从已完成 optimized-A.prof 继续诊断，父冻结下一轮有理区间重复计算优化；不重跑该已结束 CI，不提前进入下一生产合同。
 
 当前厚度阶段唯一审阅已结束，0Critical/2Important/0Minor：侧接触 signed gap 和独立映射合力审核均已在 e8c821d / 33ec9ea 定向修复并由父核对关闭，详见[审阅记录](../benchmarks/p65-thick-friction-review.md)。修复前数值证据保留原版本；修复版 interpret/CUDA 各10项已过，C++/wheel工程已通过，产品已推送，准确CI因CPU任务30分钟超时取消，交付待处理，不重复fresh review。
 

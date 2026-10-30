@@ -973,17 +973,26 @@
     "parent_frozen_digest_after": "cd6d77917dee8af09f13a430f4fdd4a5b744461874364a142aff0d8e6722d84b"
   },
   "delivery": {
-    "status": "optimized_local_validation_complete_awaiting_new_exact_ci",
+    "status": "exact_ci_cancelled_seven_cpu_timeouts_followup_optimization",
     "product_ci": {
-      "head": "5150c3efb12cfdcf81dea2923ff627c7915ca036",
-      "ci": 40950637127,
+      "head": "a478828aa6ab8c59dc310cd4639e6f7a55704bec",
+      "ci": 40991186564,
       "ci_status": "completed",
       "ci_conclusion": "cancelled",
-      "documentation": 40950637280,
+      "documentation": 40991186517,
       "documentation_conclusion": "success",
+      "required_job": 123863116796,
       "required_conclusion": "failure",
-      "checked_at_utc": "2026-10-29T21:32:28.003058+00:00",
-      "checkpoint": "artifacts/ci-5150c3e-checkpoint.json"
+      "checked_at_utc": "2026-10-30T03:09:28.921381+00:00",
+      "checkpoint": "artifacts/ci-a478828-checkpoint.json",
+      "jobs_metadata": "artifacts/ci-a478828-jobs-01.json",
+      "classification": "artifacts/ci-a478828-cancellation-classification.json",
+      "cpu_success": 1,
+      "cpu_timeout": 7,
+      "successful_cpu_job": 123853718500,
+      "successful_cpu_job_seconds": 1357,
+      "successful_cpu_examples": true,
+      "timeout_minutes": 30
     },
     "contract_ci_only": {
       "head": "6e818f574d097ce415940289a58847d4c8ba49fb",
@@ -991,16 +1000,8 @@
       "documentation": 40909862611,
       "conclusion": "success"
     },
-    "pushed_head": "5150c3efb12cfdcf81dea2923ff627c7915ca036",
+    "pushed_head": "a478828aa6ab8c59dc310cd4639e6f7a55704bec",
     "remote_sha_verified": true,
-    "timeout_diagnosis": {
-      "cpu_matrix_jobs": 8,
-      "all_execution_timeout_markers_confirmed": true,
-      "timeout_minutes": 30,
-      "metadata": "artifacts/ci-5150c3e-cancellation-metadata.json",
-      "classification": "artifacts/ci-5150c3e-cancellation-classification.json",
-      "test_failure_or_pass_not_inferred": true
-    },
     "proposed_resolution": {
       "status": "declined_by_user_keep_30_minutes",
       "cpu_timeout_minutes": 90,
@@ -1010,7 +1011,7 @@
       "no_same_configuration_retry": true
     },
     "optimization": {
-      "status": "local_validation_and_packaging_complete",
+      "status": "first_local_repair_complete_full_ci_still_fails_cost_gate",
       "user_decision": "keep 30 minutes; optimize runtime",
       "baseline_head": "127cd28af155ad23ff289a1ad9fb7e5d1c78b775",
       "profile": "artifacts/p65-ci-optimization/baseline-A.json",
@@ -1024,6 +1025,35 @@
       "evidence": "docs/benchmarks/p65-ci-cost-repair.json",
       "source_tests_scripts_digest": "9bbdeeeba487184c3a95fd96b0d20ae928ce1554c550beb2c5a0d598b79c745d",
       "workflow_unchanged": true
+    },
+    "historical_product_ci": [
+      {
+        "head": "5150c3efb12cfdcf81dea2923ff627c7915ca036",
+        "ci": 40950637127,
+        "ci_status": "completed",
+        "ci_conclusion": "cancelled",
+        "documentation": 40950637280,
+        "documentation_conclusion": "success",
+        "required_conclusion": "failure",
+        "checked_at_utc": "2026-10-29T21:32:28.003058+00:00",
+        "checkpoint": "artifacts/ci-5150c3e-checkpoint.json"
+      }
+    ],
+    "historical_timeout_diagnosis": {
+      "cpu_matrix_jobs": 8,
+      "all_execution_timeout_markers_confirmed": true,
+      "timeout_minutes": 30,
+      "metadata": "artifacts/ci-5150c3e-cancellation-metadata.json",
+      "classification": "artifacts/ci-5150c3e-cancellation-classification.json",
+      "test_failure_or_pass_not_inferred": true
+    },
+    "timeout_diagnosis": {
+      "cpu_matrix_jobs": 8,
+      "cpu_success": 1,
+      "cpu_execution_timeouts_confirmed": 7,
+      "timeout_minutes": 30,
+      "classification": "artifacts/ci-a478828-cancellation-classification.json",
+      "incomplete_tests_not_claimed": true
     }
   },
   "limits": [

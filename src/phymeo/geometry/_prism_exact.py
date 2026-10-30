@@ -29,14 +29,30 @@ class Quadratic:
         a, b, c = map(rational, (self.a, self.b, self.c))
         if c <= 0:
             raise ValueError("quadratic radicand must be positive")
-        n, d = isqrt(c.numerator), isqrt(c.denominator)
-        if n * n == c.numerator and d * d == c.denominator:
-            a, b, c = a + b * F(n, d), F(0), F(1)
         if not b:
             c = F(1)
+        elif c == 1:
+            a, b = a + b, F(0)
+        else:
+            n, d = isqrt(c.numerator), isqrt(c.denominator)
+            if n * n == c.numerator and d * d == c.denominator:
+                a, b, c = a + b * F(n, d), F(0), F(1)
         object.__setattr__(self, "a", a)
         object.__setattr__(self, "b", b)
         object.__setattr__(self, "c", c)
+
+    @staticmethod
+    def _canonical(a, b, c):
+        """Internal Fraction coefficients in an already validated canonical field.
+
+        Arithmetic cannot change the non-square radicand. Cancellation alone
+        removes that field; public construction still validates every input.
+        """
+        value = object.__new__(Quadratic)
+        object.__setattr__(value, "a", a)
+        object.__setattr__(value, "b", b)
+        object.__setattr__(value, "c", c if b else F(1))
+        return value
 
     def pair(self, other):
         if not isinstance(other, Quadratic):
@@ -47,15 +63,18 @@ class Quadratic:
 
     def __add__(self, other):
         o, c = self.pair(other)
-        return Quadratic(self.a + o.a, self.b + o.b, c)
+        b = o.b if not self.b else self.b if not o.b else self.b + o.b
+        return self._canonical(self.a + o.a, b, c)
 
     __radd__ = __add__
 
     def __neg__(self):
-        return Quadratic(-self.a, -self.b, self.c)
+        return self._canonical(-self.a, -self.b, self.c)
 
     def __sub__(self, other):
-        return self + -Quadratic.coerce(other)
+        o, c = self.pair(other)
+        b = -o.b if not self.b else self.b if not o.b else self.b - o.b
+        return self._canonical(self.a - o.a, b, c)
 
     def __rsub__(self, other):
         return -self + other
@@ -66,16 +85,30 @@ class Quadratic:
 
     def __mul__(self, other):
         o, c = self.pair(other)
-        return Quadratic(self.a * o.a + self.b * o.b * c, self.a * o.b + self.b * o.a, c)
+        if not self.b:
+            return self._canonical(self.a * o.a, self.a * o.b if o.b else F(0), c)
+        if not o.b:
+            return self._canonical(self.a * o.a, self.b * o.a, c)
+        return self._canonical(self.a * o.a + self.b * o.b * c, self.a * o.b + self.b * o.a, c)
 
     __rmul__ = __mul__
 
     def __truediv__(self, other):
         o, c = self.pair(other)
+        if not o.b:
+            if not o.a:
+                raise ZeroDivisionError("quadratic division by zero")
+            return self._canonical(self.a / o.a, self.b / o.a if self.b else F(0), c)
         den = o.a * o.a - o.b * o.b * c
         if not den:
             raise ZeroDivisionError("quadratic division by zero")
-        return self * Quadratic(o.a / den, -o.b / den, c)
+        if not self.b:
+            return self._canonical(self.a * o.a / den, -self.a * o.b / den, c)
+        return self._canonical(
+            (self.a * o.a - self.b * o.b * c) / den,
+            (self.b * o.a - self.a * o.b) / den,
+            c,
+        )
 
     def __rtruediv__(self, other):
         return Quadratic.coerce(other) / self
@@ -119,6 +152,8 @@ class Quadratic:
         return hash((self.a, self.b, self.c))
 
     def bounds(self):
+        if not self.b:
+            return self.a, self.a
         lo, hi = sqrt_bounds(self.c)
         return (
             (self.a + self.b * lo, self.a + self.b * hi)

@@ -1,3 +1,19 @@
+# R7 serial validation checkpoint
+
+Status: **R7_LOCAL_VALIDATION_PASSED_PARENT_AUDIT_PENDING**. Granted lane checks
+passed on product `40e509097cebc0806c0e08e06bfdd14c4c05bc7d`: new host 46,
+complete interpret 41, CUDA 45, bounded cpu_cpp 2, and final scoped Ruff/format.
+CUDA has exactly one declared interpret-only v1 deselection and zero skips.
+Parent evidence acceptance, shared contact integration and stage review/packaging
+remain separate gates.
+
+The initial authoring report below is retained as historical provenance at
+`0bd2fc880b04d5c3943507d9412f3383e6978bbf`. Its UNEXECUTED/pending statements
+describe that earlier checkpoint. The serial-validation section after it records
+the new results and supersedes that pending status; no TDD history is invented.
+
+## Historical authoring record
+
 # B2 represented native material authoring checkpoint
 
 Status: **CODE_READY_TESTS_PENDING**. All code and tests in this checkpoint are
@@ -203,3 +219,184 @@ self-referential table; their final hashes are supplied with the handoff.
 - tests/test_tyx_composite_material.py::test_actual_native_two_disconnected_copies_no_double_application
 
 Authoring is released at CODE_READY_TESTS_PENDING. No executable slot is taken.
+
+## Serial validation authority and evidence
+
+Parent sole-slot grant: `5fbaef670c98e040310052df64174e4968d5722d`, copied unchanged
+as grant-read.md. No parent merge, source swap, helper/reviewer, dependency install,
+remote CI, push, old full-suite rerun or extra physical sample for reporting.
+All executable operations were serial. Scope remains the exact13 paths; earlier
+B1/B2 reports and original failed v1 receipts are unchanged.
+
+Evidence root:
+`C:/Users/38347/.codex/worktrees/p65-bending-module/phymeo/artifacts/p65-b2-r7-validation-20261031-001500`.
+The directory name is an identifier; exact actual timestamps are in each receipt.
+Every numbered run saves full executable/argv/environment/start/finish/raw exit,
+all tracked src/tests/config hashes, Git source archive and raw log. Runs after
+the initial style findings also save exact working source copies; audit runs
+snapshot/hash their standalone script. All basetemps were checked absent and
+never reused or cleared. frozen-grouping.json predates the first test.
+
+First Ruff found seven import-format issues; first format check found eleven
+files requiring formatting. Both RAW_EXIT1 receipts are preserved. Scoped style
+commit9296048 then passed checks. First host run09 collected46 and stopped at
+42passed/1failed: the authored v1 schema-negative fixture passed v2 FP32 alpha
+arrays into the old v1 FP64 constructor, failing before its intended rejection.
+Only those two fixture arguments changed to explicit FP64 in product40e5090;
+focused run10 and complete run11 passed. No numerical production correction,
+threshold relaxation or physical-fixture change was needed.
+
+| Run | Result | RAW_EXIT |
+| --- | --- | --- |
+| 01 host environment/imports | Python3.11.15, NumPy2.4.6, pytest9.1.1 | 0 |
+| 02 native environment/imports | Python3.12.14, NumPy2.5.4, pytest9.1.1, pinned tyx | 0 |
+| 03 first Ruff | 7 import-format findings | 1 |
+| 04 first format check | 11 files would be formatted | 1 |
+| 05 import-format correction / 06 formatter | scoped corrections | 0 / 0 |
+| 07 Ruff / 08 format check | both clean | 0 / 0 |
+| 09 first new-host files | 46collected;42passed/1failed, stopped | 1 |
+| 10 corrected v1-schema fixture | 1passed | 0 |
+| 11 complete new-host files | 46passed,0.50s | 0 |
+| 12 complete interpret + exact consumers | 41passed,405.94s | 0 |
+| 13 complete CUDA + v1 bending/consumers | 45passed,1deselected,437.91s | 0 |
+| 14 bounded old/new cpu_cpp | 2passed,14.36s | 0 |
+| 15 saved interpret audit | 24windows/640steps | 0 |
+| 16 saved CUDA audit | 24windows/640steps | 0 |
+| 17 final Ruff / 18 final format check | eleven-file scope clean | 0 / 0 |
+
+The sole CUDA deselection is exactly
+`test_default_v1_preserves_original_interpret_rejection`; it passed in interpret
+as the original-v1 failure compatibility control. No v2 skip/fallback occurred.
+The three exact actual-consumer functions ran once per mode, with rotating-edge
+expanding to its original three h cases. Both granted bounded C++ nodes passed;
+this does not close TYX003 or accept long C++ lifecycle stress.
+
+## Audit of original same-run observations
+
+The standalone audit uses stdlib only: no project import or solver execution.
+It compares exact-byte v2 wire to typed observations, checks native d/t/geometry
+types, complete D/B order and operation receipts, RN64 world decode, and every
+saved coordinate charge reconstructed from raw rows and original inverse-mass
+witnesses. Addition/product/both rho terms satisfy the exact direct residual
+identity and noncancelling charge without double-counting. It also verifies
+same-rebuild full state/history/trace hashes, window budgets and replay/terminal
+traces. No extra physics samples were generated.
+
+Each mode has24 complete windows,640 accepted steps,648 audited paths (including
+eight replay/terminal observations),866 sweeps,7592 rows,58164 coordinate charges
+and4852 recorded completed-launch references. Those last counts describe saved
+observations, including repeated observations, not unique launches over all tests.
+
+| Quantity | Interpret | CUDA | Frozen limit |
+| --- | --- | --- | --- |
+| Maximum window positive energy sum | 0.0 J | 0.0 J | 1e-3 J |
+| Maximum window angular absolute sum | 0.0005624305681510136 N*m*s | 0.0005624456407082694 N*m*s | 1e-3 N*m*s |
+| Maximum cumulative projection bound | 1.2006390381343798e-6 | 1.2006706710110608e-6 | 2e-5 |
+
+Original A/B windows, h grids, two rebuilds, mass scales, signed perturbations,
+proper transform, disconnected copies, external work receipts, rollback and
+negative controls remain. No physical/proof budget, normal-range rule,4096-bit
+codec cap, pinned backend or NUM005 accounting changed.
+
+## Provenance, historical reuse and hashes
+
+Both environments import phymeo and representation modules from this child/src.
+Installed tyx direct_url identifies99f6df7c0fd8fdeef77f97df83914da27b64b7ee;
+all95 installed tyx source hashes match the previous frozen installation.
+All runs use explicit child PYTHONPATH, PYTHONDONTWRITEBYTECODE=1,
+PYTEST_DISABLE_PLUGIN_AUTOLOAD=1, PYTHONHASHSEED=0, PYTHONUNBUFFERED=1,
+PYTHONIOENCODING=utf-8, and OMP/OPENBLAS/MKL/NUMEXPR/VECLIB_MAXIMUM/BLIS thread
+variables equal1. Pytest disables cacheprovider. P65_B2_EVIDENCE points to a fresh
+same-run folder, with a unique checked-absent absolute basetemp.
+
+historical-evidence-reuse.json records exact source closure against72bdbcb.
+Original host75 (including four exact host-only consumers) remains original
+run12 at72bdbcb; five old interpret bending primitives remain the passing prefix
+of original run13 at72bdbcb. That run's later v1 failure and RAW_EXIT1 remain.
+These are versioned reuse, not fresh v2 results. Shared host/bounds/energy/runtime,
+v1 bending and direct-consumer dependencies are unchanged. Existing test factories
+only forward the optional representation keyword/metadata; default parity passes.
+Original six-file host tests were not rerun.
+
+Final full source/test manifest SHA256:
+`ba3149356d1439321c3a5bc60aba615147e719c268940aec1a61e8c24321456f`.
+Final eleven-file manifest SHA256:
+`898709fcea3c0d201d1df8d621a347e516ced6c370670a39d2a3507aa096df67`.
+The1625-file evidence manifest SHA256:
+`f0a4b7162a10ad22627f535bd34eeaf1f8dca43b83018808d0ffa6771b6cf3d3`.
+It excludes itself, its sidecar and the final release receipt to avoid a circular
+hash graph. Reports are tracked Git files; the release receipt binds their hashes
+and commit after a fresh clean/process scan. The original v1 evidence manifest
+remains6f1b75d9944df6f30931a863193072df5d7f41e6614532df32ce78d7430f3e46.
+
+## Remaining limits and release
+
+This explicitly selected v2 publishes RN64(immutable FP64 R + actual native FP32 d).
+Native dynamics/velocity still use actual FP32. It is not single-FP32 world
+publication or native FP64 dynamics. The original fixed-row v1 obstruction and
+its limited interpretation remain. Passed frozen scenarios are not a universal
+precision or continuous-geometry theorem; physical affine/domain proofs remain
+distinct from discrete pre/post branch guards.
+
+No line/branch coverage instrumentation was run. Behavioral coverage is exactly
+the frozen46host/41interpret/45CUDA/2boundedC++ cases plus versioned reuse above.
+TYX003/full C++ stress, shared contact wiring, self-response/fold/general robot/
+grasp, integrated stage review and wheel remain parent-owned gates. Local R7
+validation is complete; stage acceptance/merge awaits parent evidence audit.
+After the report-only commit, execution-slot-release.json records fresh clean Git,
+process0 and report hashes, formally releasing this lane's executable slot.
+
+## Final source/test bytes
+| Path | SHA256 |
+| --- | --- |
+| src/phymeo/constraints/material_representation.py | 147824c61012c4d4ab83aedf059ab676a84c13607a180e30d41a0cacbfdffdb0 |
+| src/phymeo/backends/_tyx_represented_material_kernels.py | eb7fbb4a89aa6629415df358a4d8f6fc395bf84143ebe13e0203b5a7d2f79fad |
+| src/phymeo/backends/tyx_represented_material.py | 2acb748db34f9af8abf8d443ba0d125402ba8a34184566030bbd839dd2102ecc |
+| src/phymeo/validation/material_representation.py | 7824567116ad782662a5e996819c6d6e565462f27bc2e31a3b0cb4b0139e2a9d |
+| src/phymeo/backends/tyx_composite_cloth.py | a6283af1f5c8d727d50869b4da3d1d4286082e8a22599e6ed65a9b971e16a3f9 |
+| tests/test_material_representation.py | aaab25e44e6c6ceb1fad6fe3494ff950e099b772c44cdb97377f38d498b33b0f |
+| tests/test_composite_representation_path.py | e2a4fe54a056278c95c08aa20c26cf4dcf0cb0a3c81ff4c89a753bdfedb867f0 |
+| tests/test_tyx_represented_composite_material.py | 81dfd714a2c447533e62e71d8e06d8a189c5c958d4a8b04ac2ad93813b11f2cc |
+| tests/test_composite_cloth.py | 6b2970e27f31d892194a4d1c8bd4feac964590c62850671864dab1c67df69173 |
+| tests/test_composite_material_physics.py | 697865342854946621f015d226795feb84db0a875740789e2e1903c3f4a95cf7 |
+| tests/test_tyx_composite_material.py | 3e15ea04c33f34c12e2362d2fa7ccf0f5d53755f499205c8ffa6733998bc7ecc |
+
+## Recorded complete acceptance commands
+
+Completed commands follow; their basetemps must not be reused. Numbered JSON receipts also contain the exact environment and all preflight/audit/static commands.
+
+### 11-host-complete-after-fixture-fix
+
+```powershell
+& 'C:\Users\38347\Documents\ChatGPT\phymeo\.venv-py311\Scripts\python.exe' '-B' '-m' 'pytest' '-vv' '-x' '-p' 'no:cacheprovider' '--basetemp' 'C:\Users\38347\.codex\worktrees\p65-bending-module\phymeo\artifacts\p65-b2-r7-validation-20261031-001500\basetemp-11-host-complete-after-fixture-fix' 'tests/test_material_representation.py' 'tests/test_composite_representation_path.py'
+```
+
+### 12-first-complete-interpret
+
+```powershell
+& 'C:\Users\38347\Documents\ChatGPT\phymeo\.venv\Scripts\python.exe' '-B' '-m' 'pytest' '-vv' '-x' '-p' 'no:cacheprovider' '--basetemp' 'C:\Users\38347\.codex\worktrees\p65-bending-module\phymeo\artifacts\p65-b2-r7-validation-20261031-001500\basetemp-12-first-complete-interpret' '--tyx-mode' 'interpret' '--require-tyx' 'tests/test_tyx_composite_material.py' 'tests/test_tyx_represented_composite_material.py' 'tests/test_tyx_material_path.py::test_actual_rotating_edge_keeps_original_discrete_loss' 'tests/test_tyx_participants.py::test_cloth_workspace_uses_ordered_constraints_and_device_reconstruction' 'tests/test_tyx_participants.py::test_node_position_units_reconstruct_only_once_and_reject_bad_state'
+```
+
+### 13-complete-cuda
+
+```powershell
+& 'C:\Users\38347\Documents\ChatGPT\phymeo\.venv\Scripts\python.exe' '-B' '-m' 'pytest' '-vv' '-x' '-p' 'no:cacheprovider' '--basetemp' 'C:\Users\38347\.codex\worktrees\p65-bending-module\phymeo\artifacts\p65-b2-r7-validation-20261031-001500\basetemp-13-complete-cuda' '--tyx-mode' 'cuda' '--require-tyx' 'tests/test_tyx_composite_material.py' 'tests/test_tyx_represented_composite_material.py' 'tests/test_tyx_bending.py' 'tests/test_tyx_material_path.py::test_actual_rotating_edge_keeps_original_discrete_loss' 'tests/test_tyx_participants.py::test_cloth_workspace_uses_ordered_constraints_and_device_reconstruction' 'tests/test_tyx_participants.py::test_node_position_units_reconstruct_only_once_and_reject_bad_state' '-k' 'not test_default_v1_preserves_original_interpret_rejection'
+```
+
+### 14-bounded-cpu-cpp
+
+```powershell
+& 'C:\Users\38347\Documents\ChatGPT\phymeo\.venv\Scripts\python.exe' '-B' '-m' 'pytest' '-vv' '-x' '-p' 'no:cacheprovider' '--basetemp' 'C:\Users\38347\.codex\worktrees\p65-bending-module\phymeo\artifacts\p65-b2-r7-validation-20261031-001500\basetemp-14-bounded-cpu-cpp' '--tyx-mode' 'cpu_cpp' '--require-tyx' 'tests/test_tyx_bending.py::test_actual_bending_first_sweep_and_launch_receipt' 'tests/test_tyx_represented_composite_material.py::test_actual_represented_bounded_mixed_sweep_and_reconstruction'
+```
+
+### 17-final-ruff
+
+```powershell
+& 'C:\Users\38347\Documents\ChatGPT\phymeo\.venv-py311\Scripts\python.exe' '-B' '-m' 'ruff' 'check' '--no-cache' 'src/phymeo/constraints/material_representation.py' 'src/phymeo/backends/_tyx_represented_material_kernels.py' 'src/phymeo/backends/tyx_represented_material.py' 'src/phymeo/validation/material_representation.py' 'src/phymeo/backends/tyx_composite_cloth.py' 'tests/test_material_representation.py' 'tests/test_composite_representation_path.py' 'tests/test_tyx_represented_composite_material.py' 'tests/test_composite_cloth.py' 'tests/test_composite_material_physics.py' 'tests/test_tyx_composite_material.py'
+```
+
+### 18-final-format-check
+
+```powershell
+& 'C:\Users\38347\Documents\ChatGPT\phymeo\.venv-py311\Scripts\python.exe' '-B' '-m' 'ruff' 'format' '--no-cache' '--check' 'src/phymeo/constraints/material_representation.py' 'src/phymeo/backends/_tyx_represented_material_kernels.py' 'src/phymeo/backends/tyx_represented_material.py' 'src/phymeo/validation/material_representation.py' 'src/phymeo/backends/tyx_composite_cloth.py' 'tests/test_material_representation.py' 'tests/test_composite_representation_path.py' 'tests/test_tyx_represented_composite_material.py' 'tests/test_composite_cloth.py' 'tests/test_composite_material_physics.py' 'tests/test_tyx_composite_material.py'
+```

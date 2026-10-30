@@ -6,8 +6,8 @@ The user authorizes isolated parallel code development and requires every execut
 
 | Lane | Worktree / branch | Current state |
 | --- | --- | --- |
-| G2-P / parent | C:/Users/38347/.codex/worktrees/p65-parallel-integration/phymeo / codex/p65-parallel-modules | LOCAL_SCOPED_VALIDATION_COMPLETE on e9ab075fd078c32d9695899d2a1cfff33d6b8ccd. Host29, actual interpret14, actual CUDA14 all RAW_EXIT0; all sessions naturally ended. Parent completes report/clean/process0 handoff, with no further G2 numerical run. |
-| B2-M / p65_bending_module | C:/Users/38347/.codex/worktrees/p65-bending-module/phymeo / codex/p65-bending-module | CODE_READY_TESTS_PENDING at1108af389dde69506dd6f76c3b0902ac008ac695. Reserved as the next sole execution owner after G2 release and explicit original-agent followup. See task-1-validation-grant.md; no reimplementation or merge of G2 source is needed. |
+| G2-P / parent | C:/Users/38347/.codex/worktrees/p65-parallel-integration/phymeo / codex/p65-parallel-modules | LOCAL_SCOPED_VALIDATION_COMPLETE on e9ab075fd078c32d9695899d2a1cfff33d6b8ccd. Host29, actual interpret14, actual CUDA14 all RAW_EXIT0; all sessions naturally ended. RELEASED at report6f042ec8a1ba097d58a92f8187541fba6c8c1651, clean/process0 receipt18 at2026-10-30T18:14:11+08. No further G2 numerical run. |
+| B2-M / p65_bending_module | C:/Users/38347/.codex/worktrees/p65-bending-module/phymeo / codex/p65-bending-module | SOLE_EXECUTION_OWNER: explicit followup issued after G2 release, starting at1108af389dde69506dd6f76c3b0902ac008ac695. Validation results are pending; no passing claim. See task-1-validation-grant.md; no reimplementation or merge of G2 source is needed. |
 | S2-LG / p65_self_contact_module | C:/Users/38347/.codex/worktrees/p65-self-contact-module/phymeo / codex/p65-self-contact-module | CODE_READY_TESTS_PENDING at1058d34354a9e1ecd9b15e3f85a84b10e243f4c3, code c94b91f896e92c643cce81d5f1bb1e1534c9f2ef. Waits for B2 formal release; no executable checks. |
 | Historical thickness delivery | C:/Users/38347/Documents/ChatGPT/phymeo / codex/p6-5-handoff | Local Task3/4 complete; policy50a5eeb pushed. Remote failures preserved, not queried. |
 

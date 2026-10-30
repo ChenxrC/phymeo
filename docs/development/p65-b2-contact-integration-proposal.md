@@ -583,3 +583,485 @@ integrated-stage review; none is dispatched now.
 
 Document authoring ends at PROPOSAL_NOT_FROZEN. No implementation or executable
 validation result is claimed, and no executable slot was taken.
+
+## 11. Follow-up after parent adjudication (documentation only)
+
+Authority: parent adjudication9ea19b75492b372effd770d4e79a67663eaa2123, read from
+the absolute parent tree; no merge, executable work or source/test edit. Sections
+1-10 above preserve the original585-line proposal/history and its candidate data.
+This follow-up supersedes their undecided architecture status only as follows:
+parent selected typed dispatch, both explicit publication guards, local-Feff /
+global-F0 binding, and complete conservative residual aggregation. Public names,
+additional witness files, physical support and acceptance remain NOT_FROZEN.
+S2's existing full-rank R2 and active execution are unchanged.
+
+SC1/SC2 at tiny mass are SUPPLEMENTAL ACCOUNTING ENVELOPES. They are not the two
+primary coupled-fidelity success controls. Section16 below states exactly what
+is still missing at ordinary mass; no success is inferred from mass scaling.
+
+### 11.1 Exact quotient identities, independently derived
+
+Use m owner-coordinate rows and n physical generalized coordinates. Keep all
+three world rows for every owned contact in the actual B, including duplicates.
+Restrict this candidate to constant-mass translational coordinates: q has units
+m, v has m/s, M has kg, and both generalized and owner impulses have N*s. Let
+W=M^-1 be the exact inverse of the admitted symmetric positive frozen mass and
+A=B W B.T. B is dimensionless. For any owner vector z,
+
+    z.T A z = (B.T z).T W (B.T z).
+
+Positive definiteness of W proves ker(A)=ker(B.T), hence range(A)=range(B).
+For an exact complete basis N of this nullspace, N.T N is positive definite.
+Pi_N=N (N.T N)^-1 N.T is symmetric, idempotent and basis-independent; Pi_N B=0.
+Pi_R=I-Pi_N projects onto range(B). A Pi_N=Pi_N A=0, and A restricted to Pi_R
+is positive definite. These claims require exact rank/span receipts, not merely
+B.T N=0, which would also hold for an incomplete or empty asserted basis.
+
+For nonzero rank, s=||A||_inf>0 has units1/kg. Set H=A/s+Pi_N. Split z into its
+orthogonal range and null components. Its quadratic form is the sum of a strictly
+positive range term and the squared null component, so H is positive definite.
+H Pi_N=Pi_N and H Pi_R=A/s. Therefore
+
+    H^-1 Pi_N=Pi_N,
+    H^-1(A/s)=(A/s)H^-1=Pi_R,
+    L=(1/s)H^-1 B W,
+    Pi_N L=0,                 L B.T=Pi_R.
+
+Thus p_eff=L ell is zero-nullspace and Q=B.T L satisfies
+
+    Q^2=Q,       range(Q)=range(B.T),       Q.T W=W Q,
+    r=(I-Q)ell,                         B W r=0.
+
+The W-self-adjoint identity follows directly from symmetry of W and H^-1.
+It proves that Q is a mass-weighted orthogonal projector in impulse space,
+not an owner-selection or physical-update algorithm. In particular,
+
+    ell.T W ell = (B.T p_eff).T W (B.T p_eff) + r.T W r.
+
+The residual term is nonnegative; orthogonality does not make it zero. Terminal
+work also contains r dot v_pre. It must remain in physical accounting.
+
+An equivalent independent characterization minimizes
+(ell-B.T p).T W (ell-B.T p). Its exact stationary equation is A p=B W ell.
+All minimizers differ by a vector in ker(B.T); p_eff is the one with minimum
+Euclidean owner norm. On-range ell=B.T p gives p_eff=Pi_R p and r=0. This is
+uniqueness of a chosen certificate representative, not of measured owner pressure.
+
+If rank(A)=m, Pi_N=0, H=A/s and L=A^-1 B W exactly, recovering S2 R2. Under
+uniform physical mass scaling M->gamma M, gamma>0, W,A,s scale by1/gamma and
+H,L,Q stay unchanged. This is an algebraic identity, not physical-budget relief.
+No mixed angular/linear coordinate metric follows from it. Orthogonal coordinate
+changes preserve the algebra but need not preserve the infinity-norm condition
+number; the explicitly frozen sufficient conditioning gate still applies.
+
+### 11.2 Exact illustrative identities and limitations
+
+These scalar restrictions illustrate the algebra; an implementation retains the
+full owned 3D rows and all physical columns.
+
+- Duplicate rows B=(1,1).T and one mass M=m0 give
+  A=(1/m0)*[[1,1],[1,1]], s=2/m0,
+  Pi_N=(1/2)*[[1,-1],[-1,1]], H=I and L=(1/2)*(1,1).T.
+  Hence p_eff=(ell/2,ell/2), r=0, and kappa_inf(H)=1. No owner was dropped.
+- Opposing normal rows B=(1,-1).T give H=I and
+  p_eff=(ell/2,-ell/2). For ell>0 this representative is not nonnegative on both
+  scalar normal axes, although p=(ell+t,t), t>=0, has the same delivery and can
+  be nonnegative. The certificate rejects the chosen witness; it does not deny
+  existence of another physical representation. Adding its self-stress (t,t)
+  to p_eff to create capacity would violate the proposed rule.
+- With B=(1,0) and M=I, ell=(a,b).T has p_eff=a and r=(0,b).T. Stored relative
+  response sees no b, but an independent extremum row C=(0,1) sees W r=b and
+  the residual quadratic energy is b^2/2. This is an explicit reason to keep
+  ideal-extreme and energy checks, even when B W r=0 exactly.
+
+The same nonnegative pressure distribution is not guaranteed after projection
+for different owner rays, phases, friction coefficients or geometry. Repeated
+geometric rows also do not license new owners or repeated capacity. Identity,
+phase and once-only semantics remain independent admission requirements.
+
+### 11.3 Conditioning, resources and failure obligations
+
+Verify stored exact B/M, owner order, positive mass, complete rank/nullspace,
+Pi_N symmetry/idempotence/annihilation, H positivity and all inverse identities
+independently of any producer claims. A deterministic rational elimination with
+fixed owner/coordinate ordering can produce rank and nullspace witnesses; exact
+pivot and span receipts must be checked. No small singular-value threshold,
+regularization, fitted inverse, diagonal shift or dropped owner is permitted.
+
+Require positive exact LDL for H and strict
+||H||_inf*||H^-1||_inf<10^12, using exact rational row sums. Equality rejects.
+This bounds H, not the full physical amplification |L| or every ideal-extreme
+map. Independently propagate |L| and reject if the resulting uncertainty exhausts
+original phase/map/physical ceilings even when H passes conditioning.
+
+Rank zero is not covered by division by s. A separate empty/unloaded identity
+case would need zero delivered/requested loads and all original motion/geometry
+checks; otherwise reject. Do not infer positive contact capacity from it.
+
+The parent must freeze finite matrix dimension, pivot/operation and rational-bit
+limits for this NEW witness. A4096-bit numerator/denominator ceiling consistent
+with the existing exact codec is a possible conservative choice, not permission
+to extend that codec or assert that all matrices fit. Limits apply to intermediate
+as well as final certificates, with deterministic operation counting and no
+unbounded retry. Exhaustion is unknown/reject and publishes nothing. Reusing the
+number4096 alone does not supply an algorithmic resource contract. No matrix
+witness or condition result has been computed for a physical case here.
+## 12. Generalized observed delivery and original-input uncertainty
+
+Use the original state's constant block mass M over particle velocities and all
+admitted robot translational velocities. M need not be diagonal on the robot.
+Do not replace it by independent per-joint masses. Actual stored values are
+interpreted as rationals q(.) in the following equations, not recomputed states.
+
+For each robot generalized coordinate, the original free generalized force is
+
+    f_R0 = effort0 + J_linear(q0).T force0
+                    + J_angular(q0).T torque0 - bias(q0,v0).
+
+This is the existing FrozenRobotLedger free_integral/h definition, including its
+canonical frozen mass and original bias. For admitted all-translational fixed
+orientations the angular Jacobian vanishes; retain the original term/binding
+rather than silently replacing the original force model. Particle free force is
+m_i*g_i+F0_i. Record every term, canonical mass and exact original-input identity.
+The reference here is that declared frozen law, not a proof of arbitrary robot
+energy. Any ideal-versus-stored mass/force enclosure remains a separate receipt.
+
+Let ell_H=h*(f_eff-f0). In the existing robot contact replay only effort changes;
+force/torque/gravity/bias and the original evaluation configuration must remain
+identical, so ell_H,R=h*(effort_eff-effort0). Do not use an undocumented change
+of forces/torques as contact delivery. Bind exact requested B0.T p_H, the FP64
+load arrays and actual Feff separately, as in section4.
+
+The actual pre-material free predictor gives the observed momentum residual
+
+    delta_H = M*(q(v_pred)-q(v0)) - h*f0 - ell_H,
+    e_H = abs(delta_H)                         (componentwise, N*s).
+
+The exact nominal predictor is only an audit equation,
+v0+W*(h*f0+ell_H); it is never published or substituted for actual v_pred.
+For a particle block this reduces exactly to
+abs(v_pred-v0-h*(g+w*Feff))/w, the R2 expression. For the robot it includes native
+mass solve, original effort/bias, force conversion and predictor rounding through
+the ACTUAL output. No diagonal approximation or particle formula is used there.
+Equivalently compute the exact velocity residual and multiply by M; a bound
+|M|*abs(velocity_residual) is conservative but may be looser than abs(delta_H).
+
+The signed delta_H is retained. The nominal ell_H plus its symmetric e_H box is
+conservative delivery evidence; using the observation does not authorize force
+repair or replacement of nominal requests. Material projection/reconstruction
+must not contaminate this measurement: use the actual pre-material predictor,
+not final cloth velocity containing bending impulses. For a robot-only free
+participant with no other constraints, final free-trial v may serve only when
+its phase/provenance proves it is that predictor. If current diagnostics do not
+expose or prove this boundary, that is an additional parent-owned interface gap.
+Do not infer v_pred from positions, ideal equations or an accepted final state.
+
+Independently retain robot motion error
+q(q_pred)-q(q0)-h*q(v_pred), with the original h*Vref normalization, and every R7
+particle prediction/decode/storage receipt. It cannot be charged as pressure
+and then silently removed from configuration or point-motion checks.
+
+At terminal the complete selected-pre identity is fixed and no material step
+intervenes. Actual observed delivery is
+
+    ell_T = M*(q(v_post)-q(v_selected_pre)).
+
+Use the full constant robot mass, matching the admitted selected-configuration
+M1, and the particle masses. Compare with original B1.T p_T and native input
+receipts without substituting either for ell_T. In the declared constant-mass
+domain M1=M0 must be justified by the model, not inferred from close floats.
+For variable mass, mixed revolute coordinates or changed configuration, this
+follow-up provides no terminal momentum/energy extension.
+
+If an independent ideal frozen model has errors |M_star-M|<=E_M and
+|f0_star-f0|<=e_f, the same observed velocity implies the additional conservative
+momentum error E_M*abs(v_pred-v0)+h*e_f, plus any separately bound ideal delivery
+error. At terminal use E_M*abs(v_post-v_pre). Do not assert these errors are zero
+merely because stored M passed LDL. Existing independent mass/map requirements
+are retained; the proposed ordinary single-axis model has an analytic constant
+mass, but no physical run is claimed. Bit/interval exhaustion rejects.
+
+For each phase propagate its complete admitted impulse uncertainty e through
+
+    p_center=L*ell,     e_p=abs(L)*e,
+    r_center=(I-Q)*ell, e_r=abs(I-Q)*e.
+
+Save the joint linear dependence on the SAME delta-ell as well as the boxes.
+Do not spend one discrepancy independently as two favorable pressure allowances.
+Every uncertainty event has one source ID and a list of uses (delivery, cone,
+map, energy, angular). Multiple conservative uses do not create multiple budgets.
+No native conversion/storage charge from R7 is removed or counted as new credit.
+
+## 13. A sufficient cone and KKT enclosure rule
+
+The following is a conservative candidate audit of the quotient witness. It is
+not a new friction solver, proof of owner uniqueness or change to S2. Retain each
+owner's exact normal ray n, its phase and actual final relative velocity. Let
+
+    lambda = n dot p / sqrt(n dot n),
+    T = p - n*(n dot p)/(n dot n),
+    U = u - n*(n dot u)/(n dot n).
+
+Use independently outward bounded square roots and all pressure/velocity/map
+uncertainty to obtain lambda in [lambda_lo,lambda_hi],
+||T||<=t_hi, ||U|| in [u_lo,u_hi], and T dot U in [w_lo,w_hi]. Never normalize by
+an unproved nonzero n. Keep exact normal-ray/phase identity, not a rounded guessed
+unit normal. Interval dependency loss is conservative and may reject a valid
+contact; tightening cannot change a physical threshold or use solver answers.
+
+A directly sufficient strict sign rule is lambda_lo>=0 for each phase. A negative
+lower bound is uncertainty/rejection, not max(0,lambda_lo) capacity. This can
+exclude native near-zero-pressure cases; that limitation must be accepted or
+explicitly resolved by parent under original gates before implementation.
+Unresolved upper pressure with zero safe capacity still requires the full audit.
+
+Initially closed owners use C_H=mu*[lambda_H_lo,lambda_H_hi] and
+C_T=mu*[lambda_T_lo,lambda_T_hi]. Initially open owners retain ZERO held tangent,
+and only a proved birth may use
+C_T=mu*([lambda_H_lo,lambda_H_hi]+[lambda_T_lo,lambda_T_hi]) once. Project each
+phase under its own normal before summing. Owner generations, duplicate rows,
+old history and proposal nullspace components supply no extra capacity. An
+open-held tangent enclosure containing unresolved nonzero values cannot simply
+be declared zero; it must satisfy the original zero-held rule or reject.
+
+For each admitted capacity C=[c_lo,c_hi], require the original speed-scaled
+ceilings, with the existing positive response scale kappa and Vref:
+
+    R_cone = kappa*max(t_hi-c_lo,0)/Vref,
+    R_diss = kappa*sup |w+c*z| / Vref^2,
+    R_work = kappa*max(w_hi,0)/Vref^2,
+
+where w in [w_lo,w_hi], c in [c_lo,c_hi], z in [u_lo,u_hi]. All endpoints give a
+safe bound because c,z>=0; use exact/outward arithmetic, not a midpoint. These
+are the conservative enclosure versions of _dynamic_friction_law.audit: cone,
+maximum-dissipation and positive-work checks, not an unconstrained SOC minimizer.
+For zero tolerance the admitted stick case has U=0 and ||T||<=C; sliding has
+T=-C*U/||U||. The interval test covers both without selecting a favorable capacity
+or slip from uncertainty. Actual coupled normal/tangent velocities remain used.
+
+Held Signorini additionally encloses every combination of
+abs(min(k_n*lambda,gap/h))/Vref, with existing penetration/gap gates. Terminal
+requires max(0,-u_n,abs(min(k_n*lambda,u_n)))/Vref. Here k_n is the original normal
+response scale and u_n is the actual normal relative speed. Check the complete
+lambda/gap/speed intervals, not the requested pressure at one chosen endpoint.
+Retain all ideal-extreme directions, including zero-pressure extrema, and every
+contact response/map ceiling. The stated formulas correspond to current
+_thick_contact_workspace.py:191-212,363-405 and _dynamic_friction_law.py:24-51;
+they add a sufficient delivery-witness audit, not removal of existing guards.
+
+These inequalities can reject a quotient representative although another owner
+pressure could satisfy Coulomb. That narrower admitted set is intentional in the
+candidate, but parent still must freeze it. It does not establish existence of
+two useful ordinary-mass physical controls or cover all redundant contacts.
+## 14. Ideal extrema, self-stress and physical residual limits
+
+At each phase retain B, its independent ideal-map enclosure B_star, full actual
+requested owner p_requested, p_eff, p_N=Pi_N*p_requested, and
+p_requested-p_eff. If abs(B_star-B)<=E_B componentwise, the ideal nodal mapping
+error for the actually requested impulse is bounded by
+
+    abs((B_star-B).T*p_requested) <= E_B.T*abs(p_requested).
+
+The RIGHT side uses the FULL request, including p_N, not only p_eff. Although
+B.T p_N=0, generally B_star.T p_N=(B_star-B).T p_N need not vanish. Thus a large
+proposal self-stress cannot manufacture capacity and also cannot disappear from
+ideal-map/resultant/couple/work uncertainty. Keep the original raw/native input
+construction errors and exact cancellations distinct from this enclosure.
+
+For any independently certified extremum relative-point map C_star, the frozen
+configuration response to remainder r has bound
+
+    abs(C_star*W*r) <= abs(C_star*W)*(abs(r_center)+e_r).
+
+Use outward interval matrix products when C_star is bounded. Add the separately
+bound actual-versus-ideal evaluation error (C_star-C)*v_actual and effects of
+independent ideal-map/mass uncertainty without omitting correlations or allowing
+cancellation. Check every required clip extremum and velocity direction, not
+only loaded rows or the centroid. Positive B W r=0 evidence does not replace any
+of these checks; even at stored rows, map changes between phases matter.
+
+This linear response identity is valid for a frozen terminal velocity update
+and for the free predictor. It is NOT a bound on final held position/velocity
+after nonlinear distance/bending sweeps. Multiplying it by h is not a proof of
+nonlinear endpoint gap. That would require a separately bounded material-map
+sensitivity. Keep direct actual final-state gap/relative-velocity audits, full
+material path and physical-affine proof, and CCD; no sensitivity is assumed here.
+
+For particle blocks, exact resultant and moment operators are S*r_particle and
+C_x*r_particle, where S sums physical nodal impulses and C_x uses each actual
+world position cross-product matrix. Conservative magnitudes use abs(S)*r_bar
+and abs(C_x)*r_bar, not a signed sum of errors across domains. Robot generalized
+impulses need the declared original Jacobian dual and existing paired world-point
+mapping receipts. A constrained prismatic guide does not furnish an arbitrary
+invertible world-force lift. Do not infer a total free-robot world momentum or
+torque theorem from translational coordinate units alone. Retain the original
+particle NUM005 and paired moment gates and all robot generalized response checks.
+
+Held residual endpoint-work magnitude can be conservatively accounted as
+r_bar dot abs(Delta y)/h, where y comprises world particle positions and admitted
+robot translational coordinates. At a frozen terminal configuration, with
+a=B.T p_eff and the exact orthogonal decomposition ell=a+r,
+
+    Delta K(ell)-Delta K(a)
+      = r dot v_pre + a.T W r + (1/2)*r.T W r
+      = r dot v_pre + (1/2)*r.T W r.
+
+This is an accounting identity only, never a recomputed or repaired terminal
+state. A general enclosure retaining all uncertain/ideal cross terms is
+r_bar dot abs(v_pre) + a_bar.T abs(W) r_bar
++ (1/2)*r_bar.T abs(W) r_bar. Exact stored orthogonality may remove its stored
+cross term but not an ideal-map or ideal-mass cross term without proof.
+
+These contributions stay INSIDE the original ceilings. The full actual-state
+joint D_E and componentwise angular/window gates remain authoritative. If a
+split proof bounds a physical defect by base plus residual/uncertainty, charge
+each event once in that upper bound; never add a new permitted allowance or
+subtract residual/internal work as external credit. If the full actual defect
+already includes that event, its explanatory decomposition cannot forgive it.
+There is no averaging across phases, owners, time, domains or components.
+
+## 15. Follow-up witness controls and exact ownership implications
+
+These are unexecuted future requirements, in addition to section8, not new files
+created by this task:
+
+1. Independently derive the exact duplicate/opposed/off-range examples in11.2;
+   retain every owner. Check complete row permutations and invertible nullspace
+   basis changes N->N*S yield the same projector and witness. An incomplete or
+   falsely full nullspace, invalid rank, nonsymmetric mass or wrong inverse fails.
+2. Add p_requested->p_requested+N*t with unchanged exact stored delivery. Certified
+   p_eff/capacity is unchanged; the FULL proposal remains in independent ideal-map
+   error and binding. For opposing rays, reject negative quotient normal even
+   when a positive self-stressed alternative exists. Never fit that alternative.
+3. For B=I and M=diag(1,10^12), H=diag(1,10^-12); the exact condition product is
+   10^12 and must reject equality. Nearby exact below/above choices, positive LDL
+   failure, zero rank, incomplete receipts and resource exhaustion are separate
+   controls. They are algebraic negatives, not physical support claims.
+4. Hold nominal request fixed while mutating actual robot predictor or terminal
+   v. The full observed M delta-v, not per-joint masses or nominal force, must
+   change uncertainty/delivery and capacity. Mutating original effort/force/
+   torque/bias or selected-pre identity is independently rejected.
+5. Distinguish a truly unchanged original robot force from an unauthorized changed
+   force whose effect is absent from effort-only ell_H. Bind the unchanged bias
+   and original evaluation configuration. Do not hide native mass-solve error by
+   calling its ideal predicted velocity the observed predictor.
+6. Change one phase at open birth. Recompute its own B/Pi_N/L/normal/uncertainty
+   under its saved phase identity and combine capacity only once. A held projector
+   cannot be reused at terminal solely because row counts match. Retain original
+   full selected-pre/path/history/effective-input and once-only terminal controls.
+7. Off-range r that is invisible to stored B but visible at another ideal extremum
+   must exhaust the relevant original velocity/couple/work bound when oversized.
+   Include full requested null self-stress magnified by E_B, zero-pressure ideal
+   extrema, omitted normal derivative and missing cross terms.
+8. Preserve the late second/third-substep failures, exact source/raw evidence and
+   rollback/retry contract from section8 for every new certificate failure.
+
+The ten paths in section9 remain an architectural candidate, not a new allowance.
+A quotient/predictor witness should be an explicitly parent-owned additional
+validation module if selected; it must not silently change S2's full-rank reader
+or existing robot law. The precise path, public immutable certificate, finite
+resource limits and robot predictor evidence seam require a parent freeze before
+source authoring. Every guard remains outside the solver, and none supplies a
+replacement state, pressure, map, normal or material response.
+
+## 16. Ordinary-mass coupled fidelity: exact remaining gap
+
+No pair of primary ordinary-mass success controls has been proved in this
+continuation. Sections7's tiny-mass controls remain supplemental only. For a
+precise reference to the missing work, take their SAME geometry/rest/rate/load/
+h/window/rebuild data at particle masses1 kg, robot mass4 kg, distance compliance
+1 m/N and bending compliance1/J (the ordinary-mass homogeneity counterpart).
+These values define UNPROVED analysis targets, not accepted new tests or a change
+to the original candidate data. No mass, rest angle, h, perturbation, friction,
+iteration limit or budget was adjusted after observing execution.
+
+Some local facts do survive independently: SC1 has initial C=-2^-10 and gradient
+(2ez,0,-ez,-ez), nonzero bending force, and maximum initial material acceleration
+2^-9<1/8 m/s^2. SC2 has initial Cdot=-1/64 rad/s. The unstrained reference impulse
+formulas remain valid for their explicitly unperturbed limit only. Neither fact
+bounds the full strained finite-step path or its owner capacity. In particular,
+SC1's initial compression margin is not a nonlinear window convergence proof;
+SC2's perturbed normal-offset geometry can change birth time and its terminal
+response, so the reference gap/u arrival time is not a perturbed-case theorem.
+
+The original coarse envelope becomes up to384 J of positive-defect bound over
+32 steps at unit mass, and its angular bound is likewise far above the physical
+ceiling. It is therefore USELESS as a coupled-fidelity oracle at this scale.
+That failure of an upper bound does not prove the physical cases fail, nor does
+it imply a universal FP32 obstruction. It means there is no independent tight
+bound here yet. Small-mass scaling cannot cure this missing fidelity evidence.
+
+What is required for EACH of the two primary controls is concrete:
+
+- An independently chosen non-vacuous trajectory box and impulse box covering the
+  complete h grid, windows and rebuilds, with a strictly positive lower bound on
+  actual bending activity and on the relevant held/terminal transfer. Boxes must
+  discriminate a wrong trajectory/load, not merely bound all coordinates by2.
+- Independent area/edge/angle/offset-map and derivative bounds on that box,
+  including supported angle branch, every material row and full physical affine
+  segments. A bound on the Hessian of the bending energy alone does not certify
+  the ordered XPBD row map or the contact/material composition.
+- A nonlinear residual enclosure for the complete declared finite material
+  sweeps, lambda history and endpoint gap/terminal equations, including shared
+  nodes and robot response. A force equilibrium or continuous ODE solution is not
+  the same equation as this discrete algorithm. Rank-reduced proof coordinates
+  may analyze the quotient but may not delete owner obligations in the result.
+- A certified contraction/interval-Newton witness or another independent residual
+  error bound giving trajectory/impulse inclusion, plus sign/phase/slip margins
+  sufficient for section13. Such a witness needs explicit derivative constants,
+  a domain mapping into itself, error amplification and finite iteration effects;
+  none has been derived here. Existence of a continuum contact solution does not
+  imply this replay's512-iteration success or two reproducible rebuilds.
+- For SC2 specifically, a certified perturbed birth-time bracket and positive
+  terminal-delivery lower bound, covering endpoint-only birth if it occurs. For
+  SC1, a full-window compressive capacity/geometry margin under the active hinge.
+- Tight ORIGINAL-input bounds on sum_j max(0,D_E,j) and the original sum of
+  absolute angular component/domain defects, with all mapping/paired moments.
+  Energy dissipation at impact cannot cancel a later positive step. Ideal torque
+  invariance cannot erase discrete NUM005. No internal transfer credit is used.
+- Actual R7 decode/raw/native evidence and complete FP32 predictor/projection/
+  reconstruction/publication uncertainty within unchanged normalized path gates.
+  Analytic geometry bounds do not establish these native inequalities in advance.
+  They remain distinct from the ordinary-mass physical enclosure and from a
+  universal impossibility claim.
+
+These are specific missing mathematical certificates, not permission to replace
+the two primary controls by handoff fixtures, tiny masses, zero material activity,
+solver-derived expected trajectories or tuned easier parameters. A proposed
+implementation could legitimately reject the current targets; no pass is promised.
+Parent must decide and freeze stronger independently justified controls/support
+before claiming this physical integration accepted.
+
+## 17. Width allocation, decisions and release of this continuation
+
+For a true per-step defect d_j and independent interval [a_j,b_j] enclosing it,
+max(0,b_j)<=max(0,d_j)+(b_j-a_j). Thus a noncancelling window needs a bound on the
+physical sum PLUS the sum of every initial/final energy enclosure width. All terms
+have units J; no normalized tau is itself an energy allowance. A fixed allocation
+eta*beta_E for widths is defensible only after a physical bound leaves at least
+that margin. Angular intervals need the corresponding absolute-component bound
+and N*m*s units. Preserve finite sqrt/atan/codec limits; failure to certify the
+allocated width rejects rather than increasing proof resources or physical limits.
+
+Consequently the earlier beta_E/4096 example is NOT frozen here. Its final
+allocation depends on the primary controls' physical margins and finite step
+counts. No independent bending-width result or physical trajectory was evaluated
+for this follow-up, and original R7/host/native receipts remain unchanged.
+
+Parent decisions still needed:
+
+1. Admit this conservative quotient representative and its narrowed cone domain,
+   or decline it; algebra alone gives neither friction validity nor full coverage.
+2. Freeze complete finite witness resources and exact parent-owned module/API,
+   including observed robot free-predictor provenance if not already exposed.
+3. Freeze sufficient phase/cone/ideal-extreme/error allocation using original
+   ceilings and once-only capacity semantics, with no nullspace self-stress credit.
+4. Supply the two primary ordinary-mass nonlinear fidelity enclosures and their
+   physical/angle/native margins; section16 is the precise unresolved gap.
+5. Then freeze dimensional enclosure allocation, full source ownership, focused
+   host/interpret/CUDA/bounded-C++ groups and the later integrated review scope.
+
+Status remains PROPOSAL_NOT_FROZEN. This continuation is documentation only:
+no import, test, numerical/offline probe, lint/formatter, compilation, build,
+installation, helper/reviewer, merge or remote action. S2 owns execution; no
+executable slot was taken. Documentation authoring is released at its checkpoint.

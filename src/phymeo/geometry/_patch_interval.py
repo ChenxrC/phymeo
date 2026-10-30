@@ -34,6 +34,23 @@ def sub(a, b):
 
 
 def mul(a, b):
+    # Optimize only the immutable rational endpoint representation. Legacy
+    # numeric types, iterable shapes and their errors retain the original path.
+    if (
+        type(a) is tuple
+        and type(b) is tuple
+        and len(a) == len(b) == 2
+        and all(type(x) is F for x in a + b)
+    ):
+        if a[0] == a[1]:
+            if b[0] == b[1]:
+                value = a[0] * b[0]
+                return value, value
+            values = (a[0] * b[0], a[0] * b[1])
+            return min(values), max(values)
+        if b[0] == b[1]:
+            values = (a[0] * b[0], a[1] * b[0])
+            return min(values), max(values)
     values = [x * y for x in a for y in b]
     return min(values), max(values)
 
@@ -149,7 +166,8 @@ class PatchCurve:
                 b = tuple(_dot(row, tangent) for row in frame)
                 self.rotor.append((c, a, b))
         else:
-            self.ends = (self._prismatic(self.q0), self._prismatic(self.q1))
+            left = self._prismatic(self.q0)
+            self.ends = (left, left if self.q0 == self.q1 else self._prismatic(self.q1))
 
     def _prismatic(self, configuration):
         model = self.model

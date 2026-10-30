@@ -9,4 +9,3 @@ Authored host coverage includes full T=1 windows at h=1/8 and 1/16 with two fres
 Independent physical authority: p65-g2-gripper-proposal.md A/B/C and the frozen integration spec. G2 uses existing native cache behavior because participant APIs expose no cache-root argument (R5). No old solver/runtime/law/participant/pin/history file is edited. Initial style results and exact source snapshots are retained under artifacts/p65-g2-local-20261030-a. The first post-code numerical results are pending; no historical TDD RED is invented.
 
 The C case is DistanceConstraints only. Full B2 material integration, bending/folding/self-contact, general robot support, mesh calibration and complete P6.5 are not established by this checkpoint. Remote CI stays user-deferred and unpassed.
-

@@ -37,3 +37,5 @@ Main reviews mathematical equivalence and scopes, audits raw outputs and snapsho
 - [ ] Task2 new-source package and accurate fullCI success.
 
 R5 observation correction: original rawreport fingerprint contains perf_counter timings and is not cross-run invariant. Preserve it and allrawreports; for planned3old/3new require exact canonical report/input/state/history/CCD equality excluding only the typed SceneSubstepReport.timings field, per specR5. No originalprofile rerun or production/runtime change.
+
+父检查点：308源码及93证据hash无差异，20成功rawexit核对；新源码packaging0065200-a两step exit0，wheel153字节相同。Task2仅剩专用分支push和准确新CI/Documentation；现未勾完成。

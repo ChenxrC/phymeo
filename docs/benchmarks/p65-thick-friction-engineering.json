@@ -973,7 +973,7 @@
     "parent_frozen_digest_after": "cd6d77917dee8af09f13a430f4fdd4a5b744461874364a142aff0d8e6722d84b"
   },
   "delivery": {
-    "status": "pushed_ci_cancelled_pending_timeout_exception",
+    "status": "optimized_local_validation_complete_awaiting_new_exact_ci",
     "product_ci": {
       "head": "5150c3efb12cfdcf81dea2923ff627c7915ca036",
       "ci": 40950637127,
@@ -1010,7 +1010,7 @@
       "no_same_configuration_retry": true
     },
     "optimization": {
-      "status": "profiled_ready_for_equivalent_arithmetic_optimization",
+      "status": "local_validation_and_packaging_complete",
       "user_decision": "keep 30 minutes; optimize runtime",
       "baseline_head": "127cd28af155ad23ff289a1ad9fb7e5d1c78b775",
       "profile": "artifacts/p65-ci-optimization/baseline-A.json",
@@ -1018,7 +1018,12 @@
       "profiled_seconds": 46.55563850002363,
       "quadratic_constructions": 1275544,
       "constructor_cumulative_seconds": 18.3744367,
-      "limitations": "cProfile overhead; not P95 or CI duration; old cancelled attempt remains cancelled"
+      "limitations": "cProfile overhead; not P95 or CI duration; old cancelled attempt remains cancelled",
+      "product_head": "0065200d6253cbb703d752aac3e0d1b9dfe80890",
+      "report_head": "d2cacff856379bf0907dfa4a6ac16861ff38f5fb",
+      "evidence": "docs/benchmarks/p65-ci-cost-repair.json",
+      "source_tests_scripts_digest": "9bbdeeeba487184c3a95fd96b0d20ae928ce1554c550beb2c5a0d598b79c745d",
+      "workflow_unchanged": true
     }
   },
   "limits": [
@@ -1147,5 +1152,12 @@
     "mismatches": 0,
     "actual_lifecycle_records": 39,
     "mode": "read-only hashes, original raw exits/pytest summaries and code/formula inspection; no repeated physics"
+  },
+  "ci_cost_repair": {
+    "latest_source_reference": "p65-ci-cost-repair.json",
+    "latest_product_head": "0065200d6253cbb703d752aac3e0d1b9dfe80890",
+    "source_tests_scripts_digest": "9bbdeeeba487184c3a95fd96b0d20ae928ce1554c550beb2c5a0d598b79c745d",
+    "source_digest": "5f01a176f8ef29604da0437799eea49829cf971657334a1095360eebaac189bc",
+    "historical_top_level_source_fields": "Top-level source/product/verification fields retain the pre-optimization33ec9ea snapshot; latest optimized source and results are explicitly in this linked record."
   }
 }

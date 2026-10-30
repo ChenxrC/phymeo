@@ -31,3 +31,7 @@ R4 的限制明确保留：原新增 diagonal square-corner 输入曾迭代预�
 I2 保留系数检查，补独立 expected J.T 施加实际冲量后的节点聚合误差及独立实际合力；原单位化尺度保留。原大冲量缺陷现被拒绝，合法控制四残差零；合力相消但节点映射错误及共享节点控制通过。
 
 修复版 307 文件摘要 cd6d77917dee8af09f13a430f4fdd4a5b744461874364a142aff0d8e6722d84b，153 源摘要 df8c2ad9698f3f4c958b75ad9eee4135162fac1be490e56dd29cfce3df1f8d94。父独立核对 307 文件及 73 证据 hash 均相符，host 7/13.10s、后段及事务 17/433.27s、actual interpret 10/134.13s、CUDA 10/327.19s 原始 exit 全为 0。26 个未受 R4 影响的 host03 通过项保留原版本；旧长窗口不改写成新源码全量。三模式同次 C 轨迹共 39 条 actual/fullhistory 记录经独立只读审计，原 tol/budget、FP32、force、CCD 和退出再入均通过。
+
+## CI 成本修复的父级定向核对
+
+用户保留30分钟，0065200仅优化精确算术重复规范化。父检查规范形/跨域/零除/向外界等价、119构造/6682运算差分、六份完整原始报告（只计时不同）、308源码及93证据hash、host96与actual interpret/CUDA各9及新源码wheel。没有重做本阶段唯一fresh review；本次定向核对未发现需要修改的算术差异。详见[成本修复证据](p65-ci-cost-repair.md)，准确新CI仍待。

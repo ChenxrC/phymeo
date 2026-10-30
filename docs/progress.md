@@ -1,6 +1,8 @@
 # 开发进度
 
-产品 `5150c3e` 已推送并核对远程 SHA。准确 CI `40950637127` 已结束为 cancelled：8 个 CPU 矩阵任务均由 GitHub 确认超过现有 30 分钟时限，required 因 CPU 未成功而 failure；Documentation `40950637280` success。不能计为产品交付通过。2026-10-30 用户明确选择“保持 30 分钟，另行优化耗时”。90 分钟建议未应用并已撤回；完整矩阵、测试、required 和 fail-fast 保持。当前按剖析结果优化厚度精确算术的重复规范化，先证明输出等价并验证受影响路径，再推送取得新 head 的准确 CI；不得盲重试旧 head 或提前推进下一生产合同。
+产品 `5150c3e` 已推送并核对远程 SHA。准确 CI `40950637127` 已结束为 cancelled：8 个 CPU 矩阵任务均由 GitHub 确认超过现有 30 分钟时限，required 因 CPU 未成功而 failure；Documentation `40950637280` success。不能计为产品交付通过。2026-10-30 用户明确选择“保持 30 分钟，另行优化耗时”。90 分钟建议未应用并已撤回；完整矩阵、测试、required 和 fail-fast 保持。已以0065200完成一个厚度精确算术文件的等价优化，报告d2cacff；受影响host96、actual interpret/CUDA各9、224条同次实际轨迹审计及新源码wheel153逐字节校验均通过。三个相同A负载的新进程约5.9s，对照原版约12.3–12.6s，仅为该负载成本观察。接下来推送优化版本并取得新head准确CI；原30分钟配置不变，不提前推进下一生产合同。
+
+最新优化验证及包装见[CI成本修复](benchmarks/p65-ci-cost-repair.md)。
 
 当前厚度阶段唯一审阅已结束，0Critical/2Important/0Minor：侧接触 signed gap 和独立映射合力审核均已在 e8c821d / 33ec9ea 定向修复并由父核对关闭，详见[审阅记录](benchmarks/p65-thick-friction-review.md)。修复前数值证据保留原版本；修复版 interpret/CUDA 各10项已过，C++/wheel工程已通过，产品已推送，准确CI因CPU任务30分钟超时取消，交付待处理，不重复fresh review。
 
@@ -29,7 +31,7 @@
 
 静态距离证书框架前置已准确交付e63a1bf，两CI成功；[实施任务单](superpowers/plans/2026-10-29-p65-distance-certificate.md)最后交付框已关闭。它不完成动态接触或CCD，下一项继续厚度/法向、特征身份/history与自动建立分离及连续路径。
 
-## 当前：有限厚度摩擦两项审阅修复闭环，父本地工程已通过，待推送与准确CI
+## 历史检查点：厚度摩擦审阅修复与优化前本地工程
 
 产品 `1fcd0e7`、报告 `f2d4999` 已在专用分支提交；父核对307文件和原始证据，版本化host60/严格CPU窗口通过，最终同源实际 interpret13（328.57s）与CUDA13（764.24s）通过。详见[验收](benchmarks/p65-thick-friction-acceptance.md)、[工程](benchmarks/p65-thick-friction-engineering.json)与[唯一审阅](benchmarks/p65-thick-friction-review.md)。`thick_friction_final_review` 已结束并释放数值槽；0Critical/2Important/0Minor，父已核对 e8c821d/33ec9ea 修复及定向 host/interpret/CUDA，报告 a59182a；当前父三步工程已全部退出0，153源码wheel匹配，待push和准确CI。C++短例与wheel已通过，新产品push/准确CI仍待，不勾完整H1。
 

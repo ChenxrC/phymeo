@@ -1,0 +1,351 @@
+{
+  "stage": "P6.5 existing thick friction CI cost repair",
+  "status": "local_validation_complete_pending_exact_ci",
+  "user_decision": "Keep CPU timeout30 minutes; optimize runtime. No workflow/matrix/tests/required changes.",
+  "baseline_head": "127cd28af155ad23ff289a1ad9fb7e5d1c78b775",
+  "product_head": "0065200d6253cbb703d752aac3e0d1b9dfe80890",
+  "implementation_report_head": "d2cacff856379bf0907dfa4a6ac16861ff38f5fb",
+  "source_tests_scripts_count": 308,
+  "source_tests_scripts_digest": "9bbdeeeba487184c3a95fd96b0d20ae928ce1554c550beb2c5a0d598b79c745d",
+  "source_count": 153,
+  "source_digest": "5f01a176f8ef29604da0437799eea49829cf971657334a1095360eebaac189bc",
+  "workflow_sha256": "c917835c91aeb4dad328bd49fc266f9238b638b5327346d06d8e9edad7ba7297",
+  "changed_production": [
+    "src/phymeo/geometry/_prism_exact.py"
+  ],
+  "new_tests": [
+    "tests/test_prism_exact.py"
+  ],
+  "verification": {
+    "base": "c2d38d35428c3d0709f463841f81232483d5471f",
+    "product": "0065200d6253cbb703d752aac3e0d1b9dfe80890",
+    "source_tests_scripts_digest": "9bbdeeeba487184c3a95fd96b0d20ae928ce1554c550beb2c5a0d598b79c745d",
+    "source_digest": "5f01a176f8ef29604da0437799eea49829cf971657334a1095360eebaac189bc",
+    "files": 308,
+    "workflow_sha256": "c917835c91aeb4dad328bd49fc266f9238b638b5327346d06d8e9edad7ba7297",
+    "changed_existing": [
+      "src/phymeo/geometry/_prism_exact.py"
+    ],
+    "added": [
+      "tests/test_prism_exact.py"
+    ],
+    "raw_checks": [
+      "math-green-01",
+      "math-final-02",
+      "differential-01",
+      "optimized-A",
+      "host-affected-01",
+      "numpy-window-audit-01",
+      "interpret-all-01",
+      "interpret-window-audit-01",
+      "cuda-all-01",
+      "cuda-window-audit-01",
+      "source-smoke-01",
+      "ruff-final-01",
+      "format-final-01",
+      "public-boundary-01",
+      "old-A-run1",
+      "new-A-run1",
+      "old-A-run2",
+      "new-A-run2",
+      "old-A-run3",
+      "new-A-run3"
+    ],
+    "tests": {
+      "math-final-02": {
+        "passed": 37,
+        "seconds": 0.2,
+        "raw_exit": 0
+      },
+      "host-affected-01": {
+        "passed": 96,
+        "seconds": 818.12,
+        "raw_exit": 0
+      },
+      "interpret-all-01": {
+        "passed": 9,
+        "seconds": 328.43,
+        "raw_exit": 0
+      },
+      "cuda-all-01": {
+        "passed": 9,
+        "seconds": 787.11,
+        "raw_exit": 0
+      }
+    },
+    "old_new_observations": [
+      {
+        "mode": "old",
+        "run": 1,
+        "elapsed_seconds": 12.31087510008365,
+        "module_file": "artifacts\\p65-ci-optimization\\frozen_prism_exact_127cd28.py",
+        "module_sha256": "b1e69768cbf7e86d5abc4fe1a476eb37edf48df4cfdc5d6a5dbf5e0199807931",
+        "state_fingerprint": "8c992db91af1bb46e8498b3b4a8d75e2cf50377ace340cb5665b89afd0aa0551",
+        "report_fingerprint": "e3e6d19a6c806eed4aa350e6b2d63c844594442f97b4f354e0af91dce6976d11",
+        "canonical_report_fingerprint": "ee28be883a5be53eb015103391eb190056e7df51016c666ff8d400d1128edad4",
+        "inputs_fingerprint": "4e08a0ab78a5d41d4fe39727a971c08e2e6c3aec16c081cdb11f0f9f0a53a547",
+        "held_replays": 53,
+        "terminal_replays": 1,
+        "complete_ccd_matches": true,
+        "injected_before_consumers": true,
+        "resources_closed": true
+      },
+      {
+        "mode": "new",
+        "run": 1,
+        "elapsed_seconds": 5.8918640001211315,
+        "module_file": "src\\phymeo\\geometry\\_prism_exact.py",
+        "module_sha256": "e9141c9d23250a40691d76d2544e1c55ee0f93c6331730aec1f1dfab04cc0e1c",
+        "state_fingerprint": "8c992db91af1bb46e8498b3b4a8d75e2cf50377ace340cb5665b89afd0aa0551",
+        "report_fingerprint": "d2f3c7875f91f29bdb2c9ef6cc21a6f36c79d24fcec2a6f02ff5bdb1bbd6a5df",
+        "canonical_report_fingerprint": "ee28be883a5be53eb015103391eb190056e7df51016c666ff8d400d1128edad4",
+        "inputs_fingerprint": "4e08a0ab78a5d41d4fe39727a971c08e2e6c3aec16c081cdb11f0f9f0a53a547",
+        "held_replays": 53,
+        "terminal_replays": 1,
+        "complete_ccd_matches": true,
+        "injected_before_consumers": true,
+        "resources_closed": true
+      },
+      {
+        "mode": "old",
+        "run": 2,
+        "elapsed_seconds": 12.288709999993443,
+        "module_file": "artifacts\\p65-ci-optimization\\frozen_prism_exact_127cd28.py",
+        "module_sha256": "b1e69768cbf7e86d5abc4fe1a476eb37edf48df4cfdc5d6a5dbf5e0199807931",
+        "state_fingerprint": "8c992db91af1bb46e8498b3b4a8d75e2cf50377ace340cb5665b89afd0aa0551",
+        "report_fingerprint": "f2976dd7dd90489a47d4350f7a3649572c8b234b78baeb6313a7a1e6bf3acee0",
+        "canonical_report_fingerprint": "ee28be883a5be53eb015103391eb190056e7df51016c666ff8d400d1128edad4",
+        "inputs_fingerprint": "4e08a0ab78a5d41d4fe39727a971c08e2e6c3aec16c081cdb11f0f9f0a53a547",
+        "held_replays": 53,
+        "terminal_replays": 1,
+        "complete_ccd_matches": true,
+        "injected_before_consumers": true,
+        "resources_closed": true
+      },
+      {
+        "mode": "new",
+        "run": 2,
+        "elapsed_seconds": 5.895364300115034,
+        "module_file": "src\\phymeo\\geometry\\_prism_exact.py",
+        "module_sha256": "e9141c9d23250a40691d76d2544e1c55ee0f93c6331730aec1f1dfab04cc0e1c",
+        "state_fingerprint": "8c992db91af1bb46e8498b3b4a8d75e2cf50377ace340cb5665b89afd0aa0551",
+        "report_fingerprint": "93c6faa7b1c3dd60c46405d9688f3b67cbf535177698dc953bdfefe44df5b985",
+        "canonical_report_fingerprint": "ee28be883a5be53eb015103391eb190056e7df51016c666ff8d400d1128edad4",
+        "inputs_fingerprint": "4e08a0ab78a5d41d4fe39727a971c08e2e6c3aec16c081cdb11f0f9f0a53a547",
+        "held_replays": 53,
+        "terminal_replays": 1,
+        "complete_ccd_matches": true,
+        "injected_before_consumers": true,
+        "resources_closed": true
+      },
+      {
+        "mode": "old",
+        "run": 3,
+        "elapsed_seconds": 12.589831799967214,
+        "module_file": "artifacts\\p65-ci-optimization\\frozen_prism_exact_127cd28.py",
+        "module_sha256": "b1e69768cbf7e86d5abc4fe1a476eb37edf48df4cfdc5d6a5dbf5e0199807931",
+        "state_fingerprint": "8c992db91af1bb46e8498b3b4a8d75e2cf50377ace340cb5665b89afd0aa0551",
+        "report_fingerprint": "c0d4bc0172f02218f17c11d6485ba79e38469ba68eb200992a2685a9027092d3",
+        "canonical_report_fingerprint": "ee28be883a5be53eb015103391eb190056e7df51016c666ff8d400d1128edad4",
+        "inputs_fingerprint": "4e08a0ab78a5d41d4fe39727a971c08e2e6c3aec16c081cdb11f0f9f0a53a547",
+        "held_replays": 53,
+        "terminal_replays": 1,
+        "complete_ccd_matches": true,
+        "injected_before_consumers": true,
+        "resources_closed": true
+      },
+      {
+        "mode": "new",
+        "run": 3,
+        "elapsed_seconds": 5.950501000043005,
+        "module_file": "src\\phymeo\\geometry\\_prism_exact.py",
+        "module_sha256": "e9141c9d23250a40691d76d2544e1c55ee0f93c6331730aec1f1dfab04cc0e1c",
+        "state_fingerprint": "8c992db91af1bb46e8498b3b4a8d75e2cf50377ace340cb5665b89afd0aa0551",
+        "report_fingerprint": "d3f4d3da4fb3c9dafb588cce4b75e420a68cb506a7afdb708e394ede5ead0359",
+        "canonical_report_fingerprint": "ee28be883a5be53eb015103391eb190056e7df51016c666ff8d400d1128edad4",
+        "inputs_fingerprint": "4e08a0ab78a5d41d4fe39727a971c08e2e6c3aec16c081cdb11f0f9f0a53a547",
+        "held_replays": 53,
+        "terminal_replays": 1,
+        "complete_ccd_matches": true,
+        "injected_before_consumers": true,
+        "resources_closed": true
+      }
+    ],
+    "canonical_report_parity": "all6complete reports equal except exactly SceneSubstepReport.timings; RAW complete reports retained",
+    "original_profile": "preserved; no rerun; rawreport timing difference retained, no unavailable normalized baseline claim",
+    "observed_timing_limit": "3fresh sequential observations perversion, singleA WindowsCPU workload only; no P95/900/crossbackend/wholeCI speedclaim",
+    "window_audits": {
+      "numpy": {
+        "mode": "numpy",
+        "snapshot": "ci-opt-host-01/final-source-manifest-01",
+        "source_digest": "9bbdeeeba487184c3a95fd96b0d20ae928ce1554c550beb2c5a0d598b79c745d",
+        "actual_records": 124,
+        "runs": 12,
+        "worst_absolute_oracle_errors": {
+          "position": 5.243263601073522e-10,
+          "velocity": 8.595465450511597e-10,
+          "robot_q": 3.3983083014277327e-10,
+          "robot_v": 1.049136638675563e-09,
+          "normal_impulse": 6.994244211577794e-10,
+          "tangent_impulse": 1.7485610528944484e-10,
+          "impact_sumP": 2.1647450498818444e-10,
+          "impact_sumE": 1.1102230246251565e-16,
+          "sliding_P": 1.1040589021162623e-09,
+          "sliding_E": 1.6033127182900325e-10
+        },
+        "full_state_history_rebuild_row_comparisons": 62,
+        "actual_error_halving": [
+          {
+            "rebuild": 0,
+            "observed_error_h1_8": 0.020833333376055013,
+            "observed_error_h1_16": 0.010416666688523627,
+            "halving_defect": 9.922433245416566e-13
+          },
+          {
+            "rebuild": 1,
+            "observed_error_h1_8": 0.020833333376055013,
+            "observed_error_h1_16": 0.010416666688523627,
+            "halving_defect": 9.922433245416566e-13
+          }
+        ],
+        "fp32_promotions_checked": false,
+        "physical_mapping_force_ccd_checked": true,
+        "no_physics_replay": true
+      },
+      "interpret": {
+        "mode": "interpret",
+        "snapshot": "ci-opt-interpret-01/final-source-manifest-01",
+        "source_digest": "9bbdeeeba487184c3a95fd96b0d20ae928ce1554c550beb2c5a0d598b79c745d",
+        "actual_records": 50,
+        "runs": 10,
+        "worst_absolute_oracle_errors": {
+          "position": 7.390975951260259e-07,
+          "velocity": 1.8835067748801393e-06,
+          "robot_q": 4.529953003817866e-07,
+          "robot_v": 1.9335345768922707e-06,
+          "normal_impulse": 1.289023104228404e-06,
+          "tangent_impulse": 3.22255776057101e-07,
+          "impact_sumP": 5.856532929726654e-07,
+          "impact_sumE": 2.9588564931515293e-10,
+          "sliding_P": 8.060507103037002e-07,
+          "sliding_E": 3.5522054409303586e-07
+        },
+        "full_state_history_rebuild_row_comparisons": 25,
+        "actual_error_halving": [
+          {
+            "rebuild": 0,
+            "observed_error_h1_8": 0.010416785875956217,
+            "observed_error_h1_16": 0.005208412806193034,
+            "halving_defect": 3.9736429850260414e-08
+          },
+          {
+            "rebuild": 1,
+            "observed_error_h1_8": 0.010416785875956217,
+            "observed_error_h1_16": 0.005208412806193034,
+            "halving_defect": 3.9736429850260414e-08
+          }
+        ],
+        "fp32_promotions_checked": true,
+        "physical_mapping_force_ccd_checked": true,
+        "no_physics_replay": true
+      },
+      "cuda": {
+        "mode": "cuda",
+        "snapshot": "ci-opt-cuda-01/final-source-manifest-01",
+        "source_digest": "9bbdeeeba487184c3a95fd96b0d20ae928ce1554c550beb2c5a0d598b79c745d",
+        "actual_records": 50,
+        "runs": 10,
+        "worst_absolute_oracle_errors": {
+          "position": 7.390975951260259e-07,
+          "velocity": 1.8835067748801393e-06,
+          "robot_q": 4.529953003817866e-07,
+          "robot_v": 1.9335345768922707e-06,
+          "normal_impulse": 1.289023104228404e-06,
+          "tangent_impulse": 3.22255776057101e-07,
+          "impact_sumP": 5.856532929726654e-07,
+          "impact_sumE": 2.9588564931515293e-10,
+          "sliding_P": 8.060507103037002e-07,
+          "sliding_E": 3.5522054409303586e-07
+        },
+        "full_state_history_rebuild_row_comparisons": 25,
+        "actual_error_halving": [
+          {
+            "rebuild": 0,
+            "observed_error_h1_8": 0.010416785875956217,
+            "observed_error_h1_16": 0.005208412806193034,
+            "halving_defect": 3.9736429850260414e-08
+          },
+          {
+            "rebuild": 1,
+            "observed_error_h1_8": 0.010416785875956217,
+            "observed_error_h1_16": 0.005208412806193034,
+            "halving_defect": 3.9736429850260414e-08
+          }
+        ],
+        "fp32_promotions_checked": true,
+        "physical_mapping_force_ccd_checked": true,
+        "no_physics_replay": true
+      }
+    },
+    "same_run_actual_records": 224,
+    "remaining_delivery": "parent narrow equivalence audit, new-source externalwheel, accurate head fullCI within unchanged30minutes and Documentation; local results do not replace CI"
+  },
+  "packaging": {
+    "phase": "complete",
+    "digest": "9bbdeeeba487184c3a95fd96b0d20ae928ce1554c550beb2c5a0d598b79c745d",
+    "runner_sha256": "09e25020e355aa59d545d15bfbe9850098bfb71e2cf34a1f2a976a7e1b8d84a8",
+    "results": [
+      {
+        "name": "build",
+        "command": [
+          "C:\\Users\\38347\\Documents\\ChatGPT\\phymeo\\.venv\\Scripts\\python.exe",
+          "-m",
+          "build",
+          "--no-isolation",
+          "--outdir",
+          "C:\\Users\\38347\\Documents\\ChatGPT\\phymeo\\artifacts\\ci-cost-packaging-0065200-a\\dist"
+        ],
+        "exit_code": 0,
+        "runner_seconds": 2.8267220000270754
+      },
+      {
+        "name": "wheel",
+        "command": [
+          "C:\\Users\\38347\\Documents\\ChatGPT\\phymeo\\.venv\\Scripts\\python.exe",
+          "scripts/verify_wheel.py",
+          "--dist-dir",
+          "C:\\Users\\38347\\Documents\\ChatGPT\\phymeo\\artifacts\\ci-cost-packaging-0065200-a\\dist"
+        ],
+        "exit_code": 0,
+        "runner_seconds": 15.598344000056386
+      }
+    ],
+    "wheel": {
+      "path": "C:\\Users\\38347\\Documents\\ChatGPT\\phymeo\\artifacts\\ci-cost-packaging-0065200-a\\dist\\phymeo-0.1.0a0-py3-none-any.whl",
+      "sha256": "a2b1bd35d0e99946fde91837eed819936ea414c2852a6866ed8bed497c5182c6"
+    }
+  },
+  "parent_audit": {
+    "source_hashes_verified": 308,
+    "evidence_hashes_verified": 93,
+    "raw_passing_exit_files_read": 20,
+    "source_mismatches": 0,
+    "wheel_python_files_byte_equal": 153,
+    "wheel_sha256": "a2b1bd35d0e99946fde91837eed819936ea414c2852a6866ed8bed497c5182c6",
+    "scope": "independent saved-data/hash/raw-exit and narrow one-file arithmetic inspection; no repeated whole-stage review or physics"
+  },
+  "delivery": {
+    "status": "awaiting_push_and_new_exact_ci_at_document_creation",
+    "historical_cancelled_head": "5150c3efb12cfdcf81dea2923ff627c7915ca036",
+    "historical_cancelled_ci": 40950637127,
+    "historical_successful_documentation": 40950637280,
+    "must_keep_timeout_minutes": 30
+  },
+  "limits": [
+    "SingleA bounded cost observation only, no formal P95/cross-backend/whole-CI speed claim.",
+    "Original R1-R4 support and diagonal-corner reachability limit unchanged.",
+    "No old full/900 or whole-stage review repeated.",
+    "CPP native boundary unchanged; boundedCPP52 launch evidence remains explicitly on33ec9ea, not a new CPP run.",
+    "Full P6.5 remains in progress."
+  ]
+}

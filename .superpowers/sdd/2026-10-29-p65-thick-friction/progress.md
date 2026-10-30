@@ -70,7 +70,7 @@ Task1 review-fix implementation/verification COMPLETE: e8c821d(I2),33ec9ea(I1/R4
 
 ## Parent exact CI checkpoint
 
-产品 `5150c3e` 已推送并核对远程 SHA。准确 CI `40950637127` 已结束为 cancelled：8 个 CPU 矩阵任务均由 GitHub 确认超过现有 30 分钟时限，required 因 CPU 未成功而 failure；Documentation `40950637280` success。不能计为产品交付通过。2026-10-30 用户明确选择“保持 30 分钟，另行优化耗时”。90 分钟建议未应用并已撤回；完整矩阵、测试、required 和 fail-fast 保持。当前按剖析结果优化厚度精确算术的重复规范化，先证明输出等价并验证受影响路径，再推送取得新 head 的准确 CI；不得盲重试旧 head 或提前推进下一生产合同。
+产品 `5150c3e` 已推送并核对远程 SHA。准确 CI `40950637127` 已结束为 cancelled：8 个 CPU 矩阵任务均由 GitHub 确认超过现有 30 分钟时限，required 因 CPU 未成功而 failure；Documentation `40950637280` success。不能计为产品交付通过。2026-10-30 用户明确选择“保持 30 分钟，另行优化耗时”。90 分钟建议未应用并已撤回；完整矩阵、测试、required 和 fail-fast 保持。已以0065200完成一个厚度精确算术文件的等价优化，报告d2cacff；受影响host96、actual interpret/CUDA各9、224条同次实际轨迹审计及新源码wheel153逐字节校验均通过。三个相同A负载的新进程约5.9s，对照原版约12.3–12.6s，仅为该负载成本观察。接下来推送优化版本并取得新head准确CI；原30分钟配置不变，不提前推进下一生产合同。
 
 CI cost repair ACTIVE fromc2d38d3, original implementer production/numerical/index owner. User retains30minuteCPU workflow/hash c917835c immutable; oneproduction _prism_exact +newtest_prism_exact only. math34functionalinitialGREEN/2costRED→36GREEN, frozen differential119/6682pass. optimizedprofile20.3836s vs46.5556 instrumented, state/53/1/CCDsame; R5 excludesonlytypedSceneSubstepReport.timings for artifactcanon comparison, rawfingerprints retained. Active26267 sixfreshold/new observations, baseline69618 neverrestarted; fullaffectedhost/actualbackend stillpending. No helper/reviewer/push. See task-1-ci-cost-report.md.
 
@@ -83,3 +83,7 @@ CIcost evidence checkpoint: parentdirectrawreport traversal6reports finds0non-ti
 CIcost0065200/source9bbdeeeb: actualinterpretall9passed328.43s exit0,50same-run actualwindowrecords auditedoriginaltol/budgets/FP32/force/CCD,fullhistory/statebitwise25rowpairs. StartingactualCUDAall9 identicalfile, no resultyet; numerical/index retained. No backend speedclaim or wholeCI successclaim.
 
 CIcost Task1 COMPLETE/release: product0065200/source3089bbdeeeb/source1535f01a176;96host818.12s+9interpret328.43s+9CUDA787.11s allRAW_EXIT0. All224same-run actualrecords originalgates/FP32/rebuild fullstate+history/halvingauditspass. Old/new math119/6682 exact andall6canonicalreports/inputs/state/history/counts/CCD same underR5 typedtimings-only rule, rawfullreports retained.3old/3new boundedA observations52.1125%median reduction only, no wholeCI/backend/P95 claim. Workflow30minc917835c/pin unchanged, baseline69618 neverrerun. Source/evidence93hash receipts checked,0processes, cleanfinalreportcommit releasesproduction/numerical/index. Parent Task2new-sourcepackage/accurate30minCI+Documentation required; no helper/reviewer/push.
+
+## Parent CI cost repair delivery checkpoint
+
+Original implementer released production/numerical/index at d2cacff; parent verified308files+93evidence and20success exits, narrow exact-arithmetic invariants, all6rawreports onlytimingsdifferent. Packaging session78217 naturallyexit0: build2.826722s, externalnativepip fullsmoke15.598344s (runnerwall, notbenchmark); wheel153bytesmatch sha a2b1bd35d0e99946fde91837eed819936ea414c2852a6866ed8bed497c5182c6. Current source digest9bbdeeeb unchanged. No active numerical process. Parent owns docs/index and next push/newexactCI. Original5150cancelled preserved; original30minute matrix untouched.

@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "stage": "p65-thick-friction",
-  "status": "local_acceptance_complete_product_ci_cancelled_timeout",
+  "status": "local_acceptance_delivered_remote_ci_deferred_by_user",
   "base": "6e818f574d097ce415940289a58847d4c8ba49fb",
   "product_head": "33ec9ea52dc15ee5b8050adb0a73d1591aea11f5",
   "implementation_report_head": "a59182aae19b1caa8020e3802bce6f6756ad5fac",
@@ -973,26 +973,18 @@
     "parent_frozen_digest_after": "cd6d77917dee8af09f13a430f4fdd4a5b744461874364a142aff0d8e6722d84b"
   },
   "delivery": {
-    "status": "exact_ci_cancelled_seven_cpu_timeouts_followup_optimization",
+    "status": "local_delivery_complete_remote_ci_deferred_by_user",
     "product_ci": {
-      "head": "a478828aa6ab8c59dc310cd4639e6f7a55704bec",
-      "ci": 40991186564,
-      "ci_status": "completed",
-      "ci_conclusion": "cancelled",
-      "documentation": 40991186517,
-      "documentation_conclusion": "success",
-      "required_job": 123863116796,
+      "head": "e21113837b4b0731e471baa03bbc4bb10b38cf86",
+      "ci": 41007037491,
+      "conclusion": "cancelled",
+      "cpu_success": 3,
+      "cpu_timeout": 5,
+      "required": 123913087395,
       "required_conclusion": "failure",
-      "checked_at_utc": "2026-10-30T03:09:28.921381+00:00",
-      "checkpoint": "artifacts/ci-a478828-checkpoint.json",
-      "jobs_metadata": "artifacts/ci-a478828-jobs-01.json",
-      "classification": "artifacts/ci-a478828-cancellation-classification.json",
-      "cpu_success": 1,
-      "cpu_timeout": 7,
-      "successful_cpu_job": 123853718500,
-      "successful_cpu_job_seconds": 1357,
-      "successful_cpu_examples": true,
-      "timeout_minutes": 30
+      "documentation": 41007037548,
+      "documentation_conclusion": "success",
+      "evidence": "artifacts/ci-e211138-cancellation-classification.json"
     },
     "contract_ci_only": {
       "head": "6e818f574d097ce415940289a58847d4c8ba49fb",
@@ -1000,7 +992,7 @@
       "documentation": 40909862611,
       "conclusion": "success"
     },
-    "pushed_head": "a478828aa6ab8c59dc310cd4639e6f7a55704bec",
+    "pushed_head": "e21113837b4b0731e471baa03bbc4bb10b38cf86",
     "remote_sha_verified": true,
     "proposed_resolution": {
       "status": "declined_by_user_keep_30_minutes",
@@ -1037,6 +1029,26 @@
         "required_conclusion": "failure",
         "checked_at_utc": "2026-10-29T21:32:28.003058+00:00",
         "checkpoint": "artifacts/ci-5150c3e-checkpoint.json"
+      },
+      {
+        "head": "a478828aa6ab8c59dc310cd4639e6f7a55704bec",
+        "ci": 40991186564,
+        "ci_status": "completed",
+        "ci_conclusion": "cancelled",
+        "documentation": 40991186517,
+        "documentation_conclusion": "success",
+        "required_job": 123863116796,
+        "required_conclusion": "failure",
+        "checked_at_utc": "2026-10-30T03:09:28.921381+00:00",
+        "checkpoint": "artifacts/ci-a478828-checkpoint.json",
+        "jobs_metadata": "artifacts/ci-a478828-jobs-01.json",
+        "classification": "artifacts/ci-a478828-cancellation-classification.json",
+        "cpu_success": 1,
+        "cpu_timeout": 7,
+        "successful_cpu_job": 123853718500,
+        "successful_cpu_job_seconds": 1357,
+        "successful_cpu_examples": true,
+        "timeout_minutes": 30
       }
     ],
     "historical_timeout_diagnosis": {
@@ -1054,6 +1066,15 @@
       "timeout_minutes": 30,
       "classification": "artifacts/ci-a478828-cancellation-classification.json",
       "incomplete_tests_not_claimed": true
+    },
+    "record_note": "Local product evidence and exact remote SHA complete. Remote full matrix is deferred by explicit user decision, not counted as passing.",
+    "remote_ci_policy": {
+      "automatic_triggers": false,
+      "manual_dispatch_retained": true,
+      "full_job_definitions_unchanged": true,
+      "future_runner": "user will provide new CI machine",
+      "no_remote_success_claim": true,
+      "local_progress_blocked_by_ci": false
     }
   },
   "limits": [
@@ -1185,9 +1206,11 @@
   },
   "ci_cost_repair": {
     "latest_source_reference": "p65-ci-cost-repair.json",
-    "latest_product_head": "0065200d6253cbb703d752aac3e0d1b9dfe80890",
-    "source_tests_scripts_digest": "9bbdeeeba487184c3a95fd96b0d20ae928ce1554c550beb2c5a0d598b79c745d",
-    "source_digest": "5f01a176f8ef29604da0437799eea49829cf971657334a1095360eebaac189bc",
-    "historical_top_level_source_fields": "Top-level source/product/verification fields retain the pre-optimization33ec9ea snapshot; latest optimized source and results are explicitly in this linked record."
+    "latest_product_head": "7e68154a286bff65a7cdd727b63ffd58e676f88c",
+    "source_tests_scripts_digest": "53700e17e0e5b598ab9b7e4e1e6ae5ac62f832be5887a29ddb5576aed73ac154",
+    "source_digest": "75445777a167e4cbc945691f8dd29adb8e72ae9995b98c6a34d08c2baa0022e3",
+    "historical_top_level_source_fields": "Top-level source/product/verification fields retain the pre-optimization33ec9ea snapshot; latest optimized source and results are explicitly in this linked record.",
+    "latest_report_head": "c72cdc30b798f40d23fdc5cdf519f0c5aadd4c84",
+    "latest_wheel_sha256": "ebb49fac5399b0b60898df4321aa47b7a408a684939fc69d0f8c7e8be2085210"
   }
 }

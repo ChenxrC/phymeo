@@ -1,5 +1,17 @@
 # SDD ledger — plan: docs/superpowers/plans/2026-10-29-p65-thick-friction.md
 
+## Current release policy: remote CI deferred by user
+
+Explicit user decision pauses remote automatic CI pending a new CI machine. CI and Documentation become manual-only; unchanged jobs/matrix/timeout/pin preserved. Local Task3/4 evidence and product push complete; remote e211138 remains cancelled (3CPU success/5timeout), never relabeled passing. Stop CI polling and extra cost repairs for hosted timeout. Parent releases local queue to new modules serially; full P6.5 remains open.
+
+## Historical status
+
+## Current parent delivery after Task3 release
+
+Task3 product7e68154/reportc72cdc3 complete, process0/clean confirmed; parent now owns original checkout/index/execution. Host195/interpret19/CUDA19 and224actual records passed. Parent309+126 hash audit and fresh packaging interval-7e68154-a complete, two exits0/wheel153byteparity. Pending new dedicatedbranch push/exact30minute8CPU/examples/required+Documentation. No second fresh review or duplicate physical suite. In separate managed worktrees user authorized parallel B1/S1/G1 code-only, tests pending serial queue; original numerical ownership rule does not prevent isolated editing.
+
+## Historical cost-repair checkpoints
+
 ## Current CI cost repair
 
 优化版本 `a478828aa6ab8c59dc310cd4639e6f7a55704bec` 已推送；准确 CI `40991186564` 于 2026-10-30 02:51:45Z 结束为 cancelled，Documentation `40991186517` success。8 格 CPU 中 Ubuntu/Python3.12/pip 的测试与示例全部 success，job 共 1357s；其余 7 格均由公开完整 commit 页面确认超过 30m0s，测试 cancelled、示例 skipped，required failure。完整矩阵未通过，不能据此推断未完成测试的物理断言结果。用户已明确保留 30 分钟；90 分钟方案不再考虑。第一轮 0065200 的本地等价优化、host96/实际两后端各9及新 wheel 证据保持原版本。现从已完成 optimized-A.prof 继续诊断，父冻结下一轮有理区间重复计算优化；不重跑该已结束 CI，不提前进入下一生产合同。
@@ -99,3 +111,5 @@ Task3 source7e/53700e17:fullhost10files195passed840.64s exit0, thick124actualrec
 Task3 actualinterpretbothfiles19passed351.09s exit0;thick50same-runrecords auditpass(originaltol/budgets/force/CCD/FP32,fullstatehistory25bitwise rowpairs,actualhalving);finiteallnativecontrols complete. StartingcompleteCUDA19source7e/53700e17, no resultyet; numerical/indexretained.
 
 Task3 host195/840.64s andactualinterpret19/351.09s completeexit0;current89050 actualCUDA19 issole numericalrun. Frozen7e/source30953700e17 unchanged; parent remainsread-only, no newproductiontasks or profile. Nativefinite10+thick9 currentinterpretallpass, thick50actualauditpassed.
+
+Task3 COMPLETE/release: product7e68154;source30953700e17/source15375445777. Full10host195/840.64s +actualbothfilesinterpret19/351.09s +CUDA19/975.66s allRAW_EXIT0/no skipsfallback. Same-runthick224records(originaltol/budgets/FP32/force/CCD,fullstatehistory112bitwise rowpairs,actualhalving)auditspass; finite unchangedassertions covered.41math+14474helper/22curve+9legacyshape parity; finalold3/new3R5raw/canonicalexact aparttypedtimings, observedsingleAmedian16.11%lower NON-interleaved, notwholeCI/backendspeed/P95. Cost4b→formatted1bboneblankCRLFASTdelta explicit, GitLF78/workCRLF1bb hashesverified; oldLF0e/workEA4 preserved. Workflow30min/pin/oldprofileunchanged. Finalreceipts126files,0processes, cleanfinalreportcommit releasesproduction/numerical/index. ParentTask4source-paritynewwheel/accurate8CPU+examples+required30minCI/Documentation remainpending; no helper/reviewer/push/newphysics.

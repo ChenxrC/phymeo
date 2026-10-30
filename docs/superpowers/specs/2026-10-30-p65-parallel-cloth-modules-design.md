@@ -1,6 +1,6 @@
 # P6.5 parallel cloth modules: isolated code, serial verification
 
-Status: first parallel module contracts frozen after the one new builder check and parent rulings, 2026-10-30. The human explicitly approved parallel module coding and serial tests because of resource limits. This changes scheduling, not physics or acceptance. Original checkout Task3 and its pending exact CI keep their frozen source. New modules live in isolated managed worktrees from 144656141959483ce577fc0a9e476d235f031305.
+Status: first parallel module contracts frozen after the one new builder check and parent rulings, 2026-10-30. The human explicitly approved parallel module coding and serial tests because of resource limits. This changes scheduling, not physics or acceptance. Historical Task3 source/evidence remains frozen. Latest user policy50a5eeb defers remote CI; B1/S1/G1 foundation checks have now passed serially, with the current queue in docs/development/p65-parallel-work-queue.md. New modules live in isolated managed worktrees from 144656141959483ce577fc0a9e476d235f031305.
 
 ## Decision and architecture
 
@@ -12,14 +12,14 @@ The first parallel checkpoints below are useful production building blocks, not 
 
 ## Ownership and execution
 
-- Delivery checkout C:/Users/38347/Documents/ChatGPT/phymeo remains exclusively owned by thick_friction_implementer until its explicit release. No new module files, test collection, dependencies or commits there.
+- Delivery checkout C:/Users/38347/Documents/ChatGPT/phymeo has been released by thick_friction_implementer and remains at the delivered policy checkpoint50a5eeb. New module files, test collection and dependencies stay in the isolated integration/child worktrees.
 - Integration worktree C:/Users/38347/.codex/worktrees/p65-parallel-integration/phymeo, branch codex/p65-parallel-modules, belongs to parent.
 - Each coding agent creates/uses its own managed worktree at the frozen contract commit, owns only the allowlisted new files, and commits only there. No push, helpers, other-worktree edits or old shared source edits.
 - Test execution, numerical probes, imports that execute physics, compilation/build, native backend checks, performance runs and wheel smoke require an explicit parent queue grant. NO background competing runs. Code reading/writing and Git operations may proceed concurrently.
-- Currently queue owner is original Task3 CUDA89050; after it releases, parent Task4 packaging/exact CI closure remains current delivery priority. Module agents return code and written tests with status CODE_READY_TESTS_PENDING.
+- Original Task3/4 and the B1/S1/G1 foundation execution queue have completed. CODE_READY_TESTS_PENDING was their original authored-code state, not their current verification result. B2/S2/G2 design/implementation remains next; every future execution still requires the sole queue grant.
 - Parent selects one immutable source per queue entry, fresh basetemp, raw exit, command/backend/pin manifest, and closes its resources before granting the next entry. Any changed source invalidates only affected evidence, with rationale.
 - Keep all eight CPU CI cells, timeout30, test/example/required/fail-fast commands and dependency pins unchanged. No current CI rerun against an unchanged failed head.
-- No new code merged/pushed into the delivery branch before current thick-friction cost repair passes its accurate CI gate. Parallel worktree coding is explicitly permitted before that gate.
+- Latest direct user policy defers remote CI and permits local progress. Keep unverified work isolated; preserve completed local tests/audits and original remote failures without relabeling them. New integration stays on its dedicated branch; no main merge or package release.
 
 ## Shared contracts
 
@@ -50,7 +50,7 @@ Public interfaces:
 - bending_residual(position, constraints, alpha, multipliers, reference_angle=1.0) -> (dimensionless max constitutive residual, max angular error rad); reference_angle finite positive.
 - BendingProjectionTrace: element_index, node_indices, positions_before/after (4,3), gradient (4,3), theta_before/after, constraint_before/after, lambda_before/after, delta_lambda, alpha, denominator, branch_status. A returned trace has branch_status="smooth"; a branch failure publishes no sweep. Trace tuple order is the complete element order for that sweep; integration adds the ordered sweep index. No fabricated energy/torque acceptance flag.
 
-Supported smooth branch: abs(theta-rest_angle)<pi, theta strictly inside (-pi,pi). Evaluate/check branch at every recorded pre/post state; reject crossing, exact antipodal/branch-cut state, degenerate/nonrepresentable inputs. Scaled face cross magnitude must exceed 1e-10 using face edge scale (same explicit dimensionless admissibility as existing offset port); do not tune per example. No atan2 wrapping of C, no rest-angle reset and no silent fallback. Hard zero-compliance bending is outside B1 and rejects.
+Supported smooth branch: abs(theta-rest_angle)<pi, theta strictly inside (-pi,pi). Evaluate/check branch at every recorded pre/post state; reject abs(theta_after-theta_before)>=pi, exact antipodal/branch-cut endpoint state, and degenerate/nonrepresentable endpoints. This is a discrete endpoint admissibility check, NOT a certificate that the affine nodal correction segment avoids every intermediate branch crossing or degeneracy. Such continuous geometry belongs to the later accepted-step certification gate. Scaled face cross magnitude must exceed 1e-10 using face edge scale (same explicit dimensionless admissibility as existing offset port); do not tune per example. No atan2 wrapping of C, no rest-angle reset and no silent fallback. Hard zero-compliance bending is outside B1 and rejects.
 
 Independent tests to AUTHOR (execute only with serial grant):
 1. Flat hinge a=(0,0,0), b=(1,0,0), c=(0,1,0), d=(0,-1,0), rest0: theta0/energy0/zero correction.
@@ -88,7 +88,7 @@ Allowlist:
 A subsequent G2 experiment will use public runtime APIs and remain behind serial integrated acceptance.
 
 make_parallel_jaw_gripper(*, half_gap_m, patch_half_extent_m, carriage_mass_kg, finger_mass_kg, inertia_diagonal_kg_m2, effort_limits_N, gravity_m_s2=(0,0,-9.81)) -> ParallelJawGripper(model, initial_state, patches, effort_limits_N).
-The model is 3 real massive prismatic links: shared +Z carriage parent -1, two children at Y=-half_gap,+half_gap, axes +Y and -Y (positive q closes), identity fixed orientations, zero q/v, rectangular finite local XZ patches centred at each child origin. All dimensions/masses/limits finite positive; inertia input (3,3) passes RobotModel checks; patch extent is (half_x,half_z). Existing exact coordinate-prismatic support is preserved. No massless kinematic carriage, prescribed actual state or fake hard stops.
+The model is 3 real massive prismatic links: shared +Z carriage parent -1, two children at Y=-half_gap,+half_gap, axes +Y and -Y (positive q closes), identity fixed orientations, zero q/v, rectangular finite local XZ patches centred at each child origin. finger_mass_kg accepts either a scalar (both fingers) or a length2 vector (left/right); extent is shared but may be nonsquare. All dimensions/masses/limits finite positive; inertia input (3,3) passes RobotModel checks; patch extent is (half_x,half_z). Existing exact coordinate-prismatic support is preserved. No massless kinematic carriage, prescribed actual state or fake hard stops.
 gripper_inputs(gripper, *, lift_effort_N, closing_effort_N) -> RobotInputs: lift scalar and two closing scalars may have either sign (opening allowed), each within owned limits or reject; forces/torques zero; no clipping hidden from caller.
 Opening diagnostic from q is 2*half_gap-q1-q2, in metres. It is a diagnostic/support-range check, not an implemented joint limit. Do not label current model as general articulated thickness support.
 Tests to AUTHOR: symmetric and asymmetric masses/extents; inherited carriage FK and finite patch orientation; positive commands close; commands exceeding limits rejected; ownership/input immutability; all invalid geometry/inertias. Parent G2 freezes high-mu hold/low-mu drop with finite lift/closure effort and independent force balance before executing. Builder success does not mean load-bearing success.
@@ -110,4 +110,4 @@ B1-B5 were resolved without new user decisions because user already approved thi
 - Independent prism normals require a separate number-field/interval proof and symmetric normal-selection rule. Old patch-face priority and single-Q arithmetic cannot be silently reused.
 - G1 finite prismatic geometry does not publish controller predictions as state. Initial simple finite hold can precede self-contact completion, but real load-bearing, folding, general-robot support and complete P6.5 remain separate acceptance gates.
 
-Current scripts/tests are deferred by the user's scheduling instruction. A code checkpoint is explicitly unverified, not a passing product or closed stage.
+The original code checkpoints were explicitly unverified. B1/S1/G1 foundation tests have since passed under serial grants; their versioned lane reports define exactly that evidence. Full integrated physics and P6.5 remain open.

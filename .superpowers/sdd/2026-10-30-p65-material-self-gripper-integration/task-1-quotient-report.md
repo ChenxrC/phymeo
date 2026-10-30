@@ -1,3 +1,128 @@
+# Exact contact quotient: focused host validation
+
+Current status: **HOST_VERIFIED_STANDALONE_ALGEBRA**. The complete original focused
+file passed on its FIRST functional execution: **83 passed in0.34s, RAW_EXIT0**.
+Final scoped Ruff and format checks passed. No mathematical implementation or
+oracle change was needed. This accepts standalone host algebra only; physical
+contact/folded-grasp support and ordinary-mass nonlinear controls remain open.
+
+The earlier code-only authoring report is preserved below as a historical record.
+Its UNEXECUTED status was true at7673f670 and is not rewritten as historical RED.
+
+## Grant, environment and exact tested source
+
+Activated parent grant6d7d7afde605080bb824000409f519853e7259ba. Starting child
+HEAD7673f6700a07afad143819e7365b2b6e8630fc7d was clean and matched all four
+published hashes. No parent merge, dependencies, exports or old source changed.
+
+Tested product commit: `80d2a093759f820680640d6492aee8b610f23112`.
+Only formatting differs from authoring source; exact AST and import sequences
+match before/after for BOTH Python files, without import-order normalization.
+
+- Source SHA256: `9745dc5eb37131d2aa17174e9864825c9746dc5a84a4e1c3b94966ea1b3fc1a7`
+- Test SHA256: `113b7c1d3cf733a908c433b854e6719f433b597157d45e031c4da9d97cc87047`
+- Actual Python: original `.venv-py311/Scripts/python.exe`,3.11.15.
+- Installed pytest9.1.1, Ruff0.17.2, NumPy metadata2.4.6. No installation occurred.
+- Imported `phymeo.validation.contact_quotient.__file__` was exactly this child's
+  `src/phymeo/validation/contact_quotient.py`. The provenance step called neither
+  producer nor verifier.
+
+Working directory: `C:\Users\38347\.codex\worktrees\p65-bending-module\phymeo`.
+Every executable invocation used explicit child/src PYTHONPATH,
+PYTHONDONTWRITEBYTECODE=1, PYTEST_DISABLE_PLUGIN_AUTOLOAD=1, and
+OMP/OPENBLAS/MKL/NUMEXPR thread counts1. Ruff used --no-cache; pytest used no cache
+provider. Commands, environment, start/finish, raw stdout/stderr, source-before/
+after and raw exits are saved. No native backend or unrelated test suite ran.
+
+Exact full-file command (one invocation, no deselection/subset/native flags):
+
+```powershell
+& 'C:\Users\38347\Documents\ChatGPT\phymeo\.venv-py311\Scripts\python.exe' -m pytest tests/test_contact_quotient.py -q -x --tb=short -p no:cacheprovider --basetemp 'C:\Users\38347\AppData\Local\Temp\phymeo-b2-quotient-7673f670-full01'
+```
+
+The absolute basetemp was freshly checked absent immediately before execution;
+no old directory was deleted/reused. The granted -q suppresses the collection
+header; untouched output reports83 passed, with no failed/skipped/deselected/
+xfailed outcomes. There was no separate collection invocation. The full-file
+command and unchanged83 authored parameter cases bind the complete selected scope.
+No code-coverage percentage or native capability follows from these results.
+
+## First outcomes, diagnosis and repair
+
+| Saved command receipt | RAW_EXIT | Actual outcome |
+| --- | --- | --- |
+| 01-environment | 0 | Correct executable, child module and environment |
+| 02-first-ruff | 0 | All checks passed |
+| 03-first-format | 1 | Both files needed wrapping/blank-line/newline formatting |
+| 04-format-repair | 0 | Ruff reformatted exactly the two allowed Python files |
+| 05-ast-proof | 0 | Exact AST and import sequences identical before/after |
+| 06-final-ruff | 0 | All checks passed |
+| 07-final-format | 0 | Two files already formatted |
+| full01 | 0 |83 passed in0.34s, first and only functional run |
+
+The original format failure and original bytes remain immutable. Its diagnosis
+preceded the scoped repair. Commit80d2a09 contains formatting only; mathematical
+laws, independent oracle values, resource limits and strict condition boundary
+are unchanged. No functional RED/fix cycle is claimed or fabricated. Static
+checks were not repeated after their successful final source snapshot.
+
+Two non-executing orchestration errors also remain recorded: an initial Git ZIP
+archive argument was split by PowerShell (exit1), then corrected once; a later
+runner invocation accidentally contained literal JavaScript concatenation and
+failed PowerShell parsing (exit1). Neither started quotient/Python execution or
+changed product files. Their receipts are00-preparation-failure.json and
+00-invocation-parser-failure.json; corrected archive/raw command evidence remains.
+
+A foreign Python3.13 PID63272 / parent84640, running old
+validate_candidate11_material_v1.py, appeared AFTER the initial zero scan. The
+immediate guard returned exit1 and stopped the batch before01-environment. It was left untouched;
+a fresh scan at2026-10-31T05:45:48.9737599+08:00 found no matching process or parent.
+Every subsequent executable command again required an immediate zero inventory.
+No kill/restart/interaction or overlap was used to obtain this result.
+
+## Same-run audit and evidence
+
+Evidence root:
+`artifacts/p65-contact-quotient-validation-7673f670-01` in this child worktree.
+The original source copy and Git ZIP, tested-source ZIP, all eight command
+receipts with raw streams, frozen commands, format diagnosis, AST/import proof,
+process guards and import/config source hashes are preserved.
+
+`same-run-audit.json` SHA256:
+`afb069f139499a75f173b483802dabc96615d31dc74519e3484d91660c0fa4b7`.
+It confirmed full01 exit0, all source-before/after/current hashes identical,
+all6 archived file entries matched their original/tested hashes, unchanged
+import/config bindings, and all8 original raw exits. No extra matrix samples or
+physical work were run for this audit.
+
+The immutable run-evidence manifest covers46 files. Its SHA256 is
+`df56656300d8409b420a0eccc6e30338c6e3930b2172ca2471c0502a06ebf1cf`.
+Final report/source hashes, clean commit and fresh global execution count are
+recorded separately in `execution-slot-release.json`; the final evidence manifest
+includes that receipt and final reports without a circular self-hash. Parent
+must audit those receipts before accepting this standalone scope.
+
+## Scope retained and release
+
+Exactly the original four new paths constitute the delivery. Apart from the
+formatting repair, only these two reports changed during validation. No old
+host75, R7/S2/G2/LG/adapter, CUDA/C++, build, install, profile, remote CI or helper /
+reviewer work ran. No queued process was killed. Original physical gates remain.
+
+Exact certificates may reject valid inputs/bases on finite bit/operation limits.
+Negative representative components and off-range residuals remain visible; this
+is not pressure uniqueness, friction capacity, contact admission, state repair or
+external work credit. Two ordinary-mass nonlinear fidelity controls and physical
+cone/phase/ideal-map/predictor/energy/angular integration are still unresolved.
+
+Executable work is complete; formal sole-slot release is the separately saved
+clean/process0 receipt after this documentation checkpoint. No further executable
+work is authorized by this report itself.
+
+---
+
+## Historical code-only authoring record (preserved)
+
 # Task1 exact contact quotient prerequisite report
 
 Status: **CODE_READY_TESTS_PENDING**. Original B2 owner only. No executable slot

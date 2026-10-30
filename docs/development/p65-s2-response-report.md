@@ -1,6 +1,68 @@
-# S2-L self-response authoring report
+# S2-L self-response implementation and serial validation report
 
-Status: CODE_READY_TESTS_PENDING; executable validation has not been authorized or performed.
+## Serial validation and current delivery
+
+Status: LOCAL_VALIDATION_COMPLETE; parent acceptance remains pending. The sole execution slot is released only by the final clean/process receipt saved with this report. Tested production/test snapshot: bcf4c1d343df2ee0a15be9f62f1bd1e50ca087d4. All subsequent repository changes are these two reports.
+
+The parent grant d806f28b53505cb045c9c1a346f8e62ed81fe27f authorized serial validation. The initial fifteen authored working hashes/Git blobs were saved at 7f68bdea32cc816352a5cfbd839c1eec532d3b65, then parent 174e2ab19d17652448109dad953e91c4654d2cea was merged normally as ee6370a991bfac90ca8e12cc34c7c438ff995da2 without conflicts. All fifteen authored files stayed unchanged at that merge. The adapter source and two tests matched accepted 721b5c162f1f7e42dd618c70378bba098af0698e byte hashes and Git blobs. No later dependency merge or shared-source edit occurred.
+
+All commands use the child src explicitly. Environment preflights assert eight imported-module paths. Executions set PYTHONDONTWRITEBYTECODE=1, disable plugin autoload, set all configured thread counts to 1 and disable pytest cache; each pytest group has a checked-absent absolute basetemp. Host used the existing original .venv-py311: Python3.11.15, NumPy2.4.6, pytest 9.1.1, Ruff0.17.2. Actual used the existing .venv: Python3.12.14, NumPy2.5.4, pytest 9.1.1, Ruff0.17.2, tyx-compute0.1.0a0 at pinned 99f6df7c0fd8fdeef77f97df83914da27b64b7ee. No installation was performed.
+
+| Required selection | Saved run | Observed outcome |
+| --- | --- | --- |
+| Scoped Ruff on all thirteen new Python files | 21-current-ruff-check | RAW_EXIT0 |
+| Scoped format check on the same thirteen | 22-current-format-check | RAW_EXIT0 |
+| Complete five host files together | 18-host-face-index-fix | 136 passed, 2193.93 s, RAW_EXIT0 |
+| Complete actual file, interpret, --require-tyx | 27-interpret-first-executed | 80 passed, 1565.79 s, RAW_EXIT0 |
+| Complete actual file, cuda, --require-tyx | 32-cuda-first | 80 passed, 1749.03 s, RAW_EXIT0 |
+| Exact bounded terminal node, cpu_cpp, --require-tyx | 33-cpp-bounded-first | 1 passed, 11.37 s, RAW_EXIT0 |
+
+The full host selection is test_cloth_self_response.py, test_cloth_self_anchors.py, test_cloth_self_mapping.py, test_cloth_self_physics.py and test_cloth_self_transaction.py. Both full actual selections use test_cloth_self_response_tyx.py; C++ uses only ::test_actual_bounded_cpp_terminal_control. Every pytest command used -q -x --tb=short -p no:cacheprovider. There were no skips or fallback substitutions. C++ proves only the specified bounded one-step terminal control, not all windows or backend lifetime/TYX003 closure.
+
+### Original outcomes and repairs
+
+All original post-code failures, commands, source snapshots and RAW_EXIT files are retained. They are not historical TDD RED. First Ruff run 03 found 25 issues; first format run 04 found 13 files. Style commit 6ea6c760e3984c865b8b0c7407831a90137937a7 sorted 19 imports, renamed two ambiguous LDL locals and replaced four assigned lambdas by local functions. Formatting-only ASTs matched for all 13; import-normalized ASTs also matched for all 13. The local rename/lambda transformations are separately preserved and are not mislabeled exact-AST equality.
+
+Host run 14 reached 40 passes, then found a fixture using a generic StateRegistry where the public participant-owned registry was required. Commit 8b86b10 fixes only the new fixture to use base.registry. Host run 16 again reached 40 passes, then exposed tuple-based topology indexing that selected a scalar. Commit bcf4c1d uses triangles[list(pair)] to retain both oriented face rows. The original failure receipts and small diffs remain. The complete host run 18 and every later physical selection passed on the same resulting snapshot. No physical inputs, oracle equations, h, windows, proof resources, tolerances or physical gates changed.
+
+Native preflight 23 failed in the observer's distribution metadata lookup (tyx versus installed tyx-compute); corrected preflight 25 passed without product changes. File-only observer 19 failed at final grouping because empty first-step owner evidence combined distinct B cases. The preserved v2 was not executed. V3 binds pairs from authored collection order before output comparison; it passed host run 28. Observer 30 then found that pytest's truncated native C directory names retain the variant and restart local numbering. V4 derives exactly that naming from the authored variant names and pytest 9.1.1 _mk_tmp behavior; no physics or source changed. Original observer failures and all versions remain preserved.
+
+Launches 26, 29 and 34 stopped at broad process guards before execution and have no fabricated RAW_EXIT. Foreign processes were identified, never killed or treated as Phymeo validation; their results are not claimed. The initial native-preflight approval-review rejection, based on a stale host-running condition, is also retained alongside the already-finished host receipt and subsequent allowed command. These incidents did not cause physical resampling. The last identified foreign process ended naturally; the fresh global zero snapshot at 2026-10-31T05:00:26.7314786+08:00 is retained in 34-process-ended-global-zero.json before audit 35.
+
+### Same-run saved evidence
+
+Evidence root: C:/Users/38347/AppData/Local/Temp/phymeo-p65-s2-response-7f68bde-serial. Raw logs, exact commands, source manifests, exits, before-source snapshots, failed attempts, observer versions and process receipts remain there. The final same-snapshot audit checks 328 before/after/current source/test/config hashes for every listed passing selection and observer, plus all 13 authored SHA/Git blobs and the three accepted adapter files. Its source and adapter mismatch counts are zero.
+
+| Saved physical group | Audit run/version | Windows / steps / exact rebuild pairs | Maximum positive energy / absolute angular window sum |
+| --- | --- | --- | --- |
+| Host | 28 / v3 (RAW_EXIT0) | 78 / 1434 / 39 | 0 J / 3.3306690738754696E-16 N*m*s |
+| Interpret | 31 / v4 (RAW_EXIT0) | 79 / 1435 / 39 | 0 J / 5.9604644775390625E-08 N*m*s |
+| CUDA | 35 / v4 (RAW_EXIT0) | 79 / 1435 / 39 | 0 J / 5.9604644775390625E-08 N*m*s |
+| Bounded C++ | 36 / v4 (RAW_EXIT0) | 1 / 1 / 0 | 0 J / 0 N*m*s |
+
+The saved-data observer checks complete actual state/history, original inputs, requested/represented/actual phase transfers, selected-pre binding, path/CCD receipts, independent R2 phase evidence and native FP32/launch/upload/download receipts. It compares the entire stable serialized payload for each prescribed pair, excluding only the exact typed SceneSubstepReport.timings field. Pair membership is fixed by authored function/case and ordinal block/stride before any output comparison; each pair contains exactly two distinct resolved physical directories. Aliases are deduplicated. This avoids vacuous singleton or output-selected rebuild equality.
+
+All saved full-window energy and angular sums stay within their original noncancelling budgets: host 1e-8 and actual 1e-5. Capacity enclosure and complete phase gates retain the original 1e-8/2e-5 tolerances. No extra numerical run was used to generate this report.
+
+To preserve full evidence within disk limits, the parent authorized lossless compression of closed per-step JSON only. Each file retains its original path, byte length, SHA/name sidecar, compressed SHA and independently streamed decompression byte/SHA verification in a .storage.json receipt. Atomic publication of the compressed file and receipt precedes removal of the verified redundant original. Raw logs, exits, commands, manifests, source snapshots and last-attempt.json remain uncompressed. The saved audits reconstruct and verify the exact original bytes. The first 352 sidecar filenames were independently rechecked; the later filename/regex corrections and original safe-stop evidence are retained.
+
+### Exact scope of the ideal-map capacity enclosure
+
+For actual stored B, L=(B M^-1 B^T)^-1 B M^-1 and p=L ell, the selected-address discrepancy is E=B_star^T-B^T, enclosed by |E|<=Gamma. With nodal delivery uncertainty |delta|<=e, the ideal-map certification witness is defined in the stored-map gauge by p_star=p+L delta-L E p_star. Its remainder is r_star=(I-B^T L)(ell+delta-E p_star). G=|L|Gamma and strict gamma=||G||inf<1 give the uniform contraction bound and the propagated pressure/remainder enclosures used by _ideal_capacity_error. Unknown or exhausted enclosure rejects.
+
+This p_star is a stored-map gauge certification witness. It is not asserted to be the ideal-map mass-weighted pseudoinverse, a unique measured physical pressure decomposition, or a state correction. Gamma encloses exact-versus-stored J only at the plan's selected material addresses. Differences at all complete clipping-extremum addresses are separately checked by _extreme_velocity, the ideal velocity bounds and _residual_speed over both maps. The Gamma contraction alone does not certify every ideal extremum or a nonlinear held-position sensitivity. The parent's hand derivation of these identities is file-only mathematical evidence, not an additional numerical test or independent acceptance of the whole response implementation.
+
+### Remaining scope and release
+
+The delivered claim is the frozen nonincident unique-exposed-ray, constant-normal loaded held domain with None/legacy Distance, including the full A/B/C controls and strict gates above. Full incident folds/S2-F, arbitrary rotating loaded continuation, typed B2/v2 coupling and overall P6.5 integration remain open. Blanket shared-vertex exclusion or rejecting every folded case does not satisfy full folded-cloth contact. No general-tree energy or arbitrary convergence claim is made. Remote CI is user-deferred and unpassed. Accepted LG69/S1/G2/B2/adapter groups were not repeated; no helper/reviewer/push/remote or profiling occurred.
+
+Final report/source manifests, evidence inventory and exact final clean/process 0 release receipt are returned out of band to avoid self-referential hashes. Parent acceptance is a later decision after independent inspection of these saved bytes.
+
+---
+
+## Preserved authoring record: 7f68bde
+
+Historical authoring status: CODE_READY_TESTS_PENDING. No executable validation had been authorized or performed at this checkpoint. All execution/dependency/release statements in this preserved record describe that earlier checkpoint; the current results and dependency merge are above.
 Starting lineage: a075d1826bb8ba29edb08a91460940184e0346e7, branch
 codex/p65-self-contact-module, existing isolated managed worktree.
 Contract read from the parent integration tree at d55182ea99b8c8a079acb4ea6ca4afa9833fa234,

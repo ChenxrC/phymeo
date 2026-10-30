@@ -1,6 +1,6 @@
 # S2-LG pair geometry authoring record
 
-Status: CODE_AUTHORING; no executable validation has been performed or authorized.
+Status: LOCAL_HOST_VERIFIED; parent acceptance is pending. The fixture and authoring sections below preserve the pre-execution record; see the serial validation section for current evidence.
 Contract merged normally at d79316c53f74c7d6f142b8c9a54f565a32ed27f9.
 The frozen parent specification including R4 governs this checkpoint.
 
@@ -102,7 +102,7 @@ both material reconstructions independently of the implementation.
 
 ## Code checkpoint and public interfaces
 
-Status: CODE_READY_TESTS_PENDING. This is authored code, not a passing or
+Historical authoring status: CODE_READY_TESTS_PENDING. This was authored code, not a passing or
 numerically verified result. No project import, collection, pytest, lint,
 formatter, compile, build, installation, profile, native check or remote CI
 was performed. No historical TDD RED is asserted. No executable-validation
@@ -190,3 +190,79 @@ Full folded cloth still needs the incident-material/shell decision, complete
 common-load response, all cross terms, normal-cone friction, actual endpoint
 mapping/ledger audit, persistent anchors, history and transaction integration.
 Those are deliberately outside this geometry-only checkpoint and remain open.
+
+## Authorized serial validation
+
+The sole execution grant was the parent's explicit followup plus committed
+`task-2-validation-grant.md` at parent 85c55eda7d7e55d6d1629f85f0465e5e23d05de5.
+Starting HEAD 1058d34354a9e1ecd9b15e3f85a84b10e243f4c3 was clean. No B2/G2
+code was merged or rerun. The previously noted foreign QA PID 49212 was absent
+in the initial global scan; no action was taken on that process or its work.
+
+Evidence directory:
+C:\Users\38347\AppData\Local\Temp\phymeo-p65-s2-1058d34-serial
+
+The initial manifest owns eight original source/report hashes and eleven legacy/
+S1 hashes; original file bytes were copied before imports or style changes.
+Interpreter: original-repository .venv-py311, Python 3.11.15, NumPy 2.4.6,
+pytest 9.1.1, Ruff 0.17.2. All three actual imported module paths were asserted
+inside this lane's src. Environment receipts bind explicit PYTHONPATH,
+PYTHONDONTWRITEBYTECODE=1, PYTHONNOUSERSITE=1, disabled plugin autoload and
+cacheprovider, PYTHONHASHSEED=0 and all configured thread counts 1.
+
+| Saved receipt | Actual result | RAW_EXIT |
+| --- | --- | --- |
+| 01-import-receipt | Three source paths asserted; versions recorded | 0 |
+| 02-original-ruff-check | Two I001 import-spacing findings in tests | 1 |
+| 03-original-format-check | Six files required formatting | 1 |
+| 04-scoped-import-spacing | Only two import-spacing findings repaired | 0 |
+| 05-scoped-format | Six allowlisted files formatted | 0 |
+| 06-style-semantic-classification | All six ASTs identical; eleven old hashes unchanged | 0 |
+| 08-first-host-full | 69 passed in 3.56s; no failures or skips | 0 |
+| 09-final-ruff-check | All checks passed | 0 |
+| 10-final-format-check | Six files already formatted | 0 |
+
+The FIRST complete post-code host run was GREEN. The original static failures
+remain saved; no historical TDD RED is asserted. There was no numerical repair,
+fixture change, altered test expectation, threshold relaxation, reduced proof
+budget, changed tie rule, epsilon or sampling fallback. All 42 authored function
+declarations and their 69 collected test cases ran in the complete command:
+
+```text
+C:\Users\38347\Documents\ChatGPT\phymeo\.venv-py311\Scripts\python.exe -B -m pytest tests/test_prism_pair_exact.py tests/test_prism_prism_manifold.py tests/test_prism_prism_sweep.py -q -x --tb=short -p no:cacheprovider --basetemp C:\Users\38347\AppData\Local\Temp\phymeo-p65-s2-1058d34-serial\pytest-first
+```
+
+The absolute basetemp was checked absent immediately before that command; its
+receipt is 07-first-basetemp.json. Every executable stage saved its full argv,
+environment, source hashes before/after, raw log, raw exit and process census.
+The first host source snapshot is also preserved as formatted-first-source/.
+No numerical case was rerun solely to add a report. Final static checks and
+final source manifests bind exactly the same six tested file hashes.
+
+Only style changed: whitespace/line wrapping, equivalent numeric literal
+spelling, and two extra import-block blank lines. All six complete ASTs remained
+identical. The full style patch is 11-style-only.patch. The tested source is
+committed at cf83a471422620ac00cf9b65f4ffec7c49235c0b. The two reports are a
+separate subsequent documentation checkpoint; they do not alter tested code.
+
+Passing coverage includes both independently moving safe controls; exact
+point/edge/face extrema and two-root material reconstruction; all maximal
+ties; R4 ID/orientation/caller binding; interior crossing and area collapse;
+complete coverage and honest proof exhaustion; R6 corrupted certificates with
+either curvature term omitted; and signed penetration-budget/input rejection.
+These are local host geometry results, not native, response/friction, lawful
+incident-fold, arbitrary-convergence or whole-P6.5 acceptance.
+
+Final 13-final-release.json records the actual final commit, clean tree, eight
+source/report hashes, all saved evidence hashes, unchanged legacy bytes,
+same-tested-snapshot checks and fresh global/Phymeo process counts. Slot release
+is formal only after that final receipt exists and the parent is notified.
+
+### Final tested source SHA256
+
+- src/phymeo/geometry/_prism_pair_exact.py: 25416a4f261a5554912f35d60221408908964ce269dba79241acc941565bdb14
+- src/phymeo/geometry/prism_prism_manifold.py: 540b80713dba6d68198ea55f09689035ca00984f5f7f5d0be0c9c238d6966f27
+- src/phymeo/geometry/prism_prism_sweep.py: c77a6113fcd437548cc9cd8d84231021d7943b128193f712ed6ffc4c827bf5b3
+- tests/test_prism_pair_exact.py: 602a9218616e28021de5742ffbfa608234be16014536bfaab0d0cddffd0ad0c2
+- tests/test_prism_prism_manifold.py: 1a397790a852a59951ea67e92fa591ac59cd624e4fd9e1a93f801c66dc541b46
+- tests/test_prism_prism_sweep.py: e47db0809c6edee802d60fd9064dc2541caa81054e603526c0c25a0bb20fe16e

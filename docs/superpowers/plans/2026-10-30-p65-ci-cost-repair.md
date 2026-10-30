@@ -35,3 +35,5 @@ Main reviews mathematical equivalence and scopes, audits raw outputs and snapsho
 - [x] User chose original30minutes; completed baseline profile establishes redundant exact arithmetic hotspot.
 - [ ] Task1 optimized source, equivalence and affected tests complete.
 - [ ] Task2 new-source package and accurate fullCI success.
+
+R5 observation correction: original rawreport fingerprint contains perf_counter timings and is not cross-run invariant. Preserve it and allrawreports; for planned3old/3new require exact canonical report/input/state/history/CCD equality excluding only the typed SceneSubstepReport.timings field, per specR5. No originalprofile rerun or production/runtime change.

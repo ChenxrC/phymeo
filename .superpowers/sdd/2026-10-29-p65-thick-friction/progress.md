@@ -71,3 +71,7 @@ Task1 review-fix implementation/verification COMPLETE: e8c821d(I2),33ec9ea(I1/R4
 ## Parent exact CI checkpoint
 
 产品 `5150c3e` 已推送并核对远程 SHA。准确 CI `40950637127` 已结束为 cancelled：8 个 CPU 矩阵任务均由 GitHub 确认超过现有 30 分钟时限，required 因 CPU 未成功而 failure；Documentation `40950637280` success。不能计为产品交付通过。2026-10-30 用户明确选择“保持 30 分钟，另行优化耗时”。90 分钟建议未应用并已撤回；完整矩阵、测试、required 和 fail-fast 保持。当前按剖析结果优化厚度精确算术的重复规范化，先证明输出等价并验证受影响路径，再推送取得新 head 的准确 CI；不得盲重试旧 head 或提前推进下一生产合同。
+
+CI cost repair ACTIVE fromc2d38d3, original implementer production/numerical/index owner. User retains30minuteCPU workflow/hash c917835c immutable; oneproduction _prism_exact +newtest_prism_exact only. math34functionalinitialGREEN/2costRED→36GREEN, frozen differential119/6682pass. optimizedprofile20.3836s vs46.5556 instrumented, state/53/1/CCDsame; R5 excludesonlytypedSceneSubstepReport.timings for artifactcanon comparison, rawfingerprints retained. Active26267 sixfreshold/new observations, baseline69618 neverrestarted; fullaffectedhost/actualbackend stillpending. No helper/reviewer/push. See task-1-ci-cost-report.md.
+
+CIcost product0065200: old/new sixfresh observations pass completecanonicalreport/input/state/history/CCD equality underR5, 12.29–12.59s vs5.89–5.95s boundedA. Active45451 fullaffectedhost96cases, finalsource308digest9bbdeeeba487184c3a95fd96b0d20ae928ce1554c550beb2c5a0d598b79c745d/source5f01a176..., workflowc917835c unchanged, pin99f6. Actualallthick interpret/CUDA pending. No scope expansion; production/numerical/index retained.

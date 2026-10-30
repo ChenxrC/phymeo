@@ -6,6 +6,8 @@ Implementer owns production/numerical/index. No helper/reviewer dispatched. Main
 
 ## Active execution
 
+CI cost repair ACTIVE (original30minuteCPU gate retained): see task-1-ci-cost-report.md. Original implementer again owns numerical/production/index; sixpaired observations complete; current45451 fullaffectedhost96cases at product0065200/source308digest9bbdeeeb..., actualallthick interpret/CUDA pending. Prior review-fix acceptance below is historical and remains closed; this repair changes only exact arithmetic and adds mathematical tests.
+
 Task1 review-fix implementation/verification COMPLETE. Product33ec9ea52dc15ee5b8050adb0a73d1591aea11f5 (I2e8c821d), final307file digestcd6d77917dee8af09f13a430f4fdd4a5b744461874364a142aff0d8e6722d84b; source153digestdf8c2ad9698f3f4c958b75ad9eee4135162fac1be490e56dd29cfce3df1f8d94. Focusedhost7/13.10s, remaininghost17/433.27s, actualinterpret10/134.13s andCUDA10/327.19s all rawexit0;26unaffected host03passes reused explicitly. Same-run39C actual state/fullhistory records independently audited under original tolerances/budgets and nativeFP32. Original probes/newsmoke/statics pass. R4 actual-port finite membership preserves ideal body certification; the preserved diagonal corner candidate reachability limitation is disclosed in task-1-review-fixes.md and spec. Historical1fcd full/window evidence keeps its source versions. Zero remaining numerical processes; production/numerical/index released with final report commit. Main owns original finding closure and C++/wheel/CI/push; no wholeH1/P6.5 completion claim.
 
 ## Geometry unit (step 1-3)

@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from ..constraints.material_trace import MaterialBatch
+from ..constraints.material_trace import MaterialBatch, CompositeComputeBoundary
 from ..core.scene import BackendContext
 from ..core.state import ParticleState
 from ..coupling.composite_cloth import CompositeClothParticipant, CompositeParticipantWorkspace
@@ -56,19 +56,28 @@ class TyxCompositeClothWorkspace(CompositeClothWorkspace):
         self.context = BackendContext("tyx:" + program.mode)
         self.engine = TyxBendingMath(program.mode, cache_root=program.cache_root)
 
+    def _convert(self, name, value):
+        original = np.asarray(value, dtype=np.float64)
+        computed = as_compute(original, name).astype(np.float64)
+        self.compute_boundaries.append(CompositeComputeBoundary(name, original, computed))
+        return computed
+
     def _predict(self):
         before = self.engine.stats()
-        converted = as_compute(self.initial.position, "prediction position").astype(np.float64)
+        converted, velocity, force, weights, gravity, h = self._prediction_inputs()
         self.ledger.domain(self.initial.position, converted)
-        x, v = self.engine.predict(self.initial.position, self.initial.velocity, self.inputs.force,
-                                  self.model.inverse_mass, self.model.gravity, self.h)
+        x, v = self.engine.predict(converted, velocity, force, weights, gravity, float(h))
         self.ledger.domain(converted, x)
         self.prediction_launches = self.engine.stats()["completed_launches"] - before["completed_launches"]
         return ParticleState(x, v)
 
-    def _alpha(self, compliance):
-        first = self.engine.axpy(np.zeros_like(compliance), compliance, 1 / self.h)
-        return self.engine.axpy(np.zeros_like(first), first, 1 / self.h).astype(np.float64)
+    def _alpha(self, compliance, kind):
+        converted = self._convert(kind + "/compliance", compliance)
+        before = self.engine.stats()["completed_launches"]
+        first = self.engine.axpy(np.zeros_like(converted), converted, 1 / self.h)
+        result = self.engine.axpy(np.zeros_like(first), first, 1 / self.h).astype(np.float64)
+        self.alpha_launches[self.material.order.index(kind)] = self.engine.stats()["completed_launches"] - before
+        return result
 
     def _block(self, name, x, multipliers):
         law = getattr(self.material, name)
@@ -97,10 +106,9 @@ class TyxCompositeClothWorkspace(CompositeClothWorkspace):
     def _reconstruct(self):
         before = self.engine.stats()
         # Reconstruction itself converts coordinates too; this boundary is certified.
-        converted = as_compute(self.candidate.position, "reconstruction position").astype(np.float64)
+        px, pv, converted, weights, h = self._reconstruction_inputs()
         self.ledger.domain(self.candidate.position, converted)
-        value = self.engine.reconstruct(self.predicted.position, self.predicted.velocity,
-                                        self.candidate.position, self.model.inverse_mass, self.h)
+        value = self.engine.reconstruct(px, pv, converted, weights, float(h))
         self.reconstruction_launches = self.engine.stats()["completed_launches"] - before["completed_launches"]
         return value
 
@@ -112,3 +120,4 @@ class TyxCompositeClothWorkspace(CompositeClothWorkspace):
             self.engine.close()
         finally:
             super().close()
+

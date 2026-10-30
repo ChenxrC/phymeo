@@ -94,6 +94,19 @@ class CompositeMaterialSweep:
 
 
 @dataclass(frozen=True, eq=False)
+class CompositeComputeBoundary:
+    name: str
+    original: np.ndarray
+    computed: np.ndarray
+
+    def __post_init__(self):
+        _token(self.name, "compute boundary")
+        shape = np.asarray(self.original).shape
+        for name in ("original", "computed"):
+            object.__setattr__(self, name, _owned_float64(getattr(self, name), name, shape))
+
+
+@dataclass(frozen=True, eq=False)
 class CompositeMaterialPath:
     material_fingerprint: str
     policy_fingerprint: str
@@ -109,6 +122,8 @@ class CompositeMaterialPath:
     prediction_launches: int
     reconstruction_launches: int
     schema: str = SCHEMA
+    compute_boundaries: tuple[CompositeComputeBoundary, ...] = ()
+    alpha_launches: tuple[int, int] = (0, 0)
 
     def __post_init__(self):
         if self.schema != SCHEMA or self.backend not in ("numpy", "tyx:interpret", "tyx:cpu_cpp", "tyx:cuda"):
@@ -119,6 +134,16 @@ class CompositeMaterialPath:
         if h <= 0:
             raise ValueError("duration must be positive")
         object.__setattr__(self, "duration", h)
+        boundaries = tuple(self.compute_boundaries)
+        if any(not isinstance(b, CompositeComputeBoundary) for b in boundaries):
+            raise TypeError("typed compute boundaries required")
+        if len({b.name for b in boundaries}) != len(boundaries):
+            raise ValueError("duplicate compute boundary")
+        object.__setattr__(self, "compute_boundaries", boundaries)
+        launches = tuple(_integer(v, "alpha launches") for v in self.alpha_launches)
+        if len(launches) != 2:
+            raise ValueError("both alpha operations required")
+        object.__setattr__(self, "alpha_launches", launches)
         n = len(self.predicted_position)
         for name in ("predicted_position", "predicted_velocity"):
             object.__setattr__(self, name, _owned_float64(getattr(self, name), name, (n, 3)))
@@ -158,3 +183,5 @@ class CompositeExternalImpulses:
     def bind(cls, held, terminal, h, original_inputs, selected_pre, final):
         return cls(held, terminal, h, fingerprint(original_inputs),
                    fingerprint(selected_pre), fingerprint(final))
+
+

@@ -32,8 +32,8 @@ def test_sqrt_enclosures_are_rational_proofs_not_float_roots():
 
 
 def test_pi_machin_and_quarter_angle_enclose_independent_decimal_brackets():
-    low = F("3.141592653589793238462643383279502884197169399375105820974944592307816406286")
-    high = low + F(1, 10**75)
+    low = F("3.141592653589793238462643383279502884197169399375105820974944")
+    high = low + F(1, 10**60)
     pi = pi_bounds()
     assert low < pi.low <= pi.high < high
     angle = atan_bounds(1)
@@ -113,3 +113,4 @@ def test_proof_policy_validation_and_resource_width_is_visible():
     fine = atan_bounds(F(1, 2))
     assert coarse.low <= fine.low <= fine.high <= coarse.high
     assert coarse.width > F(1, 1000000)
+

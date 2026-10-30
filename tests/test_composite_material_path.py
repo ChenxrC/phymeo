@@ -105,3 +105,19 @@ def test_ordered_work_includes_numerical_discrepancy_without_erasing_num005():
         assert "angular_defect" in data["physical_audit"]
     finally:
         ws.close()
+
+
+def test_prediction_reconstruction_and_alpha_compute_boundaries_are_bound():
+    ws = settled_workspace()
+    try:
+        data = ws.diagnostics()
+        path = data["material_path"]
+        boundary = path.compute_boundaries[0]
+        changed = replace(boundary, computed=boundary.computed+1/16)
+        for altered in (replace(path, compute_boundaries=(changed, *path.compute_boundaries[1:])),
+                        replace(path, compute_boundaries=path.compute_boundaries[1:]),
+                        replace(path, alpha_launches=(0, 2))):
+            with pytest.raises(SolverFailure):
+                audit(ws, dict(data, material_path=altered))
+    finally:
+        ws.close()

@@ -184,6 +184,36 @@ class CompositeMaterialPathLedger:
         launch = int(native and self.model.particle_count > 0)
         if (path.prediction_launches, path.reconstruction_launches) != (launch, launch):
             raise SolverFailure("prediction/reconstruction launch evidence mismatch")
+        expected_boundaries = [
+            ("predict/position", self.initial.position), ("predict/velocity", self.initial.velocity),
+            ("predict/force", effective_inputs.force), ("predict/weights", self.model.inverse_mass),
+            ("predict/gravity", self.model.gravity), ("predict/h", float(self.h)),
+        ]
+        for name in self.material.order:
+            law = getattr(self.material, name)
+            if law is not None:
+                expected_boundaries.append((name + "/compliance", law.compliance))
+        expected_boundaries.extend([
+            ("reconstruct/predicted_position", path.predicted_position),
+            ("reconstruct/predicted_velocity", path.predicted_velocity),
+            ("reconstruct/position", candidate.position),
+            ("reconstruct/weights", self.model.inverse_mass), ("reconstruct/h", float(self.h)),
+        ])
+        if len(path.compute_boundaries) != len(expected_boundaries):
+            raise SolverFailure("missing compute conversion boundary")
+        for boundary, (name, value) in zip(path.compute_boundaries, expected_boundaries, strict=True):
+            original = np.asarray(value, dtype=np.float64)
+            if boundary.name != name:
+                raise SolverFailure("reordered compute conversion boundary")
+            self._equal(boundary.original, original, "compute boundary original")
+            self._equal(boundary.computed, compute(original) if native else original, "compute boundary value")
+            if name == "predict/position":
+                self.domain(original, boundary.computed)
+                self.domain(boundary.computed, path.predicted_position)
+            elif name == "reconstruct/position":
+                self.domain(original, boundary.computed)
+        if path.alpha_launches != tuple(2 * int(native and self.material.count(name) > 0) for name in self.material.order):
+            raise SolverFailure("alpha operation-specific launch evidence mismatch")
         error = q(0)
         for i, w in enumerate(self.model.inverse_mass):
             for c in range(3):
@@ -289,6 +319,7 @@ def ordered_work(path, model, initial):
                     material_impulse_work=float(impulse_work), arithmetic_work_discrepancy=float(kinetic-impulse_work),
                     local_moment=tuple(map(float, local_moment)), discrete_angular_contribution=tuple(map(float, discrete_moment))))
     return tuple(contributions)
+
 
 
 

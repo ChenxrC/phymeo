@@ -5,7 +5,7 @@ import numpy as np
 from ..constraints.bending import bending_residual, project_bending
 from ..constraints.cloth_material import ClothMaterial, CompositeMaterialAuditSettings, CompositeMaterialBudgets
 from ..constraints.distance import distance_residual, project_distances
-from ..constraints.material_trace import MaterialBatch, CompositeMaterialSweep, CompositeMaterialPath
+from ..constraints.material_trace import MaterialBatch, CompositeMaterialSweep, CompositeMaterialPath, CompositeComputeBoundary
 from ..core.capabilities import SolverFailure
 from ..core.model import ParticleModel
 from ..core.scene import DomainBinding, SceneModel, SceneState, StageMetrics, fingerprint
@@ -74,6 +74,7 @@ class CompositeClothWorkspace:
         self.terminal_pre = None
         self.terminal_requests = np.zeros_like(state.position)
         self.prediction_launches = self.reconstruction_launches = 0
+        self.compute_boundaries, self.alpha_launches = [], [0, 0]
         self.closed = False
         self.ledger = CompositeMaterialPathLedger(self.model, self.material, self.initial, self.inputs,
             self.h, settings, audit_settings=program.audit_settings, backend=program.capabilities.backend)
@@ -84,13 +85,31 @@ class CompositeClothWorkspace:
         if self.closed or self.candidate is None:
             raise RuntimeError("composite workspace is closed or not predicted")
 
+    def _convert(self, name, value):
+        original = np.asarray(value, dtype=np.float64)
+        self.compute_boundaries.append(CompositeComputeBoundary(name, original, original))
+        return original
+
+    def _prediction_inputs(self):
+        return tuple(self._convert("predict/" + name, value) for name, value in (
+            ("position", self.initial.position), ("velocity", self.initial.velocity),
+            ("force", self.inputs.force), ("weights", self.model.inverse_mass),
+            ("gravity", self.model.gravity), ("h", self.h)))
+
+    def _reconstruction_inputs(self):
+        return tuple(self._convert("reconstruct/" + name, value) for name, value in (
+            ("predicted_position", self.predicted.position), ("predicted_velocity", self.predicted.velocity),
+            ("position", self.candidate.position), ("weights", self.model.inverse_mass), ("h", self.h)))
+
     def _predict(self):
+        self._prediction_inputs()
         trial = self.initial.copy()
         if not predict(self.model, trial, self.inputs.force, self.h):
             raise SolverFailure("composite prediction failed")
         return trial
 
-    def _alpha(self, compliance):
+    def _alpha(self, compliance, kind):
+        self._convert(kind + "/compliance", compliance)
         return (compliance / self.h) / self.h
 
     def predict(self):
@@ -100,7 +119,7 @@ class CompositeClothWorkspace:
         alphas = {}
         for name in self.material.order:
             law = getattr(self.material, name)
-            alphas[name] = np.zeros(0) if law is None else np.asarray(self._alpha(law.compliance), dtype=np.float64)
+            alphas[name] = np.zeros(0) if law is None else np.asarray(self._alpha(law.compliance, name), dtype=np.float64)
             if not np.isfinite(alphas[name]).all():
                 raise SolverFailure("composite alpha is not representable")
         self.ledger.domain(self.initial.position, trial.position)
@@ -150,6 +169,7 @@ class CompositeClothWorkspace:
         return StageMetrics(residuals, geometric_error=geometric)
 
     def _reconstruct(self):
+        self._reconstruction_inputs()
         return self.predicted.velocity + (self.candidate.position - self.predicted.position) / self.h
 
     def prepare_velocity(self):
@@ -173,7 +193,8 @@ class CompositeClothWorkspace:
         return CompositeMaterialPath(self.material.identity, fingerprint(self.program.audit_settings),
             fingerprint(self.inputs), fingerprint(self.initial), self.program.capabilities.backend,
             self.h, self.predicted.position, self.predicted.velocity, self.alphas["distance"],
-            self.alphas["bending"], tuple(self.frames), self.prediction_launches, self.reconstruction_launches)
+            self.alphas["bending"], tuple(self.frames), self.prediction_launches, self.reconstruction_launches,
+            compute_boundaries=tuple(self.compute_boundaries), alpha_launches=tuple(self.alpha_launches))
 
     def _audit(self):
         self._ready()
@@ -204,3 +225,4 @@ class CompositeClothWorkspace:
 
     def close(self):
         self.closed = True
+

@@ -8,7 +8,7 @@
 
 **Spec:** [Frozen algebra contract](../specs/2026-10-31-p65-contact-quotient-design.md).
 
-**Global Constraints:** Existing original B2 owner only, four NEW paths. Authoring is complete and the separate focused serial grant is now active after S2 formal release and parent acceptance. Only the grant permits imports/scoped static/full new host tests and same-run auditing. No helpers/reviewers, old-source changes, parent merge, build/native or remote action. Complete P6.5 remains open.
+**Global Constraints:** Existing original B2 owner only, four NEW paths. Focused host validation and parent acceptance are complete; the execution slot is released. The historical grant authorizes no further run. No helpers/reviewers, old-source changes, parent merge, build/native or remote action. Complete P6.5 remains open.
 
 **Review Focus:** Complete exact nullspace and all owner rows; full positive W; strict H conditioning; bit/operation bounds with no bypass; independent verification of altered evidence; off-range and cross-term behavior; no physical pressure or energy-credit claim.
 
@@ -51,4 +51,4 @@ quotient executable results and final acceptance remain pending. No parent
 merge or old physical suite is part of this focused grant.
 
 
-Final local algebra acceptance: tested80d2a09/report0b55b831, first host83/0.34s/0, exact formatting-only AST/import equality, parent four-source/53-evidence/eight-exit/six-ZIP checks all matched. Normal merge44456ea902ac08c4ce9eab92f9898d0fdd0c5d36. All Task4 items are complete only for this standalone scope. See ../../../docs/development/p65-contact-quotient-parent-acceptance.md. Execution is released; physical integration remains open.
+Final local algebra acceptance: tested80d2a09/report0b55b831, first host83/0.34s/0, exact formatting-only AST/import equality, parent four-source/53-evidence/eight-exit/six-ZIP checks all matched. Normal merge44456ea902ac08c4ce9eab92f9898d0fdd0c5d36. All Task4 items are complete only for this standalone scope. See [parent acceptance](../../development/p65-contact-quotient-parent-acceptance.md). Execution is released; physical integration remains open.

@@ -304,12 +304,13 @@ class SelfContactLoadPlan:
     world_points: np.ndarray
     world_impulses: np.ndarray
     node_impulses: np.ndarray
+    raw_response: np.ndarray
     binding_token: str
 
     def __post_init__(self):
         if self.phase not in ("held", "terminal"):
             raise ValueError("invalid load phase")
-        for name in ("triangles", "weights", "offsets", "pairs", "jacobians", "world_points", "world_impulses", "node_impulses"):
+        for name in ("triangles", "weights", "offsets", "pairs", "jacobians", "world_points", "world_impulses", "node_impulses", "raw_response"):
             dtype = np.int64 if name in ("triangles", "pairs") else np.float64
             object.__setattr__(self, name, owned(getattr(self, name), dtype=dtype, name=name))
 
@@ -321,7 +322,40 @@ def make_self_contact_load_plan(binding, world_impulses, *, phase):
         raise ValueError("one physical base is required")
     nodes = binding.node_impulses(world)
     arrays = dict(triangles=binding.triangles, weights=binding.weights, offsets=binding.offsets,
-                  pairs=binding.pairs, jacobians=binding.jacobians, world_points=binding.world_points)
+                  pairs=binding.pairs, jacobians=binding.jacobians, world_points=binding.world_points,
+                  raw_response=response_matrix(binding))
     token = fingerprint(dict(phase=phase, domain=domains[0], **arrays, world_impulses=world, node_impulses=nodes))
     return SelfContactLoadPlan(phase, domains[0], **arrays, world_impulses=world,
                                node_impulses=nodes, binding_token=token)
+
+
+def rational_response_inverse(matrix):
+    """R1/R2 exact symmetric admission, returning a certification inverse only."""
+    a = [[value if isinstance(value, Fraction) else Fraction(value) for value in row] for row in matrix]
+    n = len(a)
+    if any(len(row) != n for row in a) or any(a[i][j] != a[j][i] for i in range(n) for j in range(n)):
+        raise SolverFailure("exact response must be square and symmetric")
+    if not n:
+        return (), ((), (0, 1))
+    l = [[Fraction(int(i == j)) for j in range(n)] for i in range(n)]
+    pivots = []
+    for i in range(n):
+        pivot = a[i][i]-sum(l[i][k]**2*pivots[k] for k in range(i))
+        if pivot <= 0:
+            raise SolverFailure("exact capacity response lacks positive LDL pivots")
+        pivots.append(pivot)
+        for j in range(i+1, n):
+            l[j][i] = (a[j][i]-sum(l[j][k]*l[i][k]*pivots[k] for k in range(i)))/pivot
+    inverse = [[Fraction(0) for _ in range(n)] for _ in range(n)]
+    for column in range(n):
+        y, x = [Fraction(0)]*n, [Fraction(0)]*n
+        for i in range(n):
+            y[i] = Fraction(int(i == column))-sum(l[i][j]*y[j] for j in range(i))
+        for i in reversed(range(n)):
+            x[i] = y[i]/pivots[i]-sum(l[j][i]*x[j] for j in range(i+1, n))
+            inverse[i][column] = x[i]
+    condition = max(sum(map(abs, row)) for row in a)*max(sum(map(abs, row)) for row in inverse)
+    if condition >= 10**12:
+        raise SolverFailure("exact capacity response condition must be strictly below 1e12")
+    token = lambda value: (value.numerator, value.denominator)
+    return tuple(tuple(row) for row in inverse), (tuple(map(token, pivots)), token(condition))

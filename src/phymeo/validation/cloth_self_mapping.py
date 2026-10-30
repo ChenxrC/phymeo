@@ -79,7 +79,7 @@ class SelfContactMappingLedger:
         n = len(self.inverse_mass)
         x = owned(original_positions, (n, 3), name="mapping positions")
         velocity = owned(original_velocity, (n, 3), name="mapping velocity")
-        data = {name: getattr(plan, name) for name in ("phase", "domain", "triangles", "weights", "offsets", "pairs", "jacobians", "world_points", "world_impulses", "node_impulses")}
+        data = {name: getattr(plan, name) for name in ("phase", "domain", "triangles", "weights", "offsets", "pairs", "jacobians", "world_points", "world_impulses", "node_impulses", "raw_response")}
         if fingerprint(data) != plan.binding_token:
             raise SolverFailure("load plan binding changed")
         if np.any(plan.triangles >= n) or plan.node_impulses.shape != (n, 3):
@@ -148,9 +148,175 @@ class SelfContactMappingLedger:
                     actual_response_error = max(actual_response_error, abs(defect))
             if actual_response_error > q(budgets.velocity_mps):
                 raise SolverFailure("actual native terminal response disagrees with aggregate request")
-        return dict(phase=plan.phase, plan_token=plan.binding_token, ideal_map_error_ns=float(error),
+        witness = capacity_witness(plan, receipt, self.inverse_mass, velocity, budgets, original_positions=x, proof_limits=self.proof_limits)
+        return dict(phase=plan.phase, plan_token=plan.binding_token, capacity_witness=witness, ideal_map_error_ns=float(error),
                     stored_j_error=float(j_error), endpoint_error_m=float(endpoint_error),
                     represented_error_ns=float(representation), virtual_work_error_j=float(work_error),
                     resultant_ns=np.array(net, dtype=float), actual_couple_nms=np.array(couple, dtype=float),
                     moment_error_nms=float(moment_error), actual_response_error_mps=float(actual_response_error),
                     exact=proof_data((tuple(net), tuple(couple), moment_error, work_error)))
+
+
+def stored_difference_map(plan, node_count):
+    rows = [[F(0)]*(3*node_count) for _ in range(3*len(plan.pairs))]
+    for pair_index, pair in enumerate(plan.pairs):
+        for side, attachment in enumerate(pair):
+            for i, node in enumerate(plan.triangles[attachment]):
+                for component in range(3):
+                    for axis in range(3):
+                        rows[3*pair_index+component][3*int(node)+axis] += (1 if side == 0 else -1)*q(plan.jacobians[attachment, i, component, axis])
+    return rows
+
+
+def capacity_decomposition(b, inverse_mass, ell, uncertainty):
+    """Exact mass-weighted certification decomposition; never alters a state.
+
+    b is the full stored difference map [dimensionless], ell [N*s] and its
+    nonnegative coordinate enclosure. All shared-node terms survive the Gram.
+    """
+    from ..constraints.cloth_self_response import rational_response_inverse
+    weights = [q(w) for w in inverse_mass for _ in range(3)]
+    if any(w <= 0 for w in weights):
+        raise ValueError("capacity decomposition requires positive inverse masses")
+    ell, uncertainty = list(map(q, ell)), list(map(q, uncertainty))
+    if len(ell) != len(weights) or len(uncertainty) != len(weights) or any(v < 0 for v in uncertainty):
+        raise ValueError("capacity nodal impulse/uncertainty shape mismatch")
+    b = [[q(value) for value in row] for row in b]
+    if any(len(row) != len(weights) for row in b):
+        raise ValueError("capacity difference-map shape mismatch")
+    a = [[sum(x*y*w for x, y, w in zip(left, right, weights, strict=True)) for right in b] for left in b]
+    inverse, rank = rational_response_inverse(a)
+    transform = [[sum(inverse[i][j]*b[j][node] for j in range(len(b)))*weights[node]
+                  for node in range(len(weights))] for i in range(len(b))]
+    effective = [sum(v*p for v, p in zip(row, ell, strict=True)) for row in transform]
+    effective_error = [sum(abs(v)*e for v, e in zip(row, uncertainty, strict=True)) for row in transform]
+    remainder = [ell[node]-sum(b[row][node]*effective[row] for row in range(len(b))) for node in range(len(weights))]
+    residual_error = [sum(abs(F(int(node == other))-sum(b[row][node]*transform[row][other] for row in range(len(b))))*uncertainty[other]
+                          for other in range(len(weights))) for node in range(len(weights))]
+    return dict(effective=effective, effective_error=effective_error, residual=remainder,
+                residual_error=residual_error, response=a, transform=transform, rank=rank)
+
+
+def actual_phase_impulse(plan, receipt, inverse_mass, original_velocity):
+    """R2: reconstruct exact held subtraction or actual terminal momentum change."""
+    if receipt["phase"] != plan.phase or receipt["plan_token"] != plan.binding_token:
+        raise SolverFailure("phase capacity receipt binding changed")
+    n = len(inverse_mass)
+    backend = receipt["backend"]
+    if backend not in ("numpy", "tyx:interpret", "tyx:cuda", "tyx:cpu_cpp"):
+        raise SolverFailure("unknown phase native representation")
+    if backend != "numpy":
+        execution = receipt["native_execution"]
+        if execution.get("mode") != backend[4:] or execution.get("compute_dtype") != "float32" or execution.get("completed_launches", 0) <= 0 or execution.get("completed_launches") != execution.get("launches"):
+            raise SolverFailure("missing actual native phase conversion evidence")
+        values = receipt["predicted_velocity"] if plan.phase == "held" else receipt["final_velocity"]
+        if not np.array_equal(values, values.astype(np.float32).astype(np.float64)):
+            raise SolverFailure("native phase velocity is not actual FP32 promotion")
+    if plan.phase == "held":
+        if receipt.get("material_scope") != "distance-material-equations-v1":
+            raise SolverFailure("capacity lacks mandatory native material-path certification")
+        original = owned(receipt["original_force"], (n, 3), name="original force")
+        effective = owned(receipt["effective_force"], (n, 3), name="actual effective force")
+        predicted = owned(receipt["predicted_velocity"], (n, 3), name="actual predicted velocity")
+        gravity = owned(receipt["gravity"], (3,), name="original gravity")
+        h = q(receipt["h"])
+        if h <= 0:
+            raise SolverFailure("capacity duration must be positive")
+        ell, error = [], []
+        for i, inverse in enumerate(inverse_mass):
+            w = q(inverse)
+            for axis in range(3):
+                ell.append(h*(q(effective[i, axis])-q(original[i, axis])))
+                e_v = q(predicted[i, axis])-q(original_velocity[i, axis])-h*(q(gravity[axis])+w*q(effective[i, axis]))
+                error.append(abs(e_v)/w)
+    else:
+        if backend != "numpy":
+            delta = receipt["native_delta"]
+            expected = 2 if np.any(plan.node_impulses != 0) else 0
+            if delta.get("completed_launches") != expected or delta.get("launches") != expected:
+                raise SolverFailure("missing operation-specific actual native terminal receipt")
+        if receipt.get("applications") != 1:
+            raise SolverFailure("capacity terminal application count mismatch")
+        final = owned(receipt["final_velocity"], (n, 3), name="actual terminal velocity")
+        ell = [(q(final[i, axis])-q(original_velocity[i, axis]))/q(inverse_mass[i]) for i in range(n) for axis in range(3)]
+        error = [F(0)]*len(ell)
+    return ell, error
+
+
+def capacity_witness(plan, receipt, inverse_mass, original_velocity, budgets, *, original_positions, proof_limits=PrismPairProofLimits()):
+    b = stored_difference_map(plan, len(inverse_mass))
+    ell, error = actual_phase_impulse(plan, receipt, inverse_mass, original_velocity)
+    observation = receipt["represented_nodes"].ravel()
+    request = plan.node_impulses.ravel()
+    delivery_error = max((abs(value-q(expected)) for value, expected in zip(ell, request, strict=True)), default=F(0))
+    observation_error = max((abs(value-q(observed)) for value, observed in zip(ell, observation, strict=True)), default=F(0))
+    if max(delivery_error, observation_error) > q(budgets.impulse_ns):
+        raise SolverFailure("actual momentum/input subtraction exceeds original impulse-map ceiling")
+    proof = capacity_decomposition(b, inverse_mass, ell, error)
+    total_error, ideal_error, contraction = _ideal_capacity_error(plan, original_positions, proof, inverse_mass, error, budgets, proof_limits)
+    proof = capacity_decomposition(b, inverse_mass, ell, total_error)
+    delta = [a-q(p) for a, p in zip(proof["effective"], plan.world_impulses.ravel(), strict=True)]
+    raw = plan.raw_response
+    if raw.shape != (len(b), len(b)):
+        raise SolverFailure("raw capacity response shape mismatch")
+    scale = max((abs(v) for row in proof["response"] for v in row), default=F(0))
+    raw_error = max((abs(q(raw[i, j])-proof["response"][i][j]) for i in range(len(b)) for j in range(len(b))), default=F(0))
+    if raw_error > F(1, 10**12)*scale:
+        raise SolverFailure("raw response versus exact stored-map Gram mismatch")
+    residual_bound = [abs(v)+e for v, e in zip(proof["residual"], proof["residual_error"], strict=True)]
+    if max(residual_bound, default=F(0)) > q(budgets.impulse_ns):
+        raise SolverFailure("unrepresented nodal remainder exceeds mapping ceiling")
+    token = lambda value: (value.numerator, value.denominator)
+    return dict(schema="mass-weighted-capacity-witness-v1", phase=plan.phase, plan_token=plan.binding_token,
+                b_token=fingerprint(proof_data(tuple(tuple(row) for row in b))),
+                effective_exact=tuple(map(token, proof["effective"])), uncertainty_exact=tuple(map(token, proof["effective_error"])),
+                delta_exact=tuple(map(token, delta)), residual_exact=tuple(map(token, proof["residual"])),
+                residual_uncertainty_exact=tuple(map(token, proof["residual_error"])), ell_exact=tuple(map(token, ell)),
+                native_uncertainty_exact=tuple(map(token, error)), ideal_map_uncertainty_exact=tuple(map(token, ideal_error)),
+                ideal_map_contraction=token(contraction), rank=proof["rank"],
+                raw_gram_error=float(raw_error), delivery_error_ns=float(delivery_error),
+                observation_error_ns=float(observation_error), decomposition_is_physical_ownership=False)
+
+
+def verify_capacity_witness(witness, plan, receipt, inverse_mass, original_velocity, budgets, *, original_positions, proof_limits=PrismPairProofLimits()):
+    expected = capacity_witness(plan, receipt, inverse_mass, original_velocity, budgets, original_positions=original_positions, proof_limits=proof_limits)
+    if fingerprint(witness) != fingerprint(expected):
+        raise SolverFailure("phase capacity witness is not bound to actual delivery")
+    return expected
+
+
+def _ideal_capacity_error(plan, positions, proof, inverse_mass, native_error, budgets, proof_limits):
+    """Outward map error and a finite contraction bound for ideal capacity.
+
+    Pair-local radicals are enclosed before accumulation. The actual stored-map
+    decomposition remains unchanged; this bounds its interpretation uncertainty.
+    """
+    width, height = 3*len(inverse_mass), 3*len(plan.pairs)
+    gamma = [[F(0)]*height for _ in range(width)]
+    round_charge = F(0)
+    for pair_index, pair in enumerate(plan.pairs):
+        ideal, _ = independent_pair_maps(positions, plan.triangles[pair], plan.weights[pair], plan.offsets[pair], proof_limits)
+        differences = {}
+        for side, attachment in enumerate(pair):
+            for i, node in enumerate(plan.triangles[attachment]):
+                for component in range(3):
+                    for axis in range(3):
+                        key = (3*int(node)+axis, 3*pair_index+component)
+                        delta = (1 if side == 0 else -1)*(ideal[side][i][component][axis]-q(plan.jacobians[attachment, i, component, axis]))
+                        differences[key] = differences.get(key, delta.field.scalar(0))+delta
+        for (node, component), delta in differences.items():
+            lo, hi = delta.bounds(delta.field.limits.max_sqrt_bits)
+            gamma[node][component] = max(abs(lo), abs(hi))
+            round_charge += (hi-lo)*abs(proof["effective"][component])
+    if round_charge > q(budgets.impulse_ns)/64:
+        raise SolverFailure("ideal capacity map enclosure exceeds reserved impulse budget")
+    transform = proof["transform"]
+    feedback = [[sum(abs(transform[i][node])*gamma[node][j] for node in range(width)) for j in range(height)] for i in range(height)]
+    contraction = max((sum(row) for row in feedback), default=F(0))
+    if contraction >= 1:
+        raise SolverFailure("ideal/stored capacity map uncertainty has no contraction witness")
+    base = [proof["effective_error"][i]+sum(feedback[i][j]*abs(proof["effective"][j]) for j in range(height)) for i in range(height)]
+    uniform = max(base, default=F(0))/(1-contraction)
+    ideal_error = [sum(gamma[node][j]*(abs(proof["effective"][j])+uniform) for j in range(height)) for node in range(width)]
+    total = [a+b for a, b in zip(native_error, ideal_error, strict=True)]
+    return total, ideal_error, contraction

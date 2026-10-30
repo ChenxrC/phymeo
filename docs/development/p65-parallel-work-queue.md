@@ -28,7 +28,7 @@ B1 only checks each discrete projection's pre/post smooth branch and rejects abs
 
 S1 requests are in the supplied base point-row order, matching public TriangleOffsetPointPort indices. Its factory uses a single physical base and existing same-domain operator. Conservative AABB candidates are not collision or CCD acceptance.
 
-G1 model/input tests are written but have not been imported, collected, linted, compiled or executed. No grasp simulation or force-balance success is claimed.
+G1 model/input validation completed: final28/28 host tests at a16bf4a and final lint/format0, with the original and final raw results preserved. This is model/input acceptance; actual grasp simulation and force-balance acceptance belong to G2 and have not run.
 
 ## Next contracts in preparation
 

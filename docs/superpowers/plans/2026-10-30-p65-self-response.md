@@ -25,10 +25,10 @@ Files: new src/phymeo/runtime/point_participant_program.py, tests/test_point_par
 
 Interface: PointParticipantProgram(scene,participants,*,registry=None,history_fields=()), standard SceneProgram plus one public terminal application. S2 consumes its terminal_point_impulses capability and participants diagnostics; no private native imports.
 
-- [ ] Author lifecycle/binding/history/capability tests, all-request prevalidation, duplicate-row aggregate, exactly-once terminal call and late-failure retry tests. Compare independent node impulse/energy equations, not adapter internals.
-- [ ] Implement public delegation, owned partial-construction cleanup, stage aggregation and terminal batch; no physics update in adapter.
-- [ ] Author actual interpret/CUDA operation-specific receipt controls and one bounded C++ terminal control. Mark all unexecuted.
-- [ ] Commit code-ready parent report with hashes; later serial grant runs host then actual selections, preserving first failures and fresh basetemps.
+- [x] Author lifecycle/binding/history/capability tests, all-request prevalidation, duplicate-row aggregate, exactly-once terminal call and late-failure retry tests. Compare independent node impulse/energy equations, not adapter internals.
+- [x] Implement public delegation, owned partial-construction cleanup, stage aggregation and terminal batch; no physics update in adapter.
+- [x] Author actual interpret/CUDA operation-specific receipt controls and one bounded C++ terminal control. Mark all unexecuted.
+- [x] Commit code-ready parent report with hashes; later serial grant runs host then actual selections, preserving first failures and fresh basetemps.
 
 ## Task B: original S2 owner complete response checkpoint
 
@@ -48,3 +48,5 @@ Files: exact fifteen NEW paths in spec section6. Input: accepted S1/LG public in
 - [ ] Independently match raw versions and evidence, integrate tested adapter/response without relabeling B2 v1 failure or old host evidence.
 - [ ] Freeze typed B2 internal-contact ledger integration and subsequent rotating/incident lawful-fold model; these are not satisfied by A/B/C.
 - [ ] Complete full material/mesh/h/perturbation/rebuild/failure gates and one fresh integrated-stage review/local wheel. Remote remains deferred and P6.5 remains active.
+
+Task A accepted locally on tested721b5c162f1f7e42dd618c70378bba098af0698e/report5c0a170bdc75b24e2c3c210e660f047c1dd2a032: host17/interpret4/CUDA4/boundedCPP1, all RAW_EXIT0;363-file same-source audit and formal clean/process0 release. Task B remains code/test authoring only and Task C stays open.

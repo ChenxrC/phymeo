@@ -1002,12 +1002,23 @@
       "test_failure_or_pass_not_inferred": true
     },
     "proposed_resolution": {
-      "status": "awaiting_user_exception_to_ci_configuration_freeze",
+      "status": "declined_by_user_keep_30_minutes",
       "cpu_timeout_minutes": 90,
       "patch": "artifacts/ci-cpu-timeout-90m-proposal.patch",
       "workflow_modified": false,
       "matrix_tests_and_required_unchanged": true,
       "no_same_configuration_retry": true
+    },
+    "optimization": {
+      "status": "profiled_ready_for_equivalent_arithmetic_optimization",
+      "user_decision": "keep 30 minutes; optimize runtime",
+      "baseline_head": "127cd28af155ad23ff289a1ad9fb7e5d1c78b775",
+      "profile": "artifacts/p65-ci-optimization/baseline-A.json",
+      "raw_exit": 0,
+      "profiled_seconds": 46.55563850002363,
+      "quadratic_constructions": 1275544,
+      "constructor_cumulative_seconds": 18.3744367,
+      "limitations": "cProfile overhead; not P95 or CI duration; old cancelled attempt remains cancelled"
     }
   },
   "limits": [

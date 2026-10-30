@@ -41,6 +41,6 @@ Host 7 passed/13.10s、后段及事务 17 passed/433.27s、actual interpret 10 p
 
 ## 远程 CI 时限阻塞
 
-产品 `5150c3e` 已推送并核对远程 SHA。准确 CI `40950637127` 已结束为 cancelled：8 个 CPU 矩阵任务均由 GitHub 确认超过现有 30 分钟时限，required 因 CPU 未成功而 failure；Documentation `40950637280` success。不能计为产品交付通过。已准备仅将 CPU job 时限 30→90 分钟的补丁，完整矩阵、测试和 required 门槛不变；因现行政策冻结 CI 配置，等待用户批准该例外，尚未修改 workflow。不得盲重试同配置、重跑本地已过集合或推进下一生产合同。
+产品 `5150c3e` 已推送并核对远程 SHA。准确 CI `40950637127` 已结束为 cancelled：8 个 CPU 矩阵任务均由 GitHub 确认超过现有 30 分钟时限，required 因 CPU 未成功而 failure；Documentation `40950637280` success。不能计为产品交付通过。2026-10-30 用户明确选择“保持 30 分钟，另行优化耗时”。90 分钟建议未应用并已撤回；完整矩阵、测试、required 和 fail-fast 保持。当前按剖析结果优化厚度精确算术的重复规范化，先证明输出等价并验证受影响路径，再推送取得新 head 的准确 CI；不得盲重试旧 head 或提前推进下一生产合同。
 
 原始最小元数据及仅分类诊断分别留在 `artifacts/ci-5150c3e-checkpoint.json`、`ci-5150c3e-cancellation-metadata.json`、`ci-5150c3e-cancellation-classification.json`。未公开完整断言、参数或日志。该诊断只证明时限取消，既不证明数值断言失败，也不证明未完成的全量测试通过。建议补丁 `artifacts/ci-cpu-timeout-90m-proposal.patch` 仅变更一个运行时限和解释注释，未应用。

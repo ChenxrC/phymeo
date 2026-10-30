@@ -1,5 +1,9 @@
 # SDD ledger — plan: docs/superpowers/plans/2026-10-29-p65-thick-friction.md
 
+## Current CI cost repair
+
+Human decision2026-10-30: keep30minutes, optimize runtime. Main completed profile69618 exit0, found1,275,544 Quadratic constructions/18.3744s cumulative within46.5556s profiled A step. Exact state/report captured. Plan: docs/superpowers/plans/2026-10-30-p65-ci-cost-repair.md. No production modification yet; main holds index/numerical until original implementer followup. Old reviewer/builder/physics implementation are complete.
+
 ## Current review and repair status
 
 Sole fresh review completed: 0 Critical / 2 Important / 0 Minor. Main verified I1 selected supporting feature gap and I2 independent force/impulse-weighted mapping audit against frozen contract and probes. Both closed by main after e8c821d/33ec9ea directed repairs and a59182a evidence handoff, no second fresh review. Reviewer released numerical slot, 0 probe processes. Parent engineering session75126 completed exit0, tag33ec9ea-a all three steps passed: boundedCPP52launch/FP32, build, external fresh native-pip full smoke. Wheel153source byte parity independently checked; digest unchanged. Never duplicate. Product5150c3e pushed; exact CI40950637127 cancelled by 30-minute CPU timeouts, Documentation40950637280 success. Delivery remains open. Previous product evidence remains versioned.
@@ -66,4 +70,4 @@ Task1 review-fix implementation/verification COMPLETE: e8c821d(I2),33ec9ea(I1/R4
 
 ## Parent exact CI checkpoint
 
-产品 `5150c3e` 已推送并核对远程 SHA。准确 CI `40950637127` 已结束为 cancelled：8 个 CPU 矩阵任务均由 GitHub 确认超过现有 30 分钟时限，required 因 CPU 未成功而 failure；Documentation `40950637280` success。不能计为产品交付通过。已准备仅将 CPU job 时限 30→90 分钟的补丁，完整矩阵、测试和 required 门槛不变；因现行政策冻结 CI 配置，等待用户批准该例外，尚未修改 workflow。不得盲重试同配置、重跑本地已过集合或推进下一生产合同。
+产品 `5150c3e` 已推送并核对远程 SHA。准确 CI `40950637127` 已结束为 cancelled：8 个 CPU 矩阵任务均由 GitHub 确认超过现有 30 分钟时限，required 因 CPU 未成功而 failure；Documentation `40950637280` success。不能计为产品交付通过。2026-10-30 用户明确选择“保持 30 分钟，另行优化耗时”。90 分钟建议未应用并已撤回；完整矩阵、测试、required 和 fail-fast 保持。当前按剖析结果优化厚度精确算术的重复规范化，先证明输出等价并验证受影响路径，再推送取得新 head 的准确 CI；不得盲重试旧 head 或提前推进下一生产合同。

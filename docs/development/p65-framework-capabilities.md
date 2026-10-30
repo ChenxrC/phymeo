@@ -1,6 +1,6 @@
 # P6.5 框架能力与子 agent 交付规则
 
-产品 `5150c3e` 已推送并核对远程 SHA。准确 CI `40950637127` 已结束为 cancelled：8 个 CPU 矩阵任务均由 GitHub 确认超过现有 30 分钟时限，required 因 CPU 未成功而 failure；Documentation `40950637280` success。不能计为产品交付通过。已准备仅将 CPU job 时限 30→90 分钟的补丁，完整矩阵、测试和 required 门槛不变；因现行政策冻结 CI 配置，等待用户批准该例外，尚未修改 workflow。不得盲重试同配置、重跑本地已过集合或推进下一生产合同。
+产品 `5150c3e` 已推送并核对远程 SHA。准确 CI `40950637127` 已结束为 cancelled：8 个 CPU 矩阵任务均由 GitHub 确认超过现有 30 分钟时限，required 因 CPU 未成功而 failure；Documentation `40950637280` success。不能计为产品交付通过。2026-10-30 用户明确选择“保持 30 分钟，另行优化耗时”。90 分钟建议未应用并已撤回；完整矩阵、测试、required 和 fail-fast 保持。当前按剖析结果优化厚度精确算术的重复规范化，先证明输出等价并验证受影响路径，再推送取得新 head 的准确 CI；不得盲重试旧 head 或提前推进下一生产合同。
 
 当前厚度阶段唯一审阅已结束，0Critical/2Important/0Minor：侧接触 signed gap 和独立映射合力审核均已在 e8c821d / 33ec9ea 定向修复并由父核对关闭，详见[审阅记录](../benchmarks/p65-thick-friction-review.md)。修复前数值证据保留原版本；修复版 interpret/CUDA 各10项已过，C++/wheel工程已通过，产品已推送，准确CI因CPU任务30分钟超时取消，交付待处理，不重复fresh review。
 

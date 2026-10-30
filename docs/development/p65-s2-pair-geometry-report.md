@@ -74,3 +74,28 @@ from the supplied path. Constructor-created receipts are not self-authenticating
 Either single-contribution deletion must be rejected by this verifier. This
 negative control is distinct from proving that the crossing path would become
 falsely accepted by every possible omitted-term implementation.
+
+Additional explicit proof-budget control, frozen during authoring and still
+before execution: A(t)=((0,0,0),(1,4*t-1,0),(0,0,1)),
+B(t)=A(t)+(0,0,5), rho=(1/4,1/4). Raw area c=(4*t-1,-1,0)
+has norm>=1 and the exact vertical gap is4 at every time. The whole-interval
+midpoint projection uses d0=(1,-1,0), giving c(t).d0=4*t and minimum0,
+so that area proof cannot accept the root cell. On each half the midpoint
+projection is strictly positive. max_time_cells=1 must leave both halves
+pending; default limits must certify the two-half partition. This deterministic
+budget fixture replaces any assumption that low sqrt precision alone must fail.
+
+Parent static completeness ruling: a positive retained SAT axis is valid
+separation evidence, but empty selected support clipping leaves the complete
+manifold unresolved. That status is not a penetration claim. Proposal A checks
+its independent support equation, never assumes that -ez is maximal. Sweep
+certificates use full fixed-axis support inequalities without requiring a
+complete static clip. The independent sweep verifier remains required.
+
+Additional independent static two-root contact control: A as fixture1,
+B=((0,0,5),(1,-1,5),(0,1,4)), rho=(5,2). Direction d=(-2,1,1)
+is perpendicular to cA and cB. A's max-d edge and B's min-d edge meet at
+(0,-2,4)=A2+3*cA=B1-cB. Material endpoints are exactly
+(0,0,1,3*sqrt(2)) and (0,1,0,-sqrt(3)); both signed offsets are strictly
+inside the supplied thickness. This proves actual edge-edge touching and
+both material reconstructions independently of the implementation.

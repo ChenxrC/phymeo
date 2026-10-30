@@ -50,3 +50,5 @@ Files: exact fifteen NEW paths in spec section6. Input: accepted S1/LG public in
 - [ ] Complete full material/mesh/h/perturbation/rebuild/failure gates and one fresh integrated-stage review/local wheel. Remote remains deferred and P6.5 remains active.
 
 Task A accepted locally on tested721b5c162f1f7e42dd618c70378bba098af0698e/report5c0a170bdc75b24e2c3c210e660f047c1dd2a032: host17/interpret4/CUDA4/boundedCPP1, all RAW_EXIT0;363-file same-source audit and formal clean/process0 release. Task B remains code/test authoring only and Task C stays open.
+
+Task B must implement and test spec R2 actual phase capacity witnesses and noncancelling representation uncertainty before CODE_READY handoff. The prior proposed-pressure audit alone cannot satisfy actual represented normal projections. Exact on/off-range delivery and inverse-response amplification controls are mandatory; no numerical execution yet.

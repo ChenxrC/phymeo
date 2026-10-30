@@ -212,3 +212,18 @@ def test_two_independent_normals_exact_edge_edge_touch_material_endpoints():
     assert point.material_a == (0, 0, 1, 3*field.sqrt(2))
     assert point.material_b == (0, 1, 0, -field.sqrt(3))
     assert_exact_material(result, (a, b), (5., 2.))
+
+
+def test_static_common_root_reduction_and_exact_normalized_tie():
+    a = np.array([[0., 0., 0.], [1., 0., 0.], [0., 1., 1.]])
+    b = 2*a
+    result = manifold(a, b, (.25, .25))
+    assert result.status == "penetrating"
+    assert len(result.maximal_axes) == 2
+    # Raw area norms squared2 and32 generate the same reduced quadratic field.
+    assert all(axis.numerator.field.roots == (F(2),) for axis in result.axes)
+    for axis in result.maximal_axes:
+        assert axis.numerator**2 == axis.norm_squared*F(1, 4)
+        assert axis.numerator < 0
+        assert len(axis.points) == 3
+    assert_exact_material(result, (a, b), (.25, .25))

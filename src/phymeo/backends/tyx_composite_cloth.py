@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from ..constraints.material_trace import MaterialBatch, CompositeComputeBoundary
+from ..constraints.material_trace import CompositeComputeBoundary, MaterialBatch
 from ..core.scene import BackendContext
 from ..core.state import ParticleState
 from ..coupling.composite_cloth import CompositeClothParticipant, CompositeParticipantWorkspace
@@ -15,16 +15,32 @@ from .tyx_participants import _NodePort
 
 
 class TyxCompositeClothProgram(CompositeClothProgram):
-    def __init__(self, model, material, mode, domain="cloth", *, audit_settings=None, budgets, cache_root=None):
+    def __init__(
+        self,
+        model,
+        material,
+        mode,
+        domain="cloth",
+        *,
+        audit_settings=None,
+        budgets,
+        cache_root=None,
+    ):
         if mode not in TyxBendingMath.MODES:
             raise ValueError("explicit supported native mode required")
         super().__init__(model, material, domain, audit_settings=audit_settings, budgets=budgets)
         self.mode, self.cache_root = mode, cache_root
-        self.capabilities = ProgramCapabilities("tyx:" + mode, {"float64"}, {"particles"}, self.capabilities.features)
+        self.capabilities = ProgramCapabilities(
+            "tyx:" + mode, {"float64"}, {"particles"}, self.capabilities.features
+        )
 
     def problem_signature(self):
-        return dict(super().problem_signature(), backend="tyx:" + self.mode,
-                    compute_dtype="float32", storage_dtype="float64")
+        return dict(
+            super().problem_signature(),
+            backend="tyx:" + self.mode,
+            compute_dtype="float32",
+            storage_dtype="float64",
+        )
 
     def workspace(self, domain, state, inputs, h, settings):
         return TyxCompositeClothWorkspace(self, domain, state, inputs, h, settings)
@@ -32,15 +48,23 @@ class TyxCompositeClothProgram(CompositeClothProgram):
 
 class TyxCompositeClothParticipant(CompositeClothParticipant):
     def __init__(self, model, material, mode, *, audit_settings=None, budgets, cache_root=None):
-        self.program = TyxCompositeClothProgram(model, material, mode,
-            audit_settings=audit_settings, budgets=budgets, cache_root=cache_root)
+        self.program = TyxCompositeClothProgram(
+            model,
+            material,
+            mode,
+            audit_settings=audit_settings,
+            budgets=budgets,
+            cache_root=cache_root,
+        )
         self.family = StateRegistry().get("particles")
 
     def create_workspace(self, domain, state, inputs, h, settings, context):
         if context.backend != self.capabilities.backend or context.dtype != np.float64:
             raise ValueError("native composite context mismatch")
         state, inputs = self.family.snapshot(self.model, state, inputs, context)
-        return TyxCompositeParticipantWorkspace(self.program.workspace(domain, state, inputs, h, settings), None)
+        return TyxCompositeParticipantWorkspace(
+            self.program.workspace(domain, state, inputs, h, settings), None
+        )
 
 
 class TyxCompositeParticipantWorkspace(CompositeParticipantWorkspace):
@@ -68,7 +92,9 @@ class TyxCompositeClothWorkspace(CompositeClothWorkspace):
         self.ledger.domain(self.initial.position, converted)
         x, v = self.engine.predict(converted, velocity, force, weights, gravity, float(h))
         self.ledger.domain(converted, x)
-        self.prediction_launches = self.engine.stats()["completed_launches"] - before["completed_launches"]
+        self.prediction_launches = (
+            self.engine.stats()["completed_launches"] - before["completed_launches"]
+        )
         return ParticleState(x, v)
 
     def _alpha(self, compliance, kind):
@@ -76,7 +102,9 @@ class TyxCompositeClothWorkspace(CompositeClothWorkspace):
         before = self.engine.stats()["completed_launches"]
         first = self.engine.axpy(np.zeros_like(converted), converted, 1 / self.h)
         result = self.engine.axpy(np.zeros_like(first), first, 1 / self.h).astype(np.float64)
-        self.alpha_launches[self.material.order.index(kind)] = self.engine.stats()["completed_launches"] - before
+        self.alpha_launches[self.material.order.index(kind)] = (
+            self.engine.stats()["completed_launches"] - before
+        )
         return result
 
     def _block(self, name, x, multipliers):
@@ -85,20 +113,40 @@ class TyxCompositeClothWorkspace(CompositeClothWorkspace):
         if not count:
             return super()._block(name, x, multipliers)
         if name == "bending":
-            after, result, batch = self.engine.project_bending(x, self.model.inverse_mass, law,
-                                                             self.alphas[name], multipliers)
+            after, result, batch = self.engine.project_bending(
+                x, self.model.inverse_mass, law, self.alphas[name], multipliers
+            )
         else:
             before_x, before_lambda = x.copy(), multipliers.copy()
             rows = np.empty((count, 18))
             before = self.engine.stats()
-            after, result = self.engine.project_distances(x, self.model.inverse_mass, law,
-                                                          self.alphas[name], multipliers, trace=rows)
+            after, result = self.engine.project_distances(
+                x, self.model.inverse_mass, law, self.alphas[name], multipliers, trace=rows
+            )
             stats = self.engine.stats()
-            cast = lambda value: as_compute(value, "distance boundary").astype(np.float64)
-            batch = MaterialBatch(name, law.indices, before_x, cast(before_x), after, after,
-                before_lambda, cast(before_lambda), result, result, cast(self.model.inverse_mass),
-                cast(law.rest_length), cast(self.alphas[name]), rows, np.zeros(count, np.int64),
-                stats["launches"]-before["launches"], stats["completed_launches"]-before["completed_launches"])
+
+            def cast(value):
+                return as_compute(value, "distance boundary").astype(np.float64)
+
+            batch = MaterialBatch(
+                name,
+                law.indices,
+                before_x,
+                cast(before_x),
+                after,
+                after,
+                before_lambda,
+                cast(before_lambda),
+                result,
+                result,
+                cast(self.model.inverse_mass),
+                cast(law.rest_length),
+                cast(self.alphas[name]),
+                rows,
+                np.zeros(count, np.int64),
+                stats["launches"] - before["launches"],
+                stats["completed_launches"] - before["completed_launches"],
+            )
         x[:] = after
         multipliers[:] = result
         return batch
@@ -109,7 +157,9 @@ class TyxCompositeClothWorkspace(CompositeClothWorkspace):
         px, pv, converted, weights, h = self._reconstruction_inputs()
         self.ledger.domain(self.candidate.position, converted)
         value = self.engine.reconstruct(px, pv, converted, weights, float(h))
-        self.reconstruction_launches = self.engine.stats()["completed_launches"] - before["completed_launches"]
+        self.reconstruction_launches = (
+            self.engine.stats()["completed_launches"] - before["completed_launches"]
+        )
         return value
 
     def diagnostics(self):
@@ -120,4 +170,3 @@ class TyxCompositeClothWorkspace(CompositeClothWorkspace):
             self.engine.close()
         finally:
             super().close()
-

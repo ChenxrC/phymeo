@@ -27,8 +27,12 @@ class Polynomial:
     def __add__(self, other):
         other = polynomial(other)
         a, b = self.values, other.values
-        return Polynomial([(a[i] if i < len(a) else 0) + (b[i] if i < len(b) else 0)
-                           for i in range(max(len(a), len(b)))])
+        return Polynomial(
+            [
+                (a[i] if i < len(a) else 0) + (b[i] if i < len(b) else 0)
+                for i in range(max(len(a), len(b)))
+            ]
+        )
 
     __radd__ = __add__
 
@@ -52,12 +56,23 @@ class Polynomial:
         """Convex hull of exact Bernstein coefficients after affine restriction."""
         degree = len(self.values) - 1
         width = right - left
-        power = [sum((self.values[j] * comb(j, k) * left**(j-k) * width**k
-                      for j in range(k, degree + 1)), Fraction(0))
-                 for k in range(degree + 1)]
-        bernstein = [sum((power[k] * Fraction(comb(i, k), comb(degree, k))
-                          for k in range(i + 1)), Fraction(0))
-                     for i in range(degree + 1)]
+        power = [
+            sum(
+                (
+                    self.values[j] * comb(j, k) * left ** (j - k) * width**k
+                    for j in range(k, degree + 1)
+                ),
+                Fraction(0),
+            )
+            for k in range(degree + 1)
+        ]
+        bernstein = [
+            sum(
+                (power[k] * Fraction(comb(i, k), comb(degree, k)) for k in range(i + 1)),
+                Fraction(0),
+            )
+            for i in range(degree + 1)
+        ]
         return Interval(min(bernstein), max(bernstein))
 
 
@@ -86,8 +101,10 @@ def _obligations(start, end, material):
     if material.bending is None:
         return result
     for ids, rest in zip(material.bending.indices, material.bending.rest_angle, strict=True):
-        x = tuple(tuple(Polynomial((q(a), q(b)-q(a))) for a, b in zip(u, v, strict=True))
-                  for u, v in zip(start[ids], end[ids], strict=True))
+        x = tuple(
+            tuple(Polynomial((q(a), q(b) - q(a))) for a, b in zip(u, v, strict=True))
+            for u, v in zip(start[ids], end[ids], strict=True)
+        )
         e, u, v = (subtract(x[k], x[0]) for k in (1, 2, 3))
         right = subtract(x[3], x[1])
         nl, nr = cross(e, u), cross(v, e)
@@ -99,7 +116,7 @@ def _obligations(start, end, material):
             area2 = dot(normal, normal)
             # max(component)^4 is certified by all six separate inequalities.
             for component in edges:
-                faces.append(area2 - q(1e-10)**2 * component * component * component * component)
+                faces.append(area2 - q(1e-10) ** 2 * component * component * component * component)
         result.append((tuple(faces), e2, a, determinant, q(rest)))
     return result
 
@@ -107,9 +124,15 @@ def _obligations(start, end, material):
 def certify_bending_segment(start, end, material, *, policy=None):
     policy = CompositeMaterialAuditSettings() if policy is None else policy
     start, end = np.asarray(start), np.asarray(end)
-    if (start.dtype != np.float64 or end.dtype != np.float64 or start.shape != end.shape
-            or start.ndim != 2 or start.shape[1] != 3
-            or not np.isfinite(start).all() or not np.isfinite(end).all()):
+    if (
+        start.dtype != np.float64
+        or end.dtype != np.float64
+        or start.shape != end.shape
+        or start.ndim != 2
+        or start.shape[1] != 3
+        or not np.isfinite(start).all()
+        or not np.isfinite(end).all()
+    ):
         raise ValueError("domain paths require two finite FP64 (n,3) endpoints")
     identity = fingerprint((start, end, material))
     policy_id = fingerprint(policy)
@@ -137,10 +160,13 @@ def certify_bending_segment(start, end, material, *, policy=None):
                 safe = False
                 break
             try:
-                sine = -sqrt_interval(edge2.bounds(left, right), policy.sqrt_bits) * determinant.bounds(left, right)
+                sine = -sqrt_interval(
+                    edge2.bounds(left, right), policy.sqrt_bits
+                ) * determinant.bounds(left, right)
                 theta = atan2_bounds(sine, cosine.bounds(left, right), policy)
-                if not (-pi.low < theta.low <= theta.high < pi.low
-                        and (theta - rest).magnitude < pi.low):
+                if not (
+                    -pi.low < theta.low <= theta.high < pi.low and (theta - rest).magnitude < pi.low
+                ):
                     safe = False
                     break
             except SolverFailure:
@@ -159,6 +185,6 @@ def certify_bending_segment(start, end, material, *, policy=None):
         else:
             middle = (left + right) / 2
             pending.extend(((middle, right, depth + 1), (left, middle, depth + 1)))
-    return BendingDomainCertificate(status, identity, policy_id, tuple(accepted), tuple(unresolved),
-                                    processed, reason)
-
+    return BendingDomainCertificate(
+        status, identity, policy_id, tuple(accepted), tuple(unresolved), processed, reason
+    )

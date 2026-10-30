@@ -62,11 +62,18 @@ class MaterialBatch:
             object.__setattr__(self, name, _owned_float64(getattr(self, name), name, (n, 3)))
         if np.any(ids >= n):
             raise ValueError("material identity outside observation")
-        for name in ("lambda_in", "lambda_compute_start", "lambda_compute_end", "lambda_out",
-                     "compute_rest", "compute_alpha"):
+        for name in (
+            "lambda_in",
+            "lambda_compute_start",
+            "lambda_compute_end",
+            "lambda_out",
+            "compute_rest",
+            "compute_alpha",
+        ):
             object.__setattr__(self, name, _owned_float64(getattr(self, name), name, (m,)))
-        object.__setattr__(self, "compute_weights", _owned_float64(
-            self.compute_weights, "compute_weights", (n,)))
+        object.__setattr__(
+            self, "compute_weights", _owned_float64(self.compute_weights, "compute_weights", (n,))
+        )
         object.__setattr__(self, "rows", _owned_float64(self.rows, "rows", (m, wire)))
         status = np.asarray(self.status)
         if status.dtype != np.int64 or status.shape != (m,) or np.any(status != 0):
@@ -126,9 +133,19 @@ class CompositeMaterialPath:
     alpha_launches: tuple[int, int] = (0, 0)
 
     def __post_init__(self):
-        if self.schema != SCHEMA or self.backend not in ("numpy", "tyx:interpret", "tyx:cpu_cpp", "tyx:cuda"):
+        if self.schema != SCHEMA or self.backend not in (
+            "numpy",
+            "tyx:interpret",
+            "tyx:cpu_cpp",
+            "tyx:cuda",
+        ):
             raise ValueError("unsupported composite observation schema/backend")
-        for name in ("material_fingerprint", "policy_fingerprint", "input_fingerprint", "initial_fingerprint"):
+        for name in (
+            "material_fingerprint",
+            "policy_fingerprint",
+            "input_fingerprint",
+            "initial_fingerprint",
+        ):
             _token(getattr(self, name), name)
         h = finite_real(self.duration, "duration")
         if h <= 0:
@@ -151,7 +168,10 @@ class CompositeMaterialPath:
             value = getattr(self, name)
             object.__setattr__(self, name, _owned_float64(value, name, (len(value),)))
         sweeps = tuple(self.sweeps)
-        if any(not isinstance(s, CompositeMaterialSweep) or s.sweep_index != i for i, s in enumerate(sweeps)):
+        if any(
+            not isinstance(s, CompositeMaterialSweep) or s.sweep_index != i
+            for i, s in enumerate(sweeps)
+        ):
             raise ValueError("nonconsecutive composite sweep sequence")
         object.__setattr__(self, "sweeps", sweeps)
         for name in ("prediction_launches", "reconstruction_launches"):
@@ -176,12 +196,20 @@ class CompositeExternalImpulses:
         if h <= 0 or self.purpose != EXTERNAL_PURPOSE:
             raise ValueError("invalid explicit external power boundary")
         object.__setattr__(self, "duration", h)
-        for name in ("original_input_fingerprint", "selected_pre_fingerprint", "final_state_fingerprint"):
+        for name in (
+            "original_input_fingerprint",
+            "selected_pre_fingerprint",
+            "final_state_fingerprint",
+        ):
             _token(getattr(self, name), name)
 
     @classmethod
     def bind(cls, held, terminal, h, original_inputs, selected_pre, final):
-        return cls(held, terminal, h, fingerprint(original_inputs),
-                   fingerprint(selected_pre), fingerprint(final))
-
-
+        return cls(
+            held,
+            terminal,
+            h,
+            fingerprint(original_inputs),
+            fingerprint(selected_pre),
+            fingerprint(final),
+        )

@@ -28,20 +28,58 @@ class TyxBendingMath(TyxNodeMath):
         before = self.stats()
         if count:
             from ._tyx_bending_kernels import project_bending_traced
-            x, result, rows, status, failed = self.call(project_bending_traced, count, ids, rest,
-                a, w, x, old_lambda, np.zeros((count, 45), np.float32), np.zeros(count, np.int32),
-                np.zeros(1, np.int32), np.zeros((6, 3), np.float32), outputs=(5, 6, 7, 8, 9))
+
+            x, result, rows, status, failed = self.call(
+                project_bending_traced,
+                count,
+                ids,
+                rest,
+                a,
+                w,
+                x,
+                old_lambda,
+                np.zeros((count, 45), np.float32),
+                np.zeros(count, np.int32),
+                np.zeros(1, np.int32),
+                np.zeros((6, 3), np.float32),
+                outputs=(5, 6, 7, 8, 9),
+            )
             if failed[0] or np.any(status):
                 raise SolverFailure(f"native bending row rejected: {int(failed[0])}")
         else:
             x, start = np.array(position, copy=True), np.array(position, copy=True)
-            result, lambda_start = np.array(multipliers, copy=True), np.array(multipliers, copy=True)
-            w, rest, a = np.array(weights, copy=True), constraints.rest_angle, np.array(alpha, copy=True)
+            result, lambda_start = (
+                np.array(multipliers, copy=True),
+                np.array(multipliers, copy=True),
+            )
+            w, rest, a = (
+                np.array(weights, copy=True),
+                constraints.rest_angle,
+                np.array(alpha, copy=True),
+            )
             rows, status = np.empty((0, 45)), np.zeros(0, np.int32)
         after = self.stats()
-        promoted = lambda value: np.asarray(value, dtype=np.float64)
-        batch = MaterialBatch("bending", constraints.indices, position, promoted(start), promoted(x),
-            promoted(x), multipliers, promoted(lambda_start), promoted(result), promoted(result),
-            promoted(w), promoted(rest), promoted(a), promoted(rows), status.astype(np.int64),
-            after["launches"] - before["launches"], after["completed_launches"] - before["completed_launches"])
+
+        def promoted(value):
+            return np.asarray(value, dtype=np.float64)
+
+        batch = MaterialBatch(
+            "bending",
+            constraints.indices,
+            position,
+            promoted(start),
+            promoted(x),
+            promoted(x),
+            multipliers,
+            promoted(lambda_start),
+            promoted(result),
+            promoted(result),
+            promoted(w),
+            promoted(rest),
+            promoted(a),
+            promoted(rows),
+            status.astype(np.int64),
+            after["launches"] - before["launches"],
+            after["completed_launches"] - before["completed_launches"],
+        )
         return promoted(x), promoted(result), batch

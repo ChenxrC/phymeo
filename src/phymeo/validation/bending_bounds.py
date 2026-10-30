@@ -14,7 +14,7 @@ import numpy as np
 
 from ..constraints.cloth_material import CompositeMaterialAuditSettings
 from ..core.capabilities import SolverFailure
-from ._material_path_math import q, interval_float
+from ._material_path_math import interval_float, q
 
 
 @dataclass(frozen=True)
@@ -49,8 +49,12 @@ class Interval:
 
     def __mul__(self, other):
         other = interval(other)
-        values = (self.low * other.low, self.low * other.high,
-                  self.high * other.low, self.high * other.high)
+        values = (
+            self.low * other.low,
+            self.low * other.high,
+            self.high * other.low,
+            self.high * other.high,
+        )
         return Interval(min(values), max(values))
 
     __rmul__ = __mul__
@@ -81,8 +85,10 @@ class Interval:
         scale = 1 << bits
         a = self.low * scale
         b = self.high * scale
-        return Interval(Fraction(a.numerator // a.denominator, scale),
-                        Fraction(-(-b.numerator // b.denominator), scale))
+        return Interval(
+            Fraction(a.numerator // a.denominator, scale),
+            Fraction(-(-b.numerator // b.denominator), scale),
+        )
 
 
 def interval(value):
@@ -129,7 +135,8 @@ def _series(x, terms, bits):
 def pi_bounds(bits=256, terms=64):
     # Machin's identity, with independent rational series/remainder bounds.
     return 16 * _series(Interval.point(Fraction(1, 5)), terms, bits) - 4 * _series(
-        Interval.point(Fraction(1, 239)), terms, bits)
+        Interval.point(Fraction(1, 239)), terms, bits
+    )
 
 
 def _atan_point(value, policy):
@@ -143,7 +150,8 @@ def _atan_point(value, policy):
     reduced = Interval.point(value)
     for _ in range(2):
         reduced = (reduced / (1 + sqrt_interval(1 + reduced.square(), policy.sqrt_bits))).rounded(
-            policy.sqrt_bits)
+            policy.sqrt_bits
+        )
     return 4 * _series(reduced, policy.angle_terms, policy.sqrt_bits)
 
 
@@ -172,8 +180,7 @@ def dot(a, b):
 
 
 def cross(a, b):
-    return (a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2],
-            a[0] * b[1] - a[1] * b[0])
+    return (a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0])
 
 
 def subtract(a, b):
@@ -201,7 +208,7 @@ def bending_bounds(nodes, rest_angle, compliance, *, policy=None):
     right_v = subtract(x[3], x[1])
     nl, nr = cross(e, u), cross(v, e)
     e2, l2, r2 = dot(e, e), dot(nl, nl), dot(nr, nr)
-    threshold = q(1e-10)**2
+    threshold = q(1e-10) ** 2
     for normal2, first, second in ((l2, e, u), (r2, e, right_v)):
         scale = max(abs(z) for z in (*first, *second))
         if scale == 0 or normal2 <= threshold * scale**4:
@@ -219,22 +226,32 @@ def bending_bounds(nodes, rest_angle, compliance, *, policy=None):
     tc, td = dot(u, e) / e2, dot(v, e) / e2
     ga = tuple((tc - 1) * c + (td - 1) * d for c, d in zip(gc, gd, strict=True))
     gb = tuple(-tc * c - td * d for c, d in zip(gc, gd, strict=True))
-    return BendingBounds(theta, constraint, (ga, gb, gc, gd), constraint.square() / (2 * compliance))
+    return BendingBounds(
+        theta, constraint, (ga, gb, gc, gd), constraint.square() / (2 * compliance)
+    )
 
 
 def elastic_bounds(position, material, *, policy=None):
     policy = CompositeMaterialAuditSettings() if policy is None else policy
     total = Interval.point(0)
     if material.distance is not None:
-        for ids, rest, compliance in zip(material.distance.indices, material.distance.rest_length,
-                                          material.distance.compliance, strict=True):
+        for ids, rest, compliance in zip(
+            material.distance.indices,
+            material.distance.rest_length,
+            material.distance.compliance,
+            strict=True,
+        ):
             if compliance == 0:
                 continue
             delta = subtract(tuple(map(q, position[ids[0]])), tuple(map(q, position[ids[1]])))
             c = sqrt_interval(dot(delta, delta), policy.sqrt_bits) - q(rest)
             total += c.square() / (2 * q(compliance))
     if material.bending is not None:
-        for ids, rest, compliance in zip(material.bending.indices, material.bending.rest_angle,
-                                          material.bending.compliance, strict=True):
+        for ids, rest, compliance in zip(
+            material.bending.indices,
+            material.bending.rest_angle,
+            material.bending.compliance,
+            strict=True,
+        ):
             total += bending_bounds(position[ids], rest, compliance, policy=policy).energy
     return total

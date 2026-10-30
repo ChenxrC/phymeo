@@ -60,8 +60,12 @@ def project_bending_traced(
                             for axis in tx.static_range(3):
                                 j = (axis + 1) % 3
                                 t = (axis + 2) % 3
-                                nl = _add(_mul(work[0, j], work[1, t]), -_mul(work[0, t], work[1, j]))
-                                nr = _add(_mul(work[2, j], work[3, t]), -_mul(work[2, t], work[3, j]))
+                                nl = _add(
+                                    _mul(work[0, j], work[1, t]), -_mul(work[0, t], work[1, j])
+                                )
+                                nr = _add(
+                                    _mul(work[2, j], work[3, t]), -_mul(work[2, t], work[3, j])
+                                )
                                 work[4, axis] = nl
                                 work[5, axis] = nr
                                 l2 = _add(l2, _mul(nl, nl))
@@ -86,14 +90,21 @@ def project_bending_traced(
                                 for axis in tx.static_range(3):
                                     j = (axis + 1) % 3
                                     t = (axis + 2) % 3
-                                    component = _add(_mul(work[4, j], work[5, t]), -_mul(work[4, t], work[5, j]))
-                                    sine = _add(sine, _mul(_div(work[0, axis], edge_unit), component))
+                                    component = _add(
+                                        _mul(work[4, j], work[5, t]), -_mul(work[4, t], work[5, j])
+                                    )
+                                    sine = _add(
+                                        sine, _mul(_div(work[0, axis], edge_unit), component)
+                                    )
                                     cosine = _add(cosine, _mul(work[4, axis], work[5, axis]))
                                 theta = tx.atan2(sine, cosine)
                                 constraint = _add(theta, -rest[k])
                                 trace[k, 36 + phase] = theta
                                 trace[k, 38 + phase] = constraint
-                                if tx.abs(theta) >= 3.141592653589793 or tx.abs(constraint) >= 3.141592653589793:
+                                if (
+                                    tx.abs(theta) >= 3.141592653589793
+                                    or tx.abs(constraint) >= 3.141592653589793
+                                ):
                                     failed[0] = k + 1
                                     status[k] = 3 + phase
                                 elif phase == 0:
@@ -101,9 +112,17 @@ def project_bending_traced(
                                     td = _add(1.0, _div(ev, er2))
                                     denominator = alpha[k]
                                     for axis in tx.static_range(3):
-                                        gc = -_mul(_div(_div(edge, left_scale), la), _div(work[4, axis], left_scale))
-                                        gd = -_mul(_div(_div(edge, right_scale), ra), _div(work[5, axis], right_scale))
-                                        ga = _add(_mul(_add(tc, -1.0), gc), _mul(_add(td, -1.0), gd))
+                                        gc = -_mul(
+                                            _div(_div(edge, left_scale), la),
+                                            _div(work[4, axis], left_scale),
+                                        )
+                                        gd = -_mul(
+                                            _div(_div(edge, right_scale), ra),
+                                            _div(work[5, axis], right_scale),
+                                        )
+                                        ga = _add(
+                                            _mul(_add(tc, -1.0), gc), _mul(_add(td, -1.0), gd)
+                                        )
                                         gb = _add(-_mul(tc, gc), -_mul(td, gd))
                                         trace[k, 24 + axis] = ga
                                         trace[k, 27 + axis] = gb
@@ -113,14 +132,19 @@ def project_bending_traced(
                                         index = hinges[k, node]
                                         for axis in tx.static_range(3):
                                             g = trace[k, 24 + 3 * node + axis]
-                                            denominator = _add(denominator, _mul(weights[index], _mul(g, g)))
+                                            denominator = _add(
+                                                denominator, _mul(weights[index], _mul(g, g))
+                                            )
                                             trace[k, 3 * node + axis] = x[index, axis]
                                     trace[k, 44] = denominator
                                     if denominator <= 0.0:
                                         failed[0] = k + 1
                                         status[k] = 5
                                     else:
-                                        delta = _div(-_add(constraint, _mul(alpha[k], multipliers[k])), denominator)
+                                        delta = _div(
+                                            -_add(constraint, _mul(alpha[k], multipliers[k])),
+                                            denominator,
+                                        )
                                         trace[k, 42] = delta
                                         multipliers[k] = _add(multipliers[k], delta)
                                         trace[k, 41] = multipliers[k]
@@ -128,7 +152,10 @@ def project_bending_traced(
                                             index = hinges[k, node]
                                             for axis in tx.static_range(3):
                                                 g = trace[k, 24 + 3 * node + axis]
-                                                x[index, axis] = _add(x[index, axis], _mul(_mul(weights[index], delta), g))
+                                                x[index, axis] = _add(
+                                                    x[index, axis],
+                                                    _mul(_mul(weights[index], delta), g),
+                                                )
                                                 trace[k, 12 + 3 * node + axis] = x[index, axis]
                                 elif tx.abs(_add(theta, -trace[k, 36])) >= 3.141592653589793:
                                     failed[0] = k + 1

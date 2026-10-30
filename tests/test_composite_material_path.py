@@ -78,7 +78,7 @@ def test_conversion_launch_and_final_hidden_state_cannot_be_forged():
                 audit(ws, dict(data, material_path=changed))
         final = ws.candidate.copy()
         final.position[0, 2] += 1 / 16
-        with pytest.raises(SolverFailure, match="final"):
+        with pytest.raises(SolverFailure, match="compute boundary original"):
             audit(ws, data, final)
         final = ws.candidate.copy()
         final.velocity[0, 2] += 1 / 16
@@ -147,3 +147,4 @@ def test_prediction_reconstruction_and_alpha_compute_boundaries_are_bound():
                 audit(ws, dict(data, material_path=altered))
     finally:
         ws.close()
+

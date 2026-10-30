@@ -6,7 +6,7 @@
 **Architecture:** Reuse the original B/S worktrees and implementers; parent G2-P in the integration tree. One state owner per physical domain; one global execution queue. New modules stay additive until their versioned validation and shared integration are complete.
 **Tech Stack:** Existing Python/NumPy/Fraction and tyx pin99f6df7c0fd8fdeef77f97df83914da27b64b7ee; no dependency change.
 **Spec:** ../specs/2026-10-30-p65-material-self-gripper-integration-design.md
-**State:** G2-P local scoped validation complete; S2-LG host69/static passed and integratedf9c9e7ab after parent saved-evidence audit. B2 host75 passed but native publication/accumulation remains unresolved; R7 representation revision frozen; original owner code-only under the separate representation spec/plan. No child executable slot currently granted. Task4 remains open.
+**State:** G2-P and S2-LG accepted in their scopes; B2 R7 local acceptance/merge0986748 complete, old v1 rejection preserved. Parent point-adapter host/native boundary checks passed on721b5c1; release follows final docs. S2 response code-only under its separate contract. Task4 full integration/fold/review/wheel remain open.
 
 ## Global constraints
 
@@ -34,16 +34,16 @@ Files: create exactly the 11 source, 8 test files and report listed in the spec.
 
 Consumes: tested B1 BendingConstraints/trace and old distance APIs; existing public program/participant/point/terminal interfaces and native engine. Produces ClothMaterial, host/native composite owners, typed complete ordered observations and independent bounded path/energy/domain evidence. Old distance-only APIs remain callable unchanged.
 
-- [ ] After builder rulings, merge the exact final contract checkpoint into this clean isolated tree; inspect merge/source scope, do not rerun old suites.
-- [ ] Author independent bounds/domain tests and implementation: exact determinant identities, rational pi/atan remainders, gradient/energy, full strict branch/degeneracy interval certificates with fixed proof limits. Capture explicit unknown and exhausted resources.
-- [ ] Author owned material/trace classes and host composite program/participant tests: one prediction, full distance-then-bending private sweep, both residual families, one reconstruction, same material identity and atomic late-row rejection.
-- [ ] Author actual ordered FP32 bending kernel/adapter and native composite owner using existing engine. Bind all conversion boundaries, 45-field observations, actual status and operation-specific launch counts.
-- [ ] Author independent path/physical ledger and the two full frozen scenarios/windows/grids/rebuilds/perturbations. Apply spec R1-R3 exactly: explicit externally powered standalone replay receipts, zero extra transfers during windows, positive-part energy and per-step/domain/component absolute angular accumulation. Test the independent one-particle accounted/unaccounted control; retain raw and unexplained defects. Keep full NUM005 measurements and whole-window limits.
-- [ ] Author negative/transaction controls: material mismatch, forged row values, missing/reordered frames, late native/material/close and later-substep rollback/retry=fresh. No unrecorded material loads.
-- [ ] Commit code/tests/report as CODE_READY_TESTS_PENDING. List authored files/node names, no collection/import or claimed pass before grant.
-- [ ] Under the sole later grant: environment/import-path manifest; focused lint/format; all six new host test files, then interpret and CUDA for the two native files and applicable physics cases, serialized. Include the spec's three NUM005 direct consumer nodes and proposal's explicit participant/load-replay consumers where reused adapters are affected.
-- [ ] Run one bounded actual cpu_cpp bending smoke only under that same serialized queue; no long lifetime/stress test. Retain exact raw command/log/exit and launch evidence.
-- [ ] Fix only the affected allowlist, preserve original first outcome. Final report includes complete source/test/dependency manifests, same-run state/history/trace evidence and process0/clean release; no redundant physics for reporting.
+- [x] After builder rulings, merge the exact final contract checkpoint into this clean isolated tree; inspect merge/source scope, do not rerun old suites.
+- [x] Author independent bounds/domain tests and implementation: exact determinant identities, rational pi/atan remainders, gradient/energy, full strict branch/degeneracy interval certificates with fixed proof limits. Capture explicit unknown and exhausted resources.
+- [x] Author owned material/trace classes and host composite program/participant tests: one prediction, full distance-then-bending private sweep, both residual families, one reconstruction, same material identity and atomic late-row rejection.
+- [x] Author actual ordered FP32 bending kernel/adapter and native composite owner using existing engine. Bind all conversion boundaries, 45-field observations, actual status and operation-specific launch counts.
+- [x] Author independent path/physical ledger and the two full frozen scenarios/windows/grids/rebuilds/perturbations. Apply spec R1-R3 exactly: explicit externally powered standalone replay receipts, zero extra transfers during windows, positive-part energy and per-step/domain/component absolute angular accumulation. Test the independent one-particle accounted/unaccounted control; retain raw and unexplained defects. Keep full NUM005 measurements and whole-window limits.
+- [x] Author negative/transaction controls: material mismatch, forged row values, missing/reordered frames, late native/material/close and later-substep rollback/retry=fresh. No unrecorded material loads.
+- [x] Commit code/tests/report as CODE_READY_TESTS_PENDING. List authored files/node names, no collection/import or claimed pass before grant.
+- [x] Under the sole later grant: environment/import-path manifest; focused lint/format; all six new host test files, then interpret and CUDA for the two native files and applicable physics cases, serialized. Include the spec's three NUM005 direct consumer nodes and proposal's explicit participant/load-replay consumers where reused adapters are affected.
+- [x] Run one bounded actual cpu_cpp bending smoke only under that same serialized queue; no long lifetime/stress test. Retain exact raw command/log/exit and launch evidence.
+- [x] Fix only the affected allowlist, preserve original first outcome. Final report includes complete source/test/dependency manifests, same-run state/history/trace evidence and process0/clean release; no redundant physics for reporting.
 
 ## Task 2: S2-LG exact pair geometry and two-normal CCD
 
@@ -81,7 +81,7 @@ Consumes: G1 builder/input, public scene/participant/replay/terminal APIs and ex
 
 ## Task 4: Parent integration and remaining complete capability
 
-- [ ] Read each final report/actual raw exits and independently verify source/evidence hashes and narrow diffs; integrate tested immutable changes without repeating same-source complete tests.
+- [x] Read each final report/actual raw exits and independently verify source/evidence hashes and narrow diffs; integrate tested immutable changes without repeating same-source complete tests.
 - [ ] Parent alone adds typed B2 material identity/ledger/energy dispatch to existing thick-contact seams with original-form negative controls and direct-consumer validation. Preserve legacy gates until this exists.
 - [ ] Freeze and implement S2-L coupled response, all active directions, normal/friction phase budget ownership and successful impact/hold/slip controls over one base. Geometry success alone cannot close this checkbox.
 - [ ] Resolve and freeze S2-F explicit conforming shell/director/incidence/external-contact model with a successful ordinary fold and failed remote incident overlap. No blanket incidence exemption, all-fold rejection or unproved star validity.
@@ -101,3 +101,5 @@ Commands below are recipes only, not an execution grant. At grant time set the a
 - Each lane's ruff check and ruff format --check names only its exact allowlisted Python files. Apply formatting only after preserving initial outcome, then rerun only checks invalidated by the changed source.
 
 Direct-consumer node lists, the bounded B2 C++ smoke and the final wheel command are written into their grant briefs after source call paths are known, before execution. This conditional impact selection is mandated by validation policy; it is not permission to omit required new-feature windows/native cases or final integration gates. B1/S1/G1 old focused evidence need not be repeated when the matching source/dependency boundary remains unchanged.
+
+Task1 native acceptance is under explicit R7 v2 and its exact serial grant, not a rewrite of the failed v1 native run. Original host75 and unchanged interpret primitive evidence remain versioned reuse. The response contract and public adapter do not close the remaining Task4 contact/fold gates.

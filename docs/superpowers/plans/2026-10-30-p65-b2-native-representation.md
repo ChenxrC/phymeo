@@ -27,18 +27,20 @@ Files: exact13-file spec allowlist, including four new source modules, one expli
 
 Interfaces: NativeCompositeRepresentation explicit option; owned v2 raw/derived types; immutable R/d workspace; independent world row reader; default-v1 compatibility.
 
-- [ ] Preserve original72bdbcb source/test bytes and failed receipts; author independent codec/charge/wire/rollback controls from the frozen rational examples.
-- [ ] Implement immutable v2 types, exact RN32/RN64 codec with4096-bit rational caps and strict version/byte ownership.
-- [ ] Implement actual represented prediction/ordered distance+bending/reconstruction kernels and declared raw products/geometry; no host solve or world-FP32 round trip.
-- [ ] Implement independent world decoding/domain/gradient/equation/storage/path/physical audit with exact conservative charges and complete event identity.
-- [ ] Connect only explicit native program/participant dispatch and required test-factory forwarding. Preserve original physical assertions and default callers, migrate full original actual tests to explicit v2.
-- [ ] Complete new tests, review allowed diff and document unexecuted status, API/support precision, all node names, source hashes and risks. Commit small logical code units then final CODE_READY_TESTS_PENDING report; release authoring.
-- [ ] After parent serial grant: environment/current-src/pin evidence, new scoped static/host tests/default compatibility, full v2 interpret then CUDA, remaining v1/native consumers and bounded C++ selection. Use fresh absolute basetemps, original thresholds, raw exits and no fallback.
-- [ ] Preserve first failures; diagnose only the affected allowed files. New shared defects or representation changes return to parent before edits; no budget/fixture tuning.
-- [ ] Audit saved same-run state/history/trace/windows without extra physics; final source/evidence manifests, exact accepted scope and clean/process0 release. Parent verifies immutable evidence and merges tested source only.
+- [x] Preserve original72bdbcb source/test bytes and failed receipts; author independent codec/charge/wire/rollback controls from the frozen rational examples.
+- [x] Implement immutable v2 types, exact RN32/RN64 codec with4096-bit rational caps and strict version/byte ownership.
+- [x] Implement actual represented prediction/ordered distance+bending/reconstruction kernels and declared raw products/geometry; no host solve or world-FP32 round trip.
+- [x] Implement independent world decoding/domain/gradient/equation/storage/path/physical audit with exact conservative charges and complete event identity.
+- [x] Connect only explicit native program/participant dispatch and required test-factory forwarding. Preserve original physical assertions and default callers, migrate full original actual tests to explicit v2.
+- [x] Complete new tests, review allowed diff and document unexecuted status, API/support precision, all node names, source hashes and risks. Commit small logical code units then final CODE_READY_TESTS_PENDING report; release authoring.
+- [x] After parent serial grant: environment/current-src/pin evidence, new scoped static/host tests/default compatibility, full v2 interpret then CUDA, remaining v1/native consumers and bounded C++ selection. Use fresh absolute basetemps, original thresholds, raw exits and no fallback.
+- [x] Preserve first failures; diagnose only the affected allowed files. New shared defects or representation changes return to parent before edits; no budget/fixture tuning.
+- [x] Audit saved same-run state/history/trace/windows without extra physics; final source/evidence manifests, exact accepted scope and clean/process0 release. Parent verifies immutable evidence and merges tested source only.
 
 ## Task R2: parent integration
 
-- [ ] Independently read final raw/exit/version and narrow diffs; reuse unchanged evidence only at its original version.
-- [ ] Merge accepted v2 without relabeling v1 failure; update framework precision/support wording and queue.
+- [x] Independently read final raw/exit/version and narrow diffs; reuse unchanged evidence only at its original version.
+- [x] Merge accepted v2 without relabeling v1 failure; update framework precision/support wording and queue.
 - [ ] Freeze subsequent shared composite/contact and complete self-response/fold seams; one final new integrated-stage review/packaging remains required.
+
+Accepted tested40e5090/reportdc9be828 via parent merge09867484684643a2440d20f7a9741c234eedd4ee. Parent302+1625 hashes and18 original receipts matched. Only R1/local R2 evidence and merge are closed; shared contact/fold and final integrated review/packaging remain open.

@@ -1,5 +1,14 @@
 # P6.5 parallel code and serial execution queue
 
+## Current: B2 accepted, public adapter locally validated; S2 response authoring (2026-10-31)
+
+B2 reportdc9be828/tested40e5090 is accepted and merged as09867484684643a2440d20f7a9741c234eedd4ee after parent302 source/test+1625 evidence hash checks and18 raw receipts, zero mismatch. Original R7 host46/interpret41/CUDA45/boundedCPP2 passed; explicit immutable FP64-reference plus actual FP32-displacement/RN64-world publication remains the precise claim. Original v1 rejection and versioned host75 remain unchanged.
+
+Parent adapter tested721b5c162f1f7e42dd618c70378bba098af0698e has first complete host17/interpret4/CUDA4/boundedCPP1, all RAW_EXIT0. Initial style-only failures were preserved; three ASTs unchanged. Parent14-audit matches363 source/test entries across all four modes and56 evidence hashes without additional physics. It delegates public particle stages and exactly-once terminal batches, including rollback/history/close controls; it does not supply self-contact response or complete fold support.
+
+Parent is finishing the adapter report/document check/clean/process0 release. S2 remains CODE_AND_TEST_AUTHORING_ONLY under its15-new-file contract; no execution granted yet. B2 is released and performs no executable work. Next clean S2 handoff must incorporate the accepted adapter dependency before its separate serial validation. Parent typed B2 contact accounting, lawful incident fold/conforming shell/director/external-contact, complete mesh/h/perturbation/rebuild/fault integration and final review/wheel remain required. Remote CI stays deferred/unpassed; complete P6.5 remains open.
+
+
 The user authorizes isolated parallel code development and requires every executable check to be serial. Remote CI is deferred, unpassed and not a local gate: no poll/rerun/dispatch. Only the parent grants the next executable slot.
 
 ## Latest handoff and execution ownership

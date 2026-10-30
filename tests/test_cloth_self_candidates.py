@@ -8,7 +8,6 @@ import pytest
 from phymeo.constraints.cloth_self_contact import ClothSelfContactTopology
 from phymeo.geometry.cloth_self_candidates import candidate_self_pairs
 
-
 TRIANGLES = np.array([[0, 1, 2], [3, 4, 5]], dtype=np.int64)
 UNIT = np.array([[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0]])
 
@@ -63,8 +62,16 @@ def test_exact_bounds_do_not_overflow_or_round_a_small_gap_closed():
 def test_folded_strip_excludes_all_shared_vertices_and_retains_nonincident_faces():
     faces = np.array([[0, 1, 2], [1, 3, 2], [2, 3, 4], [3, 5, 4], [4, 5, 6], [5, 7, 6]])
     points = np.array(
-        [[0.0, 0, 0], [0, 1, 0], [1, 0, 0], [1, 1, 0],
-         [0, 0, 0.1], [0, 1, 0.1], [1, 0, 0.1], [1, 1, 0.1]]
+        [
+            [0.0, 0, 0],
+            [0, 1, 0],
+            [1, 0, 0],
+            [1, 1, 0],
+            [0, 0, 0.1],
+            [0, 1, 0.1],
+            [1, 0, 0.1],
+            [1, 1, 0.1],
+        ]
     )
     mesh = topology(faces)
     assert mesh.incidence_policy == "exclude_shared_vertex"
@@ -144,7 +151,9 @@ def test_invalid_incidence_is_rejected(faces, match):
 @pytest.mark.parametrize(
     "field,value",
     [
-        ("domain", ""), ("domain", " cloth"), ("domain", 1),
+        ("domain", ""),
+        ("domain", " cloth"),
+        ("domain", 1),
         ("triangles", np.array([[0.0, 1.0, 2.0]])),
         ("triangles", np.array([[False, True, False]])),
         ("triangles", np.array([[0, -1, 2]])),
@@ -169,9 +178,15 @@ def test_invalid_topology_inputs(field, value):
 
 @pytest.mark.parametrize(
     "points",
-    [np.zeros((6, 3), dtype=np.float32), np.zeros((6, 3), dtype=int),
-     np.zeros((6, 2)), np.zeros((5, 3)), np.zeros(18),
-     np.full((6, 3), np.nan), np.full((6, 3), np.inf)],
+    [
+        np.zeros((6, 3), dtype=np.float32),
+        np.zeros((6, 3), dtype=int),
+        np.zeros((6, 2)),
+        np.zeros((5, 3)),
+        np.zeros(18),
+        np.full((6, 3), np.nan),
+        np.full((6, 3), np.inf),
+    ],
 )
 def test_invalid_position_inputs(points):
     with pytest.raises((TypeError, ValueError)):

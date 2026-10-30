@@ -6,7 +6,7 @@
 **Architecture:** Reuse the original B/S worktrees and implementers; parent G2-P in the integration tree. One state owner per physical domain; one global execution queue. New modules stay additive until their versioned validation and shared integration are complete.
 **Tech Stack:** Existing Python/NumPy/Fraction and tyx pin99f6df7c0fd8fdeef77f97df83914da27b64b7ee; no dependency change.
 **Spec:** ../specs/2026-10-30-p65-material-self-gripper-integration-design.md
-**State:** G2-P and S2-LG accepted in their scopes; B2 R7 local acceptance/merge0986748 complete, old v1 rejection preserved. Parent point-adapter host/native boundary checks passed on721b5c1; release follows final docs. S2 response code-only under its separate contract. Task4 full integration/fold/review/wheel remain open.
+**State:** G2-P, S2-LG, B2 R7, parent point adapter, S2-L response and standalone contact quotient are locally accepted in their explicit scopes. S2-L merge1396df42 and quotient merge44456ea are complete; both execution slots released. S2-F proposal c35a13a is imported and its geometry/director prerequisite is frozen for original-S2 code/test authoring only. Full contact/fold/B2 integration/review/wheel and complete P6.5 remain open.
 
 ## Global constraints
 
@@ -83,7 +83,8 @@ Consumes: G1 builder/input, public scene/participant/replay/terminal APIs and ex
 
 - [x] Read each final report/actual raw exits and independently verify source/evidence hashes and narrow diffs; integrate tested immutable changes without repeating same-source complete tests.
 - [ ] Parent alone adds typed B2 material identity/ledger/energy dispatch to existing thick-contact seams with original-form negative controls and direct-consumer validation. Preserve legacy gates until this exists.
-- [ ] Freeze and implement S2-L coupled response, all active directions, normal/friction phase budget ownership and successful impact/hold/slip controls over one base. Geometry success alone cannot close this checkbox.
+- [x] Accept and integrate S2-L unique-exposed-ray coupled response over one base, including its frozen host/interpret/CUDA/bounded-CPP controls and saved evidence (merge1396df42). This is the explicitly limited nonincident/None-or-Distance domain.
+- [ ] Extend complete physical support to noncollinear active direction cones and remaining material/contact domains; limited S2-L response and quotient algebra do not close this requirement.
 - [ ] Resolve and freeze S2-F explicit conforming shell/director/incidence/external-contact model with a successful ordinary fold and failed remote incident overlap. No blanket incidence exemption, all-fold rejection or unproved star validity.
 - [ ] Supply nonlinear/time/mesh calibration bounds and full bent/self-contacting material + finite-grasp integration. Retain all final h/mesh/perturbation/rebuild/window/late-fault and physical-energy/moment gates.
 - [ ] Run one fresh review for the completed new integrated stage; fix findings with original owners and affected verification. Do not repeat old foundation/thickness fresh review.
@@ -103,3 +104,7 @@ Commands below are recipes only, not an execution grant. At grant time set the a
 Direct-consumer node lists, the bounded B2 C++ smoke and the final wheel command are written into their grant briefs after source call paths are known, before execution. This conditional impact selection is mandated by validation policy; it is not permission to omit required new-feature windows/native cases or final integration gates. B1/S1/G1 old focused evidence need not be repeated when the matching source/dependency boundary remains unchanged.
 
 Task1 native acceptance is under explicit R7 v2 and its exact serial grant, not a rewrite of the failed v1 native run. Original host75 and unchanged interpret primitive evidence remain versioned reuse. The response contract and public adapter do not close the remaining Task4 contact/fold gates.
+
+## S2-FG authoring checkpoint
+
+The [conforming geometry plan](2026-10-31-p65-conforming-shell-geometry.md) implements the [parent ruling](../../development/p65-s2-conforming-shell-parent-adjudication.md). Original S2 owns fourteen NEW paths for code/test authoring only, starting from c35a13a. There is no executable slot. B2 remains released. Strict geometry admission, analytic F1 geometry paths and F2 full-star map algebra must not be reported as runtime physical trajectories, remote self-touch, rotating loaded folds or complete S2-F. All remaining Task4 requirements stay open.

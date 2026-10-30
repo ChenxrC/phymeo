@@ -1,6 +1,6 @@
 # S2-F conforming material and lawful-fold proposal: documentation only
 
-Status: PROPOSAL_REQUESTED_NOT_FROZEN. This is the next distinct S2-F material
+Status: PROPOSAL_RECEIVED_AND_ADJUDICATED. Original documentation-only grant completed at c35a13a; imported as cf44431. Geometry/director code authoring now has a separate frozen contract and brief; complete contact physics remains NOT_FROZEN. This is the next distinct S2-F material
 contract after accepted S2-L response. It is not another review or rewrite of
 the old nonincident proposal. Continuous P6.5 authorization includes parent
 architecture adjudication; no generic stage permission question is needed.

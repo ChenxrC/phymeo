@@ -1,39 +1,43 @@
 # P6.5 parallel code and serial execution queue
 
-The user authorizes parallel isolated code development and requires all executable validation to run serially. Remote CI is deferred until a new machine is supplied: no poll, rerun or dispatch. Manual-only workflows retain the complete job definitions. Remote coverage is deferred, never relabeled passed.
+The user authorizes isolated parallel code development and requires every executable check to be serial. Remote CI is deferred, unpassed and not a local gate: no poll/rerun/dispatch. Only the parent grants the next executable slot.
 
-## Current queue and owners
+## Current owners and next action
 
 | Lane | Worktree / branch | Current state |
 | --- | --- | --- |
-| G2-P / parent | C:/Users/38347/.codex/worktrees/p65-parallel-integration/phymeo / codex/p65-parallel-modules | SOLE_EXECUTION_OWNER. Host session9415 finished29pass/1138.14s/exit0 on e9ab075fd078c32d9695899d2a1cfff33d6b8ccd. Actual interpret session71841 ended14pass/728.75s/exit0; CUDA session86307 now owns the slot on unchanged source with --require-tyx. |
-| B2-M / p65_bending_module | C:/Users/38347/.codex/worktrees/p65-bending-module/phymeo / codex/p65-bending-module | CODE_READY_TESTS_PENDING at 1108af389dde69506dd6f76c3b0902ac008ac695; clean, authoring released. Eleven new source and eight test files; no imports/collection/tests/lint/native execution. |
-| S2-LG / p65_self_contact_module | C:/Users/38347/.codex/worktrees/p65-self-contact-module/phymeo / codex/p65-self-contact-module | CODE_READY_TESTS_PENDING at 1058d34354a9e1ecd9b15e3f85a84b10e243f4c3; code snapshot c94b91f896e92c643cce81d5f1bb1e1534c9f2ef, clean and released. Three new source and three test files, 42 authored functions not collected. |
-| Existing thickness delivery | C:/Users/38347/Documents/ChatGPT/phymeo / codex/p6-5-handoff | Local Task3/4 complete and released; policy50a5eeb pushed. Historical remote failures retained, not queried again. |
+| G2-P / parent | C:/Users/38347/.codex/worktrees/p65-parallel-integration/phymeo / codex/p65-parallel-modules | LOCAL_SCOPED_VALIDATION_COMPLETE on e9ab075fd078c32d9695899d2a1cfff33d6b8ccd. Host29, actual interpret14, actual CUDA14 all RAW_EXIT0; all sessions naturally ended. Parent completes report/clean/process0 handoff, with no further G2 numerical run. |
+| B2-M / p65_bending_module | C:/Users/38347/.codex/worktrees/p65-bending-module/phymeo / codex/p65-bending-module | CODE_READY_TESTS_PENDING at1108af389dde69506dd6f76c3b0902ac008ac695. Reserved as the next sole execution owner after G2 release and explicit original-agent followup. See task-1-validation-grant.md; no reimplementation or merge of G2 source is needed. |
+| S2-LG / p65_self_contact_module | C:/Users/38347/.codex/worktrees/p65-self-contact-module/phymeo / codex/p65-self-contact-module | CODE_READY_TESTS_PENDING at1058d34354a9e1ecd9b15e3f85a84b10e243f4c3, code c94b91f896e92c643cce81d5f1bb1e1534c9f2ef. Waits for B2 formal release; no executable checks. |
+| Historical thickness delivery | C:/Users/38347/Documents/ChatGPT/phymeo / codex/p6-5-handoff | Local Task3/4 complete; policy50a5eeb pushed. Remote failures preserved, not queried. |
 
-No child may start import/pytest/collection/probe/lint/formatter/native/build/install/profile until explicitly granted the sole slot. Do not merge unvalidated lane source into G2's active frozen checkout. Parent verified actual lane Git HEAD/clean/file scope and all19 B2 plus6 S2 source/test hashes against their reports; artifacts/p65-parallel-parent-audits/b2-s2-code-handoff-01.json is provenance only, not executable validation. Both code handoffs were acknowledged without a new task or execution grant.
+B2/S2 have completed code handoffs, not executable acceptance. Parent previously checked exact Git scope and19+6 source/test hashes; artifacts/p65-parallel-parent-audits/b2-s2-code-handoff-01.json is provenance only. Do not merge unvalidated lane code or repeat old implementation/builder/review. While B2 owns the slot, parent and S2 may only read, use Git and author documents/code without execution.
 
-## Active G2 receipts and next actions
+## G2 completed evidence
 
-Code checkpoint e584b560, static-ready source e9ab075. Environment/import provenance exit0; initial ruff/format style findings retained. After unused-import and equivalent local-helper style corrections, format AST parity and final ruff/format passed. No physical formula, tolerance or old source changed.
+Authoring checkpoint e584b560, final tested source e9ab075. Initial style findings, equivalent helper correction, format AST parity and final static checks are retained. First numerical tests were green. No physical law, oracle, tolerance or old source changed.
 
-First full host command: existing .venv-py311 python -m pytest tests/test_gripper_cloth.py tests/test_gripper_cloth_transaction.py -q -x --tb=short -p no:cacheprovider --basetemp <fresh Temp/phymeo-g2-host-e9ab075-01>. Artifacts/p65-g2-local-20261030-a/09-host01-manifest.json/log/exit/finish.json retain source, environment, command and raw exit. Same-run complete records are saved under host01-runs; no extra run is made for reporting. Session9415 naturally exited0 and must not be restarted. Parent checked all327 source hashes unchanged and24 complete accepted saved runs/164steps;10-host01-evidence-index.json preserves exact record hashes. The host29passed result includes the transaction controls beyond those saved trajectory windows.
+Host session9415 finished29passed/1138.14s; interpret71841 finished14passed/728.75s; CUDA86307 finished14passed/862.92s. All RAW_EXIT0, process0 at finish, current-worktree import provenance, fresh basetemps and --require-tyx for actual modes. Never restart these sessions or repeat these successful suites for reporting.
 
-Host succeeded. On an actual-backend failure retain first post-code evidence and diagnose the frozen case. No threshold/window/rebuild deletion, hidden state repair or old shared change without a parent original-form finding. Parent is continuing actual interpret then CUDA, one fresh process/basetemp at a time, --require-tyx with real FP32/launch evidence. Interpret session71841 ended successfully;12-interpret01 raw/exit/manifest and13-evidence-index bind20acceptedruns/84steps and327unchangedsourcehashes. CUDA session86307 uses15-cuda01 manifest/log/exit/finish, fresh Temp/phymeo-g2-cuda-e9ab075-01. Native environment11 and14 both passed current-src/pin provenance. No CUDA passing claim yet. Only after all needed G2 work is closed, process0 and a formal release may B2 then S2 receive their respective serial grants. Independent report/source inspection and document file IO can proceed while tests run.
+Artifacts/p65-g2-local-20261030-a contains raw09-host01,12-interpret01,15-cuda01 and16-final-saved-evidence-audit.json. The read-only saved-data audit matched327 source files across all three runs and94 evidence hashes. Its canonical ordered source manifest hash is99c9f95e1e07ceb74881db989ab5b4dc6d0d13c600a6c2c4f575daad703b07e7. It verified64 saved accepted runs/332 steps and24 baseline rebuild groups; full state/history bitwise comparison74/38/38 rows, actual FP32 receipts168 per mode and69936 completed launches per actual mode. No extra physical sampling. Fault/retry runs are covered by original pytest results, not fabricated additional saved trajectories. See [G2 report](p65-gripper-load-bearing.md).
 
-## Binding integration contract
+## Next serial grant
 
-See ../superpowers/specs/2026-10-30-p65-material-self-gripper-integration-design.md and its matching plan, plus .superpowers/sdd/2026-10-30-p65-material-self-gripper-integration/progress.md and briefs. The single new builder's four questions were resolved in R1-R4; R5/R6 specify the actual G2 API and independent S2 sweep verifier. No second builder or old thickness/foundation fresh review is pending.
+The frozen B2 grant is at .superpowers/sdd/2026-10-30-p65-material-self-gripper-integration/task-1-validation-grant.md. Original agent validates its unchanged starting snapshot, scoped static checks, six full host files, two actual files interpret then CUDA, exact seven legacy direct-consumer nodes in applicable modes and one bounded new bending cpu_cpp smoke. Existing environments only, explicit child src, one-thread/noautoload/nocache and fresh absolute basetemps. First outcomes, scoped repairs, original proof/physical budgets and final source/evidence receipts are mandatory. No helper/reviewer/install/push/remote or unrelated old suites.
 
-B2-M includes ordered distance+bending, continuous domain proof, typed native conversion/row traces and separate original-input/external-load work. The external receipt cannot excuse internal-contact energy. S2-LG is complete scoped nonincident pair geometry/CCD, not response or lawful incident folding; empty selected clipping remains unresolved with retained exact SAT evidence. G2-P covers real finite-force planar hold/slip/capture and active distance material, not full folded cloth. All three scoped capabilities still need their versioned executable results before acceptance.
+B2 must return clean/process0 and an explicit release before S2 receives its full three-file geometry validation slot. No waits for remote CI. Parent reviews saved immutable evidence, not a duplicate full run.
 
-## Completed foundation receipts — reuse, do not rerun
+## Binding contract and remaining capability
 
-- B1: 98/98 host at8b6d935, report96cbf20, integratedc886551. Parent raw/hash/byte-parity receipts preserved. Only pre/post projection branch admissibility; B2/native/composite/continuous proof not implied.
-- S1: original80/80 and final80/80 at9a26fc7, report5056ce8, integrated51e5767. Six-file/twelve-log audit and archived20 raw artifacts retained. Conservative candidates and same-base load operator are not collision/CCD/self-response acceptance.
-- G1: final28/28 at a16bf4a, report712fdad; artifacts/p65-g1-local-20261030-a. Model/input only; actual grasp acceptance is G2.
-- Existing thickness local host195/interpret19/CUDA19 and source-external wheel are versioned historical results, not rerun for this code wave. Remote CI remains deferred and unpassed.
+The single new builder check was resolved in spec R1-R4; R5/R6 bind actual G2 APIs and the independent S2 sweep verifier. Contract: docs/superpowers/specs/2026-10-30-p65-material-self-gripper-integration-design.md and matching plan. Original new implementers are reused; no second builder or old thickness/foundation fresh review.
 
-## Required remaining full capability
+G2-P passed only planar coordinate-prismatic finite hold/slip/capture with active distance material. B2-M composite material/native/domain/energy evidence and S2-LG nonincident pair geometry remain unvalidated until their own runs complete. Parent alone owns shared material/load/ledger/native/history seams. Required follow-through: typed B2 contact dispatch; S2-L complete same-base normal/friction response; S2-F explicit conforming shell/incidence/director Jacobian/external contact with successful lawful folding and failed remote incident overlap; full material/grasp mesh/h/perturbation/rebuild/window/fault gates. No blanket incident exclusion, all-fold rejection or unproved tetra validity substitutes these gates.
 
-Parent owns old material/load/ledger/native/history/transaction seams. After scoped validation: typed B2 contact dispatch, S2-L full same-base response/friction, explicit S2-F conforming shell/incidence/director Jacobian/external contact, successful lawful fold and failed remote incident overlap, full material/grasp mesh/h/perturbation/rebuild/window/fault acceptance. No blanket incident exclusion, all-fold rejection or unproved tetra validity substitutes these gates. Then one fresh integrated review and local build/source-external wheel. General robot thickness support, real single gripper, IK/history, dual-arm handoff and same-source Three.js remain required P6.5 work. No module/test count is an overall completion percentage.
+One fresh integrated review and local build/source-external wheel follow complete integration. General robot thickness, real folded-cloth grasp, IK/history, dual-arm handoff and same-source Three.js remain required P6.5 work. Remote stays deferred. A scoped module or test count is not an overall completion percentage.
+
+## Historical foundations — reuse, do not rerun
+
+- B1:98/98 host at8b6d935, report96cbf20, integratedc886551. Endpoint projection/trace only; no B2/native/continuous-proof implication.
+- S1:80/80 final at9a26fc7, report5056ce8, integrated51e5767. Candidate/same-base mapping only.
+- G1:28/28 at a16bf4a, report712fdad. Model/input only.
+- Historical thickness host195/interpret19/CUDA19 and source-external wheel remain versioned original results; no repeat or new-source C++ claim. NUM005/TYX003/TYX004 remain open.

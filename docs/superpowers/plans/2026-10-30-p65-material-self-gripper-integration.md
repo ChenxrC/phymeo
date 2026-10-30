@@ -6,7 +6,7 @@
 **Architecture:** Reuse the original B/S worktrees and implementers; parent G2-P in the integration tree. One state owner per physical domain; one global execution queue. New modules stay additive until their versioned validation and shared integration are complete.
 **Tech Stack:** Existing Python/NumPy/Fraction and tyx pin99f6df7c0fd8fdeef77f97df83914da27b64b7ee; no dependency change.
 **Spec:** ../specs/2026-10-30-p65-material-self-gripper-integration-design.md
-**State:** The single builder check is resolved by spec R1-R4. Code authoring is ready for explicit lane grants; no executable-validation grant is implied.
+**State:** G2-P local scoped validation is complete on e9ab075 (host29, interpret14, CUDA14). B2-M and S2-LG code handoffs are ready; B2 is reserved next after the formal G2 release. Task4 full integration remains open. Exact execution authority is recorded in the queue and task-1-validation-grant.md.
 
 ## Global constraints
 
@@ -70,14 +70,14 @@ Create src/phymeo/experiments/parallel_jaw_cloth.py; examples/parallel_jaw_cloth
 
 Consumes: G1 builder/input, public scene/participant/replay/terminal APIs and existing DynamicRobotThickContactProgram. Produces build_gripper_case, run_gripper_case, save_gripper_run and a thin explicit CLI. Runner records actual state/history/report/launches; oracle lives only in independent tests.
 
-- [ ] Author model/inputs/settings assembly for hold/slip/capture/material, immutable configuration and no default long-running CLI. Unit validation and saving refuse invalid or existing targets.
-- [ ] Author independent rational A/B/C expected state/phase impulse/energy tests; actual windows/h/rebuilds and fixed budgets exactly as spec. B tests include shared6kg carriage and both phase contributions; C tests include true distance material.
-- [ ] Author mass/effort/inertia scale, changed finite patch/vertical shift and declaration-order controls. Expectations are independent transformed equations, not a second production run used as oracle.
-- [ ] Author actual backend publication/launch tests and terminal/material/audit/close late-failure whole-step rollback/retry tests. All numerical execution remains queued until parent grant.
-- [ ] Commit authored implementation/tests/report with unexecuted status.
-- [ ] Grant G2 the sole slot when no other lane executes. Run static, focused host, actual interpret then CUDA serially; manifest explicit current src imports, pin, fresh checked basetemps and raw exits. Native suite includes full new windows and transformations, no skip/fallback.
-- [ ] Preserve first failure, diagnose against frozen inputs and formulas; change no shared law/budget without an explicit original-form finding and parent ruling. Keep original raw and any corrected source versions distinct.
-- [ ] Final report binds all successful receipts to source; release process0/clean. Parent reuses the saved accepted evidence, not another whole-suite run.
+- [x] Author model/inputs/settings assembly for hold/slip/capture/material, immutable configuration and no default long-running CLI. Unit validation and saving refuse invalid or existing targets.
+- [x] Author independent rational A/B/C expected state/phase impulse/energy tests; actual windows/h/rebuilds and fixed budgets exactly as spec. B tests include shared6kg carriage and both phase contributions; C tests include true distance material.
+- [x] Author mass/effort/inertia scale, changed finite patch/vertical shift and declaration-order controls. Expectations are independent transformed equations, not a second production run used as oracle.
+- [x] Author actual backend publication/launch tests and terminal/material/audit/close late-failure whole-step rollback/retry tests. All numerical execution remains queued until parent grant.
+- [x] Commit authored implementation/tests/report with unexecuted status.
+- [x] Grant G2 the sole slot when no other lane executes. Run static, focused host, actual interpret then CUDA serially; manifest explicit current src imports, pin, fresh checked basetemps and raw exits. Native suite includes full new windows and transformations, no skip/fallback.
+- [x] Preserve first failure, diagnose against frozen inputs and formulas; change no shared law/budget without an explicit original-form finding and parent ruling. Keep original raw and any corrected source versions distinct.
+- [x] Final report binds all successful receipts to source; release process0/clean. Parent reuses the saved accepted evidence, not another whole-suite run.
 
 ## Task 4: Parent integration and remaining complete capability
 

@@ -1,13 +1,37 @@
-# G2-P finite-force gripper
+# G2-P local finite-grasp acceptance
 
-Status: HOST_AND_INTERPRET_VERIFIED_CUDA_RUNNING. On source e9ab075fd078c32d9695899d2a1cfff33d6b8ccd, the first full host selection completed naturally: 29 passed in1138.14s, RAW_EXIT0. This includes the frozen finite-grasp windows and late rollback/retry tests. Environment/import provenance and final static checks passed; original style findings remain recorded. Actual interpret completed14passed/728.75s/RAW_EXIT0 on the same source with the pinned native environment, actual FP32/launch gates and unchanged physical budgets. CUDA is now running serially; no CUDA pass or full G2 acceptance is yet claimed.
+Status: LOCAL_SCOPED_VALIDATION_COMPLETE. Tested source e9ab075fd078c32d9695899d2a1cfff33d6b8ccd; initial authored checkpoint e584b5605ea4719e9d0ea7d590f96fabec50fc74. Parent owns this lane. No old solver/runtime/law/participant/pin/history source was changed.
 
-The additive runner configures the public finite-gripper model and unchanged runtime for A high-friction hold / low-friction slip, B open-gap capture and upward hoist, and C one active distance-material step. It stores each complete actual result, state/history and raw timings with typed lossless array bytes. The CLI requires explicit case/mode/h/duration/output and records source provenance. The independent rational A/B/C equations live only in tests.
+## Actual results
 
-Authored host coverage includes full T=1 windows at h=1/8 and 1/16 with two fresh rebuilds, exact event/state/load equations, temporal halving or event-grid bound, material h=1/4 and 1/8 controls, mass/effort scales 0.5 and 2, finite patch size/vertical translation/declaration order, physical budgets, original work/momentum, complete history, serialization and immutable input controls. Actual interpret/CUDA tests retain T=1/2 windows, both grids/rebuilds, C, transformations and explicit FP32/launch checks. Fault tests use real operation wrappers for late prediction/path/terminal/mapping/CCD/close, partial construction, full-frame rollback and retry equal to a fresh frame; capture exercises nonzero terminal friction.
+| Selection | Result | Pytest wall time | Saved accepted runs / steps |
+| --- | --- | --- | --- |
+| Host: gripper cloth and transaction files | 29 passed, RAW_EXIT0 | 1138.14s | 24 / 164 |
+| Actual interpret: complete native file, --require-tyx | 14 passed, RAW_EXIT0 | 728.75s | 20 / 84 |
+| Actual CUDA: complete native file, --require-tyx | 14 passed, RAW_EXIT0 | 862.92s | 20 / 84 |
 
-Independent physical authority: p65-g2-gripper-proposal.md A/B/C and the frozen integration spec. G2 uses existing native cache behavior because participant APIs expose no cache-root argument (R5). No old solver/runtime/law/participant/pin/history file is edited. Initial style results and exact source snapshots are retained under artifacts/p65-g2-local-20261030-a. The first post-code host numerical result was green; no historical TDD RED is invented. Parent matched all327 source/test/script hashes to the starting manifest, zero mismatches, and indexed24 same-run full records covering164 physical steps (A/B windows, C and variations). No extra physical run was needed for this evidence. Test count is not an overall P6.5 completion percentage.
+Sessions9415,71841,86307 ended naturally, each finish receipt records process0. Their logs, exits, expanded commands, environment and starting manifests remain in artifacts/p65-g2-local-20261030-a as09-host01,12-interpret01,15-cuda01. No suite was restarted. These durations are validation timings, not performance or cross-backend speed measurements.
 
-The C case is DistanceConstraints only. Full B2 material integration, bending/folding/self-contact, general robot support, mesh calibration and complete P6.5 are not established by this checkpoint. Remote CI stays user-deferred and unpassed.
+Host used the existing Python3.11.15/NumPy2.4.6 environment. Actual modes used Python3.12.14/NumPy2.5.4 and tyx_compute0.1.0a0 pinned to99f6df7c0fd8fdeef77f97df83914da27b64b7ee. Environment receipts verified actual current-worktree imports. Each command used a fresh checked-absent basetemp, one-thread settings, disabled plugin autoload/cache and actual native requirements.
 
-Actual interpret receipts: session71841 ended naturally, process0; parent matched327 source/test/script hashes with0mismatch and indexed20 accepted same-run trajectories/84physicalsteps in13-interpret01-evidence-index.json. Actual CUDA session86307 uses the same frozen source, --tyx-mode cuda --require-tyx, a fresh basetemp, and15-cuda01 raw/manifest/exit records. Reported pytest wall times are validation timings, not cross-backend performance measurements.
+The first numerical results were green. Initial ruff/format style failures are retained; unused import and an equivalent local-helper style correction preceded formatting. Format AST parity and final static checks passed. The pre-execution PowerShell automatic-variable authoring error was corrected before project import/collection and is not a numerical RED. No formula, oracle, tolerance, budget or window was relaxed.
+
+## Physical coverage and independent evidence
+
+The additive runner configures public model/runtime APIs and stores complete actual results, typed lossless state/history bytes, diagnostics, raw timing and provenance. It contains no expected-solution oracle or state repair. Independent Fraction equations live in tests.
+
+A covers true finite-force high-friction support and low-friction sliding with shared carriage mass; B starts open, closes, captures through both normal phases, applies terminal friction once and hoists; C executes active DistanceConstraints. Host A/B windows retain T=1, h=1/8 and1/16 and two fresh rebuilds. Actual modes retain T=1/2, both h/rebuilds, real FP32 publication and launches. C retains h=1/4 and1/8 controls. Mass/effort scaling, changed finite patch, vertical translation, declaration order, force/work/momentum/energy, complete CCD/history, immutable inputs and serialization remain covered.
+
+Late prediction/path/terminal/mapping/CCD/close and construction faults test complete state/history/input rollback and retry equal to a fresh frame. Capture uses a real nonzero terminal load. Additional fault/retry simulations are represented by original pytest evidence, not added to the saved-trajectory counts.
+
+Parent read-only audit16-final-saved-evidence-audit.json checked all327 source/test/script files unchanged across all three manifests and94 evidence hashes. Canonical ordered source-manifest SHA256:99c9f95e1e07ceb74881db989ab5b4dc6d0d13c600a6c2c4f575daad703b07e7. This manifest encoding is distinct from historical rolling digests.
+
+All64 same-run records contain332 accepted steps. Two independent rebuilds agree bitwise on full state and substep/history: eight groups per mode, with74 host and38/38 actual rows compared. Each actual mode has168 FP32 pre/final state receipts and69936 completed launches across saved trajectories. Every accepted step has exactly one terminal application and two complete certified CCD partitions. Original host/native tolerances1e-8/2e-5 and energy/angular budgets1e-8/1e-5 are unchanged.
+
+Maximum positive energy upper bound is6.938893903907228e-18 J on host and1.7166712488833187e-11 J in both actual modes. Saved symmetric cases have zero material angular L1 defect; this does not close NUM005. Audit16-audit-saved-records.py/log/exit completed0 using only saved files, no project imports or additional physics.
+
+## Scope and remaining delivery
+
+This validates planar coordinate-prismatic finite grasp with distance material. It does not validate B2 composite bending, self-contacting/folded cloth, arbitrary robot joints, final mesh calibration or full P6.5. B2-M and S2-LG code are ready in isolated trees and await their serial validation. Shared contact/material dispatch, S2 response and lawful incident folding remain parent-owned work.
+
+One new integrated review and local build/source-external wheel belong to the completed integrated Task4. No new C++ claim is made here; original thickness C++ evidence remains versioned and TYX003 stays open. Remote CI remains user-deferred and unpassed. No remote operation or extra physical run was used for this report.

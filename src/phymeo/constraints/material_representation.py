@@ -57,6 +57,8 @@ def round_binary(value, bits):
     word, remainder = divmod(scaled_n, scaled_d)
     if 2 * remainder > scaled_d or (2 * remainder == scaled_d and word % 2):
         word += 1
+    if word and quantum + word.bit_length() - 1 > maximum:
+        raise SolverFailure("representation codec overflow")
     if bits == 32 and (not word or quantum + word.bit_length() - 1 < minimum):
         raise SolverFailure("representation native word requires nonzero subnormal/zero")
     try:
@@ -174,6 +176,7 @@ class RepresentedMaterialBatch:
     compute_weights: np.ndarray
     compute_rest: np.ndarray
     compute_alpha: np.ndarray
+    reference_vectors: np.ndarray
     rows: np.ndarray
     products: np.ndarray
     geometry_before: np.ndarray
@@ -204,7 +207,7 @@ class RepresentedMaterialBatch:
             object.__setattr__(self, name, _array(getattr(self, name), np.float64, (n, 3), name))
         for name in ("lambda_in", "lambda_out", "compute_rest", "compute_alpha"):
             object.__setattr__(self, name, _array(getattr(self, name), np.float32, (m,), name))
-        for name, shape in (("compute_weights", (n,)), ("rows", (m, width)), ("products", (m, arity, 3)), ("geometry_before", (m, vectors, 3)), ("geometry_after", (m, vectors, 3))):
+        for name, shape in (("compute_weights", (n,)), ("reference_vectors", (m, vectors, 3)), ("rows", (m, width)), ("products", (m, arity, 3)), ("geometry_before", (m, vectors, 3)), ("geometry_after", (m, vectors, 3))):
             object.__setattr__(self, name, _array(getattr(self, name), np.float32, shape, name))
         for name in ("world_before", "world_after"):
             object.__setattr__(self, name, _array(getattr(self, name), np.float64, (m, arity, 3), name))

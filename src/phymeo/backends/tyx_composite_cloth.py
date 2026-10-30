@@ -25,29 +25,43 @@ class TyxCompositeClothProgram(CompositeClothProgram):
         audit_settings=None,
         budgets,
         cache_root=None,
+        representation=None,
     ):
         if mode not in TyxBendingMath.MODES:
             raise ValueError("explicit supported native mode required")
         super().__init__(model, material, domain, audit_settings=audit_settings, budgets=budgets)
+        if representation is not None:
+            from ..constraints.material_representation import NativeCompositeRepresentation
+
+            if not isinstance(representation, NativeCompositeRepresentation):
+                raise TypeError("explicit NativeCompositeRepresentation required")
+        self.representation = representation
         self.mode, self.cache_root = mode, cache_root
         self.capabilities = ProgramCapabilities(
             "tyx:" + mode, {"float64"}, {"particles"}, self.capabilities.features
         )
 
     def problem_signature(self):
-        return dict(
+        signature = dict(
             super().problem_signature(),
             backend="tyx:" + self.mode,
             compute_dtype="float32",
             storage_dtype="float64",
         )
+        if self.representation is not None:
+            signature.update(representation=self.representation, world_publication="RN64(reference+native_displacement)")
+        return signature
 
     def workspace(self, domain, state, inputs, h, settings):
+        if self.representation is not None:
+            from .tyx_represented_material import RepresentedCompositeClothWorkspace
+
+            return RepresentedCompositeClothWorkspace(self, domain, state, inputs, h, settings)
         return TyxCompositeClothWorkspace(self, domain, state, inputs, h, settings)
 
 
 class TyxCompositeClothParticipant(CompositeClothParticipant):
-    def __init__(self, model, material, mode, *, audit_settings=None, budgets, cache_root=None):
+    def __init__(self, model, material, mode, *, audit_settings=None, budgets, cache_root=None, representation=None):
         self.program = TyxCompositeClothProgram(
             model,
             material,
@@ -55,6 +69,7 @@ class TyxCompositeClothParticipant(CompositeClothParticipant):
             audit_settings=audit_settings,
             budgets=budgets,
             cache_root=cache_root,
+            representation=representation,
         )
         self.family = StateRegistry().get("particles")
 
@@ -62,6 +77,12 @@ class TyxCompositeClothParticipant(CompositeClothParticipant):
         if context.backend != self.capabilities.backend or context.dtype != np.float64:
             raise ValueError("native composite context mismatch")
         state, inputs = self.family.snapshot(self.model, state, inputs, context)
+        if self.program.representation is not None:
+            from .tyx_represented_material import RepresentedCompositeParticipantWorkspace
+
+            return RepresentedCompositeParticipantWorkspace(
+                self.program.workspace(domain, state, inputs, h, settings), None
+            )
         return TyxCompositeParticipantWorkspace(
             self.program.workspace(domain, state, inputs, h, settings), None
         )

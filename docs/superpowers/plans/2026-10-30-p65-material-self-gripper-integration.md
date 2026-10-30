@@ -6,7 +6,7 @@
 **Architecture:** Reuse the original B/S worktrees and implementers; parent G2-P in the integration tree. One state owner per physical domain; one global execution queue. New modules stay additive until their versioned validation and shared integration are complete.
 **Tech Stack:** Existing Python/NumPy/Fraction and tyx pin99f6df7c0fd8fdeef77f97df83914da27b64b7ee; no dependency change.
 **Spec:** ../specs/2026-10-30-p65-material-self-gripper-integration-design.md
-**State:** Waiting for the one new builder check; no code or execution grant yet.
+**State:** The single builder check is resolved by spec R1-R4. Code authoring is ready for explicit lane grants; no executable-validation grant is implied.
 
 ## Global constraints
 
@@ -38,7 +38,7 @@ Consumes: tested B1 BendingConstraints/trace and old distance APIs; existing pub
 - [ ] Author independent bounds/domain tests and implementation: exact determinant identities, rational pi/atan remainders, gradient/energy, full strict branch/degeneracy interval certificates with fixed proof limits. Capture explicit unknown and exhausted resources.
 - [ ] Author owned material/trace classes and host composite program/participant tests: one prediction, full distance-then-bending private sweep, both residual families, one reconstruction, same material identity and atomic late-row rejection.
 - [ ] Author actual ordered FP32 bending kernel/adapter and native composite owner using existing engine. Bind all conversion boundaries, 45-field observations, actual status and operation-specific launch counts.
-- [ ] Author independent path/physical ledger and the two full frozen scenarios/windows/grids/rebuilds/perturbations. Keep full NUM005 measurements and whole-window limits.
+- [ ] Author independent path/physical ledger and the two full frozen scenarios/windows/grids/rebuilds/perturbations. Apply spec R1-R3 exactly: explicit externally powered standalone replay receipts, zero extra transfers during windows, positive-part energy and per-step/domain/component absolute angular accumulation. Test the independent one-particle accounted/unaccounted control; retain raw and unexplained defects. Keep full NUM005 measurements and whole-window limits.
 - [ ] Author negative/transaction controls: material mismatch, forged row values, missing/reordered frames, late native/material/close and later-substep rollback/retry=fresh. No unrecorded material loads.
 - [ ] Commit code/tests/report as CODE_READY_TESTS_PENDING. List authored files/node names, no collection/import or claimed pass before grant.
 - [ ] Under the sole later grant: environment/import-path manifest; focused lint/format; all six new host test files, then interpret and CUDA for the two native files and applicable physics cases, serialized. Include the spec's three NUM005 direct consumer nodes and proposal's explicit participant/load-replay consumers where reused adapters are affected.
@@ -55,7 +55,7 @@ Consumes: exact binary input coordinates and positive thickness, immutable proof
 
 - [ ] Merge final contract checkpoint into the clean lane and verify unchanged original foundations.
 - [ ] Author exact field tests and implementation: rational/common/independent radical reduction, zero detection, arithmetic/inverse/context behavior and finite sign-refinement limits. Preserve old Quadratic's semantics.
-- [ ] Author complete rational SAT and symmetric point/segment/polygon clipping tests/implementation, both exact material endpoint reconstructions, stable keyed ties and owned receipts.
+- [ ] Author complete rational SAT and symmetric point/segment/polygon clipping tests/implementation, both exact material endpoint reconstructions, stable keyed ties and owned receipts. Use the required PrismPairIdentity of spec R4 in static/sweep signatures, with explicit input correspondence, cyclic orientation and caller/canonical mapping tests.
 - [ ] Before any numerical execution, freeze explicit safe/unsafe moving fixture coordinates and their independent handwritten inequalities in the lane report; do not fit a successful trajectory after probing.
 - [ ] Author two-normal area/curvature/partition CCD and independent negative controls, including omission of either curvature contribution, interior crossing/degeneration and exhausted budgets.
 - [ ] Commit code/report as CODE_READY_TESTS_PENDING with authored tests listed and all execution unperformed.

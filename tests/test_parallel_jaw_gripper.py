@@ -36,9 +36,7 @@ def test_closing_and_lifting_use_actual_coordinate_joint_geometry():
     g = build()
     q = np.array([0.25, 0.125, 0.0625])
     k = forward_kinematics(g.model, q)
-    np.testing.assert_array_equal(
-        k.position, [[0, 0, 0.25], [0, -0.375, 0.25], [0, 0.4375, 0.25]]
-    )
+    np.testing.assert_array_equal(k.position, [[0, 0, 0.25], [0, -0.375, 0.25], [0, 0.4375, 0.25]])
     assert g.opening_m(q) == 0.8125
     linear, angular = point_jacobians(g.model, q, np.array([1, 2]), np.zeros((2, 3)))
     expected = np.zeros((2, 3, 3))
@@ -82,7 +80,9 @@ def test_efforts_are_finite_bounded_requests_with_no_state_publication():
     np.testing.assert_array_equal(g.initial_state.v, v0)
 
 
-@pytest.mark.parametrize("lift,closing", [(9.0, [0, 0]), (-9.0, [0, 0]), (0.0, [3, 0]), (0.0, [0, -5])])
+@pytest.mark.parametrize(
+    "lift,closing", [(9.0, [0, 0]), (-9.0, [0, 0]), (0.0, [3, 0]), (0.0, [0, -5])]
+)
 def test_effort_limit_rejects_without_clipping(lift, closing):
     g = build()
     with pytest.raises(ValueError, match="limit"):
@@ -92,11 +92,17 @@ def test_effort_limit_rejects_without_clipping(lift, closing):
 
 def test_inputs_and_distinct_builder_states_do_not_alias():
     extents, masses, limits, inertia = (
-        np.array([0.25, 0.125]), np.array([1.0, 3.0]),
-        np.array([8.0, 2.0, 4.0]), np.full((3, 3), 0.1),
+        np.array([0.25, 0.125]),
+        np.array([1.0, 3.0]),
+        np.array([8.0, 2.0, 4.0]),
+        np.full((3, 3), 0.1),
     )
-    g = build(patch_half_extent_m=extents, finger_mass_kg=masses,
-              effort_limits_N=limits, inertia_diagonal_kg_m2=inertia)
+    g = build(
+        patch_half_extent_m=extents,
+        finger_mass_kg=masses,
+        effort_limits_N=limits,
+        inertia_diagonal_kg_m2=inertia,
+    )
     extents[:] = masses[:] = limits[:] = 99
     inertia[:] = 99
     np.testing.assert_array_equal(g.model.mass, [2, 1, 3])
@@ -108,21 +114,32 @@ def test_inputs_and_distinct_builder_states_do_not_alias():
     np.testing.assert_array_equal(other.initial_state.q, np.zeros(3))
 
 
-@pytest.mark.parametrize("changes", [
-    {"half_gap_m": 0}, {"half_gap_m": True}, {"half_gap_m": float("nan")},
-    {"patch_half_extent_m": [1, 0]}, {"patch_half_extent_m": [1, 2, 3]},
-    {"carriage_mass_kg": -1}, {"finger_mass_kg": [1, 0]},
-    {"finger_mass_kg": True}, {"finger_mass_kg": [1, 2, 3]},
-    {"inertia_diagonal_kg_m2": np.tile([1.0, 1.0, 3.0], (3, 1))},
-    {"effort_limits_N": [1, 2, float("inf")]}, {"effort_limits_N": [1, 0, 1]},
-    {"gravity_m_s2": [0, 0, complex(0, 1)]},
-])
+@pytest.mark.parametrize(
+    "changes",
+    [
+        {"half_gap_m": 0},
+        {"half_gap_m": True},
+        {"half_gap_m": float("nan")},
+        {"patch_half_extent_m": [1, 0]},
+        {"patch_half_extent_m": [1, 2, 3]},
+        {"carriage_mass_kg": -1},
+        {"finger_mass_kg": [1, 0]},
+        {"finger_mass_kg": True},
+        {"finger_mass_kg": [1, 2, 3]},
+        {"inertia_diagonal_kg_m2": np.tile([1.0, 1.0, 3.0], (3, 1))},
+        {"effort_limits_N": [1, 2, float("inf")]},
+        {"effort_limits_N": [1, 0, 1]},
+        {"gravity_m_s2": [0, 0, complex(0, 1)]},
+    ],
+)
 def test_invalid_model_parameters_reject(changes):
     with pytest.raises((TypeError, ValueError)):
         build(**changes)
 
 
-@pytest.mark.parametrize("lift,closing", [(True, [0, 0]), (float("inf"), [0, 0]), (0.0, [float("nan"), 0]), (0.0, [1])])
+@pytest.mark.parametrize(
+    "lift,closing", [(True, [0, 0]), (float("inf"), [0, 0]), (0.0, [float("nan"), 0]), (0.0, [1])]
+)
 def test_invalid_effort_requests_reject(lift, closing):
     with pytest.raises((TypeError, ValueError)):
         gripper_inputs(build(), lift_effort_N=lift, closing_effort_N=closing)

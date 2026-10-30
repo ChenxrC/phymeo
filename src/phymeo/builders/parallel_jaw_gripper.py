@@ -61,7 +61,9 @@ class ParallelJawGripper:
         limits = _array(self.effort_limits_N, "effort_limits_N", (3,), positive=True)
         limits.flags.writeable = False
         object.__setattr__(self, "effort_limits_N", limits)
-        object.__setattr__(self, "half_gap_m", _scalar(self.half_gap_m, "half_gap_m", positive=True))
+        object.__setattr__(
+            self, "half_gap_m", _scalar(self.half_gap_m, "half_gap_m", positive=True)
+        )
 
     def opening_m(self, configuration):
         """Return signed opening in metres without changing any state."""
@@ -101,9 +103,7 @@ def make_parallel_jaw_gripper(
         fingers = np.full(2, _scalar(finger_mass_kg, "finger_mass_kg", positive=True))
     else:
         fingers = _array(finger_mass_kg, "finger_mass_kg", (2,), positive=True)
-    inertia = _array(
-        inertia_diagonal_kg_m2, "inertia_diagonal_kg_m2", (3, 3), positive=True
-    )
+    inertia = _array(inertia_diagonal_kg_m2, "inertia_diagonal_kg_m2", (3, 3), positive=True)
     limits = _array(effort_limits_N, "effort_limits_N", (3,), positive=True)
     gravity = _array(gravity_m_s2, "gravity_m_s2", (3,))
     positions = np.array([[0.0, 0.0, 0.0], [0.0, -half_gap, 0.0], [0.0, half_gap, 0.0]])
@@ -120,8 +120,12 @@ def make_parallel_jaw_gripper(
     )
     half_x, half_z = extent
     vertices = np.array(
-        [[-half_x, 0.0, -half_z], [-half_x, 0.0, half_z],
-         [half_x, 0.0, half_z], [half_x, 0.0, -half_z]]
+        [
+            [-half_x, 0.0, -half_z],
+            [-half_x, 0.0, half_z],
+            [half_x, 0.0, half_z],
+            [half_x, 0.0, -half_z],
+        ]
     )
     patches = (
         RobotContactPatch("left_finger", 1, vertices),

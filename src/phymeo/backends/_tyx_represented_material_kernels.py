@@ -164,7 +164,9 @@ def project_bending_represented(
                                             index = hinges[k, node]
                                             for axis in tx.static_range(3):
                                                 g = trace[k, 24 + 3 * node + axis]
-                                                products[k, node, axis] = _mul(_mul(weights[index], delta), g)
+                                                products[k, node, axis] = _mul(
+                                                    _mul(weights[index], delta), g
+                                                )
                                                 x[index, axis] = _add(
                                                     x[index, axis],
                                                     products[k, node, axis],
@@ -191,6 +193,7 @@ def project_bending_represented(
                             geometry_before[k, vector, axis] = 0.0
                         if geometry_after[k, vector, axis] == 0.0:
                             geometry_after[k, vector, axis] = 0.0
+
 
 @tx.kernel
 def predict_represented(
@@ -225,7 +228,9 @@ def reconstruct_represented(
 ):
     for i in tx.range(count):
         for c in tx.static_range(3):
-            velocity[i, c] = _add(predicted_v[i, c], _div(_add(displacement[i, c], -predicted_d[i, c]), h))
+            velocity[i, c] = _add(
+                predicted_v[i, c], _div(_add(displacement[i, c], -predicted_d[i, c]), h)
+            )
             if velocity[i, c] == 0.0:
                 velocity[i, c] = 0.0
 
@@ -255,7 +260,9 @@ def project_distance_represented(
                 for c in tx.static_range(3):
                     trace[k, c] = displacement[i, c]
                     trace[k, c + 3] = displacement[j, c]
-                    geometry_before[k, 0, c] = _add(reference_vectors[k, 0, c], _add(displacement[i, c], -displacement[j, c]))
+                    geometry_before[k, 0, c] = _add(
+                        reference_vectors[k, 0, c], _add(displacement[i, c], -displacement[j, c])
+                    )
                 dx = geometry_before[k, 0, 0]
                 dy = geometry_before[k, 0, 1]
                 dz = geometry_before[k, 0, 2]
@@ -297,8 +304,13 @@ def project_distance_represented(
                         displacement[j, c] = _add(displacement[j, c], products[k, 1, c])
                         trace[k, c + 6] = displacement[i, c]
                         trace[k, c + 9] = displacement[j, c]
-                        geometry_after[k, 0, c] = _add(reference_vectors[k, 0, c], _add(displacement[i, c], -displacement[j, c]))
-                        if not tx.isfinite(displacement[i, c]) or not tx.isfinite(displacement[j, c]):
+                        geometry_after[k, 0, c] = _add(
+                            reference_vectors[k, 0, c],
+                            _add(displacement[i, c], -displacement[j, c]),
+                        )
+                        if not tx.isfinite(displacement[i, c]) or not tx.isfinite(
+                            displacement[j, c]
+                        ):
                             status[k] = 2
                             failed[0] = k + 1
                 for field in tx.static_range(18):

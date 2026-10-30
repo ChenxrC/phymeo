@@ -1,15 +1,19 @@
 """Independent exact world-coordinate reader for represented native evidence."""
 
-from fractions import Fraction
 import math
 import struct
+from fractions import Fraction
 from types import SimpleNamespace
 
 import numpy as np
 
 from ..constraints.material_representation import (
-    CODEC_BITS, SCHEMA, NativeCompositeRepresentation,
-    RepresentationBoundary, RepresentedMaterialBatch, RepresentedMaterialPath,
+    CODEC_BITS,
+    SCHEMA,
+    NativeCompositeRepresentation,
+    RepresentationBoundary,
+    RepresentedMaterialBatch,
+    RepresentedMaterialPath,
     RepresentedMaterialSweep,
 )
 from ..core.capabilities import SolverFailure
@@ -70,7 +74,11 @@ def _rounded32(source):
     source = _bounded(source)
     with np.errstate(over="ignore", under="ignore", invalid="ignore"):
         center = np.float32(float(source))
-        candidates = (center, np.nextafter(center, np.float32(-np.inf)), np.nextafter(center, np.float32(np.inf)))
+        candidates = (
+            center,
+            np.nextafter(center, np.float32(-np.inf)),
+            np.nextafter(center, np.float32(np.inf)),
+        )
     for candidate in candidates:
         if candidate == 0:
             candidate = np.float32(0)
@@ -84,7 +92,11 @@ def _rounded32(source):
 
 def _decode_world(reference, displacement, worlds=None, witnesses=None):
     reference, displacement = np.asarray(reference), np.asarray(displacement)
-    if reference.dtype != np.float64 or displacement.dtype != np.float32 or reference.shape != displacement.shape:
+    if (
+        reference.dtype != np.float64
+        or displacement.dtype != np.float32
+        or reference.shape != displacement.shape
+    ):
         raise SolverFailure("invalid represented decode shape/dtype")
     output = np.empty(reference.shape, np.float64)
     if witnesses is not None and len(witnesses) != reference.size:
@@ -100,9 +112,18 @@ def _decode_world(reference, displacement, worlds=None, witnesses=None):
         output.flat[k] = value
         if witnesses is not None:
             witness = witnesses[k]
-            if witness.bits != 64 or (witness.numerator, witness.denominator) != (source.numerator, source.denominator) or witness.word != value:
+            if (
+                witness.bits != 64
+                or (witness.numerator, witness.denominator)
+                != (source.numerator, source.denominator)
+                or witness.word != value
+            ):
                 raise SolverFailure("decoder witness binding mismatch")
-    if worlds is not None and (output.dtype != worlds.dtype or output.shape != worlds.shape or output.tobytes() != worlds.tobytes()):
+    if worlds is not None and (
+        output.dtype != worlds.dtype
+        or output.shape != worlds.shape
+        or output.tobytes() != worlds.tobytes()
+    ):
         raise SolverFailure("derived world decode mismatch")
     return output
 
@@ -128,7 +149,11 @@ def _directed(reference, ids, kind):
     result = np.empty((len(ids), vectors, 3), np.float32)
     sources = []
     for k, row in enumerate(ids):
-        pairs = ((row[0], row[1]),) if kind == "distance" else ((row[1], row[0]), (row[2], row[0]), (row[3], row[1]))
+        pairs = (
+            ((row[0], row[1]),)
+            if kind == "distance"
+            else ((row[1], row[0]), (row[2], row[0]), (row[3], row[1]))
+        )
         for j, (a, b) in enumerate(pairs):
             for c in range(3):
                 value = _bounded(q(reference[a, c]) - q(reference[b, c]))
@@ -139,7 +164,11 @@ def _directed(reference, ids, kind):
 
 def _check_geometry(batch, k, displacement, table, actual):
     ids = batch.node_indices[k]
-    pairs = ((ids[0], ids[1]),) if batch.kind == "distance" else ((ids[1], ids[0]), (ids[2], ids[0]), (ids[3], ids[1]))
+    pairs = (
+        ((ids[0], ids[1]),)
+        if batch.kind == "distance"
+        else ((ids[1], ids[0]), (ids[2], ids[0]), (ids[3], ids[1]))
+    )
     for j, (a, b) in enumerate(pairs):
         for c in range(3):
             difference = _rounded32(q(displacement[a, c]) - q(displacement[b, c]))
@@ -155,12 +184,27 @@ def _represented_work(path, model, initial):
             size = batch.node_indices.shape[1] * 3
             world_rows = batch.rows.astype(np.float64)
             world_rows[:, :size] = batch.world_before.reshape((-1, size))
-            world_rows[:, size:2 * size] = batch.world_after.reshape((-1, size))
-            blocks.append(SimpleNamespace(kind=batch.kind, node_indices=batch.node_indices,
-                positions_in=batch.positions_in, compute_start=batch.positions_in, rows=world_rows))
+            world_rows[:, size : 2 * size] = batch.world_after.reshape((-1, size))
+            blocks.append(
+                SimpleNamespace(
+                    kind=batch.kind,
+                    node_indices=batch.node_indices,
+                    positions_in=batch.positions_in,
+                    compute_start=batch.positions_in,
+                    rows=world_rows,
+                )
+            )
         sweeps.append(SimpleNamespace(sweep_index=sweep.sweep_index, blocks=blocks))
-    return _world_ordered_work(SimpleNamespace(duration=path.duration, predicted_position=path.predicted_position,
-        predicted_velocity=path.predicted_velocity, sweeps=sweeps), model, initial)
+    return _world_ordered_work(
+        SimpleNamespace(
+            duration=path.duration,
+            predicted_position=path.predicted_position,
+            predicted_velocity=path.predicted_velocity,
+            sweeps=sweeps,
+        ),
+        model,
+        initial,
+    )
 
 
 class RepresentedMaterialPathLedger:
@@ -188,8 +232,17 @@ class RepresentedMaterialPathLedger:
             raise TypeError("represented ledger requires explicit policy")
         self.representation, self.domain_name = representation, domain
         self.reference = self.initial.position.copy()
-        self.reference_id = fingerprint((self.reference, self.material.identity, representation, domain,
-            float(h), fingerprint(self.initial), fingerprint(self.original)))
+        self.reference_id = fingerprint(
+            (
+                self.reference,
+                self.material.identity,
+                representation,
+                domain,
+                float(h),
+                fingerprint(self.initial),
+                fingerprint(self.original),
+            )
+        )
         self.tau = q(settings.tolerance)
         self._domains, self._bounds = {}, {}
         if self.h <= 0 or backend not in ("tyx:interpret", "tyx:cpu_cpp", "tyx:cuda"):
@@ -229,7 +282,9 @@ class RepresentedMaterialPathLedger:
     def audit_sweep(self, sweep, position, multipliers, alphas, *, displacement):
         domains, bounds = self._domains.copy(), self._bounds.copy()
         try:
-            return self._audit_sweep(sweep, position, multipliers, alphas, displacement=displacement)
+            return self._audit_sweep(
+                sweep, position, multipliers, alphas, displacement=displacement
+            )
         except BaseException:
             self._domains, self._bounds = domains, bounds
             raise
@@ -260,7 +315,10 @@ class RepresentedMaterialPathLedger:
                 if law is None
                 else (law.rest_length if name == "distance" else law.rest_angle)
             )
-            if not isinstance(batch, RepresentedMaterialBatch) or batch.reference_fingerprint != self.reference_id:
+            if (
+                not isinstance(batch, RepresentedMaterialBatch)
+                or batch.reference_fingerprint != self.reference_id
+            ):
                 raise SolverFailure("represented batch/reference identity mismatch")
             self._same(batch.node_indices, ids, "ordered identities")
             self._same(batch.displacement_in, encoded, "encoded block input")
@@ -280,13 +338,23 @@ class RepresentedMaterialPathLedger:
                 raw = batch.rows[k]
                 size = len(node_ids) * 3
                 raw_before = raw[:size].reshape((-1, 3))
-                raw_after = raw[size:2 * size].reshape((-1, 3))
+                raw_after = raw[size : 2 * size].reshape((-1, 3))
                 self._same(raw_before, encoded[node_ids], "native row before")
-                world_before = _decode_world(self.reference[node_ids], raw_before, batch.world_before[k], batch.decode_before[k*size:(k+1)*size])
-                world_after = _decode_world(self.reference[node_ids], raw_after, batch.world_after[k], batch.decode_after[k*size:(k+1)*size])
+                world_before = _decode_world(
+                    self.reference[node_ids],
+                    raw_before,
+                    batch.world_before[k],
+                    batch.decode_before[k * size : (k + 1) * size],
+                )
+                world_after = _decode_world(
+                    self.reference[node_ids],
+                    raw_after,
+                    batch.world_after[k],
+                    batch.decode_after[k * size : (k + 1) * size],
+                )
                 _check_geometry(batch, k, encoded, reference_vectors, batch.geometry_before[k])
                 row = raw.astype(np.float64)
-                row[:size], row[size:2 * size] = world_before.ravel(), world_after.ravel()
+                row[:size], row[size : 2 * size] = world_before.ravel(), world_after.ravel()
                 self._equal(row[:size].reshape((-1, 3)), current[node_ids], "row before")
                 before = current.copy()
                 weights = tuple(q(batch.compute_weights[i]) for i in node_ids)
@@ -363,13 +431,29 @@ class RepresentedMaterialPathLedger:
                         first_product = _rounded32(weights[i] * delta)
                         verify_rounding(q(first_product) * observed[i][c], product, 32)
                         verify_rounding(q(raw_before[i, c]) + q(product), raw_after[i, c], 32)
-                        charge, direct, terms = projection_charge(self.reference[node, c], raw_before[i, c],
-                            raw_after[i, c], product, self.model.inverse_mass[node], delta, observed[i][c])
+                        charge, direct, terms = projection_charge(
+                            self.reference[node, c],
+                            raw_before[i, c],
+                            raw_after[i, c],
+                            product,
+                            self.model.inverse_mass[node],
+                            delta,
+                            observed[i][c],
+                        )
                         if direct != abs(actual_after - ideal_after):
                             raise SolverFailure("direct represented world residual mismatch")
-                        row_charges.append(dict(sweep=sweep.sweep_index, kind=name, row=k, node=int(node), component=c,
-                            charge=(charge.numerator, charge.denominator), direct=(direct.numerator, direct.denominator),
-                            terms=tuple((term.numerator, term.denominator) for term in terms)))
+                        row_charges.append(
+                            dict(
+                                sweep=sweep.sweep_index,
+                                kind=name,
+                                row=k,
+                                node=int(node),
+                                component=c,
+                                charge=(charge.numerator, charge.denominator),
+                                direct=(direct.numerator, direct.denominator),
+                                terms=tuple((term.numerator, term.denominator) for term in terms),
+                            )
+                        )
                         budget[node][c] += charge + original_weights[i] * (
                             abs(delta) * gradient_error
                             + equation.magnitude / ideal_denominator.low * gradients[i][c].magnitude
@@ -408,37 +492,58 @@ class RepresentedMaterialPathLedger:
             raise SolverFailure("composite cumulative projection/conversion error exhausted")
         return current, values, (budget, equation_budget, lambda_budget, tuple(row_charges)), loads
 
-
     @staticmethod
     def _same(actual, expected, name):
         actual, expected = np.asarray(actual), np.asarray(expected)
-        if actual.dtype != expected.dtype or actual.shape != expected.shape or actual.tobytes() != expected.tobytes():
+        if (
+            actual.dtype != expected.dtype
+            or actual.shape != expected.shape
+            or actual.tobytes() != expected.tobytes()
+        ):
             raise SolverFailure("represented " + name + " byte binding mismatch")
 
     def _boundary(self, boundary, name, sources, shape):
-        if not isinstance(boundary, RepresentationBoundary) or boundary.name != name or boundary.computed.shape != shape:
+        if (
+            not isinstance(boundary, RepresentationBoundary)
+            or boundary.name != name
+            or boundary.computed.shape != shape
+        ):
             raise SolverFailure("representation boundary sequence/shape mismatch")
         sources = tuple(_bounded(v) for v in sources)
         if len(sources) != len(boundary.witnesses):
             raise SolverFailure("representation boundary witness count mismatch")
-        for source, witness, word in zip(sources, boundary.witnesses, boundary.computed.flat, strict=True):
-            if (witness.numerator, witness.denominator, witness.bits, witness.word) != (source.numerator, source.denominator, 32, float(word)):
+        for source, witness, word in zip(
+            sources, boundary.witnesses, boundary.computed.flat, strict=True
+        ):
+            if (witness.numerator, witness.denominator, witness.bits, witness.word) != (
+                source.numerator,
+                source.denominator,
+                32,
+                float(word),
+            ):
                 raise SolverFailure("representation boundary original binding mismatch")
             verify_rounding(source, float(word), 32)
         return boundary.computed
 
     def _operation_binding(self, operation, name, inputs, outputs, launches):
-        if operation.name != name or (operation.launches, operation.completed_launches) != (launches, launches):
+        if operation.name != name or (operation.launches, operation.completed_launches) != (
+            launches,
+            launches,
+        ):
             raise SolverFailure("represented operation-specific launch mismatch")
         if len(operation.inputs) != len(inputs) or len(operation.outputs) != len(outputs):
             raise SolverFailure("represented operation operands missing")
-        for a, b in zip(operation.inputs + operation.outputs, tuple(inputs) + tuple(outputs), strict=True):
+        for a, b in zip(
+            operation.inputs + operation.outputs, tuple(inputs) + tuple(outputs), strict=True
+        ):
             self._same(a, b, "operation operand")
 
     def require(self, candidate, effective_inputs, expected_impulses, diagnostics, *, sweeps):
         domains, bounds = self._domains.copy(), self._bounds.copy()
         try:
-            return self._require(candidate, effective_inputs, expected_impulses, diagnostics, sweeps=sweeps)
+            return self._require(
+                candidate, effective_inputs, expected_impulses, diagnostics, sweeps=sweeps
+            )
         except (TypeError, ValueError, KeyError, IndexError, ArithmeticError) as error:
             self._domains, self._bounds = domains, bounds
             raise SolverFailure(f"invalid represented material evidence: {error}") from error
@@ -450,51 +555,103 @@ class RepresentedMaterialPathLedger:
         path = diagnostics.get("material_path")
         if not isinstance(path, RepresentedMaterialPath) or path.schema != SCHEMA:
             raise SolverFailure("complete typed v2 represented path required")
-        if (fingerprint(self.model) != self.model_id or self.material.identity != self.material_id
-            or path.material_fingerprint != self.material_id or path.policy_fingerprint != self.policy_id
-            or path.backend != self.backend or path.initial_fingerprint != fingerprint(self.initial)
-            or path.input_fingerprint != fingerprint(effective_inputs) or q(path.duration) != self.h
-            or path.representation != self.representation or path.domain != self.domain_name
-            or path.reference_fingerprint != self.reference_id or len(path.sweeps) != sweeps or sweeps < 1):
+        if (
+            fingerprint(self.model) != self.model_id
+            or self.material.identity != self.material_id
+            or path.material_fingerprint != self.material_id
+            or path.policy_fingerprint != self.policy_id
+            or path.backend != self.backend
+            or path.initial_fingerprint != fingerprint(self.initial)
+            or path.input_fingerprint != fingerprint(effective_inputs)
+            or q(path.duration) != self.h
+            or path.representation != self.representation
+            or path.domain != self.domain_name
+            or path.reference_fingerprint != self.reference_id
+            or len(path.sweeps) != sweeps
+            or sweeps < 1
+        ):
             raise SolverFailure("represented path identity/policy/trial binding mismatch")
         self._same(path.reference, self.reference, "immutable trial reference")
         self._same(diagnostics.get("represented_reference"), self.reference, "hidden reference")
-        self._same(diagnostics.get("represented_displacement"), path.final_displacement, "hidden displacement")
+        self._same(
+            diagnostics.get("represented_displacement"),
+            path.final_displacement,
+            "hidden displacement",
+        )
         expected = np.asarray(expected_impulses)
         if expected.shape != self.initial.position.shape or expected.dtype != np.float64:
             raise SolverFailure("invalid expected held requests")
         boundary_values = {}
         specifications = []
-        for name, original in (("predict/velocity", self.initial.velocity), ("predict/force", effective_inputs.force),
-            ("predict/weights", self.model.inverse_mass), ("predict/gravity", self.model.gravity),
-            ("predict/h", np.asarray(float(self.h)))):
-            specifications.append((name, tuple(q(v) for v in np.asarray(original).flat), np.asarray(original).shape))
+        for name, original in (
+            ("predict/velocity", self.initial.velocity),
+            ("predict/force", effective_inputs.force),
+            ("predict/weights", self.model.inverse_mass),
+            ("predict/gravity", self.model.gravity),
+            ("predict/h", np.asarray(float(self.h))),
+        ):
+            specifications.append(
+                (name, tuple(q(v) for v in np.asarray(original).flat), np.asarray(original).shape)
+            )
         specifications.append(("alpha/inverse_h", (1 / self.h,), ()))
         for name in self.material.order:
             law = getattr(self.material, name)
-            ids = np.empty((0, 2 if name == "distance" else 4), np.int64) if law is None else law.indices
-            rest = np.zeros(0) if law is None else (law.rest_length if name == "distance" else law.rest_angle)
+            ids = (
+                np.empty((0, 2 if name == "distance" else 4), np.int64)
+                if law is None
+                else law.indices
+            )
+            rest = (
+                np.zeros(0)
+                if law is None
+                else (law.rest_length if name == "distance" else law.rest_angle)
+            )
             compliance = np.zeros(0) if law is None else law.compliance
             specifications.append((name + "/rest", tuple(map(q, rest)), rest.shape))
-            specifications.append((name + "/compliance", tuple(map(q, compliance)), compliance.shape))
+            specifications.append(
+                (name + "/compliance", tuple(map(q, compliance)), compliance.shape)
+            )
             vectors, sources = _directed(self.reference, ids, name)
             specifications.append(("reference/" + name, sources, vectors.shape))
         if len(path.compute_boundaries) != len(specifications):
             raise SolverFailure("missing represented compute boundary")
-        for boundary, (name, sources, shape) in zip(path.compute_boundaries, specifications, strict=True):
+        for boundary, (name, sources, shape) in zip(
+            path.compute_boundaries, specifications, strict=True
+        ):
             boundary_values[name] = self._boundary(boundary, name, sources, shape)
         launch = int(self.model.particle_count > 0)
-        inputs = tuple(boundary_values[name] for name in ("predict/velocity", "predict/force", "predict/weights", "predict/gravity", "predict/h"))
+        inputs = tuple(
+            boundary_values[name]
+            for name in (
+                "predict/velocity",
+                "predict/force",
+                "predict/weights",
+                "predict/gravity",
+                "predict/h",
+            )
+        )
         vp32 = path.predicted_velocity.astype(np.float32)
         self._equal(vp32.astype(np.float64), path.predicted_velocity, "native predicted velocity")
-        self._operation_binding(path.prediction_operation, "predict", inputs, (path.predicted_displacement, vp32), launch)
+        self._operation_binding(
+            path.prediction_operation,
+            "predict",
+            inputs,
+            (path.predicted_displacement, vp32),
+            launch,
+        )
         velocity, force, weights, gravity, h_native = inputs
         for i in range(len(velocity)):
             for c in range(3):
-                acceleration = _rounded32(q(gravity[c]) + q(_rounded32(q(weights[i]) * q(force[i, c]))))
-                predicted = _rounded32(q(velocity[i, c]) + q(_rounded32(q(float(h_native)) * q(acceleration))))
+                acceleration = _rounded32(
+                    q(gravity[c]) + q(_rounded32(q(weights[i]) * q(force[i, c])))
+                )
+                predicted = _rounded32(
+                    q(velocity[i, c]) + q(_rounded32(q(float(h_native)) * q(acceleration)))
+                )
                 self._equal(vp32[i, c], predicted, "actual prediction arithmetic")
-                verify_rounding(q(float(h_native)) * q(predicted), path.predicted_displacement[i, c], 32)
+                verify_rounding(
+                    q(float(h_native)) * q(predicted), path.predicted_displacement[i, c], 32
+                )
         _decode_world(self.reference, path.predicted_displacement, path.predicted_position)
         self.domain(self.initial.position, path.predicted_position)
         alpha_operations = iter(path.alpha_operations)
@@ -508,8 +665,13 @@ class RepresentedMaterialPathLedger:
                     if operation is None or len(operation.outputs) != 1:
                         raise SolverFailure("missing represented alpha operation")
                     result = operation.outputs[0]
-                    self._operation_binding(operation, name + "/alpha/" + str(phase),
-                        (np.zeros_like(values), values, inverse), (result,), 1)
+                    self._operation_binding(
+                        operation,
+                        name + "/alpha/" + str(phase),
+                        (np.zeros_like(values), values, inverse),
+                        (result,),
+                        1,
+                    )
                     if result.shape != values.shape:
                         raise SolverFailure("represented alpha shape mismatch")
                     for before, after in zip(values, result, strict=True):
@@ -518,15 +680,25 @@ class RepresentedMaterialPathLedger:
             self._same(actual, values, "native alpha")
         if next(alpha_operations, None) is not None:
             raise SolverFailure("extra represented alpha operation")
-        self._operation_binding(path.reconstruction_operation, "reconstruct",
+        self._operation_binding(
+            path.reconstruction_operation,
+            "reconstruct",
             (path.predicted_displacement, vp32, path.final_displacement, h_native),
-            (path.reconstructed_velocity,), launch)
+            (path.reconstructed_velocity,),
+            launch,
+        )
         for i in range(len(velocity)):
             for c in range(3):
-                difference = _rounded32(q(path.final_displacement[i, c]) - q(path.predicted_displacement[i, c]))
+                difference = _rounded32(
+                    q(path.final_displacement[i, c]) - q(path.predicted_displacement[i, c])
+                )
                 quotient = _rounded32(q(difference) / q(float(h_native)))
                 verify_rounding(q(vp32[i, c]) + q(quotient), path.reconstructed_velocity[i, c], 32)
-        self._equal(candidate.velocity, path.reconstructed_velocity.astype(np.float64), "published native velocity")
+        self._equal(
+            candidate.velocity,
+            path.reconstructed_velocity.astype(np.float64),
+            "published native velocity",
+        )
         error = q(0)
         for i, w in enumerate(self.model.inverse_mass):
             for c in range(3):
@@ -622,14 +794,26 @@ class RepresentedMaterialPathLedger:
         reference_errors = {}
         for boundary in path.compute_boundaries:
             if boundary.name.startswith("reference/"):
-                errors = [q(word) - Fraction(w.numerator, w.denominator) for word, w in zip(boundary.computed.flat, boundary.witnesses, strict=True)]
-                reference_errors[boundary.name] = tuple((e.numerator, e.denominator) for e in errors)
+                errors = [
+                    q(word) - Fraction(w.numerator, w.denominator)
+                    for word, w in zip(boundary.computed.flat, boundary.witnesses, strict=True)
+                ]
+                reference_errors[boundary.name] = tuple(
+                    (e.numerator, e.denominator) for e in errors
+                )
         decoder_errors = {}
-        for name, world, d in (("prediction", path.predicted_position, path.predicted_displacement), ("publication", candidate.position, path.final_displacement)):
-            errors = [q(x) - q(r) - q(offset) for x, r, offset in zip(world.flat, self.reference.flat, d.flat, strict=True)]
+        for name, world, d in (
+            ("prediction", path.predicted_position, path.predicted_displacement),
+            ("publication", candidate.position, path.final_displacement),
+        ):
+            errors = [
+                q(x) - q(r) - q(offset)
+                for x, r, offset in zip(world.flat, self.reference.flat, d.flat, strict=True)
+            ]
             decoder_errors[name] = tuple((e.numerator, e.denominator) for e in errors)
         return dict(
-            represented_row_charges=tuple(row_charges), reference_vector_conversion=reference_errors,
+            represented_row_charges=tuple(row_charges),
+            reference_vector_conversion=reference_errors,
             decoder_residuals=decoder_errors,
             max_equation_error=float(error),
             cumulative_projection_error=float(cumulative),
@@ -651,7 +835,13 @@ class RepresentedMaterialPathLedger:
                 if len(operation.inputs) != 4 or len(operation.outputs) != 1:
                     raise SolverFailure("terminal response evidence missing")
                 start, ids, loads, weights = operation.inputs
-                if ids.dtype != np.int32 or ids.ndim != 1 or loads.shape != (len(ids), 3) or np.any(ids < 0) or np.any(ids >= len(current)):
+                if (
+                    ids.dtype != np.int32
+                    or ids.ndim != 1
+                    or loads.shape != (len(ids), 3)
+                    or np.any(ids < 0)
+                    or np.any(ids >= len(current))
+                ):
                     raise SolverFailure("invalid terminal identities")
                 self._same(start, np.zeros_like(current), "terminal response origin")
                 self._equal(weights, compute(self.model.inverse_mass), "terminal mass")
@@ -660,7 +850,13 @@ class RepresentedMaterialPathLedger:
                     for c in range(3):
                         product = _rounded32(q(weights[node]) * q(loads[k, c]))
                         result[node, c] = _rounded32(q(result[node, c]) + q(product))
-                self._operation_binding(operation, "terminal_response", (start, ids, loads, weights), (result,), int(len(ids) > 0))
+                self._operation_binding(
+                    operation,
+                    "terminal_response",
+                    (start, ids, loads, weights),
+                    (result,),
+                    int(len(ids) > 0),
+                )
                 response = result
             elif operation.name == "terminal_apply":
                 if response is None or len(operation.inputs) != 3 or len(operation.outputs) != 1:
@@ -673,7 +869,13 @@ class RepresentedMaterialPathLedger:
                 output = np.empty_like(current)
                 for index in np.ndindex(current.shape):
                     output[index] = _rounded32(q(current[index]) + q(response[index]))
-                self._operation_binding(operation, "terminal_apply", (current, response, factor), (output,), int(current.size > 0))
+                self._operation_binding(
+                    operation,
+                    "terminal_apply",
+                    (current, response, factor),
+                    (output,),
+                    int(current.size > 0),
+                )
                 current, response = output, None
             else:
                 raise SolverFailure("unknown terminal operation")

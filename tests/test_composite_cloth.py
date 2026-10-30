@@ -79,7 +79,9 @@ def program_for(model, material, mode=None, *, policy=POLICY, representation=Non
         return CompositeClothProgram(model, material, audit_settings=policy, budgets=BUDGETS)
     from phymeo.backends.tyx_composite_cloth import TyxCompositeClothProgram
 
-    return TyxCompositeClothProgram(model, material, mode, audit_settings=policy, budgets=BUDGETS, representation=representation)
+    return TyxCompositeClothProgram(
+        model, material, mode, audit_settings=policy, budgets=BUDGETS, representation=representation
+    )
 
 
 def settings_for(mode=None, **kwargs):

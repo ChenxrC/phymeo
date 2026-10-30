@@ -49,7 +49,10 @@ class TyxCompositeClothProgram(CompositeClothProgram):
             storage_dtype="float64",
         )
         if self.representation is not None:
-            signature.update(representation=self.representation, world_publication="RN64(reference+native_displacement)")
+            signature.update(
+                representation=self.representation,
+                world_publication="RN64(reference+native_displacement)",
+            )
         return signature
 
     def workspace(self, domain, state, inputs, h, settings):
@@ -61,7 +64,17 @@ class TyxCompositeClothProgram(CompositeClothProgram):
 
 
 class TyxCompositeClothParticipant(CompositeClothParticipant):
-    def __init__(self, model, material, mode, *, audit_settings=None, budgets, cache_root=None, representation=None):
+    def __init__(
+        self,
+        model,
+        material,
+        mode,
+        *,
+        audit_settings=None,
+        budgets,
+        cache_root=None,
+        representation=None,
+    ):
         self.program = TyxCompositeClothProgram(
             model,
             material,

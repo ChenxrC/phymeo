@@ -13,82 +13,206 @@ import pytest
 from phymeo.constraints.cloth_material import ClothMaterial, CompositeMaterialAuditSettings
 from phymeo.constraints.distance import DistanceConstraints
 from phymeo.constraints.material_representation import (
-    NativeCompositeRepresentation, NativeRepresentationOperation, RepresentationBoundary,
-    RepresentedMaterialBatch, RepresentedMaterialPath, RepresentedMaterialSweep,
-    RoundingWitness, deserialize_evidence, serialize_evidence,
+    NativeCompositeRepresentation,
+    NativeRepresentationOperation,
+    RepresentationBoundary,
+    RepresentedMaterialBatch,
+    RepresentedMaterialPath,
+    RepresentedMaterialSweep,
+    RoundingWitness,
+    deserialize_evidence,
+    serialize_evidence,
 )
 from phymeo.constraints.material_trace import CompositeMaterialPath
 from phymeo.core.capabilities import SolverFailure
 from phymeo.core.model import ParticleModel
 from phymeo.core.scene import StepSettings, fingerprint
 from phymeo.core.state import ParticleState, StepInputs
-from phymeo.validation.material_representation import RepresentedMaterialPathLedger, projection_charge
+from phymeo.validation.material_representation import (
+    RepresentedMaterialPathLedger,
+    projection_charge,
+)
 
 
 def _boundary(name, values):
     values = np.asarray(values, np.float32)
-    witnesses = tuple(RoundingWitness(F(float(v)).numerator, F(float(v)).denominator, 32, float(v)) for v in values.flat)
+    witnesses = tuple(
+        RoundingWitness(F(float(v)).numerator, F(float(v)).denominator, 32, float(v))
+        for v in values.flat
+    )
     return RepresentationBoundary(name, values, witnesses)
 
 
 def _witnesses(values):
-    return tuple(RoundingWitness(F(float(v)).numerator, F(float(v)).denominator, 64, float(v)) for v in values.flat)
+    return tuple(
+        RoundingWitness(F(float(v)).numerator, F(float(v)).denominator, 64, float(v))
+        for v in values.flat
+    )
 
 
 def literal_distance_path():
     # h=1/2, compliance=1/2 -> alpha=2; C=1, denominator=4,
     # delta=-1/4, gradients=(-ex,+ex), corrected distance=3/2.
     model = ParticleModel(np.ones(2), np.zeros(3))
-    material = ClothMaterial(DistanceConstraints(np.array([[0, 1]]), np.array([1.0]), np.array([0.5])))
+    material = ClothMaterial(
+        DistanceConstraints(np.array([[0, 1]]), np.array([1.0]), np.array([0.5]))
+    )
     policy, representation = CompositeMaterialAuditSettings(), NativeCompositeRepresentation()
     reference = np.array([[0.0, 0.0, 0.0], [2.0, 0.0, 0.0]])
     initial = ParticleState(reference.copy(), np.zeros((2, 3)))
     inputs = StepInputs.zeros(2)
     settings = StepSettings(tolerance=2e-5, position_iterations=512)
-    ledger = RepresentedMaterialPathLedger(model, material, initial, inputs, 0.5, settings,
-        audit_settings=policy, backend="tyx:interpret", representation=representation)
-    identity = fingerprint((reference, material.identity, representation, "cloth", 0.5, fingerprint(initial), fingerprint(inputs)))
+    ledger = RepresentedMaterialPathLedger(
+        model,
+        material,
+        initial,
+        inputs,
+        0.5,
+        settings,
+        audit_settings=policy,
+        backend="tyx:interpret",
+        representation=representation,
+    )
+    identity = fingerprint(
+        (
+            reference,
+            material.identity,
+            representation,
+            "cloth",
+            0.5,
+            fingerprint(initial),
+            fingerprint(inputs),
+        )
+    )
     zero = np.zeros((2, 3), np.float32)
     displacement = np.array([[0.25, 0, 0], [-0.25, 0, 0]], np.float32)
     world = np.array([[0.25, 0, 0], [1.75, 0, 0]], np.float64)
     raw = np.zeros((1, 18), np.float32)
     raw[0, 6:12] = displacement.ravel()
     raw[0, 13], raw[0, 14], raw[0, 17] = -0.25, -1, -0.25
-    d_batch = RepresentedMaterialBatch("distance", np.array([[0, 1]]), identity, zero, displacement,
-        reference, world, np.zeros(1, np.float32), np.array([-0.25], np.float32), np.ones(2, np.float32),
-        np.ones(1, np.float32), np.array([2], np.float32), np.array([[[-2, 0, 0]]], np.float32), raw, displacement[None],
-        np.array([[[-2, 0, 0]]], np.float32), np.array([[[-1.5, 0, 0]]], np.float32),
-        reference[None], world[None], _witnesses(reference), _witnesses(world), np.zeros(1, np.int32), 1, 1)
+    d_batch = RepresentedMaterialBatch(
+        "distance",
+        np.array([[0, 1]]),
+        identity,
+        zero,
+        displacement,
+        reference,
+        world,
+        np.zeros(1, np.float32),
+        np.array([-0.25], np.float32),
+        np.ones(2, np.float32),
+        np.ones(1, np.float32),
+        np.array([2], np.float32),
+        np.array([[[-2, 0, 0]]], np.float32),
+        raw,
+        displacement[None],
+        np.array([[[-2, 0, 0]]], np.float32),
+        np.array([[[-1.5, 0, 0]]], np.float32),
+        reference[None],
+        world[None],
+        _witnesses(reference),
+        _witnesses(world),
+        np.zeros(1, np.int32),
+        1,
+        1,
+    )
     empty = np.zeros(0, np.float32)
-    b_batch = RepresentedMaterialBatch("bending", np.empty((0, 4), np.int64), identity, displacement, displacement,
-        world, world, empty, empty, np.ones(2, np.float32), empty, empty, np.empty((0, 3, 3), np.float32),
-        np.empty((0, 45), np.float32), np.empty((0, 4, 3), np.float32),
-        np.empty((0, 3, 3), np.float32), np.empty((0, 3, 3), np.float32),
-        np.empty((0, 4, 3)), np.empty((0, 4, 3)), (), (), np.zeros(0, np.int32), 0, 0)
+    b_batch = RepresentedMaterialBatch(
+        "bending",
+        np.empty((0, 4), np.int64),
+        identity,
+        displacement,
+        displacement,
+        world,
+        world,
+        empty,
+        empty,
+        np.ones(2, np.float32),
+        empty,
+        empty,
+        np.empty((0, 3, 3), np.float32),
+        np.empty((0, 45), np.float32),
+        np.empty((0, 4, 3), np.float32),
+        np.empty((0, 3, 3), np.float32),
+        np.empty((0, 3, 3), np.float32),
+        np.empty((0, 4, 3)),
+        np.empty((0, 4, 3)),
+        (),
+        (),
+        np.zeros(0, np.int32),
+        0,
+        0,
+    )
     boundaries = (
-        _boundary("predict/velocity", zero), _boundary("predict/force", zero),
-        _boundary("predict/weights", np.ones(2, np.float32)), _boundary("predict/gravity", np.zeros(3, np.float32)),
-        _boundary("predict/h", 0.5), _boundary("alpha/inverse_h", 2.0),
-        _boundary("distance/rest", [1]), _boundary("distance/compliance", [0.5]),
+        _boundary("predict/velocity", zero),
+        _boundary("predict/force", zero),
+        _boundary("predict/weights", np.ones(2, np.float32)),
+        _boundary("predict/gravity", np.zeros(3, np.float32)),
+        _boundary("predict/h", 0.5),
+        _boundary("alpha/inverse_h", 2.0),
+        _boundary("distance/rest", [1]),
+        _boundary("distance/compliance", [0.5]),
         _boundary("reference/distance", [[[-2, 0, 0]]]),
-        _boundary("bending/rest", empty), _boundary("bending/compliance", empty),
+        _boundary("bending/rest", empty),
+        _boundary("bending/compliance", empty),
         _boundary("reference/bending", np.empty((0, 3, 3), np.float32)),
     )
-    predict = NativeRepresentationOperation("predict", tuple(b.computed for b in boundaries[:5]), (zero, zero), 1, 1)
+    predict = NativeRepresentationOperation(
+        "predict", tuple(b.computed for b in boundaries[:5]), (zero, zero), 1, 1
+    )
     inverse = np.array(2, np.float32)
     alpha_ops = (
-        NativeRepresentationOperation("distance/alpha/0", (np.zeros(1, np.float32), np.array([0.5], np.float32), inverse), (np.ones(1, np.float32),), 1, 1),
-        NativeRepresentationOperation("distance/alpha/1", (np.zeros(1, np.float32), np.ones(1, np.float32), inverse), (np.array([2], np.float32),), 1, 1),
+        NativeRepresentationOperation(
+            "distance/alpha/0",
+            (np.zeros(1, np.float32), np.array([0.5], np.float32), inverse),
+            (np.ones(1, np.float32),),
+            1,
+            1,
+        ),
+        NativeRepresentationOperation(
+            "distance/alpha/1",
+            (np.zeros(1, np.float32), np.ones(1, np.float32), inverse),
+            (np.array([2], np.float32),),
+            1,
+            1,
+        ),
     )
     velocity = np.array([[0.5, 0, 0], [-0.5, 0, 0]], np.float32)
-    reconstruct = NativeRepresentationOperation("reconstruct", (zero, zero, displacement, np.array(0.5, np.float32)), (velocity,), 1, 1)
-    path = RepresentedMaterialPath(material.identity, fingerprint(policy), fingerprint(inputs), fingerprint(initial),
-        "tyx:interpret", 0.5, representation, "cloth", reference, identity, zero, displacement,
-        reference, zero.astype(np.float64), velocity, np.array([2], np.float32), empty,
-        (RepresentedMaterialSweep(0, (d_batch, b_batch)),), boundaries, predict, reconstruct, alpha_ops)
+    reconstruct = NativeRepresentationOperation(
+        "reconstruct", (zero, zero, displacement, np.array(0.5, np.float32)), (velocity,), 1, 1
+    )
+    path = RepresentedMaterialPath(
+        material.identity,
+        fingerprint(policy),
+        fingerprint(inputs),
+        fingerprint(initial),
+        "tyx:interpret",
+        0.5,
+        representation,
+        "cloth",
+        reference,
+        identity,
+        zero,
+        displacement,
+        reference,
+        zero.astype(np.float64),
+        velocity,
+        np.array([2], np.float32),
+        empty,
+        (RepresentedMaterialSweep(0, (d_batch, b_batch)),),
+        boundaries,
+        predict,
+        reconstruct,
+        alpha_ops,
+    )
     final = ParticleState(world.copy(), velocity.astype(np.float64))
-    diagnostics = dict(material_path=path, represented_reference=reference.copy(), represented_displacement=displacement.copy(),
-        distance_multipliers=np.array([-0.25]), bending_multipliers=np.zeros(0))
+    diagnostics = dict(
+        material_path=path,
+        represented_reference=reference.copy(),
+        represented_displacement=displacement.copy(),
+        distance_multipliers=np.array([-0.25]),
+        bending_multipliers=np.zeros(0),
+    )
     return ledger, path, final, inputs, diagnostics
 
 
@@ -107,25 +231,61 @@ def test_literal_complete_world_path_zero_charge_and_original_units():
     assert path.sweeps[0].blocks[0].rows.dtype == np.float32
 
 
-@pytest.mark.parametrize("field", ["rows", "reference_vectors", "products", "geometry_before", "geometry_after", "world_before", "world_after", "lambda_out", "compute_rest", "compute_alpha", "compute_weights"])
+@pytest.mark.parametrize(
+    "field",
+    [
+        "rows",
+        "reference_vectors",
+        "products",
+        "geometry_before",
+        "geometry_after",
+        "world_before",
+        "world_after",
+        "lambda_out",
+        "compute_rest",
+        "compute_alpha",
+        "compute_weights",
+    ],
+)
 def test_each_raw_and_derived_family_is_independently_bound(field):
     ledger, path, final, inputs, diagnostics = literal_distance_path()
     batch = path.sweeps[0].blocks[0]
     changed = getattr(batch, field).copy()
     changed.flat[0] += 0.125
     forged = replace(batch, **{field: changed})
-    diagnostics["material_path"] = replace(path, sweeps=(RepresentedMaterialSweep(0, (forged, path.sweeps[0].blocks[1])),))
+    diagnostics["material_path"] = replace(
+        path, sweeps=(RepresentedMaterialSweep(0, (forged, path.sweeps[0].blocks[1])),)
+    )
     with pytest.raises(SolverFailure):
         _audit(ledger, final, inputs, diagnostics)
 
 
-@pytest.mark.parametrize("change", ["identities", "launches", "reference", "hidden_d", "prediction", "reconstruction", "boundary", "extra_alpha", "missing_sweep"])
+@pytest.mark.parametrize(
+    "change",
+    [
+        "identities",
+        "launches",
+        "reference",
+        "hidden_d",
+        "prediction",
+        "reconstruction",
+        "boundary",
+        "extra_alpha",
+        "missing_sweep",
+    ],
+)
 def test_sequence_native_operations_and_hidden_provenance_reject(change):
     ledger, path, final, inputs, diagnostics = literal_distance_path()
     batch = path.sweeps[0].blocks[0]
     if change in ("identities", "launches"):
-        forged = replace(batch, node_indices=np.array([[1, 0]])) if change == "identities" else replace(batch, completed_launches=0)
-        path = replace(path, sweeps=(RepresentedMaterialSweep(0, (forged, path.sweeps[0].blocks[1])),))
+        forged = (
+            replace(batch, node_indices=np.array([[1, 0]]))
+            if change == "identities"
+            else replace(batch, completed_launches=0)
+        )
+        path = replace(
+            path, sweeps=(RepresentedMaterialSweep(0, (forged, path.sweeps[0].blocks[1])),)
+        )
     elif change == "reference":
         reference = path.reference.copy()
         reference[0, 0] = 2**-100
@@ -134,9 +294,13 @@ def test_sequence_native_operations_and_hidden_provenance_reject(change):
     elif change == "hidden_d":
         diagnostics["represented_displacement"][0, 0] += 0.125
     elif change == "prediction":
-        path = replace(path, prediction_operation=replace(path.prediction_operation, completed_launches=0))
+        path = replace(
+            path, prediction_operation=replace(path.prediction_operation, completed_launches=0)
+        )
     elif change == "reconstruction":
-        path = replace(path, reconstruction_operation=replace(path.reconstruction_operation, name="predict"))
+        path = replace(
+            path, reconstruction_operation=replace(path.reconstruction_operation, name="predict")
+        )
     elif change == "boundary":
         path = replace(path, compute_boundaries=path.compute_boundaries[:-1])
     elif change == "extra_alpha":
@@ -150,9 +314,21 @@ def test_sequence_native_operations_and_hidden_provenance_reject(change):
 
 def test_unknown_v1_schema_and_mutable_aliases_do_not_become_v2():
     ledger, path, final, inputs, diagnostics = literal_distance_path()
-    old = CompositeMaterialPath(path.material_fingerprint, path.policy_fingerprint, path.input_fingerprint,
-        path.initial_fingerprint, path.backend, path.duration, path.predicted_position, path.predicted_velocity,
-        path.distance_alpha, path.bending_alpha, (), 1, 1)
+    old = CompositeMaterialPath(
+        path.material_fingerprint,
+        path.policy_fingerprint,
+        path.input_fingerprint,
+        path.initial_fingerprint,
+        path.backend,
+        path.duration,
+        path.predicted_position,
+        path.predicted_velocity,
+        path.distance_alpha,
+        path.bending_alpha,
+        (),
+        1,
+        1,
+    )
     diagnostics["material_path"] = old
     with pytest.raises(SolverFailure, match="v2"):
         _audit(ledger, final, inputs, diagnostics)

@@ -27,8 +27,12 @@ def test_actual_composite_complete_operation_receipts_and_storage(tyx_mode):
                 assert batch.launches == batch.completed_launches == 1
                 assert batch.rows.dtype == np.float32
                 assert batch.displacement_in.dtype == batch.displacement_out.dtype == np.float32
-                np.testing.assert_array_equal(batch.positions_in, decode(path.reference, batch.displacement_in)[0])
-                np.testing.assert_array_equal(batch.positions_out, decode(path.reference, batch.displacement_out)[0])
+                np.testing.assert_array_equal(
+                    batch.positions_in, decode(path.reference, batch.displacement_in)[0]
+                )
+                np.testing.assert_array_equal(
+                    batch.positions_out, decode(path.reference, batch.displacement_out)[0]
+                )
                 assert batch.reference_fingerprint == path.reference_fingerprint
         assert data["material_audit"]["physical_affine_domain"].status == "certified"
     finally:
@@ -66,7 +70,9 @@ def test_actual_native_perturbation_windows_original_budgets(tyx_mode, kwargs):
 
 
 def test_actual_native_external_replay_and_terminal_retry(tyx_mode):
-    assert standalone_replay(tyx_mode, representation=REPRESENTATION) == standalone_replay(tyx_mode, representation=REPRESENTATION)
+    assert standalone_replay(tyx_mode, representation=REPRESENTATION) == standalone_replay(
+        tyx_mode, representation=REPRESENTATION
+    )
 
 
 def test_late_native_launch_failure_discards_complete_sweep_and_retry_is_fresh(
@@ -105,7 +111,9 @@ def test_late_native_launch_failure_discards_complete_sweep_and_retry_is_fresh(
 
 def test_native_participant_rejects_unrecorded_position_load(tyx_mode):
     model, material, initial, inputs = case()
-    factory = TyxCompositeClothParticipant(model, material, tyx_mode, budgets=BUDGETS, representation=REPRESENTATION)
+    factory = TyxCompositeClothParticipant(
+        model, material, tyx_mode, budgets=BUDGETS, representation=REPRESENTATION
+    )
     ws = factory.create_workspace(
         "cloth", initial, inputs, 1 / 64, settings_for(tyx_mode), BackendContext("tyx:" + tyx_mode)
     )
@@ -151,7 +159,9 @@ def test_actual_native_late_substep_failure_preserves_outer_state_and_retry(tyx_
     )
     context = BackendContext("tyx:" + tyx_mode)
     state, forces = SceneState({"cloth": initial}), SceneInputs({"cloth": inputs})
-    program = FaultProgram(model, material, tyx_mode, budgets=BUDGETS, representation=REPRESENTATION)
+    program = FaultProgram(
+        model, material, tyx_mode, budgets=BUDGETS, representation=REPRESENTATION
+    )
     with SceneStepper(program.scene, program, settings, context) as runtime:
         failed = runtime.step(state, forces, 1 / 32)
         assert not failed.report.accepted and failed.report.substeps[0].accepted

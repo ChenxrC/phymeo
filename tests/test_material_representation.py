@@ -1,33 +1,47 @@
 """Independent dyadic input/publication controls; no native runtime required."""
 
+import math
 from dataclasses import replace
 from fractions import Fraction as F
-import math
 
 import numpy as np
 import pytest
 
 from phymeo.constraints.material_representation import (
-    CODEC_BITS, NativeCompositeRepresentation, RepresentationBoundary,
-    decode, deserialize_evidence, encode_values, exact, round_binary, serialize_evidence,
+    CODEC_BITS,
+    NativeCompositeRepresentation,
+    RepresentationBoundary,
+    decode,
+    deserialize_evidence,
+    encode_values,
+    exact,
+    round_binary,
+    serialize_evidence,
 )
 from phymeo.core.capabilities import SolverFailure
 from phymeo.core.scene import fingerprint
 from phymeo.validation.material_representation import projection_charge, verify_rounding
 
 
-@pytest.mark.parametrize("bits,source,expected", [
-    (32, F(1) + F(1, 2**24), 1.0),
-    (32, F(1) + F(3, 2**24), 1.0 + 2**-22),
-    (64, F(1) + F(1, 2**53), 1.0),
-    (64, F(1) + F(3, 2**53), 1.0 + 2**-51),
-    (32, -F(1) - F(1, 2**24), -1.0),
-    (64, -F(1) - F(3, 2**53), -1.0 - 2**-51),
-])
+@pytest.mark.parametrize(
+    "bits,source,expected",
+    [
+        (32, F(1) + F(1, 2**24), 1.0),
+        (32, F(1) + F(3, 2**24), 1.0 + 2**-22),
+        (64, F(1) + F(1, 2**53), 1.0),
+        (64, F(1) + F(3, 2**53), 1.0 + 2**-51),
+        (32, -F(1) - F(1, 2**24), -1.0),
+        (64, -F(1) - F(3, 2**53), -1.0 - 2**-51),
+    ],
+)
 def test_exact_tie_even_codec_and_independent_cells(bits, source, expected):
     assert round_binary(source, bits) == expected
     assert verify_rounding(source, expected, bits) == F(expected) - source
-    wrong = np.nextafter(np.float32(expected), np.float32(np.inf)) if bits == 32 else math.nextafter(expected, math.inf)
+    wrong = (
+        np.nextafter(np.float32(expected), np.float32(np.inf))
+        if bits == 32
+        else math.nextafter(expected, math.inf)
+    )
     with pytest.raises(SolverFailure, match="rounding"):
         verify_rounding(source, float(wrong), bits)
 
@@ -61,7 +75,9 @@ def test_large_reference_decoder_loss_is_explicit_and_noncancelling():
     assert (charge + reverse) / F(1, 128) > F(2, 100000)
 
 
-@pytest.mark.parametrize("source", [F(1, 2**127), F(1, 2**150), F(2)**128, F(2)**128 - F(2)**103])
+@pytest.mark.parametrize(
+    "source", [F(1, 2**127), F(1, 2**150), F(2) ** 128, F(2) ** 128 - F(2) ** 103]
+)
 def test_native_codec_normal_range_failures(source):
     with pytest.raises(SolverFailure):
         round_binary(source, 32)
@@ -106,13 +122,22 @@ def test_generic_references_permute_disconnect_and_keep_original_signed_zero():
 
 def test_default_factories_preserve_host_and_v1_signatures_without_runtime():
     from test_composite_cloth import case, program_for
+
     from phymeo.backends.tyx_composite_cloth import TyxCompositeClothProgram
+
     model, material, _, _ = case()
-    assert fingerprint(program_for(model, material).problem_signature()) == fingerprint(program_for(model, material, representation=None).problem_signature())
+    assert fingerprint(program_for(model, material).problem_signature()) == fingerprint(
+        program_for(model, material, representation=None).problem_signature()
+    )
     default = program_for(model, material, "interpret")
     explicit = program_for(model, material, "interpret", representation=None)
     assert isinstance(default, TyxCompositeClothProgram)
     assert fingerprint(default.problem_signature()) == fingerprint(explicit.problem_signature())
     assert "representation" not in default.problem_signature()
-    represented = program_for(model, material, "interpret", representation=NativeCompositeRepresentation())
-    assert represented.problem_signature()["world_publication"] == "RN64(reference+native_displacement)"
+    represented = program_for(
+        model, material, "interpret", representation=NativeCompositeRepresentation()
+    )
+    assert (
+        represented.problem_signature()["world_publication"]
+        == "RN64(reference+native_displacement)"
+    )

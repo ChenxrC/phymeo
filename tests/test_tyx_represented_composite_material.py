@@ -9,7 +9,11 @@ import pytest
 from test_composite_cloth import BUDGETS, case, program_for, settings_for, settled_workspace
 
 from phymeo.constraints.cloth_material import ClothMaterial
-from phymeo.constraints.material_representation import NativeCompositeRepresentation, deserialize_evidence, serialize_evidence
+from phymeo.constraints.material_representation import (
+    NativeCompositeRepresentation,
+    deserialize_evidence,
+    serialize_evidence,
+)
 from phymeo.core.capabilities import SolverFailure
 from phymeo.core.model import ParticleModel
 from phymeo.core.scene import fingerprint
@@ -22,7 +26,9 @@ REPRESENTATION = NativeCompositeRepresentation()
 
 def _workspace(mode, name="A", h=1 / 8, **kwargs):
     model, material, state, inputs = case(name, **kwargs)
-    return program_for(model, material, mode, representation=REPRESENTATION).workspace("cloth", state, inputs, h, settings_for(mode))
+    return program_for(model, material, mode, representation=REPRESENTATION).workspace(
+        "cloth", state, inputs, h, settings_for(mode)
+    )
 
 
 def test_actual_represented_unit_hinge_literal_first_sweep(tyx_mode):
@@ -43,7 +49,11 @@ def test_actual_represented_unit_hinge_literal_first_sweep(tyx_mode):
         assert batch.rows[0, 37] == pytest.approx(theta, abs=2e-6)
         assert np.sum(ws.candidate.velocity**2) / 2 == pytest.approx(3 / 49, abs=2e-7)
         assert ws.position_metrics().max_residual > 2e-5
-        assert ws.prediction_operation.completed_launches == ws.reconstruction_operation.completed_launches == 1
+        assert (
+            ws.prediction_operation.completed_launches
+            == ws.reconstruction_operation.completed_launches
+            == 1
+        )
         assert len(ws.alpha_operations) == 2
         with pytest.raises(RuntimeError, match="already"):
             ws.prepare_velocity()
@@ -55,7 +65,9 @@ def test_actual_represented_unit_hinge_literal_first_sweep(tyx_mode):
 @pytest.mark.parametrize("shift", [0.0, 1024.0])
 def test_actual_small_displacement_translation_and_scale(tyx_mode, scale, shift):
     model = ParticleModel(np.ones(1), np.zeros(3))
-    initial = ParticleState(np.array([[scale + shift, 0.0, 0.0]]), np.array([[scale * 2**-25, 0.0, 0.0]]))
+    initial = ParticleState(
+        np.array([[scale + shift, 0.0, 0.0]]), np.array([[scale * 2**-25, 0.0, 0.0]])
+    )
     program = program_for(model, ClothMaterial(), tyx_mode, representation=REPRESENTATION)
     ws = program.workspace("cloth", initial, StepInputs.zeros(1), 1.0, settings_for(tyx_mode))
     try:
@@ -78,7 +90,8 @@ def test_actual_decoder_loss_rejects_without_host_world_repair(tyx_mode):
     model = ParticleModel(np.ones(1), np.zeros(3))
     initial = ParticleState(np.array([[2.0**100, 0, 0]]), np.array([[1.0, 0, 0]]))
     ws = program_for(model, ClothMaterial(), tyx_mode, representation=REPRESENTATION).workspace(
-        "cloth", initial, StepInputs.zeros(1), 1.0, settings_for(tyx_mode))
+        "cloth", initial, StepInputs.zeros(1), 1.0, settings_for(tyx_mode)
+    )
     try:
         ws.predict()
         assert ws.displacement[0, 0] == 1
@@ -113,8 +126,10 @@ def test_actual_represented_path_forbids_host_solver_and_reconstruction(tyx_mode
     import phymeo.constraints.bending as bending
     import phymeo.constraints.distance as distance
     import phymeo.solvers.composite_cloth as host
+
     def forbidden(*args, **kwargs):
         raise AssertionError("host solve/gradient/reconstruction is forbidden")
+
     monkeypatch.setattr(bending, "project_bending", forbidden)
     monkeypatch.setattr(bending, "bending_angle_gradient", forbidden)
     monkeypatch.setattr(distance, "project_distances", forbidden)
@@ -137,21 +152,48 @@ def test_actual_late_failure_rolls_back_encoded_state_and_retry(tyx_mode, monkey
     fresh = _workspace(tyx_mode, "B", h=1 / 128)
     try:
         ws.predict()
-        before = fingerprint((ws.reference, ws.displacement, ws.predicted_displacement, ws.candidate, ws.multipliers, tuple(ws.frames)))
-        target, name = (ws.engine, "project_bending") if phase == "bending" else (ws.ledger, "audit_sweep")
+        before = fingerprint(
+            (
+                ws.reference,
+                ws.displacement,
+                ws.predicted_displacement,
+                ws.candidate,
+                ws.multipliers,
+                tuple(ws.frames),
+            )
+        )
+        target, name = (
+            (ws.engine, "project_bending") if phase == "bending" else (ws.ledger, "audit_sweep")
+        )
         original = getattr(target, name)
+
         def fail(*args, **kwargs):
             original(*args, **kwargs)
             raise SolverFailure("late represented failure")
+
         with monkeypatch.context() as patch:
             patch.setattr(target, name, fail)
             with pytest.raises(SolverFailure, match="late represented"):
                 ws.position_sweep()
-        assert fingerprint((ws.reference, ws.displacement, ws.predicted_displacement, ws.candidate, ws.multipliers, tuple(ws.frames))) == before
+        assert (
+            fingerprint(
+                (
+                    ws.reference,
+                    ws.displacement,
+                    ws.predicted_displacement,
+                    ws.candidate,
+                    ws.multipliers,
+                    tuple(ws.frames),
+                )
+            )
+            == before
+        )
         ws.position_sweep()
         fresh.predict()
         fresh.position_sweep()
-        assert fingerprint((ws.displacement, ws.multipliers, tuple(ws.frames))) == fingerprint((fresh.displacement, fresh.multipliers, tuple(fresh.frames)))
+        assert fingerprint((ws.displacement, ws.multipliers, tuple(ws.frames))) == fingerprint(
+            (fresh.displacement, fresh.multipliers, tuple(fresh.frames))
+        )
     finally:
         ws.close()
         fresh.close()
@@ -162,7 +204,9 @@ def test_actual_represented_hidden_mutation_and_raw_wire_round_trip(tyx_mode):
     try:
         diagnostic = ws.diagnostics()
         path = diagnostic["material_path"]
-        assert fingerprint(deserialize_evidence(diagnostic["represented_wire"])) == fingerprint(path)
+        assert fingerprint(deserialize_evidence(diagnostic["represented_wire"])) == fingerprint(
+            path
+        )
         restored = deserialize_evidence(serialize_evidence(path))
         assert fingerprint(path) == fingerprint(restored)
         original = ws.displacement.copy()
@@ -182,7 +226,11 @@ def test_actual_represented_bounded_mixed_sweep_and_reconstruction(tyx_mode):
         ws.predict()
         ws.position_sweep()
         ws.prepare_velocity()
-        assert ws.prediction_operation.completed_launches == ws.reconstruction_operation.completed_launches == 1
+        assert (
+            ws.prediction_operation.completed_launches
+            == ws.reconstruction_operation.completed_launches
+            == 1
+        )
         assert len(ws.frames) == 1 and len(ws.alpha_operations) == 4
         for batch in ws.frames[0].blocks:
             assert batch.completed_launches == 1 and not np.any(batch.status)
@@ -191,14 +239,29 @@ def test_actual_represented_bounded_mixed_sweep_and_reconstruction(tyx_mode):
             for k, nodes in enumerate(batch.node_indices):
                 raw = batch.rows[k]
                 delta = raw[17] if batch.kind == "distance" else raw[42]
-                gradients = np.array([raw[14:17], -raw[14:17]]) if batch.kind == "distance" else raw[24:36].reshape((4, 3))
+                gradients = (
+                    np.array([raw[14:17], -raw[14:17]])
+                    if batch.kind == "distance"
+                    else raw[24:36].reshape((4, 3))
+                )
                 for local, node in enumerate(nodes):
                     for c in range(3):
                         before = raw[3 * local + c]
                         after = raw[size + 3 * local + c]
-                        charge, direct, terms = projection_charge(ws.reference[node, c], before, after,
-                            batch.products[k, local, c], ws.model.inverse_mass[node], delta, gradients[local, c])
-                        independent = abs(F(float(after)) - F(float(before)) - F(float(batch.products[k, local, c])))
+                        charge, direct, terms = projection_charge(
+                            ws.reference[node, c],
+                            before,
+                            after,
+                            batch.products[k, local, c],
+                            ws.model.inverse_mass[node],
+                            delta,
+                            gradients[local, c],
+                        )
+                        independent = abs(
+                            F(float(after))
+                            - F(float(before))
+                            - F(float(batch.products[k, local, c]))
+                        )
                         assert charge >= independent and charge >= direct
                         assert len(terms) == 4
         expected_v = ws.predicted.velocity + (ws.candidate.position - ws.predicted.position) / ws.h
@@ -210,10 +273,16 @@ def test_actual_represented_bounded_mixed_sweep_and_reconstruction(tyx_mode):
         broken_block = replace(ws.frames[0].blocks[1], reference_fingerprint="stale")
         broken_sweep = replace(ws.frames[0], blocks=(ws.frames[0].blocks[0], broken_block))
         with pytest.raises(SolverFailure, match="reference"):
-            ws.ledger.audit_sweep(broken_sweep, ws.predicted.position,
+            ws.ledger.audit_sweep(
+                broken_sweep,
+                ws.predicted.position,
                 {name: np.zeros(ws.material.count(name)) for name in ws.material.order},
-                ws.alphas, displacement=ws.predicted_displacement)
-        assert fingerprint((ws.candidate, ws.displacement, ws.multipliers, tuple(ws.frames))) == before
+                ws.alphas,
+                displacement=ws.predicted_displacement,
+            )
+        assert (
+            fingerprint((ws.candidate, ws.displacement, ws.multipliers, tuple(ws.frames))) == before
+        )
         # A completed nonconverged first sweep is not a physical time-step pass.
         with pytest.raises(RuntimeError, match="after reconstruction"):
             ws.position_sweep()
@@ -230,7 +299,9 @@ def test_actual_second_hinge_native_failure_retains_raw_receipt_and_rolls_back(t
         ws.native_rest["bending"][1] = 4.0
         with pytest.raises(SolverFailure, match="row rejected"):
             ws.position_sweep()
-        assert fingerprint((ws.candidate, ws.displacement, ws.multipliers, tuple(ws.frames))) == before
+        assert (
+            fingerprint((ws.candidate, ws.displacement, ws.multipliers, tuple(ws.frames))) == before
+        )
         assert ws.engine.failed_operations
         receipt = ws.engine.failed_operations[-1]
         assert receipt.completed_launches == 1
@@ -248,18 +319,39 @@ def test_actual_reconstruction_failure_keeps_hidden_publication_atomic(tyx_mode,
     try:
         ws.predict()
         ws.position_sweep()
-        before = fingerprint((ws.candidate, ws.displacement, ws.predicted_displacement,
-            ws.reconstructed_velocity, ws.reconstruction_operation, ws.velocity_ready))
+        before = fingerprint(
+            (
+                ws.candidate,
+                ws.displacement,
+                ws.predicted_displacement,
+                ws.reconstructed_velocity,
+                ws.reconstruction_operation,
+                ws.velocity_ready,
+            )
+        )
         original = ws.engine.reconstruct_displacement
+
         def late(*args, **kwargs):
             original(*args, **kwargs)
             raise SolverFailure("late native reconstruction")
+
         with monkeypatch.context() as patch:
             patch.setattr(ws.engine, "reconstruct_displacement", late)
             with pytest.raises(SolverFailure, match="late native reconstruction"):
                 ws.prepare_velocity()
-        assert fingerprint((ws.candidate, ws.displacement, ws.predicted_displacement,
-            ws.reconstructed_velocity, ws.reconstruction_operation, ws.velocity_ready)) == before
+        assert (
+            fingerprint(
+                (
+                    ws.candidate,
+                    ws.displacement,
+                    ws.predicted_displacement,
+                    ws.reconstructed_velocity,
+                    ws.reconstruction_operation,
+                    ws.velocity_ready,
+                )
+            )
+            == before
+        )
         ws.prepare_velocity()
         assert ws.velocity_ready and ws.reconstruction_operation.completed_launches == 1
     finally:
@@ -270,9 +362,14 @@ def test_actual_terminal_candidate_failure_rolls_back_receipts_and_retry(tyx_mod
     from phymeo.backends.tyx_composite_cloth import TyxCompositeClothParticipant
     from phymeo.backends.tyx_participants import _NodePort
     from phymeo.core.scene import BackendContext
+
     model, material, initial, inputs = case()
-    factory = TyxCompositeClothParticipant(model, material, tyx_mode, budgets=BUDGETS, representation=REPRESENTATION)
-    ws = factory.create_workspace("cloth", initial, inputs, 1 / 64, settings_for(tyx_mode), BackendContext("tyx:" + tyx_mode))
+    factory = TyxCompositeClothParticipant(
+        model, material, tyx_mode, budgets=BUDGETS, representation=REPRESENTATION
+    )
+    ws = factory.create_workspace(
+        "cloth", initial, inputs, 1 / 64, settings_for(tyx_mode), BackendContext("tyx:" + tyx_mode)
+    )
     try:
         ws.predict()
         for _ in range(512):
@@ -283,23 +380,45 @@ def test_actual_terminal_candidate_failure_rolls_back_receipts_and_retry(tyx_mod
             pytest.fail("frozen position budget exhausted")
         ws.prepare_velocity()
         native = ws.native
-        before = fingerprint((native.candidate, native.displacement, native.terminal_pre,
-            native.terminal_requests, tuple(native.engine.terminal_operations)))
+        before = fingerprint(
+            (
+                native.candidate,
+                native.displacement,
+                native.terminal_pre,
+                native.terminal_requests,
+                tuple(native.engine.terminal_operations),
+            )
+        )
         original = _NodePort.validate_candidate
+
         def reject(self, state):
             original(self, state)
             raise SolverFailure("late terminal candidate validation")
+
         impulse = np.array([[1 / 64, 0.0, 0.0]])
         with monkeypatch.context() as patch:
             patch.setattr(_NodePort, "validate_candidate", reject)
             with pytest.raises(SolverFailure, match="late terminal"):
                 ws.apply_velocity_impulses(np.array([0]), None, impulse)
-        assert fingerprint((native.candidate, native.displacement, native.terminal_pre,
-            native.terminal_requests, tuple(native.engine.terminal_operations))) == before
+        assert (
+            fingerprint(
+                (
+                    native.candidate,
+                    native.displacement,
+                    native.terminal_pre,
+                    native.terminal_requests,
+                    tuple(native.engine.terminal_operations),
+                )
+            )
+            == before
+        )
         assert len(native.engine.failed_operations) >= 2
         ws.apply_velocity_impulses(np.array([0]), None, impulse)
         data = ws.diagnostics()
-        assert [o.name for o in data["terminal_operations"]] == ["terminal_response", "terminal_apply"]
+        assert [o.name for o in data["terminal_operations"]] == [
+            "terminal_response",
+            "terminal_apply",
+        ]
         assert all(o.completed_launches == 1 for o in data["terminal_operations"])
     finally:
         ws.close()

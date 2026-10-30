@@ -89,7 +89,15 @@ def run_window(name, h, *, mode=None, representation=None, **kwargs):
             result = runtime.step(current, scene_inputs, h)
             persist_evidence(
                 "window-step",
-                dict(case=name, h=h, mode=mode, representation=representation, parameters=kwargs, step=step_index, result=result),
+                dict(
+                    case=name,
+                    h=h,
+                    mode=mode,
+                    representation=representation,
+                    parameters=kwargs,
+                    step=step_index,
+                    result=result,
+                ),
             )
             assert result.report.accepted, result.report.reason
             assert len(result.report.substeps) == 1
@@ -104,7 +112,15 @@ def run_window(name, h, *, mode=None, representation=None, **kwargs):
     assert total["positive_energy_sum"] <= 1e-3 and total["angular_l1_sum"] <= 1e-3
     persist_evidence(
         "window-total",
-        dict(case=name, h=h, mode=mode, representation=representation, parameters=kwargs, total=total, steps=len(records)),
+        dict(
+            case=name,
+            h=h,
+            mode=mode,
+            representation=representation,
+            parameters=kwargs,
+            total=total,
+            steps=len(records),
+        ),
     )
     return records, total
 
@@ -210,7 +226,9 @@ def standalone_replay(mode=None, *, representation=None):
     else:
         from phymeo.backends.tyx_composite_cloth import TyxCompositeClothParticipant
 
-        factory = TyxCompositeClothParticipant(model, material, mode, budgets=BUDGETS, representation=representation)
+        factory = TyxCompositeClothParticipant(
+            model, material, mode, budgets=BUDGETS, representation=representation
+        )
     ws = factory.create_workspace(
         "cloth", initial, third.effective_inputs.domains["cloth"], h, settings, context
     )

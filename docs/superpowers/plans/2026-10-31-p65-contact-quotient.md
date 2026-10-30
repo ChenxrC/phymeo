@@ -36,9 +36,9 @@
 ## Task 4: Parent acceptance after separate serial grant
 
 - [x] Parent audit exact authored four-path diff and saved hashes, then freeze a focused validation grant after S2 formal release.
-- [ ] Original owner performs first environment/import, scoped static and complete new host file serially, with original first outcomes retained.
-- [ ] Diagnose any failure within allowlist and unchanged mathematics; finalize raw exits/source/evidence/clean/process release.
-- [ ] Parent accepts only the standalone algebra scope. Ordinary-mass nonlinear contact success proofs and shared physical integration remain required.
+- [x] Original owner performs first environment/import, scoped static and complete new host file serially, with original first outcomes retained.
+- [x] Diagnose any failure within allowlist and unchanged mathematics; finalize raw exits/source/evidence/clean/process release.
+- [x] Parent accepts only the standalone algebra scope. Ordinary-mass nonlinear contact success proofs and shared physical integration remain required.
 
 Authoring checkpoint7673f670 was received and text/hash audited by the parent; Tasks1-3 above mean authored completion only. Task4 and all executable results remain pending. The prepared validation selection is not yet activated because S2 retains the sole slot.
 
@@ -49,3 +49,6 @@ task-1-quotient-validation-grant.md is activated for the original B2 owner on
 clean authoring report7673f670. Task4's first prerequisite is complete; all
 quotient executable results and final acceptance remain pending. No parent
 merge or old physical suite is part of this focused grant.
+
+
+Final local algebra acceptance: tested80d2a09/report0b55b831, first host83/0.34s/0, exact formatting-only AST/import equality, parent four-source/53-evidence/eight-exit/six-ZIP checks all matched. Normal merge44456ea902ac08c4ce9eab92f9898d0fdd0c5d36. All Task4 items are complete only for this standalone scope. See ../../../docs/development/p65-contact-quotient-parent-acceptance.md. Execution is released; physical integration remains open.

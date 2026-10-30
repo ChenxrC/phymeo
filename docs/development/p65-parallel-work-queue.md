@@ -1,5 +1,14 @@
 # P6.5 parallel code and serial execution queue
 
+## Current owner: no executable slot; S2-F documentation only
+
+B2 standalone quotient is accepted at tested80d2a093759f820680640d6492aee8b610f23112/report0b55b83140958bb3045d1acdfe28c13c5a4acdbd, normal merge44456ea902ac08c4ce9eab92f9898d0fdd0c5d36. First complete host83/0.34s/RAW_EXIT0; final scoped static passed after formatting-only repair with identical AST/imports. Parent checked four delivered hashes/blobs,53 evidence entries,eight raw exits,six ZIP entries andfour import/config bindings;55 files archived with zero mismatch. Reports preserve original formatting/preparation/guard outcomes. No old suite or extra probe was repeated.
+
+Original B2 has formally clean/process0 released; no new implementation or execution task is assigned to it. Original S2 starts a distinct DOCUMENTATION_ONLY S2-F proposal under task-2-conforming-shell-proposal-brief.md, only docs/development/p65-s2-conforming-shell-proposal.md, starting cleanf504f53. No imports/tests/lint/probes/build/native, no parent merge, no helpers. The document must derive a concrete conforming reference body/director law/full-star Jacobian, complete incidence and continuous path proof strategy, external boundary contact and independent lawful-fold controls. It is PROPOSAL_NOT_FROZEN; parent shared seams remain exclusively parent-owned.
+
+S2-L response and B2 R7 remain locally accepted only in their declared scopes. Typed B2 contact physics, ordinary-mass nonlinear controls, S2-F implementation and whole-stage review/wheel/general robotics/dual-arm/Three.js remain open. Remote CI stays deferred/unpassed. This current section supersedes historical owner paragraphs below.
+
+
 ## Current owner: original B2 quotient validation; S2 response accepted
 
 S2 formally released at2026-10-31T05:15:13.2335973+08:00 with clean reportf504f53e77407426c24cae769cc80b7c08c395dd and global/owned execution count0. Tested sourcebcf4c1d343df2ee0a15be9f62f1bd1e50ca087d4 passed host136, actual interpret80, CUDA80 and the specified bounded C++1; no physical run was repeated for acceptance. Saved audits verified78/79/79/1 windows,1434/1435/1435/1 steps, and39 complete fixed rebuild pairs in each full mode. Initial product, style, observer and launch-guard outcomes remain preserved.

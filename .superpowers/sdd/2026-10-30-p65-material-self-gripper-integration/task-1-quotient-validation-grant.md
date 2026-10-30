@@ -1,6 +1,6 @@
-# B2 quotient focused serial validation: active grant
+# B2 quotient focused serial validation: completed and released
 
-Status: GRANTED_SOLE_SERIAL_VALIDATION. Parent verified S2's formal clean/process0
+Current status: VALIDATED_ACCEPTED_SLOT_RELEASED. Final report0b55b831, tested80d2a09, parent merge44456ea902ac08c4ce9eab92f9898d0fdd0c5d36. The original grant below is preserved as history and authorizes no further execution. Historical activation: Parent verified S2's formal clean/process0
 release, independently accepted its saved evidence and integrated it normally as
 1396df42e16d057d3ed939b7fa6aafe08f42ea6e. The original B2 owner now receives this
 sole focused validation slot when the parent followup is delivered. No further

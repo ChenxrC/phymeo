@@ -1,26 +1,26 @@
 # P6.5 parallel code and serial execution queue
 
-User decision 2026-10-30: module code may be developed concurrently; tests run serially because of resources. No module here has executed tests yet.
+User decision 2026-10-30: module code may be developed concurrently; tests run serially because of resources. Later user decision explicitly defers remote CI to a new machine; remote CI is no longer a local execution prerequisite. CI and Documentation are manual-only in delivery50a5eeb; complete job definitions retained.
 
 ## Worktree ownership
 
 | Lane | Owner | Worktree / branch | State |
 | --- | --- | --- | --- |
-| Existing delivery Task3 | thick_friction_implementer | C:/Users/38347/Documents/ChatGPT/phymeo / codex/p6-5-handoff | Task3 complete/released at c72cdc3; parent packaging complete and e211138 pushed; exact CI41007037491/Documentation41007037548 running |
+| Existing delivery Task3 | thick_friction_implementer | C:/Users/38347/Documents/ChatGPT/phymeo / codex/p6-5-handoff | Local Task3/4 complete and released; e211138 remote3CPU pass/5timeout retained; remote CI deferred by user, policy50a5eeb pushed |
 | Integration and G1 | parent | C:/Users/38347/.codex/worktrees/p65-parallel-integration/phymeo / codex/p65-parallel-modules | G1 code and tests authored, unexecuted |
-| B1 bending | p65_bending_module | C:/Users/38347/.codex/worktrees/p65-bending-module/phymeo / codex/p65-bending-module | CODE_READY_TESTS_PENDING, commitee667918; five files clean, zero execution |
+| B1 bending | p65_bending_module | C:/Users/38347/.codex/worktrees/p65-bending-module/phymeo / codex/p65-bending-module | B1 verification queue grant now assigned to original agent from ee667918; no previous tests, results pending |
 | S1 self-contact | p65_self_contact_module | C:/Users/38347/.codex/worktrees/p65-self-contact-module/phymeo / codex/p65-self-contact-module | CODE_READY_TESTS_PENDING, commit8d6a403; six files clean, zero execution |
 
 All new lanes may read/edit/Git concurrently. No pytest, numerical script, solver import, compile, lint/format, packaging, dependency installation or performance run without a parent queue grant. The original Task3 command is not interrupted or restarted.
 
-## Next execution order
+## Current execution order
 
-1. Completed: Task3 host195/interpret19/CUDA19, same-run224records, final report/resource/index release. No repeat.
-2. Task4 evidence audit309source/126evidence and new build/outside-wheel smoke complete. Exact delivery e21113837b4b0731e471baa03bbc4bb10b38cf86 remote SHA verified; CI41007037491/Documentation41007037548 in progress at2026-10-30T05:12:03Z under unchanged30min matrix. No local module execution grant yet. Read artifacts/ci-e211138-checkpoint.json in original checkout for subsequent observations; do not repush documentation and cancel an active run.
-3. One frozen B1/S1/G1 verification group at a time (dependency-ready order); all authored tests currently UNEXECUTED. Formatting/syntax checks precede that group's numerical work in the same grant.
-4. B2/S2/G2 and shared integration: explicit contracts and one owner for shared changes, parallel independent coding, serial native/integration verification.
+1. Original Task3/4 local tests/audits/build/wheel are complete and will not be repeated. Remote CI41007037491 ended with3CPU success/5timeout, Documentation success. User deferred remoteCI; no rerun/poll or further optimization solely for this hosted limit. Policy50a5eeb preserves every job and disables automatic push/PR triggers.
+2. **B1 owns the sole local executable-validation slot.** Original p65_bending_module continues from ee667918 in its worktree. Merge the policy/delivery checkpoint if clean and it changes no underlying physical source; use existing Python environment with explicit child-src import path. Static checks and tests/test_bending.py plus tests/test_bending_trace.py, fresh basetemp/rawexit/source manifest. Preserve initial post-code results honestly; fixes stay in B1 allowlist. Parent and S1/G1 do not execute checks concurrently.
+3. On B1 natural completion/clean/process0/report release, grant S1 its candidate/operator tests, then G1 builder tests, one group at a time. No baseline whole-suite or old long-window replay.
+4. Parent audits versioned results, integrates additive modules and freezes B2/S2/G2 shared work. Parallel isolated coding remains allowed, shared seams have one owner, all physical/static/build validation uses the same serial queue. Local correctness and installation gates remain; remote CI coverage is explicitly deferred until user provides a new machine.
 
-Code checkpoints do not satisfy any physics gate. Current accurate CI remains prerequisite for merging new module code into delivery; coding is allowed now in isolated worktrees by the newer user instruction. Do not reinterpret this as a request to stop overall P6.5 or shorten tests.
+Code checkpoints are not physics acceptance. Full local H2/P6.5 acceptance still requires native/material/contact/hold/slip/fold/transaction evidence. Do not relabel cancelled remote jobs as passing or let their deferred state stall unrelated local tests.
 
 ## Parent clarifications
 

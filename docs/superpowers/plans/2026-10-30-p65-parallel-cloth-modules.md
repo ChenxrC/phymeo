@@ -1,5 +1,7 @@
 # P6.5 Parallel Cloth Modules Implementation Plan
 
+Latest user ruling: remote CI temporarily deferred to a future machine. Parent policy50a5eeb makes both workflows manual-only with all jobs unchanged. Local Task3/4 is complete; proceed with serial B1 then S1 then G1 validation without waiting for remote success. No numerical acceptance weakened.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development. User explicitly chose parallel code development and a single serial test queue.
 
 **Goal:** Develop bending, self-contact infrastructure and finite gripper modules concurrently, then integrate and verify the complete physical capabilities serially.
@@ -53,7 +55,7 @@ Files/interfaces exactly spec G1; implemented by parent while coding slots are o
 ## Task I: one integrated execution and delivery queue
 
 - [x] Observe current Task3 interpret/CUDA completion and explicit resource/index release; do not duplicate its already completed validation.
-- [ ] Parent original Task4 evidence/build/outsidewheel/newhead exact CI remains first delivery gate.
+- [x] Parent original Task4 local evidence/build/outsidewheel/push complete; remoteCI gate explicitly deferred by user, historical3success/5timeout retained.
 - [ ] Merge reviewed code checkpoints only into the isolated integration branch; no existing source/version evidence silently relabeled.
 - [ ] Grant one queued B1/S1/G1 test group at a time with immutable hash, fresh basetemp/rawexit, revoke after natural completion. Dependency installation also uses queue.
 - [ ] Freeze B2 composite material/native trace, S2 complete contact/CCD and G2 real load-bearing contracts with their own independent cases, using reviewed B1/S1/G1 APIs.

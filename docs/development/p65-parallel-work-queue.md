@@ -29,3 +29,13 @@ B1 only checks each discrete projection's pre/post smooth branch and rejects abs
 S1 requests are in the supplied base point-row order, matching public TriangleOffsetPointPort indices. Its factory uses a single physical base and existing same-domain operator. Conservative AABB candidates are not collision or CCD acceptance.
 
 G1 model/input tests are written but have not been imported, collected, linted, compiled or executed. No grasp simulation or force-balance success is claimed.
+
+## Next contracts in preparation
+
+No executable-validation slot is currently granted. All B1/S1/G1 focused suites have naturally ended; parent G1 release receipt records process0 and clean712fdad. Continued work is read-only code/math investigation and proposal authoring, not an idle test process or a claim that later physics has passed.
+
+- Original p65_bending_module owns only docs/development/p65-b2-material-proposal.md in its bending worktree: additive composite material/native trace/ledger and rigorous angle bounds, no source/test edits or execution.
+- Original p65_self_contact_module owns only docs/development/p65-s2-self-contact-proposal.md in its self-contact worktree: two-normal exact/interval contact and adjacent-material coverage, no source/test edits or execution.
+- Parent owns docs/development/p65-g2-gripper-proposal.md in this integration tree: closed support/slip and initially open finite-force capture/hoist derived from a shared6kg carriage mass. All expressions are proposed independent oracles, not observed trajectory results.
+
+The parent will combine and resolve these proposals, freeze public interfaces/units/support/ownership/independent cases and test selections, obtain the single design check for that new integration contract, then resume parallel independent code with serial execution. Do not repeat the earlier foundation builder or closed thick-friction fresh review. Shared seams remain parent-owned. The adjacent-prism overlap issue must be resolved explicitly before claiming folded-cloth self-contact; neither blanket incident-face exclusion nor always-reject is complete support.

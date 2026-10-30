@@ -12,7 +12,7 @@ The first parallel checkpoints below are useful production building blocks, not 
 
 ## Ownership and execution
 
-- Delivery checkout C:/Users/38347/Documents/ChatGPT/phymeo remains exclusively owned by thick_friction_implementer until its explicit release. No new module files, test collection, dependencies or commits there.
+- Delivery checkout C:/Users/38347/Documents/ChatGPT/phymeo has been released by thick_friction_implementer and remains at the delivered policy checkpoint50a5eeb. New module files, test collection and dependencies stay in the isolated integration/child worktrees.
 - Integration worktree C:/Users/38347/.codex/worktrees/p65-parallel-integration/phymeo, branch codex/p65-parallel-modules, belongs to parent.
 - Each coding agent creates/uses its own managed worktree at the frozen contract commit, owns only the allowlisted new files, and commits only there. No push, helpers, other-worktree edits or old shared source edits.
 - Test execution, numerical probes, imports that execute physics, compilation/build, native backend checks, performance runs and wheel smoke require an explicit parent queue grant. NO background competing runs. Code reading/writing and Git operations may proceed concurrently.

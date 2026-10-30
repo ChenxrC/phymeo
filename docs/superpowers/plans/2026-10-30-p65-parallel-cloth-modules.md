@@ -22,12 +22,13 @@ No tests, numerical imports/probes, compilation, profiling or packaging without 
 ## Task B1: bending module code
 
 Files/interfaces exactly spec B1. Read existing distance.py and distance_trace.py only as interface conventions; do not alter their laws.
-- [ ] Record actual worktree/base/allowed files and deferred test policy in lane report.
-- [ ] Author independent tests and formulas with the prescribed oriented hinge and analytic gradient.
-- [ ] Implement immutable constraint data, angle/gradient/energy, transactional one-sweep projection and complete immutable trace.
-- [ ] Self-read branch/degeneracy/error/ownership paths without executing code.
-- [ ] Commit allowlisted files, label CODE_READY_TESTS_PENDING, report unresolved issues; no automatic test/build/CI.
+- [x] Record actual worktree/base/allowed files and deferred test policy in lane report.
+- [x] Author independent tests and formulas with the prescribed oriented hinge and analytic gradient.
+- [x] Implement immutable constraint data, angle/gradient/energy, transactional one-sweep projection and complete immutable trace.
+- [x] Self-read branch/degeneracy/error/ownership paths without executing code.
+- [x] Commit allowlisted files, label CODE_READY_TESTS_PENDING, report unresolved issues; no automatic test/build/CI.
 - [ ] After explicit queue grant only: original-baseline missing-capability evidence if still meaningful, then current tests. Do not label post-implementation evidence as historical TDD RED. Parent audits and schedules B2 native/composite integration.
+
 
 ## Task S1: self-contact module code
 

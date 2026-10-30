@@ -101,8 +101,13 @@ def test_opposed_rows_do_not_fit_positive_self_stress():
         assert issue(((1,), (-1,)), ((1,),), (2,)) == c
     with pytest.raises(TypeError):
         certify_contact_quotient(
-            ((1,), (-1,)), ((1,),), (2,), (0,),
-            owner_ids=("a", "b"), coordinate_ids=("x",), proposal_pressure=(12, 10),
+            ((1,), (-1,)),
+            ((1,),),
+            (2,),
+            (0,),
+            owner_ids=("a", "b"),
+            coordinate_ids=("x",),
+            proposal_pressure=(12, 10),
         )
     assert check(c)
 
@@ -127,7 +132,13 @@ def test_full_inverse_mass_cross_terms_and_quadratic_identity():
     assert c.pressure_uncertainty == (F(5, 16),)
     assert c.remainder_uncertainty == (F(1, 16), F(1, 8))
     # Hand-expanded independent identity: 8 = 2 + (2 - 4 + 8).
-    assert 8 == 2 + 2 * c.remainder[0] ** 2 + 2 * c.remainder[0] * c.remainder[1] + 2 * c.remainder[1] ** 2
+    assert (
+        8
+        == 2
+        + 2 * c.remainder[0] ** 2
+        + 2 * c.remainder[0] * c.remainder[1]
+        + 2 * c.remainder[1] ** 2
+    )
     assert check(c)
     with pytest.raises(QuotientUnresolved):
         check(c, inverse_mass=((2, 0), (0, 2)))
@@ -158,12 +169,18 @@ def test_uniform_inverse_mass_scaling_preserves_quotient(scale):
 
 def test_nontrivial_owner_and_coordinate_permutations_with_ids():
     original = issue(
-        ((1, 0), (1, 0), (0, 1)), ((2, 0), (0, 3)), (4, -2),
-        owners=("a", "b", "c"), coordinates=("x", "y"),
+        ((1, 0), (1, 0), (0, 1)),
+        ((2, 0), (0, 3)),
+        (4, -2),
+        owners=("a", "b", "c"),
+        coordinates=("x", "y"),
     )
     permuted = issue(
-        ((1, 0), (0, 1), (0, 1)), ((3, 0), (0, 2)), (-2, 4),
-        owners=("c", "a", "b"), coordinates=("y", "x"),
+        ((1, 0), (0, 1), (0, 1)),
+        ((3, 0), (0, 2)),
+        (-2, 4),
+        owners=("c", "a", "b"),
+        coordinates=("y", "x"),
     )
     assert original.pressure == (2, 2, -2)
     assert permuted.pressure == (-2, 2, 2)
@@ -215,10 +232,25 @@ def test_verifier_is_independent_of_producer(monkeypatch):
         ("status", "physical_contact_accepted"),
     ],
     ids=[
-        "rank", "incomplete-basis", "wrong-basis", "A", "projector", "scale",
-        "H", "inverse", "L", "pressure", "remainder", "pressure-error",
-        "remainder-error", "condition", "fingerprint", "owners", "coordinates",
-        "schema", "physical-status",
+        "rank",
+        "incomplete-basis",
+        "wrong-basis",
+        "A",
+        "projector",
+        "scale",
+        "H",
+        "inverse",
+        "L",
+        "pressure",
+        "remainder",
+        "pressure-error",
+        "remainder-error",
+        "condition",
+        "fingerprint",
+        "owners",
+        "coordinates",
+        "schema",
+        "physical-status",
     ],
 )
 def test_forged_certificate_rejects(field, value):
@@ -226,8 +258,13 @@ def test_forged_certificate_rejects(field, value):
     bad = forged(c, field, value)
     with pytest.raises(QuotientUnresolved):
         verify_contact_quotient(
-            bad, c.difference_map, c.inverse_mass, c.delivered_impulse, c.impulse_uncertainty,
-            owner_ids=c.owner_ids, coordinate_ids=c.coordinate_ids,
+            bad,
+            c.difference_map,
+            c.inverse_mass,
+            c.delivered_impulse,
+            c.impulse_uncertainty,
+            owner_ids=c.owner_ids,
+            coordinate_ids=c.coordinate_ids,
         )
 
 
@@ -247,6 +284,7 @@ def test_forged_certificate_rejects(field, value):
 def test_external_binding_changes_reject(overrides):
     with pytest.raises(QuotientUnresolved):
         check(duplicate(), **overrides)
+
 
 @pytest.mark.parametrize("scalar", [True, False, 1.0, float("nan"), float("inf"), "1", None])
 def test_nonexact_scalar_inputs_reject(scalar):
@@ -268,8 +306,18 @@ def test_nonexact_scalar_inputs_reject(scalar):
         (((1,),), ((-1,),), (0,), (0,)),
         (((0,), (0,)), ((1,),), (0,), (0,)),
     ],
-    ids=["empty", "ragged", "mass-shape", "impulse-shape", "error-shape",
-         "negative-error", "asymmetric", "singular-mass", "negative-mass", "zero-rank"],
+    ids=[
+        "empty",
+        "ragged",
+        "mass-shape",
+        "impulse-shape",
+        "error-shape",
+        "negative-error",
+        "asymmetric",
+        "singular-mass",
+        "negative-mass",
+        "zero-rank",
+    ],
 )
 def test_invalid_shapes_mass_uncertainty_and_zero_rank_reject(b, w, ell, e):
     with pytest.raises(QuotientUnresolved):
@@ -301,8 +349,12 @@ def test_generators_and_implicit_conversion_are_not_consumed():
 def test_invalid_owner_identity_rejects(owner_ids):
     with pytest.raises(QuotientUnresolved):
         certify_contact_quotient(
-            ((1,), (1,)), ((1,),), (2,), (0,),
-            owner_ids=owner_ids, coordinate_ids=("x",),
+            ((1,), (1,)),
+            ((1,),),
+            (2,),
+            (0,),
+            owner_ids=owner_ids,
+            coordinate_ids=("x",),
         )
 
 
@@ -318,9 +370,13 @@ def test_coordinate_ids_and_utf8_boundary_are_bound():
 @pytest.mark.parametrize(
     "values",
     [
-        {"max_owner_rows": 0}, {"max_coordinates": -1}, {"max_fraction_bits": True},
-        {"max_scalar_operations": 1.0}, {"max_owner_rows": 193},
-        {"max_coordinates": 257}, {"max_fraction_bits": 4097},
+        {"max_owner_rows": 0},
+        {"max_coordinates": -1},
+        {"max_fraction_bits": True},
+        {"max_scalar_operations": 1.0},
+        {"max_owner_rows": 193},
+        {"max_coordinates": 257},
+        {"max_fraction_bits": 4097},
         {"max_scalar_operations": 2_000_001},
     ],
     ids=["zero", "negative", "bool", "float", "rows", "columns", "bits", "operations"],
@@ -332,7 +388,9 @@ def test_invalid_or_expanded_resource_policy_rejects(values):
 
 def test_shape_limits_precede_scalar_copying():
     with pytest.raises(QuotientUnresolved, match="shape"):
-        issue(((object(),), (object(),)), ((1,),), (0,), limits=QuotientProofLimits(max_owner_rows=1))
+        issue(
+            ((object(),), (object(),)), ((1,),), (0,), limits=QuotientProofLimits(max_owner_rows=1)
+        )
     with pytest.raises(QuotientUnresolved, match="shape"):
         issue(((1, 0),), ((1, 0), (0, 1)), (0, 0), limits=QuotientProofLimits(max_coordinates=1))
 
@@ -381,6 +439,7 @@ def test_equivalent_fraction_spellings_have_identical_binding():
     assert a == b
     assert check(a) and check(b)
 
+
 def test_incomplete_nullspace_with_valid_forged_shapes_rejects():
     c = issue(((1, 0), (1, 0), (1, 0)), ((1, 0), (0, 1)), (6, 3))
     bad = replace(c, rank=2, nullspace_basis=((-1,), (1,), (0,)))
@@ -422,6 +481,11 @@ def test_verifier_has_a_fresh_metered_budget_each_time(monkeypatch):
 def test_nonpolicy_objects_reject(limits):
     with pytest.raises(QuotientUnresolved, match="policy"):
         certify_contact_quotient(
-            ((1,),), ((1,),), (0,), (0,),
-            owner_ids=("a",), coordinate_ids=("x",), limits=limits,
+            ((1,),),
+            ((1,),),
+            (0,),
+            (0,),
+            owner_ids=("a",),
+            coordinate_ids=("x",),
+            limits=limits,
         )

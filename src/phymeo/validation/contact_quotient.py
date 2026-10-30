@@ -176,8 +176,13 @@ class ContactQuotientCertificate:
 
     def __post_init__(self):
         owned = _inputs(
-            self.difference_map, self.inverse_mass, self.delivered_impulse,
-            self.impulse_uncertainty, self.owner_ids, self.coordinate_ids, self.limits,
+            self.difference_map,
+            self.inverse_mass,
+            self.delivered_impulse,
+            self.impulse_uncertainty,
+            self.owner_ids,
+            self.coordinate_ids,
+            self.limits,
         )
         for item in fields(_Inputs):
             object.__setattr__(self, item.name, getattr(owned, item.name))
@@ -194,8 +199,10 @@ class ContactQuotientCertificate:
         ):
             object.__setattr__(self, name, _matrix(getattr(self, name), rows, columns, self.limits))
         for name, length in (
-            ("pressure", m), ("remainder", n),
-            ("pressure_uncertainty", m), ("remainder_uncertainty", n),
+            ("pressure", m),
+            ("remainder", n),
+            ("pressure_uncertainty", m),
+            ("remainder_uncertainty", n),
         ):
             object.__setattr__(self, name, _vector(getattr(self, name), length, self.limits))
         for name in ("response_scale", "condition_number"):
@@ -290,6 +297,7 @@ def _norm_inf(matrix, budget):
             total = budget.add(total, abs(value))
         maximum = max(maximum, total)
     return maximum
+
 
 def _rref(matrix, budget, pivot_limit=None):
     """Deterministic first-nonzero row pivots, with every arithmetic step metered."""
@@ -495,7 +503,9 @@ def _verify_evidence(certificate, inputs, budget):
     q = _mm(bt, pressure_map, budget)
     _require_equal(_mm(q, q, budget), q, "projection")
     _require_equal(_mm(_transpose(q), w, budget), _mm(w, q, budget), "mass-adjoint")
-    _require_equal(c.pressure_uncertainty, _mv(_absolute(pressure_map), e, budget), "pressure-error")
+    _require_equal(
+        c.pressure_uncertainty, _mv(_absolute(pressure_map), e, budget), "pressure-error"
+    )
     _require_equal(
         c.remainder_uncertainty,
         _mv(_absolute(_combine(inn, q, budget.sub)), e, budget),
@@ -507,6 +517,7 @@ def _verify_evidence(certificate, inputs, budget):
     if residual_energy < _ZERO:
         raise QuotientUnresolved("energy")
     _require_equal(full_energy, budget.add(represented_energy, residual_energy), "energy")
+
 
 def certify_contact_quotient(
     difference_map,
@@ -525,8 +536,13 @@ def certify_contact_quotient(
     All construction and final identity checking share one bounded counter.
     """
     inputs = _inputs(
-        difference_map, inverse_mass, delivered_impulse, impulse_uncertainty,
-        owner_ids, coordinate_ids, limits,
+        difference_map,
+        inverse_mass,
+        delivered_impulse,
+        impulse_uncertainty,
+        owner_ids,
+        coordinate_ids,
+        limits,
     )
     budget = _Budget(inputs.limits)
     b, w = inputs.difference_map, inputs.inverse_mass
@@ -601,13 +617,21 @@ def verify_contact_quotient(
     True means the exact algebra only, never unilateral/Coulomb/physical admission.
     """
     inputs = _inputs(
-        difference_map, inverse_mass, delivered_impulse, impulse_uncertainty,
-        owner_ids, coordinate_ids, limits,
+        difference_map,
+        inverse_mass,
+        delivered_impulse,
+        impulse_uncertainty,
+        owner_ids,
+        coordinate_ids,
+        limits,
     )
     if type(certificate) is not ContactQuotientCertificate:
         raise QuotientUnresolved("certificate")
     try:
-        submitted = {item.name: getattr(certificate, item.name) for item in fields(ContactQuotientCertificate)}
+        submitted = {
+            item.name: getattr(certificate, item.name)
+            for item in fields(ContactQuotientCertificate)
+        }
     except AttributeError as error:
         raise QuotientUnresolved("certificate") from error
     # Check a possibly corrupted frozen policy before using it to bound any copy.

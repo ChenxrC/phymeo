@@ -8,10 +8,16 @@ The user authorizes isolated parallel code development and requires every execut
 | --- | --- | --- |
 | G2-P / parent | C:/Users/38347/.codex/worktrees/p65-parallel-integration/phymeo / codex/p65-parallel-modules | LOCAL_SCOPED_VALIDATION_COMPLETE on e9ab075fd078c32d9695899d2a1cfff33d6b8ccd. Host29, actual interpret14, actual CUDA14 all RAW_EXIT0; all sessions naturally ended. RELEASED at report6f042ec8a1ba097d58a92f8187541fba6c8c1651, clean/process0 receipt18 at2026-10-30T18:14:11+08. No further G2 numerical run. |
 | B2-M / p65_bending_module | C:/Users/38347/.codex/worktrees/p65-bending-module/phymeo / codex/p65-bending-module | HOST_VERIFIED_NATIVE_REPRESENTATION_UNRESOLVED at product72bdbcb/report2be6396. Host75passed; native5passed/1failed. Execution slot formally RELEASED only; native/composite delivery remains unaccepted. Now documentation-only representation proposal, no executable check or product edit. All original physical gates remain. |
-| S2-LG / p65_self_contact_module | C:/Users/38347/.codex/worktrees/p65-self-contact-module/phymeo / codex/p65-self-contact-module | SOLE_EXECUTION_OWNER: original agent explicitly granted validation after parent verified B2 execution-only release. Starting1058d34354a9e1ecd9b15e3f85a84b10e243f4c3, code c94b91f896e92c643cce81d5f1bb1e1534c9f2ef. Six-file static and complete three-file host geometry checks; results pending. See task-2-validation-grant.md. |
+| S2-LG / p65_self_contact_module | C:/Users/38347/.codex/worktrees/p65-self-contact-module/phymeo / codex/p65-self-contact-module | LOCAL_HOST_ACCEPTED_AND_INTEGRATED. First complete69passed/3.56s/RAW_EXIT0, final static0, testedcf83a471/reportcb41e037. Formal clean/process0 release; parent audit and mergef9c9e7ab complete. Geometry only; no response/friction/fold/native claim. |
 | Historical thickness delivery | C:/Users/38347/Documents/ChatGPT/phymeo / codex/p6-5-handoff | Local Task3/4 complete; policy50a5eeb pushed. Remote failures preserved, not queried. |
 
-B2/S2 have completed code handoffs, not executable acceptance. Parent previously checked exact Git scope and19+6 source/test hashes; artifacts/p65-parallel-parent-audits/b2-s2-code-handoff-01.json is provenance only. Do not merge unvalidated lane code or repeat old implementation/builder/review. While S2 owns the slot, parent may only read/Git/document file IO; B2 may only author its representation-proposal document and use Git. B2 original host75 evidence is versioned, native rejection unresolved; no B2 product change or executable probe is currently granted.
+Current child execution owner: NONE. Parent may perform serial saved-evidence/document checks. B2 remains documentation-only for its representation proposal; no product edit or numerical probe is granted. S2 is locally accepted in its geometry-only scope and merged without repeating tests. B2 host75 is versioned evidence, native rejection unresolved. No remote CI wait.
+
+## S2 saved-evidence acceptance
+
+Tested source cf83a471422620ac00cf9b65f4ffec7c49235c0b, report cb41e0379562c6574847fb6c356ef15d11af5006, merge f9c9e7ab03c7dafef11d9a67adb28eb848d5cb52. Parent matched8 source/report,11 legacy/S1 and38 evidence hashes with0 mismatch, read9 raw receipts, independently compared all6 ASTs and verified final test/static snapshots. Initial lint/format failures remain; only style changed, no numerical repair or fabricated TDD RED.
+
+Original39 evidence files remain in Temp/phymeo-p65-s2-1058d34-serial and were copied byte-for-byte into artifacts/p65-s2-local-1058d34-serial. Parent receipts: artifacts/p65-parallel-parent-audits/s2-local-evidence-audit-01.json and s2-merge-byte-parity-01.json. All8 Git blobs match; six source/test working files are byte-identical and only two report files differ by checkout newlines. Timestamp trailing-zero serialization in one raw receipt caused an initial parent observer assertion, corrected by exact fractional-zero normalization and recorded separately; no child evidence changed or extra physics ran.
 
 ## G2 completed evidence
 
@@ -41,3 +47,5 @@ One fresh integrated review and local build/source-external wheel follow complet
 - S1:80/80 final at9a26fc7, report5056ce8, integrated51e5767. Candidate/same-base mapping only.
 - G1:28/28 at a16bf4a, report712fdad. Model/input only.
 - Historical thickness host195/interpret19/CUDA19 and source-external wheel remain versioned original results; no repeat or new-source C++ claim. NUM005/TYX003/TYX004 remain open.
+
+Current handoff supersedes the historical S2 grant above: S2 has released and is integrated. Next parent action is explicit B2 representation adjudication, then a new scoped implementation/serial validation grant; complete response, fold and shared integration remain required.

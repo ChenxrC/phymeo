@@ -27,7 +27,7 @@ Current executable-validation owner: NONE. Reads/file IO/Git and authoring may r
 ## Completion gates
 
 - [ ] Task1 code ready; then separate serial actual validation/release.
-- [ ] Task2 code ready; then separate serial geometry validation/release.
+- [x] Task2 code ready, serial host geometry69/static verification, formal release, parent saved-evidence audit and integration complete.
 - [x] Task3 code ready and scoped host/interpret/CUDA validation complete; final report and process0 release recorded below.
 - [ ] Parent evidence audit, typed material/common-state integration, complete self response/incidence and full cloth/grasp acceptance.
 - [ ] One fresh integrated review, scoped fixes, local packaging/source-external wheel and final applicable milestones. Remote remains deferred, never fake-passed.
@@ -63,3 +63,11 @@ B2 host milestone: original run12 naturally completed75passed/602.45s/RAW_EXIT0 
 B2 root-cause/release milestone: offline15/16 saved-row analysis found the dominant fixed-row outputs already nearest FP32, and their noncancelling storage-error sum alone exceeds the original gate. This rejects fixed-row FMA/order cleanup as a cure; it does not prove universal FP32 impossibility. No representation, precision, accounting, budget or fixture was changed. Host audit17 records24 complete windows/640 accepted steps, two standalone replay records and matching rebuild state/history/trace. Report2be6396b11b5f4aaa299e2636e3ad900c769bc57 is HOST_VERIFIED_NATIVE_REPRESENTATION_UNRESOLVED; product72bdbcb unchanged. Formal execution-only release recorded21:44:13+08 clean/process0. Parent independently matched19 product+767 evidence hashes and17 raw receipts; audit b2-host-native-unresolved-release-01.json. A later unrelated Python3.13 QA process was distinguished from Phymeo and left untouched.
 
 Parent issued documentation-only followup to original B2 for p65-b2-native-representation-proposal.md: compare audited reference/increment and compensated FP32 representations, explicit prediction/projection/reconstruction/publication and trace/schema impacts, original physical gates, no implementation or executable investigation. Parent then granted original S2 the sole numerical/static validation slot under task-2-validation-grant.md from85c55ed, starting its existing1058d343 code. Full three new host geometry files and exact six-file static scope; no remote action/old suite/native claim. Parent and B2 remain execution-free. This scheduling change preserves all unpassed B2 gates and all remaining Task4/P6.5 work.
+
+## S2-LG final scoped acceptance and integration
+
+Original agent released testedcf83a471/reportcb41e037 clean/process0 at2026-10-30T14:03:02Z. First and only complete host69passed/3.56s/RAW_EXIT0; final six-file Ruff/format0. Parent independently matched8 source/report+11 legacy+38 evidence hashes and9 raw receipts, verified all6 ASTs identical to authored originals, and archived39 files byte-for-byte while retaining original Temp evidence. The first parent audit stopped at equivalent timestamp fractional trailing-zero spellings; exact normalization fixed only the observer and is recorded. No numerical resampling.
+
+Merge f9c9e7ab03c7dafef11d9a67adb28eb848d5cb52 introduces exactly8 S2 allowlist files. All8 Git blobs match child and all6 source/test working files match bytes; report newline conversion is separately recorded. Parent audit paths are artifacts/p65-parallel-parent-audits/s2-local-evidence-audit-01.json and s2-merge-byte-parity-01.json. S2 geometry is accepted; response/friction/incidence fold/native/fullP6.5 are not.
+
+Current child execution owner is NONE. B2 remains solely documentation-only for its representation revision, preserving its native failure and original physical gates. Parent will explicitly adjudicate representation/publication/charging and affected validation before further B2 implementation. G2 and foundation suites are not repeated. Remote CI remains deferred/unpassed.

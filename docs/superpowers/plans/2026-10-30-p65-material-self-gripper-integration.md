@@ -6,7 +6,7 @@
 **Architecture:** Reuse the original B/S worktrees and implementers; parent G2-P in the integration tree. One state owner per physical domain; one global execution queue. New modules stay additive until their versioned validation and shared integration are complete.
 **Tech Stack:** Existing Python/NumPy/Fraction and tyx pin99f6df7c0fd8fdeef77f97df83914da27b64b7ee; no dependency change.
 **Spec:** ../specs/2026-10-30-p65-material-self-gripper-integration-design.md
-**State:** G2-P local scoped validation is complete on e9ab075 (host29, interpret14, CUDA14). B2-M and S2-LG code handoffs are ready; B2 is reserved next after the formal G2 release. Task4 full integration remains open. Exact execution authority is recorded in the queue and task-1-validation-grant.md.
+**State:** G2-P local scoped validation complete; S2-LG host69/static passed and integratedf9c9e7ab after parent saved-evidence audit. B2 host75 passed but native publication/accumulation remains unresolved; documentation-only representation proposal pending parent ruling. No child executable slot currently granted. Task4 remains open.
 
 ## Global constraints
 
@@ -53,14 +53,14 @@ Files: three new geometry files and their three tests plus report listed in spec
 
 Consumes: exact binary input coordinates and positive thickness, immutable proof budgets, optionally read-only existing rational interval helpers. Produces pair-local reduced algebra, complete immutable static supports/ties/material extrema and continuous partition evidence.
 
-- [ ] Merge final contract checkpoint into the clean lane and verify unchanged original foundations.
-- [ ] Author exact field tests and implementation: rational/common/independent radical reduction, zero detection, arithmetic/inverse/context behavior and finite sign-refinement limits. Preserve old Quadratic's semantics.
-- [ ] Author complete rational SAT and symmetric point/segment/polygon clipping tests/implementation, both exact material endpoint reconstructions, stable keyed ties and owned receipts. Use the required PrismPairIdentity of spec R4 in static/sweep signatures, with explicit input correspondence, cyclic orientation and caller/canonical mapping tests.
-- [ ] Before any numerical execution, freeze explicit safe/unsafe moving fixture coordinates and their independent handwritten inequalities in the lane report; do not fit a successful trajectory after probing.
-- [ ] Author two-normal area/curvature/partition CCD and independent negative controls, including omission of either curvature contribution, interior crossing/degeneration and exhausted budgets.
-- [ ] Commit code/report as CODE_READY_TESTS_PENDING with authored tests listed and all execution unperformed.
-- [ ] Under the sole later grant, static checks and complete three-file host tests run once on frozen source; preserve first post-code outcome and raw exits. Run legacy direct consumers only if actual imports/adapters affect them, otherwise record unchanged dependency bytes and why the old full suites are not repeated.
-- [ ] Correct scoped defects, verify affected tests and complete report/source hashes/resource release. Do not claim native geometry, self-friction response, lawful fold or full self-collision acceptance.
+- [x] Merge final contract checkpoint into the clean lane and verify unchanged original foundations.
+- [x] Author exact field tests and implementation: rational/common/independent radical reduction, zero detection, arithmetic/inverse/context behavior and finite sign-refinement limits. Preserve old Quadratic's semantics.
+- [x] Author complete rational SAT and symmetric point/segment/polygon clipping tests/implementation, both exact material endpoint reconstructions, stable keyed ties and owned receipts. Use the required PrismPairIdentity of spec R4 in static/sweep signatures, with explicit input correspondence, cyclic orientation and caller/canonical mapping tests.
+- [x] Before any numerical execution, freeze explicit safe/unsafe moving fixture coordinates and their independent handwritten inequalities in the lane report; do not fit a successful trajectory after probing.
+- [x] Author two-normal area/curvature/partition CCD and independent negative controls, including omission of either curvature contribution, interior crossing/degeneration and exhausted budgets.
+- [x] Commit code/report as CODE_READY_TESTS_PENDING with authored tests listed and all execution unperformed.
+- [x] Under the sole later grant, static checks and complete three-file host tests run once on frozen source; preserve first post-code outcome and raw exits. Run legacy direct consumers only if actual imports/adapters affect them, otherwise record unchanged dependency bytes and why the old full suites are not repeated.
+- [x] Correct scoped defects, verify affected tests and complete report/source hashes/resource release. Do not claim native geometry, self-friction response, lawful fold or full self-collision acceptance.
 
 ## Task 3: G2-P actual finite gripper experiments
 

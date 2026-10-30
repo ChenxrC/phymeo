@@ -74,12 +74,12 @@ def case(name="A", *, mass_scale=1.0, perturb=0.0, rotation=None, translation=No
     return ParticleModel(w, np.zeros(3)), material, ParticleState(x, velocity), StepInputs(force)
 
 
-def program_for(model, material, mode=None, *, policy=POLICY):
+def program_for(model, material, mode=None, *, policy=POLICY, representation=None):
     if mode is None:
         return CompositeClothProgram(model, material, audit_settings=policy, budgets=BUDGETS)
     from phymeo.backends.tyx_composite_cloth import TyxCompositeClothProgram
 
-    return TyxCompositeClothProgram(model, material, mode, audit_settings=policy, budgets=BUDGETS)
+    return TyxCompositeClothProgram(model, material, mode, audit_settings=policy, budgets=BUDGETS, representation=representation)
 
 
 def settings_for(mode=None, **kwargs):
@@ -92,9 +92,9 @@ def settings_for(mode=None, **kwargs):
     )
 
 
-def settled_workspace(name="A", *, mode=None, h=1 / 64, **kwargs):
+def settled_workspace(name="A", *, mode=None, h=1 / 64, representation=None, **kwargs):
     model, material, state, inputs = case(name, **kwargs)
-    program = program_for(model, material, mode)
+    program = program_for(model, material, mode, representation=representation)
     settings = settings_for(mode)
     ws = program.workspace("cloth", state, inputs, h, settings)
     try:

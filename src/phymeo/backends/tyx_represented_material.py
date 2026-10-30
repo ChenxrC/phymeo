@@ -4,7 +4,7 @@ import numpy as np
 
 from ..constraints.material_representation import (
     NativeRepresentationOperation, RepresentationBoundary, RepresentedMaterialBatch,
-    RepresentedMaterialPath, RepresentedMaterialSweep, decode, encode_values, exact,
+    RepresentedMaterialPath, RepresentedMaterialSweep, decode, encode_values, exact, serialize_evidence,
 )
 from ..core.capabilities import SolverFailure
 from ..core.scene import BackendContext, fingerprint
@@ -321,6 +321,7 @@ class RepresentedCompositeClothWorkspace(TyxCompositeClothWorkspace):
                 raise SolverFailure("terminal velocity mutation or unrecorded impulse")
             self.ledger.audit_terminal(self.engine.terminal_operations, base.velocity, self.candidate.velocity)
             data["terminal_pre"], data["terminal_requests"] = base.copy(), self.terminal_requests.copy()
+        data["represented_wire"] = serialize_evidence(data["material_path"]).decode("utf-8")
         return data
 
 

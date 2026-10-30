@@ -61,7 +61,7 @@ def test_large_reference_decoder_loss_is_explicit_and_noncancelling():
     assert (charge + reverse) / F(1, 128) > F(2, 100000)
 
 
-@pytest.mark.parametrize("source", [F(1, 2**127), F(1, 2**150), F(2)**128])
+@pytest.mark.parametrize("source", [F(1, 2**127), F(1, 2**150), F(2)**128, F(2)**128 - F(2)**103])
 def test_native_codec_normal_range_failures(source):
     with pytest.raises(SolverFailure):
         round_binary(source, 32)
@@ -108,11 +108,11 @@ def test_default_factories_preserve_host_and_v1_signatures_without_runtime():
     from test_composite_cloth import case, program_for
     from phymeo.backends.tyx_composite_cloth import TyxCompositeClothProgram
     model, material, _, _ = case()
-    assert program_for(model, material).problem_signature() == program_for(model, material, representation=None).problem_signature()
+    assert fingerprint(program_for(model, material).problem_signature()) == fingerprint(program_for(model, material, representation=None).problem_signature())
     default = program_for(model, material, "interpret")
     explicit = program_for(model, material, "interpret", representation=None)
     assert isinstance(default, TyxCompositeClothProgram)
-    assert default.problem_signature() == explicit.problem_signature()
+    assert fingerprint(default.problem_signature()) == fingerprint(explicit.problem_signature())
     assert "representation" not in default.problem_signature()
     represented = program_for(model, material, "interpret", representation=NativeCompositeRepresentation())
     assert represented.problem_signature()["world_publication"] == "RN64(reference+native_displacement)"

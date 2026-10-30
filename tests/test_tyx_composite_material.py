@@ -6,14 +6,16 @@ from test_composite_cloth import BUDGETS, case, program_for, settings_for, settl
 from test_composite_material_physics import equal_runs, run_window, standalone_replay
 
 from phymeo.backends.tyx_composite_cloth import TyxCompositeClothParticipant
+from phymeo.constraints.material_representation import NativeCompositeRepresentation, decode
 from phymeo.core.capabilities import SolverFailure
 from phymeo.core.scene import BackendContext, fingerprint
 
 pytestmark = pytest.mark.tyx
+REPRESENTATION = NativeCompositeRepresentation()
 
 
 def test_actual_composite_complete_operation_receipts_and_storage(tyx_mode):
-    ws = settled_workspace("B", mode=tyx_mode, h=1 / 128)
+    ws = settled_workspace("B", mode=tyx_mode, representation=REPRESENTATION, h=1 / 128)
     try:
         data = ws.diagnostics()
         path = data["material_path"]
@@ -23,12 +25,11 @@ def test_actual_composite_complete_operation_receipts_and_storage(tyx_mode):
         for sweep in path.sweeps:
             for batch in sweep.blocks:
                 assert batch.launches == batch.completed_launches == 1
-                np.testing.assert_array_equal(
-                    batch.compute_start, batch.positions_in.astype(np.float32).astype(np.float64)
-                )
-                np.testing.assert_array_equal(
-                    batch.compute_end, batch.compute_end.astype(np.float32).astype(np.float64)
-                )
+                assert batch.rows.dtype == np.float32
+                assert batch.displacement_in.dtype == batch.displacement_out.dtype == np.float32
+                np.testing.assert_array_equal(batch.positions_in, decode(path.reference, batch.displacement_in)[0])
+                np.testing.assert_array_equal(batch.positions_out, decode(path.reference, batch.displacement_out)[0])
+                assert batch.reference_fingerprint == path.reference_fingerprint
         assert data["material_audit"]["physical_affine_domain"].status == "certified"
     finally:
         ws.close()
@@ -39,8 +40,8 @@ def test_actual_composite_complete_operation_receipts_and_storage(tyx_mode):
     [("A", 1 / 64), ("A", 1 / 128), ("A", 1 / 256), ("B", 1 / 128), ("B", 1 / 256), ("B", 1 / 512)],
 )
 def test_actual_native_frozen_windows_two_rebuilds(tyx_mode, name, h):
-    first, a = run_window(name, h, mode=tyx_mode)
-    second, b = run_window(name, h, mode=tyx_mode)
+    first, a = run_window(name, h, mode=tyx_mode, representation=REPRESENTATION)
+    second, b = run_window(name, h, mode=tyx_mode, representation=REPRESENTATION)
     equal_runs(first, second)
     assert a == b
 
@@ -59,20 +60,20 @@ def test_actual_native_frozen_windows_two_rebuilds(tyx_mode, name, h):
     ],
 )
 def test_actual_native_perturbation_windows_original_budgets(tyx_mode, kwargs):
-    first, _ = run_window("B", 1 / 128, mode=tyx_mode, **kwargs)
-    second, _ = run_window("B", 1 / 128, mode=tyx_mode, **kwargs)
+    first, _ = run_window("B", 1 / 128, mode=tyx_mode, representation=REPRESENTATION, **kwargs)
+    second, _ = run_window("B", 1 / 128, mode=tyx_mode, representation=REPRESENTATION, **kwargs)
     equal_runs(first, second)
 
 
 def test_actual_native_external_replay_and_terminal_retry(tyx_mode):
-    assert standalone_replay(tyx_mode) == standalone_replay(tyx_mode)
+    assert standalone_replay(tyx_mode, representation=REPRESENTATION) == standalone_replay(tyx_mode, representation=REPRESENTATION)
 
 
 def test_late_native_launch_failure_discards_complete_sweep_and_retry_is_fresh(
     tyx_mode, monkeypatch
 ):
     model, material, initial, inputs = case("B")
-    program = program_for(model, material, tyx_mode)
+    program = program_for(model, material, tyx_mode, representation=REPRESENTATION)
     ws = program.workspace("cloth", initial, inputs, 1 / 128, settings_for(tyx_mode))
     try:
         ws.predict()
@@ -104,7 +105,7 @@ def test_late_native_launch_failure_discards_complete_sweep_and_retry_is_fresh(
 
 def test_native_participant_rejects_unrecorded_position_load(tyx_mode):
     model, material, initial, inputs = case()
-    factory = TyxCompositeClothParticipant(model, material, tyx_mode, budgets=BUDGETS)
+    factory = TyxCompositeClothParticipant(model, material, tyx_mode, budgets=BUDGETS, representation=REPRESENTATION)
     ws = factory.create_workspace(
         "cloth", initial, inputs, 1 / 64, settings_for(tyx_mode), BackendContext("tyx:" + tyx_mode)
     )
@@ -150,14 +151,14 @@ def test_actual_native_late_substep_failure_preserves_outer_state_and_retry(tyx_
     )
     context = BackendContext("tyx:" + tyx_mode)
     state, forces = SceneState({"cloth": initial}), SceneInputs({"cloth": inputs})
-    program = FaultProgram(model, material, tyx_mode, budgets=BUDGETS)
+    program = FaultProgram(model, material, tyx_mode, budgets=BUDGETS, representation=REPRESENTATION)
     with SceneStepper(program.scene, program, settings, context) as runtime:
         failed = runtime.step(state, forces, 1 / 32)
         assert not failed.report.accepted and failed.report.substeps[0].accepted
         assert fingerprint(failed.state) == fingerprint(state) and not failed.substep_states
         program.fault = False
         retry = runtime.step(state, forces, 1 / 32)
-    fresh_program = program_for(model, material, tyx_mode)
+    fresh_program = program_for(model, material, tyx_mode, representation=REPRESENTATION)
     with SceneStepper(fresh_program.scene, fresh_program, settings, context) as runtime:
         fresh = runtime.step(state, forces, 1 / 32)
     assert fresh.report.accepted and retry.report.accepted
@@ -166,8 +167,8 @@ def test_actual_native_late_substep_failure_preserves_outer_state_and_retry(tyx_
 
 
 def test_actual_native_two_disconnected_copies_no_double_application(tyx_mode):
-    one, _ = run_window("A", 1 / 64, mode=tyx_mode)
-    two, _ = run_window("A", 1 / 64, mode=tyx_mode, copies=2)
+    one, _ = run_window("A", 1 / 64, mode=tyx_mode, representation=REPRESENTATION)
+    two, _ = run_window("A", 1 / 64, mode=tyx_mode, representation=REPRESENTATION, copies=2)
     for a, b in zip(one, two, strict=True):
         x, y = a.state.domains["cloth"], b.state.domains["cloth"]
         np.testing.assert_allclose(y.position[:4], x.position, rtol=0, atol=2e-5)

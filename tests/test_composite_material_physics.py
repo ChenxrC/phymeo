@@ -61,9 +61,9 @@ def persist_evidence(label, data):
         json.dump(encode(data), stream, sort_keys=True, allow_nan=False)
 
 
-def run_window(name, h, *, mode=None, **kwargs):
+def run_window(name, h, *, mode=None, representation=None, **kwargs):
     model, material, initial, inputs = case(name, **kwargs)
-    program = program_for(model, material, mode)
+    program = program_for(model, material, mode, representation=representation)
     scene_state, scene_inputs = SceneState({"cloth": initial}), SceneInputs({"cloth": inputs})
     context = BackendContext("numpy" if mode is None else "tyx:" + mode)
     records, physical, current = [], [], scene_state
@@ -74,6 +74,7 @@ def run_window(name, h, *, mode=None, **kwargs):
             case=name,
             h=h,
             mode=mode,
+            representation=representation,
             parameters=kwargs,
             model=model,
             material=material,
@@ -88,7 +89,7 @@ def run_window(name, h, *, mode=None, **kwargs):
             result = runtime.step(current, scene_inputs, h)
             persist_evidence(
                 "window-step",
-                dict(case=name, h=h, mode=mode, parameters=kwargs, step=step_index, result=result),
+                dict(case=name, h=h, mode=mode, representation=representation, parameters=kwargs, step=step_index, result=result),
             )
             assert result.report.accepted, result.report.reason
             assert len(result.report.substeps) == 1
@@ -103,7 +104,7 @@ def run_window(name, h, *, mode=None, **kwargs):
     assert total["positive_energy_sum"] <= 1e-3 and total["angular_l1_sum"] <= 1e-3
     persist_evidence(
         "window-total",
-        dict(case=name, h=h, mode=mode, parameters=kwargs, total=total, steps=len(records)),
+        dict(case=name, h=h, mode=mode, representation=representation, parameters=kwargs, total=total, steps=len(records)),
     )
     return records, total
 
@@ -169,11 +170,11 @@ def test_two_disconnected_copies_share_one_owner_without_double_application():
         np.testing.assert_allclose(y.velocity[4:], x.velocity, atol=1e-8, rtol=0)
 
 
-def standalone_replay(mode=None):
+def standalone_replay(mode=None, *, representation=None):
     model, material, initial, original = case("B")
     h, settings = 1 / 128, settings_for(mode)
     context = BackendContext("numpy" if mode is None else "tyx:" + mode)
-    program = program_for(model, material, mode)
+    program = program_for(model, material, mode, representation=representation)
     scene_state, scene_inputs = SceneState({"cloth": initial}), SceneInputs({"cloth": original})
     held = np.zeros((6, 3))
     held[0, 0], held[5, 0] = 1 / 64, -1 / 64
@@ -194,6 +195,7 @@ def standalone_replay(mode=None):
             "standalone-p-zero-p",
             dict(
                 mode=mode,
+                representation=representation,
                 initial=scene_state,
                 inputs=scene_inputs,
                 held=held,
@@ -208,7 +210,7 @@ def standalone_replay(mode=None):
     else:
         from phymeo.backends.tyx_composite_cloth import TyxCompositeClothParticipant
 
-        factory = TyxCompositeClothParticipant(model, material, mode, budgets=BUDGETS)
+        factory = TyxCompositeClothParticipant(model, material, mode, budgets=BUDGETS, representation=representation)
     ws = factory.create_workspace(
         "cloth", initial, third.effective_inputs.domains["cloth"], h, settings, context
     )
@@ -280,6 +282,7 @@ def standalone_replay(mode=None):
             "standalone-terminal",
             dict(
                 mode=mode,
+                representation=representation,
                 selected_pre=pre,
                 final=final,
                 receipt=receipt,

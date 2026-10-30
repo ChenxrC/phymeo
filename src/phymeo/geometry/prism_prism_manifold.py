@@ -165,13 +165,25 @@ def _prepare(x_a, x_b, identity, thickness, limits):
         permutation = tuple((start + i) % 3 for i in range(3))
         permutations.append(permutation)
         triples.append(tuple(ids[i] for i in permutation))
-    triangles = tuple(tuple(original[side][i] for i in perm) for side, perm in zip(order, permutations, strict=True))
+    triangles = tuple(
+        tuple(original[side][i] for i in perm)
+        for side, perm in zip(order, permutations, strict=True)
+    )
     canonical_rho = tuple(original_rho[side] for side in order)
     token = (identity.domain, tuple(int(identity.face_ids[i]) for i in order), tuple(triples))
     caller_order = tuple(order.index(i) for i in range(2))
     fingerprint = _digest(("prism-pair-static-v1", token, triangles, canonical_rho, limits.token))
     caller_fingerprint = _digest((fingerprint, caller_order, tuple(permutations)))
-    return _PairInput(token, caller_order, order, tuple(permutations), triangles, canonical_rho, fingerprint, caller_fingerprint)
+    return _PairInput(
+        token,
+        caller_order,
+        order,
+        tuple(permutations),
+        triangles,
+        canonical_rho,
+        fingerprint,
+        caller_fingerprint,
+    )
 
 
 def _directions(triangles):
@@ -197,15 +209,30 @@ def _geometry(triangles, thickness, limits):
     if not all(squares):
         raise ValueError("exact zero triangle area")
     field = PairField(*squares, limits)
-    normals = tuple(tuple(field.scalar(v) / field.sqrt(c) for v in area) for area, c in zip(areas, squares, strict=True))
-    vertices = tuple(tuple(_add(tuple(field.scalar(v) for v in point), _scale(normal, sign * rho)) for point in triangle for sign in (-1, 1)) for triangle, normal, rho in zip(triangles, normals, thickness, strict=True))
+    normals = tuple(
+        tuple(field.scalar(v) / field.sqrt(c) for v in area)
+        for area, c in zip(areas, squares, strict=True)
+    )
+    vertices = tuple(
+        tuple(
+            _add(tuple(field.scalar(v) for v in point), _scale(normal, sign * rho))
+            for point in triangle
+            for sign in (-1, 1)
+        )
+        for triangle, normal, rho in zip(triangles, normals, thickness, strict=True)
+    )
     return field, normals, vertices
 
 
 def _support(vertices, direction):
     values = tuple(_dot(vertex, direction) for vertex in vertices)
     low, high = min(values), max(values)
-    return low, high, tuple(i for i, x in enumerate(values) if x == low), tuple(i for i, x in enumerate(values) if x == high)
+    return (
+        low,
+        high,
+        tuple(i for i, x in enumerate(values) if x == low),
+        tuple(i for i, x in enumerate(values) if x == high),
+    )
 
 
 def _orient(a, b, c):
@@ -238,7 +265,9 @@ def _inside(p, polygon):
         return p == polygon[0]
     if len(polygon) == 2:
         a, b = polygon
-        return _orient(a, b, p) == 0 and all(min(a[i], b[i]) <= p[i] <= max(a[i], b[i]) for i in range(2))
+        return _orient(a, b, p) == 0 and all(
+            min(a[i], b[i]) <= p[i] <= max(a[i], b[i]) for i in range(2)
+        )
     return all(_orient(a, b, p) >= 0 for a, b in _edges(polygon))
 
 
@@ -263,7 +292,14 @@ def _clip(a, b, direction):
     keep = tuple(i for i in range(3) if i != drop)
     projected = []
     for points in (a, b):
-        projected.append(_hull(tuple(tuple((_sub(p, _scale(direction, _dot(p, direction) / q)))[i] for i in keep) for p in points)))
+        projected.append(
+            _hull(
+                tuple(
+                    tuple((_sub(p, _scale(direction, _dot(p, direction) / q)))[i] for i in keep)
+                    for p in points
+                )
+            )
+        )
     intersection = _intersection(*projected)
     supports = (_dot(a[0], direction), _dot(b[0], direction))
     result = []
@@ -272,7 +308,9 @@ def _clip(a, b, direction):
         for i, value in zip(keep, point, strict=True):
             perpendicular[i] = value
         perpendicular[drop] = -sum(direction[i] * perpendicular[i] for i in keep) / direction[drop]
-        result.append(tuple(_add(perpendicular, _scale(direction, support / q)) for support in supports))
+        result.append(
+            tuple(_add(perpendicular, _scale(direction, support / q)) for support in supports)
+        )
     return tuple(result)
 
 
@@ -285,8 +323,15 @@ def _material(point, triangle, normal, rho):
     de, dh = _dot(delta, e), _dot(delta, h)
     b1, b2 = (de * hh - dh * eh) / determinant, (dh * ee - de * eh) / determinant
     weights = (1 - b1 - b2, b1, b2)
-    reconstruction = tuple(sum(weights[i] * triangle[i][j] for i in range(3)) + offset * normal[j] for j in range(3))
-    if any(b < 0 for b in weights) or sum(weights) != 1 or not -rho <= offset <= rho or reconstruction != point:
+    reconstruction = tuple(
+        sum(weights[i] * triangle[i][j] for i in range(3)) + offset * normal[j] for j in range(3)
+    )
+    if (
+        any(b < 0 for b in weights)
+        or sum(weights) != 1
+        or not -rho <= offset <= rho
+        or reconstruction != point
+    ):
         raise ArithmeticError("clipped point failed exact material reconstruction")
     return weights + (offset,)
 
@@ -306,11 +351,33 @@ def _manifold_exact(prepared, triangles, limits):
     """Internal rational-time entry; never converts times/coordinates to float."""
     axes, maximal, caller_vertices = [], [], ()
     sat_complete, complete_gap = False, None
-    fingerprint = _digest(("prism-pair-static-v1", prepared.identity_token, triangles, prepared.thickness, limits.token))
-    caller_fingerprint = _digest((fingerprint, prepared.caller_to_canonical, prepared.vertex_permutations))
+    fingerprint = _digest(
+        (
+            "prism-pair-static-v1",
+            prepared.identity_token,
+            triangles,
+            prepared.thickness,
+            limits.token,
+        )
+    )
+    caller_fingerprint = _digest(
+        (fingerprint, prepared.caller_to_canonical, prepared.vertex_permutations)
+    )
 
     def result(status, gap=None, obligation=None):
-        return PrismPairManifold(status, fingerprint, caller_fingerprint, prepared.identity_token, prepared.caller_to_canonical, tuple(axes), tuple(maximal), caller_vertices, complete_gap if gap is None else gap, sat_complete, obligation)
+        return PrismPairManifold(
+            status,
+            fingerprint,
+            caller_fingerprint,
+            prepared.identity_token,
+            prepared.caller_to_canonical,
+            tuple(axes),
+            tuple(maximal),
+            caller_vertices,
+            complete_gap if gap is None else gap,
+            sat_complete,
+            obligation,
+        )
 
     try:
         _, normals, vertices = _geometry(triangles, prepared.thickness, limits)
@@ -324,14 +391,26 @@ def _manifold_exact(prepared, triangles, limits):
         for direction in _directions(triangles):
             low, _, support_a, _ = _support(vertices[0], direction)
             _, high, _, support_b = _support(vertices[1], direction)
-            supports = [_caller_support(support_a, prepared.vertex_permutations[0]), _caller_support(support_b, prepared.vertex_permutations[1])]
+            supports = [
+                _caller_support(support_a, prepared.vertex_permutations[0]),
+                _caller_support(support_b, prepared.vertex_permutations[1]),
+            ]
             caller_supports = tuple(supports[i] for i in prepared.caller_to_canonical)
-            axis = PrismPairAxis(direction, direction if prepared.caller_to_canonical[0] == 0 else _scale(direction, -1), _dot(direction, direction), low - high, *caller_supports, (prepared.identity_token, direction))
+            axis = PrismPairAxis(
+                direction,
+                direction if prepared.caller_to_canonical[0] == 0 else _scale(direction, -1),
+                _dot(direction, direction),
+                low - high,
+                *caller_supports,
+                (prepared.identity_token, direction),
+            )
             axes.append(axis)
             if not maximal:
                 maximal = [axis]
             else:
-                comparison = compare_gaps(axis.numerator, axis.norm_squared, maximal[0].numerator, maximal[0].norm_squared)
+                comparison = compare_gaps(
+                    axis.numerator, axis.norm_squared, maximal[0].numerator, maximal[0].norm_squared
+                )
                 if comparison > 0:
                     maximal = [axis]
                 elif comparison == 0:
@@ -345,25 +424,60 @@ def _manifold_exact(prepared, triangles, limits):
             _, _, _, ib = _support(vertices[1], d)
             clips = _clip(tuple(vertices[0][i] for i in ia), tuple(vertices[1][i] for i in ib), d)
             if not clips:
-                return result("unresolved", obligation=ProofObligation("clipping", "selected support projections have no proved nonempty clip", (axis.key,)))
+                return result(
+                    "unresolved",
+                    obligation=ProofObligation(
+                        "clipping",
+                        "selected support projections have no proved nonempty clip",
+                        (axis.key,),
+                    ),
+                )
             points = []
             for pa, pb in clips:
-                materials = tuple(_material(p, x, n, rho) for p, x, n, rho in zip((pa, pb), triangles, normals, prepared.thickness, strict=True))
+                materials = tuple(
+                    _material(p, x, n, rho)
+                    for p, x, n, rho in zip(
+                        (pa, pb), triangles, normals, prepared.thickness, strict=True
+                    )
+                )
                 material_key = tuple(tuple(v.token for v in material) for material in materials)
-                caller_materials = tuple(_caller_material(materials[i], prepared.vertex_permutations[i]) for i in prepared.caller_to_canonical)
+                caller_materials = tuple(
+                    _caller_material(materials[i], prepared.vertex_permutations[i])
+                    for i in prepared.caller_to_canonical
+                )
                 caller_points = tuple((pa, pb)[i] for i in prepared.caller_to_canonical)
-                points.append(PrismPairPoint(*caller_points, *caller_materials, (axis.key, material_key)))
-            completed.append(PrismPairAxis(axis.canonical_direction, axis.direction, axis.norm_squared, axis.numerator, axis.support_a, axis.support_b, axis.key, tuple(points)))
+                points.append(
+                    PrismPairPoint(*caller_points, *caller_materials, (axis.key, material_key))
+                )
+            completed.append(
+                PrismPairAxis(
+                    axis.canonical_direction,
+                    axis.direction,
+                    axis.norm_squared,
+                    axis.numerator,
+                    axis.support_a,
+                    axis.support_b,
+                    axis.key,
+                    tuple(points),
+                )
+            )
         maximal = completed
         sign = maximal[0].numerator.sign()
-        return result({1: "separated", 0: "touching", -1: "penetrating"}[sign], maximal[0].gap_bounds)
+        return result(
+            {1: "separated", 0: "touching", -1: "penetrating"}[sign], maximal[0].gap_bounds
+        )
     except SignUnresolved as error:
-        return result("unresolved", obligation=ProofObligation("sign", str(error), (error.value_token, error.bits)))
+        return result(
+            "unresolved",
+            obligation=ProofObligation("sign", str(error), (error.value_token, error.bits)),
+        )
     except (ArithmeticError, ValueError) as error:
         return result("unresolved", obligation=ProofObligation("geometry", str(error)))
 
 
-def prism_prism_manifold(x_a, x_b, *, identity, half_thickness_m, proof_limits=PrismPairProofLimits()):
+def prism_prism_manifold(
+    x_a, x_b, *, identity, half_thickness_m, proof_limits=PrismPairProofLimits()
+):
     """Complete static SAT, all maximal ties, and both exact material extrema.
 
     Input coordinates are finite FP64 (3,3), thickness is positive FP64 (2,).

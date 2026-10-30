@@ -141,6 +141,7 @@ class PairNumber:
     def token(self):
         def token(value):
             return value.numerator, value.denominator
+
         return tuple(map(token, self.field.roots)), tuple(map(token, self.coefficients))
 
     @property
@@ -156,7 +157,9 @@ class PairNumber:
 
     def __add__(self, other):
         other = self._other(other)
-        return self.field.element(*(a + b for a, b in zip(self.coefficients, other.coefficients, strict=True)))
+        return self.field.element(
+            *(a + b for a, b in zip(self.coefficients, other.coefficients, strict=True))
+        )
 
     __radd__ = __add__
 

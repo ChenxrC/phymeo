@@ -108,7 +108,16 @@ def test_normalized_comparison_reverses_negative_squares():
     assert lo <= 1 <= hi
 
 
-@pytest.mark.parametrize("kwargs", [{"initial_sqrt_bits": 0}, {"max_sqrt_bits": True}, {"max_time_cells": -1}, {"max_time_depth": 1.5}, {"initial_sqrt_bits": 9, "max_sqrt_bits": 8}])
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        {"initial_sqrt_bits": 0},
+        {"max_sqrt_bits": True},
+        {"max_time_cells": -1},
+        {"max_time_depth": 1.5},
+        {"initial_sqrt_bits": 9, "max_sqrt_bits": 8},
+    ],
+)
 def test_invalid_proof_limits_reject(kwargs):
     with pytest.raises(ValueError):
         PrismPairProofLimits(**kwargs)

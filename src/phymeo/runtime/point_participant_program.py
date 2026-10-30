@@ -52,7 +52,9 @@ class PointParticipantProgram:
                 raise TypeError("participant requires typed family and capabilities")
             if binding.family != "particles" or family.kind != binding.family:
                 raise ValueError("point participant adapter supports particles only")
-            if factory.point_role != "node" or fingerprint(factory.model) != fingerprint(binding.model):
+            if factory.point_role != "node" or fingerprint(factory.model) != fingerprint(
+                binding.model
+            ):
                 raise ValueError("participant model and node role must match its domain")
             if "float64" not in caps.dtypes or family.kind not in caps.families:
                 raise ValueError("participant registered precision/family unsupported")
@@ -87,21 +89,32 @@ class PointParticipantProgram:
             law="public-particle-participant-terminal-v1",
             scene=self.scene.identity,
             participants=tuple(
-                (name, factory.point_role, factory.problem_signature(),
-                 _capabilities(factory.capabilities))
+                (
+                    name,
+                    factory.point_role,
+                    factory.problem_signature(),
+                    _capabilities(factory.capabilities),
+                )
                 for name, factory in self.participants.items()
             ),
-            history=tuple((entry.name, entry.shape, entry.dtype.str) for entry in self.history_fields),
+            history=tuple(
+                (entry.name, entry.shape, entry.dtype.str) for entry in self.history_fields
+            ),
             capabilities=_capabilities(self.capabilities),
         )
 
     def create_workspace(self, scene, state, inputs, h, settings, context):
         self.scene.assert_unchanged()
-        if scene.identity != self.scene.identity or fingerprint(self.problem_signature()) != self._signature:
+        if (
+            scene.identity != self.scene.identity
+            or fingerprint(self.problem_signature()) != self._signature
+        ):
             raise ValueError("bound particle program changed")
         for binding in self.scene.domains:
             factory = self.participants[binding.name]
-            if factory.family != self.registry.get(binding.family) or fingerprint(factory.model) != fingerprint(binding.model):
+            if factory.family != self.registry.get(binding.family) or fingerprint(
+                factory.model
+            ) != fingerprint(binding.model):
                 raise ValueError("bound participant family/model changed")
         if not isinstance(context, BackendContext):
             raise TypeError("expected BackendContext")
@@ -232,6 +245,7 @@ class _PointWorkspace:
 
     def result(self):
         self._velocity_ready()
+
         def snapshot():
             value = SceneState(
                 {name: child.result() for name, child in self._participants.items()}, self._history
@@ -239,15 +253,22 @@ class _PointWorkspace:
             return self.owner.registry.clone_state(
                 self.owner.scene, value, self.context, self.owner.history_fields
             )
+
         return self._call(snapshot)
 
     def diagnostics(self):
         self._velocity_ready()
+
         def snapshot():
-            return own_diagnostics(dict(
-                participants={name: child.diagnostics() for name, child in self._participants.items()},
-                point_participant=dict(terminal_applied=self._terminal),
-            ))
+            return own_diagnostics(
+                dict(
+                    participants={
+                        name: child.diagnostics() for name, child in self._participants.items()
+                    },
+                    point_participant=dict(terminal_applied=self._terminal),
+                )
+            )
+
         return self._call(snapshot)
 
     def close(self):

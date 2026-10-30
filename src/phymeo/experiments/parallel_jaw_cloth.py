@@ -191,8 +191,14 @@ def build_gripper_case(
         }
     )
     return GripperClothCase(
-        scene, initial, inputs, program, settings,
-        ph.BackendContext(program.capabilities.backend), parameters, h,
+        scene,
+        initial,
+        inputs,
+        program,
+        settings,
+        ph.BackendContext(program.capabilities.backend),
+        parameters,
+        h,
     )
 
 
@@ -224,8 +230,15 @@ def run_gripper_case(case, *, mode, h, duration_s, **configuration):
     if fingerprint((problem.initial, problem.inputs)) != original:
         raise RuntimeError("runtime changed the original experiment snapshot")
     return GripperClothRun(
-        problem.scene, problem.initial, problem.inputs, problem.settings,
-        problem.parameters, signature, h, count.numerator, tuple(records),
+        problem.scene,
+        problem.initial,
+        problem.inputs,
+        problem.settings,
+        problem.parameters,
+        signature,
+        h,
+        count.numerator,
+        tuple(records),
     )
 
 
@@ -234,8 +247,10 @@ def _encode(value):
     if isinstance(value, np.ndarray):
         array = np.ascontiguousarray(value)
         return {
-            "type": "ndarray", "dtype": array.dtype.str,
-            "shape": list(array.shape), "bytes_hex": array.tobytes().hex(),
+            "type": "ndarray",
+            "dtype": array.dtype.str,
+            "shape": list(array.shape),
+            "bytes_hex": array.tobytes().hex(),
         }
     if isinstance(value, np.generic):
         return _encode(np.asarray(value))

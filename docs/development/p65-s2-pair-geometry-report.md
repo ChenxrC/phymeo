@@ -99,3 +99,94 @@ is perpendicular to cA and cB. A's max-d edge and B's min-d edge meet at
 (0,0,1,3*sqrt(2)) and (0,1,0,-sqrt(3)); both signed offsets are strictly
 inside the supplied thickness. This proves actual edge-edge touching and
 both material reconstructions independently of the implementation.
+
+## Code checkpoint and public interfaces
+
+Status: CODE_READY_TESTS_PENDING. This is authored code, not a passing or
+numerically verified result. No project import, collection, pytest, lint,
+formatter, compile, build, installation, profile, native check or remote CI
+was performed. No historical TDD RED is asserted. No executable-validation
+slot was requested or used during this authoring grant.
+
+- `_prism_pair_exact.py`: frozen `PrismPairProofLimits`, reduced `PairField`,
+  immutable `PairNumber`, typed `SignUnresolved`, rational square/root bounds,
+  normalized-gap comparisons. Pair basis order is canonical for the supplied
+  unordered radicands after rational/common-root reduction. It does not attempt
+  global square-free factorization or implicitly convert different contexts.
+- `PrismPairIdentity(domain,face_ids,node_ids)` owns immutable bytes behind
+  read-only int64(2,) and int64(2,3) views. Faces are distinct; node triples
+  are oriented, distinct and nonnegative. Cyclic-minimum node order and sorted
+  explicit face IDs determine the canonical pair, not coordinates.
+- `prism_prism_manifold(x_a,x_b,*,identity,half_thickness_m,proof_limits)`
+  accepts FP64(3,3) inputs and positive FP64(2,) half thickness. It returns
+  immutable `PrismPairManifold`: separated/touching/penetrating/unresolved,
+  both fingerprints, explicit caller-to-canonical permutation, every exact
+  SAT axis, every maximal tie, complete clipped extrema when resolved, both
+  exact material endpoints, caller-ordered vertices, exact gap enclosures,
+  and a typed remaining proof obligation when unresolved.
+- Every `PrismPairAxis` retains rational canonical direction, caller-oriented
+  direction, rational squared norm, exact field gap numerator, caller support
+  indices and a canonical key. There is no primary axis or friction normal.
+  Its points carry caller-order endpoints/weights and canonical material keys.
+- `prism_prism_sweep(path_a,path_b,*,identity,half_thickness_m,h,
+  penetration_budget_m,proof_limits)` consumes FP64(2,3,3) paths, positive
+  duration seconds, nonnegative penetration budget metres. Its immutable result
+  is certified/violation/unresolved. Certified segments form an exact rational
+  [0,1] cover; pending cells preserve all remaining domains. A violation owns
+  a rational time and a complete-SAT upper-gap witness. Area coefficients,
+  area_a/area_b and normal_contributions use canonical side order; the explicit
+  caller permutation and caller-oriented segment direction record exchange.
+- `verify_prism_prism_sweep(certificate,path_a,path_b,*,identity,
+  half_thickness_m,h,penetration_budget_m,proof_limits)` verifies safety receipts
+  only. It returns False for violation/unresolved, altered bindings, incomplete
+  partitions, inconsistent budgets or forged segment quantities. It does not
+  invoke the sweep producer; it reconstructs path geometry and every fixed-axis
+  inequality. Producer and verifier share the local exact bound calculator;
+  independent written tests reconstruct its two-term equations separately.
+
+Coordinates and signed offsets are metres, barycentric weights dimensionless.
+Times in proofs are dimensionless t in [0,1]; h is bound into the fingerprint.
+Normal differentiation uses that normalized time, so width^2 and curvature
+refer to the same variable. No velocity, force, impulse or energy is produced.
+
+All mutable inputs are copied into exact tuples/owned immutable bytes. Exact
+shared-ID coordinates must coincide at every supplied endpoint. Canonical
+fingerprints bind IDs, cyclic orientation, full coordinates/path, thickness,
+proof policy, h and penetration budget where applicable. Caller fingerprints
+also bind vertex/caller permutations. Reverse winding has a distinct identity
+fingerprint. No float topology or expanded geometry tolerance is introduced.
+
+The temporal lower bound is valid across support changes: each of the 36 vertex
+pair projected differences satisfies the same endpoint/curvature inequality,
+so their minimum does too. Both area bounds precede acceptance. The bound is
+L=min(g_a_lower,g_b_lower)-norm_upper(d)*(rhoA*MA+rhoB*MB)*width^2/8.
+Acceptance uses L+budget*norm_lower(d)>=0. Negative L divides by norm_lower;
+nonnegative L divides by norm_upper for an outward normalized lower bound.
+A single negative axis is never a violation witness.
+
+## Logical commits and preserved scope
+
+- 1c0d080: independent fixture equations frozen before implementation/execution.
+- 3cc2ade: exact pair field and independent algebra tests.
+- e69e5ab: identity-bound static geometry and material/coverage tests.
+- d561b23: independent common-root static cancellation control.
+- c94b91f: continuous proofs, independently recomputed receipt verification,
+  moving/corrupted-receipt tests and additional pre-execution derivations.
+
+The three new modules import only each other, NumPy and Python standard library.
+No old exact/clip/manifold/sweep module, original test, S1 foundation, export,
+response, anchor, history, runtime, dependency pin, workflow or parent document
+was changed. Read-only Git comparison against d79316c confirmed exact legacy
+and S1 source/test parity. Therefore old full suites and legacy direct consumers
+are not rerun merely for this additive checkpoint. New tests remain unexecuted.
+
+Pending validation must first preserve the original frozen six-file snapshot,
+raw commands/logs/RAW_EXIT, and source hashes under a sole execution grant.
+Formatting/lint and all three complete authored test files remain required.
+No parseability, collection count, numerical pass, native parity, performance,
+arbitrary convergence or full collision acceptance is asserted here.
+
+Full folded cloth still needs the incident-material/shell decision, complete
+common-load response, all cross terms, normal-cone friction, actual endpoint
+mapping/ledger audit, persistent anchors, history and transaction integration.
+Those are deliberately outside this geometry-only checkpoint and remain open.

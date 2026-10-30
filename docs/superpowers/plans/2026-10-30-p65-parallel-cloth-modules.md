@@ -32,24 +32,26 @@ Files/interfaces exactly spec B1. Read existing distance.py and distance_trace.p
 ## Task S1: self-contact module code
 
 Files/interfaces exactly spec S1. Reuse existing public TriangleOffsetPointPort and MultiDomainPointOperator over one physical base.
-- [ ] Record worktree/base/allowed files and deferred test policy.
-- [ ] Author incidence, exact swept bounds, false-positive and shared-node/load/candidate tests.
-- [ ] Implement immutable topology, exact-rational conservative candidate filtering, and public same-domain offset attachment composition.
-- [ ] Self-read preservation of affine-path bound and distinction between candidate and collision certification.
-- [ ] Commit allowlisted files with CODE_READY_TESTS_PENDING and report S2 proof gaps explicitly.
+- [x] Record worktree/base/allowed files and deferred test policy.
+- [x] Author incidence, exact swept bounds, false-positive and shared-node/load/candidate tests.
+- [x] Implement immutable topology, exact-rational conservative candidate filtering, and public same-domain offset attachment composition.
+- [x] Self-read preservation of affine-path bound and distinction between candidate and collision certification.
+- [x] Commit allowlisted files with CODE_READY_TESTS_PENDING and report S2 proof gaps explicitly.
 - [ ] Run only with parent queue grant, then freeze S2 multi-normal geometry/CCD/response contract; no silent reuse of one-Q field for two independent roots.
+
 
 ## Task G1: finite jaw module code
 
 Files/interfaces exactly spec G1; implemented by parent while coding slots are occupied, or a third lane after a slot frees.
-- [ ] Implement 3-prismatic massive carriage/two-finger RobotModel builder and finite patches.
-- [ ] Author independent FK/input-limit/ownership/invalid-configuration tests.
-- [ ] Commit as CODE_READY_TESTS_PENDING; no simulation or builder-as-grasp claim.
+- [x] Implement 3-prismatic massive carriage/two-finger RobotModel builder and finite patches.
+- [x] Author independent FK/input-limit/ownership/invalid-configuration tests.
+- [x] Commit as CODE_READY_TESTS_PENDING; no simulation or builder-as-grasp claim.
 - [ ] Queue independent tests then write G2 actual hold/slip acceptance from independent force/energy equations. Full folding depends on B2/S2; simple no-self-contact finite hold can precede them.
+
 
 ## Task I: one integrated execution and delivery queue
 
-- [ ] Observe current Task3 interpret/CUDA completion and explicit resource/index release; do not duplicate its already completed validation.
+- [x] Observe current Task3 interpret/CUDA completion and explicit resource/index release; do not duplicate its already completed validation.
 - [ ] Parent original Task4 evidence/build/outsidewheel/newhead exact CI remains first delivery gate.
 - [ ] Merge reviewed code checkpoints only into the isolated integration branch; no existing source/version evidence silently relabeled.
 - [ ] Grant one queued B1/S1/G1 test group at a time with immutable hash, fresh basetemp/rawexit, revoke after natural completion. Dependency installation also uses queue.

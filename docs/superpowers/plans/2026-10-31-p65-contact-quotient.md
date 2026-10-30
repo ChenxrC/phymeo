@@ -8,7 +8,7 @@
 
 **Spec:** [Frozen algebra contract](../specs/2026-10-31-p65-contact-quotient-design.md).
 
-**Global Constraints:** Existing original B2 owner only, four NEW paths, code/test authoring only until separate serial grant. S2 retains the sole execution slot. No helpers/reviewers, old-source changes, parent merge, imports/probes/tests/lint/formatter/build/native or remote action. Complete P6.5 remains open.
+**Global Constraints:** Existing original B2 owner only, four NEW paths. Authoring is complete and the separate focused serial grant is now active after S2 formal release and parent acceptance. Only the grant permits imports/scoped static/full new host tests and same-run auditing. No helpers/reviewers, old-source changes, parent merge, build/native or remote action. Complete P6.5 remains open.
 
 **Review Focus:** Complete exact nullspace and all owner rows; full positive W; strict H conditioning; bit/operation bounds with no bypass; independent verification of altered evidence; off-range and cross-term behavior; no physical pressure or energy-credit claim.
 
@@ -35,9 +35,17 @@
 
 ## Task 4: Parent acceptance after separate serial grant
 
-- [ ] Parent audit exact authored four-path diff and saved hashes, then freeze a focused validation grant after S2 formal release.
+- [x] Parent audit exact authored four-path diff and saved hashes, then freeze a focused validation grant after S2 formal release.
 - [ ] Original owner performs first environment/import, scoped static and complete new host file serially, with original first outcomes retained.
 - [ ] Diagnose any failure within allowlist and unchanged mathematics; finalize raw exits/source/evidence/clean/process release.
 - [ ] Parent accepts only the standalone algebra scope. Ordinary-mass nonlinear contact success proofs and shared physical integration remain required.
 
 Authoring checkpoint7673f670 was received and text/hash audited by the parent; Tasks1-3 above mean authored completion only. Task4 and all executable results remain pending. The prepared validation selection is not yet activated because S2 retains the sole slot.
+
+
+The parent has now verified S2's final release and integrated its accepted
+response as1396df42e16d057d3ed939b7fa6aafe08f42ea6e. The previously prepared
+task-1-quotient-validation-grant.md is activated for the original B2 owner on
+clean authoring report7673f670. Task4's first prerequisite is complete; all
+quotient executable results and final acceptance remain pending. No parent
+merge or old physical suite is part of this focused grant.

@@ -40,12 +40,12 @@ Files: exact fifteen NEW paths in spec section6. Input: accepted S1/LG public in
 - [x] Implement public replay/terminal binding and selected-pre match, original-input physical balance and atomic history/lifecycle. Reject unsupported material/composite/v2 until parent typed dispatch exists.
 - [x] Include same-run full evidence capture and late-fault/retry controls; no new sample solely for reports.
 - [x] Read allowed diff, commit small logical units then both reports at CODE_READY_TESTS_PENDING with hashes/authored nodes/support limits. No executable action until the parent's separate grant after B2 release.
-- [ ] Under later serial grant: scoped static, all five new host files, complete actual interpret then CUDA, one bounded C++ control; no skip/fallback, no old LG69 rerun. Preserve actual first outcomes and repair only demonstrated allowed defects.
-- [ ] Produce exact final receipts/source hash/clean/process0 release. Parent checks saved evidence before merge.
+- [x] Under later serial grant: scoped static, all five new host files, complete actual interpret then CUDA, one bounded C++ control; no skip/fallback, no old LG69 rerun. Preserve actual first outcomes and repair only demonstrated allowed defects.
+- [x] Produce exact final receipts/source hash/clean/process0 release. Parent checks saved evidence before merge.
 
 ## Task C: parent stage integration after accepted checkpoints
 
-- [ ] Independently match raw versions and evidence, integrate tested adapter/response without relabeling B2 v1 failure or old host evidence.
+- [x] Independently match raw versions and evidence, integrate tested adapter/response without relabeling B2 v1 failure or old host evidence.
 - [ ] Freeze typed B2 internal-contact ledger integration and subsequent rotating/incident lawful-fold model; these are not satisfied by A/B/C.
 - [ ] Complete full material/mesh/h/perturbation/rebuild/failure gates and one fresh integrated-stage review/local wheel. Remote remains deferred and P6.5 remains active.
 
@@ -56,3 +56,22 @@ Task B must implement and test spec R2 actual phase capacity witnesses and nonca
 Task B authoring receipt7f68bdea32cc816352a5cfbd839c1eec532d3b65 is complete under R1/R2, parent13 source/test hashes and2 reports verified. Checked authoring boxes mean written, not validated. Original S2 now owns sole local validation under task-2-response-validation-grant.md; child dependency mergeee6370a preserved authored bytes and accepted adapter. Test and final release boxes remain unchecked. Parent/B2 perform no concurrent executable work. Earlier code-only text is historical.
 
 Task B host18 passed136tests/2193.93s/RAW_EXIT0 and actual interpret27 passed80tests/1565.79s/RAW_EXIT0 on unchangedbcf4c1d; parent verified raw receipts and328 source hashes. Current scoped static and native preflight are0. Host audit28 passed78windows/1434steps/39 complete rebuilt pairs; corrected interpret audit31 passed79windows/1435steps/39 complete pairs plus one interpret-mode bounded control. Preserve observer19/30 grouping errors, unexecuted v2 and launch-only guards. V4 changes native C directory interpretation only and keeps exact typed timing normalization. Full CUDA32 is running from03:26:31+08 with no total exit. Parent's limited R2 contraction hand proof is documented separately; no physical rerun, new reviewer or support expansion. BoundedCPP, final saved audits/reports and formal release remain required; the combined validation/release checklist stays unchecked.
+
+
+## Accepted response checkpoint after formal release
+
+Task B and Task C's first integration item are complete in the frozen restricted
+domain: testedbcf4c1d, reportf504f53, normal parent merge1396df42e16d057d3ed939b7fa6aafe08f42ea6e.
+Host136/interpret80/CUDA80/boundedCPP1 all exited0. Saved audits verified complete
+payloads for39 fixed two-run rebuild pairs per full mode; the separate CPP
+control contains one step. Parent checked15 delivered files,13787 evidence
+hashes and28 exits, preserved originals, archived13789 files and verified all15
+merged Git blobs. No physical/static/saved-audit repetition was performed.
+See parent s2-response-final-evidence-audit-01.json and
+s2-response-merge-byte-parity-01.json under artifacts/p65-parallel-parent-audits.
+
+All initial failures and restricted R1/R2/Gamma semantics remain versioned.
+Loaded noncollinear ties, lawful incident folds, rotating loaded continuation,
+typed B2 joint energy/contact integration and whole-stage review/wheel are not
+closed by this acceptance. Original B2 now receives the sole focused quotient
+validation grant; S2 is released and no other executable work may overlap it.

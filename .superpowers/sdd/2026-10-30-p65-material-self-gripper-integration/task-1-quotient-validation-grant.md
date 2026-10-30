@@ -1,10 +1,21 @@
-# B2 quotient focused serial validation: prepared selection
+# B2 quotient focused serial validation: active grant
 
-Status: PREPARED_NOT_GRANTED. This document records the exact next selection only.
-S2 remains the sole serial execution owner. It is not permission to launch now or
-to take the slot automatically after an observed idle process list. Parent must
-first verify S2's formal release and send the original B2 owner its activation.
-No further human permission is required by the already authorized P6.5 work.
+Status: GRANTED_SOLE_SERIAL_VALIDATION. Parent verified S2's formal clean/process0
+release, independently accepted its saved evidence and integrated it normally as
+1396df42e16d057d3ed939b7fa6aafe08f42ea6e. The original B2 owner now receives this
+sole focused validation slot when the parent followup is delivered. No further
+human permission is required by the already authorized P6.5 work.
+
+S2 testedbcf4c1d/reportf504f53 released at2026-10-31T05:15:13.2335973+08:00.
+Parent audited15 delivered files,13787 evidence hashes and28 raw exits with zero
+mismatch; the exact archive contains13789 files including the manifest and its sidecar. Evidence is preserved under
+artifacts/p65-s2-response-local-7f68bde-serial; originals remain in Temp.
+Parent receipts are s2-response-final-evidence-audit-01.json and
+s2-response-merge-byte-parity-01.json under artifacts/p65-parallel-parent-audits.
+All15 merged Git blobs and13 product working byte hashes match the tested
+delivery; report checkout newlines are separately recorded. Parent and S2 must
+not run executable checks while original B2 holds this grant. A fresh global
+execution inventory is still required immediately before B2 starts.
 
 ## Immutable authored starting point
 

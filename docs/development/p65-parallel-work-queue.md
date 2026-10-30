@@ -39,3 +39,9 @@ No executable-validation slot is currently granted. All B1/S1/G1 focused suites 
 - Parent owns docs/development/p65-g2-gripper-proposal.md in this integration tree: closed support/slip and initially open finite-force capture/hoist derived from a shared6kg carriage mass. All expressions are proposed independent oracles, not observed trajectory results.
 
 The parent will combine and resolve these proposals, freeze public interfaces/units/support/ownership/independent cases and test selections, obtain the single design check for that new integration contract, then resume parallel independent code with serial execution. Do not repeat the earlier foundation builder or closed thick-friction fresh review. Shared seams remain parent-owned. The adjacent-prism overlap issue must be resolved explicitly before claiming folded-cloth self-contact; neither blanket incident-face exclusion nor always-reject is complete support.
+
+## Next-wave proposal receipt and builder checkpoint
+
+B2 proposal fda3a5c and S2 proposal82fcc60 are complete, clean and released; parent integrated only their document commits as866c059/835fd8f. They are not active tests or finished new capabilities. G2 proposal8af482e now includes a third, material-active independent control C; all A/B/C equations remain unexecuted predictions.
+
+Parent draft contract c7db9a3 is docs/superpowers/specs/2026-10-30-p65-material-self-gripper-integration-design.md. One new builder p65_material_self_gripper_builder is reviewing that specific next-wave contract, read-only, with no execution grant or helpers. The old foundation builder/reviews remain closed. Proposed parallel code lanes are B2-M composite material, S2-LG pair geometry/CCD and parent G2-P actual finite grasp. Full S2 response/conforming incident material and final combined folded cloth remain explicitly open. No lane is granted implementation until this single check is resolved and final contract recorded.

@@ -1,0 +1,11 @@
+# S2-FG geometry authoring report
+
+Status: AUTHORING_IN_PROGRESS; all source/test execution UNEXECUTED. Starting c35a13a645bc68e912d390779ec29732ef07b644. Authority: parent frozen geometry design at825f7ec14e9448518d6d5f3b77082c0a79697e9d, SHA256f3e5295a5a553e1b876b1b946a9eb6b465997c9bd58e1c5559798e8ad3a7776d, its matching plan, parent adjudication and task-2-conforming-shell-geometry-brief. All read by absolute parent path; no merge.
+
+Tests in all six allowed new test files were authored before any production source. This is test-first AUTHORING, not observed TDD RED/GREEN. No imports, collection, probes, lint, format, build, native commands, helpers or reviewer ran. The explicit task forbids them and overrides generic skill execution/reviewer steps. This report is the allowed progress ledger; no extra skill workspace files are created.
+
+Preflight interfaces: constraints supply immutable topology/policy/address; low-level intervals supply one metered counter and scalar/vector/polynomial operations; director and static/sweep modules consume those; validation independently reconstructs topology, reference coverage and J using only shared low-level arithmetic/types, never producer high-level routines. Reference chart re-establishment and cell proofs share one counter per certificate invocation. F1 whole-window and every original substep are authored with two fresh rebuilds and all four transformations. F2 tests are map/reaction algebra only.
+
+Planned receipt fields: immutable Publication(intervals, values, errors, shape); material point(canonical_address,node_ids,point,jacobian,binding,reference_id,policy,bits); geometry(areas,sums,directors,offsets,lifted,domain,director_publication,lifted_publication plus binding/schema/precision/status); reference witness(charts,gradients,separators); cell(start,end,bits,domain,tetrahedra,components,separators,pair_incidence,k_max); sweep(cells,tree); TimeCell(start,end,depth,accepted). Final exact dataclass fields and complete hashes will replace this progress section at handoff.
+
+Progress: six tests authored, zero production files yet. All fourteen paths confirmed absent before writing. No change to old sources/tests/exports/proposals/reports/runtime/pins.

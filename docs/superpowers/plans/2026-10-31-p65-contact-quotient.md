@@ -14,24 +14,24 @@
 
 ## Task 1: Author the independent contract tests
 
-- [ ] Read spec and original proposal/adjudication from the parent absolute tree.
-- [ ] Verify original B2 branch is clean at its documentation release; preserve all existing history.
-- [ ] Create tests/test_contact_quotient.py with all ten control categories and fixed rational oracles. Keep all tests unexecuted.
-- [ ] Commit test authoring with explicit UNEXECUTED status; no fabricated RED.
+- [x] Read spec and original proposal/adjudication from the parent absolute tree.
+- [x] Verify original B2 branch is clean at its documentation release; preserve all existing history.
+- [x] Create tests/test_contact_quotient.py with all ten control categories and fixed rational oracles. Keep all tests unexecuted.
+- [x] Commit test authoring with explicit UNEXECUTED status; no fabricated RED.
 
 ## Task 2: Implement the standalone certificate
 
-- [ ] Create src/phymeo/validation/contact_quotient.py with exact owned inputs and checked resource policy.
-- [ ] Implement deterministic exact elimination, complete nullspace and independent W/H positive-LDL proofs.
-- [ ] Implement generator, full cross-term decomposition, explicit remainder and uncertainty.
-- [ ] Implement independent verifier with all bindings/identities and mutation rejection. No producer call inside verifier.
-- [ ] Check source text against allowlist/domain without executing it; commit implementation.
+- [x] Create src/phymeo/validation/contact_quotient.py with exact owned inputs and checked resource policy.
+- [x] Implement deterministic exact elimination, complete nullspace and independent W/H positive-LDL proofs.
+- [x] Implement generator, full cross-term decomposition, explicit remainder and uncertainty.
+- [x] Implement independent verifier with all bindings/identities and mutation rejection. No producer call inside verifier.
+- [x] Check source text against allowlist/domain without executing it; commit implementation.
 
 ## Task 3: Hand off immutable authored evidence
 
-- [ ] Write docs/development/p65-contact-quotient-report.md and current SDD task-1-quotient-report.md, both CODE_READY_TESTS_PENDING.
-- [ ] Record exact public names/fields, four paths/hashes, authored nodes, resource limits and physical limitations.
-- [ ] Commit both reports, confirm clean Git and report handoff to parent. Do not take an execution slot.
+- [x] Write docs/development/p65-contact-quotient-report.md and current SDD task-1-quotient-report.md, both CODE_READY_TESTS_PENDING.
+- [x] Record exact public names/fields, four paths/hashes, authored nodes, resource limits and physical limitations.
+- [x] Commit both reports, confirm clean Git and report handoff to parent. Do not take an execution slot.
 
 ## Task 4: Parent acceptance after separate serial grant
 
@@ -39,3 +39,5 @@
 - [ ] Original owner performs first environment/import, scoped static and complete new host file serially, with original first outcomes retained.
 - [ ] Diagnose any failure within allowlist and unchanged mathematics; finalize raw exits/source/evidence/clean/process release.
 - [ ] Parent accepts only the standalone algebra scope. Ordinary-mass nonlinear contact success proofs and shared physical integration remain required.
+
+Authoring checkpoint7673f670 was received and text/hash audited by the parent; Tasks1-3 above mean authored completion only. Task4 and all executable results remain pending. The prepared validation selection is not yet activated because S2 retains the sole slot.

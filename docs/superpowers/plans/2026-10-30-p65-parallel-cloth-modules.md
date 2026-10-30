@@ -40,7 +40,7 @@ Files/interfaces exactly spec S1. Reuse existing public TriangleOffsetPointPort 
 - [x] Implement immutable topology, exact-rational conservative candidate filtering, and public same-domain offset attachment composition.
 - [x] Self-read preservation of affine-path bound and distinction between candidate and collision certification.
 - [x] Commit allowlisted files with CODE_READY_TESTS_PENDING and report S2 proof gaps explicitly.
-- [ ] Current sole execution grant assigned to the original S1 agent after B1 release; full focused candidate/operator checks pending. After evidence/clean/process0 release, freeze S2 multi-normal geometry/CCD/response contract; no silent reuse of one-Q field for two independent roots.
+- [x] S1 serial validation complete: final80/80 at9a26fc7, report5056ce8, lint/format0 and formal clean/process0 release. Parent audited and integrated exact Git blobs, retaining separate LF/CRLF raw hashes. S2 multi-normal geometry/CCD/response contract remains an open downstream task.
 
 
 ## Task G1: finite jaw module code
@@ -49,15 +49,15 @@ Files/interfaces exactly spec G1; implemented by parent while coding slots are o
 - [x] Implement 3-prismatic massive carriage/two-finger RobotModel builder and finite patches.
 - [x] Author independent FK/input-limit/ownership/invalid-configuration tests.
 - [x] Commit as CODE_READY_TESTS_PENDING; no simulation or builder-as-grasp claim.
-- [ ] Queue independent tests then write G2 actual hold/slip acceptance from independent force/energy equations. Full folding depends on B2/S2; simple no-self-contact finite hold can precede them.
+- [x] G1 independent builder/input tests complete: first28/28, final28/28 at a16bf4a; final lint/format0 and formatting-only AST equality. G2 hold/slip acceptance from independent force/energy equations remains open; full folding depends on B2/S2, while no-self-contact finite hold can precede them.
 
 
 ## Task I: one integrated execution and delivery queue
 
 - [x] Observe current Task3 interpret/CUDA completion and explicit resource/index release; do not duplicate its already completed validation.
 - [x] Parent original Task4 local evidence/build/outsidewheel/push complete; remoteCI gate explicitly deferred by user, historical3success/5timeout retained.
-- [ ] Integrate audited code checkpoints only into the isolated integration branch; B1 merged atc886551 with its tested files preserved, S1 and G1 validation still pending. No existing source/version evidence silently relabeled.
-- [ ] Grant one queued B1/S1/G1 test group at a time with immutable hash, fresh basetemp/rawexit, revoke after natural completion. Dependency installation also uses queue.
+- [x] B1 and S1 audited checkpoints integrated into the isolated parent branch; G1 tested there. Source/evidence versions and LF/CRLF working hashes remain explicit. No old suite rerun or existing evidence relabeled.
+- [x] B1 then S1 then G1 completed one execution slot at a time, with immutable tested hashes, fresh basetemps/rawexits and natural process closure. No installation or native run occurred.
 - [ ] Freeze B2 composite material/native trace, S2 complete contact/CCD and G2 real load-bearing contracts with their own independent cases, using reviewed B1/S1/G1 APIs.
 - [ ] Code independent portions concurrently, shared seams by parent only. All tests and physical execution serial.
 - [ ] Run integrated current-source hold/slip/fold/transaction and backend gates, one fresh review of the new integration, and packaging. Remote full CI is explicitly deferred by the user to a future machine and is not a local prerequisite or a passing claim. H2/P6.5 remain open until their entire acceptance is met under the current user policy.

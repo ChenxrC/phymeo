@@ -1,6 +1,6 @@
 # P6.5 parallel cloth modules: isolated code, serial verification
 
-Status: first parallel module contracts frozen after the one new builder check and parent rulings, 2026-10-30. The human explicitly approved parallel module coding and serial tests because of resource limits. This changes scheduling, not physics or acceptance. Original checkout Task3 and its pending exact CI keep their frozen source. New modules live in isolated managed worktrees from 144656141959483ce577fc0a9e476d235f031305.
+Status: first parallel module contracts frozen after the one new builder check and parent rulings, 2026-10-30. The human explicitly approved parallel module coding and serial tests because of resource limits. This changes scheduling, not physics or acceptance. Historical Task3 source/evidence remains frozen. Latest user policy50a5eeb defers remote CI; B1/S1/G1 foundation checks have now passed serially, with the current queue in docs/development/p65-parallel-work-queue.md. New modules live in isolated managed worktrees from 144656141959483ce577fc0a9e476d235f031305.
 
 ## Decision and architecture
 
@@ -16,10 +16,10 @@ The first parallel checkpoints below are useful production building blocks, not 
 - Integration worktree C:/Users/38347/.codex/worktrees/p65-parallel-integration/phymeo, branch codex/p65-parallel-modules, belongs to parent.
 - Each coding agent creates/uses its own managed worktree at the frozen contract commit, owns only the allowlisted new files, and commits only there. No push, helpers, other-worktree edits or old shared source edits.
 - Test execution, numerical probes, imports that execute physics, compilation/build, native backend checks, performance runs and wheel smoke require an explicit parent queue grant. NO background competing runs. Code reading/writing and Git operations may proceed concurrently.
-- Currently queue owner is original Task3 CUDA89050; after it releases, parent Task4 packaging/exact CI closure remains current delivery priority. Module agents return code and written tests with status CODE_READY_TESTS_PENDING.
+- Original Task3/4 and the B1/S1/G1 foundation execution queue have completed. CODE_READY_TESTS_PENDING was their original authored-code state, not their current verification result. B2/S2/G2 design/implementation remains next; every future execution still requires the sole queue grant.
 - Parent selects one immutable source per queue entry, fresh basetemp, raw exit, command/backend/pin manifest, and closes its resources before granting the next entry. Any changed source invalidates only affected evidence, with rationale.
 - Keep all eight CPU CI cells, timeout30, test/example/required/fail-fast commands and dependency pins unchanged. No current CI rerun against an unchanged failed head.
-- No new code merged/pushed into the delivery branch before current thick-friction cost repair passes its accurate CI gate. Parallel worktree coding is explicitly permitted before that gate.
+- Latest direct user policy defers remote CI and permits local progress. Keep unverified work isolated; preserve completed local tests/audits and original remote failures without relabeling them. New integration stays on its dedicated branch; no main merge or package release.
 
 ## Shared contracts
 
@@ -110,4 +110,4 @@ B1-B5 were resolved without new user decisions because user already approved thi
 - Independent prism normals require a separate number-field/interval proof and symmetric normal-selection rule. Old patch-face priority and single-Q arithmetic cannot be silently reused.
 - G1 finite prismatic geometry does not publish controller predictions as state. Initial simple finite hold can precede self-contact completion, but real load-bearing, folding, general-robot support and complete P6.5 remain separate acceptance gates.
 
-Current scripts/tests are deferred by the user's scheduling instruction. A code checkpoint is explicitly unverified, not a passing product or closed stage.
+The original code checkpoints were explicitly unverified. B1/S1/G1 foundation tests have since passed under serial grants; their versioned lane reports define exactly that evidence. Full integrated physics and P6.5 remain open.

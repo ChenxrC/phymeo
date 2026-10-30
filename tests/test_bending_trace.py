@@ -15,17 +15,18 @@ from phymeo.core.capabilities import SolverFailure
 
 
 def case():
-    x = np.array(
-        [[0.0, 0, 0], [1.0, 0, 0], [0.0, 1, 0], [0.0, -1, -0.4], [1.1, 1.2, 0.5]]
-    )
+    x = np.array([[0.0, 0, 0], [1.0, 0, 0], [0.0, 1, 0], [0.0, -1, -0.4], [1.1, 1.2, 0.5]])
     constraints = BendingConstraints(
         np.array([[0, 1, 2, 3], [1, 2, 0, 4]], dtype=np.int64),
         np.array([-0.1, 0.2]),
         np.array([0.04, 0.07]),
     )
     return (
-        x, np.array([1.0, 0.5, 2.0, 0.8, 1.5]), constraints,
-        np.array([0.8, 1.1]), np.array([0.03, -0.02]),
+        x,
+        np.array([1.0, 0.5, 2.0, 0.8, 1.5]),
+        constraints,
+        np.array([0.8, 1.1]),
+        np.array([0.03, -0.02]),
     )
 
 
@@ -166,9 +167,10 @@ def test_trace_owns_all_arrays_across_input_mutation_and_another_sweep():
     x, w, constraints, alpha, lam = case()
     traces = project_bending(x, w, constraints, alpha, lam)
     snapshots = [
-        tuple(getattr(trace, name).copy() for name in (
-            "node_indices", "positions_before", "positions_after", "gradient"
-        ))
+        tuple(
+            getattr(trace, name).copy()
+            for name in ("node_indices", "positions_before", "positions_after", "gradient")
+        )
         for trace in traces
     ]
     project_bending(x, w, constraints, alpha, lam)
@@ -191,15 +193,19 @@ def test_trace_owns_all_arrays_across_input_mutation_and_another_sweep():
 @pytest.mark.parametrize(
     "replacement",
     [
-        {"element_index": -1}, {"element_index": True},
+        {"element_index": -1},
+        {"element_index": True},
         {"node_indices": np.array([0, 1, 2, 2])},
         {"node_indices": np.array([0.0, 1, 2, 3])},
         {"positions_before": np.zeros((3, 3))},
         {"positions_after": np.zeros((4, 3), np.float32)},
         {"gradient": np.full((4, 3), np.nan)},
-        {"theta_before": pi}, {"constraint_after": -pi},
-        {"lambda_after": np.inf}, {"alpha": 0.0},
-        {"denominator": 0.0}, {"branch_status": "safe"},
+        {"theta_before": pi},
+        {"constraint_after": -pi},
+        {"lambda_after": np.inf},
+        {"alpha": 0.0},
+        {"denominator": 0.0},
+        {"branch_status": "safe"},
     ],
 )
 def test_malformed_trace_rejected_without_claiming_valid_evidence(replacement):
@@ -210,10 +216,27 @@ def test_malformed_trace_rejected_without_claiming_valid_evidence(replacement):
 
 @pytest.mark.parametrize(
     "bad",
-    ["position_dtype", "position_shape", "position_nan", "mass_dtype", "mass_shape",
-     "negative_mass", "mass_inf", "alpha_dtype", "alpha_shape", "alpha_zero", "alpha_nan",
-     "lambda_dtype", "lambda_shape", "lambda_inf", "index_bound", "position_readonly",
-     "lambda_readonly", "alias_alpha_lambda", "alias_position_mass"],
+    [
+        "position_dtype",
+        "position_shape",
+        "position_nan",
+        "mass_dtype",
+        "mass_shape",
+        "negative_mass",
+        "mass_inf",
+        "alpha_dtype",
+        "alpha_shape",
+        "alpha_zero",
+        "alpha_nan",
+        "lambda_dtype",
+        "lambda_shape",
+        "lambda_inf",
+        "index_bound",
+        "position_readonly",
+        "lambda_readonly",
+        "alias_alpha_lambda",
+        "alias_position_mass",
+    ],
 )
 def test_invalid_sweep_inputs_never_publish_mutations(bad):
     x, w, constraints, alpha, lam = case()

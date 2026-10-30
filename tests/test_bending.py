@@ -48,9 +48,7 @@ def centered_gradient(function, nodes, step=2e-6):
 
 
 def sheet_case():
-    x = np.array(
-        [[0.0, 0, 0], [1.0, 0, 0], [0.0, 1, 0], [0.0, -1, -0.4], [1.1, 1.2, 0.5]]
-    )
+    x = np.array([[0.0, 0, 0], [1.0, 0, 0], [0.0, 1, 0], [0.0, -1, -0.4], [1.1, 1.2, 0.5]])
     constraints = BendingConstraints(
         np.array([[0, 1, 2, 3], [1, 2, 0, 4]], dtype=np.int64),
         np.array([-0.1, 0.2]),
@@ -84,9 +82,7 @@ def test_positive_right_angle_and_energy_have_independent_exact_values():
     assert bending_energy(x, one_hinge()) == pytest.approx(pi**2 / 16, rel=2e-15)
 
 
-@pytest.mark.parametrize(
-    "order, sign", [([0, 1, 3, 2], -1), ([1, 0, 2, 3], -1), ([1, 0, 3, 2], 1)]
-)
+@pytest.mark.parametrize("order, sign", [([0, 1, 3, 2], -1), ([1, 0, 2, 3], -1), ([1, 0, 3, 2], 1)])
 def test_face_and_edge_orientation_transform_consistently(order, sign):
     x = flat_hinge()
     x[3] = [0.2, -0.7, -0.5]
@@ -262,8 +258,14 @@ def test_empty_sweep_has_no_trace_and_zero_energy_or_residual():
 
 @pytest.mark.parametrize(
     "positions",
-    [np.zeros((3, 3)), np.zeros((4, 2)), np.zeros((4, 3), np.float32),
-     np.zeros((4, 3), np.int64), np.full((4, 3), np.nan), [[0.0] * 3] * 4],
+    [
+        np.zeros((3, 3)),
+        np.zeros((4, 2)),
+        np.zeros((4, 3), np.float32),
+        np.zeros((4, 3), np.int64),
+        np.full((4, 3), np.nan),
+        [[0.0] * 3] * 4,
+    ],
 )
 def test_angle_rejects_invalid_position_shape_dtype_and_storage(positions):
     with pytest.raises((TypeError, ValueError)):

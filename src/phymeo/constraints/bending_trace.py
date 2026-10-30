@@ -72,18 +72,31 @@ class BendingProjectionTrace:
         for name in ("positions_before", "positions_after", "gradient"):
             object.__setattr__(self, name, _owned_float64(getattr(self, name), name, (4, 3)))
         for name in (
-            "theta_before", "theta_after", "constraint_before", "constraint_after",
-            "lambda_before", "lambda_after", "delta_lambda", "alpha", "denominator",
+            "theta_before",
+            "theta_after",
+            "constraint_before",
+            "constraint_after",
+            "lambda_before",
+            "lambda_after",
+            "delta_lambda",
+            "alpha",
+            "denominator",
         ):
             object.__setattr__(self, name, finite_real(getattr(self, name), name))
         if self.alpha <= 0 or self.denominator < self.alpha:
             raise ValueError("alpha must be positive and denominator must be at least alpha")
         if self.branch_status != "smooth":
             raise ValueError("branch_status must be smooth for a published trace")
-        if any(
-            abs(value) >= np.pi
-            for value in (
-                self.theta_before, self.theta_after, self.constraint_before, self.constraint_after
+        if (
+            any(
+                abs(value) >= np.pi
+                for value in (
+                    self.theta_before,
+                    self.theta_after,
+                    self.constraint_before,
+                    self.constraint_after,
+                )
             )
-        ) or abs(self.theta_after - self.theta_before) >= np.pi:
+            or abs(self.theta_after - self.theta_before) >= np.pi
+        ):
             raise ValueError("trace endpoints must lie on the supported smooth branch")

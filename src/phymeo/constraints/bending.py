@@ -198,8 +198,13 @@ def project_bending(
     _writable_storage(position, "position")
     _writable_storage(multipliers, "multipliers")
     inputs = (
-        position, multipliers, inverse_mass, alpha, constraints.indices,
-        constraints.rest_angle, constraints.compliance,
+        position,
+        multipliers,
+        inverse_mass,
+        alpha,
+        constraints.indices,
+        constraints.rest_angle,
+        constraints.compliance,
     )
     for i in range(2):
         if any(np.shares_memory(inputs[i], other) for other in inputs[i + 1 :]):
@@ -219,9 +224,7 @@ def project_bending(
                 if not np.isfinite(denominator) or denominator <= 0:
                     raise SolverFailure("bending denominator is not representable")
                 old_lambda = float(trial_lambda[k])
-                delta_lambda = float(
-                    (-constraint_before - alpha[k] * old_lambda) / denominator
-                )
+                delta_lambda = float((-constraint_before - alpha[k] * old_lambda) / denominator)
                 new_lambda = old_lambda + delta_lambda
                 after = before.copy()
                 mobile = weights > 0

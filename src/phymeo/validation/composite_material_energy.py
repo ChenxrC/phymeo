@@ -17,7 +17,7 @@ class CompositeMaterialEnergyLedger:
         self.h, self.policy, self.budgets, self.tolerance = q(h), policy, budgets, q(tolerance)
         if self.h <= 0 or self.tolerance < 0:
             raise ValueError("invalid physical audit time/tolerance")
-        self.material_id = material.identity
+        self.material_id, self.model_id = material.identity, fingerprint(model)
 
     def _energy(self, state):
         x, v = matrix(state.position), matrix(state.velocity)
@@ -29,7 +29,7 @@ class CompositeMaterialEnergyLedger:
 
     def require(self, final, *, selected_pre=None, external=None, held_requests=None,
                 terminal_requests=None, effective_inputs=None, internal_boundary=False):
-        if self.material.identity != self.material_id:
+        if self.material.identity != self.material_id or fingerprint(self.model) != self.model_id:
             raise SolverFailure("physical ledger material identity changed")
         n = self.model.particle_count
         held = np.zeros((n, 3)) if held_requests is None else np.asarray(held_requests)
@@ -92,7 +92,9 @@ class CompositeMaterialEnergyLedger:
             raise SolverFailure("composite physical energy gain budget exceeded")
         if angular_l1 > q(self.budgets.max_angular_defect_nms):
             raise SolverFailure("composite NUM005 angular defect budget exceeded")
-        return dict(raw_energy_defect=raw.floats(), external_transfer_work=float(held_work + terminal_work),
+        return dict(kinetic_before=float(before[0]), kinetic_after=float(after[0]),
+                    gravity_before=float(before[1]), gravity_after=float(after[1]),
+                    raw_energy_defect=raw.floats(), external_transfer_work=float(held_work + terminal_work),
                     held_transfer_work=float(held_work), terminal_transfer_work=float(terminal_work),
                     original_input_work=float(work), unexplained_defect=unexplained.floats(),
                     positive_energy_gain=interval_float((max(q(0), unexplained.high),) * 2)[1],
@@ -100,7 +102,8 @@ class CompositeMaterialEnergyLedger:
                     angular_l1=interval_float((angular_l1, angular_l1))[1],
                     linear_defect=tuple(interval_float((v, v)) for v in linear),
                     input_response_error=float(force_error), terminal_response_error=float(terminal_error),
-                    elastic_before=before[2].floats(), elastic_after=after[2].floats())
+                    elastic_before=before[2].floats(), elastic_after=after[2].floats(),
+                    frozen_power=material_power_bounds(self.model, self.material, final, policy=self.policy))
 
 
 def require_material_window(reports, budgets):
@@ -117,3 +120,42 @@ def require_material_window(reports, budgets):
         raise SolverFailure("composite whole-window physical budget exceeded")
     return dict(positive_energy_sum=interval_float((energy, energy))[1],
                 angular_l1_sum=interval_float((angular, angular))[1])
+
+
+def material_power_bounds(model, material, state, *, policy):
+    """Independent frozen-state conservative force, moment and dU/dt bounds."""
+    from .bending_bounds import bending_bounds, sqrt_interval
+    force = [[Interval.point(0) for _ in range(3)] for _ in state.position]
+    if material.distance is not None:
+        for ids, rest, compliance in zip(material.distance.indices, material.distance.rest_length,
+                                          material.distance.compliance, strict=True):
+            if compliance == 0:
+                continue
+            i, j = map(int, ids)
+            delta = [q(state.position[i, c]) - q(state.position[j, c]) for c in range(3)]
+            length = sqrt_interval(dot(delta, delta), policy.sqrt_bits)
+            if length.low == 0:
+                if rest != 0:
+                    return dict(status="undefined-distance-cusp")
+                continue
+            coefficient = -(length - q(rest)) / q(compliance)
+            for c in range(3):
+                contribution = coefficient * delta[c] / length
+                force[i][c] += contribution
+                force[j][c] -= contribution
+    if material.bending is not None:
+        for ids, rest, compliance in zip(material.bending.indices, material.bending.rest_angle,
+                                          material.bending.compliance, strict=True):
+            bounded = bending_bounds(state.position[ids], rest, compliance, policy=policy)
+            for local, node in enumerate(ids):
+                for c in range(3):
+                    force[node][c] -= bounded.constraint / q(compliance) * bounded.gradient[local][c]
+    resultant = [sum((row[c] for row in force), Interval.point(0)) for c in range(3)]
+    moments = [cross(tuple(map(q, x)), f) for x, f in zip(state.position, force, strict=True)]
+    moment = [sum((row[c] for row in moments), Interval.point(0)) for c in range(3)]
+    power = sum((dot(f, tuple(map(q, v))) for f, v in zip(force, state.velocity, strict=True)), Interval.point(0))
+    return dict(status="bounded-smooth", force=tuple(tuple(v.floats() for v in row) for row in force),
+                resultant=tuple(v.floats() for v in resultant), moment=tuple(v.floats() for v in moment),
+                conservative_power=power.floats(), elastic_rate=(-power).floats())
+
+

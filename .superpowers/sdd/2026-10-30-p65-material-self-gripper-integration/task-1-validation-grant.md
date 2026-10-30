@@ -17,11 +17,11 @@ Retain the first post-code result; code-first authorization never implies histor
    - tests/test_material_ledger.py::test_angular_loss_is_reported_as_material_discrete_contribution
    - tests/test_initial_robot_material.py::test_fixed_angular_budget_rejects_coarse_rotating_material
    - tests/test_load_replay.py::test_p_zero_p_uses_original_time_state_and_inputs
+   - tests/test_load_replay.py::test_actual_xpbd_hidden_multipliers_are_rebuilt_for_each_trial
 5. Direct actual consumers in interpret then cuda:
    - tests/test_tyx_material_path.py::test_actual_rotating_edge_keeps_original_discrete_loss
    - tests/test_tyx_participants.py::test_cloth_workspace_uses_ordered_constraints_and_device_reconstruction
    - tests/test_tyx_participants.py::test_node_position_units_reconstruct_only_once_and_reject_bad_state
-   - tests/test_load_replay.py::test_actual_xpbd_hidden_multipliers_are_rebuilt_for_each_trial
 6. One bounded actual C++ smoke: tests/test_tyx_bending.py::test_actual_bending_first_sweep_and_launch_receipt --tyx-mode cpu_cpp --require-tyx. One projection/45-field trace/real launch; no lifetime or stress claim and no TYX003 closure.
 
 Read decorators/fixtures and freeze the exact grouping before executing consumers. If these legacy node names or mode scopes differ, report the exact read-only finding before inventing replacements. Steps 4-5 may be grouped with matching host/actual commands when valid, once per required mode. A real failure stops dependent work for diagnosis; record raw evidence and use systematic debugging, no blind retries.
@@ -29,3 +29,5 @@ Read decorators/fixtures and freeze the exact grouping before executing consumer
 ## Report and release
 
 Audit saved same-run state/history/trace/window data without extra physical sampling for reporting. Final exact source/evidence receipts, actual pass/exit/launch/FP32 results, full mathematical and scope limitations, small commits, clean tree and fresh process0 are required before formal release. Preserve NUM005 and unsupported nonsmooth distance-cusp derivatives explicitly. External transfer receipts apply only to standalone externally powered controls; they cannot excuse internal contact energy. Parent retains all shared ledger/contact/history dispatch ownership. S2 receives no slot until B2 releases.
+
+Parent classification ruling after read-only verification: test_actual_xpbd_hidden_multipliers_are_rebuilt_for_each_trial has no tyx_mode fixture and calls mixed_replay whose default is numpy. Execute it once as host, not once per native flag. The unchanged seven consumers are therefore four host plus three mode-bound actual nodes per interpret/CUDA. No replacement or relaxed coverage; new actual suites and bounded cpu_cpp remain required.

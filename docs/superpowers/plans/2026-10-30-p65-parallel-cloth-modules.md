@@ -29,7 +29,7 @@ Files/interfaces exactly spec B1. Read existing distance.py and distance_trace.p
 - [x] Implement immutable constraint data, angle/gradient/energy, transactional one-sweep projection and complete immutable trace.
 - [x] Self-read branch/degeneracy/error/ownership paths without executing code.
 - [x] Commit allowlisted files, label CODE_READY_TESTS_PENDING, report unresolved issues; no automatic test/build/CI.
-- [ ] After explicit queue grant only: original-baseline missing-capability evidence if still meaningful, then current tests. Do not label post-implementation evidence as historical TDD RED. Parent audits and schedules B2 native/composite integration.
+- [x] Explicit B1 queue grant completed: 98/98 first post-code host tests passed at8b6d935, final lint/format passed, report96cbf20 and clean/process0 release. Parent audited original exits, six input hashes and formatting-only diff, then mergedc886551 without rerunning tests. B2/native/composite integration remains a separate open task; no historical TDD RED claimed.
 
 
 ## Task S1: self-contact module code
@@ -40,7 +40,7 @@ Files/interfaces exactly spec S1. Reuse existing public TriangleOffsetPointPort 
 - [x] Implement immutable topology, exact-rational conservative candidate filtering, and public same-domain offset attachment composition.
 - [x] Self-read preservation of affine-path bound and distinction between candidate and collision certification.
 - [x] Commit allowlisted files with CODE_READY_TESTS_PENDING and report S2 proof gaps explicitly.
-- [ ] Run only with parent queue grant, then freeze S2 multi-normal geometry/CCD/response contract; no silent reuse of one-Q field for two independent roots.
+- [ ] Current sole execution grant assigned to the original S1 agent after B1 release; full focused candidate/operator checks pending. After evidence/clean/process0 release, freeze S2 multi-normal geometry/CCD/response contract; no silent reuse of one-Q field for two independent roots.
 
 
 ## Task G1: finite jaw module code
@@ -56,8 +56,8 @@ Files/interfaces exactly spec G1; implemented by parent while coding slots are o
 
 - [x] Observe current Task3 interpret/CUDA completion and explicit resource/index release; do not duplicate its already completed validation.
 - [x] Parent original Task4 local evidence/build/outsidewheel/push complete; remoteCI gate explicitly deferred by user, historical3success/5timeout retained.
-- [ ] Merge reviewed code checkpoints only into the isolated integration branch; no existing source/version evidence silently relabeled.
+- [ ] Integrate audited code checkpoints only into the isolated integration branch; B1 merged atc886551 with its tested files preserved, S1 and G1 validation still pending. No existing source/version evidence silently relabeled.
 - [ ] Grant one queued B1/S1/G1 test group at a time with immutable hash, fresh basetemp/rawexit, revoke after natural completion. Dependency installation also uses queue.
 - [ ] Freeze B2 composite material/native trace, S2 complete contact/CCD and G2 real load-bearing contracts with their own independent cases, using reviewed B1/S1/G1 APIs.
 - [ ] Code independent portions concurrently, shared seams by parent only. All tests and physical execution serial.
-- [ ] Run integrated current-source hold/slip/fold/transaction and backend gates, one fresh review of the new integration, packaging and accurate full CI. H2/P6.5 remain open until their entire acceptance is met.
+- [ ] Run integrated current-source hold/slip/fold/transaction and backend gates, one fresh review of the new integration, and packaging. Remote full CI is explicitly deferred by the user to a future machine and is not a local prerequisite or a passing claim. H2/P6.5 remain open until their entire acceptance is met under the current user policy.

@@ -1,3 +1,186 @@
+# B2-M serial validation result
+
+Status: **HOST_VERIFIED_NATIVE_REPRESENTATION_UNRESOLVED**.
+B2-M is **not accepted for native/composite delivery**. This releases the executable
+slot only; it does not complete B2 or waive its outstanding native/physical gates.
+
+## Frozen versions and execution provenance
+
+- Code-authoring baseline: `1108af389dde69506dd6f76c3b0902ac008ac695`.
+- Scoped style/evidence-capture checkpoint: `3094c1e`.
+- Product snapshot for the accepted host run and rejected native run:
+  `72bdbcb8c86f65c6cd5be8c13bed2123254fa647`.
+- No product source/test change followed native failure or diagnosis. A pure
+  file-hash comparison confirmed the current 19 Python files exactly match the
+  complete passing host run's frozen manifest.
+- Worktree: C:/Users/38347/.codex/worktrees/p65-bending-module/phymeo;
+  branch codex/p65-bending-module. Old B1, distance, shared runtime/contact source,
+  tests, exports, workflows and pins remain unchanged.
+- Host: original .venv-py311, Python3.11.15, numpy2.4.6, pytest9.1.1.
+  Native: original .venv, Python3.12.14, numpy2.5.4, pytest9.1.1,
+  tyx-compute0.1.0a0 at commit99f6df7c0fd8fdeef77f97df83914da27b64b7ee.
+  Both actual phymeo imports were this worktree's src/phymeo/__init__.py.
+
+Evidence root: `artifacts/p65-b2-validation-20261030-181949` in this worktree.
+Every numbered command has a JSON receipt with expanded interpreter/arguments,
+start/end time, environment, HEAD and RAW_EXIT, a complete raw log, and its exact
+19-file SHA256 manifest. Original code and the first failing test snapshot are
+also archived. Final product, installed distribution metadata and installed tyx
+source manifests are retained. The final evidence-file manifest and release
+receipt are written after this report commit to avoid self-referential hashes.
+
+All execution was serial under the parent's sole grant. PYTHONPATH was explicitly
+this child/src; PYTHONDONTWRITEBYTECODE=1, PYTEST_DISABLE_PLUGIN_AUTOLOAD=1,
+PYTHONHASHSEED=0 and OMP/OPENBLAS/MKL/NUMEXPR/VECLIB/BLIS thread counts=1.
+Pytest used -B, -vv, -x, -p no:cacheprovider and a distinct checked-absent absolute
+basetemp within the new evidence directory. No old basetemp deletion, dependency
+installation, remote action, build, profile, helper or reviewer occurred.
+
+## Exact command groups and raw outcomes
+
+The serial launcher is evidence-root/run.ps1. Full command arguments and absolute
+basetemps are in each correspondingly named JSON, rather than a reconstructed
+shell command. Frozen selection is also in frozen-grouping.txt.
+
+| Receipt | Operation/source | RAW_EXIT | Observed result |
+| --- | --- | --- | --- |
+| 01-host-environment | original1108af3 host import/provenance | 0 | Child src imported |
+| 02-native-environment | original1108af3 native metadata command | 1 | Command asked distribution `tyx`; installed name is `tyx-compute` |
+| 03-native-environment-correct-distribution | same product, corrected metadata query | 0 | Child import and exact pinned native distribution verified |
+| 04-first-post-code-ruff | original19-file authored snapshot | 1 | 17 style findings:15 safe import/unused fixes,2 assigned lambdas |
+| 05-first-post-code-format-check | original authored snapshot | 1 | All19 files required formatting |
+| 06-safe-lint-fixes | scoped new files only | 0 | 15 findings fixed |
+| 07-format-allowlist | scoped19 files only | 0 | 19 reformatted |
+| 08-lint-after-style | prepared3094c1e content | 0 | All checks passed |
+| 09-format-check-after-style | prepared3094c1e content | 0 | 19 already formatted |
+| 10-first-post-code-host-full |3094c1e|1|75 collected;40 passed,1 failed; fail-fast at stale message expectation |
+| 11-hidden-mutation-diagnostic | diagnostic assertion correction only |0|1 collected/passed in1.66s |
+| 12-host-full-after-diagnostic-fix |72bdbcb|0|75 collected/passed in602.45s |
+| 13-first-actual-interpret-full |72bdbcb|1|29 collected;5 passed,1 failed in1.37s; dependent cases stopped |
+| 14-diagnose-native-budget |same72bdbcb, one unchanged B first sweep observed|1|Original cumulative budget rejection reproduced; exact rows saved |
+| 15-offline-saved-budget-breakdown |saved14 data, no physics run|0|Exact component breakdown and first exceeding row |
+| 16-offline-nearest-fp32-proof |saved14 operands, no physics run|0|Nearest-output proof for fixed observed operands |
+| 17-audit-saved-host-evidence |saved12 data, no physics imports/run|0|24 complete windows,640 accepted saved steps, rebuild hashes matched |
+
+The initial artifact setup had a Git archive --output argument-shape error before
+any executable validation; it was corrected without changing source or deleting
+a prior directory. The native metadata command failure was an evidence-command
+name error, not a native solver failure; installed METADATA supplied the correct
+name. Both original outcomes remain saved.
+
+The first host failure was a stale test message, not a missed rejection. Altered
+final position already failed at the new `compute boundary original mismatch`
+gate before the older `final` message. Only the regex expectation changed in
+72bdbcb; the independent mutation, rejection and all numerical/physical gates
+were unchanged. Parent inspected and confirmed that classification. This is
+post-code verification, not a fabricated historical TDD RED cycle.
+
+Host full selection used the six new host files plus these four unchanged nodes:
+
+- tests/test_material_ledger.py::test_angular_loss_is_reported_as_material_discrete_contribution
+- tests/test_initial_robot_material.py::test_fixed_angular_budget_rejects_coarse_rotating_material
+- tests/test_load_replay.py::test_p_zero_p_uses_original_time_state_and_inputs
+- tests/test_load_replay.py::test_actual_xpbd_hidden_multipliers_are_rebuilt_for_each_trial
+
+Those four nodes expand to7 cases; the six new files supplied68 cases, total75.
+Direct source inspection found the last node has no tyx_mode and defaults to
+numpy. Parent explicitly ruled it belongs once in this host group, with no native
+relabeling or replacement. consumer-grouping-ruling.txt retains that ruling.
+
+The interpret full selection was both new native files plus:
+
+- tests/test_tyx_material_path.py::test_actual_rotating_edge_keeps_original_discrete_loss
+- tests/test_tyx_participants.py::test_cloth_workspace_uses_ordered_constraints_and_device_reconstruction
+- tests/test_tyx_participants.py::test_node_position_units_reconstruct_only_once_and_reject_bad_state
+
+It used --tyx-mode interpret --require-tyx. The equivalent full CUDA group and
+one bounded cpu_cpp first-sweep smoke were **not run**, because native failure
+stopped dependent work. No native/composite window or later direct-consumer
+acceptance is inferred from the five passing primitive tests.
+
+## Accepted host evidence from the same run
+
+All frozen A windows T=1/4 with h=1/64,1/128,1/256, and B windows T=1/8 with
+h=1/128,1/256,1/512 passed with two fresh rebuilds. Both signed node4 perturbations,
+mass factors1/2 and2, proper coordinate rotation/translation, disconnected copies,
+standalone external p-zero-p/once-only terminal controls, complete trace forgeries,
+continuous-domain controls, later-substep rollback/retry and NUM005 host consumers
+passed under their original equations and limits.
+
+The read-only saved-data audit indexes 24 complete window invocations and640
+accepted step records in host-same-run-evidence-audit.json. Full state/history and
+material/physical diagnostics hash identically across matching rebuilds. There
+are also four standalone p-zero-p/terminal evidence files, covering two rebuilds.
+Maximum whole-window positive energy sum: **0.0J**. Maximum whole-window angular
+L1 sum: **0.0005624681672712902N*m*s**, below the frozen1e-3 ceiling. No extra
+physics was sampled to populate these report values. This is declared test
+coverage, not a measured line/branch coverage percentage.
+
+## Native rejection and exact root-cause separation
+
+The first five actual interpret primitive tests passed, including the literal
+45-field first-sweep oracle and positive launch count, prohibited-host-fallback
+control, late native-row rollback, conversion/cut rejection and explicit empty
+block with no invented launch. The sixth test's original six-node B case at
+h=1/128 rejects in its first private complete sweep before publication.
+
+The first exceeding point in the frozen accumulated per-node/component gate is
+bending row1 (the second hinge), node3, y component:
+
+| Normalized term | Value |
+| --- | ---: |
+| Actual projection/storage error |2.3420806820402713e-5|
+| Independent gradient uncertainty/error contribution |1.890040772992456e-10|
+| Ideal constitutive equation correction contribution |4.9449411074473403e-8|
+| Conversion |0|
+| Lambda update/conversion |0|
+| Total |2.3470445235554487e-5|
+| Original tau |2e-5|
+
+After the final row the same coordinate's bound is2.9275224522847993e-5.
+Its arithmetic-only projection part is2.9225424779765093e-5, exactly
+33694620709861/1152921504606846976. The remaining terms are gradient
+3.245400768840405e-10 and equation4.9475203006015826e-8; conversion and lambda
+remain zero. The maximum normalized row equation is only6.511180967005247e-8.
+These values come from exact saved binary operands and independent interval
+algebra; offline-budget-breakdown.json gives every row. No term was averaged,
+cancelled, dropped or charged in different units.
+
+nearest-fixed-row-proof.json compares each saved exact ideal_after with adjacent
+FP32 representable values using rational distances. Every one of the seven
+dominant node3/y outputs is already nearest. Thus their minimum possible sum for
+**those fixed observed operands** is the same2.9225424779765093e-5 >2e-5. Two other
+row/components are nonnearest, with avoidable normalized excesses only
+4.26204627146376e-11 and8.520228966801824e-11; neither changes the dominant bound.
+This rejects a simple fixed-update FMA/order cleanup as a remedy. It does **not**
+prove every possible FP32 implementation impossible: a changed whole solve can
+change the operands. No broad impossibility or convergence claim is made.
+
+Parent ruled to preserve product72bdbcb, all original physical budgets, h/Vref,
+precision/publication and fixtures. No compensated/local-coordinate or higher-
+precision representation, revised trace, changed accumulation, tolerance increase
+or scene-specific repair is approved or implemented. A representation proposal
+is separate documentation-only work after this execution-slot release.
+
+## Remaining gates and release scope
+
+Full interpret composite acceptance, all full CUDA cases, the three actual
+consumer nodes per mode and the bounded actual cpu_cpp bending smoke remain
+pending. B2 remains unaccepted for native/composite delivery. Host75 is retained
+at its exact source version; it is not repeated merely for reporting. NUM005,
+old nonsmooth soft-distance cusp derivative limitations, joint original-input
+contact work, selected-pre identity dispatch and all full P6.5 gates remain open.
+
+The final report commit changes only the two authorized reports. A fresh process
+inventory and clean Git status are captured in execution-slot-release.json before
+formal handoff. The slot is released so the independent S2 geometry validation
+can proceed. Subsequent lane work is documentation-only until a new explicit
+execution/implementation grant. Remote CI remains user-deferred.
+
+---
+
+# Historical code-authoring checkpoint (retained unchanged below)
+
 # B2-M code-authoring checkpoint
 
 Status: **CODE_READY_TESTS_PENDING**. This is an authored implementation and test
@@ -262,4 +445,5 @@ folded/self-contact cloth, S2-F, mesh compliance calibration, nonlinear continuu
 convergence, general robot support and final P6.5 acceptance remain parent gates.
 Remote CI stays user-deferred. This lane releases code only and waits for the
 parent's explicit sole execution grant.
+
 

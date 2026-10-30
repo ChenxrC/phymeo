@@ -34,12 +34,12 @@ Interface: PointParticipantProgram(scene,participants,*,registry=None,history_fi
 
 Files: exact fifteen NEW paths in spec section6. Input: accepted S1/LG public interfaces, proposal section7 types/signatures, parent adapter above. Output: ClothSelfContactProgram and immutable phase/mapping/physical evidence, complete A/B/C tests.
 
-- [ ] Author independent full-W/Coulomb/capacity controls and actual normal-offset B oracle, shared-base C and unknown/tie/identity negatives in the six new test files. All h/windows/rebuild/covariance controls from spec remain.
-- [ ] Implement immutable law/limits/budgets and proposal-only coupled solver; no apply operation or pressure uniqueness by regularization.
-- [ ] Implement complete anchors/material identities/actual membership/constant-normal continuation and independent many-root map/work/couple ledger. Reuse LG producer and independent verifier without editing them.
-- [ ] Implement public replay/terminal binding and selected-pre match, original-input physical balance and atomic history/lifecycle. Reject unsupported material/composite/v2 until parent typed dispatch exists.
-- [ ] Include same-run full evidence capture and late-fault/retry controls; no new sample solely for reports.
-- [ ] Read allowed diff, commit small logical units then both reports at CODE_READY_TESTS_PENDING with hashes/authored nodes/support limits. No executable action until the parent's separate grant after B2 release.
+- [x] Author independent full-W/Coulomb/capacity controls and actual normal-offset B oracle, shared-base C and unknown/tie/identity negatives in the six new test files. All h/windows/rebuild/covariance controls from spec remain.
+- [x] Implement immutable law/limits/budgets and proposal-only coupled solver; no apply operation or pressure uniqueness by regularization.
+- [x] Implement complete anchors/material identities/actual membership/constant-normal continuation and independent many-root map/work/couple ledger. Reuse LG producer and independent verifier without editing them.
+- [x] Implement public replay/terminal binding and selected-pre match, original-input physical balance and atomic history/lifecycle. Reject unsupported material/composite/v2 until parent typed dispatch exists.
+- [x] Include same-run full evidence capture and late-fault/retry controls; no new sample solely for reports.
+- [x] Read allowed diff, commit small logical units then both reports at CODE_READY_TESTS_PENDING with hashes/authored nodes/support limits. No executable action until the parent's separate grant after B2 release.
 - [ ] Under later serial grant: scoped static, all five new host files, complete actual interpret then CUDA, one bounded C++ control; no skip/fallback, no old LG69 rerun. Preserve actual first outcomes and repair only demonstrated allowed defects.
 - [ ] Produce exact final receipts/source hash/clean/process0 release. Parent checks saved evidence before merge.
 
@@ -52,3 +52,5 @@ Files: exact fifteen NEW paths in spec section6. Input: accepted S1/LG public in
 Task A accepted locally on tested721b5c162f1f7e42dd618c70378bba098af0698e/report5c0a170bdc75b24e2c3c210e660f047c1dd2a032: host17/interpret4/CUDA4/boundedCPP1, all RAW_EXIT0;363-file same-source audit and formal clean/process0 release. Task B remains code/test authoring only and Task C stays open.
 
 Task B must implement and test spec R2 actual phase capacity witnesses and noncancelling representation uncertainty before CODE_READY handoff. The prior proposed-pressure audit alone cannot satisfy actual represented normal projections. Exact on/off-range delivery and inverse-response amplification controls are mandatory; no numerical execution yet.
+
+Task B authoring receipt7f68bdea32cc816352a5cfbd839c1eec532d3b65 is complete under R1/R2, parent13 source/test hashes and2 reports verified. Checked authoring boxes mean written, not validated. Original S2 now owns sole local validation under task-2-response-validation-grant.md; child dependency mergeee6370a preserved authored bytes and accepted adapter. Test and final release boxes remain unchecked. Parent/B2 perform no concurrent executable work. Earlier code-only text is historical.

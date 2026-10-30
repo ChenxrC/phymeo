@@ -1,5 +1,11 @@
 # SDD ledger — plan: docs/superpowers/plans/2026-10-29-p65-thick-friction.md
 
+## Current parent delivery after Task3 release
+
+Task3 product7e68154/reportc72cdc3 complete, process0/clean confirmed; parent now owns original checkout/index/execution. Host195/interpret19/CUDA19 and224actual records passed. Parent309+126 hash audit and fresh packaging interval-7e68154-a complete, two exits0/wheel153byteparity. Pending new dedicatedbranch push/exact30minute8CPU/examples/required+Documentation. No second fresh review or duplicate physical suite. In separate managed worktrees user authorized parallel B1/S1/G1 code-only, tests pending serial queue; original numerical ownership rule does not prevent isolated editing.
+
+## Historical cost-repair checkpoints
+
 ## Current CI cost repair
 
 优化版本 `a478828aa6ab8c59dc310cd4639e6f7a55704bec` 已推送；准确 CI `40991186564` 于 2026-10-30 02:51:45Z 结束为 cancelled，Documentation `40991186517` success。8 格 CPU 中 Ubuntu/Python3.12/pip 的测试与示例全部 success，job 共 1357s；其余 7 格均由公开完整 commit 页面确认超过 30m0s，测试 cancelled、示例 skipped，required failure。完整矩阵未通过，不能据此推断未完成测试的物理断言结果。用户已明确保留 30 分钟；90 分钟方案不再考虑。第一轮 0065200 的本地等价优化、host96/实际两后端各9及新 wheel 证据保持原版本。现从已完成 optimized-A.prof 继续诊断，父冻结下一轮有理区间重复计算优化；不重跑该已结束 CI，不提前进入下一生产合同。

@@ -1,5 +1,17 @@
 # P6.5：保留 30 分钟 CI 的精确算术优化
 
+## 当前第二轮结果
+
+第二轮纯区间成本修复已完成本地验收：产品 `7e68154a286bff65a7cdd727b63ffd58e676f88c`，最终报告 `c72cdc30b798f40d23fdc5cdf519f0c5aadd4c84`。最终受影响 host 195 项（840.64s）、actual interpret 19 项（351.09s）、CUDA 19 项（975.66s）全部 exit0，含完整 finite/thick 消费者及原窗口/失败/事务；同次224条厚度实际记录审计通过。父独立核对309源码及126证据hash无差异，原30分钟workflow字节不变。
+
+父已完成新源码构建与源码外 fresh nativepip wheel 验证，两step exit0；153源码逐字节相同，wheel SHA256 `ebb49fac5399b0b60898df4321aa47b7a408a684939fc69d0f8c7e8be2085210`。当前待专用分支推送和新准确head完整CI/Documentation；旧a478828的7格超时、1格成功保留历史，不能替代新版本结果。本次未重跑C++，原52launch证据仅属33ec9ea。
+
+用户随后明确同意“先并行完成模块代码，最后测试因资源原因串行”。已在隔离工作树启动弯曲B1、自碰撞基础S1及有限夹爪G1代码开发，合同提交 `1ccab186`、父G1未验证代码检查点 `88631ae` 位于 `codex/p65-parallel-modules`，不进入本交付head。各线只编写代码与测试，尚未运行验证；公共材料/载荷/事务由父集成，所有检查和数值执行排入唯一串行队列。完整自碰撞、弯曲材料账本/native及真实承重/低摩擦滑落仍须后续验收。此人工决定替代历史“不提前开始下一生产代码”的排期限制，未放宽任何验收。
+
+本轮仅共享 `_patch_interval.py` 与新增测试变化。最终快路仅用于精确builtin二元tuple且端点均为标准Fraction，其余类型/shape仍走原四角分支；相同convertedq只在构造器内复用不可变端点。14474 helper、9 legacy shape、22完整curve差分相等。最终三旧观察复用、随后三新观察，非交错；单Windows CPU A负载中位成本低16.11%，完整report/state/history/input/CCD仅按R5排除精确类型timings字段后相同，不代表CI/P95/跨后端速度。成本源到最终源仅一空CRLF，AST一致且版本单独记录。
+
+## 第一轮结果与历史诊断
+
 用户选择保持 CPU job 30 分钟限时，另行优化耗时。完整八格矩阵、测试、示例、required、fail-fast 和依赖均未改。原5150c3e的CI40950637127因超时cancelled，Documentation40950637280success；历史失败保留。a478828 的准确 CI40991186564 已取消：1 格 CPU 测试和示例通过（Ubuntu/py3.12/pip，1357s），其余7格明确30m0s超时，required失败；Documentation40991186517成功。完整交付仍开放。
 
 产品0065200、实现报告d2cacff仅修改厚度模块的 `_prism_exact.py`，增加独立数学测试。纯有理数与已规范化同域运算免去重复根式分类及零项计算；保留Fraction精确值、非法输入/跨域/零除、规范形、符号/排序/hash、向外界和float位模式。没有geometry/solver/cache/physics/旧测试改动。设计与边界见[优化合同](../superpowers/specs/2026-10-30-p65-ci-cost-repair-design.md)和[计划](../superpowers/plans/2026-10-30-p65-ci-cost-repair.md)。

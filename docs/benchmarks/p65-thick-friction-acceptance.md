@@ -1,5 +1,7 @@
 # 有限厚度棱柱与有限面摩擦验收
 
+当前第二轮成本修复产品7e68154及报告c72cdc3的受影响host195/interpret19/CUDA19、224实际记录和新源码外wheel153字节一致均通过，原30分钟workflow不变。详细版本化证据见现有CI成本修复记录；推送与新准确完整CI待闭环，最后交付框保持未勾。用户已授权隔离工作树并行编写弯曲/自碰撞/有限夹爪代码，所有测试串行；未验证代码不混入本交付head。
+
 修复产品 `33ec9ea`（I2 `e8c821d`）、最终报告 `a59182a` 已提交并释放数值/index。唯一 fresh review 的 0 Critical / 2 Important / 0 Minor 已由原实现者定向修复，父核对关闭。修复版实际 tyx interpret/CUDA 各 10 项通过；父 C++ 短例、构建和源码外 wheel 均已通过，产品5150c3e已推送，准确CI因CPU任务超时取消，交付尚未通过。
 
 依据：[冻结合同](../superpowers/specs/2026-10-29-p65-thick-friction-design.md)、[选测计划](../superpowers/plans/2026-10-29-p65-thick-friction.md)、[验收政策](../development/p65-validation-policy.md)、[工程证据](p65-thick-friction-engineering.json)、[唯一审阅](p65-thick-friction-review.md)。

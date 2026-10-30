@@ -1,6 +1,6 @@
 {
   "stage": "P6.5 existing thick friction CI cost repair",
-  "status": "exact_ci_seven_timeouts_interval_repair_planned",
+  "status": "interval_local_acceptance_and_packaging_complete_pending_push_and_exact_ci",
   "user_decision": "Keep CPU timeout30 minutes; optimize runtime. No workflow/matrix/tests/required changes.",
   "baseline_head": "127cd28af155ad23ff289a1ad9fb7e5d1c78b775",
   "product_head": "0065200d6253cbb703d752aac3e0d1b9dfe80890",
@@ -335,7 +335,7 @@
     "scope": "independent saved-data/hash/raw-exit and narrow one-file arithmetic inspection; no repeated whole-stage review or physics"
   },
   "delivery": {
-    "status": "exact_ci_cancelled_7_of_8_cpu_timeout",
+    "status": "interval_local_complete_pending_push_and_exact_ci",
     "historical_cancelled_head": "5150c3efb12cfdcf81dea2923ff627c7915ca036",
     "historical_cancelled_ci": 40950637127,
     "historical_successful_documentation": 40950637280,
@@ -361,7 +361,9 @@
       "timeout_minutes": 30
     },
     "pushed_head": "a478828aa6ab8c59dc310cd4639e6f7a55704bec",
-    "remote_sha_verified": true
+    "remote_sha_verified": true,
+    "pending_product_head": "7e68154a286bff65a7cdd727b63ffd58e676f88c",
+    "record_note": "pushed_head/product_ci below are historical a478828; a new delivery head is pending at document formation."
   },
   "limits": [
     "SingleA bounded cost observation only, no formal P95/cross-backend/whole-CI speed claim.",
@@ -372,7 +374,7 @@
   ],
   "followup": {
     "baseline_head": "a478828aa6ab8c59dc310cd4639e6f7a55704bec",
-    "status": "parent_frozen_interval_repair",
+    "status": "local_acceptance_and_packaging_complete_pending_push_and_exact_ci",
     "production_scope": [
       "src/phymeo/geometry/_patch_interval.py"
     ],
@@ -384,6 +386,487 @@
       "finite contact",
       "thick contact"
     ],
-    "no_physical_or_workflow_change": true
-  }
+    "no_physical_or_workflow_change": true,
+    "product_head": "7e68154a286bff65a7cdd727b63ffd58e676f88c",
+    "implementation_report_head": "c72cdc30b798f40d23fdc5cdf519f0c5aadd4c84",
+    "verification": {
+      "dispatch_base": "c942ceb64663205a0e6a0ebfd2fa7ca7d721cf02",
+      "baseline_product": "a478828aa6ab8c59dc310cd4639e6f7a55704bec",
+      "product": "7e68154a286bff65a7cdd727b63ffd58e676f88c",
+      "source_tests_scripts_digest": "53700e17e0e5b598ab9b7e4e1e6ae5ac62f832be5887a29ddb5576aed73ac154",
+      "source_digest": "75445777a167e4cbc945691f8dd29adb8e72ae9995b98c6a34d08c2baa0022e3",
+      "workflow_sha256": "c917835c91aeb4dad328bd49fc266f9238b638b5327346d06d8e9edad7ba7297",
+      "files": 309,
+      "changed_existing": [
+        "src/phymeo/geometry/_patch_interval.py"
+      ],
+      "added": [
+        "tests/test_patch_interval.py"
+      ],
+      "tests": {
+        "compatibility-green-02": {
+          "passed": 41,
+          "seconds": 0.34,
+          "raw_exit": 0
+        },
+        "host-affected-01": {
+          "passed": 195,
+          "seconds": 840.64,
+          "raw_exit": 0
+        },
+        "interpret-all-01": {
+          "passed": 19,
+          "seconds": 351.09,
+          "raw_exit": 0
+        },
+        "cuda-all-01": {
+          "passed": 19,
+          "seconds": 975.66,
+          "raw_exit": 0
+        }
+      },
+      "raw_passing_checks": [
+        "math-green-01",
+        "compatibility-green-02",
+        "differential-01",
+        "differential-02",
+        "interval-A",
+        "interval-final-A",
+        "host-affected-01",
+        "numpy-window-audit-01",
+        "interpret-all-01",
+        "interpret-window-audit-01",
+        "cuda-all-01",
+        "cuda-window-audit-01",
+        "ruff-final-01",
+        "format-final-01",
+        "public-boundary-01",
+        "source-import-smoke-01",
+        "old-A-run1",
+        "old-A-run2",
+        "old-A-run3",
+        "final-new-A-run1",
+        "final-new-A-run2",
+        "final-new-A-run3"
+      ],
+      "helper_differential": {
+        "old_git_module_sha256": "0e031527d8b7c3edacb3a9a345698246eb6685eeef150567cd0a747bef4d7014",
+        "old_working_module_sha256": "ea4cdceb96efc2bf4fde0245e5f1d8910bd5fa3a7a5461bb901e6960923c95e6",
+        "new_module_sha256": "4b662d3fc60c5fa0a7575bfff12ea08af5081cf89175aefc4148d008980bc2d0",
+        "helper_comparisons": 14474,
+        "actual_Fraction_product_counts": [
+          {
+            "a": [
+              2,
+              2
+            ],
+            "b": [
+              -3,
+              -3
+            ],
+            "old": 4,
+            "new": 1
+          },
+          {
+            "a": [
+              2,
+              2
+            ],
+            "b": [
+              -3,
+              5
+            ],
+            "old": 4,
+            "new": 2
+          },
+          {
+            "a": [
+              -3,
+              5
+            ],
+            "b": [
+              2,
+              2
+            ],
+            "old": 4,
+            "new": 2
+          },
+          {
+            "a": [
+              -2,
+              3
+            ],
+            "b": [
+              -5,
+              7
+            ],
+            "old": 4,
+            "new": 4
+          }
+        ],
+        "legacy_shape_cases": 9,
+        "curve_cases": 22,
+        "exact_types_tuples_errors_float_bits_parity": true
+      },
+      "final_cost": {
+        "final_module_sha256": "4b662d3fc60c5fa0a7575bfff12ea08af5081cf89175aefc4148d008980bc2d0",
+        "old_profile_seconds": 20.383625299902633,
+        "final_profile_seconds": 15.968309400137514,
+        "state_replays_complete_ccd_equal": true,
+        "all6_complete_R5_canonical_reports_equal": true,
+        "old_samples_seconds": [
+          5.718672999879345,
+          5.8397226999513805,
+          5.915212899912149
+        ],
+        "final_new_samples_seconds": [
+          4.898756400216371,
+          4.876094299834222,
+          5.061408000066876
+        ],
+        "old_sample_reuse": "same unchanged a478 module/fixture/settings, first3completed observations retained, no old rerun",
+        "intermediate": "eeb profile/new3 retained separately, excluded from final cost comparison",
+        "observations": [
+          {
+            "mode": "old",
+            "run": 1,
+            "elapsed_seconds": 5.718672999879345,
+            "module_file": "artifacts\\p65-ci-interval-optimization\\frozen_patch_interval_a478828.py",
+            "module_sha256": "0e031527d8b7c3edacb3a9a345698246eb6685eeef150567cd0a747bef4d7014",
+            "state_fingerprint": "8c992db91af1bb46e8498b3b4a8d75e2cf50377ace340cb5665b89afd0aa0551",
+            "report_fingerprint": "c15403bb0c7fa303f14abfe3675994d259a149f97cafc9c264498dde5d40c3ab",
+            "canonical_report_fingerprint": "ee28be883a5be53eb015103391eb190056e7df51016c666ff8d400d1128edad4",
+            "inputs_fingerprint": "4e08a0ab78a5d41d4fe39727a971c08e2e6c3aec16c081cdb11f0f9f0a53a547",
+            "held_replays": 53,
+            "terminal_replays": 1,
+            "complete_ccd_matches": true,
+            "injected_before_consumers": true,
+            "resources_closed": true
+          },
+          {
+            "mode": "old",
+            "run": 2,
+            "elapsed_seconds": 5.8397226999513805,
+            "module_file": "artifacts\\p65-ci-interval-optimization\\frozen_patch_interval_a478828.py",
+            "module_sha256": "0e031527d8b7c3edacb3a9a345698246eb6685eeef150567cd0a747bef4d7014",
+            "state_fingerprint": "8c992db91af1bb46e8498b3b4a8d75e2cf50377ace340cb5665b89afd0aa0551",
+            "report_fingerprint": "84fbe2fdd9add2288dade876d0402071c5d259bc9c12b1378341cde4a2283a3b",
+            "canonical_report_fingerprint": "ee28be883a5be53eb015103391eb190056e7df51016c666ff8d400d1128edad4",
+            "inputs_fingerprint": "4e08a0ab78a5d41d4fe39727a971c08e2e6c3aec16c081cdb11f0f9f0a53a547",
+            "held_replays": 53,
+            "terminal_replays": 1,
+            "complete_ccd_matches": true,
+            "injected_before_consumers": true,
+            "resources_closed": true
+          },
+          {
+            "mode": "old",
+            "run": 3,
+            "elapsed_seconds": 5.915212899912149,
+            "module_file": "artifacts\\p65-ci-interval-optimization\\frozen_patch_interval_a478828.py",
+            "module_sha256": "0e031527d8b7c3edacb3a9a345698246eb6685eeef150567cd0a747bef4d7014",
+            "state_fingerprint": "8c992db91af1bb46e8498b3b4a8d75e2cf50377ace340cb5665b89afd0aa0551",
+            "report_fingerprint": "321e82ea83da1a86f1992a3b4e3cee5612ea575033ed53952568ff420794662c",
+            "canonical_report_fingerprint": "ee28be883a5be53eb015103391eb190056e7df51016c666ff8d400d1128edad4",
+            "inputs_fingerprint": "4e08a0ab78a5d41d4fe39727a971c08e2e6c3aec16c081cdb11f0f9f0a53a547",
+            "held_replays": 53,
+            "terminal_replays": 1,
+            "complete_ccd_matches": true,
+            "injected_before_consumers": true,
+            "resources_closed": true
+          },
+          {
+            "mode": "new",
+            "run": 1,
+            "elapsed_seconds": 4.898756400216371,
+            "module_file": "src\\phymeo\\geometry\\_patch_interval.py",
+            "module_sha256": "4b662d3fc60c5fa0a7575bfff12ea08af5081cf89175aefc4148d008980bc2d0",
+            "state_fingerprint": "8c992db91af1bb46e8498b3b4a8d75e2cf50377ace340cb5665b89afd0aa0551",
+            "report_fingerprint": "2ece79a00ef9eca1dd4855797b70c3493a6f732390efe9ab1eadb92b24a77b53",
+            "canonical_report_fingerprint": "ee28be883a5be53eb015103391eb190056e7df51016c666ff8d400d1128edad4",
+            "inputs_fingerprint": "4e08a0ab78a5d41d4fe39727a971c08e2e6c3aec16c081cdb11f0f9f0a53a547",
+            "held_replays": 53,
+            "terminal_replays": 1,
+            "complete_ccd_matches": true,
+            "injected_before_consumers": true,
+            "resources_closed": true
+          },
+          {
+            "mode": "new",
+            "run": 2,
+            "elapsed_seconds": 4.876094299834222,
+            "module_file": "src\\phymeo\\geometry\\_patch_interval.py",
+            "module_sha256": "4b662d3fc60c5fa0a7575bfff12ea08af5081cf89175aefc4148d008980bc2d0",
+            "state_fingerprint": "8c992db91af1bb46e8498b3b4a8d75e2cf50377ace340cb5665b89afd0aa0551",
+            "report_fingerprint": "39e47512c0e625ba553dd0afc88f26e72b80347d9d32b02bf3a7ad754e88ef2b",
+            "canonical_report_fingerprint": "ee28be883a5be53eb015103391eb190056e7df51016c666ff8d400d1128edad4",
+            "inputs_fingerprint": "4e08a0ab78a5d41d4fe39727a971c08e2e6c3aec16c081cdb11f0f9f0a53a547",
+            "held_replays": 53,
+            "terminal_replays": 1,
+            "complete_ccd_matches": true,
+            "injected_before_consumers": true,
+            "resources_closed": true
+          },
+          {
+            "mode": "new",
+            "run": 3,
+            "elapsed_seconds": 5.061408000066876,
+            "module_file": "src\\phymeo\\geometry\\_patch_interval.py",
+            "module_sha256": "4b662d3fc60c5fa0a7575bfff12ea08af5081cf89175aefc4148d008980bc2d0",
+            "state_fingerprint": "8c992db91af1bb46e8498b3b4a8d75e2cf50377ace340cb5665b89afd0aa0551",
+            "report_fingerprint": "b195d29083cc89ac95e24aed05c44d63aa3b654c8f807e44328e54f4215f8fd6",
+            "canonical_report_fingerprint": "ee28be883a5be53eb015103391eb190056e7df51016c666ff8d400d1128edad4",
+            "inputs_fingerprint": "4e08a0ab78a5d41d4fe39727a971c08e2e6c3aec16c081cdb11f0f9f0a53a547",
+            "held_replays": 53,
+            "terminal_replays": 1,
+            "complete_ccd_matches": true,
+            "injected_before_consumers": true,
+            "resources_closed": true
+          }
+        ],
+        "hotspots": [
+          {
+            "name": "__init__",
+            "calls": 456,
+            "cumulative_s": 1.225659
+          },
+          {
+            "name": "mul",
+            "calls": 103608,
+            "cumulative_s": 0.8329722
+          },
+          {
+            "name": "_prismatic",
+            "calls": 468,
+            "cumulative_s": 1.2419058
+          }
+        ],
+        "observed_median_reduction_fraction": 0.16113201740603944
+      },
+      "format_only_AST_delta": {
+        "cost_module_sha256": "4b662d3fc60c5fa0a7575bfff12ea08af5081cf89175aefc4148d008980bc2d0",
+        "formatted_module_sha256": "1bb737cba78344a4dd44b8af8d848b2419c1605259ac6b7f33189d10d170a3e1",
+        "delta": "one blank CRLF between top-level functions",
+        "complete_AST_equal_excluding_location_attributes": true,
+        "CRLF_preserved": true,
+        "physical_cost_receipts_remain_versioned_not_relabeled": true
+      },
+      "old_and_current_LF_CRLF_hashes": {
+        "old_git": "0e031527d8b7c3edacb3a9a345698246eb6685eeef150567cd0a747bef4d7014",
+        "old_working": "ea4cdceb96efc2bf4fde0245e5f1d8910bd5fa3a7a5461bb901e6960923c95e6",
+        "new_git": "78f6729a4056fd1d37b5e4441c9277d9e33e8a7c0c77d217e1575953a0617421",
+        "new_working": "1bb737cba78344a4dd44b8af8d848b2419c1605259ac6b7f33189d10d170a3e1"
+      },
+      "raw_reports_independently_canonicalized": true,
+      "window_audits": {
+        "numpy": {
+          "mode": "numpy",
+          "snapshot": "ci-interval-host-01/final-source-manifest-01",
+          "source_digest": "53700e17e0e5b598ab9b7e4e1e6ae5ac62f832be5887a29ddb5576aed73ac154",
+          "actual_records": 124,
+          "runs": 12,
+          "worst_absolute_oracle_errors": {
+            "position": 5.243263601073522e-10,
+            "velocity": 8.595465450511597e-10,
+            "robot_q": 3.3983083014277327e-10,
+            "robot_v": 1.049136638675563e-09,
+            "normal_impulse": 6.994244211577794e-10,
+            "tangent_impulse": 1.7485610528944484e-10,
+            "impact_sumP": 2.1647450498818444e-10,
+            "impact_sumE": 1.1102230246251565e-16,
+            "sliding_P": 1.1040589021162623e-09,
+            "sliding_E": 1.6033127182900325e-10
+          },
+          "full_state_history_rebuild_row_comparisons": 62,
+          "actual_error_halving": [
+            {
+              "rebuild": 0,
+              "observed_error_h1_8": 0.020833333376055013,
+              "observed_error_h1_16": 0.010416666688523627,
+              "halving_defect": 9.922433245416566e-13
+            },
+            {
+              "rebuild": 1,
+              "observed_error_h1_8": 0.020833333376055013,
+              "observed_error_h1_16": 0.010416666688523627,
+              "halving_defect": 9.922433245416566e-13
+            }
+          ],
+          "fp32_promotions_checked": false,
+          "physical_mapping_force_ccd_checked": true,
+          "no_physics_replay": true
+        },
+        "interpret": {
+          "mode": "interpret",
+          "snapshot": "ci-interval-interpret-01/final-source-manifest-01",
+          "source_digest": "53700e17e0e5b598ab9b7e4e1e6ae5ac62f832be5887a29ddb5576aed73ac154",
+          "actual_records": 50,
+          "runs": 10,
+          "worst_absolute_oracle_errors": {
+            "position": 7.390975951260259e-07,
+            "velocity": 1.8835067748801393e-06,
+            "robot_q": 4.529953003817866e-07,
+            "robot_v": 1.9335345768922707e-06,
+            "normal_impulse": 1.289023104228404e-06,
+            "tangent_impulse": 3.22255776057101e-07,
+            "impact_sumP": 5.856532929726654e-07,
+            "impact_sumE": 2.9588564931515293e-10,
+            "sliding_P": 8.060507103037002e-07,
+            "sliding_E": 3.5522054409303586e-07
+          },
+          "full_state_history_rebuild_row_comparisons": 25,
+          "actual_error_halving": [
+            {
+              "rebuild": 0,
+              "observed_error_h1_8": 0.010416785875956217,
+              "observed_error_h1_16": 0.005208412806193034,
+              "halving_defect": 3.9736429850260414e-08
+            },
+            {
+              "rebuild": 1,
+              "observed_error_h1_8": 0.010416785875956217,
+              "observed_error_h1_16": 0.005208412806193034,
+              "halving_defect": 3.9736429850260414e-08
+            }
+          ],
+          "fp32_promotions_checked": true,
+          "physical_mapping_force_ccd_checked": true,
+          "no_physics_replay": true
+        },
+        "cuda": {
+          "mode": "cuda",
+          "snapshot": "ci-interval-cuda-01/final-source-manifest-01",
+          "source_digest": "53700e17e0e5b598ab9b7e4e1e6ae5ac62f832be5887a29ddb5576aed73ac154",
+          "actual_records": 50,
+          "runs": 10,
+          "worst_absolute_oracle_errors": {
+            "position": 7.390975951260259e-07,
+            "velocity": 1.8835067748801393e-06,
+            "robot_q": 4.529953003817866e-07,
+            "robot_v": 1.9335345768922707e-06,
+            "normal_impulse": 1.289023104228404e-06,
+            "tangent_impulse": 3.22255776057101e-07,
+            "impact_sumP": 5.856532929726654e-07,
+            "impact_sumE": 2.9588564931515293e-10,
+            "sliding_P": 8.060507103037002e-07,
+            "sliding_E": 3.5522054409303586e-07
+          },
+          "full_state_history_rebuild_row_comparisons": 25,
+          "actual_error_halving": [
+            {
+              "rebuild": 0,
+              "observed_error_h1_8": 0.010416785875956217,
+              "observed_error_h1_16": 0.005208412806193034,
+              "halving_defect": 3.9736429850260414e-08
+            },
+            {
+              "rebuild": 1,
+              "observed_error_h1_8": 0.010416785875956217,
+              "observed_error_h1_16": 0.005208412806193034,
+              "halving_defect": 3.9736429850260414e-08
+            }
+          ],
+          "fp32_promotions_checked": true,
+          "physical_mapping_force_ccd_checked": true,
+          "no_physics_replay": true
+        }
+      },
+      "thick_actual_records": 224,
+      "finite_native_coverage": "complete unchanged finite TYX file and host geometry/contact/physics/transaction files; no additional finite JSON record claim",
+      "cost_limit": "final old3 reused unchanged plus finalnew3 are not interleaved; singleA WindowsCPU observation only, intermediateeeb profile/new3 retained but excluded; no wholeCI/backend/P95 inference",
+      "remaining_delivery": "parent Task4 narrow audit/new-source externalwheel and exacthead full8CPU+examples+required within30min/Documentation; no stage closure claim"
+    },
+    "packaging": {
+      "phase": "complete",
+      "digest": "53700e17e0e5b598ab9b7e4e1e6ae5ac62f832be5887a29ddb5576aed73ac154",
+      "runner_sha256": "09e25020e355aa59d545d15bfbe9850098bfb71e2cf34a1f2a976a7e1b8d84a8",
+      "results": [
+        {
+          "name": "build",
+          "command": [
+            "C:\\Users\\38347\\Documents\\ChatGPT\\phymeo\\.venv\\Scripts\\python.exe",
+            "-m",
+            "build",
+            "--no-isolation",
+            "--outdir",
+            "C:\\Users\\38347\\Documents\\ChatGPT\\phymeo\\artifacts\\ci-cost-packaging-interval-7e68154-a\\dist"
+          ],
+          "exit_code": 0,
+          "runner_seconds": 7.1300413000863045
+        },
+        {
+          "name": "wheel",
+          "command": [
+            "C:\\Users\\38347\\Documents\\ChatGPT\\phymeo\\.venv\\Scripts\\python.exe",
+            "scripts/verify_wheel.py",
+            "--dist-dir",
+            "C:\\Users\\38347\\Documents\\ChatGPT\\phymeo\\artifacts\\ci-cost-packaging-interval-7e68154-a\\dist"
+          ],
+          "exit_code": 0,
+          "runner_seconds": 18.99256969988346
+        }
+      ],
+      "wheel": {
+        "path": "C:\\Users\\38347\\Documents\\ChatGPT\\phymeo\\artifacts\\ci-cost-packaging-interval-7e68154-a\\dist\\phymeo-0.1.0a0-py3-none-any.whl",
+        "sha256": "ebb49fac5399b0b60898df4321aa47b7a408a684939fc69d0f8c7e8be2085210"
+      }
+    },
+    "parent_audit": {
+      "status": "pass",
+      "head": "c72cdc30b798f40d23fdc5cdf519f0c5aadd4c84",
+      "files": 309,
+      "evidence": 126,
+      "mismatches": [],
+      "full_digest": "53700e17e0e5b598ab9b7e4e1e6ae5ac62f832be5887a29ddb5576aed73ac154",
+      "source_count": 153,
+      "source_digest": "75445777a167e4cbc945691f8dd29adb8e72ae9995b98c6a34d08c2baa0022e3",
+      "changed_product_files": [
+        "src/phymeo/geometry/_patch_interval.py",
+        "tests/test_patch_interval.py"
+      ],
+      "raw_summaries": {
+        "host-affected-01": "======================= 195 passed in 840.64s (0:14:00) =======================",
+        "interpret-all-01": "======================= 19 passed in 351.09s (0:05:51) ========================",
+        "cuda-all-01": "======================= 19 passed in 975.66s (0:16:15) ========================"
+      },
+      "no_physical_replay": true,
+      "raw_passing_exit_files_read": 22
+    },
+    "parent_wheel_audit": {
+      "status": "pass",
+      "source_count": 153,
+      "wheel_sha256": "ebb49fac5399b0b60898df4321aa47b7a408a684939fc69d0f8c7e8be2085210",
+      "wheel_source_byte_equal": true,
+      "steps": [
+        {
+          "name": "build",
+          "command": [
+            "C:\\Users\\38347\\Documents\\ChatGPT\\phymeo\\.venv\\Scripts\\python.exe",
+            "-m",
+            "build",
+            "--no-isolation",
+            "--outdir",
+            "C:\\Users\\38347\\Documents\\ChatGPT\\phymeo\\artifacts\\ci-cost-packaging-interval-7e68154-a\\dist"
+          ],
+          "exit_code": 0,
+          "runner_seconds": 7.1300413000863045
+        },
+        {
+          "name": "wheel",
+          "command": [
+            "C:\\Users\\38347\\Documents\\ChatGPT\\phymeo\\.venv\\Scripts\\python.exe",
+            "scripts/verify_wheel.py",
+            "--dist-dir",
+            "C:\\Users\\38347\\Documents\\ChatGPT\\phymeo\\artifacts\\ci-cost-packaging-interval-7e68154-a\\dist"
+          ],
+          "exit_code": 0,
+          "runner_seconds": 18.99256969988346
+        }
+      ],
+      "digest": "53700e17e0e5b598ab9b7e4e1e6ae5ac62f832be5887a29ddb5576aed73ac154"
+    },
+    "equivalence_audit": "artifacts/p65-ci-interval-optimization/parent-equivalence-audit-01.json",
+    "no_new_cpp_claim": true
+  },
+  "top_level_snapshot_note": "Top-level product/source/verification/packaging retain first repair0065200. Latest interval repair is versioned under followup."
 }

@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "stage": "p65-thick-friction",
-  "status": "local_acceptance_complete_product_ci_cancelled_timeout",
+  "status": "interval_repair_local_complete_pending_new_exact_ci",
   "base": "6e818f574d097ce415940289a58847d4c8ba49fb",
   "product_head": "33ec9ea52dc15ee5b8050adb0a73d1591aea11f5",
   "implementation_report_head": "a59182aae19b1caa8020e3802bce6f6756ad5fac",
@@ -973,7 +973,7 @@
     "parent_frozen_digest_after": "cd6d77917dee8af09f13a430f4fdd4a5b744461874364a142aff0d8e6722d84b"
   },
   "delivery": {
-    "status": "exact_ci_cancelled_seven_cpu_timeouts_followup_optimization",
+    "status": "interval_repair_local_complete_pending_push_and_exact_ci",
     "product_ci": {
       "head": "a478828aa6ab8c59dc310cd4639e6f7a55704bec",
       "ci": 40991186564,
@@ -1054,7 +1054,9 @@
       "timeout_minutes": 30,
       "classification": "artifacts/ci-a478828-cancellation-classification.json",
       "incomplete_tests_not_claimed": true
-    }
+    },
+    "pending_product_head": "7e68154a286bff65a7cdd727b63ffd58e676f88c",
+    "record_note": "Historical product_ci/pushed_head are a478828. New interval product has local acceptance and new wheel; push and exact CI pending when this document is formed."
   },
   "limits": [
     "Not complete H1 or integrated handoff.",
@@ -1185,9 +1187,11 @@
   },
   "ci_cost_repair": {
     "latest_source_reference": "p65-ci-cost-repair.json",
-    "latest_product_head": "0065200d6253cbb703d752aac3e0d1b9dfe80890",
-    "source_tests_scripts_digest": "9bbdeeeba487184c3a95fd96b0d20ae928ce1554c550beb2c5a0d598b79c745d",
-    "source_digest": "5f01a176f8ef29604da0437799eea49829cf971657334a1095360eebaac189bc",
-    "historical_top_level_source_fields": "Top-level source/product/verification fields retain the pre-optimization33ec9ea snapshot; latest optimized source and results are explicitly in this linked record."
+    "latest_product_head": "7e68154a286bff65a7cdd727b63ffd58e676f88c",
+    "source_tests_scripts_digest": "53700e17e0e5b598ab9b7e4e1e6ae5ac62f832be5887a29ddb5576aed73ac154",
+    "source_digest": "75445777a167e4cbc945691f8dd29adb8e72ae9995b98c6a34d08c2baa0022e3",
+    "historical_top_level_source_fields": "Top-level source/product/verification fields retain the pre-optimization33ec9ea snapshot; latest optimized source and results are explicitly in this linked record.",
+    "latest_report_head": "c72cdc30b798f40d23fdc5cdf519f0c5aadd4c84",
+    "latest_wheel_sha256": "ebb49fac5399b0b60898df4321aa47b7a408a684939fc69d0f8c7e8be2085210"
   }
 }

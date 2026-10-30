@@ -90,6 +90,7 @@ class PhaseFreeData:
     h [s], gaps [m], velocity [m/s], current_world [N*s]. Held iterations
     replace the normal component by gap/h; this is not a trajectory proof.
     """
+
     velocity: np.ndarray
     gaps: np.ndarray
     current_world: np.ndarray
@@ -107,6 +108,7 @@ class PhaseFreeData:
 @dataclass(frozen=True)
 class PhaseCapacities:
     """This step's owner mask and separately projected held normal impulses."""
+
     initial_closed: np.ndarray
     active: np.ndarray
     held_normal_ns: np.ndarray
@@ -139,9 +141,13 @@ class PhaseProposal:
 
     def __post_init__(self):
         k = len(self.normal_ns)
-        for name, shape in (("world_impulses", (k, 3)), ("normal_ns", (k,)),
-                            ("tangent_ns", (k, 3)), ("capacity_ns", (k,)),
-                            ("response", (3*k, 3*k))):
+        for name, shape in (
+            ("world_impulses", (k, 3)),
+            ("normal_ns", (k,)),
+            ("tangent_ns", (k, 3)),
+            ("capacity_ns", (k,)),
+            ("response", (3 * k, 3 * k)),
+        ):
             object.__setattr__(self, name, owned(getattr(self, name), shape, name=name))
 
 
@@ -155,8 +161,8 @@ def tangent_frame(n):
 def response_matrix(binding):
     """Probe the PUBLIC full same-domain operator; never apply its candidate."""
     k = len(binding.pairs)
-    result = np.empty((3*k, 3*k), np.float64)
-    for j in range(3*k):
+    result = np.empty((3 * k, 3 * k), np.float64)
+    for j in range(3 * k):
         unit = np.zeros((k, 3), np.float64)
         unit.flat[j] = 1.0
         result[:, j] = np.asarray(binding.operator.response(unit)).reshape(-1)
@@ -175,24 +181,28 @@ def rank_witness(matrix):
     if not n:
         return ((), (0, 1), (0, 1))
     q = Fraction.from_float
-    a = [[(q(float(matrix[i, j])) + q(float(matrix[j, i]))) / 2 for j in range(n)] for i in range(n)]
-    l = [[Fraction(int(i == j)) for j in range(n)] for i in range(n)]
+    a = [
+        [(q(float(matrix[i, j])) + q(float(matrix[j, i]))) / 2 for j in range(n)] for i in range(n)
+    ]
+    lower = [[Fraction(int(i == j)) for j in range(n)] for i in range(n)]
     d = []
     for i in range(n):
-        pivot = a[i][i] - sum(l[i][k]**2*d[k] for k in range(i))
+        pivot = a[i][i] - sum(lower[i][k] ** 2 * d[k] for k in range(i))
         if pivot <= 0:
             raise SolverFailure("full pressure response rank is not admitted")
         d.append(pivot)
         for j in range(i + 1, n):
-            l[j][i] = (a[j][i] - sum(l[j][k]*l[i][k]*d[k] for k in range(i))) / pivot
+            lower[j][i] = (
+                a[j][i] - sum(lower[j][k] * lower[i][k] * d[k] for k in range(i))
+            ) / pivot
     inverse = [[Fraction(0) for _ in range(n)] for _ in range(n)]
     for col in range(n):
-        y = [Fraction(0)]*n
+        y = [Fraction(0)] * n
         for i in range(n):
-            y[i] = Fraction(int(i == col)) - sum(l[i][j]*y[j] for j in range(i))
-        x = [Fraction(0)]*n
+            y[i] = Fraction(int(i == col)) - sum(lower[i][j] * y[j] for j in range(i))
+        x = [Fraction(0)] * n
         for i in reversed(range(n)):
-            x[i] = y[i]/d[i] - sum(l[j][i]*x[j] for j in range(i + 1, n))
+            x[i] = y[i] / d[i] - sum(lower[j][i] * x[j] for j in range(i + 1, n))
         for i in range(n):
             inverse[i][col] = x[i]
     inv_norm = max(sum(map(abs, row)) for row in inverse)
@@ -200,45 +210,56 @@ def rank_witness(matrix):
     skew = max(sum(abs(q(float(matrix[i, j])) - a[i][j]) for j in range(n)) for i in range(n))
     if skew * inv_norm >= 1:
         raise SolverFailure("stored response asymmetry exhausts positive-response witness")
-    asymmetry = max(abs(q(float(matrix[i, j]))-q(float(matrix[j, i]))) for i in range(n) for j in range(n))
+    asymmetry = max(
+        abs(q(float(matrix[i, j])) - q(float(matrix[j, i]))) for i in range(n) for j in range(n)
+    )
     raw_scale = max(abs(q(float(v))) for row in matrix for v in row)
-    if asymmetry > Fraction(1, 10**12)*raw_scale:
+    if asymmetry > Fraction(1, 10**12) * raw_scale:
         raise SolverFailure("full response exceeds relative asymmetry ceiling")
-    condition = norm*inv_norm
+    condition = norm * inv_norm
     if condition >= 10**12:
         raise SolverFailure("full response condition number is not strictly below 1e12")
-    token = lambda v: (v.numerator, v.denominator)
-    return (tuple(map(token, d)), token(condition), token(skew*inv_norm))
+
+    def token(v):
+        return (v.numerator, v.denominator)
+
+    return (tuple(map(token, d)), token(condition), token(skew * inv_norm))
 
 
 def propose_self_contact_phase(binding, normal_rays, free_data, *, phase, capacities, law, limits):
     if phase not in ("held", "terminal"):
         raise ValueError("unknown phase")
-    if not isinstance(law, SelfContactResponseLaw) or not isinstance(limits, SelfContactResponseLimits):
+    if not isinstance(law, SelfContactResponseLaw) or not isinstance(
+        limits, SelfContactResponseLimits
+    ):
         raise TypeError("explicit law and limits required")
     if not isinstance(free_data, PhaseFreeData) or not isinstance(capacities, PhaseCapacities):
         raise TypeError("typed free data and phase capacity required")
     k = len(binding.pairs)
     n = owned(normal_rays, (k, 3), name="normal rays")
-    if len(capacities.owners) != k or len(free_data.gaps) != k or np.any(abs(np.sum(n*n, axis=1)-1) > 1e-12):
+    if (
+        len(capacities.owners) != k
+        or len(free_data.gaps) != k
+        or np.any(abs(np.sum(n * n, axis=1) - 1) > 1e-12)
+    ):
         raise ValueError("normal/capacity binding mismatch")
     w = response_matrix(binding)
     witness = rank_witness(w)
     frames = [tangent_frame(row) for row in n]
-    transform = np.zeros((3*k, 3*k))
+    transform = np.zeros((3 * k, 3 * k))
     for i, frame in enumerate(frames):
-        transform[3*i:3*i+3, 3*i:3*i+3] = frame
-    proposal_w = w*0.5 + w.T*0.5
+        transform[3 * i : 3 * i + 3, 3 * i : 3 * i + 3] = frame
+    proposal_w = w * 0.5 + w.T * 0.5
     local_w = transform.T @ proposal_w @ transform
     velocity = free_data.velocity.copy()
     if phase == "held":
-        velocity += n*(free_data.gaps/free_data.h - np.sum(n*velocity, axis=1))[:, None]
+        velocity += n * (free_data.gaps / free_data.h - np.sum(n * velocity, axis=1))[:, None]
     free = transform.T @ (velocity.reshape(-1) - w @ free_data.current_world.reshape(-1))
     impulse = transform.T @ free_data.current_world.reshape(-1)
     radii = np.zeros(k)
     residual = 0.0
     for iteration in range(1, limits.max_normal_iterations + 1):
-        normal_ids = np.arange(0, 3*k, 3)
+        normal_ids = np.arange(0, 3 * k, 3)
         without_normal = impulse.copy()
         without_normal[normal_ids] = 0.0
         normal_free = free[normal_ids] + local_w[normal_ids] @ without_normal
@@ -248,48 +269,64 @@ def propose_self_contact_phase(binding, normal_rays, free_data, *, phase, capaci
         if len(active_ids):
             # Full normal active block is only a proposal; exact geometry and
             # actual replay independently decide whether it can be accepted.
-            solution = np.linalg.solve(local_w[np.ix_(active_ids, active_ids)], -normal_free[charged])
+            solution = np.linalg.solve(
+                local_w[np.ix_(active_ids, active_ids)], -normal_free[charged]
+            )
             impulse[active_ids] = np.maximum(solution, 0.0)
         for i in range(k):
-            block = slice(3*i, 3*i + 3)
+            block = slice(3 * i, 3 * i + 3)
             if not capacities.active[i]:
                 impulse[block] = 0.0
                 continue
             u = free[block] + local_w[block] @ impulse
-            impulse[3*i] = max(0.0, impulse[3*i] - u[0]/local_w[3*i, 3*i])
-            cap = impulse[3*i]
+            impulse[3 * i] = max(0.0, impulse[3 * i] - u[0] / local_w[3 * i, 3 * i])
+            cap = impulse[3 * i]
             if phase == "terminal" and not capacities.initial_closed[i]:
                 cap += capacities.held_normal_ns[i]
             if phase == "held" and not capacities.initial_closed[i]:
                 cap = 0.0
-            radii[i] = law.mu_dynamic*cap
-            ts = slice(3*i + 1, 3*i + 3)
+            radii[i] = law.mu_dynamic * cap
+            ts = slice(3 * i + 1, 3 * i + 3)
             u = free[ts] + local_w[ts] @ impulse - local_w[ts, ts] @ impulse[ts]
-            disk = solve_friction_disk(local_w[ts, ts], u, float(cap),
-                                      mu_static=law.mu_static, mu_dynamic=law.mu_dynamic,
-                                      tolerance=free_data.tolerance_mps/64,
-                                      max_iterations=limits.max_tangent_iterations)
+            disk = solve_friction_disk(
+                local_w[ts, ts],
+                u,
+                float(cap),
+                mu_static=law.mu_static,
+                mu_dynamic=law.mu_dynamic,
+                tolerance=free_data.tolerance_mps / 64,
+                max_iterations=limits.max_tangent_iterations,
+            )
             impulse[ts] = disk.impulse
         actual = free + local_w @ impulse
         residual = 0.0
         for i in range(k):
             if not capacities.active[i]:
                 continue
-            u, p = actual[3*i:3*i+3], impulse[3*i:3*i+3]
-            scale = local_w[3*i, 3*i]
-            residual = max(residual, -u[0], abs(min(scale*p[0], u[0])))
+            u, p = actual[3 * i : 3 * i + 3], impulse[3 * i : 3 * i + 3]
+            scale = local_w[3 * i, 3 * i]
+            residual = max(residual, -u[0], abs(min(scale * p[0], u[0])))
             tnorm, speed = np.linalg.norm(p[1:]), np.linalg.norm(u[1:])
-            residual = max(residual, max(0.0, tnorm-radii[i])*scale)
-            if radii[i] > 0 and speed > free_data.tolerance_mps/64:
-                residual = max(residual, np.linalg.norm(p[1:] + radii[i]*u[1:]/speed)*scale)
-        if residual <= free_data.tolerance_mps/64:
+            residual = max(residual, max(0.0, tnorm - radii[i]) * scale)
+            if radii[i] > 0 and speed > free_data.tolerance_mps / 64:
+                residual = max(residual, np.linalg.norm(p[1:] + radii[i] * u[1:] / speed) * scale)
+        if residual <= free_data.tolerance_mps / 64:
             break
     else:
         raise SolverFailure("conditional full-response solve exhausted; unknown")
     world = (transform @ impulse).reshape(k, 3)
-    normals = np.sum(world*n, axis=1)
-    return PhaseProposal(phase, world, normals, world-n*normals[:, None], radii, w,
-                         float(residual), iteration, witness)
+    normals = np.sum(world * n, axis=1)
+    return PhaseProposal(
+        phase,
+        world,
+        normals,
+        world - n * normals[:, None],
+        radii,
+        w,
+        float(residual),
+        iteration,
+        witness,
+    )
 
 
 @dataclass(frozen=True)
@@ -310,7 +347,17 @@ class SelfContactLoadPlan:
     def __post_init__(self):
         if self.phase not in ("held", "terminal"):
             raise ValueError("invalid load phase")
-        for name in ("triangles", "weights", "offsets", "pairs", "jacobians", "world_points", "world_impulses", "node_impulses", "raw_response"):
+        for name in (
+            "triangles",
+            "weights",
+            "offsets",
+            "pairs",
+            "jacobians",
+            "world_points",
+            "world_impulses",
+            "node_impulses",
+            "raw_response",
+        ):
             dtype = np.int64 if name in ("triangles", "pairs") else np.float64
             object.__setattr__(self, name, owned(getattr(self, name), dtype=dtype, name=name))
 
@@ -321,41 +368,60 @@ def make_self_contact_load_plan(binding, world_impulses, *, phase):
     if len(domains) != 1:
         raise ValueError("one physical base is required")
     nodes = binding.node_impulses(world)
-    arrays = dict(triangles=binding.triangles, weights=binding.weights, offsets=binding.offsets,
-                  pairs=binding.pairs, jacobians=binding.jacobians, world_points=binding.world_points,
-                  raw_response=response_matrix(binding))
-    token = fingerprint(dict(phase=phase, domain=domains[0], **arrays, world_impulses=world, node_impulses=nodes))
-    return SelfContactLoadPlan(phase, domains[0], **arrays, world_impulses=world,
-                               node_impulses=nodes, binding_token=token)
+    arrays = dict(
+        triangles=binding.triangles,
+        weights=binding.weights,
+        offsets=binding.offsets,
+        pairs=binding.pairs,
+        jacobians=binding.jacobians,
+        world_points=binding.world_points,
+        raw_response=response_matrix(binding),
+    )
+    token = fingerprint(
+        dict(phase=phase, domain=domains[0], **arrays, world_impulses=world, node_impulses=nodes)
+    )
+    return SelfContactLoadPlan(
+        phase, domains[0], **arrays, world_impulses=world, node_impulses=nodes, binding_token=token
+    )
 
 
 def rational_response_inverse(matrix):
     """R1/R2 exact symmetric admission, returning a certification inverse only."""
-    a = [[value if isinstance(value, Fraction) else Fraction(value) for value in row] for row in matrix]
+    a = [
+        [value if isinstance(value, Fraction) else Fraction(value) for value in row]
+        for row in matrix
+    ]
     n = len(a)
-    if any(len(row) != n for row in a) or any(a[i][j] != a[j][i] for i in range(n) for j in range(n)):
+    if any(len(row) != n for row in a) or any(
+        a[i][j] != a[j][i] for i in range(n) for j in range(n)
+    ):
         raise SolverFailure("exact response must be square and symmetric")
     if not n:
         return (), ((), (0, 1))
-    l = [[Fraction(int(i == j)) for j in range(n)] for i in range(n)]
+    lower = [[Fraction(int(i == j)) for j in range(n)] for i in range(n)]
     pivots = []
     for i in range(n):
-        pivot = a[i][i]-sum(l[i][k]**2*pivots[k] for k in range(i))
+        pivot = a[i][i] - sum(lower[i][k] ** 2 * pivots[k] for k in range(i))
         if pivot <= 0:
             raise SolverFailure("exact capacity response lacks positive LDL pivots")
         pivots.append(pivot)
-        for j in range(i+1, n):
-            l[j][i] = (a[j][i]-sum(l[j][k]*l[i][k]*pivots[k] for k in range(i)))/pivot
+        for j in range(i + 1, n):
+            lower[j][i] = (
+                a[j][i] - sum(lower[j][k] * lower[i][k] * pivots[k] for k in range(i))
+            ) / pivot
     inverse = [[Fraction(0) for _ in range(n)] for _ in range(n)]
     for column in range(n):
-        y, x = [Fraction(0)]*n, [Fraction(0)]*n
+        y, x = [Fraction(0)] * n, [Fraction(0)] * n
         for i in range(n):
-            y[i] = Fraction(int(i == column))-sum(l[i][j]*y[j] for j in range(i))
+            y[i] = Fraction(int(i == column)) - sum(lower[i][j] * y[j] for j in range(i))
         for i in reversed(range(n)):
-            x[i] = y[i]/pivots[i]-sum(l[j][i]*x[j] for j in range(i+1, n))
+            x[i] = y[i] / pivots[i] - sum(lower[j][i] * x[j] for j in range(i + 1, n))
             inverse[i][column] = x[i]
-    condition = max(sum(map(abs, row)) for row in a)*max(sum(map(abs, row)) for row in inverse)
+    condition = max(sum(map(abs, row)) for row in a) * max(sum(map(abs, row)) for row in inverse)
     if condition >= 10**12:
         raise SolverFailure("exact capacity response condition must be strictly below 1e12")
-    token = lambda value: (value.numerator, value.denominator)
+
+    def token(value):
+        return (value.numerator, value.denominator)
+
     return tuple(tuple(row) for row in inverse), (tuple(map(token, pivots)), token(condition))

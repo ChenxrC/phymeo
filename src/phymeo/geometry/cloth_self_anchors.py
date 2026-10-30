@@ -7,7 +7,7 @@ import numpy as np
 
 from ..constraints.cloth_self_response import owned
 from ..core.capabilities import SolverFailure
-from ._prism_pair_exact import PairNumber, PairField, square_root
+from ._prism_pair_exact import PairField, PairNumber, square_root
 from .prism_prism_manifold import PrismPairIdentity
 
 DENOMINATOR = 1 << 52
@@ -19,15 +19,15 @@ def q(value):
 
 
 def dot(a, b):
-    return sum(x*y for x, y in zip(a, b, strict=True))
+    return sum(x * y for x, y in zip(a, b, strict=True))
 
 
 def cross(a, b):
-    return (a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0])
+    return (a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0])
 
 
 def sub(a, b):
-    return tuple(x-y for x, y in zip(a, b, strict=True))
+    return tuple(x - y for x, y in zip(a, b, strict=True))
 
 
 def proof_data(value):
@@ -56,20 +56,22 @@ def _fraction(value):
 def _quantize(values):
     floors = []
     for value in values:
-        if value.sign() < 0 or (value-1).sign() > 0:
+        if value.sign() < 0 or (value - 1).sign() > 0:
             raise SolverFailure("ideal material address outside simplex")
         lo, hi = 0, DENOMINATOR
         while lo < hi:
-            mid = (lo+hi+1)//2
-            if (value-F(mid, DENOMINATOR)).sign() >= 0:
+            mid = (lo + hi + 1) // 2
+            if (value - F(mid, DENOMINATOR)).sign() >= 0:
                 lo = mid
             else:
-                hi = mid-1
+                hi = mid - 1
         floors.append(lo)
-    remaining = DENOMINATOR-sum(floors)
+    remaining = DENOMINATOR - sum(floors)
     if remaining not in (0, 1, 2):
         raise SolverFailure("ideal barycentric sum is not one")
-    ranks = sorted(range(3), key=lambda i: (values[i]-F(floors[i], DENOMINATOR), -i), reverse=True)
+    ranks = sorted(
+        range(3), key=lambda i: (values[i] - F(floors[i], DENOMINATOR), -i), reverse=True
+    )
     for i in ranks[:remaining]:
         floors[i] += 1
     return tuple(floors)
@@ -79,21 +81,27 @@ def _rounded(value, error):
     bits = value.field.limits.initial_sqrt_bits
     while True:
         lo, hi = value.bounds(bits)
-        result = float((lo+hi)/2)
-        if max(abs(q(result)-lo), abs(q(result)-hi)) <= error:
+        result = float((lo + hi) / 2)
+        if max(abs(q(result) - lo), abs(q(result) - hi)) <= error:
             return result
         if bits == value.field.limits.max_sqrt_bits:
             raise SolverFailure("material representation enclosure exhausted")
-        bits = min(bits*2, value.field.limits.max_sqrt_bits)
+        bits = min(bits * 2, value.field.limits.max_sqrt_bits)
 
 
 def ideal_attachment(vertices, counts, offset):
     """Reconstruct an actual address in the pair field, from original prism vertices."""
-    x = [tuple(_fraction((vertices[2*i][j]+vertices[2*i+1][j])/2) for j in range(3)) for i in range(3)]
+    x = [
+        tuple(_fraction((vertices[2 * i][j] + vertices[2 * i + 1][j]) / 2) for j in range(3))
+        for i in range(3)
+    ]
     area = cross(sub(x[1], x[0]), sub(x[2], x[0]))
     field = vertices[0][0].field
     norm = field.sqrt(dot(area, area))
-    return tuple(sum(F(counts[i], DENOMINATOR)*x[i][j] for i in range(3)) + q(offset)*area[j]/norm for j in range(3))
+    return tuple(
+        sum(F(counts[i], DENOMINATOR) * x[i][j] for i in range(3)) + q(offset) * area[j] / norm
+        for j in range(3)
+    )
 
 
 @dataclass(frozen=True)
@@ -118,10 +126,15 @@ class SelfContactAnchors:
         if len(set(self.owner_tokens)) != k:
             raise ValueError("duplicate material owner")
         for name, shape, dtype in (
-            ("triangles", (2*k, 3), np.int64), ("counts", (2*k, 3), np.int64),
-            ("weights", (2*k, 3), np.float64), ("offsets", (2*k,), np.float64),
-            ("pairs", (k, 2), np.int64), ("pair_index", (k,), np.int64),
-            ("normals", (k, 3), np.float64), ("active", (k,), bool), ("generations", (k,), np.int64),
+            ("triangles", (2 * k, 3), np.int64),
+            ("counts", (2 * k, 3), np.int64),
+            ("weights", (2 * k, 3), np.float64),
+            ("offsets", (2 * k,), np.float64),
+            ("pairs", (k, 2), np.int64),
+            ("pair_index", (k,), np.int64),
+            ("normals", (k, 3), np.float64),
+            ("active", (k,), bool),
+            ("generations", (k,), np.int64),
         ):
             object.__setattr__(self, name, owned(getattr(self, name), shape, dtype, name))
         if np.any(self.counts < 0) or np.any(np.sum(self.counts, axis=1) != DENOMINATOR):
@@ -134,7 +147,9 @@ def make_self_contact_anchors(manifolds, *, identities, history, limits, budgets
         raise ValueError("one explicit identity per manifold required")
     if len(manifolds) > limits.max_contacts:
         raise SolverFailure("pair budget exhausted")
-    rows, counts, offsets, owners, pair_index, normals, directions, points, generations = ([] for _ in range(9))
+    rows, counts, offsets, owners, pair_index, normals, directions, points, generations = (
+        [] for _ in range(9)
+    )
     seen_pairs = set()
     for pair, (manifold, identity) in enumerate(zip(manifolds, identities, strict=True)):
         canonical = tuple(sorted(map(int, identity.face_ids)))
@@ -144,8 +159,8 @@ def make_self_contact_anchors(manifolds, *, identities, history, limits, budgets
         oriented = []
         for side in np.argsort(identity.face_ids):
             ids = tuple(map(int, identity.node_ids[side]))
-            start = min(range(3), key=lambda i: ids[i:]+ids[:i])
-            oriented.append(ids[start:]+ids[:start])
+            start = min(range(3), key=lambda i: ids[i:] + ids[:i])
+            oriented.append(ids[start:] + ids[:start])
         if manifold.identity_token != (identity.domain, canonical, tuple(oriented)):
             raise ValueError("manifold oriented identity does not match caller")
         if manifold.exact_gap_bounds is None or not manifold.sat_complete:
@@ -153,30 +168,44 @@ def make_self_contact_anchors(manifolds, *, identities, history, limits, budgets
         if manifold.exact_gap_bounds[0] > 0:
             # A positive retained SAT witness may be unloaded even if clipping failed.
             continue
-        if manifold.status == "unresolved" or not manifold.sat_complete or not manifold.maximal_axes:
+        if (
+            manifold.status == "unresolved"
+            or not manifold.sat_complete
+            or not manifold.maximal_axes
+        ):
             raise SolverFailure("loaded manifold clipping/normal is unresolved")
         if manifold.exact_gap_bounds[1] < -q(budgets.penetration_m):
             raise SolverFailure("initial prism penetration exceeds budget")
         first = manifold.maximal_axes[0]
         d = first.direction
-        if any(any(cross(d, axis.direction)) or dot(d, axis.direction) <= 0 for axis in manifold.maximal_axes):
+        if any(
+            any(cross(d, axis.direction)) or dot(d, axis.direction) <= 0
+            for axis in manifold.maximal_axes
+        ):
             raise SolverFailure("loaded maximal SAT ties do not expose a unique oriented ray")
         complete = {}
         for axis in manifold.maximal_axes:
             if not axis.points:
                 raise SolverFailure("missing complete clipping extrema")
             for point in axis.points:
-                key = tuple(tuple(v.token for v in mat) for mat in (point.material_a, point.material_b))
+                key = tuple(
+                    tuple(v.token for v in mat) for mat in (point.material_a, point.material_b)
+                )
                 complete[key] = point
         if len(complete) > limits.max_anchors_per_pair:
             raise SolverFailure("anchor budget exhausted")
         for point in complete.values():
             materials = (point.material_a, point.material_b)
             cs = tuple(_quantize(mat[:3]) for mat in materials)
-            ss = tuple(_rounded(mat[3], q(budgets.anchor_error_m)/128) for mat in materials)
-            actual = tuple(ideal_attachment(manifold.vertices[side], cs[side], ss[side]) for side in range(2))
+            ss = tuple(_rounded(mat[3], q(budgets.anchor_error_m) / 128) for mat in materials)
+            actual = tuple(
+                ideal_attachment(manifold.vertices[side], cs[side], ss[side]) for side in range(2)
+            )
             for side in range(2):
-                extrusion = tuple((manifold.vertices[side][1][j]-manifold.vertices[side][0][j])/2 for j in range(3))
+                extrusion = tuple(
+                    (manifold.vertices[side][1][j] - manifold.vertices[side][0][j]) / 2
+                    for j in range(3)
+                )
                 rho = square_root(_fraction(dot(extrusion, extrusion)))
                 if rho is None or abs(q(ss[side])) > rho:
                     raise SolverFailure("represented signed offset left the finite prism")
@@ -186,14 +215,21 @@ def make_self_contact_anchors(manifolds, *, identities, history, limits, budgets
                     raise SolverFailure("represented address left the exact selected support")
                 ideal = point.point_a if side == 0 else point.point_b
                 for a, b in zip(actual[side], ideal, strict=True):
-                    lo, hi = (a-b).bounds(limits.geometry_limits.max_sqrt_bits)
-                    if max(abs(lo), abs(hi)) > q(budgets.anchor_error_m)/3:
+                    lo, hi = (a - b).bounds(limits.geometry_limits.max_sqrt_bits)
+                    if max(abs(lo), abs(hi)) > q(budgets.anchor_error_m) / 3:
                         raise SolverFailure("quantized material extreme error exceeds ceiling")
             endpoints = []
             for side in range(2):
                 ids = tuple(map(int, identity.node_ids[side]))
-                start = min(range(3), key=lambda i: ids[i:]+ids[:i])
-                endpoints.append((int(identity.face_ids[side]), ids[start:]+ids[:start], cs[side][start:]+cs[side][:start], int(np.array(ss[side]).view(np.int64))))
+                start = min(range(3), key=lambda i: ids[i:] + ids[:i])
+                endpoints.append(
+                    (
+                        int(identity.face_ids[side]),
+                        ids[start:] + ids[:start],
+                        cs[side][start:] + cs[side][:start],
+                        int(np.array(ss[side]).view(np.int64)),
+                    )
+                )
             material_token = (SCHEMA, identity.domain, tuple(sorted(endpoints)))
             generation = int(history.get(material_token, history.get("next_generation", 0)))
             if generation < 0 or generation >= np.iinfo(np.int64).max:
@@ -207,24 +243,39 @@ def make_self_contact_anchors(manifolds, *, identities, history, limits, budgets
             offsets.extend(ss)
             pair_index.append(pair)
             nd = np.array(d, dtype=np.float64)
-            normals.append(nd/np.linalg.norm(nd))
+            normals.append(nd / np.linalg.norm(nd))
             directions.append(d)
             points.append((point.point_a, point.point_b))
             generations.append(generation)
     k = len(owners)
-    cs = np.asarray(counts, dtype=np.int64).reshape(2*k, 3)
-    return SelfContactAnchors(identities, manifolds, tuple(owners), np.asarray(rows, dtype=np.int64).reshape(2*k, 3), cs,
-                             cs.astype(np.float64)/DENOMINATOR, np.asarray(offsets, dtype=np.float64),
-                             np.arange(2*k, dtype=np.int64).reshape(k, 2), np.asarray(pair_index, dtype=np.int64),
-                             np.asarray(normals, dtype=np.float64).reshape(k, 3), tuple(directions),
-                             np.ones(k, dtype=bool), np.asarray(generations, dtype=np.int64), tuple(points))
+    cs = np.asarray(counts, dtype=np.int64).reshape(2 * k, 3)
+    return SelfContactAnchors(
+        identities,
+        manifolds,
+        tuple(owners),
+        np.asarray(rows, dtype=np.int64).reshape(2 * k, 3),
+        cs,
+        cs.astype(np.float64) / DENOMINATOR,
+        np.asarray(offsets, dtype=np.float64),
+        np.arange(2 * k, dtype=np.int64).reshape(k, 2),
+        np.asarray(pair_index, dtype=np.int64),
+        np.asarray(normals, dtype=np.float64).reshape(k, 3),
+        tuple(directions),
+        np.ones(k, dtype=bool),
+        np.asarray(generations, dtype=np.int64),
+        tuple(points),
+    )
 
 
 def area_path(start, end):
     a, b = [tuple(tuple(map(q, row)) for row in x) for x in (start, end)]
     e, f = sub(a[1], a[0]), sub(a[2], a[0])
     de, df = sub(sub(b[1], b[0]), e), sub(sub(b[2], b[0]), f)
-    return (cross(e, f), tuple(x+y for x, y in zip(cross(e, df), cross(de, f), strict=True)), cross(de, df))
+    return (
+        cross(e, f),
+        tuple(x + y for x, y in zip(cross(e, df), cross(de, f), strict=True)),
+        cross(de, df),
+    )
 
 
 def require_area_path(start, end, *, constant_normal=False):
@@ -235,9 +286,9 @@ def require_area_path(start, end, *, constant_normal=False):
     polynomial = tuple(dot(c, direction) for c in coefficients)
     values = [polynomial[0], sum(polynomial)]
     if polynomial[2] > 0:
-        t = -polynomial[1]/(2*polynomial[2])
+        t = -polynomial[1] / (2 * polynomial[2])
         if 0 < t < 1:
-            values.append(polynomial[0]+polynomial[1]*t+polynomial[2]*t*t)
+            values.append(polynomial[0] + polynomial[1] * t + polynomial[2] * t * t)
     if min(values) <= 0:
         raise SolverFailure("face path has no positive oriented-area proof")
     if constant_normal and any(any(cross(c, direction)) for c in coefficients):
@@ -260,8 +311,12 @@ def require_fixed_support(anchors, start_positions, end_positions, loaded):
             x = tuple(tuple(map(q, v)) for v in start)
             area = cross(sub(x[1], x[0]), sub(x[2], x[0]))
             field = PairField(dot(area, area), dot(area, area))
-            normal = tuple(field.scalar(v)/field.sqrt(dot(area, area)) for v in area)
-            support = manifold.maximal_axes[0].support_a if side == 0 else manifold.maximal_axes[0].support_b
+            normal = tuple(field.scalar(v) / field.sqrt(dot(area, area)) for v in area)
+            support = (
+                manifold.maximal_axes[0].support_a
+                if side == 0
+                else manifold.maximal_axes[0].support_b
+            )
             material = anchors.counts[attachment]
             offset = q(anchors.offsets[attachment])
             # Initial support class binds top/bottom and all supporting material vertices.
@@ -271,7 +326,7 @@ def require_fixed_support(anchors, start_positions, end_positions, loaded):
                 for index, count in enumerate(material):
                     if count and values[index] != chosen:
                         raise SolverFailure("held material endpoint left its finite support")
-                if {i//2 for i in support} != {i for i, v in enumerate(values) if v == chosen}:
+                if {i // 2 for i in support} != {i for i, v in enumerate(values) if v == chosen}:
                     raise SolverFailure("charged support feature changed along path")
             if dot(normal, d).sign() and any((i % 2 == 0) != (offset < 0) for i in support):
                 raise SolverFailure("held thickness side changed")

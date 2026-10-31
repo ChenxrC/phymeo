@@ -1,5 +1,7 @@
 # P6.5 parallel code and serial execution queue
 
+> Archived queue · 2026-10-31. The recurring task was deleted. The dated owners, grants and pending items below are historical. See the [manual continuation](p65-continuation.md) for current work.
+
 ## Current owner: no executable slot; S2-F documentation only
 
 B2 standalone quotient is accepted at tested80d2a093759f820680640d6492aee8b610f23112/report0b55b83140958bb3045d1acdfe28c13c5a4acdbd, normal merge44456ea902ac08c4ce9eab92f9898d0fdd0c5d36. First complete host83/0.34s/RAW_EXIT0; final scoped static passed after formatting-only repair with identical AST/imports. Parent checked four delivered hashes/blobs,53 evidence entries,eight raw exits,six ZIP entries andfour import/config bindings;55 files archived with zero mismatch. Reports preserve original formatting/preparation/guard outcomes. No old suite or extra probe was repeated.

@@ -245,3 +245,15 @@ Here v_j includes the robot coordinate. This follows by expanding the kinetic qu
     max(0, T_(j-1)+T_j+w_j-margin_j),
 
 where margin_j=h^2(1/16000-h/354) on a free step and margin_j=m/600 on the impact step. Summing these positive parts keeps each endpoint and enclosure charge within its own step. The stored trajectory errors and enclosure widths still need to be established on the original inputs.
+
+## 原 R7 的细网格自由分支在首碰前遇到范围拒绝
+
+这是独立于 SC1 压力候选的第二个反例。取原 SC2 的 m=1、η=1/64、无重力、零压力，h=1/128 或 1/256。记 t=hη、L=th²。以下按 R7 已声明的最近偶数和正常数或零运算，并要求每条实际通过的材料行满足既有 τ=2×10⁻⁵ 角度审计。没有执行设备。[输入及分支](../benchmarks/p65-sc2-r7-free-range.json) · [有序材料行](../../src/phymeo/backends/_tyx_represented_material_kernels.py) · [独立角度检查](../../src/phymeo/validation/material_representation.py)
+
+第一次自由预测在共同平移外只有 d 高 t。三条距离行的 FP32 长度均为 1，弯曲行的左/右法向原向量为 (0,0,1) 与 (0,t,1)，两长度都舍入为 1。t_c=t_d=0，四个梯度为 (0,t,2)、0、(0,0,−1)、(0,−t,−1)，分母 h⁻²+6。真实角为 −atan(t)；如果首行通过，独立账本给观测角与它的误差 ≤τ。连同实际分母和 Δ 的 FP32 舍入，首个弯曲增量 Δ/L 在 h=1/128 时属于 (0.83,1.17)，h=1/256 时属于 (0.66,1.34)。不需要给 atan2 编造逐位结果。
+
+令 s=tΔ（乘二的幂，正常），u/v/w 分别为 a 的上移、c/d 的下移，均相对首个自由预测。它们距 2Δ、Δ、Δ 的单次位置写回误差分别不超过 L/128（h=1/128），或 L/32（h=1/256）。水平 y 修正为 (s,0,0,−s)，全部 x 不动。若同一物理步再扫一次取 ℓ=1；若首步扫一次就被接受，则下个自由预测取 ℓ=2。后者使用真实重建顺序：竖向 d−d_pred 为相近 FP32 数的精确差，除以二的幂 h，v_pred 加回得到可精确表示的 d/h，水平亦然；竖向参考加位移在本例 FP64 精确。两种情况下，第二次弯曲运算前的边向量都是 e=(1,−ℓs,−ℓu)、u_edge=(0,1,−ℓ(u+v))、v_edge=(−1,−1,ℓ(t−w))，其中接近 ±1 的水平分量按实际 FP32 舍入。距离行在这次仍无修正：最长竖向差不超过 2t，平方最多 2⁻²⁴，水平主轴为单位长度。到这个待评估材料行为止，两种分支的中面最低高度减去偏置 ρ 后，相对平台仍有大于 1/2048 m 的间隙。若过程先拒绝，也不能形成正控轨迹。
+
+第二次弯曲前，e²、左法向长度和 er² 均舍入为 1。t_c 是 −ℓs+ℓ²u(u+v) 的 FP32 结果，负且非零；正项相对 ℓs 不到 0.003。累加 ev 的初值 −1，后两项分别过小，故 ev=−1、t_d=0。左法向 x 的幅值为 ℓu 加 ℓ²s(u+v) 的舍入，后项远小于前项。由此 b 的水平梯度 g_bx 正常且非零，幅值 <1.01ℓ²su。两档分别有 s<1.17tL、u<2.35L，或 s<1.34tL、u<2.72L；下界可取 tL²/4。因此 |g_bx| 分别 <12tL² 及 <15tL²，均严格小于 2⁻⁶³，但大于 2⁻¹²⁶。原分母要求物化 g_bx²，非零平方不能以正常 FP32 表示。按代码，若到达这一运算就无法返回完整有限的行记录。这里不预测运行时错误码。[带检查的乘法](../../src/phymeo/backends/_tyx_numeric.py) · [有限返回检查](../../src/phymeo/backends/tyx_math.py)
+
+**决定。** 该障碍在布遇到平台以前出现，无需选择步内或终端接触分支。只更换压力迭代、只增加回溯或只接通材料分派，均不足以使原 R7 通过这两个必需细网格。理想首碰和能量结果仍是原有条件证据，本节没有把源码负控写成运行失败。

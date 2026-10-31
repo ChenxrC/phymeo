@@ -1,0 +1,42 @@
+{
+  "schema": "p65-sc2-r7-free-range-v1",
+  "status": "SOURCE_DERIVED_NOT_EXECUTED",
+  "control": "SC2 identity, unit particle masses, primary eta, first two zero-pressure steps",
+  "steps": ["1/128", "1/256"],
+  "inputs": {
+    "r": "0",
+    "eta": "2^-6",
+    "gap_m": "3/1024",
+    "gravity": "zero",
+    "v_z": ["-1/8", "-1/8", "-1/8", "-1/8+eta"],
+    "new_parameters": false,
+    "native_normalized_tolerance": "2e-5 (original unit reference angle and speed)"
+  },
+  "definitions": {
+    "t": "h*eta",
+    "L": "t*h^2",
+    "s": "t*delta1",
+    "u": "observed first-sweep rise of node a from its free predictor",
+    "v": "observed first-sweep drop of node c from its free predictor",
+    "w": "observed first-sweep drop of node d from its free predictor",
+    "ell": "1 for a second material sweep at the first step; 2 for the first material sweep at the second step if the first step completed after one sweep"
+  },
+  "cases": [
+    {
+      "h": "2^-7",
+      "t": "2^-13",
+      "L": "2^-27",
+      "delta1_over_L_open": ["0.83", "1.17"],
+      "upper_bound_abs_g_bx": "12*t*L^2 < 2^-63"
+    },
+    {
+      "h": "2^-8",
+      "t": "2^-14",
+      "L": "2^-30",
+      "delta1_over_L_open": ["0.66", "1.34"],
+      "upper_bound_abs_g_bx": "15*t*L^2 < 2^-63"
+    }
+  ],
+  "required_return_boundary": "On an attempted accepted path the first angle must satisfy the existing independent ledger bound. On continuing to the next bending evaluation the nonzero normal b-x gradient has an out-of-range square. Retain an earlier rejection if it occurs instead. No specific status integer is asserted.",
+  "physical_scope": "The free geometry is still strictly separated. No external contact impulse or pressure proposal is used. This is a reference counterexample to the unchanged R7 material path for these SC2 controls, not a measured backend outcome."
+}

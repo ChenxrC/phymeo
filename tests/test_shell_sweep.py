@@ -23,7 +23,10 @@ def evidence_value(value):
     if isinstance(value, np.ndarray):
         return {"dtype": value.dtype.str, "shape": value.shape, "values": value.tolist()}
     if dataclasses.is_dataclass(value):
-        return {"type": type(value).__name__, **{f.name: evidence_value(getattr(value, f.name)) for f in dataclasses.fields(value)}}
+        return {
+            "type": type(value).__name__,
+            **{f.name: evidence_value(getattr(value, f.name)) for f in dataclasses.fields(value)},
+        }
     if isinstance(value, (tuple, list)):
         return [evidence_value(v) for v in value]
     if isinstance(value, dict):
@@ -35,7 +38,9 @@ def save_evidence(folder, name, value):
     raw = json.dumps(evidence_value(value), sort_keys=True, separators=(",", ":")).encode()
     target = folder / (name + ".json")
     target.write_bytes(raw)
-    (folder / (name + ".sha256")).write_text(hashlib.sha256(raw).hexdigest() + "  " + target.name + "\n")
+    (folder / (name + ".sha256")).write_text(
+        hashlib.sha256(raw).hexdigest() + "  " + target.name + "\n"
+    )
     return raw
 
 
@@ -52,16 +57,35 @@ def test_f1_whole_window_every_substep_two_independent_rebuilds(variant, h, tmp_
         assert verify_shell_sweep(whole, ref, whole_path, h=1 / 8)
         assert max(cell.k_max for cell in whole.cells) < F(33, 64)
         assert len(whole.cells) > 0
-        saved = [save_evidence(tmp_path, f"rebuild-{rebuild}-whole", {"reference": ref, "path": whole_path, "h": F(1, 8), "certificate": whole})]
+        saved = [
+            save_evidence(
+                tmp_path,
+                f"rebuild-{rebuild}-whole",
+                {"reference": ref, "path": whole_path, "h": F(1, 8), "certificate": whole},
+            )
+        ]
         for step in range(int(F(1, 8) / h)):
-            q0 = F(1, 8) + step*h
-            q1 = q0+h
-            path = np.stack((f1_positions(ref, float(q0), rotation, shift), f1_positions(ref, float(q1), rotation, shift)))
+            q0 = F(1, 8) + step * h
+            q1 = q0 + h
+            path = np.stack(
+                (
+                    f1_positions(ref, float(q0), rotation, shift),
+                    f1_positions(ref, float(q1), rotation, shift),
+                )
+            )
             cert = certify_shell_sweep(ref, path, h=float(h))
             assert verify_shell_sweep(cert, ref, path, h=float(h))
             assert all(cell.k_max < F(33, 64) for cell in cert.cells)
-            assert all(len(cell.tetrahedra) == 6 and len(cell.pair_incidence) == 15 for cell in cert.cells)
-            saved.append(save_evidence(tmp_path, f"rebuild-{rebuild}-step-{step:03}", {"path": path, "h": h, "certificate": cert}))
+            assert all(
+                len(cell.tetrahedra) == 6 and len(cell.pair_incidence) == 15 for cell in cert.cells
+            )
+            saved.append(
+                save_evidence(
+                    tmp_path,
+                    f"rebuild-{rebuild}-step-{step:03}",
+                    {"path": path, "h": h, "certificate": cert},
+                )
+            )
         independent.append(saved)
     assert independent[0] == independent[1]
 

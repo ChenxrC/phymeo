@@ -77,6 +77,7 @@ def test_created_cells_count_failed_parents_and_depth():
     with pytest.raises(ShellUnresolved, match="depth"):
         b.visit_cell(2)
 
+
 def test_unary_fraction_negation_and_negative_absolute_value_are_metered():
     a = Arithmetic(ShellProofLimits())
     before = a.operations

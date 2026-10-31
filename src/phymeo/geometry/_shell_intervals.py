@@ -29,7 +29,11 @@ class Publication:
     def __post_init__(self):
         if type(self.values) is not np.ndarray or self.values.dtype != np.dtype("float64"):
             raise TypeError("publication requires an actual FP64 proposal array")
-        object.__setattr__(self, "values", np.frombuffer(self.values.tobytes(), dtype=np.float64).reshape(self.values.shape))
+        object.__setattr__(
+            self,
+            "values",
+            np.frombuffer(self.values.tobytes(), dtype=np.float64).reshape(self.values.shape),
+        )
         object.__setattr__(self, "intervals", tuple(self.intervals))
         object.__setattr__(self, "errors", tuple(self.errors))
         object.__setattr__(self, "shape", tuple(self.shape))
@@ -49,7 +53,10 @@ class Arithmetic:
         self.set_bits(self.bits)
 
     def set_bits(self, bits):
-        if type(bits) is not int or not self.limits.initial_sqrt_bits <= bits <= self.limits.max_sqrt_bits:
+        if (
+            type(bits) is not int
+            or not self.limits.initial_sqrt_bits <= bits <= self.limits.max_sqrt_bits
+        ):
             raise ShellUnresolved("precision_exhausted", "illegal sqrt precision")
         legal = self.limits.initial_sqrt_bits
         while legal < bits:
@@ -112,7 +119,13 @@ class Arithmetic:
             if a.denominator == b.denominator:
                 estimate = max(abs(a.numerator).bit_length(), abs(b.numerator).bit_length()) + 1
             else:
-                estimate = max(abs(a.numerator).bit_length() + b.denominator.bit_length(), abs(b.numerator).bit_length() + a.denominator.bit_length()) + 1
+                estimate = (
+                    max(
+                        abs(a.numerator).bit_length() + b.denominator.bit_length(),
+                        abs(b.numerator).bit_length() + a.denominator.bit_length(),
+                    )
+                    + 1
+                )
                 estimate = max(estimate, a.denominator.bit_length() + b.denominator.bit_length())
             if estimate > self.limits.max_fraction_bits:
                 raise ShellUnresolved("fraction_bits_exhausted", "addition intermediate")
@@ -123,8 +136,12 @@ class Arithmetic:
             b = F(b.denominator, b.numerator)
         if a == 0 or b == 0:
             return F(0)
-        if (abs(a.numerator).bit_length() + abs(b.numerator).bit_length() > self.limits.max_fraction_bits
-                or a.denominator.bit_length() + b.denominator.bit_length() > self.limits.max_fraction_bits):
+        if (
+            abs(a.numerator).bit_length() + abs(b.numerator).bit_length()
+            > self.limits.max_fraction_bits
+            or a.denominator.bit_length() + b.denominator.bit_length()
+            > self.limits.max_fraction_bits
+        ):
             raise ShellUnresolved("fraction_bits_exhausted", "multiplication intermediate")
         return self.check(a * b)
 
@@ -139,6 +156,7 @@ class Arithmetic:
     def qabs(self, value):
         self.check(value)
         return self.qneg(value) if value < 0 else value
+
     def qsub(self, a, b):
         return self._binary(a, b, "sub")
 
@@ -202,9 +220,12 @@ class Arithmetic:
         if n_square == value.numerator and d_square == value.denominator:
             root = self.qdiv(F(numerator_root), F(denominator_root))
             return root, root
-        if value.numerator.bit_length() + 2*self.bits > self.limits.max_fraction_bits or self.bits + 1 > self.limits.max_fraction_bits:
+        if (
+            value.numerator.bit_length() + 2 * self.bits > self.limits.max_fraction_bits
+            or self.bits + 1 > self.limits.max_fraction_bits
+        ):
             raise ShellUnresolved("fraction_bits_exhausted", "sqrt shift intermediate")
-        shifted = self.check_integer(value.numerator << (2*self.bits))
+        shifted = self.check_integer(value.numerator << (2 * self.bits))
         self.tick()
         quotient = self.check_integer(shifted // value.denominator)
         lower_integer = self._isqrt(quotient)
@@ -244,7 +265,10 @@ class Arithmetic:
         return self.sum(self.mul(x, y) for x, y in zip(a, b, strict=True))
 
     def cross(self, a, b):
-        return tuple(self.sub(self.mul(a[j], b[k]), self.mul(a[k], b[j])) for j, k in ((1, 2), (2, 0), (0, 1)))
+        return tuple(
+            self.sub(self.mul(a[j], b[k]), self.mul(a[k], b[j]))
+            for j, k in ((1, 2), (2, 0), (0, 1))
+        )
 
     def norm(self, vector):
         return self.sqrt(self.sum(self.square(value) for value in vector))
@@ -255,18 +279,26 @@ class Arithmetic:
         return ((zero, self.neg(z), y), (z, zero, self.neg(x)), (self.neg(y), x, zero))
 
     def matmul(self, left, right):
-        return tuple(tuple(self.dot(row, column) for column in zip(*right, strict=True)) for row in left)
+        return tuple(
+            tuple(self.dot(row, column) for column in zip(*right, strict=True)) for row in left
+        )
 
     def determinant(self, matrix):
         return self.dot(matrix[0], self.cross(matrix[1], matrix[2]))
 
     def inverse3(self, matrix):
         columns = tuple(zip(*matrix, strict=True))
-        crosses = (self.cross(columns[1], columns[2]), self.cross(columns[2], columns[0]), self.cross(columns[0], columns[1]))
+        crosses = (
+            self.cross(columns[1], columns[2]),
+            self.cross(columns[2], columns[0]),
+            self.cross(columns[0], columns[1]),
+        )
         determinant = self.dot(columns[0], crosses[0])
         if determinant.lo <= 0 <= determinant.hi:
             raise ShellUnresolved("reference_inverse_unknown", "determinant includes zero")
-        return tuple(tuple(self.div(entry, determinant) for entry in row) for row in crosses), determinant
+        return tuple(
+            tuple(self.div(entry, determinant) for entry in row) for row in crosses
+        ), determinant
 
     def poly(self, values):
         if type(values) not in (tuple, list) or not 1 <= len(values) <= 9:
@@ -278,7 +310,12 @@ class Arithmetic:
 
     def poly_add(self, a, b):
         a, b = self.poly(a), self.poly(b)
-        return self.poly(tuple(self.qadd(a[i] if i < len(a) else F(0), b[i] if i < len(b) else F(0)) for i in range(max(len(a), len(b)))))
+        return self.poly(
+            tuple(
+                self.qadd(a[i] if i < len(a) else F(0), b[i] if i < len(b) else F(0))
+                for i in range(max(len(a), len(b)))
+            )
+        )
 
     def poly_sub(self, a, b):
         return self.poly_add(a, tuple(self.qneg(v) for v in self.poly(b)))
@@ -290,7 +327,7 @@ class Arithmetic:
         result = [F(0)] * (len(a) + len(b) - 1)
         for i, left in enumerate(a):
             for j, right in enumerate(b):
-                result[i+j] = self.qadd(result[i+j], self.qmul(left, right))
+                result[i + j] = self.qadd(result[i + j], self.qmul(left, right))
         return self.poly(result)
 
     def poly_vsub(self, a, b):
@@ -300,7 +337,10 @@ class Arithmetic:
         return tuple(self.poly_add(x, y) for x, y in zip(a, b, strict=True))
 
     def poly_cross(self, a, b):
-        return tuple(self.poly_sub(self.poly_mul(a[j], b[k]), self.poly_mul(a[k], b[j])) for j, k in ((1, 2), (2, 0), (0, 1)))
+        return tuple(
+            self.poly_sub(self.poly_mul(a[j], b[k]), self.poly_mul(a[k], b[j]))
+            for j, k in ((1, 2), (2, 0), (0, 1))
+        )
 
     def poly_dot(self, a, b):
         result = (F(0),)
@@ -314,22 +354,24 @@ class Arithmetic:
         self.check(right)
         if left > right:
             raise ShellUnresolved("invalid_time_cell", "reversed interval")
-        degree = len(polynomial)-1
+        degree = len(polynomial) - 1
         width = self.qsub(right, left)
         powers = []
-        for j in range(degree+1):
+        for j in range(degree + 1):
             value = F(0)
-            for k in range(j, degree+1):
+            for k in range(j, degree + 1):
                 term = self.qmul(polynomial[k], F(comb(k, j)))
-                term = self.qmul(term, self.qpow(left, k-j))
+                term = self.qmul(term, self.qpow(left, k - j))
                 term = self.qmul(term, self.qpow(width, j))
                 value = self.qadd(value, term)
             powers.append(value)
         coefficients = []
-        for i in range(degree+1):
+        for i in range(degree + 1):
             value = F(0)
-            for j in range(i+1):
-                value = self.qadd(value, self.qmul(powers[j], self.qdiv(F(comb(i, j)), F(comb(degree, j)))))
+            for j in range(i + 1):
+                value = self.qadd(
+                    value, self.qmul(powers[j], self.qdiv(F(comb(i, j)), F(comb(degree, j))))
+                )
             coefficients.append(value)
         return Interval(min(coefficients), max(coefficients))
 
@@ -337,12 +379,16 @@ class Arithmetic:
         return tuple(self.polynomial_bounds(value, left, right) for value in vector)
 
     def publish(self, intervals, shape):
-        if type(shape) not in (tuple, list) or not shape or any(type(v) is not int or v <= 0 for v in shape):
+        if (
+            type(shape) not in (tuple, list)
+            or not shape
+            or any(type(v) is not int or v <= 0 for v in shape)
+        ):
             raise ShellUnresolved("invalid_publication", "shape")
         size = 1
         for dimension in shape:
             size *= dimension
-        if size != len(intervals) or size > self.limits.max_nodes*18:
+        if size != len(intervals) or size > self.limits.max_nodes * 18:
             raise ShellUnresolved("shape_budget", "publication")
         values, errors = [], []
         for interval in intervals:
@@ -355,12 +401,21 @@ class Arithmetic:
             if not isfinite(proposal):
                 raise ShellUnresolved("publication_not_representable", "nonfinite FP64")
             stored = self.input_float(proposal)
-            error = max(self.qabs(self.qsub(stored, interval.lo)), self.qabs(self.qsub(stored, interval.hi)))
+            error = max(
+                self.qabs(self.qsub(stored, interval.lo)), self.qabs(self.qsub(stored, interval.hi))
+            )
             if error >= F(1, 2**40):
-                raise ShellUnresolved("publication_error", "point/J storage error is not below 2^-40")
+                raise ShellUnresolved(
+                    "publication_error", "point/J storage error is not below 2^-40"
+                )
             values.append(proposal)
             errors.append(error)
-        return Publication(tuple(intervals), np.array(values, dtype=np.float64).reshape(shape), tuple(errors), tuple(shape))
+        return Publication(
+            tuple(intervals),
+            np.array(values, dtype=np.float64).reshape(shape),
+            tuple(errors),
+            tuple(shape),
+        )
 
     def visit_cell(self, depth):
         if type(depth) is not int or depth < 0 or depth > self.limits.max_time_depth:
@@ -368,6 +423,7 @@ class Arithmetic:
         self.created_cells += 1
         if self.created_cells > self.limits.max_time_cells:
             raise ShellUnresolved("time_cells_exhausted", "all visited/created cells")
+
     def qvsub(self, left, right):
         return tuple(self.qsub(a, b) for a, b in zip(left, right, strict=True))
 
@@ -381,7 +437,10 @@ class Arithmetic:
         return value
 
     def qcross(self, left, right):
-        return tuple(self.qsub(self.qmul(left[j], right[k]), self.qmul(left[k], right[j])) for j, k in ((1, 2), (2, 0), (0, 1)))
+        return tuple(
+            self.qsub(self.qmul(left[j], right[k]), self.qmul(left[k], right[j]))
+            for j, k in ((1, 2), (2, 0), (0, 1))
+        )
 
     def qcross2(self, left, right):
         return self.qsub(self.qmul(left[0], right[1]), self.qmul(left[1], right[0]))

@@ -13,7 +13,9 @@ from phymeo.geometry.shell_directors import shell_director_geometry, shell_mater
 def assert_publication(pub, expected):
     expected = np.asarray(expected)
     assert pub.values.shape == expected.shape
-    for interval, error, ideal, stored in zip(pub.intervals, pub.errors, expected.flat, pub.values.flat, strict=True):
+    for interval, error, ideal, stored in zip(
+        pub.intervals, pub.errors, expected.flat, pub.values.flat, strict=True
+    ):
         rational = F.from_float(float(ideal))
         assert interval.lo <= rational <= interval.hi
         assert error < F(1, 2**40)
@@ -50,7 +52,13 @@ def test_f2_complete_five_node_jacobian_and_exact_independent_response(variant):
     assert receipts[0] == receipts[1]
 
 
-@pytest.mark.parametrize("u,tangent,slip,energy", [(F(65, 256), F(-1, 8), F(0), F(-1089, 4096)), (F(65, 64), F(-1, 4), F(65, 128), F(-451, 1024))])
+@pytest.mark.parametrize(
+    "u,tangent,slip,energy",
+    [
+        (F(65, 256), F(-1, 8), F(0), F(-1089, 4096)),
+        (F(65, 64), F(-1, 4), F(65, 128), F(-451, 1024)),
+    ],
+)
 def test_f2_independent_impulse_squares_virtual_work_and_reaction(u, tangent, slip, energy):
     ref, _, _ = f2_reference()
     point = shell_material_point(ref, ref.reference_positions, top_center(ref))
@@ -70,8 +78,8 @@ def test_f2_independent_impulse_squares_virtual_work_and_reaction(u, tangent, sl
     kappa = F(65, 32)
     assert u + kappa * tangent == slip
     assert -F(1, 2) + F(1, 2) * (2 * F(1, 4)) + tangent * u + kappa * tangent**2 / 2 == energy
-    original_ke = (u*u + 1) / 2
-    outgoing_ke = ((u+tangent)**2 + F(1, 4) + tangent**2 + F(1, 4) + 2*(tangent/8)**2) / 2
+    original_ke = (u * u + 1) / 2
+    outgoing_ke = ((u + tangent) ** 2 + F(1, 4) + tangent**2 + F(1, 4) + 2 * (tangent / 8) ** 2) / 2
     assert outgoing_ke - original_ke == energy
 
 
@@ -81,9 +89,21 @@ def test_shared_material_parent_address_does_not_change_point_or_star():
     for tet in ref.tetrahedra:
         if (0, 1) not in tet.vertices:
             continue
-        address = ShellMaterialAddress(ref.reference_id, tet.tetra_id, tuple(2**52 if v == (0, 1) else 0 for v in tet.vertices), 3)
+        address = ShellMaterialAddress(
+            ref.reference_id,
+            tet.tetra_id,
+            tuple(2**52 if v == (0, 1) else 0 for v in tet.vertices),
+            3,
+        )
         point = shell_material_point(ref, ref.reference_positions, address)
-        receipts.append((point.canonical_address, point.node_ids, point.point.intervals, point.jacobian.intervals))
+        receipts.append(
+            (
+                point.canonical_address,
+                point.node_ids,
+                point.point.intervals,
+                point.jacobian.intervals,
+            )
+        )
     assert len(receipts) > 1 and all(value == receipts[0] for value in receipts)
 
 
@@ -97,15 +117,29 @@ def test_f1_nonflat_full_map_along_independently_differentiated_free_tangent(q, 
     point = shell_material_point(ref, positions, address)
     # y_top,2=(0,1-rho*q/s,q+rho/s), s=sqrt(1+q*q).
     # dy/dq=(0,-rho/s^3,1-rho*q/s^3), qdot=1.
-    from phymeo.geometry._shell_intervals import Arithmetic
     from phymeo.constraints.conforming_shell import ShellProofLimits
+    from phymeo.geometry._shell_intervals import Arithmetic
+
     a = Arithmetic(ShellProofLimits())
-    s = a.sqrt(a.exact(1 + q*q))
+    s = a.sqrt(a.exact(1 + q * q))
     inverse_cube = a.div(a.exact(1), a.mul(a.mul(s, s), s))
-    expected = (a.exact(0), a.mul(a.exact(-F(1, 16)), inverse_cube), a.sub(a.exact(1), a.mul(a.exact(q / 16), inverse_cube)))
-    expected = tuple(a.sum(a.mul(a.exact(F.from_float(float(rotation[i, j]))), expected[j]) for j in range(3)) for i in range(3))
+    expected = (
+        a.exact(0),
+        a.mul(a.exact(-F(1, 16)), inverse_cube),
+        a.sub(a.exact(1), a.mul(a.exact(q / 16), inverse_cube)),
+    )
+    expected = tuple(
+        a.sum(a.mul(a.exact(F.from_float(float(rotation[i, j]))), expected[j]) for j in range(3))
+        for i in range(3)
+    )
     # Add only the known two outer-node z columns, not producer response output.
-    blocks = dict(zip(point.node_ids, np.array(point.jacobian.intervals, dtype=object).reshape((-1, 3, 3)), strict=True))
+    blocks = dict(
+        zip(
+            point.node_ids,
+            np.array(point.jacobian.intervals, dtype=object).reshape((-1, 3, 3)),
+            strict=True,
+        )
+    )
     for component in range(3):
         value = a.exact(0)
         for node in (2, 3):

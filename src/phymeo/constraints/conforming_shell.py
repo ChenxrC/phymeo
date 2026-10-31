@@ -1,9 +1,9 @@
 """Owned conforming simplicial material identity; construction does not embed it."""
 
+import json
 from dataclasses import dataclass, fields
 from fractions import Fraction
 from hashlib import sha256
-import json
 
 import numpy as np
 
@@ -24,10 +24,12 @@ class ShellDirectorLaw:
     shape_policy: str = "invariant-1e-10-v1"
 
     def __post_init__(self):
-        if (self.kind != "raw-area-star-director-v1"
-                or type(self.projected_ratio_min) is not Fraction
-                or self.projected_ratio_min != Fraction(1, 4)
-                or self.shape_policy != "invariant-1e-10-v1"):
+        if (
+            self.kind != "raw-area-star-director-v1"
+            or type(self.projected_ratio_min) is not Fraction
+            or self.projected_ratio_min != Fraction(1, 4)
+            or self.shape_policy != "invariant-1e-10-v1"
+        ):
             raise ValueError("unsupported shell director law")
 
 
@@ -64,8 +66,11 @@ class ShellMaterialAddress:
     generation: int
 
     def __post_init__(self):
-        if (type(self.reference_id) is not str or len(self.reference_id) != 64
-                or any(c not in "0123456789abcdef" for c in self.reference_id)):
+        if (
+            type(self.reference_id) is not str
+            or len(self.reference_id) != 64
+            or any(c not in "0123456789abcdef" for c in self.reference_id)
+        ):
             raise ValueError("invalid reference identity")
         if not isinstance(self.tetra_id, (tuple, list)) or len(self.tetra_id) != 2:
             raise TypeError("tetra_id must have two exact integers")
@@ -79,7 +84,11 @@ class ShellMaterialAddress:
             raise TypeError("counts must be built-in integers, not bool")
         if any(v < 0 or v > 2**52 for v in self.counts) or sum(self.counts) != 2**52:
             raise ValueError("counts must be nonnegative and sum to 2^52")
-        if type(self.generation) is not int or self.generation < 0 or self.generation.bit_length() > 63:
+        if (
+            type(self.generation) is not int
+            or self.generation < 0
+            or self.generation.bit_length() > 63
+        ):
             raise ValueError("invalid generation")
         object.__setattr__(self, "tetra_id", tuple(self.tetra_id))
         object.__setattr__(self, "counts", tuple(self.counts))
@@ -103,7 +112,12 @@ def _cyclic(values):
 
 
 def _parity(values):
-    return -1 if sum(values[i] > values[j] for i in range(len(values)) for j in range(i + 1, len(values))) % 2 else 1
+    return (
+        -1
+        if sum(values[i] > values[j] for i in range(len(values)) for j in range(i + 1, len(values)))
+        % 2
+        else 1
+    )
 
 
 def _owned(array):
@@ -123,7 +137,12 @@ def _array(array, dtype, shape, name):
 
 def _topology(node_ids, face_ids, oriented_nodes, limits):
     nodes = tuple(sorted(int(v) for v in node_ids))
-    faces = tuple(sorted((int(i), tuple(int(v) for v in face)) for i, face in zip(face_ids, oriented_nodes, strict=True)))
+    faces = tuple(
+        sorted(
+            (int(i), tuple(int(v) for v in face))
+            for i, face in zip(face_ids, oriented_nodes, strict=True)
+        )
+    )
     known = set(nodes)
     seen = set()
     stars = {i: [] for i in nodes}
@@ -167,9 +186,15 @@ def _topology(node_ids, face_ids, oriented_nodes, limits):
                 pending.extend(link[v] - visited)
         boundary = any(node in edge and len(entries) == 1 for edge, entries in edges.items())
         degrees = sorted(len(v) for v in link.values())
-        correct = (degrees.count(1) == 2 and all(v in (1, 2) for v in degrees)) if boundary else all(v == 2 for v in degrees)
+        correct = (
+            (degrees.count(1) == 2 and all(v in (1, 2) for v in degrees))
+            if boundary
+            else all(v == 2 for v in degrees)
+        )
         if len(visited) != len(link) or not correct:
-            raise ShellUnresolved("invalid_reference_topology", "vertex link is not one interval/cycle")
+            raise ShellUnresolved(
+                "invalid_reference_topology", "vertex link is not one interval/cycle"
+            )
     components = []
     unseen = set(nodes)
     while unseen:
@@ -207,9 +232,11 @@ def _topology(node_ids, face_ids, oriented_nodes, limits):
     for face_id, face in faces:
         i, j, k = sorted(face)
         epsilon = _parity(face)
-        triples = (((i, -1), (j, -1), (k, -1), (k, 1)),
-                   ((i, -1), (j, -1), (j, 1), (k, 1)),
-                   ((i, -1), (i, 1), (j, 1), (k, 1)))
+        triples = (
+            ((i, -1), (j, -1), (k, -1), (k, 1)),
+            ((i, -1), (j, -1), (j, 1), (k, 1)),
+            ((i, -1), (i, 1), (j, 1), (k, 1)),
+        )
         for stair, vertices in enumerate(triples):
             if epsilon * (1, -1, 1)[stair] < 0:
                 vertices = vertices[:2] + (vertices[3], vertices[2])
@@ -219,7 +246,9 @@ def _topology(node_ids, face_ids, oriented_nodes, limits):
                 facet = tuple(v for index, v in enumerate(vertices) if index != omitted)
                 if omitted % 2:
                     facet = (facet[0], facet[2], facet[1])
-                facet_entries.setdefault(tuple(sorted(facet)), []).append((_cyclic(facet), tet.tetra_id))
+                facet_entries.setdefault(tuple(sorted(facet)), []).append(
+                    (_cyclic(facet), tet.tetra_id)
+                )
     boundary_facets = []
     for key, entries in sorted(facet_entries.items()):
         if len(entries) == 1:
@@ -246,29 +275,105 @@ class ConformingShellReference:
     reference_id: str
     input_fingerprint: str
 
-    def __init__(self, domain, node_ids, face_ids, oriented_nodes, reference_positions, half_thickness_m, *, law=ShellDirectorLaw(), limits=ShellProofLimits()):
+    def __init__(
+        self,
+        domain,
+        node_ids,
+        face_ids,
+        oriented_nodes,
+        reference_positions,
+        half_thickness_m,
+        *,
+        law=ShellDirectorLaw(),
+        limits=ShellProofLimits(),
+    ):
         if type(domain) is not str or not domain or len(domain.encode("utf-8")) > 256:
             raise ValueError("invalid shell domain")
         if type(law) is not ShellDirectorLaw or type(limits) is not ShellProofLimits:
             raise TypeError("owned shell law/limits required")
         law.__post_init__()
         limits.__post_init__()
-        if type(node_ids) is not np.ndarray or node_ids.ndim != 1 or type(face_ids) is not np.ndarray or face_ids.ndim != 1:
+        if (
+            type(node_ids) is not np.ndarray
+            or node_ids.ndim != 1
+            or type(face_ids) is not np.ndarray
+            or face_ids.ndim != 1
+        ):
             raise TypeError("rank-one node/face ID arrays required")
         n, f = len(node_ids), len(face_ids)
-        if not 3 <= n <= limits.max_nodes or not 1 <= f <= limits.max_faces or 3*f > limits.max_tetrahedra or (3*f)*(3*f-1)//2 > limits.max_pairs:
+        if (
+            not 3 <= n <= limits.max_nodes
+            or not 1 <= f <= limits.max_faces
+            or 3 * f > limits.max_tetrahedra
+            or (3 * f) * (3 * f - 1) // 2 > limits.max_pairs
+        ):
             raise ShellUnresolved("shape_budget", "nodes/faces/tetrahedra/pairs")
-        for value, dtype, shape, name in ((node_ids, "int64", (n,), "node_ids"), (face_ids, "int64", (f,), "face_ids"), (oriented_nodes, "int64", (f, 3), "oriented_nodes"), (reference_positions, "float64", (n, 3), "reference_positions"), (half_thickness_m, "float64", (n,), "half_thickness_m")):
+        for value, dtype, shape, name in (
+            (node_ids, "int64", (n,), "node_ids"),
+            (face_ids, "int64", (f,), "face_ids"),
+            (oriented_nodes, "int64", (f, 3), "oriented_nodes"),
+            (reference_positions, "float64", (n, 3), "reference_positions"),
+            (half_thickness_m, "float64", (n,), "half_thickness_m"),
+        ):
             _array(value, dtype, shape, name)
-        if np.any(node_ids < 0) or np.any(face_ids < 0) or len(set(node_ids.tolist())) != n or len(set(face_ids.tolist())) != f:
+        if (
+            np.any(node_ids < 0)
+            or np.any(face_ids < 0)
+            or len(set(node_ids.tolist())) != n
+            or len(set(face_ids.tolist())) != f
+        ):
             raise ValueError("IDs must be distinct nonnegative int64")
         if np.any(half_thickness_m <= 0):
             raise ValueError("half thickness must be positive")
-        tetrahedra, facets, components, cycles = _topology(node_ids, face_ids, oriented_nodes, limits)
-        canonical_nodes = sorted((int(node), reference_positions[row].tobytes().hex(), half_thickness_m[row:row+1].tobytes().hex()) for row, node in enumerate(node_ids))
-        canonical_faces = sorted((int(face_id), _cyclic(tuple(int(v) for v in face))) for face_id, face in zip(face_ids, oriented_nodes, strict=True))
-        identity = _digest(("conforming-shell-reference-v1", domain, canonical_nodes, canonical_faces, law.kind, (1, 4), law.shape_policy))
-        order = _digest((identity, node_ids.tobytes().hex(), face_ids.tobytes().hex(), oriented_nodes.tobytes().hex()))
-        values = dict(domain=domain, node_ids=_owned(node_ids), face_ids=_owned(face_ids), oriented_nodes=_owned(oriented_nodes), reference_positions=_owned(reference_positions), half_thickness_m=_owned(half_thickness_m), law=law, limits=limits, tetrahedra=tetrahedra, boundary_facets=facets, components=components, boundary_cycles=cycles, reference_id=identity, input_fingerprint=order)
+        tetrahedra, facets, components, cycles = _topology(
+            node_ids, face_ids, oriented_nodes, limits
+        )
+        canonical_nodes = sorted(
+            (
+                int(node),
+                reference_positions[row].tobytes().hex(),
+                half_thickness_m[row : row + 1].tobytes().hex(),
+            )
+            for row, node in enumerate(node_ids)
+        )
+        canonical_faces = sorted(
+            (int(face_id), _cyclic(tuple(int(v) for v in face)))
+            for face_id, face in zip(face_ids, oriented_nodes, strict=True)
+        )
+        identity = _digest(
+            (
+                "conforming-shell-reference-v1",
+                domain,
+                canonical_nodes,
+                canonical_faces,
+                law.kind,
+                (1, 4),
+                law.shape_policy,
+            )
+        )
+        order = _digest(
+            (
+                identity,
+                node_ids.tobytes().hex(),
+                face_ids.tobytes().hex(),
+                oriented_nodes.tobytes().hex(),
+            )
+        )
+        values = dict(
+            domain=domain,
+            node_ids=_owned(node_ids),
+            face_ids=_owned(face_ids),
+            oriented_nodes=_owned(oriented_nodes),
+            reference_positions=_owned(reference_positions),
+            half_thickness_m=_owned(half_thickness_m),
+            law=law,
+            limits=limits,
+            tetrahedra=tetrahedra,
+            boundary_facets=facets,
+            components=components,
+            boundary_cycles=cycles,
+            reference_id=identity,
+            input_fingerprint=order,
+        )
         for name, value in values.items():
             object.__setattr__(self, name, value)

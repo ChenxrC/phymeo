@@ -80,7 +80,9 @@ def test_f1_exact_six_oriented_tetrahedra_and_shared_diagonal():
     )
     assert len(ref.boundary_facets) == 12
     internal_edge_side = {((0, -1), (1, -1), (1, 1)), ((0, -1), (0, 1), (1, 1))}
-    assert not internal_edge_side.intersection(tuple(sorted(f.vertices)) for f in ref.boundary_facets)
+    assert not internal_edge_side.intersection(
+        tuple(sorted(f.vertices)) for f in ref.boundary_facets
+    )
     assert ref.components == ((0, 1, 2, 3),)
 
 
@@ -90,21 +92,39 @@ def test_reference_owns_arrays_with_immutable_backing_and_canonical_identity():
     assert ref.reference_id == changed.reference_id
     assert ref.input_fingerprint != changed.input_fingerprint
     assert ref.tetrahedra == changed.tetrahedra
-    for value in (ref.node_ids, ref.face_ids, ref.oriented_nodes, ref.reference_positions, ref.half_thickness_m):
+    for value in (
+        ref.node_ids,
+        ref.face_ids,
+        ref.oriented_nodes,
+        ref.reference_positions,
+        ref.half_thickness_m,
+    ):
         with pytest.raises(ValueError):
             value.flags.writeable = True
     with pytest.raises(FrozenInstanceError):
         ref.domain = "changed"
     source = np.array(ref.reference_positions, copy=True)
-    own = ConformingShellReference(ref.domain, ref.node_ids, ref.face_ids, ref.oriented_nodes, source, ref.half_thickness_m)
+    own = ConformingShellReference(
+        ref.domain, ref.node_ids, ref.face_ids, ref.oriented_nodes, source, ref.half_thickness_m
+    )
     source[:] = 17
     assert own.reference_id == ref.reference_id
 
 
-@pytest.mark.parametrize("mutation", ["dtype", "bool", "shape", "nan", "unused", "duplicate", "winding", "thickness", "domain"])
+@pytest.mark.parametrize(
+    "mutation",
+    ["dtype", "bool", "shape", "nan", "unused", "duplicate", "winding", "thickness", "domain"],
+)
 def test_rejects_malformed_owned_inputs(mutation):
     ref, _, _ = f1_reference()
-    data = [ref.domain, ref.node_ids.copy(), ref.face_ids.copy(), ref.oriented_nodes.copy(), ref.reference_positions.copy(), ref.half_thickness_m.copy()]
+    data = [
+        ref.domain,
+        ref.node_ids.copy(),
+        ref.face_ids.copy(),
+        ref.oriented_nodes.copy(),
+        ref.reference_positions.copy(),
+        ref.half_thickness_m.copy(),
+    ]
     if mutation == "dtype":
         data[1] = data[1].astype(np.int32)
     elif mutation == "bool":
@@ -129,12 +149,26 @@ def test_rejects_malformed_owned_inputs(mutation):
 
 def test_disconnected_vertex_link_rejects_bow_tie():
     with pytest.raises(ShellUnresolved, match="topology"):
-        ConformingShellReference("bow", np.arange(5, dtype=np.int64), np.arange(2, dtype=np.int64), np.array([[0, 1, 2], [0, 3, 4]], dtype=np.int64), np.zeros((5, 3), dtype=np.float64), np.ones(5))
+        ConformingShellReference(
+            "bow",
+            np.arange(5, dtype=np.int64),
+            np.arange(2, dtype=np.int64),
+            np.array([[0, 1, 2], [0, 3, 4]], dtype=np.int64),
+            np.zeros((5, 3), dtype=np.float64),
+            np.ones(5),
+        )
 
 
 def test_nonmanifold_edge_rejects_before_geometry():
     with pytest.raises(ShellUnresolved, match="topology"):
-        ConformingShellReference("edge", np.arange(5, dtype=np.int64), np.arange(3, dtype=np.int64), np.array([[0, 1, 2], [1, 0, 3], [0, 1, 4]], dtype=np.int64), np.zeros((5, 3)), np.ones(5))
+        ConformingShellReference(
+            "edge",
+            np.arange(5, dtype=np.int64),
+            np.arange(3, dtype=np.int64),
+            np.array([[0, 1, 2], [1, 0, 3], [0, 1, 4]], dtype=np.int64),
+            np.zeros((5, 3)),
+            np.ones(5),
+        )
 
 
 def test_law_limits_and_address_are_exact_owned_values():
@@ -156,10 +190,18 @@ def test_law_limits_and_address_are_exact_owned_values():
     with pytest.raises(TypeError):
         ShellMaterialAddress(ref.reference_id, (10, 0), [True, 0, 0, 2**52 - 1], 0)
 
+
 def test_cyclic_face_order_preserves_canonical_identity_but_binds_input_order():
     ref, _, _ = f1_reference()
     cycled = np.roll(ref.oriented_nodes, 1, axis=1)
-    other = ConformingShellReference(ref.domain, ref.node_ids, ref.face_ids, cycled, ref.reference_positions, ref.half_thickness_m)
+    other = ConformingShellReference(
+        ref.domain,
+        ref.node_ids,
+        ref.face_ids,
+        cycled,
+        ref.reference_positions,
+        ref.half_thickness_m,
+    )
     assert other.reference_id == ref.reference_id
     assert other.input_fingerprint != ref.input_fingerprint
     assert other.tetrahedra == ref.tetrahedra
@@ -168,4 +210,12 @@ def test_cyclic_face_order_preserves_canonical_identity_but_binds_input_order():
 def test_constructor_shape_ceiling_precedes_owned_copy():
     ref, _, _ = f1_reference()
     with pytest.raises(ShellUnresolved, match="shape"):
-        ConformingShellReference(ref.domain, ref.node_ids, ref.face_ids, ref.oriented_nodes, ref.reference_positions, ref.half_thickness_m, limits=replace(ShellProofLimits(), max_nodes=3))
+        ConformingShellReference(
+            ref.domain,
+            ref.node_ids,
+            ref.face_ids,
+            ref.oriented_nodes,
+            ref.reference_positions,
+            ref.half_thickness_m,
+            limits=replace(ShellProofLimits(), max_nodes=3),
+        )

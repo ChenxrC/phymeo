@@ -1,6 +1,6 @@
 # S2-FB-G authoring brief
 
-Status: GRANTED_CODE_AND_TEST_AUTHORING_ONLY. NO EXECUTION SLOT.
+Status: VALIDATED_ACCEPTED_SLOT_RELEASED for S2-FB-G. All preceding authoring/grant states below are retained history; no new task or execution is assigned.
 Owner: ORIGINAL /root/p65_self_contact_module.
 Worktree: C:/Users/38347/.codex/worktrees/p65-self-contact-module/phymeo
 Starting clean HEAD:04892aaa2b2200df3026d2ba9d267778a5307980.
@@ -48,3 +48,8 @@ The complete clean handoff 873e42f9ec78968b713796503b4604a4343f1a99 has been rea
 ## 2026-10-31 focused host validation grant after R1/R2 handoff
 
 Current status: GRANTED_SOLE_SERIAL_HOST_VALIDATION to the SAME original /root/p65_self_contact_module, beginning at clean13bd742e6ba444d4c218d43ec8731840f047530a. R1/R2 authoring findings are resolved by parent text review; source bytes remain identical to the complete873e42f9 review. Read [the sole serial host validation grant](task-2-shell-boundary-geometry-validation-grant.md) before any execution. It now supersedes the preceding authoring-only/no-slot status for this owner and exact queue only. Preserve all frozen proof/fixture/resource boundaries, raw first outcomes and complete same-run saved evidence. Parent and other agents perform no concurrent project execution. This permission is not a test/pass/physical result; report formal slot release only after the grant's complete evidence and clean/global guard conditions.
+
+
+## 2026-10-31 final HOST geometry acceptance
+
+[Parent acceptance](../../../docs/development/p65-shell-boundary-geometry-parent-acceptance.md) records tested8fba8d0, report9cb6c1f, sole-owner release,126 host passes,1413 complete payloads/704 predetermined rebuild pairs and normal mergeeae9143. All twelve delivered blobs and working bytes match. Original S2 is released with no remaining execution in this grant. General changing/clipped/loaded geometry and actual physical/native/robot/B2 integration remain open; this is not full S2-F or P6.5 completion.

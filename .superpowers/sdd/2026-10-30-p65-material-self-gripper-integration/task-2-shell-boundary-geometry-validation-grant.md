@@ -1,6 +1,6 @@
 # S2-FB-G focused host serial validation grant
 
-Status: GRANTED_SOLE_SERIAL_HOST_VALIDATION; fresh owner pre-execution guard is mandatory.
+Status: VALIDATED_ACCEPTED_SLOT_RELEASED. This completed queue grants no further execution. Earlier grant/authoring paragraphs are historical.
 Sole owner: ORIGINAL /root/p65_self_contact_module.
 Worktree: C:/Users/38347/.codex/worktrees/p65-self-contact-module/phymeo
 Branch: codex/p65-self-contact-module
@@ -83,3 +83,8 @@ No accepted FG99/S2-L/S2-LG/R7/quotient/adapter/G2 or other suite, interpret/CUD
 The original S2 author retains the SOLE project execution slot. Parent now authorizes the strictly bounded file-IO transaction in [the closed-payload storage ruling](../../../docs/development/p65-shell-boundary-storage-ruling-01.md), specifically for run13 and its predeclared1413 JSON payloads. The later explicit permission supersedes the earlier absence of compression permission only within that scope.
 
 This permits independent gzip streams for closed, single-write payloads with no future test consumer. Redundant plain removal requires unchanged sidecar-bound original SHA/size, independent streaming decompression SHA/size equality, unchanged-original recheck, durable logical index and per-file transaction receipt first. All logs/sidecars/manifests/source snapshots remain. The saved audit must transparently resolve exact original bytes, preserve all704 predetermined comparisons and run only after the HOST process exits. No source/test rerun, numerical probe, extra project process or alteration of acceptance criteria follows.
+
+
+## 2026-10-31 completed validation and parent acceptance
+
+Original owner released at16:43:01.7128149+08 with clean report9cb6c1f and zero matching execution/owned sessions. Tested8fba8d0 passed all126 host cases and the same-run1413-payload/704-full-byte-pair audit. Parent independently audited source/delivery/raw evidence, preserved11927 archived physical files and normally merged eae9143ceabd8b9bb05c78de6e1b43fa2900d980 with all twelve blobs/working bytes equal. See [parent acceptance](../../../docs/development/p65-shell-boundary-geometry-parent-acceptance.md) for exact results, retained failures, hashes and scope. This closes only the finite HOST geometry grant. Do not rerun this green queue, restart its sessions or treat it as loaded/native/full-P6.5 acceptance.

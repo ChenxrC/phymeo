@@ -6,7 +6,7 @@
 **Architecture:** Reuse the original B/S worktrees and implementers; parent G2-P in the integration tree. One state owner per physical domain; one global execution queue. New modules stay additive until their versioned validation and shared integration are complete.
 **Tech Stack:** Existing Python/NumPy/Fraction and tyx pin99f6df7c0fd8fdeef77f97df83914da27b64b7ee; no dependency change.
 **Spec:** ../specs/2026-10-30-p65-material-self-gripper-integration-design.md
-**State:** G2-P, S2-LG, B2 R7, parent point adapter, S2-L response, standalone quotient and S2-FG strict host geometry/full director maps are locally accepted in their explicit scopes. S2-L merge1396df42, quotient merge44456ea and S2-FG merge83c933e7 are complete; all execution slots released. S2-FB proposal c065cb60 is imported as 5c34f32 and reviewed; implementation remains NOT_FROZEN. Original S2 next receives only a targeted DOCUMENTATION_ONLY witness/cost appendix: static exact fields and proved constant-director segments, complete C1/C2 coverage under original counters. General changing-director paths remain required later. Full weak/contact/fold/B2 integration/general robots/review/wheel/P6.5 remain open.
+**State:** G2-P, S2-LG, B2 R7, parent point adapter, S2-L response, standalone quotient, S2-FG strict host geometry and S2-FB-G finite weak-boundary host geometry are locally accepted in their explicit scopes. S2-FB-G tested8fba8d0/report9cb6c1f is merged as eae9143 with complete saved evidence and byte parity; all execution slots are released. Full loaded/changing/clipped folding, typed ordinary-mass B2/R7 contact, general robots, native transactions, integrated review/build/wheel and the final dual-arm/Three.js demonstration remain open.
 
 ## Global constraints
 
@@ -114,7 +114,12 @@ The [conforming geometry plan](2026-10-31-p65-conforming-shell-geometry.md) impl
 - [x] Complete Appendix A.1-A.12 reviewed; exact original prefix/final scope/hash/blob checked; normal import7752c5b.
 - [x] Conditional convex-cluster/matching full-coverage proof and original-budget hand envelopes reviewed.
 - [x] [S2-FB-G design](../specs/2026-10-31-p65-shell-boundary-geometry-design.md), [implementation plan](2026-10-31-p65-shell-boundary-geometry.md) and [original-author brief](../../../.superpowers/sdd/2026-10-30-p65-material-self-gripper-integration/task-2-shell-boundary-geometry-brief.md) freeze exactly twelve NEW paths, CODE_AND_TEST_AUTHORING_ONLY, NO EXECUTION SLOT.
-- [ ] Original S2 author delivers clean twelve-file CODE_READY_TESTS_PENDING.
-- [ ] Parent full final-source review and separate sole focused HOST grant, then saved evidence/acceptance/integration.
+- [x] Original S2 author delivers clean twelve-file CODE_READY_TESTS_PENDING.
+- [x] Parent full final-source review and separate sole focused HOST grant, then saved evidence/acceptance/integration.
 - [ ] General changing/clipped/loaded fold, actual physical/native/robot/B2/R7 integration and whole P6.5.
 Existing accepted S2-L/FG/quotient and other scopes are reused; no old green suites or evidence audits are restarted. The hand operation bounds are not new executable results.
+
+
+## S2-FB-G HOST acceptance
+
+[Parent acceptance](../../development/p65-shell-boundary-geometry-parent-acceptance.md) records126 host passes,1413 complete same-call payloads,704 predefined full-byte rebuild pairs, final source/evidence audits and normal twelve-path mergeeae9143. Parent archived11927 physical files including the final manifest/sidecar, retaining original compressed evidence. This closes the finite convex-cluster/matching and constant-derived-director geometry prerequisite only. Task4's actual full physical integration, loaded folds, robot/native and final review/build obligations remain unchecked; remote CI remains deferred/unpassed.

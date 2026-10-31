@@ -1,6 +1,6 @@
 # S2-FB-G implementation plan
 
-Status: GRANTED_SOLE_SERIAL_HOST_VALIDATION; owner fresh pre-execution guard pending. Tasks1-5 denote authoring/text review only, not test results.
+Status: VALIDATED_ACCEPTED_SLOT_RELEASED. Tasks1-5 retain authoring/text-review history; Task6 now records completed actual HOST validation and parent acceptance.
 Authority: [frozen design](../specs/2026-10-31-p65-shell-boundary-geometry-design.md).
 Owner: original /root/p65_self_contact_module, isolated p65-self-contact-module worktree, clean starting commit04892aaa2b2200df3026d2ba9d267778a5307980.
 Parent owns old shared seams. Only the design's twelve NEW paths may change.
@@ -34,13 +34,13 @@ Parent owns old shared seams. Only the design's twelve NEW paths may change.
 - [x] Twelve SHA256/blob entries, small commits, clean CODE_READY_TESTS_PENDING and AUTHORING_SLOT_RELEASED.
 - [x] Parent reads full final twelve-file delivery and checks scope/hashes before ANY separate validation grant.
 
-## 6. Sole serial host validation — GRANTED to original S2 only
-- [ ] Fresh Git/global execution guard and one explicit sole owner.
-- [ ] Existing main .venv-py311 with child/src, imports/environment and only ten new Python static checks, original raw exits/source snapshots.
-- [ ] All five authored host files, fresh checked-absent absolute basetemp, complete fixed controls with no skip/deselection/fallback.
-- [ ] Same-run full evidence/rebuild audit from the predeclared grid; no hidden second geometry/physics run.
-- [ ] Honest failures/qualified style repairs; no changed oracle/control/cap and no unchanged-green rerun.
-- [ ] Reports/inventory/raw receipts/clean/global-zero formal release, parent evidence acceptance and normal merge with byte parity.
+## 6. Sole serial host validation — ACCEPTED and released
+- [x] Fresh Git/global execution guard and one explicit sole owner.
+- [x] Existing main .venv-py311 with child/src, imports/environment and only ten new Python static checks, original raw exits/source snapshots.
+- [x] All five authored host files, fresh checked-absent absolute basetemp, complete fixed controls with no skip/deselection/fallback.
+- [x] Same-run full evidence/rebuild audit from the predeclared grid; no hidden second geometry/physics run.
+- [x] Honest failures/qualified style repairs; no changed oracle/control/cap and no unchanged-green rerun.
+- [x] Reports/inventory/raw receipts/clean/global-zero formal release, parent evidence acceptance and normal merge with byte parity.
 
 ## 7. Remaining P6.5
 - [ ] General clipped/rotating boundary contact and actual loaded physical trajectories.
@@ -50,3 +50,6 @@ No completion claim or native/physical execution follows from Tasks1-5.
 
 
 2026-10-31: clean child13bd742e6ba444d4c218d43ec8731840f047530a completes the R1/R2 authoring continuation. Parent complete source review plus four-file delta review and unchanged-source binding are complete. Follow [the focused host grant](../../../.superpowers/sdd/2026-10-30-p65-material-self-gripper-integration/task-2-shell-boundary-geometry-validation-grant.md); all Task6 execution/results and Task7 physical obligations remain unchecked.
+
+
+2026-10-31 final: [parent acceptance](../../development/p65-shell-boundary-geometry-parent-acceptance.md) closes Task6 on tested8fba8d0/report9cb6c1f and mergeeae9143. The complete126-case run and original1413-payload/704-pair evidence are archived and accepted without rerunning them. All Task7 obligations remain open.

@@ -161,3 +161,140 @@ Still unresolved for BOTH complete unchanged controls:
 - actual native finite-iteration evidence and typed shared integration.
 
 No full SC1/SC2 success or physical grant follows from this local lemma. No test, import, arithmetic probe, formatter, lint, compiler or build was executed to obtain it.
+
+## 6. Conditional ideal material-sweep convergence
+
+The earlier bounds also yield a concrete result for the EXACT-ARITHMETIC material replay under an additional predictor hypothesis. This is not a claim about any stored/native trajectory or the outer pressure/gap solve.
+
+Use length L0=1 m, mass m0=1 kg and time unit1 s. Normalize each distance constraint by Cref=1 m and bending by Cref=1 rad. Write xi=x/L0, c_j=C_j/Cref_j, g_j=grad_xi c_j, H_j=Hess_xi c_j, Wbar=m0 W and dimensionless multiplier
+
+    ell_j = lambda_j Cref_j/(m0 L0^2).
+    a_j = alpha_j m0 L0^2/(Cref_j^2 h^2).
+
+For the unchanged unit physical compliances, all a_j=A=h^-2>=4096 numerically. These definitions justify comparing distance and angular residuals in one dimensionless norm; their physical units are not identified.
+
+Assume constant particle masses between1/2 and2 kg, keeping these unit compliances for this conditional statement, so eigenvalues of Wbar and Mbar are in[1/2,2]. Unit base masses satisfy this hypothesis. This does not change the interpretation of any already declared mass/compliance variant. A separate explicitly homogeneous mass/compliance scaling can instead be reduced to unit mass by its original homogeneity law.
+
+Assume the ideal predicted configuration xi_hat is within1/128 of every translated reference node, and all four multipliers start at zero. Apply exactly the original three distance rows and one bending row once per sweep, in any fixed order, with the exact row equations of section4. All h, rows and rest perturbations are unchanged.
+
+Define the dimensionless maximum row residual R=max_j |c_j+A ell_j|. At the predictor,
+
+    R0 <= 3/64 + 5/4096 = 197/4096 < 1/20 < 1/8.
+
+The distance residuals are <=1/64; the displayed larger bound covers the bending row and every declared rest perturbation.
+
+### One row and one complete sweep
+
+Let R be the residual maximum at a sweep entrance, R<=1/8. For one ideal row i, d_i=A+g_i^T Wbar g_i>=A and
+
+    |Delta ell_i| <= R_stage/A,
+    ||Delta xi|| <= 6 R_stage/A.
+
+For any other row j, its multiplier is unchanged. Provided the row segment is in the neighborhood, the mean-value theorem gives
+
+    |Delta(c_j+A ell_j)| <= 18 R_stage/A.
+
+For the updated row itself the linear term cancels exactly:
+
+    c_i(xi+Wbar g_i Delta ell_i)+A(ell_i+Delta ell_i)
+      = c_i(xi+Wbar g_i Delta ell_i)-c_i(xi)
+        -g_i^T Wbar g_i Delta ell_i.
+
+Its absolute value is <=594 R_stage^2/A^2, using ||H_i||<=33 and ||Wbar g_i||<=6. There is no assertion that its nonlinear remainder is zero.
+
+For all four row entrances and exits,
+
+    R_stage <= (1+18/A)^4 R < (33/32)R.
+
+One convenient proof is (1+x)^4<=1/(1-4x) for 0<=4x<1; at x=18/4096 this is512/503<33/32. The updated-row quadratic bound is smaller than R_stage in the stated range, so it also obeys this stage bound.
+
+Each row has at most three later rows in the sweep. With u=33/32,
+
+    R_next <= [54u/A + 594u^2 R/A^2] R
+            <= [56/A + 80/A^2] R
+            < R/64.
+
+The final inequality follows already at A=4096:
+56/4096+80/4096^2=14341/1048576<1/64.
+This is a contraction of the COMPLETE four-row constitutive residual after a sweep, not a claim that the full unconstrained x/ell Jacobian has norm<1.
+
+### Neighborhood invariance and finite history
+
+The total product-norm configuration motion in one sweep is bounded by
+
+    4*6*u R/A = (99/4)R/A.
+
+Summing the geometric sweep bound gives
+
+    sum_all_rows ||Delta xi|| <= (99/4)(64/63) R0/A
+                              = (176/7) R0/A <26 R0/A.
+
+Even the weaker R0<=1/8 gives26/(8*4096)=13/16384<1/128. Thus a predictor in the inner per-node1/128 neighborhood cannot leave the outer per-node1/64 neighborhood during these row segments.
+
+This can be proved by induction without assuming the desired invariance: previous complete sweeps obey the geometric residual bounds; the partial current sweep has at most the four stage bounds above. Their cumulative displacement is below the available1/128 margin. The next entire affine row segment is therefore inside the convex neighborhood where its gradient/Hessian bounds apply. No physical-time path is inferred from this computational sequence.
+
+For every row separately,
+
+    sum_all_sweeps |Delta ell_j| <= u R0/[A(1-1/64)]
+                                 = (22/21) R0/A.
+
+The sequence of ideal configurations and multipliers is Cauchy. For a finite N sweeps,
+
+    R_N <=64^-N R0.
+
+In particular N=512 gives the exact ideal upper bound2^-3072 R0. No executable result, finite-precision residual or underflow behavior is asserted by that expression. Rounded native updates can have a nonzero error floor and still require their original independent evidence.
+
+### Ordered-gradient drift remains nonzero
+
+At any finite end configuration xi_N, define eta_N from the full ideal row history as in the earlier residual identity. With zero initial multipliers and exact arithmetic there are no conversion/predictor/lambda discrepancies in this particular ideal theorem, but changing gradients remain:
+
+    xi_N-xi_hat = Wbar sum_j g_j(xi_N) ell_j,N + eta_N.
+
+The three distance Hessian norms are each <3 and bending is <33. Combining their sum<42 with the displacement and per-row absolute multiplier bounds yields
+
+    ||eta_N|| <=2 *42 *(26 R0/A)*((22/21)R0/A)
+               =2288 R0^2/A^2.
+
+Thus residual contraction does NOT identify the ordered-XPBD limit with the backward-Euler material root. The nonzero drift term is retained explicitly; it is not discarded because lambda updates have converged.
+
+For the dimensionless fixed-predictor material force residual,
+
+    R_force,N = Mbar A(xi_N-xi_hat) + grad Ubar(xi_N),
+
+the complete identity gives
+
+    ||R_force,N|| <= (15/2) R_N +4576 R0^2/A,
+
+because the sum of the four gradient norms is <3 sqrt(2)+3<15/2 and ||Mbar||<=2. This is an absolute upper bound, not measured error, external work or an energy credit.
+
+### A nearby fixed-input material root
+
+The same predictor hypothesis also proves existence of a root for this FIXED-predictor material problem. On the product neighborhood, Phi has Hessian >=mu I with
+
+    mu=A/2-19>=2029.
+
+The Euclidean product ball of radius1/128 about xi_hat is entirely within the outer per-node1/64 neighborhood. At its center,
+
+    ||grad Phi(xi_hat)||=||grad Ubar(xi_hat)||<=(15/2)R0.
+
+At a boundary displacement d of length1/128, strong monotonicity gives
+
+    grad Phi(xi_hat+d) dot d
+      >= mu ||d||^2 - (15/2)R0 ||d|| >0.
+
+The last strict inequality follows from mu>=2029 and R0<1/20. The continuous Phi attains a minimum on that compact ball; the outward-gradient inequality excludes every boundary point, so an interior critical point exists. Strong monotonicity makes it unique in the convex outer neighborhood.
+
+Calling that root xi_BE,
+
+    ||xi_N-xi_BE||
+      <= [(15/2)64^-N R0 +4576 R0^2/A]/(A/2-19).
+
+For all stated A>=4096 and N=512 this is <2^-19 in the original metre length scale; already replacing64^-N by64^-2 and R0 by1/20 gives a strictly smaller bound. This is a conditional ideal finite-replay fidelity enclosure around a separately defined fixed-input material root. It does not prescribe or correct a solver state.
+
+### Scope still missing from SC1 and SC2
+
+The theorem starts with an ideal predictor in the stated inner neighborhood and a fixed effective input; it does not prove that either full physical target, every outer contact trial or every later physical step has that predictor. The outer held pressure and offset geometry change the input and gap derivatives, and SC2 birth/terminal branches remain to be enclosed. The fixed-input root is not the joint contact KKT solution or a continuum trajectory.
+
+All actual R7/native gradient, parameter, update, conversion, predictor and reconstruction errors must be propagated through this finite history. The direct original-input energy/angular gates, support and whole physical path, paired robot moments, nonlinear phase capacity and finite shared resource budget are still separate. No contact tolerance is replaced by2^-19 m, and the older1e-8/2e-5 normalized or energy/angular limits are unchanged.
+
+The new result narrows the earlier open derivative/iteration question only for this explicit ideal fixed-predictor subproblem. It supplies no new execution authorization or product/native pass.

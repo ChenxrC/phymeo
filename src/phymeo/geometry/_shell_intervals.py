@@ -131,6 +131,14 @@ class Arithmetic:
     def qadd(self, a, b):
         return self._binary(a, b, "add")
 
+    def qneg(self, value):
+        self.check(value)
+        self.tick()
+        return self.check(-value)
+
+    def qabs(self, value):
+        self.check(value)
+        return self.qneg(value) if value < 0 else value
     def qsub(self, a, b):
         return self._binary(a, b, "sub")
 
@@ -154,7 +162,7 @@ class Arithmetic:
 
     def neg(self, value):
         value = self.interval(value)
-        return Interval(-value.hi, -value.lo)
+        return Interval(self.qneg(value.hi), self.qneg(value.lo))
 
     def sub(self, a, b):
         return self.add(a, self.neg(b))
@@ -273,7 +281,7 @@ class Arithmetic:
         return self.poly(tuple(self.qadd(a[i] if i < len(a) else F(0), b[i] if i < len(b) else F(0)) for i in range(max(len(a), len(b)))))
 
     def poly_sub(self, a, b):
-        return self.poly_add(a, tuple(-v for v in self.poly(b)))
+        return self.poly_add(a, tuple(self.qneg(v) for v in self.poly(b)))
 
     def poly_mul(self, a, b):
         a, b = self.poly(a), self.poly(b)
@@ -347,7 +355,7 @@ class Arithmetic:
             if not isfinite(proposal):
                 raise ShellUnresolved("publication_not_representable", "nonfinite FP64")
             stored = self.input_float(proposal)
-            error = max(abs(self.qsub(stored, interval.lo)), abs(self.qsub(stored, interval.hi)))
+            error = max(self.qabs(self.qsub(stored, interval.lo)), self.qabs(self.qsub(stored, interval.hi)))
             if error >= F(1, 2**40):
                 raise ShellUnresolved("publication_error", "point/J storage error is not below 2^-40")
             values.append(proposal)

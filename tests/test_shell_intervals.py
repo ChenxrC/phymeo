@@ -76,3 +76,22 @@ def test_created_cells_count_failed_parents_and_depth():
     b = Arithmetic(replace(ShellProofLimits(), max_time_depth=1))
     with pytest.raises(ShellUnresolved, match="depth"):
         b.visit_cell(2)
+
+def test_unary_fraction_negation_and_negative_absolute_value_are_metered():
+    a = Arithmetic(ShellProofLimits())
+    before = a.operations
+    assert a.qneg(F(2, 3)) == F(-2, 3)
+    assert a.operations == before + 1
+    before = a.operations
+    assert a.neg(Interval(F(-2), F(3))) == Interval(F(-3), F(2))
+    assert a.operations == before + 2
+    before = a.operations
+    assert a.qabs(F(-2, 3)) == F(2, 3)
+    assert a.operations == before + 1
+    before = a.operations
+    assert a.poly_sub((F(0),), (F(2), F(-3))) == (F(-2), F(3))
+    assert a.operations == before + 4  # two coefficient signs and two additions
+    b = Arithmetic(replace(ShellProofLimits(), max_scalar_operations=1))
+    assert b.qsub(F(0), F(1)) == -1  # its internal sign is charged once
+    with pytest.raises(ShellUnresolved, match="operation"):
+        b.qneg(F(0))

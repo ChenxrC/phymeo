@@ -143,3 +143,82 @@ def test_alternative_complete_dyadic_partition_and_missing_cells():
         verify_shell_sweep(cert, ref, path, h=1 / 32)
     with pytest.raises(ShellUnresolved):
         verify_shell_sweep(replace(cert, tree=()), ref, path, h=1 / 16)
+
+@pytest.mark.parametrize("mutation", ["diagonal", "side_orientation", "reference_gradient", "charged_term", "policy", "publication"])
+def test_full_material_and_charge_forgeries_are_not_authenticated_by_constructor(mutation):
+    ref, _, _ = f1_reference()
+    x = f1_positions(ref, 1 / 8)
+    cert = certify_shell_embedding(ref, x)
+    if mutation in ("diagonal", "side_orientation"):
+        bad = copy.copy(ref)
+        original = ref.tetrahedra[0]
+        vertices = list(original.vertices)
+        if mutation == "diagonal":
+            vertices[0] = (0, 1)
+        else:
+            vertices[0], vertices[1] = vertices[1], vertices[0]
+        object.__setattr__(bad, "tetrahedra", (replace(original, vertices=tuple(vertices)),) + ref.tetrahedra[1:])
+        ref = bad
+    elif mutation == "reference_gradient":
+        gradient = cert.reference.gradients[0]
+        bad = replace(gradient, lambda_gradients=gradient.lambda_gradients[:-1])
+        cert = replace(cert, reference=replace(cert.reference, gradients=(bad,) + cert.reference.gradients[1:]))
+    elif mutation == "charged_term":
+        tet = cert.cell.tetrahedra[0]
+        charges = list(tet.charges)
+        index = next(i for i, charge in enumerate(charges) if charge.director_term > 0)
+        charges[index] = replace(charges[index], director_term=F(0))
+        bad = replace(tet, charges=tuple(charges))
+        cert = replace(cert, cell=replace(cert.cell, tetrahedra=(bad,) + cert.cell.tetrahedra[1:]))
+    elif mutation == "policy":
+        cert = replace(cert, policy=replace(cert.policy, max_time_depth=1))
+    else:
+        errors = tuple(F(-1) for _ in cert.geometry.lifted_publication.errors)
+        bad = replace(cert.geometry.lifted_publication, errors=errors)
+        cert = replace(cert, geometry=replace(cert.geometry, lifted_publication=bad))
+    with pytest.raises(ShellUnresolved):
+        verify_shell_embedding(cert, ref, x)
+
+
+def test_sweep_rejects_missing_endpoint_publication_and_mutated_path():
+    ref, _, _ = f1_reference()
+    path = np.stack((f1_positions(ref, 1 / 8), f1_positions(ref, 1 / 4)))
+    cert = certify_shell_sweep(ref, path, h=1 / 8)
+    with pytest.raises(ShellUnresolved):
+        verify_shell_sweep(replace(cert, endpoint_geometry=cert.endpoint_geometry[:1]), ref, path, h=1 / 8)
+    changed = path.copy()
+    changed[1, 2, 2] += 1 / 64
+    with pytest.raises(ShellUnresolved):
+        verify_shell_sweep(cert, ref, changed, h=1 / 8)
+
+
+def test_point_address_tetra_and_winding_are_bound():
+    ref, _, _ = f2_reference()
+    address = top_center(ref)
+    point = shell_material_point(ref, ref.reference_positions, address)
+    wrong = ShellMaterialAddress(ref.reference_id, (999, 0), address.counts, address.generation)
+    with pytest.raises(ShellUnresolved):
+        verify_shell_material_point(point, ref, ref.reference_positions, wrong)
+
+def test_independent_nonmidpoint_rational_partition_is_accepted_without_new_oracle_run():
+    ref, _, _ = f2_reference()
+    path = np.stack((ref.reference_positions, ref.reference_positions))
+    original = certify_shell_sweep(ref, path, h=1 / 16)
+    # The body is constant: each original interval enclosure applies on EVERY
+    # subset of [0,1]. Construct the alternative tree by that identity alone.
+    first = replace(original.cells[0], start=F(0), end=F(1, 3))
+    second = replace(original.cells[0], start=F(1, 3), end=F(1))
+    tree = (TimeCell(F(0), F(1), 0, False), TimeCell(F(0), F(1, 3), 1, True), TimeCell(F(1, 3), F(1), 1, True))
+    alternative = replace(original, cells=(first, second), tree=tree)
+    assert verify_shell_sweep(alternative, ref, path, h=1 / 16)
+    with pytest.raises(ShellUnresolved):
+        verify_shell_sweep(replace(alternative, tree=tree[:2]), ref, path, h=1 / 16)
+    wrong_depth = tree[:2] + (replace(tree[2], depth=2),)
+    with pytest.raises(ShellUnresolved):
+        verify_shell_sweep(replace(alternative, tree=wrong_depth), ref, path, h=1 / 16)
+    overlap = (tree[0], replace(tree[1], end=F(1, 2)), tree[2])
+    with pytest.raises(ShellUnresolved):
+        verify_shell_sweep(replace(alternative, tree=overlap), ref, path, h=1 / 16)
+    isolated = tree + (TimeCell(F(1, 3), F(2, 3), 2, True),)
+    with pytest.raises(ShellUnresolved):
+        verify_shell_sweep(replace(alternative, tree=isolated), ref, path, h=1 / 16)

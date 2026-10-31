@@ -114,7 +114,7 @@ def _face_polynomials(reference, positions, arithmetic):
         area = arithmetic.poly_cross(ab, ac)
         areas[face_id] = area
         edges[face_id] = (ab, ac, bc)
-        vectors = {a: bc, b: tuple(tuple(-v for v in p) for p in ac), c: ab}
+        vectors = {a: bc, b: tuple(tuple(arithmetic.qneg(v) for v in p) for p in ac), c: ab}
         for node in (a, b, c):
             sums[node] = arithmetic.poly_vadd(sums[node], area)
             for neighbor, vector in vectors.items():

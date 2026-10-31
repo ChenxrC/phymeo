@@ -154,3 +154,8 @@ For any fixed complete ideal sweep count from 1 to 512 the four-node SC2 impact 
 ## 2026-10-31 SC2 impact on the two fine grids
 
 The signed bending correction at node c places the exact zero-pressure first touch strictly before t_b=3/128 on both fine grids. The full U,c offset gap at t_b is below -2^(-27) for every prescribed velocity perturbation and complete sweep count. The resulting ideal held solution has (2m/3)2^(-27)/h < J < m/54. The entry gap margin proves strict separation on the open held path, and the current endpoint Jacobian gives a terminal total impulse greater than m/14. Together with the coarse-grid result these bounds now cover the ideal first impact on all three grids. The native geometric budget exceeds the proved fine-grid depth margin, so both phase branches still need stored-state evidence. [Fine-grid SC2 derivation](p65-b2-sc2-first-touch.md).
+
+
+## 2026-10-31 SC2 energy through the first terminal response
+
+Each ideal free step before impact has strictly negative original-input energy defect for any allowed complete material sweep count. This follows from the ordered force residual and a positive lower bound on elastic curvature along that physical path. For a fixed-count unilateral held solution followed by its ideal terminal projection, the full impact step has defect below -m/600 on each original grid. Each step is bounded separately, including the finite material displacement and full joint kinetic change. The stored endpoint enclosures, angular budget and continuation after impact remain open. [SC2 energy derivation](p65-b2-sc2-first-touch.md).

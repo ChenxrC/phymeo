@@ -179,3 +179,69 @@ The 95h^2 term acts on the entire cloth predictor change, including the offset c
 The chord and current-Jacobian estimates of the coarse-grid proof apply on the same pressure simplex. For each owner and path fraction s the lower gap satisfies g_i(s)>=s g_i(p)+(1-s)(g_i^0-h/700). Thus the full ideal held path stays strictly clear up to its endpoint. Since J>0 at least one owner touches there. At each touching owner the incoming current-map normal speed is below -1/9+1/700. With the same response bound 3/(2m), the ideal terminal projection transfers total impulse greater than m/14. The lower bound still exceeds m/14 for a pure-normal postcondition allowing speed down to -tau. This gives positive held and terminal impulse bounds and one-sided path feasibility for the ideal first impact on all three grids.
 
 A computational pressure iteration still needs to reach an admissible candidate within the replay budget. Actual early stopping, R7 rounding, terminal membership and the selected-pre binding require their own error enclosures. The analysis here ends at the first impact and its ideal terminal velocity.
+
+
+## Original-input energy up to the first terminal impact
+
+All original forces, gravity and robot effort vanish in SC2. The joint energy is therefore cloth plus robot kinetic energy K and the elastic potential U from the three distance rows and the hinge. In the units above each unit-compliance potential is half the squared constraint. Use the actual endpoint displacement for the ideal reconstructed velocity, including every finite material update. [Composite energy definitions](../../src/phymeo/validation/composite_material_energy.py).
+
+### Each preceding free step
+
+Consider any free physical step ending at t_k<=t0. The established impact entries give t_k<=5/256 and t_k+h<=1/32 on every grid, including the single coarse free step. The stage bound E_k<=39P t_k(t_k+h) from the signed-bend calculation therefore applies. Its entrance residual satisfies R_0<(6/5)eta t_k<1/2600. Any complete ideal sweep count N>=1 gives R_N<57 h^2 R_0 from the complete-sweep factor 56h^2+80h^4. The local ordered-gradient drift bound then controls the full backward-Euler force residual F,
+
+    F = (m/h)(v_1-v_0) + grad U(x_1),
+    ||F|| <= (15/2)R_N+4576h^2 R_0^2 < h^2/6.
+
+Both its terms have zero resultant. Each material row conserves total linear momentum, and U is invariant under translation. Thus F does work only on the velocity relative to the common translation. [Ordered material residual, section 6](p65-b2-local-row-derivative-bounds.md).
+
+Along the physical segment x_0+s v_1, 0<=s<=h, subtract the common velocity -u e_z from every node and denote the resulting product velocity by w. The ballistic velocity error at this step has norm at most 78P t_k<1/1152, so ||w||<=eta+1/1152<1/59. The flat angle gradient G_0 has norm sqrt(6) and gives -eta on the ballistic velocity. The full angle Hessian bound 33 shows everywhere on the segment that
+
+    |grad theta . v_1| >= eta - (5/2)/1152 - 33P/59 > 1/80.
+
+All segment positions are within P of the translated reference. Along w, the potentially negative contributions C_j D^2 C_j to the elastic Hessian have combined magnitude at most (99+9 sqrt(2))P ||w||^2 < ||w||^2/16. This uses |C_bend|<=3P and ||D^2 theta||<33, together with |C_dist|<=sqrt(2)P and ||D^2 C_dist||<3 for each of the three lengths. Keeping the positive squared bend-rate term alone gives
+
+    v_1^T D^2 U v_1 > 1/6400 - 1/(16*59^2) > 1/8000.
+
+The endpoint Taylor identity for the potential and the kinetic difference now give
+
+    Delta(K+U) = h F.v_1 - (m/2)||v_1-v_0||^2
+                 - integral_(0..h) s v_1^T D^2 U(x_0+s v_1) v_1 ds
+               < h^3/354 - h^2/16000 < 0.
+
+The final sign uses h<=1/64. It holds for each free step independently and for every allowed finite sweep count.
+
+### Energy across the ideal held and terminal phases
+
+Take any of the fixed-count unilateral solutions proved above and its ideal inelastic terminal projection. Let A_0=B_0 M^(-1)B_0^T use the complete entry rows, including the robot. In the auxiliary velocity v_P=v_0+M^(-1)B_0^T p keep only the held update for this algebraic decomposition. Each entry normal speed is below -1/10. The direct kinetic difference for that auxiliary velocity is
+
+    K(v_P)-K(v_0) = p.B_0 v_0 + (1/2)p^T A_0 p.
+
+On all three grids D_0<1/15. On the coarse grid use D_0<1/16+64/30000 and on the finer grids D_0<256/30000. The earlier uniform response bound then gives J<32m/225<m/7. To estimate the quadratic term, write A_flat for the repeated nodal vertical matrix with the 4m robot. Complementarity p.g(p)=0 and the beta<1/32 response estimate give
+
+    p^T A_flat p <= D_0 J + beta J^2/m.
+
+For epsilon=1/6000 the entry cloth row differs from its nodal row by at most epsilon in product norm. The aggregate nodal load has norm at most J, and the change in that aggregate cloth load has norm at most epsilon J. Squaring their kinetic norms bounds |p^T(A_0-A_flat)p| by (2epsilon+epsilon^2)J^2/m. Since beta+2epsilon+epsilon^2<1/30,
+
+    K(v_P)-K(v_0) < [-1/10+1/30+1/420]J < -J/16.
+
+The finite material step adds d/h to the cloth velocity and leaves the robot velocity fixed. The stronger bound J<m/7 puts the predictor within 1/1800+(1+epsilon)h/7<1/350 of its translated flat reference. The ordered-motion bound gives ||d||<=78h^2/350, so ||d/h||<1/280 and the material endpoint is within 1/330. The cloth part of v_P has norm at most 2u+1/56+(1+epsilon)/7<5/12. Consequently the increase in kinetic energy from adding d/h is at most m[5/(12*280)+1/(2*280^2)]. Also U_1 <= 15/(2*330^2) by the three length gradient bounds and the bend gradient bound. Since m>=1/2, the sum of these two contributions is less than m/600. The entry elastic energy U_0 is nonnegative.
+
+At any touching owner let b be the magnitude of its incoming negative normal velocity. The terminal projection increases this velocity by at least b. Weighted Cauchy-Schwarz and B_i M^(-1)B_i^T<3/(2m) give
+
+    K(v_minus)-K(v_plus) = ||v_plus-v_minus||_M^2/2 > m b^2/3.
+
+On the coarse grid J>m/25 and b>1/18, giving a complete step defect below -m/400+m/600-m/972 < -m/600. On the fine grids b>1/9-1/700>1/10, so the terminal loss exceeds m/300 and the complete step defect is again below -m/600. Positions, hence U_1, are fixed during the terminal projection. This is a joint original-input calculation in which the held and terminal transfers are internal.
+
+For this exact prefix, the sum of positive per-step energy defects is zero on every grid because each step has its own strict bound. Homogeneous scaling from unit mass scales these energies by the same mass factor. Stored-state perturbations, interval widths, angular defects and steps after the first terminal response still require separate bounds within their original budgets.
+
+### Transfer to stored endpoints
+
+For the same masses and original zero loads, suppose independent evidence encloses a stored endpoint within velocity error e_v in the joint mass norm and cloth position error e_x in the product norm of its ideal comparator. Let D_x be the ideal cloth deviation from a common translation of the flat reference. The segment joining the two cloth states must lie in the original outer geometry domain. Since ||grad U||<=15D_x at the ideal endpoint and ||D^2 U||<19 there and along the segment, the absolute difference of original-input energies is at most
+
+    T_j = ||v_j||_M e_v + e_v^2/2 + 15D_x e_x + (19/2)e_x^2.
+
+Here v_j includes the robot coordinate. This follows by expanding the kinetic quadratic exactly and integrating the elastic Hessian. If a stored step's independent energy enclosure overestimates its exact defect by at most w_j, its positive upper defect is at most
+
+    max(0, T_(j-1)+T_j+w_j-margin_j),
+
+where margin_j=h^2(1/16000-h/354) on a free step and margin_j=m/600 on the impact step. Summing these positive parts keeps each endpoint and enclosure charge within its own step. The stored trajectory errors and enclosure widths still need to be established on the original inputs.

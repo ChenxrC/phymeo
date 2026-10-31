@@ -5,7 +5,7 @@
 - **交付物**　A 取布、B 接稳、A 松开、B 放台并撤离。真实仿真轨迹驱动可暂停、逐帧查看接触力的 Three.js 回放。[原始任务与验收](../superpowers/plans/2026-10-27-dual-arm-cloth-handoff-milestone.md)
 - **可复用基线**　集成分支 `codex/p65-parallel-modules` 在 `9decc41` 已有有限平面夹爪、B2/R7 材料和限定域的自接触响应与几何；单爪受载折叠和双臂递布尚无完整运行证据。[框架验收范围](../superpowers/plans/2026-10-30-p65-material-self-gripper-integration.md)
 - **当前关口**　普通质量布料与厚接触的有限次实际回溯能否同时满足完整残差、材料/设备误差和全路径无穿透，并把力与冲量正确传给机器人。
-- **下一动作**　按新计划第 1 项，以 SC1 持续支撑和 SC2 首碰建立接受/拒绝对照。产出明确的可实施决定或具体反例。[卡点调研与行动计划](../superpowers/plans/2026-10-31-p65-delivery-replan.md)
+- **下一动作**　先做 N1，以 SC1 持续支撑和 SC2 首碰列出实际接受条件；N2 只在证据足以放行或排除一条路线时作裁定。连续两次没有新增判别证据就停止该路线。[卡点调研与行动计划](../superpowers/plans/2026-10-31-p65-delivery-replan.md)
 - **执行边界**　当前无项目执行者。已过证据按其版本复用；新执行严格串行，远程 CI 延期。旧执行授权、会话号和队列不作为当前任务。
 
 旧交接可按需从 `git show 9decc41:docs/development/p65-continuation.md` 查阅。验收原件仍在对应报告和工件归档。

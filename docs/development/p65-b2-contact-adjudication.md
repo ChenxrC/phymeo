@@ -123,3 +123,12 @@ Section11 of the [SC1 note](p65-b2-sc1-active-material-reference.md) strengthens
 This applies to arbitrary exact steps in[0,2m/7], including each tentative ideal backtracking candidate. Hence the existing coordinatewise nonnegative projection is inactive for this exact-reference-entry, changing-triangle-offset-gap comparison. It introduces no replacement projection, pressure basis, force channel, fixture or tolerance. Zero accepted progress is permitted by the theorem.
 
 Actual full-metric line-search acceptance and progress within the original budget, stored/native/R7 delivery, finite-iterate penetration signs, rebuilds, full-window/SC2 and original energy/angular/transaction acceptance remain unresolved. No project execution or implementation grant changed; the complete physical contract remains NOT_FROZEN.
+
+
+## 2026-10-31: ideal finite support and first contact-score decrease
+
+Section12 of the [SC1 note](p65-b2-sc1-active-material-reference.md) strengthens the finite-support comparison. Across its complete ideal pressure domain and each reference-entry affine middle path, the square's horizontal clearance and upper/lower vertex heights make +e_z the unique maximizing SAT direction. Clipping returns only original lower support vertices; changes between vertex/edge/face support do not change the pair-and-material token. Thus this ideal six-owner comparison requires no new discovery address. Actual stored/R7 inclusion and all runtime discovery checks remain required.
+
+The complete changing-gap derivative also gives u_plus=(I-a A_n)u+epsilon with ||epsilon||_infinity<t||u||_infinity/12, t=a/m. At the zero-pressure start all six gaps are compressive with a bounded component ratio, so the first positive trial's contact contribution decreases by a factor below1-3t/2, and below25/28 for the exact full step. This contribution includes the exact whole-prism penetration and the original complementarity expression; it is not identified with the full position score.
+
+The full score still includes the material report and every native audit component. Their candidate bounds, stored gap/step/normal and delivery errors, later-trial acceptance/progress within the existing budget, finite-iterate nonpenetration, window/SC2 and the original physical gates remain unresolved. No project execution or physical implementation grant changed; the full contract remains NOT_FROZEN.

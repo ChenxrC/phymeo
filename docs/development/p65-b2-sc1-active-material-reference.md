@@ -632,3 +632,142 @@ Thus the changing-gap comparison now includes the original orthant projection fo
 The proof does not show that the actual full-metric line search selects any particular positive step, or selects one at all. Even if every selected step is among powers0..12 of the full ideal step, the worst allowed step size is much smaller; the512-update full-step rate cannot simply be reused. No extra replay or iteration budget is granted.
 
 Stored point/gap-midpoint/normal/step rounding, native material and actual delivery errors, discovery/rebuild, finite-iterate one-sided penetration/contact signs, original energy/angular/NUM005, SC1 whole-window propagation and SC2 remain separate. This is a manual ideal one-step comparison, not an executed contact result or a frozen physical integration contract.
+
+
+## 12. Exact finite support and the first ideal contact-metric decrease
+
+Continue with the exact-reference-entry, six-owner ideal comparison of sections10-11. This section proves a finite-patch SAT/support statement throughout its pressure domain and a decrease of its contact-related position metrics on the first positive trial. It does not assert that the actual full-metric line search accepts that trial, or that later accepted updates make sufficient progress.
+
+### The patch normal is the unique maximizing SAT direction
+
+For z in Q_bar, the earlier bounds give
+
+    ||b_N(z)|| <=4h||z-p_*||/m <2h^2/sqrt(m)<3h^2,
+    ||c(z)|| <=h^2||z-p_*||^2/m^2 <h^4/(4m)<=h^4/2.
+    |g_fi(z)| <4h^2<=1/1024.
+
+Here g_fi is the ideal lower-vertex height relative to the robot patch plane, as defined in section10; all six entries are retained. The outer geometry domain gives n_f,z>1/2. Thus every corresponding UPPER prism vertex has height
+
+    g_fi+2rho n_f,z >rho-1/1024=15/1024
+
+above that plane. The previously proved projected-vertex bound is |x|,|y|<33/32, whereas the patch is the full square[-2,2]^2. Write M=31/32 for a lower bound on each coordinate's clearance to its boundary.
+
+For one face let ell=min_i g_fi. Consider ANY nonzero direction d=(w,s), with horizontal w in R^2. The exact directional SAT numerator is
+
+    min_(v in prism) d.v - max_(r in patch) d.r.
+
+Translate the common patch plane to height zero; this leaves that difference unchanged. If s>=0, using the lower vertex attaining ell and the square's exact support function bounds the numerator by
+
+    s ell - M ||w||_1.
+
+For w!=0 this normalized numerator is strictly below ell. If ell>=0 this follows from s/||d||<=1 and the negative horizontal term. If ell<0, use
+
+    ||d||-s<=||w||_2<=||w||_1,
+    |ell|<1/1024<M.
+
+The only equality direction with s>=0 is positive vertical, whose normalized gap is exactly ell.
+
+If s<0, choose any upper vertex instead. Its height is greater than H=15/1024, so the numerator is strictly below
+
+    -|s|H-M||w||_1.
+
+Since M>H and |s|+||w||_2>=||d||, its normalized value is below -H<ell. This includes the negative vertical direction. Hence +e_z is the UNIQUE maximizing direction up to positive scaling, across all directions and therefore across the complete implemented SAT list. Collinear face/patch occurrences represent the same direction; the patch-face flag remains valid. This is stronger than retaining an arbitrary old axis on a tie.
+
+Consequently, for this ideal domain the exact full-prism/patch gap is ell, and the patch support is its complete unchanged four-vertex square. The prism support is precisely the subset of lower vertices attaining ell. Its identity may change between a vertex, an edge and the full lower face; no fixed prism support subset is assumed.
+
+The same conclusion holds along the ideal physical affine middle segment from this flat reference entry to each candidate endpoint. Relative nodal vertical gaps on that segment satisfy b(t)=t b_N, 0<=t<=1. The outer-domain inverse-horizontal-edge argument in section10 remains valid by convexity of the per-node domain and gives
+
+    ||c(t)||<=4rho||b(t)||^2<=h^4/(4m).
+
+The projected clearance and positive-hemisphere normal bounds remain valid there too. This proves the same SAT direction and finite support on that segment, not nonpenetration: ell(t) may still be negative.
+
+### Exact ideal discovery introduces no new material address here
+
+Every projected lower support vertex lies strictly inside the patch square. Their projected convex hull is a point, a segment or the original triangle, and the horizontal edge matrix is invertible. Clipping that hull against the square therefore returns exactly its own vertices, with no new edge intersections. Lifting along +e_z returns the original supported lower prism vertices.
+
+The implementation's [clip_support/intersect/hull route](../../src/phymeo/geometry/_prism_clip.py) has this same property: all support-hull vertices pass inside, no patch vertex is inside the small support hull, and no support edge meets the square's boundary. The exact material address recovered at each returned prism vertex is its original unit barycentric vector with offset -rho. The original flat initial manifold already supplied all three such addresses per face.
+
+[MaterialAnchor.token](../../src/phymeo/solvers/_thick_contact_geometry.py) is (pair, *material); it does not contain the changing support-feature tuple. Thus this IDEAL discovery comparison adds no address after the original six owners, including in penetrating_only discovery. The two copies of shared physical nodes remain distinct by pair. The unit barycentric vectors and rho=1/64 have exact binary representations, so the address-grid conversion does not create a different ideal token.
+
+This is a geometry/address consequence of the domain just proved. It does not excuse actual stored port-point errors, certify an R7 trajectory inclusion, or justify deleting runtime discovery/rebuild checks.
+
+### A complete changing-gap trial-response bound
+
+Write u(z)=g(z)/h, R=||u(z)||_infinity and t=a/m, with 0<a<=2m/7. If R=0 the candidate is unchanged and all response errors below are exactly zero; the strict estimates below concern R>0. Take an accepted ideal comparison history and any of its next candidates. Section11 establishes that its orthant projection is inactive, and section10 puts both z and
+
+    z_plus=z-a P_S u(z)
+
+in the convex Q_bar. No derivative of the step-selection rule is used.
+
+The row sensitivity from section11 and the full tilt derivative from section10 give, on S,
+
+    ||D_z u_i - row_i(A_n)||_2
+       <(95 sqrt(2)+2)h^2/m.
+
+Integrate this derivative along the segment from z to z_plus. Since A_n P_S=A_n and ||P_S u||_2<=sqrt(6)R,
+
+    u(z_plus)=(I-a A_n)u(z)+epsilon,
+    ||epsilon||_infinity
+       <(95 sqrt(12)+2sqrt(6))h^2 t R
+       <340h^2 t R
+       <=(85/1024)t R <t R/12.
+
+The inequality uses sqrt(12)<7/2 and sqrt(6)<5/2; their resulting coefficient is less than340. The correction includes the complete finite material response and changing triangle director. It does not assume an exact backward-Euler endpoint or discard Pi u.
+
+For any later ideal candidate this provides the sufficient full-gap estimate
+
+    ||u(z_plus)||_infinity
+       <||(I-a A_n)u(z)||_infinity+(t/12)||u(z)||_infinity.
+
+It is not by itself a uniform infinity-norm contraction or an acceptance guarantee at every iterate.
+
+### The first positive trial reduces the contact part of the score
+
+At the zero-pressure start z=0, section11's unaveraged component bound applies before P_S is taken. Put v=-u(0). Every entry satisfies
+
+    f_minus=(99/1024)h <=v_i<=(309/2048)h=f_plus.
+
+In particular all six gaps are negative. If R=||v||_infinity and v_min=min_i v_i, then
+
+    v_min/R>=f_minus/f_plus=66/103.
+
+The all-owner A_n has nonnegative entries and row sums7/(2m) on duplicated-node rows and5/(2m) on outer-node rows. The preceding trial estimate therefore gives componentwise
+
+    u_i(z_plus)/R
+       > -1 +[(165/103)-(1/12)]t,
+    u_i(z_plus)/R
+       < -66/103 +[(7/2)+(1/12)]t.
+
+For 0<t<=2/7 these imply
+
+    ||u(z_plus)||_infinity <(1-3t/2)R.
+
+For the lower bound, (165/103)-(1/12)>3/2. For the upper bound,
+[(7/2)+(1/12)+(3/2)]t=(61/12)t<=61/42<169/103=1+66/103.
+The factor is positive throughout the interval. With the exact full step a_0>m/14, this first-trial bound is strictly less than25R/28.
+
+To connect this calculation to the actual score's structure, define ONLY its ideal contact contribution
+
+    C(p)=max(
+        max_faces max(0,-ell_face)/(h V_ref),
+        max_owners |min(k_i p_i,u_i)|/V_ref,
+        ideal held friction residuals
+    ).
+
+The original references are L_ref=1 and V_ref=1, so the position penetration scale min(L_ref,h V_ref) is exactly h V_ref on this grid. The flat initial normal scales are k_i=5/(4m). Exact mu=0 and pure-normal held impulses make the three phase_audit friction residuals zero. Because p_i>=0, |min(k_i p_i,u_i)|<=|u_i|. The SAT result above gives the same bound on full-prism penetration. Therefore
+
+    C(p)<=||u(z)||_infinity/V_ref.
+    C(0)=R/V_ref,
+    C(p_first_plus)<(1-3t/2)C(0).
+
+The equality at zero follows from every initial u_i being negative; the complementarity term has not been silently replaced by ||u|| for later states.
+
+The [implemented full position score](../../src/phymeo/solvers/_thick_contact_workspace.py) additionally includes trial.result.report.max_residual and every native_audit component. Call their maximum O(p), retaining all of them; then this ideal score comparison has S(p)=max(C(p),O(p)). If the first candidate independently satisfies O(p_first_plus)<=tau, its full score decreases, since
+
+    C(0)>=(99/1024)h>=99/262144>2e-5>=tau,
+    C(p_first_plus)<C(0)<=S(0),
+    O(p_first_plus)<=tau<C(0)<=S(0).
+
+Under that ADDITIONAL verified bound, power0 would be accepted for the exact full-step comparison. O(p_first_plus)<=tau is not proved here, and stored/native gap intervals, normal/alpha evaluation and actual delivery remain outside this ideal comparison. In particular this does not assert that power0 in the current implementation passes.
+
+Later candidates need their actual complementarity metric and every other score component, not just the Euclidean pressure contraction or this first-trial result. No512-step progress rate, extra replay allowance, finite-iterate nonpenetration, SC1 perturbed-entry/window, SC2 birth/terminal, original energy/angular/NUM005 or transaction claim follows. The ordinary-mass physical integration contract remains NOT_FROZEN; no implementation or execution grant is added.

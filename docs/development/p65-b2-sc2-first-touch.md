@@ -62,3 +62,67 @@ Keep separate material owners even when rows coincide. The summed impulse J=sum_
 Complementarity gives v_plus^T M(v_plus-v_minus)=0, so the projection decreases kinetic energy by ||v_plus-v_minus||_M^2/2. Before impact the cloth product velocity norm is bounded by 2u+eta+V<9/32 and the robot is stationary. Afterwards the robot speed has magnitude J/(4m). Consequently J<9m/16. These are impulse bounds for the ideal endpoint-only branch. They are independent of any selected solver output.
 
 A step whose free endpoint penetrates before the terminal phase also includes a held replay from the original step entry. Its endpoint, active set and incoming terminal velocities need separate inclusion. Stored R7 motion, actual phase delivery, selected-pre binding, later contact iterations, the complete physical window and the original energy, angular and transaction checks remain open.
+
+
+## Held pressure in the impact step
+
+Let t0 be the left endpoint of the first grid interval whose free path reaches zero gap, and let t1=t0+h. The bracket gives 1/64<=t0<=3/128 and t1<=1/32 on each original grid. The step begins at the free entry. All six lower gaps are positive there. The horizontal square contains all six projections in its interior, so the open anchors have initial normal +e_z. Use all six candidate addresses for the existence comparison. The implemented workspace builds its held load from the entry Jacobians, and its terminal load from the Jacobians at the selected held endpoint. [Held and terminal loads](../../src/phymeo/solvers/_thick_contact_replay.py).
+
+Fix any count N between 1 and 512 for this step. Let p_i>=0 denote the held normal impulse on owner i, J its sum and P_j its aggregate on physical node j. Work first on the compact simplex J<=m/3. In the Euclidean cloth coordinate space the initial normal row at a lower vertex of node j is the unit nodal vertical row plus a correction of norm less than 1/6000. Indeed the correction has norm rho ||D n_z||. Projection of e_z onto the plane perpendicular to n has norm ||n_xy||, and ||D(raw area)||/area<4. The entry slope bound 1/399 therefore gives rho ||D n_z||<1/6384. The robot coefficient is -1.
+
+Relative to the zero-pressure predictor, the held cloth predictor moves by h B_cloth,0^T p/m, and the robot moves by -hJ/(4m). The product norm of the added cloth motion is at most h(1+1/6000)J/m. The free predictor lies within 1/1800 of the common translated flat reference by the preceding induction. Thus the held predictor's product deviation is below 1/160 throughout the simplex. Its initial constitutive residual is below 3/160, and all ordered sweeps together move the cloth by at most (78/160)h^2 relative to this predictor. In particular the material velocity correction has norm less than 1/128. These bounds cover every trial pressure in the simplex before any existence argument.
+
+Let g_i(p) denote the exact endpoint lower gap after these N sweeps. The endpoint and its straight physical path from entry have cloth product deviation below 1/150 relative to the translating flat reference. In this domain the raw oriented area differs from e_z by at most 4/150+4/150^2<1/36, giving ||n_xy||/n_z<1/35 and n_z>9/10. All lower heights relative to the moving patch have magnitude less than 1/80, using
+
+    3/1024 + 1/150 + h/12 + 1/(128*35^2) < 1/80.
+
+All upper heights exceed 1/64, and projected coordinate magnitudes are less than 33/32. The square-support argument therefore gives the exact +e_z maximizing direction throughout the simplex and path. Bottom support subsets and tied owners can change.
+
+For owner i on node j, write its entry lower gap as g_i^0. Its entry middle height is at least -1/(128*399^2), since g_i^0>=0. On the three grids, c_f^0/h is below 1/65536. The entry nodal vertical velocity is at least -1/8-V, the normalized predictor error from the initial normal-row correction is less than 1/18000, and the endpoint tilt correction is nonnegative. Combining these with the material velocity bound yields
+
+    g_i(p)/h >= P_j/m + J/(4m) - 9/64.
+
+Here 1/8+13/9600+1/65536+1/18000+1/128 < 9/64. Summing with weights p_i and using the four physical nodes gives
+
+    p.g(p)/h >= sum_j P_j^2/m + J^2/(4m) - (9/64)J
+              >= J [J/(2m)-9/64].
+
+For fixed N the complete finite material map, current normals and gaps are continuous on this simplex. The auxiliary map projecting p-a g(p)/h onto the simplex is continuous for any a>0, so Brouwer supplies a fixed point. Its variational inequality is g(p).(q-p)>=0 for every q in the simplex. Testing q=0 gives p.g(p)<=0. At J=m/3 the lower bound is strictly positive since 1/6-9/64=5/192. The fixed point is therefore interior to the *sum* constraint. Increasing one entry at a time, and decreasing it wherever p_i>0, gives all the original unilateral conditions and the aggregate enclosure
+
+    g_i(p)>=0,     p_i g_i(p)=0,     0<=J<=9m/32.
+
+The simplex only establishes existence of an ideal finite-material held solution. The implemented solver still uses its own orthant projection and full-score backtracking.
+
+For the h=1/64 impact step, t0=1/64 and t1=1/32. At zero held pressure the free comparison gives min_i g_i(0)/h < -3/50 for every N, since 1/16-64/30000>3/50. On the segment from 0 to p the finite material response changes by at most (1+95h^2) times the change in its predictor. The lower-point normal row has cloth norm at most 17/16 throughout. Including the robot translation, each endpoint gap divided by h changes by at most
+
+    [(17/16)(1+95h^2)(1+1/6000)+1/4] J/m < 3J/(2m).
+
+Applying this to a most penetrated free owner gives J>m/25 on the coarse grid. On each finer grid the same proof gives J >= (2m/3) max(0,-min_i g_i(0)/h), retaining the possibility of an endpoint-only event. [Finite material response, section 8](p65-b2-local-row-derivative-bounds.md).
+
+## Coarse-grid nonpenetration and terminal response after held transfer
+
+At the coarse entry every lower gap satisfies g_i^0/h>3/50 by the free bound at t0. Write c(s)=rho(1-n_z(s)) on one face of the affine path to a held solution, with s in [0,1] the path fraction. Subtracting the common downward velocity from the four-node path velocity leaves product norm less than
+
+    eta + V + (1+1/6000)/3 + 1/128 < 3/8.
+
+The norm of the derivative of c with respect to cloth position is below 1/560, using rho*4/35 and translation invariance. Hence its physical time derivative has magnitude less than 3/4480 along the segment. Its departure from the endpoint chord is bounded by comparing both terms to c(1),
+
+    |c(s)-(1-s)c(0)-s c(1)| <= (1-s)h/700.
+
+The nodal middle height and the robot plane follow their endpoint chords exactly. Therefore the lower gap along this physical path is bounded below by
+
+    g_i(s) >= s g_i(p) + (1-s)(g_i^0-h/700).
+
+Every lower vertex stays strictly above the patch until the endpoint. At the endpoint at least one owner touches because J>m/25. This establishes nonpenetration on the complete ideal coarse held segment.
+
+At every touching owner, the incoming relative normal velocity uses the *endpoint* lower-point Jacobian applied to the reconstructed displacement velocity. Its difference from the gap secant is c_dot(1)-(c(1)-c(0))/h, with magnitude less than 1/700. Thus B_i v_minus < -3/50+1/700 < -1/18. This estimate uses the actual tilted endpoint map of the ideal held path.
+
+Apply the terminal kinetic projection from the endpoint-only branch to all owners touching this held solution. Its summed impulse L is positive. Each normal response entry has absolute value below 3/(2m), hence L>m/27. Even a post-impact lower-velocity tolerance tau gives L>(2m/3)(1/18-tau)>m/28 for pure-normal delivery. An upper bound follows from the robot velocity after both phases, -(J+L)/(4m). The pre-terminal cloth speed has product norm less than 2u+3/8=5/8, and the robot speed is at most 1/12. The pre-terminal kinetic norm is therefore less than (2/3)sqrt(m). Terminal complementarity bounds the post-terminal kinetic norm by that same value and gives J+L<4m/3.
+
+For the original exact controls, the entry bend is already active on every grid. The ballistic angle magnitude is atan(eta t0)>=(7/8)eta t0, while the configuration error changes it by at most 3E. Since t0>=1/64, their difference exceeds 1/10000 rad. This entry bound is independent of the terminal pressure split.
+
+## Effect of stopping a trial at a different sweep count
+
+Take a 512-sweep held solution from the existence argument. At its pressure an ideal trial stopped after M complete sweeps with R_M<=tau has endpoint displacement relative to sweep 512 of at most 26h^2 tau by the geometric tail of the ordered rows. The robot coordinate is identical at this fixed pressure. Each endpoint gap divided by h therefore changes by at most 28h tau. This supplies an approximate held comparison for other counts, subject to the residual gate. Contact membership and one-sided endpoint feasibility must be verified for the selected replay. The exact existence result permits multiple pressure splits.
+
+The fine-grid held-to-terminal lower bound still depends on the true entry gaps near 3/128. Native replay and delivery, finite backtracking progress, switching sweep counts, continuation through the remaining window and original energy/angular and transaction gates remain open.

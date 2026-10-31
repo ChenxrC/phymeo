@@ -144,3 +144,8 @@ The current finite replay checks inner acceptance and ledger bounds before it sc
 ## 2026-10-31 first touch in the perturbed SC2 free replay
 
 For the original three step sizes and three d-node velocity perturbations, the ideal zero-pressure material replay has its first zero gap strictly between 47/2048 s and 49/2048 s. Every lower support vertex approaches the finite patch faster than 1/10 m/s throughout that interval, and the bend magnitude exceeds 1/8192 rad. This includes the possibility of exact endpoint arrival on the two finer grids. If that branch occurs, the ideal terminal projection has total impulse between m/15 and 9m/16 in the declared units. The impact step with held transfer, actual native delivery and the full window still require independent bounds. [SC2 first-touch derivation](p65-b2-sc2-first-touch.md).
+
+
+## 2026-10-31 held and terminal transfer at SC2 impact
+
+For any fixed complete ideal sweep count from 1 to 512 the four-node SC2 impact step admits a six-owner unilateral held solution with total impulse J<=9m/32. The proof bounds the complete material replay over a pressure simplex and excludes its sum boundary before deriving the unilateral conditions. On h=1/64 it gives J>m/25, strict separation throughout the open segment, endpoint contact and an incoming normal speed below -1/18 at each touching owner. The ideal frictionless terminal projection then transfers total impulse L>m/27. The two finer grids retain a lower bound in terms of their free endpoint gap, including the endpoint-only branch. Selection by the actual solver, native evidence and the rest of the physical window remain open. [SC2 impact derivation](p65-b2-sc2-first-touch.md).

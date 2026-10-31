@@ -96,7 +96,15 @@
     "Compare untouched publication, complete metrics and original-input energy/angular/transaction gates. Stop on the first mismatch; keep selected errors and actual verdict."
   ],
   "coverage": "Coarse identity primary native first step, and two fine-grid failure predictions for this generator. No production replay, backend execution, full window, SC2, or N2/N3 release.",
-  "scope": "Positive-prefix records below apply only to the original coarse h=1/64. The two mandatory fine-grid negative controls rule out this candidate generator on the original all-h grid with the unchanged R7 ordered native arithmetic.",
+  "post_update_range_controls": {
+    "actual_run": false,
+    "input": "First nonzero affine-normal SC1 trial, all three original step sizes.",
+    "coarse_native_result": "Unchanged R7 cannot return the first loaded trial. Its nonzero post-update edge-y component is normal, but its checked square in the second geometry phase is below the normal range. Trial 2 is a conditional arithmetic target only.",
+    "fine_if_only_denominator_rewritten": "The same post-update edge-norm guard still rejects.",
+    "fine_if_all_square_sums_rewritten": "The post-update left-area cross product also contains a checked nonzero edge_y * u_x below the normal range.",
+    "error_boundary": "Do not predict row status 5 for NaN: that branch tests denominator <= 0. A nonfinite output is rejected even if row status remains zero."
+  },
+  "scope": "Coarse h=1/64 values are conditional arithmetic records; unchanged R7 rejects before publishing the first loaded trial. The two mandatory fine-grid negative controls rule out this candidate generator on the original all-h grid with the unchanged R7 ordered native arithmetic.",
   "unchanged_r7_fine_grid_counterexamples": [
     {
       "h_s": "2^-7",

@@ -105,3 +105,12 @@ The actual thick-contact path was checked separately from the older point-patch 
 Section9 of the [SC1 note](p65-b2-sc1-active-material-reference.md) proves that an ideal frozen-gap version of the existing synchronous update, with the exact full scalar step and the original six owners, has an invariant nonnegative pressure domain containing zero. The complete triangle-offset/robot response gives7/(2m)<=L<14/m. The finite material-response sensitivity then yields a contraction factor<16/17 and the analytical512-update bound2^-32 times its initial pressure error. No alternate pressure basis, fixture, mass or budget is introduced.
 
 Acceptance of the actual backtracking step, its full metric, changing offset gaps, native rounding/delivery, anchor rebuilds, original physical step/window budgets and SC2 remain unproved. The documented ideal comparison is not runtime validation or a physical implementation grant. All project execution remained off.
+
+
+## 2026-10-31: nonlinear held offset-gap comparison
+
+Section10 of the [SC1 reference note](p65-b2-sc1-active-material-reference.md) now derives the actual ideal triangle-offset held-gap identity g_fi=b_N,fi+rho(1-n_f,z), with a finite projected-support margin inside the original patch. The second-order tilt correction is bounded by (h^2/m^2)||z-p_*||^2, and its complete range derivative after division by h is below2h^2/m on the stated one-step pressure domain. The inverse horizontal edge matrix is differentiated; the current face normal is not frozen.
+
+This analysis also retains the generally nonzero kernel part of the full six-owner gap. The exact UNCLIPPED synchronous candidate has a contracting range component and a summable kernel drift below(2/3)h^3; its limiting pressure split stays positive and yields the same ideal endpoint. This is a decomposition of a comparison sequence, not a new solver projection or permission to discard off-range residuals. Full requested pressure still belongs in actual/ideal map-error accounting.
+
+Intermediate nonnegativity, the actual orthant projection and full-metric backtracking, stored/native errors, finite-iterate penetration signs, whole-window propagation, SC2 and the original energy/angular/transaction gates are not proved by this increment. No runtime code or project execution changed, and the complete ordinary-mass physical contract remains NOT_FROZEN.

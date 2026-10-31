@@ -370,3 +370,136 @@ Since (17/16)^16>2 by its binomial expansion,512 such updates give a bound <2^-3
 The real _improve uses midpoints of actual current offset-gap bounds, full normal/friction/native/mapping/moment metrics for its score, an early-return threshold, up to13 backtracking attempts, and possible anchor rebuilds. Decrease of Euclidean distance to p_* does not prove decrease of that actual maximum score or acceptance of power0. A reduced step still has the displayed conditional contraction with its own a, but the512-update full-step rate cannot be transferred to a backtracked sequence.
 
 Actual changing offset gaps, stored step-size rounding, native material/predictor/delivery error and the complete replay resource account remain separate. A nonzero frozen-gap bound also has no one-sided sign, so exact positive-area contact and zero penetration are not inferred at finite iterates. Section7's energy statement is still about the exact fixed point entered from the exact reference. Full physical-window propagation, SC2 birth/terminal, angular/NUM005 and transaction requirements remain open, with no new source or execution grant.
+
+
+## 10. Changing triangle-offset gaps and the normal-kernel component
+
+This section keeps the same ONE-step exact SC1 reference entry, all six nodal bottom owners, unit compliances, masses, N=512 ideal material sweeps and fixed initial normal delivery map. It analyzes the current per-triangle offset law used by [held_feature_gap](../../src/phymeo/solvers/_thick_contact_geometry.py). It does not replace that law with the newer conforming full-star shell geometry. All numerical constants use the normalization already declared in the local material note.
+
+Let P_S be the Euclidean projection onto S=range(B_n), Pi=I-P_S, z=P_S p and k=Pi p. Here z denotes a pressure-range vector; write z_ref for the common vertical reference translation. The ideal predictor and finite material endpoint depend on z alone, since B_n^T k=0. This exact statement about the fixed initial normal map does not remove requested kernel pressure from later actual-versus-ideal map-error accounting.
+
+Use the larger convex pressure-range ball
+
+    Q_bar={z in S: ||z-p_*||_2<=||p_*||_2}.
+
+It is an analysis set, not a solver projection or prescribed pressure oracle. Section9's bound ||z||<h sqrt(m) holds without requiring z>=0. Thus each cloth predictor is within2h^2<=1/2048 of the one fixed free common-translation predictor. The existing inner-predictor theorem applies throughout Q_bar, including segments between its points; all ideal material row states and endpoints stay in the outer per-node1/64 geometry domain.
+
+### Finite support and an exact gap formula
+
+The reference patch projects to [-2,2]^2. Throughout the outer domain, each middle node's horizontal coordinate has magnitude at most1+1/64. The previous face-normal bound gives ||n_f,xy||<1/14. Both lifted face vertices, and hence their convex hull, therefore have projected coordinates bounded by
+
+    1+1/64+rho/14 <33/32,   rho=1/64.
+
+The ideal nodal bottom points project strictly inside the finite patch, with coordinate margin greater than31/32. The same statement holds along the ideal affine middle-position segment from the exact entry to one such endpoint: subtract its affine common vertical translation and use convexity of the outer neighborhood. This proves finite projected-feature membership for these ideal points. It does not prove absence of penetration, unchanged contact dimension, absence of other SAT ties, self-contact validity or stored-point membership.
+
+Write q_R for the robot translation and b_N(z)=B_n y_N(z)-b for the full six-owner frozen gap. For either current face f, let
+
+    c_f(z)=rho(1-n_f,z(z)) >=0.
+
+The upward held support plane has height q_R-rho. The exact current nodal bottom point is y_i-rho n_f, so inside that finite support feature its signed ideal gap is
+
+    g_fi(z)=y_i,z-q_R+rho(1-n_f,z)
+           =b_N,fi(z)+c_f(z).
+
+Thus g(z)=b_N(z)+c(z), with
+c=(c_U,c_U,c_U,c_D,c_D,c_D) in owner order(Ua,Ub,Uc,Db,Da,Dd).
+This is a changing-director identity, not an endpoint frozen-normal approximation. The implementation's stored point and rational enclosure midpoint still require their separate error bounds; held_feature_gap returns a hull containing both ideal and actual gap bounds.
+
+If all six exact g_fi vanish, subtracting gaps within each face shows that its three nodal z coordinates coincide. The shared nodes connect the faces, hence all four nodal z coordinates coincide. Positive orientation in the outer domain then forces both normals to equal e_z, c=0 and b_N=0. Conversely b_N=0 forces the same flatness and g=0. The exact zero sets agree within this domain; a small nonzero gap does not imply flatness or a one-sided gap sign.
+
+### Quadratic tilt correction and its derivative
+
+For f=U or D use horizontal edge columns
+
+    E_U=[(y_b-y_a)_xy,(y_c-y_a)_xy],
+    E_D=[(y_b-y_a)_xy,(y_d-y_a)_xy].
+
+Their reference matrices are diag(1,1) and diag(1,-1). Each column perturbation has norm<=1/32, so ||E_f-E_f,ref||_2<=sqrt(2)/32<3/64 and
+
+    ||E_f^(-1)||_2<64/61<16/15.
+
+For d_f=(y_b,z-y_a,z,y_outer,z-y_a,z), the face slope is
+t_f=E_f^(-T)d_f and n_f,z=(1+||t_f||^2)^(-1/2).
+Writing b_f for the three entries of b_N on that face, the two-difference operator has norm sqrt(3). Therefore
+
+    ||t_f||<=(16/15)sqrt(3)||b_f||<=2||b_f||,
+    0<=c_f<=rho||t_f||^2/2<=2rho||b_f||^2.
+
+Each correction is repeated three times. Summing both faces without removing duplicate owners gives
+
+    ||c||_2<=sqrt(3)(c_U+c_D)<=4rho||b_N||_2^2.
+
+A directional derivative, with dots denoting an arbitrary pressure-range direction, satisfies
+
+    ||dot t_f||<=2(||dot b_f||+||t_f|| ||dot y_f,xy||),
+    |dot c_f|<=rho||t_f|| ||dot t_f||
+             <=4rho||b_f|| ||dot b_f||
+               +8rho||b_f||^2 ||dot y_f,xy||.
+
+The first inequality differentiates the complete inverse edge matrix as well as its vertical right-hand side. No horizontal shape derivative is omitted. Cauchy-Schwarz over the two faces, and the bound on each face's norm by the full cloth norm, yield
+
+    ||dot c||<=8rho||b_N|| ||dot b_N||
+               +16rho||b_N||^2 ||dot y_cloth||.
+
+The finite material sensitivity and section9 response bounds imply on Q_bar, with e=||z-p_*||,
+
+    ||b_N(z)|| <= (4h/m)e,
+    ||D_z b_N|| <4h/m,
+    ||D_z y_cloth|| <3h/(2m).
+
+The last inequality uses ||B_cloth^T||=sqrt(2) and
+sqrt(2)(1+95/A)<3/2. Combining these estimates with rho=1/64 gives
+
+    ||c(z)|| <= (h^2/m^2)e^2,
+    ||D_z(c/h)|| <= (2h/m^2)e+(6h^2/m^3)e^2
+                 < 2h^2/m.
+
+For the last step, e<=||p_*||<h sqrt(m)/2, m>=1/2 and h<=1/64 imply
+m||D_z(c/h)||<h^2/sqrt(m)+(3/2)h^4/m<2h^2.
+In particular c=0 and D_z c=0 at e=0.
+
+### The range does not contain every changing gap
+
+In the declared owner order the kernel part is exactly
+
+    Pi c=((c_U-c_D)/2,(c_U-c_D)/2,0,
+          (c_D-c_U)/2,(c_D-c_U)/2,0).
+
+It vanishes when the two tilt corrections coincide. They need not coincide for a general endpoint in the domain. Consequently the actual six-owner gap need not lie in S even though its frozen part does. Discarding Pi g in a quotient solve would omit a real, boundable residual.
+
+Consider the full exact UNCLIPPED update p^+=p-a*g(P_S p)/h only as the candidate before the real workspace's orthant projection. Its decomposition is an identity:
+
+    z^+=z-a*P_S g(z)/h,
+    k^+=k-a*Pi c(z)/h.
+
+There is no added projection in the implementation. P_S is used only to analyze this comparison sequence. Since endpoint geometry is constant along k, a full-space strict contraction is impossible: different kernel splits can deliver the same ideal endpoint.
+
+For the range component, projection cannot increase the derivative bound of c/h. Combining it with section9 gives
+
+    ||D_z[z-a*P_S g(z)/h]||
+      <=1-(a/m)[1-(7/2)kappa_N-2h^2],
+    1-(7/2)kappa_N-2h^2
+      >=3429/4096>5/6.
+
+Thus for the same exact full step m/14<a<=2m/7 this UNCLIPPED comparison has range contraction factor<16/17 on Q_bar and fixes p_*. The ball is invariant. From p^(0)=0 its range error satisfies e_j<(16/17)^j||p_*|| for j>=1.
+
+The kernel drift is absolutely summable. With e_0=||p_*||,
+
+    sum_j ||k^(j+1)-k^(j)||
+      < (a*h/m^2)*e_0^2/[1-(16/17)^2]
+      < (289/462)h^3 <(2/3)h^3.
+
+Its limit k_infinity lies in ker(B_n^T), and the tail from j is bounded by
+(2/3)h^3(16/17)^(2j). In particular the comparison converges to p_*+k_infinity, with the same ideal endpoint. Because p_*,i>11h/4096,
+
+    p_*,i+k_infinity,i
+       >11h/4096-(2/3)h^3
+       >=31h/12288>h/512.
+
+This establishes a positive limiting split for this analytical sequence. It does not establish that every intermediate candidate is nonnegative. Therefore it does not prove that the real orthant projection is inactive, or transfer this rate to the actual projected/backtracked iteration. The residual kernel component is retained throughout the argument, not declared harmless to all physical certificates.
+
+### Outstanding physical obligations
+
+The comparison now includes the exact nonlinear tilt correction and a finite-support margin, but still begins from the exact reference and uses the fixed initial normal delivery map with exact finite material arithmetic. Orthant activity from the zero start, actual full-metric line-search acceptance, stored gap-midpoint and step-size errors, R7/native delivery, anchor discovery/rebuilds, finite-iterate one-sided penetration and contact-sign gates remain unresolved. The exact ideal limiting endpoint has the earlier one-step energy property; no finite or rounded iterate inherits it by assertion.
+
+The SC1 perturbed-entry/full-window induction, SC2 birth/terminal case, paired angular/NUM005 and transaction gates also remain open. No fixture, oracle, tolerance, iteration/resource ceiling, physical API or execution grant changes. This addition is manual mathematics and source-text/file-IO/Git work only.

@@ -62,6 +62,7 @@ These are source-text names, not pytest collection results. Parameterized cases 
 - tests/test_shell_boundary.py::test_dependent_or_square_field_basis_is_not_admitted
 - tests/test_shell_boundary.py::test_original_shared_vertex_does_not_exempt_other_pair_geometry
 - tests/test_shell_boundary.py::test_tightened_caps_return_no_partial_geometry
+- tests/test_shell_boundary.py::test_connected_n1_n2_positive_local_tets_have_distinct_material_interior_overlap
 - tests/test_shell_boundary_sweep.py::test_full_analytic_grid_and_two_predeclared_rebuilds
 - tests/test_shell_boundary_sweep.py::test_legal_endpoints_cannot_hide_constant_director_component_crossing
 - tests/test_shell_boundary_sweep.py::test_actual_path_domain_and_full_closed_join_failures
@@ -90,7 +91,7 @@ This finite geometry domain requires complete convex clusters and full support-c
 
 ## Twelve-path identity handoff
 
-Ten exact source/test SHA256 and Git blobs follow, from checkpoint b3b21095dcdca494a31455c0c13d255ef5bf0ee8. Two additional NEW paths are docs/development/p65-shell-boundary-geometry-report.md and this .superpowers/sdd/2026-10-30-p65-material-self-gripper-integration/task-2-shell-boundary-geometry-report.md. Their final SHA256/blob identities are supplied in the final handoff after committing, avoiding impossible self-referential file hashes. That final message records the exact twelve-path list and actual clean Git status. No digest is substituted for executable evidence.
+Ten exact source/test SHA256 and Git blobs follow, refreshed at the R1/R2 test-only checkpoint6b7c34571316126580877a4158c6922f26f85a0b. Five product sources remain byte-for-byte identical to873e42f9. Two additional NEW paths are docs/development/p65-shell-boundary-geometry-report.md and this .superpowers/sdd/2026-10-30-p65-material-self-gripper-integration/task-2-shell-boundary-geometry-report.md. Their final SHA256/blob identities are supplied in the final handoff after committing, avoiding impossible self-referential file hashes. That final message records the exact twelve-path list and actual clean Git status. No digest is substituted for executable evidence.
 
 | Relative path | Working SHA256 | Git blob |
 | --- | --- | --- |
@@ -100,7 +101,19 @@ Ten exact source/test SHA256 and Git blobs follow, from checkpoint b3b21095dcdca
 | src/phymeo/geometry/shell_boundary_sweep.py | f255fc8a3fd9a58cea8461506b602582f1bcb0bd5de9d2913c4ec07a230cb865 | dcf36ffc066938839daa3007727a2251e1bf14f4 |
 | src/phymeo/validation/shell_boundary.py | 3d376990a90aff3cc8c1fe8e882c82709d5ff84434b9c85f64f559e08d38da18 | 553d663dae14f873fd8585cc3595af999277aa18 |
 | tests/test_shell_contact_field.py | 5ce2aada61d3483230b54eae9eabab0518dcc9bc25ac75b08db8f8c471ab8ddd | 0bf87d8d320c74faa07a5ca080ac2fa2154bbd7f |
-| tests/test_shell_boundary.py | 6c416b39182fb6ec71a88cb72dfbbd3e59a5273bf952382933c0fecc5b058cb9 | 6002f551d399f3e989e2bb27afa3d1c77c781388 |
-| tests/test_shell_boundary_sweep.py | cb7a5f9d8bc9a59a349b118b99297ab9c03ee62209f8a9dd219d06bd20a4256a | 3386d66076485cb5e92553590e8a002f85e2f83a |
+| tests/test_shell_boundary.py | 224026a1babac8e7860ea2890f6f1215a0f8f5fb6e8b5555724c234344624f87 | 85b594a1ef94b855dde1f8260edb8b2da31c429f |
+| tests/test_shell_boundary_sweep.py | e236a6f3e1078b16e9704c118054c346e05dc4cd65bb9ed6e9c3147d14e47d34 | a74542c270f5569ac31a4bb8801c0ae1d58f38f2 |
 | tests/test_shell_boundary_verifier.py | 268eec98601d204902167e1818e6409df590112a463954ca371f8099aee56daa | bb816d415b2e09c4f5843f8d90c536aed4750a24 |
 | tests/test_shell_boundary_points.py | 5c758e9afa9170601583c78a4cbd8fb78487cb6f1fd2582907231d96f0f03a98 | 92565ce03ebd9a141a587a9fa1896f6b747abc46 |
+
+## R1/R2 continuation receipt — 2026-10-31
+
+Authority: parent source review4ff35b78284cc71626fbb4a1c3f4838a1d34cb71, read fully with the brief continuation from the absolute parent tree. Starting clean873e42f9; no merge. Changes are two existing NEW tests plus these two NEW reports. Test checkpoint6b7c34571316126580877a4158c6922f26f85a0b. Five product source SHA256/Git blobs remain byte-for-byte equal to873e42f9. Every import, collection, probe, static check, formatter, test and backend remains UNEXECUTED; no execution slot exists.
+
+R1 adds the exact historical connected N1/N2 six-face fan data, independently derived cross-z lists(1,2,2,4,8,2)/(1,2,1,1,2,1), star lists(19,3,3,4,6,12,10)/(8,2,3,3,2,3,3), exact frozen law inequalities and all18 local oriented tet determinants2rho*C_face>0. Distinct positive-barycentric interior material points from faces0 and3 map to(0,1/4,0); reference images are(3/4,1/4,0) versus(-3/8,-1/8,0) or(-3/4,-1/4,0). Common open volume is rho1/16. All six complete local convex-prism hints,15 pair hints and all original boundary exterior hints are supplied. The illicit pair is first; its genuine A exposed side n=(-1,-1,0) necessarily fails B's opposite support because n·p=-1/4. The test demands that geometric support failure after all local proofs, so unrelated missing/malformed hints cannot satisfy it. Old tests/test_shell_embedding.py was text-read only; no old producer/result is an oracle.
+
+R2 preserves the original crossing path and first independently asserts strict endpoint gaps2/4. Each endpoint now has its own complete applicable hint and authored static+independent verification, with same-call full payload saved. Exact t3/8 produces coincident open boxes[-1/2,1/2]×[-1,1]×[-rho,rho] of overlap volume4rho; the original full sweep must reject. The zero_star_inside case likewise independently authenticates both endpoints, updates the final material corner/tie/exterior data for A's planar pi rotation, and asserts the exact affine middle collapse at t1/2 with star factor(1-2t)^2. The direct changing-director F1 negative is unchanged. No path, fixture, threshold, original C1/C2 positive grid or prior negative was removed or tuned.
+
+The lane report's appended R1/R2 section contains the complete manual proofs and hint construction rationale. There are now37 source-text function nodeids, parameter cases UNCOLLECTED, with one added N1/N2 function and strengthened existing crossing/zero-star functions. The hash table is refreshed to6b7c345; final report SHA/blob values are supplied after commit to avoid self-hashing. Current production resource envelopes remain conditional and unchanged; no executed endpoint or sweep result is claimed.
+
+CODE_READY_TESTS_PENDING / AUTHORING_SLOT_RELEASED after clean final report commit. This release concerns only authoring. Parent's later focused-host validation decision is still separate.

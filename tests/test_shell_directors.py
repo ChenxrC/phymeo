@@ -87,10 +87,11 @@ def test_shared_material_parent_address_does_not_change_point_or_star():
     assert len(receipts) > 1 and all(value == receipts[0] for value in receipts)
 
 
+@pytest.mark.parametrize("variant", ["identity", "rotation", "translation", "permutation"])
 @pytest.mark.parametrize("q", [F(1, 8), F(3, 16), F(1, 4)])
-def test_f1_nonflat_full_map_along_independently_differentiated_free_tangent(q):
-    ref, _, _ = f1_reference()
-    positions = f1_positions(ref, float(q))
+def test_f1_nonflat_full_map_along_independently_differentiated_free_tangent(q, variant):
+    ref, rotation, shift = f1_reference(variant)
+    positions = f1_positions(ref, float(q), rotation, shift)
     tet = ref.tetrahedra[0]
     address = ShellMaterialAddress(ref.reference_id, tet.tetra_id, (0, 0, 0, 2**52), 0)
     point = shell_material_point(ref, positions, address)
@@ -102,6 +103,7 @@ def test_f1_nonflat_full_map_along_independently_differentiated_free_tangent(q):
     s = a.sqrt(a.exact(1 + q*q))
     inverse_cube = a.div(a.exact(1), a.mul(a.mul(s, s), s))
     expected = (a.exact(0), a.mul(a.exact(-F(1, 16)), inverse_cube), a.sub(a.exact(1), a.mul(a.exact(q / 16), inverse_cube)))
+    expected = tuple(a.sum(a.mul(a.exact(F.from_float(float(rotation[i, j]))), expected[j]) for j in range(3)) for i in range(3))
     # Add only the known two outer-node z columns, not producer response output.
     blocks = dict(zip(point.node_ids, np.array(point.jacobian.intervals, dtype=object).reshape((-1, 3, 3)), strict=True))
     for component in range(3):
@@ -112,7 +114,7 @@ def test_f1_nonflat_full_map_along_independently_differentiated_free_tangent(q):
         assert value.lo <= expected[component].hi and value.hi >= expected[component].lo
         assert value.hi - value.lo < F(1, 2**40)
     # Independent squared exact relation also checks the sign and rational target.
-    y = point.point.values
+    y = rotation.T @ (point.point.values - shift)
     assert y[1] < 1 and y[2] > float(q)
 
 

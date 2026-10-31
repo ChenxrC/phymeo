@@ -360,3 +360,20 @@ class Arithmetic:
         self.created_cells += 1
         if self.created_cells > self.limits.max_time_cells:
             raise ShellUnresolved("time_cells_exhausted", "all visited/created cells")
+    def qvsub(self, left, right):
+        return tuple(self.qsub(a, b) for a, b in zip(left, right, strict=True))
+
+    def qvadd(self, left, right):
+        return tuple(self.qadd(a, b) for a, b in zip(left, right, strict=True))
+
+    def qdot(self, left, right):
+        value = F(0)
+        for a, b in zip(left, right, strict=True):
+            value = self.qadd(value, self.qmul(a, b))
+        return value
+
+    def qcross(self, left, right):
+        return tuple(self.qsub(self.qmul(left[j], right[k]), self.qmul(left[k], right[j])) for j, k in ((1, 2), (2, 0), (0, 1)))
+
+    def qcross2(self, left, right):
+        return self.qsub(self.qmul(left[0], right[1]), self.qmul(left[1], right[0]))

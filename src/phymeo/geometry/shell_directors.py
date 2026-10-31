@@ -221,25 +221,30 @@ def _point_map(reference, address, evaluated, arithmetic):
     return canonical, node_ids, arithmetic.publish(point, (3,)), arithmetic.publish(flat, (len(node_ids), 3, 3))
 
 
+def _geometry_receipt(reference, positions, arithmetic, polynomials=None):
+    if polynomials is None:
+        polynomials = _constant_polynomials(reference, positions, arithmetic)
+    evaluated = _evaluate(reference, polynomials, F(0), F(0), arithmetic)
+    nodes = tuple(sorted(polynomials))
+    face_ids = tuple(face_id for face_id, _ in evaluated["faces"])
+    lifted = tuple(evaluated["lifted"][(node, sign)] for node in nodes for sign in (-1, 1))
+    directors = tuple(evaluated["normals"][node] for node in nodes)
+    dpub = arithmetic.publish(tuple(v for vector in directors for v in vector), (len(nodes), 3))
+    lpub = arithmetic.publish(tuple(v for vector in lifted for v in vector), (len(nodes), 2, 3))
+    return ShellDirectorGeometry("conforming-shell-directors-v1", "ideal-from-stored-fp64", "director_geometry_only", reference.reference_id, _binding("directors", reference, positions, arithmetic.limits), arithmetic.limits, arithmetic.bits, nodes, face_ids, tuple(evaluated["areas"][face] for face in face_ids), tuple(evaluated["sums"][node] for node in nodes), directors, tuple(evaluated["offsets"][node] for node in nodes), lifted, evaluated["domain"], dpub, lpub, arithmetic.operations)
+
+
 def shell_director_geometry(reference, positions, *, limits=ShellProofLimits()):
     positions = _positions(reference, positions, limits)
     arithmetic = Arithmetic(limits)
     polynomials = _constant_polynomials(reference, positions, arithmetic)
     while True:
         try:
-            evaluated = _evaluate(reference, polynomials, F(0), F(0), arithmetic)
-            nodes = tuple(sorted(polynomials))
-            face_ids = tuple(face_id for face_id, _ in evaluated["faces"])
-            lifted = tuple(evaluated["lifted"][(node, sign)] for node in nodes for sign in (-1, 1))
-            directors = tuple(evaluated["normals"][node] for node in nodes)
-            dpub = arithmetic.publish(tuple(v for vector in directors for v in vector), (len(nodes), 3))
-            lpub = arithmetic.publish(tuple(v for vector in lifted for v in vector), (len(nodes), 2, 3))
-            return ShellDirectorGeometry("conforming-shell-directors-v1", "ideal-from-stored-fp64", "director_geometry_only", reference.reference_id, _binding("directors", reference, positions, limits), limits, arithmetic.bits, nodes, face_ids, tuple(evaluated["areas"][face] for face in face_ids), tuple(evaluated["sums"][node] for node in nodes), directors, tuple(evaluated["offsets"][node] for node in nodes), lifted, evaluated["domain"], dpub, lpub, arithmetic.operations)
+            return _geometry_receipt(reference, positions, arithmetic, polynomials)
         except ShellUnresolved as error:
             if error.category not in ("publication_error", "division_interval_contains_zero") or arithmetic.bits == limits.max_sqrt_bits:
                 raise
             arithmetic.set_bits(min(2 * arithmetic.bits, limits.max_sqrt_bits))
-
 
 def shell_material_point(reference, positions, address, *, limits=ShellProofLimits()):
     positions = _positions(reference, positions, limits)

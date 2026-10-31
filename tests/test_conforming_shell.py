@@ -155,3 +155,17 @@ def test_law_limits_and_address_are_exact_owned_values():
         ShellMaterialAddress(ref.reference_id, (10, 0), [0, 0, 0, 1], 0)
     with pytest.raises(TypeError):
         ShellMaterialAddress(ref.reference_id, (10, 0), [True, 0, 0, 2**52 - 1], 0)
+
+def test_cyclic_face_order_preserves_canonical_identity_but_binds_input_order():
+    ref, _, _ = f1_reference()
+    cycled = np.roll(ref.oriented_nodes, 1, axis=1)
+    other = ConformingShellReference(ref.domain, ref.node_ids, ref.face_ids, cycled, ref.reference_positions, ref.half_thickness_m)
+    assert other.reference_id == ref.reference_id
+    assert other.input_fingerprint != ref.input_fingerprint
+    assert other.tetrahedra == ref.tetrahedra
+
+
+def test_constructor_shape_ceiling_precedes_owned_copy():
+    ref, _, _ = f1_reference()
+    with pytest.raises(ShellUnresolved, match="shape"):
+        ConformingShellReference(ref.domain, ref.node_ids, ref.face_ids, ref.oriented_nodes, ref.reference_positions, ref.half_thickness_m, limits=replace(ShellProofLimits(), max_nodes=3))

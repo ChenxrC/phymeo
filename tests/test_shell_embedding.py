@@ -104,3 +104,21 @@ def test_resource_limits_are_not_silently_reset_in_reference_proof():
     ref, _, _ = f2_reference()
     with pytest.raises(ShellUnresolved, match="operation"):
         certify_shell_embedding(ref, ref.reference_positions, limits=replace(ShellProofLimits(), max_scalar_operations=4))
+
+def test_concave_reference_is_supported_topology_but_not_this_proof_chart():
+    x = np.array([[0, 0, 0], [2, 0, 0], [1 / 2, 1 / 2, 0], [0, 2, 0]], dtype=np.float64)
+    ref = ConformingShellReference("concave", np.arange(4, dtype=np.int64), np.arange(2, dtype=np.int64), np.array([[0, 1, 2], [0, 2, 3]], dtype=np.int64), x, np.full(4, 1 / 16))
+    shell_director_geometry(ref, x)
+    with pytest.raises(ShellUnresolved, match="unsupported_reference_chart"):
+        certify_shell_embedding(ref, x)
+
+
+def test_closed_triangle_intersections_retain_exact_point_and_edge_contacts():
+    from phymeo.geometry._shell_intervals import Arithmetic
+    from phymeo.geometry.shell_embedding import _triangle_intersection
+    a = Arithmetic(ShellProofLimits())
+    first = ((F(0), F(0)), (F(1), F(0)), (F(0), F(1)))
+    at_point = ((F(1), F(0)), (F(2), F(0)), (F(1), F(1)))
+    at_edge = ((F(1), F(0)), (F(0), F(0)), (F(1), F(-1)))
+    assert set(_triangle_intersection(first, at_point, a)) == {(F(1), F(0))}
+    assert set(_triangle_intersection(first, at_edge, a)) == {(F(0), F(0)), (F(1), F(0))}

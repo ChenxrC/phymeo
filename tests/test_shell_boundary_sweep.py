@@ -4,12 +4,13 @@ from fractions import Fraction as F
 
 import numpy as np
 import pytest
-from test_shell_boundary import VARIANTS,control,payload,save
+from test_shell_boundary import VARIANTS,control,payload,save,vec
 
 from phymeo.constraints.conforming_shell import ShellUnresolved
-from phymeo.constraints.shell_boundary import BoundaryProofLimits
+from phymeo.constraints.shell_boundary import BoundaryProofLimits,SupportHint
+from phymeo.geometry.shell_boundary import certify_shell_boundary
 from phymeo.geometry.shell_boundary_sweep import certify_shell_boundary_sweep
-from phymeo.validation.shell_boundary import verify_shell_boundary_sweep
+from phymeo.validation.shell_boundary import verify_shell_boundary,verify_shell_boundary_sweep
 
 
 def state(name,ref,x,rotation,time):
@@ -61,19 +62,65 @@ def test_full_analytic_grid_and_two_predeclared_rebuilds(name,variant,h,tmp_path
     assert snapshots[0]==snapshots[1]
 
 
-def test_legal_endpoints_cannot_hide_constant_director_component_crossing():
+def _exact_middle_at(start,end,time):
+    return tuple(tuple(F.from_float(float(p))+time*(F.from_float(float(q))-F.from_float(float(p)))
+                       for p,q in zip(a,b,strict=True)) for a,b in zip(start,end,strict=True))
+
+
+def _box_xy(points,rows):
+    selected=tuple(points[i] for i in rows)
+    assert all(p[2]==0 for p in selected)
+    return (min(p[0] for p in selected),max(p[0] for p in selected),
+            min(p[1] for p in selected),max(p[1] for p in selected))
+
+
+def _certified_endpoint(ref,positions,hint,path):
+    certificate=certify_shell_boundary(ref,positions,witness_hint=hint)
+    checked=verify_shell_boundary(certificate,ref,positions,witness_hint=hint,
+                                  limits=BoundaryProofLimits())
+    assert checked and checked.verification_kind=="static"
+    assert certificate.status==checked.status=="weak_material_geometry_certified"
+    save(path,(ref,positions,hint,certificate,checked))
+
+
+def test_legal_endpoints_cannot_hide_constant_director_component_crossing(tmp_path):
     ref,x,hint,_,_=control("C2")
     x[ref.node_ids>=4,1]-=2
     x[ref.node_ids>=4,0]+=2
     y=x.copy()
     y[ref.node_ids<4,0]+=4
     y[ref.node_ids>=4,0]-=4
+    start=_exact_middle_at(x,y,F(0))
+    finish=_exact_middle_at(x,y,F(1))
+    assert _box_xy(start,range(4))==(F(-2),F(-1),F(-1),F(1))
+    assert _box_xy(start,range(4,8))==(F(1),F(2),F(-1),F(1))
+    assert _box_xy(finish,range(4))==(F(2),F(3),F(-1),F(1))
+    assert _box_xy(finish,range(4,8))==(F(-3),F(-2),F(-1),F(1))
+    assert F(1)-F(-1)==2>0 and F(2)-F(-2)==4>0
+    # Each endpoint has a valid complete separator for its actual ordering.
+    # All cluster/fan/material hints retain their original complete coverage.
+    start_pair=dataclasses.replace(hint.pairs[0],
+        supports=(SupportHint(vec((1,0,0),0),(1,1)),),matching=())
+    first_hint=dataclasses.replace(hint,pairs=(start_pair,))
+    end_pair=dataclasses.replace(hint.pairs[0],
+        supports=(SupportHint(vec((-1,0,0),0),(0,1)),),matching=())
+    last_hint=dataclasses.replace(hint,pairs=(end_pair,))
+    _certified_endpoint(ref,x,first_hint,tmp_path/"crossing-start.json")
+    _certified_endpoint(ref,y,last_hint,tmp_path/"crossing-end.json")
+    # Fixed exact interior time: both open boxes coincide. This analytic
+    # counterexample is not a sampled approximation to continuous safety.
+    interior=_exact_middle_at(x,y,F(3,8))
+    expected=(F(-1,2),F(1,2),F(-1),F(1))
+    assert _box_xy(interior,range(4))==_box_xy(interior,range(4,8))==expected
+    rho=F(1,32)
+    assert all(F.from_float(float(v))==rho for v in ref.half_thickness_m)
+    assert (expected[1]-expected[0])*(expected[3]-expected[2])*(2*rho)==4*rho>0
     with pytest.raises(ShellUnresolved):
         certify_shell_boundary_sweep(ref,(np.stack((x,y)),),durations=(1.0,),witness_hint=hint)
 
 
 @pytest.mark.parametrize("kind",("changing_director","zero_star_inside","bad_join","zero_duration"))
-def test_actual_path_domain_and_full_closed_join_failures(kind):
+def test_actual_path_domain_and_full_closed_join_failures(kind,tmp_path):
     ref,x,hint,_,_=control("C2")
     y=x.copy()
     if kind=="changing_director":
@@ -85,6 +132,32 @@ def test_actual_path_domain_and_full_closed_join_failures(kind):
         y[:4]=2*center-x[:4]
         paths=(np.stack((x,y)),)
         times=(1/8,)
+        # The endpoint motion is a proper pi rotation in the middle plane.
+        # It retains +ez directors and the same geometric box, but changes the
+        # contacting MATERIAL corner from A node2 to A node0.
+        end_pair=dataclasses.replace(hint.pairs[0],
+            supports=(SupportHint(vec((1,0,0),0),(0,1)),
+                      SupportHint(vec((0,1,0),0),(0,1))),
+            matching=(((0,-1),(4,-1)),((0,1),(4,1))))
+        exterior=tuple((simplex,tuple(tuple(-q for q in component) if axis<2 else component
+                         for axis,component in enumerate(direction)))
+                       if all(v[0]<4 for v in simplex) else (simplex,direction)
+                       for simplex,direction in hint.exterior)
+        end_hint=dataclasses.replace(hint,pairs=(end_pair,),exterior=exterior)
+        first=_exact_middle_at(x,y,F(0))
+        last=_exact_middle_at(x,y,F(1))
+        assert _box_xy(first,range(4))==_box_xy(last,range(4))==(F(-2),F(-1),F(-1),F(1))
+        assert _box_xy(first,range(4,8))==_box_xy(last,range(4,8))==(F(-1),F(0),F(1),F(3))
+        assert first[2]==last[0]==(F(-1),F(1),F(0))
+        _certified_endpoint(ref,x,hint,tmp_path/"zero-star-start.json")
+        _certified_endpoint(ref,y,end_hint,tmp_path/"zero-star-end.json")
+        # Every A middle edge is (1-2t) times its original edge, hence every
+        # actual face/star is (1-2t)^2 times its nonzero original value.
+        assert (F(1)-2*F(0))**2==(F(1)-2*F(1))**2==1
+        assert (F(1)-2*F(1,2))**2==0
+        middle=_exact_middle_at(x,y,F(1,2))
+        assert middle[:4]==((F(-3,2),F(0),F(0)),)*4
+        assert middle[4:]==first[4:]
     elif kind=="bad_join":
         paths=(np.stack((x,x)),np.stack((x+1/16,x+1/16)))
         times=(1/8,1/8)
@@ -93,7 +166,6 @@ def test_actual_path_domain_and_full_closed_join_failures(kind):
         times=(0.0,)
     with pytest.raises((ShellUnresolved,ValueError,TypeError)):
         certify_shell_boundary_sweep(ref,paths,durations=times,witness_hint=hint)
-
 
 def test_missing_time_node_or_endpoint_is_not_a_certificate():
     ref,x,hint,_,_=control("C2")

@@ -401,3 +401,130 @@ def test_tightened_caps_return_no_partial_geometry(cap):
             "field":BoundaryProofLimits(max_field_rank=1)}[cap]
     with pytest.raises((ShellUnresolved,ValueError,TypeError)):
         certify_shell_boundary(ref,x,witness_hint=hint,limits=policy)
+
+@pytest.mark.parametrize("name,ring,face_z,star_z,remote_weights",(
+    ("N1",((1,0,0),(-1,1,0),(-1,-1,0),(2,0,0),(-2,2,0),(-2,-2,0)),
+     (1,2,2,4,8,2),(19,3,3,4,6,12,10),(F(3,4),F(1,8),F(1,8))),
+    ("N2",((1,0,0),(-1,1,0),(-1,-1,0),(1,0,0),(-1,1,0),(-1,-1,0)),
+     (1,2,1,1,2,1),(8,2,3,3,2,3,3),(F(1,2),F(1,4),F(1,4))),
+))
+def test_connected_n1_n2_positive_local_tets_have_distinct_material_interior_overlap(
+        name,ring,face_z,star_z,remote_weights):
+    # The original connected six-face fan data are literal, not discovered from
+    # a producer. All calculations below use elementary rational determinants.
+    rest=((0,0,0),(2,0,0),(1,1,0),(-1,1,0),(-2,0,0),(-1,-1,0),(1,-1,0))
+    faces=tuple((0,j,1 if j==6 else j+1) for j in range(1,7))
+    current=((0,0,0),)+ring
+    rho=F(1,16)
+    epsilon=F.from_float(1e-10)
+    def sub(a,b): return tuple(F(u)-F(v) for u,v in zip(a,b,strict=True))
+    def cross(a,b):
+        return (a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0])
+    def dot(a,b): return sum((u*v for u,v in zip(a,b,strict=True)),F(0))
+    def mix(vertices,weights):
+        return tuple(sum((weight*F(vertices[node][axis]) for node,weight in weights),F(0))
+                     for axis in range(3))
+    areas=[]
+    for index,(i,j,k) in enumerate(faces):
+        edges=(sub(current[j],current[i]),sub(current[k],current[i]),sub(current[k],current[j]))
+        area=cross(edges[0],edges[1])
+        assert area==(F(0),F(0),F(face_z[index])) and area[2]>0
+        squared=dot(area,area)
+        # Exact frozen shape gate, independently checked on every actual edge.
+        assert all(squared>epsilon*epsilon*dot(edge,edge)**2 for edge in edges)
+        areas.append(area)
+    for node in range(7):
+        incident=tuple(i for i,f in enumerate(faces) if node in f)
+        star=tuple(sum((areas[i][axis] for i in incident),F(0)) for axis in range(3))
+        assert star==(F(0),F(0),F(star_z[node])) and star[2]>0
+        assert dot(star,star)>epsilon*epsilon*len(incident)*sum(dot(areas[i],areas[i]) for i in incident)
+        for index in incident:
+            projection=dot(star,areas[index])
+            assert projection>0
+            assert projection**2>=F(1,16)*dot(star,star)*dot(areas[index],areas[index])
+    # Every actual director is exactly +ez. Every oriented staircase has the
+    # same positive determinant 2*rho*c_face, not merely positive face areas.
+    tets=product_tets(tuple(range(6)),faces)
+    lifted={(node,sign):(F(x),F(y),F(z)+sign*rho)
+            for node,(x,y,z) in enumerate(current) for sign in (-1,1)}
+    assert len(tets)==18
+    for (fid,_),vertices in sorted(tets.items()):
+        a,b,c,d=(lifted[v] for v in vertices)
+        determinant=dot(sub(b,a),cross(sub(c,a),sub(d,a)))
+        assert determinant==2*rho*face_z[fid]>0
+    local_weights=(F(1,2),F(1,4),F(1,4))
+    assert all(w>0 for w in local_weights+remote_weights)
+    assert sum(local_weights)==sum(remote_weights)==1
+    first=tuple(zip(faces[0],local_weights,strict=True))
+    remote=tuple(zip(faces[3],remote_weights,strict=True))
+    # Positive face barycentrics and -rho<z<rho place BOTH material points in
+    # the global reference volume interior, not on a local/global boundary.
+    assert -rho<F(0)<rho
+    assert mix(current,first)==mix(current,remote)==(F(0),F(1,4),F(0))
+    assert mix(rest,first)==(F(3,4),F(1,4),F(0))
+    expected_remote=(F(-3,8),F(-1,8),F(0)) if name=="N1" else (F(-3,4),F(-1,4),F(0))
+    assert mix(rest,remote)==expected_remote!=mix(rest,first)
+    # Face3 is a 2x homothety of face0 for N1 and geometrically equal for N2;
+    # their common open prism has volume (1/2)*(2*rho)=rho>0.
+    scale=F(2) if name=="N1" else F(1)
+    assert all(sub(current[b],tuple(scale*F(v) for v in current[a]))==(F(0),)*3
+               for a,b in zip(faces[0],faces[3],strict=True))
+    assert F(face_z[0],2)*(2*rho)==rho>0
+    ref=ConformingShellReference("fan",np.arange(7,dtype=np.int64),
+        np.arange(6,dtype=np.int64),np.array(faces,dtype=np.int64),
+        np.array(rest,dtype=np.float64),np.full(7,float(rho),dtype=np.float64))
+    # Each complete convex cluster is ONE actual positive triangular prism.
+    # Put the analytically illicit face0/face3 pair first, so rejection cannot
+    # be caused by an earlier unrelated pair candidate or a missing hint.
+    ordered_faces=(0,3,1,2,4,5)
+    clusters=[]
+    for cid,fid in enumerate(ordered_faces):
+        local={key:v for key,v in tets.items() if key[0]==fid}
+        boundary=facets(local)
+        triangle=faces[fid]
+        groups=[face_hint(boundary,tuple((v,sign) for v in triangle),2) for sign in (-1,1)]
+        for v,w in zip(triangle,triangle[1:]+triangle[:1],strict=True):
+            delta=sub(current[w],current[v])
+            drop=0 if delta[1]!=0 else 1
+            groups.append(face_hint(boundary,tuple((i,s) for i in (v,w) for s in (-1,1)),drop))
+        assert len(local)==3 and len(boundary)==8 and len(groups)==5
+        clusters.append(ClusterHint(cid,tuple(sorted(local)),tuple(groups)))
+    pairs=[]
+    for left,right in itertools.combinations(range(6),2):
+        fa,fb=faces[ordered_faces[left]],faces[ordered_faces[right]]
+        edge=current[fa[2]]
+        normal=vec((-edge[1],edge[0],0),0)
+        shared=tuple(sorted(set(fa)&set(fb)))
+        matching=tuple(((v,s),(v,s)) for v in shared for s in (-1,1))
+        pairs.append(ClusterPairHint((left,right),(SupportHint(normal,(0,1)),),matching))
+    boundary_strata=sorted({tuple(sorted(s)) for f in facets(tets) for n in range(1,4)
+                            for s in itertools.combinations(f,n)})
+    exterior=[]
+    for simplex in boundary_strata:
+        signs={v[1] for v in simplex}
+        if len(signs)==1:
+            direction=(0,0,next(iter(signs)))
+        else:
+            nodes={v[0] for v in simplex}
+            assert 0 not in nodes  # only the original ring sides are external.
+            direction=(sum(current[i][0] for i in nodes),sum(current[i][1] for i in nodes),0)
+        exterior.append((simplex,vec(direction,0)))
+    hint=BoundaryWitnessHint((),tuple(clusters),tuple(pairs),tuple(exterior))
+    assert len(hint.clusters)==6 and len(hint.pairs)==15
+    assert sorted(t for c in hint.clusters for t in c.tetra_ids)==sorted(tets)
+    # The first A exposed plane has n=(-1,-1,0); it supports ALL A vertices.
+    # The independently proved common-interior point has n.p=-1/4, so B
+    # necessarily violates the opposite closed support inequality. This is a
+    # geometric contradiction, not a missing/zero/malformed separator hint.
+    assert hint.pairs[0].clusters==(0,1)
+    assert hint.pairs[0].supports[0].normal==vec((-1,-1,0),0)
+    assert all(-F(current[v][0])-F(current[v][1])<=0 for v in faces[0])
+    assert -F(0)-F(1,4)==F(-1,4)<0
+    with pytest.raises(ShellUnresolved) as raised:
+        certify_shell_boundary(ref,np.array(current,dtype=np.float64),witness_hint=hint)
+    # This stage is reached only after the reference/law and ALL six complete
+    # local cluster proofs; a structural hint failure does not satisfy the test.
+    assert raised.value.category=="unsupported_matching"
+    assert raised.value.detail=="complete vertex support inequality failed"
+    # The API result is unresolved. The independent algebra above supplies the
+    # overlap fact; no penetration classification is inferred from unresolved.

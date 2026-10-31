@@ -6,7 +6,7 @@
 **Architecture:** Reuse the original B/S worktrees and implementers; parent G2-P in the integration tree. One state owner per physical domain; one global execution queue. New modules stay additive until their versioned validation and shared integration are complete.
 **Tech Stack:** Existing Python/NumPy/Fraction and tyx pin99f6df7c0fd8fdeef77f97df83914da27b64b7ee; no dependency change.
 **Spec:** ../specs/2026-10-30-p65-material-self-gripper-integration-design.md
-**State:** G2-P, S2-LG, B2 R7, parent point adapter, S2-L response, standalone quotient and S2-FG strict host geometry/full director maps are locally accepted in their explicit scopes. S2-L merge1396df42, quotient merge44456ea and S2-FG merge83c933e7 are complete; all execution slots released. Original S2 next receives only the targeted boundary-contact DOCUMENTATION_ONLY brief. Full weak/contact/fold/B2 integration/general robots/review/wheel/P6.5 remain open.
+**State:** G2-P, S2-LG, B2 R7, parent point adapter, S2-L response, standalone quotient and S2-FG strict host geometry/full director maps are locally accepted in their explicit scopes. S2-L merge1396df42, quotient merge44456ea and S2-FG merge83c933e7 are complete; all execution slots released. S2-FB proposal c065cb60 is imported as 5c34f32 and reviewed; implementation remains NOT_FROZEN. Original S2 next receives only a targeted DOCUMENTATION_ONLY witness/cost appendix: static exact fields and proved constant-director segments, complete C1/C2 coverage under original counters. General changing-director paths remain required later. Full weak/contact/fold/B2 integration/general robots/review/wheel/P6.5 remain open.
 
 ## Global constraints
 

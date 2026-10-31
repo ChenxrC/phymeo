@@ -149,3 +149,8 @@ For the original three step sizes and three d-node velocity perturbations, the i
 ## 2026-10-31 held and terminal transfer at SC2 impact
 
 For any fixed complete ideal sweep count from 1 to 512 the four-node SC2 impact step admits a six-owner unilateral held solution with total impulse J<=9m/32. The proof bounds the complete material replay over a pressure simplex and excludes its sum boundary before deriving the unilateral conditions. On h=1/64 it gives J>m/25, strict separation throughout the open segment, endpoint contact and an incoming normal speed below -1/18 at each touching owner. The ideal frictionless terminal projection then transfers total impulse L>m/27. The two finer grids retain a lower bound in terms of their free endpoint gap, including the endpoint-only branch. Selection by the actual solver, native evidence and the rest of the physical window remain open. [SC2 impact derivation](p65-b2-sc2-first-touch.md).
+
+
+## 2026-10-31 SC2 impact on the two fine grids
+
+The signed bending correction at node c places the exact zero-pressure first touch strictly before t_b=3/128 on both fine grids. The full U,c offset gap at t_b is below -2^(-27) for every prescribed velocity perturbation and complete sweep count. The resulting ideal held solution has (2m/3)2^(-27)/h < J < m/54. The entry gap margin proves strict separation on the open held path, and the current endpoint Jacobian gives a terminal total impulse greater than m/14. Together with the coarse-grid result these bounds now cover the ideal first impact on all three grids. The native geometric budget exceeds the proved fine-grid depth margin, so both phase branches still need stored-state evidence. [Fine-grid SC2 derivation](p65-b2-sc2-first-touch.md).

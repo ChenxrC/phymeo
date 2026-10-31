@@ -126,3 +126,56 @@ For the original exact controls, the entry bend is already active on every grid.
 Take a 512-sweep held solution from the existence argument. At its pressure an ideal trial stopped after M complete sweeps with R_M<=tau has endpoint displacement relative to sweep 512 of at most 26h^2 tau by the geometric tail of the ordered rows. The robot coordinate is identical at this fixed pressure. Each endpoint gap divided by h therefore changes by at most 28h tau. This supplies an approximate held comparison for other counts, subject to the residual gate. Contact membership and one-sided endpoint feasibility must be verified for the selected replay. The exact existence result permits multiple pressure splits.
 
 The fine-grid held-to-terminal lower bound still depends on the true entry gaps near 3/128. Native replay and delivery, finite backtracking progress, switching sweep counts, continuation through the remaining window and original energy/angular and transaction gates remain open.
+
+
+## Which fine-grid step contains the ideal impact?
+
+Both fine grids contain t_b=3/128. The symmetric position envelope straddles zero at that time. The signed contribution of the bending row to the upper face's outer node c resolves the ideal event. Keep the three original eta values, uniform m in [1/2,2] with unit compliances and any choice of 1 to 512 complete sweeps per free step.
+
+For h=1/128 or 1/256 and t_k=kh<=t_b, the free-motion induction bounds the distance between *every row stage* of step k and the ballistic endpoint by
+
+    E_k = 39P t_k(t_k+h) <= (13/19200)t_k,     P=1/1800.
+
+Indeed the weighted sum for previous completed steps is unchanged, and any partial sweep has the same cumulative motion bound 78P h^2 used for the whole step. In particular 3E_k < eta t_k/7. Every stage is within P of the common translated reference. The signed ballistic angle is -atan(eta t_k), and the largest ballistic constraint magnitude is at most eta t_k, including the a-d distance. Each ideal gradient norm is at most 3. Thus the entrance residual with fresh zero multipliers is below (6/5)eta t_k. At the last stage, -theta is at least (7/8)eta t_k-3E_k. Even one complete sweep gives |theta+h^(-2)lambda_B| <= (3/160)eta t_k. Combining these estimates gives
+
+    lambda_B > (2/3)h^2 eta t_k,
+    sum_s |Delta lambda_(j,s)| < (44/35)h^2 eta t_k for each row j.
+
+The second bound uses the complete-history factor 22/21 from the local material analysis. It controls possible changes of sign of individual multiplier increments. [Row history and residual bounds](p65-b2-local-row-derivative-bounds.md).
+
+Exactly two material rows act on c, the bend and the a-c distance. At the flat translated reference their c-vertical gradient components are -1 and 0. At every stage their deviations from those values are bounded by 33P and 3P respectively, by the full Hessian bounds. With d_k the material displacement from the free predictor, summing both ordered rows gives
+
+    m (d_k)_(c,z) <= -lambda_B + (33+3)P (44/35)h^2 eta t_k
+                  < -(3/5)h^2 eta t_k.
+
+This signed displacement accumulates even when each physical step stops at a different sweep count. At t_b=nh the ballistic c-height is zero. Using sum_(l=1..n) l(n-l+1)=n(n+1)(n+2)/6 in the endpoint position identity gives
+
+    y_(c,z)(t_b) < -eta h^3 n(n+1)(n+2)/(10m)
+                 <= -eta t_b^3/(10m).
+
+All three nodes of the upper face have the *same* ballistic height. Their actual height differences are generated solely by their deviations from that common value. The horizontal edge bound in SC1 section10 gives an upper-face slope at most 2E_n, so its lower-offset tilt correction is at most 2rho E_n^2 <= 1/(32*30720^2). Retaining this positive correction yields
+
+    g_(U,c)(t_b) < -2^(-27).
+
+For example eta t_b^3/(10m) >= 1701/(20*2^33), and after subtracting 2^(-27) the remaining 421/(20*2^33) exceeds the tilt bound. The free gap was strictly positive at L=47/2048 and decreases continuously. Thus on both fine grids the exact zero lies strictly in (L,t_b), in the step with entry t0=t_b-h and endpoint t_b. The endpoint-only analysis above remains applicable wherever the actual selected replay reaches that branch. In particular the guaranteed ideal depth 2^(-27) is smaller than h*tau for the native tolerance on both fine grids. Identifying the actual branch requires its stored geometry and phase evidence.
+
+## Fine-grid held and terminal impulse bounds
+
+At this entry all six lower gaps satisfy g_i^0/h > 1/8-1/(30000h)>1/9. At zero pressure the free endpoint penetration divided by h, D_0=max_i max(0,-g_i(0)/h), satisfies
+
+    2^(-27)/h < D_0 < 1/(30000h).
+
+The lower bound uses the U,c address for the same fixed-count replay. The upper bound uses the full free position enclosure at t_b. These statements hold for each choice of fixed N in the held existence argument, since the preceding signed proof covered every complete count.
+
+There is also an aggregate upper bound in terms of D_0. On the established simplex, the initial cloth row differs from its vertical nodal row by less than 1/6000. Integrate the finite displacement correction derivative 95h^2 along the predictor segment. The endpoint tilt derivative has norm less than 1/560 throughout this domain. With J the summed held impulse and P_j the aggregate on physical node j, these three errors give
+
+    |(g_i(p)-g_i(0))/h - (P_j+J/4)/m| <= beta J/m,
+    beta = 1/6000 + (1+1/6000)[95h^2 + (1+95h^2)/560] < 1/32.
+
+The 95h^2 term acts on the entire cloth predictor change, including the offset contribution. The robot translation is exact in this formula. At any unilateral solution with J>0, weight the lower estimates by p_i and use sum_j P_j^2>=J^2/4. Complementarity gives 0>=-J D_0+(1/2-beta)J^2/m. Combining with the earlier single-owner lower estimate yields, on the fine grids,
+
+    (2m/3) 2^(-27)/h < J <= (32m/15)D_0 < m/54.
+
+The chord and current-Jacobian estimates of the coarse-grid proof apply on the same pressure simplex. For each owner and path fraction s the lower gap satisfies g_i(s)>=s g_i(p)+(1-s)(g_i^0-h/700). Thus the full ideal held path stays strictly clear up to its endpoint. Since J>0 at least one owner touches there. At each touching owner the incoming current-map normal speed is below -1/9+1/700. With the same response bound 3/(2m), the ideal terminal projection transfers total impulse greater than m/14. The lower bound still exceeds m/14 for a pure-normal postcondition allowing speed down to -tau. This gives positive held and terminal impulse bounds and one-sided path feasibility for the ideal first impact on all three grids.
+
+A computational pressure iteration still needs to reach an admissible candidate within the replay budget. Actual early stopping, R7 rounding, terminal membership and the selected-pre binding require their own error enclosures. The analysis here ends at the first impact and its ideal terminal velocity.

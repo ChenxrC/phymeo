@@ -1,0 +1,2045 @@
+"""Independent high-level audit from original inputs. No producer imports/calls."""
+
+from dataclasses import fields, is_dataclass
+from fractions import Fraction as F
+from itertools import combinations
+
+import numpy as np
+
+from ..constraints.conforming_shell import ConformingShellReference, ShellUnresolved
+from ..constraints.shell_boundary import (
+    BoundaryContactStratum,
+    BoundaryFanWitness,
+    BoundaryFieldWitness,
+    BoundaryLaw,
+    BoundaryPairWitness,
+    BoundaryPlaneEvidence,
+    BoundaryPointBasis,
+    BoundaryProofLimits,
+    BoundarySupportEvidence,
+    BoundaryTopology,
+    BoundaryVerificationReceipt,
+    BoundaryWitnessHint,
+    ConvexClusterBoundaryWitness,
+    ExactBoundaryAddress,
+    MatchingIntersectionWitness,
+    ShellBoundaryAdmission,
+    ShellBoundarySweep,
+    ShellExactBoundaryPoint,
+    digest,
+)
+from ..geometry._shell_contact_field import FieldArithmetic, Meter
+from ..geometry._shell_intervals import Interval, Publication
+
+
+def _reject(detail):
+    raise ShellUnresolved("invalid_certificate", detail)
+
+
+def _rotation_cycle(seq):
+    seq = tuple(seq)
+    return min(seq[i:] + seq[:i] for i in range(len(seq)))
+
+
+def _sign_order(seq):
+    inversions = 0
+    for i in range(len(seq)):
+        for j in range(i):
+            inversions += seq[j] > seq[i]
+    return (-1, 1)[inversions % 2 == 0]
+
+
+def _graph(nodes, edges):
+    nodes = set(nodes)
+    if not nodes:
+        return False
+    reach = {min(nodes)}
+    while True:
+        extended = reach | {b for a, b in edges if a in reach} | {a for a, b in edges if b in reach}
+        if extended == reach:
+            return reach == nodes
+        reach = extended
+
+
+def _triangle_manifold(triangles, boundary_expected):
+    triangles = tuple(triangles)
+    vertices = sorted({v for f in triangles for v in f})
+    face_keys = [tuple(sorted(f)) for f in triangles]
+    if (
+        not vertices
+        or len(set(face_keys)) != len(face_keys)
+        or any(len(set(f)) != 3 for f in triangles)
+    ):
+        _reject("surface face multiplicity")
+    incidence = {}
+    for tri in triangles:
+        for i in range(3):
+            edge = (tri[i], tri[(i + 1) % 3])
+            incidence.setdefault(tuple(sorted(edge)), []).append(edge)
+    if not _graph(vertices, incidence):
+        _reject("surface disconnected")
+    boundary = []
+    for occurrences in incidence.values():
+        if len(occurrences) == 1:
+            boundary.append(occurrences[0])
+        elif (
+            len(occurrences) != 2
+            or occurrences[0][0] != occurrences[1][1]
+            or occurrences[0][1] != occurrences[1][0]
+        ):
+            _reject("surface edge incidence/orientation")
+    if len(vertices) - len(incidence) + len(triangles) != (1 if boundary_expected else 2):
+        _reject("surface Euler number")
+    if bool(boundary) != boundary_expected:
+        _reject("surface boundary type")
+    ordered = ()
+    if boundary:
+        if len({a for a, _ in boundary}) != len(boundary) or len({b for _, b in boundary}) != len(
+            boundary
+        ):
+            _reject("boundary branch")
+        successor = dict(boundary)
+        walk = [min(successor)]
+        for _ in range(len(boundary) - 1):
+            nxt = successor.get(walk[-1])
+            if nxt is None or nxt in walk:
+                _reject("boundary gap/repetition")
+            walk.append(nxt)
+        if successor.get(walk[-1]) != walk[0]:
+            _reject("incomplete boundary cycle")
+        ordered = tuple(walk)
+    boundary_nodes = {v for edge in boundary for v in edge}
+    links = []
+    for v in vertices:
+        edges = tuple(tuple(u for u in tri if u != v) for tri in triangles if v in tri)
+        nodes = {u for e in edges for u in e}
+        degree = {u: sum(u in e for e in edges) for u in nodes}
+        endpoints = sum(d == 1 for d in degree.values())
+        if not _graph(nodes, edges):
+            _reject("surface link disconnected")
+        if v in boundary_nodes:
+            if endpoints != 2 or any(d not in (1, 2) for d in degree.values()):
+                _reject("boundary vertex link")
+        elif any(d != 2 for d in degree.values()):
+            _reject("interior vertex link")
+        links.append((v, tuple(sorted(tuple(sorted(e)) for e in edges))))
+    return ordered, tuple(links)
+
+
+def _solid_links(tetrahedra):
+    incidences = {}
+    for tid, vertices in sorted(tetrahedra.items()):
+        for slot in range(4):
+            f = tuple(vertices[i] for i in range(4) if i != slot)
+            if slot in (1, 3):
+                f = f[0], f[2], f[1]
+            incidences.setdefault(tuple(sorted(f)), []).append((_rotation_cycle(f), tid))
+    boundary = []
+    adjacency = []
+    for _, rows in sorted(incidences.items()):
+        if len(rows) == 1:
+            boundary.append(rows[0][0])
+        elif len(rows) == 2 and _sign_order(rows[0][0]) != _sign_order(rows[1][0]):
+            adjacency.append((rows[0][1], rows[1][1]))
+        else:
+            _reject("solid face incidence")
+    if not _graph(tetrahedra, adjacency):
+        _reject("solid connected interior")
+    _, boundary_links = _triangle_manifold(boundary, False)
+    exterior = {tuple(sorted(s)) for f in boundary for d in (1, 2) for s in combinations(f, d)}
+    links = [("boundary", boundary_links)]
+    vertices = sorted({v for t in tetrahedra.values() for v in t})
+    for v in vertices:
+        triangles = []
+        for _, t in sorted(tetrahedra.items()):
+            if v in t:
+                slot = t.index(v)
+                f = tuple(x for x in t if x != v)
+                if slot % 2:
+                    f = f[0], f[2], f[1]
+                triangles.append(f)
+        cycle, detail = _triangle_manifold(triangles, (v,) in exterior)
+        links.append(("vertex", v, cycle, detail))
+    edges = sorted({tuple(sorted(e)) for t in tetrahedra.values() for e in combinations(t, 2)})
+    for e in edges:
+        opposite = tuple(
+            tuple(v for v in t if v not in e)
+            for _, t in sorted(tetrahedra.items())
+            if set(e) <= set(t)
+        )
+        nodes = {v for q in opposite for v in q}
+        ds = [sum(v in q for q in opposite) for v in nodes]
+        if not _graph(nodes, opposite):
+            _reject("solid edge link disconnected")
+        if e in exterior:
+            if ds.count(1) != 2 or any(d not in (1, 2) for d in ds):
+                _reject("solid boundary edge link")
+        elif any(d != 2 for d in ds):
+            _reject("solid interior edge link")
+        links.append(("edge", e, tuple(sorted(tuple(sorted(q)) for q in opposite))))
+    return tuple(boundary), tuple(links)
+
+
+def _same(claim, expected, meter):
+    """Exact values/coverage, independent interval containment, actual proposals."""
+    if type(expected) is Interval:
+        if type(claim) is not Interval:
+            _reject("interval type")
+        meter.interval(claim)
+        if meter.qsub(expected.lo, claim.lo) < 0 or meter.qsub(claim.hi, expected.hi) < 0:
+            _reject("claimed interval does not contain independent enclosure")
+        return
+    if type(expected) is Publication:
+        if type(claim) is not Publication or claim.shape != expected.shape:
+            _reject("publication type/shape")
+        if (
+            type(claim.values) is not np.ndarray
+            or claim.values.dtype != np.dtype("float64")
+            or claim.values.shape != expected.shape
+            or claim.values.flags.writeable
+            or len(claim.intervals) != len(expected.intervals)
+            or len(claim.errors) != len(expected.intervals)
+        ):
+            _reject("publication ownership/coverage")
+        for interval, independent, error, stored in zip(
+            claim.intervals, expected.intervals, claim.errors, claim.values.flat, strict=True
+        ):
+            _same(interval, independent, meter)
+            meter.check(error)
+            midpoint = meter.qdiv(meter.qadd(interval.lo, interval.hi), F(2))
+            proposed = meter.input_float(stored)
+            if proposed != meter.input_float(float(midpoint)):
+                _reject("RN64 rational midpoint")
+            observed = max(
+                meter.qabs(meter.qsub(proposed, interval.lo)),
+                meter.qabs(meter.qsub(proposed, interval.hi)),
+            )
+            if meter.qsub(error, observed) < 0 or error >= F(1, 2**40):
+                _reject("actual proposal storage error")
+        return
+    if type(expected) is np.ndarray:
+        if (
+            type(claim) is not np.ndarray
+            or claim.dtype != expected.dtype
+            or claim.shape != expected.shape
+            or claim.tobytes() != expected.tobytes()
+        ):
+            _reject("original array bytes")
+        return
+    if is_dataclass(expected):
+        if type(claim) is not type(expected):
+            _reject("record type")
+        for f in fields(expected):
+            _same(getattr(claim, f.name), getattr(expected, f.name), meter)
+        return
+    if type(expected) is tuple:
+        if type(claim) is not tuple or len(claim) != len(expected):
+            _reject("complete tuple coverage")
+        for a, b in zip(claim, expected, strict=True):
+            _same(a, b, meter)
+        return
+    if type(claim) is not type(expected) or claim != expected:
+        _reject("exact evidence mismatch")
+
+
+class Audit:
+    def __init__(self, reference, positions, limits, meter):
+        if (
+            type(reference) is not ConformingShellReference
+            or type(limits) is not BoundaryProofLimits
+        ):
+            _reject("reference/policy types")
+        limits.__post_init__()
+        self.ref, self.limits, self.m = reference, limits, meter
+        r = reference
+        if type(r.node_ids) is not np.ndarray or type(r.face_ids) is not np.ndarray:
+            _reject("original ID arrays")
+        if r.node_ids.ndim != 1 or r.face_ids.ndim != 1:
+            _reject("original ID ranks")
+        n, f = len(r.node_ids), len(r.face_ids)
+        cap = limits.strict_limits
+        if not 3 <= n <= cap.max_nodes or not 1 <= f <= cap.max_faces or 3 * f > cap.max_tetrahedra:
+            _reject("original shape cap")
+        for array, dtype, shape in (
+            (r.node_ids, "int64", (n,)),
+            (r.face_ids, "int64", (f,)),
+            (r.oriented_nodes, "int64", (f, 3)),
+            (r.reference_positions, "float64", (n, 3)),
+            (r.half_thickness_m, "float64", (n,)),
+            (positions, "float64", (n, 3)),
+        ):
+            if (
+                type(array) is not np.ndarray
+                or array.dtype != np.dtype(dtype)
+                or array.shape != shape
+            ):
+                _reject("original array dtype/shape")
+            if not np.isfinite(array).all():
+                _reject("original finite values")
+        if type(r.domain) is not str or not r.domain or len(r.domain.encode()) > 256:
+            _reject("reference domain")
+        order = tuple(map(int, r.node_ids))
+        self.nodes = tuple(sorted(order))
+        fids = tuple(map(int, r.face_ids))
+        if len(set(order)) != n or len(set(fids)) != f or min(order) < 0 or min(fids) < 0:
+            _reject("unique original IDs")
+        self.faces = tuple(
+            sorted((i, tuple(map(int, v))) for i, v in zip(fids, r.oriented_nodes, strict=True))
+        )
+        if len({tuple(sorted(v)) for _, v in self.faces}) != f:
+            _reject("unoriented duplicate faces")
+        for _, v in self.faces:
+            if len(set(v)) != 3 or not set(v) <= set(order):
+                _reject("face node identities")
+        if (
+            r.law.kind != "raw-area-star-director-v1"
+            or r.law.projected_ratio_min != F(1, 4)
+            or r.law.shape_policy != "invariant-1e-10-v1"
+        ):
+            _reject("original director law")
+        identity = digest(
+            (
+                "conforming-shell-reference-v1",
+                r.domain,
+                sorted(
+                    (
+                        i,
+                        r.reference_positions[k].tobytes().hex(),
+                        r.half_thickness_m[k : k + 1].tobytes().hex(),
+                    )
+                    for k, i in enumerate(order)
+                ),
+                sorted((i, _rotation_cycle(v)) for i, v in self.faces),
+                r.law.kind,
+                (1, 4),
+                r.law.shape_policy,
+            )
+        )
+        if identity != r.reference_id:
+            _reject("reference identity reconstructed")
+        self.stars = {i: tuple(fid for fid, face in self.faces if i in face) for i in self.nodes}
+        if any(not s or len(s) > cap.max_star_faces for s in self.stars.values()):
+            _reject("full reference star bounds")
+        unseen = set(self.nodes)
+        components = []
+        while unseen:
+            component = {min(unseen)}
+            while True:
+                grown = component | {v for _, f in self.faces if set(f) & component for v in f}
+                if grown == component:
+                    break
+                component = grown
+            unseen -= component
+            components.append(tuple(sorted(component)))
+        self.components = tuple(components)
+        self.cycles = tuple(
+            _triangle_manifold(tuple(face for _, face in self.faces if face[0] in c), True)[0]
+            for c in self.components
+        )
+        self.tets = {}
+        for fid, face in self.faces:
+            i, j, k = sorted(face)
+            lifted = ((i, -1), (j, -1), (k, -1), (i, 1), (j, 1), (k, 1))
+            for stair, indices in enumerate(((0, 1, 2, 5), (0, 1, 4, 5), (0, 3, 4, 5))):
+                vertices = tuple(lifted[index] for index in indices)
+                if _sign_order(face) * (1, -1, 1)[stair] < 0:
+                    vertices = vertices[0], vertices[1], vertices[3], vertices[2]
+                self.tets[fid, stair] = vertices
+        if len(self.tets) * (len(self.tets) - 1) // 2 > cap.max_pairs:
+            _reject("all pair budget")
+        boundary = []
+        for c in self.components:
+            b, _ = _solid_links({k: t for k, t in self.tets.items() if t[0][0] in c})
+            boundary.extend(b)
+        self.boundary = tuple(sorted(boundary))
+        self.strata = {}
+        for tid, t in self.tets.items():
+            for count in range(1, 5):
+                for s in combinations(sorted(t), count):
+                    self.strata.setdefault(s, []).append(tid)
+        if len(self.strata) > limits.max_material_strata:
+            _reject("material stratum bound")
+        self.boundary_strata = {
+            tuple(sorted(s))
+            for f in self.boundary
+            for count in range(1, 4)
+            for s in combinations(f, count)
+        }
+        self.x = {i: tuple(meter.input_float(v) for v in positions[k]) for k, i in enumerate(order)}
+        self.rest = {
+            i: tuple(meter.input_float(v) for v in r.reference_positions[k])
+            for k, i in enumerate(order)
+        }
+        self.rho = {i: meter.input_float(r.half_thickness_m[k]) for k, i in enumerate(order)}
+        if any(q <= 0 for q in self.rho.values()):
+            _reject("positive thickness")
+
+    def law(self, x):
+        m = self.m
+        epsilon = m.input_float(1e-10)
+        squared = m.qmul(epsilon, epsilon)
+        areas, edges, face_gates = {}, {}, []
+        for fid, v in self.faces:
+            p, q, r = (x[i] for i in v)
+            ab = m.qvsub(q, p)
+            ac = m.qvsub(r, p)
+            bc = m.qvsub(r, q)
+            normal = m.qcross(ab, ac)
+            area = m.qdot(normal, normal)
+            if area <= 0:
+                _reject("nonzero face area")
+            sizes = tuple(m.qdot(e, e) for e in (ab, ac, bc))
+            margins = tuple(m.qsub(area, m.qmul(squared, m.qmul(s, s))) for s in sizes)
+            if any(v <= 0 for v in margins):
+                _reject("face quality")
+            areas[fid] = (normal, area)
+            edges[fid] = (ab, ac)
+            face_gates.append(("face", fid, margins))
+        stars = {}
+        norms = {}
+        star_gates = []
+        for node in self.nodes:
+            value = (F(0), F(0), F(0))
+            total = F(0)
+            for fid in self.stars[node]:
+                value = m.qvadd(value, areas[fid][0])
+                total = m.qadd(total, areas[fid][1])
+            norm = m.qdot(value, value)
+            margin = m.qsub(norm, m.qmul(squared, m.qmul(F(len(self.stars[node])), total)))
+            if norm <= 0 or margin <= 0:
+                _reject("nonzero/quality raw area star")
+            stars[node], norms[node] = value, norm
+            star_gates.append(("star", node, margin))
+        projections = []
+        for fid, face in self.faces:
+            for node in face:
+                dot = m.qdot(stars[node], areas[fid][0])
+                margin = m.qsub(
+                    m.qmul(dot, dot), m.qmul(F(1, 16), m.qmul(norms[node], areas[fid][1]))
+                )
+                if dot <= 0 or margin < 0:
+                    _reject("projected ratio")
+                projections.append(("projection", fid, node, dot, margin))
+        return areas, edges, stars, norms, tuple(face_gates + star_gates + projections)
+
+    def field(self, generators, norms):
+        m = self.m
+        algebra = FieldArithmetic(generators, m, self.limits)
+        # Independent square-class admission, never a producer helper/tag.
+        for index, radicand in enumerate(generators):
+            for subset in range(2**index):
+                ratio = m.qdiv(radicand, algebra.products[subset])
+                if m.perfect_square(ratio) is not None:
+                    _reject("dependent square class")
+        dependencies = []
+        roots = {}
+        for node in sorted(norms):
+            candidates = []
+            for mask in range(algebra.width):
+                ratio = m.qdiv(norms[node], algebra.products[mask])
+                rational_root = m.perfect_square(ratio)
+                if rational_root is not None and rational_root > 0:
+                    candidates.append((rational_root, mask))
+                    break
+            if not candidates:
+                _reject("unrepresented actual star radical")
+            coefficient, mask = candidates[0]
+            roots[node] = algebra.root_from_dependency(norms[node], coefficient, mask)
+            dependencies.append((node, norms[node], coefficient, mask))
+        return algebra, roots, tuple(dependencies)
+
+    def lifted(self, x, stars, roots, a):
+        normals = {}
+        points = {}
+        for node in self.nodes:
+            reciprocal = a.inverse(roots[node])
+            direction = tuple(a.scale(v, reciprocal) for v in stars[node])
+            displacement = tuple(a.scale(self.rho[node], q) for q in direction)
+            normals[node] = direction
+            base = tuple(a.rational(v) for v in x[node])
+            points[node, -1] = a.vsub(base, displacement)
+            points[node, 1] = a.vadd(base, displacement)
+        return normals, points
+
+    def fact(self, key, value, a):
+        sign = a.sign(value)
+        return sign, (key, value, a.enclose(value))
+
+    def area(self, p, q, r, drop, a):
+        axes = [i for i in range(3) if i != drop]
+        first = [a.sub(q[i], p[i]) for i in axes]
+        second = [a.sub(r[i], p[i]) for i in axes]
+        return a.sub(a.mul(first[0], second[1]), a.mul(first[1], second[0]))
+
+    def cluster(self, cid, tet_ids, descriptors, points, a, reference=False):
+        if (
+            type(tet_ids) is not tuple
+            or not tet_ids
+            or len(tet_ids) > self.limits.strict_limits.max_tetrahedra
+        ):
+            _reject("cluster tetra bound")
+        if len(set(tet_ids)) != len(tet_ids) or not set(tet_ids) <= set(self.tets):
+            _reject("cluster exact membership")
+        local = {t: self.tets[t] for t in tet_ids}
+        boundary, links = _solid_links(local)
+        vertices = tuple(sorted({v for t in local.values() for v in t}))
+        if not reference and (
+            len(vertices) > self.limits.max_cluster_vertices
+            or len(boundary) > self.limits.max_cluster_boundary_triangles
+        ):
+            _reject("current cluster cap")
+        if not 1 <= len(descriptors) <= 256:
+            _reject("face group bound")
+        boundary_lookup = {tuple(sorted(f)): f for f in boundary}
+        used = []
+        zero_keys = set()
+        planes = []
+        for descriptor in descriptors:
+            keys = tuple(tuple(sorted(t)) for t in descriptor.triangles)
+            if (
+                not keys
+                or len(keys) > 128
+                or len(set(keys)) != len(keys)
+                or not set(keys) <= set(boundary_lookup)
+            ):
+                _reject("face group complete triangle membership")
+            used.extend(keys)
+            triangles = tuple(boundary_lookup[k] for k in keys)
+            cycle, _ = _triangle_manifold(triangles, True)
+            if _rotation_cycle(cycle) != _rotation_cycle(descriptor.cycle):
+                _reject("face boundary cycle orientation")
+            if not reference and len(cycle) > self.limits.max_face_polygon_vertices:
+                _reject("face polygon bound")
+            if len({points[v] for v in cycle}) != len(cycle):
+                _reject("face distinct vertices")
+            drop = descriptor.drop_axis
+            if type(drop) is not int or drop not in (0, 1, 2):
+                _reject("projection axis")
+            v0, v1, v2 = (points[v] for v in triangles[0])
+            normal = a.cross(a.vsub(v1, v0), a.vsub(v2, v0))
+            if normal[drop] == a.zero:
+                _reject("nonzero projection")
+            supports = []
+            zero = []
+            for vertex in vertices:
+                sign, row = self.fact(vertex, a.dot(normal, a.vsub(points[vertex], v0)), a)
+                if sign > 0:
+                    _reject("full cluster support")
+                if sign == 0:
+                    zero.append(vertex)
+                supports.append(row)
+            face_vertices = tuple(sorted({v for t in triangles for v in t}))
+            if tuple(zero) != face_vertices or face_vertices in zero_keys:
+                _reject("full exact zero-support face group")
+            zero_keys.add(face_vertices)
+            oriented = []
+            orientation = None
+            for triangle in triangles:
+                value = self.area(*(points[v] for v in triangle), drop, a)
+                sign, row = self.fact(tuple(sorted(triangle)), value, a)
+                if sign == 0 or (orientation is not None and sign != orientation):
+                    _reject("positive face triangulation")
+                orientation = sign
+                oriented.append(row)
+            tests = []
+            for index, v in enumerate(cycle):
+                w = cycle[(index + 1) % len(cycle)]
+                strict = False
+                for u in face_vertices:
+                    sign, row = self.fact(
+                        (v, w, u), self.area(points[v], points[w], points[u], drop, a), a
+                    )
+                    if sign * orientation < 0:
+                        _reject("convex face full vertex support")
+                    strict = strict or sign != 0
+                    tests.append(row)
+                if not strict:
+                    _reject("nonzero monotone boundary edge")
+            planes.append(
+                BoundaryPlaneEvidence(
+                    face_vertices,
+                    tuple(sorted(keys)),
+                    cycle,
+                    drop,
+                    v0,
+                    normal,
+                    tuple(supports),
+                    tuple(oriented),
+                    tuple(tests),
+                )
+            )
+        if len(used) != len(boundary_lookup) or set(used) != set(boundary_lookup):
+            _reject("entire boundary triangle partition")
+        determinants = []
+        for tid, t in sorted(local.items()):
+            origin = points[t[0]]
+            edges = tuple(a.vsub(points[v], origin) for v in t[1:])
+            value = a.dot(edges[0], a.cross(edges[1], edges[2]))
+            sign, row = self.fact(tid, value, a)
+            if sign <= 0:
+                _reject("positive oriented actual tetrahedron")
+            determinants.append(row)
+        return ConvexClusterBoundaryWitness(
+            cid,
+            tuple(sorted(local)),
+            boundary,
+            tuple(sorted(planes, key=lambda p: p.vertices)),
+            tuple(determinants),
+            links,
+        )
+
+    def reference(self, claim, generators):
+        if type(claim) is not tuple or len(claim) != 3:
+            _reject("reference evidence shape")
+        alleged, alleged_separation, alleged_dependencies = claim
+        if len(alleged) != len(self.components):
+            _reject("all reference components")
+        raw = self.law(self.rest)
+        rational = True
+        for value in raw[3].values():
+            if self.m.perfect_square(value) is None:
+                rational = False
+                break
+        a, roots, dependencies = self.field(() if rational else generators, raw[3])
+        _, points = self.lifted(self.rest, raw[2], roots, a)
+        proofs = []
+        for cid, component in enumerate(self.components):
+            if len({self.rho[node] for node in component}) != 1:
+                _reject("constant reference thickness")
+            if len(alleged[cid]) != 3:
+                _reject("reference component evidence")
+            normal = raw[0][next(fid for fid, face in self.faces if face[0] in component)][0]
+            drop = next((i for i, q in enumerate(normal) if q), None)
+            if drop is None:
+                _reject("reference chart nonzero normal")
+            origin = self.rest[component[0]]
+            plane = []
+            for node in component:
+                residual = self.m.qdot(normal, self.m.qvsub(self.rest[node], origin))
+                if residual:
+                    _reject("exact original planarity")
+                plane.append((node, residual))
+            axes = tuple(i for i in range(3) if i != drop)
+            edge_rows = []
+            cycle = self.cycles[cid]
+            for i, u in enumerate(cycle):
+                v = cycle[(i + 1) % len(cycle)]
+                edge = tuple(self.m.qsub(self.rest[v][j], self.rest[u][j]) for j in axes)
+                values = []
+                for node in component:
+                    delta = tuple(self.m.qsub(self.rest[node][j], self.rest[u][j]) for j in axes)
+                    values.append(self.m.qcross2(edge, delta))
+                if not any(values) or min(values) < 0 < max(values):
+                    _reject("convex original chart")
+                edge_rows.append((u, v, tuple(zip(component, values, strict=True))))
+            local = tuple(key for key, t in sorted(self.tets.items()) if t[0][0] in component)
+            candidate = alleged[cid][2]
+            if type(candidate) is not ConvexClusterBoundaryWitness:
+                _reject("reference cluster type")
+            independently = self.cluster(cid, local, candidate.planes, points, a, reference=True)
+            proofs.append((tuple(plane), tuple(edge_rows), independently))
+        if len(alleged_separation) != len(self.components) * (len(self.components) - 1) // 2:
+            _reject("reference component pair coverage")
+        seen = set()
+        separation = []
+        for entry in alleged_separation:
+            if type(entry) is not tuple or len(entry) != 4:
+                _reject("reference support tuple")
+            source, target, index, rows = entry
+            if any(type(i) is not int for i in (source, target, index)):
+                _reject("reference support IDs")
+            if source == target or not 0 <= source < len(proofs) or not 0 <= target < len(proofs):
+                _reject("reference support owners")
+            pair = tuple(sorted((source, target)))
+            if pair in seen:
+                _reject("reference support duplicate pair")
+            seen.add(pair)
+            if not 0 <= index < len(proofs[source][2].planes):
+                _reject("reference support plane index")
+            p = proofs[source][2].planes[index]
+            facts = []
+            for node in self.components[target]:
+                for sign in (-1, 1):
+                    vertex = node, sign
+                    side, row = self.fact(
+                        vertex, a.dot(p.normal, a.vsub(points[vertex], p.origin)), a
+                    )
+                    if side <= 0:
+                        _reject("strict original component separation")
+                    facts.append(row)
+            separation.append((source, target, index, tuple(facts)))
+        expected = (tuple(proofs), tuple(separation), dependencies)
+        _same(claim, expected, self.m)
+        return expected
+
+    def maps(self, x, raw, roots, normals, points, a, publish):
+        # Direct vertex differentiation of each face, independently of producer H.
+        m = self.m
+        adjacency = {
+            node: tuple(sorted({j for _, f in self.faces if node in f for j in f}))
+            for node in self.nodes
+        }
+        h = {i: {j: (F(0), F(0), F(0)) for j in adjacency[i]} for i in self.nodes}
+        for _, (i, j, k) in self.faces:
+            terms = {i: m.qvsub(x[k], x[j]), j: m.qvsub(x[i], x[k]), k: m.qvsub(x[j], x[i])}
+            for owner in (i, j, k):
+                for node, term in terms.items():
+                    h[owner][node] = m.qvadd(h[owner][node], term)
+        result = []
+        for node in self.nodes:
+            reciprocal = a.inverse(roots[node])
+            s = raw[2][node]
+            norm = raw[3][node]
+            d = []
+            for row in range(3):
+                entries = []
+                for column in range(3):
+                    quotient = m.qdiv(m.qmul(s[row], s[column]), norm)
+                    projection = m.qsub(F(row == column), quotient)
+                    entries.append(a.scale(m.qmul(self.rho[node], projection), reciprocal))
+                d.append(tuple(entries))
+            derivatives = {}
+            for neighbor in adjacency[node]:
+                hx, hy, hz = h[node][neighbor]
+                skew = ((F(0), m.qneg(hz), hy), (hz, F(0), m.qneg(hx)), (m.qneg(hy), hx, F(0)))
+                matrix = []
+                for row in range(3):
+                    columns = []
+                    for column in range(3):
+                        total = a.zero
+                        for inner in range(3):
+                            total = a.add(total, a.scale(skew[inner][column], d[row][inner]))
+                        columns.append(total)
+                    matrix.append(tuple(columns))
+                derivatives[neighbor] = tuple(matrix)
+            for sign in (-1, 1):
+                vertex = node, sign
+                matrices = []
+                for neighbor in adjacency[node]:
+                    matrix = []
+                    for row in range(3):
+                        values = []
+                        for column in range(3):
+                            identity = a.rational(F(node == neighbor and row == column))
+                            offset = derivatives[neighbor][row][column]
+                            values.append(
+                                a.add(identity, offset) if sign == 1 else a.sub(identity, offset)
+                            )
+                        matrix.append(tuple(values))
+                    matrices.append(tuple(matrix))
+                representatives = []
+                if publish:
+                    for tid, t in sorted(self.tets.items()):
+                        if vertex not in t:
+                            continue
+                        weights = tuple(a.one if v == vertex else a.zero for v in t)
+                        total = a.zero
+                        for q in weights:
+                            total = a.add(total, q)
+                        if total != a.one:
+                            _reject("vertex representation normalization")
+                        representatives.append((tid, weights))
+                point_pub = a.publish(points[vertex], (3,)) if publish else None
+                jac_pub = (
+                    a.publish(
+                        tuple(q for matrix in matrices for row in matrix for q in row),
+                        (len(matrices), 3, 3),
+                    )
+                    if publish
+                    else None
+                )
+                result.append(
+                    BoundaryPointBasis(
+                        vertex,
+                        adjacency[node],
+                        points[vertex],
+                        tuple(matrices),
+                        point_pub,
+                        jac_pub,
+                        tuple(representatives),
+                    )
+                )
+        return tuple(result)
+
+    def oriented_matching(self, left, right, mapping, source):
+        faces = (
+            {tuple(sorted(f)): f for f in left.boundary_facets},
+            {tuple(sorted(f)): f for f in right.boundary_facets},
+        )
+        answer = []
+        for simplex in sorted(source):
+            image = tuple(mapping[v] for v in simplex)
+            target = tuple(sorted(image))
+            parity = _sign_order(image)
+            incidences = []
+            for index in range(len(simplex)) if len(simplex) > 1 else ():
+                preimage = tuple(v for j, v in enumerate(simplex) if j != index)
+                mapped = tuple(mapping[v] for v in preimage)
+                coefficient = (-1 if index % 2 else 1) * _sign_order(mapped)
+                j = target.index(image[index])
+                if coefficient != parity * (-1 if j % 2 else 1):
+                    _reject("oriented full chain-map incidence")
+                incidences.append((preimage, tuple(sorted(mapped)), coefficient))
+            signs = (0, 0)
+            if len(simplex) == 3:
+                signs = (_sign_order(faces[0][simplex]), _sign_order(faces[1][target]))
+                if signs[0] * parity + signs[1] != 0:
+                    _reject("matched oriented patches occupy opposite sides")
+            answer.append((simplex, target, parity, tuple(incidences), *signs))
+        return tuple(answer)
+
+    def matching(self, hint, clusters, points, a):
+        left, right = hint.clusters
+        if len(hint.supports) > self.limits.max_support_descents:
+            _reject("tight support descent bound")
+        if left >= right or left not in clusters or right not in clusters:
+            _reject("pair owners")
+        active_a = tuple(sorted({v for p in clusters[left].planes for v in p.vertices}))
+        active_b = tuple(sorted({v for p in clusters[right].planes for v in p.vertices}))
+        supports = []
+        axes = []
+        separated = False
+        for candidate in hint.supports:
+            normal = tuple(a.element(c) for c in candidate.normal)
+            if all(c == a.zero for c in normal) or candidate.anchor not in active_a:
+                _reject("support normal/anchor")
+            if len(axes) == 1 and all(c == a.zero for c in a.cross(axes[0], normal)):
+                _reject("support descent rank")
+            if len(axes) == 2 and a.dot(axes[0], a.cross(axes[1], normal)) == a.zero:
+                _reject("third support rank")
+            axes.append(normal)
+            origin = points[candidate.anchor]
+            evaluated = []
+            for active in (active_a, active_b):
+                rows = tuple(
+                    self.fact(v, a.dot(normal, a.vsub(points[v], origin)), a) for v in active
+                )
+                evaluated.append(rows)
+            rows_a, rows_b = evaluated
+            if any(s > 0 for s, _ in rows_a) or any(s < 0 for s, _ in rows_b):
+                _reject("full support inequalities")
+            zero_a = tuple(v for v, (s, _) in zip(active_a, rows_a, strict=True) if not s)
+            zero_b = tuple(v for v, (s, _) in zip(active_b, rows_b, strict=True) if not s)
+            supports.append(
+                BoundarySupportEvidence(
+                    normal,
+                    candidate.anchor,
+                    active_a,
+                    active_b,
+                    tuple(row for _, row in rows_a),
+                    tuple(row for _, row in rows_b),
+                    zero_a,
+                    zero_b,
+                )
+            )
+            if not zero_a or not zero_b:
+                separated = True
+                break
+            active_a, active_b = zero_a, zero_b
+        if separated:
+            return MatchingIntersectionWitness((left, right), tuple(supports), (), (), "empty")
+        mapping = dict(hint.matching)
+        if (
+            len(mapping) != len(hint.matching)
+            or set(mapping) != set(active_a)
+            or len(set(mapping.values())) != len(mapping)
+            or set(mapping.values()) != set(active_b)
+        ):
+            _reject("full matching vertices")
+        for v, w in sorted(mapping.items()):
+            differences = tuple(a.sub(p, q) for p, q in zip(points[v], points[w], strict=True))
+            if differences != (a.zero, a.zero, a.zero):
+                _reject("matching exact coordinates")
+        complexes = []
+        for cid, active in ((left, active_a), (right, active_b)):
+            simplices = {
+                tuple(sorted(s))
+                for face in clusters[cid].boundary_facets
+                for degree in range(1, 4)
+                for s in combinations(face, degree)
+                if set(s) <= set(active)
+            }
+            complexes.append(simplices)
+        transformed = {tuple(sorted(mapping[v] for v in s)) for s in complexes[0]}
+        if transformed != complexes[1]:
+            _reject("complete matching face/subface complex")
+        pieces = []
+        labels = set()
+        for first in sorted(complexes[0]):
+            second = tuple(sorted(mapping[v] for v in first))
+            if all(mapping[v] == v for v in first):
+                label = "material_incidence"
+            elif first in self.boundary_strata and second in self.boundary_strata:
+                label = "true_boundary_contact"
+            else:
+                _reject("global material boundary preimage")
+            pieces.append((first, second, label))
+            labels.add(label)
+        label = next(iter(labels)) if len(labels) == 1 else "incidence_and_boundary_contact"
+        return MatchingIntersectionWitness(
+            (left, right),
+            tuple(supports),
+            tuple(sorted(mapping.items())),
+            tuple(pieces),
+            label,
+            self.oriented_matching(clusters[left], clusters[right], mapping, complexes[0]),
+        )
+
+    def fans(self, clusters, exterior, a):
+        actual_boundary = {}
+        for f in self.boundary:
+            key = tuple(sorted(f))
+            for degree in range(1, 4):
+                for s in combinations(key, degree):
+                    actual_boundary.setdefault(s, []).append(key)
+        directions = dict(exterior)
+        if len(directions) != len(exterior) or set(directions) != set(actual_boundary):
+            _reject("complete ordinary boundary exterior directions")
+        owner = {t: cid for cid, c in clusters.items() for t in c.tetra_ids}
+        output = []
+        for simplex, incident in sorted(self.strata.items()):
+            cids = tuple(sorted({owner[t] for t in incident}))
+            cones = []
+            for cid in cids:
+                indices = tuple(
+                    i
+                    for i, face in enumerate(clusters[cid].planes)
+                    if set(simplex) <= set(face.vertices)
+                )
+                if len(indices) > self.limits.max_fan_planes:
+                    _reject("active fan bound")
+                cones.append((cid, indices))
+            if sum(len(indices) for _, indices in cones) > self.limits.max_fan_planes:
+                _reject("all active planes across stratum cones")
+            direction = ()
+            witnesses = []
+            if simplex in directions:
+                direction = tuple(a.element(v) for v in directions[simplex])
+                if not any(v != a.zero for v in direction):
+                    _reject("nonzero exterior")
+                for cid, active in cones:
+                    success = False
+                    for index in active:
+                        value = a.dot(clusters[cid].planes[index].normal, direction)
+                        sign, row = self.fact((cid, index), value, a)
+                        witnesses.append(row)
+                        if sign > 0:
+                            success = True
+                            break
+                    if not success:
+                        _reject("individual material star proper exterior")
+            output.append(
+                BoundaryFanWitness(
+                    simplex,
+                    tuple(sorted(incident)),
+                    tuple(sorted(actual_boundary.get(simplex, ()))),
+                    tuple(cones),
+                    direction,
+                    tuple(witnesses),
+                )
+            )
+        return tuple(output)
+
+    def coverage(self, clusters, pairs, fans, points):
+        membership = {t: cid for cid, c in clusters.items() for t in c.tetra_ids}
+        lookup = {p.clusters: p for p in pairs}
+        all_pairs = []
+        for first, second in combinations(sorted(self.tets), 2):
+            shared = tuple(sorted(set(self.tets[first]) & set(self.tets[second])))
+            ia, ib = membership[first], membership[second]
+            if ia == ib:
+                cpair = (ia, ia)
+                pieces = ((shared, shared, "material_incidence"),) if shared else ()
+                label = "material_incidence" if shared else "empty"
+            else:
+                cpair = tuple(sorted((ia, ib)))
+                rows = []
+                for s, t, classification in lookup[cpair].intersection_simplices:
+                    left, right = (s, t) if ia < ib else (t, s)
+                    if set(left) <= set(self.tets[first]) and set(right) <= set(self.tets[second]):
+                        rows.append((left, right, classification))
+                pieces = tuple(rows)
+                classes = {v[2] for v in pieces}
+                label = (
+                    "empty"
+                    if not classes
+                    else next(iter(classes))
+                    if len(classes) == 1
+                    else "incidence_and_boundary_contact"
+                )
+                if shared and (shared, shared, "material_incidence") not in pieces:
+                    _reject("shared material cross-cluster coverage")
+            all_pairs.append(BoundaryPairWitness((first, second), shared, cpair, pieces, label))
+        by_simplex = {v.material_stratum: v for v in fans}
+        contacts = []
+        owners = set()
+        for pair in pairs:
+            mapping = dict(pair.matching)
+            for first, second, classification in pair.intersection_simplices:
+                if classification != "true_boundary_contact":
+                    continue
+                key = (first, second)
+                if key in owners:
+                    _reject("remote owner duplication")
+                owners.add(key)
+                subfaces = tuple(
+                    (s, tuple(sorted(mapping[v] for v in s)))
+                    for count in range(1, len(first))
+                    for s in combinations(first, count)
+                )
+                fa, fb = by_simplex[first], by_simplex[second]
+                if len(contacts) >= self.limits.max_material_strata:
+                    _reject("all contact stratum cap")
+                contacts.append(
+                    BoundaryContactStratum(
+                        key,
+                        tuple(points[v] for v in first),
+                        subfaces,
+                        (fa.true_boundary_facets, fb.true_boundary_facets),
+                        pair.supports,
+                        (fa.occupied_cones, fb.occupied_cones),
+                    )
+                )
+        return tuple(all_pairs), tuple(sorted(contacts, key=lambda c: c.owners))
+
+
+def _header(claim, expected_type, reference, positions, limits, witness, pending, kind):
+    if type(claim) is not expected_type:
+        _reject("certificate type")
+    if type(reference) is not ConformingShellReference or type(limits) is not BoundaryProofLimits:
+        _reject("original reference and policy type")
+    limits.__post_init__()
+    if (
+        not 3 <= len(reference.node_ids) <= limits.strict_limits.max_nodes
+        or not 1 <= len(reference.face_ids) <= limits.strict_limits.max_faces
+        or type(positions) is not np.ndarray
+        or positions.dtype != np.dtype("float64")
+        or positions.shape != (len(reference.node_ids), 3)
+    ):
+        _reject("bounded original bytes before binding")
+    expected_hint = BoundaryWitnessHint if kind == "static" else ExactBoundaryAddress
+    if type(witness) is not expected_hint:
+        _reject("bounded binding witness type")
+    witness.__post_init__()
+    if claim.reference_id != reference.reference_id or claim.policy != limits:
+        _reject("reference/policy binding")
+    expected = digest(
+        (
+            kind,
+            reference.reference_id,
+            reference.node_ids,
+            reference.face_ids,
+            reference.oriented_nodes,
+            positions,
+            limits,
+            witness,
+        )
+    )
+    if claim.original_input_binding != expected:
+        _reject("complete original binding")
+    if (
+        type(claim.original_positions) is not np.ndarray
+        or claim.original_positions.dtype != positions.dtype
+        or claim.original_positions.shape != positions.shape
+        or claim.original_positions.tobytes() != positions.tobytes()
+    ):
+        _reject("original position bytes")
+    if claim.precision != "ideal-from-stored-fp64":
+        _reject("precision kind")
+    for number in (
+        claim.operations,
+        claim.producer_operations,
+        claim.checker_operations,
+        claim.peak_fraction_bits,
+    ):
+        if type(number) is not int or number < 0:
+            _reject("counter type")
+    if claim.operations != claim.producer_operations + claim.checker_operations:
+        _reject("counter aggregate/reset")
+    if not 0 < claim.operations <= limits.strict_limits.max_scalar_operations:
+        _reject("operation receipt range")
+    if claim.producer_operations <= 0 or (not pending and claim.checker_operations <= 0):
+        _reject("complete producer/inner accounting")
+    if not 0 < claim.peak_fraction_bits <= limits.strict_limits.max_fraction_bits:
+        _reject("bit receipt range")
+
+
+def _audit_static(claim, reference, positions, witness_hint, limits, meter, pending=False):
+    _header(
+        claim, ShellBoundaryAdmission, reference, positions, limits, witness_hint, pending, "static"
+    )
+    if (
+        claim.schema != "shell-boundary-v1"
+        or claim.status != "weak_material_geometry_certified"
+        or claim.proof_kind != "convex-cluster-matching-v1"
+    ):
+        _reject("static schema/status/domain")
+    if type(witness_hint) is not BoundaryWitnessHint:
+        _reject("untrusted hint type")
+    witness_hint.__post_init__()
+    if len(witness_hint.clusters) > limits.max_clusters:
+        _reject("tight cluster cap")
+    audit = Audit(reference, positions, limits, meter)
+    if type(claim.field) is not BoundaryFieldWitness:
+        _reject("field witness type")
+    meter.set_bits(claim.field.sqrt_bits)
+    reference_facts = audit.reference(claim.topology.reference_facts, witness_hint.generators)
+    raw = audit.law(audit.x)
+    a, roots, dependencies = audit.field(witness_hint.generators, raw[3])
+    normals, points = audit.lifted(audit.x, raw[2], roots, a)
+    flat = tuple(t for c in witness_hint.clusters for t in c.tetra_ids)
+    cids = tuple(c.cluster_id for c in witness_hint.clusters)
+    if len(set(cids)) != len(cids) or len(flat) != len(set(flat)) or set(flat) != set(audit.tets):
+        _reject("complete cluster partition")
+    clusters = {
+        c.cluster_id: audit.cluster(c.cluster_id, c.tetra_ids, c.faces, points, a)
+        for c in sorted(witness_hint.clusters, key=lambda c: c.cluster_id)
+    }
+    needed = set(combinations(sorted(clusters), 2))
+    if len(witness_hint.pairs) != len(needed) or {p.clusters for p in witness_hint.pairs} != needed:
+        _reject("complete cluster pair hints")
+    pairs = tuple(
+        audit.matching(p, clusters, points, a)
+        for p in sorted(witness_hint.pairs, key=lambda p: p.clusters)
+    )
+    fans = audit.fans(clusters, witness_hint.exterior, a)
+    all_pairs, contacts = audit.coverage(clusters, pairs, fans, points)
+    basis = audit.maps(audit.x, raw, roots, normals, points, a, True)
+    topology = BoundaryTopology(
+        audit.nodes,
+        audit.faces,
+        tuple(sorted(audit.tets.items())),
+        audit.boundary,
+        audit.components,
+        tuple((s, tuple(sorted(t))) for s, t in sorted(audit.strata.items())),
+        reference_facts,
+    )
+    law = BoundaryLaw(
+        tuple(sorted(raw[0].items())),
+        tuple(sorted(raw[2].items())),
+        tuple(sorted(raw[3].items())),
+        tuple(sorted(normals.items())),
+        raw[4],
+    )
+    field = BoundaryFieldWitness(
+        a.generators, tuple(sorted(raw[3].items())), dependencies, tuple(range(a.width)), meter.bits
+    )
+    for actual, expected in (
+        (claim.field, field),
+        (claim.topology, topology),
+        (claim.law, law),
+        (claim.clusters, tuple(clusters.values())),
+        (claim.cluster_pairs, pairs),
+        (claim.all_pairs, all_pairs),
+        (claim.full_strata_and_fans, fans),
+        (claim.contacts, contacts),
+        (claim.basis, basis),
+    ):
+        _same(actual, expected, meter)
+    return audit, raw, a, roots, normals, points, clusters, pairs, fans, basis
+
+
+def _check_static(claim, reference, positions, witness_hint, limits, meter, *, pending=False):
+    _audit_static(claim, reference, positions, witness_hint, limits, meter, pending)
+    return True
+
+
+def _verification_receipt(claim, kind, meter):
+    # Called only after the full independent audit, never from the inner path.
+    # Hashing binds the complete authenticated claim, including its informational
+    # resource fields; it performs no arithmetic and proves no geometry itself.
+    return BoundaryVerificationReceipt(
+        kind,
+        claim.reference_id,
+        claim.original_input_binding,
+        digest(("independently-verified-shell-claim-v1", claim)),
+        claim.policy,
+        claim.status,
+        claim.precision,
+        meter.operations,
+        meter.created_cells,
+        meter.peak_fraction_bits,
+    )
+
+
+def verify_shell_boundary(certificate, reference, positions, *, witness_hint, limits):
+    try:
+        meter = Meter(limits.strict_limits)
+        _check_static(certificate, reference, positions, witness_hint, limits, meter)
+        return _verification_receipt(certificate, "static", meter)
+    except (
+        ShellUnresolved,
+        ValueError,
+        TypeError,
+        AttributeError,
+        KeyError,
+        IndexError,
+        OverflowError,
+    ):
+        return False
+
+
+def _check_point(claim, reference, positions, address, limits, meter, *, pending=False):
+    _header(claim, ShellExactBoundaryPoint, reference, positions, limits, address, pending, "point")
+    if claim.schema != "shell-exact-boundary-point-v1" or claim.status != "exact_boundary_map_only":
+        _reject("map-only schema/status")
+    if type(address) is not ExactBoundaryAddress:
+        _reject("exact address type")
+    address.__post_init__()
+    if claim.address != address or address.reference_id != reference.reference_id:
+        _reject("original exact address binding")
+    audit = Audit(reference, positions, limits, meter)
+    meter.set_bits(claim.field.sqrt_bits)
+    audit.reference(claim.reference_facts, address.generators)
+    raw = audit.law(audit.x)
+    a, roots, dependencies = audit.field(address.generators, raw[3])
+    normals, points = audit.lifted(audit.x, raw[2], roots, a)
+    simplex = address.minimal_simplex
+    if simplex != tuple(sorted(set(simplex))) or simplex not in audit.boundary_strata:
+        _reject("true boundary minimal material simplex")
+    weights = tuple(a.element(w) for w in address.weights)
+    total = a.zero
+    for w in weights:
+        if a.sign(w) <= 0:
+            _reject("positive exact minimal weights")
+        total = a.add(total, w)
+    if total != a.one:
+        _reject("exact material weight sum")
+    reps = tuple(
+        (tid, tuple(weights[simplex.index(v)] if v in simplex else a.zero for v in t))
+        for tid, t in sorted(audit.tets.items())
+        if set(simplex) <= set(t)
+    )
+    if address.representatives != reps:
+        _reject("complete incident exact representations")
+    for _, qs in reps:
+        total = a.zero
+        for q in qs:
+            total = a.add(total, q)
+        if total != a.one:
+            _reject("exact tetra representation")
+    basis = audit.maps(audit.x, raw, roots, normals, points, a, False)
+    lookup = {b.vertex: b for b in basis}
+    ids = tuple(sorted({n for v in simplex for n in lookup[v].node_ids}))
+    point = [a.zero] * 3
+    blocks = {i: [[a.zero] * 3 for _ in range(3)] for i in ids}
+    for v, weight in zip(simplex, weights, strict=True):
+        b = lookup[v]
+        for row in range(3):
+            point[row] = a.add(point[row], a.mul(weight, b.exact_point[row]))
+        for node, matrix in zip(b.node_ids, b.exact_jacobian, strict=True):
+            for row in range(3):
+                for column in range(3):
+                    blocks[node][row][column] = a.add(
+                        blocks[node][row][column], a.mul(weight, matrix[row][column])
+                    )
+    point = tuple(point)
+    matrices = tuple(tuple(tuple(row) for row in blocks[i]) for i in ids)
+    point_pub = a.publish(point, (3,))
+    matrix_pub = a.publish(
+        tuple(q for matrix in matrices for row in matrix for q in row), (len(ids), 3, 3)
+    )
+    law = BoundaryLaw(
+        tuple(sorted(raw[0].items())),
+        tuple(sorted(raw[2].items())),
+        tuple(sorted(raw[3].items())),
+        tuple(sorted(normals.items())),
+        raw[4],
+    )
+    field = BoundaryFieldWitness(
+        a.generators, tuple(sorted(raw[3].items())), dependencies, tuple(range(a.width)), meter.bits
+    )
+    for actual, expected in (
+        (claim.node_ids, ids),
+        (claim.exact_point, point),
+        (claim.exact_jacobian, matrices),
+        (claim.point, point_pub),
+        (claim.jacobian, matrix_pub),
+        (claim.law, law),
+        (claim.field, field),
+    ):
+        _same(actual, expected, meter)
+    return True
+
+
+def verify_shell_exact_boundary_point(receipt, reference, positions, address, *, limits):
+    try:
+        meter = Meter(limits.strict_limits)
+        _check_point(receipt, reference, positions, address, limits, meter)
+        return _verification_receipt(receipt, "point", meter)
+    except (
+        ShellUnresolved,
+        ValueError,
+        TypeError,
+        AttributeError,
+        KeyError,
+        IndexError,
+        OverflowError,
+    ):
+        return False
+
+
+def _path_vectors(audit, segment, order):
+    m = audit.m
+    polynomials = {}
+    velocity = {}
+    for row, node in enumerate(order):
+        first = tuple(m.input_float(v) for v in segment[0, row])
+        second = tuple(m.input_float(v) for v in segment[1, row])
+        velocity[node] = m.qvsub(second, first)
+        polynomials[node] = tuple(
+            m.poly((p, v)) for p, v in zip(first, velocity[node], strict=True)
+        )
+    areas = {}
+    stars = {node: ((F(0),),) * 3 for node in audit.nodes}
+    h = {
+        node: {
+            neighbor: ((F(0),),) * 3
+            for neighbor in sorted({i for _, face in audit.faces if node in face for i in face})
+        }
+        for node in audit.nodes
+    }
+
+    def difference(first, second):
+        return tuple(m.poly_sub(p, q) for p, q in zip(first, second, strict=True))
+
+    def plus(first, second):
+        return tuple(m.poly_add(p, q) for p, q in zip(first, second, strict=True))
+
+    for fid, (i, j, k) in audit.faces:
+        ij = difference(polynomials[j], polynomials[i])
+        ik = difference(polynomials[k], polynomials[i])
+        jk = difference(polynomials[k], polynomials[j])
+        c = m.poly_cross(ij, ik)
+        areas[fid] = (ij, ik, jk, c)
+        # Differentiate original vertices directly; no producer derivative table.
+        derivatives = {
+            i: difference(polynomials[k], polynomials[j]),
+            j: difference(polynomials[i], polynomials[k]),
+            k: difference(polynomials[j], polynomials[i]),
+        }
+        for node in (i, j, k):
+            stars[node] = plus(stars[node], c)
+            for neighbor, d in derivatives.items():
+                h[node][neighbor] = plus(h[node][neighbor], d)
+    return polynomials, velocity, areas, stars, h
+
+
+def _kpoly(a, p):
+    return a.poly(tuple(a.rational(v) for v in p))
+
+
+def _poly_difference(a, first, second):
+    return tuple(a.poly_sub(p, q) for p, q in zip(first, second, strict=True))
+
+
+def _poly_vector_cross(a, first, second):
+    return tuple(
+        a.poly_sub(a.poly_mul(first[i], second[j]), a.poly_mul(first[j], second[i]))
+        for i, j in ((1, 2), (2, 0), (0, 1))
+    )
+
+
+def _poly_inner(a, first, second):
+    total = (a.zero,)
+    for p, q in zip(first, second, strict=True):
+        total = a.poly_add(total, a.poly_mul(p, q))
+    return total
+
+
+def _time_directors(audit, stars, initial, a):
+    m = audit.m
+    identities = []
+    initial_bounds = []
+    scales = {}
+    predicates = []
+    for node in audit.nodes:
+        coefficients = tuple(
+            tuple(p[index] if index < len(p) else F(0) for p in stars[node]) for index in range(3)
+        )
+        first = coefficients[0]
+        if not any(first):
+            _reject("actual initial star")
+        zero = tuple(m.qcross(c, first) for c in coefficients)
+        if any(any(v for v in c) for c in zero):
+            _reject("actual constant director identity")
+        positive = m.poly(tuple(m.qdot(c, first) for c in coefficients))
+        independent = m.polynomial_bounds(positive, F(0), F(1))
+        base = initial[2][node]
+        if any(m.qcross(first, base)) or m.qdot(first, base) <= 0:
+            _reject("actual compatible static root branch")
+        scalar = m.poly(tuple(m.qdiv(m.qdot(c, base), initial[3][node]) for c in coefficients))
+        identities.append((node, zero))
+        initial_bounds.append((node, positive, independent))
+        scales[node] = scalar
+        predicates.append((("director-positive", node), _kpoly(a, positive), "positive"))
+    return tuple(identities), tuple(initial_bounds), scales, tuple(predicates)
+
+
+def _time_translations(audit, x, delta, faces, stars, h, initial):
+    m = audit.m
+    transport = []
+    for component in audit.components:
+        first = component[0]
+        displacement = delta[first]
+        if any(delta[i] != displacement for i in component):
+            continue
+        base_shift = tuple(m.qsub(x[first][j][0], audit.x[first][j]) for j in range(3))
+        for node in component:
+            actual = tuple(m.qsub(x[node][j][0], audit.x[node][j]) for j in range(3))
+            if actual != base_shift:
+                _reject("whole original component translation")
+        fids = tuple(fid for fid, face in audit.faces if face[0] in component)
+        for fid in fids:
+            vectors = faces[fid]
+            if any(len(p) != 1 for vector in vectors for p in vector):
+                _reject("complete edge/face translation polynomial")
+            if (
+                tuple(p[0] for p in vectors[0]) != initial[1][fid][0]
+                or tuple(p[0] for p in vectors[1]) != initial[1][fid][1]
+            ):
+                _reject("base edge identity")
+        for node in component:
+            if (
+                any(len(p) != 1 for p in stars[node])
+                or tuple(p[0] for p in stars[node]) != initial[2][node]
+            ):
+                _reject("base star identity")
+            if any(len(p) != 1 for vector in h[node].values() for p in vector):
+                _reject("full H constancy")
+        transport.append(
+            (
+                component,
+                base_shift,
+                displacement,
+                fids,
+                tuple((i, tuple(sorted(h[i].items()))) for i in component),
+            )
+        )
+    return tuple(transport)
+
+
+def _time_lifted(audit, x, normals, a):
+    y = {}
+    for node in audit.nodes:
+        displacement = tuple(a.scale(audit.rho[node], q) for q in normals[node])
+        for sign in (-1, 1):
+            coefficients = []
+            for j in range(3):
+                p = list(_kpoly(a, x[node][j]))
+                p[0] = a.add(p[0], displacement[j]) if sign == 1 else a.sub(p[0], displacement[j])
+                coefficients.append(a.poly(tuple(p)))
+            y[node, sign] = tuple(coefficients)
+    return y
+
+
+def _time_geometry(audit, faces, stars, y, base, a):
+    prospective = 10 * len(audit.faces) + len(audit.nodes) + len(audit.tets)
+    prospective += sum(
+        len(p.supports) + len(p.triangles) + len(p.edge_tests)
+        for c in base.clusters
+        for p in c.planes
+    )
+    prospective += sum(
+        len(f.occupied_cones) for f in base.full_strata_and_fans if f.exterior_direction
+    )
+    if prospective > 8192:
+        _reject("whole geometry predicate shape")
+    m = audit.m
+    tolerance = m.qmul(m.input_float(1e-10), m.input_float(1e-10))
+    norm_faces, norm_stars = {}, {}
+    obligations = []
+    for fid, _ in audit.faces:
+        vectors = faces[fid]
+        norm = m.poly_dot(vectors[3], vectors[3])
+        norm_faces[fid] = norm
+        obligations.append((("face-area", fid), _kpoly(a, norm), "positive"))
+        for index, e in enumerate(vectors[:3]):
+            length = m.poly_dot(e, e)
+            fourth = m.poly_mul(length, length)
+            margin = m.poly_sub(norm, tuple(m.qmul(tolerance, q) for q in fourth))
+            obligations.append((("face-quality", fid, index), _kpoly(a, margin), "positive"))
+    for node in audit.nodes:
+        norm = m.poly_dot(stars[node], stars[node])
+        norm_stars[node] = norm
+        total = (F(0),)
+        for fid in audit.stars[node]:
+            total = m.poly_add(total, norm_faces[fid])
+        scale = m.qmul(tolerance, F(len(audit.stars[node])))
+        margin = m.poly_sub(norm, tuple(m.qmul(scale, q) for q in total))
+        obligations.append((("star-quality", node), _kpoly(a, margin), "positive"))
+    for fid, face in audit.faces:
+        for node in face:
+            product = m.poly_dot(stars[node], faces[fid][3])
+            bound = tuple(
+                m.qmul(F(1, 16), q) for q in m.poly_mul(norm_stars[node], norm_faces[fid])
+            )
+            margin = m.poly_sub(m.poly_mul(product, product), bound)
+            obligations.append((("projection-dot", fid, node), _kpoly(a, product), "positive"))
+            obligations.append((("projection-ratio", fid, node), _kpoly(a, margin), "nonnegative"))
+    normal_polys = {}
+    for cluster in base.clusters:
+        oriented = {tuple(sorted(f)): f for f in cluster.boundary_facets}
+        vertices = tuple(sorted({v for t in cluster.tetra_ids for v in audit.tets[t]}))
+        for index, plane in enumerate(cluster.planes):
+            seed = oriented[plane.triangles[0]]
+            p, q, r = (y[v] for v in seed)
+            normal = _poly_vector_cross(a, _poly_difference(a, q, p), _poly_difference(a, r, p))
+            normal_polys[cluster.cluster_id, index] = normal
+            for vertex in vertices:
+                value = _poly_inner(a, normal, _poly_difference(a, y[vertex], p))
+                relation = "zero" if vertex in plane.vertices else "negative"
+                obligations.append(
+                    (("cluster-support", cluster.cluster_id, index, vertex), value, relation)
+                )
+            axes = [j for j in range(3) if j != plane.drop_axis]
+            for triangle in plane.triangles:
+                p, q, r = (y[v] for v in oriented[triangle])
+                first, second = _poly_difference(a, q, p), _poly_difference(a, r, p)
+                value = a.poly_sub(
+                    a.poly_mul(first[axes[0]], second[axes[1]]),
+                    a.poly_mul(first[axes[1]], second[axes[0]]),
+                )
+                original = next(row[1] for row in plane.orientations if row[0] == triangle)
+                relation = "positive" if a.sign(original) > 0 else "negative"
+                obligations.append(
+                    (("face-orientation", cluster.cluster_id, index, triangle), value, relation)
+                )
+            for key, initial, _ in plane.edge_tests:
+                v, w, u = key
+                first, second = _poly_difference(a, y[w], y[v]), _poly_difference(a, y[u], y[v])
+                value = a.poly_sub(
+                    a.poly_mul(first[axes[0]], second[axes[1]]),
+                    a.poly_mul(first[axes[1]], second[axes[0]]),
+                )
+                sign = a.sign(initial)
+                relation = "zero" if sign == 0 else "positive" if sign > 0 else "negative"
+                obligations.append(
+                    (("face-edge", cluster.cluster_id, index, v, w, u), value, relation)
+                )
+        for tid in cluster.tetra_ids:
+            p, q, r, s = (y[v] for v in audit.tets[tid])
+            value = _poly_inner(
+                a,
+                _poly_difference(a, q, p),
+                _poly_vector_cross(a, _poly_difference(a, r, p), _poly_difference(a, s, p)),
+            )
+            obligations.append((("tetra", tid), value, "positive"))
+    for fan in base.full_strata_and_fans:
+        if not fan.exterior_direction:
+            continue
+        direction = tuple((q,) for q in fan.exterior_direction)
+        for cid, _ in fan.occupied_cones:
+            candidate = next(
+                index
+                for (owner, index), value, _ in fan.exterior_facts
+                if owner == cid and a.sign(value) > 0
+            )
+            value = _poly_inner(a, normal_polys[cid, candidate], direction)
+            obligations.append(
+                (("exterior", fan.material_stratum, cid, candidate), value, "positive")
+            )
+    planes = tuple(
+        (cluster.cluster_id, index, y[p.vertices[0]], normal_polys[cluster.cluster_id, index])
+        for cluster in base.clusters
+        for index, p in enumerate(cluster.planes)
+    )
+    return tuple(obligations), planes
+
+
+def _time_pairs(audit, base, hint, y, a, transported):
+    if transported:
+        return tuple((p.clusters, "component_translation", p) for p in base.cluster_pairs), ()
+    cluster_lookup = {c.cluster_id: c for c in base.clusters}
+    paths = []
+    obligations = []
+    for h in sorted(hint.pairs, key=lambda p: p.clusters):
+        ia, ib = h.clusters
+        if len(h.supports) > audit.limits.max_support_descents:
+            _reject("path support descent cap")
+        active_a = tuple(sorted({v for p in cluster_lookup[ia].planes for v in p.vertices}))
+        active_b = tuple(sorted({v for p in cluster_lookup[ib].planes for v in p.vertices}))
+        descriptions = []
+        normals = []
+        separated = False
+        for index, plane in enumerate(h.supports):
+            normal = tuple(a.element(v) for v in plane.normal)
+            if not any(v != a.zero for v in normal) or plane.anchor not in active_a:
+                _reject("whole-path support normal and anchor")
+            if len(normals) == 1 and not any(v != a.zero for v in a.cross(normals[0], normal)):
+                _reject("whole-path support rank")
+            if len(normals) == 2 and a.dot(normals[0], a.cross(normals[1], normal)) == a.zero:
+                _reject("whole-path third support rank")
+            normals.append(normal)
+            groups = []
+            for side, vertices in enumerate((active_a, active_b)):
+                values = []
+                for vertex in vertices:
+                    value = _poly_inner(
+                        a,
+                        tuple((q,) for q in normal),
+                        _poly_difference(a, y[vertex], y[plane.anchor]),
+                    )
+                    if len(value) > 2:
+                        _reject("affine whole support law")
+                    obligations.append(
+                        (
+                            ("pair", h.clusters, index, side, vertex),
+                            value,
+                            "nonpositive" if side == 0 else "nonnegative",
+                        )
+                    )
+                    values.append((vertex, value))
+                groups.append(tuple(values))
+            za = tuple(v for v, q in groups[0] if q == (a.zero,))
+            zb = tuple(v for v, q in groups[1] if q == (a.zero,))
+            descriptions.append(
+                (normal, plane.anchor, active_a, active_b, groups[0], groups[1], za, zb)
+            )
+            if not za or not zb:
+                separated = True
+                break
+            active_a, active_b = za, zb
+        if separated:
+            paths.append((h.clusters, "open_empty", tuple(descriptions), (), ()))
+            continue
+        mapping = dict(h.matching)
+        if (
+            len(mapping) != len(h.matching)
+            or set(mapping) != set(active_a)
+            or set(mapping.values()) != set(active_b)
+            or len(set(mapping.values())) != len(mapping)
+        ):
+            _reject("whole-path persistent material matching")
+        for v, w in sorted(mapping.items()):
+            if any(a.poly_sub(p, q) != (a.zero,) for p, q in zip(y[v], y[w], strict=True)):
+                _reject("coefficientwise persistent matching")
+        complexes = []
+        for cid, vertices in ((ia, active_a), (ib, active_b)):
+            complexes.append(
+                {
+                    tuple(sorted(s))
+                    for f in cluster_lookup[cid].boundary_facets
+                    for d in range(1, 4)
+                    for s in combinations(f, d)
+                    if set(s) <= set(vertices)
+                }
+            )
+        if {tuple(sorted(mapping[v] for v in s)) for s in complexes[0]} != complexes[1]:
+            _reject("whole-path full matching incidence")
+        pieces = []
+        for simplex in sorted(complexes[0]):
+            opposite = tuple(sorted(mapping[v] for v in simplex))
+            if all(mapping[v] == v for v in simplex):
+                category = "material_incidence"
+            elif simplex in audit.boundary_strata and opposite in audit.boundary_strata:
+                category = "true_boundary_contact"
+            else:
+                _reject("whole-path true boundary identity")
+            pieces.append((simplex, opposite, category))
+        paths.append(
+            (
+                h.clusters,
+                "persistent_matching",
+                tuple(descriptions),
+                tuple(sorted(mapping.items())),
+                tuple(pieces),
+                audit.oriented_matching(
+                    cluster_lookup[ia], cluster_lookup[ib], mapping, complexes[0]
+                ),
+            )
+        )
+    return tuple(paths), tuple(obligations)
+
+
+def _time_maps(audit, base, scales, h, roots, normals, initial, a, constant):
+    if constant:
+        functions = tuple(
+            (
+                b.vertex,
+                b.node_ids,
+                tuple(
+                    tuple(tuple(((q,), (a.one,)) for q in row) for row in matrix)
+                    for matrix in b.exact_jacobian
+                ),
+            )
+            for b in base.basis
+        )
+        return functions, ()
+    functions = []
+    predicates = []
+    m = audit.m
+    for node in audit.nodes:
+        denominator = _kpoly(a, scales[node])
+        predicates.append((("map-denominator", node), denominator, "positive"))
+        inverse = a.inverse(roots[node])
+        s = initial[2][node]
+        norm = initial[3][node]
+        d = []
+        for row in range(3):
+            values = []
+            for column in range(3):
+                ratio = m.qdiv(m.qmul(s[row], s[column]), norm)
+                coefficient = m.qmul(audit.rho[node], m.qsub(F(row == column), ratio))
+                values.append(a.scale(coefficient, inverse))
+            d.append(tuple(values))
+        offsets = {}
+        for neighbor, (x, y, z) in h[node].items():
+
+            def negative(p):
+                return tuple(m.qneg(q) for q in p)
+
+            zero = (F(0),)
+            skew = ((zero, negative(z), y), (z, zero, negative(x)), (negative(y), x, zero))
+            matrix = []
+            for row in range(3):
+                columns = []
+                for column in range(3):
+                    total = (a.zero,)
+                    for index in range(3):
+                        term = a.poly(tuple(a.scale(q, d[row][index]) for q in skew[index][column]))
+                        total = a.poly_add(total, term)
+                    columns.append(total)
+                matrix.append(tuple(columns))
+            offsets[neighbor] = tuple(matrix)
+        for sign in (-1, 1):
+            blocks = []
+            for neighbor in h[node]:
+                matrix = []
+                for row in range(3):
+                    values = []
+                    for column in range(3):
+                        identity = denominator if node == neighbor and row == column else (a.zero,)
+                        numerator = (
+                            a.poly_add(identity, offsets[neighbor][row][column])
+                            if sign == 1
+                            else a.poly_sub(identity, offsets[neighbor][row][column])
+                        )
+                        values.append(a.rational_function(numerator, denominator))
+                    matrix.append(tuple(values))
+                blocks.append(tuple(matrix))
+            functions.append(((node, sign), tuple(h[node]), tuple(blocks)))
+    return tuple(functions), tuple(predicates)
+
+
+def _satisfied(polynomial, relation, bound, a):
+    if relation == "zero":
+        return polynomial == (a.zero,)
+    if relation == "positive":
+        return bound.lo > 0
+    if relation == "negative":
+        return bound.hi < 0
+    if relation == "nonpositive":
+        return bound.hi <= 0
+    if relation == "nonnegative":
+        return bound.lo >= 0
+    _reject("unknown whole-cell relation")
+
+
+def _audit_time_tree(claims, constraints, a, maximum_bits):
+    if len(constraints) > 8192:
+        _reject("whole predicate cover shape")
+    from ..constraints.shell_boundary import BoundaryTimeCell
+
+    if type(claims) is not tuple or not 1 <= len(claims) <= a.limits.strict_limits.max_time_cells:
+        _reject("whole time-node shape")
+    visited = set()
+    independently = [None] * len(claims)
+
+    def visit(index, span, depth):
+        if type(index) is not int or index in visited or not 0 <= index < len(claims):
+            _reject("duplicate/detached time node")
+        visited.add(index)
+        claim = claims[index]
+        if type(claim) is not BoundaryTimeCell or claim.span != span or claim.depth != depth:
+            _reject("time parent/depth/original span")
+        if (
+            type(claim.depth) is not int
+            or type(claim.span) is not tuple
+            or len(span) != 2
+            or any(type(t) is not F for t in span)
+            or not F(0) <= span[0] < span[1] <= F(1)
+        ):
+            _reject("exact rational nonempty time span")
+        a.meter.visit_cell(depth)
+        if type(claim.sqrt_bits) is not int or claim.sqrt_bits > maximum_bits:
+            _reject("claimed time precision")
+        a.meter.set_bits(claim.sqrt_bits)
+        facts = []
+        valid = True
+        for key, polynomial, relation in constraints:
+            polynomial = a.poly(polynomial)
+            bound = a.polynomial_bounds(polynomial, *span)
+            facts.append((key, polynomial, relation, bound))
+            valid = valid and _satisfied(polynomial, relation, bound, a)
+            if relation == "zero" and polynomial != (a.zero,):
+                _reject("polynomial identity forgery")
+        if claim.children:
+            if type(claim.children) is not tuple or len(claim.children) != 2:
+                _reject("binary complete partition children")
+            first, second = claim.children
+            if (
+                any(type(i) is not int or not 0 <= i < len(claims) for i in (first, second))
+                or first == second
+            ):
+                _reject("time child IDs")
+            left, right = claims[first], claims[second]
+            if type(left) is not BoundaryTimeCell or type(right) is not BoundaryTimeCell:
+                _reject("time child records")
+            middle = left.span[1]
+            if type(middle) is not F or not span[0] < middle < span[1]:
+                _reject("interior rational split")
+            if left.span != (span[0], middle) or right.span != (middle, span[1]):
+                _reject("gap-free nonoverlapping complete children")
+            # The split is not required to be the producer's midpoint.
+            visit(first, (span[0], middle), depth + 1)
+            visit(second, (middle, span[1]), depth + 1)
+        elif not valid:
+            _reject("unproved complete closed leaf")
+        expected = BoundaryTimeCell(span, depth, claim.children, tuple(facts), claim.sqrt_bits)
+        _same(claim, expected, a.meter)
+        independently[index] = expected
+
+    visit(0, (F(0), F(1)), 0)
+    if visited != set(range(len(claims))):
+        _reject("isolated/unbilled time nodes")
+    return tuple(independently)
+
+
+def _time_endpoint(audit, base, endpoint, order, normals, functions, a, constant):
+    actual = {
+        node: tuple(audit.m.input_float(q) for q in endpoint[row]) for row, node in enumerate(order)
+    }
+    offsets = {node: tuple(a.scale(audit.rho[node], q) for q in normals[node]) for node in order}
+    functions_by_vertex = {vertex: (ids, blocks) for vertex, ids, blocks in functions}
+    result = []
+    for b in base.basis:
+        node, sign = b.vertex
+        point = tuple(
+            a.add(a.rational(q), d) if sign == 1 else a.sub(a.rational(q), d)
+            for q, d in zip(actual[node], offsets[node], strict=True)
+        )
+        stored = a.publish(point, (3,))
+        if constant:
+            exact = b.exact_jacobian
+            matrix_pub = Publication(
+                b.jacobian.intervals, b.jacobian.values, b.jacobian.errors, b.jacobian.shape
+            )
+        else:
+            ids, matrices = functions_by_vertex[b.vertex]
+            if ids != b.node_ids:
+                _reject("endpoint full map IDs")
+            exact = tuple(
+                tuple(
+                    tuple(a.div(a.poly_evaluate(p, F(1)), a.poly_evaluate(q, F(1))) for p, q in row)
+                    for row in matrix
+                )
+                for matrix in matrices
+            )
+            matrix_pub = a.publish(
+                tuple(q for matrix in exact for row in matrix for q in row), (len(ids), 3, 3)
+            )
+        result.append(
+            BoundaryPointBasis(
+                b.vertex, b.node_ids, point, exact, stored, matrix_pub, b.representatives
+            )
+        )
+    return tuple(result)
+
+
+def _check_sweep(
+    claim, reference, segments, durations, witness_hint, limits, meter, *, pending=False
+):
+    from ..constraints.shell_boundary import BoundarySegmentEvidence
+
+    if type(claim) is not ShellBoundarySweep or type(limits) is not BoundaryProofLimits:
+        _reject("whole-path certificate/policy type")
+    limits.__post_init__()
+    if claim.reference_id != reference.reference_id or claim.policy != limits:
+        _reject("path reference/policy binding")
+    if (
+        claim.schema != "shell-boundary-sweep-v1"
+        or claim.status != "weak_material_path_certified"
+        or claim.precision != "ideal-from-stored-fp64"
+    ):
+        _reject("path schema/status/precision")
+    if (
+        claim.proof_kind != "convex-cluster-matching-v1"
+        or claim.path_kind != "constant-derived-director-v1"
+    ):
+        _reject("path finite proof domain")
+    if type(segments) not in (tuple, list) or type(durations) not in (tuple, list):
+        _reject("bounded path inputs")
+    if not 1 <= len(segments) <= limits.strict_limits.max_time_cells or len(durations) != len(
+        segments
+    ):
+        _reject("complete input segment/duration cover")
+    if len(claim.segments) != len(segments):
+        _reject("all segment receipts")
+    n = len(reference.node_ids)
+    if not 3 <= n <= limits.strict_limits.max_nodes:
+        _reject("path nodes")
+    for index, array in enumerate(segments):
+        if (
+            type(array) is not np.ndarray
+            or array.dtype != np.dtype("float64")
+            or array.shape != (2, n, 3)
+        ):
+            _reject("original affine FP64 path shape")
+        if not np.isfinite(array).all():
+            _reject("original finite path")
+        if index and array[0].tobytes() != segments[index - 1][1].tobytes():
+            _reject("exact original closed joins")
+    seconds = tuple(meter.input_float(q) for q in durations)
+    if any(q <= 0 for q in seconds):
+        _reject("positive original durations")
+    total = F(0)
+    for q in seconds:
+        total = meter.qadd(total, q)
+    if claim.durations != seconds:
+        _reject("original duration rationals")
+    expected = digest(
+        (
+            "sweep",
+            reference.reference_id,
+            reference.node_ids,
+            reference.face_ids,
+            reference.oriented_nodes,
+            tuple(segments),
+            seconds,
+            limits,
+            witness_hint,
+        )
+    )
+    if claim.original_input_binding != expected:
+        _reject("complete path original binding")
+    for number in (
+        claim.operations,
+        claim.producer_operations,
+        claim.checker_operations,
+        claim.created_cells,
+        claim.peak_fraction_bits,
+    ):
+        if type(number) is not int or number < 0:
+            _reject("path counter types")
+    if (
+        not 0 < claim.operations <= limits.strict_limits.max_scalar_operations
+        or claim.operations != claim.producer_operations + claim.checker_operations
+        or claim.producer_operations <= 0
+        or (not pending and claim.checker_operations <= 0)
+    ):
+        _reject("path same-counter aggregate")
+    if not 0 < claim.created_cells <= limits.strict_limits.max_time_cells:
+        _reject("created-node counter range")
+    if not 0 < claim.peak_fraction_bits <= limits.strict_limits.max_fraction_bits:
+        _reject("path bit counter range")
+    node_start = meter.created_cells
+    context = _audit_static(
+        claim.base, reference, segments[0][0], witness_hint, limits, meter, pending=True
+    )
+    audit, initial, a, roots, normals, points, clusters, pairs, fans, basis = context
+    # Build an independent base record for temporal derivation; claimed geometry
+    # has already been checked, but its original values are never numerical oracles.
+    from dataclasses import replace
+
+    base = replace(
+        claim.base,
+        clusters=tuple(clusters.values()),
+        cluster_pairs=pairs,
+        full_strata_and_fans=fans,
+        basis=basis,
+    )
+    independent_pairs, independent_contacts = audit.coverage(clusters, pairs, fans, points)
+    base = replace(base, all_pairs=independent_pairs, contacts=independent_contacts)
+    prior_basis = basis
+    prior_contacts = (pairs, independent_pairs, independent_contacts)
+    order = tuple(map(int, reference.node_ids))
+    tree_count = 0
+    for actual, duration, receipt in zip(segments, seconds, claim.segments, strict=True):
+        if type(receipt) is not BoundarySegmentEvidence:
+            _reject("segment evidence type")
+        _same(receipt.original_segment, actual, meter)
+        if receipt.duration != duration:
+            _reject("segment duration binding")
+        meter.set_bits(receipt.sqrt_bits)
+        x, delta, face_polys, stars, h = _path_vectors(audit, actual, order)
+        zero, positive, scales, director_obligations = _time_directors(audit, stars, initial, a)
+        transport = _time_translations(audit, x, delta, face_polys, stars, h, initial)
+        constant = len(transport) == len(audit.components)
+        global_translation = constant and len({(v[1], v[2]) for v in transport}) == 1
+        y = _time_lifted(audit, x, normals, a)
+        if constant:
+            geometry = ()
+            plane_paths = tuple(
+                (c.cluster_id, index, y[p.vertices[0]], tuple((q,) for q in p.normal))
+                for c in base.clusters
+                for index, p in enumerate(c.planes)
+            )
+        else:
+            geometry, plane_paths = _time_geometry(audit, face_polys, stars, y, base, a)
+        pair_paths, pair_obligations = _time_pairs(
+            audit, base, witness_hint, y, a, global_translation
+        )
+        functions, map_obligations = _time_maps(
+            audit, base, scales, h, roots, normals, initial, a, constant
+        )
+        constraints = director_obligations + geometry + pair_obligations + map_obligations
+        checked_cells = _audit_time_tree(receipt.cells, constraints, a, receipt.sqrt_bits)
+        tree_count += len(checked_cells)
+        meter.set_bits(receipt.sqrt_bits)
+        for b in prior_basis:
+            if tuple(p[0] for p in y[b.vertex]) != b.exact_point:
+                _reject("actual original start point and closed join")
+        endpoint = _time_endpoint(audit, base, actual[1], order, normals, functions, a, constant)
+        endpoint_positions = {b.vertex: b.exact_point for b in endpoint}
+        if global_translation:
+            endpoint_pairs = pairs
+        else:
+            endpoint_pairs = tuple(
+                audit.matching(h, clusters, endpoint_positions, a)
+                for h in sorted(witness_hint.pairs, key=lambda p: p.clusters)
+            )
+        all_pairs, contacts = audit.coverage(clusters, endpoint_pairs, fans, endpoint_positions)
+        end_contacts = (endpoint_pairs, all_pairs, contacts)
+        expected_segment = BoundarySegmentEvidence(
+            actual,
+            duration,
+            tuple(sorted(stars.items())),
+            zero,
+            positive,
+            transport,
+            tuple(sorted(y.items())),
+            plane_paths,
+            geometry,
+            pair_paths,
+            checked_cells,
+            (prior_basis, endpoint),
+            (prior_contacts, end_contacts),
+            functions,
+            receipt.sqrt_bits,
+        )
+        _same(receipt, expected_segment, meter)
+        prior_basis, prior_contacts = endpoint, end_contacts
+    visited = meter.created_cells - node_start
+    if visited != tree_count or claim.created_cells != (tree_count if pending else 2 * tree_count):
+        _reject("all producer/checker created cells including parents and siblings")
+    return True
+
+
+def verify_shell_boundary_sweep(
+    certificate, reference, segments, *, durations, witness_hint, limits
+):
+    try:
+        meter = Meter(limits.strict_limits)
+        _check_sweep(certificate, reference, segments, durations, witness_hint, limits, meter)
+        return _verification_receipt(certificate, "sweep", meter)
+    except (
+        ShellUnresolved,
+        ValueError,
+        TypeError,
+        AttributeError,
+        KeyError,
+        IndexError,
+        OverflowError,
+    ):
+        return False

@@ -298,3 +298,150 @@ The theorem starts with an ideal predictor in the stated inner neighborhood and 
 All actual R7/native gradient, parameter, update, conversion, predictor and reconstruction errors must be propagated through this finite history. The direct original-input energy/angular gates, support and whole physical path, paired robot moments, nonlinear phase capacity and finite shared resource budget are still separate. No contact tolerance is replaced by2^-19 m, and the older1e-8/2e-5 normalized or energy/angular limits are unchanged.
 
 The new result narrows the earlier open derivative/iteration question only for this explicit ideal fixed-predictor subproblem. It supplies no new execution authorization or product/native pass.
+
+## 7. Conditional material compliance for a fixed normal map
+
+This section adds a hand-derived pressure-response statement for the fixed-input material root of section6. It is not a proof for the actual changing offset gap, the finite native solver or either complete SC1/SC2 window.
+
+Use the same dimensionless length, mass, constraint and multiplier conventions as section6, and explicitly introduce the unchanged time unit t0=1 s. Write hbar=h/t0, so A=hbar^-2. Normalize an impulse by m0 L0/t0. The original four material rows, unit physical compliances, rest perturbations and cloth mass interval[1/2,2] kg are unchanged.
+
+Let B_n be a FIXED, nonzero, predeclared normal-direction map containing every contact owner row. It is selected from the mathematical input before observing any delivery, only for the already declared frictionless candidate. It does not depend on the pressure variable in this section. No unrestricted three-dimensional quotient representative is substituted for a normal pressure.
+
+One may append the original constant-mass prismatic translation coordinate: the material potential is independent of that coordinate, its mass is positive, and its root equals its predictor exactly. For the uniform bounds below require that additional dimensionless mass to be at least1/2; the original4m prismatic mass with m>=1/2 satisfies this. The lower mass bound and ||Wbar||<=2 then remain valid, although the enlarged Mbar need not have norm<=2. Section6's finite material-history bound is applied only to the cloth coordinates. This argument does not apply to a general robot with configuration-dependent mass.
+
+### Predictor family and derivative of its material root
+
+For a dimensionless pressure impulse p, define the predictor family by the held-force bookkeeping identity
+
+    xi_hat(p) = xi_hat_0 + hbar Wbar B_n^T p.
+
+Assume a convex set P of pressures for which EVERY cloth predictor belongs to the inner per-node1/128 neighborhood of section6, using one fixed common translation. This is a hypothesis to be proved for the actual contact trials, not a consequence of declaring P. Fresh zero material multipliers are required when applying the finite-replay bound to each trial.
+
+For every p in P, section6 gives a unique cloth material root y(p) in the convex outer neighborhood. Any appended prismatic coordinate is its own predictor. The combined ideal equation is
+
+    Mbar A [y(p)-xi_hat(p)] + grad Ubar(y(p)) = 0.
+
+On the cloth neighborhood ||H_U||<19, where H_U=Hess Ubar; the appended block is zero. The positive lower Hessian bound A/2-19 permits implicit differentiation. The cloth roots lie strictly inside the outer neighborhood, so the same local branch is available at endpoints of pressure segments as well. Differentiating the complete equation yields
+
+    D_p y = hbar [Mbar + H_U(y)/A]^-1 B_n^T.
+
+This is the derivative of the ideal material root, not the derivative of one XPBD row or of the finite ordered replay.
+
+Put Wbar=Mbar^-1 and
+
+    epsilon = 38/A <= 19/2048 < 1.
+    A_n = B_n Wbar B_n^T.
+    C(p) = B_n [Mbar + H_U(y(p))/A]^-1 B_n^T.
+
+Indeed ||Mbar^-1/2 H_U Mbar^-1/2/A||<=epsilon. Factoring Mbar+H_U/A through Mbar^1/2 and bounding the eigenvalues of the middle factor gives the Loewner inequalities
+
+    Wbar/(1+epsilon)
+      <= [Mbar+H_U/A]^-1
+      <= Wbar/(1-epsilon),
+
+and therefore
+
+    A_n/(1+epsilon) <= C(p) <= A_n/(1-epsilon).
+
+All these inequalities are for the full matrices; no owner is removed. Since the middle inverse is positive definite,
+
+    ker C(p) = ker A_n = ker B_n^T.
+
+A pressure shift in this fixed kernel leaves the predictor and material root unchanged. This fact concerns the fixed map only; it neither discards a requested null stress from ideal-map error accounting nor certifies a nonnegative physical pressure.
+
+### Frozen linear gap and a preconditioned contraction
+
+Define the explicitly FROZEN linear observation
+
+    g_H(p) = B_n y(p) - b,
+
+where b is fixed and independently specified. Its derivative is hbar C(p). In particular, for p,q whose segment lies in P,
+
+    (p-q)^T [g_H(p)-g_H(q)]
+      >= hbar/(1+epsilon) * (p-q)^T A_n (p-q).
+
+This proves strong monotonicity on S=range(B_n)=ker(B_n^T)^perp. It does not prove monotonicity for a changing nonlinear contact gap.
+
+Fix a pressure center p_c and vary pressures in the affine space p_c+S. The kernel component of p_c is then fixed; this does not claim it is the only possible physical choice. On S let A_n,S denote the positive-definite restriction of A_n. Let a proposed frozen-gap target g_target obey the necessary compatibility condition
+
+    g_target - g_H(p_c) belongs to S.
+
+Since every difference g_H(p)-g_H(p_c) belongs to S, a target failing this condition cannot be solved by pressures in this model. It must not be silently projected away.
+
+For compatible targets, consider the mathematical map
+
+    T(p) = p - hbar^-1 A_n^+ [g_H(p)-g_target],
+
+where + denotes the Moore-Penrose inverse acting as A_n,S^-1 on S and zero on its orthogonal complement. This formula is used for analysis only; no new implementation, API or execution is authorized.
+
+Use the pressure norm ||d||_A=(d^T A_n d)^1/2 for d in S. In this norm the derivative of T is similar to the symmetric matrix
+
+    I_S - A_n,S^-1/2 C(p)|_S A_n,S^-1/2.
+
+The Loewner bounds put every eigenvalue in
+[-epsilon/(1-epsilon), epsilon/(1+epsilon)]. Integrating the derivative along a pressure segment therefore gives
+
+    ||T(p)-T(q)||_A <= kappa ||p-q||_A,
+    kappa = epsilon/(1-epsilon)
+           <= 19/2029 < 1/100.
+
+Unlike a conclusion based on one row's multiplier partial derivative, this is a contraction for the entire ideal material-root response under the stated FIXED normal map. Its proof retains the nonlinear material Hessian and the full normal-row nullspace.
+
+### A sufficient pressure-ball inclusion, still to be instantiated
+
+Let K be the closed ball {p_c+d: d in S, ||d||_A<=R}, R>0, and require K to lie in P. Define the independently bounded center residual
+
+    delta_c = hbar^-1
+              ||A_n,S^-1/2 [g_H(p_c)-g_target]||_2.
+
+Here the vector is in S by the compatibility condition. If
+
+    delta_c <= (1-kappa) R,
+
+then ||T(p)-p_c||_A<=kappa R+delta_c<=R for every p in K. Thus T maps the complete ball into itself. Banach's theorem gives one unique fixed point in K, and compatibility makes its FULL frozen-gap residual zero. For iterations starting in K,
+
+    ||p_j-p_star||_A <= kappa^j ||p_0-p_star||_A.
+
+The theorem supplies a checkable sufficient condition; no actual SC1/SC2 pressure ball or center residual has yet been bounded by this note. Strong monotonicity or the displayed small kappa alone does not supply that missing inclusion.
+
+Nonnegative pressures are also not automatic. A sufficient independent condition for the whole ball is, for every original owner i,
+
+    (p_c)_i >= R sqrt((A_n^+)_(i,i)).
+
+To see this, write d=A_n,S^-1/2 u, ||u||<=R, in an orthonormal basis of S and apply Cauchy-Schwarz to coordinate i. Strict inequalities provide a strictly positive margin. This condition retains duplicate owners and tests the chosen kernel component rather than changing it after observing a result. Whether the frozen target, pressure cone and actual geometric contact support are compatible remains a separate obligation.
+
+### Finite replay error is an additional term
+
+Let y_N(p) be the ideal finite material replay at a particular trial and e_N=y_N-y. Section6 bounds its cloth Euclidean norm under that trial's predictor hypothesis. An appended ideal prismatic coordinate contributes zero to e_N. Replacing y by y_N in the frozen observation changes T by
+
+    -hbar^-1 A_n^+ B_n e_N.
+
+Its A-norm is
+
+    hbar^-1 ||(A_n^+)^1/2 B_n e_N||_2
+      <= hbar^-1 ||e_N||_M,
+
+where ||e||_M=(e^T Mbar e)^1/2. The inequality follows because
+Wbar^1/2 B_n^T A_n^+ B_n Wbar^1/2 is an orthogonal projector. It uses all rows and does not assume full row rank.
+
+For this ideal cloth error, ||e_N||_M<=sqrt(2)||e_N||_2, even if an appended prismatic mass exceeds2, because its error component is zero. Define delta_N as the corresponding conservative upper bound on this pressure-map perturbation. It is an analysis quantity, not a new tolerance, physical residual allowance or state correction.
+
+If every approximate pressure trial remains in the declared predictor domain and its perturbation is bounded by delta_N, the error recurrence is
+
+    E_(j+1) <= kappa E_j + delta_N,
+
+so E_j<=kappa^j E_0+delta_N(1-kappa^j)/(1-kappa).
+A sufficient invariant-ball condition for these approximate trials is the stronger
+delta_c+delta_N<=(1-kappa)R. This accounts for the finite ordered-gradient drift rather than treating the XPBD limit as the material root. Actual R7/native errors require their own additional propagation and cannot be set to this ideal delta_N.
+
+### What is still absent for the physical contact problem
+
+For an actual differentiable offset-gap function g(x), its derivative along this ideal predictor family is
+
+    D_p g(y(p))
+      = hbar B_gap(y(p))
+        [Mbar+H_U(y(p))/A]^-1 B_n^T,
+
+where B_gap is its full current Jacobian. The difference B_gap(y)-B_n must be independently enclosed, including director derivatives, material address, normal changes and all support extrema. The displayed matrix need not be symmetric and is not covered by the frozen-gap Loewner argument. Nondifferentiable support switches and SC2 contact birth need their full path and branch proofs.
+
+Consequently the frozen-map contraction does not justify multiplying a stored C W r velocity bound by h to obtain a nonlinear held-position enclosure. Nor does it resolve full requested-pressure ideal-map error, actual delivery uncertainty, original-input energy/angular balance, paired robot moments, NUM005, finite native history or global step/window inclusion. The original controls and all numerical/resource budgets remain unchanged. The complete ordinary-mass typed physical contract remains NOT_FROZEN.

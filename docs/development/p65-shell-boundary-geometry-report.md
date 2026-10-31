@@ -1,5 +1,7 @@
 # S2-FB-G boundary geometry authoring report — 2026-10-31
 
+Current validation: FOCUSED_HOST_GEOMETRY_VERIFIED (126 host cases; same-run 1413 payload / 704-pair audit), pending parent acceptance. See the dated final validation section; earlier authoring-only status is historical.
+
 **CODE_READY_TESTS_PENDING. All collection, imports, static checks and tests are UNEXECUTED.** This is a finite HOST geometry prerequisite, not physical self contact, native acceptance, a simulated fold or completed S2-F/P6.5. No execution slot was held or used for this authoring task.
 
 Authority: parent frozen design/plan/brief at 0d0b4923c18f85e46ae54a0547e52dde50d8a31c, with public-verification receipt clarification c7a417e8fe97b0b71c5213995becdf9dc82ee925. The final design SHA256 read is c8983d7dd40f41bb062157467c774207e40b1ff1fe71d3dc075381f1f9ef00f6; brief SHA256 is 411be5bdbe3d7bac87d164e723d4311a24d2242bcca3029b677e23627bb203ef. Read by absolute parent path; no parent merge. Original isolated lineage starts 04892aaa2b2200df3026d2ba9d267778a5307980.
@@ -158,3 +160,75 @@ The existing zero_star_inside path now has the same causal-premise coverage. Its
 There are now37 authored function nodeids, still UNCOLLECTED; the additional function is test_connected_n1_n2_positive_local_tets_have_distinct_material_interior_overlap with the two fixed data sets. The two existing sweep function names are retained and their prerequisites strengthened. New endpoint receipts are authored evidence hooks only: no call has executed, no test outcome/count is observed. Original source-specific operation envelopes remain unchanged because production bytes are unchanged; these extra test invocations are not included in a fictional already-run total.
 
 Final continuation status after the report commit: CODE_READY_TESTS_PENDING / AUTHORING_SLOT_RELEASED. This remains a clean authoring handoff only. Updated twelve-file hashes/blobs, including both report hashes, are supplied out of band after committing; the table above reflects the new test checkpoint. Parent will inspect changed tests/reports and the unchanged source binding before separately considering a focused-host slot.
+
+## 2026-10-31 sole serial HOST validation and saved-evidence handoff
+
+Current result: FOCUSED_HOST_GEOMETRY_VERIFIED, pending parent evidence acceptance. The original authored checkpoint is 13bd742e6ba444d4c218d43ec8731840f047530a. The exact executed source/test checkpoint is 8fba8d091221c6a43520e5036da291b32e4f12f3. These two reports are the only post-test edits; their final commit/hash/blob identities are supplied in the external twelve-file handoff manifest. Earlier UNEXECUTED statements describe their dated authoring checkpoints and are not claims about this completed validation. No historical TDD RED/GREEN is invented.
+
+Authority was parent 0095b20ba8cdb2ae17089cbcce4d89e1199e14c2, original grant SHA d9c7d81b5744a22509343d929b369885d0af010283637c47672d0f7a66b5acf6. The run-specific storage supplement is parent b77c02a190a5e46dd32076ccf7f302b8dca3844b, ruling SHA e4dc0ca507daf915774aa756ff6819f7c3a412cf2cecab5b1f8dc47566357a49; the appended grant SHA is 5d5bb1ee3475016e508e459a370d47ca6e971bf4d268715725ce836067c71054. No parent merge, old shared-source edit, helper/reviewer, installation, native run, old suite, remote action or push occurred.
+
+Evidence root: C:/Users/38347/AppData/Local/Temp/p65-shell-boundary-local-13bd742-serial. Each executable run retains exact command/environment, before/after guards, source/config manifests and source copies, stdout/stderr and RAW_EXIT. The original and tested manifests each contain 355 entries. Host 13 and audit 14 before/after/current comparisons have zero changed entries. Original-to-tested changes are exactly the ten new Python paths; all other source/config/report entries were unchanged during execution. Final report edits require no repeat of unchanged green source checks.
+
+### Actual environment, first outcomes and qualified repair evidence
+
+Existing interpreter only: C:/Users/38347/Documents/ChatGPT/phymeo/.venv-py311/Scripts/python.exe, Python 3.11.15, NumPy 2.4.6, pytest 9.1.1 and existing Ruff 0.17.2. Five new module __file__ values were asserted under this child/src in run 01 and the qualified post-style run 09. PYTHONPATH is the child/src; PYTHONDONTWRITEBYTECODE, PYTHONNOUSERSITE, PYTEST_DISABLE_PLUGIN_AUTOLOAD and OMP/OPENBLAS/MKL/NUMEXPR thread counts are 1; PYTHONHASHSEED is 0. The environment checks made no producer/verifier calls.
+
+| Run | Observed result and scope |
+| --- | --- |
+|01 environment /02 Ruff version|RAW_EXIT=0 each; existing environment and actual child module locations|
+|03 initial Ruff /04 initial format-check|RAW_EXIT=1 each; INVALID SELECTION caused by the wrapper dropping its file arguments, hence unwanted repository-wide READ-ONLY static checks. Original results/configs are retained; source comparison proves no mutation. They are not accepted ten-file checks.|
+|05 first valid exact-ten Ruff|RAW_EXIT=1: 222 diagnostics, comprising 212 E701, 8 I001, 2 E731|
+|06 first valid exact-ten format-check|RAW_EXIT=1: 10 files would be reformatted; retained before any formatting repair|
+|07 import ordering /08 formatting|RAW_EXIT=0 each, exact ten-file allowlist; only diagnosed style changes|
+|09 qualified AST/import audit|RAW_EXIT=0; raw AST equality 7/10, normalized non-import AST equality 10/10, imported-binding multiset equality 10/10, and actual child import paths checked|
+|10 final exact-ten Ruff /11 final exact-ten format-check|RAW_EXIT=0 each; all checks pass/10 files already formatted|
+|12 host attempt|PRE-EXECUTION GUARD ONLY; foreign node PID 28584 ran tsc --noEmit --incremental false. No pytest launch and no invented RAW_EXIT. It ended without intervention before run 13's fresh clear guard.|
+|13 complete five-file host selection|RAW_EXIT=0;126 passed in 3470.31s (0:57:50), 15:27:03.2085767 to16:24:53.9978916+08|
+|14 same-run saved-byte audit v3|RAW_EXIT=0;16:26:27.0104400 to16:32:04.6729099+08; no geometry regeneration or project import|
+
+The exact-ten wrapper guard is preserved as run-v2.ps1, with the original flawed wrapper/configs retained. The two E731 assignments were changed to same-argument, same-return, same-closure local defs in geometry/shell_boundary_sweep.py (_map_functions.minus) and validation/shell_boundary.py (_time_maps.negative). Import ordering and these lambda-to-def changes are NOT raw AST identity. Run 09 normalizes precisely those two transformations and excludes import order from its non-import AST comparison; it separately compares imported bindings. This qualification is not a general proof that import execution order is irrelevant. The subsequent complete host tests validate this actual snapshot. No mathematical algorithm, fixture, oracle, tolerance, capacity, budget or original grid was altered.
+
+The complete host command was the existing interpreter followed by -m pytest tests/test_shell_contact_field.py tests/test_shell_boundary.py tests/test_shell_boundary_sweep.py tests/test_shell_boundary_verifier.py tests/test_shell_boundary_points.py -q -x --tb=short -p no:cacheprovider --basetemp C:/Users/38347/AppData/Local/Temp/p65-shell-boundary-local-13bd742-serial/13-first-host-basetemp. The absolute basetemp was checked absent. There was no preliminary collection, subset, skip/deselection, exploratory numerical/counting probe, or repeat of this green selection. The 37 authored function names produced the observed 126 passing parameterized cases.
+
+### Same-call saved evidence and measured resource receipts
+
+The authored membership was fixed before payload reading from function/decorator order, control, variant, h, rebuild and call ordinal. predeclared-saved-membership-v1.json SHA b8eff403dedd622b43a3815a8ad646bb35ab1008e7a5ca86ac70c74dce1dc8d6. Pair membership never depends on matching hashes or observed outputs. The successful observer is audit-saved-v3.py SHA a3f4579e5924013a6f334c425435bd63400ef4c11c3338d818848b49155fd646; v1/v2 are preserved UNEXECUTED drafts. Its complete output saved-audit-v3-summary.json SHA feea3255011d68759c9de2205219db2f3ebe75745e1f1f17f16088e8a3ad3b99.
+
+The audit covers 1413 entire logical JSON payloads and 1413 original sidecars, with 704 predetermined full-byte rebuild pairs: 16 fixed static payloads/8 pairs; C1 sweeps 472/236 pairs; C2 sweeps 920/460 pairs; plus four named legal crossing/zero-star endpoint payloads and one exact-rational-third address payload. C2-static count 12 in the table means the original 8 fixed static positive controls PLUS those 4 legal endpoints. It is not 12 fixed-grid rebuild cases. C1 has one original whole segment, C2 has both original whole segments; all three h values, four variants, two rebuilds and every step are present.
+
+Full original input, reference identity/order, complete claim and public same-call verification receipt bindings were checked from the saved bytes, including resource fields. The observer compares whole payload bytes with no field deletion, normalization or output-based pairing, checks all indexed compressed/sidecar hashes, verifies rational partition coverage and created-cell accounting, checks every saved point/J error below 2^-40, and independently matches each step's original endpoints to its authored whole input segment. It parses source only to recover dataclass serialization field order; no new producer, verifier, fixture or trajectory is executed. All numerical evidence remains the original run 13 receipts.
+
+| Saved group | Payloads | Producer max | Inner checker max | Aggregate max | Fresh public verifier max | Peak bits max | Fresh created cells max |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+|C1 static|8|407748|417260|825008|417260|177|0|
+|C2 static including four legal endpoints|12|13449|19365|32814|19365|174|0|
+|C1 sweep|472|415365|452551|867916|452551|177|1|
+|C2 sweep|920|17735|39715|57450|39715|174|2|
+|C2 exact 1/3 point|1|7682|8319|16001|8319|174|0|
+
+These are maxima of observed same-call fields, not a new operation-counting experiment or a uniqueness claim. They remain below the original shared producer+inner 2m and fresh-verifier 2m limits and 4096-bit cap, and below the earlier conditional handwritten envelopes. Static/point verifier cells are 0. Sweep fresh cells are the actual single traversal count; producer+inner created cells equal twice that count. No receipt count is substituted for a fresh verifier's observed counter. The precision label remains ideal-from-stored-fp64 with a separately certified stored-proposal error; no ideal-correct-rounding or native-delivery claim is added.
+
+### Reversible storage and final scope
+
+The source-lifetime proof, SHA 59a7a9c12dbfd6ee32454167e8aae4126bcfc747e2e78933cfc9d4186cb777fd, records that save closes JSON then sidecar and no selected test subsequently reads the path; rebuild comparisons use in-memory payloads. Only predeclared closed single-write files were eligible. Per-file storage transactions streamed the original SHA/size, wrote a new independent gzip, reopened it for independent full decompression SHA/size, rechecked unchanged original and sidecar, durably published prepared/index records, then removed only that verified redundant plain file and wrote a completion record. Sidecars/logs/manifests/source snapshots remain. Every transaction and logical path is preserved in storage-v1; there are 1413 prepared/index/completed records and zero transaction errors.
+
+The first storage batch processed 0 files because its eligibility regex expected LF while Windows sidecars contain CRLF; it removed nothing. The original script/batch and exact line-ending diagnosis remain. store-closed-v2.ps1, SHA 2da9d40e74d780f184b67d87d826b159f924ecb4a46dd5bb36d9f9ef206bd5ee, accepts the existing CRLF bytes without editing them. Subsequent bounded sequential batches preserve all 3,437,166,226 original payload bytes in 213,077,480 gzip bytes, with 142,935 sidecar bytes. The final observer independently verifies every indexed representation and transparently reads original bytes; it rejects extra/unindexed/conflicting/corrupt representations and does not batch-extract plain files. Compression provides storage safety, not geometry or physical evidence.
+
+The final external evidence inventory distinguishes physical files and exact logical original payloads and includes all raw first outcomes, source/config snapshots, environment metadata, scripts/versions, guards, storage receipts, sidecars and the successful audit. final-handoff-manifest.json supplies all twelve delivered SHA256/Git/filtered-working blobs, including both report hashes without self-reference. The final message identifies the report commit and fresh guard/release receipt. No further executable work is scheduled; formal release follows clean Git and zero matching execution/owned sessions.
+
+Acceptance is LIMITED analytic HOST geometry for the frozen convex-cluster-matching/static-multiquadratic/constant-derived-director domain, complete global material boundary/all-pair/fan/ties and full-star maps. C1's persistent translation and C2's prescribed reversal are not force-generated folding trajectories. General clipping, changing normalized directors/irrational events, loaded folding/rotating continuation, full contact normal/friction/capacity/energy/angular response, same-base delivery, B2/R7/robot/transactions and native evidence remain open. This is not full S2-F or P6.5 completion.
+
+### Exact tested Python identities
+
+| Relative path | Tested working SHA256 | Tested Git blob |
+| --- | --- | --- |
+| src/phymeo/constraints/shell_boundary.py | db35357be65e08ad0347cfd642bc5be53820fc4a3487ed6ed09fe3d803b1c898 | b42b5bcbe066657a80f13f4b00fa165f4a81bea1 |
+| src/phymeo/geometry/_shell_contact_field.py | 7f3ced2db36417031e3e09e8c7a047464f2675f80a37a808989a393b4f5c8895 | 77b79ed445c8db9d72cb87a4717b49d81842a36b |
+| src/phymeo/geometry/shell_boundary.py | 53ff3b1da664662436a7e0e336fe765daee0d822fa8e87d1bc8a9901ed9c8a56 | b1f22153e96be45821aefe24e94adcd981c187c4 |
+| src/phymeo/geometry/shell_boundary_sweep.py | b329123c6f79801f28bf39615a1b58452199d44ea1287acd722a737d95e6b972 | 5251bef36999ee12b497c4fc6c1ec6993486b8a5 |
+| src/phymeo/validation/shell_boundary.py | 7bff61d8de2e314971e54f605b07f02d92d5e67dacdbc35ab5de11a13b42496f | bcd396806ef0b41fd1656fc967ae15d0c2da7d51 |
+| tests/test_shell_contact_field.py | 516c1b29009e76c06125e311c60ecb26d1592800c37ad2ae2858de2c6414aa64 | d62b803f60fe067beb79f6c3ee3946344753f89b |
+| tests/test_shell_boundary.py | f7b304cd8814dc2e276b2b2fa6fdc0424c20a2defa8179d6f4b02fdf58d7dd8b | bf3c9a910bc018bd0388ae68fc5de2aff3750fe1 |
+| tests/test_shell_boundary_sweep.py | a43ecc286efdcd95288b53b18bb50223ebb0dcb03e0c26db8f4cfef99d253b14 | 6e525a5d66370c18217f88034ade8046d5405a73 |
+| tests/test_shell_boundary_verifier.py | 7c0d3e1f800f71a6ffe2d1c3c8f39833ab8284005dd89a244630719633b00d42 | 10403aed55be0a147ee468cf565a09a2dd966d4e |
+| tests/test_shell_boundary_points.py | c5873c7d700a3d3472c98f7bc79db0cd1a562c67f6c368622597fa70a3ce962e | 1f681658617a344b0e67726e1f27ef915bd3b73e |

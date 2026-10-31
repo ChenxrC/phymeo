@@ -1,0 +1,88 @@
+{
+  "schema": "p65-fp32-reduction-adjudication-v1",
+  "status": "REFERENCE_ONLY_NOT_RUN",
+  "scope": "Atomic candidates for N2. All operands are normal binary32 words or zero. The allowed primitive returns a finite normal binary32 word or a certified exact zero. These cases are not material/device/physical acceptance.",
+  "cases": [
+    {
+      "id": "positive_denominator",
+      "group": "fused term",
+      "inputs": ["g=2^-70", "w=1", "D=2^14"],
+      "exact": "D+2^-140",
+      "expected": "0x46800000",
+      "must_bind": "The positive product is included exactly once. A materialized FP32 g*g is out of range."
+    },
+    {
+      "id": "scale_cannot_cover_both",
+      "group": "fused term",
+      "inputs": ["g=2^-100", "w=1", "D=2^126"],
+      "exact": "D+2^-200",
+      "expected": "D",
+      "must_bind": "Any common square rescaling requires k>=37 for the product and k<=0 for D*2^(2k) to be finite. A single fused operation can return D."
+    },
+    {
+      "id": "norm_tiny_first",
+      "group": "whole normalized square sum",
+      "inputs": ["x=(2^-96,1,0)"],
+      "exact": "1+2^-192",
+      "expected": "0x3f800000",
+      "must_bind": "Physical coordinate order is retained; any evaluation permutation and zero addends appear in the receipt."
+    },
+    {
+      "id": "cross_tiny_second",
+      "group": "signed two products",
+      "inputs": ["a=1", "b=1", "c=2^-96", "d=2^-48"],
+      "exact": "a*b-c*d = 1-2^-144",
+      "expected": "0x3f800000",
+      "must_bind": "Second product is nonzero and has negative sign in the aggregate."
+    },
+    {
+      "id": "fused_residual",
+      "group": "single FMA",
+      "inputs": ["a=b=1+2^-23", "c=-(1+2^-22)"],
+      "exact": "a*b+c = 2^-46",
+      "expected": "2^-46",
+      "must_bind": "Two separately rounded operations would give zero."
+    },
+    {
+      "id": "determinant_compensation",
+      "group": "signed two products",
+      "inputs": ["a=b=c=d=1+2^-23"],
+      "exact": "a*b-c*d = 0",
+      "expected": "canonical zero for an exact determinant claim",
+      "must_bind": "One rounded anchor followed by FMA can instead yield magnitude 2^-46. A finite correctly executed FMA alone does not prove the full determinant's sign."
+    },
+    {
+      "id": "min_normal_tie",
+      "group": "stored product",
+      "inputs": ["a=2^-63", "b=2^-63-2^-87"],
+      "exact": "2^-126-2^-150",
+      "expected": "0x00800000",
+      "must_bind": "Ties-to-even picks the minimum normal over the odd maximum subnormal; evaluate the actual RN cell."
+    },
+    {
+      "id": "raw_subnormal",
+      "group": "stored row product",
+      "inputs": ["w=1", "delta=2^-70", "g=2^-70", "prior_displacement=1"],
+      "exact": "w*delta*g = 2^-140",
+      "expected": "reject if this product is a required normal-or-zero published field",
+      "must_bind": "A normal final displacement of 1 from a fused update cannot substitute for a valid raw product."
+    },
+    {
+      "id": "false_zero",
+      "group": "stored product or FMA",
+      "inputs": ["a=2^-80", "b=2^-70", "c=0"],
+      "exact": "2^-150",
+      "expected": "reject",
+      "must_bind": "Nearest-even rounds to zero but the exact source is nonzero."
+    },
+    {
+      "id": "overflow",
+      "group": "published word",
+      "inputs": ["a=b=2^100", "c=0"],
+      "exact": "2^200",
+      "expected": "reject",
+      "must_bind": "Overflow must not publish an infinity, saturation or repaired finite value."
+    }
+  ],
+  "gates": "Fixed arithmetic only. Preserve the original v2 rejection, F0/Feff, R/d, raw-products binding, range, error and iteration policy. No probe, code execution, physical grant or timing claim."
+}

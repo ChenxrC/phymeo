@@ -5,7 +5,7 @@
 - **交付物**　A 取布、B 接稳、A 松开、B 放台并撤离。同次仿真驱动可暂停、逐帧查看接触力的 Three.js 回放。[原始验收](../superpowers/plans/2026-10-27-dual-arm-cloth-handoff-milestone.md)
 - **可复用基线**　集成分支已有有限夹爪、B2/R7 材料和限定域的自接触响应与几何；单爪受载折叠和双臂递布仍缺完整轨迹。[框架范围](../superpowers/plans/2026-10-30-p65-material-self-gripper-integration.md)
 - **当前证据**　两项独立限制。旧 R7 在 SC1 受载、SC2 自由材料行均有范围拒绝。SC2 原厚度、水平平台和二进发布下，真实端点承载必须落在水平面上；两档细网格的理想首碰却有共享节点高于平台所需中面高度超过 2⁻²⁶ m。没有设备运行。[材料对照](p65-b2-joint-acceptance-gates.md) · [相邻位移字与 SC2 端点证明](p65-b2-sc2-first-touch.md)
-- **下一动作**　先区分可产生真实水平支撑的发布状态，与必须在步内记录的非二进接触事件；检查事件的冲量、继续步进和回滚如何绑定。单独的短归约设备实验尚待放行，只能验证前一项算术限制。[算术裁定与十个向量](p65-b2-range-reduction-ruling.md) · [节点与停止规则](../superpowers/plans/2026-10-31-p65-delivery-replan.md)
+- **下一动作**　模型选择已向用户提出，精确状态/事件与可标定接触层的差距和首个验收均已写入计划。当前仅调研和文本裁定；等待模型方向及独立短归约设备实验的回复，继续沿原精确二进相触迭代没有新增依据。[算术裁定与十个向量](p65-b2-range-reduction-ruling.md) · [节点与停止规则](../superpowers/plans/2026-10-31-p65-delivery-replan.md)
 - **执行边界**　当前没有项目执行者。新执行严格串行，已过证据按版本复用，远程 CI 延期。
 
 旧交接可从 `git show 9decc41:docs/development/p65-continuation.md` 查阅。

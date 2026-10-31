@@ -280,6 +280,93 @@ The full frozen gap lies in S. Writing e_j=||p^(j)-p_*||_A_n, its dual-norm resi
 
 Even this small bound has no prescribed componentwise sign. It does not establish exact flatness or nonpenetration at any finite iterate. Exact flatness, the unchanged common vertical coordinate, active bending and the negative one-step energy result in section7 apply to the unique fixed point p_* under the original exact-reference-entry hypothesis. They are not automatically inherited by a rounded iterate or a later physical step.
 
-The actual existing contact coordinator uses serial clipped diagonal coordinate updates and a backtracking/selection path, whereas T_N is the complete range-quotient update defined in the analysis. Equivalence, invariance and finite convergence for that implementation remain unproved. A future algorithm choice also needs the full native/delivery/geometry and resource accounting. No old source, iteration cap, fixture, physical budget or execution grant changes.
+The relevant existing thick-contact workspace uses synchronous projected updates with a scalar full-world response step size, recomputed geometry and backtracking; the separate finite point-patch coordinator uses serial diagonal coordinate updates. Neither is the complete range-quotient T_N. Equivalence, invariance and finite convergence for the actual thick-contact path remain unproved. The full native/delivery/geometry and resource accounting is also required. No old source, iteration cap, fixture, physical budget or execution grant changes.
 
 The remaining SC1 physical-window propagation, SC2 birth/terminal control, current full offset map, rounded support and paired energy/angular/NUM005/R7 obligations are still open. This addition is manual mathematics only; no import, test, numerical or derivative probe, lint, formatter, build or native execution was performed.
+
+## 9. A frozen-gap synchronous projected iteration
+
+The existing thick-contact proposal retains synchronous contact updates. Its actual [workspace](../../src/phymeo/solvers/_thick_contact_workspace.py) computes alpha0 from full-world response blocks, uses newp=max(0,oldp-a*normal) simultaneously, and tries a=alpha0/2^power with recomputed full metrics. The following manual statement isolates the ideal frozen-gap, fixed-step version of that update. It does not change the algorithm or assert that its actual line search accepts the full step.
+
+Continue to use N=512 exact material sweeps, all six original normal owners, the original SC1 reference entry, masses and unit compliances. Let
+
+    g_N(p)=B_n y_N(xi_hat(p))-b,
+    G_a(p)=projection_orthant[p-a*g_N(p)/h].
+
+The root p_* of sections7-8 satisfies g_N(p_*)=0 and is strictly positive. The SC1 range S consists exactly of vectors with equal duplicated a-owner entries and equal duplicated b-owner entries; c and d entries are free. Orthant projection preserves this particular S. This fact is specific to the stated normal map, not a property of arbitrary pressure ranges.
+
+### A predictor domain containing the zero-pressure start
+
+Define the analytical set
+
+    Q={p in S: p>=0 and ||p-p_*||_2<=||p_*||_2}.
+
+It is convex, contains zero, and does not prescribe p_* to an implementation. From section7 and lambda_min(A_n|S)>=1/m,
+
+    ||p_*||_2<=sqrt(m)||p_*||_A_n
+              <sqrt(m)(h/3+h^3/32)<h sqrt(m)/2.
+
+Every p in Q therefore has ||p||_2<h sqrt(m). At a shared cloth node its normal aggregate has at most two owner entries, hence absolute magnitude <=sqrt(2)||p||_2. Relative to the one fixed zero-pressure free-translation predictor, each cloth predictor's displacement is consequently
+
+    <(h/m)*h sqrt(2m)<=2h^2<=1/2048<1/128.
+
+Thus all of Q satisfies the section6 inner-predictor hypothesis, with fresh zero material multipliers for every mathematical evaluation. Section8's finite sensitivity bound holds on every segment in Q, independently of whether Q is invariant.
+
+### Full-world step size at the unchanged flat reference
+
+Here use the six original nodal bottom-offset owners and their complete initial triangle-offset Jacobians. For either oriented reference triangle the derivative D_f of its unit normal has Frobenius norm2: in the original coordinates it maps vertical nodal increments to the two differences delta z_a-delta z_b and plus or minus(delta z_a-delta z_outer). Other components are zero.
+
+For a nodal bottom owner, J_i=E_i-rho D_f with rho=1/64, where E_i selects its physical node. Therefore
+
+    ||J_i||_F<=sqrt(3)+2rho<2,
+    ||J_i||_2<=1+2rho=33/32.
+
+The full-world initial response block, including the dynamic4m prismatic reaction, is
+
+    W_ij=(J_i J_j^T)/m+(e_z e_z^T)/(4m).
+
+Define the exact ideal counterpart of the workspace's scalar response bound,
+
+    L=max_i sum_j ||W_ij||_F,   a=1/L.
+
+The normal projection n^T W_ij n equals the unchanged A_n,ij=(delta_same_node+1/4)/m. A duplicated-node row has normal row sum7/(2m). Frobenius domination and the complete six-block upper bound give
+
+    7/(2m)<=L
+      <6[(2)(33/32)+1/4]/m=111/(8m)<14/m,
+    m/14<a<=2m/7.
+
+This is an exact-arithmetic comparison with the relaxation=1 formula, not a bound on its stored rounded evaluation. Every cross block, duplicate owner and robot contribution is retained.
+
+### Contractivity and finite ideal iteration
+
+Section8 gives on S
+
+    D(g_N/h)=A_n+E_N,
+    ||A_n^(-1/2) E_N A_n^(-1/2)||_2<=kappa_N,
+    kappa_N<=95/2048.
+
+Inverses here mean inverses restricted to S. Symmetry of E_N is not assumed. With lambda_min>=1/m and lambda_max<=7/(2m), and any a<=2m/7,
+
+    ||I-a*D(g_N/h)||_(2,S)
+      <=1-a/m+a*kappa_N*7/(2m)
+      =1-(a/m)[1-(7/2)kappa_N].
+
+The bracket is >=3431/4096>5/6. For the exact full step a=1/L above, the factor is therefore
+
+    q_sync<1-5/84=79/84<16/17.
+
+Orthant projection is Euclidean nonexpansive and fixes p_*. It also preserves S. Integration along segments in Q now proves
+
+    ||G_a(p)-p_*||_2<=q_sync||p-p_*||_2.
+
+Thus Q is invariant, and the zero-start ideal synchronous frozen-gap sequence converges to the same p_*. After j updates,
+
+    ||p^(j)-p_*||_2<(16/17)^j||p_*||_2.
+
+Since (17/16)^16>2 by its binomial expansion,512 such updates give a bound <2^-32||p_*||_2. This is analytical convergence for the specified exact frozen-gap iteration and the full scalar step, not an executed512-update trace.
+
+### Remaining differences from the real thick-contact path
+
+The real _improve uses midpoints of actual current offset-gap bounds, full normal/friction/native/mapping/moment metrics for its score, an early-return threshold, up to13 backtracking attempts, and possible anchor rebuilds. Decrease of Euclidean distance to p_* does not prove decrease of that actual maximum score or acceptance of power0. A reduced step still has the displayed conditional contraction with its own a, but the512-update full-step rate cannot be transferred to a backtracked sequence.
+
+Actual changing offset gaps, stored step-size rounding, native material/predictor/delivery error and the complete replay resource account remain separate. A nonzero frozen-gap bound also has no one-sided sign, so exact positive-area contact and zero penetration are not inferred at finite iterates. Section7's energy statement is still about the exact fixed point entered from the exact reference. Full physical-window propagation, SC2 birth/terminal, angular/NUM005 and transaction requirements remain open, with no new source or execution grant.

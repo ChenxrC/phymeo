@@ -267,7 +267,9 @@ def test_fixed_static_complete_pairs_stars_ties_maps_and_rebuild(name,variant,tm
     for rebuild in range(2):
         ref,x,hint,_,_=control(name,variant)
         receipt=certify_shell_boundary(ref,x,witness_hint=hint)
-        assert verify_shell_boundary(receipt,ref,x,witness_hint=hint,limits=BoundaryProofLimits())
+        checked=verify_shell_boundary(receipt,ref,x,witness_hint=hint,limits=BoundaryProofLimits())
+        assert checked and checked.verification_kind=="static"
+        assert checked.created_cells==0 and 0<checked.operations<=2_000_000
         assert receipt.status=="weak_material_geometry_certified"
         assert receipt.precision=="ideal-from-stored-fp64"
         assert len(receipt.all_pairs)==(1770 if name=="C1" else 66)
@@ -280,8 +282,8 @@ def test_fixed_static_complete_pairs_stars_ties_maps_and_rebuild(name,variant,tm
             assert not item.point.values.flags.writeable
             assert not item.jacobian.values.flags.writeable
         assert receipt.operations<=2_000_000
-        complete.append(payload(receipt))
-        save(tmp_path/f"{name}-{variant}-rebuild{rebuild}.json",(ref,x,hint,receipt,True))
+        complete.append(payload((receipt,checked)))
+        save(tmp_path/f"{name}-{variant}-rebuild{rebuild}.json",(ref,x,hint,receipt,checked))
     assert complete[0]==complete[1]
 
 
@@ -338,3 +340,64 @@ def test_input_and_actual_law_failures_are_not_success(bad):
     else: x[[1,3]]=x[[3,1]]
     with pytest.raises((ShellUnresolved,ValueError,TypeError)):
         certify_shell_boundary(ref,x,witness_hint=hint)
+
+def test_nonzero_quality_stars_do_not_justify_negative_actual_tetrahedron():
+    ref,x,hint,_,_=control("C1")
+    scale=F(1,128)
+    rho=F(1,32)
+    # All raw area stars scale by scale^2, so normalized directors and quality
+    # ratios are unchanged. Tet (100,2) has exact determinant
+    # 2*rho*scale*(scale-2*rho/sqrt(5)) < 0, since sqrt(5)<3.
+    assert F(3)*F(3)>5
+    assert scale<2*rho/F(3)
+    with pytest.raises(ShellUnresolved):
+        certify_shell_boundary(ref,x*float(scale),witness_hint=hint)
+
+
+def test_alternate_independent_generator_order_is_a_legal_witness():
+    ref,x,hint,_,_=control("C1")
+    def swap(vector):
+        return tuple((q[0],q[2],q[1],q[3]) for q in vector)
+    pairs=tuple(dataclasses.replace(p,supports=tuple(
+        dataclasses.replace(s,normal=swap(s.normal)) for s in p.supports)) for p in hint.pairs)
+    alternate=dataclasses.replace(hint,generators=(F(5),F(2)),pairs=pairs,
+                                  exterior=tuple((s,swap(v)) for s,v in hint.exterior))
+    receipt=certify_shell_boundary(ref,x,witness_hint=alternate)
+    assert receipt.field.generators==(F(5),F(2))
+    assert verify_shell_boundary(receipt,ref,x,witness_hint=alternate,limits=BoundaryProofLimits())
+    assert len(receipt.all_pairs)==1770 and len(receipt.contacts)==11
+@pytest.mark.parametrize("basis",((F(2),F(8)),(F(1),),(F(2),F(2))))
+def test_dependent_or_square_field_basis_is_not_admitted(basis):
+    ref,x,hint,_,_=control("C1")
+    with pytest.raises(ShellUnresolved):
+        certify_shell_boundary(ref,x,witness_hint=dataclasses.replace(hint,generators=basis))
+
+
+def test_original_shared_vertex_does_not_exempt_other_pair_geometry():
+    ref,x,hint,_,_=control("C1")
+    # Move only the first fan's centre beyond the opposite material edge. Faces
+    # retain their original shared IDs; no adjacency exclusion may hide the
+    # resulting star/volume/support failure or convert it to an accepted pair.
+    x[12]=np.array([2,0,0],dtype=np.float64)
+    with pytest.raises(ShellUnresolved):
+        certify_shell_boundary(ref,x,witness_hint=hint)
+
+
+@pytest.mark.parametrize("cap",("nodes","pairs","strata","clusters","vertices","facets",
+                                "polygon","fan","descents","operations","field"))
+def test_tightened_caps_return_no_partial_geometry(cap):
+    from phymeo.constraints.conforming_shell import ShellProofLimits
+    ref,x,hint,_,_=control("C2" if cap!="field" else "C1")
+    policy={"nodes":BoundaryProofLimits(strict_limits=ShellProofLimits(max_nodes=3)),
+            "pairs":BoundaryProofLimits(strict_limits=ShellProofLimits(max_pairs=1)),
+            "strata":BoundaryProofLimits(max_material_strata=1),
+            "clusters":BoundaryProofLimits(max_clusters=1),
+            "vertices":BoundaryProofLimits(max_cluster_vertices=1),
+            "facets":BoundaryProofLimits(max_cluster_boundary_triangles=1),
+            "polygon":BoundaryProofLimits(max_face_polygon_vertices=1),
+            "fan":BoundaryProofLimits(max_fan_planes=1),
+            "descents":BoundaryProofLimits(max_support_descents=1),
+            "operations":BoundaryProofLimits(strict_limits=ShellProofLimits(max_scalar_operations=1)),
+            "field":BoundaryProofLimits(max_field_rank=1)}[cap]
+    with pytest.raises((ShellUnresolved,ValueError,TypeError)):
+        certify_shell_boundary(ref,x,witness_hint=hint,limits=policy)

@@ -96,3 +96,24 @@ def test_coercive_types_and_widened_limits_reject():
     a=field()
     for value in (True,1.0,"1"):
         with pytest.raises((TypeError,ValueError,ShellUnresolved)): a.rational(value)
+
+def test_intermediate_degree_and_expression_caps_apply_before_cancellation():
+    a=field((),BoundaryProofLimits(max_polynomial_degree=2))
+    p=(a.one,a.one,a.one)
+    with pytest.raises(ShellUnresolved): a.poly_mul(p,p)
+    # A numerator product exceeding the cap is not legalized by a subsequent
+    # subtraction of the same expression in a rational-function equality.
+    function=a.rational_function(p,p)
+    with pytest.raises(ShellUnresolved): a.function_equal(function,function)
+    with pytest.raises(ShellUnresolved):
+        field((F(2),F(5)),BoundaryProofLimits(max_expression_nodes=2))
+
+
+def test_rational_unary_minus_and_polynomial_subtraction_are_metered():
+    a=field(())
+    start=a.meter.operations
+    assert a.meter.qneg(F(0))==0
+    assert a.meter.operations==start+1
+    start=a.meter.operations
+    assert a.meter.poly_sub((F(3),),(F(1),))==(F(2),)
+    assert a.meter.operations==start+2  # qneg and qadd, including a zero case.

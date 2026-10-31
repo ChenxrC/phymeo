@@ -246,7 +246,7 @@ def _inputs(reference,positions,limits,meter):
         _fail("stale_binding","reference identity")
     return dict(nodes=nodes,faces=faces,tets=tets,boundary=tuple(sorted(boundary)),
                 components=tuple(components),cycles=tuple(cycles),strata=strata,
-                positions=positions_by_id,rest=rest,rho=rho,stars=stars)
+                positions=positions_by_id,rest=rest,rho=rho,stars=stars,limits=limits)
 
 
 def _raw(original,positions,m):
@@ -549,8 +549,38 @@ def _support_complex(cluster,active):
                          if set(s)<=allowed}))
 
 
+def _matching_incidence(first,second,mapping,simplices):
+    """Complete oriented simplicial chain map; all operations below are ID signs."""
+    facets_a={tuple(sorted(f)):f for f in first.boundary_facets}
+    facets_b={tuple(sorted(f)):f for f in second.boundary_facets}
+    records=[]
+    for simplex in simplices:
+        target=tuple(sorted(mapping[v] for v in simplex))
+        sign=_orientation(tuple(mapping[v] for v in simplex))
+        boundary=[]
+        if len(simplex)>1:
+            for index in range(len(simplex)):
+                face=simplex[:index]+simplex[index+1:]
+                mapped=tuple(sorted(mapping[v] for v in face))
+                image_sign=(1 if index%2==0 else -1)*_orientation(tuple(mapping[v] for v in face))
+                omitted=target.index(mapping[simplex[index]])
+                target_sign=sign*(1 if omitted%2==0 else -1)
+                if image_sign!=target_sign:
+                    _fail("unsupported_matching","oriented boundary chain identity")
+                boundary.append((face,mapped,image_sign))
+        oa=ob=0
+        if len(simplex)==3:
+            oa=_orientation(facets_a[simplex])
+            ob=_orientation(facets_b[target])
+            if oa*sign!=-ob:
+                _fail("unsupported_matching","opposite occupied patch orientations")
+        records.append((simplex,target,sign,tuple(boundary),oa,ob))
+    return tuple(records)
+
 def _pair(hint,clusters,points,boundary_strata,a):
     ia,ib=hint.clusters
+    if len(hint.supports)>a.limits.max_support_descents:
+        _fail("shape_budget","tight support descent bound")
     if ia>=ib or ia not in clusters or ib not in clusters:
         _fail("incomplete_material_cover","canonical cluster pair")
     ca,cb=clusters[ia],clusters[ib]
@@ -609,7 +639,8 @@ def _pair(hint,clusters,points,boundary_strata,a):
         classes.add(classification)
     classification=("incidence_and_boundary_contact" if len(classes)>1 else next(iter(classes)))
     return MatchingIntersectionWitness((ia,ib),tuple(evidence),tuple(sorted(mapping.items())),
-                                       tuple(pieces),classification)
+                                       tuple(pieces),classification,
+                                       _matching_incidence(ca,cb,mapping,first))
 
 
 def _fans(original,clusters,exterior,a):
@@ -631,6 +662,8 @@ def _fans(original,clusters,exterior,a):
             active=tuple(i for i,p in enumerate(clusters[cid].planes) if set(simplex)<=set(p.vertices))
             if len(active)>a.limits.max_fan_planes: _fail("shape_budget","active fan planes")
             cones.append((cid,active))
+        if sum(len(indices) for _,indices in cones)>a.limits.max_fan_planes:
+            _fail("shape_budget","total active stratum planes")
         facts=[]
         direction=()
         if simplex in hints:
@@ -692,6 +725,8 @@ def _coverage(original,clusters,pairs,fans,points):
             subfaces=tuple((s,tuple(sorted(mapping[v] for v in s))) for n in range(1,len(left))
                            for s in combinations(left,n))
             fa,fb=fan_index[left],fan_index[right]
+            if len(contacts)>=original["limits"].max_material_strata:
+                _fail("shape_budget","complete contact stratum cap")
             contacts.append(BoundaryContactStratum(owner,tuple(points[v] for v in left),
                            subfaces,(fa.true_boundary_facets,fb.true_boundary_facets),
                            pair.supports,(fa.occupied_cones,fb.occupied_cones)))

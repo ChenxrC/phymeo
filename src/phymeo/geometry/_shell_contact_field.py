@@ -9,6 +9,8 @@ from ._shell_intervals import Arithmetic, Interval
 
 class Meter(Arithmetic):
     def __init__(self,limits,*,bits=None):
+        self.polynomial_ceiling=8
+        self.expression_ceiling=4096
         self.peak_fraction_bits=0
         super().__init__(limits,bits=bits)
 
@@ -17,6 +19,18 @@ class Meter(Arithmetic):
         self.peak_fraction_bits=max(self.peak_fraction_bits,abs(value).bit_length())
         return result
 
+    def poly(self,values):
+        if (type(values) not in (tuple,list) or not values or
+                len(values)>self.polynomial_ceiling+1 or len(values)>self.expression_ceiling):
+            raise ShellUnresolved("polynomial_budget","rational intermediate shape")
+        return super().poly(values)
+
+    def poly_mul(self,a,b):
+        left,right=self.poly(a),self.poly(b)
+        size=len(left)+len(right)-1
+        if size>self.polynomial_ceiling+1 or size>self.expression_ceiling:
+            raise ShellUnresolved("polynomial_budget","rational intermediate product")
+        return super().poly_mul(left,right)
     def perfect_square(self,value):
         """Exact nonnegative rational square test, including all integer-root work."""
         self.check(value)
@@ -49,9 +63,15 @@ class FieldArithmetic:
         self.generators=tuple(meter.check(q) for q in generators)
         if any(q<=0 for q in self.generators):
             raise ShellUnresolved("branch_or_endpoint_mismatch","positive generators")
+        if meter.limits!=limits.strict_limits:
+            raise TypeError("one original policy-bound counter required")
+        meter.polynomial_ceiling=min(meter.polynomial_ceiling,limits.max_polynomial_degree)
+        meter.expression_ceiling=min(meter.expression_ceiling,limits.max_expression_nodes)
         self.meter,self.limits=meter,limits
         self.rank=len(self.generators)
         self.width=1<<self.rank
+        if self.width>limits.max_expression_nodes:
+            raise ShellUnresolved("polynomial_budget","field coefficient expression size")
         self.zero=(F(0),)*self.width
         self.one=(F(1),)+(F(0),)*(self.width-1)
         products=[F(1)]*self.width
@@ -233,7 +253,8 @@ class FieldArithmetic:
     def poly_mul(self,a,b):
         a,b=self.poly(a),self.poly(b)
         size=len(a)+len(b)-1
-        if size>self.limits.max_polynomial_degree+1:
+        if (size>self.limits.max_polynomial_degree+1 or
+                size*self.width>self.limits.max_expression_nodes):
             raise ShellUnresolved("polynomial_budget","intermediate product degree")
         result=[self.zero]*size
         for i,x in enumerate(a):

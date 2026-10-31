@@ -301,6 +301,7 @@ class MatchingIntersectionWitness(OwnedRecord):
     matching: tuple
     intersection_simplices: tuple
     classification: str
+    oriented_incidence: tuple = ()
 
 
 @dataclass(frozen=True)
@@ -398,6 +399,7 @@ class BoundaryTimeCell(OwnedRecord):
     depth: int
     children: tuple
     polynomial_facts: tuple
+    sqrt_bits: int
 
 
 @dataclass(frozen=True)
@@ -408,10 +410,15 @@ class BoundarySegmentEvidence(OwnedRecord):
     cross_identities: tuple
     positive_dot_bounds: tuple
     component_translations: tuple
+    lifted_paths: tuple
+    plane_paths: tuple
+    geometry_paths: tuple
+    pair_paths: tuple
     cells: tuple
     endpoint_points: tuple
     endpoint_contacts: tuple
     map_functions: tuple
+    sqrt_bits: int
 
 
 @dataclass(frozen=True)
@@ -432,3 +439,37 @@ class ShellBoundarySweep(OwnedRecord):
     precision: str = "ideal-from-stored-fp64"
     proof_kind: str = "convex-cluster-matching-v1"
     path_kind: str = "constant-derived-director-v1"
+@dataclass(frozen=True)
+class BoundaryVerificationReceipt(OwnedRecord):
+    verification_kind: str
+    reference_id: str
+    original_input_binding: str
+    verified_certificate_binding: str
+    policy: BoundaryProofLimits
+    status: str
+    precision: str
+    operations: int
+    created_cells: int
+    peak_fraction_bits: int
+    schema: str = "shell-boundary-verification-v1"
+
+    def __post_init__(self):
+        super().__post_init__()
+        if self.verification_kind not in ("static","sweep","point"):
+            raise ValueError("verification kind")
+        identity(self.reference_id)
+        identity(self.original_input_binding)
+        identity(self.verified_certificate_binding)
+        if type(self.policy) is not BoundaryProofLimits:
+            raise TypeError("immutable verification policy")
+        self.policy.__post_init__()
+        expected={"static":"weak_material_geometry_certified",
+                  "sweep":"weak_material_path_certified","point":"exact_boundary_map_only"}
+        if self.status!=expected[self.verification_kind] or self.precision!="ideal-from-stored-fp64":
+            raise ValueError("verification scope")
+        integer(self.operations,1,self.policy.strict_limits.max_scalar_operations)
+        integer(self.created_cells,0,self.policy.strict_limits.max_time_cells)
+        integer(self.peak_fraction_bits,1,self.policy.strict_limits.max_fraction_bits)
+
+    def __bool__(self):
+        return True

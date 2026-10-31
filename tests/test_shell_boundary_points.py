@@ -4,7 +4,7 @@ from fractions import Fraction as F
 
 import numpy as np
 import pytest
-from test_shell_boundary import control,product_tets
+from test_shell_boundary import control,product_tets,save
 
 from phymeo.constraints.conforming_shell import ShellUnresolved
 from phymeo.constraints.shell_boundary import BoundaryProofLimits,ExactBoundaryAddress
@@ -43,13 +43,15 @@ def test_complete_flat_corner_jacobian_independent_translation_rotation_and_work
     assert verify_shell_exact_boundary_point(point,ref,x,point.address,limits=BoundaryProofLimits())
 
 
-def test_rational_third_address_is_exact_separate_from_old_dyadic_type():
+def test_rational_third_address_is_exact_separate_from_old_dyadic_type(tmp_path):
     ref,x,_,_,_=control("C2")
     material=address(ref,((0,1),(1,1)),((F(1,3),),(F(2,3),)))
     receipt=shell_exact_boundary_point(ref,x,material)
     assert receipt.status=="exact_boundary_map_only"
     assert receipt.exact_point==((F(-4,3),),(F(-1),),(F(1,32),))
-    assert verify_shell_exact_boundary_point(receipt,ref,x,material,limits=BoundaryProofLimits())
+    checked=verify_shell_exact_boundary_point(receipt,ref,x,material,limits=BoundaryProofLimits())
+    assert checked and checked.verification_kind=="point" and checked.created_cells==0
+    save(tmp_path/"exact-rational-third.json",(ref,x,material,receipt,checked))
     assert len(receipt.node_ids)==4
     assert max(receipt.point.errors+receipt.jacobian.errors)<F(1,2**40)
 

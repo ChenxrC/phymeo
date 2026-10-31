@@ -47,13 +47,16 @@ def test_full_analytic_grid_and_two_predeclared_rebuilds(name,variant,h,tmp_path
             checked=verify_shell_boundary_sweep(receipt,ref,path,durations=duration,
                                                 witness_hint=hint,limits=BoundaryProofLimits())
             assert checked
+            assert checked.verification_kind=="sweep"
+            assert checked.created_cells==sum(len(s.cells) for s in receipt.segments)
+            assert 0<checked.operations<=2_000_000
             assert receipt.status=="weak_material_path_certified"
             assert len(receipt.segments)==len(path)
             assert receipt.operations<=2_000_000
             assert receipt.path_kind=="constant-derived-director-v1"
             save(tmp_path/f"{name}-{variant}-h{h.denominator}-r{rebuild}-{label}.json",
                  (ref,path,duration,hint,receipt,checked))
-            rebuilt.append(payload(receipt))
+            rebuilt.append(payload((receipt,checked)))
         snapshots.append(rebuilt)
     assert snapshots[0]==snapshots[1]
 
@@ -99,3 +102,79 @@ def test_missing_time_node_or_endpoint_is_not_a_certificate():
     forged=dataclasses.replace(certificate,segments=())
     assert not verify_shell_boundary_sweep(forged,ref,paths,durations=(1/8,),
                                           witness_hint=hint,limits=BoundaryProofLimits())
+
+def test_independent_nonmidpoint_partition_covers_the_same_constant_path():
+    from phymeo.constraints.shell_boundary import BoundaryTimeCell
+    ref,x,hint,_,_=control("C2")
+    paths=(np.stack((x,x)),)
+    receipt=certify_shell_boundary_sweep(ref,paths,durations=(1/8,),witness_hint=hint)
+    segment=receipt.segments[0]
+    root=segment.cells[0]
+    assert root.children==()
+    # All actual points/stars/supports are constant. Reuse their exact constant
+    # polynomial facts as an externally authored proof, not a producer rerun.
+    assert all(len(row[1])==1 for row in root.polynomial_facts)
+    first=BoundaryTimeCell((F(0),F(1,3)),1,(),root.polynomial_facts,root.sqrt_bits)
+    second=BoundaryTimeCell((F(1,3),F(1)),1,(),root.polynomial_facts,root.sqrt_bits)
+    nodes=(dataclasses.replace(root,children=(1,2)),first,second)
+    alternate=dataclasses.replace(receipt,segments=(dataclasses.replace(segment,cells=nodes),),
+                                  created_cells=6)
+    assert verify_shell_boundary_sweep(alternate,ref,paths,durations=(1/8,),
+                                       witness_hint=hint,limits=BoundaryProofLimits())
+    missing=dataclasses.replace(alternate,segments=(dataclasses.replace(segment,cells=nodes[:-1]),))
+    assert not verify_shell_boundary_sweep(missing,ref,paths,durations=(1/8,),
+                                           witness_hint=hint,limits=BoundaryProofLimits())
+
+
+def test_changing_director_f1_is_explicitly_outside_first_path_domain():
+    from phymeo.geometry._shell_contact_field import FieldArithmetic, Meter
+    from phymeo.geometry.shell_boundary_sweep import _actual_polynomials, _director_identity
+    # Original F1: q(t)=1/8+t/8. Independently c_+=(0,-2q,2),
+    # c_-=(0,2q,2), S_0=S_1=(0,0,4), S_2=c_+, S_3=c_-.
+    # dS_2 cross S_2(0)=(-1/2,0,0), dS_3 cross S_3(0)=(1/2,0,0).
+    original={"nodes":(0,1,2,3),"faces":((10,(0,1,2)),(20,(1,0,3)))}
+    first=np.array([[-1,0,0],[1,0,0],[0,1,1/8],[0,-1,1/8]],dtype=np.float64)
+    second=first.copy()
+    second[2:,2]=1/4
+    limits=BoundaryProofLimits()
+    meter=Meter(limits.strict_limits)
+    a=FieldArithmetic((),meter,limits)
+    _,_,_,stars,_=_actual_polynomials(original,np.stack((first,second)),meter,(0,1,2,3))
+    assert stars[2]==((F(0),),(F(-1,4),F(-1,4)),(F(2),))
+    assert stars[3]==((F(0),),(F(1,4),F(1,4)),(F(2),))
+    expected={0:(F(0),F(0),F(4)),1:(F(0),F(0),F(4)),
+              2:(F(0),F(-1,4),F(2)),3:(F(0),F(1,4),F(2))}
+    squared={0:F(16),1:F(16),2:F(65,16),3:F(65,16)}
+    with pytest.raises(ShellUnresolved) as raised:
+        _director_identity(original,stars,(None,None,expected,squared),a)
+    assert raised.value.category=="unsupported_constant_director"
+    # This unit control exercises the actual input-derived domain predicate;
+    # it does not use an unrelated malformed cluster hint as a rejection oracle.
+
+@pytest.mark.parametrize("mutation",("transport","zero_identity","endpoint","whole_map","same_count_cells"))
+def test_whole_path_facts_cannot_be_replaced_by_endpoint_or_hash_claims(mutation):
+    ref,x,hint,_,_=control("C2")
+    paths=(np.stack((x,x)),)
+    certificate=certify_shell_boundary_sweep(ref,paths,durations=(1/8,),witness_hint=hint)
+    segment=certificate.segments[0]
+    if mutation=="transport": changed=dataclasses.replace(segment,component_translations=())
+    elif mutation=="zero_identity": changed=dataclasses.replace(segment,cross_identities=segment.cross_identities[:-1])
+    elif mutation=="endpoint": changed=dataclasses.replace(segment,endpoint_points=segment.endpoint_points[:1])
+    elif mutation=="whole_map": changed=dataclasses.replace(segment,map_functions=segment.map_functions[:-1])
+    else:
+        root=segment.cells[0]
+        changed=dataclasses.replace(segment,cells=(dataclasses.replace(root,span=(F(0),F(1,2))),))
+    forged=dataclasses.replace(certificate,segments=(changed,))
+    assert verify_shell_boundary_sweep(forged,ref,paths,durations=(1/8,),witness_hint=hint,
+                                       limits=BoundaryProofLimits()) is False
+
+
+def test_inner_recheck_is_in_the_original_aggregate_created_cell_budget():
+    from phymeo.constraints.conforming_shell import ShellProofLimits
+    ref,x,hint,_,_=control("C2")
+    limits=BoundaryProofLimits(strict_limits=ShellProofLimits(max_time_cells=1))
+    # A constant segment needs one producer root AND one independent checker root.
+    # A reset between those passes would incorrectly return a successful receipt.
+    with pytest.raises(ShellUnresolved) as raised:
+        certify_shell_boundary_sweep(ref,(np.stack((x,x)),),durations=(1/8,),witness_hint=hint,limits=limits)
+    assert raised.value.category=="time_cells_exhausted"

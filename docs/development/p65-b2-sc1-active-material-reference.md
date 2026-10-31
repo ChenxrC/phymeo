@@ -771,3 +771,42 @@ The [implemented full position score](../../src/phymeo/solvers/_thick_contact_wo
 Under that ADDITIONAL verified bound, power0 would be accepted for the exact full-step comparison. O(p_first_plus)<=tau is not proved here, and stored/native gap intervals, normal/alpha evaluation and actual delivery remain outside this ideal comparison. In particular this does not assert that power0 in the current implementation passes.
 
 Later candidates need their actual complementarity metric and every other score component, not just the Euclidean pressure contraction or this first-trial result. No512-step progress rate, extra replay allowance, finite-iterate nonpenetration, SC1 perturbed-entry/window, SC2 birth/terminal, original energy/angular/NUM005 or transaction claim follows. The ordinary-mass physical integration contract remains NOT_FROZEN; no implementation or execution grant is added.
+
+
+## 13. First trial with a tolerance-selected material sweep count
+
+The inner scene evaluates its position metrics after each complete sweep. The accepted report records the sweep count actually used by that replay. Two pressure trials can stop after different counts. The thick workspace requires the inner and outer tolerance and reference scales to agree. The finite terminal adapter forwards the base position metrics and records its own count. [Scene stepping](../../src/phymeo/runtime/scene_stepper.py), [thick workspace settings](../../src/phymeo/solvers/dynamic_robot_thick_contact.py), [terminal adapter](../../src/phymeo/runtime/finite_contact_terminal.py).
+
+Use the exact SC1 entry, controls, units and pressure ball of section12. Compare a fixed 512-sweep ideal material endpoint with an endpoint stopped after M complete exact sweeps from the same predictor and fresh zero multipliers. Assume 1<=M<=512 and that all four exact constitutive residuals at M are at most tau in absolute value. The original references and the three unit rest lengths make each constitutive scale one. The bending scale is also one for all three rest angles. The comparison allows the stopping count to vary independently at every pressure. [Material position metrics](../../src/phymeo/solvers/composite_cloth.py).
+
+**Uniform displacement tail.** Write R_M for the largest of the four constitutive residual magnitudes. Section6 of the local material analysis bounds movement in one complete sweep by 24(33/32)R_M/A and reduces the entrance residual by at least a factor of 64. Summing from M onward gives
+
+    ||y_M-y_512||_2 <= (176/7)h^2 R_M <= 26h^2 tau.
+
+The robot coordinate is identical at the two counts for this fixed pressure. The comparison uses the same partial-row domain and ordered history on both sides. Also R_0<1/20 on this pressure ball. The bound 64^(-M)R_0 already satisfies the ideal material tolerance by M=2 for tau=2e-5 and by M=4 for tau=1e-8. Other participants and evidence gates can still determine the actual stopping count. [Ordered sweep bound](p65-b2-local-row-derivative-bounds.md).
+
+The segment between the two material endpoints lies in the convex outer domain. There the raw area derivative has norm less than 3 and the area exceeds or equals 959/1024, so the derivative of either normalized face normal has norm less than 4. Changing from y_512 to y_M thus changes each lower height by at most (1+4rho)||y_M-y_512||. For u=g/h this gives the uniform component error
+
+    ||u_M(z)-u_512(z)||_infinity <= D,    D=28h tau.
+
+The finite support result also extends to these stopped endpoints. The repeated nodal vertical map on cloth has norm sqrt(2). Hence the stopped relative nodal vertical gap vector has norm less than (2 sqrt(2)+26 sqrt(2) tau)h^2 <3h^2. Its tilt correction has norm at most 4rho(3h^2)^2. This gives the same lower-vertex bound |g_fi|<4h^2 and upper-vertex margin from section12. Along the reference-entry affine path the relative nodal gaps scale by the path fraction. The square clearance, maximizing direction and original material-address coverage follow there as well.
+
+**The full first step stays inside the proved domain.** Write u=u_512, R=||u(0)||_infinity and t=a_0/m. Sections9 and12 give 1/14<t<=2/7 and R>=(99/1024)h. On the original tolerance grid,
+
+    D/R <= (28*1024/99)tau <1/160.
+
+Let u_s(0) be the independently stopped velocity-scaled gaps at the starting pressure. All its entries are negative because the smallest magnitude of the six negative components of u(0) is at least 66R/103. Both candidates p_1=-a_0 u(0) and p'_1=-a_0 u_s(0) therefore have positive coordinates. Write z_1 and z'_1 for their range parts. Orthogonal projection gives
+
+    ||z'_1-z_1||_2 <= a_0 sqrt(6) D < m t R/64.
+
+The row norm of D_z u_i is less than 4/m on Q_bar. Indeed the row norm of A_n is at most its row sum 7/(2m), and the section12 derivative correction is below (95 sqrt(2)+2)h^2/m. Integration from p_* to zero gives e_0=||p_*||>=mR/4. The fixed-count first step leaves a distance of at least (5/6)t e_0 to the boundary of Q_bar within S, exceeding the range shift just bounded. Thus z'_1 lies in the ball before any material or gap bound is applied at z'_1.
+
+**Contact descent with two different stopping counts.** At z'_1 let the material trial use any count satisfying the stated residual gate, independently of the count at zero. Use the displacement tail at z'_1 and the fixed-count derivative bound along the segment from z_1 to z'_1. The resulting velocity-scaled gap differs from u(z_1) by at most (1+4 sqrt(6)t)D <= (1+10t)D in maximum norm. Retain the section12 contact score with the original unit reference speed, full SAT penetration and each owner's min(k_i p_i,u_i). At zero its value C_s(0) is at least R-D. At the stopped candidate C'_s <= ||u_M(z'_1)||_infinity for its own stopping count M. Section12 now gives
+
+    C_s(0)-C'_s > (3/2)tR-(2+10t)D > tR.
+
+For the last inequality use 2/t+10<38 and D<R/160. This is a strict margin for the full first contact update in the ideal comparison, even when the two counts differ. It requires neither differentiating the count-selection rule nor forcing all inner calls to run to the cap.
+
+**Connection to a scored replay.** In the existing finite replay, a failed inner report or robot ledger aborts the candidate before score comparison. For a successful inner scene report its position, velocity and optional verification residuals have each met the common tolerance. The robot ledger enforces its separate dynamics, input-integral and configuration bounds. The existing distance ledger checks each material term and returns the upward-rounded maximum. For a finite exact term bounded by the stored binary tolerance, its least binary64 upper bound is also at most that tolerance. These are postconditions of the existing successful path. [Replay checks](../../src/phymeo/solvers/_finite_contact_replay.py), [scene reports](../../src/phymeo/runtime/program.py), [distance ledger](../../src/phymeo/validation/material_path.py).
+
+For B2, the composite and R7 ledgers return detailed path and equation diagnostics. The typed integration still needs all checked residuals aggregated conservatively, including those that are checked internally but absent from the returned maxima. Positive delivery, actual inner replay success, and containment of the stored candidate in the ideal comparison require independent proofs. A future first-step comparison can spend at most the strict contact margin tR on its combined start/candidate score uncertainty while retaining strict descent. Also C_s(0) >= (159/160)(99/1024)h > 2e-5 on all three grids. Thus a first candidate satisfying the full noncontact gates at tau and lying within that descent margin would meet the strict full-score branch. Later trials, SC2 and whole-window energy, angular and transaction gates remain open.

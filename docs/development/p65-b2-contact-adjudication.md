@@ -132,3 +132,10 @@ Section12 of the [SC1 note](p65-b2-sc1-active-material-reference.md) strengthens
 The complete changing-gap derivative also gives u_plus=(I-a A_n)u+epsilon with ||epsilon||_infinity<t||u||_infinity/12, t=a/m. At the zero-pressure start all six gaps are compressive with a bounded component ratio, so the first positive trial's contact contribution decreases by a factor below1-3t/2, and below25/28 for the exact full step. This contribution includes the exact whole-prism penetration and the original complementarity expression; it is not identified with the full position score.
 
 The full score still includes the material report and every native audit component. Their candidate bounds, stored gap/step/normal and delivery errors, later-trial acceptance/progress within the existing budget, finite-iterate nonpenetration, window/SC2 and the original physical gates remain unresolved. No project execution or physical implementation grant changed; the full contract remains NOT_FROZEN.
+
+
+## 2026-10-31 tolerance-selected sweeps in the first SC1 trial
+
+The inner scene checks its position metrics after each complete sweep, so the initial replay and its first pressure trial can have different sweep counts. Given the exact four-row constitutive gate at each stop, the remaining ideal motion to sweep 512 is at most 26h^2 tau. Using the full triangle offset, this changes each velocity-scaled gap by at most 28h tau. The pressure-domain margin contains the perturbed first candidate. Together these bounds prove a first contact-score decrease greater than tR, where t is the full step divided by cloth mass and R is the fixed-count maximum initial velocity-scaled gap. [SC1 derivation, section13](p65-b2-sc1-active-material-reference.md).
+
+The current finite replay checks inner acceptance and ledger bounds before it scores the candidate. Establishing those preconditions for ordinary-mass B2 still requires typed residual aggregation and a bound on actual stored and native errors. Later trials, full physical windows and SC2 still await verification.

@@ -191,3 +191,58 @@ An actual finite endpoint need not be exactly flat. Its offset gap and current J
 The complete proof still needs the true offset-gap/director/normal extrema over every physical segment, any support switches, full actual material/contact iteration and selected replay history, original held/terminal delivery and ideal-map uncertainty, propagation from perturbed entry states through all physical steps, all native R7 errors and the original energy/angular audits. SC2's open approach, perturbed birth time and terminal transfer are untouched.
 
 The reference's all-step active C and positive pressures are exact ideal facts, whereas the ball and replay statements above concern ONE step started from that ideal reference. None is a new measured test result. All fixtures, material variants, meshes, h grids, rebuilds, failure/transaction requirements and budgets remain unchanged; the ordinary-mass coupled physical contract is still NOT_FROZEN.
+
+## 7. Existence of one finite-material contact endpoint, without an outer-loop claim
+
+There is a further ONE-STEP conclusion for an input exactly on the reference branch. It concerns at least one mathematical fixed point of T_N, not the state obtained after512 actual contact iterations.
+
+Every ideal material row is smooth on the admitted neighborhood and has denominator at least A. Its finite512-sweep composition is therefore continuous in p. The pressure ball K is compact and convex in the four-dimensional space S, and section5 proves T_N(K) is contained in K. Brouwer's theorem gives a fixed point p_star in K.
+
+The full frozen-gap residual of a finite replay belongs to S, since it is
+B_n[y_N(p)-y(p_c)]. At a fixed point A_n^+ times that residual is zero. The restriction of A_n^+ to S is invertible, so the FULL residual is zero, not merely its projection. All six owner pressures remain greater than11h/4096. No uniqueness of this finite-material fixed point or convergence of a particular outer iteration follows from Brouwer's theorem.
+
+### Size and physical gap of this endpoint
+
+At p_star the previous error recurrence gives
+
+    ||p_star-p_c||_A <=delta_N/(1-kappa)<h^3/32.
+
+Combining material-root sensitivity, the cloth lower mass bound and finite-replay error yields
+
+    ||y_N(p_star)_cloth - (X+z_(k+1)e_z)||_2
+      <[sqrt(2)/(32(1-38/A))+1/64]h^4
+      <h^4/16.
+
+For the last inequality, sqrt(2)<10/7 and
+1/(1-38/A)<=2048/2029<64/63 give coefficient
+20/441+1/64=1721/28224<1/16.
+
+Because every row of the frozen-gap residual is zero, all four cloth z coordinates equal the robot q at this endpoint. The local face-area bounds preserve the original positive orientations. Consequently both oriented face normals and every raw-area-star director are EXACTLY+e_z, including the shared hinge nodes. Thus the actual lower offsets equal x_i-rho e_z and have zero actual normal gap to the robot patch. This is a consequence of a full zero residual at this mathematical endpoint; it is not an implication from a merely small residual.
+
+Each ideal material row also conserves total cloth position weighted by mass: its increment obeys sum_i m Delta x_i=sum_i G_i Delta lambda=0, by translation invariance of the distance and angle laws. The held normal contributions of cloth and robot cancel in the corresponding combined mass-weighted position. Therefore
+
+    sum_i m (x_i,star)_z +4m q_star
+      =8m(z_k+h v_k)+4m h^2 g.
+
+All five vertical coordinates equal q_star, so
+q_star=z_k+h v_k+h^2 g/2=z_(k+1).
+The endpoint deviation from the reference is consequently horizontal only.
+
+Both the starting reference and this endpoint have a shared vertical coordinate. Their entire physical affine segment stays planar with positive oriented face areas; its full directors remain+e_z. The two triangles stay on opposite sides of their shared oriented edge, so their closed intersection is exactly that shared edge, and their vertical material extrusions share only the corresponding material side. Their footprint remains inside the original robot patch. This proves the elementary flat geometry for this one exact endpoint/segment, without asserting that a rounded outer-loop iterate has the same support feature.
+
+The endpoint bending residual is exactly-r. Since the finite material residual satisfies |C_B+A ell_B|<=64^-512/800<r/2, its actual ideal finite-replay multiplier obeys ell_B>r/(2A)>0. Thus neither active material nor held pressure has disappeared from this finite-material existence statement.
+
+### One-step endpoint energy for this ideal root
+
+Let d be the horizontal cloth displacement from the reference endpoint, with
+||d||<h^4/16. If the ideal step reconstructs velocity as its actual displacement divided by h, the vertical velocities equal the reference velocities. The only additional kinetic term is m||d||^2/(2h^2), and the three distance energies together are at most6||d||^2, since each original unit edge changes length by at most2||d||. Bending energy remains r^2/2 and gravitational energy remains the reference value.
+
+Its original-input endpoint defect therefore obeys
+
+    D_E <= -m h^2/64 +(m/(2h^2)+6)||d||^2
+         < -m h^2/64 +h^6/256+3h^8/128
+         <0.
+
+For an elementary uniform sign check, m>=1/2 and even h<=1/2 make the last expression at most(-64+5)h^2/8192<0; the original three h values are smaller. This bound includes the finite material drift's in-plane kinetic and strain energy. It does not subtract contact work or cancel positive defects between steps.
+
+This remains an ideal one-step existence and endpoint-energy theorem. It does not provide the current coordinator's finite-iteration convergence, actual pressure/delivery certificate, native reconstruction error, energy enclosure width, angular/NUM005 bound, or propagation from a perturbed entry into a full physical window. In particular, an approximately flat numerical endpoint still needs the original exact support/path checks. The ordinary-mass physical contract remains NOT_FROZEN.

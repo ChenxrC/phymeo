@@ -131,3 +131,25 @@ Never rerun accepted FG99/oldS2/R7/G2/adapter/quotient under this authoring gran
 Finish both new reports with exact public schema/API, mathematical/implementation limitations, all tests UNEXECUTED, twelve path SHA256/Git blobs, small commits and clean CODE_READY_TESTS_PENDING / AUTHORING_SLOT_RELEASED. A contradiction with fixed geometry/proof/resource assumptions must be sent as minimal pure text to parent, not patched by changing controls or budgets.
 
 General clipped contact, changing-director/irrational-event paths, actual loaded folding, complete normal-cone/friction/capacity, exactly-once force/terminal delivery, original-input energy/angular, ordinary-mass active B2/R7, external finite/articulated robots, transactions/native evidence, dual-arm cloth transfer and whole P6.5 remain mandatory. Preserve original physical tolerances and zero penetration. This finite new geometry component does not claim their completion.
+
+## 2026-10-31 authoring clarification: public verification resource receipt
+
+This fills the previously unspecified return type; it does not alter geometry, proof domains, arithmetic/cell limits, the twelve-file allowance or NO EXECUTION SLOT. The original author may apply it within the ongoing CODE_AND_TEST_AUTHORING_ONLY task.
+
+All three new public verify functions return an immutable BoundaryVerificationReceipt on success and the literal False on rejected/unknown input under their declared error handling. A successful receipt has __bool__ returning True. Define it only in the already allowed NEW constraints/shell_boundary.py. The old verification APIs stay unchanged.
+
+Required fields:
+- schema='shell-boundary-verification-v1';
+- verification_kind in {'static','sweep','point'};
+- reference_id and original_input_binding from the independently authenticated original inputs;
+- verified_certificate_binding, a deterministic binding of the complete bounded canonical claim actually checked, including its resource fields, not merely the original-input hash;
+- policy, the immutable verified BoundaryProofLimits;
+- status, exactly the independently expected weak_material_geometry_certified, weak_material_path_certified or exact_boundary_map_only for its kind;
+- precision='ideal-from-stored-fp64';
+- operations, created_cells and peak_fraction_bits from THIS successful public invocation's fresh meter.
+
+Resource values are builtin integers and satisfy the original limits. Static/point created_cells are their actual zero; sweep created_cells is the independent verifier's actual total, including created parent/failed/sibling cells required by the proof. Do not substitute the producer-plus-inner combined count or copy any claimed producer/checker count. A receipt is constructed only after the entire independent high-level check and its resource enforcement succeed. Full certificate binding/serialization must be bounded, deterministic and honestly accounted for; if it performs checked arithmetic, those operations remain on the same meter. No hidden second verifier invocation, test-only observation hook, global cache or post-hoc inferred count.
+
+The internal independent _check_* engine can retain its boolean/internal return and receives the continuing producer counter for inner checking. It need not construct a public fresh-counter receipt, reset a counter, or repeat any geometry for this API clarification. Public wrappers allocate one fresh meter, run the checker once, and publish that same call's observations.
+
+Update the existing five authored tests and both final reports within their current paths. Save each successful public receipt alongside the full claim and original inputs in the predeclared payload, so its certificate binding, kind/status and observed work can be audited without a rerun. Add independent checks of immutable receipt data, exact kind/status/bindings, differing valid claims sharing original inputs, genuine meter rather than claimed counts, and literal False for rejection/resource failure. No negative case acquires a partial successful receipt. False means verification did not certify the claim; it is not a penetration proof. Truthiness and the scoped status never imply physical, capacity, energy or native acceptance. All authoring remains UNEXECUTED.

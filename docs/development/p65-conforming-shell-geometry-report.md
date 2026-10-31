@@ -1,3 +1,71 @@
+# S2-FG conforming geometry: focused host validation
+
+Status: **FOCUSED_HOST_GEOMETRY_VALIDATED; PARENT_ACCEPTANCE_PENDING**. The complete six-file host selection passed once, 99 tests in 39.52 seconds, RAW_EXIT=0. The same-run saved F1 audit also passed. This is strict geometry and complete director-map validation only, not physical contact, runtime trajectory, native/backend, general fold, or P6.5 acceptance.
+
+## Validation authority and immutable evidence
+
+Original clean authoring checkpoint: a3f80fb478a824f2c6b66c9e15ff194d93f81735. The earlier authoring checkpoints were genuinely UNEXECUTED then; none is retroactively TDD RED/GREEN. Parent's sole serial validation grant is debc1565e5c4109c5972dbb33bc74e77082417f4, grant SHA256 b7c749ce5caf092d1295862607f5713b36ab3d6bef8dbb286d73715649f2251b. The unchanged design SHA256 remains f3e5295a5a553e1b876b1b946a9eb6b465997c9bd58e1c5559798e8ad3a7776d. No parent merge was performed.
+
+Evidence root: C:/Users/38347/AppData/Local/Temp/phymeo-p65-s2-fg-a3f80fb-serial. Original snapshots, parent contract copies, 204-entry initial source/config/report manifest, original dependency file hashes, every command/environment/launch/completion/process/raw-output/raw-exit receipt, each before/after manifest and before-source snapshot are retained there. The initial fourteen SHA256/HEAD blob/filtered working blob checks had zero mismatches; initial 204 copied snapshots also had zero mismatches. No evidence was compressed, removed, overwritten or regenerated through another geometry run.
+
+Two preflight attempts were blocked BEFORE launch: 01 at 09:47:14+08 by foreign Python3.13 PID60136; 02 at 09:48:05+08 by external CRM archive QA PIDs49324/42640. Their guards remain, with no invented raw executable exit. Those processes ended naturally without intervention. Guard observation 05 at 09:51:44+08 was zero matching execution, followed by each command's own immediate guard. Ancillary Node services were recorded separately and untouched; matching execution zero never means machine process zero.
+
+Environment run05 used the existing original .venv-py311/Scripts/python.exe: Python3.11.15, NumPy2.4.6, pytest9.1.1, Ruff0.17.2. PYTHONPATH explicitly names this child/src and all SIX actual module __file__ values were asserted to match it. PYTHONDONTWRITEBYTECODE, PYTEST_DISABLE_PLUGIN_AUTOLOAD, PYTHONNOUSERSITE and all four OMP/OPENBLAS/MKL/NUMEXPR thread caps were1. No producer/verifier was called during this environment check. No installation or pin/backend change occurred.
+
+## Original outcomes and scoped cleanup
+
+The run directory numbers reflect prepared commands; actual temporal order is05,03,04,06,07,08,09,10,11,12. Each command is serial and has its own immutable source/guard receipts.
+
+| Run | Actual outcome | RAW_EXIT |
+| --- | --- | --- |
+| 05-environment | Six child imports and existing environment asserted | 0 |
+| 03-ruff-check | FIRST outcome: five import-block findings plus E731 test-local lambda | 1 |
+| 04-ruff-format-check | FIRST outcome: twelve files would reformat | 1 |
+| 06-ruff-import-fix | Five scoped import findings fixed | 0 |
+| 07-ruff-format | Twelve allowed files formatted | 0 |
+| 08-ruff-check | All twelve-file checks passed | 0 |
+| 09-ruff-format-check | Twelve files already formatted | 0 |
+| 10-style-ast | Explicitly qualified AST/import comparison passed | 0 |
+| 11-host-complete | Complete six files, 99 passed in39.52s | 0 |
+| 12-saved-f1-audit | Same-run complete payload/coverage/sidecar audit passed | 0 |
+
+The only post-code edits to Python were import ordering, formatting and the single test-local twice lambda rewritten as a def with the identical argument/Interval return expression. This is not raw AST identity: seven files have identical raw AST; the other five differ by four import-order ASTs and that one local lambda-to-def. The saved comparison sorts only contiguous import blocks and explicitly transforms that single lambda; all twelve then match. It makes no independent execution or general semantic-equivalence claim. Original bytes and all first static failures remain available. No oracle, limit, threshold, fixture, input grid or assertion was changed. There was no numerical failure, numerical repair, exploratory collection or repeat of an unchanged green suite.
+
+Cleanup/tested-code commit: **be650fda9254666be20fabdee23e0b772293d23f**. It was clean before the host run. The command was the existing Python interpreter followed by -m pytest tests/test_conforming_shell.py tests/test_shell_intervals.py tests/test_shell_directors.py tests/test_shell_embedding.py tests/test_shell_sweep.py tests/test_shell_certificate_verifier.py -q -x --tb=short -p no:cacheprovider --basetemp C:/Users/38347/AppData/Local/Temp/phymeo-p65-s2-fg-a3f80fb-serial/11-host-complete/basetemp. This absolute basetemp was checked absent immediately before launch. Raw result:99 passed; no skip, deselection or fallback. The 204 source/config/report entries before and after run11 are identical, as are those surrounding audit12. Final report changes are the only later changes; all202 non-report entries remain checked against the tested snapshot in the final receipt.
+
+## Same-run F1 evidence and scope
+
+The saved-file reader imports no Phymeo module and performs no new geometry/physics call. Its authored pairing is fixed first: pytest's h decorator is recorded before variant, yielding h1/64,1/128,1/256 blocks of identity/rotation/translation/permutation. _mk_tmp truncates the function name to30 characters, then appends ordinals0..11. For each ordinal it requires the exact whole and every step filenames of rebuild0 and rebuild1. It rejects absent/extra files, duplicate resolved physical directories, a missing rebuild and mismatched complete bytes. No matching output digest is used to choose membership; no field is removed or normalized.
+
+Audit12 verified12 authored cases,24 independent reconstruction windows,24 whole-T certificates,448 substep certificates,472 complete JSON payloads and472 SHA256 sidecars. Each of236 fixed payload pairs is byte-identical. It independently checks the frozen original reference IDs/order/coordinates/rho/faces, affine endpoint input coordinates and exact durations, every certificate's reference binding identity, complete accepted time spans/tree leaves, six tetra IDs, fifteen pair incidences, both endpoint publication receipts, original operation ceiling and computed component k<33/64. Complete payload byte comparison retains all other geometry/publication/domain/charge/reference/partition fields. The executed tests separately ran the independent verifier on every generated certificate. The complete same-run directory and raw audit output, including every payload digest and byte size, are preserved.
+
+F1 remains the frozen analytic free-fold geometry inputs T1/8, h1/64,1/128,1/256, four transforms and two rebuilds. It is not a runtime replay of free-particle dynamics. F2's complete five-node J,65/32 response, hold/slip impulse, work/reaction/torque assertions passed in the same99-test selection; no physical F2 trajectory artifact is invented. All authored adverse topology/director/incidence/reference/path/publication/partition/resource/binding controls belong to that same full selection. The exact rational nonmidpoint partition and metered unary-negation cases were executed without changing their original limits.
+
+## Exact final tested Python bytes
+
+The two final report SHA256/Git blobs are supplied in final-source-manifest.json and the out-of-band clean handoff; no report attempts a self-referential digest. final-source-parity.json binds the202 unchanged source/config entries to run11. evidence-inventory.json and its SHA256 sidecar cover every retained evidence file other than their own self-referential entries. Final Git/status and fresh execution-zero release are recorded after this report commit in final-release.json; the parent independently audits before accepting/integrating.
+
+| Path | Tested working-file SHA256 | Tested Git blob |
+| --- | --- | --- |
+| src/phymeo/constraints/conforming_shell.py | ec9337348ea5ac8ca5bde5aaad0fe3707adb6afdfc92c8cb54d1ff32b0b9ce3c | e90d84e11c6a350cc7b9a15b46c55b9d1755cce4 |
+| src/phymeo/geometry/_shell_intervals.py | 644a42b69f27159a5c13ed2a0d24afdad54ab064686887c2eeca64c24b331209 | b671b3ea243c52d1626df129caa0fc3b848e931b |
+| src/phymeo/geometry/shell_directors.py | 93a625f3fcd53f27051c5c470f430cd5130947118d1a5a7fec559b7c12ca8014 | cf8a1c288a5651742ffb2cf1ccc2460f69a3e8f6 |
+| src/phymeo/geometry/shell_embedding.py | ed833268ad8a0de789d3c9e1841d3ff757b41113af183e2f1fe789c8d9bf2fc5 | 460d4d692d3ed0164bd93f1111b989d3002e4edf |
+| src/phymeo/geometry/shell_sweep.py | 4e677947c3c3b09f29148e9670d302b0b646cad4c2667717240734b4f3f0f8c4 | 565bbb0027f9c67d14f3055c67b8ee25ed2db9c5 |
+| src/phymeo/validation/conforming_shell.py | 372c0bfcf46d83012bd842a02d92371ef2b40b6f200e81e5363f7ceb3b464ad4 | b158975e5bf37759378134e768f933c58a1fd466 |
+| tests/test_conforming_shell.py | 82f4ae30d5739c27c3acb1bda2cf65931f9b1e206d1feeeb4ce7a7170799f9d5 | 413a8cef7e978cfdfb9fa4dddc3efa4e13157dc2 |
+| tests/test_shell_intervals.py | 6af8a900c0e8cf8bb8713b1b66c1508c80e79a254b535dc4ac5e676b4efc0752 | 4af13b2c4f850c0b8dd35c57ee2d49d9b386d0e7 |
+| tests/test_shell_directors.py | 0b21a5eed09e3844ce3382a8785d2a8042f5aa375d190e3def865fdff2d3b9d2 | f5783d181b8f4f1f4645bf4e6ac44a29464079aa |
+| tests/test_shell_embedding.py | fc716c10848c9a0980b25b35148e45ff6313260a50770e6a435d025e5778f0fd | 16f81decda33d2f1dd351efdb13d6e2ad7abec17 |
+| tests/test_shell_sweep.py | a703d8f0bc8cbaac7ccf7417d7ebeb5b77d225b755fec61f493bffb7eae86a5b | 74835c516bfba61f94140c03576d6f6d79504f26 |
+| tests/test_shell_certificate_verifier.py | d2cbd4d715922c56d8792a44f376d42b5ea0f57c4964cdab835d062518bf8006 | eb20f1bfbd304a109ff326768331358a785e65d9 |
+
+Only the original14 NEW paths relative to c35a13a changed. No shared seam, export, old source/test/report, dependency, parent contract or runtime file was edited. No helper/reviewer, remote action, old suite, interpret/CUDA/C++, compiler/build/profile or install was used. Weak remote boundary touching, loaded rotating directors, contact capacity/cones/transactions, B2 ordinary-mass nonlinear integration and robot/fold/grasp/full P6.5 remain open. Positive local tetrahedra alone and blanket incident exclusions are still insufficient; unknown remains unknown.
+
+## Preserved original authoring record (historical)
+
+Everything below records the UNEXECUTED a3f80fb authoring handoff and its original hashes/names. Its code-only status statements apply to that checkpoint, not to the later host results documented above.
+
 # S2-FG conforming geometry: code-only handoff
 
 Status: **CODE_READY_TESTS_PENDING**. This is authoring of geometry and complete director-map prerequisites only. Every import, collection, numerical probe, test, lint, formatter, compilation, build, install, profile, native command and remote action remains UNEXECUTED. No helper/reviewer was created. No execution slot is held. AUTHORING_SLOT_RELEASED at the final clean Git handoff; parent must grant the later sole focused-host slot explicitly.

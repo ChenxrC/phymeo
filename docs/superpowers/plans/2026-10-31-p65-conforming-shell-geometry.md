@@ -6,13 +6,13 @@
 **Architecture:** Six additive modules; exact bounded rational intervals; independently checked convex reference coverage and global PL injectivity. No runtime/contact wiring.
 **Tech Stack:** Existing Python, NumPy, stdlib Fraction; no new dependencies.
 **Spec:** ../specs/2026-10-31-p65-conforming-shell-geometry-design.md
-**State:** CODE_READY_TESTS_PENDING at clean child a3f80fb478a824f2c6b66c9e15ff194d93f81735. Parent read all fourteen files and verified their SHA256/Git blobs with zero mismatch. Tasks 1-4 checkmarks record AUTHORING ONLY; no import, collection, static or test pass is implied. The separate task-2-conforming-shell-geometry-validation-grant.md grants the original S2 owner sole focused host validation when the parent followup is delivered. Validation and integration remain pending.
+**State:** HOST_GEOMETRY_ACCEPTED_AND_INTEGRATED; tested be650fda/report df904777, parent merge83c933e7. Complete six-file99pass and same-run472 saved payloads accepted with source/evidence parity; execution slot released. Tasks1-4 remain authoring provenance; Task5 records actual scoped verification. Full contact physics/P6.5 and the last follow-through item remain open.
 
 ## Global constraints
 
 - Exactly the fourteen NEW files in the spec; all old sources/tests/reports/exports remain parent-owned.
 - Original S2 tree starts clean c35a13a645bc68e912d390779ec29732ef07b644. Read parent spec by absolute path, do not merge/reset.
-- Every executable action is serialized. Only the separate sole validation grant authorizes the new host environment/static/six-file selection; all other execution remains deferred.
+- Every executable action is serialized. The completed focused-host grant is released and authorizes no rerun; further execution requires a distinct explicit selection.
 - Max nodes64/faces40/tetra128/star16/pairs8192, created time cells4096/depth32, rational bits4096/operations2000000, sqrt precision64..4096; only stricter policies.
 - Strict k<1; independent positive orientation/law/reference coverage. No epsilon identities, repair, sampling-only safety or coordinate/time fixture branches.
 - F1 complete T1/8 and three h1/64,1/128,1/256; two rebuilds and four transformations. F2 complete map and independent65/32 algebra. Neither is an executed physical trajectory in this component.
@@ -70,12 +70,12 @@ Consumes original input arrays plus untrusted receipts; never calls a producer.
 - [x] Record exact APIs/field spellings, authored tests, remaining physical capabilities and initial UNEXECUTED status in both reports.
 - [x] Hand off exact fourteen-file hashes/Git blobs and clean small commits as CODE_READY_TESTS_PENDING, then release authoring. No execution.
 
-## Task 5: sole focused host validation, GRANTED ON FOLLOWUP
+## Task 5: focused host validation accepted; slot released
 
 - [x] Parent read the complete final source/tests/reports, exact fourteen NEW paths and hashes/blobs; froze the separate command grant. Receipt: artifacts/p65-parallel-parent-audits/s2-conforming-geometry-code-handoff-01.json (authoring provenance only).
-- [ ] Granted owner records existing host interpreter/current child src import and global process0; no install.
-- [ ] Run scoped static on twelve new Python files, then all six full host test files with fresh checked-absent absolute basetemp, raw commands/logs/exits and original source snapshot.
-- [ ] Preserve first failure; original-form repairs only in fourteen-file scope. No limits/oracles/window/grid relaxation.
-- [ ] Verify same-run geometry receipts/full coverage/rebuild evidence without generating extra physical samples.
-- [ ] Final reports/source/evidence manifests, clean/global0 release; parent saved-evidence audit and normal integration.
+- [x] Granted owner records existing host interpreter/current child src import and global process0; no install.
+- [x] Run scoped static on twelve new Python files, then all six full host test files with fresh checked-absent absolute basetemp, raw commands/logs/exits and original source snapshot.
+- [x] Preserve first failure; original-form repairs only in fourteen-file scope. No limits/oracles/window/grid relaxation.
+- [x] Verify same-run geometry receipts/full coverage/rebuild evidence without generating extra physical samples.
+- [x] Final reports/source/evidence manifests, clean/global0 release; parent saved-evidence audit and normal integration.
 - [ ] Advance later S2-F physical contracts separately; this checkbox does not authorize native/contact execution now.

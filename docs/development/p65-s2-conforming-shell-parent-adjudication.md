@@ -1,6 +1,6 @@
 # S2-F parent ruling: conforming material geometry
 
-Status: GEOMETRY_AND_DIRECTOR_AUTHORING_FROZEN; FULL_CONTACT_PHYSICS_NOT_FROZEN.
+Current status: STRICT_HOST_GEOMETRY_ACCEPTED; FULL_CONTACT_PHYSICS_NOT_FROZEN. See [parent acceptance](p65-conforming-shell-geometry-parent-acceptance.md) for tested be650fda/report df904777,99 host tests and full saved evidence, normal parent merge83c933e7 and released execution ownership. The original authoring ruling below is historical; its no-execution statements describe that earlier checkpoint.
 This ruling follows a complete text reading of the362-line [proposal](p65-s2-conforming-shell-proposal.md), authored at c35a13a645bc68e912d390779ec29732ef07b644 and imported as cf44431bdc8b8e988ea4cfe2cae4e72d2613fc09. Working SHA256 a408663d056ff9883df8c3b3ce1f7230ad5c80bb251a7c72be6eedabcf2f7eff and Git blob33a9f375406dbbfc711f41a2a3bdad429a1a2b7a matched. The import receipt is artifacts/p65-parallel-parent-audits/s2-conforming-proposal-import-01.json. No source, test, numerical probe or executable checker ran for this ruling.
 
 ## Parent decisions and alternatives

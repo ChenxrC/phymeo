@@ -1,6 +1,6 @@
 # S2-FG focused host serial validation grant
 
-Status: GRANTED_SOLE_SERIAL_VALIDATION, activated by the parent followup to the ORIGINAL /root/p65_self_contact_module. No other agent or parent may perform project executable checks until formal release. No further human permission is required under the continuing P6.5 authorization.
+Current status: VALIDATED_ACCEPTED_SLOT_RELEASED. Tested be650fda9254666be20fabdee23e0b772293d23f, final report df9047771224ca9d5b07f8dc1b9940f423ee91ae; complete six-file host99pass and same-run472-payload audit accepted. Parent normal merge83c933e74cf95314c043fdfc4dc87a2422a644c8 preserves all14 blobs/working bytes. See docs/development/p65-conforming-shell-geometry-parent-acceptance.md. The historical grant below authorizes no further execution; original S2 has formally released the slot.
 
 Worktree: C:/Users/38347/.codex/worktrees/p65-self-contact-module/phymeo
 Branch: codex/p65-self-contact-module

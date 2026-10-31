@@ -1,0 +1,134 @@
+{
+  "schema": "p65-sc1-replay-oracle-v1",
+  "status": "HAND_DERIVED_CONDITIONAL_NOT_EXECUTED",
+  "purpose": "Independent expected records for a diagnostic affine-normal pressure proposal. The producer must compute loads from its preceding published positions, not from the expected values below.",
+  "control": {
+    "name": "SC1",
+    "step": 1,
+    "variant": "identity, primary rest and masses",
+    "nodes": ["a", "b", "c", "d"],
+    "owners": ["Ua", "Ub", "Uc", "Db", "Da", "Dd"],
+    "owner_split": "Equal split for the two duplicates of a and b in this predeclared normal quotient. Keep six world requests.",
+    "initial_middle_xyz": [
+      [0, 0, 0],
+      [1, 0, 0],
+      [0, 1, 0],
+      [0, -1, 0]
+    ],
+    "initial_velocity": "zero for all particles and robot",
+    "h_s": "1/64",
+    "particle_mass_kg": 1,
+    "robot_mass_kg": 4,
+    "particle_gravity_z_m_s2": "-1/8",
+    "original_forces_and_robot_effort": "zero",
+    "mu": 0,
+    "rest_rad": "1/1024",
+    "unit_compliances": true,
+    "half_thickness_m": "1/64"
+  },
+  "scales": {
+    "S_m": "2^-39",
+    "U_N": "S/h^2 = 2^-27",
+    "free_pred_z_m": "-2^-15",
+    "common_height_m": "-2^-16",
+    "common_word": "0xb7800000"
+  },
+  "formula": "Start at zero. In each fresh trial let b_i = observed midpoint height_i - observed robot height. Propose F_i_next = F_i + (-b_i + sum_of_four_b/8)/h^2, with m=1. Use h*F_i_next as total integrated normal request per physical node. This is the rank-four restricted affine-normal comparison from the initial maps, not legacy _improve. All actual changing-gap and other gates stay applicable.",
+  "assumptions": [
+    "Binary32 nearest-even elementary operations as written in the kernel; no lost nonzero intermediate or reassociation that changes these values.",
+    "One complete distance-then-bending sweep per native replay with the original native tolerance. Check sweep counts and all independent audits; disagreement is evidence, not permission to force the count.",
+    "At the initial bending row the observed angle differs by strictly less than 16*S radians from 0, -785282*S, -786432*S respectively. This is a discriminator for this oracle only, not a physical tolerance.",
+    "Robot uses the same trial's full negative aggregate, zero bias, scalar mass four and original zero entry. Checked arithmetic and real return path must succeed."
+  ],
+  "trials": [
+    {
+      "id": "free",
+      "request_from": "zero outer start",
+      "force_N": ["0", "0", "0", "0"],
+      "robot_effort_N": "0",
+      "robot_end_z_m": "0",
+      "middle_pred_delta_from_free_pred_in_S": ["0", "0", "0", "0"],
+      "bend_delta": "RN32((2^-10)/4102)",
+      "bend_denominator": 4102,
+      "end_delta_from_free_pred_in_S": ["261761", "0", "-130880", "-130880"],
+      "sum_end_delta_in_S": "1",
+      "joint_pass_claimed": false
+    },
+    {
+      "id": "normal_response_1",
+      "request_from": "free",
+      "fp64_effective_force_minus_1_16_N_in_U": ["-261761+1/8", "1/8", "130880+1/8", "130880+1/8"],
+      "fp32_predict_force_minus_1_16_N_in_U": ["-261761", "0", "130880", "130880"],
+      "fp64_robot_effort_N": "-1/4+U/2",
+      "fp32_robot_effort_N": "-1/4",
+      "robot_end_z_m": "-2^-16",
+      "middle_pred_delta_from_common_height_in_S": ["-261761", "0", "130880", "130880"],
+      "bend_denominator": 4102,
+      "bend_delta_in_S": "131071+23/32",
+      "end_gap_in_S": ["765/2", "0", "-192", "-192"],
+      "strict_support": "reject; c and d penetrate",
+      "joint_pass_claimed": false
+    },
+    {
+      "id": "normal_response_2",
+      "request_from": "normal_response_1",
+      "fp64_effective_force_minus_1_16_N_in_U": ["-262143.5-1/16", "-1/16", "131072-1/16", "131072-1/16"],
+      "fp32_predict_force_minus_1_16_N_in_U": ["-262143.5", "0", "131072", "131072"],
+      "fp64_robot_effort_N": "-1/4-U/4",
+      "fp32_robot_effort_N": "-1/4",
+      "robot_end_z_m": "-2^-16",
+      "middle_pred_delta_from_common_height_in_S": ["-262144", "0", "131072", "131072"],
+      "bend_denominator": 4102,
+      "bend_delta_in_S": "131072",
+      "end_gap_in_S": ["0", "0", "0", "0"],
+      "expected_common_fp32_displacement_words": ["0xb7800000", "0xb7800000", "0xb7800000", "0xb7800000"],
+      "c_y_displacement_m": "3*2^-44",
+      "c_y_published_m": "1+3*2^-44",
+      "c_y_roundtrip_fp32_m": "1",
+      "strict_support": "two flat faces touch along this trial's entire affine path; other original gates remain separate",
+      "joint_pass_claimed": false
+    }
+  ],
+  "first_divergence_order": [
+    "Validate original state, original inputs, selected backend and per-trial represented reference_id.",
+    "Derive requested node and robot impulses from the previous result, then capture actual FP64 Feff and predict/force conversion.",
+    "Capture both predictors and actual distance and bending row inputs, outputs, theta, denominator, delta, sweep count, raw last words and robot q.",
+    "Compare untouched publication, complete metrics and original-input energy/angular/transaction gates. Stop on the first mismatch; keep selected errors and actual verdict."
+  ],
+  "coverage": "Coarse identity primary native first step, and two fine-grid failure predictions for this generator. No production replay, backend execution, full window, SC2, or N2/N3 release.",
+  "scope": "Positive-prefix records below apply only to the original coarse h=1/64. The two mandatory fine-grid negative controls rule out this candidate generator on the original all-h grid with the unchanged R7 ordered native arithmetic.",
+  "unchanged_r7_fine_grid_counterexamples": [
+    {
+      "h_s": "2^-7",
+      "particle_mass_kg": 1,
+      "rest_rad": "2^-10",
+      "trial": "first nonzero affine-normal proposal from the zero-load first sweep",
+      "L_m": "r*h^2 = 2^-24",
+      "bounds_at_bending_row": ["L < z_b-z_a < 3L", "2L < z_c-z_a = z_d-z_a < 4L", "L^3 < abs(g_b,x) < 64 L^3 <= 2^-66"],
+      "first_decisive_operation": "_mul(g_b,x, g_b,x) in the bending denominator",
+      "expected": "Ordered checked FP32 multiplication rejects a nonzero below-normal product; no final displacement result is available. Earlier rejection must likewise be retained.",
+      "actual_run": false,
+      "S_m": "2^-41",
+      "zero_trial_end_delta_from_common_free_predictor_in_S": ["262048", "0", "-131024", "-131024"],
+      "first_nonzero_fp64_predict_force_b_N": "1/16",
+      "first_nonzero_fp32_predict_force_b_N": "1/16",
+      "first_nonzero_predictor_A_G_in_S": ["262048", "393072"]
+    },
+    {
+      "h_s": "2^-8",
+      "particle_mass_kg": 1,
+      "rest_rad": "2^-10",
+      "trial": "first nonzero affine-normal proposal from the zero-load first sweep",
+      "L_m": "r*h^2 = 2^-26",
+      "bounds_at_bending_row": ["L < z_b-z_a < 3L", "2L < z_c-z_a = z_d-z_a < 4L", "L^3 < abs(g_b,x) < 64 L^3 <= 2^-66"],
+      "first_decisive_operation": "_mul(g_b,x, g_b,x) in the bending denominator",
+      "expected": "Ordered checked FP32 multiplication rejects a nonzero below-normal product; no final displacement result is available. Earlier rejection must likewise be retained.",
+      "actual_run": false,
+      "S_m": "2^-43",
+      "zero_trial_end_delta_from_common_free_predictor_in_S": ["262120", "0", "-131060", "-131060"],
+      "first_nonzero_fp64_predict_force_b_N": "1/16",
+      "first_nonzero_fp32_predict_force_b_N": "1/16",
+      "first_nonzero_predictor_A_G_in_S": ["262120", "393180"]
+    }
+  ]
+}

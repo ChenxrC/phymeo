@@ -38,3 +38,9 @@ C1 remains the 17-node/20-face/60-tet connected loop-cut patch control with rho1
 Only text reads, handwritten mathematics, append-only document IO and a small Git commit. No helper/reviewer/new agent, merge/reset/push, project import, collection, numerical or offline probe, pytest, lint/formatter, compile/build/install/profile or script that evaluates/counts candidate arithmetic. This is not an execution grant. Pure file hash/Git and textual inspection are allowed.
 
 Label each statement PROVED_WITH_HYPOTHESES / PROPOSED / UNRESOLVED. Parent will audit the full appendix before freezing any authoring contract. Keep the original proposal and original release statement explicitly historical. End with PROPOSAL_NOT_FROZEN, exact current SHA/blob, clean small commit and AUTHORING_SLOT_RELEASED. No new human stage approval is needed under continuing P6.5 authorization.
+
+
+## 2026-10-31 closure of this documentation-only task
+Status for THIS appendix task: DOCUMENTATION_DELIVERED_REVIEWED_AUTHORING_SLOT_RELEASED.
+Final child04892aaa2b2200df3026d2ba9d267778a5307980, final proposal SHA25604afba8ad9f1a60d7ed9304c2b696bda6d32e58c33ecec95f0315b25df3d97d0, normal parent import7752c5bf427f50a97107b38490f4bf24f59e3c97. Parent read A.1-A.12 and authenticated original62373-byte prefix, single-file scope and clean Git; no project execution.
+The next distinct task is the [S2-FB-G authoring brief](task-2-shell-boundary-geometry-brief.md), selected by the new parent design. Do not repeat this appendix task or treat this historical brief as an execution grant. Original caps/physical obligations remain. Appendix conditional operation bounds are hand analysis, not runtime results.

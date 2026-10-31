@@ -108,3 +108,13 @@ Task1 native acceptance is under explicit R7 v2 and its exact serial grant, not 
 ## S2-FG authoring checkpoint
 
 The [conforming geometry plan](2026-10-31-p65-conforming-shell-geometry.md) implements the [parent ruling](../../development/p65-s2-conforming-shell-parent-adjudication.md). Original S2 owns fourteen NEW paths for code/test authoring only, starting from c35a13a. There is no executable slot. B2 remains released. Strict geometry admission, analytic F1 geometry paths and F2 full-star map algebra must not be reported as runtime physical trajectories, remote self-touch, rotating loaded folds or complete S2-F. All remaining Task4 requirements stay open.
+
+
+## S2-FB-G bounded weak-boundary authoring checkpoint
+- [x] Complete Appendix A.1-A.12 reviewed; exact original prefix/final scope/hash/blob checked; normal import7752c5b.
+- [x] Conditional convex-cluster/matching full-coverage proof and original-budget hand envelopes reviewed.
+- [x] [S2-FB-G design](../specs/2026-10-31-p65-shell-boundary-geometry-design.md), [implementation plan](2026-10-31-p65-shell-boundary-geometry.md) and [original-author brief](../../../.superpowers/sdd/2026-10-30-p65-material-self-gripper-integration/task-2-shell-boundary-geometry-brief.md) freeze exactly twelve NEW paths, CODE_AND_TEST_AUTHORING_ONLY, NO EXECUTION SLOT.
+- [ ] Original S2 author delivers clean twelve-file CODE_READY_TESTS_PENDING.
+- [ ] Parent full final-source review and separate sole focused HOST grant, then saved evidence/acceptance/integration.
+- [ ] General changing/clipped/loaded fold, actual physical/native/robot/B2/R7 integration and whole P6.5.
+Existing accepted S2-L/FG/quotient and other scopes are reused; no old green suites or evidence audits are restarted. The hand operation bounds are not new executable results.

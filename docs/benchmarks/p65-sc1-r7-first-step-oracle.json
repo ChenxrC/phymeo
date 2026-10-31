@@ -95,7 +95,7 @@
     "Capture both predictors and actual distance and bending row inputs, outputs, theta, denominator, delta, sweep count, raw last words and robot q.",
     "Compare untouched publication, complete metrics and original-input energy/angular/transaction gates. Stop on the first mismatch; keep selected errors and actual verdict."
   ],
-  "coverage": "Coarse identity primary native first step, and two fine-grid failure predictions for this generator. No production replay, backend execution, full window, SC2, or N2/N3 release.",
+  "coverage": "Primary identity native first step. Original R7 has three all-grid failure predictions. The separate arithmetic reference includes both fine grids and first-step energy and angular targets. No production replay, backend execution, full window, SC2, or N2/N3 release.",
   "post_update_range_controls": {
     "actual_run": false,
     "input": "First nonzero affine-normal SC1 trial, all three original step sizes.",
@@ -138,5 +138,71 @@
       "first_nonzero_fp32_predict_force_b_N": "1/16",
       "first_nonzero_predictor_A_G_in_S": ["262120", "393180"]
     }
-  ]
+  ],
+  "candidate_reduction_fine_reference": {
+    "status": "CONDITIONAL_REFERENCE_NOT_EXECUTED",
+    "control": "SC1 identity, step one, primary rest and mass, h=1/128 and 1/256",
+    "conditions": [
+      "Separate range-safe arithmetic version; old R7 still rejects before returning load trial one.",
+      "Fresh one-sweep replay using the stated midpoint proposal, the actual per-trial FP64 loads, and the original coefficient rounding boundaries.",
+      "First bending theta at both nonzero trials differs from its own -2G by less than 16*S. Preserve any first divergence.",
+      "Unchanged robot mass 4, held delivery, terminal verification and material audit."
+    ],
+    "rows": [
+      {
+        "h": "1/128",
+        "S": "2^-41",
+        "first_loaded_D": "16390",
+        "first_loaded_abs_numerator_in_S": "r/S+786176",
+        "first_loaded_delta_in_S": "131072-1/64",
+        "first_loaded_mid_gaps_in_S": [
+          "96",
+          "0",
+          "-48",
+          "-48"
+        ],
+        "second_loaded_vertical_raw_word": "0xb6800000",
+        "c_y_above_one_in_binary64_ulps": "48"
+      },
+      {
+        "h": "1/256",
+        "S": "2^-43",
+        "first_loaded_D": "65542",
+        "first_loaded_abs_numerator_in_S": "r/S+786432",
+        "first_loaded_delta_in_S": "131072",
+        "first_loaded_mid_gaps_in_S": [
+          "24",
+          "0",
+          "-12",
+          "-12"
+        ],
+        "second_loaded_vertical_raw_word": "0xb5800000",
+        "c_y_above_one_in_binary64_ulps": "3"
+      }
+    ],
+    "second_trial_in_both_grids": {
+      "force_minus_1_16_in_U": [
+        "-262144",
+        "0",
+        "131072",
+        "131072"
+      ],
+      "robot_effort_N": "-1/4",
+      "second_loaded_delta_in_S": "131072",
+      "mid_gaps_in_S": [
+        "0",
+        "0",
+        "0",
+        "0"
+      ],
+      "joint_original_energy_defect_upper_J": "-h^2/128 (strict, conditional on the specified published states)",
+      "particle_NUM005_vector_Nms": [
+        "0",
+        "3*h*L^4/4",
+        "-18*L^4/h-216*L^8/h"
+      ],
+      "L": "(1/1024)*h^2",
+      "normal_contact_velocity": "zero at the common flat endpoint if full reconstructed words agree"
+    }
+  }
 }

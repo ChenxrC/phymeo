@@ -246,3 +246,40 @@ Its original-input endpoint defect therefore obeys
 For an elementary uniform sign check, m>=1/2 and even h<=1/2 make the last expression at most(-64+5)h^2/8192<0; the original three h values are smaller. This bound includes the finite material drift's in-plane kinetic and strain energy. It does not subtract contact work or cancel positive defects between steps.
 
 This remains an ideal one-step existence and endpoint-energy theorem. It does not provide the current coordinator's finite-iteration convergence, actual pressure/delivery certificate, native reconstruction error, energy enclosure width, angular/NUM005 bound, or propagation from a perturbed entry into a full physical window. In particular, an approximately flat numerical endpoint still needs the original exact support/path checks. The ordinary-mass physical contract remains NOT_FROZEN.
+
+## 8. Uniqueness and convergence of the abstract finite frozen-gap iteration
+
+Section8 of the [local derivative note](p65-b2-local-row-derivative-bounds.md) now supplies a complete finite-history derivative bound that strengthens the preceding Brouwer existence result. It proves ||D d_N||<95/A for the ideal material displacement correction, including all four rows, multipliers and changing-gradient history. For the frozen all-owner normal map, the resulting abstract T_N has Lipschitz factor
+
+    kappa_N=190/A<1/20
+
+in the A_n norm on the pressure range. This is a derivative of the finite ordered replay; it is not obtained by declaring its endpoint equal to the backward-Euler root or differentiating only a small endpoint-error estimate.
+
+Apply it here with N=512 material sweeps. Section4 already places every predictor from P=conv({0},K) strictly inside the required inner neighborhood. Sections5 and7 already show that the abstract zero-pressure first update enters K and that T_N(K) is contained in K. The four-dimensional pressure ball K is complete in its A_n norm. Banach's contraction theorem therefore gives a UNIQUE p_* in K in the prescribed range/equal-duplicate-owner gauge, and the abstract sequence p^(0)=0, p^(j+1)=T_N(p^(j)) converges to it.
+
+This does not assert uniqueness among physical pressures with different nullspace components. All six original owners remain present, and no computed output is used to choose the pressure space.
+
+The independently retained material-drift comparison from sections5 and7 remains valid:
+
+    ||p_*-p_c||_A_n<h^3/32,
+    ||p^(1)-p_c||_A_n<h/256.
+
+For every j>=1, combining these with the new finite-map contraction gives
+
+    ||p^(j)-p_*||_A_n
+      <20^(-(j-1)) [h/256+h^3/32]
+      <(h/128)20^(-(j-1)).
+
+In particular the j=512 ideal ABSTRACT pressure iterate has distance less than h/(128*20^511). This is an exact analytical bound for that map and count, not an observed floating-point residual or an authorization to spend512 full replays in any existing coordinator.
+
+The full frozen gap lies in S. Writing e_j=||p^(j)-p_*||_A_n, its dual-norm residual satisfies
+
+    ||B_n y_N(xi_hat(p^(j)))-b||_(A_n^+)
+      =h||p^(j)-T_N(p^(j))||_A_n
+      <=h(1+kappa_N)e_j.
+
+Even this small bound has no prescribed componentwise sign. It does not establish exact flatness or nonpenetration at any finite iterate. Exact flatness, the unchanged common vertical coordinate, active bending and the negative one-step energy result in section7 apply to the unique fixed point p_* under the original exact-reference-entry hypothesis. They are not automatically inherited by a rounded iterate or a later physical step.
+
+The actual existing contact coordinator uses serial clipped diagonal coordinate updates and a backtracking/selection path, whereas T_N is the complete range-quotient update defined in the analysis. Equivalence, invariance and finite convergence for that implementation remain unproved. A future algorithm choice also needs the full native/delivery/geometry and resource accounting. No old source, iteration cap, fixture, physical budget or execution grant changes.
+
+The remaining SC1 physical-window propagation, SC2 birth/terminal control, current full offset map, rounded support and paired energy/angular/NUM005/R7 obligations are still open. This addition is manual mathematics only; no import, test, numerical or derivative probe, lint, formatter, build or native execution was performed.

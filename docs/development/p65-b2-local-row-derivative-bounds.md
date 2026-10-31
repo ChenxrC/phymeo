@@ -445,3 +445,128 @@ For an actual differentiable offset-gap function g(x), its derivative along this
 where B_gap is its full current Jacobian. The difference B_gap(y)-B_n must be independently enclosed, including director derivatives, material address, normal changes and all support extrema. The displayed matrix need not be symmetric and is not covered by the frozen-gap Loewner argument. Nondifferentiable support switches and SC2 contact birth need their full path and branch proofs.
 
 Consequently the frozen-map contraction does not justify multiplying a stored C W r velocity bound by h to obtain a nonlinear held-position enclosure. Nor does it resolve full requested-pressure ideal-map error, actual delivery uncertainty, original-input energy/angular balance, paired robot moments, NUM005, finite native history or global step/window inclusion. The original controls and all numerical/resource budgets remain unchanged. The complete ordinary-mass typed physical contract remains NOT_FROZEN.
+
+## 8. Sensitivity of the complete finite ideal replay
+
+This manual result concerns the exact finite material map itself. It does not replace that map by the backward-Euler root. Keep every hypothesis and normalization of section6: the four original material rows, fixed unit compliances, constant cloth masses in[1/2,2], A=hbar^-2>=4096, a predictor in the inner neighborhood, and fresh zero multipliers. Let y_N(xi_hat) be the result of exactly N complete ordered sweeps, for any finite N, and let
+
+    d_N(xi_hat)=y_N(xi_hat)-xi_hat.
+
+The claim is the uniform Euclidean product-norm derivative bound
+
+    ||D_xi_hat d_N|| <95/A.
+
+It holds without a Hessian-Lipschitz or third-derivative assumption. Both the changing gradients and every multiplier are included. The derivative below is a mathematical derivative, not a finite-difference or executable probe.
+
+### Differentiate in configuration and constitutive-residual coordinates
+
+Use r_j=c_j(xi)+A ell_j as coordinates together with xi. Since A>0, this is an invertible change from the complete (xi,ell) variables; no multiplier direction is removed. A dot denotes differentiation with respect to an arbitrary unit predictor direction w. Initially dot xi=w, dot ell=0 and max_j|dot r_j|<=3.
+
+For an update of row i, write
+
+    rho=max_j|r_j|,  d=A+g_i^T Wbar g_i,
+    Delta=-r_i/d,   v=Wbar g_i Delta,   xi_plus=xi+v.
+
+Here rho is the residual maximum, not the shell half-thickness. At every stage section6 gives rho<1/8, ||v||<=6 rho/A and ||g_i||<=3, ||H_i||<=33. Differentiation gives
+
+    dot d=2 g_i^T Wbar H_i dot xi,
+    dot Delta=-dot r_i/d+r_i dot d/d^2,
+    dot v=Wbar H_i dot xi Delta+Wbar g_i dot Delta.
+
+Consequently
+
+    |dot d|<=396||dot xi||,
+    ||dot v||<=6|dot r_i|/A
+                +(66 rho/A+2376 rho/A^2)||dot xi||
+              <6|dot r_i|/A+67 rho||dot xi||/A.
+
+For an unchanged row j, r_j,plus=r_j+c_j(xi+v)-c_j(xi). Its differential therefore obeys
+
+    |dot r_j,plus-dot r_j|
+      <=18|dot r_i|/A+399 rho||dot xi||/A.
+
+For the updated row, use the exact cancellation before differentiating:
+
+    r_i,plus=c_i(xi+v)-c_i(xi)-g_i(xi)^T v,
+    dot r_i,plus=
+      [g_i(xi+v)-g_i(xi)-H_i(xi)v]^T dot xi
+      +[g_i(xi+v)-g_i(xi)]^T dot v.
+
+The first bracket is bounded by 2*33||v||, using only the two Hessian bounds separately. It is NOT assigned a quadratic-in-v third-derivative bound. The second bracket is bounded by33||v||. Hence
+
+    |dot r_i,plus|
+      <=1188 rho|dot r_i|/A^2
+        +(396 rho/A+13266 rho^2/A^2)||dot xi||
+      <=18|dot r_i|/A+399 rho||dot xi||/A.
+
+The last inequality uses rho<=1/8 and A>=4096. In particular the old dot r_i does not survive with coefficient1 after its own row update.
+
+### Complete sweeps and closure of the derivative estimate
+
+For one fixed predictor and direction w, define R_s and Z_s as the maximum absolute residual and residual differential at sweep entrance s. Let J be the largest ||dot xi|| at any row entrance or exit among the finite N sweeps. This maximum is finite because these finite smooth row maps stay in the open regular geometry domain. We will bound it without assuming it small.
+
+Put u=33/32. Section6 gives R_s<=64^-s R0, R0<1/20, and every stage residual in sweep s is <=u R_s. The preceding row bounds give, at every stage,
+
+    Z_stage <=u Z_s+1700 R_s J/A.
+
+Indeed (1+18/A)^4<u, and the inhomogeneous four-row sum is bounded by
+4*399*u^2 R_s J/A<1700 R_s J/A.
+
+Each row has its own differential reset and at most three subsequent increments. Thus the exit of a complete sweep satisfies
+
+    Z_(s+1)
+      <=72u Z_s/A
+        +(122400/A^2+1596u/A)R_s J
+      <=75 Z_s/A+1700 R_s J/A.
+
+These constants hold at the smallest A=4096 and improve as A grows. Since75/A<1/32 and Z0<=3, sums over s=0,...,N-1 obey
+
+    sum_s Z_s <=(32/31)[3+(1700/A)J sum_s R_s],
+    sum_s R_s <=(64/63)R0 <16/315.
+
+Let D be the largest ||dot xi-w|| at all these entrances and exits. Summing the complete dot v increments, rather than differentiating only the final constitutive equations, yields
+
+    D <=(24u/A)sum_s Z_s
+        +(40800/A^2+268u/A)J sum_s R_s
+      <=(25/A)sum_s Z_s+(287/A)J sum_s R_s
+      <78/A+(298/A)J sum_s R_s
+      <78/A+16J/A.
+
+Here 24u<25, 40800/A+268u<287,
+1360000/(31A)+287<298, and298*16/315<16.
+By definition J<=1+D. Closing this scalar inequality gives
+
+    D <94/(A-16) <95/A,
+
+where the last comparison follows from A>=4096>1520. In particular the final dot d_N satisfies this bound for every unit w, proving the claimed operator norm. This estimate is uniform in finite N; it does not require differentiating an infinite-sweep limit or discarding ordered-gradient drift.
+
+### A finite-replay contraction for the abstract frozen normal map
+
+Use the fixed predeclared normal map, all owner rows, constant masses and compatible target of section7. The optional prismatic translation coordinate has no material rows, so its component of d_N is zero and the cloth map has no dependence on its predictor. Its mass may exceed2, as for the original4m robot; the cloth mass bound alone is used on the output below.
+
+Let A_n=B_n Wbar B_n^T, S=range(B_n), and restrict pressures to one fixed kernel component p_c+S. Define the SAME mathematical frozen-gap update as before, now with the complete finite replay:
+
+    xi_hat(p)=xi_hat_0+hbar Wbar B_n^T p,
+    T_N(p)=p-A_n^+[B_n y_N(xi_hat(p))-b]/hbar.
+
+For a direction delta p in S the linear predictor contribution cancels exactly:
+
+    D T_N(p) delta p
+      =-A_n^+ B_n [D d_N] Wbar B_n^T delta p.
+
+This cancellation does not suppress the correction derivative: it is bounded by the complete row-history calculation above. The weighted inequalities are
+
+    ||A_n^(+1/2) B_n z||_2 <=||z||_Mbar,
+    ||Wbar B_n^T delta p||_Mbar=||delta p||_A_n.
+
+The first follows because A_n^(+1/2) B_n Mbar^(-1/2) is a partial isometry on its range. On the nonzero cloth output of D d_N, the two cloth mass conversions cost at most sqrt(2) each. Hence
+
+    ||D T_N(p) delta p||_A_n
+      <=(190/A)||delta p||_A_n,
+    kappa_N=190/A<=95/2048<1/20.
+
+On any convex pressure set whose complete predictor family satisfies section6, integration along pressure segments gives this Lipschitz bound for T_N. A separately proved invariant closed pressure ball therefore has a unique fixed point WITHIN THAT BALL AND FIXED KERNEL COMPONENT, and this abstract iteration converges to it. This is not uniqueness of physical pressures over arbitrary nullspace splits. Incompatible full gap components cannot be deleted merely because A_n^+ annihilates them.
+
+The SC1 note below instantiates the already proved invariant ball and zero-start entry. The existing [runtime coordinator](../../src/phymeo/solvers/dynamic_robot_finite_contact.py) instead performs serial clipped coordinate updates with geometry recomputation, diagonal response and backtracking in position_sweep. This derivative theorem is not a convergence proof for that code, its acceptance/selection branches or the complete replay budget. No coordinator change is authorized by this mathematical comparison.
+
+Finite pressure iterates need not have exactly zero full gap, even when the fixed point does. Thus the result does not promote approximate flatness to positive-area contact, establish actual rounded nonpenetration, propagate a physical window, or close native/R7, SC2 birth, original-input energy/angular and transaction obligations. All prior physical limits and the NOT_FROZEN full coupled contract remain unchanged. No project execution was used for this result.

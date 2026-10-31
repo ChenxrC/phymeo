@@ -503,3 +503,132 @@ This establishes a positive limiting split for this analytical sequence. It does
 The comparison now includes the exact nonlinear tilt correction and a finite-support margin, but still begins from the exact reference and uses the fixed initial normal delivery map with exact finite material arithmetic. Orthant activity from the zero start, actual full-metric line-search acceptance, stored gap-midpoint and step-size errors, R7/native delivery, anchor discovery/rebuilds, finite-iterate one-sided penetration and contact-sign gates remain unresolved. The exact ideal limiting endpoint has the earlier one-step energy property; no finite or rounded iterate inherits it by assertion.
 
 The SC1 perturbed-entry/full-window induction, SC2 birth/terminal case, paired angular/NUM005 and transaction gates also remain open. No fixture, oracle, tolerance, iteration/resource ceiling, physical API or execution grant changes. This addition is manual mathematics and source-text/file-IO/Git work only.
+
+
+## 11. Nonnegative candidates with changing gaps and variable ideal steps
+
+The comparison in section10 can be strengthened to include the original coordinatewise pressure projection. Continue to assume its exact SC1 reference entry, uniform cloth mass m in[1/2,2], robot mass4m, unit compliances, r in{3,4,5}/4096, six fixed initial normal owners and N=512 ideal material sweeps. No conclusion here applies to stored/native errors or a perturbed physical-step entry without further proof.
+
+Allow an arbitrary sequence of step sizes
+
+    0<=a_j<=2m/7,   t_j=a_j/m,   T_j=sum_(l<j) t_l.
+
+For example this contains every exact backtracking candidate a_j=a_0/2^power with the section9 exact full step, and a_j=0 represents no accepted update. No positive progress is assumed. First construct the UNCLIPPED comparison of section10 with these steps. For each chosen step its pressure-range map contracts by at most1-(5/6)t_j, so Q_bar remains invariant. This argument applies pointwise to each chosen step and does not differentiate an adaptive step-selection rule.
+
+### A componentwise bound on the nonlinear forcing
+
+For the fixed initial cloth normal map B_c, every row has norm1 and ||B_c^T||=sqrt(2). Uniform cloth mass is used explicitly here. The complete finite material sensitivity gives the ROW bound
+
+    ||D_z[b_N,i(z)/h-(A_n z)_i]||
+       <=(95 sqrt(2)h^2)/m.
+
+The robot's ideal material displacement correction is zero. Define
+R_i(z)=b_N,i(z)/h-[A_n(z-p_*)]_i. At p_* it is zero. Integration on Q_bar and ||z-p_*||<=||p_*||<h sqrt(m)/2 give
+
+    |R_i(z)| < (95/2)sqrt(2/m)h^3 <=95h^3.
+
+This uses the full finite replay, not a final-equilibrium substitution. The earlier bound ||p_*-p_c||_A_n<h^3/32 and the diagonal A_n,ii=5/(4m) imply
+
+    |[A_n(p_*-p_c)]_i|
+       <=sqrt(5/(4m)) ||p_*-p_c||_A_n <h^3/20.
+
+Section10 also gives 0<=c_i/h<=||c||/h<=h^3/(4m)<=h^3/2. Consequently the full changing ideal gap can be written
+
+    g(z)/h=A_n z-f+delta(z),   f=A_n p_c,
+    |delta_i(z)|<96h^3.
+
+Every owner is retained. In the declared order,
+
+    f=h(1/8-2r/m, 1/8, 1/8+r/m,
+        1/8, 1/8-2r/m, 1/8+r/m).
+
+For the original h<=1/64 and all stated r,m,
+
+    (492/4096)h<=f_i<=(522/4096)h,
+    |delta_i|<=(96/4096)h.
+
+P_S averages each duplicated owner pair and leaves the two outer owners unchanged, so it cannot increase the maximum component bound. Define F=f-P_S delta. Uniformly on Q_bar,
+
+    f_minus=(99/1024)h <=F_i<=(309/2048)h=f_plus,
+    d_f=f_minus-(3/5)f_plus=(63/10240)h>0.
+
+Here d_f is a positive forcing margin, not a face director, displacement or a changed physical load. The notation F is the algebraic right-hand side of this comparison update; it is not a replacement for the original external force F0 or a new runtime force channel.
+
+### An invariant aggregate bound and positive range pressures
+
+Let S_j=sum_i z_i^(j), and let d_i=2 for the four duplicated a/b owner entries and d_i=1 for the two outer owner entries. Since z belongs to S,
+
+    (A_n z)_i=d_i z_i/m+S_j/(4m),
+    z_i^(j+1)=(1-d_i t_j)z_i^(j)
+                 +a_j[F_i-S_j/(4m)].
+
+Starting at z^(0)=0, induction proves
+
+    z_i^(j)>=0,   0<=S_j<=(12/5)m f_plus.
+
+Indeed 1-d_i t_j>=3/7. Under the proposed aggregate bound,
+F_i-S_j/(4m)>=d_f>0, so every new component is nonnegative. Also
+
+    S_(j+1)
+      =S_j-t_j sum_i d_i z_i^(j)-(3/2)t_j S_j+a_j sum_i F_i
+      <=[1-(5/2)t_j]S_j+6a_j f_plus.
+
+The coefficient is >=2/7, and substitution of S_j<=(12/5)m f_plus proves the same upper bound at j+1. This induction uses both the sum and the repeated-owner structure; a Euclidean contraction alone would not establish the componentwise statement.
+
+For every component, the stronger scalar recurrence is
+
+    z_i^(j+1)>=(1-2t_j)z_i^(j)+m t_j d_f.
+
+It yields
+
+    z_i^(j)>=(m d_f/2)[1-product_(l<j)(1-2t_l)]
+            >=m d_f T_j/(1+2T_j).
+
+The last step follows from
+product(1-2t_l)^(-1)>=product(1+2t_l)>=1+2T_j.
+All factors are positive under t_l<=2/7.
+
+### Kernel drift relative to elapsed step size
+
+The fixed-kernel decomposition remains exact:
+k^(j+1)-k^(j)=-a_j Pi c(z^(j))/h. Let
+e_j=||z^(j)-p_*|| and e_0=||p_*||<h sqrt(m)/2. Then
+
+    ||k^(j+1)-k^(j)|| <=(h/m)t_j e_j^2.
+
+The range contraction gives
+e_(j+1)<= [1-(5/6)t_j]e_j. Since this factor is in[0,1],
+
+    e_j^2-e_(j+1)^2 >=(5/6)t_j e_j^2,
+    sum_(l<j) t_l e_l^2 <=(6/5)e_0^2.
+
+Together with the simpler bound e_l<=e_0, this proves BOTH estimates
+
+    ||k^(j)|| < (h^3/4)T_j,
+    ||k^(j)|| < (3/10)h^3
+
+when T_j>0. The zero case is exactly k=0. These bounds include every off-range tilt residual; no kernel pressure has been discarded or assigned zero map error.
+
+Combine p_i=z_i+k_i with the componentwise lower bound. If 0<T_j<=1, then
+
+    p_i^(j) > (21/20480)h T_j - (h^3/4)T_j
+             >= (79/81920)h T_j > (h/2048)T_j.
+
+If T_j>=1, then
+
+    p_i^(j) > (21/20480)h - (3/10)h^3
+             >= (39/40960)h >h/2048.
+
+Here m>=1/2 and h^2<=1/4096 were used. The rational deductions use (1/4)/4096=1/16384 and (3/10)/4096=3/40960. Therefore, for every j with T_j>0,
+
+    p_i^(j) > (h/2048) min(T_j,1) >0
+
+for all six owners. At T_j=0 all pressures are exactly zero. This proves that coordinatewise projection onto p>=0 leaves every candidate of this IDEAL comparison unchanged. Each tentative backtracking candidate is a one-step extension of the accepted comparison history, so the same argument covers it without assuming that its score is accepted.
+
+Thus the changing-gap comparison now includes the original orthant projection for arbitrary exact step sequences in the stated interval. With the full step on every update, section10's range convergence rate<16/17 and summable kernel limit apply to that projected ideal comparison. For varying steps the justified bound is instead
+
+    e_j<=e_0 product_(l<j)[1-(5/6)t_l].
+
+The proof does not show that the actual full-metric line search selects any particular positive step, or selects one at all. Even if every selected step is among powers0..12 of the full ideal step, the worst allowed step size is much smaller; the512-update full-step rate cannot simply be reused. No extra replay or iteration budget is granted.
+
+Stored point/gap-midpoint/normal/step rounding, native material and actual delivery errors, discovery/rebuild, finite-iterate one-sided penetration/contact signs, original energy/angular/NUM005, SC1 whole-window propagation and SC2 remain separate. This is a manual ideal one-step comparison, not an executed contact result or a frozen physical integration contract.

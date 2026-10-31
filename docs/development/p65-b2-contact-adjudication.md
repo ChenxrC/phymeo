@@ -114,3 +114,12 @@ Section10 of the [SC1 reference note](p65-b2-sc1-active-material-reference.md) n
 This analysis also retains the generally nonzero kernel part of the full six-owner gap. The exact UNCLIPPED synchronous candidate has a contracting range component and a summable kernel drift below(2/3)h^3; its limiting pressure split stays positive and yields the same ideal endpoint. This is a decomposition of a comparison sequence, not a new solver projection or permission to discard off-range residuals. Full requested pressure still belongs in actual/ideal map-error accounting.
 
 Intermediate nonnegativity, the actual orthant projection and full-metric backtracking, stored/native errors, finite-iterate penetration signs, whole-window propagation, SC2 and the original energy/angular/transaction gates are not proved by this increment. No runtime code or project execution changed, and the complete ordinary-mass physical contract remains NOT_FROZEN.
+
+
+## 2026-10-31: orthant inactivity for ideal changing-gap candidates
+
+Section11 of the [SC1 note](p65-b2-sc1-active-material-reference.md) strengthens the previous unclipped comparison. A componentwise full finite-replay bound gives g/h=A_n z-f+delta with |delta_i|<96h^3. The original repeated-owner response then admits an invariant bound on the sum of range pressures. Combining its componentwise lower bound with the complete kernel drift shows that every six-owner pressure candidate is positive after any nonzero cumulative exact step size.
+
+This applies to arbitrary exact steps in[0,2m/7], including each tentative ideal backtracking candidate. Hence the existing coordinatewise nonnegative projection is inactive for this exact-reference-entry, changing-triangle-offset-gap comparison. It introduces no replacement projection, pressure basis, force channel, fixture or tolerance. Zero accepted progress is permitted by the theorem.
+
+Actual full-metric line-search acceptance and progress within the original budget, stored/native/R7 delivery, finite-iterate penetration signs, rebuilds, full-window/SC2 and original energy/angular/transaction acceptance remain unresolved. No project execution or implementation grant changed; the complete physical contract remains NOT_FROZEN.

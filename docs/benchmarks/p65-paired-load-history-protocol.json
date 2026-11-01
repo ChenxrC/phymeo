@@ -1,0 +1,53 @@
+{
+  "schema": "p65-paired-load-history-discriminator-v1",
+  "baseline": "610bfc34749dda83d70968504b701ca78598f2c2",
+  "fixture": "p65-b2-joint-readback-protocol.json",
+  "fixture_sha256_lf": "1b70ba85d8255f6e390626952ac84c466083fb755f8033f83d3e54c0fb7ab1b4",
+  "source": "p65-contact-layer-support-results.json",
+  "source_sha256_lf": "a90b3324b8fd047f745db1484373ade09fd837999919da808887c3a747bd1d34",
+  "source_step": 0,
+  "source_macros": 63,
+  "source_words": 504,
+  "duration_s": "1/64",
+  "cases": {
+    "forward": {
+      "reverse": false,
+      "shares": [
+        "1/6",
+        "1/6",
+        "1/6",
+        "1/6",
+        "1/6",
+        "1/6"
+      ]
+    },
+    "reverse": {
+      "reverse": true,
+      "shares": [
+        "1/6",
+        "1/6",
+        "1/6",
+        "1/6",
+        "1/6",
+        "1/6"
+      ]
+    },
+    "shifted": {
+      "reverse": false,
+      "shares": [
+        "1/12",
+        "1/4",
+        "1/6",
+        "1/6",
+        "1/6",
+        "1/6"
+      ]
+    }
+  },
+  "scope": "N2 diagnostic using existing HOST public APIs. One validated force-history packet per case, all six original owners, original four-node bending cloth and 2 kg platform. Reverse and shifted are instrumentation inputs, not constitutive equilibrium targets. No product or default contact change.",
+  "rule": "Integrate each original degree-seven Bernstein macro exactly. For reversed histories reverse order, coefficient order and times. L=B/h, R=J-L are nonnegative linear temporal shape weights. L maps to represented held cloth forces and robot world COM force/torque, R to one terminal point batch using the selected endpoint Jacobians and both sides' actual points. No second copy of J, no host state repair, no generalized-effort stand-in. A provisional and a terminal-wrapped replay both begin from the same original snapshot. Bind complete selected prestate/diagnostics to terminal prestate/diagnostics and compare delivered impulse and endpoint. One applied terminal batch per candidate.",
+  "checks": "From the complete saved curves, independently obtain J and B (integrate in power basis) and compare to participant state changes. Same J, different B must yield matching final v and q=-B/2 for each profile within original 1e-8 m. Shift +1/12 share from Ua to Ub, compare delivered spatial channels/terminal point witnesses, final cloth moment and robot generalized response. A reconstructed world action or a prismatic-axis momentum does not independently measure a guide reaction. Preserve all failures.",
+  "path_energy": "Public zero-budget complete prism/patch sweep and both endpoint bounds. Also check all six lifted gaps and the initial lower-vertex directional derivative on the reported affine chord. For nonadmissible path record penetration, original external/gravity work and initial layer storage; do not credit or certify layer energy/dissipation beyond hard contact. No successor state for an unsafe candidate. A delay, nonlinear material law or future coupled solver is not certified by these metrology controls.",
+  "budget_source": "Unchanged limits in the fixture and scalar wire. 63 macros, 504 finite nonnegative coefficient words, each saved history gap-free, checksum and caller original state/material/scene/patch bound. Reject mutated time, owner, input binding or digest before a physical trial. No retries of already-complete cases.",
+  "method_reference": "https://www.cds.caltech.edu/~marsden/wiki/uploads/dmoc/home/JuMaOb04-IFAC.pdf"
+}

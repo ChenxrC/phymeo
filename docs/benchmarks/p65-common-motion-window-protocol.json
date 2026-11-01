@@ -1,0 +1,25 @@
+{
+  "schema": "p65-sc1-common-motion-window-v1",
+  "baseline": "b5ad027bc223806b8e8332a58cc86e7b50fe0d48",
+  "seed_result": "p65-common-motion-results.json",
+  "seed_result_sha256_lf": "08f9bac21ace55b30a073decffa4ff7345f6cf7a1c33c47fcb1bf5e9761d907e",
+  "seed_checkpoint_sha256": "3da31b1ba97cc9109a61f498bc38ba877bcc3312c281ab892ceb7d3dcbfa77ec",
+  "active_protocol": "p65-common-motion-protocol.json",
+  "active_sha256_lf": "2e4fe64e768055c07333889e7189bf8e35ef1cfb2529c1831f9a71ef43410ce8",
+  "h_s": "1/64",
+  "T_s": "1/8",
+  "seed_at_s": "1/32",
+  "step_indices": [
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+  ],
+  "scope": "N2 HOST original SC1, 0.5 kg per cloth node, 2 kg mobile z-platform, six fixed material owners. Reuse certified prior steps 0 and 1. Six new processes advance the unchanged PathProgram, force solver, verifier, state and all budgets. No default production change or native execution.",
+  "sequence": "Start each new step only from its audited predecessor's 1024-byte exact on-disk checkpoint, checked against SHA, model binding and exact time i*h. Call the public SceneStepper once. Save the complete attempt and return, and expose a successor checkpoint only on acceptance. Separate serial readback binds full public diagnostics, caller state, integrator intervals, all coordinate moments, original nonzero velocity and predecessor bytes. Stop at the first real rejection. Do not reset or retune.",
+  "gates": "All original step gates remain. For the eight-step window check one contiguous sequence of states; exactly six stable owners on every step with strictly positive sustained normal transfer, finite patch, oriented nondegenerate faces, hard gap >=0 and active prestrained bend. Sum positive upper energy deficits and absolute angular bounds separately (each <=1e-8 in original units), and check direct original-input energy from exact endpoint kinetic energy, material/SC-L1 storage, original work and positive dissipation. No internal energy credit. Bound total signed momentum and verify original-input/pair reactions. For each contact and each node, transport the local backward time moment B_i to the global origin by adding (T-t_i_end)*J_i; verify exact global state and all momentum/position identities. Accumulate contact-law and nodal force residual bounds without cancellation at original impulse, displacement and velocity scales. Report separately the support force extrema and margin vs the balanced inertial load m/4=0.125 N; the old 1D scalar trajectory is not used as the four-node solution.",
+  "negative_controls": "Using saved evidence only, reject a missing/aliased step, an omitted time-origin shift, cancellation of positive/negative energy in a hand-constructed signed ledger, and an external-work ledger incorrectly crediting internal contact impulse/time moment. Failure control must isolate the identity it targets. No rerun of the already accepted prefix or earlier physical faults.",
+  "resources": "Same per-step cap 512 owner evaluations, exact checkpoint 1024 bytes/512-bit integers; solver uses 486 owner evaluations per step, proof 64 leaves/384 owner enclosures. WINDOW only reads saved coefficients and states, computes whole-window support and moment bounds. Original numerical phase ownership remains serial."
+}

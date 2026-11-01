@@ -209,7 +209,7 @@ def blank():
     )
 
 
-def audit_chart(curve, model, mask, end, tail, acc, bridge=None):
+def audit_chart(curve, model, mask, end, tail, acc, bridge=None, *, closing=True, leaves=LEAVES):
     h = curve.h
     for i, taken in enumerate(mask):
         if not taken:
@@ -218,9 +218,11 @@ def audit_chart(curve, model, mask, end, tail, acc, bridge=None):
                 "force outside active branch",
             )
     edges = [[sub(curve.x[3 * i + j], curve.x[j]) for j in range(3)] for i in (1, 2, 3)]
-    for leaf in range(LEAVES):
-        lo = end * leaf / LEAVES
-        hi = end * (leaf + 1) / LEAVES
+    need(1 <= leaves <= 4096, "proof leaf limit")
+    closing_prefix = [True] * 6
+    for leaf in range(leaves):
+        lo = end * leaf / leaves
+        hi = end * (leaf + 1) / leaves
         span = h * (hi - lo)
         remaining = tail + h * (end - lo)
         acc["leaves"] += 1
@@ -231,7 +233,10 @@ def audit_chart(curve, model, mask, end, tail, acc, bridge=None):
         v = [poly_range(z, lo, hi) + d for z, d in zip(curve.v, dv, strict=True)]
         ports = geometry(x, v, model, jacobian=True)
         highest = max(z.high for _, z, _ in ports)
-        need(highest < 0, "unresolved exit or damping event")
+        need(highest < (0 if closing else Q(1, 1000)), "unresolved exit or damping event")
+        closing_prefix = [
+            old and speed.high < 0 for old, (_, speed, _) in zip(closing_prefix, ports, strict=True)
+        ]
         acc["rate_high"] = highest if acc["rate_high"] is None else max(highest, acc["rate_high"])
         gap = min(g.low for g, _, _ in ports)
         need(gap > 0, "hard penetration")
@@ -265,7 +270,7 @@ def audit_chart(curve, model, mask, end, tail, acc, bridge=None):
                 comp = poly_range(cp, lo, hi) - (actual_shift - nominal_shift)
                 # Monotone closing also supplies a bound at the left end of the whole chart.
                 start_gap = direct_gap(curve.x, Q(0), a, model)
-                minimum = max(comp.low, WIDTH - start_gap.high)
+                minimum = max(comp.low, WIDTH - start_gap.high) if closing_prefix[a] else comp.low
                 factor = 1 - 1000 * ports[a][1]
                 need(minimum > 0 and factor.low > 0, "loaded branch is not active")
                 p = curve.ps[a]
@@ -281,6 +286,14 @@ def audit_chart(curve, model, mask, end, tail, acc, bridge=None):
                 err = poly_range(errp, lo, hi).magnitude + AREA_K * (
                     spread * poly_range(fac, lo, hi).magnitude + comp.magnitude * 1000 * drift
                 )
+                if "law_lower_abs" in acc:
+                    nominal = poly_range(errp, lo, hi)
+                    radius = AREA_K * (
+                        spread * poly_range(fac, lo, hi).magnitude + 1000 * comp.magnitude * drift
+                    )
+                    floor = max(Q(0), nominal.low - radius, -nominal.high - radius)
+                    acc["law_lower_abs"][a] += span * floor
+                    acc["law_signed"][a] += span * (nominal + I(-radius, radius))
                 acc["relative"][a] = max(acc["relative"][a], err / (AREA_K * minimum * factor.low))
                 acc["je"][a] += span * err
                 acc["be"][a] += span * remaining * err

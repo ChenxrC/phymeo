@@ -1,0 +1,246 @@
+{
+  "schema": "p65-n2-sc1-joint-readback-result-v1",
+  "scope": "single HOST prescribed signal, real composite participants",
+  "raw_directory": "artifacts/p65-n2-joint-readback-20261101-01",
+  "protocol_sha256_lf": "1b70ba85d8255f6e390626952ac84c466083fb755f8033f83d3e54c0fb7ab1b4",
+  "archive_files": {
+    "automatic.json": "1c6ce49d78884399c3d4bd5f3f7441349499c0badbe43654d49eda6fb75d7e35",
+    "time-channel.json": "9ea46ecf6ed8ab03a9a0f4fccfc5e2cccff4f3c05f4aa0156be2205049a37e65",
+    "inlet.json.gz": "950e350517a7357d0c643c333d5dcba270b0bc29656fbf3ba9eccdbc62ac26e1",
+    "trial.json.gz": "30d73dc1faeda4e81f16bdc7120234b6cc430526d0792440689dea1d2125b9fa",
+    "bindings.json": "03f4b48eb91251338c01eea3c6bb5f050ac4b2d1a524ed321fde7d4a8011b779",
+    "geometry.json.gz": "1edda0a5055b6a747129806827648faefb8237383367665c2bb52d858d5401f9"
+  },
+  "automatic": {
+    "admitted": false,
+    "exception": "TypeError",
+    "reason": "materials require FP64 DistanceConstraints or None",
+    "frames": [
+      {
+        "file": "C:\\Users\\38347\\.codex\\worktrees\\p65-parallel-integration\\phymeo\\scripts\\probe_p65_joint_readback.py",
+        "line": 241,
+        "function": "main"
+      },
+      {
+        "file": "C:\\Users\\38347\\.codex\\worktrees\\p65-parallel-integration\\phymeo\\src\\phymeo\\solvers\\dynamic_robot_thick_contact.py",
+        "line": 113,
+        "function": "__init__"
+      }
+    ],
+    "base": "ArticulatedCouplingProgram",
+    "cloth": "CompositeClothParticipant",
+    "robot": "RobotParticipant",
+    "material": "ClothMaterial",
+    "protocol_sha256_lf": "1b70ba85d8255f6e390626952ac84c466083fb755f8033f83d3e54c0fb7ab1b4"
+  },
+  "unregistered_time_channel": {
+    "rejected": true,
+    "reason": "integrated load field is not a declared channel",
+    "before_step": true
+  },
+  "bindings": {
+    "scene_identity": "dc752dca42423e3ee9a1a9f176518a7260c80421606b6febd58c4b6690403097",
+    "original_inputs": "dc59e96c1f52de0aa6aec6a7288f7c303155bffb615e500d9744a476f2ffc6ae",
+    "original_cloth": "80f7f0e7a07888863d671c1c7ce02fccbe548e945e6feb42bb77edd0047fe91d",
+    "effective_inputs": "9a5b8907502eb10fd522c687e0c3418a02e27adcf274d8ac61674c56a28293ac",
+    "effective_cloth": "e797c2948c57c5e5b9a9fe9e78348f64ad9a37ac5e872640cae63448edd8b882",
+    "caller_unchanged": true,
+    "readback_residual": 1.4590195284998166e-11
+  },
+  "transport_accepted": true,
+  "joint_gate_open": false,
+  "substep": {
+    "h_s": 0.015625,
+    "material_sweeps": 1,
+    "distance_rows": 3,
+    "bend_rows": 1,
+    "angle_before_rad": 2.9451831923925517e-05,
+    "angle_after_rad": 3.221846483838525e-05,
+    "bend_multiplier": 2.3055274295936564e-07,
+    "residuals": {
+      "cloth/distance": 1.4590195284998166e-11,
+      "cloth/bending": 5.312590645178972e-17,
+      "contact/normal_contact": 0.0
+    }
+  },
+  "maps": [
+    {
+      "entries": 162,
+      "max_component_error": 0.0,
+      "point_error_m": 0.0,
+      "rate_error_m_s": 0.0,
+      "bary_only_discrepancy": 0.015625,
+      "normal_only_discrepancy": 0.0,
+      "mapped_node_error_ns": 0.0,
+      "moment_residual_nms": 0.0,
+      "power_residual_j": 0.0,
+      "public_ledger": {
+        "all_owners": true,
+        "report": {
+          "mapping": 0.0,
+          "force": 0.0,
+          "moment": 0.0,
+          "power": 0.0
+        }
+      }
+    },
+    {
+      "entries": 162,
+      "max_component_error": 1.0943286562829237e-18,
+      "point_error_m": 1.6543612251060553e-24,
+      "rate_error_m_s": 1.0587911840678754e-22,
+      "bary_only_discrepancy": 0.015624999997952669,
+      "normal_only_discrepancy": 2.6611630299377964e-07,
+      "mapped_node_error_ns": 3.0940784285660736e-21,
+      "moment_residual_nms": 5.421010862427522e-20,
+      "power_residual_j": 2.117582368135751e-22,
+      "public_ledger": {
+        "all_owners": false,
+        "reason": "different quadratic fields",
+        "per_face": [
+          {
+            "mapping": 9.240839578103787e-17,
+            "force": 5.421010862427522e-20,
+            "moment": 6.471279807155528e-20,
+            "power": 2.0098350909734325e-23
+          },
+          {
+            "mapping": 9.240830021574315e-17,
+            "force": 5.421010862427522e-20,
+            "moment": 6.471262517604922e-20,
+            "power": 2.0098227307020142e-23
+          }
+        ]
+      }
+    }
+  ],
+  "geometry": {
+    "endpoint_gaps_m": [
+      5.836108330799572e-06,
+      5.836108330799572e-06
+    ],
+    "public_sweeps": [
+      {
+        "status": "unresolved",
+        "reason": "depth budget exhausted",
+        "checked_intervals": 33,
+        "input_fingerprint": "ef9df2ccea0c785653fc6115a0dedde804ea856ddaff1fe8d78fb835345e7d3c"
+      },
+      {
+        "status": "unresolved",
+        "reason": "depth budget exhausted",
+        "checked_intervals": 33,
+        "input_fingerprint": "cb026919f76105d979578c8a11f6235017cd73b00b6b8be91c6f6d630d4604ed"
+      }
+    ],
+    "chord": {
+      "start_gap_m": 0,
+      "min_z_minus_q_displacement_m": 5.83610629675393e-06,
+      "exact_min_z_minus_q": "1722514547890953/295147905179352825856",
+      "projected_area_bernstein": [
+        [
+          "1",
+          "10889035741432773690809540854379559351903/10889035741470030830827987437816582766592",
+          "242833611526554409892178026797571999931979392973003144976050779780323363946234373105/242833611528216133864932738352939863330300854881517440156476551217363035650651062272"
+        ],
+        [
+          "1",
+          "10889035741432772805639952962091300517471/10889035741470030830827987437816582766592",
+          "60708402881638592603073788162254101506475617595676077598078543764928204600124343159/60708402882054033466233184588234965832575213720379360039119137804340758912662765568"
+        ]
+      ],
+      "finite_patch_coordinate_margin_m": 0.984375,
+      "status": "certified_for_reported_affine_middle_path",
+      "proof": "For either lift the gap over the patch plane is t*(z_i(1)-q(1)) + rho*(1 +/- n_z(t)). Positive projected-area Bernstein coefficients define a unit normal for the full segment. Each prism is a convex hull of the lifted vertices. The closed-path minimum is zero at entry."
+    }
+  },
+  "delivery": {
+    "source_j_ns": 0.0028273758649015233,
+    "source_b_ns2": 2.8050324790945726e-05,
+    "six_owner_impulse_ns": 0.0004712293108169205,
+    "node_requests_ns": [
+      [
+        0.0,
+        0.0,
+        0.000942458621633841
+      ],
+      [
+        0.0,
+        0.0,
+        0.000942458621633841
+      ],
+      [
+        0.0,
+        0.0,
+        0.0004712293108169205
+      ],
+      [
+        0.0,
+        0.0,
+        0.0004712293108169205
+      ]
+    ],
+    "predictor_error_ns": 5.421010862427522e-20,
+    "final_cloth_ns": [
+      0.0,
+      2.7277908929784137e-15,
+      0.002827375864901523
+    ],
+    "final_cloth_error_ns": 2.7277908929784137e-15,
+    "robot_momentum_ns": -0.0028273758649015233,
+    "pair_z_residual_ns": -4.336808689942018e-19,
+    "measured_robot_v_m_s": -0.0014136879324507616,
+    "measured_robot_q_m": -2.208887394454315e-05,
+    "held_prediction_q_m": -2.208887394454315e-05,
+    "signal_q_m": -1.4025162395472863e-05,
+    "reversed_signal_q_m": -8.063711549070286e-06,
+    "displacement_error_m": 8.063711549070287e-06,
+    "position_limit_m": 1e-08
+  },
+  "moments": {
+    "cloth_requested_nms": [
+      0.0,
+      -0.000942458621633841,
+      0.0
+    ],
+    "cloth_measured_nms": [
+      0.0,
+      -0.000942458621633841,
+      -5.601396209042636e-27
+    ],
+    "platform_requested_nms": [
+      0.0,
+      0.000942458621633841,
+      0.0
+    ],
+    "shift_point_moment_delta_nms": [
+      0.0,
+      0.0004712293108169205,
+      0.0
+    ],
+    "platform_contact_world_moment_observed": false
+  },
+  "work": {
+    "original_applied_work_j": 0.0,
+    "gravity_work_j": 2.107176045114213e-06,
+    "local_cloth_report_input_work_j": -1.0532645568781132e-06,
+    "effective_cloth_work_j": -1.0532645568781132e-06,
+    "effective_platform_work_j": 3.997027140713818e-06,
+    "joint_layer_potential_and_dissipation_audited": false
+  },
+  "material_ledger_fields": [
+    "cumulative_projection_error",
+    "material_configuration_load",
+    "max_equation_error",
+    "numerical_domain_certificates",
+    "ordered_material_work",
+    "physical_affine_domain"
+  ],
+  "joint_evidence_missing": [
+    "automatic B2 admission",
+    "force time moment and motion binding",
+    "measured spatial partner wrench",
+    "original-input layer energy balance",
+    "generic swept hard clearance"
+  ]
+}

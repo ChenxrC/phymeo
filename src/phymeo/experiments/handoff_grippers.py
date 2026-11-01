@@ -5,6 +5,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
+from ..constraints.robot_contact import JointLimits, LinkCapsule
 from ..control.bounded_pd import solve_bounded_pd
 from ..control.point_ik import solve_point_ik
 from ..core.capabilities import SolverFailure
@@ -44,6 +45,9 @@ class Gripper(ABC):
     tool_point: np.ndarray
     fingers: tuple[int, int]
     effort_limits: np.ndarray
+    limits: JointLimits | None = None
+    capsules: tuple[LinkCapsule, ...] = ()
+    excluded_pairs: tuple[tuple[str, str], ...] = ()
 
     def position(self, state):
         pose = forward_kinematics(self.model, state.q)
@@ -81,6 +85,7 @@ class _ArticulatedGripper(Gripper):
             self.tool_point,
             np.array([target[0], 0.0, target[1]]),
             active_joints=(0, 1),
+            limits=self.limits,
         )
         if not result.converged:
             raise SolverFailure(f"gripper point IK {result.status}, error {result.error_m:.6g} m")
@@ -107,17 +112,21 @@ class _ArticulatedGripper(Gripper):
         return data, goal
 
 
-def _articulated_gripper(base_xz, lengths, direction, home_x):
+def _articulated_gripper(name, base_xz, lengths, direction, home_x):
     upper, fore = direction * np.asarray(lengths)
+    base_y = -direction * 0.045
+    limits = JointLimits(
+        np.array([-2.8, 0.05, -0.004, -0.004]), np.array([2.8, 3.05, 0.014, 0.014]), 2000.0, 8.0
+    )
     model = RobotModel(
         np.array([-1, 0, 1, 1]),
         ("revolute", "revolute", "prismatic", "prismatic"),
         np.array(
             [
-                [base_xz[0], 0.0, base_xz[1]],
+                [base_xz[0], base_y, base_xz[1]],
                 [upper, 0.0, 0.0],
-                [fore, -HALF_OPEN, 0.0],
-                [fore, HALF_OPEN, 0.0],
+                [fore, -base_y - HALF_OPEN, 0.0],
+                [fore, -base_y + HALF_OPEN, 0.0],
             ]
         ),
         np.tile([0.0, 0.0, 0.0, 1.0], (4, 1)),
@@ -127,7 +136,7 @@ def _articulated_gripper(base_xz, lengths, direction, home_x):
         np.full((4, 3), 0.001),
         np.array([0.0, 0.0, -9.81]),
     )
-    point = np.array([fore, 0.0, 0.0])
+    point = np.array([fore, -base_y, 0.0])
     seed = np.array([-0.5, 1.7, 0.0, 0.0])
     home = solve_point_ik(
         model,
@@ -136,6 +145,7 @@ def _articulated_gripper(base_xz, lengths, direction, home_x):
         point,
         np.array([home_x, 0.0, BASE_Z]),
         active_joints=(0, 1),
+        limits=limits,
         tolerance_m=1e-11,
     )
     if not home.converged:
@@ -147,14 +157,21 @@ def _articulated_gripper(base_xz, lengths, direction, home_x):
         point,
         (2, 3),
         np.array([5.0, 4.0, 5.0, 5.0]),
+        limits,
+        (
+            LinkCapsule(name + "_upper", name, 0, np.zeros(3), np.array([upper, 0.0, 0.0]), 0.008),
+            LinkCapsule(name + "_fore", name, 1, np.zeros(3), np.array([fore, 0.0, 0.0]), 0.006),
+            LinkCapsule(name + "_wrist", name, 1, np.array([fore, 0.0, 0.0]), point, 0.004),
+        ),
+        ((name + "_upper", name + "_fore"),),
     )
 
 
 def grippers_for(layout):
     if layout == "articulated":
         return {
-            "A": _articulated_gripper((-0.24, 0.16), (0.16, 0.18), 1.0, -0.06),
-            "B": _articulated_gripper((0.20, 0.35), (0.26, 0.28), -1.0, 0.115),
+            "A": _articulated_gripper("A", (-0.24, 0.16), (0.16, 0.18), 1.0, -0.06),
+            "B": _articulated_gripper("B", (0.20, 0.35), (0.26, 0.28), -1.0, 0.115),
         }
     if layout != "cartesian":
         raise ValueError(f"unknown handoff robot layout: {layout}")

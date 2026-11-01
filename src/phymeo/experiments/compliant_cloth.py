@@ -109,6 +109,17 @@ def frame_record(program, state, t, sample=None, sample_t=None):
         },
         patch_vertices_m=_patches(program, poses),
     )
+    if program.robot_contact is not None:
+        data["body_capsules_m"] = {
+            c.key: [
+                (
+                    poses[c.domain].position[c.link_index]
+                    + poses[c.domain].rotation[c.link_index] @ p
+                ).tolist()
+                for p in (c.start, c.end)
+            ]
+            for c in program.robot_contact.capsules
+        }
     if sample is not None:
         data["force_sample_s"] = sample_t
         data["contacts"] = {
@@ -131,10 +142,20 @@ def _robot_record(model):
     return record
 
 
+def _jsonable(value):
+    if isinstance(value, np.ndarray):
+        return value.tolist()
+    if isinstance(value, dict):
+        return {k: _jsonable(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_jsonable(v) for v in value]
+    return value
+
+
 def trace_start(case, name):
     p = case.program
     s = case.initial
-    return dict(
+    trace = dict(
         schema="phymeo-compliant-case-v1",
         case=name,
         backend="numpy",
@@ -163,6 +184,17 @@ def trace_start(case, name):
         samples=[],
         events=[],
     )
+    if p.robot_contact is not None:
+        system = p.robot_contact
+        trace["robot_contact"] = dict(
+            capsules=[_robot_record(c) for c in system.capsules],
+            planes=[_robot_record(c) for c in system.planes],
+            limits={n: _robot_record(limits) for n, limits in system.limits.items()},
+            material=_robot_record(system.material),
+            excluded_pairs=system.excluded_pairs,
+        )
+        trace["robot_samples"] = []
+    return trace
 
 
 def record_step(case, trace, result, t):
@@ -172,6 +204,9 @@ def record_step(case, trace, result, t):
     h = case.dt / case.substeps
     for i, rep in enumerate(result.report.substeps):
         rows = rep.diagnostics["patches"]
+        body = rep.diagnostics.get("robot_contact")
+        if body is not None:
+            trace["robot_samples"].append(dict(t=t + (i + 0.5) * h, **_jsonable(body)))
         for key, r in rows.items():
             trace["samples"].append(
                 dict(
@@ -188,6 +223,8 @@ def record_step(case, trace, result, t):
     trace["frames"].append(
         frame_record(case.program, result.state, t + case.dt, rows, t + case.dt - h / 2)
     )
+    if trace.get("robot_samples"):
+        trace["frames"][-1]["robot_contact"] = trace["robot_samples"][-1]
     return True
 
 

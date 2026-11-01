@@ -7,8 +7,15 @@ from pathlib import Path
 
 import numpy as np
 
+from phymeo.constraints.robot_contact import (
+    CollisionPlane,
+    JointLimits,
+    LinkCapsule,
+    RobotContactMaterial,
+)
 from phymeo.constraints.robot_contact_patch import RobotContactPatch
 from phymeo.core.robot import RobotModel
+from phymeo.dynamics.robot_contact import RobotContactSystem
 from phymeo.dynamics.robot_kinematics import forward_kinematics
 from phymeo.experiments.compliant_cloth import build_impact
 from phymeo.experiments.compliant_handoff import build_handoff
@@ -22,6 +29,17 @@ def _bind_recorded_models(trace):
     if "robot_parents" in trace and trace["robot_parents"] != parents:
         raise ValueError("recorded robot parents differ from the model")
     trace["robot_parents"] = parents
+    bodies = None
+    if "robot_contact" in trace:
+        config = trace["robot_contact"]
+        bodies = RobotContactSystem(
+            models,
+            limits={n: JointLimits(**r) for n, r in config["limits"].items()},
+            capsules=tuple(LinkCapsule(**r) for r in config["capsules"]),
+            planes=tuple(CollisionPlane(**r) for r in config["planes"]),
+            material=RobotContactMaterial(**config["material"]),
+            excluded_pairs=config["excluded_pairs"],
+        )
     attachments = {}
     for row in trace["patches"]:
         patch = RobotContactPatch(
@@ -45,6 +63,18 @@ def _bind_recorded_models(trace):
                 raise ValueError("recorded robot links differ from forward kinematics")
             robot["links_m"] = pose.position.tolist()
             poses[name] = pose
+        if bodies is not None:
+            recorded = frame.get("body_capsules_m", {})
+            if set(recorded) != {c.key for c in bodies.capsules}:
+                raise ValueError("recorded capsule membership differs")
+            for c in bodies.capsules:
+                pose = poses[c.domain]
+                expected = [
+                    pose.position[c.link_index] + pose.rotation[c.link_index] @ p
+                    for p in (c.start, c.end)
+                ]
+                if not np.array_equal(recorded[c.key], expected):
+                    raise ValueError("recorded capsule differs from its model attachment")
         if set(frame["patch_vertices_m"]) != set(attachments):
             raise ValueError("recorded patch membership differs from model attachments")
         for key, (robot, patch) in attachments.items():
@@ -117,6 +147,7 @@ def export(source, output):
     add_link_geometry(trace)
     # The full source file retains every substep. The viewer reads the recorded frame data.
     trace.pop("samples", None)
+    trace.pop("robot_samples", None)
     cap = dict(source_sha256=hashlib.sha256(data).hexdigest(), trajectory=trace)
     packed = json.dumps(cap, ensure_ascii=False, separators=(",", ":"), allow_nan=False).replace(
         "<", "\\u003c"

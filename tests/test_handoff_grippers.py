@@ -79,3 +79,39 @@ def test_trace_carries_the_robot_and_finite_patch_bindings():
 def test_invalid_layout_fails_before_simulation():
     with pytest.raises(ValueError, match="robot"):
         build_handoff(robot="undeclared")
+
+
+def test_handoff_owns_limits_structural_shapes_and_records_their_loads():
+    case = build_handoff(robot="articulated")
+    system = case.program.robot_contact
+    assert system is not None, "handoff is missing body collisions and stops"
+    assert set(system.limits) == {"A", "B"}
+    assert len(system.capsules) == 6
+    assert len(system.planes) == 1
+    report = system.evaluate(case.initial.domains)
+    assert not report["contacts"], "initial robot bodies intersect"
+    trace = trace_start(case, "shaped_arm")
+    assert len(trace["robot_contact"]["capsules"]) == 6
+    assert set(trace["frames"][0]["body_capsules_m"]) == {c.key for c in system.capsules}
+    for name, g in case.grippers.items():
+        assert g.limits is system.limits[name]
+
+
+def test_recorded_collision_bodies_are_bound_to_physical_robot_models():
+    from copy import deepcopy
+    from importlib.util import module_from_spec, spec_from_file_location
+    from pathlib import Path
+
+    spec = spec_from_file_location(
+        "body_exporter", Path(__file__).resolve().parents[1] / "examples/export_compliant_replay.py"
+    )
+    module = module_from_spec(spec)
+    spec.loader.exec_module(module)
+    trace = trace_start(build_handoff(robot="articulated"), "unrelated_task_name")
+    broken = deepcopy(trace)
+    broken["frames"][0]["body_capsules_m"]["A_upper"][0][2] += 0.1
+    with pytest.raises(ValueError, match="capsule"):
+        module.add_link_geometry(broken)
+    valid = deepcopy(trace)
+    module.add_link_geometry(valid)
+    assert valid["frames"] == trace["frames"]

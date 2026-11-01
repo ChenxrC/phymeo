@@ -7,6 +7,7 @@ import numpy as np
 from ..constraints.bending import BendingConstraints, bending_angle_gradient
 from ..constraints.cloth_material import ClothMaterial
 from ..constraints.distance import DistanceConstraints
+from ..constraints.robot_contact import CollisionPlane
 from ..constraints.robot_contact_patch import RobotContactPatch
 from ..constraints.triangle_prism_surface import TrianglePrismSurface
 from ..core.capabilities import SolverFailure
@@ -14,6 +15,7 @@ from ..core.model import ParticleModel
 from ..core.robot import RobotInputs
 from ..core.scene import DomainBinding, SceneInputs, SceneModel, SceneState, StepSettings
 from ..core.state import ParticleState, StepInputs
+from ..dynamics.robot_contact import RobotContactSystem
 from ..solvers.compliant_cloth_contact import CompliantClothContactProgram, CompliantPatch
 from .compliant_cloth import Case, record_step, trace_start
 from .handoff_grippers import BASE_Z, CLOSED, Gripper, grippers_for
@@ -103,6 +105,17 @@ def build_handoff(*, grip_friction=0.9, robot="cartesian"):
                     slip_speed_m_s=0.06,
                 )
             )
+    shapes = tuple(c for g in grippers.values() for c in g.capsules)
+    limits = {n: g.limits for n, g in grippers.items() if g.limits is not None}
+    contact = None
+    if shapes or limits:
+        contact = RobotContactSystem(
+            models,
+            limits=limits,
+            capsules=shapes,
+            planes=(CollisionPlane("floor", np.array([0.0, 0.0, 1.0]), 0.0),),
+            excluded_pairs=tuple(p for g in grippers.values() for p in g.excluded_pairs),
+        )
     program = CompliantClothContactProgram(
         scene,
         "cloth",
@@ -112,6 +125,8 @@ def build_handoff(*, grip_friction=0.9, robot="cartesian"):
         patches,
         material_damping_s=0.002,
         max_penetration_m=0.010,
+        robot_contact=contact,
+        max_joint_violation=0.02,
     )
     state = SceneState(
         {
@@ -360,5 +375,11 @@ def run_handoff(*, grip_friction=0.9, robot="cartesian", progress=None):
         phase_count=len(trace["events"]),
         max_sampled_penetration_m=max((r["penetration_m"] for r in trace["samples"]), default=0.0),
         final_center_x_m=float(state.domains["cloth"].position[:, 0].mean()),
+        max_robot_penetration_m=max(
+            (r["penetration_m"] for r in trace.get("robot_samples", [])), default=0.0
+        ),
+        max_joint_violation=max(
+            (r["joint_violation"] for r in trace.get("robot_samples", [])), default=0.0
+        ),
     )
     return trace

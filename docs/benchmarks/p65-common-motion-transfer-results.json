@@ -1,0 +1,56 @@
+{
+  "schema": "p65-common-motion-transfer-results-v1",
+  "accepted": true,
+  "model": "two translational masses, one owner, independent undamped spring and active finite layer",
+  "protocol_sha256_lf": "eabe09344e3d8112b0f050c5aacd2706a3fcdd14bd917d3a43b33e433dcdc2fc",
+  "initial_state": [
+    [
+      "1/1024",
+      "0"
+    ],
+    [
+      "1/128",
+      "-1/128"
+    ]
+  ],
+  "final_state": [
+    [
+      "149306956564055064618513403/137416472850677606948504862720",
+      "-38176080998168938393678843/274832945701355213897009725440"
+    ],
+    [
+      "29362789216532659980199/4708623658534731597742080",
+      "-93738503298062193543079/9417247317069463195484160"
+    ]
+  ],
+  "analytic_positions_m": [
+    [
+      0.0010865288088590232,
+      0.0010865288088590236
+    ],
+    [
+      -0.00013890649427326173,
+      -0.00013890649427326167
+    ]
+  ],
+  "analytic_velocities_m_s": [
+    [
+      0.006235960090654179,
+      0.006235960090654181
+    ],
+    [
+      -0.009953917545327092,
+      -0.009953917545327089
+    ]
+  ],
+  "position_error_upper_m": 2.38164909710798e-22,
+  "speed_error_upper_m_s": 4.0223893294341737e-20,
+  "impulse_error_upper_ns": 7.592483421808562e-20,
+  "time_moment_error_upper_per_mass_m": 3.5944131221131824e-22,
+  "full_path_law_impulse_error_upper_ns": 4.0312989014736703e-19,
+  "full_path_material_position_error_upper_m": 4.9389520145033495e-22,
+  "full_path_minimum_gap_lower_m": 0.0009765625,
+  "signed_original_energy_defect_j": -6.444878635216958e-22,
+  "owner_evaluations": 81,
+  "verification": "analytical oscillator, rational alternating trig enclosures, whole-path polynomial laws"
+}

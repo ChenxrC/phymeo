@@ -1,0 +1,1029 @@
+{
+  "schema": "p65-sc-l1-joint-publication-results-v1",
+  "decision": "Accepted for eight registered, independently seeded HOST scalar unloading witnesses and one cold successor per witness. Exact motion uses the serialized binary64 projections plus their rational remainders.",
+  "baseline": "43266feaf78da548d67144fe4703ede8b6ce653b",
+  "preregistration_commit": "975d00a81d039295ab00682c485ff961fdabd1b2",
+  "tested_source_commit": "3dde90c823b416e4ba6c871aaed959c8c8c6b003",
+  "protocol_sha256_lf": "58f93ed30dc2733cfb5814428442718fb0ade03c15e26d4d43cdf6d6dcc617af",
+  "inlet_source": "p65-contact-layer-intrastep-results.json",
+  "prior_gates": "p65-contact-layer-intrastep-protocol.json",
+  "raw_directory": "artifacts/p65-n2-layer-publication-20261101-01",
+  "raw_hashes": {
+    "primary-audit.json": "7acd635638087e35c700e605b0286542c6e2468afad6d2e412f9a667b09defb4",
+    "primary/witness/index.json": "d39a79fcfcb7508d33bb46fd2552360ae7e392300565ea4020f9d4364bf9e473",
+    "primary/successor/index.json": "ef532260f0255831fbfb142800ff410aac74d481c10cde02656c5a0cd9cf25c7",
+    "remaining-audit.json": "71ae015b7975a7e895c6d8220706ce2dbab8f37e391a00f920f074f2234960d1",
+    "remaining/witness/index.json": "923fc018f7c7737ef086397a4729200dd7de0a76a129de75884ca25049acd7f4",
+    "remaining/successor/index.json": "43f9c3ad024c1649ee2612d2a2bb20b2f8ca12232007a27abcc5ba135e5b7703"
+  },
+  "serial_runs": [
+    {
+      "task": "format",
+      "dir": "format-130223537",
+      "start": "2026-11-01T13:02:24.4673672+08:00",
+      "end": "2026-11-01T13:02:24.5974989+08:00",
+      "raw_exit": 0,
+      "guard_matches": 0
+    },
+    {
+      "task": "lint",
+      "dir": "lint-130232189",
+      "start": "2026-11-01T13:02:33.3263323+08:00",
+      "end": "2026-11-01T13:02:33.4958882+08:00",
+      "raw_exit": 0,
+      "guard_matches": 0
+    },
+    {
+      "task": "primary-witness",
+      "dir": "primary-witness-130250250",
+      "start": "2026-11-01T13:02:51.381863+08:00",
+      "end": "2026-11-01T13:02:51.7189344+08:00",
+      "raw_exit": 0,
+      "guard_matches": 0
+    },
+    {
+      "task": "primary-successor",
+      "dir": "primary-successor-130257864",
+      "start": "2026-11-01T13:02:58.8004086+08:00",
+      "end": "2026-11-01T13:02:59.0424868+08:00",
+      "raw_exit": 0,
+      "guard_matches": 0
+    },
+    {
+      "task": "primary-audit",
+      "dir": "primary-audit-130303903",
+      "start": "2026-11-01T13:03:04.7696414+08:00",
+      "end": "2026-11-01T13:03:05.1244251+08:00",
+      "raw_exit": 0,
+      "guard_matches": 0
+    },
+    {
+      "task": "remaining-witness",
+      "dir": "remaining-witness-130324527",
+      "start": "2026-11-01T13:03:25.4670023+08:00",
+      "end": "2026-11-01T13:03:25.6719776+08:00",
+      "raw_exit": 0,
+      "guard_matches": 0
+    },
+    {
+      "task": "remaining-successor",
+      "dir": "remaining-successor-130330774",
+      "start": "2026-11-01T13:03:31.7401025+08:00",
+      "end": "2026-11-01T13:03:32.0969037+08:00",
+      "raw_exit": 0,
+      "guard_matches": 0
+    },
+    {
+      "task": "remaining-audit",
+      "dir": "remaining-audit-130337549",
+      "start": "2026-11-01T13:03:38.6639604+08:00",
+      "end": "2026-11-01T13:03:39.1727958+08:00",
+      "raw_exit": 0,
+      "guard_matches": 0
+    }
+  ],
+  "summary": {
+    "original_counterexamples": 8,
+    "cold_successors": 8,
+    "internal_pieces": 822,
+    "original_window_reference_intervals": 13,
+    "continuation_intervals_outside_window": 3,
+    "exact_delivery_intervals": 16,
+    "word_only_mismatching_intervals": 16,
+    "word_only_mismatching_pieces": 822,
+    "max_law_relative_error_bound": 0.00023592546910246182,
+    "minimum_certified_gap_m": 0.001384157014581838,
+    "max_positive_work_defect_per_interval_j": 4.0890776297624476E-22,
+    "max_evaluations_per_interval": 375,
+    "largest_wire_bytes": 217,
+    "largest_remainder_integer_bits": 135
+  },
+  "cases": [
+    {
+      "id": "h64-step7",
+      "old_endpoint_j_ns": "0",
+      "old_endpoint_b_ns2": "883732878381287/79228162514264337593543950336000",
+      "rejected_controls": {
+        "old_endpoint": "outside moment cone",
+        "dropped_remainders": "motion moments",
+        "same_impulse_other_timing": "motion moments",
+        "negative_force": "negative pressure",
+        "reversed_time": "time order"
+      },
+      "witness": {
+        "start": "7/64",
+        "end": "1/8",
+        "parts": 125,
+        "calls": 375,
+        "j_ns": "15997050218598858709/5070602400912917605986812821504000",
+        "b_ns2": "9583382158581821222509/243388915243820045087367015432192000000",
+        "j_decimal_ns": 3.15486187907747E-15,
+        "b_decimal_ns2": 3.9374768357800776E-17,
+        "hard_gap_lower_m": 0.0013880632645816677,
+        "max_relative_law_error_bound": 0.00023592546910246182,
+        "positive_work_j": 4.0890776297624476E-22,
+        "prefix_ns": 4.089077629769044E-19,
+        "max_wire_bits": 128,
+        "max_wire_bytes": 209,
+        "exact_momentum_and_position": true,
+        "word_only_piece_mismatches": 125,
+        "word_only_delta_j_ns": -9.860761315262648E-34,
+        "word_only_delta_b_ns2": -3.123477856274553E-20,
+        "word_only_outer_matches": false,
+        "reference_errors": {
+          "step_impulse_vs_reference_ns": 2.5997503667648917E-15,
+          "step_moment_error_divided_by_mass_m": 3.103996415681847E-17,
+          "step_peak_vs_reference_n": 6.412064638187258E-13,
+          "endpoint_gap_error_m": -9.625633326276852E-16,
+          "endpoint_speed_error_m_s": 1.8669906349157836E-17
+        },
+        "inlet": {
+          "gap": [
+            "0x1.6bdf594dfc2b1p-10",
+            "0"
+          ],
+          "schema": "sc-l1-motion-v1",
+          "t": "7/64",
+          "y": [
+            "0x1.c00003095a1cep-39",
+            "0"
+          ]
+        },
+        "outlet": {
+          "gap": [
+            "0x1.6ff7ecc2b8929p-10",
+            "7602198872267558509/243388915243820045087367015432192000000"
+          ],
+          "schema": "sc-l1-motion-v1",
+          "t": "1/8",
+          "y": [
+            "0x1.ff1119b762f03p-46",
+            "-5/5070602400912917605986812821504"
+          ]
+        },
+        "end_sha256": "51db900925a811f83a20c301e96ff863aebb277021f775cec05d9193967cf9bf"
+      },
+      "successor": {
+        "start": "1/8",
+        "end": "9/64",
+        "parts": 125,
+        "calls": 375,
+        "j_ns": "36455408270047886207/1298074214633706907132624082305024000",
+        "b_ns2": "180996018291128322633/519229685853482762853049632922009600000",
+        "j_decimal_ns": 2.808422496885892E-17,
+        "b_decimal_ns2": 3.485856514417439E-19,
+        "hard_gap_lower_m": 0.0014036882645816573,
+        "max_relative_law_error_bound": 0.00022388948313228508,
+        "positive_work_j": 3.452779701402251E-24,
+        "prefix_ns": 3.4527797014023E-21,
+        "max_wire_bits": 135,
+        "max_wire_bytes": 214,
+        "exact_momentum_and_position": true,
+        "word_only_piece_mismatches": 125,
+        "word_only_delta_j_ns": 9.868465035040196E-34,
+        "word_only_delta_b_ns2": 1.0857192307166177E-19,
+        "word_only_outer_matches": false,
+        "reference_errors": null,
+        "inlet": {
+          "gap": [
+            "0x1.6ff7ecc2b8929p-10",
+            "7602198872267558509/243388915243820045087367015432192000000"
+          ],
+          "schema": "sc-l1-motion-v1",
+          "t": "1/8",
+          "y": [
+            "0x1.ff1119b762f03p-46",
+            "-5/5070602400912917605986812821504"
+          ]
+        },
+        "outlet": {
+          "gap": [
+            "0x1.7410803774fd1p-10",
+            "-602336118722549520217/7788445287802241442795744493830144000000"
+          ],
+          "schema": "sc-l1-motion-v1",
+          "t": "9/64",
+          "y": [
+            "0x1.495e42cd395bep-52",
+            "1/1298074214633706907132624082305024"
+          ]
+        },
+        "end_sha256": "79ab384042771ecd00bddeff962a7c4f23afe8c0698e1ac1b6228985254bbe2a"
+      }
+    },
+    {
+      "id": "h128-step14",
+      "old_endpoint_j_ns": "0",
+      "old_endpoint_b_ns2": "266077992768409/158456325028528675187087900672000",
+      "rejected_controls": {
+        "old_endpoint": "outside moment cone",
+        "dropped_remainders": "motion moments",
+        "same_impulse_other_timing": "motion moments",
+        "negative_force": "negative pressure",
+        "reversed_time": "time order"
+      },
+      "witness": {
+        "start": "7/64",
+        "end": "15/128",
+        "parts": 63,
+        "calls": 189,
+        "j_ns": "522561345033577231/182541686432865033815525261574144",
+        "b_ns2": "157283792227668771793/10304113115762365428818769965337280512",
+        "j_decimal_ns": 2.8626959421992863E-15,
+        "b_decimal_ns2": 1.5264175621972673E-17,
+        "hard_gap_lower_m": 0.0013880632645817072,
+        "max_relative_law_error_bound": 0.0002320913960159911,
+        "positive_work_j": 3.6581571389727337E-22,
+        "prefix_ns": 3.6581571389790593E-19,
+        "max_wire_bits": 132,
+        "max_wire_bytes": 211,
+        "exact_momentum_and_position": true,
+        "word_only_piece_mismatches": 63,
+        "word_only_delta_j_ns": -2.0466557929900694E-32,
+        "word_only_delta_b_ns2": 7.59599612220995E-20,
+        "word_only_outer_matches": false,
+        "reference_errors": {
+          "step_impulse_vs_reference_ns": 2.307584429886708E-15,
+          "step_moment_error_divided_by_mass_m": 1.1096773521481514E-17,
+          "step_peak_vs_reference_n": 6.329169063638601E-13,
+          "endpoint_gap_error_m": -9.264283050104162E-16,
+          "endpoint_speed_error_m_s": 1.922429855019877E-16
+        },
+        "inlet": {
+          "gap": [
+            "0x1.6bdf594dfc367p-10",
+            "0"
+          ],
+          "schema": "sc-l1-motion-v1",
+          "t": "7/64",
+          "y": [
+            "0x1.bc2fe387ba732p-39",
+            "0"
+          ]
+        },
+        "outlet": {
+          "gap": [
+            "0x1.6deba3085a690p-10",
+            "-97837504087679511283/1288014139470295678602346245667160064000"
+          ],
+          "schema": "sc-l1-motion-v1",
+          "t": "15/128",
+          "y": [
+            "0x1.4a632e9d789dfp-42",
+            "-467/22817710804108129226940657696768"
+          ]
+        },
+        "end_sha256": "a986b65651c0685388abb97dc7f7e2a38da2be125672f619b8e388a4aba2bd72"
+      },
+      "successor": {
+        "start": "15/128",
+        "end": "1/8",
+        "parts": 63,
+        "calls": 189,
+        "j_ns": "113005463829772205/425930601676685078902892277006336",
+        "b_ns2": "348848622210359688233/247298714778296770291650479168094732288",
+        "j_decimal_ns": 2.653142633680786E-16,
+        "b_decimal_ns2": 1.4106366162197906E-18,
+        "hard_gap_lower_m": 0.0013958757645816978,
+        "max_relative_law_error_bound": 0.00022613104407597577,
+        "positive_work_j": 3.302863496767137E-23,
+        "prefix_ns": 3.30286349676767E-20,
+        "max_wire_bits": 135,
+        "max_wire_bytes": 215,
+        "exact_momentum_and_position": true,
+        "word_only_piece_mismatches": 63,
+        "word_only_delta_j_ns": 1.8913879322799022E-32,
+        "word_only_delta_b_ns2": 2.1463863929992014E-20,
+        "word_only_outer_matches": false,
+        "reference_errors": {
+          "step_impulse_vs_reference_ns": 2.653142633680786E-16,
+          "step_moment_error_divided_by_mass_m": 4.949540269848258E-18,
+          "step_peak_vs_reference_n": 5.808513713972648E-14,
+          "endpoint_gap_error_m": -9.230101917184307E-16,
+          "endpoint_speed_error_m_s": 1.842872213390909E-17
+        },
+        "inlet": {
+          "gap": [
+            "0x1.6deba3085a690p-10",
+            "-97837504087679511283/1288014139470295678602346245667160064000"
+          ],
+          "schema": "sc-l1-motion-v1",
+          "t": "15/128",
+          "y": [
+            "0x1.4a632e9d789dfp-42",
+            "-467/22817710804108129226940657696768"
+          ]
+        },
+        "outlet": {
+          "gap": [
+            "0x1.6ff7ecc2b89e0p-10",
+            "-3011598343612211654459/30912339347287096286456309896011841536000"
+          ],
+          "schema": "sc-l1-motion-v1",
+          "t": "1/8",
+          "y": [
+            "0x1.fab8d5a71caf7p-46",
+            "-31/19965496953594613073573075484672"
+          ]
+        },
+        "end_sha256": "a83ae95ee1270c6ecb03551b2691307fc7974008a0b3477ff80151f44487a436"
+      }
+    },
+    {
+      "id": "h128-step15",
+      "old_endpoint_j_ns": "0",
+      "old_endpoint_b_ns2": "266077992768409/158456325028528675187087900672000",
+      "rejected_controls": {
+        "old_endpoint": "outside moment cone",
+        "dropped_remainders": "motion moments",
+        "same_impulse_other_timing": "motion moments",
+        "negative_force": "negative pressure",
+        "reversed_time": "time order"
+      },
+      "witness": {
+        "start": "15/128",
+        "end": "1/8",
+        "parts": 63,
+        "calls": 189,
+        "j_ns": "3646305698798201189/1277791805030055236708676831019008",
+        "b_ns2": "156335695352312950787/10304113115762365428818769965337280512",
+        "j_decimal_ns": 2.853599220502463E-15,
+        "b_decimal_ns2": 1.517216412474779E-17,
+        "hard_gap_lower_m": 0.0013958757645816842,
+        "max_relative_law_error_bound": 0.00022613104407595553,
+        "positive_work_j": 3.552409350382203E-22,
+        "prefix_ns": 3.552409350388362E-19,
+        "max_wire_bits": 132,
+        "max_wire_bytes": 211,
+        "exact_momentum_and_position": true,
+        "word_only_piece_mismatches": 63,
+        "word_only_delta_j_ns": -9.322332443445131E-33,
+        "word_only_delta_b_ns2": -4.8868976050121145E-20,
+        "word_only_outer_matches": false,
+        "reference_errors": {
+          "step_impulse_vs_reference_ns": 2.853599220502463E-15,
+          "step_moment_error_divided_by_mass_m": 1.8711067778376258E-17,
+          "step_peak_vs_reference_n": 9.22797135797858E-13,
+          "endpoint_gap_error_m": -9.4519846367043E-16,
+          "endpoint_speed_error_m_s": 2.9283970719881063E-16
+        },
+        "inlet": {
+          "gap": [
+            "0x1.6deba3085a651p-10",
+            "0"
+          ],
+          "schema": "sc-l1-motion-v1",
+          "t": "15/128",
+          "y": [
+            "0x1.bc2fe387ba732p-39",
+            "0"
+          ]
+        },
+        "outlet": {
+          "gap": [
+            "0x1.6ff7ecc2b8979p-10",
+            "62943932133991278967/1288014139470295678602346245667160064000"
+          ],
+          "schema": "sc-l1-motion-v1",
+          "t": "1/8",
+          "y": [
+            "0x1.54a122340d2b1p-42",
+            "-1489/159723975628756904588584603877376"
+          ]
+        },
+        "end_sha256": "8a9cdb2ce37f803bca179eea05e9319796e6a635a02eac29a708513b89f8bcb9"
+      },
+      "successor": {
+        "start": "1/8",
+        "end": "17/128",
+        "parts": 63,
+        "calls": 189,
+        "j_ns": "2787017097360148021/10222334440240441893669414648152064",
+        "b_ns2": "119148906524039151559/82432904926098923430550159722698244096",
+        "j_decimal_ns": 2.72639983914926E-16,
+        "b_decimal_ns2": 1.445404679488805E-18,
+        "hard_gap_lower_m": 0.0014036882645816747,
+        "max_relative_law_error_bound": 0.00022025356429216842,
+        "positive_work_j": 3.3053861131241023E-23,
+        "prefix_ns": 3.305386113124653E-20,
+        "max_wire_bits": 135,
+        "max_wire_bytes": 217,
+        "exact_momentum_and_position": true,
+        "word_only_piece_mismatches": 63,
+        "word_only_delta_j_ns": 1.2044998206603762E-32,
+        "word_only_delta_b_ns2": 5.776393891740661E-20,
+        "word_only_outer_matches": false,
+        "reference_errors": null,
+        "inlet": {
+          "gap": [
+            "0x1.6ff7ecc2b8979p-10",
+            "62943932133991278967/1288014139470295678602346245667160064000"
+          ],
+          "schema": "sc-l1-motion-v1",
+          "t": "1/8",
+          "y": [
+            "0x1.54a122340d2b1p-42",
+            "-1489/159723975628756904588584603877376"
+          ]
+        },
+        "outlet": {
+          "gap": [
+            "0x1.7204367d16cc9p-10",
+            "-13093529077859227379/1472016159394623632688395709333897216000"
+          ],
+          "schema": "sc-l1-motion-v1",
+          "t": "17/128",
+          "y": [
+            "0x1.0d501162a7110p-45",
+            "497/182541686432865033815525261574144"
+          ]
+        },
+        "end_sha256": "0f474c36e194effcaccf70cf03b324942fd4220a75ce107eb91d429bd45e5048"
+      }
+    },
+    {
+      "id": "h256-step27",
+      "old_endpoint_j_ns": "952138524976239/2475880078570760549798248448000",
+      "old_endpoint_b_ns2": "-604071048007/309485009821345068724781056000",
+      "rejected_controls": {
+        "old_endpoint": "outside moment cone",
+        "dropped_remainders": "motion moments",
+        "same_impulse_other_timing": "motion moments",
+        "negative_force": "negative pressure",
+        "reversed_time": "time order"
+      },
+      "witness": {
+        "start": "27/256",
+        "end": "7/64",
+        "parts": 32,
+        "calls": 96,
+        "j_ns": "817739923270064763/324518553658426726783156020576256",
+        "b_ns2": "15651714978321664569/2658455991569831745807614120560689152",
+        "j_decimal_ns": 2.5198556879147814E-15,
+        "b_decimal_ns2": 5.8875208120632634E-18,
+        "hard_gap_lower_m": 0.001384157014581838,
+        "max_relative_law_error_bound": 0.00022761242733486492,
+        "positive_work_j": 3.167591548542069E-22,
+        "prefix_ns": 3.167591548549509E-19,
+        "max_wire_bits": 130,
+        "max_wire_bytes": 210,
+        "exact_momentum_and_position": true,
+        "word_only_piece_mismatches": 32,
+        "word_only_delta_j_ns": -8.872219993407568E-32,
+        "word_only_delta_b_ns2": -3.312399640192722E-20,
+        "word_only_outer_matches": false,
+        "reference_errors": {
+          "step_impulse_vs_reference_ns": 2.1853882508179148E-17,
+          "step_moment_error_divided_by_mass_m": -1.8316432090830686E-19,
+          "step_peak_vs_reference_n": 7.156290044593209E-20,
+          "endpoint_gap_error_m": -7.987871757724587E-16,
+          "endpoint_speed_error_m_s": -2.945347373819213E-19
+        },
+        "inlet": {
+          "gap": [
+            "0x1.6ad93470cd418p-10",
+            "0"
+          ],
+          "schema": "sc-l1-motion-v1",
+          "t": "27/256",
+          "y": [
+            "0x1.fbad47a65c800p-39",
+            "0"
+          ]
+        },
+        "outlet": {
+          "gap": [
+            "0x1.6bdf594dfc59cp-10",
+            "11007335837430119893/332306998946228968225951765070086144000"
+          ],
+          "schema": "sc-l1-motion-v1",
+          "t": "7/64",
+          "y": [
+            "0x1.3213d2527209bp-40",
+            "-3599/40564819207303340847894502572032"
+          ]
+        },
+        "end_sha256": "18a718b7a78778e8c0718616828a084a9d0dbe17d3dc812a45d199bdf0503ee8"
+      },
+      "successor": {
+        "start": "7/64",
+        "end": "29/256",
+        "parts": 32,
+        "calls": 96,
+        "j_ns": "245691927512984847/324518553658426726783156020576256",
+        "b_ns2": "28187760852603289517/15950735949418990474845684723364134912",
+        "j_decimal_ns": 7.570967044663611E-16,
+        "b_decimal_ns2": 1.767176194376789E-18,
+        "hard_gap_lower_m": 0.0013880632645818297,
+        "max_relative_law_error_bound": 0.00022469833258338792,
+        "positive_work_j": 9.39497361793872E-23,
+        "prefix_ns": 9.394973617945385E-20,
+        "max_wire_bits": 132,
+        "max_wire_bytes": 213,
+        "exact_momentum_and_position": true,
+        "word_only_piece_mismatches": 32,
+        "word_only_delta_j_ns": 9.89280878953725E-32,
+        "word_only_delta_b_ns2": 9.872607178915711E-20,
+        "word_only_outer_matches": false,
+        "reference_errors": {
+          "step_impulse_vs_reference_ns": 2.019851921537828E-16,
+          "step_moment_error_divided_by_mass_m": -3.1652485586879E-19,
+          "step_peak_vs_reference_n": -5.009436385263972E-17,
+          "endpoint_gap_error_m": -7.99167677176764E-16,
+          "endpoint_speed_error_m_s": -9.123920374302339E-20
+        },
+        "inlet": {
+          "gap": [
+            "0x1.6bdf594dfc59cp-10",
+            "11007335837430119893/332306998946228968225951765070086144000"
+          ],
+          "schema": "sc-l1-motion-v1",
+          "t": "7/64",
+          "y": [
+            "0x1.3213d2527209bp-40",
+            "-3599/40564819207303340847894502572032"
+          ]
+        },
+        "outlet": {
+          "gap": [
+            "0x1.6ce57e2b2b73bp-10",
+            "-130800172779447118409/1993841993677373809355710590420516864000"
+          ],
+          "schema": "sc-l1-motion-v1",
+          "t": "29/256",
+          "y": [
+            "0x1.73e504b3ee07ap-42",
+            "207/20282409603651670423947251286016"
+          ]
+        },
+        "end_sha256": "84787bb94ca773270b6e02abdada5919b66e2a0d5f4eebbde40494654e2342fd"
+      }
+    },
+    {
+      "id": "h256-step28",
+      "old_endpoint_j_ns": "0",
+      "old_endpoint_b_ns2": "-87571041251783/25353012004564588029934064107520",
+      "rejected_controls": {
+        "old_endpoint": "outside moment cone",
+        "dropped_remainders": "motion moments",
+        "same_impulse_other_timing": "motion moments",
+        "negative_force": "negative pressure",
+        "reversed_time": "time order"
+      },
+      "witness": {
+        "start": "7/64",
+        "end": "29/256",
+        "parts": 32,
+        "calls": 96,
+        "j_ns": "91018286876943419/40564819207303340847894502572032",
+        "b_ns2": "20884704920273241431/3987683987354747618711421180841033728",
+        "j_decimal_ns": 2.243774005544104E-15,
+        "b_decimal_ns2": 5.2373018991726136E-18,
+        "hard_gap_lower_m": 0.0013880632645818219,
+        "max_relative_law_error_bound": 0.00022469833258334328,
+        "positive_work_j": 2.7843467634074907E-22,
+        "prefix_ns": 2.784346763413344E-19,
+        "max_wire_bits": 125,
+        "max_wire_bytes": 209,
+        "exact_momentum_and_position": true,
+        "word_only_piece_mismatches": 32,
+        "word_only_delta_j_ns": -4.082355184518736E-32,
+        "word_only_delta_b_ns2": -1.7753062939983652E-20,
+        "word_only_outer_matches": false,
+        "reference_errors": {
+          "step_impulse_vs_reference_ns": 1.6886624932315256E-15,
+          "step_moment_error_divided_by_mass_m": 3.1536008489270347E-18,
+          "step_peak_vs_reference_n": 6.532811016000207E-13,
+          "endpoint_gap_error_m": -8.118779076737658E-16,
+          "endpoint_speed_error_m_s": 6.485214599745154E-16
+        },
+        "inlet": {
+          "gap": [
+            "0x1.6bdf594dfc578p-10",
+            "0"
+          ],
+          "schema": "sc-l1-motion-v1",
+          "t": "7/64",
+          "y": [
+            "0x1.c58dd73d6e391p-39",
+            "0"
+          ]
+        },
+        "outlet": {
+          "gap": [
+            "0x1.6ce57e2b2b700p-10",
+            "353968024061369011/19938419936773738093557105904205168640"
+          ],
+          "schema": "sc-l1-motion-v1",
+          "t": "29/256",
+          "y": [
+            "0x1.138ab9a3f20a6p-40",
+            "-207/5070602400912917605986812821504"
+          ]
+        },
+        "end_sha256": "d9eb4de68adce5363f3f60db7f91a3fa4664265940eef7b168fabaebebc8d66e"
+      },
+      "successor": {
+        "start": "29/256",
+        "end": "15/128",
+        "parts": 32,
+        "calls": 96,
+        "j_ns": "881765556923147671/1298074214633706907132624082305024",
+        "b_ns2": "16843894648401212711/10633823966279326983230456482242756608",
+        "j_decimal_ns": 6.792874760030311E-16,
+        "b_decimal_ns2": 1.583992240403311E-18,
+        "hard_gap_lower_m": 0.0013919695145818145,
+        "max_relative_law_error_bound": 0.00022180430429636548,
+        "positive_work_j": 8.320597724128819E-23,
+        "prefix_ns": 8.320597724134142E-20,
+        "max_wire_bits": 127,
+        "max_wire_bytes": 211,
+        "exact_momentum_and_position": true,
+        "word_only_piece_mismatches": 32,
+        "word_only_delta_j_ns": 5.880095231807558E-32,
+        "word_only_delta_b_ns2": 7.498481460308492E-20,
+        "word_only_outer_matches": false,
+        "reference_errors": {
+          "step_impulse_vs_reference_ns": 6.792874760030311E-16,
+          "step_moment_error_divided_by_mass_m": 2.4581302419697487E-18,
+          "step_peak_vs_reference_n": 1.9715818878800095E-13,
+          "endpoint_gap_error_m": -8.119178273863879E-16,
+          "endpoint_speed_error_m_s": 1.9843398397148429E-16
+        },
+        "inlet": {
+          "gap": [
+            "0x1.6ce57e2b2b700p-10",
+            "353968024061369011/19938419936773738093557105904205168640"
+          ],
+          "schema": "sc-l1-motion-v1",
+          "t": "29/256",
+          "y": [
+            "0x1.138ab9a3f20a6p-40",
+            "-207/5070602400912917605986812821504"
+          ]
+        },
+        "outlet": {
+          "gap": [
+            "0x1.6deba3085a8a0p-10",
+            "-9128885587008469279/159507359494189904748456847233641349120"
+          ],
+          "schema": "sc-l1-motion-v1",
+          "t": "15/128",
+          "y": [
+            "0x1.515b9dac247e4p-42",
+            "2917/162259276829213363391578010288128"
+          ]
+        },
+        "end_sha256": "5d43fdf4713f201f2931cc1d51a5cba41c6ffe6948b10cbf038ca6a71580d36b"
+      }
+    },
+    {
+      "id": "h256-step29",
+      "old_endpoint_j_ns": "0",
+      "old_endpoint_b_ns2": "-87571041251783/25353012004564588029934064107520",
+      "rejected_controls": {
+        "old_endpoint": "outside moment cone",
+        "dropped_remainders": "motion moments",
+        "same_impulse_other_timing": "motion moments",
+        "negative_force": "negative pressure",
+        "reversed_time": "time order"
+      },
+      "witness": {
+        "start": "29/256",
+        "end": "15/128",
+        "parts": 32,
+        "calls": 96,
+        "j_ns": "181428105965003483/81129638414606681695789005144064",
+        "b_ns2": "6931447660071949975/1329227995784915872903807060280344576",
+        "j_decimal_ns": 2.2362740610013485E-15,
+        "b_decimal_ns2": 5.214641643158362E-18,
+        "hard_gap_lower_m": 0.0013919695145818058,
+        "max_relative_law_error_bound": 0.00022180430429628707,
+        "positive_work_j": 2.7392138851074797E-22,
+        "prefix_ns": 2.7392138851132484E-19,
+        "max_wire_bits": 125,
+        "max_wire_bytes": 208,
+        "exact_momentum_and_position": true,
+        "word_only_piece_mismatches": 32,
+        "word_only_delta_j_ns": 7.740697632481179E-32,
+        "word_only_delta_b_ns2": 4.907193074268272E-21,
+        "word_only_outer_matches": false,
+        "reference_errors": {
+          "step_impulse_vs_reference_ns": 2.2362740610013485E-15,
+          "step_moment_error_divided_by_mass_m": 6.0887796447248E-18,
+          "step_peak_vs_reference_n": 8.792996876678589E-13,
+          "endpoint_gap_error_m": -8.257432906356135E-16,
+          "endpoint_speed_error_m_s": 8.852214045172709E-16
+        },
+        "inlet": {
+          "gap": [
+            "0x1.6ce57e2b2b6d8p-10",
+            "0"
+          ],
+          "schema": "sc-l1-motion-v1",
+          "t": "29/256",
+          "y": [
+            "0x1.c58dd73d6e391p-39",
+            "0"
+          ]
+        },
+        "outlet": {
+          "gap": [
+            "0x1.6deba3085a860p-10",
+            "-32613892075196173/6646139978924579364519035301401722880"
+          ],
+          "schema": "sc-l1-motion-v1",
+          "t": "15/128",
+          "y": [
+            "0x1.15a72732ad749p-40",
+            "785/10141204801825835211973625643008"
+          ]
+        },
+        "end_sha256": "69531dfa1f7c69112b21e7374fff886ef6ae673829eafb1b9140cfdbb9305517"
+      },
+      "successor": {
+        "start": "15/128",
+        "end": "31/256",
+        "parts": 32,
+        "calls": 96,
+        "j_ns": "442759219193231505/649037107316853453566312041152512",
+        "b_ns2": "50696552792129803531/31901471898837980949691369446728269824",
+        "j_decimal_ns": 6.82178590718205E-16,
+        "b_decimal_ns2": 1.5891603043549986E-18,
+        "hard_gap_lower_m": 0.0013958757645817985,
+        "max_relative_law_error_bound": 0.00021893032227248246,
+        "positive_work_j": 8.247480560211277E-23,
+        "prefix_ns": 8.247480560216602E-20,
+        "max_wire_bits": 127,
+        "max_wire_bytes": 209,
+        "exact_momentum_and_position": true,
+        "word_only_piece_mismatches": 32,
+        "word_only_delta_j_ns": -9.719012871355747E-32,
+        "word_only_delta_b_ns2": 9.911340902153528E-20,
+        "word_only_outer_matches": false,
+        "reference_errors": {
+          "step_impulse_vs_reference_ns": 6.82178590718205E-16,
+          "step_moment_error_divided_by_mass_m": 3.358612131169232E-18,
+          "step_peak_vs_reference_n": 2.6740766591417276E-13,
+          "endpoint_gap_error_m": -8.258073389426541E-16,
+          "endpoint_speed_error_m_s": 2.7304281379906585E-16
+        },
+        "inlet": {
+          "gap": [
+            "0x1.6deba3085a860p-10",
+            "-32613892075196173/6646139978924579364519035301401722880"
+          ],
+          "schema": "sc-l1-motion-v1",
+          "t": "15/128",
+          "y": [
+            "0x1.15a72732ad749p-40",
+            "785/10141204801825835211973625643008"
+          ]
+        },
+        "outlet": {
+          "gap": [
+            "0x1.6ef1c7e589a00p-10",
+            "-16592051573297468929/159507359494189904748456847233641349120"
+          ],
+          "schema": "sc-l1-motion-v1",
+          "t": "31/256",
+          "y": [
+            "0x1.568c054a27964p-42",
+            "-1605/81129638414606681695789005144064"
+          ]
+        },
+        "end_sha256": "42a07ee25883e7313d60d483a7d2cd52ae52c2f5e10b183755e79dbbbfae8fa1"
+      }
+    },
+    {
+      "id": "h256-step30",
+      "old_endpoint_j_ns": "0",
+      "old_endpoint_b_ns2": "-87571041251783/25353012004564588029934064107520",
+      "rejected_controls": {
+        "old_endpoint": "outside moment cone",
+        "dropped_remainders": "motion moments",
+        "same_impulse_other_timing": "motion moments",
+        "negative_force": "negative pressure",
+        "reversed_time": "time order"
+      },
+      "witness": {
+        "start": "15/128",
+        "end": "31/256",
+        "parts": 32,
+        "calls": 96,
+        "j_ns": "723259917858779335/324518553658426726783156020576256",
+        "b_ns2": "41407138483723826183/7975367974709495237422842361682067456",
+        "j_decimal_ns": 2.2287166934068412E-15,
+        "b_decimal_ns2": 5.191878119608906E-18,
+        "hard_gap_lower_m": 0.0013958757645817898,
+        "max_relative_law_error_bound": 0.00021893032227255006,
+        "positive_work_j": 2.6944993368546735E-22,
+        "prefix_ns": 2.694499336860358E-19,
+        "max_wire_bits": 125,
+        "max_wire_bytes": 209,
+        "exact_momentum_and_position": true,
+        "word_only_piece_mismatches": 32,
+        "word_only_delta_j_ns": 9.360327678513069E-32,
+        "word_only_delta_b_ns2": 2.767071662372388E-20,
+        "word_only_outer_matches": false,
+        "reference_errors": {
+          "step_impulse_vs_reference_ns": 2.2287166934068412E-15,
+          "step_moment_error_divided_by_mass_m": 6.96132994642314E-18,
+          "step_peak_vs_reference_n": 9.429013445581849E-13,
+          "endpoint_gap_error_m": -8.396087768649965E-16,
+          "endpoint_speed_error_m_s": 9.627787721117783E-16
+        },
+        "inlet": {
+          "gap": [
+            "0x1.6deba3085a838p-10",
+            "0"
+          ],
+          "schema": "sc-l1-motion-v1",
+          "t": "15/128",
+          "y": [
+            "0x1.c58dd73d6e391p-39",
+            "0"
+          ]
+        },
+        "outlet": {
+          "gap": [
+            "0x1.6ef1c7e5899c0p-10",
+            "-1103420735990545373/39876839873547476187114211808410337280"
+          ],
+          "schema": "sc-l1-motion-v1",
+          "t": "31/256",
+          "y": [
+            "0x1.17c7b8061ac63p-40",
+            "3797/40564819207303340847894502572032"
+          ]
+        },
+        "end_sha256": "33101d72daea3a63d34d9da95ac73a37a9e583b200d46bbab19fd4366ef1bacf"
+      },
+      "successor": {
+        "start": "31/256",
+        "end": "1/8",
+        "parts": 32,
+        "calls": 96,
+        "j_ns": "889253867614504517/1298074214633706907132624082305024",
+        "b_ns2": "16953319454127585119/10633823966279326983230456482242756608",
+        "j_decimal_ns": 6.850562607203749E-16,
+        "b_decimal_ns2": 1.594282499681005E-18,
+        "hard_gap_lower_m": 0.0013997820145817824,
+        "max_relative_law_error_bound": 0.00021607636632316014,
+        "positive_work_j": 8.174042926385263E-23,
+        "prefix_ns": 8.174042926390592E-20,
+        "max_wire_bits": 127,
+        "max_wire_bytes": 212,
+        "exact_momentum_and_position": true,
+        "word_only_piece_mismatches": 32,
+        "word_only_delta_j_ns": -7.524377181127604E-32,
+        "word_only_delta_b_ns2": -9.332825363552762E-20,
+        "word_only_outer_matches": false,
+        "reference_errors": {
+          "step_impulse_vs_reference_ns": 6.850562607203749E-16,
+          "step_moment_error_divided_by_mass_m": 3.637325968458378E-18,
+          "step_peak_vs_reference_n": 2.8893812030984443E-13,
+          "endpoint_gap_error_m": -8.397972239438771E-16,
+          "endpoint_speed_error_m_s": 2.9922251139140347E-16
+        },
+        "inlet": {
+          "gap": [
+            "0x1.6ef1c7e5899c0p-10",
+            "-1103420735990545373/39876839873547476187114211808410337280"
+          ],
+          "schema": "sc-l1-motion-v1",
+          "t": "31/256",
+          "y": [
+            "0x1.17c7b8061ac63p-40",
+            "3797/40564819207303340847894502572032"
+          ]
+        },
+        "outlet": {
+          "gap": [
+            "0x1.6ff7ecc2b8b5fp-10",
+            "10472860359644799901/159507359494189904748456847233641349120"
+          ],
+          "schema": "sc-l1-motion-v1",
+          "t": "1/8",
+          "y": [
+            "0x1.5bd0da06650c5p-42",
+            "2979/162259276829213363391578010288128"
+          ]
+        },
+        "end_sha256": "c690e50dcca5cb57aae0c56f0b8d63c1fcc3cf8a819042c822e0fa1cad02cbe2"
+      }
+    },
+    {
+      "id": "h256-step31",
+      "old_endpoint_j_ns": "0",
+      "old_endpoint_b_ns2": "-87571041251783/25353012004564588029934064107520",
+      "rejected_controls": {
+        "old_endpoint": "outside moment cone",
+        "dropped_remainders": "motion moments",
+        "same_impulse_other_timing": "motion moments",
+        "negative_force": "negative pressure",
+        "reversed_time": "time order"
+      },
+      "witness": {
+        "start": "31/256",
+        "end": "1/8",
+        "parts": 32,
+        "calls": 96,
+        "j_ns": "360394317170326073/162259276829213363391578010288128",
+        "b_ns2": "41224762990332388585/7975367974709495237422842361682067456",
+        "j_decimal_ns": 2.2211014631210302E-15,
+        "b_decimal_ns2": 5.1690107743065E-18,
+        "hard_gap_lower_m": 0.0013997820145817737,
+        "max_relative_law_error_bound": 0.00021607636632310759,
+        "positive_work_j": 2.650202581068701E-22,
+        "prefix_ns": 2.6502025810743025E-19,
+        "max_wire_bits": 125,
+        "max_wire_bytes": 209,
+        "exact_momentum_and_position": true,
+        "word_only_piece_mismatches": 32,
+        "word_only_delta_j_ns": 2.736361264985385E-32,
+        "word_only_delta_b_ns2": 5.053806192613053E-20,
+        "word_only_outer_matches": false,
+        "reference_errors": {
+          "step_impulse_vs_reference_ns": 2.2211014631210302E-15,
+          "step_moment_error_divided_by_mass_m": 7.212054243083871E-18,
+          "step_peak_vs_reference_n": 9.57796042202161E-13,
+          "endpoint_gap_error_m": -8.535743669161324E-16,
+          "endpoint_speed_error_m_s": 9.918940023975892E-16
+        },
+        "inlet": {
+          "gap": [
+            "0x1.6ef1c7e589998p-10",
+            "0"
+          ],
+          "schema": "sc-l1-motion-v1",
+          "t": "31/256",
+          "y": [
+            "0x1.c58dd73d6e391p-39",
+            "0"
+          ]
+        },
+        "outlet": {
+          "gap": [
+            "0x1.6ff7ecc2b8b20p-10",
+            "-2015298202947733363/39876839873547476187114211808410337280"
+          ],
+          "schema": "sc-l1-motion-v1",
+          "t": "1/8",
+          "y": [
+            "0x1.19ec743a5d9a3p-40",
+            "555/20282409603651670423947251286016"
+          ]
+        },
+        "end_sha256": "456110f443e6eeba9cf02698e050a7d7ba00cc79b153d3084f904ded4be188b6"
+      },
+      "successor": {
+        "start": "1/8",
+        "end": "33/256",
+        "parts": 32,
+        "calls": 96,
+        "j_ns": "892971001024705929/1298074214633706907132624082305024",
+        "b_ns2": "51021855227972690833/31901471898837980949691369446728269824",
+        "j_decimal_ns": 6.879198361371705E-16,
+        "b_decimal_ns2": 1.5993574023721198E-18,
+        "hard_gap_lower_m": 0.0014036882645817664,
+        "max_relative_law_error_bound": 0.00021324241627270746,
+        "positive_work_j": 8.100292385759742E-23,
+        "prefix_ns": 8.100292385765072E-20,
+        "max_wire_bits": 127,
+        "max_wire_bytes": 213,
+        "exact_momentum_and_position": true,
+        "word_only_piece_mismatches": 32,
+        "word_only_delta_j_ns": -6.144486894573037E-33,
+        "word_only_delta_b_ns2": -6.865616302269346E-20,
+        "word_only_outer_matches": false,
+        "reference_errors": null,
+        "inlet": {
+          "gap": [
+            "0x1.6ff7ecc2b8b20p-10",
+            "-2015298202947733363/39876839873547476187114211808410337280"
+          ],
+          "schema": "sc-l1-motion-v1",
+          "t": "1/8",
+          "y": [
+            "0x1.19ec743a5d9a3p-40",
+            "555/20282409603651670423947251286016"
+          ]
+        },
+        "outlet": {
+          "gap": [
+            "0x1.70fe119fe7cbfp-10",
+            "2889970464961522441/159507359494189904748456847233641349120"
+          ],
+          "schema": "sc-l1-motion-v1",
+          "t": "33/256",
+          "y": [
+            "0x1.612a6c45293f9p-42",
+            "3443/162259276829213363391578010288128"
+          ]
+        },
+        "end_sha256": "c4212cc5def3cfd22f45a9210f74f80fe1599713c8f6e1d6472ce276535e33d4"
+      }
+    }
+  ]
+}

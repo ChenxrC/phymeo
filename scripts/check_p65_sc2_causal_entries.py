@@ -53,10 +53,16 @@ class Curve:
     def __init__(self, claim, model, q, v, h, mode, degree):
         aff = mode == "affine"
         need(
-            mode in ("affine", "chebyshev", "active-newton", "slope-newton"),
+            mode in ("affine", "chebyshev", "active-newton", "slope-newton", "levels-newton"),
             "unknown curve basis or solver",
         )
-        if mode == "slope-newton":
+        if mode == "levels-newton":
+            need(
+                degree == 20 and claim.get("schema") == "p65-levels-newton-curve-v1",
+                "wrong levels schedule",
+            )
+            calls = 1 + 2 * 3 + 9 + 20
+        elif mode == "slope-newton":
             need(
                 degree == 20 and claim.get("schema") == "p65-slope-newton-curve-v1",
                 "wrong slope schedule",

@@ -72,6 +72,8 @@ def propose(root, model, source, *, lifting=None):
             512 - source["prefix_charges"],
             ledger,
             lifting=lifting,
+            multilevel=source.get("multilevel", False),
+            paired_axes=source.get("paired_axes", ()),
         )
         x, u = endpoint(claim, q, v)
         out = checkpoint(x, u, t + h, model.signature)
@@ -100,6 +102,7 @@ def propose(root, model, source, *, lifting=None):
     print(
         "coarse and fine residuals",
         [r["residual"] for r in claim["coarse"]],
+        [r["residual"] for r in claim.get("bridge", [])],
         [r["residual"] for r in claim["iterations"]],
     )
     print(
@@ -168,16 +171,21 @@ def verify(model, source, data):
         and all(source["mask"]),
         "wrong inlet or duration",
     )
+    levels = source.get("multilevel", False)
+    fine_nodes = 21 if levels else 14
+    mids = claim.get("bridge", [])
     need(
-        len(claim["coarse"]) == 3
-        and len(claim["iterations"]) == 2
-        and len(claim["nodes"]) == 14
+        len(claim["coarse"]) == (2 if levels else 3)
+        and len(mids) == (1 if levels else 0)
+        and len(claim["iterations"]) == (1 if levels else 2)
+        and len(claim["nodes"]) == fine_nodes
         and all(r["acc"].shape == (4, 13) for r in claim["coarse"])
-        and all(r["acc"].shape == (14, 13) for r in claim["iterations"])
+        and all(r["acc"].shape == (10, 13) for r in mids)
+        and all(r["acc"].shape == (fine_nodes, 13) for r in claim["iterations"])
         and data["charges"] == 222
         and all(
             r["linear_error"] < 1e-10 and r["projected_error"] < 1e-10
-            for r in [*claim["coarse"], *claim["iterations"]]
+            for r in [*claim["coarse"], *mids, *claim["iterations"]]
         ),
         "incomplete nonlinear sweep, failed linear solve, or owner budget",
     )
@@ -194,9 +202,14 @@ def verify(model, source, data):
             ),
             "incomplete coupled slope history",
         )
-    curve = Curve(
-        claim, model, q, v, h, "slope-newton" if variant else "active-newton", 20 if variant else 13
-    )
+    mode = "slope-newton" if variant else "active-newton"
+    if levels:
+        mode = "levels-newton"
+        need(
+            np.array_equal(claim["rows"][:, :, -1], -claim["pressure"]),
+            "changed signed platform pressure",
+        )
+    curve = Curve(claim, model, q, v, h, mode, 20 if levels or variant else 13)
     acc = blank()
     acc.update(law_lower_abs=[Q(0)] * 6, law_signed=[I.point(0) for _ in range(6)])
     audit_chart(
@@ -251,7 +264,7 @@ def publish(root, model, source, *, phase="newton"):
     )
     claim = data["chart"]
     cursor = 1
-    for sweep in [*claim["coarse"], *claim["iterations"]]:
+    for sweep in [*claim["coarse"], *claim.get("bridge", []), *claim["iterations"]]:
         for i, (x, u, p) in enumerate(zip(sweep["q"], sweep["v"], sweep["pressures"], strict=True)):
             observed = ledger[0] if i == 0 else ledger[cursor]
             need(

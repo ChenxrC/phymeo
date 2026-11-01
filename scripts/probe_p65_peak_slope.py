@@ -112,11 +112,11 @@ def peak_ranges(curve, model, cert):
     )
 
 
-def window_readback(root, model, src):
-    readback(root, model, src, phase="slope")
+def window_readback(root, model, src, *, phase="slope", mode="slope-newton"):
+    readback(root, model, src, phase=phase)
     status = saved(root / "readback.json")
     if not status["accepted"]:
-        print("slope candidate rejected; exact d checkpoint retained")
+        print(phase, "candidate rejected; exact d checkpoint retained")
         return
     proposal = saved(root / "proposal.json.gz")
     cert = saved(root / "accepted.json")
@@ -127,25 +127,8 @@ def window_readback(root, model, src):
         packet_hash(packet) == status["returned"] == cert["endpoint"] and T == Q(1, 64),
         "returned checkpoint",
     )
-    curve = Curve(proposal["chart"], model, q, v, src["h"], "slope-newton", 20)
-    parent = json.loads((BASE / "p65-sc2-causal-entry-results.json").read_bytes())
-    entry = json.loads((BASE / "p65-sc2-common-motion-entry-results.json").read_bytes())["entry"]
-    need(
-        parent["cluster"]["inlet"] == entry["checkpoint_sha256"]
-        and parent["d"]["inlet"] == parent["cluster"]["endpoint"]
-        and cert["inlet"] == parent["d"]["endpoint"],
-        "discontinuous prefix",
-    )
-    j = [Q(0)] * 6
-    b = j.copy()
-    k = model.owners.index(entry["first"])
-    j[k] = Q(entry["J_ns"])
-    b[k] = Q(entry["B_ns2"]) + (T - Q(entry["bridge_end_s"])) * j[k]
-    for segment in (parent["cluster"], parent["d"], cert):
-        for i in range(6):
-            sj = Q(segment["local_J_ns"][i])
-            j[i] += sj
-            b[i] += Q(segment["local_B_ns2"][i]) + (T - Q(segment["stop_s"])) * sj
+    curve = Curve(proposal["chart"], model, q, v, src["h"], mode, 20)
+    j, b = linked_moments(model, T, cert, d_cert=src.get("paired_d"))
     mass = Q(float(model.mass[-1]))
     need(
         mass * u[-1] == -sum(j) and mass * x[-1] == -sum(b), "global platform force or time moment"
@@ -163,6 +146,33 @@ def window_readback(root, model, src):
     )
     save(root / "whole-step.json", result)
     print(json.dumps(result["peak"], indent=2))
+
+
+def linked_moments(model, T, cert=None, *, d_cert=None):
+    parent = json.loads((BASE / "p65-sc2-causal-entry-results.json").read_bytes())
+    entry = json.loads((BASE / "p65-sc2-common-motion-entry-results.json").read_bytes())["entry"]
+    d = parent["d"] if d_cert is None else d_cert
+    need(
+        parent["cluster"]["inlet"] == entry["checkpoint_sha256"]
+        and d["inlet"] == parent["cluster"]["endpoint"]
+        and (cert is None or cert["inlet"] == d["endpoint"]),
+        "discontinuous prefix",
+    )
+    j = [Q(0)] * 6
+    b = j.copy()
+    k = model.owners.index(entry["first"])
+    j[k] = Q(entry["J_ns"])
+    b[k] = Q(entry["B_ns2"]) + (T - Q(entry["bridge_end_s"])) * j[k]
+    segments = [parent["cluster"], d]
+    if cert is not None:
+        segments.append(cert)
+    need(Q(segments[-1]["stop_s"]) == T, "unbound moment origin")
+    for segment in segments:
+        for i in range(6):
+            sj = Q(segment["local_J_ns"][i])
+            j[i] += sj
+            b[i] += Q(segment["local_B_ns2"][i]) + (T - Q(segment["stop_s"])) * sj
+    return j, b
 
 
 if __name__ == "__main__":

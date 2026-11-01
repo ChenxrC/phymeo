@@ -1,0 +1,29 @@
+{
+  "schema": "p65-sc2-peak-levels-v1",
+  "baseline": "8e894823b0eb1de50e5d4567cbf1fd71937b864a",
+  "control": "p65-sc2-peak-degree-cap-results.json",
+  "prefix": "Only the actual d.bin, accepted d certificate, original four nodes, 0.5 kg/node, 2 kg prismatic platform, six independent owners and preserved incoming velocity. Previous force words, trial values, root or peak times, and results never initialize stages.",
+  "schedule": [
+    [
+      3,
+      2
+    ],
+    [
+      9,
+      1
+    ],
+    [
+      20,
+      1
+    ]
+  ],
+  "update": "Solve the full current common acceleration residual on each grid. Interpolate corrected accelerations to the next grid; use both integral matrices and the real incoming q,v. Every material, scalar pressure and paired load is updated with the full current jet on the same trial. Interpolate all 21 fine-node fields onto the original degree-20 signed integer grid. For a declared constant signed unit map component, issue the same pressure word with that sign for its paired generalized load. Independently check the physical map value and both derivatives at each queried state. All other map components retain their full time variation. The terminal query cannot correct the candidate.",
+  "accounting": "1 inlet, 6 coarse, 9 middle, 20 fine, 1 independent terminal = 37 true joint queries. 37 times 6 = 222 newly charged owner evaluations; 288 inherited means 510/512 for this separate preregistered attempt. Save the ledger and both residuals of every linear solve, stage states, initial accelerations, Newton corrections and material/paired/scalar representations. No offline projection or independent checker used by the solver. 512 interval leaves, 64 coarse peak leaves, 4096 total original cells and original h/CP01 retained.",
+  "controls": "Read only the previously sealed counterexamples to require the original failure before implementation. Test the new three-level solver with the independent two-mass spring and active layer, nonzero entry velocity and gravity, all-coordinate motion and analytic J/B, full-path pressure and material residuals; reject a bad constant map declaration and insufficient budget. Check cumulative J and shifted B of the actual c, cluster and d prefix against the platform before evaluating the new physical attempt.",
+  "stop": "One initial physical proposal and public transaction against the unmodified SC2 physical tolerances. On rejection retain d without retries or tolerance/budget changes. On acceptance independently reconstruct the six impulses and time moments, read back the actual checkpoint in a fresh process, isolate the represented and constitutive peak over the connected first original step, and reject a stale endpoint or a false platform reaction. If accepted also challenge a changed interior force law with a paired shifted quadratic having exactly zero impulse and backward moment. Its endpoint must still match, and its public transaction must roll back. This does not authorize publishing a 125 ms or native result from one step.",
+  "prefix_ruling": "The initial exact check failed before the first peak force query. The archived bridge and cluster have zero discrepancies in both moments. The d scalar records are exact; only D/0 degree-8 scalar-plus-platform is +2 stored words. For the stricter exact-pair chain, construct d anew from the unchanged public cluster checkpoint, with the same three sweeps, root procedure, h, resource and physical gates. Represent the declared minus-one platform reaction from the very same scalar words before integrating anything. Require the original d to fail this new representation check and the new d to pass its public transaction. Bind the new d certificate and checkpoint to every peak check; retain the previous d and its prior scoped acceptance intact. This is one new lineage, no state repair or hidden cost. The peak solver schedule and one-proposal stop remain unchanged.",
+  "references": [
+    "https://arxiv.org/abs/1307.1312",
+    "https://www.chebfun.org/docs/guide/guide04.html"
+  ]
+}

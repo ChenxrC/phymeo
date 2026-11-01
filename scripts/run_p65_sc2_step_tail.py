@@ -133,6 +133,7 @@ def proposal(root, model, source, phase):
         charge_limit=meter.limit - meter.count,
         degree=degree,
         sweeps=3,
+        paired_axes=source.get("paired_axes", ()),
     )
     meter.count += claim["owner_charges"]
     curve = Curve(claim, model, q, v, h, "chebyshev", degree)
@@ -189,6 +190,13 @@ def verify(model, source, data):
         "different restart",
     )
     degree = 8 if d else 11
+    for coordinate, sign in source.get("paired_axes", ()):
+        need(
+            np.array_equal(
+                data["chart"]["rows"][:, :, coordinate], sign * data["chart"]["pressure"]
+            ),
+            "different scalar and mapped pressure words",
+        )
     curve = Curve(data["chart"], model, q, v, h, "chebyshev", degree)
     ramps = [Ramp(z, model, h, end) for z in data["ramps"]]
     need(

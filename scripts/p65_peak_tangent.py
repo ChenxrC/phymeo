@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 import numpy as np
 from numpy.polynomial import chebyshev as ch
-from p65_common_motion import GRID, Forces, need, quantized, tables, total
+from p65_common_motion import GRID, Forces, need, paired_words, quantized, tables, total
 
 from phymeo.constraints.bending import bending_angle_gradient
 
@@ -223,7 +223,26 @@ def newton_grid(model, q0, v0, h, first, degree, sweeps, guess, charged, lifting
     return nodes, card, a, frames, history
 
 
-def peak_fit(model, q, v, h, bind, available, ledger, *, lifting=None):
+def peak_fit(
+    model,
+    q,
+    v,
+    h,
+    bind,
+    available,
+    ledger,
+    *,
+    lifting=None,
+    multilevel=False,
+    provider=force_jet,
+    paired_axes=(),
+):
+    need(not (multilevel and lifting is not None), "incompatible time bases")
+    paired_axes = dict(paired_axes)
+    need(
+        all(0 <= j < len(q) and sign in (-1, 1) for j, sign in paired_axes.items()),
+        "invalid constant map component",
+    )
     q0, v0 = np.asarray(q, float), np.asarray(v, float)
     h = float(h)
     calls = 0
@@ -234,7 +253,14 @@ def peak_fit(model, q, v, h, bind, available, ledger, *, lifting=None):
         calls += 1
         row = dict(call=calls, addresses=len(model.owners), q=x.copy(), v=u.copy(), returned=False)
         ledger.append(row)
-        jet = force_jet(model, x, u)
+        jet = provider(model, x, u)
+        for j, sign in paired_axes.items():
+            need(
+                np.array_equal(jet.value.rows[:, j], sign * jet.value.pressures)
+                and np.array_equal(jet.rq[:, j], sign * jet.pq)
+                and np.array_equal(jet.rv[:, j], sign * jet.pv),
+                "unproved constant map component",
+            )
         row["pressures"] = jet.value.pressures.copy()
         row["returned"] = True
         return jet
@@ -246,15 +272,31 @@ def peak_fit(model, q, v, h, bind, available, ledger, *, lifting=None):
         return np.tile(inlet, (len(nodes), 1))
 
     _, coarse_card, coarse_a, _, coarse_history = newton_grid(
-        model, q0, v0, h, first, 3, 3, initial, evaluate_joint
+        model, q0, v0, h, first, 3, 2 if multilevel else 3, initial, evaluate_joint
     )
-    coarse_coeff = coarse_card @ coarse_a
+    previous_coeff = coarse_card @ coarse_a
 
     def transferred(nodes):
-        return ch.chebvander(2 * nodes - 1, 3) @ coarse_coeff
+        return ch.chebvander(2 * nodes - 1, len(previous_coeff) - 1) @ previous_coeff
+
+    bridge = []
+    if multilevel:
+        _, mid_card, mid_a, _, bridge = newton_grid(
+            model, q0, v0, h, first, 9, 1, transferred, evaluate_joint
+        )
+        previous_coeff = mid_card @ mid_a
 
     nodes, card, _, frames, history = newton_grid(
-        model, q0, v0, h, first, 13, 2, transferred, evaluate_joint, lifting
+        model,
+        q0,
+        v0,
+        h,
+        first,
+        20 if multilevel else 13,
+        1 if multilevel else 2,
+        transferred,
+        evaluate_joint,
+        lifting,
     )
 
     def words(field):
@@ -266,8 +308,13 @@ def peak_fit(model, q, v, h, bind, available, ledger, *, lifting=None):
         complete[: len(nodes)] += low
         return quantized(complete)
 
+    pressure = words("pressures")
+    schema = "p65-active-newton-curve-v1" if lifting is None else "p65-slope-newton-curve-v1"
+    if multilevel:
+        schema = "p65-levels-newton-curve-v1"
+    rows = paired_words(frames, card, pressure, paired_axes) if paired_axes else words("rows")
     claim = dict(
-        schema="p65-active-newton-curve-v1" if lifting is None else "p65-slope-newton-curve-v1",
+        schema=schema,
         binding=bind,
         h=h,
         grid=GRID,
@@ -275,12 +322,14 @@ def peak_fit(model, q, v, h, bind, available, ledger, *, lifting=None):
         mass=model.mass.copy(),
         external=model.external.copy(),
         material=words("material"),
-        pressure=words("pressures"),
-        rows=words("rows"),
+        pressure=pressure,
+        rows=rows,
         nodes=nodes,
         coarse=coarse_history,
         iterations=history,
         force_calls=calls,
         owner_charges=calls * len(model.owners),
     )
+    if multilevel:
+        claim["bridge"] = bridge
     return claim, evaluate_joint

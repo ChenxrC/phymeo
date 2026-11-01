@@ -117,7 +117,23 @@ def quantized(coeff):
     return words.astype(np.int64)
 
 
-def fit(model, qin, vin, h, bind, charge_limit=512, *, degree=DEGREE, sweeps=4):
+def paired_words(frames, cardinal, pressure, axes):
+    """Interpolate the varying map components and encode exact unit reactions from one flux."""
+    count, owners = pressure.shape
+    size = frames[0].rows.shape[-1]
+    independent = [i for i in range(size) if i not in axes]
+    rows = np.empty((count, owners, size), dtype=np.int64)
+    if independent:
+        samples = np.stack([f.rows[:, independent] for f in frames])
+        coeff = cardinal @ samples.reshape(len(frames), -1)
+        rows[:, :, independent] = quantized(coeff.reshape(count, owners, len(independent)))
+    for i, sign in axes.items():
+        need(0 <= i < size and sign in (-1, 1), "invalid constant map component")
+        rows[:, :, i] = sign * pressure
+    return rows
+
+
+def fit(model, qin, vin, h, bind, charge_limit=512, *, degree=DEGREE, sweeps=4, paired_axes=()):
     """The provider returns forces on ONE state at each node; its inlet tangent is only a preconditioner."""
     q0, v0 = np.asarray(qin, float), np.asarray(vin, float)
     n = len(q0)
@@ -132,12 +148,21 @@ def fit(model, qin, vin, h, bind, charge_limit=512, *, degree=DEGREE, sweeps=4):
     nodes, card, velocity_integral, position_integral = tables(degree)
     calls = 0
     history = []
+    axes = dict(paired_axes)
 
     def force(q, v):
         nonlocal calls
         need((calls + 1) * len(model.owners) <= charge_limit, "owner evaluation budget")
         calls += 1
-        return model.forces(q, v)
+        f = model.forces(q, v)
+        for i, sign in axes.items():
+            need(
+                0 <= i < len(q)
+                and sign in (-1, 1)
+                and np.array_equal(f.rows[:, i], sign * f.pressures),
+                "unproved sampled constant map component",
+            )
+        return f
 
     first = force(q0, v0)
     a0 = total(first, model)
@@ -174,6 +199,8 @@ def fit(model, qin, vin, h, bind, charge_limit=512, *, degree=DEGREE, sweeps=4):
         samples = np.stack([getattr(f, field) for f in frames])
         return quantized((card @ samples.reshape(len(nodes), -1)).reshape(samples.shape))
 
+    pressure = coefficients("pressures")
+    rows = paired_words(frames, card, pressure, axes) if axes else coefficients("rows")
     return dict(
         schema="p65-common-curve-v1",
         binding=bind,
@@ -181,8 +208,8 @@ def fit(model, qin, vin, h, bind, charge_limit=512, *, degree=DEGREE, sweeps=4):
         h=h,
         grid=GRID,
         material=coefficients("material"),
-        rows=coefficients("rows"),
-        pressure=coefficients("pressures"),
+        rows=rows,
+        pressure=pressure,
         external=model.external.copy(),
         mass=model.mass.copy(),
         force_calls=calls,

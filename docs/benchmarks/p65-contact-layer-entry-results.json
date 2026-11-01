@@ -1,0 +1,436 @@
+{
+  "schema": "sc-l1-entry-peak-result-v1",
+  "scope": "HOST scalar impact, m=0.5 kg, relative M=1 kg, h=1/64 s. From outside the layer through 31.25 ms, with a cold successor. Two candidate methods separately adjudicated.",
+  "decision": "The published affine traction fails the inherited material-moment/work gates at this peak. The registered degree-seven comparison passes for these two intervals.",
+  "preregistration_commit": "8d0da7a9bdb73fea4fca90bf9bb5e481e51b1178",
+  "protocol_sha256_lf": "9fc803c5468982c580dac55bb567dd755bf16132242208bb967b5d2221052067",
+  "tested_source_commit": "d09d8364bfcfedf2edfedb32ff8dadb582ac4815",
+  "raw_directory": "artifacts/p65-n2-layer-entry-20261101-01",
+  "report_hashes": {
+    "affine/audit.json": "42bc2858f7e5f79b75f2c565b5f1bcc90b7f6a297286de6502e20e34dbdea481",
+    "affine/entry/index.json": "87eb6c64ef81b8e8f035243051521011d135faba3f1359bfd600a116f044b27c",
+    "affine/successor/index.json": "97bec4b7db4fdf288282edaafe1013801fbef66b3dc54956ac54bd445838d3b2",
+    "series7/audit.json": "b4b5367abea6865b3e0f9f0d378361c8a2a30646723375ceea41e86c398b11cc",
+    "series7/entry/index.json": "5b4180af613dd7ca4500ee095fe5f4c2a338fca7baf7c24cd1ccec3ffd11f3d0",
+    "series7/successor/index.json": "9f77c969622441dd37ac541e564a8b5323015540d2c17d5488791cfe568b7a65"
+  },
+  "serial_runs": [
+    {
+      "task": "format",
+      "dir": "format-131554122",
+      "start": "2026-11-01T13:15:55.2077262+08:00",
+      "end": "2026-11-01T13:15:55.4169791+08:00",
+      "raw_exit": 0,
+      "matching_before": 0
+    },
+    {
+      "task": "lint",
+      "dir": "lint-131601058",
+      "start": "2026-11-01T13:16:01.9486651+08:00",
+      "end": "2026-11-01T13:16:02.0743895+08:00",
+      "raw_exit": 0,
+      "matching_before": 0
+    },
+    {
+      "task": "affine-entry",
+      "dir": "affine-entry-131612427",
+      "start": "2026-11-01T13:16:13.4718997+08:00",
+      "end": "2026-11-01T13:16:13.6960883+08:00",
+      "raw_exit": 0,
+      "matching_before": 0
+    },
+    {
+      "task": "affine-successor",
+      "dir": "affine-successor-131619094",
+      "start": "2026-11-01T13:16:19.9747424+08:00",
+      "end": "2026-11-01T13:16:20.1839167+08:00",
+      "raw_exit": 0,
+      "matching_before": 0
+    },
+    {
+      "task": "affine-audit",
+      "dir": "affine-audit-131626357",
+      "start": "2026-11-01T13:16:27.3441135+08:00",
+      "end": "2026-11-01T13:16:27.6548954+08:00",
+      "raw_exit": 1,
+      "matching_before": 0
+    },
+    {
+      "task": "series7-entry",
+      "dir": "series7-entry-131656102",
+      "start": "2026-11-01T13:16:56.997479+08:00",
+      "end": "2026-11-01T13:16:57.2650509+08:00",
+      "raw_exit": 0,
+      "matching_before": 0
+    },
+    {
+      "task": "series7-successor",
+      "dir": "series7-successor-131702516",
+      "start": "2026-11-01T13:17:03.3600035+08:00",
+      "end": "2026-11-01T13:17:03.6407204+08:00",
+      "raw_exit": 0,
+      "matching_before": 0
+    },
+    {
+      "task": "series7-audit",
+      "dir": "series7-audit-131710029",
+      "start": "2026-11-01T13:17:10.8998094+08:00",
+      "end": "2026-11-01T13:17:11.6155948+08:00",
+      "raw_exit": 0,
+      "matching_before": 0
+    }
+  ],
+  "source": "p65-contact-layer-screen-input.json",
+  "reference": "p65-contact-layer-intrastep-results.json",
+  "reference_step_table": "p65-contact-layer-intrastep-steps.csv",
+  "entry": {
+    "t_s": "119/16000",
+    "active_s": "131/16000",
+    "at_event_N": 0,
+    "free_impulse_Ns": 0,
+    "gap_at_event_m": "1/500",
+    "incoming_closing_speed_m_s": "1/8"
+  },
+  "resource_caveat": "For series7 the charged unit is a traction-series coefficient, with separate convolution terms, basis-conversion terms, exact half subdivisions and peak cells. This is a HOST bounded diagnostic, not an equal per-unit cost, runtime profile, or native performance result.",
+  "affine": {
+    "schema": "sc-l1-entry-peak-audit-v1",
+    "protocol_sha256_lf": "9fc803c5468982c580dac55bb567dd755bf16132242208bb967b5d2221052067",
+    "method": "affine",
+    "passed": false,
+    "structural_pass": true,
+    "comparison_eligible": true,
+    "source_sha256_lf": "6cedf3d02adab0161505d9bcbb34f403677ee9832b9f6965f370ab31835b717f",
+    "negative_controls": {
+      "free_load": "free load",
+      "shifted_event": "event time",
+      "dropped_gap_remainder": "event gap",
+      "swapped_timing": "position readback"
+    },
+    "intervals": [
+      {
+        "phase": "entry",
+        "entry_s": "119/16000",
+        "active_s": "131/16000",
+        "parts": 67,
+        "force_macros": 66,
+        "work": {
+          "force_charges": 198,
+          "convolution_terms": 0,
+          "conversion_terms": 0,
+          "half_subdivision_means": 0,
+          "method": "affine"
+        },
+        "max_wire_bytes": 183,
+        "peak_cells": 67,
+        "peak_n": [
+          17.133664987763755,
+          17.133664987763755
+        ],
+        "peak_time_s": [
+          0.011159090909090908,
+          0.011159090909090908
+        ],
+        "ref_peak_n": 17.131594870017633,
+        "ref_time_s": [
+          0.0111083984375,
+          0.01116943359375
+        ],
+        "j_ns": 0.10087658835162704,
+        "b_ns2": 0.0003932732247707621,
+        "exact_j_ns": "159916333530199645287/1585267068834414592000",
+        "exact_b_ns2": "59252031490614705490789/150663782222022762823680000",
+        "ref_j_ns": 0.10087794156081173,
+        "centroid_s": 0.01172644205710126,
+        "min_gap_lower_m": 0.001369835724770762,
+        "end_gap_m": 0.001369835724770762,
+        "end_speed_m_s": 0.02412341164837296,
+        "peak_relative_law_bound": 0.0008975590653056305,
+        "worst_knot_jump_n": 0.00011255328844406165,
+        "dissipation_j": 0.007423540324173503,
+        "positive_work_j": 1.3060651715562299E-06,
+        "signed_law_j_ns": 1.2768825949206217E-05,
+        "signed_law_b_ns2": 7.246479154490207E-08,
+        "errors": {
+          "step_peak_vs_reference_n": 0.0020701177461217943,
+          "step_impulse_vs_reference_ns": 1.353209184691738E-06,
+          "step_moment_error_divided_by_mass_m": 3.601548758835274E-08,
+          "endpoint_gap_error_m": 3.6015487588322736E-08,
+          "endpoint_speed_error_m_s": 1.353209184659738E-06,
+          "impact_peak_time_error_s": 0.0,
+          "law_impulse_vs_delivered_ns": 1.2768825949206217E-05,
+          "law_moment_error_divided_by_mass_m": 7.246479154490207E-08,
+          "prefix_momentum_defect_ns": 1.3424892162638829E-05,
+          "positive_work_defect_per_window_j": 1.3060651715562299E-06
+        },
+        "failed_gates": [
+          "step_moment_error_divided_by_mass_m",
+          "endpoint_gap_error_m",
+          "law_impulse_vs_delivered_ns",
+          "law_moment_error_divided_by_mass_m",
+          "prefix_momentum_defect_ns",
+          "positive_work_defect_per_window_j"
+        ],
+        "first_prefix_or_work_threshold": {
+          "piece": 1,
+          "t0": "119/16000",
+          "t1": "1597/211200",
+          "cumulative_law_j_ns": 1.9475357067877027E-08,
+          "positive_work_j": 2.434026273315774E-09
+        },
+        "exact_inertial_path": true,
+        "strict_nonnegative": true,
+        "end_sha256": "396b137ea862c6b555c93f79e2b4fa8f141fe220883d18719d4484d355f8c45c",
+        "trace_hashes": {
+          "end.state.json": "396b137ea862c6b555c93f79e2b4fa8f141fe220883d18719d4484d355f8c45c",
+          "states.jsonl": "8b75734a8a5ee2df6f67c4d0be27d135bf974b40de9a6e2e278f45d5725af862",
+          "forces.jsonl": "c3a2d719859c5ee26c34611775033028ddf507705bdcf8fbc4ea19ee4b1d9ebc",
+          "pieces.jsonl": "ff96dbd88335b14f66d0e7cf2406f4ca31af3290cdcae816c0418fa0c8350215"
+        }
+      },
+      {
+        "phase": "successor",
+        "entry_s": null,
+        "active_s": "1/64",
+        "parts": 125,
+        "force_macros": 125,
+        "work": {
+          "force_charges": 375,
+          "convolution_terms": 0,
+          "conversion_terms": 0,
+          "half_subdivision_means": 0,
+          "method": "affine"
+        },
+        "max_wire_bytes": 175,
+        "peak_cells": 125,
+        "peak_n": [
+          7.91593824634137,
+          7.91593824634137
+        ],
+        "peak_time_s": [
+          0.015625,
+          0.015625
+        ],
+        "ref_peak_n": 7.915059482706874,
+        "ref_time_s": [
+          0.015625,
+          0.015625
+        ],
+        "j_ns": 0.025003252069507837,
+        "b_ns2": 0.0003173534109100693,
+        "exact_j_ns": "57653573992082468217/2305843009213693952000",
+        "exact_b_ns2": "1170827430395366540983/3689348814741910323200000",
+        "ref_j_ns": 0.025001778123293406,
+        "centroid_s": 0.018557514637382286,
+        "min_gap_lower_m": 0.001306677779467522,
+        "end_gap_m": 0.0013102608286750038,
+        "end_speed_m_s": -0.0008798404211348737,
+        "peak_relative_law_bound": 0.0003014398144878671,
+        "worst_knot_jump_n": 0.00010843353541911682,
+        "dissipation_j": 0.0002708937924340995,
+        "positive_work_j": 6.472037083891062E-11,
+        "signed_law_j_ns": -3.0519685792287868E-06,
+        "signed_law_b_ns2": -3.7019691323011826E-08,
+        "errors": {
+          "step_peak_vs_reference_n": 0.0008787636344961103,
+          "step_impulse_vs_reference_ns": 1.4739462144294615E-06,
+          "step_moment_error_divided_by_mass_m": 2.9543631380482847E-08,
+          "endpoint_gap_error_m": 2.7615749718167045E-08,
+          "endpoint_speed_error_m_s": 1.2073702971562347E-07,
+          "impact_peak_time_error_s": 0.0,
+          "law_impulse_vs_delivered_ns": 3.0519685792287868E-06,
+          "law_moment_error_divided_by_mass_m": 3.7019691323011826E-08,
+          "prefix_momentum_defect_ns": 3.0519685792287868E-06,
+          "positive_work_defect_per_window_j": 6.472037083891062E-11
+        },
+        "failed_gates": [
+          "step_moment_error_divided_by_mass_m",
+          "endpoint_gap_error_m",
+          "law_impulse_vs_delivered_ns",
+          "law_moment_error_divided_by_mass_m"
+        ],
+        "first_prefix_or_work_threshold": {
+          "piece": 0,
+          "t0": "1/64",
+          "t1": "63/4000",
+          "cumulative_law_j_ns": -7.255064290396208E-08,
+          "positive_work_j": 0.0
+        },
+        "exact_inertial_path": true,
+        "strict_nonnegative": true,
+        "end_sha256": "5098adf20012fdda4bf69df31ac8bfc98bb03637e858ed239ca5338952674664",
+        "trace_hashes": {
+          "end.state.json": "5098adf20012fdda4bf69df31ac8bfc98bb03637e858ed239ca5338952674664",
+          "states.jsonl": "111fea6cec3f7736ba410b7d5013b7dba41faed732cd127d33f782ba3e01c57d",
+          "forces.jsonl": "a6c831839674e2d07a9e0c1974fd9cc375f8028b8853b8d7433e143baedaa155",
+          "pieces.jsonl": "ddff6888bb0dddf2a4780ee53028424369f511b505b6a6991d417909ffaca18b"
+        }
+      }
+    ],
+    "pair": {
+      "positive_work_j": 1.3061298919270689E-06,
+      "absolute_step_reference_impulse_errors_ns": 2.8271553991211993E-06,
+      "prefix_momentum_ns": 1.5820794528435005E-05
+    },
+    "pair_failed_gates": [
+      "pair_work",
+      "pair_prefix"
+    ]
+  },
+  "series7": {
+    "schema": "sc-l1-entry-peak-audit-v1",
+    "protocol_sha256_lf": "9fc803c5468982c580dac55bb567dd755bf16132242208bb967b5d2221052067",
+    "method": "series7",
+    "passed": true,
+    "structural_pass": true,
+    "comparison_eligible": false,
+    "source_sha256_lf": "6cedf3d02adab0161505d9bcbb34f403677ee9832b9f6965f370ab31835b717f",
+    "negative_controls": {
+      "free_load": "free load",
+      "shifted_event": "event time",
+      "dropped_gap_remainder": "event gap",
+      "swapped_timing": "position readback"
+    },
+    "intervals": [
+      {
+        "phase": "entry",
+        "entry_s": "119/16000",
+        "active_s": "131/16000",
+        "parts": 67,
+        "force_macros": 33,
+        "work": {
+          "force_charges": 264,
+          "convolution_terms": 1188,
+          "conversion_terms": 1188,
+          "half_subdivision_means": 1848,
+          "method": "series7"
+        },
+        "max_wire_bytes": 194,
+        "peak_cells": 83,
+        "peak_n": [
+          17.131594821662432,
+          17.131594880273898
+        ],
+        "peak_time_s": [
+          0.01115957549124053,
+          0.011160060073390151
+        ],
+        "ref_peak_n": 17.131594870017633,
+        "ref_time_s": [
+          0.0111083984375,
+          0.01116943359375
+        ],
+        "j_ns": 0.10087794157972509,
+        "b_ns2": 0.00039330924018447485,
+        "exact_j_ns": "2558695660130241595553/25364273101350633472000",
+        "exact_b_ns2": "142217898501751109528547857/361593077332854630776832000000",
+        "ref_j_ns": 0.10087794156081173,
+        "centroid_s": 0.011726137334630904,
+        "min_gap_lower_m": 0.0013698717401844748,
+        "end_gap_m": 0.0013698717401844748,
+        "end_speed_m_s": 0.024122058420274914,
+        "peak_relative_law_bound": 4.758313043072762E-11,
+        "worst_knot_jump_n": 3.4576785878925875E-10,
+        "dissipation_j": 0.007422297742834981,
+        "positive_work_j": 7.397582681749877E-15,
+        "signed_law_j_ns": 3.707244296363259E-14,
+        "signed_law_b_ns2": 3.0212416211908373E-16,
+        "errors": {
+          "step_peak_vs_reference_n": 4.8355199414417016E-08,
+          "step_impulse_vs_reference_ns": 1.891335469280607E-11,
+          "step_moment_error_divided_by_mass_m": 7.387558286173981E-14,
+          "endpoint_gap_error_m": 7.387555286173982E-14,
+          "endpoint_speed_error_m_s": 1.8913386692806068E-11,
+          "impact_peak_time_error_s": 0.0,
+          "law_impulse_vs_delivered_ns": 3.707244296363259E-14,
+          "law_moment_error_divided_by_mass_m": 3.0212416211908373E-16,
+          "prefix_momentum_defect_ns": 6.365524157687268E-14,
+          "positive_work_defect_per_window_j": 7.397582681749877E-15
+        },
+        "failed_gates": [],
+        "first_prefix_or_work_threshold": null,
+        "exact_inertial_path": true,
+        "strict_nonnegative": true,
+        "end_sha256": "1fa7dac29550b133fa561d3fc3614637ad376fa20092f5ab3372c5e0690c1441",
+        "trace_hashes": {
+          "end.state.json": "1fa7dac29550b133fa561d3fc3614637ad376fa20092f5ab3372c5e0690c1441",
+          "states.jsonl": "dd80b07098be1032fd646f227502d55bd324c816e2a4bb94286f2389370b1140",
+          "forces.jsonl": "8dec6a5f000c45cd00f51ffa44ba9fff2abc2f1be0936cb6a836608138c2855c",
+          "pieces.jsonl": "5b54c7367bbe9fff08ee2a5b626dc7b2dbafd841e340eb16ab749c790d2872a1"
+        }
+      },
+      {
+        "phase": "successor",
+        "entry_s": null,
+        "active_s": "1/64",
+        "parts": 125,
+        "force_macros": 63,
+        "work": {
+          "force_charges": 504,
+          "convolution_terms": 2268,
+          "conversion_terms": 2268,
+          "half_subdivision_means": 3472,
+          "method": "series7"
+        },
+        "max_wire_bytes": 187,
+        "peak_cells": 125,
+        "peak_n": [
+          7.9150594776758965,
+          7.9150594776758965
+        ],
+        "peak_time_s": [
+          0.015625,
+          0.015625
+        ],
+        "ref_peak_n": 7.915059482706874,
+        "ref_time_s": [
+          0.015625,
+          0.015625
+        ],
+        "j_ns": 0.025001778105516483,
+        "b_ns2": 0.0003173238670546476,
+        "exact_j_ns": "1153003505250343527/46116860184273879040",
+        "exact_b_ns2": "4682873731229534486573/14757395258967641292800000",
+        "ref_j_ns": 0.025001778123293406,
+        "centroid_s": 0.018557948030119023,
+        "min_gap_lower_m": 0.001306707211329715,
+        "end_gap_m": 0.0013102884444223268,
+        "end_speed_m_s": -0.0008797196852415681,
+        "peak_relative_law_bound": 1.7385677152430364E-12,
+        "worst_knot_jump_n": 1.2830625450988009E-11,
+        "dissipation_j": 0.00027088979633349173,
+        "positive_work_j": 2.4399534096015052E-17,
+        "signed_law_j_ns": 8.786295933192806E-16,
+        "signed_law_b_ns2": 1.4609479913189114E-17,
+        "errors": {
+          "step_peak_vs_reference_n": 5.030977540086071E-09,
+          "step_impulse_vs_reference_ns": 1.7776922601105643E-11,
+          "step_moment_error_divided_by_mass_m": 2.240412074187303E-13,
+          "endpoint_gap_error_m": 2.3951119553752777E-15,
+          "endpoint_speed_error_m_s": 1.1364099917004254E-12,
+          "impact_peak_time_error_s": 0.0,
+          "law_impulse_vs_delivered_ns": 8.786295933192806E-16,
+          "law_moment_error_divided_by_mass_m": 1.4609479913189114E-17,
+          "prefix_momentum_defect_ns": 1.2771856790899805E-15,
+          "positive_work_defect_per_window_j": 2.4399534096015052E-17
+        },
+        "failed_gates": [],
+        "first_prefix_or_work_threshold": null,
+        "exact_inertial_path": true,
+        "strict_nonnegative": true,
+        "end_sha256": "f56190b972496fe0f66bb24e76f5a8ee314ef87db03132868bdbb45fa6912363",
+        "trace_hashes": {
+          "end.state.json": "f56190b972496fe0f66bb24e76f5a8ee314ef87db03132868bdbb45fa6912363",
+          "states.jsonl": "95b923992f368442ce2d252c7dea5813da1c84070f018e0b1b6fe969c4eafc82",
+          "forces.jsonl": "74036fb551288d2bc6c99befcc1f03792565c6ebda7c980b6f18eff7ffb1ccfa",
+          "pieces.jsonl": "87c018089b1bb7fc480fbee7b2343c87ab2895e3d6dccce5a3830a9d21cd622e"
+        }
+      }
+    ],
+    "pair": {
+      "positive_work_j": 7.421982215845891E-15,
+      "absolute_step_reference_impulse_errors_ns": 3.669027729391171E-11,
+      "prefix_momentum_ns": 6.365524157687268E-14
+    },
+    "pair_failed_gates": []
+  }
+}

@@ -1,0 +1,365 @@
+{
+  "schema": "p65-sc2-peak-slope-results-v1",
+  "protocol": "p65-sc2-peak-slope-protocol.json",
+  "prior": "p65-sc2-peak-current-tangent-results.json",
+  "baseline": "29b904032215e440f2b13183abce92b5ffda613c",
+  "code": "b3331f4ce4b83e383aaa0134680511bb20617fde",
+  "evidence_root": "artifacts/p65-n2-sc2-peak-slope-20261101-01",
+  "scope": "Independent HOST research on a single original SC2 impact step, four cloth nodes of 0.5 kg each, a 2 kg platform and six material addresses. The tested interval starts at the certified d checkpoint. The requested 125 ms window remains open.",
+  "status": "Physical candidate rejected. The only failing gate is the cumulative, noncancelling impulse defect per address. Each of the six local lower bounds already exceeds the original limit. No accepted peak or new substep.",
+  "basis_check": {
+    "accepted": true,
+    "polynomial_controls": 21,
+    "max_coefficient_error": 1.4432899320127035e-15,
+    "value_at_node_error": 1.3322676295501878e-15,
+    "impulse_error": 3.870601755773251e-16,
+    "backward_error": 2.220446049250313e-16
+  },
+  "newton": {
+    "coarse_residual_m_s2": [
+      10.90903229963451,
+      1.9343157973474407,
+      0.01348381152126743
+    ],
+    "fine_residual_m_s2": [
+      0.11748219498481305,
+      0.00002264051000633316
+    ],
+    "slope_feedback_residual_m_s2": [
+      3.552713678800501e-15,
+      3.552713678800501e-15
+    ],
+    "coefficient_shape": [
+      21,
+      97
+    ],
+    "fused_queries": 37,
+    "original_addresses_per_query": 6,
+    "all_returned": true,
+    "provider_ledger_sha256": "49941a32a0b99cbe78e920c53ea766660a86f3f047896a4079886cc14c2d8df5",
+    "terminal_pressure_n": {
+      "dtype": "<f8",
+      "shape": [
+        6
+      ],
+      "values": [
+        0.9356537991211249,
+        0.9357239662554706,
+        2.23285457522095,
+        0.9357266843351983,
+        0.9356565171156279,
+        1.770273630383669
+      ]
+    },
+    "terminal_represented_pressure_n": [
+      0.9356537991205471,
+      0.9357239662548928,
+      2.2328545752209634,
+      0.9357266843346219,
+      0.9356565171150517,
+      1.7702736303836812
+    ]
+  },
+  "certificate": {
+    "inlet": "18ef159f5ecc0511620655c78ef67da1d227e49a79928ad1c7a66519a7c8ac56",
+    "candidate_endpoint": "5d2fa31f6fa56e918d1939200c988ddeced79e592de11c0c9951df8607cdd79c",
+    "binding": "741c160acacadb654d9b2078d8c3258013e58ddc74befc4cf1d8cea196a91cdd",
+    "previous_certificate_sha256": "2b00e9964ce59650817b0cd90cbce897a6a23b4ff899f953ca152abde3f94e7f",
+    "start_s": "2338287005/274877906944",
+    "stop_s": "1/64",
+    "reason": "failed physical gates: owner_impulse_ns",
+    "gates": {
+      "relative_positive": true,
+      "owner_impulse_ns": false,
+      "owner_backward_over_mass_m": true,
+      "node_velocity_m_s": true,
+      "node_position_m": true,
+      "positive_energy_j": true,
+      "paired_angular_nms": true,
+      "linear_ns": true,
+      "whole_path_hard": true,
+      "exact_two_moments": true,
+      "owner_budget": true,
+      "cell_budget": true
+    },
+    "upper": {
+      "relative_positive": 0.001274291086441587,
+      "owner_impulse_ns": 2.421422100661276e-9,
+      "owner_backward_over_mass_m": 1.6006701214804233e-11,
+      "node_velocity_m_s": 4.2817427293721415e-7,
+      "node_position_m": 4.384315875611715e-9,
+      "positive_energy_j": 1.4346934411914477e-11,
+      "paired_angular_nms": 5.692520926482766e-9,
+      "linear_ns": 5.114039357088823e-18
+    },
+    "cap_per_owner_absolute_impulse_ns": 1e-10,
+    "ordered_owners": [
+      "U/0/lower",
+      "U/1/lower",
+      "U/2/lower",
+      "D/1/lower",
+      "D/0/lower",
+      "D/3/lower"
+    ],
+    "local_absolute_impulse_defect_lower_ns": [
+      2.2107130400232533e-9,
+      2.21083134435461e-9,
+      1.3132276623742267e-9,
+      2.2101069806584247e-9,
+      2.2099887128556e-9,
+      8.180158262224486e-10
+    ],
+    "local_absolute_impulse_defect_upper_ns": [
+      2.3827051058331846e-9,
+      2.3828326334883816e-9,
+      1.416376101417647e-9,
+      2.383577088184909e-9,
+      2.3834495385879432e-9,
+      8.831712650678799e-10
+    ],
+    "cumulative_absolute_impulse_defect_upper_ns": [
+      2.396801651074741e-9,
+      2.396929699434432e-9,
+      1.42411720724114e-9,
+      2.421422100661276e-9,
+      2.4212935752730655e-9,
+      8.831800798143291e-10
+    ],
+    "local_signed_impulse_defect_ns": [
+      [
+        -7.81479662651324e-11,
+        9.580087809886773e-11
+      ],
+      [
+        -7.815217742285422e-11,
+        9.580602001635121e-11
+      ],
+      [
+        -4.6431454222357265e-11,
+        5.7880033217568054e-11
+      ],
+      [
+        -7.890255334261281e-11,
+        9.65519426062032e-11
+      ],
+      [
+        -7.889831721015657e-11,
+        9.6546779031559e-11
+      ],
+      [
+        -2.850753020539904e-11,
+        3.738448103509689e-11
+      ]
+    ],
+    "local_signed_energy_j": [
+      -3.608441712241114e-13,
+      7.578732611059297e-13
+    ],
+    "local_paired_angular_error_nms": 4.468682185201554e-9,
+    "local_relative_force_defect_upper": [
+      5.671828222008272e-7,
+      5.67173711558029e-7,
+      2.0286027102812936e-7,
+      5.672365525974934e-7,
+      5.672456658468996e-7,
+      0.000009966663925599611
+    ],
+    "local_backward_error_over_min_mass_m": [
+      1.5433682722969964e-11,
+      1.5434503896991483e-11,
+      8.984996066030592e-12,
+      1.5440138428998312e-11,
+      1.5439317083884506e-11,
+      5.344824672191915e-12
+    ],
+    "minimum_hard_gap_m": 0.0013027073504172024,
+    "endpoint_force_sample_error_n": 5.777600620149315e-13,
+    "local_represented_J_ns": [
+      "33298647728871731008682010815928121/2305465846973953958138166958903787520",
+      "3171489829409085297945662217282809/219568175902281329346492091324170240",
+      "7011572296891945196127107449624781/354687053380608301252025685985198080",
+      "22200433953827229954784515009890617/1536977231315969305425444639269191680",
+      "1958744438265651949102374905813347/135615638057291409302245115229634560",
+      "27331224065936681742969514576205287/2305465846973953958138166958903787520"
+    ],
+    "local_represented_B_ns2": [
+      "4011109949307259765972701376579415176063/71344962178111642003584973692574250286710784",
+      "10180202487476569501076930096041288651084891/181063321870593331456241008235511650906202439680",
+      "174135207044993819775280850793201747818075347/2534886506188306640387374115297163112686834155520",
+      "3958966787960202915792799103973697169077597/70413514060786295566315947647143419796856504320",
+      "71257353020618586022449512168292182049537677/1267443253094153320193687057648581556343417077760",
+      "90813886152339522097180864830313598187371923/2534886506188306640387374115297163112686834155520"
+    ],
+    "cells": {
+      "new": 577,
+      "inherited": 1635,
+      "total": 2212
+    },
+    "charges": {
+      "inherited": 288,
+      "new": 222,
+      "total": 510,
+      "remaining": 2
+    }
+  },
+  "prior_value_only": {
+    "max_cumulative_impulse_upper_ns": 2.1234197527606783e-10,
+    "max_local_impulse_lower_ns": 1.617624845662471e-10,
+    "addresses_with_local_impulse_lower_over_cap": 4,
+    "charges": {
+      "inherited": 288,
+      "new": 222,
+      "total": 510,
+      "remaining": 2
+    }
+  },
+  "readback": {
+    "accepted": false,
+    "same_inlet": true,
+    "returned": "18ef159f5ecc0511620655c78ef67da1d227e49a79928ad1c7a66519a7c8ac56",
+    "returned_time_s": "2338287005/274877906944",
+    "peak": {
+      "force_n": [
+        15.833219044050916,
+        16.294309650733723
+      ],
+      "time_s": [
+        0.010619902118889966,
+        0.011954594887185978
+      ],
+      "leaves": 64,
+      "dominates_prefix": true,
+      "interior": true,
+      "accepted": false
+    },
+    "cumulative_upper": {
+      "relative_positive": 0.001274291086441587,
+      "owner_impulse_ns": 2.421422100661276e-9,
+      "owner_backward_over_mass_m": 1.6006701214804233e-11,
+      "node_velocity_m_s": 4.2817427293721415e-7,
+      "node_position_m": 4.384315875611715e-9,
+      "positive_energy_j": 1.4346934411914477e-11,
+      "paired_angular_nms": 5.692520926482766e-9,
+      "linear_ns": 5.114039357088823e-18
+    },
+    "charges": {
+      "inherited": 288,
+      "new": 222,
+      "total": 510,
+      "remaining": 2
+    },
+    "earlier_attempt_charges": {
+      "inherited": 288,
+      "new": 210,
+      "total": 498,
+      "remaining": 14
+    },
+    "stale_endpoint": "wrong endpoint before interval check"
+  },
+  "transaction": {
+    "accepted": false,
+    "substep_count": 0,
+    "peak_checkpoint_file": false,
+    "whole_accepted_step_file": false
+  },
+  "evidence_files": [
+    {
+      "name": "basis-check.json",
+      "bytes": 245,
+      "sha256": "eb96ca2d3bc63f15641407208bb42fb9790e58e43eb2ffa9ebf54deaa5b949f8"
+    },
+    {
+      "name": "driver-at-verify.py",
+      "bytes": 6766,
+      "sha256": "1af9dfac3843c53b2c211147df799b87f867e9292ba223d82d490bf3096f4045"
+    },
+    {
+      "name": "proposal.json.gz",
+      "bytes": 93779,
+      "sha256": "dc2482afada65a1fb93f946e1f524078a9f233123b9c6596b19a09cca6c3e405"
+    },
+    {
+      "name": "provider-ledger.json.gz",
+      "bytes": 11645,
+      "sha256": "49941a32a0b99cbe78e920c53ea766660a86f3f047896a4079886cc14c2d8df5"
+    },
+    {
+      "name": "readback.json",
+      "bytes": 1161,
+      "sha256": "47d73f8b0c35c8de57505d249b8c181283286e2951430beac6513494e21f21b8"
+    },
+    {
+      "name": "run.ps1",
+      "bytes": 4904,
+      "sha256": "149a08563b99a22e748ba32ddb8e6e23d11a53abeed772e907a048fd7f2dfd30"
+    },
+    {
+      "name": "slope-attempt.json.gz",
+      "bytes": 2358,
+      "sha256": "fff787ffe4cbdf7fbc93bc646a40b8ea58b0299ddc5904ab19d694ba7a052058"
+    },
+    {
+      "name": "slope-transaction.json.gz",
+      "bytes": 1906,
+      "sha256": "5bb99bf93c7af866a5314faaeceb7f3e594d01aa3750316dc6db3460d5629bba"
+    }
+  ],
+  "runs": [
+    {
+      "run": "basis-192608038",
+      "exit": 1,
+      "receipt_sha256": "bfdb8a240a1f914dfc22f55b66481772b4245d9cfb3b09ecfc45a83f072a7844"
+    },
+    {
+      "run": "basis-192637185",
+      "exit": 0,
+      "receipt_sha256": "bd3b2d1f0706e637fcf2c632f704e481df2253bc919b2986dd985fa46589538b"
+    },
+    {
+      "run": "format-192834686",
+      "exit": 0,
+      "receipt_sha256": "af0623928193940be6b96ed4dcad7ee2fe1bc976d84bc704bdc99af8d57062c3"
+    },
+    {
+      "run": "lint-192844706",
+      "exit": 1,
+      "receipt_sha256": "98097d550807cb3a5ad98df19c12bfe2df22863c388cc3e59580d242889646e1"
+    },
+    {
+      "run": "lint-192919735",
+      "exit": 0,
+      "receipt_sha256": "e2457981b390042e5bdd9fd7374cb5669e98deb9590f58f5ebe95cd99be969db"
+    },
+    {
+      "run": "propose-192927752",
+      "exit": 0,
+      "receipt_sha256": "f81648da8270f0c1a2d5962e918e388a007e85f4f189df22dea1e069f2f4bfb9"
+    },
+    {
+      "run": "readback-193551643",
+      "exit": 0,
+      "receipt_sha256": "2e0a54afb4cad962fe5827d1c023fbccc79752e5521abcd225dbbd7d916ce71d"
+    },
+    {
+      "run": "red-192445266",
+      "exit": 1,
+      "receipt_sha256": "0ab314380319cc4351f6cb3bda66845ba4947b08f0bcab00ef6fefe935d566c7"
+    },
+    {
+      "run": "verify-192946504",
+      "exit": 1,
+      "receipt_sha256": "bf6dc825ddaca19f2e39ceafc2b8ee01c230e0bae8706f840d71146d20972547"
+    }
+  ],
+  "release": {
+    "run": "release-193636303",
+    "matching": 0,
+    "time": "2026-11-01T19:36:37.220319+08:00",
+    "sha256": "1bba59e9af154c7899781603c23101f87914db998b94e7d8660b1d28de2e85af"
+  },
+  "notes": [
+    "Independent raw phases are retained, including the value-only falsifier and the first incorrect floating-point construction of the node polynomial. The corrected dyadic construction reproduces degrees zero through twenty. The first lint finding and the later scoped clean result are retained.",
+    "The physical verifier ran once. Its driver bytes are retained in driver-at-verify.py. The later readback adds an earlier represented-force comparison on the accepted branch, which this rejected run did not enter. A stale endpoint was rejected before interval evaluation.",
+    "Signed impulse error intervals contain zero for every address. Their cancellation cannot establish the required integral of absolute force error. The stored peak interval is diagnostic only."
+  ]
+}

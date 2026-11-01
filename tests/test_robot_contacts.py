@@ -199,3 +199,45 @@ def test_driven_stop_equilibrium_and_transaction_rollback():
     assert not bad.report.accepted and "joint limit" in bad.report.reason
     np.testing.assert_array_equal(bad.state.domains["r"].q, state.domains["r"].q)
     np.testing.assert_array_equal(bad.state.domains["r"].v, state.domains["r"].v)
+
+
+def test_adjacent_link_contact_survives_unrelated_shape_exclusions():
+    model = ph.RobotModel(
+        np.array([-1, 0]),
+        ("prismatic", "prismatic"),
+        np.array([[0., 0., 0.], [0., 0., .15]]),
+        np.array([[0., 0., 0., 1.], [0., 0., 0., 1.]]),
+        np.array([[1., 0., 0.], [0., 0., 1.]]),
+        np.ones(2),
+        np.zeros((2, 3)),
+        np.ones((2, 3)),
+        np.zeros(3),
+    )
+    models = {"r": model}
+    state = {"r": ph.RobotState(np.zeros(2), np.zeros(2))}
+    shapes = (
+        capsule("parent", "r", [0, 0, 0], [0, 0, 0]),
+        capsule("guard", "r", [4, 0, 0], [4, 0, 0]),
+        capsule("child", "r", [0, 0, 0], [0, 0, 0], link=1),
+    )
+    active = ph.RobotContactSystem(models, capsules=shapes).evaluate(state)
+    assert active["checked_pairs"] == 2  # the two shapes on link zero cannot load each other
+    assert [(r["a"], r["b"]) for r in active["contacts"]] == [("parent", "child")]
+    np.testing.assert_allclose(active["efforts"]["r"], [0., 100.], atol=1e-12)
+
+    kept = ph.RobotContactSystem(
+        models, capsules=shapes, excluded_pairs=(("guard", "child"),)
+    ).evaluate(state)
+    assert kept["checked_pairs"] == 1
+    np.testing.assert_array_equal(kept["efforts"]["r"], active["efforts"]["r"])
+    clear = ph.RobotContactSystem(
+        models, capsules=shapes, excluded_pairs=(("child", "parent"),)
+    ).evaluate(state)
+    assert clear["checked_pairs"] == 1 and clear["contacts"] == []
+    np.testing.assert_array_equal(clear["efforts"]["r"], np.zeros(2))
+    with pytest.raises(ValueError, match="duplicate collision exclusion"):
+        ph.RobotContactSystem(
+            models, capsules=shapes, excluded_pairs=(("parent", "child"), ("child", "parent"))
+        )
+    with pytest.raises(ValueError, match="duplicate collision shape key"):
+        ph.RobotContactSystem(models, capsules=(*shapes, shapes[0]))

@@ -1,0 +1,371 @@
+{
+  "schema": "p65-sc2-common-motion-entry-results-v1",
+  "baseline": "bd3d1163f04b811fbb07307d632164676054a0f6",
+  "raw_directory": "artifacts/p65-n2-sc2-common-motion-entry-20261101-01",
+  "scope": "Certified free-to-first-positive HOST segment. Eight original h through 125 ms on one diagnostic coupled reference with a verified forbidden load. Full SC2 physical publication remains open.",
+  "release_guard": "release-175452608",
+  "raw": [
+    {
+      "name": "entry.json",
+      "sha256": "193da3ce46d67d463005a990f6051ae12d340a4be88c793cdc71651b0ee06b03"
+    },
+    {
+      "name": "window.json",
+      "sha256": "93ea618be49663aa4b3575cbb0758e47a56eed3ddb2c3583f9f199fbcb8ecc94"
+    },
+    {
+      "name": "proposal.json.gz",
+      "sha256": "abcf8f89d62c5ffd8515f074533cb7130b4dfb686f74eb40ee5051d20587a3c1"
+    },
+    {
+      "name": "window-bounds.json.gz",
+      "sha256": "f1dc35ba658dcccaa612754106e151bec6a66ab337ae18e7cb62088427da27ea"
+    },
+    {
+      "name": "event-moment-counterexample.json",
+      "sha256": "29ed3dfbb9f42f85bea09869e7a1e79ad1d8c179ec5eb547c1ece59857810925"
+    },
+    {
+      "name": "readback-plan.json",
+      "sha256": "2aa67f30df527a7c30380e40e12b76663f5742cacb4068bffd8469c5af6c51b2"
+    },
+    {
+      "name": "bridge.bin",
+      "sha256": "df977891667806f4ef2388c19494cd7b5d2bcc6d80861065e29d0b742f01fabe"
+    }
+  ],
+  "entry": {
+    "roots_s_over_h": [
+      [
+        "63887933/134217728",
+        "2044413857/4294967296"
+      ],
+      [
+        "127775277/268435456",
+        "2044404433/4294967296"
+      ],
+      [
+        "2044399721/4294967296",
+        "1022199861/2147483648"
+      ],
+      [
+        "255550583/536870912",
+        "2044404665/4294967296"
+      ],
+      [
+        "255551761/536870912",
+        "2044414089/4294967296"
+      ],
+      [
+        "2336454517/4294967296",
+        "1168227259/2147483648"
+      ]
+    ],
+    "first": "U/2/lower",
+    "event_seconds": [
+      "2044399721/274877906944",
+      "1022199861/137438953472"
+    ],
+    "latest_closing_rate_upper": -0.10937498509883795,
+    "positive_unsquared_factors": true,
+    "free_zero_until_root": true,
+    "instantaneous_impulse_ns": 0,
+    "free_min_hard_gap_m": "1/500",
+    "time_cells": 454,
+    "bridge_end_s": "2044402077/274877906944",
+    "only_loaded_owner": "U/2/lower",
+    "incident_relative_error_upper": 0.0012742910864415864,
+    "end_force_n": [
+      0.000011235374731962833,
+      0.000011259249299511814
+    ],
+    "end_hard_gap_m": [
+      0.001999998928625516,
+      0.001999998928625517
+    ],
+    "hard_gap_lower_m": 0.0019999989286255157,
+    "J_ns": "125109809696979101547/2596148429267413814265248164610048",
+    "B_ns2": "196464104494156182462639/1427247692705959881058285969449495136382746624",
+    "impulse_error_upper_ns": 6.143485606893506e-17,
+    "time_moment_error_over_min_mass_m": 3.5104196503722284e-25,
+    "node_velocity_defect_m_s": 3.4044212088160884e-7,
+    "node_position_defect_m": 1.3072727691261072e-9,
+    "positive_energy_upper_j": 1.213536216726486e-16,
+    "paired_angular_upper_nms": 2.409528381735466e-13,
+    "original_velocity_retained": true,
+    "event_point_impulse": 0,
+    "owner_charges": 84,
+    "negative": {
+      "wrong-first": "wrong earliest address, root or endpoint",
+      "ballistic": "wrong earliest address, root or endpoint",
+      "owner": "missing or permuted material address",
+      "early-load": "nonzero prebirth pressure",
+      "lost-velocity": "initial velocity or evaluation ledger",
+      "forged-impulse": "invalid incident force moments"
+    },
+    "checkpoint_sha256": "df977891667806f4ef2388c19494cd7b5d2bcc6d80861065e29d0b742f01fabe",
+    "proposal_sha256": "abcf8f89d62c5ffd8515f074533cb7130b4dfb686f74eb40ee5051d20587a3c1",
+    "input_binding": "0b79b484586b145df551edf64b8f0cf13871e18824af81150e368876fdf9153f",
+    "protocol_sha256_lf": "5c5fb4f8fb2c5109cb63c3fc4309c41fd643beb8fad9bdd15bb6cb4687a13042"
+  },
+  "window": {
+    "scope": "finite HOST reference, original SC2 nominal h only",
+    "protocol_sha256_lf": "5c5fb4f8fb2c5109cb63c3fc4309c41fd643beb8fad9bdd15bb6cb4687a13042",
+    "model": "7645de9d68f930a62e0690deca067b4dbf5878b14bb8c8716cde7564573cfa84",
+    "input_binding": "0b79b484586b145df551edf64b8f0cf13871e18824af81150e368876fdf9153f",
+    "entry_sha": "193da3ce46d67d463005a990f6051ae12d340a4be88c793cdc71651b0ee06b03",
+    "bridge_checkpoint": "df977891667806f4ef2388c19494cd7b5d2bcc6d80861065e29d0b742f01fabe",
+    "eight_boundary_sha256": [
+      "660bb2bf1e179b8173a4a809ea86dc6cfce9879c5ac3cdc647324cf805611b54",
+      "be5c3b92c388ac2c79a5fca7ea62ec86d3e7501b8d086ea8a3511b32fd4487d2",
+      "b537a6dae32a531ce0155cddcfc437ce0c211060d22c65267e439dfa090528cc",
+      "d80fb1f06e4630e8e4778eaf2f773c4d60639081c08b07c8afc89be69ea594cf",
+      "523fc7f93402221494dd0816def5b9c3ad1d7bc7b58a247a0acdfe5967d68f6b",
+      "9b68cfff57eea9a72a57670938f87cce7463bfcbe7d139c117efeddbab2c0075",
+      "8d86ec249e8a2e6a9b0f053dd1f29f03c7d5c5716d694538fa4675ad23057891",
+      "c070c80ff22dce1b3d28e367224425dd7f992d3c095528cd44124fd165c53c22"
+    ],
+    "eight_stage_files_sha256": [
+      "c9d6608405f97b861ced8f373586ef4207ce8519c42d7c1ef9b59b028bbbe0ec",
+      "bb5d59c61611befc5a6ccf0e6400762849258d7bfc8e01c4a082e05f3b4fa981",
+      "86f9775257846fa6951af16443c27687096961b40a2e2f20d24536983c3985f6",
+      "a6547ee2dad8bef1de78a7653fa4c91b745fb5d4fdf52e900aa567cdef6fe3d3",
+      "9d84207332865948a6e137430d7860b542d0087cc0c5dd9c0c4e5d203abdfd9d",
+      "430d0516dd4389444739240462fe35f2cca7ea0f67abeaab449d6b1995da2236",
+      "0e1baed683b2cb9251edf7feaf68fdc5b7dfd733c2b98a63aff94e231956927e",
+      "c5cc3ecf001108d046e252c7b8d9f38c98f63e168ca77d96d7adf47450702efe"
+    ],
+    "certified_entry": "U/2/lower",
+    "peak_law": {
+      "force_n": [
+        15.832672398900053,
+        15.964302817584281
+      ],
+      "time_s": [
+        0.010891596607564225,
+        0.011627193080713027
+      ],
+      "candidate_cells": 23
+    },
+    "peak_represented": {
+      "force_n": [
+        15.832431225433654,
+        15.848788525343549
+      ],
+      "time_s": [
+        0.011115473795044295,
+        0.011371333437878661
+      ],
+      "candidate_cells": 8
+    },
+    "min_gap_lower_m": 0.00114300519800432,
+    "end_gap": [
+      [
+        0.0018753216574784429,
+        0.0018753216574784433
+      ],
+      [
+        0.001888282448040864,
+        0.0018882824480408644
+      ],
+      [
+        0.0012460959272547279,
+        0.0012460959272547283
+      ],
+      [
+        0.001888281490472347,
+        0.0018882814904723475
+      ],
+      [
+        0.001875320699909926,
+        0.0018753206999099264
+      ],
+      [
+        0.0013524859394361004,
+        0.0013524859394361008
+      ]
+    ],
+    "end_rate": [
+      [
+        0.004901011389902674,
+        0.0049010113899026755
+      ],
+      [
+        0.005209030615173264,
+        0.0052090306151732655
+      ],
+      [
+        0.0012008284057231666,
+        0.001200828405723167
+      ],
+      [
+        0.0052090252456503845,
+        0.005209025245650386
+      ],
+      [
+        0.0049010060203797945,
+        0.004901006020379796
+      ],
+      [
+        0.0011051599205803898,
+        0.0011051599205803902
+      ]
+    ],
+    "end_law_n": [
+      -5e-324,
+      5e-324
+    ],
+    "end_owner_law_n": [
+      [
+        -5e-324,
+        5e-324
+      ],
+      [
+        -5e-324,
+        5e-324
+      ],
+      [
+        -5e-324,
+        5e-324
+      ],
+      [
+        -5e-324,
+        5e-324
+      ],
+      [
+        -5e-324,
+        5e-324
+      ],
+      [
+        -5e-324,
+        5e-324
+      ]
+    ],
+    "owner_exit_observations": [
+      {
+        "owner": "U/0/lower",
+        "inside_by_s": 0.007501456340008872,
+        "later_outside_by_s": null
+      },
+      {
+        "owner": "U/1/lower",
+        "inside_by_s": 0.007501456340008872,
+        "later_outside_by_s": null
+      },
+      {
+        "owner": "U/2/lower",
+        "inside_by_s": 0.007469473884654576,
+        "later_outside_by_s": null
+      },
+      {
+        "owner": "D/1/lower",
+        "inside_by_s": 0.007501456340008872,
+        "later_outside_by_s": null
+      },
+      {
+        "owner": "D/0/lower",
+        "inside_by_s": 0.007501456340008872,
+        "later_outside_by_s": null
+      },
+      {
+        "owner": "D/3/lower",
+        "inside_by_s": 0.008556877366700633,
+        "later_outside_by_s": null
+      }
+    ],
+    "prefix_peak_upper_n": 0.00021404084799137962,
+    "end_platform_speed_m_s": -0.062098861241979254,
+    "all_six_inside_by_s": 0.008556877366700633,
+    "all_six_remain_inside": true,
+    "one_or_more_inside_entire_continuation": true,
+    "positive_unloading_drop_n_lower": 15.832672398900053,
+    "full_law_certified": false,
+    "sample_spurious_or_negative_count": 9,
+    "first_spurious_or_negative": [
+      0.008476921228314893,
+      {
+        "owner": "D/3/lower",
+        "p_n": 0.011656970641925276,
+        "gap_m": [
+          0.0020031271630046327,
+          0.0020031271630046336
+        ]
+      }
+    ],
+    "strongest_spurious_or_negative": [
+      0.008476921228314893,
+      {
+        "owner": "D/3/lower",
+        "p_n": 0.011656970641925276,
+        "gap_m": [
+          0.0020031271630046327,
+          0.0020031271630046336
+        ]
+      }
+    ],
+    "time_cells_per_outer_step": 256,
+    "charges": [
+      468,
+      384,
+      384,
+      384,
+      384,
+      384,
+      384,
+      384
+    ]
+  },
+  "counterexample": {
+    "owner": "D/3/lower",
+    "step": 0,
+    "cell_zero_based": 2,
+    "cell_start_s": "18605781835/2199023255552",
+    "cell_end_s": "39462128889/4398046511104",
+    "earlier_first_unsquared_root_pairs": 6,
+    "early_sample_s": 0.008476921228314893,
+    "early_sample_n": 0.011656970641925276,
+    "empty_force_until_s": [
+      0.008505985489350273,
+      0.00850598548946942
+    ],
+    "resolved_signed_early_J_ns": [
+      7.436943458414372e-7,
+      7.436943497961545e-7
+    ],
+    "resolved_signed_early_B_ns2": [
+      3.5819388111175674e-10,
+      3.581938830550396e-10
+    ],
+    "delta_platform_v_if_only_removed_m_s": [
+      3.718471729207186e-7,
+      3.718471748980773e-7
+    ],
+    "delta_platform_q_if_only_removed_m": [
+      1.7909694055587837e-10,
+      1.790969415275198e-10
+    ],
+    "unchanged_motion_cannot_publish_clipped_force": true,
+    "root_depth": 32,
+    "trace_sha256": "c9d6608405f97b861ced8f373586ef4207ce8519c42d7c1ef9b59b028bbbe0ec",
+    "model": "7645de9d68f930a62e0690deca067b4dbf5878b14bb8c8716cde7564573cfa84"
+  },
+  "command_outcomes": {
+    "format-174529541": 0,
+    "lint-174545191": 1,
+    "format-174658410": 0,
+    "lint-174705644": 0,
+    "proposal-174713818": 0,
+    "check-174723416": 0,
+    "format-window-174932836": 0,
+    "lint-window-174943708": 0,
+    "window-174953149": 0,
+    "audit-175002644": 0,
+    "format-readback-175244289": 0,
+    "lint-readback-175251503": 1,
+    "lint-readback-175315243": 0,
+    "counterexample-175322806": 1,
+    "counterexample-175349417": 0,
+    "lint-readback-175358127": 0
+  },
+  "repairs": "Two first scoped Ruff checks identified ordinary source style findings. The first unsquared readback used Fraction / Interval where this interval type requires an interval numerator. The corrected independent readback passed on the original saved trajectory. The successful producer, first-event certificate and eight-step reference were each executed once."
+}

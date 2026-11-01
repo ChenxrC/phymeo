@@ -1,0 +1,30 @@
+{
+  "schema": "p65-common-motion-protocol-v1",
+  "baseline": "17679b2815bae5d851d1a903f1f337f23b258550",
+  "fixture": "p65-b2-joint-readback-protocol.json",
+  "fixture_sha256_lf": "1b70ba85d8255f6e390626952ac84c466083fb755f8033f83d3e54c0fb7ab1b4",
+  "previous": "p65-gravity-six-owner-results.json",
+  "previous_sha256_lf": "dfa88b0d1437a4f98e3ec4b5c1ffb2ad6773fc61400af7cd7680099447f49d69",
+  "scope": "Opt-in N2 HOST research SceneProgram and framework note. Full original four-node deformable B2, both finite faces, six distinct area owners and 2kg z-prismatic platform. A single research program advances original body forces, actual analytic distance/bend forces and all six SC-L1 offset actions together. No second solver or post-step state correction. Existing product dispatch/XPBD/R7 unchanged.",
+  "path": "One authoritative C1 motion, initialized by the real incoming full position and velocity. Independently reconstruct acceleration from original forces, polynomial material forces and each owner's mapped generalized polynomial load; integrate twice. Positions, velocities, pressures, moving directors and both sides' points bind to the same time. Integer coefficients of shifted Chebyshev polynomials use a 2^-60 physical component grid, rounding included in validation. Outermost dt=1/64; one polynomial of degree 20 for forces. Restart preserves exact bounded rational endpoint state and checks its ordinary FP64 projection.",
+  "solver": "21 cosine extrema, snapped to 2^-32 normalized time. Collocate in acceleration; compute exact low-order integration matrices numerically in the Chebyshev basis and precondition with the inlet material Gauss-Newton stiffness and normal-layer stiffness/damping. This matrix shapes updates only. Every evaluation uses actual nonlinear material and full changing offset maps on the shared trial path. One original-inlet force evaluation, reused across four sweeps at the other 20 nodes, costs 486 owner evaluations. Final force polynomials generate the authoritative motion. Original 512 cap includes all failed attempts, no fifth sweep, no fitting a reference or retry of the same controls.",
+  "gates": {
+    "owner_law_impulse_ns": 1e-10,
+    "owner_law_time_moment_per_mass_m": 1e-10,
+    "position_m": 1e-8,
+    "velocity_m_s": 0.000002,
+    "joint_positive_energy_j": 1e-8,
+    "angular_nms": 1e-8,
+    "hard_penetration_m": 0,
+    "max_owner_evaluations": 512,
+    "proof_cells_limit": 4096,
+    "proof_depth_limit": 32,
+    "proof_leaves": 64,
+    "max_checkpoint_bytes": 1024,
+    "max_checkpoint_integer_bits": 512
+  },
+  "verification": "Use independent exact rational polynomial reconstruction from published force words and the checkpoint. Prove hard clearance for the actual nonlinear thick vertex paths including initial contact, continuous finite-patch and positive-face support, nonnegative pressure and SC-L1 force, both law moments, material contributions, linear/angular balance and original-input energy including elastic layer and actual damping. Compare first endpoint against the prior independently computed reference without feeding it to production. Keep guide reaction scope explicit. Verification gets its own bounded leaves/owner checks; geometry/arithmetic, matrix solves, coefficient operations and output bytes are separate from producer pressure evaluations.",
+  "exercises": "Run the original rest inlet. Only on acceptance and fresh file audit, reopen its exact checkpoint in a new process and attempt one ordinary step with nonzero incoming velocity. Include real transaction rejections of changed inlet velocity, missing owner, and a balanced interior material-force bubble preserving both endpoint moments; do not recompute an accepted physical step for faults. Stop at a substantive numerical or contractual failure, including exhausted limits or an unresolved branch. Do not change h, masses, coefficients budget or tolerance.",
+  "framework": "Specify force-provider contracts, ownership of state and dense estimator, original external versus internal ledgers, exact motion publication/restart, whole-path geometry and constitutive verification, transaction and failure modes, current validation boundary and the obligations to generalize to robots, folds and native.",
+  "research": "https://arxiv.org/abs/2302.09056"
+}

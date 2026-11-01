@@ -1,5 +1,6 @@
 """Runnable NumPy cloth/patch cases. All recorded forces come from the public stepper."""
 
+from collections.abc import Mapping
 from dataclasses import dataclass, fields
 
 import numpy as np
@@ -145,7 +146,7 @@ def _robot_record(model):
 def _jsonable(value):
     if isinstance(value, np.ndarray):
         return value.tolist()
-    if isinstance(value, dict):
+    if isinstance(value, Mapping):
         return {k: _jsonable(v) for k, v in value.items()}
     if isinstance(value, (list, tuple)):
         return [_jsonable(v) for v in value]

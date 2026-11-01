@@ -115,3 +115,20 @@ def test_recorded_collision_bodies_are_bound_to_physical_robot_models():
     valid = deepcopy(trace)
     module.add_link_geometry(valid)
     assert valid["frames"] == trace["frames"]
+
+
+def test_accepted_runtime_diagnostics_can_be_saved_as_complete_json():
+    import json
+
+    from phymeo.experiments.compliant_cloth import record_step
+
+    case = build_handoff(robot="articulated")
+    trace = trace_start(case, "serializable_body_case")
+    with case.program.stepper(StepSettings(substeps=2)) as runtime:
+        result = runtime.step(case.initial, case.inputs, .0002)
+    assert result.report.accepted
+    assert record_step(case, trace, result, 0.)
+    restored = json.loads(json.dumps(trace, allow_nan=False))
+    assert len(restored["robot_samples"]) == 2
+    assert set(restored["robot_samples"][0]["efforts"]) == {"A", "B"}
+    assert restored["frames"][-1]["robot_contact"]["checked_pairs"] == 17

@@ -1,0 +1,355 @@
+{
+  "schema": "p65-n2-paired-load-history-result-v1",
+  "scope": "HOST prescribed history with four-node B2 and 2 kg prismatic platform",
+  "protocol_sha256_lf": "a6379ca2a7b5094f73df58880223c0a5d835a602d54c6cf2d5811d75da110a24",
+  "raw_directory": "artifacts/p65-n2-paired-load-history-20261101-01",
+  "cases": [
+    {
+      "case": "forward",
+      "packet_sha256": "b0c140657a7a2fc730f579116e4f2b778641fbd72835e432ee44e1d4020870f5",
+      "force_curve_sha256": "712ff44a9569d432b1440f0b6576e17c469874196c4f3038f3bd33bb264b6e6a",
+      "macros": 63,
+      "j_ns": 0.0028273758649015233,
+      "b_ns2": 2.8050324790945726e-05,
+      "held_ns": 0.0017952207866205265,
+      "terminal_ns": 0.0010321550782809966,
+      "source_start_force_n": 1.0,
+      "q_m": -1.4025162395472861e-05,
+      "reference_q_m": -1.4025162395472863e-05,
+      "q_error_m": 1.6940658945086007e-21,
+      "v_m_s": -0.0014136879324507614,
+      "terminal_applications": 1,
+      "pre_state_and_diagnostics_match": true,
+      "cloth_impulse_ns": [
+        4.930380657631324e-32,
+        -3.327419640371144e-16,
+        0.0028273758649015233
+      ],
+      "platform_impulse_ns": -0.002827375864901523,
+      "pair_z_residual_ns": 4.336808689942018e-19,
+      "platform_input_held_couple_nms": [
+        0.0,
+        0.0005984069288735088,
+        0.0
+      ],
+      "platform_terminal_point_couple_nms": [
+        0.0,
+        0.00034405167771860845,
+        0.0
+      ],
+      "platform_delivered_spatial_action_nms": [
+        0.0,
+        0.0009424586065921172,
+        0.0
+      ],
+      "cloth_measured_angular_impulse_nms": [
+        0.0,
+        -0.0009424586065921172,
+        -1.4508754420728137e-27
+      ],
+      "paired_angular_residual_l1_nms": 1.4508754420728137e-27,
+      "independent_guide_wrench_observed": false,
+      "raw_original_non_gravity_external_work_j": 0.0,
+      "gravity_work_j": 4.123103932381784e-06,
+      "cloth_local_effective_input_work_j": -1.6979764280960444e-06,
+      "initial_layer_storage_j": 0.001,
+      "eligible_full_step_layer_storage_dissipation": null,
+      "layer_domain": "initially on the hard boundary; lower-vertex gap derivative negative at entry",
+      "hard": [
+        {
+          "sweep": "violation",
+          "witness_t_fraction": "1/2",
+          "witness_lower_vertex_gap_m": [
+            -3.804323714290189e-06,
+            -3.804323486919783e-06
+          ],
+          "endpoint_sat_gap_m": [
+            -7.608646519098754e-06,
+            -7.608646519098754e-06
+          ],
+          "endpoint_lower_vertex_gap_m": [
+            -7.608647428580378e-06,
+            -7.608646519098754e-06
+          ],
+          "initial_path_gap_derivative_per_unit_t_m": -7.608647428580378e-06
+        },
+        {
+          "sweep": "violation",
+          "witness_t_fraction": "1/2",
+          "witness_lower_vertex_gap_m": [
+            -3.804323714290189e-06,
+            -3.804323486919783e-06
+          ],
+          "endpoint_sat_gap_m": [
+            -7.608646519098754e-06,
+            -7.608646519098754e-06
+          ],
+          "endpoint_lower_vertex_gap_m": [
+            -7.608647428580378e-06,
+            -7.608646519098754e-06
+          ],
+          "initial_path_gap_derivative_per_unit_t_m": -7.608647428580378e-06
+        }
+      ],
+      "mean_middle_gap_m": -2.467253334054274e-06,
+      "summed_current_update_gap_m": -2.467253334054274e-06,
+      "continuous_gravity_difference_m": 1.52587890625e-05,
+      "inner_mechanical_accepted": true,
+      "joint_admitted": false,
+      "successor_published": false,
+      "source_bindings": [
+        "dc752dca42423e3ee9a1a9f176518a7260c80421606b6febd58c4b6690403097",
+        "dc59e96c1f52de0aa6aec6a7288f7c303155bffb615e500d9744a476f2ffc6ae",
+        "96dd15e2beb6f4fad83f95a67164a047a8b7de47d0cea1d2d0ef9ff2cf2570e6",
+        "98d914b2e3c49d95b59958abe386a9f096ea515820bb6bb48036bdaa6b9e9fdb",
+        "b42f86b84444fe0500858382e28319563da3f5098c6d19ee9d1cc0d7e05c93b4"
+      ],
+      "evidence_sha256": {
+        "selected.json.gz": "84f9c612725f70d74a5cc2f9268229007b1dc590f3b70bfa1bf0f3f7b12b11b1",
+        "published.json.gz": "7e156d502dba2b0dbce18be5250c44c5c9f3182ee233c7653fec9bce4a04dbe8",
+        "evidence.json.gz": "ef854b135814f56435c6eb6aa779b17fbf21e4de3267b1205302123f958e6663",
+        "status.json": "7fbd5fb09cbf26de4ff7008f39c1edc967fe8eda14eb75bf901d347288b2093c"
+      }
+    },
+    {
+      "case": "reverse",
+      "packet_sha256": "87d65e26e3ae08b3981288bf667e7e5997740dd3de5e1dcd833dd492d75cb49a",
+      "force_curve_sha256": "712ff44a9569d432b1440f0b6576e17c469874196c4f3038f3bd33bb264b6e6a",
+      "macros": 63,
+      "j_ns": 0.0028273758649015233,
+      "b_ns2": 1.612742309814057e-05,
+      "held_ns": 0.0010321550782809966,
+      "terminal_ns": 0.0017952207866205265,
+      "source_start_force_n": 0.12494487282126025,
+      "q_m": -8.063711549070286e-06,
+      "reference_q_m": -8.063711549070286e-06,
+      "q_error_m": 0.0,
+      "v_m_s": -0.0014136879324507614,
+      "terminal_applications": 1,
+      "pre_state_and_diagnostics_match": true,
+      "cloth_impulse_ns": [
+        1.232595164407831e-32,
+        3.4417996907665883e-15,
+        0.002827375864901523
+      ],
+      "platform_impulse_ns": -0.002827375864901523,
+      "pair_z_residual_ns": 0.0,
+      "platform_input_held_couple_nms": [
+        0.0,
+        0.0003440516927603322,
+        0.0
+      ],
+      "platform_terminal_point_couple_nms": [
+        0.0,
+        0.0005984069024944348,
+        0.0
+      ],
+      "platform_delivered_spatial_action_nms": [
+        0.0,
+        0.0009424585952547669,
+        0.0
+      ],
+      "cloth_measured_angular_impulse_nms": [
+        1.0842021724855044e-19,
+        -0.0009424585952547669,
+        -2.80329118241273e-28
+      ],
+      "paired_angular_residual_l1_nms": 1.0842021752887956e-19,
+      "independent_guide_wrench_observed": false,
+      "raw_original_non_gravity_external_work_j": 0.0,
+      "gravity_work_j": 5.613466643982429e-06,
+      "cloth_local_effective_input_work_j": -1.4137163567206069e-06,
+      "initial_layer_storage_j": 0.001,
+      "eligible_full_step_layer_storage_dissipation": null,
+      "layer_domain": "initially on the hard boundary; lower-vertex gap derivative negative at entry",
+      "hard": [
+        {
+          "sweep": "violation",
+          "witness_t_fraction": "1/2",
+          "witness_lower_vertex_gap_m": [
+            -8.774134327411447e-06,
+            -8.774134235731532e-06
+          ],
+          "endpoint_sat_gap_m": [
+            -1.7548268288103232e-05,
+            -1.7548268288103232e-05
+          ],
+          "endpoint_lower_vertex_gap_m": [
+            -1.7548268654822894e-05,
+            -1.7548268288103232e-05
+          ],
+          "initial_path_gap_derivative_per_unit_t_m": -1.7548268654822894e-05
+        },
+        {
+          "sweep": "violation",
+          "witness_t_fraction": "1/2",
+          "witness_lower_vertex_gap_m": [
+            -8.774134327411447e-06,
+            -8.774134235731532e-06
+          ],
+          "endpoint_sat_gap_m": [
+            -1.7548268288103232e-05,
+            -1.7548268288103232e-05
+          ],
+          "endpoint_lower_vertex_gap_m": [
+            -1.7548268654822894e-05,
+            -1.7548268288103232e-05
+          ],
+          "initial_path_gap_derivative_per_unit_t_m": -1.7548268654822894e-05
+        }
+      ],
+      "mean_middle_gap_m": -1.4390155026859432e-05,
+      "summed_current_update_gap_m": -1.4390155026859428e-05,
+      "continuous_gravity_difference_m": 1.52587890625e-05,
+      "inner_mechanical_accepted": true,
+      "joint_admitted": false,
+      "successor_published": false,
+      "source_bindings": [
+        "dc752dca42423e3ee9a1a9f176518a7260c80421606b6febd58c4b6690403097",
+        "dc59e96c1f52de0aa6aec6a7288f7c303155bffb615e500d9744a476f2ffc6ae",
+        "96dd15e2beb6f4fad83f95a67164a047a8b7de47d0cea1d2d0ef9ff2cf2570e6",
+        "98d914b2e3c49d95b59958abe386a9f096ea515820bb6bb48036bdaa6b9e9fdb",
+        "b42f86b84444fe0500858382e28319563da3f5098c6d19ee9d1cc0d7e05c93b4"
+      ],
+      "evidence_sha256": {
+        "selected.json.gz": "6ad30f2db73cf93e31393c7ddd663a459f48d1f8b7c4c6b5c5e59a49d2af1189",
+        "published.json.gz": "1d0fdde36f62364010b54c5b09a395d88c03ff477f3a51842943841a3d4c1fbd",
+        "evidence.json.gz": "70646a2985c3a36389175fba3ae0352554572df0bf56d651b7a811b6eedba95b",
+        "status.json": "7fbd5fb09cbf26de4ff7008f39c1edc967fe8eda14eb75bf901d347288b2093c"
+      }
+    },
+    {
+      "case": "shifted",
+      "packet_sha256": "67378a5182004b135605c411c0b85a50ca1a8843beb618e20af1bdaaea18f46d",
+      "force_curve_sha256": "712ff44a9569d432b1440f0b6576e17c469874196c4f3038f3bd33bb264b6e6a",
+      "macros": 63,
+      "j_ns": 0.0028273758649015233,
+      "b_ns2": 2.8050324790945726e-05,
+      "held_ns": 0.0017952207866205265,
+      "terminal_ns": 0.0010321550782809966,
+      "source_start_force_n": 1.0,
+      "q_m": -1.4025162395472861e-05,
+      "reference_q_m": -1.4025162395472863e-05,
+      "q_error_m": 1.6940658945086007e-21,
+      "v_m_s": -0.0014136879324507614,
+      "terminal_applications": 1,
+      "pre_state_and_diagnostics_match": true,
+      "cloth_impulse_ns": [
+        2.1488349841043996e-16,
+        -8.318549100281625e-17,
+        0.0028273758649015237
+      ],
+      "platform_impulse_ns": -0.002827375864901523,
+      "pair_z_residual_ns": 8.673617379884035e-19,
+      "platform_input_held_couple_nms": [
+        0.0,
+        0.000748008661091886,
+        0.0
+      ],
+      "platform_terminal_point_couple_nms": [
+        -2.710505431213761e-20,
+        0.00043006475155425364,
+        0.0
+      ],
+      "platform_delivered_spatial_action_nms": [
+        -2.710505431213761e-20,
+        0.0011780734126461397,
+        0.0
+      ],
+      "cloth_measured_angular_impulse_nms": [
+        0.0,
+        -0.0011780734126448154,
+        0.0
+      ],
+      "paired_angular_residual_l1_nms": 1.3242716385281073e-15,
+      "independent_guide_wrench_observed": false,
+      "raw_original_non_gravity_external_work_j": 0.0,
+      "gravity_work_j": 4.123103932381784e-06,
+      "cloth_local_effective_input_work_j": -1.617296499896033e-06,
+      "initial_layer_storage_j": 0.001,
+      "eligible_full_step_layer_storage_dissipation": null,
+      "layer_domain": "initially on the hard boundary; lower-vertex gap derivative negative at entry",
+      "hard": [
+        {
+          "sweep": "violation",
+          "witness_t_fraction": "1/2",
+          "witness_lower_vertex_gap_m": [
+            -3.806599787387505e-06,
+            -3.8065995769180218e-06
+          ],
+          "endpoint_sat_gap_m": [
+            -7.613198732897078e-06,
+            -7.613198732897078e-06
+          ],
+          "endpoint_lower_vertex_gap_m": [
+            -7.61319957477501e-06,
+            -7.613198732897078e-06
+          ],
+          "initial_path_gap_derivative_per_unit_t_m": -7.61319957477501e-06
+        },
+        {
+          "sweep": "violation",
+          "witness_t_fraction": "1/2",
+          "witness_lower_vertex_gap_m": [
+            -3.806599787387505e-06,
+            -3.8065995769180218e-06
+          ],
+          "endpoint_sat_gap_m": [
+            -7.613198732897078e-06,
+            -7.613198732897078e-06
+          ],
+          "endpoint_lower_vertex_gap_m": [
+            -7.61319957477501e-06,
+            -7.613198732897078e-06
+          ],
+          "initial_path_gap_derivative_per_unit_t_m": -7.61319957477501e-06
+        }
+      ],
+      "mean_middle_gap_m": -2.467253334054274e-06,
+      "summed_current_update_gap_m": -2.467253334054274e-06,
+      "continuous_gravity_difference_m": 1.52587890625e-05,
+      "inner_mechanical_accepted": true,
+      "joint_admitted": false,
+      "successor_published": false,
+      "source_bindings": [
+        "dc752dca42423e3ee9a1a9f176518a7260c80421606b6febd58c4b6690403097",
+        "dc59e96c1f52de0aa6aec6a7288f7c303155bffb615e500d9744a476f2ffc6ae",
+        "96dd15e2beb6f4fad83f95a67164a047a8b7de47d0cea1d2d0ef9ff2cf2570e6",
+        "98d914b2e3c49d95b59958abe386a9f096ea515820bb6bb48036bdaa6b9e9fdb",
+        "b42f86b84444fe0500858382e28319563da3f5098c6d19ee9d1cc0d7e05c93b4"
+      ],
+      "evidence_sha256": {
+        "selected.json.gz": "97d4054cce345250260c5a75f583b2b74e3a608bf93f5cfd89481bddc1e03303",
+        "published.json.gz": "91030563c3d506a4f737d94bebdc77fe26712b521b7fd6fa5d0aceb6d82693e7",
+        "evidence.json.gz": "78dca43d9ccda2e3eb734e6a389e84665c4f17a28d86f3d8346a96572aa80e42",
+        "status.json": "7fbd5fb09cbf26de4ff7008f39c1edc967fe8eda14eb75bf901d347288b2093c"
+      }
+    }
+  ],
+  "packet_negative_controls": [
+    {
+      "fault": "time",
+      "reason": "packet differs from bound pressure, owner or original input"
+    },
+    {
+      "fault": "owner",
+      "reason": "packet differs from bound pressure, owner or original input"
+    },
+    {
+      "fault": "original",
+      "reason": "packet differs from bound pressure, owner or original input"
+    },
+    {
+      "fault": "digest",
+      "reason": "packet digest mismatch"
+    }
+  ],
+  "timing_transport_pass": true,
+  "forward_vs_reverse_displacement_m": 5.9614508464025755e-06,
+  "shifted_vs_forward_delivered_y_couple_nms": 0.00023561480605402245,
+  "measured_guide_torque": false,
+  "hard_sweeps_violated": 6,
+  "joint_admitted": false,
+  "published_successors": 0,
+  "decision": "This representation distinguishes timing and spatial actions on the genuine participants. Six exact hard-sweep violations reject the three candidates. The prescribed scalar pressures are not a coupled four-node solution."
+}

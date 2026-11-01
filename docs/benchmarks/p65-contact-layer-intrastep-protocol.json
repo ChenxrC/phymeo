@@ -1,0 +1,42 @@
+{
+  "schema": "p65-sc-l1-intrastep-screen-v1",
+  "scope": "N2 one-dimensional normal motion of the same design coupon. Reuse saved reference CSVs. No four-node/robot replay, old suite or GPU execution.",
+  "source": "p65-contact-layer-screen-input.json",
+  "source_sha256_lf": "689fccf60a5142cb4b171e4a15434bc93b0ecea4f3db5174dd17d6987229bc58",
+  "prior_summary": "p65-contact-layer-screen-results.json",
+  "all_cases": "Use both controls, all three nominal masses, all three original h and the entire original window. Enclose the whole scalar candidate path, do not treat a grid label as a solver pass.",
+  "quantities": [
+    "layer entry and active duration",
+    "within-step peak force and its time",
+    "step impulse J and mean force",
+    "time moment B=int(t_end-t)*force dt, impulse centroid and constant-held displacement error",
+    "minimum core gap and dissipation",
+    "per-step momentum, position/time-moment and energy defects"
+  ],
+  "reference": "Use the archived cumulative impulse, endpoint positions and velocities. Independently integrate the piecewise-linear interpolant to the fine force samples, inserting the known zero-force entry. For impact use the saved analytical peak in the owning step; bracket its time by sign of v-d*K*x*x/M in the fine samples. Other per-step peaks are fine samples. Treat centroids below the impulse resolution as unresolved.",
+  "candidate": "Event-split, two-moment implicit step. Solve the two Bernstein velocity coefficients for a quadratic closing velocity; integrate to a cubic gap. Match the zeroth and first time moments of the compressive force law on this path. Use FP64 in the candidate. The observer reconstructs a cubic Hermite gap from actual piece endpoints and their represented velocities and encloses the constitutive force, even at a clipped rate factor. No reference trajectory enters the producer.",
+  "partition": "Split true free entry ballistically; in an active span use n=ceil(8*duration*max(K*d*delta/M,sqrt(K*(1+d*rate_max)/M))), at least one piece. This a priori rate bound uses nominal material and the declared speed domain. Do not refine to fit an observed answer. Outer h stays unchanged; all inner stages are charged.",
+  "limits": {
+    "residual_evaluations_per_outer_step": 512,
+    "newton_updates_per_piece": 8,
+    "backtracks_per_update": 8,
+    "peak_bound_cells_per_outer_step": 4096,
+    "peak_bound_depth": 32,
+    "peak_enclosure_width_n": 1e-7
+  },
+  "gates": {
+    "step_impulse_vs_reference_ns": 0.000004,
+    "window_impulse_vs_reference_ns": 0.000004,
+    "step_moment_error_divided_by_mass_m": 1e-8,
+    "endpoint_gap_error_m": 1e-8,
+    "endpoint_speed_error_m_s": 0.000002,
+    "step_peak_vs_reference_n": 0.01,
+    "impact_peak_time_error_s": 0.00006103515625,
+    "law_impulse_vs_delivered_ns": 1e-10,
+    "law_moment_error_divided_by_mass_m": 1e-10,
+    "prefix_momentum_defect_ns": 0.000004,
+    "positive_work_defect_per_window_j": 1e-8,
+    "hard_core_gap_min_m": 0
+  },
+  "interpretation": "Imported trace tolerances are scalar comparison gates only. Match actual path force moments, nonnegative law and whole-path hard core. Include any negative instantaneous force inferred solely from the reconstructed acceleration as a separate strict-sign finding: such a path cannot certify pointwise non-tensile delivery, even if integrated observables pass. No numerical forces are fed back from the oracle. A failure retains its first step and full admitted evidence; do not retune the coupon, tolerances, rates or limits."
+}

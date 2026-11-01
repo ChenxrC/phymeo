@@ -88,7 +88,12 @@ function show(n){
  for(const row of f.robot_contact?.contacts||[]){
    if(el("filter").value && ![row.a,row.b].includes(el("filter").value))continue;
    sums.push(row.a+" ↔ "+row.b+" "+row.normal_force_n.toFixed(3)+" N");
-   if(el("forces").checked){const v=vec(row.force_on_a_n),kind=el("component").value;if(kind!=="total"){const nv=vec(row.normal).multiplyScalar(row.normal_force_n);if(kind==="normal")v.copy(nv);else v.sub(nv)}const m=v.length();if(m>1e-9)arrows.add(new THREE.ArrowHelper(v.normalize(),vec(row.point_m),m*scale,0xf38064));}
+   if(el("forces").checked){
+     const onB=el("filter").value===row.b;
+     const v=vec(onB?row.force_on_b_n:row.force_on_a_n),kind=el("component").value;
+     if(kind!=="total"){const nv=vec(row.normal).multiplyScalar((onB?-1:1)*row.normal_force_n);if(kind==="normal")v.copy(nv);else v.sub(nv)}
+     const m=v.length();if(m>1e-9)arrows.add(new THREE.ArrowHelper(v.normalize(),vec(row.point_m),m*scale,0xf38064));
+   }
  }
  if(f.robot_contact)sums.push("关节越界 "+f.robot_contact.joint_violation.toExponential(2)+" rad/m");
  el("readout").textContent="帧 "+index+"/"+(trace.frames.length-1)+"   t="+f.t.toFixed(5)+" s   "+(f.phase||trace.case)+"\n力采样 t="+(f.force_sample_s??f.t).toFixed(5)+" s   "+sums.join("   ")+"\n箭头比例 "+scale.toPrecision(3)+" m/N";render();

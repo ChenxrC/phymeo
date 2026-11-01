@@ -1,0 +1,21 @@
+{
+  "schema": "sc-l1-entry-peak-v1",
+  "baseline": "9cdb7d0aefeec91d18405cfb7be426877ffaeeee",
+  "input": "p65-contact-layer-screen-input.json",
+  "gates_from": "p65-contact-layer-intrastep-protocol.json",
+  "reference_index": "p65-contact-layer-intrastep-results.json",
+  "wire_from": "p65-contact-layer-publication-protocol.json",
+  "case": "SC-L1 nominal scalar impact; m=1/2 kg, relative mass M=2m, external F=0, original h=1/64 s; steps 0 and 1 only. Original g,u and fitted material determine ballistic entry, no force or impulse at the point event. Use independent saved step data and analytic peak bracket only in the checker.",
+  "baseline_method": "Reuse the tested three-evaluation affine advance unchanged. Use its original a-priori partition on the active span and one ballistic segment before entry. Publish/read every state in sc-l1-motion-v1; a fresh interpreter reads the end packet and advances step 1. All baseline results including failed gates are retained.",
+  "conditional_method": "Only if baseline has exact event, nonnegative delivered force, exact moment readback, path clearance and within-budget execution but fails an accuracy/work gate: use one degree-7 force Taylor polynomial per span of up to two adjacent original active pieces. At a macrospan inlet construct eight scaled Taylor traction coefficients from x'=v, y'=-d*K*x*y/M and convert to Bernstein. Publish finite binary64 macro force ordinates; integrate both moments of that same polynomial. Preserve all original publication boundaries by exact half subdivision in pairs; last unpaired piece uses its own span. Read the intermediate packet and original macro force for its second half. Refuse negative ordinates; no fitted force, path/endpoint repair, adaptive partition or further numerical tuning.",
+  "resource": "Original 512 per outer interval, 4096 peak cells and depth 32, 512-bit signed numerator/denominator and 1024-byte motion packet. Baseline charges every law evaluation. Comparison charges every computed traction-series coefficient plus reports all convolution and basis-conversion terms and subdivision count separately. Coefficient charges and point calls are different work; no equal-cost or native performance claim.",
+  "event_checks": "Exact ballistic first root from original g,u, zero load strictly before and at entry, exact same g=delta and positive closing velocity on both sides. Open active interior positive compression, no gap violation anywhere. No impulse inserted at entry. The extremum belongs to delivered pressure, in addition check its full-path difference from the material law.",
+  "accuracy": "Retain all original per-step, prefix, reference, and accumulated impulse and noncancelling work gates across both intervals. Check all pieces even when the first fails. In the incident cell require exact matching zero and |P-law|<=0.01*law for strictly positive times by Bernstein coefficients; retain the previous positive-minimum relative bound elsewhere. Enclose every possible delivered maximizer and value to original peak budgets; its time enclosure must lie within the original reference bracket plus original time tolerance. Report largest constitutive mismatch, all failing gates and first local failure.",
+  "negative_controls": [
+    "nonzero free load",
+    "shifted event time with identical position",
+    "drop the exact gap remainder at entry",
+    "reverse a nonconstant active force, recomputing its two moments to preserve J and test changed B"
+  ],
+  "outcome": "On completed baseline rejection with the stated trigger, run the one registered comparison. Keep reference, coupon, tolerances and old successful experiments unchanged. Stop at this gate; no support simulation, production seam, or additional fits."
+}

@@ -413,5 +413,8 @@
     }
   ],
   "raw_run_relative": "artifacts/p65-n2-layer-screen-20261101-01/run-122549302",
-  "raw_result_sha256": "8190699046d226da606ce4e5a095a051bcf91018d7609e066e1270a7e5a16222"
+  "raw_result_sha256": "8190699046d226da606ce4e5a095a051bcf91018d7609e066e1270a7e5a16222",
+  "numerical_source_commit": "0c21bfa734cbdaa6d9f2481d73505f9b51933424",
+  "delivery_source_sha256_lf": "f3f80d488b2adfdbc86cdab9d50e9ab2c972d05d160ddd38363d59244d56eb2b",
+  "delivery_check": "Full Python AST and import order match after identifying the four renamed local RK4 combination variables. Final Ruff lint and format check both exited 0; original numerical run retained."
 }

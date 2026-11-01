@@ -12,7 +12,6 @@ from fractions import Fraction as Q
 from pathlib import Path
 from typing import NamedTuple
 
-
 INPUT = Path(__file__).resolve().parents[1] / "docs/benchmarks/p65-contact-layer-screen-input.json"
 INPUT_SHA = "689fccf60a5142cb4b171e4a15434bc93b0ecea4f3db5174dd17d6987229bc58"
 
@@ -114,7 +113,8 @@ def screen(fixture, corners, bands):
     speed_range = list(map(Q, fixture["rate_range_m_s"]))
     min_node_acceleration = min(
         -Q(1, 8) + (5 * min(full_load) / 12 - Q(rest)) / m
-        for rest in c["sc1"]["four_node_rest_rad"] for m in (mlo, mhi)
+        for rest in c["sc1"]["four_node_rest_rad"]
+        for m in (mlo, mhi)
     )
     # Log(1+du)>0 in the compression first integral gives a strict upper bound.
     peak = sqrt_upper(2 * (2 * mhi) * u / (area * klo * dlo))
@@ -133,13 +133,15 @@ def screen(fixture, corners, bands):
         "zero_damping_negative_rejects_all_masses": elastic_capacity < least_incident_energy,
     }
     return {
-        "passed": all(gates.values()), "gates": gates,
+        "passed": all(gates.values()),
+        "gates": gates,
         "total_initial_load_n": (min(full_load), max(full_load)),
         "support_max_hard_gap_m": window / dlo,
         "support_min_compression_m": least_compression,
         "support_min_force_fraction_of_applied_load": support_fraction,
         "sc1_min_initial_relative_node_acceleration_m_s2": min_node_acceleration,
-        "impact_max_compression_m": peak, "impact_min_core_clearance_m": wlo - peak,
+        "impact_max_compression_m": peak,
+        "impact_min_core_clearance_m": wlo - peak,
         "impact_entry_time_s": ((g0 - whi) / u, latest_entry),
         "impact_half_initial_momentum_delivered_by_s": impulse_deadline,
         "impact_impulse_at_T_lower_ns_for_lightest_mass": mlo * u,
@@ -167,8 +169,10 @@ def rk4(state, h, rhs):
     b = rhs(shifted(a, h / 2))
     c = rhs(shifted(b, h / 2))
     d = rhs(shifted(c, h))
-    return tuple(x + h * (i + 2*j + 2*k + l) / 6
-                 for x, i, j, k, l in zip(state, a, b, c, d, strict=True))
+    return tuple(
+        x + h * (k1 + 2 * k2 + 2 * k3 + k4) / 6
+        for x, k1, k2, k3, k4 in zip(state, a, b, c, d, strict=True)
+    )
 
 
 def reference(control, mass, case, layer, dt):
@@ -185,14 +189,14 @@ def reference(control, mass, case, layer, dt):
     # z=delta-g is signed. y=1+d*v resolves the slow unloading tail without
     # subtracting two nearly equal floats in the pressure factor.
     state = (initial_z, 1 + damping * initial_v, 0.0, 0.0)
-    initial_energy = M * initial_v**2 / 2 + K * max(0.0, initial_z)**2 / 2
+    initial_energy = M * initial_v**2 / 2 + K * max(0.0, initial_z) ** 2 / 2
 
     def rhs(s):
         z, y, _, _ = s
         velocity = (y - 1) / damping
         elastic = K * max(z, 0.0)
         force = elastic * max(y, 0.0)
-        return velocity, damping * (applied-force) / M, force, (force-elastic) * velocity
+        return velocity, damping * (applied - force) / M, force, (force - elastic) * velocity
 
     frames = []
     ticks = Q(control["window_s"]) / dt
@@ -201,20 +205,29 @@ def reference(control, mass, case, layer, dt):
     for tick in range(int(ticks) + 1):
         t = float(tick * dt)
         if tick:
-            prev = float((tick-1) * dt)
+            prev = float((tick - 1) * dt)
             if t <= entry:
-                state = (initial_z + t*initial_v, 1+damping*initial_v, 0.0, 0.0)
+                state = (initial_z + t * initial_v, 1 + damping * initial_v, 0.0, 0.0)
             else:
                 if prev < entry:
-                    state = (0.0, 1+damping*initial_v, 0.0, 0.0)
-                state = rk4(state, t-max(prev, entry), rhs)
+                    state = (0.0, 1 + damping * initial_v, 0.0, 0.0)
+                state = rk4(state, t - max(prev, entry), rhs)
         z, y, impulse, dissipation = state
         v = (y - 1) / damping
         force = K * max(z, 0.0) * max(y, 0.0)
-        energy = M*v*v/2 + K*max(z, 0.0)**2/2
-        frames.append(Frame(t, width-z, v, force, impulse, dissipation,
-                            energy-initial_energy-applied*(z-initial_z)+dissipation,
-                            M*(v-initial_v)-applied*t+impulse))
+        energy = M * v * v / 2 + K * max(z, 0.0) ** 2 / 2
+        frames.append(
+            Frame(
+                t,
+                width - z,
+                v,
+                force,
+                impulse,
+                dissipation,
+                energy - initial_energy - applied * (z - initial_z) + dissipation,
+                M * (v - initial_v) - applied * t + impulse,
+            )
+        )
     return frames
 
 
@@ -232,14 +245,16 @@ def analytical_impact_peaks(K, damping, mass, speed):
         else:
             high = mid
     y = (low + high) / 2
-    force = math.sqrt(K * mass * y) * (1+y) / damping
+    force = math.sqrt(K * mass * y) * (1 + y) / damping
     return compression, force
 
 
 def extrema(frames):
     return {
-        "g_min_m": min(f.g for f in frames), "g_max_m": max(f.g for f in frames),
-        "min_force_n": min(f.force for f in frames), "peak_force_n": max(f.force for f in frames),
+        "g_min_m": min(f.g for f in frames),
+        "g_max_m": max(f.g for f in frames),
+        "min_force_n": min(f.force for f in frames),
+        "peak_force_n": max(f.force for f in frames),
         "peak_force_time_s": max(frames, key=lambda f: f.force).t,
         "max_energy_balance_error_j": max(abs(f.energy_defect) for f in frames),
         "max_momentum_balance_error_ns": max(abs(f.momentum_defect) for f in frames),
@@ -255,12 +270,16 @@ def check_reference(fixture, layer, mass, case, output):
         raise ValueError("reference grids are not nested")
     coarse = reference(control, mass, case, layer, coarse_dt)
     fine = reference(control, mass, case, layer, fine_dt)
-    common = list(zip(coarse, fine[::int(stride)], strict=True))
+    common = list(zip(coarse, fine[:: int(stride)], strict=True))
     checks, errors = {}, {}
-    for field, label in (("g","gap_error_m"), ("v","speed_error_m_s"),
-                         ("force","force_error_n"), ("impulse","impulse_error_ns")):
+    for field, label in (
+        ("g", "gap_error_m"),
+        ("v", "speed_error_m_s"),
+        ("force", "force_error_n"),
+        ("impulse", "impulse_error_ns"),
+    ):
         key = "max_common_" + label
-        errors[key] = max(abs(getattr(a, field)-getattr(b, field)) for a, b in common)
+        errors[key] = max(abs(getattr(a, field) - getattr(b, field)) for a, b in common)
         checks[key] = errors[key] <= float(Q(config[key]))
     coarse_stats, fine_stats = extrema(coarse), extrema(fine)
     for key in ("max_energy_balance_error_j", "max_momentum_balance_error_ns"):
@@ -273,41 +292,54 @@ def check_reference(fixture, layer, mass, case, output):
     if case == "impact":
         u = float(Q(control["sc2"]["closing_speed_m_s"]))
         x_peak, force_peak = analytical_impact_peaks(
-            float(Q(control["area_m2"])*layer.k), float(layer.d), 2*float(mass), u
+            float(Q(control["area_m2"]) * layer.k), float(layer.d), 2 * float(mass), u
         )
         peaks = {"compression_m": x_peak, "force_n": force_peak}
-        checks["sampled_peak_compression"] = (
-            abs(float(layer.delta)-fine_stats["g_min_m"]-x_peak)
-            <= float(Q(config["max_fine_peak_compression_error_m"]))
+        checks["sampled_peak_compression"] = abs(
+            float(layer.delta) - fine_stats["g_min_m"] - x_peak
+        ) <= float(Q(config["max_fine_peak_compression_error_m"]))
+        checks["sampled_peak_force"] = abs(fine_stats["peak_force_n"] - force_peak) <= float(
+            Q(config["max_fine_peak_force_error_n"])
         )
-        checks["sampled_peak_force"] = (
-            abs(fine_stats["peak_force_n"]-force_peak)
-            <= float(Q(config["max_fine_peak_force_error_n"]))
-        )
-        checks["window_impulse"] = fine[-1].impulse >= float(mass)*u
+        checks["window_impulse"] = fine[-1].impulse >= float(mass) * u
     else:
         checks["load_stays_positive"] = fine_stats["min_force_n"] > 0
         checks["stays_inside_layer"] = fine_stats["g_max_m"] < float(layer.delta)
 
     filename = f"{case}-m{mass.numerator}over{mass.denominator}-fine.csv"
-    with (output/filename).open("x", newline="", encoding="utf-8") as stream:
+    with (output / filename).open("x", newline="", encoding="utf-8") as stream:
         writer = csv.writer(stream)
-        writer.writerow(("time_s","hard_gap_m","closing_speed_m_s","normal_force_n",
-                         "impulse_ns","dissipation_j","energy_defect_j","momentum_defect_ns"))
+        writer.writerow(
+            (
+                "time_s",
+                "hard_gap_m",
+                "closing_speed_m_s",
+                "normal_force_n",
+                "impulse_ns",
+                "dissipation_j",
+                "energy_defect_j",
+                "momentum_defect_ns",
+            )
+        )
         writer.writerows(fine)
     grid_samples = {}
     for h in control["report_h_s"]:
-        ratio = Q(h)/fine_dt
+        ratio = Q(h) / fine_dt
         if ratio.denominator != 1:
             raise ValueError("original sample time is absent from the reference grid")
-        grid_samples[h] = [
-            (f.t, f.g, f.force, f.impulse) for f in fine[::int(ratio)]
-        ]
+        grid_samples[h] = [(f.t, f.g, f.force, f.impulse) for f in fine[:: int(ratio)]]
     return {
-        "mass_kg": mass, "case": case, "passed": all(checks.values()),
-        "checks": checks, "convergence": errors, "analytical_impact_peaks": peaks,
-        "coarse": coarse_stats, "fine": fine_stats, "fine_csv": filename,
-        "fine_csv_sha256": sha(output/filename), "fine_frame_count": len(fine),
+        "mass_kg": mass,
+        "case": case,
+        "passed": all(checks.values()),
+        "checks": checks,
+        "convergence": errors,
+        "analytical_impact_peaks": peaks,
+        "coarse": coarse_stats,
+        "fine": fine_stats,
+        "fine_csv": filename,
+        "fine_csv_sha256": sha(output / filename),
+        "fine_frame_count": len(fine),
         "original_grid_t_g_force_impulse": grid_samples,
     }
 
@@ -324,19 +356,31 @@ def main():
     certificate = screen(fixture, corners, bands)
     traces = [
         check_reference(fixture, nominal, Q(mass), case, args.output_dir)
-        for mass in fixture["controls"]["trace_masses_kg"] for case in ("support", "impact")
+        for mass in fixture["controls"]["trace_masses_kg"]
+        for case in ("support", "impact")
     ]
-    ok = (hard_reject and certificate["passed"] and all(row["passed"] for row in held)
-          and all(row["passed"] for row in traces))
+    ok = (
+        hard_reject
+        and certificate["passed"]
+        and all(row["passed"] for row in held)
+        and all(row["passed"] for row in traces)
+    )
     result = {
-        "schema": "p65-1d-contact-layer-screen-result-v1", "passed": ok,
-        "scope": fixture["scope"], "material": fixture["material"],
-        "fixture_sha256_lf": INPUT_SHA, "script_sha256_lf": sha(Path(__file__), normalize=True),
-        "python": platform.python_version(), "nominal": asdict(nominal), "parameter_bands": bands,
-        "held_out": held, "negative_gap_rejected": hard_reject,
-        "continuous_certificate": certificate, "reference_traces": traces,
+        "schema": "p65-1d-contact-layer-screen-result-v1",
+        "passed": ok,
+        "scope": fixture["scope"],
+        "material": fixture["material"],
+        "fixture_sha256_lf": INPUT_SHA,
+        "script_sha256_lf": sha(Path(__file__), normalize=True),
+        "python": platform.python_version(),
+        "nominal": asdict(nominal),
+        "parameter_bands": bands,
+        "held_out": held,
+        "negative_gap_rejected": hard_reject,
+        "continuous_certificate": certificate,
+        "reference_traces": traces,
     }
-    with (args.output_dir/"result.json").open("x", encoding="utf-8") as stream:
+    with (args.output_dir / "result.json").open("x", encoding="utf-8") as stream:
         json.dump(result, stream, indent=2, default=str, allow_nan=False)
         stream.write("\n")
     for row in traces:

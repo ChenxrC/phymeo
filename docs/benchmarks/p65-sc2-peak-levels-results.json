@@ -1,0 +1,833 @@
+{
+  "schema": "p65-sc2-peak-levels-results-v1",
+  "protocol": "p65-sc2-peak-levels-protocol.json",
+  "baseline": "8e894823b0eb1de50e5d4567cbf1fd71937b864a",
+  "code": "cfc0bd4a6d3748dba5332ab58975da4ef851ac6b",
+  "evidence_root": "artifacts/p65-n2-sc2-peak-levels-20261101-01",
+  "status": "First original SC2 step accepted on a continuous HOST research trajectory from the outside-layer initial state. The 125 ms window, other step sizes and production/native integration remain open.",
+  "time_s": [
+    0,
+    0.015625
+  ],
+  "construction": "Two degree-3 Newton corrections, one degree-9 correction, one degree-20 correction, all material and six scalar/mapped forces on the current path. The original coupled derivative is evaluated in every sweep; the terminal query measures the accepted candidate without feeding another iteration.",
+  "transfer": {
+    "accepted": true,
+    "queries": 37,
+    "all_moments_exact": true,
+    "position_error_m": 7.111164240117889e-22,
+    "speed_error_m_s": 1.2848223966882758e-19,
+    "pressure_J_error_ns": 7.592483421808562e-20,
+    "pressure_B_error_per_mass_m": 3.5944131221131824e-22,
+    "whole_law_J_defect_ns": 4.0334307441671644e-19,
+    "whole_material_position_defect_m": 4.939613108522725e-22,
+    "proper_pair_words": true,
+    "negatives": {
+      "wrong_map": "unproved constant map component",
+      "missing_budget": "original step force budget"
+    }
+  },
+  "prefix": {
+    "historical_d": "18ef159f5ecc0511620655c78ef67da1d227e49a79928ad1c7a66519a7c8ac56",
+    "retained_cluster": "2f5aa80d4571a450ed2839f7b9b445e3c2dfdb8ed450b06b2c21265fb1a61b4b",
+    "repair_source_and_outcome": {
+      "material_changes": 0,
+      "pressure_changes": 0,
+      "row_changes": 1,
+      "platform_changes": 1,
+      "largest_word_change": 2,
+      "first": [
+        "8,4,12=-2"
+      ],
+      "old_end": "2733/4096",
+      "new_end": "2733/4096",
+      "old_root": "2864002355/4294967296",
+      "new_root": "2864002355/4294967296",
+      "same_root_hi": true,
+      "old_join": "18ef159f5ecc0511620655c78ef67da1d227e49a79928ad1c7a66519a7c8ac56",
+      "fresh_join": "b441f303b3dc03f832d595cf3b6f4bd308f0276d7e8516cb0a8074821d324724"
+    },
+    "previous_residual": {
+      "momentum_ns": "19260989959711622232597707565/374144419156711147060143317175368453031918731001856",
+      "backward_kg_m": "-2080614322912088915860909467718755/200867255532373784442745261542645325315275374222849104412672"
+    },
+    "fresh_d": {
+      "inlet": "2f5aa80d4571a450ed2839f7b9b445e3c2dfdb8ed450b06b2c21265fb1a61b4b",
+      "endpoint": "b441f303b3dc03f832d595cf3b6f4bd308f0276d7e8516cb0a8074821d324724",
+      "start_s": "2044434845/274877906944",
+      "stop_s": "2338287005/274877906944",
+      "previous_certificate_sha": "1363f065896d19c5cfadc0b4fffd633517a5d6164a4649a303da638eb678dbad",
+      "gates": {
+        "relative_positive": true,
+        "owner_impulse_ns": true,
+        "owner_backward_over_mass_m": true,
+        "node_velocity_m_s": true,
+        "node_position_m": true,
+        "positive_energy_j": true,
+        "paired_angular_nms": true,
+        "linear_ns": true,
+        "whole_path_hard": true,
+        "exact_two_moments": true,
+        "owner_budget": true,
+        "cell_budget": true
+      },
+      "charges": {
+        "inherited": 126,
+        "new": 162,
+        "total": 288,
+        "remaining": 224
+      },
+      "upper": {
+        "relative_positive": 0.0012742910864415868,
+        "owner_impulse_ns": 3.7845012476366723e-11,
+        "owner_backward_over_mass_m": 2.7773831477611997e-14,
+        "node_velocity_m_s": 3.4196583024045254e-7,
+        "node_position_m": 1.671938487855829e-9,
+        "positive_energy_j": 1.3589061150808665e-11,
+        "paired_angular_nms": 1.2238387412812117e-9,
+        "linear_ns": 2.087541445152887e-19
+      },
+      "events": [
+        {
+          "owner": "D/3/lower",
+          "index": 5,
+          "root_unit": [
+            "2864002355/4294967296",
+            "716000589/1073741824"
+          ],
+          "prebirth_force_n": 0,
+          "point_impulse_ns": 0,
+          "J_ns": "1083537730618071506446923/5192296858534827628530496329220096",
+          "B_ns2": "133177270320504717984151710680025/2923003274661805836407369665432566039311865085952",
+          "positive_time_relative_upper": 0.00004224182332597879,
+          "final_pressure_n": [
+            0.0006371994244851282,
+            0.0006372041422079217
+          ],
+          "seconds": [
+            0.008505983574575991,
+            0.00850598357494903
+          ]
+        }
+      ]
+    },
+    "new_exact_prefix_momentum_residual": "0",
+    "new_exact_prefix_backward_residual": "0",
+    "notes": "The certified bridge and earlier four-event cluster both have zero local defects. Only the platform coefficient of mode 8, owner D/0, changed by -2 words. Neither scalar pressures nor material force words changed. New d was genuinely regenerated from the cluster, its continuous physical gates were checked, and its checkpoint now supplies the sole physical peak inlet."
+  },
+  "stage_evidence": {
+    "coarse": [
+      10.90903229963451,
+      1.9343157973474407
+    ],
+    "middle": [
+      0.11607323383507051
+    ],
+    "fine": [
+      0.000051530969813029515
+    ],
+    "terminal": [
+      0.9356538031595812,
+      0.9357239702941647,
+      2.232854577923957,
+      0.9357266883738867,
+      0.9356565211540787,
+      1.77027363222504
+    ],
+    "terminal_represented": [
+      0.9356538031590054,
+      0.9357239702935871,
+      2.2328545779239715,
+      0.9357266883733112,
+      0.9356565211535031,
+      1.7702736322250494
+    ],
+    "new_calls": 222,
+    "ledger": "bc5966c7cc1cc53a5ae3768086221ae549f2294326a992c1296618266b06d12b",
+    "binding": "bf2c4862edc596c9b706806696cee28f5dd7a2d4a99ef06f12e6091de8eb8c58"
+  },
+  "peak_certificate": {
+    "accepted": true,
+    "gates": {
+      "relative_positive": true,
+      "owner_impulse_ns": true,
+      "owner_backward_over_mass_m": true,
+      "node_velocity_m_s": true,
+      "node_position_m": true,
+      "positive_energy_j": true,
+      "paired_angular_nms": true,
+      "linear_ns": true,
+      "whole_path_hard": true,
+      "exact_two_moments": true,
+      "owner_budget": true,
+      "cell_budget": true
+    },
+    "owners": [
+      "U/0/lower",
+      "U/1/lower",
+      "U/2/lower",
+      "D/1/lower",
+      "D/0/lower",
+      "D/3/lower"
+    ],
+    "all_original_owners": true,
+    "inlet": "b441f303b3dc03f832d595cf3b6f4bd308f0276d7e8516cb0a8074821d324724",
+    "endpoint": "e439114876b1a1611c3f53f3a895165cf18e3cd779ec316cb0411947778ddaea",
+    "start_s": "2338287005/274877906944",
+    "stop_s": "1/64",
+    "binding": "bf2c4862edc596c9b706806696cee28f5dd7a2d4a99ef06f12e6091de8eb8c58",
+    "model": "7645de9d68f930a62e0690deca067b4dbf5878b14bb8c8716cde7564573cfa84",
+    "events": [],
+    "distinct_and_ordered": true,
+    "local_relative": [
+      6.147700868218683e-11,
+      6.147586152339879e-11,
+      2.970929927633543e-11,
+      1.1187719598463585e-10,
+      1.1188173666727913e-10,
+      2.552267569867881e-9
+    ],
+    "local_J_ns": [
+      "1387443654145548167078423486311477/96061076957248081589090289954324480",
+      "465743261250557704375863479864351/32244277580055300113820516907745280",
+      "91150439821681632237317345365590629/4610931693947907916276333917807575040",
+      "7400144644746752421645688497236713/512325743771989768475148213089730560",
+      "33298655421137564251801776121921363/2305465846973953958138166958903787520",
+      "1518401336243386298795922928474287/128081435942997442118787053272432640"
+    ],
+    "local_B_ns2": [
+      "47504912176906101525490905071070520577220589/844962168729435546795791371765721037562278051840",
+      "14252283485650444886861306339585383861776349/253488650618830664038737411529716311268683415552",
+      "1018334544228149298774829666305121918333079/14823897697007641171855988978345983115127685120",
+      "23753800733066636794513658728476864649204949/422481084364717773397895685882860518781139025920",
+      "35628676518267139777114658486369625565864723/633721626547076660096843528824290778171708538880",
+      "45406943078667705818468391632883399927272569/1267443253094153320193687057648581556343417077760"
+    ],
+    "local_J_error_upper_ns": [
+      4.1491452068524294e-13,
+      4.149281740543437e-13,
+      4.4483337540971655e-13,
+      1.241794338545373e-12,
+      1.241759580207302e-12,
+      8.265600594906454e-13
+    ],
+    "local_B_error_over_mass_m": [
+      2.758379500086782e-15,
+      2.758484316566807e-15,
+      2.9002898151091678e-15,
+      8.912033473632747e-15,
+      8.91178205492643e-15,
+      5.197557877981494e-15
+    ],
+    "upper": {
+      "relative_positive": 0.001274291086441587,
+      "owner_impulse_ns": 3.9086806814912104e-11,
+      "owner_backward_over_mass_m": 5.754748192795529e-13,
+      "node_velocity_m_s": 3.995871265229879e-7,
+      "node_position_m": 4.291731369460288e-9,
+      "positive_energy_j": 1.4143824826308029e-11,
+      "paired_angular_nms": 5.69252091926899e-9,
+      "linear_ns": 3.984006347896006e-18
+    },
+    "cumulative_J_error_upper_ns": [
+      1.4511459762241449e-11,
+      1.4511994120104858e-11,
+      8.1859391989029e-12,
+      3.9086806814912104e-11,
+      3.908579626532956e-11,
+      8.35374805939853e-13
+    ],
+    "cumulative_B_error_over_mass_m": [
+      2.064675673652725e-13,
+      2.0647520936113377e-13,
+      1.1487201229803588e-13,
+      5.754748192795529e-13,
+      5.754600828807382e-13,
+      5.323054829349808e-15
+    ],
+    "hard_gap_lower_m": 0.0013027073504615243,
+    "local_energy_j": [
+      -5.639538036492256e-13,
+      5.547636754993616e-13
+    ],
+    "local_angular_upper_nms": 4.468682177987778e-9,
+    "charges": {
+      "inherited": 288,
+      "new": 222,
+      "total": 510,
+      "remaining": 2
+    },
+    "cells": {
+      "new": 577,
+      "inherited": 1635,
+      "total": 2212
+    },
+    "peak": {
+      "force_n": [
+        15.833218984566946,
+        16.29430964974615
+      ],
+      "time_s": [
+        0.010619902118889966,
+        0.011954594887185978
+      ],
+      "leaves": 64,
+      "dominates_prefix": true,
+      "interior": true,
+      "accepted": true
+    },
+    "terminal_gaps_m": [
+      [
+        0.0014017475584731458,
+        0.0014017475584731463
+      ],
+      [
+        0.0014017289698906896,
+        0.00140172896989069
+      ],
+      [
+        0.0013033543185448498,
+        0.0013033543185448503
+      ],
+      [
+        0.001401728931437814,
+        0.0014017289314378143
+      ],
+      [
+        0.0014017475200202702,
+        0.0014017475200202706
+      ],
+      [
+        0.0014707349212218159,
+        0.0014707349212218163
+      ]
+    ],
+    "terminal_rates_m_s": [
+      [
+        -0.017767738931845155,
+        -0.017767738931845148
+      ],
+      [
+        -0.017768563207010635,
+        -0.01776856320701063
+      ],
+      [
+        -0.03746181157560577,
+        -0.037461811575605755
+      ],
+      [
+        -0.017768616519385473,
+        -0.017768616519385466
+      ],
+      [
+        -0.017767792244219992,
+        -0.017767792244219986
+      ],
+      [
+        -0.03913732331583431,
+        -0.0391373233158343
+      ]
+    ],
+    "previous_certificate_sha": "5b43d4de3056f9a874029667c252214f1c59335110895c655011b6295e643b3e",
+    "preceding_peak_upper_n": 6.696035577429507,
+    "local_absolute_J_error_lower_ns": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "local_signed_J_defects_ns": [
+      [
+        -4.1422350906022944e-13,
+        4.1086827117822095e-13
+      ],
+      [
+        -4.1423110413195363e-13,
+        4.108857730361938e-13
+      ],
+      [
+        -4.435030997127055e-13,
+        4.446392564485523e-13
+      ],
+      [
+        -1.2416456448407982e-12,
+        1.2338898356905543e-12
+      ],
+      [
+        -1.241612775171938e-12,
+        1.2338463713696099e-12
+      ],
+      [
+        -8.264256981326942e-13,
+        8.240408668010289e-13
+      ]
+    ],
+    "endpoint_force_sample_error_n": 5.775380174100064e-13
+  },
+  "whole_step": {
+    "exact_owner_J_ns": [
+      "860457810274587722579291749587778118163399995710711769/56704451266408742906684398940199212971705809311115509760",
+      "4513168686999445578231873208513418247369805293276133/297400968180465434825267826609436431669785713170186240",
+      "6976452701751267509789157964406585372526327867023732351/340226707598452457440106393641195277830234855866693058560",
+      "286836978098841904112783362581305785962216809449855901/18901483755469580968894799646733070990568603103705169920",
+      "82603959831666427907445233671682412916525702214403100259/5443627321575239319041702298259124445283757693867088936960",
+      "99509951723709912861023273435183298477/8393944985960280366696828323262145495040"
+    ],
+    "exact_owner_B_ns2": [
+      "961529059506754045085819601823210731276850433449274917203063019/15586800878518485385771614287460651484058587156765017836644403773440",
+      "144238062329568281579532261408195467837888708902565307349869101/2338020131777772807865742143119097722608788073514752675496660566016",
+      "121750973789166688704411840297237490676080441699084985695102469/1640715881949314251133854135522173840427219700712107140699410923520",
+      "961586716343256670795334413036953256127191125771542259347271973/15586800878518485385771614287460651484058587156765017836644403773440",
+      "92306754591791597509448151552866335168014412692396147522457824329/1496332884337774597034074971596222542469624367049441712317862762250240",
+      "1523604247037632862215017985613662848557453115908423/42528338449806557180013299205149409728779356983336632320"
+    ],
+    "total_J_ns": 0.09305987379296346,
+    "total_B_ns2": 0.0003567937197612355,
+    "platform_speed_m_s": -0.04652993689648173,
+    "platform_q_m": -0.00017839685988061774,
+    "all_address_moments_reproduce_platform": true,
+    "peak": {
+      "represented_force_n": [
+        15.833326387912644,
+        15.833326387914184
+      ],
+      "represented_time_s": [
+        0.011242044922965487,
+        0.011242046620115107
+      ],
+      "law_force_n": [
+        15.833326347501758,
+        15.83332642832507
+      ],
+      "law_time_s": [
+        0.011241758104680062,
+        0.011242331741250913
+      ],
+      "new_time_cells": 725,
+      "total_including_existing": 2937,
+      "full_first_original_step": true
+    },
+    "physical_peak_accepted": true
+  },
+  "public_restart": {
+    "accepted": true,
+    "ordered_segments": [
+      {
+        "segment": "c",
+        "stop_s": "2044402077/274877906944",
+        "packet": "df977891667806f4ef2388c19494cd7b5d2bcc6d80861065e29d0b742f01fabe",
+        "coordinates": 13,
+        "public_state_and_substep_checked": false
+      },
+      {
+        "segment": "cluster",
+        "stop_s": "2044434845/274877906944",
+        "packet": "2f5aa80d4571a450ed2839f7b9b445e3c2dfdb8ed450b06b2c21265fb1a61b4b",
+        "coordinates": 13,
+        "public_state_and_substep_checked": true
+      },
+      {
+        "segment": "d",
+        "stop_s": "2338287005/274877906944",
+        "packet": "b441f303b3dc03f832d595cf3b6f4bd308f0276d7e8516cb0a8074821d324724",
+        "coordinates": 13,
+        "public_state_and_substep_checked": true
+      },
+      {
+        "segment": "peak",
+        "stop_s": "1/64",
+        "packet": "e439114876b1a1611c3f53f3a895165cf18e3cd779ec316cb0411947778ddaea",
+        "coordinates": 13,
+        "public_state_and_substep_checked": true
+      }
+    ],
+    "coordinate_count": 13,
+    "material_and_six_mapped_fields": true,
+    "exact_original_entry_velocity": true,
+    "all_published_domain_arrays_byte_equal": true,
+    "new_force_queries": 0
+  },
+  "readback": {
+    "accepted": true,
+    "same_inlet": true,
+    "returned": "e439114876b1a1611c3f53f3a895165cf18e3cd779ec316cb0411947778ddaea",
+    "returned_time_s": "1/64",
+    "peak": {
+      "force_n": [
+        15.833218984566946,
+        16.29430964974615
+      ],
+      "time_s": [
+        0.010619902118889966,
+        0.011954594887185978
+      ],
+      "leaves": 64,
+      "dominates_prefix": true,
+      "interior": true,
+      "accepted": true
+    },
+    "cumulative_upper": {
+      "relative_positive": 0.001274291086441587,
+      "owner_impulse_ns": 3.9086806814912104e-11,
+      "owner_backward_over_mass_m": 5.754748192795529e-13,
+      "node_velocity_m_s": 3.995871265229879e-7,
+      "node_position_m": 4.291731369460288e-9,
+      "positive_energy_j": 1.4143824826308029e-11,
+      "paired_angular_nms": 5.69252091926899e-9,
+      "linear_ns": 3.984006347896006e-18
+    },
+    "charges": {
+      "inherited": 288,
+      "new": 222,
+      "total": 510,
+      "remaining": 2
+    },
+    "earlier_attempt_charges": {
+      "inherited": 288,
+      "new": 210,
+      "total": 498,
+      "remaining": 14
+    },
+    "stale_endpoint": "wrong endpoint before interval check"
+  },
+  "negative_controls": {
+    "unpaired_platform": {
+      "same_endpoint_as_accepted": false,
+      "returned": "b441f303b3dc03f832d595cf3b6f4bd308f0276d7e8516cb0a8074821d324724",
+      "reason": "changed signed platform pressure"
+    },
+    "interior_quadratic": {
+      "same_endpoint_as_accepted": true,
+      "returned": "b441f303b3dc03f832d595cf3b6f4bd308f0276d7e8516cb0a8074821d324724",
+      "reason": "failed physical gates: owner_impulse_ns",
+      "local_lower_ns": 2.536581821319562e-9,
+      "changed_gates": [
+        "owner_impulse_ns"
+      ]
+    }
+  },
+  "limits": {
+    "owner_impulse_Ns": 1e-10,
+    "owner_backward_m_per_min_mass": 1e-10,
+    "relative_positive": 0.01,
+    "node_velocity_m_s": 0.000002,
+    "node_position_m": 1e-8,
+    "positive_energy_j": 1e-8,
+    "angular_nms": 1e-8,
+    "linear_ns": 1e-10,
+    "owner_query_cap": 512,
+    "cell_cap": 4096
+  },
+  "accounting": "The reused c/cluster prefix consumes 126 owner evaluations. The corrected d uses 162 more and the new peak 222 more. Total 510 of 512. The original proof uses 2212 cells and the independent peak enclosure creates another 725, totaling 2937 of 4096. Distinct negative controls are independent transactions, not further iterations on the accepted state.",
+  "raw": [
+    {
+      "file": "accepted.json",
+      "bytes": 5983,
+      "sha256": "016bcaad4572cb011ea8bdad5e1c8047cef2bb1390bb84946b1b75f6363d8923"
+    },
+    {
+      "file": "ast.ps1",
+      "bytes": 4224,
+      "sha256": "f3753055bc1562d6aace5422285b20752d7deaee282cdcf33629cb71b859d21f"
+    },
+    {
+      "file": "d-accepted.json",
+      "bytes": 6840,
+      "sha256": "5b43d4de3056f9a874029667c252214f1c59335110895c655011b6295e643b3e"
+    },
+    {
+      "file": "d-attempt.json.gz",
+      "bytes": 2472,
+      "sha256": "d830dd25e097cdddf6a6d6cac907745d98221f8b7794e548ffec7428613663b6"
+    },
+    {
+      "file": "d-link.json",
+      "bytes": 279,
+      "sha256": "5f5631fddafb70e31d84194cc6a932af9c7bfa67975e9b1d8c5d5418269e44d4"
+    },
+    {
+      "file": "d-proposal.json.gz",
+      "bytes": 16045,
+      "sha256": "a04ea163257724677b2ae5ec025e2326b7b81eea7da73019e06df6614505a847"
+    },
+    {
+      "file": "d-transaction.json.gz",
+      "bytes": 4466,
+      "sha256": "44cea16ec42565a2ad18fc774e01ff07d469670699e53c277a7ca4a41ffdd1e9"
+    },
+    {
+      "file": "d.bin",
+      "bytes": 1024,
+      "sha256": "b441f303b3dc03f832d595cf3b6f4bd308f0276d7e8516cb0a8074821d324724"
+    },
+    {
+      "file": "inlet-moments-paired.json",
+      "bytes": 1548,
+      "sha256": "9040f4aeb393daee841c542dc0592de3936aad1a6b980a5e7c497aedaf022f60"
+    },
+    {
+      "file": "inlet-moments.json",
+      "bytes": 1724,
+      "sha256": "ff3dafc9aea78f4e4963ea77828f159872c5f27f87f5b6da298394590972905a"
+    },
+    {
+      "file": "interior_quadratic-attempt.json.gz",
+      "bytes": 2453,
+      "sha256": "37691fbe32301df1b40052b62ce8c2c205bc068db6e3b4a882cf9aa8422d5068"
+    },
+    {
+      "file": "interior_quadratic-transaction.json.gz",
+      "bytes": 1926,
+      "sha256": "fdcd3869b3df35f5ece55001bac53732992f033763c18d5174e237fd520357ff"
+    },
+    {
+      "file": "last-style.ps1",
+      "bytes": 3977,
+      "sha256": "a2148b8c802fe03dad1c9e5fe0e9be46457a57ec7842f0161fd2de92281371a7"
+    },
+    {
+      "file": "levels-attempt.json.gz",
+      "bytes": 2308,
+      "sha256": "9a7d80e8236e00a1784b2102a3ab69ddde5f2abceadaee64d25630bbf186072a"
+    },
+    {
+      "file": "levels-control.json",
+      "bytes": 546,
+      "sha256": "48dcd952becdd22179ea911e50d5f00e80d3fe6bfc4ecd5491d56792a87996ad"
+    },
+    {
+      "file": "levels-driver-as-verified.py.txt",
+      "bytes": 8575,
+      "sha256": "913fc560cd613167473c640086c2a07bf40d39f9beecfef158bc919456a228d8"
+    },
+    {
+      "file": "levels-transaction.json.gz",
+      "bytes": 4418,
+      "sha256": "35b74e09c6ac8674c0cb4d54d7324823acdbb287a90f7465a1db7c9591c3e91f"
+    },
+    {
+      "file": "negative-results.json",
+      "bytes": 532,
+      "sha256": "9ce27d3532cdeab9dc42e81bf377ad2c6596ac7628f4901a66aba638512249d6"
+    },
+    {
+      "file": "old-d-negative-attempt.json.gz",
+      "bytes": 108,
+      "sha256": "1f2b2a7caf8129e348d10bb88437c9cc12ffb982081b22810d876b3ad5d6f03e"
+    },
+    {
+      "file": "old-d-negative-transaction.json.gz",
+      "bytes": 1866,
+      "sha256": "a1748a8b25e1620030201896b99d4de0fa155ecee18d76ab146ac4b9ae9ec4ea"
+    },
+    {
+      "file": "original-falsifier.json",
+      "bytes": 274,
+      "sha256": "4a8a00582fa983c8ac539532b4dc60109675a12085c7dd8c5c44c9fa055ddb0f"
+    },
+    {
+      "file": "peak.bin",
+      "bytes": 1024,
+      "sha256": "e439114876b1a1611c3f53f3a895165cf18e3cd779ec316cb0411947778ddaea"
+    },
+    {
+      "file": "prefix-forensics.json",
+      "bytes": 3351,
+      "sha256": "16a686d059632c2ab5eccc6bdef2ff76e3bf556a7043cc3f85460e242eedc96e"
+    },
+    {
+      "file": "prefix.ps1",
+      "bytes": 3858,
+      "sha256": "2bf99ff72db2484e95f4c2ecb6f38fabc6aedbe89cfedc4eca974766e71fdaa2"
+    },
+    {
+      "file": "proposal.json.gz",
+      "bytes": 31378,
+      "sha256": "f26da38a43fdb1a99e1661ad458db347c2956770948157a55f205fbfe0b906f7"
+    },
+    {
+      "file": "provider-ledger.json.gz",
+      "bytes": 11802,
+      "sha256": "bc5966c7cc1cc53a5ae3768086221ae549f2294326a992c1296618266b06d12b"
+    },
+    {
+      "file": "publication.ps1",
+      "bytes": 4125,
+      "sha256": "b8035a6dc2378eb1565b9ddc21be29067ef1eaff6ca68ae69bb9a96e0714a7ca"
+    },
+    {
+      "file": "published-motion.json",
+      "bytes": 21181,
+      "sha256": "555c6c67376c9e269c9e6373491caa55ccadc3d199542adce955808237cdfd17"
+    },
+    {
+      "file": "readback.json",
+      "bytes": 1137,
+      "sha256": "01d521b0688ea384875b64b61326412d7e346c1c981e6216649612490a065e1f"
+    },
+    {
+      "file": "run-paired.ps1",
+      "bytes": 4915,
+      "sha256": "61f4635a47fc45fd955264d0742c3df36d9c55443067735834c9c878048f0b84"
+    },
+    {
+      "file": "run.ps1",
+      "bytes": 4773,
+      "sha256": "6c1ab3ee1697b47a05a2377a7e0e71061c8ca5abf0246973974def02c8c67a54"
+    },
+    {
+      "file": "unpaired_platform-attempt.json.gz",
+      "bytes": 101,
+      "sha256": "7c8cd7844a5da58ad029051123f32c787520a8f1286ea056243cfc9a615c4225"
+    },
+    {
+      "file": "unpaired_platform-transaction.json.gz",
+      "bytes": 1914,
+      "sha256": "78fbc3d11100f1147d990eeaf8f62d7b2b254f4646757b2799ac97e94f648a17"
+    },
+    {
+      "file": "whole-step.json",
+      "bytes": 2314,
+      "sha256": "7a50272a945d91d2f14e296410e894f53a58ede54198052ae6dbf72a4842eced"
+    }
+  ],
+  "runs": [
+    {
+      "run": "red-195148353",
+      "raw_exit": 1,
+      "receipt_sha256": "b8f1a975341b705e7711aeec5999837abb7a96c3e56ab0e598bf8542090caec4"
+    },
+    {
+      "run": "transfer-195202398",
+      "raw_exit": 1,
+      "receipt_sha256": "3348e9521a54f941ef82d0e30765ea1b997f54a5fcfca4cf30efc1a1b0d518d7"
+    },
+    {
+      "run": "transfer-195243193",
+      "raw_exit": 0,
+      "receipt_sha256": "a6f4e711c2ee767a333e3d5eff25e11dfb4729285c2e3291a834df8e26daae7a"
+    },
+    {
+      "run": "format-195437321",
+      "raw_exit": 0,
+      "receipt_sha256": "5ea544bd35e73f435e90a2bb19ba471669457ae1304c66fc72935c9afa9319e7"
+    },
+    {
+      "run": "lint-195446052",
+      "raw_exit": 1,
+      "receipt_sha256": "bc7268e6c76de43b8e50cb2f8a106bbe8dc50f66f22cd98a9f740e06f9cb4fc8"
+    },
+    {
+      "run": "lint-195512883",
+      "raw_exit": 0,
+      "receipt_sha256": "6a8c2ab3c6e02ed9c5ff4e61ffd12c181e02adfd6105208fc16a51ef23cbf1d7"
+    },
+    {
+      "run": "propose-195521356",
+      "raw_exit": 1,
+      "receipt_sha256": "bd8c78f115b465534c61041695ade4389c805a64dd8ca977ff87304f2c3427e9"
+    },
+    {
+      "run": "prefix-195652290",
+      "raw_exit": 0,
+      "receipt_sha256": "934a7d9425d0ae43aac0e7c4ad4460bd27feb5f1bc4ffd27c676b52f6e587978"
+    },
+    {
+      "run": "format-195936642",
+      "raw_exit": 0,
+      "receipt_sha256": "dfffb9b943367469abc25ca8174af35af475f2640ccea3fb849f06d21ad28f31"
+    },
+    {
+      "run": "lint-195946956",
+      "raw_exit": 1,
+      "receipt_sha256": "8d7c5228606ecffa40ee9d82f4b1e4930e62555be6cce80b97b72a39d46c9dbd"
+    },
+    {
+      "run": "lint-200027202",
+      "raw_exit": 0,
+      "receipt_sha256": "1670513e63de7d957aba4294a7cee5dcdcc39a6a6660a5ec425aa9c251576431"
+    },
+    {
+      "run": "d-negative-200036570",
+      "raw_exit": 0,
+      "receipt_sha256": "7ef1c0a6bd7ef44b9384f8190823333ea8fdef98d2a55139d01b9500b958b687"
+    },
+    {
+      "run": "d-propose-200049887",
+      "raw_exit": 0,
+      "receipt_sha256": "69622c1e2f590e0ae3c64e5ed0bf69c9e9f3c2256894fc5d9498da36b978abc1"
+    },
+    {
+      "run": "d-verify-200114201",
+      "raw_exit": 0,
+      "receipt_sha256": "ff4d8f079966de900e5d5b5d21146ca16e3cfaed3da078badbde02b48fd8c0fe"
+    },
+    {
+      "run": "propose-200252726",
+      "raw_exit": 0,
+      "receipt_sha256": "a2278043f8a31b6427a84bdb46628a7f241ce7029a89b0b32c7284c8c1b5be18"
+    },
+    {
+      "run": "verify-200303589",
+      "raw_exit": 0,
+      "receipt_sha256": "579ceecb1e512cc595ddf01d3ce5478979d67922e24163dcedc1ad09e6dec8fd"
+    },
+    {
+      "run": "readback-200709846",
+      "raw_exit": 0,
+      "receipt_sha256": "5c0def3ae32cfcfd78dcdbb57758b82845e7dcd974c7eae73a95ac25ac1f0dff"
+    },
+    {
+      "run": "format-audits-200753033",
+      "raw_exit": 0,
+      "receipt_sha256": "5aa4913381cc190d11d60f02e07d8975103d506e93edfb9737f9d5d0f796b513"
+    },
+    {
+      "run": "lint-audits-200804124",
+      "raw_exit": 0,
+      "receipt_sha256": "c67dd51852187d30b5ec80b02ec4c5ea66b3daf5f612eefdd53009cd29488f3e"
+    },
+    {
+      "run": "publication-200812684",
+      "raw_exit": 0,
+      "receipt_sha256": "b0da9f5bcfab9492be8645a0adf518ab023cdc34293f00161ea903364b7d592f"
+    },
+    {
+      "run": "negative-200843520",
+      "raw_exit": 0,
+      "receipt_sha256": "ded2d0b19958984913e81a1f195a99b52a88e69fef789e876c65e513a233362b"
+    },
+    {
+      "run": "release-201249218",
+      "matching": 0,
+      "guard_sha256": "cbcd866a903b3b52a649d0a0b8dd8d7152589ea86adff7e0df84cc493c0fe412"
+    },
+    {
+      "run": "final-format-check-201328763",
+      "raw_exit": 1,
+      "receipt_sha256": "dc9781b1c3021449626c2bdea75e7aed77b5f565ec7b2fd4393412e8f539c405"
+    },
+    {
+      "run": "final-format-check-201406235",
+      "raw_exit": 0,
+      "receipt_sha256": "e3a8e63e120e7fbd40ae2f8d6b54ff93405d5ec140494ad3891d75bb19de2f40"
+    },
+    {
+      "run": "final-lint-201414652",
+      "raw_exit": 0,
+      "receipt_sha256": "c9f3738d5bd34e7eedda6bb0defb532255703a8a718fd7b3ff0d4ab81a9861cc"
+    },
+    {
+      "run": "driver-ast-201450694",
+      "raw_exit": 0,
+      "receipt_sha256": "555b32fa4b263f92cc2c9ba0d5ec529a5b53eddedae96a67aed880a4678d8108"
+    },
+    {
+      "run": "final-release-201457902",
+      "matching": 0,
+      "guard_sha256": "5ce880169e57261da1ee2a9c0145cd4828da6eabdf910c85e85a18120329c256"
+    }
+  ],
+  "provenance": "The first transfer failed before the three-level API existed. The first proposed peak stopped at the exact inlet preflight before any peak joint query. The cause is localized in prefix-forensics.json. Early lint findings and a final formatting-only tuple change are recorded; the verified driver is archived and the delivered driver has the same Python AST. The release guard has zero matching executions."
+}

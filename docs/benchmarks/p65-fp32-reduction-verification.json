@@ -1,0 +1,326 @@
+{
+  "schema": "p65-independent-fp32-comparison-v1",
+  "status": "VERIFIED_FIXED_TEN_ONLY",
+  "scope": "Standalone arithmetic. No R7, contact-law, physical or joint replay execution.",
+  "fixture": "p65-fp32-reduction-controls.json",
+  "fixture_lf_sha256": "80746deae1c918b1ccfbb0bbf9ff55d1d12e0d57667dc9bee3e39cfd3d5c5b37",
+  "probe_lf_sha256": "efa23845b203cd1168b32a34a2f1d07b5d29feb7ba7dd283209145536a6e2663",
+  "tyx_commit": "99f6df7c0fd8fdeef77f97df83914da27b64b7ee",
+  "tyx_version": "0.1.0a0",
+  "python": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]",
+  "numpy": "2.5.4",
+  "runs": [
+    {
+      "mode": "interpret",
+      "start": "2026-11-01T12:07:26.3456793+08:00",
+      "end": "2026-11-01T12:07:27.3787099+08:00",
+      "raw_exit": 0,
+      "matching_before": 0,
+      "runtime_counts": {
+        "cuda_kernel_launches": 0,
+        "graph_builds": 0,
+        "graph_replays": 0,
+        "graph_updates": 0,
+        "cuda_h2d_transfers": 0,
+        "cuda_h2d_bytes": 0,
+        "cuda_d2h_transfers": 0,
+        "cuda_d2h_bytes": 0,
+        "cuda_d2d_transfers": 0,
+        "cuda_d2d_bytes": 0,
+        "cuda_memsets": 0,
+        "cuda_memset_bytes": 0,
+        "arg_pack_build_count": 0,
+        "prepared_launch_count": 0
+      },
+      "raw_result_sha256": "736539b353ba6b37b0c5bbe7b423ee82b54fefc9d9871a74fda14f5df93e818a"
+    },
+    {
+      "mode": "cuda",
+      "start": "2026-11-01T12:07:42.8673841+08:00",
+      "end": "2026-11-01T12:07:43.7745213+08:00",
+      "raw_exit": 0,
+      "matching_before": 0,
+      "runtime_counts": {
+        "cuda_kernel_launches": 1,
+        "graph_builds": 0,
+        "graph_replays": 0,
+        "graph_updates": 0,
+        "cuda_h2d_transfers": 3,
+        "cuda_h2d_bytes": 360,
+        "cuda_d2h_transfers": 1,
+        "cuda_d2h_bytes": 160,
+        "cuda_d2d_transfers": 0,
+        "cuda_d2d_bytes": 0,
+        "cuda_memsets": 0,
+        "cuda_memset_bytes": 0,
+        "arg_pack_build_count": 1,
+        "prepared_launch_count": 1
+      },
+      "raw_result_sha256": "d2a3cf3cc0b12ca1b5cd7c0e26d112ee9ff017484ac84f9090228162eb30c3a3"
+    }
+  ],
+  "cases": [
+    {
+      "id": "positive_denominator",
+      "input_words": [
+        "1c800000",
+        "1c800000",
+        "46800000"
+      ],
+      "exact_source": "22835963083295358096932575511191922182123945985/1393796574908163946345982392040522594123776",
+      "fields": [
+        "fma"
+      ],
+      "expected_words": [
+        "46800000"
+      ],
+      "interpret_words": [
+        "46800000"
+      ],
+      "cuda_words": [
+        "46800000"
+      ],
+      "publication": "accept"
+    },
+    {
+      "id": "scale_cannot_cover_both",
+      "input_words": [
+        "0d800000",
+        "0d800000",
+        "7e800000"
+      ],
+      "exact_source": "136703170298938245273281389194851335334573089430825777276610662900622062449960995201469573563940865/1606938044258990275541962092341162602522202993782792835301376",
+      "fields": [
+        "fma"
+      ],
+      "expected_words": [
+        "7e800000"
+      ],
+      "interpret_words": [
+        "7e800000"
+      ],
+      "cuda_words": [
+        "7e800000"
+      ],
+      "publication": "accept"
+    },
+    {
+      "id": "norm_tiny_first",
+      "input_words": [
+        "0f800000",
+        "3f800000",
+        "00000000"
+      ],
+      "exact_source": "6277101735386680763835789423207666416102355444464034512897/6277101735386680763835789423207666416102355444464034512896",
+      "fields": [
+        "square_y",
+        "plus_square_x",
+        "plus_square_z"
+      ],
+      "expected_words": [
+        "3f800000",
+        "3f800000",
+        "3f800000"
+      ],
+      "interpret_words": [
+        "3f800000",
+        "3f800000",
+        "3f800000"
+      ],
+      "cuda_words": [
+        "3f800000",
+        "3f800000",
+        "3f800000"
+      ],
+      "publication": "accept"
+    },
+    {
+      "id": "cross_tiny_second",
+      "input_words": [
+        "3f800000",
+        "3f800000",
+        "0f800000",
+        "27800000"
+      ],
+      "exact_source": "22300745198530623141535718272648361505980415/22300745198530623141535718272648361505980416",
+      "fields": [
+        "rounded_ab",
+        "naive_determinant",
+        "ab_rounding_error",
+        "compensated_determinant"
+      ],
+      "expected_words": [
+        "3f800000",
+        "3f800000",
+        "00000000",
+        "3f800000"
+      ],
+      "interpret_words": [
+        "3f800000",
+        "3f800000",
+        "00000000",
+        "3f800000"
+      ],
+      "cuda_words": [
+        "3f800000",
+        "3f800000",
+        "00000000",
+        "3f800000"
+      ],
+      "publication": "accept"
+    },
+    {
+      "id": "fused_residual",
+      "input_words": [
+        "3f800001",
+        "3f800001",
+        "bf800002"
+      ],
+      "exact_source": "1/70368744177664",
+      "fields": [
+        "fma"
+      ],
+      "expected_words": [
+        "28800000"
+      ],
+      "interpret_words": [
+        "28800000"
+      ],
+      "cuda_words": [
+        "28800000"
+      ],
+      "publication": "accept"
+    },
+    {
+      "id": "determinant_compensation",
+      "input_words": [
+        "3f800001",
+        "3f800001",
+        "3f800001",
+        "3f800001"
+      ],
+      "exact_source": "0",
+      "fields": [
+        "rounded_ab",
+        "naive_determinant",
+        "ab_rounding_error",
+        "compensated_determinant"
+      ],
+      "expected_words": [
+        "3f800002",
+        "a8800000",
+        "28800000",
+        "00000000"
+      ],
+      "interpret_words": [
+        "3f800002",
+        "a8800000",
+        "28800000",
+        "00000000"
+      ],
+      "cuda_words": [
+        "3f800002",
+        "a8800000",
+        "28800000",
+        "00000000"
+      ],
+      "publication": "accept"
+    },
+    {
+      "id": "min_normal_tie",
+      "input_words": [
+        "20000000",
+        "1fffffff"
+      ],
+      "exact_source": "16777215/1427247692705959881058285969449495136382746624",
+      "fields": [
+        "product"
+      ],
+      "expected_words": [
+        "00800000"
+      ],
+      "interpret_words": [
+        "00800000"
+      ],
+      "cuda_words": [
+        "00800000"
+      ],
+      "publication": "accept"
+    },
+    {
+      "id": "raw_subnormal",
+      "input_words": [
+        "3f800000",
+        "1c800000",
+        "1c800000",
+        "3f800000"
+      ],
+      "exact_source": "1/1393796574908163946345982392040522594123776",
+      "fields": [
+        "weighted_delta",
+        "raw_product",
+        "fused_position"
+      ],
+      "expected_words": [
+        "1c800000",
+        "00000200",
+        "3f800000"
+      ],
+      "interpret_words": [
+        "1c800000",
+        "00000200",
+        "3f800000"
+      ],
+      "cuda_words": [
+        "1c800000",
+        "00000200",
+        "3f800000"
+      ],
+      "publication": "reject_subnormal"
+    },
+    {
+      "id": "false_zero",
+      "input_words": [
+        "17800000",
+        "1c800000",
+        "00000000"
+      ],
+      "exact_source": "1/1427247692705959881058285969449495136382746624",
+      "fields": [
+        "fma"
+      ],
+      "expected_words": [
+        "00000000"
+      ],
+      "interpret_words": [
+        "00000000"
+      ],
+      "cuda_words": [
+        "00000000"
+      ],
+      "publication": "reject_lost_nonzero"
+    },
+    {
+      "id": "overflow",
+      "input_words": [
+        "71800000",
+        "71800000",
+        "00000000"
+      ],
+      "exact_source": "1606938044258990275541962092341162602522202993782792835301376",
+      "fields": [
+        "fma"
+      ],
+      "expected_words": [
+        "7f800000"
+      ],
+      "interpret_words": [
+        "7f800000"
+      ],
+      "cuda_words": [
+        "7f800000"
+      ],
+      "publication": "reject_nonfinite"
+    }
+  ]
+}

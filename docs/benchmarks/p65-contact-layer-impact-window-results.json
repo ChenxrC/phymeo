@@ -1,0 +1,834 @@
+{
+  "schema": "sc-l1-continuous-impact-result-v1",
+  "scope": "One uninterrupted HOST SC-L1 impact, m=0.5 kg, relative mass 1 kg, h=1/64 s, T=1/8 s, F=0. Eight steps, seven disk boundaries, exact original exterior inlet.",
+  "decision": "Passed for the full scalar window. The pressure peak precedes maximum compression. The material stays in the layer at T. The piecewise delivered force has small upward jumps at polynomial boundaries during unloading.",
+  "preregistration_commit": "082679d9da5a1611a044bc24f1f8664238040e12",
+  "tested_source_commit": "533e1b24d48498f1cd6b4cfc79d57df2447e48bb",
+  "protocol_sha256_lf": "efb8347aae20d4bccc8207251794f8f3ee50ae88ccc168e3b2bbed809e1c176d",
+  "prefix_result": "p65-contact-layer-entry-results.json",
+  "prefix_result_sha256_lf": "49683ac0155e819462ab461d22173ceff2049bbedbd86ec0bf9b68f781a23576",
+  "unchanged_kernel_sha256_lf": "3e676d794b8dcaba6a067df29ac2cf85ec3efa117e465ddb2267635258c7bdc3",
+  "raw_directory": "artifacts/p65-n2-layer-impact-window-20261101-01",
+  "raw_audit_sha256": "abe704a9a1e162b6df43ca61138d504e43d248fd7f563a9c7e3cd66d048b3ed5",
+  "serial_runs": [
+    {
+      "task": "format",
+      "dir": "format-134444441",
+      "start": "2026-11-01T13:44:45.5581748+08:00",
+      "end": "2026-11-01T13:44:45.7048884+08:00",
+      "raw_exit": 0,
+      "matching_before": 0
+    },
+    {
+      "task": "lint",
+      "dir": "lint-134445722",
+      "start": "2026-11-01T13:44:46.5754684+08:00",
+      "end": "2026-11-01T13:44:46.6723492+08:00",
+      "raw_exit": 0,
+      "matching_before": 0
+    },
+    {
+      "task": "step-2",
+      "dir": "step-2-134501114",
+      "start": "2026-11-01T13:45:02.021048+08:00",
+      "end": "2026-11-01T13:45:02.2557069+08:00",
+      "raw_exit": 0,
+      "matching_before": 0
+    },
+    {
+      "task": "step-3",
+      "dir": "step-3-134502276",
+      "start": "2026-11-01T13:45:03.0736231+08:00",
+      "end": "2026-11-01T13:45:03.3152852+08:00",
+      "raw_exit": 0,
+      "matching_before": 0
+    },
+    {
+      "task": "step-4",
+      "dir": "step-4-134528965",
+      "start": "2026-11-01T13:45:30.037459+08:00",
+      "end": "2026-11-01T13:45:30.3943883+08:00",
+      "raw_exit": 0,
+      "matching_before": 0
+    },
+    {
+      "task": "step-5",
+      "dir": "step-5-134530415",
+      "start": "2026-11-01T13:45:31.2167233+08:00",
+      "end": "2026-11-01T13:45:31.4695023+08:00",
+      "raw_exit": 0,
+      "matching_before": 0
+    },
+    {
+      "task": "step-6",
+      "dir": "step-6-134531480",
+      "start": "2026-11-01T13:45:32.242914+08:00",
+      "end": "2026-11-01T13:45:32.5128322+08:00",
+      "raw_exit": 0,
+      "matching_before": 0
+    },
+    {
+      "task": "step-7",
+      "dir": "step-7-134532521",
+      "start": "2026-11-01T13:45:33.4560334+08:00",
+      "end": "2026-11-01T13:45:33.7545177+08:00",
+      "raw_exit": 0,
+      "matching_before": 0
+    },
+    {
+      "task": "audit",
+      "dir": "audit-134533764",
+      "start": "2026-11-01T13:45:34.6749993+08:00",
+      "end": "2026-11-01T13:45:36.8116628+08:00",
+      "raw_exit": 0,
+      "matching_before": 0
+    }
+  ],
+  "checks": {
+    "window_reference_impulse": true,
+    "window_positive_work": true,
+    "window_prefix_momentum": true,
+    "window_law_impulse": true,
+    "window_law_time_moment": true
+  },
+  "negative_controls": {
+    "independently_seeded_same_time": "wrong trajectory predecessor",
+    "last_force_zeroed": "velocity readback",
+    "false_release": "still inside contact layer",
+    "unshifted_time_moments": "wrong window time moment"
+  },
+  "interval_display": "Certified summary interval endpoints are widened by one binary64 representable value on each side when exported from rounded audit scalars. Step records retain their original display precision; the exact impulse and time moments are stored as rationals.",
+  "charge_description": "Each outer step has a 512 degree-coefficient cap. Convolution, basis conversion, half subdivision and peak/turn search costs are recorded separately. No runtime/native cost claim.",
+  "summary": {
+    "time_s": "1/8",
+    "entry_s": "119/16000",
+    "receipt_prefix_steps": 2,
+    "new_steps": 6,
+    "cold_links": 7,
+    "total_pieces": 942,
+    "peak_n": [
+      17.131594821662425,
+      17.131594880273905
+    ],
+    "peak_time_s": [
+      0.011159575491240527,
+      0.011160060073390154
+    ],
+    "peak_time_reference_s": [
+      0.0111083984375,
+      0.01116943359375
+    ],
+    "rebound_time_s": [
+      0.025128110408782954,
+      0.02512811088562012
+    ],
+    "independent_turn_bracket_s": [
+      0.02508544921875,
+      0.025146484375
+    ],
+    "global_min_gap_m": [
+      0.0013067072246356918,
+      0.0013067072246356923
+    ],
+    "analytic_ref_min_gap_m": 0.0013067072246358007,
+    "max_compression_m": [
+      0.0006932927753643079,
+      0.0006932927753643081
+    ],
+    "turn_search_cells": 37,
+    "delivered_half_incident_momentum_by_s": 0.015625,
+    "final_gap_m": 0.0014036882645835382,
+    "final_compression_m": 0.0005963117354164619,
+    "final_closing_speed_m_s": -0.0009999999999999903,
+    "final_delivered_force_n": 2.891689309347224E-15,
+    "exited_layer": false,
+    "post_turn_pressure": {
+      "piece_count": 799,
+      "intrapiece_decrease_unproved": 0,
+      "upward_knot_count": 395,
+      "total_upward_jump_n": 9.43946414904154E-14,
+      "max_upward_jump_n": 4.191091917959966E-15,
+      "first_upward_knot_s": 0.027125,
+      "published_force_nonincreasing_certified": false
+    },
+    "terminal_oracle": {
+      "rate_factor": 9.698582595654199E-15,
+      "ideal_rate_at_same_gap_bracket": [
+        9.601596769697654E-15,
+        9.795568421610741E-15
+      ],
+      "phase_residual": [
+        3.6977914331735837E-11,
+        3.760912619064014E-11
+      ],
+      "relative_rate_error_bound": 3.7609126192054956E-11,
+      "material_force_n": 2.8916893093472243E-15
+    },
+    "external_work_j": 0,
+    "initial_kinetic_j": 0.0078125,
+    "final_kinetic_j": 4.999999999999903E-07,
+    "final_elastic_j": 8.889692144884812E-05,
+    "dissipation_j": [
+      0.007723103078556267,
+      0.00772310307855627
+    ],
+    "signed_energy_defect_j": [
+      5.115588333207041E-15,
+      5.117431476900268E-15
+    ],
+    "sum_positive_piece_defects_upper_j": 7.421982215851031E-15,
+    "sum_abs_reference_impulse_errors_ns": 3.782740598429237E-11,
+    "prefix_momentum_bound_ns": 6.365524157687271E-14,
+    "signed_window_law_impulse_error_ns": [
+      3.795211711934081E-14,
+      3.7952117119340837E-14
+    ],
+    "signed_window_law_time_moment_error_ns2": [
+      4.453998296015095E-15,
+      4.453998296015098E-15
+    ],
+    "exact_contact_impulse_ns": "224891357685289704350192141627648381/1784852045121346997307358113169408000",
+    "contact_impulse_ns": 0.126,
+    "exact_contact_time_moment_ns2": "179373485126491339022702622548120244689509/12722425377624961396806848630671540224000000",
+    "contact_time_moment_ns2": 0.014099000764583538,
+    "unshifted_time_moment_error_ns2": -0.013386829299282766,
+    "reference_final": {
+      "t": 0.125,
+      "g": 0.0014036882645826199,
+      "v": -0.0009999999999999903,
+      "force": 2.8916894481329855E-15,
+      "impulse": 0.12599999999999964,
+      "dissipation": 0.007723103084511172,
+      "energy_defect": 5.96029389038355E-12,
+      "momentum_defect": -3.608224830031759E-16
+    }
+  },
+  "steps": [
+    {
+      "step": 0,
+      "kind": "accepted prefix",
+      "evidence_directory": "artifacts\\p65-n2-layer-entry-20261101-01\\series7\\entry",
+      "index_sha256": "5b4180af613dd7ca4500ee095fe5f4c2a338fca7baf7c24cd1ccec3ffd11f3d0",
+      "origin": "original scalar impact inlet",
+      "end_sha256": "1fa7dac29550b133fa561d3fc3614637ad376fa20092f5ab3372c5e0690c1441",
+      "parts": 67,
+      "work": {
+        "force_charges": 264,
+        "convolution_terms": 1188,
+        "conversion_terms": 1188,
+        "half_subdivision_means": 1848,
+        "method": "series7"
+      },
+      "exact_j_ns": "2558695660130241595553/25364273101350633472000",
+      "exact_b_ns2": "142217898501751109528547857/361593077332854630776832000000",
+      "record": {
+        "phase": "entry",
+        "entry_s": "119/16000",
+        "active_s": "131/16000",
+        "parts": 67,
+        "force_macros": 33,
+        "work": {
+          "force_charges": 264,
+          "convolution_terms": 1188,
+          "conversion_terms": 1188,
+          "half_subdivision_means": 1848,
+          "method": "series7"
+        },
+        "max_wire_bytes": 194,
+        "peak_cells": 83,
+        "peak_n": [
+          17.131594821662432,
+          17.131594880273898
+        ],
+        "peak_time_s": [
+          0.01115957549124053,
+          0.011160060073390151
+        ],
+        "ref_peak_n": 17.131594870017633,
+        "ref_time_s": [
+          0.0111083984375,
+          0.01116943359375
+        ],
+        "j_ns": 0.10087794157972509,
+        "b_ns2": 0.00039330924018447485,
+        "exact_j_ns": "2558695660130241595553/25364273101350633472000",
+        "exact_b_ns2": "142217898501751109528547857/361593077332854630776832000000",
+        "ref_j_ns": 0.10087794156081173,
+        "centroid_s": 0.011726137334630904,
+        "min_gap_lower_m": 0.0013698717401844748,
+        "end_gap_m": 0.0013698717401844748,
+        "end_speed_m_s": 0.024122058420274914,
+        "peak_relative_law_bound": 4.758313043072762E-11,
+        "worst_knot_jump_n": 3.4576785878925875E-10,
+        "dissipation_j": 0.007422297742834981,
+        "positive_work_j": 7.397582681749877E-15,
+        "signed_law_j_ns": 3.707244296363259E-14,
+        "signed_law_b_ns2": 3.0212416211908373E-16,
+        "errors": {
+          "step_peak_vs_reference_n": 4.8355199414417016E-08,
+          "step_impulse_vs_reference_ns": 1.891335469280607E-11,
+          "step_moment_error_divided_by_mass_m": 7.387558286173981E-14,
+          "endpoint_gap_error_m": 7.387555286173982E-14,
+          "endpoint_speed_error_m_s": 1.8913386692806068E-11,
+          "impact_peak_time_error_s": 0.0,
+          "law_impulse_vs_delivered_ns": 3.707244296363259E-14,
+          "law_moment_error_divided_by_mass_m": 3.0212416211908373E-16,
+          "prefix_momentum_defect_ns": 6.365524157687268E-14,
+          "positive_work_defect_per_window_j": 7.397582681749877E-15
+        },
+        "failed_gates": [],
+        "first_prefix_or_work_threshold": null,
+        "exact_inertial_path": true,
+        "strict_nonnegative": true,
+        "end_sha256": "1fa7dac29550b133fa561d3fc3614637ad376fa20092f5ab3372c5e0690c1441",
+        "trace_hashes": {
+          "end.state.json": "1fa7dac29550b133fa561d3fc3614637ad376fa20092f5ab3372c5e0690c1441",
+          "states.jsonl": "dd80b07098be1032fd646f227502d55bd324c816e2a4bb94286f2389370b1140",
+          "forces.jsonl": "8dec6a5f000c45cd00f51ffa44ba9fff2abc2f1be0936cb6a836608138c2855c",
+          "pieces.jsonl": "5b54c7367bbe9fff08ee2a5b626dc7b2dbafd841e340eb16ab749c790d2872a1"
+        }
+      }
+    },
+    {
+      "step": 1,
+      "kind": "accepted prefix",
+      "evidence_directory": "artifacts\\p65-n2-layer-entry-20261101-01\\series7\\successor",
+      "index_sha256": "9f77c969622441dd37ac541e564a8b5323015540d2c17d5488791cfe568b7a65",
+      "origin": "series7/entry/end.state.json",
+      "end_sha256": "f56190b972496fe0f66bb24e76f5a8ee314ef87db03132868bdbb45fa6912363",
+      "parts": 125,
+      "work": {
+        "force_charges": 504,
+        "convolution_terms": 2268,
+        "conversion_terms": 2268,
+        "half_subdivision_means": 3472,
+        "method": "series7"
+      },
+      "exact_j_ns": "1153003505250343527/46116860184273879040",
+      "exact_b_ns2": "4682873731229534486573/14757395258967641292800000",
+      "record": {
+        "phase": "successor",
+        "entry_s": null,
+        "active_s": "1/64",
+        "parts": 125,
+        "force_macros": 63,
+        "work": {
+          "force_charges": 504,
+          "convolution_terms": 2268,
+          "conversion_terms": 2268,
+          "half_subdivision_means": 3472,
+          "method": "series7"
+        },
+        "max_wire_bytes": 187,
+        "peak_cells": 125,
+        "peak_n": [
+          7.9150594776758965,
+          7.9150594776758965
+        ],
+        "peak_time_s": [
+          0.015625,
+          0.015625
+        ],
+        "ref_peak_n": 7.915059482706874,
+        "ref_time_s": [
+          0.015625,
+          0.015625
+        ],
+        "j_ns": 0.025001778105516483,
+        "b_ns2": 0.0003173238670546476,
+        "exact_j_ns": "1153003505250343527/46116860184273879040",
+        "exact_b_ns2": "4682873731229534486573/14757395258967641292800000",
+        "ref_j_ns": 0.025001778123293406,
+        "centroid_s": 0.018557948030119023,
+        "min_gap_lower_m": 0.001306707211329715,
+        "end_gap_m": 0.0013102884444223268,
+        "end_speed_m_s": -0.0008797196852415681,
+        "peak_relative_law_bound": 1.7385677152430364E-12,
+        "worst_knot_jump_n": 1.2830625450988009E-11,
+        "dissipation_j": 0.00027088979633349173,
+        "positive_work_j": 2.4399534096015052E-17,
+        "signed_law_j_ns": 8.786295933192806E-16,
+        "signed_law_b_ns2": 1.4609479913189114E-17,
+        "errors": {
+          "step_peak_vs_reference_n": 5.030977540086071E-09,
+          "step_impulse_vs_reference_ns": 1.7776922601105643E-11,
+          "step_moment_error_divided_by_mass_m": 2.240412074187303E-13,
+          "endpoint_gap_error_m": 2.3951119553752777E-15,
+          "endpoint_speed_error_m_s": 1.1364099917004254E-12,
+          "impact_peak_time_error_s": 0.0,
+          "law_impulse_vs_delivered_ns": 8.786295933192806E-16,
+          "law_moment_error_divided_by_mass_m": 1.4609479913189114E-17,
+          "prefix_momentum_defect_ns": 1.2771856790899805E-15,
+          "positive_work_defect_per_window_j": 2.4399534096015052E-17
+        },
+        "failed_gates": [],
+        "first_prefix_or_work_threshold": null,
+        "exact_inertial_path": true,
+        "strict_nonnegative": true,
+        "end_sha256": "f56190b972496fe0f66bb24e76f5a8ee314ef87db03132868bdbb45fa6912363",
+        "trace_hashes": {
+          "end.state.json": "f56190b972496fe0f66bb24e76f5a8ee314ef87db03132868bdbb45fa6912363",
+          "states.jsonl": "95b923992f368442ce2d252c7dea5813da1c84070f018e0b1b6fe969c4eafc82",
+          "forces.jsonl": "74036fb551288d2bc6c99befcc1f03792565c6ebda7c980b6f18eff7ffb1ccfa",
+          "pieces.jsonl": "87c018089b1bb7fc480fbee7b2343c87ab2895e3d6dccce5a3830a9d21cd622e"
+        }
+      }
+    },
+    {
+      "step": 2,
+      "kind": "new continuation",
+      "evidence_directory": "artifacts\\p65-n2-layer-impact-window-20261101-01\\step-2",
+      "index_sha256": "827956aeb4969636a15b080b1ac64bdbf1f8d2b382274d08a566ff5d2fadde9d",
+      "origin": "artifacts/p65-n2-layer-entry-20261101-01/series7/successor/end.state.json",
+      "end_sha256": "a231c20bb05361c64d3ec5c507cdd7fa1b21a8d824b9fe34f7767783928cf858",
+      "parts": 125,
+      "work": {
+        "force_charges": 504,
+        "convolution_terms": 2268,
+        "conversion_terms": 2268,
+        "half_subdivision_means": 3472,
+        "method": "series7"
+      },
+      "exact_j_ns": "141313763686493325161/1180591620717411303424000",
+      "exact_b_ns2": "10844463695784479778673/7083549724304467820544000000",
+      "record": {
+        "step": 2,
+        "origin": "artifacts/p65-n2-layer-entry-20261101-01/series7/successor/end.state.json",
+        "seed_sha256": "f56190b972496fe0f66bb24e76f5a8ee314ef87db03132868bdbb45fa6912363",
+        "end_sha256": "a231c20bb05361c64d3ec5c507cdd7fa1b21a8d824b9fe34f7767783928cf858",
+        "parts": 125,
+        "work": {
+          "force_charges": 504,
+          "convolution_terms": 2268,
+          "conversion_terms": 2268,
+          "half_subdivision_means": 3472,
+          "method": "series7"
+        },
+        "peak_cells": 125,
+        "max_wire_bytes": 197,
+        "max_remainder_bits": 115,
+        "peak_n": [
+          0.04147936149870511,
+          0.04147936149870511
+        ],
+        "peak_time_s": [
+          0.03125,
+          0.03125
+        ],
+        "end_force_n": 0.00019656442293582155,
+        "end_gap_m": 0.0013255650008451652,
+        "end_closing_speed_m_s": -0.0009994170989845363,
+        "min_gap_lower_m": 0.0013102884444223268,
+        "max_gap_upper_m": 0.0013255650008451652,
+        "min_rate_factor": 0.000582901015463745,
+        "exact_j_ns": "141313763686493325161/1180591620717411303424000",
+        "exact_b_ns2": "10844463695784479778673/7083549724304467820544000000",
+        "j_ns": 0.00011969741374296817,
+        "b_ns2": 1.530936340938765E-06,
+        "loss_j": 5.097401546527325E-06,
+        "positive_only_j": 4.82147577943137E-27,
+        "law_relative_bound": 8.702595757511273E-14,
+        "errors": {
+          "step_peak_vs_reference_n": 3.917534887558437E-10,
+          "step_impulse_vs_reference_ns": 1.1259230166725529E-12,
+          "step_moment_error_divided_by_mass_m": 1.44790049702261E-14,
+          "endpoint_gap_error_m": 8.822545072177703E-16,
+          "endpoint_speed_error_m_s": 1.045625502787255E-14,
+          "impact_peak_time_error_s": 0.0,
+          "law_impulse_vs_delivered_ns": 1.0397429462903056E-18,
+          "law_moment_error_divided_by_mass_m": 1.30883725760707E-20,
+          "prefix_momentum_defect_ns": 1.0397429462903056E-18,
+          "positive_work_defect_per_window_j": 4.82147577943137E-27
+        },
+        "failed_gates": [],
+        "trace_hashes": {
+          "end.state.json": "a231c20bb05361c64d3ec5c507cdd7fa1b21a8d824b9fe34f7767783928cf858",
+          "states.jsonl": "657e7abf3b49f8e5b6da1d69e4f9ace85a7e521eb440c633c916e03d43b25d11",
+          "forces.jsonl": "629b6d2cf53284a2a94a989e940561b663ee16240b495d8dbc915da6eddc8b71",
+          "pieces.jsonl": "da75b26f95a8d1be37a536464b0f286ece789982eb17447cdd1df5391e0ca748"
+        }
+      },
+      "seed_sha256": "f56190b972496fe0f66bb24e76f5a8ee314ef87db03132868bdbb45fa6912363"
+    },
+    {
+      "step": 3,
+      "kind": "new continuation",
+      "evidence_directory": "artifacts\\p65-n2-layer-impact-window-20261101-01\\step-3",
+      "index_sha256": "29b3c806fb363607c6034a6e9a7ad6ca28d653e9fdb85d8a48813225ca3cc98c",
+      "origin": "step-2/end.state.json",
+      "end_sha256": "a781e0a1d66db54f96a4a8f358f52f847c47219c8a7d32e60e5be49df5762af2",
+      "parts": 125,
+      "work": {
+        "force_charges": 504,
+        "convolution_terms": 2268,
+        "conversion_terms": 2268,
+        "half_subdivision_means": 3472,
+        "method": "series7"
+      },
+      "exact_j_ns": "43801726578379972323/75557863725914323419136000",
+      "exact_b_ns2": "2509717331530551410831/340010386766614455386112000000",
+      "record": {
+        "step": 3,
+        "origin": "step-2/end.state.json",
+        "seed_sha256": "a231c20bb05361c64d3ec5c507cdd7fa1b21a8d824b9fe34f7767783928cf858",
+        "end_sha256": "a781e0a1d66db54f96a4a8f358f52f847c47219c8a7d32e60e5be49df5762af2",
+        "parts": 125,
+        "work": {
+          "force_charges": 504,
+          "convolution_terms": 2268,
+          "conversion_terms": 2268,
+          "half_subdivision_means": 3472,
+          "method": "series7"
+        },
+        "peak_cells": 125,
+        "max_wire_bytes": 202,
+        "max_remainder_bits": 122,
+        "peak_n": [
+          0.0001965644229358216,
+          0.0001965644229358216
+        ],
+        "peak_time_s": [
+          0.046875,
+          0.046875
+        ],
+        "end_force_n": 1.0508017747089372E-06,
+        "end_gap_m": 0.0013411882743128683,
+        "end_closing_speed_m_s": -0.000999996810008888,
+        "min_gap_lower_m": 0.0013255650008451652,
+        "max_gap_upper_m": 0.0013411882743128683,
+        "min_rate_factor": 3.1899911119917163E-06,
+        "exact_j_ns": "43801726578379972323/75557863725914323419136000",
+        "exact_b_ns2": "2509717331530551410831/340010386766614455386112000000",
+        "j_ns": 5.797110243517533E-07,
+        "b_ns2": 7.381296069796948E-09,
+        "loss_j": 5.20684000438877E-06,
+        "positive_only_j": 3.1185564879078805E-28,
+        "law_relative_bound": 8.023772231854331E-14,
+        "errors": {
+          "step_peak_vs_reference_n": 3.526265248001143E-12,
+          "step_impulse_vs_reference_ns": 1.024111364432517E-14,
+          "step_moment_error_divided_by_mass_m": 1.3273629965546856E-16,
+          "endpoint_gap_error_m": 9.129304397728104E-16,
+          "endpoint_speed_error_m_s": 8.13082835473809E-17,
+          "impact_peak_time_error_s": 0.0,
+          "law_impulse_vs_delivered_ns": 4.797466256193908E-21,
+          "law_moment_error_divided_by_mass_m": 6.102328442352312E-23,
+          "prefix_momentum_defect_ns": 4.797466256193908E-21,
+          "positive_work_defect_per_window_j": 3.1185564879078805E-28
+        },
+        "failed_gates": [],
+        "trace_hashes": {
+          "end.state.json": "a781e0a1d66db54f96a4a8f358f52f847c47219c8a7d32e60e5be49df5762af2",
+          "states.jsonl": "a3562446530738cf80d4826699a776aeb0725b08dcc8a220e5d720ce0047d8e0",
+          "forces.jsonl": "c251370a0f2c13742b69c7bcccc0f166b268c961849bb26741a22c929b4677db",
+          "pieces.jsonl": "26511fe94ecf23a583511546665d352f88de3d7aaf463d3c5968e40740366a81"
+        }
+      },
+      "seed_sha256": "a231c20bb05361c64d3ec5c507cdd7fa1b21a8d824b9fe34f7767783928cf858"
+    },
+    {
+      "step": 4,
+      "kind": "new continuation",
+      "evidence_directory": "artifacts\\p65-n2-layer-impact-window-20261101-01\\step-4",
+      "index_sha256": "26050441328c71a376413842375506ac38916f97e04a3ff2f29f12ca456dbd5b",
+      "origin": "step-3/end.state.json",
+      "end_sha256": "242b6778a09fa38b38993b64a799a211355994ba8cea8db9389be49f07155968",
+      "parts": 125,
+      "work": {
+        "force_charges": 504,
+        "convolution_terms": 2268,
+        "conversion_terms": 2268,
+        "half_subdivision_means": 3472,
+        "method": "series7"
+      },
+      "exact_j_ns": "245287528329384367039/77371252455336267181195264000",
+      "exact_b_ns2": "223809177808396797571277/5570730176784211237046059008000000",
+      "record": {
+        "step": 4,
+        "origin": "step-3/end.state.json",
+        "seed_sha256": "a781e0a1d66db54f96a4a8f358f52f847c47219c8a7d32e60e5be49df5762af2",
+        "end_sha256": "242b6778a09fa38b38993b64a799a211355994ba8cea8db9389be49f07155968",
+        "parts": 125,
+        "work": {
+          "force_charges": 504,
+          "convolution_terms": 2268,
+          "conversion_terms": 2268,
+          "half_subdivision_means": 3472,
+          "method": "series7"
+        },
+        "peak_cells": 125,
+        "max_wire_bytes": 210,
+        "max_remainder_bits": 130,
+        "peak_n": [
+          1.0508017747089374E-06,
+          1.0508017747089374E-06
+        ],
+        "peak_time_s": [
+          0.0625,
+          0.0625
+        ],
+        "end_force_n": 6.343143925886434E-09,
+        "end_gap_m": 0.0013568132646451713,
+        "end_closing_speed_m_s": -0.000999999980275887,
+        "min_gap_lower_m": 0.0013411882743128683,
+        "max_gap_upper_m": 0.0013568132646451713,
+        "min_rate_factor": 1.9724113005493176E-08,
+        "exact_j_ns": "245287528329384367039/77371252455336267181195264000",
+        "exact_b_ns2": "223809177808396797571277/5570730176784211237046059008000000",
+        "j_ns": 3.170266998986223E-09,
+        "b_ns2": 4.017591423492603E-11,
+        "loss_j": 5.085925171351628E-06,
+        "positive_only_j": 3.4834676785212174E-30,
+        "law_relative_bound": 6.688071378854804E-14,
+        "errors": {
+          "step_peak_vs_reference_n": 2.679218720370897E-14,
+          "step_impulse_vs_reference_ns": 2.1642702372222644E-16,
+          "step_moment_error_divided_by_mass_m": 9.754304039730667E-19,
+          "endpoint_gap_error_m": 9.132404952342652E-16,
+          "endpoint_speed_error_m_s": 5.94506825154451E-19,
+          "impact_peak_time_error_s": 0.0,
+          "law_impulse_vs_delivered_ns": 2.1863569808107293E-23,
+          "law_moment_error_divided_by_mass_m": 2.7685263180204624E-25,
+          "prefix_momentum_defect_ns": 2.1863569808107293E-23,
+          "positive_work_defect_per_window_j": 3.4834676785212174E-30
+        },
+        "failed_gates": [],
+        "trace_hashes": {
+          "end.state.json": "242b6778a09fa38b38993b64a799a211355994ba8cea8db9389be49f07155968",
+          "states.jsonl": "85554e5e6d48b44aa7732759a825391bc8866a4d38c8e1baabcd5c4bcf4e01e2",
+          "forces.jsonl": "69362ebc2e7b22ff643766785bf45d43b113d2ec32d5431f4e19c6d44a6d0364",
+          "pieces.jsonl": "bb8cb6c7c501d7e116e3a561f656f0ea67daa015dc37979b0eaa13cfcfb50054"
+        }
+      },
+      "seed_sha256": "a781e0a1d66db54f96a4a8f358f52f847c47219c8a7d32e60e5be49df5762af2"
+    },
+    {
+      "step": 5,
+      "kind": "new continuation",
+      "evidence_directory": "artifacts\\p65-n2-layer-impact-window-20261101-01\\step-5",
+      "index_sha256": "eb6d5b4433e1b85cc33c1d5c7c60a509f472cb4ab6b3a934c168340dcec5ce75",
+      "origin": "step-4/end.state.json",
+      "end_sha256": "33c9988d6572f40cc5fbe831105a7ba0554d898591b23cf1d4347253388a3eb0",
+      "parts": 125,
+      "work": {
+        "force_charges": 504,
+        "convolution_terms": 2268,
+        "conversion_terms": 2268,
+        "half_subdivision_means": 3472,
+        "method": "series7"
+      },
+      "exact_j_ns": "38794708140876697053/1980704062856608439838598758400",
+      "exact_b_ns2": "3913828066346812546987/15845632502852867518708790067200000",
+      "record": {
+        "step": 5,
+        "origin": "step-4/end.state.json",
+        "seed_sha256": "242b6778a09fa38b38993b64a799a211355994ba8cea8db9389be49f07155968",
+        "end_sha256": "33c9988d6572f40cc5fbe831105a7ba0554d898591b23cf1d4347253388a3eb0",
+        "parts": 125,
+        "work": {
+          "force_charges": 504,
+          "convolution_terms": 2268,
+          "conversion_terms": 2268,
+          "half_subdivision_means": 3472,
+          "method": "series7"
+        },
+        "peak_cells": 125,
+        "max_wire_bytes": 216,
+        "max_remainder_bits": 137,
+        "peak_n": [
+          6.343143925886436E-09,
+          6.343143925886436E-09
+        ],
+        "peak_time_s": [
+          0.078125,
+          0.078125
+        ],
+        "end_force_n": 4.323608953215643E-11,
+        "end_gap_m": 0.0013724382645839794,
+        "end_closing_speed_m_s": -0.0009999999998622092,
+        "min_gap_lower_m": 0.0013568132646451713,
+        "max_gap_upper_m": 0.0013724382645839794,
+        "min_rate_factor": 1.3779071314312863E-10,
+        "exact_j_ns": "38794708140876697053/1980704062856608439838598758400",
+        "exact_b_ns2": "3913828066346812546987/15845632502852867518708790067200000",
+        "j_ns": 1.9586322292350046E-11,
+        "b_ns2": 2.469972761038199E-13,
+        "loss_j": 4.9638611749224E-06,
+        "positive_only_j": 2.312998251959385E-33,
+        "law_relative_bound": 5.5575091674789317E-14,
+        "errors": {
+          "step_peak_vs_reference_n": 2.0428602721382714E-16,
+          "step_impulse_vs_reference_ns": 1.7679693573378095E-16,
+          "step_moment_error_divided_by_mass_m": 7.580250762626432E-20,
+          "endpoint_gap_error_m": 9.131508882233118E-16,
+          "endpoint_speed_error_m_s": 1.1314312862649196E-19,
+          "impact_peak_time_error_s": 0.0,
+          "law_impulse_vs_delivered_ns": 1.1218490909806183E-25,
+          "law_moment_error_divided_by_mass_m": 1.4143992915569127E-27,
+          "prefix_momentum_defect_ns": 1.1218511892202407E-25,
+          "positive_work_defect_per_window_j": 2.312998251959385E-33
+        },
+        "failed_gates": [],
+        "trace_hashes": {
+          "end.state.json": "33c9988d6572f40cc5fbe831105a7ba0554d898591b23cf1d4347253388a3eb0",
+          "states.jsonl": "c58b10af4f49ae38d08a11826f3429280cdb1b93ecb88f678cdca7358de61e01",
+          "forces.jsonl": "16755b924ea7098ef510e4db262920030edb03d3cf8ae48c08495805330db978",
+          "pieces.jsonl": "a7c58eb24ce06f23d894adde0fee2af9acc22816c9076fffc3385b70ad7a2fc7"
+        }
+      },
+      "seed_sha256": "242b6778a09fa38b38993b64a799a211355994ba8cea8db9389be49f07155968"
+    },
+    {
+      "step": 6,
+      "kind": "new continuation",
+      "evidence_directory": "artifacts\\p65-n2-layer-impact-window-20261101-01\\step-6",
+      "index_sha256": "8f62ea2f35c6848cabc9c7e730404d9a7d6bca6d545a0a3d88bf40dd0e23bda2",
+      "origin": "step-5/end.state.json",
+      "end_sha256": "84f91fcd77202435327c704f9a295ce3ef12f0e856a2f59204e06d5d836b0cd5",
+      "parts": 125,
+      "work": {
+        "force_charges": 504,
+        "convolution_terms": 2268,
+        "conversion_terms": 2268,
+        "half_subdivision_means": 3472,
+        "method": "series7"
+      },
+      "exact_j_ns": "173291822546018176553/1267650600228229401496703205376000",
+      "exact_b_ns2": "6261758216619431170117/3650833728657300676310505231482880000",
+      "record": {
+        "step": 6,
+        "origin": "step-5/end.state.json",
+        "seed_sha256": "33c9988d6572f40cc5fbe831105a7ba0554d898591b23cf1d4347253388a3eb0",
+        "end_sha256": "84f91fcd77202435327c704f9a295ce3ef12f0e856a2f59204e06d5d836b0cd5",
+        "parts": 125,
+        "work": {
+          "force_charges": 504,
+          "convolution_terms": 2268,
+          "conversion_terms": 2268,
+          "half_subdivision_means": 3472,
+          "method": "series7"
+        },
+        "peak_cells": 125,
+        "max_wire_bytes": 223,
+        "max_remainder_bits": 144,
+        "peak_n": [
+          4.323608953215644E-11,
+          4.323608953215644E-11
+        ],
+        "peak_time_s": [
+          0.09375,
+          0.09375
+        ],
+        "end_force_n": 3.3276175517137904E-13,
+        "end_gap_m": 0.0013880632645835416,
+        "end_closing_speed_m_s": -0.0009999999999989123,
+        "min_gap_lower_m": 0.0013724382645839794,
+        "max_gap_upper_m": 0.0013880632645835416,
+        "min_rate_factor": 1.087569142077785E-12,
+        "exact_j_ns": "173291822546018176553/1267650600228229401496703205376000",
+        "exact_b_ns2": "6261758216619431170117/3650833728657300676310505231482880000",
+        "j_ns": 1.3670314400105084E-13,
+        "b_ns2": 1.7151584218880253E-15,
+        "loss_j": 4.841790901416998E-06,
+        "positive_only_j": 3.6639565834772675E-34,
+        "law_relative_bound": 4.5909242920150377E-14,
+        "errors": {
+          "step_peak_vs_reference_n": 1.6492096717803376E-18,
+          "step_impulse_vs_reference_ns": 4.8577057152818536E-17,
+          "step_moment_error_divided_by_mass_m": 3.24743250976521E-20,
+          "endpoint_gap_error_m": 9.131294172499524E-16,
+          "endpoint_speed_error_m_s": 1.3085792221497406E-19,
+          "impact_peak_time_error_s": 0.0,
+          "law_impulse_vs_delivered_ns": 6.453938285960592E-28,
+          "law_moment_error_divided_by_mass_m": 8.097909670181212E-30,
+          "prefix_momentum_defect_ns": 6.453946727061099E-28,
+          "positive_work_defect_per_window_j": 3.6639565834772675E-34
+        },
+        "failed_gates": [],
+        "trace_hashes": {
+          "end.state.json": "84f91fcd77202435327c704f9a295ce3ef12f0e856a2f59204e06d5d836b0cd5",
+          "states.jsonl": "71bb7975c570dddfa6af6f3d23d6aa2a50482b642dba9a45abef7ad736efb569",
+          "forces.jsonl": "3530ef7c706859994dcc8f75d6690660caed8598dddc2fe3a8ca0af753763ab5",
+          "pieces.jsonl": "7ee9c4ef54b5ec4dbad66d20f52cd7facb127d49db2c792ff2b93db60cbd2de9"
+        }
+      },
+      "seed_sha256": "33c9988d6572f40cc5fbe831105a7ba0554d898591b23cf1d4347253388a3eb0"
+    },
+    {
+      "step": 7,
+      "kind": "new continuation",
+      "evidence_directory": "artifacts\\p65-n2-layer-impact-window-20261101-01\\step-7",
+      "index_sha256": "c1ce44ea392b088693480e0d99d08c869e8d20fbefa2a2524ed9f35b6593402c",
+      "origin": "step-6/end.state.json",
+      "end_sha256": "c05835b6547dfc47cedffd17ab03c057ea0badb4d078d6d52f676badc755a64d",
+      "parts": 125,
+      "work": {
+        "force_charges": 504,
+        "convolution_terms": 2268,
+        "conversion_terms": 2268,
+        "half_subdivision_means": 3472,
+        "method": "series7"
+      },
+      "exact_j_ns": "174894497497070155031/162259276829213363391578010288128000",
+      "exact_b_ns2": "52385747105785610044087/3894222643901120721397872246915072000000",
+      "record": {
+        "step": 7,
+        "origin": "step-6/end.state.json",
+        "seed_sha256": "84f91fcd77202435327c704f9a295ce3ef12f0e856a2f59204e06d5d836b0cd5",
+        "end_sha256": "c05835b6547dfc47cedffd17ab03c057ea0badb4d078d6d52f676badc755a64d",
+        "parts": 125,
+        "work": {
+          "force_charges": 504,
+          "convolution_terms": 2268,
+          "conversion_terms": 2268,
+          "half_subdivision_means": 3472,
+          "method": "series7"
+        },
+        "peak_cells": 125,
+        "max_wire_bytes": 229,
+        "max_remainder_bits": 150,
+        "peak_n": [
+          3.327617551713791E-13,
+          3.327617551713791E-13
+        ],
+        "peak_time_s": [
+          0.109375,
+          0.109375
+        ],
+        "end_force_n": 2.891689309347224E-15,
+        "end_gap_m": 0.0014036882645835382,
+        "end_closing_speed_m_s": -0.0009999999999999903,
+        "min_gap_lower_m": 0.0013880632645835416,
+        "max_gap_upper_m": 0.0014036882645835382,
+        "min_rate_factor": 9.698582595654199E-15,
+        "exact_j_ns": "174894497497070155031/162259276829213363391578010288128000",
+        "exact_b_ns2": "52385747105785610044087/3894222643901120721397872246915072000000",
+        "j_ns": 1.0778705594821308E-15,
+        "b_ns2": 1.345217053468393E-17,
+        "loss_j": 4.7197205891889476E-06,
+        "positive_only_j": 1.8756213814427223E-36,
+        "law_relative_bound": 3.771051157444676E-14,
+        "errors": {
+          "step_peak_vs_reference_n": 1.443681510880859E-20,
+          "step_impulse_vs_reference_ns": 5.227590471695525E-16,
+          "step_moment_error_divided_by_mass_m": 5.117366333701616E-18,
+          "endpoint_gap_error_m": 9.18188319939671E-16,
+          "endpoint_speed_error_m_s": 1.4174043458021469E-21,
+          "impact_peak_time_error_s": 0.0,
+          "law_impulse_vs_delivered_ns": 4.194081445201258E-30,
+          "law_moment_error_divided_by_mass_m": 5.238517818538221E-32,
+          "prefix_momentum_defect_ns": 4.1940967221525904E-30,
+          "positive_work_defect_per_window_j": 1.8756213814427223E-36
+        },
+        "failed_gates": [],
+        "trace_hashes": {
+          "end.state.json": "c05835b6547dfc47cedffd17ab03c057ea0badb4d078d6d52f676badc755a64d",
+          "states.jsonl": "aa47a7238e788b579d26130610cf5f5dbd9ef52f177a43400c778eeeb54d5c9c",
+          "forces.jsonl": "5f76b808d336e56f732f1292c370fbf805c01cf3640bafbc56ccc586c87eaea4",
+          "pieces.jsonl": "686472e1419ff4e523b42d0f8d572475463bc69c97888552295a6aafd62ea053"
+        }
+      },
+      "seed_sha256": "84f91fcd77202435327c704f9a295ce3ef12f0e856a2f59204e06d5d836b0cd5"
+    }
+  ]
+}

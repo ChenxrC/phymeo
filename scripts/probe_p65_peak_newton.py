@@ -52,8 +52,9 @@ def fields_at(words, s):
     return [evaluate(word_polys(words[:, i]), s) for i in range(words.shape[1])]
 
 
-def propose(root, model, source):
-    gate = saved(root / "derivative.json")
+def propose(root, model, source, *, lifting=None):
+    gate_path = source.get("derivative_gate", root / "derivative.json")
+    gate = saved(gate_path)
     need(
         gate["accepted"] and gate["fixed_states"] == 12 and gate["coordinate_columns"] == 26,
         "derivatives not verified",
@@ -63,7 +64,14 @@ def propose(root, model, source):
     ledger = []
     try:
         claim, terminal = peak_fit(
-            model, q, v, h, source["binding"], 512 - source["prefix_charges"], ledger
+            model,
+            q,
+            v,
+            h,
+            source["binding"],
+            512 - source["prefix_charges"],
+            ledger,
+            lifting=lifting,
         )
         x, u = endpoint(claim, q, v)
         out = checkpoint(x, u, t + h, model.signature)
@@ -79,7 +87,7 @@ def propose(root, model, source):
         binding=source["binding"],
         input_sha=packet_hash(source["input"]),
         previous_certificate=source["previous_sha"],
-        derivative_gate_sha=filehash(root / "derivative.json"),
+        derivative_gate_sha=filehash(gate_path),
         chart=claim,
         charges=len(ledger) * 6,
         search_cells=0,
@@ -176,7 +184,19 @@ def verify(model, source, data):
     proposed_x, proposed_v = endpoint(claim, q, v)
     bound_packet = checkpoint(proposed_x, proposed_v, t + h, model.signature)
     need(packet_hash(bound_packet) == data["endpoint"], "wrong endpoint before interval check")
-    curve = Curve(claim, model, q, v, h, "active-newton", 13)
+    variant = source.get("slope_modes", False)
+    if variant:
+        need(
+            all(
+                r["slope"]["coefficients"].shape == (21, 97)
+                and r["slope"]["feedback_error"] < 1e-10
+                for r in claim["iterations"]
+            ),
+            "incomplete coupled slope history",
+        )
+    curve = Curve(
+        claim, model, q, v, h, "slope-newton" if variant else "active-newton", 20 if variant else 13
+    )
     acc = blank()
     acc.update(law_lower_abs=[Q(0)] * 6, law_signed=[I.point(0) for _ in range(6)])
     audit_chart(
@@ -215,7 +235,7 @@ def verify(model, source, data):
     return out, rec
 
 
-def publish(root, model, source):
+def publish(root, model, source, *, phase="newton"):
     data = saved(root / "proposal.json.gz")
     ledger = saved(root / "provider-ledger.json.gz")
     need(
@@ -225,7 +245,8 @@ def publish(root, model, source):
             z["call"] == i + 1 and z["addresses"] == 6 and z["returned"]
             for i, z in enumerate(ledger)
         )
-        and filehash(root / "derivative.json") == data["derivative_gate_sha"],
+        and filehash(source.get("derivative_gate", root / "derivative.json"))
+        == data["derivative_gate_sha"],
         "missing charged evaluation or derivative gate",
     )
     claim = data["chart"]
@@ -250,16 +271,16 @@ def publish(root, model, source):
         and np.array_equal(ledger[-1]["pressures"], data["terminal_pressure_n"]),
         "wrong endpoint observation",
     )
-    _, rec, out = checked_publish(root, "newton", model, source, data, verify)
+    _, rec, out = checked_publish(root, phase, model, source, data, verify)
     save(root / "accepted.json", rec)
     with (root / "peak.bin").open("xb") as fp:
         fp.write(out.tobytes())
     print(json.dumps(rec, indent=2))
 
 
-def readback(root, model, source):
-    tx = saved(root / "newton-transaction.json.gz")
-    info = saved(root / "newton-attempt.json.gz")
+def readback(root, model, source, *, phase="newton"):
+    tx = saved(root / f"{phase}-transaction.json.gz")
+    info = saved(root / f"{phase}-attempt.json.gz")
     rec = info["certificate"]
     q, v, t = unpack(source["input"], model.signature)
     need(

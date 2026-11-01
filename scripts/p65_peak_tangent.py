@@ -168,7 +168,7 @@ def residual_matrix(h, V, P, mass, Fq, Fv):
     return mat.reshape(nodes * dofs, nodes * dofs)
 
 
-def newton_grid(model, q0, v0, h, first, degree, sweeps, guess, charged):
+def newton_grid(model, q0, v0, h, first, degree, sweeps, guess, charged, lifting=None):
     nodes, card, V, P = tables(degree)
     n = len(q0)
     a = guess(nodes)
@@ -178,6 +178,10 @@ def newton_grid(model, q0, v0, h, first, degree, sweeps, guess, charged):
     for _ in range(sweeps):
         x = q0 + h * nodes[:, None] * v0 + h * h * (P @ a)
         v = v0 + h * (V @ a)
+        if lifting is not None and lifting.coeff is not None:
+            ex_v, ex_x = lifting.motion(nodes, model, h)
+            x += ex_x
+            v += ex_v
         jets = [first] + [charged(pos, vel) for pos, vel in zip(x[1:], v[1:], strict=True)]
         target = np.stack([total(j.value, model) for j in jets])
         Kq = np.stack([j.mq + j.rq.sum(axis=0) for j in jets])
@@ -210,11 +214,16 @@ def newton_grid(model, q0, v0, h, first, degree, sweeps, guess, charged):
                 projected_error=projected_error,
             )
         )
+        if lifting is not None:
+            frames, da, update = lifting.update(
+                model, h, nodes, card, V, P, jets, frames, matrix, a, da, v, dx, du
+            )
+            history[-1].update(delta_acc=da, slope=update)
         a = a + da
     return nodes, card, a, frames, history
 
 
-def peak_fit(model, q, v, h, bind, available, ledger):
+def peak_fit(model, q, v, h, bind, available, ledger, *, lifting=None):
     q0, v0 = np.asarray(q, float), np.asarray(v, float)
     h = float(h)
     calls = 0
@@ -245,15 +254,20 @@ def peak_fit(model, q, v, h, bind, available, ledger):
         return ch.chebvander(2 * nodes - 1, 3) @ coarse_coeff
 
     nodes, card, _, frames, history = newton_grid(
-        model, q0, v0, h, first, 13, 2, transferred, evaluate_joint
+        model, q0, v0, h, first, 13, 2, transferred, evaluate_joint, lifting
     )
 
     def words(field):
         values = np.stack([getattr(f, field) for f in frames])
-        return quantized((card @ values.reshape(len(nodes), -1)).reshape(values.shape))
+        low = (card @ values.reshape(len(nodes), -1)).reshape(values.shape)
+        if lifting is None:
+            return quantized(low)
+        complete = getattr(lifting.fields(len(q0), len(model.owners)), field).copy()
+        complete[: len(nodes)] += low
+        return quantized(complete)
 
     claim = dict(
-        schema="p65-active-newton-curve-v1",
+        schema="p65-active-newton-curve-v1" if lifting is None else "p65-slope-newton-curve-v1",
         binding=bind,
         h=h,
         grid=GRID,

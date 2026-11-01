@@ -36,7 +36,7 @@ def public_numbers(state):
     return np.r_[c["position"].ravel(), r["q"]], np.r_[c["velocity"].ravel(), r["v"]]
 
 
-def readback(root, tag, model):
+def readback(root, tag, model, *, predecessor_checkpoint=None):
     ap = root / f"{tag}-attempt.json.gz"
     rp = root / f"{tag}-result.json.gz"
     op = root / f"{tag}-output.bin"
@@ -88,9 +88,11 @@ def readback(root, tag, model):
     if tag == "first":
         need(t0 == 0 and all(v == 0 for v in v0), "original rest start")
     else:
+        predecessor = (
+            root / "first-output.bin" if predecessor_checkpoint is None else predecessor_checkpoint
+        )
         need(
-            incoming.tobytes() == (root / "first-output.bin").read_bytes()
-            and any(v != 0 for v in v0),
+            incoming.tobytes() == predecessor.read_bytes() and any(v != 0 for v in v0),
             "lost restart",
         )
     js = []

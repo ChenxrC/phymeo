@@ -1,0 +1,35 @@
+{
+  "schema": "p65-sc2-event-cell-v1",
+  "baseline": "1680c1d5b21981eb2b19d2c0f4520496d93d3bf6",
+  "source": "p65-sc2-common-motion-entry-results.json",
+  "source_sha256_lf": "a38cef01282a8626debf30add245516e5918e02fdc849cc5ce59eeaf5efb99f7",
+  "selection": "Select the first previously observed forbidden load from the saved reference. Recover the target cell's exact inlet by accumulating only earlier saved paired moments from the linked boundary. Previous event time, owner's name, old cell interior and old terminal state are not proposal inputs. Only the independent comparison uses the failed cell.",
+  "method": "Classify six original ports at the real inlet. Fit the smooth continuation of the inlet's active set with original nonlinear material and all initial active pressures; isolate layer guards for all six, with strictly closing signed speeds and damping factor positive throughout or reject this chart. The first isolated algebraic birth turns on continuously. Use an adjacent dyadic bridge until (ceil(root_upper*4096)+1)/4096 of the original cell, with rounded rational impulse derived from the incident slope and backward moment J*dm/3. The two moments uniquely determine the zero-at-birth quadratic on the true algebraic event. Advance the other five requests and material on the shared motion and validate them on the corrected path. At the rational bridge boundary recollocate material and all six actual contacts until the original cell end. No pressure impulse at birth, velocity reset or use of the reference as target.",
+  "settings": {
+    "degree": 4,
+    "sweeps": 3,
+    "ramp_impulse_bits": 112,
+    "ramp_map_bits": 48,
+    "incident_slope_bits": 32,
+    "bridge_grid": 4096,
+    "root_depth": 32,
+    "leaves_per_smooth_chart": 64
+  },
+  "limits": {
+    "owner_calls_per_original_h": 512,
+    "proof_cells": 4096,
+    "depth": 32,
+    "checkpoint_bytes": 1024,
+    "checkpoint_bits": 512,
+    "relative_positive_law": 0.01,
+    "each_law_impulse_ns": 1e-10,
+    "each_B_over_min_mass_m": 1e-10,
+    "position_m": 1e-8,
+    "velocity_m_s": 0.000002,
+    "positive_energy_j": 1e-8,
+    "angular_nms": 1e-8,
+    "linear_ns": 1e-10
+  },
+  "gate": "Check actual hard gap, finite patch, both complete oriented faces, exact inactive zeros on their branch, all original material and mapped forces, total J/B about original cell end (including time shift), full-state CP01, original zero external energy and dissipation, paired angular and total linear momentum. Check original forbidden sample is outside with zero load on the new path. Fresh-process public HOST commit only after these checks. Early fake pressure, lost inlet, shifted root, omitted owner, forged bridge moment, reused old endpoint must fail without an accepted state. Retain first failures. Stop on a physical budget failure, never tune h, material, fixture or gates. This is one local replacement, not the unexecuted rest of the window.",
+  "research": "https://computing.llnl.gov/projects/sundials/usage-notes"
+}

@@ -1,0 +1,1162 @@
+{
+  "schema": "p65-n2-gravity-six-owner-result-v1",
+  "raw_directory": "artifacts/p65-n2-gravity-six-owner-20261101-01",
+  "protocol_sha256_lf": "def848e6494eab9148ac924fc410bea400f9468a7446b1b697776a851beaa690",
+  "controls_sha256": "f9d7cbddc6ffeb8d8d60a365b7fd7b93ae3bc1d2507b057101332b4c6e0ff509",
+  "controls": [
+    {
+      "case": "forward",
+      "prescribed": true,
+      "center_pass": true,
+      "mean_gap_m": 1.2791535728445724e-05,
+      "expected_mean_gap_m": 1.2791535728445728e-05,
+      "mean_error_m": 2.9825980130898037e-21,
+      "platform_q_m": -1.4025162395472861e-05,
+      "platform_v_m_s": -0.0014136879324507614,
+      "j_ns": 0.0028273758649015233,
+      "b_ns2": 2.8050324790945726e-05,
+      "actual_gap_rate_reference": "terminal public offset point velocity minus platform velocity",
+      "independent_hard_chord": true,
+      "hard": [
+        {
+          "surface": "U",
+          "status": "unresolved",
+          "reason": "depth budget exhausted",
+          "witness_t": null,
+          "endpoint_sat_gap_m": [
+            7.650142543401246e-06,
+            7.650142543401246e-06
+          ],
+          "tilt_gap_bound_m": 9.094816239616736e-13,
+          "tilt_rate_bound_m_s": 1.164136478676081e-10
+        },
+        {
+          "surface": "D",
+          "status": "unresolved",
+          "reason": "depth budget exhausted",
+          "witness_t": null,
+          "endpoint_sat_gap_m": [
+            7.650142543401246e-06,
+            7.650142543401246e-06
+          ],
+          "tilt_gap_bound_m": 9.094816239616737e-13,
+          "tilt_rate_bound_m_s": 1.1641364786760812e-10
+        }
+      ],
+      "chord_certificate": {
+        "start_gap_m": 0,
+        "min_z_minus_q_displacement_m": 7.650141633919622e-06,
+        "exact_min_z_minus_q": "9031693110306911/1180591620717411303424",
+        "projected_area_bernstein": [
+          [
+            "1",
+            "21778071482892350308485291064200013828301/21778071482940061661655974875633165533184",
+            "60708402881788033783699053130659829789217233009068192596759616599506503532069226823/60708402882054033466233184588234965832575213720379360039119137804340758912662765568"
+          ],
+          [
+            "1",
+            "21778071482892350082032844880560023949517/21778071482940061661655974875633165533184",
+            "3794275180111752032574029853083054379756214905602980987858169634806596387233744269/3794275180128377091639574036764685364535950857523710002444946112771297432041422848"
+          ]
+        ],
+        "finite_patch_coordinate_margin_m": 0.984375,
+        "status": "certified_for_reported_affine_middle_path",
+        "proof": "For either lift the gap over the patch plane is t*(z_i(1)-q(1)) + rho*(1 +/- n_z(t)). Positive projected-area Bernstein coefficients define a unit normal for the full segment. Each prism is a convex hull of the lifted vertices. The closed-path minimum is zero at entry."
+      },
+      "owners": [
+        {
+          "face": "U",
+          "corner": 0,
+          "node": 0,
+          "port_gap_m": 1.8399270695154332e-05,
+          "port_gap_rate_m_s": 0.0014051722419381905,
+          "source_start_n": 0.16666666666666666,
+          "source_end_n": 0.02082414547021004,
+          "required_at_inlet_n": 0.16666666666666666,
+          "required_at_published_end_n": 0.0,
+          "gap_m": [
+            1.8399269785673637e-05,
+            1.8399270695155267e-05
+          ],
+          "chord_rate_m_s": [
+            0.001177553149869465,
+            0.001177553382696761
+          ],
+          "delivered_j_ns": 0.0004712293108169205,
+          "delivered_b_ns2": 4.675054131824288e-06,
+          "required_law_j_ns": [
+            -5e-324,
+            5e-324
+          ],
+          "required_law_b_ns2": [
+            -5e-324,
+            5e-324
+          ],
+          "law_j_error_lower_ns": 0.0004712293108169205,
+          "law_b_error_lower_ns2": 4.675054131824288e-06,
+          "storage_j": [
+            0.00016361422709922882,
+            0.00016361422724941468
+          ],
+          "dissipation_j": [
+            3.0524391140914817e-06,
+            3.052439719018082e-06
+          ]
+        },
+        {
+          "face": "U",
+          "corner": 1,
+          "node": 1,
+          "port_gap_m": 1.746659076975153e-05,
+          "port_gap_rate_m_s": 0.001345480319833988,
+          "source_start_n": 0.16666666666666666,
+          "source_end_n": 0.02082414547021004,
+          "required_at_inlet_n": 0.16666666666666666,
+          "required_at_published_end_n": 0.0,
+          "gap_m": [
+            1.746658986027001e-05,
+            1.746659076975164e-05
+          ],
+          "chord_rate_m_s": [
+            0.0011178616346436327,
+            0.0011178618674709288
+          ],
+          "delivered_j_ns": 0.0004712293108169205,
+          "delivered_b_ns2": 4.675054131824288e-06,
+          "required_law_j_ns": [
+            -5e-324,
+            5e-324
+          ],
+          "required_law_b_ns2": [
+            -5e-324,
+            5e-324
+          ],
+          "law_j_error_lower_ns": 0.0004712293108169205,
+          "law_b_error_lower_ns2": 4.675054131824288e-06,
+          "storage_j": [
+            0.00016376827994642128,
+            0.00016376828009667782
+          ],
+          "dissipation_j": [
+            2.89838626682834e-06,
+            2.8983868718256284e-06
+          ]
+        },
+        {
+          "face": "U",
+          "corner": 2,
+          "node": 2,
+          "port_gap_m": 7.6501425434021e-06,
+          "port_gap_rate_m_s": 0.00037317579731494096,
+          "source_start_n": 0.16666666666666666,
+          "source_end_n": 0.02082414547021004,
+          "required_at_inlet_n": 0.16666666666666666,
+          "required_at_published_end_n": 0.10407109257249358,
+          "gap_m": [
+            7.65014163391962e-06,
+            7.650142543401248e-06
+          ],
+          "chord_rate_m_s": [
+            0.0004896089481572078,
+            0.0004896091809845038
+          ],
+          "delivered_j_ns": 0.0004712293108169205,
+          "delivered_b_ns2": 4.675054131824288e-06,
+          "required_law_j_ns": [
+            0.0013266007246611213,
+            0.0013266013304270093
+          ],
+          "required_law_b_ns2": [
+            1.0370688037944483e-05,
+            1.0370692773510303e-05
+          ],
+          "law_j_error_lower_ns": 0.0008553714138442009,
+          "law_b_error_lower_ns2": 5.6956339061201975e-06,
+          "storage_j": [
+            0.00016539408143780536,
+            0.00016539408158880588
+          ],
+          "dissipation_j": [
+            6.230688929818763e-07,
+            6.230694858508387e-07
+          ]
+        },
+        {
+          "face": "D",
+          "corner": 0,
+          "node": 1,
+          "port_gap_m": 1.746659076975153e-05,
+          "port_gap_rate_m_s": 0.001345480319833988,
+          "source_start_n": 0.16666666666666666,
+          "source_end_n": 0.02082414547021004,
+          "required_at_inlet_n": 0.16666666666666666,
+          "required_at_published_end_n": 0.0,
+          "gap_m": [
+            1.746658986027001e-05,
+            1.746659076975164e-05
+          ],
+          "chord_rate_m_s": [
+            0.0011178616346436327,
+            0.0011178618674709288
+          ],
+          "delivered_j_ns": 0.0004712293108169205,
+          "delivered_b_ns2": 4.675054131824288e-06,
+          "required_law_j_ns": [
+            -5e-324,
+            5e-324
+          ],
+          "required_law_b_ns2": [
+            -5e-324,
+            5e-324
+          ],
+          "law_j_error_lower_ns": 0.0004712293108169205,
+          "law_b_error_lower_ns2": 4.675054131824288e-06,
+          "storage_j": [
+            0.00016376827994642128,
+            0.00016376828009667782
+          ],
+          "dissipation_j": [
+            2.89838626682834e-06,
+            2.8983868718256284e-06
+          ]
+        },
+        {
+          "face": "D",
+          "corner": 1,
+          "node": 0,
+          "port_gap_m": 1.8399270695154332e-05,
+          "port_gap_rate_m_s": 0.0014051722419381905,
+          "source_start_n": 0.16666666666666666,
+          "source_end_n": 0.02082414547021004,
+          "required_at_inlet_n": 0.16666666666666666,
+          "required_at_published_end_n": 0.0,
+          "gap_m": [
+            1.8399269785673637e-05,
+            1.8399270695155267e-05
+          ],
+          "chord_rate_m_s": [
+            0.001177553149869465,
+            0.001177553382696761
+          ],
+          "delivered_j_ns": 0.0004712293108169205,
+          "delivered_b_ns2": 4.675054131824288e-06,
+          "required_law_j_ns": [
+            -5e-324,
+            5e-324
+          ],
+          "required_law_b_ns2": [
+            -5e-324,
+            5e-324
+          ],
+          "law_j_error_lower_ns": 0.0004712293108169205,
+          "law_b_error_lower_ns2": 4.675054131824288e-06,
+          "storage_j": [
+            0.00016361422709922882,
+            0.00016361422724941468
+          ],
+          "dissipation_j": [
+            3.0524391140914817e-06,
+            3.052439719018082e-06
+          ]
+        },
+        {
+          "face": "D",
+          "corner": 2,
+          "node": 3,
+          "port_gap_m": 7.6501425434021e-06,
+          "port_gap_rate_m_s": 0.00037317579731494096,
+          "source_start_n": 0.16666666666666666,
+          "source_end_n": 0.02082414547021004,
+          "required_at_inlet_n": 0.16666666666666666,
+          "required_at_published_end_n": 0.10407109257249358,
+          "gap_m": [
+            7.65014163391962e-06,
+            7.650142543401248e-06
+          ],
+          "chord_rate_m_s": [
+            0.0004896089481572078,
+            0.0004896091809845038
+          ],
+          "delivered_j_ns": 0.0004712293108169205,
+          "delivered_b_ns2": 4.675054131824288e-06,
+          "required_law_j_ns": [
+            0.0013266007246611213,
+            0.0013266013304270093
+          ],
+          "required_law_b_ns2": [
+            1.0370688037944483e-05,
+            1.0370692773510303e-05
+          ],
+          "law_j_error_lower_ns": 0.0008553714138442009,
+          "law_b_error_lower_ns2": 5.6956339061201975e-06,
+          "storage_j": [
+            0.00016539408143780536,
+            0.00016539408158880588
+          ],
+          "dissipation_j": [
+            6.230688929818763e-07,
+            6.230694858508387e-07
+          ]
+        }
+      ],
+      "max_law_j_error_lower_ns": 0.0008553714138442009,
+      "own_gravity_impulse_z_ns": -0.0009765625,
+      "own_gravity_time_moment_z_ns2": -7.62939453125e-06,
+      "original_non_gravity_work_j": 0.0,
+      "original_gravity_work_j": 3.0840666675678436e-07,
+      "local_effective_work_j": -9.903446204032861e-08,
+      "initial_layer_storage_j": 0.001,
+      "affine_path_energy": {
+        "final_layer_storage_j": [
+          0.0009855531769669109,
+          0.0009855531778697967
+        ],
+        "layer_dissipation_j": [
+          1.3147788547803397e-05,
+          1.3147792153389098e-05
+        ],
+        "prescribed_chord_work_j": [
+          2.624769628309991e-06,
+          2.6247702866002684e-06
+        ],
+        "remaining_joint_defect_j": [
+          9.128232533781923e-07,
+          9.12827761849347e-07
+        ],
+        "positive_energy_upper_within_budget": false
+      },
+      "paired_angular_l1_nms": 5.421011007515066e-20,
+      "physical_successor": false,
+      "measured_guide_reaction": false,
+      "change_in_mean_vs_saved_m": 1.5258789062499998e-05
+    },
+    {
+      "case": "reverse",
+      "prescribed": true,
+      "center_pass": true,
+      "mean_gap_m": 8.686340356405696e-07,
+      "expected_mean_gap_m": 8.686340356405714e-07,
+      "mean_error_m": 1.8175376990003162e-21,
+      "platform_q_m": -8.063711549070286e-06,
+      "platform_v_m_s": -0.0014136879324507614,
+      "j_ns": 0.0028273758649015233,
+      "b_ns2": 1.612742309814057e-05,
+      "actual_gap_rate_reference": "terminal public offset point velocity minus platform velocity",
+      "independent_hard_chord": false,
+      "hard": [
+        {
+          "surface": "U",
+          "status": "violation",
+          "reason": "complete SAT penetration witness",
+          "witness_t": "1/2",
+          "endpoint_sat_gap_m": [
+            -2.289479225603232e-06,
+            -2.289479225603232e-06
+          ],
+          "tilt_gap_bound_m": 3.667196606385491e-13,
+          "tilt_rate_bound_m_s": 4.6940116561855514e-11,
+          "witness_vertex_gap_m": [
+            -1.1447397961614464e-06,
+            -1.144739704481531e-06
+          ]
+        },
+        {
+          "surface": "D",
+          "status": "violation",
+          "reason": "complete SAT penetration witness",
+          "witness_t": "1/2",
+          "endpoint_sat_gap_m": [
+            -2.289479225603232e-06,
+            -2.289479225603232e-06
+          ],
+          "tilt_gap_bound_m": 3.667196606385492e-13,
+          "tilt_rate_bound_m_s": 4.6940116561855527e-11,
+          "witness_vertex_gap_m": [
+            -1.1447397961614464e-06,
+            -1.144739704481531e-06
+          ]
+        }
+      ],
+      "chord_certificate": null,
+      "owners": [
+        {
+          "face": "U",
+          "corner": 0,
+          "node": 0,
+          "port_gap_m": 4.496957808597726e-06,
+          "port_gap_rate_m_s": 0.001405667571213219,
+          "source_start_n": 0.02082414547021004,
+          "source_end_n": 0.16666666666666666,
+          "required_at_inlet_n": 0.16666666666666666,
+          "required_at_published_end_n": 0.0
+        },
+        {
+          "face": "U",
+          "corner": 1,
+          "node": 1,
+          "port_gap_m": 3.5565382520506145e-06,
+          "port_gap_rate_m_s": 0.001345480233354406,
+          "source_start_n": 0.02082414547021004,
+          "source_end_n": 0.16666666666666666,
+          "required_at_inlet_n": 0.16666666666666666,
+          "required_at_published_end_n": 0.0
+        },
+        {
+          "face": "U",
+          "corner": 2,
+          "node": 2,
+          "port_gap_m": -2.2894792256061836e-06,
+          "port_gap_rate_m_s": 0.00037292804830745484,
+          "source_start_n": 0.02082414547021004,
+          "source_end_n": 0.16666666666666666,
+          "required_at_inlet_n": 0.16666666666666666,
+          "required_at_published_end_n": null
+        },
+        {
+          "face": "D",
+          "corner": 0,
+          "node": 1,
+          "port_gap_m": 3.556538252047145e-06,
+          "port_gap_rate_m_s": 0.001345480233354406,
+          "source_start_n": 0.02082414547021004,
+          "source_end_n": 0.16666666666666666,
+          "required_at_inlet_n": 0.16666666666666666,
+          "required_at_published_end_n": 0.0
+        },
+        {
+          "face": "D",
+          "corner": 1,
+          "node": 0,
+          "port_gap_m": 4.496957808594257e-06,
+          "port_gap_rate_m_s": 0.001405667571213219,
+          "source_start_n": 0.02082414547021004,
+          "source_end_n": 0.16666666666666666,
+          "required_at_inlet_n": 0.16666666666666666,
+          "required_at_published_end_n": 0.0
+        },
+        {
+          "face": "D",
+          "corner": 2,
+          "node": 3,
+          "port_gap_m": -2.2894792256061836e-06,
+          "port_gap_rate_m_s": 0.00037292804830745484,
+          "source_start_n": 0.02082414547021004,
+          "source_end_n": 0.16666666666666666,
+          "required_at_inlet_n": 0.16666666666666666,
+          "required_at_published_end_n": null
+        }
+      ],
+      "max_law_j_error_lower_ns": null,
+      "own_gravity_impulse_z_ns": -0.0009765625,
+      "own_gravity_time_moment_z_ns2": -7.62939453125e-06,
+      "original_non_gravity_work_j": 0.0,
+      "original_gravity_work_j": 1.798769378357429e-06,
+      "local_effective_work_j": -1.3051371022655359e-06,
+      "initial_layer_storage_j": 0.001,
+      "affine_path_energy": null,
+      "paired_angular_l1_nms": 5.421010890461667e-20,
+      "physical_successor": false,
+      "measured_guide_reaction": false,
+      "change_in_mean_vs_saved_m": 1.52587890625e-05
+    },
+    {
+      "case": "shifted",
+      "prescribed": true,
+      "center_pass": true,
+      "mean_gap_m": 1.2791535728445724e-05,
+      "expected_mean_gap_m": 1.2791535728445728e-05,
+      "mean_error_m": 2.7708397762762286e-21,
+      "platform_q_m": -1.4025162395472861e-05,
+      "platform_v_m_s": -0.0014136879324507614,
+      "j_ns": 0.0028273758649015233,
+      "b_ns2": 2.8050324790945726e-05,
+      "actual_gap_rate_reference": "terminal public offset point velocity minus platform velocity",
+      "independent_hard_chord": true,
+      "hard": [
+        {
+          "surface": "U",
+          "status": "unresolved",
+          "reason": "depth budget exhausted",
+          "witness_t": null,
+          "endpoint_sat_gap_m": [
+            7.645590329602923e-06,
+            7.645590329602923e-06
+          ],
+          "tilt_gap_bound_m": 8.418779327846003e-13,
+          "tilt_rate_bound_m_s": 1.0776037539829116e-10
+        },
+        {
+          "surface": "D",
+          "status": "unresolved",
+          "reason": "depth budget exhausted",
+          "witness_t": null,
+          "endpoint_sat_gap_m": [
+            7.645590329602923e-06,
+            7.645590329602923e-06
+          ],
+          "tilt_gap_bound_m": 8.418779327846002e-13,
+          "tilt_rate_bound_m_s": 1.0776037539829116e-10
+        }
+      ],
+      "chord_certificate": {
+        "start_gap_m": 0,
+        "min_z_minus_q_displacement_m": 7.64558948772499e-06,
+        "exact_min_z_minus_q": "141036232572707/18446744073709551616",
+        "projected_area_bernstein": [
+          [
+            "1",
+            "2535301200464769973401536885727/2535301200456458802993406410752",
+            "3450873173417907051624206397982814218345970102840291689948747280482371/3450873173395281893717377931138512726225554486085193277581262111899648"
+          ],
+          [
+            "1",
+            "2535301200464769966810903284769/2535301200456458802993406410752",
+            "3450873173417907033682795188120942055243049763324429755013179609644989/3450873173395281893717377931138512726225554486085193277581262111899648"
+          ]
+        ],
+        "finite_patch_coordinate_margin_m": 0.984375,
+        "status": "certified_for_reported_affine_middle_path",
+        "proof": "For either lift the gap over the patch plane is t*(z_i(1)-q(1)) + rho*(1 +/- n_z(t)). Positive projected-area Bernstein coefficients define a unit normal for the full segment. Each prism is a convex hull of the lifted vertices. The closed-path minimum is zero at entry."
+      },
+      "owners": [
+        {
+          "face": "U",
+          "corner": 0,
+          "node": 0,
+          "port_gap_m": 1.3733320788158337e-05,
+          "port_gap_rate_m_s": 0.0009345251493177181,
+          "source_start_n": 0.08333333333333333,
+          "source_end_n": 0.01041207273510502,
+          "required_at_inlet_n": 0.16666666666666666,
+          "required_at_published_end_n": 0.010837542853048934,
+          "gap_m": [
+            1.3733319946280004e-05,
+            1.3733320788157941e-05
+          ],
+          "chord_rate_m_s": [
+            0.0008789323688015449,
+            0.000878932584322296
+          ],
+          "delivered_j_ns": 0.00023561465540846026,
+          "delivered_b_ns2": 2.337527065912144e-06,
+          "required_law_j_ns": [
+            0.0003141972688492171,
+            0.0003141978283069228
+          ],
+          "required_law_b_ns2": [
+            2.4574850674298835e-06,
+            2.457489443211342e-06
+          ],
+          "law_j_error_lower_ns": 7.858261344075689e-05,
+          "law_b_error_lower_ns2": 1.1995800151773997e-07,
+          "storage_j": [
+            0.00016438563837280158,
+            0.00016438563851215116
+          ],
+          "dissipation_j": [
+            2.004869232500111e-06,
+            2.004870216564748e-06
+          ]
+        },
+        {
+          "face": "U",
+          "corner": 1,
+          "node": 1,
+          "port_gap_m": 2.2141644833929136e-05,
+          "port_gap_rate_m_s": 0.0018167099270671042,
+          "source_start_n": 0.25,
+          "source_end_n": 0.031236218205315063,
+          "required_at_inlet_n": 0.16666666666666666,
+          "required_at_published_end_n": 0.0,
+          "gap_m": [
+            2.214164399205291e-05,
+            2.2141644833930847e-05
+          ],
+          "chord_rate_m_s": [
+            0.0014170651077310106,
+            0.0014170653232517619
+          ],
+          "delivered_j_ns": 0.0007068439662253808,
+          "delivered_b_ns2": 7.0125811977364315e-06,
+          "required_law_j_ns": [
+            -5e-324,
+            5e-324
+          ],
+          "required_law_b_ns2": [
+            -5e-324,
+            5e-324
+          ],
+          "law_j_error_lower_ns": 0.0007068439662253808,
+          "law_b_error_lower_ns2": 7.0125811977364315e-06,
+          "storage_j": [
+            0.0001629968197125095,
+            0.00016299681985126917
+          ],
+          "dissipation_j": [
+            3.6698465347715564e-06,
+            3.6698470944701325e-06
+          ]
+        },
+        {
+          "face": "U",
+          "corner": 2,
+          "node": 2,
+          "port_gap_m": 7.645590329601742e-06,
+          "port_gap_rate_m_s": 0.0003728845302610154,
+          "source_start_n": 0.16666666666666666,
+          "source_end_n": 0.02082414547021004,
+          "required_at_inlet_n": 0.16666666666666666,
+          "required_at_published_end_n": 0.10411968929224909,
+          "gap_m": [
+            7.645589487724988e-06,
+            7.645590329602925e-06
+          ],
+          "chord_rate_m_s": [
+            0.0004893176194540238,
+            0.0004893178349747748
+          ],
+          "delivered_j_ns": 0.0004712293108169205,
+          "delivered_b_ns2": 4.675054131824288e-06,
+          "required_law_j_ns": [
+            0.0013273595006826505,
+            0.001327360061421638
+          ],
+          "required_law_b_ns2": [
+            1.0376615813086851e-05,
+            1.0376620196653877e-05
+          ],
+          "law_j_error_lower_ns": 0.0008561301898657302,
+          "law_b_error_lower_ns2": 5.701561681262565e-06,
+          "storage_j": [
+            0.00016539483723887816,
+            0.0001653948373786548
+          ],
+          "dissipation_j": [
+            6.223283422466445e-07,
+            6.223288907203147e-07
+          ]
+        },
+        {
+          "face": "D",
+          "corner": 0,
+          "node": 1,
+          "port_gap_m": 2.2141644833929136e-05,
+          "port_gap_rate_m_s": 0.0018167099270671042,
+          "source_start_n": 0.16666666666666666,
+          "source_end_n": 0.02082414547021004,
+          "required_at_inlet_n": 0.16666666666666666,
+          "required_at_published_end_n": 0.0,
+          "gap_m": [
+            2.214164399205291e-05,
+            2.2141644833930847e-05
+          ],
+          "chord_rate_m_s": [
+            0.0014170651077310106,
+            0.0014170653232517619
+          ],
+          "delivered_j_ns": 0.0004712293108169205,
+          "delivered_b_ns2": 4.675054131824288e-06,
+          "required_law_j_ns": [
+            -5e-324,
+            5e-324
+          ],
+          "required_law_b_ns2": [
+            -5e-324,
+            5e-324
+          ],
+          "law_j_error_lower_ns": 0.0004712293108169205,
+          "law_b_error_lower_ns2": 4.675054131824288e-06,
+          "storage_j": [
+            0.0001629968197125095,
+            0.00016299681985126917
+          ],
+          "dissipation_j": [
+            3.6698465347715564e-06,
+            3.6698470944701325e-06
+          ]
+        },
+        {
+          "face": "D",
+          "corner": 1,
+          "node": 0,
+          "port_gap_m": 1.3733320788158337e-05,
+          "port_gap_rate_m_s": 0.0009345251493177181,
+          "source_start_n": 0.16666666666666666,
+          "source_end_n": 0.02082414547021004,
+          "required_at_inlet_n": 0.16666666666666666,
+          "required_at_published_end_n": 0.010837542853048934,
+          "gap_m": [
+            1.3733319946280004e-05,
+            1.3733320788157941e-05
+          ],
+          "chord_rate_m_s": [
+            0.0008789323688015449,
+            0.000878932584322296
+          ],
+          "delivered_j_ns": 0.0004712293108169205,
+          "delivered_b_ns2": 4.675054131824288e-06,
+          "required_law_j_ns": [
+            0.0003141972688492171,
+            0.0003141978283069228
+          ],
+          "required_law_b_ns2": [
+            2.4574850674298835e-06,
+            2.457489443211342e-06
+          ],
+          "law_j_error_lower_ns": 0.0001570314825099978,
+          "law_b_error_lower_ns2": 2.217564688612946e-06,
+          "storage_j": [
+            0.00016438563837280158,
+            0.00016438563851215116
+          ],
+          "dissipation_j": [
+            2.004869232500111e-06,
+            2.004870216564748e-06
+          ]
+        },
+        {
+          "face": "D",
+          "corner": 2,
+          "node": 3,
+          "port_gap_m": 7.645590329601742e-06,
+          "port_gap_rate_m_s": 0.0003728845302610154,
+          "source_start_n": 0.16666666666666666,
+          "source_end_n": 0.02082414547021004,
+          "required_at_inlet_n": 0.16666666666666666,
+          "required_at_published_end_n": 0.10411968929224909,
+          "gap_m": [
+            7.645589487724988e-06,
+            7.645590329602925e-06
+          ],
+          "chord_rate_m_s": [
+            0.0004893176194540238,
+            0.0004893178349747748
+          ],
+          "delivered_j_ns": 0.0004712293108169205,
+          "delivered_b_ns2": 4.675054131824288e-06,
+          "required_law_j_ns": [
+            0.0013273595006826505,
+            0.001327360061421638
+          ],
+          "required_law_b_ns2": [
+            1.0376615813086851e-05,
+            1.0376620196653877e-05
+          ],
+          "law_j_error_lower_ns": 0.0008561301898657302,
+          "law_b_error_lower_ns2": 5.701561681262565e-06,
+          "storage_j": [
+            0.00016539483723887816,
+            0.0001653948373786548
+          ],
+          "dissipation_j": [
+            6.223283422466445e-07,
+            6.223288907203147e-07
+          ]
+        }
+      ],
+      "max_law_j_error_lower_ns": 0.0008561301898657302,
+      "own_gravity_impulse_z_ns": -0.0009765625,
+      "own_gravity_time_moment_z_ns2": -7.62939453125e-06,
+      "original_non_gravity_work_j": 0.0,
+      "original_gravity_work_j": 3.084066667567843e-07,
+      "local_effective_work_j": -1.8354533840317493e-08,
+      "initial_layer_storage_j": 0.001,
+      "affine_path_energy": {
+        "final_layer_storage_j": [
+          0.0009855545906483783,
+          0.0009855545914841503
+        ],
+        "layer_dissipation_j": [
+          1.2594088219036624e-05,
+          1.2594092403510389e-05
+        ],
+        "prescribed_chord_work_j": [
+          2.7518361860263184e-06,
+          2.7518367953844884e-06
+        ],
+        "remaining_joint_defect_j": [
+          4.666117622947475e-07,
+          4.6661678253994317e-07
+        ],
+        "positive_energy_upper_within_budget": false
+      },
+      "paired_angular_l1_nms": 1.32443426885398e-15,
+      "physical_successor": false,
+      "measured_guide_reaction": false,
+      "change_in_mean_vs_saved_m": 1.5258789062499998e-05
+    }
+  ],
+  "coupled": {
+    "case": "coupled",
+    "prescribed": false,
+    "center_pass": true,
+    "mean_gap_m": 1.2473045534363417e-05,
+    "expected_mean_gap_m": 1.2473045534363415e-05,
+    "mean_error_m": 9.617353255283202e-22,
+    "platform_q_m": -1.3865917298431709e-05,
+    "platform_v_m_s": -0.0014050464692112012,
+    "j_ns": 0.002810092938422402,
+    "b_ns2": 2.7731834596863417e-05,
+    "actual_gap_rate_reference": "terminal public offset point velocity minus platform velocity",
+    "independent_hard_chord": true,
+    "hard": [
+      {
+        "surface": "U",
+        "status": "unresolved",
+        "reason": "depth budget exhausted",
+        "witness_t": null,
+        "endpoint_sat_gap_m": [
+          1.122909908485737e-05,
+          1.122909908485737e-05
+        ],
+        "tilt_gap_bound_m": 6.215191986379471e-14,
+        "tilt_rate_bound_m_s": 7.955445742570015e-12
+      },
+      {
+        "surface": "D",
+        "status": "unresolved",
+        "reason": "depth budget exhausted",
+        "witness_t": null,
+        "endpoint_sat_gap_m": [
+          1.122909908485737e-05,
+          1.122909908485737e-05
+        ],
+        "tilt_gap_bound_m": 6.215191986379471e-14,
+        "tilt_rate_bound_m_s": 7.955445742570015e-12
+      }
+    ],
+    "chord_certificate": {
+      "start_gap_m": 0,
+      "min_z_minus_q_displacement_m": 1.122909902270545e-05,
+      "exact_min_z_minus_q": "6628490107206063/590295810358705651712",
+      "projected_area_bernstein": [
+        [
+          "1",
+          "83076749736546264729975358943681739/83076749736557242056487941267521536",
+          "441711766194479351438069098861125206257803046261575201157914262469890733/441711766194596082395824375185729628956870974218904739530401550323154944"
+        ],
+        [
+          "1",
+          "83076749736546264711978535465493301/83076749736557242056487941267521536",
+          "441711766194479351246694046041902201845126784305248944318572781826452819/441711766194596082395824375185729628956870974218904739530401550323154944"
+        ]
+      ],
+      "finite_patch_coordinate_margin_m": 0.984375,
+      "status": "certified_for_reported_affine_middle_path",
+      "proof": "For either lift the gap over the patch plane is t*(z_i(1)-q(1)) + rho*(1 +/- n_z(t)). Positive projected-area Bernstein coefficients define a unit normal for the full segment. Each prism is a convex hull of the lifted vertices. The closed-path minimum is zero at entry."
+    },
+    "owners": [
+      {
+        "face": "U",
+        "corner": 0,
+        "node": 0,
+        "port_gap_m": 1.3994494968411555e-05,
+        "port_gap_rate_m_s": 0.0009114278140978368,
+        "source_start_n": 0.16666666666666666,
+        "source_end_n": 0.014628380468305927,
+        "required_at_inlet_n": 0.16666666666666666,
+        "required_at_published_end_n": 0.014658737399531446,
+        "gap_m": [
+          1.3994494906261936e-05,
+          1.399449496841386e-05
+        ],
+        "chord_rate_m_s": [
+          0.0008956476660453181,
+          0.0008956476819562099
+        ],
+        "delivered_j_ns": 0.0003497041877670788,
+        "delivered_b_ns2": 3.609773379440082e-06,
+        "required_law_j_ns": [
+          0.00027080007433520116,
+          0.00027080011563329533
+        ],
+        "required_law_b_ns2": [
+          2.1181015023463397e-06,
+          2.118101825365211e-06
+        ],
+        "law_j_error_lower_ns": 7.89040721337835e-05,
+        "law_b_error_lower_ns2": 1.4916715540748716e-06,
+        "storage_j": [
+          0.0001643424110839902,
+          0.00016434241109427642
+        ],
+        "dissipation_j": [
+          2.0817140601487586e-06,
+          2.081714134175634e-06
+        ]
+      },
+      {
+        "face": "U",
+        "corner": 1,
+        "node": 1,
+        "port_gap_m": 1.3439489247929134e-05,
+        "port_gap_rate_m_s": 0.0009057636095872221,
+        "source_start_n": 0.16666666666666666,
+        "source_end_n": 0.015600521944446338,
+        "required_at_inlet_n": 0.16666666666666666,
+        "required_at_published_end_n": 0.015600524322486629,
+        "gap_m": [
+          1.3439489185780828e-05,
+          1.3439489247932751e-05
+        ],
+        "chord_rate_m_s": [
+          0.0008601272999345273,
+          0.000860127315845419
+        ],
+        "delivered_j_ns": 0.00036346053842458933,
+        "delivered_b_ns2": 3.7080902374624056e-06,
+        "required_law_j_ns": [
+          0.00036302794217113026,
+          0.0003630279834778481
+        ],
+        "required_law_b_ns2": [
+          2.839342880165354e-06,
+          2.839343203236626e-06
+        ],
+        "law_j_error_lower_ns": 4.3255494674132073e-07,
+        "law_b_error_lower_ns2": 8.687470342257798e-07,
+        "storage_j": [
+          0.00016443427761997974,
+          0.00016443427763026882
+        ],
+        "dissipation_j": [
+          1.92013873646081e-06,
+          1.9201388075592814e-06
+        ]
+      },
+      {
+        "face": "U",
+        "corner": 2,
+        "node": 2,
+        "port_gap_m": 1.1229099084854657e-05,
+        "port_gap_rate_m_s": 0.0008053401742684624,
+        "source_start_n": 0.16666666666666666,
+        "source_end_n": 0.0322742600310478,
+        "required_at_inlet_n": 0.16666666666666666,
+        "required_at_published_end_n": 0.03226114974934127,
+        "gap_m": [
+          1.1229099022705448e-05,
+          1.1229099084857371e-05
+        ],
+        "chord_rate_m_s": [
+          0.0007186623294977029,
+          0.0007186623454085946
+        ],
+        "delivered_j_ns": 0.0006918817430195329,
+        "delivered_b_ns2": 6.54805368152922e-06,
+        "required_law_j_ns": [
+          0.0007305933918935077,
+          0.0007305934332345706
+        ],
+        "required_law_b_ns2": [
+          5.713116994607724e-06,
+          5.71311731788769e-06
+        ],
+        "law_j_error_lower_ns": 3.871164887397487e-05,
+        "law_b_error_lower_ns2": 8.349363636415308e-07,
+        "storage_j": [
+          0.0001648004040136178,
+          0.00016480040402391835
+        ],
+        "dissipation_j": [
+          1.341212643403311e-06,
+          1.341212702832913e-06
+        ]
+      },
+      {
+        "face": "D",
+        "corner": 0,
+        "node": 1,
+        "port_gap_m": 1.3439489247929134e-05,
+        "port_gap_rate_m_s": 0.0009057636095872221,
+        "source_start_n": 0.16666666666666666,
+        "source_end_n": 0.015600521944446338,
+        "required_at_inlet_n": 0.16666666666666666,
+        "required_at_published_end_n": 0.015600524322486629,
+        "gap_m": [
+          1.3439489185780828e-05,
+          1.3439489247932751e-05
+        ],
+        "chord_rate_m_s": [
+          0.0008601272999345273,
+          0.000860127315845419
+        ],
+        "delivered_j_ns": 0.00036346053842458933,
+        "delivered_b_ns2": 3.7080902374624056e-06,
+        "required_law_j_ns": [
+          0.00036302794217113026,
+          0.0003630279834778481
+        ],
+        "required_law_b_ns2": [
+          2.839342880165354e-06,
+          2.839343203236626e-06
+        ],
+        "law_j_error_lower_ns": 4.3255494674132073e-07,
+        "law_b_error_lower_ns2": 8.687470342257798e-07,
+        "storage_j": [
+          0.00016443427761997974,
+          0.00016443427763026882
+        ],
+        "dissipation_j": [
+          1.92013873646081e-06,
+          1.9201388075592814e-06
+        ]
+      },
+      {
+        "face": "D",
+        "corner": 1,
+        "node": 0,
+        "port_gap_m": 1.3994494968411555e-05,
+        "port_gap_rate_m_s": 0.0009114278140978368,
+        "source_start_n": 0.16666666666666666,
+        "source_end_n": 0.014628380468305927,
+        "required_at_inlet_n": 0.16666666666666666,
+        "required_at_published_end_n": 0.014658737399531446,
+        "gap_m": [
+          1.3994494906261936e-05,
+          1.399449496841386e-05
+        ],
+        "chord_rate_m_s": [
+          0.0008956476660453181,
+          0.0008956476819562099
+        ],
+        "delivered_j_ns": 0.0003497041877670788,
+        "delivered_b_ns2": 3.609773379440082e-06,
+        "required_law_j_ns": [
+          0.00027080007433520116,
+          0.00027080011563329533
+        ],
+        "required_law_b_ns2": [
+          2.1181015023463397e-06,
+          2.118101825365211e-06
+        ],
+        "law_j_error_lower_ns": 7.89040721337835e-05,
+        "law_b_error_lower_ns2": 1.4916715540748716e-06,
+        "storage_j": [
+          0.0001643424110839902,
+          0.00016434241109427642
+        ],
+        "dissipation_j": [
+          2.0817140601487586e-06,
+          2.081714134175634e-06
+        ]
+      },
+      {
+        "face": "D",
+        "corner": 2,
+        "node": 3,
+        "port_gap_m": 1.1229099084854657e-05,
+        "port_gap_rate_m_s": 0.0008053401742684624,
+        "source_start_n": 0.16666666666666666,
+        "source_end_n": 0.0322742600310478,
+        "required_at_inlet_n": 0.16666666666666666,
+        "required_at_published_end_n": 0.03226114974934127,
+        "gap_m": [
+          1.1229099022705448e-05,
+          1.1229099084857371e-05
+        ],
+        "chord_rate_m_s": [
+          0.0007186623294977029,
+          0.0007186623454085946
+        ],
+        "delivered_j_ns": 0.0006918817430195329,
+        "delivered_b_ns2": 6.54805368152922e-06,
+        "required_law_j_ns": [
+          0.0007305933918935077,
+          0.0007305934332345706
+        ],
+        "required_law_b_ns2": [
+          5.713116994607724e-06,
+          5.71311731788769e-06
+        ],
+        "law_j_error_lower_ns": 3.871164887397487e-05,
+        "law_b_error_lower_ns2": 8.349363636415308e-07,
+        "storage_j": [
+          0.0001648004040136178,
+          0.00016480040402391835
+        ],
+        "dissipation_j": [
+          1.341212643403311e-06,
+          1.341212702832913e-06
+        ]
+      }
+    ],
+    "max_law_j_error_lower_ns": 7.89040721337835e-05,
+    "own_gravity_impulse_z_ns": -0.0009765625,
+    "own_gravity_time_moment_z_ns2": -7.62939453125e-06,
+    "original_non_gravity_work_j": 0.0,
+    "original_gravity_work_j": 3.4821794101707293e-07,
+    "local_effective_work_j": -3.2470353471476356e-07,
+    "initial_layer_storage_j": 0.001,
+    "affine_path_energy": {
+      "final_layer_storage_j": [
+        0.0009871541854351755,
+        0.0009871541854969273
+      ],
+      "layer_dissipation_j": [
+        1.068613088002576e-05,
+        1.0686131289135656e-05
+      ],
+      "prescribed_chord_work_j": [
+        2.246126832606196e-06,
+        2.2461268773172803e-06
+      ],
+      "remaining_joint_defect_j": [
+        -2.3607240135593626e-07,
+        -2.3607193049461955e-07
+      ],
+      "positive_energy_upper_within_budget": true
+    },
+    "paired_angular_l1_nms": 1.615461237326519e-17,
+    "physical_successor": false,
+    "measured_guide_reaction": false,
+    "max_endpoint_gap_vs_proposal_m": 4.7220515799442883e-07,
+    "max_endpoint_rate_vs_proposal_m_s": 2.0443592981748537e-07
+  },
+  "coupled_reference": {
+    "force_evaluations": 486,
+    "stage_minimum_gap_m": 0.0,
+    "final_gaps_m": [
+      1.3522289810417127e-05,
+      1.3439489206903141e-05,
+      1.1465201626291498e-05,
+      1.3439489206903141e-05,
+      1.3522289810417127e-05,
+      1.1465201626291498e-05
+    ],
+    "final_rates_m_s": [
+      0.0009116322500276543,
+      0.0009057636239539376,
+      0.0008052379467086452,
+      0.0009057636239539376,
+      0.0009116322500276543,
+      0.0008052379467086452
+    ],
+    "final_forces_n": [
+      0.014628380468305927,
+      0.015600521944446338,
+      0.0322742600310478,
+      0.015600521944446338,
+      0.014628380468305927,
+      0.0322742600310478
+    ],
+    "force_moments": "six simultaneous nonlinear stage quadratures, no prescribed scalar curve"
+  },
+  "raw_sha256": {
+    "coupled-evidence.json.gz": "83a33bfa9f5eab1a5f03cb5994d4a3f1277a964f007f70cff0762537f7dfc805",
+    "coupled-final.json.gz": "205a0ed54d73ee517ea069de17b2ab80b091cb0a034c3a2eeeaad09b1eb8e04a",
+    "coupled-reference.json.gz": "f0669fd0bcea339a85f6424946bed29476f030acdd320e314b017748a970ed64",
+    "coupled-selected.json.gz": "7d9f4b5c2c5aa59bb7ff72bcefce4478dc010426230c6c0cfd40e9965aed77e6",
+    "forward-evidence.json.gz": "ccb004934ab131dbae12cf6fe3453f70f23b832762f5b61dac7bb033cf5790de",
+    "forward-final.json.gz": "09efa43ee66d292fcde68bf30d3aab20e12262ff67dc16ce583fb037d387305d",
+    "forward-selected.json.gz": "23873d9bd71b884081987c9f11a3193cf043edbd750c90799be23aeeeae3b5f2",
+    "reverse-evidence.json.gz": "51ab6ca1f33f8c4acb87ed5e3adf50669f07e3fd95c9f032b2a7b00899a25117",
+    "reverse-final.json.gz": "283471d6701edc70bc2dcaf6f79557a069585cb4aa2075b464cd55f31f5310d0",
+    "reverse-selected.json.gz": "73f9b0f6eff7b79d2ec5605182435e7f83c769b7090c3a3c7c3dded7fa8e58e0",
+    "shifted-evidence.json.gz": "621482b1b25c4bd12dcf363f4fed6234e0d6327a5add73ea5e82bf43aee57550",
+    "shifted-final.json.gz": "3e319b7c8f8ef6d0a0afc637a149a7126f14bbf25d27ca88588f57dac0c5de81",
+    "shifted-selected.json.gz": "e92178156a064123db114dcaa4f224ba3a768c227c37405be9203491819d853a"
+  },
+  "joint_accepted": false,
+  "successors_committed": 0
+}

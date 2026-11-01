@@ -555,10 +555,118 @@ def audit_source(root, base):
     )
 
 
+def attribute_moments(root, base):
+    # For classical RK4 position, each acceleration stage contributes its own
+    # backward time weight. Reconstruct both forces from the original stage records.
+    audited = read(root / "audited-result.json")
+    e = read(root / "coupled-evidence.json.gz")
+    ref = read(root / "coupled-reference.json.gz")
+    final = read(root / "coupled-final.json.gz")
+    pre = read(root / "coupled-selected.json.gz")
+    for path in (
+        "coupled-evidence.json.gz",
+        "coupled-reference.json.gz",
+        "coupled-final.json.gz",
+        "coupled-selected.json.gz",
+    ):
+        demand(file_sha(root / path) == audited["raw_sha256"][path], "unbound prior output")
+    h = Q(base["h_s"])
+    m = Q(base["cloth"]["m_kg"])
+    dt = h / ref["n_cells"]
+
+    def exact(a):
+        return np.vectorize(qr, otypes=[object])(a)
+
+    def values(a):
+        return np.array(a, dtype=float).tolist()
+
+    t_moment = {key: np.full((4, 3), Q(0), object) for key in ("contact_force", "material_force")}
+    for stage in ref["stages"]:
+        weight = dt * stage["weight"] * (h - Q(stage["time"])) / 6
+        for name in t_moment:
+            t_moment[name] += weight * exact(arr(stage[name]))
+    x0 = exact(arr(e["initial"]["domains"]["cloth"]["position"]))
+    v0 = exact(arr(e["initial"]["domains"]["cloth"]["velocity"]))
+    cd = final["result"]["report"]["substeps"][0]["diagnostics"]["participants"]["cloth"]
+    xref = exact(arr(ref["endpoint"]["state"])[:12].reshape(4, 3))
+    s = final["result"]["state"]["domains"]["cloth"]
+    x1 = exact(arr(s["position"]))
+    v1 = exact(arr(s["velocity"]))
+    xp = exact(arr(cd["material_path"]["predicted_position"]))
+    bc = h * exact(arr(e["start"]["node"]))
+    bm = m * (x1 - xp)
+    gb = h * h * m * exact(arr(e["model_gravity"])) / 2
+    ref_round = m * (xref - x0 - h * v0) - gb - sum(t_moment.values())
+    pub_round = m * (xp - x0 - h * v0) - gb - bc
+    contact = (bc - t_moment["contact_force"]) / m
+    material = (bm - t_moment["material_force"]) / m
+    remaining = (pub_round - ref_round) / m
+    demand(
+        np.array_equal(x1 - xref, contact + material + remaining), "per-node position decomposition"
+    )
+    demand(max(abs(x) for x in remaining.flat) < Q("1e-12"), "rounding dominates decomposition")
+
+    # Retain both the historical initial-position NUM005 convention and the constant-force
+    # angular work point on the physical chord. Neither is an independent guide wrench.
+    def cross_rows(a, b):
+        return np.stack(
+            (
+                a[:, 1] * b[:, 2] - a[:, 2] * b[:, 1],
+                a[:, 2] * b[:, 0] - a[:, 0] * b[:, 2],
+                a[:, 0] * b[:, 1] - a[:, 1] * b[:, 0],
+            ),
+            axis=1,
+        )
+
+    wrench = -(
+        cross_rows(exact(arr(e["start"]["robot_points"])), exact(arr(e["left_world"]))).sum(axis=0)
+        + cross_rows(exact(arr(e["end"]["robot_points"])), exact(arr(e["right_world"]))).sum(axis=0)
+    )
+    G = exact(arr(e["gravity_body"]))
+    ang = (cross_rows(x1, m * v1) - cross_rows(x0, m * v0)).sum(axis=0) + wrench
+    start_only = ang - cross_rows(x0, G).sum(axis=0)
+    chord = ang - cross_rows((x0 + x1) / 2, G).sum(axis=0)
+    demand(
+        max(sum(map(abs, start_only)), sum(map(abs, chord))) < Q("1e-8"),
+        "original or chord angular bound",
+    )
+    qbody = pre["result"]["state"]["domains"]["robot"]
+    q = qr(arr(qbody["q"])[0])
+    corners = np.array(base["cloth"]["faces"]).ravel()
+    rates = [(x1[k, 2] - q) / h for k in corners]
+    p0 = [AREA * K * WIDTH * max(0, 1 - DAMP * v) for v in rates]
+    return dict(
+        schema="p65-gravity-six-owner-moment-attribution-v1",
+        scope="one measured original-inlet HOST coupled force proposal; file-only attribution",
+        audited_source_sha256=file_sha(root / "audited-result.json"),
+        particle_mass_kg=float(m),
+        measured_xyz_gap_m=values(x1 - xref),
+        contact_map_component_m=values(contact),
+        material_projection_component_m=values(material),
+        rounding_component_m=values(remaining),
+        maximum_z_contact_component_m=max(abs(float(v)) for v in contact[:, 2]),
+        maximum_z_material_component_m=max(abs(float(v)) for v in material[:, 2]),
+        maximum_z_rounding_component_m=max(abs(float(v)) for v in remaining[:, 2]),
+        reference_contact_first_moments_ns2=values(t_moment["contact_force"]),
+        reference_material_first_moments_ns2=values(t_moment["material_force"]),
+        actual_held_contact_first_moments_ns2=values(bc),
+        actual_material_displacement_times_mass_kg_m=values(bm),
+        num005_initial_position_angular_l1_nms=float(sum(map(abs, start_only))),
+        split_gravity_angular_l1_nms=float(sum(map(abs, chord))),
+        actual_initial_gap_rate_m_s=[0.0] * 6,
+        affine_initial_gap_rates_m_s=values(rates),
+        actual_initial_forces_n=[float(AREA * K * WIDTH)] * 6,
+        affine_initial_law_forces_n=values(p0),
+        decision="Separate the material projection displacement and changing input map from RK force moments. The affine chord's right derivative also differs from the published velocity at entry.",
+    )
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, required=True)
-    parser.add_argument("--phase", choices=("audit-controls", "audit-coupled"), required=True)
+    parser.add_argument(
+        "--phase", choices=("audit-controls", "audit-coupled", "audit-moments"), required=True
+    )
     args = parser.parse_args()
     root = args.root
     spec = read(PLAN)
@@ -573,6 +681,18 @@ def main():
     base = read(fixture)
     prior = read(previous)
     reference = None
+    if args.phase == "audit-moments":
+        result = attribute_moments(root, base)
+        with (root / "moment-attribution.json").open("x", encoding="utf8", newline="\n") as file:
+            json.dump(result, file, indent=2, allow_nan=False)
+            file.write("\n")
+        print(
+            "Z discrepancy from contact, material and rounding:",
+            result["maximum_z_contact_component_m"],
+            result["maximum_z_material_component_m"],
+            result["maximum_z_rounding_component_m"],
+        )
+        return
     if args.phase == "audit-controls":
         rows = [extract(case, root, base, prior) for case in spec["cases"]]
         threshold = read(PLAN.with_name("p65-contact-layer-intrastep-protocol.json"))["gates"][

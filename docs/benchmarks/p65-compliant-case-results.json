@@ -1,0 +1,295 @@
+{
+  "schema": "phymeo-compliant-case-delivery-v1",
+  "baseline": "57375f841a8417aa8b0b7c9fe19aa3a1c08d3c1f",
+  "solver_commit": "ed08a1b2b1608d4c7f0fb0823b5461e93fe7a1ab",
+  "case_commit": "32ae897f0fbc1700d4f50267d90dc5622fc571c3",
+  "viewer_commit": "29c14be4a063c1f42ba541e806e969c58ae5a5a5",
+  "evidence_root": "artifacts/p65-case-flow-20261101-01",
+  "scope": "Public NumPy/FP64, sampled finite patches and offset-triangle quadrature, additive elastic material, finite-mass prismatic Cartesian grippers. Contact and motion are integrated together. Sampled overlap and case outcomes are reported separately from the prior strict research certificates.",
+  "impact": {
+    "duration_s": 0.125,
+    "peak_force_n": 15.768460794471103,
+    "peak_sample_s": 0.011474609375,
+    "first_loaded_sample_s": 0.007568359375,
+    "first_zero_after_peak_s": 0.069091796875,
+    "terminal_normal_n": 0,
+    "terminal_layer_gaps_m": [
+      0.0018721007016063267,
+      0.0018850195285581364,
+      0.0012458398248560466,
+      0.0018850185774725615,
+      0.0018720997505207483,
+      0.0013520385324879494
+    ],
+    "total_normal_impulse_ns": 0.12418213511051755,
+    "platform_end_momentum_ns": -0.12418213511051755,
+    "maximum_sampled_penetration_m": 0
+  },
+  "support": {
+    "duration_s": 0.125,
+    "peak_force_n": 0.7726546393500433,
+    "peak_sample_s": 0.000244140625,
+    "first_loaded_sample_s": 0.000244140625,
+    "first_zero_after_peak_s": null,
+    "terminal_normal_n": 0.12493479225340667,
+    "terminal_layer_gaps_m": [
+      0.00011287472152254896,
+      0.00011214346785394513,
+      0.00009905668987774882,
+      0.00011214346785394513,
+      0.00011287472152254896,
+      0.00009905668987774882
+    ],
+    "total_normal_impulse_ns": 0.01647530081315413,
+    "platform_end_momentum_ns": -0.01647530081315413,
+    "maximum_sampled_penetration_m": 0
+  },
+  "handoff": {
+    "cloth_total_mass_kg": 0.048,
+    "robot_joints_per_arm": [
+      "horizontal",
+      "vertical",
+      "left finger",
+      "right finger"
+    ],
+    "metrics": {
+      "weight_n": 0.47088,
+      "phase_count": 9,
+      "max_sampled_penetration_m": 0.0012729599148555172,
+      "final_center_x_m": 0.11848249955438984
+    },
+    "events": [
+      {
+        "phase": "grasp_A",
+        "t_s": 0,
+        "A_up_n": null,
+        "B_up_n": null,
+        "table_up_n": null,
+        "speed_m_s": null
+      },
+      {
+        "phase": "lift_A",
+        "t_s": 0.12,
+        "A_up_n": 0.00010982692873971446,
+        "B_up_n": 0,
+        "table_up_n": 0.47119757539238666,
+        "speed_m_s": 0.0001977435310029894
+      },
+      {
+        "phase": "share",
+        "t_s": 0.77,
+        "A_up_n": 0.4489673102509384,
+        "B_up_n": 0,
+        "table_up_n": 0,
+        "speed_m_s": 0.05161957335338412
+      },
+      {
+        "phase": "release_A",
+        "t_s": 0.89,
+        "A_up_n": 0.37444888885592986,
+        "B_up_n": 0.05978540388648648,
+        "table_up_n": 0,
+        "speed_m_s": 0.01607542447573835
+      },
+      {
+        "phase": "carry_B",
+        "t_s": 0.9500000000000001,
+        "A_up_n": 0,
+        "B_up_n": 0.46040248321893784,
+        "table_up_n": 0,
+        "speed_m_s": 0.307215648539416
+      },
+      {
+        "phase": "lower_B",
+        "t_s": 1.52,
+        "A_up_n": 0,
+        "B_up_n": 0.5712622552067713,
+        "table_up_n": 0,
+        "speed_m_s": 0.621216630952719
+      },
+      {
+        "phase": "open_B",
+        "t_s": 2.57,
+        "A_up_n": 0,
+        "B_up_n": -0.1644496165246508,
+        "table_up_n": 0.6338303245548733,
+        "speed_m_s": 0.02549049531028891
+      },
+      {
+        "phase": "settle",
+        "t_s": 2.61,
+        "A_up_n": 0,
+        "B_up_n": 0,
+        "table_up_n": 0.3596306520824075,
+        "speed_m_s": 0.0861423822720836
+      },
+      {
+        "phase": "placed",
+        "t_s": 2.96,
+        "A_up_n": 0,
+        "B_up_n": 0,
+        "table_up_n": 0.47103899377373726,
+        "speed_m_s": 0.0002974519764262726
+      }
+    ],
+    "transport_center_displacement_m": 0.09263089209766573,
+    "final_dwell_s": 0.1,
+    "frame_count": 297,
+    "pad_geometry_recorded_frames": {
+      "min_recorded_pad_height_m": 0.015960169892597905,
+      "min_recorded_inter_gripper_pad_distance_m": 0.0741491076235034
+    },
+    "largest_midpoint_overlap": {
+      "patch": "table",
+      "time_s": 2.0187890625000002,
+      "depth_m": 0.0012729599148555172
+    },
+    "placement": "Lower edge of the cloth rests on the table. This run does not demonstrate a flat placement or a prescribed fold."
+  },
+  "no_grip": {
+    "phase": "lift_A",
+    "reason": "measured phase condition timed out",
+    "metrics": {
+      "weight_n": 0.47088,
+      "phase_count": 2,
+      "max_sampled_penetration_m": 0.00011193355612457503,
+      "final_center_x_m": 0.00008696205803827271
+    }
+  },
+  "raw": {
+    "impact": {
+      "file": "impact-203017853/trajectory.json",
+      "bytes": 57543,
+      "sha256": "426f273fd98de7888f5fbaa6c1f385b728d78473c3cbff61e3706d80f1c86a99"
+    },
+    "support": {
+      "file": "support-203116626/trajectory.json",
+      "bytes": 83673,
+      "sha256": "1b899784c2e703546cde9069c55590db6f4cb25f13e99c21ef07b36c63e5b0b1"
+    },
+    "handoff": {
+      "file": "handoff-clearance-204737478/trajectory.json",
+      "bytes": 43135141,
+      "sha256": "a0431b5ff0d654bccda10c86c908b87bdaf996fb4f8636f910709bdf00dc3453"
+    },
+    "no-grip": {
+      "file": "no-grip-205528509/trajectory.json",
+      "bytes": 17452157,
+      "sha256": "700a4a9e7789d0da453cf8c8ddcbb7bc6ee07fb05fb32dcd743578d6559e54fc"
+    }
+  },
+  "replays": [
+    {
+      "name": "browser-verified.json",
+      "bytes": 644,
+      "sha256": "377130f7176d5459d1ae91bb143b7e84ea40001ef3457532b71db702f44e5b47"
+    },
+    {
+      "name": "handoff-shared.png",
+      "bytes": 22352,
+      "sha256": "e588057abd2e82fd89eae26fd982b588147268be2ae35d68bc0471bcaeaad2b7"
+    },
+    {
+      "name": "handoff.html",
+      "bytes": 3428283,
+      "sha256": "e59904273793f9050778a8d54eea49d4e0886605aa419aef7e81f7c550b1c5a6"
+    },
+    {
+      "name": "impact.html",
+      "bytes": 695502,
+      "sha256": "8cbeb3c10b44b2181b0e63158da9b7572c2dd316f4f30dd0ffef9c5dc52e1c8c"
+    }
+  ],
+  "browser": {
+    "handoff": {
+      "qa": {
+        "shared_frame": 88,
+        "arrows": 5,
+        "last_event": "placed",
+        "frames": 297,
+        "sha": "a0431b5ff0d654bccda10c86c908b87bdaf996fb4f8636f910709bdf00dc3453",
+        "gl": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+        "passed": true
+      },
+      "layers": {
+        "normal": true,
+        "tangent": true
+      },
+      "selected": "share · 0.770 s",
+      "active": "share",
+      "errors": ""
+    },
+    "impact": {
+      "case": "impact",
+      "frames": 9,
+      "index": 1,
+      "t": 0.015625,
+      "vertices": true,
+      "hash": "426f273fd98de7888f5fbaa6c1f385b728d78473c3cbff61e3706d80f1c86a99",
+      "error": ""
+    }
+  },
+  "wheel": {
+    "name": "phymeo-0.1.0a0-py3-none-any.whl",
+    "bytes": 530241,
+    "sha256": "c9b658267588b9eea12f3ca58beb63ac7678f851c21ca87f92bbbb2acb05fd11",
+    "all_match": true,
+    "frames": [
+      {
+        "event": "lift_A",
+        "frame": 12,
+        "time": 0.12
+      },
+      {
+        "event": "share",
+        "frame": 77,
+        "time": 0.77
+      },
+      {
+        "event": "release_A",
+        "frame": 89,
+        "time": 0.89
+      },
+      {
+        "event": "carry_B",
+        "frame": 95,
+        "time": 0.9500000000000001
+      },
+      {
+        "event": "lower_B",
+        "frame": 152,
+        "time": 1.52
+      },
+      {
+        "event": "open_B",
+        "frame": 257,
+        "time": 2.57
+      },
+      {
+        "event": "settle",
+        "frame": 261,
+        "time": 2.61
+      },
+      {
+        "event": "placed",
+        "frame": 296,
+        "time": 2.96
+      }
+    ],
+    "full_impact": true,
+    "modules": 131
+  },
+  "tests": {
+    "selected_file": "tests/test_compliant_cloth_contact.py",
+    "passed": 7,
+    "run": "test-final-210656907",
+    "offline_outcomes": "audit-outcomes-205937142"
+  },
+  "failed_during_development": [
+    "With 55 mm lift travel the far edge remained on the table.",
+    "A version with abrupt closure became unstable. Limiting the finger command speed removed that high-speed impact.",
+    "The 0.3125 ms handoff substep became unstable during landing. The final case uses 0.078125 ms substeps and a 10 mm sampled hard-overlap rollback limit.",
+    "A low B transport height allowed the free edge to swing back onto the table. The final controller chooses transport clearance from the cloth diagonal and limits the approach/lowering motion."
+  ],
+  "open": "A prescribed fold / self-contact, general articulated-arm collisions and IK, native backends, and continuous-contact precision remain separate from this runnable case."
+}

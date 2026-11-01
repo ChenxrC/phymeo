@@ -21,7 +21,12 @@ from .constraints.distance import DistanceConstraints
 from .constraints.friction import FrictionImpulseResult, solve_friction_disk
 from .constraints.node_robot import NodeRobotContact
 from .constraints.particle_plane import ParticlePlaneContacts
-from .constraints.robot_contact import JointLimits
+from .constraints.robot_contact import (
+    CollisionPlane,
+    JointLimits,
+    LinkCapsule,
+    RobotContactMaterial,
+)
 from .constraints.robot_finite_patch_collider import RobotFinitePatchCollider
 from .constraints.robot_node_plane import RobotNodePlaneContacts
 from .constraints.robot_plane import RobotPlaneContacts
@@ -62,6 +67,7 @@ from .coupling.ports import ParticlePointPort, PointPort, RigidPointPort, exchan
 from .coupling.robot_port import RobotPointPort
 from .coupling.surface_port import PointPairOperator, WeightedPointPort
 from .coupling.tetrahedral_port import TetrahedralPointPort
+from .dynamics.robot_contact import RobotContactSystem
 from .geometry.feature_distance_bound import FeatureDistanceBounds, feature_distance_bounds
 from .geometry.linear_sweep import FeatureSweepResult, linear_feature_sweep
 from .geometry.particle_sphere import ParticleSphereGeometry, particle_sphere_geometry
@@ -93,6 +99,7 @@ from .runtime.terminal_impulse import PointVelocityImpulses, TerminalImpulseProg
 from .solvers.articulated_coupling import ArticulatedCouplingProgram, make_articulated_runtime
 from .solvers.cloth import ClothProgram, make_cloth_runtime
 from .solvers.compliant_cloth_contact import CompliantClothContactProgram, CompliantPatch
+from .solvers.compliant_robot_contact import CompliantRobotContactProgram
 from .solvers.coupled_program import (
     CoupledRuntimeAdapter,
     NumpyCoupledProgram,
@@ -185,6 +192,11 @@ __all__ = [
     "CompliantPatch",
     "PointIKResult",
     "JointLimits",
+    "CollisionPlane",
+    "LinkCapsule",
+    "RobotContactMaterial",
+    "RobotContactSystem",
+    "CompliantRobotContactProgram",
     "solve_point_ik",
     "make_tetrahedral_runtime",
     "make_cloth_runtime",

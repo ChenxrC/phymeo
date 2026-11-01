@@ -12,16 +12,17 @@ from ..constraints.triangle_prism_surface import TrianglePrismSurface
 from ..core.capabilities import SolverFailure
 from ..core.model import ParticleModel
 from ..core.robot import RobotModel, RobotState
-from ..core.scene import SceneModel, SceneState, StageMetrics
-from ..core.state import ParticleState
+from ..core.scene import SceneModel, StageMetrics
 from ..core.validation import finite_real
 from ..coupling.offset_port import TriangleOffsetPointPort
 from ..coupling.ports import ParticlePointPort
+from ..dynamics.robot_contact import RobotContactSystem
 from ..dynamics.robot_dynamics import robot_com_kinematics, robot_dynamics_terms
 from ..runtime.program import ProgramCapabilities
 from ..runtime.registry import StateRegistry
 from ..runtime.robot_family import robot_family
 from ..runtime.scene_stepper import SceneStepper
+from ._compliant_motion import advance_state, check_robot_contact, optional_budget
 
 
 @dataclass(frozen=True)
@@ -143,6 +144,8 @@ class CompliantClothContactProgram:
         *,
         material_damping_s=0.0,
         max_penetration_m=None,
+        robot_contact=None,
+        max_joint_violation=None,
     ):
         if not isinstance(scene, SceneModel) or not isinstance(material, ClothMaterial):
             raise TypeError("expected SceneModel and ClothMaterial")
@@ -180,6 +183,15 @@ class CompliantClothContactProgram:
             if dom.family != "robot" or not isinstance(dom.model, RobotModel):
                 raise ValueError("additional domains must be robots")
             self.robots[name] = _RobotMechanics(dom.model)
+        if robot_contact is not None:
+            if not isinstance(robot_contact, RobotContactSystem) or set(
+                robot_contact.models
+            ) != set(self.robots):
+                raise ValueError("robot contact models must match the bound scene")
+            if any(robot_contact.models[n] is not r.model for n, r in self.robots.items()):
+                raise ValueError("robot contact uses different inertial models")
+        self.robot_contact = robot_contact
+        self.max_joint_violation = optional_budget(max_joint_violation, "max_joint_violation")
         self.surfaces = tuple(surfaces)
         if not self.surfaces or not all(
             isinstance(s, TrianglePrismSurface) and s.domain == cloth_domain for s in self.surfaces
@@ -238,6 +250,8 @@ class CompliantClothContactProgram:
             patches=self.patches,
             material_damping=self.damping,
             max_penetration_m=self.max_penetration_m,
+            robot_contact=None if self.robot_contact is None else self.robot_contact.signature(),
+            max_joint_violation=self.max_joint_violation,
         )
 
     def stepper(self, settings=None):
@@ -332,8 +346,16 @@ class CompliantClothContactProgram:
         """Sample endpoint contact forces; time-integrated loads are in substep diagnostics."""
         return self._loads(state, dynamics=False)[2]
 
+    def observe_robot_contact(self, state):
+        return None if self.robot_contact is None else self.robot_contact.evaluate(state.domains)
+
     def accelerations(self, state, inputs):
         nodal, reactions, details, geo = self._loads(state)
+        body = None
+        if self.robot_contact is not None:
+            body = self.robot_contact._evaluate(state.domains, geo)
+            for name in reactions:
+                reactions[name] += body["efforts"][name]
         cloth = state.domains[self.cloth_domain]
         internal = _elastic(self.material, cloth.position, cloth.velocity, self.damping)
         accel = {
@@ -357,18 +379,7 @@ class CompliantClothContactProgram:
                 raise SolverFailure("singular robot inertia") from exc
         if not all(np.isfinite(a).all() for a in accel.values()):
             raise SolverFailure("nonfinite coupled acceleration")
-        return accel, details, internal
-
-
-def _advance(state, accel, dt, *, midpoint):
-    domains = {}
-    for name, s in state.domains.items():
-        cloth = isinstance(s, ParticleState)
-        q, v = (s.position, s.velocity) if cloth else (s.q, s.v)
-        u = v + dt * accel[name]
-        x = q + dt * (v if midpoint else (v + u) / 2)
-        domains[name] = ParticleState(x, u) if cloth else RobotState(x, u)
-    return SceneState(domains)
+        return accel, details, internal, body
 
 
 def _penetration(rows):
@@ -386,19 +397,34 @@ class _Workspace:
         self.program, self.state, self.inputs, self.h = program, state, inputs, h
 
     def predict(self):
-        a0, initial, _ = self.program.accelerations(self.state, self.inputs)
-        mid = _advance(self.state, a0, self.h / 2, midpoint=True)
-        a, contact, internal = self.program.accelerations(mid, self.inputs)
-        self.state = _advance(self.state, a, self.h, midpoint=False)
+        a0, initial, _, body0 = self.program.accelerations(self.state, self.inputs)
+        mid = advance_state(self.state, a0, self.h / 2, midpoint=True)
+        a, contact, internal, body = self.program.accelerations(mid, self.inputs)
+        self.state = advance_state(self.state, a, self.h, midpoint=False)
         self.penetration = max(_penetration(initial), _penetration(contact))
-        if self.program.max_penetration_m is not None:
-            self.penetration = max(self.penetration, _penetration(self.program.observe(self.state)))
-            if self.penetration > self.program.max_penetration_m:
+        if self.program.max_penetration_m is not None or body is not None:
+            _, _, endpoint, geo = self.program._loads(self.state, dynamics=False)
+            self.penetration = max(self.penetration, _penetration(endpoint))
+            if body is not None:
+                end_body = self.program.robot_contact._evaluate(self.state.domains, geo)
+                check_robot_contact(
+                    (body0, body, end_body),
+                    self.program.max_penetration_m,
+                    self.program.max_joint_violation,
+                )
+                self.penetration = max(
+                    self.penetration, *(r["penetration_m"] for r in (body0, body, end_body))
+                )
+            if (
+                self.program.max_penetration_m is not None
+                and self.penetration > self.program.max_penetration_m
+            ):
                 raise SolverFailure(
                     f"sampled hard penetration limit exceeded: {self.penetration:.6g} m"
                 )
         self.report = dict(
             patches=contact,
+            robot_contact=body,
             material_force_n=internal,
             sampled_penetration_m=self.penetration,
             force_sample="substep-midpoint",

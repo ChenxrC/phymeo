@@ -1,6 +1,7 @@
 """Owned joint stops and body shapes; separate from inertial RobotModel data."""
 
 from dataclasses import dataclass
+from numbers import Integral
 
 import numpy as np
 
@@ -59,3 +60,66 @@ class JointLimits:
             violation=lo + hi,
             potential_j=float(self.stiffness * (lo @ lo + hi @ hi) / 2),
         )
+
+
+@dataclass(frozen=True, eq=False)
+class LinkCapsule:
+    """A local segment swept by a ball, attached to one massive link."""
+
+    key: str
+    domain: str
+    link_index: int
+    start: np.ndarray
+    end: np.ndarray
+    radius_m: float
+
+    def __post_init__(self):
+        if not all(isinstance(v, str) and v for v in (self.key, self.domain)):
+            raise ValueError("capsule needs a key and robot domain")
+        if (
+            isinstance(self.link_index, (bool, np.bool_))
+            or not isinstance(self.link_index, Integral)
+            or self.link_index < 0
+        ):
+            raise ValueError("invalid capsule link index")
+        for name in ("start", "end"):
+            object.__setattr__(self, name, _owned(getattr(self, name), name, 1, (3,)))
+        radius = finite_real(self.radius_m, "radius_m")
+        if radius <= 0:
+            raise ValueError("capsule radius must be positive")
+        object.__setattr__(self, "radius_m", radius)
+
+
+@dataclass(frozen=True, eq=False)
+class CollisionPlane:
+    """Stationary infinite half-space normal.dot(x) >= offset_m."""
+
+    key: str
+    normal: np.ndarray
+    offset_m: float
+
+    def __post_init__(self):
+        if not isinstance(self.key, str) or not self.key:
+            raise ValueError("plane needs a key")
+        normal = _owned(self.normal, "normal", 1, (3,))
+        if abs(np.linalg.norm(normal) - 1.0) > 1e-12:
+            raise ValueError("plane normal must be unit length")
+        object.__setattr__(self, "normal", normal)
+        object.__setattr__(self, "offset_m", finite_real(self.offset_m, "offset_m"))
+
+
+@dataclass(frozen=True)
+class RobotContactMaterial:
+    """Normal N/m and Ns/m; dimensionless friction; linear slip regularization."""
+
+    stiffness: float = 2000.0
+    damping: float = 8.0
+    friction: float = 0.3
+    slip_speed_m_s: float = 0.01
+
+    def __post_init__(self):
+        for name in ("stiffness", "damping", "friction", "slip_speed_m_s"):
+            value = finite_real(getattr(self, name), name)
+            if value < 0 or (name in ("stiffness", "slip_speed_m_s") and value == 0):
+                raise ValueError(f"invalid {name}")
+            object.__setattr__(self, name, value)

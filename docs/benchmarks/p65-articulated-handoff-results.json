@@ -1,0 +1,173 @@
+{
+  "schema": "phymeo-articulated-handoff-results-v1",
+  "scope": "Fixed-base NumPy robot trees. This handoff uses two planar shoulder/elbow arms with two finite-force finger actuators apiece, a six-node cloth and finite pad and table polygons. IK specifies a point position. Full link collisions, wrist orientation goals, supported folding and native backends remain outside this run.",
+  "source": {
+    "baseline": "3e2ccf6cfb117d04e5b73684c3f0a915048114a5",
+    "control": "b040322b26841748abbbf4162d6a025d1635665f",
+    "dynamics": "b0e624a611f194a442e1df29ef86a7c5325169db",
+    "case": "9542d0f8fcad9f97b001ca5e83cd6345138ec20e"
+  },
+  "reuse": {
+    "controller": "solve_point_ik and solve_bounded_pd submit actuator efforts; SceneStepper publishes physical states",
+    "domains": "same CompliantClothContactProgram, cloth, finite patches, handoff thresholds and finger motor law as the Cartesian fixture",
+    "trace": "serialized robot model and local patch bindings; export and offline checks do not need a factory for new case names"
+  },
+  "timing": {
+    "dt_s": 0.01,
+    "substeps": 128,
+    "frames": 363,
+    "force_rows": 231680,
+    "duration_s": 3.62,
+    "events": [
+      [
+        "grasp_A",
+        0
+      ],
+      [
+        "lift_A",
+        0.12
+      ],
+      [
+        "share",
+        1.03
+      ],
+      [
+        "release_A",
+        1.1500000000000001
+      ],
+      [
+        "carry_B",
+        1.21
+      ],
+      [
+        "lower_B",
+        1.72
+      ],
+      [
+        "open_B",
+        2.64
+      ],
+      [
+        "settle",
+        2.68
+      ],
+      [
+        "placed",
+        3.62
+      ]
+    ]
+  },
+  "handoff": {
+    "cloth_weight_n": 0.47088,
+    "b_only_center_displacement_m": 0.1036395797330886,
+    "shared": {
+      "A_up": 0.33589982739216995,
+      "B_up": 0.10445818060207988,
+      "table_up": 0,
+      "A_normal": 3.814250296410243,
+      "B_normal": 0.9145751121327033,
+      "bottom": 0.06850229145326592,
+      "center": -0.04185978756412604,
+      "speed": 0.02648555329611294
+    },
+    "b_only": {
+      "A_up": 0,
+      "B_up": 0.4225290191930529,
+      "table_up": 0,
+      "A_normal": 0,
+      "B_normal": 3.6655464103817703,
+      "bottom": 0.06817239381816818,
+      "center": -0.061946947320185575,
+      "speed": 0.8271106211983614
+    },
+    "final": {
+      "A_up": 0,
+      "B_up": 0,
+      "table_up": 0.47104196464866205,
+      "A_normal": 0,
+      "B_normal": 0,
+      "bottom": 0.0012804674795277831,
+      "center": 0.04788220814019364,
+      "speed": 0.03207558386307553
+    },
+    "joint_span_rad": {
+      "A": [
+        1.204047454253355,
+        0.3980001093253449
+      ],
+      "B": [
+        0.8031594051297068,
+        0.765596733090657
+      ]
+    },
+    "dwell_s": 0.1,
+    "max_midpoint_penetration_m": 0,
+    "placement": "lower edge on the tabletop; finite measured dwell and final maximum node speed, not a flat lay"
+  },
+  "zero_friction": {
+    "phase": "lift_A",
+    "time_s": 1.37,
+    "max_normal_n": 2.846964972482355
+  },
+  "failed_attempts": [
+    {
+      "run": "positive-01-213751416",
+      "phase": "lift_A",
+      "t_s": 0.54,
+      "reason": "Receiver target lay about 2.6 mm beyond the original 0.34 m reach. Raised and repositioned the receiving arm and sized its links for the cloth workspace; retained the reach regression."
+    },
+    {
+      "run": "positive-workspace-214351487",
+      "phase": "lift_A",
+      "t_s": 1.38,
+      "reason": "Cloth was lifted then slipped; A had lost both pad loads by 0.80 s. The arm's implicit free-motion controller had changed the physical finger law. At the same measured position the command was 0.5953 N versus 2.53 N. The finger motor law is now shared across mounts; effort limits, friction and stage thresholds stayed fixed."
+    }
+  ],
+  "evidence_root": "artifacts/p65-articulated-handoff-20261101-01",
+  "positive": {
+    "path": "artifacts/p65-articulated-handoff-20261101-01/positive-fingers-215100323/trajectory.json",
+    "sha256": "9bc3dbc1ec94375b80e2ebf8af72250b40b53b028ab245c72d32baae05b22e0f",
+    "bytes": 51476313
+  },
+  "negative": {
+    "path": "artifacts/p65-articulated-handoff-20261101-01/slip-final-220119225/trajectory.json",
+    "sha256": "7494bf4733dee3b9a070173f452b9c8708818ea07a39eab7b2574688366f4317",
+    "bytes": 17618914
+  },
+  "replay": {
+    "path": "artifacts/p65-articulated-handoff-20261101-01/articulated-handoff.html",
+    "bytes": 4144993,
+    "sha256": "f39be832d3f371f686bdac73868b885f9a83a2d31b59255b8eded285359c0e0b"
+  },
+  "tests": {
+    "passed": 86,
+    "seconds": 0.94,
+    "run": "changed-binding-220758903",
+    "ruff": "lint-binding-220745329"
+  },
+  "independent_readback": "audit-220614702/results.json",
+  "wheel": {
+    "wheel": "phymeo-0.1.0a0-py3-none-any.whl",
+    "sha256": "1e57550489c9b04c56efb143dd4183ebd8ef44a601384f2c75df8fbd68bef64d",
+    "source_sha256": "9bc3dbc1ec94375b80e2ebf8af72250b40b53b028ab245c72d32baae05b22e0f",
+    "modules": 133,
+    "bitwise_match": [
+      {
+        "event": "release_A",
+        "index": 115,
+        "time_s": 1.1500000000000001
+      },
+      {
+        "event": "carry_B",
+        "index": 121,
+        "time_s": 1.21
+      },
+      {
+        "event": "placed",
+        "index": 362,
+        "time_s": 3.62
+      }
+    ],
+    "proof": "wheel-check-221045219/proof.json"
+  }
+}

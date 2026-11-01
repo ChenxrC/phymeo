@@ -62,7 +62,7 @@ P6.5新增`WeightedPointPort`和`PointPairOperator`：面/边重心作用点保�
 
 NumPy 支持 FP32/FP64；可选 tyx 已实现 FP32 粒子/自由刚体积分和着色 XPBD 距离/平面投影。`TyxRigidSemiImplicitSolver` 验证了 interpret、实际 C++ 和 CUDA 的平移、四元数、陀螺项与异常回滚。`TyxCoupledXPBDSolver` 已执行真实设备刚柔接触并通过完整 240 帧对照与独立重复。独立的粒子 `TyxXPBDSolver` 可选择图重放一轮投影；联合驱动暂未采用 CUDA 图，均保留主机残差检查。安装及已验证模式见[环境说明](docs/development/environment-and-ci.md)。
 
-学习型 provider 必须配置独立物理验收器。目前 `FreeParticleVerifier` 验证自由粒子的离散运动方程；附有两系数数据回归、留出验证和错误候选回退示例。机器人已支持固定基座单自由度旋转/移动关节树、完整共享祖先响应与离散节点/球接触。仍无浮动基座、闭环、球球/任意形状碰撞、布料弯曲/自碰撞、完整动态场景与时间步中的摩擦集成、CCD 或通用 AI 求解器，详见[进度记录](docs/progress.md)。
+学习型 provider 必须配置独立物理验收器。目前 `FreeParticleVerifier` 验证自由粒子的离散运动方程；附有两系数数据回归、留出验证和错误候选回退示例。机器人已支持固定基座单自由度旋转/移动关节树、完整共享祖先响应与离散节点/球接触。本分支也有使用距离、弯曲和摩擦的 NumPy 布料搬运入口，见下方的布料接触案例。浮动基座、闭环和任意形状的连续碰撞仍超出这些案例的范围。[进度记录](docs/progress.md)
 
 ```sh
 uv sync --locked --group dev
@@ -90,6 +90,20 @@ python -m pytest
 ```
 
 构建与独立安装验证：`python -m build --no-isolation`，然后 `python scripts/verify_wheel.py`。后者先检查 wheel 的 Python 源码与当前 checkout 一致，再使用系统临时目录中新建的原生 pip 环境安装，需要读取公开包索引；它不会自动构建旧 wheel。CI 配置覆盖 Windows/Linux × Python 3.11/3.12 × uv/pip；工作流是否实际成功以 Actions 结果为准。
+
+## 布料接触与搬运案例
+
+在已安装本项目的 Python 环境中运行。下面的命令分别保存 0.125 s 冲击和双夹爪搬运的真实轨迹，输出文件必须是新路径。
+
+```sh
+python examples/compliant_cloth.py --case impact --output impact.json
+python examples/compliant_cloth.py --case handoff --output handoff.json
+python examples/export_compliant_replay.py handoff.json handoff.html
+```
+
+用浏览器打开 `handoff.html` 即可离线播放，或在[轨迹查看器](docs/demos/compliant-cloth.html)选择其他 JSON。`support` 运行持续外载对照，`no-grip` 运行夹爪摩擦为零的失败对照。回放读取已存布节点、有限夹爪贴片与施加载荷，可暂停、逐帧查看和跳到任一实际阶段。
+
+`CompliantClothContactProgram` 是公共 NumPy 程序。配置布的距离与弯曲材料、三角面厚度、静止或机器人附着的有限贴片后，用 `program.stepper(settings)` 推进场景。载荷由三角面三个厚度点采样，材料与接触共同推动布和机器人；穿透和峰值按采样报告。这个入口适合小步长案例。边缘之间的接触、连续扫掠与折叠自接触仍有单独的覆盖要求。回放附带 Three.js r160，可离线使用。[Three.js](https://github.com/mrdoob/three.js/tree/r160) · [MIT 许可](docs/demos/vendor/three-r160.LICENSE)
 
 ## 文档检查
 

@@ -1,0 +1,682 @@
+{
+  "schema": "sc-l1-support-results-v1",
+  "scope": "HOST SC-L1 synthetic scalar support. m=0.5 kg, relative M=1 kg, constant compressive F=0.125 N, original h=1/64 s and T=1/8 s. The eight steps form one continuous trajectory.",
+  "decision": "The loaded degree-seven candidate passes full-window sustained support, whole-path hard clearance, exact readback moment identities and signed energy and external-work checks for this one case.",
+  "preregistration_commit": "c4c7028ba1a34a854f9b0a17a0081cd0bd0b6bca",
+  "protocol_sha256_lf": "7e9a5854d41d26bfc7bb7adfe86caf64d09cded47122bf92db9d3e897d7bbf96",
+  "tested_source_commit": "659f7249708b2dd7f6362e7714a50f9b61acb2cb",
+  "fixture": "p65-contact-layer-screen-input.json",
+  "ref_index": "p65-contact-layer-intrastep-results.json",
+  "ref_step_table": "p65-contact-layer-intrastep-steps.csv",
+  "raw_directory": "artifacts/p65-n2-layer-support-20261101-01",
+  "raw_audit_sha256": "2398b2c2dfdf542a75d72c5aa0eb7e3fd9e96327d79fc750cbed1eea3862f7a1",
+  "per_step_index_sha256": {
+    "step-0/index.json": "07d14c13539fc07e249c7cd2e475304a80aec68bd0ec5377b350e7b0dc564e2d",
+    "step-1/index.json": "b03a48a5bf0d1ce49c392cdf63ad24df8d66575a8a356bc749f79a9d7840a728",
+    "step-2/index.json": "8ff9f85d6015433656e07a8fbb2e818e26abfdaa1a8d2f177a37640f35bdbbf4",
+    "step-3/index.json": "cf4b57eda7bdda28f69bf41955a5875481253733780c9c2ba59c62e5aca08417",
+    "step-4/index.json": "acd96471874fefb88fb9c322dbdf05b080bd002f4b0c736c1b8eae1fd4c3e831",
+    "step-5/index.json": "58028eb77e3f1f99f52ea1cb26d9360bde072b2e9c9c68c884b1ceab94e9e18c",
+    "step-6/index.json": "917e07cb6e03546cd4217de0ebabf4746f5ec60e73566bb88132dc763b796e17",
+    "step-7/index.json": "644052a1b93bd79855e352e7b2ad93c4182b5e848fd49325810d50847fbdc7be"
+  },
+  "serial_runs": [
+    {
+      "task": "format",
+      "dir": "format-133136744",
+      "start": "2026-11-01T13:31:37.6735356+08:00",
+      "end": "2026-11-01T13:31:37.829231+08:00",
+      "raw_exit": 0,
+      "matching_before": 0
+    },
+    {
+      "task": "lint",
+      "dir": "lint-133137845",
+      "start": "2026-11-01T13:31:38.6974643+08:00",
+      "end": "2026-11-01T13:31:38.8336795+08:00",
+      "raw_exit": 0,
+      "matching_before": 0
+    },
+    {
+      "task": "step-0",
+      "dir": "step-0-133152386",
+      "start": "2026-11-01T13:31:53.4483586+08:00",
+      "end": "2026-11-01T13:31:53.900563+08:00",
+      "raw_exit": 0,
+      "matching_before": 0
+    },
+    {
+      "task": "step-1",
+      "dir": "step-1-133153921",
+      "start": "2026-11-01T13:31:54.8516011+08:00",
+      "end": "2026-11-01T13:31:55.235267+08:00",
+      "raw_exit": 0,
+      "matching_before": 0
+    },
+    {
+      "task": "step-2",
+      "dir": "step-2-133216727",
+      "start": "2026-11-01T13:32:17.609795+08:00",
+      "end": "2026-11-01T13:32:17.8456615+08:00",
+      "raw_exit": 0,
+      "matching_before": 0
+    },
+    {
+      "task": "step-3",
+      "dir": "step-3-133217865",
+      "start": "2026-11-01T13:32:18.9904374+08:00",
+      "end": "2026-11-01T13:32:19.2770237+08:00",
+      "raw_exit": 0,
+      "matching_before": 0
+    },
+    {
+      "task": "step-4",
+      "dir": "step-4-133219286",
+      "start": "2026-11-01T13:32:20.0849004+08:00",
+      "end": "2026-11-01T13:32:20.3818296+08:00",
+      "raw_exit": 0,
+      "matching_before": 0
+    },
+    {
+      "task": "step-5",
+      "dir": "step-5-133220389",
+      "start": "2026-11-01T13:32:21.1583574+08:00",
+      "end": "2026-11-01T13:32:21.4500412+08:00",
+      "raw_exit": 0,
+      "matching_before": 0
+    },
+    {
+      "task": "step-6",
+      "dir": "step-6-133221457",
+      "start": "2026-11-01T13:32:22.3020386+08:00",
+      "end": "2026-11-01T13:32:22.5751212+08:00",
+      "raw_exit": 0,
+      "matching_before": 0
+    },
+    {
+      "task": "step-7",
+      "dir": "step-7-133222583",
+      "start": "2026-11-01T13:32:23.5323789+08:00",
+      "end": "2026-11-01T13:32:23.8812306+08:00",
+      "raw_exit": 0,
+      "matching_before": 0
+    },
+    {
+      "task": "audit",
+      "dir": "audit-133223890",
+      "start": "2026-11-01T13:32:24.7604329+08:00",
+      "end": "2026-11-01T13:32:28.4719768+08:00",
+      "raw_exit": 0,
+      "matching_before": 0
+    }
+  ],
+  "charge_description": "A charged unit is one generated traction coefficient; convolution, basis conversion, exact subdivisions, pressure extrema cells and packet bytes are reported separately. No native cost claim.",
+  "positive_energy_limit_j": 1E-08,
+  "internal_pieces": 1000,
+  "checks": {
+    "noncancelling_energy": true,
+    "sum_abs_reference_impulse_errors": true,
+    "full_window_prefix_momentum": true
+  },
+  "summary": {
+    "time_s": "1/8",
+    "h_s": "1/64",
+    "cold_boundaries": 7,
+    "force_floor_n": 0.1171875,
+    "force_min_n": [
+      0.12493946404213775,
+      0.12493946404213775
+    ],
+    "force_max_n": [
+      1.0,
+      1.0
+    ],
+    "force_min_fraction_of_external": 0.999515712337102,
+    "initial_separating_acceleration_m_s2": 0.875,
+    "minimum_hard_gap_m": 0,
+    "max_hard_gap_bound_m": 0.00010807195458671979,
+    "min_compression_m": 0.0018919280454132803,
+    "final_gap_m": 0.00010807195458671979,
+    "final_closing_speed_m_s": -0.000867923661954231,
+    "final_force_n": 0.12493946404213775,
+    "exact_contact_impulse_ns": "76060185454824561489/4611686018427387904000",
+    "contact_impulse_ns": 0.01649292366195423,
+    "external_impulse_ns": 0.015625,
+    "contact_time_moment_ns2": 0.0010846344545867197,
+    "external_time_moment_ns2": 0.0009765625,
+    "final_momentum_kg_m_s": -0.000867923661954231,
+    "initial_elastic_j": 0.001,
+    "final_elastic_j": 0.0008948479322553288,
+    "kinetic_change_j": 3.766457414900211E-07,
+    "external_work_j": -1.3508994323339973E-05,
+    "internal_contact_work_j": 1.3885640064829993E-05,
+    "dissipation_j": 9.126642767982275E-05,
+    "signed_energy_defect_j": -1.8535017310417532E-17,
+    "sum_positive_piece_defects_j": 8.596212852017224E-23,
+    "signed_window_law_impulse_error_ns": 3.7156599472298897E-14,
+    "signed_window_law_time_moment_error_ns2": 4.601134726787606E-15,
+    "prefix_momentum_bound_ns": 3.715662208308272E-14,
+    "sum_abs_reference_impulse_errors_ns": 6.029849859960231E-16,
+    "max_relative_law_error_bound": 3.339429006327953E-10,
+    "max_outer_knot_jump_n": 0.0,
+    "max_wire_bytes": 178,
+    "max_remainder_bits": 96,
+    "reference_final": {
+      "t": 0.125,
+      "g": 0.00010807195458670477,
+      "v": -0.0008679236619542247,
+      "force": 0.12493946404214472,
+      "impulse": 0.01649292366195421,
+      "dissipation": 9.126642779510112E-05,
+      "energy_defect": 1.1527211748064287E-13,
+      "momentum_defect": -1.3877787807814457E-17
+    },
+    "sampled_reference_min_force_n": 0.12493946404214472
+  },
+  "negative_controls": {
+    "missing_force": "velocity readback",
+    "missing_work": "signed external work",
+    "reversed_work": "signed external work",
+    "internal_credit": "signed external work",
+    "lost_preload": "initial elastic storage",
+    "lost_resumed_remainder": "velocity readback"
+  },
+  "steps": [
+    {
+      "step": 0,
+      "parts": 125,
+      "work": {
+        "force_charges": 504,
+        "convolution_terms": 2268,
+        "conversion_terms": 2268,
+        "half_subdivision_means": 3472,
+        "method": "loaded-series7"
+      },
+      "peak_and_min_cells": 250,
+      "max_wire_bytes": 176,
+      "max_remainder_bits": 96,
+      "hard_gap_lower_m": 0.0,
+      "hard_gap_upper_m": 1.2791535728445728E-05,
+      "min_compression_m": 0.0019872084642715542,
+      "force_min_n": [
+        0.12494487282126025,
+        0.12494487282126025
+      ],
+      "force_max_n": [
+        1.0,
+        1.0
+      ],
+      "force_end_n": 0.12494487282126025,
+      "end_gap_m": 1.2791535728445728E-05,
+      "end_speed_m_s": -0.000874250864901523,
+      "contact_impulse_ns": 0.0028273758649015233,
+      "contact_time_moment_ns2": 2.8050324790945726E-05,
+      "external_impulse_ns": 0.001953125,
+      "external_time_moment_ns2": 1.52587890625E-05,
+      "initial_elastic_j": 0.001,
+      "final_elastic_j": 0.0009872493701181273,
+      "initial_kinetic_j": 0.0,
+      "final_kinetic_j": 3.821572873905306E-07,
+      "external_work_j": -1.598941966055716E-06,
+      "internal_contact_work_j": 1.9810992534462463E-06,
+      "dissipation_j": 1.0769530628407919E-05,
+      "signed_energy_defect_j": -1.8535031642452352E-17,
+      "positive_energy_defect_j": 1.0730204893532146E-24,
+      "relative_law_bound": 3.339429006327953E-10,
+      "worst_knot_jump_n": 2.656922459820521E-10,
+      "errors": {
+        "step_peak_vs_reference_n": 0.0,
+        "step_impulse_vs_reference_ns": 2.8738397669211894E-16,
+        "step_moment_error_divided_by_mass_m": 2.2886814062349547E-17,
+        "endpoint_gap_error_m": 2.288781406234955E-17,
+        "endpoint_speed_error_m_s": 2.8688397669211893E-16,
+        "law_impulse_vs_delivered_ns": 3.715661594098941E-14,
+        "law_moment_error_divided_by_mass_m": 5.371305044627897E-16,
+        "prefix_momentum_defect_ns": 3.715661594098941E-14,
+        "positive_work_defect_per_window_j": 1.0730204893532146E-24
+      },
+      "failed_gates": [],
+      "origin": "support initial g=v=0",
+      "hashes": {
+        "states.jsonl": "9ce75f5781842da2aa719b9d9fc40de6d554eb3981d699891bd17a4f63ffc8a3",
+        "forces.jsonl": "712ff44a9569d432b1440f0b6576e17c469874196c4f3038f3bd33bb264b6e6a",
+        "pieces.jsonl": "c31bdfb742399377f617a42daae5f4201ad0f7635c234f84776ce5f41cae8ea8",
+        "end.state.json": "c8acab1de6775cdcf48057876e761676b16b38cc1717d56a1804ee3c0034b6aa"
+      }
+    },
+    {
+      "step": 1,
+      "parts": 125,
+      "work": {
+        "force_charges": 504,
+        "convolution_terms": 2268,
+        "conversion_terms": 2268,
+        "half_subdivision_means": 3472,
+        "method": "loaded-series7"
+      },
+      "peak_and_min_cells": 250,
+      "max_wire_bytes": 177,
+      "max_remainder_bits": 96,
+      "hard_gap_lower_m": 1.2791535728445728E-05,
+      "hard_gap_upper_m": 2.6444931270919317E-05,
+      "min_compression_m": 0.0019735550687290807,
+      "force_min_n": [
+        0.12494401259390095,
+        0.12494401259390095
+      ],
+      "force_max_n": [
+        0.12494487282126025,
+        0.12494487282126025
+      ],
+      "force_end_n": 0.12494401259390095,
+      "end_gap_m": 2.6444931270919317E-05,
+      "end_speed_m_s": -0.0008733817823747257,
+      "contact_impulse_ns": 0.0019522559174732026,
+      "contact_time_moment_ns2": 1.5252014840887292E-05,
+      "external_impulse_ns": 0.001953125,
+      "external_time_moment_ns2": 1.52587890625E-05,
+      "initial_elastic_j": 0.0009872493701181273,
+      "final_elastic_j": 0.0009737299023265616,
+      "initial_kinetic_j": 3.821572873905306E-07,
+      "final_kinetic_j": 3.8139786889202634E-07,
+      "external_work_j": -1.7066744428091987E-06,
+      "internal_contact_work_j": 1.7059150243106946E-06,
+      "dissipation_j": 1.181355276725501E-05,
+      "signed_energy_defect_j": -1.2342341241746212E-24,
+      "positive_energy_defect_j": 1.1854278625230015E-23,
+      "relative_law_bound": 4.2719321421363683E-16,
+      "worst_knot_jump_n": 5.551115123125783E-17,
+      "errors": {
+        "step_peak_vs_reference_n": 2.865472623482031E-13,
+        "step_impulse_vs_reference_ns": 2.825804283544448E-16,
+        "step_moment_error_divided_by_mass_m": 7.892971905014245E-18,
+        "endpoint_gap_error_m": 1.9477029293149663E-17,
+        "endpoint_speed_error_m_s": 5.903548337674142E-18,
+        "law_impulse_vs_delivered_ns": 1.41078172925935E-21,
+        "law_moment_error_divided_by_mass_m": 3.7486233803714505E-23,
+        "prefix_momentum_defect_ns": 4.962349273634713E-21,
+        "positive_work_defect_per_window_j": 1.1854278625230015E-23
+      },
+      "failed_gates": [],
+      "origin": "step-0/end.state.json",
+      "hashes": {
+        "states.jsonl": "38d0f61a954aa744058036a39baa9c57ac649fb913c1a77f09d7345d5c8e2808",
+        "forces.jsonl": "10df00fcc660c4d460a38d0bbacfb8f39372f8d4a84637440849d76f9794b0da",
+        "pieces.jsonl": "6c77db8b40ac106cfa130c783b6e183074b328fe8ba2a5ee4cac94164df61c40",
+        "end.state.json": "3c632f197654f88e98ea1601b2ab50516a83af290bc5391a26196ecfb7839bd1"
+      }
+    },
+    {
+      "step": 2,
+      "parts": 125,
+      "work": {
+        "force_charges": 504,
+        "convolution_terms": 2268,
+        "conversion_terms": 2268,
+        "half_subdivision_means": 3472,
+        "method": "loaded-series7"
+      },
+      "peak_and_min_cells": 250,
+      "max_wire_bytes": 178,
+      "max_remainder_bits": 96,
+      "hard_gap_lower_m": 2.6444931270919317E-05,
+      "hard_gap_upper_m": 4.0084657900391905E-05,
+      "min_compression_m": 0.001959915342099608,
+      "force_min_n": [
+        0.12494328874689442,
+        0.12494328874689442
+      ],
+      "force_max_n": [
+        0.12494401259390095,
+        0.12494401259390095
+      ],
+      "force_end_n": 0.12494328874689442,
+      "end_gap_m": 4.0084657900391905E-05,
+      "end_speed_m_s": -0.0008725013411925784,
+      "contact_impulse_ns": 0.0019522445588178528,
+      "contact_time_moment_ns2": 1.5251925342367497E-05,
+      "external_impulse_ns": 0.001953125,
+      "external_time_moment_ns2": 1.52587890625E-05,
+      "initial_elastic_j": 0.0009737299023265616,
+      "final_elastic_j": 0.0009603170370493559,
+      "initial_kinetic_j": 3.8139786889202634E-07,
+      "final_kinetic_j": 3.8062929519142407E-07,
+      "external_work_j": -1.7049658286840732E-06,
+      "internal_contact_work_j": 1.704197254983471E-06,
+      "dissipation_j": 1.1708668022222165E-05,
+      "signed_energy_defect_j": 7.340864844690605E-25,
+      "positive_energy_defect_j": 1.155609873545505E-23,
+      "relative_law_bound": 5.862276518193626E-17,
+      "worst_knot_jump_n": 1.3877787807814457E-17,
+      "errors": {
+        "step_peak_vs_reference_n": 7.050618379919797E-15,
+        "step_impulse_vs_reference_ns": 2.667357299691426E-18,
+        "step_moment_error_divided_by_mass_m": 4.927575587456791E-21,
+        "endpoint_gap_error_m": 1.9573074811513277E-17,
+        "endpoint_speed_error_m_s": 5.9361910379827164E-18,
+        "law_impulse_vs_delivered_ns": 8.418575202293563E-22,
+        "law_moment_error_divided_by_mass_m": 7.764677368764388E-24,
+        "prefix_momentum_defect_ns": 2.879755740400527E-21,
+        "positive_work_defect_per_window_j": 1.155609873545505E-23
+      },
+      "failed_gates": [],
+      "origin": "step-1/end.state.json",
+      "hashes": {
+        "states.jsonl": "2a103cb5319e1e13d1b9c19536115adf416aa0cd78b08b4d561682e0f8b11e79",
+        "forces.jsonl": "61a56fda4d03dbd52ebda304a1728fda75a96f21b75707ad8371b239a905cb16",
+        "pieces.jsonl": "a91007b29825797f5d7ff16b94061102cee3afd61a2633cad18167ba2db36b38",
+        "end.state.json": "56b6cd8831ad6df1849603663b4c02839e4004dd2cb7a34c4443842fc9770b6e"
+      }
+    },
+    {
+      "step": 3,
+      "parts": 125,
+      "work": {
+        "force_charges": 504,
+        "convolution_terms": 2268,
+        "conversion_terms": 2268,
+        "half_subdivision_means": 3472,
+        "method": "loaded-series7"
+      },
+      "peak_and_min_cells": 250,
+      "max_wire_bytes": 177,
+      "max_remainder_bits": 96,
+      "hard_gap_lower_m": 4.0084657900391905E-05,
+      "hard_gap_upper_m": 5.3710538738936084E-05,
+      "min_compression_m": 0.001946289461261064,
+      "force_min_n": [
+        0.12494255162106012,
+        0.12494255162106012
+      ],
+      "force_max_n": [
+        0.12494328874689442,
+        0.12494328874689442
+      ],
+      "force_end_n": 0.12494255162106012,
+      "end_gap_m": 5.3710538738936084E-05,
+      "end_speed_m_s": -0.0008716094865559147,
+      "contact_impulse_ns": 0.0019522331453633362,
+      "contact_time_moment_ns2": 1.5251836444910141E-05,
+      "external_impulse_ns": 0.001953125,
+      "external_time_moment_ns2": 1.52587890625E-05,
+      "initial_elastic_j": 0.0009603170370493559,
+      "final_elastic_j": 0.0009470106667539706,
+      "initial_kinetic_j": 3.8062929519142407E-07,
+      "final_kinetic_j": 3.798515485271326E-07,
+      "external_work_j": -1.7032351048180222E-06,
+      "internal_contact_work_j": 1.7024573581537309E-06,
+      "dissipation_j": 1.1603912937231623E-05,
+      "signed_energy_defect_j": 4.8594687741167325E-24,
+      "positive_energy_defect_j": 1.2974931761705195E-23,
+      "relative_law_bound": 5.949532923879659E-17,
+      "worst_knot_jump_n": 1.3877787807814457E-17,
+      "errors": {
+        "step_peak_vs_reference_n": 7.109118027890217E-15,
+        "step_impulse_vs_reference_ns": 6.927649450616006E-18,
+        "step_moment_error_divided_by_mass_m": 2.0797707784895405E-18,
+        "endpoint_gap_error_m": 1.7591369517992215E-17,
+        "endpoint_speed_error_m_s": 6.1638404885987225E-18,
+        "law_impulse_vs_delivered_ns": 5.573169104523561E-21,
+        "law_moment_error_divided_by_mass_m": 3.2193581511083735E-23,
+        "prefix_momentum_defect_ns": 5.573169104523561E-21,
+        "positive_work_defect_per_window_j": 1.2974931761705195E-23
+      },
+      "failed_gates": [],
+      "origin": "step-2/end.state.json",
+      "hashes": {
+        "states.jsonl": "49f684fcd52a24443ffb9a8c078751efb885b2d804ba94475538da51d40bda01",
+        "forces.jsonl": "8a69a25a80d30861f23d5dbb124461aa829c9e8fa2c0d37be2d53a7848d73335",
+        "pieces.jsonl": "a7340a7937965b15fd771d4d1ba3f9212f2c0b11d53f05f1be816795139c6eda",
+        "end.state.json": "6fea0f1fc6232407bbee82311a346fab2da5ce0cd694a22a89a4eedbc610b171"
+      }
+    },
+    {
+      "step": 4,
+      "parts": 125,
+      "work": {
+        "force_charges": 504,
+        "convolution_terms": 2268,
+        "conversion_terms": 2268,
+        "half_subdivision_means": 3472,
+        "method": "loaded-series7"
+      },
+      "peak_and_min_cells": 250,
+      "max_wire_bytes": 178,
+      "max_remainder_bits": 96,
+      "hard_gap_lower_m": 5.3710538738936084E-05,
+      "hard_gap_upper_m": 6.732239381792474E-05,
+      "min_compression_m": 0.0019326776061820753,
+      "force_min_n": [
+        0.12494180090841087,
+        0.12494180090841087
+      ],
+      "force_max_n": [
+        0.12494255162106012,
+        0.12494255162106012
+      ],
+      "force_end_n": 0.12494180090841087,
+      "end_gap_m": 6.732239381792474E-05,
+      "end_speed_m_s": -0.0008707060085875075,
+      "contact_impulse_ns": 0.001952221522031593,
+      "contact_time_moment_ns2": 1.5251745914052498E-05,
+      "external_impulse_ns": 0.001953125,
+      "external_time_moment_ns2": 1.52587890625E-05,
+      "initial_elastic_j": 0.0009470106667539706,
+      "final_elastic_j": 0.0009338106823594192,
+      "initial_kinetic_j": 3.798515485271326E-07,
+      "final_kinetic_j": 3.790644766951944E-07,
+      "external_work_j": -1.701481884873583E-06,
+      "internal_contact_work_j": 1.7006948130416448E-06,
+      "dissipation_j": 1.149928958150977E-05,
+      "signed_energy_defect_j": 4.663877735479174E-24,
+      "positive_energy_defect_j": 1.2729293650123672E-23,
+      "relative_law_bound": 5.660886284302169E-17,
+      "worst_knot_jump_n": 1.3877787807814457E-17,
+      "errors": {
+        "step_peak_vs_reference_n": 7.0310840154396826E-15,
+        "step_impulse_vs_reference_ns": 4.277092359694658E-18,
+        "step_moment_error_divided_by_mass_m": 1.2116306956546825E-18,
+        "endpoint_gap_error_m": 1.647636132997189E-17,
+        "endpoint_speed_error_m_s": 6.24093284829338E-18,
+        "law_impulse_vs_delivered_ns": 5.354579694019467E-21,
+        "law_moment_error_divided_by_mass_m": 2.7823929497143814E-23,
+        "prefix_momentum_defect_ns": 5.354579694019467E-21,
+        "positive_work_defect_per_window_j": 1.2729293650123672E-23
+      },
+      "failed_gates": [],
+      "origin": "step-3/end.state.json",
+      "hashes": {
+        "states.jsonl": "f33efdb4af00afd22950076feab1191b8e324f63b90e87389f919213d40d54d9",
+        "forces.jsonl": "86bec618d667c9161b4b1a0c13e0d6914eb879559925562f45f2e5449dc3d3e5",
+        "pieces.jsonl": "05183b93471943f597b694faaa9302696e02776966fb8665498003588d7269e6",
+        "end.state.json": "b727ed3554a68bf5bb6da2bdbae8c0c53dc185fa3bf7b4e25505959103d0ad81"
+      }
+    },
+    {
+      "step": 5,
+      "parts": 125,
+      "work": {
+        "force_charges": 504,
+        "convolution_terms": 2268,
+        "conversion_terms": 2268,
+        "half_subdivision_means": 3472,
+        "method": "loaded-series7"
+      },
+      "peak_and_min_cells": 250,
+      "max_wire_bytes": 177,
+      "max_remainder_bits": 96,
+      "hard_gap_lower_m": 6.732239381792474E-05,
+      "hard_gap_upper_m": 8.092003985146603E-05,
+      "min_compression_m": 0.001919079960148534,
+      "force_min_n": [
+        0.12494103629256789,
+        0.12494103629256789
+      ],
+      "force_max_n": [
+        0.12494180090841087,
+        0.12494180090841087
+      ],
+      "force_end_n": 0.12494103629256789,
+      "end_gap_m": 8.092003985146603E-05,
+      "end_speed_m_s": -0.000869790692532793,
+      "contact_impulse_ns": 0.0019522096839452855,
+      "contact_time_moment_ns2": 1.525165371186148E-05,
+      "external_impulse_ns": 0.001953125,
+      "external_time_moment_ns2": 1.52587890625E-05,
+      "initial_elastic_j": 0.0009338106823594192,
+      "final_elastic_j": 0.0009207169733609247,
+      "initial_kinetic_j": 3.790644766951944E-07,
+      "final_kinetic_j": 3.7826792440833785E-07,
+      "external_work_j": -1.6997057541926607E-06,
+      "internal_contact_work_j": 1.698909201905804E-06,
+      "dissipation_j": 1.1394799796588707E-05,
+      "signed_energy_defect_j": 1.2937371803971507E-25,
+      "positive_energy_defect_j": 1.0087428029428861E-23,
+      "relative_law_bound": 5.909531950205382E-17,
+      "worst_knot_jump_n": 1.3877787807814457E-17,
+      "errors": {
+        "step_peak_vs_reference_n": 7.0339444243612886E-15,
+        "step_impulse_vs_reference_ns": 8.475853079204534E-18,
+        "step_moment_error_divided_by_mass_m": 9.698190941560896E-19,
+        "endpoint_gap_error_m": 1.5601869311570384E-17,
+        "endpoint_speed_error_m_s": 6.3167859274979136E-18,
+        "law_impulse_vs_delivered_ns": 1.4918141412021025E-22,
+        "law_moment_error_divided_by_mass_m": 6.5124985166861765E-24,
+        "prefix_momentum_defect_ns": 2.6546502204336115E-21,
+        "positive_work_defect_per_window_j": 1.0087428029428861E-23
+      },
+      "failed_gates": [],
+      "origin": "step-4/end.state.json",
+      "hashes": {
+        "states.jsonl": "8b5d99fd3e351a998015c32f7c235d8fcfbc47cfb86d408af8ae8227181d8cc4",
+        "forces.jsonl": "72ef167075c933b9a742183a03c0565f50d4d3831a7866bc6d0284350de67f8c",
+        "pieces.jsonl": "15b89078a0d8b52b93e42c8adcd1ebfa1e9ac58bc7d588f74425b655d51a4035",
+        "end.state.json": "bb2c33714d3f18fca5ddffa4a665e471ee6527fbdea9219fa61ff9300b2a4dab"
+      }
+    },
+    {
+      "step": 6,
+      "parts": 125,
+      "work": {
+        "force_charges": 504,
+        "convolution_terms": 2268,
+        "conversion_terms": 2268,
+        "half_subdivision_means": 3472,
+        "method": "loaded-series7"
+      },
+      "peak_and_min_cells": 250,
+      "max_wire_bytes": 178,
+      "max_remainder_bits": 96,
+      "hard_gap_lower_m": 8.092003985146603E-05,
+      "hard_gap_upper_m": 9.450329015915714E-05,
+      "min_compression_m": 0.0019054967098408428,
+      "force_min_n": [
+        0.12494025744847582,
+        0.12494025744847582
+      ],
+      "force_max_n": [
+        0.12494103629256789,
+        0.12494103629256789
+      ],
+      "force_end_n": 0.12494025744847582,
+      "end_gap_m": 9.450329015915714E-05,
+      "end_speed_m_s": -0.0008688633186263423,
+      "contact_impulse_ns": 0.0019521976260935493,
+      "contact_time_moment_ns2": 1.5251559799366228E-05,
+      "external_impulse_ns": 0.001953125,
+      "external_time_moment_ns2": 1.52587890625E-05,
+      "initial_elastic_j": 0.0009207169733609247,
+      "final_elastic_j": 0.0009077294278035693,
+      "initial_kinetic_j": 3.7826792440833785E-07,
+      "final_kinetic_j": 3.774617332271904E-07,
+      "external_work_j": -1.6979062884613899E-06,
+      "internal_contact_work_j": 1.6971000972802426E-06,
+      "dissipation_j": 1.1290445460075128E-05,
+      "signed_energy_defect_j": 5.461500695650637E-24,
+      "positive_energy_defect_j": 1.4973815943767583E-23,
+      "relative_law_bound": 5.752539254729174E-17,
+      "worst_knot_jump_n": 1.3877787807814457E-17,
+      "errors": {
+        "step_peak_vs_reference_n": 6.978103390078213E-15,
+        "step_impulse_vs_reference_ns": 5.001428201059317E-18,
+        "step_moment_error_divided_by_mass_m": 1.0413827320702906E-18,
+        "endpoint_gap_error_m": 1.465137385961725E-17,
+        "endpoint_speed_error_m_s": 6.41821412855723E-18,
+        "law_impulse_vs_delivered_ns": 6.285229721475774E-21,
+        "law_moment_error_divided_by_mass_m": 8.253595234390392E-24,
+        "prefix_momentum_defect_ns": 6.862945596153723E-21,
+        "positive_work_defect_per_window_j": 1.4973815943767583E-23
+      },
+      "failed_gates": [],
+      "origin": "step-5/end.state.json",
+      "hashes": {
+        "states.jsonl": "3dd7e67d35c725ffd49478984e6ad9adfd029da8842241fee4c21c828ae06e75",
+        "forces.jsonl": "65c66ba87aef1d80933a867341a6befc62f19c470d7968d56e3a639620227152",
+        "pieces.jsonl": "7a34f2a1cdaf13b6d781d9e4661851354b8754cd126a77447b6f87dca7c8b4ce",
+        "end.state.json": "aa9bcfda171a70b8e04cbed3c02844caf005c56c50457a51935e434763d392c6"
+      }
+    },
+    {
+      "step": 7,
+      "parts": 125,
+      "work": {
+        "force_charges": 504,
+        "convolution_terms": 2268,
+        "conversion_terms": 2268,
+        "half_subdivision_means": 3472,
+        "method": "loaded-series7"
+      },
+      "peak_and_min_cells": 250,
+      "max_wire_bytes": 178,
+      "max_remainder_bits": 96,
+      "hard_gap_lower_m": 9.450329015915714E-05,
+      "hard_gap_upper_m": 0.00010807195458671979,
+      "min_compression_m": 0.0018919280454132803,
+      "force_min_n": [
+        0.12493946404213775,
+        0.12493946404213775
+      ],
+      "force_max_n": [
+        0.12494025744847582,
+        0.12494025744847582
+      ],
+      "force_end_n": 0.12493946404213775,
+      "end_gap_m": 0.00010807195458671979,
+      "end_speed_m_s": -0.000867923661954231,
+      "contact_impulse_ns": 0.0019521853433278886,
+      "contact_time_moment_ns2": 1.5251464136526034E-05,
+      "external_impulse_ns": 0.001953125,
+      "external_time_moment_ns2": 1.52587890625E-05,
+      "initial_elastic_j": 0.0009077294278035693,
+      "final_elastic_j": 0.0008948479322553288,
+      "initial_kinetic_j": 3.774617332271904E-07,
+      "final_kinetic_j": 3.766457414900211E-07,
+      "external_work_j": -1.696083053445329E-06,
+      "internal_contact_work_j": 1.6952670617081597E-06,
+      "dissipation_j": 1.118622848653243E-05,
+      "signed_energy_defect_j": -2.820384611325475E-25,
+      "positive_energy_defect_j": 1.0713261285108656E-23,
+      "relative_law_bound": 5.987153359595895E-17,
+      "worst_knot_jump_n": 1.3877787807814457E-17,
+      "errors": {
+        "step_peak_vs_reference_n": 7.005069310729214E-15,
+        "step_impulse_vs_reference_ns": 5.671200559193362E-18,
+        "step_moment_error_divided_by_mass_m": 2.578649673708338E-19,
+        "endpoint_gap_error_m": 1.501396092274679E-17,
+        "endpoint_speed_error_m_s": 6.247013569363868E-18,
+        "law_impulse_vs_delivered_ns": 3.2454521482171757E-22,
+        "law_moment_error_divided_by_mass_m": 5.9837539818693126E-24,
+        "prefix_momentum_defect_ns": 2.664026158969574E-21,
+        "positive_work_defect_per_window_j": 1.0713261285108656E-23
+      },
+      "failed_gates": [],
+      "origin": "step-6/end.state.json",
+      "hashes": {
+        "states.jsonl": "631ae961c0ebe940d507438724827944203ba74cba66d9db02c05254d1b385bc",
+        "forces.jsonl": "468a0d4231bfec5524df268919f5a22dfe5e6f09e6a4e6fe07f998aad92f657e",
+        "pieces.jsonl": "2c1ad309779e43883e0f67eac339142cad7f1cc402f168a67170674cdfd458b3",
+        "end.state.json": "320bef9f44426185241309e25842c2a51ebb67e9f6d713e52152c8c7a003a18a"
+      }
+    }
+  ]
+}

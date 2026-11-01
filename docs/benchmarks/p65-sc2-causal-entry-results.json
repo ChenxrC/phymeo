@@ -1,0 +1,901 @@
+{
+  "schema": "p65-sc2-causal-entry-results-v1",
+  "baseline": "08b717466892b9d4f22dbdeb10f47995d085253f",
+  "protocol": "p65-sc2-causal-entry-protocol.json",
+  "evidence_root": "artifacts/p65-n2-sc2-causal-entry-20261101-01",
+  "released_guard": "release-183703448",
+  "scope": "Original ordinary-mass nominal SC2 HOST path certified continuously from the outside inlet through the four new births and the later d birth. Latest published time is the d checkpoint. The registered peak continuation was rejected, with a proven constitutive and energy failure. The full first original step, longer window, native and production dispatch remain open.",
+  "cluster": {
+    "accepted": true,
+    "gates": {
+      "relative_positive": true,
+      "owner_impulse_ns": true,
+      "owner_backward_over_mass_m": true,
+      "node_velocity_m_s": true,
+      "node_position_m": true,
+      "positive_energy_j": true,
+      "paired_angular_nms": true,
+      "linear_ns": true,
+      "whole_path_hard": true,
+      "exact_two_moments": true,
+      "owner_budget": true,
+      "cell_budget": true
+    },
+    "owners": [
+      "U/0/lower",
+      "U/1/lower",
+      "U/2/lower",
+      "D/1/lower",
+      "D/0/lower",
+      "D/3/lower"
+    ],
+    "all_original_owners": true,
+    "inlet": "df977891667806f4ef2388c19494cd7b5d2bcc6d80861065e29d0b742f01fabe",
+    "endpoint": "2f5aa80d4571a450ed2839f7b9b445e3c2dfdb8ed450b06b2c21265fb1a61b4b",
+    "start_s": "2044402077/274877906944",
+    "stop_s": "2044434845/274877906944",
+    "binding": "071c13ddb428b795c3f1f66ff16b060191a77991914157e4fbfdba1f35bd3c83",
+    "model": "7645de9d68f930a62e0690deca067b4dbf5878b14bb8c8716cde7564573cfa84",
+    "events": [
+      {
+        "owner": "U/1/lower",
+        "index": 1,
+        "root_unit": [
+          "4824875/67108864",
+          "308792001/4294967296"
+        ],
+        "prebirth_force_n": 0,
+        "point_impulse_ns": 0,
+        "J_ns": "41710182901876502323637/5192296858534827628530496329220096",
+        "B_ns2": "110842733769497742769620103406489/374144419156711147060143317175368453031918731001856",
+        "positive_time_relative_upper": 1.5319402878195393e-9,
+        "final_pressure_n": [
+          0.00014521314891669375,
+          0.0001452131493902733
+        ],
+        "seconds": [
+          0.007437499999999985,
+          0.007437500000000014
+        ]
+      },
+      {
+        "owner": "D/1/lower",
+        "index": 3,
+        "root_unit": [
+          "169599579/2147483648",
+          "339199159/4294967296"
+        ],
+        "prebirth_force_n": 0,
+        "point_impulse_ns": 0,
+        "J_ns": "41076248020362408004797/5192296858534827628530496329220096",
+        "B_ns2": "108325408751331376525433946503725/374144419156711147060143317175368453031918731001856",
+        "positive_time_relative_upper": 1.644378576428458e-9,
+        "final_pressure_n": [
+          0.00014410537554694156,
+          0.00014410537602052093
+        ],
+        "seconds": [
+          0.007437500843968158,
+          0.0074375008439681875
+        ]
+      },
+      {
+        "owner": "U/0/lower",
+        "index": 0,
+        "root_unit": [
+          "386000673/1073741824",
+          "1544002693/4294967296"
+        ],
+        "prebirth_force_n": 0,
+        "point_impulse_ns": 0,
+        "J_ns": "19864944170510039759655/5192296858534827628530496329220096",
+        "B_ns2": "36431838842384525280125701581195/374144419156711147060143317175368453031918731001856",
+        "positive_time_relative_upper": 2.144275298177774e-9,
+        "final_pressure_n": [
+          0.00010021265959230899,
+          0.00010021266006587547
+        ],
+        "seconds": [
+          0.007437534283983748,
+          0.0074375342839837775
+        ]
+      },
+      {
+        "owner": "D/0/lower",
+        "index": 4,
+        "root_unit": [
+          "1574410551/4294967296",
+          "196801319/536870912"
+        ],
+        "prebirth_force_n": 0,
+        "point_impulse_ns": 0,
+        "J_ns": "9714103569122753759281/2596148429267413814265248164610048",
+        "B_ns2": "52855539963496859376449308041409/561216628735066720590214975763052679547878096502784",
+        "positive_time_relative_upper": 2.222442651960577e-9,
+        "final_pressure_n": [
+          0.00009910491154126168,
+          0.00009910491201482795
+        ],
+        "seconds": [
+          0.007437535127971378,
+          0.007437535127971407
+        ]
+      }
+    ],
+    "distinct_and_ordered": true,
+    "local_relative": [
+      2.144275298177774e-9,
+      1.5319402878195393e-9,
+      9.690082344865564e-10,
+      1.644378576428458e-9,
+      2.222442651960577e-9,
+      5e-324
+    ],
+    "local_J_ns": [
+      "19864944170510039759655/5192296858534827628530496329220096",
+      "41710182901876502323637/5192296858534827628530496329220096",
+      "206330713314213/19342813113834066795298816",
+      "41076248020362408004797/5192296858534827628530496329220096",
+      "9714103569122753759281/2596148429267413814265248164610048",
+      "0"
+    ],
+    "local_B_ns2": [
+      "36431838842384525280125701581195/374144419156711147060143317175368453031918731001856",
+      "110842733769497742769620103406489/374144419156711147060143317175368453031918731001856",
+      "13706282152379/30423614405477505635920876929024",
+      "108325408751331376525433946503725/374144419156711147060143317175368453031918731001856",
+      "52855539963496859376449308041409/561216628735066720590214975763052679547878096502784",
+      "0"
+    ],
+    "local_J_error_upper_ns": [
+      8.203673675761993e-21,
+      1.2306212704481035e-20,
+      4.307467868837378e-21,
+      1.3008674974149404e-20,
+      8.315794982274801e-21,
+      5e-324
+    ],
+    "local_B_error_over_mass_m": [
+      4.175921812933695e-28,
+      9.07694679973234e-28,
+      3.9668338304327783e-28,
+      9.52188364828506e-28,
+      4.186205480236047e-28,
+      5e-324
+    ],
+    "upper": {
+      "relative_positive": 0.0012742910864415866,
+      "owner_impulse_ns": 6.14391635368039e-17,
+      "owner_backward_over_mass_m": 1.499864973968477e-23,
+      "node_velocity_m_s": 3.404421209248993e-7,
+      "node_position_m": 1.3073133529894735e-9,
+      "positive_energy_j": 2.428981987670569e-16,
+      "paired_angular_nms": 1.1023174983270857e-10,
+      "linear_ns": 1.0606409047531951e-20
+    },
+    "cumulative_J_error_upper_ns": [
+      8.203673675761993e-21,
+      1.2306212704481035e-20,
+      6.14391635368039e-17,
+      1.3008674974149404e-20,
+      8.315794982274801e-21,
+      5e-324
+    ],
+    "cumulative_B_error_over_mass_m": [
+      4.175921812933695e-28,
+      9.07694679973234e-28,
+      1.499864973968477e-23,
+      9.52188364828506e-28,
+      4.186205480236047e-28,
+      5e-324
+    ],
+    "hard_gap_lower_m": 0.0019999840273612927,
+    "local_energy_j": [
+      -2.91574209053e-12,
+      1.2154457709440826e-16
+    ],
+    "local_angular_upper_nms": 1.0999079699453503e-10,
+    "charges": {
+      "inherited": 84,
+      "new": 42,
+      "total": 126,
+      "remaining": 386
+    },
+    "cells": {
+      "new": 792,
+      "inherited": 455,
+      "total": 1247
+    },
+    "peak": {
+      "force_n": [
+        0.0006502382002387041,
+        0.0006563499707810562
+      ],
+      "time_s": [
+        0.007437608775944681,
+        0.007437610638589832
+      ],
+      "leaves": 64
+    },
+    "terminal_gaps_m": [
+      [
+        0.0019999904558062266,
+        0.0019999904558062275
+      ],
+      [
+        0.001999986170176273,
+        0.0019999861701762737
+      ],
+      [
+        0.001999984027361293,
+        0.001999984027361294
+      ],
+      [
+        0.0019999862756754096,
+        0.0019999862756754105
+      ],
+      [
+        0.001999990561305364,
+        0.0019999905613053647
+      ],
+      [
+        0.0021161967990883995,
+        0.0021161967990884004
+      ]
+    ],
+    "terminal_rates_m_s": [
+      [
+        -0.12499827137425741,
+        -0.12499827137425738
+      ],
+      [
+        -0.124999999950998,
+        -0.12499999995099798
+      ],
+      [
+        -0.125000864258204,
+        -0.12500086425820395
+      ],
+      [
+        -0.12499997158504332,
+        -0.12499997158504329
+      ],
+      [
+        -0.12499824300830271,
+        -0.12499824300830269
+      ],
+      [
+        -0.10937583591367682,
+        -0.10937583591367679
+      ]
+    ],
+    "rejected_transactions": {
+      "lost-inlet": "wrong physical inlet",
+      "missing-owner": "owner order, duration or grid",
+      "merged": "invalid event moments or map",
+      "exchanged": "not the earliest event",
+      "early": "event address or nonzero prebirth pressure",
+      "impulse": "invalid event moments or map",
+      "backward": "invalid event moments or map",
+      "end": "wrong endpoint moments",
+      "omitted-event": "isolation work ledger"
+    }
+  },
+  "d": {
+    "accepted": true,
+    "gates": {
+      "relative_positive": true,
+      "owner_impulse_ns": true,
+      "owner_backward_over_mass_m": true,
+      "node_velocity_m_s": true,
+      "node_position_m": true,
+      "positive_energy_j": true,
+      "paired_angular_nms": true,
+      "linear_ns": true,
+      "whole_path_hard": true,
+      "exact_two_moments": true,
+      "owner_budget": true,
+      "cell_budget": true
+    },
+    "owners": [
+      "U/0/lower",
+      "U/1/lower",
+      "U/2/lower",
+      "D/1/lower",
+      "D/0/lower",
+      "D/3/lower"
+    ],
+    "all_original_owners": true,
+    "inlet": "2f5aa80d4571a450ed2839f7b9b445e3c2dfdb8ed450b06b2c21265fb1a61b4b",
+    "endpoint": "18ef159f5ecc0511620655c78ef67da1d227e49a79928ad1c7a66519a7c8ac56",
+    "start_s": "2044434845/274877906944",
+    "stop_s": "2338287005/274877906944",
+    "binding": "693430280a4d7949379052e9e75eb9cd2ad2d39394ed93d6916c77ef6a57819d",
+    "model": "7645de9d68f930a62e0690deca067b4dbf5878b14bb8c8716cde7564573cfa84",
+    "events": [
+      {
+        "owner": "D/3/lower",
+        "index": 5,
+        "root_unit": [
+          "2864002355/4294967296",
+          "716000589/1073741824"
+        ],
+        "prebirth_force_n": 0,
+        "point_impulse_ns": 0,
+        "J_ns": "1083537730618071506446923/5192296858534827628530496329220096",
+        "B_ns2": "133177270320504717984151710680025/2923003274661805836407369665432566039311865085952",
+        "positive_time_relative_upper": 4.224182332597879e-05,
+        "final_pressure_n": [
+          0.0006371994244851282,
+          0.0006372041422079217
+        ],
+        "seconds": [
+          0.008505983574575991,
+          0.00850598357494903
+        ]
+      }
+    ],
+    "distinct_and_ordered": true,
+    "local_relative": [
+      5.228454314300608e-07,
+      3.610461662695386e-07,
+      2.9904138039588265e-07,
+      0.00013901089771188268,
+      0.00020212741536733303,
+      4.224182332597879e-05
+    ],
+    "local_J_ns": [
+      "8547826560798325800923040117267055488030823701/11692013098647223345629478661730264157247460343808",
+      "2137159687831881003637027836820144763797502901/2923003274661805836407369665432566039311865085952",
+      "17233358710031499388598880050885072432133539745/23384026197294446691258957323460528314494920687616",
+      "8548621167786424436506930078925563399676811483/11692013098647223345629478661730264157247460343808",
+      "273529887284712972473736330327127972771123221309/374144419156711147060143317175368453031918731001856",
+      "1083537730618071506446923/5192296858534827628530496329220096"
+    ],
+    "local_B_ns2": [
+      "1652227428958870152848330470583158678042785665986455/6277101735386680763835789423207666416102355444464034512896",
+      "413109097850620262271092213422159402415276846568465/1569275433846670190958947355801916604025588861116008628224",
+      "3320748550380601453050637673526188834999827879771065/12554203470773361527671578846415332832204710888928069025792",
+      "1652431682290213841389576110981686350297180139874705/6277101735386680763835789423207666416102355444464034512896",
+      "52871127038464266479236487638389827931282592839507885/200867255532373784442745261542645325315275374222849104412672",
+      "133177270320504717984151710680025/2923003274661805836407369665432566039311865085952"
+    ],
+    "local_J_error_upper_ns": [
+      1.4096545233352574e-11,
+      1.4097065933744343e-11,
+      7.741044384329668e-12,
+      3.784501246335809e-11,
+      3.78440366768065e-11,
+      8.814746449207472e-15
+    ],
+    "local_B_error_over_mass_m": [
+      3.0205799344445578e-15,
+      3.0207039794754844e-15,
+      1.7636128544393317e-15,
+      2.7773831449797784e-14,
+      2.7773238549242e-14,
+      3.8490736990426206e-21
+    ],
+    "upper": {
+      "relative_positive": 0.0012742910864415868,
+      "owner_impulse_ns": 3.784501247636677e-11,
+      "owner_backward_over_mass_m": 2.777383147761201e-14,
+      "node_velocity_m_s": 3.4196583024045254e-07,
+      "node_position_m": 1.671938487855829e-09,
+      "positive_energy_j": 1.3589061150808546e-11,
+      "paired_angular_nms": 1.2238387412812117e-09,
+      "linear_ns": 2.0880562460953443e-19
+    },
+    "cumulative_J_error_upper_ns": [
+      1.4096545241556248e-11,
+      1.4097065946050556e-11,
+      7.741105823493206e-12,
+      3.784501247636677e-11,
+      3.7844036685122293e-11,
+      8.814746449207472e-15
+    ],
+    "cumulative_B_error_over_mass_m": [
+      3.020579951984888e-15,
+      3.0207040057877624e-15,
+      1.763744229801676e-15,
+      2.777383147761201e-14,
+      2.7773238567022054e-14,
+      3.8490736990426206e-21
+    ],
+    "hard_gap_lower_m": 0.0018675345786078477,
+    "local_energy_j": [
+      -2.1634814049699245e-11,
+      1.3588818252609779e-11
+    ],
+    "local_angular_upper_nms": 1.1136069914485031e-09,
+    "charges": {
+      "inherited": 126,
+      "new": 162,
+      "total": 288,
+      "remaining": 224
+    },
+    "cells": {
+      "new": 388,
+      "inherited": 1247,
+      "total": 1635
+    },
+    "peak": {
+      "force_n": [
+        6.638839174912565,
+        6.696035577429507
+      ],
+      "time_s": [
+        0.00848993500767392,
+        0.008506638569087956
+      ],
+      "leaves": 64
+    },
+    "terminal_gaps_m": [
+      [
+        0.0018680756659243088,
+        0.0018680756659243093
+      ],
+      [
+        0.001868069389648823,
+        0.0018680693896488234
+      ],
+      [
+        0.0018675422179345474,
+        0.0018675422179345478
+      ],
+      [
+        0.0018680695254701366,
+        0.001868069525470137
+      ],
+      [
+        0.0018680758017456227,
+        0.001868075801745623
+      ],
+      [
+        0.00199992955765741,
+        0.001999929557657411
+      ]
+    ],
+    "terminal_rates_m_s": [
+      [
+        -0.12024270029063085,
+        -0.12024270029063082
+      ],
+      [
+        -0.12024467611330007,
+        -0.12024467611330004
+      ],
+      [
+        -0.12169646805193303,
+        -0.121696468051933
+      ],
+      [
+        -0.12024464996625998,
+        -0.12024464996625996
+      ],
+      [
+        -0.12024267414359076,
+        -0.12024267414359073
+      ],
+      [
+        -0.10754537851291397,
+        -0.10754537851291394
+      ]
+    ],
+    "previous_certificate_sha": "1363f065896d19c5cfadc0b4fffd633517a5d6164a4649a303da638eb678dbad",
+    "preceding_peak_upper_n": 0.0006563499707810562,
+    "same_published_restart": true,
+    "local_smooth_absolute_J_error_lower_ns": [
+      1.2874410015618441e-11,
+      1.2874869924468046e-11,
+      6.760549352590195e-12,
+      6.787423417251128e-12,
+      6.787104761322895e-12,
+      0.0
+    ],
+    "local_smooth_signed_J_error_ns": [
+      [
+        -1.3955730218666542e-11,
+        -1.2667147156819145e-11
+      ],
+      [
+        -1.3956239763964158e-11,
+        -1.266758790858851e-11
+      ],
+      [
+        -7.573791846591965e-12,
+        -6.528250563037857e-12
+      ],
+      [
+        -3.76413310738033e-11,
+        1.1164277708504345e-11
+      ],
+      [
+        -3.764036906836724e-11,
+        1.116426481840352e-11
+      ],
+      [
+        0.0,
+        0.0
+      ]
+    ]
+  },
+  "ordering": {
+    "origin": "df977891667806f4ef2388c19494cd7b5d2bcc6d80861065e29d0b742f01fabe",
+    "four_samples": [
+      {
+        "owner": "U/1/lower",
+        "witness_s": 0.007437495714609606,
+        "old_p_n": 0.000005673804480996752,
+        "corrected_p_n": 0,
+        "gap_m": [
+          0.002000000535673799,
+          0.0020000005356738
+        ],
+        "earlier_new_owner_impulse_ns": [
+          0,
+          0
+        ]
+      },
+      {
+        "owner": "D/1/lower",
+        "witness_s": 0.007437496136617408,
+        "old_p_n": 0.0000062325146661332075,
+        "corrected_p_n": 0,
+        "gap_m": [
+          0.002000000588418713,
+          0.002000000588418714
+        ],
+        "earlier_new_owner_impulse_ns": [
+          4.674352133449767e-16,
+          4.674352755422984e-16
+        ]
+      },
+      {
+        "owner": "U/0/lower",
+        "witness_s": 0.0074375128566213445,
+        "old_p_n": 0.000028363573087411025,
+        "corrected_p_n": 0,
+        "gap_m": [
+          0.0020000026783832635,
+          0.0020000026783832643
+        ],
+        "earlier_new_owner_impulse_ns": [
+          1.505191848544119e-12,
+          1.5051918562183428e-12
+        ]
+      },
+      {
+        "owner": "D/0/lower",
+        "witness_s": 0.007437513278629147,
+        "old_p_n": 0.000028922033572011845,
+        "corrected_p_n": 0,
+        "gap_m": [
+          0.002000002731129393,
+          0.002000002731129394
+        ],
+        "earlier_new_owner_impulse_ns": [
+          1.5816143496561754e-12,
+          1.5816143576663623e-12
+        ]
+      }
+    ],
+    "negative_transactions": {
+      "merge with consistent moments": "overlapping, reordered or duplicate births",
+      "bypass earliest true root": "not the earliest event"
+    },
+    "address_force_evaluations": 0
+  },
+  "peak_rejection": {
+    "reason": "failed physical gates: relative_positive, owner_impulse_ns, owner_backward_over_mass_m, node_velocity_m_s, node_position_m, positive_energy_j",
+    "gates": {
+      "relative_positive": false,
+      "owner_impulse_ns": false,
+      "owner_backward_over_mass_m": false,
+      "node_velocity_m_s": false,
+      "node_position_m": false,
+      "positive_energy_j": false,
+      "paired_angular_nms": true,
+      "linear_ns": true,
+      "whole_path_hard": true,
+      "exact_two_moments": true,
+      "owner_budget": true,
+      "cell_budget": true
+    },
+    "upper": {
+      "relative_positive": 0.21225877569596352,
+      "owner_impulse_ns": 0.00031677896038439124,
+      "owner_backward_over_mass_m": 6.529348358489717e-7,
+      "node_velocity_m_s": 0.0038016994301138403,
+      "node_position_m": 0.0000039217483073796555,
+      "positive_energy_j": 0.00005624356473300994,
+      "paired_angular_nms": 5.659679786522799e-9,
+      "linear_ns": 4.9187951661762455e-19
+    },
+    "hard_gap_lower_m": 0.0013016763021774988,
+    "charges": {
+      "inherited": 288,
+      "new": 210,
+      "total": 498,
+      "remaining": 14
+    },
+    "cells": {
+      "new": 577,
+      "inherited": 1635,
+      "total": 2212
+    },
+    "inlet": "18ef159f5ecc0511620655c78ef67da1d227e49a79928ad1c7a66519a7c8ac56",
+    "rejected_candidate": "6fb3be5d8a8d19e0243f3b8821865ef9a7dd35b9f758366a5821b6c8bcdc231f",
+    "rolled_back": true
+  },
+  "peak_forensics": {
+    "sweep_max_acceleration_defects_m_s2": [
+      14.364642856243275,
+      4.25409943987189,
+      1.0162385906579017
+    ],
+    "sample_interpolation_error_upper_n": 1.4865396049420218e-15,
+    "sampled_law_on_own_trial_error_upper_n": 3.029290132149467e-14,
+    "last_trial_to_published_position_max_m": 0.000003710546374096539,
+    "last_trial_to_published_velocity_max_m_s": 0.002354655938280177,
+    "largest_sample_shortage": {
+      "time_s": 0.015625,
+      "node": 11,
+      "owner": "U/1/lower",
+      "published_n": 0.8003296487185171,
+      "law_on_published_n": [
+        1.0158408341387544,
+        1.0158408341387548
+      ],
+      "law_on_trial_n": [
+        0.800329648718516,
+        0.8003296487185162
+      ],
+      "shortage_n": [
+        0.2155111854202375,
+        0.21551118542023756
+      ],
+      "trial_rate_m_s": [
+        -0.015178675478315461,
+        -0.015178675478315458
+      ],
+      "published_rate_m_s": [
+        -0.019318639310811746,
+        -0.01931863931081174
+      ]
+    },
+    "global_force_law_J_error_lower_ns": [
+      0.00031374976920205366,
+      0.00031377113859957335,
+      0.00024317819967606118,
+      0.0003137705641640951,
+      0.0003137491947826341,
+      0.00017858393697146554
+    ],
+    "local_signed_J_defect_ns": [
+      [
+        -0.00031674459968267644,
+        -0.000313737071110963
+      ],
+      [
+        -0.00031676618906359904,
+        -0.0003137584392486022
+      ],
+      [
+        -0.0002458100059388535,
+        -0.00024316865116836566
+      ],
+      [
+        -0.00031676624362244704,
+        -0.00031375785952845965
+      ],
+      [
+        -0.0003167446542413554,
+        -0.00031373649140699914
+      ],
+      [
+        -0.00018057788481618626,
+        -0.00017857793952133052
+      ]
+    ],
+    "joint_signed_energy_j": [
+      0.000056243224505049415,
+      0.00005624355114394879
+    ],
+    "rolled_back_to": "18ef159f5ecc0511620655c78ef67da1d227e49a79928ad1c7a66519a7c8ac56",
+    "original_h_charges": {
+      "inherited": 288,
+      "new": 210,
+      "total": 498,
+      "remaining": 14
+    },
+    "candidate_peak": {
+      "force_n": [
+        15.833523997689086,
+        16.29458207090787
+      ],
+      "time_s": [
+        0.010619902118889966,
+        0.011954594887185978
+      ],
+      "leaves": 64,
+      "covers_first_original_step": true,
+      "interior": true
+    },
+    "candidate_peak_accepted": false
+  },
+  "raw": [
+    {
+      "name": "cluster-proposal.json.gz",
+      "sha256": "47af86311c244f77cd367f1fdbb2509fe4f8335653bcbd19aecb1fcea064f10c",
+      "size": 1366
+    },
+    {
+      "name": "cluster-attempt.json.gz",
+      "sha256": "6a7508e567e8ae6b14c4c28ed0b17139eff9197c2eb6d7764623e402dfe240ee",
+      "size": 2016
+    },
+    {
+      "name": "cluster-transaction.json.gz",
+      "sha256": "7d2b54d5399f7b9c92ca10b47dcf1e2abd7087d4b859b5a72e0c0331722c0d64",
+      "size": 3936
+    },
+    {
+      "name": "cluster-accepted.json",
+      "sha256": "1363f065896d19c5cfadc0b4fffd633517a5d6164a4649a303da638eb678dbad",
+      "size": 7804
+    },
+    {
+      "name": "cluster.bin",
+      "sha256": "2f5aa80d4571a450ed2839f7b9b445e3c2dfdb8ed450b06b2c21265fb1a61b4b",
+      "size": 1024
+    },
+    {
+      "name": "cluster-link.json",
+      "sha256": "cc754be7c50dc90ac3f89273f5194d350bbf5bf332de51e747e76494705b20cf",
+      "size": 279
+    },
+    {
+      "name": "cluster-checked-source.py.txt",
+      "sha256": "59001c2fceaebd2a97d3f6f09060064fff9897bfe3ead36abe56a9926fee9747",
+      "size": 19058
+    },
+    {
+      "name": "d-proposal.json.gz",
+      "sha256": "e16aa6c5d2011004ed1a35d6149010bd2cb2f689f75f3aaa2b269f1c09f57f82",
+      "size": 16046
+    },
+    {
+      "name": "d-attempt.json.gz",
+      "sha256": "8bba4b517aa38a1c22e2dc4bfb648909a766208a2c3b4d086a092c893aea40b4",
+      "size": 2475
+    },
+    {
+      "name": "d-transaction.json.gz",
+      "sha256": "3563771d78c4cf232acc11e636db6df4812e46498c154477ed12a5caa4193f51",
+      "size": 4468
+    },
+    {
+      "name": "d-accepted.json",
+      "sha256": "2b00e9964ce59650817b0cd90cbce897a6a23b4ff899f953ca152abde3f94e7f",
+      "size": 6838
+    },
+    {
+      "name": "d.bin",
+      "sha256": "18ef159f5ecc0511620655c78ef67da1d227e49a79928ad1c7a66519a7c8ac56",
+      "size": 1024
+    },
+    {
+      "name": "d-link.json",
+      "sha256": "035934844d0188d705a05158dc8ed9923f5192196511157e3cc09c660a90ad6d",
+      "size": 279
+    },
+    {
+      "name": "peak-proposal.json.gz",
+      "sha256": "98cec4aebfc1668433f0b9984086633353bbdf28e89eaa8df7fe7baf07ce18b3",
+      "size": 23711
+    },
+    {
+      "name": "peak-attempt.json.gz",
+      "sha256": "39dda9676261cc791bd379b3f64b62222545b1955a2007cd1a9421028fe0dfd7",
+      "size": 2228
+    },
+    {
+      "name": "peak-transaction.json.gz",
+      "sha256": "3ee5b32f7b814e17ce2cc8529b7ec386b1c523c7f54d0d6ed90dc91ea9d602e5",
+      "size": 1966
+    },
+    {
+      "name": "peak-forensics.json",
+      "sha256": "e341f7219571eda02bcbd8a7189745fff6185b0b0b7f77405cef4fd9367879c5",
+      "size": 2310
+    },
+    {
+      "name": "ordering-readback.json",
+      "sha256": "0997b5f8e9bf62ee88bd107b0b5ae277f5ad1b4a7b5a9dd82cf969a376302a20",
+      "size": 1717
+    }
+  ],
+  "commands": [
+    {
+      "run": "cluster-propose-182324172",
+      "raw_exit": 0
+    },
+    {
+      "run": "cluster-verify-182332374",
+      "raw_exit": 0
+    },
+    {
+      "run": "d-propose-182947601",
+      "raw_exit": 0
+    },
+    {
+      "run": "d-verify-182955218",
+      "raw_exit": 0
+    },
+    {
+      "run": "format-182213229",
+      "raw_exit": 0
+    },
+    {
+      "run": "format-outcome-183604815",
+      "raw_exit": 0
+    },
+    {
+      "run": "format-tail-182818801",
+      "raw_exit": 0
+    },
+    {
+      "run": "green-182346223",
+      "raw_exit": 0
+    },
+    {
+      "run": "lint-182221049",
+      "raw_exit": 1
+    },
+    {
+      "run": "lint-182313429",
+      "raw_exit": 0
+    },
+    {
+      "run": "lint-outcome-183612206",
+      "raw_exit": 1
+    },
+    {
+      "run": "lint-outcome-183635444",
+      "raw_exit": 0
+    },
+    {
+      "run": "lint-tail-182902439",
+      "raw_exit": 1
+    },
+    {
+      "run": "lint-tail-182935138",
+      "raw_exit": 0
+    },
+    {
+      "run": "outcome-183643656",
+      "raw_exit": 0
+    },
+    {
+      "run": "peak-propose-183137810",
+      "raw_exit": 0
+    },
+    {
+      "run": "peak-verify-183145838",
+      "raw_exit": 1
+    },
+    {
+      "run": "red-181930395",
+      "raw_exit": 1
+    }
+  ],
+  "source_versions": {
+    "cluster_checker_tested_sha256": "59001c2fceaebd2a97d3f6f09060064fff9897bfe3ead36abe56a9926fee9747",
+    "cluster_checker_saved": "cluster-checked-source.py.txt",
+    "single_birth_helper_at_cluster": "08b717466892b9d4f22dbdeb10f47995d085253f:scripts/check_p65_sc2_event_cell.py",
+    "shared_working_source_sha256_at_cluster": "4d9bd21381ed5f75ebaa63f4accbb2d53e0fc37b3c83844096e59c80447d4d12",
+    "later_extension": "The tail uses selectable proof leaves and a provably active damping branch for opening motion. The original cluster used the default strictly closing 64-leaf scope."
+  },
+  "run_notes": "The RED read the saved earlier four events, and GREEN used the fresh transaction. Initial scoped lint findings were corrected. format-tail-182818801 Ruff returned 0 and changed two authorized sources. Its wrapper exited 1 because a source was listed both as an intended format target and an immutable duplicate. Receipts were retained and the wrapper inventory was deduplicated. The peak receipt RAW_EXIT 1 is the actual registered physical failure. No candidate retry or published peak output."
+}

@@ -5,6 +5,7 @@ from numbers import Integral
 
 import numpy as np
 
+from ..constraints.robot_contact import JointLimits
 from ..core.capabilities import SolverFailure
 from ..core.robot import RobotModel, robot_array
 from ..core.validation import finite_real
@@ -38,6 +39,7 @@ def solve_point_ik(
     target_position,
     *,
     active_joints=None,
+    limits=None,
     damping=0.001,
     max_step=0.25,
     tolerance_m=1e-7,
@@ -49,6 +51,8 @@ def solve_point_ik(
     native joint coordinates (radians or metres). The result can be passed to
     a bounded actuator controller. A stalled solve returns its best local
     iterate and measured error, without declaring the target unreachable.
+    Optional JointLimits constrain updated target coordinates only, including
+    the seed target. The caller's state and inactive coordinates are unchanged.
     """
     if not isinstance(model, RobotModel):
         raise TypeError("expected RobotModel")
@@ -79,6 +83,11 @@ def solve_point_ik(
         ):
             raise ValueError("active joints must be unique valid joint indices")
         ids = np.array(chosen, dtype=np.intp)
+    if limits is not None:
+        if not isinstance(limits, JointLimits) or limits.lower.shape != q.shape:
+            raise ValueError("limits must match the robot")
+        # Only a target is projected. Inactive physical coordinates remain unchanged.
+        q[ids] = np.clip(q[ids], limits.lower[ids], limits.upper[ids])
     damping = finite_real(damping, "damping")
     max_step = finite_real(max_step, "max_step")
     tolerance_m = finite_real(tolerance_m, "tolerance_m")
@@ -114,6 +123,10 @@ def solve_point_ik(
                 for power in range(12):
                     candidate = q.copy()
                     candidate[ids] += delta / (2**power)
+                    if limits is not None:
+                        candidate[ids] = np.clip(
+                            candidate[ids], limits.lower[ids], limits.upper[ids]
+                        )
                     new_error, new_norm = residual(candidate)
                     if new_norm < norm:
                         q, error, norm = candidate, new_error, new_norm

@@ -21,6 +21,7 @@ from .constraints.distance import DistanceConstraints
 from .constraints.friction import FrictionImpulseResult, solve_friction_disk
 from .constraints.node_robot import NodeRobotContact
 from .constraints.particle_plane import ParticlePlaneContacts
+from .constraints.robot_contact import JointLimits
 from .constraints.robot_finite_patch_collider import RobotFinitePatchCollider
 from .constraints.robot_node_plane import RobotNodePlaneContacts
 from .constraints.robot_plane import RobotPlaneContacts
@@ -183,6 +184,7 @@ __all__ = [
     "CompliantClothContactProgram",
     "CompliantPatch",
     "PointIKResult",
+    "JointLimits",
     "solve_point_ik",
     "make_tetrahedral_runtime",
     "make_cloth_runtime",

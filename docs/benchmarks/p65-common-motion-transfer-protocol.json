@@ -1,0 +1,25 @@
+{
+  "schema": "p65-common-motion-transfer-v1",
+  "baseline": "5479828",
+  "purpose": "Independent portability control for the same unmodified research integrator and canonical position/velocity checkpoint. Different number of degrees of freedom, owners, mass ratio, nonzero entry and constitutive provider. This example does not exercise the cloth-specific proof engine.",
+  "masses_kg": [
+    "1",
+    "2"
+  ],
+  "initial_positions_m": [
+    "1/1024",
+    "0"
+  ],
+  "initial_velocities_m_s": [
+    "1/128",
+    "-1/128"
+  ],
+  "gravity_m_s2": "-1/8",
+  "h_s": "1/64",
+  "material_k_n_m": "12",
+  "material_rest_m": "1/1024",
+  "layer_k_n_m": "30",
+  "layer_width_m": "1/512",
+  "law": "g=xA-xB. Material force on A is -km(g-rest); active normal force on A is kc(width-g). Both are paired to B. Constant identical acceleration from gravity, zero contact damping. Reject a hard crossing or departure from the analytically active chart.",
+  "expected": "Reduced angular frequency squared (1/mA+1/mB)(km+kc)=63 per second squared; center moves ballistically. Independently enclose sin and cos by alternating rational series at h, obtain both node endpoints, velocities, and contact impulse and backward time moment. Verify actual polynomial force against both laws and hard gap on the full path. Use original 1e-8 m, 2e-6 m/s, 1e-10 Ns, 1e-10 m per mass and 1e-8 J limits. Same degree, sweeps and state/charge budgets. No cloth-run repeat or production change."
+}

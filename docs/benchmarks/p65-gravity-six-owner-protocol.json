@@ -1,0 +1,21 @@
+{
+  "schema": "p65-n2-gravity-six-owner-v1",
+  "baseline": "ce6f53c697fc8c5b8c4e23d38bccff3a1bd3924e",
+  "original_fixture": "p65-b2-joint-readback-protocol.json",
+  "fixture_sha256_lf": "1b70ba85d8255f6e390626952ac84c466083fb755f8033f83d3e54c0fb7ab1b4",
+  "previous_protocol": "p65-paired-load-history-protocol.json",
+  "previous_protocol_sha256_lf": "a6379ca2a7b5094f73df58880223c0a5d835a602d54c6cf2d5811d75da110a24",
+  "previous_result": "p65-paired-load-history-results.json",
+  "previous_result_sha256_lf": "bee7c6bd62f792d2bc415ab7defa332407e475976887c63e5042a585c4dd3917",
+  "cases": [
+    "forward",
+    "reverse",
+    "shifted"
+  ],
+  "scope": "N2 HOST metrology, original four physical nodes, both faces/six owners, one 2 kg moving platform, original material, gravity g=-1/8, h=1/64, zero other original inputs. No production change or trajectory publication.",
+  "gravity": "For each cloth node, inclusive original body impulse G=m*g*h and first moment hG/2. The velocity-first predictor already puts G on the left. In public held node channel request contact_L + (G/2-G), in the single terminal batch contact_R + G/2. Preserve G and original F0; the equal/opposite temporal allocations are not contact force, external credit or target-state corrections. Platform gravity zero. Compare contact-only, total and separately accounted original body impulse, actual predictor/pre/post, mean position versus q, external work using original g once.",
+  "gates": "Use the original 1e-8 metre comparison, 1e-8 J joint positive energy and 1e-8 Nms angular bounds, hard gap zero, 4096 cells/depth 32. Scalar law moment gates from p65-contact-layer-intrastep-protocol.json are diagnostic per-owner discriminators (1e-10 Ns, 1e-10 m after division by mass), never a relaxation or a complete B2 admission. Fixed area of each owner is 1/6 m2 even for shifted pressure. Full real lower gaps/velocities at entry and after the terminal application, both public sweeps at zero budget, and independent proofs of the actual affine chord. Distinguish actual port speeds, affine chord derivatives, and any continuous proposal.",
+  "energy": "On chords that can be independently certified in the material domain, enclose all six changing-director gaps and their time derivatives across the step; bound law impulse and backward time moment, layer energy and clamped Hunt-Crossley dissipation. Use final real velocities, same-run material elastic changes, raw gravity work once, no effective/internal input credit. No whole-step physical energy/dissipation for a path crossing the hard core. All nonadmissible candidates have no successor.",
+  "transition": "If the center of mass meets its preregistered continuous constant-gravity moment but a material point penetrates or its local law disagrees, run one original-inlet coupled proposal. No change of mass/material/area/threshold. Use six simultaneous SC-L1 point forces from current full offset maps and relative velocities, real distance/bend force gradients, particle inertia and prismatic opposite reaction. Preset 20 equal RK4 intervals over the original h, four stages per interval, 480 owner force evaluations (<512). Save all stage states and forces and integrate both moments with the same nonnegative RK weights. Use those six histories once to drive the same public finite-XPBD held/terminal diagnostic. Compare returned endpoint gaps, speeds and individual force moments to those of the proposal; the RK sample path does not certify continuous nonpenetration and does not replace the runtime. No retuning or repeated grid. If a stage violates the constitutive domain, save and stop.",
+  "next_stage": "Only a verified common force/motion path, body/source bindings, both hard sweeps and energy/angular/transactions could release N3. No new native or full-window grant."
+}

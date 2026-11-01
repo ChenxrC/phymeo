@@ -1,0 +1,417 @@
+{
+  "schema": "p65-contact-layer-material-screen-summary-v1",
+  "status": "PASSED_STAGE1_SYNTHETIC_1D_ONLY",
+  "scope": "Stage 1 only: fit the declared coupon and test the normal relative-translation support and approach controls. No four-node trajectory, production time-step method, robot/clothing coupling, GPU or absolute material identification.",
+  "input": "p65-contact-layer-screen-input.json",
+  "preregistration_commit": "7475322b656e5ee7fa1d5f9224e9ada1d30e7881",
+  "fixture_sha256_lf": "689fccf60a5142cb4b171e4a15434bc93b0ecea4f3db5174dd17d6987229bc58",
+  "numerical_script_sha256_lf": "4ea8156a74a42279054af75958c580051e9724ee491de6bb1f22395fd13b7752",
+  "start": "2026-11-01T12:25:50.229429+08:00",
+  "end": "2026-11-01T12:25:51.0256308+08:00",
+  "raw_exit": 0,
+  "guard_matches": 0,
+  "python": "3.11.15",
+  "material": "SC-L1",
+  "nominal": {
+    "k": "500",
+    "delta": "1/500",
+    "d": "1000"
+  },
+  "parameter_box": {
+    "k": [
+      "498",
+      "502"
+    ],
+    "delta": [
+      "501/251000",
+      "499/249000"
+    ],
+    "d": [
+      "498950/501",
+      "501050/499"
+    ]
+  },
+  "holdouts": [
+    {
+      "id": "static_mid",
+      "pressure_pa": [
+        "499/1000",
+        "501/1000"
+      ],
+      "energy_j_m2": [
+        "249001/1004000000",
+        "83667/332000000"
+      ],
+      "passed": true
+    },
+    {
+      "id": "fast_loading",
+      "pressure_pa": [
+        "1958931/20875",
+        "47360969/499000"
+      ],
+      "energy_j_m2": [
+        "1521/3921875",
+        "97969/249000000"
+      ],
+      "passed": true
+    },
+    {
+      "id": "partial_unloading",
+      "pressure_pa": [
+        "4463771/24950000",
+        "4536371/25050000"
+      ],
+      "energy_j_m2": [
+        "89401/1004000000",
+        "90601/996000000"
+      ],
+      "passed": true
+    },
+    {
+      "id": "fully_unloaded_force",
+      "pressure_pa": [
+        "0",
+        "0"
+      ],
+      "energy_j_m2": [
+        "249001/1004000000",
+        "83667/332000000"
+      ],
+      "passed": true
+    },
+    {
+      "id": "outside_layer",
+      "pressure_pa": [
+        "0",
+        "0"
+      ],
+      "energy_j_m2": [
+        "0",
+        "0"
+      ],
+      "passed": true
+    }
+  ],
+  "negative_hard_gap_rejected": true,
+  "continuous_certificate": {
+    "passed": true,
+    "gates": {
+      "support_starts_outward": true,
+      "support_stays_compressed": true,
+      "support_only_unloads_in_window": true,
+      "four_node_initial_acceleration_positive": true,
+      "free_entry_and_core_clearance": true,
+      "positive_impact_impulse_in_window": true,
+      "certified_rates_in_declared_domain": true,
+      "zero_damping_negative_rejects_all_masses": true
+    },
+    "total_initial_load_n": [
+      "499/500",
+      "501/500"
+    ],
+    "support_max_hard_gap_m": "501/3991600",
+    "support_min_compression_m": "9370203/5009458000",
+    "support_min_force_fraction_of_applied_load": "18703/19958",
+    "sc1_min_initial_relative_node_acceleration_m_s2": "50569/614400",
+    "impact_max_compression_m": "709979293/500000000000",
+    "impact_min_core_clearance_m": "72295197457/125500000000000",
+    "impact_entry_time_s": [
+      "29503/3984000",
+      "29997/4016000"
+    ],
+    "impact_half_initial_momentum_delivered_by_s": "14799543323/490234375000",
+    "impact_impulse_at_T_lower_ns_for_lightest_mass": "1/16",
+    "zero_damping_max_capacity_j": "83333/83000000",
+    "min_incident_kinetic_j": "1/128"
+  },
+  "reference_traces": [
+    {
+      "mass_kg": "1/2",
+      "case": "support",
+      "passed": true,
+      "fine_min_gap_m": 0.0,
+      "fine_max_gap_m": 0.00010807195458670477,
+      "fine_min_force_n": 0.12493946404214472,
+      "fine_peak_force_n": 1.0,
+      "fine_peak_time_s": 0.0,
+      "final": {
+        "t": 0.125,
+        "g": 0.00010807195458670477,
+        "v": -0.0008679236619542247,
+        "force": 0.12493946404214472,
+        "impulse": 0.01649292366195421,
+        "dissipation": 9.126642779510112E-05,
+        "energy_defect": 1.1527211748064287E-13,
+        "momentum_defect": -1.3877787807814457E-17
+      },
+      "max_energy_balance_error_j": 1.1528024222067293E-13,
+      "max_momentum_balance_error_ns": 2.7755575615628914E-17,
+      "step_halving": {
+        "max_common_gap_error_m": 6.19453707079165E-13,
+        "max_common_speed_error_m_s": 6.198223704038594E-10,
+        "max_common_force_error_n": 6.195858168189794E-07,
+        "max_common_impulse_error_ns": 6.19822370187019E-10
+      },
+      "analytical_peaks": {},
+      "step_endpoint_samples": {
+        "1/64": {
+          "frames": 9,
+          "sampled_peak_force_n": 1.0
+        },
+        "1/128": {
+          "frames": 17,
+          "sampled_peak_force_n": 1.0
+        },
+        "1/256": {
+          "frames": 33,
+          "sampled_peak_force_n": 1.0
+        }
+      },
+      "fine_csv": "support-m1over2-fine.csv",
+      "fine_frames": 2049,
+      "fine_sha256": "4fb02364503bb4eeb3f489a2c65f9c972c24ad59c76e6f2c74980f3bf6f2f6aa"
+    },
+    {
+      "mass_kg": "1/2",
+      "case": "impact",
+      "passed": true,
+      "fine_min_gap_m": 0.0013067072830417296,
+      "fine_max_gap_m": 0.0029296875,
+      "fine_min_force_n": 0.0,
+      "fine_peak_force_n": 17.13149530228263,
+      "fine_peak_time_s": 0.01116943359375,
+      "final": {
+        "t": 0.125,
+        "g": 0.0014036882645826199,
+        "v": -0.0009999999999999903,
+        "force": 2.8916894481329855E-15,
+        "impulse": 0.12599999999999964,
+        "dissipation": 0.007723103084511172,
+        "energy_defect": 5.96029389038355E-12,
+        "momentum_defect": -3.608224830031759E-16
+      },
+      "max_energy_balance_error_j": 5.960299094553978E-12,
+      "max_momentum_balance_error_ns": 3.885780586188048E-16,
+      "step_halving": {
+        "max_common_gap_error_m": 1.984617765266039E-12,
+        "max_common_speed_error_m_s": 3.19847568569509E-10,
+        "max_common_force_error_n": 1.0051259557997128E-07,
+        "max_common_impulse_error_ns": 3.198476067334255E-10
+      },
+      "analytical_peaks": {
+        "compression_m": 0.0006932927753641994,
+        "force_n": 17.131594870017633
+      },
+      "step_endpoint_samples": {
+        "1/64": {
+          "frames": 9,
+          "sampled_peak_force_n": 7.915059482706874
+        },
+        "1/128": {
+          "frames": 17,
+          "sampled_peak_force_n": 7.915059482706874
+        },
+        "1/256": {
+          "frames": 33,
+          "sampled_peak_force_n": 16.823177374955943
+        }
+      },
+      "fine_csv": "impact-m1over2-fine.csv",
+      "fine_frames": 2049,
+      "fine_sha256": "2e6cf99b7c3c991ef66b68964aa892926160b72de49a7cd4caef183aa493fa33"
+    },
+    {
+      "mass_kg": "1",
+      "case": "support",
+      "passed": true,
+      "fine_min_gap_m": 0.0,
+      "fine_max_gap_m": 9.154541906255501E-05,
+      "fine_min_force_n": 0.2497977481236576,
+      "fine_peak_force_n": 1.0,
+      "fine_peak_time_s": 0.0,
+      "final": {
+        "t": 0.125,
+        "g": 9.154541906255501E-05,
+        "v": -0.0007382198658341081,
+        "force": 0.2497977481236576,
+        "impulse": 0.032726439731668194,
+        "dissipation": 6.601895479915066E-05,
+        "energy_defect": 1.038135777429311E-14,
+        "momentum_defect": -2.0816681711721685E-17
+      },
+      "max_energy_balance_error_j": 1.0381588167254763E-14,
+      "max_momentum_balance_error_ns": 3.8163916471489756E-17,
+      "step_halving": {
+        "max_common_gap_error_m": 6.290757845195394E-14,
+        "max_common_speed_error_m_s": 3.1482321957709836E-11,
+        "max_common_force_error_n": 3.1457234483944774E-08,
+        "max_common_impulse_error_ns": 6.296464391541967E-11
+      },
+      "analytical_peaks": {},
+      "step_endpoint_samples": {
+        "1/64": {
+          "frames": 9,
+          "sampled_peak_force_n": 1.0
+        },
+        "1/128": {
+          "frames": 17,
+          "sampled_peak_force_n": 1.0
+        },
+        "1/256": {
+          "frames": 33,
+          "sampled_peak_force_n": 1.0
+        }
+      },
+      "fine_csv": "support-m1over1-fine.csv",
+      "fine_frames": 2049,
+      "fine_sha256": "0968d4b2e850e0181ae90c048757399aaf443cb9286d6ab016c6cdac7f703c75"
+    },
+    {
+      "mass_kg": "1",
+      "case": "impact",
+      "passed": true,
+      "fine_min_gap_m": 0.0010195359815731277,
+      "fine_max_gap_m": 0.0029296875,
+      "fine_min_force_n": 0.0,
+      "fine_peak_force_n": 24.227703740606852,
+      "fine_peak_time_s": 0.0126953125,
+      "final": {
+        "t": 0.125,
+        "g": 0.0011079918744467498,
+        "v": -0.0009999999996249292,
+        "force": 1.672831392449989E-10,
+        "impulse": 0.2519999999992493,
+        "dissipation": 0.015425080378967683,
+        "energy_defect": 2.9801890122360675E-12,
+        "momentum_defect": -5.551115123125783E-16
+      },
+      "max_energy_balance_error_j": 2.9802011553003993E-12,
+      "max_momentum_balance_error_ns": 5.551115123125783E-16,
+      "step_halving": {
+        "max_common_gap_error_m": 7.005077941324434E-13,
+        "max_common_speed_error_m_s": 7.944946783799978E-11,
+        "max_common_force_error_n": 3.5516897867182706E-08,
+        "max_common_impulse_error_ns": 1.588990328205142E-10
+      },
+      "analytical_peaks": {
+        "compression_m": 0.0009804640456153341,
+        "force_n": 24.227733810260283
+      },
+      "step_endpoint_samples": {
+        "1/64": {
+          "frames": 9,
+          "sampled_peak_force_n": 19.65960065962254
+        },
+        "1/128": {
+          "frames": 17,
+          "sampled_peak_force_n": 19.65960065962254
+        },
+        "1/256": {
+          "frames": 33,
+          "sampled_peak_force_n": 23.431162513199865
+        }
+      },
+      "fine_csv": "impact-m1over1-fine.csv",
+      "fine_frames": 2049,
+      "fine_sha256": "aa8b195f90d498c1dcb0f3fafdadf5df0ae340041f14c3ac98ba69f5e6f7725c"
+    },
+    {
+      "mass_kg": "2",
+      "case": "support",
+      "passed": true,
+      "fine_min_gap_m": 0.0,
+      "fine_max_gap_m": 5.9633223152947635E-05,
+      "fine_min_force_n": 0.49948558587992087,
+      "fine_peak_force_n": 1.0,
+      "fine_peak_time_s": 0.0,
+      "final": {
+        "t": 0.125,
+        "g": 5.9633223152947635E-05,
+        "v": -0.00048516374137105487,
+        "force": 0.49948558587992087,
+        "impulse": 0.06444065496548426,
+        "dissipation": 2.845681353925911E-05,
+        "energy_defect": 5.69839721199436E-16,
+        "momentum_defect": 4.163336342344337E-17
+      },
+      "max_energy_balance_error_j": 5.710696130388493E-16,
+      "max_momentum_balance_error_ns": 7.632783294297951E-17,
+      "step_halving": {
+        "max_common_gap_error_m": 5.1013880619787955E-15,
+        "max_common_speed_error_m_s": 1.2758367496160106E-12,
+        "max_common_force_error_n": 1.2736202092966664E-09,
+        "max_common_impulse_error_ns": 5.10334786582578E-12
+      },
+      "analytical_peaks": {},
+      "step_endpoint_samples": {
+        "1/64": {
+          "frames": 9,
+          "sampled_peak_force_n": 1.0
+        },
+        "1/128": {
+          "frames": 17,
+          "sampled_peak_force_n": 1.0
+        },
+        "1/256": {
+          "frames": 33,
+          "sampled_peak_force_n": 1.0
+        }
+      },
+      "fine_csv": "support-m2over1-fine.csv",
+      "fine_frames": 2049,
+      "fine_sha256": "f99636952f813f71cd511c73aaa2cd64058b0b455189aaf2ab75460227adefa0"
+    },
+    {
+      "mass_kg": "2",
+      "case": "impact",
+      "passed": true,
+      "fine_min_gap_m": 0.0006134145169070268,
+      "fine_max_gap_m": 0.0029296875,
+      "fine_min_force_n": 0.0,
+      "fine_peak_force_n": 34.26313068792456,
+      "fine_peak_time_s": 0.014892578125,
+      "final": {
+        "t": 0.125,
+        "g": 0.0006898140349360555,
+        "v": -0.0009999990596495484,
+        "force": 6.160169819205137E-07,
+        "impulse": 0.5039999962385979,
+        "dissipation": 0.030818853189488887,
+        "energy_defect": 1.4901205269701734E-12,
+        "momentum_defect": -2.220446049250313E-16
+      },
+      "max_energy_balance_error_j": 1.4901239964171253E-12,
+      "max_momentum_balance_error_ns": 6.661338147750939E-16,
+      "step_halving": {
+        "max_common_gap_error_m": 2.474075631864192E-13,
+        "max_common_speed_error_m_s": 1.9771996540018932E-11,
+        "max_common_force_error_n": 1.2552959560707677E-08,
+        "max_common_impulse_error_ns": 7.908779187104642E-11
+      },
+      "analytical_peaks": {
+        "compression_m": 0.0013865855507283987,
+        "force_n": 34.263189740035266
+      },
+      "step_endpoint_samples": {
+        "1/64": {
+          "frames": 9,
+          "sampled_peak_force_n": 33.98282315264801
+        },
+        "1/128": {
+          "frames": 17,
+          "sampled_peak_force_n": 33.98282315264801
+        },
+        "1/256": {
+          "frames": 33,
+          "sampled_peak_force_n": 33.98282315264801
+        }
+      },
+      "fine_csv": "impact-m2over1-fine.csv",
+      "fine_frames": 2049,
+      "fine_sha256": "5e896e494930a015c6faa52d7959c861b386e6cfc01989eb254302d1bc82f382"
+    }
+  ],
+  "raw_run_relative": "artifacts/p65-n2-layer-screen-20261101-01/run-122549302",
+  "raw_result_sha256": "8190699046d226da606ce4e5a095a051bcf91018d7609e066e1270a7e5a16222"
+}

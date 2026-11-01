@@ -1,0 +1,45 @@
+{
+  "schema": "p65-sc2-common-entry-v1",
+  "baseline": "bd3d1163f04b811fbb07307d632164676054a0f6",
+  "fixture": "p65-b2-joint-readback-protocol.json",
+  "fixture_sha256_lf": "1b70ba85d8255f6e390626952ac84c466083fb755f8033f83d3e54c0fb7ab1b4",
+  "model": "Original four nodes U=(a,b,c), D=(b,a,d), 0.5 kg/cloth node, 2 kg prismatic platform, signed oriented hinge plus three distance rows. Original fixture owner order. Zero original force/gravity, unit compliance, rest angle zero. Same six independent SC-L1 offset material addresses.",
+  "z0": "3/1024",
+  "vz": [
+    "-1/8",
+    "-1/8",
+    "-1/8",
+    "-7/64"
+  ],
+  "h": "1/64",
+  "end": "1/8",
+  "width": "1/500",
+  "area": "1/6",
+  "stiffness": 500,
+  "damping": 1000,
+  "free": "A degree-four, three-sweep material collocation gives a common free extension solely to isolate the earliest zero. On all six ports require oriented face and finite patch, full-interval strictly closing gap, rational squared guard with positive unsquared factors. Up to 32 binary levels; fail unresolved earliest ties. Free extension after that root is only a counterfactual. Check force-position, velocity, angular and energy on the physical prefix.",
+  "bridge": "Before the next free root, choose a dyadic endpoint halfway between the earliest upper and next lower isolating bounds. Only the first owner can load after the verified event. A zero-at-birth quadratic ramp has rational J and B determined from the computed onset slope. Integrate mapped forces from the exact algebraic root. Verify on the actual path that all owners close and stay on chart, others stay outside, the first owner obeys the full positive relative law, and the exact rational endpoint fits the original checkpoint.",
+  "limits": {
+    "depth": 32,
+    "cells": 4096,
+    "owner_calls_per_original_h": 512,
+    "positive_relative": 0.01,
+    "owner_J_ns": 1e-10,
+    "owner_B_over_m_m": 1e-10,
+    "material_velocity_m_s": 0.000002,
+    "material_position_m": 1e-8,
+    "positive_energy_j": 1e-8,
+    "angular_nms": 1e-8,
+    "checkpoint_bytes": 1024,
+    "checkpoint_integer_bits": 512
+  },
+  "continuation": "From the first certified bridge checkpoint alone run one coupled reference to 1/8 s with the original material, full map and six clamped forces, retaining each inherited velocity and stage. Predeclare 16 classical RK4 cells per original step (including the fractional remainder). The dense integrated quadratic stage-force history gives both inertial moments. Certify hard clearance for all its segments independently. Locate observed total peak, unloading, last layer occupancy and exit status from actual gap, separately from a zero due to damping. This diagnostic trajectory does not establish the per-owner full-window force-law budgets or a public production acceptance.",
+  "negatives": [
+    "wrong earliest owner",
+    "ballistic root",
+    "missing shared owner",
+    "nonzero prebirth pressure",
+    "lost incident velocity",
+    "force packet with changed J"
+  ]
+}

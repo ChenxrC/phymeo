@@ -94,11 +94,12 @@ def total(frame, model):
     return (model.external + frame.material + frame.rows.sum(axis=0)) / model.mass
 
 
-def tables():
-    nodes = np.rint((1 - np.cos(np.pi * np.arange(DEGREE + 1) / DEGREE)) / 2 * (1 << 32)) / (
+def tables(degree=DEGREE):
+    need(1 <= degree <= DEGREE, "unsupported collocation degree")
+    nodes = np.rint((1 - np.cos(np.pi * np.arange(degree + 1) / degree)) / 2 * (1 << 32)) / (
         1 << 32
     )
-    table = ch.chebvander(2 * nodes - 1, DEGREE)
+    table = ch.chebvander(2 * nodes - 1, degree)
     cardinal = np.linalg.solve(table, np.eye(len(nodes)))
 
     def integral(m):
@@ -116,7 +117,7 @@ def quantized(coeff):
     return words.astype(np.int64)
 
 
-def fit(model, qin, vin, h, bind, charge_limit=512):
+def fit(model, qin, vin, h, bind, charge_limit=512, *, degree=DEGREE, sweeps=4):
     """The provider returns forces on ONE state at each node; its inlet tangent is only a preconditioner."""
     q0, v0 = np.asarray(qin, float), np.asarray(vin, float)
     n = len(q0)
@@ -127,7 +128,8 @@ def fit(model, qin, vin, h, bind, charge_limit=512):
         and len(set(model.owners)) == len(model.owners),
         "invalid owners or mass",
     )
-    nodes, card, velocity_integral, position_integral = tables()
+    need(1 <= sweeps <= 4, "unsupported collocation sweep count")
+    nodes, card, velocity_integral, position_integral = tables(degree)
     calls = 0
     history = []
 
@@ -149,7 +151,7 @@ def fit(model, qin, vin, h, bind, charge_limit=512):
     )
     rhs = np.tile(a0, (len(nodes), 1)) + h * nodes[:, None] * (Aq @ v0)
     acc = np.linalg.solve(matrix, rhs.ravel()).reshape(-1, n)
-    for iteration in range(4):
+    for iteration in range(sweeps):
         q = q0 + h * nodes[:, None] * v0 + h * h * (position_integral @ acc)
         v = v0 + h * (velocity_integral @ acc)
         frames = [first] + [force(pos, vel) for pos, vel in zip(q[1:], v[1:], strict=True)]
@@ -165,7 +167,7 @@ def fit(model, qin, vin, h, bind, charge_limit=512):
                 residual=float(np.max(abs(residual))),
             )
         )
-        if iteration < 3:
+        if iteration + 1 < sweeps:
             acc += np.linalg.solve(matrix, residual.ravel()).reshape(acc.shape)
 
     def coefficients(field):

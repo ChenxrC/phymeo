@@ -1,0 +1,346 @@
+{
+  "schema": "p65-sc2-peak-current-tangent-results-v1",
+  "baseline": "84544b173bdfdb89b255cf16ebb8ea8c37cccd04",
+  "protocol": "p65-sc2-peak-current-tangent-protocol.json",
+  "evidence_root": "artifacts/p65-n2-sc2-peak-tangent-20261101-01",
+  "release_guard": "release-192151298",
+  "status": "Derivative verified, physical candidate rejected at the owner absolute impulse defect. The d checkpoint remains the last accepted state in this experiment.",
+  "derivative": {
+    "source_sha": "98cec4aebfc1668433f0b9984086633353bbdf28e89eaa8df7fe7baf07ce18b3",
+    "fixed_states": 12,
+    "real_reference_evaluations": 12,
+    "complex_reference_evaluations": 312,
+    "coordinate_columns": 26,
+    "material_owner_field_rows": 97,
+    "residual_matrix": [
+      156,
+      156
+    ],
+    "value_error": 6.076698009792777e-18,
+    "original_full_port_error": 7.840616276792587e-15,
+    "component_derivative_error": 3.466962938963652e-14,
+    "residual_derivative_error": 2.1059294399098138e-16,
+    "exact_cardinal_error": 1.2310424333602827e-16,
+    "symmetry": 3.4694468986013734e-18,
+    "translation": 7.275957614183426e-12,
+    "old_tangent_error": 6.491985705525963,
+    "omitted_map_term_error": 0.09315950645641077,
+    "omitted_rate_geometry_error": 0.01787935136813184,
+    "accepted": true
+  },
+  "red": {
+    "old_scaled_error": 6.491985705525963,
+    "expected_tolerance": 2e-10
+  },
+  "readback": {
+    "accepted": false,
+    "same_inlet": true,
+    "returned": "18ef159f5ecc0511620655c78ef67da1d227e49a79928ad1c7a66519a7c8ac56",
+    "returned_time_s": "2338287005/274877906944",
+    "peak": {
+      "force_n": [
+        15.83321898303619,
+        16.294309651116244
+      ],
+      "time_s": [
+        0.010619902118889966,
+        0.011954594887185978
+      ],
+      "leaves": 64,
+      "dominates_prefix": true,
+      "interior": true,
+      "accepted": false
+    },
+    "cumulative_upper": {
+      "relative_positive": 0.001274291086441587,
+      "owner_impulse_ns": 2.1234197527606783e-10,
+      "owner_backward_over_mass_m": 1.8490403327425767e-12,
+      "node_velocity_m_s": 4.016665813972161e-7,
+      "node_position_m": 4.299373974212451e-9,
+      "positive_energy_j": 1.4041458583962812e-11,
+      "paired_angular_nms": 5.692520926649903e-9,
+      "linear_ns": 1.1031377291632964e-17
+    },
+    "charges": {
+      "inherited": 288,
+      "new": 222,
+      "total": 510,
+      "remaining": 2
+    },
+    "earlier_attempt_charges": {
+      "inherited": 288,
+      "new": 210,
+      "total": 498,
+      "remaining": 14
+    },
+    "stale_endpoint": "wrong endpoint before interval check"
+  },
+  "candidate": {
+    "reason": "failed physical gates: owner_impulse_ns",
+    "gates": {
+      "relative_positive": true,
+      "owner_impulse_ns": false,
+      "owner_backward_over_mass_m": true,
+      "node_velocity_m_s": true,
+      "node_position_m": true,
+      "positive_energy_j": true,
+      "paired_angular_nms": true,
+      "linear_ns": true,
+      "whole_path_hard": true,
+      "exact_two_moments": true,
+      "owner_budget": true,
+      "cell_budget": true
+    },
+    "upper": {
+      "relative_positive": 0.001274291086441587,
+      "owner_impulse_ns": 2.1234197527606783e-10,
+      "owner_backward_over_mass_m": 1.8490403327425767e-12,
+      "node_velocity_m_s": 4.016665813972161e-7,
+      "node_position_m": 4.299373974212451e-9,
+      "positive_energy_j": 1.4041458583962812e-11,
+      "paired_angular_nms": 5.692520926649903e-9,
+      "linear_ns": 1.1031377291632964e-17
+    },
+    "local_absolute_J_error_lower_ns": [
+      1.617572588886352e-10,
+      1.617624845662471e-10,
+      6.347928937504081e-11,
+      1.610278226751803e-10,
+      1.610226202295724e-10,
+      4.903568435448418e-11
+    ],
+    "local_J_error_upper_ns": [
+      1.737400305204886e-10,
+      1.7374563932448097e-10,
+      6.871009939531601e-11,
+      1.7449696279970106e-10,
+      1.744913312029383e-10,
+      5.397257561693195e-11
+    ],
+    "local_signed_J_defects_ns": [
+      [
+        -5.766720680697822e-12,
+        6.367011857892506e-12
+      ],
+      [
+        -5.766907051051379e-12,
+        6.367213323631897e-12
+      ],
+      [
+        -2.529124926809559e-12,
+        2.766834978310825e-12
+      ],
+      [
+        -6.521169299495711e-12,
+        7.117019661262287e-12
+      ],
+      [
+        -6.5209624507536556e-12,
+        7.116792053434008e-12
+      ],
+      [
+        -2.408824838012728e-12,
+        2.588834067875796e-12
+      ]
+    ],
+    "local_energy_j": [
+      -6.663200496559435e-13,
+      4.5239743315426433e-13
+    ],
+    "hard_gap_lower_m": 0.0013027073504627501,
+    "cells": {
+      "new": 577,
+      "inherited": 1635,
+      "total": 2212
+    },
+    "charges": {
+      "inherited": 288,
+      "new": 222,
+      "total": 510,
+      "remaining": 2
+    },
+    "endpoint_force_sample_error_n": 6.211697822777751e-13,
+    "candidate_endpoint": "921f1148f503c0dbed6349c43c0d335c4c680e316824633b6bc6fb2981e6588c",
+    "inlet": "18ef159f5ecc0511620655c78ef67da1d227e49a79928ad1c7a66519a7c8ac56"
+  },
+  "representation": {
+    "lebesgue_upper": 2.7572923486079053,
+    "owners": [
+      {
+        "owner": "U/0/lower",
+        "max_node_defect_n": 1.032180065247744e-12,
+        "largest_midpoint_abs_n": 4.8100116018097446e-8,
+        "exact_nodal_interpolation_J_error_lower_ns": 1.6173699987400155e-10,
+        "fixed_path_polynomial_degree": 299,
+        "fixed_path_polynomial_J_error_upper_ns": 2.8635678893188512e-24
+      },
+      {
+        "owner": "U/1/lower",
+        "max_node_defect_n": 1.0339409678823173e-12,
+        "largest_midpoint_abs_n": 4.810169267436397e-8,
+        "exact_nodal_interpolation_J_error_lower_ns": 1.617421909896669e-10,
+        "fixed_path_polynomial_degree": 299,
+        "fixed_path_polynomial_J_error_upper_ns": 2.8636561494333324e-24
+      },
+      {
+        "owner": "U/2/lower",
+        "max_node_defect_n": 1.1490743615538507e-13,
+        "largest_midpoint_abs_n": 1.899017259835483e-8,
+        "exact_nodal_interpolation_J_error_lower_ns": 6.34770340404253e-11,
+        "fixed_path_polynomial_degree": 299,
+        "fixed_path_polynomial_J_error_upper_ns": 3.334044471009708e-24
+      },
+      {
+        "owner": "D/1/lower",
+        "max_node_defect_n": 1.0348656496824706e-12,
+        "largest_midpoint_abs_n": 4.810150107794956e-8,
+        "exact_nodal_interpolation_J_error_lower_ns": 1.610075109494973e-10,
+        "fixed_path_polynomial_degree": 299,
+        "fixed_path_polynomial_J_error_upper_ns": 4.151987917235053e-23
+      },
+      {
+        "owner": "D/0/lower",
+        "max_node_defect_n": 1.0332505236509704e-12,
+        "largest_midpoint_abs_n": 4.80999250985141e-8,
+        "exact_nodal_interpolation_J_error_lower_ns": 1.6100234020461974e-10,
+        "fixed_path_polynomial_degree": 299,
+        "fixed_path_polynomial_J_error_upper_ns": 4.1518729345230206e-23
+      },
+      {
+        "owner": "D/3/lower",
+        "max_node_defect_n": 1.1527776703288002e-13,
+        "largest_midpoint_abs_n": 1.4841571887103436e-8,
+        "exact_nodal_interpolation_J_error_lower_ns": 4.9033421751235113e-11,
+        "fixed_path_polynomial_degree": 299,
+        "fixed_path_polynomial_J_error_upper_ns": 3.356443439599608e-23
+      }
+    ],
+    "coefficient_products": 159682,
+    "platform_v_change_if_forces_alone_replaced": [
+      6.785795826604169e-13,
+      6.785795826604171e-13
+    ],
+    "platform_q_change_if_forces_alone_replaced": [
+      2.6508565039334625e-15,
+      2.6508565039334633e-15
+    ],
+    "physical_acceptance": false
+  },
+  "raw": [
+    {
+      "name": "derivative.json",
+      "sha256": "7d95cdb85afe91e961946805a2520d27b06c0caa999020d3c6d7a97b45a1915c",
+      "size": 812
+    },
+    {
+      "name": "old-tangent-red.json",
+      "sha256": "c84e2410a5756c8238ebac186430e3a85fd35d1b394915f573157a2c8ca04e2b",
+      "size": 79
+    },
+    {
+      "name": "p65_peak_tangent.py.derivative-tested.txt",
+      "sha256": "964ae4378d8d790ac0855d7e8cb772b8469104709e980c50a568f46c9706b0b5",
+      "size": 7722
+    },
+    {
+      "name": "check_p65_peak_tangent.py.derivative-tested.txt",
+      "sha256": "bad0b318f51f79f6d6a8a96dddae759f37ae810f272f94e57e9076c01e183ce8",
+      "size": 8661
+    },
+    {
+      "name": "proposal.json.gz",
+      "sha256": "964274450d465dd8603f83e8773feec7251b0729d55f5d74821c9acc01c7a978",
+      "size": 30214
+    },
+    {
+      "name": "provider-ledger.json.gz",
+      "sha256": "86ddb8d6ce539d0b453843163c2346d6063ae5901c5c30aa2c8187b3b45522c9",
+      "size": 11639
+    },
+    {
+      "name": "newton-attempt.json.gz",
+      "sha256": "a34369e6a49788d14b2f1561fa727b0f33fbe963e48a0f76ef195533510601af",
+      "size": 2290
+    },
+    {
+      "name": "newton-transaction.json.gz",
+      "sha256": "189a69952cd1e9b0a6e89ffc0417b99a7159f3b85c6130b6d065b1d1a305ece3",
+      "size": 1908
+    },
+    {
+      "name": "peak-checked-driver.py.txt",
+      "sha256": "c1482ef628237e2bef6ba088806e623479736115badde3d6be7e13499a611bc8",
+      "size": 12439
+    },
+    {
+      "name": "readback-plan.json",
+      "sha256": "96aebf0047a0577e762e272a2fc68564fdf69715cc56b2f7c4b367ce76b93eab",
+      "size": 1107
+    },
+    {
+      "name": "readback.json",
+      "sha256": "0538c6beb466cfdb284d7bfa111de5bb23a862e38cbff6b4de0bee71d4e5b0cb",
+      "size": 1161
+    },
+    {
+      "name": "representation-readback.json",
+      "sha256": "2b8d46e72e8e72d7f1305c7de41eddf08a2f7daafcc3a4fce45a83ae5f293a84",
+      "size": 14987
+    }
+  ],
+  "runs": [
+    {
+      "run": "derivative-190412260",
+      "raw_exit": 0
+    },
+    {
+      "run": "format-190745747",
+      "raw_exit": 0
+    },
+    {
+      "run": "format-190847997",
+      "raw_exit": 0
+    },
+    {
+      "run": "format-report-191645758",
+      "raw_exit": 0
+    },
+    {
+      "run": "lint-190754835",
+      "raw_exit": 1
+    },
+    {
+      "run": "lint-190855674",
+      "raw_exit": 0
+    },
+    {
+      "run": "lint-report-191652530",
+      "raw_exit": 1
+    },
+    {
+      "run": "lint-report-191733641",
+      "raw_exit": 0
+    },
+    {
+      "run": "propose-190901196",
+      "raw_exit": 0
+    },
+    {
+      "run": "readback-191534620",
+      "raw_exit": 0
+    },
+    {
+      "run": "red-190124100",
+      "raw_exit": 1
+    },
+    {
+      "run": "representation-191745426",
+      "raw_exit": 0
+    },
+    {
+      "run": "verify-191008353",
+      "raw_exit": 1
+    }
+  ],
+  "notes": "The separate 12-node analytic/complex-step audit used the saved failure for checking only. The physical run started solely from d; 222 new chargeable addresses and 288 inherited. Its sole physical rejection is retained. format/lint binding changes and scoped first static errors have receipts. Two derivative-tested versions and the original positively bound verifier source are archived. The late stale-endpoint readback was fail-fast; it did not rerun the whole continuous audit."
+}

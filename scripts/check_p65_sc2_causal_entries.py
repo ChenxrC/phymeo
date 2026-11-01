@@ -52,7 +52,15 @@ class Curve:
 
     def __init__(self, claim, model, q, v, h, mode, degree):
         aff = mode == "affine"
-        calls = 2 if aff else 1 + 3 * degree
+        need(mode in ("affine", "chebyshev", "active-newton"), "unknown curve basis or solver")
+        if mode == "active-newton":
+            need(
+                degree == 13 and claim.get("schema") == "p65-active-newton-curve-v1",
+                "wrong Newton schedule",
+            )
+            calls = 1 + 3 * 3 + 2 * degree
+        else:
+            calls = 2 if aff else 1 + 3 * degree
         count = 2 if aff else degree + 1
         need(
             tuple(claim["owners"]) == model.owners and Q(claim["h"]) == h and claim["grid"] == GRID,

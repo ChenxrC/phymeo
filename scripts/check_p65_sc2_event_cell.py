@@ -209,7 +209,19 @@ def blank():
     )
 
 
-def audit_chart(curve, model, mask, end, tail, acc, bridge=None, *, closing=True, leaves=LEAVES):
+def audit_chart(
+    curve,
+    model,
+    mask,
+    end,
+    tail,
+    acc,
+    bridge=None,
+    *,
+    closing=True,
+    leaves=LEAVES,
+    shift_taylor=None,
+):
     h = curve.h
     for i, taken in enumerate(mask):
         if not taken:
@@ -219,6 +231,7 @@ def audit_chart(curve, model, mask, end, tail, acc, bridge=None, *, closing=True
             )
     edges = [[sub(curve.x[3 * i + j], curve.x[j]) for j in range(3)] for i in (1, 2, 3)]
     need(1 <= leaves <= 4096, "proof leaf limit")
+    need(shift_taylor is None or bridge is None, "Taylor chart excludes algebraic bridges")
     closing_prefix = [True] * 6
     for leaf in range(leaves):
         lo = end * leaf / leaves
@@ -255,6 +268,11 @@ def audit_chart(curve, model, mask, end, tail, acc, bridge=None, *, closing=True
             acc["node_b"][i] += span * remaining * err
         for face_no, ids in enumerate(model.faces):
             shift, rateshift, arm = shift_and_arm(x, v, ids, Q(float(model.rho)))
+            correlated = (
+                None
+                if shift_taylor is None
+                else shift_taylor(curve, ids, lo, hi, x, v, Q(float(model.rho)))
+            )
             for corner, n in enumerate(ids):
                 a = 3 * face_no + corner
                 if not mask[a]:
@@ -263,11 +281,18 @@ def audit_chart(curve, model, mask, end, tail, acc, bridge=None, *, closing=True
                 speed = sub(curve.v[3 * n + 2], curve.v[12])
                 actual_shift = shift + dx[3 * n + 2] - dx[12]
                 actual_rate = rateshift + dv[3 * n + 2] - dv[12]
-                nominal_shift = (actual_shift.low + actual_shift.high) / 2
-                nominal_rate = (actual_rate.low + actual_rate.high) / 2
-                cp = sub((WIDTH - nominal_shift,), base)
-                fac = sub((1 - 1000 * nominal_rate,), scale(speed, 1000))
-                comp = poly_range(cp, lo, hi) - (actual_shift - nominal_shift)
+                if correlated is None:
+                    shift_mid = (actual_shift.low + actual_shift.high) / 2
+                    rate_mid = (actual_rate.low + actual_rate.high) / 2
+                    shift_poly, rate_poly = (shift_mid,), (rate_mid,)
+                    shift_err = actual_shift - shift_mid
+                    spread, drift = shift_err.magnitude, (actual_rate - rate_mid).magnitude
+                else:
+                    shift_poly, rate_poly, spread, drift = correlated
+                    shift_err = I(-spread, spread)
+                cp = sub(sub((WIDTH,), shift_poly), base)
+                fac = sub((1,), scale(add(speed, rate_poly), 1000))
+                comp = poly_range(cp, lo, hi) - shift_err
                 # Monotone closing also supplies a bound at the left end of the whole chart.
                 start_gap = direct_gap(curve.x, Q(0), a, model)
                 minimum = max(comp.low, WIDTH - start_gap.high) if closing_prefix[a] else comp.low
@@ -281,8 +306,6 @@ def audit_chart(curve, model, mask, end, tail, acc, bridge=None, *, closing=True
                 pg = poly_range(p, lo, hi)
                 need(pg.low >= 0, "negative represented force")
                 errp = sub(p, scale(times(cp, fac), AREA_K))
-                spread = (actual_shift - nominal_shift).magnitude
-                drift = (actual_rate - nominal_rate).magnitude
                 err = poly_range(errp, lo, hi).magnitude + AREA_K * (
                     spread * poly_range(fac, lo, hi).magnitude + comp.magnitude * 1000 * drift
                 )
@@ -307,7 +330,7 @@ def audit_chart(curve, model, mask, end, tail, acc, bridge=None, *, closing=True
                     )
                     acc["node_j"][i] += span * mismatch
                     acc["node_b"][i] += span * remaining * mismatch
-                u = add(speed, (nominal_rate,))
+                u = add(speed, rate_poly)
                 visc = AREA_K * 1000 * h * moment(times(cp, times(u, u)), lo, hi)
                 du = poly_range(u, lo, hi).magnitude
                 loss_error = (

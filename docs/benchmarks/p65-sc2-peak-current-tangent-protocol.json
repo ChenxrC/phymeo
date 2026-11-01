@@ -1,0 +1,40 @@
+{
+  "schema": "p65-sc2-peak-current-tangent-v1",
+  "baseline": "84544b173bdfdb89b255cf16ebb8ea8c37cccd04",
+  "parent": "p65-sc2-causal-entry-results.json",
+  "parent_sha256_lf": "81b0dc6b5940c7129c5878451de3f2f37135ea81c08fc77a62bc1b89f1b4012a",
+  "source": "A separate registered HOST candidate on the nominal original SC2 peak. Bind the genuine d transaction, its CP01 packet and accumulated original-step resource and physical bounds. The previous rejected proposal/forensics are read only by the independent offline derivative checker. No rejected state or force history initializes the new candidate.",
+  "tangent": "Differentiate distance and oriented hinge internal force, the complete normalized-face gap gradient and Hessian, rate Dv and each of six paired loads. For each owner differentiate p=- variations of both gap and rate on the strict positive branch and D^T p including p Hessian(g). Assemble R_k=a_k-M^-1 F(x0+h*s_k*v0+h^2*sum(P_kl*a_l),v0+h*sum(V_kl*a_l)). Recompute the tangent at the same q,v as the force. Nonpositive active compression or rate factor is outside this solver chart.",
+  "derivative_gate": "On all 12 saved final collocation trials compare every one of 26 first partials for material forces, each pressure, and every owner-coordinate load to a separate holomorphic force evaluator using complex-step 2^-72. Its oriented angle and gradient come from independent numerator/denominator polynomials, its offset map from the scalar normal projection. Compare its real value to the original full model. Compare all 156x156 residual entries using independent exact rational cardinal integrals. Gate elementwise error <=2e-10*(1+absolute oracle), value <=2e-11*(1+absolute oracle). Check symmetry, translations, action/reaction, kinetic map and nonzero detection of omitted geometry and frozen tangent; no candidate fits from these samples. These reference evaluations are logged as separate serial derivative validation.",
+  "candidate": "Compute the inlet force jet once. Initialize a cubic collocation predictor from that inlet jet, make three genuine current-tangent Newton corrections at its three non-inlet nodes, then transfer acceleration by the cubic interpolant to 14 Lobatto nodes (degree 13). Make two current-tangent Newton corrections at the thirteen non-inlet nodes. On the last correction publish each material field, six pressures and six mapped rows by its own first-order variation at the new common motion. No endpoint velocity adjustment, no use of the failed trial, no extra sweep. Independently check the candidate continuous law and both inertial moments. Use the final spare six-owner evaluation solely to measure endpoint consistency. All matrices/linear residuals and changes retained.",
+  "calls": {
+    "inherited": 288,
+    "limits": 512,
+    "inlet": 6,
+    "coarse": 54,
+    "fine": 156,
+    "terminal_read": 6,
+    "total_candidate": 222,
+    "total_original_step": 510
+  },
+  "verification": "Independent rational reconstruction from the signed Chebyshev words and CP01, all 13 coordinates, all original owner addresses, positive branch, whole hard gap, material and mapped force position/velocity, noncancelling positive energy, paired angular/linear balance, all cumulative defects. Use 512 physical leaves and, inside those same leaves, enclose director height and rate with their local quadratic and first-degree polynomials using outward bounds on the actual face second derivative. Never change the hard gate or widen an error allowance. If the candidate is rejected preserve the raw transaction/output and stop this attempt. If accepted run new readback from disk tying peak, two moments, and rejected stale endpoint. No rerun of the earlier accepted path.",
+  "limits": {
+    "owner_evaluations": 512,
+    "proof_cells": 4096,
+    "depth": 32,
+    "checkpoint_bytes": 1024,
+    "checkpoint_int_bits": 512,
+    "positive_relative": 0.01,
+    "owner_J_Ns": 1e-10,
+    "owner_B_over_min_mass_m": 1e-10,
+    "node_position_m": 1e-8,
+    "node_velocity_m_s": 0.000002,
+    "positive_energy_j": 1e-8,
+    "paired_angular_nms": 1e-8,
+    "linear_Ns": 1e-10
+  },
+  "sources": [
+    "https://computing.llnl.gov/projects/sundials/cvode",
+    "https://public.websites.umich.edu/~mdolaboratory/pdf/Martins2001.pdf"
+  ]
+}

@@ -1,0 +1,59 @@
+{
+  "schema": "p65-sc-l1-joint-publication-v1",
+  "baseline": "43266feaf78da548d67144fe4703ede8b6ce653b",
+  "old_results": "p65-contact-layer-intrastep-results.json",
+  "old_protocol": "p65-contact-layer-intrastep-protocol.json",
+  "start": "Exact binary input g0,y0 for the original eight named impact failures, time and h. Use no old end state or reference force in the update.",
+  "primary": [
+    "1/64",
+    7
+  ],
+  "others": [
+    [
+      "1/128",
+      14
+    ],
+    [
+      "1/128",
+      15
+    ],
+    [
+      "1/256",
+      27
+    ],
+    [
+      "1/256",
+      28
+    ],
+    [
+      "1/256",
+      29
+    ],
+    [
+      "1/256",
+      30
+    ],
+    [
+      "1/256",
+      31
+    ]
+  ],
+  "order": "First publish the primary witness; a fresh process consumes only its saved end state and advances one more full h under identical conditions. Independently audit both. Open the other seven only on primary acceptance; each has its own exact witness inlet and an actual cold successor. Beyond T, successor is a readback diagnostic, not a reference window extension.",
+  "force": "Fixed A=1, impact M=2m,F=0, same fit and prior active partition. Three law evaluations per internal piece: left traction L, provisional right under constant L, corrected right using the resulting affine predictor. Each evaluation rounds the stated nonnegative SC-L1 law to a binary64 force. The last right value R and L define a single affine traction on the piece. No reference force, state repair or special-case tail cutoff.",
+  "state": "Publish t,g,y=1+d*v. Each scalar has its nearest finite binary64 word and a canonical exact signed rational remainder. The word plus remainder is the scalar's authoritative value for this experiment. Construct J,B,v,g from the same traction. Every piece reads back serialized bytes. On a separate interpreter and with no archived seed passed to the successor kernel, read the original-step endpoint from disk and use it for the next force evaluation. Compare the same traction using word-only readback.",
+  "strict": "Exact recovered inertial force equals both nonnegative force endpoints on every piece; the path between them is affine in force. Independent integration of the force equals both moments of the read-back state on every piece and the original step. Verify continuity, exact whole-path core and strictly positive active compression/rate, original step impulse, gap, speed, peak, constitutive moment/prefix and positive energy gates. Only original-window rows have reference columns. Across each contiguous witness/successor pair within the original window sum positive work and impulse errors; no claim for unsimulated parts of T.",
+  "tail_guard": " additionally require a rigorous all-time absolute traction-law discrepancy no larger than 1/100 of the positive lower law bound on each tail piece. Zero force cannot pass by being below the inherited absolute tolerances.",
+  "wire_limits": {
+    "bits_per_exported_integer": 512,
+    "bytes_per_motion_packet": 1024,
+    "force_evaluations_per_outer_step": 512
+  },
+  "negative_controls": [
+    "old failed endpoint moments",
+    "remove both remainders and rebuild canonical packet with same force",
+    "swap distinct left/right forces to preserve impulse but change time moment",
+    "negative pressure endpoint",
+    "mismatched time or broken continuity"
+  ],
+  "scope": "HOST scalar diagnostic; original source, budgets, reference material and eight witness inputs stay fixed. Assess the new state representation and its actual size explicitly. No joint runtime/native acceptance."
+}

@@ -1,0 +1,315 @@
+{
+  "schema": "p65-sc2-event-cell-results-v1",
+  "baseline": "1680c1d5b21981eb2b19d2c0f4520496d93d3bf6",
+  "protocol": "p65-sc2-event-cell-protocol.json",
+  "scope": "One joint research HOST transaction on the original inherited event cell, with the real inlet velocity. This replaces the failed local segment only. Earlier uncertified cells in the 125 ms reference prevent a whole-window acceptance.",
+  "evidence_root": "artifacts/p65-n2-sc2-split-cell-20261101-01",
+  "released_guard": "release-181327997",
+  "local": {
+    "accepted": true,
+    "gates": {
+      "relative_positive": true,
+      "owner_impulse_ns": true,
+      "owner_backward_over_mass_m": true,
+      "node_velocity_m_s": true,
+      "node_position_m": true,
+      "positive_energy_j": true,
+      "paired_angular_nms": true,
+      "linear_ns": true,
+      "whole_cell_hard": true,
+      "owner_budget": true,
+      "geometry_budget": true,
+      "unique_birth_and_no_exit_or_damping_cut": true,
+      "exact_two_moments": true
+    },
+    "upper": {
+      "relative_positive": 0.0002717800957602715,
+      "owner_impulse_ns": 3.5643089099716066e-11,
+      "owner_backward_over_mass_m": 1.780466715982382e-14,
+      "node_velocity_m_s": 1.5509671572167232e-9,
+      "node_position_m": 3.6962227575618156e-13,
+      "positive_energy_j": 7.771970451855085e-12,
+      "paired_angular_nms": 1.9676419149059242e-10,
+      "linear_ns": 1.6276500459577448e-19
+    },
+    "owners": [
+      "U/0/lower",
+      "U/1/lower",
+      "U/2/lower",
+      "D/1/lower",
+      "D/0/lower",
+      "D/3/lower"
+    ],
+    "all_original_owners": true,
+    "model": "7645de9d68f930a62e0690deca067b4dbf5878b14bb8c8716cde7564573cfa84",
+    "binding": "b108dd026d104e4ddefd7711a2ed18172e4aa2902e22a210efa85ffa9591bfbe",
+    "same_inlet": true,
+    "inlet": "2c9b04f131402bf7be1e84ca50588b71b3dedfd0b684f76254940a29db038953",
+    "join": "4b6fef9cdc72830212bca94394faf5386dd0dc04bb1a923e1338ab885bd3c846",
+    "new_endpoint": "65f49b7f0d7034bf2a91908704bb5b18d58a4d5ca996b683956d3fc8fce16434",
+    "start_s": "18605781835/2199023255552",
+    "stop_s": "39462128889/4398046511104",
+    "event_owner": "D/3/lower",
+    "event_s": [
+      0.008505985227948489,
+      0.008505985228067637
+    ],
+    "join_s": "76616634700799/9007199254740992",
+    "early_witness": {
+      "owner": "D/3/lower",
+      "time_s": 0.008476921228314893,
+      "force_n": 0,
+      "gap_m": [
+        0.002003127161753368,
+        0.002003127161753369
+      ]
+    },
+    "minimum_hard_gap_m": 0.0018115533345843006,
+    "charges": {
+      "inherited": 132,
+      "new": 168,
+      "total": 300,
+      "remaining": 212
+    },
+    "proof_cells": {
+      "new": 196,
+      "inherited": 489,
+      "depth": 32
+    },
+    "J_ns": [
+      "355075084332246413685828815425318290313593/446014903970612462830714365452967230119608320",
+      "17044624363919767657018534626522549340115269/21408715390589398215874289541742427045741199360",
+      "581682898636913261772336612378544249294651/713623846352979940529142984724747568191373312",
+      "5681535201144181053497497579838212567453403/7136238463529799405291429847247475681913733120",
+      "4260896321967069396888195891447037396117591/5352178847647349553968572385435606761435299840",
+      "16207437944596996557466320627797/155768905756044828855914889876602880"
+    ],
+    "B_ns2": [
+      "4630027565880176741722967421430270813536627777923098309/24104070663884854133129431385117439037833044906741892529520640",
+      "14816997601550371352907862367015442808493419691038411799/77133026124431533226014180432375804921065743701574056094466048",
+      "37804398676646103131046594125470717448983607617773740483/192832565311078833065035451080939512302664359253935140236165120",
+      "74084902490877819085025924637981252533785659233106717511/385665130622157666130070902161879024605328718507870280472330240",
+      "3704017776953511862712689222028267013689970651407503421/19283256531107883306503545108093951230266435925393514023616512",
+      "23931093182379228955610586629983614529760651765443/1471195719231253304024013146064296816273989557296258088960"
+    ],
+    "J_error_ns": [
+      1.6174535324959543e-11,
+      1.6175375965024822e-11,
+      1.1600506856333293e-11,
+      3.5643089099716066e-11,
+      3.5641849135807224e-11,
+      2.7142003830841264e-11
+    ],
+    "B_error_over_mass_m": [
+      8.510470884887203e-15,
+      8.510904643896657e-15,
+      6.029107155958373e-15,
+      1.780466715982382e-14,
+      1.7804044230964698e-14,
+      1.2872185304216475e-14
+    ],
+    "relative_error": [
+      3.772650698730413e-8,
+      3.772614586933101e-8,
+      2.6352217285989484e-8,
+      6.536450622115331e-8,
+      6.536598265733603e-8,
+      0.0002717800957602715
+    ],
+    "energy_defect_j": [
+      -8.035650093844434e-12,
+      7.771970451855085e-12
+    ],
+    "viscous_loss_j": [
+      0.00048075379400762034,
+      0.00048075380981482034
+    ],
+    "platform_delta_v_m_s": -0.002051838187602365,
+    "platform_x_m": -0.0000019291420157413215,
+    "old_endpoint": "9a5320ad6cd7c3bbf9ad6d220f37fd11bf9592640dfbd418f5f5d9da248ddaad",
+    "platform_velocity_change_vs_old_m_s": 0.0000013474734271365151,
+    "platform_position_change_vs_old_m": 7.822826065442685e-10,
+    "rejected_transactions": {
+      "lost-inlet": "wrong physical inlet",
+      "early-force": "nonzero before event",
+      "omitted-owner": "duration, grid or owner mismatch",
+      "shifted-root": "unsquared event sign",
+      "forged-J": "invalid bridge moments",
+      "old-endpoint": "old or forged terminal checkpoint"
+    }
+  },
+  "first_unverified_successor": {
+    "source_cp_sha256": "df977891667806f4ef2388c19494cd7b5d2bcc6d80861065e29d0b742f01fabe",
+    "source_trace_sha256": "c9d6608405f97b861ced8f373586ef4207ce8519c42d7c1ef9b59b028bbbe0ec",
+    "cell_index": 0,
+    "start_s": "2044402077/274877906944",
+    "end_s": "34960998451/4398046511104",
+    "model": "7645de9d68f930a62e0690deca067b4dbf5878b14bb8c8716cde7564573cfa84",
+    "owner_force_evaluations": 0,
+    "owners": [
+      {
+        "owner": "U/0/lower",
+        "branch": "outside at inlet",
+        "next_entry_s": [
+          0.007437534283942408,
+          0.007437534284061554
+        ],
+        "identically_zero_outside": false,
+        "witness": {
+          "at_s": 0.0074375128566213445,
+          "pressure_n": 0.000028363573087411025,
+          "interval_open_s": [
+            0.007437491429300279,
+            0.007437512856621345
+          ],
+          "first_nonzero_power": 1
+        }
+      },
+      {
+        "owner": "U/1/lower",
+        "branch": "outside at inlet",
+        "next_entry_s": [
+          0.007437499999918931,
+          0.007437500000038077
+        ],
+        "identically_zero_outside": false,
+        "witness": {
+          "at_s": 0.007437495714609606,
+          "pressure_n": 0.000005673804480996752,
+          "interval_open_s": [
+            0.007437491429300279,
+            0.007437495714609607
+          ],
+          "first_nonzero_power": 1
+        }
+      },
+      {
+        "owner": "U/2/lower",
+        "branch": "already inside"
+      },
+      {
+        "owner": "D/1/lower",
+        "branch": "outside at inlet",
+        "next_entry_s": [
+          0.007437500843934536,
+          0.007437500844053682
+        ],
+        "identically_zero_outside": false,
+        "witness": {
+          "at_s": 0.007437496136617408,
+          "pressure_n": 0.0000062325146661332075,
+          "interval_open_s": [
+            0.007437491429300279,
+            0.007437496136617409
+          ],
+          "first_nonzero_power": 1
+        }
+      },
+      {
+        "owner": "D/0/lower",
+        "branch": "outside at inlet",
+        "next_entry_s": [
+          0.007437535127958013,
+          0.007437535128077159
+        ],
+        "identically_zero_outside": false,
+        "witness": {
+          "at_s": 0.007437513278629147,
+          "pressure_n": 0.000028922033572011845,
+          "interval_open_s": [
+            0.007437491429300279,
+            0.007437513278629148
+          ],
+          "first_nonzero_power": 1
+        }
+      },
+      {
+        "owner": "D/3/lower",
+        "branch": "outside at inlet",
+        "next_entry_s": null,
+        "identically_zero_outside": true,
+        "witness": null
+      }
+    ],
+    "forbidden_count": 4
+  },
+  "raw": [
+    {
+      "name": "accepted.json",
+      "sha256": "17d50970eadfdfcf6b47ea5f4a8e130a1c71601956ece9e3fa0ef0eca07d79d4",
+      "bytes": 4915
+    },
+    {
+      "name": "first-successor.json",
+      "sha256": "2abc736b7486e51509dd6f7f17f29bf2c6b1a7fbd989615ccb1de44f86c0a2ef",
+      "bytes": 2602
+    },
+    {
+      "name": "attempt.json.gz",
+      "sha256": "e1ceb5a1eef3185c93af9f3500e3e0b7b35d9ee4dd06b5ae77b1e56a171fc4ef",
+      "bytes": 1919
+    },
+    {
+      "name": "transaction.json.gz",
+      "sha256": "3dc873f26703197727aa04ac4a00a3e84ccb2c8b93952cecbf53349a7b610d09",
+      "bytes": 3911
+    },
+    {
+      "name": "cell.bin",
+      "sha256": "65f49b7f0d7034bf2a91908704bb5b18d58a4d5ca996b683956d3fc8fce16434",
+      "bytes": 1024
+    },
+    {
+      "name": "proposal.json.gz",
+      "sha256": "bfd385a06dce261c75cdd661382af62843a52341b5b3424eea3bddff56389825",
+      "bytes": 16901
+    }
+  ],
+  "commands": [
+    {
+      "name": "format-180859530",
+      "raw_exit": 0
+    },
+    {
+      "name": "format-180942060",
+      "raw_exit": 0
+    },
+    {
+      "name": "format-seam-181211697",
+      "raw_exit": 0
+    },
+    {
+      "name": "green-181101860",
+      "raw_exit": 0
+    },
+    {
+      "name": "lint-180907078",
+      "raw_exit": 1
+    },
+    {
+      "name": "lint-180950928",
+      "raw_exit": 0
+    },
+    {
+      "name": "lint-seam-181219849",
+      "raw_exit": 0
+    },
+    {
+      "name": "propose-180959988",
+      "raw_exit": 0
+    },
+    {
+      "name": "red-180525351",
+      "raw_exit": 1
+    },
+    {
+      "name": "seam-181228665",
+      "raw_exit": 0
+    },
+    {
+      "name": "verify-181009133",
+      "raw_exit": 0
+    }
+  ],
+  "notes": "RED reads the stored old failure. GREEN reads the new transaction with the same gate. The sole scoped lint failure concerned two unused or misplaced imports. Independent first-successor inspection performs no force/law stage evaluations and does not advance any state."
+}

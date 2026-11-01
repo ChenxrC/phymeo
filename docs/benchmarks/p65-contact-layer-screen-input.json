@@ -1,0 +1,160 @@
+{
+  "schema": "p65-contact-layer-material-screen-v1",
+  "material": "SC-L1",
+  "provenance": "Design-prescribed simulation coupon, not measurements. One low-static-pressure, strongly rate-dependent layer is specified before any numerical run. The intended use was chosen with knowledge of the previously published feasibility inequalities. This is a constructive feasibility screen, not blind material identification.",
+  "scope": "Stage 1 only: fit the declared coupon and test the normal relative-translation support and approach controls. No four-node trajectory, production time-step method, robot/clothing coupling, GPU or absolute material identification.",
+  "law": "x=max(delta-g,0); pressure=k*x*max(1+d*x_dot,0); stored energy per reference area=k*x^2/2. A negative hard gap rejects. All input gaps, rates, pressures, masses and times are SI; all strings are exact decimals or rational numbers.",
+  "rate_range_m_s": [
+    "-0.15",
+    "0.15"
+  ],
+  "fit": {
+    "static": [
+      {
+        "gap_m": "0.00050",
+        "rate_m_s": "0",
+        "pressure_pa": "0.750",
+        "band_pa": [
+          "0.749",
+          "0.751"
+        ]
+      },
+      {
+        "gap_m": "0.00150",
+        "rate_m_s": "0",
+        "pressure_pa": "0.250",
+        "band_pa": [
+          "0.249",
+          "0.251"
+        ]
+      }
+    ],
+    "compression": {
+      "gap_m": "0.00100",
+      "rate_m_s": "0.020",
+      "pressure_pa": "10.50",
+      "band_pa": [
+        "10.48",
+        "10.52"
+      ]
+    }
+  },
+  "holdout": [
+    {
+      "id": "static_mid",
+      "gap_m": "0.00100",
+      "rate_m_s": "0",
+      "pressure_band_pa": [
+        "0.498",
+        "0.502"
+      ],
+      "energy_band_j_m2": [
+        "0.000245",
+        "0.000255"
+      ]
+    },
+    {
+      "id": "fast_loading",
+      "gap_m": "0.00075",
+      "rate_m_s": "0.15",
+      "pressure_band_pa": [
+        "93.5",
+        "95.25"
+      ]
+    },
+    {
+      "id": "partial_unloading",
+      "gap_m": "0.00140",
+      "rate_m_s": "-0.0004",
+      "pressure_band_pa": [
+        "0.177",
+        "0.183"
+      ]
+    },
+    {
+      "id": "fully_unloaded_force",
+      "gap_m": "0.00100",
+      "rate_m_s": "-0.15",
+      "pressure_band_pa": [
+        "0",
+        "0"
+      ]
+    },
+    {
+      "id": "outside_layer",
+      "gap_m": "0.00220",
+      "rate_m_s": "0.10",
+      "pressure_band_pa": [
+        "0",
+        "0"
+      ],
+      "energy_band_j_m2": [
+        "0",
+        "0"
+      ]
+    }
+  ],
+  "geometry_negative": {
+    "gap_m": "-0.000001",
+    "expected": "hard-core violation before load evaluation"
+  },
+  "controls": {
+    "area_m2": "1",
+    "mass_range_kg": [
+      "1/2",
+      "2"
+    ],
+    "trace_masses_kg": [
+      "1/2",
+      "1",
+      "2"
+    ],
+    "window_s": "1/8",
+    "report_h_s": [
+      "1/64",
+      "1/128",
+      "1/256"
+    ],
+    "sc1": {
+      "compression_initial": "delta",
+      "v0_m_s": "0",
+      "compressive_load_n": "m/4",
+      "reduced_mass_kg": "2m",
+      "four_node_rest_rad": [
+        "3/4096",
+        "4/4096",
+        "5/4096"
+      ]
+    },
+    "sc2": {
+      "gap_initial_m": "3/1024",
+      "closing_speed_m_s": "1/8",
+      "compressive_load_n": "0",
+      "reduced_mass_kg": "2m",
+      "type": "unperturbed scalar normal reference"
+    }
+  },
+  "decision": {
+    "fit": "Fit only two static rows and one loading row. Use interval monotonicity and corner bounds; each held-out predicted range must be contained in its declared band. Material and bands remain fixed for all masses, time grids and negative controls.",
+    "support": "On all 0 <= t <= T certify 0 < compression <= delta and a positive support force, including entry from g=0. Positive initial separating acceleration is also required for each original SC1 node in the stated rest/mass ranges.",
+    "impact": "Enter from strictly outside the layer, conserve hard-core clearance for the whole window, and transfer at least M*u/2 impulse before T. Do not credit a near-zero gap as exact contact. Report the certified margins as well as the diagnostic reference traces.",
+    "negative": "With the same elastic calibration and d set to zero, the unforced impact energy must exceed hard-core capacity for every original mass. Preserve the previously rejected stiff coupon by its published scope.",
+    "on_failure": "Keep the failing inputs and results. No second coupon or adjustment to a coefficient or threshold in this screen."
+  },
+  "diagnostics": {
+    "method": "Independent host scalar ODE integrated with classical RK4 at two fixed reference resolutions. Split off the known initial free segment in impact. Compare both solutions at common times and report physical quantities at original grid times. The continuous enclosures, not sampled states, certify feasibility.",
+    "reference_dt_s": [
+      "1/8192",
+      "1/16384"
+    ],
+    "max_common_gap_error_m": "1e-8",
+    "max_common_speed_error_m_s": "2e-6",
+    "max_common_force_error_n": "1e-3",
+    "max_common_impulse_error_ns": "4e-6",
+    "max_energy_balance_error_j": "1e-7",
+    "max_momentum_balance_error_ns": "1e-10",
+    "max_fine_peak_force_error_n": "0.01",
+    "max_fine_peak_compression_error_m": "1e-8",
+    "retained": "For each nominal mass and case save full fine-grid trace with (t,g,v,force,impulse,dissipation), both resolutions' extrema and balances, and actual common-grid errors. Reference microsteps are not an acceptance of the original simulation steps."
+  }
+}

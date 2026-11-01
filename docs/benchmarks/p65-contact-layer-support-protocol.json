@@ -1,0 +1,26 @@
+{
+  "schema": "sc-l1-constant-load-support-v1",
+  "baseline": "701e8b048548b759a7ad8d2f7b070b076253af05",
+  "fixture": "p65-contact-layer-screen-input.json",
+  "reference_index": "p65-contact-layer-intrastep-results.json",
+  "reference_fine_summary": "p65-contact-layer-screen-results.json",
+  "gates_from": "p65-contact-layer-intrastep-protocol.json",
+  "wire_from": "p65-contact-layer-publication-protocol.json",
+  "case": {
+    "m_kg": "1/2",
+    "h_s": "1/64",
+    "T_s": "1/8",
+    "steps": 8,
+    "relative_mass": "2m",
+    "constant_compressive_load": "m/4",
+    "initial_gap": "0",
+    "initial_closing_speed": "0"
+  },
+  "candidate": "Unchanged SC-L1 nominal coupon, active contact and original initial preload. Use the registered degree-seven pressure recurrence with the external force in the zeroth acceleration coefficient only. Publish contact impulse J and time moment B separately from external F*dt, F*dt^2/2 and F*(x_end-x_start). Drive velocity and gap from both actual contributions. No source reference trajectory enters the producer; never offset g=0 or reset at a later outer step.",
+  "continuation": "One new process per original outer step. Step 0 starts at the registered input; steps 1..7 read the previous published end packet as their only dynamic initial state. The independent observer requires exact byte continuity at every boundary, the original [0,T] cover, and the same nonnegative traction explaining the entire path and both endpoint equations.",
+  "support": "Require exact start g=v=0, U0=K*delta^2/2, initial delivered force K*delta, initial separating acceleration (K*delta-F)/M>0. Inspect the Bernstein path throughout, including closed start. Hard gap nonnegative, strictly positive after the inlet, 0<x<=delta, no release; verify y>0, v<=0 and x>=delta-T/d on every piece. Prove delivered force >= F*(1-T/(d*delta)) throughout, enclose the actual window force minimum and maximum with the inherited peak tolerance, including one-sided values at knots.",
+  "balance": "M(v1-v0)=F*dt-J and M(g1-g0+dt*v0)=B-F*dt^2/2. Noncancelling sum of max(0, DeltaK+DeltaU+D-Wext) per internal piece, per step and over T. Verify reported external impulse, time moment and signed work against independent integrals of force and velocity. Initial elastic energy and internal contact work stay separate from original external work. Also report direct signed full-window closure, total contact/external impulse, final speed, gap, compression, force and kinetic/elastic/dissipated energy.",
+  "checks": "All inherited step/reference impulse and time moment, terminal gap/speed, peak amplitude, state-vs-law impulse/time moment, prefix and energy limits apply. Compare only the original eight support records, also window impulse; no impact-event timing gate for support. Require an all-time <=1% relative traction-law enclosure. Negative controls on authentic first-piece data: omit external drive, omit or reverse signed external work, credit internal contact work as external, erase initial preload, and drop the resumed state remainder. Keep every failure; no threshold, material or step-size tuning.",
+  "resources": "Reuse original active partition, two adjacent cells per polynomial, every internal boundary persisted. Per original step 512 charged force coefficients with convolution, conversion and subdivision costs separately reported; peak/minimum share 4096 cells and depth 32. Same 512-bit bounded published ratios and 1024-byte motion packets; no host/native equivalence claim.",
+  "scope": "HOST scalar support, one mass and one grid, one uninterrupted 0.125 s trajectory. No production four-node cloth or robot, old suite, native or CI."
+}

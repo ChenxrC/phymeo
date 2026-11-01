@@ -7,6 +7,8 @@ from pathlib import Path
 
 import numpy as np
 
+from phymeo.constraints.robot_contact_patch import RobotContactPatch
+from phymeo.core.robot import RobotModel
 from phymeo.dynamics.robot_kinematics import forward_kinematics
 from phymeo.experiments.compliant_cloth import build_impact
 from phymeo.experiments.compliant_handoff import build_handoff
@@ -14,7 +16,51 @@ from phymeo.experiments.compliant_handoff import build_handoff
 DEMOS = Path(__file__).resolve().parents[1] / "docs/demos"
 
 
+def _bind_recorded_models(trace):
+    models = {name: RobotModel(**data) for name, data in trace["robot_models"].items()}
+    parents = {name: model.parents.tolist() for name, model in models.items()}
+    if "robot_parents" in trace and trace["robot_parents"] != parents:
+        raise ValueError("recorded robot parents differ from the model")
+    trace["robot_parents"] = parents
+    attachments = {}
+    for row in trace["patches"]:
+        patch = RobotContactPatch(
+            row["name"], row["link_index"], np.asarray(row["local_vertices_m"])
+        )
+        robot = row["robot"]
+        if patch.key in attachments or (
+            robot is not None
+            and (robot not in models or patch.link_index >= models[robot].dof_count)
+        ):
+            raise ValueError("invalid or duplicate recorded patch binding")
+        attachments[patch.key] = (robot, patch)
+    for frame in trace["frames"]:
+        if set(frame["robots"]) != set(models):
+            raise ValueError("recorded robot bindings differ from the model set")
+        poses = {}
+        for name, model in models.items():
+            robot = frame["robots"][name]
+            pose = forward_kinematics(model, np.asarray(robot["q"], dtype=float))
+            if "links_m" in robot and not np.array_equal(robot["links_m"], pose.position):
+                raise ValueError("recorded robot links differ from forward kinematics")
+            robot["links_m"] = pose.position.tolist()
+            poses[name] = pose
+        if set(frame["patch_vertices_m"]) != set(attachments):
+            raise ValueError("recorded patch membership differs from model attachments")
+        for key, (robot, patch) in attachments.items():
+            vertices = patch.local_vertices
+            if robot is not None:
+                pose = poses[robot]
+                link = patch.link_index
+                vertices = vertices @ pose.rotation[link].T + pose.position[link]
+            if not np.array_equal(frame["patch_vertices_m"][key], vertices):
+                raise ValueError("recorded patch differs from its model attachment")
+
+
 def add_link_geometry(trace):
+    if "robot_models" in trace:
+        _bind_recorded_models(trace)
+        return
     if trace.get("robot_parents") and all(
         all("links_m" in r for r in f["robots"].values()) for f in trace["frames"]
     ):

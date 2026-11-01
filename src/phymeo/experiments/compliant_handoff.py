@@ -1,4 +1,6 @@
-"""Two actuated Cartesian grippers hand the same freely simulated cloth to a table."""
+"""Force-gated handoff shared by interchangeable, physically actuated robot layouts."""
+
+from dataclasses import dataclass
 
 import numpy as np
 
@@ -7,35 +9,21 @@ from ..constraints.cloth_material import ClothMaterial
 from ..constraints.distance import DistanceConstraints
 from ..constraints.robot_contact_patch import RobotContactPatch
 from ..constraints.triangle_prism_surface import TrianglePrismSurface
+from ..core.capabilities import SolverFailure
 from ..core.model import ParticleModel
-from ..core.robot import RobotInputs, RobotModel, RobotState
+from ..core.robot import RobotInputs
 from ..core.scene import DomainBinding, SceneInputs, SceneModel, SceneState, StepSettings
 from ..core.state import ParticleState, StepInputs
 from ..solvers.compliant_cloth_contact import CompliantClothContactProgram, CompliantPatch
 from .compliant_cloth import Case, record_step, trace_start
+from .handoff_grippers import BASE_Z, CLOSED, Gripper, grippers_for
 
-BASE_Z = 0.039
-HALF_OPEN = 0.013
-CLOSED = HALF_OPEN - 0.0006
-BASE_X = {"A": -0.06, "B": 0.06}
 PHASES = ("grasp_A", "lift_A", "share", "release_A", "carry_B", "lower_B", "open_B", "settle")
 
 
-def _arm(base_x):
-    # Two carriage axes and independently actuated opposed fingers.
-    return RobotModel(
-        np.array([-1, 0, 1, 1]),
-        ("prismatic",) * 4,
-        np.array(
-            [[base_x, 0.0, BASE_Z], [0.0, 0.0, 0.0], [0.0, -HALF_OPEN, 0.0], [0.0, HALF_OPEN, 0.0]]
-        ),
-        np.tile([0.0, 0.0, 0.0, 1.0], (4, 1)),
-        np.array([[1.0, 0.0, 0.0], [0.0, 0.0, 1.0], [0.0, 1.0, 0.0], [0.0, -1.0, 0.0]]),
-        np.array([0.12, 0.10, 0.06, 0.06]),
-        np.zeros((4, 3)),
-        np.full((4, 3), 0.001),
-        np.array([0.0, 0.0, -9.81]),
-    )
+@dataclass
+class HandoffCase(Case):
+    grippers: dict[str, Gripper]
 
 
 def _cloth_material(x, faces):
@@ -63,11 +51,15 @@ def _cloth_material(x, faces):
     )
 
 
-def build_handoff(*, grip_friction=0.9):
+def build_handoff(*, grip_friction=0.9, robot="cartesian"):
+    """Use a named layout or supply an A/B mapping of grippers that implement position/command."""
     x = np.array([[a, 0.0, 0.0015 + b] for b in (0.0, 0.025, 0.05) for a in (-0.06, 0.06)])
     faces = [(0, 1, 3), (0, 3, 2), (2, 3, 5), (2, 5, 4)]
     cloth = ParticleModel(np.full(len(x), 1 / 0.008), np.array([0.0, 0.0, -9.81]))
-    models = {n: _arm(a) for n, a in BASE_X.items()}
+    grippers = grippers_for(robot) if isinstance(robot, str) else dict(robot)
+    if set(grippers) != {"A", "B"}:
+        raise ValueError("handoff needs two robot roles A and B")
+    models = {n: g.model for n, g in grippers.items()}
     scene = SceneModel(
         (
             DomainBinding("cloth", "particles", cloth),
@@ -96,8 +88,9 @@ def build_handoff(*, grip_friction=0.9):
     pad = np.array(
         [[-0.022, 0.0, -0.019], [-0.022, 0.0, 0.019], [0.022, 0.0, 0.019], [0.022, 0.0, -0.019]]
     )
-    for n in models:
-        for side, link, sign in (("left", 2, 1), ("right", 3, -1)):
+    for n, gripper in grippers.items():
+        left, right = gripper.fingers
+        for side, link, sign in (("left", left, 1), ("right", right, -1)):
             patches.append(
                 CompliantPatch(
                     RobotContactPatch(f"{n}_{side}", link, pad),
@@ -123,31 +116,16 @@ def build_handoff(*, grip_friction=0.9):
     state = SceneState(
         {
             "cloth": ParticleState(x, np.zeros_like(x)),
-            "A": RobotState(np.zeros(4), np.zeros(4)),
-            "B": RobotState(np.array([0.055, 0.0, 0.0, 0.0]), np.zeros(4)),
+            **{n: g.initial for n, g in grippers.items()},
         }
     )
     inputs = SceneInputs(
-        {"cloth": StepInputs.zeros(len(x)), **{n: RobotInputs.zeros(4) for n in models}}
+        {
+            "cloth": StepInputs.zeros(len(x)),
+            **{n: RobotInputs.zeros(m.dof_count) for n, m in models.items()},
+        }
     )
-    return Case(program, state, inputs, 0.01, 128)
-
-
-def _pose(state, name):
-    return np.array([BASE_X[name], BASE_Z]) + state.domains[name].q[:2]
-
-
-def _command(state, name, target, finger_target):
-    robot = state.domains[name]
-    wanted = np.r_[target - [BASE_X[name], BASE_Z], np.full(2, finger_target)]
-    effort = (
-        np.array([165.0, 250.0, 1150.0, 1150.0]) * (wanted - robot.q)
-        - np.array([15.0, 15.0, 8.0, 8.0]) * robot.v
-    )
-    effort[1] += 0.22 * 9.81
-    limits = np.array([16.0, 20.0, 5.0, 5.0])
-    zero = np.zeros((4, 3))
-    return RobotInputs(np.clip(effort, -limits, limits), zero, zero)
+    return HandoffCase(program, state, inputs, 0.01, 128, grippers)
 
 
 def _observations(state, row, weight):
@@ -172,16 +150,23 @@ def _travel(start, end, elapsed, duration):
     return start + (end - start) * (s * s * (3.0 - 2.0 * s))
 
 
-def run_handoff(*, grip_friction=0.9, progress=None):
-    case = build_handoff(grip_friction=grip_friction)
-    trace = trace_start(case, "handoff" if grip_friction else "no-grip")
+def run_handoff(*, grip_friction=0.9, robot="cartesian", progress=None):
+    case = build_handoff(grip_friction=grip_friction, robot=robot)
+    layout = robot if isinstance(robot, str) else "custom"
+    case_name = "handoff" if grip_friction else "no-grip"
+    trace = trace_start(case, case_name if layout == "cartesian" else f"{layout}-{case_name}")
+    trace["robot_layout"] = layout
     state = case.initial
     weight = float(np.sum(1 / case.program.cloth.inverse_mass) * 9.81)
     phase = 0
     entered = 0.0
     stable = 0
     finger_targets = {"A": 0.0, "B": 0.0}
-    a0 = _pose(state, "A")
+
+    def position(name):
+        return case.grippers[name].position(state.domains[name])
+
+    a0, b0 = position("A"), position("B")
     size = np.ptp(state.domains["cloth"].position, axis=0)
     span = size[0]
     transit_z = BASE_Z + np.linalg.norm(size) + 0.04
@@ -192,7 +177,7 @@ def run_handoff(*, grip_friction=0.9, progress=None):
     place = None
     lower_start = None
     release_x = None
-    trace["controller"] = "finite force-limited Cartesian PD"
+    trace["controller"] = "finite force-limited gripper drives"
 
     def emit(name, t, measurements=None):
         event = {"phase": name, "t": t}
@@ -221,7 +206,7 @@ def run_handoff(*, grip_friction=0.9, progress=None):
                 else transfer + [-0.055, 0.010]
             )
             if phase == 0:
-                bt = np.array([BASE_X["B"] + 0.055, BASE_Z])
+                bt = b0
             elif phase == 1:
                 bt = right
             elif phase <= 3:
@@ -238,11 +223,27 @@ def run_handoff(*, grip_friction=0.9, progress=None):
                 finger_targets[arm] += float(
                     np.clip(target - finger_targets[arm], -0.09 * case.dt, 0.09 * case.dt)
                 )
+            requested = {"A": at, "B": bt}
+            try:
+                controls = {}
+                for arm, target in requested.items():
+                    controls[arm] = case.grippers[arm].command(
+                        state.domains[arm], target, finger_targets[arm], case.dt
+                    )
+            except SolverFailure as exc:
+                trace.update(
+                    completed=False,
+                    failure_phase=name,
+                    failure=str(exc),
+                    time_s=i * case.dt,
+                    failure_robot=arm,
+                    failure_target_xz_m=target.tolist(),
+                )
+                break
             inputs = SceneInputs(
                 {
                     "cloth": case.inputs.domains["cloth"],
-                    "A": _command(state, "A", at, finger_targets["A"]),
-                    "B": _command(state, "B", bt, finger_targets["B"]),
+                    **{arm: cmd for arm, (cmd, _) in controls.items()},
                 }
             )
             out = runtime.step(state, inputs, case.dt)
@@ -256,6 +257,9 @@ def run_handoff(*, grip_friction=0.9, progress=None):
                 phase=name,
                 measurements=o,
                 actuator_effort={n: inputs.domains[n].effort.tolist() for n in ("A", "B")},
+                requested_tool_xz_m={n: x.tolist() for n, x in requested.items()},
+                actual_tool_xz_m={n: position(n).tolist() for n in requested},
+                joint_target={n: goal.tolist() for n, (_, goal) in controls.items()},
             )
             if name == "grasp_A":
                 ready = o["A_both_normal_n"] > 0.20
@@ -264,8 +268,8 @@ def run_handoff(*, grip_friction=0.9, progress=None):
                     o["bottom_m"] > 0.019
                     and o["table_up_n"] < 0.02 * weight
                     and o["A_up_n"] > 0.25 * weight
-                    and np.linalg.norm(_pose(state, "A") - transfer) < 0.005
-                    and np.linalg.norm(_pose(state, "B") - right) < 0.005
+                    and np.linalg.norm(position("A") - transfer) < 0.005
+                    and np.linalg.norm(position("B") - right) < 0.005
                 )
             elif name == "share":
                 ready = (
@@ -286,7 +290,7 @@ def run_handoff(*, grip_friction=0.9, progress=None):
                 ready = (
                     o["cloth_center_x_m"] - release_x > 0.035
                     and o["B_up_n"] > 0.20 * weight
-                    and np.linalg.norm(_pose(state, "B") - carry) < 0.005
+                    and np.linalg.norm(position("B") - carry) < 0.005
                     and o["bottom_m"] > 0.012
                 )
             elif name == "lower_B":
@@ -294,7 +298,7 @@ def run_handoff(*, grip_friction=0.9, progress=None):
                     0.35 * weight < o["table_up_n"] < 1.4 * weight
                     and o["B_both_normal_n"] > 0.2
                     and o["speed_m_s"] < 0.075
-                    and np.linalg.norm(_pose(state, "B") - place) < 0.005
+                    and np.linalg.norm(position("B") - place) < 0.005
                 )
             else:
                 ready = (
@@ -307,7 +311,7 @@ def run_handoff(*, grip_friction=0.9, progress=None):
                     ready = (
                         ready
                         and o["speed_m_s"] < 0.05
-                        and np.linalg.norm(_pose(state, "B") - bt) < 0.005
+                        and np.linalg.norm(position("B") - bt) < 0.005
                     )
             stable = stable + 1 if ready else 0
             needed = 10 if name == "settle" else 4 if name == "release_A" else 2
@@ -322,13 +326,13 @@ def run_handoff(*, grip_friction=0.9, progress=None):
                         0.003,
                     ]
                 if name == "release_A":
-                    carry_start = _pose(state, "B")
+                    carry_start = position("B")
                     carry = np.array(
                         [carry_start[0] + span / 2 + 0.05, max(transit_z, carry_start[1])]
                     )
                     release_x = o["cloth_center_x_m"]
                 if name == "carry_B":
-                    lower_start = _pose(state, "B")
+                    lower_start = position("B")
                     place = lower_start + [0.0, 0.0007 - o["bottom_m"]]
                 phase += 1
                 stable = 0

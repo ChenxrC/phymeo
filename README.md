@@ -98,12 +98,17 @@ python -m pytest
 ```sh
 python examples/compliant_cloth.py --case impact --output impact.json
 python examples/compliant_cloth.py --case handoff --output handoff.json
-python examples/export_compliant_replay.py handoff.json handoff.html
+python examples/compliant_cloth.py --case handoff --robot articulated --output articulated.json
+python examples/export_compliant_replay.py articulated.json articulated.html
 ```
 
-用浏览器打开 `handoff.html` 即可离线播放，或在[轨迹查看器](docs/demos/compliant-cloth.html)选择其他 JSON。`support` 运行持续外载对照，`no-grip` 运行夹爪摩擦为零的失败对照。回放读取已存布节点、有限夹爪贴片与施加载荷，可暂停、逐帧查看和跳到任一实际阶段。
+用浏览器打开 `articulated.html` 即可离线播放，或在[轨迹查看器](docs/demos/compliant-cloth.html)选择其他 JSON。`support` 运行持续外载对照，`no-grip` 运行夹爪摩擦为零的失败对照。回放读取已存布节点、有限夹爪贴片与施加载荷，可暂停、逐帧查看和跳到任一实际阶段。
 
 `CompliantClothContactProgram` 是公共 NumPy 程序。配置布的距离与弯曲材料、三角面厚度、静止或机器人附着的有限贴片后，用 `program.stepper(settings)` 推进场景。载荷由三角面三个厚度点采样，材料与接触共同推动布和机器人；穿透和峰值按采样报告。这个入口适合小步长案例。边缘之间的接触、连续扫掠与折叠自接触仍有单独的覆盖要求。回放附带 Three.js r160，可离线使用。[Three.js](https://github.com/mrdoob/three.js/tree/r160) · [MIT 许可](docs/demos/vendor/three-r160.LICENSE)
+
+`--robot articulated` 选择两台固定基座肩肘转动、平行双指移动的机械臂。默认 `cartesian` 使用两条直线轴。两者共享布、有限贴片、接触定律、积分器和按实测载荷推进的交接流程。换装自定义硬件时，可以给 `build_handoff(robot=...)` 或 `run_handoff(robot=...)` 传入 A、B 两个夹爪的映射。每个夹爪提供机器人模型、初态、两个手指连杆、工具位置测量和返回受限驱动力的控制方法。
+
+公共 `phymeo.solve_point_ik(model, seed, link_index, local_point, target_position)` 为机器人树上指定连杆的局部点求世界坐标目标。可用 `active_joints` 只驱动选定关节。结果包含目标关节坐标、实际位置残差和停止原因。控制器把目标传给 `solve_bounded_pd`，将有限驱动力交给 `SceneStepper`，由动力学和接触决定下一状态。这里的 IK 任务只指定点位置。数值方法参考 [Modern Robotics 的数值逆运动学](https://modernrobotics.northwestern.edu/nu-gm-book-resource/6-2-numerical-inverse-kinematics-part-2-of-2/) 和 [Pinocchio 的阻尼求解示例](https://gepettoweb.laas.fr/doc/stack-of-tasks/pinocchio/master/doxygen-html/md_doc_b_examples_d_inverse_kinematics.html)。
 
 ## 文档检查
 

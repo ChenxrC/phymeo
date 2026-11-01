@@ -1,6 +1,6 @@
 """Runnable NumPy cloth/patch cases. All recorded forces come from the public stepper."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 
 import numpy as np
 
@@ -123,6 +123,14 @@ def frame_record(program, state, t, sample=None, sample_t=None):
     return data
 
 
+def _robot_record(model):
+    record = {}
+    for field in fields(model):
+        value = getattr(model, field.name)
+        record[field.name] = value.tolist() if isinstance(value, np.ndarray) else value
+    return record
+
+
 def trace_start(case, name):
     p = case.program
     s = case.initial
@@ -134,11 +142,14 @@ def trace_start(case, name):
         substeps=case.substeps,
         faces=p.faces.tolist(),
         robot_parents={n: r.model.parents.tolist() for n, r in p.robots.items()},
+        robot_models={n: _robot_record(r.model) for n, r in p.robots.items()},
         owners=[f"{f.key}/{n}" for f in p.surfaces for n in f.node_indices],
         patches=[
             dict(
                 name=a.geometry.key,
                 robot=a.robot_domain,
+                link_index=a.geometry.link_index,
+                local_vertices_m=a.geometry.local_vertices.tolist(),
                 normal_sign=a.normal_sign,
                 width_m=a.width_m,
                 stiffness_pa_per_m=a.stiffness_pa_per_m,

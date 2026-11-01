@@ -13,18 +13,30 @@ def main():
     parser.add_argument(
         "--case", required=True, choices=("impact", "support", "handoff", "no-grip")
     )
+    parser.add_argument(
+        "--robot",
+        choices=("cartesian", "articulated"),
+        default="cartesian",
+        help="gripper layout for handoff/no-grip",
+    )
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     if args.output.exists():
         parser.error("output already exists")
     if args.case in ("impact", "support"):
+        if args.robot != "cartesian":
+            parser.error("--robot applies to handoff/no-grip")
         trace = run_impact(support=args.case == "support")
     else:
 
         def progress(phase, time):
             print(f"{time:.3f} s  {phase}", flush=True)
 
-        trace = run_handoff(grip_friction=0.0 if args.case == "no-grip" else 0.9, progress=progress)
+        trace = run_handoff(
+            grip_friction=0.0 if args.case == "no-grip" else 0.9,
+            robot=args.robot,
+            progress=progress,
+        )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     with args.output.open("x", encoding="utf-8") as stream:
         json.dump(trace, stream, allow_nan=False, separators=(",", ":"))

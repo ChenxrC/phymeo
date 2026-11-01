@@ -17,8 +17,7 @@ from ..core.state import ParticleState
 from ..core.validation import finite_real
 from ..coupling.offset_port import TriangleOffsetPointPort
 from ..coupling.ports import ParticlePointPort
-from ..dynamics.robot_dynamics import bias_forces, mass_matrix
-from ..dynamics.robot_kinematics import forward_kinematics, point_jacobians
+from ..dynamics.robot_dynamics import robot_com_kinematics, robot_dynamics_terms
 from ..runtime.program import ProgramCapabilities
 from ..runtime.registry import StateRegistry
 from ..runtime.robot_family import robot_family
@@ -75,28 +74,22 @@ class CompliantPatch:
 class _RobotMechanics:
     def __init__(self, model):
         self.model = model
-        self.links = np.arange(model.dof_count)
         self.translation = None
         if all(j == "prismatic" for j in model.joint_types):
             zero = np.zeros(model.dof_count)
             self.translation = self.geometry(RobotState(zero, zero))
 
-    def geometry(self, state):
+    def geometry(self, state, *, dynamics=True):
         if self.translation is not None:
             pos, rot, com, jl, ja, m, b = self.translation
             shift = jl @ state.q
             return pos + shift, rot, com + shift, jl, ja, m, b
-        geo = forward_kinematics(self.model, state.q)
-        jl, ja = point_jacobians(self.model, state.q, self.links, self.model.com)
-        return (
-            geo.position,
-            geo.rotation,
-            geo.com_position,
-            jl,
-            ja,
-            mass_matrix(self.model, state.q),
-            bias_forces(self.model, state),
-        )
+        if dynamics:
+            geo, jl, ja, m, b = robot_dynamics_terms(self.model, state)
+        else:
+            geo, jl, ja = robot_com_kinematics(self.model, state.q)
+            m, b = None, None
+        return geo.position, geo.rotation, geo.com_position, jl, ja, m, b
 
 
 def _elastic(material, x, v, damping):
@@ -260,14 +253,14 @@ class CompliantClothContactProgram:
     def close(self):
         pass
 
-    def _loads(self, state):
+    def _loads(self, state, *, dynamics=True):
         cloth = state.domains[self.cloth_domain]
         base = ParticlePointPort(
             self.cloth, cloth, np.arange(self.cloth.particle_count), domain=self.cloth_domain
         )
         tri = cloth.position[self.faces]
         normals = np.cross(tri[:, 1] - tri[:, 0], tri[:, 2] - tri[:, 0])
-        geo = {n: r.geometry(state.domains[n]) for n, r in self.robots.items()}
+        geo = {n: r.geometry(state.domains[n], dynamics=dynamics) for n, r in self.robots.items()}
         nodal = np.zeros_like(cloth.position)
         reactions = {n: np.zeros_like(state.domains[n].v) for n in self.robots}
         details = {}
@@ -337,7 +330,7 @@ class CompliantClothContactProgram:
 
     def observe(self, state):
         """Sample endpoint contact forces; time-integrated loads are in substep diagnostics."""
-        return self._loads(state)[2]
+        return self._loads(state, dynamics=False)[2]
 
     def accelerations(self, state, inputs):
         nodal, reactions, details, geo = self._loads(state)

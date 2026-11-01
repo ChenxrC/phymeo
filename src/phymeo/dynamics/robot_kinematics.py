@@ -62,7 +62,10 @@ def forward_kinematics(model, q):
 
 
 def point_jacobians(model, q, indices, local_points):
-    geometry = forward_kinematics(model, q)
+    return _point_jacobians_at(model, forward_kinematics(model, q), indices, local_points)
+
+
+def _point_jacobians_at(model, geometry, indices, local_points):
     indices = np.asarray(indices)
     if indices.ndim != 1 or indices.dtype.kind not in "iu":
         raise TypeError("point indices must be rank-one integers")
@@ -75,19 +78,25 @@ def point_jacobians(model, q, indices, local_points):
     angular = np.zeros_like(linear)
     try:
         with np.errstate(over="raise", invalid="raise", divide="raise"):
+            world = geometry.position[indices] + np.einsum(
+                "nij,nj->ni", geometry.rotation[indices], points
+            )
+            rows = []
+            joints = []
             for row, link in enumerate(indices):
-                world = geometry.position[link] + geometry.rotation[link] @ points[row]
                 ancestor = int(link)
                 while ancestor != -1:
-                    axis = geometry.axis[ancestor]
-                    if model.joint_types[ancestor] == "revolute":
-                        linear[row, :, ancestor] = np.cross(
-                            axis, world - geometry.position[ancestor]
-                        )
-                        angular[row, :, ancestor] = axis
-                    else:
-                        linear[row, :, ancestor] = axis
+                    rows.append(row)
+                    joints.append(ancestor)
                     ancestor = int(model.parents[ancestor])
+            rows = np.asarray(rows, dtype=np.intp)
+            joints = np.asarray(joints, dtype=np.intp)
+            turns = np.asarray(model.joint_types)[joints] == "revolute"
+            ri, ji = rows[turns], joints[turns]
+            axes = geometry.axis[ji]
+            angular[ri, :, ji] = axes
+            linear[ri, :, ji] = np.cross(axes, world[ri] - geometry.position[ji])
+            linear[rows[~turns], :, joints[~turns]] = geometry.axis[joints[~turns]]
             if not np.isfinite(linear).all() or not np.isfinite(angular).all():
                 raise FloatingPointError("non-finite point Jacobian")
     except (FloatingPointError, OverflowError) as error:

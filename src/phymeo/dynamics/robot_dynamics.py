@@ -10,7 +10,7 @@ import numpy as np
 
 from ..core.capabilities import SolverFailure
 from ..core.robot import RobotInputs, robot_array, validate_robot_step
-from .robot_kinematics import forward_kinematics, point_jacobians
+from .robot_kinematics import _point_jacobians_at, forward_kinematics, point_jacobians
 
 
 def _finite(value):
@@ -51,7 +51,10 @@ def mass_matrix(model, q):
     """Generalized inertia, checked for numerical positive definiteness."""
     geometry = forward_kinematics(model, q)
     linear, angular = _com_jacobians(model, q)
-    inertia = _world_inertia(model, geometry)
+    return _mass_from_terms(model, linear, angular, _world_inertia(model, geometry))
+
+
+def _mass_from_terms(model, linear, angular, inertia):
     mass = np.zeros((model.dof_count, model.dof_count))
     for i in range(model.dof_count):
         mass += model.mass[i] * (linear[i].T @ linear[i])
@@ -93,6 +96,10 @@ def inverse_dynamics(model, state, acceleration):
     geometry = forward_kinematics(model, state.q)
     inertia = _world_inertia(model, geometry)
     linear, angular = _com_jacobians(model, state.q)
+    return _inertial_load(model, state, acceleration, geometry, inertia, linear, angular)
+
+
+def _inertial_load(model, state, acceleration, geometry, inertia, linear, angular):
     omega, alpha, origin_acc = (np.zeros((model.dof_count, 3)) for _ in range(3))
     forces, torques = np.zeros_like(omega), np.zeros_like(omega)
     zero = np.zeros(3)
@@ -120,6 +127,26 @@ def inverse_dynamics(model, state, acceleration):
     _finite(forces)
     _finite(torques)
     return np.einsum("nki,nk->i", linear, forces) + np.einsum("nki,nk->i", angular, torques)
+
+
+def robot_com_kinematics(model, q):
+    """Evaluate all COM Jacobians from the same world tree configuration."""
+    geometry = forward_kinematics(model, q)
+    linear, angular = _point_jacobians_at(model, geometry, np.arange(model.dof_count), model.com)
+    return geometry, linear, angular
+
+
+@_numerical
+def robot_dynamics_terms(model, state):
+    """Return FK, COM Jacobians, mass and bias for one physical state."""
+    validate_robot_step(model, state, RobotInputs.zeros(model.dof_count))
+    geometry, linear, angular = robot_com_kinematics(model, state.q)
+    inertia = _world_inertia(model, geometry)
+    mass = _mass_from_terms(model, linear, angular, inertia)
+    bias = _inertial_load(
+        model, state, np.zeros(model.dof_count), geometry, inertia, linear, angular
+    )
+    return geometry, linear, angular, mass, _finite(bias)
 
 
 def bias_forces(model, state):

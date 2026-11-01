@@ -1,0 +1,125 @@
+{
+  "schema": "p65-n2-sc1-joint-readback-v1",
+  "baseline": "f58c73e09557f1c3b8aa1fc77a46cbe104f3747e",
+  "scope": "N2 HOST readback/transport control, one ordinary SC1 material step. No production change, automatic physical acceptance, or native run.",
+  "cloth": {
+    "nodes": [
+      [
+        0,
+        0,
+        0
+      ],
+      [
+        1,
+        0,
+        0
+      ],
+      [
+        0,
+        1,
+        0
+      ],
+      [
+        0,
+        -1,
+        0
+      ]
+    ],
+    "faces": [
+      [
+        0,
+        1,
+        2
+      ],
+      [
+        1,
+        0,
+        3
+      ]
+    ],
+    "distance_edges": [
+      [
+        0,
+        1
+      ],
+      [
+        0,
+        2
+      ],
+      [
+        0,
+        3
+      ]
+    ],
+    "distance_rest_m": "1",
+    "hinge": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "rest_angle_rad": "1/1024",
+    "distance_and_bend_compliance": "1",
+    "m_kg": "1/2",
+    "gravity_z": "-1/8",
+    "original_force_n": 0,
+    "initial_velocity": 0,
+    "half_thickness_m": "1/64"
+  },
+  "platform": {
+    "mass": "4m",
+    "axis": "+z",
+    "initial_qv": 0,
+    "gravity": 0,
+    "original_inputs": 0,
+    "local_vertices": [
+      [
+        -2,
+        -2,
+        "-1/64"
+      ],
+      [
+        2,
+        -2,
+        "-1/64"
+      ],
+      [
+        2,
+        2,
+        "-1/64"
+      ],
+      [
+        -2,
+        2,
+        "-1/64"
+      ]
+    ],
+    "friction": 0
+  },
+  "h_s": "1/64",
+  "bounds": {
+    "substeps": 1,
+    "position_iterations": 512,
+    "velocity_iterations": 512,
+    "host_tolerance": 1e-8,
+    "joint_energy_j": 1e-8,
+    "joint_angular_nms": 1e-8,
+    "geometry_proposal_m": 9.094947017729282e-13,
+    "hard_penetration_m": 0,
+    "sweep_cells": 4096,
+    "sweep_depth": 32,
+    "reference_position_error_m": 1e-8
+  },
+  "load_source": {
+    "report": "p65-contact-layer-support-results.json",
+    "sha256_lf": "a90b3324b8fd047f745db1484373ade09fd837999919da808887c3a747bd1d34",
+    "step": 0,
+    "end_sha256": "c8acab1de6775cdcf48057876e761676b16b38cc1717d56a1804ee3c0034b6aa",
+    "meaning": "Known calibration signal solely for a transport experiment. Recover exact contact J and time moment B from the saved scalar endpoint, M=2m and F=m/4. No scalar state, pressure iteration or endpoint supplied as a target to the composite solver."
+  },
+  "owners": "Enumerate all two finite-patch/triangle manifolds at the original inlet; six distinct unit-barycentric lower material addresses, three per face. Both areas are 1/2 and each vertex has 1/6 square metre reference weight. Keep shared a/b owners distinct. Send each owner J/6 along +ez and the opposite at its projected platform point through complete initial face-normal Jacobians. Images of the same points at the replay endpoint are independent geometry observations.",
+  "sequence": "First attempt public DynamicRobotThickContactProgram with real CompositeClothParticipant, ClothMaterial (three distance rows + nonzero-rest bending), RobotParticipant, and the finite patch. Record constructor disposition before execution. Then one independent metrology trial through SceneLoadReplay on those same genuine participants in ArticulatedCouplingProgram. A rejected unknown moment channel is pre-step only; no rerun of the same physical trial, material substitution, second impulse or mock.",
+  "readback": "Retain complete input, initial state, geometry maps, original/effective inputs, represented loads, result, material row path and robot predicted/dynamical output. Separate fields produced in the trial from publicly reconstructed maps, hard-gap certificates and thrust/wrench reconstructions. Measure actual cloth predictor impulse, whole-cloth final momentum, robot axial momentum, nodal/applied world moments, gravity work, and local Feff material work distinctly. An axial effort does not identify the world contact couple.",
+  "discriminators": "Actual robot held q vs -B/M_R for the prescribed force, and time reversal with the same J but B'=hJ-B. Validate against -h*J_rep/M_R for the actual semi-implicit held update. Attempt a time-moment input without bypassing the channel schema. Check complete inlet and deformed endpoint offset Jacobians; reject barycentric-only blocks, and show two platform points have the same generalized load but different world moments. Check nonzero bend, constant support-plane hard clearance through the declared affine segment on both faces and both zero-budget public sweeps; keep unresolved distinct from penetration.",
+  "disposition": "Missing temporal or contact evidence, a material admission rejection, or a gap failure keeps N3 closed. Report each independently. Scalar P(t) is prescribed only in the diagnostic, not a four-node self-consistent solve. No claim concerning global shell injectivity or general robots."
+}

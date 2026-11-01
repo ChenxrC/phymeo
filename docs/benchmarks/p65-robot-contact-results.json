@@ -1,0 +1,183 @@
+{
+  "schema": "phymeo-robot-contact-results-v1",
+  "date": "2026-11-02",
+  "scope": "Reusable compliant joint stops, optional bounded point IK, fixed-base robot-tree capsule pairs and infinite static plane contacts in NumPy FP64. The robot-only and cloth/robot programs consume the same generalized loads at their physical substep.",
+  "source": {
+    "baseline": "457c3e9ec3200cdececca228e6263f5fbf46e9a7",
+    "limits": "e1301b7fb0e6f03f4ad8129535df84a329fe2797",
+    "mechanics": "fcea02d378f82300511874bffc57531eddda129f",
+    "handoff_hardware": "9751c5faf64e241fe3a6e1a23f3d11b717459bb5",
+    "tested_full_trace_and_wheel": "4f93e1af424796185e2f01a9d7500c59c86b4a02",
+    "viewer": "1ef9ca5ba2907ea78038fbf4ba8004dad96b5738",
+    "adjacent_filter_regression": "2463ba66e64d0b5ea0c8f9684f6e6f4cae18123c"
+  },
+  "integration": {
+    "model": "JointLimits, LinkCapsule, CollisionPlane, RobotContactMaterial, RobotContactSystem",
+    "programs": [
+      "CompliantRobotContactProgram",
+      "CompliantClothContactProgram(robot_contact=system)"
+    ],
+    "hardware": "Each arm has two revolute arm coordinates, two prismatic finger coordinates, finite named limits, and capsules on upper arm, forearm and wrist. The two mounts use distinct fixed planes and wrist extensions; cloth pads still act via their finite contact polygons.",
+    "pairs": "11 enabled capsule-capsule and 6 capsule-plane candidates; same-link shapes and explicit upper/fore pairs are excluded. Pair count is a candidate count, not a collision count.",
+    "force": "When overlapping, one shared world point receives opposite forces; full linear/angular Jacobians map reactions to the robot coordinates. Joint stops exert restoring and closing-only damping effort, without changing the reported state by clamping."
+  },
+  "physics": {
+    "duration_s": 3.62,
+    "frame_dt_s": 0.01,
+    "substeps_per_frame": 128,
+    "frames": 363,
+    "patch_samples": 231680,
+    "robot_midpoint_samples": 46336,
+    "enabled_pairs_per_substep": 17,
+    "events": [
+      [
+        "grasp_A",
+        0
+      ],
+      [
+        "lift_A",
+        0.12
+      ],
+      [
+        "share",
+        1.03
+      ],
+      [
+        "release_A",
+        1.1500000000000001
+      ],
+      [
+        "carry_B",
+        1.21
+      ],
+      [
+        "lower_B",
+        1.72
+      ],
+      [
+        "open_B",
+        2.64
+      ],
+      [
+        "settle",
+        2.68
+      ],
+      [
+        "placed",
+        3.62
+      ]
+    ],
+    "weight_n": 0.47088,
+    "shared_load_up_n": {
+      "A": 0.33589982739213525,
+      "B": 0.10445818060206832
+    },
+    "b_only": {
+      "a_normal_n": 0,
+      "b_up_n": 0.4225290191930705,
+      "cloth_center_transport_x_m": 0.1036395797330894
+    },
+    "placed": {
+      "A_normal_n": 0,
+      "B_normal_n": 0,
+      "table_up_n": 0.4710419646446559,
+      "max_node_speed_m_s": 0.032075583863075185,
+      "dwell_s": 0.1,
+      "pose": "lower edge resting on table; not a flat fold"
+    },
+    "max_midpoint_body_penetration_m": 0,
+    "max_midpoint_cloth_patch_penetration_m": 0,
+    "max_midpoint_joint_violation_native_coordinate": 0,
+    "max_frame_joint_violation_native_coordinate": 0,
+    "active_body_contact_rows": 0,
+    "interpretation": "The normal task clears structural contact and soft stops; the zero observed depths are sampled hard gaps, not continuous collision or zero compliant layer compression. Actual collision loads and stop compression are exercised separately."
+  },
+  "independent_examples": [
+    "Momentum-conserving two-moving-mass impact reversed approach; ground collision reversed vertical velocity.",
+    "A 10 N drive reached q about 0.31 m at a 0.30 m upper soft stop, with about -10 N reaction; a stricter excursion budget rejected the transaction.",
+    "A body contact coupled to cloth changed robot momentum by one midpoint impulse without moving free cloth; excess overlap restored both domains.",
+    "Two adjacent moving links actually contact and give the child 100 N; excluding a separate inactive shape preserves the force exactly, explicitly excluding the contacting pair removes it. Duplicate pairs/keys are rejected."
+  ],
+  "validation": {
+    "targeted_regression": {
+      "passed": 95,
+      "seconds": 3.92,
+      "run": "changed-final-014337261",
+      "source": "before trace serialization fix"
+    },
+    "serialization_and_replay": {
+      "passed": 16,
+      "seconds": 0.67,
+      "run": "trace-save-green-020011797"
+    },
+    "new_adjacent_filter": {
+      "passed": 1,
+      "seconds": 0.33,
+      "run": "adjacent-link-filter-021837717"
+    },
+    "ruff": [
+      "delivery-static-final-014320733",
+      "trace-save-lint-020034511",
+      "filter-lint-021900083"
+    ],
+    "evidence_root": "artifacts/p65-robot-contact-20261102-01",
+    "successful_run": "handoff-save-fixed-020112672",
+    "trajectory": {
+      "path": "artifacts/p65-robot-contact-20261102-01/handoff-fixed-trajectory.json",
+      "bytes": 67737875,
+      "sha256": "ec51e2012f9f1a210c870613911159962317cb42ce535763938c23a685706d2d"
+    },
+    "readback": {
+      "file": "artifacts/p65-robot-contact-20261102-01/audit-results.json",
+      "run": "audit-delivery-021246126",
+      "checks": "All frame transforms and capsule endpoints from independent FK, original timing and sample membership, physical transfer and final dwell. Reproduction of active body contact laws belongs to the dedicated physical controls."
+    },
+    "wheel": {
+      "wheel": "phymeo-0.1.0a0-py3-none-any.whl",
+      "wheel_sha256": "3ca3d54d2d6df552115f47fa8df6dd584e3655d01bf8d4eae869f9fdf7315dca",
+      "trajectory_sha256": "ec51e2012f9f1a210c870613911159962317cb42ce535763938c23a685706d2d",
+      "modules": 138,
+      "bitwise_match": {
+        "event": "carry_B",
+        "index": 121,
+        "time_s": 1.21,
+        "substeps": 128,
+        "checked_pairs": 17
+      },
+      "path": "artifacts/p65-robot-contact-20261102-01/wheel/phymeo-0.1.0a0-py3-none-any.whl",
+      "build_source": "git archive 4f93e1a pyproject.toml README.md src",
+      "build_run": "build-wheel-021701913",
+      "test_run": "test-wheel-021725297",
+      "method": "No install or network; isolated Python loads the wheel from outside the checkout. Bitwise same cloth/robots q,v, motor targets/efforts, last midpoint patch forces, all 128 midpoint generalized robot efforts, checked counts, penetration and joint excursion at carry_B."
+    },
+    "replay": {
+      "html": {
+        "path": "artifacts/p65-robot-contact-20261102-01/robot-handoff.html",
+        "size": 4532247,
+        "sha256": "2ed167a2d1b68fb2fc1831f9de1f7001c21fabe35733114114f6030c0d715439"
+      },
+      "screenshot": {
+        "path": "artifacts/p65-robot-contact-20261102-01/handoff-shared.png",
+        "size": 41317,
+        "sha256": "cefb9e1ab0d2186d0a357437d658cf77be3eb3ab29333a3bb7e09b331f75c8fd"
+      },
+      "run": "export-final-021511155",
+      "browser": "Three.js r160: six correct world shape centers at seven selected frames, nine event options, step/play/pause/jump passed. Synthetic UI-only opposite-force directions verified on both bodies for total/normal/tangent. Zero console errors, one legacy-library deprecation warning; the local preview listener was closed.",
+      "checks": "artifacts/p65-robot-contact-20261102-01/ui-results.json"
+    }
+  },
+  "retained_failures": [
+    {
+      "run": "handoff-014444859",
+      "result": "CLI output path collided with a job file; no simulation started."
+    },
+    {
+      "run": "handoff-full-014512623",
+      "result": "All phases reached placed, but JSON save failed on immutable runtime mappings; kept the partial invalid output. The small regression trace-save-red-015647069 reproduced it; 4f93e1a fixes recursive Mapping conversion."
+    },
+    {
+      "result": "Original display showed body A's arrow for body B's filter. Browser-only counterexample retained in ui-reaction-red.json; fixed in 1ef9ca5. Physics trace unchanged."
+    }
+  ],
+  "next": "Reusable cloth-link collision and cloth self-contact for loaded folds; finer coverage, perturbations, continuous safeguards, general orientation/obstacle planning and native backends remain open. This is not full P6.5 acceptance."
+}

@@ -26,24 +26,26 @@ Research: [Newton collision primitives and filters](https://newton-physics.githu
 
 ### 1. Joint stops and bounded IK (medium)
 Files: constraints/robot_contact.py, control/point_ik.py, tests/test_robot_contacts.py, tests/test_point_ik.py, public exports.
-- [ ] RED: lower/upper force signs, zero interior load, energy; out-of-limit target stalls at a bound while seed is unchanged; invalid dimensions rejected.
-- [ ] Implement immutable data and bounded target updates. Test inactive joints and seed outside a soft stop without silently publishing repaired state.
-- [ ] GREEN, focused checks, logical commit.
+- [x] RED: lower/upper force signs, zero interior load, energy; out-of-limit target stalls at a bound while seed is unchanged; invalid dimensions rejected.
+- [x] Implement immutable data and bounded target updates. Test inactive joints and seed outside a soft stop without silently publishing repaired state.
+- [x] GREEN, focused checks, logical commit (e1301b7; 5 tests).
 
 ### 2. Reusable collision loads and common physical step (medium/high)
 Files: geometry/capsule.py, dynamics/robot_contact.py, solvers/compliant_robot_contact.py, solvers/_compliant_motion.py, solvers/compliant_cloth_contact.py.
-- [ ] RED: oblique/parallel/point-segment closest witnesses; pair action/reaction and common-point torque; friction power; named exclusions; coincident axes rejection.
-- [ ] Integrate reusable loads into robot-only and cloth programs. Same substep state and physical input; no extra apply or state correction.
-- [ ] Real two-moving-mass collision reverses closing velocities with conserved total momentum; driven joint reaches a soft-stop equilibrium; plane collision and rollback are recorded.
-- [ ] GREEN and changed-source regression tests; commit.
+- [x] RED: oblique/parallel/point-segment closest witnesses; pair action/reaction and common-point torque; friction power; named exclusions; coincident axes rejection.
+- [x] Integrate reusable loads into robot-only and cloth programs. Same substep state and physical input; no extra apply or state correction.
+- [x] Real two-moving-mass collision reverses closing velocities with conserved total momentum; driven joint reaches a soft-stop equilibrium; plane collision and rollback are recorded.
+- [x] GREEN and changed-source regression tests; commit (fcea02d; 6 mechanics and 9 coupled checks).
 
 ### 3. Same handoff and recorded body geometry (high)
 Files: experiments/handoff_grippers.py, compliant_handoff.py, compliant_cloth.py, replay exporter/viewer; tests for bindings; results JSON and existing delivery plan.
-- [ ] Add bounded hardware and collision shapes, retain shared phase/control criteria.
-- [ ] Run one continuous articulated handoff; report loads, transfer, table dwell, limit excursions and contact penetration. A meaningful failure changes geometry/controller diagnosis, not hidden success thresholds.
-- [ ] Collision-active obstacle and joint-stop counterexamples are covered by actual robot-only dynamics. Reuse old zero-friction evidence unless its affected behavior needs a new run.
-- [ ] Save model/shape-bound offline replay; focused static checks, independent saved-data inspection, outside-source wheel verification of changed interfaces and a physical handoff boundary.
-- [ ] Record measured result, limitations, clean commits. No remote CI or push.
+- [x] Add bounded hardware and collision shapes, retain shared phase/control criteria.
+- [x] Run one continuous articulated handoff; report loads, transfer, table dwell, limit excursions and contact penetration. A meaningful failure changes geometry/controller diagnosis, not hidden success thresholds.
+- [x] Collision-active obstacle and joint-stop counterexamples are covered by actual robot-only dynamics. Reuse old zero-friction evidence unless its affected behavior needs a new run.
+- [x] Save model/shape-bound offline replay; focused static checks, independent saved-data inspection, outside-source wheel verification of changed interfaces and a physical handoff boundary.
+- [x] Record measured result, limitations, and scoped commits. No remote CI or push.
+
+**Measured result:** The nine-phase handoff finished at 3.62 s. B carried the cloth 0.10364 m alone; final table force was 0.47104 N for a 0.47088 N cloth, with zero final jaw load. There were no structural collisions or joint excursions on the normal path. Dedicated moving-body/adjacent-link, plane and driven-stop cases exercised actual reactions. Saved-data inspection covered all 363 frames, 231,680 cloth-patch samples and 46,336 robot samples. An outside-source wheel reproduced the carry_B transition including all 128 robot midpoint effort samples. The standalone browser replay passed stepping, playback, geometry and both participants' arrow directions. The first full run reached placement but failed JSON serialization; the fix has an actual short-step regression. [Measured results, original failures and evidence paths](../../benchmarks/p65-robot-contact-results.json).
 
 ## Review focus / stop rule
 

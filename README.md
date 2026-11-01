@@ -110,6 +110,28 @@ python examples/export_compliant_replay.py articulated.json articulated.html
 
 公共 `phymeo.solve_point_ik(model, seed, link_index, local_point, target_position)` 为机器人树上指定连杆的局部点求世界坐标目标。可用 `active_joints` 只驱动选定关节。结果包含目标关节坐标、实际位置残差和停止原因。控制器把目标传给 `solve_bounded_pd`，将有限驱动力交给 `SceneStepper`，由动力学和接触决定下一状态。这里的 IK 任务只指定点位置。数值方法参考 [Modern Robotics 的数值逆运动学](https://modernrobotics.northwestern.edu/nu-gm-book-resource/6-2-numerical-inverse-kinematics-part-2-of-2/) 和 [Pinocchio 的阻尼求解示例](https://gepettoweb.laas.fr/doc/stack-of-tasks/pinocchio/master/doxygen-html/md_doc_b_examples_d_inverse_kinematics.html)。
 
+机器人限位和碰撞由公共 `JointLimits`、`LinkCapsule`、`CollisionPlane` 和 `RobotContactSystem` 配置。它们独立于布料案例：`CompliantRobotContactProgram(system).stepper(settings)` 可直接推进多台机器人，也可把同一个 system 传给 `CompliantClothContactProgram(..., robot_contact=system)`。软限位产生弹簧及闭向阻尼力；胶囊—胶囊和胶囊—无限平面接触通过同一世界点交换力与力矩。无需改写机器人惯性模型，关节位置不会被强制截断。
+
+```python
+import numpy as np
+import phymeo as ph
+
+# model 是已有的 RobotModel；每个有限界对应一个标量关节。
+bounds = ph.JointLimits(lower, upper, stiffness=2000.0, damping=8.0)
+system = ph.RobotContactSystem(
+    {"arm": model},
+    limits={"arm": bounds},
+    capsules=(ph.LinkCapsule("forearm", "arm", link_index,
+                            np.zeros(3), local_tip, radius_m=0.006),),
+    planes=(ph.CollisionPlane("floor", np.array([0., 0., 1.]), 0.0),),
+)
+program = ph.CompliantRobotContactProgram(
+    system, max_penetration_m=0.01, max_joint_violation=0.02)
+# SceneState/SceneInputs 使用同一 "arm" 域，交给 program.stepper(...)。
+```
+
+`solve_point_ik(..., limits=bounds)` 只约束目标坐标，实际关节受外载时可以发生并记录有限的限位压缩。同一连杆上的形状作为一个刚体；其他碰撞对默认开启，机械连接处的排除须用显式形状名称。当前是 NumPy 小步长采样响应，平面为无限半空间，不能据此声称连续防穿透或自动避障。布与夹爪仍使用有限贴片，任意布面与胶囊的碰撞尚未接入。新版 articulated 案例附带上臂、前臂和腕部六个碰撞体，回放读取同一模型的形状与载荷。设计参考 [Newton 的形状与过滤配置](https://newton-physics.github.io/newton/latest/concepts/collisions.html) 与 [MuJoCo 的限位／接触约束说明](https://mujoco.readthedocs.io/en/stable/computation.html)。[本节点计划](docs/superpowers/plans/2026-11-02-robot-limits-contact.md) · [带碰撞体的交接实测](docs/benchmarks/p65-robot-contact-results.json)
+
 ## 文档检查
 
 需要 Python 3.11+，不需要安装第三方包。

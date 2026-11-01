@@ -1,0 +1,34 @@
+{
+  "schema": "sc-l1-continuous-impact-v1",
+  "baseline": "09a7a03ad11faf47bb1a8d90935857d3ed022066",
+  "fixture": "p65-contact-layer-screen-input.json",
+  "prefix_result": "p65-contact-layer-entry-results.json",
+  "prefix_result_sha256_lf": "49683ac0155e819462ab461d22173ceff2049bbedbd86ec0bf9b68f781a23576",
+  "kernel_sha256_lf": "3e676d794b8dcaba6a067df29ac2cf85ec3efa117e465ddb2267635258c7bdc3",
+  "resume_sha256": "f56190b972496fe0f66bb24e76f5a8ee314ef87db03132868bdbb45fa6912363",
+  "reference_index": "p65-contact-layer-intrastep-results.json",
+  "reference_fine": "p65-contact-layer-screen-results.json",
+  "gates_from": "p65-contact-layer-intrastep-protocol.json",
+  "wire_from": "p65-contact-layer-publication-protocol.json",
+  "case": {
+    "m_kg": "1/2",
+    "h_s": "1/64",
+    "T_s": "1/8",
+    "relative_mass": "2m",
+    "F_n": "0",
+    "g0_m": "3/1024",
+    "closing_speed_m_s": "1/8"
+  },
+  "continuation": "Reuse already accepted series7 original steps 0 and 1 in place. Their original inlet, validated event, peak and two end packets define the trajectory prefix. Only the exact published step-1 end seeds new step 2. Steps 2..7 use the unchanged entry kernel in six fresh interpreters, each consuming its predecessor's on-disk packet as the sole dynamic state. No reseed from reference, late counterexamples or old support trajectory.",
+  "gates": "Retain the original per-step force/impulse/time-moment, noncancelling energy, prefix-momentum, exact inertial readback, 1% positive relative material law, core and resource checks. Bind all seven byte-exact boundaries. Combine exact prefix moments and outward enclosures of previously reported binary64 summary scalars with new exact sums for whole-window J,B, initial/final energy, total dissipated work, positive-only defects, accumulated impulse and prefix momentum. Both external impulse and work are zero.",
+  "phases": "Confirm the global peak vs the saved analytic amplitude/time bracket and half of original incident momentum transferred by its original deadline. Locate the unique zero of closing speed on the saved second step by bounded Bernstein bisection (2^-30 s width, depth 32, include search cells in the original peak budget); compare against the independent fine velocity bracket and analytic minimum gap. For the new tail certify strictly positive compression and rate, opening gap, positive delivered force and no further turn. Distinguish decreasing material-law load from one-sided knot jumps of the delivered polynomial. Report total and worst upward jumps since the turn; never infer geometric release from a small positive force.",
+  "independent_tail": "At the final published compression, test the continuous-law unloading-branch rate using y-log(y)+d^2*K*x^2/(2M)=y_entry-log(y_entry). Bound logs by rational range reduction and a positive series/tail bound. Require its lower-branch root between 0.99 and 1.01 times the positive published rate factor. This independent comparison is at the same compression, not a new time integrator or an input to the producer.",
+  "negative_controls": [
+    "substitute a genuine independently seeded same-time h64 step-7 inlet",
+    "zero the last positive piece while preserving the published motion",
+    "declare geometric release at the terminal in-layer gap",
+    "omit shifts when combining original-step time moments"
+  ],
+  "resources": "The same original partitions, 512 charged coefficients per outer step, distinct convolution/conversion/subdivision counts, 4096 peak/search cells, depth 32, 512-bit exported ratios and 1024-byte state packet. Limits apply also to failed attempts; no material/mesh/budget tuning.",
+  "scope": "One uninterrupted HOST scalar impact from layer exterior to 125 ms. No production four-node/robot/native acceptance."
+}

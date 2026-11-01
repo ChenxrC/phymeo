@@ -90,6 +90,7 @@ from .runtime.stepper import Stepper
 from .runtime.terminal_impulse import PointVelocityImpulses, TerminalImpulseProgram
 from .solvers.articulated_coupling import ArticulatedCouplingProgram, make_articulated_runtime
 from .solvers.cloth import ClothProgram, make_cloth_runtime
+from .solvers.compliant_cloth_contact import CompliantClothContactProgram, CompliantPatch
 from .solvers.coupled_program import (
     CoupledRuntimeAdapter,
     NumpyCoupledProgram,
@@ -178,6 +179,8 @@ __all__ = [
     "TetrahedralProgram",
     "TetrahedralPointPort",
     "ClothProgram",
+    "CompliantClothContactProgram",
+    "CompliantPatch",
     "make_tetrahedral_runtime",
     "make_cloth_runtime",
     "tetrahedral_block",

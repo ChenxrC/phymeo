@@ -1,0 +1,16 @@
+{
+  "schema": "p65-sc2-peak-degree-cap-v1",
+  "baseline": "49758f86c6cbf4c062b5c95a03d10607dc01ca94",
+  "source_result": "p65-sc2-peak-current-tangent-results.json",
+  "source_sha256_lf": "b1b76adb08ece99b8db8437b42c3f4af474c4700372621607d9729784b1dbe1b",
+  "controls": "Exact shifted Chebyshev recovery and uniform first two moments through degree 22, including modes 21 and 22. The impossibility witness must be zero on all modes of degree at most 20. Verify the degree-299 algebraic pressure's two moments against their previously saved enclosures, for each original address.",
+  "scope": "Read only the retained degree-13 Newton candidate trajectory and its already certified per-address radical truncation errors. No time stepping, physical proposal, force provider evaluation, state update or reuse of a rejected endpoint. One predetermined degree and grid. The new witness is conditional on this one fixed motion.",
+  "sufficient": "Convert the fixed polynomial to shifted Chebyshev coefficients exactly, keep modes 0..20, round each once to nearest-even on 2^-60 and require signed int64 range. Use h*(sum absolute discarded coefficients + sum actual quantization errors) plus the existing analytic impulse remainder. Add the individual d-prefix error in the original certified accounting.",
+  "necessary": "Use shifted Legendre degrees 21 and 22, fixed before execution, to lower-bound the local absolute impulse defect for any degree-20 pressure. Subtract the existing integral remainder. For impossibility compare the local lower directly to the full cap; excess only relative to the leftover certified budget rules out using that fixed budget, not every more accurate prefix.",
+  "decision": "Report sufficient for all six only if every cumulative upper is at most 1e-10 Ns. Report impossible on this fixed motion only if some local witness lower exceeds the full cap. Otherwise undecided. No physical candidate in any outcome.",
+  "references": [
+    "https://dlmf.nist.gov/18.5#i",
+    "https://dlmf.nist.gov/18.3",
+    "https://dlmf.nist.gov/18.14#E1"
+  ]
+}

@@ -7,20 +7,20 @@ import numpy as np
 
 from ..core.capabilities import SolverFailure
 from ._round_sweep import _translation, _unit, _vector, _xyz
-from ._sweep_polynomial import Roots, add, first_entry, mul, sub, value
+from ._sweep_polynomial import (
+    Roots,
+    add,
+    affine_vectors,
+    cross,
+    difference,
+    dot,
+    face_coordinates,
+    first_entry,
+    mul,
+    sub,
+    value,
+)
 from .collision_witness import CollisionWitness
-
-
-def _dot(a, b):
-    return add(add(mul(a[0], b[0]), mul(a[1], b[1])), mul(a[2], b[2]))
-
-
-def _cross(a, b):
-    return tuple(sub(mul(a[i], b[j]), mul(a[j], b[i])) for i, j in ((1, 2), (2, 0), (0, 1)))
-
-
-def _difference(a, b):
-    return tuple(sub(x, y) for x, y in zip(a, b, strict=True))
 
 
 @dataclass(frozen=True)
@@ -59,13 +59,10 @@ class _SphereFace:
         self.rate = np.array(
             [_vector(y) - _vector(x) - self.speed for x, y in zip(mf.start, end, strict=True)]
         )
-        vertices = [
-            tuple(add((c,), (0, d)) for c, d in zip(p, dp, strict=True))
-            for p, dp in zip(self.relative, self.rate, strict=True)
-        ]
-        u, v = _difference(vertices[1], vertices[0]), _difference(vertices[2], vertices[0])
-        normal = _cross(u, v)
-        area2 = _dot(normal, normal)
+        vertices = affine_vectors(self.relative, self.rate)
+        u, v = difference(vertices[1], vertices[0]), difference(vertices[2], vertices[0])
+        normal = cross(u, v)
+        area2 = dot(normal, normal)
         self.features = ()
         if not area2 or area2[0] == 0 or Roots(area2).count(F(0), F(1)):
             return
@@ -73,24 +70,19 @@ class _SphereFace:
         features = []
         for i, p in enumerate(vertices):
             weights = tuple((1,) if j == i else () for j in range(3))
-            features.append(_SurfaceFeature((sub(r2, _dot(p, p)),), weights, (1,)))
+            features.append(_SurfaceFeature((sub(r2, dot(p, p)),), weights, (1,)))
         for i, j in ((0, 1), (1, 2), (2, 0)):
             p = vertices[i]
-            edge = _difference(vertices[j], p)
-            den = _dot(edge, edge)
-            along = sub((), _dot(p, edge))
+            edge = difference(vertices[j], p)
+            den = dot(edge, edge)
+            along = sub((), dot(p, edge))
             remain = sub(den, along)
             weights = [()] * 3
             weights[i], weights[j] = remain, along
             # Multiply the squared-distance inequality by positive |edge|².
-            clearance = add(mul(sub(r2, _dot(p, p)), den), mul(along, along))
+            clearance = add(mul(sub(r2, dot(p, p)), den), mul(along, along))
             features.append(_SurfaceFeature((clearance, remain, along), tuple(weights), den))
-        p = vertices[0]
-        minus_p = tuple(sub((), c) for c in p)
-        w1 = _dot(_cross(minus_p, v), normal)
-        w2 = _dot(_cross(u, minus_p), normal)
-        weights = (sub(sub(area2, w1), w2), w1, w2)
-        height = _dot(p, normal)
+        height, weights = face_coordinates(vertices[0], u, v, normal, area2)
         clearance = sub(mul(r2, area2), mul(height, height))
         features.append(_SurfaceFeature((clearance, *weights), weights, area2))
         self.features = tuple(features)

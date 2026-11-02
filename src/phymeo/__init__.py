@@ -85,6 +85,7 @@ from .geometry.collision_pipeline import (
     CollisionWorkspace,
     detect,
 )
+from .geometry.collision_witness import MaterialContactPoint
 from .geometry.feature_distance_bound import FeatureDistanceBounds, feature_distance_bounds
 from .geometry.linear_sweep import FeatureSweepResult, linear_feature_sweep
 from .geometry.particle_sphere import ParticleSphereGeometry, particle_sphere_geometry
@@ -326,6 +327,7 @@ __all__ += [
     "CollisionSweep",
     "CollisionWitness",
     "CollisionWorkspace",
+    "MaterialContactPoint",
     "RigidTurn",
     "detect",
 ]

@@ -14,15 +14,25 @@ class TyxCollisionBatch:
             reduce_bounds,
             round_entry_times,
             surface_entry_times,
+            triangle_entry_times,
         )
 
         self._tx = tx
         self._mode = mode
         self._reduce, self._classify = reduce_bounds, classify_pairs
         self._count, self._pair_count = len(tags), len(pairs)
-        self._entry_kernels = {5: round_entry_times, 28: surface_entry_times}
+        self._entry_kernels = {
+            5: round_entry_times,
+            28: surface_entry_times,
+            19: triangle_entry_times,
+        }
         self._entry_storage = {}
         self._sweep_counts = dict(
+            triangle_vertex_face_features=0,
+            triangle_edge_edge_features=0,
+            triangle_completed_launches=0,
+            triangle_proposed_hits=0,
+            triangle_edge_edge_proposed_hits=0,
             surface_features=0,
             surface_completed_launches=0,
             surface_proposed_hits=0,
@@ -181,6 +191,19 @@ class TyxCollisionBatch:
                         counts["surface_features"] += len(page)
                         counts["surface_proposed_hits"] += proposed
                         counts["surface_completed_launches"] += 1
+                    elif width == 19:
+                        edges = [
+                            (features[index].edge_pair, seed)
+                            for (index, _), seed in zip(page, active, strict=True)
+                        ]
+                        edge_count = sum(edge for edge, _ in edges)
+                        counts["triangle_edge_edge_features"] += edge_count
+                        counts["triangle_vertex_face_features"] += len(page) - edge_count
+                        counts["triangle_edge_edge_proposed_hits"] += sum(
+                            1 for edge, seed in edges if edge and seed >= 0
+                        )
+                        counts["triangle_completed_launches"] += 1
+                        counts["triangle_proposed_hits"] += proposed
         return results
 
     def stats(self):

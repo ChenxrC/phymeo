@@ -104,3 +104,52 @@ def surface_entry_times(count: tx.i32, rows: tx.ndarray(tx.f32, 2), entry: tx.nd
                 if feasible != 0:
                     answer = t
         entry[i] = answer
+
+
+@tx.func
+def _cubic(t: tx.f32, a: tx.f32, b: tx.f32, c: tx.f32, d: tx.f32) -> tx.f32:
+    return ((d * t + c) * t + b) * t + a
+
+
+@tx.kernel
+def triangle_entry_times(count: tx.i32, rows: tx.ndarray(tx.f32, 2), entry: tx.ndarray(tx.f32, 1)):
+    # Coplanarity has degree at most three. Bracket sign changes between
+    # samples and check material coordinates at the proposed root.
+    for i in tx.range(count):
+        a = rows[i, 0]
+        b = rows[i, 1]
+        c = rows[i, 2]
+        d = rows[i, 3]
+        answer = -1.0
+        previous = a
+        for tick in range(17):
+            t = tick * 0.0625
+            current = _cubic(t, a, b, c, d)
+            if answer < 0.0:
+                trial = -1.0
+                if current == 0.0:
+                    trial = t
+                elif (previous < 0.0 and current > 0.0) or (previous > 0.0 and current < 0.0):
+                    before = t - 0.0625
+                    after = t
+                    for iteration in range(21):
+                        mid = (before + after) * 0.5
+                        val = _cubic(mid, a, b, c, d)
+                        if (previous < 0.0 and val < 0.0) or (previous > 0.0 and val > 0.0):
+                            before = mid
+                        else:
+                            after = mid
+                    trial = (before + after) * 0.5
+                if trial >= 0.0:
+                    valid = 1
+                    for condition in tx.static_range(3):
+                        base = 4 + condition * 5
+                        gate = rows[i, base + 4]
+                        for power in tx.static_range(4):
+                            gate = gate * trial + rows[i, base + 3 - power]
+                        if gate < 0.0:
+                            valid = 0
+                    if valid != 0:
+                        answer = trial
+            previous = current
+        entry[i] = answer

@@ -56,4 +56,4 @@ python -m pytest tests/collision/test_tyx_sphere_face_sweep.py tests/collision/t
 python -m pytest tests/collision/test_tyx_sphere_face_sweep.py tests/collision/test_tyx_collision_pipeline.py tests/collision/test_tyx_round_collision.py -q -p no:cacheprovider --tyx-mode=cuda --require-tyx
 ```
 
-下一批接 DD01/DD02 的柔体点–面与边–边扫掠。材料所有者、薄面互穿和合法共享特征单独验收。[多案例计划](../superpowers/plans/2026-11-02-p65-tyx-collision-pipeline.md)
+随后交付的 [DD01/DD02](p65-collision-m2-triangle-pairs.md) 已接入异体薄面的点–面与边–边扫掠。DD03 将独立验收同体材料邻接。[多案例计划](../superpowers/plans/2026-11-02-p65-tyx-collision-pipeline.md)

@@ -4,6 +4,15 @@ from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
+class MaterialContactPoint:
+    """A world point on both surfaces, addressed separately on each pair owner."""
+
+    point: tuple[float, ...]
+    first_weights: tuple[tuple[int, float], ...]
+    second_weights: tuple[tuple[int, float], ...]
+
+
+@dataclass(frozen=True)
 class CollisionWitness:
     """One representative with the normal oriented from the first shape to the second."""
 
@@ -20,6 +29,9 @@ class CollisionWitness:
     # World-frame tangent displacement from the moving anchor of an infinite plane.
     first_offset: tuple[float, ...] | None = None
     second_offset: tuple[float, ...] | None = None
+    # For zero-thickness triangle pairs the convex hull of these points is the
+    # sampled intersection. Record order follows material IDs, not boundary winding.
+    intersection_points: tuple[MaterialContactPoint, ...] = ()
 
 
 @dataclass(frozen=True)

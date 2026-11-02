@@ -99,6 +99,8 @@ def verify_mixed(result, keys, expected):
         assert a.family == f and a.candidate
         if f == "RD":
             assert a.status == "hit" and a.sweep.first_t == (0.25, 0.25)
+        elif f == "DD":
+            assert a.status == "hit" and a.sweep.first_t == (0.5, 0.5)
         else:
             assert a.status == "unsupported"
     assert pairs[keys[4], keys[10]].candidate

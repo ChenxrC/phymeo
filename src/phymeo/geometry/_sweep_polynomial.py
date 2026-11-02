@@ -128,7 +128,7 @@ class Roots:
         return (right, right) if lo < t <= hi and _sign(self.p, t) == 0 else (left, right)
 
 
-def _first_feasible(source, conditions, end):
+def _first_feasible(source, conditions, end, start=F(0)):
     common = {}
 
     def search(lo, hi, n, depth):
@@ -157,7 +157,7 @@ def _first_feasible(source, conditions, end):
         left = source.count(lo, mid)
         return search(lo, mid, left, depth + 1) or search(mid, hi, n - left, depth + 1)
 
-    return search(F(0), end, source.count(F(0), end), 0)
+    return search(start, end, source.count(start, end), 0)
 
 
 def first_entry(conditions, proposal):
@@ -197,3 +197,54 @@ def first_entry(conditions, proposal):
     roots = [Roots(p) for p in conditions if len(p) > 1]
     bounds = [bracket for s in roots if (bracket := _first_feasible(s, roots, end)) is not None]
     return (min(x[0] for x in bounds), min(x[1] for x in bounds)) if bounds else None
+
+
+def affine_vectors(start, step):
+    return tuple(
+        tuple(add((c,), (0, d)) for c, d in zip(p, dp, strict=True))
+        for p, dp in zip(start, step, strict=True)
+    )
+
+
+def dot(a, b):
+    return add(add(mul(a[0], b[0]), mul(a[1], b[1])), mul(a[2], b[2]))
+
+
+def cross(a, b):
+    return tuple(sub(mul(a[i], b[j]), mul(a[j], b[i])) for i, j in ((1, 2), (2, 0), (0, 1)))
+
+
+def difference(a, b):
+    return tuple(sub(x, y) for x, y in zip(a, b, strict=True))
+
+
+def face_coordinates(origin_minus_point, u, v, normal, area2):
+    """Oriented height and projected barycentric numerators on an affine face."""
+    to_point = tuple(sub((), p) for p in origin_minus_point)
+    w1 = dot(cross(to_point, v), normal)
+    w2 = dot(cross(u, to_point), normal)
+    return dot(origin_minus_point, normal), (sub(sub(area2, w1), w2), w1, w2)
+
+
+def split_projection_roots(squarefree, minor):
+    """Partition the roots into usable and singular roots of a projection."""
+    shared = _gcd(squarefree, _primitive(minor))
+    return _primitive(_division(squarefree, shared)[0]), shared
+
+
+def first_zero_entry(equation, limits, proposal):
+    """Earliest root satisfying all closed material coordinates."""
+    if not equation:
+        return first_entry(((), *limits), proposal)
+    if not equation[0] and all(not p or p[0] >= 0 for p in limits):
+        return 0, 0
+    if len(equation) == 1 or any(len(p) == 1 and p[0] < 0 for p in limits):
+        return None
+    source = Roots(equation)
+    gates = [Roots(p) for p in limits if len(p) > 1]
+    if proposal is not None and 0 < proposal < 1:
+        # A nonrepresentable root need not coincide with its device hint.
+        # Search both sides of the split and keep the original dyadic time grid.
+        seed = F(proposal)
+        return _first_feasible(source, gates, seed) or _first_feasible(source, gates, F(1), seed)
+    return _first_feasible(source, gates, F(1))

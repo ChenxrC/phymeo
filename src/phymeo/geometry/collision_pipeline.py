@@ -17,6 +17,7 @@ from ..constraints.collision_shapes import (
 from ..core.capabilities import SolverFailure
 from ._round_sweep import round_query, sweep_result
 from ._sphere_triangle_sweep import sphere_face_query
+from ._triangle_pair_sweep import triangle_pair_query
 from .collision_witness import CollisionSweep, CollisionWitness
 from .surface_features import closest_point_triangle
 
@@ -258,7 +259,11 @@ def _detect_pairs(workspace, paths, flags):
             code = int(flags[offset + local])
             analytic = None
             if not code:
-                analytic = round_query(a, b, ma, mb) or sphere_face_query(a, b, ma, mb)
+                analytic = (
+                    round_query(a, b, ma, mb)
+                    or sphere_face_query(a, b, ma, mb)
+                    or triangle_pair_query(a, b, ma, mb)
+                )
             begin = len(features)
             if analytic is not None and (ma.moving or mb.moving):
                 features.extend(analytic.features)

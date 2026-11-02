@@ -271,8 +271,10 @@ def round_query(a, b, ma, mb):
 
 
 def sweep_result(query, proposals):
-    start, _ = query.sample(_ZERO)
+    start, signed_start = query.sample(_ZERO)
     end, _ = query.sample(_ONE)
+    if signed_start <= 0:
+        return end, CollisionSweep(start.gap_m, end.gap_m, (0.0, 0.0), 0.0, start)
     entries = [
         bound
         for feature, seed in zip(query.features, proposals, strict=True)

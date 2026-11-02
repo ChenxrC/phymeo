@@ -25,6 +25,7 @@ from ..runtime.registry import StateRegistry
 from ..runtime.robot_family import robot_family
 from ..runtime.scene_stepper import SceneStepper
 from ._compliant_motion import advance_state, check_robot_contact, optional_budget
+from .finite_pad_backing import backed_step
 
 
 @dataclass(frozen=True)
@@ -46,6 +47,7 @@ class CompliantPatch:
     friction: float = 0.0
     slip_speed_m_s: float = 0.01
     radius_m: float | None = None
+    backing_clearance_m: float | None = None
 
     def __post_init__(self):
         if self.radius_m is not None:
@@ -53,6 +55,11 @@ class CompliantPatch:
             if radius <= 0:
                 raise ValueError("finite pad radius must be positive")
             object.__setattr__(self, "radius_m", radius)
+        if self.backing_clearance_m is not None:
+            clearance = finite_real(self.backing_clearance_m, "backing clearance")
+            if self.radius_m is None or not 0 < clearance <= self.radius_m:
+                raise ValueError("backing clearance must be positive and inside the rounded pad")
+            object.__setattr__(self, "backing_clearance_m", clearance)
         if not isinstance(self.geometry, RobotContactPatch):
             raise TypeError("expected RobotContactPatch")
         if self.robot_domain is not None and (
@@ -229,6 +236,7 @@ class CompliantClothContactProgram:
         if len({p.geometry.key for p in self.patches}) != len(self.patches):
             raise ValueError("duplicate patch key")
         self.finite_pads = tuple(p for p in self.patches if p.radius_m is not None)
+        self.backed_pads = tuple(p for p in self.finite_pads if p.backing_clearance_m is not None)
         self.normals = {}
         for p in self.patches:
             if p.robot_domain is not None and (
@@ -251,9 +259,13 @@ class CompliantClothContactProgram:
 
     def problem_signature(self):
         return dict(
-            semantics="compliant-finite-pad-midpoint-v1"
-            if self.finite_pads
-            else "compliant-patch-midpoint-v1",
+            semantics=(
+                "compliant-pad-backing-kick-drift-v1"
+                if self.backed_pads
+                else "compliant-finite-pad-midpoint-v1"
+                if self.finite_pads
+                else "compliant-patch-midpoint-v1"
+            ),
             scene=self.scene.identity,
             cloth=self.cloth_domain,
             material=self.material,
@@ -279,7 +291,7 @@ class CompliantClothContactProgram:
     def close(self):
         pass
 
-    def _loads(self, state, *, dynamics=True):
+    def _loads(self, state, *, dynamics=True, backing_rows=False):
         cloth = state.domains[self.cloth_domain]
         base = ParticlePointPort(
             self.cloth, cloth, np.arange(self.cloth.particle_count), domain=self.cloth_domain
@@ -304,7 +316,7 @@ class CompliantClothContactProgram:
             if robot is None:
                 origin, rotation = np.zeros(3), np.eye(3)
             else:
-                pos, rot, com, jl, ja, _, _ = geo[robot]
+                pos, rot, com, jl, ja, robot_mass, _ = geo[robot]
                 origin, rotation = pos[link], rot[link]
             normal = patch.normal_sign * (rotation @ local_normal)
             vertices = p.local_vertices
@@ -382,6 +394,21 @@ class CompliantClothContactProgram:
                     middle_distance_m=gap + patch.radius_m,
                     material_fraction=pad_sites.fraction,
                 )
+                if backing_rows and patch.backing_clearance_m is not None:
+                    selected = np.flatnonzero(gap <= 0.0)
+                    if len(selected):
+                        normals_selected = force_normal[selected]
+                        particle_rows = np.einsum("ki,kaij->kaj", normals_selected, jac[selected])
+                        robot_rows = mass = None
+                        if robot is not None:
+                            robot_rows = -(
+                                normals_selected @ jl[link]
+                                + np.cross(arms[selected], normals_selected) @ ja[link]
+                            )
+                            mass = robot_mass
+                        details[p.key]["_backing"] = dict(
+                            indices=selected, particle=particle_rows, robot=robot_rows, mass=mass
+                        )
         return nodal, reactions, details, geo
 
     def observe(self, state):
@@ -391,8 +418,11 @@ class CompliantClothContactProgram:
     def observe_robot_contact(self, state):
         return None if self.robot_contact is None else self.robot_contact.evaluate(state.domains)
 
-    def accelerations(self, state, inputs):
-        nodal, reactions, details, geo = self._loads(state)
+    def accelerations(self, state, inputs, *, _backing=False):
+        if _backing:
+            nodal, reactions, details, geo = self._loads(state, backing_rows=True)
+        else:
+            nodal, reactions, details, geo = self._loads(state)
         body = None
         if self.robot_contact is not None:
             body = self.robot_contact._evaluate(state.domains, geo)
@@ -439,6 +469,10 @@ class _Workspace:
         self.program, self.state, self.inputs, self.h = program, state, inputs, h
 
     def predict(self):
+        if self.program.backed_pads:
+            self.state, self.report = backed_step(self.program, self.state, self.inputs, self.h)
+            self.penetration = self.report["sampled_penetration_m"]
+            return
         a0, initial, _, body0 = self.program.accelerations(self.state, self.inputs)
         mid = advance_state(self.state, a0, self.h / 2, midpoint=True)
         a, contact, internal, body = self.program.accelerations(mid, self.inputs)

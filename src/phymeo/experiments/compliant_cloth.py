@@ -128,6 +128,11 @@ def frame_record(program, state, t, sample=None, sample_t=None):
                 points_m=val["points_m"].tolist(),
                 force_n=val["force_n"].tolist(),
                 normal_force_n=val["normal_force_n"].tolist(),
+                **(
+                    {"backing_impulse_ns": val["backing_impulse_ns"].tolist()}
+                    if "backing_impulse_ns" in val
+                    else {}
+                ),
                 normal=val["normal"].tolist(),
                 **({"site_normals": val["site_normals"].tolist()} if "site_normals" in val else {}),
             )
@@ -177,6 +182,11 @@ def trace_start(case, name):
                 width_m=a.width_m,
                 stiffness_pa_per_m=a.stiffness_pa_per_m,
                 **({"radius_m": a.radius_m} if a.radius_m is not None else {}),
+                **(
+                    {"backing_clearance_m": a.backing_clearance_m}
+                    if a.backing_clearance_m is not None
+                    else {}
+                ),
                 damping_s_per_m=a.damping_s_per_m,
                 friction=a.friction,
                 slip_speed_m_s=a.slip_speed_m_s,
@@ -207,13 +217,24 @@ def record_step(case, trace, result, t):
     h = case.dt / case.substeps
     for i, rep in enumerate(result.report.substeps):
         rows = rep.diagnostics["patches"]
+        offset = 0.0 if rep.diagnostics.get("force_sample") == "substep-entry" else 0.5
+        sample_t = t + (i + offset) * h
         body = rep.diagnostics.get("robot_contact")
+        if "backing" in rep.diagnostics:
+            trace.setdefault("backing_samples", []).append(
+                dict(t=sample_t, **_jsonable(rep.diagnostics["backing"]))
+            )
         if body is not None:
-            trace["robot_samples"].append(dict(t=t + (i + 0.5) * h, **_jsonable(body)))
+            trace["robot_samples"].append(dict(t=sample_t, **_jsonable(body)))
         for key, r in rows.items():
             trace["samples"].append(
                 dict(
-                    t=t + (i + 0.5) * h,
+                    t=sample_t,
+                    **(
+                        {"backing_impulse_ns": r["backing_impulse_ns"].tolist()}
+                        if "backing_impulse_ns" in r
+                        else {}
+                    ),
                     patch=key,
                     normal_n=float(np.sum(r["normal_force_n"])),
                     force_n=r["force_n"].sum(axis=0).tolist(),
@@ -224,7 +245,13 @@ def record_step(case, trace, result, t):
                 )
             )
     trace["frames"].append(
-        frame_record(case.program, result.state, t + case.dt, rows, t + case.dt - h / 2)
+        frame_record(
+            case.program,
+            result.state,
+            t + case.dt,
+            rows,
+            sample_t if offset == 0 else t + case.dt - h / 2,
+        )
     )
     if trace.get("robot_samples"):
         trace["frames"][-1]["robot_contact"] = trace["robot_samples"][-1]

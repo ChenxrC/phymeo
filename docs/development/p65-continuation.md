@@ -5,7 +5,8 @@
 - **框架目标** 建立基于 tyx 的通用碰撞检测，分别验收刚体–刚体（RR）、刚体–柔体（RD）、柔体–柔体（DD，含不同物体与自碰撞）。递布是必过的最终系统回归。可记录的小穿透和数值误差沿工程预算处理。
 - **M0 首批已运行** RR04 转动扫掠、RD01 刚球撞布面、DD02 两边首触已完成独立 HOST 回归及现有接口对照，12 条逐构型观测。现有接口均未返回这三对物体的首次接触区间。[15 个案例的差异表](../benchmarks/p65-general-collision-baseline.md) · [可运行回归](../../tests/collision/test_case_catalog.py)
 - **M0 第二批已运行** RR03 已知轴的裁剪可复用，RD02 沿静态胶囊轴找到穿面见证，DD03 确认旧共享顶点过滤会排除异处相交的面。5 个构型/族，共 15 条观测。[新增回归](../../tests/collision/test_contact_regions.py) · [证据与范围](../benchmarks/p65-general-collision-baseline.md)
-- **下一节点 · M0 第三批（高）** RR05 凸体进入凹网格、RD04 球接触去掉共享面的软体外边界、DD05 两软体的完全包含及外部首触。先建独立真值和正负构型，再查现有查询能否报告完整配对结果。[案例](../benchmarks/p65-general-collision-cases.json) · [实施计划](../superpowers/plans/2026-11-02-p65-tyx-collision-pipeline.md)
+- **M0 第三批已运行** RR05、RD04、DD05 有 16 条几何观测。表面正距离同时可能出现在凹槽空区和实体内部；已有拓扑函数可消去两个四面体的共享面，材料所有者需另行绑定。初始包含、退化输入和变形体外部首次接触分别记录。[第三批回归](../../tests/collision/test_solid_boundaries.py) · [实测差异](../benchmarks/p65-general-collision-baseline.md)
+- **下一节点 · M0 收尾** 尚未运行的六项是 RR01 球–平面、RR02 胶囊对、RD03 有限板、RD05 布–箱、DD01 异体点–面、DD04 布–体边界。按原样例补独立参照和已有接口结果，然后进入三族共用的 tyx 检测入口。[案例](../benchmarks/p65-general-collision-cases.json) · [实施计划](../superpowers/plans/2026-11-02-p65-tyx-collision-pipeline.md)
 - **随后的实施顺序** 用同一公开检测入口连接原有几何，依差异补三族窄相、连续检测和材料身份，再做设备/缓存/容量的跨族回归。每族独立接动力学，最终做单爪折叠与双臂放台。
 - **可复用基础** 球–平面、连杆胶囊、有限棱柱、线性特征扫掠和限定的壳几何可作起点。已有布内力、机器人树、双向点载荷、统一子步及回滚负责消费检测输出。
 - **已完成的参考布案例** 带关节限位与六个连杆碰撞体的双臂交接。独立碰撞/限位/回滚检查已通过。3.62 s 的同次轨迹完成递布，B 独立横移 10.36 cm，末帧桌面支撑 0.47104 N；源码目录外的 wheel 逐位复现 B 接管步。[结果](../benchmarks/p65-robot-contact-results.json)及[本节点计划](../superpowers/plans/2026-11-02-robot-limits-contact.md)。

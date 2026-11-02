@@ -1,6 +1,6 @@
 # 通用碰撞检测 M0 逐案例差异表
 
-2026-11-02。两批 HOST 基线共覆盖 6 个基础案例、27 个几何构型，目录内另 9 个基础案例仍未运行。首批 3 个案例、12 个几何构型，第二批 3 个案例、15 个几何构型。每批另有 3 个案例目录检查项。tyx interpret、CUDA、Newton 对跑和动力学均未进入这两批。[案例目录](p65-general-collision-cases.json) · [首批回归](../../tests/collision/test_case_catalog.py) · [第二批回归](../../tests/collision/test_contact_regions.py) · [总路线](../superpowers/plans/2026-11-02-p65-tyx-collision-pipeline.md)
+2026-11-02。三批 HOST 基线共覆盖 9 个基础案例、43 个几何构型，目录内另 6 个基础案例尚未运行。首批、第二批、第三批分别执行了 12、15、16 个几何构型，每批都覆盖三类碰撞。每批另有 3 个目录检查项。tyx interpret、CUDA、Newton 对跑和动力学仍未进入这三批。[案例目录](p65-general-collision-cases.json) · [首批](../../tests/collision/test_case_catalog.py) · [第二批](../../tests/collision/test_contact_regions.py) · [第三批](../../tests/collision/test_solid_boundaries.py) · [总路线](../superpowers/plans/2026-11-02-p65-tyx-collision-pipeline.md)
 
 ## 首批 · 连续首触
 
@@ -55,6 +55,24 @@ RR03 复用的是已知支撑特征的投影裁剪。一般凸体的支撑轴选
 
 DD03 的零厚度网格不符合旧 `ClothSelfContactTopology` 的正厚度输入合同。本批另设半厚度 1/64 m，对比同坐标的共享 ID 和拆分 ID。这样单独定位出 `exclude_shared_vertex` 规则对候选成员的影响。通用管线需要保留可疑面片对，再按材料见证排除合法共享点/边；直接移除邻接过滤会把合法折弯也报作碰撞。此处的判断限于这条旧候选路径。[原候选规则](../../src/phymeo/geometry/cloth_self_candidates.py) · [原拓扑合同](../../src/phymeo/constraints/cloth_self_contact.py)
 
+## 第三批 · 凹网格、四面体外边界与实体包含
+
+本批有 16 个几何构型。RR05 用三个实心箱的并集作为独立参照，与两套封闭 U 形表面剖分对照。RD04 用软体的支撑平面判断外面，再实际调用现有四面体面消去函数和点–面扫掠。DD05 用四个有向半空间判断包含和首次接触，再用模型材料逆矩阵与表面距离查询复核给定见证。[可运行回归](../../tests/collision/test_solid_boundaries.py) · [独立参考](../../tests/collision/solid_case_oracles.py)
+
+| 案例及构型 | 独立真值 | HOST 组件与测试适配器的观测 |
+| --- | --- | --- |
+| RR05 base | 初态在 U 形凹槽，首次碰右壁在 `t≈0.727273`，随后切过壁面，终态完全进入右臂。 | 外包围盒始终重叠。闭网格有 28 个三角面，体积为 10 m³。凸顶点到网格面的最小距离从 0.8 m 到 0；切壁采样和终态又都约为 0.1 m。切壁时凸边上另有一点到内壁距离为零。 |
+| RR05 flip_diagonal、permuted_hull | 翻转面剖分对角线或重排凸顶点，物理事件不变。 | 两种表示均复现同一首触姿态和上述四阶段。并列最小值允许选择不同的有效特征。 |
+| RR05 clear_notch、left_arm_holdout | 缩短行程后始终在槽中；改向左臂时首触变为 `t=0.8`。 | 前者末态最小距离 0.2 m；后者在左壁命中，进入左臂后顶点到表面最小距离又变为 0.05 m。 |
+| RD04 base、reindexed | 两个正向四面体恰有六个外面，共享的 (0,1,2) 是内部面。首触 `t=0.75`，世界点 (0,0.2,0.2)，归属原单元 0。 | 现有壳内部拓扑函数返回六个外面，适配器从网格关联恢复唯一单元。六次扫掠只有原面 (0,2,3) 报越界，见证时刻为 1。节点及单元重排后仍映回原权重 (0.6,0,0.2,0.2,0)。 |
+| RD04 clear、internal_face_trap | 第一条在外侧保持至少 0.05 m 间隙。第二条球完全在软实体内，与外边界的间隙至少 0.1875 m。 | 两条的六个外面都返回 `certified`。把内部共享面错误地单独送入第二条查询会得到 `violation`，见证时刻为 0。六面净距状态单独不能区分外部分离与内部包含。 |
+| RD04 lower_holdout | 球从下半边接近，`t=0.8` 首触 (0,0.25,−0.375)，归属原单元 1。 | 唯一越界面改为 (0,2,4)，整段越界见证为 1，在首触姿态映回原节点权重 (0.375,0,0.25,0,0.375)。 |
+| DD05 base、swapped | 内部四面体完全包含于外部四面体，边界不交，重叠体积约 0.00133333 m³。 | 模型给出内部四面体体积 0.00133333 m³，内部顶点映到外体的最小重心权重为 0.1。其顶点到外表面最小距离为 0.2 m。交换两侧后包含方向随之交换。 |
+| DD05 clear、collapsed | 平移后沿 x 至少分离 1.2 m；另一个构型的 B 四个点共面、体积为零。 | 分离时实测顶点–面最小距离约 1.23288 m。共面输入由 `TetrahedralModel` 直接拒绝，未提交碰撞查询。 |
+| DD05 external_touch、deforming_holdout | 两个体都变形。原路径在 `t≈0.75` 首触，换轴及运动幅度后在 `t=0.5` 首触。两条终态都有严格位于两个体内部的见证点。 | 给定各自首触姿态，面查询得到 (0,0.4,0.4) 与 (0.4,0,0.4)。映射到 A 的体权重均为 (0.6,0,0.2,0.2)，终态共同见证在两侧的体权重均严格为正。 |
+
+`_tet_complex` 在本批连通、球面边界的两单元网格上可复用。它负责拓扑消去，稳定单元归属和材料权重由适配器另行绑定。U 网格的占据分类及变形体的首触由独立真值给出，现有公开入口没有自动返回一般凹网格/软体的实体分类或首次接触区间。后续接口需要分别表达表面接触、体内包含、分离和无效输入。[四面体面消去](../../src/phymeo/geometry/shell_boundary.py) · [体模型与材料逆矩阵](../../src/phymeo/core/tetrahedral.py) · [表面特征](../../src/phymeo/geometry/surface_features.py)
+
 ## 配对差异矩阵
 
 “局部”指存在可复用的有范围组件，“缺入口”指尚未找到与这一整项形状/运动语义对应的查询。未运行行的支持判断来自源码；不能据此登记漏检、误报或通过。
@@ -65,26 +83,28 @@ DD03 的零厚度网格不符合旧 `ClothSelfContactTopology` 的正厚度输�
 | RR02 | 胶囊–胶囊，两有限轴段距离 | `closest_segment_points`、机器人连杆胶囊 | 局部，需通用形状身份与端帽回归 | 未运行 |
 | RR03 | 凸体滑动裁剪、退化为线、斜盒边对 | 已知方向的投影裁剪 | 局部，缺一般凸体轴选择、完整区域与跨步身份 | 第二批 5 个构型 |
 | RR04 | 胶囊–球，绕轴转弧 | 静态线段最近点 | 局部，缺转弧首触 | 3 个构型，见上表 |
-| RR05 | 凸体–凹网格，三实体箱并集 | 限定凸面裁剪 | 缺凹网格中筛、实体包含 | 未运行 |
+| RR05 | 凸体–凹 U 网格，三个实心箱的并集 | 闭合拓扑与顶点–面见证 | 局部，缺公共凹网格中筛、整对实体分类与首触 | 第三批 5 个构型 |
 | RD01 | 球–三角面，面投影与重心坐标 | 点–面最近点、正净距扫掠 | 局部，缺首次事件结果 | 5 个构型，见上表 |
 | RD02 | 胶囊–布，轴部贯穿与端帽相切 | 整轴净距查询、端帽及材料点见证 | 局部，缺公共胶囊–整面配对及相切/流形输出 | 第二批 5 个构型 |
 | RD03 | 有限板–布，闭多边形加球半径 | 有限贴片与厚棱柱 | 局部，缺通用双侧圆边板和整布面覆盖 | 未运行 |
-| RD04 | 球–软体，共享面相消后的六个外面 | `TetrahedralPointPort` 节点映射 | 缺外边界提取、球–外面及单元归属 | 未运行 |
+| RD04 | 球–两单元软体，外面归属及内部面负控 | 受限拓扑面消去、正净距扫掠、材料点见证 | 局部，缺公共软体外边界/单元绑定与体内分类 | 第三批 5 个构型 |
 | RD05 | 刚箱–局部变形布，最低凸组合 | 线性特征扫掠 | 缺刚箱与整片变形面的分派 | 未运行 |
 | DD01 | 两布体的点–面首触 | 点–面最近点、正净距扫掠 | 局部，缺异体与零厚度首触 | 未运行 |
 | DD02 | 两布边内部首触 | 静态边–边和点–面 | 局部，零净距不属于现有扫掠合同 | 4 个构型，见上表 |
 | DD03 | 同体两面，异材料交叉与合法邻接 | 点–面见证、正厚度非邻接候选 | 局部，旧宽相排除共享顶点面，需按材料见证辨别 | 第二批 5 个构型 |
 | DD04 | 布–软体，平移片与体外边界 | 布面与体节点组件 | 缺布–体边界扫掠和材料权重 | 未运行 |
-| DD05 | 软体–软体，闭体半空间包含 | 四面体材料模型 | 缺闭体包含与两个变形体的外部首触 | 未运行 |
+| DD05 | 体–体，半空间包含及变形体外部首触 | 体模型有效性/材料映射、给定姿态的表面见证 | 局部，缺闭体占据查询及变形体配对 CCD | 第三批 6 个构型 |
 
 源码定位包括[离散刚体](../../src/phymeo/solvers/rigid_sphere_plane.py)、[连杆碰撞](../../src/phymeo/dynamics/robot_contact.py)、[贴片扫掠](../../src/phymeo/geometry/robot_patch_sweep.py)、[厚棱柱流形](../../src/phymeo/geometry/prism_prism_manifold.py)、[软体点映射](../../src/phymeo/coupling/tetrahedral_port.py)、[布宽相](../../src/phymeo/geometry/cloth_self_candidates.py)及[已验收的壳范围](../development/p65-shell-boundary-geometry-parent-acceptance.md)。
 
 ## 复现与下一批
 
-在项目的 Python 3.11 环境中，首批命令为 `python -m pytest tests/collision/test_case_catalog.py -q -p no:cacheprovider`，第二批命令为 `python -m pytest tests/collision/test_contact_regions.py -q -p no:cacheprovider`。指定一个新的绝对 `--basetemp` 可保存每个几何构型的 `observation.json`。文件包含原几何、独立预期、实际入口、距离或返回分类。目录里的编写状态与本表的执行结果分别维护。
+在项目的 Python 3.11 环境中，首批命令为 `python -m pytest tests/collision/test_case_catalog.py -q -p no:cacheprovider`，第二批命令为 `python -m pytest tests/collision/test_contact_regions.py -q -p no:cacheprovider`，第三批命令为 `python -m pytest tests/collision/test_solid_boundaries.py -q -p no:cacheprovider`。指定一个新的绝对 `--basetemp` 可保存每个几何构型的 `observation.json`。文件包含原几何、独立预期、实际入口、距离或返回分类。目录里的编写状态与本表的执行结果分别维护。
 
 首批在 `04a246c` 工作树上加入测试和结构化变体后执行。初次目录回归因缺少机器可读变体出现 3 项预期失败，随后完整新增文件 15 passed / 0.62 s / exit 0。两份测试文件通过 Ruff 和格式检查。完整运行前后的 7 项文件绑定一致；父串行槽已释放。完整日志与 12 条原始观测位于本机 `artifacts/p65-general-collision-m0-20261102-01`，本表保留了可随仓库复查的结果。[本次运行收据](../../artifacts/p65-general-collision-m0-20261102-01/m0-suite-113958353/final.json)
 
 第二批的独立执行结果为 18 passed / 0.57 s / exit 0，其中 3 项目录检查、15 项几何观测。4 份测试相关文件通过 Ruff 与格式检查，本轮测试前后 11 项输入文件绑定一致。共用目录读取器沿用首批输入语义，既有几何组复用原运行证据。原始日志和 15 份观测位于 `artifacts/p65-general-collision-m0-20261102-02`。父串行槽已释放。[第二批运行收据](../../artifacts/p65-general-collision-m0-20261102-02/second-pytest-122253879/final.json)
 
-下一批优先 RR05 凸体–凹网格、RD04 刚球–四面体外边界、DD05 软体完全包含及外部首触。这三项分别约束网格中筛、内部面消去与体积重叠。其余 6 个未运行案例也各自保留，不依赖递布成败。
+第三批在 `e9f4bdb` 的工作树加入用例后执行。目录首次预期失败 3 项；完整新增文件 19 passed / 1.39 s / exit 0，其中 16 项产生几何观测。两份新增测试文件通过 Ruff 和格式检查，9 项测试输入/源码在运行前后及当前绑定一致。父串行槽已释放，前两批沿用原证据。[第三批运行收据](../../artifacts/p65-general-collision-m0-20261102-03/third-pytest-124742855/final.json)
+
+M0 还剩 RR01 球–平面、RR02 胶囊–胶囊、RD03 有限圆边板、RD05 局部变形布–箱、DD01 异体布点–面及 DD04 布–体边界六项。下一批收齐这六项的真值、负控和接口差异，再进入 M1 的公共 tyx 检测入口。

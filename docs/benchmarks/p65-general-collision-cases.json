@@ -71,6 +71,13 @@
       "geometry": {"A":{"type":"closed_extruded_polygon_mesh","ring_xy":[[-2,-2],[2,-2],[2,2],[1,2],[1,-1],[-1,-1],[-1,2],[-2,2]],"z":[-0.5,0.5]},"B":{"type":"convex_hull","vertices":[[0,0,0],[0.2,0,0],[0,0.2,0],[0,0,0.2]],"translation_start":[0,0,0],"translation_end":[1.1,0,0]}},
       "oracle": {"method":"独立用底桥和左右臂三个实心轴对齐箱体的并集；首次触及内壁 x=1","initial":"overlapping_aabbs_but_clear","first_t_expression":"(1-0.2)/1.1","end":"contained_in_right_arm"},
       "controls": ["将三角化对角线改向，结果相同。","只走到 x=0.6，应仍在凹槽的空处。"],
+      "m0_variants": [
+        {"name":"base","changes":{},"relation":"hit"},
+        {"name":"flip_diagonal","changes":{},"relation":"hit","flip_diagonal":true},
+        {"name":"clear_notch","changes":{"B":{"translation_end":[0.6,0,0]}},"relation":"clear"},
+        {"name":"permuted_hull","changes":{"B":{"vertices":[[0,0,0.2],[0.2,0,0],[0,0,0],[0,0.2,0]]}},"relation":"hit"},
+        {"name":"left_arm_holdout","changes":{"B":{"translation_end":[-1.25,0,0]}},"relation":"hit"}
+      ],
       "initial_authoring_status": "specified_not_executed"
     },
     {
@@ -125,6 +132,13 @@
       "geometry": {"A":{"type":"tet_mesh","vertices":[[0,0,0],[1,0,0],[0,1,0],[0,0,1],[0,0,-1]],"tets":[[0,1,2,3],[0,2,1,4]]},"B":{"type":"sphere","radius":0.1,"center_start":[-0.25,0.2,0.2],"center_end":[-0.05,0.2,0.2]}},
       "oracle": {"method":"从有向四面体消去反向共享面，与暴露面 x=0 做平面距离检验","exterior_triangles":6,"excluded_internal_face":[0,1,2],"first_t":0.75,"surface_point":[0,0.2,0.2],"owner_tet":0},
       "controls": ["重排四面体及节点存储顺序，映回原材料 ID。","只走到 x=-0.15 应保持分离；内部共享面不得作为外表面发出。"],
+      "m0_variants": [
+        {"name":"base","changes":{},"relation":"hit"},
+        {"name":"reindexed","changes":{},"relation":"hit","node_order":[4,1,3,0,2],"cell_order":[1,0]},
+        {"name":"clear","changes":{"B":{"center_end":[-0.15,0.2,0.2]}},"relation":"clear"},
+        {"name":"internal_face_trap","changes":{"B":{"center_start":[0.25,0.25,0],"center_end":[0.25,0.25,0],"radius":0.0625}},"relation":"hit"},
+        {"name":"lower_holdout","changes":{"B":{"center_start":[-0.375,0.25,-0.375],"center_end":[-0.0625,0.25,-0.375],"radius":0.125}},"relation":"hit"}
+      ],
       "initial_authoring_status": "specified_not_executed"
     },
     {
@@ -198,6 +212,14 @@
       "geometry": {"A":{"type":"tet_mesh","vertices":[[0,0,0],[2,0,0],[0,2,0],[0,0,2]],"tets":[[0,1,2,3]]},"B":{"type":"tet_mesh","vertices":[[0.2,0.2,0.2],[0.4,0.2,0.2],[0.2,0.4,0.2],[0.2,0.2,0.4]],"tets":[[0,1,2,3]]}},
       "oracle": {"method":"所有 B 顶点在 A 的四个严格内侧半空间内，两个边界无交，体域有正体积重叠","relation":"contained_overlap","surface_crossings":0},
       "controls": ["沿 x 平移 B 三米，应分离。","把一个四面体压至零体积，返回无效几何，另行诊断；不得报作普通分离。","体–体外部首触：A 沿 x 的顶点由 [2,0,0] 移至 [2.2,0,0]。B 换成四面体 [0,1,3,2]，顶点 0 为 [-0.3+0.4*t,0.4,0.4]，其余三点为 [-0.7,0.4,0.4]、[-0.7,0.6,0.4]、[-0.7,0.4,0.6]。两个体都变形，B 顶点 0 于 t=0.75 首触 A 的 x=0 外面，随后有正体积交叠。"],
+      "m0_variants": [
+        {"name":"base","changes":{},"relation":"hit"},
+        {"name":"clear","changes":{"B":{"vertices":[[3.2,0.2,0.2],[3.4,0.2,0.2],[3.2,0.4,0.2],[3.2,0.2,0.4]]}},"relation":"clear"},
+        {"name":"collapsed","changes":{"B":{"vertices":[[0.2,0.2,0.2],[0.4,0.2,0.2],[0.2,0.4,0.2],[0.25,0.25,0.2]]}},"relation":"invalid"},
+        {"name":"swapped","changes":{},"relation":"hit","swap":true},
+        {"name":"external_touch","changes":{},"relation":"hit","geometry":{"A":{"type":"tet_mesh","vertices":[[0,0,0],[2,0,0],[0,2,0],[0,0,2]],"vertices_end":[[0,0,0],[2.2,0,0],[0,2,0],[0,0,2]],"tets":[[0,1,2,3]]},"B":{"type":"tet_mesh","vertices":[[-0.3,0.4,0.4],[-0.7,0.4,0.4],[-0.7,0.6,0.4],[-0.7,0.4,0.6]],"vertices_end":[[0.1,0.4,0.4],[-0.7,0.4,0.4],[-0.7,0.6,0.4],[-0.7,0.4,0.6]],"tets":[[0,1,3,2]]}}},
+        {"name":"deforming_holdout","changes":{},"relation":"hit","geometry":{"A":{"type":"tet_mesh","vertices":[[0,0,0],[0,2,0],[0,0,2],[2,0,0]],"vertices_end":[[0,0,0],[0,2.2,0],[0,0,2],[2,0,0]],"tets":[[0,1,2,3]]},"B":{"type":"tet_mesh","vertices":[[0.4,-0.2,0.4],[0.4,-0.7,0.4],[0.4,-0.7,0.6],[0.6,-0.7,0.4]],"vertices_end":[[0.4,0.2,0.4],[0.4,-0.7,0.4],[0.4,-0.7,0.6],[0.6,-0.7,0.4]],"tets":[[0,1,3,2]]}}}
+      ],
       "initial_authoring_status": "specified_not_executed"
     }
   ]

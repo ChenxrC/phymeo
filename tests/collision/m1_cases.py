@@ -6,6 +6,7 @@ from math import cos, pi, sin
 
 import numpy as np
 from case_catalog import catalog_entries
+from case_oracles import rotating_capsule
 
 import phymeo as ph
 
@@ -102,7 +103,9 @@ def verify_mixed(result, keys, expected):
         elif f == "DD":
             assert a.status == "hit" and a.sweep.first_t == (0.5, 0.5)
         else:
-            assert a.status == "unsupported"
+            geometry = catalog_entries()["RR04"]["geometry"]
+            expected_t = rotating_capsule(geometry["A"], geometry["B"]).time
+            assert a.status == "hit" and a.sweep.first_t[0] <= expected_t <= a.sweep.first_t[1]
     adjacent = pairs[keys[4], keys[10]]
     assert adjacent.candidate and adjacent.status == "adjacent" and adjacent.sweep.first_t is None
     assert (

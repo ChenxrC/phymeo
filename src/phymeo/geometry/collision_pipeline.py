@@ -18,6 +18,7 @@ from ..core.capabilities import SolverFailure
 from ._capsule_triangle_sweep import capsule_face_query
 from ._convex_contact import HullPairQuery
 from ._convex_hull import HullShape
+from ._rotating_round_sweep import RotatingCapsuleQuery, rotating_round_query
 from ._round_sweep import round_query, sweep_result
 from ._sphere_triangle_sweep import sphere_face_query
 from ._tetrahedral_solid import TetrahedralCellQuery, solid_body_pairs, volume_mesh_issue
@@ -241,7 +242,11 @@ def _pair(a, b, ma, mb, code, analytic, seeds):
                         *fields, True, *analytic.result(ma.moving or mb.moving, seeds)
                     )
                 if ma.moving or mb.moving:
-                    witness, sweep = sweep_result(analytic, seeds)
+                    witness, sweep = (
+                        analytic.sweep(seeds)
+                        if isinstance(analytic, RotatingCapsuleQuery)
+                        else sweep_result(analytic, seeds)
+                    )
                     hit = sweep.first_t is not None
                     if not hit and witness.shared_only:
                         return CollisionPair(
@@ -398,6 +403,7 @@ def _detect_pairs(workspace, paths, flags):
             elif not code:
                 analytic = (
                     round_query(a, b, ma, mb)
+                    or rotating_round_query(a, b, ma, mb)
                     or sphere_face_query(a, b, ma, mb)
                     or capsule_face_query(a, b, ma, mb)
                     or triangle_pair_query(a, b, ma, mb)

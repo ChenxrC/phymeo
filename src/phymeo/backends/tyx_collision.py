@@ -33,6 +33,9 @@ class TyxCollisionBatch:
         self._hull_kernel = hull_projection_intervals
         self._hull_storage = None
         self._sweep_counts = dict(
+            arc_chart_features=0,
+            arc_chart_completed_launches=0,
+            arc_chart_proposed_hits=0,
             hull_axis_terms=0,
             hull_nonempty_intervals=0,
             hull_launches=0,
@@ -201,6 +204,9 @@ class TyxCollisionBatch:
                         raise RuntimeError("invalid tyx feature entry proposal")
                     for (index, _), seed in zip(page, active, strict=True):
                         results[index] = float(seed)
+                        if getattr(features[index], "arc_chart", False):
+                            counts["arc_chart_features"] += 1
+                            counts["arc_chart_proposed_hits"] += int(seed >= 0)
                         part = getattr(features[index], "capsule_feature", None)
                         if part is not None:
                             counts[f"capsule_shaft_{part}_features"] += 1
@@ -210,9 +216,15 @@ class TyxCollisionBatch:
                     counts["sweep_features"] += len(page)
                     counts["sweep_completed_launches"] += 1
                     if width == 28:
-                        counts["surface_features"] += len(page)
-                        counts["surface_proposed_hits"] += proposed
-                        counts["surface_completed_launches"] += 1
+                        surface = [
+                            seed
+                            for (index, _), seed in zip(page, active, strict=True)
+                            if not getattr(features[index], "arc_chart", False)
+                        ]
+                        counts["arc_chart_completed_launches"] += int(len(surface) != len(page))
+                        counts["surface_features"] += len(surface)
+                        counts["surface_proposed_hits"] += sum(int(seed >= 0) for seed in surface)
+                        counts["surface_completed_launches"] += int(bool(surface))
                     elif width == 19:
                         edges = [
                             (features[index].edge_pair, seed)

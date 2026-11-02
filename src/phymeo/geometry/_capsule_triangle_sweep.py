@@ -87,6 +87,65 @@ def _sample_candidates(start, axis, tri):
             yield f.s[0], _on_edge(i, j, f.t[0])
 
 
+def segment_minimum(start, axis, tri):
+    best = None
+    ties = []
+    for s, w in _sample_candidates(start, axis, tri):
+        delta = np.asarray(w, dtype=object) @ tri.p - (start + s * axis)
+        d2 = delta @ delta
+        if best is None or d2 < best:
+            best = d2
+            ties = []
+        if d2 == best:
+            ties.append((s, w))
+    low, high = min(ties), max(ties)
+    if not any(axis):
+        low, high = (F(0), low[1]), (F(1), low[1])
+    return best, low, high
+
+
+def segment_witness(cap, face_first, start, axis, tri, nearest, source):
+    best, low, high = nearest
+
+    def endpoint(s, w):
+        return CapsuleAxisPoint(
+            float(s),
+            _xyz(start + s * axis),
+            _xyz(np.asarray(w, dtype=object) @ tri.p),
+            tuple(sorted(zip(tri.ids, map(float, w), strict=True))),
+        )
+
+    # The closest-pair set is convex and the displacement is unique.
+    # Interpolating the two extremes recovers the face weights at its center.
+    s = (F(low[0]) + high[0]) / 2
+    w = np.array([(F(a) + b) / 2 for a, b in zip(low[1], high[1], strict=True)], dtype=object)
+    axis_point = start + s * axis
+    face_point = w @ tri.p
+    signed = best - F(cap.radius) ** 2
+    direction, distance = _unit(face_point - axis_point)
+    gap = float(signed / F(distance + cap.radius))
+    face_pos = _xyz(face_point)
+    cap_pos = normal = None
+    if direction is not None:
+        normal = _xyz(-direction if face_first else direction)
+        cap_pos = (
+            face_pos if not signed else _xyz(np.asarray(axis_point, float) + cap.radius * direction)
+        )
+    cap_weights = _weights(cap, s)
+    face_weights = tuple(sorted(zip(tri.ids, map(float, w), strict=True)))
+    if face_first:
+        sides = face_pos, cap_pos, face_weights, cap_weights
+    else:
+        sides = cap_pos, face_pos, cap_weights, face_weights
+    return CollisionWitness(
+        gap,
+        normal,
+        *sides,
+        source,
+        capsule_axis_span=(endpoint(*low), endpoint(*high)),
+    ), signed
+
+
 class _CapsuleFace:
     def __init__(self, a, b, ma, mb):
         self.face_first = a.kind == "triangle"
@@ -127,59 +186,10 @@ class _CapsuleFace:
             raise SolverFailure("triangle_degenerate_on_path")
         start = self.start + time * self.speed
         tri = _Pose(self.face, time)
-        best = None
-        ties = []
-        for s, w in _sample_candidates(start, self.axis, tri):
-            delta = np.asarray(w, dtype=object) @ tri.p - (start + s * self.axis)
-            d2 = delta @ delta
-            if best is None or d2 < best:
-                best = d2
-                ties = []
-            if d2 == best:
-                ties.append((s, w))
-        low, high = min(ties), max(ties)
-        if not any(self.axis):
-            low, high = (F(0), low[1]), (F(1), low[1])
-
-        def endpoint(s, w):
-            return CapsuleAxisPoint(
-                float(s),
-                _xyz(start + s * self.axis),
-                _xyz(np.asarray(w, dtype=object) @ tri.p),
-                tuple(sorted(zip(tri.ids, map(float, w), strict=True))),
-            )
-
-        # The closest-pair set is convex and the displacement is unique.
-        # Interpolating the two extremes recovers the face weights at its center.
-        s = (F(low[0]) + high[0]) / 2
-        w = np.array([(F(a) + b) / 2 for a, b in zip(low[1], high[1], strict=True)], dtype=object)
-        axis_point = start + s * self.axis
-        face_point = w @ tri.p
-        signed = best - self.radius**2
-        direction, distance = _unit(face_point - axis_point)
-        gap = float(signed / F(distance + self.cap.radius))
-        face_pos = _xyz(face_point)
-        cap_pos = normal = None
-        if direction is not None:
-            normal = _xyz(-direction if self.face_first else direction)
-            cap_pos = (
-                face_pos
-                if not signed
-                else _xyz(np.asarray(axis_point, float) + self.cap.radius * direction)
-            )
-        cap_weights = _weights(self.cap, s)
-        face_weights = tuple(sorted(zip(tri.ids, map(float, w), strict=True)))
-        if self.face_first:
-            sides = face_pos, cap_pos, face_weights, cap_weights
-        else:
-            sides = cap_pos, face_pos, cap_weights, face_weights
-        return CollisionWitness(
-            gap,
-            normal,
-            *sides,
-            "host-affine-capsule-face",
-            capsule_axis_span=(endpoint(*low), endpoint(*high)),
-        ), signed
+        nearest = segment_minimum(start, self.axis, tri)
+        return segment_witness(
+            self.cap, self.face_first, start, self.axis, tri, nearest, "host-affine-capsule-face"
+        )
 
 
 def capsule_face_query(a, b, ma, mb):

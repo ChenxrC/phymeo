@@ -64,3 +64,5 @@ python -m pytest tests/collision/test_tyx_capsule_face_sweep.py -q -p no:cachepr
 ```
 
 随后 RR03 已接入凸刚体的支撑特征、接触区域及精确进出时刻，沿滑动箱与异向边的独立基准验收。[凸体接触实测](p65-collision-m2-convex-hulls.md) · [三族计划](../superpowers/plans/2026-11-02-p65-tyx-collision-pipeline.md)
+
+**M3 扩展。** 固定世界轴、可平移枢轴的旋转胶囊与双侧零厚仿射三角面已获得独立分派和三端连续验证。上文的 M2 历史范围仍对应其原运行。[当前角运动合同与实测](p65-collision-m3-curved-faces.md)

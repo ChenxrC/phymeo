@@ -2,7 +2,9 @@
 
 from dataclasses import dataclass
 from fractions import Fraction as F
-from math import factorial
+from math import factorial, isqrt
+
+import numpy as np
 
 from ..core.capabilities import SolverFailure
 from ._round_sweep import _GRID
@@ -73,3 +75,30 @@ def sin_cos(angle):
     s, c = polynomial(1), polynomial(0)
     s, c = ((s, c), (c, -s), (-s, -c), (-c, s))[k % 4]
     return s, c, uncertainty + F(1, scale) + F(1, factorial(21))
+
+
+def axis_length_bounds(axis):
+    square = axis @ axis
+    n = isqrt((square.numerator << 192) // square.denominator)
+    scale = 1 << 96
+    exact = n * n * square.denominator == square.numerator * scale * scale
+    return F(n, scale), F(n if exact else n + 1, scale)
+
+
+def rotate_enclosures(points, axis, length, angle):
+    """Rodrigues proposals and Euclidean distance errors from the true rotation."""
+    if not angle:
+        return tuple((v, F(0)) for v in points)
+    sine, cosine, error = sin_cos(angle)
+    low, high = length
+    results = []
+    for v in points:
+        parallel = axis * (axis @ v) / (axis @ axis)
+        perp = v - parallel
+        cross = np.cross(axis, v)
+        point = parallel + cosine * perp + (sine / high) * cross
+        bound = error * sum(abs(x) for x in perp) + (
+            error / low + abs(sine) * (1 / low - 1 / high)
+        ) * sum(abs(x) for x in cross)
+        results.append((point, bound))
+    return results

@@ -247,7 +247,9 @@ def test_thick_faces_rotating_axes_and_interior_collapse_keep_distinct_statuses(
     assert row.status == "unsupported"
     model, paths, f, c = scene(tri, None, axis, None, 0.5)
     paths[c] = ph.CollisionMotion(axis, turn=ph.RigidTurn([0, 0, 0], [0, 0, 0], [0, 0, 1], 1.0))
-    assert query((model, paths, f, c)).status == "unsupported"
+    rotating = query((model, paths, f, c))
+    assert rotating.status == "hit" and rotating.sweep.first_t == (0.0, 0.0)
+    assert rotating.sweep.start_gap_m == pytest.approx(-0.25)
     bad = query(scene(tri, tri * [-1, 1, 1], axis, None, 0.5))
     assert bad.status == "unresolved" and bad.reason == "triangle_degenerate_on_path"
 

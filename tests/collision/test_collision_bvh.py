@@ -85,3 +85,25 @@ def test_unbounded_planes_multiple_worlds_and_empty_model():
     empty = ph.CollisionModel(())
     with ph.CollisionWorkspace(empty, broad_phase="bvh") as work:
         assert ph.detect(empty, {}, ph.CollisionPolicy(), work).pairs == ()
+
+
+def test_retriangulated_mesh_revision_owns_its_own_tree():
+    from closed_mesh_cases import authored
+
+    old, old_paths, _ = authored("base")
+    updated, paths, _ = authored("flip_diagonal")
+    updated = ph.CollisionModel([replace(s, revision=3) for s in updated.shapes])
+    assert old.shapes[0].triangles != updated.shapes[0].triangles
+    with ph.CollisionWorkspace(old, mesh_midphase="bvh") as original:
+        previous = ph.detect(old, old_paths, ph.CollisionPolicy(), original)
+        with pytest.raises(ValueError, match="different collision model"):
+            ph.detect(updated, paths, ph.CollisionPolicy(), original)
+        assert original.last_result is previous
+    with (
+        ph.CollisionWorkspace(updated, mesh_midphase="bvh") as tree,
+        ph.CollisionWorkspace(updated) as brute,
+    ):
+        result = ph.detect(updated, paths, ph.CollisionPolicy(), tree)
+        assert result == ph.detect(updated, paths, ph.CollisionPolicy(), brute)
+        assert result.pairs[0].mesh.first_ratio == previous.pairs[0].mesh.first_ratio
+        assert tree.stats()["mesh_bvh_builds"] == 1

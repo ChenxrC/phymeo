@@ -24,6 +24,7 @@ from ._convex_contact import HullPairQuery
 from ._convex_hull import HullShape
 from ._hull_surface import HullSurfaceQuery
 from ._plate_contact import PlateSurfaceQuery, RoundedPlate
+from ._rotating_capsule_face import RotatingCapsuleFaceQuery, rotating_capsule_face_query
 from ._rotating_round_sweep import RotatingCapsuleQuery, rotating_round_query
 from ._round_sweep import round_query, sweep_result
 from ._sphere_triangle_sweep import sphere_face_query
@@ -278,7 +279,7 @@ def _pair(a, b, ma, mb, code, analytic, seeds):
                 if ma.moving or mb.moving:
                     witness, sweep = (
                         analytic.sweep(seeds)
-                        if isinstance(analytic, RotatingCapsuleQuery)
+                        if isinstance(analytic, (RotatingCapsuleQuery, RotatingCapsuleFaceQuery))
                         else sweep_result(analytic, seeds)
                     )
                     hit = sweep.first_t is not None
@@ -536,6 +537,7 @@ def _detect_pairs(workspace, paths, flags, selected):
                     round_query(a, b, ma, mb)
                     or rotating_round_query(a, b, ma, mb)
                     or sphere_face_query(a, b, ma, mb)
+                    or rotating_capsule_face_query(a, b, ma, mb)
                     or capsule_face_query(a, b, ma, mb)
                     or triangle_pair_query(a, b, ma, mb)
                 )

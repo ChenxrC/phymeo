@@ -6,12 +6,13 @@ conditions use the same bounded polynomial feature queries as affine surfaces.
 
 from dataclasses import dataclass
 from fractions import Fraction as F
-from math import ceil, cos, floor, isqrt, sin
+from math import ceil, cos, floor, sin
 
 import numpy as np
 
 from ..core.capabilities import SolverFailure
-from ._rotation_angle import _PI_LO, _AngleChart, sin_cos
+from ._bounded_contact import first_bounded_contact
+from ._rotation_angle import _PI_LO, _AngleChart, axis_length_bounds, rotate_enclosures
 from ._round_sweep import _GRID, _translation, _unit, _vector, _weights, _xyz, sweep_result
 from ._sphere_triangle_sweep import pack_surface_conditions
 from ._sweep_polynomial import add, dot, first_entry, mul, sub
@@ -90,12 +91,7 @@ class RotatingCapsuleQuery:
         self.angle = turn.angle
         self.radius = F(cap.radius) + F(ball.radius)
         axis2 = self.axis @ self.axis
-        n = isqrt((axis2.numerator << 192) // axis2.denominator)
-        unit = 1 << 96
-        length = (
-            F(n, unit),
-            F(n if n * n * axis2.denominator == axis2.numerator * unit * unit else n + 1, unit),
-        )
+        length = axis_length_bounds(self.axis)
         axis = self.axis if self.angle > 0 else -self.axis
         self.axis_length = length
         # This frozen ball encloses the actual relative center for every time.
@@ -154,16 +150,9 @@ class RotatingCapsuleQuery:
     def _midpoint_distance(self, t):
         # Rotate the original affine ball center into the stationary capsule frame.
         center = self.center + t * self.drift
-        sine, cosine, error = sin_cos(-t * F(self.angle))
-        axis = self.axis
-        parallel = axis * (axis @ center) / (axis @ axis)
-        perp = center - parallel
-        cross = np.cross(axis, center)
-        low, high = self.axis_length
-        point = parallel + cosine * perp + (sine / high) * cross
-        point_error = error * sum(abs(x) for x in perp) + (
-            error / low + abs(sine) * (1 / low - 1 / high)
-        ) * sum(abs(x) for x in cross)
+        ((point, point_error),) = rotate_enclosures(
+            (center,), self.axis, self.axis_length, -t * F(self.angle)
+        )
         delta = point - self.segment
         den = self.edge @ self.edge
         if den:
@@ -203,36 +192,9 @@ class RotatingCapsuleQuery:
         speed = sum(abs(x) for x in self.drift) + abs(F(self.angle)) * max(
             sum(abs(x) for x in q) for q in (self.center, self.center + self.drift)
         )
-        # DFS in time order. All cells before the earliest pending leaf have a
-        # separating lower bound. A positive result needs an occupied sample.
-        stack = [(earliest, F(1))]
-        pending = hit = None
-        for _ in range(4096):
-            if not stack:
-                if pending is not None:
-                    raise SolverFailure("rotation_contact_unresolved")
-                return result(None)
-            lo, hi = stack.pop()
-            lower = lo if pending is None else pending
-            if hit is not None and hit - lower <= F(1, 1 << 27):
-                return result((lower, hit))
-            if pending is not None and lo - pending > F(1, 1 << 27):
-                raise SolverFailure("rotation_contact_unresolved")
-            mid = (lo + hi) / 2
-            d2, error = self._midpoint_distance(mid)
-            if d2 > (self.radius + error + speed * (hi - lo) / 2) ** 2:
-                continue
-            if self.radius >= error and d2 <= (self.radius - error) ** 2:
-                hit = mid if hit is None else min(hit, mid)
-                if hit - lower <= F(1, 1 << 27):
-                    return result((lower, hit))
-                stack.append((lo, mid))
-            elif hi - lo <= F(1, 1 << 36):
-                if pending is None:
-                    pending = lo
-            else:
-                stack.extend(((mid, hi), (lo, mid)))
-        raise SolverFailure("rotation_cell_capacity")
+        return result(
+            first_bounded_contact([(earliest, F(1))], self._midpoint_distance, speed, self.radius)
+        )
 
 
 def rotating_round_query(a, b, ma, mb):

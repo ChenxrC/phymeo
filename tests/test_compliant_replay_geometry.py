@@ -56,3 +56,41 @@ def test_recorded_attachment_set_cannot_be_aliased_or_dropped(tamper):
         data["patches"].append(patch.copy())
     with pytest.raises((ValueError, TypeError)):
         module.add_link_geometry(data)
+
+
+def test_export_gzip_binds_input_bytes_and_preserves_per_site_normals(tmp_path):
+    import gzip
+    import hashlib
+    import json
+
+    trace = trace_start(
+        build_handoff(robot="articulated", fabric="soft", finger_pad_radius_m=0.002), "finite-pad"
+    )
+    raw = gzip.compress(json.dumps(trace, allow_nan=False).encode())
+    source = tmp_path / "actual.json.gz"
+    source.write_bytes(raw)
+    output = tmp_path / "motion.html"
+    assert module.export(source, output) == hashlib.sha256(raw).hexdigest()
+    html = output.read_text(encoding="utf8")
+    capture = html.split('<script id="capture" type="application/json">', 1)[1].split(
+        "</script>", 1
+    )[0]
+    cap = json.loads(capture)
+    jaw = cap["trajectory"]["frames"][0]["contacts"]["A_left"]
+    assert jaw["site_normals"] == trace["frames"][0]["contacts"]["A_left"]["site_normals"]
+    assert cap["trajectory"]["patches"][1]["radius_m"] == 0.002
+    assert "roundedPadMesh(" in html
+
+
+@pytest.mark.parametrize("tamper", ["missing", "nonunit", "force"])
+def test_finite_pad_replay_requires_the_actual_contact_direction(tamper):
+    trace = trace_start(build_handoff(robot="articulated", finger_pad_radius_m=0.002), "finite-pad")
+    site = trace["frames"][0]["contacts"]["A_left"]
+    if tamper == "missing":
+        del site["site_normals"]
+    elif tamper == "nonunit":
+        site["site_normals"][0] = [0, 0, 0]
+    else:
+        site["normal_force_n"][0] += 1.0
+    with pytest.raises(ValueError, match="contact"):
+        module.add_link_geometry(trace)

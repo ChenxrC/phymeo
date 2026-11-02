@@ -46,13 +46,82 @@ function render(){if(!renderer)return;camera.position.copy(center).add(new THREE
 function deepClear(g){g.traverse(x=>{if(x.geometry)x.geometry.dispose();if(x.material){if(Array.isArray(x.material))x.material.forEach(m=>m.dispose());else x.material.dispose()}});g.clear()}
 function mesh(n,indices,color,opacity=1){const geo=new THREE.BufferGeometry();geo.setAttribute("position",new THREE.BufferAttribute(new Float32Array(n*3),3));geo.setIndex(indices);const m=new THREE.Mesh(geo,material(color,opacity));group.add(m);return m}
 function coords(mesh,points){const a=mesh.geometry.attributes.position;points.forEach((p,i)=>a.setXYZ(i,p[0],p[1],p[2]));a.needsUpdate=true;mesh.geometry.computeVertexNormals();mesh.geometry.computeBoundingSphere()}
+function padFrame(front, sign) {
+  const origin = vec(front[0]);
+  const x = vec(front[1]).sub(origin).normalize();
+  const z = vec(front[1]).sub(origin).cross(vec(front[2]).sub(origin)).normalize().multiplyScalar(sign);
+  const y = z.clone().cross(x);
+  return {origin, x, y, z};
+}
+function placePatch(object, front) {
+  if (!object.userData.rounding) {
+    coords(object, front);
+    return;
+  }
+  const f = padFrame(front, object.userData.normalSign);
+  object.matrix.makeBasis(f.x, f.y, f.z);
+  object.matrix.setPosition(f.origin);
+  object.matrixWorldNeedsUpdate = true;
+}
+function roundedPadMesh(front, config, color) {
+  const radius = config.radius_m;
+  const sign = config.normal_sign;
+  const f = padFrame(front, sign);
+  const ring = front.map(p => {
+    const d = vec(p).sub(f.origin);
+    return new THREE.Vector3(d.dot(f.x), d.dot(f.y), 0);
+  });
+  if (sign < 0) ring.reverse();
+  const count = ring.length;
+  const indices = [];
+  for (let i=1; i<count-1; i++) indices.push(0,i,i+1,count,count+i+1,count+i);
+  for (let i=0; i<count; i++) {
+    const j = (i+1)%count;
+    indices.push(i,count+i,count+j,i,count+j,j);
+  }
+  // The solid is the union of the flat prism and capsules along its middle edges.
+  const object = new THREE.Group();
+  object.userData.rounding = radius;
+  object.userData.normalSign = sign;
+  object.matrixAutoUpdate = false;
+  group.add(object);
+  const slab = mesh(2*count,indices,color);
+  object.add(slab);
+  coords(slab,[...ring.map(p=>p.toArray()),...ring.map(p=>[p.x,p.y,-2*radius])]);
+  const axis = new THREE.Vector3(0,1,0);
+  for (let i=0; i<count; i++) {
+    const a = ring[i].clone(); a.z = -radius;
+    const b = ring[(i+1)%count].clone(); b.z = -radius;
+    const edge = b.clone().sub(a);
+    const cylinder = new THREE.Mesh(new THREE.CylinderGeometry(radius,radius,edge.length(),20),material(color));
+    cylinder.position.copy(a).lerp(b,.5);
+    cylinder.quaternion.setFromUnitVectors(axis,edge.normalize());
+    object.add(cylinder);
+    const corner = new THREE.Mesh(new THREE.SphereGeometry(radius,20,12),material(color));
+    corner.position.copy(a);
+    object.add(corner);
+  }
+  placePatch(object,front);
+  return object;
+}
 function loadTrace(raw,hash=""){
  if(!raw || raw.schema!=="phymeo-compliant-case-v1" || !raw.frames?.length || !raw.faces?.length)throw Error("请选择本示例生成的有效轨迹");
  trace=raw;index=0;playing=false;el("play").textContent="播放";deepClear(group);patches={};
  const first=raw.frames[0];cloth=mesh(first.cloth_position_m.length,raw.faces.flat(),0x63c6bb);
  const edges=raw.faces.flatMap(([a,b,c])=>[a,b,b,c,c,a]);const eg=new THREE.BufferGeometry();eg.setAttribute("position",cloth.geometry.attributes.position);eg.setIndex(edges);
  wire=new THREE.LineSegments(eg,new THREE.LineBasicMaterial({color:0x17332f}));group.add(wire);
- for(const [k,v] of Object.entries(first.patch_vertices_m)){const ids=[];for(let i=1;i<v.length-1;i++)ids.push(0,i,i+1);patches[k]=mesh(v.length,ids,colors[k]||colors[k[0]]||0x8899aa,(k==="table"||k==="platform") ? .45 : .78)}
+ const configByName=Object.fromEntries((raw.patches || []).map(p=>[p.name,p]));
+ for(const [k,v] of Object.entries(first.patch_vertices_m)){
+   const color=colors[k]||colors[k[0]]||0x8899aa;
+   const definition=configByName[k];
+   if(definition?.radius_m>0){
+     patches[k]=roundedPadMesh(v,definition,color);
+   }else{
+     const ids=[];
+     for(let i=1;i<v.length-1;i++)ids.push(0,i,i+1);
+     patches[k]=mesh(v.length,ids,color,(k==="table"||k==="platform") ? .45 : .78);
+   }
+ }
  arrows=new THREE.Group();links=new THREE.Group();bodies=new THREE.Group();group.add(arrows,links,bodies);
  const b=new THREE.Box3();let maxf=.01;
  for(const f of raw.frames){for(const p of f.cloth_position_m)b.expandByPoint(vec(p));for(const row of Object.values(f.contacts||{}))for(const p of row.force_n)maxf=Math.max(maxf,vec(p).length())}
@@ -66,7 +135,7 @@ function loadTrace(raw,hash=""){
 function show(n){
  if(!trace)return;index=Math.max(0,Math.min(trace.frames.length-1,Math.round(n)));el("time").value=index;
  const f=trace.frames[index];const latest=(trace.events||[]).filter(e=>e.t<=f.t+1e-12).at(-1);el("events").value=latest?String(latest.t):"";coords(cloth,f.cloth_position_m);wire.visible=el("wire").checked;
- for(const [k,v] of Object.entries(f.patch_vertices_m))coords(patches[k],v);
+ for(const [k,v] of Object.entries(f.patch_vertices_m))placePatch(patches[k],v);
  deepClear(arrows);deepClear(links);deepClear(bodies);
  for(const [name,robot] of Object.entries(f.robots)){if(!robot.links_m||!trace.robot_parents?.[name])continue;
    robot.links_m.forEach((p,i)=>{const parent=trace.robot_parents[name][i];if(parent<0)return;const g=new THREE.BufferGeometry().setFromPoints([vec(robot.links_m[parent]),vec(p)]);links.add(new THREE.Line(g,new THREE.LineBasicMaterial({color:colors[name]||0xffffff})))})}

@@ -1,6 +1,7 @@
 """Export a self-contained, offline Three.js replay of a Phymeo compliant-cloth trace."""
 
 import argparse
+import gzip
 import hashlib
 import json
 from pathlib import Path
@@ -41,6 +42,7 @@ def _bind_recorded_models(trace):
             excluded_pairs=config["excluded_pairs"],
         )
     attachments = {}
+    rounded = set()
     for row in trace["patches"]:
         patch = RobotContactPatch(
             row["name"], row["link_index"], np.asarray(row["local_vertices_m"])
@@ -52,6 +54,16 @@ def _bind_recorded_models(trace):
         ):
             raise ValueError("invalid or duplicate recorded patch binding")
         attachments[patch.key] = (robot, patch)
+        if row.get("radius_m") is not None:
+            radius = row["radius_m"]
+            if (
+                type(radius) not in (int, float)
+                or not np.isfinite(radius)
+                or radius <= 0
+                or row["normal_sign"] not in (-1, 1)
+            ):
+                raise ValueError("invalid recorded finite pad radius or orientation")
+            rounded.add(patch.key)
     for frame in trace["frames"]:
         if set(frame["robots"]) != set(models):
             raise ValueError("recorded robot bindings differ from the model set")
@@ -85,6 +97,27 @@ def _bind_recorded_models(trace):
                 vertices = vertices @ pose.rotation[link].T + pose.position[link]
             if not np.array_equal(frame["patch_vertices_m"][key], vertices):
                 raise ValueError("recorded patch differs from its model attachment")
+            if key in rounded and "contacts" in frame:
+                contact = frame["contacts"].get(key, {})
+                normal = np.asarray(contact.get("site_normals"), dtype=float)
+                force = np.asarray(contact.get("force_n"), dtype=float)
+                magnitude = np.asarray(contact.get("normal_force_n"), dtype=float)
+                points = np.asarray(contact.get("points_m"), dtype=float)
+                if (
+                    normal.ndim != 2
+                    or normal.shape[1] != 3
+                    or force.shape != normal.shape
+                    or points.shape != normal.shape
+                    or magnitude.shape != (len(normal),)
+                    or not np.isfinite(points).all()
+                    or not np.isfinite(force).all()
+                    or np.any(magnitude < 0)
+                    or not np.allclose(np.linalg.norm(normal, axis=1), 1.0, atol=2e-10, rtol=0.0)
+                    or not np.allclose(
+                        np.sum(force * normal, axis=1), magnitude, atol=2e-10, rtol=2e-10
+                    )
+                ):
+                    raise ValueError("invalid recorded contact directions or decomposed force")
 
 
 def add_link_geometry(trace):
@@ -140,15 +173,25 @@ def add_link_geometry(trace):
 
 
 def export(source, output):
-    data = source.read_bytes()
-    trace = json.loads(data)
+    with source.open("rb") as stream:
+        digest = hashlib.sha256()
+        for block in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(block)
+        stream.seek(0)
+        zipped = stream.read(2) == b"\x1f\x8b"
+        stream.seek(0)
+        if zipped:
+            with gzip.GzipFile(fileobj=stream) as decompressed:
+                trace = json.load(decompressed)
+        else:
+            trace = json.load(stream)
     if trace.get("schema") != "phymeo-compliant-case-v1" or not trace.get("frames"):
         raise ValueError("expected a compliant-cloth trajectory")
     add_link_geometry(trace)
     # The full source file retains every substep. The viewer reads the recorded frame data.
     trace.pop("samples", None)
     trace.pop("robot_samples", None)
-    cap = dict(source_sha256=hashlib.sha256(data).hexdigest(), trajectory=trace)
+    cap = dict(source_sha256=digest.hexdigest(), trajectory=trace)
     packed = json.dumps(cap, ensure_ascii=False, separators=(",", ":"), allow_nan=False).replace(
         "<", "\\u003c"
     )

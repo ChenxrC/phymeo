@@ -1,6 +1,13 @@
 # P6.5 人工续作入口
 
-## 当前工作（2026-11-02，以本节为准）
+## 当前入口（2026-11-03）
+
+- 公共碰撞检测已覆盖 15 个案例族、74 个登记构型。RR、RD、DD 各有独立受力运动窗口，三端共 636 个物理步。实际 TYX 与 HOST 的职责和各形状支持范围分别记录。[碰撞验收表](../benchmarks/p65-collision-public-catalog.md) · [三个动力学案例](../benchmarks/p65-collision-m4-loads.md)
+- 单爪软布已真实承载、离台并弯曲。原双臂装配的两种初态都未放台。材料点跟踪使 2° 布在 B 单独持有时横移最多 9.13 cm；竖直布的 A/B 交接重叠仍不足。[单爪结果](../benchmarks/p65-single-gripper-bend.md) · [双臂对照](../benchmarks/p65-soft-handoff-acquisition.md)
+- 已补通用胶囊–布面载荷、铰接关节反力及同源 Three.js 记录。原装配在初态有布–腕重叠，新掌部与两根移动指杆保留全部结构形状，两种软布初态各 240 对配对均分离。当前验证对象是新装配的完整协同交接。完整放台、最终集成审阅和源码外 wheel 分开验收。[结构接触证据](../benchmarks/p65-cloth-link-response.md) · [当前实施计划](../superpowers/plans/2026-11-02-p65-tyx-collision-pipeline.md)
+
+
+## 2026-11-02 实施记录
 
 - **碰撞组合持续任务已完成** RR04、RR05、RD03、RD05 已提交。全部 15 族、74 个登记构型已经在一个 164 形状模型中分别运行 HOST、tyx interpret 和实际 CUDA。82 条目标配对记录的完整内容逐字节一致。[验收总表与复现](../benchmarks/p65-collision-public-catalog.md)
 - **框架目标** 建立基于 tyx 的通用碰撞检测，分别验收刚体–刚体（RR）、刚体–柔体（RD）、柔体–柔体（DD，含不同物体与自碰撞）。递布是必过的最终系统回归。可记录的小穿透和数值误差沿工程预算处理。

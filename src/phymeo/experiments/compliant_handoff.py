@@ -26,6 +26,7 @@ from .handoff_grippers import (
     Gripper,
     grippers_for,
 )
+from .handoff_reception import CooperativeReception, _shared_support
 from .sheet_fabric import (
     HALF_THICKNESS_M,
     HEIGHT_M,
@@ -206,7 +207,7 @@ def build_gripper_sheet(
     )
 
 
-def _observations(state, row, weight):
+def _observations(state, row, weight, body=None):
     x = state.domains["cloth"].position
     o = dict(
         bottom_m=float(x[:, 2].min()),
@@ -220,6 +221,12 @@ def _observations(state, row, weight):
         o[n + "_both_normal_n"] = float(min(a["normal_force_n"].sum() for a in fingers))
         o[n + "_normal_n"] = float(sum(a["normal_force_n"].sum() for a in fingers))
         o[n + "_up_n"] = float(sum(a["force_n"][:, 2].sum() for a in fingers))
+        if body is not None and "cloth_links" in body:
+            links = [c for c in body["cloth_links"] if c["robot"] == n]
+            o[n + "_link_normal_n"] = float(sum(r["normal_force_n"] for r in links))
+            o[n + "_link_up_n"] = float(
+                sum(site["force_on_cloth_n"][2] for r in links for site in r["sites"])
+            )
     return o
 
 
@@ -240,9 +247,9 @@ def run_handoff(
     finger_backing_clearance_m=None,
     receiver_control="snapshot",
 ):
-    if receiver_control not in ("snapshot", "material"):
-        raise ValueError("receiver control must be snapshot or material")
-    track_material = receiver_control == "material"
+    if receiver_control not in ("snapshot", "material", "cooperative"):
+        raise ValueError("unknown receiver control")
+    track_material = receiver_control != "snapshot"
     case = build_handoff(
         grip_friction=grip_friction,
         robot=robot,
@@ -278,8 +285,14 @@ def run_handoff(
     edge_target = None
     finger_layer = next(p for p in case.program.patches if p.geometry.key == "B_left")
     reserve = HALF_THICKNESS_M + (finger_layer.radius_m or 0.0)
+    coordinator = None
     if track_material:
-        trace["receiver_control"] = "material"
+        trace["receiver_control"] = receiver_control
+    if receiver_control == "cooperative":
+        coordinator = CooperativeReception(
+            case.receiver_nodes, case.dt, weight, reserve, a0, b0, transfer
+        )
+        trace["coordination_events"] = coordinator.events
 
     def observed_window(frame):
         parts = frame["patch_vertices_m"]
@@ -318,7 +331,8 @@ def run_handoff(
                 if phase == 2
                 else transfer + [-0.055, 0.010]
             )
-            velocity_command = None
+            velocity_command = donor_rate = None
+            close_receiver = 2 <= phase <= 5
             receiver_observation = None
             if phase == 0:
                 bt = b0
@@ -332,7 +346,14 @@ def run_handoff(
                 bt = _travel(lower_start, place, elapsed, 0.42)
             else:
                 bt = place if phase == 6 else place + [0.045, 0.010]
-            if track_material and 2 <= phase <= 5:
+            if coordinator is not None and 1 <= phase <= 3:
+                command = coordinator.command(name, trace["frames"][-1], at, elapsed)
+                at, bt = command.donor, command.receiver
+                donor_rate, velocity_command = command.donor_rate, command.receiver_rate
+                close_receiver = command.closed
+                receiver_observation = command.observation
+                edge_target = coordinator.anchor
+            elif track_material and 2 <= phase <= 5:
                 previous = trace["frames"][-1]
                 window = observed_window(previous)
                 point = edge_target.evaluate(x)
@@ -365,7 +386,7 @@ def run_handoff(
                     else velocity_command.tolist(),
                 )
             # Limit jaw command speed through layer entry and release; measured contact still determines each transition.
-            for arm, closed in (("A", phase <= 2), ("B", 2 <= phase <= 5)):
+            for arm, closed in (("A", phase <= 2), ("B", close_receiver)):
                 target = CLOSED if closed else 0.0
                 finger_targets[arm] += float(
                     np.clip(target - finger_targets[arm], -0.09 * case.dt, 0.09 * case.dt)
@@ -374,16 +395,13 @@ def run_handoff(
             try:
                 controls = {}
                 for arm, target in requested.items():
+                    rate = donor_rate if arm == "A" else velocity_command
                     controls[arm] = case.grippers[arm].command(
                         state.domains[arm],
                         target,
                         finger_targets[arm],
                         case.dt,
-                        **(
-                            {"tool_velocity_m_s": velocity_command}
-                            if arm == "B" and velocity_command is not None
-                            else {}
-                        ),
+                        **({"tool_velocity_m_s": rate} if rate is not None else {}),
                     )
             except SolverFailure as exc:
                 trace.update(
@@ -407,7 +425,10 @@ def run_handoff(
                 break
             state = out.state
             t = (i + 1) * case.dt
-            o = _observations(state, out.report.substeps[-1].diagnostics["patches"], weight)
+            diagnostics = out.report.substeps[-1].diagnostics
+            o = _observations(
+                state, diagnostics["patches"], weight, diagnostics.get("robot_contact")
+            )
             trace["frames"][-1].update(
                 phase=name,
                 measurements=o,
@@ -418,9 +439,19 @@ def run_handoff(
             )
             if receiver_observation is not None:
                 trace["frames"][-1]["receiver_observation"] = receiver_observation
+            if coordinator is not None and phase in (1, 2, 3, 4) and coordinator.lost(o):
+                trace.update(
+                    completed=False,
+                    failure_phase=name,
+                    failure="both grippers lost the sheet before placement",
+                    time_s=t,
+                )
+                break
             visible_target = None
             if name == "grasp_A":
                 ready = o["A_both_normal_n"] > 0.20
+            elif name == "lift_A" and coordinator is not None:
+                ready = coordinator.holder is not None and _shared_support(o, weight)
             elif name == "lift_A":
                 ready = (
                     o["bottom_m"] > 0.019
@@ -435,15 +466,16 @@ def run_handoff(
                     )
                     ready = visible_target is not None
             elif name == "share":
-                ready = (
-                    o["A_both_normal_n"] > 0.20
-                    and o["B_both_normal_n"] > 0.20
-                    and min(o["A_up_n"], o["B_up_n"]) > 0.08 * weight
-                    and o["table_up_n"] < 0.02 * weight
-                )
+                ready = _shared_support(o, weight)
+                if coordinator is not None:
+                    ready = (
+                        ready
+                        and t - entered >= coordinator.motion.duration
+                        and np.linalg.norm(position("A") - transfer) < 0.005
+                    )
             elif name == "release_A":
                 ready = (
-                    o["A_normal_n"] < 0.01
+                    o["A_normal_n"] + o.get("A_link_normal_n", 0.0) < 0.01
                     and o["B_both_normal_n"] > 0.20
                     and o["B_up_n"] > 0.3 * weight
                     and o["bottom_m"] > 0.012
@@ -465,8 +497,8 @@ def run_handoff(
                 )
             else:
                 ready = (
-                    o["A_normal_n"] < 0.01
-                    and o["B_normal_n"] < 0.01
+                    o["A_normal_n"] + o.get("A_link_normal_n", 0.0) < 0.01
+                    and o["B_normal_n"] + o.get("B_link_normal_n", 0.0) < 0.01
                     and o["table_up_n"] > 0.35 * weight
                     and o["cloth_center_x_m"] - release_x > 0.03
                 )
@@ -483,7 +515,10 @@ def run_handoff(
                     trace.update(completed=True, time_s=t)
                     emit("placed", t, o)
                     break
-                if name == "lift_A" and track_material:
+                if name == "lift_A" and coordinator is not None:
+                    coordinator.join(position("A"), position("B"))
+                    edge_target = coordinator.anchor
+                elif name == "lift_A" and track_material:
                     edge_target = visible_target
                 elif name == "lift_A":
                     bhold = state.domains["cloth"].position[case.receiver_nodes].mean(axis=0)[

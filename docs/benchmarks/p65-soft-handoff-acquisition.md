@@ -29,3 +29,9 @@
 | 2° | A/B 在 0.90 s 时真实共同承载。0.94 s A 松开，B 独立承担 0.289 N。B 搬运阶段的布心水平位移峰值为 9.13 cm，末帧仍比接管时前进 7.92 cm。末帧双指法向力为 0.454/0.389 N，布最低点 68.88 mm，桌面载荷为零。 | 2.04 s 工具与目标相差约 5.08 mm，原门槛为 5 mm。原 1.1 s 搬运窗口已满，未进入放置。 |
 
 证据位于 `artifacts/p65-collision-m4-loads-local-20261102-01/with-material-feedback-v1/`。原始运行 `103/104`、独立承载和材料审计 `105/106/108`、首次拒绝的定位 `110` 均已保存。指垫跟踪改善了接取和独立搬运。完整系统仍要求在同一条物理轨迹上完成放台与撤爪。下一对照让 A 先独立抬布，在可观测的交接位置保持，由 B 取得载荷后再协同运动到原转运高度，仍使用原夹爪、电机、材料、超时与位置门槛。
+
+## 协同接取的对照设置
+
+选项 `--receiver-control cooperative` 要求 A 实际独立承载且布离台两个连续帧，B 保持原开口和起始工具目标。A 在观测到的位置等候，B 只在两个有限前表面内选取材料地址。原双指压力、双方垂直承载、桌面卸载条件达到后，两只工具从各自实测位置同步送往转运高度，再允许 A 松开。共同运动的峰值工具速度取原 A 转运曲线的峰值，原阶段超时和 5 mm 到位门槛保持。连杆夹带的布料载荷也计入 A 单独夹起及最终完全松开的观测。两只夹爪在交接前都失去布料时记录真实失败，避免继续追赶无主的材料点。[运动指令和可重复控制](../../tests/test_cooperative_grasp_transfer.py) · [布面–结构连杆独立验收](p65-cloth-link-response.md)
+
+完整新装配入口为 `python examples/compliant_cloth.py --case handoff --robot articulated-palm --fabric soft --receiver-control cooperative --initial-tilt-deg 2 --output soft-mounted-tilted.json.gz`。竖直对照使用 `--initial-tilt-deg 0`。两个初态都需要真实动力学通过全部阶段。

@@ -52,8 +52,8 @@ def main():
     )
     parser.add_argument(
         "--receiver-control",
-        choices=("snapshot", "material"),
-        help="hold the initial world target or follow the observed material through finite jaws",
+        choices=("snapshot", "material", "cooperative"),
+        help="hold the initial target, follow the material, or acquire and transport cooperatively",
     )
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()

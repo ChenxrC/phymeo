@@ -312,7 +312,14 @@ def run_handoff(
         trace["receiver_control"] = receiver_control
     if receiver_control == "cooperative":
         coordinator = CooperativeReception(
-            case.receiver_nodes, case.dt, weight, reserve, a0, b0, transfer
+            case.receiver_nodes,
+            case.dt,
+            weight,
+            reserve,
+            a0,
+            b0,
+            transfer,
+            layer_width=finger_layer.width_m,
         )
         trace["coordination_events"] = coordinator.events
 
@@ -426,7 +433,7 @@ def run_handoff(
                         and coordinator is not None
                         and case.program.cloth_links is not None
                         and receiver_observation is not None
-                        and receiver_observation["action"] in ("approach", "track")
+                        and receiver_observation["action"] in ("stage", "approach", "track")
                     ):
                         controls[arm] = coordinator.drive_approach(
                             arm,

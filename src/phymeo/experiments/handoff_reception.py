@@ -5,7 +5,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from ..control.grasp_transfer import PairedTransport, SoloLiftHold, bounded_approach
-from ..control.material_grasp import ParallelJawWindow
+from ..control.material_grasp import MaterialEdgeStandoff, ParallelJawWindow
 from ..core.capabilities import SolverFailure
 from ..core.robot import RobotState
 from ..core.scene import SceneState
@@ -42,12 +42,18 @@ class GripMotion:
 
 
 class CooperativeReception:
-    def __init__(self, nodes, dt, weight, clearance, donor_home, receiver_home, transfer):
+    def __init__(
+        self, nodes, dt, weight, clearance, donor_home, receiver_home, transfer, *, layer_width=0.0
+    ):
         self.nodes = nodes
         self.dt = dt
         self.weight = weight
         self.clearance = clearance
         self.home = receiver_home.copy()
+        if not np.isfinite(layer_width) or layer_width < 0:
+            raise ValueError("contact layer width must be finite and nonnegative")
+        self.standoff_clearance = clearance + layer_width
+        self.standoff = None
         self.transfer = transfer.copy()
         travel = np.linalg.norm(transfer - donor_home)
         self.peak_speed = 1.5 * travel / 0.55
@@ -143,11 +149,10 @@ class CooperativeReception:
         if phase == "lift_A":
             waiting = self.solo.position is None
             parked = self.solo.observe(a, _solo_support(m, self.weight))
-            if parked is None:
-                return GripMotion(donor_default, self.home, False)
-            if waiting:
-                self._event("solo_lift_held", frame)
-            donor_default = parked
+            if parked is not None:
+                if waiting:
+                    self._event("solo_lift_held", frame)
+                donor_default = parked
         x = np.asarray(frame["cloth_position_m"])
         v = np.asarray(frame["cloth_velocity_m_s"])
         patches = frame["patch_vertices_m"]
@@ -166,11 +171,40 @@ class CooperativeReception:
             )
             return GripMotion(donor_default, target, closed, receiver_rate=rate)
 
+        if phase == "lift_A" and self.solo.position is None:
+            if self.standoff is None:
+                self.standoff = MaterialEdgeStandoff.from_window(
+                    x, self.nodes, window.center, [0, 1, 0]
+                )
+            if self.standoff is None:
+                cmd = approach(window.center, np.zeros(3), False)
+                cmd.observation = dict(
+                    action="stage",
+                    reason="no_exterior_direction",
+                    tool_velocity_command_m_s=cmd.receiver_rate.tolist(),
+                )
+                return cmd
+            reserve = window.outer_radius + self.standoff_clearance
+            goal = self.standoff.point(x, reserve)
+            predicted = self.standoff.point(x + self.dt * v, reserve)
+            cmd = approach(goal, (predicted - goal) / self.dt, False)
+            cmd.observation = dict(
+                action="stage",
+                standoff_direction=list(self.standoff.direction),
+                exterior_point_m=goal.tolist(),
+                material_point_m=self.standoff.target.evaluate(x).tolist(),
+                material_velocity_m_s=self.standoff.target.evaluate(v).tolist(),
+                tool_velocity_command_m_s=cmd.receiver_rate.tolist(),
+            )
+            return cmd
         if self.anchor is None:
-            visible = window.acquire(x, self.nodes)
-            p = x[self.nodes].mean(0) if visible is None else visible.evaluate(x)
-            vel = v[self.nodes].mean(0) if visible is None else visible.evaluate(v)
-            if visible is None or np.linalg.norm(b - p[[0, 2]]) >= 0.005:
+            visible = window.acquire(x, self.nodes, clearance=self.clearance)
+            if visible is None:
+                if self.standoff is None:
+                    p, vel = x[self.nodes].mean(0), v[self.nodes].mean(0)
+                else:
+                    p = self.standoff.target.evaluate(x)
+                    vel = self.standoff.target.evaluate(v)
                 cmd = approach(p, vel, False)
                 cmd.observation = dict(
                     action="approach",

@@ -12,6 +12,21 @@ def _points(values):
     return points
 
 
+def _edge_indices(edge_nodes, positions):
+    ids = np.asarray(edge_nodes)
+    if (
+        ids.ndim != 1
+        or len(ids) < 2
+        or ids.dtype.kind not in "iu"
+        or ids.min() < 0
+        or ids.max() >= len(positions)
+    ):
+        raise ValueError("an ordered material edge needs two or more valid node indices")
+    if len(set(ids.tolist())) != len(ids):
+        raise ValueError("repeated material edge node")
+    return ids
+
+
 @dataclass(frozen=True)
 class MaterialEdgeTarget:
     """A fixed point on a material segment. Evaluation also interpolates velocities."""
@@ -36,6 +51,56 @@ class MaterialEdgeTarget:
     def evaluate(self, values):
         a, b = _points(values)[list(self.nodes)]
         return a + self.fraction * (b - a)
+
+
+@dataclass(frozen=True)
+class MaterialEdgeStandoff:
+    """A boundary address and a fixed exterior approach direction in the tool motion plane."""
+
+    target: MaterialEdgeTarget
+    direction: tuple[float, float, float]
+
+    @classmethod
+    def from_window(cls, positions, edge_nodes, center, plane_normal):
+        x = _points(positions)
+        ids = _edge_indices(edge_nodes, x)
+        center, normal = _points([center, plane_normal])
+        normal_length = np.linalg.norm(normal)
+        if normal_length == 0.0:
+            raise ValueError("the tool motion plane needs a nonzero normal")
+        normal = normal / normal_length
+        in_plane = np.eye(3) - np.outer(normal, normal)
+        distance = float("inf")
+        best = None
+        for first, second in zip(ids[:-1], ids[1:], strict=True):
+            tangent = in_plane @ (x[second] - x[first])
+            delta = in_plane @ (center - x[first])
+            length2 = float(tangent @ tangent)
+            station = float(delta @ tangent) / length2 if length2 else 0.0
+            fraction = float(np.clip(station, 0.0, 1.0))
+            residual = delta - fraction * tangent
+            if length2:
+                perpendicular = np.cross(normal, tangent) / np.sqrt(length2)
+                outward = (delta @ perpendicular) * perpendicular
+            else:
+                outward = delta
+            length = np.linalg.norm(outward)
+            score = float(residual @ residual)
+            if length <= 128 * np.finfo(float).eps * max(1.0, np.linalg.norm(delta)):
+                continue
+            if score < distance:
+                best = cls(MaterialEdgeTarget((first, second), fraction), tuple(outward / length))
+                distance = score
+        return best
+
+    def point(self, positions, reserve):
+        """Keep the pad envelope beyond the support plane of every current cloth vertex."""
+        if not np.isfinite(reserve) or reserve < 0:
+            raise ValueError("exterior standoff reserve must be finite and nonnegative")
+        x = _points(positions)
+        p = self.target.evaluate(x)
+        direction = np.asarray(self.direction)
+        return p + direction * (np.max((x - p) @ direction) + reserve)
 
 
 class ParallelJawWindow:
@@ -70,6 +135,9 @@ class ParallelJawWindow:
             normals.append(normal)
             planes.extend(zip(sides, face, strict=True))
             margins.extend(np.einsum("ij,ij->i", self.center - face, sides))
+        self.outer_radius = float(
+            max(np.linalg.norm(face - self.center, axis=1).max() for face in faces)
+        )
         self.axis = normals[0]
         if np.linalg.norm(np.cross(self.axis, normals[1])) > 1e-10:
             raise ValueError("parallel finger fronts required")
@@ -80,20 +148,12 @@ class ParallelJawWindow:
         if self.radius <= 0:
             raise ValueError("finger fronts lack a common interior around their midpoint")
 
-    def acquire(self, positions, edge_nodes):
+    def acquire(self, positions, edge_nodes, *, clearance=0.0):
         """Choose the nearest visible point on the supplied material polyline inside both faces."""
         positions = _points(positions)
-        ids = np.asarray(edge_nodes)
-        if (
-            ids.ndim != 1
-            or len(ids) < 2
-            or ids.dtype.kind not in "iu"
-            or ids.min() < 0
-            or ids.max() >= len(positions)
-        ):
-            raise ValueError("an ordered material edge needs two or more valid node indices")
-        if len(set(ids.tolist())) != len(ids):
-            raise ValueError("repeated material edge node")
+        ids = _edge_indices(edge_nodes, positions)
+        if not np.isfinite(clearance) or not 0 <= clearance < self.radius:
+            raise ValueError("clearance must leave an interior on both finger fronts")
         best = None
         distance = float("inf")
         for first, second in zip(ids[:-1], ids[1:], strict=True):
@@ -104,6 +164,8 @@ class ParallelJawWindow:
                 continue
             start = np.einsum("ij,ij->i", a - self._offsets, self._normals)
             end = np.einsum("ij,ij->i", b - self._offsets, self._normals)
+            start[:-2] -= clearance
+            end[:-2] -= clearance
             if np.any((start < 0) & (end < 0)):
                 continue
             enter = start < 0

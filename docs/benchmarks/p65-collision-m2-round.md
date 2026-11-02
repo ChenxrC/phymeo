@@ -57,4 +57,4 @@ python -m pytest tests/collision/test_tyx_round_collision.py tests/collision/tes
 python -m pytest tests/collision/test_tyx_round_collision.py tests/collision/test_tyx_collision_pipeline.py -q -p no:cacheprovider --tyx-mode=cuda --require-tyx
 ```
 
-下一批以 RD01 的整面首触为入口，再接 DD01/DD02 的点–面、边–边及 RR03–RR05 的其余刚体配对。[多案例实施计划](../superpowers/plans/2026-11-02-p65-tyx-collision-pipeline.md)
+随后交付的 [RD01](p65-collision-m2-sphere-face.md) 已支持整张变形三角面的首触。DD01/DD02 的点–面、边–边及 RR03–RR05 的其余刚体配对仍待接入。[多案例实施计划](../superpowers/plans/2026-11-02-p65-tyx-collision-pipeline.md)

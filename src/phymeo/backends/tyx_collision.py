@@ -9,15 +9,23 @@ class TyxCollisionBatch:
     def __init__(self, mode, offsets, tags, pairs, cache_root):
         import tyx as tx
 
-        from ._tyx_collision_kernels import classify_pairs, reduce_bounds, round_entry_times
+        from ._tyx_collision_kernels import (
+            classify_pairs,
+            reduce_bounds,
+            round_entry_times,
+            surface_entry_times,
+        )
 
         self._tx = tx
         self._mode = mode
         self._reduce, self._classify = reduce_bounds, classify_pairs
         self._count, self._pair_count = len(tags), len(pairs)
-        self._round_entries = round_entry_times
-        self._sweep_host = None
+        self._entry_kernels = {5: round_entry_times, 28: surface_entry_times}
+        self._entry_storage = {}
         self._sweep_counts = dict(
+            surface_features=0,
+            surface_completed_launches=0,
+            surface_proposed_hits=0,
             sweep_allocations=0,
             sweep_features=0,
             sweep_launches=0,
@@ -119,47 +127,60 @@ class TyxCollisionBatch:
         """Batch all active features using fixed-size pages across queries."""
         if not features:
             return []
+        groups = {}
+        for index, f in enumerate(features):
+            packed = f.packed()
+            groups.setdefault(len(packed), []).append((index, packed))
+        results = [None] * len(features)
+        counts = self._sweep_counts
         with self._tx.use_runtime(self._runtime):
-            if self._sweep_host is None:
-                capacity = min(512, 9 * self._pair_count)
-                self._sweep_host = np.zeros((capacity, 5), dtype=np.float32)
-                self._sweep_inputs = self._scratch((capacity, 5), np.float32)
-                self._sweep_output = self._scratch((capacity,), np.float32)
-                self._sweep_counts["sweep_allocations"] += 2
-            results = []
-            capacity = len(self._sweep_host)
-            counts = self._sweep_counts
-            for offset in range(0, len(features), capacity):
-                page = features[offset : offset + capacity]
-                for i, feature in enumerate(page):
-                    self._sweep_host[i] = feature.packed()
-                if self._mode == "cuda":
-                    self._sweep_inputs.copy_from(self._sweep_host)
-                    counts["sweep_uploads"] += 1
-                    counts["sweep_uploaded_bytes"] += self._sweep_host.nbytes
-                else:
-                    np.copyto(self._sweep_inputs[: len(page)], self._sweep_host[: len(page)])
-                counts["sweep_launches"] += 1
-                self._round_entries(
-                    len(page), self._sweep_inputs, self._sweep_output, mode=self._mode
-                )
-                if self._mode == "cuda":
-                    self._runtime.sync()
-                    counts["sweep_synchronizations"] += 1
-                    raw = self._sweep_output.to_numpy()
-                    counts["sweep_downloads"] += 1
-                    counts["sweep_downloaded_bytes"] += raw.nbytes
-                else:
-                    raw = self._sweep_output
-                active = raw[: len(page)]
-                if not np.isfinite(active).all() or np.any(
-                    (active != -1) & ((active < 0) | (active > 1))
-                ):
-                    raise RuntimeError("invalid tyx round entry proposal")
-                results.extend(map(float, active))
-                counts["sweep_proposed_hits"] += int(np.count_nonzero(active >= 0))
-                counts["sweep_features"] += len(page)
-                counts["sweep_completed_launches"] += 1
+            for width, rows in groups.items():
+                kernel = self._entry_kernels[width]
+                if width not in self._entry_storage:
+                    cap = min(512, 9 * self._pair_count)
+                    host = np.zeros((cap, width), dtype=np.float32)
+                    self._entry_storage[width] = (
+                        host,
+                        self._scratch(host.shape, np.float32),
+                        self._scratch((cap,), np.float32),
+                    )
+                    counts["sweep_allocations"] += 2
+                host, inputs, output = self._entry_storage[width]
+                for offset in range(0, len(rows), len(host)):
+                    page = rows[offset : offset + len(host)]
+                    for i, (_, packed) in enumerate(page):
+                        host[i] = packed
+                    if self._mode == "cuda":
+                        inputs.copy_from(host)
+                        counts["sweep_uploads"] += 1
+                        counts["sweep_uploaded_bytes"] += host.nbytes
+                    else:
+                        np.copyto(inputs[: len(page)], host[: len(page)])
+                    counts["sweep_launches"] += 1
+                    kernel(len(page), inputs, output, mode=self._mode)
+                    if self._mode == "cuda":
+                        self._runtime.sync()
+                        counts["sweep_synchronizations"] += 1
+                        raw = output.to_numpy()
+                        counts["sweep_downloads"] += 1
+                        counts["sweep_downloaded_bytes"] += raw.nbytes
+                    else:
+                        raw = output
+                    active = raw[: len(page)]
+                    if not np.isfinite(active).all() or np.any(
+                        (active != -1) & ((active < 0) | (active > 1))
+                    ):
+                        raise RuntimeError("invalid tyx feature entry proposal")
+                    for (index, _), seed in zip(page, active, strict=True):
+                        results[index] = float(seed)
+                    proposed = int(np.count_nonzero(active >= 0))
+                    counts["sweep_proposed_hits"] += proposed
+                    counts["sweep_features"] += len(page)
+                    counts["sweep_completed_launches"] += 1
+                    if width == 28:
+                        counts["surface_features"] += len(page)
+                        counts["surface_proposed_hits"] += proposed
+                        counts["surface_completed_launches"] += 1
         return results
 
     def stats(self):

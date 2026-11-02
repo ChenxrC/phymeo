@@ -96,7 +96,11 @@ def verify_mixed(result, keys, expected):
     pairs = {(p.first, p.second): p for p in result.pairs}
     for i, j, f in ((0, 1, "RR"), (2, 3, "RD"), (4, 5, "DD")):
         a = pairs[keys[i], keys[j]]
-        assert a.family == f and a.candidate and a.status == "unsupported"
+        assert a.family == f and a.candidate
+        if f == "RD":
+            assert a.status == "hit" and a.sweep.first_t == (0.25, 0.25)
+        else:
+            assert a.status == "unsupported"
     assert pairs[keys[4], keys[10]].candidate
     assert result.required_candidates == sum(v == "candidate" for v in expected.values())
 

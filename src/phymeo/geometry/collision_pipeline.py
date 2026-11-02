@@ -16,6 +16,7 @@ from ..constraints.collision_shapes import (
 )
 from ..core.capabilities import SolverFailure
 from ._round_sweep import round_query, sweep_result
+from ._sphere_triangle_sweep import sphere_face_query
 from .collision_witness import CollisionSweep, CollisionWitness
 from .surface_features import closest_point_triangle
 
@@ -209,6 +210,8 @@ def _pair(a, b, ma, mb, code, analytic, seeds):
                         sweep,
                     )
                 witness, signed = analytic.sample(Fraction(0))
+        except SolverFailure as error:
+            return CollisionPair(*fields, True, "unresolved", str(error))
         except (OverflowError, FloatingPointError):
             return CollisionPair(*fields, True, "unresolved", "witness_outside_fp64")
         status = "overlap" if signed < 0 else "touching" if signed == 0 else "separated"
@@ -253,7 +256,9 @@ def _detect_pairs(workspace, paths, flags):
             a, b = shapes[i], shapes[j]
             ma, mb = paths[a.key], paths[b.key]
             code = int(flags[offset + local])
-            analytic = None if code else round_query(a, b, ma, mb)
+            analytic = None
+            if not code:
+                analytic = round_query(a, b, ma, mb) or sphere_face_query(a, b, ma, mb)
             begin = len(features)
             if analytic is not None and (ma.moving or mb.moving):
                 features.extend(analytic.features)
@@ -344,8 +349,8 @@ class CollisionWorkspace:
 def detect(model, motion, policy, workspace):
     """Query every registered pair. Never publish a partial or over-capacity result.
 
-    The selected backend supplies the broad phase and, for supported translating
-    round pairs, entry proposals. Stored-coordinate feature tests bound the first event.
+    The selected backend supplies the broad phase and, for supported swept
+    features, entry proposals. Stored-coordinate feature tests bound the first event.
     """
     if not isinstance(workspace, CollisionWorkspace) or workspace._model is not model:
         raise ValueError("workspace is bound to a different collision model")

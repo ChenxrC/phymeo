@@ -82,3 +82,25 @@ def round_entry_times(count: tx.i32, rows: tx.ndarray(tx.f32, 2), entry: tx.ndar
                         before = middle
                 answer = after
         entry[i] = answer
+
+
+@tx.kernel
+def surface_entry_times(count: tx.i32, rows: tx.ndarray(tx.f32, 2), entry: tx.ndarray(tx.f32, 1)):
+    # Earliest sampled feasible time of a vertex, edge or face. The exact
+    # adjudicator also checks intervals between samples and repeated roots.
+    for i in tx.range(count):
+        answer = -1.0
+        for tick in range(17):
+            if answer < 0.0:
+                t = tick * 0.0625
+                feasible = 1
+                for condition in tx.static_range(4):
+                    base = condition * 7
+                    val = rows[i, base + 6]
+                    for k in tx.static_range(6):
+                        val = val * t + rows[i, base + 5 - k]
+                    if val < 0.0:
+                        feasible = 0
+                if feasible != 0:
+                    answer = t
+        entry[i] = answer

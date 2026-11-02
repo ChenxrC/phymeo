@@ -1,18 +1,16 @@
 """M0 baselines for the first independent RR, RD and DD catalog cases."""
 
 import json
-from copy import deepcopy
 from math import asin, cos, hypot, pi, radians, sin
-from pathlib import Path
 
 import numpy as np
 import pytest
+from case_catalog import catalog_entries, geometry_for
 from case_oracles import crossing_edges, rotating_capsule, sphere_face
 
 from phymeo import closest_point_triangle, closest_segment_segment, linear_feature_sweep
 from phymeo.geometry.capsule import closest_segment_points
 
-CATALOG = Path(__file__).resolve().parents[2] / "docs/benchmarks/p65-general-collision-cases.json"
 # Fixed before observing the geometry measurements. Coordinates are in metres.
 GAP_M = 1e-5
 TIME_T = 1e-4
@@ -21,16 +19,6 @@ RUNS = {
     "RD01": ("base", "clear", "permuted", "holdout", "holdout_permuted"),
     "DD02": ("base", "clear", "swap_reverse", "holdout"),
 }
-
-
-def catalog_entries():
-    document = json.loads(CATALOG.read_text(encoding="utf-8"))
-    assert document["schema"] == "phymeo-general-collision-cases/1"
-    entries = {row["id"]: row for row in document["cases"]}
-    assert len(entries) == len(document["cases"])
-    expected = {f"{family}{i:02d}" for family in ("RR", "RD", "DD") for i in range(1, 6)}
-    assert expected <= entries.keys()
-    return entries
 
 
 @pytest.mark.parametrize("case_id", RUNS)
@@ -42,24 +30,6 @@ def test_catalog_binds_executable_controls_and_holdouts(case_id):
     assert variants[0]["changes"] == {}
     assert all(v["relation"] in {"hit", "clear"} for v in variants)
     assert {v["relation"] for v in variants} == {"hit", "clear"}
-
-
-def geometry_for(case_id, variant_name):
-    case = catalog_entries()[case_id]
-    variant = next(v for v in case["m0_variants"] if v["name"] == variant_name)
-    geometry = deepcopy(case["geometry"])
-    for side, fields in variant["changes"].items():
-        assert fields.keys() <= geometry[side].keys()
-        geometry[side].update(fields)
-    for side in ("A", "B"):
-        if order := variant.get("order_" + side):
-            assert sorted(order) == [0, 1, 2]
-            for field in ("vertices", "vertices_start", "vertices_end"):
-                if field in geometry[side]:
-                    geometry[side][field] = [geometry[side][field][i] for i in order]
-    if variant.get("swap"):
-        geometry["A"], geometry["B"] = geometry["B"], geometry["A"]
-    return case, variant, geometry
 
 
 def assert_expected(variant, reference, expected_time):

@@ -202,6 +202,10 @@ def _pair(a, b, ma, mb, code, analytic, seeds):
                 if ma.moving or mb.moving:
                     witness, sweep = sweep_result(analytic, seeds)
                     hit = sweep.first_t is not None
+                    if not hit and witness.shared_only:
+                        return CollisionPair(
+                            *fields, True, "adjacent", "shared_material_only", witness, sweep
+                        )
                     return CollisionPair(
                         *fields,
                         True,
@@ -215,6 +219,12 @@ def _pair(a, b, ma, mb, code, analytic, seeds):
             return CollisionPair(*fields, True, "unresolved", str(error))
         except (OverflowError, FloatingPointError):
             return CollisionPair(*fields, True, "unresolved", "witness_outside_fp64")
+        if witness.shared_only:
+            return CollisionPair(*fields, True, "adjacent", "shared_material_only", witness)
+        if witness.shared_material_points and witness.intersection_points:
+            return CollisionPair(
+                *fields, True, "touching", "distinct_material_intersection", witness
+            )
         status = "overlap" if signed < 0 else "touching" if signed == 0 else "separated"
         return CollisionPair(
             *fields,

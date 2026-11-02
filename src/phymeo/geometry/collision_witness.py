@@ -29,9 +29,14 @@ class CollisionWitness:
     # World-frame tangent displacement from the moving anchor of an infinite plane.
     first_offset: tuple[float, ...] | None = None
     second_offset: tuple[float, ...] | None = None
-    # For zero-thickness triangle pairs the convex hull of these points is the
-    # sampled intersection. Record order follows material IDs, not boundary winding.
+    # The convex hull of both groups is the sampled triangle intersection.
+    # Only intersection_points have distinct material preimages.
     intersection_points: tuple[MaterialContactPoint, ...] = ()
+    shared_material_points: tuple[MaterialContactPoint, ...] = ()
+
+    @property
+    def shared_only(self):
+        return bool(self.shared_material_points) and not self.intersection_points
 
 
 @dataclass(frozen=True)
@@ -43,3 +48,6 @@ class CollisionSweep:
     first_t: tuple[float, float] | None
     witness_time: float | None
     witness: CollisionWitness | None
+    # For an isolated incident hit the representable sample time can have only
+    # adjacency. These separate material points are evaluated at that same time.
+    feature_witness: CollisionWitness | None = None

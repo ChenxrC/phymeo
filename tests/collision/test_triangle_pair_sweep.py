@@ -189,7 +189,7 @@ def test_edges_become_parallel_without_contact():
     assert row.sweep.start_gap_m >= 1 and row.witness.gap_m >= 1
 
 
-def test_degenerate_thick_and_incident_pairs_stay_explicit():
+def test_degenerate_thick_and_partial_material_overlap_are_distinguished():
     a = [[-1, 0, 0], [1, 0, 0], [0, 1, 0]]
     b = [[-1, 0, 0.25], [1, 0, 0.25], [0, 1, 0.25]]
     model, paths = scene(a, [[-1, 0, 0], [1, 0, 0], [0, -1, 0]], b, [[x, y, -z] for x, y, z in b])
@@ -207,4 +207,15 @@ def test_degenerate_thick_and_incident_pairs_stay_explicit():
     unchanged = ph.CollisionMotion(a)
     same_paths = {first.key: unchanged, other: ph.CollisionMotion([a[0], [0, 1, 0], [0, 0, 1]])}
     row = query(same, same_paths)
-    assert row.candidate and row.status == "unsupported"
+    # Their first node has the same material ID. The other endpoint of the
+    # coincident edge has ID 3 on the first face and ID 19 on the second.
+    assert (
+        row.candidate
+        and row.status == "touching"
+        and row.reason == "distinct_material_intersection"
+    )
+    (shared,) = row.witness.shared_material_points
+    (remote,) = row.witness.intersection_points
+    assert shared.point == (-1.0, 0.0, 0.0) and remote.point == (0.0, 1.0, 0.0)
+    assert dict(remote.first_weights)[3] == dict(remote.second_weights)[19] == 1.0
+    assert row.witness.first_point == row.witness.second_point == (-0.5, 0.5, 0.0)

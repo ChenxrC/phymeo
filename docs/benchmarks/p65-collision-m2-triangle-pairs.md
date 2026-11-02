@@ -1,6 +1,6 @@
 # M2-DD 首批 · 两张独立布面的首次接触
 
-`phymeo.detect` 支持不同物体上的两张双侧、零厚三角面。每个顶点可以独立作仿射运动。静态查询返回最近点、实际交集和两侧材料权重。扫掠查询还返回首次接触时间区间，与步末间隙分开保存。同体邻接留给 DD03，有限厚度留给后续壳表面。两者在宽相入选时继续明确返回 `unsupported`。[实现](../../src/phymeo/geometry/_triangle_pair_sweep.py) · [公开几何记录](../../src/phymeo/geometry/collision_witness.py)
+`phymeo.detect` 支持不同物体上的两张双侧、零厚三角面。每个顶点可以独立作仿射运动。静态查询返回最近点、实际交集和两侧材料权重。扫掠查询还返回首次接触时间区间，与步末间隙分开保存。本节记录异体零厚面验收。[随后验收的 DD03](p65-collision-m2-cloth-adjacency.md) 补齐了同体邻接。有限厚度仍有独立支持范围。[实现](../../src/phymeo/geometry/_triangle_pair_sweep.py) · [公开几何记录](../../src/phymeo/geometry/collision_witness.py)
 
 ```python
 import phymeo as ph
@@ -60,4 +60,4 @@ python -m pytest tests/collision/test_tyx_triangle_pair_sweep.py tests/collision
 python -m pytest tests/collision/test_tyx_triangle_pair_sweep.py tests/collision/test_tyx_collision_pipeline.py tests/collision/test_tyx_round_collision.py tests/collision/test_tyx_sphere_face_sweep.py -q -p no:cacheprovider --tyx-mode=cuda --require-tyx
 ```
 
-下一批为 DD03，同一张布上的共享顶点或共享边需要区分合法邻接与远离该材料特征的真实相交。[多案例实施计划](../superpowers/plans/2026-11-02-p65-tyx-collision-pipeline.md)
+[DD03](p65-collision-m2-cloth-adjacency.md) 已验收合法邻接与异处相交，下一批补四面体外边界及所属单元地址。[多案例实施计划](../superpowers/plans/2026-11-02-p65-tyx-collision-pipeline.md)

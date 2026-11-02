@@ -273,7 +273,7 @@ def round_query(a, b, ma, mb):
 def sweep_result(query, proposals):
     start, signed_start = query.sample(_ZERO)
     end, _ = query.sample(_ONE)
-    if signed_start <= 0:
+    if signed_start <= 0 and not start.shared_only:
         return end, CollisionSweep(start.gap_m, end.gap_m, (0.0, 0.0), 0.0, start)
     entries = [
         bound
@@ -287,4 +287,5 @@ def sweep_result(query, proposals):
     hi = min(x[1] for x in entries) / _GRID
     sample_time = (lo + hi) / 2
     witness, _ = query.sample(Fraction(sample_time))
-    return end, CollisionSweep(start.gap_m, end.gap_m, (lo, hi), sample_time, witness)
+    feature = query.event_witness(Fraction(sample_time)) if witness.shared_only else None
+    return end, CollisionSweep(start.gap_m, end.gap_m, (lo, hi), sample_time, witness, feature)

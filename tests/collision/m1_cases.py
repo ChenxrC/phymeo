@@ -103,7 +103,12 @@ def verify_mixed(result, keys, expected):
             assert a.status == "hit" and a.sweep.first_t == (0.5, 0.5)
         else:
             assert a.status == "unsupported"
-    assert pairs[keys[4], keys[10]].candidate
+    adjacent = pairs[keys[4], keys[10]]
+    assert adjacent.candidate and adjacent.status == "adjacent" and adjacent.sweep.first_t is None
+    assert (
+        not adjacent.witness.intersection_points
+        and len(adjacent.witness.shared_material_points) == 2
+    )
     assert result.required_candidates == sum(v == "candidate" for v in expected.values())
 
 

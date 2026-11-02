@@ -4,6 +4,7 @@ import argparse
 import json
 from pathlib import Path
 
+from phymeo.experiments.cloth_drape import run_drape
 from phymeo.experiments.compliant_cloth import run_impact
 from phymeo.experiments.compliant_handoff import run_handoff
 
@@ -11,7 +12,7 @@ from phymeo.experiments.compliant_handoff import run_handoff
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "--case", required=True, choices=("impact", "support", "handoff", "no-grip")
+        "--case", required=True, choices=("impact", "support", "handoff", "no-grip", "drape")
     )
     parser.add_argument(
         "--robot",
@@ -19,14 +20,30 @@ def main():
         default="cartesian",
         help="gripper layout for handoff/no-grip",
     )
+    parser.add_argument(
+        "--fabric",
+        choices=("reference", "soft"),
+        help="handoff or drape fabric; reference preserves the original handoff",
+    )
+    parser.add_argument(
+        "--initial-tilt-deg",
+        type=float,
+        default=0.0,
+        help="physical initial sheet angle from vertical in handoff/no-grip",
+    )
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     if args.output.exists():
         parser.error("output already exists")
+    handoff = args.case in ("handoff", "no-grip")
+    if not handoff and (args.robot != "cartesian" or args.initial_tilt_deg != 0.0):
+        parser.error("robot layout and sheet tilt apply only to handoff/no-grip")
     if args.case in ("impact", "support"):
-        if args.robot != "cartesian":
-            parser.error("--robot applies to handoff/no-grip")
+        if args.fabric is not None:
+            parser.error("--fabric applies to handoff/no-grip and drape")
         trace = run_impact(support=args.case == "support")
+    elif args.case == "drape":
+        trace = run_drape(fabric=args.fabric or "soft")
     else:
 
         def progress(phase, time):
@@ -36,6 +53,8 @@ def main():
             grip_friction=0.0 if args.case == "no-grip" else 0.9,
             robot=args.robot,
             progress=progress,
+            fabric=args.fabric or "reference",
+            initial_tilt_deg=args.initial_tilt_deg,
         )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     with args.output.open("x", encoding="utf-8") as stream:

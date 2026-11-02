@@ -4,9 +4,6 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from ..constraints.bending import BendingConstraints, bending_angle_gradient
-from ..constraints.cloth_material import ClothMaterial
-from ..constraints.distance import DistanceConstraints
 from ..constraints.robot_contact import CollisionPlane
 from ..constraints.robot_contact_patch import RobotContactPatch
 from ..constraints.triangle_prism_surface import TrianglePrismSurface
@@ -15,10 +12,21 @@ from ..core.model import ParticleModel
 from ..core.robot import RobotInputs
 from ..core.scene import DomainBinding, SceneInputs, SceneModel, SceneState, StepSettings
 from ..core.state import ParticleState, StepInputs
+from ..core.validation import finite_real
 from ..dynamics.robot_contact import RobotContactSystem
 from ..solvers.compliant_cloth_contact import CompliantClothContactProgram, CompliantPatch
 from .compliant_cloth import Case, record_step, trace_start
 from .handoff_grippers import BASE_Z, CLOSED, Gripper, grippers_for
+from .sheet_fabric import (
+    HALF_THICKNESS_M,
+    HEIGHT_M,
+    MASS_KG,
+    SheetFabric,
+    checked_grid,
+    fabric_preset,
+    material_for_sheet,
+    sheet_grid,
+)
 
 PHASES = ("grasp_A", "lift_A", "share", "release_A", "carry_B", "lower_B", "open_B", "settle")
 
@@ -26,38 +34,29 @@ PHASES = ("grasp_A", "lift_A", "share", "release_A", "carry_B", "lower_B", "open
 @dataclass
 class HandoffCase(Case):
     grippers: dict[str, Gripper]
+    receiver_nodes: np.ndarray
+    fabric: SheetFabric
+    grid: tuple[int, int]
+    initial_tilt_deg: float
 
 
-def _cloth_material(x, faces):
-    sides = {}
-    for a, b, c in faces:
-        for i, j, k in ((a, b, c), (b, c, a), (c, a, b)):
-            sides.setdefault(tuple(sorted((i, j))), []).append((i, j, k))
-    edges = np.array(sorted(sides))
-    hinges = []
-    for incidents in sides.values():
-        if len(incidents) == 2:
-            (a, b, c), (j, i, d) = incidents
-            if (a, b) != (i, j):
-                raise ValueError("inconsistent handoff mesh winding")
-            hinges.append((a, b, c, d))
-    hinge = np.array(hinges)
-    rest = np.array([bending_angle_gradient(x[r])[0] for r in hinge])
-    return ClothMaterial(
-        DistanceConstraints(
-            edges,
-            np.linalg.norm(x[edges[:, 1]] - x[edges[:, 0]], axis=1),
-            np.full(len(edges), 0.001),
-        ),
-        BendingConstraints(hinge, rest, np.full(len(hinge), 20.0)),
+def build_handoff(
+    *, grip_friction=0.9, robot="cartesian", fabric="reference", grid=None, initial_tilt_deg=0.0
+):
+    """Build the handoff with a fabric preset or a custom SheetFabric."""
+    fabric = fabric_preset(fabric)
+    grid = checked_grid(fabric.suggested_grid if grid is None else grid)
+    uv, faces = sheet_grid(grid)
+    initial_tilt_deg = finite_real(initial_tilt_deg, "initial_tilt_deg")
+    if abs(initial_tilt_deg) >= 90:
+        raise ValueError("initial tilt must keep the sheet above its lower edge")
+    tilt = np.deg2rad(initial_tilt_deg)
+    x = np.column_stack(
+        (uv[:, 0], uv[:, 1] * np.sin(tilt), HALF_THICKNESS_M + uv[:, 1] * np.cos(tilt))
     )
-
-
-def build_handoff(*, grip_friction=0.9, robot="cartesian"):
-    """Use a named layout or supply an A/B mapping of grippers that implement position/command."""
-    x = np.array([[a, 0.0, 0.0015 + b] for b in (0.0, 0.025, 0.05) for a in (-0.06, 0.06)])
-    faces = [(0, 1, 3), (0, 3, 2), (2, 3, 5), (2, 5, 4)]
-    cloth = ParticleModel(np.full(len(x), 1 / 0.008), np.array([0.0, 0.0, -9.81]))
+    # The receiver follows the upper half of the same material edge on any grid.
+    receiver_nodes = np.flatnonzero((uv[:, 0] == uv[:, 0].max()) & (uv[:, 1] >= HEIGHT_M / 2))
+    cloth = ParticleModel(np.full(len(x), len(x) / MASS_KG), np.array([0.0, 0.0, -9.81]))
     grippers = grippers_for(robot) if isinstance(robot, str) else dict(robot)
     if set(grippers) != {"A", "B"}:
         raise ValueError("handoff needs two robot roles A and B")
@@ -69,7 +68,7 @@ def build_handoff(*, grip_friction=0.9, robot="cartesian"):
         )
     )
     surfaces = tuple(
-        TrianglePrismSurface(f"face_{i}", "cloth", f, half_thickness_m=0.0015)
+        TrianglePrismSurface(f"face_{i}", "cloth", f, half_thickness_m=HALF_THICKNESS_M)
         for i, f in enumerate(faces)
     )
     table = RobotContactPatch(
@@ -119,7 +118,7 @@ def build_handoff(*, grip_friction=0.9, robot="cartesian"):
     program = CompliantClothContactProgram(
         scene,
         "cloth",
-        _cloth_material(x, faces),
+        material_for_sheet(x, faces, fabric),
         surfaces,
         x,
         patches,
@@ -140,7 +139,9 @@ def build_handoff(*, grip_friction=0.9, robot="cartesian"):
             **{n: RobotInputs.zeros(m.dof_count) for n, m in models.items()},
         }
     )
-    return HandoffCase(program, state, inputs, 0.01, 128, grippers)
+    return HandoffCase(
+        program, state, inputs, 0.01, 128, grippers, receiver_nodes, fabric, grid, initial_tilt_deg
+    )
 
 
 def _observations(state, row, weight):
@@ -165,12 +166,29 @@ def _travel(start, end, elapsed, duration):
     return start + (end - start) * (s * s * (3.0 - 2.0 * s))
 
 
-def run_handoff(*, grip_friction=0.9, robot="cartesian", progress=None):
-    case = build_handoff(grip_friction=grip_friction, robot=robot)
+def run_handoff(
+    *,
+    grip_friction=0.9,
+    robot="cartesian",
+    progress=None,
+    fabric="reference",
+    grid=None,
+    initial_tilt_deg=0.0,
+):
+    case = build_handoff(
+        grip_friction=grip_friction,
+        robot=robot,
+        fabric=fabric,
+        grid=grid,
+        initial_tilt_deg=initial_tilt_deg,
+    )
     layout = robot if isinstance(robot, str) else "custom"
     case_name = "handoff" if grip_friction else "no-grip"
     trace = trace_start(case, case_name if layout == "cartesian" else f"{layout}-{case_name}")
     trace["robot_layout"] = layout
+    trace["fabric"] = case.fabric.record(case.grid)
+    trace["initial_tilt_deg"] = case.initial_tilt_deg
+    trace["receiver_nodes"] = case.receiver_nodes.tolist()
     state = case.initial
     weight = float(np.sum(1 / case.program.cloth.inverse_mass) * 9.81)
     phase = 0
@@ -209,7 +227,7 @@ def run_handoff(*, grip_friction=0.9, robot="cartesian", progress=None):
         for i in range(620):
             name = PHASES[phase]
             x = state.domains["cloth"].position
-            right = x[[3, 5]].mean(axis=0)[[0, 2]]
+            right = x[case.receiver_nodes].mean(axis=0)[[0, 2]]
             elapsed = i * case.dt - entered
             at = (
                 a0
@@ -336,7 +354,9 @@ def run_handoff(*, grip_friction=0.9, robot="cartesian", progress=None):
                     emit("placed", t, o)
                     break
                 if name == "lift_A":
-                    bhold = state.domains["cloth"].position[[3, 5]].mean(axis=0)[[0, 2]] + [
+                    bhold = state.domains["cloth"].position[case.receiver_nodes].mean(axis=0)[
+                        [0, 2]
+                    ] + [
                         0.0,
                         0.003,
                     ]

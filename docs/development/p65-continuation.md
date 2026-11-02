@@ -14,7 +14,7 @@
 - **判停**：每轮必须产出新的可运行能力、真实失败证据或可复现对照；同一分支两次尝试无新证据即停下重新定位。未经证明的“更严精度”不自动阻塞已授权的工程交付。
 - **工作纪律**：父分支独占共享接口；执行串行且每次 fresh guard；不重跑同源已绿组，不恢复周期任务，不修改依赖 pin，不碰已归档证据及 Temp junction。
 
-[运行命令与公共接口](../../README.md#布料接触与搬运案例) · [交付计划](../superpowers/plans/2026-10-31-p65-delivery-replan.md) · [最终案例目标](../superpowers/plans/2026-10-27-dual-arm-cloth-handoff-milestone.md)
+[运行命令与公共接口](../../README.md#布料接触与搬运案例) · [Newton 对标与交付计划](../superpowers/plans/2026-10-31-p65-delivery-replan.md#2026-11-02-与-newton-的差距和执行顺序) · [最终案例目标](../superpowers/plans/2026-10-27-dual-arm-cloth-handoff-milestone.md)
 
 ## 历史研究快照（保留追溯，不作为当前任务队列）
 

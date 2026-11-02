@@ -1,6 +1,9 @@
 """World-space geometry and material addresses from a collision query."""
 
 from dataclasses import dataclass
+from fractions import Fraction
+
+from ..constraints.collision_shapes import CollisionKey
 
 
 @dataclass(frozen=True)
@@ -68,3 +71,56 @@ class TetrahedralFacetResult:
     sweep: CollisionSweep | None
     event_time_ratio: tuple[int, int] | None
     event_witness: CollisionWitness | None
+
+
+@dataclass(frozen=True)
+class TetrahedralOccupancy:
+    """Intersection of filled cells or their conforming union at one pose."""
+
+    relation: str
+    volume_ratio: tuple[int, int]
+    owners: tuple[CollisionKey, CollisionKey] | None
+    witness: MaterialContactPoint | None
+
+    @property
+    def volume_m3(self):
+        return float(Fraction(*self.volume_ratio))
+
+
+@dataclass(frozen=True)
+class TetrahedralBoundaryContact:
+    """A representative pair of exterior faces in original outward material order."""
+
+    first_face: tuple[int, int, int]
+    second_face: tuple[int, int, int]
+    witness: CollisionWitness
+
+
+@dataclass(frozen=True)
+class TetrahedralBoundaryTrace:
+    start: TetrahedralBoundaryContact
+    end: TetrahedralBoundaryContact
+    first_t: tuple[float, float] | None
+    witness_time: float | None
+    witness: TetrahedralBoundaryContact | None
+    event_time_ratio: tuple[int, int] | None
+    event_witness: TetrahedralBoundaryContact | None
+
+
+@dataclass(frozen=True)
+class TetrahedralSolidResult:
+    start: TetrahedralOccupancy
+    end: TetrahedralOccupancy
+    boundary: TetrahedralBoundaryTrace | None
+
+
+@dataclass(frozen=True)
+class TetrahedralBodyPair:
+    world: int
+    first_body: int
+    second_body: int
+    status: str
+    start: TetrahedralOccupancy | None = None
+    end: TetrahedralOccupancy | None = None
+    first_t: tuple[float, float] | None = None
+    boundary_first_t: tuple[float, float] | None = None

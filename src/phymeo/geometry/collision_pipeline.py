@@ -17,9 +17,16 @@ from ..constraints.collision_shapes import (
 from ..core.capabilities import SolverFailure
 from ._round_sweep import round_query, sweep_result
 from ._sphere_triangle_sweep import sphere_face_query
+from ._tetrahedral_solid import TetrahedralCellQuery, solid_body_pairs, volume_mesh_issue
 from ._tetrahedral_surface import TetrahedralSurfaceQuery, exterior_faces, positive_cell
 from ._triangle_pair_sweep import triangle_pair_query
-from .collision_witness import CollisionSweep, CollisionWitness, TetrahedralFacetResult
+from .collision_witness import (
+    CollisionSweep,
+    CollisionWitness,
+    TetrahedralBodyPair,
+    TetrahedralFacetResult,
+    TetrahedralSolidResult,
+)
 from .surface_features import closest_point_triangle
 
 _REASONS = ("candidate", "different_world", "same_rigid_body", "mask", "excluded", "aabb")
@@ -48,6 +55,7 @@ class CollisionPair:
     witness: CollisionWitness | None = None
     sweep: CollisionSweep | None = None
     facets: tuple[TetrahedralFacetResult, ...] = ()
+    solid: TetrahedralSolidResult | None = None
 
 
 @dataclass(frozen=True)
@@ -57,6 +65,7 @@ class CollisionDetection:
     required_candidates: int
     pairs: tuple[CollisionPair, ...]
     bounds: tuple[CollisionBounds, ...]
+    solid_pairs: tuple[TetrahedralBodyPair, ...] = ()
 
 
 def _outward(value, upper):
@@ -191,9 +200,18 @@ def _static_witness(a, b, x, y):
     )
 
 
+@dataclass(frozen=True)
+class _SolidFailure:
+    status: str
+    reason: str
+    features = ()
+
+
 def _pair(a, b, ma, mb, code, analytic, seeds):
     family = "RR" if a.rigid and b.rigid else "RD" if a.rigid != b.rigid else "DD"
     fields = (a.key, b.key, family)
+    if isinstance(analytic, _SolidFailure):
+        return CollisionPair(*fields, not code, analytic.status, analytic.reason)
     if code:
         return CollisionPair(
             *fields, False, "separated" if code == 5 else "filtered", _REASONS[code]
@@ -201,6 +219,11 @@ def _pair(a, b, ma, mb, code, analytic, seeds):
     if analytic is not None:
         try:
             with np.errstate(over="raise", invalid="raise", divide="raise"):
+                if isinstance(analytic, TetrahedralCellQuery):
+                    status, reason, witness, sweep, solid = analytic.result(
+                        ma.moving or mb.moving, seeds
+                    )
+                    return CollisionPair(*fields, True, status, reason, witness, sweep, solid=solid)
                 if isinstance(analytic, TetrahedralSurfaceQuery):
                     return CollisionPair(
                         *fields, True, *analytic.result(ma.moving or mb.moving, seeds)
@@ -267,6 +290,35 @@ def _detect_pairs(workspace, paths, flags):
     shapes = workspace._model.shapes
     # Bound temporary exact feature storage independently of the model's pair capacity.
     valid = {}
+    mesh_issues = {}
+
+    def valid_body(shape):
+        body = shape.key.world, shape.key.body
+        if body not in valid:
+            valid[body] = all(
+                positive_cell(paths[k])
+                for k in workspace.exterior_faces
+                if (k.world, k.body) == body
+            )
+        return valid[body]
+
+    def solid_issue(shape):
+        body = shape.key.world, shape.key.body
+        if body not in mesh_issues:
+            if not valid_body(shape):
+                mesh_issues[body] = ("invalid_geometry", "tetrahedron_nonpositive_on_path")
+            else:
+                cells = [
+                    s
+                    for s in shapes
+                    if s.kind == "tetrahedron" and (s.key.world, s.key.body) == body
+                ]
+                try:
+                    mesh_issues[body] = volume_mesh_issue(cells, paths)
+                except SolverFailure as error:
+                    mesh_issues[body] = ("unresolved", str(error))
+        return mesh_issues[body]
+
     # A thick cloth/cell pair can contribute 4 outer faces x 8 skin triangles.
     batch_size = 4 if workspace.exterior_faces else 128
     for offset in range(0, len(flags), batch_size):
@@ -277,22 +329,29 @@ def _detect_pairs(workspace, paths, flags):
             ma, mb = paths[a.key], paths[b.key]
             code = int(flags[offset + local])
             analytic = None
-            if (
+            if a.kind == b.kind == "tetrahedron" and a.key.body != b.key.body and code in (0, 5):
+                issue = solid_issue(a) or solid_issue(b)
+                if issue:
+                    analytic = _SolidFailure(*issue)
+                elif a.radius or b.radius:
+                    analytic = _SolidFailure("unsupported", "tetrahedral_cell_offset")
+                elif not code:
+                    analytic = TetrahedralCellQuery(a, b, ma, mb, workspace.exterior_faces)
+            elif (
                 not code
                 and "tetrahedron" in (a.kind, b.kind)
                 and {a.kind, b.kind} & {"triangle", "sphere"}
             ):
                 tet_first = a.kind == "tetrahedron"
                 cell, other, mc, mo = (a, b, ma, mb) if tet_first else (b, a, mb, ma)
-                body = (cell.key.world, cell.key.body)
-                if body not in valid:
-                    valid[body] = all(
-                        positive_cell(paths[k])
-                        for k in workspace.exterior_faces
-                        if (k.world, k.body) == body
-                    )
                 analytic = TetrahedralSurfaceQuery(
-                    cell, other, mc, mo, workspace.exterior_faces[cell.key], tet_first, valid[body]
+                    cell,
+                    other,
+                    mc,
+                    mo,
+                    workspace.exterior_faces[cell.key],
+                    tet_first,
+                    valid_body(cell),
                 )
             elif not code:
                 analytic = (
@@ -443,6 +502,13 @@ def detect(model, motion, policy, workspace):
             )
             for s, row in zip(model.shapes, bounds, strict=True)
         )
-        result = CollisionDetection("ok", workspace._backend, count, rows, boxes)
+        result = CollisionDetection(
+            "ok",
+            workspace._backend,
+            count,
+            rows,
+            boxes,
+            solid_body_pairs(model, paths, rows) if workspace.exterior_faces else (),
+        )
         workspace._last = result
         return result

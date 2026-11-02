@@ -85,7 +85,15 @@ from .geometry.collision_pipeline import (
     CollisionWorkspace,
     detect,
 )
-from .geometry.collision_witness import MaterialContactPoint, TetrahedralFacetResult
+from .geometry.collision_witness import (
+    MaterialContactPoint,
+    TetrahedralBodyPair,
+    TetrahedralBoundaryContact,
+    TetrahedralBoundaryTrace,
+    TetrahedralFacetResult,
+    TetrahedralOccupancy,
+    TetrahedralSolidResult,
+)
 from .geometry.feature_distance_bound import FeatureDistanceBounds, feature_distance_bounds
 from .geometry.linear_sweep import FeatureSweepResult, linear_feature_sweep
 from .geometry.particle_sphere import ParticleSphereGeometry, particle_sphere_geometry
@@ -329,6 +337,11 @@ __all__ += [
     "CollisionWorkspace",
     "MaterialContactPoint",
     "TetrahedralFacetResult",
+    "TetrahedralBodyPair",
+    "TetrahedralBoundaryContact",
+    "TetrahedralBoundaryTrace",
+    "TetrahedralOccupancy",
+    "TetrahedralSolidResult",
     "RigidTurn",
     "detect",
 ]

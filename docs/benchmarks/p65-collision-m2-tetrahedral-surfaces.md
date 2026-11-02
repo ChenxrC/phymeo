@@ -52,4 +52,4 @@ python -m pytest tests/collision/test_tyx_tetrahedral_surface_detection.py tests
 python -m pytest tests/collision/test_tyx_tetrahedral_surface_detection.py tests/collision/test_tyx_collision_pipeline.py tests/collision/test_tyx_round_collision.py tests/collision/test_tyx_sphere_face_sweep.py tests/collision/test_tyx_triangle_pair_sweep.py tests/collision/test_tyx_adjacent_triangle_sweep.py -q -p no:cacheprovider --tyx-mode=cuda --require-tyx
 ```
 
-下一批 DD05 用完全包含、交换内外、分离、塌陷与两个变形外部首触构型，区分表面距离和实体占据。其余刚体、刚柔配对仍沿三族案例计划推进。[行动计划](../superpowers/plans/2026-11-02-p65-tyx-collision-pipeline.md)
+DD05 已通过完全包含、交换内外、分离、塌陷和变形外部首触等构型，将实体占据与边界扫掠分别发布。[闭体实测](p65-collision-m2-closed-volumes.md) · [行动计划](../superpowers/plans/2026-11-02-p65-tyx-collision-pipeline.md)

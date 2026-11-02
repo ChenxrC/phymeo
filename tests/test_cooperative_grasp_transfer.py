@@ -103,6 +103,7 @@ def test_coordinator_waits_for_observed_material_then_moves_both_actual_tools():
         t=0.1,
         actual_tool_xz_m={"A": a.tolist(), "B": b.tolist()},
         measurements=m,
+        actual_tool_velocity_xz_m_s={"A": [0.0, 0.0], "B": [0.0, 0.0]},
         patch_vertices_m={"B_left": face(-0.013), "B_right": face(0.013)},
         cloth_position_m=[[-0.01, 0.0, 0.08], [0.01, 0.0, 0.08]],
         cloth_velocity_m_s=[[0.0, 0.0, 0.0], [0.0, 0.0, 0.0]],

@@ -347,6 +347,10 @@ def run_handoff(
             else:
                 bt = place if phase == 6 else place + [0.045, 0.010]
             if coordinator is not None and 1 <= phase <= 3:
+                trace["frames"][-1]["actual_tool_velocity_xz_m_s"] = {
+                    arm: case.grippers[arm].velocity(state.domains[arm]).tolist()
+                    for arm in ("A", "B")
+                }
                 command = coordinator.command(name, trace["frames"][-1], at, elapsed)
                 at, bt = command.donor, command.receiver
                 donor_rate, velocity_command = command.donor_rate, command.receiver_rate
@@ -395,6 +399,23 @@ def run_handoff(
             try:
                 controls = {}
                 for arm, target in requested.items():
+                    if (
+                        arm == "B"
+                        and coordinator is not None
+                        and case.program.cloth_links is not None
+                        and receiver_observation is not None
+                        and receiver_observation["action"] in ("approach", "track")
+                    ):
+                        controls[arm] = coordinator.drive_approach(
+                            arm,
+                            case.grippers[arm],
+                            state,
+                            command,
+                            finger_targets[arm],
+                            case.program.cloth_links,
+                        )
+                        requested[arm] = command.receiver
+                        continue
                     rate = donor_rate if arm == "A" else velocity_command
                     controls[arm] = case.grippers[arm].command(
                         state.domains[arm],

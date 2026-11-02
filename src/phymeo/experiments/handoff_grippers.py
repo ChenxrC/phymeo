@@ -58,6 +58,12 @@ class Gripper(ABC):
         tip = pose.position[self.tool_link] + pose.rotation[self.tool_link] @ self.tool_point
         return tip[[0, 2]]
 
+    def velocity(self, state):
+        jacobian, _ = point_jacobians(
+            self.model, state.q, [self.tool_link], self.tool_point[None, :]
+        )
+        return (jacobian[0] @ state.v)[[0, 2]]
+
     def finger_effort(self, state, aperture):
         ids = list(self.fingers)
         effort = 1150.0 * (aperture - state.q[ids]) - 8.0 * state.v[ids]

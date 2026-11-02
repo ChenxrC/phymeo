@@ -4,8 +4,12 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from ..control.grasp_transfer import PairedTransport, SoloLiftHold
+from ..control.grasp_transfer import PairedTransport, SoloLiftHold, bounded_approach
 from ..control.material_grasp import ParallelJawWindow
+from ..core.capabilities import SolverFailure
+from ..core.robot import RobotState
+from ..core.scene import SceneState
+from ..core.state import ParticleState
 
 
 def _solo_support(m, weight):
@@ -45,7 +49,9 @@ class CooperativeReception:
         self.clearance = clearance
         self.home = receiver_home.copy()
         self.transfer = transfer.copy()
-        self.peak_speed = 1.5 * np.linalg.norm(transfer - donor_home) / 0.55
+        travel = np.linalg.norm(transfer - donor_home)
+        self.peak_speed = 1.5 * travel / 0.55
+        self.peak_acceleration = 6 * travel / 0.55**2
         self.solo = SoloLiftHold()
         self.anchor = None
         self.holder = None
@@ -62,6 +68,57 @@ class CooperativeReception:
                 actual_tool_xz_m=frame["actual_tool_xz_m"].copy(),
             )
         )
+
+    def drive_approach(self, domain, gripper, state, motion, aperture, contacts):
+        """Check measured-link clearance on the proposed IK and moving material segments."""
+        robot = state.domains[domain]
+        tip, speed = gripper.position(robot), gripper.velocity(robot)
+        stop, stop_rate = bounded_approach(
+            tip,
+            speed,
+            tip,
+            np.zeros_like(speed),
+            self.dt,
+            peak_speed=self.peak_speed,
+            peak_acceleration=self.peak_acceleration,
+        )
+        cloth = state.domains[contacts.cloth_domain]
+        predicted = ParticleState(cloth.position + self.dt * cloth.velocity, cloth.velocity)
+        blocked = []
+        for fraction in (1.0, 0.5, 0.25, 0.0):
+            goal = stop + fraction * (motion.receiver - stop)
+            rate = stop_rate + fraction * (motion.receiver_rate - stop_rate)
+            try:
+                drive, joints = gripper.command(
+                    robot, goal, aperture, self.dt, tool_velocity_m_s=rate
+                )
+            except SolverFailure:
+                if not fraction:
+                    raise
+                blocked.append(dict(fraction=fraction, reason="ik_unavailable"))
+                continue
+            candidate = SceneState(
+                {
+                    **state.domains,
+                    domain: RobotState(joints, robot.v),
+                    contacts.cloth_domain: predicted,
+                }
+            )
+            pair = contacts.approach_blocker(domain, state, candidate)
+            if pair is not None:
+                blocked.append(dict(fraction=fraction, pair=list(pair)))
+                if fraction:
+                    continue
+            # A moving sheet can approach even a braking hand. In that case
+            # the contact program remains active and the prediction is marked.
+            motion.receiver, motion.receiver_rate = goal, rate
+            motion.observation.update(
+                tool_velocity_command_m_s=rate.tolist(),
+                approach_fraction=fraction,
+                predicted_structural_clear=pair is None,
+                blocked_approach_candidates=blocked,
+            )
+            return drive, joints
 
     def join(self, donor, receiver):
         if self.holder is None:
@@ -95,14 +152,33 @@ class CooperativeReception:
         v = np.asarray(frame["cloth_velocity_m_s"])
         patches = frame["patch_vertices_m"]
         window = ParallelJawWindow(patches["B_left"], patches["B_right"])
+
+        def approach(p, vel, closed):
+            actual_velocity = np.asarray(frame["actual_tool_velocity_xz_m_s"]["B"])
+            target, rate = bounded_approach(
+                b,
+                actual_velocity,
+                p[[0, 2]],
+                vel[[0, 2]],
+                self.dt,
+                peak_speed=self.peak_speed,
+                peak_acceleration=self.peak_acceleration,
+            )
+            return GripMotion(donor_default, target, closed, receiver_rate=rate)
+
         if self.anchor is None:
             visible = window.acquire(x, self.nodes)
             p = x[self.nodes].mean(0) if visible is None else visible.evaluate(x)
             vel = v[self.nodes].mean(0) if visible is None else visible.evaluate(v)
             if visible is None or np.linalg.norm(b - p[[0, 2]]) >= 0.005:
-                return GripMotion(
-                    donor_default, (p + self.dt * vel)[[0, 2]], False, receiver_rate=vel[[0, 2]]
+                cmd = approach(p, vel, False)
+                cmd.observation = dict(
+                    action="approach",
+                    material_point_m=p.tolist(),
+                    material_velocity_m_s=vel.tolist(),
+                    tool_velocity_command_m_s=cmd.receiver_rate.tolist(),
                 )
+                return cmd
             self.anchor = visible
             self._event("receiver_address_acquired", frame)
         p, vel = self.anchor.evaluate(x), self.anchor.evaluate(v)
@@ -110,9 +186,7 @@ class CooperativeReception:
             self.holder = b + np.array([0.0, 0.003])
             self._event("receiver_bilateral_contact", frame)
         if self.holder is None:
-            cmd = GripMotion(
-                donor_default, (p + self.dt * vel)[[0, 2]], True, receiver_rate=vel[[0, 2]]
-            )
+            cmd = approach(p, vel, True)
             action = "track"
         else:
             donor_rate = receiver_rate = None

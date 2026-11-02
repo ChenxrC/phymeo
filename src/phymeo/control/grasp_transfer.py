@@ -27,6 +27,34 @@ class SoloLiftHold:
         return self.position
 
 
+def bounded_approach(position, velocity, goal, goal_velocity, dt, *, peak_speed, peak_acceleration):
+    """One constant-acceleration tool reference from the measured position and velocity."""
+    p, v, target, rate = (
+        np.asarray(value, dtype=float) for value in (position, velocity, goal, goal_velocity)
+    )
+    if (
+        p.ndim != 1
+        or not p.size
+        or any(row.shape != p.shape or not np.isfinite(row).all() for row in (p, v, target, rate))
+    ):
+        raise ValueError("expected matching finite tool coordinates")
+    dt = finite_real(dt, "control interval")
+    speed = finite_real(peak_speed, "peak tool speed")
+    acceleration = finite_real(peak_acceleration, "peak tool acceleration")
+    if dt <= 0 or min(speed, acceleration) <= 0:
+        raise ValueError("positive approach duration and motion budgets are required")
+
+    def limited(vector, limit):
+        length = np.hypot.reduce(vector)
+        return vector if length <= limit else vector * (limit / length)
+
+    error = target - p
+    braking_speed = np.sqrt(2 * acceleration * np.hypot.reduce(error))
+    desired = limited(limited(rate, speed) + limited(error / dt, braking_speed), speed)
+    end_velocity = v + limited(desired - v, acceleration * dt)
+    return p + 0.5 * dt * (v + end_velocity), end_velocity
+
+
 class PairedTransport:
     """A common cubic time law starting from each tool's actual acquired pose."""
 

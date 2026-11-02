@@ -91,6 +91,10 @@ python -m pytest
 
 构建与独立安装验证：`python -m build --no-isolation`，然后 `python scripts/verify_wheel.py`。后者先检查 wheel 的 Python 源码与当前 checkout 一致，再使用系统临时目录中新建的原生 pip 环境安装，需要读取公开包索引；它不会自动构建旧 wheel。CI 配置覆盖 Windows/Linux × Python 3.11/3.12 × uv/pip；工作流是否实际成功以 Actions 结果为准。
 
+## 通用碰撞检测
+
+`phymeo.detect` 在同一模型中查询刚体–刚体、刚体–柔体和柔体–柔体形状对。使用 `CollisionWorkspace` 可选择 HOST、tyx interpret 或 CUDA 宽相。结果分别标识过滤原因、几何见证、缺少窄相和容量不足。[配对支持表、示例与实测](docs/benchmarks/p65-collision-m1.md)
+
 ## 布料接触与搬运案例
 
 在已安装本项目的 Python 环境中运行。下面的命令分别保存 0.125 s 冲击和双夹爪搬运的真实轨迹，输出文件必须是新路径。

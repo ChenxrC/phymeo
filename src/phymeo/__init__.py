@@ -16,6 +16,14 @@ from .backends.tyx_xpbd import TyxXPBDSolver
 from .builders.cloth import ClothPatch, cloth_grid
 from .builders.robot import pendulum_chain
 from .builders.tetrahedral import tetrahedral_block
+from .constraints.collision_shapes import (
+    CollisionKey,
+    CollisionModel,
+    CollisionMotion,
+    CollisionPolicy,
+    CollisionShape,
+    RigidTurn,
+)
 from .constraints.contact_impulse import ContactImpulseResult, solve_contact_impulses
 from .constraints.distance import DistanceConstraints
 from .constraints.friction import FrictionImpulseResult, solve_friction_disk
@@ -68,6 +76,14 @@ from .coupling.robot_port import RobotPointPort
 from .coupling.surface_port import PointPairOperator, WeightedPointPort
 from .coupling.tetrahedral_port import TetrahedralPointPort
 from .dynamics.robot_contact import RobotContactSystem
+from .geometry.collision_pipeline import (
+    CollisionBounds,
+    CollisionDetection,
+    CollisionPair,
+    CollisionWitness,
+    CollisionWorkspace,
+    detect,
+)
 from .geometry.feature_distance_bound import FeatureDistanceBounds, feature_distance_bounds
 from .geometry.linear_sweep import FeatureSweepResult, linear_feature_sweep
 from .geometry.particle_sphere import ParticleSphereGeometry, particle_sphere_geometry
@@ -296,3 +312,18 @@ __all__ += ["PrismPatchSweepResult", "triangle_prism_patch_sweep"]
 __all__ += ["DynamicRobotThickContactProgram"]
 
 __all__ += ["ThickContactMappingLedger"]
+
+__all__ += [
+    "CollisionBounds",
+    "CollisionDetection",
+    "CollisionKey",
+    "CollisionModel",
+    "CollisionMotion",
+    "CollisionPair",
+    "CollisionPolicy",
+    "CollisionShape",
+    "CollisionWitness",
+    "CollisionWorkspace",
+    "RigidTurn",
+    "detect",
+]

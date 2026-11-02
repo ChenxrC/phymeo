@@ -128,4 +128,4 @@ DD03 的零厚度网格不符合旧 `ClothSelfContactTopology` 的正厚度输�
 
 收尾批在 `4e19864` 工作树增加六个案例后执行。目录初次出现六项预期失败；后续 DD04 原构型暴露上文的错误断言，修正后单项通过，完整新增文件最终 **37 passed / 0.94 s / exit 0**。其中 31 项产生几何观测，6 项检查目录。两份新增测试文件通过 Ruff 与格式检查，最终运行的 18 项输入和源码绑定前后一致。证据位于 `artifacts/p65-general-collision-m0-20261102-04`，父串行槽已释放。[修正后的单项](../../artifacts/p65-general-collision-m0-20261102-04/fixed-node-pytest-133137235/final.json) · [收尾批运行收据](../../artifacts/p65-general-collision-m0-20261102-04/matrix-final-pytest-133148760/final.json)
 
-**下一项为 M1 公共 tyx 检测入口。** 同一模型登记 RR、RD、DD，按世界、对象、形状和材料特征建立稳定身份。先以同输入的 HOST 穷举核对 tyx 的过滤和离散/扫掠候选，记录容量、明确不支持的配对及失败后的原状态。候选与已证实接触分别输出，interpret 和实际 CUDA 分开串行验收。M2 依据上表逐配对补窄相与首触，递布保留到系统集成。
+**M0 之后的公共入口已经接通。** M1 用同一混合模型核对 HOST、tyx interpret 和实际 CUDA 的候选。原 M0 几何观测继续作为 M2 各配对的独立预期。[M1 支持表和实测](p65-collision-m1.md)

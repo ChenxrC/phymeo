@@ -7,7 +7,8 @@
 - **M0 第二批已运行** RR03 已知轴的裁剪可复用，RD02 沿静态胶囊轴找到穿面见证，DD03 确认旧共享顶点过滤会排除异处相交的面。5 个构型/族，共 15 条观测。[新增回归](../../tests/collision/test_contact_regions.py) · [证据与范围](../benchmarks/p65-general-collision-baseline.md)
 - **M0 第三批已运行** RR05、RD04、DD05 有 16 条几何观测。表面正距离同时可能出现在凹槽空区和实体内部；已有拓扑函数可消去两个四面体的共享面，材料所有者需另行绑定。初始包含、退化输入和变形体外部首次接触分别记录。[第三批回归](../../tests/collision/test_solid_boundaries.py) · [实测差异](../benchmarks/p65-general-collision-baseline.md)
 - **M0 已完成** 收尾批 RR01、RR02、RD03、RD05、DD01、DD04 有 31 条几何观测。四批共覆盖 15 个基础案例、74 个构型。DD04 保留了先触外面、后触斜面的原始失败和修正记录。[逐案例结果](../benchmarks/p65-general-collision-baseline.md) · [收尾批回归](../../tests/collision/test_detection_matrix.py)
-- **下一节点 · M1 公共 tyx 入口** 在同一 RR/RD/DD 模型上实现形状注册、稳定身份、过滤、离散/扫掠候选和有界工作区。以 M0 输入对照 HOST 穷举，分别验证 tyx interpret 和实际 CUDA；未支持的配对要显式返回。[实施计划](../superpowers/plans/2026-11-02-p65-tyx-collision-pipeline.md)
+- **M1 公共入口已验收** `phymeo.detect` 可在一个混合模型里筛选 RR/RD/DD。11 个形状的 55 对在 HOST、tyx interpret、实际 CUDA 上逐对一致。静态球、胶囊及球–零厚三角面已接入。尚无扫掠窄相的候选公开标为 `unsupported`。[用法和实测](../benchmarks/p65-collision-m1.md)
+- **下一节点 · M2 窄相** 先用 RR01 球–平面与 RR02 胶囊轴部/端帽检验静态和首触结果，再将 RD01 与 DD01/DD02 接入相同入口。[实施计划](../superpowers/plans/2026-11-02-p65-tyx-collision-pipeline.md)
 - **随后的实施顺序** 用同一公开检测入口连接原有几何，依差异补三族窄相、连续检测和材料身份，再做设备/缓存/容量的跨族回归。每族独立接动力学，最终做单爪折叠与双臂放台。
 - **可复用基础** 球–平面、连杆胶囊、有限棱柱、线性特征扫掠和限定的壳几何可作起点。已有布内力、机器人树、双向点载荷、统一子步及回滚负责消费检测输出。
 - **已完成的参考布案例** 带关节限位与六个连杆碰撞体的双臂交接。独立碰撞/限位/回滚检查已通过。3.62 s 的同次轨迹完成递布，B 独立横移 10.36 cm，末帧桌面支撑 0.47104 N；源码目录外的 wheel 逐位复现 B 接管步。[结果](../benchmarks/p65-robot-contact-results.json)及[本节点计划](../superpowers/plans/2026-11-02-robot-limits-contact.md)。

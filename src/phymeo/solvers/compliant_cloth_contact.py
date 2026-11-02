@@ -14,6 +14,7 @@ from ..core.model import ParticleModel
 from ..core.robot import RobotModel, RobotState
 from ..core.scene import SceneModel, StageMetrics
 from ..core.validation import finite_real
+from ..coupling.material_column import TriangleColumnMap
 from ..coupling.offset_port import TriangleOffsetPointPort
 from ..coupling.ports import ParticlePointPort
 from ..dynamics.robot_contact import RobotContactSystem
@@ -290,6 +291,11 @@ class CompliantClothContactProgram:
         reactions = {n: np.zeros_like(state.domains[n].v) for n in self.robots}
         details = {}
         ports = {}
+        columns = (
+            TriangleColumnMap(base, self.ids, self.weights, np.repeat(self.rho, 3))
+            if self.finite_pads
+            else None
+        )
         for patch in self.patches:
             p = patch.geometry
             local_normal = self.normals[p.key]
@@ -327,14 +333,7 @@ class CompliantClothContactProgram:
                 pad_sites = rounded_pad_columns(
                     vertices, patch.normal_sign * local_normal, patch.radius_m, centers, half
                 )
-                heights = pad_sites.fraction * np.repeat(self.rho, 3)
-                key = heights.tobytes()
-                # Separate the two cache namespaces even when all heights vanish.
-                key = ("finite", key)
-                if key not in ports:
-                    port = TriangleOffsetPointPort(base, self.ids, self.weights, heights)
-                    ports[key] = port.positions(), port.velocities(), port.jacobians
-                points, velocity, jac = ports[key]
+                points, velocity, jac = columns.sample(pad_sites.fraction)
                 gap = pad_sites.gap_m
                 inside = np.ones(len(gap), dtype=bool)
                 force_normal = pad_sites.normal @ rotation.T

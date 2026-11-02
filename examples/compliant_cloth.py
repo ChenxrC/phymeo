@@ -2,11 +2,13 @@
 
 import argparse
 import json
+from dataclasses import replace
 from pathlib import Path
 
 from phymeo.experiments.cloth_drape import run_drape
 from phymeo.experiments.compliant_cloth import run_impact
 from phymeo.experiments.compliant_handoff import run_handoff
+from phymeo.experiments.sheet_fabric import fabric_preset
 
 
 def main():
@@ -26,6 +28,11 @@ def main():
         help="handoff or drape fabric; reference preserves the original handoff",
     )
     parser.add_argument(
+        "--bend-compliance",
+        type=float,
+        help="override per-hinge compliance in 1/(N m); larger bends more easily",
+    )
+    parser.add_argument(
         "--initial-tilt-deg",
         type=float,
         default=0.0,
@@ -38,12 +45,20 @@ def main():
     handoff = args.case in ("handoff", "no-grip")
     if not handoff and (args.robot != "cartesian" or args.initial_tilt_deg != 0.0):
         parser.error("robot layout and sheet tilt apply only to handoff/no-grip")
+    if args.case in ("impact", "support") and (
+        args.fabric is not None or args.bend_compliance is not None
+    ):
+        parser.error("fabric options apply to handoff/no-grip and drape")
+    fabric = fabric_preset(args.fabric or ("soft" if args.case == "drape" else "reference"))
+    if args.bend_compliance is not None:
+        try:
+            fabric = replace(fabric, bend_compliance=args.bend_compliance)
+        except ValueError as exc:
+            parser.error(str(exc))
     if args.case in ("impact", "support"):
-        if args.fabric is not None:
-            parser.error("--fabric applies to handoff/no-grip and drape")
         trace = run_impact(support=args.case == "support")
     elif args.case == "drape":
-        trace = run_drape(fabric=args.fabric or "soft")
+        trace = run_drape(fabric=fabric)
     else:
 
         def progress(phase, time):
@@ -53,7 +68,7 @@ def main():
             grip_friction=0.0 if args.case == "no-grip" else 0.9,
             robot=args.robot,
             progress=progress,
-            fabric=args.fabric or "reference",
+            fabric=fabric,
             initial_tilt_deg=args.initial_tilt_deg,
         )
     args.output.parent.mkdir(parents=True, exist_ok=True)

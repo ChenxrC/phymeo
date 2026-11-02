@@ -22,7 +22,7 @@ def main():
     )
     parser.add_argument(
         "--robot",
-        choices=("cartesian", "articulated"),
+        choices=("cartesian", "articulated", "articulated-palm"),
         help="gripper layout; the single-gripper benchmark uses an articulated arm",
     )
     parser.add_argument(

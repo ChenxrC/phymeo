@@ -16,6 +16,10 @@ from ..dynamics.robot_kinematics import forward_kinematics, point_jacobians
 BASE_Z = 0.039
 HALF_OPEN = 0.013
 CLOSED = HALF_OPEN - 0.0006
+PAD_HALF_LENGTH = 0.022
+PAD_HALF_HEIGHT = 0.019
+FINGER_REACH = 0.045
+SHANK_RADIUS = 0.002
 
 
 def _cartesian_model(base_x):
@@ -134,9 +138,12 @@ class _ArticulatedGripper(Gripper):
         return data, goal
 
 
-def _articulated_gripper(name, base_xz, lengths, direction, home_x):
+def _articulated_gripper(name, base_xz, lengths, direction, home_x, pad_radius=None):
     upper, fore = direction * np.asarray(lengths)
     base_y = -direction * 0.045
+    reach = 0.0 if pad_radius is None else FINGER_REACH
+    tip_x = fore + direction * reach
+    outer = 0.0 if pad_radius is None else 2 * pad_radius + SHANK_RADIUS
     limits = JointLimits(
         np.array([-2.8, 0.05, -0.004, -0.004]), np.array([2.8, 3.05, 0.014, 0.014]), 2000.0, 8.0
     )
@@ -147,18 +154,25 @@ def _articulated_gripper(name, base_xz, lengths, direction, home_x):
             [
                 [base_xz[0], base_y, base_xz[1]],
                 [upper, 0.0, 0.0],
-                [fore, -base_y - HALF_OPEN, 0.0],
-                [fore, -base_y + HALF_OPEN, 0.0],
+                [tip_x, -base_y - HALF_OPEN, 0.0],
+                [tip_x, -base_y + HALF_OPEN, 0.0],
             ]
         ),
         np.tile([0.0, 0.0, 0.0, 1.0], (4, 1)),
         np.array([[0.0, direction, 0.0], [0.0, direction, 0.0], [0.0, 1.0, 0.0], [0.0, -1.0, 0.0]]),
         np.array([0.16, 0.12, 0.06, 0.06]),
-        np.array([[upper / 2, 0.0, 0.0], [fore / 2, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]]),
+        np.array(
+            [
+                [upper / 2, 0.0, 0.0],
+                [fore / 2, 0.0, 0.0],
+                [-direction * reach / 2, -outer, 0.0],
+                [-direction * reach / 2, outer, 0.0],
+            ]
+        ),
         np.full((4, 3), 0.001),
         np.array([0.0, 0.0, -9.81]),
     )
-    point = np.array([fore, -base_y, 0.0])
+    point = np.array([tip_x, -base_y, 0.0])
     seed = np.array([-0.5, 1.7, 0.0, 0.0])
     home = solve_point_ik(
         model,
@@ -172,6 +186,38 @@ def _articulated_gripper(name, base_xz, lengths, direction, home_x):
     )
     if not home.converged:
         raise ValueError("articulated gripper cannot reach its initial pose")
+    wrist_y = (
+        (0.0, -base_y)
+        if pad_radius is None
+        else (min(0.0, -base_y - HALF_OPEN - outer), max(0.0, -base_y + HALF_OPEN + outer))
+    )
+    shapes = [
+        LinkCapsule(name + "_upper", name, 0, np.zeros(3), np.array([upper, 0.0, 0.0]), 0.008),
+        LinkCapsule(name + "_fore", name, 1, np.zeros(3), np.array([fore, 0.0, 0.0]), 0.006),
+        LinkCapsule(
+            name + "_wrist",
+            name,
+            1,
+            np.array([fore, wrist_y[0], 0.0]),
+            np.array([fore, wrist_y[1], 0.0]),
+            0.004,
+        ),
+    ]
+    exclusions = [(name + "_upper", name + "_fore")]
+    if pad_radius is not None:
+        for side, link, lateral in (("left", 2, -outer), ("right", 3, outer)):
+            shank = name + "_" + side + "_shank"
+            shapes.append(
+                LinkCapsule(
+                    shank,
+                    name,
+                    link,
+                    np.array([-direction * reach, lateral, 0.0]),
+                    np.array([-direction * PAD_HALF_LENGTH, lateral, 0.0]),
+                    SHANK_RADIUS,
+                )
+            )
+            exclusions.append((name + "_wrist", shank))
     return _ArticulatedGripper(
         model,
         RobotState(home.configuration, np.zeros(4)),
@@ -180,25 +226,26 @@ def _articulated_gripper(name, base_xz, lengths, direction, home_x):
         (2, 3),
         np.array([5.0, 4.0, 5.0, 5.0]),
         limits,
-        (
-            LinkCapsule(name + "_upper", name, 0, np.zeros(3), np.array([upper, 0.0, 0.0]), 0.008),
-            LinkCapsule(name + "_fore", name, 1, np.zeros(3), np.array([fore, 0.0, 0.0]), 0.006),
-            LinkCapsule(name + "_wrist", name, 1, np.array([fore, 0.0, 0.0]), point, 0.004),
-        ),
-        ((name + "_upper", name + "_fore"),),
+        tuple(shapes),
+        tuple(exclusions),
     )
 
 
-def grippers_for(layout, *, roles=("A", "B")):
+def grippers_for(layout, *, roles=("A", "B"), finger_pad_radius_m=None):
     if not roles or len(set(roles)) != len(roles) or not set(roles) <= {"A", "B"}:
         raise ValueError("unknown or duplicate gripper roles")
-    if layout == "articulated":
+    if layout in ("articulated", "articulated-palm"):
+        radius = None
+        if layout == "articulated-palm":
+            radius = 0.002 if finger_pad_radius_m is None else float(finger_pad_radius_m)
+            if not np.isfinite(radius) or radius <= 0:
+                raise ValueError("a mounted gripper requires a positive finite pad radius")
         definitions = (
             ("A", (-0.24, 0.16), (0.16, 0.18), 1.0, -0.06),
             ("B", (0.20, 0.35), (0.26, 0.28), -1.0, 0.115),
         )
         return {
-            name: _articulated_gripper(name, base, lengths, direction, home_x)
+            name: _articulated_gripper(name, base, lengths, direction, home_x, radius)
             for name, base, lengths, direction, home_x in definitions
             if name in roles
         }

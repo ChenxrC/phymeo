@@ -197,6 +197,11 @@ def trace_start(case, name):
         samples=[],
         events=[],
     )
+    if p.cloth_links is not None:
+        trace["cloth_link_material"] = _jsonable(
+            {f.name: getattr(p.cloth_links.law, f.name) for f in fields(p.cloth_links.law)}
+        )
+        trace["frames"][0]["robot_contact"] = _jsonable(p.observe_robot_contact(s))
     if p.robot_contact is not None:
         system = p.robot_contact
         trace["robot_contact"] = dict(

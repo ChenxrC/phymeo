@@ -15,9 +15,17 @@ from ..core.scene import DomainBinding, SceneInputs, SceneModel, SceneState, Ste
 from ..core.state import ParticleState, StepInputs
 from ..core.validation import finite_real
 from ..dynamics.robot_contact import RobotContactSystem
+from ..solvers.cloth_link_contact import ClothLinkMaterial
 from ..solvers.compliant_cloth_contact import CompliantClothContactProgram, CompliantPatch
 from .compliant_cloth import Case, record_step, trace_start
-from .handoff_grippers import BASE_Z, CLOSED, Gripper, grippers_for
+from .handoff_grippers import (
+    BASE_Z,
+    CLOSED,
+    PAD_HALF_HEIGHT,
+    PAD_HALF_LENGTH,
+    Gripper,
+    grippers_for,
+)
 from .sheet_fabric import (
     HALF_THICKNESS_M,
     HEIGHT_M,
@@ -89,7 +97,17 @@ def build_gripper_sheet(
     # The receiver follows the upper half of the same material edge on any grid.
     receiver_nodes = np.flatnonzero((uv[:, 0] == uv[:, 0].max()) & (uv[:, 1] >= HEIGHT_M / 2))
     cloth = ParticleModel(np.full(len(x), len(x) / MASS_KG), np.array([0.0, 0.0, -9.81]))
-    grippers = grippers_for(robot, roles=roles) if isinstance(robot, str) else dict(robot)
+    mounted = isinstance(robot, str) and robot == "articulated-palm"
+    if mounted:
+        if finger_pad_radius_m is None:
+            finger_pad_radius_m = 0.002
+        if finger_backing_clearance_m is None:
+            finger_backing_clearance_m = finger_pad_radius_m / 16
+    grippers = (
+        grippers_for(robot, roles=roles, finger_pad_radius_m=finger_pad_radius_m)
+        if isinstance(robot, str)
+        else dict(robot)
+    )
     if set(grippers) != set(roles):
         raise ValueError("robot roles do not match the gripper scene")
     models = {n: g.model for n, g in grippers.items()}
@@ -119,7 +137,12 @@ def build_gripper_sheet(
         )
     ]
     pad = np.array(
-        [[-0.022, 0.0, -0.019], [-0.022, 0.0, 0.019], [0.022, 0.0, 0.019], [0.022, 0.0, -0.019]]
+        [
+            [-PAD_HALF_LENGTH, 0.0, -PAD_HALF_HEIGHT],
+            [-PAD_HALF_LENGTH, 0.0, PAD_HALF_HEIGHT],
+            [PAD_HALF_LENGTH, 0.0, PAD_HALF_HEIGHT],
+            [PAD_HALF_LENGTH, 0.0, -PAD_HALF_HEIGHT],
+        ]
     )
     for n, gripper in grippers.items():
         left, right = gripper.fingers
@@ -159,6 +182,11 @@ def build_gripper_sheet(
         material_damping_s=0.002,
         max_penetration_m=0.010,
         robot_contact=contact,
+        cloth_link_material=ClothLinkMaterial(
+            0.0015, 1.6e6, 9.0, contact.material.friction, contact.material.slip_speed_m_s
+        )
+        if mounted
+        else None,
         max_joint_violation=0.02,
     )
     state = SceneState(
@@ -506,4 +534,8 @@ def run_handoff(
             (r["joint_violation"] for r in trace.get("robot_samples", [])), default=0.0
         ),
     )
+    if case.program.cloth_links is not None:
+        trace["metrics"]["max_cloth_link_penetration_m"] = max(
+            (s["cloth_link_penetration_m"] for s in trace.get("robot_samples", ())), default=0.0
+        )
     return trace

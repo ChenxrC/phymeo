@@ -10,6 +10,7 @@ from ..core.validation import finite_real
 MAX_SHAPES = 256
 MAX_VERTICES = 8192
 MAX_CONVEX_VERTICES = 64
+MAX_MESH_TRIANGLES = 128
 _INT_MAX = 2**31 - 1
 
 
@@ -68,12 +69,13 @@ class CollisionShape:
     mask: int = _INT_MAX
     revision: int = 0
     normal: tuple[float, float, float] | None = None
+    triangles: tuple[tuple[int, int, int], ...] = ()
 
     def __post_init__(self):
         if not isinstance(self.key, CollisionKey):
             raise TypeError("shape key must be a CollisionKey")
         counts = {"sphere": 1, "capsule": 2, "triangle": 3, "tetrahedron": 4, "plane": 1}
-        if self.kind not in (*counts, "hull"):
+        if self.kind not in (*counts, "hull", "mesh"):
             raise ValueError("unsupported collision shape kind")
         if not 1 <= len(self.vertex_ids) <= MAX_VERTICES:
             raise ValueError("vertex count outside limits")
@@ -84,6 +86,23 @@ class CollisionShape:
             or (self.kind in counts and len(ids) != counts[self.kind])
         ):
             raise ValueError("invalid vertex IDs or count for shape kind")
+        if self.kind == "mesh":
+            if not 4 <= len(self.triangles) <= MAX_MESH_TRIANGLES:
+                raise ValueError("closed mesh face count outside limits")
+            known = set(ids)
+            faces = []
+            for face in self.triangles:
+                if len(face) != 3:
+                    raise ValueError("closed mesh faces must be triangles")
+                tri = tuple(_integer(i, "triangle material ID") for i in face)
+                if len(set(tri)) != 3 or not set(tri) <= known:
+                    raise ValueError("closed mesh triangle has invalid material IDs")
+                faces.append(min(tri, tri[1:] + tri[:1], tri[2:] + tri[:2]))
+            object.__setattr__(self, "triangles", tuple(sorted(faces)))
+        elif len(self.triangles):
+            raise ValueError("triangles require a closed mesh shape")
+        else:
+            object.__setattr__(self, "triangles", ())
         radius = finite_real(self.radius, "radius")
         if radius < 0 or (self.kind in ("sphere", "capsule") and radius == 0):
             raise ValueError("invalid shape radius or maximum surface offset")
@@ -101,7 +120,7 @@ class CollisionShape:
 
     @property
     def rigid(self):
-        return self.kind in ("sphere", "capsule", "hull", "plane")
+        return self.kind in ("sphere", "capsule", "hull", "mesh", "plane")
 
 
 @dataclass(frozen=True)

@@ -16,6 +16,7 @@ from ..constraints.collision_shapes import (
 )
 from ..core.capabilities import SolverFailure
 from ._capsule_triangle_sweep import capsule_face_query
+from ._closed_mesh import ClosedMesh, MeshHullQuery
 from ._convex_contact import HullPairQuery
 from ._convex_hull import HullShape
 from ._rotating_round_sweep import RotatingCapsuleQuery, rotating_round_query
@@ -28,6 +29,7 @@ from .collision_witness import (
     CollisionSweep,
     CollisionWitness,
     ConvexHullTrace,
+    MeshContactTrace,
     TetrahedralBodyPair,
     TetrahedralFacetResult,
     TetrahedralSolidResult,
@@ -62,6 +64,7 @@ class CollisionPair:
     facets: tuple[TetrahedralFacetResult, ...] = ()
     solid: TetrahedralSolidResult | None = None
     convex: ConvexHullTrace | None = None
+    mesh: MeshContactTrace | None = None
 
 
 @dataclass(frozen=True)
@@ -225,6 +228,11 @@ def _pair(a, b, ma, mb, code, analytic, seeds):
     if analytic is not None:
         try:
             with np.errstate(over="raise", invalid="raise", divide="raise"):
+                if isinstance(analytic, MeshHullQuery):
+                    status, reason, witness, sweep, mesh = analytic.result(
+                        ma.moving or mb.moving, seeds
+                    )
+                    return CollisionPair(*fields, True, status, reason, witness, sweep, mesh=mesh)
                 if isinstance(analytic, HullPairQuery):
                     status, reason, witness, sweep, convex = analytic.result(
                         ma.moving or mb.moving, seeds
@@ -309,6 +317,7 @@ def _detect_pairs(workspace, paths, flags):
     valid = {}
     mesh_issues = {}
     hulls = {}
+    meshes = {}
 
     def prepared_hull(shape, path):
         if shape.key not in hulls:
@@ -319,6 +328,16 @@ def _detect_pairs(workspace, paths, flags):
             except SolverFailure as error:
                 hulls[shape.key] = _NarrowFailure("unresolved", str(error))
         return hulls[shape.key]
+
+    def prepared_mesh(shape, path):
+        if shape.key not in meshes:
+            try:
+                meshes[shape.key] = ClosedMesh(shape, path)
+            except ValueError as error:
+                meshes[shape.key] = _NarrowFailure("invalid_geometry", str(error))
+            except SolverFailure as error:
+                meshes[shape.key] = _NarrowFailure("unresolved", str(error))
+        return meshes[shape.key]
 
     def valid_body(shape):
         body = shape.key.world, shape.key.body
@@ -357,7 +376,24 @@ def _detect_pairs(workspace, paths, flags):
             ma, mb = paths[a.key], paths[b.key]
             code = int(flags[offset + local])
             analytic = None
-            if a.kind == b.kind == "hull" and code in (0, 5):
+            if {a.kind, b.kind} == {"mesh", "hull"} and code in (0, 5):
+                mesh_first = a.kind == "mesh"
+                ms, hs, mp, hp = (a, b, ma, mb) if mesh_first else (b, a, mb, ma)
+                if ms.radius or hs.radius or any(p.turn and p.turn.angle for p in (ma, mb)):
+                    if not code:
+                        analytic = _NarrowFailure("unsupported", "mesh_rounding_or_rotation")
+                else:
+                    mesh, hull = prepared_mesh(ms, mp), prepared_hull(hs, hp)
+                    if isinstance(mesh, _NarrowFailure):
+                        analytic = mesh
+                    elif isinstance(hull, _NarrowFailure):
+                        analytic = hull
+                    elif not code:
+                        try:
+                            analytic = MeshHullQuery(mesh, hull, mesh_first)
+                        except SolverFailure as error:
+                            analytic = _NarrowFailure("unresolved", str(error))
+            elif a.kind == b.kind == "hull" and code in (0, 5):
                 if (
                     a.radius
                     or b.radius
@@ -427,6 +463,17 @@ def _detect_pairs(workspace, paths, flags):
                 if workspace._engine is not None:
                     try:
                         proposals = workspace._engine.hull_intervals(*analytic.device_inputs())
+                    except BaseException:
+                        workspace._close_locked()
+                        raise
+            if isinstance(analytic, MeshHullQuery):
+                proposals = None
+                if workspace._engine is not None:
+                    try:
+                        proposals = [
+                            workspace._engine.hull_intervals(*part.device_inputs())
+                            for part in analytic.parts
+                        ]
                     except BaseException:
                         workspace._close_locked()
                         raise

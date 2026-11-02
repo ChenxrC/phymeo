@@ -177,3 +177,22 @@ class ConvexHullTrace:
     first: ConvexContactPose | None
     last: ConvexContactPose | None
     axis_count: int
+
+
+@dataclass(frozen=True)
+class MeshContactPose:
+    """Filled-solid relation and actual exterior-boundary geometry at a single time."""
+
+    relation: str
+    boundary_gap_m: float
+    witness: CollisionWitness
+    facets: tuple
+    contacts: tuple[MaterialContactPoint, ...]
+
+
+@dataclass(frozen=True)
+class MeshContactTrace:
+    start: MeshContactPose
+    end: MeshContactPose
+    first_ratio: tuple[int, int] | None
+    entry: MeshContactPose | None

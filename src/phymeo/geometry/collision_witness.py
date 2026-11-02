@@ -10,6 +10,8 @@ class MaterialContactPoint:
     point: tuple[float, ...]
     first_weights: tuple[tuple[int, float], ...]
     second_weights: tuple[tuple[int, float], ...]
+    first_height_m: float | None = None
+    second_height_m: float | None = None
 
 
 @dataclass(frozen=True)
@@ -34,6 +36,10 @@ class CollisionWitness:
     intersection_points: tuple[MaterialContactPoint, ...] = ()
     shared_material_points: tuple[MaterialContactPoint, ...] = ()
 
+    # Signed material height along the middle triangle's oriented normal.
+    first_height_m: float | None = None
+    second_height_m: float | None = None
+
     @property
     def shared_only(self):
         return bool(self.shared_material_points) and not self.intersection_points
@@ -51,3 +57,14 @@ class CollisionSweep:
     # For an isolated incident hit the representable sample time can have only
     # adjacency. These separate material points are evaluated at that same time.
     feature_witness: CollisionWitness | None = None
+
+
+@dataclass(frozen=True)
+class TetrahedralFacetResult:
+    """One outward cell face. An exact event is distinct from the sweep's sampled pose."""
+
+    face_ids: tuple[int, int, int]
+    witness: CollisionWitness
+    sweep: CollisionSweep | None
+    event_time_ratio: tuple[int, int] | None
+    event_witness: CollisionWitness | None

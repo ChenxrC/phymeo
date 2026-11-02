@@ -17,8 +17,9 @@ from ..constraints.collision_shapes import (
 from ..core.capabilities import SolverFailure
 from ._round_sweep import round_query, sweep_result
 from ._sphere_triangle_sweep import sphere_face_query
+from ._tetrahedral_surface import TetrahedralSurfaceQuery, exterior_faces, positive_cell
 from ._triangle_pair_sweep import triangle_pair_query
-from .collision_witness import CollisionSweep, CollisionWitness
+from .collision_witness import CollisionSweep, CollisionWitness, TetrahedralFacetResult
 from .surface_features import closest_point_triangle
 
 _REASONS = ("candidate", "different_world", "same_rigid_body", "mask", "excluded", "aabb")
@@ -46,6 +47,7 @@ class CollisionPair:
     reason: str
     witness: CollisionWitness | None = None
     sweep: CollisionSweep | None = None
+    facets: tuple[TetrahedralFacetResult, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -199,6 +201,10 @@ def _pair(a, b, ma, mb, code, analytic, seeds):
     if analytic is not None:
         try:
             with np.errstate(over="raise", invalid="raise", divide="raise"):
+                if isinstance(analytic, TetrahedralSurfaceQuery):
+                    return CollisionPair(
+                        *fields, True, *analytic.result(ma.moving or mb.moving, seeds)
+                    )
                 if ma.moving or mb.moving:
                     witness, sweep = sweep_result(analytic, seeds)
                     hit = sweep.first_t is not None
@@ -260,15 +266,35 @@ def _detect_pairs(workspace, paths, flags):
     rows = []
     shapes = workspace._model.shapes
     # Bound temporary exact feature storage independently of the model's pair capacity.
-    for offset in range(0, len(flags), 128):
+    valid = {}
+    # A thick cloth/cell pair can contribute 4 outer faces x 8 skin triangles.
+    batch_size = 4 if workspace.exterior_faces else 128
+    for offset in range(0, len(flags), batch_size):
         batch = []
         features = []
-        for local, (i, j, _) in enumerate(workspace._pairs[offset : offset + 128]):
+        for local, (i, j, _) in enumerate(workspace._pairs[offset : offset + batch_size]):
             a, b = shapes[i], shapes[j]
             ma, mb = paths[a.key], paths[b.key]
             code = int(flags[offset + local])
             analytic = None
-            if not code:
+            if (
+                not code
+                and "tetrahedron" in (a.kind, b.kind)
+                and {a.kind, b.kind} & {"triangle", "sphere"}
+            ):
+                tet_first = a.kind == "tetrahedron"
+                cell, other, mc, mo = (a, b, ma, mb) if tet_first else (b, a, mb, ma)
+                body = (cell.key.world, cell.key.body)
+                if body not in valid:
+                    valid[body] = all(
+                        positive_cell(paths[k])
+                        for k in workspace.exterior_faces
+                        if (k.world, k.body) == body
+                    )
+                analytic = TetrahedralSurfaceQuery(
+                    cell, other, mc, mo, workspace.exterior_faces[cell.key], tet_first, valid[body]
+                )
+            elif not code:
                 analytic = (
                     round_query(a, b, ma, mb)
                     or sphere_face_query(a, b, ma, mb)
@@ -300,6 +326,7 @@ class CollisionWorkspace:
         if backend not in ("host", "interpret", "cuda"):
             raise ValueError("collision backend must be host, interpret or cuda")
         shapes = model.shapes
+        self._exterior_faces = exterior_faces(shapes)
         excluded = set(model.excluded)
         self._offsets = np.array(
             [0, *np.cumsum([len(s.vertex_ids) for s in shapes], dtype=np.int32)], dtype=np.int32
@@ -329,6 +356,11 @@ class CollisionWorkspace:
             self._engine = TyxCollisionBatch(
                 backend, self._offsets, self._tags, self._pairs, cache_root
             )
+
+    @property
+    def exterior_faces(self):
+        """Outward vertex ID triples grouped by owning tetrahedron, after internal cancellation."""
+        return self._exterior_faces
 
     @property
     def last_result(self):

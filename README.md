@@ -93,7 +93,7 @@ python -m pytest
 
 ## 通用碰撞检测
 
-`phymeo.detect` 在同一模型中查询刚体–刚体、刚体–柔体和柔体–柔体形状对。使用 `CollisionWorkspace` 可选择 HOST、tyx interpret 或 CUDA 宽相。结果分别标识过滤原因、几何见证、缺少窄相和容量不足。[宽相用法](docs/benchmarks/p65-collision-m1.md) · [球、胶囊和移动半空间的首触](docs/benchmarks/p65-collision-m2-round.md) · [球与变形三角面的首触](docs/benchmarks/p65-collision-m2-sphere-face.md) · [异体布面首触](docs/benchmarks/p65-collision-m2-triangle-pairs.md) · [同体布面自碰撞与合法邻接](docs/benchmarks/p65-collision-m2-cloth-adjacency.md)
+`phymeo.detect` 在同一模型中查询刚体–刚体、刚体–柔体和柔体–柔体形状对。使用 `CollisionWorkspace` 可选择 HOST、tyx interpret 或 CUDA 宽相。结果分别标识过滤原因、几何见证、缺少窄相和容量不足。[宽相用法](docs/benchmarks/p65-collision-m1.md) · [球、胶囊和移动半空间的首触](docs/benchmarks/p65-collision-m2-round.md) · [球与变形三角面的首触](docs/benchmarks/p65-collision-m2-sphere-face.md) · [异体布面首触](docs/benchmarks/p65-collision-m2-triangle-pairs.md) · [同体布面自碰撞与合法邻接](docs/benchmarks/p65-collision-m2-cloth-adjacency.md) · [刚球和布面与四面体外表面](docs/benchmarks/p65-collision-m2-tetrahedral-surfaces.md)
 
 ## 布料接触与搬运案例
 

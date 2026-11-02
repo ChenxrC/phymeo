@@ -6,7 +6,7 @@ from fractions import Fraction as F
 import numpy as np
 
 from ..core.capabilities import SolverFailure
-from ._round_sweep import _axis_features, _unit, _vector, _xyz
+from ._round_sweep import _axis_features, _unit, _xyz
 from ._sweep_polynomial import (
     Roots,
     affine_vectors,
@@ -47,9 +47,9 @@ class _TouchFeature:
 class _FacePath:
     def __init__(self, shape, motion):
         self.ids = shape.vertex_ids
-        self.start = np.array([_vector(p) for p in motion.start], dtype=object)
+        self.start = np.array([[F(x) for x in p] for p in motion.start], dtype=object)
         end = motion.start if motion.end is None else motion.end
-        self.step = np.array([_vector(p) for p in end], dtype=object) - self.start
+        self.step = np.array([[F(x) for x in p] for p in end], dtype=object) - self.start
         self.vertices = affine_vectors(self.start, self.step)
         p, q, r = self.vertices
         self.u, self.v = difference(q, p), difference(r, p)

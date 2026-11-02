@@ -63,4 +63,4 @@ python -m pytest tests/collision/test_tyx_adjacent_triangle_sweep.py tests/colli
 python -m pytest tests/collision/test_tyx_adjacent_triangle_sweep.py tests/collision/test_tyx_triangle_pair_sweep.py tests/collision/test_tyx_collision_pipeline.py tests/collision/test_tyx_round_collision.py tests/collision/test_tyx_sphere_face_sweep.py -q -p no:cacheprovider --tyx-mode=cuda --require-tyx
 ```
 
-下一批从 RD04/DD04 共用的四面体外表面开始。先验证共享内部面消去、外面定向以及材料地址回到所属单元，再用球和布面的独立案例接扫掠。DD05 的闭体包含单独验收。[多案例计划](../superpowers/plans/2026-11-02-p65-tyx-collision-pipeline.md)
+后续 RD04/DD04 已将定向四面体外表面接到球、布的独立扫掠案例。DD05 的闭体包含单独验收。[外表面实测](p65-collision-m2-tetrahedral-surfaces.md) · [多案例计划](../superpowers/plans/2026-11-02-p65-tyx-collision-pipeline.md)

@@ -160,6 +160,13 @@ class ConvexContactPatch:
 
 
 @dataclass(frozen=True)
+class ProximityWitness(CollisionWitness):
+    """Complete finite closest patch when explicitly requested for a separated pair."""
+
+    proximity_patch: ConvexContactPatch | None = None
+
+
+@dataclass(frozen=True)
 class ConvexContactPose:
     relation: str
     witness: CollisionWitness

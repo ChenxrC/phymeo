@@ -217,11 +217,14 @@ class CollisionPolicy:
 
     candidate_capacity: int = MAX_SHAPES * (MAX_SHAPES - 1) // 2
     margin: float = 0.0
+    proximity_patches: bool = False
 
     def __post_init__(self):
         object.__setattr__(
             self, "candidate_capacity", _integer(self.candidate_capacity, "capacity")
         )
+        if not isinstance(self.proximity_patches, bool):
+            raise TypeError("proximity_patches must be bool")
         margin = finite_real(self.margin, "margin")
         if margin < 0:
             raise ValueError("detection margin cannot be negative")

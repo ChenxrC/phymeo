@@ -366,7 +366,7 @@ def _mesh_candidates(workspace, paths, flags, envelopes, bounds, pending):
     return selected
 
 
-def _detect_pairs(workspace, paths, flags, selected):
+def _detect_pairs(workspace, paths, flags, selected, proximity=False):
     rows = []
     shapes = workspace._model.shapes
     # Bound temporary exact feature storage independently of the model's pair capacity.
@@ -505,7 +505,7 @@ def _detect_pairs(workspace, paths, flags, selected):
                         analytic = second
                     elif not code:
                         try:
-                            analytic = HullPairQuery(first, second)
+                            analytic = HullPairQuery(first, second, proximity=proximity)
                         except SolverFailure as error:
                             analytic = _NarrowFailure("unresolved", str(error))
             elif a.kind == b.kind == "tetrahedron" and a.key.body != b.key.body and code in (0, 5):
@@ -539,7 +539,7 @@ def _detect_pairs(workspace, paths, flags, selected):
                     or sphere_face_query(a, b, ma, mb)
                     or rotating_capsule_face_query(a, b, ma, mb)
                     or capsule_face_query(a, b, ma, mb)
-                    or triangle_pair_query(a, b, ma, mb)
+                    or triangle_pair_query(a, b, ma, mb, proximity=proximity)
                 )
             begin = len(features)
             if analytic is not None and (ma.moving or mb.moving):
@@ -762,7 +762,7 @@ def detect(model, motion, policy, workspace):
             after_mid = perf_counter_ns()
             workspace._times["midphase_ns"] += after_mid - narrow_start
             narrow_start = after_mid
-        rows = _detect_pairs(workspace, paths, flags, selected)
+        rows = _detect_pairs(workspace, paths, flags, selected, policy.proximity_patches)
         boxes = tuple(
             CollisionBounds(s.key, s.revision, None, None)
             if s.kind == "plane"

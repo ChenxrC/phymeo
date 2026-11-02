@@ -6,6 +6,7 @@ from .backends.tyx_articulated import (
     make_tyx_articulated_runtime,
 )
 from .backends.tyx_coupled import TyxCoupledXPBDSolver
+from .backends.tyx_normal_layer import TyxNormalLayer
 from .backends.tyx_participants import (
     TyxClothParticipant,
     TyxRobotParticipant,
@@ -135,6 +136,12 @@ from .runtime.stepper import Stepper
 from .runtime.terminal_impulse import PointVelocityImpulses, TerminalImpulseProgram
 from .solvers.articulated_coupling import ArticulatedCouplingProgram, make_articulated_runtime
 from .solvers.cloth import ClothProgram, make_cloth_runtime
+from .solvers.collision_loads import (
+    CollisionLoadSystem,
+    NormalLayer,
+    ParticleAttachment,
+    RigidAttachment,
+)
 from .solvers.compliant_cloth_contact import CompliantClothContactProgram, CompliantPatch
 from .solvers.compliant_robot_contact import CompliantRobotContactProgram
 from .solvers.coupled_program import (
@@ -338,6 +345,11 @@ __all__ += [
     "CollisionBounds",
     "CollisionDetection",
     "CollisionKey",
+    "CollisionLoadSystem",
+    "TyxNormalLayer",
+    "NormalLayer",
+    "ParticleAttachment",
+    "RigidAttachment",
     "CollisionModel",
     "CollisionMotion",
     "CollisionPair",

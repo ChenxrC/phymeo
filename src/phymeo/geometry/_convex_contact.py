@@ -19,6 +19,7 @@ from .collision_witness import (
     ConvexContactPose,
     ConvexHullTrace,
     MaterialContactPoint,
+    ProximityWitness,
 )
 
 _MAX_AXES = 4096
@@ -103,7 +104,7 @@ def _patch(a, b, t, d, fa, fb):
     )
 
 
-def _closest(a, b, t):
+def _closest(a, b, t, proximity=False):
     """Finite vertex/face and true-edge/edge candidates for a disjoint pair."""
     best = None
 
@@ -141,6 +142,22 @@ def _closest(a, b, t):
     normal, dist = _unit(pb - pa)
     if normal is None:
         raise SolverFailure("convex_disjoint_witness_unresolved")
+    if proximity:
+        d = pb - pa
+        fa, fb = _projection(a, d)[3], _projection(b, d)[2]
+        patch = _patch(a, b, t, d, fa, fb)
+        if patch is None:
+            raise SolverFailure("convex_closest_patch_unresolved")
+        return ProximityWitness(
+            dist,
+            _xyz(normal),
+            _xyz(pa),
+            _xyz(pb),
+            _public(wa),
+            _public(wb),
+            _SOURCE,
+            proximity_patch=patch,
+        )
     return CollisionWitness(
         dist, _xyz(normal), _xyz(pa), _xyz(pb), _public(wa), _public(wb), _SOURCE
     )
@@ -149,8 +166,9 @@ def _closest(a, b, t):
 class HullPairQuery:
     features = ()
 
-    def __init__(self, a, b):
+    def __init__(self, a, b, *, proximity=False):
         self.a, self.b = a, b
+        self.proximity = proximity
         axes = {direction_key(face.normal) for shape in (a, b) for face in shape.faces}
         for u, v in product(a.edge_rays, b.edge_rays):
             ray = direction_key(_cross3(u, v))
@@ -220,8 +238,10 @@ class HullPairQuery:
                         p.second_weights,
                         _SOURCE,
                     )
+                    if self.proximity:
+                        w = ProximityWitness(**vars(w), proximity_patch=patch)
                     return ConvexContactPose("separated", w, ())
-            return ConvexContactPose("separated", _closest(self.a, self.b, t), ())
+            return ConvexContactPose("separated", _closest(self.a, self.b, t, self.proximity), ())
         for _, d, fa, fb in ties:
             patch = _patch(self.a, self.b, t, d, fa, fb)
             if patch is None:

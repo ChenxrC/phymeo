@@ -6,6 +6,7 @@ from fractions import Fraction as F
 import numpy as np
 
 from ..core.capabilities import SolverFailure
+from ._prism_clip import hull, intersect
 from ._round_sweep import _axis_features, _unit, _xyz
 from ._sweep_polynomial import (
     Roots,
@@ -19,7 +20,13 @@ from ._sweep_polynomial import (
     split_projection_roots,
     sub,
 )
-from .collision_witness import CollisionWitness, MaterialContactPoint
+from .collision_witness import (
+    CollisionWitness,
+    ConvexContactPatch,
+    ConvexContactPoint,
+    MaterialContactPoint,
+    ProximityWitness,
+)
 
 _EDGES = ((0, 1), (1, 2), (2, 0))
 _ZERO_VECTOR = np.array((F(0), F(0), F(0)), dtype=object)
@@ -207,7 +214,54 @@ def _center_witness(points, shared):
     )
 
 
-def _record(a, b, candidates, *, incident, source="host-affine-triangle-pair"):
+def _closest_patch(a, b, pa, delta):
+    # For disjoint convex faces the nearest displacement is unique. Translate
+    # the two exposed supports onto one plane and intersect their complete hulls.
+    dropped = max(range(3), key=lambda i: abs(delta[i]))
+    cols = tuple(i for i in range(3) if i != dropped)
+
+    def support(face, extreme, shift):
+        heights = [p @ delta for p in face.p]
+        ids = [i for i, h in enumerate(heights) if h == extreme(heights)]
+        ring = hull(tuple(face.p[i, j] - shift[j] for j in cols) for i in ids)
+        return tuple(sorted(face.ids[i] for i in ids)), ring
+
+    fa, ra = support(a, max, _ZERO_VECTOR)
+    fb, rb = support(b, min, delta)
+    ring = intersect(ra, rb)
+    if not ring:
+        raise SolverFailure("triangle_closest_patch_unresolved")
+    pts, coords = [], []
+    for xy in ring:
+        x = pa.copy()
+        for j, val in zip(cols, xy, strict=True):
+            x[j] = val
+        x[dropped] = (pa @ delta - sum(delta[j] * x[j] for j in cols)) / delta[dropped]
+        y = x + delta
+        wa, wb = a.projected(x), b.projected(y)
+        if wa is None or wb is None:
+            raise SolverFailure("triangle_closest_material_unresolved")
+        pts.append(
+            ConvexContactPoint(
+                _xyz(x), _xyz(y), _as_weights(a.address(wa)), _as_weights(b.address(wb))
+            )
+        )
+        coords.append(x)
+    twice = sum(
+        (
+            _cross3(coords[i] - coords[0], coords[i + 1] - coords[0])
+            for i in range(1, len(coords) - 1)
+        ),
+        _ZERO_VECTOR.copy(),
+    )
+    if twice @ delta < 0:
+        pts.reverse()
+    return ConvexContactPatch(
+        _xyz(_unit(delta)[0]), fa, fb, min(2, len(pts) - 1), _unit(twice)[1] / 2, tuple(pts)
+    )
+
+
+def _record(a, b, candidates, *, incident, source="host-affine-triangle-pair", proximity=False):
     best = None
     points = {}
     shared = {}
@@ -239,7 +293,7 @@ def _record(a, b, candidates, *, incident, source="host-affine-triangle-pair"):
         ), F(0)
     key, pa, pb, delta = best
     normal, distance = _unit(delta)
-    return CollisionWitness(
+    w = CollisionWitness(
         distance,
         None if normal is None else _xyz(normal),
         _xyz(pa),
@@ -247,11 +301,15 @@ def _record(a, b, candidates, *, incident, source="host-affine-triangle-pair"):
         *map(_as_weights, key[2]),
         source=source,
         intersection_points=_material_points(points),
-    ), key[0]
+    )
+    if proximity and key[0]:
+        w = ProximityWitness(**vars(w), proximity_patch=_closest_patch(a, b, pa, delta))
+    return w, key[0]
 
 
 class _TrianglePair:
-    def __init__(self, a, b, ma, mb, *, sweep=True):
+    def __init__(self, a, b, ma, mb, *, sweep=True, proximity=False):
+        self.proximity = proximity
         self.a, self.b = _FacePath(a, ma), _FacePath(b, mb)
         self.shared = (
             set(self.a.ids).intersection(self.b.ids) if a.key.body == b.key.body else set()
@@ -293,7 +351,7 @@ class _TrianglePair:
         candidates = list(_face_candidates(a, b))
         candidates.extend((wa, wb) for wb, wa in _face_candidates(b, a))
         candidates.extend(_edge_candidates(a, b))
-        return _record(a, b, candidates, incident=bool(self.shared))
+        return _record(a, b, candidates, incident=bool(self.shared), proximity=self.proximity)
 
     def event_witness(self, time):
         """Closest disjoint feature pair at the reported sample of an incident hit."""
@@ -307,7 +365,7 @@ class _TrianglePair:
         return witness
 
 
-def triangle_pair_query(a, b, ma, mb):
+def triangle_pair_query(a, b, ma, mb, *, proximity=False):
     if a.kind != b.kind or a.kind != "triangle" or a.radius or b.radius:
         return None
-    return _TrianglePair(a, b, ma, mb)
+    return _TrianglePair(a, b, ma, mb, proximity=proximity)

@@ -46,8 +46,39 @@ def classify_pairs(
             code = 3
         elif pairs[row, 2] != 0:
             code = 4
+        elif tags[a, 5] != 0 or tags[b, 5] != 0:
+            code = 0  # Unbounded half-space. Its anchor box cannot separate the pair.
         else:
             for k in tx.static_range(3):
                 if bounds[a, k] > bounds[b, k + 3] or bounds[b, k] > bounds[a, k + 3]:
                     code = 5
         result[row] = code
+
+
+@tx.kernel
+def round_entry_times(count: tx.i32, rows: tx.ndarray(tx.f32, 2), entry: tx.ndarray(tx.f32, 1)):
+    # First entry of a convex quadratic on a closed feature interval in FP32.
+    for i in tx.range(count):
+        lo = rows[i, 0]
+        hi = rows[i, 1]
+        a = rows[i, 2]
+        b = rows[i, 3]
+        c = rows[i, 4]
+        answer = -1.0
+        if (a * lo + b) * lo + c <= 0.0:
+            answer = lo
+        else:
+            minimum = hi
+            if a > 0.0:
+                minimum = tx.max(lo, tx.min(hi, -0.5 * b / a))
+            if (a * minimum + b) * minimum + c <= 0.0:
+                before = lo
+                after = minimum
+                for _step in range(24):
+                    middle = 0.5 * (before + after)
+                    if (a * middle + b) * middle + c <= 0.0:
+                        after = middle
+                    else:
+                        before = middle
+                answer = after
+        entry[i] = answer

@@ -93,7 +93,7 @@ python -m pytest
 
 ## 通用碰撞检测
 
-`phymeo.detect` 在同一模型中查询刚体–刚体、刚体–柔体和柔体–柔体形状对。使用 `CollisionWorkspace` 可选择 HOST、tyx interpret 或 CUDA 宽相。结果分别标识过滤原因、几何见证、缺少窄相和容量不足。[配对支持表、示例与实测](docs/benchmarks/p65-collision-m1.md)
+`phymeo.detect` 在同一模型中查询刚体–刚体、刚体–柔体和柔体–柔体形状对。使用 `CollisionWorkspace` 可选择 HOST、tyx interpret 或 CUDA 宽相。结果分别标识过滤原因、几何见证、缺少窄相和容量不足。[宽相用法](docs/benchmarks/p65-collision-m1.md) · [球、胶囊和移动半空间的首触与见证](docs/benchmarks/p65-collision-m2-round.md)
 
 ## 布料接触与搬运案例
 

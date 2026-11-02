@@ -61,4 +61,4 @@ python -m pytest tests/collision/test_tyx_collision_pipeline.py -q -p no:cachepr
 python -m pytest tests/collision/test_tyx_collision_pipeline.py -q -p no:cacheprovider --tyx-mode=cuda --require-tyx
 ```
 
-M2 用原案例补几何分类、接触区域和首次接触。SAP、BVH 与动力学消费者按后续节点验收。[分族计划](../superpowers/plans/2026-11-02-p65-tyx-collision-pipeline.md)
+M2 首批已补球、胶囊和固定法向移动半空间的平移首触，扩展后的支持范围见[M2 记录](p65-collision-m2-round.md)。SAP、BVH 与动力学消费者按后续节点验收。[分族计划](../superpowers/plans/2026-11-02-p65-tyx-collision-pipeline.md)

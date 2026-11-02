@@ -8,7 +8,8 @@
 - **M0 第三批已运行** RR05、RD04、DD05 有 16 条几何观测。表面正距离同时可能出现在凹槽空区和实体内部；已有拓扑函数可消去两个四面体的共享面，材料所有者需另行绑定。初始包含、退化输入和变形体外部首次接触分别记录。[第三批回归](../../tests/collision/test_solid_boundaries.py) · [实测差异](../benchmarks/p65-general-collision-baseline.md)
 - **M0 已完成** 收尾批 RR01、RR02、RD03、RD05、DD01、DD04 有 31 条几何观测。四批共覆盖 15 个基础案例、74 个构型。DD04 保留了先触外面、后触斜面的原始失败和修正记录。[逐案例结果](../benchmarks/p65-general-collision-baseline.md) · [收尾批回归](../../tests/collision/test_detection_matrix.py)
 - **M1 公共入口已验收** `phymeo.detect` 可在一个混合模型里筛选 RR/RD/DD。11 个形状的 55 对在 HOST、tyx interpret、实际 CUDA 上逐对一致。静态球、胶囊及球–零厚三角面已接入。尚无扫掠窄相的候选公开标为 `unsupported`。[用法和实测](../benchmarks/p65-collision-m1.md)
-- **下一节点 · M2 窄相** 先用 RR01 球–平面与 RR02 胶囊轴部/端帽检验静态和首触结果，再将 RD01 与 DD01/DD02 接入相同入口。[实施计划](../superpowers/plans/2026-11-02-p65-tyx-collision-pipeline.md)
+- **M2-RR 首批已验收** RR01 球–平面/球–球与 RR02 胶囊轴部/端帽已接到公开入口。运动时独立保存首触与末态几何。两端分离的胶囊穿越、擦边与一刻度近失均有回归。[支持范围与实测](../benchmarks/p65-collision-m2-round.md)
+- **下一节点 · M2-RD** 用 RD01 验证球对整张三角面的首触，包含所有顶点均未命中的正例、偏心留出和分离负控。随后接 DD01/DD02 的点–面、边–边和 RR03–RR05 的凸体、转动与凹网格。[分族实施计划](../superpowers/plans/2026-11-02-p65-tyx-collision-pipeline.md)
 - **随后的实施顺序** 用同一公开检测入口连接原有几何，依差异补三族窄相、连续检测和材料身份，再做设备/缓存/容量的跨族回归。每族独立接动力学，最终做单爪折叠与双臂放台。
 - **可复用基础** 球–平面、连杆胶囊、有限棱柱、线性特征扫掠和限定的壳几何可作起点。已有布内力、机器人树、双向点载荷、统一子步及回滚负责消费检测输出。
 - **已完成的参考布案例** 带关节限位与六个连杆碰撞体的双臂交接。独立碰撞/限位/回滚检查已通过。3.62 s 的同次轨迹完成递布，B 独立横移 10.36 cm，末帧桌面支撑 0.47104 N；源码目录外的 wheel 逐位复现 B 接管步。[结果](../benchmarks/p65-robot-contact-results.json)及[本节点计划](../superpowers/plans/2026-11-02-robot-limits-contact.md)。

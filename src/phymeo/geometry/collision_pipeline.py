@@ -1,4 +1,4 @@
-"""Finite, mixed-family collision queries. Candidate coverage is independent of narrow support."""
+"""Mixed-family collision queries for bounded shapes and unbounded half-spaces."""
 
 from collections.abc import Mapping
 from dataclasses import dataclass
@@ -15,7 +15,9 @@ from ..constraints.collision_shapes import (
     CollisionPolicy,
 )
 from ..core.capabilities import SolverFailure
-from .surface_features import closest_point_triangle, closest_segment_segment
+from ._round_sweep import round_query, sweep_result
+from .collision_witness import CollisionSweep, CollisionWitness
+from .surface_features import closest_point_triangle
 
 _REASONS = ("candidate", "different_world", "same_rigid_body", "mask", "excluded", "aabb")
 _F32_MAX = Fraction(float(np.finfo(np.float32).max))
@@ -24,23 +26,12 @@ _F32_TINY = Fraction(float(np.finfo(np.float32).tiny))
 
 @dataclass(frozen=True)
 class CollisionBounds:
+    """Outward box for a bounded shape; both endpoints are None for a half-space."""
+
     key: CollisionKey
     revision: int
-    lower: tuple[float, ...]
-    upper: tuple[float, ...]
-
-
-@dataclass(frozen=True)
-class CollisionWitness:
-    """One feasible material representative, with normal oriented from first to second."""
-
-    gap_m: float
-    normal: tuple[float, ...] | None
-    first_point: tuple[float, ...] | None
-    second_point: tuple[float, ...] | None
-    first_weights: tuple[tuple[int, float], ...]
-    second_weights: tuple[tuple[int, float], ...]
-    source: str = "host-fp64"
+    lower: tuple[float, ...] | None
+    upper: tuple[float, ...] | None
 
 
 @dataclass(frozen=True)
@@ -52,6 +43,7 @@ class CollisionPair:
     status: str
     reason: str
     witness: CollisionWitness | None = None
+    sweep: CollisionSweep | None = None
 
 
 @dataclass(frozen=True)
@@ -95,6 +87,11 @@ def _envelopes(model, paths, margin):
         turn = path.turn
         if turn is not None and not shape.rigid:
             raise ValueError("rigid turn requires a rigid shape")
+        if shape.kind == "plane":
+            # Its row is storage padding only. Both broad phases bypass this AABB.
+            packed[row] = 0
+            row += 1
+            continue
         pad = Fraction(shape.radius) + Fraction(margin) / 2
         translation = None
         for i, p in enumerate(path.start):
@@ -147,6 +144,8 @@ def _host_query(offsets, tags, pairs, envelopes):
             flags[row] = 3
         elif excluded:
             flags[row] = 4
+        elif tags[a, 5] or tags[b, 5]:
+            continue
         elif np.any(bounds[a, :3] > bounds[b, 3:]) or np.any(bounds[b, :3] > bounds[a, 3:]):
             flags[row] = 5
     return bounds, flags
@@ -158,84 +157,25 @@ def _address(shape, weights):
     )
 
 
-def _axis_pair(a, b, x, y):
-    if len(x) == len(y) == 2 and not np.array_equal(x[0], x[1]) and not np.array_equal(y[0], y[1]):
-        try:
-            pair = closest_segment_segment(x, y)
-        except SolverFailure:
-            pass  # Conditioned FP64 query declined. Solve the same two closed axes below.
-        else:
-            return (
-                pair.first,
-                pair.second,
-                pair.second - pair.first,
-                _address(a, pair.first_weights),
-                _address(b, pair.second_weights),
-                "host-fp64",
-            )
-
-    # The squared distance between two closed axes is a convex quadratic on [0,1]^2.
-    # Check its stationary point and each boundary minimum on the stored coordinates.
-    p, p1, q, q1 = (
-        np.array([Fraction(float(z)) for z in point], dtype=object)
-        for point in (x[0], x[-1], y[0], y[-1])
-    )
-    u, v, w = p1 - p, q1 - q, p - q
-    uu, uv, vv, uw, vw = u @ u, u @ v, v @ v, u @ w, v @ w
-    half = Fraction(1, 2)
-
-    def clamp(z):
-        return min(1, max(0, z))
-
-    choices = [(s, clamp((vw + s * uv) / vv) if vv else half) for s in ((0, 1) if uu else (half,))]
-    choices.extend(
-        (clamp((t * uv - uw) / uu) if uu else half, t) for t in ((0, 1) if vv else (half,))
-    )
-    determinant = uu * vv - uv * uv
-    if determinant:
-        s, t = (uv * vw - vv * uw) / determinant, (uu * vw - uv * uw) / determinant
-        if 0 <= s <= 1 and 0 <= t <= 1:
-            choices.append((s, t))
-
-    def squared(pair):
-        s, t = pair
-        residual = w + s * u - t * v
-        return residual @ residual
-
-    s, t = min(choices, key=squared)
-    first, second = p + s * u, q + t * v
-    return (
-        np.asarray(first, float),
-        np.asarray(second, float),
-        np.asarray(second - first, float),
-        _address(a, (1,) if len(x) == 1 else (1 - s, s)),
-        _address(b, (1,) if len(y) == 1 else (1 - t, t)),
-        "host-rational-axis",
-    )
-
-
 def _static_witness(a, b, x, y):
-    if a.kind in {"sphere", "capsule"} and b.kind in {"sphere", "capsule"}:
-        p, q, delta, wa, wb, source = _axis_pair(a, b, x, y)
-    elif {a.kind, b.kind} == {"sphere", "triangle"}:
-        sphere_first = a.kind == "sphere"
-        face = b if sphere_first else a
-        if face.radius != 0:
-            return None
-        pair = closest_point_triangle(x[0], y) if sphere_first else closest_point_triangle(y[0], x)
-        if sphere_first:
-            p, q = pair.first, pair.second
-            wa, wb = _address(a, (1.0,)), _address(b, pair.second_weights)
-        else:
-            p, q = pair.second, pair.first
-            wa, wb = _address(a, pair.second_weights), _address(b, (1.0,))
-        delta, source = q - p, "host-fp64"
-    else:
+    if {a.kind, b.kind} != {"sphere", "triangle"}:
         return None
+    sphere_first = a.kind == "sphere"
+    face = b if sphere_first else a
+    if face.radius != 0:
+        return None
+    pair = closest_point_triangle(x[0], y) if sphere_first else closest_point_triangle(y[0], x)
+    if sphere_first:
+        p, q = pair.first, pair.second
+        wa, wb = _address(a, (1.0,)), _address(b, pair.second_weights)
+    else:
+        p, q = pair.second, pair.first
+        wa, wb = _address(a, pair.second_weights), _address(b, (1.0,))
+    delta = q - p
     distance = float(np.hypot.reduce(delta))
     gap = distance - (a.radius + b.radius)
     if distance == 0:
-        return CollisionWitness(gap, None, None, None, wa, wb, source)
+        return CollisionWitness(gap, None, None, None, wa, wb)
     normal = delta / distance
     return CollisionWitness(
         gap,
@@ -244,16 +184,40 @@ def _static_witness(a, b, x, y):
         tuple(map(float, q - b.radius * normal)),
         wa,
         wb,
-        source,
     )
 
 
-def _pair(a, b, ma, mb, code):
+def _pair(a, b, ma, mb, code, analytic, seeds):
     family = "RR" if a.rigid and b.rigid else "RD" if a.rigid != b.rigid else "DD"
     fields = (a.key, b.key, family)
     if code:
         return CollisionPair(
             *fields, False, "separated" if code == 5 else "filtered", _REASONS[code]
+        )
+    if analytic is not None:
+        try:
+            with np.errstate(over="raise", invalid="raise", divide="raise"):
+                if ma.moving or mb.moving:
+                    witness, sweep = sweep_result(analytic, seeds)
+                    hit = sweep.first_t is not None
+                    return CollisionPair(
+                        *fields,
+                        True,
+                        "hit" if hit else "separated",
+                        "first_contact" if hit else "swept_separated",
+                        witness,
+                        sweep,
+                    )
+                witness, signed = analytic.sample(Fraction(0))
+        except (OverflowError, FloatingPointError):
+            return CollisionPair(*fields, True, "unresolved", "witness_outside_fp64")
+        status = "overlap" if signed < 0 else "touching" if signed == 0 else "separated"
+        return CollisionPair(
+            *fields,
+            True,
+            status,
+            "nonunique_normal" if witness.normal is None else "narrow_phase",
+            witness,
         )
     if ma.moving or mb.moving:
         return CollisionPair(*fields, True, "unsupported", "swept_narrow_phase")
@@ -278,6 +242,35 @@ def _pair(a, b, ma, mb, code):
     )
 
 
+def _detect_pairs(workspace, paths, flags):
+    rows = []
+    shapes = workspace._model.shapes
+    # Bound temporary exact feature storage independently of the model's pair capacity.
+    for offset in range(0, len(flags), 128):
+        batch = []
+        features = []
+        for local, (i, j, _) in enumerate(workspace._pairs[offset : offset + 128]):
+            a, b = shapes[i], shapes[j]
+            ma, mb = paths[a.key], paths[b.key]
+            code = int(flags[offset + local])
+            analytic = None if code else round_query(a, b, ma, mb)
+            begin = len(features)
+            if analytic is not None and (ma.moving or mb.moving):
+                features.extend(analytic.features)
+            batch.append((a, b, ma, mb, code, analytic, begin, len(features)))
+        if workspace._engine is None:
+            seeds = [None] * len(features)
+        else:
+            try:
+                seeds = workspace._engine.entry_times(features)
+            except BaseException:
+                workspace._close_locked()
+                raise
+        for a, b, ma, mb, code, analytic, start, end in batch:
+            rows.append(_pair(a, b, ma, mb, code, analytic, seeds[start:end]))
+    return tuple(rows)
+
+
 class CollisionWorkspace:
     """One immutable model, one explicit broad-phase backend and one publication."""
 
@@ -292,9 +285,12 @@ class CollisionWorkspace:
             [0, *np.cumsum([len(s.vertex_ids) for s in shapes], dtype=np.int32)], dtype=np.int32
         )
         self._tags = np.array(
-            [(s.key.world, s.key.body, int(s.rigid), s.group, s.mask) for s in shapes],
+            [
+                (s.key.world, s.key.body, int(s.rigid), s.group, s.mask, int(s.kind == "plane"))
+                for s in shapes
+            ],
             dtype=np.int32,
-        ).reshape(-1, 5)
+        ).reshape(-1, 6)
         self._pairs = np.array(
             [
                 (i, j, int((shapes[i].key, shapes[j].key) in excluded))
@@ -348,8 +344,8 @@ class CollisionWorkspace:
 def detect(model, motion, policy, workspace):
     """Query every registered pair. Never publish a partial or over-capacity result.
 
-    Supported static narrow queries run on the bound FP64 source geometry.
-    The selected host/tyx broad phase always supplies its own bounds and flags.
+    The selected backend supplies the broad phase and, for supported translating
+    round pairs, entry proposals. Stored-coordinate feature tests bound the first event.
     """
     if not isinstance(workspace, CollisionWorkspace) or workspace._model is not model:
         raise ValueError("workspace is bound to a different collision model")
@@ -386,16 +382,15 @@ def detect(model, motion, policy, workspace):
         count = int(np.count_nonzero(flags == 0))
         if count > policy.candidate_capacity:
             return CollisionDetection("capacity_exceeded", workspace._backend, count, (), ())
-        rows = []
-        for (i, j, _), code in zip(workspace._pairs, flags, strict=True):
-            a, b = model.shapes[i], model.shapes[j]
-            rows.append(_pair(a, b, paths[a.key], paths[b.key], int(code)))
+        rows = _detect_pairs(workspace, paths, flags)
         boxes = tuple(
-            CollisionBounds(
+            CollisionBounds(s.key, s.revision, None, None)
+            if s.kind == "plane"
+            else CollisionBounds(
                 s.key, s.revision, tuple(map(float, row[:3])), tuple(map(float, row[3:]))
             )
             for s, row in zip(model.shapes, bounds, strict=True)
         )
-        result = CollisionDetection("ok", workspace._backend, count, tuple(rows), boxes)
+        result = CollisionDetection("ok", workspace._backend, count, rows, boxes)
         workspace._last = result
         return result

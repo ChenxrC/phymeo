@@ -1,4 +1,4 @@
-"""Immutable registrations and motion paths for the finite collision broad phase."""
+"""Immutable shape registrations and motion paths for collision detection."""
 
 from dataclasses import dataclass
 from numbers import Integral
@@ -57,7 +57,7 @@ class CollisionKey:
 
 @dataclass(frozen=True)
 class CollisionShape:
-    """A bounded primitive, with material IDs in the order of its motion vertices."""
+    """Material IDs follow the motion vertices. A plane has one anchor and a fixed normal."""
 
     key: CollisionKey
     kind: str
@@ -66,13 +66,14 @@ class CollisionShape:
     group: int = 1
     mask: int = _INT_MAX
     revision: int = 0
+    normal: tuple[float, float, float] | None = None
 
     def __post_init__(self):
         if not isinstance(self.key, CollisionKey):
             raise TypeError("shape key must be a CollisionKey")
-        counts = {"sphere": 1, "capsule": 2, "triangle": 3, "tetrahedron": 4}
+        counts = {"sphere": 1, "capsule": 2, "triangle": 3, "tetrahedron": 4, "plane": 1}
         if self.kind not in (*counts, "hull"):
-            raise ValueError("unsupported finite shape kind")
+            raise ValueError("unsupported collision shape kind")
         if not 1 <= len(self.vertex_ids) <= MAX_VERTICES:
             raise ValueError("vertex count outside limits")
         ids = tuple(_integer(v, "vertex ID") for v in self.vertex_ids)
@@ -85,6 +86,13 @@ class CollisionShape:
         radius = finite_real(self.radius, "radius")
         if radius < 0 or (self.kind in ("sphere", "capsule") and radius == 0):
             raise ValueError("invalid shape radius or maximum surface offset")
+        if self.kind == "plane":
+            normal = _vector(self.normal, "plane normal")
+            if not any(normal) or radius != 0:
+                raise ValueError("a half-space requires a nonzero normal and zero radius")
+            object.__setattr__(self, "normal", normal)
+        elif self.normal is not None:
+            raise ValueError("normal is only defined for a plane")
         object.__setattr__(self, "vertex_ids", ids)
         object.__setattr__(self, "radius", radius)
         for name in ("group", "mask", "revision"):
@@ -92,7 +100,7 @@ class CollisionShape:
 
     @property
     def rigid(self):
-        return self.kind in ("sphere", "capsule", "hull")
+        return self.kind in ("sphere", "capsule", "hull", "plane")
 
 
 @dataclass(frozen=True)

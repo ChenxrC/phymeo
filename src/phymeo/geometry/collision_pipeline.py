@@ -28,6 +28,7 @@ from ._plate_contact import PlateSurfaceQuery, RoundedPlate
 from ._rotating_capsule_face import RotatingCapsuleFaceQuery, rotating_capsule_face_query
 from ._rotating_round_sweep import RotatingCapsuleQuery, rotating_round_query
 from ._round_sweep import round_query, sweep_result
+from ._sheet_pair_bounds import SheetPairBounds
 from ._sphere_triangle_sweep import sphere_face_query
 from ._tetrahedral_solid import TetrahedralCellQuery, solid_body_pairs, volume_mesh_issue
 from ._tetrahedral_surface import TetrahedralSurfaceQuery, exterior_faces, positive_cell
@@ -37,6 +38,7 @@ from .collision_witness import (
     CollisionWitness,
     ConvexHullTrace,
     HullSurfaceTrace,
+    MaterialContactPoint,
     MeshContactTrace,
     PlateContactTrace,
     TetrahedralBodyPair,
@@ -367,9 +369,47 @@ def _mesh_candidates(workspace, paths, flags, envelopes, bounds, pending):
     return selected
 
 
-def _detect_pairs(workspace, paths, flags, selected, proximity=False):
+def _proved_sheet_pairs(workspace, paths, flags, margin):
+    bounds = workspace._sheet_bounds
+    if bounds is None:
+        return {}
+    rows = {}
+    for slot, common in bounds.classify(paths, flags, margin).items():
+        i, j, _ = workspace._pairs[slot]
+        a, b = workspace._model.shapes[i], workspace._model.shapes[j]
+        if not common:
+            rows[slot] = CollisionPair(a.key, b.key, "DD", False, "separated", "sheet_projection")
+            continue
+        ma, mb = paths[a.key], paths[b.key]
+        end = ma.start if ma.end is None else ma.end
+        points = []
+        for node in common:
+            position = tuple(map(float, end[a.vertex_ids.index(node)]))
+            weights_a = tuple((k, float(k == node)) for k in sorted(a.vertex_ids))
+            weights_b = tuple((k, float(k == node)) for k in sorted(b.vertex_ids))
+            points.append(MaterialContactPoint(position, weights_a, weights_b))
+        points.sort(key=lambda p: (p.first_weights, p.second_weights))
+        witness = CollisionWitness(
+            0.0,
+            None,
+            None,
+            None,
+            (),
+            (),
+            "host-affine-triangle-pair",
+            shared_material_points=tuple(points),
+        )
+        sweep = CollisionSweep(0.0, 0.0, None, None, None) if ma.moving or mb.moving else None
+        rows[slot] = CollisionPair(
+            a.key, b.key, "DD", True, "adjacent", "shared_material_only", witness, sweep
+        )
+    return rows
+
+
+def _detect_pairs(workspace, paths, flags, selected, proximity=False, resolved=None):
     rows = []
     shapes = workspace._model.shapes
+    resolved = {} if resolved is None else resolved
     # Bound temporary exact feature storage independently of the model's pair capacity.
     valid = {}
     mesh_issues = {}
@@ -435,6 +475,10 @@ def _detect_pairs(workspace, paths, flags, selected, proximity=False):
             a, b = shapes[i], shapes[j]
             ma, mb = paths[a.key], paths[b.key]
             code = int(flags[offset + local])
+            ready = resolved.get(offset + local)
+            if ready is not None:
+                batch.append((a, b, ma, mb, code, ready, 0, 0))
+                continue
             analytic = None
             if (
                 "plate" in (a.kind, b.kind)
@@ -555,6 +599,9 @@ def _detect_pairs(workspace, paths, flags, selected, proximity=False):
                 workspace._close_locked()
                 raise
         for a, b, ma, mb, code, analytic, start, end in batch:
+            if isinstance(analytic, CollisionPair):
+                rows.append(analytic)
+                continue
             proposals = seeds[start:end]
             if isinstance(analytic, HullPairQuery):
                 proposals = None
@@ -597,6 +644,7 @@ class CollisionWorkspace:
         cache_root=None,
         broad_phase="all_pairs",
         mesh_midphase="all_facets",
+        sheet_bounds=False,
     ):
         if not isinstance(model, CollisionModel):
             raise TypeError("collision workspace requires a CollisionModel")
@@ -607,6 +655,9 @@ class CollisionWorkspace:
         if mesh_midphase not in ("all_facets", "bvh"):
             raise ValueError("mesh midphase must be all_facets or bvh")
         shapes = model.shapes
+        if not isinstance(sheet_bounds, bool):
+            raise TypeError("sheet_bounds must be a boolean")
+        self._sheet_bounds = SheetPairBounds(shapes) if sheet_bounds else None
         self._exterior_faces = exterior_faces(shapes)
         excluded = set(model.excluded)
         self._offsets = np.array(
@@ -713,6 +764,15 @@ class CollisionWorkspace:
                 **self._times,
                 **self._trees.counts,
                 **self._mesh_work,
+                **(
+                    {
+                        "sheet_pairs_adjacent": self._sheet_bounds.adjacent,
+                        "sheet_pairs_far": self._sheet_bounds.far,
+                        "sheet_pairs_fallback": self._sheet_bounds.fallback,
+                    }
+                    if self._sheet_bounds is not None
+                    else {}
+                ),
                 "mesh_midphase": self._mesh_midphase,
                 "broad_phase": self._broad_phase,
                 "sap_window_pairs": self._spatial.window_pairs if self._spatial else 0,
@@ -794,7 +854,8 @@ def detect(model, motion, policy, workspace):
             raise
         narrow_start = perf_counter_ns()
         workspace._times["broad_ns"] += narrow_start - broad_start
-        count = int(np.count_nonzero(flags == 0))
+        resolved = _proved_sheet_pairs(workspace, paths, flags, policy.margin)
+        count = int(np.count_nonzero(flags == 0)) - sum(not p.candidate for p in resolved.values())
         if count > policy.candidate_capacity:
             return CollisionDetection("capacity_exceeded", workspace._backend, count, (), ())
         selected = {}
@@ -807,7 +868,7 @@ def detect(model, motion, policy, workspace):
             after_mid = perf_counter_ns()
             workspace._times["midphase_ns"] += after_mid - narrow_start
             narrow_start = after_mid
-        rows = _detect_pairs(workspace, paths, flags, selected, policy.proximity_patches)
+        rows = _detect_pairs(workspace, paths, flags, selected, policy.proximity_patches, resolved)
         boxes = tuple(
             CollisionBounds(s.key, s.revision, None, None)
             if s.kind == "plane"

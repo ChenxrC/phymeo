@@ -68,7 +68,9 @@ class ClothSurfaceContact:
         )
 
     def workspace(self):
-        return CollisionWorkspace(self.system.model, self.geometry_mode, broad_phase="bvh")
+        return CollisionWorkspace(
+            self.system.model, self.geometry_mode, broad_phase="bvh", sheet_bounds=True
+        )
 
     def evaluate(self, cloth, workspace):
         loads = self.system.sample_particles(cloth, workspace)

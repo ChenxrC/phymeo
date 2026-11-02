@@ -167,11 +167,18 @@ def _articulated_gripper(name, base_xz, lengths, direction, home_x):
     )
 
 
-def grippers_for(layout):
+def grippers_for(layout, *, roles=("A", "B")):
+    if not roles or len(set(roles)) != len(roles) or not set(roles) <= {"A", "B"}:
+        raise ValueError("unknown or duplicate gripper roles")
     if layout == "articulated":
+        definitions = (
+            ("A", (-0.24, 0.16), (0.16, 0.18), 1.0, -0.06),
+            ("B", (0.20, 0.35), (0.26, 0.28), -1.0, 0.115),
+        )
         return {
-            "A": _articulated_gripper("A", (-0.24, 0.16), (0.16, 0.18), 1.0, -0.06),
-            "B": _articulated_gripper("B", (0.20, 0.35), (0.26, 0.28), -1.0, 0.115),
+            name: _articulated_gripper(name, base, lengths, direction, home_x)
+            for name, base, lengths, direction, home_x in definitions
+            if name in roles
         }
     if layout != "cartesian":
         raise ValueError(f"unknown handoff robot layout: {layout}")
@@ -185,4 +192,5 @@ def grippers_for(layout):
             np.array([16.0, 20.0, 5.0, 5.0]),
         )
         for key, base, offset in (("A", -0.06, 0.0), ("B", 0.06, 0.055))
+        if key in roles
     }

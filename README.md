@@ -97,6 +97,8 @@ python -m pytest
 
 `phymeo.detect` 在同一模型中查询刚体–刚体、刚体–柔体和柔体–柔体形状对。使用 `CollisionWorkspace` 可选择 HOST、tyx interpret 或 CUDA 宽相。结果分别标识过滤原因、几何见证、缺少窄相和容量不足。[宽相用法](docs/benchmarks/p65-collision-m1.md) · [球、胶囊和移动半空间的首触](docs/benchmarks/p65-collision-m2-round.md) · [凸刚体与凹闭合网格](docs/benchmarks/p65-collision-m2-closed-mesh.md) · [旋转胶囊与球的首触](docs/benchmarks/p65-collision-m2-rotating-round.md) · [凸刚体接触区域与连续区间](docs/benchmarks/p65-collision-m2-convex-hulls.md) · [凸刚体与变形布面](docs/benchmarks/p65-collision-m2-hull-surfaces.md) · [有限圆边板与布点、布面](docs/benchmarks/p65-collision-m2-rounded-plates.md) · [球与变形三角面的首触](docs/benchmarks/p65-collision-m2-sphere-face.md) · [胶囊整轴与有限布面](docs/benchmarks/p65-collision-m2-capsule-face.md) · [异体布面首触](docs/benchmarks/p65-collision-m2-triangle-pairs.md) · [同体布面自碰撞与合法邻接](docs/benchmarks/p65-collision-m2-cloth-adjacency.md) · [刚球和布面与四面体外表面](docs/benchmarks/p65-collision-m2-tetrahedral-surfaces.md) · [闭体包含、交体积与外边界首触](docs/benchmarks/p65-collision-m2-closed-volumes.md)
 
+单爪实验可通过 `examples/compliant_cloth.py --case single-grip --output single-grip.json.gz` 运行。夹爪实际抬起 48 g 软布，零摩擦对照滑落。[实测、命令与离线回放](docs/benchmarks/p65-single-gripper-bend.md)
+
 三类配对的法向载荷现可驱动真实刚体和布粒子。箱堆、球撞布和两片布再碰撞的完整轨迹已有 HOST、tyx interpret 和 CUDA 对照。[用法、力和运动实测](docs/benchmarks/p65-collision-m4-loads.md)
 
 ## 布料接触与搬运案例

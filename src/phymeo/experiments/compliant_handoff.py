@@ -48,8 +48,33 @@ def build_handoff(
     grid=None,
     initial_tilt_deg=0.0,
     finger_pad_radius_m=None,
+    finger_backing_clearance_m=None,
 ):
     """Build the handoff with a fabric preset or a custom SheetFabric."""
+    return build_gripper_sheet(
+        ("A", "B"),
+        grip_friction=grip_friction,
+        robot=robot,
+        fabric=fabric,
+        grid=grid,
+        initial_tilt_deg=initial_tilt_deg,
+        finger_pad_radius_m=finger_pad_radius_m,
+        finger_backing_clearance_m=finger_backing_clearance_m,
+    )
+
+
+def build_gripper_sheet(
+    roles,
+    *,
+    grip_friction,
+    robot,
+    fabric,
+    grid,
+    initial_tilt_deg,
+    finger_pad_radius_m,
+    finger_backing_clearance_m=None,
+):
+    """Build only the requested physical robot roles around the shared material and table."""
     fabric = fabric_preset(fabric)
     grid = checked_grid(fabric.suggested_grid if grid is None else grid)
     uv, faces = sheet_grid(grid)
@@ -63,9 +88,9 @@ def build_handoff(
     # The receiver follows the upper half of the same material edge on any grid.
     receiver_nodes = np.flatnonzero((uv[:, 0] == uv[:, 0].max()) & (uv[:, 1] >= HEIGHT_M / 2))
     cloth = ParticleModel(np.full(len(x), len(x) / MASS_KG), np.array([0.0, 0.0, -9.81]))
-    grippers = grippers_for(robot) if isinstance(robot, str) else dict(robot)
-    if set(grippers) != {"A", "B"}:
-        raise ValueError("handoff needs two robot roles A and B")
+    grippers = grippers_for(robot, roles=roles) if isinstance(robot, str) else dict(robot)
+    if set(grippers) != set(roles):
+        raise ValueError("robot roles do not match the gripper scene")
     models = {n: g.model for n, g in grippers.items()}
     scene = SceneModel(
         (
@@ -108,6 +133,7 @@ def build_handoff(
                     damping_s_per_m=9.0,
                     friction=grip_friction,
                     radius_m=finger_pad_radius_m,
+                    backing_clearance_m=finger_backing_clearance_m,
                     slip_speed_m_s=0.06,
                 )
             )
@@ -182,6 +208,7 @@ def run_handoff(
     grid=None,
     initial_tilt_deg=0.0,
     finger_pad_radius_m=None,
+    finger_backing_clearance_m=None,
 ):
     case = build_handoff(
         grip_friction=grip_friction,
@@ -190,6 +217,7 @@ def run_handoff(
         grid=grid,
         initial_tilt_deg=initial_tilt_deg,
         finger_pad_radius_m=finger_pad_radius_m,
+        finger_backing_clearance_m=finger_backing_clearance_m,
     )
     layout = robot if isinstance(robot, str) else "custom"
     case_name = "handoff" if grip_friction else "no-grip"

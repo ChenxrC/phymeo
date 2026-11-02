@@ -23,6 +23,15 @@ from ._sweep_polynomial import (
 from .collision_witness import CollisionWitness
 
 
+def pack_surface_conditions(conditions):
+    # Four inequalities of degree at most six, each independently scaled.
+    row = [0.0] * 28
+    for i, poly in enumerate(conditions):
+        scale = max(map(abs, poly), default=0) or 1
+        row[7 * i : 7 * i + len(poly)] = [float(c / scale) for c in poly]
+    return row
+
+
 @dataclass(frozen=True)
 class _SurfaceFeature:
     conditions: tuple
@@ -33,12 +42,7 @@ class _SurfaceFeature:
         return first_entry(self.conditions, proposal)
 
     def packed(self):
-        # Four inequalities of degree at most six, each independently scaled.
-        row = [0.0] * 28
-        for i, poly in enumerate(self.conditions):
-            scale = max(map(abs, poly), default=0) or 1
-            row[7 * i : 7 * i + len(poly)] = [float(c / scale) for c in poly]
-        return row
+        return pack_surface_conditions(self.conditions)
 
     def barycentric(self, t):
         den = value(self.denominator, t)

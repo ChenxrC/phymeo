@@ -18,6 +18,16 @@ class MaterialContactPoint:
 
 
 @dataclass(frozen=True)
+class CapsuleAxisPoint:
+    """One extreme closest pair in the capsule parameter and the triangle's material chart."""
+
+    axis_parameter: float
+    axis_point: tuple[float, ...]
+    face_point: tuple[float, ...]
+    face_weights: tuple[tuple[int, float], ...]
+
+
+@dataclass(frozen=True)
 class CollisionWitness:
     """One representative with the normal oriented from the first shape to the second."""
 
@@ -42,6 +52,9 @@ class CollisionWitness:
     # Signed material height along the middle triangle's oriented normal.
     first_height_m: float | None = None
     second_height_m: float | None = None
+
+    # Ordered along the capsule, regardless of the shape-pair order.
+    capsule_axis_span: tuple[CapsuleAxisPoint, CapsuleAxisPoint] | None = None
 
     @property
     def shared_only(self):

@@ -66,4 +66,4 @@ python -m pytest tests/collision/test_tyx_tetrahedral_solid_detection.py -q -p n
 python -m pytest tests/collision/test_tyx_tetrahedral_solid_detection.py -q -p no:cacheprovider --tyx-mode=cuda --require-tyx
 ```
 
-下一批 RD02 查询胶囊整条轴与有限布面，先区分轴身贯穿、端帽相切和真分离，再接平移胶囊与变形面的首触。轴的空间参数和步内时间分别验收。[三族案例计划](../superpowers/plans/2026-11-02-p65-tyx-collision-pipeline.md)
+随后 RD02 已接入胶囊整轴对有限布面的查询，轴部材料参数与步内时间分别发布。[胶囊–布面实测](p65-collision-m2-capsule-face.md) · [三族案例计划](../superpowers/plans/2026-11-02-p65-tyx-collision-pipeline.md)

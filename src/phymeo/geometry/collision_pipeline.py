@@ -15,6 +15,7 @@ from ..constraints.collision_shapes import (
     CollisionPolicy,
 )
 from ..core.capabilities import SolverFailure
+from ._capsule_triangle_sweep import capsule_face_query
 from ._round_sweep import round_query, sweep_result
 from ._sphere_triangle_sweep import sphere_face_query
 from ._tetrahedral_solid import TetrahedralCellQuery, solid_body_pairs, volume_mesh_issue
@@ -357,6 +358,7 @@ def _detect_pairs(workspace, paths, flags):
                 analytic = (
                     round_query(a, b, ma, mb)
                     or sphere_face_query(a, b, ma, mb)
+                    or capsule_face_query(a, b, ma, mb)
                     or triangle_pair_query(a, b, ma, mb)
                 )
             begin = len(features)

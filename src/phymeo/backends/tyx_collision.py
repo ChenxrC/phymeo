@@ -33,6 +33,10 @@ class TyxCollisionBatch:
             triangle_completed_launches=0,
             triangle_proposed_hits=0,
             triangle_edge_edge_proposed_hits=0,
+            capsule_shaft_vertex_features=0,
+            capsule_shaft_vertex_proposed_hits=0,
+            capsule_shaft_edge_features=0,
+            capsule_shaft_edge_proposed_hits=0,
             surface_features=0,
             surface_completed_launches=0,
             surface_proposed_hits=0,
@@ -183,6 +187,10 @@ class TyxCollisionBatch:
                         raise RuntimeError("invalid tyx feature entry proposal")
                     for (index, _), seed in zip(page, active, strict=True):
                         results[index] = float(seed)
+                        part = getattr(features[index], "capsule_feature", None)
+                        if part is not None:
+                            counts[f"capsule_shaft_{part}_features"] += 1
+                            counts[f"capsule_shaft_{part}_proposed_hits"] += int(seed >= 0)
                     proposed = int(np.count_nonzero(active >= 0))
                     counts["sweep_proposed_hits"] += proposed
                     counts["sweep_features"] += len(page)

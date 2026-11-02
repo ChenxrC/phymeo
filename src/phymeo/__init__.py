@@ -86,6 +86,7 @@ from .geometry.collision_pipeline import (
     detect,
 )
 from .geometry.collision_witness import (
+    CapsuleAxisPoint,
     MaterialContactPoint,
     TetrahedralBodyPair,
     TetrahedralBoundaryContact,
@@ -336,6 +337,7 @@ __all__ += [
     "CollisionWitness",
     "CollisionWorkspace",
     "MaterialContactPoint",
+    "CapsuleAxisPoint",
     "TetrahedralFacetResult",
     "TetrahedralBodyPair",
     "TetrahedralBoundaryContact",

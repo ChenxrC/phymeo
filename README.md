@@ -132,6 +132,22 @@ program = ph.CompliantRobotContactProgram(
 
 `solve_point_ik(..., limits=bounds)` 只约束目标坐标，实际关节受外载时可以发生并记录有限的限位压缩。同一连杆上的形状作为一个刚体；其他碰撞对默认开启，机械连接处的排除须用显式形状名称。当前是 NumPy 小步长采样响应，平面为无限半空间，不能据此声称连续防穿透或自动避障。布与夹爪仍使用有限贴片，任意布面与胶囊的碰撞尚未接入。新版 articulated 案例附带上臂、前臂和腕部六个碰撞体，回放读取同一模型的形状与载荷。设计参考 [Newton 的形状与过滤配置](https://newton-physics.github.io/newton/latest/concepts/collisions.html) 与 [MuJoCo 的限位／接触约束说明](https://mujoco.readthedocs.io/en/stable/computation.html)。[本节点计划](docs/superpowers/plans/2026-11-02-robot-limits-contact.md) · [带碰撞体的交接实测](docs/benchmarks/p65-robot-contact-results.json)
 
+### 调整布料的柔软度
+
+递布支持 `--fabric reference` 和 `--fabric soft`。两档总质量都是 48 g，每条边的拉伸柔量都是 0.001 m/N。软档把铰链弯曲柔量从 20 提高到 2000 (N·m)⁻¹，建议网格从 2 × 3 个节点增加到 7 × 3 个节点，给 12 cm 布幅留下可弯曲的中间列。省略参数沿用原递布材料。
+
+```sh
+python examples/compliant_cloth.py --case drape --fabric reference --output drape-reference.json
+python examples/compliant_cloth.py --case drape --fabric soft --output drape-soft.json
+python examples/compliant_cloth.py --case drape --fabric soft --bend-compliance 200 --output drape-mid.json
+python examples/compliant_cloth.py --case handoff --robot articulated --fabric soft --initial-tilt-deg 2 --output soft-handoff.json
+python examples/export_compliant_replay.py soft-handoff.json soft-handoff.html
+```
+
+`drape` 把布水平架在两条有限宽支承上。三组对照都用同一张 7 × 3 网格、同一步长与重力。80 ms 时，材料中心相对支承处材料列的下垂量依次为 0.72 mm（柔量 20）、8.22 mm（200）和 18.49 mm（2000）。软布在 0.12 s 内的最大边长变化低于 0.53%。递布命令里的 2° 单独控制初始放置姿态，省略时布竖直放置。使用原单面指垫和 2° 初态时，A 成功夹持后在 0.36 s 之后的抬升试算停止。布角从侧面进入指垫投影时，背侧 20.96 mm 的距离触发了穿透上限。这条命令保存真实停止帧。竖直初态跑到了 B 独立持布，在 1.39 s 时触发 B 右指垫的同类边缘问题。[各次实测及回放位置](docs/benchmarks/p65-soft-fabric-results.json)
+
+自定义材料可以用 `dataclasses.replace(SOFT, bend_compliance=...)` 传给 `build_handoff(fabric=...)` 或 `run_handoff(fabric=...)`。增大弯曲柔量使铰链更易弯曲，`grid=(列数, 行数)` 独立指定分辨率。数值对应离散的边与铰链。实际面料可以用相同试片和载荷做标定。[材料与网格定义](src/phymeo/experiments/sheet_fabric.py) · [Baraff 与 Witkin 的布料抗拉和抗弯模型](https://graphics.stanford.edu/courses/cs448-01-spring/papers/baraff2.pdf)
+
 ## 文档检查
 
 需要 Python 3.11+，不需要安装第三方包。

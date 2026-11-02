@@ -1,0 +1,187 @@
+{
+  "schema": "phymeo-soft-fabric-profiles-v1",
+  "source": {
+    "baseline": "baf76623ae01be39ef5c6e685a2cd9da88cb6b15",
+    "fabric_and_handoff": "4b27a471307bc3525f957736b71cd8e33e31fa7f",
+    "cli_bend_control": "77daffde0c611c8b79dc43f9b8aa3eb1a1a74334"
+  },
+  "material": {
+    "dimensions_m": [
+      0.12,
+      0.05
+    ],
+    "mass_kg": 0.048,
+    "half_thickness_m": 0.0015,
+    "stretch_compliance_m_per_n": 0.001,
+    "material_damping_time_s": 0.002,
+    "hinge_compliance_per_nm": {
+      "reference": 20,
+      "intermediate": 200,
+      "soft": 2000
+    },
+    "handoff_default_grid": {
+      "reference": [
+        2,
+        3
+      ],
+      "soft": [
+        7,
+        3
+      ]
+    },
+    "note": "Discrete per-edge and per-hinge parameters. The comparison keeps all three sheets on the same 21-node 24-triangle grid."
+  },
+  "drape": {
+    "test": "Dynamic gravity loading from the same flat horizontal rest geometry across two finite supports. All masses dynamic. Support-relative vertical displacement measured at 80 ms. Each independent run continued to 120 ms.",
+    "reference": {
+      "sag_80ms_m": 0.0007180922577969219,
+      "peak_sag_m": 0.0010519049668872306,
+      "max_edge_strain": 0.00015511739018703175,
+      "support_80ms_n": {
+        "left_rail": 0.2497255625275236,
+        "right_rail": 0.24972556252752334
+      }
+    },
+    "intermediate": {
+      "bend_compliance": 200,
+      "control_grid": [
+        7,
+        3
+      ],
+      "sag_80ms_m": 0.008218194595067136,
+      "max_edge_strain": 0.003207992298672302
+    },
+    "soft": {
+      "sag_80ms_m": 0.018487113828547803,
+      "peak_sag_m": 0.019257908851074274,
+      "max_edge_strain": 0.005227504280350237,
+      "support_80ms_n": {
+        "left_rail": 0.3128607807338148,
+        "right_rail": 0.31286078073381385
+      }
+    },
+    "soft_to_reference_sag_ratio": 25.74476138381651
+  },
+  "handoff": {
+    "shared_conditions": "Articulated A/B, original actuators, friction, contact laws, total mass, substeps, phase/load gates and 10 mm sampled guard. Both use the soft 21-node sheet.",
+    "vertical": {
+      "completed": false,
+      "last_accepted_time_s": 1.3900000000000001,
+      "frames": 140,
+      "events": [
+        [
+          "grasp_A",
+          0
+        ],
+        [
+          "lift_A",
+          0.12
+        ],
+        [
+          "share",
+          1.1500000000000001
+        ],
+        [
+          "release_A",
+          1.28
+        ],
+        [
+          "carry_B",
+          1.32
+        ]
+      ],
+      "peak_published_hinge_deg": 85.80481099690441,
+      "peak_plane_rms_m": 0.012990771175970847,
+      "peak_frame_edge_strain": 0.03787749392990514,
+      "final_gripper_A_normal_n": 0,
+      "final_gripper_B_normal_n": 3.055675855496541,
+      "final_gripper_B_up_n": 0.22765661008522978,
+      "accepted_max_sampled_depth_m": 0.008830485348376335,
+      "failure_phase": "carry_B",
+      "reproduced_reason": "sampled hard penetration limit exceeded: 0.0167928 m",
+      "offending_patch": "B_right",
+      "offending_face": 20,
+      "offending_node": 11
+    },
+    "tilted_two_degrees": {
+      "completed": false,
+      "last_accepted_time_s": 0.36,
+      "frames": 37,
+      "events": [
+        [
+          "grasp_A",
+          0
+        ],
+        [
+          "lift_A",
+          0.13
+        ]
+      ],
+      "peak_published_hinge_deg": 65.1857963786484,
+      "peak_frame_edge_strain": 0.0188189682227744,
+      "accepted_max_sampled_depth_m": 0.00029700957032253463,
+      "failure_phase": "lift_A",
+      "reproduced_reason": "sampled hard penetration limit exceeded: 0.0209573 m",
+      "offending_patch": "A_left",
+      "offending_face": 1,
+      "offending_node": 0,
+      "signed_gap_before_projection_m": -0.02095473815318407,
+      "signed_gap_after_projection_m": -0.020957259066610553
+    },
+    "interpretation": "The vertical run transferred load to B. Neither soft run reached placement. Both failed transitions were reproduced directly from the last accepted state and actual controller inputs. A cloth corner already behind a one-sided pad entered its finite projected footprint."
+  },
+  "evidence_root": "artifacts/p65-soft-fabric-20261102-01",
+  "artifacts": {
+    "figure": "drape-comparison.png",
+    "verified_drape": "drape-readback.json",
+    "intermediate_drape": "mid-readback.json",
+    "replays": {
+      "reference": "reference-drape.html",
+      "intermediate": "mid-drape.html",
+      "soft": "soft-drape.html",
+      "vertical_handoff": "soft-vertical.html",
+      "tilted_handoff": "soft-handoff.html"
+    },
+    "trajectories": {
+      "reference": {
+        "file": "reference-drape-trace.json",
+        "sha256": "1e261fb2c2111590216440d146070cc4848d7f23c7dd813ae6c68a90135cb8e6"
+      },
+      "intermediate": {
+        "file": "mid-drape-trace.json",
+        "sha256": "22d6cedeb3e44366e4ebdc036ddff0b8cb9456ae537d56c69c65e20470d3ac94"
+      },
+      "soft": {
+        "file": "soft-drape-trace.json",
+        "sha256": "917edab3160ed969958fa2a5d5bb2fb40e175793714dea614707866003e3115d"
+      },
+      "vertical": {
+        "file": "soft-vertical-trace.json",
+        "sha256": "83409352735a8f5eacb64761564103616ff8189600f66dac4989d5b0d8ab58c4"
+      },
+      "tilted": {
+        "file": "soft-handoff-trace.json",
+        "sha256": "0de98493aed24daca4503f85ad07a011e2f45647a79f8d7f11a4320078a4e288"
+      }
+    },
+    "handoff_checks": [
+      "vertical-readback.json",
+      "vertical-diagnosis.json",
+      "handoff-readback.json",
+      "impact-diagnosis.json"
+    ]
+  },
+  "verification": {
+    "tests": "18 passed in the selected suite with one constructor call failing; its keyword correction passed the affected test. The two material controls, identical-load setup and existing handoff/replay paths are covered.",
+    "style": "Ruff checks passed on the five feature files and the final CLI change. The new CLI override was exercised at compliance 200 on the complete physical drape run.",
+    "raw_exit": {
+      "reference_drape": 0,
+      "soft_drape": 0,
+      "mid_drape": 0,
+      "vertical_handoff": 1,
+      "tilted_handoff": 1,
+      "both_checkpoint_diagnoses": 0
+    }
+  },
+  "next": "Model the finite finger pad's back and rim as real geometry, then use the two saved failing transitions and the original gripping reaction to check a repair before repeating the soft handoff."
+}

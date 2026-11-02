@@ -41,7 +41,13 @@ class HandoffCase(Case):
 
 
 def build_handoff(
-    *, grip_friction=0.9, robot="cartesian", fabric="reference", grid=None, initial_tilt_deg=0.0
+    *,
+    grip_friction=0.9,
+    robot="cartesian",
+    fabric="reference",
+    grid=None,
+    initial_tilt_deg=0.0,
+    finger_pad_radius_m=None,
 ):
     """Build the handoff with a fabric preset or a custom SheetFabric."""
     fabric = fabric_preset(fabric)
@@ -101,6 +107,7 @@ def build_handoff(
                     stiffness_pa_per_m=1.6e6,
                     damping_s_per_m=9.0,
                     friction=grip_friction,
+                    radius_m=finger_pad_radius_m,
                     slip_speed_m_s=0.06,
                 )
             )
@@ -174,6 +181,7 @@ def run_handoff(
     fabric="reference",
     grid=None,
     initial_tilt_deg=0.0,
+    finger_pad_radius_m=None,
 ):
     case = build_handoff(
         grip_friction=grip_friction,
@@ -181,6 +189,7 @@ def run_handoff(
         fabric=fabric,
         grid=grid,
         initial_tilt_deg=initial_tilt_deg,
+        finger_pad_radius_m=finger_pad_radius_m,
     )
     layout = robot if isinstance(robot, str) else "custom"
     case_name = "handoff" if grip_friction else "no-grip"

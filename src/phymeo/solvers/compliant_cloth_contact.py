@@ -18,6 +18,7 @@ from ..coupling.offset_port import TriangleOffsetPointPort
 from ..coupling.ports import ParticlePointPort
 from ..dynamics.robot_contact import RobotContactSystem
 from ..dynamics.robot_dynamics import robot_com_kinematics, robot_dynamics_terms
+from ..geometry.pad_columns import check_column_segment, rounded_pad_columns
 from ..runtime.program import ProgramCapabilities
 from ..runtime.registry import StateRegistry
 from ..runtime.robot_family import robot_family
@@ -30,7 +31,8 @@ class CompliantPatch:
     """One-sided finite polygon. Set robot_domain=None for a stationary world patch.
 
     The signed canonical normal points into the allowed half-space. Stiffness
-    is normal stress per metre of compression. Friction is regularized below
+    is normal stress per metre of compression. A positive radius gives the
+    finite pad a rounded rim and back behind its authored front. Friction is regularized below
     slip_speed_m_s. Both participants receive the force at the same point.
     """
 
@@ -42,8 +44,14 @@ class CompliantPatch:
     damping_s_per_m: float = 0.0
     friction: float = 0.0
     slip_speed_m_s: float = 0.01
+    radius_m: float | None = None
 
     def __post_init__(self):
+        if self.radius_m is not None:
+            radius = finite_real(self.radius_m, "pad radius")
+            if radius <= 0:
+                raise ValueError("finite pad radius must be positive")
+            object.__setattr__(self, "radius_m", radius)
         if not isinstance(self.geometry, RobotContactPatch):
             raise TypeError("expected RobotContactPatch")
         if self.robot_domain is not None and (
@@ -219,6 +227,7 @@ class CompliantClothContactProgram:
             raise TypeError("expected CompliantPatch")
         if len({p.geometry.key for p in self.patches}) != len(self.patches):
             raise ValueError("duplicate patch key")
+        self.finite_pads = tuple(p for p in self.patches if p.radius_m is not None)
         self.normals = {}
         for p in self.patches:
             if p.robot_domain is not None and (
@@ -241,7 +250,9 @@ class CompliantClothContactProgram:
 
     def problem_signature(self):
         return dict(
-            semantics="compliant-patch-midpoint-v1",
+            semantics="compliant-finite-pad-midpoint-v1"
+            if self.finite_pads
+            else "compliant-patch-midpoint-v1",
             scene=self.scene.identity,
             cloth=self.cloth_domain,
             material=self.material,
@@ -290,26 +301,51 @@ class CompliantClothContactProgram:
                 pos, rot, com, jl, ja, _, _ = geo[robot]
                 origin, rotation = pos[link], rot[link]
             normal = patch.normal_sign * (rotation @ local_normal)
-            signs = -np.sign(normals @ normal)
-            key = signs.tobytes()
-            if key not in ports:
-                port = TriangleOffsetPointPort(
-                    base, self.ids, self.weights, np.repeat(signs * self.rho, 3)
-                )
-                ports[key] = port.positions(), port.velocities(), port.jacobians
-            points, velocity, jac = ports[key]
-            local = (points - origin) @ rotation
             vertices = p.local_vertices
-            edge = np.roll(vertices, -1, axis=0) - vertices
-            sides = np.cross(edge[None, :, :], local[:, None, :] - vertices) @ local_normal
-            inside = np.all(sides >= 0, axis=1)
-            gap = (local - vertices[0]) @ (patch.normal_sign * local_normal)
+            pad_sites = None
+            if patch.radius_m is None:
+                signs = -np.sign(normals @ normal)
+                key = signs.tobytes()
+                if key not in ports:
+                    port = TriangleOffsetPointPort(
+                        base, self.ids, self.weights, np.repeat(signs * self.rho, 3)
+                    )
+                    ports[key] = port.positions(), port.velocities(), port.jacobians
+                points, velocity, jac = ports[key]
+                local = (points - origin) @ rotation
+                edge = np.roll(vertices, -1, axis=0) - vertices
+                sides = np.cross(edge[None, :, :], local[:, None, :] - vertices) @ local_normal
+                inside = np.all(sides >= 0, axis=1)
+                gap = (local - vertices[0]) @ (patch.normal_sign * local_normal)
+                force_normal = normal
+            else:
+                lengths = np.linalg.norm(normals, axis=1)
+                if np.any(lengths <= 0):
+                    raise SolverFailure("degenerate material face at finite pad")
+                centers = (tri.reshape(-1, 3) - origin) @ rotation
+                half = np.repeat(normals * (self.rho / lengths)[:, None], 3, axis=0) @ rotation
+                pad_sites = rounded_pad_columns(
+                    vertices, patch.normal_sign * local_normal, patch.radius_m, centers, half
+                )
+                heights = pad_sites.fraction * np.repeat(self.rho, 3)
+                key = heights.tobytes()
+                # Separate the two cache namespaces even when all heights vanish.
+                key = ("finite", key)
+                if key not in ports:
+                    port = TriangleOffsetPointPort(base, self.ids, self.weights, heights)
+                    ports[key] = port.positions(), port.velocities(), port.jacobians
+                points, velocity, jac = ports[key]
+                gap = pad_sites.gap_m
+                inside = np.ones(len(gap), dtype=bool)
+                force_normal = pad_sites.normal @ rotation.T
             relative = velocity
             if robot is not None:
                 speed = state.domains[robot].v
                 arms = points - com[link]
                 relative = velocity - (jl[link] @ speed + np.cross(ja[link] @ speed, arms))
-            rate = relative @ normal
+            rate = (
+                relative @ normal if pad_sites is None else np.sum(relative * force_normal, axis=1)
+            )
             pressure = np.where(
                 inside,
                 self.area
@@ -318,14 +354,14 @@ class CompliantClothContactProgram:
                 * np.maximum(1 - patch.damping_s_per_m * rate, 0.0),
                 0.0,
             )
-            tangent = relative - rate[:, None] * normal
+            tangent = relative - rate[:, None] * force_normal
             ft = (
                 -patch.friction
                 * pressure[:, None]
                 * tangent
                 / np.maximum(patch.slip_speed_m_s, np.linalg.norm(tangent, axis=1))[:, None]
             )
-            force = pressure[:, None] * normal + ft
+            force = pressure[:, None] * force_normal + ft
             np.add.at(nodal, self.ids.ravel(), np.einsum("kaij,ki->kaj", jac, force).reshape(-1, 3))
             if robot is not None:
                 reactions[robot] -= jl[link].T @ force.sum(axis=0) + ja[link].T @ np.cross(
@@ -340,6 +376,13 @@ class CompliantClothContactProgram:
                 normal_speed_m_s=rate,
                 in_patch=inside,
             )
+            if pad_sites is not None:
+                details[p.key].update(
+                    site_normals=force_normal,
+                    column_ends_local_m=pad_sites.endpoints_m,
+                    middle_distance_m=gap + patch.radius_m,
+                    material_fraction=pad_sites.fraction,
+                )
         return nodal, reactions, details, geo
 
     def observe(self, state):
@@ -402,9 +445,22 @@ class _Workspace:
         a, contact, internal, body = self.program.accelerations(mid, self.inputs)
         self.state = advance_state(self.state, a, self.h, midpoint=False)
         self.penetration = max(_penetration(initial), _penetration(contact))
-        if self.program.max_penetration_m is not None or body is not None:
+        if (
+            self.program.max_penetration_m is not None
+            or body is not None
+            or self.program.finite_pads
+        ):
             _, _, endpoint, geo = self.program._loads(self.state, dynamics=False)
             self.penetration = max(self.penetration, _penetration(endpoint))
+            for pad in self.program.finite_pads:
+                key = pad.geometry.key
+                for left, right in ((initial[key], contact[key]), (contact[key], endpoint[key])):
+                    check_column_segment(
+                        left["column_ends_local_m"],
+                        left["middle_distance_m"],
+                        right["column_ends_local_m"],
+                        right["middle_distance_m"],
+                    )
             if body is not None:
                 end_body = self.program.robot_contact._evaluate(self.state.domains, geo)
                 check_robot_contact(

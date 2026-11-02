@@ -16,3 +16,18 @@
 原来的 10 mm 拒绝预算和控制输入均保留。在这些点处，旧平面把已经越过指垫背面的布误计为深入正面的穿透。改变圆边尺寸会改变距离。若旧有向间隙为 `g<0`、指垫圆边半径为 `r`，背侧距离至少为 `−g−2r`。此关系与投影横向位置无关。该步的状态仍由原求解器产生，此处比较的是同一状态下的两种接触力。[原软布失败记录](p65-soft-fabric-results.json)
 
 证据位于 `artifacts/p65-collision-m4-loads-local-20261102-01`。设备原始轨迹在 `20-pad-interpret-pytest-basetemp` 与 `21-pad-cuda-pytest-basetemp` 内。原控制输入的比较收据为 `25-original-pad-samples`，逐点数据为 `soft-pad-sample-comparison.json`。
+
+### 铰接机器人与软布的实际反馈
+
+`CompliantPatch(radius_m=...)` 可显式启用有限背面与圆边。正面仍位于原多边形，原始厚度偏置的布面材料列从一端到另一端参与最近距离计算，包括列内部先到边的情形。所选材料点的速度与转置力映射来自已有厚度点端口。指垫用同一世界点相对于实际连杆质心的力矩和关节雅可比计算反力。两边都参与中点动力学更新。每个半步还检查指垫局部坐标中的材料列直线连接能否排除穿过指垫中面，未能排除会回滚。该守卫覆盖声明的局部连接路径。布面内部、非线性关节运动全段与厚布自碰撞仍有各自的验收条件。[材料列算法](../../src/phymeo/geometry/pad_columns.py) · [动力学接入](../../src/phymeo/solvers/compliant_cloth_contact.py)
+
+两次从原末帧重建入步状态和当时的 IK、夹指及布料外载。保持 2 mm 圆边、1.5 mm 接触层、10 mm 穿透门槛和 128 个子步。新的力实际驱动了软布与两台机器人。
+
+| 原窗口 | 新结果 | 峰值采样穿透 | 布节点最大坐标变化 |
+| --- | --- | --- | --- |
+| 倾斜软布 0.36–0.37 s | 128 子步全部接受，A 两指的法向峰值为 1.188 N 和 1.114 N | 0.3744 mm | 5.236 mm |
+| 竖直软布 1.39–1.40 s | 128 子步全部接受，B 两指的法向峰值为 1.506 N 和 1.549 N | 0 mm | 10.185 mm |
+
+两段反馈均在原 FP64 NumPy 铰接求解器运行。独立读取全部 256 个出步状态、材料列法向和力，对照摩擦上界与末状态，最大法向力分解误差为 3.34×10⁻¹⁶ N。正面和背面驱动真实关节的两侧冲量均另有回归，快速穿芯会拒绝并保持原状态。六种斜置、反向、近平行和内部边缘构型的列距与独立的完整胶囊–三角扇查询一致。相关 HOST 回归分别通过 23 和 7 项。[真实关节、布和回滚](../../tests/test_compliant_finite_pad.py) · [独立几何与回放字段](../../tests/test_pad_column_witnesses.py)
+
+案例入口 `examples/compliant_cloth.py` 接受 `--case handoff --robot articulated --fabric soft --finger-pad-radius-m 0.002`，2° 初态另加 `--initial-tilt-deg 2`。每个材料点的法向与合力一同进入回放，法向和切向箭头使用同次物理采样。完整递布仍需分别从两个原始初态走到放台。完整入步、控制、出步及实际反力保存在本地证据目录的 `tilted-feedback.json.gz` 和 `vertical-feedback.json.gz`，`feedback-independent.json` 是独立读回结果。[案例入口](../../examples/compliant_cloth.py) · [回放](../demos/compliant-cloth.html)

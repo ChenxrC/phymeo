@@ -83,7 +83,7 @@ function show(n){
  for(const [k,r] of Object.entries(f.contacts||{})){if(el("filter").value&&el("filter").value!==k)continue;
    sums.push(k+" "+r.normal_force_n.reduce((a,b)=>a+b,0).toFixed(3)+" N");
    if(el("forces").checked)r.force_n.forEach((p,i)=>{const v=vec(p),kind=el("component").value;
-     if(kind!=="total"){if(!r.normal)return;const nv=vec(r.normal).multiplyScalar(r.normal_force_n[i]);if(kind==="normal")v.copy(nv);else v.sub(nv)}
+     if(kind!=="total"){const direction=r.site_normals?.[i] ?? r.normal;if(!direction)return;const nv=vec(direction).multiplyScalar(r.normal_force_n[i]);if(kind==="normal")v.copy(nv);else v.sub(nv)}
      const m=v.length();if(m>1e-9){const len=m*scale;const a=new THREE.ArrowHelper(v.normalize(),vec(r.points_m[i]),len,0xffc675,Math.min(len*.25,.035*extent),Math.min(len*.12,.017*extent));arrows.add(a)}})}
  for(const row of f.robot_contact?.contacts||[]){
    if(el("filter").value && ![row.a,row.b].includes(el("filter").value))continue;

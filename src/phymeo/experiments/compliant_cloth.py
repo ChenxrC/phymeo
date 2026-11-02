@@ -129,6 +129,7 @@ def frame_record(program, state, t, sample=None, sample_t=None):
                 force_n=val["force_n"].tolist(),
                 normal_force_n=val["normal_force_n"].tolist(),
                 normal=val["normal"].tolist(),
+                **({"site_normals": val["site_normals"].tolist()} if "site_normals" in val else {}),
             )
             for key, val in sample.items()
         }
@@ -175,6 +176,7 @@ def trace_start(case, name):
                 normal_sign=a.normal_sign,
                 width_m=a.width_m,
                 stiffness_pa_per_m=a.stiffness_pa_per_m,
+                **({"radius_m": a.radius_m} if a.radius_m is not None else {}),
                 damping_s_per_m=a.damping_s_per_m,
                 friction=a.friction,
                 slip_speed_m_s=a.slip_speed_m_s,

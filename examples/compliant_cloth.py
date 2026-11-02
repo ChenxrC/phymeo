@@ -38,11 +38,18 @@ def main():
         default=0.0,
         help="physical initial sheet angle from vertical in handoff/no-grip",
     )
+    parser.add_argument(
+        "--finger-pad-radius-m",
+        type=float,
+        help="finite gripper pad rounding behind the original front, in metres",
+    )
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     if args.output.exists():
         parser.error("output already exists")
     handoff = args.case in ("handoff", "no-grip")
+    if args.finger_pad_radius_m is not None and (not handoff or not args.finger_pad_radius_m > 0):
+        parser.error("a positive finger pad radius applies to handoff/no-grip")
     if not handoff and (args.robot != "cartesian" or args.initial_tilt_deg != 0.0):
         parser.error("robot layout and sheet tilt apply only to handoff/no-grip")
     if args.case in ("impact", "support") and (
@@ -70,6 +77,7 @@ def main():
             progress=progress,
             fabric=fabric,
             initial_tilt_deg=args.initial_tilt_deg,
+            finger_pad_radius_m=args.finger_pad_radius_m,
         )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     with args.output.open("x", encoding="utf-8") as stream:

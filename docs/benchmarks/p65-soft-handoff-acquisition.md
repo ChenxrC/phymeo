@@ -45,3 +45,11 @@
 从 0.54 s 到 0.86 s，仅 B 腕就向上给布 0.13549 N·s。在 0.62 s 的记录中，B 腕已经加载，A 尚有双侧夹持。判别旁路将从真实 0.54 s 状态出发，保持同一 A 指令和全部接触形状，单独让 B 停在原处，检验 A 能否持到原接取时刻。此旁路只区别接近碰撞和供体自身滑脱。后续接近控制要使用真实腕、指杆和材料边的距离，并约束工具速度。MoveIt Servo 的邻近速度调节与 TrajOpt 对步内扫掠的处理给出了两种可检验的对照。[MoveIt Servo](https://moveit.picknik.ai/main/doc/examples/realtime_servo/realtime_servo_tutorial.html) · [TrajOpt 原论文](https://rll.berkeley.edu/trajopt/ijrr/2013-IJRR-TRAJOPT.pdf)
 
 本机原始轨迹、逐帧动量和结构核对分别保存在 `artifacts/p65-collision-m4-loads-local-20261102-01/with-structural-palm-v1/full-vertical.json.gz`、`cloth-momentum-vertical.json` 和 `structural-independent-vertical.json`。
+
+## 两个初态的接近运动与独立供体对照
+
+2° 布由 A 在 0.49 s 单独抬离桌面 32.60 mm，A 的向上载荷为 0.637 N，B 和桌面均未承载。已发布的 7,552 个子步中有 437 步出现布–连杆力，最大单对力为 17.96 N，最大结构层穿入为 3.720 mm。0.49–0.59 s 内，B 腕给布的向上冲量为 0.21807 N·s，B 尚未取得双侧指垫载荷。逐帧布动量与所有实际外载冲量的最大分量差为 8.51×10⁻¹⁷ N·s。[竖直轨迹回放](../../artifacts/p65-collision-m4-loads-local-20261102-01/with-structural-palm-v1/full-vertical.html) · [2° 轨迹回放](../../artifacts/p65-collision-m4-loads-local-20261102-01/with-structural-palm-v1/full-tilted.html)
+
+2° 轨迹在 0.59 s 的下一显示帧被拒绝。以原入口状态和执行器输入复现时，此前 46 帧的控制目标逐项相同。第 97 个子步的前半段，A 右指杆与材料面 12 的轴线距离在两端分别为 67.04 µm 和 56.44 µm，整段运动上界为 70.47 µm。用真实关节弧计算中点得到 61.74 µm，两半各自的运动上界只有 35.23 µm，因此这个具体区间轴线严格分离。原运行完整回滚。此结论只解决首次拒绝的那段路径。[真实输入、区间与判定](../../artifacts/p65-collision-m4-loads-local-20261102-01/with-structural-palm-v1/tilted-rejected-link-interval.json)
+
+竖直布的独立对照从原 0.54 s 的实际状态出发，沿用 A 的首个原始驱动输入，只将 B 保持在原始开口及停靠点。32 帧、4,096 个反馈子步连续到 0.86 s。A 每帧都有双侧载荷，B 与桌面的最大载荷均为零，末端 A 向上支撑 0.48945 N，布底仍离台 16.99 mm。原双臂同一窗口内 A 在 0.65 s 后失去所需双侧载荷。接近控制的独立反例还测得，原算法在一个 10 ms 周期把工具目标移动了 140.36 mm，原转运速度预算允许移动 3.34 mm。[供体对照结果](../../artifacts/p65-collision-m4-loads-local-20261102-01/with-structural-palm-v1/donor-hold-vertical-summary.json) · [工具运动负控](../../tests/test_receiver_approach.py)

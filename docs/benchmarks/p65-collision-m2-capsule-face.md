@@ -63,4 +63,4 @@ python -m pytest tests/collision/test_tyx_capsule_face_sweep.py -q -p no:cachepr
 python -m pytest tests/collision/test_tyx_capsule_face_sweep.py -q -p no:cacheprovider --tyx-mode=cuda --require-tyx
 ```
 
-下一批 RR03 处理凸刚体的接触区域。先用两个滑动箱从面接触过渡到线接触再分离，并用重排和纯边–边首触对照验收；查询应自行选择支撑特征，返回接触区域及两侧材料地址。[三族计划](../superpowers/plans/2026-11-02-p65-tyx-collision-pipeline.md)
+随后 RR03 已接入凸刚体的支撑特征、接触区域及精确进出时刻，沿滑动箱与异向边的独立基准验收。[凸体接触实测](p65-collision-m2-convex-hulls.md) · [三族计划](../superpowers/plans/2026-11-02-p65-tyx-collision-pipeline.md)

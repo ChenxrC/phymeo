@@ -4,6 +4,8 @@ from contextlib import ExitStack
 
 import numpy as np
 
+from ..constraints.collision_shapes import MAX_CONVEX_VERTICES
+
 
 class TyxCollisionBatch:
     def __init__(self, mode, offsets, tags, pairs, cache_root):
@@ -11,6 +13,7 @@ class TyxCollisionBatch:
 
         from ._tyx_collision_kernels import (
             classify_pairs,
+            hull_projection_intervals,
             reduce_bounds,
             round_entry_times,
             surface_entry_times,
@@ -27,7 +30,18 @@ class TyxCollisionBatch:
             19: triangle_entry_times,
         }
         self._entry_storage = {}
+        self._hull_kernel = hull_projection_intervals
+        self._hull_storage = None
         self._sweep_counts = dict(
+            hull_axis_terms=0,
+            hull_nonempty_intervals=0,
+            hull_launches=0,
+            hull_completed_launches=0,
+            hull_uploads=0,
+            hull_uploaded_bytes=0,
+            hull_downloads=0,
+            hull_downloaded_bytes=0,
+            hull_synchronizations=0,
             triangle_vertex_face_features=0,
             triangle_edge_edge_features=0,
             triangle_completed_launches=0,
@@ -213,6 +227,62 @@ class TyxCollisionBatch:
                         counts["triangle_completed_launches"] += 1
                         counts["triangle_proposed_hits"] += proposed
         return results
+
+    def hull_intervals(self, points, na, nb, directions):
+        """Return one checked-format FP32 interval proposal for each SAT direction."""
+        counts = self._sweep_counts
+        with self._tx.use_runtime(self._runtime):
+            if self._hull_storage is None:
+                cloud = np.zeros((2 * MAX_CONVEX_VERTICES + 1, 3), dtype=np.float32)
+                axes = np.zeros((256, 3), dtype=np.float32)
+                self._hull_storage = (
+                    cloud,
+                    axes,
+                    self._scratch(cloud.shape, np.float32),
+                    self._scratch(axes.shape, np.float32),
+                    self._scratch((len(axes), 2), np.float32),
+                )
+            cloud, axes, device_cloud, device_axes, output = self._hull_storage
+            cloud[: len(points)] = points
+            if self._mode == "cuda":
+                device_cloud.copy_from(cloud)
+                counts["hull_uploads"] += 1
+                counts["hull_uploaded_bytes"] += cloud.nbytes
+            else:
+                np.copyto(device_cloud[: len(points)], points)
+            proposals = []
+            for start in range(0, len(directions), len(axes)):
+                page = directions[start : start + len(axes)]
+                axes[: len(page)] = page
+                if self._mode == "cuda":
+                    device_axes.copy_from(axes)
+                    counts["hull_uploads"] += 1
+                    counts["hull_uploaded_bytes"] += axes.nbytes
+                else:
+                    np.copyto(device_axes[: len(page)], page)
+                counts["hull_launches"] += 1
+                self._hull_kernel(
+                    len(page), na, nb, device_cloud, device_axes, output, mode=self._mode
+                )
+                if self._mode == "cuda":
+                    self._runtime.sync()
+                    counts["hull_synchronizations"] += 1
+                    raw = output.to_numpy()
+                    counts["hull_downloads"] += 1
+                    counts["hull_downloaded_bytes"] += raw.nbytes
+                else:
+                    raw = output
+                active = raw[: len(page)]
+                valid = ((active[:, 0] == -1) & (active[:, 1] == -1)) | (
+                    (active[:, 0] >= 0) & (active[:, 1] <= 1) & (active[:, 0] <= active[:, 1])
+                )
+                if not np.isfinite(active).all() or not valid.all():
+                    raise RuntimeError("invalid tyx hull interval proposal")
+                proposals.extend(None if lo < 0 else (float(lo), float(hi)) for lo, hi in active)
+                counts["hull_completed_launches"] += 1
+                counts["hull_axis_terms"] += len(page)
+                counts["hull_nonempty_intervals"] += int(np.count_nonzero(active[:, 0] >= 0))
+        return proposals
 
     def stats(self):
         return {**self._counts, **self._sweep_counts, "backend": self._mode}

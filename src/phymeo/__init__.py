@@ -87,6 +87,10 @@ from .geometry.collision_pipeline import (
 )
 from .geometry.collision_witness import (
     CapsuleAxisPoint,
+    ConvexContactPatch,
+    ConvexContactPoint,
+    ConvexContactPose,
+    ConvexHullTrace,
     MaterialContactPoint,
     TetrahedralBodyPair,
     TetrahedralBoundaryContact,
@@ -336,6 +340,10 @@ __all__ += [
     "CollisionSweep",
     "CollisionWitness",
     "CollisionWorkspace",
+    "ConvexContactPatch",
+    "ConvexContactPoint",
+    "ConvexContactPose",
+    "ConvexHullTrace",
     "MaterialContactPoint",
     "CapsuleAxisPoint",
     "TetrahedralFacetResult",

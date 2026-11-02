@@ -9,6 +9,7 @@ from ..core.validation import finite_real
 
 MAX_SHAPES = 256
 MAX_VERTICES = 8192
+MAX_CONVEX_VERTICES = 64
 _INT_MAX = 2**31 - 1
 
 

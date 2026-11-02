@@ -16,6 +16,8 @@ from ..constraints.collision_shapes import (
 )
 from ..core.capabilities import SolverFailure
 from ._capsule_triangle_sweep import capsule_face_query
+from ._convex_contact import HullPairQuery
+from ._convex_hull import HullShape
 from ._round_sweep import round_query, sweep_result
 from ._sphere_triangle_sweep import sphere_face_query
 from ._tetrahedral_solid import TetrahedralCellQuery, solid_body_pairs, volume_mesh_issue
@@ -24,6 +26,7 @@ from ._triangle_pair_sweep import triangle_pair_query
 from .collision_witness import (
     CollisionSweep,
     CollisionWitness,
+    ConvexHullTrace,
     TetrahedralBodyPair,
     TetrahedralFacetResult,
     TetrahedralSolidResult,
@@ -57,6 +60,7 @@ class CollisionPair:
     sweep: CollisionSweep | None = None
     facets: tuple[TetrahedralFacetResult, ...] = ()
     solid: TetrahedralSolidResult | None = None
+    convex: ConvexHullTrace | None = None
 
 
 @dataclass(frozen=True)
@@ -202,7 +206,7 @@ def _static_witness(a, b, x, y):
 
 
 @dataclass(frozen=True)
-class _SolidFailure:
+class _NarrowFailure:
     status: str
     reason: str
     features = ()
@@ -211,7 +215,7 @@ class _SolidFailure:
 def _pair(a, b, ma, mb, code, analytic, seeds):
     family = "RR" if a.rigid and b.rigid else "RD" if a.rigid != b.rigid else "DD"
     fields = (a.key, b.key, family)
-    if isinstance(analytic, _SolidFailure):
+    if isinstance(analytic, _NarrowFailure):
         return CollisionPair(*fields, not code, analytic.status, analytic.reason)
     if code:
         return CollisionPair(
@@ -220,6 +224,13 @@ def _pair(a, b, ma, mb, code, analytic, seeds):
     if analytic is not None:
         try:
             with np.errstate(over="raise", invalid="raise", divide="raise"):
+                if isinstance(analytic, HullPairQuery):
+                    status, reason, witness, sweep, convex = analytic.result(
+                        ma.moving or mb.moving, seeds
+                    )
+                    return CollisionPair(
+                        *fields, True, status, reason, witness, sweep, convex=convex
+                    )
                 if isinstance(analytic, TetrahedralCellQuery):
                     status, reason, witness, sweep, solid = analytic.result(
                         ma.moving or mb.moving, seeds
@@ -292,6 +303,17 @@ def _detect_pairs(workspace, paths, flags):
     # Bound temporary exact feature storage independently of the model's pair capacity.
     valid = {}
     mesh_issues = {}
+    hulls = {}
+
+    def prepared_hull(shape, path):
+        if shape.key not in hulls:
+            try:
+                hulls[shape.key] = HullShape(shape, path)
+            except ValueError as error:
+                hulls[shape.key] = _NarrowFailure("invalid_geometry", str(error))
+            except SolverFailure as error:
+                hulls[shape.key] = _NarrowFailure("unresolved", str(error))
+        return hulls[shape.key]
 
     def valid_body(shape):
         body = shape.key.world, shape.key.body
@@ -321,7 +343,7 @@ def _detect_pairs(workspace, paths, flags):
         return mesh_issues[body]
 
     # A thick cloth/cell pair can contribute 4 outer faces x 8 skin triangles.
-    batch_size = 4 if workspace.exterior_faces else 128
+    batch_size = 4 if workspace.exterior_faces or any(s.kind == "hull" for s in shapes) else 128
     for offset in range(0, len(flags), batch_size):
         batch = []
         features = []
@@ -330,12 +352,31 @@ def _detect_pairs(workspace, paths, flags):
             ma, mb = paths[a.key], paths[b.key]
             code = int(flags[offset + local])
             analytic = None
-            if a.kind == b.kind == "tetrahedron" and a.key.body != b.key.body and code in (0, 5):
+            if a.kind == b.kind == "hull" and code in (0, 5):
+                if (
+                    a.radius
+                    or b.radius
+                    or any(p.turn is not None and p.turn.angle != 0 for p in (ma, mb))
+                ):
+                    if not code:
+                        analytic = _NarrowFailure("unsupported", "convex_rounding_or_rotation")
+                else:
+                    first, second = prepared_hull(a, ma), prepared_hull(b, mb)
+                    if isinstance(first, _NarrowFailure):
+                        analytic = first
+                    elif isinstance(second, _NarrowFailure):
+                        analytic = second
+                    elif not code:
+                        try:
+                            analytic = HullPairQuery(first, second)
+                        except SolverFailure as error:
+                            analytic = _NarrowFailure("unresolved", str(error))
+            elif a.kind == b.kind == "tetrahedron" and a.key.body != b.key.body and code in (0, 5):
                 issue = solid_issue(a) or solid_issue(b)
                 if issue:
-                    analytic = _SolidFailure(*issue)
+                    analytic = _NarrowFailure(*issue)
                 elif a.radius or b.radius:
-                    analytic = _SolidFailure("unsupported", "tetrahedral_cell_offset")
+                    analytic = _NarrowFailure("unsupported", "tetrahedral_cell_offset")
                 elif not code:
                     analytic = TetrahedralCellQuery(a, b, ma, mb, workspace.exterior_faces)
             elif (
@@ -374,7 +415,16 @@ def _detect_pairs(workspace, paths, flags):
                 workspace._close_locked()
                 raise
         for a, b, ma, mb, code, analytic, start, end in batch:
-            rows.append(_pair(a, b, ma, mb, code, analytic, seeds[start:end]))
+            proposals = seeds[start:end]
+            if isinstance(analytic, HullPairQuery):
+                proposals = None
+                if workspace._engine is not None:
+                    try:
+                        proposals = workspace._engine.hull_intervals(*analytic.device_inputs())
+                    except BaseException:
+                        workspace._close_locked()
+                        raise
+            rows.append(_pair(a, b, ma, mb, code, analytic, proposals))
     return tuple(rows)
 
 

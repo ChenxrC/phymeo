@@ -137,3 +137,43 @@ class TetrahedralBodyPair:
     end: TetrahedralOccupancy | None = None
     first_t: tuple[float, float] | None = None
     boundary_first_t: tuple[float, float] | None = None
+
+
+@dataclass(frozen=True)
+class ConvexContactPoint:
+    """Paired material support points, coincident when the solids just touch."""
+
+    first_point: tuple[float, ...]
+    second_point: tuple[float, ...]
+    first_weights: tuple[tuple[int, float], ...]
+    second_weights: tuple[tuple[int, float], ...]
+
+
+@dataclass(frozen=True)
+class ConvexContactPatch:
+    normal: tuple[float, ...]
+    first_support: tuple[int, ...]
+    second_support: tuple[int, ...]
+    dimension: int
+    area_m2: float
+    points: tuple[ConvexContactPoint, ...]
+
+
+@dataclass(frozen=True)
+class ConvexContactPose:
+    relation: str
+    witness: CollisionWitness
+    patches: tuple[ConvexContactPatch, ...]
+
+
+@dataclass(frozen=True)
+class ConvexHullTrace:
+    """Start/end geometry and both exact endpoints of the closed contact window."""
+
+    start: ConvexContactPose
+    end: ConvexContactPose
+    first_time_ratio: tuple[int, int] | None
+    last_time_ratio: tuple[int, int] | None
+    first: ConvexContactPose | None
+    last: ConvexContactPose | None
+    axis_count: int

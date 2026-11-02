@@ -153,3 +153,56 @@ def triangle_entry_times(count: tx.i32, rows: tx.ndarray(tx.f32, 2), entry: tx.n
                         answer = trial
             previous = current
         entry[i] = answer
+
+
+@tx.func
+def _hull_dot(px: tx.f32, py: tx.f32, pz: tx.f32, x: tx.f32, y: tx.f32, z: tx.f32) -> tx.f32:
+    return px * x + py * y + pz * z
+
+
+@tx.kernel
+def hull_projection_intervals(
+    count: tx.i32,
+    na: tx.i32,
+    nb: tx.i32,
+    points: tx.ndarray(tx.f32, 2),
+    axes: tx.ndarray(tx.f32, 2),
+    intervals: tx.ndarray(tx.f32, 2),
+):
+    # Each lane projects both complete extreme-vertex sets. The last point row
+    # stores B's translation relative to A in the same scaled coordinate frame.
+    for row in tx.range(count):
+        x = axes[row, 0]
+        y = axes[row, 1]
+        z = axes[row, 2]
+        amin = _hull_dot(points[0, 0], points[0, 1], points[0, 2], x, y, z)
+        amax = amin
+        bmin = _hull_dot(points[na, 0], points[na, 1], points[na, 2], x, y, z)
+        bmax = bmin
+        for k in range(1, na):
+            a = _hull_dot(points[k, 0], points[k, 1], points[k, 2], x, y, z)
+            amin = tx.min(amin, a)
+            amax = tx.max(amax, a)
+        for j in range(1, nb):
+            b = _hull_dot(points[na + j, 0], points[na + j, 1], points[na + j, 2], x, y, z)
+            bmin = tx.min(bmin, b)
+            bmax = tx.max(bmax, b)
+        speed = _hull_dot(points[na + nb, 0], points[na + nb, 1], points[na + nb, 2], x, y, z)
+        forward = bmin - amax
+        backward = amin - bmax
+        lo = 0.0
+        hi = 1.0
+        if speed > 0.0:
+            lo = tx.max(lo, backward / speed)
+            hi = tx.min(hi, -forward / speed)
+        elif speed < 0.0:
+            lo = tx.max(lo, -forward / speed)
+            hi = tx.min(hi, backward / speed)
+        elif forward > 0.0 or backward > 0.0:
+            lo = 2.0
+        if lo <= hi:
+            intervals[row, 0] = lo
+            intervals[row, 1] = hi
+        else:
+            intervals[row, 0] = -1.0
+            intervals[row, 1] = -1.0

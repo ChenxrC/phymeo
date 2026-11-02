@@ -21,6 +21,7 @@ from ..core.rigid import RigidBodyInputs
 from ..core.state import StepInputs
 from ..core.validation import finite_real, validate_dt
 from ..dynamics.rotation import quaternion_matrix
+from ..geometry._capsule_triangle_sweep import capsule_material_sites
 from ..geometry.collision_pipeline import CollisionDetection, CollisionWorkspace, detect
 from ..geometry.collision_witness import ConvexContactPoint, ProximityWitness
 
@@ -140,8 +141,14 @@ def _quadrature(points):
     return (areas + np.roll(areas, 1)) / (3 * total) + 1 / (3 * n)
 
 
-def _sites(pair):
+def _sites(pair, shapes):
     w = pair.witness
+    if w.capsule_axis_span is not None:
+        first = shapes[pair.first]
+        cap_first = first.kind == "capsule"
+        return capsule_material_sites(
+            first if cap_first else shapes[pair.second], w, capsule_first=cap_first
+        )
     if isinstance(w, ProximityWitness) and w.proximity_patch is not None:
         return w.proximity_patch.points
     if pair.plate is not None and pair.plate.end.patch is not None:
@@ -182,6 +189,7 @@ class CollisionLoadSystem:
         self.model = model
         self._layer_operator = layer_operator
         shapes = {s.key: s for s in model.shapes}
+        self._shapes = shapes
         if set(bindings) != set(shapes):
             raise ValueError("bindings must cover the collision model")
         self.bindings = MappingProxyType(dict(bindings))
@@ -231,10 +239,11 @@ class CollisionLoadSystem:
             if kinds not in {
                 ("hull", "hull"),
                 ("sphere", "triangle"),
+                ("capsule", "triangle"),
                 ("triangle", "triangle"),
                 ("particle", "plate"),
                 ("plate", "triangle"),
-            } or any(s.radius and s.kind not in ("sphere", "plate") for s in (x, y)):
+            } or any(s.radius and s.kind not in ("sphere", "capsule", "plate") for s in (x, y)):
                 raise ValueError("unsupported shape combination for contact layer")
             if law.friction and x.rigid == y.rigid:
                 raise ValueError("sliding layer requires one rigid and one deformable surface")
@@ -345,7 +354,7 @@ class CollisionLoadSystem:
                 continue
             if w.gap_m <= 0 or w.normal is None:
                 raise SolverFailure("hard core has no admissible layer state")
-            points = _sites(pair)
+            points = _sites(pair, self._shapes)
             fractions = _quadrature(points)
             coordinates = []
             for site, fraction in zip(points, fractions, strict=True):

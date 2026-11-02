@@ -23,7 +23,7 @@ from ._sweep_polynomial import (
     sub,
 )
 from ._triangle_pair_sweep import _EDGES, _ZERO_VECTOR, _FacePath, _on_edge, _Pose
-from .collision_witness import CapsuleAxisPoint, CollisionWitness
+from .collision_witness import CapsuleAxisPoint, CollisionWitness, ConvexContactPoint
 
 
 @dataclass(frozen=True)
@@ -144,6 +144,23 @@ def segment_witness(cap, face_first, start, axis, tri, nearest, source):
         source,
         capsule_axis_span=(endpoint(*low), endpoint(*high)),
     ), signed
+
+
+def capsule_material_sites(capsule, witness, *, capsule_first):
+    """Material endpoints for quadrature over the complete closest interval."""
+    first, last = witness.capsule_axis_span
+    extrema = (first,) if first == last else (first, last)
+    outward = np.asarray(witness.normal) * (1 if capsule_first else -1)
+    sites = []
+    for point in extrema:
+        s = point.axis_parameter
+        cap = tuple(np.asarray(point.axis_point) + capsule.radius * outward)
+        weights = tuple(sorted(zip(capsule.vertex_ids, (1 - s, s), strict=True)))
+        if capsule_first:
+            sites.append(ConvexContactPoint(cap, point.face_point, weights, point.face_weights))
+        else:
+            sites.append(ConvexContactPoint(point.face_point, cap, point.face_weights, weights))
+    return tuple(sites)
 
 
 class _CapsuleFace:

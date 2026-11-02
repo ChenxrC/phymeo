@@ -9,6 +9,7 @@ from ..constraints.conforming_shell import _cyclic
 from ..core.capabilities import SolverFailure
 from ._prism_clip import hull, inside, orient
 from ._round_sweep import _translation, _vector
+from ._tetrahedral_surface import _clip
 from ._triangle_pair_sweep import _cross3
 
 
@@ -156,3 +157,16 @@ class HullShape:
 
     def point(self, weights, time):
         return sum(w * self.points[i] for i, w in weights) + time * self.step
+
+
+def clip_triangle_to_hull(heights):
+    """Closed triangle section in its own barycentric coordinates and interior occupancy."""
+    polygon = list(np.eye(3, dtype=int).astype(object))
+    for column in heights.T:
+        polygon = _clip(polygon, column)
+        if not polygon:
+            return [], False
+    # The centroid lies strictly inside exactly when every plane has positive
+    # slack somewhere on the section. This also covers line and point sections.
+    interior = all(any(w @ column > 0 for w in polygon) for column in heights.T)
+    return polygon, interior

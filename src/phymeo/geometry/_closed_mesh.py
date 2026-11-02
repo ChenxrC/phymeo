@@ -10,9 +10,9 @@ import numpy as np
 from ..constraints.collision_shapes import CollisionShape
 from ..core.capabilities import SolverFailure
 from ._convex_contact import HullPairQuery, _closest
-from ._convex_hull import _Face, direction_key
+from ._convex_hull import _Face, clip_triangle_to_hull, direction_key
 from ._round_sweep import _GRID, _translation, _unit, _vector, _xyz
-from ._tetrahedral_surface import _clip, _TriangleMotion
+from ._tetrahedral_surface import _TriangleMotion
 from ._triangle_pair_sweep import _cross3, _TrianglePair
 from .collision_witness import (
     CollisionSweep,
@@ -181,15 +181,10 @@ class MeshHullQuery:
         facets = []
         for tri in mesh.facets:
             heights = np.array([planes[i] for i in tri.ids], dtype=object)
-            polygon = list(np.eye(3, dtype=int).astype(object))
-            for column in heights.T:
-                polygon = _clip(polygon, column)
-                if not polygon:
-                    break
+            polygon, strict = clip_triangle_to_hull(heights)
             if not polygon:
                 continue
-            if all(any(w @ column > 0 for w in polygon) for column in heights.T):
-                interior = True
+            interior = interior or strict
             touch = False
             for w in polygon:
                 local = w @ tri.xyz + relative

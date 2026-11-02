@@ -19,6 +19,7 @@ from ._capsule_triangle_sweep import capsule_face_query
 from ._closed_mesh import ClosedMesh, MeshHullQuery
 from ._convex_contact import HullPairQuery
 from ._convex_hull import HullShape
+from ._hull_surface import HullSurfaceQuery
 from ._plate_contact import PlateSurfaceQuery, RoundedPlate
 from ._rotating_round_sweep import RotatingCapsuleQuery, rotating_round_query
 from ._round_sweep import round_query, sweep_result
@@ -30,6 +31,7 @@ from .collision_witness import (
     CollisionSweep,
     CollisionWitness,
     ConvexHullTrace,
+    HullSurfaceTrace,
     MeshContactTrace,
     PlateContactTrace,
     TetrahedralBodyPair,
@@ -68,6 +70,7 @@ class CollisionPair:
     convex: ConvexHullTrace | None = None
     mesh: MeshContactTrace | None = None
     plate: PlateContactTrace | None = None
+    hull_surface: HullSurfaceTrace | None = None
 
 
 @dataclass(frozen=True)
@@ -231,6 +234,13 @@ def _pair(a, b, ma, mb, code, analytic, seeds):
     if analytic is not None:
         try:
             with np.errstate(over="raise", invalid="raise", divide="raise"):
+                if isinstance(analytic, HullSurfaceQuery):
+                    status, reason, witness, sweep, surface = analytic.result(
+                        ma.moving or mb.moving, seeds
+                    )
+                    return CollisionPair(
+                        *fields, True, status, reason, witness, sweep, hull_surface=surface
+                    )
                 if isinstance(analytic, PlateSurfaceQuery):
                     status, reason, witness, sweep, plate = analytic.result(
                         ma.moving or mb.moving, seeds
@@ -408,6 +418,18 @@ def _detect_pairs(workspace, paths, flags):
                         analytic = plate
                     elif not code:
                         analytic = PlateSurfaceQuery(plate, other, mc, plate_first)
+            elif {a.kind, b.kind} == {"hull", "triangle"} and code in (0, 5):
+                hull_first = a.kind == "hull"
+                hs, cs, hp, cp = (a, b, ma, mb) if hull_first else (b, a, mb, ma)
+                if hs.radius or cs.radius or (hp.turn is not None and hp.turn.angle):
+                    if not code:
+                        analytic = _NarrowFailure("unsupported", "hull_rotation_or_surface_offset")
+                else:
+                    hull = prepared_hull(hs, hp)
+                    if isinstance(hull, _NarrowFailure):
+                        analytic = hull
+                    elif not code:
+                        analytic = HullSurfaceQuery(hs, hull, cs, cp, hull_first)
             elif {a.kind, b.kind} == {"mesh", "hull"} and code in (0, 5):
                 mesh_first = a.kind == "mesh"
                 ms, hs, mp, hp = (a, b, ma, mb) if mesh_first else (b, a, mb, ma)

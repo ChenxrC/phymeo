@@ -251,13 +251,13 @@ def _record(a, b, candidates, *, incident, source="host-affine-triangle-pair"):
 
 
 class _TrianglePair:
-    def __init__(self, a, b, ma, mb):
+    def __init__(self, a, b, ma, mb, *, sweep=True):
         self.a, self.b = _FacePath(a, ma), _FacePath(b, mb)
         self.shared = (
             set(self.a.ids).intersection(self.b.ids) if a.key.body == b.key.body else set()
         )
         self.features = ()
-        if self.a.valid and self.b.valid and (ma.moving or mb.moving):
+        if sweep and self.a.valid and self.b.valid and (ma.moving or mb.moving):
             # A vertex's own face and edges with a common material endpoint
             # coincide by construction. Keep the rest of each triangle pair.
             features = [

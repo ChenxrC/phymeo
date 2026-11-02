@@ -213,3 +213,23 @@ class PlateContactTrace:
     start: PlateContactPose
     end: PlateContactPose
     entry: PlateContactPose | None
+
+
+@dataclass(frozen=True)
+class HullSurfacePose:
+    """Occupied material section of a cloth triangle in a convex solid."""
+
+    relation: str
+    area_m2: float
+    section: tuple[MaterialContactPoint, ...]
+    boundary_faces: tuple
+    support_normals: tuple[tuple[float, ...], ...]
+    witness: CollisionWitness
+
+
+@dataclass(frozen=True)
+class HullSurfaceTrace:
+    start: HullSurfacePose
+    end: HullSurfacePose
+    entry: HullSurfacePose | None
+    exact_first_ratio: tuple[int, int] | None

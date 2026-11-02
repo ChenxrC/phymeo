@@ -151,3 +151,5 @@ DD03 的零厚度网格不符合旧 `ClothSelfContactTopology` 的正厚度输�
 **M2-RR 已接入 RR05。** 原五个构型已从公开入口读到实体关系、真实边界距离和首触材料点；外箱包住整个 U 网格也得到相反的包含方向。[三端实测](p65-collision-m2-closed-mesh.md)
 
 **M2-RD 已接入 RD03。** 原五种构型均有公共接口结果，包括侧边避让、角部留出以及大布面覆盖时 1 m² 的完整区域。[三端实测](p65-collision-m2-rounded-plates.md)
+
+**M2-RD 已接入 RD05。** 原五个加入回归的构型覆盖布尖首触、避让、共同刚体变换及留出。凸体内的布面有完整材料截面。[三端实测](p65-collision-m2-hull-surfaces.md)

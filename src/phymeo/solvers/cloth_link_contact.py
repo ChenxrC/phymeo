@@ -8,6 +8,7 @@ from ..backends.tyx_normal_layer import TyxNormalLayer
 from ..constraints.collision_shapes import CollisionKey, CollisionMotion, CollisionShape
 from ..core.capabilities import SolverFailure
 from ..core.validation import finite_real
+from ..dynamics.robot_kinematics import forward_kinematics
 from ..geometry._capsule_triangle_sweep import capsule_face_query, capsule_material_sites
 from .collision_loads import _host_law
 
@@ -71,9 +72,48 @@ class ClothLinkContacts:
         return local @ rotations[link.link_index].T + origins[link.link_index]
 
     @staticmethod
-    def bounds_distance(ends, tri):
-        separation = np.maximum(ends.min(0) - tri.max(1), tri.min(1) - ends.max(0))
-        return np.linalg.norm(np.maximum(0.0, separation), axis=1)
+    def bounds_distance(ends, tri, cutoff=None):
+        """Lower distance bound from boxes and a separating projection for diagonal shafts."""
+        scale = np.maximum(abs(tri).max(axis=(1, 2)), max(1.0, abs(ends).max()))
+        slack = 128 * np.finfo(float).eps
+        low = ends.min(0) / scale[:, None]
+        high = ends.max(0) / scale[:, None]
+        gaps = np.maximum(low - tri.max(1) / scale[:, None], tri.min(1) / scale[:, None] - high)
+        box = np.hypot.reduce(np.maximum(0.0, gaps), axis=1)
+        with np.errstate(over="ignore"):
+            bound = np.minimum(np.finfo(float).max, np.maximum(0.0, box - slack) * scale)
+        near = np.ones(len(tri), dtype=bool) if cutoff is None else bound <= cutoff
+        if not np.any(near):
+            return bound
+
+        unit_scale = scale[near, None]
+        origin = ends[0] / unit_scale
+        shaft = ends[1] / unit_scale - origin
+        vertices = tri[near] / unit_scale[:, None, :] - origin[:, None, :]
+        center = vertices.mean(1)
+        length = np.hypot.reduce(shaft, axis=1)
+        along = np.divide(
+            shaft, length[:, None], out=np.zeros_like(shaft), where=length[:, None] > 0
+        )
+        t = np.clip(np.einsum("ij,ij->i", center, along), 0.0, length)
+        direction = center - t[:, None] * along
+        size = np.hypot.reduce(direction, axis=1)
+        # Any unit direction gives a lower bound, irrespective of how well it
+        # approximates the true closest normal. A zero vector adds no bound.
+        n = np.divide(
+            direction, size[:, None], out=np.zeros_like(direction), where=size[:, None] > slack
+        )
+        projected = np.einsum("fij,fj->fi", vertices, n)
+        tip = np.einsum("ij,ij->i", shaft, n)
+        gap = np.maximum(
+            projected.min(1) - np.maximum(0.0, tip), np.minimum(0.0, tip) - projected.max(1)
+        )
+        with np.errstate(over="ignore"):
+            directional = np.minimum(
+                np.finfo(float).max, np.maximum(0.0, gap - slack) * scale[near]
+            )
+        bound[near] = np.maximum(bound[near], directional)
+        return bound
 
     def _witness(self, cap, face, ends, tri):
         query = capsule_face_query(
@@ -92,9 +132,8 @@ class ClothLinkContacts:
         depth = 0.0
         for link, cap in zip(self.links, self.capsules, strict=True):
             ends = self.endpoints(link, geo)
-            indices = np.flatnonzero(
-                self.bounds_distance(ends, tri) <= cap.radius + self.rho + self.law.width_m
-            )
+            cutoff = cap.radius + self.rho + self.law.width_m
+            indices = np.flatnonzero(self.bounds_distance(ends, tri, cutoff) <= cutoff)
             candidates += len(indices)
             _, _, com, jl, ja = geo[link.domain][:5]
             step_v = state.domains[link.domain].v
@@ -209,12 +248,64 @@ class ClothLinkContacts:
             i = int(model.parents[i])
         return travel
 
+    def _clear_axis_interval(self, index, face, first, last, e0, e1, travel, uncertainty, required):
+        link, cap = self.links[index], self.capsules[index]
+        q0, q1 = (state.domains[link.domain].q for state in (first, last))
+        x0, x1 = (
+            state.domains[self.cloth_domain].position[self.faces[face]] for state in (first, last)
+        )
+
+        def distance(ends, triangle):
+            witness = self._witness(cap, face, ends, triangle)
+            if witness.normal is None and required == 0:
+                raise SolverFailure(
+                    f"cloth-link axis intersects face {self.face_names[face]} on {link.key} during drift"
+                )
+            return witness.gap_m + cap.radius - required
+
+        def covered(lo, hi, d0, d1, depth):
+            # If an intersection existed, travel to it and away from it would
+            # have to cover both endpoint distances within this time interval.
+            if min(d0, d1) <= uncertainty:
+                return False
+            if d0 + d1 > travel * (hi - lo) + 2 * uncertainty:
+                return True
+            if depth == 8:
+                return False
+            t = (lo + hi) / 2
+            pose = forward_kinematics(self.models[link.domain], q0 + t * (q1 - q0))
+            ends = np.array([link.start, link.end]) @ pose.rotation[link.link_index].T
+            ends += pose.position[link.link_index]
+            dm = distance(ends, x0 + t * (x1 - x0))
+            return covered(lo, t, d0, dm, depth + 1) and covered(t, hi, dm, d1, depth + 1)
+
+        return covered(0.0, 1.0, distance(e0, x0), distance(e1, x1), 0)
+
     def check_path(self, first, last, geo0, geo1):
         """Require strictly positive axis-to-middle separation along this affine x/q segment."""
+        blocked = self._blocked_pair(first, last, geo0, geo1)
+        if blocked is not None:
+            link, face = blocked
+            raise SolverFailure(f"cloth-link axis path unresolved for {link} and face {face}")
+
+    def approach_blocker(self, domain, first, last):
+        """First structural pair without certified layer clearance on the proposed x/q segment."""
+        if domain not in self.models:
+            raise ValueError("unknown approaching robot")
+
+        def geometry(state):
+            pose = forward_kinematics(self.models[domain], state.domains[domain].q)
+            return {domain: (pose.position, pose.rotation)}
+
+        return self._blocked_pair(first, last, geometry(first), geometry(last), domain)
+
+    def _blocked_pair(self, first, last, geo0, geo1, domain=None):
         tri0 = first.domains[self.cloth_domain].position[self.faces]
         tri1 = last.domains[self.cloth_domain].position[self.faces]
         cloth_travel = np.linalg.norm(tri1 - tri0, axis=2).max(1)
-        for link, cap in zip(self.links, self.capsules, strict=True):
+        for index, (link, cap) in enumerate(zip(self.links, self.capsules, strict=True)):
+            if domain is not None and link.domain != domain:
+                continue
             e0, e1 = self.endpoints(link, geo0), self.endpoints(link, geo1)
             travel = cloth_travel + self._axis_motion(link, first, last)
             scale = np.maximum(
@@ -222,14 +313,27 @@ class ClothLinkContacts:
                 max(1.0, abs(e0).max(), abs(e1).max()),
             )
             uncertainty = 128 * np.finfo(float).eps * (scale + travel + cap.radius)
+            required = (
+                np.zeros_like(self.rho)
+                if domain is None
+                else cap.radius + self.rho + self.law.width_m
+            )
+            cutoff = travel + 2 * (uncertainty + required)
             possible = np.flatnonzero(
-                np.maximum(self.bounds_distance(e0, tri0), self.bounds_distance(e1, tri1))
-                <= travel + uncertainty
+                self.bounds_distance(e0, tri0, cutoff) + self.bounds_distance(e1, tri1, cutoff)
+                <= cutoff
             )
             for face in possible:
-                d0 = self._witness(cap, face, e0, tri0[face]).gap_m + cap.radius
-                d1 = self._witness(cap, face, e1, tri1[face]).gap_m + cap.radius
-                if max(d0, d1) <= travel[face] + uncertainty[face]:
-                    raise SolverFailure(
-                        f"cloth-link axis path unresolved for {link.key} and face {self.face_names[face]}"
-                    )
+                if not self._clear_axis_interval(
+                    index,
+                    face,
+                    first,
+                    last,
+                    e0,
+                    e1,
+                    travel[face],
+                    uncertainty[face],
+                    required[face],
+                ):
+                    return link.key, self.face_names[face]
+        return None

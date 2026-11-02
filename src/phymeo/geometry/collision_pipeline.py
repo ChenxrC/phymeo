@@ -18,6 +18,7 @@ from ..constraints.collision_shapes import (
 from ..core.capabilities import SolverFailure
 from ._capsule_triangle_sweep import capsule_face_query
 from ._closed_mesh import ClosedMesh, MeshHullQuery
+from ._collision_bvh import CollisionTrees
 from ._collision_spatial import SpatialPairs
 from ._convex_contact import HullPairQuery
 from ._convex_hull import HullShape
@@ -335,7 +336,36 @@ def _pair(a, b, ma, mb, code, analytic, seeds):
     )
 
 
-def _detect_pairs(workspace, paths, flags):
+def _mesh_candidates(workspace, paths, flags, envelopes, bounds, pending):
+    shapes = workspace._model.shapes
+    groups = {}
+    for slot in np.flatnonzero(flags == 0):
+        i, j, _ = workspace._pairs[slot]
+        if shapes[j].kind == "mesh":
+            i, j = j, i
+        if shapes[i].kind != "mesh" or shapes[j].kind != "hull":
+            continue
+        if any(
+            s.radius or (paths[s.key].turn and paths[s.key].turn.angle)
+            for s in (shapes[i], shapes[j])
+        ):
+            continue
+        groups.setdefault(i, []).append((int(slot), j))
+    selected = {}
+    for i, partners in groups.items():
+        shape = shapes[i]
+        rows = workspace._mesh_rows[i]
+        corners = envelopes[rows]
+        leaves = np.column_stack((corners[:, :, :3].min(axis=1), corners[:, :, 3:].max(axis=1)))
+        key = ("mesh", shape.key, shape.revision)
+        hits = workspace._trees.facets(
+            pending, key, leaves, bounds[[j for _, j in partners]], workspace._engine
+        )
+        selected.update((slot, row) for (slot, _), row in zip(partners, hits, strict=True))
+    return selected
+
+
+def _detect_pairs(workspace, paths, flags, selected):
     rows = []
     shapes = workspace._model.shapes
     # Bound temporary exact feature storage independently of the model's pair capacity.
@@ -451,7 +481,11 @@ def _detect_pairs(workspace, paths, flags):
                         analytic = hull
                     elif not code:
                         try:
-                            analytic = MeshHullQuery(mesh, hull, mesh_first)
+                            analytic = MeshHullQuery(
+                                mesh, hull, mesh_first, selected.get(offset + local)
+                            )
+                            workspace._mesh_work["mesh_facet_pairs_total"] += len(mesh.facets)
+                            workspace._mesh_work["mesh_facet_pairs_tested"] += len(analytic.parts)
                         except SolverFailure as error:
                             analytic = _NarrowFailure("unresolved", str(error))
             elif a.kind == b.kind == "hull" and code in (0, 5):
@@ -545,13 +579,23 @@ def _detect_pairs(workspace, paths, flags):
 class CollisionWorkspace:
     """One immutable model, one explicit broad-phase backend and one publication."""
 
-    def __init__(self, model, backend="host", *, cache_root=None, broad_phase="all_pairs"):
+    def __init__(
+        self,
+        model,
+        backend="host",
+        *,
+        cache_root=None,
+        broad_phase="all_pairs",
+        mesh_midphase="all_facets",
+    ):
         if not isinstance(model, CollisionModel):
             raise TypeError("collision workspace requires a CollisionModel")
         if backend not in ("host", "interpret", "cuda"):
             raise ValueError("collision backend must be host, interpret or cuda")
-        if broad_phase not in ("all_pairs", "sap"):
-            raise ValueError("broad phase must be all_pairs or sap")
+        if broad_phase not in ("all_pairs", "sap", "bvh"):
+            raise ValueError("broad phase must be all_pairs, sap or bvh")
+        if mesh_midphase not in ("all_facets", "bvh"):
+            raise ValueError("mesh midphase must be all_facets or bvh")
         shapes = model.shapes
         self._exterior_faces = exterior_faces(shapes)
         excluded = set(model.excluded)
@@ -573,8 +617,23 @@ class CollisionWorkspace:
             dtype=np.int32,
         ).reshape(-1, 3)
         self._broad_phase = broad_phase
-        self._spatial = SpatialPairs(self._tags, self._pairs) if broad_phase == "sap" else None
-        self._times = dict(envelope_ns=0, broad_ns=0, narrow_ns=0)
+        self._spatial = (
+            SpatialPairs(self._tags, self._pairs, broad_phase)
+            if broad_phase != "all_pairs"
+            else None
+        )
+        self._trees = CollisionTrees()
+        self._mesh_midphase = mesh_midphase
+        self._mesh_work = dict(mesh_facet_pairs_total=0, mesh_facet_pairs_tested=0)
+        self._mesh_rows = {}
+        if mesh_midphase == "bvh":
+            for index, shape in enumerate(shapes):
+                if shape.kind == "mesh":
+                    by_id = {k: self._offsets[index] + j for j, k in enumerate(shape.vertex_ids)}
+                    self._mesh_rows[index] = np.asarray(
+                        [[by_id[k] for k in face] for face in shape.triangles], dtype=np.int32
+                    )
+        self._times = dict(envelope_ns=0, broad_ns=0, midphase_ns=0, narrow_ns=0)
         self._model, self._backend = model, backend
         self._lock = Lock()
         self._closed = False
@@ -606,6 +665,9 @@ class CollisionWorkspace:
             return {
                 **base,
                 **self._times,
+                **self._trees.counts,
+                **self._mesh_work,
+                "mesh_midphase": self._mesh_midphase,
                 "broad_phase": self._broad_phase,
                 "sap_window_pairs": self._spatial.window_pairs if self._spatial else 0,
                 "sap_box_tests": self._spatial.box_tests if self._spatial else 0,
@@ -652,14 +714,22 @@ def detect(model, motion, policy, workspace):
         envelopes = _envelopes(model, paths, policy.margin)
         broad_start = perf_counter_ns()
         workspace._times["envelope_ns"] += broad_start - stamp
+        pending = workspace._trees.layouts.copy()
         try:
             if workspace._engine is None and workspace._spatial is not None:
                 space = workspace._spatial
                 bounds = _host_bounds(workspace._offsets, envelopes)
-                flags = space.decode_sap(space.host_sap(bounds, space.order(bounds)))
+                if space.mode == "bvh":
+                    flags = space.tree_flags(bounds, workspace._trees, pending)
+                else:
+                    flags = space.decode_sap(space.host_sap(bounds, space.order(bounds)))
             elif workspace._engine is None:
                 bounds, flags = _host_query(
                     workspace._offsets, workspace._tags, workspace._pairs, envelopes
+                )
+            elif workspace._broad_phase == "bvh":
+                bounds, flags = workspace._engine.query(
+                    envelopes, trees=workspace._trees, pending=pending
                 )
             else:
                 bounds, flags = workspace._engine.query(envelopes)
@@ -680,7 +750,17 @@ def detect(model, motion, policy, workspace):
         count = int(np.count_nonzero(flags == 0))
         if count > policy.candidate_capacity:
             return CollisionDetection("capacity_exceeded", workspace._backend, count, (), ())
-        rows = _detect_pairs(workspace, paths, flags)
+        selected = {}
+        if workspace._mesh_midphase == "bvh":
+            try:
+                selected = _mesh_candidates(workspace, paths, flags, envelopes, bounds, pending)
+            except BaseException:
+                workspace._close_locked()
+                raise
+            after_mid = perf_counter_ns()
+            workspace._times["midphase_ns"] += after_mid - narrow_start
+            narrow_start = after_mid
+        rows = _detect_pairs(workspace, paths, flags, selected)
         boxes = tuple(
             CollisionBounds(s.key, s.revision, None, None)
             if s.kind == "plane"
@@ -698,5 +778,6 @@ def detect(model, motion, policy, workspace):
             solid_body_pairs(model, paths, rows) if workspace.exterior_faces else (),
         )
         workspace._times["narrow_ns"] += perf_counter_ns() - narrow_start
+        workspace._trees.layouts = pending
         workspace._last = result
         return result

@@ -8,7 +8,8 @@ WORD_BITS = 30
 
 
 class SpatialPairs:
-    def __init__(self, tags, pairs):
+    def __init__(self, tags, pairs, mode):
+        self.mode = mode
         self.tags = tags
         self.count = len(tags)
         self.words = (len(tags) + WORD_BITS - 1) // WORD_BITS
@@ -100,3 +101,9 @@ class SpatialPairs:
         self.window_pairs += int(raw[:, -2].sum())
         self.box_tests += int(raw[:, -1].sum())
         return flags
+
+    def tree_flags(self, bounds, trees, pending, driver=None):
+        if self.count < 2:
+            return self.defaults.copy()
+        raw = trees.hits(pending, ("shape",), bounds, bounds, self, driver)
+        return self.flags(raw)

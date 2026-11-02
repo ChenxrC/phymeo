@@ -149,9 +149,12 @@ class ClosedMesh:
 class MeshHullQuery:
     features = ()
 
-    def __init__(self, mesh, hull, mesh_first):
+    def __init__(self, mesh, hull, mesh_first, facet_indices=None):
         self.mesh, self.hull, self.mesh_first = mesh, hull, mesh_first
-        self.parts = tuple(HullPairQuery(f, hull) for f in mesh.facets)
+        self.facets = (
+            mesh.facets if facet_indices is None else tuple(mesh.facets[i] for i in facet_indices)
+        )
+        self.parts = tuple(HullPairQuery(f, hull) for f in self.facets)
 
     def _nearest(self, t):
         # A vertex pair supplies a valid upper bound for pruning distant facets.
@@ -179,7 +182,7 @@ class MeshHullQuery:
         interior = False
         contacts = {}
         facets = []
-        for tri in mesh.facets:
+        for tri in self.facets:
             heights = np.array([planes[i] for i in tri.ids], dtype=object)
             polygon, strict = clip_triangle_to_hull(heights)
             if not polygon:

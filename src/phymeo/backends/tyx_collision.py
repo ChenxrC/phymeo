@@ -23,6 +23,7 @@ class TyxCollisionBatch:
 
         self._sap_kernel = sap_candidates
         self._spatial = spatial
+        self._tree_buffers = {}
         self._spatial_counts = dict(
             spatial_completed_launches=0,
             spatial_uploads=0,
@@ -102,10 +103,11 @@ class TyxCollisionBatch:
                     self._envelopes = self._scratch((int(offsets[-1]), 6), np.float32)
                     self._bounds = self._scratch((self._count, 6), np.float32)
                 if self._pair_count and spatial is not None:
-                    self._spatial_meta = self._static(spatial.meta)
                     self._allowed = self._static(spatial.allowed)
-                    self._order = self._scratch((self._count, 2), np.int32)
-                    self._packed = self._scratch((self._count, spatial.words + 2), np.int32)
+                    if spatial.mode == "sap":
+                        self._spatial_meta = self._static(spatial.meta)
+                        self._order = self._scratch((self._count, 2), np.int32)
+                        self._packed = self._scratch((self._count, spatial.words + 2), np.int32)
                 elif self._pair_count:
                     self._tags = self._static(tags)
                     self._pairs = self._static(pairs)
@@ -161,7 +163,15 @@ class TyxCollisionBatch:
             self._spatial_counts["spatial_downloaded_bytes"] += raw.nbytes
         return raw
 
-    def _spatial_query(self):
+    def tree_hits(self, key, tree, leaves, queries, params, shape):
+        from ._tyx_collision_bvh import TreeBuffers
+
+        with self._tx.use_runtime(self._runtime):
+            if key not in self._tree_buffers:
+                self._tree_buffers[key] = TreeBuffers(self, tree, self._count, shape)
+            return self._tree_buffers[key].hits(tree, leaves, queries, params, shape)
+
+    def _spatial_query(self, trees, pending):
         # Public bounds must be returned on all backends. Reuse that transfer
         # for the deterministic host endpoint order used by the tyx traversal.
         if self._mode == "cuda":
@@ -172,6 +182,8 @@ class TyxCollisionBatch:
         if not self._pair_count:
             return bounds, np.empty(0, np.int32)
         space = self._spatial
+        if space.mode == "bvh":
+            return bounds, space.tree_flags(bounds, trees, pending, self)
         self._spatial_upload(self._order, space.order(bounds))
         self._counts["launches"] += 1
         self._sap_kernel(
@@ -189,7 +201,7 @@ class TyxCollisionBatch:
         self._spatial_counts["spatial_completed_launches"] += 1
         return bounds, space.decode_sap(raw)
 
-    def query(self, envelopes):
+    def query(self, envelopes, *, trees=None, pending=None):
         if not self._count:
             return np.empty((0, 6), np.float32), np.empty(0, np.int32)
         with self._tx.use_runtime(self._runtime):
@@ -202,7 +214,7 @@ class TyxCollisionBatch:
             self._counts["launches"] += 1
             self._reduce(self._count, self._offsets, self._envelopes, self._bounds, mode=self._mode)
             if self._spatial is not None:
-                return self._spatial_query()
+                return self._spatial_query(trees, pending)
             if self._pair_count:
                 self._counts["launches"] += 1
                 self._classify(

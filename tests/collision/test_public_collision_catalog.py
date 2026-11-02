@@ -47,7 +47,7 @@ def case_scene(case, name):
     return model, paths, focus
 
 
-def run_catalog(backend, tmp_path):
+def catalog_model():
     catalog = catalog_entries()
     expected = {f"{family}{n:02}" for family in ("RR", "RD", "DD") for n in range(1, 6)}
     assert set(catalog) == expected
@@ -66,10 +66,15 @@ def run_catalog(backend, tmp_path):
             cases.append((case, v["name"], v["relation"], tuple(keys[k] for k in focus)))
     assert len(cases) == 74 and len({(c, n) for c, n, _, _ in cases}) == 74
     model = ph.CollisionModel(shapes, exclusions)
+    return model, motions, cases
+
+
+def run_catalog(backend, tmp_path):
+    model, motions, cases = catalog_model()
     with ph.CollisionWorkspace(model, backend, cache_root=tmp_path / "cache") as workspace:
         result = ph.detect(model, motions, ph.CollisionPolicy(margin=0.5), workspace)
         assert result.status == "ok" and workspace.last_result is result
-        assert len(result.pairs) == len(shapes) * (len(shapes) - 1) // 2
+        assert len(result.pairs) == len(model.shapes) * (len(model.shapes) - 1) // 2
         by_world = [[] for _ in cases]
         for p in result.pairs:
             if p.first.world != p.second.world:
@@ -123,7 +128,7 @@ def run_catalog(backend, tmp_path):
             json.dumps(
                 dict(
                     records=records,
-                    shapes=len(shapes),
+                    shapes=len(model.shapes),
                     pairs=len(result.pairs),
                     candidates=result.required_candidates,
                     stats=stats,

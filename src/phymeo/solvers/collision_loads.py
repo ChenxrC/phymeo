@@ -20,7 +20,7 @@ from ..core.result import StepReport
 from ..core.rigid import RigidBodyInputs
 from ..core.state import StepInputs
 from ..core.validation import finite_real, validate_dt
-from ..dynamics.rotation import quaternion_matrix
+from ..dynamics.rotation import SEMI_IMPLICIT_WORLD_OMEGA, quaternion_matrix
 from ..geometry._capsule_triangle_sweep import capsule_material_sites
 from ..geometry.collision_pipeline import CollisionDetection, CollisionWorkspace, detect
 from ..geometry.collision_witness import ConvexContactPoint, ProximityWitness
@@ -266,7 +266,7 @@ class CollisionLoadSystem:
         with self._lock:
             self._last = frame
 
-    def _paths(self, state, end=None):
+    def _paths(self, state, end=None, rigid_solver=None):
         rotations = quaternion_matrix(state.rigid.orientation)
         out = {}
         for s in self.model.shapes:
@@ -288,6 +288,13 @@ class CollisionLoadSystem:
             if end is None:
                 out[s.key] = CollisionMotion(start)
                 continue
+            if s.kind == "capsule" and (
+                getattr(rigid_solver, "rigid_motion_contract", None) != SEMI_IMPLICIT_WORLD_OMEGA
+                or np.any(end.rigid.angular_velocity[r])
+            ):
+                raise SolverFailure(
+                    "attached capsule requires bound continuous rigid motion for translation"
+                )
             q0, q1 = state.rigid.orientation[r], end.rigid.orientation[r]
             if not (np.array_equal(q0, q1) or np.array_equal(q0, -q1)) and (
                 s.kind != "sphere" or np.any(local)
@@ -301,13 +308,13 @@ class CollisionLoadSystem:
             out[s.key] = CollisionMotion(start, turn=turn)
         return out
 
-    def _query(self, state, end, work, capacity):
+    def _query(self, state, end, work, capacity, rigid_solver=None):
         policy = CollisionPolicy(
             margin=self._margin,
             proximity_patches=end is None,
             **({} if capacity is None else {"candidate_capacity": capacity}),
         )
-        result = detect(self.model, self._paths(state, end), policy, work)
+        result = detect(self.model, self._paths(state, end, rigid_solver), policy, work)
         if result.status != "ok":
             raise SolverFailure("collision " + result.status)
         return result
@@ -441,6 +448,7 @@ class CollisionLoadSystem:
             if not isinstance(external, CoupledInputs):
                 raise TypeError("expected CoupledInputs")
             pm, rm = models
+            particle_solver, rigid_solver = solvers
             if (
                 pm.particle_count != state.particles.particle_count
                 or rm.body_count != state.rigid.body_count
@@ -461,8 +469,8 @@ class CollisionLoadSystem:
             output = []
             reports = []
             for model, solver, entry, forces, count in zip(
-                models,
-                solvers,
+                (pm, rm),
+                (particle_solver, rigid_solver),
                 (state.particles, state.rigid),
                 combined,
                 (pm.particle_count, rm.body_count),
@@ -478,7 +486,7 @@ class CollisionLoadSystem:
                     output.append(entry)
                     reports.append(None)
             candidate = CoupledState(*output)
-            path = self._query(state, candidate, workspace, capacity)
+            path = self._query(state, candidate, workspace, capacity, rigid_solver)
             for pair in path.pairs:
                 if (pair.first, pair.second) not in self.layers:
                     continue

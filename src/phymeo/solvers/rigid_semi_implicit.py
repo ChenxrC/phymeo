@@ -7,7 +7,11 @@ from ..core.result import StepReport, StepResult
 from ..core.rigid import RigidBodyInputs, RigidBodyModel, RigidBodyState
 from ..core.validation import validate_rigid_step
 from ..dynamics.integrate import predict
-from ..dynamics.rotation import advance_world_orientation, quaternion_matrix
+from ..dynamics.rotation import (
+    SEMI_IMPLICIT_WORLD_OMEGA,
+    advance_world_orientation,
+    quaternion_matrix,
+)
 
 
 class RigidSemiImplicitSolver:
@@ -17,6 +21,7 @@ class RigidSemiImplicitSolver:
     energy/momentum-preserving integrator for arbitrary anisotropic inertia.
     """
 
+    rigid_motion_contract = SEMI_IMPLICIT_WORLD_OMEGA
     capabilities = SolverCapabilities(
         backend="numpy",
         dtypes=frozenset(["float32", "float64"]),

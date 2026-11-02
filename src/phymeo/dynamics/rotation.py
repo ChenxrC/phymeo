@@ -5,6 +5,9 @@ Kernels use FP64 intermediate arithmetic and preserve the input storage dtype.
 
 import numpy as np
 
+# A participant with this contract drifts at its published final world angular velocity.
+SEMI_IMPLICIT_WORLD_OMEGA = "semi_implicit_world_omega_v1"
+
 
 def quaternion_matrix(orientation: np.ndarray) -> np.ndarray:
     """Return (n,3,3) body-to-world matrices from validated unit quaternions."""

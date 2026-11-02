@@ -20,6 +20,8 @@ class TyxRigidSemiImplicitSolver(TyxSemiImplicitSolver):
     CUDA buffers are per step; this adapter makes no throughput claim.
     """
 
+    rigid_motion_contract = RigidSemiImplicitSolver.rigid_motion_contract
+
     def __init__(self, mode="interpret", *, cache_root=None):
         super().__init__(mode, cache_root=cache_root)
         try:

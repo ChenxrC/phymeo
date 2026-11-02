@@ -168,3 +168,8 @@ def test_tangential_load_and_work_come_from_the_same_material_point():
     assert row["power_w"] == pytest.approx(-0.5)
     for site in row["sites"]:
         np.testing.assert_allclose(site["force_on_cloth_n"], [-0.5, 0.0, -1.0], atol=1e-13)
+
+
+def test_structural_law_binds_the_cpu_or_explicit_tyx_operator():
+    with pytest.raises(TypeError, match="TyxNormalLayer"):
+        make_scene(operator=object())

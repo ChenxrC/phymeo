@@ -18,11 +18,11 @@ canvas{display:block}#err{position:absolute;top:8px;left:12px;color:#ffb093}.con
 <main><header><div><h1>布料接触回放</h1><p id="case">选择一次 Phymeo 仿真的轨迹</p></div>
 <label class="file">打开轨迹 JSON<input type="file" id="file" accept=".json,application/json"></label></header>
 <nav><label>跳到阶段 <select id="events"><option>—</option></select></label><label>受力对象 <select id="filter"><option value="">全部</option></select></label>
-<label><input type="checkbox" id="forces" checked>接触力</label><select id="component" aria-label="力分量"><option value="total">总力</option><option value="normal">法向力</option><option value="tangent">切向力</option></select><label><input type="checkbox" id="wire" checked>网格边</label></nav>
+<label><input type="checkbox" id="forces" checked>接触力</label><select id="component" aria-label="力分量"><option value="total">总力</option><option value="normal">法向力</option><option value="tangent">切向力</option></select><label><input type="checkbox" id="impulses">背板冲量</label><label><input type="checkbox" id="wire" checked>网格边</label></nav>
 <div id="view"><span id="err"></span></div>
 <div class="controls"><button id="prev" aria-label="上一帧">◀</button><button id="play">播放</button><button id="next" aria-label="下一帧">▶</button>
 <input id="time" aria-label="物理帧" type="range" min="0" max="0" value="0" step="1"></div>
-<div id="readout">—</div><p>布面与夹爪显示当前物理帧。箭头来自记录的受力采样点，单位为 N。拖动画面旋转，滚轮缩放。</p>
+<div id="readout">—</div><p>布面与夹爪显示当前物理帧。箭头来自记录的受力采样点，单位为 N。青色冲量箭头对应显示帧最后一个物理子步，读数另列这帧所有子步的法向冲量标量之和（N·s）。拖动画面旋转，滚轮缩放。</p>
 <p id="source"></p></main>
 <script id="capture" type="application/json">null</script>
 <script>
@@ -30,7 +30,7 @@ canvas{display:block}#err{position:absolute;top:8px;left:12px;color:#ffb093}.con
 const el=id=>document.getElementById(id),box=el("view");
 let trace=null,index=0,playing=false,clockStart=0,simStart=0;
 let renderer,scene,camera,group,cloth,wire,arrows,patches,links,bodies;
-let yaw=.52,pitch=.38,distance=1,center=new THREE.Vector3(),extent=1,scale=1,drag=null;
+let yaw=.52,pitch=.38,distance=1,center=new THREE.Vector3(),extent=1,scale=1,impulseScale=0,drag=null;
 const vec=p=>new THREE.Vector3(p[0],p[1],p[2]);
 const colors={table:0x536679,platform:0x7491a2,A:0xe99967,B:0x7999e3};
 function material(color,opacity=1){return new THREE.MeshStandardMaterial({color,side:THREE.DoubleSide,transparent:opacity<1,opacity,roughness:.75})}
@@ -123,12 +123,15 @@ function loadTrace(raw,hash=""){
    }
  }
  arrows=new THREE.Group();links=new THREE.Group();bodies=new THREE.Group();group.add(arrows,links,bodies);
- const b=new THREE.Box3();let maxf=.01;
+ const b=new THREE.Box3();let maxf=.01,maxImpulse=0;
+ for(const f of raw.frames)for(const row of Object.values(f.contacts||{}))for(const p of row.backing_impulse_ns||[])maxImpulse=Math.max(maxImpulse,p);
  for(const f of raw.frames){for(const p of f.cloth_position_m)b.expandByPoint(vec(p));for(const row of Object.values(f.contacts||{}))for(const p of row.force_n)maxf=Math.max(maxf,vec(p).length())}
+ for(const f of raw.frames)for(const row of f.robot_contact?.cloth_links||[])for(const site of row.sites)maxf=Math.max(maxf,vec(site.force_on_cloth_n).length());
  for(const f of raw.frames)for(const ends of Object.values(f.body_capsules_m||{}))for(const p of ends)b.expandByPoint(vec(p));
- b.getCenter(center);extent=Math.max(.025,b.getSize(new THREE.Vector3()).length());distance=1.8*extent;scale=.30*extent/maxf;
+ b.getCenter(center);extent=Math.max(.025,b.getSize(new THREE.Vector3()).length());distance=1.8*extent;scale=.30*extent/maxf;impulseScale=maxImpulse>0 ? 0.30*extent/maxImpulse : 0;
  el("events").replaceChildren(new Option("选择阶段",""));(raw.events||[]).forEach(e=>el("events").add(new Option(e.phase+" · "+e.t.toFixed(3)+" s",e.t)));
  el("filter").replaceChildren(new Option("全部",""));Object.keys(patches).forEach(k=>el("filter").add(new Option(k,k)));(raw.robot_contact?.capsules||[]).forEach(c=>el("filter").add(new Option(c.key,c.key)));
+ if(raw.cloth_link_material)el("filter").add(new Option("布面（连杆接触）","cloth-links"));
  el("time").max=raw.frames.length-1;el("case").textContent=raw.case+" · "+(raw.completed?"完成":("停止 "+(raw.failure_phase||"")+" "+(raw.failure||"")))+" · "+raw.backend;
  el("source").textContent=(hash?"源 JSON SHA-256 "+hash+" · ":"")+"位置 m，渲染缓冲 FP32，记录保留原精度。";el("err").textContent="";show(0);
 }
@@ -151,6 +154,8 @@ function show(n){
  let sums=[];
  for(const [k,r] of Object.entries(f.contacts||{})){if(el("filter").value&&el("filter").value!==k)continue;
    sums.push(k+" "+r.normal_force_n.reduce((a,b)=>a+b,0).toFixed(3)+" N");
+   if(el("impulses").checked)for(const [i,impulse] of (r.backing_impulse_ns||[]).entries()){
+     if(impulse>0&&r.site_normals?.[i]){const len=impulse*impulseScale;arrows.add(new THREE.ArrowHelper(vec(r.site_normals[i]),vec(r.points_m[i]),len,0x58d6ef,Math.min(len*.25,.035*extent),Math.min(len*.12,.017*extent)))}}
    if(el("forces").checked)r.force_n.forEach((p,i)=>{const v=vec(p),kind=el("component").value;
      if(kind!=="total"){const direction=r.site_normals?.[i] ?? r.normal;if(!direction)return;const nv=vec(direction).multiplyScalar(r.normal_force_n[i]);if(kind==="normal")v.copy(nv);else v.sub(nv)}
      const m=v.length();if(m>1e-9){const len=m*scale;const a=new THREE.ArrowHelper(v.normalize(),vec(r.points_m[i]),len,0xffc675,Math.min(len*.25,.035*extent),Math.min(len*.12,.017*extent));arrows.add(a)}})}
@@ -164,15 +169,36 @@ function show(n){
      const m=v.length();if(m>1e-9)arrows.add(new THREE.ArrowHelper(v.normalize(),vec(row.point_m),m*scale,0xf38064));
    }
  }
+ for(const row of f.robot_contact?.cloth_links||[]){
+   const selected=el("filter").value;
+   if(selected&&selected!=="cloth-links"&&selected!==row.link)continue;
+   sums.push(row.face+" ↔ "+row.link+" "+row.normal_force_n.toFixed(3)+" N");
+   if(!el("forces").checked)continue;
+   for(const site of row.sites){
+     const onLink=selected===row.link,mode=el("component").value;
+     const v=vec(onLink?site.force_on_link_n:site.force_on_cloth_n);
+     const nv=vec(row.normal).multiplyScalar((onLink?-1:1)*site.normal_force_n);
+     if(mode==="normal")v.copy(nv);else if(mode==="tangent")v.sub(nv);
+     const length=v.length();
+     if(length>1e-9)arrows.add(new THREE.ArrowHelper(v.normalize(),vec(site.point_m),length*scale,0xa6e27a));
+   }
+ }
+ let impulses="";
+ if(el("impulses").checked&&f.backing_window){
+   const w=f.backing_window,chosen=el("filter").value;
+   const items=Object.entries(w.impulse_ns_by_patch).filter(([key])=>!chosen||key===chosen);
+   impulses="\n背板冲量 ["+w.start_s.toFixed(5)+", "+w.end_s.toFixed(5)+"] s   "+items.map(([key,j])=>key+" "+j.toExponential(3)+" N·s").join("   ")
+     +"\n最后子步 "+w.substep_s.toExponential(3)+" s，青色箭头 "+impulseScale.toPrecision(3)+" m/(N·s)";
+ }
  if(f.robot_contact)sums.push("关节越界 "+f.robot_contact.joint_violation.toExponential(2)+" rad/m");
- el("readout").textContent="帧 "+index+"/"+(trace.frames.length-1)+"   t="+f.t.toFixed(5)+" s   "+(f.phase||trace.case)+"\n力采样 t="+(f.force_sample_s??f.t).toFixed(5)+" s   "+sums.join("   ")+"\n箭头比例 "+scale.toPrecision(3)+" m/N";render();
+ el("readout").textContent="帧 "+index+"/"+(trace.frames.length-1)+"   t="+f.t.toFixed(5)+" s   "+(f.phase||trace.case)+"\n力采样 t="+(f.force_sample_s??f.t).toFixed(5)+" s   "+sums.join("   ")+"\n箭头比例 "+scale.toPrecision(3)+" m/N"+impulses;render();
 }
 function pause(){playing=false;el("play").textContent="播放"}
 function tick(now){if(playing&&trace){const t=simStart+(now-clockStart)/1000;let next=index;while(next+1<trace.frames.length && trace.frames[next+1].t<=t)next++;if(next!==index)show(next);if(index===trace.frames.length-1)pause()}requestAnimationFrame(tick)}
 el("play").onclick=()=>{if(!trace)return;if(playing){pause();return}if(index===trace.frames.length-1)show(0);playing=true;clockStart=performance.now();simStart=trace.frames[index].t;el("play").textContent="暂停"};
 el("prev").onclick=()=>{pause();show(index-1)};el("next").onclick=()=>{pause();show(index+1)};
 el("time").oninput=e=>{pause();show(Number(e.target.value))};el("events").onchange=e=>{if(e.target.value==="")return;pause();const ix=trace.frames.findIndex(f=>f.t>=Number(e.target.value)-1e-12);show(ix<0?trace.frames.length-1:ix)};
-el("forces").onchange=el("wire").onchange=el("filter").onchange=el("component").onchange=()=>show(index);
+el("forces").onchange=el("wire").onchange=el("filter").onchange=el("impulses").onchange=el("component").onchange=()=>show(index);
 el("file").onchange=async e=>{try{const f=e.target.files[0];if(!f)return;const bytes=await f.arrayBuffer();const hash=crypto.subtle?Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256",bytes)),x=>x.toString(16).padStart(2,"0")).join(""):"";loadTrace(JSON.parse(new TextDecoder().decode(bytes)),hash)}catch(err){el("err").textContent=err.message}};
 box.onpointerdown=e=>{drag=[e.clientX,e.clientY];box.setPointerCapture(e.pointerId)};box.onpointerup=()=>drag=null;
 box.onpointermove=e=>{if(!drag)return;yaw-=(e.clientX-drag[0])*.008;pitch=Math.min(1.5,Math.max(-1.5,pitch+(e.clientY-drag[1])*.008));drag=[e.clientX,e.clientY];render()};

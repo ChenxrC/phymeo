@@ -4,6 +4,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
+from ..backends.tyx_normal_layer import TyxNormalLayer
 from ..constraints.collision_shapes import CollisionKey, CollisionMotion, CollisionShape
 from ..core.capabilities import SolverFailure
 from ..core.validation import finite_real
@@ -50,6 +51,8 @@ class ClothLinkContacts:
             for i, ids in enumerate(self.faces)
         )
         self.areas = np.array(areas, dtype=float, copy=True)
+        for values in (self.faces, self.rho, self.areas):
+            values.flags.writeable = False
         self.models = robots.models
         self.links = robots.capsules
         self.capsules = tuple(
@@ -57,8 +60,8 @@ class ClothLinkContacts:
             for i, link in enumerate(self.links)
         )
         self.law = material
-        if operator is not None and not callable(getattr(operator, "evaluate", None)):
-            raise TypeError("cloth-link operator must evaluate world-space load rows")
+        if operator is not None and not isinstance(operator, TyxNormalLayer):
+            raise TypeError("cloth-link operator must be a TyxNormalLayer")
         self.operator = operator
 
     @staticmethod
@@ -130,7 +133,7 @@ class ClothLinkContacts:
                         )
                     )
                     group.append((point, arm, ids, weights, relative, site.first_weights))
-                groups.append((link, face, n, gap, group))
+                groups.append((link, face, ends, n, gap, group))
         values = np.array(rows, dtype=float).reshape(-1, 13)
         answer = _host_law(values) if self.operator is None else self.operator.evaluate(values)
         if (
@@ -141,7 +144,7 @@ class ClothLinkContacts:
             raise SolverFailure("invalid cloth-link layer response")
         actual = iter(answer.astype(float, copy=False))
         records = []
-        for link, face, n, gap, group in groups:
+        for link, face, ends, n, gap, group in groups:
             _, _, _, jl, ja = geo[link.domain][:5]
             sites = []
             for point, arm, ids, weights, relative, axis_weights in group:
@@ -157,6 +160,7 @@ class ClothLinkContacts:
                         axis_parameter=dict(axis_weights)[1],
                         face_weights=tuple(zip(ids, map(float, weights), strict=True)),
                         normal_speed_m_s=float(rate),
+                        relative_velocity_m_s=relative.copy(),
                         normal_force_n=float(fn),
                         force_on_cloth_n=force,
                         force_on_link_n=-force,
@@ -168,6 +172,10 @@ class ClothLinkContacts:
                     link=link.key,
                     robot=link.domain,
                     face=self.face_names[face],
+                    face_nodes=tuple(map(int, self.faces[face])),
+                    face_positions_m=tri[face].copy(),
+                    half_thickness_m=float(self.rho[face]),
+                    axis_ends_m=ends.copy(),
                     normal=n,
                     gap_m=float(gap),
                     normal_force_n=sum(s["normal_force_n"] for s in sites),

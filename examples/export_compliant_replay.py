@@ -120,9 +120,92 @@ def _bind_recorded_models(trace):
                     raise ValueError("invalid recorded contact directions or decomposed force")
 
 
+def _check_structural_records(trace):
+    if "cloth_link_material" not in trace:
+        return
+    shapes = {c["key"]: c for c in trace["robot_contact"]["capsules"]}
+    owners = trace["owners"]
+    faces = {}
+    for i, ids in enumerate(trace["faces"]):
+        group = [x.rsplit("/", 1) for x in owners[3 * i : 3 * i + 3]]
+        if (
+            len(group) != 3
+            or len({name for name, _ in group}) != 1
+            or [int(n) for _, n in group] != ids
+        ):
+            raise ValueError("invalid structural material face binding")
+        faces[group[0][0]] = ids
+    tolerance = 2e-6 if trace.get("cloth_link_force_backend") in ("interpret", "cuda") else 2e-10
+    for frame in trace["frames"]:
+        body = frame.get("robot_contact", {})
+        rows = body.get("cloth_links")
+        if not isinstance(rows, list) or len({(r["face"], r["link"]) for r in rows}) != len(rows):
+            raise ValueError("invalid structural contact set")
+        for row in rows:
+            link = shapes.get(row["link"])
+            ids = faces.get(row["face"])
+            if link is None or link["domain"] != row["robot"] or ids != row["face_nodes"]:
+                raise ValueError("unknown structural face or link")
+            pts = np.asarray(row["face_positions_m"], dtype=float)
+            ends = np.asarray(row["axis_ends_m"], dtype=float)
+            normal = np.asarray(row["normal"], dtype=float)
+            if (
+                pts.shape != (3, 3)
+                or ends.shape != (2, 3)
+                or normal.shape != (3,)
+                or not np.isfinite(pts).all()
+                or not np.isfinite(ends).all()
+                or not np.isclose(normal @ normal, 1.0, atol=2e-10, rtol=0.0)
+                or len(row["sites"]) not in (1, 2)
+            ):
+                raise ValueError("invalid structural contact geometry")
+            total_force = total_power = 0.0
+            for site in row["sites"]:
+                weights = dict(site["face_weights"])
+                t = site["axis_parameter"]
+                if (
+                    len(site["face_weights"]) != 3
+                    or set(weights) != set(ids)
+                    or min(weights.values()) < -1e-13
+                    or not np.isclose(sum(weights.values()), 1.0, atol=1e-12, rtol=0.0)
+                    or not 0 <= t <= 1
+                ):
+                    raise ValueError("invalid structural material weights")
+                point = np.asarray(site["point_m"])
+                arm = ends[0] + t * (ends[1] - ends[0])
+                force = np.asarray(site["force_on_cloth_n"])
+                opposite = np.asarray(site["force_on_link_n"])
+                velocity = np.asarray(site["relative_velocity_m_s"])
+                fn = site["normal_force_n"]
+                distance = row["gap_m"] + link["radius_m"] + row["half_thickness_m"]
+                if (
+                    point.shape != (3,)
+                    or force.shape != (3,)
+                    or opposite.shape != (3,)
+                    or velocity.shape != (3,)
+                    or distance <= 0
+                    or fn < 0
+                    or not np.array_equal(force, -opposite)
+                    or not np.allclose(
+                        point, np.array([weights[i] for i in ids]) @ pts, atol=2e-11, rtol=2e-11
+                    )
+                    or not np.allclose(point - arm, distance * normal, atol=2e-11, rtol=2e-11)
+                    or not np.isclose(force @ normal, fn, atol=tolerance, rtol=tolerance)
+                    or not np.isclose(force @ velocity, site["power_w"], atol=2e-11, rtol=2e-11)
+                ):
+                    raise ValueError("invalid structural force, address or work")
+                total_force += fn
+                total_power += site["power_w"]
+            if not np.isclose(total_force, row["normal_force_n"]) or not np.isclose(
+                total_power, row["power_w"]
+            ):
+                raise ValueError("structural load sum differs from its sites")
+
+
 def add_link_geometry(trace):
     if "robot_models" in trace:
         _bind_recorded_models(trace)
+        _check_structural_records(trace)
         return
     if trace.get("robot_parents") and all(
         all("links_m" in r for r in f["robots"].values()) for f in trace["frames"]
@@ -172,6 +255,76 @@ def add_link_geometry(trace):
             contact["normal"] = axis.tolist()
 
 
+def add_backing_windows(trace):
+    """Summarize actual scalar normal impulses in each displayed frame interval."""
+    fronts = [p["name"] for p in trace.get("patches", ()) if "backing_clearance_m" in p]
+    by_step = trace.get("backing_samples")
+    frames = trace["frames"]
+    if (not fronts and by_step is None) or (len(frames) == 1 and not by_step):
+        return
+    dt, steps = trace["dt_s"], trace["substeps"]
+    if not fronts or type(steps) is not int or steps < 1 or not np.isfinite(dt) or dt <= 0:
+        raise ValueError("invalid backing sample interval")
+    h = dt / steps
+    names = [p["name"] for p in trace["patches"]]
+    if len(set(names)) != len(names):
+        raise ValueError("duplicate backing patch name")
+    expected = steps * (len(frames) - 1)
+    samples = trace.get("samples", ())
+    if by_step is None or len(by_step) != expected or len(samples) != expected * len(names):
+        raise ValueError("incomplete backing sample sequence")
+
+    for i, frame in enumerate(frames[1:]):
+        start = frames[i]["t"]
+        if not np.isclose(frame["t"] - start, dt, rtol=0, atol=1e-12):
+            raise ValueError("invalid backing frame interval")
+        accumulated = dict.fromkeys(fronts, 0.0)
+        active = 0
+        for j in range(steps):
+            index = i * steps + j
+            time = start + j * h
+            result = by_step[index]
+            rows = samples[index * len(names) : (index + 1) * len(names)]
+            if {r["patch"] for r in rows} != set(names) or not np.isclose(
+                result["t"], time, rtol=0, atol=1e-12
+            ):
+                raise ValueError("incorrect backing sample identity")
+            total = 0.0
+            for row in rows:
+                if not np.isfinite(row["t"]) or abs(row["t"] - time) > 1e-12:
+                    raise ValueError("incorrect backing sample time")
+                key = row["patch"]
+                if key not in accumulated:
+                    continue
+                impulse = np.asarray(row.get("backing_impulse_ns"), dtype=float)
+                if impulse.ndim != 1 or not np.isfinite(impulse).all() or np.any(impulse < 0):
+                    raise ValueError("invalid backing impulse")
+                value = float(impulse.sum())
+                accumulated[key] += value
+                total += value
+                if j == steps - 1:
+                    contact = frame["contacts"][key]
+                    force = np.asarray(contact["normal_force_n"], dtype=float)
+                    if (
+                        not np.array_equal(impulse, contact.get("backing_impulse_ns"))
+                        or force.shape != impulse.shape
+                        or not np.isfinite(force).all()
+                        or np.any(impulse / h > force + 2e-10 * np.maximum(1.0, abs(force)))
+                        or not np.isclose(frame["force_sample_s"], time, rtol=0, atol=1e-12)
+                    ):
+                        raise ValueError("frame backing impulse differs from its source substep")
+            if not np.isclose(total, result["total_impulse_ns"], atol=0, rtol=1e-12):
+                raise ValueError("backing patch sum differs from the velocity projection")
+            active += int(total > 0)
+        frame["backing_window"] = dict(
+            start_s=start,
+            end_s=frame["t"],
+            substep_s=h,
+            active_substeps=active,
+            impulse_ns_by_patch=accumulated,
+        )
+
+
 def export(source, output):
     with source.open("rb") as stream:
         digest = hashlib.sha256()
@@ -188,6 +341,7 @@ def export(source, output):
     if trace.get("schema") != "phymeo-compliant-case-v1" or not trace.get("frames"):
         raise ValueError("expected a compliant-cloth trajectory")
     add_link_geometry(trace)
+    add_backing_windows(trace)
     # The full source file retains every substep. The viewer reads the recorded frame data.
     trace.pop("samples", None)
     trace.pop("robot_samples", None)

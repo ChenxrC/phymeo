@@ -19,6 +19,7 @@ from ._capsule_triangle_sweep import capsule_face_query
 from ._closed_mesh import ClosedMesh, MeshHullQuery
 from ._convex_contact import HullPairQuery
 from ._convex_hull import HullShape
+from ._plate_contact import PlateSurfaceQuery, RoundedPlate
 from ._rotating_round_sweep import RotatingCapsuleQuery, rotating_round_query
 from ._round_sweep import round_query, sweep_result
 from ._sphere_triangle_sweep import sphere_face_query
@@ -30,6 +31,7 @@ from .collision_witness import (
     CollisionWitness,
     ConvexHullTrace,
     MeshContactTrace,
+    PlateContactTrace,
     TetrahedralBodyPair,
     TetrahedralFacetResult,
     TetrahedralSolidResult,
@@ -65,6 +67,7 @@ class CollisionPair:
     solid: TetrahedralSolidResult | None = None
     convex: ConvexHullTrace | None = None
     mesh: MeshContactTrace | None = None
+    plate: PlateContactTrace | None = None
 
 
 @dataclass(frozen=True)
@@ -228,6 +231,11 @@ def _pair(a, b, ma, mb, code, analytic, seeds):
     if analytic is not None:
         try:
             with np.errstate(over="raise", invalid="raise", divide="raise"):
+                if isinstance(analytic, PlateSurfaceQuery):
+                    status, reason, witness, sweep, plate = analytic.result(
+                        ma.moving or mb.moving, seeds
+                    )
+                    return CollisionPair(*fields, True, status, reason, witness, sweep, plate=plate)
                 if isinstance(analytic, MeshHullQuery):
                     status, reason, witness, sweep, mesh = analytic.result(
                         ma.moving or mb.moving, seeds
@@ -318,6 +326,7 @@ def _detect_pairs(workspace, paths, flags):
     mesh_issues = {}
     hulls = {}
     meshes = {}
+    plates = {}
 
     def prepared_hull(shape, path):
         if shape.key not in hulls:
@@ -367,7 +376,9 @@ def _detect_pairs(workspace, paths, flags):
         return mesh_issues[body]
 
     # A thick cloth/cell pair can contribute 4 outer faces x 8 skin triangles.
-    batch_size = 4 if workspace.exterior_faces or any(s.kind == "hull" for s in shapes) else 128
+    batch_size = (
+        4 if workspace.exterior_faces or any(s.kind in ("hull", "plate") for s in shapes) else 128
+    )
     for offset in range(0, len(flags), batch_size):
         batch = []
         features = []
@@ -376,7 +387,28 @@ def _detect_pairs(workspace, paths, flags):
             ma, mb = paths[a.key], paths[b.key]
             code = int(flags[offset + local])
             analytic = None
-            if {a.kind, b.kind} == {"mesh", "hull"} and code in (0, 5):
+            if (
+                "plate" in (a.kind, b.kind)
+                and {a.kind, b.kind} & {"particle", "triangle"}
+                and code in (0, 5)
+            ):
+                plate_first = a.kind == "plate"
+                ps, other, mp, mc = (a, b, ma, mb) if plate_first else (b, a, mb, ma)
+                if other.radius or (mp.turn is not None and mp.turn.angle):
+                    if not code:
+                        analytic = _NarrowFailure("unsupported", "plate_rotation_or_cloth_offset")
+                else:
+                    if ps.key not in plates:
+                        try:
+                            plates[ps.key] = RoundedPlate(ps, mp)
+                        except ValueError as error:
+                            plates[ps.key] = _NarrowFailure("invalid_geometry", str(error))
+                    plate = plates[ps.key]
+                    if isinstance(plate, _NarrowFailure):
+                        analytic = plate
+                    elif not code:
+                        analytic = PlateSurfaceQuery(plate, other, mc, plate_first)
+            elif {a.kind, b.kind} == {"mesh", "hull"} and code in (0, 5):
                 mesh_first = a.kind == "mesh"
                 ms, hs, mp, hp = (a, b, ma, mb) if mesh_first else (b, a, mb, ma)
                 if ms.radius or hs.radius or any(p.turn and p.turn.angle for p in (ma, mb)):

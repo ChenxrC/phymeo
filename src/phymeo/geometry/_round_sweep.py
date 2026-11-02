@@ -20,7 +20,9 @@ _HALF = Fraction(1, 2)
 
 
 def _vector(point):
-    return np.array([Fraction(float(v)) for v in point], dtype=object)
+    return np.array(
+        [v if isinstance(v, Fraction) else Fraction(float(v)) for v in point], dtype=object
+    )
 
 
 def _xyz(point):

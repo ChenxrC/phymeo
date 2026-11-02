@@ -196,3 +196,20 @@ class MeshContactTrace:
     end: MeshContactPose
     first_ratio: tuple[int, int] | None
     entry: MeshContactPose | None
+
+
+@dataclass(frozen=True)
+class PlateContactPose:
+    """The closest plate feature and complete support patch when its normal is defined."""
+
+    relation: str
+    feature: str
+    witness: CollisionWitness
+    patch: ConvexContactPatch | None
+
+
+@dataclass(frozen=True)
+class PlateContactTrace:
+    start: PlateContactPose
+    end: PlateContactPose
+    entry: PlateContactPose | None

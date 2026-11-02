@@ -74,8 +74,15 @@ class CollisionShape:
     def __post_init__(self):
         if not isinstance(self.key, CollisionKey):
             raise TypeError("shape key must be a CollisionKey")
-        counts = {"sphere": 1, "capsule": 2, "triangle": 3, "tetrahedron": 4, "plane": 1}
-        if self.kind not in (*counts, "hull", "mesh"):
+        counts = {
+            "sphere": 1,
+            "particle": 1,
+            "capsule": 2,
+            "triangle": 3,
+            "tetrahedron": 4,
+            "plane": 1,
+        }
+        if self.kind not in (*counts, "hull", "mesh", "plate"):
             raise ValueError("unsupported collision shape kind")
         if not 1 <= len(self.vertex_ids) <= MAX_VERTICES:
             raise ValueError("vertex count outside limits")
@@ -83,6 +90,7 @@ class CollisionShape:
         if (
             len(ids) != len(set(ids))
             or (self.kind == "hull" and len(ids) < 4)
+            or (self.kind == "plate" and not 3 <= len(ids) <= 32)
             or (self.kind in counts and len(ids) != counts[self.kind])
         ):
             raise ValueError("invalid vertex IDs or count for shape kind")
@@ -106,6 +114,10 @@ class CollisionShape:
         radius = finite_real(self.radius, "radius")
         if radius < 0 or (self.kind in ("sphere", "capsule") and radius == 0):
             raise ValueError("invalid shape radius or maximum surface offset")
+        if (self.kind == "plate" and radius == 0) or (self.kind == "particle" and radius != 0):
+            raise ValueError(
+                "a plate has positive rounding and a material particle has zero radius"
+            )
         if self.kind == "plane":
             normal = _vector(self.normal, "plane normal")
             if not any(normal) or radius != 0:
@@ -120,7 +132,7 @@ class CollisionShape:
 
     @property
     def rigid(self):
-        return self.kind in ("sphere", "capsule", "hull", "mesh", "plane")
+        return self.kind in ("sphere", "capsule", "hull", "mesh", "plate", "plane")
 
 
 @dataclass(frozen=True)

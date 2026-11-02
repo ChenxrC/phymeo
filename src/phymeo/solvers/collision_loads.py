@@ -228,9 +228,10 @@ class CollisionLoadSystem:
             ):
                 raise ValueError("invalid collision layer pair")
             x, y = shapes[a], shapes[b]
+            same_sheet = a != b and x.kind == y.kind == "triangle"
             if (
                 a.world != b.world
-                or a.body == b.body
+                or (a.body == b.body and not same_sheet)
                 or (a, b) in model.excluded
                 or not (x.group & y.mask and y.group & x.mask)
             ):
@@ -352,7 +353,7 @@ class CollisionLoadSystem:
         rows = []
         for pair in result.pairs:
             law = self.layers.get((pair.first, pair.second))
-            if law is None:
+            if law is None or pair.status == "adjacent":
                 continue
             if pair.status not in ("separated", "touching", "overlap"):
                 raise SolverFailure(pair.reason)
@@ -490,7 +491,7 @@ class CollisionLoadSystem:
             for pair in path.pairs:
                 if (pair.first, pair.second) not in self.layers:
                     continue
-                if pair.status != "separated":
+                if pair.status not in ("separated", "adjacent"):
                     raise SolverFailure("core path rejected: " + pair.reason)
             frame = CollisionLoadStep(
                 CoupledState(state.particles, state.rigid),

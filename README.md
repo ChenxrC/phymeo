@@ -101,6 +101,10 @@ python -m pytest
 
 三类配对的法向载荷现可驱动真实刚体和布粒子。箱堆、球撞布和两片布再碰撞的完整轨迹已有 HOST、tyx interpret 和 CUDA 对照。[用法、力和运动实测](docs/benchmarks/p65-collision-m4-loads.md)
 
+结构连杆通过 `ClothLinkMaterial` 与可变形三角面交换力。有限轴段或端帽上的载荷同时作用到布的材料节点和铰接关节。铰接步使用 HOST FP64，接触力也可显式交给 `TyxNormalLayer`。离线回放可在同一作用点切换布与连杆的受力方向，力用 N 显示，背板冲量用 N·s 显示。[接口、物理对照和回放](docs/benchmarks/p65-cloth-link-response.md)
+
+软布双臂实验可用 `--robot articulated-palm --receiver-control cooperative` 选择带掌部和两根移动指杆的装配。交接分别检查 A 单独抬升、两爪共同承载、B 接管搬运和最终桌面支撑。每种初态的实际到达阶段均单独记录。[夹取与放台验收](docs/benchmarks/p65-soft-handoff-acquisition.md)
+
 ## 布料接触与搬运案例
 
 在已安装本项目的 Python 环境中运行。下面的命令分别保存 0.125 s 冲击和双夹爪搬运的真实轨迹，输出文件必须是新路径。

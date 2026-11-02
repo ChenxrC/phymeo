@@ -1,6 +1,6 @@
 # 通用碰撞检测 M0 逐案例差异表
 
-2026-11-02。三批 HOST 基线共覆盖 9 个基础案例、43 个几何构型，目录内另 6 个基础案例尚未运行。首批、第二批、第三批分别执行了 12、15、16 个几何构型，每批都覆盖三类碰撞。每批另有 3 个目录检查项。tyx interpret、CUDA、Newton 对跑和动力学仍未进入这三批。[案例目录](p65-general-collision-cases.json) · [首批](../../tests/collision/test_case_catalog.py) · [第二批](../../tests/collision/test_contact_regions.py) · [第三批](../../tests/collision/test_solid_boundaries.py) · [总路线](../superpowers/plans/2026-11-02-p65-tyx-collision-pipeline.md)
+2026-11-02。**M0 的 HOST 案例基线已完成。** 15 个基础案例全部有独立真值和现有接口观测。四批分别产生 12、15、16、31 个几何构型，共 74 个；目录检查另计。这里验收的是案例、差异矩阵与复现路径。通用 tyx 接口、实际 CUDA、Newton 对跑及动力学仍属后续节点。[案例目录](p65-general-collision-cases.json) · [首批](../../tests/collision/test_case_catalog.py) · [第二批](../../tests/collision/test_contact_regions.py) · [第三批](../../tests/collision/test_solid_boundaries.py) · [收尾批](../../tests/collision/test_detection_matrix.py) · [总路线](../superpowers/plans/2026-11-02-p65-tyx-collision-pipeline.md)
 
 ## 首批 · 连续首触
 
@@ -73,33 +73,52 @@ DD03 的零厚度网格不符合旧 `ClothSelfContactTopology` 的正厚度输�
 
 `_tet_complex` 在本批连通、球面边界的两单元网格上可复用。它负责拓扑消去，稳定单元归属和材料权重由适配器另行绑定。U 网格的占据分类及变形体的首触由独立真值给出，现有公开入口没有自动返回一般凹网格/软体的实体分类或首次接触区间。后续接口需要分别表达表面接触、体内包含、分离和无效输入。[四面体面消去](../../src/phymeo/geometry/shell_boundary.py) · [体模型与材料逆矩阵](../../src/phymeo/core/tetrahedral.py) · [表面特征](../../src/phymeo/geometry/surface_features.py)
 
+## 收尾批 · 过滤、有限表面与变化的接触集合
+
+这批为剩余六个案例增加了 31 个几何构型。表中首触时刻来自独立参考。现有组件的直接返回包括候选检查数、响应行、静态最近点、正净距扫掠见证及裁剪顶点。[收尾批回归](../../tests/collision/test_detection_matrix.py) · [独立参考](../../tests/collision/matrix_case_oracles.py)
+
+| 案例与构型 | 基线结果 | 可复用部分与公共入口缺口 |
+| --- | --- | --- |
+| RR01 · base、clear、filtered | 球–平面首触在 `t=0.5`，末态间隙 −0.2 m。分离负控和具名排除都没有响应行，实际检查对数分别为 1 和 0。 | 连杆查询已有显式排除和有符号负间隙响应。公共检测应区分过滤、分离及零间隙接触。 |
+| RR01 · sphere_pair、axis_holdout | 球–球首触在 0.75。换平面法向与偏置后首触为 2/3，两段独立参考映回同一时间。 | 半径求和后的点–球静态间隙与几何一致。独立自由球的平面构造限 +y，连杆平面支持所测的其他单位法向。两条离散路径都没有返回配对 TOI。 |
+| RR02 · base、tangent、overlap、endcaps | 两轴内部最近时，间隙依次为 +0.05、0、−0.05 m。端帽对照为 +0.1 m，轴参数 (1,0)。 | 最近点入口能分辨三种几何状态。机器人响应只在负间隙生成接触行。 |
+| RR02 · parallel_holdout、coincident | 平行段有一段同样近的轴点，间隙 −0.0125 m；重合轴的间隙为 −0.2 m。 | 平行轴可返回合法代表。重合轴的响应明确拒绝没有唯一法线的输入，几何交叠仍成立。 |
+| RD03 · base、corner_holdout | 正面、背面、侧边、角部间隙均约 +0.05 m，法线分别为 +z、−z、+x 和 (1,1,0)/√2。另一个角部点的间隙为 −0.01339746 m。 | 有限凸多边形最近点可复用，适配器扣除板半径以得到实体间隙。通用圆边板仍需公开这些特征和见证。 |
+| RD03 · large_face、rim_bypass、through_plate | 大布片在 2/3 首触，区域 1 m²，最近布顶点仍离圆边板约 1.40333 m。绕边路径最小间隙 +0.2 m；穿板路径在 1/6 首触，中点间隙 −0.1 m。 | 四个板角的整步查询都给出越界见证 1。二分后前段均保持净距，后段见证映回 0.75。两条点路径的面片扫掠分别给出净距与越界。 |
+| RD05 · base、clear、outside_box、rigid_transform、tip_holdout | 单个布顶点在 0.5 命中箱顶，另外两个顶点仍分离。同一刚体变换后见证为 (2.1,−1,0.5)。重排的留出构型在 2/3 命中，同一原材料顶点移到当前索引 2。两条负控的分离下界分别为 0.05 m、1.5 m。 | 在给定姿态上，布顶点到箱上 12 个三角面的查询能复核见证。尚缺整张变形面与刚箱的自动首触。 |
+| DD01 · base、clear、reused_ids、swapped、tip_holdout | 两独立布体在 0.5 首次点–面相触，侧移后整段至少分离 2 m。两体都用局部 ID 11 时仍是不同材料点，交换 A/B 后世界见证不变。移动留出点和重排目标面后首触变为 2/3。 | 最近点给出面内权重。物体 ID 与局部 ID 由适配器绑定，正净距扫掠接口拒绝名义零厚度。公共分派须保留异体身份并支持零厚度 CCD。 |
+| DD04 · base、thick、lateral_clear、reversed_thick | 整片首触面积约 0.02 m²。半厚度从 0 改为 0.02 m，首触从 0.75 提前到 0.7。反向绕序交换材料侧，物理时刻和区域不变。侧移负控的间隙下界为 1.2 m。 | 已知外面时，投影裁剪和材料权重可复用。正厚度角点扫掠给出越界见证 0.75，名义零厚度不属于该接口的合同。 |
+| DD04 · moving_tet_holdout | 变形四面体与厚布在 9/14 首次相触，面积 0.046875 m²。末态第三个布角的厚度段又与斜面相交。 | 首张外面的整步和二分见证均映到 0.75；斜面 (1,2,3) 在末态另有见证 1。完整面表保留两个事件。 |
+
+**DD04 的首轮失败。** 最初断言将首张面当成全步唯一可能相交的面。收尾批首次运行有 36 项通过、1 项失败，原输入单例复现了斜面的额外见证。在末态，斜面与第三个布角的实际厚度段相交于 (3/14,3/16,9/16) m。交点沿厚度方向距中面 3/112 m，小于半厚度 1/32 m，四面体权重为 (0,1/7,3/14,9/14)。独立参考现按每张面、每个角分别给出全段距离下界或真实相交见证；输入、首次事件及原比较带保持。该检查只确认有后续相交，不给它臆定出生时刻。[首次失败收据](../../artifacts/p65-general-collision-m0-20261102-04/matrix-pytest-132723989/final.json) · [单例复现](../../artifacts/p65-general-collision-m0-20261102-04/diagnose-pytest-132928702/final.json)
+
 ## 配对差异矩阵
 
-“局部”指存在可复用的有范围组件，“缺入口”指尚未找到与这一整项形状/运动语义对应的查询。未运行行的支持判断来自源码；不能据此登记漏检、误报或通过。
+“局部”指存在可复用的有范围组件，“缺入口”指尚未找到与这一整项形状/运动语义对应的查询。各行的执行栏记录几何基线，支持栏列出现有配对入口的实际覆盖范围。
 
 | ID | 配对 / 真值依据 | 当前可用组件 | 支持状态与待补模块 | 本案例执行 |
 | --- | --- | --- | --- | --- |
-| RR01 | 球–平面，球心投影 | `RigidSpherePlaneSolver` | 局部离散响应，缺首触分派 | 未运行 |
-| RR02 | 胶囊–胶囊，两有限轴段距离 | `closest_segment_points`、机器人连杆胶囊 | 局部，需通用形状身份与端帽回归 | 未运行 |
+| RR01 | 球–平面/球–球，投影及相对中心距 | 离散球/连杆间隙、具名排除 | 局部，缺通用过滤状态与首次事件 | 收尾批 5 个构型 |
+| RR02 | 胶囊–胶囊，内部/端帽/并列轴 | 有限轴最近点、连杆接触 | 局部，缺几何相切与多解法线的公共记录 | 收尾批 6 个构型 |
 | RR03 | 凸体滑动裁剪、退化为线、斜盒边对 | 已知方向的投影裁剪 | 局部，缺一般凸体轴选择、完整区域与跨步身份 | 第二批 5 个构型 |
 | RR04 | 胶囊–球，绕轴转弧 | 静态线段最近点 | 局部，缺转弧首触 | 3 个构型，见上表 |
 | RR05 | 凸体–凹 U 网格，三个实心箱的并集 | 闭合拓扑与顶点–面见证 | 局部，缺公共凹网格中筛、整对实体分类与首触 | 第三批 5 个构型 |
 | RD01 | 球–三角面，面投影与重心坐标 | 点–面最近点、正净距扫掠 | 局部，缺首次事件结果 | 5 个构型，见上表 |
 | RD02 | 胶囊–布，轴部贯穿与端帽相切 | 整轴净距查询、端帽及材料点见证 | 局部，缺公共胶囊–整面配对及相切/流形输出 | 第二批 5 个构型 |
-| RD03 | 有限板–布，闭多边形加球半径 | 有限贴片与厚棱柱 | 局部，缺通用双侧圆边板和整布面覆盖 | 未运行 |
+| RD03 | 有限圆边板与材料点/整布面 | 多边形最近点、面片/角点净距和裁剪 | 局部，缺通用双侧圆边板–整面配对 | 收尾批 5 个构型 |
 | RD04 | 球–两单元软体，外面归属及内部面负控 | 受限拓扑面消去、正净距扫掠、材料点见证 | 局部，缺公共软体外边界/单元绑定与体内分类 | 第三批 5 个构型 |
-| RD05 | 刚箱–局部变形布，最低凸组合 | 线性特征扫掠 | 缺刚箱与整片变形面的分派 | 未运行 |
-| DD01 | 两布体的点–面首触 | 点–面最近点、正净距扫掠 | 局部，缺异体与零厚度首触 | 未运行 |
+| RD05 | 刚箱–局部变形布面 | 给定姿态的面内见证 | 局部，缺整片刚箱查询与连续事件 | 收尾批 5 个构型 |
+| DD01 | 异体布点–面首触 | 静态面点/重心权重 | 局部，缺跨物体材料身份及零厚度 CCD | 收尾批 5 个构型 |
 | DD02 | 两布边内部首触 | 静态边–边和点–面 | 局部，零净距不属于现有扫掠合同 | 4 个构型，见上表 |
 | DD03 | 同体两面，异材料交叉与合法邻接 | 点–面见证、正厚度非邻接候选 | 局部，旧宽相排除共享顶点面，需按材料见证辨别 | 第二批 5 个构型 |
-| DD04 | 布–软体，平移片与体外边界 | 布面与体节点组件 | 缺布–体边界扫掠和材料权重 | 未运行 |
+| DD04 | 布–四面体外面，面积与厚度 | 外面拓扑、支撑裁剪、正净距角点扫掠 | 局部，缺布–体连续接触区域及所有者的公共输出 | 收尾批 5 个构型 |
 | DD05 | 体–体，半空间包含及变形体外部首触 | 体模型有效性/材料映射、给定姿态的表面见证 | 局部，缺闭体占据查询及变形体配对 CCD | 第三批 6 个构型 |
 
 源码定位包括[离散刚体](../../src/phymeo/solvers/rigid_sphere_plane.py)、[连杆碰撞](../../src/phymeo/dynamics/robot_contact.py)、[贴片扫掠](../../src/phymeo/geometry/robot_patch_sweep.py)、[厚棱柱流形](../../src/phymeo/geometry/prism_prism_manifold.py)、[软体点映射](../../src/phymeo/coupling/tetrahedral_port.py)、[布宽相](../../src/phymeo/geometry/cloth_self_candidates.py)及[已验收的壳范围](../development/p65-shell-boundary-geometry-parent-acceptance.md)。
 
-## 复现与下一批
+## 复现与交接
 
-在项目的 Python 3.11 环境中，首批命令为 `python -m pytest tests/collision/test_case_catalog.py -q -p no:cacheprovider`，第二批命令为 `python -m pytest tests/collision/test_contact_regions.py -q -p no:cacheprovider`，第三批命令为 `python -m pytest tests/collision/test_solid_boundaries.py -q -p no:cacheprovider`。指定一个新的绝对 `--basetemp` 可保存每个几何构型的 `observation.json`。文件包含原几何、独立预期、实际入口、距离或返回分类。目录里的编写状态与本表的执行结果分别维护。
+在项目的 Python 3.11 环境中，首批命令为 `python -m pytest tests/collision/test_case_catalog.py -q -p no:cacheprovider`，第二批命令为 `python -m pytest tests/collision/test_contact_regions.py -q -p no:cacheprovider`，第三批命令为 `python -m pytest tests/collision/test_solid_boundaries.py -q -p no:cacheprovider`，收尾批命令为 `python -m pytest tests/collision/test_detection_matrix.py -q -p no:cacheprovider`。指定一个新的绝对 `--basetemp` 可保存每个几何构型的 `observation.json`。文件包含原几何、独立预期、实际入口、距离或返回分类。目录里的编写状态与本表的执行结果分别维护。
 
 首批在 `04a246c` 工作树上加入测试和结构化变体后执行。初次目录回归因缺少机器可读变体出现 3 项预期失败，随后完整新增文件 15 passed / 0.62 s / exit 0。两份测试文件通过 Ruff 和格式检查。完整运行前后的 7 项文件绑定一致；父串行槽已释放。完整日志与 12 条原始观测位于本机 `artifacts/p65-general-collision-m0-20261102-01`，本表保留了可随仓库复查的结果。[本次运行收据](../../artifacts/p65-general-collision-m0-20261102-01/m0-suite-113958353/final.json)
 
@@ -107,4 +126,6 @@ DD03 的零厚度网格不符合旧 `ClothSelfContactTopology` 的正厚度输�
 
 第三批在 `e9f4bdb` 的工作树加入用例后执行。目录首次预期失败 3 项；完整新增文件 19 passed / 1.39 s / exit 0，其中 16 项产生几何观测。两份新增测试文件通过 Ruff 和格式检查，9 项测试输入/源码在运行前后及当前绑定一致。父串行槽已释放，前两批沿用原证据。[第三批运行收据](../../artifacts/p65-general-collision-m0-20261102-03/third-pytest-124742855/final.json)
 
-M0 还剩 RR01 球–平面、RR02 胶囊–胶囊、RD03 有限圆边板、RD05 局部变形布–箱、DD01 异体布点–面及 DD04 布–体边界六项。下一批收齐这六项的真值、负控和接口差异，再进入 M1 的公共 tyx 检测入口。
+收尾批在 `4e19864` 工作树增加六个案例后执行。目录初次出现六项预期失败；后续 DD04 原构型暴露上文的错误断言，修正后单项通过，完整新增文件最终 **37 passed / 0.94 s / exit 0**。其中 31 项产生几何观测，6 项检查目录。两份新增测试文件通过 Ruff 与格式检查，最终运行的 18 项输入和源码绑定前后一致。证据位于 `artifacts/p65-general-collision-m0-20261102-04`，父串行槽已释放。[修正后的单项](../../artifacts/p65-general-collision-m0-20261102-04/fixed-node-pytest-133137235/final.json) · [收尾批运行收据](../../artifacts/p65-general-collision-m0-20261102-04/matrix-final-pytest-133148760/final.json)
+
+**下一项为 M1 公共 tyx 检测入口。** 同一模型登记 RR、RD、DD，按世界、对象、形状和材料特征建立稳定身份。先以同输入的 HOST 穷举核对 tyx 的过滤和离散/扫掠候选，记录容量、明确不支持的配对及失败后的原状态。候选与已证实接触分别输出，interpret 和实际 CUDA 分开串行验收。M2 依据上表逐配对补窄相与首触，递布保留到系统集成。

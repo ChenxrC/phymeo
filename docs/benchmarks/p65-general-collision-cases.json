@@ -19,6 +19,13 @@
       "geometry": {"A":{"type":"plane","normal":[0,0,1],"offset":0},"B":{"type":"sphere","radius":0.1,"center_start":[0,0,0.3],"center_end":[0,0,-0.1]}},
       "oracle": {"method":"球心投影减半径","gap_start":0.2,"gap_end":-0.2,"first_t":0.5,"witness":[0,0,0]},
       "controls": ["改终点 z=0.2，全程分离；删除该形状对的碰撞掩码，应得到 FILTERED。","改为两个半径 0.1 的球，第一球固定在原点，第二球沿 x 从 0.5 移至 0.1；首次相切 t=0.75。"],
+      "m0_variants": [
+        {"name":"base","changes":{},"relation":"hit","expected":{"first_t":0.5,"start_gap":0.2,"end_gap":-0.2}},
+        {"name":"clear","changes":{"B":{"center_end":[0,0,0.2]}},"relation":"clear","expected":{"first_t":null,"end_gap":0.1}},
+        {"name":"filtered","changes":{},"relation":"filtered","expected":{"geometric_first_t":0.5,"checked_pairs":0},"exclude_pair":true},
+        {"name":"sphere_pair","changes":{},"relation":"hit","expected":{"first_t":0.75},"geometry":{"A":{"type":"sphere","radius":0.1,"center":[0,0,0]},"B":{"type":"sphere","radius":0.1,"center_start":[0.5,0,0],"center_end":[0.1,0,0]}}},
+        {"name":"axis_holdout","changes":{"A":{"normal":[0,1,0],"offset":0.25},"B":{"radius":0.125,"center_start":[0.25,0.625,0.375],"center_end":[0.25,0.25,0.375]}},"relation":"hit","expected":{"first_t":0.6666666666666666,"point_m":[0.25,0.25,0.375]},"split_t":0.5}
+      ],
       "initial_authoring_status": "specified_not_executed"
     },
     {
@@ -29,6 +36,14 @@
       "geometry": {"A":{"type":"capsule","axis":[[-1,0,0],[1,0,0]],"radius":0.1},"B":{"type":"capsule","axis":[[0,-1,0.25],[0,1,0.25]],"radius":0.1}},
       "oracle": {"method":"两轴线段内部最近点距离减两半径","axis_parameters":[0.5,0.5],"gap":0.05,"normal_A_to_B":[0,0,1]},
       "controls": ["B 高度改为 0.2 相切，0.15 重叠。","B 轴改为 [[1.3,0,0],[2.3,0,0]]，最近点在两端帽，间隙 0.1。"],
+      "m0_variants": [
+        {"name":"base","changes":{},"relation":"clear","expected":{"gap_m":0.05,"normal":[0,0,1]}},
+        {"name":"tangent","changes":{"B":{"axis":[[0,-1,0.2],[0,1,0.2]]}},"relation":"hit","expected":{"gap_m":0,"normal":[0,0,1]}},
+        {"name":"overlap","changes":{"B":{"axis":[[0,-1,0.15],[0,1,0.15]]}},"relation":"hit","expected":{"gap_m":-0.05,"normal":[0,0,1]}},
+        {"name":"endcaps","changes":{"B":{"axis":[[1.3,0,0],[2.3,0,0]]}},"relation":"clear","expected":{"gap_m":0.1,"normal":[1,0,0]}},
+        {"name":"parallel_holdout","changes":{"B":{"axis":[[-0.5,0.1875,0],[0.5,0.1875,0]]}},"relation":"hit","expected":{"gap_m":-0.0125,"normal":[0,1,0],"parallel_overlap_x":[-0.5,0.5]}},
+        {"name":"coincident","changes":{"B":{"axis":[[-1,0,0],[1,0,0]]}},"relation":"hit","expected":{"gap_m":-0.2,"normal":null}}
+      ],
       "initial_authoring_status": "specified_not_executed"
     },
     {
@@ -122,6 +137,13 @@
       "geometry": {"A":{"type":"convex_plate_plus_ball","polygon":[[-0.5,-0.5,0],[0.5,-0.5,0],[0.5,0.5,0],[-0.5,0.5,0]],"radius":0.1},"B":{"type":"cloth_material_vertex_queries","points":[[0,0,0.15],[0,0,-0.15],[0.65,0,0]],"corner_point_expression":"(0.5+0.15/sqrt(2),0.5+0.15/sqrt(2),0)"}},
       "oracle": {"method":"投影夹到闭合方形后求距离再减半径","gap_each":0.05,"normals_in_order":["+z","-z","+x","(1,1,0)/sqrt(2)"]},
       "controls": ["用 RD01 的大布三角形覆盖板，平移其 z 从 0.2 到 0.05；t=2/3 首触板正面，所有布顶点均在板外。","布点从 [.8,0,.15] 到 [.8,0,-.15] 绕侧边，整段分离；改为 x=0 的同段应穿过实体。"],
+      "m0_variants": [
+        {"name":"base","changes":{},"relation":"clear","expected":{"gaps_m":[0.05,0.05,0.05,0.05],"features":["front","back","rim","corner"]}},
+        {"name":"large_face","changes":{},"relation":"hit","expected":{"first_t":0.6666666666666666,"area_m2":1},"geometry":{"A":{"type":"convex_plate_plus_ball","polygon":[[-0.5,-0.5,0],[0.5,-0.5,0],[0.5,0.5,0],[-0.5,0.5,0]],"radius":0.1},"B":{"type":"cloth_triangle","vertices_start":[[-2,-1,0.2],[2,-1,0.2],[0,2,0.2]],"vertices_end":[[-2,-1,0.05],[2,-1,0.05],[0,2,0.05]]}},"split_t":0.5},
+        {"name":"rim_bypass","changes":{},"relation":"clear","expected":{"first_t":null,"min_gap_m":0.2},"geometry":{"A":{"type":"convex_plate_plus_ball","polygon":[[-0.5,-0.5,0],[0.5,-0.5,0],[0.5,0.5,0],[-0.5,0.5,0]],"radius":0.1},"B":{"type":"material_vertex_path","start":[0.8,0,0.15],"end":[0.8,0,-0.15]}}},
+        {"name":"through_plate","changes":{},"relation":"hit","expected":{"first_t":0.16666666666666666,"mid_gap_m":-0.1},"geometry":{"A":{"type":"convex_plate_plus_ball","polygon":[[-0.5,-0.5,0],[0.5,-0.5,0],[0.5,0.5,0],[-0.5,0.5,0]],"radius":0.1},"B":{"type":"material_vertex_path","start":[0,0,0.15],"end":[0,0,-0.15]}}},
+        {"name":"corner_holdout","changes":{},"relation":"hit","expected":{"gap_m":-0.01339745962155614,"feature":"corner"},"geometry":{"A":{"type":"convex_plate_plus_ball","polygon":[[-0.5,-0.5,0],[0.5,-0.5,0],[0.5,0.5,0],[-0.5,0.5,0]],"radius":0.1},"B":{"type":"cloth_material_vertex_queries","points":[[0.55,0.55,0.05]]}}}
+      ],
       "initial_authoring_status": "specified_not_executed"
     },
     {
@@ -149,6 +171,13 @@
       "geometry": {"A":{"type":"box","half":[0.5,0.5,0.1],"center":[0,0,0]},"B":{"type":"cloth_triangle","vertices_start":[[0,0,0.3],[-1,-1,0.3],[1,-1,0.3]],"vertices_end":[[0,0,-0.1],[-1,-1,0.3],[1,-1,0.3]]}},
       "oracle": {"method":"首次接触时下弯顶点在箱顶面内部，另两点仍高于顶面；其它位置由凸组合界定","first_t":0.5,"point":[0,0,0.1],"cloth_vertex":0},
       "controls": ["把第一个顶点的终点改为 [0,0,0.15]，整段分离。","箱和布共同作同一刚体变换，首触时刻与材料身份应保持。"],
+      "m0_variants": [
+        {"name":"base","changes":{},"relation":"hit","expected":{"first_t":0.5,"original_vertex":0,"point_m":[0,0,0.1]}},
+        {"name":"clear","changes":{"B":{"vertices_end":[[0,0,0.15],[-1,-1,0.3],[1,-1,0.3]]}},"relation":"clear","expected":{"first_t":null,"gap_lower_m":0.05}},
+        {"name":"outside_box","changes":{"B":{"vertices_start":[[3,0,0.3],[2,-1,0.3],[4,-1,0.3]],"vertices_end":[[3,0,-0.1],[2,-1,0.3],[4,-1,0.3]]}},"relation":"clear","expected":{"first_t":null,"gap_lower_m":1.5}},
+        {"name":"rigid_transform","changes":{},"relation":"hit","expected":{"first_t":0.5,"original_vertex":0,"point_m":[2.1,-1,0.5]},"rotation":[[0,0,1],[0,1,0],[-1,0,0]],"translation":[2,-1,0.5]},
+        {"name":"tip_holdout","changes":{"B":{"vertices_start":[[0.25,-0.125,0.35],[-1,-1,0.35],[1,-1,0.35]],"vertices_end":[[0.25,-0.125,-0.025],[-1,-1,0.35],[1,-1,0.35]]}},"relation":"hit","expected":{"first_t":0.6666666666666666,"original_vertex":0,"point_m":[0.25,-0.125,0.1]},"order_B":[1,2,0]}
+      ],
       "initial_authoring_status": "specified_not_executed"
     },
     {
@@ -159,6 +188,13 @@
       "geometry": {"A":{"type":"cloth_triangle","vertices":[[-2,-1,0],[2,-1,0],[0,2,0]]},"B":{"type":"cloth_triangle","vertices_start":[[0,0,0.4],[0.2,0,0.5],[0,0.2,0.5]],"vertices_end":[[0,0,-0.4],[0.2,0,0.5],[0,0.2,0.5]]}},
       "oracle": {"method":"首次零高度的 B 顶点投影是 A 的内部","first_t":0.5,"point":[0,0,0],"feature_pair":"face_vertex"},
       "controls": ["把 B 整体平移 x=4，整段分离。","在不同物体复用局部顶点序号；两侧身份仍须不同。"],
+      "m0_variants": [
+        {"name":"base","changes":{},"relation":"hit","expected":{"first_t":0.5,"point_m":[0,0,0]}},
+        {"name":"clear","changes":{"B":{"vertices_start":[[4,0,0.4],[4.2,0,0.5],[4,0.2,0.5]],"vertices_end":[[4,0,-0.4],[4.2,0,0.5],[4,0.2,0.5]]}},"relation":"clear","expected":{"first_t":null,"gap_lower_m":2}},
+        {"name":"reused_ids","changes":{},"relation":"hit","expected":{"first_t":0.5,"point_m":[0,0,0]},"object_ids":["cloth-left","cloth-right"],"node_ids":[[11,7,3],[11,7,3]]},
+        {"name":"swapped","changes":{},"relation":"hit","expected":{"first_t":0.5,"point_m":[0,0,0]},"object_ids":["cloth-left","cloth-right"],"node_ids":[[11,7,3],[11,7,3]],"swap":true},
+        {"name":"tip_holdout","changes":{"B":{"vertices_start":[[0.125,0.375,0.3],[0.4,0.375,0.5],[0.125,0.6,0.5]],"vertices_end":[[0.125,0.375,-0.15],[0.4,0.375,0.5],[0.125,0.6,0.5]]}},"relation":"hit","expected":{"first_t":0.6666666666666666,"point_m":[0.125,0.375,0]},"order_A":[2,0,1]}
+      ],
       "initial_authoring_status": "specified_not_executed"
     },
     {
@@ -202,6 +238,13 @@
       "geometry": {"A":{"type":"tet_mesh","vertices":[[0,0,0],[1,0,0],[0,1,0],[0,0,1]],"tets":[[0,1,2,3]]},"B":{"type":"cloth_triangle","vertices_start":[[-0.3,0.2,0.2],[-0.3,0.4,0.2],[-0.3,0.2,0.4]],"vertices_end":[[0.1,0.2,0.2],[0.1,0.4,0.2],[0.1,0.2,0.4]]}},
       "oracle": {"method":"跟踪外面 x=0 和整张平行布片；接触区域等于布片的投影","first_t":0.75,"contact_area":0.02,"tet_owner":0},
       "controls": ["布半厚度改为 0.02，按实际外表面，首触时刻为 0.7。","布沿 y 平移 2，应整段分离。"],
+      "m0_variants": [
+        {"name":"base","changes":{},"relation":"hit","expected":{"first_t":0.75,"area_m2":0.02}},
+        {"name":"thick","changes":{},"relation":"hit","expected":{"first_t":0.7,"area_m2":0.02},"half_thickness_m":0.02},
+        {"name":"lateral_clear","changes":{"B":{"vertices_start":[[-0.3,2.2,0.2],[-0.3,2.4,0.2],[-0.3,2.2,0.4]],"vertices_end":[[0.1,2.2,0.2],[0.1,2.4,0.2],[0.1,2.2,0.4]]}},"relation":"clear","expected":{"first_t":null,"gap_lower_m":1.2}},
+        {"name":"reversed_thick","changes":{},"relation":"hit","expected":{"first_t":0.7,"area_m2":0.02},"half_thickness_m":0.02,"order_B":[0,2,1]},
+        {"name":"moving_tet_holdout","changes":{},"relation":"hit","expected":{"first_t":0.6428571428571429,"area_m2":0.046875},"geometry":{"A":{"type":"tet_mesh","vertices":[[0,0,0],[1,0,0],[0,1,0],[0,0,1]],"tets":[[0,1,2,3]],"vertices_end":[[0.0625,0,0],[1.125,0,0],[0.0625,0.875,0],[0.0625,0,0.875]]},"B":{"type":"cloth_triangle","vertices_start":[[-0.3125,0.1875,0.1875],[-0.3125,0.4375,0.1875],[-0.3125,0.1875,0.5625]],"vertices_end":[[0.1875,0.1875,0.1875],[0.1875,0.4375,0.1875],[0.1875,0.1875,0.5625]]}},"half_thickness_m":0.03125,"split_t":0.5}
+      ],
       "initial_authoring_status": "specified_not_executed"
     },
     {

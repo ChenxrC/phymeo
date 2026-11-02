@@ -1,4 +1,4 @@
-"""Two-way frictionless contact loads on registered rigid and deformable surfaces."""
+"""Two-way contact loads on registered rigid and deformable surfaces."""
 
 from dataclasses import dataclass
 from numbers import Integral
@@ -66,11 +66,21 @@ class NormalLayer:
     width_m: float
     stiffness_n_per_m: float
     damping_s_per_m: float = 0.0
+    friction: float = 0.0
+    slip_speed_m_s: float = 0.01
 
     def __post_init__(self):
-        for name in ("width_m", "stiffness_n_per_m", "damping_s_per_m"):
+        for name in (
+            "width_m",
+            "stiffness_n_per_m",
+            "damping_s_per_m",
+            "friction",
+            "slip_speed_m_s",
+        ):
             value = finite_real(getattr(self, name), name)
-            if value < 0 or (name != "damping_s_per_m" and value == 0):
+            if value < 0 or (
+                name in ("width_m", "stiffness_n_per_m", "slip_speed_m_s") and value == 0
+            ):
                 raise ValueError("invalid normal layer calibration")
             object.__setattr__(self, name, value)
 
@@ -81,6 +91,10 @@ class LoadSite:
     fraction: float
     rate_m_per_s: float
     force_n: float
+    application_point_first_m: tuple
+    application_point_second_m: tuple
+    force_on_second_n: tuple
+    power_w: float
 
 
 @dataclass(frozen=True)
@@ -130,6 +144,8 @@ def _sites(pair):
     w = pair.witness
     if isinstance(w, ProximityWitness) and w.proximity_patch is not None:
         return w.proximity_patch.points
+    if pair.plate is not None and pair.plate.end.patch is not None:
+        return pair.plate.end.patch.points
     if pair.convex is not None:
         raise SolverFailure("missing finite rigid support patch")
     if pair.family == "DD":
@@ -141,7 +157,14 @@ def _host_law(rows):
     rate = np.einsum("ij,ij->i", rows[:, :3], rows[:, 3:6])
     compression = np.maximum(0.0, rows[:, 6] - rows[:, 7])
     magnitude = rows[:, 8] * compression * rows[:, 9] * np.maximum(0.0, 1.0 - rows[:, 10] * rate)
-    return np.column_stack((rate, magnitude, magnitude[:, None] * rows[:, :3]))
+    force = magnitude[:, None] * rows[:, :3]
+    sliding = rows[:, 11] > 0
+    if np.any(sliding):
+        tangent = rows[sliding, 3:6] - rate[sliding, None] * rows[sliding, :3]
+        speed = np.hypot.reduce(tangent, axis=1)
+        factor = rows[sliding, 11] * magnitude[sliding] / np.maximum(speed, rows[sliding, 12])
+        force[sliding] -= factor[:, None] * tangent
+    return np.column_stack((rate, magnitude, force))
 
 
 class CollisionLoadSystem:
@@ -204,13 +227,17 @@ class CollisionLoadSystem:
                 or not (x.group & y.mask and y.group & x.mask)
             ):
                 raise ValueError("layer pair is filtered by the collision model")
-            kinds = sorted((x.kind, y.kind))
-            if kinds not in (
-                ["hull", "hull"],
-                ["sphere", "triangle"],
-                ["triangle", "triangle"],
-            ) or any(s.radius and s.kind != "sphere" for s in (x, y)):
-                raise ValueError("unsupported shape combination for normal layer")
+            kinds = tuple(sorted((x.kind, y.kind)))
+            if kinds not in {
+                ("hull", "hull"),
+                ("sphere", "triangle"),
+                ("triangle", "triangle"),
+                ("particle", "plate"),
+                ("plate", "triangle"),
+            } or any(s.radius and s.kind not in ("sphere", "plate") for s in (x, y)):
+                raise ValueError("unsupported shape combination for contact layer")
+            if law.friction and x.rigid == y.rigid:
+                raise ValueError("sliding layer requires one rigid and one deformable surface")
             laws[a, b] = law
         self.layers = MappingProxyType(laws)
         self._margin = max((v.width_m for v in laws.values()), default=0.0)
@@ -307,9 +334,16 @@ class CollisionLoadSystem:
                 raise SolverFailure("hard core has no admissible layer state")
             points = _sites(pair)
             fractions = _quadrature(points)
+            coordinates = []
             for site, fraction in zip(points, fractions, strict=True):
-                va = self._velocity(pair.first, site.first_point, site.first_weights, state)
-                vb = self._velocity(pair.second, site.second_point, site.second_weights, state)
+                pa, pb = site.first_point, site.second_point
+                if law.friction:
+                    # The traction acts at the cloth material point. The rigid
+                    # pad supports a wrench at this same spatial location.
+                    pa = pb = pb if isinstance(self.bindings[pair.first], RigidAttachment) else pa
+                va = self._velocity(pair.first, pa, site.first_weights, state)
+                vb = self._velocity(pair.second, pb, site.second_weights, state)
+                coordinates.append((pa, pb, vb - va))
                 rows.append(
                     (
                         *w.normal,
@@ -319,10 +353,12 @@ class CollisionLoadSystem:
                         law.stiffness_n_per_m,
                         fraction,
                         law.damping_s_per_m,
+                        law.friction,
+                        law.slip_speed_m_s,
                     )
                 )
-            pending.append((pair, law, points, fractions))
-        values = np.asarray(rows, dtype=float).reshape(-1, 11)
+            pending.append((pair, law, points, fractions, coordinates))
+        values = np.asarray(rows, dtype=float).reshape(-1, 13)
         response = (
             _host_law(values)
             if self._layer_operator is None
@@ -336,19 +372,28 @@ class CollisionLoadSystem:
             raise SolverFailure("invalid normal layer response")
         contacts = []
         result_rows = iter(response.astype(float, copy=False))
-        for pair, law, points, fractions in pending:
+        for pair, law, points, fractions, coordinates in pending:
             w = pair.witness
             sites = []
-            for site, fraction in zip(points, fractions, strict=True):
+            for site, fraction, (pa, pb, velocity) in zip(
+                points, fractions, coordinates, strict=True
+            ):
                 rate, magnitude, *directional = next(result_rows)
                 f = np.asarray(directional)
-                self._apply(
-                    pair.first, site.first_point, site.first_weights, -f, state, p, r, torque
+                self._apply(pair.first, pa, site.first_weights, -f, state, p, r, torque)
+                self._apply(pair.second, pb, site.second_weights, f, state, p, r, torque)
+                sites.append(
+                    LoadSite(
+                        site,
+                        float(fraction),
+                        float(rate),
+                        float(magnitude),
+                        pa,
+                        pb,
+                        tuple(f),
+                        float(f @ velocity),
+                    )
                 )
-                self._apply(
-                    pair.second, site.second_point, site.second_weights, f, state, p, r, torque
-                )
-                sites.append(LoadSite(site, float(fraction), float(rate), float(magnitude)))
             contacts.append(
                 PairLoad(
                     pair.first,
@@ -357,7 +402,7 @@ class CollisionLoadSystem:
                     w.gap_m,
                     sum(s.force_n for s in sites),
                     law.stiffness_n_per_m * (law.width_m - w.gap_m) ** 2 / 2,
-                    sum(s.force_n * s.rate_m_per_s for s in sites),
+                    sum(s.power_w for s in sites),
                     tuple(sites),
                 )
             )

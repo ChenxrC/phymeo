@@ -11,7 +11,8 @@ from ..core.capabilities import SolverFailure
 class TyxNormalLayer:
     """Input rows are (normal[3], relative velocity[3], width, gap, k, fraction, damping).
 
-    Results contain gap rate, scalar magnitude and the world force on side two.
+    Optional final columns supply friction and slip speed. Results contain gap rate,
+    scalar normal magnitude and the total world force on side two.
     Material addressing and the two transposed maps remain on the host.
     """
 
@@ -40,7 +41,7 @@ class TyxNormalLayer:
         )
         self._resources.callback(self._runtime.close)
         try:
-            self._host = np.zeros((128, 11), np.float32)
+            self._host = np.zeros((128, 13), np.float32)
             with tx.use_runtime(self._runtime):
                 self._in = self._buffer(self._host.shape)
                 self._out = self._buffer((len(self._host), 5))
@@ -60,14 +61,17 @@ class TyxNormalLayer:
         with self._lock:
             if self._closed:
                 raise RuntimeError("normal layer runtime is closed")
-            if rows.ndim != 2 or rows.shape[1] != 11 or not np.isfinite(rows).all():
+            if rows.ndim != 2 or rows.shape[1] not in (11, 13) or not np.isfinite(rows).all():
                 raise ValueError("invalid normal layer site rows")
+            if rows.shape[1] == 11:
+                rows = np.column_stack((rows, np.zeros(len(rows)), np.ones(len(rows))))
             if (
                 np.any(abs(np.linalg.norm(rows[:, :3], axis=1) - 1) > 2e-6)
                 or np.any(rows[:, 6] <= 0)
                 or np.any(rows[:, 8] <= 0)
                 or np.any((rows[:, 9] < 0) | (rows[:, 9] > 1))
-                or np.any(rows[:, 10] < 0)
+                or np.any(rows[:, 10:12] < 0)
+                or np.any(rows[:, 12] <= 0)
             ):
                 raise ValueError("invalid site normal or calibration")
             with np.errstate(over="ignore", under="ignore"):

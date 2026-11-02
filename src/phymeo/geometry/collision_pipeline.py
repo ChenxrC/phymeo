@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from fractions import Fraction
 from itertools import combinations
 from threading import Lock
+from time import perf_counter_ns
 
 import numpy as np
 
@@ -17,6 +18,7 @@ from ..constraints.collision_shapes import (
 from ..core.capabilities import SolverFailure
 from ._capsule_triangle_sweep import capsule_face_query
 from ._closed_mesh import ClosedMesh, MeshHullQuery
+from ._collision_spatial import SpatialPairs
 from ._convex_contact import HullPairQuery
 from ._convex_hull import HullShape
 from ._hull_surface import HullSurfaceQuery
@@ -156,12 +158,17 @@ def _envelopes(model, paths, margin):
     return packed
 
 
-def _host_query(offsets, tags, pairs, envelopes):
-    bounds = np.empty((len(tags), 6), np.float32)
+def _host_bounds(offsets, envelopes):
+    bounds = np.empty((len(offsets) - 1, 6), np.float32)
     for i, (lo, hi) in enumerate(zip(offsets[:-1], offsets[1:], strict=True)):
         vertices = envelopes[lo:hi]
         bounds[i, :3] = vertices[:, :3].min(axis=0)
         bounds[i, 3:] = vertices[:, 3:].max(axis=0)
+    return bounds
+
+
+def _host_query(offsets, tags, pairs, envelopes):
+    bounds = _host_bounds(offsets, envelopes)
     flags = np.zeros(len(pairs), np.int32)
     for row, (a, b, excluded) in enumerate(pairs):
         if tags[a, 0] != tags[b, 0]:
@@ -538,11 +545,13 @@ def _detect_pairs(workspace, paths, flags):
 class CollisionWorkspace:
     """One immutable model, one explicit broad-phase backend and one publication."""
 
-    def __init__(self, model, backend="host", *, cache_root=None):
+    def __init__(self, model, backend="host", *, cache_root=None, broad_phase="all_pairs"):
         if not isinstance(model, CollisionModel):
             raise TypeError("collision workspace requires a CollisionModel")
         if backend not in ("host", "interpret", "cuda"):
             raise ValueError("collision backend must be host, interpret or cuda")
+        if broad_phase not in ("all_pairs", "sap"):
+            raise ValueError("broad phase must be all_pairs or sap")
         shapes = model.shapes
         self._exterior_faces = exterior_faces(shapes)
         excluded = set(model.excluded)
@@ -563,6 +572,9 @@ class CollisionWorkspace:
             ],
             dtype=np.int32,
         ).reshape(-1, 3)
+        self._broad_phase = broad_phase
+        self._spatial = SpatialPairs(self._tags, self._pairs) if broad_phase == "sap" else None
+        self._times = dict(envelope_ns=0, broad_ns=0, narrow_ns=0)
         self._model, self._backend = model, backend
         self._lock = Lock()
         self._closed = False
@@ -572,7 +584,7 @@ class CollisionWorkspace:
             from ..backends.tyx_collision import TyxCollisionBatch
 
             self._engine = TyxCollisionBatch(
-                backend, self._offsets, self._tags, self._pairs, cache_root
+                backend, self._offsets, self._tags, self._pairs, cache_root, spatial=self._spatial
             )
 
     @property
@@ -586,11 +598,18 @@ class CollisionWorkspace:
 
     def stats(self):
         with self._lock:
-            return (
+            base = (
                 {"backend": "host", "completed_launches": 0}
                 if self._engine is None
                 else self._engine.stats()
             )
+            return {
+                **base,
+                **self._times,
+                "broad_phase": self._broad_phase,
+                "sap_window_pairs": self._spatial.window_pairs if self._spatial else 0,
+                "sap_box_tests": self._spatial.box_tests if self._spatial else 0,
+            }
 
     def _close_locked(self):
         if not self._closed:
@@ -629,9 +648,16 @@ def detect(model, motion, policy, workspace):
         paths = dict(motion)
         if set(paths) != {s.key for s in model.shapes}:
             raise ValueError("motion keys must exactly cover the collision model")
+        stamp = perf_counter_ns()
         envelopes = _envelopes(model, paths, policy.margin)
+        broad_start = perf_counter_ns()
+        workspace._times["envelope_ns"] += broad_start - stamp
         try:
-            if workspace._engine is None:
+            if workspace._engine is None and workspace._spatial is not None:
+                space = workspace._spatial
+                bounds = _host_bounds(workspace._offsets, envelopes)
+                flags = space.decode_sap(space.host_sap(bounds, space.order(bounds)))
+            elif workspace._engine is None:
                 bounds, flags = _host_query(
                     workspace._offsets, workspace._tags, workspace._pairs, envelopes
                 )
@@ -649,6 +675,8 @@ def detect(model, motion, policy, workspace):
         except BaseException:
             workspace._close_locked()
             raise
+        narrow_start = perf_counter_ns()
+        workspace._times["broad_ns"] += narrow_start - broad_start
         count = int(np.count_nonzero(flags == 0))
         if count > policy.candidate_capacity:
             return CollisionDetection("capacity_exceeded", workspace._backend, count, (), ())
@@ -669,5 +697,6 @@ def detect(model, motion, policy, workspace):
             boxes,
             solid_body_pairs(model, paths, rows) if workspace.exterior_faces else (),
         )
+        workspace._times["narrow_ns"] += perf_counter_ns() - narrow_start
         workspace._last = result
         return result

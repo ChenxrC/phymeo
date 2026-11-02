@@ -8,7 +8,7 @@ from ..constraints.collision_shapes import MAX_CONVEX_VERTICES
 
 
 class TyxCollisionBatch:
-    def __init__(self, mode, offsets, tags, pairs, cache_root):
+    def __init__(self, mode, offsets, tags, pairs, cache_root, *, spatial=None):
         import tyx as tx
 
         from ._tyx_collision_kernels import (
@@ -19,7 +19,18 @@ class TyxCollisionBatch:
             surface_entry_times,
             triangle_entry_times,
         )
+        from ._tyx_spatial_kernels import sap_candidates
 
+        self._sap_kernel = sap_candidates
+        self._spatial = spatial
+        self._spatial_counts = dict(
+            spatial_completed_launches=0,
+            spatial_uploads=0,
+            spatial_uploaded_bytes=0,
+            spatial_downloads=0,
+            spatial_downloaded_bytes=0,
+            spatial_synchronizations=0,
+        )
         self._tx = tx
         self._mode = mode
         self._reduce, self._classify = reduce_bounds, classify_pairs
@@ -90,7 +101,12 @@ class TyxCollisionBatch:
                     self._offsets = self._static(offsets)
                     self._envelopes = self._scratch((int(offsets[-1]), 6), np.float32)
                     self._bounds = self._scratch((self._count, 6), np.float32)
-                if self._pair_count:
+                if self._pair_count and spatial is not None:
+                    self._spatial_meta = self._static(spatial.meta)
+                    self._allowed = self._static(spatial.allowed)
+                    self._order = self._scratch((self._count, 2), np.int32)
+                    self._packed = self._scratch((self._count, spatial.words + 2), np.int32)
+                elif self._pair_count:
                     self._tags = self._static(tags)
                     self._pairs = self._static(pairs)
                     self._flags = self._scratch((self._pair_count,), np.int32)
@@ -124,6 +140,55 @@ class TyxCollisionBatch:
         self._counts["downloaded_bytes"] += host.nbytes
         return host
 
+    def _spatial_upload(self, device, host):
+        if self._mode != "cuda":
+            np.copyto(device, host)
+            return
+        device.copy_from(host)
+        self._counts["dynamic_uploads"] += 1
+        self._counts["uploaded_bytes"] += host.nbytes
+        self._spatial_counts["spatial_uploads"] += 1
+        self._spatial_counts["spatial_uploaded_bytes"] += host.nbytes
+
+    def _spatial_output(self, output):
+        if self._mode == "cuda":
+            self._runtime.sync()
+            self._counts["synchronizations"] += 1
+            self._spatial_counts["spatial_synchronizations"] += 1
+        raw = self._read(output)
+        if self._mode == "cuda":
+            self._spatial_counts["spatial_downloads"] += 1
+            self._spatial_counts["spatial_downloaded_bytes"] += raw.nbytes
+        return raw
+
+    def _spatial_query(self):
+        # Public bounds must be returned on all backends. Reuse that transfer
+        # for the deterministic host endpoint order used by the tyx traversal.
+        if self._mode == "cuda":
+            self._runtime.sync()
+            self._counts["synchronizations"] += 1
+        bounds = self._read(self._bounds)
+        self._counts["completed_launches"] += 1
+        if not self._pair_count:
+            return bounds, np.empty(0, np.int32)
+        space = self._spatial
+        self._spatial_upload(self._order, space.order(bounds))
+        self._counts["launches"] += 1
+        self._sap_kernel(
+            self._count,
+            space.words,
+            self._spatial_meta,
+            self._allowed,
+            self._order,
+            self._bounds,
+            self._packed,
+            mode=self._mode,
+        )
+        raw = self._spatial_output(self._packed)
+        self._counts["completed_launches"] += 1
+        self._spatial_counts["spatial_completed_launches"] += 1
+        return bounds, space.decode_sap(raw)
+
     def query(self, envelopes):
         if not self._count:
             return np.empty((0, 6), np.float32), np.empty(0, np.int32)
@@ -136,6 +201,8 @@ class TyxCollisionBatch:
                 np.copyto(self._envelopes, envelopes)
             self._counts["launches"] += 1
             self._reduce(self._count, self._offsets, self._envelopes, self._bounds, mode=self._mode)
+            if self._spatial is not None:
+                return self._spatial_query()
             if self._pair_count:
                 self._counts["launches"] += 1
                 self._classify(
@@ -297,7 +364,7 @@ class TyxCollisionBatch:
         return proposals
 
     def stats(self):
-        return {**self._counts, **self._sweep_counts, "backend": self._mode}
+        return {**self._counts, **self._sweep_counts, **self._spatial_counts, "backend": self._mode}
 
     def close(self):
         self._resources.close()

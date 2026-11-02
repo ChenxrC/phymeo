@@ -50,8 +50,15 @@ def main():
         type=float,
         help="optional unilateral clearance ahead of the finger middle surface, in metres",
     )
+    parser.add_argument(
+        "--receiver-control",
+        choices=("snapshot", "material"),
+        help="hold the initial world target or follow the observed material through finite jaws",
+    )
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
+    if args.receiver_control is not None and args.case not in ("handoff", "no-grip"):
+        parser.error("receiver control requires a two-gripper case")
     if args.output.exists():
         parser.error("output already exists")
     single = args.case in ("single-grip", "single-slip")
@@ -120,6 +127,7 @@ def main():
             grip_friction=0.0 if args.case == "no-grip" else 0.9,
             robot=args.robot,
             progress=progress,
+            receiver_control=args.receiver_control or "snapshot",
             fabric=fabric,
             initial_tilt_deg=args.initial_tilt_deg,
             finger_pad_radius_m=args.finger_pad_radius_m,

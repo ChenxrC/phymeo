@@ -7,6 +7,7 @@ import numpy as np
 from ..constraints.robot_contact import CollisionPlane
 from ..constraints.robot_contact_patch import RobotContactPatch
 from ..constraints.triangle_prism_surface import TrianglePrismSurface
+from ..control.material_grasp import ParallelJawWindow
 from ..core.capabilities import SolverFailure
 from ..core.model import ParticleModel
 from ..core.robot import RobotInputs
@@ -209,7 +210,11 @@ def run_handoff(
     initial_tilt_deg=0.0,
     finger_pad_radius_m=None,
     finger_backing_clearance_m=None,
+    receiver_control="snapshot",
 ):
+    if receiver_control not in ("snapshot", "material"):
+        raise ValueError("receiver control must be snapshot or material")
+    track_material = receiver_control == "material"
     case = build_handoff(
         grip_friction=grip_friction,
         robot=robot,
@@ -242,6 +247,16 @@ def run_handoff(
     transit_z = BASE_Z + np.linalg.norm(size) + 0.04
     transfer = np.array([a0[0] + 0.025, transit_z])
     bhold = None
+    edge_target = None
+    finger_layer = next(p for p in case.program.patches if p.geometry.key == "B_left")
+    reserve = HALF_THICKNESS_M + (finger_layer.radius_m or 0.0)
+    if track_material:
+        trace["receiver_control"] = "material"
+
+    def observed_window(frame):
+        parts = frame["patch_vertices_m"]
+        return ParallelJawWindow(parts["B_left"], parts["B_right"])
+
     carry = None
     carry_start = None
     place = None
@@ -275,6 +290,8 @@ def run_handoff(
                 if phase == 2
                 else transfer + [-0.055, 0.010]
             )
+            velocity_command = None
+            receiver_observation = None
             if phase == 0:
                 bt = b0
             elif phase == 1:
@@ -287,6 +304,38 @@ def run_handoff(
                 bt = _travel(lower_start, place, elapsed, 0.42)
             else:
                 bt = place if phase == 6 else place + [0.045, 0.010]
+            if track_material and 2 <= phase <= 5:
+                previous = trace["frames"][-1]
+                window = observed_window(previous)
+                point = edge_target.evaluate(x)
+                velocity = edge_target.evaluate(state.domains["cloth"].velocity)
+                if (
+                    phase <= 3
+                    and bhold is None
+                    and previous["measurements"]["B_both_normal_n"] > 0.20
+                ):
+                    bhold = position("B") + np.array([0.0, 0.003])
+                    bt = bhold
+                if phase <= 3 and bhold is None:
+                    # Follow the physical material address until both fingers develop load.
+                    bt = (point + case.dt * velocity)[[0, 2]]
+                    velocity_command = velocity[[0, 2]]
+                    action = "track"
+                else:
+                    goal = window.center.copy()
+                    goal[[0, 2]] = bt
+                    bt = window.limit_transport(point, goal, clearance=reserve)[[0, 2]]
+                    action = "hold" if phase <= 3 else "transport"
+                receiver_observation = dict(
+                    action=action,
+                    nodes=list(edge_target.nodes),
+                    fraction=edge_target.fraction,
+                    material_point_m=point.tolist(),
+                    material_velocity_m_s=velocity.tolist(),
+                    tool_velocity_command_m_s=None
+                    if velocity_command is None
+                    else velocity_command.tolist(),
+                )
             # Limit jaw command speed through layer entry and release; measured contact still determines each transition.
             for arm, closed in (("A", phase <= 2), ("B", 2 <= phase <= 5)):
                 target = CLOSED if closed else 0.0
@@ -298,7 +347,15 @@ def run_handoff(
                 controls = {}
                 for arm, target in requested.items():
                     controls[arm] = case.grippers[arm].command(
-                        state.domains[arm], target, finger_targets[arm], case.dt
+                        state.domains[arm],
+                        target,
+                        finger_targets[arm],
+                        case.dt,
+                        **(
+                            {"tool_velocity_m_s": velocity_command}
+                            if arm == "B" and velocity_command is not None
+                            else {}
+                        ),
                     )
             except SolverFailure as exc:
                 trace.update(
@@ -331,6 +388,9 @@ def run_handoff(
                 actual_tool_xz_m={n: position(n).tolist() for n in requested},
                 joint_target={n: goal.tolist() for n, (_, goal) in controls.items()},
             )
+            if receiver_observation is not None:
+                trace["frames"][-1]["receiver_observation"] = receiver_observation
+            visible_target = None
             if name == "grasp_A":
                 ready = o["A_both_normal_n"] > 0.20
             elif name == "lift_A":
@@ -341,6 +401,11 @@ def run_handoff(
                     and np.linalg.norm(position("A") - transfer) < 0.005
                     and np.linalg.norm(position("B") - right) < 0.005
                 )
+                if ready and track_material:
+                    visible_target = observed_window(trace["frames"][-1]).acquire(
+                        state.domains["cloth"].position, case.receiver_nodes
+                    )
+                    ready = visible_target is not None
             elif name == "share":
                 ready = (
                     o["A_both_normal_n"] > 0.20
@@ -390,7 +455,9 @@ def run_handoff(
                     trace.update(completed=True, time_s=t)
                     emit("placed", t, o)
                     break
-                if name == "lift_A":
+                if name == "lift_A" and track_material:
+                    edge_target = visible_target
+                elif name == "lift_A":
                     bhold = state.domains["cloth"].position[case.receiver_nodes].mean(axis=0)[
                         [0, 2]
                     ] + [

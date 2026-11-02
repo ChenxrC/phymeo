@@ -11,7 +11,7 @@ from ..control.point_ik import solve_point_ik
 from ..core.capabilities import SolverFailure
 from ..core.robot import RobotInputs, RobotModel, RobotState
 from ..dynamics.robot_dynamics import robot_dynamics_terms
-from ..dynamics.robot_kinematics import forward_kinematics
+from ..dynamics.robot_kinematics import forward_kinematics, point_jacobians
 
 BASE_Z = 0.039
 HALF_OPEN = 0.013
@@ -59,16 +59,27 @@ class Gripper(ABC):
         effort = 1150.0 * (aperture - state.q[ids]) - 8.0 * state.v[ids]
         return np.clip(effort, -self.effort_limits[ids], self.effort_limits[ids])
 
+    @staticmethod
+    def _tool_velocity(value):
+        if value is None:
+            return np.zeros(2)
+        velocity = np.asarray(value, dtype=float)
+        if velocity.shape != (2,) or not np.isfinite(velocity).all():
+            raise ValueError("tool velocity must be a finite planar vector")
+        return velocity
+
     @abstractmethod
-    def command(self, state, target, aperture, dt):
+    def command(self, state, target, aperture, dt, *, tool_velocity_m_s=None):
         pass
 
 
 class _CartesianGripper(Gripper):
-    def command(self, state, target, aperture, dt):
+    def command(self, state, target, aperture, dt, *, tool_velocity_m_s=None):
         origin = self.model.joint_position[0, [0, 2]]
         goal = np.r_[target - origin, np.full(2, aperture)]
-        carriage = np.array([165.0, 250.0]) * (goal[:2] - state.q[:2]) - 15.0 * state.v[:2]
+        carriage = np.array([165.0, 250.0]) * (goal[:2] - state.q[:2]) + 15.0 * (
+            self._tool_velocity(tool_velocity_m_s) - state.v[:2]
+        )
         carriage[1] += 0.22 * 9.81
         data = RobotInputs.zeros(self.model.dof_count)
         data.effort[:2] = np.clip(carriage, -self.effort_limits[:2], self.effort_limits[:2])
@@ -77,7 +88,7 @@ class _CartesianGripper(Gripper):
 
 
 class _ArticulatedGripper(Gripper):
-    def command(self, state, target, aperture, dt):
+    def command(self, state, target, aperture, dt, *, tool_velocity_m_s=None):
         result = solve_point_ik(
             self.model,
             state.q,
@@ -94,13 +105,24 @@ class _ArticulatedGripper(Gripper):
         _, _, _, mass, bias = robot_dynamics_terms(self.model, state)
         held = bias.copy()
         held[list(self.fingers)] = self.finger_effort(state, aperture)
+        goal_velocity = np.zeros_like(goal)
+        if tool_velocity_m_s is not None:
+            desired = self._tool_velocity(tool_velocity_m_s)
+            jac, _ = point_jacobians(
+                self.model, state.q, [self.tool_link], self.tool_point[None, :]
+            )
+            planar = jac[0][[0, 2], :2]
+            # Damped differential IK uses the same 1 mm/rad damping as point-position IK.
+            goal_velocity[:2] = planar.T @ np.linalg.solve(
+                planar @ planar.T + 1e-6 * np.eye(2), desired
+            )
         drive = solve_bounded_pd(
             mass,
             bias,
             state.q,
             state.v,
             goal,
-            np.zeros_like(goal),
+            goal_velocity,
             np.array([40.0, 35.0, 0.0, 0.0]),
             np.array([2.0, 1.4, 0.0, 0.0]),
             self.effort_limits,

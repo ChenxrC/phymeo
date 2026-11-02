@@ -1,10 +1,11 @@
 """Mixed-family collision queries for bounded shapes and unbounded half-spaces."""
 
 from collections.abc import Mapping
-from dataclasses import dataclass
+from contextlib import contextmanager
+from dataclasses import dataclass, field
 from fractions import Fraction
 from itertools import combinations
-from threading import Lock
+from threading import RLock
 from time import perf_counter_ns
 
 import numpy as np
@@ -578,6 +579,13 @@ def _detect_pairs(workspace, paths, flags, selected, proximity=False):
     return tuple(rows)
 
 
+@dataclass
+class _QueryDraft:
+    layouts: dict
+    result: CollisionDetection | None
+    publications: dict = field(default_factory=dict)
+
+
 class CollisionWorkspace:
     """One immutable model, one explicit broad-phase backend and one publication."""
 
@@ -637,7 +645,8 @@ class CollisionWorkspace:
                     )
         self._times = dict(envelope_ns=0, broad_ns=0, midphase_ns=0, narrow_ns=0)
         self._model, self._backend = model, backend
-        self._lock = Lock()
+        self._lock = RLock()
+        self._draft = None
         self._closed = False
         self._last = None
         self._engine = None
@@ -655,7 +664,42 @@ class CollisionWorkspace:
 
     @property
     def last_result(self):
-        return self._last
+        with self._lock:
+            return self._last
+
+    @contextmanager
+    def transaction(self):
+        """Publish a group of geometry queries and associated physical frames on success.
+
+        Nested groups join the enclosing commit. Failed work still contributes to
+        diagnostics and a backend fault still closes the workspace.
+        """
+        with self._lock:
+            if self._closed:
+                raise RuntimeError("collision workspace is closed")
+            parent = self._draft
+            draft = (
+                _QueryDraft(self._trees.layouts, self._last)
+                if parent is None
+                else _QueryDraft(parent.layouts, parent.result)
+            )
+            self._draft = draft
+            try:
+                yield self
+                if self._closed:
+                    raise RuntimeError("collision workspace closed during transaction")
+                if parent is None:
+                    self._trees.layouts, self._last = draft.layouts, draft.result
+                    for publish, frame in draft.publications.items():
+                        publish(frame)
+                else:
+                    parent.layouts, parent.result = draft.layouts, draft.result
+                    parent.publications.update(draft.publications)
+            finally:
+                self._draft = parent
+
+    def _stage_publication(self, publish, frame):
+        self._draft.publications[publish] = frame
 
     def stats(self):
         with self._lock:
@@ -716,7 +760,8 @@ def detect(model, motion, policy, workspace):
         envelopes = _envelopes(model, paths, policy.margin)
         broad_start = perf_counter_ns()
         workspace._times["envelope_ns"] += broad_start - stamp
-        pending = workspace._trees.layouts.copy()
+        draft = workspace._draft
+        pending = (workspace._trees.layouts if draft is None else draft.layouts).copy()
         try:
             if workspace._engine is None and workspace._spatial is not None:
                 space = workspace._spatial
@@ -780,6 +825,8 @@ def detect(model, motion, policy, workspace):
             solid_body_pairs(model, paths, rows) if workspace.exterior_faces else (),
         )
         workspace._times["narrow_ns"] += perf_counter_ns() - narrow_start
-        workspace._trees.layouts = pending
-        workspace._last = result
+        if draft is None:
+            workspace._trees.layouts, workspace._last = pending, result
+        else:
+            draft.layouts, draft.result = pending, result
         return result

@@ -19,3 +19,7 @@ HOST 法向与事务 8 项、两个最近区域回归 2 项，tyx interpret 和�
 完整本地证据在 `artifacts/p65-collision-m4-loads-local-20261102-01`。同次九条轨迹位于 `09-load-host-pytest-basetemp`、`10-load-interpret-pytest-basetemp` 和 `11-load-cuda-pytest-basetemp`，独立复核结果在 `m4-physical-summary.json`。新的运行需给 pytest 使用新的 basetemp。几何默认值、之前的目录对照和原软布失败记录继续沿用已有证据。
 
 当前响应范围是法向、不同物体、登记的凸体–凸体、球–布面和布面–布面。硬芯穿越、未支持的刚体角路径、缺失法线或超容量均拒绝整步。关节夹爪的切向持载、同片布的厚度与折叠、两种软布递布及最终构建仍需单独验收。
+
+## 联合步拒绝与发布
+
+一个成功的 RD 步后，让球在下一步从布面一侧穿到另一侧。原实现拒绝物理步，但调用方可以在 `CollisionWorkspace.last_result` 读到这次无效尝试。用同一公开入口复现后，将检测结果、BVH 布局和 `CollisionLoadSystem.last_frame` 纳入同一次提交。独立采样失败、嵌套组回滚都保留上次成功的发布，已经执行的 BVH 工作及设备启动数照常计入统计。HOST 的相关回归 20 项通过，tyx interpret 和实际 CUDA 各 4 项通过。原失败在本地记录 `91-physics-rollback-red-pytest`，修复记录为 `95` 至 `97`。[公开接口回归](../../tests/collision/test_load_publication.py) · [设备回归](../../tests/collision/test_tyx_load_publication.py)

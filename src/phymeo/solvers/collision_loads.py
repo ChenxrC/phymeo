@@ -21,7 +21,7 @@ from ..core.rigid import RigidBodyInputs
 from ..core.state import StepInputs
 from ..core.validation import finite_real, validate_dt
 from ..dynamics.rotation import quaternion_matrix
-from ..geometry.collision_pipeline import CollisionDetection, detect
+from ..geometry.collision_pipeline import CollisionDetection, CollisionWorkspace, detect
 from ..geometry.collision_witness import ConvexContactPoint, ProximityWitness
 
 
@@ -248,6 +248,15 @@ class CollisionLoadSystem:
     def last_frame(self):
         return self._last
 
+    def _transaction(self, workspace):
+        if not isinstance(workspace, CollisionWorkspace):
+            raise ValueError("workspace is bound to a different collision model")
+        return workspace.transaction()
+
+    def _publish_frame(self, frame):
+        with self._lock:
+            self._last = frame
+
     def _paths(self, state, end=None):
         rotations = quaternion_matrix(state.rigid.orientation)
         out = {}
@@ -315,6 +324,10 @@ class CollisionLoadSystem:
 
     def sample(self, state, workspace, *, capacity=None):
         """Evaluate internal loads without advancing state or replacing the last physical frame."""
+        with self._transaction(workspace):
+            return self._sample(state, workspace, capacity)
+
+    def _sample(self, state, workspace, capacity):
         result = self._query(state, None, workspace, capacity)
         p = np.zeros(state.particles.position.shape, dtype=float)
         r = np.zeros(state.rigid.position.shape, dtype=float)
@@ -414,7 +427,7 @@ class CollisionLoadSystem:
 
     def step(self, state, external, models, solvers, dt, workspace, *, capacity=None):
         """Advance one substep with supplied particle-material and rigid solvers. No implicit retry."""
-        with self._lock:
+        with self._transaction(workspace), self._lock:
             h = validate_dt(dt, state.particles.position.dtype)
             if not isinstance(external, CoupledInputs):
                 raise TypeError("expected CoupledInputs")
@@ -470,5 +483,5 @@ class CollisionLoadSystem:
                 path,
                 *reports,
             )
-            self._last = frame
+            workspace._stage_publication(self._publish_frame, frame)
             return frame

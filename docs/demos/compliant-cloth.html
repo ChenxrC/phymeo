@@ -127,11 +127,13 @@ function loadTrace(raw,hash=""){
  for(const f of raw.frames)for(const row of Object.values(f.contacts||{}))for(const p of row.backing_impulse_ns||[])maxImpulse=Math.max(maxImpulse,p);
  for(const f of raw.frames){for(const p of f.cloth_position_m)b.expandByPoint(vec(p));for(const row of Object.values(f.contacts||{}))for(const p of row.force_n)maxf=Math.max(maxf,vec(p).length())}
  for(const f of raw.frames)for(const row of f.robot_contact?.cloth_links||[])for(const site of row.sites)maxf=Math.max(maxf,vec(site.force_on_cloth_n).length());
+ for(const f of raw.frames)for(const pair of f.self_contact?.contacts||[])for(const site of pair.sites)maxf=Math.max(maxf,vec(site.force_on_second_n).length());
  for(const f of raw.frames)for(const ends of Object.values(f.body_capsules_m||{}))for(const p of ends)b.expandByPoint(vec(p));
  b.getCenter(center);extent=Math.max(.025,b.getSize(new THREE.Vector3()).length());distance=1.8*extent;scale=.30*extent/maxf;impulseScale=maxImpulse>0 ? 0.30*extent/maxImpulse : 0;
  el("events").replaceChildren(new Option("选择阶段",""));(raw.events||[]).forEach(e=>el("events").add(new Option(e.phase+" · "+e.t.toFixed(3)+" s",e.t)));
  el("filter").replaceChildren(new Option("全部",""));Object.keys(patches).forEach(k=>el("filter").add(new Option(k,k)));(raw.robot_contact?.capsules||[]).forEach(c=>el("filter").add(new Option(c.key,c.key)));
  if(raw.cloth_link_material)el("filter").add(new Option("布面（连杆接触）","cloth-links"));
+ if(raw.cloth_self_material)el("filter").add(new Option("布面自接触","cloth-self"));
  el("time").max=raw.frames.length-1;el("case").textContent=raw.case+" · "+(raw.completed?"完成":("停止 "+(raw.failure_phase||"")+" "+(raw.failure||"")))+" · "+raw.backend;
  el("source").textContent=(hash?"源 JSON SHA-256 "+hash+" · ":"")+"位置 m，渲染缓冲 FP32，记录保留原精度。";el("err").textContent="";show(0);
 }
@@ -181,6 +183,16 @@ function show(n){
      if(mode==="normal")v.copy(nv);else if(mode==="tangent")v.sub(nv);
      const length=v.length();
      if(length>1e-9)arrows.add(new THREE.ArrowHelper(v.normalize(),vec(site.point_m),length*scale,0xa6e27a));
+   }
+ }
+ if(!el("filter").value||el("filter").value==="cloth-self"){
+   for(const row of f.self_contact?.contacts||[]){
+     sums.push(row.faces.join(" ↔ ")+" "+row.force_n.toFixed(3)+" N");
+     if(!el("forces").checked||el("component").value==="tangent")continue;
+     for(const site of row.sites)for(const side of ["first","second"]){
+       const v=vec(site["force_on_"+side+"_n"]),length=v.length();
+       if(length>1e-9)arrows.add(new THREE.ArrowHelper(v.normalize(),vec(site[side+"_point_m"]),length*scale,side==="first"?0x87cefa:0xd39bff));
+     }
    }
  }
  let impulses="";

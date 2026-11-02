@@ -1,6 +1,7 @@
 """Force-gated handoff shared by interchangeable, physically actuated robot layouts."""
 
 from dataclasses import dataclass
+from itertools import combinations
 
 import numpy as np
 
@@ -16,6 +17,7 @@ from ..core.state import ParticleState, StepInputs
 from ..core.validation import finite_real
 from ..dynamics.robot_contact import RobotContactSystem
 from ..solvers.cloth_link_contact import ClothLinkMaterial
+from ..solvers.collision_loads import NormalLayer
 from ..solvers.compliant_cloth_contact import CompliantClothContactProgram, CompliantPatch
 from .compliant_cloth import Case, record_step, trace_start
 from .handoff_grippers import (
@@ -59,6 +61,7 @@ def build_handoff(
     initial_tilt_deg=0.0,
     finger_pad_radius_m=None,
     finger_backing_clearance_m=None,
+    self_contact=False,
 ):
     """Build the handoff with a fabric preset or a custom SheetFabric."""
     return build_gripper_sheet(
@@ -70,6 +73,7 @@ def build_handoff(
         initial_tilt_deg=initial_tilt_deg,
         finger_pad_radius_m=finger_pad_radius_m,
         finger_backing_clearance_m=finger_backing_clearance_m,
+        self_contact=self_contact,
     )
 
 
@@ -83,6 +87,7 @@ def build_gripper_sheet(
     initial_tilt_deg,
     finger_pad_radius_m,
     finger_backing_clearance_m=None,
+    self_contact=False,
 ):
     """Build only the requested physical robot roles around the shared material and table."""
     fabric = fabric_preset(fabric)
@@ -173,6 +178,20 @@ def build_gripper_sheet(
             planes=(CollisionPlane("floor", np.array([0.0, 0.0, 1.0]), 0.0),),
             excluded_pairs=tuple(p for g in grippers.values() for p in g.excluded_pairs),
         )
+    if not isinstance(self_contact, bool):
+        raise TypeError("self_contact must be a boolean")
+    self_layers = None
+    if self_contact:
+        tri = x[np.array(faces)]
+        areas = np.linalg.norm(np.cross(tri[:, 1] - tri[:, 0], tri[:, 2] - tri[:, 0]), axis=1) / 2
+        # This fixture uses the same area stiffness and boundary interaction width
+        # as its mounted pads. Each face pair has a separately registered load.
+        self_layers = {
+            (surfaces[i].key, surfaces[j].key): NormalLayer(
+                0.0015, 1.6e6 * min(areas[i], areas[j]), 9.0
+            )
+            for i, j in combinations(range(len(faces)), 2)
+        }
     program = CompliantClothContactProgram(
         scene,
         "cloth",
@@ -189,6 +208,7 @@ def build_gripper_sheet(
         if mounted
         else None,
         max_joint_violation=0.02,
+        cloth_self_layer=self_layers,
     )
     state = SceneState(
         {
@@ -246,6 +266,7 @@ def run_handoff(
     finger_pad_radius_m=None,
     finger_backing_clearance_m=None,
     receiver_control="snapshot",
+    self_contact=False,
 ):
     if receiver_control not in ("snapshot", "material", "cooperative"):
         raise ValueError("unknown receiver control")
@@ -258,6 +279,7 @@ def run_handoff(
         initial_tilt_deg=initial_tilt_deg,
         finger_pad_radius_m=finger_pad_radius_m,
         finger_backing_clearance_m=finger_backing_clearance_m,
+        self_contact=self_contact,
     )
     layout = robot if isinstance(robot, str) else "custom"
     case_name = "handoff" if grip_friction else "no-grip"

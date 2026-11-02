@@ -55,6 +55,11 @@ def main():
         choices=("snapshot", "material", "cooperative"),
         help="hold the initial target, follow the material, or acquire and transport cooperatively",
     )
+    parser.add_argument(
+        "--self-contact",
+        action="store_true",
+        help="enable the sheet's normal self-contact layer in gripper cases",
+    )
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     if args.receiver_control is not None and args.case not in ("handoff", "no-grip"):
@@ -63,6 +68,8 @@ def main():
         parser.error("output already exists")
     single = args.case in ("single-grip", "single-slip")
     gripper_case = single or args.case in ("handoff", "no-grip")
+    if args.self_contact and not gripper_case:
+        parser.error("self-contact requires a gripper sheet case")
     args.robot = args.robot or ("articulated" if single else "cartesian")
     if args.initial_tilt_deg is None:
         args.initial_tilt_deg = 2.0 if single else 0.0
@@ -116,6 +123,7 @@ def main():
             initial_tilt_deg=args.initial_tilt_deg,
             finger_pad_radius_m=args.finger_pad_radius_m,
             finger_backing_clearance_m=args.finger_backing_clearance_m,
+            self_contact=args.self_contact,
             progress=single_progress,
         )
     else:
@@ -132,6 +140,7 @@ def main():
             initial_tilt_deg=args.initial_tilt_deg,
             finger_pad_radius_m=args.finger_pad_radius_m,
             finger_backing_clearance_m=args.finger_backing_clearance_m,
+            self_contact=args.self_contact,
         )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     stream = (

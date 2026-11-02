@@ -16,6 +16,7 @@ def build_single_gripper(
     initial_tilt_deg=2.0,
     finger_pad_radius_m=0.002,
     finger_backing_clearance_m=None,
+    self_contact=False,
 ):
     return build_gripper_sheet(
         ("A",),
@@ -26,6 +27,7 @@ def build_single_gripper(
         initial_tilt_deg=initial_tilt_deg,
         finger_pad_radius_m=finger_pad_radius_m,
         finger_backing_clearance_m=finger_backing_clearance_m,
+        self_contact=self_contact,
     )
 
 
@@ -57,6 +59,7 @@ def run_single_gripper(
     finger_pad_radius_m=0.002,
     finger_backing_clearance_m=None,
     progress=None,
+    self_contact=False,
 ):
     """Pinch at the initial pose, lift with bounded drives and measure gravity-driven bending."""
     case = build_single_gripper(
@@ -64,6 +67,7 @@ def run_single_gripper(
         initial_tilt_deg=initial_tilt_deg,
         finger_pad_radius_m=finger_pad_radius_m,
         finger_backing_clearance_m=finger_backing_clearance_m,
+        self_contact=self_contact,
     )
     state = case.initial
     robot = case.grippers["A"]

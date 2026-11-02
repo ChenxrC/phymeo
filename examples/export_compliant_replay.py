@@ -325,6 +325,112 @@ def add_backing_windows(trace):
         )
 
 
+def check_self_records(trace):
+    meta = trace.get("cloth_self_material")
+    if meta is None:
+        return
+    faces = {face["name"]: tuple(face["nodes"]) for face in meta["faces"]}
+    if len(faces) != len(trace["faces"]) or list(faces.values()) != list(
+        map(tuple, trace["faces"])
+    ):
+        raise ValueError("invalid self-contact material topology")
+    frames, samples = trace["frames"], trace.get("self_samples", [])
+    steps = trace["substeps"]
+    if len(samples) != steps * (len(frames) - 1):
+        raise ValueError("incomplete self-contact sample history")
+    dt = trace["dt_s"] / steps
+    tolerance = 3e-5 if meta["force_backend"] != "host" else 3e-10
+    nodes = len(frames[0]["cloth_position_m"])
+
+    def verify(sample):
+        nodal = np.zeros((nodes, 3))
+        owners = set()
+        for row in sample["contacts"]:
+            pair = tuple(row["faces"])
+            if len(pair) != 2 or pair[0] == pair[1] or pair in owners:
+                raise ValueError("duplicate or invalid self-contact material pair")
+            owners.add(pair)
+            if tuple(row["first_nodes"]) != faces.get(pair[0]) or tuple(
+                row["second_nodes"]
+            ) != faces.get(pair[1]):
+                raise ValueError("invalid self-contact material owner")
+            n = np.asarray(row["normal"], float)
+            if n.shape != (3,) or not np.isclose(n @ n, 1.0, atol=1e-10, rtol=0):
+                raise ValueError("invalid self-contact normal")
+            magnitude = power = fraction = 0.0
+            for site in row["sites"]:
+                force = np.asarray(site["force_on_second_n"], float)
+                if (
+                    not np.array_equal(-force, site["force_on_first_n"])
+                    or not np.allclose(force, site["force_n"] * n, rtol=tolerance, atol=tolerance)
+                    or site["force_n"] < 0
+                    or not 0 < site["fraction"] <= 1
+                ):
+                    raise ValueError("invalid self-contact pair force")
+                points, velocities = [], []
+                for side, sign in (("first", -1), ("second", 1)):
+                    indices = np.asarray(row[side + "_nodes"], dtype=int)
+                    material = site[side + "_weights"]
+                    weights = dict(material)
+                    if (
+                        len(material) != 3
+                        or set(weights) != set(indices)
+                        or min(weights.values()) < 0
+                        or not np.isclose(sum(weights.values()), 1.0, rtol=0, atol=2e-12)
+                    ):
+                        raise ValueError("invalid self-contact barycentric weights")
+                    w = np.asarray([weights[i] for i in indices])
+                    point = w @ np.asarray(row[side + "_positions_m"])
+                    velocity = w @ np.asarray(row[side + "_velocities_m_s"])
+                    if not np.allclose(
+                        point, site[side + "_point_m"], atol=tolerance, rtol=tolerance
+                    ):
+                        raise ValueError("invalid self-contact material point")
+                    np.add.at(nodal, indices, sign * w[:, None] * force)
+                    points.append(point)
+                    velocities.append(velocity)
+                rel = velocities[1] - velocities[0]
+                if (
+                    not np.allclose(
+                        points[1] - points[0],
+                        row["middle_gap_m"] * n,
+                        atol=tolerance,
+                        rtol=tolerance,
+                    )
+                    or not np.isclose(
+                        rel @ n, site["normal_speed_m_s"], atol=tolerance, rtol=tolerance
+                    )
+                    or not np.isclose(rel @ force, site["power_w"], atol=tolerance, rtol=tolerance)
+                ):
+                    raise ValueError("invalid self-contact geometry or work")
+                magnitude += site["force_n"]
+                power += site["power_w"]
+                fraction += site["fraction"]
+            if not np.allclose(
+                [magnitude, power, fraction],
+                [row["force_n"], row["power_w"], 1.0],
+                atol=tolerance,
+                rtol=tolerance,
+            ):
+                raise ValueError("invalid self-contact sample sum")
+        if not np.allclose(nodal, sample["nodal_force_n"], atol=tolerance, rtol=tolerance):
+            raise ValueError("invalid self-contact nodal force")
+
+    verify(frames[0]["self_contact"])
+    for i, frame in enumerate(frames[1:]):
+        group = samples[i * steps : (i + 1) * steps]
+        offset = 0.0 if "backing_samples" in trace else 0.5
+        for j, sample in enumerate(group):
+            expected = frames[i]["t"] + (j + offset) * dt
+            if not np.isclose(sample["t"], expected, rtol=0, atol=1e-12):
+                raise ValueError("invalid self-contact sample time")
+            verify(sample)
+        if frame["self_contact"] != group[-1] or not np.isclose(
+            frame["force_sample_s"], group[-1]["t"], rtol=0, atol=1e-12
+        ):
+            raise ValueError("self-contact frame is not bound to its source substep")
+
+
 def export(source, output):
     with source.open("rb") as stream:
         digest = hashlib.sha256()
@@ -342,9 +448,11 @@ def export(source, output):
         raise ValueError("expected a compliant-cloth trajectory")
     add_link_geometry(trace)
     add_backing_windows(trace)
+    check_self_records(trace)
     # The full source file retains every substep. The viewer reads the recorded frame data.
     trace.pop("samples", None)
     trace.pop("robot_samples", None)
+    trace.pop("self_samples", None)
     cap = dict(source_sha256=digest.hexdigest(), trajectory=trace)
     packed = json.dumps(cap, ensure_ascii=False, separators=(",", ":"), allow_nan=False).replace(
         "<", "\\u003c"

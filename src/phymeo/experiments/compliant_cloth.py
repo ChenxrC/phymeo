@@ -197,6 +197,22 @@ def trace_start(case, name):
         samples=[],
         events=[],
     )
+    if p.cloth_self is not None:
+        self_contact = p.cloth_self
+        trace["cloth_self_material"] = dict(
+            geometry_backend=self_contact.geometry_mode,
+            force_backend=self_contact.force_mode,
+            faces=[
+                dict(name=s.key, nodes=list(s.node_indices), half_thickness_m=s.half_thickness_m)
+                for s in p.surfaces
+            ],
+            layers=[
+                dict(faces=list(pair), **{f.name: getattr(law, f.name) for f in fields(law)})
+                for pair, law in self_contact.calibrations
+            ],
+        )
+        trace["self_samples"] = []
+        trace["frames"][0]["self_contact"] = _jsonable(p.observe_self_contact(s))
     if p.cloth_links is not None:
         trace["cloth_link_material"] = _jsonable(
             {f.name: getattr(p.cloth_links.law, f.name) for f in fields(p.cloth_links.law)}
@@ -226,6 +242,10 @@ def record_step(case, trace, result, t):
         offset = 0.0 if rep.diagnostics.get("force_sample") == "substep-entry" else 0.5
         sample_t = t + (i + offset) * h
         body = rep.diagnostics.get("robot_contact")
+        if "self_contact" in rep.diagnostics:
+            trace["self_samples"].append(
+                dict(t=sample_t, **_jsonable(rep.diagnostics["self_contact"]))
+            )
         if "backing" in rep.diagnostics:
             trace.setdefault("backing_samples", []).append(
                 dict(t=sample_t, **_jsonable(rep.diagnostics["backing"]))
@@ -259,6 +279,8 @@ def record_step(case, trace, result, t):
             sample_t if offset == 0 else t + case.dt - h / 2,
         )
     )
+    if trace.get("self_samples"):
+        trace["frames"][-1]["self_contact"] = trace["self_samples"][-1]
     if trace.get("robot_samples"):
         trace["frames"][-1]["robot_contact"] = trace["robot_samples"][-1]
     return True

@@ -61,10 +61,11 @@ class ClothSurfaceContact:
                 width_m=law.width_m + surfaces[i].half_thickness_m + surfaces[j].half_thickness_m,
             )
         self.system = CollisionLoadSystem(model, bindings, measured, layer_operator=operator)
+        self.calibrations = tuple((key, laws[key]) for key in keys)
         self.signature = (
             self.geometry_mode,
             self.force_mode,
-            tuple((key, laws[key]) for key in keys),
+            self.calibrations,
         )
 
     def workspace(self):
@@ -76,6 +77,8 @@ class ClothSurfaceContact:
         loads = self.system.sample_particles(cloth, workspace)
         contacts = []
         for row in loads.contacts:
+            first_nodes = self.system.bindings[row.first].rows
+            second_nodes = self.system.bindings[row.second].rows
             sites = tuple(
                 dict(
                     first_weights=site.material.first_weights,
@@ -85,6 +88,7 @@ class ClothSurfaceContact:
                     force_on_first_n=-np.asarray(site.force_on_second_n),
                     force_on_second_n=site.force_on_second_n,
                     fraction=site.fraction,
+                    force_n=site.force_n,
                     normal_speed_m_s=site.rate_m_per_s,
                     power_w=site.power_w,
                 )
@@ -93,6 +97,12 @@ class ClothSurfaceContact:
             contacts.append(
                 dict(
                     faces=(self.names[row.first.shape], self.names[row.second.shape]),
+                    first_nodes=first_nodes,
+                    second_nodes=second_nodes,
+                    first_positions_m=cloth.position[list(first_nodes)].copy(),
+                    second_positions_m=cloth.position[list(second_nodes)].copy(),
+                    first_velocities_m_s=cloth.velocity[list(first_nodes)].copy(),
+                    second_velocities_m_s=cloth.velocity[list(second_nodes)].copy(),
                     normal=row.normal,
                     middle_gap_m=row.gap_m,
                     force_n=row.force_n,

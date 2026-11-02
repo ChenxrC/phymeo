@@ -35,3 +35,13 @@
 选项 `--receiver-control cooperative` 要求 A 实际独立承载且布离台两个连续帧，B 保持原开口和起始工具目标。A 在观测到的位置等候，B 只在两个有限前表面内选取材料地址。原双指压力、双方垂直承载、桌面卸载条件达到后，两只工具从各自实测位置同步送往转运高度，再允许 A 松开。共同运动的峰值工具速度取原 A 转运曲线的峰值，原阶段超时和 5 mm 到位门槛保持。连杆夹带的布料载荷也计入 A 单独夹起及最终完全松开的观测。两只夹爪在交接前都失去布料时记录真实失败，避免继续追赶无主的材料点。[运动指令和可重复控制](../../tests/test_cooperative_grasp_transfer.py) · [布面–结构连杆独立验收](p65-cloth-link-response.md)
 
 完整新装配入口为 `python examples/compliant_cloth.py --case handoff --robot articulated-palm --fabric soft --receiver-control cooperative --initial-tilt-deg 2 --output soft-mounted-tilted.json.gz`。竖直对照使用 `--initial-tilt-deg 0`。两个初态都需要真实动力学通过全部阶段。
+
+## 新装配的竖直轨迹
+
+新装配从原竖直软布静止初态运行了 17,536 个真实子步。0.54 s 时 A 独自持布，最低点离台 26.85 mm，A 向上提供 0.5093 N，B 和桌面均无载荷。A 双侧载荷最后超过 0.20 N 的显示帧是 0.65 s，B 首次达到该条件是 0.85 s。B 在 0.87 s 取得双侧载荷，1.37 s 时仍持布；没有任何显示帧让两者同时达到交接门槛。原抬升时限到期，任务失败。
+
+17,536 个子步中有 8,589 步发生结构接触。29,504 条活动面–杆记录均从当次材料点和相反载荷核对，66 个有结构接触的帧入口另用已存实际关节位置重算广义力。最大面–杆力为 6.036 N，最大结构穿透 1.600 mm。布的逐帧动量变化与重力、桌面、两臂指垫和结构载荷积分之和的最大分量误差为 4.17×10⁻¹⁷ N·s。
+
+从 0.54 s 到 0.86 s，仅 B 腕就向上给布 0.13549 N·s。在 0.62 s 的记录中，B 腕已经加载，A 尚有双侧夹持。判别旁路将从真实 0.54 s 状态出发，保持同一 A 指令和全部接触形状，单独让 B 停在原处，检验 A 能否持到原接取时刻。此旁路只区别接近碰撞和供体自身滑脱。后续接近控制要使用真实腕、指杆和材料边的距离，并约束工具速度。MoveIt Servo 的邻近速度调节与 TrajOpt 对步内扫掠的处理给出了两种可检验的对照。[MoveIt Servo](https://moveit.picknik.ai/main/doc/examples/realtime_servo/realtime_servo_tutorial.html) · [TrajOpt 原论文](https://rll.berkeley.edu/trajopt/ijrr/2013-IJRR-TRAJOPT.pdf)
+
+本机原始轨迹、逐帧动量和结构核对分别保存在 `artifacts/p65-collision-m4-loads-local-20261102-01/with-structural-palm-v1/full-vertical.json.gz`、`cloth-momentum-vertical.json` 和 `structural-independent-vertical.json`。

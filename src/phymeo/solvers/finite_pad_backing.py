@@ -149,9 +149,12 @@ def _project(program, state, accel, contacts, h):
     )
 
 
-def backed_step(program, state, inputs, h):
+def backed_step(program, state, inputs, h, *, self_work=None):
     """Semi-implicit force kick, joint unilateral velocity solve, and checked common drift."""
-    accel, initial, internal, body = program.accelerations(state, inputs, _backing=True)
+    own = program._self_sample(state, self_work)
+    accel, initial, internal, body = program.accelerations(
+        state, inputs, _backing=True, _self_sample=own
+    )
     drift, certificate = _project(program, state, accel, initial, h)
     middle, end = drift(h / 2), drift(h)
     _, _, mid, mid_geo = program._loads(middle, dynamics=False)
@@ -182,7 +185,9 @@ def backed_step(program, state, inputs, h):
         )
     if program.max_penetration_m is not None and penetration > program.max_penetration_m:
         raise SolverFailure(f"sampled hard penetration limit exceeded: {penetration:.6g} m")
+    program._check_self_path(state, middle, end, self_work)
     return end, dict(
+        **({"self_contact": own} if own is not None else {}),
         patches=initial,
         robot_contact=body,
         material_force_n=internal,

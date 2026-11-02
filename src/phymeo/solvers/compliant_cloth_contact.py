@@ -26,6 +26,7 @@ from ..runtime.robot_family import robot_family
 from ..runtime.scene_stepper import SceneStepper
 from ._compliant_motion import advance_state, check_robot_contact, optional_budget
 from .cloth_link_contact import ClothLinkContacts
+from .cloth_surface_contact import ClothSurfaceContact
 from .finite_pad_backing import backed_step
 
 
@@ -165,6 +166,9 @@ class CompliantClothContactProgram:
         max_joint_violation=None,
         cloth_link_material=None,
         cloth_link_operator=None,
+        cloth_self_layer=None,
+        cloth_self_operator=None,
+        cloth_self_geometry="host",
     ):
         if not isinstance(scene, SceneModel) or not isinstance(material, ClothMaterial):
             raise TypeError("expected SceneModel and ClothMaterial")
@@ -247,6 +251,13 @@ class CompliantClothContactProgram:
             )
         elif cloth_link_operator is not None:
             raise ValueError("cloth-link operator requires an explicit material")
+        self.cloth_self = None
+        if cloth_self_layer is not None:
+            self.cloth_self = ClothSurfaceContact(
+                self.surfaces, cloth_self_layer, cloth_self_operator, cloth_self_geometry
+            )
+        elif cloth_self_operator is not None or cloth_self_geometry != "host":
+            raise ValueError("cloth self-contact backend requires an explicit contact layer")
         self.patches = tuple(patches)
         if not all(isinstance(p, CompliantPatch) for p in self.patches):
             raise TypeError("expected CompliantPatch")
@@ -291,6 +302,7 @@ class CompliantClothContactProgram:
                 if self.cloth_links
                 else {}
             ),
+            **({"cloth_self_contact": self.cloth_self.signature} if self.cloth_self else {}),
             scene=self.scene.identity,
             cloth=self.cloth_domain,
             material=self.material,
@@ -464,11 +476,35 @@ class CompliantClothContactProgram:
             return self._body_sample(state, self._link_geometry(state))[0]
         return None if self.robot_contact is None else self.robot_contact.evaluate(state.domains)
 
-    def accelerations(self, state, inputs, *, _backing=False):
+    def observe_self_contact(self, state):
+        """Sample the configured sheet's own surface forces at this actual state."""
+        if self.cloth_self is None:
+            return None
+        with self.cloth_self.workspace() as work:
+            return self.cloth_self.evaluate(state.domains[self.cloth_domain], work)
+
+    def _self_sample(self, state, work):
+        if work is None:
+            return self.observe_self_contact(state)
+        return self.cloth_self.evaluate(state.domains[self.cloth_domain], work)
+
+    def _check_self_path(self, first, middle, last, work):
+        if self.cloth_self is not None:
+            self.cloth_self.check_path(
+                first.domains[self.cloth_domain],
+                middle.domains[self.cloth_domain],
+                last.domains[self.cloth_domain],
+                work,
+            )
+
+    def accelerations(self, state, inputs, *, _backing=False, _self_sample=None):
         if _backing:
             nodal, reactions, details, geo = self._loads(state, backing_rows=True)
         else:
             nodal, reactions, details, geo = self._loads(state)
+        if self.cloth_self is not None:
+            sample = self.observe_self_contact(state) if _self_sample is None else _self_sample
+            nodal += sample["nodal_force_n"]
         body = None
         if self.robot_contact is not None:
             body, link_nodal = self._body_sample(state, geo)
@@ -517,16 +553,25 @@ def _penetration(rows):
 class _Workspace:
     def __init__(self, program, state, inputs, h):
         self.program, self.state, self.inputs, self.h = program, state, inputs, h
+        self.self_work = None if program.cloth_self is None else program.cloth_self.workspace()
 
     def predict(self):
         if self.program.backed_pads:
-            self.state, self.report = backed_step(self.program, self.state, self.inputs, self.h)
+            self.state, self.report = backed_step(
+                self.program, self.state, self.inputs, self.h, self_work=self.self_work
+            )
             self.penetration = self.report["sampled_penetration_m"]
             return
         entry = self.state
-        a0, initial, _, body0 = self.program.accelerations(entry, self.inputs)
+        initial_self = self.program._self_sample(entry, self.self_work)
+        a0, initial, _, body0 = self.program.accelerations(
+            entry, self.inputs, _self_sample=initial_self
+        )
         mid = advance_state(self.state, a0, self.h / 2, midpoint=True)
-        a, contact, internal, body = self.program.accelerations(mid, self.inputs)
+        mid_self = self.program._self_sample(mid, self.self_work)
+        a, contact, internal, body = self.program.accelerations(
+            mid, self.inputs, _self_sample=mid_self
+        )
         self.state = advance_state(self.state, a, self.h, midpoint=False)
         self.penetration = max(_penetration(initial), _penetration(contact))
         if (
@@ -567,7 +612,9 @@ class _Workspace:
                 raise SolverFailure(
                     f"sampled hard penetration limit exceeded: {self.penetration:.6g} m"
                 )
+        self.program._check_self_path(entry, mid, self.state, self.self_work)
         self.report = dict(
+            **({"self_contact": mid_self} if mid_self is not None else {}),
             patches=contact,
             robot_contact=body,
             material_force_n=internal,
@@ -597,4 +644,5 @@ class _Workspace:
         return self.report
 
     def close(self):
-        pass
+        if self.self_work is not None:
+            self.self_work.close()

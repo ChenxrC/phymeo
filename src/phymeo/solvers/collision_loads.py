@@ -18,7 +18,7 @@ from ..core.capabilities import SolverFailure
 from ..core.coupled import CoupledInputs, CoupledState
 from ..core.result import StepReport
 from ..core.rigid import RigidBodyInputs
-from ..core.state import StepInputs
+from ..core.state import ParticleState, StepInputs
 from ..core.validation import finite_real, validate_dt
 from ..dynamics.rotation import SEMI_IMPLICIT_WORLD_OMEGA, quaternion_matrix
 from ..geometry._capsule_triangle_sweep import capsule_material_sites
@@ -268,17 +268,21 @@ class CollisionLoadSystem:
             self._last = frame
 
     def _paths(self, state, end=None, rigid_solver=None):
-        rotations = quaternion_matrix(state.rigid.orientation)
+        particles = state if isinstance(state, ParticleState) else state.particles
+        end_particles = end if end is None or isinstance(end, ParticleState) else end.particles
+        rotations = (
+            None if isinstance(state, ParticleState) else quaternion_matrix(state.rigid.orientation)
+        )
         out = {}
         for s in self.model.shapes:
             b = self.bindings[s.key]
             if isinstance(b, ParticleAttachment):
                 rows = list(b.rows)
-                if max(rows) >= state.particles.particle_count:
+                if max(rows) >= particles.particle_count:
                     raise ValueError("particle attachment row exceeds state")
                 out[s.key] = CollisionMotion(
-                    state.particles.position[rows],
-                    None if end is None else end.particles.position[rows],
+                    particles.position[rows],
+                    None if end_particles is None else end_particles.position[rows],
                 )
                 continue
             r = b.row
@@ -326,8 +330,9 @@ class CollisionLoadSystem:
             arm = np.asarray(point) - state.rigid.position[b.row]
             return state.rigid.velocity[b.row] + np.cross(state.rigid.angular_velocity[b.row], arm)
         rows = self._material[key]
+        particles = state if isinstance(state, ParticleState) else state.particles
         return sum(
-            weight * state.particles.velocity[rows[node]].astype(float) for node, weight in weights
+            weight * particles.velocity[rows[node]].astype(float) for node, weight in weights
         )
 
     def _apply(self, key, point, weights, f, state, particles, rigid, torques):
@@ -344,10 +349,43 @@ class CollisionLoadSystem:
         with self._transaction(workspace):
             return self._sample(state, workspace, capacity)
 
+    def _require_particles(self, particles):
+        if not isinstance(particles, ParticleState) or len(self._material) != len(self.bindings):
+            raise ValueError("expected particle states and only particle surface bindings")
+
+    def sample_particles(self, particles, workspace, *, capacity=None):
+        """Sample surface forces directly from an external particle solver's state."""
+        self._require_particles(particles)
+        return self.sample(particles, workspace, capacity=capacity)
+
+    def check_particle_segment(self, first, last, workspace, *, capacity=None):
+        """Check the actual affine material segment, preserving legal shared addresses."""
+        self._require_particles(first)
+        self._require_particles(last)
+        if (
+            first.position.shape != last.position.shape
+            or first.position.dtype != last.position.dtype
+        ):
+            raise ValueError("particle segment endpoints must have matching rows and precision")
+        with self._transaction(workspace):
+            return self._checked_path(first, last, workspace, capacity)
+
+    def _checked_path(self, first, last, workspace, capacity, rigid_solver=None):
+        path = self._query(first, last, workspace, capacity, rigid_solver)
+        for pair in path.pairs:
+            if (pair.first, pair.second) in self.layers and pair.status not in (
+                "separated",
+                "adjacent",
+            ):
+                raise SolverFailure("core path rejected: " + pair.reason)
+        return path
+
     def _sample(self, state, workspace, capacity):
         result = self._query(state, None, workspace, capacity)
-        p = np.zeros(state.particles.position.shape, dtype=float)
-        r = np.zeros(state.rigid.position.shape, dtype=float)
+        particles = state if isinstance(state, ParticleState) else state.particles
+        p = np.zeros(particles.position.shape, dtype=float)
+        rigid_count = 0 if isinstance(state, ParticleState) else state.rigid.body_count
+        r = np.zeros((rigid_count, 3), dtype=float)
         torque = np.zeros_like(r)
         pending = []
         rows = []
@@ -436,7 +474,7 @@ class CollisionLoadSystem:
                     tuple(sites),
                 )
             )
-        dtype = state.particles.position.dtype
+        dtype = particles.position.dtype
         loads = CoupledInputs(
             StepInputs(p.astype(dtype)), RigidBodyInputs(r.astype(dtype), torque.astype(dtype))
         )
@@ -487,12 +525,7 @@ class CollisionLoadSystem:
                     output.append(entry)
                     reports.append(None)
             candidate = CoupledState(*output)
-            path = self._query(state, candidate, workspace, capacity, rigid_solver)
-            for pair in path.pairs:
-                if (pair.first, pair.second) not in self.layers:
-                    continue
-                if pair.status not in ("separated", "adjacent"):
-                    raise SolverFailure("core path rejected: " + pair.reason)
+            path = self._checked_path(state, candidate, workspace, capacity, rigid_solver)
             frame = CollisionLoadStep(
                 CoupledState(state.particles, state.rigid),
                 candidate,

@@ -25,6 +25,7 @@ from ..runtime.registry import StateRegistry
 from ..runtime.robot_family import robot_family
 from ..runtime.scene_stepper import SceneStepper
 from ._compliant_motion import advance_state, check_robot_contact, optional_budget
+from .cloth_link_contact import ClothLinkContacts
 from .finite_pad_backing import backed_step
 
 
@@ -162,6 +163,8 @@ class CompliantClothContactProgram:
         max_penetration_m=None,
         robot_contact=None,
         max_joint_violation=None,
+        cloth_link_material=None,
+        cloth_link_operator=None,
     ):
         if not isinstance(scene, SceneModel) or not isinstance(material, ClothMaterial):
             raise TypeError("expected SceneModel and ClothMaterial")
@@ -230,6 +233,20 @@ class CompliantClothContactProgram:
         )
         if not np.isfinite(self.area).all() or np.any(self.area <= 0):
             raise ValueError("degenerate reference face")
+        self.cloth_links = None
+        if cloth_link_material is not None:
+            if robot_contact is None or not robot_contact.capsules:
+                raise ValueError("cloth-link material requires bound structural capsules")
+            self.cloth_links = ClothLinkContacts(
+                cloth_domain,
+                self.surfaces,
+                self.area[::3] * 3,
+                robot_contact,
+                cloth_link_material,
+                cloth_link_operator,
+            )
+        elif cloth_link_operator is not None:
+            raise ValueError("cloth-link operator requires an explicit material")
         self.patches = tuple(patches)
         if not all(isinstance(p, CompliantPatch) for p in self.patches):
             raise TypeError("expected CompliantPatch")
@@ -265,6 +282,14 @@ class CompliantClothContactProgram:
                 else "compliant-finite-pad-midpoint-v1"
                 if self.finite_pads
                 else "compliant-patch-midpoint-v1"
+            ),
+            **(
+                {
+                    "cloth_link_material": self.cloth_links.law,
+                    "cloth_link_backend": getattr(self.cloth_links.operator, "mode", "host"),
+                }
+                if self.cloth_links
+                else {}
             ),
             scene=self.scene.identity,
             cloth=self.cloth_domain,
@@ -415,7 +440,28 @@ class CompliantClothContactProgram:
         """Sample endpoint contact forces; time-integrated loads are in substep diagnostics."""
         return self._loads(state, dynamics=False)[2]
 
+    def _body_sample(self, state, geo):
+        body = self.robot_contact._evaluate(state.domains, geo)
+        if self.cloth_links is None:
+            return body, None
+        nodal, link_rows = self.cloth_links.evaluate(state, geo)
+        body.update(link_rows)
+        return body, nodal
+
+    def _link_geometry(self, state):
+        return {n: r.geometry(state.domains[n], dynamics=False) for n, r in self.robots.items()}
+
+    def _check_link_motion(self, first, middle, last, mid_geo, end_geo):
+        if self.cloth_links is not None:
+            geo0 = self._link_geometry(first)
+            if mid_geo is None:
+                mid_geo = self._link_geometry(middle)
+            self.cloth_links.check_path(first, middle, geo0, mid_geo)
+            self.cloth_links.check_path(middle, last, mid_geo, end_geo)
+
     def observe_robot_contact(self, state):
+        if self.cloth_links is not None:
+            return self._body_sample(state, self._link_geometry(state))[0]
         return None if self.robot_contact is None else self.robot_contact.evaluate(state.domains)
 
     def accelerations(self, state, inputs, *, _backing=False):
@@ -425,9 +471,13 @@ class CompliantClothContactProgram:
             nodal, reactions, details, geo = self._loads(state)
         body = None
         if self.robot_contact is not None:
-            body = self.robot_contact._evaluate(state.domains, geo)
+            body, link_nodal = self._body_sample(state, geo)
+            if link_nodal is not None:
+                nodal += link_nodal
             for name in reactions:
                 reactions[name] += body["efforts"][name]
+                if link_nodal is not None:
+                    reactions[name] += body["cloth_link_efforts"][name]
         cloth = state.domains[self.cloth_domain]
         internal = _elastic(self.material, cloth.position, cloth.velocity, self.damping)
         accel = {
@@ -473,7 +523,8 @@ class _Workspace:
             self.state, self.report = backed_step(self.program, self.state, self.inputs, self.h)
             self.penetration = self.report["sampled_penetration_m"]
             return
-        a0, initial, _, body0 = self.program.accelerations(self.state, self.inputs)
+        entry = self.state
+        a0, initial, _, body0 = self.program.accelerations(entry, self.inputs)
         mid = advance_state(self.state, a0, self.h / 2, midpoint=True)
         a, contact, internal, body = self.program.accelerations(mid, self.inputs)
         self.state = advance_state(self.state, a, self.h, midpoint=False)
@@ -495,14 +546,19 @@ class _Workspace:
                         right["middle_distance_m"],
                     )
             if body is not None:
-                end_body = self.program.robot_contact._evaluate(self.state.domains, geo)
+                end_body, _ = self.program._body_sample(self.state, geo)
+                self.program._check_link_motion(entry, mid, self.state, None, geo)
                 check_robot_contact(
                     (body0, body, end_body),
                     self.program.max_penetration_m,
                     self.program.max_joint_violation,
                 )
                 self.penetration = max(
-                    self.penetration, *(r["penetration_m"] for r in (body0, body, end_body))
+                    self.penetration,
+                    *(
+                        max(r["penetration_m"], r.get("cloth_link_penetration_m", 0.0))
+                        for r in (body0, body, end_body)
+                    ),
                 )
             if (
                 self.program.max_penetration_m is not None

@@ -136,6 +136,7 @@ from .runtime.stepper import Stepper
 from .runtime.terminal_impulse import PointVelocityImpulses, TerminalImpulseProgram
 from .solvers.articulated_coupling import ArticulatedCouplingProgram, make_articulated_runtime
 from .solvers.cloth import ClothProgram, make_cloth_runtime
+from .solvers.cloth_link_contact import ClothLinkMaterial
 from .solvers.collision_loads import (
     CollisionLoadSystem,
     NormalLayer,
@@ -234,6 +235,7 @@ __all__ = [
     "ClothProgram",
     "CompliantClothContactProgram",
     "CompliantPatch",
+    "ClothLinkMaterial",
     "PointIKResult",
     "JointLimits",
     "CollisionPlane",

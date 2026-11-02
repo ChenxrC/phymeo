@@ -171,11 +171,15 @@ def backed_step(program, state, inputs, h):
         for r in rows.values()
     )
     if body is not None:
-        midbody = program.robot_contact._evaluate(middle.domains, mid_geo)
-        endbody = program.robot_contact._evaluate(end.domains, end_geo)
+        midbody, _ = program._body_sample(middle, mid_geo)
+        endbody, _ = program._body_sample(end, end_geo)
+        program._check_link_motion(state, middle, end, mid_geo, end_geo)
         bodies = (body, midbody, endbody)
         check_robot_contact(bodies, program.max_penetration_m, program.max_joint_violation)
-        penetration = max(penetration, *(x["penetration_m"] for x in bodies))
+        penetration = max(
+            penetration,
+            *(max(x["penetration_m"], x.get("cloth_link_penetration_m", 0.0)) for x in bodies),
+        )
     if program.max_penetration_m is not None and penetration > program.max_penetration_m:
         raise SolverFailure(f"sampled hard penetration limit exceeded: {penetration:.6g} m")
     return end, dict(

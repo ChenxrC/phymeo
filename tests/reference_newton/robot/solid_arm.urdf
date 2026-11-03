@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<robot name="solid_arm">
+  <link name="base">
+    <inertial><mass value="1"/><inertia ixx="0.25" iyy="0.25" izz="0.25" ixy="0" ixz="0" iyz="0"/></inertial>
+    <collision name="base_barrel">
+      <origin xyz="2 0 0.5" rpy="1.5707963267948966 0 0"/>
+      <geometry><cylinder radius="0.0625" length="0.25"/></geometry>
+    </collision>
+  </link>
+  <link name="carrier">
+    <inertial><origin xyz="0.0625 -0.03125 0.125"/><mass value="2"/>
+      <inertia ixx="0.125" iyy="0.1875" izz="0.25" ixy="0" ixz="0" iyz="0"/></inertial>
+    <visual name="display"><geometry><cylinder radius="1" length="4"/></geometry></visual>
+    <collision name="barrel">
+      <origin xyz="0.125 0 0" rpy="0 1.5707963267948966 0"/>
+      <geometry><cylinder radius="0.125" length="0.5"/></geometry>
+    </collision>
+  </link>
+  <joint name="tilt" type="revolute">
+    <parent link="base"/><child link="carrier"/>
+    <origin xyz="0.25 -0.125 0.25"/><axis xyz="0 1 0"/>
+    <limit lower="-3.141592653589793" upper="3.141592653589793" effort="8" velocity="4"/>
+  </joint>
+</robot>

@@ -153,7 +153,7 @@ def test_inertial_frame_and_explicit_gravity_override(tmp_path):
         ('type="hinge"', 'type="ball"', "ball"),
         ('<geom name="probe"', '<geom friction="0.2 0.1 0.1" name="probe"', "friction"),
         ('<geom name="probe"', '<geom contype="2" name="probe"', "mask|contype"),
-        ('type="box" size="0.25 0.125 0.0625"', 'type="cylinder" size="0.25 0.125"', "cylinder"),
+        ('type="box" size="0.25 0.125 0.0625"', 'type="hfield" size="0.25 0.125"', "hfield"),
         ("<worldbody>", "<default/><worldbody>", "default"),
         (INERTIA, "", "inertial"),
         ('name="probe"', 'name="base_mark"', "duplicate"),

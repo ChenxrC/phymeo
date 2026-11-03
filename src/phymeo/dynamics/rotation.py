@@ -44,3 +44,29 @@ def advance_world_orientation(orientation, angular_velocity, dt):
     result[:, 3] = delta_scalar * q[:, 3] - np.sum(delta_vector * q[:, :3], axis=1)
     result /= np.hypot.reduce(result, axis=1, keepdims=True)
     return result.astype(orientation.dtype)
+
+
+def matrix_quaternion(rotation):
+    """Return a unit XYZW quaternion for one validated body-to-world rotation."""
+    diagonal = np.diag(rotation)
+    trace = float(diagonal.sum())
+    four_squares = np.r_[1.0 + 2.0 * diagonal - trace, 1.0 + trace]
+    axis = int(np.argmax(four_squares))
+    q = np.empty(4)
+    q[axis] = 0.5 * np.sqrt(four_squares[axis])
+    scale = 4.0 * q[axis]
+    skew = np.array(
+        [
+            rotation[2, 1] - rotation[1, 2],
+            rotation[0, 2] - rotation[2, 0],
+            rotation[1, 0] - rotation[0, 1],
+        ]
+    )
+    if axis == 3:
+        q[:3] = skew / scale
+    else:
+        for other in range(3):
+            if other != axis:
+                q[other] = (rotation[axis, other] + rotation[other, axis]) / scale
+        q[3] = skew[axis] / scale
+    return q / np.hypot.reduce(q)

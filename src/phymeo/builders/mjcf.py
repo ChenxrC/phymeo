@@ -112,6 +112,44 @@ def _joint(joint, name, degrees, automatic):
     )
 
 
+def _fromto(element, kind, where):
+    """Read a cylinder/capsule segment in body coordinates, in metres."""
+    if kind not in {"cylinder", "capsule"}:
+        raise ValueError(f"{where} supports fromto only on a cylinder or capsule")
+    if any(key in element.attrib for key in ("pos", "quat", "euler")):
+        raise ValueError(f"{where} cannot combine fromto with an explicit pose")
+    start, end = _numbers(element, "fromto", 6, where).reshape(2, 3)
+    # Work with half vectors before adding/subtracting distant end coordinates.
+    center = 0.5 * start + 0.5 * end
+    half_axis = 0.5 * start - 0.5 * end
+    with np.errstate(over="ignore"):
+        length = np.hypot.reduce(half_axis)
+    if not np.isfinite(length) or length == 0:
+        raise ValueError(f"{where} fromto needs a finite positive segment length")
+    z = half_axis / length
+    lateral = np.hypot(z[0], z[1])
+    if lateral == 0:
+        rotation = np.array([0.0, 0.0, 0.0, 1.0]) if z[2] > 0 else np.array([1.0, 0.0, 0.0, 0.0])
+    else:
+        half_angle = 0.5 * np.arctan2(lateral, z[2])
+        rotation = np.array(
+            [
+                -z[1] / lateral * np.sin(half_angle),
+                z[0] / lateral * np.sin(half_angle),
+                0.0,
+                np.cos(half_angle),
+            ]
+        )
+    # The segment supplies the axial dimension even if an optional size[1] was authored.
+    count = len(element.get("size", "").split())
+    if count not in (1, 2):
+        raise ValueError(f"{where} fromto needs size containing a radius and optional half-length")
+    supplied = _numbers(element, "size", count, where)
+    if np.any(supplied <= 0):
+        raise ValueError(f"{where} needs positive size values")
+    return center, rotation, np.array([supplied[0], length])
+
+
 def _colliders(body, link, index, degrees, sequence, named_geoms):
     colliders = []
     names = set()
@@ -137,15 +175,30 @@ def _colliders(body, link, index, degrees, sequence, named_geoms):
             raise ValueError(f"{where} has unsupported contype/conaffinity masks {masks}")
         _attributes(
             geom,
-            {"name", "pos", "quat", "euler", "type", "size", "contype", "conaffinity", "rgba"},
+            {
+                "name",
+                "pos",
+                "quat",
+                "euler",
+                "fromto",
+                "type",
+                "size",
+                "contype",
+                "conaffinity",
+                "rgba",
+            },
             where,
         )
         _children(geom, set(), where)
         kind = geom.get("type", "sphere")
-        if kind not in {"sphere", "box"}:
+        counts = {"sphere": 1, "box": 3, "cylinder": 2, "capsule": 2, "ellipsoid": 3}
+        if kind not in counts:
             raise ValueError(f"{where} uses unsupported primitive {kind!r}")
-        size = _numbers(geom, "size", 1 if kind == "sphere" else 3, where)
-        position, rotation = _pose(geom, where, degrees, sequence)
+        if "fromto" in geom.attrib:
+            position, rotation, size = _fromto(geom, kind, where)
+        else:
+            size = _numbers(geom, "size", counts[kind], where)
+            position, rotation = _pose(geom, where, degrees, sequence)
         colliders.append(make_collider(name, link, index, ordinal, position, rotation, kind, size))
     return colliders
 
@@ -156,7 +209,8 @@ def load_mjcf(path: str | Path, *, gravity=None) -> RobotAsset:
     Each moving body has one finite hinge or slide with a zero local pivot and
     reference coordinate. Positions and slides are metres. Hinge limits and
     Euler angles follow compiler angle and eulerseq. Quaternions use MJCF WXYZ.
-    Only canonical collision masks, boxes and spheres are represented. Geoms with
+    Primitive colliders support spheres, boxes, cylinders, capsules and ellipsoids.
+    A cylinder or capsule may specify its axis with fromto. Geoms with
     contype=conaffinity=0 supply no colliders. Immediate moving
     parent/child pairs are excluded as in MJCF; the world-welded root is exempt.
 

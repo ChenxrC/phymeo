@@ -11,9 +11,10 @@ from ..constraints.collision_shapes import (
     CollisionMotion,
     CollisionShape,
 )
+from ..constraints.curved_solids import CurvedSolid
 from ..core.robot import RobotModel
 from ..dynamics.robot_kinematics import forward_kinematics
-from ..dynamics.rotation import quaternion_matrix
+from ..dynamics.rotation import matrix_quaternion, quaternion_matrix
 
 
 @dataclass(frozen=True)
@@ -65,7 +66,12 @@ class RobotAsset:
                 points = geometry.position[link] + points @ geometry.rotation[link].T
             else:
                 points = np.asarray(self.root_xyz) + points @ root_rotation.T
-            paths[collider.shape.key] = CollisionMotion(points)
+            orientation = None
+            if collider.shape.curved is not None:
+                orientation = (
+                    matrix_quaternion(geometry.rotation[link]) if link >= 0 else self.root_xyzw
+                )
+            paths[collider.shape.key] = CollisionMotion(points, body_orientation_xyzw=orientation)
         return paths
 
 
@@ -102,15 +108,26 @@ def unit_axis(axis, where):
 
 
 def make_collider(name, link_name, link_index, ordinal, position, orientation, kind, size):
-    """Build a sphere with its radius or a box from its three half-extents."""
+    """Register a finite primitive in the authored link frame, with SI half-lengths."""
     where = f"link {link_name!r} collision {name!r}"
     if np.any(size <= 0):
         raise ValueError(
             f"{where} requires positive {kind} {'radius' if kind == 'sphere' else 'size'}"
         )
+    curved = None
     if kind == "sphere":
         native_kind, radius = "sphere", float(size[0])
         vertices = position[None, :]
+    elif kind in ("cylinder", "ellipsoid"):
+        native_kind, radius = kind, 0.0
+        curved = CurvedSolid(kind, tuple(size), tuple(orientation))
+        vertices = position[None, :]
+    elif kind == "capsule":
+        if len(size) != 2:
+            raise ValueError(f"{where} requires a radius and an axis half-length")
+        native_kind, radius = kind, float(size[0])
+        half_axis = size[1] * quaternion_matrix(orientation[None, :])[0, :, 2]
+        vertices = np.array([position - half_axis, position + half_axis])
     elif kind == "box":
         native_kind, radius = "hull", 0.0
         corners = np.array(list(product((-1.0, 1.0), repeat=3))) * size
@@ -120,7 +137,7 @@ def make_collider(name, link_name, link_index, ordinal, position, orientation, k
     if not np.isfinite(vertices).all():
         raise ValueError(f"{where} has unrepresentable local vertices")
     key = CollisionKey(0, link_index + 1, ordinal)
-    shape = CollisionShape(key, native_kind, tuple(range(len(vertices))), radius)
+    shape = CollisionShape(key, native_kind, tuple(range(len(vertices))), radius, curved=curved)
     return LinkCollision(
         name,
         link_name,

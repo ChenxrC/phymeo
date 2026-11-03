@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<robot name="rp_arm">
+  <link name="base">
+    <inertial>
+      <mass value="1"/><inertia ixx="0.1" ixy="0" ixz="0" iyy="0.1" iyz="0" izz="0.1"/>
+    </inertial>
+  </link>
+  <link name="boom">
+    <inertial>
+      <origin xyz="0.25 0 0"/><mass value="1"/>
+      <inertia ixx="0.1" ixy="0" ixz="0" iyy="0.1" iyz="0" izz="0.1"/>
+    </inertial>
+  </link>
+  <link name="tool">
+    <inertial>
+      <origin xyz="0.125 -0.0625 0.03125"/><mass value="0.5"/>
+      <inertia ixx="0.1" ixy="0" ixz="0" iyy="0.1" iyz="0" izz="0.1"/>
+    </inertial>
+    <visual name="display"><geometry><box size="0.24 0.02 0.02"/></geometry></visual>
+    <collision name="marker">
+      <origin xyz="0.125 -0.0625 0.03125"/><geometry><sphere radius="0.03125"/></geometry>
+    </collision>
+  </link>
+  <joint name="yaw" type="revolute">
+    <parent link="base"/><child link="boom"/>
+    <origin xyz="0.25 -0.5 0.125"/><axis xyz="0 0 1"/>
+    <limit lower="-1.5707963267948966" upper="2.0943951023931953" effort="12" velocity="3"/>
+  </joint>
+  <joint name="slide" type="prismatic">
+    <parent link="boom"/><child link="tool"/>
+    <origin xyz="0.5 0 0" rpy="0 0 1.5707963267948966"/><axis xyz="1 0 0"/>
+    <limit lower="-0.1" upper="0.25" effort="8" velocity="1"/>
+  </joint>
+</robot>

@@ -1,0 +1,73 @@
+#usda 1.0
+(
+    defaultPrim = "arm"
+    metersPerUnit = 1
+    kilogramsPerUnit = 1
+    upAxis = "Z"
+)
+
+def Xform "arm" (
+    prepend apiSchemas = ["PhysicsArticulationRootAPI"]
+)
+{
+    def Xform "base" (
+        prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+    )
+    {
+        float physics:mass = 1
+        point3f physics:centerOfMass = (0, 0, 0)
+        float3 physics:diagonalInertia = (0.1, 0.1, 0.1)
+    }
+    def Xform "boom" (
+        prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+    )
+    {
+        double3 xformOp:translate = (0.25, -0.5, 0.125)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+        float physics:mass = 1
+        point3f physics:centerOfMass = (0.25, 0, 0)
+        float3 physics:diagonalInertia = (0.1, 0.1, 0.1)
+    }
+    def Xform "tool" (
+        prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+    )
+    {
+        double3 xformOp:translate = (0.75, -0.5, 0.125)
+        quatf xformOp:orient = (0.70710678, 0, 0, 0.70710678)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+        float physics:mass = 0.5
+        point3f physics:centerOfMass = (0.125, -0.0625, 0.03125)
+        float3 physics:diagonalInertia = (0.1, 0.1, 0.1)
+        def Sphere "marker" (
+            prepend apiSchemas = ["PhysicsCollisionAPI"]
+        )
+        {
+            double radius = 0.03125
+            double3 xformOp:translate = (0.125, -0.0625, 0.03125)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+    }
+    def PhysicsFixedJoint "mount"
+    {
+        rel physics:body1 = </arm/base>
+    }
+    def PhysicsRevoluteJoint "yaw"
+    {
+        rel physics:body0 = </arm/base>
+        rel physics:body1 = </arm/boom>
+        point3f physics:localPos0 = (0.25, -0.5, 0.125)
+        uniform token physics:axis = "Z"
+        float physics:lowerLimit = -90
+        float physics:upperLimit = 120
+    }
+    def PhysicsPrismaticJoint "slide"
+    {
+        rel physics:body0 = </arm/boom>
+        rel physics:body1 = </arm/tool>
+        point3f physics:localPos0 = (0.5, 0, 0)
+        quatf physics:localRot0 = (0.70710678, 0, 0, 0.70710678)
+        uniform token physics:axis = "X"
+        float physics:lowerLimit = -0.1
+        float physics:upperLimit = 0.25
+    }
+}

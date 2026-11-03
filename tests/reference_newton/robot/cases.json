@@ -1,0 +1,303 @@
+{
+  "schema": "newton-reference-v1",
+  "lane": "robot",
+  "fixtures": {
+    "arm": {
+      "joint_types": ["revolute", "prismatic"],
+      "joint_positions_m": [[0.25, -0.5, 0.125], [0.5, 0, 0]],
+      "joint_frames_xyzw": [[0, 0, 0, 1], [0, 0, 0.7071067811865476, 0.7071067811865476]],
+      "joint_axes": [[0, 0, 1], [1, 0, 0]],
+      "body_mass_kg": [1, 0.5],
+      "body_com_m": [[0.25, 0, 0], [0.125, -0.0625, 0.03125]],
+      "body_inertia_diagonal_kg_m2": [[0.1, 0.1, 0.1], [0.1, 0.1, 0.1]],
+      "yaw_limits_rad": [-1.5707963267948966, 2.0943951023931953],
+      "slide_limits_m": [-0.1, 0.25],
+      "marker_local_m": [0.125, -0.0625, 0.03125],
+      "marker_radius_m": 0.03125
+    },
+    "rail": {
+      "joint_types": ["prismatic"],
+      "joint_positions_m": [[0, 0, 0]],
+      "joint_frames_xyzw": [[0, 0, 0, 1]],
+      "joint_axes": [[1, 0, 0]],
+      "body_mass_kg": [2],
+      "body_com_m": [[0, 0, 0]],
+      "body_inertia_diagonal_kg_m2": [[0.1, 0.1, 0.1]]
+    }
+  },
+  "cases": [
+    {
+      "id": "ROBOT-FK-ZERO",
+      "family": "native-fk",
+      "difficulty": "easy",
+      "inputs": {
+        "fixture": "arm",
+        "source": "builder",
+        "q": [0, 0],
+        "qd": [0, 0],
+        "slide_probe_m": 0.015625
+      },
+      "expected": {
+        "dof_count": 2,
+        "tool_origin_m": [0.75, -0.5, 0.125],
+        "marker_world_m": [0.8125, -0.375, 0.15625],
+        "slide_axis_world": [0, 1, 0],
+        "marker_velocity_m_s": [0, 0, 0]
+      },
+      "tolerances": {"tool_origin_m": 0.000002, "marker_world_m": 0.000002, "slide_axis_world": 0.00002, "marker_velocity_m_s": 0.000002},
+      "oracle": "零位先把 slide 局部 X 转到世界 Y；半米臂长与偏心标记直接相加。",
+      "newton": {"status": "run", "devices": ["cpu", "cuda:0"], "reason": "ModelBuilder 创建 R-P 臂；在指定设备进行 FK、形状传感及微位移查询。"},
+      "phymeo": {"status": "run", "devices": ["cpu", "cuda:0"], "reason": "RobotModel 程序式建模。HOST 读取 FK 与点端口，CUDA 读取 tyx 的 FK 与点雅可比。"}
+    },
+    {
+      "id": "ROBOT-FK-TURN-SLIDE",
+      "family": "native-fk",
+      "difficulty": "medium",
+      "inputs": {
+        "fixture": "arm",
+        "source": "builder",
+        "q": [1.5707963267948966, 0.125],
+        "qd": [0.5, -0.125],
+        "slide_probe_m": 0.015625
+      },
+      "expected": {
+        "dof_count": 2,
+        "tool_origin_m": [0.125, 0, 0.125],
+        "marker_world_m": [0, 0.0625, 0.15625],
+        "slide_axis_world": [-1, 0, 0],
+        "marker_velocity_m_s": [-0.15625, -0.125, 0]
+      },
+      "tolerances": {"tool_origin_m": 0.000002, "marker_world_m": 0.000002, "slide_axis_world": 0.00002, "marker_velocity_m_s": 0.000002},
+      "oracle": "四分之一转后 slide 轴朝世界 -X。工具点速度为 ω×(点−铰点)+ṡ·轴。",
+      "newton": {"status": "run", "devices": ["cpu", "cuda:0"], "reason": "ModelBuilder 创建 R-P 臂；在指定设备进行 FK、形状传感及微位移查询。"},
+      "phymeo": {"status": "run", "devices": ["cpu", "cuda:0"], "reason": "RobotModel 程序式建模。HOST 读取 FK 与点端口，CUDA 读取 tyx 的 FK 与点雅可比。"}
+    },
+    {
+      "id": "ROBOT-FK-OBLIQUE-HOLDOUT",
+      "family": "native-fk",
+      "difficulty": "medium",
+      "inputs": {
+        "fixture": "arm",
+        "source": "builder",
+        "q": [-0.9272952180016122, -0.0625],
+        "qd": [-0.75, 0.0625],
+        "slide_probe_m": 0.015625
+      },
+      "expected": {
+        "dof_count": 2,
+        "tool_origin_m": [0.5, -0.9375, 0.125],
+        "marker_world_m": [0.6375, -0.9125, 0.15625],
+        "slide_axis_world": [0.8, 0.6, 0],
+        "marker_velocity_m_s": [-0.259375, -0.253125, 0]
+      },
+      "tolerances": {"tool_origin_m": 0.000002, "marker_world_m": 0.000002, "slide_axis_world": 0.00002, "marker_velocity_m_s": 0.000002},
+      "oracle": "独立留出取 cosθ=3/5、sinθ=−4/5；Rθ·(9/16,1/16) 得标记在铰点平面内的偏移 (0.3875,−0.4125)。",
+      "newton": {"status": "run", "devices": ["cpu", "cuda:0"], "reason": "ModelBuilder 创建 R-P 臂；在指定设备进行 FK、形状传感及微位移查询。"},
+      "phymeo": {"status": "run", "devices": ["cpu", "cuda:0"], "reason": "RobotModel 程序式建模。HOST 读取 FK 与点端口，CUDA 读取 tyx 的 FK 与点雅可比。"}
+    },
+    {
+      "id": "ROBOT-URDF-TOOL",
+      "family": "asset-fk",
+      "difficulty": "medium",
+      "inputs": {
+        "fixture": "arm",
+        "source": "arm.urdf",
+        "q": [1.5707963267948966, 0.125],
+        "qd": [0.5, -0.125],
+        "slide_probe_m": 0.015625
+      },
+      "expected": {
+        "dof_count": 2,
+        "tool_origin_m": [0.125, 0, 0.125],
+        "marker_world_m": [0, 0.0625, 0.15625],
+        "slide_axis_world": [-1, 0, 0],
+        "marker_velocity_m_s": [-0.15625, -0.125, 0],
+        "joint_kinds": ["revolute", "prismatic"],
+        "tool_colliders": 1,
+        "tool_collider_kind": "sphere",
+        "marker_radius_m": 0.03125,
+        "local_sphere_m": [0.125, -0.0625, 0.03125],
+        "yaw_limits_rad": [-1.5707963267948966, 2.0943951023931953],
+        "slide_limits_m": [-0.1, 0.25]
+      },
+      "tolerances": {
+        "tool_origin_m": 0.000002,
+        "marker_world_m": 0.000002,
+        "slide_axis_world": 0.00002,
+        "marker_velocity_m_s": 0.000002,
+        "marker_radius_m": 0.000001,
+        "local_sphere_m": 0.000001,
+        "yaw_limits_rad": 0.000002,
+        "slide_limits_m": 0.000001
+      },
+      "oracle": "URDF 米/弧度，visual box 与唯一 collision sphere 分开。用四分之一转的手算世界位置和 COM 速度检查导入。",
+      "newton": {"status": "run", "devices": ["cpu", "cuda:0"], "reason": "本地资产在 HOST 解析；指定设备运行 eval_fk 与偏心碰撞球的 SensorFrameTransform。"},
+      "phymeo": {"status": "gap", "devices": [], "reason": "缺少对应格式的公开机器人导入入口；同形的程序式对照单列。"}
+    },
+    {
+      "id": "ROBOT-MJCF-DEGREES",
+      "family": "asset-fk",
+      "difficulty": "medium",
+      "inputs": {
+        "fixture": "arm",
+        "source": "arm.mjcf.xml",
+        "q": [1.5707963267948966, 0.125],
+        "qd": [0.5, -0.125],
+        "slide_probe_m": 0.015625
+      },
+      "expected": {
+        "dof_count": 2,
+        "tool_origin_m": [0.125, 0, 0.125],
+        "marker_world_m": [0, 0.0625, 0.15625],
+        "slide_axis_world": [-1, 0, 0],
+        "marker_velocity_m_s": [-0.15625, -0.125, 0],
+        "joint_kinds": ["revolute", "prismatic"],
+        "tool_colliders": 1,
+        "tool_collider_kind": "sphere",
+        "marker_radius_m": 0.03125,
+        "local_sphere_m": [0.125, -0.0625, 0.03125],
+        "yaw_limits_rad": [-1.5707963267948966, 2.0943951023931953],
+        "slide_limits_m": [-0.1, 0.25]
+      },
+      "tolerances": {
+        "tool_origin_m": 0.000002,
+        "marker_world_m": 0.000002,
+        "slide_axis_world": 0.00002,
+        "marker_velocity_m_s": 0.000002,
+        "marker_radius_m": 0.000001,
+        "local_sphere_m": 0.000001,
+        "yaw_limits_rad": 0.000002,
+        "slide_limits_m": 0.000001
+      },
+      "oracle": "MJCF 度数 −90、120 换算弧度，移动限位仍为米。相同四分之一转、偏心球和运动速度独立核对。",
+      "newton": {"status": "run", "devices": ["cpu", "cuda:0"], "reason": "本地资产在 HOST 解析；指定设备运行 eval_fk 与偏心碰撞球的 SensorFrameTransform。"},
+      "phymeo": {"status": "gap", "devices": [], "reason": "缺少对应格式的公开机器人导入入口；同形的程序式对照单列。"}
+    },
+    {
+      "id": "ROBOT-USD-ZUP",
+      "family": "asset-fk",
+      "difficulty": "hard",
+      "inputs": {
+        "fixture": "arm",
+        "source": "arm.usda",
+        "q": [1.5707963267948966, 0.125],
+        "qd": [0.5, -0.125],
+        "slide_probe_m": 0.015625
+      },
+      "expected": {
+        "dof_count": 2,
+        "tool_origin_m": [0.125, 0, 0.125],
+        "marker_world_m": [0, 0.0625, 0.15625],
+        "slide_axis_world": [-1, 0, 0],
+        "marker_velocity_m_s": [-0.15625, -0.125, 0],
+        "joint_kinds": ["revolute", "prismatic"],
+        "tool_colliders": 1,
+        "tool_collider_kind": "sphere",
+        "marker_radius_m": 0.03125,
+        "local_sphere_m": [0.125, -0.0625, 0.03125],
+        "yaw_limits_rad": [-1.5707963267948966, 2.0943951023931953],
+        "slide_limits_m": [-0.1, 0.25]
+      },
+      "tolerances": {
+        "tool_origin_m": 0.000002,
+        "marker_world_m": 0.000002,
+        "slide_axis_world": 0.00002,
+        "marker_velocity_m_s": 0.000002,
+        "marker_radius_m": 0.000001,
+        "local_sphere_m": 0.000001,
+        "yaw_limits_rad": 0.000002,
+        "slide_limits_m": 0.000001
+      },
+      "oracle": "USD 为 1 m/单位、1 kg/单位、Z 向上，转动限位为度。局部参照系与原点按手算链连乘。",
+      "newton": {"status": "run", "devices": ["cpu", "cuda:0"], "reason": "本地资产在 HOST 解析；指定设备运行 eval_fk 与偏心碰撞球的 SensorFrameTransform。"},
+      "phymeo": {"status": "gap", "devices": [], "reason": "缺少对应格式的公开机器人导入入口；同形的程序式对照单列。"}
+    },
+    {
+      "id": "ROBOT-USD-CENTIMETER-WARNING",
+      "family": "usd-unit-diagnostic",
+      "difficulty": "easy",
+      "inputs": {"source": "arm.usda", "stage_meters_per_unit": 0.01},
+      "expected": {"reported_meters_per_unit": 0.01, "nonunit_warning_count": 1},
+      "tolerances": {"reported_meters_per_unit": 1e-12},
+      "oracle": "在独立内存层把同一刚体文件的 stage 单位改成厘米。1.7 刚体导入契约警告非单位米。该项只观察主机诊断。",
+      "newton": {"status": "run", "devices": ["cpu"], "reason": "OpenUSD 内存 stage 与 ModelBuilder.add_usd 返回的单位、诊断均发生在 HOST。"},
+      "phymeo": {"status": "gap", "devices": [], "reason": "缺少机器人 USD stage 导入入口。"}
+    },
+    {
+      "id": "ROBOT-IK-REACHABLE",
+      "family": "point-ik",
+      "difficulty": "hard",
+      "inputs": {
+        "fixture": "arm",
+        "source": "builder",
+        "seed": [1.3, 0.09],
+        "target_world_m": [0, 0.0625, 0.15625],
+        "iterations": 40
+      },
+      "expected": {"marker_world_m": [0, 0.0625, 0.15625], "residual_m": 0, "yaw_rad": 1.5707963267948966, "slide_m": 0.125},
+      "tolerances": {"marker_world_m": 0.0001, "residual_m": 0.0001, "yaw_rad": 0.0005, "slide_m": 0.0003},
+      "oracle": "固定平面内存在已知解 θ=π/2、s=1/8；另一逆解 s=−3/8 在滑轨下限外。",
+      "newton": {"status": "run", "devices": ["cpu", "cuda:0"], "reason": "指定设备使用点位置与关节限位目标执行 IKSolver，再调用设备 FK 及形状传感器复测。"},
+      "phymeo": {"status": "run", "devices": ["cpu"], "reason": "公开 solve_point_ik 及 RobotPointPort 在 HOST 上独立读回几何残差。"}
+    },
+    {
+      "id": "ROBOT-IK-OFFPLANE",
+      "family": "point-ik",
+      "difficulty": "hard",
+      "inputs": {
+        "fixture": "arm",
+        "source": "builder",
+        "seed": [1.3, 0.09],
+        "target_world_m": [0, 0.0625, 0.21875],
+        "iterations": 40
+      },
+      "expected": {"marker_world_m": [0, 0.0625, 0.15625], "residual_m": 0.0625, "yaw_rad": 1.5707963267948966, "slide_m": 0.125},
+      "tolerances": {"marker_world_m": 0.0001, "residual_m": 0.0001, "yaw_rad": 0.0005, "slide_m": 0.0003},
+      "oracle": "把同一目标沿 Z 抬高 1/16 m。所有工具点都在 z=5/32 m，故最小距离恰为 1/16 m。",
+      "newton": {"status": "run", "devices": ["cpu", "cuda:0"], "reason": "指定设备使用点位置与关节限位目标执行 IKSolver，再调用设备 FK 及形状传感器复测。"},
+      "phymeo": {"status": "run", "devices": ["cpu"], "reason": "公开 solve_point_ik 及 RobotPointPort 在 HOST 上独立读回几何残差。"}
+    },
+    {
+      "id": "ROBOT-DRIVE-REVERSE",
+      "family": "saturated-rail",
+      "difficulty": "medium",
+      "inputs": {
+        "fixture": "rail",
+        "dt_s": 0.0625,
+        "initial_q_m": 0,
+        "initial_v_m_s": 0,
+        "gravity_m_s2": [0, 0, 0],
+        "kp_n_m": 16,
+        "kd_n_s_m": 1,
+        "force_limit_n": 4,
+        "targets_m": [1, 1, -1, -1]
+      },
+      "expected": {"effort_n": [4, 4, -4, -4], "velocity_m_s": [0.125, 0.25, 0.125, 0], "position_m": [0.0078125, 0.0234375, 0.03125, 0.03125]},
+      "tolerances": {"effort_n": 0.00001, "velocity_m_s": 0.00001, "position_m": 0.000002},
+      "oracle": "2 kg 无重力滑块。此命令的显式及隐式 PD 在每步均达 ±4 N 饱和，v 每步变化 ±1/8 m/s，q 加 h·v_new。核对全部物理子步。",
+      "newton": {"status": "run", "devices": ["cpu", "cuda:0"], "reason": "DrivePD、ClampingMaxEffort、Control.joint_f 和 Featherstone 产生真实单轴状态。"},
+      "phymeo": {"status": "run", "devices": ["cpu"], "reason": "solve_bounded_pd 的饱和命令送入 make_robot_runtime，逐步读取已接受状态。"}
+    },
+    {
+      "id": "ROBOT-DRIVE-NEGATIVE-HOLDOUT",
+      "family": "saturated-rail",
+      "difficulty": "medium",
+      "inputs": {
+        "fixture": "rail",
+        "dt_s": 0.0625,
+        "initial_q_m": 0,
+        "initial_v_m_s": 0,
+        "gravity_m_s2": [0, 0, 0],
+        "kp_n_m": 16,
+        "kd_n_s_m": 1,
+        "force_limit_n": 4,
+        "targets_m": [-1, 1, 1]
+      },
+      "expected": {"effort_n": [-4, 4, 4], "velocity_m_s": [-0.125, 0, 0.125], "position_m": [-0.0078125, -0.0078125, 0]},
+      "tolerances": {"effort_n": 0.00001, "velocity_m_s": 0.00001, "position_m": 0.000002},
+      "oracle": "2 kg 无重力滑块。此命令的显式及隐式 PD 在每步均达 ±4 N 饱和，v 每步变化 ±1/8 m/s，q 加 h·v_new。核对全部物理子步。",
+      "newton": {"status": "run", "devices": ["cpu", "cuda:0"], "reason": "DrivePD、ClampingMaxEffort、Control.joint_f 和 Featherstone 产生真实单轴状态。"},
+      "phymeo": {"status": "run", "devices": ["cpu"], "reason": "solve_bounded_pd 的饱和命令送入 make_robot_runtime，逐步读取已接受状态。"}
+    }
+  ]
+}

@@ -89,3 +89,46 @@ def test_curved_cloth_domain_outcomes_preserve_finite_geometry():
     for kwargs in (dict(radius=.0625), dict(end=FACE+np.array(((0.,0.,.1),(0,0,-.1),(0,0,0))))):
         row,_,_=observe(asset,center,**kwargs)
         assert row.status == "unsupported" and row.witness is None and row.sweep is None
+
+
+@pytest.mark.parametrize("kind,radius", [("particle",0.),("rounded_particle",1/16)])
+@pytest.mark.parametrize("gap",[1/32,-1/64])
+def test_deformable_particle_owns_its_own_skin_on_a_curved_rigid_body(kind,radius,gap):
+    rk, pk = ph.CollisionKey(2,3,4), ph.CollisionKey(2,8,12)
+    asset = ph.CurvedSolid("ellipsoid",(0.5, 0.375, 0.25))
+    shape=ph.CollisionShape(rk,asset.kind,(12,),curved=asset)
+    pt=ph.CollisionShape(pk,kind,(42,),radius=radius)
+    model=ph.CollisionModel((pt,shape))
+    skin=0.25+gap
+    paths={rk:ph.CollisionMotion([[0.,0.,0.]]),pk:ph.CollisionMotion([[0.,0.,skin+radius]])}
+    with ph.CollisionWorkspace(model) as work:
+        row,=ph.detect(model,paths,ph.CollisionPolicy(margin=0.25),work).pairs
+    assert row.family=="RD" and row.status==("overlap" if gap<0 else "separated"),row.reason
+    repeat=row.witness
+    assert repeat.second_weights==((42,1.),) and abs(repeat.gap_m-gap)<2e-5
+    np.testing.assert_allclose(repeat.second_point,(0,0,skin),rtol=0,atol=2e-4)
+    measured=np.array(repeat.second_point)-paths[pk].start[0]
+    assert abs(np.linalg.norm(measured)-radius)<2e-5
+
+
+@pytest.mark.tyx
+def test_mixed_curved_soft_faces_retain_world_material_ids_on_real_device(tyx_mode,tmp_path):
+    worlds, paths = {}, {}
+    for world,gap in ((17,-1/32),(3,1/16)):
+        rk,ck = ph.CollisionKey(world,1,0),ph.CollisionKey(world,2,0)
+        shape=ph.CollisionShape(rk,"ellipsoid",(55,),curved=ph.CurvedSolid("ellipsoid",(3/8,1/4,1/8)))
+        cloth=ph.CollisionShape(ck,"triangle",IDS)
+        worlds[world]=ph.CollisionModel((cloth,shape))
+        paths[world]={rk:ph.CollisionMotion([[0,0,1/8+gap]]),ck:ph.CollisionMotion(FACE)}
+    with ph.WorldCollisionWorkspace(worlds.items(),tyx_mode,cache_root=tmp_path) as batch:
+        result=batch.detect(paths,dict.fromkeys(worlds,ph.CollisionPolicy(margin=1/4)))
+        for key,gap in ((3,1/16),(17,-1/32)):
+            row,=result[key].pairs
+            assert row.status==("overlap" if gap<0 else "separated")
+            assert row.family=="RD" and row.first.world==row.second.world==key
+            assert {k for k,_ in row.witness.second_weights}==set(IDS)
+            assert abs(row.witness.gap_m-gap)<2e-5
+        stats=batch.stats()
+        assert stats["completed_launches"]>0 and stats["host_pair_table_slots"]==2
+        if tyx_mode=="cuda":
+            assert stats["device_pair_table_slots"]==2 and stats["synchronizations"]>0

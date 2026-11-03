@@ -430,7 +430,9 @@ def _proved_sheet_pairs(workspace, paths, flags, margin):
     return rows
 
 
-def _detect_pairs(workspace, paths, flags, selected, proximity=False, resolved=None, *, pair_start=0):
+def _detect_pairs(
+    workspace, paths, flags, selected, proximity=False, resolved=None, *, pair_start=0
+):
     rows = []
     shapes = workspace._model.shapes
     resolved = {} if resolved is None else resolved
@@ -584,9 +586,7 @@ def _detect_pairs(workspace, paths, flags, selected, proximity=False, resolved=N
                         analytic = hull
                     elif not code:
                         try:
-                            analytic = MeshHullQuery(
-                                mesh, hull, mesh_first, selected.get(slot)
-                            )
+                            analytic = MeshHullQuery(mesh, hull, mesh_first, selected.get(slot))
                             workspace._mesh_work["mesh_facet_pairs_total"] += len(mesh.facets)
                             workspace._mesh_work["mesh_facet_pairs_tested"] += len(analytic.parts)
                         except SolverFailure as error:
@@ -720,7 +720,9 @@ class CollisionWorkspace:
         instance._initialize(model, backend, cache_root, "all_pairs", "all_facets", False, pairs)
         return instance
 
-    def _initialize(self, model, backend, cache_root, broad_phase, mesh_midphase, sheet_bounds, pairs):
+    def _initialize(
+        self, model, backend, cache_root, broad_phase, mesh_midphase, sheet_bounds, pairs
+    ):
         if not isinstance(model, CollisionModel):
             raise TypeError("collision workspace requires a CollisionModel")
         if backend not in ("host", "interpret", "cuda"):
@@ -879,13 +881,9 @@ class CollisionWorkspace:
                 else:
                     flags = space.decode_sap(space.host_sap(bounds, space.order(bounds)))
             elif self._engine is None:
-                bounds, flags = _host_query(
-                    self._offsets, self._tags, self._pairs, envelopes
-                )
+                bounds, flags = _host_query(self._offsets, self._tags, self._pairs, envelopes)
             elif self._broad_phase == "bvh":
-                bounds, flags = self._engine.query(
-                    envelopes, trees=self._trees, pending=pending
-                )
+                bounds, flags = self._engine.query(envelopes, trees=self._trees, pending=pending)
             else:
                 bounds, flags = self._engine.query(envelopes)
             if (
@@ -950,7 +948,9 @@ def _detection_result(model, paths, backend, count, rows, bounds):
         count,
         rows,
         boxes,
-        solid_body_pairs(model, paths, rows) if any(s.kind == "tetrahedron" for s in model.shapes) else (),
+        solid_body_pairs(model, paths, rows)
+        if any(s.kind == "tetrahedron" for s in model.shapes)
+        else (),
     )
 
 

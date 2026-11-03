@@ -10,9 +10,7 @@ import phymeo as ph
 
 
 def robot_motion(model, speed, backend, cache_root):
-    drive = ph.DrivenRobotProgram(
-        model, kp=np.zeros(1), kd=np.zeros(1), effort_limit=np.zeros(1)
-    )
+    drive = ph.DrivenRobotProgram(model, kp=np.zeros(1), kd=np.zeros(1), effort_limit=np.zeros(1))
     entry = ph.RobotState(np.zeros(1), np.array([speed]))
     with drive.stepper(ph.StepSettings(substeps=1)) as stepper:
         step = stepper.step(drive.initial_state(entry), drive.inputs(np.zeros(1)), 1.0)
@@ -25,10 +23,14 @@ def robot_motion(model, speed, backend, cache_root):
     world = ph.RobotSite(None)
     marker = ph.RobotSite(None, (1 / 4, 0, 3 / 8))
     first, last = (
-        ph.measure_relative_site(model, state, world, center, backend=backend, cache_root=cache_root)
+        ph.measure_relative_site(
+            model, state, world, center, backend=backend, cache_root=cache_root
+        )
         for state in (entry, end)
     )
-    reading = ph.measure_relative_site(model, end, center, marker, backend=backend, cache_root=cache_root)
+    reading = ph.measure_relative_site(
+        model, end, center, marker, backend=backend, cache_root=cache_root
+    )
     tolerance = 2e-12 if backend == "host" else 2e-5
     angle = float(end.q[0] - entry.q[0])
     np.testing.assert_allclose(first.rotation, np.eye(3), rtol=0, atol=tolerance)
@@ -142,7 +144,9 @@ def observe(backend, cache_root, *, partitioned):
             if backend == "cuda":
                 assert stats["device_pair_table_slots"] == 2
                 assert stats["completed_launches"] == 2 and stats["synchronizations"] == 1
-    (cache_root / "driven-rotation.json").write_text(json.dumps(record, allow_nan=False), encoding="utf-8")
+    (cache_root / "driven-rotation.json").write_text(
+        json.dumps(record, allow_nan=False), encoding="utf-8"
+    )
 
 
 def test_measured_rotation_generates_two_contact_events(tmp_path):

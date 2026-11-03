@@ -2,6 +2,7 @@
 
 import json
 from contextlib import ExitStack
+from dataclasses import asdict
 from math import hypot
 
 import numpy as np
@@ -198,7 +199,7 @@ def spring_impact_window(mode, root):
             np.testing.assert_allclose(momentum,[.25,0,0],atol=5e-6,rtol=0)
             energy=.25*(v[0]@v[0])+.5*(v[1]@v[1])+32*max(1/16-gap,0.)**2
             assert abs(energy-.0625)<.003
-            history.append(dict(step=n+1,entry_force_n=magnitude,analytic_entry_force_n=64*compression,
+            history.append(dict(step=n+1,contacts=[asdict(c) for c in sites],entry_force_n=magnitude,analytic_entry_force_n=64*compression,
                 end_gap_m=gap,end_positions_m=state.rigid.position.tolist(),end_velocity_m_s=v.tolist(),
                 momentum_kg_m_s=momentum.tolist(),mechanical_energy_j=energy))
         assert history[7]["entry_force_n"]==0 and history[-1]["entry_force_n"]==0
@@ -252,7 +253,7 @@ def sliding_cloth_window(mode, root):
             measured=.5*state.rigid.velocity[0]+state.particles.velocity.sum(axis=0)
             assert frame.path.pairs[0].status=="separated"
             np.testing.assert_allclose(measured,impulse,atol=5e-4 if mode!="host" else 1e-8,rtol=0)
-            history.append(dict(step=n+1,external_force_n=ext.rigid.force.tolist(),entry_normal_n=got[0].force_n if got else 0.,
+            history.append(dict(step=n+1,contacts=[asdict(c) for c in got],external_force_n=ext.rigid.force.tolist(),entry_normal_n=got[0].force_n if got else 0.,
                 contact_power_w=got[0].power_w if got else 0.,rigid_force_n=force.tolist(),
                 rigid_torque_nm=frame.loads.inputs.rigid.torque[0].tolist(),end_q_xyzw=state.rigid.orientation.tolist(),
                 end_omega_rad_s=state.rigid.angular_velocity.tolist(),cloth_positions_m=state.particles.position.tolist(),

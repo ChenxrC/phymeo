@@ -53,7 +53,7 @@ class CooperativeReception:
         transfer,
         *,
         layer_width=0.0,
-        axial_clearance=0.0,
+        axial_clearance=None,
     ):
         self.nodes = nodes
         self.dt = dt
@@ -62,7 +62,9 @@ class CooperativeReception:
         self.home = receiver_home.copy()
         if not np.isfinite(layer_width) or layer_width < 0:
             raise ValueError("contact layer width must be finite and nonnegative")
-        if not np.isfinite(axial_clearance) or axial_clearance < 0:
+        if axial_clearance is not None and (
+            not np.isfinite(axial_clearance) or axial_clearance < 0
+        ):
             raise ValueError("axial clearance must be finite and nonnegative")
         self.axial_clearance = axial_clearance
         self.standoff_clearance = clearance + layer_width
@@ -216,24 +218,28 @@ class CooperativeReception:
         if self.anchor is None:
             visible = window.acquire(x, self.nodes, clearance=self.clearance)
             if visible is None:
-                target = window.approach_target(
-                    x,
-                    self.nodes,
-                    preferred=self.standoff.target if self.standoff else None,
-                    axial_clearance=self.axial_clearance,
-                )
+                target = self.standoff.target if self.standoff else None
+                if self.axial_clearance is not None:
+                    target = window.approach_target(
+                        x, self.nodes, preferred=target, axial_clearance=self.axial_clearance
+                    )
+                    if target is None:
+                        return exterior("await_aperture")
                 if target is None:
-                    return exterior("await_aperture")
-                p, vel = target.evaluate(x), target.evaluate(v)
+                    p, vel = x[self.nodes].mean(0), v[self.nodes].mean(0)
+                else:
+                    p, vel = target.evaluate(x), target.evaluate(v)
                 cmd = approach(p, vel, False)
                 cmd.observation = dict(
                     action="approach",
-                    guidance_nodes=list(target.nodes),
-                    guidance_fraction=target.fraction,
                     material_point_m=p.tolist(),
                     material_velocity_m_s=vel.tolist(),
                     tool_velocity_command_m_s=cmd.receiver_rate.tolist(),
                 )
+                if self.axial_clearance is not None:
+                    cmd.observation.update(
+                        guidance_nodes=list(target.nodes), guidance_fraction=target.fraction
+                    )
                 return cmd
             self.anchor = visible
             self._event("receiver_address_acquired", frame)

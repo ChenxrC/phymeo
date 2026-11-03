@@ -8,7 +8,7 @@ from pathlib import Path
 
 from phymeo.experiments.cloth_drape import run_drape
 from phymeo.experiments.compliant_cloth import run_impact
-from phymeo.experiments.compliant_handoff import run_handoff
+from phymeo.experiments.compliant_handoff import RECEIVER_CONTROLS, run_handoff
 from phymeo.experiments.sheet_fabric import fabric_preset
 from phymeo.experiments.single_gripper_bend import run_single_gripper
 
@@ -52,8 +52,8 @@ def main():
     )
     parser.add_argument(
         "--receiver-control",
-        choices=("snapshot", "material", "cooperative"),
-        help="hold the initial target, follow the material, or acquire and transport cooperatively",
+        choices=RECEIVER_CONTROLS,
+        help="select aperture-guided to try the experimental open-jaw guidance",
     )
     parser.add_argument(
         "--self-contact",

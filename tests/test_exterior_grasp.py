@@ -7,7 +7,7 @@ from phymeo.control.material_grasp import ParallelJawWindow
 from phymeo.experiments.handoff_reception import CooperativeReception
 
 
-def fixture(x, center=0.0):
+def fixture(x, center=0.0, *, axial_clearance=None):
     pad = np.array(
         [[-0.022, 0, -0.019], [-0.022, 0, 0.019], [0.022, 0, 0.019], [0.022, 0, -0.019]]
     ) + [center, 0, 0.1]
@@ -39,6 +39,7 @@ def fixture(x, center=0.0):
         np.array([-0.1, 0.04]),
         np.array([center, 0.1]),
         np.array([0.0, 0.2]),
+        axial_clearance=axial_clearance,
     )
     return frame, control
 

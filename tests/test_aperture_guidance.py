@@ -10,7 +10,7 @@ from phymeo.control.material_grasp import MaterialEdgeTarget, ParallelJawWindow
 @pytest.mark.parametrize("side", [1.0, -1.0])
 def test_receiving_hand_retargets_a_reachable_part_of_the_same_ungrasped_edge(side):
     x = np.array([[0.08, 0.0, 0.09], [0.05, side * 0.024, 0.11]])
-    frame, controller = fixture(x)
+    frame, controller = fixture(x, axial_clearance=0.003)
     donor = np.asarray(frame["actual_tool_xz_m"]["A"])
     controller.command("lift_A", frame, donor, 0.0)
     assert side * controller.standoff.target.evaluate(x)[1] > 0.013
@@ -51,3 +51,35 @@ def test_axial_window_guidance_clips_the_edge_independently_of_lateral_capture(r
     assert window.approach_target(points, [0, 1], axial_clearance=0.02) is None
     with pytest.raises(ValueError, match="clearance"):
         window.approach_target(points, [0, 1], axial_clearance=float("nan"))
+
+
+def test_standard_cooperative_keeps_the_original_guidance_address():
+    x = np.array([[0.08, 0.0, 0.09], [0.05, 0.024, 0.11]])
+    frame, standard = fixture(x)
+    donor = np.asarray(frame["actual_tool_xz_m"]["A"])
+    standard.command("lift_A", frame, donor, 0.0)
+    frame["t"] += 0.01
+    motion = standard.command("lift_A", frame, donor, 0.01)
+    assert not motion.closed and motion.observation["action"] == "approach"
+    np.testing.assert_array_equal(
+        motion.observation["material_point_m"], standard.standoff.target.evaluate(x)
+    )
+    assert "guidance_nodes" not in motion.observation
+
+
+@pytest.mark.parametrize("policy, reserve", [("cooperative", None), ("aperture-guided", 0.003)])
+def test_normal_handoff_selects_the_requested_receiver_policy(monkeypatch, policy, reserve):
+    from phymeo.experiments import compliant_handoff
+
+    class PolicySelected(Exception):
+        pass
+
+    def receive(*args, **kwargs):
+        assert kwargs["axial_clearance"] == reserve
+        raise PolicySelected
+
+    monkeypatch.setattr(compliant_handoff, "CooperativeReception", receive)
+    with pytest.raises(PolicySelected):
+        compliant_handoff.run_handoff(
+            fabric="soft", robot="articulated-palm", receiver_control=policy
+        )

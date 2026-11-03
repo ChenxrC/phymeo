@@ -117,7 +117,18 @@ def main():
         assert asset.model.dof_count>0 and asset.collisions
         pose=asset.collision_motion(np.zeros(asset.model.dof_count))
         assert set(pose)=={g.shape.key for g in asset.collisions}
-        result["usd"]=dict(sdk=distribution("usd-core").version,moving_links=asset.model.dof_count,shapes=len(pose))
+        tool,=asset.collisions
+        key=ph.CollisionKey(0,93,0)
+        cylinder=ph.CollisionShape(key,"cylinder",(71,),curved=ph.CurvedSolid("cylinder",(.25,.25)))
+        model=ph.CollisionModel((*asset.collision_model.shapes,cylinder),asset.collision_model.excluded)
+        fixed={key:ph.CollisionMotion([[17/64,1/16,5/32]])}
+        with ph.CollisionWorkspace(model) as work:
+            clear,=ph.detect(model,pose|fixed,ph.CollisionPolicy(),work).pairs
+            contact,=ph.detect(model,asset.collision_motion(np.array([np.pi/2,1/8]))|fixed,ph.CollisionPolicy(),work).pairs
+        assert clear.status=="separated" and contact.status=="overlap"
+        assert (contact.first,contact.second)==(tool.shape.key,key) and abs(contact.witness.gap_m+1/64)<2e-6
+        result["usd"]=dict(sdk=distribution("usd-core").version,moving_links=asset.model.dof_count,shapes=len(pose),
+                           tool_cylinder_gap_m=contact.witness.gap_m)
     else:
         assert "pxr" not in sys.modules
         result.update(robot=robot_sample(ph,np),force=collision_and_force(ph,np,args.mode,args.out.parent/"cache"),

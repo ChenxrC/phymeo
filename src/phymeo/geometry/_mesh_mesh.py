@@ -2,17 +2,19 @@
 
 from dataclasses import dataclass, replace
 from fractions import Fraction as F
+from math import ceil, floor
 
 import numpy as np
 
 from ..core.capabilities import SolverFailure
 from ._collision_bvh import CollisionTrees
-from ._convex_hull import sparse_weights
+from ._convex_contact import HullPairQuery, _Axis
+from ._convex_hull import direction_key, sparse_weights
 from ._prism_clip import hull, intersect
-from ._round_sweep import _unit, _xyz
+from ._round_sweep import _GRID, _unit, _xyz
 from ._tetrahedral_surface import _TriangleMotion
 from ._triangle_pair_sweep import _cross3, _TrianglePair
-from .collision_witness import CollisionWitness
+from .collision_witness import CollisionSweep, CollisionWitness
 
 
 @dataclass(frozen=True)
@@ -292,11 +294,69 @@ class MeshMeshQuery:
         intrusion = -deepest[0].witness.gap_m if deepest else None
         return MeshMeshPose(relation, distance, intrusion, deepest, boundary, witness, count)
 
+    @staticmethod
+    def _facet_window(a, b):
+        # Full-dimensional triangle Minkowski differences use the two face axes
+        # and all edge-cross-edge axes already supplied by HullPairQuery.
+        window = HullPairQuery(a, b)._window(None)
+        if window is None or any(_cross3(a.face.normal, b.face.normal)):
+            return window
+        # Parallel triangles can meet coplanarly. Their in-plane separating
+        # directions are absent from the usual 3D face/cross-product axis set.
+        lo, hi = window
+        directions = {direction_key(_cross3(f.face.normal, edge))
+                      for f in (a, b) for edge in f.edge_rays}
+        for d in sorted(directions):
+            axis = _Axis(d, a, b).interval()
+            if axis is None:
+                return None
+            lo, hi = max(lo, axis[0]), min(hi, axis[1])
+            if lo > hi:
+                return None
+        return lo, hi
+
     def result(self, moving):
-        if moving:
-            return "unsupported", "mesh_mesh_swept_pair", None, None, None
-        pose = self.sample(F(0))
-        trace = MeshMeshTrace(pose, pose, None, None)
-        status = {"separated":"separated", "touching":"touching",
-                  "boundary_intersection_unclassified":"unresolved"}.get(pose.relation, "overlap")
-        return status, pose.relation, pose.witness, None, trace
+        start = self.sample(F(0))
+        if not moving:
+            trace = MeshMeshTrace(start, start, None, None)
+            status = {"separated": "separated", "touching": "touching",
+                      "boundary_intersection_unclassified": "unresolved"}.get(start.relation, "overlap")
+            return status, start.relation, start.witness, None, trace
+
+        first = F(0) if start.relation != "separated" else None
+        if first is None:
+            for i, j in self.facet_pairs(F(0), F(1)):
+                window = self._facet_window(self.a.facets[i], self.b.facets[j])
+                if window is not None and (first is None or window[0] < first):
+                    first = window[0]
+        end = self.sample(F(1), first_from_clear=first == 1)
+        if first is None:
+            if end.relation != "separated":
+                raise SolverFailure("mesh_mesh_time_interval_inconsistent")
+            sweep = CollisionSweep(start.witness.gap_m, end.witness.gap_m, None, None, None)
+            return "separated", "mesh_mesh_swept_separated", end.witness, sweep, MeshMeshTrace(start,end,None,None)
+
+        if first == 0:
+            entry = start
+        elif first == 1:
+            entry = end
+        else:
+            entry = self.sample(first, first_from_clear=True)
+        if first and (entry.relation != "touching" or not entry.boundary):
+            raise SolverFailure("mesh_mesh_first_boundary_unresolved")
+        bracket = (floor(first*_GRID)/_GRID, ceil(first*_GRID)/_GRID)
+        sample_time = float(first)
+        stored_time = F(sample_time)
+        if stored_time == first:
+            sampled_witness = entry.witness
+        elif stored_time == 0:
+            sampled_witness = start.witness
+        elif stored_time == 1:
+            sampled_witness = end.witness
+        else:
+            # The exact entry is kept separately. The ordinary sweep witness
+            # must describe the actual binary time published in witness_time.
+            sampled_witness = self.sample(stored_time).witness
+        trace = MeshMeshTrace(start,end,(first.numerator,first.denominator),entry)
+        sweep = CollisionSweep(start.witness.gap_m,end.witness.gap_m,bracket,sample_time,sampled_witness)
+        return "hit", "mesh_mesh_swept_boundary", end.witness, sweep, trace

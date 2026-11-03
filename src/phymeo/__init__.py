@@ -141,6 +141,13 @@ from .geometry.compact_contacts import (
     ContactBufferLimits,
     compact_contacts,
 )
+from .geometry.deformable_feature_sweep import (
+    DeformableFeaturePath,
+    DeformableFeatureSweeps,
+    DeformableSweepEvent,
+    DeformableThresholdSweep,
+    sweep_deformable_features,
+)
 from .geometry.deformable_features import (
     DeformableFeatureContact,
     DeformableFeatureContacts,
@@ -514,6 +521,11 @@ __all__ += [
     "CollisionWitness",
     "DeformableFeatureContact",
     "DeformableFeatureContacts",
+    "DeformableFeaturePath",
+    "DeformableFeatureSweeps",
+    "DeformableSweepEvent",
+    "DeformableThresholdSweep",
+    "sweep_deformable_features",
     "DeformableFeatureLoad",
     "DeformableFeatureLoads",
     "DeformableFeatureLoadSystem",

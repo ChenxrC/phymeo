@@ -74,6 +74,7 @@ class _Face:
     nodes: _Nodes
     edges: tuple[_Edge, ...]
     pose: _Pose
+    path: _FacePath
 
 
 class _Geometry(Exception):
@@ -81,34 +82,45 @@ class _Geometry(Exception):
         self.status, self.reason, self.keys = status, reason, tuple(sorted(set(keys)))
 
 
-def _topology(model, motion):
+def _topology(model, motion, *, affine=False):
     faces = []
     poses = {}
     points = {}
     introduced = {}
     graph = {}
     edge_faces = {}
+    end_points = {}
     for s in model.shapes:
         m = motion[s.key]
         if not isinstance(m, CollisionMotion):
             raise TypeError("deformable feature motion must use CollisionMotion")
         if s.kind != "triangle" or s.radius:
             raise _Geometry("unsupported", "unrounded_triangle_model_required", s.key)
-        if m.moving or m.turn is not None or m.body_orientation_xyzw is not None:
-            raise _Geometry("unsupported", "discrete_pose_required", s.key)
+        if m.turn is not None or m.body_orientation_xyzw is not None or (m.moving and not affine):
+            reason = "affine_material_path_required" if affine else "discrete_pose_required"
+            raise _Geometry("unsupported", reason, s.key)
         if len(m.start) != 3:
             raise ValueError("triangle material positions require three vertices")
-        pose = _Pose(_FacePath(s, m), F(0))
+        path = _FacePath(s, m)
+        pose = _Pose(path, F(0))
+        if affine and not path.valid:
+            raise _Geometry("unresolved", "face_degenerate_on_path", s.key)
         if not pose.den:
             raise _Geometry("invalid_geometry", "degenerate_face", s.key)
         owner = s.key.world, s.key.body
         nodes = []
-        for id_, p in zip(s.vertex_ids, pose.p, strict=True):
+        for id_, p, step in zip(s.vertex_ids, pose.p, path.step, strict=True):
             node = (*owner, id_)
             if node in points and not np.array_equal(points[node], p):
                 raise _Geometry(
                     "invalid_geometry", "inconsistent_material_position", introduced[node], s.key
                 )
+            if affine and node in end_points and not np.array_equal(end_points[node], p + step):
+                raise _Geometry(
+                    "invalid_geometry", "inconsistent_material_path", introduced[node], s.key
+                )
+            if affine:
+                end_points[node] = p + step
             points[node] = p
             introduced.setdefault(node, s.key)
             graph.setdefault(node, {node})
@@ -125,7 +137,7 @@ def _topology(model, motion):
         for a, b in edges:
             graph[a].add(b)
             graph[b].add(a)
-        face = _Face(s.key, nodes, edges, pose)
+        face = _Face(s.key, nodes, edges, pose, path)
         faces.append(face)
         poses[nodes] = face
     return faces, poses, points, graph
@@ -190,13 +202,13 @@ def _round_out(x, up):
     return value
 
 
-def _measure(key, support, points, poses, search_sq, force):
+def _measure(key, support, points, poses, search_sq, force, *, exact=False):
     kind, first, second = key
     p = points[first[0]]
     if kind == "VT":
         tri = poses[second].pose
         d2, (_, weights), _ = segment_minimum(p, _ZERO_VECTOR, tri)
-        if d2 >= search_sq:
+        if search_sq is not None and d2 >= search_sq:
             return None
         other = np.asarray(weights, dtype=object) @ tri.p
         ends = (
@@ -212,7 +224,7 @@ def _measure(key, support, points, poses, search_sq, force):
         p1 = points[first[1]]
         q, q1 = (points[n] for n in second)
         d2, span = _edge_minimum(p, p1, q, q1)
-        if d2 >= search_sq:
+        if search_sq is not None and d2 >= search_sq:
             return None
         out = []
         for a, b in span:
@@ -228,7 +240,7 @@ def _measure(key, support, points, poses, search_sq, force):
     low, high = sqrt_bounds(d2, 96)
     distance = float((low + high) / 2)
     inside = d2 < force * force
-    return DeformableFeatureContact(
+    contact = DeformableFeatureContact(
         kind,
         first,
         second,
@@ -242,6 +254,7 @@ def _measure(key, support, points, poses, search_sq, force):
         inside and bool(d2),
         ends,
     )
+    return (contact, d2) if exact else contact
 
 
 def _capacity(value, low, high, name):

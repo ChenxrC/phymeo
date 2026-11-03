@@ -159,6 +159,7 @@ from .solvers.coupled_program import (
     make_coupled_runtime,
 )
 from .solvers.coupled_xpbd import CoupledXPBDSolver
+from .solvers.driven_robot import DrivenRobotProgram
 from .solvers.dynamic_robot_finite_contact import DynamicRobotFiniteContactProgram
 from .solvers.dynamic_robot_friction_contact import DynamicRobotFrictionContactProgram
 from .solvers.dynamic_robot_normal_contact import DynamicRobotNormalContactProgram
@@ -260,6 +261,7 @@ __all__ = [
     "RobotInputs",
     "RobotPointPort",
     "RobotProgram",
+    "DrivenRobotProgram",
     "make_robot_runtime",
     "pendulum_chain",
     "load_urdf",

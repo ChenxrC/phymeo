@@ -189,6 +189,13 @@ class WorldCollisionWorkspace:
                 )
         return {key: attempts[key] for key in self._order}
 
+    def _empty_results(self, paths, rules, bounds):
+        results = {
+            part.key: _detection_result(part.model, paths, self._backend, 0, (), bounds[part.shapes])
+            for part in self._worlds
+        }
+        return {world: results[world] for world in self._order}
+
     def detect(self, motion_by_world, policy_by_world):
         """Classify the packed input once, then publish successful world observations together."""
         with self._lock:
@@ -196,7 +203,7 @@ class WorldCollisionWorkspace:
                 raise RuntimeError("world collision workspace is closed")
             rules, paths = self._inputs(motion_by_world, policy_by_world)
             if not self._model.shapes:
-                empty = {w: CollisionDetection("ok", self._backend, 0, (), ()) for w in self._order}
+                empty = self._empty_results(paths, rules, np.empty((0, 6), dtype=np.float32))
                 self._last = empty.copy()
                 return empty
             t0 = perf_counter_ns()
@@ -204,13 +211,7 @@ class WorldCollisionWorkspace:
             self._times["envelope_ns"] += perf_counter_ns() - t0
             if not len(self._pairs):
                 bounds = _host_bounds(self._unpaired_offsets, envelopes)
-                empty = {
-                    part.key: _detection_result(
-                        part.model, paths, self._backend, 0, (), bounds[part.shapes]
-                    )
-                    for part in self._worlds
-                }
-                ordered = {w: empty[w] for w in self._order}
+                ordered = self._empty_results(paths, rules, bounds)
                 self._last = ordered.copy()
                 return ordered
             if self._work is None:

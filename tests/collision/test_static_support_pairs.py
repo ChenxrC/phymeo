@@ -108,3 +108,18 @@ def test_static_support_does_not_claim_a_swept_toi():
         result = ph.detect(model, {ka: ma, kb: ph.CollisionMotion(mb.start, mb.start - [0.5, 0, 0])},
                            ph.CollisionPolicy(), work)
     assert result.pairs[0].status == "unsupported" and result.pairs[0].sweep is None
+
+
+def test_rotating_both_static_bodies_transports_the_common_normal():
+    cycled = (0.5, 0.5, 0.5, 0.5)
+    ka, kb = ph.CollisionKey(2, 12, 5), ph.CollisionKey(2, 40, 8)
+    a = geometry("cylinder", (0.5, 0.375), [[0, 0, 0]], orientation=cycled)
+    b = geometry("cylinder", (0.25, 0.25), [[0, 23 / 32, 0]], orientation=cycled)
+    shift = np.array([-4.125, 3.25, 1.0])
+    sa, ma = shape_and_motion(ka, a, shift)
+    sb, mb = shape_and_motion(kb, b, shift)
+    model = ph.CollisionModel((sb, sa))
+    with ph.CollisionWorkspace(model) as work:
+        (row,) = ph.detect(model, {ka: ma, kb: mb}, ph.CollisionPolicy(), work).pairs
+    assert row.status == "overlap" and row.witness.gap_m == pytest.approx(-1 / 32, abs=2e-5)
+    np.testing.assert_allclose(row.witness.normal, [0, 1, 0], rtol=0, atol=3e-3)

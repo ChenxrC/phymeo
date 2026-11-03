@@ -24,6 +24,7 @@ from ._collision_bvh import CollisionTrees
 from ._collision_spatial import SpatialPairs
 from ._convex_contact import HullPairQuery
 from ._convex_hull import HullShape
+from ._convex_support import ConvexSupportTrace, static_convex_support
 from ._curved_solids import CurvedContact, curved_bounds, curved_solid_contact
 from ._heightfield import HeightfieldTrace, heightfield_sphere_contact
 from ._hull_surface import HullSurfaceQuery
@@ -85,6 +86,7 @@ class CollisionPair:
     heightfield: HeightfieldTrace | None = None
     curved: CurvedContact | None = None
     mesh_mesh: MeshMeshTrace | None = None
+    support_map: ConvexSupportTrace | None = None
 
 
 @dataclass(frozen=True)
@@ -507,8 +509,14 @@ def _detect_pairs(
             if code == 0 and (a.curved is not None or b.curved is not None):
                 family = "RR" if a.rigid and b.rigid else "RD"
                 status, reason, witness, trace, sweep = curved_solid_contact(a, b, ma, mb)
+                support_map = None
+                if reason == "curved_shape_pair":
+                    fallback = static_convex_support(a, b, ma, mb)
+                    if fallback is not None:
+                        status, reason, witness, support_map = fallback
                 ready = CollisionPair(
-                    a.key, b.key, family, True, status, reason, witness, sweep, curved=trace
+                    a.key, b.key, family, True, status, reason, witness, sweep,
+                    curved=trace, support_map=support_map,
                 )
             elif code == 0 and (
                 (a.kind == "heightfield" and b.kind in ("sphere", "rounded_particle"))

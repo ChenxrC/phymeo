@@ -220,8 +220,15 @@ def test_curved_geometry_validation_and_unhandled_pair():
     ):
         with pytest.raises(ValueError):
             ph.CollisionShape(c, kind, ids, r, curved=asset)
-    model, paths, _, _ = scene(asset, [0, 0, 0], "sphere", [0, 0, 0.5], radius=0.25)
-    (pair,) = query(model, paths).pairs
+    model, paths, _, ball = scene(asset, [0, 0, 0], "sphere", [0, 0, 0.5], radius=0.25)
+    (inside,) = query(model, paths).pairs
+    assert inside.candidate and inside.status == "overlap"
+    # The center is inside the cone. Its nearest side is (2 - 0.5)/sqrt(17)
+    # away, and a further sphere radius is required to separate the solids.
+    signed = -0.25 - 1.5 / np.sqrt(17)
+    assert inside.support_map.gap_lower_m <= signed <= inside.support_map.gap_upper_m
+    moving = paths | {ball: ph.CollisionMotion(paths[ball].start, [[0.5, 0, 0.5]])}
+    (pair,) = query(model, moving).pairs
     assert pair.candidate and pair.status == "unsupported" and pair.witness is None
 
 

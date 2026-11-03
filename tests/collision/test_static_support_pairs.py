@@ -55,6 +55,39 @@ def shape_and_motion(key, config, shift):
     return shape, ph.CollisionMotion(vertices + shift)
 
 
+
+def check_material_surface(shape, nodes, point):
+    if shape.kind == "hull":
+        # This control uses an axis-aligned box; its corners are registered in arbitrary order.
+        low, high = np.min(nodes, axis=0), np.max(nodes, axis=0)
+        assert np.all(point >= low - 2e-5) and np.all(point <= high + 2e-5)
+        assert np.min(np.minimum(abs(point - low), abs(point - high))) < 2e-5
+        return
+    if shape.kind == "capsule":
+        axis = nodes[1] - nodes[0]
+        t = np.clip((point - nodes[0]) @ axis / (axis @ axis), 0, 1)
+        assert abs(np.linalg.norm(point - (nodes[0] + t * axis)) - shape.radius) < 2e-5
+        return
+    offset = point - nodes[0]
+    if shape.kind == "sphere":
+        assert abs(np.linalg.norm(offset) - shape.radius) < 2e-5
+        return
+    # Rotate backward independently with a unit quaternion (XYZW).
+    x, y, z, s = shape.curved.orientation_xyzw
+    vector = -np.array((x, y, z))
+    local = offset + 2 * np.cross(vector, s * offset + np.cross(vector, offset))
+    dims = shape.curved.dimensions_m
+    if shape.kind == "ellipsoid":
+        assert abs(np.linalg.norm(local / dims) - 1) * max(dims) < 2e-5
+        return
+    radius, half_height = dims
+    radial = hypot(*local[:2])
+    side = radius if shape.kind == "cylinder" else radius * (half_height - local[2]) / (2 * half_height)
+    assert abs(local[2]) <= half_height + 2e-5 and radial <= side + 2e-5
+    cap = min(abs(local[2] + half_height), abs(local[2] - half_height)) if shape.kind == "cylinder" else abs(local[2] + half_height)
+    assert min(abs(radial - side), cap) < 2e-5
+
+
 def query(name, gap, swapped=False):
     a, b, n, support = control(name, gap)
     shift = np.array([0.375, -0.25, 0.5])
@@ -92,6 +125,7 @@ def test_support_pairs_publish_distance_and_material_owners(name, gap, swapped, 
         (row.first, w.first_weights, w.first_offset, w.first_point),
         (row.second, w.second_weights, w.second_offset, w.second_point),
     ):
+        check_material_surface(shapes[key], paths[key].start, np.asarray(point))
         vertices = dict(zip(shapes[key].vertex_ids, paths[key].start, strict=True))
         assert all(i in vertices and x >= 0 for i, x in weights)
         assert sum(x for _, x in weights) == pytest.approx(1.0, abs=1e-12)
@@ -155,3 +189,14 @@ def test_static_support_uses_real_partition_broad_phase(tyx_mode, tmp_path):
         assert stats["host_pair_table_slots"] == 2 and stats["completed_launches"] > 0
         if tyx_mode == "cuda":
             assert stats["device_pair_table_slots"] == 2 and stats["synchronizations"] > 0
+
+
+def test_hull_extent_is_not_published_as_an_unregistered_rounded_material_surface():
+    hull, cur, _, _ = control("oblique-hull", 1/16)
+    ka, kb = ph.CollisionKey(0, 5, 0), ph.CollisionKey(0, 9, 0)
+    a = ph.CollisionShape(ka, "hull", hull[3], radius=1/32)
+    b, mb = shape_and_motion(kb, cur, np.zeros(3))
+    model = ph.CollisionModel((a,b))
+    with ph.CollisionWorkspace(model) as work:
+        row, = ph.detect(model, {ka: ph.CollisionMotion(hull[2]), kb: mb}, ph.CollisionPolicy(margin=1/4), work).pairs
+    assert row.candidate and row.status == "unsupported" and row.witness is None

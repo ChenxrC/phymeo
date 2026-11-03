@@ -299,6 +299,8 @@ def static_convex_support(a, b, ma, mb):
     """Return one bounded-distance observation for two registered, finite convex bodies."""
     if a.kind not in _KINDS or b.kind not in _KINDS or ma.moving or mb.moving:
         return None
+    if any(shape.kind == "hull" and shape.radius for shape in (a, b)):
+        return "unsupported", "convex_hull_offset", None, None
     try:
         with np.errstate(over="raise", invalid="raise", divide="raise"):
             return _Query(a, b, ma, mb).result()

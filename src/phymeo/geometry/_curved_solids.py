@@ -1,4 +1,4 @@
-"""Analytic finite-cylinder/sphere and cone or ellipsoid/half-space queries."""
+"""Analytic cylinder/sphere and curved-solid/half-space queries."""
 
 from dataclasses import dataclass
 from fractions import Fraction as F
@@ -110,6 +110,18 @@ def _plane_support(kind, dims, n, center_height):
     tangent = n[:2]
     squared = tangent @ tangent
     length = _root(squared)
+    if kind == "cylinder":
+        cap = "bottom_cap" if nz > 0 else "top_cap"
+        z = -h if nz > 0 else h
+        if not squared:
+            disk = tuple(_vector((x, y, z)) for x, y in
+                         ((0, 0), (radius, 0), (-radius, 0), (0, radius), (0, -radius)))
+            return (cap,), "disk", disk, center_height + z * nz
+        xy = -radius * tangent / length
+        height = _minus_root(center_height - h * abs(nz), radius * radius * squared, radius * length)
+        if nz == 0:
+            return ("side",), "segment", (_vector((*xy, -h)), _vector((*xy, h))), height
+        return ("side", cap), "point", (_vector((*xy, z)),), height
     apex = _vector((0, 0, h))
     # The cone is the convex hull of its apex and base disk. Compare their
     # support heights without rounding sqrt(nx² + ny²) before testing the tie.
@@ -270,6 +282,7 @@ def curved_solid_contact(a, b, ma, mb):
     curved, other, mc, mo = (a, b, ma, mb) if curved_first else (b, a, mb, ma)
     if (curved.kind, other.kind) not in (
         ("cylinder", "sphere"),
+        ("cylinder", "plane"),
         ("cone", "plane"),
         ("ellipsoid", "plane"),
     ):

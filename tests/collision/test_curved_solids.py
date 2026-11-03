@@ -269,3 +269,31 @@ def test_axis_aligned_plane_point_keeps_its_exact_coordinate():
     (row,) = query(model, paths).pairs
     _, plane, _ = oriented(row, c)
     assert plane[2] == 0 and row.witness.second_offset[2] == 0
+
+
+@pytest.mark.parametrize("reverse", [False, True])
+@pytest.mark.parametrize("local_normal,features,locus,extremes", [
+    ((0,0,2), ("bottom_cap",), "disk", [(0,0,-0.25),(-0.5,0,-0.25),(0,0.5,-0.25)]),
+    ((0,0,-1), ("top_cap",), "disk", [(0,0,0.25),(0.5,0,0.25),(0,-0.5,0.25)]),
+    ((3,4,0), ("side",), "segment", [(-0.3,-0.4,-0.25),(-0.3,-0.4,0.25)]),
+    ((-3,0,4), ("side","bottom_cap"), "point", [(0.5,0,-0.25)]),
+    ((0,-4,-3), ("side","top_cap"), "point", [(0,0.5,0.25)]),
+])
+def test_cylinder_plane_whole_finite_support(local_normal, features, locus, extremes, reverse):
+    n = np.roll(local_normal, 1)
+    unit = n / np.linalg.norm(n)
+    center = np.array([-0.5, 0.75, 0.375])
+    anchor = np.array([0.25, -0.25, 0.5])
+    model, paths, c, _ = scene(solid("cylinder", (0.5, 0.25), CYCLIC), center, "plane",
+                               anchor, reverse=reverse, normal=n)
+    pair, = query(model, paths).pairs
+    assert pair.curved is not None, (pair.status, pair.reason)
+    assert (pair.curved.features, pair.curved.locus) == (features, locus)
+    for x in extremes:
+        expected = center + np.roll(x, 1)
+        assert any(np.allclose(expected, p, atol=1e-12, rtol=0) for p in pair.curved.points_m)
+    pc, pp, direction = oriented(pair,c)
+    gap = (expected-anchor) @ unit
+    assert pair.witness.gap_m == pytest.approx(gap, abs=1e-12)
+    np.testing.assert_allclose(direction,-unit,atol=1e-12,rtol=0)
+    np.testing.assert_allclose(pc-pp,gap*unit,atol=1e-12,rtol=0)

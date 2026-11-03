@@ -13,6 +13,7 @@ from .backends.tyx_participants import (
     TyxTetrahedralParticipant,
 )
 from .backends.tyx_rigid import TyxRigidSemiImplicitSolver
+from .backends.tyx_world_batch import FreeSphere, PrismaticSlider, TyxWorldBatch, WorldCheckpoint
 from .backends.tyx_xpbd import TyxXPBDSolver
 from .builders.cloth import ClothPatch, cloth_grid
 from .builders.mjcf import load_mjcf
@@ -81,6 +82,13 @@ from .coupling.ports import ParticlePointPort, PointPort, RigidPointPort, exchan
 from .coupling.robot_port import RobotPointPort
 from .coupling.surface_port import PointPairOperator, WeightedPointPort
 from .coupling.tetrahedral_port import TetrahedralPointPort
+from .dynamics.floating_robot import (
+    FloatingKinematics,
+    FloatingRobotModel,
+    FloatingRobotState,
+    floating_kinematics,
+    floating_point_jacobians,
+)
 from .dynamics.robot_contact import RobotContactSystem
 from .geometry._convex_support import ConvexSupportTrace
 from .geometry._curved_solids import CurvedContact, CurvedEvent
@@ -178,6 +186,7 @@ from .solvers.driven_robot import DrivenRobotProgram
 from .solvers.dynamic_robot_finite_contact import DynamicRobotFiniteContactProgram
 from .solvers.dynamic_robot_friction_contact import DynamicRobotFrictionContactProgram
 from .solvers.dynamic_robot_normal_contact import DynamicRobotNormalContactProgram
+from .solvers.free_root import step_free_root
 from .solvers.free_scene import FreeSceneProgram
 from .solvers.initial_robot_material_contact import (
     InitialRobotMaterialContactProgram,
@@ -271,6 +280,16 @@ __all__ = [
     "make_tetrahedral_runtime",
     "make_cloth_runtime",
     "tetrahedral_block",
+    "FreeSphere",
+    "PrismaticSlider",
+    "TyxWorldBatch",
+    "WorldCheckpoint",
+    "FloatingKinematics",
+    "FloatingRobotModel",
+    "FloatingRobotState",
+    "floating_kinematics",
+    "floating_point_jacobians",
+    "step_free_root",
     "RobotModel",
     "RobotState",
     "RobotInputs",

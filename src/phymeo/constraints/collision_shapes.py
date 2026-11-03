@@ -6,6 +6,7 @@ from numbers import Integral
 import numpy as np
 
 from ..core.validation import finite_real
+from .heightfield import Heightfield
 
 MAX_SHAPES = 256
 MAX_VERTICES = 8192
@@ -70,6 +71,7 @@ class CollisionShape:
     revision: int = 0
     normal: tuple[float, float, float] | None = None
     triangles: tuple[tuple[int, int, int], ...] = ()
+    heightfield: Heightfield | None = None
 
     def __post_init__(self):
         if not isinstance(self.key, CollisionKey):
@@ -82,7 +84,7 @@ class CollisionShape:
             "tetrahedron": 4,
             "plane": 1,
         }
-        if self.kind not in (*counts, "hull", "mesh", "plate"):
+        if self.kind not in (*counts, "hull", "mesh", "plate", "heightfield"):
             raise ValueError("unsupported collision shape kind")
         if not 1 <= len(self.vertex_ids) <= MAX_VERTICES:
             raise ValueError("vertex count outside limits")
@@ -112,6 +114,13 @@ class CollisionShape:
         else:
             object.__setattr__(self, "triangles", ())
         radius = finite_real(self.radius, "radius")
+        if self.kind == "heightfield":
+            if not isinstance(self.heightfield, Heightfield) or len(ids) != self.heightfield.vertex_count:
+                raise ValueError("heightfield shape must bind one material ID per grid sample")
+            if radius != 0:
+                raise ValueError("heightfield has zero surface offset")
+        elif self.heightfield is not None:
+            raise ValueError("heightfield data requires a heightfield shape")
         if radius < 0 or (self.kind in ("sphere", "capsule") and radius == 0):
             raise ValueError("invalid shape radius or maximum surface offset")
         if (self.kind == "plate" and radius == 0) or (self.kind == "particle" and radius != 0):
@@ -132,7 +141,7 @@ class CollisionShape:
 
     @property
     def rigid(self):
-        return self.kind in ("sphere", "capsule", "hull", "mesh", "plate", "plane")
+        return self.kind in ("sphere", "capsule", "hull", "mesh", "plate", "plane", "heightfield")
 
 
 @dataclass(frozen=True)

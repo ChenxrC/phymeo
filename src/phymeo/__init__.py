@@ -28,6 +28,7 @@ from .constraints.collision_shapes import (
 from .constraints.contact_impulse import ContactImpulseResult, solve_contact_impulses
 from .constraints.distance import DistanceConstraints
 from .constraints.friction import FrictionImpulseResult, solve_friction_disk
+from .constraints.heightfield import Heightfield
 from .constraints.node_robot import NodeRobotContact
 from .constraints.particle_plane import ParticlePlaneContacts
 from .constraints.robot_contact import (
@@ -77,6 +78,7 @@ from .coupling.robot_port import RobotPointPort
 from .coupling.surface_port import PointPairOperator, WeightedPointPort
 from .coupling.tetrahedral_port import TetrahedralPointPort
 from .dynamics.robot_contact import RobotContactSystem
+from .geometry._heightfield import HeightfieldTrace
 from .geometry.collision_pipeline import (
     CollisionBounds,
     CollisionDetection,
@@ -360,6 +362,8 @@ __all__ += [
     "CollisionSweep",
     "CollisionWitness",
     "CollisionWorkspace",
+    "Heightfield",
+    "HeightfieldTrace",
     "ConvexContactPatch",
     "ConvexContactPoint",
     "ConvexContactPose",

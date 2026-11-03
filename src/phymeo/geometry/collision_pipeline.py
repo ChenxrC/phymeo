@@ -23,6 +23,7 @@ from ._collision_bvh import CollisionTrees
 from ._collision_spatial import SpatialPairs
 from ._convex_contact import HullPairQuery
 from ._convex_hull import HullShape
+from ._heightfield import HeightfieldTrace, heightfield_sphere_contact
 from ._hull_surface import HullSurfaceQuery
 from ._plate_contact import PlateSurfaceQuery, RoundedPlate
 from ._rotating_capsule_face import RotatingCapsuleFaceQuery, rotating_capsule_face_query
@@ -78,6 +79,7 @@ class CollisionPair:
     mesh: MeshContactTrace | None = None
     plate: PlateContactTrace | None = None
     hull_surface: HullSurfaceTrace | None = None
+    heightfield: HeightfieldTrace | None = None
 
 
 @dataclass(frozen=True)
@@ -119,6 +121,10 @@ def _envelopes(model, paths, margin):
         path = paths[shape.key]
         if not isinstance(path, CollisionMotion) or path.start.shape != (len(shape.vertex_ids), 3):
             raise ValueError("motion must supply all registered vertices in material order")
+        if shape.heightfield is not None and not np.array_equal(
+            path.start, shape.heightfield.world_vertices()
+        ):
+            raise ValueError("heightfield motion start must match registered world vertices")
         turn = path.turn
         if turn is not None and not shape.rigid:
             raise ValueError("rigid turn requires a rigid shape")
@@ -476,6 +482,11 @@ def _detect_pairs(workspace, paths, flags, selected, proximity=False, resolved=N
             ma, mb = paths[a.key], paths[b.key]
             code = int(flags[offset + local])
             ready = resolved.get(offset + local)
+            if code == 0 and {a.kind, b.kind} == {"heightfield", "sphere"}:
+                status, reason, witness, chart = heightfield_sphere_contact(a, b, ma, mb)
+                ready = CollisionPair(
+                    a.key, b.key, "RR", True, status, reason, witness, heightfield=chart
+                )
             if ready is not None:
                 batch.append((a, b, ma, mb, code, ready, 0, 0))
                 continue

@@ -191,7 +191,8 @@ def test_masks_cover_every_true_face_and_drive_the_root_search(
 
 
 @pytest.mark.parametrize("fault,match", [("capacity","capacity exceeded"),("stale","incomplete"),
-                                         ("mask","invalid heightfield candidate mask"),("launch","injected")])
+                                         ("mask","invalid heightfield candidate mask"),("launch","injected"),
+                                         ("missing","invalid heightfield candidate selection")])
 def test_device_fault_preserves_publication_and_never_falls_back(fault,match,tyx_mode,terrain_cache,monkeypatch):
     from phymeo.backends import _tyx_heightfield_kernels as kernels
 
@@ -204,6 +205,8 @@ def test_device_fault_preserves_publication_and_never_falls_back(fault,match,tyx
         driver = work._engine._heightfield_candidates
         if fault == "capacity":
             monkeypatch.setattr(driver,"capacity",0)
+        elif fault == "missing":
+            monkeypatch.setattr(work._engine,"heightfield_face_candidates",lambda *args: None)
         elif fault == "launch":
             def bad_launch(*args,**kwargs):
                 raise RuntimeError("injected terrain kernel failure")

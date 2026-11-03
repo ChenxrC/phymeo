@@ -141,6 +141,12 @@ from .geometry.mesh_arc_surface import (
     MeshArcSurfaceResult,
     mesh_arc_first_surface,
 )
+from .geometry.paged_collision import (
+    CollisionPage,
+    CollisionPageCapacityError,
+    CollisionPageLimits,
+    PagedWorldCollisionWorkspace,
+)
 from .geometry.particle_sphere import ParticleSphereGeometry, particle_sphere_geometry
 from .geometry.plane import Plane
 from .geometry.robot_patch_sweep import RobotPatchSweepResult, robot_patch_sweep
@@ -473,6 +479,10 @@ __all__ += [
     "CollisionWitness",
     "CollisionWorkspace",
     "WorldCollisionWorkspace",
+    "CollisionPage",
+    "CollisionPageCapacityError",
+    "CollisionPageLimits",
+    "PagedWorldCollisionWorkspace",
     "Heightfield",
     "HeightfieldEvent",
     "HeightfieldFace",

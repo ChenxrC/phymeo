@@ -171,7 +171,7 @@ from .runtime.registry import StateFamily, StateRegistry
 from .runtime.scene_stepper import SceneStepper
 from .runtime.stepper import Stepper
 from .runtime.terminal_impulse import PointVelocityImpulses, TerminalImpulseProgram
-from .sensors import RelativeSiteMeasurement, RobotSite, measure_relative_site
+from .sensors import RelativeSiteMeasurement, RobotIMUReading, RobotSite, measure_relative_site, measure_robot_imu
 from .solvers.articulated_coupling import ArticulatedCouplingProgram, make_articulated_runtime
 from .solvers.cloth import ClothProgram, make_cloth_runtime
 from .solvers.cloth_link_contact import ClothLinkMaterial
@@ -328,6 +328,8 @@ __all__ = [
     "RobotSite",
     "RelativeSiteMeasurement",
     "measure_relative_site",
+    "RobotIMUReading",
+    "measure_robot_imu",
     "RobotProgram",
     "DrivenRobotProgram",
     "make_robot_runtime",

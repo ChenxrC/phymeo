@@ -2,7 +2,7 @@
 
 ## 当前入口（2026-11-03）
 
-- 当前可并行的三项是移动参考系传感、非零转动刚体首触试片和 TYX 世界内配对。固定基座止挡、延迟驱动及设备地形候选已经组合验证。一台滑轨因限位在半步时触地，另一台共址滑轨保持净空。G1 已测到 64 个世界，单世界扰动没有串扰。在该档位，完整配对表保留了 32,256 个跨世界过滤行，暖态合批查询慢于逐世界调用。[组合验收](../benchmarks/p65-driven-terrain-worlds.md) · [G1 成本](../benchmarks/p65-g1-world-isolation.md) · [下一组独立案例与开发依赖](../superpowers/plans/2026-11-03-newton-reference-development.md#下一组独立案例与开发依赖)
+- 当前可并行的三项是移动参考系传感、非零转动刚体首触试片和 TYX 世界内配对。固定基座止挡、延迟驱动及设备地形候选已经组合验证。一台滑轨因限位在半步时触地，另一台共址滑轨保持净空。G1 已测到 64 个世界，单世界扰动没有串扰。在该档位，完整配对表保留了 32,256 个跨世界过滤行，暖态合批查询慢于逐世界调用。[组合验收](../benchmarks/p65-driven-terrain-worlds.md) · [G1 成本](../benchmarks/p65-g1-world-isolation.md) · [下一批子任务分派与验收](../superpowers/plans/2026-11-03-p65-next-parallel-dispatch.md)
 
 - 前一批接通了固定基座 URDF、MJCF 与可选 USD、双闭合凹网格的平移首触及三类静态曲面，并验证了 USD 工具球与圆柱的组合。[资产与刚体实测](../benchmarks/p65-independent-rigid-usd-20261103.md) · [地形与资产](../benchmarks/p65-robot-terrain-20261103.md)
 

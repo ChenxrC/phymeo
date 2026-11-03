@@ -169,3 +169,27 @@ def test_sdf_bake_validates_topology_once_and_keeps_narrow_band_explicit(monkeyp
     valid,off=grid.sample_local([[0.625,0,0],[0.99,0,0]])
     assert valid.distance_m==pytest.approx(0.125) and off.status=="outside_band" and off.gradient is None
     assert grid.geometry_error_bound_m is not None
+
+
+def test_refinement_along_thin_wall_restores_interior_sign(tmp_path):
+    _,bake=api()
+    mesh,p=asset("thin")
+    coarse=bake(mesh,p,origin_m=(-0.25,-0.25,-0.25),spacing_m=(0.25,)*3,shape_xyz=(4,3,3))
+    fine=bake(mesh,p,origin_m=(-0.25,-0.25,-0.25),spacing_m=(1/64,0.25,0.25),shape_xyz=(49,3,3))
+    probe=[[0.125,0.0625,0.0625]]
+    a,b=(g.sample_local(probe)[0] for g in (coarse,fine))
+    assert a.distance_m==7/64 and b.distance_m==-1/64
+    assert a.gradient==(0,0,0)
+    assert fine.geometry_error_bound_m<coarse.geometry_error_bound_m
+    (tmp_path/"thin-refinement.json").write_text(json.dumps(dict(position_m=probe[0],exact_m=-1/64,
+        coarse_m=a.distance_m,fine_m=b.distance_m,coarse_gradient=a.gradient,fine_gradient=b.gradient,
+        coarse_bound_m=coarse.geometry_error_bound_m,fine_bound_m=fine.geometry_error_bound_m)),encoding="utf-8")
+
+
+def test_bake_work_budget_precedes_geometric_allocation(monkeypatch):
+    from phymeo.geometry import _sdf_mesh_bake
+    _,bake=api()
+    mesh,p=asset("box")
+    monkeypatch.setattr(_sdf_mesh_bake,"ClosedMesh",lambda *a:pytest.fail("over-capacity bake validated or allocated"))
+    with pytest.raises(ValueError,match="face-node pairs"):
+        bake(mesh,p,origin_m=(0,0,0),spacing_m=(0.25,)*3,shape_xyz=(160,160,40))

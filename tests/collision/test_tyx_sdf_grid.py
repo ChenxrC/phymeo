@@ -62,20 +62,29 @@ def test_tyx_band_flat_gradient_and_failed_kernel_close_the_workspace(tyx_mode,t
         assert work.stats()["completed_launches"]==1
 
 
-def test_tyx_uses_the_baked_concave_asset(tyx_mode,tmp_path):
-    from test_sdf_grid import asset,exact_distance
+@pytest.mark.parametrize("kind",["box","u","thin"])
+def test_tyx_free_points_use_the_baked_asset(tyx_mode,tmp_path,kind):
+    from test_sdf_grid import REF,asset,exact_distance
     _,bake=api()
-    shape,vertices=asset("u")
-    field=bake(shape,vertices,shape_xyz=(13,13,7),origin_m=(-3,-3,-1.5),spacing_m=(0.5,)*3)
-    points=np.array([[0,0,0],[1.5,0,0],[0,-1.5,0],[0.825,0.225,0.25],[4,0,0]])
+    case=json.loads((REF/"rr"/"sdf_grid_points.json").read_text("utf-8"))[kind]
+    shape,vertices=asset(kind)
+    field=bake(shape,vertices,shape_xyz=case["shape_xyz"],origin_m=case["origin_m"],spacing_m=case["spacing_m"])
+    points=np.asarray(case["points_m"])
+    host=field.sample_local(points)
     with sampler()(field,mode=tyx_mode,capacity=len(points),cache_root=tmp_path/"cache") as work:
+        with pytest.raises(AttributeError):
+            work.grid=field
         rows=work.sample_local(points)
         stats=work.stats()
-    vals=np.array([r.distance_m for r in rows[:-1]])
-    truth=exact_distance("u",points[:-1])
+    assert [r.status for r in rows]==[r.status for r in host]
     assert rows[-1].status=="outside_grid" and all(r.status=="valid" for r in rows[:-1])
-    np.testing.assert_allclose(vals[:3],[1,-0.5,-0.5],rtol=0,atol=3e-6)
-    assert np.max(np.abs(vals-truth))<=field.geometry_error_bound_m+3e-6
-    assert stats["completed_launches"]==1
-    (tmp_path/"device-u.json").write_text(json.dumps(dict(values_m=vals.tolist(),exact_m=truth.tolist(),
-        grid_bound_m=field.geometry_error_bound_m,stats=stats),allow_nan=False),encoding="utf-8")
+    vals=np.array([r.distance_m for r in rows[:-1]])
+    truth=exact_distance(kind,points[:-1])
+    np.testing.assert_allclose(vals,[r.distance_m for r in host[:-1]],rtol=0,atol=3e-6)
+    np.testing.assert_allclose([r.gradient for r in rows[:-1]],[r.gradient for r in host[:-1]],rtol=0,atol=3e-6)
+    assert np.max(np.abs(vals-truth))<=stats["geometry_error_bound_m"] and stats["completed_launches"]==1
+    assert stats["geometry_error_bound_m"]>=field.geometry_error_bound_m
+    (tmp_path/"device-grid-probes.json").write_text(json.dumps(dict(kind=kind,positions_m=points.tolist(),
+        host=[dict(status=s.status,distance_m=s.distance_m,gradient=s.gradient) for s in host],
+        tyx=[dict(status=s.status,distance_m=s.distance_m,gradient=s.gradient) for s in rows],
+        exact_m=truth.tolist(),grid_bound_m=field.geometry_error_bound_m,stats=stats),allow_nan=False),encoding="utf-8")

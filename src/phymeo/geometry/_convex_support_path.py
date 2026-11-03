@@ -2,19 +2,20 @@
 
 from dataclasses import replace
 from fractions import Fraction
+from typing import NamedTuple
 
 import numpy as np
 
 from ..constraints.collision_shapes import CollisionMotion
 from ..core.capabilities import SolverFailure
-from ..dynamics.rotation import advance_world_orientation, quaternion_matrix
-from ._convex_support import _KINDS, static_convex_support
+from ..dynamics.rotation import advance_world_orientation
+from ._convex_support import _KINDS, ConvexSupportTrace, static_convex_support
 from ._curved_solids import _rotation, _support_upper
 from ._prism_pair_exact import sqrt_bounds
 from ._rotation_angle import axis_length_bounds, rotate_enclosures
 from ._round_sweep import _translation, _vector
 from ._triangle_pair_sweep import _FacePath
-from .collision_witness import CollisionSweep
+from .collision_witness import CollisionSweep, CollisionWitness
 
 _MAX_CELLS = 256
 _DEPTH = 18
@@ -136,6 +137,33 @@ class _RigidSupport(_AffineSupport):
         return support + lo * speed, support + hi * speed
 
 
+_MAX_POSE_ERROR = Fraction(1, 5_000_000)
+
+
+class _Sample(NamedTuple):
+    status: str
+    reason: str
+    witness: CollisionWitness | None
+    trace: ConvexSupportTrace | None
+    pose_error: Fraction
+
+
+def _end_trace(sample, peak_error, cells, count):
+    trace = sample.trace
+    lower, upper = trace.gap_lower_m, trace.gap_upper_m
+    if sample.pose_error:
+        lower = np.nextafter(float(Fraction(lower) - sample.pose_error), -np.inf)
+        upper = np.nextafter(float(Fraction(upper) + sample.pose_error), np.inf)
+    return replace(
+        trace,
+        gap_lower_m=lower,
+        gap_upper_m=upper,
+        time_cells=cells,
+        static_samples=count,
+        pose_error_upper_m=np.nextafter(float(peak_error), np.inf) if peak_error else 0.0,
+    )
+
+
 class _Window:
     def __init__(self, a, b):
         self.a, self.b = a, b
@@ -149,7 +177,7 @@ class _Window:
             status, reason, witness, trace = static_convex_support(
                 self.a.shape, self.b.shape, pa, pb
             )
-            self.observed[t] = status, reason, witness, trace, ea + eb
+            self.observed[t] = _Sample(status, reason, witness, trace, ea + eb)
         return self.observed[t]
 
     def clear_on(self, lo, hi, directions):
@@ -168,26 +196,21 @@ class _Window:
         left, right = Fraction(0), Fraction(1)
         start, end = self.sample(left), self.sample(right)
         for sample in (start, end):
-            if sample[0] == "invalid_geometry":
-                return sample[0], sample[1], None, None, None
-        if start[2] is None or end[2] is None:
-            return "unresolved", "support_path_endpoint_witness", end[2], end[3], None
-        w0, w1 = start[2], end[2]
+            if sample.status == "invalid_geometry":
+                return sample.status, sample.reason, None, None, None
+        if start.witness is None or end.witness is None:
+            return "unresolved", "support_path_endpoint_witness", end.witness, end.trace, None
+        w0, w1 = start.witness, end.witness
         axes = ((1, 0, 0), (-1, 0, 0), (0, 1, 0), (0, -1, 0), (0, 0, 1), (0, 0, -1))
 
         def finish(status, reason, interval=None, t=None):
-            error = max(s[4] for s in self.observed.values())
-            trace = replace(
-                end[3],
-                time_cells=self.cells,
-                static_samples=len(self.observed),
-                pose_error_upper_m=np.nextafter(float(error), np.inf) if error else 0.0,
-            )
-            if error > Fraction(1, 5000000):
+            error = max(s.pose_error for s in self.observed.values())
+            trace = _end_trace(end, error, self.cells, len(self.observed))
+            if error > _MAX_POSE_ERROR:
                 return "unresolved", "support_sample_pose_resolution", w1, trace, None
             if status == "unresolved":
                 return status, reason, w1, trace, None
-            entry = None if t is None else self.sample(t)[2]
+            entry = None if t is None else self.sample(t).witness
             sweep = CollisionSweep(
                 w0.gap_m, w1.gap_m, interval, None if t is None else float(t), entry
             )
@@ -195,8 +218,8 @@ class _Window:
 
         def inside(sample):
             # A strictly negative upper estimate must dominate rounding the affine pose.
-            trace = sample[3]
-            return trace is not None and trace.gap_upper_m < -sample[4]
+            trace = sample.trace
+            return trace is not None and trace.gap_upper_m < -sample.pose_error
 
         if inside(start):
             return finish("hit", "support_path_start_overlapped", (0.0, 0.0), left)
@@ -208,19 +231,19 @@ class _Window:
             if self.cells > _MAX_CELLS:
                 return finish("unresolved", "support_path_cell_capacity")
             sl, sr = self.sample(lo), self.sample(hi)
-            proposals = [o[2].normal for o in (sl, sr) if o[2] is not None]
+            proposals = [o.witness.normal for o in (sl, sr) if o.witness is not None]
             if self.clear_on(lo, hi, (*proposals, *axes)):
                 continue
             if depth == _DEPTH:
                 earliest = lo if earliest is None else earliest
-                if inside(sr) and sr[2] is not None:
+                if inside(sr) and sr.witness is not None:
                     if hi - earliest > Fraction(1, 1024):
                         return finish("unresolved", "support_path_first_event_ambiguous")
                     return finish("hit", "bounded_support_path", (float(earliest), float(hi)), hi)
                 continue
             mid = (lo + hi) / 2
             sm = self.sample(mid)
-            if sm[2] and self.clear_on(lo, hi, (sm[2].normal,)):
+            if sm.witness and self.clear_on(lo, hi, (sm.witness.normal,)):
                 continue
             pending.extend(((mid, hi, depth + 1), (lo, mid, depth + 1)))
         if earliest is not None:
@@ -228,51 +251,19 @@ class _Window:
         return finish("separated", "swept_support_planes")
 
 
-def _turn_allowance(body, motion):
-    turn = motion.turn
-    if turn is None or not turn.angle:
-        return Fraction(0)
-    pivot = _vector(turn.pivot_start)
-    radius = max(sum(abs(x) for x in point - pivot) for point in body.start)
-    if body.shape.curved is not None:
-        radius += (
-            max(body.dims)
-            if body.shape.kind == "ellipsoid"
-            else sqrt_bounds(body.dims @ body.dims, 96)[1]
-        )
-    else:
-        radius += Fraction(body.shape.radius)
-    # A rotating point stays within both its arc length and its diameter.
-    return radius * min(Fraction(2), abs(Fraction(turn.angle)))
-
-
-def _turn_end(body, motion):
-    if motion.turn is None or not motion.turn.angle:
-        return body.pose(Fraction(1))[0]
-    turn = motion.turn
-    axis = np.asarray(turn.axis)
-    angular = np.array([turn.angle * axis / np.linalg.norm(axis)])
-    identity = np.array([[0.0, 0.0, 0.0, 1.0]])
-    delta = advance_world_orientation(identity, angular, 1.0)
-    matrix = quaternion_matrix(delta)[0]
-    p = (motion.start - np.asarray(turn.pivot_start)) @ matrix.T + np.asarray(turn.pivot_end)
-    q = None
-    if body.shape.curved is not None:
-        entry = identity if body.body_orientation is None else np.array([body.body_orientation])
-        q = advance_world_orientation(entry, angular, 1.0)[0]
-    return CollisionMotion(p, body_orientation_xyzw=q)
-
-
-def _turn_clear(a, b, ma, mb):
-    bodies = [_AffineSupport(s, m) for s, m in ((a, ma), (b, mb))]
-    allowance = sum(_turn_allowance(body, m) for body, m in zip(bodies, (ma, mb), strict=True))
-    before = [body.pose(Fraction(0))[0] for body in bodies]
-    after = [_turn_end(body, motion) for body, motion in zip(bodies, (ma, mb), strict=True)]
-    start = static_convex_support(a, b, *before)
-    end = static_convex_support(a, b, *after)
-    if not all(row and row[0] == "separated" and row[2] for row in (start, end)):
+def _turn_clear(window):
+    bodies = window.a, window.b
+    allowance = sum(
+        body.reach * min(Fraction(2), abs(body.angle))
+        for body in bodies if isinstance(body, _RigidSupport)
+    )
+    start, end = window.sample(Fraction(0)), window.sample(Fraction(1))
+    if not all(s.status == "separated" and s.witness is not None for s in (start, end)):
         return None
-    for proposed in (start[2].normal, end[2].normal, *np.eye(3), *-np.eye(3)):
+    error = max(start.pose_error, end.pose_error)
+    if error > _MAX_POSE_ERROR:
+        return None
+    for proposed in (start.witness.normal, end.witness.normal, *np.eye(3), *-np.eye(3)):
         direction = tuple(map(float, proposed))
         reverse = tuple(-x for x in direction)
         n = _vector(direction)
@@ -280,9 +271,8 @@ def _turn_clear(a, b, ma, mb):
         if all(
             bodies[0].upper(direction, t) + bodies[1].upper(reverse, t) + pad < 0 for t in (0, 1)
         ):
-            sweep = CollisionSweep(start[2].gap_m, end[2].gap_m, None, None, None)
-            trace = replace(end[3], time_cells=1, static_samples=2)
-            return "separated", "rotational_support_clearance", end[2], trace, sweep
+            sweep = CollisionSweep(start.witness.gap_m, end.witness.gap_m, None, None, None)
+            return "separated", "rotational_support_clearance", end.witness, _end_trace(end, error, 1, 2), sweep
     return None
 
 
@@ -297,16 +287,17 @@ def affine_convex_contact(a, b, ma, mb):
             return "invalid_geometry", "degenerate_material_triangle_path", None, None, None
     try:
         with np.errstate(over="raise", invalid="raise", divide="raise"):
-            if any(m.turn and m.turn.angle for m in (ma, mb)):
-                if any(m.turn and abs(m.turn.angle) > 2 * np.pi for m in (ma, mb)):
-                    return None
-                clear = _turn_clear(a, b, ma, mb)
-                if clear is not None:
-                    return clear
+            if any(m.turn and abs(m.turn.angle) > 2 * np.pi for m in (ma, mb)):
+                return None
             bodies = [
                 (_RigidSupport if m.turn and m.turn.angle else _AffineSupport)(s, m)
                 for s, m in ((a, ma), (b, mb))
             ]
-            return _Window(*bodies).run()
+            window = _Window(*bodies)
+            if any(isinstance(body, _RigidSupport) for body in bodies):
+                clear = _turn_clear(window)
+                if clear is not None:
+                    return clear
+            return window.run()
     except (SolverFailure, FloatingPointError, OverflowError):
         return "unresolved", "support_path_coordinate_resolution", None, None, None

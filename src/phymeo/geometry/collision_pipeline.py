@@ -745,6 +745,26 @@ def _detect_pairs(
                     or capsule_face_query(a, b, ma, mb)
                     or triangle_pair_query(a, b, ma, mb, proximity=proximity)
                 )
+            unavailable = analytic is None or (
+                isinstance(analytic, _NarrowFailure) and analytic.status == "unsupported"
+            )
+            if (
+                not code
+                and unavailable
+                and any(path.turn and path.turn.angle for path in (ma, mb))
+                and not (proximity and "hull" in (a.kind, b.kind))
+            ):
+                # A bounded point witness may serve callers that requested the usual
+                # query. A complete proximity patch retains its separate contract.
+                moving = affine_convex_contact(a, b, ma, mb)
+                if moving is not None and moving[0] != "unsupported":
+                    status, reason, witness, trace, sweep = moving
+                    family = "RR" if a.rigid and b.rigid else "RD"
+                    result = CollisionPair(
+                        a.key, b.key, family, True, status, reason, witness, sweep, support_map=trace
+                    )
+                    batch.append((a, b, ma, mb, code, result, 0, 0))
+                    continue
             begin = len(features)
             if analytic is not None and (ma.moving or mb.moving):
                 features.extend(analytic.features)

@@ -777,7 +777,22 @@ def main():
         first_time = 0.5 - angle / abs(arc.turn.angle)
         assert swept.status == "hit" and swept.sweep.start_gap_m > 0 and swept.sweep.end_gap_m > 0
         lo, hi = swept.sweep.first_t
-        assert lo - 1e-12 <= first_time <= hi + 1e-12 and hi - lo < 1e-6
+        assert lo <= first_time <= hi and hi - lo <= 1 / 1024
+        # The whole-arc public CCD may return up to 1/1024 of the requested
+        # interval. Requery that same portion of the actual authored joint path
+        # to meet this example's tighter whole-window requirement.
+        lower_pose = q0 + lo * (q1 - q0)
+        upper_pose = q0 + hi * (q1 - q0)
+        refined_motion = asset.collision_motion(lower_pose, upper_pose)[tool.shape.key]
+        with ph.CollisionWorkspace(orbit, "host") as work:
+            (refined,) = ph.detect(
+                orbit, {tool.shape.key: refined_motion, probe.key: ph.CollisionMotion(mid)},
+                ph.CollisionPolicy(), work,
+            ).pairs
+        assert refined.status == "hit" and refined.sweep.start_gap_m > 0
+        assert refined.sweep.end_gap_m <= 0 and refined.sweep.witness_time is not None
+        rlo, rhi = (lo + (hi - lo) * value for value in refined.sweep.first_t)
+        assert lo <= rlo <= first_time <= rhi <= hi and rhi - rlo < 1e-6
         result["usd"] = dict(
             sdk=sdk.version,
             sdk_runtime_version=usd_version,
@@ -787,7 +802,8 @@ def main():
             shapes=len(pose),
             tool_cylinder_gap_m=contact.witness.gap_m,
             joint_arc_first_time=first_time,
-            joint_arc_interval=[lo, hi],
+            joint_arc_whole_interval=[lo, hi],
+            joint_arc_refined_interval=[rlo, rhi],
         )
     else:
         assert "pxr" not in sys.modules

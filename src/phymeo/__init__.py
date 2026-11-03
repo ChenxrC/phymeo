@@ -19,6 +19,7 @@ from .builders.mjcf import load_mjcf
 from .builders.robot import pendulum_chain
 from .builders.tetrahedral import tetrahedral_block
 from .builders.urdf import load_urdf
+from .builders.usd import load_usd
 from .constraints.collision_shapes import (
     CollisionKey,
     CollisionModel,
@@ -260,6 +261,7 @@ __all__ = [
     "pendulum_chain",
     "load_urdf",
     "load_mjcf",
+    "load_usd",
     "BackendContext",
     "DomainBinding",
     "HistoryField",

@@ -212,6 +212,11 @@ from .sensors import (
     measure_relative_site,
     measure_robot_imu,
 )
+from .solvers.deformable_feature_loads import (
+    DeformableFeatureLoad,
+    DeformableFeatureLoads,
+    DeformableFeatureLoadSystem,
+)
 from .solvers.articulated_coupling import ArticulatedCouplingProgram, make_articulated_runtime
 from .solvers.cloth import ClothProgram, make_cloth_runtime
 from .solvers.cloth_link_contact import ClothLinkMaterial
@@ -509,6 +514,9 @@ __all__ += [
     "CollisionWitness",
     "DeformableFeatureContact",
     "DeformableFeatureContacts",
+    "DeformableFeatureLoad",
+    "DeformableFeatureLoads",
+    "DeformableFeatureLoadSystem",
     "query_deformable_features",
     "CollisionWorkspace",
     "WorldCollisionWorkspace",

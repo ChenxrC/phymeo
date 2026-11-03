@@ -6,6 +6,7 @@ from fractions import Fraction
 import numpy as np
 
 from ..constraints.collision_shapes import CollisionMotion
+from ..dynamics.rotation import advance_world_orientation, quaternion_matrix
 from ._convex_support import _KINDS, static_convex_support
 from ._curved_solids import _rotation, _support_upper
 from ._prism_pair_exact import sqrt_bounds
@@ -129,15 +130,67 @@ class _Window:
         return finish("separated","swept_support_planes")
 
 
+def _turn_allowance(body, motion):
+    turn=motion.turn
+    if turn is None or not turn.angle:
+        return Fraction(0)
+    pivot=_vector(turn.pivot_start)
+    radius=max(sum(abs(x) for x in point-pivot) for point in body.start)
+    if body.shape.curved is not None:
+        radius+=max(body.dims) if body.shape.kind=="ellipsoid" else sqrt_bounds(body.dims@body.dims,96)[1]
+    else:
+        radius+=Fraction(body.shape.radius)
+    # A rotating point stays within both its arc length and its diameter.
+    return radius*min(Fraction(2), abs(Fraction(turn.angle)))
+
+
+def _turn_end(body,motion):
+    if motion.turn is None or not motion.turn.angle:
+        return body.pose(Fraction(1))[0]
+    turn=motion.turn
+    axis=np.asarray(turn.axis)
+    angular=np.array([turn.angle*axis/np.linalg.norm(axis)])
+    identity=np.array([[0.,0.,0.,1.]])
+    delta=advance_world_orientation(identity,angular,1.)
+    matrix=quaternion_matrix(delta)[0]
+    p=(motion.start-np.asarray(turn.pivot_start))@matrix.T+np.asarray(turn.pivot_end)
+    q=None
+    if body.shape.curved is not None:
+        entry=identity if body.body_orientation is None else np.array([body.body_orientation])
+        q=advance_world_orientation(entry,angular,1.)[0]
+    return CollisionMotion(p,body_orientation_xyzw=q)
+
+
+def _turn_clear(a,b,ma,mb):
+    bodies=[_AffineSupport(s,m) for s,m in ((a,ma),(b,mb))]
+    allowance=sum(_turn_allowance(body,m) for body,m in zip(bodies,(ma,mb),strict=True))
+    before=[body.pose(Fraction(0))[0] for body in bodies]
+    after=[_turn_end(body,motion) for body,motion in zip(bodies,(ma,mb),strict=True)]
+    start=static_convex_support(a,b,*before)
+    end=static_convex_support(a,b,*after)
+    if not all(row and row[0]=="separated" and row[2] for row in (start,end)):
+        return None
+    for proposed in (start[2].normal,end[2].normal,*np.eye(3),*-np.eye(3)):
+        direction=tuple(map(float,proposed))
+        reverse=tuple(-x for x in direction)
+        n=_vector(direction)
+        pad=allowance*sqrt_bounds(n@n,96)[1]
+        if all(bodies[0].upper(direction,t)+bodies[1].upper(reverse,t)+pad<0 for t in (0,1)):
+            sweep=CollisionSweep(start[2].gap_m,end[2].gap_m,None,None,None)
+            trace=replace(end[3],time_cells=1,static_samples=2)
+            return "separated","rotational_support_clearance",end[2],trace,sweep
+    return None
+
+
 def affine_convex_contact(a,b,ma,mb):
     """Return a full positive clearance cover or a bounded first-overlap observation."""
     if not (ma.moving or mb.moving) or any(s.kind not in _KINDS for s in (a,b)):
-        return None
-    if any(p.turn and p.turn.angle for p in (ma,mb)):
         return None
     for shape,motion in ((a,ma),(b,mb)):
         if shape.kind in ("triangle","hull") and shape.radius:
             return "unsupported","support_path_material_offset",None,None,None
         if shape.kind=="triangle" and not _FacePath(shape,motion).valid:
             return "invalid_geometry","degenerate_material_triangle_path",None,None,None
+    if any(m.turn and m.turn.angle for m in (ma,mb)):
+        return _turn_clear(a,b,ma,mb)
     return _Window(a,b,ma,mb).run()

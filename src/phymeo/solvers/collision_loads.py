@@ -20,7 +20,7 @@ from ..core.result import StepReport
 from ..core.rigid import RigidBodyInputs
 from ..core.state import ParticleState, StepInputs
 from ..core.validation import finite_real, validate_dt
-from ..dynamics.rotation import SEMI_IMPLICIT_WORLD_OMEGA, quaternion_matrix
+from ..dynamics.rotation import SEMI_IMPLICIT_WORLD_OMEGA, advance_world_orientation, quaternion_matrix
 from ..geometry._capsule_triangle_sweep import capsule_material_sites
 from ..geometry.collision_pipeline import CollisionDetection, CollisionWorkspace, detect
 from ..geometry.collision_witness import ConvexContactPoint, ProximityWitness
@@ -237,14 +237,17 @@ class CollisionLoadSystem:
             ):
                 raise ValueError("layer pair is filtered by the collision model")
             kinds = tuple(sorted((x.kind, y.kind)))
-            if kinds not in {
+            smooth_pair = "ellipsoid" in kinds and set(kinds) <= {
+                "ellipsoid","sphere","triangle","particle","rounded_particle",
+            }
+            if (not smooth_pair and kinds not in {
                 ("hull", "hull"),
                 ("sphere", "triangle"),
                 ("capsule", "triangle"),
                 ("triangle", "triangle"),
                 ("particle", "plate"),
                 ("plate", "triangle"),
-            } or any(s.radius and s.kind not in ("sphere", "capsule", "plate") for s in (x, y)):
+            }) or any(s.radius and s.kind not in ("sphere", "capsule", "plate", "rounded_particle") for s in (x, y)):
                 raise ValueError("unsupported shape combination for contact layer")
             if law.friction and x.rigid == y.rigid:
                 raise ValueError("sliding layer requires one rigid and one deformable surface")
@@ -267,7 +270,7 @@ class CollisionLoadSystem:
         with self._lock:
             self._last = frame
 
-    def _paths(self, state, end=None, rigid_solver=None):
+    def _paths(self, state, end=None, rigid_solver=None, dt=None):
         particles = state if isinstance(state, ParticleState) else state.particles
         end_particles = end if end is None or isinstance(end, ParticleState) else end.particles
         rotations = (
@@ -290,8 +293,25 @@ class CollisionLoadSystem:
                 raise ValueError("rigid attachment row exceeds state")
             local = np.array(b.vertices)
             start = local @ rotations[r].T + state.rigid.position[r]
+            body_frame=None
+            if s.curved is not None:
+                q0=state.rigid.orientation[r].astype(float)
+                body_frame=q0/np.hypot.reduce(q0)
             if end is None:
-                out[s.key] = CollisionMotion(start)
+                out[s.key] = CollisionMotion(start,body_orientation_xyzw=body_frame)
+                continue
+            if body_frame is not None:
+                if dt is None or getattr(rigid_solver,"rigid_motion_contract",None)!=SEMI_IMPLICIT_WORLD_OMEGA:
+                    raise SolverFailure("attached curved solid requires a bound physical angular drift")
+                omega=end.rigid.angular_velocity[r].astype(float)
+                speed=float(np.hypot.reduce(omega))
+                axis=(1.,0.,0.) if not speed else omega/speed
+                expected=advance_world_orientation(body_frame[None,:],omega[None,:],dt)[0]
+                q1=end.rigid.orientation[r]
+                if min(np.linalg.norm(q1-expected),np.linalg.norm(q1+expected))>16*np.finfo(q1.dtype).eps:
+                    raise SolverFailure("curved attachment orientation differs from physical angular drift")
+                turn=RigidTurn(tuple(state.rigid.position[r]),tuple(end.rigid.position[r]),axis,speed*dt)
+                out[s.key]=CollisionMotion(start,turn=turn,body_orientation_xyzw=body_frame)
                 continue
             if s.kind == "capsule" and (
                 getattr(rigid_solver, "rigid_motion_contract", None) != SEMI_IMPLICIT_WORLD_OMEGA
@@ -313,13 +333,13 @@ class CollisionLoadSystem:
             out[s.key] = CollisionMotion(start, turn=turn)
         return out
 
-    def _query(self, state, end, work, capacity, rigid_solver=None):
+    def _query(self, state, end, work, capacity, rigid_solver=None, dt=None):
         policy = CollisionPolicy(
             margin=self._margin,
             proximity_patches=end is None,
             **({} if capacity is None else {"candidate_capacity": capacity}),
         )
-        result = detect(self.model, self._paths(state, end, rigid_solver), policy, work)
+        result = detect(self.model, self._paths(state, end, rigid_solver, dt), policy, work)
         if result.status != "ok":
             raise SolverFailure("collision " + result.status)
         return result
@@ -370,8 +390,8 @@ class CollisionLoadSystem:
         with self._transaction(workspace):
             return self._checked_path(first, last, workspace, capacity)
 
-    def _checked_path(self, first, last, workspace, capacity, rigid_solver=None):
-        path = self._query(first, last, workspace, capacity, rigid_solver)
+    def _checked_path(self, first, last, workspace, capacity, rigid_solver=None, dt=None):
+        path = self._query(first, last, workspace, capacity, rigid_solver, dt)
         for pair in path.pairs:
             if (pair.first, pair.second) in self.layers and pair.status not in (
                 "separated",
@@ -396,7 +416,11 @@ class CollisionLoadSystem:
             if pair.status not in ("separated", "touching", "overlap"):
                 raise SolverFailure(pair.reason)
             w = pair.witness
-            if w is None or w.gap_m >= law.width_m:
+            if w is None:
+                if pair.status != "separated":
+                    raise SolverFailure("overlapping material pair has no resolved load witness")
+                continue
+            if w.gap_m >= law.width_m:
                 continue
             if w.gap_m <= 0 or w.normal is None:
                 raise SolverFailure("hard core has no admissible layer state")
@@ -525,7 +549,7 @@ class CollisionLoadSystem:
                     output.append(entry)
                     reports.append(None)
             candidate = CoupledState(*output)
-            path = self._checked_path(state, candidate, workspace, capacity, rigid_solver)
+            path = self._checked_path(state, candidate, workspace, capacity, rigid_solver, h)
             frame = CollisionLoadStep(
                 CoupledState(state.particles, state.rigid),
                 candidate,

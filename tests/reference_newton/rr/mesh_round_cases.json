@@ -1,0 +1,19 @@
+{
+  "mesh_assets": {"box":{"low":[-1,-1,-1],"high":[1,1,1]},"u":{"source":"cases.json#u_prism"}},
+  "poses": [
+    {"id":"sphere-face","mesh":"box","axis_m":[[1.125,0.125,-0.25]],"radius_m":0.25,"relation":"boundary_overlap","axis_gap_m":-0.125,"boundary_gap_m":0,"mesh_point_m":[1,0.125,-0.25],"normal_mesh_to_round":[1,0,0]},
+    {"id":"sphere-edge","mesh":"box","axis_m":[[1.09375,1.125,0]],"radius_m":0.125,"relation":"separated","axis_gap_m":0.03125,"boundary_gap_m":0.03125,"mesh_point_m":[1,1,0],"normal_mesh_to_round":[0.6,0.8,0]},
+    {"id":"sphere-corner","mesh":"box","axis_m":[[1.03125,1.0625,1.0625]],"radius_m":0.125,"relation":"boundary_overlap","axis_gap_m":-0.03125,"boundary_gap_m":0,"mesh_point_m":[1,1,1],"normal_mesh_to_round":[0.3333333333333333,0.6666666666666666,0.6666666666666666]},
+    {"id":"sphere-touch","mesh":"box","axis_m":[[1.125,0.1875,0.125]],"radius_m":0.125,"relation":"touching","axis_gap_m":0,"boundary_gap_m":0,"mesh_point_m":[1,0.1875,0.125],"normal_mesh_to_round":[1,0,0]},
+    {"id":"sphere-contained","mesh":"box","axis_m":[[0.5,0,0]],"radius_m":0.125,"relation":"mesh_contains_round","axis_gap_m":0.375,"boundary_gap_m":0.375,"mesh_point_m":[1,0,0],"normal_mesh_to_round":[1,0,0]},
+    {"id":"sphere-encloses","mesh":"box","axis_m":[[0,0,0]],"radius_m":2,"relation":"round_contains_mesh","axis_gap_m":-1,"boundary_gap_m":0.2679491924311228},
+    {"id":"u-notch","mesh":"u","axis_m":[[0,0.25,0]],"radius_m":0.25,"relation":"separated","axis_gap_m":0.75,"boundary_gap_m":0.75},
+    {"id":"u-right","mesh":"u","axis_m":[[0.875,0.25,0]],"radius_m":0.25,"relation":"boundary_overlap","axis_gap_m":-0.125,"boundary_gap_m":0,"mesh_point_m":[1,0.25,0],"normal_mesh_to_round":[-1,0,0]},
+    {"id":"u-left","mesh":"u","axis_m":[[-0.875,0.25,0]],"radius_m":0.25,"relation":"boundary_overlap","axis_gap_m":-0.125,"boundary_gap_m":0,"mesh_point_m":[-1,0.25,0],"normal_mesh_to_round":[1,0,0]},
+    {"id":"capsule-shaft","mesh":"box","axis_m":[[1.125,0.25,-0.375],[1.125,0.25,0.375]],"radius_m":0.25,"relation":"boundary_overlap","axis_gap_m":-0.125,"boundary_gap_m":0,"normal_mesh_to_round":[1,0,0]},
+    {"id":"capsule-tip","mesh":"box","axis_m":[[1.09375,1.125,0],[1.09375,1.625,0]],"radius_m":0.1875,"relation":"boundary_overlap","axis_gap_m":-0.03125,"boundary_gap_m":0,"mesh_point_m":[1,1,0],"normal_mesh_to_round":[0.6,0.8,0]},
+    {"id":"capsule-pierces","mesh":"box","axis_m":[[-2,0,0],[2,0,0]],"radius_m":0.125,"relation":"boundary_overlap","axis_gap_m":-0.125,"boundary_gap_m":0},
+    {"id":"capsule-encloses","mesh":"box","axis_m":[[0,0,-1],[0,0,1]],"radius_m":2,"relation":"round_contains_mesh","axis_gap_m":-2,"boundary_gap_m":0.5857864376269049},
+    {"id":"degenerate-axis","mesh":"u","axis_m":[[0.875,0.25,0],[0.875,0.25,0]],"radius_m":0.25,"relation":"boundary_overlap","axis_gap_m":-0.125,"boundary_gap_m":0,"mesh_point_m":[1,0.25,0],"normal_mesh_to_round":[-1,0,0]}
+  ]
+}

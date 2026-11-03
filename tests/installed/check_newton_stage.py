@@ -275,14 +275,63 @@ def imported_mesh_contacts(ph, np, assets, mode, cache):
     return output
 
 
+def reference_handoff(cli, target):
+    """Run the public CLI from this installed package, then inspect its original physical frames."""
+    import gzip
+    import runpy
+
+    trace_path = target / "articulated-reference-handoff.json.gz"
+    old = sys.argv
+    try:
+        sys.argv = [str(cli), "--case", "handoff", "--robot", "articulated",
+                    "--fabric", "reference", "--output", str(trace_path)]
+        try:
+            runpy.run_path(str(cli), run_name="__main__")
+        except SystemExit as result:
+            assert result.code == 0, result.code
+    finally:
+        sys.argv = old
+    with gzip.open(trace_path, "rt", encoding="utf-8") as stream:
+        record = json.load(stream)
+    frames = record["frames"]
+    events = record["events"]
+    expected = ["grasp_A","lift_A","share","release_A","carry_B",
+                "lower_B","open_B","settle","placed"]
+    assert record["completed"] and [e["phase"] for e in events] == expected
+    steps = (len(frames) - 1) * record["substeps"]
+    assert steps == len(record["robot_samples"]) and len(record["samples"]) == steps * len(record["patches"])
+    at = {}
+    for event in events:
+        frame = min(frames, key=lambda src: abs(src["t"] - event["t"]))
+        if event["phase"] in {"release_A", "carry_B", "lower_B", "placed"}:
+            assert abs(frame["t"] - event["t"]) < 1e-9
+            at[event["phase"]] = frame["measurements"]
+    share, first, last, placed = (at[k] for k in ("release_A","carry_B","lower_B","placed"))
+    weight = record["metrics"]["weight_n"]
+    assert share["A_up_n"] > 0 and share["B_up_n"] > 0
+    transport = last["cloth_center_x_m"] - first["cloth_center_x_m"]
+    assert transport > .035 and last["B_up_n"] > .2 * weight and last["A_normal_n"] < .01
+    assert all(f["measurements"]["table_up_n"] > .35*weight and
+               f["measurements"]["A_normal_n"] < .01 and f["measurements"]["B_normal_n"] < .01
+               for f in frames[-10:])
+    assert placed["speed_m_s"] < .05 and .9*weight < placed["table_up_n"] < 1.1*weight
+    return dict(physical_frames=len(frames),substeps=steps,time_s=record["time_s"],
+                phases=[e["phase"] for e in events],b_independent_transport_m=transport,
+                share_up_n=[share["A_up_n"],share["B_up_n"]],b_carry_up_n=last["B_up_n"],
+                last_jaw_n=[placed["A_normal_n"],placed["B_normal_n"]],
+                final_table_n=placed["table_up_n"],cloth_weight_n=weight,
+                final_node_speed_m_s=placed["speed_m_s"],trace=str(trace_path))
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--wheel-site", type=Path, required=True)
     p.add_argument("--checkout", type=Path, required=True)
     p.add_argument("--out", type=Path, required=True)
-    p.add_argument("--mode", choices=["host", "cuda", "usd"], required=True)
+    p.add_argument("--mode", choices=["host", "cuda", "usd", "handoff"], required=True)
     p.add_argument("--usd-fixture", type=Path)
     p.add_argument("--mesh-assets", type=Path)
+    p.add_argument("--case-cli", type=Path)
     args = p.parse_args()
     site, checkout = args.wheel_site.resolve(), args.checkout.resolve()
     assert sys.flags.isolated and all(
@@ -319,7 +368,10 @@ def main():
         cwd=str(Path.cwd()),
         interpreter_dependency_paths_under_checkout=[str(path) for path in local_env_paths],
     )
-    if args.mode == "usd":
+    if args.mode == "handoff":
+        assert args.case_cli and not args.case_cli.resolve().is_relative_to(checkout)
+        result["reference_handoff"] = reference_handoff(args.case_cli, args.out.parent)
+    elif args.mode == "usd":
         assert args.usd_fixture and not args.usd_fixture.resolve().is_relative_to(checkout)
         asset = ph.load_usd(args.usd_fixture)
         assert asset.model.dof_count > 0 and asset.collisions
@@ -360,7 +412,7 @@ def main():
             field=field_sample(ph, np, args.mode, args.out.parent / "cache"),
             pages=many_worlds(ph, args.mode, args.out.parent / "cache"),
         )
-    if args.mode != "usd":
+    if args.mode in ("host", "cuda"):
         assert args.mesh_assets and not args.mesh_assets.resolve().is_relative_to(checkout)
         result["mesh_assets"] = imported_mesh_contacts(ph, np, args.mesh_assets, args.mode, args.out.parent / "cache")
         result["floating_impact"] = floating_impact(ph, np)

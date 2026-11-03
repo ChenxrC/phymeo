@@ -151,6 +151,11 @@ def _link_collisions(link, link_name, link_index):
         if primitive.tag == "sphere":
             _attributes(primitive, {"radius"}, where)
             size = _numbers(primitive, "radius", 1, where)
+        elif primitive.tag == "cylinder":
+            _attributes(primitive, {"radius", "length"}, where)
+            size = np.array(
+                [_number(primitive, "radius", where), 0.5 * _number(primitive, "length", where)]
+            )
         elif primitive.tag == "box":
             _attributes(primitive, {"size"}, where)
             size = _numbers(primitive, "size", 3, where) / 2
@@ -170,7 +175,7 @@ def load_urdf(path: str | Path, *, gravity=(0.0, 0.0, -9.81)) -> RobotAsset:
     An absent joint axis defaults to +X. Moving links need positive mass and a
     COM inertia diagonal after rotating the URDF inertial frame into the link.
     Optional fixed-root inertia is validated and omitted from moving dynamics.
-    Spheres and boxes retain their authored link, name and collision transform.
+    Spheres, boxes and Z-axis cylinders retain their authored link, name and collision transform.
     Visuals and global display materials are ignored. Other joint/shape types
     and semantic elements (e.g. mimic or joint dynamics) raise ValueError.
     """

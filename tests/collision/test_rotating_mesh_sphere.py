@@ -24,7 +24,7 @@ def scene(vertices, faces, center, radius, angle, *, reverse=False, transformed=
     sphere = ph.CollisionShape(ph.CollisionKey(0, int(not reverse), 1), "sphere", (41,), radius)
     vertices = np.asarray(vertices) @ matrix.T + origin
     center = matrix @ center + origin
-    turn = ph.RigidTurn(origin, origin + drift, matrix @ (0, 0, 2), angle)
+    turn = ph.RigidTurn(origin, origin + drift, matrix @ (0, 0, 1), angle)
     paths = {
         mesh.key: ph.CollisionMotion(vertices, turn=turn),
         sphere.key: ph.CollisionMotion([center], [center + drift]),

@@ -1,0 +1,42 @@
+{
+  "fixtures": {
+    "hinge": {
+      "parents": [-1], "kinds": ["revolute"], "anchors": [[0,0,0]], "axes": [[0,0,1]],
+      "com_m": [[0.25,0,0]], "mass_kg": [1]
+    },
+    "branches": {
+      "parents": [-1,-1,1], "kinds": ["revolute","prismatic","revolute"],
+      "anchors": [[0,0,0],[0,-0.125,0.25],[0,0,0]], "axes": [[0,0,1],[1,0,0],[1,0,0]],
+      "com_m": [[0.0625,0,0],[0,0,0],[0,0.03125,0]], "mass_kg": [1,2,1]
+    }
+  },
+  "cases": [
+    {
+      "id": "STATIC-90", "model": "hinge", "q": [0], "v": [0],
+      "reference": [null,[0.125,-0.25,0],[0,0,0.7071067811865476,0.7071067811865476]],
+      "target": [null,[0.375,-0.25,0],[0,0,0,1]],
+      "position_m": [0,-0.25,0], "rotation": [[0,1,0],[-1,0,0],[0,0,1]],
+      "linear_velocity_m_s": [0,0,0], "angular_velocity_rad_s": [0,0,0]
+    },
+    {
+      "id": "SAME-LINK", "model": "hinge", "q": [1.5707963267948966], "v": [2],
+      "reference": [0,[0.125,0,0],[0,0,0,1]],
+      "target": [0,[0.375,0.0625,0],[0.7071067811865476,0,0,0.7071067811865476]],
+      "position_m": [0.25,0.0625,0], "rotation": [[1,0,0],[0,0,-1],[0,1,0]],
+      "linear_velocity_m_s": [0,0,0], "angular_velocity_rad_s": [0,0,0]
+    },
+    {
+      "id": "ROTATING-REF", "model": "hinge", "q": [1.5707963267948966], "v": [2],
+      "reference": [0,[0,0,0],[0,0,0,1]], "target": [null,[0.25,0,0],[0,0,0,1]],
+      "position_m": [0,-0.25,0], "rotation": [[0,1,0],[-1,0,0],[0,0,1]],
+      "linear_velocity_m_s": [-0.5,0,0], "angular_velocity_rad_s": [0,0,-2]
+    },
+    {
+      "id": "OBLIQUE-BRANCH", "model": "branches",
+      "q": [0.9272952180016122,0.25,1.5707963267948966], "v": [0.5,0.125,0.25],
+      "reference": [0,[0.25,0,0],[0,0,0,1]], "target": [2,[0,0.125,0],[0,0,0,1]],
+      "position_m": [-0.2,-0.275,0.375], "rotation": [[0.6,0,-0.8],[-0.8,0,-0.6],[0,1,0]],
+      "linear_velocity_m_s": [-0.0875,-0.14375,0], "angular_velocity_rad_s": [0.15,-0.2,-0.5]
+    }
+  ]
+}

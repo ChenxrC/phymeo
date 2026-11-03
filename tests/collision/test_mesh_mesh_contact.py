@@ -160,7 +160,9 @@ def test_invalid_and_rotation_do_not_become_false_separation():
     paths[key] = ph.CollisionMotion(
         paths[key].start, turn=ph.RigidTurn((0, 0, 0), (0, 0, 0), (0, 0, 1), 1)
     )
-    assert detect(model, paths).status == "unsupported"
+    row = detect(model, paths)
+    assert row.status == "hit" and row.sweep.first_t == (0.0, 0.0)
+    assert row.mesh_mesh.start.relation == "coincident"
 
 
 def test_two_l_prisms_share_an_aabb_but_only_one_pose_cuts_the_concave_arm():

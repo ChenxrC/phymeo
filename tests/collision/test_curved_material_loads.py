@@ -132,3 +132,30 @@ def test_curved_trial_crossing_aborts_and_preserves_last_publication(tmp_path):
         with pytest.raises(SolverFailure):
             system.step(failed,ext,models,(None,ph.RigidSemiImplicitSolver()),1/32,work)
         assert system.last_frame is good and work.last_result is before
+
+
+def test_angular_clearance_covers_small_real_arcs_and_refuses_hidden_half_turn():
+    key, cloth=ph.CollisionKey(0,1,0),ph.CollisionKey(0,2,0)
+    shape=ph.CollisionShape(key,"ellipsoid",(5,),curved=ph.CurvedSolid("ellipsoid",(.5,.25,.125)))
+    sheet=ph.CollisionShape(cloth,"triangle",(4,9,11))
+    center=(0,0,.25)
+    triangle=ph.CollisionMotion([[-2,-1,0],[2,-1,0],[0,2,0]])
+    model=ph.CollisionModel((sheet,shape))
+    with ph.CollisionWorkspace(model) as work:
+        def sample(angle):
+            arc=ph.RigidTurn(center,center,(0,1,0),angle)
+            motion=ph.CollisionMotion([center],turn=arc)
+            pair,=ph.detect(model,{key:motion,cloth:triangle},ph.CollisionPolicy(margin=.5),work).pairs
+            return pair
+
+        clear=sample(.05)
+        assert clear.status=="separated" and clear.reason=="rotational_support_clearance"
+        assert clear.sweep.first_t is None
+        end_gap=.25-hypot(.5*np.sin(.05),.125*np.cos(.05))
+        assert clear.sweep.end_gap_m==pytest.approx(end_gap,abs=2e-5)
+        hidden=sample(np.pi)
+        assert hidden.status in ("unsupported","unresolved","hit")
+        if hidden.status=="hit":
+            assert hidden.sweep.first_t is not None
+        # At half the arc, the long axis is vertical and passes through the sheet.
+        assert .25-.5<0 and .25-.125>0

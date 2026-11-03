@@ -78,13 +78,16 @@ class TyxWorldContactBatch:
 
     def restore(self, by_world):
         with self._lock:
-            self._open()
-            if not isinstance(by_world, Mapping):
-                raise TypeError("checkpoints must be keyed by world")
-            points = dict(self._points)
-            for k in self._keys(by_world):
-                points[k] = self._worlds[k].validate(by_world[k])
-            self._points = points
+            self._publish_points(self._stage_restore(by_world))
+
+    def _stage_restore(self, by_world):
+        self._open()
+        if not isinstance(by_world, Mapping):
+            raise TypeError("checkpoints must be keyed by world")
+        points = dict(self._points)
+        for k in self._keys(by_world):
+            points[k] = self._worlds[k].validate(by_world[k])
+        return points
 
     def reset(self, keys=None):
         with self._lock:
@@ -193,63 +196,72 @@ class TyxWorldContactBatch:
     def step(self, h, loads, *, site_capacity=None):
         """Advance co-located worlds; rejected worlds retain their last accepted state and audit."""
         with self._lock:
-            self._open()
-            h = float(as_fp32(h, "physical substep", ()))
-            if h <= 0:
-                raise ValueError("physical substep must be positive")
-            if not isinstance(loads, Mapping) or set(self._keys(loads)) != set(self._worlds):
-                raise ValueError("every world requires physical loads")
-            caps = self._limits(site_capacity)
-            if not self._worlds:
-                return {}
-            frames, failures, v, stages, enabled = self._frames(h, loads, caps)
-            if not frames:
-                return {key: failures[key] for key in self._worlds}
-            rows, forces, mapped, status, dx, dv = self._evaluate(v, stages, enabled, h)
-            points = dict(self._points)
-            results = {}
-            for i, (key, world) in enumerate(self._worlds.items()):
-                old = self._points[key]
-                if key in failures:
-                    results[key] = failures[key]
-                    continue
-                f = frames[key]
-                try:
-                    if not status[i] or not all(
-                        np.isfinite(a[i]).all() for a in (rows, forces, mapped, dx, dv)
-                    ):
-                        raise SolverFailure("nonfinite candidate from TYX contact operator")
-                    # Add device-integrated increments to the original FP64 material coordinates.
-                    end = world.scene(
-                        np.asarray(old.position) + dx[i, :3],
-                        np.asarray(old.velocity) + dv[i, :3],
-                        old.q + float(dx[i, 3, 0]),
-                        old.qd + float(dv[i, 3, 0]),
-                    )
-                    final_face = world.geometry(end)
-                    max_depth = world.p.max_penetration_m
-                    if (
-                        max_depth is not None
-                        and min(f.entry_face.gap, f.mid_face.gap, final_face.gap) < -max_depth
-                    ):
-                        raise SolverFailure("sampled cloth-link penetration exceeds limit")
-                    world.p._check_link_motion(
-                        f.state, f.mid, end, None, world.p._link_geometry(end)
-                    )
-                    sample = world.sample(f.mid_face, rows[i], forces[i], mapped[i])
-                    audit = world.audit(
-                        old, end, f.entry_face, final_face, sample, f.external, f.spring, h
-                    )
-                    cloth = end.domains[world.cloth]
-                    arm = end.domains[world.robot]
-                    points[key] = world.point(
-                        cloth.position, cloth.velocity, arm.q[0], arm.v[0], old.tick + 1, audit
-                    )
-                    results[key] = WorldContactResult(True, f.required, None, audit)
-                except (SolverFailure, FloatingPointError, ValueError) as error:
-                    results[key] = WorldContactResult(False, f.required, str(error), old.last_audit)
-            self._points = points
+            points, results = self._stage_step(h, loads, site_capacity=site_capacity)
+            self._publish_points(points)
             return results
+
+    def _publish_points(self, points):
+        # The physical checkpoint and its audit are immutable. All device work is done.
+        self._points = points
+
+    def _stage_step(self, h, loads, *, site_capacity=None):
+        """Prepare a complete material result; the owning stepper controls publication."""
+        self._open()
+        h = float(as_fp32(h, "physical substep", ()))
+        if h <= 0:
+            raise ValueError("physical substep must be positive")
+        if not isinstance(loads, Mapping) or set(self._keys(loads)) != set(self._worlds):
+            raise ValueError("every world requires physical loads")
+        caps = self._limits(site_capacity)
+        if not self._worlds:
+            return self._points, {}
+        frames, failures, v, stages, enabled = self._frames(h, loads, caps)
+        if not frames:
+            return self._points, {key: failures[key] for key in self._worlds}
+        rows, forces, mapped, status, dx, dv = self._evaluate(v, stages, enabled, h)
+        points = dict(self._points)
+        results = {}
+        for i, (key, world) in enumerate(self._worlds.items()):
+            old = self._points[key]
+            if key in failures:
+                results[key] = failures[key]
+                continue
+            f = frames[key]
+            try:
+                if not status[i] or not all(
+                    np.isfinite(a[i]).all() for a in (rows, forces, mapped, dx, dv)
+                ):
+                    raise SolverFailure("nonfinite candidate from TYX contact operator")
+                # Add device-integrated increments to the original FP64 material coordinates.
+                end = world.scene(
+                    np.asarray(old.position) + dx[i, :3],
+                    np.asarray(old.velocity) + dv[i, :3],
+                    old.q + float(dx[i, 3, 0]),
+                    old.qd + float(dv[i, 3, 0]),
+                )
+                final_face = world.geometry(end)
+                max_depth = world.p.max_penetration_m
+                if (
+                    max_depth is not None
+                    and min(f.entry_face.gap, f.mid_face.gap, final_face.gap) < -max_depth
+                ):
+                    raise SolverFailure("sampled cloth-link penetration exceeds limit")
+                world.p._check_link_motion(
+                    f.state, f.mid, end, None, world.p._link_geometry(end)
+                )
+                sample = world.sample(f.mid_face, rows[i], forces[i], mapped[i])
+                audit = world.audit(
+                    old, end, f.entry_face, final_face, sample, f.external, f.spring, h
+                )
+                cloth = end.domains[world.cloth]
+                arm = end.domains[world.robot]
+                points[key] = world.point(
+                    cloth.position, cloth.velocity, arm.q[0], arm.v[0], old.tick + 1, audit
+                )
+                results[key] = WorldContactResult(True, f.required, None, audit)
+            except (SolverFailure, FloatingPointError, ValueError) as error:
+                results[key] = WorldContactResult(False, f.required, str(error), old.last_audit)
+        return points, results
 
     def stats(self):
         with self._lock:

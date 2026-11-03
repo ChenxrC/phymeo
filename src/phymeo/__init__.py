@@ -179,6 +179,7 @@ from .geometry.surface_features import (
     closest_point_triangle,
     closest_segment_segment,
 )
+from .runtime.batched_scene import BatchedStepResult, TyxBatchedScene
 from .runtime.finite_contact_terminal import FiniteContactTerminalProgram
 from .runtime.load_replay import ReplayTrial, SceneLoadReplay
 from .runtime.program import (
@@ -340,6 +341,8 @@ __all__ = [
     "FreeSphere",
     "PrismaticSlider",
     "TyxWorldBatch",
+    "TyxBatchedScene",
+    "BatchedStepResult",
     "WorldCheckpoint",
     "ClothLinkWorld",
     "TyxWorldContactBatch",

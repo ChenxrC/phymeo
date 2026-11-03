@@ -1,4 +1,4 @@
-"""Static bounded convex primitives using support witnesses on the Minkowski difference."""
+"""Static convex material features using support witnesses on the Minkowski difference."""
 
 from dataclasses import dataclass
 from itertools import combinations
@@ -8,12 +8,14 @@ import numpy as np
 from ..core.capabilities import SolverFailure
 from ._convex_hull import HullShape
 from ._curved_solids import _rotation
+from ._triangle_pair_sweep import _FacePath
 from .collision_witness import CollisionWitness
 
 _TOL_M = 2e-7
 _MAX_GJK = 64
 _MAX_EPA = 192
-_KINDS = frozenset(("sphere", "capsule", "cylinder", "cone", "ellipsoid", "hull"))
+_VERTEX_SUPPORT = frozenset(("sphere", "capsule", "hull", "triangle", "particle", "rounded_particle"))
+_KINDS = _VERTEX_SUPPORT | {"cylinder", "cone", "ellipsoid"}
 
 
 @dataclass(frozen=True)
@@ -47,12 +49,14 @@ class _Body:
         if shape.curved is not None:
             self.frame = _rotation(shape.curved).astype(np.float64)
             self.dims = shape.curved.dimensions_m
+        if shape.kind == "triangle" and not _FacePath(shape, path).valid:
+            raise ValueError("degenerate_material_triangle")
         if shape.kind == "hull":
             HullShape(shape, path)  # Enforce the same full-dimensional registration as hull/hull.
         self.extent = float(np.max(np.abs(self.points))) + max((*self.dims, self.radius))
 
     def support(self, direction):
-        if self.kind in ("sphere", "capsule", "hull"):
+        if self.kind in _VERTEX_SUPPORT:
             i = int(np.argmax(self.points @ direction))
             return self.points[i] + self.radius * direction, i
         local = self.frame.T @ direction
@@ -75,7 +79,7 @@ class _Body:
         coefficients = np.zeros(len(self.points))
         np.add.at(coefficients, indices, weights)
         address = tuple((int(key), float(weight)) for key, weight in zip(self.ids, coefficients, strict=True) if weight > 0)
-        offset = None if self.kind == "hull" else tuple(map(float, point - coefficients @ self.points))
+        offset = None if self.kind in ("triangle", "hull", "particle") else tuple(map(float, point - coefficients @ self.points))
         return address, offset
 
 
@@ -299,6 +303,8 @@ def static_convex_support(a, b, ma, mb):
     """Return one bounded-distance observation for two registered, finite convex bodies."""
     if a.kind not in _KINDS or b.kind not in _KINDS or ma.moving or mb.moving:
         return None
+    if any(shape.kind == "triangle" and shape.radius for shape in (a, b)):
+        return "unsupported", "material_triangle_thickness", None, None
     if any(shape.kind == "hull" and shape.radius for shape in (a, b)):
         return "unsupported", "convex_hull_offset", None, None
     try:

@@ -249,8 +249,8 @@ class CollisionLoadSystem:
                 ("plate", "triangle"),
             }) or any(s.radius and s.kind not in ("sphere", "capsule", "plate", "rounded_particle") for s in (x, y)):
                 raise ValueError("unsupported shape combination for contact layer")
-            if law.friction and x.rigid == y.rigid:
-                raise ValueError("sliding layer requires one rigid and one deformable surface")
+            if law.friction and x.rigid == y.rigid and not (x.rigid and smooth_pair):
+                raise ValueError("sliding layer requires an admitted smooth rigid pair or a rigid and deformable pair")
             laws[a, b] = law
         self.layers = MappingProxyType(laws)
         self._margin = max((v.width_m for v in laws.values()), default=0.0)
@@ -422,6 +422,8 @@ class CollisionLoadSystem:
                 continue
             if w.gap_m >= law.width_m:
                 continue
+            if pair.support_map is not None and pair.support_map.gap_lower_m <= 0:
+                raise SolverFailure("hard core lacks a strictly positive support gap")
             if w.gap_m <= 0 or w.normal is None:
                 raise SolverFailure("hard core has no admissible layer state")
             points = _sites(pair, self._shapes)
@@ -430,9 +432,13 @@ class CollisionLoadSystem:
             for site, fraction in zip(points, fractions, strict=True):
                 pa, pb = site.first_point, site.second_point
                 if law.friction:
-                    # The traction acts at the cloth material point. The rigid
-                    # pad supports a wrench at this same spatial location.
-                    pa = pb = pb if isinstance(self.bindings[pair.first], RigidAttachment) else pa
+                    if pair.family == "RR":
+                        # The equal tractions act through the same point of the layer.
+                        # Its midpoint is invariant if the two rigid owners are swapped.
+                        pa = pb = tuple((np.asarray(pa) + np.asarray(pb)) * 0.5)
+                    else:
+                        # The rigid pad carries the traction at the cloth material point.
+                        pa = pb = pb if isinstance(self.bindings[pair.first], RigidAttachment) else pa
                 va = self._velocity(pair.first, pa, site.first_weights, state)
                 vb = self._velocity(pair.second, pb, site.second_weights, state)
                 coordinates.append((pa, pb, vb - va))

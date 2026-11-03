@@ -255,7 +255,8 @@ def _turn_clear(window):
     bodies = window.a, window.b
     allowance = sum(
         body.reach * min(Fraction(2), abs(body.angle))
-        for body in bodies if isinstance(body, _RigidSupport)
+        for body in bodies
+        if isinstance(body, _RigidSupport)
     )
     start, end = window.sample(Fraction(0)), window.sample(Fraction(1))
     if not all(s.status == "separated" and s.witness is not None for s in (start, end)):
@@ -272,7 +273,13 @@ def _turn_clear(window):
             bodies[0].upper(direction, t) + bodies[1].upper(reverse, t) + pad < 0 for t in (0, 1)
         ):
             sweep = CollisionSweep(start.witness.gap_m, end.witness.gap_m, None, None, None)
-            return "separated", "rotational_support_clearance", end.witness, _end_trace(end, error, 1, 2), sweep
+            return (
+                "separated",
+                "rotational_support_clearance",
+                end.witness,
+                _end_trace(end, error, 1, 2),
+                sweep,
+            )
     return None
 
 

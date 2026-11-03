@@ -764,7 +764,15 @@ def _detect_pairs(
                     status, reason, witness, trace, sweep = moving
                     family = "RR" if a.rigid and b.rigid else "RD"
                     result = CollisionPair(
-                        a.key, b.key, family, True, status, reason, witness, sweep, support_map=trace
+                        a.key,
+                        b.key,
+                        family,
+                        True,
+                        status,
+                        reason,
+                        witness,
+                        sweep,
+                        support_map=trace,
                     )
                     batch.append((a, b, ma, mb, code, result, 0, 0))
                     continue

@@ -5,7 +5,6 @@ import pytest
 
 import phymeo as ph
 
-
 CYCLE = np.array([[0.0, 0.0, 1.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0]])
 CYCLE_Q = (0.5, 0.5, 0.5, 0.5)
 S = np.sqrt(0.5)
@@ -22,9 +21,7 @@ BINDINGS = {PLANE: ("plane", 0), SOLID: ("solid", 0)}
 
 def rigid_port(domain, mass, inertia, center, q, velocity, local_point):
     model = ph.RigidBodyModel(np.array([1.0 / mass]), np.array([inertia]), np.zeros(3))
-    state = ph.RigidBodyState(
-        center[None, :], np.array([q]), velocity[None, :], np.zeros((1, 3))
-    )
+    state = ph.RigidBodyState(center[None, :], np.array([q]), velocity[None, :], np.zeros((1, 3)))
     return ph.RigidPointPort(model, state, np.array([0]), np.array([local_point]), domain=domain)
 
 
@@ -99,7 +96,9 @@ def test_live_curved_plane_witness_rotates_impulse_and_reaction(cycled):
     arm = solid.position[0] - plane.position[0]
     angular = np.cross(arm, 2.0 * solid.velocity[0])
     solid_rotation = turn @ RZ90
-    solid_spin = solid_rotation @ (np.asarray(SOLID_INERTIA) * (solid_rotation.T @ solid.angular_velocity[0]))
+    solid_spin = solid_rotation @ (
+        np.asarray(SOLID_INERTIA) * (solid_rotation.T @ solid.angular_velocity[0])
+    )
     angular += solid_spin + 0.25 * plane.angular_velocity[0]
     np.testing.assert_allclose(momentum, -2.0 * normal, atol=2e-10, rtol=0)
     np.testing.assert_allclose(angular, turn @ [0, 0, 0.5], atol=2e-10, rtol=0)

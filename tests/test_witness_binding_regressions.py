@@ -10,9 +10,7 @@ import phymeo as ph
 
 def _sphere_model():
     keys = (ph.CollisionKey(7, 1, 0), ph.CollisionKey(7, 2, 0))
-    return ph.CollisionModel(
-        tuple(ph.CollisionShape(k, "sphere", (0,), radius=1.0) for k in keys)
-    )
+    return ph.CollisionModel(tuple(ph.CollisionShape(k, "sphere", (0,), radius=1.0) for k in keys))
 
 
 def _touch(model, centers):
@@ -21,7 +19,7 @@ def _touch(model, centers):
         for shape, center in zip(model.shapes, centers, strict=True)
     }
     with ph.CollisionWorkspace(model, "host") as workspace:
-        row, = ph.detect(model, motion, ph.CollisionPolicy(), workspace).pairs
+        (row,) = ph.detect(model, motion, ph.CollisionPolicy(), workspace).pairs
     assert row.candidate and row.status == "touching" and row.witness.gap_m == 0
     return row
 

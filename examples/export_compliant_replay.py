@@ -452,7 +452,7 @@ def structural_substep_windows(trace):
         rows = samples[index * steps : (index + 1) * steps]
         for j, row in enumerate(rows):
             entry = first["t"] + j * h
-            if not any(np.isclose(row["t"], t, rtol=0, atol=1e-12) for t in (entry, entry + h/2)):
+            if not any(np.isclose(row["t"], t, rtol=0, atol=1e-12) for t in (entry, entry + h / 2)):
                 raise ValueError("structural force time outside its original sampling stage")
         if last.get("robot_contact") != rows[-1] or not np.isclose(
             last.get("force_sample_s", np.nan), rows[-1]["t"], rtol=0, atol=1e-12
@@ -511,6 +511,10 @@ if __name__ == "__main__":
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("source", type=Path)
     p.add_argument("output", type=Path)
-    p.add_argument("--structural-substeps", action="store_true", help="Include recorded finite material and link geometry at each physical force time")
+    p.add_argument(
+        "--structural-substeps",
+        action="store_true",
+        help="Include recorded finite material and link geometry at each physical force time",
+    )
     args = p.parse_args()
     print(export(args.source, args.output, structural_substeps=args.structural_substeps))

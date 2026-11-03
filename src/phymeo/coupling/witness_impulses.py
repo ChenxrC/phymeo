@@ -17,10 +17,12 @@ from .domain_graph import MultiDomainPointOperator
 def _chart_point(frame, local, origin):
     origins, rotation, _ = frame
     arm = rotation @ local
-    return np.array([
-        fsum([*(float(term[k]) for term in origins), float(arm[k]), -float(origin[k])])
-        for k in range(3)
-    ])
+    return np.array(
+        [
+            fsum([*(float(term[k]) for term in origins), float(arm[k]), -float(origin[k])])
+            for k in range(3)
+        ]
+    )
 
 
 def _material_anchor(shape, path, weights):
@@ -29,15 +31,21 @@ def _material_anchor(shape, path, weights):
         raise ValueError("collision witness requires one bounded material address")
     nodes = [node for node, _ in weights]
     values = [float(weight) for _, weight in weights]
-    if (len(set(nodes)) != len(nodes) or not np.isfinite(values).all()
-            or min(values) < 0 or abs(fsum(values) - 1.0) > 1e-12):
+    if (
+        len(set(nodes)) != len(nodes)
+        or not np.isfinite(values).all()
+        or min(values) < 0
+        or abs(fsum(values) - 1.0) > 1e-12
+    ):
         raise ValueError("collision witness material coordinates must be a convex combination")
     vertices = dict(zip(shape.vertex_ids, path.start, strict=True))
     try:
-        return np.array([
-            fsum(float(weight) * float(vertices[node][k]) for node, weight in weights)
-            for k in range(3)
-        ])
+        return np.array(
+            [
+                fsum(float(weight) * float(vertices[node][k]) for node, weight in weights)
+                for k in range(3)
+            ]
+        )
     except KeyError as exc:
         raise ValueError("collision witness refers to an unregistered material vertex") from exc
 
@@ -146,7 +154,9 @@ def solve_witness_impulses(
     if local_normals is None:
         local_normals = {}
     if not isinstance(local_vertices, Mapping) or not isinstance(local_normals, Mapping):
-        raise TypeError("local_vertices and local_normals must be mappings keyed by collision shape")
+        raise TypeError(
+            "local_vertices and local_normals must be mappings keyed by collision shape"
+        )
     first, second, witnesses, pairs = [], [], [], []
     event_time = None
     for pair, bindings in rows:
@@ -200,10 +210,13 @@ def solve_witness_impulses(
         raise ValueError("witness geometry supplied for an unbound shape")
     if set(local_normals) - {s.key for p in pairs for s in p.witness_shapes if s.kind == "plane"}:
         raise ValueError("body-local normal supplied for an unbound plane")
-    normals = np.asarray([
-        _current_normal(pair, witness, (a, b), ports, local_vertices, local_normals, tol)
-        for pair, witness, a, b in zip(pairs, witnesses, first, second, strict=True)
-    ], dtype=np.float64).reshape(-1, 3)
+    normals = np.asarray(
+        [
+            _current_normal(pair, witness, (a, b), ports, local_vertices, local_normals, tol)
+            for pair, witness, a, b in zip(pairs, witnesses, first, second, strict=True)
+        ],
+        dtype=np.float64,
+    ).reshape(-1, 3)
     return solve_contact_impulses(
         graph,
         normals,

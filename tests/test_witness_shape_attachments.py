@@ -15,7 +15,7 @@ def _detect(model, capsule_vertices, ball_center):
         ball.key: ph.CollisionMotion([ball_center]),
     }
     with ph.CollisionWorkspace(model, "host") as work:
-        row, = ph.detect(model, paths, ph.CollisionPolicy(), work).pairs
+        (row,) = ph.detect(model, paths, ph.CollisionPolicy(), work).pairs
     assert row.candidate and row.status == "touching" and row.witness.gap_m == 0
     return row
 
@@ -24,14 +24,14 @@ def _scene(rotated=False):
     capsule = ph.CollisionShape(ph.CollisionKey(4, 1, 0), "capsule", (11, 23), radius=0.25)
     ball = ph.CollisionShape(ph.CollisionKey(4, 2, 0), "sphere", (37,), radius=0.25)
     model = ph.CollisionModel((capsule, ball))
-    R = np.array([[0., 0., 1.], [1., 0., 0.], [0., 1., 0.]]) if rotated else np.eye(3)
-    origin = np.array([2., -3., 0.5]) if rotated else np.zeros(3)
-    q = np.array([0.5] * 4) if rotated else np.array([0., 0., 0., 1.])
-    local = np.array([[0., 0., 0.], [2., 0., 0.]])
+    R = np.array([[0.0, 0.0, 1.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0]]) if rotated else np.eye(3)
+    origin = np.array([2.0, -3.0, 0.5]) if rotated else np.zeros(3)
+    q = np.array([0.5] * 4) if rotated else np.array([0.0, 0.0, 0.0, 1.0])
+    local = np.array([[0.0, 0.0, 0.0], [2.0, 0.0, 0.0]])
     vertices = origin + local @ R.T
-    center = origin + R @ [0.5, 0.5, 0.]
-    world_point = origin + R @ [0.5, 0.25, 0.]
-    up = R @ [0., 1., 0.]
+    center = origin + R @ [0.5, 0.5, 0.0]
+    world_point = origin + R @ [0.5, 0.25, 0.0]
+    up = R @ [0.0, 1.0, 0.0]
     row = _detect(model, vertices, center)
     np.testing.assert_array_equal(row.witness.first_point, world_point)
     np.testing.assert_array_equal(row.witness.second_point, world_point)
@@ -45,11 +45,14 @@ def _scene(rotated=False):
     ball_state = ph.RigidBodyState(center[None, :], q[None, :], -up[None, :], np.zeros((1, 3)))
     ports = {
         "capsule": ph.FloatingRobotPointPort(
-            tree, cap_state, np.array([0, 0]), np.array([[0.5, 0.25, 0.], [0.5, 0.125, 0.]]),
+            tree,
+            cap_state,
+            np.array([0, 0]),
+            np.array([[0.5, 0.25, 0.0], [0.5, 0.125, 0.0]]),
             domain="capsule",
         ),
         "ball": ph.RigidPointPort(
-            rigid, ball_state, np.array([0]), np.array([[0., -0.25, 0.]]), domain="ball"
+            rigid, ball_state, np.array([0]), np.array([[0.0, -0.25, 0.0]]), domain="ball"
         ),
     }
     np.testing.assert_array_equal(ports["capsule"].positions()[0], world_point)
@@ -58,14 +61,19 @@ def _scene(rotated=False):
 
 
 def _solve(row, ports, states, vertices, capsule_row=0):
-    before = {key: {f.name: getattr(state, f.name).copy() for f in fields(state)}
-              for key, state in states.items()}
+    before = {
+        key: {f.name: getattr(state, f.name).copy() for f in fields(state)}
+        for key, state in states.items()
+    }
     local_before = vertices.copy()
     try:
         return ph.solve_witness_impulses(
             ports,
             [(row, {row.first: ("capsule", capsule_row), row.second: ("ball", 0)})],
-            [0.0], [0.0], local_vertices={row.first: vertices}, position_tolerance=0.0,
+            [0.0],
+            [0.0],
+            local_vertices={row.first: vertices},
+            position_tolerance=0.0,
         )
     finally:
         np.testing.assert_array_equal(vertices, local_before)
@@ -83,11 +91,11 @@ def test_off_center_capsule_shaft_uses_the_registered_axis_material(rotated):
     # Two unit masses and cap lever x=1/2 yield normal response 2+1/4.
     cap = result.states["capsule"]
     ball = result.states["ball"]
-    np.testing.assert_allclose(result.world_impulses[0], R @ [0., 8/9, 0.], atol=2e-12)
-    np.testing.assert_allclose(cap.v[:3], R @ [0., 1/9, 0.], atol=2e-12)
-    np.testing.assert_allclose(cap.v[3:], R @ [0., 0., -4/9], atol=2e-12)
-    np.testing.assert_allclose(ball.velocity[0], R @ [0., -1/9, 0.], atol=2e-12)
-    np.testing.assert_allclose(ball.angular_velocity[0], 0., atol=2e-12)
+    np.testing.assert_allclose(result.world_impulses[0], R @ [0.0, 8 / 9, 0.0], atol=2e-12)
+    np.testing.assert_allclose(cap.v[:3], R @ [0.0, 1 / 9, 0.0], atol=2e-12)
+    np.testing.assert_allclose(cap.v[3:], R @ [0.0, 0.0, -4 / 9], atol=2e-12)
+    np.testing.assert_allclose(ball.velocity[0], R @ [0.0, -1 / 9, 0.0], atol=2e-12)
+    np.testing.assert_allclose(ball.angular_velocity[0], 0.0, atol=2e-12)
 
 
 def test_reversed_capsule_material_vertices_cannot_bind_the_same_geometric_surface():
@@ -114,10 +122,14 @@ def test_other_row_on_the_same_capsule_cannot_receive_the_witness_impulse():
     with pytest.raises((ValueError, ph.SolverFailure), match="material|witness"):
         _solve(row, ports, states, local, capsule_row=1)
 
-@pytest.mark.parametrize("weights", [
-    ((11, float("nan")), (23, 0.25)),
-    ((11, 0.875), (11, -0.125), (23, 0.25)),
-])
+
+@pytest.mark.parametrize(
+    "weights",
+    [
+        ((11, float("nan")), (23, 0.25)),
+        ((11, 0.875), (11, -0.125), (23, 0.25)),
+    ],
+)
 def test_invalid_material_coordinates_cannot_authenticate_a_real_contact(weights):
     _, pair, ports, states, local, _ = _scene()
     invalid = replace(pair, witness=replace(pair.witness, first_weights=weights))

@@ -219,11 +219,6 @@ from .sensors import (
     measure_relative_site,
     measure_robot_imu,
 )
-from .solvers.deformable_feature_loads import (
-    DeformableFeatureLoad,
-    DeformableFeatureLoads,
-    DeformableFeatureLoadSystem,
-)
 from .solvers.articulated_coupling import ArticulatedCouplingProgram, make_articulated_runtime
 from .solvers.cloth import ClothProgram, make_cloth_runtime
 from .solvers.cloth_link_contact import ClothLinkMaterial
@@ -241,6 +236,11 @@ from .solvers.coupled_program import (
     make_coupled_runtime,
 )
 from .solvers.coupled_xpbd import CoupledXPBDSolver
+from .solvers.deformable_feature_loads import (
+    DeformableFeatureLoad,
+    DeformableFeatureLoads,
+    DeformableFeatureLoadSystem,
+)
 from .solvers.driven_robot import DrivenRobotProgram
 from .solvers.dynamic_robot_finite_contact import DynamicRobotFiniteContactProgram
 from .solvers.dynamic_robot_friction_contact import DynamicRobotFrictionContactProgram

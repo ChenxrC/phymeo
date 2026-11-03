@@ -5,7 +5,6 @@ from pathlib import Path
 
 import numpy as np
 
-
 CATALOG = json.loads(Path(__file__).with_name("cases.json").read_text(encoding="utf-8"))
 
 
@@ -61,28 +60,36 @@ def _add_shape(builder, asset, path, cfg, flip):
     if kind not in ("cylinder", "cone"):
         raise ValueError(f"Unknown RR shape {kind}")
     add = builder.add_shape_cylinder if kind == "cylinder" else builder.add_shape_cone
-    return add(body, radius=asset["radius_m"], half_height=asset["half_height_m"], xform=rotation, cfg=cfg)
+    return add(
+        body, radius=asset["radius_m"], half_height=asset["half_height_m"], xform=rotation, cfg=cfg
+    )
 
 
 def _newton_witnesses(contacts, count, distance, points, shape_ids, keep_all):
     first = contacts.rigid_contact_shape0.numpy()[:count]
     second = contacts.rigid_contact_shape1.numpy()[:count]
-    assert np.all(((first == shape_ids[0]) & (second == shape_ids[1])) |
-                  ((first == shape_ids[1]) & (second == shape_ids[0]))), "Unexpected shape pair"
+    assert np.all(
+        ((first == shape_ids[0]) & (second == shape_ids[1]))
+        | ((first == shape_ids[1]) & (second == shape_ids[0]))
+    ), "Unexpected shape pair"
     gaps = distance.numpy()[:count]
     normals = contacts.rigid_contact_normal.numpy()[:count]
     assert np.isfinite(gaps).all()
     np.testing.assert_allclose(np.linalg.norm(normals, axis=1), 1.0, rtol=0, atol=2e-4)
     support = [array.numpy()[:count] for array in points]
     witnesses = []
-    for i in (range(count) if keep_all else [int(np.argmin(gaps))]):
+    for i in range(count) if keep_all else [int(np.argmin(gaps))]:
         side_a = int(first[i] != shape_ids[0])
         normal = normals[i] if side_a == 0 else -normals[i]
         a_point, b_point = support[side_a][i], support[1 - side_a][i]
         assert np.isfinite([a_point, b_point]).all()
-        row = dict(gap_m=float(gaps[i]), normal_a_to_b=normal.tolist(),
-                   a_support_world_m=a_point.tolist(), b_support_world_m=b_point.tolist(),
-                   observed_pair_ids=[int(first[i]), int(second[i])])
+        row = dict(
+            gap_m=float(gaps[i]),
+            normal_a_to_b=normal.tolist(),
+            a_support_world_m=a_point.tolist(),
+            b_support_world_m=b_point.tolist(),
+            observed_pair_ids=[int(first[i]), int(second[i])],
+        )
         if keep_all:
             row["buffer_index"] = i
         witnesses.append(row)
@@ -100,7 +107,7 @@ def _newton_samples(inputs, assets, device, *, keep_all=False):
         builder = newton.ModelBuilder(up_axis=newton.Axis.Z)
         cfg = builder.ShapeConfig(margin=0.0, gap=0.0, has_particle_collision=False)
         shape_ids = [None, None]
-        for side in ((1, 0) if inputs.get("reverse_registration") else (0, 1)):
+        for side in (1, 0) if inputs.get("reverse_registration") else (0, 1):
             shape_ids[side] = _add_shape(
                 builder, assets[side], paths[side], cfg, inputs.get("flip_quad_diagonal", False)
             )
@@ -112,7 +119,9 @@ def _newton_samples(inputs, assets, device, *, keep_all=False):
         assert types == [expected_types.get(a["kind"], a["kind"].upper()) for a in assets]
         dynamic = bodies[bodies >= 0]
         masses = model.body_mass.numpy()[dynamic]
-        assert len(set(dynamic)) == len(dynamic) and np.all(np.isfinite(masses)) and np.all(masses > 0)
+        assert (
+            len(set(dynamic)) == len(dynamic) and np.all(np.isfinite(masses)) and np.all(masses > 0)
+        )
         state = model.state()
         pipeline = newton.CollisionPipeline(
             model, broad_phase="nxn", reduce_contacts=False, rigid_contact_max=256
@@ -120,7 +129,9 @@ def _newton_samples(inputs, assets, device, *, keep_all=False):
         contacts = pipeline.contacts()
         assert str(contacts.rigid_contact_count.device) == device
         distance = wp.empty(contacts.rigid_contact_max, dtype=float, device=selected)
-        points = [wp.empty(contacts.rigid_contact_max, dtype=wp.vec3, device=selected) for _ in shape_ids]
+        points = [
+            wp.empty(contacts.rigid_contact_max, dtype=wp.vec3, device=selected) for _ in shape_ids
+        ]
         poses = state.body_q.numpy().copy()
         samples = []
         for fraction in inputs["sample_fractions"]:
@@ -130,25 +141,44 @@ def _newton_samples(inputs, assets, device, *, keep_all=False):
             state.body_q.assign(poses)
             pipeline.collide(state, contacts)
             newton.eval_rigid_contact_kinematics(
-                model, state, contacts, out_distance=distance,
-                out_point0_world=points[0], out_point1_world=points[1]
+                model,
+                state,
+                contacts,
+                out_distance=distance,
+                out_point0_world=points[0],
+                out_point1_world=points[1],
             )
             wp.synchronize_device(selected)
             count = int(contacts.rigid_contact_count.numpy()[0])
-            assert 0 <= count < contacts.rigid_contact_max, f"Contact count {count} exhausted the buffer"
+            assert 0 <= count < contacts.rigid_contact_max, (
+                f"Contact count {count} exhausted the buffer"
+            )
             readback = state.body_q.numpy()
             translations = [readback[b, :3].tolist() if b >= 0 else [0.0, 0.0, 0.0] for b in bodies]
             for path, published in zip(paths, translations, strict=True):
                 np.testing.assert_allclose(published, _position(path, fraction), rtol=0, atol=5e-7)
-            sample = dict(fraction=fraction, prescribed_time_s=fraction * inputs["duration_s"],
-                          origins_world_m=translations, contact=count > 0, contact_count=count)
+            sample = dict(
+                fraction=fraction,
+                prescribed_time_s=fraction * inputs["duration_s"],
+                origins_world_m=translations,
+                contact=count > 0,
+                contact_count=count,
+            )
             if count:
-                sample.update(_newton_witnesses(contacts, count, distance, points, shape_ids, keep_all))
+                sample.update(
+                    _newton_witnesses(contacts, count, distance, points, shape_ids, keep_all)
+                )
             elif keep_all:
                 sample["contacts"] = []
             samples.append(sample)
-        return dict(device=str(contacts.rigid_contact_count.device), shape_ids=shape_ids, shape_types=types,
-                    body_ids=bodies.tolist(), dynamic_masses_kg=masses.tolist(), samples=samples)
+        return dict(
+            device=str(contacts.rigid_contact_count.device),
+            shape_ids=shape_ids,
+            shape_types=types,
+            body_ids=bodies.tolist(),
+            dynamic_masses_kg=masses.tolist(),
+            samples=samples,
+        )
 
 
 def _phymeo(case, inputs, assets, device):
@@ -157,8 +187,12 @@ def _phymeo(case, inputs, assets, device):
     if any(asset["kind"] != "sphere" for asset in assets):
         raise ValueError("The comparison has no Phymeo adapter for these native shapes")
     keys = (ph.CollisionKey(0, 1, 0), ph.CollisionKey(0, 2, 0))
-    model = ph.CollisionModel([ph.CollisionShape(key, "sphere", (0,), asset["radius_m"])
-                               for key, asset in zip(keys, assets, strict=True)])
+    model = ph.CollisionModel(
+        [
+            ph.CollisionShape(key, "sphere", (0,), asset["radius_m"])
+            for key, asset in zip(keys, assets, strict=True)
+        ]
+    )
     paths = (inputs["a_path_m"], inputs["b_path_m"])
     mode = {"cpu": "host", "cuda:0": "cuda"}[device]
     # This margin only retains separated pairs for signed-distance readout.
@@ -167,41 +201,70 @@ def _phymeo(case, inputs, assets, device):
         if inputs["query"] == "sampled_poses":
             samples = []
             for fraction in inputs["sample_fractions"]:
-                motion = {key: ph.CollisionMotion([_position(path, fraction)])
-                          for key, path in zip(keys, paths, strict=True)}
+                motion = {
+                    key: ph.CollisionMotion([_position(path, fraction)])
+                    for key, path in zip(keys, paths, strict=True)
+                }
                 (row,) = ph.detect(model, motion, policy, work).pairs
                 assert row.first == keys[0] and row.second == keys[1] and row.family == "RR"
-                assert row.status in ("separated", "overlap", "touching") and row.witness is not None
-                samples.append(dict(fraction=fraction, prescribed_time_s=fraction * inputs["duration_s"],
-                                    status=row.status, contact=row.status != "separated",
-                                    gap_m=row.witness.gap_m, normal_a_to_b=row.witness.normal))
+                assert (
+                    row.status in ("separated", "overlap", "touching") and row.witness is not None
+                )
+                samples.append(
+                    dict(
+                        fraction=fraction,
+                        prescribed_time_s=fraction * inputs["duration_s"],
+                        status=row.status,
+                        contact=row.status != "separated",
+                        gap_m=row.witness.gap_m,
+                        normal_a_to_b=row.witness.normal,
+                    )
+                )
             return dict(backend=work.stats()["backend"], samples=samples)
 
-        motion = {key: ph.CollisionMotion([start], [end])
-                  for key, (start, end) in zip(keys, paths, strict=True)}
+        motion = {
+            key: ph.CollisionMotion([start], [end])
+            for key, (start, end) in zip(keys, paths, strict=True)
+        }
         (row,) = ph.detect(model, motion, policy, work).pairs
         assert (row.first, row.second, row.family, row.status) == (*keys, "RR", "hit"), row
         assert row.sweep is not None and row.sweep.first_t is not None and row.witness is not None
         lo, hi = row.sweep.first_t
-        observed = dict(first_interval_fraction=[lo, hi],
-                        first_interval_s=[v * inputs["duration_s"] for v in (lo, hi)],
-                        start_gap_m=row.sweep.start_gap_m,
-                        end_gap_m=row.witness.gap_m, first_gap_m=row.sweep.witness.gap_m,
-                        first_normal_a_to_b=row.sweep.witness.normal)
+        observed = dict(
+            first_interval_fraction=[lo, hi],
+            first_interval_s=[v * inputs["duration_s"] for v in (lo, hi)],
+            start_gap_m=row.sweep.start_gap_m,
+            end_gap_m=row.witness.gap_m,
+            first_gap_m=row.sweep.witness.gap_m,
+            first_normal_a_to_b=row.sweep.witness.normal,
+        )
         expected, tol = case["expected"], case["tolerances"]
-        assert lo <= expected["first_fraction"] <= hi and 0 <= hi - lo <= tol["time_fraction"], observed
+        assert lo <= expected["first_fraction"] <= hi and 0 <= hi - lo <= tol["time_fraction"], (
+            observed
+        )
         lower_s, upper_s = observed["first_interval_s"]
         assert lower_s <= expected["first_time_s"] <= upper_s, observed
-        np.testing.assert_allclose([observed["start_gap_m"], observed["end_gap_m"], observed["first_gap_m"]],
-                                   [expected["start_gap_m"], expected["end_gap_m"], 0],
-                                   rtol=0, atol=tol["length_m"])
-        np.testing.assert_allclose(observed["first_normal_a_to_b"], expected["first_normal_a_to_b"],
-                                   rtol=0, atol=tol["normal_component"])
+        np.testing.assert_allclose(
+            [observed["start_gap_m"], observed["end_gap_m"], observed["first_gap_m"]],
+            [expected["start_gap_m"], expected["end_gap_m"], 0],
+            rtol=0,
+            atol=tol["length_m"],
+        )
+        np.testing.assert_allclose(
+            observed["first_normal_a_to_b"],
+            expected["first_normal_a_to_b"],
+            rtol=0,
+            atol=tol["normal_component"],
+        )
         stats = work.stats()
         observed["backend"] = stats["backend"]
         if device == "cuda:0":
-            counters = ("completed_launches", "sweep_completed_launches", "sweep_downloads",
-                        "sweep_synchronizations")
+            counters = (
+                "completed_launches",
+                "sweep_completed_launches",
+                "sweep_downloads",
+                "sweep_synchronizations",
+            )
             for key in counters:
                 assert stats[key] > 0, (key, stats[key])
                 observed[key] = stats[key]
@@ -247,12 +310,15 @@ def _check_u_walls(case, observed, assets):
             a = np.asarray(row["a_support_world_m"]) - origin_a
             b = np.asarray(row["b_support_world_m"]) - origin_b
             a_error, b_error = float(a[0] - a_wall_x), float(b[0] - b_outer_x)
-            normal_error = float(np.max(np.abs(np.asarray(row["normal_a_to_b"]) - wall["normal_a_to_b"])))
+            normal_error = float(
+                np.max(np.abs(np.asarray(row["normal_a_to_b"]) - wall["normal_a_to_b"]))
+            )
             row.update(
                 is_deepest=row["gap_m"] - minimum <= length_tol,
                 normal_max_component_error=normal_error,
                 normal_matches=normal_error <= normal_tol,
-                a_wall_x_error_m=a_error, b_outer_face_x_error_m=b_error,
+                a_wall_x_error_m=a_error,
+                b_outer_face_x_error_m=b_error,
                 a_wall_x_matches=abs(a_error) <= length_tol,
                 b_outer_face_x_matches=abs(b_error) <= length_tol,
                 a_surface_distance_m=_u_surface_distance(a, assets[0]["scale_xyz"]),
@@ -260,21 +326,38 @@ def _check_u_walls(case, observed, assets):
                 depth_matches=gap_low - length_tol <= row["gap_m"] <= gap_high + length_tol,
             )
         tied = [row for row in contacts if row["is_deepest"]]
-        summary = dict(minimum_gap_m=minimum, band_m=length_tol, count=len(tied),
-                       normal_matches=sum(row["normal_matches"] for row in tied),
-                       a_wall_x_matches=sum(row["a_wall_x_matches"] for row in tied),
-                       b_outer_face_x_matches=sum(row["b_outer_face_x_matches"] for row in tied),
-                       strict_matches=sum(row["normal_matches"] and row["a_wall_x_matches"] and
-                                          row["depth_matches"] for row in tied))
-        for field in ("a_wall_x_error_m", "b_outer_face_x_error_m", "a_surface_distance_m", "b_surface_distance_m"):
+        summary = dict(
+            minimum_gap_m=minimum,
+            band_m=length_tol,
+            count=len(tied),
+            normal_matches=sum(row["normal_matches"] for row in tied),
+            a_wall_x_matches=sum(row["a_wall_x_matches"] for row in tied),
+            b_outer_face_x_matches=sum(row["b_outer_face_x_matches"] for row in tied),
+            strict_matches=sum(
+                row["normal_matches"] and row["a_wall_x_matches"] and row["depth_matches"]
+                for row in tied
+            ),
+        )
+        for field in (
+            "a_wall_x_error_m",
+            "b_outer_face_x_error_m",
+            "a_surface_distance_m",
+            "b_surface_distance_m",
+        ):
             values = [row[field] for row in tied]
-            summary[field.removesuffix("_m") + "_range_m"] = [min(values), max(values)] if values else None
+            summary[field.removesuffix("_m") + "_range_m"] = (
+                [min(values), max(values)] if values else None
+            )
         sample["deepest_set"] = summary
         if sample["contact"] != target["contact"]:
-            failures.append(f"t={sample['fraction']} expected contact={target['contact']}, got {len(contacts)} rows")
+            failures.append(
+                f"t={sample['fraction']} expected contact={target['contact']}, got {len(contacts)} rows"
+            )
         elif target["contact"] and summary["strict_matches"] != len(tied):
-            failures.append(f"t={sample['fraction']} {summary['strict_matches']}/{len(tied)} deepest rows "
-                            f"match depth, A-to-B normal and the receiver wall")
+            failures.append(
+                f"t={sample['fraction']} {summary['strict_matches']}/{len(tied)} deepest rows "
+                f"match depth, A-to-B normal and the receiver wall"
+            )
     if failures:
         error = AssertionError(f"{case['id']}: " + ", ".join(failures))
         error.observed = observed
@@ -288,25 +371,43 @@ def _check_samples(case, observed):
         assert sample["contact"] == target["contact"], context
         if not target["contact"]:
             if "gap_m" in sample and "host_witness_gap_m" in target:
-                np.testing.assert_allclose(sample["gap_m"], target["host_witness_gap_m"],
-                                           rtol=0, atol=tol["length_m"], err_msg=context)
+                np.testing.assert_allclose(
+                    sample["gap_m"],
+                    target["host_witness_gap_m"],
+                    rtol=0,
+                    atol=tol["length_m"],
+                    err_msg=context,
+                )
             continue
         gap = sample["gap_m"]
         if "gap_range_m" in target:
             lo, hi = target["gap_range_m"]
             assert lo - tol["length_m"] <= gap <= hi + tol["length_m"], context
         else:
-            np.testing.assert_allclose(gap, target["gap_m"], rtol=0, atol=tol["length_m"], err_msg=context)
-        np.testing.assert_allclose(sample["normal_a_to_b"], target["normal_a_to_b"],
-                                   rtol=0, atol=tol["normal_component"], err_msg=context)
+            np.testing.assert_allclose(
+                gap, target["gap_m"], rtol=0, atol=tol["length_m"], err_msg=context
+            )
+        np.testing.assert_allclose(
+            sample["normal_a_to_b"],
+            target["normal_a_to_b"],
+            rtol=0,
+            atol=tol["normal_component"],
+            err_msg=context,
+        )
         # The receiver has zero effective support radius in all landmark cases.
         if "a_point_world_m" in target:
-            np.testing.assert_allclose(sample["a_support_world_m"], target["a_point_world_m"],
-                                       rtol=0, atol=tol["length_m"], err_msg=context)
+            np.testing.assert_allclose(
+                sample["a_support_world_m"],
+                target["a_point_world_m"],
+                rtol=0,
+                atol=tol["length_m"],
+                err_msg=context,
+            )
         if "a_local_x_m" in target:
             local_x = sample["a_support_world_m"][0] - sample["origins_world_m"][0][0]
-            np.testing.assert_allclose(local_x, target["a_local_x_m"],
-                                       rtol=0, atol=tol["length_m"], err_msg=context)
+            np.testing.assert_allclose(
+                local_x, target["a_local_x_m"], rtol=0, atol=tol["length_m"], err_msg=context
+            )
 
 
 def run_case(case, *, engine, device):

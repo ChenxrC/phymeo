@@ -17,7 +17,9 @@ def _newton_model(case, newton, wp, device):
     p = case["inputs"]
     builder = newton.ModelBuilder(gravity=(0.0, 0.0, 0.0))
     for xyz in p["vertices_m"]:
-        builder.add_particle(wp.vec3(*xyz), wp.vec3(0.0, 0.0, 0.0), 1.0, radius=p["particle_radius_m"])
+        builder.add_particle(
+            wp.vec3(*xyz), wp.vec3(0.0, 0.0, 0.0), 1.0, radius=p["particle_radius_m"]
+        )
     builder.add_triangle(0, 1, 2)
     # Newton's edge rows end with the two endpoints. -1 identifies the absent second face.
     for opposite, a, b in ((2, 0, 1), (0, 1, 2), (1, 2, 0)):
@@ -38,8 +40,11 @@ def _newton_model(case, newton, wp, device):
         builder.add_shape_heightfield(heightfield=field, cfg=cfg)
     elif family == "mesh_sdf":
         mesh = newton.Mesh.create_box(
-            *p["cube_half_extents_m"], duplicate_vertices=False,
-            compute_normals=False, compute_uvs=False, compute_inertia=False,
+            *p["cube_half_extents_m"],
+            duplicate_vertices=False,
+            compute_normals=False,
+            compute_uvs=False,
+            compute_inertia=False,
         )
         if p["sdf_resolution"] is not None:
             mesh.build_sdf(
@@ -61,7 +66,15 @@ def _read_soft(pipeline, state, q, device):
     assert int(contacts.rigid_contact_count.numpy()[0]) == 0
     columns = {
         name: getattr(contacts, "soft_contact_" + name).numpy()[:count]
-        for name in ("indices", "barycentric", "particle", "shape", "body_pos", "body_vel", "normal")
+        for name in (
+            "indices",
+            "barycentric",
+            "particle",
+            "shape",
+            "body_pos",
+            "body_vel",
+            "normal",
+        )
     }
     radii = model.particle_radius.numpy()
     margins = model.shape_margin.numpy()
@@ -79,7 +92,9 @@ def _read_soft(pipeline, state, q, device):
         particle = int(columns["particle"][i])
         assert particle == (ids[0] if size == 1 else -1)
         shape = int(columns["shape"][i])
-        assert shape == 0 and bodies[shape] == -1, "body-local coordinates must be world coordinates"
+        assert shape == 0 and bodies[shape] == -1, (
+            "body-local coordinates must be world coordinates"
+        )
         rigid_point = columns["body_pos"][i].astype(float)
         soft_point = weights[:size] @ q[ids]
         normal = columns["normal"][i].astype(float)
@@ -87,13 +102,23 @@ def _read_soft(pipeline, state, q, device):
         _close(np.linalg.norm(normal), 1.0, 1e-4, "unit world normal")
         _close(velocity, [0, 0, 0], 1e-8, "stationary rigid surface velocity")
         gap = float(normal @ (soft_point - rigid_point) - max(radii[ids]) - margins[shape])
-        records.append(dict(
-            indices=corners, barycentric=weights.tolist(), particle=particle, rigid_shape=shape,
-            soft_point_m=soft_point.tolist(), rigid_point_m=rigid_point.tolist(),
-            rigid_surface_velocity_m_s=velocity.tolist(), normal=normal.tolist(), gap_m=gap,
-        ))
+        records.append(
+            dict(
+                indices=corners,
+                barycentric=weights.tolist(),
+                particle=particle,
+                rigid_shape=shape,
+                soft_point_m=soft_point.tolist(),
+                rigid_point_m=rigid_point.tolist(),
+                rigid_surface_velocity_m_s=velocity.tolist(),
+                normal=normal.tolist(),
+                gap_m=gap,
+            )
+        )
     return dict(
-        count=count, capacity=int(contacts.soft_contact_max), device=str(contacts.device),
+        count=count,
+        capacity=int(contacts.soft_contact_max),
+        device=str(contacts.device),
         edge_candidates=len(pipeline.soft_edge_rigid_pairs),
         face_candidates=len(pipeline.soft_face_rigid_pairs),
         particle_candidates=pipeline.soft_contact_pair_count,
@@ -135,9 +160,16 @@ def _newton(case, device):
     assert str(state.particle_q.device) == device
     q = state.particle_q.numpy().astype(float)
     _close(q, p["vertices_m"], 1e-7, "frozen particle coordinates")
-    assert (model.particle_count, model.tri_count, model.edge_count, model.shape_count) == (3, 1, 3, 1)
+    assert (model.particle_count, model.tri_count, model.edge_count, model.shape_count) == (
+        3,
+        1,
+        3,
+        1,
+    )
     options = dict(
-        broad_phase="nxn", soft_contact_gap=p["soft_gap_m"], rigid_contact_max=1,
+        broad_phase="nxn",
+        soft_contact_gap=p["soft_gap_m"],
+        rigid_contact_max=1,
         max_triangle_pairs=32,
     )
     default = _read_soft(newton.CollisionPipeline(model, **options), state, q, device)
@@ -182,13 +214,16 @@ def _newton(case, device):
 def _sphere_scene(ph, inputs, *, swept):
     rigid = ph.CollisionKey(0, 0, 0)
     soft = ph.CollisionKey(0, 1, 0)
-    model = ph.CollisionModel([
-        ph.CollisionShape(rigid, "sphere", (7,), inputs["radius_m"]),
-        ph.CollisionShape(soft, "triangle", (0, 1, 2)),
-    ])
+    model = ph.CollisionModel(
+        [
+            ph.CollisionShape(rigid, "sphere", (7,), inputs["radius_m"]),
+            ph.CollisionShape(soft, "triangle", (0, 1, 2)),
+        ]
+    )
     sphere = (
         ph.CollisionMotion([inputs["start_m"]], [inputs["end_m"]])
-        if swept else ph.CollisionMotion([inputs["center_m"]])
+        if swept
+        else ph.CollisionMotion([inputs["center_m"]])
     )
     return model, {rigid: sphere, soft: ph.CollisionMotion(inputs["vertices_m"])}
 
@@ -211,16 +246,25 @@ def _phymeo_sphere(case, device, ph):
             hit = pair.sweep
             lo, hi = hit.first_t
             assert lo <= e["first_t_fraction"] <= hi and hi - lo <= tol["first_t_width"]
-            _close([hit.start_gap_m, pair.witness.gap_m], [e["endpoint_gap_m"]] * 2,
-                   tol["phymeo_m"], "both endpoints separated")
+            _close(
+                [hit.start_gap_m, pair.witness.gap_m],
+                [e["endpoint_gap_m"]] * 2,
+                tol["phymeo_m"],
+                "both endpoints separated",
+            )
             witness = hit.witness
-            out.update(time_semantics="normalized affine sweep", first_t=[lo, hi],
-                       endpoint_gaps_m=[hit.start_gap_m, pair.witness.gap_m])
+            out.update(
+                time_semantics="normalized affine sweep",
+                first_t=[lo, hi],
+                endpoint_gaps_m=[hit.start_gap_m, pair.witness.gap_m],
+            )
             if backend == "cuda":
                 stats = workspace.stats()
                 keys = (
-                    "surface_completed_launches", "surface_features",
-                    "sweep_downloads", "sweep_synchronizations",
+                    "surface_completed_launches",
+                    "surface_features",
+                    "sweep_downloads",
+                    "sweep_synchronizations",
                 )
                 out["tyx_counters"] = {key: stats[key] for key in keys}
                 assert all(count > 0 for count in out["tyx_counters"].values()), out["tyx_counters"]
@@ -240,8 +284,13 @@ def _phymeo_sphere(case, device, ph):
         _close(witness.second_point, soft_target, tol["phymeo_m"], "soft point")
         _close(witness.normal, e["normal"], tol["phymeo_unit"], "rigid to soft normal")
         _close(witness.gap_m, gap, tol["phymeo_m"], "surface gap")
-        out.update(rigid_point_m=witness.first_point, soft_point_m=witness.second_point,
-                   face_weights=material, normal=witness.normal, gap_m=witness.gap_m)
+        out.update(
+            rigid_point_m=witness.first_point,
+            soft_point_m=witness.second_point,
+            face_weights=material,
+            normal=witness.normal,
+            gap_m=witness.gap_m,
+        )
         return out
 
 
@@ -274,8 +323,16 @@ def _phymeo_plate(case, ph):
             _close(w.second_point, q, tol["phymeo_m"], "probe")
             target = q - e["gaps_m"][i] * np.asarray(e["normals"][i])
             _close(w.first_point, target, tol["phymeo_m"], "rounded plate surface")
-            rows.append(dict(probe=i, feature=pair.plate.end.feature, status=pair.status,
-                             gap_m=w.gap_m, normal=w.normal, surface_point_m=w.first_point))
+            rows.append(
+                dict(
+                    probe=i,
+                    feature=pair.plate.end.feature,
+                    status=pair.status,
+                    gap_m=w.gap_m,
+                    normal=w.normal,
+                    surface_point_m=w.first_point,
+                )
+            )
         assert sorted(row["probe"] for row in rows) == list(range(len(p["probes_m"])))
         return dict(time_semantics="static configuration", probes=rows)
 
@@ -290,37 +347,62 @@ def _phymeo_link(case, device, ph):
     masses = np.asarray(p["node_masses_kg"], dtype=float)
     gravity = np.asarray(p["gravity_m_s2"], dtype=float)
     robot = ph.RobotModel(
-        parents=np.array([-1]), joint_types=("prismatic",),
+        parents=np.array([-1]),
+        joint_types=("prismatic",),
         joint_position=np.asarray([p["link_origin_m"]], dtype=float),
-        joint_orientation=np.array([[0.0, 0.0, 0.0, 1.0]]), joint_axis=np.array([[0.0, 0.0, 1.0]]),
-        mass=np.array([p["link_mass_kg"]]), com=np.zeros((1, 3)), inertia_diagonal=np.ones((1, 3)),
+        joint_orientation=np.array([[0.0, 0.0, 0.0, 1.0]]),
+        joint_axis=np.array([[0.0, 0.0, 1.0]]),
+        mass=np.array([p["link_mass_kg"]]),
+        com=np.zeros((1, 3)),
+        inertia_diagonal=np.ones((1, 3)),
         gravity=gravity,
     )
     start, end = np.asarray(p["link_axis_ends_m"], dtype=float)
     link = LinkCapsule("beam", "arm", 0, start, end, p["link_radius_m"])
     links = RobotContactSystem({"arm": robot}, capsules=(link,))
     cloth = ph.ParticleModel(1 / masses, gravity)
-    model = ph.SceneModel((
-        ph.DomainBinding("cloth", "particles", cloth), ph.DomainBinding("arm", "robot", robot),
-    ))
+    model = ph.SceneModel(
+        (
+            ph.DomainBinding("cloth", "particles", cloth),
+            ph.DomainBinding("arm", "robot", robot),
+        )
+    )
     constraint = ph.DistanceConstraints(np.array([[0, 1]]), np.array([2.0]), np.array([1.0]))
     material = ClothMaterial(distance=constraint)
     surface = ph.TrianglePrismSurface(
         "sheet", "cloth", (0, 1, 2), half_thickness_m=p["half_thickness_m"]
     )
-    layer = ph.ClothLinkMaterial(width_m=p["layer_width_m"], stiffness_pa_per_m=p["stiffness_pa_per_m"],
-                                 friction=p["friction"], damping_s_per_m=p["damping_s_per_m"])
-    state = ph.SceneState({"cloth": ph.ParticleState(x, np.zeros_like(x)),
-                           "arm": ph.RobotState(np.zeros(1), np.zeros(1))})
+    layer = ph.ClothLinkMaterial(
+        width_m=p["layer_width_m"],
+        stiffness_pa_per_m=p["stiffness_pa_per_m"],
+        friction=p["friction"],
+        damping_s_per_m=p["damping_s_per_m"],
+    )
+    state = ph.SceneState(
+        {
+            "cloth": ph.ParticleState(x, np.zeros_like(x)),
+            "arm": ph.RobotState(np.zeros(1), np.zeros(1)),
+        }
+    )
     loads = ph.SceneInputs({"cloth": ph.StepInputs.zeros(len(x)), "arm": ph.RobotInputs.zeros(1)})
     settings = ph.StepSettings(substeps=1, position_iterations=1, velocity_iterations=1)
     cache = TemporaryDirectory(prefix="phymeo-rd-layer-") if device == "cuda:0" else nullcontext()
     with cache as root:
-        operator = ph.TyxNormalLayer("cuda", cache_root=root) if device == "cuda:0" else nullcontext()
+        operator = (
+            ph.TyxNormalLayer("cuda", cache_root=root) if device == "cuda:0" else nullcontext()
+        )
         with operator as native:
             program = ph.CompliantClothContactProgram(
-                model, "cloth", material, (surface,), x, (), robot_contact=links,
-                max_penetration_m=0.01, cloth_link_material=layer, cloth_link_operator=native,
+                model,
+                "cloth",
+                material,
+                (surface,),
+                x,
+                (),
+                robot_contact=links,
+                max_penetration_m=0.01,
+                cloth_link_material=layer,
+                cloth_link_operator=native,
             )
             with program.stepper(settings) as stepper:
                 result = stepper.step(state, loads, p["dt_s"])
@@ -344,13 +426,23 @@ def _phymeo_link(case, device, ph):
     _close(effort, e["joint_effort_n"], tol["force_n"], "prismatic effort")
     _close(arm.q[0], e["end_joint_displacement_m"], tol["position_m"], "joint displacement")
     _close(arm.v[0], e["end_joint_velocity_m_s"], tol["velocity_m_s"], "joint velocity")
-    _close(cloth.velocity[:, 2], e["end_node_velocity_z_m_s"], tol["velocity_m_s"], "nodal velocities")
+    _close(
+        cloth.velocity[:, 2], e["end_node_velocity_z_m_s"], tol["velocity_m_s"], "nodal velocities"
+    )
     _close(momentum, e["net_momentum_z_kg_m_s"], tol["momentum_kg_m_s"], "net momentum")
     return dict(
-        time_semantics="one midpoint substep", force_sample=diagnostics["force_sample"], dt_s=p["dt_s"],
-        site_count=len(contact["sites"]), sample_gap_m=contact["gap_m"], normal_force_n=contact["normal_force_n"],
-        joint_effort_n=effort, end_joint_displacement_m=float(arm.q[0]), end_joint_velocity_m_s=float(arm.v[0]),
-        end_node_velocity_m_s=cloth.velocity.tolist(), net_momentum_z_kg_m_s=momentum, tyx_counters=native_counts,
+        time_semantics="one midpoint substep",
+        force_sample=diagnostics["force_sample"],
+        dt_s=p["dt_s"],
+        site_count=len(contact["sites"]),
+        sample_gap_m=contact["gap_m"],
+        normal_force_n=contact["normal_force_n"],
+        joint_effort_n=effort,
+        end_joint_displacement_m=float(arm.q[0]),
+        end_joint_velocity_m_s=float(arm.v[0]),
+        end_node_velocity_m_s=cloth.velocity.tolist(),
+        net_momentum_z_kg_m_s=momentum,
+        tyx_counters=native_counts,
     )
 
 

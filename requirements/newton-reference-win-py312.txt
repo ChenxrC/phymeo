@@ -1,0 +1,15 @@
+# Newton reference matrix on Windows x86-64, Python 3.12.13.
+# Warp 1.17 is the CUDA 12 build validated on NVIDIA driver 566.07.
+certifi==2026.10.23
+charset-normalizer==3.5.2
+idna==3.20
+newton==1.7.0
+newton-usd-schemas==0.6.0
+numpy==2.5.4
+requests==2.34.2
+resolve-robotics-uri-py==0.6.1
+scipy==1.18.1
+trimesh==5.2.0
+urllib3==2.8.0
+usd-core==26.8
+warp-lang==1.17.0

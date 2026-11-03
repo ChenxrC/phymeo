@@ -53,10 +53,29 @@ def test_tyx_band_flat_gradient_and_failed_kernel_close_the_workspace(tyx_mode,t
         rows=work.sample_local([[0.25,0.4,0.5],[0.75,0.4,0.5],[1.25,0.4,0.5],[2,0,0]])
         assert [r.status for r in rows]==["outside_band","valid","outside_band","outside_grid"]
         assert rows[1].distance_m==-0.25 and rows[1].gradient==(0,0,0)
-        monkeypatch.setattr(work,"_launch",lambda *args:None)
+        monkeypatch.setattr(work,"_launch",lambda *args,**kwargs:None)
         with pytest.raises(RuntimeError,match="incomplete"):
             work.sample_local([[0.75,0.4,0.5]])
         assert work.closed
         with pytest.raises(RuntimeError,match="closed"):
             work.sample_local([[0.75,0.4,0.5]])
         assert work.stats()["completed_launches"]==1
+
+
+def test_tyx_uses_the_baked_concave_asset(tyx_mode,tmp_path):
+    from test_sdf_grid import asset,exact_distance
+    _,bake=api()
+    shape,vertices=asset("u")
+    field=bake(shape,vertices,shape_xyz=(13,13,7),origin_m=(-3,-3,-1.5),spacing_m=(0.5,)*3)
+    points=np.array([[0,0,0],[1.5,0,0],[0,-1.5,0],[0.825,0.225,0.25],[4,0,0]])
+    with sampler()(field,mode=tyx_mode,capacity=len(points),cache_root=tmp_path/"cache") as work:
+        rows=work.sample_local(points)
+        stats=work.stats()
+    vals=np.array([r.distance_m for r in rows[:-1]])
+    truth=exact_distance("u",points[:-1])
+    assert rows[-1].status=="outside_grid" and all(r.status=="valid" for r in rows[:-1])
+    np.testing.assert_allclose(vals[:3],[1,-0.5,-0.5],rtol=0,atol=3e-6)
+    assert np.max(np.abs(vals-truth))<=field.geometry_error_bound_m+3e-6
+    assert stats["completed_launches"]==1
+    (tmp_path/"device-u.json").write_text(json.dumps(dict(values_m=vals.tolist(),exact_m=truth.tolist(),
+        grid_bound_m=field.geometry_error_bound_m,stats=stats),allow_nan=False),encoding="utf-8")

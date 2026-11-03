@@ -114,11 +114,15 @@ def _plane_support(kind, dims, n, center_height):
         cap = "bottom_cap" if nz > 0 else "top_cap"
         z = -h if nz > 0 else h
         if not squared:
-            disk = tuple(_vector((x, y, z)) for x, y in
-                         ((0, 0), (radius, 0), (-radius, 0), (0, radius), (0, -radius)))
+            disk = tuple(
+                _vector((x, y, z))
+                for x, y in ((0, 0), (radius, 0), (-radius, 0), (0, radius), (0, -radius))
+            )
             return (cap,), "disk", disk, center_height + z * nz
         xy = -radius * tangent / length
-        height = _minus_root(center_height - h * abs(nz), radius * radius * squared, radius * length)
+        height = _minus_root(
+            center_height - h * abs(nz), radius * radius * squared, radius * length
+        )
         if nz == 0:
             return ("side",), "segment", (_vector((*xy, -h)), _vector((*xy, h))), height
         return ("side", cap), "point", (_vector((*xy, z)),), height

@@ -38,8 +38,12 @@ def control(name, gap):
     sin_y, cos_y = 24 / 25, 7 / 25
     reach = hypot(3 * sin_y / 8, cos_y / 8)
     side = ((3 / 8) ** 2 - (1 / 8) ** 2) * sin_y * cos_y / reach
-    b = geometry("ellipsoid", (0.375, 0.25, 0.125), [[-side, 0.125, 0.25 + reach + gap]],
-                 orientation=(0.0, 0.6, 0.0, 0.8))
+    b = geometry(
+        "ellipsoid",
+        (0.375, 0.25, 0.125),
+        [[-side, 0.125, 0.25 + reach + gap]],
+        orientation=(0.0, 0.6, 0.0, 0.8),
+    )
     return a, b, np.array([0, 0, 1]), 0.25
 
 
@@ -53,7 +57,6 @@ def shape_and_motion(key, config, shift):
     else:
         shape = ph.CollisionShape(key, kind, ids, curved=ph.CurvedSolid(kind, parameters, rotation))
     return shape, ph.CollisionMotion(vertices + shift)
-
 
 
 def check_material_surface(shape, nodes, point):
@@ -82,9 +85,17 @@ def check_material_surface(shape, nodes, point):
         return
     radius, half_height = dims
     radial = hypot(*local[:2])
-    side = radius if shape.kind == "cylinder" else radius * (half_height - local[2]) / (2 * half_height)
+    side = (
+        radius
+        if shape.kind == "cylinder"
+        else radius * (half_height - local[2]) / (2 * half_height)
+    )
     assert abs(local[2]) <= half_height + 2e-5 and radial <= side + 2e-5
-    cap = min(abs(local[2] + half_height), abs(local[2] - half_height)) if shape.kind == "cylinder" else abs(local[2] + half_height)
+    cap = (
+        min(abs(local[2] + half_height), abs(local[2] - half_height))
+        if shape.kind == "cylinder"
+        else abs(local[2] + half_height)
+    )
     assert min(abs(radial - side), cap) < 2e-5
 
 
@@ -105,12 +116,16 @@ def query(name, gap, swapped=False):
     return row, {sa.key: sa, sb.key: sb}, paths, n, support + n @ shift
 
 
-@pytest.mark.parametrize("name", ["two-cylinders", "ellipsoid-sphere", "cone-capsule", "cone-cylinder", "oblique-hull"])
+@pytest.mark.parametrize(
+    "name", ["two-cylinders", "ellipsoid-sphere", "cone-capsule", "cone-cylinder", "oblique-hull"]
+)
 @pytest.mark.parametrize("gap", [1 / 16, 0.0, -1 / 32])
 @pytest.mark.parametrize("swapped", [False, True])
 def test_support_pairs_publish_distance_and_material_owners(name, gap, swapped, tmp_path):
     row, shapes, paths, n, h = query(name, gap, swapped)
-    assert row.status == ("separated" if gap > 0 else "overlap" if gap < 0 else "touching"), row.reason
+    assert row.status == ("separated" if gap > 0 else "overlap" if gap < 0 else "touching"), (
+        row.reason
+    )
     w, trace = row.witness, row.support_map
     assert w.source == "host-convex-support" and trace.support_calls > 0
     assert trace.gap_lower_m - 1e-10 <= gap <= trace.gap_upper_m + 1e-10
@@ -130,15 +145,28 @@ def test_support_pairs_publish_distance_and_material_owners(name, gap, swapped, 
         assert all(i in vertices and x >= 0 for i, x in weights)
         assert sum(x for _, x in weights) == pytest.approx(1.0, abs=1e-12)
         anchor = sum(x * vertices[i] for i, x in weights)
-        np.testing.assert_allclose(anchor + (0 if offset is None else offset), point, rtol=0, atol=1e-9)
+        np.testing.assert_allclose(
+            anchor + (0 if offset is None else offset), point, rtol=0, atol=1e-9
+        )
 
     readback = {
-        "pair": name, "input_gap_m": gap, "swapped": swapped, "status": row.status,
-        "gap_m": w.gap_m, "lower_m": trace.gap_lower_m, "upper_m": trace.gap_upper_m,
-        "normal": w.normal, "first_point": w.first_point, "second_point": w.second_point,
-        "phase": trace.phase, "support_calls": trace.support_calls, "iterations": trace.iterations,
+        "pair": name,
+        "input_gap_m": gap,
+        "swapped": swapped,
+        "status": row.status,
+        "gap_m": w.gap_m,
+        "lower_m": trace.gap_lower_m,
+        "upper_m": trace.gap_upper_m,
+        "normal": w.normal,
+        "first_point": w.first_point,
+        "second_point": w.second_point,
+        "phase": trace.phase,
+        "support_calls": trace.support_calls,
+        "iterations": trace.iterations,
     }
-    (tmp_path / "convex-result.json").write_text(json.dumps(readback, allow_nan=False), encoding="utf-8")
+    (tmp_path / "convex-result.json").write_text(
+        json.dumps(readback, allow_nan=False), encoding="utf-8"
+    )
 
 
 def test_static_support_does_not_claim_a_swept_toi():
@@ -148,8 +176,12 @@ def test_static_support_does_not_claim_a_swept_toi():
     sb, mb = shape_and_motion(kb, b, np.zeros(3))
     model = ph.CollisionModel((sa, sb))
     with ph.CollisionWorkspace(model) as work:
-        result = ph.detect(model, {ka: ma, kb: ph.CollisionMotion(mb.start, mb.start - [0.5, 0, 0])},
-                           ph.CollisionPolicy(), work)
+        result = ph.detect(
+            model,
+            {ka: ma, kb: ph.CollisionMotion(mb.start, mb.start - [0.5, 0, 0])},
+            ph.CollisionPolicy(),
+            work,
+        )
     assert result.pairs[0].status == "unsupported" and result.pairs[0].sweep is None
 
 
@@ -171,7 +203,7 @@ def test_rotating_both_static_bodies_transports_the_common_normal():
 @pytest.mark.tyx
 def test_static_support_uses_real_partition_broad_phase(tyx_mode, tmp_path):
     models, paths, policies = {}, {}, {}
-    for key, gap in ((18, 1/16), (4, -1/32)):
+    for key, gap in ((18, 1 / 16), (4, -1 / 32)):
         a, b, _, _ = control("oblique-hull", gap)
         ka, kb = ph.CollisionKey(key, 0, 0), ph.CollisionKey(key, 1, 0)
         sa, ma = shape_and_motion(ka, a, np.zeros(3))
@@ -180,11 +212,11 @@ def test_static_support_uses_real_partition_broad_phase(tyx_mode, tmp_path):
         policies[key] = ph.CollisionPolicy(margin=0.25)
     with ph.WorldCollisionWorkspace(models.items(), tyx_mode, cache_root=tmp_path) as batch:
         result = batch.detect(paths, policies)
-        for key, gap in ((18, 1/16), (4, -1/32)):
-            row, = result[key].pairs
+        for key, gap in ((18, 1 / 16), (4, -1 / 32)):
+            (row,) = result[key].pairs
             assert row.status == ("overlap" if gap < 0 else "separated")
             assert row.witness.source == "host-convex-support"
-            assert abs(row.witness.gap_m-gap) <= 2e-5
+            assert abs(row.witness.gap_m - gap) <= 2e-5
         stats = batch.stats()
         assert stats["host_pair_table_slots"] == 2 and stats["completed_launches"] > 0
         if tyx_mode == "cuda":
@@ -192,11 +224,13 @@ def test_static_support_uses_real_partition_broad_phase(tyx_mode, tmp_path):
 
 
 def test_hull_extent_is_not_published_as_an_unregistered_rounded_material_surface():
-    hull, cur, _, _ = control("oblique-hull", 1/16)
+    hull, cur, _, _ = control("oblique-hull", 1 / 16)
     ka, kb = ph.CollisionKey(0, 5, 0), ph.CollisionKey(0, 9, 0)
-    a = ph.CollisionShape(ka, "hull", hull[3], radius=1/32)
+    a = ph.CollisionShape(ka, "hull", hull[3], radius=1 / 32)
     b, mb = shape_and_motion(kb, cur, np.zeros(3))
-    model = ph.CollisionModel((a,b))
+    model = ph.CollisionModel((a, b))
     with ph.CollisionWorkspace(model) as work:
-        row, = ph.detect(model, {ka: ph.CollisionMotion(hull[2]), kb: mb}, ph.CollisionPolicy(margin=1/4), work).pairs
+        (row,) = ph.detect(
+            model, {ka: ph.CollisionMotion(hull[2]), kb: mb}, ph.CollisionPolicy(margin=1 / 4), work
+        ).pairs
     assert row.candidate and row.status == "unsupported" and row.witness is None

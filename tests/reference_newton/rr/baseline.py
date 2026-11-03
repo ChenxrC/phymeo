@@ -56,7 +56,11 @@ def _add_shape(builder, asset, path, cfg, flip):
     rotation = wp.transform((0.0, 0.0, 0.0), asset.get("local_quat_xyzw", (0, 0, 0, 1)))
     if kind == "capsule":
         return builder.add_shape_capsule(
-            body, radius=asset["radius_m"], half_height=asset["half_height_m"], xform=rotation, cfg=cfg
+            body,
+            radius=asset["radius_m"],
+            half_height=asset["half_height_m"],
+            xform=rotation,
+            cfg=cfg,
         )
     if kind == "box":
         hx, hy, hz = asset["half_extents_xyz_m"]

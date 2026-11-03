@@ -14,7 +14,9 @@ from .collision_witness import CollisionWitness
 _TOL_M = 2e-7
 _MAX_GJK = 64
 _MAX_EPA = 192
-_VERTEX_SUPPORT = frozenset(("sphere", "capsule", "hull", "triangle", "particle", "rounded_particle"))
+_VERTEX_SUPPORT = frozenset(
+    ("sphere", "capsule", "hull", "triangle", "particle", "rounded_particle")
+)
 _KINDS = _VERTEX_SUPPORT | {"cylinder", "cone", "ellipsoid"}
 
 
@@ -78,8 +80,16 @@ class _Body:
     def material(self, indices, weights, point):
         coefficients = np.zeros(len(self.points))
         np.add.at(coefficients, indices, weights)
-        address = tuple((int(key), float(weight)) for key, weight in zip(self.ids, coefficients, strict=True) if weight > 0)
-        offset = None if self.kind in ("triangle", "hull", "particle") else tuple(map(float, point - coefficients @ self.points))
+        address = tuple(
+            (int(key), float(weight))
+            for key, weight in zip(self.ids, coefficients, strict=True)
+            if weight > 0
+        )
+        offset = (
+            None
+            if self.kind in ("triangle", "hull", "particle")
+            else tuple(map(float, point - coefficients @ self.points))
+        )
         return address, offset
 
 
@@ -228,11 +238,21 @@ class _Query:
             raise SolverFailure("support_world_witness_resolution")
         status = "separated" if lo > 0 else "overlap" if hi < 0 else "touching"
         witness = CollisionWitness(
-            gap, tuple(map(float, normal)), tuple(map(float, points[0])), tuple(map(float, points[1])),
-            wa, wb, "host-convex-support", first_offset=oa, second_offset=ob,
+            gap,
+            tuple(map(float, normal)),
+            tuple(map(float, points[0])),
+            tuple(map(float, points[1])),
+            wa,
+            wb,
+            "host-convex-support",
+            first_offset=oa,
+            second_offset=ob,
         )
-        return status, "bounded_support_estimate", witness, ConvexSupportTrace(
-            phase, lo, hi, self.calls, iterations
+        return (
+            status,
+            "bounded_support_estimate",
+            witness,
+            ConvexSupportTrace(phase, lo, hi, self.calls, iterations),
         )
 
     def expand(self, simplex, weights, approach, previous):
@@ -254,12 +274,16 @@ class _Query:
             reach = float(n @ outer.point)
             if depth >= -self.eps and reach - depth <= _TOL_M:
                 subset, bary = poly.foot(face)
-                return self.finish(subset, bary, n, -reach, -depth, "expanding_polytope", previous + iteration)
+                return self.finish(
+                    subset, bary, n, -reach, -depth, "expanding_polytope", previous + iteration
+                )
             if reach <= self.eps and depth < 0:
                 # A plane supporting the original bodies reaches the origin and
                 # the active simplex supplies the matching near-coincident points.
                 gap = float(np.linalg.norm(weights @ np.array([v.point for v in simplex])))
-                return self.finish(simplex, weights, n, -reach, gap, "support_plane", previous + iteration)
+                return self.finish(
+                    simplex, weights, n, -reach, gap, "support_plane", previous + iteration
+                )
             if not poly.extend(outer):
                 raise SolverFailure("support_expansion_stalled")
         face = min(poly.faces, key=lambda f: f.height)
@@ -269,8 +293,11 @@ class _Query:
             # to a unique, accurate contact witness is costly.
             reach = float(face.normal @ self.support(face.normal).point)
             trace = ConvexSupportTrace(
-                "overlap_bracket", -reach - self.eps, -face.height + self.eps,
-                self.calls, previous + _MAX_EPA,
+                "overlap_bracket",
+                -reach - self.eps,
+                -face.height + self.eps,
+                self.calls,
+                previous + _MAX_EPA,
             )
             return "overlap", "support_depth_unresolved", None, trace
         raise SolverFailure("support_expansion_capacity")
@@ -292,7 +319,9 @@ class _Query:
             # A supporting plane bounds the signed gap from below even if it
             # crosses zero. The simplex gives an upper bound in either case.
             if upper - lower <= _TOL_M:
-                return self.finish(vertices, weights, normal, lower, upper, "simplex_distance", iteration)
+                return self.finish(
+                    vertices, weights, normal, lower, upper, "simplex_distance", iteration
+                )
             if any(np.linalg.norm(vertex.point - v.point) <= self.eps for v in vertices):
                 raise SolverFailure("support_distance_stalled")
             simplex = [*vertices, vertex]

@@ -3,6 +3,7 @@
 import argparse
 import json
 import sys
+import sysconfig
 from contextlib import ExitStack
 from importlib.metadata import distribution
 from pathlib import Path
@@ -297,12 +298,26 @@ def main():
         origin.is_relative_to(site)
         and Path(distribution("phymeo").locate_file("")).resolve() == site
     )
-    assert not any(path and Path(path).resolve().is_relative_to(checkout) for path in sys.path)
+    # The optional USD interpreter lives in a worktree-local venv. Its installed
+    # dependencies are distinct from a source checkout on the import path.
+    dependency_dirs = {
+        Path(sysconfig.get_path(name)).resolve()
+        for name in ("stdlib", "platstdlib", "purelib", "platlib")
+    }
+    local_env_paths = [Path(path).resolve() for path in sys.path
+                       if path and Path(path).resolve().is_relative_to(checkout)]
+    for path in local_env_paths:
+        assert Path(sys.prefix).resolve().is_relative_to(checkout) and Path(sys.prefix).resolve() != checkout
+        assert path.is_relative_to(Path(sys.prefix).resolve()) and (
+            path == Path(sys.prefix).resolve() or any(path.is_relative_to(folder) for folder in dependency_dirs)
+        ), path
+        assert path != checkout / "src" and path != checkout, path
     result = dict(
         package_version=distribution("phymeo").version,
         mode=args.mode,
         package=str(origin),
         cwd=str(Path.cwd()),
+        interpreter_dependency_paths_under_checkout=[str(path) for path in local_env_paths],
     )
     if args.mode == "usd":
         assert args.usd_fixture and not args.usd_fixture.resolve().is_relative_to(checkout)

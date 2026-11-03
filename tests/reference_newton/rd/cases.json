@@ -1,0 +1,105 @@
+{
+  "schema": "newton-reference-v1",
+  "lane": "rd",
+  "cases": [
+    {
+      "id": "RD-SPHERE-FACE", "family": "sphere_triangle", "difficulty": "easy",
+      "inputs": {"vertices_m": [[-1,-1,0],[1,-1,0],[0,2,0]], "center_m": [0,0,0.1875], "radius_m": 0.25, "particle_radius_m": 0, "soft_gap_m": 0, "shape_margin_m": 0, "phymeo_broad_margin_m": 0.5},
+      "expected": {"particle_count": 0, "full_features": [[0,1,2]], "node_gap_min_gt_m": 0.5, "gap_m": -0.0625, "soft_point_m": [0,0,0], "rigid_point_m": [0,0,-0.0625], "normal": [0,0,-1], "face_weights": [0.3333333333333333,0.3333333333333333,0.3333333333333333]},
+      "tolerances": {"newton_point_m": 0.003, "newton_gap_m": 0.0002, "newton_normal": 0.02, "phymeo_m": 1e-12, "phymeo_unit": 1e-12},
+      "oracle": "球心垂足等于三角形重心。中面到球面的有向距离为 3/16 − 1/4 m，各边和各节点均在球外。法向从刚体朝外。",
+      "newton": {"status": "run", "devices": ["cpu","cuda:0"], "reason": "比较相同静态 State 的缺省粒子管线与显式整面管线。"},
+      "phymeo": {"status": "run", "devices": ["cpu"], "reason": "detect 对零厚三角形和球发布最近点、间隙、法向及材料权重。"}
+    },
+    {
+      "id": "RD-SPHERE-SEPARATED", "family": "sphere_triangle", "difficulty": "easy",
+      "inputs": {"vertices_m": [[-1,-1,0],[1,-1,0],[0,2,0]], "center_m": [0,0,0.375], "radius_m": 0.25, "particle_radius_m": 0, "soft_gap_m": 0, "shape_margin_m": 0, "phymeo_broad_margin_m": 0.5},
+      "expected": {"particle_count": 0, "full_features": [], "node_gap_min_gt_m": 0.5, "gap_m": 0.125, "soft_point_m": [0,0,0], "rigid_point_m": [0,0,0.125], "normal": [0,0,-1], "face_weights": [0.3333333333333333,0.3333333333333333,0.3333333333333333]},
+      "tolerances": {"phymeo_m": 1e-12, "phymeo_unit": 1e-12},
+      "oracle": "与面内部命中组共用三角形，垂足至球心距离 3/8 m，减去半径后保留 1/8 m 真间隙。宽相余量只用于读取 Phymeo 分离见证。",
+      "newton": {"status": "run", "devices": ["cpu","cuda:0"], "reason": "同一状态上两种管线均应产生零条软接触。"},
+      "phymeo": {"status": "run", "devices": ["cpu"], "reason": "以正宽相余量读取分离的物理间隙。"}
+    },
+    {
+      "id": "RD-SPHERE-MIRROR-HOLDOUT", "family": "sphere_triangle", "difficulty": "medium",
+      "inputs": {"vertices_m": [[0,2,0],[1,-1,0],[-1,-1,0]], "center_m": [0,-0.25,-0.1875], "radius_m": 0.25, "particle_radius_m": 0, "soft_gap_m": 0, "shape_margin_m": 0, "phymeo_broad_margin_m": 0.5},
+      "expected": {"particle_count": 0, "full_features": [[0,1,2]], "node_gap_min_gt_m": 0.5, "gap_m": -0.0625, "soft_point_m": [0,-0.25,0], "rigid_point_m": [0,-0.25,0.0625], "normal": [0,0,1], "face_weights": [0.25,0.375,0.375]},
+      "tolerances": {"newton_point_m": 0.004, "newton_gap_m": 0.0002, "newton_normal": 0.03, "phymeo_m": 1e-12, "phymeo_unit": 1e-12},
+      "oracle": "球心翻到中面下方并在 y 向移位，节点次序反转。垂足 y=−1/4，按新节点顺序的材料权重为 (1/4,3/8,3/8)，刚体外法向朝 +z。",
+      "newton": {"status": "run", "devices": ["cpu","cuda:0"], "reason": "留出面上的非中心材料位置和相反法向。"},
+      "phymeo": {"status": "run", "devices": ["cpu"], "reason": "从双侧面查询实际节点权重和有向法向。"}
+    },
+    {
+      "id": "RD-SPHERE-EDGE", "family": "sphere_triangle", "difficulty": "medium",
+      "inputs": {"vertices_m": [[-0.5,0,0],[0.5,0,0],[0,0.25,0]], "center_m": [0,-0.375,0.5], "radius_m": 0.6875, "particle_radius_m": 0, "soft_gap_m": 0, "shape_margin_m": 0, "phymeo_broad_margin_m": 0.5},
+      "expected": {"particle_count": 0, "full_features": [[0,1],[0,1,2]], "node_gap_min_gt_m": 0.1, "gap_m": -0.0625, "soft_point_m": [0,0,0], "rigid_point_m": [0,0.0375,-0.05], "normal": [0,0.6,-0.8], "face_weights": [0.5,0.5,0]},
+      "tolerances": {"newton_point_m": 0.00075, "newton_gap_m": 0.0002, "newton_normal": 0.002, "newton_adjacent_face_point_m": 0.027, "newton_adjacent_face_gap_m": 0.018, "newton_adjacent_face_normal": 0.055, "phymeo_m": 1e-12, "phymeo_unit": 1e-12},
+      "oracle": "闭三角形上唯一最近点是第一边中点。球心到它的截面为 3:4:5，距离 5/8 m，其他两边距离 3/4 m。独立边优化与面上趋近边的有限迭代分别限误差。",
+      "newton": {"status": "run", "devices": ["cpu","cuda:0"], "reason": "实际三条边和一个面均登记，核对边及相邻面两条几何记录。"},
+      "phymeo": {"status": "run", "devices": ["cpu"], "reason": "公开最近点查询可识别端点均在球外的边内部。"}
+    },
+    {
+      "id": "RD-FINITE-PLANE", "family": "finite_plane", "difficulty": "medium",
+      "inputs": {"vertices_m": [[0.125,-0.125,0.015625],[0.5625,0.25,0.015625],[-0.25,0.25,0.25]], "width_m": 1, "length_m": 1, "particle_radius_m": 0.03125, "soft_gap_m": 0, "shape_margin_m": 0},
+      "expected": {"particle_features": [[0]], "full_features": [[0]], "warning_contains": "finite planes", "top_z_m": 0, "gap_m": -0.015625, "normal": [0,0,1]},
+      "tolerances": {"newton_point_m": 0.00001, "newton_gap_m": 0.00001, "newton_normal": 0.00001},
+      "oracle": "节点 0 在方形内且距面 1/64 m，节点 1 同高但越过 x 边界 1/16 m，节点 2 离面 1/4 m。有限 quad 的 L∞ 距离只有第一个小于 1/32 m，整面选项仍保留该单节点。",
+      "newton": {"status": "run", "devices": ["cpu","cuda:0"], "reason": "核对有限平面降级警告、零个 E/F 候选及保留的有效 P 记录。"},
+      "phymeo": {"status": "not_comparable", "devices": [], "reason": "有限圆边板包含舍入半径、背面与侧边。其余半空间接口对应无限平面。"}
+    },
+    {
+      "id": "RD-HEIGHTFIELD", "family": "heightfield", "difficulty": "medium",
+      "inputs": {"vertices_m": [[-0.125,0.125,0.28125],[1.09375,0.5,0.21875],[-0.5,0.5,0.5]], "heights_m": [[0.25,0.25,0.25],[0.25,0.25,0.25],[0.25,0.25,0.25]], "half_extents_xy_m": [1,1], "particle_radius_m": 0.0625, "soft_gap_m": 0, "shape_margin_m": 0},
+      "expected": {"particle_features": [[0]], "full_features": [[0]], "warning_contains": "heightfields", "top_z_m": 0.25, "gap_m": -0.03125, "normal": [0,0,1]},
+      "tolerances": {"newton_point_m": 0.00001, "newton_gap_m": 0.00001, "newton_normal": 0.00001},
+      "oracle": "地形高度为 1/4 m。节点 0 到面 1/32 m。节点 1 虽低于地表，但越过边界 3/32 m，边缘距离为 √10/32 m。节点 2 距面 1/4 m，只有节点 0 落入 1/16 m 半径。",
+      "newton": {"status": "run", "devices": ["cpu","cuda:0"], "reason": "真实 HFIELD 是静态标高资产，打开整面后该形状退回节点检测。"},
+      "phymeo": {"status": "gap", "devices": [], "reason": "当前 CollisionShape 公共种类尚无 heightfield 输入和地形节点查询。"}
+    },
+    {
+      "id": "RD-MESH-MISSING-SDF", "family": "mesh_sdf", "difficulty": "medium",
+      "inputs": {"vertices_m": [[-0.09375,-0.078125,0.28125],[0.09375,-0.078125,0.28125],[0,0.09375,0.28125]], "cube_half_extents_m": [0.25,0.25,0.25], "sdf_resolution": null, "particle_radius_m": 0.0625, "soft_gap_m": 0, "shape_margin_m": 0},
+      "expected": {"particle_features": [[0],[1],[2]], "error_contains": "signed-distance field", "top_z_m": 0.25, "gap_m": -0.03125, "normal": [0,0,1]},
+      "tolerances": {"newton_point_m": 0.00001, "newton_gap_m": 0.00001, "newton_normal": 0.00001},
+      "oracle": "点投影位于闭立方体顶面内部，距顶面 1/32 m。无烘焙场时粒子 BVH 查询能读到三个节点。构造整面管线须在任何碰撞查询前报告缺少场。",
+      "newton": {"status": "run", "devices": ["cpu","cuda:0"], "reason": "分别验证粒子几何和启用整面时的 ValueError 阶段、原因。"},
+      "phymeo": {"status": "not_comparable", "devices": [], "reason": "当前闭网格、凸体接口按几何登记，缺少 Newton 纹理 SDF 的构造前置合同。"}
+    },
+    {
+      "id": "RD-MESH-BAKED-SDF", "family": "mesh_sdf", "difficulty": "hard",
+      "inputs": {"vertices_m": [[-0.09375,-0.078125,0.28125],[0.09375,-0.078125,0.28125],[0,0.09375,0.28125]], "cube_half_extents_m": [0.25,0.25,0.25], "sdf_resolution": 32, "sdf_padding_m": 0.078125, "particle_radius_m": 0.0625, "soft_gap_m": 0, "shape_margin_m": 0},
+      "expected": {"particle_features": [[0],[1],[2]], "full_features": [[0],[1],[2],[0,1],[0,2],[1,2],[0,1,2]], "top_z_m": 0.25, "gap_m": -0.03125, "normal": [0,0,1]},
+      "tolerances": {"newton_point_m": 0.003, "newton_gap_m": 0.003, "newton_normal": 0.035},
+      "oracle": "同一方块网格先烘焙场。整张三角形投影落在顶面平坦区域，任一合法材料权重的净隙相同。区分三个节点、三条边与一张面，也核对各自的表面坐标。",
+      "newton": {"status": "run", "devices": ["cuda:0"], "reason": "以 Mesh.build_sdf 实建 GPU 纹理，随后 finalize 和整面查询。Warp Volume/Texture3D 烘焙要求 CUDA。"},
+      "phymeo": {"status": "not_comparable", "devices": [], "reason": "几何见证可用其他表示获得，纹理 SDF 采样与误差属于此 Newton 资产路径。"}
+    },
+    {
+      "id": "RD-ROUNDED-PLATE", "family": "rounded_plate", "difficulty": "medium",
+      "inputs": {"polygon_m": [[-0.5,-0.5,0],[0.5,-0.5,0],[0.5,0.5,0],[-0.5,0.5,0]], "rounding_m": 0.125, "probes_m": [[0.125,-0.125,0.09375],[-0.125,0.125,-0.1875],[0.59375,0,0],[0.59375,0.625,0]], "phymeo_broad_margin_m": 0.5},
+      "expected": {"features": ["front","back","rim","corner"], "gaps_m": [-0.03125,0.0625,-0.03125,0.03125], "normals": [[0,0,1],[0,0,-1],[1,0,0],[0.6,0.8,0]]},
+      "tolerances": {"phymeo_m": 1e-12, "phymeo_unit": 1e-12},
+      "oracle": "把探针垂投到平面并将 xy 钳制到方形，所得位移长度减 1/8 m 为间隙。角外位移 (3/32,4/32,0) 的长度为 5/32 m。",
+      "newton": {"status": "not_comparable", "devices": [], "reason": "有限 plane、锐边 box 与此多边形加球的带背面和圆角实体有不同边界。"},
+      "phymeo": {"status": "run", "devices": ["cpu"], "reason": "一次公开 detect 查询分别读出四个真实材料探针的间隙、法向和板特征。"}
+    },
+    {
+      "id": "RD-SWEPT-INTERIOR", "family": "sphere_sweep", "difficulty": "hard",
+      "inputs": {"vertices_m": [[-1,-1,0],[1,-1,0],[0,2,0]], "start_m": [0,0,0.5], "end_m": [0,0,-0.5], "radius_m": 0.25},
+      "expected": {"first_t_fraction": 0.25, "endpoint_gap_m": 0.25, "point_m": [0,0,0], "normal": [0,0,-1], "face_weights": [0.3333333333333333,0.3333333333333333,0.3333333333333333]},
+      "tolerances": {"first_t_width": 1e-10, "phymeo_m": 1e-10, "phymeo_unit": 1e-10},
+      "oracle": "线性球心高度 z=1/2−t，球心距面首次等于 1/4 m 时 t=1/4。两端球面距中面均为正 1/4 m，首触落在重心。",
+      "newton": {"status": "not_comparable", "devices": [], "reason": "CollisionPipeline.collide 对当前 State 发布离散软接触，无该仿射路径的首触区间。"},
+      "phymeo": {"status": "run", "devices": ["cpu","cuda:0"], "reason": "主机认证路径首触。CUDA 路径须有 tyx 面特征启动、下载和同步计数，最终区间由主机复核。"}
+    },
+    {
+      "id": "RD-PRISMATIC-LINK-STEP", "family": "link_layer", "difficulty": "hard",
+      "inputs": {"vertices_m": [[-1,-1,0],[1,-1,0],[0,2,0]], "node_masses_kg": [1,1,1], "half_thickness_m": 0.03125, "link_origin_m": [0,0,0.25], "link_axis_ends_m": [[-0.25,0,0],[0.25,0,0]], "link_radius_m": 0.125, "link_mass_kg": 0.5, "layer_width_m": 0.125, "stiffness_pa_per_m": 21.333333333333332, "dt_s": 0.00390625, "gravity_m_s2": [0,0,0], "friction": 0, "damping_s_per_m": 0},
+      "expected": {"sample_gap_m": 0.09375, "normal_force_n": 2, "joint_effort_n": 2, "site_count": 2, "end_joint_velocity_m_s": 0.015625, "end_joint_displacement_m": 0.000030517578125, "end_node_velocity_z_m_s": -0.0026041666666666665, "net_momentum_z_kg_m_s": 0},
+      "tolerances": {"force_n": 0.00002, "position_m": 1e-9, "velocity_m_s": 1e-7, "momentum_kg_m_s": 1e-10},
+      "oracle": "中面面积 3 m²，压缩 1/32 m，合力 3 × (64/3) × (1/32)=2 N。对称轴两端的平均材料权重各为 1/3。零初速使首个中点采样保留初始几何，阻尼为零，滑块获 4 m/s²，各节点获 −2/3 m/s²。",
+      "newton": {"status": "not_comparable", "devices": [], "reason": "Phymeo 按参考面积的有限作用层、两端分配和中点步进共同定义这个数值实验。Newton VBD 的 E/F 缓冲和材料定律不提供该相同合同。"},
+      "phymeo": {"status": "run", "devices": ["cpu","cuda:0"], "reason": "真实 CompliantClothContactProgram 子步。CUDA 只加速 TyxNormalLayer 点载荷，材料映射与关节积分留在主机，并核实设备读回。"}
+    }
+  ]
+}

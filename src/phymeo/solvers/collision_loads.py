@@ -20,7 +20,11 @@ from ..core.result import StepReport
 from ..core.rigid import RigidBodyInputs
 from ..core.state import ParticleState, StepInputs
 from ..core.validation import finite_real, validate_dt
-from ..dynamics.rotation import SEMI_IMPLICIT_WORLD_OMEGA, advance_world_orientation, quaternion_matrix
+from ..dynamics.rotation import (
+    SEMI_IMPLICIT_WORLD_OMEGA,
+    advance_world_orientation,
+    quaternion_matrix,
+)
 from ..geometry._capsule_triangle_sweep import capsule_material_sites
 from ..geometry.collision_pipeline import CollisionDetection, CollisionWorkspace, detect
 from ..geometry.collision_witness import ConvexContactPoint, ProximityWitness
@@ -238,19 +242,32 @@ class CollisionLoadSystem:
                 raise ValueError("layer pair is filtered by the collision model")
             kinds = tuple(sorted((x.kind, y.kind)))
             smooth_pair = "ellipsoid" in kinds and set(kinds) <= {
-                "ellipsoid","sphere","triangle","particle","rounded_particle",
+                "ellipsoid",
+                "sphere",
+                "triangle",
+                "particle",
+                "rounded_particle",
             }
-            if (not smooth_pair and kinds not in {
-                ("hull", "hull"),
-                ("sphere", "triangle"),
-                ("capsule", "triangle"),
-                ("triangle", "triangle"),
-                ("particle", "plate"),
-                ("plate", "triangle"),
-            }) or any(s.radius and s.kind not in ("sphere", "capsule", "plate", "rounded_particle") for s in (x, y)):
+            if (
+                not smooth_pair
+                and kinds
+                not in {
+                    ("hull", "hull"),
+                    ("sphere", "triangle"),
+                    ("capsule", "triangle"),
+                    ("triangle", "triangle"),
+                    ("particle", "plate"),
+                    ("plate", "triangle"),
+                }
+            ) or any(
+                s.radius and s.kind not in ("sphere", "capsule", "plate", "rounded_particle")
+                for s in (x, y)
+            ):
                 raise ValueError("unsupported shape combination for contact layer")
             if law.friction and x.rigid == y.rigid and not (x.rigid and smooth_pair):
-                raise ValueError("sliding layer requires an admitted smooth rigid pair or a rigid and deformable pair")
+                raise ValueError(
+                    "sliding layer requires an admitted smooth rigid pair or a rigid and deformable pair"
+                )
             laws[a, b] = law
         self.layers = MappingProxyType(laws)
         self._margin = max((v.width_m for v in laws.values()), default=0.0)
@@ -293,25 +310,38 @@ class CollisionLoadSystem:
                 raise ValueError("rigid attachment row exceeds state")
             local = np.array(b.vertices)
             start = local @ rotations[r].T + state.rigid.position[r]
-            body_frame=None
+            body_frame = None
             if s.curved is not None:
-                q0=state.rigid.orientation[r].astype(float)
-                body_frame=q0/np.hypot.reduce(q0)
+                q0 = state.rigid.orientation[r].astype(float)
+                body_frame = q0 / np.hypot.reduce(q0)
             if end is None:
-                out[s.key] = CollisionMotion(start,body_orientation_xyzw=body_frame)
+                out[s.key] = CollisionMotion(start, body_orientation_xyzw=body_frame)
                 continue
             if body_frame is not None:
-                if dt is None or getattr(rigid_solver,"rigid_motion_contract",None)!=SEMI_IMPLICIT_WORLD_OMEGA:
-                    raise SolverFailure("attached curved solid requires a bound physical angular drift")
-                omega=end.rigid.angular_velocity[r].astype(float)
-                speed=float(np.hypot.reduce(omega))
-                axis=(1.,0.,0.) if not speed else omega/speed
-                expected=advance_world_orientation(body_frame[None,:],omega[None,:],dt)[0]
-                q1=end.rigid.orientation[r]
-                if min(np.linalg.norm(q1-expected),np.linalg.norm(q1+expected))>16*np.finfo(q1.dtype).eps:
-                    raise SolverFailure("curved attachment orientation differs from physical angular drift")
-                turn=RigidTurn(tuple(state.rigid.position[r]),tuple(end.rigid.position[r]),axis,speed*dt)
-                out[s.key]=CollisionMotion(start,turn=turn,body_orientation_xyzw=body_frame)
+                if (
+                    dt is None
+                    or getattr(rigid_solver, "rigid_motion_contract", None)
+                    != SEMI_IMPLICIT_WORLD_OMEGA
+                ):
+                    raise SolverFailure(
+                        "attached curved solid requires a bound physical angular drift"
+                    )
+                omega = end.rigid.angular_velocity[r].astype(float)
+                speed = float(np.hypot.reduce(omega))
+                axis = (1.0, 0.0, 0.0) if not speed else omega / speed
+                expected = advance_world_orientation(body_frame[None, :], omega[None, :], dt)[0]
+                q1 = end.rigid.orientation[r]
+                if (
+                    min(np.linalg.norm(q1 - expected), np.linalg.norm(q1 + expected))
+                    > 16 * np.finfo(q1.dtype).eps
+                ):
+                    raise SolverFailure(
+                        "curved attachment orientation differs from physical angular drift"
+                    )
+                turn = RigidTurn(
+                    tuple(state.rigid.position[r]), tuple(end.rigid.position[r]), axis, speed * dt
+                )
+                out[s.key] = CollisionMotion(start, turn=turn, body_orientation_xyzw=body_frame)
                 continue
             if s.kind == "capsule" and (
                 getattr(rigid_solver, "rigid_motion_contract", None) != SEMI_IMPLICIT_WORLD_OMEGA
@@ -438,7 +468,9 @@ class CollisionLoadSystem:
                         pa = pb = tuple((np.asarray(pa) + np.asarray(pb)) * 0.5)
                     else:
                         # The rigid pad carries the traction at the cloth material point.
-                        pa = pb = pb if isinstance(self.bindings[pair.first], RigidAttachment) else pa
+                        pa = pb = (
+                            pb if isinstance(self.bindings[pair.first], RigidAttachment) else pa
+                        )
                 va = self._velocity(pair.first, pa, site.first_weights, state)
                 vb = self._velocity(pair.second, pb, site.second_weights, state)
                 coordinates.append((pa, pb, vb - va))

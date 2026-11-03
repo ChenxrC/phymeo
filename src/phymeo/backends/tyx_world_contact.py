@@ -246,9 +246,7 @@ class TyxWorldContactBatch:
                     and min(f.entry_face.gap, f.mid_face.gap, final_face.gap) < -max_depth
                 ):
                     raise SolverFailure("sampled cloth-link penetration exceeds limit")
-                world.p._check_link_motion(
-                    f.state, f.mid, end, None, world.p._link_geometry(end)
-                )
+                world.p._check_link_motion(f.state, f.mid, end, None, world.p._link_geometry(end))
                 sample = world.sample(f.mid_face, rows[i], forces[i], mapped[i])
                 audit = world.audit(
                     old, end, f.entry_face, final_face, sample, f.external, f.spring, h

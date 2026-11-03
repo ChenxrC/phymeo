@@ -11,8 +11,16 @@ from .domain_graph import MultiDomainPointOperator
 
 
 def solve_witness_impulses(
-    ports, rows, mu_static, mu_dynamic, *, sample="pose", velocity_tolerance=1e-10,
-    response_tolerance=1e-12, position_tolerance=1e-9, max_iterations=200,
+    ports,
+    rows,
+    mu_static,
+    mu_dynamic,
+    *,
+    sample="pose",
+    velocity_tolerance=1e-10,
+    response_tolerance=1e-12,
+    position_tolerance=1e-9,
+    max_iterations=200,
 ):
     """Solve coincident material rows at one physical instant, with zero restitution.
 
@@ -35,10 +43,17 @@ def solve_witness_impulses(
             raise ValueError("witness bindings must cover both registered shape keys")
         if sample == "first_contact":
             sweep = pair.sweep
-            if pair.status != "hit" or sweep is None or sweep.first_t is None or sweep.witness_time is None:
+            if (
+                pair.status != "hit"
+                or sweep is None
+                or sweep.first_t is None
+                or sweep.witness_time is None
+            ):
                 raise ValueError("a first-contact witness with a physical sample time is required")
             now = sweep.witness_time
-            if not (sweep.first_t[0] <= now <= sweep.first_t[1]) or (event_time is not None and event_time != now):
+            if not (sweep.first_t[0] <= now <= sweep.first_t[1]) or (
+                event_time is not None and event_time != now
+            ):
                 raise ValueError("contact graph witnesses must refer to one sampled instant")
             event_time = now
             witness = sweep.witness
@@ -46,12 +61,19 @@ def solve_witness_impulses(
             if pair.status != "touching" or pair.sweep is not None:
                 raise ValueError("a static touching witness is required")
             witness = pair.witness
-        if witness is None or witness.normal is None or witness.first_point is None or witness.second_point is None:
+        if (
+            witness is None
+            or witness.normal is None
+            or witness.first_point is None
+            or witness.second_point is None
+        ):
             raise ValueError("a resolved normal and both material world points are required")
         for value in (witness.first_point, witness.second_point, witness.normal):
             observed = np.asarray(value, dtype=np.float64)
             if observed.shape != (3,) or not np.isfinite(observed).all():
-                raise ValueError("collision witness world vectors must be finite and three-dimensional")
+                raise ValueError(
+                    "collision witness world vectors must be finite and three-dimensional"
+                )
         if not np.isfinite(witness.gap_m) or abs(witness.gap_m) > tol:
             raise ValueError("signed witness gap exceeds the position tolerance")
         first.append(bindings[pair.first])
@@ -66,8 +88,14 @@ def solve_witness_impulses(
             domain, row = endpoint
             if np.linalg.norm(positions[domain][row] - point) > tol:
                 raise ValueError("material port is not bound to its collision witness")
-    normals = np.array([w.normal for w in witnesses], dtype=np.float64).reshape(-1,3)
+    normals = np.array([w.normal for w in witnesses], dtype=np.float64).reshape(-1, 3)
     return solve_contact_impulses(
-        graph, normals, mu_static, mu_dynamic, velocity_tolerance=velocity_tolerance,
-        response_tolerance=response_tolerance, position_tolerance=tol, max_iterations=max_iterations,
+        graph,
+        normals,
+        mu_static,
+        mu_dynamic,
+        velocity_tolerance=velocity_tolerance,
+        response_tolerance=response_tolerance,
+        position_tolerance=tol,
+        max_iterations=max_iterations,
     )

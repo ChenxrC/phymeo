@@ -178,7 +178,12 @@ def test_static_support_does_not_claim_a_rotating_toi():
     with ph.CollisionWorkspace(model) as work:
         result = ph.detect(
             model,
-            {ka: ma, kb: ph.CollisionMotion(mb.start, turn=ph.RigidTurn((0,0,0),(0,0,0),(0,1,0),0.5))},
+            {
+                ka: ma,
+                kb: ph.CollisionMotion(
+                    mb.start, turn=ph.RigidTurn((0, 0, 0), (0, 0, 0), (0, 1, 0), 0.5)
+                ),
+            },
             ph.CollisionPolicy(),
             work,
         )

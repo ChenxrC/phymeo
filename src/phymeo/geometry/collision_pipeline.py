@@ -452,7 +452,15 @@ def _proved_sheet_pairs(workspace, paths, flags, margin):
 
 
 def _detect_pairs(
-    workspace, paths, flags, selected, proximity=False, resolved=None, *, pair_start=0, pair_slots=None
+    workspace,
+    paths,
+    flags,
+    selected,
+    proximity=False,
+    resolved=None,
+    *,
+    pair_start=0,
+    pair_slots=None,
 ):
     rows = []
     shapes = workspace._model.shapes
@@ -522,7 +530,8 @@ def _detect_pairs(
         if pair_start or pair_slots.shape != (len(flags),) or pair_slots.dtype.kind not in "iu":
             raise ValueError("compact slots must match the ordered classification vector")
         if len(pair_slots) and (
-            pair_slots[0] < 0 or pair_slots[-1] >= len(workspace._pairs)
+            pair_slots[0] < 0
+            or pair_slots[-1] >= len(workspace._pairs)
             or np.any(pair_slots[1:] <= pair_slots[:-1])
         ):
             raise ValueError("compact slots must be distinct ordered global pair indices")
@@ -534,7 +543,11 @@ def _detect_pairs(
             a, b = shapes[i], shapes[j]
             ma, mb = paths[a.key], paths[b.key]
             code = int(flags[offset + local])
-            slot = pair_start + offset + local if pair_slots is None else int(pair_slots[offset + local])
+            slot = (
+                pair_start + offset + local
+                if pair_slots is None
+                else int(pair_slots[offset + local])
+            )
             ready = resolved.get(slot)
             if code == 0 and (a.curved is not None or b.curved is not None):
                 family = "RR" if a.rigid and b.rigid else "RD"
@@ -549,8 +562,16 @@ def _detect_pairs(
                     if fallback is not None:
                         status, reason, witness, support_map = fallback
                 ready = CollisionPair(
-                    a.key, b.key, family, True, status, reason, witness, sweep,
-                    curved=trace, support_map=support_map,
+                    a.key,
+                    b.key,
+                    family,
+                    True,
+                    status,
+                    reason,
+                    witness,
+                    sweep,
+                    curved=trace,
+                    support_map=support_map,
                 )
             elif code == 0 and (
                 (a.kind == "heightfield" and b.kind in ("sphere", "rounded_particle"))

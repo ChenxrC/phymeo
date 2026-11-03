@@ -45,8 +45,12 @@ class TyxBatchedScene:
             self._is_material[key] = contact
             (material if contact else resident).append((key, spec))
         with ExitStack() as resources:
-            self._material = resources.enter_context(TyxWorldContactBatch(material, mode, cache_root=cache_root))
-            self._resident = resources.enter_context(TyxWorldBatch(resident, mode, cache_root=cache_root))
+            self._material = resources.enter_context(
+                TyxWorldContactBatch(material, mode, cache_root=cache_root)
+            )
+            self._resident = resources.enter_context(
+                TyxWorldBatch(resident, mode, cache_root=cache_root)
+            )
             self._initial_material = self._material.snapshot()
             self._resources = resources.pop_all()
 

@@ -52,7 +52,7 @@ class _Body:
         self.radius = shape.radius
         self.dims = ()
         if shape.curved is not None:
-            self.frame = _rotation(shape.curved,path).astype(np.float64)
+            self.frame = _rotation(shape.curved, path).astype(np.float64)
             self.dims = shape.curved.dimensions_m
         if shape.kind == "triangle" and not _FacePath(shape, path).valid:
             raise ValueError("degenerate_material_triangle")

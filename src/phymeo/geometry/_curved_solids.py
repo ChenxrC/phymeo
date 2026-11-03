@@ -305,7 +305,9 @@ def curved_solid_contact(a, b, ma, mb):
         return "unsupported", "curved_shape_pair", None, None, None
     try:
         if ma.moving or mb.moving:
-            if other.kind == "plane" and all(path.turn is None or not path.turn.angle for path in (ma, mb)):
+            if other.kind == "plane" and all(
+                path.turn is None or not path.turn.angle for path in (ma, mb)
+            ):
                 from ._translating_curved_plane import translating_curved_plane
 
                 return translating_curved_plane(curved, other, mc, mo, curved_first)

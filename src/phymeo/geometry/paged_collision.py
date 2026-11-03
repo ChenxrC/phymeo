@@ -199,7 +199,9 @@ class PagedWorldCollisionWorkspace:
     to retain contact and diagnostic rows on each page. The page budgets still bound pair slots.
     """
 
-    def __init__(self, worlds, backend="host", *, limits=None, cache_root=None, result_format="full"):
+    def __init__(
+        self, worlds, backend="host", *, limits=None, cache_root=None, result_format="full"
+    ):
         if result_format not in ("full", "contacts"):
             raise ValueError("result_format must be full or contacts")
         self._result_format = result_format
@@ -285,7 +287,11 @@ class PagedWorldCollisionWorkspace:
             self._metrics[oldest]["evictions"] += 1
             self._release(oldest)
         t0 = perf_counter_ns()
-        factory = CompactWorldContactWorkspace if self._result_format == "contacts" else WorldCollisionWorkspace
+        factory = (
+            CompactWorldContactWorkspace
+            if self._result_format == "contacts"
+            else WorldCollisionWorkspace
+        )
         work = factory(
             [(k, self._models[k]) for k in page.world_keys], self._backend, cache_root=self._cache
         )
@@ -327,8 +333,12 @@ class PagedWorldCollisionWorkspace:
                     t0 = perf_counter_ns()
                     try:
                         if overrides:
-                            local_limits = {k: overrides[k] for k in page.world_keys if k in overrides}
-                            output = work.detect(local_motion, local_rules, limits_by_world=local_limits)
+                            local_limits = {
+                                k: overrides[k] for k in page.world_keys if k in overrides
+                            }
+                            output = work.detect(
+                                local_motion, local_rules, limits_by_world=local_limits
+                            )
                         else:
                             output = work.detect(local_motion, local_rules)
                     finally:

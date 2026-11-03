@@ -78,6 +78,7 @@ from .core.tetrahedral import TetrahedralModel
 from .core.verification import CandidateVerifier, VerificationReport
 from .coupling.candidate_audit import PointCandidateAudit
 from .coupling.domain_graph import MultiDomainPointOperator
+from .coupling.floating_port import FloatingRobotPointPort
 from .coupling.offset_port import TriangleOffsetPointPort
 from .coupling.participant import (
     ClothParticipant,
@@ -86,12 +87,11 @@ from .coupling.participant import (
     TetrahedralParticipant,
 )
 from .coupling.point_port import ParticleRigidPorts
-from .coupling.floating_port import FloatingRobotPointPort
-from .coupling.witness_impulses import solve_witness_impulses
 from .coupling.ports import ParticlePointPort, PointPort, RigidPointPort, exchange_impulses
 from .coupling.robot_port import RobotPointPort
 from .coupling.surface_port import PointPairOperator, WeightedPointPort
 from .coupling.tetrahedral_port import TetrahedralPointPort
+from .coupling.witness_impulses import solve_witness_impulses
 from .dynamics.floating_robot import (
     FloatingKinematics,
     FloatingRobotModel,
@@ -115,17 +115,6 @@ from .geometry.collision_pipeline import (
     CollisionWorkspace,
     detect,
 )
-from .geometry.compact_contacts import (
-    CompactContactBuffer,
-    CompactWorldContactWorkspace,
-    ContactBufferLimits,
-    compact_contacts,
-)
-from .geometry.deformable_features import (
-    DeformableFeatureContact,
-    DeformableFeatureContacts,
-    query_deformable_features,
-)
 from .geometry.collision_witness import (
     CapsuleAxisPoint,
     ConvexContactPatch,
@@ -145,6 +134,17 @@ from .geometry.collision_witness import (
     TetrahedralFacetResult,
     TetrahedralOccupancy,
     TetrahedralSolidResult,
+)
+from .geometry.compact_contacts import (
+    CompactContactBuffer,
+    CompactWorldContactWorkspace,
+    ContactBufferLimits,
+    compact_contacts,
+)
+from .geometry.deformable_features import (
+    DeformableFeatureContact,
+    DeformableFeatureContacts,
+    query_deformable_features,
 )
 from .geometry.feature_distance_bound import FeatureDistanceBounds, feature_distance_bounds
 from .geometry.linear_sweep import FeatureSweepResult, linear_feature_sweep

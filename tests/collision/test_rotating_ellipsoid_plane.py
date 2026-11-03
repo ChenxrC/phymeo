@@ -195,7 +195,9 @@ def test_outside_centered_static_plane_arc_contract(kind):
     row = detect(model, paths)
     if kind == "translation":
         assert row.status == "separated" and row.sweep.first_t is None
-        assert row.sweep.start_gap_m == pytest.approx(1/8) and row.sweep.end_gap_m == pytest.approx(1/4)
+        assert row.sweep.start_gap_m == pytest.approx(
+            1 / 8
+        ) and row.sweep.end_gap_m == pytest.approx(1 / 4)
     else:
         assert row.status == "unsupported" and row.sweep is None and row.curved is None
 

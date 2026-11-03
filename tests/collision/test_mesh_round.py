@@ -169,17 +169,20 @@ def test_closed_mesh_round_static_relation_and_real_materials(case, reverse, tra
     )
 
 
-def test_mesh_round_rejects_nonzero_turn_and_obeys_filters():
-    case = CASES[0]
+def test_turning_mesh_sphere_preserves_overlap_and_explicit_pair_filter():
+    case = next(c for c in CASES if c["id"] == "sphere-face")
     model, paths, mesh, shape, _, _ = build(case)
     arc = ph.CollisionMotion(
         paths[mesh.key].start, turn=ph.RigidTurn((0, 0, 0), (0, 0, 0), (0, 0, 1), 0.5)
     )
     pair = query(model, {**paths, mesh.key: arc})
-    assert pair.status == "unsupported" and pair.sweep is None
+    assert pair.status == "hit" and pair.sweep.first_t == (0.0, 0.0)
+    assert pair.mesh_round.start.relation == case["relation"]
+    assert pair.mesh_round.start.axis_gap_m == case["axis_gap_m"]
     excluded = ph.CollisionModel(model.shapes, excluded=((mesh.key, shape.key),))
-    row = query(excluded, paths)
-    assert row.status == "filtered" and row.mesh_round is None
+    for motion in (paths, {**paths, mesh.key: arc}):
+        row = query(excluded, motion)
+        assert row.status == "filtered" and row.mesh_round is None
 
 
 def test_material_node_reordering_preserves_the_same_physical_supports():

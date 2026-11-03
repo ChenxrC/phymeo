@@ -22,7 +22,7 @@ Newton 1.7 中，指针形状 ID 为 4，所属刚体 ID 为 3，正负球分别
 
 ### 拒绝仍然有意义的边界
 
-原闭网格与圆体的连续窄阶段支持刚体平移；当输入是非零旋转的闭 OBJ 时，资产仍能生成正确刚体弧，该配对实测报告 `unsupported / mesh_rounding_or_rotation`。另一反例把铰链世界 X 坐标移至 2⁵² m，此处 0.25 m 的上游滑移会被两次 binary64 世界枢轴坐标相减全部吞掉。入口验证编码出的位移误差不超过 √ε 倍实际滑移矢量长度，超出时返回所属碰撞体与关节名称。同一大坐标下的纯滑移使用独立零角平移，能保留该 0.25 m。这个检查只界定移动枢轴的位移表示。[浮点反例](../../artifacts/p65-night-asset-joint-sweep-20261104-01/08-pivot-resolution-red/stdout.log) · [修复后](../../artifacts/p65-night-asset-joint-sweep-20261104-01/09-fp64-pivot-boundary/stdout.log)
+首次验收时，转动闭 OBJ 的刚体弧已经能从资产生成。当时的球配对记录为 `unsupported / mesh_rounding_or_rotation`。后续已接入单转轴网格与仿射球心的连续查询。同一原始球心在资产首顶点时实际判出初始占用，轴间隙为 −1/64 m、边界间隙为零。把球换成有限胶囊，仍报告原来的不支持原因。[后续实测](p65-rotating-mesh-sphere.md) 另一反例把铰链世界 X 坐标移至 2⁵² m，此处 0.25 m 的上游滑移会被两次 binary64 世界枢轴坐标相减全部吞掉。入口验证编码出的位移误差不超过 √ε 倍实际滑移矢量长度，超出时返回所属碰撞体与关节名称。同一大坐标下的纯滑移使用独立零角平移，能保留该 0.25 m。这个检查只界定移动枢轴的位移表示。[浮点反例](../../artifacts/p65-night-asset-joint-sweep-20261104-01/08-pivot-resolution-red/stdout.log) · [修复后](../../artifacts/p65-night-asset-joint-sweep-20261104-01/09-fp64-pivot-boundary/stdout.log)
 
 
 ## 复现

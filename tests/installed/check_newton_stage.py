@@ -527,6 +527,25 @@ def imported_mesh_contacts(ph, np, assets, mode, cache):
             if mode == "cuda":
                 assert work.stats()["completed_launches"] > 0
         output[suffix] = [dict(relation=p.relation, boundary_gap_m=p.boundary_gap_m) for p in poses]
+        turning = asset.collision_motion(np.array([0.0]), np.array([0.25]))[bracket.shape.key]
+        ball = ph.CollisionShape(ph.CollisionKey(0, 99, 0), "sphere", (23,), 1 / 64)
+        model = ph.CollisionModel((bracket.shape, ball))
+        with ph.CollisionWorkspace(model, mode, cache_root=cache) as work:
+            (hit,) = ph.detect(
+                model,
+                {bracket.shape.key: turning, ball.key: ph.CollisionMotion(turning.start[:1])},
+                ph.CollisionPolicy(), work,
+            ).pairs
+            assert hit.status == "hit" and hit.sweep.first_t == (0.0, 0.0)
+            start = hit.mesh_round.start
+            assert start.relation == "boundary_overlap" and start.axis_location == "on_boundary"
+            assert start.axis_gap_m == -1 / 64 and start.boundary_gap_m == 0
+            if mode == "cuda":
+                assert work.stats()["completed_launches"] > 0
+        output[suffix + "_joint_interval"] = dict(
+            first_contact=hit.sweep.first_t, initial_relation=start.relation,
+            initial_axis_clearance_m=start.axis_gap_m, center_samples=hit.mesh_round.center_samples,
+        )
     return output
 
 

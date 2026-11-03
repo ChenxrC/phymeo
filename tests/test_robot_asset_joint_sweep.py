@@ -370,7 +370,9 @@ def test_rotating_closed_obj_preserves_initial_ball_overlap_and_capsule_boundary
     paths[sphere.key] = ph.CollisionMotion([center])
     hit = detect_pair(asset, mesh, sphere, paths)
     assert hit.status == "hit" and hit.sweep.first_t == (0.0, 0.0)
-    assert hit.sweep.start_gap_m < 0
+    start = hit.mesh_round.start
+    assert start.relation == "boundary_overlap" and start.axis_location == "on_boundary"
+    assert start.axis_gap_m == -1 / 64 and start.boundary_gap_m == 0
 
     capsule = ph.CollisionShape(ph.CollisionKey(0, 14, 0), "capsule", (12, 17), 1 / 64)
     paths[capsule.key] = ph.CollisionMotion([center, center + [0, 0, 1 / 16]])

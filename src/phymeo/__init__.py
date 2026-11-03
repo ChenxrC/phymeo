@@ -117,6 +117,12 @@ from .geometry.collision_witness import (
 )
 from .geometry.feature_distance_bound import FeatureDistanceBounds, feature_distance_bounds
 from .geometry.linear_sweep import FeatureSweepResult, linear_feature_sweep
+from .geometry.mesh_arc_surface import (
+    MeshArcBoundaryEvent,
+    MeshArcSupport,
+    MeshArcSurfaceResult,
+    mesh_arc_first_surface,
+)
 from .geometry.particle_sphere import ParticleSphereGeometry, particle_sphere_geometry
 from .geometry.plane import Plane
 from .geometry.robot_patch_sweep import RobotPatchSweepResult, robot_patch_sweep
@@ -408,6 +414,10 @@ __all__ += [
     "MeshArcFacePair",
     "MeshArcWindow",
     "mesh_arc_face_candidates",
+    "MeshArcSupport",
+    "MeshArcBoundaryEvent",
+    "MeshArcSurfaceResult",
+    "mesh_arc_first_surface",
     "PlateContactPose",
     "PlateContactTrace",
     "CapsuleAxisPoint",

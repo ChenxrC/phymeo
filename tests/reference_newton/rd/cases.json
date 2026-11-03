@@ -54,7 +54,7 @@
       "tolerances": {"newton_point_m": 0.00001, "newton_gap_m": 0.00001, "newton_normal": 0.00001},
       "oracle": "地形高度为 1/4 m。节点 0 到面 1/32 m。节点 1 虽低于地表，但越过边界 3/32 m，边缘距离为 √10/32 m。节点 2 距面 1/4 m，只有节点 0 落入 1/16 m 半径。",
       "newton": {"status": "run", "devices": ["cpu","cuda:0"], "reason": "真实 HFIELD 是静态标高资产，打开整面后该形状退回节点检测。"},
-      "phymeo": {"status": "gap", "devices": [], "reason": "公共高度图已支持刚球。此项逐粒子半径、有限域与降级语义尚未接入 Phymeo 的材料点查询。"}
+      "phymeo": {"status": "gap", "devices": [], "reason": "逐材料点的正半径、有限域和两侧见证已用 RD-HEIGHTFIELD-NODES 独立实测。整布面–地形入口尚缺，本行包含 Newton 特定的整面降级与告警。"}
     },
     {
       "id": "RD-MESH-MISSING-SDF", "family": "mesh_sdf", "difficulty": "medium",

@@ -1,0 +1,413 @@
+{
+  "schema": "newton-reference-v1",
+  "lane": "rr",
+  "time_coordinate": "t is a dimensionless fraction in [0,1]. Each path linearly translates one body frame in metres. Poses use zero shape gap/margin and no velocity speculation.",
+  "u_prism": {
+    "u_ring_xy_m": [[-2, -2], [2, -2], [2, 2], [1, 2], [1, -1], [-1, -1], [-1, 2], [-2, 2]],
+    "u_z_m": [-0.5, 0.5],
+    "u_cap_quads_ccw": [[1, 2, 3, 4], [0, 1, 4, 5], [0, 5, 6, 7]]
+  },
+  "assets": {
+    "ball_a": {"kind": "sphere", "radius_m": 0.25},
+    "ball_b": {"kind": "sphere", "radius_m": 0.125},
+    "u_outer": {"kind": "u_mesh", "scale_xyz": [1, 1, 1]},
+    "u_insert": {"kind": "u_mesh", "scale_xyz": [0.25, 0.25, 0.5]},
+    "roof": {"kind": "heightfield", "half_extent_xy_m": [1, 1], "heights_yx_m": [[0, 1, 0], [0, 1, 0], [0, 1, 0]]},
+    "ridge_ball": {"kind": "sphere", "radius_m": 0.3125},
+    "ground": {"kind": "plane"},
+    "cylinder": {"kind": "cylinder", "radius_m": 0.5, "half_height_m": 0.25},
+    "rim_ball": {"kind": "sphere", "radius_m": 0.1875},
+    "tilted_cone": {
+      "kind": "cone",
+      "radius_m": 0.375,
+      "half_height_m": 0.25,
+      "local_quat_xyzw": [0, 0.9486832980505138, 0, 0.31622776601683794]
+    },
+    "tilted_ellipsoid": {
+      "kind": "ellipsoid",
+      "radii_xyz_m": [0.5, 0.125, 0.28125],
+      "local_quat_xyzw": [0, 0.31622776601683794, 0, 0.9486832980505138]
+    }
+  },
+  "cases": [
+    {
+      "id": "RR-SPHERE-POSES",
+      "family": "sphere–sphere",
+      "difficulty": "easy",
+      "inputs": {
+        "query": "sampled_poses",
+        "assets": ["ball_a", "ball_b"],
+        "a_path_m": [[0, 0, 0], [0.25, 0, 0]],
+        "b_path_m": [[-0.75, 0, 0], [1, 0, 0]],
+        "sample_fractions": [0, 0.375, 1],
+        "duration_s": 0.0078125
+      },
+      "expected": {
+        "samples": [
+          {"contact": false, "host_witness_gap_m": 0.375},
+          {"contact": true, "gap_m": -0.1875, "normal_a_to_b": [-1, 0, 0]},
+          {"contact": false, "host_witness_gap_m": 0.375}
+        ]
+      },
+      "tolerances": {"length_m": 0.00005, "normal_component": 0.001},
+      "oracle": "The signed distance is |-3/4 + 3t/2| - 3/8 m. Three fixed observations distinguish penetration from separated endpoints.",
+      "newton": {
+        "status": "run",
+        "devices": ["cpu", "cuda:0"],
+        "reason": "Free rigid bodies at the specified poses, zero shape gap and margin; read the Newton rigid contact buffer."
+      },
+      "phymeo": {
+        "status": "run",
+        "devices": ["cpu"],
+        "reason": "Host detect returns a signed sphere-pair witness at each pose; static narrow-phase CUDA is outside this comparison."
+      }
+    },
+    {
+      "id": "RR-SPHERE-FIRST",
+      "family": "sphere–sphere",
+      "difficulty": "medium",
+      "inputs": {
+        "query": "first_touch",
+        "assets": ["ball_a", "ball_b"],
+        "a_path_m": [[0, 0, 0], [0.25, 0, 0]],
+        "b_path_m": [[-0.75, 0, 0], [1, 0, 0]],
+        "duration_s": 0.0078125
+      },
+      "expected": {
+        "first_fraction": 0.25,
+        "start_gap_m": 0.375,
+        "end_gap_m": 0.375,
+        "first_normal_a_to_b": [-1, 0, 0],
+        "first_time_s": 0.001953125
+      },
+      "tolerances": {"length_m": 1e-10, "time_fraction": 1e-9, "normal_component": 1e-10},
+      "oracle": "The first root of |-3/4 + 3t/2| = 3/8 in [0,1] is t=1/4. The two endpoint gaps are both 3/8 m.",
+      "newton": {
+        "status": "not_comparable",
+        "devices": [],
+        "reason": "Newton 1.7 CollisionPipeline consumes one state. Velocity-adapted gaps do not publish a first-touch time."
+      },
+      "phymeo": {
+        "status": "run",
+        "devices": ["cpu", "cuda:0"],
+        "reason": "One public detect call over both body paths, including a real TYX feature kernel and download when CUDA is selected."
+      }
+    },
+    {
+      "id": "RR-U-NOTCH",
+      "family": "moving concave mesh–mesh",
+      "difficulty": "hard",
+      "inputs": {
+        "query": "sampled_poses",
+        "assets": ["u_outer", "u_insert"],
+        "a_path_m": [[0, 0, 0], [0.25, -0.125, 0.125]],
+        "b_path_m": [[0, 0.25, 0], [0.375, 0.125, 0.125]],
+        "sample_fractions": [0, 0.5, 1],
+        "duration_s": 0.0078125
+      },
+      "expected": {"samples": [{"contact": false}, {"contact": false}, {"contact": false}]},
+      "tolerances": {"unexpected_contacts": 0},
+      "oracle": "The insert projects into x=[-1/2 + t/8, 1/2 + t/8], y=[-1/4,3/4] in the receiver frame. It fits inside the open notch for the entire move with at least 3/8 m side clearance. Both whole-object AABBs overlap.",
+      "newton": {
+        "status": "run",
+        "devices": ["cpu", "cuda:0"],
+        "reason": "Two free, closed concave meshes. Query the live mesh BVHs without geometry approximation or precomputed SDF."
+      },
+      "phymeo": {
+        "status": "gap",
+        "devices": [],
+        "reason": "The public RR narrow phase on da5ba35 handles mesh–hull but has no mesh–mesh narrow phase."
+      }
+    },
+    {
+      "id": "RR-U-RIGHT",
+      "family": "moving concave mesh–mesh",
+      "difficulty": "hard",
+      "inputs": {
+        "query": "sampled_poses",
+        "assets": ["u_outer", "u_insert"],
+        "a_path_m": [[0, 0, 0], [0.25, -0.125, 0.125]],
+        "b_path_m": [[0, 0.25, 0], [0.875, 0.125, 0.125]],
+        "sample_fractions": [0, 1],
+        "duration_s": 0.0078125
+      },
+      "expected": {
+        "samples": [
+          {"contact": false},
+          {"contact": true, "gap_range_m": [-0.125, -0.015625], "normal_a_to_b": [-1, 0, 0], "a_local_x_m": 1}
+        ]
+      },
+      "tolerances": {"length_m": 0.001, "normal_component": 0.03},
+      "oracle": "At t=1 the outer x of the insert is 9/8 m. Its cap edges cross the receiver's inner wall x=1 m at y=-1/4 and z=±1/4. Maximum intrusion is 1/8 m. Require a genuine wall witness with at least 1/64 m intrusion.",
+      "newton": {
+        "status": "run",
+        "devices": ["cpu", "cuda:0"],
+        "reason": "Two free, closed concave meshes. Query the live mesh BVHs without geometry approximation or precomputed SDF."
+      },
+      "phymeo": {
+        "status": "gap",
+        "devices": [],
+        "reason": "The public RR narrow phase on da5ba35 handles mesh–hull but has no mesh–mesh narrow phase."
+      }
+    },
+    {
+      "id": "RR-U-LEFT-HOLDOUT",
+      "family": "moving concave mesh–mesh",
+      "difficulty": "hard",
+      "inputs": {
+        "query": "sampled_poses",
+        "assets": ["u_outer", "u_insert"],
+        "a_path_m": [[0.125, 0, 0], [-0.125, 0.25, -0.125]],
+        "b_path_m": [[0.125, 0.25, 0], [-0.8125, 0.5, -0.125]],
+        "sample_fractions": [0, 1],
+        "flip_quad_diagonal": true,
+        "reverse_registration": true,
+        "duration_s": 0.0078125
+      },
+      "expected": {
+        "samples": [
+          {"contact": false},
+          {"contact": true, "gap_range_m": [-0.1875, -0.03125], "normal_a_to_b": [1, 0, 0], "a_local_x_m": -1}
+        ]
+      },
+      "tolerances": {"length_m": 0.001, "normal_component": 0.03},
+      "oracle": "Relative end x=-11/16 makes the leftmost insert face x=-19/16. The inner wall x=-1 m cuts its cap. At most 3/16 m penetration is possible; demand at least 1/32 m. Both bodies move, all quads change diagonal, and insertion order is reversed.",
+      "newton": {
+        "status": "run",
+        "devices": ["cpu", "cuda:0"],
+        "reason": "Two free, closed concave meshes. Query the live mesh BVHs without geometry approximation or precomputed SDF."
+      },
+      "phymeo": {
+        "status": "gap",
+        "devices": [],
+        "reason": "The public RR narrow phase on da5ba35 handles mesh–hull but has no mesh–mesh narrow phase."
+      }
+    },
+    {
+      "id": "RR-U-FIRST",
+      "family": "moving concave mesh–mesh",
+      "difficulty": "hard",
+      "inputs": {
+        "query": "first_touch",
+        "assets": ["u_outer", "u_insert"],
+        "a_path_m": [[0, 0, 0], [0.25, -0.125, 0.125]],
+        "b_path_m": [[0, 0.25, 0], [0.875, 0.125, 0.125]],
+        "duration_s": 0.0078125
+      },
+      "expected": {"first_fraction": 0.8, "first_time_s": 0.00625, "first_a_local_x_m": 1, "first_normal_a_to_b": [-1, 0, 0]},
+      "tolerances": {"time_fraction": 0.000001, "length_m": 0.0001, "normal_component": 0.001},
+      "oracle": "In the outer body's frame the insert's right face is x=1/2+5t/8. Its whole span stays above the channel floor and within the receiver's Z slab. It first meets x=1 at t=4/5, 6.25 ms into the prescribed move.",
+      "newton": {
+        "status": "not_comparable",
+        "devices": [],
+        "reason": "Newton 1.7 CollisionPipeline consumes one state. Velocity-adapted gaps do not publish a first-touch time."
+      },
+      "phymeo": {
+        "status": "gap",
+        "devices": [],
+        "reason": "The public RR narrow phase on da5ba35 handles mesh–hull but has no mesh–mesh narrow phase."
+      }
+    },
+    {
+      "id": "RR-RIDGE-POSES",
+      "family": "heightfield–moving sphere",
+      "difficulty": "hard",
+      "inputs": {
+        "query": "sampled_poses",
+        "assets": ["roof", "ridge_ball"],
+        "a_path_m": [[0, 0, 0], [0, 0, 0]],
+        "b_path_m": [[-0.75, 0.125, 1.25], [0.75, 0.125, 1.25]],
+        "sample_fractions": [0, 0.5, 1],
+        "duration_s": 0.0078125
+      },
+      "expected": {
+        "samples": [
+          {"contact": false},
+          {"contact": true, "gap_m": -0.0625, "normal_a_to_b": [0, 0, 1], "a_point_world_m": [0, 0.125, 1]},
+          {"contact": false}
+        ]
+      },
+      "tolerances": {"length_m": 0.001, "normal_component": 0.02},
+      "oracle": "For z=1-|x| and center z=5/4, the nearest point at the middle is the ridge. Its distance 1/4 minus radius 5/16 gives -1/16 m. At both endpoints the closest facet is 1/sqrt(2) m away.",
+      "newton": {
+        "status": "run",
+        "devices": ["cpu", "cuda:0"],
+        "reason": "Use native HFIELD as static terrain and a free sphere; read only the listed pose contacts."
+      },
+      "phymeo": {
+        "status": "gap",
+        "devices": [],
+        "reason": "CollisionShape cannot register a native heightfield or its cells."
+      }
+    },
+    {
+      "id": "RR-RIDGE-MISS",
+      "family": "heightfield–moving sphere",
+      "difficulty": "medium",
+      "inputs": {
+        "query": "sampled_poses",
+        "assets": ["roof", "ridge_ball"],
+        "a_path_m": [[0, 0, 0], [0, 0, 0]],
+        "b_path_m": [[-0.75, 0.125, 1.375], [0.75, 0.125, 1.375]],
+        "sample_fractions": [0, 0.5, 1],
+        "duration_s": 0.0078125
+      },
+      "expected": {"samples": [{"contact": false}, {"contact": false}, {"contact": false}]},
+      "tolerances": {"unexpected_contacts": 0},
+      "oracle": "The entire terrain is at or below z=1 m. At peak crossing the ball bottom is z=17/16 m and the minimum clearance along the whole segment is 1/16 m.",
+      "newton": {
+        "status": "run",
+        "devices": ["cpu", "cuda:0"],
+        "reason": "Use native HFIELD as static terrain and a free sphere; read only the listed pose contacts."
+      },
+      "phymeo": {
+        "status": "gap",
+        "devices": [],
+        "reason": "CollisionShape cannot register a native heightfield or its cells."
+      }
+    },
+    {
+      "id": "RR-SLOPE-FACE",
+      "family": "heightfield–moving sphere",
+      "difficulty": "medium",
+      "inputs": {
+        "query": "sampled_poses",
+        "assets": ["roof", "ridge_ball"],
+        "a_path_m": [[0, 0, 0], [0, 0, 0]],
+        "b_path_m": [[-0.5, 0.125, 1.125], [-0.5, 0.125, 0.75]],
+        "sample_fractions": [0, 1],
+        "duration_s": 0.0078125
+      },
+      "expected": {
+        "samples": [
+          {"contact": false},
+          {
+            "contact": true,
+            "gap_m": -0.1357233047033631,
+            "normal_a_to_b": [-0.7071067811865475, 0, 0.7071067811865475],
+            "a_point_world_m": [-0.375, 0.125, 0.625]
+          }
+        ]
+      },
+      "tolerances": {"length_m": 0.001, "normal_component": 0.02},
+      "oracle": "Projection onto the left facet z=1+x gives endpoint signed gap (1/4)/sqrt(2)-5/16 and foot (-3/8,1/8,5/8) m. The start gap is (5/8)/sqrt(2)-5/16 > 0.",
+      "newton": {
+        "status": "run",
+        "devices": ["cpu", "cuda:0"],
+        "reason": "Use native HFIELD as static terrain and a free sphere; read only the listed pose contacts."
+      },
+      "phymeo": {
+        "status": "gap",
+        "devices": [],
+        "reason": "CollisionShape cannot register a native heightfield or its cells."
+      }
+    },
+    {
+      "id": "RR-RIDGE-FIRST",
+      "family": "heightfield–swept sphere",
+      "difficulty": "hard",
+      "inputs": {
+        "query": "first_touch",
+        "assets": ["roof", "ridge_ball"],
+        "a_path_m": [[0, 0, 0], [0, 0, 0]],
+        "b_path_m": [[-0.75, 0.125, 1.25], [0.75, 0.125, 1.25]],
+        "duration_s": 0.0078125
+      },
+      "expected": {
+        "first_fraction": 0.375,
+        "leave_fraction": 0.625,
+        "first_center_m": [-0.1875, 0.125, 1.25],
+        "first_point_world_m": [0, 0.125, 1],
+        "first_normal_a_to_b": [-0.6, 0, 0.8],
+        "first_time_s": 0.0029296875
+      },
+      "tolerances": {"time_fraction": 0.000001, "length_m": 0.0001, "normal_component": 0.001},
+      "oracle": "At first touch the nearest feature is the ridge: sqrt((5/16)^2-(1/4)^2)=3/16 m. Projecting onto either face leaves its domain at that instant. x=-3/4+3t/2 reaches ±3/16 at t=3/8 and 5/8.",
+      "newton": {
+        "status": "not_comparable",
+        "devices": [],
+        "reason": "Newton 1.7 CollisionPipeline consumes one state. Velocity-adapted gaps do not publish a first-touch time."
+      },
+      "phymeo": {
+        "status": "gap",
+        "devices": [],
+        "reason": "CollisionShape cannot register a native heightfield or its cells."
+      }
+    },
+    {
+      "id": "RR-CYLINDER-RIM",
+      "family": "cylinder–sphere",
+      "difficulty": "medium",
+      "inputs": {
+        "query": "sampled_poses",
+        "assets": ["cylinder", "rim_ball"],
+        "a_path_m": [[0, 0, 0], [0, 0, 0]],
+        "b_path_m": [[0.59375, 0, 0.5], [0.59375, 0, 0.375]],
+        "sample_fractions": [0, 1],
+        "duration_s": 0.0078125
+      },
+      "expected": {
+        "samples": [
+          {"contact": false},
+          {"contact": true, "gap_m": -0.03125, "normal_a_to_b": [0.6, 0, 0.8], "a_point_world_m": [0.5, 0, 0.25]}
+        ]
+      },
+      "tolerances": {"length_m": 0.0002, "normal_component": 0.003},
+      "oracle": "The closest point is on the finite top rim. End radial and axial excesses are 3/32 and 4/32 m, giving center-to-rim distance 5/32 m. Subtract the 6/32 m sphere radius.",
+      "newton": {
+        "status": "run",
+        "devices": ["cpu", "cuda:0"],
+        "reason": "Free rigid bodies at the specified poses, zero shape gap and margin; read the Newton rigid contact buffer."
+      },
+      "phymeo": {
+        "status": "gap",
+        "devices": [],
+        "reason": "The native finite cylinder with a sharp rim is absent from CollisionShape."
+      }
+    },
+    {
+      "id": "RR-CONE-TIP",
+      "family": "cone–plane",
+      "difficulty": "medium",
+      "inputs": {
+        "query": "sampled_poses",
+        "assets": ["ground", "tilted_cone"],
+        "a_path_m": [[0, 0, 0], [0, 0, 0]],
+        "b_path_m": [[0, 0, 0.25], [0, 0, 0.1875]],
+        "sample_fractions": [0, 1],
+        "duration_s": 0.0078125
+      },
+      "expected": {"samples": [{"contact": false}, {"contact": true, "gap_m": -0.0125, "normal_a_to_b": [0, 0, 1]}]},
+      "tolerances": {"length_m": 0.0005, "normal_component": 0.01},
+      "oracle": "With local +Z mapped to (3/5,0,-4/5), the apex is 1/5 m below the origin, while the lowest base rim is only 1/40 m below it. The signed final apex height is -1/80 m.",
+      "newton": {
+        "status": "run",
+        "devices": ["cpu", "cuda:0"],
+        "reason": "Free rigid bodies at the specified poses, zero shape gap and margin; read the Newton rigid contact buffer."
+      },
+      "phymeo": {"status": "gap", "devices": [], "reason": "The public builder cannot register an exact circular cone."}
+    },
+    {
+      "id": "RR-ELLIPSOID-TILT",
+      "family": "ellipsoid–plane",
+      "difficulty": "medium",
+      "inputs": {
+        "query": "sampled_poses",
+        "assets": ["ground", "tilted_ellipsoid"],
+        "a_path_m": [[0, 0, 0], [0, 0, 0]],
+        "b_path_m": [[0, 0, 0.4375], [0, 0, 0.34375]],
+        "sample_fractions": [0, 1],
+        "duration_s": 0.0078125
+      },
+      "expected": {"samples": [{"contact": false}, {"contact": true, "gap_m": -0.03125, "normal_a_to_b": [0, 0, 1]}]},
+      "tolerances": {"length_m": 0.0002, "normal_component": 0.003},
+      "oracle": "Vertical support radius is sqrt(((1/2)*(3/5))^2+((9/32)*(4/5))^2)=3/8 m. Thus 7/16 m clears and 11/32 m penetrates by 1/32 m.",
+      "newton": {
+        "status": "run",
+        "devices": ["cpu", "cuda:0"],
+        "reason": "Free rigid bodies at the specified poses, zero shape gap and margin; read the Newton rigid contact buffer."
+      },
+      "phymeo": {"status": "gap", "devices": [], "reason": "The public builder has no exact ellipsoid support map."}
+    }
+  ]
+}

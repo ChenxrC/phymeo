@@ -1,6 +1,13 @@
 # P6.5 人工续作入口
 
-## 当前入口（2026-11-03）
+## 当前入口（2026-11-04）
+
+- 机器人已从移动参考系观测推进到浮动基座与子树的动力学、固定基座的双边点闭环及带实际加速度的站点 IMU。闭环反力、两端功率和离散投影分别记录。IMU 的瞬时样本和 Newton 步平均加速度按各自时刻对照。[浮动树](../benchmarks/p65-floating-tree-dynamics.md) · [四杆反力](../benchmarks/p65-robot-point-closures.md) · [站点 IMU](../benchmarks/p65-robot-site-imu.md)
+- 刚体几何已接通闭网格与球/有限胶囊的实体查询、受限单相对轴的闭网格旋转首触，以及有界曲面之间和曲面与有限布面的材料见证。首触时刻、末态边界净距和整体退让深度为不同观测。[闭网格与圆体](../benchmarks/p65-mesh-round-contact.md) · [转动闭体](../benchmarks/p65-rotating-mesh-solid.md) · [曲面与布](../benchmarks/p65-convex-support-pairs.md)
+- GPU 已有独立的世界内配对、常驻自由球/滑轨推进和多世界布–连杆双向受力。相同局部编号的 RR、RD、DD 和空世界也经过同批查询。GPU 启动、必要读回与 HOST 几何复核分别计数。[世界内配对](../benchmarks/p65-world-partition.md) · [G2 常驻推进](../benchmarks/p65-g2-resident-world-step.md) · [G3 双向受力](../benchmarks/p65-g3-world-contact-loads.md) · [混合世界回归](../../tests/scale/test_mixed_world_queries.py)
+- 本轮继续检验多目标 IK、凹闭网格与完整柔性三角面、稠密单世界规模及曲面几何产生的真实物理载荷。阶段签收使用多个独立材料/运动反例。两种软布初态递布沿用同一条真实轨迹的接管、桌面支撑和撤爪条件。[应用基线](../benchmarks/p65-soft-handoff-acquisition.md) · [规模计划](../superpowers/plans/2026-11-03-tyx-gpu-multiworld.md)
+
+## 2026-11-03 进展和入口
 
 - 当前可并行的三项是移动参考系传感、非零转动刚体首触试片和 TYX 世界内配对。固定基座止挡、延迟驱动及设备地形候选已经组合验证。一台滑轨因限位在半步时触地，另一台共址滑轨保持净空。G1 已测到 64 个世界，单世界扰动没有串扰。在该档位，完整配对表保留了 32,256 个跨世界过滤行，暖态合批查询慢于逐世界调用。[组合验收](../benchmarks/p65-driven-terrain-worlds.md) · [G1 成本](../benchmarks/p65-g1-world-isolation.md) · [下一批子任务分派与验收](../superpowers/plans/2026-11-03-p65-next-parallel-dispatch.md)
 

@@ -786,8 +786,10 @@ def main():
         refined_motion = asset.collision_motion(lower_pose, upper_pose)[tool.shape.key]
         with ph.CollisionWorkspace(orbit, "host") as work:
             (refined,) = ph.detect(
-                orbit, {tool.shape.key: refined_motion, probe.key: ph.CollisionMotion(mid)},
-                ph.CollisionPolicy(), work,
+                orbit,
+                {tool.shape.key: refined_motion, probe.key: ph.CollisionMotion(mid)},
+                ph.CollisionPolicy(),
+                work,
             ).pairs
         assert refined.status == "hit" and refined.sweep.start_gap_m > 0
         assert refined.sweep.end_gap_m <= 0 and refined.sweep.witness_time is not None

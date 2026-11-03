@@ -43,13 +43,21 @@ def test_line_contact_axial_traction(h, case, speed, force, mu_static, mu_dynami
     order = (1, 0) if reversed_owners else (0, 1)
     rows = [(pair, {cylinder: ("cylinder", i), plane: ("floor", i)}, i) for i in order]
     result = ph.step_floating_contacts(
-        {"cylinder": (model, state, inputs)}, sites, rows, [mu_static] * 2, [mu_dynamic] * 2, h,
-        fixed_bodies={"floor": (floor, rest)}, local_normals={plane: UP},
+        {"cylinder": (model, state, inputs)},
+        sites,
+        rows,
+        [mu_static] * 2,
+        [mu_dynamic] * 2,
+        h,
+        fixed_bodies={"floor": (floor, rest)},
+        local_normals={plane: UP},
     )
     assert result.report.accepted, result.report.reason
     contact = result.impulses
     body_impulses = contact.world_impulses * (1 if pair.second == cylinder else -1)
-    np.testing.assert_allclose(body_impulses.sum(axis=0), [0.0, 8 * h, -force * h], rtol=0, atol=4e-9)
+    np.testing.assert_allclose(
+        body_impulses.sum(axis=0), [0.0, 8 * h, -force * h], rtol=0, atol=4e-9
+    )
     np.testing.assert_allclose(contact.normal_impulses, [4 * h, 4 * h], atol=4e-9, rtol=0)
     tangent = np.linalg.norm(contact.tangent_impulses, axis=1)
     if speed:
@@ -61,12 +69,26 @@ def test_line_contact_axial_traction(h, case, speed, force, mu_static, mu_dynami
     expected_q = state.q.copy()
     expected_q[2] += speed * h
     np.testing.assert_allclose(actual.q, expected_q, atol=2e-9, rtol=0)
-    free_energy = 0.5 * ((8 * h) ** 2 + (speed + force * h) ** 2 + (0.5 * force * h) ** 2 / principal)
+    free_energy = 0.5 * (
+        (8 * h) ** 2 + (speed + force * h) ** 2 + (0.5 * force * h) ** 2 / principal
+    )
     assert contact.energy_change == pytest.approx(0.5 * speed**2 - free_energy, abs=3e-9)
-    (tmp_path / "traction.json").write_text(json.dumps(dict(
-        case=case, h_s=h, sliding_m_s=speed, applied_n=force,
-        contact_force_n=(body_impulses.sum(axis=0) / h).tolist(),
-        impulses_ns=body_impulses.tolist(), normal_ns=contact.normal_impulses.tolist(),
-        regimes=contact.regimes, energy_change_j=contact.energy_change,
-        final_velocity=actual.v.tolist(), final_q=actual.q.tolist(),
-    ), allow_nan=False), encoding="utf8")
+    (tmp_path / "traction.json").write_text(
+        json.dumps(
+            dict(
+                case=case,
+                h_s=h,
+                sliding_m_s=speed,
+                applied_n=force,
+                contact_force_n=(body_impulses.sum(axis=0) / h).tolist(),
+                impulses_ns=body_impulses.tolist(),
+                normal_ns=contact.normal_impulses.tolist(),
+                regimes=contact.regimes,
+                energy_change_j=contact.energy_change,
+                final_velocity=actual.v.tolist(),
+                final_q=actual.q.tolist(),
+            ),
+            allow_nan=False,
+        ),
+        encoding="utf8",
+    )

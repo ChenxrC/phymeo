@@ -61,3 +61,17 @@
 在 2° 布的原 0.49 s 单爪抬升状态，原先 36 帧的命令及第一步 A 驱动力保持一致。新指令推进 11 帧、1,408 个真实子步至 0.60 s，跨过原先被拒的帧。A 持续双侧承载，B 腕施加的冲量三个分量均为零。末帧布底离台 76.07 mm，A 向上支撑 0.420 N，B 尚未夹布。本段和 24 项 HOST 控制测试通过；完整原始初态还需要独立运行。[分段轨迹摘要](../../artifacts/p65-collision-m4-loads-local-20261102-01/with-guarded-approach-v1/prefix-tilted-summary.json)
 
 竖直布从原 0.54 s 状态继续到 0.86 s，32 帧、4,096 个实际子步中 A 持续双侧夹持。B 的实际工具移动了 5.80 cm，最大实测速度 0.330 m/s，腕部冲量为零。末帧 A 向上支撑 0.48945 N，材料边仍在 B 的有限指垫之外，平面内最近可达材料点距工具 49.6 mm。两种新分段逐帧核对全部 276 个布中面对，均未检出异处自交；布动量最大分量误差为 1.13×10⁻¹⁷ N·s。B 尚未接管。这些分段不能代替从两种原始初态运行的完整系统轨迹。[分段独立审计](../../artifacts/p65-collision-m4-loads-local-20261102-01/with-guarded-approach-v1/independent-prefix-audit.json) · [真实工具行程](../../artifacts/p65-collision-m4-loads-local-20261102-01/with-guarded-approach-v1/receiver-reference-observation.json)
+
+## 全布自接触下的接收时机
+
+原竖直软布从初态运行到 1.02 s，共 103 个显示帧、13,056 个物理子步。全部 276 个同体面对应在每个材料子步检查，本条轨迹没有激活布–布法向力。A 在 0.54 s 单独抬起布，B 始终没有形成双侧夹持，两只手在放台前丢布。最大指垫穿入 0.543 mm，结构接触层最大穿入为零。按全部原始力通道核对，逐帧布动量最大分量误差为 8.68×10⁻¹⁸ N·s。[逐步核对](../../artifacts/p65-collision-m4-loads-local-20261102-01/with-full-self-v1/full-vertical-audit.json) · [原始失败回放](../../artifacts/p65-collision-m4-loads-local-20261102-01/with-full-self-v1/full-vertical.html)
+
+布边首次进入 B 的两个指垫轮廓是在 0.93 s，留有 3.5 mm 侧面余量的首帧为 0.94 s。A 双侧法向力最后一次都超过 0.20 N 也在 0.94 s。旧的接收逻辑还要求布边距工具中心小于 5 mm，而两指之间实际可达的材料点最近也有 10.975 mm。B 在 0.96 s 才有可测的接触力。由原闭指行程 12.4 mm 和最大命令速度 0.09 m/s，完整行程至少需要约 0.138 s。[实际布边与载荷](../../artifacts/p65-collision-m4-loads-local-20261102-01/with-full-self-v1/full-vertical-receiver.json) · [带几何余量的复算](../../artifacts/p65-collision-m4-loads-local-20261102-01/exterior-original-observations.json)
+
+新控制让 B 在 A 抬布时张指预靠。它选取材料边上的固定地址，从 B 所在的一侧计算指垫包络相对整张当下布面的外侧目标，同时检查实际腕、前臂与指杆的接近轨迹。只有在 A 单独承载且上述材料边的一个点进入两个有限指面的安全内部后，B 才开始闭指。闭指结果仍由两侧真实载荷判定。在竖直与 2° 的原抬升入口，外侧目标扣除整个指垫半径后，对布都留有 5 mm 余量。控制器和夹爪回归共 32 项通过。两种初态的物理结果须分别记录。[有限指面的工具](../../src/phymeo/control/material_grasp.py) · [控制与反例](../../tests/test_exterior_grasp.py)
+
+### 外侧预靠的竖直原始初态
+
+同一正常 CLI 在 1.37 s 到达原抬升阶段时限，共 138 帧、17,536 个真实子步。A 在 0.54 s 单独抬布；此前 B 张指行进 29.05 mm，期间 B 上的布接触载荷为零。B 于 0.86 s 取得布边节点 13–20 之间的材料地址，该点距工具中心 15.97 mm，距指垫侧界 3.50 mm。B 在 0.99 s 建立双侧夹持，A 两侧都高于 0.20 N 的末帧为 0.95 s，两个承载窗仍差约 40 ms。末帧 B 两侧较小法向力为 0.590 N，桌面承担 0.215 N。交接未放行。[逐帧地址与夹持](../../artifacts/p65-collision-m4-loads-local-20261102-01/with-exterior-self-v1/full-vertical-exterior.json)
+
+同条轨迹有 1,639 个子步产生布自接触力，涉及 16 对材料面，峰值 0.776 N，自接触净合力最大值 1.96×10⁻¹⁶ N。全部外载冲量与布动量变化的最大分量差为 1.39×10⁻¹⁷ N·s。指垫最大穿入 0.543 mm，结构穿入和关节限位违例均为零。下一次诊断应区分闭指行程、材料边沿夹爪轴向的运动，以及 A 在等待期间的滑移。[受力与阶段审计](../../artifacts/p65-collision-m4-loads-local-20261102-01/with-exterior-self-v1/full-vertical-audit.json) · [同源离线回放](../../artifacts/p65-collision-m4-loads-local-20261102-01/with-exterior-self-v1/full-vertical.html)

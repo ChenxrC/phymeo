@@ -8,6 +8,7 @@ import numpy as np
 
 from ._robot_asset import LinkCollision as LinkCollision
 from ._robot_asset import RobotAsset, assemble_robot, make_collider, principal_inertia, unit_axis
+from ._robot_mesh import load_obj_mesh
 from ._robot_xml import _attributes, _child, _children, _name, _number, _numbers
 
 
@@ -130,7 +131,7 @@ def _tree(robot):
     return root, links, order, inbound
 
 
-def _link_collisions(link, link_name, link_index):
+def _link_collisions(link, link_name, link_index, xml_path):
     result = []
     names = set()
     for ordinal, collision in enumerate(link.findall("collision")):
@@ -148,7 +149,15 @@ def _link_collisions(link, link_name, link_index):
             raise ValueError(f"{where} geometry needs exactly one shape")
         primitive = geometry[0]
         _children(primitive, set(), where + " geometry")
-        if primitive.tag == "sphere":
+        if primitive.tag == "mesh":
+            _attributes(primitive, {"filename", "scale"}, where)
+            size = load_obj_mesh(
+                xml_path,
+                _name(primitive, "filename", where),
+                _numbers(primitive, "scale", 3, where, (1.0, 1.0, 1.0)),
+                where=where,
+            )
+        elif primitive.tag == "sphere":
             _attributes(primitive, {"radius"}, where)
             size = _numbers(primitive, "radius", 1, where)
         elif primitive.tag == "cylinder":
@@ -175,7 +184,7 @@ def load_urdf(path: str | Path, *, gravity=(0.0, 0.0, -9.81)) -> RobotAsset:
     An absent joint axis defaults to +X. Moving links need positive mass and a
     COM inertia diagonal after rotating the URDF inertial frame into the link.
     Optional fixed-root inertia is validated and omitted from moving dynamics.
-    Spheres, boxes and Z-axis cylinders retain their authored link, name and collision transform.
+    Spheres, boxes, Z-axis cylinders and local closed OBJ meshes retain their link and transform.
     Visuals and global display materials are ignored. Other joint/shape types
     and semantic elements (e.g. mimic or joint dynamics) raise ValueError.
     """
@@ -193,7 +202,7 @@ def load_urdf(path: str | Path, *, gravity=(0.0, 0.0, -9.81)) -> RobotAsset:
     root, links, order, inbound = _tree(robot)
     indices = {root: -1, **{link: i for i, link in enumerate(order)}}
     _inertial(links[root], root, root=True)
-    colliders = _link_collisions(links[root], root, -1)
+    colliders = _link_collisions(links[root], root, -1, path)
     parents, joints, joint_data, bodies = [], [], [], []
     for link_name in order:
         parent, joint_name, joint = inbound[link_name]
@@ -201,7 +210,7 @@ def load_urdf(path: str | Path, *, gravity=(0.0, 0.0, -9.81)) -> RobotAsset:
         joints.append(joint_name)
         joint_data.append(_joint_data(joint, joint_name))
         bodies.append(_inertial(links[link_name], link_name))
-        colliders.extend(_link_collisions(links[link_name], link_name, indices[link_name]))
+        colliders.extend(_link_collisions(links[link_name], link_name, indices[link_name], path))
     return assemble_robot(
         name, root, order, parents, joints, joint_data, bodies, colliders, gravity
     )

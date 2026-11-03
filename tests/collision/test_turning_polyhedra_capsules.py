@@ -50,17 +50,17 @@ def test_two_perpendicular_capsule_orbits_keep_both_caps(reverse):
 
 
 def boxes(face=False,reverse=False):
-    k,l=[ph.CollisionKey(28,i,0) for i in ((9,8) if reverse else (8,9))]
+    box_key, other_key=[ph.CollisionKey(28,i,0) for i in ((9,8) if reverse else (8,9))]
     corners=np.array(list(product((-1.,1.),repeat=3)))
-    block=ph.CollisionShape(k,"hull",tuple(range(8)))
+    block=ph.CollisionShape(box_key,"hull",tuple(range(8)))
     pivot=np.array([0.,0.,.375]);drift=np.array([.25,-.375,.125])
     block_motion=ph.CollisionMotion(pivot+corners*[.5,.125,.125],turn=ph.RigidTurn(pivot,pivot+drift,(0,1,0),pi))
     if face:
-        ground=ph.CollisionShape(l,"triangle",(3,7,1))
+        ground=ph.CollisionShape(other_key,"triangle",(3,7,1))
         top=np.array([[-2.,-2.,0],[2.,-2.,0],[0,2.,0]])
         support=ph.CollisionMotion(top,top+drift+[[.125,0,0],[0,-.125,0],[-.125,0,0]])
     else:
-        ground=ph.CollisionShape(l,"hull",tuple(range(31,39)))
+        ground=ph.CollisionShape(other_key,"hull",tuple(range(31,39)))
         center=np.array([0,0,-.25])
         support=ph.CollisionMotion(center+corners*[2.,2.,.25],turn=ph.RigidTurn(center,center+drift,(0,0,1),pi/3))
     return block,ground,block_motion,support

@@ -213,6 +213,37 @@ def many_worlds(ph, mode, root):
         )
 
 
+def imported_mesh_contacts(ph, np, assets, mode, cache):
+    probes = ((1.375, 1.375, 0.), (.5, 1.5, 0.))
+    pivot = np.array([.5, .25, -.125])
+    offset = np.array([.125, -.25, .0625])
+    scale = np.array([.125, .25, .25])
+    rz = np.array([[0., -1, 0], [1., 0, 0], [0, 0, 1.]])
+    ry = np.array([[.8, 0, .6], [0, 1., 0], [-.6, 0, .8]])
+    output = {}
+    for suffix, loader in (("urdf", ph.load_urdf), ("xml", ph.load_mjcf)):
+        asset = loader(assets / ("mesh_arm." + suffix))
+        _, bracket = asset.collisions
+        assert bracket.shape.kind == "mesh" and len(bracket.shape.triangles) == 20
+        keys = [ph.CollisionKey(0, 77, i) for i in (0, 1)]
+        spheres = [ph.CollisionShape(k, "sphere", (0,), 1/64) for k in keys]
+        model = ph.CollisionModel((*asset.collision_model.shapes, *spheres), asset.collision_model.excluded)
+        paths = asset.collision_motion(np.array([np.arctan2(.6, .8)]))
+        for key, local in zip(keys, probes, strict=True):
+            center = pivot + (offset + (np.asarray(local) * scale) @ rz.T) @ ry.T
+            paths[key] = ph.CollisionMotion([center])
+        with ph.CollisionWorkspace(model, mode, cache_root=cache) as work:
+            pairs = ph.detect(model, paths, ph.CollisionPolicy(margin=.5), work).pairs
+            poses = [next(p for p in pairs if {p.first,p.second} == {bracket.shape.key,k}).mesh_round.end
+                     for k in keys]
+            assert [p.relation for p in poses] == ["separated", "mesh_contains_round"]
+            np.testing.assert_allclose([p.boundary_gap_m for p in poses], [.03125, .046875], atol=2e-12)
+            if mode == "cuda":
+                assert work.stats()["completed_launches"] > 0
+        output[suffix] = [dict(relation=p.relation, boundary_gap_m=p.boundary_gap_m) for p in poses]
+    return output
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--wheel-site", type=Path, required=True)
@@ -220,6 +251,7 @@ def main():
     p.add_argument("--out", type=Path, required=True)
     p.add_argument("--mode", choices=["host", "cuda", "usd"], required=True)
     p.add_argument("--usd-fixture", type=Path)
+    p.add_argument("--mesh-assets", type=Path)
     args = p.parse_args()
     site, checkout = args.wheel_site.resolve(), args.checkout.resolve()
     assert sys.flags.isolated and all(
@@ -284,6 +316,8 @@ def main():
             pages=many_worlds(ph, args.mode, args.out.parent / "cache"),
         )
     if args.mode != "usd":
+        assert args.mesh_assets and not args.mesh_assets.resolve().is_relative_to(checkout)
+        result["mesh_assets"] = imported_mesh_contacts(ph, np, args.mesh_assets, args.mode, args.out.parent / "cache")
         result["floating_impact"] = floating_impact(ph, np)
     used = [
         Path(module.__file__).resolve()

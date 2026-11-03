@@ -296,10 +296,15 @@ def _phymeo_arm(case, fixture, device):
         model = _phymeo_model(fixture, [0, 0, 0])
         tool = slide = 1
         marker_local = np.asarray(fixture["marker_local_m"], dtype=float)
-    elif inputs["source"] == "arm.urdf":
+    elif inputs["source"] in ("arm.urdf", "arm.mjcf.xml"):
+        from phymeo.builders.mjcf import load_mjcf
         from phymeo.builders.urdf import load_urdf
 
-        asset = load_urdf(DIRECTORY / inputs["source"])
+        loader, format_name = {
+            "arm.urdf": (load_urdf, "URDF"),
+            "arm.mjcf.xml": (load_mjcf, "MJCF"),
+        }[inputs["source"]]
+        asset = loader(DIRECTORY / inputs["source"])
         model = asset.model
         tool = asset.link_names.index("tool")
         yaw, slide = (asset.joint_names.index(name) for name in ("yaw", "slide"))
@@ -307,7 +312,7 @@ def _phymeo_arm(case, fixture, device):
         (collider,) = shapes
         marker_local = np.asarray(collider.local_vertices[0])
         observed.update(
-            asset_import="HOST URDF",
+            asset_import=f"HOST {format_name}",
             joint_kinds=[model.joint_types[i] for i in (yaw, slide)],
             tool_colliders=len(shapes),
             tool_collider_kind=collider.shape.kind,

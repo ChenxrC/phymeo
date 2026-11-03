@@ -101,6 +101,21 @@ def test_nested_euler_quaternion_frames_and_shape_owners(tmp_path, unit, sequenc
     paths = asset.collision_motion(q)
     np.testing.assert_allclose(paths[root.shape.key].start[0], base, atol=2e-12)
     np.testing.assert_allclose(paths[ball.shape.key].start[0], point, atol=2e-12)
+    if sequence == "xyz":
+        lever_origin, lever_x = [1, 1.55, 3.35], [-np.sqrt(3) / 2, 0, -0.5]
+    else:
+        lever_origin, lever_x = [1.45, 2.35, 3], [0, -0.5, np.sqrt(3) / 2]
+    np.testing.assert_allclose(fk.position[1], lever_origin, atol=2e-12)
+    np.testing.assert_allclose(fk.rotation[1, :, 0], lever_x, atol=2e-12)
+
+
+def test_default_model_name_and_diagonal_fullinertia(tmp_path):
+    xml = MODEL.replace('model="local_rig"', '').replace(
+        'diaginertia="1 2 2.5"', 'fullinertia="1 2 2.5 0 0 0"'
+    )
+    asset = read(file(tmp_path, xml))
+    assert asset.name == "MuJoCo Model"
+    np.testing.assert_allclose(asset.model.inertia_diagonal, [[1, 2, 2.5]] * 2)
 
 
 def test_inertial_frame_and_explicit_gravity_override(tmp_path):
@@ -125,6 +140,8 @@ def test_inertial_frame_and_explicit_gravity_override(tmp_path):
     ('type="box" size="0.25 0.125 0.0625"', 'type="cylinder" size="0.25 0.125"', "cylinder"),
     ('<worldbody>', '<default/><worldbody>', "default"),
     (INERTIA, '', "inertial"),
+    ('name="probe"', 'name="base_mark"', "duplicate"),
+    ('diaginertia="1 2 2.5"', 'fullinertia="1 2 2.5 0.2 0 0"', "inertia"),
     ('diaginertia="1 2 2.5"', 'diaginertia="1 2 2.5" euler="0 0 30"', "inertia"),
     ('euler="90 0 90"', 'euler="90 0 90" quat="1 0 0 0"', "orient|quat|euler"),
     ('quat="0.7071067811865476 0 0 0.7071067811865476"', 'quat="0 0 0 0"', "quat"),

@@ -1,108 +1,14 @@
 """Local URDF import for massive scalar links connected to a fixed world frame."""
 
 from collections import deque
-from dataclasses import dataclass
-from itertools import product
 from pathlib import Path
 from xml.etree import ElementTree as ET
 
 import numpy as np
 
-from ..constraints.collision_shapes import CollisionKey, CollisionModel, CollisionMotion, CollisionShape
-from ..core.robot import RobotModel
-from ..dynamics.robot_kinematics import forward_kinematics
-from ..dynamics.rotation import quaternion_matrix
-
-
-@dataclass(frozen=True)
-class LinkCollision:
-    """A named collision element. Local vertices are expressed in the URDF link frame."""
-
-    name: str
-    link_name: str
-    link_index: int
-    origin_xyz: tuple[float, ...]
-    origin_xyzw: tuple[float, ...]
-    shape: CollisionShape
-    local_vertices: tuple[tuple[float, ...], ...]
-
-
-@dataclass(frozen=True, eq=False)
-class RobotAsset:
-    """Moving links and joints use the model DOF order. Link index -1 is the fixed root.
-
-    Limits retain URDF units (rad or m, N·m or N, rad/s or m/s). They are asset
-    metadata and may be passed to a controller or physical stop with explicit gains.
-    The collision model assigns body 0 to the base and i+1 to moving link i.
-    """
-
-    name: str
-    root_link: str
-    model: RobotModel
-    link_names: tuple[str, ...]
-    joint_names: tuple[str, ...]
-    lower: tuple[float, ...]
-    upper: tuple[float, ...]
-    effort_limit: tuple[float, ...]
-    velocity_limit: tuple[float, ...]
-    collisions: tuple[LinkCollision, ...]
-    collision_model: CollisionModel
-
-    def collision_motion(self, q):
-        """Build a static pose for each shape at q, ready for the public detect query."""
-        geometry = forward_kinematics(self.model, q)
-        paths = {}
-        for collider in self.collisions:
-            points = np.asarray(collider.local_vertices)
-            link = collider.link_index
-            if link >= 0:
-                points = geometry.position[link] + points @ geometry.rotation[link].T
-            paths[collider.shape.key] = CollisionMotion(points)
-        return paths
-
-
-def _name(element, attribute, where):
-    value = element.get(attribute, "").strip()
-    if not value:
-        raise ValueError(f"{where} requires a nonempty {attribute}")
-    return value
-
-
-def _attributes(element, allowed, where):
-    extra = set(element.attrib) - allowed
-    if extra:
-        raise ValueError(f"{where} contains unsupported attribute(s) {sorted(extra)}")
-
-
-def _children(element, allowed, where):
-    for child in element:
-        if child.tag not in allowed:
-            raise ValueError(f"{where} contains unsupported <{child.tag}>")
-
-
-def _child(element, tag, where, *, required=True):
-    items = element.findall(tag)
-    if len(items) > 1 or (required and not items):
-        raise ValueError(f"{where} requires exactly one <{tag}>")
-    return items[0] if items else None
-
-
-def _numbers(element, key, count, where, default=None):
-    if key not in element.attrib:
-        if default is not None:
-            return np.array(default, dtype=float)
-        raise ValueError(f"{where} requires {key}")
-    try:
-        values = np.array([float(s) for s in element.attrib[key].split()])
-    except ValueError as exc:
-        raise ValueError(f"{where} has invalid {key}") from exc
-    if len(values) != count or not np.isfinite(values).all():
-        raise ValueError(f"{where} requires {count} finite value(s) for {key}")
-    return values
-
-
-def _number(element, key, where):
-    return float(_numbers(element, key, 1, where)[0])
+from ._robot_asset import RobotAsset, assemble_robot, make_collider, principal_inertia, unit_axis
+from ._robot_asset import LinkCollision as LinkCollision
+from ._robot_xml import _attributes, _child, _children, _name, _number, _numbers
 
 
 def _origin(element, where):
@@ -142,26 +48,7 @@ def _inertial(link, name, *, root=False):
         _number(entry, key, where) for key in ("ixx", "ixy", "ixz", "iyy", "iyz", "izz")
     )
     tensor = np.array([[xx, xy, xz], [xy, yy, yz], [xz, yz, zz]])
-    if root and mass == 0 and not np.any(tensor):
-        return None
-    scale = np.max(np.abs(tensor))
-    if mass <= 0 or scale == 0:
-        raise ValueError(f"{where} needs positive mass and inertia")
-    rotation = quaternion_matrix(orientation[None, :])[0]
-    # Scale first so the roundoff budget is relative to authored inertia.
-    normalized = rotation @ (tensor / scale) @ rotation.T
-    diagonal = normalized.diagonal()
-    off_diagonal = normalized - np.diag(diagonal)
-    budget = 32 * np.finfo(float).eps if np.any(orientation[:3]) else 0.0
-    if np.max(np.abs(off_diagonal)) > budget:
-        raise ValueError(f"{where} has non-diagonal inertia in the link frame")
-    if np.any(diagonal <= 0) or 2 * np.max(diagonal) > np.sum(diagonal) + 8 * np.finfo(float).eps:
-        raise ValueError(f"{where} violates positive principal inertia or triangle inequalities")
-    with np.errstate(over="ignore"):
-        inertia = diagonal * scale
-    if not np.isfinite(inertia).all() or np.any(inertia <= 0):
-        raise ValueError(f"{where} is outside the representable inertia range")
-    return mass, com, inertia
+    return principal_inertia(mass, com, orientation, tensor, where, root=root)
 
 
 def _joint_data(joint, name):
@@ -179,11 +66,7 @@ def _joint_data(joint, name):
         _attributes(element, {"xyz"}, where + " axis")
         _children(element, set(), where + " axis")
         axis = _numbers(element, "xyz", 3, where + " axis")
-    scale = np.max(np.abs(axis))
-    if scale == 0:
-        raise ValueError(f"{where} has a zero axis")
-    axis = axis / scale
-    axis /= np.hypot.reduce(axis)
+    axis = unit_axis(axis, where)
     limit = _child(joint, "limit", where)
     keys = ("lower", "upper", "effort", "velocity")
     _attributes(limit, set(keys), where + " limit")
@@ -263,29 +146,13 @@ def _link_collisions(link, link_name, link_index):
         _children(primitive, set(), where + " geometry")
         if primitive.tag == "sphere":
             _attributes(primitive, {"radius"}, where)
-            radius = _number(primitive, "radius", where)
-            if radius <= 0:
-                raise ValueError(f"{where} requires a positive sphere radius")
-            kind = "sphere"
-            vertices = origin[None, :]
+            size = _numbers(primitive, "radius", 1, where)
         elif primitive.tag == "box":
             _attributes(primitive, {"size"}, where)
-            size = _numbers(primitive, "size", 3, where)
-            if np.any(size <= 0):
-                raise ValueError(f"{where} requires positive box size")
-            kind, radius = "hull", 0.0
-            corners = np.array(list(product((-0.5, 0.5), repeat=3))) * size
-            vertices = origin + corners @ quaternion_matrix(orientation[None, :])[0].T
+            size = _numbers(primitive, "size", 3, where) / 2
         else:
             raise ValueError(f"{where}: unsupported collision geometry <{primitive.tag}>")
-        if not np.isfinite(vertices).all():
-            raise ValueError(f"{where} has unrepresentable local vertices")
-        key = CollisionKey(0, link_index + 1, ordinal)
-        shape = CollisionShape(key, kind, tuple(range(len(vertices))), radius)
-        result.append(LinkCollision(
-            name, link_name, link_index, tuple(origin), tuple(orientation), shape,
-            tuple(tuple(row) for row in vertices),
-        ))
+        result.append(make_collider(name, link_name, link_index, ordinal, origin, orientation, primitive.tag, size))
     return result
 
 
@@ -322,15 +189,4 @@ def load_urdf(path: str | Path, *, gravity=(0.0, 0.0, -9.81)) -> RobotAsset:
         joint_data.append(_joint_data(joint, joint_name))
         bodies.append(_inertial(links[link_name], link_name))
         colliders.extend(_link_collisions(links[link_name], link_name, indices[link_name]))
-    kinds, positions, orientations, axes, limits = zip(*joint_data, strict=True)
-    masses, com, inertia = zip(*bodies, strict=True)
-    lower, upper, effort, velocity = zip(*limits, strict=True)
-    model = RobotModel(
-        parents=np.array(parents), joint_types=kinds, joint_position=np.array(positions),
-        joint_orientation=np.array(orientations), joint_axis=np.array(axes), mass=np.array(masses),
-        com=np.array(com), inertia_diagonal=np.array(inertia), gravity=np.asarray(gravity, dtype=float),
-    )
-    return RobotAsset(
-        name, root, model, tuple(order), tuple(joints), lower, upper, effort, velocity,
-        tuple(colliders), CollisionModel(tuple(c.shape for c in colliders)),
-    )
+    return assemble_robot(name, root, order, parents, joints, joint_data, bodies, colliders, gravity)

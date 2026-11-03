@@ -171,7 +171,7 @@
       },
       "oracle": "MJCF 度数 −90、120 换算弧度，移动限位仍为米。相同四分之一转、偏心球和运动速度独立核对。",
       "newton": {"status": "run", "devices": ["cpu", "cuda:0"], "reason": "本地资产在 HOST 解析；指定设备运行 eval_fk 与偏心碰撞球的 SensorFrameTransform。"},
-      "phymeo": {"status": "gap", "devices": [], "reason": "缺少对应格式的公开机器人导入入口；同形的程序式对照单列。"}
+      "phymeo": {"status": "run", "devices": ["cpu", "cuda:0"], "reason": "公开 load_mjcf 在 HOST 解析角度、限位及碰撞体；HOST 或真实 tyx CUDA FK/雅可比读回位姿及速度。"}
     },
     {
       "id": "ROBOT-USD-ZUP",

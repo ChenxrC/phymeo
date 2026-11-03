@@ -85,6 +85,7 @@ from .dynamics.robot_contact import RobotContactSystem
 from .geometry._curved_solids import CurvedContact
 from .geometry._heightfield import HeightfieldEvent, HeightfieldFace, HeightfieldTrace
 from .geometry._mesh_mesh import MeshMeshPose, MeshMeshSupport, MeshMeshTrace
+from .geometry.batched_collision import WorldCollisionWorkspace
 from .geometry.collision_pipeline import (
     CollisionBounds,
     CollisionDetection,
@@ -375,6 +376,7 @@ __all__ += [
     "CollisionSweep",
     "CollisionWitness",
     "CollisionWorkspace",
+    "WorldCollisionWorkspace",
     "Heightfield",
     "HeightfieldEvent",
     "HeightfieldFace",

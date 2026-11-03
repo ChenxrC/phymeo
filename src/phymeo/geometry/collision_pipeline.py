@@ -39,6 +39,7 @@ from ._sphere_triangle_sweep import sphere_face_query
 from ._tetrahedral_solid import TetrahedralCellQuery, solid_body_pairs, volume_mesh_issue
 from ._tetrahedral_surface import TetrahedralSurfaceQuery, exterior_faces, positive_cell
 from ._triangle_pair_sweep import triangle_pair_query
+from ._validated_mesh_cache import ValidatedMeshCache
 from .collision_witness import (
     CollisionSweep,
     CollisionWitness,
@@ -465,7 +466,7 @@ def _detect_pairs(
     def prepared_mesh(shape, path):
         if shape.key not in meshes:
             try:
-                meshes[shape.key] = ClosedMesh(shape, path)
+                meshes[shape.key] = workspace._validated_meshes.get(shape, path, ClosedMesh)
             except ValueError as error:
                 meshes[shape.key] = _NarrowFailure("invalid_geometry", str(error))
             except SolverFailure as error:
@@ -813,6 +814,7 @@ class CollisionWorkspace:
         )
         self._trees = CollisionTrees()
         self._mesh_midphase = mesh_midphase
+        self._validated_meshes = ValidatedMeshCache()
         self._mesh_work = dict(mesh_facet_pairs_total=0, mesh_facet_pairs_tested=0)
         self._mesh_rows = {}
         if mesh_midphase == "bvh":
@@ -892,6 +894,7 @@ class CollisionWorkspace:
                 **self._times,
                 **self._trees.counts,
                 **self._mesh_work,
+                **self._validated_meshes.stats(),
                 **(
                     {
                         "sheet_pairs_adjacent": self._sheet_bounds.adjacent,
@@ -953,6 +956,7 @@ class CollisionWorkspace:
     def _close_locked(self):
         if not self._closed:
             self._closed = True
+            self._validated_meshes.clear()
             if self._engine is not None:
                 self._engine.close()
 

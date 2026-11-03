@@ -1,5 +1,6 @@
 """Carry a measured joint trajectory through the moving site and public collision APIs."""
 
+import json
 from math import atan, cos, hypot, pi, sin, sqrt
 
 import numpy as np
@@ -47,7 +48,16 @@ def robot_motion(model, speed, backend, cache_root):
     if backend != "host":
         assert reading.kernel_stats["completed_launches"] > 0
     turn = ph.RigidTurn(first.position_m, last.position_m, first.rotation[:, 1], angle)
-    return ph.CollisionMotion([first.position_m], turn=turn)
+    observations = {
+        "q0_rad": float(entry.q[0]),
+        "q1_rad": float(end.q[0]),
+        "v1_rad_s": float(end.v[0]),
+        "marker_in_link_m": reading.position_m.tolist(),
+        "marker_in_link_m_s": reading.linear_velocity_m_s.tolist(),
+        "marker_in_link_rad_s": reading.angular_velocity_rad_s.tolist(),
+        "sensor_completed_launches": int(reading.kernel_stats.get("completed_launches", 0)),
+    }
+    return ph.CollisionMotion([first.position_m], turn=turn), observations
 
 
 def trajectory_scene(world, path):
@@ -99,14 +109,25 @@ def observe(backend, cache_root, *, partitioned):
         np.ones((1, 3)),
         np.zeros(3),
     )
-    bindings, paths, singles = [], {}, {}
+    bindings, paths, singles, states = [], {}, {}, {}
     for world, speed in ((17, 3.0), (5, 0.0)):
-        path = robot_motion(robot, speed, backend, cache_root)
+        path, states[world] = robot_motion(robot, speed, backend, cache_root)
         model, paths[world] = trajectory_scene(world, path)
         bindings.append((world, model))
         with ph.CollisionWorkspace(model, backend, cache_root=cache_root) as work:
             singles[world] = ph.detect(model, paths[world], ph.CollisionPolicy(), work)
-    check_events(singles[17].pairs[0], singles[5].pairs[0])
+    hit, clear = singles[17].pairs[0], singles[5].pairs[0]
+    check_events(hit, clear)
+    record = {
+        "backend": backend,
+        "states": states,
+        "first": hit.curved.first_contact.interval,
+        "last": hit.curved.last_contact.interval,
+        "entry_plane_point_m": hit.curved.first_contact.witness.first_point,
+        "entry_ellipsoid_point_m": hit.curved.first_contact.witness.second_point,
+        "moving_end_gap_m": hit.sweep.end_gap_m,
+        "stationary_gap_m": clear.witness.gap_m,
+    }
     if partitioned:
         policy = {world: ph.CollisionPolicy() for world, _ in bindings}
         with ph.WorldCollisionWorkspace(bindings, backend, cache_root=cache_root) as work:
@@ -114,10 +135,14 @@ def observe(backend, cache_root, *, partitioned):
             assert list(result) == [17, 5] and result == singles
             assert all(work.last_result(world) is result[world] for world in result)
             stats = work.stats()
+            record["host_pair_slots"] = int(stats["host_pair_table_slots"])
+            record["device_pair_slots"] = int(stats["device_pair_table_slots"])
+            record["broad_completed_launches"] = int(stats["completed_launches"])
             assert stats["host_pair_table_slots"] == 2
             if backend == "cuda":
                 assert stats["device_pair_table_slots"] == 2
                 assert stats["completed_launches"] == 2 and stats["synchronizations"] == 1
+    (cache_root / "driven-rotation.json").write_text(json.dumps(record, allow_nan=False), encoding="utf-8")
 
 
 def test_measured_rotation_generates_two_contact_events(tmp_path):

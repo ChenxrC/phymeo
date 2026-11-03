@@ -242,7 +242,7 @@ def collision_and_force(ph, np, mode, root):
         )
 
 
-def floating_impact(ph, np):
+def floating_impact(ph, np, mode, cache_root):
     child = ph.RobotModel(
         np.array([-1]),
         ("prismatic",),
@@ -266,13 +266,16 @@ def floating_impact(ph, np):
     )
     rk, bk = [ph.CollisionKey(1, k, 0) for k in (3, 8)]
     shapes = ph.CollisionModel([ph.CollisionShape(k, "sphere", (0,), 0.125) for k in (rk, bk)])
-    with ph.CollisionWorkspace(shapes) as work:
+    with ph.CollisionWorkspace(shapes, mode, cache_root=cache_root) as work:
         (pair,) = ph.detect(
             shapes,
             {rk: ph.CollisionMotion([[1.0, -0.125, 0.0]]), bk: ph.CollisionMotion(s.position)},
             ph.CollisionPolicy(),
             work,
         ).pairs
+        launches = work.stats()["completed_launches"]
+        if mode == "cuda":
+            assert launches > 0
     assert pair.status == "touching"
     ports = {
         "arm": ph.FloatingRobotPointPort(
@@ -296,7 +299,9 @@ def floating_impact(ph, np):
     np.testing.assert_allclose(impulse.states["arm"].v, [0, -0.125, 0, 0, 0, -0.25, 0], atol=1e-10)
     assert abs(impulse.normal_impulses[0] - 0.625) < 1e-10
     return dict(
-        backend="HOST NumPy",
+        collision_broad_backend=mode,
+        collision_completed_launches=launches,
+        impulse_backend="HOST NumPy",
         impulse_ns=float(impulse.normal_impulses[0]),
         kinetic_change_j=impulse.energy_change,
     )
@@ -775,7 +780,7 @@ def main():
         result["mesh_assets"] = imported_mesh_contacts(
             ph, np, args.mesh_assets, args.mode, args.out.parent / "cache"
         )
-        result["floating_impact"] = floating_impact(ph, np)
+        result["floating_impact"] = floating_impact(ph, np, args.mode, args.out.parent / "cache")
         result["floating_support"] = floating_support_window(ph, np)
         result["mixed_world_step"] = mixed_world_step(ph, np, args.mode, args.out.parent / "cache")
         result["material_step"] = deformable_force_step(

@@ -132,6 +132,8 @@ def _envelopes(model, paths, margin):
         path = paths[shape.key]
         if not isinstance(path, CollisionMotion) or path.start.shape != (len(shape.vertex_ids), 3):
             raise ValueError("motion must supply all registered vertices in material order")
+        if path.body_orientation_xyzw is not None and shape.curved is None:
+            raise ValueError("a starting body orientation applies only to registered curved solids")
         if shape.heightfield is not None and not np.array_equal(
             path.start, shape.heightfield.world_vertices()
         ):

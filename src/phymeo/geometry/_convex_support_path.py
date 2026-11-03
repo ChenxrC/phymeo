@@ -20,12 +20,13 @@ _DEPTH = 18
 class _AffineSupport:
     def __init__(self, shape, motion):
         self.shape = shape
+        self.body_orientation = motion.body_orientation_xyzw
         self.start = np.array([_vector(row) for row in motion.start], dtype=object)
         if motion.end is None:
             self.delta = np.broadcast_to(_translation(motion), self.start.shape)
         else:
             self.delta = np.array([_vector(row) for row in motion.end], dtype=object) - self.start
-        self.axes = None if shape.curved is None else _rotation(shape.curved)
+        self.axes = None if shape.curved is None else _rotation(shape.curved,motion)
         self.dims = None if shape.curved is None else _vector(shape.curved.dimensions_m)
         self.cache = {}
 
@@ -34,7 +35,7 @@ class _AffineSupport:
         points = exact.astype(float)
         errors = (np.array([_vector(row) for row in points], dtype=object) - exact)
         error = float(max(sum(abs(x) for x in row) for row in errors))
-        return CollisionMotion(points), error
+        return CollisionMotion(points,body_orientation_xyzw=self.body_orientation), error
 
     def upper(self, direction, t):
         # The maximum of affine vertex projections is convex in time.

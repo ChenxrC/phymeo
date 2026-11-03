@@ -38,10 +38,17 @@ class CurvedContact:
     last_contact: CurvedEvent | None = None
 
 
-def _rotation(asset):
+def _rotation(asset, path=None):
+    frame = _quaternion_frame(asset.orientation_xyzw)
+    if path is not None and path.body_orientation_xyzw is not None:
+        frame = _quaternion_frame(path.body_orientation_xyzw) @ frame
+    return frame
+
+
+def _quaternion_frame(quaternion):
     # Dividing by |q|² retains exact orthogonality for the stored binary
     # quaternion, including around a support tie or a tangency.
-    x, y, z, w = map(F, asset.orientation_xyzw)
+    x, y, z, w = map(F, quaternion)
     s = 2 / (x * x + y * y + z * z + w * w)
     return np.array(
         [
@@ -90,7 +97,7 @@ def curved_bounds(asset, path):
         reach = sum(abs(start - pivot)) + radius
         return np.minimum(pivot, end) - reach, np.maximum(pivot, end) + reach
     end = start + _translation(path)
-    frame = _rotation(asset)
+    frame = _rotation(asset, path)
     upper = [_support_upper(asset.kind, dims, axis) for axis in frame]
     lower = [_support_upper(asset.kind, dims, -axis) for axis in frame]
     return np.minimum(start, end) - lower, np.maximum(start, end) + upper
@@ -228,7 +235,7 @@ def _static(curved, other, m_curved, m_other, curved_first, *, frame=None):
     center = _vector(m_curved.start[0])
     anchor = _vector(m_other.start[0])
     if frame is None:
-        frame = _rotation(asset)
+        frame = _rotation(asset, m_curved)
     if other.kind == "plane":
         plane_n = _vector(other.normal)
         norm = _root(plane_n @ plane_n)

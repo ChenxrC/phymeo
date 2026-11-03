@@ -220,13 +220,23 @@ class RigidTurn:
 
 @dataclass(frozen=True, eq=False)
 class CollisionMotion:
-    """Single pose, affine vertex path, or rigid arc about a moving pivot."""
+    """Single pose, affine vertex path, or rigid arc about a moving pivot.
+
+    For curved solids the optional starting body orientation left-composes the
+    registered local shape orientation. Other shapes supply world vertices.
+    """
 
     start: np.ndarray
     end: np.ndarray | None = None
     turn: RigidTurn | None = None
+    body_orientation_xyzw: tuple[float,float,float,float] | None = None
 
     def __post_init__(self):
+        if self.body_orientation_xyzw is not None:
+            q=tuple(finite_real(v,"starting body orientation") for v in self.body_orientation_xyzw)
+            if len(q)!=4 or abs(np.hypot.reduce(q)-1)>1e-12:
+                raise ValueError("starting body orientation must be a unit XYZW quaternion")
+            object.__setattr__(self,"body_orientation_xyzw",q)
         start = _points(self.start, "start")
         object.__setattr__(self, "start", start)
         if self.turn is not None and (not isinstance(self.turn, RigidTurn) or self.end is not None):

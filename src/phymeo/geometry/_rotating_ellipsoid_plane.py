@@ -137,7 +137,7 @@ def rotating_ellipsoid_plane(curved, plane, mc, mp, curved_first):
     ):
         return "unsupported", "ellipsoid_arc_motion_domain", None, None, None
     try:
-        initial = _rotation(curved.curved)
+        initial = _rotation(curved.curved, mc)
         dims = _vector(curved.curved.dimensions_m)
         normal = _vector(plane.normal)
         height = (_vector(mc.start[0]) - _vector(mp.start[0])) @ normal

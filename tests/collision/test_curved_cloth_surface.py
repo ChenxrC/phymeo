@@ -104,7 +104,7 @@ def test_curved_cloth_domain_outcomes_preserve_finite_geometry():
     assert result.status == "invalid_geometry" and result.witness is None
     for kwargs in (
         dict(radius=0.0625),
-        dict(end=FACE + np.array(((0.0, 0.0, 0.1), (0, 0, -0.1), (0, 0, 0)))),
+        dict(radius=0.0625,end=FACE + np.array(((0.0, 0.0, 0.1), (0, 0, -0.1), (0, 0, 0)))),
     ):
         row, _, _ = observe(asset, center, **kwargs)
         assert row.status == "unsupported" and row.witness is None and row.sweep is None

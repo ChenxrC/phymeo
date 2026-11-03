@@ -187,17 +187,14 @@ def test_bounds_include_rotated_shape_and_motion_has_no_manufactured_toi():
     model, paths, c, o = scene(
         solid("cylinder", (0.5, 0.25)), [-2, 0, 0], "sphere", [0, 0, 0], radius=0.0625
     )
-    for movement in (
-        ph.CollisionMotion([[-2, 0, 0]], [[2, 0, 0]]),
-        ph.CollisionMotion([[-2, 0, 0]], turn=ph.RigidTurn((0, 0, 0), (0, 0, 0), (0, 0, 1), np.pi)),
-    ):
-        (pair,) = query(model, {c: movement, o: paths[o]}, margin=0).pairs
-        assert (
-            pair.candidate
-            and pair.status == "unsupported"
-            and pair.sweep is None
-            and pair.witness is None
-        )
+    linear = ph.CollisionMotion([[-2, 0, 0]], [[2, 0, 0]])
+    (hit,) = query(model, {c:linear, o:paths[o]}, margin=0).pairs
+    assert hit.status == "hit"
+    lo, hi=hit.sweep.first_t
+    assert lo <= 23/64 <= hi and hi-lo < 1e-4
+    arc = ph.CollisionMotion([[-2, 0, 0]], turn=ph.RigidTurn((0,0,0),(0,0,0),(0,0,1),np.pi))
+    (pair,) = query(model, {c:arc, o:paths[o]}, margin=0).pairs
+    assert pair.candidate and pair.status=="unsupported" and pair.sweep is None and pair.witness is None
 
 
 def test_curved_geometry_validation_and_unhandled_pair():
@@ -227,7 +224,7 @@ def test_curved_geometry_validation_and_unhandled_pair():
     # away, and a further sphere radius is required to separate the solids.
     signed = -0.25 - 1.5 / np.sqrt(17)
     assert inside.support_map.gap_lower_m <= signed <= inside.support_map.gap_upper_m
-    moving = paths | {ball: ph.CollisionMotion(paths[ball].start, [[0.5, 0, 0.5]])}
+    moving = paths | {ball: ph.CollisionMotion(paths[ball].start,turn=ph.RigidTurn((0,0,0),(0,0,0),(0,1,0),0.7))}
     (pair,) = query(model, moving).pairs
     assert pair.candidate and pair.status == "unsupported" and pair.witness is None
 

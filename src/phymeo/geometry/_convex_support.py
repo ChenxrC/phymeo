@@ -29,6 +29,8 @@ class ConvexSupportTrace:
     gap_upper_m: float
     support_calls: int
     iterations: int
+    time_cells: int = 0
+    static_samples: int = 1
 
 
 @dataclass

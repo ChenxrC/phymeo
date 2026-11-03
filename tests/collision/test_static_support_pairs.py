@@ -169,7 +169,7 @@ def test_support_pairs_publish_distance_and_material_owners(name, gap, swapped, 
     )
 
 
-def test_static_support_does_not_claim_a_swept_toi():
+def test_static_support_does_not_claim_a_rotating_toi():
     a, b, _, _ = control("two-cylinders", 1 / 16)
     ka, kb = ph.CollisionKey(4, 1, 0), ph.CollisionKey(4, 2, 0)
     sa, ma = shape_and_motion(ka, a, np.zeros(3))
@@ -178,7 +178,7 @@ def test_static_support_does_not_claim_a_swept_toi():
     with ph.CollisionWorkspace(model) as work:
         result = ph.detect(
             model,
-            {ka: ma, kb: ph.CollisionMotion(mb.start, mb.start - [0.5, 0, 0])},
+            {ka: ma, kb: ph.CollisionMotion(mb.start, turn=ph.RigidTurn((0,0,0),(0,0,0),(0,1,0),0.5))},
             ph.CollisionPolicy(),
             work,
         )

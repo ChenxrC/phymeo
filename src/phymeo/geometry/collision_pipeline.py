@@ -25,6 +25,7 @@ from ._collision_spatial import SpatialPairs
 from ._convex_contact import HullPairQuery
 from ._convex_hull import HullShape
 from ._convex_support import ConvexSupportTrace, static_convex_support
+from ._convex_support_path import affine_convex_contact
 from ._curved_solids import CurvedContact, curved_bounds, curved_solid_contact
 from ._heightfield import HeightfieldTrace, heightfield_sphere_contact
 from ._hull_surface import HullSurfaceQuery
@@ -518,7 +519,11 @@ def _detect_pairs(
                 family = "RR" if a.rigid and b.rigid else "RD"
                 status, reason, witness, trace, sweep = curved_solid_contact(a, b, ma, mb)
                 support_map = None
-                if reason == "curved_shape_pair":
+                if reason in ("curved_shape_pair", "curved_sweep") and (ma.moving or mb.moving):
+                    moving_support = affine_convex_contact(a, b, ma, mb)
+                    if moving_support is not None:
+                        status, reason, witness, support_map, sweep = moving_support
+                elif reason == "curved_shape_pair":
                     fallback = static_convex_support(a, b, ma, mb)
                     if fallback is not None:
                         status, reason, witness, support_map = fallback

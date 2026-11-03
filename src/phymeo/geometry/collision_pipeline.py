@@ -452,7 +452,7 @@ def _proved_sheet_pairs(workspace, paths, flags, margin):
 
 
 def _detect_pairs(
-    workspace, paths, flags, selected, proximity=False, resolved=None, *, pair_start=0
+    workspace, paths, flags, selected, proximity=False, resolved=None, *, pair_start=0, pair_slots=None
 ):
     rows = []
     shapes = workspace._model.shapes
@@ -515,7 +515,18 @@ def _detect_pairs(
     batch_size = (
         4 if workspace.exterior_faces or any(s.kind in ("hull", "plate") for s in shapes) else 128
     )
-    pairs = workspace._pairs[pair_start : pair_start + len(flags)]
+    if pair_slots is None:
+        pairs = workspace._pairs[pair_start : pair_start + len(flags)]
+    else:
+        pair_slots = np.asarray(pair_slots)
+        if pair_start or pair_slots.shape != (len(flags),) or pair_slots.dtype.kind not in "iu":
+            raise ValueError("compact slots must match the ordered classification vector")
+        if len(pair_slots) and (
+            pair_slots[0] < 0 or pair_slots[-1] >= len(workspace._pairs)
+            or np.any(pair_slots[1:] <= pair_slots[:-1])
+        ):
+            raise ValueError("compact slots must be distinct ordered global pair indices")
+        pairs = workspace._pairs[pair_slots]
     for offset in range(0, len(flags), batch_size):
         batch = []
         features = []
@@ -523,7 +534,7 @@ def _detect_pairs(
             a, b = shapes[i], shapes[j]
             ma, mb = paths[a.key], paths[b.key]
             code = int(flags[offset + local])
-            slot = pair_start + offset + local
+            slot = pair_start + offset + local if pair_slots is None else int(pair_slots[offset + local])
             ready = resolved.get(slot)
             if code == 0 and (a.curved is not None or b.curved is not None):
                 family = "RR" if a.rigid and b.rigid else "RD"

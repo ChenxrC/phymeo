@@ -26,7 +26,7 @@ class FloatingRobotPointPort:
         indices = np.array(indices, dtype=np.int64, copy=True)
         local = robot_array(local_points, "local_points", ndim=2, columns=3)
         geometry = floating_kinematics(model, state)
-        self._positions = geometry.position[indices] + np.einsum("nij,nj->ni", geometry.rotation[indices], local)
+        self._positions = _finite(geometry.position[indices] + np.einsum("nij,nj->ni", geometry.rotation[indices], local))
         self._indices = indices
         self._mass = floating_mass_matrix(model, state)
 

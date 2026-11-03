@@ -48,7 +48,11 @@ def solve_witness_impulses(
             witness = pair.witness
         if witness is None or witness.normal is None or witness.first_point is None or witness.second_point is None:
             raise ValueError("a resolved normal and both material world points are required")
-        if abs(witness.gap_m) > tol:
+        for value in (witness.first_point, witness.second_point, witness.normal):
+            observed = np.asarray(value, dtype=np.float64)
+            if observed.shape != (3,) or not np.isfinite(observed).all():
+                raise ValueError("collision witness world vectors must be finite and three-dimensional")
+        if not np.isfinite(witness.gap_m) or abs(witness.gap_m) > tol:
             raise ValueError("signed witness gap exceeds the position tolerance")
         first.append(bindings[pair.first])
         second.append(bindings[pair.second])

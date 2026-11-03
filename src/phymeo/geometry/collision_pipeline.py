@@ -430,7 +430,7 @@ def _proved_sheet_pairs(workspace, paths, flags, margin):
     return rows
 
 
-def _detect_pairs(workspace, paths, flags, selected, proximity=False, resolved=None):
+def _detect_pairs(workspace, paths, flags, selected, proximity=False, resolved=None, *, pair_start=0):
     rows = []
     shapes = workspace._model.shapes
     resolved = {} if resolved is None else resolved
@@ -492,14 +492,16 @@ def _detect_pairs(workspace, paths, flags, selected, proximity=False, resolved=N
     batch_size = (
         4 if workspace.exterior_faces or any(s.kind in ("hull", "plate") for s in shapes) else 128
     )
+    pairs = workspace._pairs[pair_start : pair_start + len(flags)]
     for offset in range(0, len(flags), batch_size):
         batch = []
         features = []
-        for local, (i, j, _) in enumerate(workspace._pairs[offset : offset + batch_size]):
+        for local, (i, j, _) in enumerate(pairs[offset : offset + batch_size]):
             a, b = shapes[i], shapes[j]
             ma, mb = paths[a.key], paths[b.key]
             code = int(flags[offset + local])
-            ready = resolved.get(offset + local)
+            slot = pair_start + offset + local
+            ready = resolved.get(slot)
             if code == 0 and (a.curved is not None or b.curved is not None):
                 family = "RR" if a.rigid and b.rigid else "RD"
                 status, reason, witness, trace = curved_solid_contact(a, b, ma, mb)
@@ -583,7 +585,7 @@ def _detect_pairs(workspace, paths, flags, selected, proximity=False, resolved=N
                     elif not code:
                         try:
                             analytic = MeshHullQuery(
-                                mesh, hull, mesh_first, selected.get(offset + local)
+                                mesh, hull, mesh_first, selected.get(slot)
                             )
                             workspace._mesh_work["mesh_facet_pairs_total"] += len(mesh.facets)
                             workspace._mesh_work["mesh_facet_pairs_tested"] += len(analytic.parts)
@@ -701,6 +703,24 @@ class CollisionWorkspace:
         mesh_midphase="all_facets",
         sheet_bounds=False,
     ):
+        self._initialize(model, backend, cache_root, broad_phase, mesh_midphase, sheet_bounds, None)
+
+    @classmethod
+    def _from_world_pairs(cls, model, backend, pairs, *, cache_root=None):
+        """Use an already partitioned host table for a single all-pairs backend batch."""
+        if not (
+            isinstance(pairs, np.ndarray)
+            and pairs.dtype == np.int32
+            and pairs.ndim == 2
+            and pairs.shape[1] == 3
+            and pairs.flags.c_contiguous
+        ):
+            raise ValueError("world pairs require a contiguous int32 array with three columns")
+        instance = cls.__new__(cls)
+        instance._initialize(model, backend, cache_root, "all_pairs", "all_facets", False, pairs)
+        return instance
+
+    def _initialize(self, model, backend, cache_root, broad_phase, mesh_midphase, sheet_bounds, pairs):
         if not isinstance(model, CollisionModel):
             raise TypeError("collision workspace requires a CollisionModel")
         if backend not in ("host", "interpret", "cuda"):
@@ -714,7 +734,6 @@ class CollisionWorkspace:
             raise TypeError("sheet_bounds must be a boolean")
         self._sheet_bounds = SheetPairBounds(shapes) if sheet_bounds else None
         self._exterior_faces = exterior_faces(shapes)
-        excluded = set(model.excluded)
         self._offsets = np.array(
             [0, *np.cumsum([len(s.vertex_ids) for s in shapes], dtype=np.int32)], dtype=np.int32
         )
@@ -725,13 +744,28 @@ class CollisionWorkspace:
             ],
             dtype=np.int32,
         ).reshape(-1, 6)
-        self._pairs = np.array(
-            [
-                (i, j, int((shapes[i].key, shapes[j].key) in excluded))
-                for i, j in combinations(range(len(shapes)), 2)
-            ],
-            dtype=np.int32,
-        ).reshape(-1, 3)
+        self._world_partitioned = pairs is not None
+        if pairs is None:
+            excluded = set(model.excluded)
+            pairs = np.array(
+                [
+                    (i, j, int((shapes[i].key, shapes[j].key) in excluded))
+                    for i, j in combinations(range(len(shapes)), 2)
+                ],
+                dtype=np.int32,
+            ).reshape(-1, 3)
+        else:
+            i, j, excluded = pairs.T
+            if (
+                np.any(i < 0)
+                or np.any(j >= len(shapes))
+                or np.any(i >= j)
+                or np.any((excluded < 0) | (excluded > 1))
+                or np.any(self._tags[i, 0] != self._tags[j, 0])
+            ):
+                raise ValueError("world pairs contain an invalid index, world or exclusion")
+            pairs.flags.writeable = False
+        self._pairs = pairs
         self._broad_phase = broad_phase
         self._spatial = (
             SpatialPairs(self._tags, self._pairs, broad_phase)
@@ -834,6 +868,40 @@ class CollisionWorkspace:
                 "sap_box_tests": self._spatial.box_tests if self._spatial else 0,
             }
 
+    def _classify_world_envelopes(self, envelopes, *, pending=None):
+        """Classify precisely this workspace's pair table without publishing results."""
+        try:
+            if self._engine is None and self._spatial is not None:
+                space = self._spatial
+                bounds = _host_bounds(self._offsets, envelopes)
+                if space.mode == "bvh":
+                    flags = space.tree_flags(bounds, self._trees, pending)
+                else:
+                    flags = space.decode_sap(space.host_sap(bounds, space.order(bounds)))
+            elif self._engine is None:
+                bounds, flags = _host_query(
+                    self._offsets, self._tags, self._pairs, envelopes
+                )
+            elif self._broad_phase == "bvh":
+                bounds, flags = self._engine.query(
+                    envelopes, trees=self._trees, pending=pending
+                )
+            else:
+                bounds, flags = self._engine.query(envelopes)
+            if (
+                bounds.shape != (len(self._model.shapes), 6)
+                or flags.shape != (len(self._pairs),)
+                or not np.isfinite(bounds).all()
+                or np.any(bounds[:, :3] > bounds[:, 3:])
+                or np.any(flags < 0)
+                or np.any(flags >= len(_REASONS))
+            ):
+                raise SolverFailure("invalid collision broad-phase output")
+            return bounds, flags
+        except BaseException:
+            self._close_locked()
+            raise
+
     def _heightfield_faces(self, terrain, sphere):
         heights = self._model.shapes[terrain].heightfield.heights_yx
         try:
@@ -866,6 +934,26 @@ class CollisionWorkspace:
         self.close()
 
 
+def _detection_result(model, paths, backend, count, rows, bounds):
+    """Build public diagnostics using the caller's model and corresponding bounds slice."""
+    boxes = tuple(
+        CollisionBounds(s.key, s.revision, None, None)
+        if s.kind == "plane"
+        else CollisionBounds(
+            s.key, s.revision, tuple(map(float, row[:3])), tuple(map(float, row[3:]))
+        )
+        for s, row in zip(model.shapes, bounds, strict=True)
+    )
+    return CollisionDetection(
+        "ok",
+        backend,
+        count,
+        rows,
+        boxes,
+        solid_body_pairs(model, paths, rows) if any(s.kind == "tetrahedron" for s in model.shapes) else (),
+    )
+
+
 def detect(model, motion, policy, workspace):
     """Query every registered pair. Never publish a partial or over-capacity result.
 
@@ -874,6 +962,8 @@ def detect(model, motion, policy, workspace):
     """
     if not isinstance(workspace, CollisionWorkspace) or workspace._model is not model:
         raise ValueError("workspace is bound to a different collision model")
+    if workspace._world_partitioned:
+        raise ValueError("world-partitioned workspaces require a per-world detect query")
     if not isinstance(policy, CollisionPolicy):
         raise TypeError("query requires a CollisionPolicy")
     with workspace._lock:
@@ -890,36 +980,7 @@ def detect(model, motion, policy, workspace):
         workspace._times["envelope_ns"] += broad_start - stamp
         draft = workspace._draft
         pending = (workspace._trees.layouts if draft is None else draft.layouts).copy()
-        try:
-            if workspace._engine is None and workspace._spatial is not None:
-                space = workspace._spatial
-                bounds = _host_bounds(workspace._offsets, envelopes)
-                if space.mode == "bvh":
-                    flags = space.tree_flags(bounds, workspace._trees, pending)
-                else:
-                    flags = space.decode_sap(space.host_sap(bounds, space.order(bounds)))
-            elif workspace._engine is None:
-                bounds, flags = _host_query(
-                    workspace._offsets, workspace._tags, workspace._pairs, envelopes
-                )
-            elif workspace._broad_phase == "bvh":
-                bounds, flags = workspace._engine.query(
-                    envelopes, trees=workspace._trees, pending=pending
-                )
-            else:
-                bounds, flags = workspace._engine.query(envelopes)
-            if (
-                bounds.shape != (len(model.shapes), 6)
-                or flags.shape != (len(workspace._pairs),)
-                or not np.isfinite(bounds).all()
-                or np.any(bounds[:, :3] > bounds[:, 3:])
-                or np.any(flags < 0)
-                or np.any(flags >= len(_REASONS))
-            ):
-                raise SolverFailure("invalid collision broad-phase output")
-        except BaseException:
-            workspace._close_locked()
-            raise
+        bounds, flags = workspace._classify_world_envelopes(envelopes, pending=pending)
         narrow_start = perf_counter_ns()
         workspace._times["broad_ns"] += narrow_start - broad_start
         resolved = _proved_sheet_pairs(workspace, paths, flags, policy.margin)
@@ -937,22 +998,7 @@ def detect(model, motion, policy, workspace):
             workspace._times["midphase_ns"] += after_mid - narrow_start
             narrow_start = after_mid
         rows = _detect_pairs(workspace, paths, flags, selected, policy.proximity_patches, resolved)
-        boxes = tuple(
-            CollisionBounds(s.key, s.revision, None, None)
-            if s.kind == "plane"
-            else CollisionBounds(
-                s.key, s.revision, tuple(map(float, row[:3])), tuple(map(float, row[3:]))
-            )
-            for s, row in zip(model.shapes, bounds, strict=True)
-        )
-        result = CollisionDetection(
-            "ok",
-            workspace._backend,
-            count,
-            rows,
-            boxes,
-            solid_body_pairs(model, paths, rows) if workspace.exterior_faces else (),
-        )
+        result = _detection_result(model, paths, workspace._backend, count, rows, bounds)
         workspace._times["narrow_ns"] += perf_counter_ns() - narrow_start
         if draft is None:
             workspace._trees.layouts, workspace._last = pending, result

@@ -82,6 +82,9 @@ class _Window:
     def run(self):
         left, right = Fraction(0), Fraction(1)
         start, end = self.sample(left), self.sample(right)
+        for sample in (start,end):
+            if sample[0]=="invalid_geometry":
+                return sample[0],sample[1],None,None,None
         if start[2] is None or end[2] is None:
             return "unresolved", "support_path_endpoint_witness", end[2], end[3], None
         w0, w1 = start[2], end[2]
@@ -191,6 +194,12 @@ def affine_convex_contact(a,b,ma,mb):
             return "unsupported","support_path_material_offset",None,None,None
         if shape.kind=="triangle" and not _FacePath(shape,motion).valid:
             return "invalid_geometry","degenerate_material_triangle_path",None,None,None
-    if any(m.turn and m.turn.angle for m in (ma,mb)):
-        return _turn_clear(a,b,ma,mb)
-    return _Window(a,b,ma,mb).run()
+    try:
+        with np.errstate(over="raise",invalid="raise",divide="raise"):
+            if any(m.turn and m.turn.angle for m in (ma,mb)):
+                if any(m.turn and abs(m.turn.angle)>2*np.pi for m in (ma,mb)):
+                    return None
+                return _turn_clear(a,b,ma,mb)
+            return _Window(a,b,ma,mb).run()
+    except (FloatingPointError, OverflowError):
+        return "unresolved","support_path_coordinate_resolution",None,None,None

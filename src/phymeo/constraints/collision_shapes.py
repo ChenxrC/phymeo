@@ -233,7 +233,10 @@ class CollisionMotion:
 
     def __post_init__(self):
         if self.body_orientation_xyzw is not None:
-            q=tuple(finite_real(v,"starting body orientation") for v in self.body_orientation_xyzw)
+            try:
+                q=tuple(finite_real(v,"starting body orientation") for v in self.body_orientation_xyzw)
+            except TypeError as error:
+                raise ValueError("starting body orientation must have four finite components") from error
             if len(q)!=4 or abs(np.hypot.reduce(q)-1)>1e-12:
                 raise ValueError("starting body orientation must be a unit XYZW quaternion")
             object.__setattr__(self,"body_orientation_xyzw",q)

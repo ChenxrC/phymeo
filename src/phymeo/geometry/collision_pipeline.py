@@ -29,6 +29,7 @@ from ._curved_solids import CurvedContact, curved_bounds, curved_solid_contact
 from ._heightfield import HeightfieldTrace, heightfield_sphere_contact
 from ._hull_surface import HullSurfaceQuery
 from ._mesh_mesh import MeshMeshQuery, MeshMeshTrace
+from ._mesh_round import MeshRoundQuery, MeshRoundTrace
 from ._plate_contact import PlateSurfaceQuery, RoundedPlate
 from ._rotating_capsule_face import RotatingCapsuleFaceQuery, rotating_capsule_face_query
 from ._rotating_round_sweep import RotatingCapsuleQuery, rotating_round_query
@@ -87,6 +88,7 @@ class CollisionPair:
     curved: CurvedContact | None = None
     mesh_mesh: MeshMeshTrace | None = None
     support_map: ConvexSupportTrace | None = None
+    mesh_round: MeshRoundTrace | None = None
 
 
 @dataclass(frozen=True)
@@ -283,6 +285,11 @@ def _pair(a, b, ma, mb, code, analytic, seeds):
                     status, reason, witness, sweep, trace = analytic.result(ma.moving or mb.moving)
                     return CollisionPair(
                         *fields, True, status, reason, witness, sweep, mesh_mesh=trace
+                    )
+                if isinstance(analytic, MeshRoundQuery):
+                    status, reason, witness, sweep, trace = analytic.result(ma.moving or mb.moving)
+                    return CollisionPair(
+                        *fields, True, status, reason, witness, sweep, mesh_round=trace
                     )
                 if isinstance(analytic, MeshHullQuery):
                     status, reason, witness, sweep, mesh = analytic.result(
@@ -584,6 +591,24 @@ def _detect_pairs(
                         analytic = second
                     elif not code:
                         analytic = MeshMeshQuery(first, second)
+            elif code in (0, 5) and (
+                (a.kind == "mesh" and b.kind in ("sphere", "capsule"))
+                or (b.kind == "mesh" and a.kind in ("sphere", "capsule"))
+            ):
+                mesh_first = a.kind == "mesh"
+                ms, rs, mp, rp = (a, b, ma, mb) if mesh_first else (b, a, mb, ma)
+                if ms.radius or any(p.turn and p.turn.angle for p in (mp, rp)):
+                    if not code:
+                        analytic = _NarrowFailure("unsupported", "mesh_rounding_or_rotation")
+                else:
+                    mesh = prepared_mesh(ms, mp)
+                    if isinstance(mesh, _NarrowFailure):
+                        analytic = mesh
+                    elif not code:
+                        try:
+                            analytic = MeshRoundQuery(mesh, rs, rp, mesh_first)
+                        except SolverFailure as error:
+                            analytic = _NarrowFailure("unresolved", str(error))
             elif {a.kind, b.kind} == {"mesh", "hull"} and code in (0, 5):
                 mesh_first = a.kind == "mesh"
                 ms, hs, mp, hp = (a, b, ma, mb) if mesh_first else (b, a, mb, ma)

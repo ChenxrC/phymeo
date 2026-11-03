@@ -94,6 +94,7 @@ from .geometry._convex_support import ConvexSupportTrace
 from .geometry._curved_solids import CurvedContact, CurvedEvent
 from .geometry._heightfield import HeightfieldEvent, HeightfieldFace, HeightfieldTrace
 from .geometry._mesh_mesh import MeshMeshPose, MeshMeshSupport, MeshMeshTrace
+from .geometry._mesh_round import MeshRoundEvent, MeshRoundPose, MeshRoundSupport, MeshRoundTrace
 from .geometry.batched_collision import WorldCollisionWorkspace
 from .geometry.collision_pipeline import (
     CollisionBounds,
@@ -431,6 +432,10 @@ __all__ += [
     "MeshMeshPose",
     "MeshMeshSupport",
     "MeshMeshTrace",
+    "MeshRoundEvent",
+    "MeshRoundPose",
+    "MeshRoundSupport",
+    "MeshRoundTrace",
     "MeshArcCandidates",
     "MeshArcFacePair",
     "MeshArcWindow",

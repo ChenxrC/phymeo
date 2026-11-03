@@ -360,19 +360,23 @@ def test_usd_authored_child_anchor_offset_survives_the_whole_interval():
         )
 
 
-def test_rotating_closed_mesh_does_not_hide_unsupported_round_pair():
+def test_rotating_closed_obj_preserves_initial_ball_overlap_and_capsule_boundary():
     asset = ph.load_urdf(ROOT / "mesh_assets" / "mesh_arm.urdf")
     mesh = by_name(asset)["bracket"].shape
     sphere = ph.CollisionShape(ph.CollisionKey(0, 13, 0), "sphere", (11,), 1 / 64)
     paths = asset.collision_motion([0.0], [0.25])
     assert paths[mesh.key].turn.angle == 0.25
-    paths[sphere.key] = ph.CollisionMotion(paths[mesh.key].start[:1])
-    row = detect_pair(asset, mesh, sphere, paths)
-    assert (
-        row.status == "unsupported"
-        and row.sweep is None
-        and row.reason == "mesh_rounding_or_rotation"
-    )
+    center = paths[mesh.key].start[0]
+    paths[sphere.key] = ph.CollisionMotion([center])
+    hit = detect_pair(asset, mesh, sphere, paths)
+    assert hit.status == "hit" and hit.sweep.first_t == (0.0, 0.0)
+    assert hit.sweep.start_gap_m < 0
+
+    capsule = ph.CollisionShape(ph.CollisionKey(0, 14, 0), "capsule", (12, 17), 1 / 64)
+    paths[capsule.key] = ph.CollisionMotion([center, center + [0, 0, 1 / 16]])
+    row = detect_pair(asset, mesh, capsule, paths)
+    assert row.status == "unsupported" and row.sweep is None
+    assert row.reason == "mesh_rounding_or_rotation"
 
 
 def test_lost_moving_pivot_translation_is_rejected_before_publishing_false_arc(tmp_path):

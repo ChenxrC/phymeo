@@ -545,6 +545,25 @@ def main():
         assert (contact.first, contact.second) == (tool.shape.key, key) and abs(
             contact.witness.gap_m + 1 / 64
         ) < 2e-6
+        # Put a separate probe at the middle of a real authored yaw interval.
+        # The endpoint gaps and the circle chord give an independent first time.
+        q0, q1 = np.array([0.0, 0.125]), np.array([np.pi / 2, 0.125])
+        arc = asset.collision_motion(q0, q1)[tool.shape.key]
+        mid = asset.collision_motion(0.5 * (q0 + q1))[tool.shape.key].start
+        probe = ph.CollisionShape(ph.CollisionKey(0, 94, 0), "sphere", (9,), radius=1 / 32)
+        orbit = ph.CollisionModel((tool.shape, probe))
+        with ph.CollisionWorkspace(orbit, "host") as work:
+            (swept,) = ph.detect(
+                orbit, {tool.shape.key: arc, probe.key: ph.CollisionMotion(mid)},
+                ph.CollisionPolicy(), work,
+            ).pairs
+        arm = arc.start[0] - np.asarray(arc.turn.pivot_start)
+        radius = np.linalg.norm(np.cross(arc.turn.axis, arm))
+        angle = 2 * np.arcsin((tool.shape.radius + probe.radius) / (2 * radius))
+        first_time = 0.5 - angle / abs(arc.turn.angle)
+        assert swept.status == "hit" and swept.sweep.start_gap_m > 0 and swept.sweep.end_gap_m > 0
+        lo, hi = swept.sweep.first_t
+        assert lo - 1e-12 <= first_time <= hi + 1e-12 and hi - lo < 1e-6
         result["usd"] = dict(
             sdk=sdk.version,
             sdk_runtime_version=usd_version,
@@ -553,6 +572,8 @@ def main():
             moving_links=asset.model.dof_count,
             shapes=len(pose),
             tool_cylinder_gap_m=contact.witness.gap_m,
+            joint_arc_first_time=first_time,
+            joint_arc_interval=[lo, hi],
         )
     else:
         assert "pxr" not in sys.modules

@@ -13,7 +13,14 @@ from time import perf_counter_ns
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tests" / "scale"))
-from g2_cross_engine_steps import DT, STEPS, ApplicationOutput, load_engine, setup_rows  # noqa: E402
+from g2_cross_engine_steps import (
+    DT,
+    STEPS,
+    ApplicationOutput,
+    KinematicFall,
+    load_engine,
+    setup_rows,
+)  # noqa: E402
 
 
 def cache_state(root):
@@ -103,7 +110,22 @@ def measure(a, modules, factory, count, asymmetric=False):
                 )
                 if a.device == "cuda:0":
                     assert total["status_downloaded_bytes"] == confirmed * 4
-                    assert total["snapshot_downloaded_bytes"] == confirmed * 52
+                    if a.phymeo_observation == "kinematics":
+                        assert total["kinematics_downloaded_bytes"] == confirmed * 52
+                        assert total["snapshot_downloaded_bytes"] == 0
+                    else:
+                        assert total["snapshot_downloaded_bytes"] == confirmed * 52
+                    assert (
+                        total["cuda_kernel_launches"]
+                        == total["synchronizations"]
+                        == STEPS * a.samples
+                    )
+                    assert (
+                        total["cuda_h2d_bytes"]
+                        == total["cuda_d2d_bytes"]
+                        == total["device_allocations"]
+                        == 0
+                    )
                     assert total["cuda_d2h_bytes"] == confirmed * 56
             elif a.device == "cuda:0":
                 assert total["explicit_state_d2h_bytes"] == confirmed * 52
@@ -142,6 +164,9 @@ def main():
     p.add_argument("--warmup", type=int, default=5)
     p.add_argument("--samples", type=int, default=20)
     p.add_argument("--expect-empty-cache", action="store_true")
+    p.add_argument(
+        "--phymeo-observation", choices=("checkpoint", "kinematics"), default="checkpoint"
+    )
     a = p.parse_args()
     if a.warmup < 1 or a.samples < 2:
         p.error("warmup must be positive and at least two samples are required")
@@ -155,11 +180,14 @@ def main():
     started = perf_counter_ns()
     modules, factory, meta = load_engine(a.engine, a.device, a.cache_root)
     initialized = perf_counter_ns() - started
+    if a.engine == "phymeo" and a.phymeo_observation == "kinematics":
+        factory = KinematicFall
     report = dict(
         schema="phymeo-newton-g2-observed-free-fall/1",
         engine=a.engine,
         device=a.device,
         phase=a.phase,
+        observation=a.phymeo_observation if a.engine == "phymeo" else "native_rigid_state",
         interpreter=sys.executable,
         python=sys.version.split()[0],
         numpy=version("numpy"),

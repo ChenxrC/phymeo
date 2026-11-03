@@ -12,27 +12,14 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tests" / "scale"))
 from benchmark_newton_free_fall import checked_window  # noqa: E402
-from g2_cross_engine_steps import STEPS, ApplicationOutput, PhymeoFall, load_engine, setup_rows  # noqa: E402
-
-
-class CountedFall(PhymeoFall):
-    def counters(self):
-        return dict(
-            super().counters(),
-            kinematics_downloaded_bytes=self.work.stats()["kinematics_downloaded_bytes"],
-        )
-
-
-class KinematicFall(CountedFall):
-    def read(self, tick):
-        observed = self.work.kinematics()
-        if (
-            observed.keys != self.keys
-            or observed.widths != (3,) * len(self.keys)
-            or not np.all(observed.ticks == tick)
-        ):
-            raise AssertionError("typed observation did not report the expected committed worlds")
-        return observed.values[:, :3], observed.values[:, 3:]
+from g2_cross_engine_steps import (
+    STEPS,
+    ApplicationOutput,
+    CountedFall,
+    KinematicFall,
+    load_engine,
+    setup_rows,
+)  # noqa: E402
 
 
 def summarize(measurements, worlds, lane):

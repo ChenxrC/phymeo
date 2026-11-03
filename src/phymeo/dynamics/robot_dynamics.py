@@ -51,13 +51,14 @@ def mass_matrix(model, q):
     """Generalized inertia, checked for numerical positive definiteness."""
     geometry = forward_kinematics(model, q)
     linear, angular = _com_jacobians(model, q)
-    return _mass_from_terms(model, linear, angular, _world_inertia(model, geometry))
+    return _mass_from_terms(model.mass, linear, angular, _world_inertia(model, geometry))
 
 
-def _mass_from_terms(model, linear, angular, inertia):
-    mass = np.zeros((model.dof_count, model.dof_count))
-    for i in range(model.dof_count):
-        mass += model.mass[i] * (linear[i].T @ linear[i])
+def _mass_from_terms(masses, linear, angular, inertia):
+    dofs = linear.shape[-1]
+    mass = np.zeros((dofs, dofs))
+    for i, body_mass in enumerate(masses):
+        mass += body_mass * (linear[i].T @ linear[i])
         mass += angular[i].T @ inertia[i] @ angular[i]
     _finite(mass)
     if not np.allclose(mass, mass.T, rtol=1e-12, atol=0):
@@ -73,6 +74,10 @@ def solve_mass(model, q, load):
     mass = mass_matrix(model, q)
     if load.shape != (model.dof_count,):
         raise ValueError("generalized load must match the robot DOF count")
+    return _solve_mass_matrix(mass, load)
+
+
+def _solve_mass_matrix(mass, load):
     delta = _finite(np.linalg.solve(mass, load))
     residual = _finite(mass @ delta - load)
     scale = max(
@@ -142,7 +147,7 @@ def robot_dynamics_terms(model, state):
     validate_robot_step(model, state, RobotInputs.zeros(model.dof_count))
     geometry, linear, angular = robot_com_kinematics(model, state.q)
     inertia = _world_inertia(model, geometry)
-    mass = _mass_from_terms(model, linear, angular, inertia)
+    mass = _mass_from_terms(model.mass, linear, angular, inertia)
     bias = _inertial_load(
         model, state, np.zeros(model.dof_count), geometry, inertia, linear, angular
     )

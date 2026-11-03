@@ -67,7 +67,10 @@ def test_real_swept_hit_applies_full_floating_recoil(rotated, reverse, tmp_path)
     R, shift, model, start, other, body, ports, hit, bind, rk, bk = build(rotated, reverse)
     # Total tree COM is at local x=1/3; Izz about it is 5/3. Its child site responds
     # in y by 1/3 + (2/3)^2/(5/3)=3/5; the external free body contributes one.
-    result = ph.solve_witness_impulses(ports, [(hit, bind)], [0.0], [0.0], sample="first_contact")
+    result = ph.solve_witness_impulses(
+        ports, [(hit, bind)], [0.0], [0.0], sample="first_contact",
+        local_vertices={rk: ((0.0, -0.125, 0.0),)},
+    )
     assert result.normal_impulses[0] == pytest.approx(5 / 8, abs=2e-10)
     arm, ball = result.states["arm"], result.states["ball"]
     np.testing.assert_array_equal(arm.q, start.q)
@@ -137,7 +140,8 @@ def test_floating_points_keep_cross_terms_repeated_addresses_and_actual_candidat
 def test_coulomb_response_from_real_skew_arrival_and_bad_port_binding():
     R, _, model, state, _, _, ports, hit, bind, rk, bk = build(tangent=0.5)
     result = ph.solve_witness_impulses(
-        ports, [(hit, bind)], [0.125], [0.125], sample="first_contact"
+        ports, [(hit, bind)], [0.125], [0.125], sample="first_contact",
+        local_vertices={rk: ((0.0, -0.125, 0.0),)},
     )
     assert result.normal_impulses[0] == pytest.approx(5 / 8, abs=2e-9)
     assert np.linalg.norm(result.tangent_impulses[0]) == pytest.approx(5 / 64, abs=2e-9)

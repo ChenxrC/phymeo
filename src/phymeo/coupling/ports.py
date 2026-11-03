@@ -175,6 +175,15 @@ class RigidPointPort(_PointPortBase):
         points.flags.writeable = False
         self._local = points
 
+    def witness_frame(self, row):
+        """World origin terms, rotation and material point for collision rebinding."""
+        index = self._indices[row]
+        return (
+            (self._state.position[index].astype(np.float64),),
+            quaternion_matrix(self._state.orientation[index : index + 1])[0],
+            self._local[row].astype(np.float64),
+        )
+
     def _arms(self):
         return np.einsum(
             "nij,nj->ni",

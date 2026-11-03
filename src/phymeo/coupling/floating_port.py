@@ -29,9 +29,16 @@ class FloatingRobotPointPort:
         self._linear, _ = floating_point_jacobians(model, state, indices, local_points)
         indices = np.array(indices, dtype=np.int64, copy=True)
         local = robot_array(local_points, "local_points", ndim=2, columns=3)
-        geometry = floating_kinematics(model, state)
+        # Keep the root translation separate so a common large world coordinate
+        # cannot erase an attachment offset that still contributes to J.T impulse.
+        centered = state.q.copy()
+        centered[:3] = 0.0
+        geometry = floating_kinematics(model, FloatingRobotState(centered, state.v))
+        self._body_offsets = geometry.position[indices]
+        self._rotations = geometry.rotation[indices]
+        self._local = local
         self._positions = _finite(
-            geometry.position[indices] + np.einsum("nij,nj->ni", geometry.rotation[indices], local)
+            state.q[:3] + (self._body_offsets + np.einsum("nij,nj->ni", self._rotations, local))
         )
         self._indices = indices
         self._mass = floating_mass_matrix(model, state)
@@ -57,6 +64,13 @@ class FloatingRobotPointPort:
                 "an instantaneous floating impulse must preserve the selected configuration"
             )
         return FloatingRobotState(state.q, state.v)
+
+    def witness_frame(self, row):
+        return (
+            (self._state.q[:3].copy(), self._body_offsets[row].copy()),
+            self._rotations[row].copy(),
+            self._local[row].copy(),
+        )
 
     def positions(self):
         return self._positions.copy()

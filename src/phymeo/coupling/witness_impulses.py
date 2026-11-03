@@ -1,13 +1,72 @@
 """Bind actual published surface witnesses to the existing multi-domain Coulomb solver."""
 
 from collections.abc import Mapping
+from math import fsum, hypot
 
 import numpy as np
 
+from ..constraints.collision_shapes import CollisionModel, CollisionMotion, CollisionPolicy
 from ..constraints.contact_impulse import solve_contact_impulses
 from ..core.validation import finite_real
-from ..geometry.collision_pipeline import CollisionPair
+from ..geometry.collision_pipeline import CollisionPair, CollisionWorkspace, detect
 from .domain_graph import MultiDomainPointOperator
+
+
+def _chart_point(frame, local, origin):
+    origins, rotation, _ = frame
+    arm = rotation @ local
+    return np.array([
+        fsum([*(float(term[k]) for term in origins), float(arm[k]), -float(origin[k])])
+        for k in range(3)
+    ])
+
+
+def _current_normal(pair, witness, endpoints, ports, local_vertices, tol):
+    """Requery the immutable two-shape model in the witness-relative coordinate system."""
+    if tuple(s.key for s in pair.witness_shapes) != (pair.first, pair.second):
+        raise ValueError("collision witness lacks a supported live rigid shape registration")
+    origin = np.asarray(witness.first_point)
+    points = []
+    paths = {}
+    for shape, (domain, row), published in zip(
+        pair.witness_shapes, endpoints, (witness.first_point, witness.second_point), strict=True
+    ):
+        frame_reader = getattr(ports[domain], "witness_frame", None)
+        if frame_reader is None:
+            raise ValueError("collision witness requires material body frames")
+        frame = frame_reader(row)
+        actual = _chart_point(frame, frame[2], origin)
+        if hypot(*(actual - (np.asarray(published) - origin))) > tol:
+            raise ValueError("material port is not bound to its collision witness")
+        points.append(actual)
+        vertices = local_vertices.get(shape.key)
+        if vertices is None:
+            if shape.kind != "sphere":
+                raise ValueError("collision witness requires registered body-local shape vertices")
+            vertices = ((0.0, 0.0, 0.0),)
+        vertices = np.asarray(vertices, dtype=np.float64)
+        if vertices.shape != (len(shape.vertex_ids), 3) or not np.isfinite(vertices).all():
+            raise ValueError("witness shape vertices must match the registered material order")
+        paths[shape.key] = CollisionMotion([_chart_point(frame, vertex, origin) for vertex in vertices])
+    if hypot(*(points[0] - points[1])) > tol:
+        raise ValueError("collision witness ports do not meet at one material point")
+    model = CollisionModel(pair.witness_shapes)
+    with CollisionWorkspace(model, "host") as work:
+        (current,) = detect(model, paths, CollisionPolicy(margin=tol), work).pairs
+    fresh = current.witness
+    if (
+        not current.candidate
+        or fresh is None
+        or fresh.normal is None
+        or fresh.first_point is None
+        or fresh.second_point is None
+        or abs(fresh.gap_m) > tol
+        or hypot(*(np.asarray(fresh.normal) - witness.normal)) > 1e-10
+        or hypot(*(np.asarray(fresh.first_point) - points[0])) > tol
+        or hypot(*(np.asarray(fresh.second_point) - points[1])) > tol
+    ):
+        raise ValueError("collision witness disagrees with the current shape pose or normal")
+    return fresh.normal
 
 
 def solve_witness_impulses(
@@ -17,6 +76,7 @@ def solve_witness_impulses(
     mu_dynamic,
     *,
     sample="pose",
+    local_vertices=None,
     velocity_tolerance=1e-10,
     response_tolerance=1e-12,
     position_tolerance=1e-9,
@@ -26,15 +86,22 @@ def solve_witness_impulses(
 
     Each row is a (CollisionPair, {shape_key: (port_domain, local_row)}) tuple.
     A static row must be touching. First-contact rows must share one reported witness
-    time and the ports must represent that sampled configuration. world_impulses in
-    the returned ContactImpulseResult act on the second collision shape in each row.
+    time. The HOST impulse adapter checks both material frames and queries the current
+    rigid shapes again in a common local chart. Supply local_vertices keyed by shape,
+    in registered vertex order. A sphere defaults to its body origin. Vertex-defined
+    capsules, hulls, closed meshes and plates require their full local geometry.
+    The returned world_impulses act on the second collision shape in each row.
     """
     if sample not in ("pose", "first_contact"):
         raise ValueError("select pose or first_contact witnesses")
     tol = finite_real(position_tolerance, "position_tolerance")
     if tol < 0:
         raise ValueError("position tolerance must be non-negative")
-    first, second, witnesses = [], [], []
+    if local_vertices is None:
+        local_vertices = {}
+    if not isinstance(local_vertices, Mapping):
+        raise TypeError("local_vertices must be a mapping keyed by collision shape")
+    first, second, witnesses, pairs = [], [], [], []
     event_time = None
     for pair, bindings in rows:
         if not isinstance(pair, CollisionPair) or not pair.candidate:
@@ -79,16 +146,16 @@ def solve_witness_impulses(
         first.append(bindings[pair.first])
         second.append(bindings[pair.second])
         witnesses.append(witness)
+        pairs.append(pair)
     # Public collision normals point from first to second. The existing graph
     # expects a normal from its right endpoint toward its left endpoint.
     graph = MultiDomainPointOperator(ports, second, first)
-    positions = {name: port.positions() for name, port in ports.items()}
-    for witness, a, b in zip(witnesses, first, second, strict=True):
-        for endpoint, point in ((a, witness.first_point), (b, witness.second_point)):
-            domain, row = endpoint
-            if np.linalg.norm(positions[domain][row] - point) > tol:
-                raise ValueError("material port is not bound to its collision witness")
-    normals = np.array([w.normal for w in witnesses], dtype=np.float64).reshape(-1, 3)
+    if set(local_vertices) - {key for pair in pairs for key in (pair.first, pair.second)}:
+        raise ValueError("witness geometry supplied for an unbound shape")
+    normals = np.asarray([
+        _current_normal(pair, witness, (a, b), ports, local_vertices, tol)
+        for pair, witness, a, b in zip(pairs, witnesses, first, second, strict=True)
+    ], dtype=np.float64).reshape(-1, 3)
     return solve_contact_impulses(
         graph,
         normals,

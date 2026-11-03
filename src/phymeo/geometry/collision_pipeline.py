@@ -2,7 +2,7 @@
 
 from collections.abc import Mapping
 from contextlib import contextmanager
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from fractions import Fraction
 from functools import partial
 from itertools import combinations
@@ -16,6 +16,7 @@ from ..constraints.collision_shapes import (
     CollisionModel,
     CollisionMotion,
     CollisionPolicy,
+    CollisionShape,
 )
 from ..core.capabilities import SolverFailure
 from ._capsule_triangle_sweep import capsule_face_query
@@ -94,6 +95,8 @@ class CollisionPair:
     support_map: ConvexSupportTrace | None = None
     mesh_round: MeshRoundTrace | None = None
     mesh_triangle: MeshTriangleTrace | None = None
+    # Immutable registrations used to recheck a contact against live material frames.
+    witness_shapes: tuple[CollisionShape, ...] = field(default=(), repr=False, compare=False)
 
 
 @dataclass(frozen=True)
@@ -1067,11 +1070,22 @@ def _detection_result(model, paths, backend, count, rows, bounds):
         )
         for s, row in zip(model.shapes, bounds, strict=True)
     )
+    # Geometry of these rigid shapes is fully determined by their ordered vertices.
+    # Large meshes share the same immutable registration across all of their contacts.
+    shapes = {
+        s.key: s for s in model.shapes if s.kind in ("sphere", "capsule", "hull", "mesh", "plate")
+    }
+    bound_rows = tuple(
+        replace(row, witness_shapes=(shapes[row.first], shapes[row.second]))
+        if row.status in ("touching", "hit") and row.first in shapes and row.second in shapes
+        else row
+        for row in rows
+    )
     return CollisionDetection(
         "ok",
         backend,
         count,
-        rows,
+        bound_rows,
         boxes,
         solid_body_pairs(model, paths, rows)
         if any(s.kind == "tetrahedron" for s in model.shapes)

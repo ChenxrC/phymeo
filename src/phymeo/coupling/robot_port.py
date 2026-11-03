@@ -55,6 +55,20 @@ class RobotPointPort:
             raise ValueError("instantaneous robot impulses must preserve configuration")
         return candidate
 
+    def witness_frame(self, row):
+        geometry = forward_kinematics(self._model, self._state.q)
+        body = self._indices[row]
+        joint = body
+        terms = []
+        while joint >= 0:
+            parent = self._model.parents[joint]
+            offset = self._model.joint_position[joint]
+            terms.append(offset.copy() if parent < 0 else geometry.rotation[parent] @ offset)
+            if self._model.joint_types[joint] == "prismatic":
+                terms.append(geometry.axis[joint] * self._state.q[joint])
+            joint = parent
+        return tuple(terms), geometry.rotation[body].copy(), self._local[row].copy()
+
     def _jacobian(self):
         return point_jacobians(self._model, self._state.q, self._indices, self._local)[0]
 

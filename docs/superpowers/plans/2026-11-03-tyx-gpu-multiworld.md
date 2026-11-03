@@ -1,5 +1,7 @@
 # TYX GPU 与多场景规模计划
 
+**11 月 4 日 08:00 续作。** 世界内配对、分页、运动量批量读回和载荷混合批次均已有真实 CUDA 对照。当前 W32 同输出自由球的 Newton/Phymeo 三轮吞吐比为 0.903、1.305、1.457；W16 的受载合组相对本引擎逐世界调用为 1.21–1.24 倍，但其绝对吞吐低于 W4。下一轮按下方原规模门槛分拆带载稠密场景的窄相、求解与读回成本。[跨引擎实测](../../benchmarks/p65-g2-typed-newton-direct.md) · [混合世界实测](../../benchmarks/p65-mixed-physical-world-scale.md) · [总览](../../benchmarks/p65-newton-20261104-0800.md)
+
 **当前入口。** 阶段 0 的 G1 静态隔离与成本已完成。W=1、2、8、32、64 的两种布局在 Phymeo HOST、TYX CUDA、Newton CPU 和 CUDA 均保留了预期接触。W=64 时，现有 TYX 完整合批发布 32,640 行，其中 32,256 行是跨世界过滤。五个单查询暖态样本的中位数为合批 117.513 ms、逐世界顺序调用 31.698 ms。下一项为阶段 1 世界内配对。动力学吞吐、设备驻留和长窗口统计仍按后续步骤分别验收。[G1 原始口径及复现](../../benchmarks/p65-g1-world-isolation.md) · [三方向开发计划](2026-11-03-newton-reference-development.md) · [环境锁](../../../requirements/tyx.txt)
 
 ## 已有能力和成本

@@ -115,6 +115,12 @@ from .geometry.collision_pipeline import (
     CollisionWorkspace,
     detect,
 )
+from .geometry.compact_contacts import (
+    CompactContactBuffer,
+    CompactWorldContactWorkspace,
+    ContactBufferLimits,
+    compact_contacts,
+)
 from .geometry.collision_witness import (
     CapsuleAxisPoint,
     ConvexContactPatch,
@@ -495,6 +501,10 @@ __all__ += [
     "CollisionWitness",
     "CollisionWorkspace",
     "WorldCollisionWorkspace",
+    "CompactContactBuffer",
+    "CompactWorldContactWorkspace",
+    "ContactBufferLimits",
+    "compact_contacts",
     "CollisionPage",
     "CollisionPageCapacityError",
     "CollisionPageLimits",

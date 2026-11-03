@@ -210,7 +210,7 @@
       },
       "oracle": "USD 为 1 m/单位、1 kg/单位、Z 向上，转动限位为度。局部参照系与原点按手算链连乘。",
       "newton": {"status": "run", "devices": ["cpu", "cuda:0"], "reason": "本地资产在 HOST 解析；指定设备运行 eval_fk 与偏心碰撞球的 SensorFrameTransform。"},
-      "phymeo": {"status": "gap", "devices": [], "reason": "缺少对应格式的公开机器人导入入口；同形的程序式对照单列。"}
+      "phymeo": {"status": "run", "devices": ["cpu", "cuda:0"], "reason": "可选 OpenUSD 在 HOST 解析。指定设备的 FK/雅可比读取具名碰撞球的世界位姿与速度。"}
     },
     {
       "id": "ROBOT-USD-CENTIMETER-WARNING",
@@ -221,7 +221,7 @@
       "tolerances": {"reported_meters_per_unit": 1e-12},
       "oracle": "在独立内存层把同一刚体文件的 stage 单位改成厘米。1.7 刚体导入契约警告非单位米。该项只观察主机诊断。",
       "newton": {"status": "run", "devices": ["cpu"], "reason": "OpenUSD 内存 stage 与 ModelBuilder.add_usd 返回的单位、诊断均发生在 HOST。"},
-      "phymeo": {"status": "gap", "devices": [], "reason": "缺少机器人 USD stage 导入入口。"}
+      "phymeo": {"status": "not_comparable", "devices": [], "reason": "此项冻结 Newton 对厘米刚体的诊断；Phymeo 对物理长度及惯量作 SI 换算，另用等尺寸厘米/Y-up 资产验收。"}
     },
     {
       "id": "ROBOT-IK-REACHABLE",

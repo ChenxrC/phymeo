@@ -292,17 +292,20 @@ def _phymeo_arm(case, fixture, device):
 
     inputs = case["inputs"]
     observed = {}
+    link_origin_local = np.zeros(3)
     if inputs["source"] == "builder":
         model = _phymeo_model(fixture, [0, 0, 0])
         tool = slide = 1
         marker_local = np.asarray(fixture["marker_local_m"], dtype=float)
-    elif inputs["source"] in ("arm.urdf", "arm.mjcf.xml"):
+    elif inputs["source"] in ("arm.urdf", "arm.mjcf.xml", "arm.usda"):
         from phymeo.builders.mjcf import load_mjcf
         from phymeo.builders.urdf import load_urdf
+        from phymeo.builders.usd import load_usd
 
         loader, format_name = {
             "arm.urdf": (load_urdf, "URDF"),
             "arm.mjcf.xml": (load_mjcf, "MJCF"),
+            "arm.usda": (load_usd, "USD"),
         }[inputs["source"]]
         asset = loader(DIRECTORY / inputs["source"])
         model = asset.model
@@ -310,14 +313,18 @@ def _phymeo_arm(case, fixture, device):
         yaw, slide = (asset.joint_names.index(name) for name in ("yaw", "slide"))
         shapes = [item for item in asset.collisions if item.link_index == tool]
         (collider,) = shapes
-        marker_local = np.asarray(collider.local_vertices[0])
+        authored_center = np.asarray(collider.local_vertices[0])
+        marker_local = authored_center
+        if format_name == "USD":
+            marker_local = asset.authored_to_model_points("tool", authored_center)
+            link_origin_local = asset.authored_to_model_points("tool", link_origin_local)
         observed.update(
             asset_import=f"HOST {format_name}",
             joint_kinds=[model.joint_types[i] for i in (yaw, slide)],
             tool_colliders=len(shapes),
             tool_collider_kind=collider.shape.kind,
             marker_radius_m=collider.shape.radius,
-            local_sphere_m=marker_local.tolist(),
+            local_sphere_m=authored_center.tolist(),
             yaw_limits_rad=[asset.lower[yaw], asset.upper[yaw]],
             slide_limits_m=[asset.lower[slide], asset.upper[slide]],
         )
@@ -367,7 +374,9 @@ def _phymeo_arm(case, fixture, device):
         observed.update(fk_device="HOST")
     observed.update(
         dof_count=model.dof_count,
-        tool_origin_m=geometry.position[tool].tolist(),
+        tool_origin_m=(
+            geometry.position[tool] + geometry.rotation[tool] @ link_origin_local
+        ).tolist(),
         marker_world_m=marker.tolist(),
         slide_axis_world=geometry.axis[slide].tolist(),
         marker_velocity_m_s=velocity.tolist(),

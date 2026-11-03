@@ -45,13 +45,17 @@ class USDAsset(RobotAsset):
         index = -1 if link_name == self.root_link else self.link_names.index(link_name)
         return self._authored_pose(index, forward_kinematics(self.model, q))
 
-    def collision_motion(self, q):
+    def collision_motion(self, q, q_end=None):
         geometry = forward_kinematics(self.model, q)
         paths = {}
         for collider in self.collisions:
             position, rotation = self._authored_pose(collider.link_index, geometry)
             points = position + np.asarray(collider.local_vertices) @ rotation.T
             paths[collider.shape.key] = CollisionMotion(points)
+        if q_end is not None:
+            from ._robot_joint_motion import joint_interval_motion
+
+            return joint_interval_motion(self, q, q_end, geometry, paths)
         return paths
 
 

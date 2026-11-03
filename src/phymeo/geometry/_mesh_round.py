@@ -7,10 +7,12 @@ from math import ulp
 import numpy as np
 
 from ..core.capabilities import SolverFailure
-from ._capsule_triangle_sweep import segment_minimum
+from ._capsule_triangle_sweep import _CapsuleFace, segment_minimum
 from ._curved_solids import _root
 from ._mesh_mesh import _point_nearest
-from ._round_sweep import _translation, _unit, _vector, _weights, _xyz
+from ._round_sweep import _GRID, _translation, _unit, _vector, _weights, _xyz
+from ._sphere_triangle_sweep import _SphereFace
+from ._tetrahedral_surface import _TriangleMotion
 from ._triangle_pair_sweep import _FacePath, _Pose
 from .collision_witness import CapsuleAxisPoint, CollisionSweep, CollisionWitness
 
@@ -214,9 +216,44 @@ class MeshRoundQuery:
             witness=replace(witness,normal=None)
         return MeshRoundPose(relation,clearance,axis_gap,axis_location,supports,boundary,witness)
 
+    def _first(self):
+        # In the mesh frame, the two endpoints of the finite spine translate
+        # by the same vector. A radius-expanded sweep guards the exact features.
+        ends = np.array((self.start, self.start+self.axis, self.start+self.drift,
+                         self.start+self.axis+self.drift))
+        lo,hi=ends.min(0)-self.radius,ends.max(0)+self.radius
+        best=None
+        for facet in self.mesh.facets:
+            if any(facet.hi<lo) or any(facet.lo>hi):
+                continue
+            face_path=_TriangleMotion(facet.xyz,facet.xyz+facet.step,bool(any(facet.step)))
+            query=(_SphereFace(facet.shape,self.round,face_path,self.path)
+                   if self.round.kind=="sphere" else _CapsuleFace(facet.shape,self.round,face_path,self.path))
+            if not query.features:
+                raise SolverFailure("mesh_round_facet_sweep_unresolved")
+            for feature in query.features:
+                bracket=feature.entry(None)
+                if bracket is not None and (best is None or bracket<best):
+                    best=bracket
+        return best
+
     def result(self,moving):
-        if moving:
-            return "unsupported","mesh_round_motion",None,None,None
-        pose=self.sample(_ZERO)
-        status=pose.relation if pose.relation in ("separated","touching") else "overlap"
-        return status,pose.relation,pose.witness,None,MeshRoundTrace(pose,pose,None)
+        start=self.sample(_ZERO)
+        if not moving:
+            status=start.relation if start.relation in ("separated","touching") else "overlap"
+            return status,start.relation,start.witness,None,MeshRoundTrace(start,start,None)
+        end=self.sample(_ONE)
+        entry=(0,0) if start.relation!="separated" else self._first()
+        if entry is None:
+            if end.relation!="separated":
+                raise SolverFailure("mesh_round_terminal_state_inconsistent")
+            sweep=CollisionSweep(start.witness.gap_m,end.witness.gap_m,None,None,None)
+            return "separated","mesh_round_swept_clear",end.witness,sweep,MeshRoundTrace(start,end,None)
+        bracket=entry[0]/_GRID,entry[1]/_GRID
+        time=(bracket[0]+bracket[1])/2
+        pose=start if time==0 else end if time==1 else self.sample(F(time))
+        if time and (abs(pose.axis_gap_m)>1e-6 or pose.boundary_gap_m>1e-6):
+            raise SolverFailure("mesh_round_first_witness_resolution")
+        event=MeshRoundEvent(bracket,time,pose)
+        sweep=CollisionSweep(start.witness.gap_m,end.witness.gap_m,bracket,time,pose.witness)
+        return "hit","mesh_round_first_solid_contact",end.witness,sweep,MeshRoundTrace(start,end,event)

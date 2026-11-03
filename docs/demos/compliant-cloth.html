@@ -11,6 +11,8 @@ h1{font-size:25px;margin:0}p{color:#b3c5ca;margin:8px 0}button,select,.file{bord
 .file input{display:none}#view{height:min(62vh,680px);min-height:300px;background:#15252c;position:relative;margin:14px 0;border:1px solid #31454f;border-radius:7px;overflow:hidden}
 canvas{display:block}#err{position:absolute;top:8px;left:12px;color:#ffb093}.controls input[type=range]{flex:1;min-width:180px}
 #readout{font:14px/1.65 ui-monospace,monospace;color:#d6e6e3;white-space:pre-line;margin:10px 0}
+#physical-panel{padding:10px 12px;border:1px solid #48626c;border-radius:6px;margin-top:12px}
+#physical-panel[hidden]{display:none}#subreadout{white-space:pre-line;font:14px/1.6 ui-monospace,monospace}
 #source{font-size:12px;overflow-wrap:anywhere}.sw{color:#7edfd7}.key{color:#ffc675}
 </style>
 <script src="./vendor/three-r160.min.js"></script>
@@ -22,6 +24,11 @@ canvas{display:block}#err{position:absolute;top:8px;left:12px;color:#ffb093}.con
 <div id="view"><span id="err"></span></div>
 <div class="controls"><button id="prev" aria-label="上一帧">◀</button><button id="play">播放</button><button id="next" aria-label="下一帧">▶</button>
 <input id="time" aria-label="物理帧" type="range" min="0" max="0" value="0" step="1"></div>
+<section id="physical-panel" hidden aria-label="已记录的结构载荷子步"><div class="controls">
+<label><input id="physical-mode" type="checkbox">查看本帧的物理子步</label>
+<input id="physical-index" type="range" min="0" max="0" value="0" step="1" aria-label="结构力物理子步" disabled></div>
+<p>子步视图只显示该采样时刻实际受力的布面、连杆和材料点。选择连杆可查看它承受的反向力。</p>
+<div id="subreadout" aria-live="polite"></div></section>
 <div id="readout">—</div><p>布面与夹爪显示当前物理帧。箭头来自记录的受力采样点，单位为 N。青色冲量箭头对应显示帧最后一个物理子步，读数另列这帧所有子步的法向冲量标量之和（N·s）。拖动画面旋转，滚轮缩放。</p>
 <p id="source"></p></main>
 <script id="capture" type="application/json">null</script>
@@ -29,7 +36,8 @@ canvas{display:block}#err{position:absolute;top:8px;left:12px;color:#ffb093}.con
 "use strict";
 const el=id=>document.getElementById(id),box=el("view");
 let trace=null,index=0,playing=false,clockStart=0,simStart=0;
-let renderer,scene,camera,group,cloth,wire,arrows,patches,links,bodies;
+let renderer,scene,camera,group,cloth,wire,arrows,patches,links,bodies,localDetail;
+let detailFrame=-1;
 let yaw=.52,pitch=.38,distance=1,center=new THREE.Vector3(),extent=1,scale=1,impulseScale=0,drag=null;
 const vec=p=>new THREE.Vector3(p[0],p[1],p[2]);
 const colors={table:0x536679,platform:0x7491a2,A:0xe99967,B:0x7999e3};
@@ -39,7 +47,7 @@ function init(){
  scene=new THREE.Scene();scene.background=new THREE.Color(0x15252c);
  camera=new THREE.PerspectiveCamera(42,1,.0001,100);camera.up.set(0,0,1);
  scene.add(new THREE.HemisphereLight(0xeaf8ff,0x759092,2.1));const light=new THREE.DirectionalLight(0xffffff,2);light.position.set(1,-2,3);scene.add(light);
- group=new THREE.Group();scene.add(group);new ResizeObserver(resize).observe(box);
+ group=new THREE.Group();localDetail=new THREE.Group();localDetail.visible=false;scene.add(group,localDetail);new ResizeObserver(resize).observe(box);
 }
 function resize(){if(!renderer)return;const w=box.clientWidth,h=box.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();render()}
 function render(){if(!renderer)return;camera.position.copy(center).add(new THREE.Vector3(Math.sin(yaw)*Math.cos(pitch),-Math.cos(yaw)*Math.cos(pitch),Math.sin(pitch)).multiplyScalar(distance));camera.lookAt(center);renderer.render(scene,camera)}
@@ -106,7 +114,7 @@ function roundedPadMesh(front, config, color) {
 }
 function loadTrace(raw,hash=""){
  if(!raw || raw.schema!=="phymeo-compliant-case-v1" || !raw.frames?.length || !raw.faces?.length)throw Error("请选择本示例生成的有效轨迹");
- trace=raw;index=0;playing=false;el("play").textContent="播放";deepClear(group);patches={};
+ trace=raw;index=0;detailFrame=-1;el("physical-mode").checked=false;playing=false;el("play").textContent="播放";deepClear(group);patches={};
  const first=raw.frames[0];cloth=mesh(first.cloth_position_m.length,raw.faces.flat(),0x63c6bb);
  const edges=raw.faces.flatMap(([a,b,c])=>[a,b,b,c,c,a]);const eg=new THREE.BufferGeometry();eg.setAttribute("position",cloth.geometry.attributes.position);eg.setIndex(edges);
  wire=new THREE.LineSegments(eg,new THREE.LineBasicMaterial({color:0x17332f}));group.add(wire);
@@ -129,13 +137,62 @@ function loadTrace(raw,hash=""){
  for(const f of raw.frames)for(const row of f.robot_contact?.cloth_links||[])for(const site of row.sites)maxf=Math.max(maxf,vec(site.force_on_cloth_n).length());
  for(const f of raw.frames)for(const pair of f.self_contact?.contacts||[])for(const site of pair.sites)maxf=Math.max(maxf,vec(site.force_on_second_n).length());
  for(const f of raw.frames)for(const ends of Object.values(f.body_capsules_m||{}))for(const p of ends)b.expandByPoint(vec(p));
+ for(const samples of raw.structural_force_windows||[])for(const sample of samples)for(const row of sample.cloth_links)
+   for(const site of row.sites)maxf=Math.max(maxf,vec(site.force_on_cloth_n).length());
  b.getCenter(center);extent=Math.max(.025,b.getSize(new THREE.Vector3()).length());distance=1.8*extent;scale=.30*extent/maxf;impulseScale=maxImpulse>0 ? 0.30*extent/maxImpulse : 0;
  el("events").replaceChildren(new Option("选择阶段",""));(raw.events||[]).forEach(e=>el("events").add(new Option(e.phase+" · "+e.t.toFixed(3)+" s",e.t)));
  el("filter").replaceChildren(new Option("全部",""));Object.keys(patches).forEach(k=>el("filter").add(new Option(k,k)));(raw.robot_contact?.capsules||[]).forEach(c=>el("filter").add(new Option(c.key,c.key)));
  if(raw.cloth_link_material)el("filter").add(new Option("布面（连杆接触）","cloth-links"));
  if(raw.cloth_self_material)el("filter").add(new Option("布面自接触","cloth-self"));
- el("time").max=raw.frames.length-1;el("case").textContent=raw.case+" · "+(raw.completed?"完成":("停止 "+(raw.failure_phase||"")+" "+(raw.failure||"")))+" · "+raw.backend;
+ el("time").max=raw.frames.length-1;el("case").textContent=raw.case+" · "+(raw.completed?"记录完成":("记录停止 "+(raw.failure_phase||"")+" "+(raw.failure||"")))+" · "+raw.backend;
  el("source").textContent=(hash?"源 JSON SHA-256 "+hash+" · ":"")+"位置 m，渲染缓冲 FP32，记录保留原精度。";el("err").textContent="";show(0);
+}
+function drawForceSubstep() {
+ const windows=trace?.structural_force_windows;
+ const available=Array.isArray(windows) && windows.length>0;
+ const panel=el("physical-panel"), toggle=el("physical-mode"), slider=el("physical-index");
+ panel.hidden=!available;
+ const enabled=available && toggle.checked && index>0;
+ slider.disabled=!enabled;
+ group.visible=!enabled;
+ localDetail.visible=!!enabled;
+ deepClear(localDetail);
+ if(!enabled){el("subreadout").textContent="";return}
+ const samples=windows[index-1];
+ slider.max=samples.length-1;
+ if(detailFrame!==index){slider.value=samples.length-1;detailFrame=index}
+ const j=Math.min(Number(slider.value),samples.length-1),sample=samples[j];
+ const filter=el("filter").value,component=el("component").value;
+ const rows=sample.cloth_links.filter(r=>!filter||filter==="cloth-links"||filter===r.link);
+ const loads=[];
+ for(const row of rows){
+   const surface=new THREE.BufferGeometry().setFromPoints(row.face_positions_m.map(vec));
+   surface.setIndex([0,1,2]);surface.computeVertexNormals();
+   localDetail.add(new THREE.Mesh(surface,material(0x66cdb9,.82)));
+   const a=vec(row.axis_ends_m[0]),b=vec(row.axis_ends_m[1]),axis=b.clone().sub(a),length=axis.length();
+   const radius=trace.robot_contact.capsules.find(c=>c.key===row.link).radius_m;
+   const geometry=length?new THREE.CapsuleGeometry(radius,length,4,12):new THREE.SphereGeometry(radius,16,8);
+   const shape=new THREE.Mesh(geometry,material(colors[row.robot]||0x91aaca,.68));
+   shape.position.copy(a).lerp(b,.5);
+   if(length)shape.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),axis.divideScalar(length));
+   localDetail.add(shape);
+   loads.push(row.face+" ↔ "+row.link+"  "+row.normal_force_n.toPrecision(6)+" N");
+   if(!el("forces").checked)continue;
+   for(const site of row.sites){
+     const onLink=filter===row.link;
+     const force=vec(onLink?site.force_on_link_n:site.force_on_cloth_n);
+     const normal=vec(row.normal).multiplyScalar((onLink?-1:1)*site.normal_force_n);
+     if(component==="normal")force.copy(normal);else if(component==="tangent")force.sub(normal);
+     const magnitude=force.length();
+     if(magnitude<=1e-9)continue;
+     const len=scale*magnitude;
+     localDetail.add(new THREE.ArrowHelper(force.divideScalar(magnitude),vec(site.point_m),len,0xa6e27a,
+           Math.min(len*.25,.035*extent),Math.min(len*.12,.017*extent)));
+   }
+ }
+ el("readout").textContent="显示帧 "+index+"/"+(trace.frames.length-1)+" 的局部结构接触";
+ el("subreadout").textContent="物理子步 "+(j+1)+"/"+samples.length+"  ·  力采样 t="+sample.t.toFixed(9)+" s\n"+
+   (loads.join("   ")||"所选对象在该子步没有结构接触力");
 }
 function show(n){
  if(!trace)return;index=Math.max(0,Math.min(trace.frames.length-1,Math.round(n)));el("time").value=index;
@@ -203,8 +260,10 @@ function show(n){
      +"\n最后子步 "+w.substep_s.toExponential(3)+" s，青色箭头 "+impulseScale.toPrecision(3)+" m/(N·s)";
  }
  if(f.robot_contact)sums.push("关节越界 "+f.robot_contact.joint_violation.toExponential(2)+" rad/m");
- el("readout").textContent="帧 "+index+"/"+(trace.frames.length-1)+"   t="+f.t.toFixed(5)+" s   "+(f.phase||trace.case)+"\n力采样 t="+(f.force_sample_s??f.t).toFixed(5)+" s   "+sums.join("   ")+"\n箭头比例 "+scale.toPrecision(3)+" m/N"+impulses;render();
+ el("readout").textContent="帧 "+index+"/"+(trace.frames.length-1)+"   t="+f.t.toFixed(5)+" s   "+(f.phase||trace.case)+"\n力采样 t="+(f.force_sample_s??f.t).toFixed(5)+" s   "+sums.join("   ")+"\n箭头比例 "+scale.toPrecision(3)+" m/N"+impulses;drawForceSubstep();render();
 }
+el("physical-mode").onchange=()=>{pause();show(el("physical-mode").checked&&index===0?1:index)};
+el("physical-index").oninput=()=>{pause();show(index)};
 function pause(){playing=false;el("play").textContent="播放"}
 function tick(now){if(playing&&trace){const t=simStart+(now-clockStart)/1000;let next=index;while(next+1<trace.frames.length && trace.frames[next+1].t<=t)next++;if(next!==index)show(next);if(index===trace.frames.length-1)pause()}requestAnimationFrame(tick)}
 el("play").onclick=()=>{if(!trace)return;if(playing){pause();return}if(index===trace.frames.length-1)show(0);playing=true;clockStart=performance.now();simStart=trace.frames[index].t;el("play").textContent="暂停"};

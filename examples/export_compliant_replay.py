@@ -120,7 +120,7 @@ def _bind_recorded_models(trace):
                     raise ValueError("invalid recorded contact directions or decomposed force")
 
 
-def _check_structural_records(trace):
+def _check_structural_records(trace, *, bodies=None):
     if "cloth_link_material" not in trace:
         return
     shapes = {c["key"]: c for c in trace["robot_contact"]["capsules"]}
@@ -136,8 +136,9 @@ def _check_structural_records(trace):
             raise ValueError("invalid structural material face binding")
         faces[group[0][0]] = ids
     tolerance = 2e-6 if trace.get("cloth_link_force_backend") in ("interpret", "cuda") else 2e-10
-    for frame in trace["frames"]:
-        body = frame.get("robot_contact", {})
+    if bodies is None:
+        bodies = (frame.get("robot_contact", {}) for frame in trace["frames"])
+    for body in bodies:
         rows = body.get("cloth_links")
         if not isinstance(rows, list) or len({(r["face"], r["link"]) for r in rows}) != len(rows):
             raise ValueError("invalid structural contact set")
@@ -431,7 +432,37 @@ def check_self_records(trace):
             raise ValueError("self-contact frame is not bound to its source substep")
 
 
-def export(source, output):
+def structural_substep_windows(trace):
+    """Bind the actual local cloth-link force geometry to each accepted physical substep."""
+    if "cloth_link_material" not in trace:
+        raise ValueError("structural substeps require recorded cloth-link material")
+    frames, samples, steps = trace["frames"], trace.get("robot_samples"), trace["substeps"]
+    if not isinstance(steps, int) or isinstance(steps, bool) or steps < 1:
+        raise ValueError("invalid number of structural substeps")
+    if not frames or not isinstance(samples, list) or len(samples) != (len(frames) - 1) * steps:
+        raise ValueError("incomplete structural substep history")
+    _check_structural_records(trace, bodies=samples)
+    windows = []
+    h = trace["dt_s"] / steps
+    if not np.isfinite(h) or h <= 0:
+        raise ValueError("invalid structural substep duration")
+    for index, (first, last) in enumerate(zip(frames, frames[1:])):
+        if not np.isclose(last["t"] - first["t"], trace["dt_s"], rtol=0, atol=1e-12):
+            raise ValueError("inconsistent physical display interval")
+        rows = samples[index * steps : (index + 1) * steps]
+        for j, row in enumerate(rows):
+            entry = first["t"] + j * h
+            if not any(np.isclose(row["t"], t, rtol=0, atol=1e-12) for t in (entry, entry + h/2)):
+                raise ValueError("structural force time outside its original sampling stage")
+        if last.get("robot_contact") != rows[-1] or not np.isclose(
+            last.get("force_sample_s", np.nan), rows[-1]["t"], rtol=0, atol=1e-12
+        ):
+            raise ValueError("frame is not bound to its last structural force sample")
+        windows.append([{"t": row["t"], "cloth_links": row["cloth_links"]} for row in rows])
+    return windows
+
+
+def export(source, output, *, structural_substeps=False):
     with source.open("rb") as stream:
         digest = hashlib.sha256()
         for block in iter(lambda: stream.read(1024 * 1024), b""):
@@ -449,6 +480,8 @@ def export(source, output):
     add_link_geometry(trace)
     add_backing_windows(trace)
     check_self_records(trace)
+    if structural_substeps:
+        trace["structural_force_windows"] = structural_substep_windows(trace)
     # The full source file retains every substep. The viewer reads the recorded frame data.
     trace.pop("samples", None)
     trace.pop("robot_samples", None)
@@ -478,5 +511,6 @@ if __name__ == "__main__":
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("source", type=Path)
     p.add_argument("output", type=Path)
+    p.add_argument("--structural-substeps", action="store_true", help="Include recorded finite material and link geometry at each physical force time")
     args = p.parse_args()
-    print(export(args.source, args.output))
+    print(export(args.source, args.output, structural_substeps=args.structural_substeps))

@@ -105,7 +105,7 @@ def window(family,mode,cache):
             total=(state.rigid.velocity/models[1].inverse_mass[:,None]).sum(axis=0)+state.particles.velocity.sum(axis=0)
             np.testing.assert_allclose(total,np.zeros(3),atol=8e-5 if mode!="host" else 1e-9,rtol=0)
         if mode!="host":
-            assert work.stats()["completed_launches"]>0 and layer.stats()["rows"]>=8
+            assert work.stats()["completed_launches"]>0 and layer.stats()["sites"]>=8
 
 
 @pytest.mark.parametrize("family",["RR","RD"])
@@ -126,7 +126,7 @@ def test_curved_trial_crossing_aborts_and_preserves_last_publication(tmp_path):
     with ph.CollisionWorkspace(m) as work:
         good=system.step(state,ext,models,(None,ph.RigidSemiImplicitSolver()),1/256,work)
         before=work.last_result
-        bad=ph.RigidBodyState(good.state.rigid.position,good.state.rigid.orientation,[[0,0,0],[-32,0,0]],
+        bad=ph.RigidBodyState(good.state.rigid.position,good.state.rigid.orientation,np.array([[0.,0.,0.],[-32.,0.,0.]]),
                               good.state.rigid.angular_velocity)
         failed=ph.CoupledState(good.state.particles,bad)
         with pytest.raises(SolverFailure):

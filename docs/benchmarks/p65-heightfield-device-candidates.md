@@ -18,3 +18,5 @@
 TYX interpret 与真实 CUDA 专项各 12 项通过。原 HOST 地形离散及连续回归 26 项、实际 CUDA 相邻高度场及通用 BVH 6 项通过。设备范围是固定有限高度图与直线球心路径的候选生成。标量特征根、材料见证和两个公开时间区间均由 HOST 计算。性能基准、球心转弧与运动地形需单独验收。
 
 同批收据位于 `artifacts/p65-wave4-terrain-20261103-01`。原树红测 `terrain-device-red` 保留缺少逐面完成计数的 raw 1。通过收据为 `terrain-cuda`、`terrain-interpret`、`terrain-ridge-first-cuda`、`terrain-host-regression` 和 `terrain-cuda-adjacent`。各 CUDA 留出在其 basetemp 下保存独立真面和实际设备面 ID；冻结入口的测量保存在 `terrain-ridge-first-cuda/result.json`。
+
+专项和冻结 CUDA 案例首次通过时的提交为 `64f0474`。随后只对四个专属 Python 文件运行 Ruff 格式化，修正测试文件的导入顺序。该工作区再执行原 HOST 离散与连续 26 项、真实 CUDA 相邻 6 项，分别保存在 `terrain-host-regression` 与 `terrain-cuda-adjacent`；每份收据的 7 个源码哈希均与最终文件一致。最终 `terrain-lint-final` 的 4/4 源文件哈希同样一致，`terrain-format-check` 通过。

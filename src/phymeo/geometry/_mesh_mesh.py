@@ -49,14 +49,18 @@ def _owners(mesh, weights):
 
 
 def _support(a, b, wa, wb, t, *, intrusion=False, normal=None):
-    pa = sum(w*a.points[i] for i, w in wa) + t*a.step
-    pb = sum(w*b.points[i] for i, w in wb) + t*b.step
+    pa = sum(w * a.points[i] for i, w in wa) + t * a.step
+    pb = sum(w * b.points[i] for i, w in wb) + t * b.step
     direction, length = _unit(pb - pa)
     if direction is not None:
         normal = _xyz(-direction if intrusion else direction)
     w = CollisionWitness(
-        -length if intrusion else length, normal, _xyz(pa), _xyz(pb),
-        tuple((i, float(v)) for i, v in wa), tuple((i, float(v)) for i, v in wb),
+        -length if intrusion else length,
+        normal,
+        _xyz(pa),
+        _xyz(pb),
+        tuple((i, float(v)) for i, v in wa),
+        tuple((i, float(v)) for i, v in wb),
         "host-mesh-mesh",
     )
     return MeshMeshSupport(_owners(a, wa), _owners(b, wb), w)
@@ -75,21 +79,21 @@ def _representative(supports):
 
 
 def _area2(xy):
-    return abs(sum(p[0]*q[1] - p[1]*q[0] for p, q in zip(xy, xy[1:] + xy[:1], strict=True)))
+    return abs(sum(p[0] * q[1] - p[1] * q[0] for p, q in zip(xy, xy[1:] + xy[:1], strict=True)))
 
 
 def _slice(xyz, heights):
     points = {tuple(p) for p, h in zip(xyz, heights, strict=True) if not h}
     for i, j in ((0, 1), (1, 2), (2, 0)):
         u, v = heights[i], heights[j]
-        if u*v < 0:
-            points.add(tuple(xyz[i] + (u/(u-v))*(xyz[j] - xyz[i])))
+        if u * v < 0:
+            points.add(tuple(xyz[i] + (u / (u - v)) * (xyz[j] - xyz[i])))
     return points
 
 
 def _intersection(a, b, t):
     """Exact intersection generators, projected coplanar area and strict transverse crossing."""
-    x, y = a.xyz + t*a.step, b.xyz + t*b.step
+    x, y = a.xyz + t * a.step, b.xyz + t * b.step
     n, m = a.face.normal, b.face.normal
     ah = (x - y[0]) @ m
     bh = (y - x[0]) @ n
@@ -98,13 +102,13 @@ def _intersection(a, b, t):
     axis = _cross3(n, m)
     if not any(axis):
         i, j = a.face.cols
-        k = 3-i-j
+        k = 3 - i - j
         xy = intersect(hull((v[i], v[j]) for v in x), hull((v[i], v[j]) for v in y))
         points = []
         for u, v in xy:
             p = x[0].copy()
             p[i], p[j] = u, v
-            p[k] = (x[0] @ n - n[i]*u - n[j]*v)/n[k]
+            p[k] = (x[0] @ n - n[i] * u - n[j] * v) / n[k]
             points.append(p)
         return points, _area2(xy), False
     left, right = _slice(x, ah), _slice(y, bh)
@@ -114,8 +118,8 @@ def _intersection(a, b, t):
     points = [np.array(p, dtype=object) for p in sorted(left | right) if lo <= p[k] <= hi]
     transverse = False
     if len(points) == 2:
-        midpoint = (points[0] + points[1])/2
-        wa, wb = a.weights(midpoint-t*a.step), b.weights(midpoint-t*b.step)
+        midpoint = (points[0] + points[1]) / 2
+        wa, wb = a.weights(midpoint - t * a.step), b.weights(midpoint - t * b.step)
         transverse = len(wa) == len(wb) == 3
     return points, 0, transverse
 
@@ -127,7 +131,7 @@ def _point_nearest(faces, p):
         if best is not None and d @ d > best:
             continue
         n = f.face.normal
-        projected = p - n*((p @ n - f.face.plane)/(n @ n))
+        projected = p - n * ((p @ n - f.face.plane) / (n @ n))
         wa = f.weights(projected)
         options = []
         if wa is not None:
@@ -135,8 +139,10 @@ def _point_nearest(faces, p):
         else:
             for i, j in f.edges:
                 u = f.points[j] - f.points[i]
-                along = min(F(1), max(F(0), ((p-f.points[i]) @ u)/(u @ u)))
-                options.append((f.points[i] + along*u, sparse_weights((i, j), (1-along, along))))
+                along = min(F(1), max(F(0), ((p - f.points[i]) @ u) / (u @ u)))
+                options.append(
+                    (f.points[i] + along * u, sparse_weights((i, j), (1 - along, along)))
+                )
         for q, w in options:
             delta = q - p
             d2 = delta @ delta
@@ -156,9 +162,11 @@ class MeshMeshQuery:
 
     @staticmethod
     def _boxes(mesh, t0, t1, margin):
-        d0, d1 = mesh.step*t0, mesh.step*t1
-        lo, hi = np.minimum(d0, d1)-margin, np.maximum(d0, d1)+margin
-        bounds = np.array([(*tuple(f.lo+lo), *tuple(f.hi+hi)) for f in mesh.facets], dtype=float)
+        d0, d1 = mesh.step * t0, mesh.step * t1
+        lo, hi = np.minimum(d0, d1) - margin, np.maximum(d0, d1) + margin
+        bounds = np.array(
+            [(*tuple(f.lo + lo), *tuple(f.hi + hi)) for f in mesh.facets], dtype=float
+        )
         maximum = np.finfo(np.float32).max
         raw = np.clip(bounds, -maximum, maximum).astype(np.float32)
         with np.errstate(over="ignore", under="ignore"):
@@ -177,9 +185,9 @@ class MeshMeshQuery:
         for side, (source, target) in enumerate(((self.a, self.b), (self.b, self.a))):
             target_points = np.array(list(target.points.values()))
             lo, hi = target_points.min(0), target_points.max(0)
-            shift = t*(source.step-target.step)
+            shift = t * (source.step - target.step)
             for i, original in source.points.items():
-                p = original+shift
+                p = original + shift
                 if any(p <= lo) or any(p >= hi):
                     continue
                 d2, supports = _point_nearest(target.facets, p)
@@ -191,15 +199,16 @@ class MeshMeshQuery:
                 if d2 == largest:
                     node = ((i, F(1)),)
                     pairs.update((w, node) if side else (node, w) for w in supports)
-        deepest = sorted((_support(self.a, self.b, u, v, t, intrusion=True) for u, v in pairs),
-                         key=_order)
+        deepest = sorted(
+            (_support(self.a, self.b, u, v, t, intrusion=True) for u, v in pairs), key=_order
+        )
         return tuple(deepest), inside
 
     def _nearest(self, t):
         a, b = self.a, self.b
-        motion = t*(b.step-a.step)
+        motion = t * (b.step - a.step)
         # Any vertex-pair L1 distance bounds the Euclidean boundary distance above.
-        pad = min(sum(abs(q+motion-p)) for p in a.points.values() for q in b.points.values())
+        pad = min(sum(abs(q + motion - p)) for p in a.points.values() for q in b.points.values())
         candidates = []
         for i, j in self.facet_pairs(t, t, pad):
             f, g = a.facets[i], b.facets[j]
@@ -210,21 +219,34 @@ class MeshMeshQuery:
             if best is not None and lower > best:
                 break
             f, g = a.facets[i], b.facets[j]
-            x, y = f.xyz+t*f.step, g.xyz+t*g.step
+            x, y = f.xyz + t * f.step, g.xyz + t * g.step
             # Use the same internal owner order if a caller exchanges its shape keys.
             reverse = (tuple(sorted(map(tuple, y))), g.ids) < (tuple(sorted(map(tuple, x))), f.ids)
             u, v, left, right = (g, f, y, x) if reverse else (f, g, x, y)
-            pair = _TrianglePair(u.shape, v.shape, _TriangleMotion(left,left,False),
-                                 _TriangleMotion(right,right,False), sweep=False)
+            pair = _TrianglePair(
+                u.shape,
+                v.shape,
+                _TriangleMotion(left, left, False),
+                _TriangleMotion(right, right, False),
+                sweep=False,
+            )
             w, d2 = pair.sample(F(0))
             if best is None or d2 < best:
                 best, nearest = d2, []
             if d2 == best:
                 wa, wb = w.first_weights, w.second_weights
                 if reverse:
-                    w = replace(w, normal=_xyz(-np.array(w.normal)), first_point=w.second_point,
-                                second_point=w.first_point, first_weights=wb, second_weights=wa)
-                nearest.append(MeshMeshSupport(_owners(a,w.first_weights), _owners(b,w.second_weights), w))
+                    w = replace(
+                        w,
+                        normal=_xyz(-np.array(w.normal)),
+                        first_point=w.second_point,
+                        second_point=w.first_point,
+                        first_weights=wb,
+                        second_weights=wa,
+                    )
+                nearest.append(
+                    MeshMeshSupport(_owners(a, w.first_weights), _owners(b, w.second_weights), w)
+                )
         if not nearest:
             raise SolverFailure("mesh_mesh_nearest_unresolved")
         return _representative(nearest)
@@ -235,7 +257,7 @@ class MeshMeshQuery:
         return _area2(tuple((p[i], p[j]) for p in f.xyz))
 
     def _separating(self, t, directions):
-        pts = [np.array(list(m.points.values())) + t*m.step for m in (self.a, self.b)]
+        pts = [np.array(list(m.points.values())) + t * m.step for m in (self.a, self.b)]
         for direction in directions:
             n = np.array(direction, dtype=object)
             p, q = (v @ n for v in pts)
@@ -246,7 +268,7 @@ class MeshMeshQuery:
     def sample(self, t, *, first_from_clear=False):
         a, b = self.a, self.b
         surfaces = {}
-        areas_a, areas_b = [F(0)]*len(a.facets), [F(0)]*len(b.facets)
+        areas_a, areas_b = [F(0)] * len(a.facets), [F(0)] * len(b.facets)
         opposed = set()
         crossing = False
         count = 0
@@ -263,22 +285,31 @@ class MeshMeshQuery:
                 else:
                     opposed.add(tuple(f.face.normal))
             for p in points:
-                wa, wb = f.weights(p - t*f.step), g.weights(p - t*g.step)
+                wa, wb = f.weights(p - t * f.step), g.weights(p - t * g.step)
                 if wa is None or wb is None:
                     raise SolverFailure("mesh_mesh_surface_address_unresolved")
                 surfaces[wa, wb] = None
         deepest, inside = self._intrusions(t)
-        direction = _unit(np.array(next(iter(opposed)), dtype=object))[0] if len(opposed) == 1 else None
+        direction = (
+            _unit(np.array(next(iter(opposed)), dtype=object))[0] if len(opposed) == 1 else None
+        )
         normal = None if direction is None else _xyz(direction)
-        boundary = tuple(sorted((_support(a,b,u,v,t,normal=normal) for u,v in surfaces), key=_order))
+        boundary = tuple(
+            sorted((_support(a, b, u, v, t, normal=normal) for u, v in surfaces), key=_order)
+        )
         distance = 0.0
         if boundary:
-            if all(area == self._full_area(f) for m, areas in ((a,areas_a),(b,areas_b))
-                   for f, area in zip(m.facets, areas, strict=True)):
+            if all(
+                area == self._full_area(f)
+                for m, areas in ((a, areas_a), (b, areas_b))
+                for f, area in zip(m.facets, areas, strict=True)
+            ):
                 relation = "coincident"
             elif deepest or crossing:
                 relation = "boundary_overlap"
-            elif first_from_clear or self._separating(t, [*opposed, (1,0,0), (0,1,0), (0,0,1)]):
+            elif first_from_clear or self._separating(
+                t, [*opposed, (1, 0, 0), (0, 1, 0), (0, 0, 1)]
+            ):
                 relation = "touching"
             else:
                 relation = "boundary_intersection_unclassified"
@@ -304,8 +335,9 @@ class MeshMeshQuery:
         # Parallel triangles can meet coplanarly. Their in-plane separating
         # directions are absent from the usual 3D face/cross-product axis set.
         lo, hi = window
-        directions = {direction_key(_cross3(f.face.normal, edge))
-                      for f in (a, b) for edge in f.edge_rays}
+        directions = {
+            direction_key(_cross3(f.face.normal, edge)) for f in (a, b) for edge in f.edge_rays
+        }
         for d in sorted(directions):
             axis = _Axis(d, a, b).interval()
             if axis is None:
@@ -319,8 +351,11 @@ class MeshMeshQuery:
         start = self.sample(F(0))
         if not moving:
             trace = MeshMeshTrace(start, start, None, None)
-            status = {"separated": "separated", "touching": "touching",
-                      "boundary_intersection_unclassified": "unresolved"}.get(start.relation, "overlap")
+            status = {
+                "separated": "separated",
+                "touching": "touching",
+                "boundary_intersection_unclassified": "unresolved",
+            }.get(start.relation, "overlap")
             return status, start.relation, start.witness, None, trace
 
         first = F(0) if start.relation != "separated" else None
@@ -334,7 +369,13 @@ class MeshMeshQuery:
             if end.relation != "separated":
                 raise SolverFailure("mesh_mesh_time_interval_inconsistent")
             sweep = CollisionSweep(start.witness.gap_m, end.witness.gap_m, None, None, None)
-            return "separated", "mesh_mesh_swept_separated", end.witness, sweep, MeshMeshTrace(start,end,None,None)
+            return (
+                "separated",
+                "mesh_mesh_swept_separated",
+                end.witness,
+                sweep,
+                MeshMeshTrace(start, end, None, None),
+            )
 
         if first == 0:
             entry = start
@@ -344,7 +385,7 @@ class MeshMeshQuery:
             entry = self.sample(first, first_from_clear=True)
         if first and (entry.relation != "touching" or not entry.boundary):
             raise SolverFailure("mesh_mesh_first_boundary_unresolved")
-        bracket = (floor(first*_GRID)/_GRID, ceil(first*_GRID)/_GRID)
+        bracket = (floor(first * _GRID) / _GRID, ceil(first * _GRID) / _GRID)
         sample_time = float(first)
         stored_time = F(sample_time)
         if stored_time == first:
@@ -357,6 +398,8 @@ class MeshMeshQuery:
             # The exact entry is kept separately. The ordinary sweep witness
             # must describe the actual binary time published in witness_time.
             sampled_witness = self.sample(stored_time).witness
-        trace = MeshMeshTrace(start,end,(first.numerator,first.denominator),entry)
-        sweep = CollisionSweep(start.witness.gap_m,end.witness.gap_m,bracket,sample_time,sampled_witness)
+        trace = MeshMeshTrace(start, end, (first.numerator, first.denominator), entry)
+        sweep = CollisionSweep(
+            start.witness.gap_m, end.witness.gap_m, bracket, sample_time, sampled_witness
+        )
         return "hit", "mesh_mesh_swept_boundary", end.witness, sweep, trace

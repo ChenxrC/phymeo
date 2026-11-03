@@ -50,6 +50,7 @@ class TyxWorldBatch:
                 "status_downloaded_bytes",
                 "summary_downloaded_bytes",
                 "snapshot_downloaded_bytes",
+                "kinematics_downloaded_bytes",
                 "launch_attempts",
                 "submitted_kernels",
                 "synchronizations",
@@ -276,6 +277,12 @@ class TyxWorldBatch:
                     t = self._read(self._row_tick, "snapshot")[0]
                     result[key] = self._bindings[i].checkpoint(row, t, self._held[i])
                 return result
+
+    def kinematics(self, keys=None):
+        """Read owned FP32 position and velocity rows with their world keys, widths and ticks."""
+        from ._world_kinematics import read_kinematics
+
+        return read_kinematics(self, keys)
 
     def summary(self):
         """Read two FP32 values per world: kinetic energy and sphere bottom z or slider q."""

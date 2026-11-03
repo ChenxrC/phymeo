@@ -103,3 +103,23 @@ def test_ball_arc_remains_outside_linear_sweep_contract():
     )
     row = detect(model, paths)
     assert row.status == "unsupported" and row.sweep is None
+
+
+def test_rotated_grid_and_zero_angle_translating_pivot():
+    rotation = np.array([[0, -1, 0], [0, 0, -1], [1, 0, 0]])
+    offset = np.array([2, -3, 4])
+    grid = ph.Heightfield([[0, 1, 0]]*3, (1, 1), origin=offset + rotation @ [-1, -1, 0],
+                          rotation=rotation)
+    start = offset + rotation @ [-0.75, 0.125, 1.25]
+    end = offset + rotation @ [0.75, 0.125, 1.25]
+    model, paths, land = scene(grid, start, 5/16, reverse=True)
+    ball_key = next(k for k in paths if k != land.key)
+    paths[ball_key] = ph.CollisionMotion(
+        [start], turn=ph.RigidTurn((0, 0, 0), end-start, (0, 1, 0), 0)
+    )
+    row = detect(model, paths)
+    assert row.status == "hit"
+    p = offset + rotation @ [0, 0.125, 1]
+    for event, t, n in ((row.heightfield.first_contact, Fraction(3, 8), [-0.6, 0, 0.8]),
+                        (row.heightfield.last_contact, Fraction(5, 8), [0.6, 0, 0.8])):
+        assert_event(event, t, land, 5/16, start, end, True, p, rotation @ n)

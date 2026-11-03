@@ -329,9 +329,9 @@
         "reason": "Newton 1.7 CollisionPipeline consumes one state. Velocity-adapted gaps do not publish a first-touch time."
       },
       "phymeo": {
-        "status": "gap",
-        "devices": [],
-        "reason": "CollisionShape cannot register a native heightfield or its cells."
+        "status": "run",
+        "devices": ["cpu"],
+        "reason": "The HOST path brackets first and last sphere contact on a fixed finite heightfield and returns material addresses sampled inside those brackets."
       }
     },
     {

@@ -24,6 +24,14 @@ with ph.CollisionWorkspace(model, "host") as workspace:
 
 `pair.heightfield.cell`、`triangle`、`vertex_ids` 与 `barycentric` 对应同一原始材料面。按行优先的材料 ID 取三个世界样本并加权，可重建地形支持点。球拥有自己的中心材料 ID，结合半径及法向即可重建另一侧支持点。多个最近三角面同距时，按行、列、面号取最小者。宽相分离的配对可直接返回 `separated` 和 `aabb`，需要读正间隙时可用 `CollisionPolicy.margin` 扩大候选范围。
 
-每轴至少有两个样本，样本总数受公共模型的 `MAX_VERTICES` 限制。构造器拒绝无效姿态或在世界坐标中塌陷的三角形。查询的初始顶点必须等于登记后的世界网格。窄相在 HOST 上用实际单元的世界包围盒筛选，再复用球–三角形几何核核对候选。首次相触和内核运行设备分别验收；本阶段覆盖离散姿态，进入宽相的扫描路径明确发布 `unsupported / heightfield_swept_pair`。
+每轴至少有两个样本，样本总数受公共模型的 `MAX_VERTICES` 限制。构造器拒绝无效姿态或在世界坐标中塌陷的三角形。查询的初始顶点必须等于登记后的世界网格。窄相在 HOST 上用实际单元的世界包围盒筛选，再复用球–三角形几何核核对候选。
 
 [冻结的 RR 输入](../../tests/reference_newton/rr/cases.json) · [两种次序、非方形旋转留出及有限边界](../../tests/collision/test_heightfield_sphere.py)
+
+## 固定地形与直线球心路径
+
+给球的 `CollisionMotion` 同时传起点和终点，可查询跨越整步的接触。固定地形和零转角的移动枢轴也接受同一球心直线。先用路径的扫掠包围盒筛选真实单元，再对各三角形的面、边、顶点分别求满足全部接触条件的最早时刻。用精确有理条件代入反向时间 1−t，得到正向末次相触。公开的时间区间按步长归一化，宽度不超过 2⁻⁴⁰。当前几何窄相运行在 HOST。运动地形和球心的非零转弧在候选对中发布 `unsupported / heightfield_swept_pair`。
+
+`pair.witness` 与 `pair.heightfield` 的顶层材料地址属于末姿态。首次相触可从 `pair.sweep.first_t` 或 `pair.heightfield.first_contact.interval` 读取，末次相触用 `pair.heightfield.last_contact.interval`。两事件各自的 `witness_time`、`witness` 和 `face` 对应同一个可表示的采样时刻。若根不能精确表示，返回的区间包围根，支持点和权重在区间内的采样时刻重建。初态已交叠时首次时刻为 0，末态仍交叠时末次时刻为 1；两座分离的屋脊可产生多个接触窗，中间可能分离。
+
+在上例中令球心从 `(-3/4, 1/8, 5/4)` 走到 `(3/4, 1/8, 5/4)`，首末相触分别在步长的 3/8 和 5/8。两个时刻的地形点均为 `(0, 1/8, 1)` m，地形指向球的法向分别为 `(-3/5, 0, 4/5)` 和 `(3/5, 0, 4/5)`。同一入口还区分有限外角的孤立擦边及仅差一个浮点刻度的近失。[连续路径和独立留出](../../tests/collision/test_heightfield_sphere_sweep.py)

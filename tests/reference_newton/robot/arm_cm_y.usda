@@ -1,0 +1,77 @@
+#usda 1.0
+(
+    defaultPrim = "arm"
+    metersPerUnit = 0.01
+    kilogramsPerUnit = 2
+    upAxis = "Y"
+)
+
+def Xform "arm" (
+    prepend apiSchemas = ["PhysicsArticulationRootAPI"]
+)
+{
+    # Re-author the physical Z-up rig in a Y-up stage, preserving world pose in SI.
+    quatf xformOp:orient = (0.70710678, -0.70710678, 0, 0)
+    uniform token[] xformOpOrder = ["xformOp:orient"]
+    def Xform "base" (
+        prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+    )
+    {
+        float physics:mass = 0.5
+        point3f physics:centerOfMass = (0, 0, 0)
+        float3 physics:diagonalInertia = (500, 500, 500)
+    }
+    def Xform "boom" (
+        prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+    )
+    {
+        double3 xformOp:translate = (25, -50, 12.5)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+        float physics:mass = 0.5
+        point3f physics:centerOfMass = (25, 0, 0)
+        float3 physics:diagonalInertia = (500, 500, 500)
+    }
+    def Xform "tool" (
+        prepend apiSchemas = ["PhysicsRigidBodyAPI", "PhysicsMassAPI"]
+    )
+    {
+        double3 xformOp:translate = (75, -50, 12.5)
+        quatf xformOp:orient = (0.70710678, 0, 0, 0.70710678)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+        float physics:mass = 0.25
+        point3f physics:centerOfMass = (12.5, -6.25, 3.125)
+        float3 physics:diagonalInertia = (500, 500, 500)
+        def Sphere "marker" (
+            prepend apiSchemas = ["PhysicsCollisionAPI"]
+        )
+        {
+            double radius = 3.125
+            double3 xformOp:translate = (12.5, -6.25, 3.125)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+    }
+    def PhysicsFixedJoint "mount"
+    {
+        rel physics:body1 = </arm/base>
+        quatf physics:localRot0 = (0.70710678, -0.70710678, 0, 0)
+    }
+    def PhysicsRevoluteJoint "yaw"
+    {
+        rel physics:body0 = </arm/base>
+        rel physics:body1 = </arm/boom>
+        point3f physics:localPos0 = (25, -50, 12.5)
+        uniform token physics:axis = "Z"
+        float physics:lowerLimit = -90
+        float physics:upperLimit = 120
+    }
+    def PhysicsPrismaticJoint "slide"
+    {
+        rel physics:body0 = </arm/boom>
+        rel physics:body1 = </arm/tool>
+        point3f physics:localPos0 = (50, 0, 0)
+        quatf physics:localRot0 = (0.70710678, 0, 0, 0.70710678)
+        uniform token physics:axis = "X"
+        float physics:lowerLimit = -10
+        float physics:upperLimit = 25
+    }
+}

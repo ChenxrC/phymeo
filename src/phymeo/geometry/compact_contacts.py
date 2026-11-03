@@ -111,6 +111,22 @@ def compact_contacts(detection, limits=None):
     return _project(detection.backend, detection.required_candidates, detection.pairs, limits)
 
 
+def _contact_limits(limits, keys):
+    if limits is None:
+        return {}
+    if not isinstance(limits, Mapping):
+        raise TypeError("limits_by_world must be a world mapping")
+    overrides = {}
+    for key, value in limits.items():
+        key = _integer(key, "world")
+        if key not in keys:
+            raise KeyError(key)
+        if not isinstance(value, ContactBufferLimits):
+            raise TypeError("every supplied output limit must be ContactBufferLimits")
+        overrides[key] = value
+    return overrides
+
+
 class CompactWorldContactWorkspace(WorldCollisionWorkspace):
     """Single-page same-world solver records with the original broad/narrow semantics.
 
@@ -135,18 +151,7 @@ class CompactWorldContactWorkspace(WorldCollisionWorkspace):
         with self._lock:
             if self._closed:
                 raise RuntimeError("world collision workspace is closed")
-            supplied = {} if limits_by_world is None else limits_by_world
-            if not isinstance(supplied, Mapping):
-                raise TypeError("limits_by_world must be a world mapping")
-            overrides = {}
-            for key, value in supplied.items():
-                key = _integer(key, "world")
-                if key not in self._keys:
-                    raise KeyError(key)
-                if not isinstance(value, ContactBufferLimits):
-                    raise TypeError("every supplied output limit must be ContactBufferLimits")
-                overrides[key] = value
-            self._active_limits = overrides
+            self._active_limits = _contact_limits(limits_by_world, self._keys)
             try:
                 return super().detect(motion_by_world, policy_by_world)
             finally:

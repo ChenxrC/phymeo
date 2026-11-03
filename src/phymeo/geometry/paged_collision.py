@@ -19,6 +19,7 @@ from ..constraints.collision_shapes import (
     _integer,
 )
 from .batched_collision import WorldCollisionWorkspace
+from .compact_contacts import CompactWorldContactWorkspace, _contact_limits
 
 __all__ = [
     "CollisionPage",
@@ -53,6 +54,9 @@ _COUNTERS = (
     "validated_mesh_attempts",
     "validated_mesh_builds",
     "validated_mesh_hits",
+    "compact_selected_slots",
+    "compact_validation_slots",
+    "compact_skipped_slots",
 )
 
 
@@ -191,10 +195,14 @@ class PagedWorldCollisionWorkspace:
     Worlds stay whole and follow registration order. Resident leaves are acquired lazily
     and evicted in least-recently-used order to satisfy the explicit page and byte budgets.
     Only this object's observations are public. A later page failure publishes no earlier
-    page results, even when an earlier leaf has already been evicted.
+    page results, even when an earlier leaf has already been evicted. Use result_format='contacts'
+    to retain contact and diagnostic rows on each page. The page budgets still bound pair slots.
     """
 
-    def __init__(self, worlds, backend="host", *, limits=None, cache_root=None):
+    def __init__(self, worlds, backend="host", *, limits=None, cache_root=None, result_format="full"):
+        if result_format not in ("full", "contacts"):
+            raise ValueError("result_format must be full or contacts")
+        self._result_format = result_format
         if backend not in ("host", "interpret", "cuda"):
             raise ValueError("collision backend must be host, interpret or cuda")
         self._limits = CollisionPageLimits() if limits is None else limits
@@ -277,7 +285,8 @@ class PagedWorldCollisionWorkspace:
             self._metrics[oldest]["evictions"] += 1
             self._release(oldest)
         t0 = perf_counter_ns()
-        work = WorldCollisionWorkspace(
+        factory = CompactWorldContactWorkspace if self._result_format == "contacts" else WorldCollisionWorkspace
+        work = factory(
             [(k, self._models[k]) for k in page.world_keys], self._backend, cache_root=self._cache
         )
         self._resident[i] = work
@@ -292,13 +301,17 @@ class PagedWorldCollisionWorkspace:
         )
         return work
 
-    def detect(self, motion_by_world, policy_by_world):
+    def detect(self, motion_by_world, policy_by_world, *, limits_by_world=None):
+        """Query all pages. Optional per-world contact/diagnostic budgets apply to contacts output."""
         with self._lock:
             if self._closed:
                 raise RuntimeError("paged collision workspace is closed")
             try:
                 motion, rules = self._inputs(motion_by_world, policy_by_world)
-            except (TypeError, ValueError):
+                if limits_by_world is not None and self._result_format != "contacts":
+                    raise ValueError("limits_by_world requires contacts output")
+                overrides = _contact_limits(limits_by_world, self._models)
+            except (TypeError, ValueError, KeyError):
                 self._counts["input_rejections"] += 1
                 raise
             attempts = {}
@@ -313,7 +326,11 @@ class PagedWorldCollisionWorkspace:
                     metric["dispatches"] += 1
                     t0 = perf_counter_ns()
                     try:
-                        output = work.detect(local_motion, local_rules)
+                        if overrides:
+                            local_limits = {k: overrides[k] for k in page.world_keys if k in overrides}
+                            output = work.detect(local_motion, local_rules, limits_by_world=local_limits)
+                        else:
+                            output = work.detect(local_motion, local_rules)
                     finally:
                         metric["dispatch_ns"] += perf_counter_ns() - t0
                     metric["completed_dispatches"] += 1
@@ -381,6 +398,7 @@ class PagedWorldCollisionWorkspace:
                 )
             return dict(
                 backend=self._backend,
+                result_format=self._result_format,
                 world_count=len(self._models),
                 result_pair_slots=self._total_pairs,
                 pages=pages,

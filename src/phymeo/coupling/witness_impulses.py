@@ -21,6 +21,20 @@ def _chart_point(frame, local, origin):
     ])
 
 
+def _material_anchor(shape, path, weights):
+    """Locate the reported material address on the current registered geometry."""
+    if not weights:
+        raise ValueError("collision witness has no material vertex address")
+    vertices = dict(zip(shape.vertex_ids, path.start, strict=True))
+    try:
+        return np.array([
+            fsum(float(weight) * float(vertices[node][k]) for node, weight in weights)
+            for k in range(3)
+        ])
+    except KeyError as exc:
+        raise ValueError("collision witness refers to an unregistered material vertex") from exc
+
+
 def _current_normal(pair, witness, endpoints, ports, local_vertices, tol):
     """Requery the immutable two-shape model in the witness-relative coordinate system."""
     if tuple(s.key for s in pair.witness_shapes) != (pair.first, pair.second):
@@ -66,6 +80,15 @@ def _current_normal(pair, witness, endpoints, ports, local_vertices, tol):
         or hypot(*(np.asarray(fresh.second_point) - points[1])) > tol
     ):
         raise ValueError("collision witness disagrees with the current shape pose or normal")
+    for shape, old, live in zip(
+        pair.witness_shapes,
+        (witness.first_weights, witness.second_weights),
+        (fresh.first_weights, fresh.second_weights),
+        strict=True,
+    ):
+        path = paths[shape.key]
+        if hypot(*(_material_anchor(shape, path, old) - _material_anchor(shape, path, live))) > tol:
+            raise ValueError("collision witness material address disagrees with the current shape")
     return fresh.normal
 
 

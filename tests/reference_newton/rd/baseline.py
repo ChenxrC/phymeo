@@ -31,6 +31,14 @@ def _newton_model(case, newton, wp, device):
     if family == "sphere_triangle":
         pose = wp.transform(wp.vec3(*p["center_m"]), wp.quat_identity())
         builder.add_shape_sphere(-1, radius=p["radius_m"], xform=pose, cfg=cfg)
+    elif family == "curved_triangle":
+        pose = wp.transform(wp.vec3(*p["center_m"]), wp.quat(*p["orientation_xyzw"]))
+        dims = p["dimensions_m"]
+        if p["kind"] == "ellipsoid":
+            builder.add_shape_ellipsoid(-1, rx=dims[0], ry=dims[1], rz=dims[2], xform=pose, cfg=cfg)
+        else:
+            add = {"cylinder": builder.add_shape_cylinder, "cone": builder.add_shape_cone}[p["kind"]]
+            add(-1, radius=dims[0], half_height=dims[1], xform=pose, cfg=cfg)
     elif family == "finite_plane":
         builder.add_shape_plane(width=p["width_m"], length=p["length_m"], cfg=cfg)
     elif family == "heightfield":

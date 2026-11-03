@@ -55,6 +55,28 @@ def collision_and_force(ph,np,mode,root):
                     completed_broad=box.stats()["completed_launches"],force_sites=None if law is None else law.stats()["sites"])
 
 
+def floating_impact(ph,np):
+    child=ph.RobotModel(np.array([-1]),("prismatic",),np.array([[1.,0,0]]),np.array([[0.,0,0,1.]]),
+                        np.array([[1.,0,0]]),np.ones(1),np.zeros((1,3)),np.full((1,3),.5),np.zeros(3))
+    root=ph.RigidBodyModel(np.array([.5]),np.full((1,3),.5),np.zeros(3))
+    arm=ph.FloatingRobotModel(root,np.zeros(3),child)
+    q=np.array([0.,0,0,0,0,0,1,0])
+    body=ph.RigidBodyModel(np.ones(1),np.full((1,3),.5),np.zeros(3))
+    s=ph.RigidBodyState(np.array([[1.,.125,0.]]),np.array([[0.,0,0,1.]]),
+                        np.array([[0.,-1.,0.]]),np.zeros((1,3)))
+    rk,bk=[ph.CollisionKey(1,k,0) for k in (3,8)]
+    shapes=ph.CollisionModel([ph.CollisionShape(k,"sphere",(0,),.125) for k in (rk,bk)])
+    with ph.CollisionWorkspace(shapes) as work:
+        (pair,)=ph.detect(shapes,{rk:ph.CollisionMotion([[1.,-.125,0.]]),bk:ph.CollisionMotion(s.position)},ph.CollisionPolicy(),work).pairs
+    assert pair.status=="touching"
+    ports={"arm":ph.FloatingRobotPointPort(arm,ph.FloatingRobotState(q,np.zeros(7)),np.array([1]),np.zeros((1,3)),domain="arm"),
+           "ball":ph.RigidPointPort(body,s,np.array([0]),np.array([[0.,-.125,0.]]),domain="ball")}
+    impulse=ph.solve_witness_impulses(ports,[(pair,{rk:("arm",0),bk:("ball",0)})],[0.],[0.])
+    np.testing.assert_allclose(impulse.states["arm"].v, [0,-.125,0,0,0,-.25,0],atol=1e-10)
+    assert abs(impulse.normal_impulses[0]-.625)<1e-10
+    return dict(impulse_ns=float(impulse.normal_impulses[0]),kinetic_change_j=impulse.energy_change)
+
+
 def field_sample(ph,np,mode,root):
     values=np.broadcast_to((np.arange(3)*.25-.25)[:,None,None],(3,3,3)).copy()
     grid=ph.SignedDistanceGrid(values,origin_m=(0,0,0),spacing_m=(.25,.25,.25))
@@ -80,16 +102,19 @@ def many_worlds(ph,mode,root):
         shapes=[ph.CollisionShape(k,"sphere",(17,),.125) for k in key]
         worlds[world]=ph.CollisionModel(shapes)
         paths[world]={k:ph.CollisionMotion([[x,0,0]]) for k,x in zip(key,(0,.1875,2,4),strict=True)}
-    with ph.PagedWorldCollisionWorkspace(worlds.items(),mode,cache_root=root) as batch:
+    with ph.PagedWorldCollisionWorkspace(worlds.items(),mode,cache_root=root,result_format="contacts") as batch:
         obs=batch.detect(paths,{w:ph.CollisionPolicy() for w in worlds})
         assert len(obs)==65 and len(batch.layout)>=2
         hits=[]
         for w,rows in obs.items():
-            assert len(rows.pairs)==6
-            pair,=[row for row in rows.pairs if row.status=="overlap"]
+            assert isinstance(rows,ph.CompactContactBuffer) and rows.required_contacts==1
+            assert rows.required_candidates==1 and not rows.diagnostics
+            pair,=rows.contacts
+            assert pair.status=="overlap"
             assert pair.first.world==pair.second.world==w and abs(pair.witness.gap_m+1/16)<1e-6
             hits.append(w)
-        return dict(worlds=len(obs),shape_count=260,pages=len(batch.layout),local_hits=len(hits))
+        assert batch.stats()["backend_counts"]["compact_skipped_slots"]==65*5
+        return dict(worlds=len(obs),shape_count=260,pages=len(batch.layout),local_hits=len(hits),skipped_pair_rows=65*5)
 
 
 def main():
@@ -133,6 +158,12 @@ def main():
         assert "pxr" not in sys.modules
         result.update(robot=robot_sample(ph,np),force=collision_and_force(ph,np,args.mode,args.out.parent/"cache"),
                       field=field_sample(ph,np,args.mode,args.out.parent/"cache"),pages=many_worlds(ph,args.mode,args.out.parent/"cache"))
+    if args.mode!="usd":
+        result["floating_impact"]=floating_impact(ph,np)
+    used=[Path(module.__file__).resolve() for name,module in tuple(sys.modules.items())
+          if (name=="phymeo" or name.startswith("phymeo.")) and getattr(module,"__file__",None)]
+    assert used and all(file.is_relative_to(site) for file in used)
+    result["installed_phymeo_module_count"]=len(used)
     with args.out.open("x",encoding="utf8") as out:
         json.dump(result,out,allow_nan=False,indent=2)
     print(json.dumps(result,allow_nan=False))

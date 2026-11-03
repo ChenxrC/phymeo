@@ -10,9 +10,11 @@ from ..dynamics.rotation import advance_world_orientation, quaternion_matrix
 from ._convex_support import _KINDS, static_convex_support
 from ._curved_solids import _rotation, _support_upper
 from ._prism_pair_exact import sqrt_bounds
+from ._rotation_angle import axis_length_bounds, rotate_enclosures
 from ._round_sweep import _translation, _vector
 from ._triangle_pair_sweep import _FacePath
 from .collision_witness import CollisionSweep
+from ..core.capabilities import SolverFailure
 
 _MAX_CELLS = 256
 _DEPTH = 18
@@ -35,7 +37,7 @@ class _AffineSupport:
         exact = self.start + t * self.delta
         points = exact.astype(float)
         errors = (np.array([_vector(row) for row in points], dtype=object) - exact)
-        error = float(max(sum(abs(x) for x in row) for row in errors))
+        error = max(sum(abs(x) for x in row) for row in errors)
         return CollisionMotion(points,body_orientation_xyzw=self.body_orientation), error
 
     def upper(self, direction, t):
@@ -55,9 +57,83 @@ class _AffineSupport:
         return max(starts + t * speeds)
 
 
+    def interval_upper(self, direction, lo, hi):
+        return self.upper(direction, lo), self.upper(direction, hi)
+
+
+class _RigidSupport(_AffineSupport):
+    """A finite body rotating about an independently translating world pivot."""
+
+    def __init__(self, shape, motion):
+        super().__init__(shape, motion)
+        self.turn = motion.turn
+        self.angle = Fraction(self.turn.angle)
+        self.pivot = _vector(self.turn.pivot_start)
+        self.travel = _vector(self.turn.pivot_end) - self.pivot
+        self.relative = self.start - self.pivot
+        self.axis = _vector(self.turn.axis)
+        self.axis_length = axis_length_bounds(self.axis)
+        self.extent = Fraction(shape.radius)
+        if self.dims is not None:
+            self.extent = max(self.dims) if shape.kind == "ellipsoid" else sqrt_bounds(self.dims @ self.dims, 96)[1]
+        self.reach = max(sum(abs(x) for x in row) for row in self.relative) + self.extent
+        self.rotation_cache = {}
+
+    def _rotated(self, t):
+        if t not in self.rotation_cache:
+            items = rotate_enclosures(self.relative, self.axis, self.axis_length, t * self.angle)
+            points = np.array([v for v, _ in items], dtype=object)
+            error = max(e for _, e in items)
+            axes = None
+            if self.axes is not None:
+                columns = rotate_enclosures(self.axes.T, self.axis, self.axis_length, t * self.angle)
+                axes = np.column_stack([v for v, _ in columns])
+                # Every material point is inside the local ball of radius extent.
+                error += self.extent * sum(e for _, e in columns)
+            self.rotation_cache[t] = points, axes, error
+        return self.rotation_cache[t]
+
+    def pose(self, t):
+        if not t:
+            return super().pose(t)
+        relative, axes, error = self._rotated(t)
+        exact = relative + self.pivot + t * self.travel
+        points = exact.astype(float)
+        rounding = np.array([_vector(row) for row in points], dtype=object) - exact
+        error += max(sum(abs(x) for x in row) for row in rounding)
+        orientation = None
+        if axes is not None:
+            entry = (0., 0., 0., 1.) if self.body_orientation is None else self.body_orientation
+            spin = np.asarray(self.turn.axis) * self.turn.angle / np.linalg.norm(self.turn.axis)
+            orientation = advance_world_orientation(np.array([entry]), spin[None, :], float(t))[0]
+        pose = CollisionMotion(points, body_orientation_xyzw=orientation)
+        if axes is not None:
+            # Compare the actual stored quaternion's frame with the bounded Rodrigues
+            # frame before using the static solver's signed gap at this sample.
+            difference = _rotation(self.shape.curved, pose) - axes
+            error += self.extent * sum(abs(x) for x in difference.flat)
+        return pose, error
+
+    def interval_upper(self, direction, lo, hi):
+        mid = (lo + hi) / 2
+        relative, axes, error = self._rotated(mid)
+        n = _vector(direction)
+        norm = sqrt_bounds(n @ n, 96)[1]
+        height = max(relative @ n)
+        if axes is not None:
+            height += _support_upper(self.shape.kind, self.dims, axes.T @ n)
+        else:
+            height += Fraction(self.shape.radius) * norm
+        # Arc length bounds every point's displacement from the midpoint orientation.
+        radius = self.reach * min(Fraction(2), abs(self.angle) * (hi - lo) / 2)
+        support = height + (radius + error) * norm + self.pivot @ n
+        speed = self.travel @ n
+        return support + lo * speed, support + hi * speed
+
+
 class _Window:
-    def __init__(self, a, b, ma, mb):
-        self.a, self.b = _AffineSupport(a, ma), _AffineSupport(b, mb)
+    def __init__(self, a, b):
+        self.a, self.b = a, b
         self.observed = {}
         self.cells = 0
 
@@ -75,7 +151,9 @@ class _Window:
                 continue
             forward = tuple(float(x) for x in direction)
             backward = tuple(-x for x in forward)
-            if all(self.a.upper(forward,t) + self.b.upper(backward,t) < 0 for t in (lo,hi)):
+            a = self.a.interval_upper(forward, lo, hi)
+            b = self.b.interval_upper(backward, lo, hi)
+            if all(x + y < 0 for x, y in zip(a, b, strict=True)):
                 return True
         return False
 
@@ -91,7 +169,11 @@ class _Window:
         axes = ((1,0,0),(-1,0,0),(0,1,0),(0,-1,0),(0,0,1),(0,0,-1))
 
         def finish(status, reason, interval=None, t=None):
-            trace=replace(end[3],time_cells=self.cells,static_samples=len(self.observed))
+            error = max(s[4] for s in self.observed.values())
+            trace=replace(end[3],time_cells=self.cells,static_samples=len(self.observed),
+                          pose_error_upper_m=np.nextafter(float(error),np.inf) if error else 0.)
+            if error > Fraction(1, 5000000):
+                return "unresolved","support_sample_pose_resolution",w1,trace,None
             if status=="unresolved":
                 return status,reason,w1,trace,None
             entry=None if t is None else self.sample(t)[2]
@@ -199,7 +281,11 @@ def affine_convex_contact(a,b,ma,mb):
             if any(m.turn and m.turn.angle for m in (ma,mb)):
                 if any(m.turn and abs(m.turn.angle)>2*np.pi for m in (ma,mb)):
                     return None
-                return _turn_clear(a,b,ma,mb)
-            return _Window(a,b,ma,mb).run()
-    except (FloatingPointError, OverflowError):
+                clear = _turn_clear(a, b, ma, mb)
+                if clear is not None:
+                    return clear
+            bodies = [(_RigidSupport if m.turn and m.turn.angle else _AffineSupport)(s,m)
+                      for s,m in ((a,ma),(b,mb))]
+            return _Window(*bodies).run()
+    except (SolverFailure, FloatingPointError, OverflowError):
         return "unresolved","support_path_coordinate_resolution",None,None,None

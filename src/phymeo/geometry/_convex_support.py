@@ -31,6 +31,7 @@ class ConvexSupportTrace:
     iterations: int
     time_cells: int = 0
     static_samples: int = 1
+    pose_error_upper_m: float = 0.0
 
 
 @dataclass

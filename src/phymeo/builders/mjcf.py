@@ -47,7 +47,9 @@ def _compiler(robot):
     compiler = _child(robot, "compiler", "mujoco", required=False)
     if compiler is None:
         return True, "xyz", True
-    _attributes(compiler, {"angle", "eulerseq", "inertiafromgeom", "autolimits", "meshdir"}, "compiler")
+    _attributes(
+        compiler, {"angle", "eulerseq", "inertiafromgeom", "autolimits", "meshdir"}, "compiler"
+    )
     _children(compiler, set(), "compiler")
     angle = compiler.get("angle", "degree")
     if angle not in {"degree", "radian"}:
@@ -205,7 +207,9 @@ def _colliders(body, link, index, degrees, sequence, named_geoms, resolve_mesh):
                 _numbers(geom, "size", count, where)
             position, rotation = _pose(geom, where, degrees, sequence)
             size = resolve_mesh(_name(geom, "mesh", where), where)
-            colliders.append(make_collider(name, link, index, ordinal, position, rotation, kind, size))
+            colliders.append(
+                make_collider(name, link, index, ordinal, position, rotation, kind, size)
+            )
             continue
         counts = {"sphere": 1, "box": 3, "cylinder": 2, "capsule": 2, "ellipsoid": 3}
         if kind not in counts:

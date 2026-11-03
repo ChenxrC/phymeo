@@ -154,7 +154,7 @@ def _link_collisions(link, link_name, link_index, xml_path):
             size = load_obj_mesh(
                 xml_path,
                 _name(primitive, "filename", where),
-                _numbers(primitive, "scale", 3, where, (1., 1., 1.)),
+                _numbers(primitive, "scale", 3, where, (1.0, 1.0, 1.0)),
                 where=where,
             )
         elif primitive.tag == "sphere":

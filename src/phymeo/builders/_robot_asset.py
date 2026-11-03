@@ -119,7 +119,9 @@ def make_collider(name, link_name, link_index, ordinal, position, orientation, k
     if kind == "mesh":
         native_kind, radius = "mesh", 0.0
         triangles = size.triangles
-        vertices = position + np.asarray(size.vertices) @ quaternion_matrix(orientation[None, :])[0].T
+        vertices = (
+            position + np.asarray(size.vertices) @ quaternion_matrix(orientation[None, :])[0].T
+        )
     elif kind == "sphere":
         native_kind, radius = "sphere", float(size[0])
         vertices = position[None, :]
@@ -144,7 +146,12 @@ def make_collider(name, link_name, link_index, ordinal, position, orientation, k
     key = CollisionKey(0, link_index + 1, ordinal)
     try:
         shape = CollisionShape(
-            key, native_kind, tuple(range(len(vertices))), radius, triangles=triangles, curved=curved
+            key,
+            native_kind,
+            tuple(range(len(vertices))),
+            radius,
+            triangles=triangles,
+            curved=curved,
         )
         if kind == "mesh":
             from ..geometry._closed_mesh import ClosedMesh

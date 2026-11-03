@@ -8,7 +8,6 @@ import pytest
 import phymeo as ph
 from phymeo.coupling.curved_manifold import select_static_support
 
-
 UP = np.array([0.0, 1.0, 0.0])
 IDENTITY = np.array([0.0, 0.0, 0.0, 1.0])
 H = 1 / 64
@@ -17,10 +16,14 @@ H = 1 / 64
 def detect_support(*, curved_first=False, center=(0.0, 0.5, 0.0), normal=UP):
     low, high = ph.CollisionKey(9, 1, 0), ph.CollisionKey(9, 7, 0)
     cylinder, plane = (low, high) if curved_first else (high, low)
-    shapes = ph.CollisionModel([
-        ph.CollisionShape(cylinder, "cylinder", (31,), curved=ph.CurvedSolid("cylinder", (0.5, 1.0))),
-        ph.CollisionShape(plane, "plane", (17,), normal=tuple(normal)),
-    ])
+    shapes = ph.CollisionModel(
+        [
+            ph.CollisionShape(
+                cylinder, "cylinder", (31,), curved=ph.CurvedSolid("cylinder", (0.5, 1.0))
+            ),
+            ph.CollisionShape(plane, "plane", (17,), normal=tuple(normal)),
+        ]
+    )
     paths = {
         plane: ph.CollisionMotion([np.zeros(3)]),
         cylinder: ph.CollisionMotion([center], body_orientation_xyzw=IDENTITY),
@@ -42,15 +45,23 @@ def physical_step(indices, *, curved_first=False, speed=-1.0, gravity=0.0, trans
     state = ph.FloatingRobotState(np.r_[center, IDENTITY], np.r_[speed * UP, np.zeros(3)])
     inputs = ph.FloatingRobotInputs(np.empty(0), np.zeros((1, 3)), np.zeros((1, 3)))
     bed = ph.RigidBodyModel(np.zeros(1), np.zeros((1, 3)), np.zeros(3))
-    rest = ph.RigidBodyState(np.zeros((1, 3)), IDENTITY[None, :], np.zeros((1, 3)), np.zeros((1, 3)))
+    rest = ph.RigidBodyState(
+        np.zeros((1, 3)), IDENTITY[None, :], np.zeros((1, 3)), np.zeros((1, 3))
+    )
     ids = np.zeros(2, dtype=np.int64)
     sites = {"cylinder": (ids, ends - center), "plane": (ids, ends)}
     rows = [(pair, {cylinder: ("cylinder", i), plane: ("plane", i)}, i) for i in indices]
 
     def step(at):
         return ph.step_floating_contacts(
-            {"cylinder": (floating, at, inputs)}, sites, rows, [0.0] * len(rows), [0.0] * len(rows),
-            H, fixed_bodies={"plane": (bed, rest)}, local_normals={plane: UP},
+            {"cylinder": (floating, at, inputs)},
+            sites,
+            rows,
+            [0.0] * len(rows),
+            [0.0] * len(rows),
+            H,
+            fixed_bodies={"plane": (bed, rest)},
+            local_normals={plane: UP},
         )
 
     return floating, state, rest, sites, step
@@ -65,7 +76,9 @@ def test_complete_two_endpoint_impact_stops_the_whole_cylinder(curved_first, ord
     # A centered 1 kg body loses 1 m/s. Equal arms require equal impulses for zero torque.
     np.testing.assert_allclose(out.impulses.normal_impulses, [0.5, 0.5], atol=2e-9, rtol=0)
     support = -UP if curved_first else UP  # returned world impulses act on the second shape
-    np.testing.assert_allclose(out.impulses.world_impulses, np.tile(0.5 * support, (2, 1)), atol=2e-9, rtol=0)
+    np.testing.assert_allclose(
+        out.impulses.world_impulses, np.tile(0.5 * support, (2, 1)), atol=2e-9, rtol=0
+    )
     observed = out.states["cylinder"]
     np.testing.assert_allclose(observed.q, before_q, atol=2e-10, rtol=0)
     np.testing.assert_allclose(observed.v, np.zeros(6), atol=2e-9, rtol=0)
@@ -86,7 +99,7 @@ def test_two_endpoints_support_the_uniform_gravity_kick():
         out = step(state)
         assert out.report.accepted, out.report.reason
         np.testing.assert_allclose(out.predicted["cylinder"].v[:3], -8 * H * UP, atol=2e-9, rtol=0)
-        np.testing.assert_allclose(out.impulses.normal_impulses, [4*H, 4*H], atol=2e-9, rtol=0)
+        np.testing.assert_allclose(out.impulses.normal_impulses, [4 * H, 4 * H], atol=2e-9, rtol=0)
         state = out.states["cylinder"]
         np.testing.assert_allclose(state.v, np.zeros(6), atol=2e-9, rtol=0)
         np.testing.assert_allclose(state.q, original, atol=2e-10, rtol=0)
@@ -125,8 +138,10 @@ def test_selection_translates_each_owner_offset_preserving_a_nonzero_gap(curved_
     chosen = select_static_support(pair, old, np.int64(1))
     assert chosen.normal == old.normal and chosen.gap_m == old.gap_m
     assert chosen.first_weights == old.first_weights and chosen.second_weights == old.second_weights
-    for key, point, offset in ((pair.first, chosen.first_point, chosen.first_offset),
-                               (pair.second, chosen.second_point, chosen.second_offset)):
+    for key, point, offset in (
+        (pair.first, chosen.first_point, chosen.first_offset),
+        (pair.second, chosen.second_point, chosen.second_offset),
+    ):
         if key == cylinder:
             np.testing.assert_array_equal(point, [0.0, 0.125, 1.0])
             np.testing.assert_array_equal(offset, np.asarray(point) - center)

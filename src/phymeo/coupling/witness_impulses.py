@@ -57,7 +57,9 @@ def _unpack_row(row):
         return pair, bindings, None
     if len(row) == 3:
         return row
-    raise ValueError("a witness row requires a collision pair, bindings and an optional support index")
+    raise ValueError(
+        "a witness row requires a collision pair, bindings and an optional support index"
+    )
 
 
 def _current_normal(pair, witness, endpoints, ports, local_vertices, local_normals, tol, index):
@@ -192,7 +194,11 @@ def solve_witness_impulses(
             ):
                 raise ValueError("a first-contact witness with a physical sample time is required")
             now = sweep.witness_time
-            if now == 0 and pair.mesh_round is not None and pair.mesh_round.start.relation != "touching":
+            if (
+                now == 0
+                and pair.mesh_round is not None
+                and pair.mesh_round.start.relation != "touching"
+            ):
                 raise ValueError("initial solid occupancy does not supply a first-impact normal")
             if not (sweep.first_t[0] <= now <= sweep.first_t[1]) or (
                 event_time is not None and event_time != now

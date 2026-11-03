@@ -44,8 +44,15 @@ def _require_complete_support(rows):
             if span is not None and span[0] != span[1]:
                 raise SolverFailure("extended capsule support requires a complete contact manifold")
             continue
-        if curved.locus != "segment" or isinstance(index, bool) or not isinstance(index, Integral) or index not in (0, 1):
-            raise SolverFailure("a floating step requires both endpoints of a supported segment manifold")
+        if (
+            curved.locus != "segment"
+            or isinstance(index, bool)
+            or not isinstance(index, Integral)
+            or index not in (0, 1)
+        ):
+            raise SolverFailure(
+                "a floating step requires both endpoints of a supported segment manifold"
+            )
         original, found = segments.setdefault((pair.first, pair.second), (pair, set()))
         if pair is not original or index in found:
             raise SolverFailure("duplicate or inconsistent sampled segment manifold")

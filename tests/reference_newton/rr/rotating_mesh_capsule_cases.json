@@ -1,0 +1,98 @@
+{
+  "id": "rotating-closed-mesh-finite-capsule-v1",
+  "unit": "metre",
+  "time": "normalized [0,1]; theta(t) = stored signed angle * t",
+  "bar_bounds_m": [
+    [
+      1,
+      -0.125,
+      -0.25
+    ],
+    [
+      2,
+      0.125,
+      0.25
+    ]
+  ],
+  "u_asset": "cases.json#u_prism",
+  "capsule_radius_m": 0.125,
+  "axis_ends_z_m": [
+    -1,
+    1
+  ],
+  "pose_samples": [
+    0,
+    0.4375,
+    0.46875,
+    1
+  ],
+  "analytic_targets": {
+    "bar-shaft": {"status": "first_contact", "time": "acos(1/6)/pi", "axis_u_span": [0.375, 0.625], "local_x_m": "sqrt(35)/4", "endpoint_ball_clearance_lower_m": 0.625},
+    "bar-shaft-mirror-swap": {"transform_of": "bar-shaft", "status": "first_contact", "axis_u_span": [0.375, 0.625]},
+    "bar-clear": {"status": "clear", "minimum_skin_gap_m": "(17-sqrt(257))/8"},
+    "u-notch": {"status": "clear", "minimum_skin_gap_m": 0.625},
+    "bar-other-world": {"geometry_of": "bar-shaft", "status": "first_contact", "query_eligibility": "different_world"}
+  },
+  "cases": [
+    {
+      "id": "bar-shaft",
+      "mesh": "bar",
+      "axis_y_m": 1.5,
+      "angle_rad": 3.141592653589793,
+      "body_order": "mesh_first",
+      "placement": "identity",
+      "worlds": [
+        0,
+        0
+      ]
+    },
+    {
+      "id": "bar-shaft-mirror-swap",
+      "mesh": "bar",
+      "axis_y_m": -1.5,
+      "angle_rad": -3.141592653589793,
+      "body_order": "capsule_first",
+      "placement": "cyclic_translation",
+      "worlds": [
+        0,
+        0
+      ]
+    },
+    {
+      "id": "bar-clear",
+      "mesh": "bar",
+      "axis_y_m": 2.25,
+      "angle_rad": 3.141592653589793,
+      "body_order": "mesh_first",
+      "placement": "identity",
+      "worlds": [
+        0,
+        0
+      ]
+    },
+    {
+      "id": "u-notch",
+      "mesh": "u",
+      "axis_y_m": 0.25,
+      "angle_rad": 6.283185307179586,
+      "body_order": "capsule_first",
+      "placement": "identity",
+      "worlds": [
+        0,
+        0
+      ]
+    },
+    {
+      "id": "bar-other-world",
+      "mesh": "bar",
+      "axis_y_m": 1.5,
+      "angle_rad": 3.141592653589793,
+      "body_order": "mesh_first",
+      "placement": "identity",
+      "worlds": [
+        4,
+        5
+      ]
+    }
+  ]
+}

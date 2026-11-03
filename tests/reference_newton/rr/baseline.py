@@ -54,6 +54,13 @@ def _add_shape(builder, asset, path, cfg, flip):
         vertices, indices = _u_geometry(asset["scale_xyz"], flip)
         return builder.add_shape_mesh(body, mesh=newton.Mesh(vertices, indices), cfg=cfg)
     rotation = wp.transform((0.0, 0.0, 0.0), asset.get("local_quat_xyzw", (0, 0, 0, 1)))
+    if kind == "capsule":
+        return builder.add_shape_capsule(
+            body, radius=asset["radius_m"], half_height=asset["half_height_m"], xform=rotation, cfg=cfg
+        )
+    if kind == "box":
+        hx, hy, hz = asset["half_extents_xyz_m"]
+        return builder.add_shape_box(body, hx=hx, hy=hy, hz=hz, xform=rotation, cfg=cfg)
     if kind == "ellipsoid":
         rx, ry, rz = asset["radii_xyz_m"]
         return builder.add_shape_ellipsoid(body, rx=rx, ry=ry, rz=rz, xform=rotation, cfg=cfg)

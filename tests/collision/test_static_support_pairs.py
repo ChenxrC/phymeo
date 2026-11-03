@@ -1,5 +1,6 @@
 """Independent common-normal controls for bounded convex rigid primitives."""
 
+import json
 from itertools import product
 from math import hypot
 
@@ -74,7 +75,7 @@ def query(name, gap, swapped=False):
 @pytest.mark.parametrize("name", ["two-cylinders", "ellipsoid-sphere", "cone-capsule", "cone-cylinder", "oblique-hull"])
 @pytest.mark.parametrize("gap", [1 / 16, 0.0, -1 / 32])
 @pytest.mark.parametrize("swapped", [False, True])
-def test_support_pairs_publish_distance_and_material_owners(name, gap, swapped):
+def test_support_pairs_publish_distance_and_material_owners(name, gap, swapped, tmp_path):
     row, shapes, paths, n, h = query(name, gap, swapped)
     assert row.status == ("separated" if gap > 0 else "overlap" if gap < 0 else "touching"), row.reason
     w, trace = row.witness, row.support_map
@@ -96,6 +97,14 @@ def test_support_pairs_publish_distance_and_material_owners(name, gap, swapped):
         assert sum(x for _, x in weights) == pytest.approx(1.0, abs=1e-12)
         anchor = sum(x * vertices[i] for i, x in weights)
         np.testing.assert_allclose(anchor + (0 if offset is None else offset), point, rtol=0, atol=1e-9)
+
+    readback = {
+        "pair": name, "input_gap_m": gap, "swapped": swapped, "status": row.status,
+        "gap_m": w.gap_m, "lower_m": trace.gap_lower_m, "upper_m": trace.gap_upper_m,
+        "normal": w.normal, "first_point": w.first_point, "second_point": w.second_point,
+        "phase": trace.phase, "support_calls": trace.support_calls, "iterations": trace.iterations,
+    }
+    (tmp_path / "convex-result.json").write_text(json.dumps(readback, allow_nan=False), encoding="utf-8")
 
 
 def test_static_support_does_not_claim_a_swept_toi():
@@ -123,3 +132,26 @@ def test_rotating_both_static_bodies_transports_the_common_normal():
         (row,) = ph.detect(model, {ka: ma, kb: mb}, ph.CollisionPolicy(), work).pairs
     assert row.status == "overlap" and row.witness.gap_m == pytest.approx(-1 / 32, abs=2e-5)
     np.testing.assert_allclose(row.witness.normal, [0, 1, 0], rtol=0, atol=3e-3)
+
+
+@pytest.mark.tyx
+def test_static_support_uses_real_partition_broad_phase(tyx_mode, tmp_path):
+    models, paths, policies = {}, {}, {}
+    for key, gap in ((18, 1/16), (4, -1/32)):
+        a, b, _, _ = control("oblique-hull", gap)
+        ka, kb = ph.CollisionKey(key, 0, 0), ph.CollisionKey(key, 1, 0)
+        sa, ma = shape_and_motion(ka, a, np.zeros(3))
+        sb, mb = shape_and_motion(kb, b, np.zeros(3))
+        models[key], paths[key] = ph.CollisionModel([sb, sa]), {ka: ma, kb: mb}
+        policies[key] = ph.CollisionPolicy(margin=0.25)
+    with ph.WorldCollisionWorkspace(models.items(), tyx_mode, cache_root=tmp_path) as batch:
+        result = batch.detect(paths, policies)
+        for key, gap in ((18, 1/16), (4, -1/32)):
+            row, = result[key].pairs
+            assert row.status == ("overlap" if gap < 0 else "separated")
+            assert row.witness.source == "host-convex-support"
+            assert abs(row.witness.gap_m-gap) <= 2e-5
+        stats = batch.stats()
+        assert stats["host_pair_table_slots"] == 2 and stats["completed_launches"] > 0
+        if tyx_mode == "cuda":
+            assert stats["device_pair_table_slots"] == 2 and stats["synchronizations"] > 0

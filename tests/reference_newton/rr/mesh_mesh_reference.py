@@ -73,7 +73,7 @@ def run_case(case, inputs, assets, device):
                                np.allclose(s["normal_a_to_b"], normal, rtol=0, atol=case["tolerances"]["normal_component"]) and
                                abs(s["a_support_world_m"][0]-origins[0][0]-wall) <= length
                                for s in deepest]
-                    result["strict_matches"] = sum(correct)
+                    result["strict_matches"] = int(sum(correct))
                     if not boundary or not deepest or not all(correct):
                         failures.append(f"t={t} {sum(correct)}/{len(deepest)} complete intrusion witnesses, {len(boundary)} boundary intersections")
                     if deepest:

@@ -483,9 +483,9 @@ def _detect_pairs(workspace, paths, flags, selected, proximity=False, resolved=N
             code = int(flags[offset + local])
             ready = resolved.get(offset + local)
             if code == 0 and {a.kind, b.kind} == {"heightfield", "sphere"}:
-                status, reason, witness, chart = heightfield_sphere_contact(a, b, ma, mb)
+                status, reason, witness, chart, sweep = heightfield_sphere_contact(a, b, ma, mb)
                 ready = CollisionPair(
-                    a.key, b.key, "RR", True, status, reason, witness, heightfield=chart
+                    a.key, b.key, "RR", True, status, reason, witness, sweep, heightfield=chart
                 )
             if ready is not None:
                 batch.append((a, b, ma, mb, code, ready, 0, 0))

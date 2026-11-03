@@ -1070,11 +1070,9 @@ def _detection_result(model, paths, backend, count, rows, bounds):
         )
         for s, row in zip(model.shapes, bounds, strict=True)
     )
-    # Geometry of these rigid shapes is fully determined by their ordered vertices.
-    # Large meshes share the same immutable registration across all of their contacts.
-    shapes = {
-        s.key: s for s in model.shapes if s.kind in ("sphere", "capsule", "hull", "mesh", "plate")
-    }
+    # Store references to immutable rigid registrations. Heightfields require
+    # a separate binding for their grid frame before an impulse can use them.
+    shapes = {s.key: s for s in model.shapes if s.rigid and s.kind != "heightfield"}
     bound_rows = tuple(
         replace(row, witness_shapes=(shapes[row.first], shapes[row.second]))
         if row.status in ("touching", "hit") and row.first in shapes and row.second in shapes

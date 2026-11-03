@@ -1,6 +1,7 @@
 """Bind actual published surface witnesses to the existing multi-domain Coulomb solver."""
 
 from collections.abc import Mapping
+from dataclasses import replace
 from math import fsum, hypot
 
 import numpy as np
@@ -8,6 +9,7 @@ import numpy as np
 from ..constraints.collision_shapes import CollisionModel, CollisionMotion, CollisionPolicy
 from ..constraints.contact_impulse import solve_contact_impulses
 from ..core.validation import finite_real
+from ..dynamics.rotation import matrix_quaternion
 from ..geometry.collision_pipeline import CollisionPair, CollisionWorkspace, detect
 from .domain_graph import MultiDomainPointOperator
 
@@ -35,13 +37,14 @@ def _material_anchor(shape, path, weights):
         raise ValueError("collision witness refers to an unregistered material vertex") from exc
 
 
-def _current_normal(pair, witness, endpoints, ports, local_vertices, tol):
+def _current_normal(pair, witness, endpoints, ports, local_vertices, local_normals, tol):
     """Requery the immutable two-shape model in the witness-relative coordinate system."""
     if tuple(s.key for s in pair.witness_shapes) != (pair.first, pair.second):
         raise ValueError("collision witness lacks a supported live rigid shape registration")
     origin = np.asarray(witness.first_point)
     points = []
     paths = {}
+    posed_shapes = []
     for shape, (domain, row), published in zip(
         pair.witness_shapes, endpoints, (witness.first_point, witness.second_point), strict=True
     ):
@@ -55,16 +58,26 @@ def _current_normal(pair, witness, endpoints, ports, local_vertices, tol):
         points.append(actual)
         vertices = local_vertices.get(shape.key)
         if vertices is None:
-            if shape.kind != "sphere":
+            if shape.kind not in ("sphere", "plane") and shape.curved is None:
                 raise ValueError("collision witness requires registered body-local shape vertices")
             vertices = ((0.0, 0.0, 0.0),)
         vertices = np.asarray(vertices, dtype=np.float64)
         if vertices.shape != (len(shape.vertex_ids), 3) or not np.isfinite(vertices).all():
             raise ValueError("witness shape vertices must match the registered material order")
-        paths[shape.key] = CollisionMotion([_chart_point(frame, vertex, origin) for vertex in vertices])
+        if shape.kind == "plane":
+            normal = np.asarray(local_normals.get(shape.key), dtype=np.float64)
+            if normal.shape != (3,) or not np.isfinite(normal).all() or not normal.any():
+                raise ValueError("a plane witness requires its oriented body-local normal")
+            shape = replace(shape, normal=tuple(frame[1] @ (normal / np.max(np.abs(normal)))))
+        posed_shapes.append(shape)
+        orientation = matrix_quaternion(frame[1]) if shape.curved is not None else None
+        paths[shape.key] = CollisionMotion(
+            [_chart_point(frame, vertex, origin) for vertex in vertices],
+            body_orientation_xyzw=orientation,
+        )
     if hypot(*(points[0] - points[1])) > tol:
         raise ValueError("collision witness ports do not meet at one material point")
-    model = CollisionModel(pair.witness_shapes)
+    model = CollisionModel(posed_shapes)
     with CollisionWorkspace(model, "host") as work:
         (current,) = detect(model, paths, CollisionPolicy(margin=tol), work).pairs
     fresh = current.witness
@@ -100,6 +113,7 @@ def solve_witness_impulses(
     *,
     sample="pose",
     local_vertices=None,
+    local_normals=None,
     velocity_tolerance=1e-10,
     response_tolerance=1e-12,
     position_tolerance=1e-9,
@@ -111,8 +125,10 @@ def solve_witness_impulses(
     A static row must be touching. First-contact rows must share one reported witness
     time. The HOST impulse adapter checks both material frames and queries the current
     rigid shapes again in a common local chart. Supply local_vertices keyed by shape,
-    in registered vertex order. A sphere defaults to its body origin. Vertex-defined
-    capsules, hulls, closed meshes and plates require their full local geometry.
+    in registered vertex order. The center of a sphere or curved solid and the
+    anchor of a plane default to the body origin. A plane requires its oriented
+    body-local normal in local_normals. CurvedSolid.orientation_xyzw is body-local.
+    A vertex-defined shape requires its full local geometry.
     The returned world_impulses act on the second collision shape in each row.
     """
     if sample not in ("pose", "first_contact"):
@@ -122,8 +138,10 @@ def solve_witness_impulses(
         raise ValueError("position tolerance must be non-negative")
     if local_vertices is None:
         local_vertices = {}
-    if not isinstance(local_vertices, Mapping):
-        raise TypeError("local_vertices must be a mapping keyed by collision shape")
+    if local_normals is None:
+        local_normals = {}
+    if not isinstance(local_vertices, Mapping) or not isinstance(local_normals, Mapping):
+        raise TypeError("local_vertices and local_normals must be mappings keyed by collision shape")
     first, second, witnesses, pairs = [], [], [], []
     event_time = None
     for pair, bindings in rows:
@@ -175,8 +193,10 @@ def solve_witness_impulses(
     graph = MultiDomainPointOperator(ports, second, first)
     if set(local_vertices) - {key for pair in pairs for key in (pair.first, pair.second)}:
         raise ValueError("witness geometry supplied for an unbound shape")
+    if set(local_normals) - {s.key for p in pairs for s in p.witness_shapes if s.kind == "plane"}:
+        raise ValueError("body-local normal supplied for an unbound plane")
     normals = np.asarray([
-        _current_normal(pair, witness, (a, b), ports, local_vertices, tol)
+        _current_normal(pair, witness, (a, b), ports, local_vertices, local_normals, tol)
         for pair, witness, a, b in zip(pairs, witnesses, first, second, strict=True)
     ], dtype=np.float64).reshape(-1, 3)
     return solve_contact_impulses(

@@ -9,7 +9,6 @@ import phymeo as ph
 from phymeo.builders.urdf import RobotAsset
 from phymeo.dynamics.robot_kinematics import forward_kinematics
 
-
 ARM = Path(__file__).parent / "reference_newton" / "robot" / "arm.mjcf.xml"
 INERTIA = '<inertial pos="0.125 0 0" mass="2" diaginertia="1 2 2.5"/>'
 MODEL = f"""
@@ -58,24 +57,35 @@ def test_mjcf_match_reference_arm():
     assert marker.name == "marker" and marker.link_index == 1 and marker.shape.radius == 0.03125
     for q, v, p, speed in [
         ([np.pi / 2, 0.125], [0.5, -0.125], [0, 0.0625, 0.15625], [-0.15625, -0.125, 0]),
-        ([-np.arctan2(4, 3), -0.0625], [-0.75, 0.0625], [0.6375, -0.9125, 0.15625],
-         [-0.259375, -0.253125, 0]),
+        (
+            [-np.arctan2(4, 3), -0.0625],
+            [-0.75, 0.0625],
+            [0.6375, -0.9125, 0.15625],
+            [-0.259375, -0.253125, 0],
+        ),
     ]:
         q = np.array(q)
-        port = ph.RobotPointPort(asset.model, ph.RobotState(q, np.array(v)), [1],
-                                 np.asarray(marker.local_vertices))
+        port = ph.RobotPointPort(
+            asset.model, ph.RobotState(q, np.array(v)), [1], np.asarray(marker.local_vertices)
+        )
         np.testing.assert_allclose(port.positions()[0], p, atol=2e-12, rtol=0)
         np.testing.assert_allclose(port.velocities()[0], speed, atol=2e-12, rtol=0)
-        np.testing.assert_allclose(asset.collision_motion(q)[marker.shape.key].start[0], p,
-                                   atol=2e-12, rtol=0)
+        np.testing.assert_allclose(
+            asset.collision_motion(q)[marker.shape.key].start[0], p, atol=2e-12, rtol=0
+        )
 
 
-@pytest.mark.parametrize("unit,sequence,base,axis,point", [
-    ("degree", "xyz", [0.75, 2, 3], [0, -0.8, -0.6], [0.875, 1.8, 3.35]),
-    ("radian", "xyz", [0.75, 2, 3], [0, -0.8, -0.6], [0.875, 1.8, 3.35]),
-    ("degree", "XYZ", [1, 2, 3.25], [0.8, -0.6, 0], [1.2, 2.35, 3.125]),
-])
-def test_nested_euler_quaternion_frames_and_shape_owners(tmp_path, unit, sequence, base, axis, point):
+@pytest.mark.parametrize(
+    "unit,sequence,base,axis,point",
+    [
+        ("degree", "xyz", [0.75, 2, 3], [0, -0.8, -0.6], [0.875, 1.8, 3.35]),
+        ("radian", "xyz", [0.75, 2, 3], [0, -0.8, -0.6], [0.875, 1.8, 3.35]),
+        ("degree", "XYZ", [1, 2, 3.25], [0.8, -0.6, 0], [1.2, 2.35, 3.125]),
+    ],
+)
+def test_nested_euler_quaternion_frames_and_shape_owners(
+    tmp_path, unit, sequence, base, axis, point
+):
     xml = MODEL.replace('angle="degree"', f'angle="{unit}" eulerseq="{sequence}"')
     if unit == "radian":
         xml = xml.replace("90 0 90", "1.5707963267948966 0 1.5707963267948966")
@@ -90,7 +100,9 @@ def test_nested_euler_quaternion_frames_and_shape_owners(tmp_path, unit, sequenc
     np.testing.assert_allclose(asset.upper, [0.5, np.pi / 3])
     root, ball, box = asset.collisions
     assert [(x.name, x.link_index) for x in (root, ball, box)] == [
-        ("base_mark", -1), ("probe", 0), ("tipbox", 1)
+        ("base_mark", -1),
+        ("probe", 0),
+        ("tipbox", 1),
     ]
     assert asset.collision_model.excluded == ((ball.shape.key, box.shape.key),)
     np.testing.assert_allclose(np.max(box.local_vertices, axis=0), [0.25, 0.125, 0.0625])
@@ -110,7 +122,7 @@ def test_nested_euler_quaternion_frames_and_shape_owners(tmp_path, unit, sequenc
 
 
 def test_default_model_name_and_diagonal_fullinertia(tmp_path):
-    xml = MODEL.replace('model="local_rig"', '').replace(
+    xml = MODEL.replace('model="local_rig"', "").replace(
         'diaginertia="1 2 2.5"', 'fullinertia="1 2 2.5 0 0 0"'
     )
     asset = read(file(tmp_path, xml))
@@ -119,33 +131,38 @@ def test_default_model_name_and_diagonal_fullinertia(tmp_path):
 
 
 def test_inertial_frame_and_explicit_gravity_override(tmp_path):
-    xml = MODEL.replace('diaginertia="1 2 2.5"',
-                        'diaginertia="1 2 2.5" quat="0.7071067811865476 0 0 0.7071067811865476"')
+    xml = MODEL.replace(
+        'diaginertia="1 2 2.5"',
+        'diaginertia="1 2 2.5" quat="0.7071067811865476 0 0 0.7071067811865476"',
+    )
     asset = read(file(tmp_path, xml), gravity=(0, 0, 0))
     np.testing.assert_allclose(asset.model.inertia_diagonal, [[2, 1, 2.5]] * 2, atol=1e-12)
     np.testing.assert_array_equal(asset.model.gravity, [0, 0, 0])
 
 
-@pytest.mark.parametrize("old,new,match", [
-    ('angle="degree"', 'angle="grad"', "angle"),
-    ('angle="degree"', 'angle="degree" eulerseq="xqz"', "eulerseq"),
-    ('inertiafromgeom="false"', 'inertiafromgeom="true"', "inertiafromgeom"),
-    ('range="-0.25 0.5"', 'range="-0.25 0.5" limited="false"', "limited|bounded"),
-    ('<joint name="travel"', '<joint pos="0.1 0 0" name="travel"', "pos|anchor"),
-    ('<joint name="travel"', '<joint ref="0.25" name="travel"', "ref"),
-    ('<joint name="spin"', '<joint type="slide" name="extra"/><joint name="spin"', "joint"),
-    ('type="hinge"', 'type="ball"', "ball"),
-    ('<geom name="probe"', '<geom friction="0.2 0.1 0.1" name="probe"', "friction"),
-    ('<geom name="probe"', '<geom contype="2" name="probe"', "mask|contype"),
-    ('type="box" size="0.25 0.125 0.0625"', 'type="cylinder" size="0.25 0.125"', "cylinder"),
-    ('<worldbody>', '<default/><worldbody>', "default"),
-    (INERTIA, '', "inertial"),
-    ('name="probe"', 'name="base_mark"', "duplicate"),
-    ('diaginertia="1 2 2.5"', 'fullinertia="1 2 2.5 0.2 0 0"', "inertia"),
-    ('diaginertia="1 2 2.5"', 'diaginertia="1 2 2.5" euler="0 0 30"', "inertia"),
-    ('euler="90 0 90"', 'euler="90 0 90" quat="1 0 0 0"', "orient|quat|euler"),
-    ('quat="0.7071067811865476 0 0 0.7071067811865476"', 'quat="0 0 0 0"', "quat"),
-])
+@pytest.mark.parametrize(
+    "old,new,match",
+    [
+        ('angle="degree"', 'angle="grad"', "angle"),
+        ('angle="degree"', 'angle="degree" eulerseq="xqz"', "eulerseq"),
+        ('inertiafromgeom="false"', 'inertiafromgeom="true"', "inertiafromgeom"),
+        ('range="-0.25 0.5"', 'range="-0.25 0.5" limited="false"', "limited|bounded"),
+        ('<joint name="travel"', '<joint pos="0.1 0 0" name="travel"', "pos|anchor"),
+        ('<joint name="travel"', '<joint ref="0.25" name="travel"', "ref"),
+        ('<joint name="spin"', '<joint type="slide" name="extra"/><joint name="spin"', "joint"),
+        ('type="hinge"', 'type="ball"', "ball"),
+        ('<geom name="probe"', '<geom friction="0.2 0.1 0.1" name="probe"', "friction"),
+        ('<geom name="probe"', '<geom contype="2" name="probe"', "mask|contype"),
+        ('type="box" size="0.25 0.125 0.0625"', 'type="cylinder" size="0.25 0.125"', "cylinder"),
+        ("<worldbody>", "<default/><worldbody>", "default"),
+        (INERTIA, "", "inertial"),
+        ('name="probe"', 'name="base_mark"', "duplicate"),
+        ('diaginertia="1 2 2.5"', 'fullinertia="1 2 2.5 0.2 0 0"', "inertia"),
+        ('diaginertia="1 2 2.5"', 'diaginertia="1 2 2.5" euler="0 0 30"', "inertia"),
+        ('euler="90 0 90"', 'euler="90 0 90" quat="1 0 0 0"', "orient|quat|euler"),
+        ('quat="0.7071067811865476 0 0 0.7071067811865476"', 'quat="0 0 0 0"', "quat"),
+    ],
+)
 def test_mjcf_reports_unrepresented_semantics(tmp_path, old, new, match):
     with pytest.raises(ValueError, match=match):
         read(file(tmp_path, MODEL.replace(old, new)))

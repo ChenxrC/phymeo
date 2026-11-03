@@ -77,7 +77,9 @@ def _body_inertia(body, name, degrees, sequence, *, root=False):
         tensor = np.diag(_numbers(entry, "diaginertia", 3, where))
     else:
         if "euler" in entry.attrib or "quat" in entry.attrib:
-            raise ValueError(f"{where}: fullinertia uses the body frame and cannot specify orientation")
+            raise ValueError(
+                f"{where}: fullinertia uses the body frame and cannot specify orientation"
+            )
         xx, yy, zz, xy, xz, yz = _numbers(entry, "fullinertia", 6, where)
         tensor = np.array([[xx, xy, xz], [xy, yy, yz], [xz, yz, zz]])
     return principal_inertia(mass, com, frame, tensor, where, root=root)
@@ -103,7 +105,11 @@ def _joint(joint, name, degrees, automatic):
     if bounds[0] >= bounds[1]:
         raise ValueError(f"{where} needs an increasing range")
     axis = unit_axis(_numbers(joint, "axis", 3, where, (0, 0, 1)), where)
-    return "revolute" if kind == "hinge" else "prismatic", axis, (float(bounds[0]), float(bounds[1]), None, None)
+    return (
+        "revolute" if kind == "hinge" else "prismatic",
+        axis,
+        (float(bounds[0]), float(bounds[1]), None, None),
+    )
 
 
 def _colliders(body, link, index, degrees, sequence, named_geoms):
@@ -129,7 +135,11 @@ def _colliders(body, link, index, degrees, sequence, named_geoms):
             continue
         if masks != (1, 1):
             raise ValueError(f"{where} has unsupported contype/conaffinity masks {masks}")
-        _attributes(geom, {"name", "pos", "quat", "euler", "type", "size", "contype", "conaffinity", "rgba"}, where)
+        _attributes(
+            geom,
+            {"name", "pos", "quat", "euler", "type", "size", "contype", "conaffinity", "rgba"},
+            where,
+        )
         _children(geom, set(), where)
         kind = geom.get("type", "sphere")
         if kind not in {"sphere", "box"}:
@@ -227,7 +237,16 @@ def load_mjcf(path: str | Path, *, gravity=None) -> RobotAsset:
     if not order:
         raise ValueError("MJCF RobotModel requires at least one moving link")
     return assemble_robot(
-        name, root, order, parents, joints, joint_data, bodies, colliders,
+        name,
+        root,
+        order,
+        parents,
+        joints,
+        joint_data,
+        bodies,
+        colliders,
         default_gravity if gravity is None else gravity,
-        root_xyz=root_xyz, root_xyzw=root_quat, excluded=excluded,
+        root_xyz=root_xyz,
+        root_xyzw=root_quat,
+        excluded=excluded,
     )

@@ -196,33 +196,55 @@ def _heightfield_sweep_observation(case, pair, grid_motion, path, radius):
         center = _position(path, event.witness_time)
         w, face = event.witness, event.face
         np.testing.assert_allclose(
-            np.asarray(face.barycentric) @ grid_motion.start[list(face.vertex_ids)], w.first_point,
-            rtol=0, atol=tol["length_m"]
+            np.asarray(face.barycentric) @ grid_motion.start[list(face.vertex_ids)],
+            w.first_point,
+            rtol=0,
+            atol=tol["length_m"],
         )
         np.testing.assert_allclose(
             center - radius * np.asarray(w.normal), w.second_point, rtol=0, atol=tol["length_m"]
         )
         assert abs(w.gap_m) <= tol["length_m"]
-        observed[name] = dict(interval_fraction=event.interval, interval_s=(lo * duration, hi * duration),
-                              witness_fraction=event.witness_time, gap_m=w.gap_m, center_m=center.tolist(),
-                              normal_a_to_b=w.normal, terrain_point_m=w.first_point, sphere_point_m=w.second_point,
-                              cell=face.cell, triangle=face.triangle, vertex_ids=face.vertex_ids,
-                              barycentric=face.barycentric)
+        observed[name] = dict(
+            interval_fraction=event.interval,
+            interval_s=(lo * duration, hi * duration),
+            witness_fraction=event.witness_time,
+            gap_m=w.gap_m,
+            center_m=center.tolist(),
+            normal_a_to_b=w.normal,
+            terrain_point_m=w.first_point,
+            sphere_point_m=w.second_point,
+            cell=face.cell,
+            triangle=face.triangle,
+            vertex_ids=face.vertex_ids,
+            barycentric=face.barycentric,
+        )
     first = observed["entry"]
     assert first["interval_fraction"] == pair.sweep.first_t
     assert first["interval_s"][0] <= expected["first_time_s"] <= first["interval_s"][1]
-    np.testing.assert_allclose(first["center_m"], expected["first_center_m"], rtol=0, atol=tol["length_m"])
-    np.testing.assert_allclose(first["terrain_point_m"], expected["first_point_world_m"],
-                               rtol=0, atol=tol["length_m"])
-    np.testing.assert_allclose(first["normal_a_to_b"], expected["first_normal_a_to_b"],
-                               rtol=0, atol=tol["normal_component"])
+    np.testing.assert_allclose(
+        first["center_m"], expected["first_center_m"], rtol=0, atol=tol["length_m"]
+    )
+    np.testing.assert_allclose(
+        first["terrain_point_m"], expected["first_point_world_m"], rtol=0, atol=tol["length_m"]
+    )
+    np.testing.assert_allclose(
+        first["normal_a_to_b"],
+        expected["first_normal_a_to_b"],
+        rtol=0,
+        atol=tol["normal_component"],
+    )
     return observed
 
 
 def _phymeo_heightfield(case, inputs, assets, device):
     import phymeo as ph
 
-    if device != "cpu" or inputs["query"] not in ("sampled_poses", "first_touch") or np.any(inputs["a_path_m"]):
+    if (
+        device != "cpu"
+        or inputs["query"] not in ("sampled_poses", "first_touch")
+        or np.any(inputs["a_path_m"])
+    ):
         raise ValueError("The heightfield comparison needs a fixed grid and a HOST query")
     field, ball = assets
     heights = np.array(field["heights_yx_m"])
@@ -235,7 +257,9 @@ def _phymeo_heightfield(case, inputs, assets, device):
     terrain = ph.CollisionShape(
         field_key, "heightfield", tuple(range(grid.vertex_count)), heightfield=grid
     )
-    model = ph.CollisionModel([terrain, ph.CollisionShape(ball_key, "sphere", (0,), ball["radius_m"])])
+    model = ph.CollisionModel(
+        [terrain, ph.CollisionShape(ball_key, "sphere", (0,), ball["radius_m"])]
+    )
     field_motion = ph.CollisionMotion(grid.world_vertices())
     samples = []
     with ph.CollisionWorkspace(model, "host") as work:
@@ -244,7 +268,9 @@ def _phymeo_heightfield(case, inputs, assets, device):
             paths = {field_key: field_motion, ball_key: ph.CollisionMotion([start], [end])}
             (pair,) = ph.detect(model, paths, ph.CollisionPolicy(), work).pairs
             assert pair.first == field_key and pair.second == ball_key and pair.family == "RR"
-            values = _heightfield_sweep_observation(case, pair, field_motion, inputs["b_path_m"], ball["radius_m"])
+            values = _heightfield_sweep_observation(
+                case, pair, field_motion, inputs["b_path_m"], ball["radius_m"]
+            )
             return dict(backend=work.stats()["backend"], **values)
         for fraction in inputs["sample_fractions"]:
             center = _position(inputs["b_path_m"], fraction)
@@ -252,16 +278,30 @@ def _phymeo_heightfield(case, inputs, assets, device):
             (pair,) = ph.detect(model, paths, ph.CollisionPolicy(), work).pairs
             assert pair.family == "RR" and pair.first == field_key and pair.second == ball_key
             assert pair.status in ("separated", "touching", "overlap") and pair.sweep is None
-            sample = dict(fraction=fraction, prescribed_time_s=fraction * inputs["duration_s"],
-                          contact=pair.status != "separated", status=pair.status, reason=pair.reason)
+            sample = dict(
+                fraction=fraction,
+                prescribed_time_s=fraction * inputs["duration_s"],
+                contact=pair.status != "separated",
+                status=pair.status,
+                reason=pair.reason,
+            )
             if pair.witness is not None:
                 w, chart = pair.witness, pair.heightfield
                 assert chart is not None
                 tri = field_motion.start[list(chart.vertex_ids)]
-                np.testing.assert_allclose(chart.barycentric @ tri, w.first_point, rtol=0, atol=1e-10)
-                sample.update(gap_m=w.gap_m, normal_a_to_b=w.normal, a_support_world_m=w.first_point,
-                              b_support_world_m=w.second_point, cell=chart.cell, triangle=chart.triangle,
-                              vertex_ids=chart.vertex_ids, barycentric=chart.barycentric)
+                np.testing.assert_allclose(
+                    chart.barycentric @ tri, w.first_point, rtol=0, atol=1e-10
+                )
+                sample.update(
+                    gap_m=w.gap_m,
+                    normal_a_to_b=w.normal,
+                    a_support_world_m=w.first_point,
+                    b_support_world_m=w.second_point,
+                    cell=chart.cell,
+                    triangle=chart.triangle,
+                    vertex_ids=chart.vertex_ids,
+                    barycentric=chart.barycentric,
+                )
             samples.append(sample)
         return dict(backend=work.stats()["backend"], samples=samples)
 

@@ -6,8 +6,8 @@ from xml.etree import ElementTree as ET
 
 import numpy as np
 
-from ._robot_asset import RobotAsset, assemble_robot, make_collider, principal_inertia, unit_axis
 from ._robot_asset import LinkCollision as LinkCollision
+from ._robot_asset import RobotAsset, assemble_robot, make_collider, principal_inertia, unit_axis
 from ._robot_xml import _attributes, _child, _children, _name, _number, _numbers
 
 
@@ -22,10 +22,14 @@ def _origin(element, where):
     sr, sp, sy = np.sin(half)
     cr, cp, cy = np.cos(half)
     # URDF roll, pitch, yaw are extrinsic rotations: Rz(yaw) Ry(pitch) Rx(roll).
-    quat = np.array([
-        sr * cp * cy - cr * sp * sy, cr * sp * cy + sr * cp * sy,
-        cr * cp * sy - sr * sp * cy, cr * cp * cy + sr * sp * sy,
-    ])
+    quat = np.array(
+        [
+            sr * cp * cy - cr * sp * sy,
+            cr * sp * cy + sr * cp * sy,
+            cr * cp * sy - sr * sp * cy,
+            cr * cp * cy + sr * sp * sy,
+        ]
+    )
     return xyz, quat
 
 
@@ -152,7 +156,11 @@ def _link_collisions(link, link_name, link_index):
             size = _numbers(primitive, "size", 3, where) / 2
         else:
             raise ValueError(f"{where}: unsupported collision geometry <{primitive.tag}>")
-        result.append(make_collider(name, link_name, link_index, ordinal, origin, orientation, primitive.tag, size))
+        result.append(
+            make_collider(
+                name, link_name, link_index, ordinal, origin, orientation, primitive.tag, size
+            )
+        )
     return result
 
 
@@ -189,4 +197,6 @@ def load_urdf(path: str | Path, *, gravity=(0.0, 0.0, -9.81)) -> RobotAsset:
         joint_data.append(_joint_data(joint, joint_name))
         bodies.append(_inertial(links[link_name], link_name))
         colliders.extend(_link_collisions(links[link_name], link_name, indices[link_name]))
-    return assemble_robot(name, root, order, parents, joints, joint_data, bodies, colliders, gravity)
+    return assemble_robot(
+        name, root, order, parents, joints, joint_data, bodies, colliders, gravity
+    )

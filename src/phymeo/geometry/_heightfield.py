@@ -110,7 +110,11 @@ class _TerrainSphere:
             points = ball_point, local.first_point
             weights = local.second_weights, local.first_weights
             normal = tuple(-v for v in normal)
-        return CollisionWitness(local.gap_m, normal, *points, *weights, "host-heightfield"), face, signed
+        return (
+            CollisionWitness(local.gap_m, normal, *points, *weights, "host-heightfield"),
+            face,
+            signed,
+        )
 
     def event_bounds(self):
         end = self.start + self.step
@@ -126,7 +130,9 @@ class _TerrainSphere:
                 enter = feature.entry(None)
                 if enter is None:
                     continue
-                reverse = first_entry(tuple(_reversed_polynomial(p) for p in feature.conditions), None)
+                reverse = first_entry(
+                    tuple(_reversed_polynomial(p) for p in feature.conditions), None
+                )
                 if reverse is None:
                     raise SolverFailure("heightfield_time_reversal_unresolved")
                 leave = (_GRID - reverse[1], _GRID - reverse[0])
@@ -167,7 +173,9 @@ def heightfield_sphere_contact(a, b, ma, mb):
             return HeightfieldEvent((lo / _GRID, hi / _GRID), float(time), witness, address)
 
         entry, leave = event(first), event(last)
-        sweep = CollisionSweep(start.gap_m, end.gap_m, entry.interval, entry.witness_time, entry.witness)
+        sweep = CollisionSweep(
+            start.gap_m, end.gap_m, entry.interval, entry.witness_time, entry.witness
+        )
         return "hit", "first_contact", end, HeightfieldTrace(*face_fields, entry, leave), sweep
     except (SolverFailure, OverflowError, FloatingPointError) as error:
         return "unresolved", str(error), None, None, None

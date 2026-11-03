@@ -8,7 +8,6 @@ import pytest
 
 import phymeo as ph
 
-
 CATALOG = json.loads(
     (Path(__file__).parents[1] / "reference_newton" / "rr" / "cases.json").read_text("utf-8")
 )
@@ -80,8 +79,15 @@ def test_frozen_ridge_samples(case_id, reverse):
         row = detect(model, paths)
         if expected["contact"]:
             assert row.status == "overlap"
-            check_witness(row, terrain, center, sphere["radius_m"], expected["a_point_world_m"],
-                          expected["normal_a_to_b"], expected["gap_m"])
+            check_witness(
+                row,
+                terrain,
+                center,
+                sphere["radius_m"],
+                expected["a_point_world_m"],
+                expected["normal_a_to_b"],
+                expected["gap_m"],
+            )
         else:
             assert row.status == "separated"
 
@@ -154,8 +160,12 @@ def test_swept_candidate_filter_capacity_and_stale_pose():
 
 
 def test_invalid_sizes_pose_and_resource_limit():
-    for heights, spacing in [([[0, 1]], (1, 1)), ([[0, 1], [1, np.nan]], (1, 1)),
-                             ([[0, 0], [0, 0]], (0, 1)), (np.zeros((2, 4097)), (1, 1))]:
+    for heights, spacing in [
+        ([[0, 1]], (1, 1)),
+        ([[0, 1], [1, np.nan]], (1, 1)),
+        ([[0, 0], [0, 0]], (0, 1)),
+        (np.zeros((2, 4097)), (1, 1)),
+    ]:
         with pytest.raises(ValueError):
             ph.Heightfield(heights, spacing)
     with pytest.raises(ValueError):

@@ -5,7 +5,12 @@ from itertools import product
 
 import numpy as np
 
-from ..constraints.collision_shapes import CollisionKey, CollisionModel, CollisionMotion, CollisionShape
+from ..constraints.collision_shapes import (
+    CollisionKey,
+    CollisionModel,
+    CollisionMotion,
+    CollisionShape,
+)
 from ..core.robot import RobotModel
 from ..dynamics.robot_kinematics import forward_kinematics
 from ..dynamics.rotation import quaternion_matrix
@@ -100,7 +105,9 @@ def make_collider(name, link_name, link_index, ordinal, position, orientation, k
     """Build a sphere with its radius or a box from its three half-extents."""
     where = f"link {link_name!r} collision {name!r}"
     if np.any(size <= 0):
-        raise ValueError(f"{where} requires positive {kind} {'radius' if kind == 'sphere' else 'size'}")
+        raise ValueError(
+            f"{where} requires positive {kind} {'radius' if kind == 'sphere' else 'size'}"
+        )
     if kind == "sphere":
         native_kind, radius = "sphere", float(size[0])
         vertices = position[None, :]
@@ -115,23 +122,57 @@ def make_collider(name, link_name, link_index, ordinal, position, orientation, k
     key = CollisionKey(0, link_index + 1, ordinal)
     shape = CollisionShape(key, native_kind, tuple(range(len(vertices))), radius)
     return LinkCollision(
-        name, link_name, link_index, tuple(position), tuple(orientation), shape,
+        name,
+        link_name,
+        link_index,
+        tuple(position),
+        tuple(orientation),
+        shape,
         tuple(tuple(row) for row in vertices),
     )
 
 
-def assemble_robot(name, root, order, parents, joints, joint_data, bodies, colliders, gravity, *,
-                   root_xyz=(0.0, 0.0, 0.0), root_xyzw=(0.0, 0.0, 0.0, 1.0), excluded=()):
+def assemble_robot(
+    name,
+    root,
+    order,
+    parents,
+    joints,
+    joint_data,
+    bodies,
+    colliders,
+    gravity,
+    *,
+    root_xyz=(0.0, 0.0, 0.0),
+    root_xyzw=(0.0, 0.0, 0.0, 1.0),
+    excluded=(),
+):
     kinds, positions, orientations, axes, limits = zip(*joint_data, strict=True)
     masses, com, inertia = zip(*bodies, strict=True)
     lower, upper, effort, velocity = zip(*limits, strict=True)
     model = RobotModel(
-        parents=np.array(parents), joint_types=kinds, joint_position=np.array(positions),
-        joint_orientation=np.array(orientations), joint_axis=np.array(axes), mass=np.array(masses),
-        com=np.array(com), inertia_diagonal=np.array(inertia), gravity=np.asarray(gravity, dtype=float),
+        parents=np.array(parents),
+        joint_types=kinds,
+        joint_position=np.array(positions),
+        joint_orientation=np.array(orientations),
+        joint_axis=np.array(axes),
+        mass=np.array(masses),
+        com=np.array(com),
+        inertia_diagonal=np.array(inertia),
+        gravity=np.asarray(gravity, dtype=float),
     )
     return RobotAsset(
-        name, root, model, tuple(order), tuple(joints), lower, upper, effort, velocity,
-        tuple(colliders), CollisionModel(tuple(c.shape for c in colliders), tuple(excluded)),
-        tuple(root_xyz), tuple(root_xyzw),
+        name,
+        root,
+        model,
+        tuple(order),
+        tuple(joints),
+        lower,
+        upper,
+        effort,
+        velocity,
+        tuple(colliders),
+        CollisionModel(tuple(c.shape for c in colliders), tuple(excluded)),
+        tuple(root_xyz),
+        tuple(root_xyzw),
     )

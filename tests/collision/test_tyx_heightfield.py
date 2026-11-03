@@ -32,7 +32,9 @@ def test_heightfield_uses_device_bounds_and_host_witness(tyx_mode, tmp_path, bro
         assert pair.witness.normal == pytest.approx((0, 0, 1))
         assert pair.witness.first_point == pytest.approx((0, 1 / 8, 1))
         coordinates = grid.world_vertices()[list(pair.heightfield.vertex_ids)]
-        np.testing.assert_allclose(pair.heightfield.barycentric @ coordinates, pair.witness.first_point)
+        np.testing.assert_allclose(
+            pair.heightfield.barycentric @ coordinates, pair.witness.first_point
+        )
         paths[ball] = ph.CollisionMotion([[0, 1 / 8, 2]])
         clear = ph.detect(model, paths, ph.CollisionPolicy(), workspace)
         assert clear.required_candidates == 0 and clear.pairs[0].status == "separated"

@@ -115,7 +115,10 @@ class CollisionShape:
             object.__setattr__(self, "triangles", ())
         radius = finite_real(self.radius, "radius")
         if self.kind == "heightfield":
-            if not isinstance(self.heightfield, Heightfield) or len(ids) != self.heightfield.vertex_count:
+            if (
+                not isinstance(self.heightfield, Heightfield)
+                or len(ids) != self.heightfield.vertex_count
+            ):
                 raise ValueError("heightfield shape must bind one material ID per grid sample")
             if radius != 0:
                 raise ValueError("heightfield has zero surface offset")

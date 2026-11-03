@@ -174,6 +174,33 @@ class PhymeoFall:
         self.work.close()
 
 
+class CountedFall(PhymeoFall):
+    def counters(self):
+        return dict(
+            super().counters(),
+            kinematics_downloaded_bytes=self.work.stats()["kinematics_downloaded_bytes"],
+        )
+
+
+class KinematicFall(CountedFall):
+    def binding(self):
+        result = super().binding()
+        result["position_velocity_read"] = (
+            "TyxWorldBatch.kinematics: keyed committed ticks and FP32 XYZ/COM velocity"
+        )
+        return result
+
+    def read(self, tick):
+        observed = self.work.kinematics()
+        if (
+            observed.keys != self.keys
+            or observed.widths != (3,) * len(self.keys)
+            or not np.all(observed.ticks == tick)
+        ):
+            raise AssertionError("typed observation did not report the expected committed worlds")
+        return observed.values[:, :3], observed.values[:, 3:]
+
+
 class NewtonFall:
     def __init__(self, modules, keys, z, vz, device, cache):
         nt, self.wp = modules

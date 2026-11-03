@@ -8,7 +8,7 @@ from pathlib import Path
 from statistics import median
 
 
-def compare(root):
+def compare(root, phymeo_observation="checkpoint"):
     qualifications = {}
     pairs = {}
     intervals = []
@@ -21,6 +21,9 @@ def compare(root):
             continue
         receipt = json.loads(path.read_text(encoding="utf8"))
         engine = receipt["engine"]
+        expected = phymeo_observation if engine == "phymeo" else "native_rigid_state"
+        legacy = "checkpoint" if engine == "phymeo" else "native_rigid_state"
+        assert receipt.get("observation", legacy) == expected
         if receipt["phase"] == "qualify":
             key = engine, receipt["device"]
             assert key not in qualifications and [r["worlds"] for r in receipt["runs"]] == [1, 2]
@@ -40,6 +43,11 @@ def compare(root):
             run["final_tick"],
         ) == (5, 20, 32, 801)
         assert run["max_position_error_m"] == run["max_velocity_error_m_s"] == 0
+        if engine == "phymeo" and phymeo_observation == "kinematics":
+            counts = run["warm_totals"]
+            assert counts["snapshot_downloaded_bytes"] == 0
+            assert counts["kinematics_downloaded_bytes"] == worlds * 640 * 52
+            assert counts["cuda_kernel_launches"] == 640
         slot = pairs.setdefault((round_id, worlds), {})
         assert engine not in slot
         slot[engine] = (path.parent.name, run)
@@ -107,6 +115,7 @@ def compare(root):
         observations.append(result)
     return dict(
         ordered_processes=planned,
+        phymeo_observation=phymeo_observation,
         qualifying_trajectories="all 32 W1 and asymmetric W2 steps match on all four backends",
         output_signatures={str(w): dict(cold=v[2], measured=v[3]) for w, v in signatures.items()},
         pairs=observations,
@@ -121,10 +130,13 @@ def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--receipts-root", type=Path, required=True)
     p.add_argument("--out", type=Path, required=True)
+    p.add_argument(
+        "--phymeo-observation", choices=("checkpoint", "kinematics"), default="checkpoint"
+    )
     args = p.parse_args()
     if args.out.exists():
         p.error("provide a fresh output path")
-    result = compare(args.receipts_root)
+    result = compare(args.receipts_root, args.phymeo_observation)
     args.out.write_text(json.dumps(result, indent=2, allow_nan=False), encoding="utf8")
     for row in result["pairs"]:
         print(

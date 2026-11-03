@@ -55,6 +55,7 @@ def run_case(case, inputs, assets, device):
             assert pair.family == "RR" and pair.status in ("separated","touching","overlap")
             result = dict(fraction=t, prescribed_time_s=t*inputs["duration_s"], status=pair.status,
                           contact=pair.status != "separated", origins_world_m=[p.tolist() for p in origins])
+            assert pair.candidate and pair.mesh_mesh is not None, "Both U-shape AABBs overlap"
             if pair.mesh_mesh is not None:
                 pose = pair.mesh_mesh.end
                 lookup = [dict(zip(ids,x,strict=True)) for ids,x in zip(sources,coords,strict=True)]
@@ -76,9 +77,13 @@ def run_case(case, inputs, assets, device):
                     if not boundary or not deepest or not all(correct):
                         failures.append(f"t={t} {sum(correct)}/{len(deepest)} complete intrusion witnesses, {len(boundary)} boundary intersections")
                     if deepest:
-                        result.update(gap_m=pose.witness.gap_m, normal_a_to_b=deepest[0]["normal_a_to_b"],
-                                      a_support_world_m=deepest[0]["a_support_world_m"],
-                                      b_support_world_m=deepest[0]["b_support_world_m"])
+                        w = pose.witness
+                        direction = w.normal
+                        if reverse and direction is not None:
+                            direction = tuple(-n for n in direction)
+                        result.update(gap_m=w.gap_m, normal_a_to_b=direction,
+                                      a_support_world_m=w.second_point if reverse else w.first_point,
+                                      b_support_world_m=w.first_point if reverse else w.second_point)
             samples.append(result)
         observed = dict(backend=work.stats()["backend"], samples=samples)
     if failures:

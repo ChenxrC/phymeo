@@ -132,3 +132,27 @@ def test_invalid_and_rotation_do_not_become_false_separation():
     key = max(paths)
     paths[key] = ph.CollisionMotion(paths[key].start, turn=ph.RigidTurn((0,0,0),(0,0,0),(0,0,1),1))
     assert detect(model, paths).status == "unsupported"
+
+
+def test_two_l_prisms_share_an_aabb_but_only_one_pose_cuts_the_concave_arm():
+    ring = [(-2,-2),(2,-2),(2,0),(0,0),(0,2),(-2,2)]
+    vertices = np.array([(x,y,z) for z in (-0.5,0.5) for x,y in ring], dtype=float)
+    cap = [(0,1,2),(0,2,3),(0,3,4),(0,4,5)]
+    faces = [tri[::-1] for tri in cap] + [tuple(i+6 for i in tri) for tri in cap]
+    for i in range(6):
+        j = (i+1) % 6
+        faces.extend(((i,j,j+6),(i,j+6,i+6)))
+    for x, expected in [(0.5, "separated"), (0.125, "boundary_overlap")]:
+        insert = vertices * [0.125, 0.125, 0.25] + [x,0.75,0]
+        model, paths = scene((vertices,faces), (insert,faces))
+        row = detect(model,paths)
+        pose = row.mesh_mesh.end
+        assert pose.relation == expected
+        if expected == "separated":
+            assert pose.boundary_gap_m == 0.25 and not pose.boundary and not pose.deepest
+        else:
+            assert pose.vertex_intrusion_m == 0.125 and pose.boundary
+            for support in pose.deepest:
+                check_support(support,model,paths)
+                np.testing.assert_allclose(support.witness.normal,[1,0,0], atol=1e-12)
+                assert support.witness.first_point[0] == 0

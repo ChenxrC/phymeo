@@ -203,9 +203,9 @@
         "reason": "Newton 1.7 CollisionPipeline consumes one state. Velocity-adapted gaps do not publish a first-touch time."
       },
       "phymeo": {
-        "status": "gap",
-        "devices": [],
-        "reason": "The public RR narrow phase on da5ba35 handles mesh–hull but has no mesh–mesh narrow phase."
+        "status": "run",
+        "devices": ["cpu"],
+        "reason": "The first boundary touch for two independently translated closed triangle meshes is measured on HOST."
       }
     },
     {

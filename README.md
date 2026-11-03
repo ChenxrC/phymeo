@@ -93,6 +93,8 @@ python -m pytest
 
 ## 通用碰撞检测
 
+固定基座机器人可用 `phymeo.load_urdf(path)` 或 `phymeo.load_mjcf(path)` 读入。两者提供 `asset.model`、具名连杆碰撞形状和由关节坐标生成的 `asset.collision_motion(q)`。将这些形状与有限 `phymeo.Heightfield` 注册到同一 `CollisionModel`，即可在公共查询中读到工具球的双侧接触点。静止地形还支持直线移动球的首次及末次相触。[支持的文件范围与跨模块示例](docs/benchmarks/p65-robot-terrain-20261103.md) · [高度场用法](docs/development/p65-rigid-heightfield.md)
+
 [15 个碰撞案例族、74 个构型的三端验收总表](docs/benchmarks/p65-collision-public-catalog.md) · [SAP/BVH 与六组成本实测](docs/benchmarks/p65-collision-m3-spatial.md) · [旋转胶囊与变形布面](docs/benchmarks/p65-collision-m3-curved-faces.md)
 
 `phymeo.detect` 在同一模型中查询刚体–刚体、刚体–柔体和柔体–柔体形状对。使用 `CollisionWorkspace` 可选择 HOST、tyx interpret 或 CUDA 宽相。结果分别标识过滤原因、几何见证、缺少窄相和容量不足。[宽相用法](docs/benchmarks/p65-collision-m1.md) · [球、胶囊和移动半空间的首触](docs/benchmarks/p65-collision-m2-round.md) · [凸刚体与凹闭合网格](docs/benchmarks/p65-collision-m2-closed-mesh.md) · [旋转胶囊与球的首触](docs/benchmarks/p65-collision-m2-rotating-round.md) · [凸刚体接触区域与连续区间](docs/benchmarks/p65-collision-m2-convex-hulls.md) · [凸刚体与变形布面](docs/benchmarks/p65-collision-m2-hull-surfaces.md) · [有限圆边板与布点、布面](docs/benchmarks/p65-collision-m2-rounded-plates.md) · [球与变形三角面的首触](docs/benchmarks/p65-collision-m2-sphere-face.md) · [胶囊整轴与有限布面](docs/benchmarks/p65-collision-m2-capsule-face.md) · [异体布面首触](docs/benchmarks/p65-collision-m2-triangle-pairs.md) · [同体布面自碰撞与合法邻接](docs/benchmarks/p65-collision-m2-cloth-adjacency.md) · [刚球和布面与四面体外表面](docs/benchmarks/p65-collision-m2-tetrahedral-surfaces.md) · [闭体包含、交体积与外边界首触](docs/benchmarks/p65-collision-m2-closed-volumes.md)

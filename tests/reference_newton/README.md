@@ -8,6 +8,8 @@
 
 [35 个案例逐项实测](../../docs/benchmarks/newton-1.7-reference-baseline.md) · [完整物理读数与失败记录](../../docs/benchmarks/newton-1.7-reference-observations.json) · [按依赖和难度排列的开发计划](../../docs/superpowers/plans/2026-11-03-newton-reference-development.md)
 
+初始 35 行表保留当时的实测。后续在同一数值判据下，固定地形与球的 4 项、URDF/MJCF 的 2 项已从 Phymeo 的入口缺口变为可执行。[本次增量与复现](../../docs/benchmarks/p65-robot-terrain-20261103.md)
+
 ## 输入与报告
 
 每个方向有独立的 `cases.json` 与 `baseline.py`。目录名为 `rr`、`rd` 和 `robot`。根对象使用 `schema="newton-reference-v1"`、`lane` 及非空 `cases` 列表。

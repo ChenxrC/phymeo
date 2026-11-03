@@ -330,8 +330,8 @@
       },
       "phymeo": {
         "status": "run",
-        "devices": ["cpu"],
-        "reason": "The HOST path brackets first and last sphere contact on a fixed finite heightfield and returns material addresses sampled inside those brackets."
+        "devices": ["cpu", "cuda:0"],
+        "reason": "The fixed-grid sweep brackets first and last contact and returns both material witnesses. TYX CUDA selects candidate triangles. HOST resolves the exact feature roots on both paths."
       }
     },
     {

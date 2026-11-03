@@ -19,6 +19,7 @@ class TyxCollisionBatch:
             surface_entry_times,
             triangle_entry_times,
         )
+        from ._tyx_heightfield_candidates import HeightfieldCandidateBuffer
         from ._tyx_spatial_kernels import sap_candidates
 
         self._sap_kernel = sap_candidates
@@ -80,6 +81,7 @@ class TyxCollisionBatch:
             sweep_downloaded_bytes=0,
             sweep_synchronizations=0,
         )
+        self._heightfield_candidates = HeightfieldCandidateBuffer(self, offsets)
         self._resources = ExitStack()
         self._counts = dict(
             allocations=0,
@@ -170,6 +172,9 @@ class TyxCollisionBatch:
             if key not in self._tree_buffers:
                 self._tree_buffers[key] = TreeBuffers(self, tree, self._count, shape)
             return self._tree_buffers[key].hits(tree, leaves, queries, params, shape)
+
+    def heightfield_face_candidates(self, terrain, sphere, rows, columns):
+        return self._heightfield_candidates.select(terrain, sphere, rows, columns)
 
     def _spatial_query(self, trees, pending):
         # Public bounds must be returned on all backends. Reuse that transfer
@@ -376,7 +381,13 @@ class TyxCollisionBatch:
         return proposals
 
     def stats(self):
-        return {**self._counts, **self._sweep_counts, **self._spatial_counts, "backend": self._mode}
+        return {
+            **self._counts,
+            **self._sweep_counts,
+            **self._spatial_counts,
+            **self._heightfield_candidates.counts,
+            "backend": self._mode,
+        }
 
     def close(self):
         self._resources.close()

@@ -11,7 +11,7 @@ from importlib.metadata import version
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
-LANES = ("rr", "rd", "robot")
+LANES = ("rr", "rd", "robot", "dd")
 ENGINES = ("newton", "phymeo")
 DEVICES = ("cpu", "cuda:0")
 

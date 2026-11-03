@@ -111,10 +111,7 @@ def _bias_accelerations(model, state, obs, local_com):
     return com_acc, alpha
 
 
-@_numerical
-def floating_dynamics_terms(model, state, inputs):
-    """Return full inertia, inertial/gravity bias, projected external/drive loads and acceleration."""
-    _validate(model, state, inputs)
+def _inertial_geometry(model, state):
     masses = 1 / model.root.inverse_mass
     local_com = model.root_com_m[None]
     principal = model.root.inertia_diagonal
@@ -125,7 +122,22 @@ def floating_dynamics_terms(model, state, inputs):
     obs = floating_kinematics(model, state)
     linear, angular = floating_point_jacobians(model, state, np.arange(model.body_count), local_com)
     inertia = (obs.rotation * principal[:, None, :]) @ obs.rotation.transpose(0, 2, 1)
-    mass = _mass_from_terms(masses, linear, angular, _finite(inertia))
+    return obs, local_com, masses, linear, angular, _finite(inertia)
+
+
+@_numerical
+def floating_mass_matrix(model, state):
+    """Full inertia at this pose in root COM, root angular and joint-rate coordinates."""
+    _, _, masses, linear, angular, inertia = _inertial_geometry(model, state)
+    return _mass_from_terms(masses, linear, angular, inertia)
+
+
+@_numerical
+def floating_dynamics_terms(model, state, inputs):
+    """Return full inertia, inertial/gravity bias, projected external/drive loads and acceleration."""
+    _validate(model, state, inputs)
+    obs, local_com, masses, linear, angular, inertia = _inertial_geometry(model, state)
+    mass = _mass_from_terms(masses, linear, angular, inertia)
     com_acc, alpha = _bias_accelerations(model, state, obs, local_com)
     forces = masses[:, None] * (com_acc - model.root.gravity)
     spin_momentum = np.einsum("nij,nj->ni", inertia, obs.angular_velocity)

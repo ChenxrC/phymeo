@@ -86,6 +86,8 @@ from .coupling.participant import (
     TetrahedralParticipant,
 )
 from .coupling.point_port import ParticleRigidPorts
+from .coupling.floating_port import FloatingRobotPointPort
+from .coupling.witness_impulses import solve_witness_impulses
 from .coupling.ports import ParticlePointPort, PointPort, RigidPointPort, exchange_impulses
 from .coupling.robot_port import RobotPointPort
 from .coupling.surface_port import PointPairOperator, WeightedPointPort
@@ -348,6 +350,8 @@ __all__ = [
     "RobotState",
     "RobotInputs",
     "RobotPointPort",
+    "FloatingRobotPointPort",
+    "solve_witness_impulses",
     "RobotSite",
     "RelativeSiteMeasurement",
     "measure_relative_site",

@@ -2,7 +2,7 @@
 
 from dataclasses import replace
 from fractions import Fraction as F
-from math import ceil, floor, pi
+from math import ceil, floor, isfinite, pi, ulp
 
 import numpy as np
 
@@ -146,7 +146,7 @@ def rotating_ellipsoid_plane(curved,plane,mc,mp,curved_first):
             # Keep roundoff in world-space reconstruction within the same metre
             # budget. Very large world offsets can otherwise hide the surface gap.
             coords=(*w.first_point,*w.second_point,*w.first_offset,*w.second_offset,w.gap_m)
-            if any(not np.isfinite(x) or abs(np.spacing(abs(x)))>float(_MAX_WITNESS_ERROR_M) for x in coords):
+            if any(not isfinite(x) or ulp(x)>float(_MAX_WITNESS_ERROR_M) for x in coords):
                 raise SolverFailure("ellipsoid_arc_world_resolution")
             return replace(w,source="host-ellipsoid-angle-chart"),trace
 

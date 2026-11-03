@@ -1,5 +1,7 @@
 """Complete finite-angle support contact sets of a centered rotating ellipsoid."""
 
+import json
+from dataclasses import asdict
 from decimal import Decimal as D
 from math import pi
 
@@ -59,7 +61,7 @@ def check_material(w,key,plane,curved_first,paths,dims,initial,turn,t):
     (pi,0.5,False,False,False),(pi,9/16,False,False,False),(3.0,0.5-1/16384,False,False,False),
     (2.0,0.375,False,False,False),(pi,0.375,False,False,True),(-pi,0.375,True,True,True),
 ])
-def test_analytic_contact_extrema_and_physical_material(angle,height,reverse,transformed,triaxial):
+def test_analytic_contact_extrema_and_physical_material(angle,height,reverse,transformed,triaxial,tmp_path):
     dims=(0.5,0.375,0.25) if triaxial else AXES
     axis=(0.6,0.8,0) if triaxial else (0,1,0)
     model,paths,key,plane,turn,rotation=build(angle,height,dims,axis,reverse=reverse,transformed=transformed)
@@ -70,6 +72,12 @@ def test_analytic_contact_extrema_and_physical_material(angle,height,reverse,tra
     first=row.first==key
     assert row.sweep.start_gap_m==pytest.approx(height-dims[2],abs=1e-10)
     assert row.sweep.end_gap_m==row.witness.gap_m
+    data=dict(angle_rad=angle,stored_axis=turn.axis,height_m=height,reverse=reverse,
+              transformed=transformed,triaxial=triaxial,oracle=list(map(str,expected)) if expected else None,
+              start_gap_m=row.sweep.start_gap_m,end_gap_m=row.sweep.end_gap_m,
+              first=asdict(row.curved.first_contact) if row.curved.first_contact else None,
+              last=asdict(row.curved.last_contact) if row.curved.last_contact else None)
+    (tmp_path/"ellipsoid-arc.json").write_text(json.dumps(data,allow_nan=False),encoding="utf-8")
     point=check_material(row.witness,key,plane,first,paths,dims,rotation,turn,1.0)
     np.testing.assert_allclose(row.curved.points_m[0],point,rtol=0,atol=1e-6)
     if expected is None:

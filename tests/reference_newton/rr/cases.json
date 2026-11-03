@@ -235,9 +235,9 @@
         "reason": "Use native HFIELD as static terrain and a free sphere; read only the listed pose contacts."
       },
       "phymeo": {
-        "status": "gap",
-        "devices": [],
-        "reason": "CollisionShape cannot register a native heightfield or its cells."
+        "status": "run",
+        "devices": ["cpu"],
+        "reason": "The HOST heightfield–sphere query publishes signed distance, two world points and terrain material coordinates at each narrow-phase pose."
       }
     },
     {
@@ -261,9 +261,9 @@
         "reason": "Use native HFIELD as static terrain and a free sphere; read only the listed pose contacts."
       },
       "phymeo": {
-        "status": "gap",
-        "devices": [],
-        "reason": "CollisionShape cannot register a native heightfield or its cells."
+        "status": "run",
+        "devices": ["cpu"],
+        "reason": "The HOST heightfield–sphere query publishes signed distance, two world points and terrain material coordinates at each narrow-phase pose."
       }
     },
     {
@@ -297,9 +297,9 @@
         "reason": "Use native HFIELD as static terrain and a free sphere; read only the listed pose contacts."
       },
       "phymeo": {
-        "status": "gap",
-        "devices": [],
-        "reason": "CollisionShape cannot register a native heightfield or its cells."
+        "status": "run",
+        "devices": ["cpu"],
+        "reason": "The HOST heightfield–sphere query publishes signed distance, two world points and terrain material coordinates at each narrow-phase pose."
       }
     },
     {

@@ -181,9 +181,51 @@ def _newton_samples(inputs, assets, device, *, keep_all=False):
         )
 
 
+def _phymeo_heightfield_samples(inputs, assets, device):
+    import phymeo as ph
+
+    if device != "cpu" or inputs["query"] != "sampled_poses" or np.any(inputs["a_path_m"]):
+        raise ValueError("The heightfield comparison needs a fixed grid and explicit HOST poses")
+    field, ball = assets
+    heights = np.array(field["heights_yx_m"])
+    rows, columns = heights.shape
+    hx, hy = field["half_extent_xy_m"]
+    grid = ph.Heightfield(
+        heights, (2 * hx / (columns - 1), 2 * hy / (rows - 1)), origin=(-hx, -hy, 0)
+    )
+    field_key, ball_key = ph.CollisionKey(0, 1, 0), ph.CollisionKey(0, 2, 0)
+    terrain = ph.CollisionShape(
+        field_key, "heightfield", tuple(range(grid.vertex_count)), heightfield=grid
+    )
+    model = ph.CollisionModel([terrain, ph.CollisionShape(ball_key, "sphere", (0,), ball["radius_m"])])
+    field_motion = ph.CollisionMotion(grid.world_vertices())
+    samples = []
+    with ph.CollisionWorkspace(model, "host") as work:
+        for fraction in inputs["sample_fractions"]:
+            center = _position(inputs["b_path_m"], fraction)
+            paths = {field_key: field_motion, ball_key: ph.CollisionMotion([center])}
+            (pair,) = ph.detect(model, paths, ph.CollisionPolicy(), work).pairs
+            assert pair.family == "RR" and pair.first == field_key and pair.second == ball_key
+            assert pair.status in ("separated", "touching", "overlap") and pair.sweep is None
+            sample = dict(fraction=fraction, prescribed_time_s=fraction * inputs["duration_s"],
+                          contact=pair.status != "separated", status=pair.status, reason=pair.reason)
+            if pair.witness is not None:
+                w, chart = pair.witness, pair.heightfield
+                assert chart is not None
+                tri = field_motion.start[list(chart.vertex_ids)]
+                np.testing.assert_allclose(chart.barycentric @ tri, w.first_point, rtol=0, atol=1e-10)
+                sample.update(gap_m=w.gap_m, normal_a_to_b=w.normal, a_support_world_m=w.first_point,
+                              b_support_world_m=w.second_point, cell=chart.cell, triangle=chart.triangle,
+                              vertex_ids=chart.vertex_ids, barycentric=chart.barycentric)
+            samples.append(sample)
+        return dict(backend=work.stats()["backend"], samples=samples)
+
+
 def _phymeo(case, inputs, assets, device):
     import phymeo as ph
 
+    if [a["kind"] for a in assets] == ["heightfield", "sphere"]:
+        return _phymeo_heightfield_samples(inputs, assets, device)
     if any(asset["kind"] != "sphere" for asset in assets):
         raise ValueError("The comparison has no Phymeo adapter for these native shapes")
     keys = (ph.CollisionKey(0, 1, 0), ph.CollisionKey(0, 2, 0))

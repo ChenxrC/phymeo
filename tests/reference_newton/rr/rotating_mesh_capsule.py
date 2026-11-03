@@ -8,7 +8,6 @@ from math import acos, cos, hypot, sin, sqrt
 from pathlib import Path
 
 import numpy as np
-
 from mesh_round_poses import geometry
 
 HERE = Path(__file__).resolve().parent
@@ -96,12 +95,23 @@ def oracle(case):
         normal = frame @ rotate((0, np.sign(ys), 0), case["angle_rad"] * time)
         world = frame @ rotate(local, case["angle_rad"] * time) + origin
         np.testing.assert_allclose(world, frame @ core + origin - R * normal, atol=1e-13, rtol=0)
-        witnesses.append(dict(
-            u=s, capsule_weights=[[41, 1 - s], [93, s]], face_material=face_addresses(vertices, faces, local, side),
-            common_point_m=world.tolist(), mesh_to_capsule_normal=normal.tolist(),
-        ))
-    return dict(target="first_contact", t=time, entry_local_x_m=cx, axis_span=span.tolist(),
-                end_ball_lower_m=endpoint, witness_examples=witnesses)
+        witnesses.append(
+            dict(
+                u=s,
+                capsule_weights=[[41, 1 - s], [93, s]],
+                face_material=face_addresses(vertices, faces, local, side),
+                common_point_m=world.tolist(),
+                mesh_to_capsule_normal=normal.tolist(),
+            )
+        )
+    return dict(
+        target="first_contact",
+        t=time,
+        entry_local_x_m=cx,
+        axis_span=span.tolist(),
+        end_ball_lower_m=endpoint,
+        witness_examples=witnesses,
+    )
 
 
 def read_host(case, target):
@@ -112,17 +122,23 @@ def read_host(case, target):
     wm, wc = case["worlds"]
     mk, ck = ph.CollisionKey(wm, int(reverse), 0), ph.CollisionKey(wc, int(not reverse), 0)
     ids = tuple(41 + 7 * i for i in range(len(vertices)))
-    mesh = ph.CollisionShape(mk, "mesh", ids, triangles=tuple(tuple(ids[i] for i in f) for f in faces))
+    mesh = ph.CollisionShape(
+        mk, "mesh", ids, triangles=tuple(tuple(ids[i] for i in f) for f in faces)
+    )
     cap = ph.CollisionShape(ck, "capsule", (41, 93), R)
     model = ph.CollisionModel([mesh, cap])
     turn = ph.RigidTurn(origin, origin, frame @ (0, 0, 1), case["angle_rad"])
-    paths = {mk: ph.CollisionMotion(vertices @ frame.T + origin, turn=turn),
-             ck: ph.CollisionMotion(axis @ frame.T + origin)}
+    paths = {
+        mk: ph.CollisionMotion(vertices @ frame.T + origin, turn=turn),
+        ck: ph.CollisionMotion(axis @ frame.T + origin),
+    }
     poses = []
     with ph.CollisionWorkspace(model, "host") as work:
         (row,) = ph.detect(model, paths, ph.CollisionPolicy(), work).pairs
         if wm != wc:
-            assert not row.candidate and row.status == "filtered" and row.reason == "different_world"
+            assert (
+                not row.candidate and row.status == "filtered" and row.reason == "different_world"
+            )
             coverage = "filtered_by_world"
         elif row.status in ("unsupported", "unresolved"):
             assert row.sweep is None
@@ -138,17 +154,32 @@ def read_host(case, target):
             coverage = "resolved_time"
         if wm == wc:
             for t in CAT["pose_samples"]:
-                paths[mk] = ph.CollisionMotion(rotate(vertices, t * case["angle_rad"]) @ frame.T + origin)
+                paths[mk] = ph.CollisionMotion(
+                    rotate(vertices, t * case["angle_rad"]) @ frame.T + origin
+                )
                 (static,) = ph.detect(model, paths, ph.CollisionPolicy(margin=4), work).pairs
                 expected = axis_skin_gap(case, t)
                 assert static.status == ("separated" if expected > 0 else "overlap")
                 pose = static.mesh_round.start
                 assert abs(pose.axis_gap_m - expected) < 1e-12
-                poses.append(dict(t=t, expected_gap_m=expected, relation=pose.relation,
-                                  status=static.status, reported_gap_m=pose.axis_gap_m,
-                                  material=asdict(pose.supports[0])))
-    return dict(coverage=coverage, status=row.status, reason=row.reason, candidate=row.candidate,
-                published_sweep=None if row.sweep is None else asdict(row.sweep), discrete_poses=poses)
+                poses.append(
+                    dict(
+                        t=t,
+                        expected_gap_m=expected,
+                        relation=pose.relation,
+                        status=static.status,
+                        reported_gap_m=pose.axis_gap_m,
+                        material=asdict(pose.supports[0]),
+                    )
+                )
+    return dict(
+        coverage=coverage,
+        status=row.status,
+        reason=row.reason,
+        candidate=row.candidate,
+        published_sweep=None if row.sweep is None else asdict(row.sweep),
+        discrete_poses=poses,
+    )
 
 
 def read_newton(case, t, device):
@@ -160,26 +191,53 @@ def read_newton(case, t, device):
     with wp.ScopedDevice(device):
         builder = newton.ModelBuilder(up_axis=newton.Axis.Z)
         cfg = builder.ShapeConfig(margin=0, gap=0, has_particle_collision=False)
-        mesh = builder.add_shape_mesh(builder.add_body(), mesh=newton.Mesh(
-            rotate(vertices, t * case["angle_rad"]).astype(np.float32), faces.astype(np.int32).ravel()
-        ), cfg=cfg)
-        cap = builder.add_shape_capsule(builder.add_body(xform=wp.transform(axis.mean(0), wp.quat_identity())),
-                                        radius=R, half_height=np.linalg.norm(axis[1] - axis[0]) / 2, cfg=cfg)
+        mesh = builder.add_shape_mesh(
+            builder.add_body(),
+            mesh=newton.Mesh(
+                rotate(vertices, t * case["angle_rad"]).astype(np.float32),
+                faces.astype(np.int32).ravel(),
+            ),
+            cfg=cfg,
+        )
+        cap = builder.add_shape_capsule(
+            builder.add_body(xform=wp.transform(axis.mean(0), wp.quat_identity())),
+            radius=R,
+            half_height=np.linalg.norm(axis[1] - axis[0]) / 2,
+            cfg=cfg,
+        )
         model = builder.finalize(device=device)
         types = [newton.GeoType(int(x)).name for x in model.shape_type.numpy()[[mesh, cap]]]
         assert types == ["MESH", "CAPSULE"]
-        pipe = newton.CollisionPipeline(model, broad_phase="nxn", reduce_contacts=False, rigid_contact_max=256)
+        pipe = newton.CollisionPipeline(
+            model, broad_phase="nxn", reduce_contacts=False, rigid_contact_max=256
+        )
         state, contacts = model.state(), pipe.contacts()
         pipe.collide(state, contacts)
         gap = wp.empty(contacts.rigid_contact_max, dtype=float, device=device)
-        a, b = [wp.empty(contacts.rigid_contact_max, dtype=wp.vec3, device=device) for _ in range(2)]
-        newton.eval_rigid_contact_kinematics(model, state, contacts, out_distance=gap,
-                                            out_point0_world=a, out_point1_world=b)
+        a, b = [
+            wp.empty(contacts.rigid_contact_max, dtype=wp.vec3, device=device) for _ in range(2)
+        ]
+        newton.eval_rigid_contact_kinematics(
+            model, state, contacts, out_distance=gap, out_point0_world=a, out_point1_world=b
+        )
         wp.synchronize_device(device)
         count = int(contacts.rigid_contact_count.numpy()[0])
-        assert 0 <= count < contacts.rigid_contact_max and str(contacts.rigid_contact_count.device) == str(device)
-        arrays = [x.numpy()[:count] for x in (contacts.rigid_contact_shape0, contacts.rigid_contact_shape1,
-                  gap, contacts.rigid_contact_normal, a, b, contacts.rigid_contact_offset0, contacts.rigid_contact_offset1)]
+        assert 0 <= count < contacts.rigid_contact_max and str(
+            contacts.rigid_contact_count.device
+        ) == str(device)
+        arrays = [
+            x.numpy()[:count]
+            for x in (
+                contacts.rigid_contact_shape0,
+                contacts.rigid_contact_shape1,
+                gap,
+                contacts.rigid_contact_normal,
+                a,
+                b,
+                contacts.rigid_contact_offset0,
+                contacts.rigid_contact_offset1,
+            )
+        ]
         rows = []
         for i, j, d, n, p, q, op, oq in zip(*arrays, strict=True):
             assert {int(i), int(j)} == {mesh, cap}
@@ -188,9 +246,23 @@ def read_newton(case, t, device):
             mp, cp = p + op, q + oq
             assert np.isfinite([d, *n, *mp, *cp]).all()
             np.testing.assert_allclose((cp - mp) @ n, d, atol=2e-6, rtol=0)
-            rows.append(dict(gap_m=float(d), normal_mesh_to_capsule=n.tolist(), mesh_point_m=mp.tolist(),
-                             capsule_point_m=cp.tolist(), mesh_offset_m=op.tolist(), capsule_offset_m=oq.tolist()))
-    return dict(t=t, expected_axis_gap_m=axis_skin_gap(case, t), native_geo_types=types, count=count, contacts=rows)
+            rows.append(
+                dict(
+                    gap_m=float(d),
+                    normal_mesh_to_capsule=n.tolist(),
+                    mesh_point_m=mp.tolist(),
+                    capsule_point_m=cp.tolist(),
+                    mesh_offset_m=op.tolist(),
+                    capsule_offset_m=oq.tolist(),
+                )
+            )
+    return dict(
+        t=t,
+        expected_axis_gap_m=axis_skin_gap(case, t),
+        native_geo_types=types,
+        count=count,
+        contacts=rows,
+    )
 
 
 def main():
@@ -219,7 +291,10 @@ def main():
         json.dump(output, file, allow_nan=False, indent=2)
     for row in records:
         result = row["observed"]
-        print(row["id"], result["coverage"] if isinstance(result, dict) else [r["count"] for r in result])
+        print(
+            row["id"],
+            result["coverage"] if isinstance(result, dict) else [r["count"] for r in result],
+        )
 
 
 if __name__ == "__main__":

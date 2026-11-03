@@ -147,9 +147,7 @@ def study_newton(device):
     )
     stream = pipeline.contacts()
     ds = wp.empty(stream.rigid_contact_max, dtype=float, device=device)
-    assert all(
-        str(a.device) == device for a in (state.body_q, ds, stream.rigid_contact_count)
-    )
+    assert all(str(a.device) == device for a in (state.body_q, ds, stream.rigid_contact_count))
     forward = {}
     for sign in (1, -1):
         rows = []

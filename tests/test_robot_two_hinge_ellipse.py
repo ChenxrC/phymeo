@@ -20,7 +20,13 @@ def test_mirrored_two_hinge_pose_and_whole_interval_controls():
         run = result["signs"][str(sign)]
         target, control = reference["targets"](sign)
         assert [row["occupied"][target] for row in run["rows"]] == [
-            False, False, True, True, True, False, False
+            False,
+            False,
+            True,
+            True,
+            True,
+            False,
+            False,
         ]
         assert min(row["distance_gaps_m"][control] for row in run["rows"]) == pytest.approx(7 / 8)
         assert run["rows"][3]["distance_gaps_m"][target] == pytest.approx(-1 / 8)

@@ -502,9 +502,9 @@ def _detect_pairs(workspace, paths, flags, selected, proximity=False, resolved=N
             ready = resolved.get(offset + local)
             if code == 0 and (a.curved is not None or b.curved is not None):
                 family = "RR" if a.rigid and b.rigid else "RD"
-                status, reason, witness, trace = curved_solid_contact(a, b, ma, mb)
+                status, reason, witness, trace, sweep = curved_solid_contact(a, b, ma, mb)
                 ready = CollisionPair(
-                    a.key, b.key, family, True, status, reason, witness, curved=trace
+                    a.key, b.key, family, True, status, reason, witness, sweep, curved=trace
                 )
             elif code == 0 and {a.kind, b.kind} == {"heightfield", "sphere"}:
                 terrain, sphere = (i, j) if a.kind == "heightfield" else (j, i)

@@ -1,4 +1,4 @@
-"""Static finite-cylinder/sphere and cone or ellipsoid/half-space queries."""
+"""Analytic finite-cylinder/sphere and cone or ellipsoid/half-space queries."""
 
 from dataclasses import dataclass
 from fractions import Fraction as F
@@ -9,6 +9,15 @@ from ..constraints.collision_shapes import CollisionKey
 from ._prism_pair_exact import sqrt_bounds
 from ._round_sweep import _translation, _vector, _xyz
 from .collision_witness import CollisionWitness
+
+
+@dataclass(frozen=True)
+class CurvedEvent:
+    """A contact time bracket and both material witnesses evaluated at witness_time."""
+
+    interval: tuple[float, float]
+    witness_time: float
+    witness: CollisionWitness
 
 
 @dataclass(frozen=True)
@@ -25,6 +34,8 @@ class CurvedContact:
     features: tuple[str, ...]
     locus: str
     points_m: tuple[tuple[float, ...], ...]
+    first_contact: CurvedEvent | None = None
+    last_contact: CurvedEvent | None = None
 
 
 def _rotation(asset):
@@ -195,12 +206,13 @@ def _cylinder_sphere(dims, p, ball):
     return tuple(features), locus, tuple(points), None, gap
 
 
-def _static(curved, other, m_curved, m_other, curved_first):
+def _static(curved, other, m_curved, m_other, curved_first, *, frame=None):
     asset = curved.curved
     dims = _vector(asset.dimensions_m)
     center = _vector(m_curved.start[0])
     anchor = _vector(m_other.start[0])
-    frame = _rotation(asset)
+    if frame is None:
+        frame = _rotation(asset)
     if other.kind == "plane":
         plane_n = _vector(other.normal)
         norm = _root(plane_n @ plane_n)
@@ -253,7 +265,7 @@ def _static(curved, other, m_curved, m_other, curved_first):
 
 
 def curved_solid_contact(a, b, ma, mb):
-    """Query a supported static pair; a candidate motion never acquires a sampled TOI."""
+    """Return endpoint geometry and any whole-path contact bracket for a supported pair."""
     curved_first = a.curved is not None
     curved, other, mc, mo = (a, b, ma, mb) if curved_first else (b, a, mb, ma)
     if (curved.kind, other.kind) not in (
@@ -261,10 +273,14 @@ def curved_solid_contact(a, b, ma, mb):
         ("cone", "plane"),
         ("ellipsoid", "plane"),
     ):
-        return "unsupported", "curved_shape_pair", None, None
-    if ma.moving or mb.moving:
-        return "unsupported", "curved_sweep", None, None
+        return "unsupported", "curved_shape_pair", None, None, None
     try:
-        return _static(curved, other, mc, mo, curved_first)
+        if ma.moving or mb.moving:
+            if curved.kind == "ellipsoid" and other.kind == "plane":
+                from ._rotating_ellipsoid_plane import rotating_ellipsoid_plane
+
+                return rotating_ellipsoid_plane(curved, other, mc, mo, curved_first)
+            return "unsupported", "curved_sweep", None, None, None
+        return (*_static(curved, other, mc, mo, curved_first), None)
     except OverflowError:
-        return "unresolved", "witness_outside_fp64", None, None
+        return "unresolved", "witness_outside_fp64", None, None, None

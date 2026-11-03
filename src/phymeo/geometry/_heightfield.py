@@ -1,4 +1,4 @@
-"""Rigid sphere queries against a finite, two-sided triangle height graph."""
+"""Spherical rigid or material-point geometry against a finite, two-sided height graph."""
 
 from dataclasses import dataclass
 from fractions import Fraction
@@ -111,6 +111,13 @@ class _TerrainSphere:
                 raise SolverFailure("heightfield_degenerate_world_face")
             normal = _xyz(direction)
             ball_point = _xyz(center - self.sphere.radius * direction)
+        # The material address is the node center. Carry its spherical surface offset
+        # in the same world frame as the published point, before ordering the owners.
+        material_offset = (
+            tuple(-self.sphere.radius * n for n in normal)
+            if self.sphere.kind == "rounded_particle"
+            else None
+        )
         if self.field_first:
             points = local.first_point, ball_point
             weights = local.first_weights, local.second_weights
@@ -119,7 +126,15 @@ class _TerrainSphere:
             weights = local.second_weights, local.first_weights
             normal = tuple(-v for v in normal)
         return (
-            CollisionWitness(local.gap_m, normal, *points, *weights, "host-heightfield"),
+            CollisionWitness(
+                local.gap_m,
+                normal,
+                *points,
+                *weights,
+                "host-heightfield",
+                first_offset=None if self.field_first else material_offset,
+                second_offset=material_offset if self.field_first else None,
+            ),
             face,
             signed,
         )

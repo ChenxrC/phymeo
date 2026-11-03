@@ -510,7 +510,10 @@ def _detect_pairs(
                 ready = CollisionPair(
                     a.key, b.key, family, True, status, reason, witness, sweep, curved=trace
                 )
-            elif code == 0 and {a.kind, b.kind} == {"heightfield", "sphere"}:
+            elif code == 0 and (
+                (a.kind == "heightfield" and b.kind in ("sphere", "rounded_particle"))
+                or (b.kind == "heightfield" and a.kind in ("sphere", "rounded_particle"))
+            ):
                 terrain, sphere = (i, j) if a.kind == "heightfield" else (j, i)
                 selector = (
                     partial(workspace._heightfield_faces, terrain, sphere)
@@ -520,8 +523,9 @@ def _detect_pairs(
                 status, reason, witness, chart, sweep = heightfield_sphere_contact(
                     a, b, ma, mb, face_selector=selector
                 )
+                family = "RR" if shapes[sphere].rigid else "RD"
                 ready = CollisionPair(
-                    a.key, b.key, "RR", True, status, reason, witness, sweep, heightfield=chart
+                    a.key, b.key, family, True, status, reason, witness, sweep, heightfield=chart
                 )
             if ready is not None:
                 batch.append((a, b, ma, mb, code, ready, 0, 0))

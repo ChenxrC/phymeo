@@ -84,6 +84,7 @@ class CollisionShape:
             "cone": 1,
             "ellipsoid": 1,
             "particle": 1,
+            "rounded_particle": 1,
             "capsule": 2,
             "triangle": 3,
             "tetrahedron": 4,
@@ -136,7 +137,7 @@ class CollisionShape:
                 raise ValueError("heightfield has zero surface offset")
         elif self.heightfield is not None:
             raise ValueError("heightfield data requires a heightfield shape")
-        if radius < 0 or (self.kind in ("sphere", "capsule") and radius == 0):
+        if radius < 0 or (self.kind in ("sphere", "capsule", "rounded_particle") and radius == 0):
             raise ValueError("invalid shape radius or maximum surface offset")
         if (self.kind == "plate" and radius == 0) or (self.kind == "particle" and radius != 0):
             raise ValueError(

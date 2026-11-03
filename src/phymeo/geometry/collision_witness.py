@@ -41,7 +41,7 @@ class CollisionWitness:
     # Endpoints of the complete closest (first, second) axis-parameter interval
     # for two nonzero capsules. A unique minimum repeats the same pair.
     axis_parameter_span: tuple[tuple[float, float], tuple[float, float]] | None = None
-    # World-frame tangent displacement from the moving anchor of an infinite plane.
+    # Optional world-frame displacement from the material anchor to the surface point.
     first_offset: tuple[float, ...] | None = None
     second_offset: tuple[float, ...] | None = None
     # The convex hull of both groups is the sampled triangle intersection.

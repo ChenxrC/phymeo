@@ -45,3 +45,9 @@ W4 布面在 CUDA 上的注册耗时分别为 5.403、0.136、0.135 ms，冷首�
 ```powershell
 python scripts/benchmark_paged_worlds.py --backend cuda --samples 3 --cache-root artifacts/paged-cache --out artifacts/paged-cost.json
 ```
+
+## 只消费接触与诊断的分页调用
+
+给 `PagedWorldCollisionWorkspace` 指定 `result_format="contacts"`，每个世界返回完整的接触见证和需要处理的诊断。用 `detect(..., limits_by_world={world: ContactBufferLimits(...)})` 可以分别限定单个世界的接触数与诊断数。注册时的页大小与候选对预算仍然有效；原完整行输出保留为默认模式。[紧凑输出口径](p65-compact-world-contacts.md)
+
+同批放入空世界、地形与球、穿面球、两张变形布面以及三个彼此分离的球，令一时刻只驻留一页。HOST 和真实 CUDA 均走四页，逐出三次，保留了 RR、RD、DD 三个接触，最后一页跳过三个已分离行。CUDA 完成九次启动。RD 的三元材料地址、DD 在归一化 1/4 时刻的四个边节点及双方权重与独立单世界完全匹配。将 DD 的接触容量降为零只拒绝该世界，明确报告需要一条记录。另在最后一页注入异常，整个批次继续保留前一已接受发布，重试可逐项复现。[混合分页用例](../../tests/scale/test_paged_compact_contacts.py)

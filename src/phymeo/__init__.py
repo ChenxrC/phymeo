@@ -15,6 +15,7 @@ from .backends.tyx_participants import (
 from .backends.tyx_rigid import TyxRigidSemiImplicitSolver
 from .backends.tyx_xpbd import TyxXPBDSolver
 from .builders.cloth import ClothPatch, cloth_grid
+from .builders.mjcf import load_mjcf
 from .builders.robot import pendulum_chain
 from .builders.tetrahedral import tetrahedral_block
 from .builders.urdf import load_urdf
@@ -258,6 +259,7 @@ __all__ = [
     "make_robot_runtime",
     "pendulum_chain",
     "load_urdf",
+    "load_mjcf",
     "BackendContext",
     "DomainBinding",
     "HistoryField",

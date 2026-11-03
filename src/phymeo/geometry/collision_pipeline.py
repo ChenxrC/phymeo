@@ -23,6 +23,7 @@ from ._collision_bvh import CollisionTrees
 from ._collision_spatial import SpatialPairs
 from ._convex_contact import HullPairQuery
 from ._convex_hull import HullShape
+from ._curved_solids import CurvedContact, curved_bounds, curved_solid_contact
 from ._heightfield import HeightfieldTrace, heightfield_sphere_contact
 from ._hull_surface import HullSurfaceQuery
 from ._plate_contact import PlateSurfaceQuery, RoundedPlate
@@ -80,6 +81,7 @@ class CollisionPair:
     plate: PlateContactTrace | None = None
     hull_surface: HullSurfaceTrace | None = None
     heightfield: HeightfieldTrace | None = None
+    curved: CurvedContact | None = None
 
 
 @dataclass(frozen=True)
@@ -131,6 +133,14 @@ def _envelopes(model, paths, margin):
         if shape.kind == "plane":
             # Its row is storage padding only. Both broad phases bypass this AABB.
             packed[row] = 0
+            row += 1
+            continue
+        if shape.curved is not None:
+            low, high = curved_bounds(shape.curved, path)
+            halo = Fraction(margin) / 2
+            for k in range(3):
+                packed[row, k] = _outward(low[k] - halo, False)
+                packed[row, k + 3] = _outward(high[k] + halo, True)
             row += 1
             continue
         pad = Fraction(shape.radius) + Fraction(margin) / 2
@@ -482,7 +492,11 @@ def _detect_pairs(workspace, paths, flags, selected, proximity=False, resolved=N
             ma, mb = paths[a.key], paths[b.key]
             code = int(flags[offset + local])
             ready = resolved.get(offset + local)
-            if code == 0 and {a.kind, b.kind} == {"heightfield", "sphere"}:
+            if code == 0 and (a.curved is not None or b.curved is not None):
+                family = "RR" if a.rigid and b.rigid else "RD"
+                status, reason, witness, trace = curved_solid_contact(a, b, ma, mb)
+                ready = CollisionPair(a.key, b.key, family, True, status, reason, witness, curved=trace)
+            elif code == 0 and {a.kind, b.kind} == {"heightfield", "sphere"}:
                 status, reason, witness, chart, sweep = heightfield_sphere_contact(a, b, ma, mb)
                 ready = CollisionPair(
                     a.key, b.key, "RR", True, status, reason, witness, sweep, heightfield=chart

@@ -360,9 +360,9 @@
         "reason": "Free rigid bodies at the specified poses, zero shape gap and margin; read the Newton rigid contact buffer."
       },
       "phymeo": {
-        "status": "gap",
-        "devices": [],
-        "reason": "The native finite cylinder with a sharp rim is absent from CollisionShape."
+        "status": "run",
+        "devices": ["cpu"],
+        "reason": "Finite solid and sphere surface witnesses through the HOST collision query."
       }
     },
     {
@@ -385,7 +385,11 @@
         "devices": ["cpu", "cuda:0"],
         "reason": "Free rigid bodies at the specified poses, zero shape gap and margin; read the Newton rigid contact buffer."
       },
-      "phymeo": {"status": "gap", "devices": [], "reason": "The public builder cannot register an exact circular cone."}
+      "phymeo": {
+        "status": "run",
+        "devices": ["cpu"],
+        "reason": "Finite cone support and the projected point on the registered plane, measured on HOST."
+      }
     },
     {
       "id": "RR-ELLIPSOID-TILT",
@@ -407,7 +411,11 @@
         "devices": ["cpu", "cuda:0"],
         "reason": "Free rigid bodies at the specified poses, zero shape gap and margin; read the Newton rigid contact buffer."
       },
-      "phymeo": {"status": "gap", "devices": [], "reason": "The public builder has no exact ellipsoid support map."}
+      "phymeo": {
+        "status": "run",
+        "devices": ["cpu"],
+        "reason": "Tilted ellipsoid support and the paired plane witness through HOST detect."
+      }
     }
   ]
 }

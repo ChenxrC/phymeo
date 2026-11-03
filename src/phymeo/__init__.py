@@ -29,6 +29,7 @@ from .constraints.collision_shapes import (
     RigidTurn,
 )
 from .constraints.contact_impulse import ContactImpulseResult, solve_contact_impulses
+from .constraints.curved_solids import CurvedSolid
 from .constraints.distance import DistanceConstraints
 from .constraints.friction import FrictionImpulseResult, solve_friction_disk
 from .constraints.heightfield import Heightfield
@@ -81,6 +82,7 @@ from .coupling.robot_port import RobotPointPort
 from .coupling.surface_port import PointPairOperator, WeightedPointPort
 from .coupling.tetrahedral_port import TetrahedralPointPort
 from .dynamics.robot_contact import RobotContactSystem
+from .geometry._curved_solids import CurvedContact
 from .geometry._heightfield import HeightfieldEvent, HeightfieldFace, HeightfieldTrace
 from .geometry.collision_pipeline import (
     CollisionBounds,
@@ -365,6 +367,8 @@ __all__ += [
     "CollisionPair",
     "CollisionPolicy",
     "CollisionShape",
+    "CurvedSolid",
+    "CurvedContact",
     "CollisionSweep",
     "CollisionWitness",
     "CollisionWorkspace",

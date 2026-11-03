@@ -837,9 +837,12 @@ class CollisionWorkspace:
     def _heightfield_faces(self, terrain, sphere):
         heights = self._model.shapes[terrain].heightfield.heights_yx
         try:
-            return self._engine.heightfield_face_candidates(
+            faces = self._engine.heightfield_face_candidates(
                 terrain, sphere, len(heights), len(heights[0])
             )
+            if not isinstance(faces, tuple):
+                raise RuntimeError("invalid heightfield candidate selection")
+            return faces
         except BaseException:
             self._close_locked()
             raise

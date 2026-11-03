@@ -1,0 +1,129 @@
+"""Complete finite-angle support contact sets of a centered rotating ellipsoid."""
+
+from decimal import Decimal as D
+from math import pi
+
+import numpy as np
+import pytest
+from rotating_ellipsoid_oracles import analytic_extrema, physical_points
+from test_curved_solids import CYCLIC, IDENTITY, scene, solid
+
+import phymeo as ph
+
+
+AXES=(0.5,0.25,0.25)
+I=np.eye(3)
+CYCLE=np.array([[0,0,1],[1,0,0],[0,1,0]])
+
+
+def build(angle=pi,height=0.375,dims=AXES,axis=(0,1,0),*,reverse=False,transformed=False,orientation=None):
+    rotation=CYCLE if transformed else I
+    anchor=np.array([2,-1,0.5]) if transformed else np.zeros(3)
+    center=anchor+rotation@[0,0,height]
+    n=rotation@[0,0,3]
+    quat=orientation or (CYCLIC if transformed else IDENTITY)
+    model,paths,key,plane=scene(solid("ellipsoid",dims,quat),center,"plane",anchor,reverse=reverse,normal=n)
+    turn=ph.RigidTurn(center,center,rotation@axis,angle)
+    paths[key]=ph.CollisionMotion([center],turn=turn)
+    return model,paths,key,plane,turn,rotation
+
+
+def detect(model,paths):
+    with ph.CollisionWorkspace(model) as work:
+        (row,) = ph.detect(model,paths,ph.CollisionPolicy(),work).pairs
+        return row
+
+
+def check_material(w,key,plane,curved_first,paths,dims,initial,turn,t):
+    center,anchor = paths[key].start[0], paths[plane].start[0]
+    # These tests bind the world plane by rotating the initial local +Z together
+    # with the whole fixture. Independent-initial-pose tests set the plane separately.
+    normal=initial@[0,0,1]
+    gap,ellipse,on_plane=physical_points(center,anchor,normal,dims,initial,turn.axis,t*turn.angle)
+    expect_normal=-normal if curved_first else normal
+    np.testing.assert_allclose(w.normal,expect_normal,rtol=0,atol=1e-5)
+    assert w.gap_m == pytest.approx(gap,rel=0,abs=1e-6)
+    for point,offset,weights,ref,origin,node in zip(
+        (w.first_point,w.second_point),(w.first_offset,w.second_offset),(w.first_weights,w.second_weights),
+        (ellipse,on_plane) if curved_first else (on_plane,ellipse),
+        (center,anchor) if curved_first else (anchor,center),(47,91) if curved_first else (91,47),strict=True
+    ):
+        assert weights == ((node,1.0),)
+        np.testing.assert_allclose(point,ref,rtol=0,atol=1e-6)
+        np.testing.assert_allclose(origin+offset,point,rtol=0,atol=1e-10)
+    return ellipse
+
+
+@pytest.mark.parametrize("angle,height,reverse,transformed,triaxial", [
+    (pi,0.375,False,False,False),(-pi,0.375,False,False,False),(pi,0.375,True,False,False),
+    (pi,0.5,False,False,False),(pi,9/16,False,False,False),(3.0,0.5-1/16384,False,False,False),
+    (2.0,0.375,False,False,False),(pi,0.375,False,False,True),(-pi,0.375,True,True,True),
+])
+def test_analytic_contact_extrema_and_physical_material(angle,height,reverse,transformed,triaxial):
+    dims=(0.5,0.375,0.25) if triaxial else AXES
+    axis=(0.6,0.8,0) if triaxial else (0,1,0)
+    model,paths,key,plane,turn,rotation=build(angle,height,dims,axis,reverse=reverse,transformed=transformed)
+    expected=analytic_extrema(dims,height,rotation.T@turn.axis,turn.angle)
+    row=detect(model,paths)
+    assert row.status == ("hit" if expected else "separated")
+    assert row.sweep is not None and row.curved.owner==key
+    first=row.first==key
+    assert row.sweep.start_gap_m==pytest.approx(height-dims[2],abs=1e-10)
+    assert row.sweep.end_gap_m==row.witness.gap_m
+    point=check_material(row.witness,key,plane,first,paths,dims,rotation,turn,1.0)
+    np.testing.assert_allclose(row.curved.points_m[0],point,rtol=0,atol=1e-6)
+    if expected is None:
+        assert row.sweep.first_t is None and row.curved.first_contact is row.curved.last_contact is None
+        return
+    events=(row.curved.first_contact,row.curved.last_contact)
+    assert row.sweep.first_t == events[0].interval and row.sweep.witness == events[0].witness
+    assert row.sweep.witness_time==events[0].witness_time
+    for target,event in zip(expected,events,strict=True):
+        assert isinstance(event,ph.CurvedEvent)
+        lo,hi=event.interval
+        assert 0<=lo<=event.witness_time<=hi<=1
+        assert D.from_float(lo)<=target<=D.from_float(hi) and hi-lo<=1e-6
+        check_material(event.witness,key,plane,first,paths,dims,rotation,turn,event.witness_time)
+    if height==0.5:
+        assert expected[0] == expected[1] > D("0.5") and events[0].interval==events[1].interval
+    if angle==3.0:
+        assert events[0].interval[1]<events[1].interval[0]
+        assert all(physical_points(paths[key].start[0],paths[plane].start[0],[0,0,1],dims,I,
+                                   turn.axis,angle*j/64)[0]>0 for j in range(65))
+
+
+def test_contacts_at_both_ends_can_have_clear_interior():
+    q=(0,np.sqrt(0.5),0,np.sqrt(0.5))
+    model,paths,key,plane,turn,_=build(orientation=q)
+    row=detect(model,paths)
+    assert row.status=="hit" and row.curved.first_contact.interval==(0,0)
+    assert row.curved.last_contact.interval==(1,1)
+    assert row.sweep.start_gap_m==pytest.approx(-0.125)
+    # At quarter of an ideal revolution, its long axis is horizontal again.
+    initial=np.array([[0,0,1],[0,1,0],[-1,0,0]])
+    assert physical_points(paths[key].start[0],paths[plane].start[0],[0,0,1],AXES,initial,turn.axis,turn.angle/2)[0]>0.12
+
+
+@pytest.mark.parametrize("kind",["off-center","moving-pivot","moving-plane","long-arc","translation"])
+def test_outside_centered_static_plane_arc_contract(kind):
+    model,paths,key,plane,turn,_=build()
+    center=paths[key].start[0]
+    start=center+[0.25,0,0] if kind=="off-center" else center
+    end=start+[0,0.25,0] if kind=="moving-pivot" else start
+    angle=np.nextafter(pi,np.inf) if kind=="long-arc" else pi
+    paths[key]=ph.CollisionMotion([center],turn=ph.RigidTurn(start,end,turn.axis,angle))
+    if kind=="moving-plane":
+        paths[plane]=ph.CollisionMotion([[0,0,0]],[[0,0,0.125]])
+    if kind=="translation":
+        paths[key]=ph.CollisionMotion([center],[center+[0,0,0.125]])
+    row=detect(model,paths)
+    assert row.status=="unsupported" and row.sweep is None and row.curved is None
+
+
+def test_root_isolation_failure_is_explicit(monkeypatch):
+    from phymeo.geometry import _rotating_ellipsoid_plane as arc
+
+    model,paths,*_=build(angle=3.0,height=0.5-1/16384)
+    monkeypatch.setattr(arc,"_MAX_REFINEMENTS",0)
+    row=detect(model,paths)
+    assert row.status=="unresolved" and row.sweep is None and row.curved is None

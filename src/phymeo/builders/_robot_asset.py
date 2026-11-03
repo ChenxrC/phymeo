@@ -142,13 +142,18 @@ def make_collider(name, link_name, link_index, ordinal, position, orientation, k
     if not np.isfinite(vertices).all():
         raise ValueError(f"{where} has unrepresentable local vertices")
     key = CollisionKey(0, link_index + 1, ordinal)
-    shape = CollisionShape(
-        key, native_kind, tuple(range(len(vertices))), radius, triangles=triangles, curved=curved
-    )
-    if kind == "mesh":
-        from ..geometry._closed_mesh import ClosedMesh
+    try:
+        shape = CollisionShape(
+            key, native_kind, tuple(range(len(vertices))), radius, triangles=triangles, curved=curved
+        )
+        if kind == "mesh":
+            from ..geometry._closed_mesh import ClosedMesh
 
-        ClosedMesh(shape, CollisionMotion(vertices))
+            ClosedMesh(shape, CollisionMotion(vertices))
+    except ValueError as error:
+        if kind != "mesh":
+            raise
+        raise ValueError(f"{where}: {error}") from error
     return LinkCollision(
         name,
         link_name,

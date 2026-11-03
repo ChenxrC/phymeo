@@ -2,6 +2,9 @@
 
 ## 当前入口（2026-11-04）
 
+**08:00 阶段概览。** 刚体单转轴闭网格–球 CCD、柔体顶点–面与边–边完整冲击、浮动树持续承载和真实双端线支撑，以及 W1/W32 与 Newton、W4/W16 真实混合世界的吞吐对照已有实测。源码外 wheel 完成参考布九阶段递交，目标软布两种倾角仍未完成放台。下一批从旋转闭网格–胶囊、跨步材料摩擦、多活动关节链和带载 GPU 的分项计时继续。[可放大概览图与力曲线](../benchmarks/p65-newton-20261104-overview.html) · [数据、开放项与下一批验收](../benchmarks/p65-newton-20261104-0800.md)
+
+
 - 机器人已从移动参考系观测推进到浮动基座与子树的动力学、固定基座的双边点闭环及带实际加速度的站点 IMU。闭环反力、两端功率和离散投影分别记录。IMU 的瞬时样本和 Newton 步平均加速度按各自时刻对照。[浮动树](../benchmarks/p65-floating-tree-dynamics.md) · [四杆反力](../benchmarks/p65-robot-point-closures.md) · [站点 IMU](../benchmarks/p65-robot-site-imu.md)
 - 刚体几何已接通闭网格与球/有限胶囊的实体查询、受限单相对轴的闭网格旋转首触，以及有界曲面之间和曲面与有限布面的材料见证。首触时刻、末态边界净距和整体退让深度为不同观测。[闭网格与圆体](../benchmarks/p65-mesh-round-contact.md) · [转动闭体](../benchmarks/p65-rotating-mesh-solid.md) · [曲面与布](../benchmarks/p65-convex-support-pairs.md)
 - GPU 已有独立的世界内配对、常驻自由球/滑轨推进和多世界布–连杆双向受力。相同局部编号的 RR、RD、DD 和空世界也经过同批查询。GPU 启动、必要读回与 HOST 几何复核分别计数。[世界内配对](../benchmarks/p65-world-partition.md) · [G2 常驻推进](../benchmarks/p65-g2-resident-world-step.md) · [G3 双向受力](../benchmarks/p65-g3-world-contact-loads.md) · [混合世界回归](../../tests/scale/test_mixed_world_queries.py)

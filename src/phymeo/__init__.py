@@ -144,13 +144,13 @@ from .geometry.particle_sphere import ParticleSphereGeometry, particle_sphere_ge
 from .geometry.plane import Plane
 from .geometry.robot_patch_sweep import RobotPatchSweepResult, robot_patch_sweep
 from .geometry.robot_sphere import RobotSphereAttachments
-from .geometry.sdf_grid import SdfSample, SignedDistanceGrid, bake_mesh_sdf
 from .geometry.rotating_mesh import (
     MeshArcCandidates,
     MeshArcFacePair,
     MeshArcWindow,
     mesh_arc_face_candidates,
 )
+from .geometry.sdf_grid import SdfSample, SignedDistanceGrid, bake_mesh_sdf
 from .geometry.sphere import SphereShapes
 from .geometry.surface_features import (
     ClosestFeaturePair,

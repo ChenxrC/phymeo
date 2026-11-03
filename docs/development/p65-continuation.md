@@ -2,6 +2,8 @@
 
 ## 当前入口（2026-11-03）
 
+- Newton 1.7.0 的独立 CPU/CUDA 参考环境和刚–刚 13、刚–柔 11、机器人与资产 11 个案例已实测。新产品开发从跨 RR/RD 的公共高度场和固定基座 URDF 导入切入，凹体对凹体先统一双侧表面地址。[逐项物理对照](../benchmarks/newton-1.7-reference-baseline.md) · [三方向后续开发计划](../superpowers/plans/2026-11-03-newton-reference-development.md) · [复现入口](../../tests/reference_newton/README.md)
+
 - 公共碰撞检测已覆盖 15 个案例族、74 个登记构型。RR、RD、DD 各有独立受力运动窗口，三端共 636 个物理步。实际 TYX 与 HOST 的职责和各形状支持范围分别记录。[碰撞验收表](../benchmarks/p65-collision-public-catalog.md) · [三个动力学案例](../benchmarks/p65-collision-m4-loads.md)
 - 单爪软布已真实承载、离台并弯曲。原双臂装配的两种初态都未放台。材料点跟踪使 2° 布在 B 单独持有时横移最多 9.13 cm；竖直布的 A/B 交接重叠仍不足。[单爪结果](../benchmarks/p65-single-gripper-bend.md) · [双臂对照](../benchmarks/p65-soft-handoff-acquisition.md)
 - 已补通用胶囊–布面载荷、铰接关节反力及同源 Three.js 记录。原装配在初态有布–腕重叠，新掌部与两根移动指杆保留全部结构形状，两种软布初态各 240 对配对均分离。两种原协同轨迹已记录。竖直旧轨迹还检出了同一张布的远处材料面横穿；连通折叠试片已在 HOST、tyx interpret 和 CUDA 实现双向受力，并接入真实弹性布子步。完整放台、最终集成审阅和源码外 wheel 分开验收。[结构接触证据](../benchmarks/p65-cloth-link-response.md) · [当前实施计划](../superpowers/plans/2026-11-02-p65-tyx-collision-pipeline.md)

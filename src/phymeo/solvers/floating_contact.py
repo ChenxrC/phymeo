@@ -43,6 +43,7 @@ def step_floating_contacts(
     *,
     fixed_bodies=None,
     local_vertices=None,
+    local_normals=None,
     velocity_tolerance=1e-10,
     response_tolerance=1e-12,
     position_tolerance=1e-9,
@@ -56,6 +57,7 @@ def step_floating_contacts(
     local material points). A domain with no attached sites may be omitted. rows and friction
     arrays follow solve_witness_impulses: each collision-key binding selects a domain/site row,
     and local_vertices supplies body-local shape points for active row keys only.
+    Half-spaces require their oriented body-local vectors in local_normals.
 
     Forces, gravity and drives advance velocities at input q. All graph rows then act on those
     velocities at that same q. Only the resulting velocity drifts each dynamic domain. Pass
@@ -104,6 +106,7 @@ def step_floating_contacts(
                 mu_static,
                 mu_dynamic,
                 local_vertices=local_vertices,
+                local_normals=local_normals,
                 velocity_tolerance=velocity_tolerance,
                 response_tolerance=response_tolerance,
                 position_tolerance=position_tolerance,

@@ -263,6 +263,46 @@ def floating_impact(ph, np):
     )
 
 
+def floating_support_window(ph, np):
+    """Advance an installed free-root sphere under a load, then lift it off the plane."""
+    h = 1 / 64
+    root = ph.RigidBodyModel(np.array([2.0]), np.ones((1, 3)), np.array([0.0, 0.0, -8.0]))
+    model = ph.FloatingRobotModel(root, np.zeros(3))
+    state = ph.FloatingRobotState(np.array([0.0, 0.0, 0.125, 0, 0, 0, 1]), np.zeros(6))
+    fixed = ph.RigidBodyModel(np.zeros(1), np.zeros((1, 3)), np.zeros(3))
+    base = ph.RigidBodyState(np.zeros((1, 3)), np.array([[0., 0., 0., 1.]]),
+                             np.zeros((1, 3)), np.zeros((1, 3)))
+    floor, ball = (ph.CollisionKey(1, k, 0) for k in (1, 2))
+    collision = ph.CollisionModel((
+        ph.CollisionShape(floor, "plane", (6,), normal=(0, 0, 1)),
+        ph.CollisionShape(ball, "sphere", (9,), radius=0.125),
+    ))
+    attachments = {"tree": (np.array([0]), np.array([[0., 0., -0.125]])),
+                   "floor": (np.array([0]), np.zeros((1, 3)))}
+    bindings = {floor: ("floor", 0), ball: ("tree", 0)}
+    reactions = []
+    with ph.CollisionWorkspace(collision) as workspace:
+        for step in range(6):
+            paths = {floor: ph.CollisionMotion(base.position), ball: ph.CollisionMotion([state.q[:3]])}
+            pair, = ph.detect(collision, paths, ph.CollisionPolicy(), workspace).pairs
+            rows = [(pair, bindings)] if pair.status == "touching" else []
+            assert pair.status in ("touching", "separated") and bool(rows) == (step < 5)
+            force = np.array([[0., 0., 8. if step >= 4 else 0.]])
+            inputs = ph.FloatingRobotInputs(np.zeros(0), force, np.zeros((1, 3)))
+            result = ph.step_floating_contacts(
+                {"tree": (model, state, inputs)}, attachments, rows,
+                np.zeros(len(rows)), np.zeros(len(rows)), h, fixed_bodies={"floor": (fixed, base)},
+                local_normals={floor: (0, 0, 1)} if rows else None,
+            )
+            assert isinstance(result, ph.FloatingContactStep) and result.report.accepted
+            reactions.append(float(np.sum(result.impulses.normal_impulses) / h))
+            state = result.states["tree"]
+    np.testing.assert_allclose(reactions, [4., 4., 4., 4., 0., 0.], rtol=0, atol=1e-12)
+    np.testing.assert_allclose([state.v[2], state.q[2] - 0.125], [16 * h, 24 * h**2], rtol=0, atol=1e-12)
+    return dict(backend="HOST NumPy", reaction_n=reactions, liftoff_m=float(state.q[2] - 0.125),
+                final_velocity_m_s=float(state.v[2]))
+
+
 def field_sample(ph, np, mode, root):
     values = np.broadcast_to((np.arange(3) * 0.25 - 0.25)[:, None, None], (3, 3, 3)).copy()
     grid = ph.SignedDistanceGrid(values, origin_m=(0, 0, 0), spacing_m=(0.25, 0.25, 0.25))
@@ -587,6 +627,7 @@ def main():
         assert args.mesh_assets and not args.mesh_assets.resolve().is_relative_to(checkout)
         result["mesh_assets"] = imported_mesh_contacts(ph, np, args.mesh_assets, args.mode, args.out.parent / "cache")
         result["floating_impact"] = floating_impact(ph, np)
+        result["floating_support"] = floating_support_window(ph, np)
         result["mixed_world_step"] = mixed_world_step(ph, np, args.mode, args.out.parent / "cache")
         result["material_step"] = deformable_force_step(ph, np, args.mode, args.out.parent / "cache")
     if args.mode != "usd":

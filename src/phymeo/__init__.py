@@ -245,6 +245,7 @@ from .solvers.driven_robot import DrivenRobotProgram
 from .solvers.dynamic_robot_finite_contact import DynamicRobotFiniteContactProgram
 from .solvers.dynamic_robot_friction_contact import DynamicRobotFrictionContactProgram
 from .solvers.dynamic_robot_normal_contact import DynamicRobotNormalContactProgram
+from .solvers.floating_contact import FloatingContactStep, step_floating_contacts
 from .solvers.floating_tree import (
     FloatingDynamicsTerms,
     FloatingRobotInputs,
@@ -374,6 +375,8 @@ __all__ = [
     "FloatingRobotState",
     "floating_kinematics",
     "floating_point_jacobians",
+    "FloatingContactStep",
+    "step_floating_contacts",
     "FloatingDynamicsTerms",
     "FloatingRobotInputs",
     "floating_dynamics_terms",

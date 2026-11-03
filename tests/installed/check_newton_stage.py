@@ -1,12 +1,110 @@
 """Run from outside the source checkout against a separately installed stage wheel."""
 
 import argparse
+import hashlib
 import json
 import sys
 import sysconfig
 from contextlib import ExitStack
 from importlib.metadata import distribution
 from pathlib import Path
+from urllib.parse import urlsplit
+from zipfile import ZipFile
+
+
+def verified_wheel(installed, expected):
+    """Tie the independently installed distribution to a concrete local wheel archive."""
+    assert expected.is_absolute() and expected.suffix.lower() == ".whl" and expected.is_file()
+    wheel = expected.resolve()
+    with wheel.open("rb") as source:
+        actual = hashlib.file_digest(source, "sha256").hexdigest()
+    raw = installed.read_text("direct_url.json")
+    assert raw is not None, "install the supplied wheel file directly to record its archive SHA256"
+    direct = json.loads(raw)
+    origin = urlsplit(direct["url"])
+    assert origin.scheme == "file" and origin.path.lower().endswith(".whl")
+    archive = direct["archive_info"]
+    recorded = archive.get("hashes", {}).get("sha256")
+    if recorded is None:
+        algorithm, _, recorded = archive.get("hash", "").partition("=")
+        assert algorithm == "sha256"
+    assert recorded.lower() == actual, "installed archive SHA256 differs from --expected-wheel"
+    return dict(file=str(wheel), sha256=actual, installed_from=direct["url"])
+
+
+def mixed_world_step(ph, np, mode, root):
+    """One true scene step with a free sphere, a loaded finite cloth face and a clear face."""
+    from phymeo.constraints.cloth_material import ClothMaterial
+
+    xyz = np.array([[-1.0, -1.0, 0.0], [1.0, -1.0, 0.0], [0.0, 2.0, 0.0]])
+    cloth = ph.ParticleModel(np.ones(3), np.zeros(3))
+    arm = ph.RobotModel(
+        np.array([-1]), ("prismatic",), np.array([[0.0, 0.0, 0.25]]),
+        np.array([[0.0, 0.0, 0.0, 1.0]]), np.array([[0.0, 0.0, 1.0]]),
+        np.array([0.5]), np.zeros((1, 3)), np.ones((1, 3)), np.zeros(3),
+    )
+    model = ph.SceneModel(
+        (ph.DomainBinding("cloth", "particles", cloth), ph.DomainBinding("arm", "robot", arm))
+    )
+    rod = ph.LinkCapsule("beam", "arm", 0, (-0.25, 0, 0), (0.25, 0, 0), 0.125)
+    face = ph.TrianglePrismSurface("sheet", "cloth", (0, 1, 2), half_thickness_m=1 / 32)
+    spring = ph.DistanceConstraints(np.array([[0, 1]]), np.array([2.0]), np.array([1.0]))
+    program = ph.CompliantClothContactProgram(
+        model, "cloth", ClothMaterial(distance=spring), (face,), xyz, (),
+        robot_contact=ph.RobotContactSystem({"arm": arm}, capsules=(rod,)),
+        max_penetration_m=0.01, cloth_link_material=ph.ClothLinkMaterial(0.125, 64 / 3, 0.0, 0.0),
+    )
+
+    def material(q):
+        state = ph.SceneState(
+            {"cloth": ph.ParticleState(xyz, np.zeros_like(xyz)),
+             "arm": ph.RobotState(np.array([q]), np.zeros(1))}
+        )
+        return ph.ClothLinkWorld(program, state)
+
+    ball = ph.FreeSphere(2.0, 0.125, position=(0, 0, 2), gravity=(0, 0, -8))
+    worlds = [(13, material(0.0)), (61, ball), (29, material(0.5))]
+    loads = {
+        key: ph.SceneInputs({"cloth": ph.StepInputs.zeros(3), "arm": ph.RobotInputs.zeros(1)})
+        for key in (13, 29)
+    }
+    engine = "cuda" if mode == "cuda" else "interpret"
+    h = 1 / 256
+    with ph.TyxBatchedScene(worlds, engine, cache_root=root) as scene:
+        if engine == "cuda":
+            import tyx
+
+            before = tyx.runtime_stats().cuda_kernel_launches
+        result = scene.step(h, loads)
+        points = scene.snapshot()
+        counts = scene.stats()
+        launches = 0 if engine == "interpret" else tyx.runtime_stats().cuda_kernel_launches - before
+    assert tuple(result.accepted) == (13, 61, 29) and all(result.accepted.values())
+    assert tuple(result.contact_results) == (13, 29) and all(p.tick == 1 for p in points.values())
+    loaded = result.contact_results[13].audit
+    clear = result.contact_results[29].audit.sample
+    assert points[13].last_audit == loaded and len(loaded.sample.sites) == 2
+    np.testing.assert_allclose(
+        [loaded.sample.gap_m, loaded.sample.normal_force_n, loaded.sample.joint_effort_n],
+        [3 / 32, 2.0, 2.0], rtol=0, atol=2e-7,
+    )
+    np.testing.assert_allclose(loaded.sample.node_forces_n, np.tile([0, 0, -2 / 3], (3, 1)), atol=2e-7)
+    np.testing.assert_allclose(np.asarray(points[13].velocity)[:, 2], [-1 / 384] * 3, atol=2e-9)
+    np.testing.assert_allclose([points[13].q, points[13].qd], [1 / 32768, 1 / 64], atol=2e-9)
+    assert clear.sites == () and clear.normal_force_n == 0 and points[29].q == 0.5 and points[29].qd == 0
+    assert points[61].position == (0.0, 0.0, 2 - 8 * h**2) and points[61].velocity == (0.0, 0.0, -8 * h)
+    assert counts["resident"]["submitted_kernels"] == 1 and counts["material"]["completed_kernels"] == 6
+    if engine == "cuda":
+        assert launches == 7 and counts["material"]["downloaded_bytes"] > 0
+    return dict(
+        physical_backend="TYX CUDA" if engine == "cuda" else "TYX HOST interpret",
+        geometry_and_audit="HOST", keys=list(result.accepted), h_s=h, ticks=[p.tick for p in points.values()],
+        material_normal_n=[loaded.sample.normal_force_n, clear.normal_force_n],
+        loaded_node_velocity_m_s=points[13].velocity, loaded_link_velocity_m_s=points[13].qd,
+        sphere_velocity_m_s=points[61].velocity, actual_cuda_launches=launches,
+        resident_submissions=counts["resident"]["submitted_kernels"],
+        material_submissions=counts["material"]["completed_kernels"],
+    )
 
 
 def robot_sample(ph, np):
@@ -36,6 +134,7 @@ def robot_sample(ph, np):
     np.testing.assert_allclose(imu.specific_force_m_s2, [0, 0, 4], atol=1e-10)
     np.testing.assert_allclose(sample.reaction.force_first_world, [[0, 0, 8]], atol=1e-10)
     return dict(
+        backend="HOST NumPy",
         ik_position_m=ik.configuration.tolist(),
         closure_force_n=sample.reaction.force_first_world.tolist(),
         imu_specific_force_m_s2=imu.specific_force_m_s2.tolist(),
@@ -96,6 +195,9 @@ def collision_and_force(ph, np, mode, root):
         np.testing.assert_allclose(reading.torque_nm, [0, 0, 0.1328125], atol=2e-5, rtol=0)
         assert output.path.pairs[0].status == "separated" and len(reading.contributing_pairs) == 1
         return dict(
+            broad_phase=mode,
+            narrow_phase="HOST",
+            material_and_rigid_step="HOST NumPy" if mode == "host" else "TYX CUDA",
             force_n=reading.force_n.tolist(),
             torque_nm=reading.torque_nm.tolist(),
             rigid_velocity_m_s=output.state.rigid.velocity.tolist(),
@@ -150,11 +252,13 @@ def floating_impact(ph, np):
         ),
     }
     impulse = ph.solve_witness_impulses(
-        ports, [(pair, {rk: ("arm", 0), bk: ("ball", 0)})], [0.0], [0.0]
+        ports, [(pair, {rk: ("arm", 0), bk: ("ball", 0)})], [0.0], [0.0],
+        local_vertices={rk: ((0.0, -0.125, 0.0),)},
     )
     np.testing.assert_allclose(impulse.states["arm"].v, [0, -0.125, 0, 0, 0, -0.25, 0], atol=1e-10)
     assert abs(impulse.normal_impulses[0] - 0.625) < 1e-10
     return dict(
+        backend="HOST NumPy",
         impulse_ns=float(impulse.normal_impulses[0]), kinetic_change_j=impulse.energy_change
     )
 
@@ -204,12 +308,18 @@ def many_worlds(ph, mode, root):
                 and abs(pair.witness.gap_m + 1 / 16) < 1e-6
             )
             hits.append(w)
-        assert batch.stats()["backend_counts"]["compact_skipped_slots"] == 65 * 5
+        stats = batch.stats()
+        assert stats["backend_counts"]["compact_skipped_slots"] == 65 * 5
+        if mode == "cuda":
+            assert stats["completed_launches"] > 0
         return dict(
             worlds=len(obs),
             shape_count=260,
             pages=len(batch.layout),
             local_hits=len(hits),
+            broad_phase=mode,
+            narrow_phase="HOST",
+            completed_broad_launches=stats["completed_launches"],
             skipped_pair_rows=65 * 5,
         )
 
@@ -276,15 +386,17 @@ def imported_mesh_contacts(ph, np, assets, mode, cache):
 
 
 def reference_handoff(cli, target):
-    """Run the public CLI from this installed package, then inspect its original physical frames."""
+    """Run the external CLI against the installed package and verify its physical frames."""
     import gzip
     import runpy
 
     trace_path = target / "articulated-reference-handoff.json.gz"
     old = sys.argv
     try:
-        sys.argv = [str(cli), "--case", "handoff", "--robot", "articulated",
-                    "--fabric", "reference", "--output", str(trace_path)]
+        sys.argv = [
+            str(cli), "--case", "handoff", "--robot", "articulated",
+            "--fabric", "reference", "--output", str(trace_path),
+        ]
         try:
             runpy.run_path(str(cli), run_name="__main__")
         except SystemExit as result:
@@ -293,39 +405,58 @@ def reference_handoff(cli, target):
         sys.argv = old
     with gzip.open(trace_path, "rt", encoding="utf-8") as stream:
         record = json.load(stream)
-    frames = record["frames"]
-    events = record["events"]
-    expected = ["grasp_A","lift_A","share","release_A","carry_B",
-                "lower_B","open_B","settle","placed"]
+    assert record["schema"] == "phymeo-compliant-case-v1"
+    assert record["case"] == "articulated-handoff" and record["robot_layout"] == "articulated"
+    assert record["backend"] == "numpy" and record["initial_tilt_deg"] == 0
+    assert record["dt_s"] == 0.01 and record["substeps"] == 128
+    fabric = record["fabric"]
+    assert fabric["name"] == "reference" and fabric["grid"] == [2, 3]
+    assert fabric["mass_kg"] == 0.048 and fabric["half_thickness_m"] == 0.0015
+    assert fabric["stretch_compliance_m_per_n"] == 0.001 and fabric["bend_compliance_per_nm"] == 20.0
+    frames, events = record["frames"], record["events"]
+    expected = ["grasp_A", "lift_A", "share", "release_A", "carry_B", "lower_B", "open_B", "settle", "placed"]
     assert record["completed"] and [e["phase"] for e in events] == expected
     steps = (len(frames) - 1) * record["substeps"]
     assert steps == len(record["robot_samples"]) and len(record["samples"]) == steps * len(record["patches"])
+    assert len(frames) >= 10 and abs(frames[-1]["t"] - record["time_s"]) < 1e-9
     at = {}
     for event in events:
-        frame = min(frames, key=lambda src: abs(src["t"] - event["t"]))
         if event["phase"] in {"release_A", "carry_B", "lower_B", "placed"}:
+            frame = min(frames, key=lambda src: abs(src["t"] - event["t"]))
             assert abs(frame["t"] - event["t"]) < 1e-9
             at[event["phase"]] = frame["measurements"]
-    share, first, last, placed = (at[k] for k in ("release_A","carry_B","lower_B","placed"))
+    share, first, last, placed = (at[k] for k in ("release_A", "carry_B", "lower_B", "placed"))
     weight = record["metrics"]["weight_n"]
-    assert share["A_up_n"] > 0 and share["B_up_n"] > 0
+    assert abs(weight - fabric["mass_kg"] * 9.81) < 1e-12
+    assert min(share["A_both_normal_n"], share["B_both_normal_n"]) > 0.20
+    assert min(share["A_up_n"], share["B_up_n"]) > 0.08 * weight and share["table_up_n"] < 0.02 * weight
+    assert first["A_normal_n"] < 0.01 and first["B_up_n"] > 0.3 * weight and first["table_up_n"] < 0.02 * weight
     transport = last["cloth_center_x_m"] - first["cloth_center_x_m"]
-    assert transport > .035 and last["B_up_n"] > .2 * weight and last["A_normal_n"] < .01
-    assert all(f["measurements"]["table_up_n"] > .35*weight and
-               f["measurements"]["A_normal_n"] < .01 and f["measurements"]["B_normal_n"] < .01
-               for f in frames[-10:])
-    assert placed["speed_m_s"] < .05 and .9*weight < placed["table_up_n"] < 1.1*weight
-    return dict(physical_frames=len(frames),substeps=steps,time_s=record["time_s"],
-                phases=[e["phase"] for e in events],b_independent_transport_m=transport,
-                share_up_n=[share["A_up_n"],share["B_up_n"]],b_carry_up_n=last["B_up_n"],
-                last_jaw_n=[placed["A_normal_n"],placed["B_normal_n"]],
-                final_table_n=placed["table_up_n"],cloth_weight_n=weight,
-                final_node_speed_m_s=placed["speed_m_s"],trace=str(trace_path))
+    assert transport > 0.035 and last["B_up_n"] > 0.2 * weight and last["A_normal_n"] < 0.01
+    assert all(
+        f["measurements"]["table_up_n"] > 0.35 * weight
+        and f["measurements"]["A_normal_n"] < 0.01 and f["measurements"]["B_normal_n"] < 0.01
+        for f in frames[-10:]
+    )
+    assert placed["speed_m_s"] < 0.05 and 0.9 * weight < placed["table_up_n"] < 1.1 * weight
+    return dict(
+        case=record["case"], backend=record["backend"], robot_layout=record["robot_layout"],
+        fabric=fabric, dt_s=record["dt_s"], substeps_per_frame=record["substeps"],
+        physical_frames=len(frames), substeps=steps, time_s=record["time_s"],
+        phases=[e["phase"] for e in events], b_independent_transport_m=transport,
+        share_both_jaw_normal_n=[share["A_both_normal_n"], share["B_both_normal_n"]],
+        share_up_n=[share["A_up_n"], share["B_up_n"]], share_table_n=share["table_up_n"],
+        b_carry_up_n=last["B_up_n"], last_jaw_n=[placed["A_normal_n"], placed["B_normal_n"]],
+        final_table_n=placed["table_up_n"], cloth_weight_n=weight,
+        final_node_speed_m_s=placed["speed_m_s"], trace=str(trace_path),
+        external_cli=str(cli.resolve()), external_cli_sha256=hashlib.sha256(cli.read_bytes()).hexdigest(),
+    )
 
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--wheel-site", type=Path, required=True)
+    p.add_argument("--expected-wheel", type=Path, required=True)
     p.add_argument("--checkout", type=Path, required=True)
     p.add_argument("--out", type=Path, required=True)
     p.add_argument("--mode", choices=["host", "cuda", "usd", "handoff"], required=True)
@@ -333,6 +464,8 @@ def main():
     p.add_argument("--mesh-assets", type=Path)
     p.add_argument("--case-cli", type=Path)
     args = p.parse_args()
+    if not __debug__:
+        p.error("run with -I and assertions enabled")
     site, checkout = args.wheel_site.resolve(), args.checkout.resolve()
     assert sys.flags.isolated and all(
         not path.resolve().is_relative_to(checkout) for path in (site, Path(__file__), Path.cwd())
@@ -342,10 +475,12 @@ def main():
 
     import phymeo as ph
 
+    installed = distribution("phymeo")
+    wheel = verified_wheel(installed, args.expected_wheel)
     origin = Path(ph.__file__).resolve()
     assert (
         origin.is_relative_to(site)
-        and Path(distribution("phymeo").locate_file("")).resolve() == site
+        and Path(installed.locate_file("")).resolve() == site
     )
     # The optional USD interpreter lives in a worktree-local venv. Its installed
     # dependencies are distinct from a source checkout on the import path.
@@ -362,18 +497,30 @@ def main():
         ), path
         assert path != checkout / "src" and path != checkout, path
     result = dict(
-        package_version=distribution("phymeo").version,
+        package_version=installed.version,
+        wheel=wheel,
         mode=args.mode,
         package=str(origin),
         cwd=str(Path.cwd()),
         interpreter_dependency_paths_under_checkout=[str(path) for path in local_env_paths],
     )
+    assert not any(n == "pxr" or n.startswith("pxr.") for n in sys.modules)
     if args.mode == "handoff":
         assert args.case_cli and not args.case_cli.resolve().is_relative_to(checkout)
         result["reference_handoff"] = reference_handoff(args.case_cli, args.out.parent)
     elif args.mode == "usd":
         assert args.usd_fixture and not args.usd_fixture.resolve().is_relative_to(checkout)
         asset = ph.load_usd(args.usd_fixture)
+        sdk = distribution("usd-core")
+        assert sdk.version == "26.8"
+        loaded_sdk = {}
+        for name in ("Usd", "UsdGeom", "UsdPhysics"):
+            module = sys.modules["pxr." + name]
+            path = Path(module.__file__).resolve()
+            assert path == Path(sdk.locate_file(f"pxr/{name}/__init__.py")).resolve()
+            loaded_sdk[name] = str(path)
+        usd_version = tuple(sys.modules["pxr.Usd"].GetVersion())
+        assert usd_version[-2:] == (26, 8)
         assert asset.model.dof_count > 0 and asset.collisions
         pose = asset.collision_motion(np.zeros(asset.model.dof_count))
         assert set(pose) == {g.shape.key for g in asset.collisions}
@@ -399,7 +546,10 @@ def main():
             contact.witness.gap_m + 1 / 64
         ) < 2e-6
         result["usd"] = dict(
-            sdk=distribution("usd-core").version,
+            sdk=sdk.version,
+            sdk_runtime_version=usd_version,
+            sdk_modules=loaded_sdk,
+            collision_backend="HOST",
             moving_links=asset.model.dof_count,
             shapes=len(pose),
             tool_cylinder_gap_m=contact.witness.gap_m,
@@ -416,14 +566,22 @@ def main():
         assert args.mesh_assets and not args.mesh_assets.resolve().is_relative_to(checkout)
         result["mesh_assets"] = imported_mesh_contacts(ph, np, args.mesh_assets, args.mode, args.out.parent / "cache")
         result["floating_impact"] = floating_impact(ph, np)
+        result["mixed_world_step"] = mixed_world_step(ph, np, args.mode, args.out.parent / "cache")
         result["material_step"] = deformable_force_step(ph, np, args.mode, args.out.parent / "cache")
+    if args.mode != "usd":
+        assert not any(n == "pxr" or n.startswith("pxr.") for n in sys.modules)
     used = [
         Path(module.__file__).resolve()
         for name, module in tuple(sys.modules.items())
         if (name == "phymeo" or name.startswith("phymeo.")) and getattr(module, "__file__", None)
     ]
     assert used and all(file.is_relative_to(site) for file in used)
+    with ZipFile(args.expected_wheel) as archive:
+        for file in set(used):
+            member = file.relative_to(site).as_posix()
+            assert archive.read(member) == file.read_bytes(), member
     result["installed_phymeo_module_count"] = len(used)
+    result["verified_wheel_member_count"] = len(set(used))
     with args.out.open("x", encoding="utf8") as out:
         json.dump(result, out, allow_nan=False, indent=2)
     print(json.dumps(result, allow_nan=False))

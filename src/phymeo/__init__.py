@@ -13,6 +13,7 @@ from .backends.tyx_participants import (
     TyxTetrahedralParticipant,
 )
 from .backends.tyx_rigid import TyxRigidSemiImplicitSolver
+from .backends.tyx_sdf import TyxSdfSampler
 from .backends.tyx_world_batch import FreeSphere, PrismaticSlider, TyxWorldBatch, WorldCheckpoint
 from .backends.tyx_world_contact import (
     ClothLinkWorld,
@@ -150,6 +151,7 @@ from .geometry.rotating_mesh import (
     MeshArcWindow,
     mesh_arc_face_candidates,
 )
+from .geometry.sdf_grid import SdfSample, SignedDistanceGrid, bake_mesh_sdf
 from .geometry.sphere import SphereShapes
 from .geometry.surface_features import (
     ClosestFeaturePair,
@@ -460,6 +462,10 @@ __all__ += [
     "CollisionPolicy",
     "CollisionShape",
     "CurvedSolid",
+    "SdfSample",
+    "SignedDistanceGrid",
+    "TyxSdfSampler",
+    "bake_mesh_sdf",
     "CurvedContact",
     "CurvedEvent",
     "ConvexSupportTrace",

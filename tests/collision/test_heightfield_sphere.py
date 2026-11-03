@@ -133,7 +133,8 @@ def test_finite_edges_corners_and_both_sides(center, radius, foot, normal, gap, 
 def test_swept_candidate_filter_capacity_and_stale_pose():
     grid = ph.Heightfield([[0, 1, 0]] * 3, (1, 1), origin=(-1, -1, 0))
     start, end = (-0.75, 0.125, 1.25), (0.75, 0.125, 1.25)
-    model, paths, terrain = scene(grid, start, 5 / 16, end=end)
+    moving_land = ph.CollisionMotion(grid.world_vertices(), grid.world_vertices() + [0, 0, 0.125])
+    model, paths, terrain = scene(grid, start, 5 / 16, end=end, terrain_motion=moving_land)
     with ph.CollisionWorkspace(model) as work:
         result = ph.detect(model, paths, ph.CollisionPolicy(), work)
         (row,) = result.pairs

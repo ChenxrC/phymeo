@@ -82,7 +82,7 @@ from .coupling.robot_port import RobotPointPort
 from .coupling.surface_port import PointPairOperator, WeightedPointPort
 from .coupling.tetrahedral_port import TetrahedralPointPort
 from .dynamics.robot_contact import RobotContactSystem
-from .geometry._curved_solids import CurvedContact
+from .geometry._curved_solids import CurvedContact, CurvedEvent
 from .geometry._heightfield import HeightfieldEvent, HeightfieldFace, HeightfieldTrace
 from .geometry._mesh_mesh import MeshMeshPose, MeshMeshSupport, MeshMeshTrace
 from .geometry.collision_pipeline import (
@@ -376,6 +376,7 @@ __all__ += [
     "CollisionShape",
     "CurvedSolid",
     "CurvedContact",
+    "CurvedEvent",
     "CollisionSweep",
     "CollisionWitness",
     "CollisionWorkspace",

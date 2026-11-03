@@ -152,6 +152,13 @@ from .geometry.rotating_mesh import (
     mesh_arc_face_candidates,
 )
 from .geometry.sdf_grid import SdfSample, SignedDistanceGrid, bake_mesh_sdf
+from .geometry.sdf_material import (
+    SdfContactBatch,
+    SdfFieldPose,
+    SdfMaterialResult,
+    SdfMaterialSample,
+    sample_sdf_contacts,
+)
 from .geometry.sphere import SphereShapes
 from .geometry.surface_features import (
     ClosestFeaturePair,
@@ -463,6 +470,11 @@ __all__ += [
     "CollisionShape",
     "CurvedSolid",
     "SdfSample",
+    "SdfContactBatch",
+    "SdfFieldPose",
+    "SdfMaterialResult",
+    "SdfMaterialSample",
+    "sample_sdf_contacts",
     "SignedDistanceGrid",
     "TyxSdfSampler",
     "bake_mesh_sdf",

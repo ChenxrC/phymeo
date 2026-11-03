@@ -2,6 +2,8 @@
 
 ## 当前入口（2026-11-03）
 
+- 本轮优先推进机器人/工具链和刚–刚检测。GPU 与多场景已有独立分期计划，首个量化目标是同坐标世界正确隔离并消除跨世界配对的存储成本。[GPU/规模计划与验收](../superpowers/plans/2026-11-03-tyx-gpu-multiworld.md)
+
 - Newton 1.7.0 的独立 CPU/CUDA 参考环境和刚–刚 13、刚–柔 11、机器人与资产 11 个案例已实测。新产品开发从跨 RR/RD 的公共高度场和固定基座 URDF 导入切入，凹体对凹体先统一双侧表面地址。[逐项物理对照](../benchmarks/newton-1.7-reference-baseline.md) · [三方向后续开发计划](../superpowers/plans/2026-11-03-newton-reference-development.md) · [复现入口](../../tests/reference_newton/README.md)
 
 - 公共碰撞检测已覆盖 15 个案例族、74 个登记构型。RR、RD、DD 各有独立受力运动窗口，三端共 636 个物理步。实际 TYX 与 HOST 的职责和各形状支持范围分别记录。[碰撞验收表](../benchmarks/p65-collision-public-catalog.md) · [三个动力学案例](../benchmarks/p65-collision-m4-loads.md)

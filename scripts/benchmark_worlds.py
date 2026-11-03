@@ -18,7 +18,15 @@ from tempfile import NamedTemporaryFile
 from time import perf_counter_ns
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tests" / "scale"))
-from cases import BASE_X_M, HOLDOUT_X_M, SCALES, PhymeoGroup, world_ids  # noqa: E402
+from cases import (
+    BASE_X_M,
+    HOLDOUT_X_M,
+    SCALES,
+    PartitionedGroup,
+    PhymeoGroup,
+    combine_observations,
+    world_ids,
+)  # noqa: E402
 
 
 def gpu_memory():
@@ -63,22 +71,14 @@ def stats(groups, method):
 
 def observed(groups, raw, moved):
     parts = [g.inspect(out, moved) for g, out in zip(groups, raw, strict=True)]
-    keys = (
-        "published_pair_rows",
-        "same_world_rows",
-        "cross_world_filtered_rows",
-        "candidate_pairs",
-    )
-    snapshot = {key: None if parts[0][key] is None else sum(p[key] for p in parts) for key in keys}
-    snapshot["contacts"] = sorted(
-        (row for part in parts for row in part["contacts"]), key=lambda row: row["world"]
-    )
-    return snapshot
+    return combine_observations(parts)
 
 
 def run_configuration(args, factory, device, count, layout):
     ids = world_ids(count)
-    partitions = [ids] if layout == "combined" else [(w,) for w in ids]
+    partitions = [ids] if layout in ("combined", "partitioned") else [(w,) for w in ids]
+    if layout == "partitioned":
+        factory = PartitionedGroup
     runtime_stats = None
     if args.engine == "phymeo" and device == "cuda":
         from tyx import runtime_stats
@@ -124,7 +124,7 @@ def run_configuration(args, factory, device, count, layout):
                 raw = query_all()
             wall = perf_counter_ns() - t0
             after = stats(groups, "stats")
-            delta = {k: v - before[k] for k, v in after.items() if type(v) is int}
+            delta = {k: v - before.get(k, 0) for k, v in after.items() if type(v) is int}
             actual = asdict(runtime_stats() - start_runtime) if runtime_stats else None
             return raw, dict(
                 wall_ns=wall, query_sets=window, stat_deltas=delta, tyx_process_delta=actual
@@ -145,7 +145,9 @@ def run_configuration(args, factory, device, count, layout):
         restored = observed(groups, query_all(), None)
         assert restored == base
         for _ in range(args.warmup):
-            assert observed(groups, query_all(), None) == base
+            for _ in range(args.window):
+                warm = query_all()
+            assert observed(groups, warm, None) == base
         samples = []
         for _ in range(args.samples):
             raw, sample = timed(args.window)
@@ -187,6 +189,7 @@ def run_configuration(args, factory, device, count, layout):
             expanded_phymeo_positive_gap=expanded,
             warm_samples=samples,
             warm_p50_window_ns=median(durations),
+            accepted_world_queries_per_s=count * args.window * 1e9 / median(durations),
             warm_p95_window_ns=durations[math.ceil(0.95 * len(durations)) - 1],
         )
 
@@ -206,7 +209,10 @@ def main():
     p.add_argument("--device", choices=("cpu", "cuda:0"), required=True)
     p.add_argument("--worlds", type=int, nargs="+", choices=SCALES, default=list(SCALES))
     p.add_argument(
-        "--layouts", nargs="+", choices=("serial", "combined"), default=["serial", "combined"]
+        "--layouts",
+        nargs="+",
+        choices=("serial", "combined", "partitioned"),
+        default=["serial", "combined"],
     )
     p.add_argument("--reserve-mib", type=int, default=512)
     p.add_argument("--warmup", type=int, default=2)
@@ -233,6 +239,8 @@ def main():
         numpy=version("numpy"),
     )
     if a.engine == "newton":
+        if "partitioned" in a.layouts:
+            p.error("partitioned is a Phymeo layout")
         import newton
         import warp as wp
         from newton_g1 import NewtonGroup
@@ -265,7 +273,8 @@ def main():
         factory = PhymeoGroup
         device = {"cpu": "host", "cuda:0": "cuda"}[a.device]
         semantics = (
-            "Full CollisionDetection pair table. The CUDA backend reduces AABBs and classifies pairs on "
+            "Serial and partitioned return a complete per-world diagnostic each; combined includes all "
+            "cross-world rows. A partitioned workspace lazily opens its device engine on first valid input. The CUDA backend reduces AABBs and classifies pairs on "
             "the pinned tyx runtime, synchronizes and downloads bounds and flags; envelope construction, "
             "static sphere witnesses and full-row publication execute on HOST."
         )

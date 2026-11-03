@@ -5,7 +5,7 @@
 - 公共碰撞检测已覆盖 15 个案例族、74 个登记构型。RR、RD、DD 各有独立受力运动窗口，三端共 636 个物理步。实际 TYX 与 HOST 的职责和各形状支持范围分别记录。[碰撞验收表](../benchmarks/p65-collision-public-catalog.md) · [三个动力学案例](../benchmarks/p65-collision-m4-loads.md)
 - 单爪软布已真实承载、离台并弯曲。原双臂装配的两种初态都未放台。材料点跟踪使 2° 布在 B 单独持有时横移最多 9.13 cm；竖直布的 A/B 交接重叠仍不足。[单爪结果](../benchmarks/p65-single-gripper-bend.md) · [双臂对照](../benchmarks/p65-soft-handoff-acquisition.md)
 - 已补通用胶囊–布面载荷、铰接关节反力及同源 Three.js 记录。原装配在初态有布–腕重叠，新掌部与两根移动指杆保留全部结构形状，两种软布初态各 240 对配对均分离。两种原协同轨迹已记录。竖直旧轨迹还检出了同一张布的远处材料面横穿；连通折叠试片已在 HOST、tyx interpret 和 CUDA 实现双向受力，并接入真实弹性布子步。完整放台、最终集成审阅和源码外 wheel 分开验收。[结构接触证据](../benchmarks/p65-cloth-link-response.md) · [当前实施计划](../superpowers/plans/2026-11-02-p65-tyx-collision-pipeline.md)
-- 新的外侧预靠控制已让 B 在竖直软布上取得双侧夹持，A 与 B 的承载窗口仍相差 40 ms，未放台。同一条轨迹有 1,639 个子步产生布自接触力，最大 0.776 N。2° 原始初态单独验收。[竖直接收时机与回放](../benchmarks/p65-soft-handoff-acquisition.md#外侧预靠的竖直原始初态) · [连通布响应](../benchmarks/p65-connected-cloth-contact.md)
+- 两种原始软布初态均已完成实测，尚未共同承载和放台。常用 `cooperative` 保留了竖直布 B 的双侧夹持及同轨迹 1,639 个子步的布自接触力。可达地址策略单列为 `aperture-guided` 实验模式，它在 2° 接取窗较早丢布。下一项是用已定位的 B 指杆–布面和 B 腕–布面两个入口先验证提前接近的路径。[双臂实测与后续验收](../benchmarks/p65-soft-handoff-acquisition.md#对照结果与下一项验收) · [竖直与 2° 回放](../benchmarks/p65-soft-handoff-acquisition.md#倾斜软布与两种布边路径)
 
 
 ## 2026-11-02 实施记录

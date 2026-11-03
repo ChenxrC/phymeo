@@ -75,3 +75,27 @@
 同一正常 CLI 在 1.37 s 到达原抬升阶段时限，共 138 帧、17,536 个真实子步。A 在 0.54 s 单独抬布；此前 B 张指行进 29.05 mm，期间 B 上的布接触载荷为零。B 于 0.86 s 取得布边节点 13–20 之间的材料地址，该点距工具中心 15.97 mm，距指垫侧界 3.50 mm。B 在 0.99 s 建立双侧夹持，A 两侧都高于 0.20 N 的末帧为 0.95 s，两个承载窗仍差约 40 ms。末帧 B 两侧较小法向力为 0.590 N，桌面承担 0.215 N。交接未放行。[逐帧地址与夹持](../../artifacts/p65-collision-m4-loads-local-20261102-01/with-exterior-self-v1/full-vertical-exterior.json)
 
 同条轨迹有 1,639 个子步产生布自接触力，涉及 16 对材料面，峰值 0.776 N，自接触净合力最大值 1.96×10⁻¹⁶ N。全部外载冲量与布动量变化的最大分量差为 1.39×10⁻¹⁷ N·s。指垫最大穿入 0.543 mm，结构穿入和关节限位违例均为零。下一次诊断应区分闭指行程、材料边沿夹爪轴向的运动，以及 A 在等待期间的滑移。[受力与阶段审计](../../artifacts/p65-collision-m4-loads-local-20261102-01/with-exterior-self-v1/full-vertical-audit.json) · [同源离线回放](../../artifacts/p65-collision-m4-loads-local-20261102-01/with-exterior-self-v1/full-vertical.html)
+
+### 倾斜软布与两种布边路径
+
+2° 布在 0.49 s 达到 A 独立承载。B 在这之前张指行进 43.76 mm，布对 B 的载荷为零。此后 B 腕与材料面 2 的预测路径在 0.79 s 首次阻挡接近，B 在 0.93 s 出现指垫力，但始终没有得到位于两个有效指面内的目标地址。1.38 s 时两只手均丢布，桌面竖向支撑为 0.371 N。139 帧、17,664 个物理子步中最大指垫穿入 1.875 mm，结构穿入及关节限位违例均为零。本条轨迹没有激活布自接触力。[原始阶段与载荷](../../artifacts/p65-collision-m4-loads-local-20261102-01/with-exterior-self-v1/full-tilted-audit.json) · [逐帧接近记录](../../artifacts/p65-collision-m4-loads-local-20261102-01/with-exterior-self-v1/full-tilted-exterior.json) · [2° 布回放](../../artifacts/p65-collision-m4-loads-local-20261102-01/with-exterior-self-v1/full-tilted.html)
+
+竖直轨迹的真实子步采样把两个夹持窗之间的间隔缩小到 27.66 ms。A 最后一次合格夹持的采样时刻为 0.95265625 s，B 首次为 0.9803125 s，二者没有同时达标。按实际指面裁剪，0.86 s 已进入指面的那部分布边在计入 3 mm 轴向预留后，还差 0.504 mm 才能继续收指保持这份预留。同一材料边在指面投影之外仍有 9.93 mm 行程余量。2° 轨迹的 89 个接近帧中，23 帧连整条候选边都越过了张开指面的轴向范围，其中 9 帧同时记录了结构阻挡。[竖直子步载荷与行程](../../artifacts/p65-collision-m4-loads-local-20261102-01/with-exterior-self-v1/full-vertical-stroke.json) · [2° 子步载荷与行程](../../artifacts/p65-collision-m4-loads-local-20261102-01/with-exterior-self-v1/full-tilted-stroke.json)
+
+### 先找到张开的夹爪能够接近的材料点
+
+平面接收器在尚未看到可夹持地址时，沿同一材料边检查实际开口与布厚。优先保留仍在轴向余量内的先前地址；它越界时，选取当下可达的地址。整条边暂时不可达时，张指等待在材料外侧。实际闭指仍要求两个有限指面都能覆盖目标。查询接受任意空间朝向，在镜像和旋转夹爪上均有回归。36 项控制与有限指面测试通过。[通用开口查询](../../src/phymeo/control/material_grasp.py) · [反例与留出构型](../../tests/test_aperture_guidance.py)
+
+在此前的 121 个实测接近姿态上逐帧对照独立裁剪，竖直轨迹的 32 帧中保留 17 个原地址、改选 14 个、等待 1 个；2° 轨迹的 89 帧中分别为 50、13、26。两组都是对旧姿态重算指令；真实运动另按同入口短窗比较。[原目标与候选边的距离](../../artifacts/p65-collision-m4-loads-local-20261102-01/with-exterior-self-v1/approach-address-differences.json) · [两条保存轨迹上的新指令](../../artifacts/p65-collision-m4-loads-local-20261102-01/with-aperture-guidance-v1/saved-guidance.json)
+
+两条大场景的离线回放均已用浏览器核对。从竖直轨迹第 113 帧读取了 10 根布面自接触箭头，箭头起点与各自材料作用点完全一致，方向最大误差 1.58×10⁻¹⁶。2° 布第 92 帧的结构接触有三根箭头，B 腕的法向载荷为 0.582 N；播放器可到达末帧 138。[浏览器与原始轨迹绑定](../../artifacts/p65-collision-m4-loads-local-20261102-01/with-exterior-self-v1/browser-force-audit.json)
+
+两种初态分别重建了首个不同执行器输入之前的 54 帧与 36 帧控制，关节目标、工具目标和电机输出与原轨迹逐项相同。保留入口的布及机器人速度，每种初态再推进四个显示帧、512 个真实子步。竖直布从 0.66 s 改选地址，2° 布从 0.49 s 等待开口。两个短窗内 A 每帧都维持双侧夹持，B 尚未接触布，对应时刻布节点位置与原轨迹一致。[竖直短窗](../../artifacts/p65-collision-m4-loads-local-20261102-01/with-aperture-guidance-v1/window-vertical-summary.json) · [2° 短窗](../../artifacts/p65-collision-m4-loads-local-20261102-01/with-aperture-guidance-v1/window-tilted-summary.json)
+
+### 对照结果与下一项验收
+
+从同一批原始状态继续到原轨迹的接取时段，两种初态合计 12,544 个真实子步。竖直布在 0.86 s 取得地址，0.99 s 观察到 B 双侧夹持；A 与 B 的合格夹持仍相差 27.89 ms。2° 布的 B 始终未建立双侧载荷，两只手在 1.12 s 丢布，早于原协同轨迹的 1.38 s。两个拼接点的全部布和机器人位置、速度完全相同，逐帧动量与实际外载冲量的分量误差均小于 1.05×10⁻¹⁷ N·s。[竖直接取窗](../../artifacts/p65-collision-m4-loads-local-20261102-01/with-aperture-guidance-v1/capture-vertical-audit.json) · [2° 接取窗](../../artifacts/p65-collision-m4-loads-local-20261102-01/with-aperture-guidance-v1/capture-tilted-audit.json)
+
+因此，既有 `--receiver-control cooperative` 保留张指外侧预靠及有限指面闭指策略。开口引导通过 `--receiver-control aperture-guided` 显式选择。当前 39 项控制回归通过。在两条完整协同轨迹的抬升阶段，两个初态各 125 帧的工具目标、关节目标、电机输出和控制观测均逐项一致。实验模式另核对了竖直 89 帧和 2° 99 帧的全部执行器指令。竖直公共前缀的 12 个旧观测没有两个新增引导地址字段，已用同次材料节点和分数独立绑定。[正常案例入口](../../examples/compliant_cloth.py) · [竖直协同指令](../../artifacts/p65-collision-m4-loads-local-20261102-01/with-aperture-guidance-v1/mode-cooperative-vertical.json) · [2° 协同指令](../../artifacts/p65-collision-m4-loads-local-20261102-01/with-aperture-guidance-v1/mode-cooperative-tilted.json) · [实验模式竖直](../../artifacts/p65-collision-m4-loads-local-20261102-01/with-aperture-guidance-v1/mode-aperture-guided-vertical.json) · [实验模式 2°](../../artifacts/p65-collision-m4-loads-local-20261102-01/with-aperture-guidance-v1/mode-aperture-guided-tilted.json)
+
+两个最早的结构阻挡给出了下一项独立回归的输入。竖直布在 0.89 s 的 B 左指杆与材料面 6 离接触层还有 6.97 mm，2° 布在 0.83 s 的 B 腕与材料面 2 还有 1.13 mm。对每个真实入口，在原速度、加速度、关节约束下检查了 17 个平面参考，均未获得下一段的结构净空。分别提前 10 ms 和 30 ms 出发，使用真实 FK、两段或四段运动、仅由入口速度前推的布，两个对照的每组 17 个参考也都未通过净空检查。结果仅限这组方向和布运动预测。后续先用这两组状态、镜像和空场对照检验能提前形成通道的双臂接近路径，再用实际布和执行器推进到共同承载。[首个结构阻挡与各方向结果](../../artifacts/p65-collision-m4-loads-local-20261102-01/with-aperture-guidance-v1/first-structural-options.json) · [提前出发的参考路径](../../artifacts/p65-collision-m4-loads-local-20261102-01/with-aperture-guidance-v1/earlier-structural-references.json)

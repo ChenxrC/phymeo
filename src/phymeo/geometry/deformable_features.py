@@ -42,6 +42,16 @@ class DeformableFeatureContact:
     closest: tuple[ConvexContactPoint, ...]
 
 
+@dataclass(frozen=True, eq=False)
+class _FeatureInput:
+    model: CollisionModel
+    positions: tuple[bytes, ...]
+    search_distance_m: float
+    contact_distance_m: float
+    rings: int
+    contacts: tuple[DeformableFeatureContact, ...]
+
+
 @dataclass(frozen=True)
 class DeformableFeatureContacts:
     """All qualifying features or an explicit failure with no partial feature list."""
@@ -331,4 +341,30 @@ def query_deformable_features(
     )
     if found > max_results:
         return DeformableFeatureContacts("capacity_exceeded", "feature_capacity", backend, **info)
-    return DeformableFeatureContacts("ok", "complete", backend, tuple(kept), **info)
+    frame = DeformableFeatureContacts("ok", "complete", backend, tuple(kept), **info)
+    # A separate load consumer may reuse this geometry only for the identical
+    # registration and complete pose. Keep provenance out of public row
+    # serialization and dataclass replacements, which do not re-run geometry.
+    source = _FeatureInput(
+        model,
+        tuple(paths[s.key].start.tobytes() for s in model.shapes),
+        float(search),
+        float(force),
+        rings,
+        frame.contacts,
+    )
+    object.__setattr__(frame, "_source", source)
+    return frame
+
+
+def _matches_feature_input(frame, model, paths, search, force, rings):
+    source = getattr(frame, "_source", None)
+    return (
+        isinstance(source, _FeatureInput)
+        and source.model is model
+        and source.contacts is frame.contacts
+        and source.search_distance_m == search
+        and source.contact_distance_m == force
+        and source.rings == rings
+        and source.positions == tuple(paths[s.key].start.tobytes() for s in model.shapes)
+    )

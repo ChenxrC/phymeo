@@ -32,6 +32,7 @@ from ._mesh_mesh import MeshMeshQuery, MeshMeshTrace
 from ._mesh_round import MeshRoundQuery, MeshRoundTrace
 from ._plate_contact import PlateSurfaceQuery, RoundedPlate
 from ._rotating_capsule_face import RotatingCapsuleFaceQuery, rotating_capsule_face_query
+from ._rotating_mesh_solid import RotatingMeshSolidQuery
 from ._rotating_round_sweep import RotatingCapsuleQuery, rotating_round_query
 from ._round_sweep import round_query, sweep_result
 from ._sheet_pair_bounds import SheetPairBounds
@@ -580,17 +581,22 @@ def _detect_pairs(
                     elif not code:
                         analytic = HullSurfaceQuery(hs, hull, cs, cp, hull_first)
             elif a.kind == b.kind == "mesh" and code in (0, 5):
-                if a.radius or b.radius or any(path.turn and path.turn.angle for path in (ma, mb)):
+                rotating = any(path.turn and path.turn.angle for path in (ma, mb))
+                if a.radius or b.radius:
                     if not code:
                         analytic = _NarrowFailure("unsupported", "mesh_rounding_or_rotation")
-                else:
+                elif not rotating or not code:
                     first, second = prepared_mesh(a, ma), prepared_mesh(b, mb)
                     if isinstance(first, _NarrowFailure):
                         analytic = first
                     elif isinstance(second, _NarrowFailure):
                         analytic = second
                     elif not code:
-                        analytic = MeshMeshQuery(first, second)
+                        analytic = (
+                            RotatingMeshSolidQuery(first, second, a, b, ma, mb)
+                            if rotating
+                            else MeshMeshQuery(first, second)
+                        )
             elif code in (0, 5) and (
                 (a.kind == "mesh" and b.kind in ("sphere", "capsule"))
                 or (b.kind == "mesh" and a.kind in ("sphere", "capsule"))

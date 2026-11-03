@@ -2,7 +2,9 @@
 
 ## 当前入口（2026-11-03）
 
-- 机器人已接通固定基座 URDF、MJCF 与可选 USD。刚–刚可查询有限高度场、双闭合凹网格的平移首触和三类静态曲面。三名作者分别编码、自测和修复，父集成验证了 USD 工具球→圆柱及共址世界的曲面/双网格分派。后续机器人限位/传感和刚体非零旋转等范围单列，GPU 与多场景仍按独立计划推进。[最新三线实测](../benchmarks/p65-independent-rigid-usd-20261103.md) · [上一批地形与资产](../benchmarks/p65-robot-terrain-20261103.md) · [GPU/规模验收](../superpowers/plans/2026-11-03-tyx-gpu-multiworld.md)
+- 当前可并行的三项是移动参考系传感、非零转动刚体首触试片和 TYX 世界内配对。固定基座止挡、延迟驱动及设备地形候选已经组合验证。一台滑轨因限位在半步时触地，另一台共址滑轨保持净空。G1 已测到 64 个世界，单世界扰动没有串扰。在该档位，完整配对表保留了 32,256 个跨世界过滤行，暖态合批查询慢于逐世界调用。[组合验收](../benchmarks/p65-driven-terrain-worlds.md) · [G1 成本](../benchmarks/p65-g1-world-isolation.md) · [下一组独立案例与开发依赖](../superpowers/plans/2026-11-03-newton-reference-development.md#下一组独立案例与开发依赖)
+
+- 前一批接通了固定基座 URDF、MJCF 与可选 USD、双闭合凹网格的平移首触及三类静态曲面，并验证了 USD 工具球与圆柱的组合。[资产与刚体实测](../benchmarks/p65-independent-rigid-usd-20261103.md) · [地形与资产](../benchmarks/p65-robot-terrain-20261103.md)
 
 - Newton 1.7.0 的独立 CPU/CUDA 参考环境和刚–刚 13、刚–柔 11、机器人与资产 11 个案例已实测。首轮记录作为差异基线，新增入口的通过结果单列在上方本批实测中。[逐项物理对照](../benchmarks/newton-1.7-reference-baseline.md) · [三方向后续开发计划](../superpowers/plans/2026-11-03-newton-reference-development.md) · [复现入口](../../tests/reference_newton/README.md)
 

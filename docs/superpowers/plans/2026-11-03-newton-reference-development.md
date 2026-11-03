@@ -6,6 +6,8 @@
 
 ## 本批已验收
 
+固定基座机器人已通过柔顺止挡受力、0/1/2 物理步延迟、非饱和 PD 与回滚。TYX 可为平移球扫固定地形生成逐三角候选，HOST 计算两端事件及材料见证。父集成用实际限位运动查得归一化首触 1/2。多世界阶段 0 已完成共址四球基线，覆盖 W=1、2、8、32、64 的 Phymeo HOST/TYX CUDA 与独立 Newton CPU/CUDA。下面的独立案例表是后续开发起点。[机器人](../../benchmarks/p65-driven-robot-substeps.md) · [地形](../../benchmarks/p65-heightfield-device-candidates.md) · [组合](../../benchmarks/p65-driven-terrain-worlds.md) · [G1](../../benchmarks/p65-g1-world-isolation.md)
+
 固定基座 URDF 和本地 MJCF 已接入同一机器人资产模型。刚球与有限高度图的三个静态 ID 及直线球心的首末事件 ID 都已通过。两条入口用真实工具球和独立地形做了组合回归。随后双凹网格 4 项、曲面原语 3 项已补通。USD 工具点现有 HOST/CUDA 实测，厘米警告按引擎语义单列。RD 的带半径材料点–地形合同仍待单独实现。[模块作者验证与父级集成](../../benchmarks/p65-independent-rigid-usd-20261103.md) · [2026-11-03 增量读数与支持域](../../benchmarks/p65-robot-terrain-20261103.md)
 
 ## 开发起点

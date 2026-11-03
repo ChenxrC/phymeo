@@ -1,6 +1,6 @@
 # TYX GPU 与多场景规模计划
 
-**交付顺序。** 当前产品线先补机器人与工具链、刚体–刚体检测。本计划定义其后的设备与规模工作。本轮做了源码、既有测量和 Newton 1.7.0 接口调研。下列规模档、速度目标和拟建文件用于下一阶段验收，目前没有新的批量吞吐测量。生产后端采用项目已固定的 tyx。Newton/Warp 在独立环境作对照。[三方向开发计划](2026-11-03-newton-reference-development.md) · [环境锁](../../../requirements/tyx.txt) · [Newton 参考基线](../../benchmarks/newton-1.7-reference-baseline.md)
+**当前入口。** 阶段 0 的 G1 静态隔离与成本已完成。W=1、2、8、32、64 的两种布局在 Phymeo HOST、TYX CUDA、Newton CPU 和 CUDA 均保留了预期接触。W=64 时，现有 TYX 完整合批发布 32,640 行，其中 32,256 行是跨世界过滤。五个单查询暖态样本的中位数为合批 117.513 ms、逐世界顺序调用 31.698 ms。下一项为阶段 1 世界内配对。动力学吞吐、设备驻留和长窗口统计仍按后续步骤分别验收。[G1 原始口径及复现](../../benchmarks/p65-g1-world-isolation.md) · [三方向开发计划](2026-11-03-newton-reference-development.md) · [环境锁](../../../requirements/tyx.txt)
 
 ## 已有能力和成本
 

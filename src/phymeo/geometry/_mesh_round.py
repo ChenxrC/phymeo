@@ -57,7 +57,14 @@ def _gap(d2, radius):
     return float((d2 - radius * radius) / (_root(d2) + radius))
 
 
-def _material(face, weights):
+def _material(face, weights, shift):
+    # The witness and its published barycentric address must identify the same
+    # point. Small world coordinates do not bound cancellation on a long face.
+    rounding = np.array([F(float(w)) - w for w in weights], dtype=object)
+    if any(rounding):
+        displacement = rounding @ (face.xyz + shift)
+        if sum(abs(x) for x in displacement) > F(1, 10**7):
+            raise SolverFailure("mesh_round_material_address_resolution")
     return tuple(sorted((i, float(w)) for i, w in zip(face.ids, weights, strict=True) if w))
 
 
@@ -109,7 +116,7 @@ class MeshRoundQuery:
         round_point = _xyz(np.asarray(axis + shift, dtype=float) + radial)
         if any(ulp(x) > 1e-7 for x in (*mesh_point, *round_point)):
             raise SolverFailure("mesh_round_world_resolution")
-        mesh_weights = _material(face, weights)
+        mesh_weights = _material(face, weights, shift)
         round_weights = _weights(self.round, s)
         offsets = _ZERO_OFFSET, _xyz(radial)
         points = mesh_point, round_point
@@ -141,7 +148,7 @@ class MeshRoundQuery:
                     float(u),
                     _xyz(start + u * self.axis + shift),
                     _xyz(np.asarray(v, dtype=object) @ face.xyz + shift),
-                    _material(face, v),
+                    _material(face, v, shift),
                 )
                 for u, v in (low, high)
             )

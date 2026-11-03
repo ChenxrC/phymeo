@@ -22,3 +22,7 @@
 该 RTX 4060 的 TYX 宽相有 3 次完成的启动和 2 次下载，之后由 HOST 对真实三角边界做时间证明。最终同批 10 项在 3.56 秒通过，含实际 CUDA 和导入资产。孤立切角耗时 0.63 秒。这是本机单次诊断耗时。此前的 Newton 离散网格–球对照仍见[闭网格与有限球/胶囊](p65-mesh-round-contact.md)。
 
 增量验收使用 `tests/collision/test_rotating_mesh_sphere.py` 与 `tests/test_robot_asset_joint_sweep.py::test_rotating_closed_obj_preserves_initial_ball_overlap_and_capsule_boundary`。运行 pytest 时加 `--require-tyx --tyx-mode=cuda`。本机原始收据在 `artifacts/p65-night-rotating-mesh-sphere-20261104-01/`，`mesh-sphere-frozen-red` 保留旧入口两项 unsupported，`mesh-sphere-delivered` 存有逐例两侧材料、首触括区和设备读回，`mesh-sphere-obj-material` 保存完整 OBJ 起始读数。首次 CUDA 命令因不存在的 pytest 开关以 4 退出，纠正后成功。最终 formatter 与 lint 均为 0。
+
+一条长边能跨过局部原点。两端为 ±2⁵⁵ m 时，真实接触点 x=0.25 m 的材料权重为 1/2±2⁻⁵⁸，存为 FP64 后两者都成了 1/2。原见证点的坐标本身能表示，但从这对权重重建的位置相差 0.25 m。闭网格与圆体的公共材料输出现在按原顶点和实际公布的权重核对位移，超出 10⁻⁷ m 时返回 `mesh_round_material_address_resolution`。普通尺寸的刚体/网格路径保留原接口。[材料重建反例](../../tests/collision/test_rotating_mesh_sphere.py)
+
+初始时球心已在网格面上时，两表面的交线也能给出间隙为零的代表点。它表示初始占用，径向可能完全平行于网格面。新的接触冲量调用会拒绝将这种既有重叠当作新撞击，几何查询仍保留原始占用时刻和材料点。

@@ -2,6 +2,7 @@
 
 import json
 from dataclasses import asdict
+from fractions import Fraction
 from math import acos, atan2, cos, pi, sin
 
 import numpy as np
@@ -215,4 +216,50 @@ def test_device_classifies_candidates_and_host_certifies_the_actual_rotating_con
             event.witness_time,
             "center samples",
             row.mesh_round.center_samples,
+        )
+
+def test_published_mesh_material_reconstructs_the_point_or_declines_the_address():
+    vertices, faces = box((-2**55, -0.125, -0.25), (2**55, 0.125, 0.25))
+    center = (0.25, 0.25, 0.25)
+    model, paths, mesh, _ = scene(vertices, faces, center, 0.125, 0.25)
+    pivot = (0.0, 0.25, 0.25)
+    paths[mesh.key] = ph.CollisionMotion(vertices, turn=ph.RigidTurn(pivot, pivot, (1, 0, 0), 0.25))
+    pair = detect(model, paths)
+    if pair.status == "unresolved":
+        assert pair.reason == "mesh_round_material_address_resolution"
+        return
+    assert pair.status == "hit" and pair.sweep.first_t == (0.0, 0.0)
+    positions = dict(zip(mesh.vertex_ids, paths[mesh.key].start, strict=True))
+    for site in pair.mesh_round.start.supports:
+        witness = site.witness
+        recovered = sum(Fraction(weight) * Fraction(positions[node][0])
+                        for node, weight in witness.first_weights)
+        assert abs(recovered - Fraction(witness.first_point[0])) < Fraction(1, 10**6)
+
+def test_initial_overlap_curve_cannot_supply_a_tangential_impact_normal():
+    vertices, faces = box((0.0, 0.0, -1.0), (4.0, 2.0, 0.0))
+    center = np.array([3.0, 1.25, 0.0])
+    radius = 13 / 128
+    model, paths, mesh, sphere = scene(vertices, faces, center, radius, 0.25)
+    paths[mesh.key] = ph.CollisionMotion(vertices, turn=ph.RigidTurn(center, center, (0, 0, 1), 0.25))
+    pair = detect(model, paths)
+    assert pair.status == "hit" and pair.sweep.first_t == (0.0, 0.0)
+    pose = pair.mesh_round.start
+    assert pose.relation == "boundary_overlap" and pose.axis_gap_m == -radius
+    witness = pair.sweep.witness
+    assert abs(witness.gap_m) < 1e-9 and witness.normal[2] == 0
+    ident = np.array([[0.0, 0.0, 0.0, 1.0]])
+    zero = np.zeros((1, 3))
+    bed = ph.RigidBodyModel(np.zeros(1), zero, np.zeros(3))
+    ball = ph.RigidBodyModel(np.ones(1), np.ones((1, 3)), np.zeros(3))
+    ports = {
+        "mesh": ph.RigidPointPort(bed, ph.RigidBodyState(zero, ident, zero, zero), np.array([0]),
+                                  np.array([witness.first_point]), domain="mesh"),
+        "ball": ph.RigidPointPort(ball, ph.RigidBodyState(center[None], ident, -np.array([witness.normal]), zero),
+                                  np.array([0]), (np.array(witness.second_point) - center)[None], domain="ball"),
+    }
+    with pytest.raises(ValueError, match="occup|penetrat|overlap"):
+        ph.solve_witness_impulses(
+            ports, [(pair, {mesh.key: ("mesh", 0), sphere.key: ("ball", 0)})], [0.0], [0.0],
+            sample="first_contact", local_vertices={mesh.key: vertices},
         )

@@ -62,7 +62,19 @@ def _mass_from_terms(masses, linear, angular, inertia):
         mass += angular[i].T @ inertia[i] @ angular[i]
     _finite(mass)
     if not np.allclose(mass, mass.T, rtol=1e-12, atol=0):
-        raise SolverFailure("robot mass matrix lost symmetry")
+        # Gram entries may cancel to zero even when the two diagonal energies
+        # are large. Cauchy-Schwarz gives the units and scale of their roundoff.
+        diagonal = mass.diagonal()
+        if np.any(diagonal <= 0):
+            raise SolverFailure("robot mass matrix lost symmetry")
+        scale = np.sqrt(diagonal)
+        roundoff = np.outer((32 * np.finfo(mass.dtype).eps) * scale, scale)
+        if not np.allclose(mass, mass.T, rtol=1e-12, atol=roundoff):
+            raise SolverFailure("robot mass matrix lost symmetry")
+        i, j = np.triu_indices(dofs, 1)
+        midpoint = 0.5 * mass[i, j] + 0.5 * mass[j, i]
+        mass[i, j] = midpoint
+        mass[j, i] = midpoint
     np.linalg.cholesky(mass)
     return mass
 

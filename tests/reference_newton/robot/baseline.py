@@ -291,10 +291,33 @@ def _phymeo_arm(case, fixture, device):
     from phymeo.dynamics.robot_kinematics import forward_kinematics
 
     inputs = case["inputs"]
-    if inputs["source"] != "builder":
-        raise ValueError("Phymeo arm measurements require the native model")
-    model = _phymeo_model(fixture, [0, 0, 0])
-    marker_local = np.asarray(fixture["marker_local_m"], dtype=float)
+    observed = {}
+    if inputs["source"] == "builder":
+        model = _phymeo_model(fixture, [0, 0, 0])
+        tool = slide = 1
+        marker_local = np.asarray(fixture["marker_local_m"], dtype=float)
+    elif inputs["source"] == "arm.urdf":
+        from phymeo.builders.urdf import load_urdf
+
+        asset = load_urdf(DIRECTORY / inputs["source"])
+        model = asset.model
+        tool = asset.link_names.index("tool")
+        yaw, slide = (asset.joint_names.index(name) for name in ("yaw", "slide"))
+        shapes = [item for item in asset.collisions if item.link_index == tool]
+        (collider,) = shapes
+        marker_local = np.asarray(collider.local_vertices[0])
+        observed.update(
+            asset_import="HOST URDF",
+            joint_kinds=[model.joint_types[i] for i in (yaw, slide)],
+            tool_colliders=len(shapes),
+            tool_collider_kind=collider.shape.kind,
+            marker_radius_m=collider.shape.radius,
+            local_sphere_m=marker_local.tolist(),
+            yaw_limits_rad=[asset.lower[yaw], asset.upper[yaw]],
+            slide_limits_m=[asset.lower[slide], asset.upper[slide]],
+        )
+    else:
+        raise ValueError(f"Unsupported Phymeo arm source {inputs['source']}")
     if case["family"] == "point-ik":
         limits = np.array([fixture["yaw_limits_rad"], fixture["slide_limits_m"]])
         result = solve_point_ik(
@@ -307,7 +330,7 @@ def _phymeo_arm(case, fixture, device):
             max_iterations=inputs["iterations"],
         )
         q = result.configuration
-        port = RobotPointPort(model, RobotState(q, np.zeros(2)), [1], marker_local[None, :])
+        port = RobotPointPort(model, RobotState(q, np.zeros(2)), [tool], marker_local[None, :])
         marker = port.positions()[0]
         return {
             "fk_device": "HOST",
@@ -325,23 +348,23 @@ def _phymeo_arm(case, fixture, device):
 
         with TyxRobotMath(model, "cuda") as kernels:
             geometry = kernels.geometry(q)
-            linear, _ = kernels.jacobians(q, [1], marker_local[None, :])
+            linear, _ = kernels.jacobians(q, [tool], marker_local[None, :])
             stats = kernels.stats()
         if stats["completed_launches"] <= 0 or stats["downloads"] <= 0:
             raise AssertionError("Missing completed CUDA geometry kernels or device readback")
-        marker = geometry.com_position[1]
+        marker = geometry.position[tool] + geometry.rotation[tool] @ marker_local
         velocity = linear[0] @ qd
-        observed = {"fk_device": "tyx cuda", "kernel_stats": stats}
+        observed.update(fk_device="tyx cuda", kernel_stats=stats)
     else:
         geometry = forward_kinematics(model, q)
-        port = RobotPointPort(model, RobotState(q, qd), [1], marker_local[None, :])
+        port = RobotPointPort(model, RobotState(q, qd), [tool], marker_local[None, :])
         marker, velocity = port.positions()[0], port.velocities()[0]
-        observed = {"fk_device": "HOST"}
+        observed.update(fk_device="HOST")
     observed.update(
         dof_count=model.dof_count,
-        tool_origin_m=geometry.position[1].tolist(),
+        tool_origin_m=geometry.position[tool].tolist(),
         marker_world_m=marker.tolist(),
-        slide_axis_world=geometry.axis[1].tolist(),
+        slide_axis_world=geometry.axis[slide].tolist(),
         marker_velocity_m_s=velocity.tolist(),
     )
     return observed

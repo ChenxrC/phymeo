@@ -101,10 +101,10 @@ def test_collision_box_and_fixed_root_reach_public_query(tmp_path):
     np.testing.assert_allclose(np.max(corners, axis=0), [2.25, 1, 0.125], atol=1e-12)
     assert len(np.unique(corners, axis=0)) == 8
     with ph.CollisionWorkspace(asset.collision_model) as workspace:
-        for q, wanted, gap in [(0.0, "touching", 0.0), (0.0625, "overlap", -0.0625)]:
+        for q, wanted, gap in [(-0.125, "separated", 0.125), (0.0, "touching", 0.0), (0.0625, "overlap", -0.0625)]:
             paths = asset.collision_motion(np.array([q]))
             np.testing.assert_array_equal(paths[fixed.shape.key].start, [[0.25, 0, 0]])
-            result = ph.detect(asset.collision_model, paths, ph.CollisionPolicy(), workspace)
+            result = ph.detect(asset.collision_model, paths, ph.CollisionPolicy(margin=0.2), workspace)
             pair = next(p for p in result.pairs if (p.first, p.second) == (fixed.shape.key, ball.shape.key))
             assert pair.status == wanted
             assert pair.witness.gap_m == pytest.approx(gap)
@@ -148,6 +148,9 @@ def test_unrepresentable_tensor_is_rejected_in_its_named_link(tmp_path, inertia)
     ('<child link="carriage"/>', '<child link="missing"/>', "missing"),
     ('<child link="carriage"/>', '', "child"),
     ('<link name="carriage">', '<link>', "name"),
+    ('<joint name="rail"', '<joint', "name"),
+    ('velocity="4"', 'velocity="4" acceleration="3"', "acceleration"),
+    ('radius="0.125"', 'radius="0.125" scale="2"', "scale"),
     ('<mass value="2"/>', '', "mass"),
     ('<inertia ', '<dummy ', "inertia|dummy"),
     (INERTIAL, '', "inertial"),

@@ -54,6 +54,7 @@ from .constraints.robot_plane import RobotPlaneContacts
 from .constraints.robot_plane_collider import RobotPlaneCollider
 from .control.bounded_pd import BoundedPDResult, solve_bounded_pd
 from .control.point_ik import PointIKResult, solve_point_ik
+from .control.site_ik import MultiSiteIKResult, SiteIKResidual, SiteIKTarget, solve_multi_site_ik
 from .core.capabilities import ProblemSignature, SolverCapabilities, SolverFailure
 from .core.coupled import CoupledInputs, CoupledState, CoupledStepReport, CoupledStepResult
 from .core.coupling import ImpulseExchangeResult, ImpulseLedger
@@ -296,6 +297,10 @@ __all__ = [
     "RobotContactSystem",
     "CompliantRobotContactProgram",
     "solve_point_ik",
+    "MultiSiteIKResult",
+    "SiteIKResidual",
+    "SiteIKTarget",
+    "solve_multi_site_ik",
     "make_tetrahedral_runtime",
     "make_cloth_runtime",
     "tetrahedral_block",

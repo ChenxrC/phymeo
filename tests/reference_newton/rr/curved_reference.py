@@ -51,7 +51,10 @@ def phymeo_curved(case, inputs, assets, device):
     keys = [ph.CollisionKey(0, i + 1, i) for i in range(2)]
     if inputs.get("reverse_registration"):
         keys.reverse()
-    shapes = [_shape(ph, key, asset, i + 1) for i, (key, asset) in enumerate(zip(keys, assets, strict=True))]
+    shapes = [
+        _shape(ph, key, asset, i + 1)
+        for i, (key, asset) in enumerate(zip(keys, assets, strict=True))
+    ]
     model = ph.CollisionModel(shapes)
     paths = np.asarray([inputs["a_path_m"], inputs["b_path_m"]], dtype=float)
     tol = case["tolerances"]["length_m"]
@@ -59,7 +62,9 @@ def phymeo_curved(case, inputs, assets, device):
     with ph.CollisionWorkspace(model) as work:
         for t in inputs["sample_fractions"]:
             pose = paths[:, 0] + t * (paths[:, 1] - paths[:, 0])
-            motions = {key: ph.CollisionMotion([origin]) for key, origin in zip(keys, pose, strict=True)}
+            motions = {
+                key: ph.CollisionMotion([origin]) for key, origin in zip(keys, pose, strict=True)
+            }
             # Retain the actual separated witnesses too. Broad-phase slack does not inflate either surface.
             policy = ph.CollisionPolicy(margin=float(np.linalg.norm(pose[0] - pose[1])))
             result = ph.detect(model, motions, policy, work)
@@ -86,15 +91,30 @@ def phymeo_curved(case, inputs, assets, device):
                 assert material[i] == ((shape.vertex_ids[0], 1.0),)
                 _check_boundary(shape, offsets[i], tol)
                 np.testing.assert_allclose(pose[i] + offsets[i], supports[i], rtol=0, atol=tol)
-            np.testing.assert_allclose(np.subtract(supports[1], supports[0]),
-                                       witness.gap_m * normal, rtol=0, atol=tol)
-            samples.append(dict(
-                fraction=t, prescribed_time_s=t * inputs["duration_s"], origins_world_m=pose.tolist(),
-                status=pair.status, contact=pair.status != "separated", gap_m=witness.gap_m,
-                normal_a_to_b=normal.tolist(), a_support_world_m=supports[0], b_support_world_m=supports[1],
-                a_material_id=material[0][0][0], a_offset_m=offsets[0],
-                b_material_id=material[1][0][0], b_offset_m=offsets[1],
-                curved_shape_key=(trace.owner.world, trace.owner.body, trace.owner.shape),
-                curved_features=trace.features, curved_locus=trace.locus, curved_points_m=trace.points_m,
-            ))
-        return dict(backend=work.stats()["backend"], shape_types=[s.kind for s in shapes], samples=samples)
+            np.testing.assert_allclose(
+                np.subtract(supports[1], supports[0]), witness.gap_m * normal, rtol=0, atol=tol
+            )
+            samples.append(
+                dict(
+                    fraction=t,
+                    prescribed_time_s=t * inputs["duration_s"],
+                    origins_world_m=pose.tolist(),
+                    status=pair.status,
+                    contact=pair.status != "separated",
+                    gap_m=witness.gap_m,
+                    normal_a_to_b=normal.tolist(),
+                    a_support_world_m=supports[0],
+                    b_support_world_m=supports[1],
+                    a_material_id=material[0][0][0],
+                    a_offset_m=offsets[0],
+                    b_material_id=material[1][0][0],
+                    b_offset_m=offsets[1],
+                    curved_shape_key=(trace.owner.world, trace.owner.body, trace.owner.shape),
+                    curved_features=trace.features,
+                    curved_locus=trace.locus,
+                    curved_points_m=trace.points_m,
+                )
+            )
+        return dict(
+            backend=work.stats()["backend"], shape_types=[s.kind for s in shapes], samples=samples
+        )

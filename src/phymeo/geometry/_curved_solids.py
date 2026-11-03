@@ -31,12 +31,15 @@ def _rotation(asset):
     # Dividing by |q|² retains exact orthogonality for the stored binary
     # quaternion, including around a support tie or a tangency.
     x, y, z, w = map(F, asset.orientation_xyzw)
-    s = 2 / (x*x + y*y + z*z + w*w)
-    return np.array([
-        [1-s*(y*y+z*z), s*(x*y-z*w), s*(x*z+y*w)],
-        [s*(x*y+z*w), 1-s*(x*x+z*z), s*(y*z-x*w)],
-        [s*(x*z-y*w), s*(y*z+x*w), 1-s*(x*x+y*y)],
-    ], dtype=object)
+    s = 2 / (x * x + y * y + z * z + w * w)
+    return np.array(
+        [
+            [1 - s * (y * y + z * z), s * (x * y - z * w), s * (x * z + y * w)],
+            [s * (x * y + z * w), 1 - s * (x * x + z * z), s * (y * z - x * w)],
+            [s * (x * z - y * w), s * (y * z + x * w), 1 - s * (x * x + y * y)],
+        ],
+        dtype=object,
+    )
 
 
 def _root(squared):
@@ -105,9 +108,16 @@ def _plane_support(kind, dims, n, center_height):
     if base_minus_tip > 0:
         return ("apex",), "point", (apex,), tip_height
     if not squared:
-        base = tuple(_vector((dx, dy, -h)) for dx, dy in (
-            (0, 0), (radius, 0), (-radius, 0), (0, radius), (0, -radius),
-        ))
+        base = tuple(
+            _vector((dx, dy, -h))
+            for dx, dy in (
+                (0, 0),
+                (radius, 0),
+                (-radius, 0),
+                (0, radius),
+                (0, -radius),
+            )
+        )
         return ("base_disk",), "disk", base, center_height - h * nz
     rim = _vector((*(-radius * tangent / length), -h))
     if not base_minus_tip:
@@ -138,8 +148,8 @@ def _cylinder_sphere(dims, p, ball):
             distance = _root(dr * dr + dz * dz)
             normal = (dr * radial + dz * cap_normal) / distance
             # (rho-r)² + dz² - ball², rationalized before deciding contact.
-            bias = radial_sq + r*r + dz*dz - ball*ball
-            delta = _minus_root(bias, 4*r*r*radial_sq, 2*r*rho)
+            bias = radial_sq + r * r + dz * dz - ball * ball
+            delta = _minus_root(bias, 4 * r * r * radial_sq, 2 * r * rho)
             gap = delta / (distance + ball)
         elif dr > 0:
             normal = radial
@@ -163,9 +173,15 @@ def _cylinder_sphere(dims, p, ball):
             points.append(_vector((*(r * radial[:2]), z)))
             normal = radial
         else:
-            points.extend(_vector((dx, dy, z)) for dx, dy in (
-                (r, 0), (-r, 0), (0, r), (0, -r),
-            ))
+            points.extend(
+                _vector((dx, dy, z))
+                for dx, dy in (
+                    (r, 0),
+                    (-r, 0),
+                    (0, r),
+                    (0, -r),
+                )
+            )
     if side_minus_cap <= 0:
         for sign, name in ((-1, "bottom_cap"), (1, "top_cap")):
             if sign * z >= 0:
@@ -205,9 +221,13 @@ def _static(curved, other, m_curved, m_other, curved_first):
     cp = op = co = oo = None
     if n is not None:
         offset = offsets[0]
-        other_offset = (
-            center - anchor + offset + gap * n if other.kind == "plane" else -F(other.radius) * n
-        )
+        if other.kind == "plane":
+            # Project the actual support vector. Even an irrational ellipsoid support
+            # then has an exactly planar counterpart before rounding to world FP64.
+            relative = center - anchor + offset
+            other_offset = relative - plane_n * ((relative @ plane_n) / (plane_n @ plane_n))
+        else:
+            other_offset = -F(other.radius) * n
         cp, op = points[0], _xyz(anchor + other_offset)
         co, oo = _xyz(offset), _xyz(other_offset)
     if not curved_first:
@@ -218,8 +238,15 @@ def _static(curved, other, m_curved, m_other, curved_first):
     if gap and not published_gap:
         raise OverflowError("curved gap cannot be represented in FP64")
     witness = CollisionWitness(
-        published_gap, None if n is None else _xyz(n), cp, op, cw, ow, "host-analytic-curved-solid",
-        first_offset=co, second_offset=oo,
+        published_gap,
+        None if n is None else _xyz(n),
+        cp,
+        op,
+        cw,
+        ow,
+        "host-analytic-curved-solid",
+        first_offset=co,
+        second_offset=oo,
     )
     status = "separated" if gap > 0 else "overlap" if gap < 0 else "touching"
     return status, "nonunique_normal" if n is None else "analytic_curved_solid", witness, trace
@@ -230,7 +257,9 @@ def curved_solid_contact(a, b, ma, mb):
     curved_first = a.curved is not None
     curved, other, mc, mo = (a, b, ma, mb) if curved_first else (b, a, mb, ma)
     if (curved.kind, other.kind) not in (
-        ("cylinder", "sphere"), ("cone", "plane"), ("ellipsoid", "plane"),
+        ("cylinder", "sphere"),
+        ("cone", "plane"),
+        ("ellipsoid", "plane"),
     ):
         return "unsupported", "curved_shape_pair", None, None
     if ma.moving or mb.moving:

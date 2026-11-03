@@ -213,6 +213,36 @@ def many_worlds(ph, mode, root):
         )
 
 
+def deformable_force_step(ph, np, mode, cache):
+    dtype = np.float64 if mode == "host" else np.float32
+    ids = ((11, 23, 37), (53, 67, 79))
+    xyz = np.array([[-1,-1,0],[1,-1,0],[0,1,0],
+                    [0,0,3/64],[-.125,.125,.75],[.125,.125,.75]],dtype=dtype)
+    shapes = [ph.CollisionShape(ph.CollisionKey(8, body, 0), "triangle", nodes)
+              for body, nodes in zip((7,13),ids,strict=True)]
+    model = ph.CollisionModel(shapes)
+    bindings = {shape.key:ph.ParticleAttachment(tuple(range(3*i,3*i+3))) for i,shape in enumerate(shapes)}
+    particles = ph.ParticleModel(np.ones(6,dtype=dtype),np.zeros(3,dtype=dtype))
+    state=ph.ParticleState(xyz,np.zeros_like(xyz))
+    with ExitStack() as scope:
+        work=scope.enter_context(ph.CollisionWorkspace(model,mode,cache_root=cache))
+        law=None if mode=="host" else scope.enter_context(ph.TyxNormalLayer(mode,cache_root=cache))
+        solver=ph.SemiImplicitSolver() if mode=="host" else scope.enter_context(ph.TyxSemiImplicitSolver(mode,cache_root=cache))
+        system=ph.DeformableFeatureLoadSystem(model,bindings,ph.NormalLayer(1/16,128.),search_distance_m=3/32,layer_operator=law)
+        initial=system.sample_particles(state,work)
+        np.testing.assert_allclose(initial.nodal_force_n[:,2],[-.5,-.5,-1.,2.,0.,0.],rtol=0,atol=2e-6)
+        step=solver.step(particles,state,initial.step_inputs(),1/256)
+        assert step.report.accepted
+        after=system.sample_particles(step.state,work)
+        first,=initial.contacts
+        last,=after.contacts
+        assert first.feature.kind=="VT" and last.feature.distance_m>first.feature.distance_m
+        assert last.force_n<first.force_n
+        return dict(first_force_n=first.force_n,after_force_n=last.force_n,
+                    final_gap_m=last.feature.distance_m,receiver_velocity_m_s=step.state.velocity[3].tolist(),
+                    physics_backend=step.report.backend)
+
+
 def imported_mesh_contacts(ph, np, assets, mode, cache):
     probes = ((1.375, 1.375, 0.), (.5, 1.5, 0.))
     pivot = np.array([.5, .25, -.125])
@@ -319,6 +349,7 @@ def main():
         assert args.mesh_assets and not args.mesh_assets.resolve().is_relative_to(checkout)
         result["mesh_assets"] = imported_mesh_contacts(ph, np, args.mesh_assets, args.mode, args.out.parent / "cache")
         result["floating_impact"] = floating_impact(ph, np)
+        result["material_step"] = deformable_force_step(ph, np, args.mode, args.out.parent / "cache")
     used = [
         Path(module.__file__).resolve()
         for name, module in tuple(sys.modules.items())

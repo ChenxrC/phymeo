@@ -37,7 +37,8 @@ canvas{display:block}#err{position:absolute;top:8px;left:12px;color:#ffb093}.con
 const el=id=>document.getElementById(id),box=el("view");
 let trace=null,index=0,playing=false,clockStart=0,simStart=0;
 let renderer,scene,camera,group,cloth,wire,arrows,patches,links,bodies,localDetail;
-let detailFrame=-1;
+let detailFrame=-1,detailExtent=0;
+const detailCenter=new THREE.Vector3();
 let yaw=.52,pitch=.38,distance=1,center=new THREE.Vector3(),extent=1,scale=1,impulseScale=0,drag=null;
 const vec=p=>new THREE.Vector3(p[0],p[1],p[2]);
 const colors={table:0x536679,platform:0x7491a2,A:0xe99967,B:0x7999e3};
@@ -50,7 +51,13 @@ function init(){
  group=new THREE.Group();localDetail=new THREE.Group();localDetail.visible=false;scene.add(group,localDetail);new ResizeObserver(resize).observe(box);
 }
 function resize(){if(!renderer)return;const w=box.clientWidth,h=box.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();render()}
-function render(){if(!renderer)return;camera.position.copy(center).add(new THREE.Vector3(Math.sin(yaw)*Math.cos(pitch),-Math.cos(yaw)*Math.cos(pitch),Math.sin(pitch)).multiplyScalar(distance));camera.lookAt(center);renderer.render(scene,camera)}
+function render(){
+ if(!renderer)return;
+ const local=localDetail?.visible && detailExtent>0;
+ const target=local?detailCenter:center,range=local?distance*detailExtent/extent:distance;
+ camera.position.copy(target).add(new THREE.Vector3(Math.sin(yaw)*Math.cos(pitch),-Math.cos(yaw)*Math.cos(pitch),Math.sin(pitch)).multiplyScalar(range));
+ camera.lookAt(target);renderer.render(scene,camera)
+}
 function deepClear(g){g.traverse(x=>{if(x.geometry)x.geometry.dispose();if(x.material){if(Array.isArray(x.material))x.material.forEach(m=>m.dispose());else x.material.dispose()}});g.clear()}
 function mesh(n,indices,color,opacity=1){const geo=new THREE.BufferGeometry();geo.setAttribute("position",new THREE.BufferAttribute(new Float32Array(n*3),3));geo.setIndex(indices);const m=new THREE.Mesh(geo,material(color,opacity));group.add(m);return m}
 function coords(mesh,points){const a=mesh.geometry.attributes.position;points.forEach((p,i)=>a.setXYZ(i,p[0],p[1],p[2]));a.needsUpdate=true;mesh.geometry.computeVertexNormals();mesh.geometry.computeBoundingSphere()}
@@ -156,7 +163,7 @@ function drawForceSubstep() {
  slider.disabled=!enabled;
  group.visible=!enabled;
  localDetail.visible=!!enabled;
- deepClear(localDetail);
+ deepClear(localDetail);detailExtent=0;
  if(!enabled){el("subreadout").textContent="";return}
  const samples=windows[index-1];
  slider.max=samples.length-1;
@@ -190,9 +197,14 @@ function drawForceSubstep() {
            Math.min(len*.25,.035*extent),Math.min(len*.12,.017*extent)));
    }
  }
+ if(localDetail.children.length){
+   const bounds=new THREE.Box3().setFromObject(localDetail);
+   bounds.getCenter(detailCenter);
+   detailExtent=Math.max(.025,bounds.getSize(new THREE.Vector3()).length());
+ }
  el("readout").textContent="显示帧 "+index+"/"+(trace.frames.length-1)+" 的局部结构接触";
  el("subreadout").textContent="物理子步 "+(j+1)+"/"+samples.length+"  ·  力采样 t="+sample.t.toFixed(9)+" s\n"+
-   (loads.join("   ")||"所选对象在该子步没有结构接触力");
+   (loads.join("   ")||"所选对象在该子步没有结构接触力")+"\n箭头比例 "+scale.toPrecision(3)+" m/N";
 }
 function show(n){
  if(!trace)return;index=Math.max(0,Math.min(trace.frames.length-1,Math.round(n)));el("time").value=index;

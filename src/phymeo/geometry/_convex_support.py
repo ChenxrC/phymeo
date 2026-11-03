@@ -98,6 +98,14 @@ def _closest(vertices):
                 weights = np.maximum(weights, 0.0)
                 weights /= sum(weights)
             point = weights @ coordinates
+            if count == 3 and np.all(weights > 0):
+                # Close to contact, subtractive cancellation in a barycentric sum
+                # can destroy the normal. The interior foot is perpendicular to
+                # the actual triangle plane, even at vanishing separation.
+                normal = np.cross(coordinates[1] - coordinates[0], coordinates[2] - coordinates[0])
+                point = normal * ((normal @ coordinates[0]) / (normal @ normal))
+            elif count == 4 and np.all(weights > 0):
+                point = np.zeros(3)
             distance = float(point @ point)
             if best is None or distance < best[0]:
                 best = distance, subset, weights, point
@@ -277,7 +285,9 @@ class _Query:
             normal = -point / upper
             vertex = self.support(normal)
             lower = -float(normal @ vertex.point)
-            if lower >= -self.eps and upper - lower <= _TOL_M:
+            # A supporting plane bounds the signed gap from below even if it
+            # crosses zero. The simplex gives an upper bound in either case.
+            if upper - lower <= _TOL_M:
                 return self.finish(vertices, weights, normal, lower, upper, "simplex_distance", iteration)
             if any(np.linalg.norm(vertex.point - v.point) <= self.eps for v in vertices):
                 raise SolverFailure("support_distance_stalled")

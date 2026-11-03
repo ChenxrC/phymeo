@@ -1,0 +1,22 @@
+# 固定高度场与平移球的 TYX 面候选
+
+`RR-RIDGE-FIRST` 在实际 CUDA 上返回 3/8 步长的首次相触和 5/8 的末次相触，分别为 2.9296875 ms、4.8828125 ms。TYX 用一个并行核筛过 4 个单元，保留 8 张三角面，同步并下载一次，读回 72 字节。两个事件的地形点和球面点都在 (0, 0.125, 1) m，地形法向的 x 分量从 −0.6 变为 +0.6，z 分量均为 0.8。[冻结输入与容差](../../tests/reference_newton/rr/cases.json) · [公共用法](../development/p65-rigid-heightfield.md)
+
+设备复用整形状宽相已上传的顶点区间与球的整步包围盒。对局部 SW–NE 对角线切出的两张三角面分别做闭区间相交检查，每格写自己的 2 位掩码和调用代次。FP32 边界已向外取整，宽相策略的额外余量也可增加候选。HOST 对实际选中面隔离精确特征根并重建材料点，起末最近点独立计算。容量由模型中最大的形状顶点数确定，每个单元只占一个槽。设备异常或无效输出会关闭工作区，并保留上一次成功发布。[设备内核](../../src/phymeo/backends/_tyx_heightfield_kernels.py) · [输出完整性检查](../../src/phymeo/backends/_tyx_heightfield_candidates.py) · [首末根与材料地址](../../src/phymeo/geometry/_heightfield.py)
+
+| 独立构型 | CUDA 候选面数 | 与扫掠球真实相触的面数 | 实际结果 |
+| --- | ---: | ---: | --- |
+| 4×7 旋转非等距地形、2²⁴ 量级平移、刚体换序 | 16 / 36 | 6 | 六个真面全部保留，仍是 3/8 进入、5/8 离开 |
+| 抬高球心并放宽宽相余量 | 8 / 8 | 0 | 精确求根确认整段分离 |
+| 非共面单格的高侧三角形 | 1 / 2 | 1 | 只保留局部面 1，首触区间 [0.507179676971646, 0.507179676972555] |
+| 球在平地上方，远处有高峰 | 0 / 16 | 0 | 整形状通过宽相，逐面掩码为空，仍读到正的末态净距 |
+| 有限外角孤立擦边 | 2 / 2 | 2 | 首末同在包围 1/3 的区间，宽度为 2⁻⁴⁰ |
+| 上一例向外挪一个 FP64 刻度 | 2 / 2 | 0 | 相同的设备掩码经 HOST 精确核对后分离 |
+
+真面集合由独立的有理数线段–三角形距离对每张原始三角面穷举。测试同时捕获设备返回的 ID 和根求解实际消费的 ID，并令 HOST 扫掠候选函数在设备路径上被调用时直接失败。容量不足、代次陈旧、非法掩码、内核抛错和选择丢失均有保留上一次发布的检查。[专项与独立距离解](../../tests/collision/test_tyx_heightfield_candidates.py)
+
+TYX interpret 与真实 CUDA 专项各 12 项通过。原 HOST 地形离散及连续回归 26 项、实际 CUDA 相邻高度场及通用 BVH 6 项通过。设备范围是固定有限高度图与直线球心路径的候选生成。标量特征根、材料见证和两个公开时间区间均由 HOST 计算。性能基准、球心转弧与运动地形需单独验收。
+
+同批收据位于 `artifacts/p65-wave4-terrain-20261103-01`。原树红测 `terrain-device-red` 保留缺少逐面完成计数的 raw 1。通过收据为 `terrain-cuda`、`terrain-interpret`、`terrain-ridge-first-cuda`、`terrain-host-regression` 和 `terrain-cuda-adjacent`。各 CUDA 留出在其 basetemp 下保存独立真面和实际设备面 ID；冻结入口的测量保存在 `terrain-ridge-first-cuda/result.json`。
+
+专项和冻结 CUDA 案例首次通过时的提交为 `64f0474`。随后只对四个专属 Python 文件运行 Ruff 格式化，修正测试文件的导入顺序。该工作区再执行原 HOST 离散与连续 26 项、真实 CUDA 相邻 6 项，分别保存在 `terrain-host-regression` 与 `terrain-cuda-adjacent`；每份收据的 7 个源码哈希均与最终文件一致。最终 `terrain-lint-final` 的 4/4 源文件哈希同样一致，`terrain-format-check` 通过。

@@ -4,6 +4,7 @@ from collections.abc import Mapping
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from fractions import Fraction
+from functools import partial
 from itertools import combinations
 from threading import RLock
 from time import perf_counter_ns
@@ -506,7 +507,15 @@ def _detect_pairs(workspace, paths, flags, selected, proximity=False, resolved=N
                     a.key, b.key, family, True, status, reason, witness, curved=trace
                 )
             elif code == 0 and {a.kind, b.kind} == {"heightfield", "sphere"}:
-                status, reason, witness, chart, sweep = heightfield_sphere_contact(a, b, ma, mb)
+                terrain, sphere = (i, j) if a.kind == "heightfield" else (j, i)
+                selector = (
+                    partial(workspace._heightfield_faces, terrain, sphere)
+                    if workspace._engine is not None
+                    else None
+                )
+                status, reason, witness, chart, sweep = heightfield_sphere_contact(
+                    a, b, ma, mb, face_selector=selector
+                )
                 ready = CollisionPair(
                     a.key, b.key, "RR", True, status, reason, witness, sweep, heightfield=chart
                 )
@@ -824,6 +833,19 @@ class CollisionWorkspace:
                 "sap_window_pairs": self._spatial.window_pairs if self._spatial else 0,
                 "sap_box_tests": self._spatial.box_tests if self._spatial else 0,
             }
+
+    def _heightfield_faces(self, terrain, sphere):
+        heights = self._model.shapes[terrain].heightfield.heights_yx
+        try:
+            faces = self._engine.heightfield_face_candidates(
+                terrain, sphere, len(heights), len(heights[0])
+            )
+            if not isinstance(faces, tuple):
+                raise RuntimeError("invalid heightfield candidate selection")
+            return faces
+        except BaseException:
+            self._close_locked()
+            raise
 
     def _close_locked(self):
         if not self._closed:

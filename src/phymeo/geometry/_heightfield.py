@@ -63,17 +63,25 @@ class _TerrainSphere:
         self.lower = np.nextafter(np.minimum.reduce(corners), -np.inf)
         self.upper = np.nextafter(np.maximum.reduce(corners), np.inf)
 
-    def faces(self, cells):
-        for r, c in cells:
-            row, col = int(r), int(c)
+    def cell_faces(self, cells):
+        return (
+            2 * (int(row) * (self.columns - 1) + int(col)) + index
+            for row, col in cells
+            for index in (0, 1)
+        )
+
+    def faces(self, ids_to_query):
+        for face_id in ids_to_query:
+            cell, index = divmod(face_id, 2)
+            row, col = divmod(cell, self.columns - 1)
             sw = row * self.columns + col
             se, nw, ne = sw + 1, sw + self.columns, sw + self.columns + 1
-            for index, slots in enumerate(((sw, se, ne), (sw, ne, nw))):
-                ids = tuple(self.terrain.vertex_ids[k] for k in slots)
-                face = CollisionShape(self.terrain.key, "triangle", ids)
-                triangle = self.positions[list(slots)]
-                query = _SphereFace(face, self.sphere, CollisionMotion(triangle), self.ball_path)
-                yield row, col, index, ids, triangle, query
+            slots = (sw, se, ne) if index == 0 else (sw, ne, nw)
+            ids = tuple(self.terrain.vertex_ids[k] for k in slots)
+            face = CollisionShape(self.terrain.key, "triangle", ids)
+            triangle = self.positions[list(slots)]
+            query = _SphereFace(face, self.sphere, CollisionMotion(triangle), self.ball_path)
+            yield row, col, index, ids, triangle, query
 
     def sample(self, time):
         # A vertex bounds the distance from above. A cell AABB bounds it from
@@ -85,7 +93,7 @@ class _TerrainSphere:
         outside = np.maximum(np.maximum(self.lower - center, center - self.upper), 0.0)
         cells = np.argwhere(np.hypot.reduce(outside, axis=-1) <= bound)
         best = None
-        for r, c, index, ids, triangle, query in self.faces(cells):
+        for r, c, index, ids, triangle, query in self.faces(self.cell_faces(cells)):
             witness, signed = query.sample(time)
             # All comparisons use exact squared distances on the original path.
             if best is None or signed < best[0]:
@@ -116,7 +124,7 @@ class _TerrainSphere:
             signed,
         )
 
-    def event_bounds(self):
+    def host_swept_faces(self):
         end = self.start + self.step
         radius = Fraction(self.sphere.radius)
         # The swept AABB is only a rejection test. Entry and exit use the exact
@@ -124,8 +132,12 @@ class _TerrainSphere:
         low = np.nextafter(np.asarray(np.minimum(self.start, end) - radius, dtype=float), -np.inf)
         high = np.nextafter(np.asarray(np.maximum(self.start, end) + radius, dtype=float), np.inf)
         cells = np.argwhere(np.all((low <= self.upper) & (self.lower <= high), axis=-1))
+        return self.cell_faces(cells)
+
+    def event_bounds(self, selected_faces):
+        faces = self.host_swept_faces() if selected_faces is None else selected_faces
         first = last = None
-        for *_, query in self.faces(cells):
+        for *_, query in self.faces(faces):
             for feature in query.features:
                 enter = feature.entry(None)
                 if enter is None:
@@ -141,12 +153,14 @@ class _TerrainSphere:
         return first, last
 
 
-def heightfield_sphere_contact(a, b, ma, mb):
+def heightfield_sphere_contact(a, b, ma, mb, *, face_selector=None):
     """Return status, reason, endpoint witness/address and an optional continuous query."""
     field_first = a.kind == "heightfield"
     terrain, sphere, field_path, ball_path = (a, b, ma, mb) if field_first else (b, a, mb, ma)
     if field_path.moving or (ball_path.turn is not None and ball_path.turn.angle != 0):
         return "unsupported", "heightfield_swept_pair", None, None, None
+    # A failed device launch or invalid download must reach the workspace failure handler.
+    selected = face_selector() if ball_path.moving and face_selector is not None else None
     try:
         query = _TerrainSphere(terrain, sphere, field_path, ball_path, field_first)
         end, face, signed = query.sample(Fraction(int(ball_path.moving)))
@@ -156,7 +170,7 @@ def heightfield_sphere_contact(a, b, ma, mb):
             return status, "narrow_phase", end, HeightfieldTrace(*face_fields), None
 
         start, start_face, _ = query.sample(Fraction(0))
-        first, last = query.event_bounds()
+        first, last = query.event_bounds(selected)
         if first is None:
             sweep = CollisionSweep(start.gap_m, end.gap_m, None, None, None)
             return "separated", "swept_separated", end, HeightfieldTrace(*face_fields), sweep

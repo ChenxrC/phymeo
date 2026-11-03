@@ -241,11 +241,12 @@ def _phymeo_heightfield(case, inputs, assets, device):
     import phymeo as ph
 
     if (
-        device != "cpu"
+        device not in ("cpu", "cuda:0")
+        or (device == "cuda:0" and inputs["query"] != "first_touch")
         or inputs["query"] not in ("sampled_poses", "first_touch")
         or np.any(inputs["a_path_m"])
     ):
-        raise ValueError("The heightfield comparison needs a fixed grid and a HOST query")
+        raise ValueError("The heightfield comparison needs a fixed grid and a supported query")
     field, ball = assets
     heights = np.array(field["heights_yx_m"])
     rows, columns = heights.shape
@@ -262,7 +263,8 @@ def _phymeo_heightfield(case, inputs, assets, device):
     )
     field_motion = ph.CollisionMotion(grid.world_vertices())
     samples = []
-    with ph.CollisionWorkspace(model, "host") as work:
+    mode = "cuda" if device == "cuda:0" else "host"
+    with ph.CollisionWorkspace(model, mode) as work:
         if inputs["query"] == "first_touch":
             start, end = inputs["b_path_m"]
             paths = {field_key: field_motion, ball_key: ph.CollisionMotion([start], [end])}
@@ -271,7 +273,13 @@ def _phymeo_heightfield(case, inputs, assets, device):
             values = _heightfield_sweep_observation(
                 case, pair, field_motion, inputs["b_path_m"], ball["radius_m"]
             )
-            return dict(backend=work.stats()["backend"], **values)
+            stats = work.stats()
+            if mode == "cuda":
+                counters = {key: n for key, n in stats.items() if key.startswith("heightfield_")}
+                for key in ("completed_launches", "downloads", "synchronizations"):
+                    assert counters[f"heightfield_{key}"] > 0
+                values["device_face_selection"] = counters
+            return dict(backend=stats["backend"], **values)
         for fraction in inputs["sample_fractions"]:
             center = _position(inputs["b_path_m"], fraction)
             paths = {field_key: field_motion, ball_key: ph.CollisionMotion([center])}

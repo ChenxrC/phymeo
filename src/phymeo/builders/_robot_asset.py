@@ -110,12 +110,17 @@ def unit_axis(axis, where):
 def make_collider(name, link_name, link_index, ordinal, position, orientation, kind, size):
     """Register a finite primitive in the authored link frame, with SI half-lengths."""
     where = f"link {link_name!r} collision {name!r}"
-    if np.any(size <= 0):
+    if kind != "mesh" and np.any(size <= 0):
         raise ValueError(
             f"{where} requires positive {kind} {'radius' if kind == 'sphere' else 'size'}"
         )
     curved = None
-    if kind == "sphere":
+    triangles = ()
+    if kind == "mesh":
+        native_kind, radius = "mesh", 0.0
+        triangles = size.triangles
+        vertices = position + np.asarray(size.vertices) @ quaternion_matrix(orientation[None, :])[0].T
+    elif kind == "sphere":
         native_kind, radius = "sphere", float(size[0])
         vertices = position[None, :]
     elif kind in ("cylinder", "ellipsoid"):
@@ -137,7 +142,13 @@ def make_collider(name, link_name, link_index, ordinal, position, orientation, k
     if not np.isfinite(vertices).all():
         raise ValueError(f"{where} has unrepresentable local vertices")
     key = CollisionKey(0, link_index + 1, ordinal)
-    shape = CollisionShape(key, native_kind, tuple(range(len(vertices))), radius, curved=curved)
+    shape = CollisionShape(
+        key, native_kind, tuple(range(len(vertices))), radius, triangles=triangles, curved=curved
+    )
+    if kind == "mesh":
+        from ..geometry._closed_mesh import ClosedMesh
+
+        ClosedMesh(shape, CollisionMotion(vertices))
     return LinkCollision(
         name,
         link_name,

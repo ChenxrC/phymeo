@@ -8,6 +8,7 @@ import numpy as np
 
 from ..dynamics.rotation import quaternion_matrix
 from ._robot_asset import RobotAsset, assemble_robot, make_collider, principal_inertia, unit_axis
+from ._robot_mesh import mjcf_mesh_assets
 from ._robot_xml import _attributes, _child, _children, _name, _number, _numbers
 
 
@@ -46,7 +47,7 @@ def _compiler(robot):
     compiler = _child(robot, "compiler", "mujoco", required=False)
     if compiler is None:
         return True, "xyz", True
-    _attributes(compiler, {"angle", "eulerseq", "inertiafromgeom", "autolimits"}, "compiler")
+    _attributes(compiler, {"angle", "eulerseq", "inertiafromgeom", "autolimits", "meshdir"}, "compiler")
     _children(compiler, set(), "compiler")
     angle = compiler.get("angle", "degree")
     if angle not in {"degree", "radian"}:
@@ -150,7 +151,7 @@ def _fromto(element, kind, where):
     return center, rotation, np.array([supplied[0], length])
 
 
-def _colliders(body, link, index, degrees, sequence, named_geoms):
+def _colliders(body, link, index, degrees, sequence, named_geoms, resolve_mesh):
     colliders = []
     names = set()
     for ordinal, geom in enumerate(body.findall("geom")):
@@ -181,6 +182,7 @@ def _colliders(body, link, index, degrees, sequence, named_geoms):
                 "quat",
                 "euler",
                 "fromto",
+                "mesh",
                 "type",
                 "size",
                 "contype",
@@ -190,7 +192,21 @@ def _colliders(body, link, index, degrees, sequence, named_geoms):
             where,
         )
         _children(geom, set(), where)
-        kind = geom.get("type", "sphere")
+        kind = geom.get("type", "mesh" if "mesh" in geom.attrib else "sphere")
+        if "mesh" in geom.attrib and kind != "mesh":
+            raise ValueError(f"{where} fitting a primitive to a mesh is unsupported")
+        if kind == "mesh":
+            if "fromto" in geom.attrib:
+                raise ValueError(f"{where} mesh cannot use fromto")
+            if "size" in geom.attrib:
+                count = len(geom.get("size").split())
+                if not 1 <= count <= 3:
+                    raise ValueError(f"{where} mesh size needs one to three finite numbers")
+                _numbers(geom, "size", count, where)
+            position, rotation = _pose(geom, where, degrees, sequence)
+            size = resolve_mesh(_name(geom, "mesh", where), where)
+            colliders.append(make_collider(name, link, index, ordinal, position, rotation, kind, size))
+            continue
         counts = {"sphere": 1, "box": 3, "cylinder": 2, "capsule": 2, "ellipsoid": 3}
         if kind not in counts:
             raise ValueError(f"{where} uses unsupported primitive {kind!r}")
@@ -209,13 +225,13 @@ def load_mjcf(path: str | Path, *, gravity=None) -> RobotAsset:
     Each moving body has one finite hinge or slide with a zero local pivot and
     reference coordinate. Positions and slides are metres. Hinge limits and
     Euler angles follow compiler angle and eulerseq. Quaternions use MJCF WXYZ.
-    Primitive colliders support spheres, boxes, cylinders, capsules and ellipsoids.
+    Colliders support spheres, boxes, cylinders, capsules, ellipsoids and named local OBJ meshes.
     A cylinder or capsule may specify its axis with fromto. Geoms with
     contype=conaffinity=0 supply no colliders. Immediate moving
     parent/child pairs are excluded as in MJCF; the world-welded root is exempt.
 
     Missing actuator force and speed limits are returned as None. Unsupported
-    semantic elements (e.g. defaults, free joints, actuators and mesh assets)
+    semantic elements (e.g. defaults, free joints, actuators and primitive fitting)
     raise ValueError. The gravity keyword overrides the authored option vector.
     """
     try:
@@ -225,9 +241,10 @@ def load_mjcf(path: str | Path, *, gravity=None) -> RobotAsset:
     if robot.tag != "mujoco":
         raise ValueError("MJCF root element must be <mujoco>")
     _attributes(robot, {"model"}, "mujoco")
-    _children(robot, {"compiler", "option", "worldbody"}, "mujoco")
+    _children(robot, {"compiler", "option", "worldbody", "asset"}, "mujoco")
     name = _name(robot, "model", "mujoco") if "model" in robot.attrib else "MuJoCo Model"
     degrees, sequence, automatic = _compiler(robot)
+    resolve_mesh = mjcf_mesh_assets(robot, path)
     option = _child(robot, "option", "mujoco", required=False)
     default_gravity = (0, 0, -9.81)
     if option is not None:
@@ -280,7 +297,7 @@ def load_mjcf(path: str | Path, *, gravity=None) -> RobotAsset:
             joints.append(joint_name)
             joint_data.append((kind, position, rotation, axis, limits))
             bodies.append(inertial)
-        local_shapes = _colliders(body, link, index, degrees, sequence, named_geoms)
+        local_shapes = _colliders(body, link, index, degrees, sequence, named_geoms, resolve_mesh)
         if parent >= 0:
             excluded.extend(
                 (p.shape.key, c.shape.key) for p in shapes_by_link[parent] for c in local_shapes

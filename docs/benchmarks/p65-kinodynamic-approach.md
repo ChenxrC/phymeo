@@ -61,3 +61,9 @@ python scripts/benchmark_receiver_approach.py --archive <with-aperture-guidance-
 python scripts/benchmark_receiver_approach.py --archive <with-aperture-guidance-v1> --variant tilted --frames 7 --resume <accepted-tilted.json.gz> --stop-on-layer --stop-on-grip --output <continued.json.gz>
 python scripts/audit_receiver_approach.py <new-trace.json.gz> --out <new-audit.json>
 ```
+
+## 查看腕部首次真实受力
+
+离线回放可显示每个已记录的物理子步。打开“物理子步”，选中 B 的腕部，再移动子步滑块，能看到同一时刻的有限布面、连杆轴和双侧接触力。状态栏同时标明显示帧和力的源时刻。0° 留出有 10 个显示帧和 1,152 个力学子步，腕部峰值为 1.521142 N。2° 留出有 13 个显示帧和 1,536 个子步，腕部峰值为 0.152875 N。两个离线文件的逐帧几何和子步力都来自各自的真实轨迹。[0° 回放](../../artifacts/p65-20261104-0800/replays/vertical-physics-substeps.html) · [2° 回放](../../artifacts/p65-20261104-0800/replays/tilted-physics-substeps.html) · [离线导出入口](../../examples/export_compliant_replay.py)
+
+双臂后续需要控制实际挡路的材料面。对称改变 A 驱动时，2° 的目标点沿有利方向移动了 3.389 mm，但阻挡面的相对位置只改变约 0.038 mm。两种倾角均未达到 0.75 mm 的通道要求。[捐出臂载荷与材料位移对照](p65-donor-material-authority.md)

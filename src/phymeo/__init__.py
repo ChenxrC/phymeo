@@ -17,6 +17,7 @@ from .backends.tyx_xpbd import TyxXPBDSolver
 from .builders.cloth import ClothPatch, cloth_grid
 from .builders.robot import pendulum_chain
 from .builders.tetrahedral import tetrahedral_block
+from .builders.urdf import load_urdf
 from .constraints.collision_shapes import (
     CollisionKey,
     CollisionModel,
@@ -256,6 +257,7 @@ __all__ = [
     "RobotProgram",
     "make_robot_runtime",
     "pendulum_chain",
+    "load_urdf",
     "BackendContext",
     "DomainBinding",
     "HistoryField",

@@ -155,6 +155,18 @@ def floating_dynamics_terms(model, state, inputs):
     return FloatingDynamicsTerms(mass, bias, applied, acceleration)
 
 
+def _drift_floating_state(model, state, velocity, dt):
+    """Drift the root COM, world rotation and child scalars once using one final velocity."""
+    old_quat = state.q[None, 3:7]
+    new_quat = advance_world_orientation(old_quat, velocity[None, 3:6], dt)
+    orientation_change = quaternion_matrix(new_quat)[0] - quaternion_matrix(old_quat)[0]
+    origin = state.q[:3] + (dt * velocity[:3] - orientation_change @ model.root_com_m)
+    q = _finite(np.concatenate((origin, new_quat[0], state.q[7:] + dt * velocity[6:])))
+    candidate = FloatingRobotState(q, velocity)
+    floating_kinematics(model, candidate)
+    return candidate
+
+
 def step_floating_robot(model, state, inputs, dt) -> StepResult[FloatingRobotState]:
     """Take one velocity-first physical step for the full coupled tree, with root COM drift."""
     _validate(model, state, inputs)
@@ -165,13 +177,7 @@ def step_floating_robot(model, state, inputs, dt) -> StepResult[FloatingRobotSta
         with np.errstate(over="raise", invalid="raise", divide="raise"):
             terms = floating_dynamics_terms(model, state, inputs)
             v = _finite(state.v + h * terms.acceleration)
-            old_quat = state.q[None, 3:7]
-            new_quat = advance_world_orientation(old_quat, v[None, 3:6], h)
-            orientation_change = quaternion_matrix(new_quat)[0] - quaternion_matrix(old_quat)[0]
-            origin = state.q[:3] + (h * v[:3] - orientation_change @ model.root_com_m)
-            q = _finite(np.concatenate((origin, new_quat[0], state.q[7:] + h * v[6:])))
-            candidate = FloatingRobotState(q, v)
-            floating_kinematics(model, candidate)
+            candidate = _drift_floating_state(model, state, v, h)
     except (FloatingPointError, OverflowError, SolverFailure) as exc:
         return StepResult(state, StepReport(accepted=False, reason=str(exc)))
     return StepResult(candidate, StepReport(accepted=True))

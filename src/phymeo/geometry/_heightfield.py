@@ -64,13 +64,16 @@ class _TerrainSphere:
         self.upper = np.nextafter(np.maximum.reduce(corners), np.inf)
 
     def cell_faces(self, cells):
-        return (2 * (int(row) * (self.columns-1) + int(col)) + index
-                for row, col in cells for index in (0, 1))
+        return (
+            2 * (int(row) * (self.columns - 1) + int(col)) + index
+            for row, col in cells
+            for index in (0, 1)
+        )
 
     def faces(self, ids_to_query):
         for face_id in ids_to_query:
             cell, index = divmod(face_id, 2)
-            row, col = divmod(cell, self.columns-1)
+            row, col = divmod(cell, self.columns - 1)
             sw = row * self.columns + col
             se, nw, ne = sw + 1, sw + self.columns, sw + self.columns + 1
             slots = (sw, se, ne) if index == 0 else (sw, ne, nw)

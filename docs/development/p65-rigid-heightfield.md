@@ -30,8 +30,10 @@ with ph.CollisionWorkspace(model, "host") as workspace:
 
 ## 固定地形与直线球心路径
 
-给球的 `CollisionMotion` 同时传起点和终点，可查询跨越整步的接触。固定地形和零转角的移动枢轴也接受同一球心直线。先用路径的扫掠包围盒筛选真实单元，再对各三角形的面、边、顶点分别求满足全部接触条件的最早时刻。用精确有理条件代入反向时间 1−t，得到正向末次相触。公开的时间区间按步长归一化，宽度不超过 2⁻⁴⁰。当前几何窄相运行在 HOST。运动地形和球心的非零转弧在候选对中发布 `unsupported / heightfield_swept_pair`。
+给球的 `CollisionMotion` 同时传起点和终点，可查询跨越整步的接触。固定地形和零转角的移动枢轴也接受同一球心直线。先用路径的扫掠包围盒筛选真实单元，再对各三角形的面、边、顶点分别求满足全部接触条件的最早时刻。用精确有理条件代入反向时间 1−t，得到正向末次相触。公开的时间区间按步长归一化，宽度不超过 2⁻⁴⁰。HOST 模式在主机筛格；TYX 模式在设备上分别筛每格的两个三角形，随后在 HOST 求根并重建材料见证。运动地形和球心的非零转弧在候选对中发布 `unsupported / heightfield_swept_pair`。
 
 `pair.witness` 与 `pair.heightfield` 的顶层材料地址属于末姿态。首次相触可从 `pair.sweep.first_t` 或 `pair.heightfield.first_contact.interval` 读取，末次相触用 `pair.heightfield.last_contact.interval`。两事件各自的 `witness_time`、`witness` 和 `face` 对应同一个可表示的采样时刻。若根不能精确表示，返回的区间包围根，支持点和权重在区间内的采样时刻重建。初态已交叠时首次时刻为 0，末态仍交叠时末次时刻为 1；两座分离的屋脊可产生多个接触窗，中间可能分离。
 
 在上例中令球心从 `(-3/4, 1/8, 5/4)` 走到 `(3/4, 1/8, 5/4)`，首末相触分别在步长的 3/8 和 5/8。两个时刻的地形点均为 `(0, 1/8, 1)` m，地形指向球的法向分别为 `(-3/5, 0, 4/5)` 和 `(3/5, 0, 4/5)`。同一入口还区分有限外角的孤立擦边及仅差一个浮点刻度的近失。[连续路径和独立留出](../../tests/collision/test_heightfield_sphere_sweep.py)
+
+按 `CollisionWorkspace(model, "cuda")` 查询时，可从 `workspace.stats()` 读取 `heightfield_cells_tested`、`heightfield_faces_kept`、`heightfield_completed_launches` 及下载和同步计数。[设备候选与实测](../benchmarks/p65-heightfield-device-candidates.md)

@@ -29,9 +29,15 @@ def heightfield_masks(
             diagonal_hi = tx.max(envelopes[sw, k + 3], envelopes[ne, k + 3])
             qlo = bounds[ball, k]
             qhi = bounds[ball, k + 3]
-            if tx.min(diagonal_lo, envelopes[se, k]) > qhi or tx.max(diagonal_hi, envelopes[se, k + 3]) < qlo:
+            if (
+                tx.min(diagonal_lo, envelopes[se, k]) > qhi
+                or tx.max(diagonal_hi, envelopes[se, k + 3]) < qlo
+            ):
                 low_bit = 0
-            if tx.min(diagonal_lo, envelopes[nw, k]) > qhi or tx.max(diagonal_hi, envelopes[nw, k + 3]) < qlo:
+            if (
+                tx.min(diagonal_lo, envelopes[nw, k]) > qhi
+                or tx.max(diagonal_hi, envelopes[nw, k + 3]) < qlo
+            ):
                 high_bit = 0
         output[cell, 0] = generation
         output[cell, 1] = low_bit + high_bit

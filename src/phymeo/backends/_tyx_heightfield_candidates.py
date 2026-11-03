@@ -39,8 +39,12 @@ class HeightfieldCandidateBuffer:
         if not (0 <= terrain < n and 0 <= sphere < n and terrain != sphere):
             raise RuntimeError("invalid heightfield candidate owners")
         cells = (rows - 1) * (columns - 1)
-        if (rows < 2 or columns < 2 or rows * columns != self.offsets[terrain+1] - self.offsets[terrain]
-                or self.offsets[sphere+1] - self.offsets[sphere] != 1):
+        if (
+            rows < 2
+            or columns < 2
+            or rows * columns != self.offsets[terrain + 1] - self.offsets[terrain]
+            or self.offsets[sphere + 1] - self.offsets[sphere] != 1
+        ):
             raise RuntimeError("invalid heightfield candidate layout")
         if cells > self.capacity:
             raise RuntimeError("heightfield candidate capacity exceeded")
@@ -54,17 +58,33 @@ class HeightfieldCandidateBuffer:
                 self.output = e._static(np.zeros((self.capacity, 2), dtype=np.int32))
             self.counts["heightfield_launches"] += 1
             e._counts["launches"] += 1
-            heightfield_masks(cells, columns, self.offsets[terrain], int(sphere), generation,
-                              e._envelopes, e._bounds, self.output, mode=e._mode)
+            heightfield_masks(
+                cells,
+                columns,
+                self.offsets[terrain],
+                int(sphere),
+                generation,
+                e._envelopes,
+                e._bounds,
+                self.output,
+                mode=e._mode,
+            )
             raw = self._read()
-        if (raw.shape != (self.capacity, 2) or raw.dtype != np.int32 or
-                not np.all(raw[:cells, 0] == generation)):
+        if (
+            raw.shape != (self.capacity, 2)
+            or raw.dtype != np.int32
+            or not np.all(raw[:cells, 0] == generation)
+        ):
             raise RuntimeError("incomplete heightfield candidate output")
         masks = raw[:cells, 1]
         if np.any((masks < 0) | (masks > 3)):
             raise RuntimeError("invalid heightfield candidate mask")
-        faces = tuple(2 * int(cell) + face for cell in np.flatnonzero(masks)
-                      for face in (0, 1) if int(masks[cell]) & (1 << face))
+        faces = tuple(
+            2 * int(cell) + face
+            for cell in np.flatnonzero(masks)
+            for face in (0, 1)
+            if int(masks[cell]) & (1 << face)
+        )
         self.counts["heightfield_completed_launches"] += 1
         self.counts["heightfield_cells_tested"] += cells
         self.counts["heightfield_faces_kept"] += len(faces)

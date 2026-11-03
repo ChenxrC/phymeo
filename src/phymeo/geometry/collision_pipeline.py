@@ -31,6 +31,7 @@ from ._heightfield import HeightfieldTrace, heightfield_sphere_contact
 from ._hull_surface import HullSurfaceQuery
 from ._mesh_mesh import MeshMeshQuery, MeshMeshTrace
 from ._mesh_round import MeshRoundQuery, MeshRoundTrace
+from ._mesh_triangle import MeshTriangleQuery, MeshTriangleTrace
 from ._plate_contact import PlateSurfaceQuery, RoundedPlate
 from ._rotating_capsule_face import RotatingCapsuleFaceQuery, rotating_capsule_face_query
 from ._rotating_mesh_solid import RotatingMeshSolidQuery
@@ -91,6 +92,7 @@ class CollisionPair:
     mesh_mesh: MeshMeshTrace | None = None
     support_map: ConvexSupportTrace | None = None
     mesh_round: MeshRoundTrace | None = None
+    mesh_triangle: MeshTriangleTrace | None = None
 
 
 @dataclass(frozen=True)
@@ -294,6 +296,11 @@ def _pair(a, b, ma, mb, code, analytic, seeds):
                     status, reason, witness, sweep, trace = analytic.result(ma.moving or mb.moving)
                     return CollisionPair(
                         *fields, True, status, reason, witness, sweep, mesh_round=trace
+                    )
+                if isinstance(analytic, MeshTriangleQuery):
+                    status, reason, witness, sweep, trace = analytic.result(ma.moving or mb.moving)
+                    return CollisionPair(
+                        *fields, True, status, reason, witness, sweep, mesh_triangle=trace
                     )
                 if isinstance(analytic, MeshHullQuery):
                     status, reason, witness, sweep, mesh = analytic.result(
@@ -622,6 +629,18 @@ def _detect_pairs(
                             analytic = MeshRoundQuery(mesh, rs, rp, mesh_first)
                         except SolverFailure as error:
                             analytic = _NarrowFailure("unresolved", str(error))
+            elif {a.kind, b.kind} == {"mesh", "triangle"} and code in (0, 5):
+                mesh_first = a.kind == "mesh"
+                ms, cs, mp, cp = (a, b, ma, mb) if mesh_first else (b, a, mb, ma)
+                if ms.radius or cs.radius or any(p.turn and p.turn.angle for p in (mp, cp)):
+                    if not code:
+                        analytic = _NarrowFailure("unsupported", "mesh_triangle_offset_or_rotation")
+                else:
+                    mesh = prepared_mesh(ms, mp)
+                    if isinstance(mesh, _NarrowFailure):
+                        analytic = mesh
+                    elif not code:
+                        analytic = MeshTriangleQuery(mesh, cs, cp, mesh_first)
             elif {a.kind, b.kind} == {"mesh", "hull"} and code in (0, 5):
                 mesh_first = a.kind == "mesh"
                 ms, hs, mp, hp = (a, b, ma, mb) if mesh_first else (b, a, mb, ma)

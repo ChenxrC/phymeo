@@ -45,11 +45,15 @@ def exact_face_boxes(terms, indices, t0, t1):
         low, high = sorted((omega * t0, omega * t1))
         phi = math.atan2(c[v, k], s[v, k])
         for base in (math.acos(threshold) - phi, -math.acos(threshold) - phi):
-            for j in range(math.ceil((low-base)/math.tau), math.floor((high-base)/math.tau)+1):
+            for j in range(
+                math.ceil((low - base) / math.tau), math.floor((high - base) / math.tau) + 1
+            ):
                 theta = base + j * math.tau
                 component = (
-                    origin[v, k] + drift[v, k] * theta / omega
-                    + c[v, k] * math.cos(theta) + s[v, k] * math.sin(theta)
+                    origin[v, k]
+                    + drift[v, k] * theta / omega
+                    + c[v, k] * math.cos(theta)
+                    + s[v, k] * math.sin(theta)
                 )
                 lo[v, k] = min(lo[v, k], component)
                 hi[v, k] = max(hi[v, k], component)

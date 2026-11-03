@@ -157,7 +157,13 @@ class CollisionShape:
     @property
     def rigid(self):
         return self.curved is not None or self.kind in (
-            "sphere", "capsule", "hull", "mesh", "plate", "plane", "heightfield"
+            "sphere",
+            "capsule",
+            "hull",
+            "mesh",
+            "plate",
+            "plane",
+            "heightfield",
         )
 
 

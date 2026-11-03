@@ -278,7 +278,9 @@ def _pair(a, b, ma, mb, code, analytic, seeds):
                     return CollisionPair(*fields, True, status, reason, witness, sweep, plate=plate)
                 if isinstance(analytic, MeshMeshQuery):
                     status, reason, witness, sweep, trace = analytic.result(ma.moving or mb.moving)
-                    return CollisionPair(*fields, True, status, reason, witness, sweep, mesh_mesh=trace)
+                    return CollisionPair(
+                        *fields, True, status, reason, witness, sweep, mesh_mesh=trace
+                    )
                 if isinstance(analytic, MeshHullQuery):
                     status, reason, witness, sweep, mesh = analytic.result(
                         ma.moving or mb.moving, seeds
@@ -500,7 +502,9 @@ def _detect_pairs(workspace, paths, flags, selected, proximity=False, resolved=N
             if code == 0 and (a.curved is not None or b.curved is not None):
                 family = "RR" if a.rigid and b.rigid else "RD"
                 status, reason, witness, trace = curved_solid_contact(a, b, ma, mb)
-                ready = CollisionPair(a.key, b.key, family, True, status, reason, witness, curved=trace)
+                ready = CollisionPair(
+                    a.key, b.key, family, True, status, reason, witness, curved=trace
+                )
             elif code == 0 and {a.kind, b.kind} == {"heightfield", "sphere"}:
                 status, reason, witness, chart, sweep = heightfield_sphere_contact(a, b, ma, mb)
                 ready = CollisionPair(

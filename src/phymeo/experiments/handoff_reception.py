@@ -43,7 +43,17 @@ class GripMotion:
 
 class CooperativeReception:
     def __init__(
-        self, nodes, dt, weight, clearance, donor_home, receiver_home, transfer, *, layer_width=0.0
+        self,
+        nodes,
+        dt,
+        weight,
+        clearance,
+        donor_home,
+        receiver_home,
+        transfer,
+        *,
+        layer_width=0.0,
+        axial_clearance=0.0,
     ):
         self.nodes = nodes
         self.dt = dt
@@ -52,6 +62,9 @@ class CooperativeReception:
         self.home = receiver_home.copy()
         if not np.isfinite(layer_width) or layer_width < 0:
             raise ValueError("contact layer width must be finite and nonnegative")
+        if not np.isfinite(axial_clearance) or axial_clearance < 0:
+            raise ValueError("axial clearance must be finite and nonnegative")
+        self.axial_clearance = axial_clearance
         self.standoff_clearance = clearance + layer_width
         self.standoff = None
         self.transfer = transfer.copy()
@@ -171,7 +184,7 @@ class CooperativeReception:
             )
             return GripMotion(donor_default, target, closed, receiver_rate=rate)
 
-        if phase == "lift_A" and self.solo.position is None:
+        def exterior(action):
             if self.standoff is None:
                 self.standoff = MaterialEdgeStandoff.from_window(
                     x, self.nodes, window.center, [0, 1, 0]
@@ -179,7 +192,7 @@ class CooperativeReception:
             if self.standoff is None:
                 cmd = approach(window.center, np.zeros(3), False)
                 cmd.observation = dict(
-                    action="stage",
+                    action=action,
                     reason="no_exterior_direction",
                     tool_velocity_command_m_s=cmd.receiver_rate.tolist(),
                 )
@@ -189,7 +202,7 @@ class CooperativeReception:
             predicted = self.standoff.point(x + self.dt * v, reserve)
             cmd = approach(goal, (predicted - goal) / self.dt, False)
             cmd.observation = dict(
-                action="stage",
+                action=action,
                 standoff_direction=list(self.standoff.direction),
                 exterior_point_m=goal.tolist(),
                 material_point_m=self.standoff.target.evaluate(x).tolist(),
@@ -197,17 +210,26 @@ class CooperativeReception:
                 tool_velocity_command_m_s=cmd.receiver_rate.tolist(),
             )
             return cmd
+
+        if phase == "lift_A" and self.solo.position is None:
+            return exterior("stage")
         if self.anchor is None:
             visible = window.acquire(x, self.nodes, clearance=self.clearance)
             if visible is None:
-                if self.standoff is None:
-                    p, vel = x[self.nodes].mean(0), v[self.nodes].mean(0)
-                else:
-                    p = self.standoff.target.evaluate(x)
-                    vel = self.standoff.target.evaluate(v)
+                target = window.approach_target(
+                    x,
+                    self.nodes,
+                    preferred=self.standoff.target if self.standoff else None,
+                    axial_clearance=self.axial_clearance,
+                )
+                if target is None:
+                    return exterior("await_aperture")
+                p, vel = target.evaluate(x), target.evaluate(v)
                 cmd = approach(p, vel, False)
                 cmd.observation = dict(
                     action="approach",
+                    guidance_nodes=list(target.nodes),
+                    guidance_fraction=target.fraction,
                     material_point_m=p.tolist(),
                     material_velocity_m_s=vel.tolist(),
                     tool_velocity_command_m_s=cmd.receiver_rate.tolist(),

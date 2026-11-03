@@ -154,6 +154,29 @@ class ParallelJawWindow:
         ids = _edge_indices(edge_nodes, positions)
         if not np.isfinite(clearance) or not 0 <= clearance < self.radius:
             raise ValueError("clearance must leave an interior on both finger fronts")
+        margins = np.full(len(self._normals), clearance)
+        margins[-2:] = 0.0
+        return self._nearest(positions, ids, self._normals, self._offsets, margins)
+
+    def approach_target(self, positions, edge_nodes, *, preferred=None, axial_clearance=0.0):
+        """Find an edge address between the open jaws. It can still be outside both finite fronts."""
+        positions = _points(positions)
+        ids = _edge_indices(edge_nodes, positions)
+        if not np.isfinite(axial_clearance) or axial_clearance < 0:
+            raise ValueError("axial clearance must be finite and nonnegative")
+        normals, offsets = self._normals[-2:], self._offsets[-2:]
+        if preferred is not None:
+            if not isinstance(preferred, MaterialEdgeTarget) or not any(
+                (i, j) in (preferred.nodes, preferred.nodes[::-1])
+                for i, j in zip(ids[:-1], ids[1:], strict=True)
+            ):
+                raise ValueError("preferred address must lie on the supplied material edge")
+            p = preferred.evaluate(positions)
+            if np.all(np.einsum("ij,ij->i", p - offsets, normals) >= axial_clearance):
+                return preferred
+        return self._nearest(positions, ids, normals, offsets, axial_clearance)
+
+    def _nearest(self, positions, ids, normals, offsets, margins):
         best = None
         distance = float("inf")
         for first, second in zip(ids[:-1], ids[1:], strict=True):
@@ -162,10 +185,8 @@ class ParallelJawWindow:
             length2 = float(ab @ ab)
             if length2 == 0:
                 continue
-            start = np.einsum("ij,ij->i", a - self._offsets, self._normals)
-            end = np.einsum("ij,ij->i", b - self._offsets, self._normals)
-            start[:-2] -= clearance
-            end[:-2] -= clearance
+            start = np.einsum("ij,ij->i", a - offsets, normals) - margins
+            end = np.einsum("ij,ij->i", b - offsets, normals) - margins
             if np.any((start < 0) & (end < 0)):
                 continue
             enter = start < 0

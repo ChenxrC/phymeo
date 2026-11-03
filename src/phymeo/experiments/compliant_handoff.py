@@ -320,6 +320,7 @@ def run_handoff(
             b0,
             transfer,
             layer_width=finger_layer.width_m,
+            axial_clearance=HALF_THICKNESS_M + finger_layer.width_m,
         )
         trace["coordination_events"] = coordinator.events
 
@@ -433,7 +434,8 @@ def run_handoff(
                         and coordinator is not None
                         and case.program.cloth_links is not None
                         and receiver_observation is not None
-                        and receiver_observation["action"] in ("stage", "approach", "track")
+                        and receiver_observation["action"]
+                        in ("stage", "await_aperture", "approach", "track")
                     ):
                         controls[arm] = coordinator.drive_approach(
                             arm,

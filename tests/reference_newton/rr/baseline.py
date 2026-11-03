@@ -315,6 +315,10 @@ def _phymeo(case, inputs, assets, device):
         return phymeo_curved(case, inputs, assets, device)
     if [a["kind"] for a in assets] == ["heightfield", "sphere"]:
         return _phymeo_heightfield(case, inputs, assets, device)
+    if all(asset["kind"] == "u_mesh" for asset in assets):
+        from .mesh_mesh_reference import run_case
+
+        return run_case(case, inputs, assets, device)
     if any(asset["kind"] != "sphere" for asset in assets):
         raise ValueError("The comparison has no Phymeo adapter for these native shapes")
     keys = (ph.CollisionKey(0, 1, 0), ph.CollisionKey(0, 2, 0))

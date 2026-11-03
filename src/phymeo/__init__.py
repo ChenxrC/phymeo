@@ -84,6 +84,7 @@ from .coupling.tetrahedral_port import TetrahedralPointPort
 from .dynamics.robot_contact import RobotContactSystem
 from .geometry._curved_solids import CurvedContact
 from .geometry._heightfield import HeightfieldEvent, HeightfieldFace, HeightfieldTrace
+from .geometry._mesh_mesh import MeshMeshPose, MeshMeshSupport, MeshMeshTrace
 from .geometry.collision_pipeline import (
     CollisionBounds,
     CollisionDetection,
@@ -385,6 +386,9 @@ __all__ += [
     "MaterialContactPoint",
     "MeshContactPose",
     "MeshContactTrace",
+    "MeshMeshPose",
+    "MeshMeshSupport",
+    "MeshMeshTrace",
     "PlateContactPose",
     "PlateContactTrace",
     "CapsuleAxisPoint",

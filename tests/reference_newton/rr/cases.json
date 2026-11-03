@@ -114,9 +114,9 @@
         "reason": "Two free, closed concave meshes. Query the live mesh BVHs without geometry approximation or precomputed SDF."
       },
       "phymeo": {
-        "status": "gap",
-        "devices": [],
-        "reason": "The public RR narrow phase on da5ba35 handles mesh–hull but has no mesh–mesh narrow phase."
+        "status": "run",
+        "devices": ["cpu"],
+        "reason": "Independent closed triangle meshes publish actual boundary addresses and a HOST contact classification."
       }
     },
     {
@@ -145,9 +145,9 @@
         "reason": "Two free, closed concave meshes. Query the live mesh BVHs without geometry approximation or precomputed SDF."
       },
       "phymeo": {
-        "status": "gap",
-        "devices": [],
-        "reason": "The public RR narrow phase on da5ba35 handles mesh–hull but has no mesh–mesh narrow phase."
+        "status": "run",
+        "devices": ["cpu"],
+        "reason": "Independent closed triangle meshes publish actual boundary addresses and a HOST contact classification."
       }
     },
     {
@@ -178,9 +178,9 @@
         "reason": "Two free, closed concave meshes. Query the live mesh BVHs without geometry approximation or precomputed SDF."
       },
       "phymeo": {
-        "status": "gap",
-        "devices": [],
-        "reason": "The public RR narrow phase on da5ba35 handles mesh–hull but has no mesh–mesh narrow phase."
+        "status": "run",
+        "devices": ["cpu"],
+        "reason": "Independent closed triangle meshes publish actual boundary addresses and a HOST contact classification."
       }
     },
     {

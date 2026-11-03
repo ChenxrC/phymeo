@@ -75,7 +75,7 @@ def test_multi_site_command_drives_a_real_tool_and_observes_the_plane_passage():
              ph.SiteIKTarget(marker,position_world_m=(.25,0,-.375))]
     ik=ph.solve_multi_site_ik(robot,np.array([.25]),targets,tolerance_m=1e-8)
     assert ik.converged and abs(ik.configuration[0]+.5)<1e-8
-    drive=DrivenRobotProgram(robot,kp=[64],kd=[0],effort_limit=[4])
+    drive=DrivenRobotProgram(robot,kp=[64.],kd=[0.],effort_limit=[4.])
     state=drive.initial_state(ph.RobotState(np.array([.25]),np.array([0.])))
     packet=drive.inputs(ik.configuration)
     dt=1/8; seen=[]

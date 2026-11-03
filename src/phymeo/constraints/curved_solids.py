@@ -11,8 +11,9 @@ class CurvedSolid:
     """A centered Z-axis cylinder/cone (radius, half-height) or ellipsoid (a, b, c).
 
     The cone apex lies at local +half-height. Lengths are in metres. The unit
-    xyzw quaternion maps local vectors to world coordinates at the start pose.
-    CollisionMotion supplies the world center separately.
+    xyzw quaternion maps local vectors to world coordinates for a direct query.
+    If CollisionMotion supplies a starting body orientation, it maps asset-local
+    vectors into that body frame. Motion carries the world center separately.
     """
 
     kind: str

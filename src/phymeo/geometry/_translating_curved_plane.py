@@ -5,7 +5,7 @@ from fractions import Fraction as F
 from math import inf, nextafter, ulp
 
 from ..constraints.collision_shapes import CollisionMotion
-from ._curved_solids import CurvedEvent, _rotation, _static, _support_bounds
+from ._curved_solids import CurvedEvent, _plane_support, _rotation, _static, _support_bounds
 from ._round_sweep import _translation, _vector
 from .collision_witness import CollisionSweep
 
@@ -26,7 +26,9 @@ def translating_curved_plane(shape, plane, motion, plane_motion, curved_first):
     anchor = _vector(plane_motion.start[0])
     dc, dp = _translation(motion), _translation(plane_motion)
     frame = _rotation(shape.curved, motion)
-    reach = _support_bounds(shape.kind, _vector(shape.curved.dimensions_m), -(frame.T @ n))
+    dims = _vector(shape.curved.dimensions_m)
+    local_normal = frame.T @ n
+    reach = _support_bounds(shape.kind, dims, -local_normal)
     height0, slope = (center-anchor) @ n, (dc-dp) @ n
 
     def sample(time):
@@ -40,19 +42,25 @@ def translating_curved_plane(shape, plane, motion, plane_motion, curved_first):
 
     start,_=sample(0.)
     end,trace=sample(1.)
-    g0,g1=start.gap_m,end.gap_m
-    if g0>0 and g1>0:
+    g0, g1 = start.gap_m, end.gap_m
+    # A zero-angle pivot translation can have a nonrepresentable endpoint.
+    # Decide each side from the stored affine inputs before publishing a rounded point.
+    h0 = _plane_support(shape.kind, dims, local_normal, height0)[3]
+    h1 = _plane_support(shape.kind, dims, local_normal, height0+slope)[3]
+    if any((h>0)!=(g>0) or (h<0)!=(g<0) for h,g in ((h0,g0),(h1,g1))):
+        return "unresolved","curved_plane_endpoint_rounding",None,None,None
+    if h0>0 and h1>0:
         return "separated","affine_curved_halfspace",end,trace,CollisionSweep(g0,g1,None,None,None)
 
     start_event,end_event=CurvedEvent((0.,0.),0.,start),CurvedEvent((1.,1.),1.,end)
-    if g0<=0 and g1<=0:
+    if h0<=0 and h1<=0:
         first,last=start_event,end_event
     else:
         interval=_outward_time([(h-height0)/slope for h in reach])
         time=(interval[0]+interval[1])/2
         w,_=sample(time)
         boundary=CurvedEvent(interval,time,w)
-        first,last=(start_event,boundary) if g0<=0 else (boundary,end_event)
+        first,last=(start_event,boundary) if h0<=0 else (boundary,end_event)
     trace=replace(trace,first_contact=first,last_contact=last)
     sweep=CollisionSweep(g0,g1,first.interval,first.witness_time,first.witness)
     return "hit","affine_curved_halfspace",end,trace,sweep

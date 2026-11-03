@@ -59,7 +59,9 @@ def load_cases(lane):
 
 def load_runner(lane):
     path = ROOT / lane / "baseline.py"
-    spec = importlib.util.spec_from_file_location("newton_reference_" + lane, path)
+    spec = importlib.util.spec_from_file_location(
+        "newton_reference_" + lane, path, submodule_search_locations=[str(path.parent)]
+    )
     if spec is None or spec.loader is None:
         raise ImportError(str(path))
     module = importlib.util.module_from_spec(spec)

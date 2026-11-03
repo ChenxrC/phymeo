@@ -309,6 +309,10 @@ def _phymeo_heightfield(case, inputs, assets, device):
 def _phymeo(case, inputs, assets, device):
     import phymeo as ph
 
+    if any(asset["kind"] in ("cylinder", "cone", "ellipsoid") for asset in assets):
+        from .curved_reference import phymeo_curved
+
+        return phymeo_curved(case, inputs, assets, device)
     if [a["kind"] for a in assets] == ["heightfield", "sphere"]:
         return _phymeo_heightfield(case, inputs, assets, device)
     if any(asset["kind"] != "sphere" for asset in assets):

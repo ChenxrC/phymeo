@@ -6,6 +6,7 @@ from numbers import Integral
 import numpy as np
 
 from ..core.validation import finite_real
+from .curved_solids import CurvedSolid
 from .heightfield import Heightfield
 
 MAX_SHAPES = 256
@@ -72,12 +73,16 @@ class CollisionShape:
     normal: tuple[float, float, float] | None = None
     triangles: tuple[tuple[int, int, int], ...] = ()
     heightfield: Heightfield | None = None
+    curved: CurvedSolid | None = None
 
     def __post_init__(self):
         if not isinstance(self.key, CollisionKey):
             raise TypeError("shape key must be a CollisionKey")
         counts = {
             "sphere": 1,
+            "cylinder": 1,
+            "cone": 1,
+            "ellipsoid": 1,
             "particle": 1,
             "capsule": 2,
             "triangle": 3,
@@ -114,6 +119,13 @@ class CollisionShape:
         else:
             object.__setattr__(self, "triangles", ())
         radius = finite_real(self.radius, "radius")
+        if self.kind in ("cylinder", "cone", "ellipsoid"):
+            if not isinstance(self.curved, CurvedSolid) or self.curved.kind != self.kind:
+                raise ValueError("curved shape kind must match its registered geometry")
+            if radius:
+                raise ValueError("curved solid dimensions specify the entire shape")
+        elif self.curved is not None:
+            raise ValueError("curved geometry requires a cylinder, cone or ellipsoid")
         if self.kind == "heightfield":
             if (
                 not isinstance(self.heightfield, Heightfield)
@@ -144,7 +156,9 @@ class CollisionShape:
 
     @property
     def rigid(self):
-        return self.kind in ("sphere", "capsule", "hull", "mesh", "plate", "plane", "heightfield")
+        return self.curved is not None or self.kind in (
+            "sphere", "capsule", "hull", "mesh", "plate", "plane", "heightfield"
+        )
 
 
 @dataclass(frozen=True)

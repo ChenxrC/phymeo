@@ -11,7 +11,7 @@ from ..core.capabilities import SolverFailure
 from ._closed_mesh import _Facet
 from ._mesh_mesh import _intersection
 from ._prism_clip import edges,hull,inside
-from ._round_sweep import _translation,_unit,_vector,_xyz
+from ._round_sweep import _GRID,_translation,_unit,_vector,_xyz
 from ._tetrahedral_surface import _TriangleMotion
 from ._triangle_pair_sweep import _FacePath,_TrianglePair
 from .collision_witness import CollisionSweep,CollisionWitness
@@ -147,7 +147,9 @@ class MeshTriangleQuery:
                 continue
             if best is None or d2<best:
                 best,patches=d2,[]
-            patch=w.proximity_patch
+            patch=getattr(w,"proximity_patch",None)
+            if patch is None:
+                raise SolverFailure("mesh_triangle_nearest_patch_unresolved")
             gap,n=w.gap_m,w.normal
             if is_inside:
                 gap=-gap
@@ -209,9 +211,40 @@ class MeshTriangleQuery:
         return MeshTrianglePose(relation,abs(witness.gap_m),float(inside_area),float(boundary_area),
                                 float(outside_area),boundary,closest,witness)
 
+    def _first_boundary(self):
+        # In the rigid mesh frame each cloth node follows its own affine path.
+        # Bounds are only a filter. Roots of the finite vertex/face and edge/edge
+        # material conditions establish contact, including isolated touches.
+        lo=np.minimum(self.motion.start,self.motion.end).min(0)
+        hi=np.maximum(self.motion.start,self.motion.end).max(0)
+        best=None
+        for face in self.mesh.facets:
+            if any(face.hi<lo) or any(hi<face.lo):
+                continue
+            leaf=_TrianglePair(face.shape,self.cloth,face.stationary,self.motion)
+            for feature in leaf.features:
+                entry=feature.entry(None)
+                if entry is not None and (best is None or entry<best):
+                    best=entry
+        return best
+
     def result(self,moving):
-        if moving:
-            return "unsupported","mesh_triangle_motion",None,None,None
-        pose=self.sample(_ZERO)
-        status=pose.relation if pose.relation in ("separated","touching") else "overlap"
-        return status,pose.relation,pose.witness,None,MeshTriangleTrace(pose,pose,None)
+        start=self.sample(_ZERO)
+        if not moving:
+            status=start.relation if start.relation in ("separated","touching") else "overlap"
+            return status,start.relation,start.witness,None,MeshTriangleTrace(start,start,None)
+        end=self.sample(_ONE)
+        first=(0,0) if start.relation!="separated" else self._first_boundary()
+        if first is None:
+            if end.relation!="separated":
+                raise SolverFailure("mesh_triangle_terminal_state_inconsistent")
+            sweep=CollisionSweep(start.witness.gap_m,end.witness.gap_m,None,None,None)
+            return "separated","mesh_triangle_swept_clear",end.witness,sweep,MeshTriangleTrace(start,end,None)
+        interval=first[0]/_GRID,first[1]/_GRID
+        time=(interval[0]+interval[1])/2
+        pose=start if time==0 else end if time==1 else self.sample(F(time))
+        if time and pose.boundary_gap_m>1e-6:
+            raise SolverFailure("mesh_triangle_first_witness_resolution")
+        event=MeshTriangleEvent(interval,time,pose)
+        sweep=CollisionSweep(start.witness.gap_m,end.witness.gap_m,interval,time,pose.witness)
+        return "hit","mesh_triangle_first_solid_contact",end.witness,sweep,MeshTriangleTrace(start,end,event)

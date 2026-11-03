@@ -64,7 +64,7 @@ def _add_shape(builder, asset, path, cfg, flip):
     return add(body, radius=asset["radius_m"], half_height=asset["half_height_m"], xform=rotation, cfg=cfg)
 
 
-def _deepest_newton_contact(contacts, count, distance, points, shape_ids):
+def _newton_witnesses(contacts, count, distance, points, shape_ids, keep_all):
     first = contacts.rigid_contact_shape0.numpy()[:count]
     second = contacts.rigid_contact_shape1.numpy()[:count]
     assert np.all(((first == shape_ids[0]) & (second == shape_ids[1])) |
@@ -73,18 +73,23 @@ def _deepest_newton_contact(contacts, count, distance, points, shape_ids):
     normals = contacts.rigid_contact_normal.numpy()[:count]
     assert np.isfinite(gaps).all()
     np.testing.assert_allclose(np.linalg.norm(normals, axis=1), 1.0, rtol=0, atol=2e-4)
-    deepest = int(np.argmin(gaps))
-    side_a = int(first[deepest] != shape_ids[0])
-    normal = normals[deepest] if side_a == 0 else -normals[deepest]
-    a_point = points[side_a].numpy()[deepest]
-    b_point = points[1 - side_a].numpy()[deepest]
-    assert np.isfinite([a_point, b_point]).all()
-    return dict(gap_m=float(gaps[deepest]), normal_a_to_b=normal.tolist(),
-                a_support_world_m=a_point.tolist(), b_support_world_m=b_point.tolist(),
-                observed_pair_ids=[int(first[deepest]), int(second[deepest])])
+    support = [array.numpy()[:count] for array in points]
+    witnesses = []
+    for i in (range(count) if keep_all else [int(np.argmin(gaps))]):
+        side_a = int(first[i] != shape_ids[0])
+        normal = normals[i] if side_a == 0 else -normals[i]
+        a_point, b_point = support[side_a][i], support[1 - side_a][i]
+        assert np.isfinite([a_point, b_point]).all()
+        row = dict(gap_m=float(gaps[i]), normal_a_to_b=normal.tolist(),
+                   a_support_world_m=a_point.tolist(), b_support_world_m=b_point.tolist(),
+                   observed_pair_ids=[int(first[i]), int(second[i])])
+        if keep_all:
+            row["buffer_index"] = i
+        witnesses.append(row)
+    return {"contacts": witnesses} if keep_all else witnesses[0]
 
 
-def _newton_samples(inputs, assets, device):
+def _newton_samples(inputs, assets, device, *, keep_all=False):
     import newton
     import warp as wp
 
@@ -138,7 +143,9 @@ def _newton_samples(inputs, assets, device):
             sample = dict(fraction=fraction, prescribed_time_s=fraction * inputs["duration_s"],
                           origins_world_m=translations, contact=count > 0, contact_count=count)
             if count:
-                sample.update(_deepest_newton_contact(contacts, count, distance, points, shape_ids))
+                sample.update(_newton_witnesses(contacts, count, distance, points, shape_ids, keep_all))
+            elif keep_all:
+                sample["contacts"] = []
             samples.append(sample)
         return dict(device=str(contacts.rigid_contact_count.device), shape_ids=shape_ids, shape_types=types,
                     body_ids=bodies.tolist(), dynamic_masses_kg=masses.tolist(), samples=samples)
@@ -201,6 +208,79 @@ def _phymeo(case, inputs, assets, device):
         return observed
 
 
+def _u_surface_distance(local_point, scale):
+    """Exact distance to the boundary of the extruded ring, independent of mesh triangulation."""
+    ring = np.asarray(CATALOG["u_prism"]["u_ring_xy_m"]) * scale[:2]
+    z_low, z_high = np.asarray(CATALOG["u_prism"]["u_z_m"]) * scale[2]
+    xy, z = local_point[:2], local_point[2]
+    ends = np.roll(ring, -1, axis=0)
+    edges = ends - ring
+    delta = xy - ring
+    along = np.clip(np.sum(delta * edges, axis=1) / np.sum(edges * edges, axis=1), 0, 1)
+    edge_distance = min(np.linalg.norm(delta - along[:, None] * edges, axis=1))
+    # Half-open ray crossings exclude horizontal edges and count a shared vertex once.
+    cross = (ring[:, 1] > xy[1]) != (ends[:, 1] > xy[1])
+    crossing_x = ring[cross, 0] + delta[cross, 1] * edges[cross, 0] / edges[cross, 1]
+    inside_xy = np.count_nonzero(xy[0] < crossing_x) % 2 == 1
+    outside_z = max(z_low - z, z - z_high, 0.0)
+    if inside_xy:
+        return float(outside_z if outside_z else min(edge_distance, z - z_low, z_high - z))
+    return float(np.hypot(edge_distance, outside_z))
+
+
+def _check_u_walls(case, observed, assets):
+    """Test the original wall criteria against every contact tied at the deepest gap."""
+    expected = case["expected"]["samples"]
+    wall = next(row for row in expected if "a_local_x_m" in row)
+    gap_low, gap_high = wall["gap_range_m"]
+    length_tol = case["tolerances"]["length_m"]
+    normal_tol = case["tolerances"]["normal_component"]
+    a_wall_x = wall["a_local_x_m"]
+    insert_x = np.asarray(CATALOG["u_prism"]["u_ring_xy_m"])[:, 0] * assets[1]["scale_xyz"][0]
+    b_outer_x = float(max(insert_x) if a_wall_x > 0 else min(insert_x))
+    failures = []
+    for sample, target in zip(observed["samples"], expected, strict=True):
+        contacts = sample["contacts"]
+        minimum = min((row["gap_m"] for row in contacts), default=None)
+        origin_a, origin_b = np.asarray(sample["origins_world_m"])
+        for row in contacts:
+            a = np.asarray(row["a_support_world_m"]) - origin_a
+            b = np.asarray(row["b_support_world_m"]) - origin_b
+            a_error, b_error = float(a[0] - a_wall_x), float(b[0] - b_outer_x)
+            normal_error = float(np.max(np.abs(np.asarray(row["normal_a_to_b"]) - wall["normal_a_to_b"])))
+            row.update(
+                is_deepest=row["gap_m"] - minimum <= length_tol,
+                normal_max_component_error=normal_error,
+                normal_matches=normal_error <= normal_tol,
+                a_wall_x_error_m=a_error, b_outer_face_x_error_m=b_error,
+                a_wall_x_matches=abs(a_error) <= length_tol,
+                b_outer_face_x_matches=abs(b_error) <= length_tol,
+                a_surface_distance_m=_u_surface_distance(a, assets[0]["scale_xyz"]),
+                b_surface_distance_m=_u_surface_distance(b, assets[1]["scale_xyz"]),
+                depth_matches=gap_low - length_tol <= row["gap_m"] <= gap_high + length_tol,
+            )
+        tied = [row for row in contacts if row["is_deepest"]]
+        summary = dict(minimum_gap_m=minimum, band_m=length_tol, count=len(tied),
+                       normal_matches=sum(row["normal_matches"] for row in tied),
+                       a_wall_x_matches=sum(row["a_wall_x_matches"] for row in tied),
+                       b_outer_face_x_matches=sum(row["b_outer_face_x_matches"] for row in tied),
+                       strict_matches=sum(row["normal_matches"] and row["a_wall_x_matches"] and
+                                          row["depth_matches"] for row in tied))
+        for field in ("a_wall_x_error_m", "b_outer_face_x_error_m", "a_surface_distance_m", "b_surface_distance_m"):
+            values = [row[field] for row in tied]
+            summary[field.removesuffix("_m") + "_range_m"] = [min(values), max(values)] if values else None
+        sample["deepest_set"] = summary
+        if sample["contact"] != target["contact"]:
+            failures.append(f"t={sample['fraction']} expected contact={target['contact']}, got {len(contacts)} rows")
+        elif target["contact"] and summary["strict_matches"] != len(tied):
+            failures.append(f"t={sample['fraction']} {summary['strict_matches']}/{len(tied)} deepest rows "
+                            f"match depth, A-to-B normal and the receiver wall")
+    if failures:
+        error = AssertionError(f"{case['id']}: " + ", ".join(failures))
+        error.observed = observed
+        raise error
+
+
 def _check_samples(case, observed):
     tol = case["tolerances"]
     for sample, target in zip(observed["samples"], case["expected"]["samples"], strict=True):
@@ -235,7 +315,11 @@ def run_case(case, *, engine, device):
     if engine == "phymeo":
         observed = _phymeo(case, inputs, assets, device)
     elif engine == "newton" and inputs["query"] == "sampled_poses":
-        observed = _newton_samples(inputs, assets, device)
+        inspect_walls = case["id"] in ("RR-U-RIGHT", "RR-U-LEFT-HOLDOUT")
+        observed = _newton_samples(inputs, assets, device, keep_all=inspect_walls)
+        if inspect_walls:
+            _check_u_walls(case, observed, assets)
+            return observed
     else:
         raise ValueError(f"No {engine} adapter for {inputs['query']}")
     if inputs["query"] == "sampled_poses":

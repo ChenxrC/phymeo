@@ -1,5 +1,6 @@
 """Sample and advance real states through a smooth finite rigid contact layer."""
 
+import json
 from contextlib import ExitStack
 from math import hypot
 
@@ -159,3 +160,116 @@ def test_angular_clearance_covers_small_real_arcs_and_refuses_hidden_half_turn()
             assert hidden.sweep.first_t is not None
         # At half the arc, the long axis is vertical and passes through the sheet.
         assert .25-.5<0 and .25-.125>0
+
+
+def spring_impact_window(mode, root):
+    model, bindings, laws, initial, models = scene("RR", mode)
+    p=initial.particles
+    rigid=initial.rigid
+    dtype=rigid.position.dtype
+    pos=rigid.position.copy()
+    pos[1,0]=.375+5/64
+    velocity=rigid.velocity.copy()
+    velocity[0,0]=.5
+    state=ph.CoupledState(p,ph.RigidBodyState(pos,rigid.orientation,velocity,rigid.angular_velocity))
+    dt=1/256
+    phase=2*np.arcsin(np.sqrt(192.)*dt/2)
+    history=[]
+    with ExitStack() as stack:
+        work=stack.enter_context(ph.CollisionWorkspace(model,mode,cache_root=root))
+        op=None if mode=="host" else stack.enter_context(ph.TyxNormalLayer(mode,cache_root=root))
+        sys=CollisionLoadSystem(model,bindings,laws,layer_operator=op)
+        solver=ph.RigidSemiImplicitSolver() if mode=="host" else stack.enter_context(ph.TyxRigidSemiImplicitSolver(mode=mode,cache_root=root))
+        ext=ph.CoupledInputs.zeros(0,2,dtype=dtype)
+        for n in range(80):
+            frame=sys.step(state,ext,models,(None,solver),dt,work)
+            sites=frame.loads.contacts
+            magnitude=sites[0].force_n if sites else 0.
+            # Eight free steps reach the layer. In contact, the scalar relative oscillator
+            # has exact discrete solution c[j]=(dt/2) sin(j*phase)/sin(phase).
+            j=n-8
+            compression=(dt/2)*np.sin(j*phase)/np.sin(phase) if 0<j*phase<np.pi else 0.
+            assert magnitude==pytest.approx(64*compression,abs=8e-5)
+            state=frame.state
+            gap=float(state.rigid.position[1,0]-state.rigid.position[0,0]-.375)
+            assert gap>0 and frame.path.pairs[0].status=="separated"
+            v=state.rigid.velocity.astype(float)
+            momentum=.5*v[0]+v[1]
+            np.testing.assert_allclose(momentum,[.25,0,0],atol=5e-6,rtol=0)
+            energy=.25*(v[0]@v[0])+.5*(v[1]@v[1])+32*max(1/16-gap,0.)**2
+            assert abs(energy-.0625)<.003
+            history.append(dict(step=n+1,entry_force_n=magnitude,analytic_entry_force_n=64*compression,
+                end_gap_m=gap,end_positions_m=state.rigid.position.tolist(),end_velocity_m_s=v.tolist(),
+                momentum_kg_m_s=momentum.tolist(),mechanical_energy_j=energy))
+        assert history[7]["entry_force_n"]==0 and history[-1]["entry_force_n"]==0
+        assert max(row["entry_force_n"] for row in history)>2.2
+        assert state.rigid.velocity[1,0] > state.rigid.velocity[0,0]
+        result=dict(mode=mode,step_s=dt,family="RR",rows=history,workspace=work.stats(),layer=op.stats() if op else None)
+        (root/"curved-impact-window.json").write_text(json.dumps(result,allow_nan=False),encoding="utf8")
+
+
+def sliding_cloth_window(mode, root):
+    model,bindings,laws,initial,models=scene("RD",mode)
+    laws=dict.fromkeys(laws,NormalLayer(1/16,64.,friction=.25))
+    p0=initial.particles
+    v0=p0.velocity.copy(); v0[:,1]=.25
+    state=ph.CoupledState(ph.ParticleState(p0.position,v0),initial.rigid)
+    dtype=v0.dtype
+    dt=1/256
+    impulse=np.array((0.,.75,0.))
+    edges=np.array([[0,1],[1,2],[2,0]])
+    rest=np.linalg.norm(p0.position[edges[:,0]]-p0.position[edges[:,1]],axis=1)
+    constraints=ph.DistanceConstraints(edges,rest,np.full(3,.01,dtype=dtype))
+    history=[]
+    with ExitStack() as stack:
+        work=stack.enter_context(ph.CollisionWorkspace(model,mode,cache_root=root))
+        op=None if mode=="host" else stack.enter_context(ph.TyxNormalLayer(mode,cache_root=root))
+        sys=CollisionLoadSystem(model,bindings,laws,layer_operator=op)
+        if mode=="host":
+            rigid_solver=ph.RigidSemiImplicitSolver()
+            cloth_solver=ph.XPBDSolver(constraints=constraints,tolerance=5e-5)
+        else:
+            rigid_solver=stack.enter_context(ph.TyxRigidSemiImplicitSolver(mode=mode,cache_root=root))
+            cloth_solver=stack.enter_context(ph.TyxXPBDSolver(constraints,mode=mode,tolerance=5e-5,cache_root=root))
+        for n in range(48):
+            ext=ph.CoupledInputs.zeros(3,1,dtype=dtype)
+            if 8<=n<16:
+                ext.rigid.force[0,1]=.25
+            impulse+=dt*ext.rigid.force[0].astype(float)
+            frame=sys.step(state,ext,models,(cloth_solver,rigid_solver),dt,work)
+            got=frame.loads.contacts
+            force=frame.loads.inputs.rigid.force[0].astype(float)
+            if not n:
+                contact,=got
+                assert contact.force_n==pytest.approx(2,abs=3e-5)
+                np.testing.assert_allclose(force,[0,.5,2],atol=1e-4,rtol=0)
+                assert contact.power_w==pytest.approx(-.125,abs=2e-5)
+                site,=contact.sites
+                assert site.application_point_first_m==site.application_point_second_m
+                torque=np.cross(np.asarray(site.application_point_first_m)-state.rigid.position[0],force)
+                np.testing.assert_allclose(frame.loads.inputs.rigid.torque[0],torque,atol=2e-6)
+            state=frame.state
+            measured=.5*state.rigid.velocity[0]+state.particles.velocity.sum(axis=0)
+            assert frame.path.pairs[0].status=="separated"
+            np.testing.assert_allclose(measured,impulse,atol=5e-4 if mode!="host" else 1e-8,rtol=0)
+            history.append(dict(step=n+1,external_force_n=ext.rigid.force.tolist(),entry_normal_n=got[0].force_n if got else 0.,
+                contact_power_w=got[0].power_w if got else 0.,rigid_force_n=force.tolist(),
+                rigid_torque_nm=frame.loads.inputs.rigid.torque[0].tolist(),end_q_xyzw=state.rigid.orientation.tolist(),
+                end_omega_rad_s=state.rigid.angular_velocity.tolist(),cloth_positions_m=state.particles.position.tolist(),
+                cloth_velocities_m_s=state.particles.velocity.tolist(),rigid_velocities_m_s=state.rigid.velocity.tolist(),
+                end_linear_momentum=measured.tolist(),expected_linear_momentum=impulse.tolist()))
+        assert np.linalg.norm(state.rigid.angular_velocity[0])>0.02
+        assert history[-1]["entry_normal_n"]==0
+        result=dict(mode=mode,step_s=dt,family="RD",rows=history,workspace=work.stats(),layer=op.stats() if op else None)
+        (root/"curved-sliding-window.json").write_text(json.dumps(result,allow_nan=False),encoding="utf8")
+
+
+@pytest.mark.parametrize("run",[spring_impact_window,sliding_cloth_window])
+def test_curved_contact_windows_transfer_real_load_and_unload(run,tmp_path):
+    run("host",tmp_path)
+
+
+@pytest.mark.tyx
+@pytest.mark.parametrize("run",[spring_impact_window,sliding_cloth_window])
+def test_curved_contact_windows_on_native_participants(run,tmp_path,tyx_mode):
+    run(tyx_mode,tmp_path)

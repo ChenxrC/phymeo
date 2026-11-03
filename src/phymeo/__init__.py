@@ -121,6 +121,11 @@ from .geometry.compact_contacts import (
     ContactBufferLimits,
     compact_contacts,
 )
+from .geometry.deformable_features import (
+    DeformableFeatureContact,
+    DeformableFeatureContacts,
+    query_deformable_features,
+)
 from .geometry.collision_witness import (
     CapsuleAxisPoint,
     ConvexContactPatch,
@@ -502,6 +507,9 @@ __all__ += [
     "ConvexSupportTrace",
     "CollisionSweep",
     "CollisionWitness",
+    "DeformableFeatureContact",
+    "DeformableFeatureContacts",
+    "query_deformable_features",
     "CollisionWorkspace",
     "WorldCollisionWorkspace",
     "CompactContactBuffer",

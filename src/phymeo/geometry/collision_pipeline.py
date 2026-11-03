@@ -1038,6 +1038,30 @@ def _detection_result(model, paths, backend, count, rows, bounds):
     )
 
 
+def _material_face_broad_pairs(model, paths, workspace, margin):
+    """Query allowed finite-face AABB pairs without replacing the published collision result."""
+    if not isinstance(workspace, CollisionWorkspace) or workspace._model is not model:
+        raise ValueError("collision workspace belongs to a different model")
+    with workspace._lock:
+        if workspace._closed:
+            raise RuntimeError("collision workspace is closed")
+        if set(paths) != {shape.key for shape in model.shapes}:
+            raise ValueError("motion keys must exactly cover the collision model")
+        start = perf_counter_ns()
+        envelopes = _envelopes(model, paths, margin)
+        broad_start = perf_counter_ns()
+        workspace._times["envelope_ns"] += broad_start - start
+        draft = workspace._draft
+        layouts = workspace._trees.layouts if draft is None else draft.layouts
+        _, flags = workspace._classify_world_envelopes(envelopes, pending=layouts.copy())
+        workspace._times["broad_ns"] += perf_counter_ns() - broad_start
+        return tuple(
+            (int(i), int(j))
+            for (i, j, _), flag in zip(workspace._pairs, flags, strict=True)
+            if flag == 0
+        )
+
+
 def detect(model, motion, policy, workspace):
     """Query every registered pair. Never publish a partial or over-capacity result.
 

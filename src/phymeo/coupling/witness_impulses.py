@@ -25,8 +25,13 @@ def _chart_point(frame, local, origin):
 
 def _material_anchor(shape, path, weights):
     """Locate the reported material address on the current registered geometry."""
-    if not weights:
-        raise ValueError("collision witness has no material vertex address")
+    if not 1 <= len(weights) <= len(shape.vertex_ids):
+        raise ValueError("collision witness requires one bounded material address")
+    nodes = [node for node, _ in weights]
+    values = [float(weight) for _, weight in weights]
+    if (len(set(nodes)) != len(nodes) or not np.isfinite(values).all()
+            or min(values) < 0 or abs(fsum(values) - 1.0) > 1e-12):
+        raise ValueError("collision witness material coordinates must be a convex combination")
     vertices = dict(zip(shape.vertex_ids, path.start, strict=True))
     try:
         return np.array([

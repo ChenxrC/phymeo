@@ -1,6 +1,6 @@
 """Original material coordinates and actual impulse arm of a capsule touching a ball."""
 
-from dataclasses import fields
+from dataclasses import fields, replace
 
 import numpy as np
 import pytest
@@ -113,3 +113,13 @@ def test_other_row_on_the_same_capsule_cannot_receive_the_witness_impulse():
     assert np.linalg.norm(ports["capsule"].positions()[1] - row.witness.first_point) == 0.125
     with pytest.raises((ValueError, ph.SolverFailure), match="material|witness"):
         _solve(row, ports, states, local, capsule_row=1)
+
+@pytest.mark.parametrize("weights", [
+    ((11, float("nan")), (23, 0.25)),
+    ((11, 0.875), (11, -0.125), (23, 0.25)),
+])
+def test_invalid_material_coordinates_cannot_authenticate_a_real_contact(weights):
+    _, pair, ports, states, local, _ = _scene()
+    invalid = replace(pair, witness=replace(pair.witness, first_weights=weights))
+    with pytest.raises(ValueError, match="material"):
+        _solve(invalid, ports, states, local)

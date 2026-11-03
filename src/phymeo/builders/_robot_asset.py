@@ -68,7 +68,9 @@ class RobotAsset:
                 points = np.asarray(self.root_xyz) + points @ root_rotation.T
             orientation = None
             if collider.shape.curved is not None:
-                orientation = matrix_quaternion(geometry.rotation[link]) if link >= 0 else self.root_xyzw
+                orientation = (
+                    matrix_quaternion(geometry.rotation[link]) if link >= 0 else self.root_xyzw
+                )
             paths[collider.shape.key] = CollisionMotion(points, body_orientation_xyzw=orientation)
         return paths
 

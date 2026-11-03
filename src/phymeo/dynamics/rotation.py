@@ -55,9 +55,13 @@ def matrix_quaternion(rotation):
     q = np.empty(4)
     q[axis] = 0.5 * np.sqrt(four_squares[axis])
     scale = 4.0 * q[axis]
-    skew = np.array([rotation[2, 1] - rotation[1, 2],
-                     rotation[0, 2] - rotation[2, 0],
-                     rotation[1, 0] - rotation[0, 1]])
+    skew = np.array(
+        [
+            rotation[2, 1] - rotation[1, 2],
+            rotation[0, 2] - rotation[2, 0],
+            rotation[1, 0] - rotation[0, 1],
+        ]
+    )
     if axis == 3:
         q[:3] = skew / scale
     else:

@@ -54,8 +54,8 @@ class RobotAsset:
     root_xyz: tuple[float, ...] = (0.0, 0.0, 0.0)
     root_xyzw: tuple[float, ...] = (0.0, 0.0, 0.0, 1.0)
 
-    def collision_motion(self, q):
-        """Build a static pose for each shape at q, ready for the public detect query."""
+    def collision_motion(self, q, q_end=None):
+        """Build static shape poses or rigid paths over the given straight joint-coordinate interval."""
         geometry = forward_kinematics(self.model, q)
         root_rotation = quaternion_matrix(np.array([self.root_xyzw]))[0]
         paths = {}
@@ -72,6 +72,10 @@ class RobotAsset:
                     matrix_quaternion(geometry.rotation[link]) if link >= 0 else self.root_xyzw
                 )
             paths[collider.shape.key] = CollisionMotion(points, body_orientation_xyzw=orientation)
+        if q_end is not None:
+            from ._robot_joint_motion import joint_interval_motion
+
+            return joint_interval_motion(self, q, q_end, geometry, paths)
         return paths
 
 

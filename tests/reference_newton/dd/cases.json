@@ -1,0 +1,127 @@
+{
+  "schema": "newton-reference-v1",
+  "lane": "dd",
+  "cases": [
+    {
+      "id": "DD-VT-TWO-SHEETS",
+      "family": "vt",
+      "difficulty": "medium",
+      "inputs": {"sheets":[{"body":7,"vertices":[[11,-1,-1,0],[23,1,-1,0],[37,0,1,0]],"faces":[[11,23,37]]},{"body":13,"vertices":[[53,0,0,0.046875],[67,-0.125,0.125,0.75],[79,0.125,0.125,0.75]],"faces":[[53,67,79]]}],"focus_faces":[[11,23,37],[53,67,79]],"self_margin_m":0.0625,"detection_gap_m":0.03125,"phymeo_query_margin_m":0.25,"stiffness_n_per_m":128,"topological_ring":2,"dt_s":0.00390625,"step":true},
+      "expected": {"focus_distance_m":0.046875,"focus_weights_a":[[11,0.25],[23,0.25],[37,0.5]],"focus_weights_b":[[53,1]],"newton_unique_force_n":2,"phymeo_unique_force_n":2,"material_target":[53,[11,23,37]],"target_in_detection":true},
+      "tolerances": {"distance_m":0.000003,"weight":0.00003,"force_n":0.0003,"host_m":1e-12},
+      "oracle": "Closed simplex and segment projection give the two material witnesses and center-surface distance. Strict search radius = 3/32 m, interaction radius = 1/16 m. Verify both force laws independently.",
+      "newton": {"status":"run","devices":["cpu","cuda:0"],"reason":"Actual VBD mesh detector and its color-wise nodal force kernel; broad search and active force are distinguished."},
+      "phymeo": {"status":"run","devices":["cpu","cuda:0"],"reason":"Ordinary DD triangle query and calibrated CollisionLoadSystem. CUDA broad phase and native layer launches recorded separately from HOST geometry."}
+    },
+    {
+      "id": "DD-VT-AT-MARGIN",
+      "family": "vt",
+      "difficulty": "medium",
+      "inputs": {"sheets":[{"body":7,"vertices":[[11,-1,-1,0],[23,1,-1,0],[37,0,1,0]],"faces":[[11,23,37]]},{"body":13,"vertices":[[53,0,0,0.0625],[67,-0.125,0.125,0.75],[79,0.125,0.125,0.75]],"faces":[[53,67,79]]}],"focus_faces":[[11,23,37],[53,67,79]],"self_margin_m":0.0625,"detection_gap_m":0.03125,"phymeo_query_margin_m":0.25,"stiffness_n_per_m":128,"topological_ring":2,"dt_s":0.00390625,"step":false},
+      "expected": {"focus_distance_m":0.0625,"focus_weights_a":[[11,0.25],[23,0.25],[37,0.5]],"focus_weights_b":[[53,1]],"newton_unique_force_n":0,"phymeo_unique_force_n":0,"material_target":[53,[11,23,37]],"target_in_detection":true},
+      "tolerances": {"distance_m":0.000003,"weight":0.00003,"force_n":0.0003,"host_m":1e-12},
+      "oracle": "Closed simplex and segment projection give the two material witnesses and center-surface distance. Strict search radius = 3/32 m, interaction radius = 1/16 m. Verify both force laws independently.",
+      "newton": {"status":"run","devices":["cpu","cuda:0"],"reason":"Actual VBD mesh detector and its color-wise nodal force kernel; broad search and active force are distinguished."},
+      "phymeo": {"status":"run","devices":["cpu","cuda:0"],"reason":"Ordinary DD triangle query and calibrated CollisionLoadSystem. CUDA broad phase and native layer launches recorded separately from HOST geometry."}
+    },
+    {
+      "id": "DD-VT-DETECTION-ONLY",
+      "family": "vt",
+      "difficulty": "medium",
+      "inputs": {"sheets":[{"body":7,"vertices":[[11,-1,-1,0],[23,1,-1,0],[37,0,1,0]],"faces":[[11,23,37]]},{"body":13,"vertices":[[53,0,0,0.078125],[67,-0.125,0.125,0.75],[79,0.125,0.125,0.75]],"faces":[[53,67,79]]}],"focus_faces":[[11,23,37],[53,67,79]],"self_margin_m":0.0625,"detection_gap_m":0.03125,"phymeo_query_margin_m":0.25,"stiffness_n_per_m":128,"topological_ring":2,"dt_s":0.00390625,"step":true},
+      "expected": {"focus_distance_m":0.078125,"focus_weights_a":[[11,0.25],[23,0.25],[37,0.5]],"focus_weights_b":[[53,1]],"newton_unique_force_n":0,"phymeo_unique_force_n":0,"material_target":[53,[11,23,37]],"target_in_detection":true},
+      "tolerances": {"distance_m":0.000003,"weight":0.00003,"force_n":0.0003,"host_m":1e-12},
+      "oracle": "Closed simplex and segment projection give the two material witnesses and center-surface distance. Strict search radius = 3/32 m, interaction radius = 1/16 m. Verify both force laws independently.",
+      "newton": {"status":"run","devices":["cpu","cuda:0"],"reason":"Actual VBD mesh detector and its color-wise nodal force kernel; broad search and active force are distinguished."},
+      "phymeo": {"status":"run","devices":["cpu","cuda:0"],"reason":"Ordinary DD triangle query and calibrated CollisionLoadSystem. CUDA broad phase and native layer launches recorded separately from HOST geometry."}
+    },
+    {
+      "id": "DD-VT-AT-QUERY",
+      "family": "vt",
+      "difficulty": "medium",
+      "inputs": {"sheets":[{"body":7,"vertices":[[11,-1,-1,0],[23,1,-1,0],[37,0,1,0]],"faces":[[11,23,37]]},{"body":13,"vertices":[[53,0,0,0.09375],[67,-0.125,0.125,0.75],[79,0.125,0.125,0.75]],"faces":[[53,67,79]]}],"focus_faces":[[11,23,37],[53,67,79]],"self_margin_m":0.0625,"detection_gap_m":0.03125,"phymeo_query_margin_m":0.25,"stiffness_n_per_m":128,"topological_ring":2,"dt_s":0.00390625,"step":false},
+      "expected": {"focus_distance_m":0.09375,"focus_weights_a":[[11,0.25],[23,0.25],[37,0.5]],"focus_weights_b":[[53,1]],"newton_unique_force_n":0,"phymeo_unique_force_n":0,"material_target":[53,[11,23,37]],"target_in_detection":false},
+      "tolerances": {"distance_m":0.000003,"weight":0.00003,"force_n":0.0003,"host_m":1e-12},
+      "oracle": "Closed simplex and segment projection give the two material witnesses and center-surface distance. Strict search radius = 3/32 m, interaction radius = 1/16 m. Verify both force laws independently.",
+      "newton": {"status":"run","devices":["cpu","cuda:0"],"reason":"Actual VBD mesh detector and its color-wise nodal force kernel; broad search and active force are distinguished."},
+      "phymeo": {"status":"run","devices":["cpu","cuda:0"],"reason":"Ordinary DD triangle query and calibrated CollisionLoadSystem. CUDA broad phase and native layer launches recorded separately from HOST geometry."}
+    },
+    {
+      "id": "DD-VT-OUTSIDE",
+      "family": "vt",
+      "difficulty": "medium",
+      "inputs": {"sheets":[{"body":7,"vertices":[[11,-1,-1,0],[23,1,-1,0],[37,0,1,0]],"faces":[[11,23,37]]},{"body":13,"vertices":[[53,0,0,0.109375],[67,-0.125,0.125,0.75],[79,0.125,0.125,0.75]],"faces":[[53,67,79]]}],"focus_faces":[[11,23,37],[53,67,79]],"self_margin_m":0.0625,"detection_gap_m":0.03125,"phymeo_query_margin_m":0.25,"stiffness_n_per_m":128,"topological_ring":2,"dt_s":0.00390625,"step":false},
+      "expected": {"focus_distance_m":0.109375,"focus_weights_a":[[11,0.25],[23,0.25],[37,0.5]],"focus_weights_b":[[53,1]],"newton_unique_force_n":0,"phymeo_unique_force_n":0,"material_target":[53,[11,23,37]],"target_in_detection":false},
+      "tolerances": {"distance_m":0.000003,"weight":0.00003,"force_n":0.0003,"host_m":1e-12},
+      "oracle": "Closed simplex and segment projection give the two material witnesses and center-surface distance. Strict search radius = 3/32 m, interaction radius = 1/16 m. Verify both force laws independently.",
+      "newton": {"status":"run","devices":["cpu","cuda:0"],"reason":"Actual VBD mesh detector and its color-wise nodal force kernel; broad search and active force are distinguished."},
+      "phymeo": {"status":"run","devices":["cpu","cuda:0"],"reason":"Ordinary DD triangle query and calibrated CollisionLoadSystem. CUDA broad phase and native layer launches recorded separately from HOST geometry."}
+    },
+    {
+      "id": "DD-VT-DEEP-LAW",
+      "family": "vt",
+      "difficulty": "medium",
+      "inputs": {"sheets":[{"body":7,"vertices":[[11,-1,-1,0],[23,1,-1,0],[37,0,1,0]],"faces":[[11,23,37]]},{"body":13,"vertices":[[53,0,0,0.015625],[67,-0.125,0.125,0.75],[79,0.125,0.125,0.75]],"faces":[[53,67,79]]}],"focus_faces":[[11,23,37],[53,67,79]],"self_margin_m":0.0625,"detection_gap_m":0.03125,"phymeo_query_margin_m":0.25,"stiffness_n_per_m":128,"topological_ring":2,"dt_s":0.00390625,"step":false},
+      "expected": {"focus_distance_m":0.015625,"focus_weights_a":[[11,0.25],[23,0.25],[37,0.5]],"focus_weights_b":[[53,1]],"newton_unique_force_n":8,"phymeo_unique_force_n":6,"material_target":[53,[11,23,37]],"target_in_detection":true},
+      "tolerances": {"distance_m":0.000003,"weight":0.00003,"force_n":0.0003,"host_m":1e-12},
+      "oracle": "Closed simplex and segment projection give the two material witnesses and center-surface distance. Strict search radius = 3/32 m, interaction radius = 1/16 m. Verify both force laws independently.",
+      "newton": {"status":"run","devices":["cpu","cuda:0"],"reason":"Actual VBD mesh detector and its color-wise nodal force kernel; broad search and active force are distinguished."},
+      "phymeo": {"status":"run","devices":["cpu","cuda:0"],"reason":"Ordinary DD triangle query and calibrated CollisionLoadSystem. CUDA broad phase and native layer launches recorded separately from HOST geometry."}
+    },
+    {
+      "id": "DD-VT-MIRROR-ORDER",
+      "family": "vt",
+      "difficulty": "medium",
+      "inputs": {"sheets":[{"body":7,"vertices":[[79,0.125,-0.375,0.875],[67,0.375,-0.375,0.875],[53,0.25,-0.5,0.171875]],"faces":[[67,53,79]]},{"body":13,"vertices":[[37,0.25,0.5,0.125],[23,-0.75,-1.5,0.125],[11,1.25,-1.5,0.125]],"faces":[[23,11,37]]}],"focus_faces":[[11,23,37],[53,67,79]],"self_margin_m":0.0625,"detection_gap_m":0.03125,"phymeo_query_margin_m":0.25,"stiffness_n_per_m":128,"topological_ring":2,"dt_s":0.00390625,"step":false},
+      "expected": {"focus_distance_m":0.046875,"focus_weights_a":[[11,0.25],[23,0.25],[37,0.5]],"focus_weights_b":[[53,1]],"newton_unique_force_n":2,"phymeo_unique_force_n":2,"material_target":[53,[11,23,37]],"target_in_detection":true},
+      "tolerances": {"distance_m":0.000003,"weight":0.00003,"force_n":0.0003,"host_m":1e-12},
+      "oracle": "Closed simplex and segment projection give the two material witnesses and center-surface distance. Strict search radius = 3/32 m, interaction radius = 1/16 m. Verify both force laws independently.",
+      "newton": {"status":"run","devices":["cpu","cuda:0"],"reason":"Actual VBD mesh detector and its color-wise nodal force kernel; broad search and active force are distinguished."},
+      "phymeo": {"status":"run","devices":["cpu","cuda:0"],"reason":"Ordinary DD triangle query and calibrated CollisionLoadSystem. CUDA broad phase and native layer launches recorded separately from HOST geometry."}
+    },
+    {
+      "id": "DD-EE-TWO-SHEETS",
+      "family": "ee",
+      "difficulty": "medium",
+      "inputs": {"sheets":[{"body":7,"vertices":[[11,-1,0,0],[23,1,0,0],[37,0,-0.75,-0.75]],"faces":[[11,23,37]]},{"body":13,"vertices":[[53,0,-1,0.046875],[67,0,1,0.046875],[79,0.75,0,0.796875]],"faces":[[53,67,79]]}],"focus_faces":[[11,23,37],[53,67,79]],"self_margin_m":0.0625,"detection_gap_m":0.03125,"phymeo_query_margin_m":0.25,"stiffness_n_per_m":128,"topological_ring":2,"dt_s":0.00390625,"step":true},
+      "expected": {"focus_distance_m":0.046875,"focus_weights_a":[[11,0.5],[23,0.5]],"focus_weights_b":[[53,0.5],[67,0.5]],"newton_unique_force_n":2,"phymeo_unique_force_n":2,"material_target":[[11,23],[53,67]],"target_in_detection":true},
+      "tolerances": {"distance_m":0.000003,"weight":0.00003,"force_n":0.0003,"host_m":1e-12},
+      "oracle": "Closed simplex and segment projection give the two material witnesses and center-surface distance. Strict search radius = 3/32 m, interaction radius = 1/16 m. Verify both force laws independently.",
+      "newton": {"status":"run","devices":["cpu","cuda:0"],"reason":"Actual VBD mesh detector and its color-wise nodal force kernel; broad search and active force are distinguished."},
+      "phymeo": {"status":"run","devices":["cpu","cuda:0"],"reason":"Ordinary DD triangle query and calibrated CollisionLoadSystem. CUDA broad phase and native layer launches recorded separately from HOST geometry."}
+    },
+    {
+      "id": "DD-EE-MIRROR-SKEW",
+      "family": "ee",
+      "difficulty": "medium",
+      "inputs": {"sheets":[{"body":7,"vertices":[[79,-0.5,-0.5,0.921875],[67,0.25,-0.25,0.171875],[53,0.25,-1.25,0.171875]],"faces":[[67,53,79]]},{"body":13,"vertices":[[37,0.25,-1.25,-0.625],[23,-1.25,-0.5,0.125],[11,0.75,-0.5,0.125]],"faces":[[23,11,37]]}],"focus_faces":[[11,23,37],[53,67,79]],"self_margin_m":0.0625,"detection_gap_m":0.03125,"phymeo_query_margin_m":0.25,"stiffness_n_per_m":128,"topological_ring":2,"dt_s":0.00390625,"step":false},
+      "expected": {"focus_distance_m":0.046875,"focus_weights_a":[[11,0.75],[23,0.25]],"focus_weights_b":[[53,0.25],[67,0.75]],"newton_unique_force_n":2,"phymeo_unique_force_n":2,"material_target":[[11,23],[53,67]],"target_in_detection":true},
+      "tolerances": {"distance_m":0.000003,"weight":0.00003,"force_n":0.0003,"host_m":1e-12},
+      "oracle": "Closed simplex and segment projection give the two material witnesses and center-surface distance. Strict search radius = 3/32 m, interaction radius = 1/16 m. Verify both force laws independently.",
+      "newton": {"status":"run","devices":["cpu","cuda:0"],"reason":"Actual VBD mesh detector and its color-wise nodal force kernel; broad search and active force are distinguished."},
+      "phymeo": {"status":"run","devices":["cpu","cuda:0"],"reason":"Ordinary DD triangle query and calibrated CollisionLoadSystem. CUDA broad phase and native layer launches recorded separately from HOST geometry."}
+    },
+    {
+      "id": "DD-ADJACENT-EDGE",
+      "family": "adjacent",
+      "difficulty": "medium",
+      "inputs": {"sheets":[{"body":7,"vertices":[[11,0,0,0],[23,1,0,0],[37,0,1,0],[53,0,-1,0]],"faces":[[11,23,37],[23,11,53]]}],"focus_faces":[[11,23,37],[11,23,53]],"self_margin_m":0.0625,"detection_gap_m":0.03125,"phymeo_query_margin_m":0.25,"stiffness_n_per_m":128,"topological_ring":2,"dt_s":0.00390625,"step":false},
+      "expected": {"focus_distance_m":0,"focus_weights_a":[],"focus_weights_b":[],"newton_unique_force_n":0,"phymeo_unique_force_n":0,"material_target":[],"target_in_detection":false},
+      "tolerances": {"distance_m":0.000003,"weight":0.00003,"force_n":0.0003,"host_m":1e-12},
+      "oracle": "Shared edge and its two identical material endpoints are geometric incidence; the graph-neighbor criterion filters all remaining primitives.",
+      "newton": {"status":"run","devices":["cpu","cuda:0"],"reason":"Actual VBD mesh detector and its color-wise nodal force kernel; broad search and active force are distinguished."},
+      "phymeo": {"status":"run","devices":["cpu","cuda:0"],"reason":"Ordinary DD triangle query and calibrated CollisionLoadSystem. CUDA broad phase and native layer launches recorded separately from HOST geometry."}
+    },
+    {
+      "id": "DD-REMOTE-FOLD",
+      "family": "fold",
+      "difficulty": "hard",
+      "inputs": {"sheets":[{"body":7,"vertices":[[100,0,-0.5,0],[101,0,0.5,0],[102,1,-0.5,0],[103,1,0.5,0],[104,2,-0.5,0],[105,2,0.5,0],[106,3,-0.5,1],[107,3,0.5,1],[108,2,-0.5,2],[109,2,0.5,2],[110,-1,-0.5,2],[111,-1,0.5,2],[112,-1,-0.5,0.046875],[113,-1,0.5,0.046875],[114,0.25,-0.5,0.046875],[115,0.25,0.5,0.046875],[116,1.25,-0.5,0.046875],[117,1.25,0.5,0.046875]],"faces":[[100,101,102],[102,101,103],[102,103,104],[104,103,105],[104,105,106],[106,105,107],[106,107,108],[108,107,109],[108,109,110],[110,109,111],[110,111,112],[112,111,113],[112,113,114],[114,113,115],[114,115,116],[116,115,117]]}],"focus_faces":[[100,101,102],[114,115,116]],"self_margin_m":0.0625,"detection_gap_m":0.03125,"phymeo_query_margin_m":0.25,"stiffness_n_per_m":128,"topological_ring":2,"dt_s":0.00390625,"step":false},
+      "expected": {"focus_distance_m":0.046875,"focus_weights_a":[],"focus_weights_b":[],"newton_unique_force_n":null,"phymeo_unique_force_n":null,"material_target":[114,[100,101,102]],"target_in_detection":true},
+      "tolerances": {"distance_m":0.000003,"weight":0.00003,"force_n":0.0003,"host_m":1e-12},
+      "oracle": "A single edge-connected ribbon returns above its original horizontal plate, 3/64 m above it. Exhaustive finite VT/EE distance versus the connectivity graph supplies all candidate pairs.",
+      "newton": {"status":"run","devices":["cpu","cuda:0"],"reason":"Actual VBD mesh detector and its color-wise nodal force kernel; broad search and active force are distinguished."},
+      "phymeo": {"status":"run","devices":["cpu","cuda:0"],"reason":"Ordinary DD triangle query and calibrated CollisionLoadSystem. CUDA broad phase and native layer launches recorded separately from HOST geometry."}
+    }
+  ]
+}

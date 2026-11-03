@@ -193,7 +193,11 @@ def test_outside_centered_static_plane_arc_contract(kind):
     if kind == "translation":
         paths[key] = ph.CollisionMotion([center], [center + [0, 0, 0.125]])
     row = detect(model, paths)
-    assert row.status == "unsupported" and row.sweep is None and row.curved is None
+    if kind == "translation":
+        assert row.status == "separated" and row.sweep.first_t is None
+        assert row.sweep.start_gap_m == pytest.approx(1/8) and row.sweep.end_gap_m == pytest.approx(1/4)
+    else:
+        assert row.status == "unsupported" and row.sweep is None and row.curved is None
 
 
 def test_root_isolation_failure_is_explicit(monkeypatch):

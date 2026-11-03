@@ -10,6 +10,8 @@
 
 初始 35 行表保留当时的实测。后续在同一数值判据下，固定地形与球的 4 项、URDF/MJCF 的 2 项已从 Phymeo 的入口缺口变为可执行。[本次增量与复现](../../docs/benchmarks/p65-robot-terrain-20261103.md)
 
+双凹网格 4 项及解析曲面 3 项已在 Phymeo HOST 验收，`ROBOT-USD-ZUP` 已在 HOST 与实际 CUDA 验收。Phymeo 的厘米/Y-up 等尺寸物理转换另有试片。原 Newton 告警项继续保留原判据，在 Phymeo 列按不同语义分类。[三线测量与支持域](../../docs/benchmarks/p65-independent-rigid-usd-20261103.md)
+
 ## 输入与报告
 
 每个方向有独立的 `cases.json` 与 `baseline.py`。目录名为 `rr`、`rd` 和 `robot`。根对象使用 `schema="newton-reference-v1"`、`lane` 及非空 `cases` 列表。

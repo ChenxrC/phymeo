@@ -93,7 +93,9 @@ python -m pytest
 
 ## 通用碰撞检测
 
-固定基座机器人可用 `phymeo.load_urdf(path)` 或 `phymeo.load_mjcf(path)` 读入。两者提供 `asset.model`、具名连杆碰撞形状和由关节坐标生成的 `asset.collision_motion(q)`。将这些形状与有限 `phymeo.Heightfield` 注册到同一 `CollisionModel`，即可在公共查询中读到工具球的双侧接触点。静止地形还支持直线移动球的首次及末次相触。[支持的文件范围与跨模块示例](docs/benchmarks/p65-robot-terrain-20261103.md) · [高度场用法](docs/development/p65-rigid-heightfield.md)
+固定基座机器人可用 `phymeo.load_urdf(path)`、`phymeo.load_mjcf(path)` 或选装 OpenUSD 后的 `phymeo.load_usd(path)` 读入。三者提供 `asset.model`、具名连杆碰撞形状和由关节坐标生成的 `asset.collision_motion(q)`。将这些形状与有限 `phymeo.Heightfield` 注册到同一 `CollisionModel`，即可在公共查询中读到工具球的双侧接触点。静止地形还支持直线移动球的首次及末次相触。[支持的文件范围与跨模块示例](docs/benchmarks/p65-robot-terrain-20261103.md) · [高度场用法](docs/development/p65-rigid-heightfield.md)
+
+刚体检测可对两张独立闭合凹面返回真实三角边界、双方材料地址和规定平移的首触时刻。有限圆柱–球、圆锥–半空间和椭球–半空间可读取解析支撑特征。这些窄相运行在 HOST。[几何范围与实测](docs/benchmarks/p65-independent-rigid-usd-20261103.md) · [双网格读数](docs/development/p65-double-mesh.md)
 
 [15 个碰撞案例族、74 个构型的三端验收总表](docs/benchmarks/p65-collision-public-catalog.md) · [SAP/BVH 与六组成本实测](docs/benchmarks/p65-collision-m3-spatial.md) · [旋转胶囊与变形布面](docs/benchmarks/p65-collision-m3-curved-faces.md)
 

@@ -72,16 +72,21 @@ def _minus_root(value, squared, root):
     return (value * value - squared) / (value + root)
 
 
-def _support_upper(kind, dimensions, direction):
+def _support_bounds(kind, dimensions, direction):
+    """Outward bounds on maximum support in a stored, possibly non-unit direction."""
     if kind == "ellipsoid":
         scaled = dimensions * direction
-        return sqrt_bounds(scaled @ scaled, 96)[1]
+        return sqrt_bounds(scaled @ scaled, 96)
     radius, half_height = dimensions
-    radial = radius * sqrt_bounds(direction[:2] @ direction[:2], 96)[1]
+    low, high = sqrt_bounds(direction[:2] @ direction[:2], 96)
     axial = half_height * direction[2]
     if kind == "cone":
-        return max(axial, -axial + radial)
-    return abs(axial) + radial
+        return max(axial, -axial + radius * low), max(axial, -axial + radius * high)
+    return abs(axial) + radius * low, abs(axial) + radius * high
+
+
+def _support_upper(kind, dimensions, direction):
+    return _support_bounds(kind, dimensions, direction)[1]
 
 
 def curved_bounds(asset, path):
@@ -300,6 +305,10 @@ def curved_solid_contact(a, b, ma, mb):
         return "unsupported", "curved_shape_pair", None, None, None
     try:
         if ma.moving or mb.moving:
+            if other.kind == "plane" and all(path.turn is None or not path.turn.angle for path in (ma, mb)):
+                from ._translating_curved_plane import translating_curved_plane
+
+                return translating_curved_plane(curved, other, mc, mo, curved_first)
             if curved.kind == "ellipsoid" and other.kind == "plane":
                 from ._rotating_ellipsoid_plane import rotating_ellipsoid_plane
 

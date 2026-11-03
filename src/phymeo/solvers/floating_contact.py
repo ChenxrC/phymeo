@@ -2,6 +2,7 @@
 
 from collections.abc import Mapping
 from dataclasses import dataclass
+from numbers import Integral
 from types import MappingProxyType
 
 import numpy as np
@@ -13,7 +14,7 @@ from ..core.rigid import RigidBodyModel, RigidBodyState
 from ..core.validation import validate_dt
 from ..coupling.floating_port import FloatingRobotPointPort
 from ..coupling.ports import RigidPointPort
-from ..coupling.witness_impulses import solve_witness_impulses
+from ..coupling.witness_impulses import _unpack_row, solve_witness_impulses
 from ..dynamics.floating_robot import FloatingRobotState
 from ..dynamics.robot_dynamics import _finite
 from .floating_tree import _drift_floating_state, floating_dynamics_terms
@@ -31,6 +32,26 @@ class FloatingContactStep:
     report: StepReport
     predicted: Mapping[str, FloatingRobotState]
     impulses: ContactImpulseResult | None
+
+
+def _require_complete_support(rows):
+    segments = {}
+    for row in rows:
+        pair, _, index = _unpack_row(row)
+        curved = getattr(pair, "curved", None)
+        if curved is None or curved.locus == "point":
+            span = getattr(getattr(pair, "witness", None), "axis_parameter_span", None)
+            if span is not None and span[0] != span[1]:
+                raise SolverFailure("extended capsule support requires a complete contact manifold")
+            continue
+        if curved.locus != "segment" or isinstance(index, bool) or not isinstance(index, Integral) or index not in (0, 1):
+            raise SolverFailure("a floating step requires both endpoints of a supported segment manifold")
+        original, found = segments.setdefault((pair.first, pair.second), (pair, set()))
+        if pair is not original or index in found:
+            raise SolverFailure("duplicate or inconsistent sampled segment manifold")
+        found.add(index)
+    if any(len(found) != 2 for _, found in segments.values()):
+        raise SolverFailure("incomplete segment manifold")
 
 
 def step_floating_contacts(
@@ -58,6 +79,8 @@ def step_floating_contacts(
     arrays follow solve_witness_impulses: each collision-key binding selects a domain/site row,
     and local_vertices supplies body-local shape points for active row keys only.
     Half-spaces require their oriented body-local vectors in local_normals.
+    For a cylinder resting along a line, supply both indexed endpoints of the same
+    registered pair before drift. Other extended curved supports require a manifold solver.
 
     Forces, gravity and drives advance velocities at input q. All graph rows then act on those
     velocities at that same q. Only the resulting velocity drifts each dynamic domain. Pass
@@ -80,6 +103,8 @@ def step_floating_contacts(
     poses = {}
     ports = {}
     try:
+        rows = tuple(rows)
+        _require_complete_support(rows)
         with np.errstate(over="raise", invalid="raise", divide="raise"):
             for name, (model, state, inputs) in participants.items():
                 terms = floating_dynamics_terms(model, state, inputs)

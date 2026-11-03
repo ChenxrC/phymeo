@@ -11,6 +11,7 @@ from ..constraints.contact_impulse import solve_contact_impulses
 from ..core.validation import finite_real
 from ..dynamics.rotation import matrix_quaternion
 from ..geometry.collision_pipeline import CollisionPair, CollisionWorkspace, detect
+from .curved_manifold import select_static_support
 from .domain_graph import MultiDomainPointOperator
 
 
@@ -50,7 +51,16 @@ def _material_anchor(shape, path, weights):
         raise ValueError("collision witness refers to an unregistered material vertex") from exc
 
 
-def _current_normal(pair, witness, endpoints, ports, local_vertices, local_normals, tol):
+def _unpack_row(row):
+    if len(row) == 2:
+        pair, bindings = row
+        return pair, bindings, None
+    if len(row) == 3:
+        return row
+    raise ValueError("a witness row requires a collision pair, bindings and an optional support index")
+
+
+def _current_normal(pair, witness, endpoints, ports, local_vertices, local_normals, tol, index):
     """Requery the immutable two-shape model in the witness-relative coordinate system."""
     if tuple(s.key for s in pair.witness_shapes) != (pair.first, pair.second):
         raise ValueError("collision witness lacks a supported live rigid shape registration")
@@ -94,6 +104,10 @@ def _current_normal(pair, witness, endpoints, ports, local_vertices, local_norma
     with CollisionWorkspace(model, "host") as work:
         (current,) = detect(model, paths, CollisionPolicy(margin=tol), work).pairs
     fresh = current.witness
+    if current.candidate and fresh is not None and index is not None:
+        if not current.witness_shapes:
+            current = replace(current, witness_shapes=tuple(posed_shapes))
+        fresh = select_static_support(current, fresh, index)
     if (
         not current.candidate
         or fresh is None
@@ -134,7 +148,8 @@ def solve_witness_impulses(
 ):
     """Solve coincident material rows at one physical instant, with zero restitution.
 
-    Each row is a (CollisionPair, {shape_key: (port_domain, local_row)}) tuple.
+    Rows contain (CollisionPair, {shape_key: (port_domain, local_row)}). A third
+    entry selects an ordered endpoint of a static cylinder-plane support segment.
     A static row must be touching. First-contact rows must share one reported witness
     time. The HOST impulse adapter checks both material frames and queries the current
     rigid shapes again in a common local chart. Supply local_vertices keyed by shape,
@@ -159,7 +174,10 @@ def solve_witness_impulses(
         )
     first, second, witnesses, pairs = [], [], [], []
     event_time = None
-    for pair, bindings in rows:
+    for row in rows:
+        pair, bindings, index = _unpack_row(row)
+        if sample != "pose" and index is not None:
+            raise ValueError("a material support index requires a static pose witness")
         if not isinstance(pair, CollisionPair) or not pair.candidate:
             raise ValueError("an active published collision pair is required")
         if not isinstance(bindings, Mapping) or set(bindings) != {pair.first, pair.second}:
@@ -186,6 +204,8 @@ def solve_witness_impulses(
             if pair.status != "touching" or pair.sweep is not None:
                 raise ValueError("a static touching witness is required")
             witness = pair.witness
+            if witness is not None and index is not None:
+                witness = select_static_support(pair, witness, index)
         if (
             witness is None
             or witness.normal is None
@@ -203,7 +223,7 @@ def solve_witness_impulses(
             raise ValueError("signed witness gap exceeds the position tolerance")
         first.append(bindings[pair.first])
         second.append(bindings[pair.second])
-        witnesses.append(witness)
+        witnesses.append((witness, index))
         pairs.append(pair)
     # Public collision normals point from first to second. The existing graph
     # expects a normal from its right endpoint toward its left endpoint.
@@ -214,8 +234,8 @@ def solve_witness_impulses(
         raise ValueError("body-local normal supplied for an unbound plane")
     normals = np.asarray(
         [
-            _current_normal(pair, witness, (a, b), ports, local_vertices, local_normals, tol)
-            for pair, witness, a, b in zip(pairs, witnesses, first, second, strict=True)
+            _current_normal(pair, witness, (a, b), ports, local_vertices, local_normals, tol, index)
+            for pair, (witness, index), a, b in zip(pairs, witnesses, first, second, strict=True)
         ],
         dtype=np.float64,
     ).reshape(-1, 3)

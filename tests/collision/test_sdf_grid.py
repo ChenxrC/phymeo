@@ -152,3 +152,20 @@ def test_validation_closed_topology_capacity_and_grid_ownership():
         grid.sample_local([[np.inf,0,0]])
     with pytest.raises(ValueError):
         grid.sample_world([[0,0,0]],translation_m=(0,0,0),orientation_xyzw=(0,0,0,0))
+
+
+def test_sdf_bake_validates_topology_once_and_keeps_narrow_band_explicit(monkeypatch):
+    from phymeo.geometry import _sdf_mesh_bake
+    _,bake=api()
+    original=_sdf_mesh_bake.ClosedMesh
+    seen=[]
+    def counted(*args):
+        seen.append(args[0].key)
+        return original(*args)
+    monkeypatch.setattr(_sdf_mesh_bake,"ClosedMesh",counted)
+    mesh,p=asset("box")
+    grid=bake(mesh,p,shape_xyz=(9,9,9),origin_m=(-1,-1,-1),spacing_m=(0.25,)*3,band_m=0.4)
+    assert seen==[mesh.key]
+    valid,off=grid.sample_local([[0.625,0,0],[0.99,0,0]])
+    assert valid.distance_m==pytest.approx(0.125) and off.status=="outside_band" and off.gradient is None
+    assert grid.geometry_error_bound_m is not None

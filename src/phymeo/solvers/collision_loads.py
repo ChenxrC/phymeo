@@ -430,11 +430,18 @@ class CollisionLoadSystem:
             weight * particles.velocity[rows[node]].astype(float) for node, weight in weights
         )
 
-    def _apply(self, key, point, weights, f, state, particles, rigid, torques):
+    def _apply(self, key, point, weights, f, state, particles, rigid, torques, *, normal_only):
         b = self.bindings[key]
         if isinstance(b, RigidAttachment):
             rigid[b.row] += f
-            torques[b.row] += np.cross(np.asarray(point) - state.rigid.position[b.row], f)
+            arm = np.asarray(point) - state.rigid.position[b.row]
+            if normal_only and self._shapes[key].kind == "sphere":
+                # Radial normal traction passes through the sphere centre.
+                # Keep an eccentric attachment's real COM lever and avoid
+                # a spurious spin from subtracting rounded surface points.
+                rotation = quaternion_matrix(state.rigid.orientation[b.row : b.row + 1])[0]
+                arm = rotation @ np.asarray(b.vertices[0])
+            torques[b.row] += np.cross(arm, f)
         else:
             for node, weight in weights:
                 particles[self._material[key][node]] += weight * f
@@ -565,8 +572,28 @@ class CollisionLoadSystem:
                 rate, magnitude, *directional = next(result_rows)
                 f = np.asarray(directional)
                 if not finite_rigid_patch:
-                    self._apply(pair.first, pa, site.first_weights, -f, state, p, r, torque)
-                    self._apply(pair.second, pb, site.second_weights, f, state, p, r, torque)
+                    self._apply(
+                        pair.first,
+                        pa,
+                        site.first_weights,
+                        -f,
+                        state,
+                        p,
+                        r,
+                        torque,
+                        normal_only=not law.friction,
+                    )
+                    self._apply(
+                        pair.second,
+                        pb,
+                        site.second_weights,
+                        f,
+                        state,
+                        p,
+                        r,
+                        torque,
+                        normal_only=not law.friction,
+                    )
                 sites.append(
                     LoadSite(
                         site,

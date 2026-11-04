@@ -52,7 +52,13 @@ class HandoffCase(Case):
     initial_tilt_deg: float
 
 
-RECEIVER_CONTROLS = ("snapshot", "material", "cooperative", "aperture-guided")
+RECEIVER_CONTROLS = (
+    "snapshot",
+    "material",
+    "cooperative",
+    "aperture-guided",
+    "paired-presentation",
+)
 
 
 def build_handoff(
@@ -313,7 +319,7 @@ def run_handoff(
     coordinator = None
     if track_material:
         trace["receiver_control"] = receiver_control
-    if receiver_control in ("cooperative", "aperture-guided"):
+    if receiver_control in ("cooperative", "aperture-guided", "paired-presentation"):
         coordinator = CooperativeReception(
             case.receiver_nodes,
             case.dt,
@@ -323,9 +329,10 @@ def run_handoff(
             b0,
             transfer,
             layer_width=finger_layer.width_m,
+            paired_presentation=receiver_control == "paired-presentation",
             axial_clearance=(
                 HALF_THICKNESS_M + finger_layer.width_m
-                if receiver_control == "aperture-guided"
+                if receiver_control in ("aperture-guided", "paired-presentation")
                 else None
             ),
         )

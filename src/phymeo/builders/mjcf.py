@@ -208,7 +208,17 @@ def _colliders(body, link, index, degrees, sequence, named_geoms, resolve_mesh):
             position, rotation = _pose(geom, where, degrees, sequence)
             size = resolve_mesh(_name(geom, "mesh", where), where)
             colliders.append(
-                make_collider(name, link, index, ordinal, position, rotation, kind, size)
+                make_collider(
+                    name,
+                    link,
+                    index,
+                    ordinal,
+                    position,
+                    rotation,
+                    kind,
+                    size,
+                    name_is_authored="name" in geom.attrib,
+                )
             )
             continue
         counts = {"sphere": 1, "box": 3, "cylinder": 2, "capsule": 2, "ellipsoid": 3}
@@ -219,7 +229,19 @@ def _colliders(body, link, index, degrees, sequence, named_geoms, resolve_mesh):
         else:
             size = _numbers(geom, "size", counts[kind], where)
             position, rotation = _pose(geom, where, degrees, sequence)
-        colliders.append(make_collider(name, link, index, ordinal, position, rotation, kind, size))
+        colliders.append(
+            make_collider(
+                name,
+                link,
+                index,
+                ordinal,
+                position,
+                rotation,
+                kind,
+                size,
+                name_is_authored="name" in geom.attrib,
+            )
+        )
     return colliders
 
 

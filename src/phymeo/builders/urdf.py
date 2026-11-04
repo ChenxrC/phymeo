@@ -173,7 +173,15 @@ def _link_collisions(link, link_name, link_index, xml_path):
             raise ValueError(f"{where}: unsupported collision geometry <{primitive.tag}>")
         result.append(
             make_collider(
-                name, link_name, link_index, ordinal, origin, orientation, primitive.tag, size
+                name,
+                link_name,
+                link_index,
+                ordinal,
+                origin,
+                orientation,
+                primitive.tag,
+                size,
+                name_is_authored="name" in collision.attrib,
             )
         )
     return result

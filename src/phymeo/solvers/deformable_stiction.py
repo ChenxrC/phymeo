@@ -12,6 +12,7 @@ from ..core.state import StepInputs
 from ..core.validation import finite_real, validate_step
 from ..geometry.collision_witness import ConvexContactPoint
 from ..geometry.deformable_features import DeformableFeatureContact
+from ._material_stick_law import return_traction
 from .deformable_feature_loads import DeformableFeatureLoads, DeformableFeatureSite
 from .deformable_sliding import (
     MaterialSlidingState,
@@ -126,17 +127,9 @@ class MaterialStickSlipStepper(MaterialSlidingStepper):
         )
 
     def _return_map(self, old, free, inverse, h, normal_force, prior):
-        trial = (old + free) / (1.0 + self._kt * h * h * inverse)
-        trial_n = self._kt * hypot(*trial)
-        continuing = prior is not None and prior.regime == "slide" and trial @ old >= 0
-        limit = normal_force * (self._layer.friction if continuing else self._static)
-        sliding = trial_n > limit
-        force = -self._kt * trial
-        if sliding:
-            force *= self._layer.friction * normal_force / trial_n
-        if not np.isfinite((limit, trial_n)).all():
-            raise SolverFailure("material tangent prediction exceeds precision")
-        return force, sliding
+        return return_traction(
+            old, free, inverse, h, normal_force, prior, self._kt, self._static, self._layer.friction
+        )
 
     def _dynamic_rows(self, trial):
         return (trial.vertex,)

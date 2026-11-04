@@ -87,7 +87,8 @@ def step_floating_contacts(
     and local_vertices supplies body-local shape points for active row keys only.
     Half-spaces require their oriented body-local vectors in local_normals.
     For a cylinder resting along a line, supply both indexed endpoints of the same
-    registered pair before drift. Other extended curved supports require a manifold solver.
+    registered pair before drift. A positive-area hull-hull face requires every indexed
+    corner of its single contact polygon. Other extended curved supports require a manifold solver.
 
     Forces, gravity and drives advance velocities at input q. All graph rows then act on those
     velocities at that same q. Only the resulting velocity drifts each dynamic domain. Pass

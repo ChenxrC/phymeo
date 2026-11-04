@@ -2,6 +2,7 @@
 
 from hashlib import sha256
 from itertools import product
+from numbers import Real
 from pathlib import Path
 
 import numpy as np
@@ -11,7 +12,7 @@ from ..control.site_ik import SiteIKTarget, solve_multi_site_ik
 from ..core.rigid import RigidBodyInputs, RigidBodyModel, RigidBodyState
 from ..core.robot import RobotState
 from ..dynamics.robot_dynamics import robot_dynamics_terms
-from ..dynamics.robot_kinematics import _point_jacobians_at, forward_kinematics
+from ..dynamics.robot_kinematics import _axis_rotation, _point_jacobians_at, forward_kinematics
 from ..dynamics.rotation import matrix_quaternion, quaternion_matrix
 from ..solvers.rigid_semi_implicit import RigidSemiImplicitSolver
 from ..solvers.sampled_box_contact import box_surface_samples, sample_loads
@@ -134,15 +135,18 @@ def run_panda_cube(
     box_size_m=(0.05, 0.05, 0.05),
     closed_width_m=0.029,
     initial_xy_offset_m=(0.0, 0.0),
+    initial_yaw_rad=0.0,
     grip_above_com_m=0.012,
 ):
     """Pick, translate and release under gravity. No actuator reads or sets the cube pose.
 
     The four points per rubber face use a compliant normal and regularized friction.
-    box_size_m specifies full widths along the grasp axis, in-plane transverse axis and
-    vertical. The planar initial offset moves only the object on the fixed tabletop.
-    grip_above_com_m sets the face-center grasp height relative to the actual payload COM. closed_width_m is a position command. Actual jaw loads follow from contact and effort
-    limits. Table loads act at the eight free box corners.
+    box_size_m gives full lengths along the initially grasp-aligned, transverse and
+    vertical body axes at zero yaw. initial_yaw_rad rotates only the payload about
+    world +Z from this orientation. The box rests flat on the finite table.
+    initial_xy_offset_m moves the uniform payload COM relative to the gripper in
+    world X/Y. grip_above_com_m sets the face-center grasp height. closed_width_m
+    commands the jaws. Their actual force follows from contact and actuator effort.
     """
     from ..builders.panda import PANDA_URDF, load_panda
 
@@ -156,6 +160,12 @@ def run_panda_cube(
         raise ValueError("box_size_m must contain three finite positive full sizes")
     if offset.shape != (2,) or not np.isfinite(offset).all():
         raise ValueError("initial_xy_offset_m must contain two finite world coordinates")
+    if (
+        isinstance(initial_yaw_rad, (bool, np.bool_))
+        or not isinstance(initial_yaw_rad, Real)
+        or not np.isfinite(initial_yaw_rad)
+    ):
+        raise ValueError("initial_yaw_rad must be a finite scalar angle in radians")
     if (
         not np.isscalar(closed_width_m)
         or not np.isfinite(closed_width_m)
@@ -183,6 +193,8 @@ def run_panda_cube(
     axis = outward / np.linalg.norm(outward)
     vertical = np.array([0.0, 0.0, 1.0])
     rotation = np.column_stack([axis, np.cross(vertical, axis), vertical])
+    if initial_yaw_rad != 0:
+        rotation = _axis_rotation(vertical, initial_yaw_rad) @ rotation
     extents = size / 2
     vertices = np.array(list(product(*[(-h, h) for h in extents])))
     # The calibrated table stays in place for every payload. Its top supports the initial base.
@@ -193,6 +205,9 @@ def run_panda_cube(
     table_center = np.array(
         [nominal_center[0] + travel / 2, nominal_center[1], table_z - table_half[2]]
     )
+    initial_vertices = start_center + vertices @ rotation.T
+    if np.any(np.abs(initial_vertices[:, :2] - table_center[:2]) > table_half[:2]):
+        raise ValueError("initial box extends beyond the finite tabletop footprint")
     cube_margin = table_margin = float("inf")
     cube_minimum = table_minimum = None
     x, y, z = size
@@ -362,6 +377,7 @@ def run_panda_cube(
         closed_width_m=closed,
         grip_above_com_m=float(grip_above_com_m),
         initial_xy_offset_m=offset.tolist(),
+        initial_yaw_rad=float(initial_yaw_rad),
         inputs=run_inputs,
         table_center_m=table_center.tolist(),
         table_full_size_m=(2 * table_half).tolist(),

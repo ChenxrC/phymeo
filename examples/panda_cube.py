@@ -30,6 +30,12 @@ def main():
         help="object offset on the fixed table, world metres",
     )
     parser.add_argument(
+        "--initial-yaw-rad",
+        type=float,
+        default=0.0,
+        help="payload yaw about world +Z from the grasp-aligned pose, radians",
+    )
+    parser.add_argument(
         "--grip-above-com",
         type=float,
         default=0.012,
@@ -58,6 +64,7 @@ def main():
         closed_width_m=args.closed_width,
         grip_above_com_m=args.grip_above_com,
         initial_xy_offset_m=args.initial_xy_offset,
+        initial_yaw_rad=args.initial_yaw_rad,
         record=args.trace is not None,
     )
     if args.trace is not None:

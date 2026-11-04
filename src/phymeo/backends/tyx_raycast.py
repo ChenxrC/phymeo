@@ -1,4 +1,4 @@
-"""Opt-in TYX first hits for sampled worlds with round, flat and triangulated surfaces."""
+"""Opt-in TYX first hits for analytic and triangulated collision surfaces."""
 
 from numbers import Integral
 
@@ -10,6 +10,7 @@ from .tyx_math import TyxMath, as_compute
 _MAX_PATCHES = 2**16
 _MAX_TESTS = 2**26
 _F32 = np.finfo(np.float32)
+_CURVES = {"cylinder": 5, "cone": 6, "ellipsoid": 7}
 
 
 def _unit(value):
@@ -20,24 +21,27 @@ def _unit(value):
 
 def _patches(model, poses, world, reference):
     for index, kind, points, param in _surfaces(model, poses, world):
-        if kind not in ("round", "triangle", "plane"):
-            raise NotImplementedError(f"unsupported TYX ray geometry: {kind}")
         p = points - reference
         if not np.isfinite(p).all():
             raise ValueError("ray scene exceeds the FP32 coordinate domain after rebasing")
-        if kind != "round":
-            yield (4 if kind == "triangle" else 3), index, p, _unit(param), 0.0, 0.0
+        if kind in _CURVES:
+            frame, dimensions = param
+            yield _CURVES[kind], index, p[None, :], frame.T, dimensions
+        elif kind in ("triangle", "plane"):
+            yield (4 if kind == "triangle" else 3), index, p, _unit(param), (0.0, 0.0)
+        elif kind != "round":
+            raise NotImplementedError(f"unsupported TYX ray geometry: {kind}")
         elif len(p) == 1 or np.array_equal(points[0], points[1]):
-            yield 0, index, p[:1], (0.0, 0.0, 0.0), param, 0.0
+            yield 0, index, p[:1], (0.0, 0.0, 0.0), (param, 0.0)
         else:
             axis = points[1] - points[0]
             length = np.hypot.reduce(axis)
             if not np.isfinite(length) or not length:
                 raise ValueError("capsule length is outside the FP32 ray domain")
             axis = axis / length
-            yield 1, index, p[:1], -axis, param, 0.0
-            yield 1, index, p[1:], axis, param, 0.0
-            yield 2, index, p[:1], axis, param, length
+            yield 1, index, p[:1], -axis, (param, 0.0)
+            yield 1, index, p[1:], axis, (param, 0.0)
+            yield 2, index, p[:1], axis, (param, length)
 
 
 def _geometry(model, poses, origin, ray_count, world, capacity):
@@ -51,8 +55,8 @@ def _geometry(model, poses, origin, ray_count, world, capacity):
                 f"TYX ray capacity exceeded at {len(patches) + 1} patches × {ray_count} rays"
             )
         patches.append(record)
-        _, _, points, _, radius, length = record
-        extent = max(extent, float(np.max(np.abs(points))), radius, length)
+        _, _, points, _, size = record
+        extent = max(extent, float(np.max(np.abs(points))), *size)
     if not patches or not ray_count:
         return None
     if not np.isfinite(extent):
@@ -61,17 +65,26 @@ def _geometry(model, poses, origin, ray_count, world, capacity):
     # remain in a modest numeric range even if the scene is far from world zero.
     scale = float(np.ldexp(1.0, int(np.frexp(extent)[1]) - 1)) if extent else 1.0
     tags = np.empty((len(patches), 2), np.int32)
-    data = np.zeros((len(patches), 14))
-    for row, (kind, index, points, axis, radius, length) in enumerate(patches):
+    width = 15 if any(record[0] == 7 for record in patches) else 14
+    data = np.zeros((len(patches), width))
+    for row, (kind, index, points, axis, size) in enumerate(patches):
         p = points / scale
         tags[row] = kind, index
         data[row, :3] = p[0]
+        metric = np.asarray(size) / scale
+        data[row, 12 : 12 + len(size)] = metric
+        if kind >= 5:
+            if np.min(metric) < 4 * _F32.eps:
+                raise ValueError(
+                    "analytic ray surface is unresolved at the scene's FP32 resolution"
+                )
+            data[row, 3:12] = axis.reshape(9)
+            continue
         data[row, 3:6] = axis
-        data[row, 12:] = radius / scale, length / scale
         # Avoid returning finite-looking ranges when an entire transverse feature is smaller
         # than the FP32 precision available in this query envelope.
         if kind <= 2:
-            if radius / scale < 4 * _F32.eps or (kind == 2 and length / scale < 4 * _F32.eps):
+            if metric[0] < 4 * _F32.eps or (kind == 2 and metric[1] < 4 * _F32.eps):
                 raise ValueError("round ray surface is unresolved at the scene's FP32 resolution")
         if kind == 4:
             data[row, 6:12] = p[1:].reshape(6)

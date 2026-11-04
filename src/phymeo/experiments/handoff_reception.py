@@ -56,6 +56,7 @@ class CooperativeReception:
         layer_width=0.0,
         axial_clearance=None,
         paired_presentation=False,
+        boundary_access=None,
     ):
         self.nodes = nodes
         self.dt = dt
@@ -77,6 +78,9 @@ class CooperativeReception:
         self.peak_acceleration = 6 * travel / 0.55**2
         self.solo = SoloLiftHold()
         self.presentation = PlanarPresentation() if paired_presentation else None
+        self.boundary = boundary_access
+        if self.boundary is not None and axial_clearance is None:
+            raise ValueError("boundary selection needs the measured axial clearance")
         self.anchor = None
         self.holder = None
         self.motion = None
@@ -163,6 +167,12 @@ class CooperativeReception:
 
     def command(self, phase, frame, donor_default, elapsed):
         motion = self._command(phase, frame, donor_default, elapsed)
+        if (
+            self.boundary is not None
+            and self.boundary.report is not None
+            and motion.observation is not None
+        ):
+            motion.observation["boundary_selection"] = self.boundary.report
         if self.presentation is None or self.solo.position is None or phase != "lift_A":
             return motion
         row = motion.observation or {}
@@ -255,6 +265,39 @@ class CooperativeReception:
 
         if phase == "lift_A" and self.solo.position is None:
             return exterior("stage")
+        if self.anchor is None and self.boundary is not None:
+            target = self.boundary.observe(frame, window, self.axial_clearance)
+            in_band = (
+                target is not None
+                and window.approach_target(
+                    x, target.nodes, preferred=target, axial_clearance=self.axial_clearance
+                )
+                is target
+            )
+            if not in_band:
+                cmd = approach(window.center, np.zeros(3), False)
+                cmd.observation = dict(
+                    action="await_aperture",
+                    reason="no_certified_boundary"
+                    if target is None
+                    else "selected_address_outside_axial_band",
+                    tool_velocity_command_m_s=cmd.receiver_rate.tolist(),
+                )
+                return cmd
+            point, velocity = target.evaluate(x), target.evaluate(v)
+            if not window.contains(point, clearance=self.clearance):
+                cmd = approach(point, velocity, False)
+                cmd.observation = dict(
+                    action="approach",
+                    material_point_m=point.tolist(),
+                    material_velocity_m_s=velocity.tolist(),
+                    guidance_nodes=list(target.nodes),
+                    guidance_fraction=target.fraction,
+                    tool_velocity_command_m_s=cmd.receiver_rate.tolist(),
+                )
+                return cmd
+            self.anchor = target
+            self._event("receiver_address_acquired", frame)
         if self.anchor is None:
             visible = window.acquire(x, self.nodes, clearance=self.clearance)
             if visible is None:

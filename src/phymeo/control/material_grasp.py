@@ -158,6 +158,15 @@ class ParallelJawWindow:
         margins[-2:] = 0.0
         return self._nearest(positions, ids, self._normals, self._offsets, margins)
 
+    def contains(self, point, *, clearance=0.0):
+        """Test one fixed material address against both finite front polygons and the opening."""
+        p = _points([point])[0]
+        if not np.isfinite(clearance) or not 0 <= clearance < self.radius:
+            raise ValueError("clearance must leave an interior on both finger fronts")
+        margins = np.full(len(self._normals), clearance)
+        margins[-2:] = 0.0
+        return bool(np.all(np.einsum("ij,ij->i", p - self._offsets, self._normals) >= margins))
+
     def approach_target(self, positions, edge_nodes, *, preferred=None, axial_clearance=0.0):
         """Find an edge address between the open jaws. It can still be outside both finite fronts."""
         positions = _points(positions)

@@ -133,7 +133,7 @@ def load_obj_mesh(
     directory = root if meshdir is None else _local(root, meshdir, where + " meshdir")
     path = _local(directory, file, where)
     if path.suffix.lower() != ".obj":
-        raise ValueError(f"{where} supports only local triangular OBJ files")
+        raise ValueError(f"{where} mesh supports only local triangular OBJ files")
     if not path.is_file():
         raise ValueError(f"{where} missing local OBJ file {file!r}")
     scaling = _vector(scale, 3, where + " scale")

@@ -7,10 +7,10 @@ from phymeo.runtime.robot_payload_scene import RobotPayloadScene
 
 session = RobotPayloadScene.from_urdf(urdf_path, **scene_options)
 before = session.observe()
-after = session.step(target_q, target_velocity=target_v, effort_limit=effort_limits)
+session.step(target_q, target_velocity=target_v, effort_limit=effort_limits)
+after, snapshot = session.observe_scene()
 print(after.time_s, after.q, after.payload_position_m)
 print(after.load_time_s, after.pad_normal_loads_N, after.fixed_table_wrench)
-snapshot = session.geometry()
 image = camera.capture(snapshot.model, snapshot.poses, position_m=eye, orientation_xyzw=camera_xyzw)
 ```
 
@@ -18,7 +18,7 @@ image = camera.capture(snapshot.model, snapshot.poses, position_m=eye, orientati
 
 `PadFace.named(link_name, collision_name, axis, side, offsets_m)` 每次构造场景都从这份资产的原链接和碰撞元素名重新绑定。两个名称必须唯一匹配。URDF 或 MJCF 为匿名碰撞体生成的序号名只能通过本模型的数字键选择。显式写在源资产中的名字可以使用相同拼写。如果材料缺失、歧义或重复选中，开始求解前就会报错。`PadFace(shape_key, axis, side, offsets_m)` 使用当前模型自己的数字键，在实际长方体碰撞形状的一面上选取有限材料点。偏移沿其余两个局部轴，按轴号从小到大排列。每点有指定的材料刚度与阻尼。该形状对自由物体使用这些点，避免整形状重复施力；它对桌面的碰撞仍单独计算。其余连杆支持球、有限胶囊和正交箱。均匀自由箱的桌面载荷沿有限顶面的八个材料角点计算，越出台面占地或沉到底面以下会拒绝该步。自由球使用有限桌面最近点。这里的检测在入步采样，不包含连续防穿透或机器人自碰撞。
 
-`geometry()` 保留资产原来的碰撞键，并为自由物体和桌面分配独立刚体键。返回的同刻模型、世界材料点、名称和键可直接交给几何消费者。世界坐标用米，四元数按 XYZW，从本体旋转到世界。
+`observe_scene()` 在同一场景发布锁内返回最新的物理读数与几何快照。另一个操作者若在本次观测前完成步进，返回的是该次已接受步，`step_number` 和 `target_q` 可辨认其来源。之后任一线程继续推进，已保留的这对读数仍对应同一物理步末。只取几何时，`geometry()` 保留资产原来的碰撞键，并为自由物体和桌面分配独立刚体键。返回的同刻模型、世界材料点、名称和键可直接交给几何消费者。世界坐标用米，四元数按 XYZW，从本体旋转到世界。
 
 ## 独立物理控制
 
@@ -54,3 +54,10 @@ python examples/robot_payload_pick_place.py --shape sphere --interactive --outpu
 两份 URDF 只交换两块等尺寸材料的碰撞元素次序。相同的 `PadFace.named("tool", "jaw", 0, 1, [(0, 0)])` 在两次载入后分别选到该模型内不同数字键的真实夹面，入步样点都是 (0.003, 0, 0.25) m。两次均测得 2 N 指面法向力，125 g 自由球在 1 ms 内沿 X 增速 0.016 m/s。刻意将旧数字键用于重排后的模型时，样点落到远处的护块，指面读数为零，实际接触转换为夹面的普通结构受力记录。两种途径的差异没有以总力相等掩盖。
 
 URDF 的 `collision_0` 与 MJCF 的 `geom_0` 均覆盖了显式作者名和匿名自动编号两种情况。匿名材料仍可通过当前模型的数字键使用。不存在、同链接重名以及同一真实形状同时被名字和数字键选中均会报错。[跨资产材料与受力对照](../../tests/test_robot_named_pad.py)
+
+
+## 在操作者同时改指令时取观测
+
+并发试片先向滑轨发送正向目标，使指令和真实 2 N 接触载荷被接受。读线程刚第一次完全释放场景原锁，另一线程就执行反向目标并完成第二步。分别调用旧的两个接口时，物理读数为 1 ms，几何已是 2 ms。用 `observe_scene()` 取回的读数和几何均为 1 ms，该步载荷采于 0 ms；下一次成对读取分别为 2 ms 和 1 ms。坐标用实际 FK 和自由物体八个材料角点逐项复核。两个线程通过事件确定先后次序，无需假定调度延时。
+
+另一条试片在接受一步后让入步速度跨越滑轨上限。拒步前后，返回的物理读数是同一个不可变对象；每个碰撞键的世界材料点、状态时刻和载荷时刻均保持原值。[并发与拒步试片](../../tests/test_robot_observe_scene.py)

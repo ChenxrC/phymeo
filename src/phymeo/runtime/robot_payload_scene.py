@@ -415,6 +415,15 @@ class RobotPayloadScene:
         with self._lock:
             return self._observation
 
+    def observe_scene(self) -> tuple[RobotPayloadObservation, SceneGeometrySnapshot]:
+        """Return the accepted physics reading and all collision poses under one publication lock.
+
+        Both share the end-state time. The force and drive channels keep the reading's
+        load_time_s, the physical input time for the last accepted step.
+        """
+        with self._lock:
+            return self._observation, self.geometry()
+
     def geometry(self):
         """Current static collision material, including table and free body, at observe().time_s."""
         with self._lock:

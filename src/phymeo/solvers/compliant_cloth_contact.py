@@ -452,11 +452,11 @@ class CompliantClothContactProgram:
         """Sample endpoint contact forces; time-integrated loads are in substep diagnostics."""
         return self._loads(state, dynamics=False)[2]
 
-    def _body_sample(self, state, geo):
+    def _body_sample(self, state, geo, *, phase=None):
         body = self.robot_contact._evaluate(state.domains, geo)
         if self.cloth_links is None:
             return body, None
-        nodal, link_rows = self.cloth_links.evaluate(state, geo)
+        nodal, link_rows = self.cloth_links.evaluate(state, geo, phase=phase)
         body.update(link_rows)
         return body, nodal
 
@@ -497,7 +497,7 @@ class CompliantClothContactProgram:
                 work,
             )
 
-    def accelerations(self, state, inputs, *, _backing=False, _self_sample=None):
+    def accelerations(self, state, inputs, *, _backing=False, _self_sample=None, _phase=None):
         if _backing:
             nodal, reactions, details, geo = self._loads(state, backing_rows=True)
         else:
@@ -507,7 +507,7 @@ class CompliantClothContactProgram:
             nodal += sample["nodal_force_n"]
         body = None
         if self.robot_contact is not None:
-            body, link_nodal = self._body_sample(state, geo)
+            body, link_nodal = self._body_sample(state, geo, phase=_phase)
             if link_nodal is not None:
                 nodal += link_nodal
             for name in reactions:
@@ -565,12 +565,12 @@ class _Workspace:
         entry = self.state
         initial_self = self.program._self_sample(entry, self.self_work)
         a0, initial, _, body0 = self.program.accelerations(
-            entry, self.inputs, _self_sample=initial_self
+            entry, self.inputs, _self_sample=initial_self, _phase="entry"
         )
         mid = advance_state(self.state, a0, self.h / 2, midpoint=True)
         mid_self = self.program._self_sample(mid, self.self_work)
         a, contact, internal, body = self.program.accelerations(
-            mid, self.inputs, _self_sample=mid_self
+            mid, self.inputs, _self_sample=mid_self, _phase="midpoint"
         )
         self.state = advance_state(self.state, a, self.h, midpoint=False)
         self.penetration = max(_penetration(initial), _penetration(contact))
@@ -591,7 +591,7 @@ class _Workspace:
                         right["middle_distance_m"],
                     )
             if body is not None:
-                end_body, _ = self.program._body_sample(self.state, geo)
+                end_body, _ = self.program._body_sample(self.state, geo, phase="endpoint")
                 self.program._check_link_motion(entry, mid, self.state, None, geo)
                 check_robot_contact(
                     (body0, body, end_body),

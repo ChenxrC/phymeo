@@ -1,5 +1,6 @@
 """Material area weighted contact between finite link capsules and deforming triangle faces."""
 
+from contextvars import ContextVar
 from dataclasses import dataclass
 
 import numpy as np
@@ -65,6 +66,7 @@ class ClothLinkContacts:
         if operator is not None and not isinstance(operator, TyxNormalLayer):
             raise TypeError("cloth-link operator must be a TyxNormalLayer")
         self.operator = operator
+        self._phase_dispatch = ContextVar("cloth_link_phase_dispatch", default=None)
 
     @staticmethod
     def endpoints(link, geo):
@@ -121,7 +123,7 @@ class ClothLinkContacts:
             cap, self.triangles[face], CollisionMotion(ends), CollisionMotion(tri)
         )[0]
 
-    def evaluate(self, state, geo):
+    def evaluate(self, state, geo, *, phase=None):
         cloth = state.domains[self.cloth_domain]
         tri = cloth.position[self.faces]
         forces = np.zeros_like(cloth.position)
@@ -174,7 +176,21 @@ class ClothLinkContacts:
                     group.append((point, arm, ids, weights, relative, site.first_weights))
                 groups.append((link, face, ends, n, gap, group))
         values = np.array(rows, dtype=float).reshape(-1, 13)
-        answer = _host_law(values) if self.operator is None else self.operator.evaluate(values)
+        dispatch = self._phase_dispatch.get()
+        if dispatch is None:
+            answer = _host_law(values) if self.operator is None else self.operator.evaluate(values)
+        else:
+            addresses = tuple(
+                (
+                    link.domain,
+                    link.key,
+                    self.face_names[face],
+                    tuple(map(int, self.faces[face])),
+                    len(sites),
+                )
+                for link, face, _, _, _, sites in groups
+            )
+            answer = dispatch(phase, values, addresses)
         if (
             answer.shape != (len(rows), 5)
             or not np.isfinite(answer).all()

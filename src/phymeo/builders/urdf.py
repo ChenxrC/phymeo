@@ -10,6 +10,7 @@ from ._robot_asset import LinkCollision as LinkCollision
 from ._robot_asset import RobotAsset, assemble_robot, make_collider, principal_inertia, unit_axis
 from ._robot_mesh import load_obj_mesh
 from ._robot_xml import _attributes, _child, _children, _name, _number, _numbers
+from ._urdf_frames import FoldedURDFAsset as FoldedURDFAsset
 
 
 def _origin(element, where):
@@ -178,12 +179,19 @@ def _link_collisions(link, link_name, link_index, xml_path):
     return result
 
 
-def load_urdf(path: str | Path, *, gravity=(0.0, 0.0, -9.81)) -> RobotAsset:
+def load_urdf(
+    path: str | Path, *, gravity=(0.0, 0.0, -9.81), collapse_fixed_joints=None
+) -> RobotAsset:
     """Read a local, fixed-base URDF 1.0 tree with bounded revolute/prismatic scalar joints.
 
-    An absent joint axis defaults to +X. Moving links need positive mass and a
-    COM inertia diagonal after rotating the URDF inertial frame into the link.
-    Optional fixed-root inertia is validated and omitted from moving dynamics.
+    With the default setting a tree containing fixed joints groups their inertial
+    and collision components with the nearest moving ancestor. The result exposes
+    every authored link through sites and authored_link_pose. Its moving bodies use
+    their aggregate COM and principal axes. Explicit True also selects these frames
+    for an all-scalar tree. False keeps the strict scalar-only importer, which needs
+    each COM inertia to be diagonal in the original moving link. Existing scalar-only
+    assets use that strict path by default. Static-root inertia is checked and omitted
+    from dynamics. An absent moving joint axis defaults to +X.
     Spheres, boxes, Z-axis cylinders and local closed OBJ meshes retain their link and transform.
     Visuals and global display materials are ignored. Other joint/shape types
     and semantic elements (e.g. mimic or joint dynamics) raise ValueError.
@@ -200,6 +208,19 @@ def load_urdf(path: str | Path, *, gravity=(0.0, 0.0, -9.81)) -> RobotAsset:
     name = _name(robot, "name", "robot")
     _children(robot, {"link", "joint", "material"}, f"robot {name!r}")
     root, links, order, inbound = _tree(robot)
+    if collapse_fixed_joints is not None and not isinstance(
+        collapse_fixed_joints, (bool, np.bool_)
+    ):
+        raise ValueError("collapse_fixed_joints must be True, False or None")
+    fold = (
+        any(joint.get("type") == "fixed" for _, _, joint in inbound.values())
+        if collapse_fixed_joints is None
+        else collapse_fixed_joints
+    )
+    if fold:
+        from ._urdf_fixed import folded_robot
+
+        return folded_robot(name, root, links, order, inbound, gravity, path)
     indices = {root: -1, **{link: i for i, link in enumerate(order)}}
     _inertial(links[root], root, root=True)
     colliders = _link_collisions(links[root], root, -1, path)

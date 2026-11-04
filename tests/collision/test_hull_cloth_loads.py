@@ -239,25 +239,61 @@ def test_same_cloth_and_rigid_step_with_true_native_participants(tyx_mode, tmp_p
     full_step(tyx_mode, tmp_path)
 
 
-def test_two_connected_cloth_faces_share_rows_and_advance_with_internal_distance_constraints(
-    tmp_path,
-):
-    system, state, models, _ = setup(two=True)
-    state.particles.velocity[:, 2] = [1 / 64, -1 / 16, -1 / 32, 1 / 32]
-    state.particles.velocity[1, 0] = 1 / 16
-    state.rigid.velocity[0, 2] = -1 / 16
-    edges = np.array([[0, 1], [1, 2], [2, 0], [2, 3], [3, 0]])
-    rest = np.linalg.norm(
-        state.particles.position[edges[:, 1]] - state.particles.position[edges[:, 0]], axis=1
-    )
-    structural = ph.DistanceConstraints(edges, rest, np.full(5, 0.02))
-    p, r = ph.XPBDSolver(constraints=structural, tolerance=1e-5), ph.RigidSemiImplicitSolver()
-    mass = 1 / models[0].inverse_mass[:, None]
-    frames = []
-    with ph.CollisionWorkspace(system.model) as work:
+def two_face_window(mode, root):
+    dtype = np.float64 if mode == "host" else np.float32
+    with ExitStack() as stack:
+        cache = root / "cache"
+        layer = (
+            None
+            if mode == "host"
+            else stack.enter_context(ph.TyxNormalLayer(mode, cache_root=cache))
+        )
+        system, state, models, _ = setup(two=True, dtype=dtype, layer=layer)
+        state.particles.velocity[:, 2] = [1 / 64, -1 / 16, -1 / 32, 1 / 32]
+        state.particles.velocity[1, 0] = 1 / 16
+        state.rigid.velocity[0, 2] = -1 / 16
+        edges = np.array([[0, 1], [1, 2], [2, 0], [2, 3], [3, 0]])
+        rest = np.linalg.norm(
+            state.particles.position[edges[:, 1]] - state.particles.position[edges[:, 0]], axis=1
+        )
+        structural = ph.DistanceConstraints(edges, rest, np.full(5, 0.02, dtype=dtype))
+        if mode == "host":
+            p = ph.XPBDSolver(constraints=structural, tolerance=1e-5)
+            r = ph.RigidSemiImplicitSolver()
+        else:
+            p = stack.enter_context(
+                ph.TyxXPBDSolver(structural, mode=mode, tolerance=1e-5, cache_root=cache)
+            )
+            r = stack.enter_context(ph.TyxRigidSemiImplicitSolver(mode, cache_root=cache))
+        work = stack.enter_context(ph.CollisionWorkspace(system.model, mode, cache_root=cache))
+        mass = 1 / models[0].inverse_mass[:, None].astype(float)
+        eps = np.finfo(dtype).eps
+        ext = ph.CoupledInputs.zeros(4, 1, dtype=dtype)
+        frames = []
+        if mode == "cuda":
+            import tyx
+
+            prior = tyx.runtime_stats().cuda_kernel_launches
         for k in range(12):
             before = state
-            out = system.step(before, ph.CoupledInputs.zeros(4, 1), models, (p, r), H, work)
+            try:
+                out = system.step(before, ext, models, (p, r), H, work)
+            except ph.SolverFailure as error:
+                (root / "rejected-cloth-step.json").write_text(
+                    json.dumps(
+                        dict(
+                            mode=mode,
+                            rejected_tick=k + 1,
+                            reason=str(error),
+                            accepted=frames,
+                            entry_nodes=before.particles.position.tolist(),
+                            entry_body_q=before.rigid.orientation.tolist(),
+                        ),
+                        allow_nan=False,
+                    ),
+                    encoding="utf8",
+                )
+                raise
             state = out.state
             if k == 0:
                 assert sorted(c.force_n for c in out.loads.contacts) == pytest.approx([1, 3])
@@ -265,14 +301,25 @@ def test_two_connected_cloth_faces_share_rows_and_advance_with_internal_distance
                 np.testing.assert_allclose(
                     out.loads.inputs.rigid.torque[0], [0, -0.25, 0], atol=1e-12
                 )
-            dp = ((state.particles.velocity - before.particles.velocity) * mass).sum(axis=0)
-            dpb = 2 * (state.rigid.velocity[0] - before.rigid.velocity[0])
-            np.testing.assert_allclose(dp + dpb, 0, atol=1e-10)
-            np.testing.assert_allclose(dpb, H * out.loads.inputs.rigid.force[0], atol=1e-10)
+            dp = ((state.particles.velocity.astype(float) - before.particles.velocity) * mass).sum(
+                axis=0
+            )
+            dpb = 2 * (state.rigid.velocity[0].astype(float) - before.rigid.velocity[0])
+            # XPBD reconstructs its velocity from stored positions. Its roundoff scales as
+            # m*ulp(x)/h in each coordinate, not as ulp of the much smaller contact impulse.
+            scale = np.maximum(abs(state.particles.position), abs(before.particles.position)) / H
+            scale = (
+                mass * (scale + abs(before.particles.velocity) + abs(state.particles.velocity))
+            ).sum(axis=0)
+            budget = np.maximum(1e-10, 16 * eps * (scale + 2 * abs(state.rigid.velocity[0])))
+            assert np.all(abs(dp + dpb) <= budget), (dp + dpb, budget)
+            np.testing.assert_allclose(
+                dpb, H * out.loads.inputs.rigid.force[0], atol=max(1e-10, eps)
+            )
             np.testing.assert_allclose(
                 state.rigid.angular_velocity - before.rigid.angular_velocity,
                 H * out.loads.inputs.rigid.torque,
-                atol=1e-10,
+                atol=max(1e-10, eps),
             )
             frames.append(
                 dict(
@@ -281,19 +328,58 @@ def test_two_connected_cloth_faces_share_rows_and_advance_with_internal_distance
                     v=state.particles.velocity.tolist(),
                     body_x=state.rigid.position.tolist(),
                     body_q=state.rigid.orientation.tolist(),
+                    body_v=state.rigid.velocity.tolist(),
+                    body_omega=state.rigid.angular_velocity.tolist(),
                     force_by_face=[
                         (c.second.shape, c.force_n, len(c.sites)) for c in out.loads.contacts
                     ],
                     torque=out.loads.inputs.rigid.torque.tolist(),
                     momentum_residual=(dp + dpb).tolist(),
+                    momentum_roundoff_budget=budget.tolist(),
+                    particle_iterations=out.particle_report.iterations,
                 )
             )
-    assert np.max(np.abs(state.particles.position[:, 2])) > 0.001
-    assert np.ptp(state.particles.position[:, 2]) > 0.002
-    assert any(any(n != 4 for _, _, n in f["force_by_face"]) for f in frames[1:])
-    (tmp_path / "two-cloth-faces.json").write_text(
-        json.dumps(frames, allow_nan=False), encoding="utf8"
-    )
+        launches = tyx.runtime_stats().cuda_kernel_launches - prior if mode == "cuda" else None
+        if mode == "cuda":
+            assert launches > 12 * 4
+        if layer is not None:
+            assert layer.stats()["completed_launches"] == 12
+            assert layer.stats()["sites"] == sum(
+                c[2] for row in frames for c in row["force_by_face"]
+            )
+        assert np.max(np.abs(state.particles.position[:, 2])) > 0.001
+        assert np.ptp(state.particles.position[:, 2]) > 0.002
+        assert any(any(n != 4 for _, _, n in f["force_by_face"]) for f in frames[1:])
+        (root / "two-cloth-faces.json").write_text(
+            json.dumps(frames, allow_nan=False), encoding="utf8"
+        )
+        if layer is not None:
+            (root / "two-cloth-device.json").write_text(
+                json.dumps(
+                    dict(
+                        mode=mode,
+                        kernels=launches,
+                        layer=layer.stats(),
+                        colors=p.color_count,
+                        h_s=H,
+                        mass_kg=mass[:, 0].tolist(),
+                        rest_lengths_m=rest.tolist(),
+                    ),
+                    allow_nan=False,
+                ),
+                encoding="utf8",
+            )
+
+
+def test_two_connected_cloth_faces_share_rows_and_advance_with_internal_distance_constraints(
+    tmp_path,
+):
+    two_face_window("host", tmp_path)
+
+
+@pytest.mark.tyx
+def test_same_two_face_window_executes_native_xpbd_and_rigid_steps(tyx_mode, tmp_path):
+    two_face_window(tyx_mode, tmp_path)
 
 
 def test_core_crossing_and_collapsed_cloth_fail_without_replacing_the_previous_acceptance():

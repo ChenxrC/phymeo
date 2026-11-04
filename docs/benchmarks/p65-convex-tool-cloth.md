@@ -15,7 +15,7 @@
 | [投影分离的平行边](../../artifacts/p65-convex-tool-cloth-20261105-01/pytest-host/test_finite_patch_separates_ar2/closest-patch.json) | 39.0625 | 2 | (−1.8, 0, 2.4) | (0, −0.375, 0) |
 | [只剩一对最近角点](../../artifacts/p65-convex-tool-cloth-20261105-01/pytest-host/test_finite_patch_separates_ar3/closest-patch.json) | 39.0625 | 1 | (−1.8, 0, 2.4) | (0.6, −0.375, 0.45) |
 
-后两行的水平偏移为 23.4375 mm，独立直角三角形给出 39.0625 mm 欧氏间隙。再将布面移至横向距离超过层宽时，所有节点载荷归零。原层律以每个登记形状对的有效刚度给出合力，补丁权重总和为一。因此图中等间隙的面与线承受相同法向合力，改变力臂后力矩不同。用户对网格重新剖分时应按材料模型分配每对刚度。[有限边界正负控](../../tests/collision/test_hull_cloth_loads.py)
+后两行的水平偏移为 23.4375 mm，独立直角三角形给出 39.0625 mm 欧氏间隙。再将布面移至横向距离超过层宽时，所有节点载荷归零。原层律以每个登记形状对的有效刚度给出合力，补丁权重总和为一。因此图中等间隙的面与线承受相同法向合力，改变力臂后力矩不同。每对刚度对应这组网格与材料的标定。[有限边界正负控](../../tests/collision/test_hull_cloth_loads.py)
 
 将偏心四面体工具与布面一起作空间轴循环后，最近补丁的面积为 0.0625 m²，三个实际支撑节点为 65、9、41，第四个顶端节点的权重为零。刚体世界系力为 (4, 0, 0) N，力矩为 (0, −1/3, −5/6) N·m。另一项有切向速度的矩形覆盖试验测得 −0.3 W 摩擦功率，切向力在同一布材料点向两侧施加。[四面体材料和扳手](../../artifacts/p65-convex-tool-cloth-20261105-01/pytest-host/test_offcenter_tetrahedral_too0/tetrahedral-tool.json) · [摩擦与力臂核验](../../tests/collision/test_hull_cloth_loads.py)
 
@@ -25,4 +25,10 @@ HOST 使用两个共享材料边的三角面、四个独立质量和五条距离
 
 物理步先在实际入步姿态计算力，再以刚体参与者的真实末世界角速度与质心平移检查整段工具圆弧，并以布的三个实际端点位移构造各自的仿射轨迹。对有角漂移的凸工具，连续查询沿真实弧构造包络；转角和求证预算沿用已有凸体求证器。材料三角形在步内退化、硬核穿越或求证未决会拒绝发布整步，旧检查点仍可读取。在持续布约束场景中，连续几何描述每个已接受子步初末之间的运动，布面形状在这一段可改变。[真实角漂移](../../src/phymeo/geometry/_convex_support_path.py) · [硬核及失败发布检查](../../tests/collision/test_hull_cloth_loads.py)
 
-实际 CUDA 资格使用单张三自由节点布的同一物理步，总计七次设备核提交，其中一次计算四行法向材料。法向工作区上传 6,656 字节、下载 2,560 字节。几何剪裁、材料分配和圆弧窄相在 HOST，真正的粒子和自由刚体状态更新在 TYX。两张相连布面的 12 步记录在 HOST 完成。[解释执行](../../artifacts/p65-convex-tool-cloth-20261105-01/pytest-interpret/test_same_cloth_and_rigid_step0/convex-cloth-step.json) · [原生 CUDA](../../artifacts/p65-convex-tool-cloth-20261105-01/pytest-cuda/test_same_cloth_and_rigid_step0/convex-cloth-step.json)
+实际 CUDA 资格使用单张三自由节点布的同一物理步，总计七次设备核提交，其中一次计算四行法向材料。法向工作区上传 6,656 字节、下载 2,560 字节。几何剪裁、材料分配和圆弧窄相在 HOST，真正的粒子和自由刚体状态更新在 TYX。[解释执行](../../artifacts/p65-convex-tool-cloth-20261105-01/pytest-interpret/test_same_cloth_and_rigid_step0/convex-cloth-step.json) · [原生 CUDA](../../artifacts/p65-convex-tool-cloth-20261105-01/pytest-cuda/test_same_cloth_and_rigid_step0/convex-cloth-step.json)
+
+## 原生设备的双面 12 步窗口
+
+把同一四节点、五条距离约束的算例交给 TYX 的三色 XPBD 与刚体求解器，实际 CUDA 在 12 个物理步共执行 **144 个核**。法向材料独占 12 次提交，处理 30 条实际受载行，上传 79,872 字节、下载 30,720 字节。每个子步的受载面和每面的积分点数均与先前归档的 HOST FP64 逐项一致。最后两面分别为 0.7854483 和 2.2006173 N。每步先在 HOST 算实际接触补丁，再用设备参与者推进状态。[CUDA 完整轨迹](../../artifacts/p65-convex-tool-cloth-20261105-01/pytest-native-cloth-cuda/test_same_two_face_window_exec0/two-cloth-faces.json) · [原生计数与材料输入](../../artifacts/p65-convex-tool-cloth-20261105-01/pytest-native-cloth-cuda/test_same_two_face_window_exec0/two-cloth-device.json)
+
+将 12 步所有时刻与原 FP64 HOST 数据比对，CUDA 布节点每坐标最大绝对差 3.145 µm、速度分量 46.47 µm/s、每面法向力 2.088 µN、刚体力矩分量 0.690 µN·m、刚体质心坐标 0.0184 µm。FP32 的最大系统线动量残差为 2.431×10⁻⁵ N·s，按每坐标质量、位置精度与时间步核对。XPBD 从位置差恢复速度，具有 `m × ulp(x) / h` 的舍入尺度。解释执行与原生 CUDA 的节点坐标分量最大相差 2.51×10⁻¹² m，刚体姿态及扭矩逐字段相同。[同窗独立审计](../../artifacts/p65-convex-tool-cloth-20261105-01/native-vs-host.json) · [解释执行完整轨迹](../../artifacts/p65-convex-tool-cloth-20261105-01/pytest-native-cloth-interpret/test_same_two_face_window_exec0/two-cloth-faces.json)

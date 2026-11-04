@@ -33,6 +33,7 @@ from ._hull_surface import HullSurfaceQuery
 from ._mesh_mesh import MeshMeshQuery, MeshMeshTrace
 from ._mesh_round import MeshRoundQuery, MeshRoundTrace
 from ._mesh_triangle import MeshTriangleQuery, MeshTriangleTrace
+from ._plane_hull import StaticPlaneHull
 from ._plate_contact import PlateSurfaceQuery, RoundedPlate
 from ._rotating_capsule_face import RotatingCapsuleFaceQuery, rotating_capsule_face_query
 from ._rotating_mesh_solid import RotatingMeshSolidQuery
@@ -289,6 +290,9 @@ def _pair(a, b, ma, mb, code, analytic, seeds):
     if analytic is not None:
         try:
             with np.errstate(over="raise", invalid="raise", divide="raise"):
+                if isinstance(analytic, StaticPlaneHull):
+                    status, reason, witness, trace = analytic.result()
+                    return CollisionPair(*fields, True, status, reason, witness, convex=trace)
                 if isinstance(analytic, HullSurfaceQuery):
                     status, reason, witness, sweep, surface = analytic.result(
                         ma.moving or mb.moving, seeds
@@ -611,7 +615,19 @@ def _detect_pairs(
                 batch.append((a, b, ma, mb, code, ready, 0, 0))
                 continue
             analytic = None
-            if (
+            if {a.kind, b.kind} == {"plane", "hull"} and code in (0, 5):
+                plane_first = a.kind == "plane"
+                plane, hs, pp, hp = (a, b, ma, mb) if plane_first else (b, a, mb, ma)
+                if plane.radius or hs.radius or pp.moving or hp.moving:
+                    if not code:
+                        analytic = _NarrowFailure("unsupported", "plane_hull_motion_or_rounding")
+                else:
+                    hull = prepared_hull(hs, hp)
+                    if isinstance(hull, _NarrowFailure):
+                        analytic = hull
+                    elif not code:
+                        analytic = StaticPlaneHull(hull, plane, pp, plane_first, proximity)
+            elif (
                 "plate" in (a.kind, b.kind)
                 and {a.kind, b.kind} & {"particle", "triangle"}
                 and code in (0, 5)

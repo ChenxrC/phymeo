@@ -1,5 +1,6 @@
 """Filled convex rigid bodies versus a finite, independently deforming material triangle."""
 
+from dataclasses import replace
 from fractions import Fraction as F
 from itertools import pairwise
 
@@ -7,12 +8,14 @@ import numpy as np
 
 from ..constraints.collision_shapes import CollisionShape
 from ..core.capabilities import SolverFailure
+from ._closed_mesh import _Facet
+from ._convex_contact import _closest
 from ._convex_hull import clip_triangle_to_hull, direction_key, sparse_weights
 from ._prism_clip import hull as planar_hull
 from ._round_sweep import _GRID, _unit, _xyz
 from ._tetrahedral_solid import _CellPose
 from ._tetrahedral_surface import _TriangleMotion
-from ._triangle_pair_sweep import _cross3, _FacePath, _TrianglePair
+from ._triangle_pair_sweep import _ZERO_VECTOR, _cross3, _FacePath, _TrianglePair
 from .collision_witness import (
     CollisionSweep,
     CollisionWitness,
@@ -23,7 +26,8 @@ from .collision_witness import (
 
 
 class HullSurfaceQuery:
-    def __init__(self, hull_shape, hull, cloth, mc, hull_first):
+    def __init__(self, hull_shape, hull, cloth, mc, hull_first, *, proximity=False):
+        self.proximity = proximity
         self.hull, self.cloth, self.hull_first = hull, cloth, hull_first
         self.face = _FacePath(cloth, mc)
         self.parts, self.cells = [], []
@@ -173,6 +177,15 @@ class HullSurfaceQuery:
                 s.second_weights,
                 "host-filled-hull-surface",
                 intersection_points=tuple(section),
+            )
+        elif self.proximity:
+            # The hull keeps its registered translation. This facet is already at
+            # its physical pose t, including the three distinct nodal displacements.
+            points = dict(zip(self.face.ids, tri, strict=True))
+            face = _Facet(self.cloth, points, self.face.ids, _ZERO_VECTOR)
+            pair = (hull, face) if self.hull_first else (face, hull)
+            witness = replace(
+                _closest(*pair, t, proximity=True), source="host-hull-cloth-proximity"
             )
         else:
             witness = self._boundary(t)

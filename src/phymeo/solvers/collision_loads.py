@@ -157,6 +157,8 @@ def _sites(pair, shapes):
         return w.proximity_patch.points
     if pair.plate is not None and pair.plate.end.patch is not None:
         return pair.plate.end.patch.points
+    if pair.hull_surface is not None:
+        raise SolverFailure("missing finite hull-cloth support patch")
     if pair.convex is not None:
         raise SolverFailure("missing finite rigid support patch")
     if pair.family == "DD":
@@ -222,6 +224,7 @@ class CollisionLoadSystem:
                     ):
                         raise ValueError("inconsistent particle material identity")
         laws = {}
+        cloth_hulls = set()
         for key, law in layers.items():
             a, b = sorted(key)
             if (
@@ -253,6 +256,7 @@ class CollisionLoadSystem:
                 and kinds
                 not in {
                     ("hull", "hull"),
+                    ("hull", "triangle"),
                     ("sphere", "triangle"),
                     ("capsule", "triangle"),
                     ("triangle", "triangle"),
@@ -268,7 +272,10 @@ class CollisionLoadSystem:
                 raise ValueError(
                     "sliding layer requires an admitted smooth rigid pair or a rigid and deformable pair"
                 )
+            if kinds == ("hull", "triangle"):
+                cloth_hulls.add(a if x.kind == "hull" else b)
             laws[a, b] = law
+        self._cloth_hulls = frozenset(cloth_hulls)
         self.layers = MappingProxyType(laws)
         self._margin = max((v.width_m for v in laws.values()), default=0.0)
         self._last = None
@@ -321,7 +328,7 @@ class CollisionLoadSystem:
             # A sphere centered at an offset rotates around the body's COM, including
             # full turns whose endpoint orientations represent the very same pose.
             offset_ball = s.kind == "sphere" and np.any(local)
-            if body_frame is not None or offset_ball:
+            if body_frame is not None or offset_ball or s.key in self._cloth_hulls:
                 if (
                     dt is None
                     or getattr(rigid_solver, "rigid_motion_contract", None)

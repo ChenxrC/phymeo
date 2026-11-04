@@ -659,7 +659,9 @@ def _detect_pairs(
                     if isinstance(hull, _NarrowFailure):
                         analytic = hull
                     elif not code:
-                        analytic = HullSurfaceQuery(hs, hull, cs, cp, hull_first)
+                        analytic = HullSurfaceQuery(
+                            hs, hull, cs, cp, hull_first, proximity=proximity
+                        )
             elif a.kind == b.kind == "mesh" and code in (0, 5):
                 rotating = any(path.turn and path.turn.angle for path in (ma, mb))
                 if a.radius or b.radius:

@@ -2,7 +2,7 @@
 
 ## 当前入口（2026-11-04）
 
-[受载接触第一批并行分工](../superpowers/plans/2026-11-04-contact-load-parallel.md)记录三个 P0 独立任务、GPU 计量和串行验收顺序。
+[受载接触第一批分工与结果](../superpowers/plans/2026-11-04-contact-load-parallel.md)已集成平面–凸包支撑、有限布面静持/转滑、长方体强弱夹持与同姿态几何复核。Phymeo 的 120 g 强夹已放台，Newton Featherstone 同输入原生接触尚未复现整个受载过程。W32 当前计量中单姿态最近特征查询占插桩墙钟约 86%。
 
 [与 Newton 1.7.0 的逐项功能盘点](phymeo-newton-1.7-functional-inventory.md)覆盖 19 个功能族，并区分物理实测、同引擎加速与跨引擎对照。测试工具开源已列入后续待优化工作。
 

@@ -1,6 +1,6 @@
 # 静态碰撞世界的 TYX 射线观测
 
-`TyxRaycaster.query` 为一个指定世界的每束射线返回最近表面的米制距离、原碰撞模型中的形状编号和世界法向。相机可以共享原点，扫描仪的每一束也可以拥有各自原点。每次显式传入当时的形状姿态。
+`TyxRaycaster.query` 为每束射线在它指定的世界中返回最近表面的米制距离、原碰撞模型中的形状编号和世界法向。相机可以共享原点，扫描仪的每一束也可以拥有各自原点。每次显式传入当时的形状姿态。
 
 ```python
 import numpy as np
@@ -69,3 +69,45 @@ python scripts/check_curved_device_rays.py --mode cuda --native curved-rays-gpu.
 ```
 
 完整形状编号、距离、法向和超限计数位于父集成工作区 `artifacts/p65-curved-device-rays-20261105-01` 的 `09-final-frame-cuda/all-rays.json` 与 `10-final-frame-interpret/all-rays.json`。旧源明确拒绝圆柱的原始结果在 `01-initial-red`。
+
+## 每束射线选择世界
+
+`phymeo.raycast_scene(..., world=...)` 和 `TyxRaycaster.query(..., world=...)` 接受同一标量或逐束整型世界编号。方向形状为 `(N,3)` 或 `(H,W,3)`，对应的逐束编号必须严格为 `(N,)` 或 `(H,W)`。距离与形状编号保持这个布局，法向在末尾再加 3 个分量。可以共享单个原点，也可传与全部方向逐项同形的原点。观察某个缺少形状的世界会直接得到未命中。
+
+```python
+import numpy as np
+import phymeo as ph
+from phymeo.backends.tyx_raycast import TyxRaycaster
+
+shape = [ph.CollisionShape(ph.CollisionKey(w, 4, 0), "sphere", (3,), radius=r)
+         for w, r in [(2, 0.5), (9, 1.0)]]
+model = ph.CollisionModel(shape)
+poses = {s.key: ph.CollisionMotion([[0, 0, -2]]) for s in shape}
+worlds = np.array([[9, 2], [2, 90]])
+directions = np.zeros((2, 2, 3))
+directions[..., 2] = -1
+with TyxRaycaster("cuda") as op:
+    hit = op.query(model, poses, [0, 0, 0], directions, world=worlds)
+np.testing.assert_equal(hit.distance_m, [[1.0, 1.5], [1.5, np.inf]])
+np.testing.assert_equal(hit.shape_index, [[1, 0], [0, -1]])
+```
+
+HOST 按已注册世界对束做稳定分组，然后将结果写回原顺序。TYX 将选中世界的面片连接成一份表，每束只遍历自己世界的整数起止区间，在同一个内核完成求交与最近表面选择。尺度、原点基准和米制裁剪按各世界独立处理。相同本地物体及形状编号可出现在多个世界，返回的索引始终指向全模型的 `keys`。单次查询的容量按各世界“束数×本世界面片数”之和计算，空世界不消耗面片测试数。所有选中形状在发起设备调用前校验，未选择世界无需提供姿态。
+
+### 同输出的 32 世界实测
+
+RTX 4060 Laptop GPU 在 32 个几何重叠的世界分别放置球和平面，各世界使用相同本地物体编号。每个世界 25 束，合计交错排列 800 束。逐世界标量查询也采用同一个 `TyxRaycaster`。两条路径的距离、全模型形状编号和世界法向逐值相同，每个世界都实际命中了自己的球和平面。
+
+| TYX 原生计数 | 一次多世界查询 | 逐世界调用 32 次 |
+| --- | ---: | ---: |
+| CUDA 内核提交 | 1 | 32 |
+| H2D 次数 / 字节 | 5 / 52,096 | 160 / 39,296 |
+| D2H 次数 / 字节 | 2 / 16,000 | 64 / 16,000 |
+
+多世界路径额外上传 12,800 字节，用于每束的面片区间和按本世界尺度换算的裁剪界限。本次比较提交、传输与实际输出，未测墙钟用时。另一组 `2×3` 交错矩阵读得全模型编号 `[[2,1,-1],[3,1,2]]`，同一位置分别由不同大小、姿态的资产或空世界产生结果。设备路径与独立公式、HOST 和原标量路线一致。相距 2³⁵ m 的大坐标组与半径 2⁻³⁵ m 的小球也能在一次查询中按各自尺度恢复米制距离。
+
+冻结产品基线 `5b6c854` 对原矩阵输入返回参数错误。最终源码 `c47e306` 在 CUDA 设置下通过本次 7 项、前两批设备专项及 HOST 射线近邻共 29 项。解释器另通过 7 项新增专项并确认没有 CUDA 提交。选中世界含圆角板、非法世界编号、错位输入形状和容量拒绝都在发起设备调用前被发现；在已执行内核后注入读回异常，重新排序后的下一次查询仍与独立结果一致。证据保存在 `artifacts/p65-batched-world-rays-20261105-01` 的 `05-final-cuda` 与 `06-final-interpret`。
+
+```text
+python -m pytest -q -s --require-tyx --tyx-mode cuda tests/collision/test_world_routed_raycast.py
+```

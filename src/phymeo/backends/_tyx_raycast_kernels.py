@@ -12,6 +12,7 @@ def _dot(x: tx.f32, y: tx.f32, z: tx.f32, u: tx.f32, v: tx.f32, w: tx.f32) -> tx
 def first_hits(
     ray_count: tx.i32,
     patch_count: tx.i32,
+    routed: tx.i32,
     near: tx.f32,
     far: tx.f32,
     beams: tx.ndarray(tx.f32, 2),
@@ -43,7 +44,16 @@ def first_hits(
         ny = 0.0
         nz = 0.0
         issue = 0
-        for patch in range(patch_count):
+        begin = 0
+        end = patch_count
+        lower = near
+        upper = far
+        if routed != 0:
+            begin = tags[patch_count + ray, 0]
+            end = tags[patch_count + ray, 1]
+            lower = beams[ray, 6]
+            upper = beams[ray, 7]
+        for patch in range(begin, end):
             kind = tags[patch, 0]
             # p0 is the sphere centre, start of the shaft, or first point of a flat surface.
             vx = ox - geom[patch, 0]
@@ -104,7 +114,7 @@ def first_hits(
                                     valid = 0
                             if not tx.isfinite(time):
                                 issue = 1
-                            elif valid == 1 and time >= near and time <= far:
+                            elif valid == 1 and time >= lower and time <= upper:
                                 if label < 0 or time < best:
                                     length = tx.sqrt(_dot(rx, ry, rz, rx, ry, rz))
                                     if length > 0.0 and tx.isfinite(length):
@@ -121,7 +131,7 @@ def first_hits(
                 time = -axis_offset / axis_ray
                 if not tx.isfinite(time):
                     issue = 1
-                elif time >= near and time <= far:
+                elif time >= lower and time <= upper:
                     valid = 1
                     if kind == 4:
                         za = geom[patch, kz] - beams[ray, kz]
@@ -223,7 +233,7 @@ def first_hits(
                     elif feature == 2 and generator == 1 and uz != 0.0:
                         low = shift + (-half - cz) / uz
                         high = shift + (half - cz) / uz
-                        time = tx.max(near, tx.min(low, high))
+                        time = tx.max(lower, tx.min(low, high))
                         delta = time - shift
                         if time <= tx.max(low, high):
                             valid = 1
@@ -235,7 +245,12 @@ def first_hits(
                             valid = 1
                     if valid == 1 and not tx.isfinite(time):
                         issue = 1
-                    if valid == 1 and time >= near and time <= far and (label < 0 or time < best):
+                    if (
+                        valid == 1
+                        and time >= lower
+                        and time <= upper
+                        and (label < 0 or time < best)
+                    ):
                         px = cx + delta * ux
                         py = cy + delta * uy
                         pz = cz + delta * uz

@@ -4,7 +4,7 @@ from numbers import Integral
 
 import numpy as np
 
-from ..geometry.raycast import RayHits, _frozen, _ray_inputs, _surfaces
+from ..geometry.raycast import RayHits, _frozen, _ray_batch, _ray_shape, _surfaces
 from .tyx_math import TyxMath, as_compute
 
 _MAX_PATCHES = 2**16
@@ -112,8 +112,57 @@ def _clip(near, far, scale):
     return float(low), float(high)
 
 
+def _world_packet(model, poses, origin, rays, world, near, far, capacity):
+    geom = _geometry(model, poses, origin, len(rays), world, capacity)
+    if geom is None:
+        return None
+    tags, data, local, scale = geom
+    close, distant = _clip(near, far, scale)
+    beams = as_compute(np.column_stack((np.broadcast_to(local, rays.shape), rays)), "FP32 beams")
+    return beams, tags, data, scale, close, distant
+
+
+def _routed_packet(model, poses, origin, rays, groups, near, far, capacity):
+    if not groups:
+        return None
+    tag_blocks, surfaces = [], []
+    # Empty-world directions remain valid even though their empty ranges perform no tests.
+    beams = np.zeros((len(rays), 8), np.float32)
+    beams[:, 3:6] = rays
+    bounds = np.zeros((len(rays), 2), np.int32)
+    scales = np.ones(len(rays))
+    total = tests = 0
+    for key, slots in groups:
+        eye = origin if origin.ndim == 1 else origin[slots]
+        packet = _world_packet(model, poses, eye, rays[slots], key, near, far, capacity - tests)
+        if packet is None:
+            continue
+        local_beams, tags, data, scale, low, high = packet
+        end = total + len(data)
+        if end > _MAX_PATCHES:
+            raise ValueError("TYX ray capacity exceeded by selected worlds' surface tables")
+        bounds[slots] = (total, end)
+        beams[slots, :6] = local_beams
+        beams[slots, 6:] = (low, high)
+        scales[slots] = scale
+        tag_blocks.append(tags)
+        surfaces.append(data)
+        total = end
+        tests += len(slots) * len(data)
+    if not total:
+        return None
+    width = max(s.shape[1] for s in surfaces)
+    packed = np.zeros((total, width), np.float32)
+    start = 0
+    for block in surfaces:
+        packed[start : start + len(block), : block.shape[1]] = block
+        start += len(block)
+    # Rows [0,total) identify original shapes; the i32 tail gives each beam its own [start,end).
+    return beams, np.vstack((*tag_blocks, bounds)), packed, scales, 0.0, 0.0
+
+
 class TyxRaycaster:
-    """Metric first hits from one fixed world, using an explicit FP32 TYX execution mode.
+    """Metric first hits from selected fixed worlds, using an explicit FP32 TYX mode.
 
     Each call consumes its supplied pose and ray origins. The host only prepares registered
     geometry and units. The kernel evaluates every ray against every selected patch, including
@@ -169,22 +218,25 @@ class TyxRaycaster:
         """First hit per unit ray, including either endpoint of the metric clip interval."""
         if self._closed:
             raise RuntimeError("TYX raycaster is closed")
-        origin, rays, near, far = _ray_inputs(origins_m, directions, near_m, far_m)
+        shape, origin, rays, near, far, groups = _ray_batch(
+            model, poses, origins_m, directions, world, near_m, far_m
+        )
         with np.errstate(over="ignore", under="ignore", invalid="ignore"):
-            geometry = _geometry(model, poses, origin, len(rays), world, self._capacity)
+            if groups is None:
+                packet = _world_packet(model, poses, origin, rays, world, near, far, self._capacity)
+            else:
+                packet = _routed_packet(
+                    model, poses, origin, rays, groups, near, far, self._capacity
+                )
         keys = tuple(s.key for s in model.shapes)
-        if geometry is None:
+        if packet is None:
             return RayHits(
-                _frozen(np.full(len(rays), np.inf)),
-                _frozen(np.full(len(rays), -1, dtype=np.int32)),
-                _frozen(np.zeros((len(rays), 3))),
+                _frozen(np.full(shape, np.inf)),
+                _frozen(np.full(shape, -1, dtype=np.int32)),
+                _frozen(np.zeros((*shape, 3))),
                 keys,
             )
-        tags, data, local, scale = geometry
-        close, distant = _clip(near, far, scale)
-        beams = as_compute(
-            np.column_stack((np.broadcast_to(local, rays.shape), rays)), "FP32 beams"
-        )
+        beams, tags, data, scale, close, distant = packet
         labels = np.zeros(len(rays), np.int32)
         hits = np.zeros((len(rays), 4), np.float32)
         if self._math is None:
@@ -196,7 +248,14 @@ class TyxRaycaster:
         before = self._math.stats()
         try:
             labels, hits = self._math.call(
-                first_hits, len(rays), len(tags), close, distant, *arrays, outputs=(7, 8)
+                first_hits,
+                len(rays),
+                len(data),
+                int(groups is not None),
+                close,
+                distant,
+                *arrays,
+                outputs=(8, 9),
             )
         finally:
             after = self._math.stats()
@@ -211,6 +270,7 @@ class TyxRaycaster:
         with np.errstate(over="raise", invalid="raise"):
             distances = hits[:, 0].astype(float) * scale
         distances[labels == -1] = np.inf
-        return RayHits(
-            _frozen(distances), _frozen(labels), _frozen(hits[:, 1:].astype(float)), keys
+        return _ray_shape(
+            RayHits(_frozen(distances), _frozen(labels), _frozen(hits[:, 1:].astype(float)), keys),
+            shape,
         )

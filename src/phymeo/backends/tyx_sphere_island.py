@@ -454,85 +454,116 @@ class TyxSphereIslandBatch:
                 self._counts[k] += v
             engine.close()
 
+    def _inputs(self, h, forces, contact_capacity, iterations):
+        h = float(as_fp32(h, "island substep", ()))
+        if h <= 0:
+            raise ValueError("positive island substep required")
+        if (
+            isinstance(iterations, (bool, np.bool_))
+            or not isinstance(iterations, Integral)
+            or not 1 <= iterations <= 128
+        ):
+            raise ValueError("iterations must be an integer in [1,128]")
+        forces = {} if forces is None else forces
+        caps = {} if contact_capacity is None else contact_capacity
+        if not isinstance(forces, Mapping) or not isinstance(caps, Mapping):
+            raise TypeError("expected world-keyed force and capacity mappings")
+        self._keys(forces)
+        self._keys(caps)
+        initial = np.empty((len(self._static[0]), 6), np.float32)
+        external = np.zeros((len(initial), 3), np.float32)
+        capacity = []
+        for key in self._worlds:
+            bs, _ = self._ranges[key]
+            packet = forces.get(key, {})
+            if not isinstance(packet, Mapping):
+                raise TypeError("expected local sphere force mapping")
+            ids = self._states[key].bodies
+            for local in packet:
+                if world_key(local) not in ids:
+                    raise KeyError((key, local))
+            for i, (local, state) in enumerate(ids.items(), bs.start):
+                initial[i] = (*state.position, *state.velocity)
+                if local in packet:
+                    external[i] = as_fp32(packet[local], "sphere COM force", (3,))
+            limit = caps.get(key, len(self._local_pairs[key]))
+            if (
+                isinstance(limit, (bool, np.bool_))
+                or not isinstance(limit, Integral)
+                or not 0 <= limit <= np.iinfo(np.int32).max
+            ):
+                raise ValueError("invalid per-world contact capacity")
+            capacity.append(limit)
+        return h, initial, external, np.asarray(capacity, np.int32)
+
+    def _trial(self, states, initial, external, capacity, h, iterations):
+        """Compute candidate states only; no physical world is published here."""
+        if self._engine is None:
+            self._engine = SphereIslandDevice(self._mode, self._cache, *self._static)
+        try:
+            state, rows, status, errors, issues = self._engine.step(
+                initial,
+                external,
+                capacity,
+                h,
+                int(iterations),
+                _POS_TOL,
+                _VEL_TOL,
+            )
+            result = {}
+            for i, (k, spec) in enumerate(self._worlds.items()):
+                if k not in states:
+                    continue
+                bs, ps = self._ranges[k]
+                result[k] = _result(
+                    k,
+                    spec,
+                    states[k],
+                    initial[bs],
+                    external[bs],
+                    h,
+                    state[bs],
+                    rows[ps],
+                    status[i],
+                    errors[i],
+                    issues[ps],
+                    self._local_pairs[k],
+                )
+        except BaseException:
+            self._retire()
+            raise
+        return result
+
+    def _publish(self, result):
+        states = self._states | {k: r.state for k, r in result.items()}
+        last = self._last | {k: r for k, r in result.items() if r.accepted}
+        self._states, self._last = states, last
+        self._batches += 1
+        return MappingProxyType(result)
+
     def step(self, h, *, forces=None, contact_capacity=None, iterations=96):
         """Advance all worlds; force packets (N) address world then local sphere ID."""
         with self._lock:
             self._open()
-            h = float(as_fp32(h, "island substep", ()))
-            if h <= 0:
-                raise ValueError("positive island substep required")
-            if (
-                isinstance(iterations, (bool, np.bool_))
-                or not isinstance(iterations, Integral)
-                or not 1 <= iterations <= 128
-            ):
-                raise ValueError("iterations must be an integer in [1,128]")
-            forces = {} if forces is None else forces
-            caps = {} if contact_capacity is None else contact_capacity
-            if not isinstance(forces, Mapping) or not isinstance(caps, Mapping):
-                raise TypeError("expected world-keyed force and capacity mappings")
-            self._keys(forces)
-            self._keys(caps)
-            initial = np.empty((len(self._static[0]), 6), np.float32)
-            external = np.zeros((len(initial), 3), np.float32)
-            capacity = []
-            for key, spec in self._worlds.items():
-                bs, _ = self._ranges[key]
-                packet = forces.get(key, {})
-                if not isinstance(packet, Mapping):
-                    raise TypeError("expected local sphere force mapping")
-                ids = self._states[key].bodies
-                for local in packet:
-                    if world_key(local) not in ids:
-                        raise KeyError((key, local))
-                for i, (local, state) in enumerate(ids.items(), bs.start):
-                    initial[i] = (*state.position, *state.velocity)
-                    if local in packet:
-                        external[i] = as_fp32(packet[local], "sphere COM force", (3,))
-                limit = caps.get(key, len(self._local_pairs[key]))
-                if (
-                    isinstance(limit, (bool, np.bool_))
-                    or not isinstance(limit, Integral)
-                    or not 0 <= limit <= np.iinfo(np.int32).max
-                ):
-                    raise ValueError("invalid per-world contact capacity")
-                capacity.append(limit)
-            if self._engine is None:
-                self._engine = SphereIslandDevice(self._mode, self._cache, *self._static)
-            try:
-                state, rows, status, errors, issues = self._engine.step(
-                    initial,
-                    external,
-                    np.asarray(capacity, np.int32),
-                    h,
-                    int(iterations),
-                    _POS_TOL,
-                    _VEL_TOL,
-                )
-                result = {}
-                for i, (k, spec) in enumerate(self._worlds.items()):
-                    bs, ps = self._ranges[k]
-                    result[k] = _result(
-                        k,
-                        spec,
-                        self._states[k],
-                        initial[bs],
-                        external[bs],
-                        h,
-                        state[bs],
-                        rows[ps],
-                        status[i],
-                        errors[i],
-                        issues[ps],
-                        self._local_pairs[k],
-                    )
-            except BaseException:
-                self._retire()
-                raise
-            self._states = {k: r.state for k, r in result.items()}
-            self._last = {k: r if r.accepted else self._last[k] for k, r in result.items()}
-            self._batches += 1
-            return MappingProxyType(result)
+            h, initial, external, capacity = self._inputs(h, forces, contact_capacity, iterations)
+            result = self._trial(self._states, initial, external, capacity, h, iterations)
+            return self._publish(result)
+
+    def step_substepped(
+        self, h, *, substeps=8, keys=None, forces=None, contact_capacity=None, iterations=96
+    ):
+        """Advance one public tick through 1–64 dyadic substeps, publishing once per world.
+
+        A closing, exactly touching initial configuration may first receive an impulse at t=0.
+        Duration-positive intervals use the same TYX kernels and audits as step(). Contact rows
+        belong to their sampled stage, with times relative to the input checkpoint. Supply keys
+        to retry only selected worlds without advancing successful neighbors.
+        """
+        from .sphere_island_substeps import advance
+
+        with self._lock:
+            self._open()
+            return advance(self, h, substeps, keys, forces, contact_capacity, iterations)
 
     def stats(self):
         with self._lock:

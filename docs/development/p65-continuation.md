@@ -1,6 +1,10 @@
 # P6.5 人工续作入口
 
-## 当前入口（2026-11-04）
+## 当前入口（2026-11-05）
+
+多面接触现可跨世界共用 TYX 设备提交，W4×8 核数从 48 降至 12，墙钟尚未加速。独立布节点已在共面应变下完成受压换面。Panda 在两引擎中都搬运了 40 mm 实心球，50 mm 球的失持和首次未求解结构接触按真实时刻记录。[集成结果与下一批判据](../superpowers/plans/2026-11-05-ragged-contact-and-payloads.md) · [真实球形回放](../../artifacts/p65-ragged-seam-payload-20261105-01/panda-grasp-replay.html)
+
+## 2026-11-04 续作记录
 
 已验证共面平移材料片的带压跨边、旋转偏心长方体抓放，以及 2/8 个真实受载面在 W1/W4 上的成本。当前多面法向层可在 TYX 运行，跨世界接触批入口仍限定每世界单面。下一批优先验证自由节点换面与多面变长站点合批。[验收、数据和下一批判据](../superpowers/plans/2026-11-04-shared-edge-offset-and-density.md) · [偏心抓取与滑落的交互回放](../../artifacts/p65-crossing-rotated-density-20261104-01/panda-grasp-replay.html)
 

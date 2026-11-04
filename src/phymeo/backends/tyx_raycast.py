@@ -155,7 +155,7 @@ def _routed_packet(model, poses, origin, rays, groups, near, far, capacity):
     packed = np.zeros((total, width), np.float32)
     start = 0
     for block in surfaces:
-        packed[start:start + len(block), :block.shape[1]] = block
+        packed[start : start + len(block), : block.shape[1]] = block
         start += len(block)
     # Rows [0,total) identify original shapes; the i32 tail gives each beam its own [start,end).
     return beams, np.vstack((*tag_blocks, bounds)), packed, scales, 0.0, 0.0
@@ -225,11 +225,17 @@ class TyxRaycaster:
             if groups is None:
                 packet = _world_packet(model, poses, origin, rays, world, near, far, self._capacity)
             else:
-                packet = _routed_packet(model, poses, origin, rays, groups, near, far, self._capacity)
+                packet = _routed_packet(
+                    model, poses, origin, rays, groups, near, far, self._capacity
+                )
         keys = tuple(s.key for s in model.shapes)
         if packet is None:
-            return RayHits(_frozen(np.full(shape, np.inf)), _frozen(np.full(shape, -1, dtype=np.int32)),
-                           _frozen(np.zeros((*shape, 3))), keys)
+            return RayHits(
+                _frozen(np.full(shape, np.inf)),
+                _frozen(np.full(shape, -1, dtype=np.int32)),
+                _frozen(np.zeros((*shape, 3))),
+                keys,
+            )
         beams, tags, data, scale, close, distant = packet
         labels = np.zeros(len(rays), np.int32)
         hits = np.zeros((len(rays), 4), np.float32)
@@ -242,7 +248,14 @@ class TyxRaycaster:
         before = self._math.stats()
         try:
             labels, hits = self._math.call(
-                first_hits, len(rays), len(data), int(groups is not None), close, distant, *arrays, outputs=(8, 9)
+                first_hits,
+                len(rays),
+                len(data),
+                int(groups is not None),
+                close,
+                distant,
+                *arrays,
+                outputs=(8, 9),
             )
         finally:
             after = self._math.stats()
@@ -257,4 +270,7 @@ class TyxRaycaster:
         with np.errstate(over="raise", invalid="raise"):
             distances = hits[:, 0].astype(float) * scale
         distances[labels == -1] = np.inf
-        return _ray_shape(RayHits(_frozen(distances), _frozen(labels), _frozen(hits[:, 1:].astype(float)), keys), shape)
+        return _ray_shape(
+            RayHits(_frozen(distances), _frozen(labels), _frozen(hits[:, 1:].astype(float)), keys),
+            shape,
+        )

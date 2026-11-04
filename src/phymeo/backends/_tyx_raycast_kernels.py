@@ -245,7 +245,12 @@ def first_hits(
                             valid = 1
                     if valid == 1 and not tx.isfinite(time):
                         issue = 1
-                    if valid == 1 and time >= lower and time <= upper and (label < 0 or time < best):
+                    if (
+                        valid == 1
+                        and time >= lower
+                        and time <= upper
+                        and (label < 0 or time < best)
+                    ):
                         px = cx + delta * ux
                         py = cy + delta * uy
                         pz = cz + delta * uz

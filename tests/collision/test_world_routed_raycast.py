@@ -10,10 +10,13 @@ from phymeo.backends.tyx_raycast import TyxRaycaster
 def scene():
     def k(w):
         return ph.CollisionKey(w, 1, 0)
+
     plate = ph.CollisionShape(k(1), "plate", (1, 2, 3), radius=0.1)
     large = ph.CollisionShape(k(3), "sphere", (9,), radius=1)
     small = ph.CollisionShape(k(7), "sphere", (9,), radius=0.5)
-    rod = ph.CollisionShape(k(11), "ellipsoid", (9,), curved=ph.CurvedSolid("ellipsoid", (1, 0.5, 0.25)))
+    rod = ph.CollisionShape(
+        k(11), "ellipsoid", (9,), curved=ph.CurvedSolid("ellipsoid", (1, 0.5, 0.25))
+    )
     # Rotate 180 degrees about (1,0,1)/sqrt(2) so the long local X axis becomes world Z.
     rot = (np.sqrt(0.5), 0, np.sqrt(0.5), 0)
     return ph.CollisionModel([rod, small, large, plate]), {
@@ -49,7 +52,9 @@ def test_interleaved_matrix_routes_and_retains_full_global_keys(tyx_mode, tmp_pa
             np.testing.assert_allclose(out.world_normals, normals, rtol=0, atol=2e-6)
             with pytest.raises(ValueError):
                 out.shape_index.setflags(write=True)
-        flat = op.query(model, poses, origins.reshape(-1, 3), rays.reshape(-1, 3), world=routed.ravel())
+        flat = op.query(
+            model, poses, origins.reshape(-1, 3), rays.reshape(-1, 3), world=routed.ravel()
+        )
         np.testing.assert_array_equal(flat.distance_m, hit.distance_m.ravel())
         np.testing.assert_array_equal(flat.world_normals, hit.world_normals.reshape(-1, 3))
         # Compare every row with its original scalar-world call, preserving input order.
@@ -90,7 +95,7 @@ def test_zero_beams_missing_world_and_unselected_unsupported_shapes(tyx_mode, tm
             bad = dict(poses)
             bad[model.shapes[0].key] = ph.CollisionMotion([[0, 0, 0], [0, 1, 0], [1, 0, 0]])
             with pytest.raises(ValueError, match="plate"):
-                fn(model, bad, [0, 0, 0], [[0, 0, -1]]*2, world=[7, 1])
+                fn(model, bad, [0, 0, 0], [[0, 0, -1]] * 2, world=[7, 1])
         assert op.stats()["completed_launches"] == 0
 
 
@@ -99,8 +104,15 @@ def test_world_address_shape_type_and_broadcast_fail_before_launch(tyx_mode, tmp
     with TyxRaycaster(tyx_mode, cache_root=tmp_path) as op:
         for fn in (ph.raycast_scene, op.query):
             dirs = np.full((2, 2, 3), 1.0)
-            for invalid in ([[3, True], [7, 3]], [[3, -1], [7, 3]], [[3.0, 7], [7, 3]],
-                            [3, 7], [[3], [7]], np.ones((2, 2, 1), np.int64), True):
+            for invalid in (
+                [[3, True], [7, 3]],
+                [[3, -1], [7, 3]],
+                [[3.0, 7], [7, 3]],
+                [3, 7],
+                [[3], [7]],
+                np.ones((2, 2, 1), np.int64),
+                True,
+            ):
                 with pytest.raises(ValueError, match="world"):
                     fn(model, poses, [0, 0, 0], dirs, world=invalid)
             with pytest.raises(ValueError):
@@ -111,8 +123,10 @@ def test_world_address_shape_type_and_broadcast_fail_before_launch(tyx_mode, tmp
 def test_capacity_counts_only_local_pairs_and_retry_keeps_previous_reading(tyx_mode, tmp_path):
     model, poses = scene()
     with TyxRaycaster(tyx_mode, max_ray_patch_tests=4, cache_root=tmp_path) as op:
+
         def read(ids):
             return op.query(model, poses, [0, 0, 0], [[0, 0, -1]] * len(ids), world=ids)
+
         good = read([3, 7, 3, 7, 99])
         # 4 real tests, not 5×2. Another routed ray in an empty world costs zero surfaces.
         np.testing.assert_array_equal(good.shape_index, [1, 2, 1, 2, -1])
@@ -158,7 +172,9 @@ def test_32_overlapping_worlds_compare_every_beam_with_32_scalar_queries(tyx_mod
         print("W32×25 equal outputs; batched", united, "scalar", separate)
 
 
-def test_late_backend_failure_does_not_mix_routed_geometry_on_retry(tyx_mode, tmp_path, monkeypatch):
+def test_late_backend_failure_does_not_mix_routed_geometry_on_retry(
+    tyx_mode, tmp_path, monkeypatch
+):
     from phymeo.backends.tyx_math import TyxMath
 
     model, poses = scene()
@@ -166,9 +182,11 @@ def test_late_backend_failure_does_not_mix_routed_geometry_on_retry(tyx_mode, tm
     with TyxRaycaster(tyx_mode, cache_root=tmp_path) as op:
         first = op.query(model, poses, [0, 0, 0], rays, world=[3, 7])
         actual = TyxMath.call
+
         def fail(self, *args, **kwargs):
             actual(self, *args, **kwargs)
             raise RuntimeError("late routed device read")
+
         with monkeypatch.context() as patch:
             patch.setattr(TyxMath, "call", fail)
             with pytest.raises(RuntimeError, match="late routed device read"):

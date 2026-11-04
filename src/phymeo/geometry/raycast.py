@@ -285,8 +285,12 @@ def _ray_batch(model, poses, origins, directions, world, near, far):
     if not isinstance(model, CollisionModel) or not isinstance(poses, Mapping):
         raise ValueError("expected a collision model and a mapping of current poses")
     d, o = np.asarray(directions), np.asarray(origins)
-    if (d.ndim not in (2, 3) or d.shape[-1] != 3 or d.size // 3 > 2**20
-            or o.shape not in ((3,), d.shape)):
+    if (
+        d.ndim not in (2, 3)
+        or d.shape[-1] != 3
+        or d.size // 3 > 2**20
+        or o.shape not in ((3,), d.shape)
+    ):
         raise ValueError("expected rows or a matrix of 3D rays and matching origins")
     shape = d.shape[:-1]
     eyes, rays, near, far = _ray_inputs(
@@ -301,7 +305,9 @@ def _ray_batch(model, poses, origins, directions, world, near, far):
     else:
         # Validate elements before array promotion can turn a mixed Boolean/integer list into IDs.
         address = np.asarray(world, dtype=object)
-        if any(not isinstance(v, Integral) or isinstance(v, (bool, np.bool_)) for v in address.flat):
+        if any(
+            not isinstance(v, Integral) or isinstance(v, (bool, np.bool_)) for v in address.flat
+        ):
             raise ValueError("ray world addresses must be nonnegative integers")
     if address.shape != shape or np.any(address < 0):
         raise ValueError("ray world addresses must match exactly the ray layout and be nonnegative")
@@ -322,8 +328,12 @@ def _ray_batch(model, poses, origins, directions, world, near, far):
 def _ray_shape(hit, shape):
     if hit.distance_m.shape == shape:
         return hit
-    return RayHits(hit.distance_m.reshape(shape), hit.shape_index.reshape(shape),
-                   hit.world_normals.reshape(*shape, 3), hit.keys)
+    return RayHits(
+        hit.distance_m.reshape(shape),
+        hit.shape_index.reshape(shape),
+        hit.world_normals.reshape(*shape, 3),
+        hit.keys,
+    )
 
 
 def raycast_scene(model, poses, origins_m, directions, *, world=0, near_m=0.0, far_m=np.inf):
@@ -349,6 +359,12 @@ def raycast_scene(model, poses, origins_m, directions, *, world=0, near_m=0.0, f
         for key, slots in groups:
             eye = origins if origins.ndim == 1 else origins[slots]
             hit = _cast_unit(model, poses, eye, rays[slots], key, near, far)
-            depth[slots], labels[slots], normals[slots] = hit.distance_m, hit.shape_index, hit.world_normals
-        result = RayHits(_frozen(depth), _frozen(labels), _frozen(normals), tuple(s.key for s in model.shapes))
+            depth[slots], labels[slots], normals[slots] = (
+                hit.distance_m,
+                hit.shape_index,
+                hit.world_normals,
+            )
+        result = RayHits(
+            _frozen(depth), _frozen(labels), _frozen(normals), tuple(s.key for s in model.shapes)
+        )
         return _ray_shape(result, shape)

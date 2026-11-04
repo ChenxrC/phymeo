@@ -1,5 +1,7 @@
 # 机器人资产的关节区间与连续碰撞
 
+2026-11-04 后续新增双活动转铰的球–球连续路径，支持异向轴和前置滑轨。本文的单铰链能力、当时的双铰链拒绝和旧收据保留为首轮基线。[双铰链实测](p65-two-hinge-ellipse.md#双铰链连续检测)
+
 `asset.collision_motion(q, q_end)` 返回所有已注册形状在直线关节坐标区间上的世界路径，可直接作为 `detect` 的 motions 参数。`asset.collision_motion(q=q)` 仍返回原静态姿态。归一化时间 t 对应 q(t)=q+t(q_end−q)。例如可以传入一次真实积分漂移的首末关节坐标；若一个显示帧内有多个加速度不同的物理子步，应按原物理漂移分别构造区间。[关节路径实现](../../src/phymeo/builders/_robot_joint_motion.py) · [普通资产入口](../../src/phymeo/builders/_robot_asset.py) · [USD authored-frame 入口](../../src/phymeo/builders/usd.py)
 
 ## 每个碰撞体的运动

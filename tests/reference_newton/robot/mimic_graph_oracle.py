@@ -11,7 +11,7 @@ def kkt(mass, bias, external, motor, C):
     return answer[: len(mass)], answer[len(mass) :]
 
 
-def fan():
+def fan(*, both_loaded=False):
     names = ("lift", "screw", "idler", "meter")
     q = np.array([0.02, 0.005, -0.001, 0.0045])
     v = np.array([0.04, 0.025, -0.025, 0.0125])
@@ -20,6 +20,8 @@ def fan():
     mass = np.diag([1.9, 0.2, 0.3, 0.4])
     bias = np.zeros(4)
     F = np.array([[0.0, 0.0, 0.0], [-0.7, 0, 0.0], [1.1, 0, 0.5], [-1.6, 0, -0.1]])
+    if both_loaded:
+        F[2:, 0] = [3.5, -3.2]
     W = np.zeros_like(F)
     motor = np.array([0.25, 0.4, 0.0, 0.0])
     ext = np.r_[F[:, 2].sum(), F[1:, 0]]
@@ -44,6 +46,7 @@ def fan():
         point_offset=[0.03125, 0, 0],
         energy=0.5 * v @ mass @ v,
         body_energy=physical_energies,
+        expected_multipliers=(-0.8, 1.4) if both_loaded else (0.0, 13.0 / 15.0),
         row_names=(("screw", "idler"), ("screw", "meter")),
     )
 

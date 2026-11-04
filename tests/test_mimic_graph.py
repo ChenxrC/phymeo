@@ -19,7 +19,13 @@ ROOT = Path(__file__).parent / "reference_newton" / "robot"
 
 
 @pytest.mark.parametrize(
-    "case,ref", [("fan", fan()), ("chain", serial()), ("chain", serial(-0.16, -0.24))]
+    "case,ref",
+    [
+        ("fan", fan()),
+        pytest.param("fan", fan(both_loaded=True), id="both-fan-rows"),
+        ("chain", serial()),
+        ("chain", serial(-0.16, -0.24)),
+    ],
 )
 def test_each_original_transmission_row_matches_full_kkt_and_total_body_energy(case, ref):
     asset = load_mimic_urdf(ROOT / f"mimic_{case}.urdf", gravity=(0, 0, 0))
@@ -52,6 +58,8 @@ def test_each_original_transmission_row_matches_full_kkt_and_total_body_energy(c
     J, _ = point_jacobians(asset.tree.model, full.q, [idx], p)
     np.testing.assert_allclose(asset.project_jacobian(J)[0], ref["J"] @ ref["P"], atol=5e-14)
     qdd, multipliers = kkt(ref["mass"], ref["bias"], ref["external"], ref["motor"], ref["C"])
+    if case == "fan":
+        np.testing.assert_allclose(multipliers, ref["expected_multipliers"], rtol=0, atol=3e-14)
     shot = asset.step(
         state,
         effort=ref["motor"][ids],

@@ -105,9 +105,15 @@ def test_rejected_world_drops_prior_stages_and_retries_with_no_contamination(tyx
         assert out[1].stages == () and out[1].state is before[1] and batch.last_result(1) is None
         assert out[2].reason == "undefined_normal" and out[2].state is before[2]
         assert out[3].accepted and out[3].state.tick == 1
-        retry = batch.step_substepped(0.5, substeps=8)
-        assert retry[1].accepted and retry[1].state.tick == 1
-        assert retry[2].state is before[2] and retry[3].state.tick == 2
+        neighbor = batch.last_result(3)
+        with pytest.raises(ValueError, match="unselected"):
+            batch.step_substepped(0.5, keys=[1], forces={3: {1: (1, 0, 0)}})
+        retry = batch.step_substepped(0.5, substeps=8, keys=[1])
+        assert tuple(retry) == (1,) and retry[1].accepted and retry[1].state.tick == 1
+        assert batch.snapshot()[2] is before[2]
+        assert batch.snapshot()[3] is neighbor.state and batch.last_result(3) is neighbor
+        counts = batch.stats()
+        assert not batch.step_substepped(0.5, keys=[]) and batch.stats() == counts
 
 
 def test_late_driver_failure_has_no_visible_partial_macrostep(tyx_mode, tmp_path, monkeypatch):
@@ -149,3 +155,29 @@ def test_energy_gate_and_resource_limits_remain_effective(tyx_mode, tmp_path):
         assert out.reason == "contact_energy_gain" and out.state is saved[7]
         assert out.failure.kind == "initial_impulse" and out.stages == ()
         assert out.failure.report.energy_components[0].normal_work_j == pytest.approx(0.25, abs=1e-5)
+
+
+def test_initial_impulse_adds_no_extra_duration_or_external_impulse(tyx_mode, tmp_path):
+    base = glancing()
+    g = (0, 0, -4)
+    spec = SphereIslandWorld(tuple((i, sphere(s.position, s.velocity, g=g)) for i, s in base.bodies))
+    with TyxSphereIslandBatch([(5, spec)], tyx_mode, cache_root=tmp_path) as batch:
+        out = batch.step_substepped(0.25, substeps=4, forces={5: {1: (0, 0, 8), 2: (0, 0, 8)}})[5]
+        assert out.accepted and sum(s.end_s - s.start_s for s in out.stages) == 0.25
+        first = out.stages[0]
+        assert first.kind == "initial_impulse" and first.start_s == first.end_s == 0
+        assert all(b.velocity[2] == 0 for b in first.report.state.bodies.values())
+        for b in out.state.bodies.values():
+            # For each 1 kg sphere, integral of (8 N − 4 N) dt = 1 N s.
+            assert b.velocity[2] == 1
+            assert b.position[2] == 5 / 32
+        assert batch.last_result(5) is out
+        assert batch.step(1 / 64)[5].state.tick == 2
+
+
+def test_unrepresentable_time_partition_rejects_before_device_allocation(tyx_mode, tmp_path):
+    with TyxSphereIslandBatch([(11, glancing())], tyx_mode, cache_root=tmp_path) as batch:
+        saved = batch.snapshot()
+        with pytest.raises(ValueError, match="FP32"):
+            batch.step_substepped(np.finfo(np.float32).tiny, substeps=64)
+        assert batch.snapshot() == saved and batch.stats()["device_allocations"] == 0

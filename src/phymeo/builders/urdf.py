@@ -179,6 +179,22 @@ def _link_collisions(link, link_name, link_index, xml_path):
     return result
 
 
+def _read_tree(path):
+    try:
+        robot = ET.parse(path).getroot()
+    except ET.ParseError as exc:
+        raise ValueError(f"Invalid URDF XML in {path}: {exc}") from exc
+    if robot.tag != "robot":
+        raise ValueError("URDF root element must be <robot>")
+    _attributes(robot, {"name", "version"}, "robot")
+    if robot.get("version", "1.0") != "1.0":
+        raise ValueError(f"Unsupported URDF version {robot.get('version')!r}, expected 1.0")
+    name = _name(robot, "name", "robot")
+    _children(robot, {"link", "joint", "material"}, f"robot {name!r}")
+    root, links, order, inbound = _tree(robot)
+    return name, root, links, order, inbound
+
+
 def load_urdf(
     path: str | Path, *, gravity=(0.0, 0.0, -9.81), collapse_fixed_joints=None
 ) -> RobotAsset:
@@ -196,18 +212,7 @@ def load_urdf(
     Visuals and global display materials are ignored. Other joint/shape types
     and semantic elements (e.g. mimic or joint dynamics) raise ValueError.
     """
-    try:
-        robot = ET.parse(path).getroot()
-    except ET.ParseError as exc:
-        raise ValueError(f"Invalid URDF XML in {path}: {exc}") from exc
-    if robot.tag != "robot":
-        raise ValueError("URDF root element must be <robot>")
-    _attributes(robot, {"name", "version"}, "robot")
-    if robot.get("version", "1.0") != "1.0":
-        raise ValueError(f"Unsupported URDF version {robot.get('version')!r}, expected 1.0")
-    name = _name(robot, "name", "robot")
-    _children(robot, {"link", "joint", "material"}, f"robot {name!r}")
-    root, links, order, inbound = _tree(robot)
+    name, root, links, order, inbound = _read_tree(path)
     if collapse_fixed_joints is not None and not isinstance(
         collapse_fixed_joints, (bool, np.bool_)
     ):

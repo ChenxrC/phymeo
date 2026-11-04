@@ -20,6 +20,7 @@ from ..control.bounded_pd import solve_bounded_pd
 from ..core.rigid import RigidBodyInputs, RigidBodyModel, RigidBodyState
 from ..core.robot import RobotState
 from ..core.validation import finite_real, validate_dt
+from ..dynamics.joint_mimic import MimicLoads, MimicRobotAsset
 from ..dynamics.robot_dynamics import _solve_mass_matrix, robot_dynamics_terms
 from ..dynamics.robot_kinematics import _point_jacobians_at
 from ..dynamics.rotation import quaternion_matrix
@@ -140,6 +141,9 @@ class RobotPayloadObservation:
     load on the payload about its COM. fixed_table_wrench combines the opposite
     payload reaction and all robot link reactions about the table centre.
     contact_effort includes every robot contact once; drive_effort is separate.
+    q/v and all commands use independent coordinates. full_q/full_v are the
+    actual joint tree coordinates. mimic_loads holds the previous step's passive
+    coupling reaction when a mechanical linkage was loaded.
     """
 
     step_number: int
@@ -164,6 +168,9 @@ class RobotPayloadObservation:
     fixed_table_wrench: np.ndarray
     structural_contacts: tuple
     link_table_contacts: tuple
+    full_q: np.ndarray
+    full_v: np.ndarray
+    mimic_loads: MimicLoads | None
 
 
 class RobotPayloadScene:
@@ -197,6 +204,8 @@ class RobotPayloadScene:
         structure_material=RobotContactMaterial(6000.0, 16.0, 0.35, 0.04),
     ):
         self._asset = asset
+        self._mimic = asset if isinstance(asset, MimicRobotAsset) else None
+        self._tree = asset.tree if self._mimic is not None else asset
         self._dt = float(validate_dt(dt_s, np.float64))
         mass_kg = finite_real(mass_kg, "mass_kg")
         if mass_kg <= 0:
@@ -211,7 +220,7 @@ class RobotPayloadScene:
             payload_table_material,
             structure_material,
         )
-        n = asset.model.dof_count
+        n = len(asset.joint_names)
         self._kp, self._kd = _vector(kp, n, "kp"), _vector(kd, n, "kd")
         if np.any(self._kp < 0) or np.any(self._kd < 0):
             raise ValueError("controller gains must be nonnegative")
@@ -231,26 +240,26 @@ class RobotPayloadScene:
         self._check_q(robot_state.q)
         self._payload = SampledPayload(payload_geometry=payload_geometry)
         self._rigid = RigidBodyModel(
-            np.array([1 / mass_kg]), self._payload.inertia(mass_kg)[None], asset.model.gravity
+            np.array([1 / mass_kg]), self._payload.inertia(mass_kg)[None], self._tree.model.gravity
         )
         self._integrator = RigidSemiImplicitSolver()
-        self._indices, self._local_points, self._pad_keys, excluded = _pad_points(asset, pads)
+        self._indices, self._local_points, self._pad_keys, excluded = _pad_points(self._tree, pads)
         registry = TableLinkSolids if self._payload.radius is None else SphereLinkContacts
-        self._structure = registry.from_asset(asset, exclude_keys=excluded)
+        self._structure = registry.from_asset(self._tree, exclude_keys=excluded)
         self._table = FixedTableContacts.from_asset(
-            asset,
+            self._tree,
             center_m=table_center_m,
             half_extents_m=table_half_extents_m,
             orientation_xyzw=table_orientation_xyzw,
             material=structure_material,
         )
         self._check_box_domain(payload_state)
-        shapes = asset.collision_model.shapes
+        shapes = self._tree.collision_model.shapes
         worlds = {s.key.world for s in shapes}
         if len(worlds) > 1:
             raise ValueError("robot asset must belong to one world")
         world = next(iter(worlds), 0)
-        index = 1 + max([n, *(s.key.body for s in shapes)])
+        index = 1 + max([self._tree.model.dof_count, *(s.key.body for s in shapes)])
         self._object_key, self._table_key = (
             CollisionKey(world, index, 0),
             CollisionKey(world, index + 1, 0),
@@ -261,10 +270,10 @@ class RobotPayloadScene:
             else CollisionShape(self._object_key, "hull", tuple(range(8)))
         )
         table = CollisionShape(self._table_key, "hull", tuple(range(8)))
-        self._model = CollisionModel((*shapes, obj, table), asset.collision_model.excluded)
+        self._model = CollisionModel((*shapes, obj, table), self._tree.collision_model.excluded)
         self._names = MappingProxyType(
             {
-                **{c.shape.key: c.name for c in asset.collisions},
+                **{c.shape.key: c.name for c in self._tree.collisions},
                 self._object_key: "payload",
                 self._table_key: "table",
             }
@@ -338,16 +347,19 @@ class RobotPayloadScene:
         table_reaction,
         structural,
         links,
+        mimic_loads=None,
     ):
+        q, v = _readonly(arm.q), _readonly(arm.v)
+        full = self._mimic.full_state(arm) if self._mimic is not None else None
         return RobotPayloadObservation(
             step,
             step * self._dt,
             (step - 1) * self._dt if step else None,
+            q,
+            v,
             *map(
                 _readonly,
                 (
-                    arm.q,
-                    arm.v,
                     body.position[0],
                     body.orientation[0],
                     body.velocity[0],
@@ -361,6 +373,9 @@ class RobotPayloadScene:
             *map(_readonly, (pad_points, pad_forces, normals, table_load, table_reaction)),
             _frozen(structural),
             _frozen(links),
+            q if full is None else _readonly(full.q),
+            v if full is None else _readonly(full.v),
+            mimic_loads,
         )
 
     def observe(self):
@@ -413,11 +428,19 @@ class RobotPayloadScene:
             raise ValueError(
                 "command effort limit must be nonnegative and within configured rating"
             )
-        geo, linear, angular, mass, bias = robot_dynamics_terms(self._asset.model, arm)
-        ff = bias if feedforward is None else _vector(feedforward, n, "feedforward")
+        mechanism = self._mimic
+        physical = arm if mechanism is None else mechanism.full_state(arm)
+        geo, linear, angular, mass, bias = robot_dynamics_terms(self._tree.model, physical)
+        effective_mass, effective_bias = mass, bias
+        if mechanism is not None:
+            if np.any(abs(rate) > mechanism.velocity_limit):
+                raise ValueError("command velocity outside driver/follower limit")
+            P = mechanism.matrix
+            effective_mass, effective_bias = P.T @ mass @ P, P.T @ bias
+        ff = effective_bias if feedforward is None else _vector(feedforward, n, "feedforward")
         effort = solve_bounded_pd(
-            mass,
-            bias,
+            effective_mass,
+            effective_bias,
             arm.q,
             arm.v,
             target,
@@ -432,7 +455,7 @@ class RobotPayloadScene:
             geo.position,
             geo.rotation,
             geo.com_position,
-            np.column_stack((linear @ arm.v, angular @ arm.v)),
+            np.column_stack((linear @ physical.v, angular @ physical.v)),
         )
         c, v, w = body.position[0], body.velocity[0], body.angular_velocity[0]
         R = quaternion_matrix(body.orientation)[0]
@@ -447,7 +470,7 @@ class RobotPayloadScene:
                 w,
                 self._structure_law,
                 payload_rotation=R,
-                fixed_reference_m=self._asset.root_xyz,
+                fixed_reference_m=self._tree.root_xyz,
             )
         else:
             structure = self._structure.evaluate(
@@ -457,7 +480,7 @@ class RobotPayloadScene:
                 v,
                 w,
                 self._structure_law,
-                fixed_reference_m=self._asset.root_xyz,
+                fixed_reference_m=self._tree.root_xyz,
             )
         for row in structure.contacts:
             if "table_material_weights" in row:
@@ -469,8 +492,8 @@ class RobotPayloadScene:
         pts = geo.position[ids] + np.einsum("nij,nj->ni", geo.rotation[ids], local)
         pad_forces, normal_loads = np.empty((0, 3)), np.empty(0)
         if len(ids):
-            jac, _ = _point_jacobians_at(self._asset.model, geo, ids, local)
-            pads = payload.pad_loads(pts, jac @ arm.v, c, R, v, w, self._pad_law)
+            jac, _ = _point_jacobians_at(self._tree.model, geo, ids, local)
+            pads = payload.pad_loads(pts, jac @ physical.v, c, R, v, w, self._pad_law)
             joint_load += np.einsum("nki,nk->i", jac, pads.forces)
             wrench += np.r_[pads.body_force, pads.body_torque]
             pad_forces, normal_loads = pads.forces, pads.normal_loads
@@ -496,7 +519,14 @@ class RobotPayloadScene:
         )
         if not result.report.accepted:
             raise ValueError(result.report.reason)
-        new_v = arm.v + self._dt * _solve_mass_matrix(mass, effort + joint_load - bias)
+        effective_load = joint_load if mechanism is None else mechanism.matrix.T @ joint_load
+        accel = _solve_mass_matrix(effective_mass, effort + effective_load - effective_bias)
+        mimic_loads = (
+            None
+            if mechanism is None
+            else mechanism._receipt(arm, mass, bias, effort, joint_load, accel)
+        )
+        new_v = arm.v + self._dt * accel
         new_arm = RobotState(arm.q + self._dt * new_v, new_v)
         self._check_q(new_arm.q)
         self._check_box_domain(result.state)
@@ -506,7 +536,7 @@ class RobotPayloadScene:
             result.state,
             (target, rate, cap),
             effort,
-            joint_load,
+            effective_load,
             pts,
             pad_forces,
             normal_loads,
@@ -514,6 +544,7 @@ class RobotPayloadScene:
             table_reaction,
             structure.contacts,
             link_table.contacts,
+            mimic_loads,
         )
         self._arm, self._body, self._observation = new_arm, result.state, observation
         return observation

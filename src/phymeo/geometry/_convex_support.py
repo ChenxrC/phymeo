@@ -1,6 +1,7 @@
 """Static convex material features using support witnesses on the Minkowski difference."""
 
 from dataclasses import dataclass
+from fractions import Fraction
 from itertools import combinations
 
 import numpy as np
@@ -8,6 +9,8 @@ import numpy as np
 from ..core.capabilities import SolverFailure
 from ._convex_hull import HullShape
 from ._curved_solids import _rotation
+from ._prism_pair_exact import sqrt_bounds
+from ._round_sweep import _vector, _xyz
 from ._triangle_pair_sweep import _FacePath
 from .collision_witness import CollisionWitness
 
@@ -331,6 +334,72 @@ class _Query:
         raise SolverFailure("support_distance_capacity")
 
 
+def _contained_cone_sphere(a, b, ma, mb):
+    """Signed distance to the nearer base or lateral surface in the cone's meridian."""
+    cone_first = a.kind == "cone"
+    cone, ball, mc, ms = (a, b, ma, mb) if cone_first else (b, a, mb, ma)
+    r, h = _vector(cone.curved.dimensions_m)
+    frame = _rotation(cone.curved, mc)
+    cone_center, center = _vector(mc.start[0]), _vector(ms.start[0])
+    x, y, z = frame.T @ (center - cone_center)
+    if not -h < z < h:
+        return None
+    radial = sqrt_bounds(x * x + y * y, 96)
+    side_length = sqrt_bounds(r * r + 4 * h * h, 96)
+    clearance = r * (h - z)
+    if clearance <= 2 * h * radial[1]:
+        return None
+    # For an interior point the perpendicular foot lies on the finite sloping
+    # segment, and the vertical projection is in the base disk.
+    side_lo = (clearance - 2 * h * radial[1]) / side_length[1]
+    side_hi = (clearance - 2 * h * radial[0]) / side_length[0]
+    base = h + z
+    lo, hi = min(base, side_lo), min(base, side_hi)
+    depth = (lo + hi) / 2
+    radius = Fraction(ball.radius)
+    n = None
+    if base < side_lo:
+        n = -frame[:, 2]
+    elif side_hi < base and radial[0]:
+        length = sum(side_length) / 2
+        scale = 2 * h / (sum(radial) / 2)
+        n = frame @ np.array([scale * x, scale * y, r], dtype=object) / length
+    pa = pb = oa = ob = None
+    wa, wb = ((cone.vertex_ids[0], 1.0),), ((ball.vertex_ids[0], 1.0),)
+    if n is not None:
+        cone_offset, ball_offset = center - cone_center + depth * n, -radius * n
+        pa, pb = _xyz(cone_center + cone_offset), _xyz(center + ball_offset)
+        if np.spacing(np.abs((pa, pb))).max() > _TOL_M:
+            raise SolverFailure("support_world_witness_resolution")
+        oa, ob = _xyz(cone_offset), _xyz(ball_offset)
+    if not cone_first:
+        pa, pb, wa, wb, oa, ob = pb, pa, wb, wa, ob, oa
+        if n is not None:
+            n = -n
+    gap = float(-depth - radius)
+    if not np.isfinite(gap) or gap >= 0:
+        raise SolverFailure("support_coordinate_resolution")
+    witness = CollisionWitness(
+        gap,
+        None if n is None else _xyz(n),
+        pa,
+        pb,
+        wa,
+        wb,
+        "host-cone-interior",
+        first_offset=oa,
+        second_offset=ob,
+    )
+    trace = ConvexSupportTrace(
+        "cone_meridian",
+        np.nextafter(float(-hi - radius), -np.inf),
+        np.nextafter(float(-lo - radius), np.inf),
+        0,
+        0,
+    )
+    return "overlap", "cone_interior", witness, trace
+
+
 def static_convex_support(a, b, ma, mb):
     """Return one bounded-distance observation for two registered, finite convex bodies."""
     if a.kind not in _KINDS or b.kind not in _KINDS or ma.moving or mb.moving:
@@ -341,6 +410,10 @@ def static_convex_support(a, b, ma, mb):
         return "unsupported", "convex_hull_offset", None, None
     try:
         with np.errstate(over="raise", invalid="raise", divide="raise"):
+            if {a.kind, b.kind} == {"cone", "sphere"}:
+                interior = _contained_cone_sphere(a, b, ma, mb)
+                if interior is not None:
+                    return interior
             return _Query(a, b, ma, mb).result()
     except ValueError as error:
         return "invalid_geometry", str(error), None, None

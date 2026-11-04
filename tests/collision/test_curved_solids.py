@@ -194,10 +194,15 @@ def test_bounds_include_rotated_shape_and_motion_has_no_manufactured_toi():
     assert lo <= 23/64 <= hi and hi-lo < 1e-4
     arc = ph.CollisionMotion([[-2, 0, 0]], turn=ph.RigidTurn((0,0,0),(0,0,0),(0,0,1),np.pi))
     (pair,) = query(model, {c:arc, o:paths[o]}, margin=0).pairs
-    assert pair.candidate and pair.status=="unsupported" and pair.sweep is None and pair.witness is None
+    assert pair.candidate and pair.status == "separated"
+    assert pair.sweep.first_t is None and pair.support_map.time_cells >= 1
+    # Both ends and the entire equatorial orbit keep the same radial clearance.
+    expected = 2 - 0.5 - 0.0625
+    assert pair.sweep.start_gap_m == pytest.approx(expected, abs=2e-6)
+    assert pair.sweep.end_gap_m == pytest.approx(expected, abs=2e-6)
 
 
-def test_curved_geometry_validation_and_unhandled_pair():
+def test_curved_geometry_validation_and_initial_cone_containment():
     for kind, dims, quat in (
         ("cone", (1, 0), IDENTITY),
         ("sphere", (1, 2), IDENTITY),
@@ -226,7 +231,11 @@ def test_curved_geometry_validation_and_unhandled_pair():
     assert inside.support_map.gap_lower_m <= signed <= inside.support_map.gap_upper_m
     moving = paths | {ball: ph.CollisionMotion(paths[ball].start,turn=ph.RigidTurn((0,0,0),(0,0,0),(0,1,0),0.7))}
     (pair,) = query(model, moving).pairs
-    assert pair.candidate and pair.status == "unsupported" and pair.witness is None
+    assert pair.candidate and pair.status == "hit"
+    assert pair.sweep.first_t == (0.0, 0.0)
+    assert pair.sweep.start_gap_m == pytest.approx(signed, abs=2e-6)
+    # Axial containment has an entire ring of equally near lateral points.
+    assert pair.sweep.witness.normal is None
 
 
 def test_rim_tangency_distinguishes_adjacent_binary_pose():

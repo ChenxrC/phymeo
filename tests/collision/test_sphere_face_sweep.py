@@ -185,7 +185,7 @@ def test_irrational_first_touch_on_a_tilting_face(tmp_path):
     save(tmp_path, "irrational_tilt", model, paths, row)
 
 
-def test_curved_ball_and_finite_face_thickness_keep_unsupported_candidates():
+def test_curved_ball_hits_thin_face_and_finite_offset_stays_unsupported():
     model, paths, face, ball = authored("base")
     turn = ph.RigidTurn((0, 0, 0), (0, 0, 0), (0, 1, 0), np.pi)
     curved = {**paths, ball: ph.CollisionMotion(paths[ball].start, turn=turn)}
@@ -195,6 +195,15 @@ def test_curved_ball_and_finite_face_thickness_keep_unsupported_candidates():
             ph.CollisionShape(ball, "sphere", (19,), 0.25),
         ]
     )
-    for m, p in ((model, curved), (altered, paths)):
-        row = query(m, p)
-        assert row.candidate and row.status == "unsupported" and row.sweep is None
+    row = query(model, curved)
+    assert row.candidate and row.status == "hit"
+    # The centre rotates at radius 1/2 above z=0. At t=1/3 the bottom
+    # reaches the interior at x=sqrt(3)/4, before the centre crosses.
+    lo, hi = row.sweep.first_t
+    assert lo <= 1 / 3 <= hi and hi - lo < 1 / 1024
+    w = row.sweep.witness
+    assert set(dict(w.first_weights)) == set(IDS)
+    assert w.first_point[0] == pytest.approx(np.sqrt(3) / 4, abs=1e-4)
+
+    thick = query(altered, paths)
+    assert thick.candidate and thick.status == "unsupported" and thick.sweep is None

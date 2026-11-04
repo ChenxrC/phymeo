@@ -220,7 +220,18 @@ def test_full_turn_and_moving_pivot_keep_mid_arc_candidate(sign):
     with ph.CollisionWorkspace(model) as work:
         out = ph.detect(model, paths, ph.CollisionPolicy(), work)
         (row,) = out.pairs
-        assert row.candidate and row.status == "unsupported" and row.witness is None
+        assert row.candidate and row.status == "hit"
+        lo, hi = row.sweep.first_t
+        assert 0 < lo <= hi < 0.25
+        # The approaching centre is (t + 2 cos(2 pi t), ±2 sin(2 pi t), 0).
+        # Independent signed gaps bracket the sum of radii at first contact.
+        def gap(t):
+            angle = 2 * np.pi * t
+            return np.hypot(t + 2 * np.cos(angle) - 0.25, 2 * np.sin(angle) - 2) - 0.125
+
+        assert gap(lo) >= -1e-12 and gap(hi) <= 1e-12
+        assert hi - lo < 1 / 1024
+        assert row.sweep.start_gap_m > 0 and row.sweep.end_gap_m > 0
         assert out.bounds[0].lower[1] <= 2 * sign <= out.bounds[0].upper[1]
 
 

@@ -549,7 +549,9 @@ class TyxSphereIslandBatch:
             result = self._trial(self._states, initial, external, capacity, h, iterations)
             return self._publish(result)
 
-    def step_substepped(self, h, *, substeps=8, keys=None, forces=None, contact_capacity=None, iterations=96):
+    def step_substepped(
+        self, h, *, substeps=8, keys=None, forces=None, contact_capacity=None, iterations=96
+    ):
         """Advance one public tick through 1–64 dyadic substeps, publishing once per world.
 
         A closing, exactly touching initial configuration may first receive an impulse at t=0.

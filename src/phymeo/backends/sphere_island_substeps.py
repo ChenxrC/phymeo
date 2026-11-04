@@ -72,8 +72,10 @@ def _closing_at_start(spec, state):
 def advance(batch, h, substeps, keys, forces, contact_capacity, iterations):
     """Called with the batch lock held. Trials touch its device scratch but never its checkpoints."""
     if (
-        isinstance(substeps, (bool, np.bool_)) or not isinstance(substeps, Integral)
-        or not 1 <= substeps <= 64 or int(substeps) & (int(substeps) - 1)
+        isinstance(substeps, (bool, np.bool_))
+        or not isinstance(substeps, Integral)
+        or not 1 <= substeps <= 64
+        or int(substeps) & (int(substeps) - 1)
     ):
         raise ValueError("substeps must be a power of two in [1,64]")
     count = int(substeps)
@@ -82,7 +84,12 @@ def advance(batch, h, substeps, keys, forces, contact_capacity, iterations):
     if not dt or dt * count != h:
         raise ValueError("substeps must exactly cover the supported positive FP32 interval")
     selected = batch._keys(keys)
-    if any(k not in selected for packet in (forces, contact_capacity) if packet is not None for k in packet):
+    if any(
+        k not in selected
+        for packet in (forces, contact_capacity)
+        if packet is not None
+        for k in packet
+    ):
         raise ValueError("force or capacity names an unselected world")
     if not selected:
         return MappingProxyType({})
@@ -100,13 +107,26 @@ def advance(batch, h, substeps, keys, forces, contact_capacity, iterations):
                     body.position != original.bodies[local].position
                     for local, body in row.state.bodies.items()
                 ):
-                    row = replace(row, accepted=False, reason="initial_impulse_changed_pose",
-                                  state=original, contacts=())
+                    row = replace(
+                        row,
+                        accepted=False,
+                        reason="initial_impulse_changed_pose",
+                        state=original,
+                        contacts=(),
+                    )
             if not row.accepted:
                 # Earlier candidate stages and their impulses never become public commitments.
                 completed = sum(s.kind == "advance" for s in history[key])
-                outcome[key] = SphereIslandAdvance(False, row.reason, h, count, completed, original, (),
-                                                    SphereIslandStage(kind, start_s, end_s, row))
+                outcome[key] = SphereIslandAdvance(
+                    False,
+                    row.reason,
+                    h,
+                    count,
+                    completed,
+                    original,
+                    (),
+                    SphereIslandStage(kind, start_s, end_s, row),
+                )
                 del active[key]
                 history[key].clear()
                 continue
@@ -125,5 +145,7 @@ def advance(batch, h, substeps, keys, forces, contact_capacity, iterations):
             break
         stage("advance", i * dt, (i + 1) * dt, active, external)
     for key, state in active.items():
-        outcome[key] = SphereIslandAdvance(True, None, h, count, count, state, tuple(history[key]), None)
+        outcome[key] = SphereIslandAdvance(
+            True, None, h, count, count, state, tuple(history[key]), None
+        )
     return batch._publish({key: outcome[key] for key in starting})

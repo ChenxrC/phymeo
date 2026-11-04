@@ -225,8 +225,7 @@ class FoldedMaterialChart:
             raise SolverFailure("material station on an endpoint tie at the hinge")
         return int(signed > 0)
 
-    def trace(self, x, last, width, eps):
-        dx = last - x
+    def intervals(self, x, last, width, eps):
         c0 = (x[1] + x[2]) / 2
         c1 = (last[1] + last[2]) / 2
         u, length = _unit(x[2] - x[1])
@@ -333,7 +332,6 @@ class FoldedMaterialChart:
         else:
             pieces = ((0.0, 1.0, source),)
         out = []
-        error = 0.0
         for a, b, side in pieces:
             arm, velocity = arms[side]
             numerator = _bilinear(r, dr, arm, velocity, lambda q, v: q @ np.cross(v, u))
@@ -344,9 +342,16 @@ class FoldedMaterialChart:
                 raise SolverFailure(
                     "cannot certify positive compression across this folded interval"
                 )
+            out.append((side, a, b, (float(low), float(high))))
+        return tuple(out), bracket
+
+    def trace(self, x, last, width, eps):
+        pieces, bracket = self.intervals(x, last, width, eps)
+        dx = last - x
+        out = []
+        error = 0.0
+        for side, a, b, gap_bounds in pieces:
             integrated, diff = _integrate(x, dx, side, a, b)
-            out.append(
-                FoldInterval(side, a, b, (float(low), float(high)), integrated[0], integrated[1])
-            )
+            out.append(FoldInterval(side, a, b, gap_bounds, integrated[0], integrated[1]))
             error += diff
         return FoldTrace(tuple(out), sum(leg.rows for leg in out), bracket, error)

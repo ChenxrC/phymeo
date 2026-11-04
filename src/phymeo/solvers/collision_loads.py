@@ -310,33 +310,37 @@ class CollisionLoadSystem:
                 raise ValueError("rigid attachment row exceeds state")
             local = np.array(b.vertices)
             start = local @ rotations[r].T + state.rigid.position[r]
+            q0 = state.rigid.orientation[r]
             body_frame = None
             if s.curved is not None:
-                q0 = state.rigid.orientation[r].astype(float)
-                body_frame = q0 / np.hypot.reduce(q0)
+                q_unit = q0.astype(float)
+                body_frame = q_unit / np.hypot.reduce(q_unit)
             if end is None:
                 out[s.key] = CollisionMotion(start, body_orientation_xyzw=body_frame)
                 continue
-            if body_frame is not None:
+            # A sphere centered at an offset rotates around the body's COM, including
+            # full turns whose endpoint orientations represent the very same pose.
+            offset_ball = s.kind == "sphere" and np.any(local)
+            if body_frame is not None or offset_ball:
                 if (
                     dt is None
                     or getattr(rigid_solver, "rigid_motion_contract", None)
                     != SEMI_IMPLICIT_WORLD_OMEGA
                 ):
-                    raise SolverFailure(
-                        "attached curved solid requires a bound physical angular drift"
-                    )
+                    raise SolverFailure("rotating geometry requires a bound physical angular drift")
                 omega = end.rigid.angular_velocity[r].astype(float)
                 speed = float(np.hypot.reduce(omega))
                 axis = (1.0, 0.0, 0.0) if not speed else omega / speed
-                expected = advance_world_orientation(body_frame[None, :], omega[None, :], dt)[0]
+                expected = advance_world_orientation(q0.astype(float)[None, :], omega[None, :], dt)[
+                    0
+                ]
                 q1 = end.rigid.orientation[r]
                 if (
                     min(np.linalg.norm(q1 - expected), np.linalg.norm(q1 + expected))
                     > 16 * np.finfo(q1.dtype).eps
                 ):
                     raise SolverFailure(
-                        "curved attachment orientation differs from physical angular drift"
+                        "attachment orientation differs from physical angular drift"
                     )
                 turn = RigidTurn(
                     tuple(state.rigid.position[r]), tuple(end.rigid.position[r]), axis, speed * dt
@@ -350,10 +354,8 @@ class CollisionLoadSystem:
                 raise SolverFailure(
                     "attached capsule requires bound continuous rigid motion for translation"
                 )
-            q0, q1 = state.rigid.orientation[r], end.rigid.orientation[r]
-            if not (np.array_equal(q0, q1) or np.array_equal(q0, -q1)) and (
-                s.kind != "sphere" or np.any(local)
-            ):
+            q1 = end.rigid.orientation[r]
+            if s.kind != "sphere" and not (np.array_equal(q0, q1) or np.array_equal(q0, -q1)):
                 raise SolverFailure(
                     "rotating attached shape needs supported continuous rigid motion"
                 )

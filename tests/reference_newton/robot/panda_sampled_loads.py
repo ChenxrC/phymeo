@@ -127,7 +127,7 @@ def run(urdf, inputs, device):
     pos_error = vel_error = 0.0
     momentum_error = max_limits = max_depth = 0.0
     other_margin = table_margin = np.inf
-    rows, stop = [], None
+    rows, stop, first_unresolved = [], None, None
     for step in range(n):
         t = step * dt
         q, v = state.joint_q.numpy()[iq].astype(float), state.joint_qd.numpy()[iv].astype(float)
@@ -152,7 +152,7 @@ def run(urdf, inputs, device):
                 float(np.max(np.abs(_world_points(geometry, frame_ids, local_points) - points))),
             )
             vel_error = max(vel_error, float(np.max(np.abs(jac @ v - speeds))))
-        gap, table_gap, _, _ = passive.clearances(
+        gap, table_gap, object_part, table_part = passive.clearances(
             geometry,
             body[payload, :3],
             quaternion_matrix(body[payload, None, 3:])[0],
@@ -161,6 +161,8 @@ def run(urdf, inputs, device):
             half,
             sphere_radius=shape.radius,
         )
+        if first_unresolved is None:
+            first_unresolved = passive.unresolved(step, t, gap, table_gap, object_part, table_part)
         other_margin, table_margin = min(other_margin, gap), min(table_margin, table_gap)
         state.clear_forces()
         state.body_f.assign(w.astype(np.float32))
@@ -264,6 +266,7 @@ def run(urdf, inputs, device):
         release_pad_force_N=final_pad,
         peak_bilateral_normal_N=max((min(r["pad_normal_N"]) for r in rows), default=None),
         max_pad_penetration_m=max_depth,
+        first_unresolved_structure=first_unresolved,
         other_robot_cube_axis_clearance_m=other_margin,
         robot_table_axis_clearance_m=table_margin,
         max_joint_limit_violation=max_limits,

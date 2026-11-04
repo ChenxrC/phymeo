@@ -69,6 +69,20 @@ class _PassiveGeometry:
         high = np.maximum.reduceat(points, self.starts, axis=0) + self.radii
         return np.max(np.maximum(low - extents, -extents - high), axis=1)
 
+    @staticmethod
+    def unresolved(step, time, object_gap, table_gap, object_shape, table_shape):
+        """First unchecked solid pair. Sphere/robot uses exact distances; the table audit uses bounds."""
+        if min(object_gap, table_gap) > 0:
+            return None
+        is_object = object_gap <= table_gap
+        return dict(
+            step_index=step,
+            t_before_s=time,
+            pair="robot_payload" if is_object else "robot_table",
+            shape=object_shape if is_object else table_shape,
+            clearance_m=min(object_gap, table_gap),
+        )
+
     def sphere_margins(self, points, center, radius):
         """Signed ball clearance to actual round primitives and URDF cuboids on the live arm."""
         margins = np.empty(len(self.starts))
@@ -254,7 +268,7 @@ def run_panda_cube(
     if not payload.fits_on_table(start_center, rotation, table_center, table_half):
         raise ValueError("initial payload extends beyond the finite tabletop footprint")
     cube_margin = table_margin = float("inf")
-    cube_minimum = table_minimum = None
+    cube_minimum = table_minimum = first_unresolved = None
     diagonal = payload.inertia(mass_kg)
     rigid = RigidBodyModel(np.array([1.0 / mass_kg]), diagonal[None, :], gravity)
     cube = RigidBodyState(
@@ -339,6 +353,10 @@ def run_panda_cube(
             table_half,
             sphere_radius=payload.radius,
         )
+        if first_unresolved is None:
+            first_unresolved = passive.unresolved(
+                step, t, cube_gap, table_gap, cube_shape, table_shape
+            )
         if cube_gap < cube_margin:
             cube_margin, cube_minimum = cube_gap, dict(t=t, shape=cube_shape)
         if table_gap < table_margin:
@@ -448,6 +466,7 @@ def run_panda_cube(
         min_carry_bilateral_normal_N=min_carry_bilateral,
         other_robot_cube_axis_clearance_m=cube_margin,
         robot_table_axis_clearance_m=table_margin,
+        first_unresolved_structure=first_unresolved,
         minimum_object_axis_clearance_at=cube_minimum,
         minimum_table_axis_clearance_at=table_minimum,
         final_target_error_m=target_error,

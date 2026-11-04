@@ -11,7 +11,7 @@ from threading import get_ident
 from time import perf_counter_ns
 from unittest.mock import patch
 
-from benchmark_multiface_phase_batch import H, STEPS, certify, make_world, summary, whole_window
+from benchmark_multiface_phase_batch import STEPS, H, certify, make_world, summary, whole_window
 
 import phymeo as ph
 from phymeo.backends import tyx_multiface_contact as group
@@ -101,7 +101,10 @@ class WallTimeline:
                 lead = next(reversed(controller.values()), "scheduler_or_other_caller")
                 if lead == "await_world":
                     blocked["caller_await_inclusive"] += dt
-                if len(work) > 1 or (work and lead not in ("await_world", "schedule_world", "scheduler_or_other_caller")):
+                if len(work) > 1 or (
+                    work
+                    and lead not in ("await_world", "schedule_world", "scheduler_or_other_caller")
+                ):
                     owner = "handoff_overlap"
                 elif work:
                     owner = work[0]
@@ -114,8 +117,13 @@ class WallTimeline:
                 del active[thread][token]
             previous = at
         assert sum(totals.values()) == end - begin and all(not x for x in active.values())
-        return dict(exclusive_ns=dict(totals), inclusive_wait_ns=dict(blocked),
-                    calls=dict(calls), main_thread=self.main, spans=spans)
+        return dict(
+            exclusive_ns=dict(totals),
+            inclusive_wait_ns=dict(blocked),
+            calls=dict(calls),
+            main_thread=self.main,
+            spans=spans,
+        )
 
 
 def main():
@@ -126,7 +134,9 @@ def main():
     args = cli.parse_args()
     if args.out.exists() or args.pairs < 1:
         cli.error("fresh output and positive pair count required")
-    settings = ph.StepSettings(substeps=1, position_iterations=1, velocity_iterations=1, record_substeps=True)
+    settings = ph.StepSettings(
+        substeps=1, position_iterations=1, velocity_iterations=1, record_substeps=True
+    )
     with ExitStack() as resources:
         solo = resources.enter_context(ph.TyxNormalLayer("cuda", cache_root=args.cache_root))
         worlds = [make_world(i, 8, solo) for i in range(4)]
@@ -136,10 +146,14 @@ def main():
         expected = summary(ordinary)
         for w, frames in zip(worlds, ordinary, strict=True):
             certify(w, frames)
-        batch = resources.enter_context(ph.TyxMultifaceContactBatch(
-            [(i, ph.ClothLinkWorld(w.program, w.initial)) for i, w in enumerate(worlds)],
-            "cuda", settings=settings, cache_root=args.cache_root
-        ))
+        batch = resources.enter_context(
+            ph.TyxMultifaceContactBatch(
+                [(i, ph.ClothLinkWorld(w.program, w.initial)) for i, w in enumerate(worlds)],
+                "cuda",
+                settings=settings,
+                cache_root=args.cache_root,
+            )
+        )
         controls = [{i: w.controls[t] for i, w in enumerate(worlds)} for t in range(STEPS)]
 
         def measure(traced):
@@ -158,8 +172,13 @@ def main():
             assert summary(frames) == expected
             after = batch.stats()
             diff = {k: v - counts[k] for k, v in after.items() if k != "backend"}
-            assert (diff["completed_launches"], diff["sites"], diff["uploaded_bytes"], diff["downloaded_bytes"]) == (12,416,79872,30720)
-            record = dict(wall_ns=stop-start, counts=diff)
+            assert (
+                diff["completed_launches"],
+                diff["sites"],
+                diff["uploaded_bytes"],
+                diff["downloaded_bytes"],
+            ) == (12, 416, 79872, 30720)
+            record = dict(wall_ns=stop - start, counts=diff)
             if traced:
                 record.update(timer.partition(start, stop))
                 c = record["calls"]
@@ -170,7 +189,7 @@ def main():
         measure(False)
         pairs = []
         for i in range(args.pairs):
-            order = ("plain","trace") if i % 2 == 0 else ("trace","plain")
+            order = ("plain", "trace") if i % 2 == 0 else ("trace", "plain")
             pairs.append({mode: measure(mode == "trace") for mode in order})
     output = dict(reference_hashes=expected, pairs=pairs)
     with args.out.open("x", encoding="utf-8") as file:

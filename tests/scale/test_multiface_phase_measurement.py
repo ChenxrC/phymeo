@@ -27,7 +27,10 @@ def test_one_wall_clock_excludes_parked_world_and_overlapping_caller_wait():
         "law_wrapper": 20,
         "kernel_submit": 20,
     }
-    assert result["inclusive_wait_ns"] == {"caller_await_inclusive": 40, "parked_world_stack_sum": 140}
+    assert result["inclusive_wait_ns"] == {
+        "caller_await_inclusive": 40,
+        "parked_world_stack_sum": 140,
+    }
     assert sum(result["exclusive_ns"].values()) == 100
 
 

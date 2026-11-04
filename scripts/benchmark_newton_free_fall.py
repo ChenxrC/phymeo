@@ -88,14 +88,26 @@ def measure(a, modules, factory, count, asymmetric=False):
             states = np.concatenate((first, subsequent))
             result.update(trajectory=states.tolist(), remainder=remainder, qualification_tick=tick)
         else:
+            trajectory = [initial[None], first] if a.trajectory_out is not None else None
             warm = []
             for _ in range(a.warmup):
-                tick, _, one = checked_window(adapter, app, tick, STEPS)
+                tick, warm_states, one = checked_window(adapter, app, tick, STEPS)
+                if trajectory is not None:
+                    trajectory.append(warm_states)
                 warm.append(one["wall_ns"])
             observations = []
             for _ in range(a.samples):
                 tick, states, one = checked_window(adapter, app, tick, STEPS)
                 observations.append(one)
+                if trajectory is not None:
+                    trajectory.append(states)
+            if trajectory is not None:
+                raw = np.concatenate(trajectory)
+                assert raw.shape == (tick + 1, count, 6) and raw.dtype == np.float32
+                with a.trajectory_out.open("xb") as file:
+                    np.save(file, raw, allow_pickle=False)
+                result["trajectory_file"] = a.trajectory_out.name
+                result["trajectory_shape"] = raw.shape
             walls = sorted(row["wall_ns"] for row in observations)
             confirmed = count * STEPS * a.samples
             total = {
@@ -158,9 +170,13 @@ def main():
     p.add_argument("--engine", choices=("phymeo", "newton"), required=True)
     p.add_argument("--device", choices=("cpu", "cuda:0"), required=True)
     p.add_argument("--phase", choices=("qualify", "measure"), required=True)
-    p.add_argument("--worlds", choices=(1, 32), type=int, default=1)
+    p.add_argument("--worlds", choices=(1, 32, 128), type=int, default=1)
     p.add_argument("--cache-root", type=Path, required=True)
     p.add_argument("--out", type=Path, required=True)
+    p.add_argument("--asymmetric-starts", action="store_true")
+    p.add_argument(
+        "--trajectory-out", type=Path, help="optional complete FP32 trajectory next to the report"
+    )
     p.add_argument("--warmup", type=int, default=5)
     p.add_argument("--samples", type=int, default=20)
     p.add_argument("--expect-empty-cache", action="store_true")
@@ -172,6 +188,14 @@ def main():
         p.error("warmup must be positive and at least two samples are required")
     if a.out.exists():
         p.error("provide a fresh receipt")
+    if a.phase != "measure" and (a.asymmetric_starts or a.trajectory_out is not None):
+        p.error("the qualification already includes its own two initial-state controls")
+    if a.trajectory_out is not None and (
+        a.trajectory_out.exists()
+        or a.trajectory_out.parent.resolve() != a.out.parent.resolve()
+        or a.trajectory_out.resolve() == a.out.resolve()
+    ):
+        p.error("choose a distinct fresh trajectory file next to the report")
     initial_cache = cache_state(a.cache_root)
     if a.expect_empty_cache and initial_cache["files"]:
         raise ValueError("cold qualification requires an empty cache")
@@ -202,7 +226,7 @@ def main():
         semantics="End-to-end actual physical step, synchronized public state read, same key order, copied FP32 XYZ and COM velocity trajectory and per-step finite/analytic checks. Hashing is outside the clock.",
         runs=[],
     )
-    cases = ((1, False), (2, True)) if a.phase == "qualify" else ((a.worlds, False),)
+    cases = ((1, False), (2, True)) if a.phase == "qualify" else ((a.worlds, a.asymmetric_starts),)
     for count, asymmetric in cases:
         row = measure(a, modules, factory, count, asymmetric)
         report["runs"].append(row)

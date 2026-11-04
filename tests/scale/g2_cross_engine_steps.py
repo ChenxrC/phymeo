@@ -19,7 +19,7 @@ def setup_rows(count, asymmetric=False):
     z = np.full(count, 2.0, dtype=np.float64)
     vz = np.zeros(count, dtype=np.float64)
     if asymmetric:
-        # A qualification-only control makes wrong world-to-body maps observable.
+        # Distinct initial states make wrong world-to-body maps observable.
         z += np.arange(count) / 8
         vz = (np.arange(count) + 1) / 16
         vz[1::2] *= -1

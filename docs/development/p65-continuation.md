@@ -2,7 +2,9 @@
 
 ## 当前入口（2026-11-04）
 
-本批已合入。Newton Featherstone CPU 采用同一材料接触律后，Panda 强夹完成抓放，弱夹仍留台；可动布面支持带预载共转和转滑；32 个混合世界的三个独立同场 CUDA 测量分别加速 4.64×、4.97×、4.45×，逐帧输出一致。下一批从受压跨面、旋转偏心抓取和更多受载面下的剖析继续。[本批证据与下批入口](../superpowers/plans/2026-11-04-contact-model-and-geometry.md)
+已验证共面平移材料片的带压跨边、旋转偏心长方体抓放，以及 2/8 个真实受载面在 W1/W4 上的成本。当前多面法向层可在 TYX 运行，跨世界接触批入口仍限定每世界单面。下一批优先验证自由节点换面与多面变长站点合批。[验收、数据和下一批判据](../superpowers/plans/2026-11-04-shared-edge-offset-and-density.md) · [偏心抓取与滑落的交互回放](../../artifacts/p65-crossing-rotated-density-20261104-01/panda-grasp-replay.html)
+
+上一批已合入。Newton Featherstone CPU 采用同一材料接触律后，Panda 强夹完成抓放，弱夹仍留台；可动布面支持带预载共转和转滑；32 个混合世界的三个独立同场 CUDA 测量分别加速 4.64×、4.97×、4.45×，逐帧输出一致。下一批从受压跨面、旋转偏心抓取和更多受载面下的剖析继续。[本批证据与下批入口](../superpowers/plans/2026-11-04-contact-model-and-geometry.md)
 
 [受载接触第一批分工与结果](../superpowers/plans/2026-11-04-contact-load-parallel.md)已集成平面–凸包支撑、有限布面静持/转滑、长方体强弱夹持与同姿态几何复核。Phymeo 的 120 g 强夹已放台，Newton Featherstone 同输入原生接触尚未复现整个受载过程。该批 W32 优化前的计量中单姿态最近特征查询占插桩墙钟约 86%。
 

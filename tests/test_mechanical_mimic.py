@@ -93,7 +93,8 @@ def test_effective_follower_limits_and_failed_input_preserve_state():
 
 
 @pytest.mark.parametrize(
-    "wrong", ["chain", "cycle", "unknown", "mixed", "zero", "empty", "unknown_control", "no_mimic"]
+    "wrong",
+    ["multi_cycle", "cycle", "unknown", "mixed", "zero", "empty", "unknown_control", "no_mimic"],
 )
 def test_rejects_ambiguous_and_out_of_domain_linkages(tmp_path, wrong):
     from phymeo.builders.mimic_urdf import load_mimic_urdf
@@ -101,8 +102,8 @@ def test_rejects_ambiguous_and_out_of_domain_linkages(tmp_path, wrong):
     doc = ET.parse(ROOT / "mimic_jaws.urdf")
     follower = doc.find(".//joint[@name='idler']")
     entry = follower.find("mimic")
-    if wrong == "chain":
-        ET.SubElement(doc.find(".//joint[@name='screw']"), "mimic", joint="lift")
+    if wrong == "multi_cycle":
+        ET.SubElement(doc.find(".//joint[@name='screw']"), "mimic", joint="idler")
     elif wrong == "cycle":
         entry.set("joint", "idler")
     elif wrong == "unknown":

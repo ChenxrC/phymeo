@@ -15,6 +15,7 @@ from .backends.tyx_participants import (
 )
 from .backends.tyx_rigid import TyxRigidSemiImplicitSolver
 from .backends.tyx_sdf import TyxSdfSampler
+from .backends.tyx_sphere_island import SphereIslandWorld, TyxSphereIslandBatch
 from .backends.tyx_world_batch import (
     FreeSphere,
     PrismaticSlider,
@@ -177,6 +178,7 @@ from .geometry.paged_collision import (
 )
 from .geometry.particle_sphere import ParticleSphereGeometry, particle_sphere_geometry
 from .geometry.plane import Plane
+from .geometry.raycast import RayHits, raycast_scene
 from .geometry.robot_patch_sweep import RobotPatchSweepResult, robot_patch_sweep
 from .geometry.robot_sphere import RobotSphereAttachments
 from .geometry.rotating_mesh import (
@@ -422,6 +424,10 @@ __all__ = [
     "ContactSelector",
     "ContactWrenchReading",
     "DepthCamera",
+    "RayHits",
+    "SphereIslandWorld",
+    "TyxSphereIslandBatch",
+    "raycast_scene",
     "DepthImage",
     "measure_cloth_link_matrix",
     "measure_cloth_link_wrench",

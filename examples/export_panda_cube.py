@@ -58,7 +58,7 @@ def export(loaded, slippery, output, urdf=None):
 PAGE = """<!doctype html><html lang="zh"><meta charset="utf-8"><title>Panda 抓放 | Phymeo</title>
 <style>*{box-sizing:border-box}body{margin:0;background:#0e1927;color:#edf4f7;font:16px system-ui}main{padding:18px 4vw}h1{font-size:23px;margin:0 0 6px}p{color:#aabdcf;margin:4px 0}canvas{display:block;width:100%;height:63vh;touch-action:none}nav{display:flex;gap:12px;align-items:center;flex-wrap:wrap}input{width:min(46vw,640px)}button,select{padding:7px;color:#142033}output{font-variant-numeric:tabular-nums}</style>
 <main><h1>经典 Panda · 自由方块抓放</h1><p>七轴、双指与 19 个厂家碰撞代理。拖动旋转视角，滚轮缩放。读数为进入显示状态的物理子步。</p></main>
-<canvas id="view"></canvas><main><nav><select id="run"><option>标定指面摩擦</option><option>零指面摩擦</option></select><button id="play">播放 / 暂停</button><input id="time" type="range" min="0" value="0" step="1"></nav><p><output id="value"></output></p></main>
+<canvas id="view"></canvas><main><nav><select id="run"></select><button id="play">播放 / 暂停</button><input id="time" type="range" min="0" value="0" step="1"></nav><p><output id="value"></output></p></main>
 <!-- __LICENSE__ --><script>__LIB__</script><script>
 const data=__DATA__, canvas=document.getElementById("view"), slider=document.getElementById("time"), choice=document.getElementById("run");
 const renderer=new THREE.WebGLRenderer({canvas,antialias:true}), scene=new THREE.Scene(), camera=new THREE.PerspectiveCamera(39,1,.005,15);
@@ -67,10 +67,17 @@ scene.add(new THREE.HemisphereLight(0xffffff,0x94a4ba,2)); const sun=new THREE.D
 const vec=a=>new THREE.Vector3(...a);
 function mesh(geometry,color){const m=new THREE.Mesh(geometry,new THREE.MeshStandardMaterial({color}));scene.add(m);return m;}
 const parts=data.parts.map(([name,kind,size])=>kind==="hull"?mesh(new THREE.BoxGeometry(...size),name.endsWith("_pad")?0x32d2b7:0x879db6):mesh(kind==="sphere"?new THREE.SphereGeometry(size,16,12):new THREE.CapsuleGeometry(size,1,6,16),0xb9d2e2));
-const cube=mesh(new THREE.BoxGeometry(.05,.05,.05),0xf6a74d);
-const s=data.runs[0].summary, table=mesh(new THREE.BoxGeometry(...s.table_full_size_m),0x57718c);table.position.fromArray(s.table_center_m);
+const cube=mesh(new THREE.BoxGeometry(1,1,1),0xf6a74d);
+const table=mesh(new THREE.BoxGeometry(1,1,1),0x57718c);
 let az=-1.08, el=.35, dist=1.35, last=0, playing=false, target=vec([.20,0,.37]);
-function draw(){const frames=data.runs[choice.selectedIndex].frames;
+for (const run of data.runs) {
+  const s=run.summary, option=document.createElement("option");
+  option.textContent=(s.cube_mass_kg*1000).toFixed(0)+" g · μ "+s.finger_friction+" · 闭合目标 "+((s.closed_width_m ?? .029)*1000).toFixed(1)+" mm";
+  choice.appendChild(option);
+}
+function draw(){const {frames,summary}=data.runs[choice.selectedIndex];
+cube.scale.fromArray(summary.cube_full_size_m ?? [.05,.05,.05]);
+table.scale.fromArray(summary.table_full_size_m);table.position.fromArray(summary.table_center_m);
 slider.max=frames.length-1;const [t,shapes,p,q,forces,tbl]=frames[+slider.value];
 shapes.forEach((coords,i)=>{const obj=parts[i],kind=data.parts[i][1];
 if(kind==="hull"){obj.position.fromArray(coords[0]);obj.quaternion.fromArray(coords[1]);}
@@ -85,7 +92,7 @@ document.getElementById("play").onclick=()=>{if(+slider.value===+slider.max)slid
 let cursor=null;canvas.onpointerdown=e=>{cursor=[e.clientX,e.clientY];canvas.setPointerCapture(e.pointerId)};
 canvas.onpointermove=e=>{if(!cursor)return;az-=(e.clientX-cursor[0])*.008;el=Math.max(-1.35,Math.min(1.35,el+(e.clientY-cursor[1])*.008));cursor=[e.clientX,e.clientY];draw()};
 canvas.onpointerup=canvas.onpointercancel=()=>{cursor=null};canvas.onwheel=e=>{e.preventDefault();dist=Math.max(.35,Math.min(3,dist*Math.exp(e.deltaY*.001)));draw()};
-function tick(now){if(playing && now-last>1000*data.runs[0].summary.simulated_seconds/(+slider.max)){slider.value=+slider.value+1;last=now;draw();if(+slider.value===+slider.max)playing=false}requestAnimationFrame(tick)}window.onresize=draw;draw();requestAnimationFrame(tick);
+function tick(now){if(playing && now-last>1000*data.runs[choice.selectedIndex].summary.simulated_seconds/(+slider.max)){slider.value=+slider.value+1;last=now;draw();if(+slider.value===+slider.max)playing=false}requestAnimationFrame(tick)}window.onresize=draw;draw();requestAnimationFrame(tick);
 </script></html>"""
 
 

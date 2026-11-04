@@ -2,6 +2,7 @@
 
 import argparse
 import gzip
+import hashlib
 import json
 from collections import Counter
 from itertools import combinations
@@ -16,7 +17,7 @@ def read(path):
         return json.load(f)
 
 
-def audit(observed, fixed):
+def audit(observed, fixed, prefix=None):
     a = read(observed)
     ref = read(fixed)
     assert a["origin"]["receiver_control"] == "boundary-presentation"
@@ -27,6 +28,23 @@ def audit(observed, fixed):
     assert a["faces"] == ref["faces"] and a["patches"] == ref["patches"]
     count = Counter(tuple(sorted(edge)) for face in a["faces"] for edge in combinations(face, 2))
     boundary = {edge for edge, v in count.items() if v == 1}
+    restart = None
+    if prefix is not None:
+        previous = read(prefix)
+        restart = a["verified_restarts"][-1]
+        assert restart["source_sha256"] == hashlib.sha256(prefix.read_bytes()).hexdigest()
+        assert (
+            restart["time_s"] == previous["metrics"]["end_s"]
+            and restart["restored_state"] == previous["metrics"]["end_state"]
+        )
+        assert restart["frame_count"] == len(previous["frames"]) - 1
+        for original, retained in zip(
+            previous["frames"], a["frames"][: len(previous["frames"])], strict=True
+        ):
+            assert all(retained[k] == v for k, v in original.items())
+        for names in ("samples", "robot_samples", "self_samples", "backing_samples"):
+            if names in previous:
+                assert a[names][: len(previous[names])] == previous[names]
     capsules = {c["key"] for c in a["robot_contact"]["capsules"] if c["domain"] == "B"}
     half_widths = [v["half_thickness_m"] for v in a["cloth_self_material"]["faces"]]
     axial_margin = max(half_widths) + next(
@@ -35,6 +53,10 @@ def audit(observed, fixed):
     address = None
     history = []
     seen = set()
+    suffix_bilateral = 0
+    suffix_shared = 0
+    suffix_pad = dict(left=0.0, right=0.0)
+    suffix_structural = {}
     for previous, f in zip(a["frames"][:-1], a["frames"][1:], strict=True):
         row = f["receiver_observation"] or {}
         decision = row.get("boundary_selection")
@@ -122,6 +144,17 @@ def audit(observed, fixed):
         for n, v in low.items():
             weaker[n] = max(weaker[n], v)
             bilateral[n] += int(v > 0.20)
+        if restart is not None and k >= restart["frame_count"] * steps:
+            suffix_bilateral += int(low["B"] > 0.20)
+            suffix_shared += int(
+                min(low.values()) > 0.20
+                and min(up.values()) > 0.08 * W
+                and patches["table"]["force_n"][2] < 0.02 * W
+            )
+            for side in suffix_pad:
+                suffix_pad[side] = max(suffix_pad[side], patches["B_" + side]["normal_n"])
+            for link, force in joint_forces.items():
+                suffix_structural[link] = max(suffix_structural.get(link, 0.0), force)
         shared += int(
             min(low.values()) > 0.20
             and min(up.values()) > 0.08 * W
@@ -159,7 +192,77 @@ def audit(observed, fixed):
             original_B_wrist_face2_layer_clearance_m=original[0],
         )
 
+    def remaining(frame):
+        if address is None:
+            return None
+        (i, j), w = address
+        x = np.asarray(frame["cloth_position_m"])
+        p = x[i] + w * (x[j] - x[i])
+        faces = [np.asarray(frame["patch_vertices_m"]["B_" + s]) for s in ("left", "right")]
+        centers = [f.mean(0) for f in faces]
+        center = 0.5 * (centers[0] + centers[1])
+        sides = []
+        for face in faces:
+            n = np.cross(face[1] - face[0], face[-1] - face[0])
+            n /= np.linalg.norm(n)
+            edges = np.roll(face, -1, axis=0) - face
+            normals = np.cross(n, edges) / np.linalg.norm(edges, axis=1)[:, None]
+            sides.extend(np.einsum("ij,ij->i", p - face, normals))
+        return dict(
+            time_s=frame["t"],
+            distance_to_open_center_m=float(np.linalg.norm(p - center)),
+            planar_xz_distance_m=float(np.linalg.norm((p - center)[[0, 2]])),
+            actual_point_m=p.tolist(),
+            center_m=center.tolist(),
+            axial_slack_over_3mm_m=float(
+                min(p[1] - centers[0][1], centers[1][1] - p[1]) - axial_margin
+            ),
+            min_side_clearance_m=float(min(sides)),
+        )
+
+    suffix = None
+    if restart is not None:
+        first = restart["frame_count"]
+        suffix_samples = [remaining(frame) for frame in a["frames"][first:] if address is not None]
+        pad_radius = next(p["radius_m"] for p in a["patches"] if p["name"] == "B_left")
+        side_margin = max(half_widths) + pad_radius
+        suffix = dict(
+            verified_restart=restart,
+            closest_target_sample=min(
+                suffix_samples, key=lambda row: row["planar_xz_distance_m"], default=None
+            ),
+            best_finite_side_sample=max(
+                suffix_samples, key=lambda row: row["min_side_clearance_m"], default=None
+            ),
+            samples_inside_axis_and_registered_footprints=sum(
+                row["axial_slack_over_3mm_m"] >= 0 and row["min_side_clearance_m"] >= side_margin
+                for row in suffix_samples
+            ),
+            side_clearance_required_m=side_margin,
+            state_transitions=[
+                (event["event"], event["t"])
+                for event in a["coordination_events"]
+                if event["t"] >= restart["time_s"] - 1e-12
+            ],
+            new_integrated_frames=len(a["frames"]) - 1 - first,
+            new_physical_substeps=steps * (len(a["frames"]) - 1 - first),
+            initial_target_window=remaining(a["frames"][first]),
+            end_target_window=remaining(last),
+            B_bilateral_substeps=suffix_bilateral,
+            shared_load_substeps=suffix_shared,
+            B_pad_normal_peaks_n=suffix_pad,
+            B_structure_normal_peaks_n=suffix_structural,
+            actions=dict(
+                Counter(
+                    item["applied_action"]
+                    for item in history
+                    if item["t"] >= restart["time_s"] - 1e-12
+                )
+            ),
+        )
     summary = dict(
+        continuation=suffix,
+        final_target_window=remaining(last),
         action_counts=dict(Counter(item["applied_action"] for item in history)),
         actual_end_surface=finite_structure(last),
         prior_fixed_end_surface=finite_structure(other),
@@ -197,8 +300,9 @@ if __name__ == "__main__":
     cli.add_argument("observed", type=Path)
     cli.add_argument("fixed", type=Path)
     cli.add_argument("output", type=Path)
+    cli.add_argument("--resume-prefix", type=Path)
     a = cli.parse_args()
-    out = audit(a.observed, a.fixed)
+    out = audit(a.observed, a.fixed, a.resume_prefix)
     with a.output.open("x", encoding="utf8") as f:
         json.dump(out, f, indent=2, allow_nan=False)
     print(json.dumps({k: v for k, v in out.items() if k != "raw_decisions"}))

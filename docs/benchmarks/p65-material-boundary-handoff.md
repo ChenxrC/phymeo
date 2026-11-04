@@ -26,3 +26,23 @@ python scripts/audit_boundary_handoff.py boundary-pilot.json.gz paired-tilted.js
 正式窗口 0.49–0.83 s 的 34 个输入帧全部跟踪同一个材料地址。最后一条已施加的输入在 0.82 s，此时目标 y=4.888 mm，原 3 mm 预留以外仍余 5.112 mm。B 腕/杆相对整片的最近层间隙，在 0.83 s 从固定目标 N6 的 −0.926 mm（右杆/0 号面）变为 +21.258 mm（腕/13 号面）；原历次受阻的腕/2 号面间隙从 3.832 增至 48.289 mm。没有任何该窗口的 B 结构或指垫载荷，B 尚未双侧持布；A 的 4,352 个物理子步均双侧超过 0.20 N。两案末态材料节点最大位置差为 9.331 mm。用所有实际指面、桌面、结构力和重力积到每个 10 ms 帧末，布动量残差最大分量 1.40×10⁻¹⁷ N·s。所有 276 对自接触逐步登记，关节限位违反为零。[完整同状态轨迹](../../artifacts/p65-boundary-material-handoff-20261105-01/window-address-verified.json.gz) · [独立节点、冲量和几何审计](../../artifacts/p65-boundary-material-handoff-20261105-01/verified-audit-result.json)
 
 通用材料边选择接受整体转轴和平移。此实验的机臂适配器只接受已注册的同一台平面接收机械手与沿世界 y 的指面轴；给定不同模型或非平面轴时会拒绝。最终适配源码在原真实 0.49 s 状态重算得完全相同的六个候选及材料比例。[安装式约束与留出](../../artifacts/p65-boundary-material-handoff-20261105-01/hardware-green/final.json) · [原状态选择复核](../../artifacts/p65-boundary-material-handoff-20261105-01/final-address/stdout.log)
+
+## 从已接受 0.83 s 状态继续
+
+```powershell
+python scripts/benchmark_planar_handoff.py full-tilted.json.gz boundary-final.json.gz --boundary --resume boundary-at-0.83.json.gz --stop-time 1.12
+python scripts/audit_boundary_handoff.py boundary-final.json.gz paired-tilted.json.gz boundary-final-audit.json --resume-prefix boundary-at-0.83.json.gz
+```
+
+恢复时读取原先 34 帧的实际双臂关节与布节点，重建单独承载计数、两臂目标、指驱动历史、冻结的材料地址及结构候选。逐项比较原电机力、关节和工具目标、材料观测及时间，核验 0.83 s 末状态哈希后再做新的物理积分。故意更改第一条受载观测的材料比例，或改写端点状态摘要，均在启动续窗前拒绝，未创建结果轨迹。[持久化数据篡改负控](../../artifacts/p65-boundary-material-handoff-20261105-01/resume-reject/stdout.log)
+
+实际恢复了原 0.83 s 的末状态、固定地址和电机历史，新积分 29 个控制帧、3,712 个物理子步至 1.12 s。独立审计逐值核对原 34 帧以及已记录的指面、背衬、结构和布自接触子步。续段 29 条命令均为 `approach`，没有进入闭指、共享承载或原连续失持终止条件，采取原定时间上限结束。全段 8,064 个子步中 A 两指法向均超过 0.20 N，B 两指及结构实际外力均为零；此前固定边 N6 的 A 双侧法向资格在 1.061484 s 结束。[续算原始轨迹](../../artifacts/p65-boundary-material-handoff-20261105-01/window-rendezvous-final.json.gz) · [同时间段固定边实测](p65-planar-soft-handoff.md)
+
+| 已接受状态 | 材料到指面中心的 x/z 距离 | 当前轴向余量（扣除 3 mm） | 最小有限边侧余量 |
+|---|---:|---:|---:|
+| 0.83 s，恢复点 | 47.530 mm | +5.416 mm | −14.415 mm |
+| 0.88 s，最近中心 | 32.328 mm | +7.604 mm | −13.132 mm |
+| 0.92 s，最接近两指共同足印 | 37.205 mm | +8.907 mm | −5.791 mm |
+| 1.12 s，窗口末 | 75.221 mm | +3.377 mm | −51.310 mm |
+
+负侧余量表示材料点还在至少一张有限多边形的边界外。原捕捉条件需要 +3.5 mm；在所有续段控制采样中最接近时仍缺 9.291 mm。末态 B 结构对整片都有正间隙，最近为右杆到 13 号面 +89.467 mm；与同刻固定边控制相比，布节点最大位置差 44.691 mm。此窗证明改变真实材料地址和动作可以清开杆体，仍欠缺在可用时刻同时满足两指有限足印的 x/z 会合。[逐值前缀审计、真实足印与受力](../../artifacts/p65-boundary-material-handoff-20261105-01/continuation-audit-result.json)

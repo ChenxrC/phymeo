@@ -36,7 +36,7 @@ from ._mesh_triangle import MeshTriangleQuery, MeshTriangleTrace
 from ._plate_contact import PlateSurfaceQuery, RoundedPlate
 from ._rotating_capsule_face import RotatingCapsuleFaceQuery, rotating_capsule_face_query
 from ._rotating_mesh_solid import RotatingMeshSolidQuery
-from ._rotating_mesh_sphere import RotatingMeshSphereQuery
+from ._rotating_mesh_sphere import RotatingMeshRoundQuery
 from ._rotating_round_sweep import RotatingCapsuleQuery, rotating_round_query
 from ._round_sweep import round_query, sweep_result
 from ._sheet_pair_bounds import SheetPairBounds
@@ -656,7 +656,7 @@ def _detect_pairs(
                 ms, rs, mp, rp = (a, b, ma, mb) if mesh_first else (b, a, mb, ma)
                 mesh_rotates = mp.turn is not None and mp.turn.angle != 0
                 round_rotates = rp.turn is not None and rp.turn.angle != 0
-                if ms.radius or round_rotates or (mesh_rotates and rs.kind != "sphere"):
+                if ms.radius or round_rotates:
                     if not code:
                         analytic = _NarrowFailure("unsupported", "mesh_rounding_or_rotation")
                 elif not mesh_rotates or not code:
@@ -666,7 +666,7 @@ def _detect_pairs(
                     elif not code:
                         try:
                             analytic = (
-                                RotatingMeshSphereQuery(mesh, rs, mp, rp, mesh_first)
+                                RotatingMeshRoundQuery(mesh, rs, mp, rp, mesh_first)
                                 if mesh_rotates
                                 else MeshRoundQuery(mesh, rs, rp, mesh_first)
                             )

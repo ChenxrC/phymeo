@@ -1,7 +1,6 @@
 """Read the classic Franka Emika Panda URDF as an ordinary fixed-base RobotAsset."""
 
 from collections import defaultdict
-from collections.abc import Mapping
 from copy import deepcopy
 from dataclasses import dataclass, replace
 from pathlib import Path
@@ -10,15 +9,16 @@ from xml.etree import ElementTree as ET
 
 import numpy as np
 
-from ..constraints.collision_shapes import CollisionKey, CollisionMotion
+from ..constraints.collision_shapes import CollisionKey
 from ..core.robot import robot_array
 from ..core.validation import finite_real
-from ..dynamics.robot_kinematics import forward_kinematics
-from ..dynamics.rotation import matrix_quaternion, quaternion_matrix
+from ..dynamics.rotation import matrix_quaternion
 from ..sensors.robot_frame import RobotSite
-from ._robot_asset import RobotAsset, assemble_robot, make_collider
-from ._robot_xml import _child, _children, _number
-from .urdf import _joint_data, _link_collisions, _origin, _tree
+from ._robot_asset import assemble_robot, make_collider
+from ._robot_xml import _child, _children
+from ._urdf_fixed import _mass_component, _origin_pose, _principal
+from ._urdf_frames import FoldedURDFAsset, _rotation
+from .urdf import _joint_data, _link_collisions, _tree
 
 PANDA_URDF = Path(__file__).with_name("panda_assets") / "panda.urdf"
 _ARM = tuple(f"panda_link{i}" for i in range(1, 8))
@@ -33,50 +33,6 @@ _FIXED = {
     "panda_hand": ("panda_link8", "panda_hand_joint"),
     "panda_hand_tcp": ("panda_hand", "panda_hand_tcp_joint"),
 }
-
-
-def _rotation(quat):
-    return quaternion_matrix(np.array([quat], dtype=float))[0]
-
-
-def _origin_pose(element, name):
-    xyz, xyzw = _origin(element, name)
-    return xyz, _rotation(xyzw)
-
-
-def _mass_component(link, name, position, orientation):
-    inertial = _child(link, "inertial", name, required=False)
-    if inertial is None:
-        return None
-    _children(inertial, {"mass", "origin", "inertia"}, name)
-    com, rotation = _origin_pose(inertial, name)
-    mass = _number(_child(inertial, "mass", name), "value", name)
-    entry = _child(inertial, "inertia", name)
-    xx, xy, xz, yy, yz, zz = [
-        _number(entry, k, name) for k in ("ixx", "ixy", "ixz", "iyy", "iyz", "izz")
-    ]
-    tensor = np.array([[xx, xy, xz], [xy, yy, yz], [xz, yz, zz]])
-    moments = np.linalg.eigvalsh(tensor)
-    if mass <= 0 or moments[0] <= 0 or moments[2] > moments[:2].sum() * (1 + 2e-14):
-        raise ValueError(f"{name}: invalid mass or COM inertia")
-    frame = orientation @ rotation
-    return mass, position + orientation @ com, frame @ tensor @ frame.T
-
-
-def _principal(parts):
-    mass = sum(m for m, _, _ in parts)
-    center = sum(m * p for m, p, _ in parts) / mass
-    tensor = np.zeros((3, 3))
-    for m, p, inertia in parts:
-        d = p - center
-        tensor += inertia + m * ((d @ d) * np.eye(3) - np.outer(d, d))
-    if np.any(tensor - np.diag(tensor.diagonal())):
-        moments, axes = np.linalg.eigh(tensor)
-        if np.linalg.det(axes) < 0:
-            axes[:, -1] *= -1
-    else:
-        moments, axes = tensor.diagonal(), np.eye(3)
-    return axes, (mass, axes.T @ center, moments)
 
 
 def _moving_joint(joint, name):
@@ -145,7 +101,7 @@ def _proxy_capsules(colliders, name, owner):
 
 
 @dataclass(frozen=True, eq=False, kw_only=True)
-class PandaAsset(RobotAsset):
+class PandaAsset(FoldedURDFAsset):
     """Seven arm coordinates and two physical sliders; sites refer to the original URDF frames.
 
     The native moving frames use COM principal axes. Public collider vertices remain in their
@@ -153,8 +109,6 @@ class PandaAsset(RobotAsset):
     Finger positions are independent dynamic coordinates. configuration maps the single nominal
     opening command to a matching pair of slider positions.
     """
-
-    sites: Mapping[str, RobotSite]
 
     def configuration(self, arm_q, opening_m):
         arm = np.asarray(arm_q)
@@ -177,41 +131,6 @@ class PandaAsset(RobotAsset):
         if values.shape != (9,):
             raise ValueError("Panda needs seven arm and two finger coordinates")
         return float(values[-2] + values[-1])
-
-    def authored_to_model_points(self, name, points_m):
-        """Map authored local points to a native moving link, or to world for the fixed base."""
-        site = self.sites[name]
-        points = np.asarray(points_m, dtype=float)
-        if points.ndim not in (1, 2) or points.shape[-1] != 3 or not np.isfinite(points).all():
-            raise ValueError("authored points must be finite 3-vectors")
-        return np.asarray(site.local_position_m) + points @ _rotation(site.local_orientation_xyzw).T
-
-    def _pose(self, name, kinematics):
-        site = self.sites[name]
-        p, r = np.asarray(site.local_position_m), _rotation(site.local_orientation_xyzw)
-        i = site.link_index
-        if i is None:
-            return p, r
-        return kinematics.position[i] + kinematics.rotation[i] @ p, kinematics.rotation[i] @ r
-
-    def authored_link_pose(self, name, q):
-        """Return the named URDF link or pad site's world position and orientation matrix."""
-        return self._pose(name, forward_kinematics(self.model, q))
-
-    def collision_motion(self, q, q_end=None):
-        fk = forward_kinematics(self.model, q)
-        poses = {name: self._pose(name, fk) for name in {c.link_name for c in self.collisions}}
-        paths = {}
-        for collider in self.collisions:
-            p, r = poses[collider.link_name]
-            points = p + np.asarray(collider.local_vertices) @ r.T
-            orientation = matrix_quaternion(r) if collider.shape.curved is not None else None
-            paths[collider.shape.key] = CollisionMotion(points, body_orientation_xyzw=orientation)
-        if q_end is not None:
-            from ._robot_joint_motion import joint_interval_motion
-
-            return joint_interval_motion(self, q, q_end, fk, paths)
-        return paths
 
 
 def load_panda(path=None, *, base_xyz=(0, 0, 0), base_xyzw=(0, 0, 0, 1), gravity=(0, 0, -9.81)):

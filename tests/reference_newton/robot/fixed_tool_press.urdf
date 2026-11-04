@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<robot name="vertical_indenter">
+  <link name="base"/>
+  <link name="ram">
+    <inertial><origin xyz="0 0 0.015625"/><mass value="0.75"/>
+      <inertia ixx="0.008" ixy="0" ixz="0" iyy="0.009" iyz="0" izz="0.01"/></inertial>
+  </link>
+  <link name="head">
+    <inertial><origin xyz="0.015625 0 0"/><mass value="0.25"/>
+      <inertia ixx="0.002" ixy="0" ixz="0" iyy="0.0025" iyz="0" izz="0.003"/></inertial>
+    <collision name="tip"><origin xyz="0 0 0.03125"/><geometry><sphere radius="0.03125"/></geometry></collision>
+  </link>
+  <link name="tip_site"/>
+  <joint name="stroke" type="prismatic"><parent link="base"/><child link="ram"/><origin xyz="-0.125 0.0625 0.25"/><axis xyz="0 0 1"/>
+    <limit lower="-0.06" upper="0.12" effort="12" velocity="2"/></joint>
+  <joint name="head_screws" type="fixed"><parent link="ram"/><child link="head"/><origin xyz="0.03125 0 0.09375" rpy="0 0 1.5707963267948966"/></joint>
+  <joint name="contact_frame" type="fixed"><parent link="head"/><child link="tip_site"/><origin xyz="0 0 0.03125"/></joint>
+</robot>

@@ -10,6 +10,7 @@ from ..constraints.collision_shapes import CollisionKey, CollisionShape
 from ..geometry._convex_contact import HullPairQuery
 from ..geometry._convex_hull import HullShape
 from ..geometry._round_sweep import _vector
+from ._patch_quadrature import patch_quadrature
 from .box_link_contact import BoxLinkContacts
 from .sphere_link_contact import _RigidLinkContacts
 
@@ -32,34 +33,6 @@ def _blend(chart, coeff):
         for node, weight in point:
             result[node] += amount * weight
     return result
-
-
-def _quadrature(patch):
-    count = len(patch.points)
-    if patch.dimension < 2:
-        for alpha in np.eye(count):
-            yield alpha, 1 / count, 0.0
-        return
-    points = np.array([p.first_point for p in patch.points])
-    # Symmetric degree-two quadrature on a fan about one interior point.
-    relative = points - points[0]
-    arms = relative - relative.mean(axis=0)
-    areas = 0.5 * np.abs(np.cross(arms, np.roll(arms, -1, axis=0)) @ np.asarray(patch.normal))
-    total = areas.sum()
-    if total <= 0 or not np.isclose(total, patch.area_m2, rtol=1e-8, atol=0):
-        raise ValueError("box contact patch area cannot be resolved")
-    for i, area in enumerate(areas):
-        if area == 0:
-            continue
-        for middle, left, right in (
-            (2 / 3, 1 / 6, 1 / 6),
-            (1 / 6, 2 / 3, 1 / 6),
-            (1 / 6, 1 / 6, 2 / 3),
-        ):
-            alpha = np.full(count, middle / count)
-            alpha[i] += left
-            alpha[(i + 1) % count] += right
-            yield alpha, area / (3 * total), area / 3
 
 
 class TableLinkSolids(BoxLinkContacts):
@@ -130,7 +103,7 @@ class TableLinkSolids(BoxLinkContacts):
         table_points = center + ((np.asarray(_BITS) * 2 - 1) * half) @ R.T
         link_chart = [p.first_weights for p in patch.points]
         table_chart = [p.second_weights for p in patch.points]
-        for coeff, weight, area in _quadrature(patch):
+        for coeff, weight, area in patch_quadrature(patch):
             wa, wb = _blend(link_chart, coeff), _blend(table_chart, coeff)
             pa, pb = wa @ world, wb @ table_points
             if not np.allclose(pb - pa, gap * normal, atol=tol * 8, rtol=0):

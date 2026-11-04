@@ -1,6 +1,7 @@
 """Two-way contact loads on registered rigid and deformable surfaces."""
 
 from dataclasses import dataclass
+from math import fsum
 from numbers import Integral
 from threading import Lock
 from types import MappingProxyType
@@ -28,6 +29,7 @@ from ..dynamics.rotation import (
 from ..geometry._capsule_triangle_sweep import capsule_material_sites
 from ..geometry.collision_pipeline import CollisionDetection, CollisionWorkspace, detect
 from ..geometry.collision_witness import ConvexContactPoint, ProximityWitness
+from ._patch_quadrature import material_sites
 
 
 def _row(value):
@@ -166,6 +168,17 @@ def _sites(pair, shapes):
     return (ConvexContactPoint(w.first_point, w.second_point, w.first_weights, w.second_weights),)
 
 
+def _sum_rigid_patch(state, before, after, sites, forces, torques):
+    """Sum each whole finite patch before adding its wrench to either rigid body."""
+    traction = np.array([s.force_on_second_n for s in sites])
+    points = np.array([s.application_point_second_m for s in sites])
+    force = np.array([fsum(component) for component in traction.T])
+    for row, sign in ((before.row, -1), (after.row, 1)):
+        moments = np.cross(points - state.rigid.position[row], traction)
+        forces[row] += sign * force
+        torques[row] += sign * np.array([fsum(component) for component in moments.T])
+
+
 def _host_law(rows):
     rate = np.einsum("ij,ij->i", rows[:, :3], rows[:, 3:6])
     compression = np.maximum(0.0, rows[:, 6] - rows[:, 7])
@@ -224,7 +237,7 @@ class CollisionLoadSystem:
                     ):
                         raise ValueError("inconsistent particle material identity")
         laws = {}
-        cloth_hulls = set()
+        turning_hulls = set()
         for key, law in layers.items():
             a, b = sorted(key)
             if (
@@ -268,14 +281,20 @@ class CollisionLoadSystem:
                 for s in (x, y)
             ):
                 raise ValueError("unsupported shape combination for contact layer")
-            if law.friction and x.rigid == y.rigid and not (x.rigid and smooth_pair):
+            if (
+                law.friction
+                and x.rigid == y.rigid
+                and not (x.rigid and (smooth_pair or kinds == ("hull", "hull")))
+            ):
                 raise ValueError(
-                    "sliding layer requires an admitted smooth rigid pair or a rigid and deformable pair"
+                    "sliding layer needs an admitted rigid pair or a rigid and deformable pair"
                 )
             if kinds == ("hull", "triangle"):
-                cloth_hulls.add(a if x.kind == "hull" else b)
+                turning_hulls.add(a if x.kind == "hull" else b)
+            if kinds == ("hull", "hull") and law.friction:
+                turning_hulls.update((a, b))
             laws[a, b] = law
-        self._cloth_hulls = frozenset(cloth_hulls)
+        self._turning_hulls = frozenset(turning_hulls)
         self.layers = MappingProxyType(laws)
         self._margin = max((v.width_m for v in laws.values()), default=0.0)
         self._last = None
@@ -328,7 +347,7 @@ class CollisionLoadSystem:
             # A sphere centered at an offset rotates around the body's COM, including
             # full turns whose endpoint orientations represent the very same pose.
             offset_ball = s.kind == "sphere" and np.any(local)
-            if body_frame is not None or offset_ball or s.key in self._cloth_hulls:
+            if body_frame is not None or offset_ball or s.key in self._turning_hulls:
                 if (
                     dt is None
                     or getattr(rigid_solver, "rigid_motion_contract", None)
@@ -465,8 +484,16 @@ class CollisionLoadSystem:
                 raise SolverFailure("hard core lacks a strictly positive support gap")
             if w.gap_m <= 0 or w.normal is None:
                 raise SolverFailure("hard core has no admissible layer state")
-            points = _sites(pair, self._shapes)
-            fractions = _quadrature(points)
+            if (
+                law.friction
+                and pair.convex is not None
+                and isinstance(w, ProximityWitness)
+                and w.proximity_patch is not None
+            ):
+                points, fractions = material_sites(w.proximity_patch)
+            else:
+                points = _sites(pair, self._shapes)
+                fractions = _quadrature(points)
             coordinates = []
             for site, fraction in zip(points, fractions, strict=True):
                 pa, pb = site.first_point, site.second_point
@@ -514,13 +541,15 @@ class CollisionLoadSystem:
         for pair, law, points, fractions, coordinates in pending:
             w = pair.witness
             sites = []
+            finite_rigid_patch = bool(law.friction and pair.convex is not None)
             for site, fraction, (pa, pb, velocity) in zip(
                 points, fractions, coordinates, strict=True
             ):
                 rate, magnitude, *directional = next(result_rows)
                 f = np.asarray(directional)
-                self._apply(pair.first, pa, site.first_weights, -f, state, p, r, torque)
-                self._apply(pair.second, pb, site.second_weights, f, state, p, r, torque)
+                if not finite_rigid_patch:
+                    self._apply(pair.first, pa, site.first_weights, -f, state, p, r, torque)
+                    self._apply(pair.second, pb, site.second_weights, f, state, p, r, torque)
                 sites.append(
                     LoadSite(
                         site,
@@ -532,6 +561,10 @@ class CollisionLoadSystem:
                         tuple(f),
                         float(f @ velocity),
                     )
+                )
+            if finite_rigid_patch:
+                _sum_rigid_patch(
+                    state, self.bindings[pair.first], self.bindings[pair.second], sites, r, torque
                 )
             contacts.append(
                 PairLoad(

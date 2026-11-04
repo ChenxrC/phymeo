@@ -249,7 +249,37 @@ def test_rounding_and_rotating_hulls_keep_explicit_scope():
     paths[b.key] = ph.CollisionMotion(
         paths[b.key].start, turn=ph.RigidTurn([0, 0, 0], [0, 0, 0], [0, 1, 0], 0.5)
     )
-    assert query(model, paths).status == "unsupported"
+    rotated = query(model, paths)
+    assert rotated.status == "hit" and rotated.sweep is not None
+    sweep = rotated.sweep
+    lo, hi = sweep.first_t
+    t = sweep.witness_time
+    # At t=0 the two authored boxes share the entire square at z=1/2.
+    pa, pb = paths[a.key].start, paths[b.key].start
+    assert pa[:, 2].max() == pb[:, 2].min() == 0.5
+    top = {tuple(p) for p in pa if p[2] == 0.5}
+    assert len(top) == 4 and top == {tuple(p) for p in pb if p[2] == 0.5}
+    assert lo == 0 and lo <= t <= hi <= 1 / 1024
+    theta = 0.5 * t
+    c, s = np.cos(theta), np.sin(theta)
+    rotation = np.array(((c, 0, s), (0, 1, 0), (-s, 0, c)))
+    if t:
+        # This point lies strictly inside B in its initial frame, and strictly
+        # inside A when transformed at the actual reported occupied sample.
+        point_b = np.array([0.25, 0.0, 0.5 + s / 16])
+        assert np.all(np.abs(point_b - (0, 0, 1)) < 0.5)
+        assert np.all(np.abs(rotation @ point_b) < 0.5)
+    w = sweep.witness
+    assert w.gap_m <= 2e-7
+    for owner, vertices, weights, point in (
+        (a, paths[a.key].start, w.first_weights, w.first_point),
+        (b, paths[b.key].start @ rotation.T, w.second_weights, w.second_point),
+    ):
+        assert min(x for _, x in weights) >= 0 and sum(x for _, x in weights) == pytest.approx(1)
+        material = dict(zip(owner.vertex_ids, vertices, strict=True))
+        np.testing.assert_allclose(
+            sum(x * material[i] for i, x in weights), point, atol=2e-7, rtol=0
+        )
 
 
 def test_same_workspace_keeps_the_sliding_face_identity_until_exit(tmp_path):

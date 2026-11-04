@@ -40,8 +40,7 @@ def test_metric_beams_clip_to_second_root_and_preserve_global_shape_ties(tyx_mod
     with operator(tyx_mode, tmp_path) as cast:
         hit = cast.query(model, poses, origins, rays, world=6, far_m=3)
         assert hit.keys == (other.key, first.key, second.key)
-        verify(hit, [2, 1, 3, np.inf], [1, 1, 1, -1],
-               [[1, 0, 0], [0, -1, 0], [0, 1, 0], [0, 0, 0]])
+        verify(hit, [2, 1, 3, np.inf], [1, 1, 1, -1], [[1, 0, 0], [0, -1, 0], [0, 1, 0], [0, 0, 0]])
         exit_hit = cast.query(model, poses, origins[:1], rays[:1], world=6, near_m=2.5, far_m=4)
         verify(exit_hit, [4], [1], [[-1, 0, 0]])
         near_hit = cast.query(model, poses, origins[:1], rays[:1], world=6, near_m=2, far_m=2.5)
@@ -58,15 +57,21 @@ def test_metric_beams_clip_to_second_root_and_preserve_global_shape_ties(tyx_mod
         assert cast.stats() == before
 
 
-def test_finite_capsule_barrel_hemispheres_no_internal_discs_or_generator_extension(tyx_mode, tmp_path):
+def test_finite_capsule_barrel_hemispheres_no_internal_discs_or_generator_extension(
+    tyx_mode, tmp_path
+):
     s = ph.CollisionShape(ph.CollisionKey(0, 7, 2), "capsule", (89, 7), 0.25)
     model, poses = scene((s, [[-1, 0, 0], [1, 0, 0]]))
     origins = [[0, 2, 0], [3, 0, 0], [1.15, 1, 0], [1.3125, 2, 0], [0, 0, 0]]
     rays = [[0, -4, 0], [-3, 0, 0], [0, -1, 0], [0, -1, 0], [-1, 0, 0]]
     with operator(tyx_mode, tmp_path) as cast:
         hit = cast.query(model, poses, origins, rays)
-        verify(hit, [1.75, 1.75, 0.8, np.inf, 1.25], [0, 0, 0, -1, 0],
-               [[0, 1, 0], [1, 0, 0], [0.6, 0.8, 0], [0, 0, 0], [-1, 0, 0]])
+        verify(
+            hit,
+            [1.75, 1.75, 0.8, np.inf, 1.25],
+            [0, 0, 0, -1, 0],
+            [[0, 1, 0], [1, 0, 0], [0.6, 0.8, 0], [0, 0, 0], [-1, 0, 0]],
+        )
         # Changes at both ends are read from the new pose.
         poses[s.key] = ph.CollisionMotion([[0, 4, 0], [0, 4, 0]])
         verify(cast.query(model, poses, [[0, 2, 0]], [[0, 7, 0]]), [1.75], [0], [[0, -1, 0]])
@@ -77,19 +82,29 @@ def test_flat_face_occlusion_both_sides_hull_and_pose_translation(tyx_mode, tmp_
     hull = ph.CollisionShape(ph.CollisionKey(1, 9, 0), "hull", tuple(range(8)))
     plane = ph.CollisionShape(ph.CollisionKey(1, 4, 9), "plane", (0,), normal=(0, 0, 7))
     vertices = np.asarray(list(product([3.5, 4.5], [-0.5, 0.5], [0, 0.5])))
-    shift = np.array([2.0**30, -2.0**30, 1.0])
+    shift = np.array([2.0**30, -(2.0**30), 1.0])
     model, poses = scene(
         (tri, shift + [(0, 0, 1), (2, 0, 1), (0, 2, 1)]),
         (hull, shift + vertices),
         (plane, shift + [[0, 0, -1]]),
     )
-    origins = shift + [[0.25, 0.25, 2], [0.25, 0.25, 0], [1.25, 1.25, 2],
-                       [4, 0.125, 2], [8, 2, -3], [0, 0, 8]]
+    origins = shift + [
+        [0.25, 0.25, 2],
+        [0.25, 0.25, 0],
+        [1.25, 1.25, 2],
+        [4, 0.125, 2],
+        [8, 2, -3],
+        [0, 0, 8],
+    ]
     rays = [[0, 0, -4], [0, 0, 1], [0, 0, -1], [0, 0, -1], [0, 0, 1], [1, 0, 0]]
     with operator(tyx_mode, tmp_path) as cast:
         hit = cast.query(model, poses, origins, rays, world=1)
-        verify(hit, [1, 1, 3, 1.5, 2, np.inf], [0, 0, 1, 2, 1, -1],
-               [[0, 0, 1], [0, 0, -1], [0, 0, 1], [0, 0, 1], [0, 0, -1], [0, 0, 0]])
+        verify(
+            hit,
+            [1, 1, 3, 1.5, 2, np.inf],
+            [0, 0, 1, 2, 1, -1],
+            [[0, 0, 1], [0, 0, -1], [0, 0, 1], [0, 0, 1], [0, 0, -1], [0, 0, 0]],
+        )
         baseline = ph.raycast_scene(model, poses, origins, rays, world=1)
         np.testing.assert_array_equal(hit.shape_index, baseline.shape_index)
         np.testing.assert_allclose(hit.distance_m, baseline.distance_m, rtol=2e-6, atol=2e-6)
@@ -97,9 +112,12 @@ def test_flat_face_occlusion_both_sides_hull_and_pose_translation(tyx_mode, tmp_
 
 def test_heightfield_finite_diagonal_face_normals_and_other_world_rejection(tyx_mode, tmp_path):
     field = ph.Heightfield(((0, 0), (0, 1)), (1, 1))
-    terrain = ph.CollisionShape(ph.CollisionKey(3, 2, 1), "heightfield", (9, 13, 5, 7), heightfield=field)
-    curve = ph.CollisionShape(ph.CollisionKey(1, 2, 1), "ellipsoid", (8,),
-                              curved=ph.CurvedSolid("ellipsoid", (1, 2, 3)))
+    terrain = ph.CollisionShape(
+        ph.CollisionKey(3, 2, 1), "heightfield", (9, 13, 5, 7), heightfield=field
+    )
+    curve = ph.CollisionShape(
+        ph.CollisionKey(1, 2, 1), "ellipsoid", (8,), curved=ph.CurvedSolid("ellipsoid", (1, 2, 3))
+    )
     model, poses = scene((curve, [[0, 0, 0]]), (terrain, field.world_vertices()))
     origins = [[0.25, 0.75, 2], [0.75, 0.25, 2], [1.125, 0.5, 2]]
     rays = [[0, 0, -1]] * 3
@@ -133,7 +151,11 @@ def test_unrepresentable_size_and_bounded_pair_work_fail_before_launch(tyx_mode,
         assert cast.query(baseline, valid, [0, 0, 0], [[1, 0, 0]]).distance_m.item() == 0.75
 
 
-def test_rotated_independent_origins_over_one_block_match_analytic_ranges_and_normals(tyx_mode, tmp_path):
+def test_rotated_independent_origins_over_one_block_match_analytic_ranges_and_normals(
+    tyx_mode, tmp_path
+):
+    import tyx as tx
+
     count = 269
     center = np.array([2.25, -1.0, 1.5])
     rotate = np.array([[0.8, 0, 0.6], [0, 1, 0], [-0.6, 0, 0.8]])
@@ -152,19 +174,36 @@ def test_rotated_independent_origins_over_one_block_match_analytic_ranges_and_no
     ball = ph.CollisionShape(ph.CollisionKey(0, 8, 6), "sphere", (9,), 1)
     model, poses = scene((ball, center[None, :]))
     with operator(tyx_mode, tmp_path) as cast:
+        start = tx.runtime_stats()
         hit = cast.query(model, poses, origins, rays)
+        raw = tx.runtime_stats() - start
         verify(hit, target, np.where(visible, 0, -1), normals)
-        print("rays", count, "hits", int(visible.sum()),
-              "max_range_error_m", np.max(abs(hit.distance_m[visible] - target[visible])),
-              "max_normal_component_error", np.max(abs(hit.world_normals - normals)), cast.stats())
+        assert raw.cuda_kernel_launches == int(tyx_mode == "cuda")
+        assert raw.cuda_h2d_bytes == cast.stats()["uploaded_bytes"]
+        assert raw.cuda_d2h_bytes == cast.stats()["downloaded_bytes"]
+        print("native TYX", raw)
+        print(
+            "rays",
+            count,
+            "hits",
+            int(visible.sum()),
+            "max_range_error_m",
+            np.max(abs(hit.distance_m[visible] - target[visible])),
+            "max_normal_component_error",
+            np.max(abs(hit.world_normals - normals)),
+            cast.stats(),
+        )
 
 
-def test_failure_propagates_and_following_observation_uses_current_inputs(tyx_mode, tmp_path, monkeypatch):
+def test_failure_propagates_and_following_observation_uses_current_inputs(
+    tyx_mode, tmp_path, monkeypatch
+):
     from phymeo.backends.tyx_math import TyxMath
 
     plane = ph.CollisionShape(ph.CollisionKey(0, 6, 3), "plane", (7,), normal=(0, 0, 1e290))
     model, poses = scene((plane, [[0, 0, -2]]))
     with operator(tyx_mode, tmp_path) as cast:
+
         def fail(*_args, **_kwargs):
             raise RuntimeError("injected ray execution failure")
 
@@ -180,12 +219,17 @@ def test_failure_propagates_and_following_observation_uses_current_inputs(tyx_mo
 
 def test_closed_mesh_keeps_sloping_finite_face_and_two_sided_exit(tyx_mode, tmp_path):
     key = ph.CollisionKey(0, 3, 9)
-    mesh = ph.CollisionShape(key, "mesh", (9, 2, 5, 17),
-                             triangles=((9, 5, 2), (9, 2, 17), (9, 17, 5), (2, 5, 17)))
+    mesh = ph.CollisionShape(
+        key, "mesh", (9, 2, 5, 17), triangles=((9, 5, 2), (9, 2, 17), (9, 17, 5), (2, 5, 17))
+    )
     model, poses = scene((mesh, [[0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1]]))
     origins = [[0.25, 0.25, 2], [0.75, 0.75, 2], [0.25, 0.25, 0.125], [0.25, 0.25, 0]]
     with operator(tyx_mode, tmp_path) as cast:
         hit = cast.query(model, poses, origins, [[0, 0, -1]] * 4)
         n = 1 / np.sqrt(3)
-        verify(hit, [1.5, np.inf, 0.125, 0], [0, -1, 0, 0],
-               [[n, n, n], [0, 0, 0], [0, 0, 1], [0, 0, 1]])
+        verify(
+            hit,
+            [1.5, np.inf, 0.125, 0],
+            [0, -1, 0, 0],
+            [[n, n, n], [0, 0, 0], [0, 0, 1], [0, 0, 1]],
+        )

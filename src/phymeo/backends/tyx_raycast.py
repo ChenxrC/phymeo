@@ -47,7 +47,9 @@ def _geometry(model, poses, origin, ray_count, world, capacity):
     patches = []
     for record in _patches(model, poses, world, reference):
         if len(patches) >= _MAX_PATCHES or (len(patches) + 1) * ray_count > capacity:
-            raise ValueError(f"TYX ray capacity exceeded at {len(patches) + 1} patches × {ray_count} rays")
+            raise ValueError(
+                f"TYX ray capacity exceeded at {len(patches) + 1} patches × {ray_count} rays"
+            )
         patches.append(record)
         _, _, points, _, radius, length = record
         extent = max(extent, float(np.max(np.abs(points))), radius, length)
@@ -109,8 +111,11 @@ class TyxRaycaster:
     def __init__(self, mode="cuda", *, cache_root=None, max_ray_patch_tests=_MAX_TESTS):
         if mode not in ("cuda", "interpret"):
             raise ValueError("ray mode must be cuda or interpret")
-        if (isinstance(max_ray_patch_tests, bool) or not isinstance(max_ray_patch_tests, Integral)
-            or not 1 <= max_ray_patch_tests <= _MAX_TESTS):
+        if (
+            isinstance(max_ray_patch_tests, bool)
+            or not isinstance(max_ray_patch_tests, Integral)
+            or not 1 <= max_ray_patch_tests <= _MAX_TESTS
+        ):
             raise ValueError(f"ray test capacity must be an integer from 1 to {_MAX_TESTS}")
         self.mode = mode
         self._cache = cache_root
@@ -134,8 +139,16 @@ class TyxRaycaster:
 
     def stats(self):
         counts = (
-            self._math.stats() if self._math is not None else
-            dict(mode=self.mode, compute_dtype="float32", launches=0, completed_launches=0, uploads=0, downloads=0)
+            self._math.stats()
+            if self._math is not None
+            else dict(
+                mode=self.mode,
+                compute_dtype="float32",
+                launches=0,
+                completed_launches=0,
+                uploads=0,
+                downloads=0,
+            )
         )
         return dict(counts, uploaded_bytes=self._uploaded, downloaded_bytes=self._downloaded)
 
@@ -148,12 +161,17 @@ class TyxRaycaster:
             geometry = _geometry(model, poses, origin, len(rays), world, self._capacity)
         keys = tuple(s.key for s in model.shapes)
         if geometry is None:
-            return RayHits(_frozen(np.full(len(rays), np.inf)),
-                           _frozen(np.full(len(rays), -1, dtype=np.int32)),
-                           _frozen(np.zeros((len(rays), 3))), keys)
+            return RayHits(
+                _frozen(np.full(len(rays), np.inf)),
+                _frozen(np.full(len(rays), -1, dtype=np.int32)),
+                _frozen(np.zeros((len(rays), 3))),
+                keys,
+            )
         tags, data, local, scale = geometry
         close, distant = _clip(near, far, scale)
-        beams = as_compute(np.column_stack((np.broadcast_to(local, rays.shape), rays)), "FP32 beams")
+        beams = as_compute(
+            np.column_stack((np.broadcast_to(local, rays.shape), rays)), "FP32 beams"
+        )
         labels = np.zeros(len(rays), np.int32)
         hits = np.zeros((len(rays), 4), np.float32)
         if self._math is None:
@@ -169,11 +187,17 @@ class TyxRaycaster:
             )
         finally:
             after = self._math.stats()
-            self._uploaded += sum(x.nbytes for x in arrays[:after["uploads"] - before["uploads"]])
-            self._downloaded += sum(x.nbytes for x in arrays[3:3 + after["downloads"] - before["downloads"]])
+            self._uploaded += sum(x.nbytes for x in arrays[: after["uploads"] - before["uploads"]])
+            self._downloaded += sum(
+                x.nbytes for x in arrays[3 : 3 + after["downloads"] - before["downloads"]]
+            )
         if np.any(labels == -2):
-            raise FloatingPointError(f"unresolved FP32 ray arithmetic at row {np.flatnonzero(labels == -2)[0]}")
+            raise FloatingPointError(
+                f"unresolved FP32 ray arithmetic at row {np.flatnonzero(labels == -2)[0]}"
+            )
         with np.errstate(over="raise", invalid="raise"):
             distances = hits[:, 0].astype(float) * scale
         distances[labels == -1] = np.inf
-        return RayHits(_frozen(distances), _frozen(labels), _frozen(hits[:, 1:].astype(float)), keys)
+        return RayHits(
+            _frozen(distances), _frozen(labels), _frozen(hits[:, 1:].astype(float)), keys
+        )

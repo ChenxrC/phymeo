@@ -136,8 +136,7 @@ def first_hits(
                         u = xb * yc - yb * xc
                         v = xc * ya - yc * xa
                         w = xa * yb - ya * xb
-                        if ((u < 0.0 or v < 0.0 or w < 0.0)
-                            and (u > 0.0 or v > 0.0 or w > 0.0)):
+                        if (u < 0.0 or v < 0.0 or w < 0.0) and (u > 0.0 or v > 0.0 or w > 0.0):
                             valid = 0
                         elif u == 0.0 and v == 0.0 and w == 0.0:
                             issue = 1
@@ -148,7 +147,7 @@ def first_hits(
                         nz = sign * az
                         best = time
                         label = tags[patch, 1]
-        labels[ray] = -2 if issue else label
+        labels[ray] = -2 if issue != 0 else label
         hits[ray, 0] = best
         hits[ray, 1] = nx
         hits[ray, 2] = ny

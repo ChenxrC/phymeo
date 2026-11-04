@@ -28,7 +28,7 @@
 - 主边界 `public_to_raw_read_ns`：公开 API 调用开始，直到形状编号、米制射线距离、世界法向全部同步可在主机读取。
 - 补充边界 `public_to_common_frame_ns`：再包含共同 int64/float64 有拥有权数组和 miss 规范化。公开原始格式是 Newton uint32/float32/vec3f，Phy int32/float64/float64；不能把补充转换说成增加计算精度。
 
-Newton 另记录 update 返回、设备同步、ID/depth/normal 三次 numpy 读回墙钟，以及请求读回的 3 次/83,420 字节；这是显式调用统计，不冒充所有 Warp 内部操作的 profiler。Phy 用真实 `tyx.runtime_stats()` 差分记录内核/H2D/D2H 次数和字节；内部 I/O 时间无法从公开 query 分离，明确留在整次墙钟内，不做全局 monkeypatch。双方逐帧校验和磁盘写 NPZ 的耗时另存，不包含在主边界内。全部数组先保存在主机，所有计时结束或首个失败后统一写文件，计时轮之间不穿插磁盘输出。setup、冷和 12 预热原样留存；正式 21 样本给出 p10/p50/p90/min/max，无删点。
+Newton 另记录 update 返回、设备同步、ID/depth/normal 三次 numpy 读回墙钟，以及请求读回的 3 次/83,420 字节；这是显式调用统计，不冒充所有 Warp 内部操作的 profiler。Phy 用真实 `tyx.runtime_stats()` 差分记录内核/H2D/D2H 次数和字节；内部 I/O 时间无法从公开 query 分离，明确留在整次墙钟内，不做全局 monkeypatch。双方逐帧校验和磁盘写 NPZ 的耗时另存，不包含在主边界内。全部数组先保存在主机，所有计时结束或首个失败后统一写文件，计时轮之间不穿插磁盘输出。setup、冷和 12 预热原样留存；正式 21 样本给出 p10/p50/p90/p95/min/max，无删点。
 
 速度比若最终资格成立，名称为 `phymeo_over_newton_throughput`，数值严格是 **Newton 整次耗时中位数 / Phy 整次耗时中位数**，同为 4,171 束。三对全部报告，不能挑最快的一对。
 

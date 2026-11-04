@@ -385,6 +385,7 @@ def percentiles(samples, field):
         maximum_ns=max(values),
         p10_ns=float(np.percentile(values, 10)),
         p90_ns=float(np.percentile(values, 90)),
+        p95_ns=float(np.percentile(values, 95)),
     )
 
 

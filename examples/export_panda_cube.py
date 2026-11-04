@@ -22,7 +22,11 @@ def display_geometry(run):
         if "cube_full_size_m" in run and not np.array_equal(run["cube_full_size_m"], size):
             raise ValueError("saved sphere dimensions disagree with its radius")
     elif kind == "box":
-        size = np.asarray(run.get("cube_full_size_m", [0.05, 0.05, 0.05]), dtype=float)
+        size = np.asarray(
+            geometry.get("full_size_m", run.get("cube_full_size_m", [0.05] * 3)), dtype=float
+        )
+        if "cube_full_size_m" in run and not np.array_equal(run["cube_full_size_m"], size):
+            raise ValueError("saved box dimensions disagree")
     else:
         raise ValueError(f"unknown saved payload geometry {kind!r}")
     if size.shape != (3,) or not np.isfinite(size).all() or np.any(size <= 0):
@@ -94,6 +98,8 @@ let az=-1.08, el=.35, dist=1.35, last=0, playing=false, target=vec([.20,0,.37]);
 for (const run of data.runs) {
   const s=run.summary, option=document.createElement("option");
   option.textContent=(run.payload.kind==="sphere"?"球 · ":"方盒 · ")+(s.cube_mass_kg*1000).toFixed(0)+" g · μ "+s.finger_friction+" · 闭合目标 "+((s.closed_width_m ?? .029)*1000).toFixed(1)+" mm";
+  if(s.success!==undefined) option.textContent+=s.success?" · 已放置":" · 未完成抓放";
+  if(s.other_robot_cube_axis_clearance_m<0) option.textContent+=" · 整窗结构净空未通过";
   choice.appendChild(option);
 }
 function draw(){const {frames,summary,payload}=data.runs[choice.selectedIndex];

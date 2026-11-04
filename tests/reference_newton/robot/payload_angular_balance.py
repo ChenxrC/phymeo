@@ -41,14 +41,24 @@ def balance(spec, saved):
     if saved["cube_mass_kg"] != mass or not np.array_equal(saved["cube_full_size_m"], size):
         raise ValueError("trajectory payload differs from its input")
     geometry = spec.get("payload_geometry", {"kind": "box"})
-    if saved.get("payload_geometry", {"kind": "box"}) != geometry:
+    saved_geometry = saved.get("payload_geometry", {"kind": "box"})
+    if saved_geometry["kind"] != geometry["kind"]:
         raise ValueError("trajectory geometry differs from its input")
     if geometry["kind"] == "sphere":
         radius = float(geometry["radius_m"])
-        if not np.isfinite(radius) or radius <= 0 or not np.all(size == 2 * radius):
+        if (
+            saved_geometry != geometry
+            or not np.isfinite(radius)
+            or radius <= 0
+            or not np.all(size == 2 * radius)
+        ):
             raise ValueError("sphere diameters and the declared radius disagree")
         principal = np.full(3, (2 / 5) * mass * radius**2)
     elif geometry["kind"] == "box":
+        if any(
+            not np.array_equal(g.get("full_size_m", size), size) for g in (geometry, saved_geometry)
+        ):
+            raise ValueError("box dimensions disagree with its declared geometry")
         principal = mass / 12 * (np.roll(size, 1) ** 2 + np.roll(size, 2) ** 2)
     else:
         raise ValueError("unsupported payload inertia")

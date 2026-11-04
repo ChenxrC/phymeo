@@ -43,6 +43,11 @@ def main():
         default=0.012,
         help="target rubber face center height above the payload COM, metres",
     )
+    parser.add_argument(
+        "--observe-structure",
+        action="store_true",
+        help="record only clearances for non-pad robot links",
+    )
     parser.add_argument("--urdf", type=Path, help="compatible local classic Panda asset")
     parser.add_argument("--trace", type=Path, help="save full state and forces to a new JSON file")
     parser.add_argument(
@@ -70,6 +75,7 @@ def main():
         grip_above_com_m=args.grip_above_com,
         initial_xy_offset_m=args.initial_xy_offset,
         initial_yaw_rad=args.initial_yaw_rad,
+        structural_response=False if args.observe_structure else None,
         record=args.trace is not None,
     )
     if args.trace is not None:

@@ -76,10 +76,13 @@ def test_invalid_shape_fails_before_advance(bad):
         run_panda_cube(payload_geometry=bad)
 
 
-def _sphere_window(label, mu, radius, mass, height, expected_inertia, tmp_path):
+def _sphere_window(
+    label, mu, radius, mass, height, expected_inertia, tmp_path, *, structural_response=None
+):
     ball = {"kind": "sphere", "radius_m": radius}
     result = run_panda_cube(
         payload_geometry=ball,
+        structural_response=structural_response,
         mass_kg=mass,
         grip_above_com_m=height,
         closed_width_m=0.024,
@@ -202,7 +205,9 @@ def _observe_window(result, historical_issue=None):
 
 @pytest.mark.parametrize("label,mu", [("grip", 0.65), ("slip", 0.0)])
 def test_50mm_ball_grasp_loses_load_before_transfer(label, mu, tmp_path):
-    _observe_window(_sphere_window(label, mu, 0.025, 0.080, 0.008, 2e-5, tmp_path))
+    _observe_window(
+        _sphere_window(label, mu, 0.025, 0.080, 0.008, 2e-5, tmp_path, structural_response=False)
+    )
 
 
 @pytest.mark.parametrize("label,mu", [("grip", 0.65), ("slip", 0.0)])

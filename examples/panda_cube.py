@@ -11,14 +11,16 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--friction", type=float, default=0.65, help="finger/cube coefficient")
     parser.add_argument("--mass", type=float, default=0.10, help="cube mass in kg")
-    parser.add_argument(
+    shapes = parser.add_mutually_exclusive_group()
+    shapes.add_argument(
         "--box-size",
         type=float,
         nargs=3,
-        default=(0.05, 0.05, 0.05),
+        default=None,
         metavar=("GRIP", "TRANSVERSE", "HEIGHT"),
-        help="full size in metres",
+        help="full box size in metres (default: 50 mm cube)",
     )
+    shapes.add_argument("--sphere-radius", type=float, help="uniform solid sphere radius in metres")
     parser.add_argument(
         "--closed-width", type=float, default=0.029, help="nominal closing command in metres"
     )
@@ -61,6 +63,9 @@ def main():
         mass_kg=args.mass,
         asset_path=args.urdf,
         box_size_m=args.box_size,
+        payload_geometry=None
+        if args.sphere_radius is None
+        else {"kind": "sphere", "radius_m": args.sphere_radius},
         closed_width_m=args.closed_width,
         grip_above_com_m=args.grip_above_com,
         initial_xy_offset_m=args.initial_xy_offset,

@@ -16,6 +16,7 @@ from phymeo.core.robot import RobotState
 from phymeo.dynamics.robot_dynamics import robot_dynamics_terms
 from phymeo.dynamics.rotation import quaternion_matrix
 from phymeo.experiments.panda_cube import _command_at, _PassiveGeometry, _servo_effort
+from phymeo.experiments.panda_payload import SampledPayload
 
 
 def named(labels, name):
@@ -77,11 +78,17 @@ def make_model(urdf, spec, device):
         label="payload",
     )
     free = named(builder.joint_label, "payload_free_joint")
-    half = np.array(spec["full_size_m"]) / 2
+    geometry = SampledPayload.from_manifest(spec)
+    half = geometry.half
     zero = newton.ModelBuilder.ShapeConfig(density=0, ke=0, kd=0, kf=0, mu=0, gap=0, margin=0)
-    box = builder.add_shape_box(
-        payload, hx=half[0], hy=half[1], hz=half[2], cfg=zero, label="payload_box"
-    )
+    if geometry.radius is None:
+        box = builder.add_shape_box(
+            payload, hx=half[0], hy=half[1], hz=half[2], cfg=zero, label="payload_box"
+        )
+    else:
+        box = builder.add_shape_sphere(
+            payload, radius=geometry.radius, cfg=zero, label="payload_sphere"
+        )
     half_table = np.array(spec["table_full_size_m"]) / 2
     table = builder.add_shape_box(
         -1,
@@ -187,6 +194,8 @@ class ContactRows:
 
 def run(urdf, inputs, device, max_steps=None):
     spec = json.loads(inputs.read_text(encoding="utf8"))
+    if SampledPayload.from_manifest(spec).radius is not None:
+        raise ValueError("the original native box-manifold benchmark requires a box payload")
     assert spec["schema"] == "panda-box-control-v1" and "trace" not in spec
     digest = hashlib.sha256(urdf.read_bytes()).hexdigest()
     assert digest == spec["urdf_sha256"] and version("newton") == "1.7.0"

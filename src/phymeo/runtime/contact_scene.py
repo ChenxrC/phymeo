@@ -1,0 +1,524 @@
+"""Declare finite rigid tools and connected particle sheets for the native contact-load step."""
+
+from contextlib import ExitStack
+from dataclasses import dataclass
+from itertools import combinations, product
+from threading import RLock
+from types import MappingProxyType
+
+import numpy as np
+
+from ..constraints.collision_shapes import (
+    MAX_CONVEX_VERTICES,
+    MAX_SHAPES,
+    MAX_VERTICES,
+    CollisionKey,
+    CollisionModel,
+    CollisionMotion,
+    CollisionShape,
+)
+from ..constraints.distance import DistanceConstraints
+from ..core.coupled import CoupledInputs, CoupledState
+from ..core.model import ParticleModel
+from ..core.rigid import RigidBodyModel, RigidBodyState
+from ..core.state import ParticleState
+from ..core.validation import finite_real
+from ..geometry._convex_hull import HullShape
+from ..geometry.collision_pipeline import CollisionDetection, CollisionWorkspace
+from ..solvers.collision_loads import (
+    CollisionLoadSystem,
+    NormalLayer,
+    ParticleAttachment,
+    RigidAttachment,
+    SurfaceLoads,
+)
+from ..solvers.rigid_semi_implicit import RigidSemiImplicitSolver
+from ..solvers.xpbd import XPBDSolver
+
+_ZERO = (0.0, 0.0, 0.0)
+_IDENTITY = (0.0, 0.0, 0.0, 1.0)
+
+
+def _array(value, name, *, shape):
+    a = np.asarray(value)
+    if (
+        a.dtype.kind not in "fiu"
+        or a.ndim != len(shape)
+        or any(n is not None and n != s for n, s in zip(shape, a.shape, strict=True))
+    ):
+        raise ValueError(f"{name} must be a real array with shape {shape}")
+    a = np.array(a, dtype=float, copy=True, order="C")
+    if not np.isfinite(a).all():
+        raise ValueError(f"{name} must be finite")
+    return a
+
+
+def _address(world, body):
+    key = CollisionKey(world, body, 0)
+    return key.world, key.body
+
+
+def _mass(value):
+    mass = finite_real(value, "mass")
+    if mass <= 0:
+        raise ValueError("mass must be positive; use None for a fixed rigid body")
+    return mass
+
+
+@dataclass(frozen=True)
+class _Body:
+    vertices: tuple
+    inverse_mass: float
+    inertia: np.ndarray
+    position: np.ndarray
+    orientation: np.ndarray
+    velocity: np.ndarray
+    omega: np.ndarray
+
+
+@dataclass(frozen=True)
+class _Sheet:
+    position: np.ndarray
+    velocity: np.ndarray
+    inverse_mass: np.ndarray
+    faces: tuple
+    compliance: float | None
+
+
+@dataclass(frozen=True)
+class ContactSceneObservation:
+    """Static finite geometry and material loads evaluated on the same current state."""
+
+    geometry: CollisionDetection
+    loads: SurfaceLoads
+
+
+class ContactSceneBuilder:
+    """Build isolated snapshots of explicitly calibrated, finite contact scenes.
+
+    Body IDs are local to each integer world. All shape pairs in a world require
+    an explicit material declaration or exclusion, including pairs of sheet faces.
+    Gravity is shared. Body poses are COM position and body-to-world xyzw orientation.
+    """
+
+    def __init__(self, *, gravity=(0.0, 0.0, -9.81)):
+        self._gravity = _array(gravity, "gravity", shape=(3,))
+        self._bodies = {}
+        self._pairs = {}
+
+    def add_box(
+        self,
+        body,
+        half_extents,
+        *,
+        mass,
+        position=_ZERO,
+        orientation_xyzw=_IDENTITY,
+        velocity=_ZERO,
+        angular_velocity=_ZERO,
+        inertia_diagonal=None,
+        world=0,
+    ):
+        """Add a true finite box. A positive mass defaults to uniform-box principal moments."""
+        d = _array(half_extents, "half extents", shape=(3,))
+        if min(d) <= 0:
+            raise ValueError("box half extents must be positive")
+        if mass is not None and inertia_diagonal is None:
+            dx, dy, dz = d
+            inertia_diagonal = (
+                _mass(mass)
+                / 3
+                * np.array([dy * dy + dz * dz, dx * dx + dz * dz, dx * dx + dy * dy])
+            )
+        verts = tuple(product(*[(-v, v) for v in d]))
+        self.add_convex(
+            body,
+            verts,
+            mass=mass,
+            inertia_diagonal=inertia_diagonal,
+            position=position,
+            orientation_xyzw=orientation_xyzw,
+            velocity=velocity,
+            angular_velocity=angular_velocity,
+            world=world,
+        )
+
+    def add_convex(
+        self,
+        body,
+        local_vertices,
+        *,
+        mass,
+        inertia_diagonal=None,
+        position=_ZERO,
+        orientation_xyzw=_IDENTITY,
+        velocity=_ZERO,
+        angular_velocity=_ZERO,
+        world=0,
+    ):
+        """Register convex-hull points in the body's principal COM frame. Mass None fixes the body."""
+        addr = _address(world, body)
+        if addr in self._bodies:
+            raise ValueError("duplicate world-local body ID")
+        pts = _array(local_vertices, "local hull vertices", shape=(None, 3))
+        if not 4 <= len(pts) <= MAX_CONVEX_VERTICES:
+            raise ValueError("convex vertex count outside limits")
+        if mass is None:
+            inv = 0.0
+            if inertia_diagonal is None:
+                inertia_diagonal = _ZERO
+        else:
+            inv = 1.0 / _mass(mass)
+            if inertia_diagonal is None:
+                raise ValueError("a moving general convex body needs its principal inertia")
+        inertia = _array(inertia_diagonal, "principal inertia", shape=(3,))
+        x = _array(position, "body COM position", shape=(3,))
+        q = _array(orientation_xyzw, "body orientation", shape=(4,))
+        v = _array(velocity, "body COM velocity", shape=(3,))
+        w = _array(angular_velocity, "body angular velocity", shape=(3,))
+        RigidBodyModel(np.array([inv]), inertia[None, :], self._gravity)
+        RigidBodyState(x[None, :], q[None, :], v[None, :], w[None, :])
+        if inv == 0 and (v.any() or w.any()):
+            raise ValueError("a fixed rigid body must have zero velocity")
+        shape = CollisionShape(CollisionKey(*addr, 0), "hull", tuple(range(len(pts))))
+        HullShape(shape, CollisionMotion(pts))
+        self._bodies[addr] = _Body(RigidAttachment(0, pts).vertices, inv, inertia, x, q, v, w)
+
+    def add_sheet(
+        self,
+        body,
+        positions,
+        triangles,
+        *,
+        node_masses,
+        velocities=None,
+        edge_compliance=0.0,
+        world=0,
+    ):
+        """Register independent material nodes and finite triangles; each unique edge gets one XPBD constraint.
+
+        Node masses are positive kg, scalar or one per node. A compliance of None disables stretch
+        constraints. All triangles share the physical vertices named by their local node IDs.
+        """
+        addr = _address(world, body)
+        if addr in self._bodies:
+            raise ValueError("duplicate world-local body ID")
+        x = _array(positions, "sheet positions", shape=(None, 3))
+        n = len(x)
+        if not 3 <= n <= MAX_VERTICES:
+            raise ValueError("material node count outside limits")
+        v = (
+            np.zeros_like(x)
+            if velocities is None
+            else _array(velocities, "sheet velocities", shape=x.shape)
+        )
+        m = np.asarray(node_masses)
+        masses = (
+            np.full(n, _mass(node_masses)) if m.ndim == 0 else _array(m, "node masses", shape=(n,))
+        )
+        if np.any(masses <= 0):
+            raise ValueError("node masses must be positive")
+        f = np.asarray(triangles)
+        if (
+            f.ndim != 2
+            or f.shape[1] != 3
+            or not 0 < len(f) <= MAX_SHAPES
+            or f.dtype.kind not in "iu"
+            or np.any(f < 0)
+            or np.any(f >= n)
+        ):
+            raise ValueError(
+                "triangles must be a bounded array of triples of local material node IDs"
+            )
+        faces = tuple(tuple(map(int, row)) for row in f)
+        distinct = {frozenset(row) for row in faces}
+        if (
+            len(distinct) != len(faces)
+            or any(len(row) != 3 for row in distinct)
+            or len(set(f.flat)) != n
+        ):
+            raise ValueError(
+                "faces need distinct, referenced material nodes and unique triangle registrations"
+            )
+        u = x[f[:, 1]] - x[f[:, 0]]
+        v_edge = x[f[:, 2]] - x[f[:, 0]]
+        cross = np.cross(u, v_edge)
+        if np.any(~np.isfinite(cross)) or np.any(~np.any(cross, axis=1)):
+            raise ValueError("degenerate initial sheet triangle")
+        compliance = (
+            None if edge_compliance is None else finite_real(edge_compliance, "edge compliance")
+        )
+        if compliance is not None and compliance < 0:
+            raise ValueError("edge compliance must be nonnegative")
+        self._bodies[addr] = _Sheet(x, v, 1.0 / masses, faces, compliance)
+
+    def pair(self, first, second, layer, *, world=0):
+        """Assign one NormalLayer to every shape pair of these bodies, or explicitly exclude with None."""
+        a, b = sorted((_address(world, first), _address(world, second)))
+        if a not in self._bodies or b not in self._bodies:
+            raise ValueError("pair refers to an unregistered body")
+        if a == b and (not isinstance(self._bodies[a], _Sheet) or len(self._bodies[a].faces) < 2):
+            raise ValueError("a body needs distinct material faces for a self pair")
+        if (a, b) in self._pairs:
+            raise ValueError("duplicate material pair")
+        if layer is not None and not isinstance(layer, NormalLayer):
+            raise TypeError("expected NormalLayer or explicit exclusion None")
+        self._pairs[a, b] = layer
+
+    def build(self, *, backend="host", cache_root=None):
+        """Compile a new independent runtime and initial state. The builder remains editable."""
+        if backend not in ("host", "interpret", "cuda"):
+            raise ValueError("expected host, interpret or cuda")
+        if not self._bodies:
+            raise ValueError("register at least one physical body")
+        dtype = np.float64 if backend == "host" else np.float32
+        shape_count = sum(
+            len(b.faces) if isinstance(b, _Sheet) else 1 for b in self._bodies.values()
+        )
+        vertex_count = sum(
+            3 * len(b.faces) if isinstance(b, _Sheet) else len(b.vertices)
+            for b in self._bodies.values()
+        )
+        if shape_count > MAX_SHAPES or vertex_count > MAX_VERTICES:
+            raise ValueError("collision model capacity exceeded")
+        shapes = []
+        bindings = {}
+        rigid_rows = {}
+        particle_rows = {}
+        bodies = []
+        points = []
+        velocities = []
+        mass = []
+        edges = []
+        compliances = []
+        for addr, item in sorted(self._bodies.items()):
+            if isinstance(item, _Body):
+                rigid_rows[addr] = len(bodies)
+                shape = CollisionShape(
+                    CollisionKey(*addr, 0), "hull", tuple(range(len(item.vertices)))
+                )
+                bindings[shape.key] = RigidAttachment(len(bodies), item.vertices)
+                shapes.append(shape)
+                bodies.append(item)
+                continue
+            offset = len(points)
+            rows = tuple(range(offset, offset + len(item.position)))
+            particle_rows[addr] = rows
+            points.extend(item.position)
+            velocities.extend(item.velocity)
+            mass.extend(item.inverse_mass)
+            for i, face in enumerate(item.faces):
+                shape = CollisionShape(CollisionKey(*addr, i), "triangle", face)
+                bindings[shape.key] = ParticleAttachment(tuple(rows[node] for node in face))
+                shapes.append(shape)
+            if item.compliance is not None:
+                unique = sorted(
+                    {
+                        tuple(sorted((rows[a], rows[b])))
+                        for face in item.faces
+                        for a, b in combinations(face, 2)
+                    }
+                )
+                edges.extend(unique)
+                compliances.extend([item.compliance] * len(unique))
+        laws = {}
+        exclusions = []
+        for a, b in combinations(shapes, 2):
+            if a.key.world != b.key.world:
+                continue
+            key = ((a.key.world, a.key.body), (b.key.world, b.key.body))
+            if key not in self._pairs:
+                raise ValueError(f"missing material pair or explicit exclusion for {key}")
+            layer = self._pairs[key]
+            pair = (a.key, b.key)
+            if layer is None:
+                exclusions.append(pair)
+            else:
+                laws[pair] = layer
+        collision = CollisionModel(tuple(shapes), tuple(exclusions))
+
+        def matrix(values, width):
+            return np.asarray(values, dtype=dtype).reshape(-1, width)
+
+        gravity = self._gravity.astype(dtype)
+        particles = ParticleState(matrix(points, 3), matrix(velocities, 3))
+        particle_inverse = np.asarray(mass, dtype=dtype)
+        rigid_inverse = np.asarray([body.inverse_mass for body in bodies], dtype=dtype)
+        dynamic = np.array([body.inverse_mass > 0 for body in bodies], dtype=bool)
+        if np.any(particle_inverse == 0) or np.any(rigid_inverse[dynamic] == 0):
+            raise ValueError("positive inverse mass is unrepresentable at backend precision")
+        if backend != "host" and points:
+            face_rows = [bindings[s.key].rows for s in shapes if s.kind == "triangle"]
+            actual = particles.position[np.asarray(face_rows)].astype(np.float64)
+            normals = np.cross(actual[:, 1] - actual[:, 0], actual[:, 2] - actual[:, 0])
+            if np.any(~np.any(normals, axis=1)):
+                raise ValueError("sheet triangle is degenerate at backend precision")
+        pm = ParticleModel(particle_inverse, gravity)
+        rm = RigidBodyModel(
+            rigid_inverse,
+            matrix([b.inertia for b in bodies], 3),
+            gravity,
+        )
+        rigid = RigidBodyState(
+            matrix([b.position for b in bodies], 3),
+            matrix([b.orientation for b in bodies], 4),
+            matrix([b.velocity for b in bodies], 3),
+            matrix([b.omega for b in bodies], 3),
+        )
+        constraints = None
+        if edges:
+            ids = np.asarray(edges, dtype=np.int64)
+            rest = np.linalg.norm(
+                particles.position[ids[:, 0]] - particles.position[ids[:, 1]], axis=1
+            )
+            constraints = DistanceConstraints(ids, rest, np.asarray(compliances, dtype=dtype))
+        return ContactScene(
+            collision,
+            bindings,
+            laws,
+            rigid_rows,
+            particle_rows,
+            (pm, rm),
+            CoupledState(particles, rigid),
+            constraints,
+            backend,
+            cache_root,
+        )
+
+
+class ContactScene:
+    """Own a physical state and resources for a compiled declaration. Each step is one native substep."""
+
+    def __init__(
+        self,
+        collision,
+        bindings,
+        laws,
+        rigid_rows,
+        particle_rows,
+        models,
+        state,
+        constraints,
+        backend,
+        cache_root,
+    ):
+        self._lock = RLock()
+        self._closed = False
+        self._models = models
+        self._state = state
+        self._backend = backend
+        self._edge_count = 0 if constraints is None else len(constraints.indices)
+        self.rigid_rows = MappingProxyType(rigid_rows)
+        self.particle_rows = MappingProxyType(particle_rows)
+        with ExitStack() as stack:
+            self._work = stack.enter_context(
+                CollisionWorkspace(collision, backend, cache_root=cache_root)
+            )
+            self._layer = None
+            if backend == "host":
+                ps = (
+                    XPBDSolver(constraints=constraints, tolerance=5e-5)
+                    if models[0].particle_count
+                    else None
+                )
+                rs = RigidSemiImplicitSolver() if models[1].body_count else None
+            else:
+                from ..backends.tyx_normal_layer import TyxNormalLayer
+                from ..backends.tyx_rigid import TyxRigidSemiImplicitSolver
+                from ..backends.tyx_xpbd import TyxXPBDSolver
+
+                self._layer = stack.enter_context(TyxNormalLayer(backend, cache_root=cache_root))
+                ps = (
+                    stack.enter_context(
+                        TyxXPBDSolver(
+                            constraints, mode=backend, tolerance=5e-5, cache_root=cache_root
+                        )
+                    )
+                    if models[0].particle_count
+                    else None
+                )
+                rs = (
+                    stack.enter_context(
+                        TyxRigidSemiImplicitSolver(mode=backend, cache_root=cache_root)
+                    )
+                    if models[1].body_count
+                    else None
+                )
+            self._solvers = (ps, rs)
+            self._system = CollisionLoadSystem(
+                collision, bindings, laws, layer_operator=self._layer
+            )
+            self._resources = stack.pop_all()
+
+    def _require_open(self):
+        if self._closed:
+            raise RuntimeError("contact scene is closed")
+
+    @property
+    def state(self):
+        """Return an owned copy of the latest accepted physical state."""
+        with self._lock:
+            return CoupledState(self._state.particles, self._state.rigid)
+
+    @property
+    def last_frame(self):
+        """The native CollisionLoadStep for the latest accepted substep, or None at entry."""
+        with self._lock:
+            return self._system.last_frame
+
+    def inputs(self):
+        """Allocate independently writable external forces and torques matching the compiled state."""
+        return CoupledInputs.zeros(
+            self._models[0].particle_count,
+            self._models[1].body_count,
+            dtype=self._state.particles.position.dtype,
+        )
+
+    def sample(self, *, capacity=None):
+        """Observe loads and static material geometry without advancing either participant."""
+        with self._lock:
+            self._require_open()
+            loads = self._system.sample(self._state, self._work, capacity=capacity)
+            return ContactSceneObservation(self._work.last_result, loads)
+
+    def step(self, dt, external=None, *, capacity=None):
+        """Advance both active participants and publish only after material and swept checks accept."""
+        with self._lock:
+            self._require_open()
+            with self._work.transaction():
+                f = self._system.step(
+                    self._state,
+                    self.inputs() if external is None else external,
+                    self._models,
+                    self._solvers,
+                    dt,
+                    self._work,
+                    capacity=capacity,
+                )
+                owned = CoupledState(f.state.particles, f.state.rigid)
+            self._state = owned
+            return f
+
+    def stats(self):
+        with self._lock:
+            return dict(
+                backend=self._backend,
+                rigid_count=self._models[1].body_count,
+                particle_count=self._models[0].particle_count,
+                distance_edges=self._edge_count,
+                geometry=self._work.stats(),
+                normal_layer=None if self._layer is None else self._layer.stats(),
+            )
+
+    def close(self):
+        with self._lock:
+            if not self._closed:
+                self._closed = True
+                self._resources.close()
+
+    def __enter__(self):
+        self._require_open()
+        return self
+
+    def __exit__(self, *_):
+        self.close()

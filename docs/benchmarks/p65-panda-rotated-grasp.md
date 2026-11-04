@@ -37,3 +37,10 @@ python tests/reference_newton/robot/panda_sampled_loads.py --device cpu --urdf s
 ```
 
 在零摩擦 Newton 窗口用对应清单和 `--expect slip`。[冻结强夹清单](../../artifacts/p65-panda-rotated-offset-20261104-01/phy-results/test_rotated_offset_box_window0/rotated-grip.inputs.json) · [冻结零摩擦清单](../../artifacts/p65-panda-rotated-offset-20261104-01/phy-results/test_rotated_offset_box_window1/rotated-slip.inputs.json)
+
+
+## 转动读回与三维回放
+
+对这两个偏心窗口的全部 3,600 个子步，从实际 XYZW 与世界角速度独立重建质心角动量 `L = R I Rᵀ ω`。惯量由均匀长方体的质量和三边长独立计算。逐步比较 `L_after − L_before` 和施加在质心的世界角冲量 `h τ`，误差先取范数再相加。正常摩擦窗口的累计逐步误差为 3.36×10⁻⁶ N·m·s，占累计施加角冲量范数的 **0.00855%**；零摩擦窗口对应 2.88×10⁻⁷ N·m·s 和 **0.02132%**。在同一保存轨迹上把力矩项置零，两个误差分别增至 0.03926 和 0.001351 N·m·s。该反事实只检查读数的辨别力。独立转动盒算例同时检查 XYZW 双覆盖、主轴旋到世界轴以及反向力矩的符号。[检查程序](../../tests/reference_newton/robot/payload_angular_balance.py) · [正常摩擦逐步核查](../../artifacts/p65-crossing-rotated-density-20261104-01/moment-grip-summary.json) · [零摩擦逐步核查](../../artifacts/p65-crossing-rotated-density-20261104-01/moment-slip-summary.json)
+
+离线三维回放使用这两条 **Newton Featherstone CPU、相同接触律** 的已保存轨迹，各抽取 181 帧。1.350 s 时正常摩擦夹爪两指分别为 5.42 N 和 5.44 N，桌面为 0 N；零摩擦物体在桌面承受 1.18 N，两指均已脱离。可切换材料、转动视角或拖动时间。[打开双工况回放](../../artifacts/p65-crossing-rotated-density-20261104-01/panda-grasp-replay.html) · [浏览器实际读数](../../artifacts/p65-crossing-rotated-density-20261104-01/playback-qa.json)

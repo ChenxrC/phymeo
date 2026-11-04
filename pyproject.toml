@@ -41,3 +41,6 @@ line-length = 100
 
 [tool.ruff.lint]
 select = ["E4", "E7", "E9", "F", "I"]
+
+[tool.setuptools.package-data]
+"phymeo.builders" = ["panda_assets/*.urdf", "panda_assets/LICENSE", "panda_assets/NOTICE", "panda_assets/SOURCES.md"]

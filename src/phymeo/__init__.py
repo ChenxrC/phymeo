@@ -206,6 +206,12 @@ from .runtime.program import (
     TerminalPointImpulseWorkspace,
 )
 from .runtime.registry import StateFamily, StateRegistry
+from .runtime.robot_payload_scene import (
+    PadFace,
+    RobotPayloadObservation,
+    RobotPayloadScene,
+    SceneGeometrySnapshot,
+)
 from .runtime.scene_stepper import SceneStepper
 from .runtime.stepper import Stepper
 from .runtime.terminal_impulse import PointVelocityImpulses, TerminalImpulseProgram
@@ -228,6 +234,7 @@ from .sensors import (
 from .solvers.articulated_coupling import ArticulatedCouplingProgram, make_articulated_runtime
 from .solvers.cloth import ClothProgram, make_cloth_runtime
 from .solvers.cloth_link_contact import ClothLinkMaterial
+from .solvers.cloth_tool_contact import LinkHullTool
 from .solvers.collision_loads import (
     CollisionLoadSystem,
     NormalLayer,
@@ -351,6 +358,7 @@ __all__ = [
     "JointLimits",
     "CollisionPlane",
     "LinkCapsule",
+    "LinkHullTool",
     "RobotContactMaterial",
     "RobotContactSystem",
     "CompliantRobotContactProgram",
@@ -390,6 +398,10 @@ __all__ = [
     "step_free_root",
     "RobotModel",
     "RobotState",
+    "PadFace",
+    "RobotPayloadObservation",
+    "RobotPayloadScene",
+    "SceneGeometrySnapshot",
     "RobotInputs",
     "RobotPointPort",
     "FloatingRobotPointPort",

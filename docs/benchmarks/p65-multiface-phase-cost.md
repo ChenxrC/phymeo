@@ -36,3 +36,8 @@
 两会话在标准载荷上的时长降低 **13.35% 和 13.34%**，异构留出降低 **10.36% 和 8.87%**。留出的三个世界复用了本地面和节点编号。两张受载布的逐面位置、权重、正压力和连杆反力通过独立检查；第三张布零接触且仍然推进。CUDA 压力层真实中点才超容量时，先前已执行的入步工作如实计数，整批不发布；在同一对象上以足额容量重试得到原世界输出。提前物理拒绝、错序、设备异常后的重试与等待栈清理也通过。另有平移与真正转动下的边内首触、连续并列线段、退化拒绝回归。[容量和取消试片](../../tests/scale/test_tyx_multiface_batch.py)
 
 复现时先导出基线 `0764463e4705f7447f7437d3b8b1c2f74c6171f7` 的 `src`。在旧源码作为 `PYTHONPATH` 时运行 `python scripts/profile_multiface_stage_cost.py --pairs 3 --cache-root <cache> --out <旧剖析.json>`；换到新源码后，以 `python scripts/benchmark_capsule_witness_batch.py --baseline-module <旧src>/phymeo/geometry/_capsule_triangle_sweep.py --profile-reference <旧剖析.json> --first baseline --pairs 5 --cache-root <cache> --out <新收据.json>` 运行。第二进程改用 `--first candidate` 和新的缓存、收据路径。父树 `artifacts/p65-multiface-phase-cost-20261105-01` 中的 `profile-{baseline,candidate}-timeline` 保留原始跨线程时间段，`cost-paired-{baseline,candidate}-first` 保留逐窗原时钟、完整物理输出和原始计数。全部专项和格式检查正常退出。
+
+
+## 同一新几何下，单独合批能省多少墙钟
+
+父集成采用完全相同的新版最近点代码，在同一进程交替比较普通逐世界调用与跨世界合批，共 10 对 W4×8 四步窗。两路实际处理的 416 个站点和逐帧物理状态相同。普通窗 p50 为 **156.40 ms**，合批为 **155.74 ms**，10 对中各有 5 次更快。此档未测得稳定的纯合批墙钟收益。核启动和双向传输仍从每窗 48 次降至 12 次；上传从 319,488 B 降至 79,872 B，下载从 122,880 B 降至 30,720 B。前表约 13.3% 的收益比较的是同一合批里两种几何实现。[同场十对原始时间、状态及计数](../../artifacts/p65-fold-impact-and-batch-20261105-01/ordinary-vs-batch.json)

@@ -39,3 +39,10 @@
 python examples/panda_cube.py --sphere-radius .025 --mass .08 --closed-width .024 --grip-above-com .008 --friction 0 --trace active-phy.json --inputs-out active.inputs.json
 python tests/reference_newton/robot/panda_sampled_loads.py --device cpu --urdf src/phymeo/builders/panda_assets/panda.urdf --inputs active.inputs.json --expect structural-contact --out active-newton.json
 ```
+
+
+## 入步作用点与实际回放
+
+对 50 mm 球的两条受力轨迹，从原输入和旧监测轨迹分别独立重建球的力矩、连杆质心力矩、沿物理祖先轴的广义载荷，以及球所受指垫、桌面和结构的合外力。首步之前，核对的球位姿、速度与九个关节状态在各自引擎内逐分量相同。Phymeo 首次受力的球冲量为 (0.0103241, 0.0000587, 0.0036135) N·s，同一时刻的新旧球动量差与这三个分量一致。该步第一轴的反作用角冲量约 6.78×10⁻⁷ N·m·s。[Phymeo 受力核查](../../artifacts/p65-fold-impact-and-batch-20261105-01/phy-pair.result.json) · [Newton 受力核查](../../artifacts/p65-fold-impact-and-batch-20261105-01/newton-pair.result.json)
+
+离线回放可切换两个引擎，用“首次结构受力”或“峰值结构受力”跳转。箭头从该物理步真实的世界作用点出发，方向为球所受的合接触力。每个非零结构受力步均有对应的入步位姿，终态单独显示。浏览器核对了四个跳转的时间、姿态、箭头及力值。两端的峰值合接触力分别为 18.274 N、17.133 N。[双引擎交互回放](../../artifacts/p65-fold-impact-and-batch-20261105-01/panda-link-impact.html) · [浏览器实际读数](../../artifacts/p65-fold-impact-and-batch-20261105-01/impact-playback-qa.json)

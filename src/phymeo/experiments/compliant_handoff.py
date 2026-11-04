@@ -20,6 +20,7 @@ from ..solvers.cloth_link_contact import ClothLinkMaterial
 from ..solvers.collision_loads import NormalLayer
 from ..solvers.compliant_cloth_contact import CompliantClothContactProgram, CompliantPatch
 from .compliant_cloth import Case, record_step, trace_start
+from .handoff_boundary import MountedBoundaryAccess
 from .handoff_grippers import (
     BASE_Z,
     CLOSED,
@@ -58,6 +59,7 @@ RECEIVER_CONTROLS = (
     "cooperative",
     "aperture-guided",
     "paired-presentation",
+    "boundary-presentation",
 )
 
 
@@ -319,7 +321,12 @@ def run_handoff(
     coordinator = None
     if track_material:
         trace["receiver_control"] = receiver_control
-    if receiver_control in ("cooperative", "aperture-guided", "paired-presentation"):
+    if receiver_control in (
+        "cooperative",
+        "aperture-guided",
+        "paired-presentation",
+        "boundary-presentation",
+    ):
         coordinator = CooperativeReception(
             case.receiver_nodes,
             case.dt,
@@ -329,10 +336,15 @@ def run_handoff(
             b0,
             transfer,
             layer_width=finger_layer.width_m,
-            paired_presentation=receiver_control == "paired-presentation",
+            paired_presentation=receiver_control
+            in ("paired-presentation", "boundary-presentation"),
+            boundary_access=MountedBoundaryAccess(case)
+            if receiver_control == "boundary-presentation"
+            else None,
             axial_clearance=(
                 HALF_THICKNESS_M + finger_layer.width_m
-                if receiver_control in ("aperture-guided", "paired-presentation")
+                if receiver_control
+                in ("aperture-guided", "paired-presentation", "boundary-presentation")
                 else None
             ),
         )

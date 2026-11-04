@@ -21,6 +21,7 @@ from phymeo.experiments.compliant_handoff import (
     _travel,
     build_handoff,
 )
+from phymeo.experiments.handoff_boundary import MountedBoundaryAccess
 from phymeo.experiments.handoff_grippers import BASE_Z, CLOSED
 from phymeo.experiments.handoff_reception import CooperativeReception
 
@@ -45,7 +46,7 @@ def physical(frame):
     )
 
 
-def run(original_path, output, *, frames=None, stop_time=None, resume=None):
+def run(original_path, output, *, frames=None, stop_time=None, resume=None, boundary=False):
     summary = output.with_suffix("").with_suffix(".summary.json")
     if output.exists() or summary.exists():
         raise FileExistsError("choose a fresh output and summary path for this physical window")
@@ -83,6 +84,7 @@ def run(original_path, output, *, frames=None, stop_time=None, resume=None):
         layer_width=pad["width_m"],
         axial_clearance=rho + pad["width_m"],
         paired_presentation=True,
+        boundary_access=MountedBoundaryAccess(case) if boundary else None,
     )
     start = next(ev["t"] for ev in original["events"] if ev["phase"] == "lift_A")
     begin = round(start / dt)
@@ -135,7 +137,7 @@ def run(original_path, output, *, frames=None, stop_time=None, resume=None):
     for i in range(begin, len(source) - 1):
         restored = physical(source[i])
         command = drive(source[i], restored, i * dt)
-        if coord.presentation.goal is not None:
+        if coord.presentation.goal is not None or (boundary and coord.boundary.report is not None):
             entry = i
             break
         matched(source[i + 1], command)
@@ -143,7 +145,8 @@ def run(original_path, output, *, frames=None, stop_time=None, resume=None):
         raise ValueError("source has no measured released-from-solo presentation entry")
     state = physical(source[entry])
     local = Case(case.program, state, case.inputs, dt, case.substeps)
-    trace = trace_start(local, "paired-presentation-" + str(original["initial_tilt_deg"]))
+    mode = "boundary-presentation" if boundary else "paired-presentation"
+    trace = trace_start(local, mode + "-" + str(original["initial_tilt_deg"]))
     trace["frames"][0] = dict(source[entry])
     signature = fingerprint(case.program.problem_signature())
     sha = hashlib.sha256(Path(original_path).read_bytes()).hexdigest()
@@ -158,6 +161,9 @@ def run(original_path, output, *, frames=None, stop_time=None, resume=None):
         substeps=case.substeps,
         force_limits={n: g.effort_limits.tolist() for n, g in case.grippers.items()},
     )
+
+    if boundary:
+        trace["origin"]["receiver_control"] = mode
 
     def qualified(frame):
         return coord.holder is not None and _shared_support(frame["measurements"], weight)
@@ -261,6 +267,36 @@ def run(original_path, output, *, frames=None, stop_time=None, resume=None):
         else {},
         registered_pairs=sorted({f["registered_pairs"] for f in trace["self_samples"]}),
     )
+    if boundary:
+        windows = {}
+        for f in data:
+            obs = f["receiver_observation"] or {}
+            selection = obs.get("boundary_selection")
+            if selection is not None:
+                windows[selection["decision_time_s"]] = selection
+        patch_count = len(trace["patches"])
+        weakest = 0.0
+        peak_structure = {}
+        bilateral = []
+        for k, body in enumerate(sub):
+            g = {s["patch"]: s for s in trace["samples"][k * patch_count : (k + 1) * patch_count]}
+            lower = min(g[n]["normal_n"] for n in ("B_left", "B_right"))
+            weakest = max(weakest, lower)
+            if lower > 0.20:
+                bilateral.append(body["t"])
+            forces = {}
+            for c in body["cloth_links"]:
+                if c["robot"] == "B":
+                    forces[c["link"]] = forces.get(c["link"], 0.0) + c["normal_force_n"]
+            for link, value in forces.items():
+                peak_structure[link] = max(peak_structure.get(link, 0.0), value)
+        metrics.update(
+            boundary_decisions=list(windows.values()),
+            substep_B_weaker_pad_peak_n=weakest,
+            actual_B_bilateral_substeps=len(bilateral),
+            first_B_bilateral_substep_s=bilateral[0] if bilateral else None,
+            substep_B_structural_normal_peaks_n=peak_structure,
+        )
     trace["metrics"] = metrics
     trace["coordination_events"] = coord.events
     trace["completed"] = "failure" not in trace
@@ -280,9 +316,19 @@ def main():
     g.add_argument("--frames", type=int)
     g.add_argument("--stop-time", type=float)
     ap.add_argument("--resume", type=Path)
+    ap.add_argument(
+        "--boundary",
+        action="store_true",
+        help="choose and latch a structurally checked topological material boundary",
+    )
     args = ap.parse_args()
     return run(
-        args.source, args.output, frames=args.frames, stop_time=args.stop_time, resume=args.resume
+        args.source,
+        args.output,
+        frames=args.frames,
+        stop_time=args.stop_time,
+        resume=args.resume,
+        boundary=args.boundary,
     )
 
 

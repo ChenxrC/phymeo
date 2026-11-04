@@ -8,6 +8,7 @@ import numpy as np
 class SphereIslandDevice:
     def __init__(self, mode, cache, props, bodies, offsets, sides, restitution):
         import tyx as tx
+
         from . import _tyx_sphere_island_kernels as kernels
 
         self.tx, self.k, self.mode = tx, kernels, mode

@@ -7,8 +7,8 @@ import numpy as np
 from ..constraints.robot_contact import RobotContactMaterial
 from ..dynamics.robot_dynamics import robot_com_kinematics
 from ..dynamics.rotation import quaternion_matrix
-from .box_link_contact import BoxLinkContacts
 from .sphere_link_contact import SphereLinkLoads
+from .table_box_patch import TableLinkSolids
 
 
 @dataclass
@@ -31,12 +31,12 @@ class FixedTableLoads:
 
 
 class FixedTableContacts:
-    """A stationary oriented box supporting moving link capsules or spheres."""
+    """A fixed oriented support for moving spheres, finite capsules and cuboids."""
 
     def __init__(
         self, solids, *, center_m, half_extents_m, material, orientation_xyzw=(0.0, 0.0, 0.0, 1.0)
     ):
-        self._registry = BoxLinkContacts(solids)
+        self._registry = TableLinkSolids(solids)
         if any(s.owner_index < 0 for s in self._registry.solids):
             raise ValueError("a fixed table needs moving link solids")
         self.center = np.array(center_m, dtype=float, copy=True)
@@ -69,7 +69,7 @@ class FixedTableContacts:
         # any unsupported moving shapes or channels it already solves.
         excluded = set(exclude_keys)
         excluded.update(c.shape.key for c in asset.collisions if c.link_index < 0)
-        source = BoxLinkContacts.from_asset(
+        source = TableLinkSolids.from_asset(
             asset, exclude_keys=excluded, authored_moving_frames=authored_moving_frames
         )
         return cls(source.solids, **table)

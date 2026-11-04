@@ -66,10 +66,8 @@ class _PassiveGeometry:
         self.moving = self.links >= 0
         self.radii = np.array(self.radii)[:, None]
         self.pad = np.array(self.pad)
-        self.table_parts = np.array(
-            [i for i in self.round_parts if not self.pad[i] and self.links[self.starts[i]] >= 0],
-            dtype=int,
-        )
+        # Each moving solid may contact the table independently of its payload contacts.
+        self.table_parts = np.flatnonzero(self.links[self.starts] >= 0)
 
     def margin(self, points, extents):
         low = np.minimum.reduceat(points, self.starts, axis=0) - self.radii
@@ -122,8 +120,8 @@ class _PassiveGeometry:
         return margins
 
     def table_registry(self, asset, **kwargs):
-        moving_round = set(self.table_parts)
-        excluded = [s.shape.key for i, s in enumerate(asset.collisions) if i not in moving_round]
+        moving_parts = set(self.table_parts)
+        excluded = [s.shape.key for i, s in enumerate(asset.collisions) if i not in moving_parts]
         return FixedTableContacts.from_asset(asset, exclude_keys=excluded, **kwargs)
 
     def world_collision_points(self, kin):
@@ -252,7 +250,7 @@ def run_panda_cube(
     with full_size_m. Omit it to use box_size_m, which defaults to a 50 mm cube.
     Spheres exchange loads with non-pad solids. For boxes, structural_response=True
     enables finite round link contact. False keeps the historical clearance audit.
-    table_link_response adds a separate reaction between moving round links and the fixed table.
+    table_link_response adds a separate reaction between moving link solids and the fixed table.
     box_size_m gives full lengths along the initially grasp-aligned, transverse and
     vertical body axes at zero yaw. initial_yaw_rad rotates only the payload about
     world +Z from this orientation. The box rests flat on the finite table.

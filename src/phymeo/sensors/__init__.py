@@ -7,6 +7,7 @@ from .contact_wrench import (
     measure_cloth_link_wrench,
     measure_contact_wrench,
 )
+from .depth_camera import DepthCamera, DepthImage
 from .robot_frame import RelativeSiteMeasurement, RobotSite, measure_relative_site
 from .robot_imu import RobotIMUReading, measure_robot_imu
 
@@ -14,6 +15,8 @@ __all__ = [
     "ContactForceMatrix",
     "ContactSelector",
     "ContactWrenchReading",
+    "DepthCamera",
+    "DepthImage",
     "RelativeSiteMeasurement",
     "RobotIMUReading",
     "RobotSite",

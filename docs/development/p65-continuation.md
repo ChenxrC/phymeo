@@ -2,6 +2,10 @@
 
 ## 当前入口（2026-11-05）
 
+北京时间 11 月 5 日凌晨的工作以[08:00 批次计划](../superpowers/plans/2026-11-05-newton-overnight-0800.md)和[分模块实测](../benchmarks/p65-newton-20261105-0800.md)为入口。按刚体与关节、柔性接触、运行时观测和 GPU 多世界分别验收，保留本机 Newton 1.7.0 的参照以及尚未通过的案例。
+
+### 同日较早结果
+
 自由球已能向非指垫机器人连杆施加反力，50 mm 球撞臂的真实响应已在 Phymeo 和 Newton 独立推进。小折角材料片可带压换面，实际离散角动量偏差及同窗细分已记录。W4×8 的重复材料记录重建已消除，合批物理窗较上一版缩短约 13.3%，与同几何的普通逐世界调用耗时接近。[三线结果与下一批判据](../superpowers/plans/2026-11-05-structural-impact-fold-and-host-cost.md) · [首碰与峰值受力回放](../../artifacts/p65-fold-impact-and-batch-20261105-01/panda-link-impact.html)
 
 ### 同日上一批

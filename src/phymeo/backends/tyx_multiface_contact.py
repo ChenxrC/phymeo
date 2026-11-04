@@ -23,7 +23,14 @@ _PHASES = ("entry", "midpoint", "endpoint")
 _MAX_WORLDS = 64
 _MAX_SITES = 1 << 20
 _STOP = object()
-_COUNTERS = ("completed_launches", "sites", "uploads", "downloads", "uploaded_bytes", "downloaded_bytes")
+_COUNTERS = (
+    "completed_launches",
+    "sites",
+    "uploads",
+    "downloads",
+    "uploaded_bytes",
+    "downloaded_bytes",
+)
 
 
 @dataclass(frozen=True)
@@ -116,14 +123,20 @@ class TyxMultifaceContactBatch:
                 raise ValueError("duplicate world key")
             if len(self._steppers) >= _MAX_WORLDS:
                 raise ValueError(f"multiface batch supports at most {_MAX_WORLDS} worlds")
-            if not isinstance(spec, ClothLinkWorld) or not isinstance(spec.program, CompliantClothContactProgram):
+            if not isinstance(spec, ClothLinkWorld) or not isinstance(
+                spec.program, CompliantClothContactProgram
+            ):
                 raise TypeError("expected a ClothLinkWorld with a compliant cloth program")
             program = spec.program
             if program.cloth_links is None or program.backed_pads or program.cloth_self is not None:
-                raise ValueError("expected a midpoint cloth-link program without backed pads or self-contact")
+                raise ValueError(
+                    "expected a midpoint cloth-link program without backed pads or self-contact"
+                )
             self._links[key] = program.cloth_links
             self._steppers[key] = stepper = program.stepper(self._settings)
-            unloaded = {name: RobotInputs.zeros(r.model.dof_count) for name, r in program.robots.items()}
+            unloaded = {
+                name: RobotInputs.zeros(r.model.dof_count) for name, r in program.robots.items()
+            }
             unloaded[program.cloth_domain] = StepInputs.zeros(program.cloth.particle_count)
             self._initial[key], _ = stepper._snapshot(spec.initial, SceneInputs(unloaded))
         if not self._steppers:
@@ -131,7 +144,9 @@ class TyxMultifaceContactBatch:
         self._states = self._initial.copy()
         # A suspended Python stack per world retains the original geometry and scattering
         # locals. The scheduler resumes only one at a time, including on the first phase.
-        self._pool = ThreadPoolExecutor(max_workers=len(self._states), thread_name_prefix="phymeo-material")
+        self._pool = ThreadPoolExecutor(
+            max_workers=len(self._states), thread_name_prefix="phymeo-material"
+        )
 
     @property
     def last_phases(self):
@@ -174,8 +189,12 @@ class TyxMultifaceContactBatch:
     def _evaluate(self, requests, index, capacity):
         substep, phase_id = divmod(index, len(_PHASES))
         phase = _PHASES[phase_id]
-        if substep >= self._settings.substeps or any(req.phase != phase for req in requests.values()):
-            raise RuntimeError(f"unexpected world material phase, expected {phase} in substep {substep}")
+        if substep >= self._settings.substeps or any(
+            req.phase != phase for req in requests.values()
+        ):
+            raise RuntimeError(
+                f"unexpected world material phase, expected {phase} in substep {substep}"
+            )
         count = sum(len(req.rows) for req in requests.values())
         if count > capacity:
             raise ValueError(f"site capacity {capacity} below {count} at substep {substep} {phase}")
@@ -196,7 +215,11 @@ class TyxMultifaceContactBatch:
         values = np.concatenate([req.rows for req in requests.values()])
         try:
             answer = self._layer.evaluate(values)
-            if answer.shape != (count, 5) or not np.isfinite(answer).all() or np.any(answer[:, 1] < 0):
+            if (
+                answer.shape != (count, 5)
+                or not np.isfinite(answer).all()
+                or np.any(answer[:, 1] < 0)
+            ):
                 raise RuntimeError("invalid grouped normal layer response")
             return trace, answer
         except BaseException:
@@ -207,22 +230,40 @@ class TyxMultifaceContactBatch:
         """Return full per-world SceneStepResults; capacity bounds material rows per phase."""
         with self._lock:
             self._open()
-            if not isinstance(inputs_by_world, Mapping) or set(self._keys(inputs_by_world)) != set(self._states):
+            if not isinstance(inputs_by_world, Mapping) or set(self._keys(inputs_by_world)) != set(
+                self._states
+            ):
                 raise ValueError("inputs must cover every registered world")
-            if isinstance(site_capacity, (bool, np.bool_)) or not isinstance(site_capacity, Integral) or not 0 <= site_capacity <= _MAX_SITES:
+            if (
+                isinstance(site_capacity, (bool, np.bool_))
+                or not isinstance(site_capacity, Integral)
+                or not 0 <= site_capacity <= _MAX_SITES
+            ):
                 raise ValueError(f"site capacity must be an integer in [0, {_MAX_SITES}]")
             capacity = int(site_capacity)
             calls = {k: _WorldCall() for k in self._states}
             jobs, events, results, traces = [], {}, {}, []
             try:
                 for k, call in calls.items():
-                    jobs.append(self._pool.submit(call.run, self._links[k], self._steppers[k], self._states[k], inputs_by_world[k], h))
+                    jobs.append(
+                        self._pool.submit(
+                            call.run,
+                            self._links[k],
+                            self._steppers[k],
+                            self._states[k],
+                            inputs_by_world[k],
+                            h,
+                        )
+                    )
                     events[k] = call.next_event()
                 while events:
                     requests = {}
                     for k, event in events.items():
                         if isinstance(event, SceneStepResult):
-                            if event.report.accepted and len(traces) != len(_PHASES) * self._settings.substeps:
+                            if (
+                                event.report.accepted
+                                and len(traces) != len(_PHASES) * self._settings.substeps
+                            ):
                                 raise RuntimeError("world accepted with missing material phases")
                             results[k] = event
                         else:
@@ -250,7 +291,9 @@ class TyxMultifaceContactBatch:
         """Actual normal-layer counters, including work performed before a later rejection."""
         with self._lock:
             current = self._layer.stats() if self._layer is not None else {}
-            return dict(backend=self._mode, **{k: self._retired[k] + current.get(k, 0) for k in _COUNTERS})
+            return dict(
+                backend=self._mode, **{k: self._retired[k] + current.get(k, 0) for k in _COUNTERS}
+            )
 
     def close(self):
         with self._lock:

@@ -66,7 +66,7 @@ class ClothLinkContacts:
         if operator is not None and not isinstance(operator, TyxNormalLayer):
             raise TypeError("cloth-link operator must be a TyxNormalLayer")
         self.operator = operator
-        self._phase_dispatch = ContextVar('cloth_link_phase_dispatch', default=None)
+        self._phase_dispatch = ContextVar("cloth_link_phase_dispatch", default=None)
 
     @staticmethod
     def endpoints(link, geo):
@@ -181,7 +181,13 @@ class ClothLinkContacts:
             answer = _host_law(values) if self.operator is None else self.operator.evaluate(values)
         else:
             addresses = tuple(
-                (link.domain, link.key, self.face_names[face], tuple(map(int, self.faces[face])), len(sites))
+                (
+                    link.domain,
+                    link.key,
+                    self.face_names[face],
+                    tuple(map(int, self.faces[face])),
+                    len(sites),
+                )
                 for link, face, _, _, _, sites in groups
             )
             answer = dispatch(phase, values, addresses)

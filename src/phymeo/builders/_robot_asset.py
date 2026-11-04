@@ -28,6 +28,7 @@ class LinkCollision:
     origin_xyzw: tuple[float, ...]
     shape: CollisionShape
     local_vertices: tuple[tuple[float, ...], ...]
+    name_is_authored: bool = False
 
 
 @dataclass(frozen=True, eq=False)
@@ -111,7 +112,18 @@ def unit_axis(axis, where):
     return axis / np.hypot.reduce(axis)
 
 
-def make_collider(name, link_name, link_index, ordinal, position, orientation, kind, size):
+def make_collider(
+    name,
+    link_name,
+    link_index,
+    ordinal,
+    position,
+    orientation,
+    kind,
+    size,
+    *,
+    name_is_authored=True,
+):
     """Register a finite primitive in the authored link frame, with SI half-lengths."""
     where = f"link {link_name!r} collision {name!r}"
     if kind != "mesh" and np.any(size <= 0):
@@ -173,6 +185,7 @@ def make_collider(name, link_name, link_index, ordinal, position, orientation, k
         tuple(orientation),
         shape,
         tuple(tuple(row) for row in vertices),
+        name_is_authored,
     )
 
 

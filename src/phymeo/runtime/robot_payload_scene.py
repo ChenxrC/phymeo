@@ -52,6 +52,12 @@ def _frozen(value):
 
 
 @dataclass(frozen=True)
+class _NamedCollision:
+    link_name: str
+    collision_name: str
+
+
+@dataclass(frozen=True)
 class PadFace:
     """Material samples on one moving cuboid face, in its authored collision axes.
 
@@ -60,14 +66,23 @@ class PadFace:
     has the configured per-sample stiffness and damping.
     """
 
-    shape_key: CollisionKey
+    shape_key: CollisionKey | _NamedCollision
     axis: int
     side: int
     offsets_m: tuple
 
+    @classmethod
+    def named(cls, link_name, collision_name, axis, side, offsets_m):
+        """Resolve this authored (link, collision) pair against each new scene's asset."""
+        if any(
+            not isinstance(name, str) or not name.strip() for name in (link_name, collision_name)
+        ):
+            raise ValueError("named pad requires a nonempty authored link and collision name")
+        return cls(_NamedCollision(link_name, collision_name), axis, side, offsets_m)
+
     def __post_init__(self):
-        if not isinstance(self.shape_key, CollisionKey):
-            raise TypeError("pad shape_key must be a CollisionKey")
+        if not isinstance(self.shape_key, (CollisionKey, _NamedCollision)):
+            raise TypeError("pad requires a model-local CollisionKey or PadFace.named")
         for name, choices in (("axis", (0, 1, 2)), ("side", (-1, 1))):
             v = getattr(self, name)
             if isinstance(v, (bool, np.bool_)) or not isinstance(v, Integral) or v not in choices:
@@ -91,12 +106,29 @@ def _pad_points(asset, pads):
     cols = {c.shape.key: c for c in asset.collisions}
     links, points, sample_keys, excluded = [], [], [], set()
     for pad in pads:
-        if not isinstance(pad, PadFace) or pad.shape_key not in cols:
+        if not isinstance(pad, PadFace):
             raise ValueError("pad must select a registered collision shape")
-        if pad.shape_key in excluded:
+        selector = pad.shape_key
+        if isinstance(selector, _NamedCollision):
+            matches = [
+                col
+                for col in asset.collisions
+                if col.name_is_authored
+                and (col.link_name, col.name) == (selector.link_name, selector.collision_name)
+            ]
+            if len(matches) != 1:
+                reason = "ambiguous" if matches else "not found"
+                raise ValueError(
+                    f"pad collision {selector.link_name!r}/{selector.collision_name!r} {reason}"
+                )
+            col = matches[0]
+        else:
+            if selector not in cols:
+                raise ValueError("pad must select a registered collision shape")
+            col = cols[selector]
+        if col.shape.key in excluded:
             raise ValueError("duplicate pad collision shape")
-        excluded.add(pad.shape_key)
-        col = cols[pad.shape_key]
+        excluded.add(col.shape.key)
         if col.link_index < 0 or col.shape.kind != "hull":
             raise ValueError("pad face requires a moving cuboid collision shape")
         box = LinkSolid(col.name, col.link_name, col.link_index, "box", col.local_vertices)

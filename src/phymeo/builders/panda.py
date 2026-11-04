@@ -95,6 +95,7 @@ def _proxy_capsules(colliders, name, owner):
                 q,
                 "capsule",
                 np.array([radius, half]),
+                name_is_authored=False,
             )
         )
     return result

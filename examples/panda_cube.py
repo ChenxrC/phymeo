@@ -57,6 +57,11 @@ def main():
         help="exchange forces with supported non-pad robot links",
     )
     parser.set_defaults(structural_response=None)
+    parser.add_argument(
+        "--resolve-link-table",
+        action="store_true",
+        help="apply separate forces between moving round links and the finite table",
+    )
     parser.add_argument("--urdf", type=Path, help="compatible local classic Panda asset")
     parser.add_argument("--trace", type=Path, help="save full state and forces to a new JSON file")
     parser.add_argument(
@@ -85,6 +90,7 @@ def main():
         initial_xy_offset_m=args.initial_xy_offset,
         initial_yaw_rad=args.initial_yaw_rad,
         structural_response=args.structural_response,
+        table_link_response=args.resolve_link_table,
         record=args.trace is not None,
     )
     if args.trace is not None:

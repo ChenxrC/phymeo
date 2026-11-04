@@ -15,6 +15,7 @@ from ..dynamics.robot_dynamics import robot_dynamics_terms
 from ..dynamics.robot_kinematics import _axis_rotation, _point_jacobians_at, forward_kinematics
 from ..dynamics.rotation import matrix_quaternion, quaternion_matrix
 from ..solvers.box_link_contact import BoxLinkContacts
+from ..solvers.fixed_table_contact import FixedTableContacts
 from ..solvers.rigid_semi_implicit import RigidSemiImplicitSolver
 from ..solvers.sphere_link_contact import SphereLinkContacts
 from .panda_payload import SampledPayload
@@ -65,6 +66,10 @@ class _PassiveGeometry:
         self.moving = self.links >= 0
         self.radii = np.array(self.radii)[:, None]
         self.pad = np.array(self.pad)
+        self.table_parts = np.array(
+            [i for i in self.round_parts if not self.pad[i] and self.links[self.starts[i]] >= 0],
+            dtype=int,
+        )
 
     def margin(self, points, extents):
         low = np.minimum.reduceat(points, self.starts, axis=0) - self.radii
@@ -116,6 +121,22 @@ class _PassiveGeometry:
         )
         return margins
 
+    def table_registry(self, asset, **kwargs):
+        moving_round = set(self.table_parts)
+        excluded = [s.shape.key for i, s in enumerate(asset.collisions) if i not in moving_round]
+        return FixedTableContacts.from_asset(asset, exclude_keys=excluded, **kwargs)
+
+    def world_collision_points(self, kin):
+        points = self.local.copy()
+        points[self.moving] = _world_points(kin, self.links[self.moving], self.local[self.moving])
+        return points
+
+    def unhandled_table(self, kin, center, half):
+        gaps = self.margin(self.world_collision_points(kin) - center, half)
+        gaps[self.table_parts] = np.inf
+        index = int(np.argmin(gaps))
+        return float(gaps[index]), self.names[index]
+
     def registry(self, asset, payload, *, authored_moving_frames=False):
         is_box = payload.radius is None
         excluded = [
@@ -140,8 +161,7 @@ class _PassiveGeometry:
         sphere_radius=None,
         omit_round=False,
     ):
-        points = self.local.copy()
-        points[self.moving] = _world_points(kin, self.links[self.moving], self.local[self.moving])
+        points = self.world_collision_points(kin)
         cube = (
             self.margin((points - center) @ rotation, extents)
             if sphere_radius is None
@@ -219,6 +239,7 @@ def run_panda_cube(
     box_size_m=None,
     payload_geometry=None,
     structural_response=None,
+    table_link_response=False,
     closed_width_m=0.029,
     initial_xy_offset_m=(0.0, 0.0),
     initial_yaw_rad=0.0,
@@ -231,6 +252,7 @@ def run_panda_cube(
     with full_size_m. Omit it to use box_size_m, which defaults to a 50 mm cube.
     Spheres exchange loads with non-pad solids. For boxes, structural_response=True
     enables finite round link contact. False keeps the historical clearance audit.
+    table_link_response adds a separate reaction between moving round links and the fixed table.
     box_size_m gives full lengths along the initially grasp-aligned, transverse and
     vertical body axes at zero yaw. initial_yaw_rad rotates only the payload about
     world +Z from this orientation. The box rests flat on the finite table.
@@ -245,6 +267,8 @@ def run_panda_cube(
     if not np.isfinite(mass_kg) or mass_kg <= 0:
         raise ValueError("the cube must have finite positive mass")
     payload = SampledPayload(box_size_m, payload_geometry=payload_geometry)
+    if not isinstance(table_link_response, (bool, np.bool_)):
+        raise ValueError("table_link_response must be boolean")
     if structural_response is not None and not isinstance(structural_response, (bool, np.bool_)):
         raise ValueError("structural_response must be a boolean or None")
     respond = (
@@ -299,6 +323,13 @@ def run_panda_cube(
     table_half = np.array([travel / 2 + 0.052, 0.055, 0.008])
     table_center = np.array(
         [nominal_center[0] + travel / 2, nominal_center[1], table_z - table_half[2]]
+    )
+    table_links = (
+        passive.table_registry(
+            asset, center_m=table_center, half_extents_m=table_half, material=structure_law
+        )
+        if table_link_response
+        else None
     )
     if not payload.fits_on_table(start_center, rotation, table_center, table_half):
         raise ValueError("initial payload extends beyond the finite tabletop footprint")
@@ -361,7 +392,14 @@ def run_panda_cube(
             structure_law.friction,
             structure_law.slip_speed_m_s,
         ]
-    first_contact = None
+    if table_links is not None:
+        run_inputs["link_table_material"] = [
+            structure_law.stiffness,
+            structure_law.damping,
+            structure_law.friction,
+            structure_law.slip_speed_m_s,
+        ]
+    first_contact = first_table_contact = None
     integrator = RigidSemiImplicitSolver()
     trace = []
     bilateral_peak = depth_max = limit_error = 0.0
@@ -399,8 +437,9 @@ def run_panda_cube(
         structural_rows = []
         structural_joint = np.zeros_like(arm.v)
         structural_wrench = np.zeros(6)
-        if structure is not None:
+        if structure is not None or table_links is not None:
             vel = np.column_stack([linear @ arm.v, angular @ arm.v])
+        if structure is not None:
             structural = structure.evaluate(
                 kin.position,
                 kin.rotation,
@@ -421,7 +460,24 @@ def run_panda_cube(
                 first_contact = dict(
                     step_index=step, t_before_s=t, shape=structural_rows[0]["shape"]
                 )
+        table_rows = []
+        table_joint = np.zeros_like(arm.v)
+        robot_on_table = np.zeros(6)
+        if table_links is not None:
+            table_load = table_links.evaluate(kin.position, kin.rotation, kin.com_position, vel)
+            table_rows = table_load.contacts
+            table_joint = table_load.joint_load(linear, angular)
+            robot_on_table = table_load.table_wrench
+            if table_rows and first_table_contact is None:
+                first_table_contact = dict(
+                    step_index=step, t_before_s=t, shape=table_rows[0]["shape"]
+                )
         if first_unresolved is None:
+            unchecked_table, unchecked_table_shape = table_gap, table_shape
+            if table_links is not None and table_gap <= 0:
+                unchecked_table, unchecked_table_shape = passive.unhandled_table(
+                    kin, table_center, table_half
+                )
             unchecked = cube_gap if structure is None else np.inf
             if structure is not None and payload.radius is None and cube_gap <= 0:
                 unchecked, _, unchecked_shape, _ = passive.clearances(
@@ -439,9 +495,9 @@ def run_panda_cube(
                 step,
                 t,
                 unchecked,
-                table_gap,
+                unchecked_table,
                 unchecked_shape,
-                table_shape,
+                unchecked_table_shape,
             )
         if cube_gap < cube_margin:
             cube_margin, cube_minimum = cube_gap, dict(t=t, shape=cube_shape)
@@ -470,7 +526,7 @@ def run_panda_cube(
         momentum_error = max(momentum_error, mass_kg * np.linalg.norm(error))
         cube = updated.state
         drive = _servo_effort(arm, qcmd, vcmd, inertia, bias, effort_limit)
-        joint_load = np.einsum("ijk,ij->k", jac, pads.forces) + structural_joint
+        joint_load = np.einsum("ijk,ij->k", jac, pads.forces) + structural_joint + table_joint
         new_v = arm.v + dt * np.linalg.solve(inertia, drive + joint_load - bias)
         arm = RobotState(arm.q + dt * new_v, new_v)
         limit_error = max(limit_error, float(np.max(lower - arm.q)), float(np.max(arm.q - upper)))
@@ -510,6 +566,9 @@ def run_panda_cube(
                     table_forces_N=table_f.tolist(),
                     applied_payload_wrench=np.r_[force, torque].tolist(),
                     structural_contacts=structural_rows,
+                    link_table_contacts=table_rows,
+                    table_joint_load=table_joint.tolist(),
+                    robot_on_table_wrench=robot_on_table.tolist(),
                     structural_joint_load=structural_joint.tolist(),
                     drive=drive.tolist(),
                 )
@@ -552,6 +611,7 @@ def run_panda_cube(
         initial_payload_position_m=initial_center.tolist(),
         initial_payload_xyzw=initial_xyzw.tolist(),
         first_structural_contact=first_contact,
+        first_link_table_contact=first_table_contact,
         carry_clearance_m=carry_clearance,
         carry_displacement_m=carry_displacement,
         peak_carry_table_N=peak_carry_table,

@@ -9,7 +9,8 @@ from ..constraints.collision_shapes import CollisionKey, CollisionMotion, Collis
 from ..core.capabilities import SolverFailure
 from ..core.validation import finite_real
 from ..dynamics.robot_kinematics import forward_kinematics
-from ..geometry._capsule_triangle_sweep import capsule_face_query, capsule_material_sites
+from ..geometry._capsule_triangle_sweep import capsule_material_sites
+from ..geometry._static_capsule_face import static_capsule_face_sample
 from .collision_loads import _host_law
 
 
@@ -116,10 +117,9 @@ class ClothLinkContacts:
         return bound
 
     def _witness(self, cap, face, ends, tri):
-        query = capsule_face_query(
+        return static_capsule_face_sample(
             cap, self.triangles[face], CollisionMotion(ends), CollisionMotion(tri)
-        )
-        return query.sample(0)[0]
+        )[0]
 
     def evaluate(self, state, geo):
         cloth = state.domains[self.cloth_domain]

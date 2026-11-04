@@ -2,6 +2,8 @@
 
 ## 当前入口（2026-11-04）
 
+[受载接触第一批并行分工](../superpowers/plans/2026-11-04-contact-load-parallel.md)记录三个 P0 独立任务、GPU 计量和串行验收顺序。
+
 [与 Newton 1.7.0 的逐项功能盘点](phymeo-newton-1.7-functional-inventory.md)覆盖 19 个功能族，并区分物理实测、同引擎加速与跨引擎对照。测试工具开源已列入后续待优化工作。
 
 **经典 Panda 和自由方块（11月4日，08:00 后的集成批次）。** 打开[抓放例程与实测](../benchmarks/p65-panda-rigid-grasp.md)：从官方经典 Panda URDF 和真实关节惯量出发，100 g 方块在指面摩擦 0.65 时离台 59.9 mm、横移 77.4 mm、放下后桌面承重 0.981 N；零指面摩擦时留在桌面。相同资产的 17 个真实入步姿态已由 Newton CPU/CUDA 核实两侧指面位置。三条独立物理工作线已补[凸面多点冲量](../benchmarks/p65-rigid-polygon-impulses.md)、[旋转网格与有限杆身](../benchmarks/p65-rotating-mesh-finite-capsule.md)、[双铰链连续球路径](../benchmarks/p65-two-hinge-ellipse.md)和[有限布面离边动摩擦](../benchmarks/p65-dd-material-sliding.md)。[同输出 W32 混合受载合批](../benchmarks/p65-mixed-physical-w32.md)已达三轮 1.33–1.48 倍的本引擎逐世界吞吐。

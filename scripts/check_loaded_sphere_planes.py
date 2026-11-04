@@ -2,6 +2,7 @@
 
 import argparse
 import json
+from datetime import datetime
 from hashlib import sha256
 from pathlib import Path
 
@@ -117,6 +118,7 @@ def qualify(paths):
 
 def formal(paths, qualification):
     groups = {}
+    intervals = []
     for file in paths:
         r = unpack(file)
         assert r["device"] == "cuda:0" and r["phase"] == "measure"
@@ -125,11 +127,16 @@ def formal(paths, qualification):
         assert row["verified_world_steps"] == 5120 and len(row["samples"]) == 10
         raw = np.load(file.with_name(row["trajectory"]), allow_pickle=False)
         assert raw.shape == (210, 32, 8)
-        groups.setdefault(r["engine"], []).append((row, raw))
+        guard = json.loads(file.with_name("final.json").read_text(encoding="utf-8-sig"))
+        start, end = (datetime.fromisoformat(guard[tag]) for tag in ("start", "end"))
+        intervals.append((start, end))
+        groups.setdefault(r["engine"], []).append((row, raw, start))
     assert {k: len(v) for k, v in groups.items()} == {"newton": 3, "phymeo": 3}
     rounds = []
     reference = groups["phymeo"][0][1]
-    for (p, a), (n, b) in zip(groups["phymeo"], groups["newton"], strict=True):
+    intervals.sort()
+    assert all(end <= start for (_, end), (start, _) in zip(intervals, intervals[1:]))
+    for (p, a, ps), (n, b, ns) in zip(groups["phymeo"], groups["newton"], strict=True):
         same = bool(
             np.array_equal(a.view(np.uint32), b.view(np.uint32))
             and np.array_equal(reference.view(np.uint32), a.view(np.uint32))
@@ -144,11 +151,14 @@ def formal(paths, qualification):
         }
         rounds.append(
             dict(
+                first="phymeo" if ps < ns else "newton",
                 all_values_same_bits=same,
                 max_abs_state_diff=float(np.max(abs(a.astype(float) - b))),
                 **metrics,
             )
         )
+    assert [r["first"] for r in rounds] == ["phymeo", "newton", "phymeo"]
+    assert np.all(reference[1:, :, 6] == 0) and np.all(reference[1:, :, 7] == 0.125)
     fair = qualification["w32_same_output_eligible"] and all(
         r["all_values_same_bits"] for r in rounds
     )

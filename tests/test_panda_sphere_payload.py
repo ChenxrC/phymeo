@@ -76,52 +76,55 @@ def test_invalid_shape_fails_before_advance(bad):
         run_panda_cube(payload_geometry=bad)
 
 
-@pytest.mark.parametrize("label,mu,carry", [("grip", 0.65, True), ("slip", 0.0, False)])
-def test_ordinary_panda_sphere_window(label, mu, carry, tmp_path):
+def _sphere_window(label, mu, radius, mass, height, expected_inertia, tmp_path):
+    ball = {"kind": "sphere", "radius_m": radius}
     result = run_panda_cube(
-        payload_geometry=BALL,
-        mass_kg=MASS,
-        grip_above_com_m=0.008,
-        closed_width_m=0.024,
-        friction=mu,
-        record=True,
+        payload_geometry=ball, mass_kg=mass, grip_above_com_m=height,
+        closed_width_m=.024, friction=mu, record=True,
     )
     spec, trace = result["inputs"], result["trace"]
-    (tmp_path / f"sphere-{label}.json").write_text(json.dumps(result), encoding="utf8")
-    (tmp_path / f"sphere-{label}.inputs.json").write_text(json.dumps(spec), encoding="utf8")
-    assert result["payload_geometry"] == spec["payload_geometry"] == BALL
+    (tmp_path/f"sphere-{label}.json").write_text(json.dumps(result), encoding="utf8")
+    (tmp_path/f"sphere-{label}.inputs.json").write_text(json.dumps(spec), encoding="utf8")
+    assert result["payload_geometry"] == spec["payload_geometry"] == ball
     assert result["steps"] == len(trace) == 3600 and trace[-1]["t"] == 2.25
-    np.testing.assert_allclose(spec["inertia_diagonal_kg_m2"], [2e-5] * 3, atol=1e-18, rtol=0)
-    assert result["cube_mass_kg"] == MASS and spec["full_size_m"] == [0.05] * 3
+    np.testing.assert_allclose(spec["inertia_diagonal_kg_m2"], [expected_inertia]*3, atol=1e-18, rtol=0)
+    assert result["cube_mass_kg"] == mass and spec["full_size_m"] == [2*radius]*3
     initial = np.array(spec["body_position_m"])
-    top = spec["table_center_m"][2] + spec["table_full_size_m"][2] / 2
-    assert initial[2] - BALL["radius_m"] == pytest.approx(top)
+    top = spec["table_center_m"][2]+spec["table_full_size_m"][2]/2
+    assert initial[2]-radius == pytest.approx(top)
     moving = trace[2159]
     assert moving["t"] == 1.35
-    assert result["carry_clearance_m"] == pytest.approx(moving["cube"][2] - BALL["radius_m"] - top)
-    target = initial + [0.075, 0, 0]
-    assert result["final_target_error_m"] == pytest.approx(
-        np.linalg.norm(trace[-1]["cube"] - target)
-    )
-    assert (
-        result["max_cube_momentum_residual_Ns"] < 1e-12
-        and result["max_joint_limit_violation"] < 1e-4
-    )
-    assert result["peak_bilateral_normal_N"] > 1.0
-    assert (
-        result["other_robot_cube_axis_clearance_m"] > 0
-        and result["robot_table_axis_clearance_m"] > 0
-    )
-    assert (
-        result["release_pad_force_N"] < 0.001
-        and abs(result["final_table_force_N"] - MASS * 9.81) < 0.025
-    )
+    assert result["carry_clearance_m"] == pytest.approx(moving["cube"][2]-radius-top)
+    target = initial+[.075,0,0]
+    assert result["final_target_error_m"] == pytest.approx(np.linalg.norm(trace[-1]["cube"]-target))
+    assert result["max_cube_momentum_residual_Ns"] < 1e-12 and result["max_joint_limit_violation"] < 1e-4
+    assert result["peak_bilateral_normal_N"] > 1
+    return result
+
+
+def _assert_grasp_target(result, carry, minimum_table_reaction):
+    assert result["other_robot_cube_axis_clearance_m"] > 0 and result["robot_table_axis_clearance_m"] > 0
+    assert result["release_pad_force_N"] < .001 and abs(result["final_table_force_N"]-result["cube_weight_N"]) < .025
     assert result["success"] is carry and result["carried_during_transfer"] is carry
     if carry:
-        assert result["carry_clearance_m"] > 0.035 and result["carry_displacement_m"] > 0.045
-        assert result["min_carry_bilateral_normal_N"] > 0 and result["peak_carry_table_N"] < 0.001
-        assert result["released_on_target"] and result["final_target_error_m"] < 0.012
+        assert result["carry_clearance_m"] > .035 and result["carry_displacement_m"] > .045
+        assert result["min_carry_bilateral_normal_N"] > 0 and result["peak_carry_table_N"] < .001
+        assert result["released_on_target"] and result["final_target_error_m"] < .012
     else:
-        assert result["carry_clearance_m"] < 0.005 and abs(result["carry_displacement_m"]) < 0.015
-        assert result["min_carry_bilateral_normal_N"] == 0 and result["peak_carry_table_N"] > 0.65
+        assert result["carry_clearance_m"] < .005 and abs(result["carry_displacement_m"]) < .015
+        assert result["min_carry_bilateral_normal_N"] == 0 and result["peak_carry_table_N"] > minimum_table_reaction
         assert not result["released_on_target"]
+
+
+@pytest.mark.parametrize("label,mu,carry", [("grip", .65, True), ("slip", 0., False)])
+def test_ordinary_panda_sphere_window(label, mu, carry, tmp_path):
+    result = _sphere_window(label, mu, .025, .080, .008, 2e-5, tmp_path)
+    _assert_grasp_target(result, carry, .65)
+
+
+@pytest.mark.parametrize("label,mu,carry", [("grip", .65, True), ("slip", 0., False)])
+def test_equatorial_40mm_sphere_window(label, mu, carry, tmp_path):
+    # At equatorial height the original palm clears this radius by 3.65 mm.
+    # Same density, 76 -> 24 mm jaw command and 7-axis transport primitive as the 50 mm ball.
+    result = _sphere_window(label, mu, .020, .04096, 0., 6.5536e-6, tmp_path)
+    _assert_grasp_target(result, carry, .65*(.020/.025)**3)

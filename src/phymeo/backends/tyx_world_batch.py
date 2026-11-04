@@ -90,6 +90,10 @@ class TyxWorldBatch:
         from . import _tyx_world_kernels as kernels
 
         self._tx, self._kernels = tx, kernels
+        self._advance_kernels = (
+            kernels.advance_worlds,
+            kernels.advance_worlds_other_buffer if mode == "cuda" else kernels.advance_worlds,
+        )
         self._runtime = tx.Runtime(
             backend="cuda" if mode == "cuda" else "cpu", cache_root=cache_root
         )
@@ -223,7 +227,7 @@ class TyxWorldBatch:
                         self._upload(self._commands, self._held, "control")
                         self._dirty = False
                     self._launch(
-                        self._kernels.advance_worlds,
+                        self._advance_kernels[src],
                         self._count,
                         dt,
                         self._kind,

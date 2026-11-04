@@ -6,6 +6,7 @@ import numpy as np
 
 from ..control.grasp_transfer import PairedTransport, SoloLiftHold, bounded_approach
 from ..control.material_grasp import MaterialEdgeStandoff, ParallelJawWindow
+from ..control.planar_presentation import PlanarPresentation
 from ..core.capabilities import SolverFailure
 from ..core.robot import RobotState
 from ..core.scene import SceneState
@@ -54,6 +55,7 @@ class CooperativeReception:
         *,
         layer_width=0.0,
         axial_clearance=None,
+        paired_presentation=False,
     ):
         self.nodes = nodes
         self.dt = dt
@@ -74,6 +76,7 @@ class CooperativeReception:
         self.peak_speed = 1.5 * travel / 0.55
         self.peak_acceleration = 6 * travel / 0.55**2
         self.solo = SoloLiftHold()
+        self.presentation = PlanarPresentation() if paired_presentation else None
         self.anchor = None
         self.holder = None
         self.motion = None
@@ -159,6 +162,43 @@ class CooperativeReception:
         return self.unloaded_frames >= 4
 
     def command(self, phase, frame, donor_default, elapsed):
+        motion = self._command(phase, frame, donor_default, elapsed)
+        if self.presentation is None or self.solo.position is None or phase != "lift_A":
+            return motion
+        row = motion.observation or {}
+        if "material_point_m" not in row:
+            return motion
+        measurement = frame["measurements"]
+        active = self.presentation.goal is None
+        target = row.get("exterior_point_m", row["material_point_m"])
+        velocities = frame["actual_tool_velocity_xz_m_s"]
+        result = self.presentation.update(
+            donor=frame["actual_tool_xz_m"]["A"],
+            donor_velocity=velocities["A"],
+            receiver=frame["actual_tool_xz_m"]["B"],
+            receiver_velocity=velocities["B"],
+            material=np.asarray(row["material_point_m"])[[0, 2]],
+            waypoint=np.asarray(target)[[0, 2]],
+            waypoint_velocity=np.asarray(row["material_velocity_m_s"])[[0, 2]],
+            held_height=self.solo.position[1],
+            loaded=measurement["A_both_normal_n"] > 0.20
+            and measurement["A_up_n"] > 0.08 * self.weight,
+            closing=motion.closed,
+            dt=self.dt,
+            peak_speed=self.peak_speed,
+            peak_acceleration=self.peak_acceleration,
+        )
+        if result is not None:
+            motion.donor, motion.donor_rate, bt, bv, observation = result
+            if not motion.closed:
+                motion.receiver, motion.receiver_rate = bt, bv
+                row["tool_velocity_command_m_s"] = bv.tolist()
+            row["presentation"] = observation
+            if active:
+                self._event("paired_presentation_started", frame)
+        return motion
+
+    def _command(self, phase, frame, donor_default, elapsed):
         a, b = (np.asarray(frame["actual_tool_xz_m"][arm]) for arm in "AB")
         m = frame["measurements"]
         if phase == "lift_A":

@@ -334,6 +334,80 @@ class _Query:
         raise SolverFailure("support_distance_capacity")
 
 
+def _exterior_sphere_hull(a, b, ma, mb):
+    """Project the sphere centre onto the actual convex material before rounding."""
+    hull_first = a.kind == "hull"
+    hs, ball, hp, sp = (a, b, ma, mb) if hull_first else (b, a, mb, ma)
+    hull = HullShape(hs, hp)
+    center = _vector(sp.start[0])
+    outside = False
+    for face in hull.faces:
+        distance = center @ face.normal - face.plane
+        if distance <= 0:
+            continue
+        outside = True
+        projected = center - face.normal * (distance / (face.normal @ face.normal))
+        weights = face.chart.weights(tuple(projected[i] for i in face.cols))
+        if weights is not None:
+            # The normal points out of the supporting half-space, so this
+            # polygon point is the nearest point on the whole convex body.
+            break
+    else:
+        if not outside:
+            return None
+        # No face contains its orthogonal foot. The unique metric projection
+        # then lies on a true edge (possibly its endpoint).
+        best = None
+        for i, j in hull.edges:
+            begin = hull.points[i]
+            edge = hull.points[j] - begin
+            t = min(1, max(0, ((center - begin) @ edge) / (edge @ edge)))
+            point = begin + t * edge
+            delta = center - point
+            square = delta @ delta
+            if best is None or square < best:
+                best = square
+                projected = point
+                weights = tuple((node, w) for node, w in ((i, 1 - t), (j, t)) if w)
+    delta = center - projected
+    square = delta @ delta
+    low, high = sqrt_bounds(square, 96)
+    length = (low + high) / 2
+    radius = Fraction(ball.radius)
+    normal = delta / length
+    offset = -radius * normal
+    gap = (square - radius * radius) / (length + radius)
+    pa, pb = _xyz(projected), _xyz(center + offset)
+    if np.spacing(np.abs((pa, pb))).max() > _TOL_M or (gap and not float(gap)):
+        raise SolverFailure("support_world_witness_resolution")
+    wa = tuple((node, float(w)) for node, w in weights)
+    wb = ((ball.vertex_ids[0], 1.0),)
+    oa, ob = None, _xyz(offset)
+    if not hull_first:
+        pa, pb, wa, wb, oa, ob = pb, pa, wb, wa, ob, oa
+        normal = -normal
+    w = CollisionWitness(
+        float(gap),
+        _xyz(normal),
+        pa,
+        pb,
+        wa,
+        wb,
+        "host-sphere-hull-projection",
+        first_offset=oa,
+        second_offset=ob,
+    )
+    trace = ConvexSupportTrace(
+        "convex_projection",
+        np.nextafter(float(low - radius), -np.inf),
+        np.nextafter(float(high - radius), np.inf),
+        0,
+        0,
+    )
+    status = "separated" if gap > 0 else "overlap" if gap < 0 else "touching"
+    return status, "sphere_hull_projection", w, trace
+
+
 def _contained_cone_sphere(a, b, ma, mb):
     """Signed distance to the nearer base or lateral surface in the cone's meridian."""
     cone_first = a.kind == "cone"
@@ -410,6 +484,10 @@ def static_convex_support(a, b, ma, mb):
         return "unsupported", "convex_hull_offset", None, None
     try:
         with np.errstate(over="raise", invalid="raise", divide="raise"):
+            if {a.kind, b.kind} == {"hull", "sphere"}:
+                exterior = _exterior_sphere_hull(a, b, ma, mb)
+                if exterior is not None:
+                    return exterior
             if {a.kind, b.kind} == {"cone", "sphere"}:
                 interior = _contained_cone_sphere(a, b, ma, mb)
                 if interior is not None:

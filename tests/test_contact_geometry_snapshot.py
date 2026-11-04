@@ -80,7 +80,7 @@ def test_frozen_material_snapshot_stays_usable_after_steps_close_and_external_mu
         for h in (1 / 16, 1 / 8):
             frame = scene.step(h)
         end = scene.geometry()
-        assert end.time_s == 3 / 16 and scene.last_frame is frame
+        assert end.time_s == 3 / 16 and scene.last_frame.path is frame.path
         assert end.model is old.model
         check_optics(end)
         xyz = old.poses[sheet].start.copy()
@@ -114,7 +114,7 @@ def test_fresh_observation_is_end_state_while_original_applied_force_remains_at_
         assert entry.time_s == 0 and reading.loads.contacts[0].force_n == pytest.approx(4)
         frame = scene.step(1 / 32)
         reading, end = scene.observe_scene()
-        assert end.time_s == 1 / 32 and scene.last_frame is frame
+        assert end.time_s == 1 / 32 and scene.last_frame.path is frame.path
         gap = end.poses[upper].start[:, 2].min() - end.poses[lower].start[:, 2].max()
         assert gap == pytest.approx(1 / 32 + 2 / 32**2)
         assert reading.loads.contacts[0].force_n == pytest.approx(128 * (1 / 16 - gap))
@@ -124,7 +124,7 @@ def test_fresh_observation_is_end_state_while_original_applied_force_remains_at_
             scene.step(1 / 64, capacity=0)
         with pytest.raises(ValueError, match="time"):
             scene.step(np.nextafter(0.0, 1.0))
-        assert scene.last_frame is frame and scene.geometry().time_s == end.time_s
+        assert scene.last_frame.path is frame.path and scene.geometry().time_s == end.time_s
         np.testing.assert_array_equal(scene.state.rigid.position, current.rigid.position)
         scene.step(1 / 64)
         assert scene.geometry().time_s == 3 / 64

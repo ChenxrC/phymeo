@@ -1,6 +1,6 @@
 """Two-way contact loads on registered rigid and deformable surfaces."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from math import fsum
 from numbers import Integral
 from threading import Lock
@@ -132,6 +132,19 @@ class CollisionLoadStep:
     particle_report: StepReport | None
     rigid_report: StepReport | None
 
+    def owned_copy(self):
+        """Copy mutable state and load arrays, retaining the same immutable geometry receipt."""
+        return replace(
+            self,
+            entry=CoupledState(self.entry.particles, self.entry.rigid),
+            state=CoupledState(self.state.particles, self.state.rigid),
+            external=CoupledInputs(self.external.particles, self.external.rigid),
+            loads=replace(
+                self.loads,
+                inputs=CoupledInputs(self.loads.inputs.particles, self.loads.inputs.rigid),
+            ),
+        )
+
 
 def _quadrature(points):
     """Lump a uniform patch measure at its material vertices. Integrate affine fields exactly."""
@@ -257,6 +270,7 @@ class CollisionLoadSystem:
             ):
                 raise ValueError("layer pair is filtered by the collision model")
             kinds = tuple(sorted((x.kind, y.kind)))
+            round_rigid = kinds in {("sphere", "sphere"), ("hull", "sphere"), ("ellipsoid", "hull")}
             smooth_pair = "ellipsoid" in kinds and set(kinds) <= {
                 "ellipsoid",
                 "sphere",
@@ -265,7 +279,7 @@ class CollisionLoadSystem:
                 "rounded_particle",
             }
             if (
-                not smooth_pair
+                not (smooth_pair or round_rigid)
                 and kinds
                 not in {
                     ("hull", "hull"),
@@ -284,12 +298,12 @@ class CollisionLoadSystem:
             if (
                 law.friction
                 and x.rigid == y.rigid
-                and not (x.rigid and (smooth_pair or kinds == ("hull", "hull")))
+                and not (x.rigid and (smooth_pair or round_rigid or kinds == ("hull", "hull")))
             ):
                 raise ValueError(
                     "sliding layer needs an admitted rigid pair or a rigid and deformable pair"
                 )
-            if kinds == ("hull", "triangle"):
+            if "hull" in kinds and (round_rigid or kinds == ("hull", "triangle")):
                 turning_hulls.add(a if x.kind == "hull" else b)
             if kinds == ("hull", "hull") and law.friction:
                 turning_hulls.update((a, b))
@@ -360,10 +374,13 @@ class CollisionLoadSystem:
                 expected = advance_world_orientation(q0.astype(float)[None, :], omega[None, :], dt)[
                     0
                 ]
-                q1 = end.rigid.orientation[r]
+                # RigidBodyState accepts near-unit stored quaternions. Compare
+                # orientations using their normalized rotations, with either sign.
+                stored_q1 = end.rigid.orientation[r]
+                q1 = stored_q1.astype(float) / np.hypot.reduce(stored_q1.astype(float))
                 if (
                     min(np.linalg.norm(q1 - expected), np.linalg.norm(q1 + expected))
-                    > 16 * np.finfo(q1.dtype).eps
+                    > 16 * np.finfo(stored_q1.dtype).eps
                 ):
                     raise SolverFailure(
                         "attachment orientation differs from physical angular drift"

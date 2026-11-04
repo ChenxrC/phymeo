@@ -594,6 +594,20 @@ def _detect_pairs(
                     curved=trace,
                     support_map=support_map,
                 )
+            elif code == 0 and {a.kind, b.kind} == {"hull", "sphere"}:
+                # At positive separation a sphere has one closest material point
+                # on a closed convex solid, including on an edge or vertex.
+                if ma.moving or mb.moving:
+                    answer = affine_convex_contact(a, b, ma, mb)
+                    if answer is None:
+                        answer = ("unsupported", "sphere_hull_motion", None, None, None)
+                    status, reason, witness, trace, sweep = answer
+                else:
+                    status, reason, witness, trace = static_convex_support(a, b, ma, mb)
+                    sweep = None
+                ready = CollisionPair(
+                    a.key, b.key, "RR", True, status, reason, witness, sweep, support_map=trace
+                )
             elif code == 0 and (
                 (a.kind == "heightfield" and b.kind in ("sphere", "rounded_particle"))
                 or (b.kind == "heightfield" and a.kind in ("sphere", "rounded_particle"))

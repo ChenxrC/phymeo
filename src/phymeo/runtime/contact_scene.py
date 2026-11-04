@@ -18,6 +18,7 @@ from ..constraints.collision_shapes import (
     CollisionMotion,
     CollisionShape,
 )
+from ..constraints.curved_solids import CurvedSolid
 from ..constraints.distance import DistanceConstraints
 from ..core.coupled import CoupledInputs, CoupledState
 from ..core.model import ParticleModel
@@ -68,6 +69,7 @@ def _mass(value):
 
 @dataclass(frozen=True)
 class _Body:
+    shape: CollisionShape
     vertices: tuple
     inverse_mass: float
     inertia: np.ndarray
@@ -173,6 +175,79 @@ class ContactSceneBuilder:
         pts = _array(local_vertices, "local hull vertices", shape=(None, 3))
         if not 4 <= len(pts) <= MAX_CONVEX_VERTICES:
             raise ValueError("convex vertex count outside limits")
+        shape = CollisionShape(CollisionKey(*addr, 0), "hull", tuple(range(len(pts))))
+        HullShape(shape, CollisionMotion(pts))
+        self._add_rigid(
+            shape,
+            pts,
+            mass,
+            inertia_diagonal,
+            position,
+            orientation_xyzw,
+            velocity,
+            angular_velocity,
+        )
+
+    def add_sphere(
+        self,
+        body,
+        radius,
+        *,
+        mass,
+        position=_ZERO,
+        orientation_xyzw=_IDENTITY,
+        velocity=_ZERO,
+        angular_velocity=_ZERO,
+        world=0,
+    ):
+        """Add a uniform solid sphere centered at its COM. A missing mass fixes it in space."""
+        r = finite_real(radius, "sphere radius")
+        if r <= 0:
+            raise ValueError("sphere radius must be positive")
+        shape = CollisionShape(CollisionKey(world, body, 0), "sphere", (0,), r)
+        inertia = None if mass is None else np.full(3, (2 / 5) * _mass(mass) * r**2)
+        self._add_rigid(
+            shape, (_ZERO,), mass, inertia, position, orientation_xyzw, velocity, angular_velocity
+        )
+
+    def add_ellipsoid(
+        self,
+        body,
+        semi_axes,
+        *,
+        mass,
+        position=_ZERO,
+        orientation_xyzw=_IDENTITY,
+        velocity=_ZERO,
+        angular_velocity=_ZERO,
+        world=0,
+    ):
+        """Add a uniform ellipsoid. Its three semi-axes follow the body's principal frame."""
+        d = _array(semi_axes, "ellipsoid semi axes", shape=(3,))
+        asset = CurvedSolid("ellipsoid", tuple(d))
+        shape = CollisionShape(CollisionKey(world, body, 0), "ellipsoid", (0,), curved=asset)
+        inertia = None
+        if mass is not None:
+            x, y, z = d
+            inertia = (_mass(mass) / 5) * np.array([y * y + z * z, x * x + z * z, x * x + y * y])
+        self._add_rigid(
+            shape, (_ZERO,), mass, inertia, position, orientation_xyzw, velocity, angular_velocity
+        )
+
+    def _add_rigid(
+        self,
+        shape,
+        pts,
+        mass,
+        inertia_diagonal,
+        position,
+        orientation_xyzw,
+        velocity,
+        angular_velocity,
+    ):
+        addr = shape.key.world, shape.key.body
+        if addr in self._bodies:
+            raise ValueError("duplicate world-local body ID")
         if mass is None:
             inv = 0.0
             if inertia_diagonal is None:
@@ -190,9 +265,9 @@ class ContactSceneBuilder:
         RigidBodyState(x[None, :], q[None, :], v[None, :], w[None, :])
         if inv == 0 and (v.any() or w.any()):
             raise ValueError("a fixed rigid body must have zero velocity")
-        shape = CollisionShape(CollisionKey(*addr, 0), "hull", tuple(range(len(pts))))
-        HullShape(shape, CollisionMotion(pts))
-        self._bodies[addr] = _Body(RigidAttachment(0, pts).vertices, inv, inertia, x, q, v, w)
+        self._bodies[addr] = _Body(
+            shape, RigidAttachment(0, pts).vertices, inv, inertia, x, q, v, w
+        )
 
     def add_sheet(
         self,
@@ -304,9 +379,7 @@ class ContactSceneBuilder:
         for addr, item in sorted(self._bodies.items()):
             if isinstance(item, _Body):
                 rigid_rows[addr] = len(bodies)
-                shape = CollisionShape(
-                    CollisionKey(*addr, 0), "hull", tuple(range(len(item.vertices)))
-                )
+                shape = item.shape
                 bindings[shape.key] = RigidAttachment(len(bodies), item.vertices)
                 shapes.append(shape)
                 bodies.append(item)
@@ -473,9 +546,10 @@ class ContactScene:
 
     @property
     def last_frame(self):
-        """The native CollisionLoadStep for the latest accepted substep, or None at entry."""
+        """An owned copy of the latest accepted substep, or None at entry."""
         with self._lock:
-            return self._system.last_frame
+            frame = self._system.last_frame
+            return None if frame is None else frame.owned_copy()
 
     def inputs(self):
         """Allocate independently writable external forces and torques matching the compiled state."""
@@ -524,10 +598,10 @@ class ContactScene:
                     self._work,
                     capacity=capacity,
                 )
-                owned = CoupledState(f.state.particles, f.state.rigid)
-            self._state = owned
+                public = f.owned_copy()
+            self._state = f.state
             self._time_s = end_time
-            return f
+            return public
 
     def stats(self):
         with self._lock:

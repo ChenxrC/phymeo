@@ -137,7 +137,7 @@ def test_registration_snapshot_rollback_and_repeated_builds_own_state():
         assert other.last_frame is None
         with pytest.raises(SolverFailure, match="capacity"):
             a.step(1 / 512, capacity=0)
-        assert a.last_frame is good
+        assert a.last_frame.path is good.path
         np.testing.assert_array_equal(a.state.rigid.position, expected.rigid.position)
         state = a.state
         state.rigid.position[:] = 23
@@ -218,7 +218,7 @@ def test_true_swept_core_crossing_is_rejected_and_the_same_scene_can_continue():
         fast.rigid.force[sc.rigid_rows[0, 2], 2] = -4096
         with pytest.raises(SolverFailure, match="core"):
             sc.step(1 / 64, fast)
-        assert sc.last_frame is first
+        assert sc.last_frame.path is first.path
         np.testing.assert_array_equal(sc.state.rigid.position, first.state.rigid.position)
         retried = sc.step(1 / 64)
         np.testing.assert_array_equal(retried.state.rigid.position, first.state.rigid.position)

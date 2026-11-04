@@ -16,20 +16,28 @@ HOLDOUT = np.array([0.43, 0.19, -0.35, -1.83, 0.72, 1.46, -0.6])
 
 
 def euler(rpy):
-    x, y, z = rpy
     cx, cy, cz = np.cos(rpy)
     sx, sy, sz = np.sin(rpy)
-    return np.array([
-        [cz * cy, cz * sy * sx - sz * cx, cz * sy * cx + sz * sx],
-        [sz * cy, sz * sy * sx + cz * cx, sz * sy * cx - cz * sx],
-        [-sy, cy * sx, cy * cx],
-    ])
+    return np.array(
+        [
+            [cz * cy, cz * sy * sx - sz * cx, cz * sy * cx + sz * sx],
+            [sz * cy, sz * sy * sx + cz * cx, sz * sy * cx - cz * sx],
+            [-sy, cy * sx, cy * cx],
+        ]
+    )
 
 
 def reference(q):
     # Independent homogeneous chain from the classic Panda drawing/description.
-    origins = [(0, 0, .333), (0, 0, 0), (0, -.316, 0), (.0825, 0, 0),
-               (-.0825, .384, 0), (0, 0, 0), (.088, 0, 0)]
+    origins = [
+        (0, 0, 0.333),
+        (0, 0, 0),
+        (0, -0.316, 0),
+        (0.0825, 0, 0),
+        (-0.0825, 0.384, 0),
+        (0, 0, 0),
+        (0.088, 0, 0),
+    ]
     turns = [0, -1, 1, 1, -1, 1, 1]
     pos, rot = np.zeros(3), np.eye(3)
     frames = {}
@@ -37,25 +45,26 @@ def reference(q):
         pos = pos + rot @ origin
         rot = rot @ euler([turn * math.pi / 2, 0, 0]) @ euler([0, 0, angle])
         frames[f"panda_link{i + 1}"] = pos, rot
-    flange = pos + rot @ [0, 0, .107]
+    flange = pos + rot @ [0, 0, 0.107]
     frames["panda_link8"] = flange, rot
     hand = rot @ euler([0, 0, -math.pi / 4])
     frames["panda_hand"] = flange, hand
-    frames["panda_hand_tcp"] = flange + hand @ [0, 0, .1034], hand
+    frames["panda_hand_tcp"] = flange + hand @ [0, 0, 0.1034], hand
     for sign, name, finger_q in zip((1, -1), ("left", "right"), q[7:], strict=True):
-        finger = flange + hand @ [0, sign * finger_q, .0584]
+        finger = flange + hand @ [0, sign * finger_q, 0.0584]
         frames[f"panda_{name}finger"] = finger, hand
-        frames[f"panda_{name}pad"] = finger + hand @ [0, -sign * .00002, .04525], hand
+        frames[f"panda_{name}pad"] = finger + hand @ [0, -sign * 0.00002, 0.04525], hand
     return frames
 
 
-@pytest.mark.parametrize("arm,width", [(READY, 0), (HOLDOUT, .027), (READY, .08)])
+@pytest.mark.parametrize("arm,width", [(READY, 0), (HOLDOUT, 0.027), (READY, 0.08)])
 def test_loader_reproduces_all_authored_frames_and_rubber_pad_gap(arm, width):
     asset = load_panda()
     q = asset.configuration(arm, width)
     np.testing.assert_array_equal(q, np.r_[arm, width / 2, width / 2])
     assert asset.joint_names == tuple(f"panda_joint{i}" for i in range(1, 8)) + (
-        "panda_finger_joint1", "panda_finger_joint2"
+        "panda_finger_joint1",
+        "panda_finger_joint2",
     )
     measured = {}
     for name, (p, r) in reference(q).items():
@@ -74,24 +83,50 @@ def test_loader_reproduces_all_authored_frames_and_rubber_pad_gap(arm, width):
         verts = paths[pad.shape.key].start
         tip, hand = reference(q)[body]
         local = (verts - tip) @ hand
-        np.testing.assert_allclose(np.ptp(local, axis=0), [.0175, .0152, .0185], atol=3e-13)
-        assert (sign * local[:, 1]).min() == pytest.approx(-.00002, abs=3e-13)
+        np.testing.assert_allclose(np.ptp(local, axis=0), [0.0175, 0.0152, 0.0185], atol=3e-13)
+        assert (sign * local[:, 1]).min() == pytest.approx(-0.00002, abs=3e-13)
         assert asset.sites[f"panda_{side}pad"].link_index == pad.link_index
 
 
 def test_mass_properties_include_tensor_products_and_welded_hand():
     arm = load_panda()
-    q = arm.configuration(HOLDOUT, .04)
+    q = arm.configuration(HOLDOUT, 0.04)
     fk = forward_kinematics(arm.model, q)
     assert arm.model.mass[0] == pytest.approx(4.970684)
-    assert arm.model.mass[6] == pytest.approx(.735522 + .73)
-    np.testing.assert_allclose(arm.model.mass[-2:], [.015, .015])
+    assert arm.model.mass[6] == pytest.approx(0.735522 + 0.73)
+    np.testing.assert_allclose(arm.model.mass[-2:], [0.015, 0.015])
     world_p, world_r = reference(q)["panda_link1"]
-    inertia = np.array([[.70337, -.000139, .006772], [-.000139, .70661, .019169],
-                        [.006772, .019169, .009117]])
+    inertia = np.array(
+        [
+            [0.70337, -0.000139, 0.006772],
+            [-0.000139, 0.70661, 0.019169],
+            [0.006772, 0.019169, 0.009117],
+        ]
+    )
     measured = fk.rotation[0] @ np.diag(arm.model.inertia_diagonal[0]) @ fk.rotation[0].T
     np.testing.assert_allclose(measured, world_r @ inertia @ world_r.T, atol=1e-13)
-    np.testing.assert_allclose(fk.com_position[0], world_p + world_r @ [.003875, .002081, -.04762])
+    np.testing.assert_allclose(
+        fk.com_position[0], world_p + world_r @ [0.003875, 0.002081, -0.04762]
+    )
+
+    p7, r7 = reference(q)["panda_link7"]
+    phand, rhand = reference(q)["panda_hand"]
+    c7 = p7 + r7 @ [0.010517, -0.004252, 0.061597]
+    ch = phand + rhand @ [-0.01, 0, 0.03]
+    combined_center = (0.735522 * c7 + 0.73 * ch) / (0.735522 + 0.73)
+    np.testing.assert_allclose(fk.com_position[6], combined_center, atol=2e-13)
+    i7 = np.array(
+        [
+            [0.012516, -0.000428, -0.001196],
+            [-0.000428, 0.010027, -0.000741],
+            [-0.001196, -0.000741, 0.004815],
+        ]
+    )
+    total = r7 @ i7 @ r7.T + rhand @ np.diag([0.001, 0.0025, 0.0017]) @ rhand.T
+    for mass, d in ((0.735522, c7 - combined_center), (0.73, ch - combined_center)):
+        total += mass * (np.inner(d, d) * np.eye(3) - np.outer(d, d))
+    measured = fk.rotation[6] @ np.diag(arm.model.inertia_diagonal[6]) @ fk.rotation[6].T
+    np.testing.assert_allclose(measured, total, atol=1e-13)
 
 
 def test_offset_base_and_local_file_actually_change_fk(tmp_path):
@@ -100,27 +135,43 @@ def test_offset_base_and_local_file_actually_change_fk(tmp_path):
     shoulder.set("xyz", "0 0 0.458")
     filename = tmp_path / "same-topology.urdf"
     doc.write(filename)
-    quat = np.full(4, .5)
-    base_xyz = np.array([.041, -.213, .377])
+    quat = np.full(4, 0.5)
+    base_xyz = np.array([0.041, -0.213, 0.377])
     asset = load_panda(filename, base_xyz=base_xyz, base_xyzw=quat)
-    q = asset.configuration(HOLDOUT, .05)
+    q = asset.configuration(HOLDOUT, 0.05)
     p0, r0 = reference(q)["panda_hand_tcp"]
     p, r = asset.authored_link_pose("panda_hand_tcp", q)
     base = quaternion_matrix(quat[None, :])[0]
-    np.testing.assert_allclose(p, base_xyz + base @ (p0 + [0, 0, .125]), atol=3e-13)
+    np.testing.assert_allclose(p, base_xyz + base @ (p0 + [0, 0, 0.125]), atol=3e-13)
     np.testing.assert_allclose(r, base @ r0, atol=3e-13)
     site = asset.sites["panda_hand_tcp"]
     fk = forward_kinematics(asset.model, q)
-    tool_point = np.array([.01, -.015, .032])
+    tool_point = np.array([0.01, -0.015, 0.032])
     native = asset.authored_to_model_points("panda_hand_tcp", tool_point)
     i = site.link_index
     np.testing.assert_allclose(fk.position[i] + fk.rotation[i] @ native, p + r @ tool_point)
 
 
-@pytest.mark.parametrize("width", [-.001, .081, np.nan])
+@pytest.mark.parametrize("width", [-0.001, 0.081, np.nan])
 def test_configuration_rejects_invalid_width(width):
     with pytest.raises(ValueError):
         load_panda().configuration(READY, width)
+
+
+def test_two_independently_loaded_slider_states_keep_the_actual_opening_and_midpoint():
+    arm = load_panda()
+    q = arm.configuration(READY, 0.04)
+    q[-2:] = [0.006, 0.014]
+    assert arm.finger_opening(q) == pytest.approx(0.02)
+    left, _ = arm.authored_link_pose("panda_leftpad", q)
+    right, _ = arm.authored_link_pose("panda_rightpad", q)
+    origin, rotation = arm.authored_link_pose("panda_hand", q)
+    assert (left - right) @ rotation[:, 1] == pytest.approx(0.01996)
+    assert (0.5 * (left + right) - origin) @ rotation[:, 1] == pytest.approx(-0.004)
+    out_of_range = READY.copy()
+    out_of_range[3] = 0
+    with pytest.raises(ValueError, match="limits"):
+        arm.configuration(out_of_range, 0.04)
 
 
 def test_invalid_mimic_is_not_silently_interpreted_as_symmetric(tmp_path):

@@ -2,6 +2,8 @@
 
 ## 当前入口（2026-11-05）
 
+本轮新增功能、最终源码外 wheel 验收、限域性能与尚未达标的数值/软布案例见[08:00 总结](../benchmarks/p65-newton-20261105-0800.md)和[可点击概览](../benchmarks/p65-newton-20261105-overview.html)。下一轮从[场景编排、通用持续接触与 GPU 规模计划](../superpowers/plans/2026-11-05-after-night-newton-parity.md)选择新的工作节点。
+
 北京时间 11 月 5 日凌晨的工作以[08:00 批次计划](../superpowers/plans/2026-11-05-newton-overnight-0800.md)和[分模块实测](../benchmarks/p65-newton-20261105-0800.md)为入口。按刚体与关节、柔性接触、运行时观测和 GPU 多世界分别验收，保留本机 Newton 1.7.0 的参照以及尚未通过的案例。
 
 ### 同日较早结果

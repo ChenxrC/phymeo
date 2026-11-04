@@ -14,13 +14,13 @@
 | 08 刚–柔施力 | 圆体、凸工具和真实关节端可驱动可变形有限布面并得到反力/力矩，托板有完整拖动和撤板轨迹。[凸工具](../benchmarks/p65-convex-tool-cloth.md) · [完整软布操作](../benchmarks/p65-convex-tool-soft-transfer.md) | 任意机器人/复杂网格同时作用于折叠布、多个工具的连续加载与碰撞覆盖尚需扩展。 |
 | 09 布、柔–柔及自接触 | 弹性布步进和有限折角材料持续接触可运行。布料可切换软硬，受力、释放与独立飞行由真实运动验证。[折角站点](../benchmarks/p65-continuous-folded-sites.md) | 参考布双臂转移早已有安装包验收；两种目标软布的独立物理窗口均未达到双臂共享承载门槛。新方案可更换真实材料边并清开腕杆，2° 在 0.92 s 最接近捕捉时，共同指面足印的最小有符号余量为 −5.791 mm，距 +3.5 mm 的捕捉门差 9.291 mm。[选边后的连续受力与资格](../benchmarks/p65-material-boundary-handoff.md)复杂自碰及大网格长期运行仍需检验。 |
 | 10 体软体 | 既有四面体变形、StVK 及有限接触入口。本轮重点在三角布和刚体，不计体软体新增验收。[原盘点](phymeo-newton-1.7-functional-inventory.md) | 大变形、复杂材料、体积边界以及多软体与机器人联合的大规模工作流。 |
-| 11 GPU、多世界 | TYX 驻留 W128、动态球岛及多个世界真布面有验证。W32 持续受载具有严格相同物理输出的直接对标。[受载实测](../benchmarks/p65-loaded-sphere-planes.md) | 逐束世界编号把 W32 的 800 束光线从 32 次 CUDA 提交合为 1 次。很多精细碰撞窄相仍在 HOST，复杂形状整体耗时有待独立对标。[世界路由](../benchmarks/p65-device-raycast.md) |
+| 11 GPU、多世界 | TYX 驻留 W128、动态球岛及多个世界真布面有验证。W32 持续受载具有严格相同物理输出的直接对标。[受载实测](../benchmarks/p65-loaded-sphere-planes.md) | 逐束世界编号把 W32 的 800 束光线从 32 次 CUDA 提交合为 1 次。很多精细碰撞窄相仍在 HOST。球–自由箱–弹性片双接触链可以在 CUDA 运行，但独立动量读数仍有约 6.8×10⁻⁵ N·s 偏差，未过该试片更严的门。[世界路由](../benchmarks/p65-device-raycast.md) |
 | 12 力学传感 | 力与切力可按世界和具体对端组成矩阵；力权重位置、扳手、关节读数与 IMU 可用于反馈。[原生 SensorContact 对照](../benchmarks/p65-world-contact-matrix.md) | 力的生效时刻、求解器原生力和从动量重建的净冲量仍须区别，应用生态尚待扩展。 |
 | 13 多求解器组合 | 多域图、点端口、实际关节/布同时受力均能运行。[关节工具](../benchmarks/p65-articulated-convex-cloth.md) | 用户在同一场景按区域自由更换和组合求解器的通用入口尚缺。 |
 | 14 在线交互与交换 | Python 客户端逐步发指令并读回，同一会话可在带载运动中换目标，深度与力有实际快照和离线回放。[控制闭环](../benchmarks/p65-metric-depth-camera.md) | 在线交互式 3D 操作、通用 USD 时间序列交换、多种外部诊断/可视化工具尚待补齐。 |
 | 15 柔性杆缆 | 现有布–刚性工具接触已可用。[原盘点](phymeo-newton-1.7-functional-inventory.md) | 柔性杆/绳的扭转、弯曲与外接触共同推进仍缺端到端入口。 |
 | 16 颗粒/塑性介质与流体 | 现有自由粒子、动态刚球、弹性固体各有自身模型。[原盘点](phymeo-newton-1.7-functional-inventory.md) | MPM 粒–网、塑性流动、雪与流体仍属独立能力族。 |
-| 17 视觉 | 米制深度、前向深度、世界法线、分割编号与反投影已接入实际抓放。Newton 原生 CUDA 相机与多起点光束对照均有实际图像。[相机](../benchmarks/p65-metric-depth-camera.md) · [曲面](../benchmarks/p65-ray-queries.md) | 真实 TYX 相机已进入 Panda 载荷回放，387,072 像素中 8 个轮廓标签不同。尚缺材质 RGB、复杂光学和大规模可微传感。[设备测距](../benchmarks/p65-device-raycast.md) |
+| 17 视觉 | 米制深度、前向深度、世界法线、分割编号与反投影已接入实际抓放。Newton 原生 CUDA 相机与多起点光束对照均有实际图像。[相机](../benchmarks/p65-metric-depth-camera.md) · [曲面](../benchmarks/p65-ray-queries.md) | 真实 TYX 相机已进入 Panda 载荷回放，387,072 像素中 8 个轮廓标签不同。尚缺材质 RGB、复杂光学和大规模可微传感。已有解析曲面公开测距在三次配对中均比 Newton 慢。[完整计时](../benchmarks/p65-curved-ray-readback-protocol.md)[设备测距](../benchmarks/p65-device-raycast.md) |
 | 18 可微物理 | 已有局部导数/学习型组件；本轮未验证多步反向物理求解。[原盘点](phymeo-newton-1.7-functional-inventory.md) | 选一个可微控制或参数辨识轨迹，建立从损失到控制/材料参数的实际反传和独立校验。 |
 | 19 机器人学习界面 | 多世界可读状态、发动作并局部复位；视觉、载荷、夹持轨迹已有可用信号。[动态世界](../benchmarks/p65-dynamic-sphere-islands.md) | 完整的批量 episode、奖励、终止、随机化与策略训练适配仍未验收。Newton 的 Isaac Lab 对接也是外部生态的一部分。 |
 

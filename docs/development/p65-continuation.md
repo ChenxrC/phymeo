@@ -2,9 +2,9 @@
 
 ## 当前入口（2026-11-04）
 
-本批并行验证 Panda 受力模型对齐、可动布面静摩擦和胶囊–三角面单姿态查询的实际 CUDA 吞吐。[验收条件与结果](../superpowers/plans/2026-11-04-contact-model-and-geometry.md)
+本批已合入。Newton Featherstone CPU 采用同一材料接触律后，Panda 强夹完成抓放，弱夹仍留台；可动布面支持带预载共转和转滑；32 个混合世界的三个独立同场 CUDA 测量分别加速 4.64×、4.97×、4.45×，逐帧输出一致。下一批从受压跨面、旋转偏心抓取和更多受载面下的剖析继续。[本批证据与下批入口](../superpowers/plans/2026-11-04-contact-model-and-geometry.md)
 
-[受载接触第一批分工与结果](../superpowers/plans/2026-11-04-contact-load-parallel.md)已集成平面–凸包支撑、有限布面静持/转滑、长方体强弱夹持与同姿态几何复核。Phymeo 的 120 g 强夹已放台，Newton Featherstone 同输入原生接触尚未复现整个受载过程。W32 当前计量中单姿态最近特征查询占插桩墙钟约 86%。
+[受载接触第一批分工与结果](../superpowers/plans/2026-11-04-contact-load-parallel.md)已集成平面–凸包支撑、有限布面静持/转滑、长方体强弱夹持与同姿态几何复核。Phymeo 的 120 g 强夹已放台，Newton Featherstone 同输入原生接触尚未复现整个受载过程。该批 W32 优化前的计量中单姿态最近特征查询占插桩墙钟约 86%。
 
 [与 Newton 1.7.0 的逐项功能盘点](phymeo-newton-1.7-functional-inventory.md)覆盖 19 个功能族，并区分物理实测、同引擎加速与跨引擎对照。测试工具开源已列入后续待优化工作。
 

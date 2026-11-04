@@ -40,6 +40,83 @@ def cloth():
     return record
 
 
+def declared(ph, np):
+    from declared_contact_scene import box_stack, tool_sheet
+
+    result = []
+    for make in (box_stack, tool_sheet):
+        builder, dt, count, drives = make()
+        assert isinstance(builder, ph.ContactSceneBuilder)
+        with builder.build() as scene:
+            reading, start = scene.observe_scene()
+            first_forces = [c.force_n for c in reading.loads.contacts]
+            for i in range(count):
+                external = scene.inputs()
+                for first, address, force in drives:
+                    if i >= first:
+                        external.rigid.force[scene.rigid_rows[address]] += force
+                frame = scene.step(dt, external)
+            _, end = scene.observe_scene()
+            assert start.time_s == 0 and end.time_s == count * dt
+            if make is box_stack:
+                a, b = scene.rigid_rows[7, 30], scene.rigid_rows[42, 30]
+                assert frame.state.rigid.position[b, 2] - frame.state.rigid.position[a, 2] > 0.05
+            else:
+                assert np.linalg.norm(frame.state.particles.velocity) > 0.001
+                assert max(first_forces) == 4.0
+            result.append(
+                dict(
+                    case=make.__name__,
+                    steps=count,
+                    shapes=len(end.model.shapes),
+                    time_s=end.time_s,
+                    entry_forces_n=first_forces,
+                )
+            )
+    builder = ph.ContactSceneBuilder(gravity=(0, 0, 0))
+    builder.add_box(0, (0.5, 0.375, 0.125), mass=None, orientation_xyzw=(0, 0, 0, 1 + 2**-24))
+    builder.add_sphere(1, 0.125, mass=1, position=(0, 0, 9 / 32))
+    builder.add_ellipsoid(0, (0.5, 0.25, 0.125), mass=3, world=1, position=(0, 0, -2))
+    builder.pair(0, 1, ph.NormalLayer(1 / 16, 128))
+    with builder.build() as scene:
+        reading, geometry = scene.observe_scene()
+        assert reading.loads.contacts[0].force_n == 4
+        depth = ph.raycast_scene(geometry.model, geometry.poses, [0, 0, 0], [[0, 0, -1]], world=1)
+        assert depth.distance_m[0] == 1.875
+        frame = scene.step(1 / 64)
+        frame.loads.inputs.rigid.force[:] = 0
+        assert scene.last_frame.loads.inputs.rigid.force[1, 2] == 4
+        result.append(
+            dict(
+                case="sphere-box-and-ellipsoid",
+                force_n=4,
+                depth_m=float(depth.distance_m[0]),
+                sphere_vz_m_s=float(scene.state.rigid.velocity[1, 2]),
+            )
+        )
+    from mimic_graph_oracle import H, fan, kkt, serial
+
+    root = Path(__file__).resolve().parent
+    for family, source in (("fan", fan()), ("chain", serial())):
+        asset = ph.load_mimic_urdf(root / f"mimic_{family}.urdf", gravity=(0, 0, 0))
+        indices = list(asset.independent_indices)
+        q = ph.RobotState(source["q"][indices], source["v"][indices])
+        # Full-coordinate generalized loads are equivalent to the oracle's link wrench.
+        force = ph.RobotInputs.zeros(len(source["q"]))
+        force.effort[:] = source["external"]
+        shot = asset.step(q, effort=source["motor"][indices], external=force, dt_s=H)
+        expected, rows = kkt(
+            source["mass"], source["bias"], source["external"], source["motor"], source["C"]
+        )
+        np.testing.assert_allclose(shot.loads.acceleration_full, expected, atol=1e-11)
+        observed = [row.multiplier_force for row in shot.loads.row_forces]
+        np.testing.assert_allclose(observed, rows, atol=1e-11)
+        result.append(
+            dict(mechanism=family, full_acceleration=expected.tolist(), row_reactions=observed)
+        )
+    return result
+
+
 def device(ph, np, cache):
     ball = ph.FreeSphere
     hit = ph.SphereIslandWorld(
@@ -64,6 +141,9 @@ def device(ph, np, cache):
         )
         batch.reset([87])
         assert batch.snapshot()[3].tick == 1 and batch.snapshot()[87].tick == 0
+        macro = batch.step_substepped(1 / 128, keys=(87,), substeps=4)[87]
+        assert macro.accepted and macro.state.tick == 1 and batch.snapshot()[3].tick == 1
+        measured["stages"] = [(s.kind, s.start_s, s.end_s) for s in macro.stages]
     key = ph.CollisionKey(0, 2, 0)
     plane = ph.CollisionKey(0, 5, 0)
     optics = ph.CollisionModel(
@@ -80,7 +160,33 @@ def device(ph, np, cache):
         assert frame.keys[frame.shape_index[0, 0]] == plane
         np.testing.assert_allclose(frame.ray_depth_m[1, 1], 1.5, atol=1e-5)
         np.testing.assert_allclose(frame.forward_depth_m[0, 0], 4.0, atol=1e-5)
+        other = ph.CollisionKey(9, 2, 0)
+        curved = ph.CollisionShape(
+            other, "ellipsoid", (0,), curved=ph.CurvedSolid("ellipsoid", (0.5, 0.25, 0.125))
+        )
+        routed = ray_operator.query(
+            ph.CollisionModel((*optics.shapes, curved)),
+            {**poses, other: ph.CollisionMotion([[0, 0, -3]])},
+            [0, 0, 0],
+            [[0, 0, -1], [0, 0, -1]],
+            world=np.array([0, 9]),
+        )
+        np.testing.assert_allclose(routed.distance_m, [1.5, 2.875], atol=1e-5)
+        assert tuple(routed.keys[i] for i in routed.shape_index) == (key, other)
+        measured["routed_depths_m"] = routed.distance_m.tolist()
         measured["camera_stats"] = ray_operator.stats()
+    from declared_contact_scene import tool_sheet
+
+    maker, dt, count, _ = tool_sheet()
+    with maker.build(backend="cuda", cache_root=cache) as scene:
+        initial, pose = scene.observe_scene()
+        assert pose.time_s == 0 and initial.loads.contacts[0].force_n == 4.0
+        for _ in range(count):
+            frame = scene.step(dt)
+        assert frame.particle_report.accepted and frame.rigid_report.accepted
+        assert np.linalg.norm(frame.state.particles.velocity) > 0.001
+        assert scene.geometry().time_s == dt * count
+        measured["cloth_tool"] = dict(steps=count, stats=scene.stats(), entry_n=4.0)
     return measured
 
 
@@ -90,7 +196,7 @@ def main():
     parser.add_argument("--expected-wheel", type=Path, required=True)
     parser.add_argument("--checkout", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
-    parser.add_argument("--mode", choices=("robot", "cloth", "cuda"), required=True)
+    parser.add_argument("--mode", choices=("robot", "cloth", "scene", "cuda"), required=True)
     args = parser.parse_args()
     site = args.wheel_site.resolve(strict=True)
     outside = Path(__file__).resolve().parent
@@ -115,6 +221,8 @@ def main():
     wheel = verified_wheel(installed, args.expected_wheel)
     if args.mode == "robot":
         product = robot()
+    elif args.mode == "scene":
+        product = declared(ph, np)
     elif args.mode == "cloth":
         record = cloth()
         stored = args.out.with_suffix(".trace.json.gz")

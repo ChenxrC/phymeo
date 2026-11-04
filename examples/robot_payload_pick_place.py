@@ -42,10 +42,10 @@ def make_session(kind="box"):
     body = RigidBodyState(
         center[None], matrix_quaternion(R)[None], np.zeros((1, 3)), np.zeros((1, 3))
     )
-    colliders = {c.name: c.shape.key for c in asset.collisions}
     pads = tuple(
-        PadFace(
-            colliders["panda_" + side + "finger_pad"],
+        PadFace.named(
+            "panda_" + side + "finger",
+            "panda_" + side + "finger_pad",
             1,
             orientation,
             tuple(product((-0.005, 0.005), repeat=2)),
@@ -131,6 +131,9 @@ def run_session(scene, info, choose_target, *, on_event=None):
         )
 
     def emit(name, read):
+        published, snapshot = scene.observe_scene()
+        if published.step_number != read.step_number:
+            raise RuntimeError("robot advanced before its event pose was recorded")
         bilateral = (
             read.pad_normal_loads_N.reshape(2, 4).sum(axis=1) if read.step_number else np.zeros(2)
         )
@@ -160,7 +163,6 @@ def run_session(scene, info, choose_target, *, on_event=None):
             structural_contacts=[dict(row) for row in read.structural_contacts],
             link_table_contacts=[dict(row) for row in read.link_table_contacts],
         )
-        snapshot = scene.geometry()
         events[name]["payload_key"] = (
             snapshot.payload_key.world,
             snapshot.payload_key.body,

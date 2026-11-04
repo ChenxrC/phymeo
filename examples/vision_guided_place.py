@@ -53,12 +53,17 @@ def run(kind, remaining_m):
         views.append((eye, look_at(eye, target)))
     exposures = {"rest": visible_span_x(camera, scene.geometry(), views)}
 
-    def on_command(_reading):
-        current = visible_span_x(camera, scene.geometry(), views)
+    def on_command(reading):
+        seen, snapshot = scene.observe_scene()
+        if seen.step_number != reading.step_number:
+            raise RuntimeError("robot advanced before the in-flight exposure")
+        current = visible_span_x(camera, snapshot, views)
         exposures["in_flight"] = current
         dx = current["center_of_visible_span_m"] - exposures["rest"]["center_of_visible_span_m"]
         requested = dx + remaining_m
-        print(f"visible displacement {dx:.9f} m; requested destination {requested:.9f} m", flush=True)
+        print(
+            f"visible displacement {dx:.9f} m; requested destination {requested:.9f} m", flush=True
+        )
         return requested
 
     result = run_session(scene, info, on_command)

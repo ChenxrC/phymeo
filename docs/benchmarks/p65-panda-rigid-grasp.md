@@ -2,6 +2,8 @@
 
 本例读取 Franka 官方描述的经典七轴 Panda 和双滑轨手。源码分发中内置从固定版本 Xacro 展开的 URDF、许可证、署名以及再生方法。公开入口 `load_panda()` 读取 XML，`asset.configuration(arm_q, opening_m)` 生成两指的对称命令，实际运动允许两指受力不同。夹持时长和目标位姿由一个预定的关节目标序列给出。[资产来历与改动](../../src/phymeo/builders/panda_assets/SOURCES.md) · [使用入口](../../examples/panda_cube.py)
 
+在包含 examples 的源码目录中，用已安装本批 wheel 与 NumPy 的 Python 执行。每个输出文件使用新路径。
+
 ```powershell
 python examples/panda_cube.py --trace panda-carry.json
 python examples/panda_cube.py --friction 0 --trace panda-slip.json
@@ -37,3 +39,7 @@ Newton 官方抓方块样例加载 FR3 描述。本项目的同资产几何对�
 在同一个离线页面切换两条已保存轨迹，可拖动进度和视角。浏览器验收在 1.350 s 读出正例的两侧法向力各约 5.78 N、桌面 0 N；此时零摩擦对照的双指为 0 N、桌面约 0.98 N。每条展示 181 个实际子步，两份原始 JSON 各保留 3,600 个子步。[双轨迹三维回放](../../artifacts/p65-20261104-panda-batch/panda-grasp-replay.html) · [搬运时刻截图](../../artifacts/p65-20261104-panda-batch/panda-carry-1p35.png) · [实际浏览器读数](../../artifacts/p65-20261104-panda-batch/playback-qa.json)
 
 Newton 1.7.0 独立读入与 Phymeo 相同的经典 Panda URDF，从正例轨迹取 17 个实际入步关节状态。按 Newton 给出的指盒形状及刚体变换重建两侧内面中心，世界位置与 Phymeo 的最大差分别为 CPU 0.250 µm、CUDA 0.200 µm。这个对照验证资产与运动学。表中的受力、抬离、放下和失抓来自 Phymeo HOST 的真实动力学。[Newton CPU](../../artifacts/p65-20261104-panda-batch/newton-panda-fk-cpu-values.json) · [Newton CUDA](../../artifacts/p65-20261104-panda-batch/newton-panda-fk-cuda-values.json)
+
+## 源码外安装
+
+从 sdist 构建 wheel 后，318 个库模块和四个模型数据文件全部与源码逐字节一致。开发虚拟环境缺少 pip，第一次安装命令在导入 pip 时退出；随后使用系统已有的 pip 将同一 wheel 离线安装到新的独立目标目录。在源码外启动解释器，加载该目标中的库和 Panda URDF，读取全部 19 个碰撞几何，并得到 76 mm 开口命令对应的内面净距 75.96 mm。wheel 的 SHA-256 为 3db59e2eb95fabd81d506a2921b6b85b8aadea526a72a4156e0fe26223f06c37。[本地 wheel](../../artifacts/p65-20261104-panda-batch/dist/phymeo-0.1.0a0-py3-none-any.whl) · [安装身份与模型文件核对](../../artifacts/p65-20261104-panda-batch/installed-panda.json) · [源码与成品内容核对](../../artifacts/p65-20261104-panda-batch/wheel-source-parity.json)

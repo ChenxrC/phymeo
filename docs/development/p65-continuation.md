@@ -2,6 +2,10 @@
 
 ## 当前入口（2026-11-04）
 
+**经典 Panda 和自由方块（11月4日，08:00 后的集成批次）。** 打开[抓放例程与实测](../benchmarks/p65-panda-rigid-grasp.md)：从官方经典 Panda URDF 和真实关节惯量出发，100 g 方块在指面摩擦 0.65 时离台 59.9 mm、横移 77.4 mm、放下后桌面承重 0.981 N；零指面摩擦时留在桌面。相同资产的 17 个真实入步姿态已由 Newton CPU/CUDA 核实两侧指面位置。三条独立物理工作线已补[凸面多点冲量](../benchmarks/p65-rigid-polygon-impulses.md)、[旋转网格与有限杆身](../benchmarks/p65-rotating-mesh-finite-capsule.md)、[双铰链连续球路径](../benchmarks/p65-two-hinge-ellipse.md)和[有限布面离边动摩擦](../benchmarks/p65-dd-material-sliding.md)。[同输出 W32 混合受载合批](../benchmarks/p65-mixed-physical-w32.md)已达三轮 1.33–1.48 倍的本引擎逐世界吞吐。
+
+下一批优先复用同一 Panda 资产与两条保存轨迹，扩展抓取起始姿态、质量和夹持力，在 Newton 做相同初态与控制定义的受载对照。通用碰撞线从胶囊自身独立旋转、跨步抓持面、双铰链非球工具和柔性材料的静止持载继续；GPU 线按 W32 的读回、复杂窄相与 HOST 审计分别定位时间。软布递交保留为另一条集成验收。
+
 **08:00 阶段概览。** 刚体单转轴闭网格–球 CCD、柔体顶点–面与边–边完整冲击、浮动树持续承载和真实双端线支撑，以及 W1/W32 与 Newton、W4/W16 真实混合世界的吞吐对照已有实测。源码外 wheel 完成参考布九阶段递交，目标软布两种倾角仍未完成放台。下一批从旋转闭网格–胶囊、跨步材料摩擦、多活动关节链和带载 GPU 的分项计时继续。[可放大概览图与力曲线](../benchmarks/p65-newton-20261104-overview.html) · [数据、开放项与下一批验收](../benchmarks/p65-newton-20261104-0800.md)
 
 

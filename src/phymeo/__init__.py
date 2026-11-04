@@ -13,6 +13,7 @@ from .backends.tyx_participants import (
     TyxRobotParticipant,
     TyxTetrahedralParticipant,
 )
+from .backends.tyx_raycast import TyxRaycaster
 from .backends.tyx_rigid import TyxRigidSemiImplicitSolver
 from .backends.tyx_sdf import TyxSdfSampler
 from .backends.tyx_sphere_island import SphereIslandWorld, TyxSphereIslandBatch
@@ -32,6 +33,7 @@ from .backends.tyx_world_contact import (
 )
 from .backends.tyx_xpbd import TyxXPBDSolver
 from .builders.cloth import ClothPatch, cloth_grid
+from .builders.mimic_urdf import load_mimic_urdf
 from .builders.mjcf import load_mjcf
 from .builders.robot import pendulum_chain
 from .builders.tetrahedral import tetrahedral_block
@@ -427,6 +429,7 @@ __all__ = [
     "RayHits",
     "SphereIslandWorld",
     "TyxSphereIslandBatch",
+    "TyxRaycaster",
     "raycast_scene",
     "DepthImage",
     "measure_cloth_link_matrix",
@@ -440,6 +443,7 @@ __all__ = [
     "make_robot_runtime",
     "pendulum_chain",
     "load_urdf",
+    "load_mimic_urdf",
     "load_mjcf",
     "load_usd",
     "BackendContext",

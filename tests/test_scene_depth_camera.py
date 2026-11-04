@@ -129,3 +129,24 @@ def test_backproject_metric_depth_preserves_the_rotated_world_hit_and_missing_pi
     for bad in (np.ones((5, 3)), np.full((3, 5), -1), np.full((3, 5), np.nan)):
         with pytest.raises(ValueError):
             camera.unproject(bad)
+
+
+def test_explicit_camera_operator_receives_all_rays_and_never_hides_query_failure():
+    class OnlyOnce:
+        def __init__(self):
+            self.calls = 0
+
+        def query(self, model, poses, origins, directions, **kwargs):
+            self.calls += 1
+            if self.calls > 1:
+                raise RuntimeError("device unavailable")
+            assert directions.shape == (9, 3) and origins.shape == (3,)
+            return ph.raycast_scene(model, poses, origins, directions, **kwargs)
+
+    model, poses, *_ = make_scene()
+    camera, op = ph.DepthCamera(3, 3, 0.8), OnlyOnce()
+    frame = camera.capture(model, poses, operator=op)
+    np.testing.assert_allclose(frame.ray_depth_m, camera.capture(model, poses).ray_depth_m)
+    with pytest.raises(RuntimeError, match="unavailable"):
+        camera.capture(model, poses, operator=op)
+    assert op.calls == 2

@@ -7,6 +7,7 @@ as the NPZ, quantized solely for visualization. No external viewer is required.
 import argparse
 import base64
 import json
+from contextlib import nullcontext
 from pathlib import Path
 
 import numpy as np
@@ -27,7 +28,7 @@ def encode(frame):
     return base64.b64encode(np.ascontiguousarray(frame).tobytes()).decode("ascii")
 
 
-def observe(record, output):
+def observe(record, output, *, operator=None):
     width, height = 192, 144
     table = np.asarray(record["table_center_m"])
     eye = table + [0.28, -0.48, 0.28]
@@ -60,7 +61,9 @@ def observe(record, output):
             k: ph.CollisionMotion(p["start_m"], body_orientation_xyzw=p["body_orientation_xyzw"])
             for k, p in zip(keys, parts, strict=True)
         }
-        image = camera.capture(model, poses, position_m=eye, orientation_xyzw=view)
+        image = camera.capture(
+            model, poses, position_m=eye, orientation_xyzw=view, operator=operator
+        )
         samples.append(image)
         stamps.append(event["time_s"])
         mask = image.shape_index >= 0
@@ -172,5 +175,18 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("record", type=Path)
     parser.add_argument("output", type=Path)
+    parser.add_argument("--backend", choices=("host", "interpret", "cuda"), default="host")
     args = parser.parse_args()
-    print(json.dumps(observe(json.loads(args.record.read_text(encoding="utf8")), args.output)))
+    context = nullcontext() if args.backend == "host" else ph.TyxRaycaster(args.backend)
+    with context as operator:
+        print(
+            json.dumps(
+                observe(
+                    json.loads(args.record.read_text(encoding="utf8")),
+                    args.output,
+                    operator=operator,
+                )
+            )
+        )
+        if operator is not None:
+            print(json.dumps(operator.stats()))

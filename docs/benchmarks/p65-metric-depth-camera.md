@@ -38,3 +38,12 @@ Phymeo 用公开刚体积分器推进自由球，Newton 1.7.0 用 Featherstone �
 | 40.96 g 球 | 9.881 mm | +0.1160 mm | 64.881 mm | 1.575 mm |
 
 两条轨迹各 3,600 步，均完成搬运和放台。首个方块请求为额外 30 mm；视觉读数约 9.2 mm，加总小于此演示的 45 mm 可操作下界，现场命令被拒。两次 55 mm 请求沿用同一工作区和控制门。用例接受用户的显式额外行程，越界请求保留失败，不静默更改目标或物体位置。[可执行闭环](../../examples/vision_guided_place.py) · [方块原始物理与估计](../../artifacts/p65-newton-night-20261105-01/vision-loop-box.55mm.json) · [球原始物理与估计](../../artifacts/p65-newton-night-20261105-01/vision-loop-sphere.55mm.json)
+
+
+## 同一机器人几何的真实 TYX 成像
+
+可让同一相机用 `with ph.TyxRaycaster("cuda") as op` 后的 `camera.capture(model, poses, operator=op)` 实施设备求交。每个物理事件保留相同的世界和原始形状键，不支持的几何或设备错误直接向调用者返回。高度场、凸包与网格在 HOST 展开为有限三角面，逐束最近距离、标签与法线在设备上求。HOST 射线的解析圆柱/椭球/圆锥另有 Newton 原生对照，当前设备候选对这三类解析形状明确拒绝。
+
+使用真实箱体与球抓放的全部 14 个事件，各 192×144 个像素，每个事件一次真正的 CUDA 核提交。共 **387,072 像素**；箱的 193,536 个像素中有 2 个标签不同，球的同样像素数中有 6 个标签不同。所有匹配命中上的最大视线距离差为 4.80 µm，最大世界法线分量差为 0.000105。工程门同时限制每帧标签差率 0.1%、距离差 1 mm、法线分量差 0.02；两组均通过，保留全部像素，未当作逐位相同。
+
+[箱体设备图](../../artifacts/p65-newton-night-20261105-01/panda-box-sensor-cuda/observations.html) · [球设备图](../../artifacts/p65-newton-night-20261105-01/panda-sphere-sensor-cuda/observations.html) · [箱逐帧偏差](../../artifacts/p65-newton-night-20261105-01/depth-compare-box.result.json) · [球逐帧偏差](../../artifacts/p65-newton-night-20261105-01/depth-compare-sphere.result.json) · [设备核/范围](p65-device-raycast.md)

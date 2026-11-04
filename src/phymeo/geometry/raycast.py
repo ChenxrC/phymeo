@@ -22,6 +22,16 @@ class RayHits:
     keys: tuple[CollisionKey, ...]
 
 
+def _terrain_triangles(points, shape):
+    height, width = shape
+    for y in range(height - 1):
+        for x in range(width - 1):
+            start = y * width + x
+            diagonal = start + width + 1
+            yield points[[start, start + 1, diagonal]]
+            yield points[[start, diagonal, start + width]]
+
+
 def _surfaces(model, poses, world):
     if not isinstance(model, CollisionModel) or not isinstance(poses, Mapping):
         raise ValueError("expected a collision model and a mapping of current poses")
@@ -41,7 +51,9 @@ def _surfaces(model, poses, world):
         if shape.kind in ("sphere", "rounded_particle", "capsule") and shape.radius > 0:
             yield index, "round", p, shape.radius
         elif shape.kind == "plane":
-            yield index, "plane", p, np.asarray(shape.normal)
+            normal = np.asarray(shape.normal, dtype=float)
+            scaled = normal / np.max(np.abs(normal))
+            yield index, "plane", p, scaled / np.hypot.reduce(scaled)
         elif shape.curved is not None:
             frame = quaternion_matrix(np.asarray([shape.curved.orientation_xyzw]))[0]
             if motion.body_orientation_xyzw is not None:
@@ -56,14 +68,7 @@ def _surfaces(model, poses, world):
             elif shape.kind == "heightfield":
                 if not np.array_equal(p, shape.heightfield.world_vertices()):
                     raise ValueError("terrain must match its registered world vertices")
-                height, width = np.shape(shape.heightfield.heights_yx)
-                triangles = (
-                    p[list(face)]
-                    for y in range(height - 1)
-                    for x in range(width - 1)
-                    for a in (y * width + x,)
-                    for face in ((a, a + 1, a + width + 1), (a, a + width + 1, a + width))
-                )
+                triangles = _terrain_triangles(p, np.shape(shape.heightfield.heights_yx))
             elif shape.kind == "tetrahedron":
                 triangles = [p[list(face)] for face in ((0, 1, 2), (0, 1, 3), (0, 2, 3), (1, 2, 3))]
             else:

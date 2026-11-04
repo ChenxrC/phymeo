@@ -8,7 +8,7 @@ import numpy as np
 from ..constraints.collision_shapes import CollisionKey
 from ..core.validation import finite_real
 from ..dynamics.rotation import quaternion_matrix
-from ..geometry.raycast import _cast_unit, _frozen
+from ..geometry.raycast import RayHits, _cast_unit, _frozen
 from .robot_frame import RobotSite
 
 
@@ -84,12 +84,35 @@ class DepthCamera:
         return points.reshape(self.height, self.width, 3)
 
     def capture(
-        self, model, poses, *, world=0, position_m=(0, 0, 0), orientation_xyzw=(0, 0, 0, 1)
+        self,
+        model,
+        poses,
+        *,
+        world=0,
+        position_m=(0, 0, 0),
+        orientation_xyzw=(0, 0, 0, 1),
+        operator=None,
     ):
+        """Capture at one pose. An explicit ray query operator owns the entire ray calculation."""
         origin, rotation = _pose(position_m, orientation_xyzw)
-        hit = _cast_unit(
-            model, poses, origin, self._rays @ rotation.T, world, self.near_m, self.far_m
-        )
+        rays = self._rays @ rotation.T
+        if operator is None:
+            hit = _cast_unit(model, poses, origin, rays, world, self.near_m, self.far_m)
+        else:
+            hit = operator.query(
+                model, poses, origin, rays, world=world, near_m=self.near_m, far_m=self.far_m
+            )
+            count = len(rays)
+            if (
+                not isinstance(hit, RayHits)
+                or hit.keys != tuple(s.key for s in model.shapes)
+                or hit.distance_m.shape != (count,)
+                or hit.shape_index.shape != (count,)
+                or hit.world_normals.shape != (count, 3)
+            ):
+                raise ValueError(
+                    "ray operator returned a different shape registration or image extent"
+                )
         shape = (self.height, self.width)
         return DepthImage(
             hit.distance_m.reshape(shape),

@@ -101,3 +101,16 @@ def test_generator_is_a_surface_interval_and_respects_the_near_clip():
     hit = ph.raycast_scene(model, poses, [1.0, 0.0, 2.0], [[0.0, 0.0, -1.0]], near_m=1.5)
     assert hit.distance_m.item() == 1.5
     np.testing.assert_array_equal(hit.world_normals, [[1.0, 0.0, 0.0]])
+
+
+@pytest.mark.parametrize("magnitude", [7.0, 1e308])
+def test_plane_normal_magnitude_does_not_change_distance_or_unit_normal(magnitude):
+    plane = ph.CollisionShape(ph.CollisionKey(0, 1, 0), "plane", (2,), normal=(0, 0, magnitude))
+    actual = ph.raycast_scene(
+        ph.CollisionModel([plane]),
+        {plane.key: ph.CollisionMotion([[0, 0, 0]])},
+        [[0, 0, 2.0], [0, 0, -2.0]],
+        [[0, 0, -4], [0, 0, 3]],
+    )
+    np.testing.assert_array_equal(actual.distance_m, [2, 2])
+    np.testing.assert_array_equal(actual.world_normals, [[0, 0, 1], [0, 0, -1]])

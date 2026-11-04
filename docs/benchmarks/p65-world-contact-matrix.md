@@ -16,3 +16,6 @@ center_m = reading.position_m[0, 1]
 
 
 `ph.measure_cloth_link_matrix(results, programs, sensing, counterparts)` 可直接读取真实跨世界布–连杆中点报告，按世界和面展开列。拒绝未接受的发布或不同步的子步；调用者可显式选择两份映射中相同的世界子集。表中位置按实际胶囊表面和有限厚度布面的中点计算，力使用各物理站点已发布的法向和切向分量。2 面/8 面异构批的每一列用独立的单对端扳手与按净距推回的表面中点核对。真实 TYX interpret、CUDA 各 1 项及原 12 项回归通过。[跨世界完整物理步检查](../../tests/scale/test_multiface_contact_matrix.py)
+
+
+偏心球的圆弧物理步现已接通。同一个偏心附件和步长保留，原拒绝断言在新集成上实际报出 DID NOT RAISE。新的跨模块回归从该步读取真实角速度和双方 2 N 等反向载荷，再推进分离步并检查旧发布失效。相机和受影响的感测合同合计 16 项通过。[实际旋转路径及回滚](p65-eccentric-sphere-cloth-arc.md) · [集成原始结果](../../artifacts/p65-newton-night-20261105-01/depth-and-eccentric-contracts)

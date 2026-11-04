@@ -69,7 +69,7 @@ def test_counterpart_position_weights_survive_net_force_cancellation():
         )
 
 
-def test_rejected_offset_rotation_does_not_publish_sensor_data():
+def test_published_offset_rotation_and_separation_update_sensor_data():
     system, state, models, keys = layer_fixture()
     a, b = keys[0]
     with pytest.raises(ValueError, match="published"):
@@ -77,10 +77,16 @@ def test_rejected_offset_rotation_does_not_publish_sensor_data():
     with ph.CollisionWorkspace(system.model) as work:
         solvers = (ph.SemiImplicitSolver(), ph.RigidSemiImplicitSolver())
         zero = ph.CoupledInputs.zeros(3, 1)
-        # The off-centre load rotates this sphere attachment. The producer cannot
-        # certify that continuous motion and must not publish a candidate.
-        with pytest.raises(ph.SolverFailure, match="rotating attached shape"):
-            system.step(state, zero, models, solvers, 1 / 1024, work)
-        assert system.last_frame is None
+        loaded = system.step(state, zero, models, solvers, 1 / 1024, work)
+        assert loaded is system.last_frame
+        assert np.linalg.norm(loaded.state.rigid.angular_velocity[0]) > 0
+        observation = ph.measure_contact_matrix(loaded, [a, b], [b, a], published_by=system)
+        np.testing.assert_allclose(observation.total_force_n, [[0, 0, 2], [0, 0, -2]])
+        np.testing.assert_allclose(observation.weight_n, np.diag([2.0, 2.0]))
+        separated = ph.CoupledState(loaded.state.particles, loaded.state.rigid.copy())
+        separated.rigid.position[0, 2] += 2
+        clear = system.step(separated, zero, models, solvers, 1 / 1024, work)
+        assert clear is system.last_frame
+        np.testing.assert_array_equal(ph.measure_contact_matrix(system, [a], [b]).weight_n, [[0]])
         with pytest.raises(ValueError, match="published"):
-            ph.measure_contact_matrix(system, [a], [b])
+            ph.measure_contact_matrix(loaded, [a], [b], published_by=system)

@@ -115,7 +115,7 @@ def first_hits(
                                         label = tags[patch, 1]
                                     else:
                                         issue = 1
-            elif axis_ray != 0.0:
+            elif kind <= 4 and axis_ray != 0.0:
                 # 3 plane; 4 closed two-sided triangle. Shared edge endpoint products are
                 # evaluated in the same ray frame for both triangles.
                 time = -axis_offset / axis_ray
@@ -147,6 +147,135 @@ def first_hits(
                         nz = sign * az
                         best = time
                         label = tags[patch, 1]
+            elif kind >= 5:
+                # 5 cylinder; 6 cone (apex at +half); 7 triaxial ellipsoid. Transform vectors,
+                # solve in a metric ray frame and rotate the implicit gradient back to world.
+                lx = axis_offset
+                ux = axis_ray
+                ly = _dot(vx, vy, vz, geom[patch, 6], geom[patch, 7], geom[patch, 8])
+                uy = _dot(dx, dy, dz, geom[patch, 6], geom[patch, 7], geom[patch, 8])
+                lz = _dot(vx, vy, vz, geom[patch, 9], geom[patch, 10], geom[patch, 11])
+                uz = _dot(dx, dy, dz, geom[patch, 9], geom[patch, 10], geom[patch, 11])
+                # Expand about the point nearest the shape centre, so a distant sensor does not
+                # subtract two large, nearly equal terms in the discriminant.
+                shift = -_dot(lx, ly, lz, ux, uy, uz) / _dot(ux, uy, uz, ux, uy, uz)
+                cx = lx + shift * ux
+                cy = ly + shift * uy
+                cz = lz + shift * uz
+                r = geom[patch, 12]
+                half = geom[patch, 13]
+                oxu = cx / r
+                oyu = cy / r
+                dxu = ux / r
+                dyu = uy / r
+                a = dxu * dxu + dyu * dyu
+                b = dxu * oxu + dyu * oyu
+                c = oxu * oxu + oyu * oyu - 1.0
+                generator = 0
+                if kind == 5:
+                    # A ray parallel to the axis may lie on the whole finite barrel.
+                    if a == 0.0 and lx * lx + ly * ly == r * r:
+                        generator = 1
+                elif kind == 6:
+                    zscale = 2.0 * half
+                    ozc = (half - cz) / zscale
+                    dzc = -uz / zscale
+                    radial = tx.sqrt(a)
+                    # A factored difference retains opposite generators and the linear case.
+                    a = (radial - tx.abs(dzc)) * (radial + tx.abs(dzc))
+                    b = b - ozc * dzc
+                    c = oxu * oxu + oyu * oyu - ozc * ozc
+                    if a == 0.0:
+                        gx = lx / r
+                        gy = ly / r
+                        gz = (half - lz) / zscale
+                        if gx * gx + gy * gy == gz * gz and gx * dxu + gy * dyu == gz * dzc:
+                            generator = 1
+                else:
+                    oyu = cy / half
+                    dyu = uy / half
+                    ozu = cz / geom[patch, 14]
+                    dzu = uz / geom[patch, 14]
+                    a = _dot(dxu, dyu, dzu, dxu, dyu, dzu)
+                    b = _dot(oxu, oyu, ozu, dxu, dyu, dzu)
+                    c = _dot(oxu, oyu, ozu, oxu, oyu, ozu) - 1.0
+                disc = b * b - a * c
+                if not tx.isfinite(disc):
+                    issue = 1
+                for feature in tx.static_range(5):
+                    # Side roots precede a possible coincident side interval and the end discs.
+                    valid = 0
+                    delta = 0.0
+                    time = 0.0
+                    cap_sign = 0.0
+                    if feature < 2 and generator == 0:
+                        if a != 0.0 and disc >= 0.0:
+                            root_span = tx.sqrt(disc)
+                            q = -b - root_span if b >= 0.0 else -b + root_span
+                            delta = q / a
+                            if feature == 1 and q != 0.0:
+                                delta = c / q
+                            valid = 1
+                        elif a == 0.0 and b != 0.0 and feature == 0:
+                            delta = -c / (2.0 * b)
+                            valid = 1
+                        time = shift + delta
+                    elif feature == 2 and generator == 1 and uz != 0.0:
+                        low = shift + (-half - cz) / uz
+                        high = shift + (half - cz) / uz
+                        time = tx.max(near, tx.min(low, high))
+                        delta = time - shift
+                        if time <= tx.max(low, high):
+                            valid = 1
+                    elif feature >= 3 and kind != 7 and uz != 0.0:
+                        if kind == 5 or feature == 3:
+                            cap_sign = -1.0 if feature == 3 else 1.0
+                            delta = (cap_sign * half - cz) / uz
+                            time = shift + delta
+                            valid = 1
+                    if valid == 1 and not tx.isfinite(time):
+                        issue = 1
+                    if valid == 1 and time >= near and time <= far and (label < 0 or time < best):
+                        px = cx + delta * ux
+                        py = cy + delta * uy
+                        pz = cz + delta * uz
+                        gx = px
+                        gy = py
+                        gz = 0.0
+                        if cap_sign != 0.0:
+                            if px * px + py * py > r * r:
+                                valid = 0
+                            gx = 0.0
+                            gy = 0.0
+                            gz = cap_sign
+                        elif kind == 7:
+                            gx = px / (r * r)
+                            gy = py / (half * half)
+                            zsize = geom[patch, 14]
+                            gz = pz / (zsize * zsize)
+                        else:
+                            if pz < -half or pz > half:
+                                valid = 0
+                            if kind == 6:
+                                slope = r / (2.0 * half)
+                                gz = slope * slope * (half - pz)
+                        if valid == 1:
+                            wx = gx * ax + gy * geom[patch, 6] + gz * geom[patch, 9]
+                            wy = gx * ay + gy * geom[patch, 7] + gz * geom[patch, 10]
+                            wz = gx * az + gy * geom[patch, 8] + gz * geom[patch, 11]
+                            length = tx.sqrt(_dot(wx, wy, wz, wx, wy, wz))
+                            if not tx.isfinite(length):
+                                issue = 1
+                            elif length == 0.0 and (
+                                kind != 6 or px != 0.0 or py != 0.0 or pz != half
+                            ):
+                                issue = 1
+                            else:
+                                nx = wx / length if length > 0.0 else 0.0
+                                ny = wy / length if length > 0.0 else 0.0
+                                nz = wz / length if length > 0.0 else 0.0
+                                best = time
+                                label = tags[patch, 1]
         labels[ray] = -2 if issue != 0 else label
         hits[ray, 0] = best
         hits[ray, 1] = nx

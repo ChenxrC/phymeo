@@ -116,7 +116,9 @@ def test_heightfield_finite_diagonal_face_normals_and_other_world_rejection(tyx_
         ph.CollisionKey(3, 2, 1), "heightfield", (9, 13, 5, 7), heightfield=field
     )
     plate = ph.CollisionShape(ph.CollisionKey(1, 2, 1), "plate", (8, 9, 10), radius=0.125)
-    model, poses = scene((plate, [[0, 0, 0], [1, 0, 0], [0, 1, 0]]), (terrain, field.world_vertices()))
+    model, poses = scene(
+        (plate, [[0, 0, 0], [1, 0, 0], [0, 1, 0]]), (terrain, field.world_vertices())
+    )
     origins = [[0.25, 0.75, 2], [0.75, 0.25, 2], [1.125, 0.5, 2]]
     rays = [[0, 0, -1]] * 3
     with operator(tyx_mode, tmp_path) as cast:

@@ -106,7 +106,7 @@ def read_points(wp, model, state, contacts, obs, body, pads, reference):
     return force, friction, moment, about_com, rows
 
 
-def window(newton, wp, device, sliding):
+def window(newton, wp, device, sliding, *, observe=None):
     model, body, pads, floor, far, sensors = build(newton, wp, device)
     beam, shapes, reverse = sensors
     pipe = newton.CollisionPipeline(model, rigid_contact_max=32, soft_contact_max=0)
@@ -135,6 +135,8 @@ def window(newton, wp, device, sliding):
         state, target = target, state
         for sensor in sensors:
             sensor.update(state, contacts, observables=obs)
+        if observe is not None:
+            observe(model, state, contacts, obs, shapes, (floor, *pads, far))
         native = beam.total_force.numpy()[0].astype(float)
         tangent = beam.total_force_friction.numpy()[0].astype(float)
         direct, friction, moment, spin, points = read_points(

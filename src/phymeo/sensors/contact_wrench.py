@@ -188,22 +188,7 @@ def _reading(
     )
 
 
-def measure_contact_wrench(
-    source,
-    sensing,
-    *,
-    counterparts=None,
-    reference_world_m=(0.0, 0.0, 0.0),
-    sensor_to_world_xyzw=(0.0, 0.0, 0.0, 1.0),
-    published_by=None,
-):
-    """Read an accepted CollisionLoadSystem entry frame or an explicit SurfaceLoads sample.
-
-    Passing a CollisionLoadStep directly requires its current publishing system
-    so that a staged frame from an outer transaction cannot mimic publication.
-    SurfaceLoads is an explicit observation at its sampled state; its source
-    label does not imply an accepted step. No time-step conversion is applied.
-    """
+def _surface_observation(source, published_by):
     catalog = None
     if isinstance(source, (CollisionLoadSystem, CollisionLoadStep)):
         if isinstance(source, CollisionLoadSystem):
@@ -231,6 +216,26 @@ def measure_contact_wrench(
         source_name, phase = "SurfaceLoads", "sampled-state"
     else:
         raise TypeError("expected CollisionLoadSystem, published CollisionLoadStep or SurfaceLoads")
+    return loads, catalog, source_name, phase
+
+
+def measure_contact_wrench(
+    source,
+    sensing,
+    *,
+    counterparts=None,
+    reference_world_m=(0.0, 0.0, 0.0),
+    sensor_to_world_xyzw=(0.0, 0.0, 0.0, 1.0),
+    published_by=None,
+):
+    """Read an accepted CollisionLoadSystem entry frame or an explicit SurfaceLoads sample.
+
+    Passing a CollisionLoadStep directly requires its current publishing system
+    so that a staged frame from an outer transaction cannot mimic publication.
+    SurfaceLoads is an explicit observation at its sampled state; its source
+    label does not imply an accepted step. No time-step conversion is applied.
+    """
+    loads, catalog, source_name, phase = _surface_observation(source, published_by)
     return _reading(
         _surface_rows(loads),
         sensing,

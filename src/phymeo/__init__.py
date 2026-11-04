@@ -210,12 +210,14 @@ from .runtime.scene_stepper import SceneStepper
 from .runtime.stepper import Stepper
 from .runtime.terminal_impulse import PointVelocityImpulses, TerminalImpulseProgram
 from .sensors import (
+    ContactForceMatrix,
     ContactSelector,
     ContactWrenchReading,
     RelativeSiteMeasurement,
     RobotIMUReading,
     RobotSite,
     measure_cloth_link_wrench,
+    measure_contact_matrix,
     measure_contact_wrench,
     measure_relative_site,
     measure_robot_imu,
@@ -392,9 +394,11 @@ __all__ = [
     "RobotSite",
     "RelativeSiteMeasurement",
     "measure_relative_site",
+    "ContactForceMatrix",
     "ContactSelector",
     "ContactWrenchReading",
     "measure_cloth_link_wrench",
+    "measure_contact_matrix",
     "measure_contact_wrench",
     "RobotIMUReading",
     "measure_robot_imu",

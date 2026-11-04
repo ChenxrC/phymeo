@@ -172,6 +172,11 @@ def test_world_isolation_empty_source_and_transactional_last_frame():
         zero = ph.CoupledInputs.zeros(6, 2)
         accepted = system.step(state, zero, models, solvers, 1 / 256, ws)
         first = measure_contact_wrench(system, target)
+        table = ph.measure_contact_matrix(accepted, [target], [other], published_by=system)
+        np.testing.assert_array_equal(table.total_force_n[0], first.force_n)
+        assert table.phase == "substep-entry"
+        with pytest.raises(ValueError, match="registered"):
+            ph.measure_contact_matrix(system, [target], [ph.CollisionKey(0, 234, 8)])
         assert first.source == "CollisionLoadStep" and first.phase == "substep-entry"
         np.testing.assert_array_equal(
             measure_contact_wrench(accepted, target, published_by=system).force_n, first.force_n
@@ -189,6 +194,14 @@ def test_world_isolation_empty_source_and_transactional_last_frame():
         np.testing.assert_array_equal(measure_contact_wrench(system, target).force_n, first.force_n)
         separated = ph.CoupledState(state.particles, state.rigid.copy())
         separated.rigid.position[:, 2] += 2
+        clear = system.step(separated, zero, models, solvers, 1 / 256, ws)
+        assert clear is system.last_frame
+        np.testing.assert_array_equal(
+            ph.measure_contact_matrix(system, [target], [other]).weight_n, [[0]]
+        )
+        with pytest.raises(ValueError, match="published"):
+            ph.measure_contact_matrix(accepted, [target], [other], published_by=system)
+        assert table.weight_n[0, 0] > 0
         no_contacts = system.sample(separated, ws)
         result = measure_contact_wrench(no_contacts, other)
         np.testing.assert_array_equal(result.force_n, np.zeros(3))

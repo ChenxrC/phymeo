@@ -45,3 +45,13 @@ image = camera.capture(exposure.model, exposure.poses, world=7)
 在另一套光学留出中，7 号世界的倾置长箱沿负 z 平移并绕世界 z 轴旋转，四个有限片节点取不等竖直初速。0.1875 s 时，从原相机中心读到箱面深度 1.546875 m；移到片面内的材料采样位置读到 2.98828125 m。42 号世界同局部编号的静止箱始终读到 4.875 m。真实 CUDA 组把设备动力学返回的状态冻结为 HOST 材料顶点，再以 `TyxRaycaster` 运行设备射线；另用独立 HOST 射线核对有限片距离。以 0.1 s 输入时，设备组的曝光时间采用 FP32 实际步长 0.10000000149011612 s。[interpret 实录](../../artifacts/p65-contact-geometry-snapshot-20261105-01/interpret/final.json) · [CUDA 实录](../../artifacts/p65-contact-geometry-snapshot-20261105-01/cuda/final.json)
 
 原凸工具压片示例在世界 3 的五次曝光均读到工具键 (3, 7, 0)，0 到 0.0078125 s 的中心光线距离由 0.718750000 降至 0.718673758 m。[带时刻的原始受载相机输出](../../artifacts/p65-contact-geometry-snapshot-20261105-01/tool-sheet-depth.json)
+
+## 球、椭球与有限凸体
+
+同一构建器也接受 `add_sphere(body, radius, mass=...)` 和 `add_ellipsoid(body, semi_axes, mass=...)`，尺寸单位为米，质量单位为 kg。球和椭球按均匀实心体计算主惯量；椭球半轴随物体的真实四元数转动。球心位于凸体外时，静态查询从实际凸面、棱或顶点投影，保留原材料地址。加载阶段和整步防穿过检查采用同一对登记形状。[源代码](../../src/phymeo/runtime/contact_scene.py) · [面、棱、角、交换材料顺序和全场转动](../../tests/test_contact_scene_round_bodies.py)
+
+两自由体的面偏心和有限棱碰触各独立推进 48 步，两个案例的初始材料力均为 4 N。面案载荷持续 29 步，棱案 28 步，两者最终卸载。Phy 使用声明式 HOST 场景。Newton 1.7 的独立 CPU 和 CUDA `SolverSemiImplicit` 从自身姿态计算同一法向层的力和力矩，再推进两个真正的自由刚体。这里对比同一力律的积分。两个案例全窗的最大位置分量差分别为 0.126 µm 和 0.360 µm，最大力差小于 0.000011 N。另有 TYX interpret 和真实 CUDA 实际推进同一面加载及斜角留出。[双引擎驱动](../../tests/reference_newton/robot/round_body_scene.py) · [Newton CUDA 原始双轨迹](../../artifacts/p65-newton-night-20261105-01/declared-round-gpu.result.json) · [Newton CPU 原始双轨迹](../../artifacts/p65-newton-night-20261105-01/declared-round-cpu.result.json)
+
+集成时首次设备面加载曾因浮点凸支撑迭代引入侧向分量而被刚体积分器拒绝。现以凸体最近材料投影建立法向，保留原设备拒绝范围。快速球在起止均分离却穿过箱体的步仍会回滚。已接受的近单位四元数按实际旋转比较角漂移，正负双覆盖均有真实受载步验证。[首个设备拒绝](../../artifacts/p65-newton-night-20261105-01/declared-round-cuda/stdout.log) · [修正后的设备面加载](../../artifacts/p65-newton-night-20261105-01/declared-round-cuda-projected/stdout.log) · [斜角留出](../../artifacts/p65-newton-night-20261105-01/oblique-coverage-cuda/stdout.log)
+
+`ContactScene.step()` 和 `scene.last_frame` 均返回可由调用者编辑的状态与力数组副本。两者共用同一不可变几何记录；比较它们时可使用 `frame.path is scene.last_frame.path`。改动旧回执的末态或合力不会改变下一次读取的历史或场景状态。

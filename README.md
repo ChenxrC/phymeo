@@ -2,6 +2,17 @@
 
 面向机器人、刚体接触、布料与柔性体的物理仿真引擎设计与首版开发。
 
+## 从一个可运行的场景开始
+
+在已安装本地 Phymeo 的环境中，从仓库根目录执行下列示例。第一个运行 Panda 抓起边长 50 mm、质量 100 g 的自由立方体，在持载时接受新的放置距离，然后松指。第二个用刚体和可动布面构建同一场景，记录四个物理步的接触力和深度观测。输出路径请选择新文件。
+
+```powershell
+python examples/robot_payload_pick_place.py --shape box --interactive --output panda-box.json
+python examples/declared_contact_scene.py --case tool-sheet --backend host --depth --output tool-sheet.json
+```
+
+机器人从 `RobotPayloadScene.step(...)` 接受新命令；声明式场景从 `ContactSceneBuilder` 登记物体、材料对和世界。两者都可用 `reading, geometry = scene.observe_scene()` 从同一时刻取观测和几何。首次使用 TYX 设备后端请先核对本机环境。[安装与后端](docs/development/environment-and-ci.md) · [公开场景及单位](docs/benchmarks/p65-declared-contact-scenes.md) · [Newton 功能对照与当前边界](docs/development/phymeo-newton-20261105-coverage.md)
+
 **定位：** phymeo 拥有物理模型、状态、碰撞、数学/学习求解器和耦合调度；[tyx](https://github.com/ChenxrC/tyx) 拥有通用计算、编译、数组、自动微分和设备执行。
 
 > 当前处于设计与基础实现阶段。图中描述的是目标架构，不能据此推断全部模块已实现、GPU 已通过验证或整体可微。实际交付以[进度记录](docs/progress.md)为准。

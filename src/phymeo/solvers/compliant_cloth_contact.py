@@ -27,6 +27,7 @@ from ..runtime.scene_stepper import SceneStepper
 from ._compliant_motion import advance_state, check_robot_contact, optional_budget
 from .cloth_link_contact import ClothLinkContacts
 from .cloth_surface_contact import ClothSurfaceContact
+from .cloth_tool_contact import ClothToolContacts
 from .finite_pad_backing import backed_step
 
 
@@ -169,6 +170,8 @@ class CompliantClothContactProgram:
         cloth_self_layer=None,
         cloth_self_operator=None,
         cloth_self_geometry="host",
+        link_hull_tools=(),
+        link_hull_operator=None,
     ):
         if not isinstance(scene, SceneModel) or not isinstance(material, ClothMaterial):
             raise TypeError("expected SceneModel and ClothMaterial")
@@ -265,6 +268,18 @@ class CompliantClothContactProgram:
             raise ValueError("duplicate patch key")
         self.finite_pads = tuple(p for p in self.patches if p.radius_m is not None)
         self.backed_pads = tuple(p for p in self.finite_pads if p.backing_clearance_m is not None)
+        tools = tuple(link_hull_tools)
+        self.hull_tools = None
+        if tools:
+            if self.backed_pads or self.cloth_links is not None:
+                raise ValueError(
+                    "convex link tools require the midpoint solver without capsule cloth layers or backed pads"
+                )
+            self.hull_tools = ClothToolContacts(
+                cloth_domain, self.surfaces, self.robots, tools, link_hull_operator
+            )
+        elif link_hull_operator is not None:
+            raise ValueError("link_hull_operator requires registered link_hull_tools")
         self.normals = {}
         for p in self.patches:
             if p.robot_domain is not None and (
@@ -303,6 +318,11 @@ class CompliantClothContactProgram:
                 else {}
             ),
             **({"cloth_self_contact": self.cloth_self.signature} if self.cloth_self else {}),
+            **(
+                {"link_hull_tools": (self.hull_tools.specs, self.hull_tools.force_mode)}
+                if self.hull_tools
+                else {}
+            ),
             scene=self.scene.identity,
             cloth=self.cloth_domain,
             material=self.material,
@@ -476,6 +496,12 @@ class CompliantClothContactProgram:
             return self._body_sample(state, self._link_geometry(state))[0]
         return None if self.robot_contact is None else self.robot_contact.evaluate(state.domains)
 
+    def observe_hull_tools(self, state, *, _work=None):
+        """Read the current finite tool loads and their actual joint efforts."""
+        if self.hull_tools is None:
+            return None
+        return self.hull_tools.evaluate(state, self._link_geometry(state), _work)
+
     def observe_self_contact(self, state):
         """Sample the configured sheet's own surface forces at this actual state."""
         if self.cloth_self is None:
@@ -497,7 +523,9 @@ class CompliantClothContactProgram:
                 work,
             )
 
-    def accelerations(self, state, inputs, *, _backing=False, _self_sample=None, _phase=None):
+    def accelerations(
+        self, state, inputs, *, _backing=False, _self_sample=None, _phase=None, _hull_sample=None
+    ):
         if _backing:
             nodal, reactions, details, geo = self._loads(state, backing_rows=True)
         else:
@@ -505,6 +533,11 @@ class CompliantClothContactProgram:
         if self.cloth_self is not None:
             sample = self.observe_self_contact(state) if _self_sample is None else _self_sample
             nodal += sample["nodal_force_n"]
+        if self.hull_tools is not None:
+            tools = self.hull_tools.evaluate(state, geo) if _hull_sample is None else _hull_sample
+            nodal += tools["nodal_force_n"]
+            for name in reactions:
+                reactions[name] += tools["efforts"][name]
         body = None
         if self.robot_contact is not None:
             body, link_nodal = self._body_sample(state, geo, phase=_phase)
@@ -554,6 +587,7 @@ class _Workspace:
     def __init__(self, program, state, inputs, h):
         self.program, self.state, self.inputs, self.h = program, state, inputs, h
         self.self_work = None if program.cloth_self is None else program.cloth_self.workspace()
+        self.hull_work = None if program.hull_tools is None else program.hull_tools.workspace()
 
     def predict(self):
         if self.program.backed_pads:
@@ -564,13 +598,19 @@ class _Workspace:
             return
         entry = self.state
         initial_self = self.program._self_sample(entry, self.self_work)
+        initial_hulls = self.program.observe_hull_tools(entry, _work=self.hull_work)
         a0, initial, _, body0 = self.program.accelerations(
-            entry, self.inputs, _self_sample=initial_self, _phase="entry"
+            entry,
+            self.inputs,
+            _self_sample=initial_self,
+            _phase="entry",
+            _hull_sample=initial_hulls,
         )
         mid = advance_state(self.state, a0, self.h / 2, midpoint=True)
         mid_self = self.program._self_sample(mid, self.self_work)
+        mid_hulls = self.program.observe_hull_tools(mid, _work=self.hull_work)
         a, contact, internal, body = self.program.accelerations(
-            mid, self.inputs, _self_sample=mid_self, _phase="midpoint"
+            mid, self.inputs, _self_sample=mid_self, _phase="midpoint", _hull_sample=mid_hulls
         )
         self.state = advance_state(self.state, a, self.h, midpoint=False)
         self.penetration = max(_penetration(initial), _penetration(contact))
@@ -613,7 +653,11 @@ class _Workspace:
                     f"sampled hard penetration limit exceeded: {self.penetration:.6g} m"
                 )
         self.program._check_self_path(entry, mid, self.state, self.self_work)
+        if self.program.hull_tools is not None:
+            self.program.hull_tools.check_path(entry, mid)
+            self.program.hull_tools.check_path(mid, self.state)
         self.report = dict(
+            **({"hull_tools": mid_hulls} if mid_hulls is not None else {}),
             **({"self_contact": mid_self} if mid_self is not None else {}),
             patches=contact,
             robot_contact=body,
@@ -646,3 +690,5 @@ class _Workspace:
     def close(self):
         if self.self_work is not None:
             self.self_work.close()
+        if self.hull_work is not None:
+            self.hull_work.close()

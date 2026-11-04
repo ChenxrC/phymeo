@@ -31,3 +31,9 @@ Newton 官方抓方块样例加载 FR3 描述。本项目的同资产几何对�
 | 全窗指垫最大采样压入量 | 1.221 mm | 2.253 mm |
 
 正例采样时刻其余登记实体至方块的保守最小轴向净空 5.797 mm，机械臂至有限桌面 25.872 mm。两组各自撤指后的指垫力均为零，全窗关节限位违规量均为零。抓住和失抓两次都发生了约 5.8 N 的峰值双侧夹压。这个差异来自切向载荷，夹紧命令相同。HOST 材料点解析控制与两条物理轨迹一共 3 项通过。[完整正例子步](../../artifacts/p65-20261104-panda-batch/temp-panda-pick-window/test_imported_panda_grips_and_0/motion.json) · [零摩擦子步](../../artifacts/p65-20261104-panda-batch/temp-panda-pick-window/test_imported_panda_grips_and_1/motion.json) · [原始退出与用时](../../artifacts/p65-20261104-panda-batch/panda-pick-window/final.json)
+
+## 可视回放和同资产对照
+
+在同一个离线页面切换两条已保存轨迹，可拖动进度和视角。浏览器验收在 1.350 s 读出正例的两侧法向力各约 5.78 N、桌面 0 N；此时零摩擦对照的双指为 0 N、桌面约 0.98 N。每条展示 181 个实际子步，两份原始 JSON 各保留 3,600 个子步。[双轨迹三维回放](../../artifacts/p65-20261104-panda-batch/panda-grasp-replay.html) · [搬运时刻截图](../../artifacts/p65-20261104-panda-batch/panda-carry-1p35.png) · [实际浏览器读数](../../artifacts/p65-20261104-panda-batch/playback-qa.json)
+
+Newton 1.7.0 独立读入与 Phymeo 相同的经典 Panda URDF，从正例轨迹取 17 个实际入步关节状态。按 Newton 给出的指盒形状及刚体变换重建两侧内面中心，世界位置与 Phymeo 的最大差分别为 CPU 0.250 µm、CUDA 0.200 µm。这个对照验证资产与运动学。表中的受力、抬离、放下和失抓来自 Phymeo HOST 的真实动力学。[Newton CPU](../../artifacts/p65-20261104-panda-batch/newton-panda-fk-cpu-values.json) · [Newton CUDA](../../artifacts/p65-20261104-panda-batch/newton-panda-fk-cuda-values.json)

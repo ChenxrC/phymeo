@@ -76,6 +76,8 @@ class _PolygonRows:
         self.live = None
 
     def register(self, pair, index):
+        if index is None and len(self.patch.points) == 1:
+            index = 0
         if index is None or pair is not self.pair or index in self.requested:
             raise SolverFailure(
                 "a complete convex polygon requires each indexed material corner once"
@@ -161,7 +163,8 @@ def _current_normal(
         )
     if hypot(*(points[0] - points[1])) > tol:
         raise ValueError("collision witness ports do not meet at one material point")
-    static_hulls = pair.sweep is None and all(s.kind == "hull" for s in pair.witness_shapes)
+    kinds = {s.kind for s in pair.witness_shapes}
+    static_hulls = pair.sweep is None and "hull" in kinds and kinds <= {"hull", "plane"}
     if polygon is None or polygon.current is None:
         model = CollisionModel(posed_shapes)
         with CollisionWorkspace(model, "host") as work:
@@ -199,6 +202,19 @@ def _current_normal(
         strict=True,
     ):
         path = paths[shape.key]
+        if polygon is not None and shape.kind == "plane":
+            old_offset, new_offset = (
+                (witness.first_offset, fresh.first_offset)
+                if shape.key == pair.first
+                else (witness.second_offset, fresh.second_offset)
+            )
+            if (
+                old_offset is None
+                or new_offset is None
+                or not np.all(np.isfinite(old_offset))
+                or hypot(*(np.asarray(old_offset) - new_offset)) > tol
+            ):
+                raise ValueError("the plane material offset disagrees with the current anchor")
         if hypot(*(_material_anchor(shape, path, old) - _material_anchor(shape, path, live))) > tol:
             raise ValueError("collision witness material address disagrees with the current shape")
     return fresh.normal
@@ -222,7 +238,8 @@ def solve_witness_impulses(
 
     Rows contain (CollisionPair, {shape_key: (port_domain, local_row)}). A third
     entry selects a static cylinder-plane endpoint or a corner of the unique hull-hull
-    contact polygon. Supply every positive-area polygon corner once, with one material
+    contact polygon or a finite hull support on a plane. Supply every polygon corner or both
+    segment ends once, with one material
     port per owner and corner, in any row order. A static row must be touching. First-contact rows must share one reported witness
     time. The HOST impulse adapter checks both material frames and queries the current
     rigid shapes again in a common local chart. Supply local_vertices keyed by shape,

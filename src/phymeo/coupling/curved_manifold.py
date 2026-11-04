@@ -10,24 +10,27 @@ from ..constraints.collision_shapes import MAX_CONVEX_VERTICES
 
 
 def hull_polygon(pair):
-    """The single oriented, positive-area convex contact face, including a live proximity query."""
+    """The unique hull face or half-space support, including the live proximity query."""
     if pair.sweep is not None or pair.convex is None:
         return None
     patches = pair.convex.end.patches
     if not patches:
         close = getattr(pair.witness, "proximity_patch", None)
         patches = () if close is None else (close,)
-    if not any(p.dimension == 2 for p in patches):
+    kinds = tuple(s.kind for s in pair.witness_shapes)
+    halfspace = set(kinds) == {"plane", "hull"}
+    if not patches or (not halfspace and not any(p.dimension == 2 for p in patches)):
         return None
     if len(patches) != 1 or pair.witness is None or pair.witness.normal is None:
         raise ValueError("contact polygon requires a single resolved support normal")
     patch = patches[0]
     if (
-        tuple((shape.key, shape.kind) for shape in pair.witness_shapes)
-        != ((pair.first, "hull"), (pair.second, "hull"))
-        or not 3 <= len(patch.points) <= 2 * MAX_CONVEX_VERTICES
+        tuple(s.key for s in pair.witness_shapes) != (pair.first, pair.second)
+        or (not halfspace and kinds != ("hull", "hull"))
+        or not 1 <= len(patch.points) <= 2 * MAX_CONVEX_VERTICES
+        or patch.dimension != min(2, len(patch.points) - 1)
         or not isfinite(patch.area_m2)
-        or patch.area_m2 <= 0
+        or (patch.area_m2 <= 0 if patch.dimension == 2 else patch.area_m2 != 0)
         or patch.normal != pair.witness.normal
     ):
         raise ValueError("invalid registered convex contact polygon")
@@ -51,6 +54,8 @@ def select_static_support(pair, witness, index):
             second_point=corner.second_point,
             first_weights=corner.first_weights,
             second_weights=corner.second_weights,
+            first_offset=getattr(corner, "first_offset", witness.first_offset),
+            second_offset=getattr(corner, "second_offset", witness.second_offset),
         )
     if index not in (0, 1):
         raise ValueError("a support segment endpoint index must be integer 0 or 1")

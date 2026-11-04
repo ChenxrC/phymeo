@@ -117,8 +117,13 @@ def segment_witness(cap, face_first, start, axis, tri, nearest, source):
 
     # The closest-pair set is convex and the displacement is unique.
     # Interpolating the two extremes recovers the face weights at its center.
-    s = (F(low[0]) + high[0]) / 2
-    w = np.array([(F(a) + b) / 2 for a, b in zip(low[1], high[1], strict=True)], dtype=object)
+    singleton = low == high
+    if singleton:
+        s = low[0]
+        w = np.asarray(low[1], dtype=object)
+    else:
+        s = (F(low[0]) + high[0]) / 2
+        w = np.array([(F(a) + b) / 2 for a, b in zip(low[1], high[1], strict=True)], dtype=object)
     axis_point = start + s * axis
     face_point = w @ tri.p
     signed = best - F(cap.radius) ** 2
@@ -133,6 +138,12 @@ def segment_witness(cap, face_first, start, axis, tri, nearest, source):
         )
     cap_weights = _weights(cap, s)
     face_weights = tuple(sorted(zip(tri.ids, map(float, w), strict=True)))
+    if singleton:
+        # The representative and both extrema have this same exact material address.
+        point = CapsuleAxisPoint(float(s), _xyz(axis_point), face_pos, face_weights)
+        span = (point, point)
+    else:
+        span = (endpoint(*low), endpoint(*high))
     if face_first:
         sides = face_pos, cap_pos, face_weights, cap_weights
     else:
@@ -142,7 +153,7 @@ def segment_witness(cap, face_first, start, axis, tri, nearest, source):
         normal,
         *sides,
         source,
-        capsule_axis_span=(endpoint(*low), endpoint(*high)),
+        capsule_axis_span=span,
     ), signed
 
 

@@ -1,4 +1,4 @@
-"""Fixed-base Panda and a free cube, with sampled finite rubber pads on HOST."""
+"""Fixed-base Panda and a free, uniform payload with finite sampled rubber pads on HOST."""
 
 from hashlib import sha256
 from itertools import product
@@ -15,7 +15,7 @@ from ..dynamics.robot_dynamics import robot_dynamics_terms
 from ..dynamics.robot_kinematics import _axis_rotation, _point_jacobians_at, forward_kinematics
 from ..dynamics.rotation import matrix_quaternion, quaternion_matrix
 from ..solvers.rigid_semi_implicit import RigidSemiImplicitSolver
-from ..solvers.sampled_box_contact import box_surface_samples, sample_loads
+from .panda_payload import SampledPayload
 
 
 def _finger_samples(asset):
@@ -51,6 +51,14 @@ class _PassiveGeometry:
             rows = asset.authored_to_model_points(shape.link_name, shape.local_vertices)
             local.extend(rows)
             links.extend([shape.link_index] * len(rows))
+        self.starts = np.array(self.starts)
+        self.counts = np.diff(np.r_[self.starts, len(local)])
+        self.box_parts = np.array(
+            [i for i, shape in enumerate(asset.collisions) if shape.shape.kind == "hull"], dtype=int
+        )
+        self.round_parts = np.array(
+            [i for i, shape in enumerate(asset.collisions) if shape.shape.kind != "hull"], dtype=int
+        )
         self.links, self.local = np.array(links), np.array(local)
         self.moving = self.links >= 0
         self.radii = np.array(self.radii)[:, None]
@@ -61,10 +69,47 @@ class _PassiveGeometry:
         high = np.maximum.reduceat(points, self.starts, axis=0) + self.radii
         return np.max(np.maximum(low - extents, -extents - high), axis=1)
 
-    def clearances(self, kin, center, rotation, extents, table_center, table_half):
+    def sphere_margins(self, points, center, radius):
+        """Signed ball clearance to actual round primitives and URDF cuboids on the live arm."""
+        margins = np.empty(len(self.starts))
+        indices = self.round_parts
+        starts = self.starts[indices]
+        a = points[starts]
+        ab = points[starts + self.counts[indices] - 1] - a
+        ab2 = np.einsum("ij,ij->i", ab, ab)
+        along = np.divide(
+            np.einsum("ij,ij->i", center - a, ab), ab2, out=np.zeros_like(ab2), where=ab2 > 0
+        )
+        nearest = a + np.clip(along, 0, 1)[:, None] * ab
+        margins[indices] = (
+            np.linalg.norm(center - nearest, axis=1) - self.radii[indices, 0] - radius
+        )
+
+        # make_collider enumerates URDF box vertices in local (-,+) product order.
+        indices = self.box_parts
+        first = self.starts[indices]
+        corners = points[first]
+        edges = points[first[:, None] + [4, 2, 1]] - corners[:, None, :]
+        lengths = np.linalg.norm(edges, axis=2)
+        local = np.einsum(
+            "nij,nj->ni", edges / lengths[:, :, None], center - corners - 0.5 * edges.sum(axis=1)
+        )
+        gaps = np.abs(local) - 0.5 * lengths
+        margins[indices] = (
+            np.linalg.norm(np.maximum(gaps, 0), axis=1) + np.minimum(gaps.max(axis=1), 0) - radius
+        )
+        return margins
+
+    def clearances(
+        self, kin, center, rotation, extents, table_center, table_half, *, sphere_radius=None
+    ):
         points = self.local.copy()
         points[self.moving] = _world_points(kin, self.links[self.moving], self.local[self.moving])
-        cube = self.margin((points - center) @ rotation, extents)
+        cube = (
+            self.margin((points - center) @ rotation, extents)
+            if sphere_radius is None
+            else self.sphere_margins(points, center, sphere_radius)
+        )
         table = self.margin(points - table_center, table_half)
         cube[self.pad] = np.inf
         i, j = int(np.argmin(cube)), int(np.argmin(table))
@@ -132,7 +177,8 @@ def run_panda_cube(
     steps_per_second=1600,
     record=False,
     asset_path=None,
-    box_size_m=(0.05, 0.05, 0.05),
+    box_size_m=None,
+    payload_geometry=None,
     closed_width_m=0.029,
     initial_xy_offset_m=(0.0, 0.0),
     initial_yaw_rad=0.0,
@@ -141,6 +187,8 @@ def run_panda_cube(
     """Pick, translate and release under gravity. No actuator reads or sets the cube pose.
 
     The four points per rubber face use a compliant normal and regularized friction.
+    A payload_geometry mapping accepts kind="sphere" with radius_m, or kind="box"
+    with full_size_m. Omit it to use box_size_m, which defaults to a 50 mm cube.
     box_size_m gives full lengths along the initially grasp-aligned, transverse and
     vertical body axes at zero yaw. initial_yaw_rad rotates only the payload about
     world +Z from this orientation. The box rests flat on the finite table.
@@ -154,10 +202,9 @@ def run_panda_cube(
         raise ValueError("this sampled control requires at least 800 substeps per second")
     if not np.isfinite(mass_kg) or mass_kg <= 0:
         raise ValueError("the cube must have finite positive mass")
-    size = np.asarray(box_size_m, dtype=float)
+    payload = SampledPayload(box_size_m, payload_geometry=payload_geometry)
+    size = payload.full_size
     offset = np.asarray(initial_xy_offset_m, dtype=float)
-    if size.shape != (3,) or not np.isfinite(size).all() or np.any(size <= 0):
-        raise ValueError("box_size_m must contain three finite positive full sizes")
     if offset.shape != (2,) or not np.isfinite(offset).all():
         raise ValueError("initial_xy_offset_m must contain two finite world coordinates")
     if (
@@ -195,8 +242,7 @@ def run_panda_cube(
     rotation = np.column_stack([axis, np.cross(vertical, axis), vertical])
     if initial_yaw_rad != 0:
         rotation = _axis_rotation(vertical, initial_yaw_rad) @ rotation
-    extents = size / 2
-    vertices = np.array(list(product(*[(-h, h) for h in extents])))
+    extents = payload.half
     # The calibrated table stays in place for every payload. Its top supports the initial base.
     table_z = nominal_center[2] - 0.025
     start_center = np.array([*(nominal_center[:2] + offset), table_z + extents[2]])
@@ -205,13 +251,11 @@ def run_panda_cube(
     table_center = np.array(
         [nominal_center[0] + travel / 2, nominal_center[1], table_z - table_half[2]]
     )
-    initial_vertices = start_center + vertices @ rotation.T
-    if np.any(np.abs(initial_vertices[:, :2] - table_center[:2]) > table_half[:2]):
-        raise ValueError("initial box extends beyond the finite tabletop footprint")
+    if not payload.fits_on_table(start_center, rotation, table_center, table_half):
+        raise ValueError("initial payload extends beyond the finite tabletop footprint")
     cube_margin = table_margin = float("inf")
     cube_minimum = table_minimum = None
-    x, y, z = size
-    diagonal = mass_kg / 12 * np.array([y * y + z * z, x * x + z * z, x * x + y * y])
+    diagonal = payload.inertia(mass_kg)
     rigid = RigidBodyModel(np.array([1.0 / mass_kg]), diagonal[None, :], gravity)
     cube = RigidBodyState(
         start_center[None], matrix_quaternion(rotation)[None], np.zeros((1, 3)), np.zeros((1, 3))
@@ -259,6 +303,8 @@ def run_panda_cube(
         ],
         travel_m=travel,
     )
+    if payload.radius is not None:
+        run_inputs["payload_geometry"] = payload.descriptor()
     integrator = RigidSemiImplicitSolver()
     trace = []
     bilateral_peak = depth_max = limit_error = 0.0
@@ -266,7 +312,6 @@ def run_panda_cube(
     peak_carry_table = 0.0
     min_carry_bilateral = float("inf")
     final_table, final_pad = [], []
-    normal_table = np.tile(vertical, (8, 1))
     momentum_error = 0.0
     for step in range(step_count):
         t = step * dt
@@ -276,29 +321,42 @@ def run_panda_cube(
         samples = _world_points(kin, links, local)
         jac, _ = _point_jacobians_at(asset.model, kin, links, local)
         rotation = quaternion_matrix(cube.orientation)[0]
-        pads = box_surface_samples(
+        pads = payload.pad_loads(
             samples,
             jac @ arm.v,
             cube.position[0],
             rotation,
             cube.velocity[0],
             cube.angular_velocity[0],
-            extents,
             pad_law,
         )
-        corners = vertices @ rotation.T
-        world = cube.position[0] + corners
         cube_gap, table_gap, cube_shape, table_shape = passive.clearances(
-            kin, cube.position[0], rotation, extents, table_center, table_half
+            kin,
+            cube.position[0],
+            rotation,
+            extents,
+            table_center,
+            table_half,
+            sphere_radius=payload.radius,
         )
         if cube_gap < cube_margin:
             cube_margin, cube_minimum = cube_gap, dict(t=t, shape=cube_shape)
         if table_gap < table_margin:
             table_margin, table_minimum = table_gap, dict(t=t, shape=table_shape)
-        if np.any(np.abs(world[:, :2] - table_center[:2]) > table_half[:2]):
-            raise RuntimeError("cube left the finite tabletop footprint")
-        corner_v = cube.velocity[0] + np.cross(cube.angular_velocity[0], corners)
-        table_n, table_f = sample_loads(table_z - world[:, 2], normal_table, corner_v, table_law)
+        try:
+            table_f, table_n, corners = payload.table_loads(
+                cube.position[0],
+                rotation,
+                cube.velocity[0],
+                cube.angular_velocity[0],
+                table_center,
+                table_half,
+                table_law,
+            )
+        except ValueError as exc:
+            raise RuntimeError(str(exc)) from exc
+        if record:
+            table_points = cube.position[0] + corners
         force = pads.body_force + table_f.sum(axis=0)
         torque = pads.body_torque + np.cross(corners, table_f).sum(axis=0)
         updated = integrator.step(rigid, cube, RigidBodyInputs(force[None], torque[None]), dt)
@@ -317,9 +375,7 @@ def run_panda_cube(
         depth_max = max(depth_max, float(max(pads.depths)))
         # Metrics refer to the advanced body state; the recorded loads acted during this step.
         clearance = (
-            cube.position[0, 2]
-            + np.min((vertices @ quaternion_matrix(cube.orientation)[0].T)[:, 2])
-            - table_z
+            payload.low_z(cube.position[0], quaternion_matrix(cube.orientation)[0]) - table_z
         )
         elapsed = (step + 1) * dt
         if abs(elapsed - times[4]) <= 0.5 * dt:
@@ -346,6 +402,9 @@ def run_panda_cube(
                     pad_normal_N=finger_n.tolist(),
                     pad_forces_N=pads.forces.tolist(),
                     table_N=table_n.sum(),
+                    table_points_before_m=table_points.tolist(),
+                    table_forces_N=table_f.tolist(),
+                    applied_payload_wrench=np.r_[force, torque].tolist(),
                     drive=drive.tolist(),
                 )
             )
@@ -373,6 +432,7 @@ def run_panda_cube(
         cube_mass_kg=mass_kg,
         finger_friction=friction,
         cube_full_size_m=size.tolist(),
+        payload_geometry=payload.descriptor(),
         cube_inertia_diagonal_kg_m2=diagonal.tolist(),
         closed_width_m=closed,
         grip_above_com_m=float(grip_above_com_m),

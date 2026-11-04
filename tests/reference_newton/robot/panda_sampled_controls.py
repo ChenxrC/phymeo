@@ -7,9 +7,9 @@ from pathlib import Path
 import newton
 import numpy as np
 import warp as wp
-from panda_sampled_loads import box_corners, tabletop_load
 
 from phymeo.constraints.robot_contact import RobotContactMaterial
+from phymeo.experiments.panda_payload import box_corners, box_tabletop_load
 
 
 def check(speed):
@@ -55,7 +55,7 @@ def check(speed):
         state.joint_qd.assign(np.array([speed, 0.0, 0.0, 0.0, 0.0, 0.0], dtype=np.float32))
         newton.eval_fk(model, state.joint_q, state.joint_qd, state)
         twist = state.body_qd.numpy()[0].astype(float)
-        force, normal, arms = tabletop_load(
+        force, normal, arms = box_tabletop_load(
             box_corners(half),
             state.body_q.numpy()[0, :3].astype(float),
             np.eye(3),

@@ -24,24 +24,7 @@ from phymeo.experiments.panda_cube import (
     _servo_effort,
     _world_points,
 )
-from phymeo.solvers.sampled_box_contact import box_surface_samples, sample_loads
-
-
-def box_corners(extents):
-    return np.array(list(product(*[(-h, h) for h in extents])))
-
-
-def tabletop_load(vertices, center, rotation, twist, table_center, table_half, law):
-    arms = vertices @ rotation.T
-    world = center + arms
-    if np.any(np.abs(world[:, :2] - table_center[:2]) > table_half[:2]):
-        raise ValueError("payload corner left the finite tabletop footprint")
-    velocity = twist[:3] + np.cross(twist[3:], arms)
-    normal = np.tile([0.0, 0.0, 1.0], (len(world), 1))
-    loads, forces = sample_loads(
-        table_center[2] + table_half[2] - world[:, 2], normal, velocity, law
-    )
-    return forces, loads, arms
+from phymeo.experiments.panda_payload import SampledPayload
 
 
 def finger_material(model, pads):
@@ -62,20 +45,16 @@ def finger_material(model, pads):
     return np.array(owners), np.array(material)
 
 
-def sampled_wrenches(
-    body, twist, com_local, owners, material, payload, ext, corners, cn, half, laws
-):
+def sampled_wrenches(body, twist, com_local, owners, material, payload, shape, cn, half, laws):
     rotations = quaternion_matrix(body[:, 3:])
     com = body[:, :3] + np.einsum("nij,nj->ni", rotations, com_local)
     points = body[owners, :3] + np.einsum("nij,nj->ni", rotations[owners], material)
     pad_arms = points - com[owners]
     speeds = twist[owners, :3] + np.cross(twist[owners, 3:], pad_arms)
     box_rot, vel = rotations[payload], twist[payload]
-    contact = box_surface_samples(
-        points, speeds, com[payload], box_rot, vel[:3], vel[3:], ext, laws[0]
-    )
-    table_f, table_n, corner_arms = tabletop_load(
-        corners, com[payload], box_rot, vel, cn, half, laws[1]
+    contact = shape.pad_loads(points, speeds, com[payload], box_rot, vel[:3], vel[3:], laws[0])
+    table_f, table_n, corner_arms = shape.table_loads(
+        com[payload], box_rot, vel[:3], vel[3:], cn, half, laws[1]
     )
 
     w = np.zeros_like(twist)
@@ -92,7 +71,16 @@ def sampled_wrenches(
     contact_power = np.sum(contact.forces * (speeds - object_point_v))
     table_power = np.sum(table_f * (vel[:3] + np.cross(vel[3:], corner_arms)))
     power_error = abs(np.sum(w * twist) - contact_power - table_power)
-    return w, points, speeds, contact, table_n, (pad_f_balance, pad_t_balance, power_error)
+    return (
+        w,
+        points,
+        speeds,
+        contact,
+        table_n,
+        table_f,
+        com[payload] + corner_arms,
+        (pad_f_balance, pad_t_balance, power_error),
+    )
 
 
 def run(urdf, inputs, device):
@@ -101,7 +89,17 @@ def run(urdf, inputs, device):
     assert hashlib.sha256(urdf.read_bytes()).hexdigest() == spec["urdf_sha256"]
     assert version("newton") == "1.7.0"
     asset = load_panda(urdf)
-    model, state, iq, iv, pads, _, payload, _, _ = make_model(urdf, spec, device)
+    shape = SampledPayload.from_manifest(spec)
+    model, state, iq, iv, pads, payload_shape, payload, _, _ = make_model(urdf, spec, device)
+    shape_type = int(model.shape_type.numpy()[payload_shape])
+    shape_scale = model.shape_scale.numpy()[payload_shape].astype(float)
+    expected_type = newton.GeoType.BOX if shape.radius is None else newton.GeoType.SPHERE
+    expected_scale = shape.half if shape.radius is None else [shape.radius, 0.0, 0.0]
+    assert shape_type == int(expected_type)
+    np.testing.assert_allclose(shape_scale, expected_scale, atol=1e-9, rtol=1e-7)
+    np.testing.assert_allclose(
+        model.body_inertia.numpy()[payload], np.diag(shape.inertia(spec["mass_kg"])), atol=2e-9
+    )
     joints = [named(model.joint_label, n) for n in spec["joint_names"]]
     native_child = model.joint_child.numpy()[joints]
     np.testing.assert_allclose(
@@ -113,10 +111,8 @@ def run(urdf, inputs, device):
     assert str(state.body_f.device) == str(state.joint_q.device) == device
     owners, material = finger_material(model, pads)
     com_local = model.body_com.numpy().astype(float)
-    # The box has its origin at its COM in the shared model.
+    # Both uniform payloads have their origin at their COM.
     np.testing.assert_array_equal(com_local[payload], np.zeros(3))
-    ext = np.array(spec["full_size_m"]) / 2
-    corners = box_corners(ext)
     cn, half = np.array(spec["table_center_m"]), np.array(spec["table_full_size_m"]) / 2
     laws = [RobotContactMaterial(*spec[k]) for k in ("pad_material", "table_material")]
     frame_ids, local_points = _finger_samples(asset)
@@ -141,8 +137,8 @@ def run(urdf, inputs, device):
         qcmd, vcmd = _command_at(times, knots, t)
         tau[iv] = _servo_effort(arm, qcmd, vcmd, mass, bias, eff)
         try:
-            w, points, speeds, pad, table_n, audit = sampled_wrenches(
-                body, twist, com_local, owners, material, payload, ext, corners, cn, half, laws
+            w, points, speeds, pad, table_n, table_f, table_points, audit = sampled_wrenches(
+                body, twist, com_local, owners, material, payload, shape, cn, half, laws
             )
         except ValueError as exc:
             stop = dict(step=step, t=t, reason=str(exc), q=q.tolist(), box=body[payload].tolist())
@@ -160,9 +156,10 @@ def run(urdf, inputs, device):
             geometry,
             body[payload, :3],
             quaternion_matrix(body[payload, None, 3:])[0],
-            ext,
+            shape.half,
             cn,
             half,
+            sphere_radius=shape.radius,
         )
         other_margin, table_margin = min(other_margin, gap), min(table_margin, table_gap)
         state.clear_forces()
@@ -186,10 +183,8 @@ def run(urdf, inputs, device):
             spec["mass_kg"] * (speed[:3] - twist[payload, :3] - dt * gravity) - dt * w[payload, :3]
         )
         momentum_error = max(momentum_error, float(np.linalg.norm(impulse_error)))
-        clearance = (
-            result[2]
-            + (corners @ quaternion_matrix(result[None, 3:])[0].T)[:, 2].min()
-            - (cn[2] + half[2])
+        clearance = shape.low_z(result[:3], quaternion_matrix(result[None, 3:])[0]) - (
+            cn[2] + half[2]
         )
         rows.append(
             dict(
@@ -202,6 +197,10 @@ def run(urdf, inputs, device):
                 omega=speed[3:].tolist(),
                 pad_normal_N=pad.normal_loads.reshape(2, 4).sum(axis=1).tolist(),
                 table_N=float(table_n.sum()),
+                pad_points_before_m=points.tolist(),
+                pad_forces_N=pad.forces.tolist(),
+                table_points_before_m=table_points.tolist(),
+                table_forces_N=table_f.tolist(),
                 pad_total_N=float(np.linalg.norm(pad.forces, axis=1).sum()),
                 clearance_m=float(clearance),
                 applied_payload_wrench=w[payload].tolist(),
@@ -240,6 +239,10 @@ def run(urdf, inputs, device):
         steps=len(rows),
         simulated_seconds=len(rows) * dt,
         cube_full_size_m=spec["full_size_m"],
+        payload_geometry=shape.descriptor(),
+        native_payload_shape=dict(
+            id=int(payload_shape), kind=expected_type.name, scale=shape_scale.tolist()
+        ),
         cube_mass_kg=spec["mass_kg"],
         closed_width_m=float(np.min(knots[:, -2:].sum(axis=1))),
         finger_friction=spec["pad_material"][2],

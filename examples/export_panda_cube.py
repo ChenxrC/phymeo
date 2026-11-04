@@ -166,7 +166,9 @@ for (const run of data.runs) {
   const s=run.summary, option=document.createElement("option");
   option.textContent=(s.engine ?? "Phymeo")+" · "+(run.payload.kind==="sphere"?"球 · ":"方盒 · ")+(s.cube_mass_kg*1000).toFixed(0)+" g · μ "+s.finger_friction+" · 闭合目标 "+((s.closed_width_m ?? .029)*1000).toFixed(1)+" mm";
   if(s.success!==undefined) option.textContent+=s.success?" · 已放置":" · 未完成抓放";
-  if(s.other_robot_cube_axis_clearance_m<0) option.textContent+=" · 整窗结构净空未通过";
+  if(s.first_unresolved_structure) option.textContent+=" · 有未求力结构接触";
+  else if(run.jumps.first!==undefined) option.textContent+=" · 结构接触已求力";
+  else if(s.other_robot_cube_axis_clearance_m<0) option.textContent+=" · 整窗结构净空未通过";
   choice.appendChild(option);
 }
 const arrows=[];

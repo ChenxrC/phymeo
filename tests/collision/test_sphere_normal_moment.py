@@ -1,6 +1,7 @@
 """A frictionless sphere's normal traction passes through its geometric centre."""
 
 import numpy as np
+
 import phymeo as ph
 
 

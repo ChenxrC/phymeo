@@ -9,7 +9,7 @@ import pytest
 from mixed_physical_cases import WINDOW, H, HostReferences, MixedRun, population, signature
 
 
-@pytest.mark.parametrize("count", [4, 16])
+@pytest.mark.parametrize("count", [4, 16, 32])
 @pytest.mark.parametrize("mode", ["interpret", "cuda"])
 def test_group_matches_all_original_laws_and_complete_separate_reports(count, mode, tmp_path):
     case = population(count)
@@ -34,11 +34,11 @@ def test_group_matches_all_original_laws_and_complete_separate_reports(count, mo
         assert all(len(s.law_row) == 13 for s in start.sample.sites)
         finish = dict(frames[-1].material)[k].audit
         assert 0 < finish.sample.normal_force_n < start.sample.normal_force_n
-        if count == 16:
+        if count >= 16:
             end = dict(frames[-1].checkpoints)
             assert (
                 len({end[key].velocity[2] for key, role in case.roles.items() if role == "ball"})
-                == 4
+                == count // 4
             )
         stats = scene.counts()
         assert (

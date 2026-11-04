@@ -5,6 +5,7 @@ import json
 import sys
 from contextlib import ExitStack
 from dataclasses import asdict
+from math import ceil
 from pathlib import Path
 from statistics import median
 from time import perf_counter_ns
@@ -63,7 +64,7 @@ def window(runner, reset):
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("--worlds", type=int, choices=(4, 16), required=True)
+    p.add_argument("--worlds", type=int, choices=(4, 16, 32), required=True)
     p.add_argument("--first", choices=("scene", "separate"), required=True)
     p.add_argument("--cache-root", type=Path, required=True)
     p.add_argument("--out", type=Path, required=True)
@@ -113,6 +114,7 @@ def main():
         )
         summary[lane] = dict(
             p50_ms=median(times) / 1e6,
+            p95_ms=times[ceil(0.95 * len(times)) - 1] / 1e6,
             min_ms=times[0] / 1e6,
             max_ms=times[-1] / 1e6,
             world_steps=len(times) * args.worlds * WINDOW,

@@ -23,8 +23,8 @@ class Population:
 
 
 def population(count):
-    if count not in (4, 16):
-        raise ValueError("one or four physical units required")
+    if count not in (4, 16, 32):
+        raise ValueError("one, four or eight physical units required")
     worlds = []
     roles = {}
     frames = [({}, {}) for _ in range(WINDOW)]

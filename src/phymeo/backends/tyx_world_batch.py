@@ -11,13 +11,22 @@ from ._world_step_layout import (
     STATE_WIDTH,
     FreeSphere,
     PrismaticSlider,
+    SpherePlaneCheckpoint,
+    SpherePlaneWorld,
     WorldCheckpoint,
     as_fp32,
     bind_world,
     world_key,
 )
 
-__all__ = ["FreeSphere", "PrismaticSlider", "TyxWorldBatch", "WorldCheckpoint"]
+__all__ = [
+    "FreeSphere",
+    "PrismaticSlider",
+    "SpherePlaneCheckpoint",
+    "SpherePlaneWorld",
+    "TyxWorldBatch",
+    "WorldCheckpoint",
+]
 
 
 class TyxWorldBatch:
@@ -94,6 +103,17 @@ class TyxWorldBatch:
             kernels.advance_worlds,
             kernels.advance_worlds_other_buffer if mode == "cuda" else kernels.advance_worlds,
         )
+        self._plane_kernels = None
+        if any(b.plane_height is not None for b in self._bindings):
+            from ._tyx_sphere_plane_kernel import (
+                project_sphere_planes,
+                project_sphere_planes_other_buffer,
+            )
+
+            self._plane_kernels = (
+                project_sphere_planes,
+                project_sphere_planes_other_buffer if mode == "cuda" else project_sphere_planes,
+            )
         self._runtime = tx.Runtime(
             backend="cuda" if mode == "cuda" else "cpu", cache_root=cache_root
         )
@@ -239,6 +259,18 @@ class TyxWorldBatch:
                         self._ticks[dst],
                         self._status,
                     )
+                    if self._plane_kernels is not None:
+                        self._launch(
+                            self._plane_kernels[src],
+                            self._count,
+                            self._kind,
+                            self._props,
+                            self._states[src],
+                            self._ticks[src],
+                            self._states[dst],
+                            self._ticks[dst],
+                            self._status,
+                        )
                     self._sync()
                     status = self._read_status()
                 results = {

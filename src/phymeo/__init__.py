@@ -15,7 +15,14 @@ from .backends.tyx_participants import (
 )
 from .backends.tyx_rigid import TyxRigidSemiImplicitSolver
 from .backends.tyx_sdf import TyxSdfSampler
-from .backends.tyx_world_batch import FreeSphere, PrismaticSlider, TyxWorldBatch, WorldCheckpoint
+from .backends.tyx_world_batch import (
+    FreeSphere,
+    PrismaticSlider,
+    SpherePlaneCheckpoint,
+    SpherePlaneWorld,
+    TyxWorldBatch,
+    WorldCheckpoint,
+)
 from .backends.tyx_world_contact import (
     ClothLinkWorld,
     TyxWorldContactBatch,
@@ -363,6 +370,8 @@ __all__ = [
     "make_cloth_runtime",
     "tetrahedral_block",
     "FreeSphere",
+    "SpherePlaneCheckpoint",
+    "SpherePlaneWorld",
     "PrismaticSlider",
     "TyxWorldBatch",
     "TyxBatchedScene",

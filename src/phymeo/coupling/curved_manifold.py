@@ -1,4 +1,4 @@
-"""Select one material endpoint of a published static curved/plane support segment."""
+"""Address the material points of a published static rigid support."""
 
 from dataclasses import replace
 from math import fsum, isfinite
@@ -6,16 +6,53 @@ from numbers import Integral
 
 import numpy as np
 
+from ..constraints.collision_shapes import MAX_CONVEX_VERTICES
+
+
+def hull_polygon(pair):
+    """The single oriented, positive-area convex contact face, including a live proximity query."""
+    if pair.sweep is not None or pair.convex is None:
+        return None
+    patches = pair.convex.end.patches
+    if not patches:
+        close = getattr(pair.witness, "proximity_patch", None)
+        patches = () if close is None else (close,)
+    if not any(p.dimension == 2 for p in patches):
+        return None
+    if len(patches) != 1 or pair.witness is None or pair.witness.normal is None:
+        raise ValueError("contact polygon requires a single resolved support normal")
+    patch = patches[0]
+    if (
+        tuple((shape.key, shape.kind) for shape in pair.witness_shapes)
+        != ((pair.first, "hull"), (pair.second, "hull"))
+        or not 3 <= len(patch.points) <= 2 * MAX_CONVEX_VERTICES
+        or not isfinite(patch.area_m2)
+        or patch.area_m2 <= 0
+        or patch.normal != pair.witness.normal
+    ):
+        raise ValueError("invalid registered convex contact polygon")
+    return patch
+
 
 def select_static_support(pair, witness, index):
-    """Keep the representative, or select one of two static cylinder/plane endpoints."""
+    """Select an ordered clipped hull corner or an endpoint of a cylinder/plane support."""
     if index is None:
         return witness
-    if (
-        isinstance(index, (bool, np.bool_))
-        or not isinstance(index, Integral)
-        or index not in (0, 1)
-    ):
+    if isinstance(index, (bool, np.bool_)) or not isinstance(index, Integral):
+        raise ValueError("a material support index must be an integer")
+    patch = hull_polygon(pair)
+    if patch is not None:
+        if not 0 <= index < len(patch.points):
+            raise ValueError("material index outside convex contact polygon")
+        corner = patch.points[index]
+        return replace(
+            witness,
+            first_point=corner.first_point,
+            second_point=corner.second_point,
+            first_weights=corner.first_weights,
+            second_weights=corner.second_weights,
+        )
+    if index not in (0, 1):
         raise ValueError("a support segment endpoint index must be integer 0 or 1")
     trace = pair.curved
     shapes = pair.witness_shapes

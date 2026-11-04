@@ -1,5 +1,6 @@
 """Finite planar rigid contact rows carry the clipped polygon and both bodies' materials."""
 
+import json
 from dataclasses import replace
 from itertools import product
 
@@ -51,7 +52,9 @@ def hulls(*, octagon=False, reverse=False, speed=(0, 0, -1)):
     state = ph.FloatingRobotState(np.r_[center[box], IDENTITY], np.r_[speed, ZERO])
     inputs = ph.FloatingRobotInputs(np.empty(0), np.zeros((1, 3)), np.zeros((1, 3)))
     fixed_model = ph.RigidBodyModel(np.zeros(1), np.zeros((1, 3)), ZERO)
-    fixed_state = ph.RigidBodyState(center[pad][None, :], IDENTITY[None, :], ZERO[None, :], ZERO[None, :])
+    fixed_state = ph.RigidBodyState(
+        center[pad][None, :], IDENTITY[None, :], ZERO[None, :], ZERO[None, :]
+    )
 
     def step(order, *, current=state, owner=local, submitted=row, mu=0.0, sites=attachments):
         rows = []
@@ -60,8 +63,14 @@ def hulls(*, octagon=False, reverse=False, speed=(0, 0, -1)):
             bindings = {k: (names[k], j) for k in local}
             rows.append((submitted, bindings) if i is None else (submitted, bindings, i))
         return ph.step_floating_contacts(
-            {"box": (floating, current, inputs)}, sites, rows, [mu] * len(rows), [mu] * len(rows), H,
-            fixed_bodies={"pad": (fixed_model, fixed_state)}, local_vertices=owner,
+            {"box": (floating, current, inputs)},
+            sites,
+            rows,
+            [mu] * len(rows),
+            [mu] * len(rows),
+            H,
+            fixed_bodies={"pad": (fixed_model, fixed_state)},
+            local_vertices=owner,
         )
 
     return row, pad, box, contacts, local, state, attachments, step
@@ -90,7 +99,9 @@ def test_polygon_sliding_friction_and_opening_use_real_site_velocities():
     assert out.report.accepted, out.report.reason
     impulses = out.impulses.world_impulses * (1 if pair.second == box else -1)
     np.testing.assert_allclose(impulses.sum(0), [-0.25, 0, 1], atol=2e-8, rtol=0)
-    np.testing.assert_allclose(np.cross(sites - state.q[:3], impulses).sum(0), ZERO, atol=2e-8, rtol=0)
+    np.testing.assert_allclose(
+        np.cross(sites - state.q[:3], impulses).sum(0), ZERO, atol=2e-8, rtol=0
+    )
     np.testing.assert_allclose(out.states["box"].v, [2.75, 0, 0, 0, 0, 0], atol=2e-8, rtol=0)
     assert all(np.linalg.norm(p[:2]) <= 0.25 * p[2] + 1e-10 for p in impulses)
     upward = ph.FloatingRobotState(state.q, np.r_[UP, ZERO])
@@ -102,7 +113,10 @@ def test_polygon_sliding_friction_and_opening_use_real_site_velocities():
         step(range(4), current=opens.states["box"], mu=0.25)
 
 
-@pytest.mark.parametrize("fault", ["unindexed", "missing", "repeat", "truncated", "material", "body_point"])
+@pytest.mark.parametrize(
+    "fault",
+    ["unindexed", "missing", "repeat", "truncated", "trace_removed", "material", "body_point"],
+)
 def test_bad_face_rows_never_publish_partial_impulses(fault):
     pair, _, box, _, local, state, attachments, step = hulls()
     q, v = state.q.copy(), state.v.copy()
@@ -121,6 +135,9 @@ def test_bad_face_rows_never_publish_partial_impulses(fault):
         end = replace(pair.convex.end, patches=(replace(patch, points=patch.points[:-1]),))
         pair = replace(pair, convex=replace(pair.convex, end=end))
         order.pop()
+    elif fault == "trace_removed":
+        pair = replace(pair, convex=None)
+        order = [None]
     elif fault == "material":
         owner[box][[0, 2]] = owner[box][[2, 0]]
     else:
@@ -136,3 +153,69 @@ def test_bad_face_rows_never_publish_partial_impulses(fault):
     np.testing.assert_array_equal(state.v, v)
     for key in local:
         np.testing.assert_array_equal(local[key], frozen[key])
+
+
+def test_two_finite_jaws_apply_equal_opposite_impacts_to_the_same_box(tmp_path):
+    local = np.array(list(product((-0.5, 0.5), repeat=3)))
+    shapes = tuple(
+        ph.CollisionShape(ph.CollisionKey(0, i, 0), "hull", tuple(range(8))) for i in range(3)
+    )
+    model = ph.CollisionModel(shapes)
+    centers = np.array([[-1.0, 0, 0], [0.0, 0, 0], [1.0, 0, 0]])
+    paths = {
+        shape.key: ph.CollisionMotion(local + c) for shape, c in zip(shapes, centers, strict=True)
+    }
+    with ph.CollisionWorkspace(model) as work:
+        pairs = ph.detect(model, paths, ph.CollisionPolicy(), work).pairs
+    rows, body_ids, points = [], [], []
+    for pair in pairs:
+        if pair.status == "separated":
+            continue
+        patch = pair.convex.end.patches[0]
+        assert pair.status == "touching" and len(patch.points) == 4
+        for i, vertex in enumerate(patch.points):
+            binding = {}
+            for shape, xyz in (
+                (pair.first, vertex.first_point),
+                (pair.second, vertex.second_point),
+            ):
+                binding[shape] = ("bodies", len(body_ids))
+                body_ids.append(shape.body)
+                points.append(xyz - centers[shape.body])
+            rows.append((pair, binding, i))
+    assert len(rows) == 8
+    rigid = ph.RigidBodyModel(np.ones(3), np.ones((3, 3)), ZERO)
+    velocities = np.array([[1.0, 0, 0], [0.0, 0, 0], [-1.0, 0, 0]])
+    state = ph.RigidBodyState(centers, np.tile(IDENTITY, (3, 1)), velocities, np.zeros((3, 3)))
+    port = ph.RigidPointPort(rigid, state, np.array(body_ids), np.array(points), domain="bodies")
+    result = ph.solve_witness_impulses(
+        {"bodies": port},
+        rows,
+        np.zeros(8),
+        np.zeros(8),
+        local_vertices={s.key: local for s in shapes},
+    )
+    np.testing.assert_allclose(
+        result.states["bodies"].velocity, np.zeros((3, 3)), atol=2e-9, rtol=0
+    )
+    np.testing.assert_allclose(
+        result.states["bodies"].angular_velocity, np.zeros((3, 3)), atol=2e-9, rtol=0
+    )
+    for selected in (slice(0, 4), slice(4, 8)):
+        np.testing.assert_allclose(
+            result.world_impulses[selected].sum(0), (1, 0, 0), atol=2e-9, rtol=0
+        )
+    assert result.energy_change == pytest.approx(-1.0, abs=2e-9)
+    np.testing.assert_array_equal(state.velocity, velocities)
+    (tmp_path / "double-jaw.json").write_text(
+        json.dumps(
+            {
+                "world_impulses_Ns": result.world_impulses.tolist(),
+                "normal_impulses_Ns": result.normal_impulses.tolist(),
+                "final_v_mps": result.states["bodies"].velocity.tolist(),
+                "final_omega_radps": result.states["bodies"].angular_velocity.tolist(),
+                "energy_change_J": result.energy_change,
+            }
+        ),
+        encoding="utf-8",
+    )

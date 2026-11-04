@@ -132,6 +132,19 @@ def run(original_path, output, *, frames=None, stop_time=None, resume=None, boun
                 (goal, next_frame["requested_tool_xz_m"][n]),
             ):
                 np.testing.assert_array_equal(measured, expected)
+        if boundary:
+            replayed = m.observation or {}
+            recorded = next_frame.get("receiver_observation") or {}
+            if (
+                replayed.get("boundary_selection") is not None
+                or recorded.get("boundary_selection") is not None
+            ):
+                if json.dumps(replayed, sort_keys=True, allow_nan=False) != json.dumps(
+                    recorded, sort_keys=True, allow_nan=False
+                ):
+                    raise ValueError(
+                        "boundary controller replay differs from the stored material and structure observation"
+                    )
 
     entry = None
     for i in range(begin, len(source) - 1):
@@ -178,6 +191,8 @@ def run(original_path, output, *, frames=None, stop_time=None, resume=None, boun
             )
         trace = saved
         for fr in trace["frames"][1:]:
+            if boundary and abs(fr["t"] - (i + 1) * dt) > 1e-12:
+                raise ValueError("stored boundary control frame has a different time")
             matched(fr, command)
             state = physical(fr)
             i += 1
@@ -185,6 +200,25 @@ def run(original_path, output, *, frames=None, stop_time=None, resume=None, boun
                 raise ValueError("cannot resume after loss of both grippers")
             count = count + 1 if qualified(fr) else 0
             command = drive(fr, state, i * dt)
+        if boundary:
+            digest = fingerprint(state)
+            if (
+                digest != saved["metrics"]["end_state"]
+                or saved["metrics"]["end_s"] != trace["frames"][-1]["t"]
+            ):
+                raise ValueError(
+                    "stored boundary endpoint does not match its recorded state and time"
+                )
+            trace.setdefault("verified_restarts", []).append(
+                dict(
+                    time_s=trace["frames"][-1]["t"],
+                    frame_count=i - entry,
+                    restored_state=digest,
+                    source_sha256=hashlib.sha256(Path(resume).read_bytes()).hexdigest(),
+                    target=coord.boundary.report["target"],
+                    replayed_material_observations=True,
+                )
+            )
     end = i + frames if frames is not None else round(stop_time / dt)
     if end <= i:
         raise ValueError("new window must extend the accepted prefix")

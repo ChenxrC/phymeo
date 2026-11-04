@@ -76,10 +76,9 @@ class TableLinkSolids(BoxLinkContacts):
             return
         half, R = geometry
         owner = solid.owner_index
-        if owner < 0:
-            raise ValueError("fixed table response requires moving box links")
-        link_rotation = rotations[owner]
-        link_position = positions[owner]
+        # Fixed-owner vertices from the asset registry are already in world coordinates.
+        link_rotation = rotations[owner] if owner >= 0 else np.eye(3)
+        link_position = positions[owner] if owner >= 0 else np.zeros(3)
         world = link_position + solid.vertices @ link_rotation.T
         table_extent = np.abs(R) @ half
         tol = (

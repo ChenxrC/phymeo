@@ -169,7 +169,7 @@ def test_support_pairs_publish_distance_and_material_owners(name, gap, swapped, 
     )
 
 
-def test_static_support_does_not_claim_a_rotating_toi():
+def test_rotating_cylinder_rim_first_reaches_the_other_cylinder_wall():
     a, b, _, _ = control("two-cylinders", 1 / 16)
     ka, kb = ph.CollisionKey(4, 1, 0), ph.CollisionKey(4, 2, 0)
     sa, ma = shape_and_motion(ka, a, np.zeros(3))
@@ -187,7 +187,15 @@ def test_static_support_does_not_claim_a_rotating_toi():
             ph.CollisionPolicy(),
             work,
         )
-    assert result.pairs[0].status == "unsupported" and result.pairs[0].sweep is None
+    (row,) = result.pairs
+    assert row.status == "hit" and row.sweep.start_gap_m == pytest.approx(1 / 16, abs=2e-6)
+    # In the y=0 meridian the moving cylinder's leftmost rim starts at (9/16,-1/4).
+    # Until it reaches x=1/2 the complete moving solid is in the outer half space.
+    angle = np.arccos(0.5 / np.hypot(9 / 16, 1 / 4)) - np.arctan2(1 / 4, 9 / 16)
+    z_rim = -9 / 16 * np.sin(angle) - 1 / 4 * np.cos(angle)
+    assert -3 / 8 < z_rim < 3 / 8
+    lo, hi = row.sweep.first_t
+    assert lo <= angle / 0.5 <= hi and hi - lo < 1 / 1024
 
 
 def test_rotating_both_static_bodies_transports_the_common_normal():

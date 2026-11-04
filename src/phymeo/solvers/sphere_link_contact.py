@@ -123,7 +123,7 @@ class SphereLinkLoads:
         )
 
 
-class SphereLinkContacts:
+class _RigidLinkContacts:
     def __init__(self, solids):
         self.solids = tuple(sorted(solids, key=lambda s: (s.owner_index, s.shape, s.link)))
         names = [(s.owner_index, s.link, s.shape) for s in self.solids]
@@ -154,25 +154,20 @@ class SphereLinkContacts:
             solids.append(LinkSolid(col.name, col.link_name, owner, kind, points, col.shape.radius))
         return cls(solids)
 
-    def evaluate(
+    def _evaluate(
         self,
         positions,
         rotations,
         centers_of_mass,
         twists,
         center,
-        radius,
+        geometry,
         velocity,
         omega,
         material,
         *,
         fixed_reference_m=(0.0, 0.0, 0.0),
     ):
-        """Evaluate one witness per penetrating registered solid at a single pre-step state.
-
-        twists hold COM linear then angular velocity. The common action point is the midpoint
-        of the two material witnesses. This preserves net moment and reciprocal power.
-        """
         positions, rotations, centers_of_mass, twists, center, velocity, omega, fixed = (
             np.asarray(a, dtype=float)
             for a in (
@@ -195,8 +190,6 @@ class SphereLinkContacts:
             or centers_of_mass.shape != (n, 3)
             or twists.shape != (n, 6)
             or any(a.shape != (3,) for a in (center, velocity, omega, fixed))
-            or not np.isfinite(radius)
-            or radius <= 0
             or not all(
                 np.isfinite(a).all()
                 for a in (
@@ -222,49 +215,96 @@ class SphereLinkContacts:
         ball = np.zeros(6)
         for solid in self.solids:
             i = solid.owner_index
-            local = (center - positions[i]) @ rotations[i] if i >= 0 else center
-            w = solid.witness(local, radius)
-            if w is None:
-                continue
-            gap, normal, surface, feature = w
-            if i >= 0:
-                normal = rotations[i] @ normal
-                surface = positions[i] + rotations[i] @ surface
-            skin = center - radius * normal
-            point = 0.5 * (skin + surface)
-            reference = centers_of_mass[i] if i >= 0 else fixed
-            link_velocity = (
-                twists[i, :3] + np.cross(twists[i, 3:], point - reference)
-                if i >= 0
-                else np.zeros(3)
-            )
-            relative = velocity + np.cross(omega, point - center) - link_velocity
-            normal_load, force = sample_loads([-gap], normal[None], relative[None], material)
-            force = force[0]
-            sphere_torque = np.cross(point - center, force)
-            link_torque = np.cross(point - reference, -force)
-            ball += np.r_[force, sphere_torque]
-            if i >= 0:
-                body_load[i] += np.r_[-force, link_torque]
-            contacts.append(
-                dict(
-                    shape=solid.shape,
-                    link=solid.link,
-                    owner_index=int(i),
-                    feature=feature,
-                    gap_m=float(gap),
-                    normal_world=normal.tolist(),
-                    link_surface_m=surface.tolist(),
-                    sphere_surface_m=skin.tolist(),
-                    point_world_m=point.tolist(),
-                    link_com_world_m=reference.tolist(),
-                    relative_velocity_m_s=relative.tolist(),
-                    force_on_payload_N=force.tolist(),
-                    force_on_link_N=(-force).tolist(),
-                    torque_on_payload_Nm=sphere_torque.tolist(),
-                    torque_on_link_Nm=link_torque.tolist(),
-                    normal_load_N=float(normal_load[0]),
-                    pair_power_W=float(force @ relative),
+            for gap, normal, surface, skin, feature, weight, metadata in self._witnesses(
+                solid, positions, rotations, center, geometry
+            ):
+                point = 0.5 * (skin + surface)
+                reference = centers_of_mass[i] if i >= 0 else fixed
+                link_velocity = (
+                    twists[i, :3] + np.cross(twists[i, 3:], point - reference)
+                    if i >= 0
+                    else np.zeros(3)
                 )
-            )
+                relative = velocity + np.cross(omega, point - center) - link_velocity
+                normal_load, force = sample_loads([-gap], normal[None], relative[None], material)
+                force = force[0] * weight
+                sphere_torque = np.cross(point - center, force)
+                link_torque = np.cross(point - reference, -force)
+                ball += np.r_[force, sphere_torque]
+                if i >= 0:
+                    body_load[i] += np.r_[-force, link_torque]
+                contacts.append(
+                    dict(
+                        shape=solid.shape,
+                        link=solid.link,
+                        owner_index=int(i),
+                        feature=feature,
+                        gap_m=float(gap),
+                        normal_world=normal.tolist(),
+                        link_surface_m=surface.tolist(),
+                        payload_surface_m=skin.tolist(),
+                        weight=weight,
+                        **metadata,
+                        point_world_m=point.tolist(),
+                        link_com_world_m=reference.tolist(),
+                        relative_velocity_m_s=relative.tolist(),
+                        force_on_payload_N=force.tolist(),
+                        force_on_link_N=(-force).tolist(),
+                        torque_on_payload_Nm=sphere_torque.tolist(),
+                        torque_on_link_Nm=link_torque.tolist(),
+                        normal_load_N=float(normal_load[0] * weight),
+                        pair_power_W=float(force @ relative),
+                    )
+                )
         return SphereLinkLoads(contacts, ball, body_load)
+
+
+class SphereLinkContacts(_RigidLinkContacts):
+    def evaluate(
+        self,
+        positions,
+        rotations,
+        centers_of_mass,
+        twists,
+        center,
+        radius,
+        velocity,
+        omega,
+        material,
+        *,
+        fixed_reference_m=(0.0, 0.0, 0.0),
+    ):
+        """Evaluate one witness per penetrating registered solid at a single pre-step state.
+
+        twists hold COM linear then angular velocity. The common action point is the midpoint
+        of the two material witnesses. This preserves net moment and reciprocal power.
+        """
+
+        if not np.isscalar(radius) or not np.isfinite(radius) or radius <= 0:
+            raise ValueError("invalid structural sphere radius")
+        return self._evaluate(
+            positions,
+            rotations,
+            centers_of_mass,
+            twists,
+            center,
+            radius,
+            velocity,
+            omega,
+            material,
+            fixed_reference_m=fixed_reference_m,
+        )
+
+    @staticmethod
+    def _witnesses(solid, positions, rotations, center, radius):
+        i = solid.owner_index
+        local = (center - positions[i]) @ rotations[i] if i >= 0 else center
+        witness = solid.witness(local, radius)
+        if witness is None:
+            return
+        gap, normal, surface, feature = witness
+        if i >= 0:
+            normal = rotations[i] @ normal
+            surface = positions[i] + rotations[i] @ surface
+        skin = center - radius * normal
+        yield gap, normal, surface, skin, feature, 1.0, {"sphere_surface_m": skin.tolist()}

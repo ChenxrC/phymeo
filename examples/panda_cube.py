@@ -38,13 +38,16 @@ def main():
     parser.add_argument("--urdf", type=Path, help="compatible local classic Panda asset")
     parser.add_argument("--trace", type=Path, help="save full state and forces to a new JSON file")
     parser.add_argument(
-        "--inputs-out", type=Path, help="save the initial state and control knots for independent dynamics"
+        "--inputs-out",
+        type=Path,
+        help="save the initial state and control knots for independent dynamics",
     )
     args = parser.parse_args()
     if args.trace is not None and args.trace.exists():
         parser.error("choose a new trace path")
     if args.inputs_out is not None and (
-        args.inputs_out.exists() or (args.trace is not None and args.inputs_out.resolve() == args.trace.resolve())
+        args.inputs_out.exists()
+        or (args.trace is not None and args.inputs_out.resolve() == args.trace.resolve())
     ):
         parser.error("choose a new input manifest path distinct from the trace")
     result = run_panda_cube(

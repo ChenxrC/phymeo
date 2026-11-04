@@ -39,3 +39,23 @@
 强夹原生轨迹在 0.544375 s 时物体质心已离开有限桌面的水平范围，之后落下。弱夹在搬运期抬起物体，最终位置和结构净空未达完整放置门槛。两组的 RAW_EXIT 均为 0，含义是原生计算完成了 2.25 s。这个参考设置在两组均未通过与 Phymeo 相同的完整物理验收。Phymeo 的弱夹、重载对照一直留台，不能外推到这一原生接触设置。[Newton 强夹全轨迹](../../artifacts/p65-panda-loaded-box-20261104-01/native-strong.json) · [Newton 弱夹全轨迹](../../artifacts/p65-panda-loaded-box-20261104-01/native-weak.json)
 
 本机 Newton 环境检测到 CPU 与 RTX 4060 Laptop CUDA。该批负载步进用 CPU。MuJoCo 和 mujoco-warp 两个可选包均缺失；实际创建 `SolverMuJoCo(use_mujoco_cpu=True)` 返回缺少后端的 ImportError。Featherstone 同环境的自由刚体在 1 ms 单步读到 v_z = −0.0098100 m/s。[依赖和实际步进检查](../../artifacts/p65-panda-loaded-box-20261104-01/02-native-capabilities/stdout.log)
+
+## 原生轨迹从哪一步分开
+
+对原生强夹窗口重新独立推进到首次指碰，保留前 16 步和首次指碰共 17 帧。每帧用 Featherstone 实际送入接触计算的步初 `body_qd_fk`、刚体/接触点坐标、偏移和材料覆盖值，在独立输出缓冲再次调用本机安装的原始 `eval_body_contact`。同时用同一内核逐行计算载荷，对照把 μ 置零的临时缓冲。临时缓冲均不反馈到运动；实际推进继续使用初始材料。逐行力/力矩之和与整组输出的最大分量差为 1.91×10⁻⁶（N 或 N·m），整组合力与自由物体真实动量变化给出的非重力合力最大差为 1.87×10⁻⁴ N。关于物体质心的角冲量与实际角动量增量最大差为 1.35×10⁻⁶ N·m·s。[逐行审计程序](../../tests/reference_newton/robot/panda_native_contact_audit.py) · [逐行六维输出和同态对照](../../artifacts/p65-panda-loaded-box-20261104-01/native-authoritative-wrench.json)
+
+- **2.5 ms，只有桌面。** 第二、三、四步的四个台面接触全部选中黏性支路。第 4 步各行切速为 0.00053937–0.00053943 m/s，合计法向约 0.36432 N。原生核输出水平合力为 (0.04238, −2.15719) N；同状态零 μ 核仅有 (−0.0000034, −0.0000200) N 水平分量。实际动量给出的水平力大小为 2.15761 N。取该设置的 Huber 参数 0.04 或已安装构造器默认值 1.0，对该帧得到相同的原核六维结果。两份强/弱夹轨迹的物体位置在前 675 个物理步逐分量相同。
+- **3.125 ms，支路发生变化。** 第 5 步的四个台面行都选中 Huber 限幅支路。Warp 定义低速 H(v)=|v|²/2、高速 H(v)=δ(|v|−δ/2)。Featherstone 使用切向量 v/H(v)，乘以 min(kf·H(v), μN)。实测 17 帧中，按该表达式、实际覆盖值和每行法向计算的切力大小，与分离输出核的最大差为 4.12×10⁻⁶ N。对于四行均在黏性段的理想纯平移模式，显式更新因子为 1−4hkf/m，取 h=1/1600 s、kf=1000 N·s/m、m=0.12 kg 得 −19.83；实际还包含转动、各点的不同速度和流形变化。这个条件说明该时间步与黏性参数组合为何可能放大微小滑速。[Newton 力实现](https://github.com/newton-physics/newton/blob/v1.7.0/newton/_src/solvers/semi_implicit/kernels_contact.py) · [Warp Huber 定义](https://github.com/NVIDIA/warp/blob/v1.17.0/warp/_src/math.py)
+- **422.5 ms，首次指碰。** 该步只有一侧指垫的 3 个穿入行，均在 Huber 限幅支路。法向大小相加为 1.40436 N。原生核给载荷的力为 (16.82644, −1.31517, 54.37712) N，真实非重力动量力为 (16.82642, −1.31520, 54.37716) N。保持相同几何、速度和法向参数，仅在临时输出缓冲移除摩擦得到 (0.00921, −1.40433, −0.00055) N。此帧的竖直大载荷来自切向项，之后窗中的运动还受到姿态、滑速和接触集合的演化影响。
+
+单独回放最初质心上 17 mm 抓取的保守几何反例，最负值发生在 t = 1.979375 s 的 `panda_hand_sc_0`。该时刻以相同姿态重新注册原胶囊与载荷，普通碰撞查询用其世界包围盒证明两者分离。−32.252 mm 是所用物体局部轴投影不能证明分离的读数；此单帧复核不提供其余时刻的整窗净空证书。原末段平均台面力同样未过 0.025 N 容差。[最小姿态复核](../../artifacts/p65-panda-loaded-box-20261104-01/11c-first-structure-readback/stdout.log)
+
+## 复现
+
+```text
+python examples/panda_cube.py --box-size .046 .058 .040 --mass .12 --closed-width .024 --initial-xy-offset .001 0 --grip-above-com .012 --trace strong.json --inputs-out strong-inputs.json
+python tests/reference_newton/robot/panda_loaded_box.py --device cpu --inputs strong-inputs.json --urdf src/phymeo/builders/panda_assets/panda.urdf --out newton-strong.json
+python tests/reference_newton/robot/panda_native_contact_audit.py --inputs strong-inputs.json --urdf src/phymeo/builders/panda_assets/panda.urdf --out contact-row-audit.json
+```
+
+第一条使用普通项目解释器。后两条使用 Newton 1.7.0 / Warp 1.17.0 参考环境，并通过 PYTHONPATH 指向同一份 Phymeo 源码以共享控制器。原 50 mm 方块的 3 项回归通过，新长方体及输入验证的 8 项也通过，CLI 可直接保存纯输入清单。[原例程回归](../../artifacts/p65-panda-loaded-box-20261104-01/10-default-window-compatibility/stdout.log) · [长方体回归](../../artifacts/p65-panda-loaded-box-20261104-01/06-box-height-windows/stdout.log)

@@ -25,6 +25,7 @@ from phymeo.experiments.panda_cube import (
     _world_points,
 )
 from phymeo.experiments.panda_payload import SampledPayload
+from phymeo.solvers.sphere_link_contact import SphereLinkContacts
 
 
 def finger_material(model, pads):
@@ -106,6 +107,7 @@ def run(urdf, inputs, device):
         model.body_mass.numpy()[native_child], asset.model.mass, rtol=2e-6, atol=1e-7
     )
     initial_native_pose = state.body_q.numpy()[payload].astype(float)
+    initial_native_arm = state.joint_q.numpy()[iq].astype(float)
     next_state, control = model.state(), model.control()
     solver = newton.solvers.SolverFeatherstone(model, angular_damping=0.0)
     assert str(state.body_f.device) == str(state.joint_q.device) == device
@@ -117,6 +119,27 @@ def run(urdf, inputs, device):
     laws = [RobotContactMaterial(*spec[k]) for k in ("pad_material", "table_material")]
     frame_ids, local_points = _finger_samples(asset)
     passive = _PassiveGeometry(asset)
+    law_spec = spec.get("structural_material")
+    structure_law = None if law_spec is None else RobotContactMaterial(*law_spec)
+    if structure_law is not None and shape.radius is None:
+        raise ValueError("structural response requires a spherical payload")
+    excluded = [c.shape.key for c, pad in zip(asset.collisions, passive.pad, strict=True) if pad]
+    structure = (
+        None
+        if structure_law is None
+        else SphereLinkContacts.from_asset(
+            asset, exclude_keys=excluded, authored_moving_frames=True
+        )
+    )
+    body_shapes = (
+        None if structure is None else SphereLinkContacts.from_asset(asset, exclude_keys=excluded)
+    )
+    fixed_ids = [
+        i for i, s in enumerate(model.body_label) if s.rsplit("/", 1)[-1] == asset.root_link
+    ]
+    fixed_id = fixed_ids[0] if len(fixed_ids) == 1 else None
+    first_contact = None
+    structural_pose_error = 0.0
     dt, n = spec["dt_s"], spec["steps"]
     gravity, initial = np.array(spec["gravity_m_s2"]), np.array(spec["body_position_m"])
     times, knots = np.array(spec["knot_times_s"]), np.array(spec["knot_q"])
@@ -133,7 +156,7 @@ def run(urdf, inputs, device):
         q, v = state.joint_q.numpy()[iq].astype(float), state.joint_qd.numpy()[iv].astype(float)
         body, twist = state.body_q.numpy().astype(float), state.body_qd.numpy().astype(float)
         arm = RobotState(q, v)
-        geometry, _, _, mass, bias = robot_dynamics_terms(asset.model, arm)
+        geometry, linear, angular, mass, bias = robot_dynamics_terms(asset.model, arm)
         qcmd, vcmd = _command_at(times, knots, t)
         tau[iv] = _servo_effort(arm, qcmd, vcmd, mass, bias, eff)
         try:
@@ -161,8 +184,60 @@ def run(urdf, inputs, device):
             half,
             sphere_radius=shape.radius,
         )
+        structural_rows = []
+        structural_joint = np.zeros_like(v)
+        if structure is not None:
+            Rs = quaternion_matrix(body[:, 3:])
+            body_com = body[:, :3] + np.einsum("nij,nj->ni", Rs, com_local)
+            positions, rotations = body[native_child, :3], Rs[native_child]
+            if step in verify:
+                for phy, nat in zip(body_shapes.solids, structure.solids, strict=True):
+                    i = nat.owner_index
+                    if i >= 0:
+                        cooked = geometry.position[i] + phy.vertices @ geometry.rotation[i].T
+                        observed = positions[i] + nat.vertices @ rotations[i].T
+                        structural_pose_error = max(
+                            structural_pose_error, float(np.max(np.abs(cooked - observed)))
+                        )
+            fixed_reference = asset.root_xyz if fixed_id is None else body_com[fixed_id]
+            structural = structure.evaluate(
+                positions,
+                rotations,
+                body_com[native_child],
+                twist[native_child],
+                body_com[payload],
+                shape.radius,
+                twist[payload, :3],
+                twist[payload, 3:],
+                structure_law,
+                fixed_reference_m=fixed_reference,
+            )
+            structural_rows = structural.contacts
+            w[native_child] += structural.link_wrenches
+            w[payload] += structural.payload_wrench
+            if fixed_id is not None:
+                for contact in structural_rows:
+                    if contact["owner_index"] < 0:
+                        w[fixed_id] += np.r_[
+                            contact["force_on_link_N"], contact["torque_on_link_Nm"]
+                        ]
+            # Only body_f drives native structural response. This readback uses the
+            # shared point-J identity with the small native-to-reference COM lever.
+            structural_joint = structural.joint_load(linear, angular) + np.einsum(
+                "nki,nk->i",
+                angular,
+                np.cross(
+                    body_com[native_child] - geometry.com_position, structural.link_wrenches[:, :3]
+                ),
+            )
+            if first_contact is None and structural_rows:
+                first_contact = dict(
+                    step_index=step, t_before_s=t, shape=structural_rows[0]["shape"]
+                )
         if first_unresolved is None:
-            first_unresolved = passive.unresolved(step, t, gap, table_gap, object_part, table_part)
+            first_unresolved = passive.unresolved(
+                step, t, gap if structure is None else np.inf, table_gap, object_part, table_part
+            )
         other_margin, table_margin = min(other_margin, gap), min(table_margin, table_gap)
         state.clear_forces()
         state.body_f.assign(w.astype(np.float32))
@@ -206,6 +281,8 @@ def run(urdf, inputs, device):
                 pad_total_N=float(np.linalg.norm(pad.forces, axis=1).sum()),
                 clearance_m=float(clearance),
                 applied_payload_wrench=w[payload].tolist(),
+                structural_contacts=structural_rows,
+                structural_joint_load=structural_joint.tolist(),
                 drive=tau[iv].astype(float).tolist(),
             )
         )
@@ -253,6 +330,9 @@ def run(urdf, inputs, device):
         stop=stop,
         inputs_sha256=hashlib.sha256(inputs.read_bytes()).hexdigest(),
         urdf_sha256=spec["urdf_sha256"],
+        initial_arm_q=initial_native_arm.tolist(),
+        first_structural_contact=first_contact,
+        max_structural_frame_error_m=structural_pose_error,
         initial_payload_position_m=initial_native_pose[:3].tolist(),
         initial_payload_xyzw=initial_native_pose[3:].tolist(),
         placement_target_m=(initial + [spec["travel_m"], 0.0, 0.0]).tolist(),
@@ -296,7 +376,7 @@ if __name__ == "__main__":
     p.add_argument("--inputs", required=True, type=Path)
     p.add_argument("--device", choices=("cpu", "cuda:0"), required=True)
     p.add_argument("--out", required=True, type=Path)
-    p.add_argument("--expect", choices=("carry", "slip"), required=True)
+    p.add_argument("--expect", choices=("carry", "slip", "structural-contact"), required=True)
     args = p.parse_args()
     result = run(args.urdf, args.inputs, args.device)
     with args.out.open("x", encoding="utf8") as out:
@@ -318,6 +398,13 @@ if __name__ == "__main__":
     assert (
         result["max_site_position_error_m"] < 2e-5 and result["max_site_velocity_error_m_s"] < 2e-4
     )
-    assert result["success"] == (args.expect == "carry")
+    if args.expect == "structural-contact":
+        assert (
+            result["first_structural_contact"] is not None
+            and result["max_structural_frame_error_m"] < 2e-5
+        )
+        assert result["first_unresolved_structure"] is None
+    else:
+        assert result["success"] == (args.expect == "carry")
     if args.expect == "slip":
         assert result["carry_clearance_m"] < 0.005 and abs(result["carry_displacement_m"]) < 0.015

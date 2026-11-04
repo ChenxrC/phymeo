@@ -218,7 +218,7 @@ def test_a_quarter_turn_passes_through_a_finite_face_while_all_three_force_sampl
     assert run(far, other, inputs, 1.0).report.accepted
 
 
-def test_thick_core_and_shared_domain_motion_outside_certified_axes_reject_without_publishing():
+def test_thick_core_rejection_and_clear_compound_motion_preserve_input():
     prog, s, inp = case("rail")
     # Middle-face separation is still positive. The material coating overlaps the tool.
     s.domains["arm"].q[0] = -5 / 128
@@ -229,9 +229,9 @@ def test_thick_core_and_shared_domain_motion_outside_certified_axes_reject_witho
     assert not run(prog, s, inp).report.accepted and fingerprint(s) == sig
     multi, old, inp = case("double", speed=0.1, shift=3)
     sig = fingerprint(old)
-    bad = run(multi, old, inp)
-    assert not bad.report.accepted and "multiple active" in bad.report.reason
-    assert fingerprint(bad.state) == sig and fingerprint(old) == sig
+    clear = run(multi, old, inp)
+    assert clear.report.accepted, clear.report.reason
+    assert fingerprint(old) == sig and fingerprint(clear.state) != sig
 
 
 @pytest.mark.tyx

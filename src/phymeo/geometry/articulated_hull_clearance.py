@@ -7,6 +7,7 @@ import numpy as np
 from ..constraints.collision_shapes import CollisionMotion, RigidTurn
 from ..core.capabilities import SolverFailure
 from ._convex_support_path import _AffineSupport, _RigidSupport, _Window
+from ._joint_chain_support import JointChainSupport
 from ._prism_pair_exact import sqrt_bounds
 from ._round_sweep import _vector
 from ._triangle_pair_sweep import _FacePath
@@ -42,19 +43,16 @@ def link_hull_motion(model, tool, shape, q0, q1, start_fk, end_fk):
     chain.reverse()
     changed = [j for j in chain if q0[j] != q1[j]]
     revolute = [j for j in changed if model.joint_types[j] == "revolute"]
-    if len(revolute) > 1:
-        raise SolverFailure(
-            f"{tool.key}: multiple active rotational ancestors lack a certified path"
-        )
-    if revolute and any(j in changed for j in chain[chain.index(revolute[0]) + 1 :]):
-        raise SolverFailure(
-            f"{tool.key}: moving prismatic joint below a turning ancestor is unresolved"
-        )
+    compound = len(revolute) > 1 or (
+        revolute and any(j in changed for j in chain[chain.index(revolute[0]) + 1 :])
+    )
     i = tool.link_index
     local = np.asarray(tool.local_vertices)
     x0 = local @ start_fk.rotation[i].T + start_fk.position[i]
     x1 = local @ end_fk.rotation[i].T + end_fk.position[i]
-    if revolute:
+    if compound:
+        support = JointChainSupport(model, chain, shape, local, q0, q1)
+    elif revolute:
         j = revolute[0]
         angle = float(q1[j] - q0[j])
         if not np.isfinite(angle) or abs(angle) > 2 * np.pi:
@@ -65,9 +63,9 @@ def link_hull_motion(model, tool, shape, q0, q1, start_fk, end_fk):
         )
     else:
         turn = RigidTurn(start_fk.position[i], end_fk.position[i], (1.0, 0.0, 0.0), 0.0)
-    path = CollisionMotion(x0, turn=turn)
-    support = (_RigidSupport if revolute else _AffineSupport)(shape, path)
-    endpoint, rotation_error = support.pose(Fraction(1))
+    if not compound:
+        path = CollisionMotion(x0, turn=turn)
+        support = (_RigidSupport if revolute else _AffineSupport)(shape, path)
     # FK frame composition and its conversion to actual world vertices use FP64.
     # Count all ancestors, including stationary radials and telescoping offsets.
     reach = np.linalg.norm(local, axis=1).max() + sum(
@@ -75,10 +73,10 @@ def link_hull_motion(model, tool, shape, q0, q1, start_fk, end_fk):
     )
     reach += sum(max(abs(q0[j]), abs(q1[j])) for j in chain if model.joint_types[j] == "prismatic")
     slack = 256 * np.finfo(float).eps * (len(chain) + 1) ** 2 * max(1.0, reach)
-    if np.max(np.linalg.norm(endpoint.start - x1, axis=1)) > slack + float(rotation_error):
-        raise SolverFailure(
-            f"{tool.key}: constructed joint arc misses the actual endpoint geometry"
-        )
+    for t, actual in ((0, x0), (1, x1)):
+        endpoint, rotation_error = support.pose(Fraction(t))
+        if np.max(np.linalg.norm(endpoint.start - actual, axis=1)) > slack + float(rotation_error):
+            raise SolverFailure(f"{tool.key}: constructed joint path misses the actual FK geometry")
     return support, float(slack)
 
 

@@ -5,7 +5,6 @@ import tyx as tx
 from ._tyx_numeric import _add, _div, _mul
 
 
-@tx.kernel
 def advance_worlds(
     count: tx.i32,
     h: tx.f32,
@@ -73,6 +72,12 @@ def advance_worlds(
             for k in tx.static_range(12):
                 candidate[i, k] = state[i, k]
         accepted[i] = good
+
+
+# Each callable retains a TYX argument binding for one swap-buffer direction.
+# Both lower the same physical kernel and follow normal dispatch and recording.
+advance_worlds_other_buffer = tx.kernel(advance_worlds)
+advance_worlds = tx.kernel(advance_worlds)
 
 
 @tx.kernel

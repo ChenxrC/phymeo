@@ -90,7 +90,7 @@ def run(urdf, inputs, device):
     assert version("newton") == "1.7.0"
     asset = load_panda(urdf)
     shape = SampledPayload.from_manifest(spec)
-    model, state, iq, iv, pads, payload_shape, payload, _, _ = make_model(urdf, spec, device)
+    model, state, iq, iv, pads, payload_shape, payload, table_id, _ = make_model(urdf, spec, device)
     shape_type = int(model.shape_type.numpy()[payload_shape])
     shape_scale = model.shape_scale.numpy()[payload_shape].astype(float)
     expected_type = newton.GeoType.BOX if shape.radius is None else newton.GeoType.SPHERE
@@ -118,6 +118,22 @@ def run(urdf, inputs, device):
     laws = [RobotContactMaterial(*spec[k]) for k in ("pad_material", "table_material")]
     frame_ids, local_points = _finger_samples(asset)
     passive = _PassiveGeometry(asset)
+    table_links = None
+    table_law_spec = spec.get("link_table_material")
+    if table_law_spec is not None:
+        assert (
+            model.shape_body.numpy()[table_id] == -1
+            and model.shape_type.numpy()[table_id] == newton.GeoType.BOX
+        )
+        native_table = model.shape_transform.numpy()[table_id].astype(float)
+        table_links = passive.table_registry(
+            asset,
+            center_m=native_table[:3],
+            half_extents_m=model.shape_scale.numpy()[table_id],
+            orientation_xyzw=native_table[3:],
+            material=RobotContactMaterial(*table_law_spec),
+            authored_moving_frames=True,
+        )
     law_spec = spec.get("structural_material")
     structure_law = None if law_spec is None else RobotContactMaterial(*law_spec)
     structure = (
@@ -130,7 +146,7 @@ def run(urdf, inputs, device):
         i for i, s in enumerate(model.body_label) if s.rsplit("/", 1)[-1] == asset.root_link
     ]
     fixed_id = fixed_ids[0] if len(fixed_ids) == 1 else None
-    first_contact = None
+    first_contact = first_table_contact = None
     structural_pose_error = 0.0
     dt, n = spec["dt_s"], spec["steps"]
     gravity, initial = np.array(spec["gravity_m_s2"]), np.array(spec["body_position_m"])
@@ -178,10 +194,11 @@ def run(urdf, inputs, device):
         )
         structural_rows = []
         structural_joint = np.zeros_like(v)
-        if structure is not None:
+        if structure is not None or table_links is not None:
             Rs = quaternion_matrix(body[:, 3:])
             body_com = body[:, :3] + np.einsum("nij,nj->ni", Rs, com_local)
             positions, rotations = body[native_child, :3], Rs[native_child]
+        if structure is not None:
             if step in verify:
                 for phy, nat in zip(body_shapes.solids, structure.solids, strict=True):
                     i = nat.owner_index
@@ -227,7 +244,31 @@ def run(urdf, inputs, device):
                 first_contact = dict(
                     step_index=step, t_before_s=t, shape=structural_rows[0]["shape"]
                 )
+        table_rows = []
+        table_joint = np.zeros_like(v)
+        robot_on_table = np.zeros(6)
+        if table_links is not None:
+            table_load = table_links.evaluate(
+                positions, rotations, body_com[native_child], twist[native_child]
+            )
+            w[native_child] += table_load.link_wrenches
+            table_rows = table_load.contacts
+            table_joint = table_load.joint_load(linear, angular) + np.einsum(
+                "nki,nk->i",
+                angular,
+                np.cross(
+                    body_com[native_child] - geometry.com_position, table_load.link_wrenches[:, :3]
+                ),
+            )
+            robot_on_table = table_load.table_wrench
+            if table_rows and first_table_contact is None:
+                first_table_contact = dict(
+                    step_index=step, t_before_s=t, shape=table_rows[0]["shape"]
+                )
         if first_unresolved is None:
+            unchecked_table, unchecked_table_part = table_gap, table_part
+            if table_links is not None and table_gap <= 0:
+                unchecked_table, unchecked_table_part = passive.unhandled_table(geometry, cn, half)
             unchecked = gap if structure is None else np.inf
             if structure is not None and shape.radius is None and gap <= 0:
                 unchecked, _, unchecked_part, _ = passive.clearances(
@@ -236,7 +277,7 @@ def run(urdf, inputs, device):
             else:
                 unchecked_part = object_part
             first_unresolved = passive.unresolved(
-                step, t, unchecked, table_gap, unchecked_part, table_part
+                step, t, unchecked, unchecked_table, unchecked_part, unchecked_table_part
             )
         other_margin, table_margin = min(other_margin, gap), min(table_margin, table_gap)
         state.clear_forces()
@@ -282,6 +323,9 @@ def run(urdf, inputs, device):
                 clearance_m=float(clearance),
                 applied_payload_wrench=w[payload].tolist(),
                 structural_contacts=structural_rows,
+                link_table_contacts=table_rows,
+                robot_on_table_wrench=robot_on_table.tolist(),
+                table_joint_load=table_joint.tolist(),
                 structural_joint_load=structural_joint.tolist(),
                 drive=tau[iv].astype(float).tolist(),
             )
@@ -332,6 +376,7 @@ def run(urdf, inputs, device):
         urdf_sha256=spec["urdf_sha256"],
         initial_arm_q=initial_native_arm.tolist(),
         first_structural_contact=first_contact,
+        first_link_table_contact=first_table_contact,
         max_structural_frame_error_m=structural_pose_error,
         initial_payload_position_m=initial_native_pose[:3].tolist(),
         initial_payload_xyzw=initial_native_pose[3:].tolist(),

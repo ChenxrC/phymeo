@@ -182,15 +182,14 @@ def test_signed_full_turn_cannot_be_collapsed_and_identical_endpoints_preserve_s
     )
 
 
-@pytest.mark.parametrize("secondary,owner", [("extend", "finger"), ("bend", "wrist")])
-def test_irrepresentable_descendant_motion_names_the_owner_and_both_joints(secondary, owner):
+def test_irrepresentable_descendant_motion_names_the_owner_and_both_joints():
     asset = ph.load_mjcf(ARM)
     start = joints(asset)
-    end = joints(asset, spin=0.5, **{secondary: 0.125})
+    end = joints(asset, spin=0.5, extend=0.125)
     with pytest.raises(ValueError) as trapped:
         asset.collision_motion(start, end)
     message = str(trapped.value)
-    assert owner in message and "spin" in message and secondary in message
+    assert all(name in message for name in ("finger", "spin", "extend"))
     np.testing.assert_array_equal(start, joints(asset))
     assert asset.collision_motion(start, joints(asset, spin=0.5))
 

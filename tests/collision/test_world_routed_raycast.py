@@ -123,3 +123,57 @@ def test_capacity_counts_only_local_pairs_and_retry_keeps_previous_reading(tyx_m
         again = read([7, 3, 7, 3, 99])
         np.testing.assert_array_equal(again.shape_index, [2, 1, 2, 1, -1])
         np.testing.assert_array_equal(good.shape_index, [1, 2, 1, 2, -1])
+
+
+def test_32_overlapping_worlds_compare_every_beam_with_32_scalar_queries(tyx_mode, tmp_path):
+    import tyx as tx
+
+    worlds = np.arange(32) * 3 + 4
+    shapes, poses = [], {}
+    for i, w in enumerate(worlds):
+        ball = ph.CollisionShape(ph.CollisionKey(w, 1, 0), "sphere", (3,), radius=0.3 + i / 512)
+        floor = ph.CollisionShape(ph.CollisionKey(w, 2, 0), "plane", (3,), normal=(0, 0, 1))
+        shapes.extend((ball, floor))
+        poses[ball.key] = ph.CollisionMotion([[(i % 3 - 1) / 32, 0, -1.5 - i / 32]])
+        poses[floor.key] = ph.CollisionMotion([[0, 0, -3 - i / 32]])
+    model = ph.CollisionModel(tuple(reversed(shapes)))
+    addresses = np.tile(worlds, 25)
+    x, y = np.meshgrid(np.linspace(-0.25, 0.25, 5), np.linspace(-0.25, 0.25, 5))
+    rays = np.repeat(np.column_stack((x.ravel(), y.ravel(), -np.ones(25))), 32, axis=0)
+    with TyxRaycaster(tyx_mode, cache_root=tmp_path) as op:
+        start = tx.runtime_stats()
+        combined = op.query(model, poses, [0, 0, 0], rays, world=addresses)
+        united = tx.runtime_stats() - start
+        start = tx.runtime_stats()
+        for w in worlds:
+            mask = addresses == w
+            direct = op.query(model, poses, [0, 0, 0], rays[mask], world=w)
+            assert {direct.keys[i].world for i in direct.shape_index} == {w}
+            assert {direct.keys[i].body for i in direct.shape_index} == {1, 2}
+            for attr in ("distance_m", "shape_index", "world_normals"):
+                np.testing.assert_array_equal(getattr(combined, attr)[mask], getattr(direct, attr))
+        separate = tx.runtime_stats() - start
+        assert united.cuda_kernel_launches == (1 if tyx_mode == "cuda" else 0)
+        assert separate.cuda_kernel_launches == (32 if tyx_mode == "cuda" else 0)
+        print("W32×25 equal outputs; batched", united, "scalar", separate)
+
+
+def test_late_backend_failure_does_not_mix_routed_geometry_on_retry(tyx_mode, tmp_path, monkeypatch):
+    from phymeo.backends.tyx_math import TyxMath
+
+    model, poses = scene()
+    rays = [[0, 0, -1], [0, 0, -1]]
+    with TyxRaycaster(tyx_mode, cache_root=tmp_path) as op:
+        first = op.query(model, poses, [0, 0, 0], rays, world=[3, 7])
+        actual = TyxMath.call
+        def fail(self, *args, **kwargs):
+            actual(self, *args, **kwargs)
+            raise RuntimeError("late routed device read")
+        with monkeypatch.context() as patch:
+            patch.setattr(TyxMath, "call", fail)
+            with pytest.raises(RuntimeError, match="late routed device read"):
+                op.query(model, poses, [0, 0, 0], rays, world=[7, 3])
+        again = op.query(model, poses, [0, 0, 0], rays, world=[7, 3])
+        np.testing.assert_array_equal(again.distance_m, first.distance_m[::-1])
+        np.testing.assert_array_equal(again.shape_index, [2, 1])
+        np.testing.assert_array_equal(first.shape_index, [1, 2])

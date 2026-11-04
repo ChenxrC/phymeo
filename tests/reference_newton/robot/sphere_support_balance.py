@@ -55,6 +55,13 @@ def analyze(inputs, run):
             table.sum(0) - forces.sum(0),
             np.cross(table_arms, table).sum(0) - np.cross(arms, forces).sum(0),
         ]
+        structure_z = 0.0
+        for contact in row.get("structural_contacts", ()):
+            structural_force = np.asarray(contact["force_on_payload_N"])
+            lever = np.asarray(contact["point_world_m"]) - center
+            wrench[:3] += structural_force
+            wrench[3:] += np.cross(lever, structural_force)
+            structure_z += structural_force[2]
         declared = np.asarray(row["applied_payload_wrench"])
         actual_support = np.asarray(row["pad_normal_N"])
         error = np.array(
@@ -77,6 +84,7 @@ def analyze(inputs, run):
             pad_total_z_N=float(vertical),
             pad_upward_limit_N=float((load_z + cap_z).sum()),
             table_z_N=float(table[0, 2]),
+            structure_z_N=float(structure_z),
             bilateral_N=float(min(actual_support)),
         )
         if min(actual_support) > 0 and "first_bilateral" not in events:

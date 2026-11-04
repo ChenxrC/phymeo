@@ -248,23 +248,7 @@ def measure_contact_wrench(
     )
 
 
-def measure_cloth_link_wrench(
-    result,
-    program,
-    sensing,
-    *,
-    counterparts=None,
-    reference_world_m=(0.0, 0.0, 0.0),
-    sensor_to_world_xyzw=(0.0, 0.0, 0.0, 1.0),
-    world=0,
-    substep=-1,
-):
-    """Read one accepted structural cloth-link midpoint from its producing scene.
-
-    The scalar scene has no built-in multi-world ID. world binds this result
-    to the caller's world. A rejected outer result publishes no readings,
-    including any substeps which had provisionally succeeded.
-    """
+def _cloth_observation(result, program, world, substep):
     from ..solvers.compliant_cloth_contact import CompliantClothContactProgram
 
     if not isinstance(result, SceneStepResult) or not isinstance(
@@ -273,8 +257,8 @@ def measure_cloth_link_wrench(
         raise TypeError("expected the scene step result and its producing cloth program")
     if not result.report.accepted:
         raise ValueError("cloth wrench requires an accepted outer step")
-    if not _index(world) or _selector(sensing).world != world:
-        raise ValueError("sensing world does not match this cloth scene")
+    if not _index(world):
+        raise ValueError("invalid world for cloth scene")
     if (
         not isinstance(substep, Integral)
         or isinstance(substep, (bool, np.bool_))
@@ -300,6 +284,29 @@ def measure_cloth_link_wrench(
     faces = {
         name: ContactSelector(world, structure.cloth_domain, name) for name in structure.face_names
     }
+    return sample, body, links, faces
+
+
+def measure_cloth_link_wrench(
+    result,
+    program,
+    sensing,
+    *,
+    counterparts=None,
+    reference_world_m=(0.0, 0.0, 0.0),
+    sensor_to_world_xyzw=(0.0, 0.0, 0.0, 1.0),
+    world=0,
+    substep=-1,
+):
+    """Read one accepted structural cloth-link midpoint from its producing scene.
+
+    The scalar scene has no built-in multi-world ID. world binds this result
+    to the caller's world. A rejected outer result publishes no readings,
+    including any substeps which had provisionally succeeded.
+    """
+    if _selector(sensing).world != world:
+        raise ValueError("sensing world does not match this cloth scene")
+    sample, body, links, faces = _cloth_observation(result, program, world, substep)
 
     def rows():
         for record in body["cloth_links"]:

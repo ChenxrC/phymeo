@@ -1,12 +1,20 @@
 """World-frame contact totals and counterpart-resolved observations from one physical sample."""
 
+from collections.abc import Mapping
 from dataclasses import dataclass
+from itertools import chain
 
 import numpy as np
 
 from ..constraints.collision_shapes import CollisionKey
 from ..core.capabilities import SolverFailure
-from .contact_wrench import ContactSelector, _selector, _surface_observation, _vector
+from .contact_wrench import (
+    ContactSelector,
+    _cloth_observation,
+    _selector,
+    _surface_observation,
+    _vector,
+)
 
 
 @dataclass(frozen=True, eq=False)
@@ -55,6 +63,19 @@ def measure_contact_matrix(source, sensing, counterparts=(), *, published_by=Non
     Either axis may select distinct shapes or whole bodies in multiple worlds.
     """
     loads, catalog, source_name, phase = _surface_observation(source, published_by)
+
+    def observations():
+        for pair in loads.contacts:
+            sites = (
+                (s.force_on_second_n, s.material.first_point, s.material.second_point)
+                for s in pair.sites
+            )
+            yield pair.first, pair.second, pair.normal, sites
+
+    return _reduce_matrix(observations(), catalog, source_name, phase, sensing, counterparts)
+
+
+def _reduce_matrix(observations, catalog, source_name, phase, sensing, counterparts):
     rows, rindex = _slots(sensing, catalog)
     cols, cindex = _slots(counterparts, catalog)
     if not rows:
@@ -68,8 +89,7 @@ def measure_contact_matrix(source, sensing, counterparts=(), *, published_by=Non
     weight = np.zeros(shape)
     try:
         with np.errstate(over="raise", invalid="raise", divide="raise"):
-            for contact in loads.contacts:
-                a, b = contact.first, contact.second
+            for a, b, normal, sites in observations:
                 if a.world != b.world:
                     raise ValueError("invalid contact across worlds")
                 sides = [
@@ -79,18 +99,18 @@ def measure_contact_matrix(source, sensing, counterparts=(), *, published_by=Non
                 ]
                 if not sides:
                     continue
-                n = _vector(contact.normal, "normal")
+                n = _vector(normal, "normal")
                 length = np.hypot.reduce(n)
                 if not length:
                     raise ValueError("contact normal is zero")
                 n = n / length
-                for site in contact.sites:
-                    f = _vector(site.force_on_second_n, "force on second")
+                for force, pa, pb in sites:
+                    f = _vector(force, "force on second")
                     tangent = f - n * (f @ n)
                     mag = np.hypot.reduce(f)
-                    midpoint = 0.5 * _vector(
-                        site.material.first_point, "first surface point"
-                    ) + 0.5 * _vector(site.material.second_point, "second surface point")
+                    midpoint = 0.5 * _vector(pa, "first surface point") + 0.5 * _vector(
+                        pb, "second surface point"
+                    )
                     for r, c, sign in sides:
                         total[r] += sign * f
                         total_t[r] += sign * tangent
@@ -107,4 +127,62 @@ def measure_contact_matrix(source, sensing, counterparts=(), *, published_by=Non
         array.flags.writeable = False
     return ContactForceMatrix(
         rows, cols, total, total_t, pair_f, pair_t, pos, weight, source_name, phase
+    )
+
+
+def _cloth_matrix_rows(body, links, faces, radius):
+    for record in body["cloth_links"]:
+        link = links.get((record["robot"], record["link"]))
+        face = faces.get(record["face"])
+        if link is None or face is None:
+            raise ValueError("recorded cloth-link pair does not match this program")
+        n = _vector(record["normal"], "cloth-link normal")
+        a, b = np.asarray(record["axis_ends_m"])
+        r = radius[record["robot"], record["link"]]
+        # Reconstruct material surface points from measured midpoint geometry.
+        # The equal/opposite physical forces were applied at the cloth middle point.
+        sites = (
+            (
+                s["force_on_cloth_n"],
+                a + s["axis_parameter"] * (b - a) + r * n,
+                np.asarray(s["point_m"]) - record["half_thickness_m"] * n,
+            )
+            for s in record["sites"]
+        )
+        yield link, face, n, sites
+
+
+def measure_cloth_link_matrix(results, programs, sensing, counterparts=(), *, substep=-1):
+    """Read midpoint observations from a world-keyed group of accepted cloth-link scenes.
+
+    A rejected world invalidates the requested group snapshot. To observe unaffected
+    worlds, pass the same explicit subset of keys in both mappings.
+    """
+    if (
+        not isinstance(results, Mapping)
+        or not isinstance(programs, Mapping)
+        or not results
+        or set(results) != set(programs)
+    ):
+        raise ValueError("require results and programs for the same nonempty set of worlds")
+    catalog, streams = [], []
+    time_slot = None
+    for world, result in results.items():
+        program = programs[world]
+        sample, body, links, faces = _cloth_observation(result, program, world, substep)
+        slot = (sample.index, sample.dt)
+        if time_slot is not None and slot != time_slot:
+            raise ValueError("inconsistent substep in cloth-link group")
+        time_slot = slot
+        catalog.extend(links.values())
+        catalog.extend(faces.values())
+        radius = {(link.domain, link.key): link.radius_m for link in program.cloth_links.links}
+        streams.append(_cloth_matrix_rows(body, links, faces, radius))
+    return _reduce_matrix(
+        chain.from_iterable(streams),
+        catalog,
+        "cloth_links",
+        "substep-midpoint",
+        sensing,
+        counterparts,
     )

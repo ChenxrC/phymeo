@@ -13,3 +13,6 @@ center_m = reading.position_m[0, 1]
 在 Newton 1.7 的真实 XPBD 梁–地面静置/滑动窗口中，CPU 和 CUDA 各产生 32 个独立物理步。将每步实际原生求解器六维观测中的线力和两侧世界材料点交给 Phymeo，在相同接触流上逐元素对照 Newton `SensorContact` 的五张总量/成对力与位置表，绝对误差门为 2×10⁻⁵，另含 10⁻⁶ 相对容差。各自的两个远处空槽和双方符号同时核对。此项验证传感观测的数学定义；未测两套传感器的速度。[Newton 传感器定义](https://newton-physics.github.io/newton/1.7.0/concepts/sensors.html) · [CPU 实际记录](../../artifacts/p65-newton-night-20261105-01/matrix-cpu.json) · [CUDA 实际记录](../../artifacts/p65-newton-night-20261105-01/matrix-cuda.json)
 
 首轮试图通过现有通用载荷系统推进偏心球时，连续转动附件路径在发布前拒绝。该输入保留在回归中验证拒绝后没有可读载荷；正常发布、外层事务和后续分离由已有独立双世界物理用例检查。12 项 HOST 专项及受影响的旧扳手回归通过，原始失败收据仍保存在同一目录。
+
+
+`ph.measure_cloth_link_matrix(results, programs, sensing, counterparts)` 可直接读取真实跨世界布–连杆中点报告，按世界和面展开列。拒绝未接受的发布或不同步的子步；调用者可显式选择两份映射中相同的世界子集。表中位置按实际胶囊表面和有限厚度布面的中点计算，力使用各物理站点已发布的法向和切向分量。2 面/8 面异构批的每一列用独立的单对端扳手与按净距推回的表面中点核对。真实 TYX interpret、CUDA 各 1 项及原 12 项回归通过。[跨世界完整物理步检查](../../tests/scale/test_multiface_contact_matrix.py)

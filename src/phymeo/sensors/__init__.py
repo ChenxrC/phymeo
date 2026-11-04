@@ -1,6 +1,6 @@
 """Robot sensors for published physical states."""
 
-from .contact_matrix import ContactForceMatrix, measure_contact_matrix
+from .contact_matrix import ContactForceMatrix, measure_cloth_link_matrix, measure_contact_matrix
 from .contact_wrench import (
     ContactSelector,
     ContactWrenchReading,
@@ -17,6 +17,7 @@ __all__ = [
     "RelativeSiteMeasurement",
     "RobotIMUReading",
     "RobotSite",
+    "measure_cloth_link_matrix",
     "measure_cloth_link_wrench",
     "measure_contact_matrix",
     "measure_contact_wrench",

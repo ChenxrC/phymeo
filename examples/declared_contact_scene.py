@@ -6,6 +6,7 @@ from dataclasses import asdict
 from pathlib import Path
 
 from phymeo.runtime.contact_scene import ContactSceneBuilder
+from phymeo.sensors.depth_camera import DepthCamera
 from phymeo.solvers.collision_loads import NormalLayer
 
 
@@ -91,10 +92,30 @@ def geometry(result):
     )
 
 
-def run(case, backend, cache_root):
+def depth_reading(snapshot, camera):
+    """One HOST optical-axis ray per world, from the same metre-high camera."""
+    hits = []
+    for world in sorted({s.key.world for s in snapshot.model.shapes}):
+        image = camera.capture(snapshot.model, snapshot.poses, world=world, position_m=(0, 0, 1))
+        index = image.shape_index.item()
+        hits.append(
+            dict(
+                world=world,
+                key=None if index < 0 else shape_key(image.keys[index]),
+                distance_m=None if index < 0 else image.ray_depth_m.item(),
+            )
+        )
+    return dict(time_s=snapshot.time_s, ray_backend="host", hits=hits)
+
+
+def run(case, backend, cache_root, *, depth=False):
     scene, dt, steps, drives = {"stack": box_stack, "tool-sheet": tool_sheet}[case]()
     with scene.build(backend=backend, cache_root=cache_root) as runtime:
-        observed = runtime.sample()
+        camera = DepthCamera(1, 1, 0.8) if depth else None
+        if depth:
+            observed, exposed = runtime.observe_scene()
+        else:
+            observed = runtime.sample()
         history = []
         output = dict(
             schema="phymeo-declared-contact-scene-v1",
@@ -108,12 +129,16 @@ def run(case, backend, cache_root):
             initial_loads=contact(observed.loads),
             steps=history,
         )
+        if depth:
+            output["depth_samples"] = [depth_reading(exposed, camera)]
         for i in range(steps):
             external = runtime.inputs()
             for start, address, force in drives:
                 if i >= start:
                     external.rigid.force[runtime.rigid_rows[address]] += force
             frame = runtime.step(dt, external)
+            if depth:
+                output["depth_samples"].append(depth_reading(runtime.geometry(), camera))
             history.append(
                 dict(
                     entry_s=i * dt,
@@ -139,11 +164,16 @@ def main():
     p.add_argument("--case", choices=("stack", "tool-sheet"), required=True)
     p.add_argument("--backend", choices=("host", "interpret", "cuda"), default="host")
     p.add_argument("--cache-root", type=Path)
+    p.add_argument(
+        "--depth",
+        action="store_true",
+        help="capture one current HOST depth per accepted time and world",
+    )
     p.add_argument("--output", required=True, type=Path)
     a = p.parse_args()
     if a.output.exists():
         raise FileExistsError(a.output)
-    out = run(a.case, a.backend, a.cache_root)
+    out = run(a.case, a.backend, a.cache_root, depth=a.depth)
     a.output.parent.mkdir(parents=True, exist_ok=True)
     with a.output.open("x", encoding="utf8") as stream:
         json.dump(out, stream, allow_nan=False, indent=2)

@@ -1,5 +1,6 @@
 """Declare finite rigid tools and connected particle sheets for the native contact-load step."""
 
+from collections.abc import Mapping
 from contextlib import ExitStack
 from dataclasses import dataclass
 from itertools import combinations, product
@@ -22,7 +23,7 @@ from ..core.coupled import CoupledInputs, CoupledState
 from ..core.model import ParticleModel
 from ..core.rigid import RigidBodyModel, RigidBodyState
 from ..core.state import ParticleState
-from ..core.validation import finite_real
+from ..core.validation import finite_real, validate_dt
 from ..geometry._convex_hull import HullShape
 from ..geometry.collision_pipeline import CollisionDetection, CollisionWorkspace
 from ..solvers.collision_loads import (
@@ -91,6 +92,15 @@ class ContactSceneObservation:
 
     geometry: CollisionDetection
     loads: SurfaceLoads
+
+
+@dataclass(frozen=True, eq=False)
+class ContactGeometrySnapshot:
+    """Current, static world-space material poses at one accepted physical time in seconds."""
+
+    time_s: float
+    model: CollisionModel
+    poses: Mapping[CollisionKey, CollisionMotion]
 
 
 class ContactSceneBuilder:
@@ -406,6 +416,7 @@ class ContactScene:
         self._closed = False
         self._models = models
         self._state = state
+        self._time_s = 0.0
         self._backend = backend
         self._edge_count = 0 if constraints is None else len(constraints.indices)
         self.rigid_rows = MappingProxyType(rigid_rows)
@@ -474,6 +485,20 @@ class ContactScene:
             dtype=self._state.particles.position.dtype,
         )
 
+    def geometry(self):
+        """Freeze every registered body/face at the accepted state for raycast_scene or DepthCamera."""
+        with self._lock:
+            self._require_open()
+            poses = self._system._paths(self._state)
+            return ContactGeometrySnapshot(
+                self._time_s, self._system.model, MappingProxyType(poses)
+            )
+
+    def observe_scene(self, *, capacity=None):
+        """Return (current contact sample, sensor geometry) under the same accepted-state lock."""
+        with self._lock:
+            return self.sample(capacity=capacity), self.geometry()
+
     def sample(self, *, capacity=None):
         """Observe loads and static material geometry without advancing either participant."""
         with self._lock:
@@ -485,18 +510,23 @@ class ContactScene:
         """Advance both active participants and publish only after material and swept checks accept."""
         with self._lock:
             self._require_open()
+            h = validate_dt(dt, self._state.particles.position.dtype)
+            end_time = self._time_s + float(h)
+            if not np.isfinite(end_time) or end_time <= self._time_s:
+                raise ValueError("time must advance by a representable physical interval")
             with self._work.transaction():
                 f = self._system.step(
                     self._state,
                     self.inputs() if external is None else external,
                     self._models,
                     self._solvers,
-                    dt,
+                    h,
                     self._work,
                     capacity=capacity,
                 )
                 owned = CoupledState(f.state.particles, f.state.rigid)
             self._state = owned
+            self._time_s = end_time
             return f
 
     def stats(self):

@@ -173,8 +173,8 @@ def test_invalid_geometry_mass_and_unregistered_ownership_are_explicit():
         b.pair(2, 19, NormalLayer(0.1, 1.0, 0.0))
 
 
-@pytest.mark.parametrize("backend", ["interpret", "cuda"])
-def test_real_backend_runs_registered_participants_and_finite_layer(backend, tmp_path):
+def test_real_backend_runs_registered_participants_and_finite_layer(tyx_mode, tmp_path):
+    backend = tyx_mode
     b = builder()
     panel(b)
     with b.build(backend=backend, cache_root=tmp_path) as scene:

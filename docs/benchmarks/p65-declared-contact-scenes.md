@@ -30,3 +30,18 @@
 python examples/declared_contact_scene.py --case stack --backend host --output stack.json
 python examples/declared_contact_scene.py --case tool-sheet --backend cuda --output tool-sheet.json
 ```
+
+## 接受状态的光学快照
+
+`scene.geometry()` 返回 `time_s`、`model` 和按完整 `CollisionKey` 索引的静态 `poses`。刚体本地材料顶点随当前质心和实际旋转变换，三角面从共享粒子行读取各自三个当前节点。姿态数组由独立只读存储支撑；后续物理步、修改外部状态副本或关闭运行时之后，先前快照仍可用于同一次曝光。示例中的 `--depth` 在初态和每一接受物理时刻使用真实 HOST 相机。[公开例程](../../examples/declared_contact_scene.py) · [快照与光学专项](../../tests/test_contact_geometry_snapshot.py)
+
+```python
+reading, exposure = scene.observe_scene()
+image = camera.capture(exposure.model, exposure.poses, world=7)
+```
+
+`observe_scene()` 在同一状态锁内取当前材料力和传感器几何。对于 2 kg 受载上箱，一步 1/32 s 的入口力为 4 N，末间隙升至 17/512 m，重新采到 3.75 N。`last_frame.loads` 继续保留已施加的 4 N。时钟累加实际积分使用的步长；容量失败和小到不能推进当前时刻的步长都保留前一帧与时间。[载荷与时间回滚](../../artifacts/p65-contact-geometry-snapshot-20261105-01/host-v2/final.json)
+
+在另一套光学留出中，7 号世界的倾置长箱沿负 z 平移并绕世界 z 轴旋转，四个有限片节点取不等竖直初速。0.1875 s 时，从原相机中心读到箱面深度 1.546875 m；移到片面内的材料采样位置读到 2.98828125 m。42 号世界同局部编号的静止箱始终读到 4.875 m。真实 CUDA 组把设备动力学返回的状态冻结为 HOST 材料顶点，再以 `TyxRaycaster` 运行设备射线；另用独立 HOST 射线核对有限片距离。以 0.1 s 输入时，设备组的曝光时间采用 FP32 实际步长 0.10000000149011612 s。[interpret 实录](../../artifacts/p65-contact-geometry-snapshot-20261105-01/interpret/final.json) · [CUDA 实录](../../artifacts/p65-contact-geometry-snapshot-20261105-01/cuda/final.json)
+
+原凸工具压片示例在世界 3 的五次曝光均读到工具键 (3, 7, 0)，0 到 0.0078125 s 的中心光线距离由 0.718750000 降至 0.718673758 m。[带时刻的原始受载相机输出](../../artifacts/p65-contact-geometry-snapshot-20261105-01/tool-sheet-depth.json)

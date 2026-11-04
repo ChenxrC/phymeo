@@ -6,6 +6,7 @@ from .backends.tyx_articulated import (
     make_tyx_articulated_runtime,
 )
 from .backends.tyx_coupled import TyxCoupledXPBDSolver
+from .backends.tyx_multiface_contact import TyxMultifaceContactBatch
 from .backends.tyx_normal_layer import TyxNormalLayer
 from .backends.tyx_participants import (
     TyxClothParticipant,
@@ -498,6 +499,7 @@ __all__ += [
     "CollisionDetection",
     "CollisionKey",
     "CollisionLoadSystem",
+    "TyxMultifaceContactBatch",
     "TyxNormalLayer",
     "NormalLayer",
     "ParticleAttachment",

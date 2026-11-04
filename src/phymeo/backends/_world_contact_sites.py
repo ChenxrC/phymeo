@@ -24,7 +24,7 @@ def matrix(array):
 
 @dataclass(frozen=True)
 class ClothLinkWorld:
-    """A three-node finite cloth face and the single sliding capsule in its original program."""
+    """An original cloth/link program and its per-world initial scene state."""
 
     program: CompliantClothContactProgram
     initial: SceneState

@@ -164,3 +164,65 @@ def test_fixed_page_boundary_packs_across_worlds_and_substeps(tyx_mode, tmp_path
         assert batch.last_phases[0].sites == 144
         launches = sum((p.sites + 127) // 128 for p in batch.last_phases)
         assert batch.stats()["completed_launches"] == launches and launches > 6
+
+
+def test_early_rejected_world_and_fault_while_neighbours_wait(tyx_mode, tmp_path, monkeypatch):
+    import threading
+
+    with ExitStack() as stack:
+        layer = stack.enter_context(ph.TyxNormalLayer(tyx_mode, cache_root=tmp_path))
+        good = make_world(0, 2, layer)
+        crossing = moved(make_world(0, 2, layer), 0.15625)
+        worlds = {5: good, 7: crossing}
+        oracle = {k: stack.enter_context(w.program.stepper(SETTINGS)).step(w.initial, w.controls[0], H) for k, w in worlds.items()}
+        assert oracle[5].report.accepted and not oracle[7].report.accepted
+        assert "axis intersects face" in oracle[7].report.reason
+        batch = stack.enter_context(ph.TyxMultifaceContactBatch(specs(worlds), tyx_mode, settings=SETTINGS, cache_root=tmp_path))
+        out = batch.step(H, inputs(worlds, 0))
+        assert all(physical_hash(out[k]) == physical_hash(v) for k, v in oracle.items())
+        assert all(tuple(k for k, _, _ in x.world_offsets) == (5,) for x in batch.last_phases)
+        assert hashes(batch.snapshot()) == hashes({5: oracle[5].state, 7: crossing.initial})
+
+        # Two co-located worlds with identical face and node IDs must survive a broken callback.
+        group = stack.enter_context(ph.TyxMultifaceContactBatch(specs({0: good, 1: good}), tyx_mode, settings=SETTINGS, cache_root=tmp_path))
+        requests = {0: good.controls[0], 1: good.controls[0]}
+        first = group.step(H, requests)
+        stored, phases = hashes(group.snapshot()), group.last_phases
+        restart = stack.enter_context(good.program.stepper(SETTINGS)).step(first[0].state, good.controls[0], H)
+        original = good.program._body_sample
+
+        def bad_phase(state, geo, *, phase=None):
+            return original(state, geo, phase="endpoint" if phase == "midpoint" else phase)
+
+        with monkeypatch.context() as patch:
+            patch.setattr(good.program, "_body_sample", bad_phase)
+            with pytest.raises(RuntimeError, match="expected midpoint"):
+                group.step(H, requests)
+        assert hashes(group.snapshot()) == stored and group.last_phases is phases
+
+        def failed_device(_rows):
+            raise RuntimeError("injected device failure")
+
+        with monkeypatch.context() as patch:
+            patch.setattr(group._layer, "evaluate", failed_device)
+            with pytest.raises(RuntimeError, match="device failure"):
+                group.step(H, requests)
+        assert hashes(group.snapshot()) == stored and group.last_phases is phases
+        retry = group.step(H, requests)
+        assert all(physical_hash(v) == physical_hash(restart) for v in retry.values())
+        group.close()
+        batch.close()
+        assert not any(t.name.startswith("phymeo-material") for t in threading.enumerate())
+        with pytest.raises(RuntimeError, match="closed"):
+            group.step(H, requests)
+
+
+def test_world_count_and_registration_are_bounded_before_device_execution():
+    w = make_world(0, 2, None)
+    spec = ph.ClothLinkWorld(w.program, w.initial)
+    with pytest.raises(ValueError, match="at least one"):
+        ph.TyxMultifaceContactBatch([], "cuda")
+    with pytest.raises(ValueError, match="duplicate"):
+        ph.TyxMultifaceContactBatch([(1, spec), (1, spec)], "cuda")
+    with pytest.raises(ValueError, match="64 worlds"):
+        ph.TyxMultifaceContactBatch([(k, spec) for k in range(65)], "cuda")

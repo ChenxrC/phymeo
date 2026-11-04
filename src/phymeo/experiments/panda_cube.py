@@ -14,6 +14,7 @@ from ..core.robot import RobotState
 from ..dynamics.robot_dynamics import robot_dynamics_terms
 from ..dynamics.robot_kinematics import _axis_rotation, _point_jacobians_at, forward_kinematics
 from ..dynamics.rotation import matrix_quaternion, quaternion_matrix
+from ..solvers.box_link_contact import BoxLinkContacts
 from ..solvers.rigid_semi_implicit import RigidSemiImplicitSolver
 from ..solvers.sphere_link_contact import SphereLinkContacts
 from .panda_payload import SampledPayload
@@ -115,8 +116,29 @@ class _PassiveGeometry:
         )
         return margins
 
+    def registry(self, asset, payload, *, authored_moving_frames=False):
+        is_box = payload.radius is None
+        excluded = [
+            c.shape.key
+            for c, pad in zip(asset.collisions, self.pad, strict=True)
+            if pad or (is_box and c.shape.kind == "hull")
+        ]
+        cls = BoxLinkContacts if is_box else SphereLinkContacts
+        return cls.from_asset(
+            asset, exclude_keys=excluded, authored_moving_frames=authored_moving_frames
+        )
+
     def clearances(
-        self, kin, center, rotation, extents, table_center, table_half, *, sphere_radius=None
+        self,
+        kin,
+        center,
+        rotation,
+        extents,
+        table_center,
+        table_half,
+        *,
+        sphere_radius=None,
+        omit_round=False,
     ):
         points = self.local.copy()
         points[self.moving] = _world_points(kin, self.links[self.moving], self.local[self.moving])
@@ -127,6 +149,8 @@ class _PassiveGeometry:
         )
         table = self.margin(points - table_center, table_half)
         cube[self.pad] = np.inf
+        if omit_round:
+            cube[self.round_parts] = np.inf
         i, j = int(np.argmin(cube)), int(np.argmin(table))
         return float(cube[i]), float(table[j]), self.names[i], self.names[j]
 
@@ -205,7 +229,8 @@ def run_panda_cube(
     The four points per rubber face use a compliant normal and regularized friction.
     A payload_geometry mapping accepts kind="sphere" with radius_m, or kind="box"
     with full_size_m. Omit it to use box_size_m, which defaults to a 50 mm cube.
-    Sphere payloads exchange loads with non-pad solids; structural_response=False keeps the historical clearance audit.
+    Spheres exchange loads with non-pad solids. For boxes, structural_response=True
+    enables finite round link contact. False keeps the historical clearance audit.
     box_size_m gives full lengths along the initially grasp-aligned, transverse and
     vertical body axes at zero yaw. initial_yaw_rad rotates only the payload about
     world +Z from this orientation. The box rests flat on the finite table.
@@ -225,8 +250,6 @@ def run_panda_cube(
     respond = (
         payload.radius is not None if structural_response is None else bool(structural_response)
     )
-    if respond and payload.radius is None:
-        raise ValueError("link structural response requires a spherical payload")
     size = payload.full_size
     offset = np.asarray(initial_xy_offset_m, dtype=float)
     if offset.shape != (2,) or not np.isfinite(offset).all():
@@ -271,8 +294,7 @@ def run_panda_cube(
     table_z = nominal_center[2] - 0.025
     start_center = np.array([*(nominal_center[:2] + offset), table_z + extents[2]])
     passive = _PassiveGeometry(asset)
-    excluded = [c.shape.key for c, pad in zip(asset.collisions, passive.pad, strict=True) if pad]
-    structure = SphereLinkContacts.from_asset(asset, exclude_keys=excluded) if respond else None
+    structure = passive.registry(asset, payload) if respond else None
     structure_law = RobotContactMaterial(6000.0, 16.0, 0.35, 0.04)
     table_half = np.array([travel / 2 + 0.052, 0.055, 0.008])
     table_center = np.array(
@@ -385,11 +407,12 @@ def run_panda_cube(
                 kin.com_position,
                 vel,
                 cube.position[0],
-                payload.radius,
+                payload.half if payload.radius is None else payload.radius,
                 cube.velocity[0],
                 cube.angular_velocity[0],
                 structure_law,
                 fixed_reference_m=asset.root_xyz,
+                **({"payload_rotation": rotation} if payload.radius is None else {}),
             )
             structural_rows = structural.contacts
             structural_joint = structural.joint_load(linear, angular)
@@ -399,12 +422,25 @@ def run_panda_cube(
                     step_index=step, t_before_s=t, shape=structural_rows[0]["shape"]
                 )
         if first_unresolved is None:
+            unchecked = cube_gap if structure is None else np.inf
+            if structure is not None and payload.radius is None and cube_gap <= 0:
+                unchecked, _, unchecked_shape, _ = passive.clearances(
+                    kin,
+                    cube.position[0],
+                    rotation,
+                    extents,
+                    table_center,
+                    table_half,
+                    omit_round=True,
+                )
+            else:
+                unchecked_shape = cube_shape
             first_unresolved = passive.unresolved(
                 step,
                 t,
-                cube_gap if structure is None else np.inf,
+                unchecked,
                 table_gap,
-                cube_shape,
+                unchecked_shape,
                 table_shape,
             )
         if cube_gap < cube_margin:

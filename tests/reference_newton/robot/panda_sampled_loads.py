@@ -25,7 +25,6 @@ from phymeo.experiments.panda_cube import (
     _world_points,
 )
 from phymeo.experiments.panda_payload import SampledPayload
-from phymeo.solvers.sphere_link_contact import SphereLinkContacts
 
 
 def finger_material(model, pads):
@@ -121,19 +120,12 @@ def run(urdf, inputs, device):
     passive = _PassiveGeometry(asset)
     law_spec = spec.get("structural_material")
     structure_law = None if law_spec is None else RobotContactMaterial(*law_spec)
-    if structure_law is not None and shape.radius is None:
-        raise ValueError("structural response requires a spherical payload")
-    excluded = [c.shape.key for c, pad in zip(asset.collisions, passive.pad, strict=True) if pad]
     structure = (
         None
         if structure_law is None
-        else SphereLinkContacts.from_asset(
-            asset, exclude_keys=excluded, authored_moving_frames=True
-        )
+        else passive.registry(asset, shape, authored_moving_frames=True)
     )
-    body_shapes = (
-        None if structure is None else SphereLinkContacts.from_asset(asset, exclude_keys=excluded)
-    )
+    body_shapes = None if structure is None else passive.registry(asset, shape)
     fixed_ids = [
         i for i, s in enumerate(model.body_label) if s.rsplit("/", 1)[-1] == asset.root_link
     ]
@@ -206,11 +198,12 @@ def run(urdf, inputs, device):
                 body_com[native_child],
                 twist[native_child],
                 body_com[payload],
-                shape.radius,
+                shape.half if shape.radius is None else shape.radius,
                 twist[payload, :3],
                 twist[payload, 3:],
                 structure_law,
                 fixed_reference_m=fixed_reference,
+                **({"payload_rotation": Rs[payload]} if shape.radius is None else {}),
             )
             structural_rows = structural.contacts
             w[native_child] += structural.link_wrenches
@@ -235,8 +228,15 @@ def run(urdf, inputs, device):
                     step_index=step, t_before_s=t, shape=structural_rows[0]["shape"]
                 )
         if first_unresolved is None:
+            unchecked = gap if structure is None else np.inf
+            if structure is not None and shape.radius is None and gap <= 0:
+                unchecked, _, unchecked_part, _ = passive.clearances(
+                    geometry, body[payload, :3], Rs[payload], shape.half, cn, half, omit_round=True
+                )
+            else:
+                unchecked_part = object_part
             first_unresolved = passive.unresolved(
-                step, t, gap if structure is None else np.inf, table_gap, object_part, table_part
+                step, t, unchecked, table_gap, unchecked_part, table_part
             )
         other_margin, table_margin = min(other_margin, gap), min(table_margin, table_gap)
         state.clear_forces()

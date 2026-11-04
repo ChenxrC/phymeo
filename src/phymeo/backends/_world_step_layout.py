@@ -1,6 +1,7 @@
 """Owned HOST bindings and checkpoints for the supported resident TYX world laws."""
 
 from dataclasses import dataclass
+from math import fsum
 from numbers import Integral
 
 import numpy as np
@@ -64,6 +65,36 @@ class FreeSphere:
 
 
 @dataclass(frozen=True)
+class SpherePlaneWorld(FreeSphere):
+    """A translating sphere above its own fixed horizontal (+Z) frictionless half-space.
+
+    Restitution acts on incoming free velocity exceeding twice the external normal
+    velocity change in this step. Slower contacts settle. A sphere outside the
+    plane's end-step candidate receives no impulse. Radius and height are in m.
+    """
+
+    plane_height: float = 0.0
+    restitution: float = 0.0
+
+    def __post_init__(self):
+        super().__post_init__()
+        height = float(as_fp32(self.plane_height, "plane height", ()))
+        e = float(as_fp32(self.restitution, "normal restitution", ()))
+        if not 0 <= float(self.restitution) <= 1:
+            raise ValueError("normal restitution must lie in [0, 1]")
+        object.__setattr__(self, "plane_height", height)
+        object.__setattr__(self, "restitution", e)
+
+    def center_stop(self):
+        """Lowest supported FP32 center on or above the actual sphere-plane contact."""
+        level = as_fp32(self.plane_height + self.radius, "sphere contact height", ())
+        if fsum((float(level), -self.plane_height, -self.radius)) < 0:
+            with np.errstate(over="ignore", under="ignore"):
+                level = np.nextafter(level, np.float32(np.inf))
+        return float(as_fp32(level, "outward sphere contact height", ()))
+
+
+@dataclass(frozen=True)
 class PrismaticSlider:
     """A fixed-base, one-link DrivenRobotProgram and its initial physical/history state."""
 
@@ -86,12 +117,20 @@ class WorldCheckpoint:
 
 
 @dataclass(frozen=True)
+class SpherePlaneCheckpoint(WorldCheckpoint):
+    """Last accepted upward plane impulse in N s, separate from the held external force."""
+
+    normal_impulse_n_s: float
+
+
+@dataclass(frozen=True)
 class WorldBinding:
     world: int
     kind: int  # 0 sphere, 1 slider without delay, 2 slider with one-step delay
     domain: str
     axis: tuple
     topology: tuple
+    plane_height: float | None = None
 
     @property
     def width(self):
@@ -117,7 +156,7 @@ class WorldBinding:
 
     def checkpoint(self, row, tick, control):
         n = self.width
-        return WorldCheckpoint(
+        args = (
             self.world,
             self.topology,
             int(tick),
@@ -127,6 +166,10 @@ class WorldBinding:
             _values(row[9:12]) if self.kind == 2 else (),
             _values(control[: 4 if self.kind else 3]),
         )
+
+        if self.plane_height is not None:
+            return SpherePlaneCheckpoint(*args, float(row[9]))
+        return WorldCheckpoint(*args)
 
     def unpack(self, point):
         if (
@@ -146,6 +189,13 @@ class WorldBinding:
             state[start : start + self.width] = as_fp32(value, "checkpoint state", (self.width,))
         count = 3 if self.kind == 2 else 0
         state[9 : 9 + count] = as_fp32(point.history, "checkpoint history", (count,))
+        if self.plane_height is not None:
+            if not isinstance(point, SpherePlaneCheckpoint):
+                raise ValueError("sphere-plane checkpoint requires a normal impulse")
+            impulse = as_fp32(point.normal_impulse_n_s, "normal impulse", ())
+            if impulse < 0:
+                raise ValueError("normal impulse must be nonnegative")
+            state[9] = impulse
         n = 4 if self.kind else 3
         controls = np.zeros(4, np.float32)
         controls[:n] = as_fp32(point.control, "checkpoint held control", (n,))
@@ -156,9 +206,14 @@ def bind_world(world, spec):
     state = np.zeros(STATE_WIDTH, np.float32)
     command = np.zeros(4, np.float32)
     axis, domain = (), ""
+    plane_height = None
     if isinstance(spec, FreeSphere):
         kind = 0
-        props = (1 / spec.mass, *spec.gravity, 0, 0, 0, spec.radius, spec.mass)
+        plane = (0, 0, 0)
+        if isinstance(spec, SpherePlaneWorld):
+            plane = (spec.center_stop(), spec.restitution, 1)
+            plane_height = spec.plane_height
+        props = (1 / spec.mass, *spec.gravity, *plane, spec.radius, spec.mass)
         state[:3], state[3:6] = spec.position, spec.velocity
     elif isinstance(spec, PrismaticSlider):
         p = spec.program
@@ -199,5 +254,8 @@ def bind_world(world, spec):
     else:
         raise TypeError("expected FreeSphere or PrismaticSlider")
     constants = as_fp32(props, "world topology", (PROPERTY_WIDTH,))
-    binding = WorldBinding(world, kind, domain, axis, (kind, domain, axis, _values(constants)))
+    topology = (kind, domain, axis, _values(constants))
+    if plane_height is not None:
+        topology += ("horizontal-sphere-plane-v1", plane_height)
+    binding = WorldBinding(world, kind, domain, axis, topology, plane_height)
     return binding, constants, state, command

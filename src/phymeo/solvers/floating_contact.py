@@ -69,6 +69,8 @@ def step_floating_contacts(
     mu_dynamic,
     dt,
     *,
+    restitution=0.0,
+    bounce_threshold_mps=0.0,
     fixed_bodies=None,
     local_vertices=None,
     local_normals=None,
@@ -91,7 +93,8 @@ def step_floating_contacts(
     corner of its single contact polygon. Other extended curved supports require a manifold solver.
 
     Forces, gravity and drives advance velocities at input q. All graph rows then act on those
-    velocities at that same q. Only the resulting velocity drifts each dynamic domain. Pass
+    velocities at that same q. The restitution threshold applies to that free normal
+    speed after the force kick. Only the resulting velocity drifts each dynamic domain. Pass
     empty rows after separation. New arrivals inside a drift require prior event localization.
     Invalid bindings raise before any caller-owned state is changed.
     """
@@ -140,6 +143,8 @@ def step_floating_contacts(
                 mu_dynamic,
                 local_vertices=local_vertices,
                 local_normals=local_normals,
+                restitution=restitution,
+                bounce_threshold_mps=bounce_threshold_mps,
                 velocity_tolerance=velocity_tolerance,
                 response_tolerance=response_tolerance,
                 position_tolerance=position_tolerance,

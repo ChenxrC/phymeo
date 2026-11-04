@@ -78,15 +78,25 @@ def _world(basis, values):
     return np.einsum("kij,kj->ki", basis, values)
 
 
-def _audit(velocity, impulse, normal_response, tangent_scale, static, dynamic, tolerance):
+def _normal_restitution(value, count):
+    raw = np.asarray(value)
+    if raw.shape not in ((), (count,)) or raw.dtype.kind not in "iuf":
+        raise ValueError("restitution must be a scalar or one real value per row")
+    if not np.isfinite(raw).all() or np.any(raw < 0) or np.any(raw > 1):
+        raise ValueError("restitution must be between zero and one")
+    return np.broadcast_to(np.asarray(raw, dtype=np.float64), (count,))
+
+
+def _audit(velocity, impulse, normal_response, tangent_scale, static, dynamic, tolerance, target):
     """Check laws directly at the final velocity, independently of the GS updates."""
     if not np.isfinite(velocity).all() or not np.isfinite(impulse).all():
         raise SolverFailure("non-finite contact audit input")
     residual, regimes = 0.0, []
     for index, (u, p) in enumerate(zip(velocity, impulse, strict=True)):
         kn, kt = normal_response[index], tangent_scale[index]
-        projected = max(0.0, p[0] - u[0] / kn)
-        residual = max(residual, abs(p[0] - projected) * kn, -u[0], -p[0] * kn)
+        normal_speed = u[0] - target[index]
+        projected = max(0.0, p[0] - normal_speed / kn)
+        residual = max(residual, abs(p[0] - projected) * kn, -normal_speed, -p[0] * kn)
         speed, tangent = _norm(u[1:]), _norm(p[1:])
         if speed <= tolerance:
             residual = max(residual, (tangent - static[index] * p[0]) * kt)
@@ -110,12 +120,19 @@ def solve_contact_impulses(
     mu_static,
     mu_dynamic,
     *,
+    restitution=0.0,
+    bounce_threshold_mps=0.0,
     velocity_tolerance=1e-10,
     response_tolerance=1e-12,
     position_tolerance=1e-9,
     max_iterations=200,
 ):
-    """Solve a zero-restitution impulse problem; no positions or history advance.
+    """Solve one closed impact at fixed positions with optional normal restitution.
+
+    A coefficient in [0,1] may be supplied per contact or shared across all rows.
+    For incoming normal speeds above bounce_threshold_mps, the normal velocity
+    target is the incoming speed times the coefficient. Slower impacts use zero
+    target. Tangent laws use physical slip, and work uses the actual velocities.
 
     Normals point from the right endpoint toward the left endpoint. Closed
     geometry is required. Final physical gates use a fresh actual port query,
@@ -125,6 +142,10 @@ def solve_contact_impulses(
     normals = _array(normals, "normals", (count, 3))
     static = _array(mu_static, "mu_static", (count,))
     dynamic = _array(mu_dynamic, "mu_dynamic", (count,))
+    coefficient = _normal_restitution(restitution, count)
+    threshold = finite_real(bounce_threshold_mps, "bounce_threshold_mps")
+    if threshold < 0:
+        raise ValueError("bounce_threshold_mps must be nonnegative")
     if np.any(dynamic < 0) or np.any(static < dynamic):
         raise ValueError("require 0 <= mu_dynamic <= mu_static")
     velocity_tolerance = finite_real(velocity_tolerance, "velocity_tolerance")
@@ -193,11 +214,15 @@ def solve_contact_impulses(
         tangent_scale.append(float(values[-1] * scale))
         tangents.append(tangent)
     free = _local(basis, free_world).reshape(-1)
+    incoming = -free[::3]
+    target = np.where(incoming > threshold, coefficient * incoming, 0.0)
     impulse, velocity = np.zeros(3 * count), free.copy()
     for iteration in range(1, max_iterations + 1):
         for edge in range(count):
             row = 3 * edge
-            new_normal = max(0.0, impulse[row] - velocity[row] / normal_response[edge])
+            new_normal = max(
+                0.0, impulse[row] - (velocity[row] - target[edge]) / normal_response[edge]
+            )
             velocity += matrix[:, row] * (new_normal - impulse[row])
             impulse[row] = new_normal
             current = impulse[row + 1 : row + 3].copy()
@@ -224,6 +249,7 @@ def solve_contact_impulses(
             static,
             dynamic,
             velocity_tolerance,
+            target,
         )
         if residual > velocity_tolerance:
             continue
@@ -238,6 +264,7 @@ def solve_contact_impulses(
             static,
             dynamic,
             velocity_tolerance,
+            target,
         )
         if residual > velocity_tolerance:
             continue
@@ -266,6 +293,7 @@ def solve_contact_impulses(
             static,
             dynamic,
             velocity_tolerance,
+            target,
         )
         if residual > velocity_tolerance:
             raise SolverFailure("actual candidate violates contact laws")

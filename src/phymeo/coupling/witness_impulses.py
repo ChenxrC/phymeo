@@ -227,6 +227,8 @@ def solve_witness_impulses(
     mu_dynamic,
     *,
     sample="pose",
+    restitution=0.0,
+    bounce_threshold_mps=0.0,
     local_vertices=None,
     local_normals=None,
     velocity_tolerance=1e-10,
@@ -234,7 +236,7 @@ def solve_witness_impulses(
     position_tolerance=1e-9,
     max_iterations=200,
 ):
-    """Solve coincident material rows at one physical instant, with zero restitution.
+    """Solve coincident material rows at one physical instant using per-row impact materials.
 
     Rows contain (CollisionPair, {shape_key: (port_domain, local_row)}). A third
     entry selects a static cylinder-plane endpoint or a corner of the unique hull-hull
@@ -359,6 +361,8 @@ def solve_witness_impulses(
         normals,
         mu_static,
         mu_dynamic,
+        restitution=restitution,
+        bounce_threshold_mps=bounce_threshold_mps,
         velocity_tolerance=velocity_tolerance,
         response_tolerance=response_tolerance,
         position_tolerance=tol,

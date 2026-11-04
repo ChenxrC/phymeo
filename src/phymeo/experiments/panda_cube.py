@@ -1,6 +1,8 @@
 """Fixed-base Panda and a free cube, with sampled finite rubber pads on HOST."""
 
+from hashlib import sha256
 from itertools import product
+from pathlib import Path
 
 import numpy as np
 
@@ -36,6 +38,7 @@ class _PassiveGeometry:
 
     def __init__(self, asset):
         local, links, self.starts, self.radii, self.pad = [], [], [], [], []
+        self.names = tuple(s.name for s in asset.collisions)
         for shape in asset.collisions:
             if shape.shape.kind not in ("capsule", "sphere", "hull"):
                 raise ValueError(
@@ -62,7 +65,9 @@ class _PassiveGeometry:
         points[self.moving] = _world_points(kin, self.links[self.moving], self.local[self.moving])
         cube = self.margin((points - center) @ rotation, extents)
         table = self.margin(points - table_center, table_half)
-        return float(min(cube[~self.pad])), float(min(table))
+        cube[self.pad] = np.inf
+        i, j = int(np.argmin(cube)), int(np.argmin(table))
+        return float(cube[i]), float(table[j]), self.names[i], self.names[j]
 
 
 def _waypoints(asset, q0, lower_by, lift, travel, opening, closed):
@@ -103,26 +108,67 @@ def _waypoints(asset, q0, lower_by, lift, travel, opening, closed):
     return np.asarray(times), np.asarray(knots)
 
 
+def _command_at(times, knots, t):
+    segment = min(np.searchsorted(times[1:], t, side="right"), len(times) - 2)
+    duration = times[segment + 1] - times[segment]
+    u = (t - times[segment]) / duration
+    s = u**3 * (10 + u * (-15 + 6 * u))
+    ds = 30 * u**2 * (1 - u) ** 2 / duration
+    dq = knots[segment + 1] - knots[segment]
+    return knots[segment] + s * dq, ds * dq
+
+
+def _servo_effort(arm, qcmd, vcmd, inertia, bias, limit):
+    effort = bias + inertia @ (900.0 * (qcmd - arm.q) + 60.0 * (vcmd - arm.v))
+    effort[7:] = bias[7:] + 620.0 * (qcmd[7:] - arm.q[7:]) + 5.0 * (vcmd[7:] - arm.v[7:])
+    return np.clip(effort, -limit, limit)
+
+
 def run_panda_cube(
-    *, friction=0.65, mass_kg=0.10, steps_per_second=1600, record=False, asset_path=None
+    *,
+    friction=0.65,
+    mass_kg=0.10,
+    steps_per_second=1600,
+    record=False,
+    asset_path=None,
+    box_size_m=(0.05, 0.05, 0.05),
+    closed_width_m=0.029,
+    initial_xy_offset_m=(0.0, 0.0),
+    grip_above_com_m=0.012,
 ):
     """Pick, translate and release under gravity. No actuator reads or sets the cube pose.
 
     The four points per rubber face use a compliant normal and regularized friction.
-    Table loads use the eight free box vertices on a horizontal tabletop. Arm collision
-    meshes outside the fingertip interface are excluded from this tabletop experiment.
+    box_size_m specifies full widths along the grasp axis, in-plane transverse axis and
+    vertical. The planar initial offset moves only the object on the fixed tabletop.
+    grip_above_com_m sets the face-center grasp height relative to the actual payload COM. closed_width_m is a position command. Actual jaw loads follow from contact and effort
+    limits. Table loads act at the eight free box corners.
     """
-    from ..builders.panda import load_panda
+    from ..builders.panda import PANDA_URDF, load_panda
 
     if not isinstance(steps_per_second, int) or steps_per_second < 800:
         raise ValueError("this sampled control requires at least 800 substeps per second")
     if not np.isfinite(mass_kg) or mass_kg <= 0:
         raise ValueError("the cube must have finite positive mass")
+    size = np.asarray(box_size_m, dtype=float)
+    offset = np.asarray(initial_xy_offset_m, dtype=float)
+    if size.shape != (3,) or not np.isfinite(size).all() or np.any(size <= 0):
+        raise ValueError("box_size_m must contain three finite positive full sizes")
+    if offset.shape != (2,) or not np.isfinite(offset).all():
+        raise ValueError("initial_xy_offset_m must contain two finite world coordinates")
+    if (
+        not np.isscalar(closed_width_m)
+        or not np.isfinite(closed_width_m)
+        or not 0 <= closed_width_m <= 0.076
+    ):
+        raise ValueError("closed_width_m must be within the initial 76 mm jaw opening")
+    if not np.isscalar(grip_above_com_m) or not np.isfinite(grip_above_com_m):
+        raise ValueError("grip_above_com_m must be finite")
     pad_law = RobotContactMaterial(1200.0, 1.2, friction, 0.04)
     table_law = RobotContactMaterial(2200.0, 3.0, 0.45, 0.04)
     asset = load_panda(asset_path) if asset_path is not None else load_panda()
     gravity = np.array([0.0, 0.0, -9.81])
-    opened, closed, descend, lift, travel = 0.076, 0.029, 0.042, 0.065, 0.075
+    opened, closed, descend, lift, travel = 0.076, float(closed_width_m), 0.042, 0.065, 0.075
     initial_q = asset.configuration(
         [0.0, -np.pi / 4, 0.0, -3 * np.pi / 4, 0.0, np.pi / 2, np.pi / 4], opened
     )
@@ -130,35 +176,74 @@ def run_panda_cube(
     links, local = _finger_samples(asset)
     start_points = _world_points(forward_kinematics(asset.model, initial_q), links, local)
     grip_above_com = 0.012  # Keep the finger stocks above the payload during side entry.
-    start_center = start_points.mean(axis=0) - [0.0, 0.0, descend + grip_above_com]
+    nominal_center = start_points.mean(axis=0) - [0.0, 0.0, descend + grip_above_com]
     outward = start_points[:4].mean(axis=0) - start_points[4:].mean(axis=0)
     if abs(outward[2]) > 1e-6 or np.linalg.norm(outward[:2]) < 0.06:
         raise ValueError("home configuration must present opposed horizontal fingers")
     axis = outward / np.linalg.norm(outward)
     vertical = np.array([0.0, 0.0, 1.0])
     rotation = np.column_stack([axis, np.cross(vertical, axis), vertical])
-    half = 0.025
-    extents = np.full(3, half)
-    vertices = np.array(list(product((-half, half), repeat=3)))
-    table_z = start_center[2] - half
+    extents = size / 2
+    vertices = np.array(list(product(*[(-h, h) for h in extents])))
+    # The calibrated table stays in place for every payload. Its top supports the initial base.
+    table_z = nominal_center[2] - 0.025
+    start_center = np.array([*(nominal_center[:2] + offset), table_z + extents[2]])
     passive = _PassiveGeometry(asset)
     table_half = np.array([travel / 2 + 0.052, 0.055, 0.008])
     table_center = np.array(
-        [start_center[0] + travel / 2, start_center[1], table_z - table_half[2]]
+        [nominal_center[0] + travel / 2, nominal_center[1], table_z - table_half[2]]
     )
     cube_margin = table_margin = float("inf")
-    rigid = RigidBodyModel(
-        np.array([1.0 / mass_kg]), np.full((1, 3), mass_kg * (2 * half) ** 2 / 6), gravity
-    )
+    cube_minimum = table_minimum = None
+    x, y, z = size
+    diagonal = mass_kg / 12 * np.array([y * y + z * z, x * x + z * z, x * x + y * y])
+    rigid = RigidBodyModel(np.array([1.0 / mass_kg]), diagonal[None, :], gravity)
     cube = RigidBodyState(
         start_center[None], matrix_quaternion(rotation)[None], np.zeros((1, 3)), np.zeros((1, 3))
     )
     initial_center = cube.position[0].copy()
-    times, knots = _waypoints(asset, initial_q, descend, lift, travel, opened, closed)
+    initial_xyzw = cube.orientation[0].copy()
+    # The table remains fixed. Position the pad centers relative to this object's actual COM.
+    descent = float(start_points[:, 2].mean() - (initial_center[2] + grip_above_com_m))
+    if descent <= 0:
+        raise ValueError("the requested grip height must be below the open starting pads")
+    times, knots = _waypoints(asset, initial_q, descent, lift, travel, opened, closed)
     lower, upper = np.asarray(asset.lower), np.asarray(asset.upper)
     effort_limit = np.asarray(asset.effort_limit)
     dt = 1.0 / steps_per_second
     step_count = round(times[-1] * steps_per_second)
+    # This manifest alone can drive another engine; it contains no computed trajectory.
+    run_inputs = dict(
+        schema="panda-box-control-v1",
+        urdf_sha256=sha256(
+            Path(PANDA_URDF if asset_path is None else asset_path).read_bytes()
+        ).hexdigest(),
+        joint_names=list(asset.joint_names),
+        initial_q=initial_q.tolist(),
+        initial_v=np.zeros(9).tolist(),
+        knot_times_s=times.tolist(),
+        knot_q=knots.tolist(),
+        dt_s=dt,
+        steps=step_count,
+        mass_kg=mass_kg,
+        full_size_m=size.tolist(),
+        inertia_diagonal_kg_m2=diagonal.tolist(),
+        body_position_m=initial_center.tolist(),
+        body_xyzw=initial_xyzw.tolist(),
+        initial_linear_velocity_m_s=[0.0, 0.0, 0.0],
+        initial_omega_rad_s=[0.0, 0.0, 0.0],
+        gravity_m_s2=gravity.tolist(),
+        table_center_m=table_center.tolist(),
+        table_full_size_m=(2 * table_half).tolist(),
+        pad_material=[pad_law.stiffness, pad_law.damping, pad_law.friction, pad_law.slip_speed_m_s],
+        table_material=[
+            table_law.stiffness,
+            table_law.damping,
+            table_law.friction,
+            table_law.slip_speed_m_s,
+        ],
+        travel_m=travel,
+    )
     integrator = RigidSemiImplicitSolver()
     trace = []
     bilateral_peak = depth_max = limit_error = 0.0
@@ -170,13 +255,7 @@ def run_panda_cube(
     momentum_error = 0.0
     for step in range(step_count):
         t = step * dt
-        segment = min(np.searchsorted(times[1:], t, side="right"), len(times) - 2)
-        duration = times[segment + 1] - times[segment]
-        u = (t - times[segment]) / duration
-        s = u**3 * (10 + u * (-15 + 6 * u))
-        ds = 30 * u**2 * (1 - u) ** 2 / duration
-        dq = knots[segment + 1] - knots[segment]
-        qcmd, vcmd = knots[segment] + s * dq, ds * dq
+        qcmd, vcmd = _command_at(times, knots, t)
         q_before = arm.q
         kin, _, _, inertia, bias = robot_dynamics_terms(asset.model, arm)
         samples = _world_points(kin, links, local)
@@ -194,10 +273,13 @@ def run_panda_cube(
         )
         corners = vertices @ rotation.T
         world = cube.position[0] + corners
-        cube_gap, table_gap = passive.clearances(
+        cube_gap, table_gap, cube_shape, table_shape = passive.clearances(
             kin, cube.position[0], rotation, extents, table_center, table_half
         )
-        cube_margin, table_margin = min(cube_margin, cube_gap), min(table_margin, table_gap)
+        if cube_gap < cube_margin:
+            cube_margin, cube_minimum = cube_gap, dict(t=t, shape=cube_shape)
+        if table_gap < table_margin:
+            table_margin, table_minimum = table_gap, dict(t=t, shape=table_shape)
         if np.any(np.abs(world[:, :2] - table_center[:2]) > table_half[:2]):
             raise RuntimeError("cube left the finite tabletop footprint")
         corner_v = cube.velocity[0] + np.cross(cube.angular_velocity[0], corners)
@@ -210,9 +292,7 @@ def run_panda_cube(
         error = updated.state.velocity[0] - cube.velocity[0] - dt * (gravity + force / mass_kg)
         momentum_error = max(momentum_error, mass_kg * np.linalg.norm(error))
         cube = updated.state
-        commanded = bias + inertia @ (900.0 * (qcmd - arm.q) + 60.0 * (vcmd - arm.v))
-        commanded[7:] = bias[7:] + 620.0 * (qcmd[7:] - arm.q[7:]) + 5.0 * (vcmd[7:] - arm.v[7:])
-        drive = np.clip(commanded, -effort_limit, effort_limit)
+        drive = _servo_effort(arm, qcmd, vcmd, inertia, bias, effort_limit)
         joint_load = np.einsum("ijk,ij->k", jac, pads.forces)
         new_v = arm.v + dt * np.linalg.solve(inertia, drive + joint_load - bias)
         arm = RobotState(arm.q + dt * new_v, new_v)
@@ -256,25 +336,33 @@ def run_panda_cube(
             )
     target_error = float(np.linalg.norm(cube.position[0] - initial_center - [travel, 0.0, 0.0]))
     weight = mass_kg * abs(gravity[2])
-    success = (
+    carried = (
         carry_clearance > 0.035
         and carry_displacement > 0.045
-        and target_error < 0.012
-        and cube_margin > 0
-        and table_margin > 0
         and min_carry_bilateral > 0
         and peak_carry_table < 0.001
+    )
+    placed = (
+        target_error < 0.012
         and max(final_pad) < 0.001
         and abs(np.mean(final_table) - weight) < 0.025
-        and limit_error < 1e-4
     )
+    success = carried and placed and cube_margin > 0 and table_margin > 0 and limit_error < 1e-4
     return dict(
         success=bool(success),
+        carried_during_transfer=bool(carried),
+        released_on_target=bool(placed),
         steps=step_count,
         simulated_seconds=step_count * dt,
         cube_weight_N=weight,
         cube_mass_kg=mass_kg,
         finger_friction=friction,
+        cube_full_size_m=size.tolist(),
+        cube_inertia_diagonal_kg_m2=diagonal.tolist(),
+        closed_width_m=closed,
+        grip_above_com_m=float(grip_above_com_m),
+        initial_xy_offset_m=offset.tolist(),
+        inputs=run_inputs,
         table_center_m=table_center.tolist(),
         table_full_size_m=(2 * table_half).tolist(),
         initial_cube_center_m=initial_center.tolist(),
@@ -284,6 +372,8 @@ def run_panda_cube(
         min_carry_bilateral_normal_N=min_carry_bilateral,
         other_robot_cube_axis_clearance_m=cube_margin,
         robot_table_axis_clearance_m=table_margin,
+        minimum_object_axis_clearance_at=cube_minimum,
+        minimum_table_axis_clearance_at=table_minimum,
         final_target_error_m=target_error,
         final_table_force_N=float(np.mean(final_table)),
         release_pad_force_N=float(max(final_pad)),

@@ -125,6 +125,22 @@ class MaterialStickSlipStepper(MaterialSlidingStepper):
             self._owner,
         )
 
+    def _return_map(self, old, free, inverse, h, normal_force, prior):
+        trial = (old + free) / (1.0 + self._kt * h * h * inverse)
+        trial_n = self._kt * hypot(*trial)
+        continuing = prior is not None and prior.regime == "slide" and trial @ old >= 0
+        limit = normal_force * (self._layer.friction if continuing else self._static)
+        sliding = trial_n > limit
+        force = -self._kt * trial
+        if sliding:
+            force *= self._layer.friction * normal_force / trial_n
+        if not np.isfinite((limit, trial_n)).all():
+            raise SolverFailure("material tangent prediction exceeds precision")
+        return force, sliding
+
+    def _dynamic_rows(self, trial):
+        return (trial.vertex,)
+
     def _trial(self, load, state, base_force, previous, h):
         feature = load.feature
         if feature.kind != "VT" or len(load.sites) != 1:
@@ -153,17 +169,10 @@ class MaterialStickSlipStepper(MaterialSlidingStepper):
         free_velocity = state.velocity[vertex].astype(float) + h * acceleration
         free = h * _in_plane(free_velocity, normal)
         # At a fixed face, d = d_free + h^2/m * f. In the elastic regime f = -k*(old+d).
-        trial = (old + free) / (1.0 + self._kt * h * h * inverse)
-        trial_n = self._kt * hypot(*trial)
-        continuing = prior is not None and prior.regime == "slide" and trial @ old >= 0
-        limit = site.force_n * (self._layer.friction if continuing else self._static)
-        sliding = trial_n > limit
-        force = -self._kt * trial
-        if sliding:
-            force *= self._layer.friction * site.force_n / trial_n
+        force, sliding = self._return_map(old, free, inverse, h, site.force_n, prior)
         predicted = free + h * h * inverse * force
         predicted_velocity = free_velocity + h * inverse * force
-        if not np.isfinite([*force, *predicted, *predicted_velocity, limit, trial_n]).all():
+        if not np.isfinite([*force, *predicted, *predicted_velocity]).all():
             raise SolverFailure("material tangent prediction exceeds precision")
         return _Trial(
             feature,
@@ -180,7 +189,7 @@ class MaterialStickSlipStepper(MaterialSlidingStepper):
         )
 
     def _accept(self, trial, initial, final, tick):
-        vertex, n, force = trial.vertex, trial.normal, trial.force
+        vertex, n = trial.vertex, trial.normal
         before, after = initial.position[vertex].astype(float), final.position[vertex].astype(float)
         if any(
             not np.array_equal(final.position[i], initial.position[i]) or np.any(final.velocity[i])
@@ -209,6 +218,10 @@ class MaterialStickSlipStepper(MaterialSlidingStepper):
             or hypot(*(delta - trial.predicted_delta)) > tolerance
         ):
             raise SolverFailure("particle solver did not realize the tangential mass response")
+        return self._record(trial, delta, eps, tolerance, tick)
+
+    def _record(self, trial, delta, eps, tolerance, tick):
+        force, n = trial.force, trial.normal
         old = trial.old_elastic
         if trial.sliding:
             elastic = -force / self._kt
@@ -283,9 +296,12 @@ class MaterialStickSlipStepper(MaterialSlidingStepper):
                 if load.force_n == 0:
                     continue
                 trial = self._trial(load, initial, base.force, previous, float(h))
-                if trial.vertex in used:
-                    raise SolverFailure("multiple loaded faces share a free material vertex")
-                used.add(trial.vertex)
+                rows = self._dynamic_rows(trial)
+                if not used.isdisjoint(rows):
+                    raise SolverFailure(
+                        "multiple contacts share a free material vertex or support node"
+                    )
+                used.update(rows)
                 nodal[trial.vertex] += trial.force
                 for row, weight in trial.face:
                     nodal[row] -= weight * trial.force

@@ -82,7 +82,7 @@ def candidate_rows(
                     # An FP32 guard around the segment minimum also rejects uncertain grazes.
                     scale = tx.max(l0, tx.max(l1, support))
                     if closest <= support + 0.000002 * scale:
-                        if (g0 > 0.0 and g1 > 0.0) or facing <= 0.0:
+                        if g1 > 0.0 or facing <= 0.0:
                             issue = 3
         rows[p, 0] = nx
         rows[p, 1] = ny

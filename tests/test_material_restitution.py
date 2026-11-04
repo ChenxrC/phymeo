@@ -80,3 +80,16 @@ def test_swept_floating_arm_and_sphere_recoil_with_restitution():
     assert result.normal_impulses[0] == pytest.approx(15 / 16)
     assert result.relative_velocity_after[0] @ result.contact_basis[0, :, 0] == pytest.approx(0.5)
     assert result.energy_change == pytest.approx(-15 / 64)
+
+
+def test_dissipative_pair_does_not_hide_energy_created_by_unrelated_impacts():
+    speed = (2.0, 0.0, 0.5, 2.0, -2.0)
+    ports = {str(i): node(str(i), 1, [s, 0, 0]) for i, s in enumerate(speed)}
+    graph = ph.MultiDomainPointOperator(
+        ports, [("1", 0), ("2", 0), ("4", 0)], [("0", 0), ("1", 0), ("3", 0)]
+    )
+    # First component gains 0.25 J; the independent, plastic pair loses 4 J.
+    with pytest.raises(ph.SolverFailure, match="kinetic energy"):
+        solve(graph, [[1, 0, 0]] * 3, mu=0.0, restitution=[1.0, 1.0, 0.0])
+    for i, s in enumerate(speed):
+        assert graph.snapshot()[str(i)].velocity[0, 0] == s

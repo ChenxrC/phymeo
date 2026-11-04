@@ -233,3 +233,48 @@ def test_late_device_failure_retries_with_original_world_checkpoints(
                 batch.step(H)
         assert batch.snapshot() == saved and batch.last_result(4) is before[4]
         assert batch.step(H) == oracle.step(H)
+
+
+@pytest.mark.parametrize("configuration", ["distant", "boosted", "dissipating"])
+def test_passivity_is_local_to_the_colliding_component(tyx_mode, tmp_path, configuration):
+    World, Batch = api()
+    boost = 300.0 if configuration == "boosted" else 0.0
+    coefficient = 15 / 16 if configuration == "dissipating" else 1
+    third = 1.0 if configuration == "dissipating" else 0.5
+    bodies = [
+        (i, ball(1, (i / 2, 0, 0), (speed, boost, 0))) for i, speed in enumerate((2, 0, third))
+    ]
+    if configuration == "distant":
+        bodies.append((8, ball(100, (20, 20, 0), (0, 10, 0))))
+    elif configuration == "dissipating":
+        bodies.extend([(7, ball(1, (0, 20, 0), (2, 0, 0))), (8, ball(1, (0.5, 20, 0), (-2, 0, 0)))])
+    with Batch(
+        [(47, World(tuple(bodies), restitution=coefficient))], tyx_mode, cache_root=tmp_path
+    ) as batch:
+        saved = batch.snapshot()
+        row = batch.step(H)[47]
+        assert not row.accepted and row.reason == "contact_energy_gain"
+        assert batch.snapshot() == saved
+        tri = next(group for group in row.energy_components if group.body_ids == (0, 1, 2))
+        expected = 11 / 64 if configuration == "dissipating" else 0.25
+        assert tri.normal_work_j == pytest.approx(expected, abs=2e-5)
+        assert tri.relative_kinetic_change_j == pytest.approx(expected, abs=2e-5)
+        if configuration == "dissipating":
+            assert row.contact_kinetic_change_j < 0
+
+
+def test_initial_closed_pair_that_crosses_and_separates_is_not_published_as_empty(
+    tyx_mode, tmp_path
+):
+    World, Batch = api()
+    shared = World(((1, ball(1, (0, 0, 0))), (2, ball(1, (0.5, 0, 0), (-1, 2, 0)))))
+    neighbor = World(((1, ball(1, (0, 4, 0), (0, 0, 1))),))
+    with Batch([(11, shared), (12, neighbor)], tyx_mode, cache_root=tmp_path) as batch:
+        saved = batch.snapshot()
+        hit = batch.step(0.25)
+        assert not hit[11].accepted and hit[11].reason == "intermediate_crossing"
+        assert hit[12].accepted and batch.snapshot()[12].tick == 1
+        assert batch.snapshot()[11] == saved[11]
+        (problem,) = hit[11].issues
+        assert problem.initial_gap_m == 0 and problem.free_gap_m > 0
+        assert problem.closest_free_gap_m == pytest.approx(np.sqrt(0.2) - 0.5, abs=1e-7)

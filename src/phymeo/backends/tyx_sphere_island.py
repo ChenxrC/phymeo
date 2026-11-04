@@ -110,6 +110,15 @@ class SphereIslandIssue:
 
 
 @dataclass(frozen=True)
+class SphereIslandEnergy:
+    body_ids: tuple
+    normal_work_j: float
+    relative_kinetic_change_j: float
+    work_allowance_j: float
+    momentum_work_error_j: float
+
+
+@dataclass(frozen=True)
 class SphereIslandResult:
     accepted: bool
     reason: str | None
@@ -121,6 +130,7 @@ class SphereIslandResult:
     velocity_residual_m_s: float | None
     contact_kinetic_change_j: float | None
     momentum_residual_n_s: float | None
+    energy_components: tuple[SphereIslandEnergy, ...] = ()
 
 
 def _vector(a):
@@ -139,13 +149,59 @@ def _issue(world, left, right, code, old, free, radii, ids):
     if not code:
         if np.linalg.norm(start) == 0 or np.linalg.norm(finish) == 0:
             code = 2
-        elif 0 < t < 1 and middle <= 0 and ((g0 > 0 and g1 > 0) or start @ finish <= 0):
+        elif 0 < t < 1 and middle <= 0 and (g1 > 0 or start @ finish <= 0):
             code = 3
     if code not in (2, 3):
         return None
     return SphereIslandIssue(
         world, ids[left], ids[right], _REASONS[code], float(g0), float(g1), t, float(middle)
     )
+
+
+def _component_energy(ids, mass, old_v, new_v, contacts, residual_vectors):
+    """A distant body or a common tangential boost cannot pay for a contact."""
+    groups = [{body} for body in ids]
+    loaded = [c for c in contacts if c.normal_impulse_n_s > 0]
+    for c in loaded:
+        if c.first is None:
+            continue
+        first = next(group for group in groups if c.first in group)
+        second = next(group for group in groups if c.second in group)
+        if first is not second:
+            first.update(second)
+            groups.remove(second)
+    slots = dict(zip(ids, range(len(ids)), strict=True))
+    reports = []
+    for group in groups:
+        rows = [c for c in loaded if c.second in group]
+        if not rows:
+            continue
+        members = sorted(group)
+        indices = np.array([slots[body] for body in members])
+        reference = np.average(old_v[indices], axis=0, weights=mass[indices])
+        if any(c.first is None for c in rows):
+            # A static horizontal plane can supply a normal impulse, but no tangential impulse.
+            reference[2] = 0
+        local_mid = (old_v[indices] - reference) / 2 + (new_v[indices] - reference) / 2
+        local_delta = new_v[indices] - old_v[indices]
+        kinetic = float(np.sum(mass[indices, None] * local_delta * local_mid))
+        work, normal_scale, impulse_sum = 0.0, 0.0, 0.0
+        for c in rows:
+            b = slots[c.second]
+            incoming, outgoing = old_v[b], new_v[b]
+            if c.first is not None:
+                a = slots[c.first]
+                incoming, outgoing = incoming - old_v[a], outgoing - new_v[a]
+            n = np.asarray(c.normal)
+            u0, u1 = float(incoming @ n), float(outgoing @ n)
+            impulse_sum += c.normal_impulse_n_s
+            work += c.normal_impulse_n_s * (u0 + u1) / 2
+            normal_scale += c.normal_impulse_n_s * (abs(u0) + abs(u1))
+        allowance = float(8 * _VEL_TOL * impulse_sum + 64 * np.finfo(np.float32).eps * normal_scale)
+        # The separate, per-body momentum gate caps this actually observed error.
+        binding = float(np.sum(abs(residual_vectors[indices]) * abs(local_mid)))
+        reports.append(SphereIslandEnergy(tuple(members), work, kinetic, allowance, binding))
+    return tuple(reports)
 
 
 def _result(key, world, state, old, forces, h, staged, rows, status, errors, issues, pairs):
@@ -258,29 +314,23 @@ def _result(key, world, state, old, forces, h, staged, rows, status, errors, iss
         code = 4
     elif vel > _VEL_TOL:
         code = 5
-    error = float(np.max(np.linalg.norm(mass[:, None] * (v - free_v) - ledger, axis=1)))
+    residual_vectors = mass[:, None] * (v - free_v) - ledger
+    error = float(np.max(np.linalg.norm(residual_vectors, axis=1)))
     change = float(0.5 * np.sum(mass[:, None] * (v - free_v) * (v + free_v)))
-    momentum_scale = float(
-        np.max(mass * np.linalg.norm(free_v, axis=1) + np.linalg.norm(ledger, axis=1))
-    )
-    allowable = 64 * np.finfo(np.float32).eps * momentum_scale + max(mass) * _VEL_TOL
-    passive = (
-        8
-        * _VEL_TOL
-        * float(
-            np.sum(
-                mass
-                * np.maximum(np.linalg.norm(v, axis=1) + np.linalg.norm(free_v, axis=1), _VEL_TOL)
-            )
-        )
-    )
-    if not code and error > allowable:
+    scale = mass[:, None] * np.maximum(abs(free_v), abs(v)) + abs(ledger)
+    allowance = 64 * np.finfo(np.float32).eps * scale + mass[:, None] * _VEL_TOL
+    energy = _component_energy(ids, mass, free_v, v, contacts, residual_vectors)
+    if not code and np.any(abs(residual_vectors) > allowance):
         code = 9
-    if not code and change > passive:
+    if not code and any(
+        item.normal_work_j > item.work_allowance_j
+        or item.relative_kinetic_change_j > item.work_allowance_j + item.momentum_work_error_j
+        for item in energy
+    ):
         code = 8
     if code:
         return SphereIslandResult(
-            False, _REASONS[code], needed, state, (), tuple(found), pos, vel, change, error
+            False, _REASONS[code], needed, state, (), tuple(found), pos, vel, change, error, energy
         )
     updated = SphereIslandState(
         key,
@@ -290,7 +340,7 @@ def _result(key, world, state, old, forces, h, staged, rows, status, errors, iss
         ),
     )
     return SphereIslandResult(
-        True, None, needed, updated, tuple(contacts), (), pos, vel, change, error
+        True, None, needed, updated, tuple(contacts), (), pos, vel, change, error, energy
     )
 
 

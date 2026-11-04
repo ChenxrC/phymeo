@@ -44,3 +44,12 @@ with TyxSphereIslandBatch([(17, world)], "cuda") as batch:
 两个 CUDA 轨迹在堆叠构型的最大分量差为 0.954 μm 和 0.1465 mm/s；碰撞构型为 0.0596 μm 和 2.98×10⁻⁸ m/s，自由世界逐点相等。本批没有性能排序。实际 TYX CUDA 三世界共 7 颗球、10 个同世界可能对，16 步记录 48 次核提交和 16 次显式同步。固定拓扑上传 320 B，逐步现态/外力/容量共上传 4,224 B，下载候选状态、行及审核数据 9,856 B。
 
 父树 `artifacts/p65-dynamic-sphere-islands-20261105-01` 保存全部原始物理状态、接触力、退出码和文件绑定。`g4-old-api-red` 为固定旧源码缺少公共入口的原失败，`g4-sphere-interpret-first` 保留 TYX 前端最初拒绝增强赋值的记录。最终七项专项在 interpret / 真实 CUDA 均通过。四端观测位于 `g4-observe-{phymeo,newton}-{cpu,cuda}/report.json`；独立逐世界比较为 `g4-native-audit/comparison.json`。复现使用各自解释器运行 `python scripts/observe_sphere_islands.py --engine <phymeo 或 newton> --device <cpu 或 cuda:0> --cache-root <缓存目录> --out <新路径>`。
+
+
+## 集成复核修正
+
+在既有三球反例外加一颗没有接触的高速重球，或给全部球添加同一切向速度，原来的整世界动能容差会放宽。另一留出让独立两球发生耗散，能把相隔很远的三球多出的能量抵消。初始恰触、步内进一步穿入后重新分离的斜向球对也会被旧终点判据当作空接触。四个输入在修复前的实际 CUDA 全部错误发布，原失败收据保留。
+
+现在每个传递冲量的连通体组分别检验表面冲量做功和相对质心的动能变化；固定水平面只允许去掉共同切向漂移。每体、每分量核对动量。未受力球的质量、绝对速度以及另一组的耗散均不增加该组的做功容量。结果通过 `energy_components` 保留各相关物体编号、表面功、实际相对动能、容差和动量读回误差。两组三球观测多出的 0.25 J / 0.171875 J 均被拒绝。若从恰触状态在步内压入再开离，当前离散终点算法也会明确给出 `intermediate_crossing`，保留原球状态；同批远处世界仍接受。给定初始相对位置 (0.5,0,0) m、速度 (−1,2,0) m/s、步长 0.25 s，两球在步内最近处的实体间隙为 −52.786 mm。
+
+新旧正负控在真实 CUDA 和 interpret 各 11 项通过。HOST 多域材料冲量另验不耦合接触分量，防止远端塑性碰撞补贴弹性分量。[首轮四个真实分叉](../../artifacts/p65-newton-night-20261105-01/island-review-before/stdout.log) · [CUDA 终测](../../artifacts/p65-newton-night-20261105-01/island-review-complete-cuda/stdout.log) · [interpret 终测](../../artifacts/p65-newton-night-20261105-01/island-review-complete-interpret/stdout.log)

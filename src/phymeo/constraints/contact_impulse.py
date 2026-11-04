@@ -113,6 +113,31 @@ def _audit(velocity, impulse, normal_response, tangent_scale, static, dynamic, t
     return float(residual), tuple(regimes)
 
 
+def _check_independent_work(response, impulses, midpoint_velocity, velocity_tolerance):
+    """Disconnected active material rows cannot exchange kinetic energy."""
+    count = len(impulses)
+    if count < 2:
+        return
+    blocks = response.reshape(count, 3, count, 3)
+    connected = np.any(blocks != 0.0, axis=(1, 3))
+    connected = connected | connected.T
+    remaining = set(np.flatnonzero(np.any(impulses != 0, axis=1)))
+    while remaining:
+        frontier = [remaining.pop()]
+        group = []
+        while frontier:
+            edge = frontier.pop()
+            group.append(edge)
+            neighbors = {i for i in remaining if connected[edge, i]}
+            remaining.difference_update(neighbors)
+            frontier.extend(sorted(neighbors))
+        part = impulses[group]
+        work = float(np.sum(part * midpoint_velocity[group]))
+        budget = velocity_tolerance * sum(_norm(row) for row in part) + 1e-12
+        if not np.isfinite(work) or work > budget:
+            raise SolverFailure("an independent contact component increases kinetic energy")
+
+
 @_numerical
 def solve_contact_impulses(
     graph,
@@ -268,7 +293,9 @@ def solve_contact_impulses(
         )
         if residual > velocity_tolerance:
             continue
-        energy = float(np.sum(world_impulse * (free_world + actual_delta * 0.5)))
+        midpoint_velocity = free_world + actual_delta * 0.5
+        energy = float(np.sum(world_impulse * midpoint_velocity))
+        _check_independent_work(raw, world_impulse, midpoint_velocity, velocity_tolerance)
         budget = velocity_tolerance * sum(_norm(row) for row in world_impulse) + 1e-12
         if not np.isfinite(energy) or not np.isfinite(budget) or energy > budget:
             raise SolverFailure("contact impulses increase kinetic energy")

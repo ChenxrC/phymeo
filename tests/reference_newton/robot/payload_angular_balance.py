@@ -1,4 +1,4 @@
-"""Check angular impulse about a uniform box's COM in a saved Newton payload trajectory."""
+"""Check angular impulse about the COM of a saved uniform box or solid sphere."""
 
 import argparse
 import json
@@ -40,7 +40,18 @@ def balance(spec, saved):
         raise ValueError("the angular impulse audit requires every original integration step")
     if saved["cube_mass_kg"] != mass or not np.array_equal(saved["cube_full_size_m"], size):
         raise ValueError("trajectory payload differs from its input")
-    principal = mass / 12 * (np.roll(size, 1) ** 2 + np.roll(size, 2) ** 2)
+    geometry = spec.get("payload_geometry", {"kind": "box"})
+    if saved.get("payload_geometry", {"kind": "box"}) != geometry:
+        raise ValueError("trajectory geometry differs from its input")
+    if geometry["kind"] == "sphere":
+        radius = float(geometry["radius_m"])
+        if not np.isfinite(radius) or radius <= 0 or not np.all(size == 2 * radius):
+            raise ValueError("sphere diameters and the declared radius disagree")
+        principal = np.full(3, (2 / 5) * mass * radius**2)
+    elif geometry["kind"] == "box":
+        principal = mass / 12 * (np.roll(size, 1) ** 2 + np.roll(size, 2) ** 2)
+    else:
+        raise ValueError("unsupported payload inertia")
     np.testing.assert_allclose(
         principal, vector(spec["inertia_diagonal_kg_m2"], 3), rtol=1e-12, atol=0
     )
@@ -105,6 +116,19 @@ def verify_units_and_frames():
     row.update(xyzw=[-v for v in q], applied_payload_wrench=[0, 0, 0, -20, 0, 0])
     np.testing.assert_allclose(balance(spec, data)["sum_step_error_norm_Nms"], 10, atol=1e-14)
 
+    # A 5 kg sphere of radius 1 m has inertia 2 about any axis.
+    spec.update(
+        mass_kg=5,
+        full_size_m=[2] * 3,
+        inertia_diagonal_kg_m2=[2] * 3,
+        payload_geometry={"kind": "sphere", "radius_m": 1},
+    )
+    data.update(cube_mass_kg=5, cube_full_size_m=[2] * 3, payload_geometry=spec["payload_geometry"])
+    row["applied_payload_wrench"] = [0, 0, 0, 4, 0, 0]
+    sphere = balance(spec, data)
+    np.testing.assert_allclose(sphere["sum_step_error_norm_Nms"], 0, atol=1e-14)
+    np.testing.assert_allclose(sphere["sum_error_if_torque_omitted_Nms"], 1, atol=1e-14)
+
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
@@ -124,7 +148,11 @@ def main():
     with args.out.open("x", encoding="utf8") as f:
         json.dump(report, f, indent=2, allow_nan=False)
     print(json.dumps(report, allow_nan=False))
-    if report["relative_step_error_sum"] is None or report["relative_step_error_sum"] > 0.1:
+    relative_error = report["relative_step_error_sum"]
+    if relative_error is None:
+        if report["sum_step_error_norm_Nms"]:
+            raise ValueError("observed angular momentum changed without an applied torque")
+    elif relative_error > 0.1:
         raise ValueError("angular impulse diagnostic exceeds its declared 10 percent threshold")
 
 

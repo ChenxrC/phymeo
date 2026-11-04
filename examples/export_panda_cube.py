@@ -10,6 +10,26 @@ from phymeo.builders.panda import load_panda
 from phymeo.dynamics.rotation import matrix_quaternion, quaternion_matrix
 
 
+def display_geometry(run):
+    """Use the saved physical dimensions, including pre-shape box recordings."""
+    geometry = run.get("payload_geometry", {"kind": "box"})
+    kind = geometry["kind"]
+    if kind == "sphere":
+        radius = float(geometry["radius_m"])
+        if not np.isfinite(radius) or radius <= 0:
+            raise ValueError("sphere radius must be positive and finite")
+        size = np.full(3, 2 * radius)
+        if "cube_full_size_m" in run and not np.array_equal(run["cube_full_size_m"], size):
+            raise ValueError("saved sphere dimensions disagree with its radius")
+    elif kind == "box":
+        size = np.asarray(run.get("cube_full_size_m", [0.05, 0.05, 0.05]), dtype=float)
+    else:
+        raise ValueError(f"unknown saved payload geometry {kind!r}")
+    if size.shape != (3,) or not np.isfinite(size).all() or np.any(size <= 0):
+        raise ValueError("expected three positive, finite payload dimensions")
+    return {"kind": kind, "size_m": size.tolist()}
+
+
 def read_run(asset, path):
     run = json.loads(path.read_text(encoding="utf8"))
     rows = run.pop("trace")
@@ -32,7 +52,7 @@ def read_run(asset, path):
         frames.append(
             [row["t"], shapes, row["cube"], row["xyzw"], row["pad_normal_N"], row["table_N"]]
         )
-    return dict(frames=frames, summary=run)
+    return dict(frames=frames, summary=run, payload=display_geometry(run))
 
 
 def export(loaded, slippery, output, urdf=None):
@@ -57,7 +77,7 @@ def export(loaded, slippery, output, urdf=None):
 
 PAGE = """<!doctype html><html lang="zh"><meta charset="utf-8"><title>Panda 抓放 | Phymeo</title>
 <style>*{box-sizing:border-box}body{margin:0;background:#0e1927;color:#edf4f7;font:16px system-ui}main{padding:18px 4vw}h1{font-size:23px;margin:0 0 6px}p{color:#aabdcf;margin:4px 0}canvas{display:block;width:100%;height:63vh;touch-action:none}nav{display:flex;gap:12px;align-items:center;flex-wrap:wrap}input{width:min(46vw,640px)}button,select{padding:7px;color:#142033}output{font-variant-numeric:tabular-nums}</style>
-<main><h1>经典 Panda · 自由方块抓放</h1><p>七轴、双指与 19 个厂家碰撞代理。拖动旋转视角，滚轮缩放。读数为进入显示状态的物理子步。</p></main>
+<main><h1>经典 Panda · 自由载荷抓放</h1><p>七轴、双指与 19 个厂家碰撞代理。拖动旋转视角，滚轮缩放。读数为进入显示状态的物理子步。</p></main>
 <canvas id="view"></canvas><main><nav><select id="run"></select><button id="play">播放 / 暂停</button><input id="time" type="range" min="0" value="0" step="1"></nav><p><output id="value"></output></p></main>
 <!-- __LICENSE__ --><script>__LIB__</script><script>
 const data=__DATA__, canvas=document.getElementById("view"), slider=document.getElementById("time"), choice=document.getElementById("run");
@@ -67,16 +87,17 @@ scene.add(new THREE.HemisphereLight(0xffffff,0x94a4ba,2)); const sun=new THREE.D
 const vec=a=>new THREE.Vector3(...a);
 function mesh(geometry,color){const m=new THREE.Mesh(geometry,new THREE.MeshStandardMaterial({color}));scene.add(m);return m;}
 const parts=data.parts.map(([name,kind,size])=>kind==="hull"?mesh(new THREE.BoxGeometry(...size),name.endsWith("_pad")?0x32d2b7:0x879db6):mesh(kind==="sphere"?new THREE.SphereGeometry(size,16,12):new THREE.CapsuleGeometry(size,1,6,16),0xb9d2e2));
-const cube=mesh(new THREE.BoxGeometry(1,1,1),0xf6a74d);
+const payloadGeometry={box:new THREE.BoxGeometry(1,1,1),sphere:new THREE.SphereGeometry(.5,32,20)};
+const cube=mesh(payloadGeometry.box,0xf6a74d);
 const table=mesh(new THREE.BoxGeometry(1,1,1),0x57718c);
 let az=-1.08, el=.35, dist=1.35, last=0, playing=false, target=vec([.20,0,.37]);
 for (const run of data.runs) {
   const s=run.summary, option=document.createElement("option");
-  option.textContent=(s.cube_mass_kg*1000).toFixed(0)+" g · μ "+s.finger_friction+" · 闭合目标 "+((s.closed_width_m ?? .029)*1000).toFixed(1)+" mm";
+  option.textContent=(run.payload.kind==="sphere"?"球 · ":"方盒 · ")+(s.cube_mass_kg*1000).toFixed(0)+" g · μ "+s.finger_friction+" · 闭合目标 "+((s.closed_width_m ?? .029)*1000).toFixed(1)+" mm";
   choice.appendChild(option);
 }
-function draw(){const {frames,summary}=data.runs[choice.selectedIndex];
-cube.scale.fromArray(summary.cube_full_size_m ?? [.05,.05,.05]);
+function draw(){const {frames,summary,payload}=data.runs[choice.selectedIndex];
+cube.geometry=payloadGeometry[payload.kind];cube.scale.fromArray(payload.size_m);
 table.scale.fromArray(summary.table_full_size_m);table.position.fromArray(summary.table_center_m);
 slider.max=frames.length-1;const [t,shapes,p,q,forces,tbl]=frames[+slider.value];
 shapes.forEach((coords,i)=>{const obj=parts[i],kind=data.parts[i][1];

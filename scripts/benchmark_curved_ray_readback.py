@@ -142,7 +142,10 @@ def gate(frame, expected):
     mismatches = int(np.count_nonzero(labels != ids))
     miss_valid = bool(np.isposinf(distance[miss]).all() and not np.any(normals[miss]))
     passed = bool(
-        finite and miss_valid and not invalid_labels and not mismatches
+        finite
+        and miss_valid
+        and not invalid_labels
+        and not mismatches
         and all(not s["depth_failures"] and not s["normal_failures"] for s in errors.values())
     )
     return dict(
@@ -174,18 +177,23 @@ def verified_installed_wheel(args):
         require(algorithm == "sha256", "missing installed wheel digest")
     require(recorded.lower() == WHEEL_SHA, "installed wheel origin differs")
     return ph, dict(
-        site=str(site), wheel=str(args.wheel.resolve()), sha256=WHEEL_SHA,
-        installed_from=direct.get("url"), module=str(Path(ph.__file__).resolve()),
+        site=str(site),
+        wheel=str(args.wheel.resolve()),
+        sha256=WHEEL_SHA,
+        installed_from=direct.get("url"),
+        module=str(Path(ph.__file__).resolve()),
     )
 
 
 def verify_loaded_files(site, wheel):
-    paths = sorted({
-        Path(module.__file__).resolve()
-        for name, module in tuple(sys.modules.items())
-        if (name == "phymeo" or name.startswith("phymeo."))
-        and getattr(module, "__file__", None)
-    })
+    paths = sorted(
+        {
+            Path(module.__file__).resolve()
+            for name, module in tuple(sys.modules.items())
+            if (name == "phymeo" or name.startswith("phymeo."))
+            and getattr(module, "__file__", None)
+        }
+    )
     with ZipFile(wheel) as archive:
         for path in paths:
             require(path.is_relative_to(site), "a Phymeo module escaped the installed site")
@@ -200,6 +208,7 @@ class Phymeo:
     def __init__(self, args, data):
         ph, origin = verified_installed_wheel(args)
         import tyx as tx
+
         from phymeo.backends.tyx_raycast import TyxRaycaster
 
         self.tx = tx
@@ -207,20 +216,27 @@ class Phymeo:
         q = unit_rotations(data)
         for i, kind in enumerate(KINDS):
             key = ph.CollisionKey(0, i, 0)
-            size = data["dimensions_m"][i, :3 if i == 0 else 2]
-            shapes.append(ph.CollisionShape(
-                key, kind, (0,), curved=ph.CurvedSolid(kind, tuple(size), tuple(q[i]))
-            ))
+            size = data["dimensions_m"][i, : 3 if i == 0 else 2]
+            shapes.append(
+                ph.CollisionShape(
+                    key, kind, (0,), curved=ph.CurvedSolid(kind, tuple(size), tuple(q[i]))
+                )
+            )
             self.poses[key] = ph.CollisionMotion([data["centers_m"][i]])
         self.model = ph.CollisionModel(shapes)
         self.origin, self.rays = data["origins_m"], data["directions"]
         self.operator = TyxRaycaster("cuda", cache_root=args.out / "cache")
         self.meta = dict(
-            engine="phymeo", package=version("phymeo"), runtime=version("tyx"),
-            device="cuda:0", wheel=origin,
+            engine="phymeo",
+            package=version("phymeo"),
+            runtime=version("tyx"),
+            device="cuda:0",
+            wheel=origin,
             precision="FP32 compute; public i32 labels and float64 metric/normal arrays",
             synchronization="query synchronizes and downloads both output buffers internally",
-            scene_builds=1, operator_builds=1, input_quaternion=q.tolist(),
+            scene_builds=1,
+            operator_builds=1,
+            input_quaternion=q.tolist(),
             io_timing="not separable through the public query; included in call wall clock",
         )
 
@@ -235,12 +251,16 @@ class Phymeo:
         counts = asdict(self.tx.runtime_stats() - before)
         require(counts["cuda_kernel_launches"] == 1, "expected one actual TYX CUDA launch")
         require(counts["cuda_d2h_transfers"] == 2, "expected both TYX output downloads")
-        return raw, frame, dict(
-            public_to_raw_read_ns=read - start,
-            public_to_common_frame_ns=end - start,
-            public_call_ns=read - start,
-            common_conversion_ns=end - read,
-            io=counts,
+        return (
+            raw,
+            frame,
+            dict(
+                public_to_raw_read_ns=read - start,
+                public_to_common_frame_ns=end - start,
+                public_call_ns=read - start,
+                common_conversion_ns=end - read,
+                io=counts,
+            ),
         )
 
     def close(self):
@@ -276,13 +296,14 @@ class Newton:
         self.state = self.model.state()
         self.sensor = SensorCamera(self.model, load_textures=False)
         beams = np.stack(
-            (data["origins_m"].reshape(HEIGHT, WIDTH, 3),
-             data["directions"].reshape(HEIGHT, WIDTH, 3)), axis=-2
+            (
+                data["origins_m"].reshape(HEIGHT, WIDTH, 3),
+                data["directions"].reshape(HEIGHT, WIDTH, 3),
+            ),
+            axis=-2,
         )[:, :, None, :, :]
         self.rays = wp.array(beams, dtype=wp.vec3f, device=self.device)
-        self.xform = wp.array(
-            [wp.transform_identity()], dtype=wp.transformf, device=self.device
-        )
+        self.xform = wp.array([wp.transform_identity()], dtype=wp.transformf, device=self.device)
         self.ids = self.sensor.allocate_image_shape_index(1, WIDTH, HEIGHT)
         self.depth = self.sensor.allocate_image_depth(1, WIDTH, HEIGHT)
         self.normals = self.sensor.allocate_image_normal(1, WIDTH, HEIGHT)
@@ -290,12 +311,18 @@ class Newton:
         self.model.bvh_refit_shapes(self.state)
         wp.synchronize_device(self.device)
         self.meta = dict(
-            engine="newton", package=version("newton"), runtime=version("warp-lang"),
-            module=str(Path(newton.__file__).resolve()), device=str(self.device),
+            engine="newton",
+            package=version("newton"),
+            runtime=version("warp-lang"),
+            module=str(Path(newton.__file__).resolve()),
+            device=str(self.device),
             device_name=self.device.name,
             precision="native uint32 labels, float32 metric depth and vec3f world normals",
             synchronization="update, one device synchronization, then three numpy downloads",
-            scene_builds=1, sensor_builds=1, output_buffer_sets=1, setup_bvh_refits=1,
+            scene_builds=1,
+            sensor_builds=1,
+            output_buffer_sets=1,
+            setup_bvh_refits=1,
             input_quaternion=q.tolist(),
             stored_shape_transform=self.model.shape_transform.numpy().tolist(),
             setup_beam_and_camera_h2d_bytes=int(beams.nbytes + 7 * 4),
@@ -305,8 +332,12 @@ class Newton:
     def sample(self):
         start = perf_counter_ns()
         self.sensor.update(
-            self.state, self.xform, self.rays, depth_image=self.depth,
-            shape_index_image=self.ids, normal_image=self.normals
+            self.state,
+            self.xform,
+            self.rays,
+            depth_image=self.depth,
+            shape_index_image=self.ids,
+            normal_image=self.normals,
         )
         submitted = perf_counter_ns()
         self.wp.synchronize_device(self.device)
@@ -320,20 +351,25 @@ class Newton:
         raw = (ids, depth, normals)
         frame = common_frame(raw)
         end = perf_counter_ns()
-        return raw, frame, dict(
-            public_to_raw_read_ns=read - start,
-            public_to_common_frame_ns=end - start,
-            public_call_ns=submitted - start,
-            compute_wait_ns=synchronized - submitted,
-            d2h_ids_ns=ids_read - synchronized,
-            d2h_depth_ns=depth_read - ids_read,
-            d2h_normals_ns=read - depth_read,
-            common_conversion_ns=end - read,
-            io=dict(
-                requested_d2h_calls=3,
-                requested_d2h_bytes=int(ids.nbytes + depth.nbytes + normals.nbytes),
-                caller_h2d_calls=0, caller_h2d_bytes=0,
-                scope="explicit caller arrays; not a profiler of hidden Warp driver operations",
+        return (
+            raw,
+            frame,
+            dict(
+                public_to_raw_read_ns=read - start,
+                public_to_common_frame_ns=end - start,
+                public_call_ns=submitted - start,
+                compute_wait_ns=synchronized - submitted,
+                d2h_ids_ns=ids_read - synchronized,
+                d2h_depth_ns=depth_read - ids_read,
+                d2h_normals_ns=read - depth_read,
+                common_conversion_ns=end - read,
+                io=dict(
+                    requested_d2h_calls=3,
+                    requested_d2h_bytes=int(ids.nbytes + depth.nbytes + normals.nbytes),
+                    caller_h2d_calls=0,
+                    caller_h2d_bytes=0,
+                    scope="explicit caller arrays; not a profiler of hidden Warp driver operations",
+                ),
             ),
         )
 
@@ -344,8 +380,11 @@ class Newton:
 def percentiles(samples, field):
     values = [record[field] for record in samples]
     return dict(
-        median_ns=median(values), minimum_ns=min(values), maximum_ns=max(values),
-        p10_ns=float(np.percentile(values, 10)), p90_ns=float(np.percentile(values, 90)),
+        median_ns=median(values),
+        minimum_ns=min(values),
+        maximum_ns=max(values),
+        p10_ns=float(np.percentile(values, 10)),
+        p90_ns=float(np.percentile(values, 90)),
     )
 
 
@@ -365,18 +404,27 @@ def measure(args):
     with (args.out / "inputs.npz").open("xb") as stream:
         np.savez(stream, **data)
     report = dict(
-        protocol="g7-4171-public-readback-v1", session=args.session, engine=args.engine,
-        started_utc=datetime.now(timezone.utc).isoformat(), pid=os.getpid(),
-        executable=sys.executable, python=sys.version, cwd=str(Path.cwd()),
+        protocol="g7-4171-public-readback-v1",
+        session=args.session,
+        engine=args.engine,
+        started_utc=datetime.now(timezone.utc).isoformat(),
+        pid=os.getpid(),
+        executable=sys.executable,
+        python=sys.version,
+        cwd=str(Path.cwd()),
         driver_sha256=digest(__file__),
-        numpy=version("numpy"), device="cuda:0",
+        numpy=version("numpy"),
+        device="cuda:0",
         cuda_visible_devices=os.environ.get("CUDA_VISIBLE_DEVICES"),
-        input_sha256=input_digest(data), input_file_sha256=digest(args.inputs),
+        input_sha256=input_digest(data),
+        input_file_sha256=digest(args.inputs),
         frozen_native_sha256=NATIVE_SHA,
-        depth_gate_m=DEPTH_GATE, normal_component_gate=NORMAL_GATE,
+        depth_gate_m=DEPTH_GATE,
+        normal_component_gate=NORMAL_GATE,
         counts=dict(cold=1, warm=WARM, formal=SAMPLES),
         comparison="same original error gates; not bitwise identical native precision",
-        rows=[], success=False,
+        rows=[],
+        success=False,
     )
     engine = None
     staged = []
@@ -396,10 +444,16 @@ def measure(args):
             # Every call returns owned host arrays. Retain them without disk traffic
             # between timed calls; save even the first failed gate in the finally block.
             staged.append((raw, frame))
-            report["rows"].append(dict(
-                phase=phase, ordinal=ordinal, arrays=name, validation_ns=validation_ns,
-                gate=checked, **timing
-            ))
+            report["rows"].append(
+                dict(
+                    phase=phase,
+                    ordinal=ordinal,
+                    arrays=name,
+                    validation_ns=validation_ns,
+                    gate=checked,
+                    **timing,
+                )
+            )
             require(checked["passed"], f"{phase} {ordinal}: frozen per-ray gate failed")
         if args.engine == "phymeo":
             report["verified_installed_modules"] = verify_loaded_files(
@@ -424,17 +478,27 @@ def measure(args):
                 save_start = perf_counter_ns()
                 with (args.out / row["arrays"]).open("xb") as stream:
                     np.savez(
-                        stream, raw_shape_index=raw[0], raw_distance_m=raw[1],
-                        raw_world_normals=raw[2], shape_index=frame[0],
-                        distance_m=frame[1], world_normals=frame[2]
+                        stream,
+                        raw_shape_index=raw[0],
+                        raw_distance_m=raw[1],
+                        raw_world_normals=raw[2],
+                        shape_index=frame[0],
+                        distance_m=frame[1],
+                        world_normals=frame[2],
                     )
                 row["file_io_ns"] = perf_counter_ns() - save_start
             report["ended_utc"] = datetime.now(timezone.utc).isoformat()
             write_json(args.out / "receipt.json", report)
-    print(json.dumps(dict(
-        engine=args.engine, session=args.session, passed=report["success"],
-        statistics=report["statistics"]
-    )))
+    print(
+        json.dumps(
+            dict(
+                engine=args.engine,
+                session=args.session,
+                passed=report["success"],
+                statistics=report["statistics"],
+            )
+        )
+    )
 
 
 def compare(args):
@@ -479,7 +543,9 @@ def compare(args):
             for path, row in ((phy_path, p_row), (new_path, n_row)):
                 with np.load(path.parent / row["arrays"], allow_pickle=False) as array:
                     frame = tuple(array[k] for k in ("shape_index", "distance_m", "world_normals"))
-                require(gate(frame, reference_frames)["passed"], "saved sample failed original gate")
+                require(
+                    gate(frame, reference_frames)["passed"], "saved sample failed original gate"
+                )
                 frames.append(frame)
             check = gate(frames[0], frames[1])
             cross_gates.append(dict(session=session, ordinal=ordinal, **check))
@@ -488,7 +554,8 @@ def compare(args):
             p = median(r[field] for r in p_rows)
             n = median(r[field] for r in n_rows)
             pair[field] = dict(
-                phymeo_median_ns=p, newton_median_ns=n,
+                phymeo_median_ns=p,
+                newton_median_ns=n,
                 phymeo_over_newton_throughput=n / p,
                 ratio_definition="Newton elapsed / Phymeo elapsed for the same 4171 beams",
             )
@@ -504,7 +571,8 @@ def compare(args):
     output = dict(
         qualified=qualified,
         comparison="same original ID/depth/normal gates, not bitwise output equivalence",
-        pairs=pairs, all_formal_cross_engine_gates=cross_gates,
+        pairs=pairs,
+        all_formal_cross_engine_gates=cross_gates,
         reporting_rule="no speed claim unless all frozen AND paired gates pass",
     )
     write_json(args.out, output)

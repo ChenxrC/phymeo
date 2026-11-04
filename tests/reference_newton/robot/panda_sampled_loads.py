@@ -107,6 +107,7 @@ def run(urdf, inputs, device):
     np.testing.assert_allclose(
         model.body_mass.numpy()[native_child], asset.model.mass, rtol=2e-6, atol=1e-7
     )
+    initial_native_pose = state.body_q.numpy()[payload].astype(float)
     next_state, control = model.state(), model.control()
     solver = newton.solvers.SolverFeatherstone(model, angular_damping=0.0)
     assert str(state.body_f.device) == str(state.joint_q.device) == device
@@ -247,6 +248,9 @@ def run(urdf, inputs, device):
         stop=stop,
         inputs_sha256=hashlib.sha256(inputs.read_bytes()).hexdigest(),
         urdf_sha256=spec["urdf_sha256"],
+        initial_payload_position_m=initial_native_pose[:3].tolist(),
+        initial_payload_xyzw=initial_native_pose[3:].tolist(),
+        placement_target_m=(initial + [spec["travel_m"], 0.0, 0.0]).tolist(),
         contact="shared HOST material laws on Newton pose/COM twist; paired body_f, solver contacts=None",
         carry_clearance_m=clear,
         carry_displacement_m=travel,

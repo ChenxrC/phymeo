@@ -27,11 +27,10 @@ def make(case):
     return b
 
 
-def real_fan(device):
+def real_fan(device, ref):
     import newton
 
     b = make("fan")
-    ref = fan()
     labels = [str(n).rsplit("/", 1)[-1] for n in b.joint_label]
     joints = [labels.index(n) for n in ref["names"]]
     iq = [b.joint_q_start[i] for i in joints]
@@ -97,27 +96,36 @@ def main():
 
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--device", required=True)
+    parser.add_argument("--load", choices=("zero-row", "two-rows"), default="zero-row")
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
     wp.init()
-    try:
-        b = make("chain")
-    except ValueError as exc:
-        chain = dict(accepted=False, reason=str(exc))
-    else:
-        chain = dict(accepted=True, joints=b.joint_count)
-    row = real_fan(args.device)
+    chain = None
+    if args.load == "zero-row":
+        try:
+            b = make("chain")
+        except ValueError as exc:
+            chain = dict(accepted=False, reason=str(exc))
+        else:
+            chain = dict(accepted=True, joints=b.joint_count)
+    ref = fan(both_loaded=args.load == "two-rows")
+    row = real_fan(args.device, ref)
     result = dict(
-        device=str(wp.get_device(args.device)), version=newton.__version__, chain=chain, fan=row
+        device=str(wp.get_device(args.device)),
+        version=newton.__version__,
+        load=args.load,
+        chain=chain,
+        fan=row,
     )
     args.out.write_text(json.dumps(result, indent=2, allow_nan=False), encoding="utf-8")
-    assert not chain["accepted"] and "mimic" in chain["reason"].lower()
+    if chain is not None:
+        assert not chain["accepted"] and "mimic" in chain["reason"].lower()
     assert row["native_leaders"] == ["screw", "screw"]
     np.testing.assert_allclose(row["native_coefficients"], [[0.004, -1.0], [0.002, 0.5]], atol=2e-7)
-    ref = fan()
     a, lam = kkt(ref["mass"], ref["bias"], ref["external"], ref["motor"], ref["C"])
     np.testing.assert_allclose(row["raw_mass"], ref["mass"], atol=2e-6, rtol=0)
     np.testing.assert_allclose(row["acceleration"], a, atol=3e-4, rtol=0)
+    np.testing.assert_allclose(lam, ref["expected_multipliers"], atol=3e-14, rtol=0)
     np.testing.assert_allclose(row["reconstructed_multipliers"], lam, atol=3e-4, rtol=0)
     np.testing.assert_allclose(row["q_after"], ref["q"] + H * (ref["v"] + H * a), atol=2e-7, rtol=0)
     print(

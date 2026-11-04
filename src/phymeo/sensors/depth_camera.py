@@ -128,6 +128,13 @@ def _flat(kind, p, normal, origin, directions, index, tile, near, far):
     _store(t, mask, n, index, tile, near, far)
 
 
+def _pose(position_m, orientation_xyzw):
+    frame = RobotSite(None, position_m, orientation_xyzw)
+    return np.asarray(frame.local_position_m), quaternion_matrix(
+        np.asarray([frame.local_orientation_xyzw])
+    )[0]
+
+
 class DepthCamera:
     """Capture the first closed-surface ray hit in [near_m, far_m].
 
@@ -163,6 +170,24 @@ class DepthCamera:
         rays = np.stack((x, y, -np.ones_like(x)), axis=-1).reshape(-1, 3)
         self._rays = rays / np.linalg.norm(rays, axis=1)[:, None]
 
+    def unproject(self, ray_depth_m, *, position_m=(0, 0, 0), orientation_xyzw=(0, 0, 0, 1)):
+        """Recover world coordinates in metres. Missing rays (+inf) produce three NaNs.
+
+        Supply the ray depth and camera pose from the same exposure. Use this
+        camera's calibration, including its pixel-centre and image-axis conventions.
+        """
+        raw = np.asarray(ray_depth_m)
+        if raw.shape != (self.height, self.width) or raw.dtype.kind not in "fiu":
+            raise ValueError("expected one real ray depth per camera pixel")
+        depth = raw.astype(np.float64, copy=False).reshape(-1)
+        if np.any(np.isnan(depth)) or np.any(depth < 0):
+            raise ValueError("ray depths must be nonnegative metres or +inf")
+        origin, rotation = _pose(position_m, orientation_xyzw)
+        valid = np.isfinite(depth)
+        points = np.full((len(depth), 3), np.nan)
+        points[valid] = origin + (self._rays[valid] @ rotation.T) * depth[valid, None]
+        return points.reshape(self.height, self.width, 3)
+
     def capture(
         self, model, poses, *, world=0, position_m=(0, 0, 0), orientation_xyzw=(0, 0, 0, 1)
     ):
@@ -173,9 +198,7 @@ class DepthCamera:
             or world < 0
         ):
             raise ValueError("expected a collision model and nonnegative world index")
-        frame = RobotSite(None, position_m, orientation_xyzw)
-        origin = np.asarray(frame.local_position_m)
-        rotation = quaternion_matrix(np.asarray([frame.local_orientation_xyzw]))[0]
+        origin, rotation = _pose(position_m, orientation_xyzw)
         surfaces = list(_surfaces(model, poses, world))
         n = len(self._rays)
         depth = np.full(n, np.inf)

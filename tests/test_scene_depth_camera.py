@@ -109,3 +109,23 @@ def test_hull_mesh_inside_and_tie_order_at_sampled_pose():
     duplicate = ph.CollisionShape(front, "hull", tuple(range(8)))
     tied = cam.capture(ph.CollisionModel((hull, duplicate)), {key: pose, front: pose})
     assert tied.keys[tied.shape_index.item()] == front
+
+
+def test_backproject_metric_depth_preserves_the_rotated_world_hit_and_missing_pixels():
+    model, poses, ball, plane, _ = make_scene()
+    camera = ph.DepthCamera(5, 3, 0.9)
+    eye = (0.04, -0.07, 0.3)
+    turn = (0.0, np.sin(0.18), 0.0, np.cos(0.18))
+    frame = camera.capture(model, poses, position_m=eye, orientation_xyzw=turn)
+    xyz = camera.unproject(frame.ray_depth_m, position_m=eye, orientation_xyzw=turn)
+    labels = {key: i for i, key in enumerate(frame.keys)}
+    floor_hits = frame.shape_index == labels[plane]
+    sphere_hits = frame.shape_index == labels[ball]
+    assert floor_hits.any() and sphere_hits.any()
+    np.testing.assert_allclose(xyz[floor_hits, 2], -4, atol=3e-14, rtol=0)
+    np.testing.assert_allclose(np.linalg.norm(xyz[sphere_hits] - poses[ball].start[0], axis=1), 0.5)
+    empty = np.full((3, 5), np.inf)
+    assert np.isnan(camera.unproject(empty)).all()
+    for bad in (np.ones((5, 3)), np.full((3, 5), -1), np.full((3, 5), np.nan)):
+        with pytest.raises(ValueError):
+            camera.unproject(bad)

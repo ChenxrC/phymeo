@@ -229,7 +229,7 @@ class Phymeo:
         self.meta = dict(
             engine="phymeo",
             package=version("phymeo"),
-            runtime=version("tyx"),
+            runtime=version("tyx-compute"),
             device="cuda:0",
             wheel=origin,
             precision="FP32 compute; public i32 labels and float64 metric/normal arrays",

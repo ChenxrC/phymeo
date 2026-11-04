@@ -44,6 +44,7 @@ from ._sphere_triangle_sweep import sphere_face_query
 from ._tetrahedral_solid import TetrahedralCellQuery, solid_body_pairs, volume_mesh_issue
 from ._tetrahedral_surface import TetrahedralSurfaceQuery, exterior_faces, positive_cell
 from ._triangle_pair_sweep import triangle_pair_query
+from ._two_hinge_spheres import TwoHingeMotion, serial_sphere_contact, two_hinge_bounds
 from ._validated_mesh_cache import ValidatedMeshCache
 from .collision_witness import (
     CollisionSweep,
@@ -146,12 +147,20 @@ def _envelopes(model, paths, margin):
         ):
             raise ValueError("heightfield motion start must match registered world vertices")
         turn = path.turn
-        if turn is not None and not shape.rigid:
+        if (turn is not None or isinstance(path, TwoHingeMotion)) and not shape.rigid:
             raise ValueError("rigid turn requires a rigid shape")
         if shape.kind == "plane":
             # Its row is storage padding only. Both broad phases bypass this AABB.
             packed[row] = 0
             row += 1
+            continue
+        if isinstance(path, TwoHingeMotion):
+            halo = Fraction(margin) / 2
+            for low, high in two_hinge_bounds(path, shape):
+                for k in range(3):
+                    packed[row, k] = _outward(low[k] - halo, False)
+                    packed[row, k + 3] = _outward(high[k] + halo, True)
+                row += 1
             continue
         if shape.curved is not None:
             low, high = curved_bounds(shape.curved, path)
@@ -553,7 +562,11 @@ def _detect_pairs(
                 else int(pair_slots[offset + local])
             )
             ready = resolved.get(slot)
-            if code == 0 and (a.curved is not None or b.curved is not None):
+            if code == 0 and (isinstance(ma, TwoHingeMotion) or isinstance(mb, TwoHingeMotion)):
+                status, reason, witness, sweep = serial_sphere_contact(a, b, ma, mb)
+                family = "RR" if a.rigid and b.rigid else "RD"
+                ready = CollisionPair(a.key, b.key, family, True, status, reason, witness, sweep)
+            elif code == 0 and (a.curved is not None or b.curved is not None):
                 family = "RR" if a.rigid and b.rigid else "RD"
                 status, reason, witness, trace, sweep = curved_solid_contact(a, b, ma, mb)
                 support_map = None

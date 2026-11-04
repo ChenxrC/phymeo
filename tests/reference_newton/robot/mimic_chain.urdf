@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<robot name="geared_three_axis_tool">
+  <link name="base"/>
+  <link name="shoulder">
+    <inertial><origin xyz="0.16 0.03 0.02"/><mass value="2"/><inertia ixx="0.035" iyy="0.05" izz="0.06" ixy="0" ixz="0" iyz="0"/></inertial>
+  </link>
+  <link name="tool">
+    <inertial><origin xyz="0.09 -0.04 0.06"/><mass value="1.2"/><inertia ixx="0.012" iyy="0.018" izz="0.021" ixy="0" ixz="0" iyz="0"/></inertial>
+    <collision name="tip"><origin xyz="0.22 0.06 -0.03"/><geometry><sphere radius="0.0125"/></geometry></collision>
+  </link>
+  <joint name="shaft" type="revolute"><parent link="base"/><child link="shoulder"/><origin xyz="0.0625 -0.125 0.25"/><axis xyz="0 0 1"/>
+    <limit lower="-1" upper="0.9" effort="14" velocity="1.5"/></joint>
+  <joint name="gear" type="revolute"><parent link="shoulder"/><child link="tool"/><origin xyz="0.32 0.04 0.02"/><axis xyz="0 1 0"/>
+    <limit lower="-0.5" upper="0.5" effort="0.125" velocity="2"/><mimic joint="shaft" multiplier="1.5" offset="-0.125"/></joint>
+  <link name="nozzle"><inertial><origin xyz="0.065 0.035 -0.025"/><mass value="0.6"/>
+    <inertia ixx="0.003" iyy="0.004" izz="0.005" ixy="0" ixz="0" iyz="0"/></inertial>
+    <collision name="outlet"><origin xyz="0.10 0.06 -0.04"/><geometry><sphere radius="0.014"/></geometry></collision>
+  </link>
+  <joint name="nozzle_drive" type="revolute"><parent link="tool"/><child link="nozzle"/>
+    <origin xyz="0.22 0.04 -0.03"/><axis xyz="1 0 0"/><limit lower="0.05" upper="0.42" effort="0.2" velocity="0.60"/>
+    <mimic joint="gear" multiplier="-0.5" offset="0.2"/></joint>
+</robot>

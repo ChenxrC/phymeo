@@ -1,5 +1,6 @@
-"""One passive scalar URDF linkage, expressed in independent generalized coordinates."""
+"""Acyclic passive scalar URDF linkages expressed in independent generalized coordinates."""
 
+from collections import deque
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
@@ -26,12 +27,34 @@ def _vector(value, count, name):
     return np.asarray(a, dtype=np.float64)
 
 
+@dataclass(frozen=True)
+class MimicRelation:
+    driver: str
+    follower: str
+    multiplier: float
+    offset: float
+
+
+@dataclass(frozen=True)
+class MimicRowForce:
+    """One authored constraint's independent contributions on its two physical axes."""
+
+    driver: str
+    follower: str
+    multiplier_force: float
+    driver_effort: float
+    follower_effort: float
+    constraint_power_W: float
+
+
 @dataclass(frozen=True, eq=False)
 class MimicLoads:
     """Full physical joint loads at the input time. The motor acts only on independent joints.
 
     constraint_effort_full is the mechanism's force on the tree, positive along each
-    authored joint coordinate. multiplier_force is its follower component (N or N m).
+    authored joint coordinate. row_forces retains each original relation's load,
+    even on a joint that both follows and drives. multiplier_force is the scalar
+    follower component for one row (N or N m), and None for a multi-row graph.
     contact_effort_full includes all non-actuator generalized loads, excluding gravity.
     """
 
@@ -39,8 +62,9 @@ class MimicLoads:
     contact_effort_full: np.ndarray
     constraint_effort_full: np.ndarray
     acceleration_full: np.ndarray
-    multiplier_force: float
+    multiplier_force: float | None
     constraint_power_W: float
+    row_forces: tuple[MimicRowForce, ...] = ()
 
 
 @dataclass(frozen=True, eq=False)
@@ -55,7 +79,9 @@ class MimicRobotAsset:
     """One constrained tree q_full=P q+offset. tree is the explicitly unconstrained full model.
 
     joint_names, limits, and public motion commands refer to the independent coordinates.
-    Raw body ownership and material points remain in tree. The follower has no motor.
+    Raw body ownership and material points remain in tree. Only independent roots
+    have motors. driver/follower/constraint_row describe the first declared relation;
+    relations and constraint_rows describe the full mechanism in source tree order.
     """
 
     tree: "FoldedURDFAsset"
@@ -63,6 +89,11 @@ class MimicRobotAsset:
     follower: str
     multiplier: float
     offset: float
+    additional_relations: tuple[MimicRelation, ...] = ()
+    relations: tuple[MimicRelation, ...] = field(init=False)
+    constraint_rows: np.ndarray = field(init=False, repr=False)
+    _indices: tuple = field(init=False, repr=False)
+    _forward: tuple = field(init=False, repr=False)
     driver_index: int = field(init=False)
     follower_index: int = field(init=False)
     independent_indices: tuple = field(init=False)
@@ -77,50 +108,100 @@ class MimicRobotAsset:
 
     def __post_init__(self):
         names = self.tree.joint_names
-        if self.driver not in names or self.follower not in names or self.driver == self.follower:
-            raise ValueError(
-                "mimic requires distinct existing independent driver and follower joints"
-            )
-        d, f = names.index(self.driver), names.index(self.follower)
-        if self.tree.model.joint_types[d] != self.tree.model.joint_types[f]:
-            raise ValueError("mimic driver and follower must use the same scalar joint type")
-        a = finite_real(self.multiplier, "mimic multiplier")
-        b = finite_real(self.offset, "mimic offset")
-        if a == 0:
-            raise ValueError("a zero mimic multiplier is outside this mechanical linkage")
-        indices = tuple(i for i in range(len(names)) if i != f)
-        column = indices.index(d)
-        P = np.eye(len(names))[:, indices]
-        P[f, column] = a
+        extra = tuple(self.additional_relations)
+        relations = (
+            MimicRelation(self.driver, self.follower, self.multiplier, self.offset),
+            *extra,
+        )
+        name_index = {name: i for i, name in enumerate(names)}
+        followers = set()
+        outgoing = [[] for _ in names]
+        edges = []
+        rows = np.zeros((len(relations), len(names)))
+        for i, relation in enumerate(relations):
+            if not isinstance(relation, MimicRelation):
+                raise TypeError("additional mimic relations must be MimicRelation objects")
+            d = name_index.get(relation.driver)
+            f = name_index.get(relation.follower)
+            if d is None or f is None:
+                raise ValueError(
+                    f"unknown mimic driver or follower in {relation.driver!r} -> {relation.follower!r}"
+                )
+            if d == f:
+                raise ValueError(f"mimic cycle at joint {relation.follower!r}")
+            if f in followers:
+                raise ValueError(f"mimic follower {relation.follower!r} has multiple drivers")
+            if self.tree.model.joint_types[d] != self.tree.model.joint_types[f]:
+                raise ValueError(
+                    f"mimic {relation.follower!r} and driver must use the same scalar joint type"
+                )
+            a = finite_real(relation.multiplier, "mimic multiplier")
+            b = finite_real(relation.offset, "mimic offset")
+            if a == 0:
+                raise ValueError(f"zero mimic multiplier on {relation.follower!r}")
+            followers.add(f)
+            outgoing[d].append(i)
+            edges.append((d, f, a, b))
+            rows[i, d] = -a
+            rows[i, f] = 1.0
+        roots = tuple(i for i in range(len(names)) if i not in followers)
+        columns = {i: k for k, i in enumerate(roots)}
+        P = np.eye(len(names))[:, roots]
         off = np.zeros(len(names))
-        off[f] = b
-        row = np.zeros(len(names))
-        row[d] = -a
-        row[f] = 1.0
-        selected = list(indices)
-        lower = np.asarray(self.tree.lower)[selected].copy()
-        upper = np.asarray(self.tree.upper)[selected].copy()
-        lo, hi = sorted(((self.tree.lower[f] - b) / a, (self.tree.upper[f] - b) / a))
-        if not np.isfinite((lo, hi)).all():
-            raise ValueError("mimic position interval is outside FP64 range")
-        lower[column] = max(lower[column], lo)
-        upper[column] = min(upper[column], hi)
-        if np.any(lower >= upper):
-            raise ValueError("empty movable intersection of driver and follower position limits")
-        speed = np.array(self.tree.velocity_limit, dtype=float)[selected].copy()
-        speed[column] = min(speed[column], self.tree.velocity_limit[f] / abs(a))
+        lower = np.asarray(self.tree.lower)[list(roots)].copy()
+        upper = np.asarray(self.tree.upper)[list(roots)].copy()
+        speed = np.array(self.tree.velocity_limit, dtype=float)[list(roots)].copy()
+        queue = deque(roots)
+        forward = []
+        while queue:
+            parent = queue.popleft()
+            for i in outgoing[parent]:
+                d, f, a, b = edges[i]
+                column = columns[d]
+                gain = a * P[d, column]
+                intercept = a * off[d] + b
+                if gain == 0 or not np.isfinite((gain, intercept)).all():
+                    raise ValueError(f"mimic chain to {names[f]!r} cannot be represented in FP64")
+                P[f, column], off[f], columns[f] = gain, intercept, column
+                lo, hi = sorted(
+                    (
+                        (self.tree.lower[f] - intercept) / gain,
+                        (self.tree.upper[f] - intercept) / gain,
+                    )
+                )
+                if not np.isfinite((lo, hi)).all():
+                    raise ValueError(
+                        f"mimic position interval at {names[f]!r} is outside FP64 range"
+                    )
+                lower[column] = max(lower[column], lo)
+                upper[column] = min(upper[column], hi)
+                if lower[column] >= upper[column]:
+                    raise ValueError(
+                        f"empty movable intersection for {names[roots[column]]!r} at mimic follower {names[f]!r}"
+                    )
+                speed[column] = min(speed[column], self.tree.velocity_limit[f] / abs(gain))
+                forward.append(i)
+                queue.append(f)
+        if len(forward) != len(edges):
+            unresolved = [names[f] for _, f, _, _ in edges if f not in columns]
+            raise ValueError(f"mimic cycle prevents resolving joints {unresolved}")
         for key, value in (
-            ("driver_index", d),
-            ("follower_index", f),
-            ("independent_indices", indices),
+            ("additional_relations", extra),
+            ("relations", relations),
+            ("_indices", tuple(edges)),
+            ("_forward", tuple(forward)),
+            ("driver_index", edges[0][0]),
+            ("follower_index", edges[0][1]),
+            ("independent_indices", roots),
             ("matrix", _frozen(P)),
             ("offset_vector", _frozen(off)),
-            ("constraint_row", _frozen(row)),
-            ("joint_names", tuple(names[i] for i in indices)),
+            ("constraint_row", _frozen(rows[0])),
+            ("constraint_rows", _frozen(rows)),
+            ("joint_names", tuple(names[i] for i in roots)),
             ("lower", tuple(lower)),
             ("upper", tuple(upper)),
             ("velocity_limit", tuple(speed)),
-            ("effort_limit", tuple(self.tree.effort_limit[i] for i in indices)),
+            ("effort_limit", tuple(self.tree.effort_limit[i] for i in roots)),
         ):
             object.__setattr__(self, key, value)
 
@@ -184,8 +265,15 @@ class MimicRobotAsset:
         full_acc = self.matrix @ acceleration
         inertial = mass @ full_acc
         balance = inertial + bias - motor - external
-        multiplier = float(balance[self.follower_index])
-        reaction = multiplier * self.constraint_row
+        # Remove each descendant row first. At an intermediate follower its measured
+        # total contains its own incoming force and all outgoing driver reactions.
+        remaining = balance.copy()
+        multipliers = np.zeros(len(self.relations))
+        for i in reversed(self._forward):
+            d, f, a, _ = self._indices[i]
+            multipliers[i] = remaining[f]
+            remaining[d] += a * multipliers[i]
+        reaction = self.constraint_rows.T @ multipliers
         scale = max(
             1.0, *(np.linalg.norm(x, np.inf) for x in (inertial, bias, motor, external, reaction))
         )
@@ -195,10 +283,32 @@ class MimicRobotAsset:
             or np.linalg.norm(balance - reaction, np.inf) > 2e-10 * scale
         ):
             raise SolverFailure("mimic full-coordinate force balance failed")
-        power = float(reaction @ (self.matrix @ state.v))
+        full_speed = self.matrix @ state.v
+        power = float(reaction @ full_speed)
         if not np.isfinite(power):
             raise SolverFailure("mimic constraint power is not finite")
-        return MimicLoads(*map(_frozen, (motor, external, reaction, full_acc)), multiplier, power)
+        forces = []
+        for relation, (d, f, a, _), value in zip(
+            self.relations, self._indices, multipliers, strict=True
+        ):
+            value = float(value)
+            driver_effort = -a * value
+            row_power = float(value * (full_speed[f] - a * full_speed[d]))
+            if not np.isfinite((driver_effort, row_power)).all():
+                raise SolverFailure(
+                    f"mimic row to {relation.follower!r} has nonfinite load or power"
+                )
+            forces.append(
+                MimicRowForce(
+                    relation.driver, relation.follower, value, driver_effort, value, row_power
+                )
+            )
+        return MimicLoads(
+            *map(_frozen, (motor, external, reaction, full_acc)),
+            float(multipliers[0]) if len(forces) == 1 else None,
+            power,
+            tuple(forces),
+        )
 
     def step(self, state, *, effort, dt_s, external=None):
         """Advance the constrained robot one HOST step. external contains full-tree world COM wrenches.

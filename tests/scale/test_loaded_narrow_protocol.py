@@ -205,3 +205,22 @@ def test_new_diagnostic_and_protocol_sources_are_bound_and_checked(tmp_path, mon
     assert before["extra_tools"][changed] != after["extra_tools"][changed]
     with pytest.raises(AssertionError, match="diagnostic tool changed"):
         tool.verify_provenance(before, after)
+
+
+def test_public_capacity_failure_restores_dispatch_and_keeps_the_next_step_valid():
+    tool = _tool()
+    original = collision_pipeline._complete_pairs
+    with builder(ph, "loaded", 1).build() as scene:
+        state_before = tool.driver.public_value(scene.state)
+        with pytest.raises(ph.SolverFailure, match="capacity"):
+            with tool.dispatch_variant("full_dispatch"):
+                scene.step(H, capacity=0)
+        assert collision_pipeline._complete_pairs is original
+        assert scene.geometry().time_s == 0
+        assert scene.last_frame is None
+        tool.assert_full_equal(state_before, tool.driver.public_value(scene.state))
+        with tool.dispatch_variant("filtered_dispatch"):
+            frame = scene.step(H)
+        certify_frame(frame, scene.rigid_rows, "loaded", 1, 0)
+        assert frame.loads.contacts[0].force_n == 4.0
+    assert collision_pipeline._complete_pairs is original

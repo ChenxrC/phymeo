@@ -181,6 +181,7 @@ def main():
                 )
             )
         report["source_after"] = driver.provenance(args.expected_head)
+        driver.verify_provenance(source, report["source_after"])
         report["success"] = True
     except BaseException as error:
         report["failure"] = dict(type=type(error).__name__, message=str(error))

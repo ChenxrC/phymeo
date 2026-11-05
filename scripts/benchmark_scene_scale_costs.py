@@ -35,6 +35,11 @@ from scene_scale_cases import (  # noqa: E402
 MATRIX = matrix()
 WINDOWS = ("cold", "warm")
 SCHEMA = "phymeo-c1-scale-cost-v1"
+TOOL_PATHS = {
+    "benchmark": Path(__file__).resolve(),
+    "profile": ROOT / "scripts" / "profile_scene_scale_costs.py",
+    "cases": Path(seeds.__code__.co_filename).resolve(),
+}
 
 
 def public_value(value):
@@ -212,6 +217,30 @@ def delta_counts(after, before, prefix=""):
     return result
 
 
+def _tool_sources():
+    return {
+        name: dict(path=str(path.resolve()), sha256=hashlib.sha256(path.read_bytes()).hexdigest())
+        for name, path in TOOL_PATHS.items()
+    }
+
+
+def verify_provenance(before, after):
+    """Allow lazily imported product files, but no changed measured code or input source."""
+    names = {"benchmark", "profile", "cases"}
+    left, right = before.get("tools", {}), after.get("tools", {})
+    if set(left) != names or set(right) != names:
+        raise AssertionError("benchmark tool changed: missing source binding")
+    for name in sorted(names):
+        if left[name] != right[name]:
+            raise AssertionError("benchmark tool changed: " + name)
+    for key in ("source_head", "root", "module", "product_dirty"):
+        if before[key] != after[key]:
+            raise AssertionError("product changed during the measurement: " + key)
+    for name, digest in before["imported_files"].items():
+        if after["imported_files"].get(name) != digest:
+            raise AssertionError("loaded product file changed during measurement: " + name)
+
+
 def provenance(expected_head=None):
     source = Path(ph.__file__).resolve()
     root = source.parents[2]
@@ -231,13 +260,15 @@ def provenance(expected_head=None):
             if not path.is_relative_to(root / "src"):
                 raise AssertionError("mixed source or installed Phymeo modules")
             files[str(path.relative_to(root))] = hashlib.sha256(path.read_bytes()).hexdigest()
+    measured_tools = _tool_sources()
     return dict(
         source_head=head,
         root=str(root),
         module=str(source),
         product_dirty=False,
         imported_files=files,
-        driver_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+        tools=measured_tools,
+        driver_sha256=measured_tools["benchmark"]["sha256"],
     )
 
 
@@ -422,11 +453,7 @@ def main():
             )
             report["windows"].append(result)
         report["source_after"] = provenance(args.expected_head)
-        if report["source_after"]["source_head"] != before["source_head"]:
-            raise AssertionError("product changed during the measurement")
-        for name, digest in before["imported_files"].items():
-            if report["source_after"]["imported_files"].get(name) != digest:
-                raise AssertionError("loaded product file changed during measurement")
+        verify_provenance(before, report["source_after"])
         report["success"] = True
     except BaseException as error:
         report["failure"] = dict(type=type(error).__name__, message=str(error))

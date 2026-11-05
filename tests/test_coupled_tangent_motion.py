@@ -1,4 +1,4 @@
-"""Actual native motion after a coupled tangent solve, with explicitly prescribed normal capacity.
+"""Actual HOST motion after a coupled tangent solve, with explicitly prescribed normal capacity.
 
 These are material-port mechanics tests, not an automatic contact-geometry adapter.
 """

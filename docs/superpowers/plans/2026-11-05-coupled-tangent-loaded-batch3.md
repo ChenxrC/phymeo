@@ -59,7 +59,7 @@ tests/test_coupled_tangent_motion.py、docs/benchmarks/p65-coupled-tangent.md。
 
 ## B3：显式材料站点状态（中高）
 
-原刚柔作者 p65-world-scale。精确文件/API在首次作者接口交接后追加本计划，不侵入旧 scene。
+原刚柔作者 p65-world-scale。NEW src/phymeo/solvers/tangent_history.py、tests/test_tangent_history.py、docs/benchmarks/p65-tangent-history.md。TangentHistory.initial_state / prepare(state, samples, sample_time_s, dt_s) / commit(state, trial, updates)均保输入不可变；StationKey(world, token)显式声明，MaterialAddress保存owner/shape/topology_revision/feature/weights/local_point_m，StationSample另给proper material frame、normal和实际法向力。commit只产生候选，调用方与真实物理状态一起发布；此模块自身不作物理验收。
 
 - [ ] 固定身份、地址/frame、episode、transport 与 reset 规则；先提交测试，父实际 RED。
 - [ ] 纯 prepare/commit 事务及有界状态，完整丢弃能量、过期/重复输入与对调隔离。

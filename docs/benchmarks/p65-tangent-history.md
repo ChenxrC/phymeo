@@ -6,7 +6,7 @@
 
 基线 `ff6efeb07143cb2b3eb671a48d26d4ad6bd2e06c`；tests-only 提交 `6dc3c05f7b518ab6a632126095098845dd728013`。父在 `artifacts/p65-postnight-batch3-20261105-01/b3-history-red` 实际运行首节点：普通场景的真实 4 N 接受步和净线动量先验通过，随后缺少 `phymeo.solvers.tangent_history`，`1 failed / 1.05 s / RAW1`。
 
-本次作者交付为待父串行验证的实现候选。作者未运行 import、测试、数值、lint 或格式化；本报告不提前写 GREEN。新增文件仅：
+首份产品 `19d2392` 已由父实际执行原专项 `15 passed / 1.11 s`；父样式提交 `52975a8` 对两个 Python 文件核得 raw AST 不变，Ruff/format 通过。独立审查随后发现完整 trial 内容未绑定及 owner 字段可能持有外部可变引用。回归提交 `6793619` 的 9 个新增实例在 `artifacts/p65-postnight-batch3-20261105-01/b3-review-red` 实际得到 `9 failed / 1.28 s / RAW1`：释放记录/能量篡改 1 项、四个求解数组替换 4 项、非机器人或固定根 owner 字段 4 项。本次修复候选待父完整 24 实例验收，不用先前 15 绿代替修复验证。作者未运行 import、测试、数值、lint 或格式化。新增文件仅：
 
 - `src/phymeo/solvers/tangent_history.py`
 - `tests/test_tangent_history.py`
@@ -33,10 +33,10 @@ candidate = history.commit(state, trial, updates)
 # 只有全部物理验证也通过，调用方才将 candidate 与真实物理末态一起发布。
 ```
 
-`commit` 也是纯函数式候选生成：同一 base 上同输入重试合法；将旧 trial 用于后来的 state、另一 owner 或改过的时间会拒绝。没有全局 consumed 标记，也没有内部钟；失败不推进 generation 或历史。当前样本数及曾受载 token 的 tombstone 总数均受固定 capacity 约束，不隐式淘汰、增容或回收旧 generation。
+`commit` 也是纯函数式候选生成：同一 base 上同输入重试合法；将旧 trial 用于后来的 state、另一 owner 或改过的时间会拒绝。准备快照绑定所有公开 trial 字段：站点、代际、结束原因/释放能量、键、时间，以及四个求解数组的拥有关系、dtype/shape/stride 和实际字节。替换或篡改这些内容会在接受更新前拒绝；数组的数据只读不被误当作其 NumPy 元数据也不可修改。没有全局 consumed 标记，也没有内部钟；失败不推进 generation 或历史。当前样本数及曾受载 token 的 tombstone 总数均受固定 capacity 约束，不隐式淘汰、增容或回收旧 generation。
 
 - `StationKey(world, token)` 的 token 必须由调用方对真实材料站点显式登记；不能把当前 component 下标、世界坐标 hash、最近邻顺序当作长期身份。
-- `MaterialAddress` 保留实际 `ContactOwner`、shape、topology revision、原 feature 节点 IDs、weights 与 rigid/link-local surface point。机器人物理登记 ID 与 remapped collision body ID 分开。粒子侧使用材料节点权重。
+- `MaterialAddress` 保留实际 `ContactOwner`、shape、topology revision、原 feature 节点 IDs、weights 与 rigid/link-local surface point。机器人物理登记 ID 与 remapped collision body ID 分开。粒子侧使用材料节点权重。 接受前按 owner kind 验证全部字段并重建规范值对象：普通刚体/粒子不得携带 link 字段，robot link 为非负整数索引和非空字符串名，fixed root 为整数 `-1` 和非空字符串名；不保留调用者的可变字段。
 - `StationSample` 另给真实法向、法向载荷和 `frame_world=[t1,t2,n]`。frame 必须正交、右手且与法向一致。运输使用完整 `F_new F_old^T`，包括绕不变法向的材料共转，不能只投影旧世界向量而缩减储能。转角超预设范围直接拒绝。
 - 默认材料地址变化即释放并重建。可选非空 `chart_id` 仅是生产适配器对有效同一材料图的**明确声明**；在 owner、feature、topology 都不变时，才允许该图内坐标漂移。此声明和 weights 不证明实际连续运动，也不生成位移/滑移/功。适配器仍必须独立提供真实材料位移，不能以最近点漂移冒充滑动。
 - owner、拓扑版本、shape/feature、chart 改变均保守重置并递增 generation；未验证的相邻面、同空间重合面、非连通面都不会自动继承弹性。零载或缺席明确结束。`ended` 给原因和旧弹簧能量，`dropped_spring_energy_j` 给本次总额；不静默抹去。

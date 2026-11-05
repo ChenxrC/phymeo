@@ -120,10 +120,37 @@ class TangentHistoryState:
 
 
 @dataclass(frozen=True, eq=False)
+class _ArrayBinding:
+    value: np.ndarray
+    dtype: str
+    shape: tuple
+    strides: tuple
+    contents: bytes
+
+    def matches(self, value):
+        return (
+            value is self.value
+            and value.dtype.str == self.dtype
+            and value.shape == self.shape
+            and value.strides == self.strides
+            and not value.flags.writeable
+            and value.tobytes() == self.contents
+        )
+
+
+@dataclass(frozen=True)
+class _PreparedPayload:
+    owner: object
+    base: TangentHistoryState
+    values: tuple
+    arrays: tuple[_ArrayBinding, ...]
+
+
+@dataclass(frozen=True, eq=False)
 class TangentTrial:
     _owner: object = field(repr=False)
     _base: TangentHistoryState = field(repr=False)
-    _times: tuple = field(repr=False)
+    _prepared: _PreparedPayload = field(repr=False)
     step_index: int
     sample_time_s: float
     commit_time_s: float
@@ -162,24 +189,44 @@ def _address(value, world):
     owner, shape = value.owner, value.shape
     if not isinstance(shape, CollisionKey) or shape.world != world or owner.world != world:
         raise ValueError("station and bilateral material owners must share a world")
-    _index(owner.world, "owner world")
-    _index(owner.body, "physical owner")
+    owner_world = _index(owner.world, "owner world")
+    body = _index(owner.body, "physical owner")
     frames = {
         "rigid": "rigid_com",
         "particle": "material_vertices",
         "robot_link": "robot_model_link",
         "robot_root": "robot_root",
     }
-    if owner.kind not in frames or owner.local_frame != frames[owner.kind]:
+    if (
+        not isinstance(owner.kind, str)
+        or owner.kind not in frames
+        or not isinstance(owner.local_frame, str)
+        or owner.local_frame != frames[owner.kind]
+    ):
         raise ValueError("unsupported physical owner material frame")
-    if owner.kind in {"rigid", "particle"} and owner.body != shape.body:
-        raise ValueError("material shape differs from its physical owner")
-    if owner.kind == "robot_link":
-        _index(owner.link_index, "robot link")
+    if owner.kind in {"rigid", "particle"}:
+        if body != shape.body:
+            raise ValueError("material shape differs from its physical owner")
+        if owner.link_index is not None or owner.link_name is not None:
+            raise ValueError("nonrobot material owner cannot carry link fields")
+        link_index, link_name = None, None
+    else:
         if not isinstance(owner.link_name, str) or not owner.link_name:
             raise ValueError("missing computational link name")
-    if owner.kind == "robot_root" and (owner.link_index != -1 or not owner.link_name):
-        raise ValueError("invalid fixed root owner")
+        link_name = str(owner.link_name)
+        if owner.kind == "robot_link":
+            link_index = _index(owner.link_index, "robot link")
+        else:
+            if (
+                isinstance(owner.link_index, (bool, np.bool_))
+                or not isinstance(owner.link_index, Integral)
+                or owner.link_index != -1
+            ):
+                raise ValueError("invalid fixed root owner")
+            link_index = -1
+    owner = ContactOwner(
+        owner_world, body, str(owner.kind), str(owner.local_frame), link_index, link_name
+    )
     feature = tuple(sorted(_index(i, "material feature vertex") for i in value.feature))
     if not feature or len(set(feature)) != len(feature):
         raise ValueError("feature requires distinct material vertex IDs")
@@ -400,10 +447,7 @@ class TangentHistory:
         tangent = _readonly(
             [F[:, :2].T @ e for F, e in zip(frames, elastic, strict=True)], (count, 2)
         )
-        return TangentTrial(
-            self._owner,
-            state,
-            (state.step_index + 1, time, end),
+        values = (
             state.step_index + 1,
             time,
             end,
@@ -412,11 +456,24 @@ class TangentHistory:
             tuple(ended),
             energy,
             tuple(p.identity.key for p in prepared),
+        )
+        arrays = (
             frames,
             _readonly([p.sample.normal_force_n for p in prepared], (count,)),
             elastic,
             tangent,
         )
+        # Seal every public prepared field, including the arrays consumed by
+        # the solver. Their bytes are read-only, but NumPy metadata can change.
+        payload = _PreparedPayload(
+            self._owner,
+            state,
+            values,
+            tuple(
+                _ArrayBinding(a, a.dtype.str, a.shape, a.strides, a.tobytes()) for a in arrays
+            ),
+        )
+        return TangentTrial(self._owner, state, payload, *values, *arrays)
 
     def commit(self, state, trial, updates):
         """Return an owned candidate bound to exactly this base/owner/trial.
@@ -432,12 +489,46 @@ class TangentHistory:
             or trial._base is not state
         ):
             raise ValueError("stale trial or different history owner/base")
+        payload = trial._prepared
         if (
-            trial._times != (trial.step_index, trial.sample_time_s, trial.commit_time_s)
-            or trial.step_index != state.step_index + 1
-            or trial.sample_time_s != state.commit_time_s
+            not isinstance(payload, _PreparedPayload)
+            or payload.owner is not self._owner
+            or payload.base is not state
         ):
-            raise ValueError("trial time differs from its prepared base/time")
+            raise ValueError("trial payload differs from its prepared owner/base")
+        values = (
+            trial.step_index,
+            trial.sample_time_s,
+            trial.commit_time_s,
+            trial.stations,
+            trial.generations,
+            trial.ended,
+            trial.dropped_spring_energy_j,
+            trial.keys,
+        )
+        arrays = (
+            trial.frames_world,
+            trial.normal_force_n,
+            trial.elastic_displacement_m,
+            trial.elastic_tangent_m,
+        )
+        try:
+            intact = (
+                len(values) == len(payload.values)
+                and all(
+                    type(value) is type(bound)
+                    and (value is bound if isinstance(bound, tuple) else value == bound)
+                    for value, bound in zip(values, payload.values, strict=True)
+                )
+                and trial.step_index == state.step_index + 1
+                and trial.sample_time_s == state.commit_time_s
+                and len(arrays) == len(payload.arrays)
+                and all(a.matches(b) for a, b in zip(payload.arrays, arrays, strict=True))
+            )
+        except (AttributeError, TypeError, ValueError):
+            intact = False
+        if not intact:
+            raise ValueError("trial payload differs from its prepared values or time")
         if not isinstance(updates, Mapping) or set(updates) != set(trial.keys):
             raise ValueError("updates must cover exactly the prepared station keys")
         records = []

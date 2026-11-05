@@ -2,7 +2,11 @@
 
 本批新增一个可供普通刚体、粒子和机器人材料适配器使用的状态工具。调用方明确登记站点，求解器产生切向候选，本工具验证并保存；它不搜索最近接触、不计算摩擦力、不把 B2 事件观察变成求解状态。默认 ContactScene、RobotScene 和旧动摩擦/静持入口均未改变。
 
-## 源与当前验证状态
+## 父最终验收（2026-11-06）
+
+修复候选cdcc9f1的完整24项HOST验证通过（1.11 s/RAW0）；新增9项先真实RED，完整trial绑定和owner所有权修复均经原审阅人复核。Ruff及最终format通过，修复后两Python文件格式化前后raw AST同，style提交7f3a7e0正常合入2157e0d。父公开组合193步与源码外wheel用法均通过，见[集成实测](p65-coupled-tangent-loaded-batch3.md)。以下保留各次交接历史，旧“待验”不覆盖本最终范围。
+
+## 源与交接时验证状态
 
 基线 `ff6efeb07143cb2b3eb671a48d26d4ad6bd2e06c`；tests-only 提交 `6dc3c05f7b518ab6a632126095098845dd728013`。父在 `artifacts/p65-postnight-batch3-20261105-01/b3-history-red` 实际运行首节点：普通场景的真实 4 N 接受步和净线动量先验通过，随后缺少 `phymeo.solvers.tangent_history`，`1 failed / 1.05 s / RAW1`。
 

@@ -1,6 +1,6 @@
 # A3：全耦合切向弹簧–Coulomb 核
 
-基线 ff6efeb，HOST FP64，首批只有新 `solvers/coupled_tangent.py`、两个 `test_coupled_tangent*.py` 和本报告。旧 smooth friction、scalar return_traction、MaterialStick*、普通/机器人场景与 A2 mimic 100 g 滑移 RAW1 全不改。下列设计与输入在首次执行前冻结；本批真实执行结果见末节，静态验证仍待父完成。
+基线 ff6efeb，HOST FP64，首批只有新 `solvers/coupled_tangent.py`、两个 `test_coupled_tangent*.py` 和本报告。旧 smooth friction、scalar return_traction、MaterialStick*、普通/机器人场景与 A2 mimic 100 g 滑移 RAW1 全不改。下列设计与输入在首次执行前冻结；本批真实执行结果见末节，最终静态验证已通过，父验收见下方补充。
 
 现有 robot `sampled_box_contact.sample_loads` 与普通 `collision_loads._host_law` 都是速度正则滑动摩擦，零切速给零切力。仓内 `_material_stick_law.return_traction` 和 `deformable_stiction` 已有隐式弹性返回、塑性/隐式耗散和卸载储能记录，但它们的标量 mobility 不能替代机器人/刚体多站点完整耦合。`solve_friction_disk` 的有界二维数值解可以复用为全系统的块优化；该调用返回的 energy_change 在本用途仅是数值目标差，不能冒称真实动能差。普通 ContactHistory 是事件观测账本，不是切向弹性状态。
 
@@ -19,6 +19,10 @@
 **Newton 1.7 本机只读观察。** 安装元数据确认1.7.0。semi_implicit/kernels_contact.py 的 eval_body_contact 仍以 norm_huber 和 min(kf*speed,μN)算速度摩擦；XPBD kernels.py 在当前两侧局部接触点的真实位置差上算friction_delta，限于增量normal multiplier，且明确避免重复加动态速度；不是本弹性history律。VBD rigid_vbd_kernels.py 有完整两体切向Delassus块、Coulomb盘和迭代切向dual，solver_vbd.py 的 rigid_contact_history（默认False）在 latest matching 下恢复投影切向乘子作数值 warm-start；sticky matching 的切向记忆由碰撞管线重放的材料锚点表示（本机第544–563行）。两者均不能未经同律核验就等同本核的材料弹性储能回执。MuJoCo原生约束路径另有锥/solver语义。本批先不加原生跨引擎跑，未来同输入会分别报告模型差异。
 
 运动输入补充冻结：两自由刚体 m=(2,3) kg，两个并联COM材料端口，h=.1 s、各kt=120、N=4、μ=.5，外载±3 N，完整W每块为(1/2+1/3)I，首步每站−1 N，真实两体速度(−.05,1/30)m/s；另加共速boost和90°共同变换。粒子质量1 kg、h=1/16、kt256、N4、μ.5，64步外载1 N到静态牵引；2步3 N触发滑动，8步N=0保留真实速度而非清零，随后重入；每步审核实际位移与动能/外功/弹性能/塑性与两种离散损失。RobotPointPort用1 kg普通滑轨上的两个地址求全W，再施原公开点冲量，检验真实v而不宣称瞬时接口已drift。转动留出 m=1、Iz=1、r=(1,−1,0)，入步角速度0、第一接受末态角速度1/32 rad/s、h=1/8；真实姿态用原RigidSemiImplicitSolver，材料点exp-map与hJv的差必须在verify_motion中拒绝，保入态原数组。
+
+## 父最终补充（2026-11-06）
+
+27项功能验证之后，父Ruff通过，三个Python文件格式化前后raw AST同，最终format通过，style提交d4ebe32正常合入8fd15d3。父另完成公开A+B组合193个真实步与源码外wheel验收，边界仍是给定法向载荷的平移模型；详见[本批集成实测](p65-coupled-tangent-loaded-batch3.md)。以下保留作者交接时的原始证据状态，不代表静态或包外仍待验。
 
 ## 本批实际结果与范围
 

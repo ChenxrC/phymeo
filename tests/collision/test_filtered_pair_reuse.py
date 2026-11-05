@@ -22,9 +22,7 @@ def _filter_scene():
         for key in ((0, 1, 0), (0, 1, 1), (0, 2, 0), (0, 3, 0), (0, 4, 0), (0, 5, 0), (1, 1, 0))
     )
     a, same, mask, excluded, _, _, other_world = keys
-    shapes = [
-        ph.CollisionShape(key, "sphere", (7,), 0.125, group=1, mask=1) for key in keys
-    ]
+    shapes = [ph.CollisionShape(key, "sphere", (7,), 0.125, group=1, mask=1) for key in keys]
     shapes[1] = ph.CollisionShape(same, "sphere", (7,), 0.125, group=1, mask=0)
     shapes[2] = ph.CollisionShape(mask, "sphere", (7,), 0.125, group=2, mask=2)
     model = ph.CollisionModel(
@@ -53,7 +51,10 @@ def _assert_filter_scene(result, keys):
     ):
         row = rows[a, second]
         assert (row.candidate, row.status, row.reason, row.family) == (
-            False, "filtered", reason, "RR"
+            False,
+            "filtered",
+            reason,
+            "RR",
         )
         assert row.witness is None and row.sweep is None and not row.witness_shapes
     miss = rows[a, far]
@@ -142,9 +143,7 @@ def test_filtered_inputs_still_validate_envelopes_before_backend(monkeypatch):
             (ph.CollisionMotion([[0, 0, 0], [1, 0, 0]]), "registered vertices"),
         ):
             with pytest.raises(ValueError, match=message):
-                ph.detect(
-                    model, {**paths, keys[-1]: invalid}, ph.CollisionPolicy(), work
-                )
+                ph.detect(model, {**paths, keys[-1]: invalid}, ph.CollisionPolicy(), work)
             assert work.last_result is previous
         assert not calls
         assert ph.detect(model, paths, ph.CollisionPolicy(), work) == previous
@@ -156,11 +155,15 @@ def test_only_filtered_rr_rd_dd_rows_still_use_real_classification(monkeypatch):
     kinds = ("sphere", "triangle", "triangle", "sphere")
     vertices = {"sphere": (9,), "triangle": (2, 9, 17)}
     model = ph.CollisionModel(
-        [ph.CollisionShape(k, kind, vertices[kind], 0.125 if kind == "sphere" else 0)
-         for k, kind in zip(keys, kinds, strict=True)]
+        [
+            ph.CollisionShape(k, kind, vertices[kind], 0.125 if kind == "sphere" else 0)
+            for k, kind in zip(keys, kinds, strict=True)
+        ]
     )
     paths = {
-        k: ph.CollisionMotion([[0, 0, 0]] if kind == "sphere" else [[0, 0, 0], [1, 0, 0], [0, 1, 0]])
+        k: ph.CollisionMotion(
+            [[0, 0, 0]] if kind == "sphere" else [[0, 0, 0], [1, 0, 0], [0, 1, 0]]
+        )
         for k, kind in zip(keys, kinds, strict=True)
     }
     calls = []
@@ -212,7 +215,9 @@ def test_aabb_filtered_geometry_still_reports_invalid_material(kind):
         pa, pb = flat, np.asarray(tetra) + [8, 0, 0]
     elif kind == "mesh":
         a = ph.CollisionShape(
-            first, kind, (0, 1, 2, 3),
+            first,
+            kind,
+            (0, 1, 2, 3),
             triangles=((0, 2, 1), (0, 1, 3), (0, 3, 2), (1, 2, 3)),
         )
         b = ph.CollisionShape(second, "sphere", (0,), 0.125)
@@ -283,7 +288,8 @@ def test_device_filters_keep_real_classify_capacity_and_failure(tyx_mode, tmp_pa
         assert first.pairs == restored.pairs == expected.pairs
         assert first.bounds == expected.bounds
         assert all(
-            a is b for a, b in zip(first.pairs, restored.pairs, strict=True)
+            a is b
+            for a, b in zip(first.pairs, restored.pairs, strict=True)
             if a.status == "filtered"
         )
         later = work.stats()
@@ -314,7 +320,8 @@ def test_filtered_slots_preserve_global_feature_batches(tyx_mode, tmp_path, monk
             shapes.append(ph.CollisionShape(key, "sphere", (13,), 0.125))
             paths[key] = (
                 ph.CollisionMotion([[-0.5, 0, 0]], [[0.5, 0, 0]])
-                if body == 0 else ph.CollisionMotion([[0, 0, 0]])
+                if body == 0
+                else ph.CollisionMotion([[0, 0, 0]])
             )
     model = ph.CollisionModel(shapes)
     complete = pipeline._complete_pairs
@@ -357,15 +364,27 @@ def _comparison_module():
 
 def _protocol_row():
     return dict(
-        step=1, entry_s=0.0, end_s=1 / 128,
-        step_ns=12, geometry_snapshot_ns=2, public_to_end_ns=14,
-        oracle_ns=3, archive_ns=4,
-        actual_contacts=1, actual_sites=2, actual_required_candidates=1,
-        published_pairs=21, different_world_rows=6, force_worlds=[0],
+        step=1,
+        entry_s=0.0,
+        end_s=1 / 128,
+        step_ns=12,
+        geometry_snapshot_ns=2,
+        public_to_end_ns=14,
+        oracle_ns=3,
+        archive_ns=4,
+        actual_contacts=1,
+        actual_sites=2,
+        actual_required_candidates=1,
+        published_pairs=21,
+        different_world_rows=6,
+        force_worlds=[0],
         counters={
-            "geometry.envelope_ns": 2, "geometry.broad_ns": 2,
-            "geometry.midphase_ns": 0, "geometry.narrow_ns": 3,
-            "geometry.completed_launches": 4, "geometry.downloaded_bytes": 96,
+            "geometry.envelope_ns": 2,
+            "geometry.broad_ns": 2,
+            "geometry.midphase_ns": 0,
+            "geometry.narrow_ns": 3,
+            "geometry.completed_launches": 4,
+            "geometry.downloaded_bytes": 96,
         },
         native_counters={"cuda_kernel_launches": 5, "cuda_h2d_bytes": 128},
         frame_logical_sha256="same-full-frame",
@@ -430,7 +449,9 @@ def test_comparison_rejects_missing_added_or_retyped_output(operation):
 
 def _source_receipt(compare, head):
     return dict(
-        source_head=head, root="C:/frozen", module="C:/frozen/src/phymeo/__init__.py",
+        source_head=head,
+        root="C:/frozen",
+        module="C:/frozen/src/phymeo/__init__.py",
         product_dirty=False,
         imported_files={
             compare.PRODUCT_CHANGE: head,
@@ -479,34 +500,47 @@ def _protocol_run(directory, compare, head, *, mutate=False):
                     frame["frame"]["future_private_field"] = 8
                 row = _protocol_row()
                 row.update(
-                    step=step + 1, entry_s=step * driver.H, end_s=(step + 1) * driver.H,
+                    step=step + 1,
+                    entry_s=step * driver.H,
+                    end_s=(step + 1) * driver.H,
                     frame_logical_sha256=writer.append(frame),
                 )
                 rows.append(row)
-        windows.append(dict(
-            phase=phase, successful_steps=driver.STEPS, rows=rows, build_ns=7,
-            output=writer.stats(),
-            public_statistics=driver._distribution([r["public_to_end_ns"] for r in rows]),
-            step_statistics=driver._distribution([r["step_ns"] for r in rows]),
-            native_build_counters={"cuda_kernel_launches": 0},
-            native_window_counters={"cuda_kernel_launches": 160},
-            max_physical_errors={"position_m": 0.0},
-        ))
+        windows.append(
+            dict(
+                phase=phase,
+                successful_steps=driver.STEPS,
+                rows=rows,
+                build_ns=7,
+                output=writer.stats(),
+                public_statistics=driver._distribution([r["public_to_end_ns"] for r in rows]),
+                step_statistics=driver._distribution([r["step_ns"] for r in rows]),
+                native_build_counters={"cuda_kernel_launches": 0},
+                native_window_counters={"cuda_kernel_launches": 160},
+                max_physical_errors={"position_m": 0.0},
+            )
+        )
     source = _source_receipt(compare, head)
     manifest = dict(
-        schema=driver.SCHEMA, success=True, backend="cuda",
-        source=source, source_after=copy.deepcopy(source),
-        case="free", worlds=1, steps_per_window=driver.STEPS, h_s=driver.H,
+        schema=driver.SCHEMA,
+        success=True,
+        backend="cuda",
+        source=source,
+        source_after=copy.deepcopy(source),
+        case="free",
+        worlds=1,
+        steps_per_window=driver.STEPS,
+        h_s=driver.H,
         matrix=[list(pair) for pair in driver.MATRIX],
-        started_utc="2026-11-05T00:00:00+00:00", ended_utc="2026-11-05T00:00:01+00:00",
-        declaration_ns=1, windows=windows,
+        started_utc="2026-11-05T00:00:00+00:00",
+        ended_utc="2026-11-05T00:00:01+00:00",
+        declaration_ns=1,
+        windows=windows,
     )
     (directory / "manifest.json").write_text(json.dumps(manifest), encoding="utf8")
 
 
-def test_full_archive_comparison_reuses_acceptance_and_locates_unknown_field(
-    tmp_path, monkeypatch
-):
+def test_full_archive_comparison_reuses_acceptance_and_locates_unknown_field(tmp_path, monkeypatch):
     compare = _comparison_module()
     old, same, changed = (tmp_path / name for name in ("old", "same", "changed"))
     _protocol_run(old, compare, "old")

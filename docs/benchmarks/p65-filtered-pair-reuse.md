@@ -47,3 +47,9 @@ python scripts/compare_scene_scale_frames.py --before <C1收据根> --after <C2�
 原生 kernel/传输/分配/参数包计数、应用计数、候选/接触/材料数、力、状态、全部路径和 history 均不得不同。新增、删除或改名字段会拒绝。源 HEAD/绝对路径属于另行核验的来源元数据，两边原始绑定完整保存；每侧前后必须稳定。原 benchmark/profile/cases 三工具 SHA 必须跨两版相同，实载入产品文件仅允许 collision_pipeline.py 改变。比较脚本自身另存路径和 SHA，并核对读回结束后未变。
 
 父将先只集成 C2 再运行原九档，不混入本批其他功能的共享改动；完整同输出门通过后才解释测得的 wall clock。
+
+## 父本批专项核验
+
+2026-11-05父唯一串行槽：HOST 31 passed / 1.10s；interpret 2 passed / 1.11s；CUDA 2 passed / 1.85s，均RAW_EXIT=0。两设备组只选择本批两个标记tyx的用例，31个HOST例按相同文件单独完成，非漏测。
+
+首Ruff check通过；首format-check指出3文件排版，父保存原三文件并格式化，随后独立AST逐文件严格相同，最终Ruff和format-check均0。证据位于父 artifacts/p65-postnight-batch2-20261105-01 的 c2-* 各收据。未重跑同语义已绿组。实际九档矩阵与性能仍待后续收据。

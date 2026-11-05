@@ -18,11 +18,12 @@ driver = importlib.util.module_from_spec(_SPEC)
 sys.modules[_SPEC.name] = driver
 _SPEC.loader.exec_module(driver)
 
-ROW_TIMINGS = (
-    "step_ns", "geometry_snapshot_ns", "public_to_end_ns", "oracle_ns", "archive_ns"
-)
+ROW_TIMINGS = ("step_ns", "geometry_snapshot_ns", "public_to_end_ns", "oracle_ns", "archive_ns")
 COUNTER_TIMINGS = (
-    "geometry.envelope_ns", "geometry.broad_ns", "geometry.midphase_ns", "geometry.narrow_ns"
+    "geometry.envelope_ns",
+    "geometry.broad_ns",
+    "geometry.midphase_ns",
+    "geometry.narrow_ns",
 )
 DISTRIBUTION_TIMINGS = ("total_ns", "p50_ns", "p95_ns", "minimum_ns", "maximum_ns")
 PRODUCT_CHANGE = "src/phymeo/geometry/collision_pipeline.py"
@@ -106,7 +107,10 @@ def _checked_manifest(path):
             ):
                 raise AssertionError(f"{path}: physical/timing sequence changed at step {step}")
             normalized_step(row)
-        for key, sample in (("public_statistics", "public_to_end_ns"), ("step_statistics", "step_ns")):
+        for key, sample in (
+            ("public_statistics", "public_to_end_ns"),
+            ("step_statistics", "step_ns"),
+        ):
             compare_values(
                 window[key], driver._distribution([row[sample] for row in rows]), str(path) + key
             )
@@ -135,8 +139,14 @@ def _check_sources(before, after):
         for name in TOOL_SUFFIXES:
             if left["tools"][name]["sha256"] != right["tools"][name]["sha256"]:
                 raise AssertionError("original measurement tool changed: " + name)
-    left = {key.replace("\\", "/"): value for key, value in before["source_after"]["imported_files"].items()}
-    right = {key.replace("\\", "/"): value for key, value in after["source_after"]["imported_files"].items()}
+    left = {
+        key.replace("\\", "/"): value
+        for key, value in before["source_after"]["imported_files"].items()
+    }
+    right = {
+        key.replace("\\", "/"): value
+        for key, value in after["source_after"]["imported_files"].items()
+    }
     if left.keys() != right.keys():
         raise AssertionError("imported product set changed")
     changed = [key for key in left if left[key] != right[key]]
@@ -178,9 +188,10 @@ def _archive_header(path, window):
 
 def _locate_payload_difference(first, second, old, new, target):
     """Only a new digest mismatch justifies decoding an accepted old payload again."""
-    with closing(driver.read_window(first)) as left_stream, closing(
-        driver.read_window(second)
-    ) as right_stream:
+    with (
+        closing(driver.read_window(first)) as left_stream,
+        closing(driver.read_window(second)) as right_stream,
+    ):
         missing = object()
         for index, (left, right) in enumerate(
             zip_longest(left_stream, right_stream, fillvalue=missing)
@@ -205,14 +216,18 @@ def compare_case(before_directory, after_directory):
     windows = []
     for old, new in zip(before["windows"], after["windows"], strict=True):
         phase = old["phase"]
-        if old["output"]["file"] != phase + ".json.gz" or new["output"]["file"] != phase + ".json.gz":
+        if (
+            old["output"]["file"] != phase + ".json.gz"
+            or new["output"]["file"] != phase + ".json.gz"
+        ):
             raise AssertionError("unexpected archive path")
         first = before_directory / old["output"]["file"]
         second = after_directory / new["output"]["file"]
         compare_values(_archive_header(first, old), _archive_header(second, new), "archive.header")
         mismatching = next(
             (
-                index for index, (left, right) in enumerate(zip(old["rows"], new["rows"], strict=True))
+                index
+                for index, (left, right) in enumerate(zip(old["rows"], new["rows"], strict=True))
                 if left["frame_logical_sha256"] != right["frame_logical_sha256"]
             ),
             None,
@@ -221,19 +236,30 @@ def compare_case(before_directory, after_directory):
             _locate_payload_difference(first, second, old, new, mismatching)
         if old["output"]["logical_sha256"] != new["output"]["logical_sha256"]:
             raise AssertionError("whole logical digest changed despite equal per-frame digests")
-        windows.append(dict(
-            phase=phase, compared_frames=driver.STEPS, full_public_fields_exact=True,
-            excluded_public_fields=[], extra_full_frames_decoded=0,
-            evidence="accepted same-run full decode; equal per-frame and whole logical SHA",
-            before_public=old["public_statistics"], after_public=new["public_statistics"],
-            before_build_ns=old["build_ns"], after_build_ns=new["build_ns"],
-        ))
+        windows.append(
+            dict(
+                phase=phase,
+                compared_frames=driver.STEPS,
+                full_public_fields_exact=True,
+                excluded_public_fields=[],
+                extra_full_frames_decoded=0,
+                evidence="accepted same-run full decode; equal per-frame and whole logical SHA",
+                before_public=old["public_statistics"],
+                after_public=new["public_statistics"],
+                before_build_ns=old["build_ns"],
+                after_build_ns=new["build_ns"],
+            )
+        )
     compare_values(_manifest_view(before), _manifest_view(after), "manifest")
     return dict(
-        case=before["case"], worlds=before["worlds"], success=True,
+        case=before["case"],
+        worlds=before["worlds"],
+        success=True,
         changed_product_files=changed,
-        before_source=before["source"], before_source_after=before["source_after"],
-        after_source=after["source"], after_source_after=after["source_after"],
+        before_source=before["source"],
+        before_source_after=before["source_after"],
+        after_source=after["source"],
+        after_source_after=after["source_after"],
         windows=windows,
     )
 
@@ -268,10 +294,12 @@ def main():
     report = dict(
         schema="phymeo-c2-full-frame-comparison-v1",
         comparator=dict(path=str(script), sha256=digest),
-        before=str(args.before.resolve()), after=str(args.after.resolve()),
+        before=str(args.before.resolve()),
+        after=str(args.after.resolve()),
         excluded_public_fields=[],
         separate_wall_clocks=dict(
-            row=list(ROW_TIMINGS), counters=list(COUNTER_TIMINGS),
+            row=list(ROW_TIMINGS),
+            counters=list(COUNTER_TIMINGS),
             manifest=["declaration_ns", "started_utc", "ended_utc"],
             window=["build_ns", "public_statistics", "step_statistics"],
             distribution_values=list(DISTRIBUTION_TIMINGS),

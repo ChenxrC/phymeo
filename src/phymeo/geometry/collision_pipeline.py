@@ -1275,7 +1275,9 @@ def detect(model, motion, policy, workspace):
             after_mid = perf_counter_ns()
             workspace._times["midphase_ns"] += after_mid - narrow_start
             narrow_start = after_mid
-        rows = _complete_pairs(workspace, paths, flags, selected, policy.proximity_patches, resolved)
+        rows = _complete_pairs(
+            workspace, paths, flags, selected, policy.proximity_patches, resolved
+        )
         result = _detection_result(model, paths, workspace._backend, count, rows, bounds)
         workspace._times["narrow_ns"] += perf_counter_ns() - narrow_start
         if draft is None:

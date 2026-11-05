@@ -165,8 +165,10 @@ def _address(value, world):
     _index(owner.world, "owner world")
     _index(owner.body, "physical owner")
     frames = {
-        "rigid": "rigid_com", "particle": "material_vertices",
-        "robot_link": "robot_model_link", "robot_root": "robot_root",
+        "rigid": "rigid_com",
+        "particle": "material_vertices",
+        "robot_link": "robot_model_link",
+        "robot_root": "robot_root",
     }
     if owner.kind not in frames or owner.local_frame != frames[owner.kind]:
         raise ValueError("unsupported physical owner material frame")
@@ -181,13 +183,18 @@ def _address(value, world):
     feature = tuple(sorted(_index(i, "material feature vertex") for i in value.feature))
     if not feature or len(set(feature)) != len(feature):
         raise ValueError("feature requires distinct material vertex IDs")
-    weights = tuple(sorted(
-        (_index(i, "material weight vertex"), finite_real(w, "material weight"))
-        for i, w in value.weights
-    ))
-    if (not weights or len({i for i, _ in weights}) != len(weights)
+    weights = tuple(
+        sorted(
+            (_index(i, "material weight vertex"), finite_real(w, "material weight"))
+            for i, w in value.weights
+        )
+    )
+    if (
+        not weights
+        or len({i for i, _ in weights}) != len(weights)
         or any(i not in feature or w < 0 for i, w in weights)
-        or not isclose(fsum(w for _, w in weights), 1.0, rel_tol=0, abs_tol=1e-10)):
+        or not isclose(fsum(w for _, w in weights), 1.0, rel_tol=0, abs_tol=1e-10)
+    ):
         raise ValueError("material weights require a valid partition of the declared feature")
     local = value.local_point_m
     if owner.kind == "particle":
@@ -197,8 +204,13 @@ def _address(value, world):
         local = _vector(local, "local material point")
     chart = None if value.chart_id is None else _index(value.chart_id, "material chart")
     return MaterialAddress(
-        owner, shape, _index(value.topology_revision, "topology revision"),
-        feature, weights, local, chart,
+        owner,
+        shape,
+        _index(value.topology_revision, "topology revision"),
+        feature,
+        weights,
+        local,
+        chart,
     )
 
 
@@ -211,10 +223,13 @@ def _sample(value):
         raise ValueError("bilateral station shapes must be in canonical order")
     n = np.asarray(_vector(value.normal, "station normal"))
     frame = np.asarray(value.frame_world, dtype=float)
-    if (frame.shape != (3, 3) or not np.isfinite(frame).all()
+    if (
+        frame.shape != (3, 3)
+        or not np.isfinite(frame).all()
         or not np.allclose(frame.T @ frame, np.eye(3), atol=1e-10, rtol=0)
         or not isclose(float(np.linalg.det(frame)), 1.0, rel_tol=0, abs_tol=1e-10)
-        or not np.allclose(frame[:, 2], n, atol=1e-10, rtol=0)):
+        or not np.allclose(frame[:, 2], n, atol=1e-10, rtol=0)
+    ):
         raise ValueError("material frame must be proper orthonormal and normal-aligned")
     force = finite_real(value.normal_force_n, "normal force")
     if force < 0:
@@ -240,7 +255,11 @@ def _update(value, normal):
     if stiffness is not None:
         stiffness = finite_real(stiffness, "tangent stiffness")
         expected = 0.5 * stiffness * float(np.dot(elastic, elastic))
-        if stiffness <= 0 or not np.isfinite(expected) or not isclose(energy, expected, rel_tol=1e-10, abs_tol=1e-300):
+        if (
+            stiffness <= 0
+            or not np.isfinite(expected)
+            or not isclose(energy, expected, rel_tol=1e-10, abs_tol=1e-300)
+        ):
             raise ValueError("stored energy differs from the supplied tangent stiffness")
     if value.regime == "frictionless" and (length != 0 or energy != 0):
         raise ValueError("frictionless history must have zero elastic strain and energy")
@@ -257,7 +276,9 @@ def _continuity(old, new):
         return "feature_changed"
     if any(a.chart_id != b.chart_id for a, b in sides):
         return "chart_changed"
-    moved = [(a, b) for a, b in sides if a.weights != b.weights or a.local_point_m != b.local_point_m]
+    moved = [
+        (a, b) for a, b in sides if a.weights != b.weights or a.local_point_m != b.local_point_m
+    ]
     if moved:
         return "same_chart" if all(a.chart_id is not None for a, _ in moved) else "material_changed"
     return "persist"
@@ -325,25 +346,38 @@ class TangentHistory:
             prior, sample = old.get(key), current.get(key)
             if sample is None or sample.normal_force_n == 0:
                 if prior is not None:
-                    ended.append(EndedStation(
-                        prior.identity, "absent" if sample is None else "zero_load",
-                        prior.update.stored_energy_j,
-                    ))
+                    ended.append(
+                        EndedStation(
+                            prior.identity,
+                            "absent" if sample is None else "zero_load",
+                            prior.update.stored_energy_j,
+                        )
+                    )
                 continue
             status = "begin" if prior is None else _continuity(prior.sample, sample)
             update = None
             if status in {"persist", "same_chart"}:
                 rotation = np.asarray(sample.frame_world) @ np.asarray(prior.sample.frame_world).T
-                sine = np.linalg.norm([rotation[2, 1] - rotation[1, 2],
-                                       rotation[0, 2] - rotation[2, 0],
-                                       rotation[1, 0] - rotation[0, 1]]) / 2
+                sine = (
+                    np.linalg.norm(
+                        [
+                            rotation[2, 1] - rotation[1, 2],
+                            rotation[0, 2] - rotation[2, 0],
+                            rotation[1, 0] - rotation[0, 1],
+                        ]
+                    )
+                    / 2
+                )
                 angle = atan2(float(sine), float((np.trace(rotation) - 1) / 2))
                 if angle > self.max_frame_turn_rad + 1e-12:
                     raise ValueError("material frame turn exceeds configured limit")
-                update = _update(replace(
-                    prior.update,
-                    elastic_displacement_m=rotation @ prior.update.elastic_displacement_m,
-                ), sample.normal)
+                update = _update(
+                    replace(
+                        prior.update,
+                        elastic_displacement_m=rotation @ prior.update.elastic_displacement_m,
+                    ),
+                    sample.normal,
+                )
                 identity = prior.identity
             else:
                 if prior is not None:
@@ -356,16 +390,32 @@ class TangentHistory:
         energy = finite_real(fsum(e.released_energy_j for e in ended), "released spring energy")
         count = len(prepared)
         frames = _readonly([p.sample.frame_world for p in prepared], (count, 3, 3))
-        elastic = _readonly([
-            (0.0, 0.0, 0.0) if p.prior is None else p.prior.elastic_displacement_m for p in prepared
-        ], (count, 3))
-        tangent = _readonly([F[:, :2].T @ e for F, e in zip(frames, elastic, strict=True)], (count, 2))
+        elastic = _readonly(
+            [
+                (0.0, 0.0, 0.0) if p.prior is None else p.prior.elastic_displacement_m
+                for p in prepared
+            ],
+            (count, 3),
+        )
+        tangent = _readonly(
+            [F[:, :2].T @ e for F, e in zip(frames, elastic, strict=True)], (count, 2)
+        )
         return TangentTrial(
-            self._owner, state, (state.step_index + 1, time, end),
-            state.step_index + 1, time, end, tuple(prepared),
-            tuple(generations[key] for key in sorted(generations)), tuple(ended), energy,
-            tuple(p.identity.key for p in prepared), frames,
-            _readonly([p.sample.normal_force_n for p in prepared], (count,)), elastic, tangent,
+            self._owner,
+            state,
+            (state.step_index + 1, time, end),
+            state.step_index + 1,
+            time,
+            end,
+            tuple(prepared),
+            tuple(generations[key] for key in sorted(generations)),
+            tuple(ended),
+            energy,
+            tuple(p.identity.key for p in prepared),
+            frames,
+            _readonly([p.sample.normal_force_n for p in prepared], (count,)),
+            elastic,
+            tangent,
         )
 
     def commit(self, state, trial, updates):
@@ -376,11 +426,17 @@ class TangentHistory:
         validation leaves the physical caller free to retry the same proposal.
         """
         self._check_state(state)
-        if not isinstance(trial, TangentTrial) or trial._owner is not self._owner or trial._base is not state:
+        if (
+            not isinstance(trial, TangentTrial)
+            or trial._owner is not self._owner
+            or trial._base is not state
+        ):
             raise ValueError("stale trial or different history owner/base")
-        if (trial._times != (trial.step_index, trial.sample_time_s, trial.commit_time_s)
+        if (
+            trial._times != (trial.step_index, trial.sample_time_s, trial.commit_time_s)
             or trial.step_index != state.step_index + 1
-            or trial.sample_time_s != state.commit_time_s):
+            or trial.sample_time_s != state.commit_time_s
+        ):
             raise ValueError("trial time differs from its prepared base/time")
         if not isinstance(updates, Mapping) or set(updates) != set(trial.keys):
             raise ValueError("updates must cover exactly the prepared station keys")
@@ -391,6 +447,12 @@ class TangentHistory:
                 raise ValueError("cumulative plastic slip cannot decrease within an episode")
             records.append(TangentRecord(prepared.identity, prepared.sample, update))
         return TangentHistoryState(
-            self._owner, trial.step_index, trial.sample_time_s, trial.commit_time_s,
-            tuple(records), trial.generations, trial.ended, trial.dropped_spring_energy_j,
+            self._owner,
+            trial.step_index,
+            trial.sample_time_s,
+            trial.commit_time_s,
+            tuple(records),
+            trial.generations,
+            trial.ended,
+            trial.dropped_spring_energy_j,
         )

@@ -12,7 +12,6 @@ import pytest
 from phymeo.runtime.contact_scene import ContactSceneBuilder
 from phymeo.solvers.collision_loads import NormalLayer
 
-
 H = 1 / 256
 
 
@@ -22,8 +21,14 @@ def _sphere_record(*, world=7, transformed=False):
     q = (0.5,) * 4 if transformed else (0.0, 0.0, 0.0, 1.0)
     make = ContactSceneBuilder(gravity=(0.0, 0.0, 0.0))
     for body, z in ((4, 0.0), (9, 9 / 32)):
-        make.add_sphere(body, 1 / 8, mass=1.0, world=world,
-                        position=shift + R @ [0.0, 0.0, z], orientation_xyzw=q)
+        make.add_sphere(
+            body,
+            1 / 8,
+            mass=1.0,
+            world=world,
+            position=shift + R @ [0.0, 0.0, z],
+            orientation_xyzw=q,
+        )
     make.pair(4, 9, NormalLayer(1 / 16, 128.0), world=world)
     with make.build() as scene:
         frame = scene.step(H)
@@ -42,16 +47,23 @@ def _sample(record, token, frame, *, component=0, chart_id=None):
     addresses = []
     for side in ("first", "second"):
         address = getattr(material, side)
-        addresses.append(MaterialAddress(
-            owner=getattr(record, side + "_owner"),
-            shape=getattr(record.identity, side), topology_revision=0,
-            feature=tuple(node for node, weight in address.weights if weight != 0),
-            weights=address.weights, local_point_m=address.local_point_m,
-            chart_id=chart_id,
-        ))
+        addresses.append(
+            MaterialAddress(
+                owner=getattr(record, side + "_owner"),
+                shape=getattr(record.identity, side),
+                topology_revision=0,
+                feature=tuple(node for node, weight in address.weights if weight != 0),
+                weights=address.weights,
+                local_point_m=address.local_point_m,
+                chart_id=chart_id,
+            )
+        )
     return StationSample(
-        StationKey(record.identity.first.world, token), *addresses,
-        normal=load.load.normal, frame_world=frame, normal_force_n=load.load.force_n,
+        StationKey(record.identity.first.world, token),
+        *addresses,
+        normal=load.load.normal,
+        frame_world=frame,
+        normal_force_n=load.load.force_n,
     )
 
 
@@ -61,8 +73,10 @@ def _update(elastic=(1 / 16, 0.0, 0.0), *, stiffness=8.0):
     return TangentUpdate(
         elastic_displacement_m=elastic,
         stored_energy_j=0.5 * stiffness * float(np.asarray(elastic) @ elastic),
-        plastic_slip_m=1 / 32, tangent_work_j=-1 / 128,
-        regime="stick", stiffness_n_per_m=stiffness,
+        plastic_slip_m=1 / 32,
+        tangent_work_j=-1 / 128,
+        regime="stick",
+        stiffness_n_per_m=stiffness,
     )
 
 
@@ -105,8 +119,9 @@ def test_actual_transformed_material_frames_transport_twist_without_fake_slip():
     rotated, R = _sphere_record(transformed=True)
     sample, other = _sample(record, 7, frame), _sample(rotated, 7, R)
     for side in ("first", "second"):
-        np.testing.assert_allclose(getattr(sample, side).local_point_m,
-                                   getattr(other, side).local_point_m, atol=1e-14)
+        np.testing.assert_allclose(
+            getattr(sample, side).local_point_m, getattr(other, side).local_point_m, atol=1e-14
+        )
     book = TangentHistory(1, max_frame_turn_rad=3 * np.pi / 4)
     initial = book.initial_state()
     first = book.prepare(initial, [sample], sample_time_s=0.0, dt_s=H)
@@ -169,10 +184,15 @@ def test_zero_load_exit_reentry_and_capacity_keep_explicit_energy_and_tombstones
     assert empty.generations[0].generation == 1
 
 
-@pytest.mark.parametrize("change,reason", [
-    ("face", "feature_changed"), ("topology", "topology_changed"),
-    ("material", "material_changed"), ("owner", "owner_changed"),
-])
+@pytest.mark.parametrize(
+    "change,reason",
+    [
+        ("face", "feature_changed"),
+        ("topology", "topology_changed"),
+        ("material", "material_changed"),
+        ("owner", "owner_changed"),
+    ],
+)
 def test_unsupported_continuity_resets_and_reports_discarded_spring(change, reason):
     from phymeo.constraints.collision_shapes import CollisionKey
     from phymeo.solvers.tangent_history import TangentHistory
@@ -205,8 +225,9 @@ def test_real_deformable_weights_require_declared_same_chart_not_just_a_token():
 
     make = ContactSceneBuilder(gravity=(0.0, 0.0, 0.0))
     make.add_sphere(4, 1 / 8, mass=1.0, position=(0.0, 0.0, 7 / 32))
-    make.add_sheet(9, [(-1, -1, 0), (1, -1, 0), (0, 1, 0)], [(0, 1, 2)],
-                   node_masses=1.0, edge_compliance=None)
+    make.add_sheet(
+        9, [(-1, -1, 0), (1, -1, 0), (0, 1, 0)], [(0, 1, 2)], node_masses=1.0, edge_compliance=None
+    )
     make.pair(4, 9, NormalLayer(1 / 8, 64.0))
     with make.build() as scene:
         scene.step(H)
@@ -267,9 +288,11 @@ def test_invalid_candidate_update_is_atomic_owned_and_retryable():
     initial = book.initial_state()
     trial = book.prepare(initial, [a], sample_time_s=0.0, dt_s=H)
     update = _update()
-    for bad in (replace(update, stored_energy_j=1.0),
-                replace(update, elastic_displacement_m=(0.0, 0.0, 1 / 16)),
-                replace(update, tangent_work_j=float("nan"))):
+    for bad in (
+        replace(update, stored_energy_j=1.0),
+        replace(update, elastic_displacement_m=(0.0, 0.0, 1 / 16)),
+        replace(update, tangent_work_j=float("nan")),
+    ):
         with pytest.raises(ValueError):
             book.commit(initial, trial, {a.key: bad})
         assert initial.active == () and initial.step_index == 0
@@ -284,8 +307,12 @@ def test_invalid_candidate_update_is_atomic_owned_and_retryable():
         book.commit(initial, replace(trial, commit_time_s=2 * H), {a.key: update})
     result = book.commit(initial, trial, {a.key: update})
     assert result == book.commit(initial, trial, {a.key: update})
-    for array in (trial.frames_world, trial.normal_force_n, trial.elastic_displacement_m,
-                  trial.elastic_tangent_m):
+    for array in (
+        trial.frames_world,
+        trial.normal_force_n,
+        trial.elastic_displacement_m,
+        trial.elastic_tangent_m,
+    ):
         with pytest.raises(ValueError):
             array.setflags(write=True)
     assert result.active[0].sample.first == a.first

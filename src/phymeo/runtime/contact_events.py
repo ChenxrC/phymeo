@@ -156,11 +156,7 @@ class _OwnerFrame:
 
 
 def _index(value, name, *, minimum=0):
-    if (
-        isinstance(value, (bool, np.bool_))
-        or not isinstance(value, Integral)
-        or value < minimum
-    ):
+    if isinstance(value, (bool, np.bool_)) or not isinstance(value, Integral) or value < minimum:
         raise ValueError("invalid " + name)
     return int(value)
 
@@ -210,9 +206,7 @@ class RobotContactEventAdapter:
             link = _index(col.link_index, "robot link", minimum=-1)
             name = tree.root_link if link == -1 else tree.link_names[link]
             kind, frame = (
-                ("robot_root", "robot_root")
-                if link == -1
-                else ("robot_link", "robot_model_link")
+                ("robot_root", "robot_root") if link == -1 else ("robot_link", "robot_model_link")
             )
             frames[key] = _OwnerFrame(
                 ContactOwner(world, body, kind, frame, link, name),
@@ -265,20 +259,26 @@ class RobotContactEventAdapter:
             rotation = geo.rotation[owner.link_index]
         position = _vector(position, "material frame position")
         local = (np.asarray(point) - position) @ _rotation(rotation)
-        return ContactMaterialAddress(
-            owner.kind, weights, _vector(local, "local surface point")
-        )
+        return ContactMaterialAddress(owner.kind, weights, _vector(local, "local surface point"))
 
     def _material(self, load, geo, rigid, rotations):
         return tuple(
             ContactMaterialSite(
                 self._address(
-                    load.first, s.material.first_point, s.material.first_weights,
-                    geo, rigid, rotations,
+                    load.first,
+                    s.material.first_point,
+                    s.material.first_weights,
+                    geo,
+                    rigid,
+                    rotations,
                 ),
                 self._address(
-                    load.second, s.material.second_point, s.material.second_weights,
-                    geo, rigid, rotations,
+                    load.second,
+                    s.material.second_point,
+                    s.material.second_weights,
+                    geo,
+                    rigid,
+                    rotations,
                 ),
                 s.fraction,
             )
@@ -307,8 +307,10 @@ class RobotContactEventAdapter:
             if owned.force_n < 0 or any(s.force_n < 0 or s.fraction <= 0 for s in owned.sites):
                 raise ValueError("normal loads and site fractions must be nonnegative/positive")
             component = ContactComponent(
-                owned, self._material(owned, geo, rigid, rotations),
-                "robot_contact_material", law,
+                owned,
+                self._material(owned, geo, rigid, rotations),
+                "robot_contact_material",
+                law,
             )
             current.setdefault((raw.first, raw.second), []).append(component)
         active, events = [], []
@@ -316,26 +318,41 @@ class RobotContactEventAdapter:
             components, prior = tuple(current.get(pair, ())), old.get(pair)
             if not any(c.load.force_n > 0 for c in components):
                 if prior is not None:
-                    events.append(SceneContactEvent(
-                        "end", prior.identity, None, "zero_force" if components else "absent"
-                    ))
+                    events.append(
+                        SceneContactEvent(
+                            "end", prior.identity, None, "zero_force" if components else "absent"
+                        )
+                    )
                 continue
             if prior is None:
                 tombstone = generations.get(pair)
-                identity = ContactIdentity(*pair, 1 if tombstone is None else tombstone.generation + 1)
+                identity = ContactIdentity(
+                    *pair, 1 if tombstone is None else tombstone.generation + 1
+                )
                 generations[pair] = identity
             else:
                 identity = prior.identity
             record = SceneContactRecord(
-                identity, self._frames[pair[0]].owner, self._frames[pair[1]].owner, components,
-                prior is not None and _component_values(components, _values)
+                identity,
+                self._frames[pair[0]].owner,
+                self._frames[pair[1]].owner,
+                components,
+                prior is not None
+                and _component_values(components, _values)
                 != _component_values(prior.components, _values),
-                prior is not None and _component_values(components, _support)
+                prior is not None
+                and _component_values(components, _support)
                 != _component_values(prior.components, _support),
             )
             active.append(record)
-            events.append(SceneContactEvent("begin" if prior is None else "persist", identity, record))
+            events.append(
+                SceneContactEvent("begin" if prior is None else "persist", identity, record)
+            )
         return SceneContactEvents(
-            previous.step_index + 1, sample, committed, tuple(active), tuple(events),
+            previous.step_index + 1,
+            sample,
+            committed,
+            tuple(active),
+            tuple(events),
             tuple(generations[pair] for pair in sorted(generations)),
         )

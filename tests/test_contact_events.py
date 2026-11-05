@@ -52,7 +52,6 @@ def test_ordinary_scene_exposes_the_existing_episode_through_the_common_event_vi
         assert view.step_index == 1 and view.events[0].kind == "begin"
 
 
-
 def test_pure_history_adapter_retains_particle_addresses_and_rejects_a_different_law():
     from phymeo.constraints.robot_contact import RobotContactMaterial
     from phymeo.runtime.contact_events import contact_events_from_history
@@ -60,8 +59,11 @@ def test_pure_history_adapter_retains_particle_addresses_and_rejects_a_different
     make = ContactSceneBuilder(gravity=(0.0, 0.0, 0.0))
     make.add_sphere(4, 1 / 8, mass=1.0, position=(0.0, 0.0, 7 / 32))
     make.add_sheet(
-        9, [(-1.0, -1.0, 0.0), (1.0, -1.0, 0.0), (0.0, 1.0, 0.0)],
-        [(0, 1, 2)], node_masses=1.0, edge_compliance=None,
+        9,
+        [(-1.0, -1.0, 0.0), (1.0, -1.0, 0.0), (0.0, 1.0, 0.0)],
+        [(0, 1, 2)],
+        node_masses=1.0,
+        edge_compliance=None,
     )
     law = NormalLayer(1 / 8, 64.0)
     make.pair(4, 9, law)
@@ -116,9 +118,9 @@ def test_ordinary_same_ids_in_two_worlds_capacity_retry_and_owned_views():
         np.testing.assert_array_equal(scene.state.rigid.position, state.rigid.position)
         with pytest.raises(FrozenInstanceError):
             before.active[0].components[0].load.force_n = 100.0
-        assert [(r.first_owner.world, r.first_owner.body, r.second_owner.body) for r in before.active] == [
-            (7, 4, 9), (42, 4, 9)
-        ]
+        assert [
+            (r.first_owner.world, r.first_owner.body, r.second_owner.body) for r in before.active
+        ] == [(7, 4, 9), (42, 4, 9)]
         scene.step(1 / 256)
         direct.step(1 / 256)
         assert scene.contact_events == direct.contact_events
@@ -175,7 +177,9 @@ def test_device_ordinary_event_view_retains_actual_reentry(tyx_mode, tmp_path):
 def test_ordinary_patch_retains_all_sites_and_pure_torsional_friction():
     make = ContactSceneBuilder(gravity=(0.0, 0.0, 0.0))
     make.add_box(2, (1 / 8,) * 3, mass=None)
-    make.add_box(9, (1 / 8,) * 3, mass=1.0, position=(0.0, 0.0, 5 / 16), angular_velocity=(0, 0, 0.25))
+    make.add_box(
+        9, (1 / 8,) * 3, mass=1.0, position=(0.0, 0.0, 5 / 16), angular_velocity=(0, 0, 0.25)
+    )
     law = NormalLayer(1 / 8, 16.0, friction=0.5, slip_speed_m_s=1 / 16)
     make.pair(2, 9, law)
     with make.build() as scene:
@@ -185,10 +189,15 @@ def test_ordinary_patch_retains_all_sites_and_pure_torsional_friction():
         assert component.material == scene.contact_history.active[0].material
         assert len(component.load.sites) == len(component.material) == 12
         force = np.sum([s.force_on_second_n for s in component.load.sites], axis=0)
-        torque = np.sum([
-            np.cross(np.asarray(s.application_point_second_m) - [0, 0, 5 / 16], s.force_on_second_n)
-            for s in component.load.sites
-        ], axis=0)
+        torque = np.sum(
+            [
+                np.cross(
+                    np.asarray(s.application_point_second_m) - [0, 0, 5 / 16], s.force_on_second_n
+                )
+                for s in component.load.sites
+            ],
+            axis=0,
+        )
         np.testing.assert_allclose(force, [0, 0, 1], atol=1e-12)
         np.testing.assert_allclose(torque, [0, 0, -1 / 48], atol=1e-12)
         np.testing.assert_allclose(frame.loads.inputs.rigid.torque[1], torque, atol=1e-12)

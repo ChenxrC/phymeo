@@ -11,7 +11,6 @@ from phymeo.core.robot import RobotState
 from phymeo.runtime.contact_scene import ContactSceneBuilder
 from phymeo.runtime.robot_scene import RobotCommand
 
-
 PUSHER = Path(__file__).parent / "reference_newton" / "robot" / "multiobject_pusher.urdf"
 LAW = RobotContactMaterial(2000.0, 0.0, 0.0)
 
@@ -19,8 +18,11 @@ LAW = RobotContactMaterial(2000.0, 0.0, 0.0)
 def three_body_chain():
     make = ContactSceneBuilder(gravity=(0.0, 0.0, 0.0))
     make.add_urdf(
-        10, PUSHER, robot_state=RobotState(np.zeros(1), np.zeros(1)),
-        kp=[0.0], kd=[0.0],
+        10,
+        PUSHER,
+        robot_state=RobotState(np.zeros(1), np.zeros(1)),
+        kp=[0.0],
+        kd=[0.0],
     )
     make.add_sphere(20, 0.0625, mass=1.0, position=(0.124, 0.0, 0.25))
     make.add_sphere(30, 0.0625, mass=1.0, position=(0.248, 0.0, 0.25))
@@ -36,7 +38,9 @@ def test_robot_scene_publishes_both_real_chain_contacts_through_the_common_event
         frame = scene.step(0.001, actions=command)
         np.testing.assert_allclose(frame.robots[0, 10].v, [-0.001], atol=1e-14, rtol=0)
         assert len(frame.loads.contacts) == 2
-        np.testing.assert_allclose([p.force_n for p in frame.loads.contacts], [2.0, 2.0], atol=1e-12)
+        np.testing.assert_allclose(
+            [p.force_n for p in frame.loads.contacts], [2.0, 2.0], atol=1e-12
+        )
         # The RED is the public property absent on the already working robot route.
         view = scene.contact_events
         from phymeo.runtime.contact_events import SceneContactEvents
@@ -48,9 +52,7 @@ def test_robot_scene_publishes_both_real_chain_contacts_through_the_common_event
         assert len(view.active) == 2
         assert [e.kind for e in view.events] == ["begin", "begin"]
         assert sum(len(r.components) for r in view.active) == 2
-        physical_pairs = {
-            (r.first_owner.body, r.second_owner.body): r for r in view.active
-        }
+        physical_pairs = {(r.first_owner.body, r.second_owner.body): r for r in view.active}
         assert set(physical_pairs) == {(10, 20), (20, 30)}
         link = physical_pairs[10, 20].first_owner
         assert link.kind == "robot_link" and link.link_name == "pusher" and link.link_index == 0
@@ -69,8 +71,9 @@ def test_robot_scene_publishes_both_real_chain_contacts_through_the_common_event
         assert scene.contact_events == view
         scene.step(0.001, actions=command)
         assert [e.kind for e in scene.contact_events.events] == ["persist", "persist"]
-        assert [r.identity for r in scene.contact_events.active] == [r.identity for r in view.active]
-
+        assert [r.identity for r in scene.contact_events.active] == [
+            r.identity for r in view.active
+        ]
 
 
 def _twisting_pad_scene(tmp_path, *, spin=2.0, transformed=False, reverse=False):
@@ -97,11 +100,18 @@ def _twisting_pad_scene(tmp_path, *, spin=2.0, transformed=False, reverse=False)
         offsets = offsets[::-1]
     make = ContactSceneBuilder(gravity=(0.0, 0.0, 0.0))
     make.add_urdf(
-        10, path, robot_state=RobotState(np.zeros(1), np.zeros(1)), kp=[0.0], kd=[0.0],
+        10,
+        path,
+        robot_state=RobotState(np.zeros(1), np.zeros(1)),
+        kp=[0.0],
+        kd=[0.0],
         pads=[PadFace.named("pad_link", "pad", 0, 1, offsets)],
     )
     make.add_sphere(
-        20, 0.02, mass=0.1, position=shift + R @ [0.015, 0.0, 0.3],
+        20,
+        0.02,
+        mass=0.1,
+        position=shift + R @ [0.015, 0.0, 0.3],
         orientation_xyzw=(0.0, 0.0, np.sin(angle / 2), np.cos(angle / 2)),
         angular_velocity=R @ [spin, 0.0, 0.0],
     )
@@ -146,14 +156,19 @@ def test_multiple_pad_components_keep_nonparallel_normals_and_torsional_friction
             assert address.first.kind == "robot_link" and address.second.kind == "rigid"
             np.testing.assert_allclose(
                 address.first.local_point_m,
-                [0.01, (R.T @ (p - shift))[1], 0.0], atol=5e-14,
+                [0.01, (R.T @ (p - shift))[1], 0.0],
+                atol=5e-14,
             )
             np.testing.assert_allclose(
-                center + R @ address.second.local_point_m, site.material.second_point, atol=5e-14,
+                center + R @ address.second.local_point_m,
+                site.material.second_point,
+                atol=5e-14,
             )
             assert np.linalg.norm(address.second.local_point_m) == pytest.approx(0.02, abs=5e-14)
             # The actual sphere surface is not its penetrating pad application point.
-            assert np.linalg.norm(np.asarray(site.material.second_point) - p) == pytest.approx(n / 2000)
+            assert np.linalg.norm(np.asarray(site.material.second_point) - p) == pytest.approx(
+                n / 2000
+            )
         assert not np.allclose(record.components[0].load.normal, record.components[1].load.normal)
         np.testing.assert_allclose(np.sum(tangents, axis=0), 0.0, atol=2e-12)
         expected_force = R @ [2 * n * 0.015 / np.hypot(0.015, 0.009), 0.0, 0.0]
@@ -162,15 +177,23 @@ def test_multiple_pad_components_keep_nonparallel_normals_and_torsional_friction
         np.testing.assert_allclose(np.sum(torques, axis=0), expected_torque, atol=2e-12)
         row = scene.rigid_rows[0, 20]
         np.testing.assert_allclose(frame.loads.inputs.rigid.force[row], expected_force, atol=2e-12)
-        np.testing.assert_allclose(frame.loads.inputs.rigid.torque[row], expected_torque, atol=2e-12)
-        assert sum(c.load.power_w for c in record.components) == pytest.approx(tangent_torque * spin, abs=2e-12)
+        np.testing.assert_allclose(
+            frame.loads.inputs.rigid.torque[row], expected_torque, atol=2e-12
+        )
+        assert sum(c.load.power_w for c in record.components) == pytest.approx(
+            tangent_torque * spin, abs=2e-12
+        )
         inertia = (2 / 5) * 0.1 * 0.02**2
         np.testing.assert_allclose(
-            frame.rigid.angular_velocity[row], R @ [spin + h * tangent_torque / inertia, 0, 0], atol=2e-12,
+            frame.rigid.angular_velocity[row],
+            R @ [spin + h * tangent_torque / inertia, 0, 0],
+            atol=2e-12,
         )
         # The two real masses react once, with no averaged-normal replacement.
         np.testing.assert_allclose(
-            0.1 * frame.rigid.velocity[row] + 2 * frame.robots[0, 10].v[0] * R[:, 0], 0.0, atol=1e-13,
+            0.1 * frame.rigid.velocity[row] + 2 * frame.robots[0, 10].v[0] * R[:, 0],
+            0.0,
+            atol=1e-13,
         )
         frame.loads.inputs.rigid.force[:] = 123.0
         assert scene.contact_events is view
@@ -219,8 +242,12 @@ def test_robot_finite_table_reentry_retains_penetration_law_and_sample_times():
             assert c.material_kind == "robot_contact_material" and c.law is LAW
             assert c.load.force_n == pytest.approx(4.0, abs=1e-11)
             assert c.load.gap_m == pytest.approx(-0.002, abs=1e-14)
-        np.testing.assert_allclose([f.rigid.velocity[row, 2] for f in frames], [4, -4, 0], atol=1e-12)
-        np.testing.assert_allclose([f.rigid.position[row, 2] for f in frames], [0.3105, 0.248, 0.248], atol=1e-13)
+        np.testing.assert_allclose(
+            [f.rigid.velocity[row, 2] for f in frames], [4, -4, 0], atol=1e-12
+        )
+        np.testing.assert_allclose(
+            [f.rigid.position[row, 2] for f in frames], [0.3105, 0.248, 0.248], atol=1e-13
+        )
         for frame in frames:
             np.testing.assert_array_equal(frame.robots[0, 10].q, [0.0])
 
@@ -230,7 +257,9 @@ def _stage_inputs(scene, frame):
 
     return dict(
         geo=forward_kinematics(scene.assets[0, 10].model, frame.robots[0, 10].entry_q),
-        rigid=frame.entry_rigid, sample_time_s=frame.load_time_s, commit_time_s=frame.time_s,
+        rigid=frame.entry_rigid,
+        sample_time_s=frame.load_time_s,
+        commit_time_s=frame.time_s,
     )
 
 
@@ -243,7 +272,9 @@ def test_pure_robot_stage_preserves_zero_components_reorders_and_bounded_tombsto
         frame = scene.step(0.001, actions={10: RobotCommand([0.0], feedforward=[0.0])})
         adapter, initial = scene._event_adapter, SceneContactEvents()
         first, second = frame.loads.contacts
-        zero_site = replace(first.sites[0], force_n=0.0, force_on_second_n=(0.0, 0.0, 0.0), power_w=0.0)
+        zero_site = replace(
+            first.sites[0], force_n=0.0, force_on_second_n=(0.0, 0.0, 0.0), power_w=0.0
+        )
         zero = replace(first, force_n=0.0, power_w=0.0, sites=(zero_site,))
         raw = replace(frame.loads, contacts=(zero, first, second))
         kwargs = _stage_inputs(scene, frame)
@@ -311,12 +342,15 @@ def test_robot_stage_failure_rolls_back_entire_scene_then_same_input_retries(mon
         previous = scene.last_frame
         with monkeypatch.context() as patch:
             if failure == "allocation":
+
                 def fail_allocation(_):
                     raise MemoryError("injected staging allocation")
+
                 patch.setattr(module, "_owned_load", fail_allocation)
                 expected, match = MemoryError, "staging allocation"
             else:
                 original = scene._contact.evaluate
+
                 def invalid_material(*args, **kwargs):
                     measured = original(*args, **kwargs)
                     row, *rest = measured.loads.contacts
@@ -324,6 +358,7 @@ def test_robot_stage_failure_rolls_back_entire_scene_then_same_input_retries(mon
                     material = replace(site.material, first_weights=((999, 1.0),))
                     bad = replace(row, sites=(replace(site, material=material),))
                     return replace(measured, loads=replace(measured.loads, contacts=(bad, *rest)))
+
                 patch.setattr(scene._contact, "evaluate", invalid_material)
                 expected, match = ValueError, "material weights"
             with pytest.raises(expected, match=match):
@@ -372,8 +407,12 @@ def test_folded_collision_records_computational_link_owner_and_real_entry_frame(
         assert record.identity.first == scene.shape_key(10, "authored_tip", "tool")
         (component,) = record.components
         assert component.load.force_n == pytest.approx(2.0, abs=1e-12)
-        np.testing.assert_allclose(component.material[0].first.local_point_m, [0.0825, 0.0, 0.0], atol=1e-13)
-        np.testing.assert_allclose(component.material[0].second.local_point_m, [-0.0625, 0.0, 0.0], atol=1e-13)
+        np.testing.assert_allclose(
+            component.material[0].first.local_point_m, [0.0825, 0.0, 0.0], atol=1e-13
+        )
+        np.testing.assert_allclose(
+            component.material[0].second.local_point_m, [-0.0625, 0.0, 0.0], atol=1e-13
+        )
         assert frame.robots[0, 10].v[0] == pytest.approx(-0.001)
 
 
@@ -391,9 +430,15 @@ def test_pure_robot_stage_owns_array_backed_source_values():
         traction = np.array(site.force_on_second_n)
         weights = list(site.material.first_weights)
         material = replace(site.material, first_point=point, first_weights=weights)
-        mutable = replace(raw, normal=normal, sites=(replace(site, material=material, force_on_second_n=traction),))
+        mutable = replace(
+            raw,
+            normal=normal,
+            sites=(replace(site, material=material, force_on_second_n=traction),),
+        )
         result = scene._event_adapter.stage(
-            SceneContactEvents(), replace(frame.loads, contacts=(mutable,)), **_stage_inputs(scene, frame)
+            SceneContactEvents(),
+            replace(frame.loads, contacts=(mutable,)),
+            **_stage_inputs(scene, frame),
         )
         (component,) = result.active[0].components
         assert component.load == raw
@@ -429,13 +474,21 @@ def test_fixed_root_collision_has_its_actual_owner_and_root_material_frame(tmp_p
         (record,) = scene.contact_events.active
         owner = record.first_owner
         assert (owner.body, owner.kind, owner.link_index, owner.link_name, owner.local_frame) == (
-            10, "robot_root", -1, "base", "robot_root"
+            10,
+            "robot_root",
+            -1,
+            "base",
+            "robot_root",
         )
         assert record.identity.first == scene.shape_key(10, "base", "stop")
         component = record.components[0]
-        np.testing.assert_allclose(component.material[0].first.local_point_m, [0.0625, 0, 0.25], atol=1e-13)
+        np.testing.assert_allclose(
+            component.material[0].first.local_point_m, [0.0625, 0, 0.25], atol=1e-13
+        )
         assert component.load.force_n == pytest.approx(2.0, abs=1e-12)
-        np.testing.assert_allclose(frame.robots[0, 10].fixed_root_contact_wrench, [-2, 0, 0, 0, -0.5, 0], atol=1e-12)
+        np.testing.assert_allclose(
+            frame.robots[0, 10].fixed_root_contact_wrench, [-2, 0, 0, 0, -0.5, 0], atol=1e-12
+        )
         np.testing.assert_array_equal(frame.robots[0, 10].contact_effort, [0.0])
         np.testing.assert_array_equal(frame.robots[0, 10].v, [0.0])
         assert frame.rigid.velocity[0, 0] == pytest.approx(0.002)

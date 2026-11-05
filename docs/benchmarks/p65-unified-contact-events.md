@@ -69,3 +69,11 @@ staged_events = self._event_adapter.stage(
 ## 验收域与限制
 
 冻结测试包括普通/机器人真实多体载荷、有限箱台抬离后回返、同 pair 多站点的非共线法向与纯扭转摩擦、材料/物理 owner、world 隔离、不可变旧快照、失败后同输入重试。普通设备测试沿已有 TYX 路径；RobotScene 仍沿原 HOST 物理路线。本批不会把机器人 HOST 接口标成 CUDA，也不增加连续碰撞、机器人自碰或布–机器人共同求解能力。
+
+## 父实际验收
+
+完整HOST范围分组完成：首两public 2 passed/1.38s；其余首次22 passed/1 failed/1.44s，失败仅RobotScene的external关键字参数在测试中误作位置参数，c3b092e只修调用后该节点1 passed/.88s。因此25个HOST实例均已通过，不重复已绿节点。普通场景interpret 1 passed/1.14s、实际CUDA 1 passed/2.06s，均保真实有限台退出/重入和原law，RobotScene仍HOST。
+
+包括非共线pad法向、两种旋转与刚变换、原摩擦合力和非零力矩、12站点普通接触、folded/root owner及两种实际stage异常后同输入重试。原作者之外的既有agent只读检查了组件/owner/原子发布，无阻断发现。
+
+首Ruff仅一个测试import区排版；首format-check四文件需排版。父保存原5个Python文件后修style，5份raw AST逐一严格相同；最终Ruff/format-check全部RAW0，不重跑语义未改的已绿物理。证据在父 artifacts/p65-postnight-batch2-20261105-01/b2-*。整组没有增改物理力律或积分器。

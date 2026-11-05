@@ -408,7 +408,9 @@ class ContactSceneBuilder:
                 backend=backend,
                 cache_root=cache_root,
             )
-        if any(law is not None and not isinstance(law, NormalLayer) for law in self._pairs.values()):
+        if any(
+            law is not None and not isinstance(law, NormalLayer) for law in self._pairs.values()
+        ):
             raise TypeError("a scene without a robot requires NormalLayer materials")
         dtype = np.float64 if backend == "host" else np.float32
         shape_count = sum(

@@ -4,7 +4,7 @@
 
 ## 来源与验证状态
 
-基线 `9e1693110880f23245d8d2e780d37316f1d7d21b`。tests-only 提交 `65ba4b0b0a58876f66e3d28de09cdeb045142cab`；父已用集成基线执行 `test_real_finite_face_load_is_bound_to_explicit_material_station`，真实有限箱面–球的 4 N 入步前置通过，随后缺少 `runtime.material_stations`，RAW1。父保存收据名为 `03-material-first-red`。首次完整功能运行在 `3 passed / 1 failed` 停止：同一有限面移动的 `[17]` 用例错误期望仅凭 chart ID 就能跨过稀疏支撑变化。第一次诊断的完整 dataclass 被 pytest 截断，保留 RAW1；随后短诊断实际确认 first.feature `(1,7)→(1,5,7)`、second.feature `(0,)→(0,)`、ended=`feature_changed`，箱面局部点由 `(0,0,0.125)` 移到 `(0.001953125,0,0.125)`，球侧 `(0,0,-0.125)` 不变。这是 B4 初版源/测试对 feature 定义不完整，B3 的保守重置正确。修复新增显式完整 feature 声明，以预先登记的 +z 面 `(1,3,5,7)` 验证同面连续性，同时保留未声明时的原 reset 和越出声明子集的拒绝负控。修复与其余专项待父串行 GREEN；作者没有运行项目 import、测试、数值、lint 或格式化。
+基线 `9e1693110880f23245d8d2e780d37316f1d7d21b`。tests-only 提交 `65ba4b0b0a58876f66e3d28de09cdeb045142cab`；父已用集成基线执行 `test_real_finite_face_load_is_bound_to_explicit_material_station`，真实有限箱面–球的 4 N 入步前置通过，随后缺少 `runtime.material_stations`，RAW1。父保存收据名为 `03-material-first-red`。首次完整功能运行在 `3 passed / 1 failed` 停止：同一有限面移动的 `[17]` 用例错误期望仅凭 chart ID 就能跨过稀疏支撑变化。第一次诊断的完整 dataclass 被 pytest 截断，保留 RAW1；随后短诊断实际确认 first.feature `(1,7)→(1,5,7)`、second.feature `(0,)→(0,)`、ended=`feature_changed`，箱面局部点由 `(0,0,0.125)` 移到 `(0.001953125,0,0.125)`，球侧 `(0,0,-0.125)` 不变。这是 B4 初版源/测试对 feature 定义不完整，B3 的保守重置正确。修复新增显式完整 feature 声明，以预先登记的 +z 面 `(1,3,5,7)` 验证同面连续性，同时保留未声明时的原 reset 和越出声明子集的拒绝负控。作者交接时修复与其余专项待父串行 GREEN；作者没有运行项目 import、测试、数值、lint 或格式化。最终父结果见文末。
 
 仅新增：
 
@@ -20,7 +20,7 @@
 
 `MaterialStationRegistration(key, first, second, anchor_side, anchor_local_m, tangent_axis_local, first_chart_id, second_chart_id, topology_revision=0, match_tolerance_m=1e-8, first_feature=None, second_feature=None)` 声明一个稳定 token、canonical 同世界 shape pair 及一侧实际局部材料锚点。切向轴在该侧 owner 材料坐标系中声明，现场投影到真实法向的切平面；退化轴拒绝。匹配容限是调用者明确的局部坐标容限，不用来挑最近的一行。可选 `first_feature/second_feature` 是各侧完整 chart 的预声明原始材料顶点 IDs，必须非空、非负整数且互异；bind 逐次核实真实 weights 的所有 IDs 都在声明集合内。默认 `None` 仍将当前稀疏支持作为 feature，不凭 chart ID 自动扩展。
 
-`MaterialStationRegistry(registrations)` 冻结最多 128 个登记，允许空集合；重复 key 拒绝。只读 `pairs` 是选中的 canonical pair tuple，供父层仅对这些 pair 使用 normal-only 原采样；未配置 pair 不进入适配，保留旧摩擦路径。
+`MaterialStationRegistry(registrations)` 冻结最多 128 个登记，允许空集合；重复 key 拒绝。只读 `pairs` 是选中的 canonical pair tuple，供父层仅对这些 pair 替换原切向载荷；原采样的 friction、求积和作用点保持，未配置 pair 保留旧摩擦路径。
 
 ```python
 selected = registry.bind(entry_events, entry_frames, sample_time_s=t)
@@ -54,3 +54,9 @@ RR 的旧摩擦可在中层公共点施力，robot pad 可在 pad 点施力；�
 新专项包含真实有限台 4 N 及三步退出重入、有限四角 patch 每站点 0.25 N（合计 1 N）、真实 URDF 同滑轨双 pad 的转序与整体静态变换、真实有限面滑动时相同 chart 的见证漂移和固定入步材料位移分离、真实刚体转动时 material/application 两套运动，以及缺漏/歧义/重复、错时/错 owner、输入拥有、空集、不同世界同 token 和非法姿态负控。
 
 这些适配测试没有凭手填法向替代真实采样。B3 中手填的弹性更新只验证存储/退出释放，不能当成新的摩擦物理结果。普通/机器人 scene 的新共同物理步、全 W、反力和总功验收由父与 A 另行交付；本文件本身不宣称任意转动接触已通过，也不宣称旧 mimic 抓持失败已解决。
+
+## 父最终验收（2026-11-06）
+
+完整 feature 修复后，父 19-material-functional-fixed：23 passed / 0.82 s / RAW0；原首次失败与两次诊断均保留。父场景使用原真实求积的 24 站点完成两质量各 48 步，真实三步卸载/重入通过。最终静态与源码外 wheel 通过，产品提交 8c4a7db。完整数据与边界见 [第四批验收](p65-scene-tangent-batch4.md)。
+
+父接缝明确保持原 friction 下的采样、求积及作用点，再以 normal+新 tangent 替换选中旧切力；不会通过将原采样 friction 设为零取得 normal-only 输入。当前显式登记不等于自动换面材料跟踪；粒子/柔体与一般关节新摩擦仍未接。父执行槽已释放。

@@ -2,6 +2,14 @@
 
 ## 当前入口（2026-11-06）
 
+[第四批：真实场景耦合切向与固定凸包复用](../benchmarks/p65-scene-tangent-batch4.md)已完成本地集成、119 HOST + interpret 1 + CUDA 1、静态检查及源码外 wheel 使用验证。产品 8c4a7db：真实法向、全跨站点响应、材料/施力点实际位移和功审核进入同一步共同发布；两质量压载、URDF 双站点、卸载重入与回滚均有实测。新模式仍限显式材料站点的 HOST 刚体/普通移动关节，不覆盖粒子/柔体、mimic 或 revolute 机器人；原 mimic 100g 失败与两种软布未放台保持。
+
+固定 hull 边界/chart 在完整绑定后复用，四档24帧输出一致；W32 CUDA 的两个暖态观察 step+geometry p50 为207.183→89.495ms，只是本引擎局部对照。所有本批执行结束，原 agents 已释放。[已完成计划](../superpowers/plans/2026-11-06-scene-coupled-tangent-batch4.md) · [较大功能差异与下一优先级](phymeo-newton-functional-overview-2026-11-06.md)。
+
+下一项优先旋转/铰接/mimic 的持续摩擦与真实运动一致，再扩材料特征迁移及 RD/DD；独立机器人场景组合与 GPU 热点可分树并行编码，项目验证仍串行。相机、在线 Python 控制和 mimic 传动图已存在，不能继续沿用11月4日“缺失”表述。功能通过与性能改善分别验收。
+
+### 11月6日第三批
+
 [第三批：耦合切向状态与受载诊断](../benchmarks/p65-coupled-tangent-loaded-batch3.md)已完成本地集成、63项专项、193步真实组合窗口和源码外wheel使用验证。新增HOST完整交叉W切向核、显式材料站点历史与纯事务；默认scene摩擦未自动改变，原100g mimic失败仍保留。CUDA同进程4档256帧完整一致，W32受载/出生有局部过滤收益，W1无一致收益；发现重复HullShape边界/chart构造，插桩时间不当无插桩占比。下一批从共享场景适配继续：真实法向采样、完整自由运动与反作用、实际材料位移/能量审核、共同发布；用有限双面压载、双站点URDF滑轨、偏心转动留出分别验收。性能可并行做不变hull边界/chart复用，但先保完整输出与全部检查。详见[本批已执行计划](../superpowers/plans/2026-11-05-coupled-tangent-loaded-batch3.md)。
 
 ### 11月5日第二批

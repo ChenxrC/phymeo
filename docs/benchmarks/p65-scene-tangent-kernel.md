@@ -33,4 +33,9 @@
 
 测试先提交 `056ebc2`；`9376416` 仅在实现前统一父scene需要的receipt字段和ValueError门。父真实首RED已保存 `artifacts/p65-scene-tangent-batch4-20261106-01/02-adapter-first-red`：指定第一个新节点，父无新模块的src产生ModuleNotFoundError，RAW1。作者未重跑。
 
-当前实现待父串行专项及静态检查。父公共scene/几何身份组合与本模块独立验收分开，尚无本批GREEN或新Newton/CUDA声明。
+作者交接时实现待父串行专项及静态检查；当时没有本批 GREEN 或新 Newton/CUDA 声明。最终父执行结果见文末，公共 scene 与独立核的边界继续分别记录。
+## 父最终验收（2026-11-06）
+
+作者交接后，父唯一串行执行 06-adapter-first-functional：31 passed / 0.55 s / RAW0。最终 17 文件 Ruff/format 均通过，style-equivalence 保非 import AST 和 import 绑定。父已接入真实双面压载、URDF 共享祖先双站点、卸载重入和失败回滚；源码外 wheel 的两质量各 48 步公共例程通过。
+
+实际产品范围以 [第四批综合验收](p65-scene-tangent-batch4.md) 为准：只接 HOST 刚体和普通纯移动关节；本批未接无内部投影粒子，也未接 mimic/revolute。原默认摩擦保留。公开 scene receipt 的 ndarray 元数据别名有独立红绿验证，当前 getter 返回拥有副本。该结果不代表任意旋转或原 mimic 抓持已经通过。产品提交 8c4a7db；父执行槽已释放。

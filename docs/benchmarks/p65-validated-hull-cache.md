@@ -53,3 +53,11 @@ python scripts/profile_validated_hull_cache.py --backend host --worlds 32 --expe
 ```
 
 真实 CUDA 可用同脚本 `--backend cuda`，父按队列选择执行。每调用 6 个真实公开步，不跑旧九档或 C3 大矩阵。HOST 排程目标每档 20 s，超目标只如实标 `host_budget_exceeded` 并保留完整自然结束结果，不截取成功片段或悄悄减量；若它暴露成本问题不追加规模。存储预留约 64 MiB/档是估计，实际逻辑和压缩字节由收据决定。是否保留默认优化，以完整输出与有限同次实测裁定，不因构造次数减少预先许诺更快。
+
+## 父最终验收（2026-11-06）
+
+18-cache-first-functional：23 HOST passed / 1.00 s，另一个设备节点分别在 21-cache-interpret 和 22-cache-cuda 实际通过（1 / 0.68 s、1 / 1.20 s）。最终 Ruff/format 与源码外 wheel 通过。父 hook 限外部 sphere–hull 原 code 0 分支，原其它几何分流不变。
+
+30–33 四个预声明小实验均 RAW0，24 个完整公开帧一致，完整 payload 同次核验，getter 均恢复。两个正式样本的 step+geometry p50：HOST W1 6.421→3.390 ms、HOST W32 191.985→86.879 ms、CUDA W1 8.159→5.163 ms、CUDA W32 207.183→89.495 ms。W32 暖态为 96 hits / 0 builds。保留该窄范围优化；两样本不是稳定吞吐排名，也没有比较 Newton 性能。实际 CUDA 宽相仍执行，HOST 几何复用不能称为设备窄相。
+
+产品提交 8c4a7db，原始收据与限制见 [第四批综合验收](p65-scene-tangent-batch4.md)。父执行槽已释放；不追加旧矩阵或重复本同源已绿组。

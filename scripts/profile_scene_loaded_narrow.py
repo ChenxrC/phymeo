@@ -112,7 +112,9 @@ def _zero_clocks(value, *, nested):
 
 
 def assert_counters_equal(left, right):
-    assert_full_equal(_zero_clocks(left, nested=False), _zero_clocks(right, nested=False), "counters")
+    assert_full_equal(
+        _zero_clocks(left, nested=False), _zero_clocks(right, nested=False), "counters"
+    )
 
 
 def canonical_payload(scene, frame, geometry):
@@ -256,7 +258,10 @@ class NarrowTimeline(profile.CallTimeline):
             if parent is None:
                 raise RuntimeError("projection region has no enclosing function span")
             self._regions[id(frame)] = (
-                now, self._serial, self._line_labels[frame.f_lineno], parent[3] + 1
+                now,
+                self._serial,
+                self._line_labels[frame.f_lineno],
+                parent[3] + 1,
             )
         elif event == "return":
             self._close_region(frame, perf_counter_ns())
@@ -301,8 +306,14 @@ def _physical_row(frame):
 
 def _compare_observations(left, right):
     for key in (
-        "actual_contacts", "actual_sites", "actual_required_candidates", "published_pairs",
-        "different_world_rows", "force_worlds", "frame_logical_sha256", "physical_errors",
+        "actual_contacts",
+        "actual_sites",
+        "actual_required_candidates",
+        "published_pairs",
+        "different_world_rows",
+        "force_worlds",
+        "frame_logical_sha256",
+        "physical_errors",
     ):
         assert_full_equal(left[key], right[key], key)
     assert_counters_equal(left["counters"], right["counters"])
@@ -327,10 +338,21 @@ def _check_trace_counts(left, right):
     if a.get("filtered_completion", 0) != 0 or b.get("filtered_completion", 0) != 2:
         raise AssertionError("the two dispatch controls were not actually exercised")
     equal = (
-        "hull_reconstruction", "hull_boundary", "material_chart_build", "material_chart_weights",
-        "sphere_hull_projection", "projection_feature_search", "projection_distance_material_finish",
-        "generic_simplex_closest", "path_support_build", "path_sample_pose", "path_support_upper",
-        "path_sample_dispatch", "path_interval_verify", "path_window_driver", "path_trace_finish",
+        "hull_reconstruction",
+        "hull_boundary",
+        "material_chart_build",
+        "material_chart_weights",
+        "sphere_hull_projection",
+        "projection_feature_search",
+        "projection_distance_material_finish",
+        "generic_simplex_closest",
+        "path_support_build",
+        "path_sample_pose",
+        "path_support_upper",
+        "path_sample_dispatch",
+        "path_interval_verify",
+        "path_window_driver",
+        "path_trace_finish",
     )
     for label in equal:
         if a.get(label, 0) != b.get(label, 0):
@@ -351,9 +373,17 @@ def run_pair(case, worlds, phase, mode, cache, destination):
     destination = Path(destination)
     destination.mkdir(parents=True, exist_ok=False)
     report = dict(
-        case=case, worlds=worlds, phase=phase, backend=mode, dt_s=H, frames=list(FRAMES),
+        case=case,
+        worlds=worlds,
+        phase=phase,
+        backend=mode,
+        dt_s=H,
+        frames=list(FRAMES),
         excluded_public_fields=list(PUBLIC_CLOCK_FIELDS),
-        counter_clock_fields=list(COUNTER_CLOCK_FIELDS), rows=[], outputs={}, builds={},
+        counter_clock_fields=list(COUNTER_CLOCK_FIELDS),
+        rows=[],
+        outputs={},
+        builds={},
         scope="retained full dispatch vs current filtered dispatch in one product revision",
         timing_scope="scene.step plus geometry; observations/oracle/serialization are outside",
         resource_policy="two independent scenes; same code-cache directory; new state/buffers",
@@ -371,27 +401,44 @@ def run_pair(case, worlds, phase, mode, cache, destination):
                 built = perf_counter_ns()
                 scenes[variant] = scene
                 report["builds"][variant] = dict(
-                    declaration_ns=declared - begin, build_ns=built - declared,
+                    declaration_ns=declared - begin,
+                    build_ns=built - declared,
                     native_counters=driver.delta_counts(driver._raw_counts(mode), native_before),
                 )
-                writers[variant] = stack.enter_context(driver.WindowWriter(
-                    destination / f"{variant}.json.gz",
-                    dict(case=case, worlds=worlds, phase=phase, variant=variant, dt_s=H,
-                         frames=FRAMES, initial=scene.state, rigid_rows=scene.rigid_rows,
-                         input_rows=driver.seeds(case, worlds)),
-                ))
+                writers[variant] = stack.enter_context(
+                    driver.WindowWriter(
+                        destination / f"{variant}.json.gz",
+                        dict(
+                            case=case,
+                            worlds=worlds,
+                            phase=phase,
+                            variant=variant,
+                            dt_s=H,
+                            frames=FRAMES,
+                            initial=scene.state,
+                            rigid_rows=scene.rigid_rows,
+                            input_rows=driver.seeds(case, worlds),
+                        ),
+                    )
+                )
             assert_full_equal(
                 driver.public_value(scenes[VARIANTS[0]].state),
-                driver.public_value(scenes[VARIANTS[1]].state), "initial_state"
+                driver.public_value(scenes[VARIANTS[1]].state),
+                "initial_state",
             )
             spans = None
             if phase == "traced":
-                spans = stack.enter_context(gzip.open(
-                    destination / "timelines.jsonl.gz", "xt", encoding="utf8"
-                ))
+                spans = stack.enter_context(
+                    gzip.open(destination / "timelines.jsonl.gz", "xt", encoding="utf8")
+                )
             for number in FRAMES:
-                row = dict(frame=number, entry_s=(number - 1) * H, end_s=number * H,
-                           order=list(pair_order(number)), observations={})
+                row = dict(
+                    frame=number,
+                    entry_s=(number - 1) * H,
+                    end_s=number * H,
+                    order=list(pair_order(number)),
+                    observations={},
+                )
                 report["rows"].append(row)
                 values = {}
                 for variant in pair_order(number):
@@ -408,7 +455,9 @@ def run_pair(case, worlds, phase, mode, cache, destination):
                             end = perf_counter_ns()
                     after, native_after = scene.stats(), driver._raw_counts(mode)
                     if geometry.time_s != number * H:
-                        raise AssertionError("accepted physical time differs from the declared frame")
+                        raise AssertionError(
+                            "accepted physical time differs from the declared frame"
+                        )
                     certify_begin = perf_counter_ns()
                     errors = driver.certify_frame(frame, scene.rigid_rows, case, worlds, number - 1)
                     certify_end = perf_counter_ns()
@@ -416,13 +465,18 @@ def run_pair(case, worlds, phase, mode, cache, destination):
                     values[variant] = value
                     digest = writers[variant].append(value)
                     observation = dict(
-                        step_ns=stepped - begin, geometry_snapshot_ns=end - stepped,
-                        public_to_end_ns=end - begin, oracle_ns=certify_end - certify_begin,
+                        step_ns=stepped - begin,
+                        geometry_snapshot_ns=end - stepped,
+                        public_to_end_ns=end - begin,
+                        oracle_ns=certify_end - certify_begin,
                         archive_and_observation_ns=perf_counter_ns() - certify_end,
-                        frame_logical_sha256=digest, physical_errors=errors,
-                        statistics_before=before, statistics_after=after,
+                        frame_logical_sha256=digest,
+                        physical_errors=errors,
+                        statistics_before=before,
+                        statistics_after=after,
                         counters=driver.delta_counts(after, before),
-                        native_before=native, native_after=native_after,
+                        native_before=native,
+                        native_after=native_after,
                         native_counters=driver.delta_counts(native_after, native),
                         **_physical_row(frame),
                     )
@@ -432,14 +486,25 @@ def run_pair(case, worlds, phase, mode, cache, destination):
                         or observation["counters"].get("geometry.completed_launches", 0) <= 0
                         or frame.rigid_report.backend != "tyx:cuda"
                     ):
-                        raise AssertionError("the CUDA call did not execute the real selected backend")
+                        raise AssertionError(
+                            "the CUDA call did not execute the real selected backend"
+                        )
                     if timeline is not None:
                         intervals = timeline.partition(begin, end)
                         raw_spans = intervals.pop("spans")
-                        spans.write(json.dumps(dict(
-                            frame=number, variant=variant, spans=raw_spans,
-                            source=timeline.source_binding,
-                        ), separators=(",", ":"), allow_nan=False) + "\n")
+                        spans.write(
+                            json.dumps(
+                                dict(
+                                    frame=number,
+                                    variant=variant,
+                                    spans=raw_spans,
+                                    source=timeline.source_binding,
+                                ),
+                                separators=(",", ":"),
+                                allow_nan=False,
+                            )
+                            + "\n"
+                        )
                         observation["diagnostic_intervals"] = intervals
                         observation["projection_source"] = timeline.source_binding
                 assert_full_equal(values[VARIANTS[0]], values[VARIANTS[1]])
@@ -464,14 +529,18 @@ def run_pair(case, worlds, phase, mode, cache, destination):
                 )
             report["statistics"] = {
                 variant: dict(
-                    all_16=driver._distribution([
-                        row["observations"][variant]["public_to_end_ns"] for row in report["rows"]
-                    ]),
+                    all_16=driver._distribution(
+                        [row["observations"][variant]["public_to_end_ns"] for row in report["rows"]]
+                    ),
                     first_call_ns=report["rows"][0]["observations"][variant]["public_to_end_ns"],
-                    subsequent_15=driver._distribution([
-                        row["observations"][variant]["public_to_end_ns"] for row in report["rows"][1:]
-                    ]),
-                ) for variant in VARIANTS
+                    subsequent_15=driver._distribution(
+                        [
+                            row["observations"][variant]["public_to_end_ns"]
+                            for row in report["rows"][1:]
+                        ]
+                    ),
+                )
+                for variant in VARIANTS
             }
             report["success"] = True
     except BaseException as error:
@@ -494,7 +563,8 @@ def compare_windows(untraced, traced):
     for variant in VARIANTS:
         assert_full_equal(
             untraced["outputs"][variant]["logical_sha256"],
-            traced["outputs"][variant]["logical_sha256"], "whole_window_payload"
+            traced["outputs"][variant]["logical_sha256"],
+            "whole_window_payload",
         )
         a = untraced["statistics"][variant]["all_16"]["total_ns"]
         b = traced["statistics"][variant]["all_16"]["total_ns"]
@@ -519,12 +589,18 @@ def main():
     args.out.mkdir(parents=True)
     source = provenance(args.expected_head)
     report = dict(
-        schema="phymeo-c3-loaded-narrow-v1", source=source, matrix=[list(p) for p in MATRIX],
-        frame_indices=list(FRAMES), backend=args.backend, windows=[], comparisons=[],
+        schema="phymeo-c3-loaded-narrow-v1",
+        source=source,
+        matrix=[list(p) for p in MATRIX],
+        frame_indices=list(FRAMES),
+        backend=args.backend,
+        windows=[],
+        comparisons=[],
         excluded_public_fields=list(PUBLIC_CLOCK_FIELDS),
         counter_clock_fields=list(COUNTER_CLOCK_FIELDS),
         mechanism="A retained full dispatch; B current filtered dispatch; same source",
-        pure_gpu_device_ns=None, max_spans_per_frame=MAX_SPANS_PER_FRAME,
+        pure_gpu_device_ns=None,
+        max_spans_per_frame=MAX_SPANS_PER_FRAME,
         scope="one bounded session, no claim about another revision or Newton performance",
     )
     try:
@@ -532,16 +608,27 @@ def main():
             paired = {}
             for phase in ("untraced", "traced"):
                 result = run_pair(
-                    case, worlds, phase, args.backend, args.out / "cache",
+                    case,
+                    worlds,
+                    phase,
+                    args.backend,
+                    args.out / "cache",
                     args.out / f"{case}-w{worlds}-{phase}",
                 )
                 paired[phase] = result
                 report["windows"].append(result)
-                print(json.dumps(dict(case=case, worlds=worlds, phase=phase, success=True)), flush=True)
-            report["comparisons"].append(dict(
-                case=case, worlds=worlds, same_complete_outputs=True,
-                perturbation=compare_windows(paired["untraced"], paired["traced"]),
-            ))
+                print(
+                    json.dumps(dict(case=case, worlds=worlds, phase=phase, success=True)),
+                    flush=True,
+                )
+            report["comparisons"].append(
+                dict(
+                    case=case,
+                    worlds=worlds,
+                    same_complete_outputs=True,
+                    perturbation=compare_windows(paired["untraced"], paired["traced"]),
+                )
+            )
         report["source_after"] = provenance(args.expected_head)
         verify_provenance(source, report["source_after"])
         report["success"] = True

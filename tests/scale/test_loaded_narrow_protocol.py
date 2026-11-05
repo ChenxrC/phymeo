@@ -165,7 +165,8 @@ def test_real_trace_separates_geometry_features_and_path_proof_with_identical_pa
     assert sum(measured["exclusive_ns"].values()) == end - begin
     assert timeline.source_binding["sha256"]
     assert set(timeline.source_binding["anchors"]) == {
-        "projection_feature_search", "projection_distance_material_finish"
+        "projection_feature_search",
+        "projection_distance_material_finish",
     }
     assert sys.getprofile() is None and sys.gettrace() is None
 

@@ -270,6 +270,11 @@ from .solvers.coupled_program import (
     NumpyCoupledProgram,
     make_coupled_runtime,
 )
+from .solvers.coupled_tangent import (
+    CoupledTangentResult,
+    TangentMotionVerification,
+    solve_coupled_tangent,
+)
 from .solvers.coupled_xpbd import CoupledXPBDSolver
 from .solvers.deformable_feature_loads import (
     DeformableFeatureLoad,
@@ -306,6 +311,15 @@ from .solvers.robot_closure import (
 )
 from .solvers.robot_plane_contact import RobotPlaneContactProgram
 from .solvers.semi_implicit import SemiImplicitSolver
+from .solvers.tangent_history import (
+    MaterialAddress,
+    StationKey,
+    StationSample,
+    TangentHistory,
+    TangentHistoryState,
+    TangentTrial,
+    TangentUpdate,
+)
 from .solvers.tetrahedral import TetrahedralProgram, make_tetrahedral_runtime
 from .solvers.xpbd import XPBDSolver
 from .validation.finite_contact_terminal import FiniteContactTerminalLedger
@@ -520,6 +534,16 @@ __all__ = [
     "ProblemSignature",
     "SolverCapabilities",
     "SolverFailure",
+    "CoupledTangentResult",
+    "TangentMotionVerification",
+    "solve_coupled_tangent",
+    "MaterialAddress",
+    "StationKey",
+    "StationSample",
+    "TangentHistory",
+    "TangentHistoryState",
+    "TangentTrial",
+    "TangentUpdate",
     "Stepper",
     "CandidateVerifier",
     "VerificationReport",

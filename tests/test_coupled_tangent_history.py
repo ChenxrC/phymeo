@@ -1,6 +1,7 @@
 """Public combined use: coupled forces, real affine motion, and atomic history."""
 
 import importlib.util
+import json
 from pathlib import Path
 
 import pytest
@@ -15,9 +16,12 @@ def _example():
     return module
 
 
-def test_shared_station_window_commits_actual_motion_once():
+def test_shared_station_window_commits_actual_motion_once(tmp_path):
     result = _example().run_window()
-    assert result["accepted_motion_steps"] == 192
+    (tmp_path / "coupled_history_window.json").write_text(
+        json.dumps(result, indent=2, allow_nan=False), encoding="utf-8"
+    )
+    assert result["accepted_motion_steps"] == 193
     assert result["history_steps"] == 193
     assert result["station_count"] == 2
     assert result["final_active_stations"] == 0
@@ -33,7 +37,7 @@ def test_shared_station_window_commits_actual_motion_once():
     h = 1 / 256
     expected = h * h * 1.5 / (1 + 200 * h * h * 1.5)
     assert result["first_relative_displacement_m"] == pytest.approx(expected, abs=1e-15)
-    assert len(result["frames"]) == 192
+    assert len(result["frames"]) == 193
     assert [result["frames"][i]["external_pair_force_n"] for i in (0, 64, 128)] == [1, 3, -1]
     assert result["motion_domain"] == "affine_translation_given_normal_load"
     assert result["tangent_backend"] == "host"

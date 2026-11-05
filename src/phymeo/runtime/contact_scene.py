@@ -20,6 +20,7 @@ from ..constraints.collision_shapes import (
 )
 from ..constraints.curved_solids import CurvedSolid
 from ..constraints.distance import DistanceConstraints
+from ..constraints.robot_contact import RobotContactMaterial
 from ..core.coupled import CoupledInputs, CoupledState
 from ..core.model import ParticleModel
 from ..core.rigid import RigidBodyModel, RigidBodyState
@@ -117,6 +118,43 @@ class ContactSceneBuilder:
         self._gravity = _array(gravity, "gravity", shape=(3,))
         self._bodies = {}
         self._pairs = {}
+        self._robots = set()
+
+    def add_urdf(
+        self,
+        body,
+        path,
+        *,
+        robot_state,
+        kp,
+        kd,
+        effort_limit=None,
+        pads=(),
+        loader=None,
+        world=0,
+    ):
+        """Register a fixed-root asset for the HOST robot and multiple rigid body scene.
+
+        This scene uses explicit RobotContactMaterial pairs. Unsupported shape,
+        backend and participant combinations are rejected when build() is called.
+        """
+        from .robot_scene import make_robot_registration
+
+        addr = _address(world, body)
+        if addr in self._bodies:
+            raise ValueError("duplicate world-local body ID")
+        registration = make_robot_registration(
+            path,
+            robot_state=robot_state,
+            kp=kp,
+            kd=kd,
+            effort_limit=effort_limit,
+            pads=pads,
+            loader=loader,
+            gravity=self._gravity,
+        )
+        self._bodies[addr] = registration
+        self._robots.add(addr)
 
     def add_box(
         self,
@@ -338,7 +376,11 @@ class ContactSceneBuilder:
         self._bodies[addr] = _Sheet(x, v, 1.0 / masses, faces, compliance)
 
     def pair(self, first, second, layer, *, world=0):
-        """Assign one NormalLayer to every shape pair of these bodies, or explicitly exclude with None."""
+        """Assign an explicit material to a body pair, or exclude it with None.
+
+        NormalLayer applies to ordinary contact scenes; RobotContactMaterial
+        applies to registered robot scenes. build() rejects mixed material models.
+        """
         a, b = sorted((_address(world, first), _address(world, second)))
         if a not in self._bodies or b not in self._bodies:
             raise ValueError("pair refers to an unregistered body")
@@ -346,8 +388,8 @@ class ContactSceneBuilder:
             raise ValueError("a body needs distinct material faces for a self pair")
         if (a, b) in self._pairs:
             raise ValueError("duplicate material pair")
-        if layer is not None and not isinstance(layer, NormalLayer):
-            raise TypeError("expected NormalLayer or explicit exclusion None")
+        if layer is not None and not isinstance(layer, (NormalLayer, RobotContactMaterial)):
+            raise TypeError("expected NormalLayer, RobotContactMaterial or explicit exclusion None")
         self._pairs[a, b] = layer
 
     def build(self, *, backend="host", cache_root=None):
@@ -356,6 +398,18 @@ class ContactSceneBuilder:
             raise ValueError("expected host, interpret or cuda")
         if not self._bodies:
             raise ValueError("register at least one physical body")
+        if self._robots:
+            from .robot_scene import build_robot_scene
+
+            return build_robot_scene(
+                self._bodies,
+                self._pairs,
+                gravity=self._gravity,
+                backend=backend,
+                cache_root=cache_root,
+            )
+        if any(law is not None and not isinstance(law, NormalLayer) for law in self._pairs.values()):
+            raise TypeError("a scene without a robot requires NormalLayer materials")
         dtype = np.float64 if backend == "host" else np.float32
         shape_count = sum(
             len(b.faces) if isinstance(b, _Sheet) else 1 for b in self._bodies.values()
@@ -489,7 +543,10 @@ class ContactScene:
         self._closed = False
         self._models = models
         self._state = state
+        from .contact_history import ContactHistory
+
         self._time_s = 0.0
+        self._contact_history = ContactHistory()
         self._backend = backend
         self._edge_count = 0 if constraints is None else len(constraints.indices)
         self.rigid_rows = MappingProxyType(rigid_rows)
@@ -551,6 +608,16 @@ class ContactScene:
             frame = self._system.last_frame
             return None if frame is None else frame.owned_copy()
 
+    @property
+    def contact_history(self):
+        """Immutable loaded-pair lifecycle from the last successful physical step.
+
+        Its sample time is the force input time, distinct from the accepted end
+        state time. Read-only observations never advance the lifecycle.
+        """
+        with self._lock:
+            return self._contact_history
+
     def inputs(self):
         """Allocate independently writable external forces and torques matching the compiled state."""
         return CoupledInputs.zeros(
@@ -599,8 +666,18 @@ class ContactScene:
                     capacity=capacity,
                 )
                 public = f.owned_copy()
+                from .contact_history import advance_contact_history
+
+                history = advance_contact_history(
+                    self._contact_history,
+                    f,
+                    sample_time_s=self._time_s,
+                    commit_time_s=end_time,
+                    bindings=self._system.bindings,
+                )
             self._state = f.state
             self._time_s = end_time
+            self._contact_history = history
             return public
 
     def stats(self):

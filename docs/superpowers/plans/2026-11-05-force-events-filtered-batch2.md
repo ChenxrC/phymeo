@@ -43,7 +43,9 @@ Ruling: 保留原三个作者与工作树、并行编码/串行运行，是当�
 
 ## A2 — 受限驱动力的通用获取控制（高）
 
-Files: 新control模块、专属tests、公开example及报告由原robot作者交精确allowlist后追加。禁止改现robot_scene/contact_scene/root exports。
+Files: NEW src/phymeo/control/gripper_acquisition.py、tests/test_gripper_acquisition.py、tests/test_gripper_acquisition_windows.py、examples/robot_force_acquisition.py、docs/benchmarks/p65-gripper-acquisition.md。禁止改现robot_scene/contact_scene/root exports。
+
+API首切片为 GripperAcquisition.propose(observation, dt_s, posture_target, intent)，只返回RobotCommand与不可变判定；配置独立joint_indices/open_q/closed_q/速度与驱动力上限、payload_key与两组pad、力目标及持续门。contact_ready只表示双侧力和关节速度符合持续门；实际holding必须另有lift净空、台面卸载与相对滑移证据。重复同step和拒步重试不推进控制状态。
 
 - [ ] 核现bounded PD、真实q/v/载荷及本机Newton控制入口，冻结通用闭合映射、SI单位、限幅与状态机。
 - [ ] 写实际能力缺失RED；非法测量/时序、空夹、单边接触、失持和饱和均有负控。
@@ -54,7 +56,9 @@ Files: 新control模块、专属tests、公开example及报告由原robot作者�
 
 ## B2 — 两类场景的统一事件首切片（高）
 
-Files: 新runtime/contact_events.py、专属ordinary/robot tests和报告；父改runtime/contact_scene.py、runtime/robot_scene.py与公共导出。原contact_history数据语义保留。
+Files: NEW src/phymeo/runtime/contact_events.py、tests/test_contact_events.py、tests/test_robot_contact_events.py、docs/benchmarks/p65-unified-contact-events.md；父改src/phymeo/runtime/contact_scene.py、src/phymeo/runtime/robot_scene.py与公共导出。原contact_history数据语义保留。
+
+两scene .contact_events 返回 SceneContactEvents；每pair SceneContactRecord沿用ContactIdentity，保物理owner与components元组。ContactComponent含完整原PairLoad、每site材料、material_kind和不可变原law；不平均normal/gap、不声明跨步component身份。普通 contact_events_from_history 是纯只读视图；机器人 RobotContactEventAdapter.stage 在父一次commit前构造完整新snapshot，坐标采用入步link/COM姿态。
 
 - [ ] 冻结 .contact_events 的不可变snapshot与组件字段，完整原PairLoad、law类型、所有site/双侧address/施力点/力/力矩。
 - [ ] 普通与机器人两个正常入口缺失RED，真实载荷不由假mock代替。
@@ -83,4 +87,6 @@ Files: 修改src/phymeo/geometry/collision_pipeline.py；新增tests/collision/t
 
 ## Ledger
 
-- 当前三作者已FF基线并开始设计/tests-only，父执行槽已明确；暂无本批项目结果。
+- 三作者已FF基线69bd12d，A/B路径与接口已冻结；父执行槽唯一。
+- C2首tests-only 65a35e3：c2-filter-red真实1failed/1.06s，完整21行物理正控后发现code1–4仍送原窄相，原输出已保。只允许针对该机制实施。
+- 父先单独集成C2并测九档，与上一批已存完整帧比较，然后再接B2共享源，避免混淆C2性能收益。

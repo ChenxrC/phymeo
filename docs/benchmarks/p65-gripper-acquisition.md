@@ -1,6 +1,6 @@
-# A2：受限驱动力的渐进获取（执行前冻结）
+# A2：受限驱动力的渐进获取（冻结输入与实际结果）
 
-基线 `69bd12d`。本轮仅新增 `control/gripper_acquisition.py`、两个 `test_gripper_acquisition*.py`、`examples/robot_force_acquisition.py` 和本报告，旧 A1 两个窗口及 mimic 2 mm 突加预载 RAW1 不动。所有项目命令由父串行执行；本页此时仅为预注册合同，尚无 A2 数值通过声明。
+基线 `69bd12d`。本轮仅新增 `control/gripper_acquisition.py`、两个 `test_gripper_acquisition*.py`、`examples/robot_force_acquisition.py` 和本报告，旧 A1 两个窗口及 mimic 2 mm 突加预载 RAW1 不动。所有项目命令由父串行执行。以下输入在首窗前冻结，末节给出实际结果：Panda 完成获取、抬持及释放；mimic 箱取得双侧力后滑移，原保持门仍未达。零摩擦与超载是预期失持的通过负控，不是抓取成功。
 
 **首切片与方案。** 选用“实际双侧力反馈 + 有界关节目标渐进器”，继续让原 bounded PD、真实质量和接触律施力。不再添加另一套关节力解算或按绝对时刻闭爪。单固定根、单世界、HOST 的原边界不变。无桌面远距接近或完整搬运规划；起始物体在有限台面上、位于已张开的双指有效高度内。
 
@@ -33,4 +33,23 @@ contact_ready 后应用仅通过有界 posture 目标使实际夹具上移20 mm�
 
 **专项首错保留。** 缺模块首红 RAW1；首20µm实际响应/同step与拒步重试首绿 RAW0。随后仅更改feedforward的真实接受命令未被辨识，`DID NOT RAISE` RAW1；父补原始 requested_command 后控制器分别核对四项请求与解析收据，重力feedforward仍由原运行时解析。完整控制专项首次17通过/1失败（2.84 s）：25个后续步后两侧实测2.0002474897536207、1.9999109262340473 N，未满足测试误设的“初始精确2 N恒定”断言；此前真实20 ms ready门已过，抽离段尚未执行到。
 
-该精确解析只给初始闭合轴 `δ=2/(4k)`、`τ=4 N`、`Mss=.5 kg` 的平衡参考，不是自由箱–有限台–双指的全系统静态解：初始台面无压、切速零，箱首步仍受重力，后续法向为实际 `kδ-d vn`，摩擦与台面也依实际姿态/速度重算。末两力的日志不能单独归因这2.47e-4 N差异的具体耦合或舍入来源。修正测试将原精确2 N oracle保留在第一回执 `load_time=0`，真实后续dwell查原预注册2±.25 N带和≤.002 m/s；没有按观测挑新容差，四窗口输入、门和原首失败均不变。抽离仍为原10 N、最多70个实际步，后续实测另记。
+该精确解析只给初始闭合轴 `δ=2/(4k)`、`τ=4 N`、`Mss=.5 kg` 的平衡参考，不是自由箱–有限台–双指的全系统静态解：初始台面无压、切速零，箱首步仍受重力，后续法向为实际 `kδ-d vn`，摩擦与台面也依实际姿态/速度重算。末两力的日志不能单独归因这2.47e-4 N差异的具体耦合或舍入来源。修正测试将原精确2 N oracle保留在第一回执 `load_time=0`，真实后续dwell查原预注册2±.25 N带和≤.002 m/s；没有按观测挑新容差，四窗口输入、门和原首失败均不变。抽离仍为原10 N、最多70个实际步；修正后该节点实际通过，见下方分组收据。
+
+**实际交付与分组验证（2026-11-05）。** 测得产品源码为 `031638a`，父维护的原请求收据接缝为 `1ae0e44`；最终报告提交不改产品字节。直接入口是 `phymeo.control.gripper_acquisition.GripperAcquisition` / `AcquisitionProposal`。控制器只提交 RobotCommand；原 request 的四字段须与上次 proposal 相同，下一参考仍从 resolved command 锚定。`None` feedforward 的请求与原运行时解析出的重力补偿分别读回。
+
+18 个 HOST 控制专项的来源为：[`a2-control-final-functional`](../../artifacts/p65-postnight-batch2-20261105-01/a2-control-final-functional/stdout.log) 一次17通过/1失败（2.84 s，RAW1），以及修正上述测试 oracle 后仅复验原失败节点的 [`a2-initial-force-oracle-repair`](../../artifacts/p65-postnight-batch2-20261105-01/a2-initial-force-oracle-repair/stdout.log) 1通过（1.48 s，RAW0）。没有把它写成另跑一次18项全绿。已覆盖20µm真实首步/惯性、同step与拒步retry、未来/倒退时间、零帽与anti-windup、反向闭合、真实单侧力/错误对象、初始解析力/后续dwell/10 N抽离失持、实际释放、非法参数8项、实际改feedforward拒绝、小行程空夹与10 ms真实超时。缺模块首红、feedforward首红及错误恒等力 oracle 的 RAW1 均保留；首20µm早期绿不再重复计数。
+
+四个冻结 CLI 各实际执行一次，同源窗口 pytest 没有再重跑，也没有 skip/xfail 或改预期。每份 JSON 保存全部接受帧、原请求/解析命令、q/v、载荷、自由体姿态及关键同锁 geometry；载荷与步末各有时间戳。
+
+| 窗口及原始收据 | 接受步数 / 物理时间 | 实际取得双侧力 / holding / release | 首个物理失败 | 原八门与退出码 |
+|---|---:|---|---|---|
+| [Panda 球](../../artifacts/p65-postnight-batch2-20261105-01/a2-panda-sphere-window/stdout.log) | 3008 / 1.880 s | 是 / 是 / 是 | 无 | 8/8，RAW0 |
+| [mimic 箱正控](../../artifacts/p65-postnight-batch2-20261105-01/a2-mimic-box-window/stdout.log) | 1807 / 1.807 s | 是 / **否** / 是 | 1.048 s，相对滑移3.005689 mm；离台3.499783 mm，台面力0 | **7/8，RAW1**；仅 expected_holding_outcome=false |
+| [mimic 零摩擦](../../artifacts/p65-postnight-batch2-20261105-01/a2-mimic-zero-friction-window/stdout.log) | 1681 / 1.681 s | 是 / 否 / 是 | .923 s，相对滑移3.012614 mm；台面向上力.980305 N | 8/8，RAW0；失持负控符合预期 |
+| [mimic 超载](../../artifacts/p65-postnight-batch2-20261105-01/a2-mimic-overload-window/stdout.log) | 1789 / 1.789 s | 是 / 否 / 是 | 1.033 s，相对滑移3.010834 mm；台面向上力7.625533 N | 8/8，RAW0；失持负控符合预期 |
+
+四窗均无执行异常；目标物释放后实际再受有限台面支撑，第二自由体也有真实支撑。最大自由体逐步线冲量闭合误差≤1.38778e-17 N·s，电机帽超额均为0。Panda 的20 mm目标由实际接受姿态求 IK，3次迭代收敛，残差3.31494e-12 m、9.15973e-13 rad；是否实际抬持仍由原10 mm离台/100 ms/双侧载荷/相对运动门判断，不能用IK残差替代。mimic 正控的实测滑移与预先指出的滑速正则风险方向一致；仅这些摘要不足以逐项隔离其法向、转动、台面和舍入贡献，不声称已经完成因果分解。
+
+[首lint](../../artifacts/p65-postnight-batch2-20261105-01/a2-first-lint/stdout.log) 为1个 I001（例程 json import 次序），[首format](../../artifacts/p65-postnight-batch2-20261105-01/a2-first-format/stdout.log) 为4文件需格式化、1文件已格式化，原失败保留。父只改 import 次序并格式化；[qualified AST 核对](../../artifacts/p65-postnight-batch2-20261105-01/a2-style-ast/stdout.log) 中 controller、runtime 和两个测试的 raw AST 相同，example 只改变独立顶层 `json` import 次序，导入绑定与其余 AST 一致，并非宣称五份 raw AST 全同。[最终lint](../../artifacts/p65-postnight-batch2-20261105-01/a2-final-lint/stdout.log) 与 [最终format](../../artifacts/p65-postnight-batch2-20261105-01/a2-final-format/stdout.log) 都为 RAW0。格式后四窗基于同一份冻结源码运行。
+
+**适用边界与余项。** 当前可交付的是受限驱动力、实际接受步反馈的获取/力接触保持/失持与释放协议，已从无预压初态在经典 Panda 球上完成实际抬持。普通 mimic 箱的“可取得双侧力”已实测，“原2 N协议下抬持”未达，不能用两负控 RAW0 或原A1预载结果遮盖。窗口仍是起始夹具已对准物体、单固定树/单世界/HOST；没有远距接近规划、CCD保证、自碰撞、柔性或本批机器人CUDA资格。共同刚体变换的新增物理窗口本批未执行。Newton 本批只有1.7控制例程源码核对，没有新跨引擎受载控制通过。后续若改变加载协议、夹具、摩擦机制或力目标，须另行独立冻结物理依据与正反例；本轮不通过重调原输入追求全绿。旧 A1 mimic 突加2 mm预载 RAW1 和本轮 mimic 获取后滑移 RAW1 是两个不同失败，均保留。

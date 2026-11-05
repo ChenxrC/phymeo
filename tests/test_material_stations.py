@@ -40,13 +40,15 @@ def _poses(events, state, rows):
 
 
 def _registration(record, *, token=41, anchor=(0.0, 0.0, -1 / 8),
-                  side="second", axis=(1.0, 0.0, 0.0), first_chart=17, second_chart=None):
+                  side="second", axis=(1.0, 0.0, 0.0), first_chart=17, second_chart=None,
+                  first_feature=None, second_feature=None):
     from phymeo.runtime.material_stations import MaterialStationRegistration
 
     return MaterialStationRegistration(
         StationKey(record.identity.first.world, token),
         record.identity.first, record.identity.second, side, anchor, axis,
         first_chart, second_chart,
+        first_feature=first_feature, second_feature=second_feature,
     )
 
 
@@ -121,7 +123,11 @@ def test_closest_chart_drift_is_separate_from_the_same_entry_material_motion(cha
         external.rigid.force[scene.rigid_rows[7, 9], 2] = -4.0
         first = scene.step(H, external)
         events = scene.contact_events
-        registry = MaterialStationRegistry([_registration(events.active[0], first_chart=chart)])
+        # ContactScene.add_box authors product((-hx,hx),(-hy,hy),(-hz,hz)).
+        # The finite +z face is declared before its sparse barycentric support changes.
+        declaration = _registration(events.active[0], first_chart=chart,
+                                    first_feature=(1, 3, 5, 7))
+        registry = MaterialStationRegistry([declaration])
         selection = registry.bind(events, _poses(events, first.entry.rigid, scene.rigid_rows),
                                   sample_time_s=0.0)
         motion, _ = selection.measure_motion(_poses(events, first.state.rigid, scene.rigid_rows))
@@ -141,11 +147,40 @@ def test_closest_chart_drift_is_separate_from_the_same_entry_material_motion(cha
         again, _ = selection.measure_motion(_poses(events, first.state.rigid, scene.rigid_rows))
         np.testing.assert_array_equal(again, motion)
         trial = book.prepare(state, next_selection.samples, sample_time_s=H, dt_s=H)
-        assert trial.stations[0].continuity == ("reset" if chart is None else "same_chart")
+        before, after = selection.samples[0], next_selection.samples[0]
+        assert trial.stations[0].continuity == ("reset" if chart is None else "same_chart"), (
+            f"first.feature={before.first.feature}->{after.first.feature}; "
+            f"second.feature={before.second.feature}->{after.second.feature}; "
+            f"ended={tuple(e.reason for e in trial.ended)}; "
+            f"first.local={before.first.local_point_m}->{after.first.local_point_m}; "
+            f"second.local={before.second.local_point_m}->{after.second.local_point_m}"
+        )
         assert trial.dropped_spring_energy_j == (1 / 64 if chart is None else 0.0)
         if chart is not None:
             assert trial.stations[0].prior.elastic_displacement_m == (1 / 16, 0.0, 0.0)
             assert trial.stations[0].prior.plastic_slip_m == 0.0
+            assert selection.samples[0].first.feature == (1, 3, 5, 7)
+            assert next_selection.samples[0].first.feature == (1, 3, 5, 7)
+            # The source really changes sparse support on that same finite face.
+            assert tuple(i for i, _ in selection.samples[0].first.weights) == (1, 7)
+            assert tuple(i for i, _ in next_selection.samples[0].first.weights) == (1, 5, 7)
+            narrow = MaterialStationRegistry([replace(declaration, first_feature=(1, 7))])
+            narrow.bind(events, _poses(events, first.entry.rigid, scene.rigid_rows), sample_time_s=0.0)
+            with pytest.raises(ValueError, match="first_feature"):
+                narrow.bind(next_events, _poses(next_events, second.entry.rigid, scene.rigid_rows),
+                            sample_time_s=H)
+            assert registry.bind(next_events, _poses(next_events, second.entry.rigid, scene.rigid_rows),
+                                 sample_time_s=H).samples == next_selection.samples
+            # A chart ID alone must not widen the observed support or suppress a reset.
+            sparse = MaterialStationRegistry([replace(declaration, first_feature=None)])
+            old = sparse.bind(events, _poses(events, first.entry.rigid, scene.rigid_rows), sample_time_s=0.0)
+            new = sparse.bind(next_events, _poses(next_events, second.entry.rigid, scene.rigid_rows),
+                              sample_time_s=H)
+            sparse_trial = book.prepare(initial, old.samples, sample_time_s=0.0, dt_s=H)
+            sparse_state = book.commit(initial, sparse_trial, {old.samples[0].key: _stored()})
+            sparse_trial = book.prepare(sparse_state, new.samples, sample_time_s=H, dt_s=H)
+            assert sparse_trial.ended[0].reason == "feature_changed"
+            assert sparse_trial.dropped_spring_energy_j == 1 / 64
 
 
 def test_finite_four_site_patch_uses_actual_site_force_without_fraction_twice():
@@ -333,7 +368,7 @@ def test_empty_unselected_pairs_and_same_local_token_in_other_world_are_explicit
     assert len(partial.samples) == 1 and partial.samples[0].key.world == 7
 
 
-@pytest.mark.parametrize("bad", ["duplicate_key", "world", "side", "axis", "tolerance"])
+@pytest.mark.parametrize("bad", ["duplicate_key", "world", "side", "axis", "tolerance", "feature_duplicate", "feature_boolean"])
 def test_bad_registration_fails_before_any_binding(bad):
     from phymeo.runtime.material_stations import MaterialStationRegistry
 
@@ -345,7 +380,9 @@ def test_bad_registration_fails_before_any_binding(bad):
         else:
             updates = {"world": {"key": StationKey(42, 41)}, "side": {"anchor_side": "either"},
                        "axis": {"tangent_axis_local": (0.0, 0.0, 0.0)},
-                       "tolerance": {"match_tolerance_m": float("inf")}}[bad]
+                       "tolerance": {"match_tolerance_m": float("inf")},
+                       "feature_duplicate": {"first_feature": (1, 1)},
+                       "feature_boolean": {"second_feature": (True,)}}[bad]
             MaterialStationRegistry([replace(registration, **updates)])
 
 

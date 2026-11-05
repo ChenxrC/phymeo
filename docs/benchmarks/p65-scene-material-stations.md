@@ -4,7 +4,7 @@
 
 ## 来源与验证状态
 
-基线 `9e1693110880f23245d8d2e780d37316f1d7d21b`。tests-only 提交 `65ba4b0b0a58876f66e3d28de09cdeb045142cab`；父已用集成基线执行 `test_real_finite_face_load_is_bound_to_explicit_material_station`，真实有限箱面–球的 4 N 入步前置通过，随后缺少 `runtime.material_stations`，RAW1。父保存收据名为 `03-material-first-red`。本报告交付时，新模块与其余专项仍待父串行 GREEN；作者没有运行项目 import、测试、数值、lint 或格式化。
+基线 `9e1693110880f23245d8d2e780d37316f1d7d21b`。tests-only 提交 `65ba4b0b0a58876f66e3d28de09cdeb045142cab`；父已用集成基线执行 `test_real_finite_face_load_is_bound_to_explicit_material_station`，真实有限箱面–球的 4 N 入步前置通过，随后缺少 `runtime.material_stations`，RAW1。父保存收据名为 `03-material-first-red`。首次完整功能运行在 `3 passed / 1 failed` 停止：同一有限面移动的 `[17]` 用例错误期望仅凭 chart ID 就能跨过稀疏支撑变化。第一次诊断的完整 dataclass 被 pytest 截断，保留 RAW1；随后短诊断实际确认 first.feature `(1,7)→(1,5,7)`、second.feature `(0,)→(0,)`、ended=`feature_changed`，箱面局部点由 `(0,0,0.125)` 移到 `(0.001953125,0,0.125)`，球侧 `(0,0,-0.125)` 不变。这是 B4 初版源/测试对 feature 定义不完整，B3 的保守重置正确。修复新增显式完整 feature 声明，以预先登记的 +z 面 `(1,3,5,7)` 验证同面连续性，同时保留未声明时的原 reset 和越出声明子集的拒绝负控。修复与其余专项待父串行 GREEN；作者没有运行项目 import、测试、数值、lint 或格式化。
 
 仅新增：
 
@@ -18,7 +18,7 @@
 
 `OwnerPose(owner, position_m, rotation_world)` 保存实际 owner 原点和正交右手旋转的独立不可变值。支持普通 rigid COM、URDF computational link、fixed root；粒子/柔体 owner 暂时明确拒绝。机器人物理 body ID 与碰撞 remapped body ID 分开。
 
-`MaterialStationRegistration(key, first, second, anchor_side, anchor_local_m, tangent_axis_local, first_chart_id, second_chart_id, topology_revision=0, match_tolerance_m=1e-8)` 声明一个稳定 token、canonical 同世界 shape pair 及一侧实际局部材料锚点。切向轴在该侧 owner 材料坐标系中声明，现场投影到真实法向的切平面；退化轴拒绝。匹配容限是调用者明确的局部坐标容限，不用来挑最近的一行。
+`MaterialStationRegistration(key, first, second, anchor_side, anchor_local_m, tangent_axis_local, first_chart_id, second_chart_id, topology_revision=0, match_tolerance_m=1e-8, first_feature=None, second_feature=None)` 声明一个稳定 token、canonical 同世界 shape pair 及一侧实际局部材料锚点。切向轴在该侧 owner 材料坐标系中声明，现场投影到真实法向的切平面；退化轴拒绝。匹配容限是调用者明确的局部坐标容限，不用来挑最近的一行。可选 `first_feature/second_feature` 是各侧完整 chart 的预声明原始材料顶点 IDs，必须非空、非负整数且互异；bind 逐次核实真实 weights 的所有 IDs 都在声明集合内。默认 `None` 仍将当前稀疏支持作为 feature，不凭 chart ID 自动扩展。
 
 `MaterialStationRegistry(registrations)` 冻结最多 128 个登记，允许空集合；重复 key 拒绝。只读 `pairs` 是选中的 canonical pair tuple，供父层仅对这些 pair 使用 normal-only 原采样；未配置 pair 不进入适配，保留旧摩擦路径。
 
@@ -45,7 +45,7 @@ bind 会校验每方实际 pose 能在登记容限内将局部材料坐标重建
 
 RR 的旧摩擦可在中层公共点施力，robot pad 可在 pad 点施力；这些点不一定等于表面材料点。平移时两套位移可相同，偏心转动时一般不同。此模块如实返回差别，不能把 `h J v` 或重新采样的末态最近点当作真实材料运动。A 的实际 motion/work 门仍决定候选能否发布。
 
-`chart_id` 是用户对该侧有效同一材料图的显式声明；适配器只保存当次真实权重/材料点，既不证明连续跨面，也不把 chart 内的最近点漂移计成塑性滑移。B3 对未声明坐标变化、owner/支持节点/拓扑变化仍保守释放重建，丢弃储能可见。夹持面裁剪后若原局部 anchor 不再对应唯一真实采样，本版拒绝，不自动将附近顶点升级为同一材料身份。
+`chart_id` 是用户对该侧有效同一材料图的显式声明；适配器只保存当次真实权重/材料点，既不证明连续跨面，也不把 chart 内的最近点漂移计成塑性滑移。完整 feature 已明确声明时，当前稀疏 weights 可以在该集合内变化；对真正离开声明集合的采样直接拒绝。B3 对未声明坐标变化、owner/feature/拓扑变化仍保守释放重建，丢弃储能可见。夹持面裁剪后若原局部 anchor 不再对应唯一真实采样，本版拒绝，不自动将附近顶点升级为同一材料身份。
 
 公共 `.contact_events` 表示上一成功步的**入步**载荷。父场景接缝必须从当前 `sample()` 的真实 loads 和当前 entry state/FK 纯 stage B2 view，再调用 bind；传旧 view 与新 sample_time 会拒绝。源码入口默认物理/摩擦行为本批作者没有改动。
 

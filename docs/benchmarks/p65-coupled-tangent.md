@@ -17,3 +17,5 @@
 实际运动测试将用原公有刚体、粒子推进器与RobotPointPort：两体等反合力/动量和完整交叉W；独立粒子64步恒载至非零静牵引、8步卸载及无旧strain重入；RobotPointPort共享祖先实际响应；刚体偏心力矩产生真实exp-map与线性预测不等的拒绝留出。它们是已知法向容量下的切向子问题，不能称作新场景已自动检测box/sphere/finite-plane/robot-pad接触，完整生产适配是后续独立能力。
 
 **Newton 1.7 本机只读观察。** 安装元数据确认1.7.0。semi_implicit/kernels_contact.py 的 eval_body_contact 仍以 norm_huber 和 min(kf*speed,μN)算速度摩擦；XPBD kernels.py 在当前两侧局部接触点的真实位置差上算friction_delta，限于增量normal multiplier，且明确避免重复加动态速度；不是本弹性history律。VBD rigid_vbd_kernels.py 有完整两体切向Delassus块、Coulomb盘和迭代切向dual，solver_vbd.py 的 rigid_contact_history为数值warm-start（默认False）；不能把缓存乘子等同材料弹性储能。MuJoCo原生约束路径另有锥/solver语义。本批先不加原生跨引擎跑，未来同输入会分别报告模型差异。
+
+运动输入补充冻结：两自由刚体 m=(2,3) kg，两个并联COM材料端口，h=.1 s、各kt=120、N=4、μ=.5，外载±3 N，完整W每块为(1/2+1/3)I，首步每站−1 N，真实两体速度(−.05,1/30)m/s；另加共速boost和90°共同变换。粒子质量1 kg、h=1/16、kt256、N4、μ.5，64步外载1 N到静态牵引；2步3 N触发滑动，8步N=0保留真实速度而非清零，随后重入；每步审核实际位移与动能/外功/弹性能/塑性与两种离散损失。RobotPointPort用1 kg普通滑轨上的两个地址求全W，再施原公开点冲量，检验真实v而不宣称瞬时接口已drift。转动留出 m=1、Iz=1、r=(1,−1,0)，首角速度1/32 rad/s、h=1/8；真实姿态用原RigidSemiImplicitSolver，材料点exp-map与hJv的差必须在verify_motion中拒绝，保入态原数组。

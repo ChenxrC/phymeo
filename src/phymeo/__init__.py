@@ -204,6 +204,7 @@ from .geometry.surface_features import (
     closest_segment_segment,
 )
 from .runtime.batched_scene import BatchedStepResult, TyxBatchedScene
+from .runtime.contact_history import ContactEvent, ContactHistory, ContactIdentity, ContactRecord
 from .runtime.contact_scene import ContactSceneBuilder
 from .runtime.finite_contact_terminal import FiniteContactTerminalProgram
 from .runtime.load_replay import ReplayTrial, SceneLoadReplay
@@ -454,6 +455,10 @@ __all__ = [
     "SceneModel",
     "SceneState",
     "ContactSceneBuilder",
+    "ContactHistory",
+    "ContactIdentity",
+    "ContactRecord",
+    "ContactEvent",
     "StageMetrics",
     "StepSettings",
     "ProgramCapabilities",

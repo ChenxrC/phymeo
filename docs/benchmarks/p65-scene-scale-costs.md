@@ -55,6 +55,12 @@ W1诊断单独用同一loaded输入：先一个未插桩准备窗，再一个插
 
 若最终源码已含 B1，每步另外保留已发布的 contact_history 完整快照（getter/编码在计时之外，生成本身仍在 step 内）；独立诊断以 contact_history_staging 记录其真实 HOST 区间。缺模块的旧基线明确为无该字段，不和最终版本混报。
 
+## 正式矩阵与诊断结果
+
+父在产品HEAD `2a4c22f2ea6049ece9bc150332490eb863b773ab` 完成了九档CUDA矩阵（576个正式物理步）和单独W1 loaded诊断，均RAW0；完整输出同次解码与摘要验证通过。前后产品及三工具绑定一致。没有改输入、容差、字段或增加调优运行。
+
+[九档实测、完整数据链接与下一项优化](p65-scene-contact-scale-batch1.md#规模数据与交付)：W128 warm p50分别405.53/1045.98/1123.46 ms。最先关注原narrow统计覆盖的分派与完整记录装配；其计时不能当纯GPU时间。下一项候选是保留完整输出的不可变过滤行复用，尚未实施或声称加速。
+
 ## 已完成的协议资格
 
 父单槽收据位于同一证据根：`c1-host-first` 为12 passed / 1 deselected，1.76 s；`c1-cuda-qualification` 为1 passed / 12 deselected，2.23 s。这些是专项耗时，不是正式物理吞吐。资格对应 `c424c6f` 的输入/数学代码；随后父只调整四个Python文件的导入顺序和格式，`c1-style-ast` 证明4个规范化AST与导入绑定相同，`c1-lint-final`、`c1-format-final` 均RAW0。首轮两个import顺序错误及四文件格式差异保留，未修改几何、误差门或物理预期。

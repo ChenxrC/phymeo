@@ -2,6 +2,8 @@
 
 ## 当前入口（2026-11-05）
 
+08:00之后的[场景、接触与规模第一批](../benchmarks/p65-scene-contact-scale-batch1.md)已完成集成和源码外wheel验收。公共构建器现可登记一个URDF、多个自由球/箱及有限台，普通场景增加不可变接触生命周期；九档CUDA规模矩阵576步通过。Panda预载保持/释放288步通过，mimic192步能运行但连续持稳门仍失败并保留。下一批从报告的A2通用获取控制、B2材料/事件统一、C2完整过滤记录复用继续；未将预载释放等同完整抓取。
+
 本轮新增功能、最终源码外 wheel 验收、限域性能与尚未达标的数值/软布案例见[08:00 总结](../benchmarks/p65-newton-20261105-0800.md)和[可点击概览](../benchmarks/p65-newton-20261105-overview.html)。下一轮从[场景编排、通用持续接触与 GPU 规模计划](../superpowers/plans/2026-11-05-after-night-newton-parity.md)选择新的工作节点。
 
 北京时间 11 月 5 日凌晨的工作以[08:00 批次计划](../superpowers/plans/2026-11-05-newton-overnight-0800.md)和[分模块实测](../benchmarks/p65-newton-20261105-0800.md)为入口。按刚体与关节、柔性接触、运行时观测和 GPU 多世界分别验收，保留本机 Newton 1.7.0 的参照以及尚未通过的案例。

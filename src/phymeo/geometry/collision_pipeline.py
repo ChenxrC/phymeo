@@ -478,6 +478,7 @@ def _detect_pairs(
     *,
     pair_start=0,
     pair_slots=None,
+    preserve_batches=False,
 ):
     rows = []
     shapes = workspace._model.shapes
@@ -553,10 +554,20 @@ def _detect_pairs(
         ):
             raise ValueError("compact slots must be distinct ordered global pair indices")
         pairs = workspace._pairs[pair_slots]
-    for offset in range(0, len(flags), batch_size):
+    if preserve_batches and pair_slots is not None:
+        # Ordinary detect keeps the old global batches: removing filtered rows
+        # must not regroup active features into different device launches.
+        edges = np.flatnonzero(np.diff(pair_slots // batch_size)) + 1
+        batches = zip((0, *edges), (*edges, len(flags)), strict=True) if len(flags) else ()
+    else:
+        batches = (
+            (offset, min(offset + batch_size, len(flags)))
+            for offset in range(0, len(flags), batch_size)
+        )
+    for offset, limit in batches:
         batch = []
         features = []
-        for local, (i, j, _) in enumerate(pairs[offset : offset + batch_size]):
+        for local, (i, j, _) in enumerate(pairs[offset:limit]):
             a, b = shapes[i], shapes[j]
             ma, mb = paths[a.key], paths[b.key]
             code = int(flags[offset + local])
@@ -868,6 +879,51 @@ def _detect_pairs(
     return tuple(rows)
 
 
+def _filtered_templates(shapes, pairs):
+    """Freeze only model-defined filters, in the unmodified global pair order."""
+    codes, rows = [], []
+    for i, j, excluded in pairs:
+        a, b = shapes[i], shapes[j]
+        if a.key.world != b.key.world:
+            code = 1
+        elif a.rigid and a.key.body == b.key.body:
+            code = 2
+        elif not (a.group & b.mask and b.group & a.mask):
+            code = 3
+        elif excluded:
+            code = 4
+        else:
+            code = 0
+        codes.append(code)
+        rows.append(_pair(a, b, None, None, code, None, None) if code else None)
+    # bytes-backed storage prevents a changed classification from rewriting
+    # the model's filter codes or a previously published frozen row.
+    return np.frombuffer(bytes(codes), dtype=np.uint8), tuple(rows)
+
+
+def _complete_pairs(workspace, paths, flags, selected, proximity, resolved):
+    """Reuse matching immutable filters; every code 0/5 retains the old narrow path."""
+    codes = workspace._filtered_codes
+    reuse = (codes != 0) & (flags == codes)
+    if not np.any(reuse):
+        return _detect_pairs(workspace, paths, flags, selected, proximity, resolved)
+    slots = np.flatnonzero(~reuse)
+    active = _detect_pairs(
+        workspace,
+        paths,
+        flags[slots],
+        selected,
+        proximity,
+        resolved,
+        pair_slots=slots,
+        preserve_batches=True,
+    )
+    rows = list(workspace._filtered_rows)
+    for slot, row in zip(slots, active, strict=True):
+        rows[slot] = row
+    return tuple(rows)
+
+
 @dataclass
 class _QueryDraft:
     layouts: dict
@@ -953,6 +1009,7 @@ class CollisionWorkspace:
                 raise ValueError("world pairs contain an invalid index, world or exclusion")
             pairs.flags.writeable = False
         self._pairs = pairs
+        self._filtered_codes, self._filtered_rows = _filtered_templates(shapes, pairs)
         self._broad_phase = broad_phase
         self._spatial = (
             SpatialPairs(self._tags, self._pairs, broad_phase)
@@ -1218,7 +1275,7 @@ def detect(model, motion, policy, workspace):
             after_mid = perf_counter_ns()
             workspace._times["midphase_ns"] += after_mid - narrow_start
             narrow_start = after_mid
-        rows = _detect_pairs(workspace, paths, flags, selected, policy.proximity_patches, resolved)
+        rows = _complete_pairs(workspace, paths, flags, selected, policy.proximity_patches, resolved)
         result = _detection_result(model, paths, workspace._backend, count, rows, bounds)
         workspace._times["narrow_ns"] += perf_counter_ns() - narrow_start
         if draft is None:

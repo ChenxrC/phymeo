@@ -10,10 +10,10 @@ from phymeo import ContactSceneBuilder, NormalLayer
 from phymeo.constraints.collision_shapes import CollisionKey
 
 
-def clamp(mass=1.0):
+def clamp(mass=1.0, *, omega=(0., 0., 0.)):
     b = ContactSceneBuilder(gravity=(0.0, 0.0, 0.0))
     b.add_box(10, (.3, .3, .1), mass=None, position=(0, 0, -.2))
-    b.add_box(20, (.1, .1, .05), mass=mass)
+    b.add_box(20, (.1, .1, .05), mass=mass, angular_velocity=omega)
     b.add_box(30, (.3, .3, .1), mass=None, position=(0, 0, .2))
     layer = NormalLayer(.06, 200.0, .2, .5)
     b.pair(10, 20, layer)
@@ -90,3 +90,65 @@ def test_default_remains_unconfigured_and_native_opt_in_rejects_before_execution
         assert scene.tangent_history is None
         frame = scene.step(1 / 1024)
         assert frame.rigid_report.accepted
+
+
+def test_real_urdf_two_pads_share_one_prismatic_response(tmp_path):
+    from phymeo.constraints.robot_contact import RobotContactMaterial
+    from phymeo.core.robot import RobotState
+    from phymeo.runtime.robot_payload_scene import PadFace
+    from phymeo.runtime.robot_scene import RobotCommand
+    from phymeo.runtime.material_stations import MaterialStationRegistration, MaterialStationRegistry
+    from phymeo.solvers.tangent_history import StationKey
+
+    path = tmp_path / "two_pad_slide.urdf"
+    path.write_text(
+        '<robot name="slide"><link name="base"/><link name="pad_link">'
+        '<inertial><mass value="2"/><inertia ixx=".01" iyy=".01" izz=".01" '
+        'ixy="0" ixz="0" iyz="0"/></inertial>'
+        '<collision name="pad"><geometry><box size=".02 .04 .06"/></geometry></collision>'
+        '</link><joint name="slide" type="prismatic"><parent link="base"/>'
+        '<child link="pad_link"/><origin xyz="-.01 0 .3"/><axis xyz="0 0 1"/>'
+        '<limit lower="-.1" upper=".1" effort="20" velocity="1"/></joint></robot>',
+        encoding="utf-8",
+    )
+    b = ContactSceneBuilder(gravity=(0, 0, 0))
+    b.add_urdf(10, path, robot_state=RobotState(np.zeros(1), np.zeros(1)),
+               kp=[100.], kd=[1.],
+               pads=[PadFace.named("pad_link", "pad", 0, 1, ((.009, 0), (-.009, 0)))])
+    b.add_sphere(20, .02, mass=.1, position=(.015, 0, .3))
+    b.pair(10, 20, RobotContactMaterial(2000., 0., .5, .01))
+    with b.build() as scene:
+        loads = scene.sample()
+        first, second = loads.contacts[0].first, loads.contacts[0].second
+        registrations = tuple(MaterialStationRegistration(
+            StationKey(0, i), first, second, "first", (.01, y, 0), (0, 0, 1), 0, 1,
+        ) for i, y in enumerate((.009, -.009)))
+        scene.enable_coupled_tangent(MaterialStationRegistry(registrations),
+                                     stiffness_n_per_m=200.)
+        action = {10: RobotCommand([.0001], feedforward=[0.])}
+        force = scene.inputs()
+        force.rigid.force[scene.rigid_rows[0, 20], 2] = -.1
+        for _ in range(4):
+            frame = scene.step(.0001, actions=action, external=force)
+            assert scene.tangent_receipt.accepted
+            assert len(scene.tangent_history.active) == 2
+            joint = frame.robots[0, 10]
+            assert joint.drive_effort[0] > 0
+            tangent_z = sum(s.force_on_second_n[2] for c in frame.loads.contacts for s in c.sites)
+            assert tangent_z > 0
+            assert joint.contact_effort[0] == pytest.approx(-tangent_z, abs=1e-12)
+            for detail, load in zip(frame.contacts, frame.loads.contacts, strict=True):
+                np.testing.assert_allclose(detail["force_on_second_N"], load.sites[0].force_on_second_n)
+        assert scene.contact_events.commit_time_s == scene.tangent_history.commit_time_s
+
+
+def test_actual_rotating_material_path_is_rejected_before_publication():
+    with clamp(omega=(0., 5., 0.)).build() as scene:
+        scene.enable_coupled_tangent(clamp_registry(), stiffness_n_per_m=200.)
+        initial, history = scene.state, scene.tangent_history
+        with pytest.raises(ValueError, match='motion|displacement|energy|work'):
+            scene.step(.0001)
+        np.testing.assert_array_equal(scene.state.rigid.orientation, initial.rigid.orientation)
+        assert scene.tangent_history is history
+        assert scene.contact_events.step_index == 0
+        assert scene.last_frame is None

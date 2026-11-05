@@ -618,6 +618,18 @@ class ContactScene:
         with self._lock:
             return self._contact_history
 
+    @property
+    def contact_events(self):
+        """Unified immutable view of the last committed loaded-pair episodes."""
+        with self._lock:
+            from .contact_events import contact_events_from_history
+
+            return contact_events_from_history(
+                self._contact_history,
+                layers=self._system.layers,
+                bindings=self._system.bindings,
+            )
+
     def inputs(self):
         """Allocate independently writable external forces and torques matching the compiled state."""
         return CoupledInputs.zeros(

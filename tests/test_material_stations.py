@@ -141,7 +141,13 @@ def test_closest_chart_drift_is_separate_from_the_same_entry_material_motion(cha
         again, _ = selection.measure_motion(_poses(events, first.state.rigid, scene.rigid_rows))
         np.testing.assert_array_equal(again, motion)
         trial = book.prepare(state, next_selection.samples, sample_time_s=H, dt_s=H)
-        assert trial.stations[0].continuity == ("reset" if chart is None else "same_chart")
+        assert trial.stations[0].continuity == ("reset" if chart is None else "same_chart"), {
+            "before_first": selection.samples[0].first,
+            "before_second": selection.samples[0].second,
+            "after_first": next_selection.samples[0].first,
+            "after_second": next_selection.samples[0].second,
+            "ended": trial.ended,
+        }
         assert trial.dropped_spring_energy_j == (1 / 64 if chart is None else 0.0)
         if chart is not None:
             assert trial.stations[0].prior.elastic_displacement_m == (1 / 16, 0.0, 0.0)

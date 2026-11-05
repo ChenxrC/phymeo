@@ -418,13 +418,19 @@ def test_mutable_or_mistyped_material_owner_fields_are_rejected_without_publicat
         owner = replace(sample.first.owner, link_index=external)
     elif bad == "root_name":
         owner = replace(
-            sample.first.owner, kind="robot_root", local_frame="robot_root",
-            link_index=-1, link_name=external,
+            sample.first.owner,
+            kind="robot_root",
+            local_frame="robot_root",
+            link_index=-1,
+            link_name=external,
         )
     else:
         owner = replace(
-            sample.first.owner, kind="robot_root", local_frame="robot_root",
-            link_index=-1.0, link_name="root",
+            sample.first.owner,
+            kind="robot_root",
+            local_frame="robot_root",
+            link_index=-1.0,
+            link_name="root",
         )
     invalid = replace(sample, first=replace(sample.first, owner=owner))
     book = TangentHistory(1)

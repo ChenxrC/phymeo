@@ -469,9 +469,7 @@ class TangentHistory:
             self._owner,
             state,
             values,
-            tuple(
-                _ArrayBinding(a, a.dtype.str, a.shape, a.strides, a.tobytes()) for a in arrays
-            ),
+            tuple(_ArrayBinding(a, a.dtype.str, a.shape, a.strides, a.tobytes()) for a in arrays),
         )
         return TangentTrial(self._owner, state, payload, *values, *arrays)
 

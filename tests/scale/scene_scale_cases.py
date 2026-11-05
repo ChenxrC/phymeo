@@ -54,11 +54,7 @@ def seeds(case, count, *, feature="edge"):
             normal = (mirror / 3, 2 / 3, 2 / 3)
         gap = {"free": 3 / 4, "loaded": 1 / 32, "birth": 3 / 32}[case]
         center = np.asarray(point) + (RADIUS + gap) * np.asarray(normal)
-        velocity = (
-            -0.5 * np.asarray(normal)
-            if case == "birth"
-            else np.array((mirror / 32, 0, 0))
-        )
+        velocity = -0.5 * np.asarray(normal) if case == "birth" else np.array((mirror / 32, 0, 0))
         result.append(
             Seed(17 + 3 * i, case, actual, mirror, point, normal, tuple(center), tuple(velocity))
         )
@@ -79,12 +75,20 @@ def builder(ph, case, count, *, feature="edge", transformed=False):
     make = ph.ContactSceneBuilder(gravity=rotation @ gravity(case))
     for seed in seeds(case, count, feature=feature):
         make.add_box(
-            BOX, HALF, mass=None, world=seed.world,
-            position=offset, orientation_xyzw=orientation,
+            BOX,
+            HALF,
+            mass=None,
+            world=seed.world,
+            position=offset,
+            orientation_xyzw=orientation,
         )
         make.add_sphere(
-            BALL, RADIUS, mass=MASS, world=seed.world,
-            position=offset + rotation @ seed.center, velocity=rotation @ seed.velocity,
+            BALL,
+            RADIUS,
+            mass=MASS,
+            world=seed.world,
+            position=offset + rotation @ seed.center,
+            velocity=rotation @ seed.velocity,
         )
         make.pair(BOX, BALL, ph.NormalLayer(WIDTH, STIFFNESS), world=seed.world)
     return make
@@ -97,7 +101,13 @@ def oracle(seed, *, transformed=False):
     normal = np.asarray(seed.normal)
     position, velocity = np.asarray(seed.center).copy(), np.asarray(seed.velocity).copy()
     contact_point = np.asarray(seed.point)
-    points, velocities, entry_gaps, forces, points_on_box = [position.copy()], [velocity.copy()], [], [], []
+    points, velocities, entry_gaps, forces, points_on_box = (
+        [position.copy()],
+        [velocity.copy()],
+        [],
+        [],
+        [],
+    )
     for _ in range(STEPS):
         if seed.feature == "face":
             gap = position[2] - HALF[2] - RADIUS
@@ -144,8 +154,10 @@ def certify_frame(frame, rows, case, count, step, *, feature="edge", transformed
             entry.position[ball], expected["position_m"][step], rtol=0, atol=POSITION_ATOL_M
         )
         np.testing.assert_allclose(
-            state.velocity[ball], expected["velocity_m_s"][step + 1],
-            rtol=0, atol=VELOCITY_ATOL_M_S,
+            state.velocity[ball],
+            expected["velocity_m_s"][step + 1],
+            rtol=0,
+            atol=VELOCITY_ATOL_M_S,
         )
         np.testing.assert_allclose(force, want_force, rtol=0, atol=FORCE_ATOL_N)
         np.testing.assert_allclose(frame.loads.inputs.rigid.force[box], -force, rtol=0, atol=1e-7)
@@ -161,17 +173,22 @@ def certify_frame(frame, rows, case, count, step, *, feature="edge", transformed
         if np.linalg.norm(want_force) > FORCE_ATOL_N:
             assert c is not None
             np.testing.assert_allclose(c.normal, expected["normal"], rtol=0, atol=NORMAL_ATOL)
-            np.testing.assert_allclose(c.gap_m, expected["entry_gap_m"][step], rtol=0, atol=GAP_ATOL_M)
+            np.testing.assert_allclose(
+                c.gap_m, expected["entry_gap_m"][step], rtol=0, atol=GAP_ATOL_M
+            )
             assert c.gap_m > 0 and c.force_n > 0 and len(c.sites) == 1
             site = c.sites[0]
             np.testing.assert_allclose(
-                site.application_point_first_m, expected["point_on_box_m"][step],
-                rtol=0, atol=POSITION_ATOL_M,
+                site.application_point_first_m,
+                expected["point_on_box_m"][step],
+                rtol=0,
+                atol=POSITION_ATOL_M,
             )
             np.testing.assert_allclose(
                 site.application_point_second_m,
                 entry.position[ball].astype(float) - RADIUS * expected["normal"],
-                rtol=0, atol=POSITION_ATOL_M,
+                rtol=0,
+                atol=POSITION_ATOL_M,
             )
         elif c is not None:
             assert abs(c.force_n) <= FORCE_ATOL_N

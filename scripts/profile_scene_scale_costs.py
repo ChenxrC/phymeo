@@ -77,7 +77,10 @@ class CallTimeline:
         if event == "call" and frame.f_code in self._labels:
             self._serial += 1
             self._open[id(frame)] = (
-                perf_counter_ns(), self._serial, self._labels[frame.f_code], len(self._open)
+                perf_counter_ns(),
+                self._serial,
+                self._labels[frame.f_code],
+                len(self._open),
             )
         elif event == "return":
             item = self._open.pop(id(frame), None)
@@ -134,8 +137,11 @@ class CallTimeline:
         if active or sum(exclusive.values()) != end - begin:
             raise AssertionError("exclusive caller time does not cover the public boundary")
         return dict(
-            exclusive_ns=dict(exclusive), inclusive_ns=dict(inclusive), calls=dict(calls),
-            spans=spans, caller_wall_ns=end - begin,
+            exclusive_ns=dict(exclusive),
+            inclusive_ns=dict(inclusive),
+            calls=dict(calls),
+            spans=spans,
+            caller_wall_ns=end - begin,
             pure_gpu_device_ns=None,
             scope="current caller thread only; nested API wall times include runtime overhead",
         )
@@ -153,15 +159,27 @@ def main():
     source = driver.provenance(args.expected_head)
     cache, make = args.out / "cache", driver.builder(ph, args.case, 1)
     report = dict(
-        source=source, case=args.case, worlds=1, diagnostic_only=True, windows=[],
+        source=source,
+        case=args.case,
+        worlds=1,
+        diagnostic_only=True,
+        windows=[],
         scope="not a formal score; Python profile overhead is present; no pure GPU time",
     )
     try:
         for phase, timeline in (("untraced_prepare", None), ("diagnostic", CallTimeline())):
-            report["windows"].append(driver.run_window(
-                make, args.case, 1, phase, "cuda", cache,
-                args.out / f"{phase}.json.gz", profile=timeline,
-            ))
+            report["windows"].append(
+                driver.run_window(
+                    make,
+                    args.case,
+                    1,
+                    phase,
+                    "cuda",
+                    cache,
+                    args.out / f"{phase}.json.gz",
+                    profile=timeline,
+                )
+            )
         report["source_after"] = driver.provenance(args.expected_head)
         report["success"] = True
     except BaseException as error:

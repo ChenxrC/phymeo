@@ -8,11 +8,19 @@ from pathlib import Path
 
 import numpy as np
 import pytest
+from scene_scale_cases import (
+    BALL,
+    BOX,
+    STEPS,
+    H,
+    builder,
+    certify_frame,
+    matrix,
+    oracle,
+    seeds,
+)
 
 import phymeo as ph
-from scene_scale_cases import (
-    BALL, BOX, H, STEPS, builder, certify_frame, matrix, oracle, seeds,
-)
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -58,7 +66,9 @@ def test_independent_scalar_oracles_distinguish_occupancy_and_first_force(case):
         assert magnitudes[-1] > 0
 
 
-@pytest.mark.parametrize("feature, transformed", (("face", False), ("edge", False), ("corner", True)))
+@pytest.mark.parametrize(
+    "feature, transformed", (("face", False), ("edge", False), ("corner", True))
+)
 def test_real_birth_trajectory_has_bound_material_points_and_accepted_endpoints(
     feature, transformed
 ):
@@ -68,8 +78,13 @@ def test_real_birth_trajectory_has_bound_material_points_and_accepted_endpoints(
         for step in range(STEPS):
             frame = scene.step(H)
             certify_frame(
-                frame, scene.rigid_rows, "birth", 1, step,
-                feature=feature, transformed=transformed,
+                frame,
+                scene.rigid_rows,
+                "birth",
+                1,
+                step,
+                feature=feature,
+                transformed=transformed,
             )
             assert scene.geometry().time_s == (step + 1) * H
 
@@ -89,7 +104,9 @@ def test_capacity_rejection_preserves_state_time_frame_then_the_same_scene_recov
             scene.step(H, capacity=0)
         np.testing.assert_array_equal(scene.state.rigid.position, old.rigid.position)
         assert scene.geometry().time_s == time
-        np.testing.assert_array_equal(scene.last_frame.state.rigid.position, frame.state.rigid.position)
+        np.testing.assert_array_equal(
+            scene.last_frame.state.rigid.position, frame.state.rigid.position
+        )
         accepted = scene.step(H)
         certify_frame(accepted, scene.rigid_rows, "loaded", 1, 1)
 

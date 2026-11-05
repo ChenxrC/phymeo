@@ -24,7 +24,12 @@ import phymeo as ph
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tests" / "scale"))
 from scene_scale_cases import (  # noqa: E402
-    H, STEPS, builder, certify_frame, matrix, seeds,
+    STEPS,
+    H,
+    builder,
+    certify_frame,
+    matrix,
+    seeds,
 )
 
 MATRIX = matrix()
@@ -38,7 +43,8 @@ def public_value(value):
         array = np.ascontiguousarray(value)
         return dict(
             __array__=base64.b64encode(array.tobytes()).decode("ascii"),
-            dtype=array.dtype.str, shape=list(array.shape),
+            dtype=array.dtype.str,
+            shape=list(array.shape),
         )
     if isinstance(value, np.generic):
         return public_value(value.item())
@@ -144,7 +150,9 @@ class WindowWriter:
 
     def stats(self):
         return dict(
-            file=self.path.name, frames=self.count, logical_sha256=self.digest.hexdigest(),
+            file=self.path.name,
+            frames=self.count,
+            logical_sha256=self.digest.hexdigest(),
             logical_uncompressed_bytes=self.logical_bytes,
             delta_json_bytes=self.stored_json_bytes,
             gzip_bytes=self.path.stat().st_size,
@@ -195,8 +203,10 @@ def delta_counts(after, before, prefix=""):
         if isinstance(value, Mapping) and isinstance(previous, Mapping):
             result.update(delta_counts(value, previous, label + "."))
         elif (
-            isinstance(value, (float, int)) and not isinstance(value, bool)
-            and isinstance(previous, (float, int)) and not isinstance(previous, bool)
+            isinstance(value, (float, int))
+            and not isinstance(value, bool)
+            and isinstance(previous, (float, int))
+            and not isinstance(previous, bool)
         ):
             result[label] = value - previous
     return result
@@ -222,7 +232,10 @@ def provenance(expected_head=None):
                 raise AssertionError("mixed source or installed Phymeo modules")
             files[str(path.relative_to(root))] = hashlib.sha256(path.read_bytes()).hexdigest()
     return dict(
-        source_head=head, root=str(root), module=str(source), product_dirty=False,
+        source_head=head,
+        root=str(root),
+        module=str(source),
+        product_dirty=False,
         imported_files=files,
         driver_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
     )
@@ -230,8 +243,12 @@ def provenance(expected_head=None):
 
 def _distribution(values):
     return dict(
-        count=len(values), total_ns=sum(values), p50_ns=float(np.median(values)),
-        p95_ns=float(np.percentile(values, 95)), minimum_ns=min(values), maximum_ns=max(values),
+        count=len(values),
+        total_ns=sum(values),
+        p50_ns=float(np.median(values)),
+        p95_ns=float(np.percentile(values, 95)),
+        minimum_ns=min(values),
+        maximum_ns=max(values),
     )
 
 
@@ -253,8 +270,13 @@ def run_window(make, case, count, phase, mode, cache, destination, *, profile=No
     last_value = None
     try:
         meta = dict(
-            case=case, worlds=count, phase=phase, dt_s=H, steps=STEPS,
-            initial=scene.state, rigid_rows=scene.rigid_rows,
+            case=case,
+            worlds=count,
+            phase=phase,
+            dt_s=H,
+            steps=STEPS,
+            initial=scene.state,
+            rigid_rows=scene.rigid_rows,
             input_rows=seeds(case, count),
             output_contract="entire step and geometry; published contact_history if available",
         )
@@ -287,15 +309,19 @@ def run_window(make, case, count, phase, mode, cache, destination, *, profile=No
                     maximum[key] = max(maximum.get(key, 0), value)
                 oracle_ns = perf_counter_ns() - oracle_start
                 encoding_start = perf_counter_ns()
-                last_value = public_value(dict(
-                    frame=frame, geometry=geometry, contact_history=history
-                ))
+                last_value = public_value(
+                    dict(frame=frame, geometry=geometry, contact_history=history)
+                )
                 digest = writer.append(last_value)
                 row = dict(
-                    step=step + 1, entry_s=step * H, end_s=expected_time,
-                    step_ns=stepped - start, geometry_snapshot_ns=stop - stepped,
+                    step=step + 1,
+                    entry_s=step * H,
+                    end_s=expected_time,
+                    step_ns=stepped - start,
+                    geometry_snapshot_ns=stop - stepped,
                     public_to_end_ns=stop - start,
-                    oracle_ns=oracle_ns, archive_ns=perf_counter_ns() - encoding_start,
+                    oracle_ns=oracle_ns,
+                    archive_ns=perf_counter_ns() - encoding_start,
                     actual_contacts=len(frame.loads.contacts),
                     actual_sites=sum(len(c.sites) for c in frame.loads.contacts),
                     actual_required_candidates=frame.path.required_candidates,
@@ -303,11 +329,10 @@ def run_window(make, case, count, phase, mode, cache, destination, *, profile=No
                     different_world_rows=sum(
                         p.first.world != p.second.world for p in frame.path.pairs
                     ),
-                    force_worlds=[
-                        c.first.world for c in frame.loads.contacts if c.force_n > 3e-4
-                    ],
+                    force_worlds=[c.first.world for c in frame.loads.contacts if c.force_n > 3e-4],
                     counters=delta_counts(statistics, before),
-                    native_counters=delta_counts(raw, native), frame_logical_sha256=digest,
+                    native_counters=delta_counts(raw, native),
+                    frame_logical_sha256=digest,
                 )
                 if profile is not None:
                     row["diagnostic_intervals"] = profile.partition(start, stop)
@@ -323,9 +348,13 @@ def run_window(make, case, count, phase, mode, cache, destination, *, profile=No
         if verified != STEPS:
             raise AssertionError("missing public physical steps")
         return dict(
-            phase=phase, build_ns=build_ns, successful_steps=len(rows), rows=rows,
+            phase=phase,
+            build_ns=build_ns,
+            successful_steps=len(rows),
+            rows=rows,
             native_build_counters=delta_counts(count_before, before_build),
-            output=writer.stats(), max_physical_errors=maximum,
+            output=writer.stats(),
+            max_physical_errors=maximum,
             public_statistics=_distribution([r["public_to_end_ns"] for r in rows]),
             step_statistics=_distribution([r["step_ns"] for r in rows]),
             native_window_counters=delta_counts(_raw_counts(mode), count_before),
@@ -333,8 +362,13 @@ def run_window(make, case, count, phase, mode, cache, destination, *, profile=No
         )
     except BaseException as error:
         failure = dict(
-            phase=phase, build_ns=build_ns, successful_steps=len(rows), rows=rows,
-            type=type(error).__name__, message=str(error), state=public_value(scene.state),
+            phase=phase,
+            build_ns=build_ns,
+            successful_steps=len(rows),
+            rows=rows,
+            type=type(error).__name__,
+            message=str(error),
+            state=public_value(scene.state),
             last_frame=public_value(scene.last_frame),
         )
         try:
@@ -364,11 +398,21 @@ def main():
     make = builder(ph, args.case, args.worlds)
     declaration_ns = perf_counter_ns() - make_start
     report = dict(
-        schema=SCHEMA, source=before, case=args.case, worlds=args.worlds,
-        started_utc=datetime.now(timezone.utc).isoformat(), python=sys.version,
-        tyx=version("tyx-compute"), numpy=version("numpy"), backend="cuda",
-        matrix=[list(pair) for pair in MATRIX], h_s=H, steps_per_window=STEPS,
-        declaration_ns=declaration_ns, windows=[], success=False,
+        schema=SCHEMA,
+        source=before,
+        case=args.case,
+        worlds=args.worlds,
+        started_utc=datetime.now(timezone.utc).isoformat(),
+        python=sys.version,
+        tyx=version("tyx-compute"),
+        numpy=version("numpy"),
+        backend="cuda",
+        matrix=[list(pair) for pair in MATRIX],
+        h_s=H,
+        steps_per_window=STEPS,
+        declaration_ns=declaration_ns,
+        windows=[],
+        success=False,
         scope="internal public ContactScene costs; no Newton speed comparison",
     )
     try:
@@ -391,11 +435,17 @@ def main():
         report["ended_utc"] = datetime.now(timezone.utc).isoformat()
         with (args.out / "manifest.json").open("x", encoding="utf8") as stream:
             json.dump(report, stream, indent=2, allow_nan=False)
-    print(json.dumps({
-        "case": args.case, "worlds": args.worlds, "success": True,
-        "warm_public": report["windows"][1]["public_statistics"],
-        "warm_bytes": report["windows"][1]["output"]["gzip_bytes"],
-    }))
+    print(
+        json.dumps(
+            {
+                "case": args.case,
+                "worlds": args.worlds,
+                "success": True,
+                "warm_public": report["windows"][1]["public_statistics"],
+                "warm_bytes": report["windows"][1]["output"]["gzip_bytes"],
+            }
+        )
+    )
 
 
 if __name__ == "__main__":

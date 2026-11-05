@@ -24,3 +24,13 @@ contact_ready 后应用仅通过有界 posture 目标使实际夹具上移20 mm�
 **独立控制留出与首红。** 先真实 mimic 无预压首步：目标增量20 µm，实际 q 的惯性响应必须小于目标；重复读取及拒步重试不累加，下一接受步只再增20 µm。随后覆盖反向闭合坐标、单边/错误物体力、空夹、帽饱和、未来/倒退时间、不可写判定和实际丢载/释放。共同刚体变换只改变世界几何，不改变力阈值与闭合坐标判定。
 
 **Newton 源码观察。** 本机1.7的 `example_controller_operational_space_hybrid_force_motion.py` 使用上帧 SensorContact 实测力并检查反力符号，经 Controller 和 SolverMuJoCo 推进；该文件名下实际装载 `fr3_franka_hand.urdf`，不能当经典 Panda 同模型验证。`example_robot_panda_hydro.py` 同样有 fr3 body 名，明确限 effort，并注释低刚度指驱动用于避免释放挤压储能。只借鉴“测量反馈/原生驱动限幅”的层次，不移植其增益、几何或将本次控制记为 Newton 动力学通过。
+
+**窗口执行与判读。** 四个 CLI 均为 `python examples/robot_force_acquisition.py --case <panda-sphere|mimic-box|mimic-zero-friction|mimic-overload> --out <fresh.json>`。同源 pytest 节点为 `tests/test_gripper_acquisition_windows.py::test_frozen_acquisition_lift_and_release_windows[<case>]`；本批父仅执行四个 CLI 各一次，避免以 pytest 重跑相同物理窗。JSON 在正常退出前保留全部接受帧和首个物理/执行失败，已有输出拒绝覆盖。RAW0 需要八门同时为真；正例未真实 holding、负控未按预期失败、拒步/异常、未取得双侧力或未实际释放都不能伪装通过。negative 的 holding=false 只满足一门，不消除其他七门。
+
+保持时间只累计力采样起点 `load_time_s` 已进入保持阶段的已接受区间，姿态/净空取同回执的步末 `time_s`；释放后再支撑同样要求载荷采样在 release 请求之后。所有记录保留这两个时刻，不把上一步载荷冒称当前瞬时力。获取后全程相对位移和保持窗口自身的相对位移分别保存与检查。
+
+**执行前可证伪风险。** 现有切向律是滑速正则摩擦，没有静摩擦粘着历史。理想两侧各2 N、μ=.65、正则滑速.04 m/s 时，100 g 箱抵消重量所需相对竖直滑速约 `mg*.04/(2*.65*2)=.0151 m/s`；因此 M 正控仍可能在 .6 s 上抬期间越过原3 mm相对滑移门。此为执行前预测，不是实测，也不据此提高力目标、降低载荷或修改门。P 球可能通过几何包持承重，因此零摩擦反例仅用竖直平面夹箱。
+
+**专项首错保留。** 缺模块首红 RAW1；首20µm实际响应/同step与拒步重试首绿 RAW0。随后仅更改feedforward的真实接受命令未被辨识，`DID NOT RAISE` RAW1；父补原始 requested_command 后控制器分别核对四项请求与解析收据，重力feedforward仍由原运行时解析。完整控制专项首次17通过/1失败（2.84 s）：25个后续步后两侧实测2.0002474897536207、1.9999109262340473 N，未满足测试误设的“初始精确2 N恒定”断言；此前真实20 ms ready门已过，抽离段尚未执行到。
+
+该精确解析只给初始闭合轴 `δ=2/(4k)`、`τ=4 N`、`Mss=.5 kg` 的平衡参考，不是自由箱–有限台–双指的全系统静态解：初始台面无压、切速零，箱首步仍受重力，后续法向为实际 `kδ-d vn`，摩擦与台面也依实际姿态/速度重算。末两力的日志不能单独归因这2.47e-4 N差异的具体耦合或舍入来源。修正测试将原精确2 N oracle保留在第一回执 `load_time=0`，真实后续dwell查原预注册2±.25 N带和≤.002 m/s；没有按观测挑新容差，四窗口输入、门和原首失败均不变。抽离仍为原10 N、最多70个实际步，后续实测另记。

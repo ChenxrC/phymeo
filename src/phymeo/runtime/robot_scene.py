@@ -170,6 +170,8 @@ class RobotJointObservation:
     fixed_root_contact_wrench: np.ndarray
     command: RobotCommand | None
     mimic_loads: object | None
+    # Preserve optional request fields separately from the resolved drive command.
+    requested_command: RobotCommand | None = None
 
 
 @dataclass(frozen=True, eq=False)
@@ -557,6 +559,7 @@ class RobotScene:
                 _readonly(measured.fixed_root_contact_wrench),
                 RobotCommand(target, rate, cap, ff),
                 mimic_loads,
+                requested_command=command,
             )
             reading = RobotSceneObservation(
                 self._step_number + 1,

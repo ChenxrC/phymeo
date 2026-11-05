@@ -408,7 +408,9 @@ class ContactSceneBuilder:
                 backend=backend,
                 cache_root=cache_root,
             )
-        if any(law is not None and not isinstance(law, NormalLayer) for law in self._pairs.values()):
+        if any(
+            law is not None and not isinstance(law, NormalLayer) for law in self._pairs.values()
+        ):
             raise TypeError("a scene without a robot requires NormalLayer materials")
         dtype = np.float64 if backend == "host" else np.float32
         shape_count = sum(
@@ -617,6 +619,18 @@ class ContactScene:
         """
         with self._lock:
             return self._contact_history
+
+    @property
+    def contact_events(self):
+        """Unified immutable view of the last committed loaded-pair episodes."""
+        with self._lock:
+            from .contact_events import contact_events_from_history
+
+            return contact_events_from_history(
+                self._contact_history,
+                layers=self._system.layers,
+                bindings=self._system.bindings,
+            )
 
     def inputs(self):
         """Allocate independently writable external forces and torques matching the compiled state."""

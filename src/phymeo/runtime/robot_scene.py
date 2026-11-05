@@ -331,6 +331,12 @@ class RobotScene:
             registration.pads,
             self._model,
         )
+        from .contact_events import RobotContactEventAdapter, SceneContactEvents
+
+        self._event_adapter = RobotContactEventAdapter(
+            robot_addr, self._tree, self._items, self.rigid_rows, pairs, self._robot_keys
+        )
+        self._contact_events = SceneContactEvents()
         self._lock, self._closed = RLock(), False
         self._time_s, self._step_number = 0.0, 0
         self._geometry = self._geometry_for(self._arm, self._body, 0.0)
@@ -416,6 +422,12 @@ class RobotScene:
     def last_frame(self):
         with self._lock:
             return None if self._step_number == 0 else _owned(self._observation)
+
+    @property
+    def contact_events(self):
+        """Immutable events sampled at entry and committed with the accepted step."""
+        with self._lock:
+            return self._contact_events
 
     def inputs(self):
         """Allocate independently writable COM forces/torques in rigid_rows order."""
@@ -559,11 +571,20 @@ class RobotScene:
             )
             # Finish every allocation and public copy before the one state publication.
             public = _owned(reading)
-            self._arm, self._body, self._observation, self._geometry = (
+            staged_events = self._event_adapter.stage(
+                self._contact_events,
+                measured.loads,
+                geo=geo,
+                rigid=body,
+                sample_time_s=self._time_s,
+                commit_time_s=end_time,
+            )
+            self._arm, self._body, self._observation, self._geometry, self._contact_events = (
                 candidate_arm,
                 candidate_body,
                 reading,
                 geometry,
+                staged_events,
             )
             self._step_number, self._time_s = reading.step_number, end_time
             return public

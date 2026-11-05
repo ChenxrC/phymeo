@@ -178,3 +178,55 @@ def test_diagnostic_wall_partition_does_not_add_nested_device_api_times():
     assert sum(result["exclusive_ns"].values()) == 100
     assert result["pure_gpu_device_ns"] is None
     assert result["calls"]["kernel_call_api"] == 1
+
+
+def _copied_tool_paths(tool, tmp_path, monkeypatch):
+    sources = {
+        "benchmark": ROOT / "scripts" / "benchmark_scene_scale_costs.py",
+        "profile": ROOT / "scripts" / "profile_scene_scale_costs.py",
+        "cases": ROOT / "tests" / "scale" / "scene_scale_cases.py",
+    }
+    copied = {}
+    for name, source in sources.items():
+        path = tmp_path / source.name
+        path.write_bytes(source.read_bytes())
+        copied[name] = path
+    # Only replace this benchmark's path table; never edit a live source file.
+    monkeypatch.setattr(tool, "TOOL_PATHS", copied, raising=False)
+    return copied
+
+
+@pytest.mark.parametrize("changed", ("cases", "profile"))
+def test_cases_and_profile_changes_are_receipted_and_rejected(tmp_path, monkeypatch, changed):
+    tool = driver()
+    paths = _copied_tool_paths(tool, tmp_path, monkeypatch)
+    before = tool.provenance()
+    original = paths[changed].read_text(encoding="utf8")
+    if changed == "cases":
+        modified = original.replace("H = 1 / 128", "H = 1 / 64")
+        assert modified != original
+    else:
+        modified = original + "\nPROVENANCE_NEGATIVE_CONTROL = True\n"
+    paths[changed].write_text(modified, encoding="utf8")
+    after = tool.provenance()
+    assert before["source_head"] == after["source_head"]
+    # This is the original gap: a real changed tool did not change the receipt.
+    assert before != after, f"changed {changed} source is absent from provenance"
+    assert before["tools"][changed]["path"] == str(paths[changed].resolve())
+    assert before["tools"][changed]["sha256"] != after["tools"][changed]["sha256"]
+    with pytest.raises(AssertionError, match="benchmark tool changed"):
+        tool.verify_provenance(before, after)
+
+
+def test_all_three_tool_sources_are_bound_and_unchanged_receipts_pass(tmp_path, monkeypatch):
+    import hashlib
+
+    tool = driver()
+    paths = _copied_tool_paths(tool, tmp_path, monkeypatch)
+    before, after = tool.provenance(), tool.provenance()
+    assert set(before["tools"]) == {"benchmark", "profile", "cases"}
+    for name, path in paths.items():
+        assert before["tools"][name] == dict(
+            path=str(path.resolve()), sha256=hashlib.sha256(path.read_bytes()).hexdigest()
+        )
+    tool.verify_provenance(before, after)

@@ -103,7 +103,10 @@ class MaterialStationRegistration:
 
     Chart IDs assert caller-validated same-chart continuity on each side; they
     do not prove a feature transition. B3 still resets on a changed owner,
-    material support or topology revision. match_tolerance_m is an explicit
+    material support or topology revision. Optional first_feature/second_feature
+    declare the complete chart vertex IDs; current weights must remain a subset.
+    Without this declaration the current sparse support remains the feature.
+    match_tolerance_m is an explicit
     local-coordinate roundoff allowance, not a nearest-site ranking radius.
     """
 
@@ -117,6 +120,8 @@ class MaterialStationRegistration:
     second_chart_id: int | None
     topology_revision: int = 0
     match_tolerance_m: float = 1e-8
+    first_feature: tuple[int, ...] | None = None
+    second_feature: tuple[int, ...] | None = None
 
     def __post_init__(self):
         if not isinstance(self.key, StationKey):
@@ -148,6 +153,13 @@ class MaterialStationRegistration:
         for name in ("first_chart_id", "second_chart_id"):
             value = getattr(self, name)
             object.__setattr__(self, name, None if value is None else _index(value, "material chart"))
+        for name in ("first_feature", "second_feature"):
+            value = getattr(self, name)
+            if value is not None:
+                value = tuple(sorted(_index(node, "declared feature vertex") for node in value))
+                if not value or len(set(value)) != len(value):
+                    raise ValueError("declared feature needs distinct material vertex IDs")
+            object.__setattr__(self, name, value)
 
 
 def _material(address, owner):
@@ -392,9 +404,14 @@ class MaterialStationRegistry:
                     materials = []
                     for side in ("first", "second"):
                         part = getattr(address, side)
+                        support = tuple(node for node, _ in part.weights)
+                        declared = getattr(registration, side + "_feature")
+                        feature = support if declared is None else declared
+                        if not set(support).issubset(feature):
+                            raise ValueError("sample weights leave declared " + side + "_feature")
                         materials.append(MaterialAddress(
                             getattr(record, side + "_owner"), getattr(record.identity, side),
-                            registration.topology_revision, tuple(node for node, _ in part.weights),
+                            registration.topology_revision, feature,
                             part.weights, part.local_point_m, getattr(registration, side + "_chart_id"),
                         ))
                     sample = _sample(StationSample(registration.key, *materials,

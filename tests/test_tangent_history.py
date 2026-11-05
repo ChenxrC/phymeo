@@ -280,6 +280,8 @@ def test_invalid_candidate_update_is_atomic_owned_and_retryable():
         book.prepare(initial, [a], sample_time_s=H, dt_s=H)
     with pytest.raises(ValueError, match="updates|keys|station"):
         book.commit(initial, trial, {})
+    with pytest.raises(ValueError, match="time"):
+        book.commit(initial, replace(trial, commit_time_s=2 * H), {a.key: update})
     result = book.commit(initial, trial, {a.key: update})
     assert result == book.commit(initial, trial, {a.key: update})
     for array in (trial.frames_world, trial.normal_force_n, trial.elastic_displacement_m,

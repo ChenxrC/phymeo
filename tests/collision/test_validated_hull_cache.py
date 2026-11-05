@@ -356,3 +356,85 @@ def test_device_still_classifies_each_query_and_preserves_failure(tyx_mode, tmp_
         assert work.last_result is second
         with pytest.raises(RuntimeError, match="closed"):
             ph.detect(model, paths, ph.CollisionPolicy(), work)
+
+
+def test_replaced_constructor_on_same_class_forces_revalidation(monkeypatch):
+    model, paths, hull, _ = _scene()
+    cache = _cache(model.shapes)
+    cache.get(hull, paths[hull.key])
+    original, calls = hull_module.HullShape.__init__, []
+
+    def changed(self, shape, path):
+        calls.append(shape.key)
+        original(self, shape, path)
+
+    monkeypatch.setattr(hull_module.HullShape, "__init__", changed)
+    cache.get(hull, paths[hull.key])
+    cache.get(hull, paths[hull.key])
+    assert calls == [hull.key]
+
+
+def _profile_tool():
+    import importlib.util
+    import sys
+    from pathlib import Path
+
+    path = Path(__file__).resolve().parents[2] / "scripts" / "profile_validated_hull_cache.py"
+    spec = importlib.util.spec_from_file_location("_c4_profile_protocol", path)
+    tool = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = tool
+    spec.loader.exec_module(tool)
+    return tool
+
+
+def test_profile_context_restores_on_failure_and_rejects_nested_replacement():
+    tool = _profile_tool()
+    from phymeo.geometry._validated_hull_cache import ValidatedHullCache
+
+    original = ValidatedHullCache.get
+    with pytest.raises(RuntimeError, match="caller failure"):
+        with tool.cache_variant("uncached"):
+            assert ValidatedHullCache.get is not original
+            with pytest.raises(RuntimeError, match="active"):
+                with tool.cache_variant("cached"):
+                    pass
+            raise RuntimeError("caller failure")
+    assert ValidatedHullCache.get is original
+    with tool.cache_variant("cached"):
+        pass
+    assert ValidatedHullCache.get is original
+    with pytest.raises(ValueError, match="variant"):
+        with tool.cache_variant("other"):
+            pass
+    assert ValidatedHullCache.get is original
+
+
+def test_profile_preserves_all_payload_fields_and_only_declared_counter_differences():
+    tool = _profile_tool()
+    assert tool.FRAMES == (1, 2, 3) and tool.FORMAL_FRAMES == (2, 3)
+    for left, right in (
+        ({"sample_time_s": 0.0}, {"sample_time_s": 1.0}),
+        ({"world": 1}, {"world": 2}),
+        ({"zero": 0.0}, {"zero": -0.0}),
+        ({"unknown_clock_ns": 1}, {"unknown_clock_ns": 2}),
+    ):
+        with pytest.raises(AssertionError, match="payload"):
+            tool.assert_payload_equal(left, right)
+    a = dict.fromkeys(tool.CLOCK_FIELDS, 1)
+    a.update(dict.fromkeys(tool.CACHE_FIELDS, 0))
+    a["geometry.completed_launches"] = 6
+    b = dict(a)
+    b.update(dict.fromkeys(tool.CLOCK_FIELDS, 999))
+    b[tool.CACHE_FIELDS[2]] = 3
+    tool.compare_counters(a, b, worlds=1, number=2)
+    b["geometry.completed_launches"] = 4
+    with pytest.raises(AssertionError, match="statistics"):
+        tool.compare_counters(a, b, worlds=1, number=2)
+    b["geometry.completed_launches"] = 6
+    b["new_clock_ns"] = 100
+    with pytest.raises(AssertionError, match="keys"):
+        tool.compare_counters(a, b, worlds=1, number=2)
+    b.pop("new_clock_ns")
+    b[tool.CACHE_FIELDS[1]] = 1
+    with pytest.raises(AssertionError, match="mechanism"):
+        tool.compare_counters(a, b, worlds=1, number=2)

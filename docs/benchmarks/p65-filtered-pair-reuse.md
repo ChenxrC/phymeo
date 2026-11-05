@@ -53,3 +53,25 @@ python scripts/compare_scene_scale_frames.py --before <C1收据根> --after <C2�
 2026-11-05父唯一串行槽：HOST 31 passed / 1.10s；interpret 2 passed / 1.11s；CUDA 2 passed / 1.85s，均RAW_EXIT=0。两设备组只选择本批两个标记tyx的用例，31个HOST例按相同文件单独完成，非漏测。
 
 首Ruff check通过；首format-check指出3文件排版，父保存原三文件并格式化，随后独立AST逐文件严格相同，最终Ruff和format-check均0。证据位于父 artifacts/p65-postnight-batch2-20261105-01 的 c2-* 各收据。未重跑同语义已绿组。实际九档矩阵与性能仍待后续收据。
+
+## 原九档实际同输出测量（2026-11-05）
+
+父集成测量源为 ab7519aec06cad4160d5b8e80becf39e95ba9f3a；上一批参照源为 2a4c22f2ea6049ece9bc150332490eb863b773ab。原九档每档cold/warm各32步全部RAW0；独立比较576个完整公开帧、18个whole logical摘要、全部非墙钟计数与输入绑定，RAW0，公开字段排除为零。两版原benchmark/profile/cases工具SHA相同，载入产品仅collision_pipeline.py改变。旧完整解码验收按原收据复用，本批每个新窗口已同次完整解码验证。
+
+暖态每步公开step+geometry的中位耗时（ms）：
+
+| 场景 | world数 | 上一批 | 本批 | 旧/新 |
+| --- | ---: | ---: | ---: | ---: |
+| free | 1 | 2.735 | 3.914 | 0.70x |
+| free | 32 | 42.947 | 68.676 | 0.63x |
+| free | 128 | 405.530 | 260.092 | 1.56x |
+| loaded | 1 | 8.363 | 17.112 | 0.49x |
+| loaded | 32 | 201.651 | 423.378 | 0.48x |
+| loaded | 128 | 1045.979 | 1671.171 | 0.63x |
+| birth | 1 | 8.478 | 18.988 | 0.45x |
+| birth | 32 | 223.903 | 475.022 | 0.47x |
+| birth | 128 | 1123.463 | 1913.593 | 0.59x |
+
+没有全档加速。free W128仍返回32640行，其中32512个跨世界过滤行；暖32步窄相分派/组装累计由9314.819ms降至485.961ms，完整公开中位耗时减少约35.9%。实际受载几何仍昂贵：loaded/birth W128该阶段本批为45125.166/52702.740ms，上一批29102.010/31714.286ms。W1无跨世界行也测得变慢，因此这些不同时间段的墙钟快照不能单独证明回归由过滤复用造成，更不能推断纯GPU耗时；未做额外重复试验或调参。当前保留机制及完整同输出验收，下一轮需在同场条件下区分受载几何计算和宿主成本。
+
+收据：父 artifacts/p65-postnight-batch2-20261105-01 的9个matrix-*、c2-full-frame-comparison.json、c2-performance-results.json。首次摘要输出名与执行配置名冲突导致FileExistsError，修正独立结果名后摘要RAW0；原失败保留，未重跑任何物理窗口或完整帧比较。

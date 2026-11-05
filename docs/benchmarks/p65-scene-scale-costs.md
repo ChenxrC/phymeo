@@ -60,3 +60,10 @@ W1诊断单独用同一loaded输入：先一个未插桩准备窗，再一个插
 父单槽收据位于同一证据根：`c1-host-first` 为12 passed / 1 deselected，1.76 s；`c1-cuda-qualification` 为1 passed / 12 deselected，2.23 s。这些是专项耗时，不是正式物理吞吐。资格对应 `c424c6f` 的输入/数学代码；随后父只调整四个Python文件的导入顺序和格式，`c1-style-ast` 证明4个规范化AST与导入绑定相同，`c1-lint-final`、`c1-format-final` 均RAW0。首轮两个import顺序错误及四文件格式差异保留，未修改几何、误差门或物理预期。
 
 上述资格覆盖完整帧codec、嵌套区间分配和实际CUDA 32步恒4N窗口；尚不等同于真实插桩驱动或九项正式矩阵已执行。正式源须绑定父合入A/B及本工具后的完整HEAD，结果再另行填写。
+## 工具来源绑定复核
+
+只读审阅发现原provenance只绑定产品与主驱动，遗漏cases和profile：在产品HEAD不变时，改动H/容差所在文件仍可留下相同收据。父对临时副本的两个真实负控均复现该问题：`c1-provenance-red` 为2 failed，1.76 s，失败点均为changed source absent，不是新API缺失。
+
+修复 `6255fb4` 在每份before/after中显式保存benchmark、profile、实际已导入cases的绝对路径与SHA；共用的 `verify_provenance` 逐项比较三工具、产品头/路径及已导入文件。两种命令只有检查通过才标记success。原HEAD不再代替工具身份，物理输入/数值门没有改变。
+
+父仅运行新增协议：`c1-provenance-green` 3 passed，2.06 s、RAW0；`c1-provenance-lint` RAW0。首次format只报测试文件末尾缺LF；父仅补该LF，Git差异没有语句变化，`c1-provenance-format-final` RAW0。旧物理组没有重复运行。至此工具资格和来源绑定闭环，九项正式矩阵及真实W1诊断仍由父绑定最终集成HEAD后执行。

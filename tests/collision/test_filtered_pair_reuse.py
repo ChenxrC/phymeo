@@ -1,7 +1,12 @@
 """Complete ordinary detect records with reusable immutable filter rows."""
 
+import copy
+import importlib.util
+import json
+import sys
 from dataclasses import FrozenInstanceError
 from itertools import combinations
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -16,7 +21,7 @@ def _filter_scene():
         ph.CollisionKey(*key)
         for key in ((0, 1, 0), (0, 1, 1), (0, 2, 0), (0, 3, 0), (0, 4, 0), (0, 5, 0), (1, 1, 0))
     )
-    a, same, mask, excluded, touching, far, other_world = keys
+    a, same, mask, excluded, _, _, other_world = keys
     shapes = [
         ph.CollisionShape(key, "sphere", (7,), 0.125, group=1, mask=1) for key in keys
     ]
@@ -340,3 +345,184 @@ def test_filtered_slots_preserve_global_feature_batches(tyx_mode, tmp_path, monk
             assert lo <= 0.25 <= hi
             assert row.witness.first_weights == row.witness.second_weights == ((13, 1.0),)
 
+
+def _comparison_module():
+    path = Path(__file__).resolve().parents[2] / "scripts" / "compare_scene_scale_frames.py"
+    spec = importlib.util.spec_from_file_location("_c2_comparison_protocol", path)
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+def _protocol_row():
+    return dict(
+        step=1, entry_s=0.0, end_s=1 / 128,
+        step_ns=12, geometry_snapshot_ns=2, public_to_end_ns=14,
+        oracle_ns=3, archive_ns=4,
+        actual_contacts=1, actual_sites=2, actual_required_candidates=1,
+        published_pairs=21, different_world_rows=6, force_worlds=[0],
+        counters={
+            "geometry.envelope_ns": 2, "geometry.broad_ns": 2,
+            "geometry.midphase_ns": 0, "geometry.narrow_ns": 3,
+            "geometry.completed_launches": 4, "geometry.downloaded_bytes": 96,
+        },
+        native_counters={"cuda_kernel_launches": 5, "cuda_h2d_bytes": 128},
+        frame_logical_sha256="same-full-frame",
+        future_diagnostic={"physical_sample_time_s": 0.0, "unlisted_cost_ns": 9},
+    )
+
+
+def test_comparison_allows_only_the_enumerated_wall_clock_values():
+    compare = _comparison_module()
+    before, after = _protocol_row(), _protocol_row()
+    for key in compare.ROW_TIMINGS:
+        after[key] += 10
+    for key in compare.COUNTER_TIMINGS:
+        after["counters"][key] += 20
+    compare.compare_step_rows(before, after)
+    assert compare.normalized_step(before).keys() == before.keys()
+    assert compare.normalized_step(before)["counters"].keys() == before["counters"].keys()
+    assert before["step_ns"] == 12 and after["step_ns"] == 22
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        ("actual_sites",),
+        ("actual_required_candidates",),
+        ("published_pairs",),
+        ("different_world_rows",),
+        ("entry_s",),
+        ("end_s",),
+        ("counters", "geometry.completed_launches"),
+        ("counters", "geometry.downloaded_bytes"),
+        ("native_counters", "cuda_kernel_launches"),
+        ("future_diagnostic", "physical_sample_time_s"),
+        ("future_diagnostic", "unlisted_cost_ns"),
+    ],
+)
+def test_comparison_rejects_changed_counts_physical_time_and_unlisted_fields(path):
+    compare = _comparison_module()
+    before, after = _protocol_row(), _protocol_row()
+    target = after
+    for part in path[:-1]:
+        target = target[part]
+    target[path[-1]] += 1
+    with pytest.raises(AssertionError, match="changed"):
+        compare.compare_step_rows(before, after)
+
+
+@pytest.mark.parametrize("operation", ["delete", "add", "type"])
+def test_comparison_rejects_missing_added_or_retyped_output(operation):
+    compare = _comparison_module()
+    before = {"frame": {"pair": {"normal": [0.0, 0.0, 1.0], "candidate": True}}}
+    after = copy.deepcopy(before)
+    if operation == "delete":
+        del after["frame"]["pair"]["normal"]
+    elif operation == "add":
+        after["frame"]["pair"]["new_unrecorded_quantity"] = 1
+    else:
+        after["frame"]["pair"]["candidate"] = 1
+    with pytest.raises(AssertionError, match="changed"):
+        compare.compare_values(before, after)
+
+
+def _source_receipt(compare, head):
+    return dict(
+        source_head=head, root="C:/frozen", module="C:/frozen/src/phymeo/__init__.py",
+        product_dirty=False,
+        imported_files={
+            compare.PRODUCT_CHANGE: head,
+            "src/phymeo/core/result.py": "unchanged-product",
+        },
+        tools={
+            name: {"path": "C:/frozen/" + suffix, "sha256": "fixed-" + name}
+            for name, suffix in compare.TOOL_SUFFIXES.items()
+        },
+        driver_sha256="fixed-benchmark",
+    )
+
+
+@pytest.mark.parametrize("changed", ["cases", "profile", "product"])
+def test_comparison_rejects_changed_original_tools_or_other_product_files(changed):
+    compare = _comparison_module()
+    before_source = _source_receipt(compare, "old")
+    after_source = _source_receipt(compare, "new")
+    before = dict(source=before_source, source_after=copy.deepcopy(before_source))
+    after = dict(source=after_source, source_after=copy.deepcopy(after_source))
+    assert compare._check_sources(before, after) == [compare.PRODUCT_CHANGE]
+    for stage in ("source", "source_after"):
+        if changed == "product":
+            after[stage]["imported_files"]["src/phymeo/core/result.py"] = "changed"
+        else:
+            after[stage]["tools"][changed]["sha256"] = "changed"
+    with pytest.raises(AssertionError, match="changed|changes"):
+        compare._check_sources(before, after)
+
+
+def _protocol_run(directory, compare, head, *, mutate=False):
+    """Tiny pure codec receipt, not a substitute for the actual nine physics runs."""
+    directory.mkdir()
+    driver = compare.driver
+    windows = []
+    for phase in driver.WINDOWS:
+        rows = []
+        with driver.WindowWriter(directory / (phase + ".json.gz"), {"phase": phase}) as writer:
+            for step in range(driver.STEPS):
+                frame = {
+                    "frame": {"sample": step, "normal": [0, 0, 1], "future_private_field": 7},
+                    "geometry": {"time_s": (step + 1) * driver.H},
+                    "contact_history": [],
+                }
+                if mutate and step == 7:
+                    frame["frame"]["future_private_field"] = 8
+                row = _protocol_row()
+                row.update(
+                    step=step + 1, entry_s=step * driver.H, end_s=(step + 1) * driver.H,
+                    frame_logical_sha256=writer.append(frame),
+                )
+                rows.append(row)
+        windows.append(dict(
+            phase=phase, successful_steps=driver.STEPS, rows=rows, build_ns=7,
+            output=writer.stats(),
+            public_statistics=driver._distribution([r["public_to_end_ns"] for r in rows]),
+            step_statistics=driver._distribution([r["step_ns"] for r in rows]),
+            native_build_counters={"cuda_kernel_launches": 0},
+            native_window_counters={"cuda_kernel_launches": 160},
+            max_physical_errors={"position_m": 0.0},
+        ))
+    source = _source_receipt(compare, head)
+    manifest = dict(
+        schema=driver.SCHEMA, success=True, backend="cuda",
+        source=source, source_after=copy.deepcopy(source),
+        case="free", worlds=1, steps_per_window=driver.STEPS, h_s=driver.H,
+        matrix=[list(pair) for pair in driver.MATRIX],
+        started_utc="2026-11-05T00:00:00+00:00", ended_utc="2026-11-05T00:00:01+00:00",
+        declaration_ns=1, windows=windows,
+    )
+    (directory / "manifest.json").write_text(json.dumps(manifest), encoding="utf8")
+
+
+def test_full_archive_comparison_reuses_acceptance_and_locates_unknown_field(
+    tmp_path, monkeypatch
+):
+    compare = _comparison_module()
+    old, same, changed = (tmp_path / name for name in ("old", "same", "changed"))
+    _protocol_run(old, compare, "old")
+    _protocol_run(same, compare, "new")
+    _protocol_run(changed, compare, "new", mutate=True)
+    original_reader = compare.driver.read_window
+
+    def forbidden(*args, **kwargs):
+        raise AssertionError("accepted old frames were unnecessarily decoded again")
+
+    monkeypatch.setattr(compare.driver, "read_window", forbidden)
+    result = compare.compare_case(old, same)
+    assert result["success"]
+    assert all(row["extra_full_frames_decoded"] == 0 for row in result["windows"])
+    monkeypatch.setattr(compare.driver, "read_window", original_reader)
+    assert [row["compared_frames"] for row in result["windows"]] == [32, 32]
+    assert all(row["excluded_public_fields"] == [] for row in result["windows"])
+    with pytest.raises(AssertionError, match="future_private_field"):
+        compare.compare_case(old, changed)

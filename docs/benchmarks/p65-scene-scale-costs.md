@@ -1,6 +1,6 @@
 # C1：固定公共场景规模成本
 
-状态：输入、独立标量 oracle 和协议 RED 已冻结，尚未执行。仅测试和测量工具；不修改 A/B 公共场景或材料算法，不给 Newton 速度结论。
+状态：父已实跑协议首 RED：公共真实 4 N 正控先通过，再因驱动缺失失败（1 failed，0.96 s）。当前驱动与诊断为待验证候选，作者未运行项目。仅测试和测量工具；不修改 A/B 公共场景或材料算法，不给 Newton 速度结论。
 
 产品起点为 `104e49a`（功能基线 `c53e616`）。所有正式作业必须保存实际执行的源码头及文件身份。若父合入 contact history，再按最终 HEAD 测同一矩阵；旧版本与含 history 的结果不得混称同一版本成绩。
 
@@ -30,10 +30,27 @@
 
 父证据目录：`artifacts/p65-postnight-batch1-20261105-01/c1-scale/`。每窗口一个流式gzip JSON，保留全部公开入步/出步、力/力矩、双侧材料点/权重、路径、求解报告及接受态几何。首个完整pair表绑定一次，之后只存实际变化及完整返回值逻辑SHA；读回器须无损还原，不能删字段来减小输出。每步仍保实际candidate数、接触数和完整状态。逻辑字段身份不受gzip头时间戳影响。
 
-静态存储估计：W128每窗未压缩等价20–80 MiB、gzip约1–10 MiB；正式报告以实际写入字节为准。流式编码只留前后帧，避免持有32份32640行对象表。容量不足则明确拒绝；不提高256上限或截断路径。
+静态存储估计：按完整 CollisionPair 的所有空/非空字段重新估计，W128每窗全帧未压缩等价约0.4–1 GiB；首次pair表加后续差分的gzip约1–10 MiB；正式报告以实际写入字节为准。流式编码只留前后帧，避免持有32份32640行对象表。容量不足则明确拒绝；不提高256上限或截断路径。
 
 先运行新增协议RED节点：
 `tests/scale/test_scene_scale_protocol.py::test_cost_harness_preserves_a_real_loaded_step_and_freezes_nine_cases`。
 它先通过现有公共真实4 N正控，再因新增驱动缺失失败，不能声称产品本身缺失。后续新增资格涵盖独立32步面/棱/角、刚体共变、world/local-ID、257形状拒绝、拒步状态/时钟/帧保留及同实例恢复、完整gzip解码和变动字段digest。
 
 本作者独占五个新增文件：`scripts/benchmark_scene_scale_costs.py`、`scripts/profile_scene_scale_costs.py`、`tests/scale/scene_scale_cases.py`、`tests/scale/test_scene_scale_protocol.py`、本报告。所有项目执行由父fresh guard串行完成；当前无作者执行权限。
+
+## 执行候选
+
+只需新专项，先 HOST 协议、再设备资格；所有 pytest 必须由父加独立绝对 `--basetemp`，不读旧 pytest 临时目录。首个仅默认临时目录权限错误的尝试与上述真正缺驱动 RED 分开保存。
+
+```powershell
+python -m pytest tests/scale/test_scene_scale_protocol.py -m "not tyx" -q
+python -m pytest tests/scale/test_scene_scale_protocol.py -m tyx --tyx-mode cuda --require-tyx -q
+python scripts/benchmark_scene_scale_costs.py --case loaded --worlds 32 --expected-head FULL_FINAL_SHA --out ABS_FRESH_OUTPUT
+python scripts/profile_scene_scale_costs.py --case loaded --expected-head FULL_FINAL_SHA --out ABS_FRESH_DIAGNOSTIC
+```
+
+主程序每个进程只接受已冻结case/world；父按表顺序共执行九次，不由脚本启动并发或扩大矩阵。`manifest.json` 包含源HEAD、实际导入文件SHA、构建与正式步设备计数、物理误差、整窗及逐步p50/p95；`cold.json.gz` 和 `warm.json.gz` 保存完整逻辑帧及逐帧/整窗SHA。公开值编码包含全部dataclass字段、数组dtype/shape/原bytes、Fraction和完整映射；未知类型直接失败。每个文件在窗口后实际流式解码并校验所有SHA。失败另存已成功步骤及原错误，不发布成功计时结论。
+
+W1诊断单独用同一loaded输入：先一个未插桩准备窗，再一个插桩窗。通过当前调用线程的Python函数事件读取真实入口/出口，没有替换库函数。每个原始区间与inclusive计时保留，exclusive最内层区间相加恰等于完整调用墙钟。`kernel_call_api` 含TYX验证/准备/提交，`h2d_api`/`d2h_api`/`synchronization_api` 均为同步API墙钟；没有GPU事件，`pure_gpu_device_ns=null`。这组有观测开销，只定位HOST/设备接口比例，不能替代主矩阵成绩。
+
+若最终源码已含 B1，每步另外保留已发布的 contact_history 完整快照（getter/编码在计时之外，生成本身仍在 step 内）；独立诊断以 contact_history_staging 记录其真实 HOST 区间。缺模块的旧基线明确为无该字段，不和最终版本混报。

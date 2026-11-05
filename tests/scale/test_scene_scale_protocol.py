@@ -1,6 +1,8 @@
 """C1's new cost harness must preserve physical outputs, keys and complete path receipts."""
 
+import gzip
 import importlib.util
+import json
 import sys
 from pathlib import Path
 
@@ -109,6 +111,15 @@ def test_streamed_window_round_trips_all_public_fields_and_rejects_changed_recei
     changed = tool.public_value(first_value)
     changed["intentional_extra_field"] = True
     assert tool.logical_digest(changed) != tool.logical_digest(first_value)
+    with gzip.open(destination, "rt", encoding="utf8") as stream:
+        lines = [json.loads(line) for line in stream]
+    lines[1]["delta"]["set"]["changed_public_field"] = 123
+    corrupted = tmp_path / "corrupted.json.gz"
+    with gzip.open(corrupted, "wt", encoding="utf8") as stream:
+        for row in lines:
+            stream.write(json.dumps(row) + "\n")
+    with pytest.raises(AssertionError, match="digest mismatch"):
+        list(tool.read_window(corrupted))
 
 
 def test_w32_local_ids_and_mirrors_are_distinct_original_material_addresses():
@@ -127,3 +138,26 @@ def test_w1_device_window_publishes_the_same_full_physical_contract(tyx_mode, tm
             certify_frame(frame, scene.rigid_rows, "loaded", 1, step)
         assert frame.rigid_report.backend == f"tyx:{tyx_mode}"
         assert scene.stats()["geometry"]["completed_launches"] > 0
+
+
+def test_diagnostic_wall_partition_does_not_add_nested_device_api_times():
+    path = ROOT / "scripts" / "profile_scene_scale_costs.py"
+    spec = importlib.util.spec_from_file_location("_scene_scale_profile_protocol", path)
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    timeline = module.CallTimeline()
+    timeline.records = [
+        (10, 90, 1, "response_law_wrapper", 0),
+        (20, 30, 2, "h2d_api", 1),
+        (35, 45, 3, "kernel_call_api", 1),
+        (45, 60, 4, "synchronization_api", 1),
+        (60, 70, 5, "d2h_api", 1),
+    ]
+    result = timeline.partition(0, 100)
+    assert result["inclusive_ns"]["response_law_wrapper"] == 80
+    assert result["exclusive_ns"]["response_law_wrapper"] == 35
+    assert result["exclusive_ns"]["other_public_caller"] == 20
+    assert sum(result["exclusive_ns"].values()) == 100
+    assert result["pure_gpu_device_ns"] is None
+    assert result["calls"]["kernel_call_api"] == 1

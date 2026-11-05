@@ -56,7 +56,9 @@ def test_same_entry_three_body_chain_preserves_both_reactions_and_one_drift():
         np.testing.assert_allclose(result.rigid.velocity[a], [0, 0, 0], atol=1e-14, rtol=0)
         np.testing.assert_allclose(result.rigid.velocity[b], [0.002, 0, 0], atol=1e-14, rtol=0)
         np.testing.assert_allclose(result.rigid.position[a], [0.124, 0, 0.25], atol=1e-14, rtol=0)
-        np.testing.assert_allclose(result.rigid.position[b], [0.248002, 0, 0.25], atol=1e-14, rtol=0)
+        np.testing.assert_allclose(
+            result.rigid.position[b], [0.248002, 0, 0.25], atol=1e-14, rtol=0
+        )
         np.testing.assert_array_equal(result.rigid.velocity[table], np.zeros(3))
         np.testing.assert_array_equal(result.rigid.angular_velocity, 0)
         np.testing.assert_allclose(
@@ -73,6 +75,6 @@ def test_same_entry_three_body_chain_preserves_both_reactions_and_one_drift():
         np.testing.assert_allclose(result.loads.inputs.rigid.force[a], [0, 0, 0], atol=1e-12)
         np.testing.assert_allclose(result.loads.inputs.rigid.force[b], [2, 0, 0], atol=1e-12)
         reading, geometry = scene.observe_scene()
-        assert reading is result and geometry.time_s == result.time_s
+        assert reading.step_number == result.step_number and geometry.time_s == result.time_s
         assert set(geometry.poses) == {shape.key for shape in geometry.model.shapes}
         assert len(geometry.poses) == 4

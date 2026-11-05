@@ -462,6 +462,25 @@ class RobotScene:
                 physical, geo, linear, angular, self._body, self._geometry.poses
             ).loads
 
+    def enable_coupled_tangent(self, registry, **options):
+        """Select explicit material-station spring/Coulomb friction before the first step."""
+        with self._lock:
+            self._require_open()
+            from ._scene_coupled_tangent import configure
+
+            configure(self, registry, **options)
+
+    @property
+    def tangent_history(self):
+        with self._lock:
+            return getattr(self, "_tangent_state", None)
+
+    @property
+    def tangent_receipt(self):
+        with self._lock:
+            value = getattr(self, "_tangent_receipt", None)
+            return None if value is None else replace(value)
+
     def step(self, dt, *, actions, external=None):
         with self._lock:
             self._require_open()
@@ -524,6 +543,13 @@ class RobotScene:
             measured = self._contact.evaluate(
                 physical, geo, linear, angular, body, self._geometry.poses
             )
+            tangent = None
+            if getattr(self, "_tangent", None) is not None:
+                from ._scene_coupled_tangent import robot_prepare
+
+                measured, tangent = robot_prepare(
+                    self, measured, geo, linear, M, b, effort, external, h
+                )
             full_load = measured.joint_effort_full
             load = full_load if P is None else P.T @ full_load
             acceleration = _solve_mass_matrix(M, effort + load - b)
@@ -540,6 +566,12 @@ class RobotScene:
             candidate_body = result.state
             geometry = self._geometry_for(candidate_arm, candidate_body, end_time)
             full = self._full(candidate_arm)
+            staged_tangent = None
+            if tangent is not None:
+                from ..dynamics.robot_kinematics import forward_kinematics
+
+                end_geo = forward_kinematics(self._tree.model, candidate_arm.q)
+                staged_tangent = tangent.finish(candidate_body, end_geo)
             mimic_loads = (
                 None
                 if P is None
@@ -582,14 +614,31 @@ class RobotScene:
                 sample_time_s=self._time_s,
                 commit_time_s=end_time,
             )
-            self._arm, self._body, self._observation, self._geometry, self._contact_events = (
+            tangent_state, tangent_receipt = (
+                staged_tangent if staged_tangent is not None else (None, None)
+            )
+            publication = (
                 candidate_arm,
                 candidate_body,
                 reading,
                 geometry,
                 staged_events,
+                reading.step_number,
+                end_time,
+                tangent_state,
+                tangent_receipt,
             )
-            self._step_number, self._time_s = reading.step_number, end_time
+            (
+                self._arm,
+                self._body,
+                self._observation,
+                self._geometry,
+                self._contact_events,
+                self._step_number,
+                self._time_s,
+                self._tangent_state,
+                self._tangent_receipt,
+            ) = publication
             return public
 
     def close(self):

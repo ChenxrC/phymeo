@@ -628,7 +628,18 @@ class CollisionLoadSystem:
         )
         return SurfaceLoads(loads, tuple(contacts))
 
-    def step(self, state, external, models, solvers, dt, workspace, *, capacity=None):
+    def step(
+        self,
+        state,
+        external,
+        models,
+        solvers,
+        dt,
+        workspace,
+        *,
+        capacity=None,
+        _load_transform=None,
+    ):
         """Advance one substep with supplied particle-material and rigid solvers. No implicit retry."""
         with self._transaction(workspace), self._lock:
             h = validate_dt(dt, state.particles.position.dtype)
@@ -645,6 +656,8 @@ class CollisionLoadSystem:
             ):
                 raise ValueError("state, model and external inputs must match")
             loads = self.sample(state, workspace, capacity=capacity)
+            if _load_transform is not None:
+                loads = _load_transform(loads)
             internal = loads.inputs
             combined = (
                 StepInputs(external.particles.force + internal.particles.force),

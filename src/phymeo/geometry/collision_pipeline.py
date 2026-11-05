@@ -609,12 +609,16 @@ def _detect_pairs(
                 # At positive separation a sphere has one closest material point
                 # on a closed convex solid, including on an edge or vertex.
                 if ma.moving or mb.moving:
-                    answer = affine_convex_contact(a, b, ma, mb)
+                    answer = affine_convex_contact(
+                        a, b, ma, mb, hull_getter=workspace._validated_hulls.get
+                    )
                     if answer is None:
                         answer = ("unsupported", "sphere_hull_motion", None, None, None)
                     status, reason, witness, trace, sweep = answer
                 else:
-                    status, reason, witness, trace = static_convex_support(a, b, ma, mb)
+                    status, reason, witness, trace = static_convex_support(
+                        a, b, ma, mb, hull_getter=workspace._validated_hulls.get
+                    )
                     sweep = None
                 ready = CollisionPair(
                     a.key, b.key, "RR", True, status, reason, witness, sweep, support_map=trace
@@ -1019,6 +1023,9 @@ class CollisionWorkspace:
         self._trees = CollisionTrees()
         self._mesh_midphase = mesh_midphase
         self._validated_meshes = ValidatedMeshCache()
+        from ._validated_hull_cache import ValidatedHullCache
+
+        self._validated_hulls = ValidatedHullCache(shapes)
         self._mesh_work = dict(mesh_facet_pairs_total=0, mesh_facet_pairs_tested=0)
         self._mesh_rows = {}
         if mesh_midphase == "bvh":
@@ -1099,6 +1106,7 @@ class CollisionWorkspace:
                 **self._trees.counts,
                 **self._mesh_work,
                 **self._validated_meshes.stats(),
+                **self._validated_hulls.stats(),
                 **(
                     {
                         "sheet_pairs_adjacent": self._sheet_bounds.adjacent,
@@ -1161,6 +1169,7 @@ class CollisionWorkspace:
         if not self._closed:
             self._closed = True
             self._validated_meshes.clear()
+            self._validated_hulls.clear()
             if self._engine is not None:
                 self._engine.close()
 

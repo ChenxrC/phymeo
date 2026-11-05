@@ -69,7 +69,9 @@ def _owner(value):
         if not isinstance(value.link_name, str) or not value.link_name:
             raise ValueError("robot owner needs a computational link name")
         index = _index(value.link_index, "robot link index", minimum=-1)
-        if (value.kind == "robot_root" and index != -1) or (value.kind == "robot_link" and index < 0):
+        if (value.kind == "robot_root" and index != -1) or (
+            value.kind == "robot_link" and index < 0
+        ):
             raise ValueError("invalid robot link/root index")
         name = str(value.link_name)
     return ContactOwner(world, body, str(value.kind), str(value.local_frame), index, name)
@@ -94,7 +96,9 @@ class OwnerPose:
             raise ValueError("owner rotation must be proper orthonormal")
         object.__setattr__(self, "owner", _owner(self.owner))
         object.__setattr__(self, "position_m", _vector(self.position_m, "owner position"))
-        object.__setattr__(self, "rotation_world", tuple(tuple(map(float, row)) for row in rotation))
+        object.__setattr__(
+            self, "rotation_world", tuple(tuple(map(float, row)) for row in rotation)
+        )
 
 
 @dataclass(frozen=True)
@@ -126,7 +130,9 @@ class MaterialStationRegistration:
     def __post_init__(self):
         if not isinstance(self.key, StationKey):
             raise TypeError("expected explicit StationKey")
-        key = StationKey(_index(self.key.world, "station world"), _index(self.key.token, "station token"))
+        key = StationKey(
+            _index(self.key.world, "station world"), _index(self.key.token, "station token")
+        )
         if (
             not isinstance(self.first, CollisionKey)
             or not isinstance(self.second, CollisionKey)
@@ -149,10 +155,14 @@ class MaterialStationRegistration:
         object.__setattr__(self, "anchor_local_m", _vector(self.anchor_local_m, "local anchor"))
         object.__setattr__(self, "tangent_axis_local", tuple(x / length for x in axis))
         object.__setattr__(self, "match_tolerance_m", tolerance)
-        object.__setattr__(self, "topology_revision", _index(self.topology_revision, "topology revision"))
+        object.__setattr__(
+            self, "topology_revision", _index(self.topology_revision, "topology revision")
+        )
         for name in ("first_chart_id", "second_chart_id"):
             value = getattr(self, name)
-            object.__setattr__(self, name, None if value is None else _index(value, "material chart"))
+            object.__setattr__(
+                self, name, None if value is None else _index(value, "material chart")
+            )
         for name in ("first_feature", "second_feature"):
             value = getattr(self, name)
             if value is not None:
@@ -166,18 +176,25 @@ def _material(address, owner):
     if not isinstance(address, ContactMaterialAddress) or address.kind != owner.kind:
         raise ValueError("material address differs from its physical owner")
     weights = _weights(address.weights)
-    if any(w < 0 for _, w in weights) or not isclose(fsum(w for _, w in weights), 1.0,
-                                                    abs_tol=1e-10, rel_tol=0):
+    if any(w < 0 for _, w in weights) or not isclose(
+        fsum(w for _, w in weights), 1.0, abs_tol=1e-10, rel_tol=0
+    ):
         raise ValueError("material weights must be a nonnegative partition")
-    return ContactMaterialAddress(owner.kind, weights, _vector(address.local_point_m, "local material point"))
+    return ContactMaterialAddress(
+        owner.kind, weights, _vector(address.local_point_m, "local material point")
+    )
 
 
 def _record(value):
     if not isinstance(value, SceneContactRecord) or not isinstance(value.identity, ContactIdentity):
         raise TypeError("expected a real SceneContactRecord")
     identity = value.identity
-    if (not isinstance(identity.first, CollisionKey) or not isinstance(identity.second, CollisionKey)
-            or not identity.first < identity.second or identity.first.world != identity.second.world):
+    if (
+        not isinstance(identity.first, CollisionKey)
+        or not isinstance(identity.second, CollisionKey)
+        or not identity.first < identity.second
+        or identity.first.world != identity.second.world
+    ):
         raise ValueError("contact record requires canonical same-world shapes")
     first, second = _owner(value.first_owner), _owner(value.second_owner)
     for owner, key in ((first, identity.first), (second, identity.second)):
@@ -199,24 +216,40 @@ def _record(value):
             raise ValueError("contact material/site counts or normal loads disagree")
         material = []
         for address, site in zip(component.material, load.sites, strict=True):
-            if not isinstance(address, ContactMaterialSite) or site.force_n < 0 or site.fraction <= 0:
+            if (
+                not isinstance(address, ContactMaterialSite)
+                or site.force_n < 0
+                or site.fraction <= 0
+            ):
                 raise ValueError("invalid material site or negative normal load")
             a, b = _material(address.first, first), _material(address.second, second)
             fraction = finite_real(address.fraction, "material fraction")
-            if (fraction != site.fraction or a.weights != site.material.first_weights
-                    or b.weights != site.material.second_weights):
+            if (
+                fraction != site.fraction
+                or a.weights != site.material.first_weights
+                or b.weights != site.material.second_weights
+            ):
                 raise ValueError("material addresses differ from the original load site")
             material.append(ContactMaterialSite(a, b, fraction))
-        if not isclose(fsum(s.force_n for s in load.sites), load.force_n, rel_tol=1e-10, abs_tol=1e-12):
+        if not isclose(
+            fsum(s.force_n for s in load.sites), load.force_n, rel_tol=1e-10, abs_tol=1e-12
+        ):
             raise ValueError("site normal loads differ from their pair total")
-        components.append(ContactComponent(load, tuple(material), str(component.material_kind),
-                                           replace(component.law)))
+        components.append(
+            ContactComponent(
+                load, tuple(material), str(component.material_kind), replace(component.law)
+            )
+        )
     for flag in (value.material_changed, value.support_changed):
         if not isinstance(flag, (bool, np.bool_)):
             raise ValueError("invalid material change flag")
     return SceneContactRecord(
         ContactIdentity(identity.first, identity.second, _index(identity.generation, "episode", 1)),
-        first, second, tuple(components), bool(value.material_changed), bool(value.support_changed),
+        first,
+        second,
+        tuple(components),
+        bool(value.material_changed),
+        bool(value.support_changed),
     )
 
 
@@ -292,14 +325,21 @@ class MaterialStationSelection:
 
         def displacement(owner, local):
             start, stop = self._entry_frames[owner], end[owner]
-            return (np.asarray(stop.position_m) - start.position_m
-                    + (np.asarray(stop.rotation_world) - start.rotation_world) @ local)
+            return (
+                np.asarray(stop.position_m)
+                - start.position_m
+                + (np.asarray(stop.rotation_world) - start.rotation_world) @ local
+            )
 
         material, application = [], []
         for binding, (a, b) in zip(self.bindings, self._application_local, strict=True):
-            material.append(displacement(binding.second_owner, binding.second_material_local_m)
-                            - displacement(binding.first_owner, binding.first_material_local_m))
-            application.append(displacement(binding.second_owner, b) - displacement(binding.first_owner, a))
+            material.append(
+                displacement(binding.second_owner, binding.second_material_local_m)
+                - displacement(binding.first_owner, binding.first_material_local_m)
+            )
+            application.append(
+                displacement(binding.second_owner, b) - displacement(binding.first_owner, a)
+            )
         output = []
         for values in (material, application):
             array = np.asarray(values, dtype=np.float64).reshape(len(self.samples), 3)
@@ -337,7 +377,9 @@ class MaterialStationRegistry:
             pairs.setdefault((registration.first, registration.second), []).append(registration)
         object.__setattr__(self, "registrations", tuple(sorted(owned, key=lambda r: r.key)))
         object.__setattr__(self, "pairs", tuple(sorted(pairs)))
-        object.__setattr__(self, "_by_pair", MappingProxyType({p: tuple(rows) for p, rows in pairs.items()}))
+        object.__setattr__(
+            self, "_by_pair", MappingProxyType({p: tuple(rows) for p, rows in pairs.items()})
+        )
 
     def bind(self, entry_events, entry_frames, *, sample_time_s):
         """Bind actual input-time normal loads; do not advance B3 or a scene.
@@ -370,11 +412,21 @@ class MaterialStationRegistry:
                     if site.force_n == 0:
                         continue
                     address = component.material[si]
-                    matches = [r for r in declarations
-                               if hypot(*(np.asarray(getattr(address, r.anchor_side).local_point_m)
-                                          - r.anchor_local_m)) <= r.match_tolerance_m]
+                    matches = [
+                        r
+                        for r in declarations
+                        if hypot(
+                            *(
+                                np.asarray(getattr(address, r.anchor_side).local_point_m)
+                                - r.anchor_local_m
+                            )
+                        )
+                        <= r.match_tolerance_m
+                    ]
                     if len(matches) != 1:
-                        raise ValueError("positive load site has missing or ambiguous material registration")
+                        raise ValueError(
+                            "positive load site has missing or ambiguous material registration"
+                        )
                     registration = matches[0]
                     if registration.key in selected:
                         raise ValueError("one declared station matches duplicate load sites")
@@ -388,12 +440,22 @@ class MaterialStationRegistry:
                         rotation = np.asarray(pose.rotation_world)
                         local = getattr(address, side).local_point_m
                         surface = getattr(site.material, side + "_point")
-                        if hypot(*(np.asarray(pose.position_m) + rotation @ local - surface)) > registration.match_tolerance_m:
-                            raise ValueError("entry owner pose does not reconstruct the sampled material point")
+                        if (
+                            hypot(*(np.asarray(pose.position_m) + rotation @ local - surface))
+                            > registration.match_tolerance_m
+                        ):
+                            raise ValueError(
+                                "entry owner pose does not reconstruct the sampled material point"
+                            )
                         point = getattr(site, "application_point_" + side + "_m")
-                        local_application.append(tuple((np.asarray(point) - pose.position_m) @ rotation))
+                        local_application.append(
+                            tuple((np.asarray(point) - pose.position_m) @ rotation)
+                        )
                     anchor_owner = getattr(record, registration.anchor_side + "_owner")
-                    axis = np.asarray(frames[anchor_owner].rotation_world) @ registration.tangent_axis_local
+                    axis = (
+                        np.asarray(frames[anchor_owner].rotation_world)
+                        @ registration.tangent_axis_local
+                    )
                     normal = np.asarray(component.load.normal)
                     tangent = axis - (axis @ normal) * normal
                     length = hypot(*tangent)
@@ -409,16 +471,28 @@ class MaterialStationRegistry:
                         feature = support if declared is None else declared
                         if not set(support).issubset(feature):
                             raise ValueError("sample weights leave declared " + side + "_feature")
-                        materials.append(MaterialAddress(
-                            getattr(record, side + "_owner"), getattr(record.identity, side),
-                            registration.topology_revision, feature,
-                            part.weights, part.local_point_m, getattr(registration, side + "_chart_id"),
-                        ))
-                    sample = _sample(StationSample(registration.key, *materials,
-                                                   tuple(normal), basis, site.force_n))
+                        materials.append(
+                            MaterialAddress(
+                                getattr(record, side + "_owner"),
+                                getattr(record.identity, side),
+                                registration.topology_revision,
+                                feature,
+                                part.weights,
+                                part.local_point_m,
+                                getattr(registration, side + "_chart_id"),
+                            )
+                        )
+                    sample = _sample(
+                        StationSample(
+                            registration.key, *materials, tuple(normal), basis, site.force_n
+                        )
+                    )
                     selected[registration.key] = sample, binding, tuple(local_application)
         ordered = [selected[key] for key in sorted(selected)]
         return MaterialStationSelection(
-            time, tuple(row[0] for row in ordered), tuple(row[1] for row in ordered),
-            MappingProxyType(frames), tuple(row[2] for row in ordered),
+            time,
+            tuple(row[0] for row in ordered),
+            tuple(row[1] for row in ordered),
+            MappingProxyType(frames),
+            tuple(row[2] for row in ordered),
         )

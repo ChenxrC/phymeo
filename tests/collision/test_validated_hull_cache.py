@@ -17,7 +17,10 @@ from phymeo.geometry import collision_pipeline as pipeline
 def _bits(value):
     """Every public dataclass field, including non-comparing registration fields."""
     if is_dataclass(value):
-        return (type(value).__qualname__, tuple((f.name, _bits(getattr(value, f.name))) for f in fields(value)))
+        return (
+            type(value).__qualname__,
+            tuple((f.name, _bits(getattr(value, f.name))) for f in fields(value)),
+        )
     if isinstance(value, np.ndarray):
         data = tuple(_bits(v) for v in value.flat) if value.dtype.hasobject else value.tobytes()
         return ("array", value.dtype.str, value.shape, data)
@@ -35,9 +38,18 @@ def _bits(value):
 
 
 def _hull_bits(hull):
-    return _bits((hull.points, hull.step, hull.vertices, hull.edges, hull.edge_rays, tuple(
-        (f.normal, f.plane, f.cols, f.ids, f.chart.ids, f.chart.ring) for f in hull.faces
-    )))
+    return _bits(
+        (
+            hull.points,
+            hull.step,
+            hull.vertices,
+            hull.edges,
+            hull.edge_rays,
+            tuple(
+                (f.normal, f.plane, f.cols, f.ids, f.chart.ids, f.chart.ring) for f in hull.faces
+            ),
+        )
+    )
 
 
 def _scene(center=(0, 0, 37 / 32), *, world=0, swapped=False, transform=False):
@@ -52,9 +64,12 @@ def _scene(center=(0, 0, 37 / 32), *, world=0, swapped=False, transform=False):
         # Exact signed permutation and dyadic offset; actual stored coordinates are used.
         points = points[:, [2, 0, 1]] * [-1, 1, -1] + [3.5, -2.25, 0.75]
         center = center[[2, 0, 1]] * [-1, 1, -1] + [3.5, -2.25, 0.75]
-    return ph.CollisionModel((ball, hull)), {
-        kh: ph.CollisionMotion(points), ks: ph.CollisionMotion([center])
-    }, hull, ball
+    return (
+        ph.CollisionModel((ball, hull)),
+        {kh: ph.CollisionMotion(points), ks: ph.CollisionMotion([center])},
+        hull,
+        ball,
+    )
 
 
 def _material_points(row, model, paths, time=0.0, witness=None):
@@ -116,9 +131,14 @@ def test_public_repeated_fixed_hull_reuses_validation_after_real_witness(monkeyp
         assert calls == [hull.key], "same stored hull was rebuilt for a new sphere query"
 
 
-@pytest.mark.parametrize("center", [(0, 0, 37 / 32), (35 / 32, 36 / 32, 0), (33 / 32, 34 / 32, 34 / 32), (0, 0, 9 / 8), (0, 0, 0)])
+@pytest.mark.parametrize(
+    "center",
+    [(0, 0, 37 / 32), (35 / 32, 36 / 32, 0), (33 / 32, 34 / 32, 34 / 32), (0, 0, 9 / 8), (0, 0, 0)],
+)
 @pytest.mark.parametrize("swapped,transform", [(False, False), (True, True)])
-def test_complete_public_payload_matches_original_constructor(center, swapped, transform, monkeypatch):
+def test_complete_public_payload_matches_original_constructor(
+    center, swapped, transform, monkeypatch
+):
     model, paths, _, _ = _scene(center, swapped=swapped, transform=transform)
     from phymeo.geometry._validated_hull_cache import ValidatedHullCache
 
@@ -151,7 +171,11 @@ def test_byte_binding_representation_and_moving_paths_use_real_constructor():
     cache.get(hull, ph.CollisionMotion(changed), build)
     cache.get(hull, ph.CollisionMotion(start[[1, 0, 2, 3, 4, 5, 6, 7]]), build)
     cache.get(hull, ph.CollisionMotion(start, start), build)
-    cache.get(hull, ph.CollisionMotion(start, turn=ph.RigidTurn((0, 0, 0), (0, 0, 0), (0, 0, 1), 0)), build)
+    cache.get(
+        hull,
+        ph.CollisionMotion(start, turn=ph.RigidTurn((0, 0, 0), (0, 0, 0), (0, 0, 1), 0)),
+        build,
+    )
     cache.get(hull, ph.CollisionMotion(start, body_orientation_xyzw=(0, 0, 0, 1)), build)
     assert len(calls) == 6
     for moving in (
@@ -243,7 +267,11 @@ def test_registry_identity_full_registration_capacity_and_world_isolation():
     model, paths, hull, ball = _scene()
     cache = _cache(model.shapes)
     cache.get(hull, paths[hull.key])
-    for foreign in (replace(hull), replace(hull, revision=1), replace(hull, key=replace(hull.key, world=3))):
+    for foreign in (
+        replace(hull),
+        replace(hull, revision=1),
+        replace(hull, key=replace(hull.key, world=3)),
+    ):
         with pytest.raises(ValueError, match="registered hull"):
             cache.get(foreign, paths[hull.key])
     with pytest.raises(ValueError, match="registered hull"):
@@ -285,11 +313,18 @@ def test_public_multiworld_failure_capacity_and_retry_preserve_output(monkeypatc
         assert len(first.pairs) == 6
         assert sum(row.reason == "different_world" for row in first.pairs) == 4
         assert calls == [h0.key, h1.key]
-        failed = ph.detect(model, paths, ph.CollisionPolicy(margin=0.25, candidate_capacity=0), work)
+        failed = ph.detect(
+            model, paths, ph.CollisionPolicy(margin=0.25, candidate_capacity=0), work
+        )
         assert failed.status == "capacity_exceeded" and work.last_result is first
         assert calls == [h0.key, h1.key]
         with pytest.raises(ValueError, match="registered vertices"):
-            ph.detect(model, paths | {h0.key: ph.CollisionMotion(p0[h0.key].start[:-1])}, ph.CollisionPolicy(), work)
+            ph.detect(
+                model,
+                paths | {h0.key: ph.CollisionMotion(p0[h0.key].start[:-1])},
+                ph.CollisionPolicy(),
+                work,
+            )
         assert work.last_result is first and _bits(first) == saved
         assert _bits(ph.detect(model, paths, ph.CollisionPolicy(margin=0.25), work)) == saved
         assert calls == [h0.key, h1.key]
@@ -344,7 +379,12 @@ def test_device_still_classifies_each_query_and_preserves_failure(tyx_mode, tmp_
         stats = work.stats()
         assert stats["completed_launches"] == 4
         assert stats["validated_hull_builds"] == 1 and stats["validated_hull_hits"] == 1
-        assert ph.detect(model, paths, ph.CollisionPolicy(margin=0.25, candidate_capacity=0), work).status == "capacity_exceeded"
+        assert (
+            ph.detect(
+                model, paths, ph.CollisionPolicy(margin=0.25, candidate_capacity=0), work
+            ).status
+            == "capacity_exceeded"
+        )
         assert work.last_result is second
 
         def fault(*args, **kwargs):

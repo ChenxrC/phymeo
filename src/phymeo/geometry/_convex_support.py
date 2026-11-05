@@ -334,11 +334,11 @@ class _Query:
         raise SolverFailure("support_distance_capacity")
 
 
-def _exterior_sphere_hull(a, b, ma, mb):
+def _exterior_sphere_hull(a, b, ma, mb, *, hull_getter=None):
     """Project the sphere centre onto the actual convex material before rounding."""
     hull_first = a.kind == "hull"
     hs, ball, hp, sp = (a, b, ma, mb) if hull_first else (b, a, mb, ma)
-    hull = HullShape(hs, hp)
+    hull = HullShape(hs, hp) if hull_getter is None else hull_getter(hs, hp, HullShape)
     center = _vector(sp.start[0])
     outside = False
     for face in hull.faces:
@@ -474,7 +474,7 @@ def _contained_cone_sphere(a, b, ma, mb):
     return "overlap", "cone_interior", witness, trace
 
 
-def static_convex_support(a, b, ma, mb):
+def static_convex_support(a, b, ma, mb, *, hull_getter=None):
     """Return one bounded-distance observation for two registered, finite convex bodies."""
     if a.kind not in _KINDS or b.kind not in _KINDS or ma.moving or mb.moving:
         return None
@@ -485,7 +485,7 @@ def static_convex_support(a, b, ma, mb):
     try:
         with np.errstate(over="raise", invalid="raise", divide="raise"):
             if {a.kind, b.kind} == {"hull", "sphere"}:
-                exterior = _exterior_sphere_hull(a, b, ma, mb)
+                exterior = _exterior_sphere_hull(a, b, ma, mb, hull_getter=hull_getter)
                 if exterior is not None:
                     return exterior
             if {a.kind, b.kind} == {"cone", "sphere"}:

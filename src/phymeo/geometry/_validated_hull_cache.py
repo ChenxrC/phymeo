@@ -24,7 +24,10 @@ from . import _convex_hull
 def _representation(value):
     """Exact registration representation, independent of dataclass equality."""
     if is_dataclass(value):
-        return (type(value), tuple((f.name, _representation(getattr(value, f.name))) for f in fields(value)))
+        return (
+            type(value),
+            tuple((f.name, _representation(getattr(value, f.name))) for f in fields(value)),
+        )
     if isinstance(value, float):
         return (float, pack("<d", value))
     if isinstance(value, tuple):
@@ -99,9 +102,7 @@ class ValidatedHullCache:
             or sum(len(s.vertex_ids) for s in registered) > MAX_VERTICES
         ):
             raise ValueError("invalid registered hull shape table or capacity")
-        self._registered = {
-            id(s): (s, _representation(s)) for s in registered if s.kind == "hull"
-        }
+        self._registered = {id(s): (s, _representation(s)) for s in registered if s.kind == "hull"}
         self._entries = {}
         self._attempts = self._builds = self._hits = 0
 
@@ -128,7 +129,12 @@ class ValidatedHullCache:
             # never through a previously successful cached representation.
             motion = None
         entry = self._entries.get(token)
-        if motion is not None and entry is not None and entry[0] == motion and _same_builder(entry[1], factory):
+        if (
+            motion is not None
+            and entry is not None
+            and entry[0] == motion
+            and _same_builder(entry[1], factory)
+        ):
             result = deepcopy(entry[2])
             self._hits += 1
             return result

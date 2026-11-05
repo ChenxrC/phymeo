@@ -165,8 +165,9 @@ def _end_trace(sample, peak_error, cells, count):
 
 
 class _Window:
-    def __init__(self, a, b):
+    def __init__(self, a, b, *, hull_getter=None):
         self.a, self.b = a, b
+        self.hull_getter = hull_getter
         self.observed = {}
         self.cells = 0
 
@@ -175,7 +176,7 @@ class _Window:
             pa, ea = self.a.pose(t)
             pb, eb = self.b.pose(t)
             status, reason, witness, trace = static_convex_support(
-                self.a.shape, self.b.shape, pa, pb
+                self.a.shape, self.b.shape, pa, pb, hull_getter=self.hull_getter
             )
             self.observed[t] = _Sample(status, reason, witness, trace, ea + eb)
         return self.observed[t]
@@ -283,7 +284,7 @@ def _turn_clear(window):
     return None
 
 
-def affine_convex_contact(a, b, ma, mb):
+def affine_convex_contact(a, b, ma, mb, *, hull_getter=None):
     """Return a full positive clearance cover or a bounded first-overlap observation."""
     if not (ma.moving or mb.moving) or any(s.kind not in _KINDS for s in (a, b)):
         return None
@@ -300,7 +301,7 @@ def affine_convex_contact(a, b, ma, mb):
                 (_RigidSupport if m.turn and m.turn.angle else _AffineSupport)(s, m)
                 for s, m in ((a, ma), (b, mb))
             ]
-            window = _Window(*bodies)
+            window = _Window(*bodies, hull_getter=hull_getter)
             if any(isinstance(body, _RigidSupport) for body in bodies):
                 clear = _turn_clear(window)
                 if clear is not None:

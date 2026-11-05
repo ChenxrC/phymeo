@@ -216,6 +216,11 @@ from .runtime.contact_history import ContactEvent, ContactHistory, ContactIdenti
 from .runtime.contact_scene import ContactSceneBuilder
 from .runtime.finite_contact_terminal import FiniteContactTerminalProgram
 from .runtime.load_replay import ReplayTrial, SceneLoadReplay
+from .runtime.material_stations import (
+    MaterialStationRegistration,
+    MaterialStationRegistry,
+    OwnerPose,
+)
 from .runtime.program import (
     ProgramCapabilities,
     SceneProgram,
@@ -481,6 +486,9 @@ __all__ = [
     "SceneModel",
     "SceneState",
     "ContactSceneBuilder",
+    "MaterialStationRegistration",
+    "MaterialStationRegistry",
+    "OwnerPose",
     "ContactHistory",
     "ContactIdentity",
     "ContactRecord",

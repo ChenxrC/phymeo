@@ -1,6 +1,5 @@
 """Actual sampled scene forces and physical motion publish tangent state together."""
 
-
 import numpy as np
 import pytest
 
@@ -27,15 +26,14 @@ def clamp_registry():
     from phymeo.runtime.material_stations import (
         MaterialStationRegistry,
     )
-
     from phymeo.solvers.tangent_history import StationKey
 
     registrations = []
-    corners = np.array([[-.1, -.1], [.1, -.1], [.1, .1], [-.1, .1]])
+    corners = np.array([[-0.1, -0.1], [0.1, -0.1], [0.1, 0.1], [-0.1, 0.1]])
     anchors = []
     for edge in range(4):
         left, right = corners[edge], corners[(edge + 1) % 4]
-        for wl, wr in ((1/6, 1/6), (2/3, 1/6), (1/6, 2/3)):
+        for wl, wr in ((1 / 6, 1 / 6), (2 / 3, 1 / 6), (1 / 6, 2 / 3)):
             anchors.append(wl * left + wr * right)
     for side, (a, b, z) in enumerate(((10, 20, -0.05), (20, 30, 0.05))):
         for index, (x, y) in enumerate(anchors):
@@ -112,13 +110,12 @@ def test_default_remains_unconfigured_and_native_opt_in_rejects_before_execution
 
 
 def test_real_urdf_two_pads_share_one_prismatic_response(tmp_path):
+    from phymeo.constraints.robot_contact import RobotContactMaterial
+    from phymeo.core.robot import RobotState
     from phymeo.runtime.material_stations import (
         MaterialStationRegistration,
         MaterialStationRegistry,
     )
-
-    from phymeo.constraints.robot_contact import RobotContactMaterial
-    from phymeo.core.robot import RobotState
     from phymeo.runtime.robot_payload_scene import PadFace
     from phymeo.runtime.robot_scene import RobotCommand
     from phymeo.solvers.tangent_history import StationKey
@@ -197,32 +194,44 @@ def test_actual_rotating_material_path_is_rejected_before_publication():
 
 def test_public_tangent_receipt_owns_array_metadata():
     with clamp().build() as scene:
-        scene.enable_coupled_tangent(clamp_registry(), stiffness_n_per_m=200.)
-        scene.step(1/1024)
+        scene.enable_coupled_tangent(clamp_registry(), stiffness_n_per_m=200.0)
+        scene.step(1 / 1024)
         receipt = scene.tangent_receipt
         receipt.application_work_j.dtype = np.uint64
         assert scene.tangent_receipt.application_work_j.dtype == np.float64
+
 
 def test_real_unload_and_reentry_release_spring_once_on_the_same_trajectory():
     from phymeo import MaterialStationRegistration, MaterialStationRegistry
     from phymeo.solvers.tangent_history import StationKey
 
-    b = ContactSceneBuilder(gravity=(0., 0., 0.))
-    b.add_box(2, (.25, .25, .125), mass=None)
-    b.add_sphere(9, .125, mass=1., position=(0., 0., 9/32))
-    b.pair(2, 9, NormalLayer(1/16, 128., friction=.5))
-    registry = MaterialStationRegistry((MaterialStationRegistration(
-        StationKey(0, 41), CollisionKey(0, 2, 0), CollisionKey(0, 9, 0),
-        "second", (0., 0., -.125), (1., 0., 0.), 17, None,
-        match_tolerance_m=1e-3, first_feature=(1, 3, 5, 7),
-    ),))
+    b = ContactSceneBuilder(gravity=(0.0, 0.0, 0.0))
+    b.add_box(2, (0.25, 0.25, 0.125), mass=None)
+    b.add_sphere(9, 0.125, mass=1.0, position=(0.0, 0.0, 9 / 32))
+    b.pair(2, 9, NormalLayer(1 / 16, 128.0, friction=0.5))
+    registry = MaterialStationRegistry(
+        (
+            MaterialStationRegistration(
+                StationKey(0, 41),
+                CollisionKey(0, 2, 0),
+                CollisionKey(0, 9, 0),
+                "second",
+                (0.0, 0.0, -0.125),
+                (1.0, 0.0, 0.0),
+                17,
+                None,
+                match_tolerance_m=1e-3,
+                first_feature=(1, 3, 5, 7),
+            ),
+        )
+    )
     with b.build() as scene:
-        scene.enable_coupled_tangent(registry, stiffness_n_per_m=20.)
+        scene.enable_coupled_tangent(registry, stiffness_n_per_m=20.0)
         generation, releases = [], []
-        for i, z in enumerate((252., -512., 252.)):
+        for i, z in enumerate((252.0, -512.0, 252.0)):
             external = scene.inputs()
-            external.rigid.force[scene.rigid_rows[0, 9]] = (.125 if i == 0 else 0., 0., z)
-            scene.step(1/64, external)
+            external.rigid.force[scene.rigid_rows[0, 9]] = (0.125 if i == 0 else 0.0, 0.0, z)
+            scene.step(1 / 64, external)
             generation.append(tuple(r.identity.generation for r in scene.tangent_history.active))
             releases.append(scene.tangent_receipt.released_energy_j)
         assert generation == [(1,), (), (2,)]

@@ -16,8 +16,7 @@ H = 1 / 64
 def _table_builder(*, world=7, velocity=(0.0, 0.0, 0.0)):
     make = ContactSceneBuilder(gravity=(0.0, 0.0, 0.0))
     make.add_box(2, (1 / 4, 1 / 4, 1 / 8), mass=None, world=world)
-    make.add_sphere(9, 1 / 8, mass=1.0, world=world,
-                    position=(0.0, 0.0, 9 / 32), velocity=velocity)
+    make.add_sphere(9, 1 / 8, mass=1.0, world=world, position=(0.0, 0.0, 9 / 32), velocity=velocity)
     make.pair(2, 9, NormalLayer(1 / 16, 128.0), world=world)
     return make
 
@@ -35,20 +34,37 @@ def _poses(events, state, rows):
 
     rotations = quaternion_matrix(state.orientation)
     owners = {o for r in events.active for o in (r.first_owner, r.second_owner)}
-    return {o: OwnerPose(o, state.position[rows[o.world, o.body]],
-                         rotations[rows[o.world, o.body]]) for o in owners}
+    return {
+        o: OwnerPose(o, state.position[rows[o.world, o.body]], rotations[rows[o.world, o.body]])
+        for o in owners
+    }
 
 
-def _registration(record, *, token=41, anchor=(0.0, 0.0, -1 / 8),
-                  side="second", axis=(1.0, 0.0, 0.0), first_chart=17, second_chart=None,
-                  first_feature=None, second_feature=None):
+def _registration(
+    record,
+    *,
+    token=41,
+    anchor=(0.0, 0.0, -1 / 8),
+    side="second",
+    axis=(1.0, 0.0, 0.0),
+    first_chart=17,
+    second_chart=None,
+    first_feature=None,
+    second_feature=None,
+):
     from phymeo.runtime.material_stations import MaterialStationRegistration
 
     return MaterialStationRegistration(
         StationKey(record.identity.first.world, token),
-        record.identity.first, record.identity.second, side, anchor, axis,
-        first_chart, second_chart,
-        first_feature=first_feature, second_feature=second_feature,
+        record.identity.first,
+        record.identity.second,
+        side,
+        anchor,
+        axis,
+        first_chart,
+        second_chart,
+        first_feature=first_feature,
+        second_feature=second_feature,
     )
 
 
@@ -106,7 +122,9 @@ def test_real_exit_reentry_keeps_history_transaction_outside_the_selector():
             selected = registry.bind(events, frames, sample_time_s=index * H)
             trial = book.prepare(state, selected.samples, sample_time_s=index * H, dt_s=H)
             candidate = book.commit(state, trial, {s.key: _stored() for s in selected.samples})
-            assert candidate == book.commit(state, trial, {s.key: _stored() for s in selected.samples})
+            assert candidate == book.commit(
+                state, trial, {s.key: _stored() for s in selected.samples}
+            )
             state = candidate
             generations.append(tuple(r.identity.generation for r in state.active))
             releases.append(state.dropped_spring_energy_j)
@@ -125,11 +143,11 @@ def test_closest_chart_drift_is_separate_from_the_same_entry_material_motion(cha
         events = scene.contact_events
         # ContactScene.add_box authors product((-hx,hx),(-hy,hy),(-hz,hz)).
         # The finite +z face is declared before its sparse barycentric support changes.
-        declaration = _registration(events.active[0], first_chart=chart,
-                                    first_feature=(1, 3, 5, 7))
+        declaration = _registration(events.active[0], first_chart=chart, first_feature=(1, 3, 5, 7))
         registry = MaterialStationRegistry([declaration])
-        selection = registry.bind(events, _poses(events, first.entry.rigid, scene.rigid_rows),
-                                  sample_time_s=0.0)
+        selection = registry.bind(
+            events, _poses(events, first.entry.rigid, scene.rigid_rows), sample_time_s=0.0
+        )
         motion, _ = selection.measure_motion(_poses(events, first.state.rigid, scene.rigid_rows))
         np.testing.assert_allclose(motion, [[1 / 512, 0.0, 0.0]], atol=1e-14)
         book = TangentHistory(1)
@@ -165,17 +183,33 @@ def test_closest_chart_drift_is_separate_from_the_same_entry_material_motion(cha
             assert tuple(i for i, _ in selection.samples[0].first.weights) == (1, 7)
             assert tuple(i for i, _ in next_selection.samples[0].first.weights) == (1, 5, 7)
             narrow = MaterialStationRegistry([replace(declaration, first_feature=(1, 7))])
-            narrow.bind(events, _poses(events, first.entry.rigid, scene.rigid_rows), sample_time_s=0.0)
+            narrow.bind(
+                events, _poses(events, first.entry.rigid, scene.rigid_rows), sample_time_s=0.0
+            )
             with pytest.raises(ValueError, match="first_feature"):
-                narrow.bind(next_events, _poses(next_events, second.entry.rigid, scene.rigid_rows),
-                            sample_time_s=H)
-            assert registry.bind(next_events, _poses(next_events, second.entry.rigid, scene.rigid_rows),
-                                 sample_time_s=H).samples == next_selection.samples
+                narrow.bind(
+                    next_events,
+                    _poses(next_events, second.entry.rigid, scene.rigid_rows),
+                    sample_time_s=H,
+                )
+            assert (
+                registry.bind(
+                    next_events,
+                    _poses(next_events, second.entry.rigid, scene.rigid_rows),
+                    sample_time_s=H,
+                ).samples
+                == next_selection.samples
+            )
             # A chart ID alone must not widen the observed support or suppress a reset.
             sparse = MaterialStationRegistry([replace(declaration, first_feature=None)])
-            old = sparse.bind(events, _poses(events, first.entry.rigid, scene.rigid_rows), sample_time_s=0.0)
-            new = sparse.bind(next_events, _poses(next_events, second.entry.rigid, scene.rigid_rows),
-                              sample_time_s=H)
+            old = sparse.bind(
+                events, _poses(events, first.entry.rigid, scene.rigid_rows), sample_time_s=0.0
+            )
+            new = sparse.bind(
+                next_events,
+                _poses(next_events, second.entry.rigid, scene.rigid_rows),
+                sample_time_s=H,
+            )
             sparse_trial = book.prepare(initial, old.samples, sample_time_s=0.0, dt_s=H)
             sparse_state = book.commit(initial, sparse_trial, {old.samples[0].key: _stored()})
             sparse_trial = book.prepare(sparse_state, new.samples, sample_time_s=H, dt_s=H)
@@ -196,9 +230,11 @@ def test_finite_four_site_patch_uses_actual_site_force_without_fraction_twice():
     record = events.active[0]
     assert len(record.components[0].load.sites) == 4
     # Tokens belong to four authored cuboid corners, not enumerated output rows.
-    declarations = [_registration(record, token=100 + 2 * ix + iy, anchor=(x, y, -1 / 8))
-                    for ix, x in enumerate((-1 / 8, 1 / 8))
-                    for iy, y in enumerate((-1 / 8, 1 / 8))]
+    declarations = [
+        _registration(record, token=100 + 2 * ix + iy, anchor=(x, y, -1 / 8))
+        for ix, x in enumerate((-1 / 8, 1 / 8))
+        for iy, y in enumerate((-1 / 8, 1 / 8))
+    ]
     registry = MaterialStationRegistry(declarations[::-1])
     frames = _poses(events, frame.entry.rigid, rows)
     selected = registry.bind(events, frames, sample_time_s=0.0)
@@ -210,8 +246,11 @@ def test_finite_four_site_patch_uses_actual_site_force_without_fraction_twice():
         assert binding.record.components[binding.component_index] == binding.component
         assert binding.component.load.sites[binding.site_index] == binding.site
     component = record.components[0]
-    reversed_component = replace(component, material=component.material[::-1],
-                                 load=replace(component.load, sites=component.load.sites[::-1]))
+    reversed_component = replace(
+        component,
+        material=component.material[::-1],
+        load=replace(component.load, sites=component.load.sites[::-1]),
+    )
     reordered = replace(events, active=(replace(record, components=(reversed_component,)),))
     assert registry.bind(reordered, frames, sample_time_s=0.0).samples == selected.samples
 
@@ -219,6 +258,7 @@ def test_finite_four_site_patch_uses_actual_site_force_without_fraction_twice():
 @pytest.mark.parametrize("turned", [False, True])
 def test_real_urdf_pad_sites_keep_local_anchor_identity_across_component_order(tmp_path, turned):
     from test_robot_contact_events import _twisting_pad_scene
+
     from phymeo.dynamics.robot_kinematics import forward_kinematics
     from phymeo.runtime.material_stations import MaterialStationRegistry, OwnerPose
     from phymeo.runtime.robot_scene import RobotCommand
@@ -236,12 +276,24 @@ def test_real_urdf_pad_sites_keep_local_anchor_identity_across_component_order(t
     assert record.identity.first.body != robot.body
     frames = {
         robot: OwnerPose(robot, geo.position[0], geo.rotation[0]),
-        rigid: OwnerPose(rigid, frame.entry_rigid.position[0],
-                         quaternion_matrix(frame.entry_rigid.orientation)[0]),
+        rigid: OwnerPose(
+            rigid,
+            frame.entry_rigid.position[0],
+            quaternion_matrix(frame.entry_rigid.orientation)[0],
+        ),
     }
-    declarations = [_registration(record, token=token, anchor=(0.01, y, 0.0), side="first",
-                                  axis=(0.0, 0.0, 1.0), first_chart=None, second_chart=11)
-                    for token, y in ((101, 0.009), (202, -0.009))]
+    declarations = [
+        _registration(
+            record,
+            token=token,
+            anchor=(0.01, y, 0.0),
+            side="first",
+            axis=(0.0, 0.0, 1.0),
+            first_chart=None,
+            second_chart=11,
+        )
+        for token, y in ((101, 0.009), (202, -0.009))
+    ]
     registry = MaterialStationRegistry(declarations)
     selected = registry.bind(events, frames, sample_time_s=0.0)
     assert len(selected.samples) == 2
@@ -255,7 +307,9 @@ def test_real_urdf_pad_sites_keep_local_anchor_identity_across_component_order(t
     assert repeat.samples == selected.samples
     end = {
         robot: OwnerPose(robot, end_geo.position[0], end_geo.rotation[0]),
-        rigid: OwnerPose(rigid, frame.rigid.position[0], quaternion_matrix(frame.rigid.orientation)[0]),
+        rigid: OwnerPose(
+            rigid, frame.rigid.position[0], quaternion_matrix(frame.rigid.orientation)[0]
+        ),
     }
     material, application = selected.measure_motion(end)
     np.testing.assert_allclose(material, application, atol=1e-12)
@@ -282,8 +336,9 @@ def test_real_rotating_body_keeps_material_and_application_motion_distinct():
     )
     material, application = selected.measure_motion(_poses(events, frame.state.rigid, rows))
     rotation = quaternion_matrix(frame.state.rigid.orientation)[0]
-    np.testing.assert_allclose(application[0] - material[0],
-                               -(rotation - np.eye(3)) @ [0.0, 0.0, 1 / 64], atol=1e-14)
+    np.testing.assert_allclose(
+        application[0] - material[0], -(rotation - np.eye(3)) @ [0.0, 0.0, 1 / 64], atol=1e-14
+    )
     assert np.linalg.norm(application - material) > 1e-6
     binding = selected.bindings[0]
     assert binding.application_point_first_m == binding.application_point_second_m
@@ -325,17 +380,25 @@ def test_owned_source_and_pose_copies_do_not_move_prior_selection():
     record, component = events.active[0], events.active[0].components[0]
     local = np.asarray(component.material[0].second.local_point_m).copy()
     point = np.asarray(component.load.sites[0].application_point_second_m).copy()
-    addresses = (replace(component.material[0], second=replace(component.material[0].second,
-                                                             local_point_m=local)),)
-    load = replace(component.load, sites=(replace(component.load.sites[0],
-                                                  application_point_second_m=point),))
-    source = replace(events, active=(replace(record, components=(replace(component,
-                             material=addresses, load=load),)),))
+    addresses = (
+        replace(
+            component.material[0], second=replace(component.material[0].second, local_point_m=local)
+        ),
+    )
+    load = replace(
+        component.load, sites=(replace(component.load.sites[0], application_point_second_m=point),)
+    )
+    source = replace(
+        events,
+        active=(replace(record, components=(replace(component, material=addresses, load=load),)),),
+    )
     frames = _poses(events, frame.entry.rigid, rows)
     position = np.asarray(frames[record.second_owner].position_m).copy()
     rotation = np.eye(3)
     frames[record.second_owner] = OwnerPose(record.second_owner, position, rotation)
-    selected = MaterialStationRegistry([_registration(record)]).bind(source, frames, sample_time_s=0.0)
+    selected = MaterialStationRegistry([_registration(record)]).bind(
+        source, frames, sample_time_s=0.0
+    )
     local[:] = 99
     point[:] = 88
     position[:] = 77
@@ -368,7 +431,10 @@ def test_empty_unselected_pairs_and_same_local_token_in_other_world_are_explicit
     assert len(partial.samples) == 1 and partial.samples[0].key.world == 7
 
 
-@pytest.mark.parametrize("bad", ["duplicate_key", "world", "side", "axis", "tolerance", "feature_duplicate", "feature_boolean"])
+@pytest.mark.parametrize(
+    "bad",
+    ["duplicate_key", "world", "side", "axis", "tolerance", "feature_duplicate", "feature_boolean"],
+)
 def test_bad_registration_fails_before_any_binding(bad):
     from phymeo.runtime.material_stations import MaterialStationRegistry
 
@@ -378,11 +444,14 @@ def test_bad_registration_fails_before_any_binding(bad):
         if bad == "duplicate_key":
             MaterialStationRegistry([registration, registration])
         else:
-            updates = {"world": {"key": StationKey(42, 41)}, "side": {"anchor_side": "either"},
-                       "axis": {"tangent_axis_local": (0.0, 0.0, 0.0)},
-                       "tolerance": {"match_tolerance_m": float("inf")},
-                       "feature_duplicate": {"first_feature": (1, 1)},
-                       "feature_boolean": {"second_feature": (True,)}}[bad]
+            updates = {
+                "world": {"key": StationKey(42, 41)},
+                "side": {"anchor_side": "either"},
+                "axis": {"tangent_axis_local": (0.0, 0.0, 0.0)},
+                "tolerance": {"match_tolerance_m": float("inf")},
+                "feature_duplicate": {"first_feature": (1, 1)},
+                "feature_boolean": {"second_feature": (True,)},
+            }[bad]
             MaterialStationRegistry([replace(registration, **updates)])
 
 
@@ -395,8 +464,11 @@ def test_bad_pose_unsupported_owner_and_parallel_material_axis_are_explicit():
         with pytest.raises(ValueError):
             OwnerPose(owner, (0.0, 0.0, 0.0), bad)
     with pytest.raises(ValueError):
-        OwnerPose(replace(owner, kind="particle", local_frame="material_vertices"),
-                  (0.0, 0.0, 0.0), np.eye(3))
+        OwnerPose(
+            replace(owner, kind="particle", local_frame="material_vertices"),
+            (0.0, 0.0, 0.0),
+            np.eye(3),
+        )
     declaration = _registration(events.active[0], axis=(0.0, 0.0, 1.0))
     with pytest.raises(ValueError):
         MaterialStationRegistry([declaration]).bind(

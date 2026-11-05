@@ -2,7 +2,7 @@
 
 from collections.abc import Mapping
 from contextlib import ExitStack
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from itertools import combinations, product
 from threading import RLock
 from types import MappingProxyType
@@ -661,6 +661,25 @@ class ContactScene:
             loads = self._system.sample(self._state, self._work, capacity=capacity)
             return ContactSceneObservation(self._work.last_result, loads)
 
+    def enable_coupled_tangent(self, registry, **options):
+        """Select explicit material-station spring/Coulomb friction before the first step."""
+        with self._lock:
+            self._require_open()
+            from ._scene_coupled_tangent import configure
+
+            configure(self, registry, **options)
+
+    @property
+    def tangent_history(self):
+        with self._lock:
+            return getattr(self, "_tangent_state", None)
+
+    @property
+    def tangent_receipt(self):
+        with self._lock:
+            value = getattr(self, "_tangent_receipt", None)
+            return None if value is None else replace(value)
+
     def step(self, dt, external=None, *, capacity=None):
         """Advance both active participants and publish only after material and swept checks accept."""
         with self._lock:
@@ -669,16 +688,29 @@ class ContactScene:
             end_time = self._time_s + float(h)
             if not np.isfinite(end_time) or end_time <= self._time_s:
                 raise ValueError("time must advance by a representable physical interval")
+            inputs = self.inputs() if external is None else external
+            tangent = None
+            transform = None
+            if getattr(self, "_tangent", None) is not None:
+                from ._scene_coupled_tangent import ordinary_context, ordinary_events
+
+                tangent = ordinary_context(self, inputs, h)
+
+                def transform(loads):
+                    return tangent.prepare(loads, ordinary_events(self, loads, h))
+
             with self._work.transaction():
                 f = self._system.step(
                     self._state,
-                    self.inputs() if external is None else external,
+                    inputs,
                     self._models,
                     self._solvers,
                     h,
                     self._work,
                     capacity=capacity,
+                    _load_transform=transform,
                 )
+                staged_tangent = None if tangent is None else tangent.finish(f.state.rigid)
                 public = f.owned_copy()
                 from .contact_history import advance_contact_history
 
@@ -689,9 +721,17 @@ class ContactScene:
                     commit_time_s=end_time,
                     bindings=self._system.bindings,
                 )
-            self._state = f.state
-            self._time_s = end_time
-            self._contact_history = history
+            tangent_state, tangent_receipt = (
+                staged_tangent if staged_tangent is not None else (None, None)
+            )
+            publication = (f.state, end_time, history, tangent_state, tangent_receipt)
+            (
+                self._state,
+                self._time_s,
+                self._contact_history,
+                self._tangent_state,
+                self._tangent_receipt,
+            ) = publication
             return public
 
     def stats(self):

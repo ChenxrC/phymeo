@@ -47,12 +47,12 @@ Files: NEW src/phymeo/control/gripper_acquisition.py、tests/test_gripper_acquis
 
 API首切片为 GripperAcquisition.propose(observation, dt_s, posture_target, intent)，只返回RobotCommand与不可变判定；配置独立joint_indices/open_q/closed_q/速度与驱动力上限、payload_key与两组pad、力目标及持续门。contact_ready只表示双侧力和关节速度符合持续门；实际holding必须另有lift净空、台面卸载与相对滑移证据。重复同step和拒步重试不推进控制状态。
 
-- [ ] 核现bounded PD、真实q/v/载荷及本机Newton控制入口，冻结通用闭合映射、SI单位、限幅与状态机。
-- [ ] 写实际能力缺失RED；非法测量/时序、空夹、单边接触、失持和饱和均有负控。
-- [ ] 纯控制器产生RobotCommand；不修改任何物体/关节状态，不对象名称/世界坐标/特定时刻特判。
-- [ ] 预先冻结Panda/mimic、球/箱的新渐闭获取/保持/释放窗口；不同协议独立记账，旧突加预载仍失败。
-- [ ] 父实际执行控制专项与物理窗口，记录所有q/v、接触和状态转换；失败只按证据修机制。
-- [ ] 实际受限正负控报告与公共用法交接，不把未做到的从台面获取/完整放置记为完成。
+- [x] 核现bounded PD、真实q/v/载荷及本机Newton控制入口，冻结通用闭合映射、SI单位、限幅与状态机。
+- [x] 写实际能力缺失RED；非法测量/时序、空夹、单边接触、失持和饱和均有负控。
+- [x] 纯控制器产生RobotCommand；不修改任何物体/关节状态，不对象名称/世界坐标/特定时刻特判。
+- [x] 预先冻结Panda/mimic、球/箱的新渐闭获取/保持/释放窗口；不同协议独立记账，旧突加预载仍失败。
+- [x] 父实际执行控制专项与物理窗口，记录所有q/v、接触和状态转换；失败只按证据修机制。
+- [x] 实际受限正负控报告与公共用法交接，不把未做到的从台面获取/完整放置记为完成。
 
 ## B2 — 两类场景的统一事件首切片（高）
 
@@ -60,33 +60,43 @@ Files: NEW src/phymeo/runtime/contact_events.py、tests/test_contact_events.py�
 
 两scene .contact_events 返回 SceneContactEvents；每pair SceneContactRecord沿用ContactIdentity，保物理owner与components元组。ContactComponent含完整原PairLoad、每site材料、material_kind和不可变原law；不平均normal/gap、不声明跨步component身份。普通 contact_events_from_history 是纯只读视图；机器人 RobotContactEventAdapter.stage 在父一次commit前构造完整新snapshot，坐标采用入步link/COM姿态。
 
-- [ ] 冻结 .contact_events 的不可变snapshot与组件字段，完整原PairLoad、law类型、所有site/双侧address/施力点/力/力矩。
-- [ ] 普通与机器人两个正常入口缺失RED，真实载荷不由假mock代替。
-- [ ] 普通history只读适配，机器人新事件在现一次commit前stage；不改变物理积分。
-- [ ] 多点/非共线法向、纯扭转、退出重入、局部ID复用、查询幂等及拒步重试验证。
-- [ ] HOST及已有普通场景CUDA适配；机器人仍HOST，不能静默fallback。
-- [ ] 父集成同一public接口并验证源码外用法。
+- [x] 冻结 .contact_events 的不可变snapshot与组件字段，完整原PairLoad、law类型、所有site/双侧address/施力点/力/力矩。
+- [x] 普通与机器人两个正常入口缺失RED，真实载荷不由假mock代替。
+- [x] 普通history只读适配，机器人新事件在现一次commit前stage；不改变物理积分。
+- [x] 多点/非共线法向、纯扭转、退出重入、局部ID复用、查询幂等及拒步重试验证。
+- [x] HOST及已有普通场景CUDA适配；机器人仍HOST，不能静默fallback。
+- [x] 父集成同一public接口并验证源码外用法。
 
 ## C2 — 完整静态过滤记录复用（中）
 
 Files: 修改src/phymeo/geometry/collision_pipeline.py；新增tests/collision/test_filtered_pair_reuse.py、scripts/compare_scene_scale_frames.py、docs/benchmarks/p65-filtered-pair-reuse.md。不修改原C1驱动/inputs/oracle。
 
-- [ ] 真实RED量到重复静态行进入原窄相，而非仅缺新属性。
-- [ ] workspace绑定模型时冻结code1–4记录；code0/5用原有global pair_slots窄相，再按完整顺序组装。
-- [ ] 保路径验证、真实backend分类、capacity、code5非法几何和失败时旧publication；覆盖mask/excluded优先级。
-- [ ] HOST/interpret/CUDA语义验证和两个模型同key互不污染。
-- [ ] 新源码固定九档矩阵一次，逐步完整对照上一批18个已存窗口；仅精确已有timing字段可排除。
-- [ ] 基于实际相同输出墙钟报告收益或无收益，不声称Newton整体速度。
+- [x] 真实RED量到重复静态行进入原窄相，而非仅缺新属性。
+- [x] workspace绑定模型时冻结code1–4记录；code0/5用原有global pair_slots窄相，再按完整顺序组装。
+- [x] 保路径验证、真实backend分类、capacity、code5非法几何和失败时旧publication；覆盖mask/excluded优先级。
+- [x] HOST/interpret/CUDA语义验证和两个模型同key互不污染。
+- [x] 新源码固定九档矩阵一次，逐步完整对照上一批18个已存窗口；仅精确已有timing字段可排除。
+- [x] 基于实际相同输出墙钟报告收益或无收益，不声称Newton整体速度。
 
 ## Parent integration
 
-- [ ] 小范围交叉review，所有实质发现有聚焦回归，不重跑无变化全集。
-- [ ] 父合入作者独立提交、完成共享接缝与导出，所有旧WIP保留。
-- [ ] 干净归档构建与源码外wheel使用新接口；仅已有uv离线target安装，不修改主环境。
-- [ ] 更新本计划、结果报告与continuation；记录剩余差距，不据局部通过宣布Newton全面对齐。
+- [x] 小范围交叉review，所有实质发现有聚焦回归，不重跑无变化全集。
+- [x] 父合入作者独立提交、完成共享接缝与导出，所有旧WIP保留。
+- [x] 干净归档构建与源码外wheel使用新接口；仅已有uv离线target安装，不修改主环境。
+- [x] 更新本计划、结果报告与continuation；记录剩余差距，不据局部通过宣布Newton全面对齐。
 
 ## Ledger
 
 - 三作者已FF基线69bd12d，A/B路径与接口已冻结；父执行槽唯一。
 - C2首tests-only 65a35e3：c2-filter-red真实1failed/1.06s，完整21行物理正控后发现code1–4仍送原窄相，原输出已保。只允许针对该机制实施。
 - 父先单独集成C2并测九档，与上一批已存完整帧比较，然后再接B2共享源，避免混淆C2性能收益。
+
+## 本批交付状态
+
+以上清单标记的是实施、实际检验与记录完成，不表示每个预注册物理正控通过，更不表示Newton全面对齐。三线源已正常合入；父公共API最终产品a329b2b，源码外wheel也通过。总体报告：[第二批实际结果](../../benchmarks/p65-force-events-filtered-batch2.md)。
+
+- A2：18HOST专项分组通过；四窗只运行一次。Panda真实获取/抬持/释放通过；mimic箱仅持稳门失败（1.048s滑移3.005689mm），RAW1完整保留；零摩擦/超载负控符合预期，无执行异常。原requested_command与resolved command分别公开，真实feedforward替换反例已修。
+- B2：25HOST、interpret1、CUDA1通过；两种原力律及全部同pair components/site/owner保留，普通视图只读、机器人stage失败后原状态和同输入重试已验。唯一测试调用keyword-only错误已局部修正，原22绿未重跑。
+- C2：31HOST、interpret2、CUDA2通过；固定九档576公开帧完整同旧。free W128约1.56x，但受载/出生实际较慢；没有整体提速结论或Newton跨引擎速度主张。
+- 57条原始命令收据包含首红、style、测试oracle/调用修复和1条未通过物理窗；不得把该数称测试通过数。C摘要一次结果名撞执行配置名，独立输出名修复后成功；没有重跑物理或比较。
+- 剩余优先级：通用持续切向摩擦与材料身份、受载几何成本同场定位；普通mimic持稳、机器人GPU/CCD/自碰、柔体联合和软布递交继续开放。

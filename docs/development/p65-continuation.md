@@ -2,6 +2,10 @@
 
 ## 当前入口（2026-11-05）
 
+[获取控制、统一事件与过滤复用第二批](../benchmarks/p65-force-events-filtered-batch2.md)已合入并通过源码外wheel使用验证。新增接受步力反馈控制、完整多component的两scene统一contact_events，以及保全局输出的过滤行复用；80项专项分组通过，九档576帧与旧版完整相同。Panda无预压获取/抬持/释放通过，mimic100g箱在1.048s滑移超3mm，原RAW1保持；零摩擦/超载负控符合预期。性能只在free W128观察到1.56x，受载/出生本次更慢，不作整体加速结论。下一批优先通用持续切向摩擦/材料身份和受载窄相成本，而不是调原夹力或重复旧窗口。[本批计划与收尾](../superpowers/plans/2026-11-05-force-events-filtered-batch2.md)。
+
+### 同日第一批
+
 08:00之后的[场景、接触与规模第一批](../benchmarks/p65-scene-contact-scale-batch1.md)已完成集成和源码外wheel验收。公共构建器现可登记一个URDF、多个自由球/箱及有限台，普通场景增加不可变接触生命周期；九档CUDA规模矩阵576步通过。Panda预载保持/释放288步通过，mimic192步能运行但连续持稳门仍失败并保留。下一批从报告的A2通用获取控制、B2材料/事件统一、C2完整过滤记录复用继续；未将预载释放等同完整抓取。
 
 本轮新增功能、最终源码外 wheel 验收、限域性能与尚未达标的数值/软布案例见[08:00 总结](../benchmarks/p65-newton-20261105-0800.md)和[可点击概览](../benchmarks/p65-newton-20261105-overview.html)。下一轮从[场景编排、通用持续接触与 GPU 规模计划](../superpowers/plans/2026-11-05-after-night-newton-parity.md)选择新的工作节点。

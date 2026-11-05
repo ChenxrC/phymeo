@@ -225,6 +225,7 @@ from .runtime.robot_payload_scene import (
     RobotPayloadScene,
     SceneGeometrySnapshot,
 )
+from .runtime.robot_scene import RobotCommand
 from .runtime.scene_stepper import SceneStepper
 from .runtime.stepper import Stepper
 from .runtime.terminal_impulse import PointVelocityImpulses, TerminalImpulseProgram
@@ -416,6 +417,7 @@ __all__ = [
     "PadFace",
     "RobotPayloadObservation",
     "RobotPayloadScene",
+    "RobotCommand",
     "SceneGeometrySnapshot",
     "RobotInputs",
     "RobotPointPort",

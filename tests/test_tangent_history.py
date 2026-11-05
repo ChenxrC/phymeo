@@ -354,3 +354,87 @@ def test_actual_robot_pad_materials_use_declared_distinct_tokens_after_reorderin
         assert active.sample.first.shape.body != active.sample.first.owner.body
         assert active.sample.second.owner.body == 20
         assert len(active.sample.first.weights) == 4
+
+
+def test_prepared_exit_cannot_discard_its_release_energy_receipt():
+    from phymeo.solvers.tangent_history import TangentHistory
+
+    record, frame = _sphere_record()
+    sample = _sample(record, 41, frame)
+    book = TangentHistory(1)
+    initial = book.initial_state()
+    loaded = book.prepare(initial, [sample], sample_time_s=0.0, dt_s=H)
+    state = book.commit(initial, loaded, {sample.key: _update()})
+    ending = book.prepare(state, [], sample_time_s=H, dt_s=H)
+    assert ending.ended[0].released_energy_j == 1 / 64
+    assert ending.dropped_spring_energy_j == 1 / 64
+    forged = replace(ending, ended=(), dropped_spring_energy_j=0.0)
+    with pytest.raises(ValueError, match="prepared|payload|trial"):
+        book.commit(state, forged, {})
+    assert state.step_index == 1 and state.active[0].update.stored_energy_j == 1 / 64
+    ended = book.commit(state, ending, {})
+    assert ended == book.commit(state, ending, {})
+    assert ended.active == () and ended.ended[0].reason == "absent"
+    assert ended.dropped_spring_energy_j == 1 / 64
+
+
+@pytest.mark.parametrize(
+    "field", ["frames_world", "normal_force_n", "elastic_displacement_m", "elastic_tangent_m"]
+)
+def test_prepared_solver_arrays_cannot_be_swapped_before_commit(field):
+    from phymeo.solvers.tangent_history import TangentHistory
+
+    record, frame = _sphere_record()
+    sample = _sample(record, 41, frame)
+    book = TangentHistory(1)
+    initial = book.initial_state()
+    loaded = book.prepare(initial, [sample], sample_time_s=0.0, dt_s=H)
+    state = book.commit(initial, loaded, {sample.key: _update()})
+    trial = book.prepare(state, [sample], sample_time_s=H, dt_s=H)
+    # A solver would consume this replaced row, while the old implementation
+    # committed the untouched station record and never checked the array.
+    replacement = np.full_like(getattr(trial, field), 7.0)
+    forged = replace(trial, **{field: replacement})
+    with pytest.raises(ValueError, match="prepared|payload|trial"):
+        book.commit(state, forged, {sample.key: _update()})
+    replacement[...] = -3.0
+    assert state.step_index == 1
+    np.testing.assert_array_equal(trial.elastic_tangent_m, [[1 / 16, 0]])
+    result = book.commit(state, trial, {sample.key: _update()})
+    assert result == book.commit(state, trial, {sample.key: _update()})
+    assert result.active[0].update.stored_energy_j == 1 / 64
+
+
+@pytest.mark.parametrize("bad", ["rigid_name", "rigid_index", "root_name", "root_index"])
+def test_mutable_or_mistyped_material_owner_fields_are_rejected_without_publication(bad):
+    from phymeo.solvers.tangent_history import TangentHistory
+
+    record, frame = _sphere_record()
+    sample = _sample(record, 41, frame)
+    external = ["caller-owned"]
+    if bad == "rigid_name":
+        owner = replace(sample.first.owner, link_name=external)
+    elif bad == "rigid_index":
+        owner = replace(sample.first.owner, link_index=external)
+    elif bad == "root_name":
+        owner = replace(
+            sample.first.owner, kind="robot_root", local_frame="robot_root",
+            link_index=-1, link_name=external,
+        )
+    else:
+        owner = replace(
+            sample.first.owner, kind="robot_root", local_frame="robot_root",
+            link_index=-1.0, link_name="root",
+        )
+    invalid = replace(sample, first=replace(sample.first, owner=owner))
+    book = TangentHistory(1)
+    initial = book.initial_state()
+    with pytest.raises(ValueError, match="owner|link|root"):
+        book.prepare(initial, [invalid], sample_time_s=0.0, dt_s=H)
+    external.append("mutated after rejection")
+    assert initial.active == () and initial.generations == () and initial.step_index == 0
+    trial = book.prepare(initial, [sample], sample_time_s=0.0, dt_s=H)
+    result = book.commit(initial, trial, {sample.key: _update()})
+    assert result == book.commit(initial, trial, {sample.key: _update()})
+    assert result.active[0].sample.first.owner == sample.first.owner
+    assert result.active[0].sample.first.owner.link_name is None

@@ -51,21 +51,21 @@ B3 只消费调用方有依据的稳定站点标识、完整双侧材料地址�
 NEW src/phymeo/solvers/coupled_tangent.py、tests/test_coupled_tangent.py、
 tests/test_coupled_tangent_motion.py、docs/benchmarks/p65-coupled-tangent.md。
 
-- [ ] 先提交测试；父运行一条最小真实缺失 RED。
-- [ ] 实现有界 full-W 求解、输入所有权及完整结果收据；保留旧 scalar law。
-- [ ] 验单站点独立解析解、非对角/冗余站点、排列/坐标变换、零摩擦/负载减少、上限失败。
-- [ ] 两种真实质量拓扑的多步受载/起滑/卸载，核实际速度、位移、动量与能量；额外机器人雅可比响应留出。
-- [ ] 父串行测试、针对性修复、静态核验；原另一作者交叉审阅后小提交/集成。
+- [x] 先提交测试；父运行一条最小真实缺失 RED。
+- [x] 实现有界 full-W 求解、输入所有权及完整结果收据；保留旧 scalar law。
+- [x] 验单站点独立解析解、非对角/冗余站点、排列/坐标变换、零摩擦/负载减少、上限失败。
+- [x] 两种真实质量拓扑的多步受载/起滑/卸载，核实际速度、位移、动量与能量；额外机器人雅可比响应留出。
+- [x] 父串行测试、针对性修复、静态核验；原另一作者交叉审阅后小提交/集成。
 
 ## B3：显式材料站点状态（中高）
 
 原刚柔作者 p65-world-scale。NEW src/phymeo/solvers/tangent_history.py、tests/test_tangent_history.py、docs/benchmarks/p65-tangent-history.md。TangentHistory.initial_state / prepare(state, samples, sample_time_s, dt_s) / commit(state, trial, updates)均保输入不可变；StationKey(world, token)显式声明，MaterialAddress保存owner/shape/topology_revision/feature/weights/local_point_m，StationSample另给proper material frame、normal和实际法向力。commit只产生候选，调用方与真实物理状态一起发布；此模块自身不作物理验收。
 
-- [ ] 固定身份、地址/frame、episode、transport 与 reset 规则；先提交测试，父实际 RED。
-- [ ] 纯 prepare/commit 事务及有界状态，完整丢弃能量、过期/重复输入与对调隔离。
-- [ ] 从真实有限几何和原事件构造材料样本，验证顺序、刚体共转、材料点、退出重入与不支持换面。
-- [ ] 与 A3 做一个父持有的组合用法：失败不推进，同输入重试与有效历史加载。
-- [ ] 父静态/专项验证，原另一作者交叉审阅后集成。
+- [x] 固定身份、地址/frame、episode、transport 与 reset 规则；先提交测试，父实际 RED。
+- [x] 纯 prepare/commit 事务及有界状态，完整丢弃能量、过期/重复输入与对调隔离。
+- [x] 从真实有限几何和原事件构造材料样本，验证顺序、刚体共转、材料点、退出重入与不支持换面。
+- [x] 与 A3 做一个父持有的组合用法：失败不推进，同输入重试与有效历史加载。
+- [x] 父静态/专项验证，原另一作者交叉审阅后集成。
 
 ## C3：同进程受载诊断（中）
 
@@ -73,16 +73,16 @@ tests/test_coupled_tangent_motion.py、docs/benchmarks/p65-coupled-tangent.md。
 NEW scripts/profile_scene_loaded_narrow.py、tests/scale/test_loaded_narrow_protocol.py、
 docs/benchmarks/p65-loaded-narrow-diagnostic.md。
 
-- [ ] 固定 loaded/birth × W1/W32，每档16帧；同进程两个独立 scene 同输入，逐帧 AB/BA 交替。
-- [ ] A仅在诊断上下文把完整配对分派送回保留的 _detect_pairs；B用当前过滤复用。此A是同源 retained full-dispatch，不冒旧产品二进制。
-- [ ] 保全 step/state/geometry/history 全字段，仅列明的墙钟字段可不同；原非墙钟计数保留。
-- [ ] 另外独立 tracing 窗记录 HullShape 重建、面/边最近特征、材料见证/距离界、HOST路径证明；互斥计时和未分类残项明确。
-- [ ] 父执行固定四档并报告真实数据；无证据不预先改产品/许诺加速；不重跑旧九档。
-- [ ] 恢复所有诊断 monkeypatch（含异常）；全输出不一致直接失败。
+- [x] 固定 loaded/birth × W1/W32，每档16帧；同进程两个独立 scene 同输入，逐帧 AB/BA 交替。
+- [x] A仅在诊断上下文把完整配对分派送回保留的 _detect_pairs；B用当前过滤复用。此A是同源 retained full-dispatch，不冒旧产品二进制。
+- [x] 保全 step/state/geometry/history 全字段，仅列明的墙钟字段可不同；原非墙钟计数保留。
+- [x] 另外独立 tracing 窗记录 HullShape 重建、面/边最近特征、材料见证/距离界、HOST路径证明；互斥计时和未分类残项明确。
+- [x] 父执行固定四档并报告真实数据；无证据不预先改产品/许诺加速；不重跑旧九档。
+- [x] 恢复所有诊断 monkeypatch（含异常）；全输出不一致直接失败。
 
 ## 父集成与判停
 
-- [ ] 审查三个独立交付，与原测试/作者结论核对；只新增必要组合测试。
+- [x] 审查三个独立交付，与原测试/作者结论核对；只新增必要组合测试。
 - [ ] 明确公共导出；从干净源构建并安装到源码外独立 site，执行新公共用法。
 - [ ] 本批报告/continuation只写实际结果、边界和下一个可执行节点；工作树 clean，小提交，不 push。
 
@@ -91,3 +91,5 @@ docs/benchmarks/p65-loaded-narrow-diagnostic.md。
 ### 父组合窗口的预声明
 
 用两个正质量平移参与者（1 kg、2 kg）与两个显式不同token的并列材料站点检验A+B的共同用法。每站点给定法向压载2 N、mu=0.5、切向刚度100 N/m，h=1/256 s；法向是独立固定输入，运动仅在切平面，不把它称完整碰撞或夹持场景。两个站点共享同一对参与者，W的每个2×2块均为(1+1/2)I，刻意保留秩亏和交叉响应。外力在两侧等反作用，分别以1 N/3 N/−1 N作用64步形成受载、超容量滑移与卸载；再无接触终止历史。使用真实SemiImplicitSolver推进一次，检查总动量、真实材料增量、外功、动能、储能和两类摩擦耗散；几何平移下位移公式成立。窗口中重排站点顺序，旧trial与错误实际位移必须拒绝，原输入不变。第一步有独立闭式位移 h²(3/2)/(1+200h²(3/2))，无需调参或数值参考探针。生产scene自动适配仍未包含在这个窗口中。
+
+组合窗口细化：192个有载步后，退出事件必须与第193个真实无接触自由步共同提交，不能只推进历史时间而不推进物理状态。对应组合测试在首次实现运行前明确总步数193；原192步的三阶段输入不变。

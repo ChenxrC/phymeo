@@ -65,6 +65,7 @@ from .constraints.robot_node_plane import RobotNodePlaneContacts
 from .constraints.robot_plane import RobotPlaneContacts
 from .constraints.robot_plane_collider import RobotPlaneCollider
 from .control.bounded_pd import BoundedPDResult, solve_bounded_pd
+from .control.gripper_acquisition import AcquisitionProposal, GripperAcquisition
 from .control.point_ik import PointIKResult, solve_point_ik
 from .control.site_ik import MultiSiteIKResult, SiteIKResidual, SiteIKTarget, solve_multi_site_ik
 from .core.capabilities import ProblemSignature, SolverCapabilities, SolverFailure
@@ -204,6 +205,13 @@ from .geometry.surface_features import (
     closest_segment_segment,
 )
 from .runtime.batched_scene import BatchedStepResult, TyxBatchedScene
+from .runtime.contact_events import (
+    ContactComponent,
+    ContactOwner,
+    SceneContactEvent,
+    SceneContactEvents,
+    SceneContactRecord,
+)
 from .runtime.contact_history import ContactEvent, ContactHistory, ContactIdentity, ContactRecord
 from .runtime.contact_scene import ContactSceneBuilder
 from .runtime.finite_contact_terminal import FiniteContactTerminalProgram
@@ -418,6 +426,8 @@ __all__ = [
     "RobotPayloadObservation",
     "RobotPayloadScene",
     "RobotCommand",
+    "GripperAcquisition",
+    "AcquisitionProposal",
     "SceneGeometrySnapshot",
     "RobotInputs",
     "RobotPointPort",
@@ -461,6 +471,11 @@ __all__ = [
     "ContactIdentity",
     "ContactRecord",
     "ContactEvent",
+    "ContactOwner",
+    "ContactComponent",
+    "SceneContactEvent",
+    "SceneContactEvents",
+    "SceneContactRecord",
     "StageMetrics",
     "StepSettings",
     "ProgramCapabilities",

@@ -204,7 +204,7 @@ def test_robot_finite_table_reentry_retains_penetration_law_and_sample_times():
         for force in (252.0, -512.0, 252.0):
             external = scene.inputs()
             external.rigid.force[row, 2] = force
-            frames.append(scene.step(h, external, actions=command))
+            frames.append(scene.step(h, external=external, actions=command))
             views.append(scene.contact_events)
         assert [v.events[0].kind for v in views] == ["begin", "end", "begin"]
         assert views[1].active == () and views[1].events[0].reason == "absent"

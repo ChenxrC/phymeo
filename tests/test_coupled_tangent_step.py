@@ -7,7 +7,6 @@ import numpy as np
 import pytest
 
 from phymeo.constraints.collision_shapes import CollisionKey
-from phymeo.core.capabilities import SolverFailure
 from phymeo.core.rigid import RigidBodyInputs, RigidBodyModel, RigidBodyState
 from phymeo.dynamics.rotation import quaternion_matrix
 from phymeo.runtime.contact_events import ContactOwner
@@ -82,7 +81,7 @@ def test_two_station_full_world_response_is_projected_without_losing_cross_block
     np.testing.assert_allclose(trial.predicted_displacement_m, [[.01, 0, 0]]*2, atol=1e-12)
     assert trial.history_trial.keys == tuple(s.key for s in samples)
     candidate, receipt = finish(store, history, trial)
-    assert receipt.accepted and abs(receipt.energy_balance_j) < 1e-12
+    assert receipt.accepted and abs(receipt.energy_residual_j) < 1e-12
     np.testing.assert_allclose(receipt.application_work_j, [-.01, -.01], atol=1e-12)
     assert [row.update.stored_energy_j for row in candidate.active] == pytest.approx([.005, .005])
     assert [row.update.tangent_work_j for row in candidate.active] == pytest.approx([-.01, -.01])
@@ -130,7 +129,7 @@ def test_spring_unloading_may_do_positive_work_with_a_balanced_receipt():
     np.testing.assert_allclose(trial.force_on_second_n, [[-.5, 0, 0]], atol=1e-12)
     np.testing.assert_allclose(receipt.application_work_j, [.0025], atol=1e-12)
     assert state.active[0].update.tangent_work_j == pytest.approx(.0025)
-    assert abs(receipt.energy_balance_j) < 1e-12
+    assert abs(receipt.energy_residual_j) < 1e-12
 
 
 @pytest.mark.parametrize("absent", [False, True])
@@ -142,7 +141,7 @@ def test_unload_empty_step_and_reentry_release_the_old_spring_exactly_once(absen
     assert trial.result is None and trial.force_on_second_n.shape == (n, 3)
     released, receipt = finish(store, history, trial)
     assert released.active == () and receipt.released_energy_j == pytest.approx(.02)
-    assert abs(receipt.energy_balance_j) < 1e-12
+    assert abs(receipt.energy_residual_j) < 1e-12
     empty = prepare(store, released, (), np.zeros((0, 0)), np.zeros((0, 3)))
     empty_state, empty_receipt = finish(store, released, empty)
     assert empty_state.commit_time_s == pytest.approx(.3)
@@ -172,7 +171,7 @@ def test_material_and_application_motion_each_and_their_difference_must_pass(mat
     material, application = trial.predicted_displacement_m.copy(), trial.predicted_displacement_m.copy()
     material[0, 0] += material_error
     application[0, 0] += application_error
-    with pytest.raises(SolverFailure, match="motion|displacement"):
+    with pytest.raises(ValueError, match="motion|displacement"):
         finish(store, history, trial, material, application, m=5e-7, j=1)
     assert history.active == ()
     _, retry = finish(store, history, trial)
@@ -186,7 +185,7 @@ def test_energy_gate_rejects_small_motion_error_even_when_total_work_can_cancel(
     actual = trial.predicted_displacement_m.copy()
     actual[:, 0] += [1e-5, -1e-5 if cancel else 1e-5]
     # The declared motion gate passes. Per-station physical work still fails.
-    with pytest.raises(SolverFailure, match="energy|work"):
+    with pytest.raises(ValueError, match="energy|work"):
         finish(store, history, trial, actual, actual, m=2e-5, j=1e-8)
     assert history.step_index == 0
 
@@ -207,7 +206,7 @@ def test_actual_rigid_exp_map_is_checked_before_history_can_be_committed():
     )
     assert result.report.accepted
     actual = (result.state.position[0] + quaternion_matrix(result.state.orientation)[0] @ point - point)[None, :]
-    with pytest.raises(SolverFailure, match="motion|displacement"):
+    with pytest.raises(ValueError, match="motion|displacement"):
         finish(store, history, trial, actual, actual)
     assert history.active == ()
     np.testing.assert_array_equal(initial.orientation, [[0, 0, 0, 1]])
@@ -218,7 +217,7 @@ def test_identical_retry_is_pure_but_later_history_or_another_store_is_rejected(
     trial = prepare(store, history, samples, W, free)
     state, receipt = finish(store, history, trial)
     repeated, again = finish(store, history, trial)
-    assert state == repeated and receipt.energy_balance_j == again.energy_balance_j
+    assert state == repeated and receipt.energy_residual_j == again.energy_residual_j
     with pytest.raises(ValueError, match="stale|base|owner"):
         finish(store, state, trial)
     foreign = TangentHistory(4)

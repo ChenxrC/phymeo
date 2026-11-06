@@ -341,9 +341,16 @@ def test_helper_rejects_selector_from_another_material_geometry(kind):
     elif kind == "coordinates":
         path = ph.CollisionMotion(path.start + (1 / 64, 0, 0))
     else:
-        other = replace(mesh, triangles=mesh.triangles[::-1])
+        # The x-min quad originally uses diagonal a--d. Flip it to b--c;
+        # merely reversing row order is erased by CollisionShape canonicalization.
+        a, b, c, d = mesh.vertex_ids[:4]
+        quad = {a, b, c, d}
+        faces = tuple(face for face in mesh.triangles if not set(face) <= quad)
+        other = replace(mesh, triangles=(*faces, (a, b, c), (b, d, c)))
+        assert other.triangles != mesh.triangles
+    other_prepared = ClosedMesh(other, path)
     with pytest.raises(ValueError, match="binding"):
-        MeshRoundArcCandidates(ClosedMesh(other, path), selector)
+        MeshRoundArcCandidates(other_prepared, selector)
     assert not callback.calls
 
 

@@ -199,3 +199,56 @@ def check_materials(pair, pose, mesh, round_shape, paths, time=0):
             assert 0 <= endpoint.axis_parameter <= 1
             np.testing.assert_allclose(endpoint.axis_point,
                 axis[0] + endpoint.axis_parameter * (axis[-1] - axis[0]), rtol=0, atol=2e-9)
+
+
+def record_facets(workspace, monkeypatch):
+    """Observe the real tree call without substituting its traversal or indices."""
+    calls = []
+    original = workspace._trees.facets
+
+    def observed(pending, key, leaves, queries, driver):
+        rows = original(pending, key, leaves, queries, driver)
+        calls.append(dict(key=key, leaves=leaves.copy(), queries=queries.copy(),
+                          rows=tuple(tuple(row) for row in rows), driver=driver))
+        return rows
+
+    monkeypatch.setattr(workspace._trees, "facets", observed)
+    return calls
+
+
+def prepare_selector(case, callback, *, dense=False, variant="identity", reverse=False,
+                     reorder=False):
+    """New interface is imported only when its protocol tests are selected."""
+    from phymeo.geometry._closed_mesh import ClosedMesh
+    from phymeo.geometry._mesh_round_candidates import MeshRoundFaceSelector
+
+    model, paths, mesh, round_shape = build(
+        case, dense=dense, variant=variant, reverse=reverse, reorder=reorder
+    )
+    prepared = ClosedMesh(mesh, paths[mesh.key])
+    selector = MeshRoundFaceSelector(mesh, prepared, callback)
+    axis = paths[round_shape.key].start
+    distances = vertex_distances(prepared.points, axis[0], axis[-1])
+    return model, paths, mesh, round_shape, prepared, selector, distances
+
+
+class BoxOracle:
+    """Protocol stand-in only; public/device tests always execute the actual BVH."""
+
+    def __init__(self, *, scrambled=False):
+        self.calls = []
+        self.scrambled = scrambled
+
+    def __call__(self, binding, leaves, queries):
+        assert leaves.dtype == queries.dtype == np.float32
+        assert leaves.ndim == 2 and leaves.shape[1] == 6 and queries.shape == (1, 6)
+        assert np.isfinite(leaves).all() and np.isfinite(queries).all()
+        assert np.all(leaves[:, :3] <= leaves[:, 3:])
+        assert np.all(queries[:, :3] <= queries[:, 3:])
+        assert len(binding.faces) == len(leaves)
+        hits = [i for i, leaf in enumerate(leaves)
+                if np.all(leaf[:3] <= queries[0, 3:]) and np.all(queries[0, :3] <= leaf[3:])]
+        self.calls.append((binding, leaves.copy(), queries.copy(), tuple(hits)))
+        if self.scrambled:
+            hits = hits[::-1] + hits[:1]
+        return [hits]

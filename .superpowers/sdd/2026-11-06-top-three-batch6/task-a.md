@@ -1,3 +1,5 @@
+CLOSED — accepted within A2 declared scope. Parent new25/shared21 and40-step public example passed; source-outside wheel47/48 passed. Report: docs/benchmarks/p65-multi-robot-direct-contact.md. No further authoring or execution grant. Instructions below are historical.
+
 # A2 author brief
 
 Status: TEST_AUTHORING_ONLY. Parent sole execution owner; no execution assigned yet.

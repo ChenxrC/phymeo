@@ -1,15 +1,14 @@
-# Batch6 current ownership
+# Batch6 accepted and released
 
-Baseline f4695e4a4f75738fcfb6bc424835811e50112e31; prior batch5 accepted/released, do not rerun.
+Baseline f4695e4; tested integrated product 3e6dff494d898ad19a3a3695d1de0c368b511805. Final source build and wheel-only integration passed (47/48). Later changes are reports and continuation records only.
 
-Three original read-only surveys completed. Parent reviewed actual shared seams and froze A2/B2 plus C0 cost gate. Current owner: parent only for project execution; runs 01-03 ended, no live project process. A/B/C may author independent NEW files only when followup includes plan commit. All old shared files belong to parent.
+- A2 accepted within HOST, same-world, distinct fixed-root ordinary/mimic trees, sphere vs sphere/finite capsule/OBB. New suite25, affected old scene21, public40 steps/11checks passed. Original RED and collection/MJCF-label test failures retained.
+- B2 accepted within independent rigid arcs of closed mesh vs sphere/finite capsule. HOST18, interpret1, CUDA1, affected compatibility4 passed. TYX broadphase; HOST bounded narrowphase. Unknown does not mean separated.
+- C0 completed, no optimization branch. Protocol27, interpret7, CUDA7 passed; five realCUDA tasks each7 complete4-step windows equal independent uninstrumented reference. W32F8 extra-page cost0.15468% <15%; all defaults unchanged. Preserve clock-oracle and failure-record adapter fixes.
+- Evidence: artifacts/p65-top-three-batch6-20261106-01; 46 independently read five gzip archives/40 complete records; no numerical replay. Candidate cost is API wall upper bound, not GPU-event time or promised saved time.
+- A/B original authors cross-reviewed; B reviewed C; parent reviewed shared seams and C complete source/evidence. No material blockers remained.
+- All48 jobs finished. Parent sole project execution ownership released; all three original authors released after final documentation, no pending implementation task.
+- Next candidates: A3 floating-root shared transaction; B3 per-face TYX conservative candidates; C measured HOST geometry/material assembly hotspots. Resolve B/C interface dependencies before new implementation grants.
+- No push, remoteCI, dependency/pin changes, deletion, new agent, goal, timer or automatic task.
 
-- A2: tests-first 9af43c9 exact snapshot; 02-a-public-red reached original direct-contact build guard, RAW1 / 1 failed / 1.13s. All source before/after equal. Original author completing other cases and NEW adapter, author-only.
-- B2: complete tests-first 2c596cc; 01-b-public-red passed static contact/material/oracle controls and failed only unsupported versus hit, RAW1 / 1 failed / 1.45s. Source unchanged. NEW query authoring underway.
-- C0: tests/stub 9ba776a; 03-c-protocol-red reached declared summarize_windows NotImplementedError, RAW1 / 1 failed / .12s, source unchanged. Profiler authoring underway; optimization NOT_GRANTED.
-- C0 gate refined conservatively: only extra pages after the first count toward 15% of full real CUDA task; this is a candidate upper bound, not a promised removable cost. Cold compile excluded. Complete new outputs directly gzip, bounded windows; no old cleanup.
-- Parent currently has unvalidated A/B shared hooks and two affected legacy capability tests as WIP. Old direct-contact refusal becomes a bilateral-force assertion; old two-turn input is retained, whose axis intersects the box at t=.5. No functionality accepted yet.
-- Parent review/integration/build/wheel: pending.
-Evidence: artifacts/p65-top-three-batch6-20261106-01 (fresh runner and guard copied; no old runs resumed).
-
-No push, CI, deps, cleanup, auto goal or timer task.
+See docs/benchmarks/p65-top-three-batch6.md and the current continuation entry for verified limits. No overall Newton parity or full P6.5 completion claim.

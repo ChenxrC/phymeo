@@ -96,6 +96,6 @@ A 原作者另对 B 实现作独立文本交叉复核，未报告本片范围内
 5cd405e970bd1ef5709769d7b439f143613be69c23c1b9cc58c87c11b775aa09
 ```
 
-[48-outside-wheel-integration](../../artifacts/p65-top-three-batch6-20261106-01/48-outside-wheel-integration/stdout.log) 在源码外安装目录运行，RAW_EXIT 0；所有已加载 Phymeo 模块都位于 wheel 安装目录。B 检查使用 B01 两个不交换旋转轴，核最早首触括区和同一采样时刻的双侧材料重建；同次集成还完成 A 的原登记反序 40 步实际直接接触例程。这里是打包后的有限集成留出，不声称从 wheel 重跑八输入矩阵或全部 CUDA 窄相。
+[48-outside-wheel-integration](../../artifacts/p65-top-three-batch6-20261106-01/48-outside-wheel-integration/stdout.log) 在源码外解包目录运行，RAW_EXIT 0；所有已加载 Phymeo 模块都位于 wheel 解包目录。B 检查使用 B01 两个不交换旋转轴，核最早首触括区和同一采样时刻的双侧材料重建；同次集成还完成 A 的原登记反序 40 步实际直接接触例程。这里是打包后的有限集成留出，不声称从 wheel 重跑八输入矩阵或全部 CUDA 窄相。
 
 最终交付范围保持为**两个独立 RigidTurn 的闭网格–球/有限胶囊 HOST 保守连续窄相，以及真实 TYX 宽相**。完整路径速度与旋转/存储误差界、首态实体关系、实际占用采样、材料寻址和 unknown/容量失败语义均保留；孤立擦触仍可明确 unresolved。没有新增接触响应、摩擦流形或设备窄相，也不把 Newton 的离散/speculative 接触称为连续首触真值。本次最终报告只追加验收证据，不改变已测产品与测试源码。

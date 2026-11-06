@@ -1,3 +1,5 @@
+CLOSED — C0 completed; five realCUDA profiles andindependent reference outputs passed. Extra-page fraction0.15468% isbelow15% gate: optimization branch NOT_TRIGGERED, defaults unchanged. Report: docs/benchmarks/p65-material-phase-transfer.md. No pending execution grant. Instructions below are historical.
+
 # C2 phase-transfer C0 brief
 
 Status: TEST_AND_PROFILE_AUTHORING_ONLY; parent owns all project execution.

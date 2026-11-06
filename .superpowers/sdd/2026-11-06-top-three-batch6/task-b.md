@@ -1,3 +1,5 @@
+CLOSED — accepted within B2 declared scope. HOST18, interpret1, CUDA1, affected compatibility4 andsource-outside wheel passed. Report: docs/benchmarks/p65-dual-turn-mesh-round.md. No further authoring or execution grant. Instructions below are historical.
+
 # B2 author brief
 
 Status: TEST_AUTHORING_ONLY. Parent only serial project execution.

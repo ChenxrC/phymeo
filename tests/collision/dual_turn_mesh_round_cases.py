@@ -51,32 +51,52 @@ class DualCase:
 
 
 B01 = DualCase(
-    "B01-noncommuting-capsule", *box((-2, -2, 7/8), (2, 2, 9/8)),
-    (ZERO, (0.0, 1.0, 0.0)), 1/8, -2*A, A,
+    "B01-noncommuting-capsule",
+    *box((-2, -2, 7 / 8), (2, 2, 9 / 8)),
+    (ZERO, (0.0, 1.0, 0.0)),
+    1 / 8,
+    -2 * A,
+    A,
 )
 B02 = replace(B01, name="B02-orbiting-sphere", points=((0.0, 1.0, 0.0),))
 B03 = replace(
-    B01, name="B03-independent-moving-pivots",
-    mesh_pivot_end=(1/8, -1/16, 3/32),
-    round_pivot_end=(1/8, -1/16, 7/64),
+    B01,
+    name="B03-independent-moving-pivots",
+    mesh_pivot_end=(1 / 8, -1 / 16, 3 / 32),
+    round_pivot_end=(1 / 8, -1 / 16, 7 / 64),
 )
 B04 = DualCase(
-    "B04-shaft-only", *box((-1/2, -2, 1), (1/2, 2, 5/4)),
-    ((-3.0, 1.0, 0.0), (3.0, 1.0, 0.0)), 1/8, 1.0, 3.0,
-    mesh_axis=Z, round_axis=X,
+    "B04-shaft-only",
+    *box((-1 / 2, -2, 1), (1 / 2, 2, 5 / 4)),
+    ((-3.0, 1.0, 0.0), (3.0, 1.0, 0.0)),
+    1 / 8,
+    1.0,
+    3.0,
+    mesh_axis=Z,
+    round_axis=X,
 )
-B05 = replace(B01, name="B05-clear-height", vertices=box((-2, -2, 1), (2, 2, 5/4))[0])
+B05 = replace(B01, name="B05-clear-height", vertices=box((-2, -2, 1), (2, 2, 5 / 4))[0])
 B06 = DualCase(
-    "B06-concave-notch", *u_mesh(), ((-1/4, 0.0, 0.0), (1/4, 0.0, 0.0)),
-    1/8, 0.9, 1.3,
+    "B06-concave-notch",
+    *u_mesh(),
+    ((-1 / 4, 0.0, 0.0), (1 / 4, 0.0, 0.0)),
+    1 / 8,
+    0.9,
+    1.3,
 )
 B07 = DualCase(
-    "B07-initial-containment", *box((-2,)*3, (2,)*3),
-    ((-1/2, 0.0, 0.0), (1/2, 0.0, 0.0)), 1/8, 0.9, 1.3,
+    "B07-initial-containment",
+    *box((-2,) * 3, (2,) * 3),
+    ((-1 / 2, 0.0, 0.0), (1 / 2, 0.0, 0.0)),
+    1 / 8,
+    0.9,
+    1.3,
 )
 B08 = replace(
-    B01, name="B08-isolated-grazing", mesh_angle=-A,
-    vertices=box((-2, -2, 5/8), (2, 2, 7/8))[0],
+    B01,
+    name="B08-isolated-grazing",
+    mesh_angle=-A,
+    vertices=box((-2, -2, 5 / 8), (2, 2, 7 / 8))[0],
 )
 CASES = (B01, B02, B03, B04, B05, B06, B07, B08)
 
@@ -87,15 +107,21 @@ def public_case(case, *, world=0, reverse=False, reorder=False, round_world=None
     ids = tuple(range(len(case.vertices)))
     order = tuple(reversed(ids)) if reorder else ids
     mesh = ph.CollisionShape(mk, "mesh", order, triangles=case.triangles)
-    round_shape = ph.CollisionShape(rk, case.kind, (41,) if case.kind == "sphere" else (41, 93), case.radius)
+    round_shape = ph.CollisionShape(
+        rk, case.kind, (41,) if case.kind == "sphere" else (41, 93), case.radius
+    )
     paths = {
         mk: ph.CollisionMotion(
             [case.vertices[i] for i in order],
-            turn=ph.RigidTurn(case.mesh_pivot_start, case.mesh_pivot_end, case.mesh_axis, case.mesh_angle),
+            turn=ph.RigidTurn(
+                case.mesh_pivot_start, case.mesh_pivot_end, case.mesh_axis, case.mesh_angle
+            ),
         ),
         rk: ph.CollisionMotion(
             case.points,
-            turn=ph.RigidTurn(case.round_pivot_start, case.round_pivot_end, case.round_axis, case.round_angle),
+            turn=ph.RigidTurn(
+                case.round_pivot_start, case.round_pivot_end, case.round_axis, case.round_angle
+            ),
         ),
     }
     return ph.CollisionModel((round_shape, mesh)), paths, mesh, round_shape
@@ -110,13 +136,16 @@ def transform(case, matrix, offset):
         return tuple(matrix @ p + offset)
 
     return replace(
-        case, vertices=tuple(point(p) for p in case.vertices),
+        case,
+        vertices=tuple(point(p) for p in case.vertices),
         triangles=case.triangles if sign > 0 else tuple((a, c, b) for a, b, c in case.triangles),
         points=tuple(point(p) for p in case.points),
         mesh_axis=tuple(sign * matrix @ case.mesh_axis),
         round_axis=tuple(sign * matrix @ case.round_axis),
-        mesh_pivot_start=point(case.mesh_pivot_start), mesh_pivot_end=point(case.mesh_pivot_end),
-        round_pivot_start=point(case.round_pivot_start), round_pivot_end=point(case.round_pivot_end),
+        mesh_pivot_start=point(case.mesh_pivot_start),
+        mesh_pivot_end=point(case.mesh_pivot_end),
+        round_pivot_start=point(case.round_pivot_start),
+        round_pivot_end=point(case.round_pivot_end),
     )
 
 
@@ -128,36 +157,36 @@ def _series(x, *, cosine=False):
     term = x if odd else F(1)
     total = term
     for k in range(1, 28):
-        degree = 2*k + odd
-        term *= -x*x / (degree * (degree-1))
+        degree = 2 * k + odd
+        term *= -x * x / (degree * (degree - 1))
         total += term
     degree = 56 + odd
-    error = abs(x)**degree / factorial(degree)
-    return total-error, total+error
+    error = abs(x) ** degree / factorial(degree)
+    return total - error, total + error
 
 
 def _product(a, b):
-    corners = tuple(x*y for x in a for y in b)
+    corners = tuple(x * y for x in a for y in b)
     return min(corners), max(corners)
 
 
 def height_interval(t, angle=A, drift=F(0)):
     """B01/B02/B03 true tip height in the unrotated material box."""
     t, angle = F(t), F(angle)
-    sine = _series(2*angle*t)
-    cosine = _series(angle*t, cosine=True)
+    sine = _series(2 * angle * t)
+    cosine = _series(angle * t, cosine=True)
     lo, hi = _product(sine, cosine)
-    extra = _product((F(drift)*t, F(drift)*t), _series(2*angle*t, cosine=True))
-    return lo+extra[0], hi+extra[1]
+    extra = _product((F(drift) * t, F(drift) * t), _series(2 * angle * t, cosine=True))
+    return lo + extra[0], hi + extra[1]
 
 
 def _increasing_root(function, target, low, high):
     target, low, high = F(target), F(low), F(high)
     assert function(low)[1] < target < function(high)[0]
     for _ in range(64):
-        if high-low <= F(1, 1 << 42):
+        if high - low <= F(1, 1 << 42):
             return low, high
-        mid = (low+high)/2
+        mid = (low + high) / 2
         a, b = function(mid)
         if b < target:
             low = mid
@@ -173,20 +202,22 @@ def root_interval(case, round_angle=None):
     if case.name in (B01.name, B02.name):
         # f=2s(1-s^2), strictly increasing up to s=1/sqrt(3); first f=3/4 is s=1/2.
         # The stored A is not exact mathematical pi/2, so t is not exactly 1/3.
-        return PI_LOW/(6*angle), PI_HIGH/(6*angle)
+        return PI_LOW / (6 * angle), PI_HIGH / (6 * angle)
     if case.name == B03.name:
         # On [0,1/3], f'(t)=2A*cos(a)*(1-3sin(a)^2) plus the bounded drift derivative.
         # A<pi/2, cos(a)>0.85 and sin(a)^2<1/4 give f'>.425A-(1+2A/3)/64>0.
-        assert 2*angle < PI_LOW
-        assert F(17, 40)*angle - (1+2*angle/3)/64 > 0
-        return _increasing_root(lambda t: height_interval(t, angle, F(1, 64)), F(3, 4), F(5, 16), F(1, 3))
+        assert 2 * angle < PI_LOW
+        assert F(17, 40) * angle - (1 + 2 * angle / 3) / 64 > 0
+        return _increasing_root(
+            lambda t: height_interval(t, angle, F(1, 64)), F(3, 4), F(5, 16), F(1, 3)
+        )
     if case.name == B04.name:
         # sin(3t) is increasing over this predeclared interval; the finite face contains its projection.
-        return _increasing_root(lambda t: _series(angle*t), F(7, 8), F(1, 4), F(1, 2))
+        return _increasing_root(lambda t: _series(angle * t), F(7, 8), F(1, 4), F(1, 2))
     if case.name == B07.name:
         return F(0), F(0)
     if case.name == B08.name:
-        return PI_LOW/(4*angle), PI_HIGH/(4*angle)
+        return PI_LOW / (4 * angle), PI_HIGH / (4 * angle)
     raise ValueError("this input has a full-path clearance proof, not an entry root")
 
 
@@ -195,21 +226,27 @@ def mesh_distance_reference(mesh, round_shape, paths, time):
     vertices = dict(zip(mesh.vertex_ids, stored_pose(paths[mesh.key], time), strict=True))
     points = stored_pose(paths[round_shape.key], time)
     ends = points if len(points) == 2 else (points[0], points[0])
-    return min((segment_triangle_reference(ends, [vertices[i] for i in face]), face) for face in mesh.triangles)
+    return min(
+        (segment_triangle_reference(ends, [vertices[i] for i in face]), face)
+        for face in mesh.triangles
+    )
 
 
 def shaft_span_reference(time):
     """Clip the actual finite axis to the rotated bottom rectangle, independent of triangulation."""
-    y, phi = cos(B04.round_angle*time), B04.mesh_angle*time
+    y, phi = cos(B04.round_angle * time), B04.mesh_angle * time
     low, high = -3.0, 3.0
-    for coefficient, constant, half in ((cos(phi), y*sin(phi), 1/2), (-sin(phi), y*cos(phi), 2)):
+    for coefficient, constant, half in (
+        (cos(phi), y * sin(phi), 1 / 2),
+        (-sin(phi), y * cos(phi), 2),
+    ):
         if coefficient:
-            bounds = sorted(((-half-constant)/coefficient, (half-constant)/coefficient))
+            bounds = sorted(((-half - constant) / coefficient, (half - constant) / coefficient))
             low, high = max(low, bounds[0]), min(high, bounds[1])
         else:
             assert abs(constant) <= half
     assert low < high
-    return (low+3)/6, (high+3)/6
+    return (low + 3) / 6, (high + 3) / 6
 
 
 def static_paths(paths, time):

@@ -16,7 +16,9 @@ pytestmark = pytest.mark.tyx
 def test_dual_turn_device_worlds_match_all_host_fields_and_recover(tyx_mode, tmp_path, monkeypatch):
     shapes, paths, owners = [], {}, []
     for index, case in enumerate((B01, B02, B03, B06)):
-        model, local, mesh, round_shape = public_case(case, world=17+index, reverse=bool(index % 2))
+        model, local, mesh, round_shape = public_case(
+            case, world=17 + index, reverse=bool(index % 2)
+        )
         shapes.extend(model.shapes)
         paths.update(local)
         owners.append((case, mesh, round_shape))
@@ -29,7 +31,9 @@ def test_dual_turn_device_worlds_match_all_host_fields_and_recover(tyx_mode, tmp
         raise AssertionError("selected TYX call used HOST broad phase")
 
     monkeypatch.setattr(collision_pipeline, "_host_query", forbidden)
-    with ph.CollisionWorkspace(model, tyx_mode, broad_phase="bvh", cache_root=tmp_path / "cache") as work:
+    with ph.CollisionWorkspace(
+        model, tyx_mode, broad_phase="bvh", cache_root=tmp_path / "cache"
+    ) as work:
         actual = ph.detect(model, paths, ph.CollisionPolicy(), work)
         assert actual.status == "ok" and actual.backend == tyx_mode
         assert actual.pairs == expected.pairs and actual.bounds == expected.bounds
@@ -53,10 +57,20 @@ def test_dual_turn_device_worlds_match_all_host_fields_and_recover(tyx_mode, tmp
         assert rejected.status == "capacity_exceeded" and work.last_result is actual
         assert asdict(actual) == previous
         recovered = ph.detect(model, paths, ph.CollisionPolicy(), work)
-        assert recovered == actual and work.stats()["completed_launches"] > stats["completed_launches"]
-        (tmp_path / "dual-turn-device.json").write_text(json.dumps(dict(
-            backend=tyx_mode, expected=asdict(expected), actual=asdict(actual), stats=work.stats(),
-        )), encoding="utf8")
+        assert (
+            recovered == actual and work.stats()["completed_launches"] > stats["completed_launches"]
+        )
+        (tmp_path / "dual-turn-device.json").write_text(
+            json.dumps(
+                dict(
+                    backend=tyx_mode,
+                    expected=asdict(expected),
+                    actual=asdict(actual),
+                    stats=work.stats(),
+                )
+            ),
+            encoding="utf8",
+        )
 
         def failed_query(*args, **kwargs):
             raise RuntimeError("dual-turn injected device failure")

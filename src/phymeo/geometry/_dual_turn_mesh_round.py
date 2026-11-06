@@ -68,7 +68,10 @@ class DualTurnMeshRoundQuery(RotatingMeshRoundQuery):
         self.axis, self.round_axis = _vector(mesh_turn.axis), _vector(round_turn.axis)
         self.axis_length = axis_length_bounds(self.axis)
         self.round_axis_length = axis_length_bounds(self.round_axis)
-        self.pivot, self.round_pivot = _vector(mesh_turn.pivot_start), _vector(round_turn.pivot_start)
+        self.pivot, self.round_pivot = (
+            _vector(mesh_turn.pivot_start),
+            _vector(round_turn.pivot_start),
+        )
         self.travel, self.round_travel = _translation(mesh_path), _translation(round_path)
         self.spine = tuple(_vector(p) for p in round_path.start)
         self.arms = tuple(p - self.round_pivot for p in self.spine)
@@ -143,11 +146,7 @@ class DualTurnMeshRoundQuery(RotatingMeshRoundQuery):
             # Do not infer winding/containment from boundary distance alone.
             # The reused crossing predicate uses only fixed facets and bounded
             # endpoint positions; no conserved-axis argument is valid here.
-            if (
-                (best <= error**2 and not transverse)
-                or low <= best <= high
-                or low <= far <= high
-            ):
+            if (best <= error**2 and not transverse) or low <= best <= high or low <= far <= high:
                 raise SolverFailure(self.prefix + "pose_relation_unresolved")
         local = query.sample(_ZERO)
         if not t:
@@ -180,18 +179,27 @@ class DualTurnMeshRoundQuery(RotatingMeshRoundQuery):
 
         def round_material(weights):
             anchor = sum(F(w) * actual[self.shape.vertex_ids.index(i)][0] for i, w in weights)
-            uncertainty = sum(abs(F(w)) * actual[self.shape.vertex_ids.index(i)][1] for i, w in weights)
+            uncertainty = sum(
+                abs(F(w)) * actual[self.shape.vertex_ids.index(i)][1] for i, w in weights
+            )
             return anchor, uncertainty
 
         def world(witness):
             mp, cp, mesh_weights, weights, offset = (
                 (
-                    witness.first_point, witness.second_point, witness.first_weights,
-                    witness.second_weights, witness.second_offset,
+                    witness.first_point,
+                    witness.second_point,
+                    witness.first_weights,
+                    witness.second_weights,
+                    witness.second_offset,
                 )
-                if self.mesh_first else (
-                    witness.second_point, witness.first_point, witness.second_weights,
-                    witness.first_weights, witness.first_offset,
+                if self.mesh_first
+                else (
+                    witness.second_point,
+                    witness.first_point,
+                    witness.second_weights,
+                    witness.first_weights,
+                    witness.first_offset,
                 )
             )
             mesh_point = mesh_material(mp, mesh_weights)
@@ -204,7 +212,8 @@ class DualTurnMeshRoundQuery(RotatingMeshRoundQuery):
             difference = _vector(skin) - _vector(world_point(cp))
             self._world_bound(
                 sum(abs(x) for x in difference)
-                + anchor_error + abs(radial_local) @ column_error
+                + anchor_error
+                + abs(radial_local) @ column_error
                 + 8 * F(max(ulp(x) for x in skin)),
                 "material_address_resolution",
             )
@@ -214,17 +223,21 @@ class DualTurnMeshRoundQuery(RotatingMeshRoundQuery):
                 points = []
                 for item in span:
                     u = F(item.axis_parameter)
-                    core = _xyz((1-u) * actual[0][0] + u * actual[-1][0])
-                    uncertainty = abs(1-u) * actual[0][1] + abs(u) * actual[-1][1]
+                    core = _xyz((1 - u) * actual[0][0] + u * actual[-1][0])
+                    uncertainty = abs(1 - u) * actual[0][1] + abs(u) * actual[-1][1]
                     self._world_bound(
                         sum(abs(x) for x in _vector(core) - _vector(world_point(item.axis_point)))
-                        + uncertainty + 8 * F(max(ulp(x) for x in core)),
+                        + uncertainty
+                        + 8 * F(max(ulp(x) for x in core)),
                         "material_address_resolution",
                     )
-                    points.append(replace(
-                        item, axis_point=core,
-                        face_point=mesh_material(item.face_point, item.face_weights),
-                    ))
+                    points.append(
+                        replace(
+                            item,
+                            axis_point=core,
+                            face_point=mesh_material(item.face_point, item.face_weights),
+                        )
+                    )
                 span = tuple(points)
             return replace(
                 witness,
@@ -247,8 +260,18 @@ class DualTurnMeshRoundQuery(RotatingMeshRoundQuery):
         # Reuse the established whole-path search, actual-start solid semantics,
         # occupied sample gate, time/spatial budget and original five-field output.
         status, reason, endpoint, sweep, trace = super().result(moving)
-        return status, reason, endpoint, sweep, DualTurnMeshRoundTrace(
-            trace.start, trace.end, trace.first_contact,
-            len(self.samples), _upper_float(self.speed),
-            _upper_float(self.observed_error), _upper_float(self.observed_world_error),
+        return (
+            status,
+            reason,
+            endpoint,
+            sweep,
+            DualTurnMeshRoundTrace(
+                trace.start,
+                trace.end,
+                trace.first_contact,
+                len(self.samples),
+                _upper_float(self.speed),
+                _upper_float(self.observed_error),
+                _upper_float(self.observed_world_error),
+            ),
         )

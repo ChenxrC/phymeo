@@ -270,7 +270,7 @@ def test_b05_isolated_tangency_never_becomes_a_false_clear():
 
 
 @pytest.mark.parametrize("kind", ["angle", "samples", "closed_boundary", "two_turns"])
-def test_b05_capacity_invalid_mesh_and_unsupported_motion_are_explicit(kind, monkeypatch):
+def test_b05_capacity_invalid_mesh_and_new_dual_turn_route_are_explicit(kind, monkeypatch):
     from dataclasses import replace
     from math import pi
 
@@ -291,11 +291,19 @@ def test_b05_capacity_invalid_mesh_and_unsupported_motion_are_explicit(kind, mon
             paths[mesh.key].start, turn=ph.RigidTurn((0, 0, 0), (0, 0, 0), (1, 0, 0), pi / 4)
         )
     row = detect(model, paths)
+    if kind == "two_turns":
+        # At t=1/2 the finite axis x=1.5,y=0,z in [-1,1] cuts the
+        # box rotated by pi/8 about X. The same original input is now supported.
+        assert row.candidate and row.status == "hit"
+        event = row.mesh_round.first_contact
+        assert 0 < event.interval[0] <= event.interval[1] <= 0.5
+        assert event.pose.relation != "separated"
+        check_materials(row, event.pose, mesh, capsule, paths, event.witness_time)
+        return
     status, reason = {
         "angle": ("unresolved", "capsule_mesh_arc_angle_capacity"),
         "samples": ("unresolved", "capsule_mesh_arc_axis_capacity"),
         "closed_boundary": ("invalid_geometry", "mesh_open_or_misoriented_edge"),
-        "two_turns": ("unsupported", "mesh_rounding_or_rotation"),
     }[kind]
     assert row.candidate and row.status == status and row.reason == reason
     assert row.sweep is None and row.mesh_round is None

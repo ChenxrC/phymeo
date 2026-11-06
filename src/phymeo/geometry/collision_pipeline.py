@@ -717,16 +717,21 @@ def _detect_pairs(
                 mesh_rotates = mp.turn is not None and mp.turn.angle != 0
                 round_rotates = rp.turn is not None and rp.turn.angle != 0
                 capsule_turn = round_rotates and rs.kind == "capsule" and not mesh_rotates
-                if ms.radius or (round_rotates and not capsule_turn):
+                dual_turn = mesh_rotates and round_rotates
+                if ms.radius or (round_rotates and not capsule_turn and not dual_turn):
                     if not code:
                         analytic = _NarrowFailure("unsupported", "mesh_rounding_or_rotation")
-                elif not mesh_rotates or not code:
+                elif dual_turn or not mesh_rotates or not code:
                     mesh = prepared_mesh(ms, mp)
                     if isinstance(mesh, _NarrowFailure):
                         analytic = mesh
                     elif not code:
                         try:
-                            if capsule_turn:
+                            if dual_turn:
+                                from ._dual_turn_mesh_round import DualTurnMeshRoundQuery
+
+                                analytic = DualTurnMeshRoundQuery(mesh, rs, mp, rp, mesh_first)
+                            elif capsule_turn:
                                 from ._rotating_capsule_mesh import RotatingCapsuleMeshQuery
 
                                 analytic = RotatingCapsuleMeshQuery(mesh, rs, mp, rp, mesh_first)

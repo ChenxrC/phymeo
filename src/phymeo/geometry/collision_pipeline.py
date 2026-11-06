@@ -428,6 +428,46 @@ def _mesh_candidates(workspace, paths, flags, envelopes, bounds, pending):
             pending, key, leaves, bounds[[j for _, j in partners]], workspace._engine
         )
         selected.update((slot, row) for (slot, _), row in zip(partners, hits, strict=True))
+    # Round-body samples require a nearest-distance upper bound, which is
+    # available only after full closed-mesh validation. Bind a lazy selector
+    # here, retaining the same transactional BVH layout publication.
+    for slot in np.flatnonzero(flags == 0):
+        i, j, _ = workspace._pairs[slot]
+        if shapes[j].kind == "mesh":
+            i, j = j, i
+        shape, other = shapes[i], shapes[j]
+        if (
+            shape.kind != "mesh"
+            or other.kind not in ("sphere", "capsule")
+            or shape.radius
+            or any(paths[s.key].turn and paths[s.key].turn.angle for s in (shape, other))
+        ):
+            continue
+
+        def selector(mesh, shape=shape):
+            from ._mesh_round_candidates import MeshRoundFaceSelector
+
+            def query_boxes(binding, leaves, queries):
+                try:
+                    return workspace._trees.facets(
+                        pending,
+                        ("mesh", binding),
+                        leaves,
+                        queries,
+                        workspace._engine,
+                    )
+                except Exception as error:
+                    # Backend faults must escape the narrow-phase unknown
+                    # handler and abort publication of the entire query.
+                    workspace._close_locked()
+                    raise RuntimeError("mesh-round face candidate query failed") from error
+                except BaseException:
+                    workspace._close_locked()
+                    raise
+
+            return MeshRoundFaceSelector(shape, mesh, query_boxes)
+
+        selected[int(slot)] = selector
     return selected
 
 
@@ -739,7 +779,15 @@ def _detect_pairs(
                                 analytic = (
                                     RotatingMeshRoundQuery(mesh, rs, mp, rp, mesh_first)
                                     if mesh_rotates
-                                    else MeshRoundQuery(mesh, rs, rp, mesh_first)
+                                    else MeshRoundQuery(
+                                        mesh,
+                                        rs,
+                                        rp,
+                                        mesh_first,
+                                        face_selector=(
+                                            selected[slot](mesh) if slot in selected else None
+                                        ),
+                                    )
                                 )
                         except SolverFailure as error:
                             analytic = _NarrowFailure("unresolved", str(error))

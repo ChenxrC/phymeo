@@ -38,7 +38,11 @@ def _rational(value):
         return value
     if isinstance(value, Integral) and not isinstance(value, (bool, np.bool_)):
         return F(int(value))
-    if isinstance(value, Real) and not isinstance(value, (bool, np.bool_)) and isfinite(float(value)):
+    if (
+        isinstance(value, Real)
+        and not isinstance(value, (bool, np.bool_))
+        and isfinite(float(value))
+    ):
         return F(float(value))
     raise ValueError("mesh-round candidate coordinates must be finite real values")
 
@@ -76,8 +80,9 @@ def _outward(value, upper):
 
 
 def _boxes(rows):
-    data = np.array([[_outward(value, i >= 3) for i, value in enumerate(row)]
-                     for row in rows], dtype=np.float32)
+    data = np.array(
+        [[_outward(value, i >= 3) for i, value in enumerate(row)] for row in rows], dtype=np.float32
+    )
     # The callback receives owned immutable bytes, not aliases into prepared
     # geometry or a mutable buffer left over from an earlier query.
     return np.frombuffer(data.tobytes(), dtype=np.float32).reshape(-1, 6)
@@ -86,8 +91,11 @@ def _boxes(rows):
 def _axis_square(point, start, end):
     axis = tuple(b - a for a, b in zip(start, end, strict=True))
     length2 = sum(v * v for v in axis)
-    t = (sum((p - a) * v for p, a, v in zip(point, start, axis, strict=True)) / length2
-         if length2 else F(0))
+    t = (
+        sum((p - a) * v for p, a, v in zip(point, start, axis, strict=True)) / length2
+        if length2
+        else F(0)
+    )
     t = max(F(0), min(F(1), t))
     return sum((p - a - t * v) ** 2 for p, a, v in zip(point, start, axis, strict=True))
 
@@ -107,8 +115,11 @@ class MeshRoundFaceSelector:
         if not isinstance(prepared_mesh, ClosedMesh) or not callable(query_boxes):
             raise TypeError("mesh-round face selector requires a prepared closed mesh and callback")
         faces = tuple(f.ids for f in prepared_mesh.facets)
-        if (not 4 <= len(faces) <= MAX_MESH_TRIANGLES or faces != shape.triangles
-                or tuple(prepared_mesh.points) != shape.vertex_ids):
+        if (
+            not 4 <= len(faces) <= MAX_MESH_TRIANGLES
+            or faces != shape.triangles
+            or tuple(prepared_mesh.points) != shape.vertex_ids
+        ):
             raise ValueError("mesh-round candidate material binding does not match prepared mesh")
         points = {i: _point(p) for i, p in prepared_mesh.points.items()}
         rows = []
@@ -116,10 +127,16 @@ class MeshRoundFaceSelector:
             xyz = tuple(points[i] for i in facet.ids)
             low = tuple(min(p[k] for p in xyz) for k in range(3))
             high = tuple(max(p[k] for p in xyz) for k in range(3))
-            if (facet.shape.key != shape.key or facet.shape.vertex_ids != facet.ids
-                    or tuple(_point(p) for p in facet.xyz) != xyz
-                    or _point(facet.lo) != low or _point(facet.hi) != high):
-                raise ValueError("mesh-round candidate face coordinates do not match material binding")
+            if (
+                facet.shape.key != shape.key
+                or facet.shape.vertex_ids != facet.ids
+                or tuple(_point(p) for p in facet.xyz) != xyz
+                or _point(facet.lo) != low
+                or _point(facet.hi) != high
+            ):
+                raise ValueError(
+                    "mesh-round candidate face coordinates do not match material binding"
+                )
             rows.append((*low, *high))
         self.binding = MeshRoundFaceBinding(shape.key, shape.revision, shape.vertex_ids, faces)
         self._points = points
@@ -132,11 +149,17 @@ class MeshRoundFaceSelector:
         query = _boxes(((*low, *high),))
         rows = self._query_boxes(self.binding, self._leaves, query)
         count = len(self.binding.faces)
-        if (not isinstance(rows, list) or len(rows) != 1 or not isinstance(rows[0], list)
-                or len(rows[0]) > 2 * count):
+        if (
+            not isinstance(rows, list)
+            or len(rows) != 1
+            or not isinstance(rows[0], list)
+            or len(rows[0]) > 2 * count
+        ):
             raise SolverFailure("mesh_round_invalid_face_candidates")
-        if any(isinstance(i, (bool, np.bool_)) or not isinstance(i, Integral)
-               or not 0 <= i < count for i in rows[0]):
+        if any(
+            isinstance(i, (bool, np.bool_)) or not isinstance(i, Integral) or not 0 <= i < count
+            for i in rows[0]
+        ):
             raise SolverFailure("mesh_round_invalid_face_candidates")
         result = tuple(sorted({int(i) for i in rows[0]}))
         if require_nonempty and not result:
@@ -173,6 +196,10 @@ class MeshRoundFaceSelector:
         relation and must not infer absence of containment from this result.
         """
         start, end, drift, radius = _point(start), _point(end), _point(drift), _radius(radius)
-        endpoints = (start, end, tuple(a + d for a, d in zip(start, drift, strict=True)),
-                     tuple(b + d for b, d in zip(end, drift, strict=True)))
+        endpoints = (
+            start,
+            end,
+            tuple(a + d for a, d in zip(start, drift, strict=True)),
+            tuple(b + d for b, d in zip(end, drift, strict=True)),
+        )
         return self._query(endpoints, radius, require_nonempty=False)

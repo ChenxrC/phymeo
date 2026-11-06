@@ -7,9 +7,23 @@ from math import sqrt
 import numpy as np
 import pytest
 from mesh_round_candidate_cases import (
-    CLEAR_SWEEP, CONTAINS, CROSSING, FACE, INSIDE, SHAFT, STATIC_CASES, SWEEP_CASES,
-    BoxOracle, Case, build, check_materials, face_distances, five_fields,
-    prepare_selector, record_facets, required_faces,
+    CLEAR_SWEEP,
+    CONTAINS,
+    CROSSING,
+    FACE,
+    INSIDE,
+    SHAFT,
+    STATIC_CASES,
+    SWEEP_CASES,
+    BoxOracle,
+    Case,
+    build,
+    check_materials,
+    face_distances,
+    five_fields,
+    prepare_selector,
+    record_facets,
+    required_faces,
 )
 
 import phymeo as ph
@@ -50,7 +64,10 @@ def test_static_candidates_preserve_all_public_fields_and_independent_materials(
     model, paths, mesh, rounded = build(case)
     distances = face_distances(mesh, rounded, paths)
     policy = ph.CollisionPolicy(margin=4)
-    with ph.CollisionWorkspace(model) as full, ph.CollisionWorkspace(model, mesh_midphase="bvh") as work:
+    with (
+        ph.CollisionWorkspace(model) as full,
+        ph.CollisionWorkspace(model, mesh_midphase="bvh") as work,
+    ):
         expected = ph.detect(model, paths, policy, full)
         calls = record_facets(work, monkeypatch)
         actual = ph.detect(model, paths, policy, work)
@@ -59,7 +76,9 @@ def test_static_candidates_preserve_all_public_fields_and_independent_materials(
         assert five_fields(row) == five_fields(expected.pairs[0])
         pose = row.mesh_round.end
         assert pose.relation == case.relation
-        assert pose.axis_gap_m == pytest.approx(sqrt(float(min(distances))) - case.radius, abs=2e-12)
+        assert pose.axis_gap_m == pytest.approx(
+            sqrt(float(min(distances))) - case.radius, abs=2e-12
+        )
         if case.axis_gap_m is not None:
             assert pose.axis_gap_m == pytest.approx(case.axis_gap_m, abs=2e-12)
         assert calls and len(calls) == 1
@@ -91,7 +110,10 @@ def test_108_facet_box_really_prunes_without_losing_full_face_oracle(case, monke
     model, paths, mesh, rounded = build(case, dense=True)
     assert len(mesh.triangles) == 108
     required = set(required_faces(mesh, rounded, paths))
-    with ph.CollisionWorkspace(model) as full, ph.CollisionWorkspace(model, mesh_midphase="bvh") as work:
+    with (
+        ph.CollisionWorkspace(model) as full,
+        ph.CollisionWorkspace(model, mesh_midphase="bvh") as work,
+    ):
         expected = ph.detect(model, paths, ph.CollisionPolicy(), full)
         calls = record_facets(work, monkeypatch)
         actual = ph.detect(model, paths, ph.CollisionPolicy(), work)
@@ -104,10 +126,15 @@ def test_108_facet_box_really_prunes_without_losing_full_face_oracle(case, monke
 
 
 @pytest.mark.parametrize("case", SWEEP_CASES, ids=lambda case: case.name)
-def test_translation_retains_earliest_event_and_empty_boundary_candidate_semantics(case, monkeypatch):
+def test_translation_retains_earliest_event_and_empty_boundary_candidate_semantics(
+    case, monkeypatch
+):
     model, paths, mesh, rounded = build(case)
     policy = ph.CollisionPolicy(margin=1 / 16)
-    with ph.CollisionWorkspace(model) as full, ph.CollisionWorkspace(model, mesh_midphase="bvh") as work:
+    with (
+        ph.CollisionWorkspace(model) as full,
+        ph.CollisionWorkspace(model, mesh_midphase="bvh") as work,
+    ):
         expected = ph.detect(model, paths, policy, full)
         calls = record_facets(work, monkeypatch)
         actual = ph.detect(model, paths, policy, work)
@@ -123,7 +150,9 @@ def test_translation_retains_earliest_event_and_empty_boundary_candidate_semanti
             lo, hi = row.sweep.first_t
             assert F(lo) <= case.first_t <= F(hi) and hi - lo <= 2**-38
             event = row.mesh_round.first_contact
-            assert event.interval == row.sweep.first_t and event.witness_time == row.sweep.witness_time
+            assert (
+                event.interval == row.sweep.first_t and event.witness_time == row.sweep.witness_time
+            )
             check_materials(row, event.pose, mesh, rounded, paths, event.witness_time)
             # Both bodies move, but the relative X speed is exactly four metres.
             assert np.any(paths[mesh.key].end != paths[mesh.key].start)
@@ -138,21 +167,32 @@ def test_translation_retains_earliest_event_and_empty_boundary_candidate_semanti
             assert calls[0]["rows"][0] and calls[1]["rows"][0]
 
 
-@pytest.mark.parametrize("variant,reverse,reorder", [
-    ("identity", True, False), ("identity", False, True),
-    ("rigid", True, True), ("mirror", False, True),
-])
+@pytest.mark.parametrize(
+    "variant,reverse,reorder",
+    [
+        ("identity", True, False),
+        ("identity", False, True),
+        ("rigid", True, True),
+        ("mirror", False, True),
+    ],
+)
 def test_material_permutation_order_and_rigid_covariance(variant, reverse, reorder):
     model, paths, mesh, rounded = build(SHAFT, variant=variant, reverse=reverse, reorder=reorder)
     assert min(face_distances(mesh, rounded, paths)) == F(9, 1024)
-    with ph.CollisionWorkspace(model) as full, ph.CollisionWorkspace(model, mesh_midphase="bvh") as work:
+    with (
+        ph.CollisionWorkspace(model) as full,
+        ph.CollisionWorkspace(model, mesh_midphase="bvh") as work,
+    ):
         expected = ph.detect(model, paths, ph.CollisionPolicy(), full)
         actual = ph.detect(model, paths, ph.CollisionPolicy(), work)
         assert actual == expected and actual.pairs[0].mesh_round.end.axis_gap_m == -1 / 32
         row = actual.pairs[0]
         check_materials(row, row.mesh_round.end, mesh, rounded, paths)
-        parameters = [p.axis_parameter for support in row.mesh_round.end.supports
-                      for p in support.witness.capsule_axis_span]
+        parameters = [
+            p.axis_parameter
+            for support in row.mesh_round.end.supports
+            for p in support.witness.capsule_axis_span
+        ]
         assert min(parameters) == 0 and max(parameters) == 1
 
 
@@ -160,7 +200,10 @@ def test_same_key_actual_coordinate_refit_and_transaction_capacity_rollback(monk
     model, paths, mesh, rounded = build(FACE)
     changed = {**paths, mesh.key: ph.CollisionMotion(paths[mesh.key].start - (1 / 2, 0, 0))}
     policy = ph.CollisionPolicy(margin=1)
-    with ph.CollisionWorkspace(model) as full, ph.CollisionWorkspace(model, mesh_midphase="bvh") as work:
+    with (
+        ph.CollisionWorkspace(model) as full,
+        ph.CollisionWorkspace(model, mesh_midphase="bvh") as work,
+    ):
         calls = record_facets(work, monkeypatch)
         first = ph.detect(model, paths, policy, work)
         before = asdict(first)
@@ -208,8 +251,10 @@ def test_topological_filters_do_not_launch_face_search(kind, monkeypatch):
     exclusions = ((mesh.key, rounded.key),) if kind == "excluded" else ()
     model = ph.CollisionModel((mesh, rounded), exclusions)
     with ph.CollisionWorkspace(model, mesh_midphase="bvh") as work:
+
         def forbidden(*args):
             raise AssertionError("filtered material reached face traversal")
+
         monkeypatch.setattr(work._trees, "facets", forbidden)
         row = ph.detect(model, paths, ph.CollisionPolicy(), work).pairs[0]
         assert row.status == "filtered" and row.reason == kind and row.mesh_round is None
@@ -221,8 +266,10 @@ def test_aabb_rejection_still_validates_entire_closed_topology(monkeypatch):
     paths[rounded.key] = ph.CollisionMotion([[20, 0, 0]])
     model = ph.CollisionModel((mesh, rounded))
     with ph.CollisionWorkspace(model, mesh_midphase="bvh") as work:
+
         def forbidden(*args):
             raise AssertionError("code5 must not run a face query")
+
         monkeypatch.setattr(work._trees, "facets", forbidden)
         row = ph.detect(model, paths, ph.CollisionPolicy(candidate_capacity=0), work).pairs[0]
         assert not row.candidate and row.status == "invalid_geometry"
@@ -233,10 +280,15 @@ def test_double_turn_uses_existing_full_path_without_this_static_selector(monkey
     from dual_turn_mesh_round_cases import B01, public_case
 
     model, paths, _, _ = public_case(B01)
-    with ph.CollisionWorkspace(model) as full, ph.CollisionWorkspace(model, mesh_midphase="bvh") as work:
+    with (
+        ph.CollisionWorkspace(model) as full,
+        ph.CollisionWorkspace(model, mesh_midphase="bvh") as work,
+    ):
         expected = ph.detect(model, paths, ph.CollisionPolicy(), full)
+
         def forbidden(*args):
             raise AssertionError("dual-turn path entered static face selector")
+
         monkeypatch.setattr(work._trees, "facets", forbidden)
         actual = ph.detect(model, paths, ph.CollisionPolicy(), work)
         assert actual == expected and actual.pairs[0].status == "hit"
@@ -245,11 +297,19 @@ def test_double_turn_uses_existing_full_path_without_this_static_selector(monkey
 
 @pytest.mark.parametrize("delta", (0.0, -(2**-26), 2**-26))
 def test_fp32_boundary_rounding_preserves_fp64_gap_and_all_ties(delta, monkeypatch):
-    case = Case("boundary", ((9 / 8 + delta, 0, 0),), 1 / 8,
-                "touching" if not delta else "boundary_overlap" if delta < 0 else "separated", delta)
+    case = Case(
+        "boundary",
+        ((9 / 8 + delta, 0, 0),),
+        1 / 8,
+        "touching" if not delta else "boundary_overlap" if delta < 0 else "separated",
+        delta,
+    )
     model, paths, mesh, rounded = build(case)
     policy = ph.CollisionPolicy(margin=2**-20)
-    with ph.CollisionWorkspace(model) as full, ph.CollisionWorkspace(model, mesh_midphase="bvh") as work:
+    with (
+        ph.CollisionWorkspace(model) as full,
+        ph.CollisionWorkspace(model, mesh_midphase="bvh") as work,
+    ):
         expected = ph.detect(model, paths, policy, full)
         calls = record_facets(work, monkeypatch)
         actual = ph.detect(model, paths, policy, work)
@@ -263,13 +323,19 @@ def test_selector_callback_binding_and_exact_nearest_upper_bound(case):
     callback = BoxOracle(scrambled=True)
     _, paths, mesh, rounded, prepared, selector, distances = prepare_selector(case, callback)
     axis = paths[rounded.key].start
-    selected = selector.sample(axis[0], axis[-1], radius=F(rounded.radius), vertex_distance2=distances)
+    selected = selector.sample(
+        axis[0], axis[-1], radius=F(rounded.radius), vertex_distance2=distances
+    )
     assert selected == tuple(sorted(set(selected)))
     assert set(required_faces(mesh, rounded, paths)) <= set(selected)
     binding, leaves, queries, raw = callback.calls[0]
     assert selected == raw
     assert (binding.key, binding.revision, binding.vertex_ids, binding.faces) == (
-        mesh.key, mesh.revision, mesh.vertex_ids, mesh.triangles)
+        mesh.key,
+        mesh.revision,
+        mesh.vertex_ids,
+        mesh.triangles,
+    )
     assert hash(binding) == hash(binding)
     for index, face in enumerate(mesh.triangles):
         for node in face:
@@ -291,9 +357,11 @@ def test_selector_bad_or_empty_sample_fails_without_full_face_fallback(reply):
     from phymeo.core.capabilities import SolverFailure
 
     calls = []
+
     def bad(*args):
         calls.append(args)
         return reply
+
     _, paths, _, rounded, _, selector, distances = prepare_selector(FACE, bad)
     axis = paths[rounded.key].start
     with pytest.raises(SolverFailure):
@@ -334,9 +402,11 @@ def test_public_empty_sample_is_unresolved_not_clear_or_full_enumeration(monkeyp
     model, paths, _, _ = build(FACE)
     with ph.CollisionWorkspace(model, mesh_midphase="bvh") as work:
         calls = []
+
         def empty(*args):
             calls.append(args)
             return [[]]
+
         monkeypatch.setattr(work._trees, "facets", empty)
         row = ph.detect(model, paths, ph.CollisionPolicy(), work).pairs[0]
         assert calls and row.status == "unresolved" and row.witness is None

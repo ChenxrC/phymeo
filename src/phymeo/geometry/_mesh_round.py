@@ -71,8 +71,9 @@ def _material(face, weights, shift):
 class MeshRoundQuery:
     features = ()
 
-    def __init__(self, mesh, round_shape, round_motion, mesh_first):
+    def __init__(self, mesh, round_shape, round_motion, mesh_first, *, face_selector=None):
         self.mesh = mesh
+        self.face_selector = face_selector
         self.round = round_shape
         self.path = round_motion
         self.mesh_first = mesh_first
@@ -188,7 +189,18 @@ class MeshRoundQuery:
         furthest = max(d2 for d2, _ in distances.values())
         low, high = np.minimum(start, start + self.axis), np.maximum(start, start + self.axis)
         queue = []
-        for i, f in enumerate(self.mesh.facets):
+        indices = (
+            range(len(self.mesh.facets))
+            if self.face_selector is None
+            else self.face_selector.sample(
+                start,
+                start + self.axis,
+                radius=self.radius,
+                vertex_distance2={i: distance[0] for i, distance in distances.items()},
+            )
+        )
+        for i in indices:
+            f = self.mesh.facets[i]
             delta = np.maximum(0, np.maximum(f.lo - high, low - f.hi))
             queue.append((delta @ delta, i))
         best = None
@@ -274,7 +286,18 @@ class MeshRoundQuery:
         )
         lo, hi = ends.min(0) - self.radius, ends.max(0) + self.radius
         best = None
-        for facet in self.mesh.facets:
+        indices = (
+            range(len(self.mesh.facets))
+            if self.face_selector is None
+            else self.face_selector.translation(
+                self.start,
+                self.start + self.axis,
+                self.drift,
+                radius=self.radius,
+            )
+        )
+        for i in indices:
+            facet = self.mesh.facets[i]
             if any(facet.hi < lo) or any(facet.lo > hi):
                 continue
             face_path = _TriangleMotion(facet.xyz, facet.xyz + facet.step, bool(any(facet.step)))

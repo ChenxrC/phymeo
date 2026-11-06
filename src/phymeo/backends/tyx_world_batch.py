@@ -427,8 +427,9 @@ class TyxWorldBatch:
             if not self._closed:
                 self._closed = True
                 try:
-                    for plan in tuple(self._readback_plans):
-                        plan.close()
+                    with ExitStack() as closing_plans:
+                        for plan in tuple(self._readback_plans):
+                            closing_plans.callback(plan.close)
                 finally:
                     self._resources.close()
                     self._counts["device_owned_bytes"] = 0

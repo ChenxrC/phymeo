@@ -71,3 +71,14 @@ pytest tests/collision/test_tyx_mesh_round_candidates.py -m tyx --require-tyx --
 ```
 
 父还负责窄范围共享接缝兼容、格式与静态收据。没有新增性能计时或旧矩阵重跑；本批交付目标是真设备逐面候选可用且完整结果不变。
+
+## 父最终设备结果追加
+
+上述待执行设备范围现已由父唯一串行队列完成，输入、oracle、精度和资源上限未改：
+
+| 收据 | 实际结果 | 验收边界 |
+|---|---|---|
+| `14-b-interpret` | 4 passed，1 HOST deselected，18.82s，RAW0 | 完整输出、真实解释后端 BVH、六世界/108面、容量与三种故障恢复 |
+| `15-b-cuda` | 4 passed，1 HOST deselected，20.95s，RAW0 | 真实 CUDA refit/traverse、上传/同步/读回及同一完整输出/失败合同 |
+
+原 44 项 HOST 和已绿坏回读事务 1 项没有重跑。四个 Python 文件继续冻结；本次只追加报告，作者仍未执行任何项目命令。这里记录的是功能验收耗时，不是两后端性能对比。HOST 精确窄相、TYX 逐面候选的职责边界，以及本片不扩旋转/响应的范围保持不变。

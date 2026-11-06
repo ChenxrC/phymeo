@@ -2,6 +2,12 @@
 
 ## 当前入口（2026-11-06）
 
+[第七批：浮根共同场景、逐面设备候选与局部复用](../benchmarks/p65-top-three-batch7.md)已本地集成，产品8128440，新wheel已在源码外通过三线组合。浮根专项43+共享回归73与40步承重/撤离通过；B逐面HOST44+故障1、interpret4/CUDA4通过；C复用HOST29、interpret2/CUDA2通过。三原作者交叉审阅完成。
+
+C的W1F8/W32F8三对AB/BA/AB共3960 world-substeps完整输出与计数一致；W32 p50比值1.008/0.957/1.006，无稳定规模收益，默认False并收束此候选。下一项先调研/冻结非球机器人互碰多案例、转动mesh–round逐面候选、已接受设备状态直接供宽相的公共合同。浮mimic/fixed折叠/pads、全设备窄相、目标软布两初态放台及原mimic受载失败仍开放。所有本批执行槽释放，无自动任务。[已执行计划](../superpowers/plans/2026-11-06-top-three-batch7.md) · [大模块差异](phymeo-newton-functional-overview-2026-11-06.md)
+
+### 11月6日第六批（历史）
+
 [第六批：真实机器人互碰、双转轴与分页成本](../benchmarks/p65-top-three-batch6.md)已本地集成，产品 `3e6dff4`，新wheel在源码外通过。多固定根普通/mimic树可直接球–球/有限胶囊/OBB双侧受力；闭网格与球/有限胶囊支持双方独立旋转和移动枢轴。A专项25+共享21、B HOST18+interpret1+CUDA1+受影响兼容4通过，公开40步保持/撤离通过。
 
 C工具27协议+解释7+CUDA7通过，五档正式CUDA与独立未插桩完整输出一致。稠密W32×8面额外分页仅占0.155%，未触发15%优化门，默认保持；后续优先分析HOST几何/材料装配。原作者交叉审阅和父证据读取结束，所有执行槽释放，无自动任务。下一项是A3浮根共同事务、B3逐面设备候选及C热点拆解，先处理B/C接口依赖。非球机器人互碰、全设备窄相、原软布两初态放台及mimic原失败仍开放。[本批计划](../superpowers/plans/2026-11-06-top-three-batch6.md) · [当前大模块差异](phymeo-newton-functional-overview-2026-11-06.md)

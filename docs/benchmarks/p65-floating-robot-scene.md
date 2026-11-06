@@ -39,3 +39,9 @@ HOST FP64、单 world，真实普通 bounded scalar joint 树。检测继续使�
 - 完整专项冻结52c5e67；两个NEW source检查点8af32b6。作者未执行项目import/test/numeric/lint/build。功能、静态、公开例程及源码外wheel结果等待父串行收据，当前不写通过数。
 - 作者只拥有本节点5个NEW文件；旧builder路由、单/多机器人共享采样计数、接触view、动态根event、状态复制/事务与公共导出由父独立维护和验证。
 - 没有本轮Newton独立浮树动态运行，也没有把旧浮树CPU/CUDA对照当作新共享场景验收。原100g mimic失败窗口没有重跑或修改。
+
+## 父实际验收（2026-11-06，取代上方待执行状态）
+
+父产品8128440。完整专项43 passed/1.18s，受改共享接口73 passed/2.12s，公开例程40连续步11门通过；源码外新wheel反序登记再通过同40步与两条新功能组合。16原contribution混淆广义速度与body数量由父修复；17新MJCF fixture缺固定父体仅修层级、原mass/axis/force oracle保持，全部首错保留。原RR作者跨模块只读审阅无新阻断。最终静态通过，style限定原AST或连续导入排序，不重跑已绿同源。
+
+[本批范围、失败、构建与下一项](p65-top-three-batch7.md)；[原始收据](../../artifacts/p65-top-three-batch7-20261106-01)。浮树设备、mimic/fixed折叠/pads/非球组合等仍未支持。

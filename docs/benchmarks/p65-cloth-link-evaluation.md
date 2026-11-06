@@ -28,3 +28,11 @@ python scripts/benchmark_cloth_link_evaluation.py summarize --profiles <12-absol
 第二端用 `--implementation reuse`；按1/2/3轮顺序分别AB/BA/AB，W1同样执行。summary要求全12端、同物理输入/完整输出/来源/设备、实际相同计数、非重叠进程时间线；分别给每端原始正式wall、p50/p95与每秒world-substep、每轮同输出比值。3样本nearest-rank p95只是最大样本。冷态另列，不与暖态相除造速度。父另由guard保证整个主机项目队列串行。
 
 尚无本批实测收益。若无端到端收益，保留有限可选能力/工具并如实报告；即使某档获益也不自动开默认，不外推至Newton、全GPU求解或其他规模。
+
+## 父实际验收（2026-11-06，取代上方候选状态）
+
+父产品8128440。18 HOST29/1.23s、19 interpret2/.84s、20 CUDA2/1.39s均RAW0；前者2设备deselected，后者各29 HOST deselected。完整输出、同调用浮点次序与实际原生计数保持。最终静态通过，原机器人作者跨模块审阅无新阻断；源码外wheel的真实TYX两面2N双向载荷、完整步输出和设备计数对照通过。
+
+31–42共12独立CUDA端、60完整窗、3960 world-substeps均完成，43配对摘要通过。W1三对p50原版/复用=1.0999、0.9927、1.2057；W32=1.0081、0.9568、1.0059。**没有稳定规模收益，默认继续False，本性能候选在此收束。** 不加重复轮次、不改预算、不推Newton速度结论。
+
+[完整毫秒数据与限定结论](p65-top-three-batch7.md) · [配对原始摘要](../../artifacts/p65-top-three-batch7-20261106-01/43-c-paired-summary/comparison.json)。

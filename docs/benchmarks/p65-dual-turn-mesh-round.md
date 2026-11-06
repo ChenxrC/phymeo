@@ -71,3 +71,31 @@ DualTurnMeshRoundQuery(prepared_mesh, round_shape, mesh_path, round_path, mesh_f
 父共享 hook 约定：未倒圆的 mesh 与 sphere/capsule 双方均为非零 `RigidTurn` 时，code0/5继续 `prepared_mesh` 的真实闭体合法性检查，仅code0构造本query；沿用原 `_pair` 的 `isinstance(MeshRoundQuery)` 五字段发布，过滤/容量/设备失败事务不变。原单侧、零角/平移路由保持旧实现。父另行迁移已存在的双转动历史 unsupported 断言，原输入不变，作者未修改旧测试。
 
 当前候选 **UNEXECUTED**，三份冻结测试、八输入、oracle和全部容差未修改。父建议先完整 `tests/collision/test_dual_turn_mesh_round.py`，然后 `test_tyx_dual_turn_mesh_round.py` 的interpret与真实CUDA，再按实际受影响范围验旧路由；失败原始输出保留，不以改fixture追绿。
+
+## 父串行最终验收与源码外 wheel
+
+本节记录最终状态；前文的 TEST_AUTHORING_ONLY / UNEXECUTED 保留为 tests-first 和作者候选交付时的历史。作者没有运行项目命令。父在同一批次的唯一串行执行队列完成下列验收；原八输入、独立 oracle、容差和资源上限均未为取得通过而修改。
+
+收据根为 `artifacts/p65-top-three-batch6-20261106-01/`。`01-b-public-red` 的原始失败继续保留：静态正控、独立首根与材料校验先成立，旧双方转动公共路径才在 unsupported != hit 处失败（1 failed / 1.45 s / RAW_EXIT 1）。没有以模块缺失代替该有效 RED。
+
+| 父实际作业 | 结果与限定 |
+| --- | --- |
+| [04-b-host-first](../../artifacts/p65-top-three-batch6-20261106-01/04-b-host-first/stdout.log) | 首次完整 HOST：18 passed / 18.17 s / RAW_EXIT 0。 |
+| 05-b-ruff-first、06-b-format-first | 首次静态检查分别为 HOST test 的 I001 导入顺序、四个 NEW Python 文件需格式化；原失败收据保留。 |
+| 07-b-import-fix、08-b-format | 父仅修导入别名顺序和格式，没有几何、输入或判据修复。 |
+| 09-b-ruff-final、10-b-format-final、[11-b-style-ast](../../artifacts/p65-top-three-batch6-20261106-01/11-b-style-ast/stdout.log) | 最终 Ruff/format 均 RAW_EXIT 0；六个受核文件中五个原始 AST 相同，HOST test 仅 import alias order 改变。复用 04 的物理验收，没有为样式重跑 HOST。 |
+| [12-b-interpret](../../artifacts/p65-top-three-batch6-20261106-01/12-b-interpret/stdout.log) | 实际 interpret 专项：1 passed / 10.52 s / RAW_EXIT 0。 |
+| [13-b-cuda](../../artifacts/p65-top-three-batch6-20261106-01/13-b-cuda/stdout.log) | 实际 CUDA 专项：1 passed / 11.14 s / RAW_EXIT 0，检查真实宽相提交、读回/同步及完整 HOST 结果对照。 |
+| [14-b-dispatch-compat](../../artifacts/p65-top-three-batch6-20261106-01/14-b-dispatch-compat/stdout.log) | 四项受影响旧路由兼容：4 passed / 2.79 s / RAW_EXIT 0。旧 two_turns 输入保留，按 t=1/2 的独立贯穿判据迁移能力预期；不是删除历史控制。 |
+
+A 原作者另对 B 实现作独立文本交叉复核，未报告本片范围内的阻断；该复核不计为新的数值验证。
+
+父集成产品快照为 `3e6dff494d898ad19a3a3695d1de0c368b511805`。[47-integrated-wheel-build](../../artifacts/p65-top-three-batch6-20261106-01/47-integrated-wheel-build/stdout.log) 实际构建成功，RAW_EXIT 0。wheel 为 `phymeo-0.1.0a0-py3-none-any.whl`，大小 **1,115,791 B**，父保存的 SHA-256 为：
+
+```text
+5cd405e970bd1ef5709769d7b439f143613be69c23c1b9cc58c87c11b775aa09
+```
+
+[48-outside-wheel-integration](../../artifacts/p65-top-three-batch6-20261106-01/48-outside-wheel-integration/stdout.log) 在源码外安装目录运行，RAW_EXIT 0；所有已加载 Phymeo 模块都位于 wheel 安装目录。B 检查使用 B01 两个不交换旋转轴，核最早首触括区和同一采样时刻的双侧材料重建；同次集成还完成 A 的原登记反序 40 步实际直接接触例程。这里是打包后的有限集成留出，不声称从 wheel 重跑八输入矩阵或全部 CUDA 窄相。
+
+最终交付范围保持为**两个独立 RigidTurn 的闭网格–球/有限胶囊 HOST 保守连续窄相，以及真实 TYX 宽相**。完整路径速度与旋转/存储误差界、首态实体关系、实际占用采样、材料寻址和 unknown/容量失败语义均保留；孤立擦触仍可明确 unresolved。没有新增接触响应、摩擦流形或设备窄相，也不把 Newton 的离散/speculative 接触称为连续首触真值。本次最终报告只追加验收证据，不改变已测产品与测试源码。

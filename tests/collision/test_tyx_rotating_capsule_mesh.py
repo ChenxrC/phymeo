@@ -13,10 +13,12 @@ from phymeo.geometry import collision_pipeline
 pytestmark = pytest.mark.tyx
 
 
-def test_device_capsule_mesh_multiple_worlds_match_full_host_and_restore(tyx_mode, tmp_path, monkeypatch):
+def test_device_capsule_mesh_multiple_worlds_match_full_host_and_restore(
+    tyx_mode, tmp_path, monkeypatch
+):
     shapes, paths, owners = [], {}, []
     for world, case in enumerate((B01, B02, b04_oblique_moving())):
-        model, local, mesh, capsule = public_case(case, world=world+11, reverse=bool(world % 2))
+        model, local, mesh, capsule = public_case(case, world=world + 11, reverse=bool(world % 2))
         shapes.extend(model.shapes)
         paths.update(local)
         owners.append((mesh, capsule))
@@ -28,7 +30,9 @@ def test_device_capsule_mesh_multiple_worlds_match_full_host_and_restore(tyx_mod
         raise AssertionError("selected device silently used HOST broad phase")
 
     monkeypatch.setattr(collision_pipeline, "_host_query", forbidden)
-    with ph.CollisionWorkspace(model, tyx_mode, broad_phase="bvh", cache_root=tmp_path / "cache") as work:
+    with ph.CollisionWorkspace(
+        model, tyx_mode, broad_phase="bvh", cache_root=tmp_path / "cache"
+    ) as work:
         actual = ph.detect(model, paths, ph.CollisionPolicy(), work)
         assert actual.backend == tyx_mode and actual.status == "ok"
         assert actual.pairs == expected.pairs and actual.bounds == expected.bounds
@@ -51,9 +55,17 @@ def test_device_capsule_mesh_multiple_worlds_match_full_host_and_restore(tyx_mod
         restored = ph.detect(model, paths, ph.CollisionPolicy(), work)
         assert restored == actual
         assert work.stats()["completed_launches"] > stats["completed_launches"]
-        (tmp_path / "rotating-capsule-mesh-device.json").write_text(json.dumps(
-            dict(backend=tyx_mode, expected=asdict(expected), actual=asdict(actual), stats=work.stats())
-        ), encoding="utf8")
+        (tmp_path / "rotating-capsule-mesh-device.json").write_text(
+            json.dumps(
+                dict(
+                    backend=tyx_mode,
+                    expected=asdict(expected),
+                    actual=asdict(actual),
+                    stats=work.stats(),
+                )
+            ),
+            encoding="utf8",
+        )
 
         def failure(*args, **kwargs):
             raise RuntimeError("injected device classification failure")

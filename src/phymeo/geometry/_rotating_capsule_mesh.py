@@ -177,13 +177,19 @@ class RotatingCapsuleMeshQuery(MeshRoundQuery):
         def world(witness):
             mesh_point, cap_point, weights, offset, mesh_weights = (
                 (
-                    witness.first_point, witness.second_point, witness.second_weights,
-                    witness.second_offset, witness.first_weights,
+                    witness.first_point,
+                    witness.second_point,
+                    witness.second_weights,
+                    witness.second_offset,
+                    witness.first_weights,
                 )
                 if self.mesh_first
                 else (
-                    witness.second_point, witness.first_point, witness.first_weights,
-                    witness.first_offset, witness.second_weights,
+                    witness.second_point,
+                    witness.first_point,
+                    witness.first_weights,
+                    witness.first_offset,
+                    witness.second_weights,
                 )
             )
             mp = mesh_material(mesh_point, mesh_weights)
@@ -205,10 +211,13 @@ class RotatingCapsuleMeshQuery(MeshRoundQuery):
                         > _MAX_WORLD_ERROR
                     ):
                         raise SolverFailure(self.prefix + "material_address_resolution")
-                    items.append(replace(
-                        item, axis_point=core,
-                        face_point=mesh_material(item.face_point, item.face_weights),
-                    ))
+                    items.append(
+                        replace(
+                            item,
+                            axis_point=core,
+                            face_point=mesh_material(item.face_point, item.face_weights),
+                        )
+                    )
                 span = tuple(items)
             return replace(
                 witness,
@@ -247,11 +256,16 @@ class RotatingCapsuleMeshQuery(MeshRoundQuery):
             event = MeshRoundEvent((float(low), float(high)), float(high), pose)
             status, reason = "hit", self.prefix + "first_solid_contact"
         trace = RotatingCapsuleMeshTrace(
-            start, end, event, len(self.samples), _upper_float(self.speed),
+            start,
+            end,
+            event,
+            len(self.samples),
+            _upper_float(self.speed),
             _upper_float(self.observed_error),
         )
         sweep = CollisionSweep(
-            start.witness.gap_m, end.witness.gap_m,
+            start.witness.gap_m,
+            end.witness.gap_m,
             None if event is None else event.interval,
             None if event is None else event.witness_time,
             None if event is None else event.pose.witness,

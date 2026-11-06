@@ -6,6 +6,7 @@ until all candidates, owned observations and contact events are ready.
 """
 
 from collections.abc import Mapping
+from dataclasses import replace
 from itertools import combinations
 from threading import RLock
 from types import MappingProxyType
@@ -22,6 +23,7 @@ from ..dynamics.rotation import quaternion_matrix
 from ..solvers.collision_loads import SurfaceLoads
 from ..solvers.rigid_semi_implicit import RigidSemiImplicitSolver
 from ._robot_participant import RobotParticipant
+from ._robot_robot_contacts import RobotRobotContacts
 from ._robot_scene_contacts import RobotSceneContacts, rigid_solid
 from .contact_events import RobotContactEventAdapter, SceneContactEvents
 from .robot_payload_scene import _frozen
@@ -63,11 +65,6 @@ def build_multi_robot_scene(bodies, pairs, *, gravity, backend="host", cache_roo
         raise TypeError(
             "multi-robot scenes require RobotContactMaterial; NormalLayer is not converted"
         )
-    for a, b in combinations(robots, 2):
-        if pairs[a, b] is not None:
-            raise ValueError(
-                "direct robot contact is unsupported; declare pair(robot_a, robot_b, None)"
-            )
     return MultiRobotScene(robots, rigid, dict(pairs), gravity)
 
 
@@ -75,8 +72,9 @@ class MultiRobotScene:
     """HOST fixed-root trees sharing ordinary contact, rigid bodies and one accepted clock.
 
     Commands use independent joint coordinates, including existing mimic graphs.
-    Direct robot contact, self-contact, CCD, floating roots, deformable bodies and
-    the opt-in coupled tangential-history mode are outside this first slice.
+    Direct contacts support a sphere against a sphere, finite capsule or box on
+    another tree. Self-contact, CCD, floating roots, deformable bodies and the
+    opt-in coupled tangential-history mode remain unsupported.
     """
 
     def __init__(self, registrations, rigid_items, pairs, gravity):
@@ -110,6 +108,7 @@ class MultiRobotScene:
                 exclusions.append((first.key, second.key))
         self._model = CollisionModel(tuple(shapes), tuple(exclusions))
         self._names, self.body_keys = MappingProxyType(names), MappingProxyType(body_keys)
+        self._robot_contacts = RobotRobotContacts(self._participants, pairs, self._model)
 
         def matrix(field, width):
             return np.asarray(
@@ -206,6 +205,19 @@ class MultiRobotScene:
             torque += item.loads.inputs.rigid.torque
             contacts.extend(item.loads.contacts)
             rows.extend(item.details)
+        direct = self._robot_contacts.evaluate(terms, self._geometry.poses)
+        for addr, contribution in direct.by_robot.items():
+            prior = measured[addr]
+            measured[addr] = replace(
+                prior,
+                joint_effort_full=prior.joint_effort_full + contribution.joint_effort_full,
+                link_wrenches_world=prior.link_wrenches_world + contribution.link_wrenches_world,
+                fixed_root_contact_wrench=(
+                    prior.fixed_root_contact_wrench + contribution.fixed_root_contact_wrench
+                ),
+            )
+        contacts.extend(direct.contacts)
+        rows.extend(direct.details)
         inputs = self.inputs()
         inputs.rigid.force[:] = force
         inputs.rigid.torque[:] = torque

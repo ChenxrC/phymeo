@@ -112,7 +112,8 @@ class RobotRobotContacts:
             if not isinstance(law, RobotContactMaterial):
                 raise TypeError("direct robot contacts require RobotContactMaterial")
             for a, b in product(
-                self._robots[first].tree.collisions, self._robots[second].tree.collisions,
+                self._robots[first].tree.collisions,
+                self._robots[second].tree.collisions,
             ):
                 kinds = _kind(a), _kind(b)
                 if "sphere" not in kinds or any(
@@ -147,7 +148,9 @@ class RobotRobotContacts:
                     or shape.vertex_ids != collision.shape.vertex_ids
                     or shape.radius != collision.shape.radius
                 ):
-                    raise ValueError(f"robot {owner}: collider mapping does not match the scene model")
+                    raise ValueError(
+                        f"robot {owner}: collider mapping does not match the scene model"
+                    )
                 occupied.add(key)
             if not needed[owner]:
                 continue
@@ -159,7 +162,9 @@ class RobotRobotContacts:
             for solid in solids:
                 source = original[solid.owner_index, solid.link, solid.shape]
                 if solid.owner_index >= tree.model.dof_count:
-                    raise ValueError(f"robot {owner} {solid.link}/{solid.shape}: invalid link owner")
+                    raise ValueError(
+                        f"robot {owner} {solid.link}/{solid.shape}: invalid link owner"
+                    )
                 compiled[owner, source] = _Collider(owner, participant.key_map[source], solid)
         selected = []
         for first, a, second, b, law in specifications:
@@ -247,10 +252,15 @@ class RobotRobotContacts:
             pb = center - second.solid.radius * normal
             point = (pa + pb) / 2
             ca, va = self._point_motion(first, point, ga, twists[first.owner], roots[first.owner])
-            cb, vb = self._point_motion(second, point, gb, twists[second.owner], roots[second.owner])
+            cb, vb = self._point_motion(
+                second, point, gb, twists[second.owner], roots[second.owner]
+            )
             relative = vb - va
             normal_load, forces = sample_loads(
-                np.array([-gap]), normal[None, :], relative[None, :], law,
+                np.array([-gap]),
+                normal[None, :],
+                relative[None, :],
+                law,
             )
             force = forces[0]
             self._accumulate(first, point, ca, -force, link_loads, root_loads)

@@ -433,7 +433,7 @@ def test_a06_multi_robot_backend_is_not_silently_host(tmp_path, backend):
         _symmetric_builder(tmp_path).build(backend=backend)
 
 
-def test_a06_direct_robot_contact_needs_a_future_explicit_capability(tmp_path):
+def test_a06_direct_robot_contact_now_applies_bilateral_loads(tmp_path):
     b = ContactSceneBuilder(gravity=(0, 0, 0))
     for body, x in ((10, 0), (20, 0.124)):
         b.add_urdf(
@@ -444,8 +444,14 @@ def test_a06_direct_robot_contact_needs_a_future_explicit_capability(tmp_path):
             kd=[0],
         )
     b.pair(10, 20, LAW)
-    with pytest.raises(ValueError, match="direct robot"):
-        b.build()
+    with b.build() as scene:
+        result = scene.step(H, actions=_zero_actions())
+        assert scene.rigid_rows == {}
+        assert len(result.loads.contacts) == 1
+        np.testing.assert_allclose(result.robots[0, 10].contact_effort, [-2], atol=2e-12)
+        np.testing.assert_allclose(result.robots[0, 20].contact_effort, [2], atol=2e-12)
+        np.testing.assert_allclose(result.robots[0, 10].v, [-H], atol=2e-14)
+        np.testing.assert_allclose(result.robots[0, 20].v, [H], atol=2e-14)
 
 
 def test_a06_multirobot_coupled_history_is_explicitly_unavailable(tmp_path):

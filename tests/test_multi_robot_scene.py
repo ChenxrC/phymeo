@@ -453,3 +453,31 @@ def test_a06_multirobot_coupled_history_is_explicitly_unavailable(tmp_path):
         with pytest.raises(ValueError, match="multi.robot.*tangent|tangent.*multi.robot"):
             scene.enable_coupled_tangent(None)
         assert scene.observe().step_number == 0
+
+
+@pytest.mark.parametrize("accepted", [True, False])
+def test_example_json_boundary_preserves_numpy_boolean_checks(tmp_path, monkeypatch, capsys, accepted):
+    import importlib.util
+    import json
+    import sys
+    from pathlib import Path
+
+    path = Path(__file__).resolve().parents[1] / "examples" / "multi_robot_push.py"
+    spec = importlib.util.spec_from_file_location("multi_robot_push_protocol", path)
+    example = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(example)
+    output = tmp_path / "protocol.json"
+    physical_result = {
+        "checks": {"actual_withdrawal": np.bool_(accepted)},
+        "maxima": {"payload_impulse_ns": np.float64(0.0)},
+        "execution_failure": None,
+    }
+    monkeypatch.setattr(example, "run_window", lambda *args, **kwargs: physical_result)
+    monkeypatch.setattr(sys, "argv", [str(path), "--output", str(output)])
+    assert example.main() == (0 if accepted else 1)
+    stored = json.loads(output.read_text(encoding="utf-8"))
+    printed = json.loads(capsys.readouterr().out)
+    assert stored["checks"]["actual_withdrawal"] is accepted
+    assert printed["checks"] == stored["checks"]
+    assert stored["maxima"]["payload_impulse_ns"] == 0.0
+    assert isinstance(physical_result["checks"]["actual_withdrawal"], np.bool_)

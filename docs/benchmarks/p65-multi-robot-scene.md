@@ -48,3 +48,11 @@ python examples/multi_robot_push.py --output <fresh-absolute-json>
 
 后续先将机器人–机器人直接接触映射到双方真实点/J，再把已有浮根动力学接入同一事务。两者分别验收，不通过放松本批边界暗中加入。
 
+
+### 公开输出边界的首次失败
+
+父完成四个 Python 文件的 import/format 处理，并核 qualified AST：非 import 语法树及限定作用域的 import 绑定相同；作者将该纯格式变更单独提交为 `a1e25d2`。运行时与原 19 项物理专项未作行为修改。
+
+`22-a-public-example` 首次 CLI 为 **RAW_EXIT=1**：`run_window` 返回后，最终 `json.dumps(result)` 因 `checks.actual_withdrawal` 是 NumPy 布尔标量而抛出 `TypeError: Object of type bool is not JSON serializable`。这不是物理拒步，但也不是公开例程验收通过；当次没有成功写出最终 JSON。原 stdout/stderr 和退出码保留。
+
+修复仅在 CLI 输出边界对整个返回结果调用已有 `_json_value`，同时覆盖文件和 stdout 的 checks/maxima。新增两个纯协议参数控制分别传入 NumPy true/false，要求仍输出 JSON 布尔值并保留 0/1 退出语义，不运行物理窗、不修改原结果。两种质量、材料、驱动、时刻和原容差均未变化。该修复与例程复验仍待父串行执行。

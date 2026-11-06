@@ -278,7 +278,7 @@ def main():
     if args.output.exists():
         raise FileExistsError(f"refusing to overwrite existing evidence: {args.output}")
     with TemporaryDirectory(prefix="phymeo-multi-robot-") as directory:
-        result = run_window(directory, reverse_registration=args.reverse_registration)
+        result = _json_value(run_window(directory, reverse_registration=args.reverse_registration))
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(result, indent=2, allow_nan=False) + "\n", encoding="utf-8")
     print(

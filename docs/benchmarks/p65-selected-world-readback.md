@@ -1,0 +1,133 @@
+# 按世界选择观测：C0 受控成本入口
+
+状态：**C0父已实测；C1候选UNEXECUTED**。作者始终仅文本/Git，全部项目执行由父串行负责。C0在 `fbdee826f335c135f237f1c861f12d99cdddbfa2` 通过20个interpret专项和3个CUDA专项；14个正式CUDA配置全部完成801tick、RAW_EXIT0。下文前半保留C0方法，C1实现及配对尚待父验证。本报告不沿用旧完整观测、凸包缓存或Newton的倍率。
+
+基线为 `2027f721a0d1937de6f0e89ec869b6c03951f625`。tests-only 提交为 `beb323b6ff08ba9372ef443e91b123967fdb8c46`；父已在 `artifacts/p65-top-three-batch5-20261106-01/01-c-profiler-red` 保留首个真实 RED：1 failed / 0.19 s / exit 1，明确断言尚无 C0 测量工具。父后续证据为23-c-first-interpret（20 passed / 1.75 s）、24-c-first-cuda（3 passed / 2.02 s），以及25-c-base系列14项完整CUDA计量。
+
+## 冻结输入与任务
+
+新入口 [profile_selected_world_readback.py](../../scripts/profile_selected_world_readback.py) 每进程只测一种公开输出。`snapshot` 保存完整 `WorldCheckpoint`，包括世界/拓扑、int tick、位置/速度、实际上一拍力、延迟历史、held control；同时保存同次原生 `_read` 返回的全部12列FP32状态和int32 tick，不再额外读设备。`kinematics` 保存原世界键、维度、int32 tick和六列FP32观测。两个接口不互算速度比，不以六量摘要替代完整检查点。
+
+| W | K（独立进程） | 模型 |
+|---|---|---|
+| 1 | all，等于1；不重复测同档 | 一个自由球 |
+| 32 | 1、8、all | 自由球/一步延迟滑轨交替，各16个 |
+| 128 | 1、8、all | 自由球/一步延迟滑轨交替，各64个 |
+
+上表对 `snapshot`、`kinematics` 各执行一次，共14个正式 CUDA 进程。interpret 只用于新工具资格，不能开启性能实现门。世界键固定为 `101+17*slot`；子集按注册逆序选取，all保原注册顺序。每次仍真实推进全部 W 个世界，只观察 K 个。
+
+- 自由球：质量2 kg，半径1/8 m，初位 `(slot/8,-slot/16,2)`，初速 `(1/4,-1/8,0)`，重力 `(0,0,-8)`，无接触/外力。
+- 滑轨：真实单关节 `DrivenRobotProgram`，质量2 kg，轴+x，零重力，`kp=kd=0`，限力4 N，目标/目标速度为0，held feedforward为2 N，一步真实延迟；初始q、qd、历史均0。
+- `h=1/128 s`。单次冷物理步之后，5预热窗＋20正式窗，每窗32步；连续推进到tick801，窗间不复位、不换输入。W1没有滑轨，这一边界明确保留。
+- 独立解析审核在计时外进行。第n步球的z为 `2-n(n+1)/4096`、vz为`-n/16`；滑轨q为`n(n-1)/32768`、qd为`(n-1)/128`，第一步实际驱动力0，随后2 N。均为该窗口可精确表示的dyadic输入；非零误差即失败，不用产品输出反算参考。
+
+## 计时、计数和门
+
+`whole_ns` 为逐步 `step + 当前接口观察 + 保留返回引用` 的窗口墙钟；同步沿旧入口原样发生，不补新同步。计时外另记录 import、案例构建、批工作区构建/初始上传、控制设置和逐窗离线审计。冷窗包含首次实际提交/JIT；新cache目录防止把旧磁盘缓存叫冷启动，但不假定操作系统或驱动为全新状态。
+
+同一窗口内独立记 `step`、`observation`。每阶段细分 `_launch`提交API、显式`_sync`、`_read`下载API、`_upload`上传API、HOST构造。snapshot的构造边界为整个`WorldBinding.checkpoint`；kinematics为结果dataclass构造。各自剩余时间叫 `host_other_ns`，含键验证、HOST选择/数组拷贝、字典和包装器管理，**不是纯构造函数时间**。另记循环保存/派发残差；排他项必须非负且精确加回whole。
+
+所有阶段是HOST调用墙钟。异步提交包含编译/绑定/提交开销，下载可能含隐式等待；均不叫GPU kernel事件时间。包装器会扰动成本，因此本结果是归因诊断，不作为新路径的正式加速比。
+
+每次真实读回按返回数组的`nbytes`计量，并对照batch与TYX原生计数。interpret的`read_bytes`是HOST复制字节，`d2h_bytes=0`。CUDA状态读取期望为：kinematics每次52W B；snapshot子集每次52K B，全量52W B。物理步的接受标志另有4W B，不藏入观测列。snapshot子集的K次read_world提交/同步单列；全量及kinematics无此观测核。全部原生计数字段也归档，冷启动额外运行时活动单列，暖态不许有不明差值。工作区分配计数仅表示TyxWorldBatch所持设备缓冲，不冒称整个驱动分配统计。
+
+正式统计报告20个窗口的p50/p95、总world-substeps/s、selected-world-observations/s、各阶段占whole和observation的比例。前者分子是`W×640`，后者是`K×640`；不把少读世界说成少推进世界。
+
+实现门分母固定为正式32步的推进＋同种观察全任务 `whole_ns`，包括公开HOST构造、排除JSON和离线审计文件IO；分别看观测下载、观测提交＋同步各自占whole的比例。另保观察调用子段分母的比例供归因，但不能用极短观察子段的高占比放行。只有真实CUDA、K<W、完整5/20×32采样且其中一项≥15%，才给父提示`measured_cost_gate=true`。两个不足15%的子项不相加凑门；短资格、interpret和全量档一律不获资格。脚本从不自动改变产品或实现核，父仍审核实际归因。若无充分成本依据，本节点结束并保留数据。
+
+## 来源和输出绑定
+
+正式CLI冻结名为 `--select`、`--backend`；旧提案名`--selection`、`--mode`是兼容alias。必传完整`--expected-head`。运行前后核HEAD、被执行脚本、新专项、pyproject及全部tracked `src/phymeo`文件的路径和SHA256；拒绝dirty/新增未跟踪产品源、错误HEAD、末态源码漂移。CLI还核实际加载的Phymeo路径确为脚本所属树的`src/phymeo`，记录解释器、Phymeo/TYX版本及路径；CUDA名称/ordinal来自实际状态缓冲与同设备driver查询。
+
+`--out`、`--cache-root`必须为全新绝对路径；同名`.frames.jsonl`也必须不存在。每窗完成后在计时外追加一条含完整真实观测的raw行，JSON收据保存各窗摘要、输出SHA和raw文件SHA。失败保留之前完成的raw窗并写`status=failed`，不覆盖旧结果；源码末检失败也不能发成功收据。没有后台进程和子进程矩阵调度，14项均由父guard串行调用。
+
+C0复现命令形状（原14项已测，无需重跑；若另行授权复现需填所用clean HEAD）：
+
+```powershell
+$source = 'C:/Users/38347/.codex/worktrees/p65-world-scale/phymeo'
+$evidence = 'C:/Users/38347/.codex/worktrees/p65-parallel-integration/phymeo/artifacts/p65-top-three-batch5-20261106-01'
+$env:PYTHONPATH = "$source/src"
+$head = (git -C $source rev-parse HEAD).Trim()
+& 'C:/Users/38347/Documents/ChatGPT/phymeo/.venv/Scripts/python.exe' `
+  "$source/scripts/profile_selected_world_readback.py" `
+  --worlds 32 --select 8 --kind snapshot --backend cuda `
+  --expected-head $head --cache-root "$evidence/c0-cache/w32-k8-snapshot" `
+  --out "$evidence/c0/w32-k8-snapshot.json"
+```
+
+替换W、K和kind形成上表14项，输出/cache路径逐项不同。正式项保默认5预热、20正式、32步；如需首个小CLI资格，可显式 `--warm-windows 0 --formal-windows 1 --steps 2`，该收据被标为不具备性能门资格。
+
+## 新专项交接
+
+[test_selected_world_readback.py](../../tests/scale/test_selected_world_readback.py) 只验新增测量工具的真实混合状态、完整历史输出、实际字节和排他归因、CLI/源码/文件所有权、异常后包装器恢复；不重跑旧物理尺度矩阵。它使用仓库`tyx_mode` fixture，父可以只将设备节点在CUDA再次执行。
+
+```text
+python -m pytest tests/scale/test_selected_world_readback.py --tyx-mode interpret --require-tyx -q
+python -m pytest tests/scale/test_selected_world_readback.py -m tyx --tyx-mode cuda --require-tyx -q
+```
+
+上述C0新专项的实测结果见开头，已绿组不重复。本节之后是由成本门授权的独立C1增量，作者不自行执行。
+
+
+
+## C0 实际成本门与 C1 增量
+
+父归档目录为 `artifacts/p65-top-three-batch5-20261106-01/25-c-base-<kind>-w<W>-k<K>/profile.json`，完整raw帧在旁。14项均`status=complete`和801tick；8个CUDA子集都通过全任务15%成本门。例如：
+
+| 实际配置 | submit+sync / whole | download / whole |
+|---|---:|---:|
+| snapshot W32 K8 | 0.601557 | 0.196421 |
+| snapshot W128 K8 | 0.591968 | 0.197155 |
+| kinematics W32 K1 | — | 0.201247 |
+| kinematics W128 K8 | — | 0.192942 |
+
+以上是父保存的C0插桩归因比例，不是新计划的提速比。以真实门为依据，C1优先减少snapshot的K次提交/同步；kinematics仅确认减少读回字节，端到端收益仍待测。
+
+公开首红由父保存在`32-c1-public-red`：2 kg自由球旧step和解析状态通过后，`prepare_readback`缺失，1 failed / 1.16 s / RAW1。父共享薄hook提交`933079625fa84744e51ec53edfb1246310bafddc`，作者新增两个模块：
+
+- [计划与资源所有权](../../src/phymeo/backends/_world_readback_plan.py)
+- [实际TYX选择核](../../src/phymeo/backends/_tyx_world_readback_kernels.py)
+
+```python
+plan = batch.prepare_readback([628, 101, 611], kind="snapshot")
+reading = batch.readback(plan)  # 真实owner校验；外实例拒绝且没有设备动作。
+reading = plan.read()          # 同一batch便利入口。
+plan.close()
+```
+
+计划拥有冻结keys/kind、三个设备缓冲（索引、结果行、ticks）和两方向的kernel句柄；每次从当前active接受缓冲一次gather、一次显式sync、两次实际下载。索引只在创建上传，HOST checkpoint逐行构造仍保留，不称为GPU公共记录发布。kinematics读回28K B，snapshot读回52K B；索引另4K B，常驻设备缓冲分别32K/56K B。空选择不分配、不提交、不同步、不触空batch未存在的runtime。
+
+所有操作保持原batch锁。snapshot读取当前held controls与入步历史、实际力；局部restore/reset或数值拒步后照当前接受状态读取，不保存旧active指针。返回数组/tuple与计划scratch独立；创建中途失败关闭已经分配的buffer，保累计实际分配/上传计数，但回滚live bytes且不留下半成品计划。读回失败遵循原`_device`恢复，不改物理状态和tick，旧读数仍有效。
+
+父的`device_allocations`保持累计次数；`device_owned_bytes`和新增`readback_plan_owned_bytes`均为当前CUDA缓冲拥有量，单独plan.close即扣除，batch.close先关闭所有计划再释放旧缓冲。新增readback索引上传/成功读取/失败读取计数单列，`readback_plan_live_count`由集合给出。plan有独立stats，手动与batch关闭均幂等。编译代码缓存由TYX Runtime管理，不计成计划的三个数据缓冲。
+
+## C1 无插桩同任务配对（待父执行）
+
+新CLI `--compare-plan --first original|plan`。每个进程建立两个独立相同初态，original使用旧公开方法，plan使用显式计划；两路各cold1＋5预热＋20正式32步，均801tick。首顺序按三独立进程original/plan/original，窗内继续交替先后，以配对的同tick完整public输出逐项比对。配置为W32K8、W128K8、W1all各snapshot/kinematics，共18个配对进程。默认入口不切换。
+
+正式配对循环**不安装PhaseProbe**，避免旧K次调用的包装器成本夸大收益。只计原`step + 同种公开观察 + 保留输出引用`；计数快照、构建/索引上传、完整序列化和离线独立审核在外。C0诊断只作定位，不能把它的插桩时间直接与C1无插桩数据算倍率。
+
+原生/batch计数和新增`PLAN_COUNTERS`分开保存。每窗核完整公共帧相等及同一public SHA；不比较不同wire形状的C0 `output_sha256`。C1不再拦截设备读回，raw文件保存全部实际公共输出，原C0原生wire文件保持原样，不额外下载或复制整包资产。raw JSON使用紧凑分隔符，减少磁盘占用；所有新cache正常保留，不清理旧证据。报告各路绝对p50/p95/吞吐、每窗比值、p50比值和总吞吐比值，分母明列，保留W1可能退化。
+
+新命令在上方固定源码/解释器/证据根约定上增加：
+
+```text
+--worlds 32 --select 8 --kind snapshot --backend cuda --compare-plan --first original
+```
+
+三次任务使用不同全新out/cache，首序original、plan、original。其他五个配置同样各三次。C1功能、设备和实际收益均待父执行，不因C0成本门通过而宣称这些新代码已通过。
+
+只执行新增节点的入口：
+
+```text
+python -m pytest tests/scale/test_selected_world_readback.py -k readback_plan --tyx-mode interpret --require-tyx -q
+python -m pytest tests/scale/test_selected_world_readback.py -k readback_plan -m tyx --tyx-mode cuda --require-tyx -q
+```
+
+本组包含公共双缓冲、多世界重排/32步零稳态分配、跨实例、空/非法选择、held/history与局部重放、第二次下载故障、局部数值拒步、中途分配失败、两种完整输出无插桩配对和CLI计数命名。作者只交源码与精确节点，不重跑C0的20个已绿实例或14配置。
+
+### C1 清理异常审阅留出（待父修复/执行）
+
+父已完成原C1功能组：35-c interpret 14 passed / 2.69 s，36-c CUDA 13 passed / 4.60 s；style提交为`58a256f9496e8bee3574f3926e658b6ac1c032af`。正式18个配对任务尚未启动。随后交叉审阅发现：batch含两个计划时，首个plan的关闭回调抛错会使旧父hook跳出循环，第二计划未关闭而runtime已经关闭，拥有字节也可能被误置零。
+
+新增唯一节点`test_readback_plan_batch_close_failure_still_closes_all_plans`，先真实创建/读取两个不同kind计划，再定向在实际首关闭计划的ExitStack注入异常；要求传播异常且所有计划/两级live bytes/集合都清理，后续关闭幂等、读取拒绝。本次只提交测试和记录，作者未运行，产品修复及新增节点RED/GREEN由父串行负责；原已绿组和C0不重跑。

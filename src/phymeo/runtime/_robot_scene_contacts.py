@@ -196,7 +196,8 @@ class RobotSceneContacts:
         return registry.evaluate(*args, **kwargs)
 
     def evaluate(self, physical, geo, linear, angular, body, poses, *, include_rigid=True):
-        n, count = len(physical.q), body.body_count
+        # Body count differs from configuration and velocity sizes for free roots.
+        n, count = len(geo.position), body.body_count
         force, torque = np.zeros((count, 3)), np.zeros((count, 3))
         link_load = np.zeros((n, 6))
         root_load = np.zeros(6)

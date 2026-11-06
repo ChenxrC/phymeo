@@ -14,9 +14,17 @@ from ..builders.floating_urdf import FloatingRobotAsset, load_floating_urdf
 from ..constraints.collision_shapes import CollisionKey
 from ..control.bounded_pd import solve_bounded_pd
 from ..core.validation import validate_dt
-from ..dynamics.floating_robot import FloatingRobotState, floating_kinematics, floating_point_jacobians
+from ..dynamics.floating_robot import (
+    FloatingRobotState,
+    floating_kinematics,
+    floating_point_jacobians,
+)
 from ..dynamics.robot_dynamics import _solve_mass_matrix
-from ..solvers.floating_tree import FloatingRobotInputs, floating_dynamics_terms, step_floating_robot
+from ..solvers.floating_tree import (
+    FloatingRobotInputs,
+    floating_dynamics_terms,
+    step_floating_robot,
+)
 from .robot_payload_scene import _readonly, _vector
 from .robot_scene import RobotCommand, _asset_snapshot
 
@@ -56,7 +64,9 @@ class FloatingRobotRegistration:
     pads: tuple = ()
 
 
-def make_floating_registration(path, *, robot_state, kp, kd, effort_limit=None, pads=(), loader=None, gravity=(0.0, 0.0, -9.81)):
+def make_floating_registration(
+    path, *, robot_state, kp, kd, effort_limit=None, pads=(), loader=None, gravity=(0.0, 0.0, -9.81)
+):
     """Load and isolate one real asset; floating pads have no implicit adaptation."""
     if tuple(pads):
         raise ValueError("floating robot pads are not implemented")
@@ -64,20 +74,40 @@ def make_floating_registration(path, *, robot_state, kp, kd, effort_limit=None, 
     if not isinstance(asset, FloatingRobotAsset):
         raise TypeError("floating loader must return FloatingRobotAsset")
     n = len(asset.joint_names)
-    if asset.model.body_count != n + 1 or not isinstance(robot_state, FloatingRobotState) or robot_state.q.shape != (7 + n,):
+    if (
+        asset.model.body_count != n + 1
+        or not isinstance(robot_state, FloatingRobotState)
+        or robot_state.q.shape != (7 + n,)
+    ):
         raise ValueError("floating robot state must match the root and scalar-joint order")
-    if any(len(values) != n for values in (asset.link_names, asset.lower, asset.upper, asset.effort_limit, asset.velocity_limit)):
+    if any(
+        len(values) != n
+        for values in (
+            asset.link_names,
+            asset.lower,
+            asset.upper,
+            asset.effort_limit,
+            asset.velocity_limit,
+        )
+    ):
         raise ValueError("floating asset metadata must match its scalar children")
     kp, kd = _vector(kp, n, "kp"), _vector(kd, n, "kd")
     if np.any(kp < 0) or np.any(kd < 0):
         raise ValueError("controller gains must be nonnegative")
-    hard = np.array([np.inf if value is None else value for value in asset.effort_limit], dtype=float)
+    hard = np.array(
+        [np.inf if value is None else value for value in asset.effort_limit], dtype=float
+    )
     cap = _vector(hard if effort_limit is None else effort_limit, n, "effort_limit")
     if np.any(cap < 0) or np.any(cap > hard):
         raise ValueError("effort limit is negative or exceeds the URDF rating")
-    if not np.array_equal(asset.model.root.gravity, np.asarray(gravity, dtype=float)) or (asset.model.children is not None and not np.array_equal(asset.model.children.gravity, asset.model.root.gravity)):
+    if not np.array_equal(asset.model.root.gravity, np.asarray(gravity, dtype=float)) or (
+        asset.model.children is not None
+        and not np.array_equal(asset.model.children.gravity, asset.model.root.gravity)
+    ):
         raise ValueError("floating loader must preserve the scene gravity for every body")
-    return FloatingRobotRegistration(_asset_snapshot(asset), _readonly(robot_state.q), _readonly(robot_state.v), kp, kd, cap)
+    return FloatingRobotRegistration(
+        _asset_snapshot(asset), _readonly(robot_state.q), _readonly(robot_state.v), kp, kd, cap
+    )
 
 
 @dataclass(frozen=True)
@@ -154,13 +184,23 @@ class FloatingRobotParticipant:
         self.body_count = self.asset.model.body_count
         self.velocity_count = 6 + len(self.asset.joint_names)
         self.lower, self.upper = np.asarray(self.asset.lower), np.asarray(self.asset.upper)
-        self.speed_limit = np.array([np.inf if value is None else value for value in self.asset.velocity_limit])
+        self.speed_limit = np.array(
+            [np.inf if value is None else value for value in self.asset.velocity_limit]
+        )
         self.initial = FloatingRobotState(self.spec.q, self.spec.v)
         self.validate(self.initial)
-        collisions = tuple(replace(row, link_index=row.link_index + 1) for row in self.asset.collisions)
+        collisions = tuple(
+            replace(row, link_index=row.link_index + 1) for row in self.asset.collisions
+        )
         if any(row.link_index < 0 or row.link_index >= self.body_count for row in collisions):
             raise ValueError("floating collider owner is outside the physical body list")
-        self.contact_view = _FloatingContactView(self.asset.name, self.asset.root_link, (self.asset.root_link, *self.asset.link_names), collisions, self.asset.collision_model)
+        self.contact_view = _FloatingContactView(
+            self.asset.name,
+            self.asset.root_link,
+            (self.asset.root_link, *self.asset.link_names),
+            collisions,
+            self.asset.collision_model,
+        )
         body_remap, next_body = {}, 0
         for body in sorted({shape.key.body for shape in self.asset.collision_model.shapes}):
             while next_body in occupied:
@@ -189,9 +229,17 @@ class FloatingRobotParticipant:
         return FloatingRobotState(state.q, state.v)
 
     def validate(self, state):
-        if not isinstance(state, FloatingRobotState) or state.q.shape != (self.velocity_count + 1,) or state.v.shape != (self.velocity_count,):
+        if (
+            not isinstance(state, FloatingRobotState)
+            or state.q.shape != (self.velocity_count + 1,)
+            or state.v.shape != (self.velocity_count,)
+        ):
             raise ValueError("floating state must match the physical root and children")
-        if not np.isfinite(state.q).all() or not np.isfinite(state.v).all() or abs(np.hypot.reduce(state.q[3:7]) - 1.0) > 1e-10:
+        if (
+            not np.isfinite(state.q).all()
+            or not np.isfinite(state.v).all()
+            or abs(np.hypot.reduce(state.q[3:7]) - 1.0) > 1e-10
+        ):
             raise ValueError("floating state must be finite with unit XYZW orientation")
         if np.any(state.q[7:] < self.lower) or np.any(state.q[7:] > self.upper):
             raise ValueError("joint position outside the asset interval")
@@ -209,8 +257,12 @@ class FloatingRobotParticipant:
         local_com = model.root_com_m[None, :]
         if model.children is not None:
             local_com = np.vstack((local_com, model.children.com))
-        linear, angular = floating_point_jacobians(model, state, np.arange(self.body_count), local_com)
-        dynamics = floating_dynamics_terms(model, state, FloatingRobotInputs.zeros(self.body_count - 1))
+        linear, angular = floating_point_jacobians(
+            model, state, np.arange(self.body_count), local_com
+        )
+        dynamics = floating_dynamics_terms(
+            model, state, FloatingRobotInputs.zeros(self.body_count - 1)
+        )
         return state, geometry, linear, angular, dynamics.mass_matrix, dynamics.bias
 
     def poses(self, state):
@@ -220,21 +272,49 @@ class FloatingRobotParticipant:
             raise ValueError("floating collision poses do not match the compiled model")
         return {key: source[old] for old, key in self.key_map.items()}
 
-    def _observation(self, state, entry, effort, contact, wrenches, external, applied, acceleration, command=None, requested=None):
+    def _observation(
+        self,
+        state,
+        entry,
+        effort,
+        contact,
+        wrenches,
+        external,
+        applied,
+        acceleration,
+        command=None,
+        requested=None,
+    ):
         return FloatingRobotObservation(
-            q=_readonly(state.q), v=_readonly(state.v), full_q=_readonly(state.q), full_v=_readonly(state.v),
-            entry_q=_readonly(entry.q), entry_v=_readonly(entry.v), drive_effort=_readonly(effort),
-            contact_effort=_readonly(contact), contact_effort_full=_readonly(contact),
-            link_wrenches_world=_readonly(wrenches), fixed_root_contact_wrench=_readonly(np.zeros(6)),
-            command=command, requested_command=requested, external=_asset_snapshot(external),
-            applied_effort_full=_readonly(applied), acceleration_full=_readonly(acceleration),
+            q=_readonly(state.q),
+            v=_readonly(state.v),
+            full_q=_readonly(state.q),
+            full_v=_readonly(state.v),
+            entry_q=_readonly(entry.q),
+            entry_v=_readonly(entry.v),
+            drive_effort=_readonly(effort),
+            contact_effort=_readonly(contact),
+            contact_effort_full=_readonly(contact),
+            link_wrenches_world=_readonly(wrenches),
+            fixed_root_contact_wrench=_readonly(np.zeros(6)),
+            command=command,
+            requested_command=requested,
+            external=_asset_snapshot(external),
+            applied_effort_full=_readonly(applied),
+            acceleration_full=_readonly(acceleration),
         )
 
     def initial_observation(self):
         zero = np.zeros(self.velocity_count)
         return self._observation(
-            self.initial, self.initial, np.zeros(self.body_count - 1), zero,
-            np.zeros((self.body_count, 6)), FloatingRobotInputs.zeros(self.body_count - 1), zero, zero,
+            self.initial,
+            self.initial,
+            np.zeros(self.body_count - 1),
+            zero,
+            np.zeros((self.body_count, 6)),
+            FloatingRobotInputs.zeros(self.body_count - 1),
+            zero,
+            zero,
         )
 
     def prepare(self, state, command, dt):
@@ -253,7 +333,11 @@ class FloatingRobotParticipant:
         physical, geometry, linear, angular, mass, bias = self.terms(entry)
         n = self.body_count - 1
         external = FloatingRobotInputs.zeros(n) if command.external is None else command.external
-        if external.force.shape != (self.body_count, 3) or external.effort.shape != (n,) or np.any(external.effort):
+        if (
+            external.force.shape != (self.body_count, 3)
+            or external.effort.shape != (n,)
+            or np.any(external.effort)
+        ):
             raise ValueError("external COM loads must cover root and children with zero effort")
         external = _asset_snapshot(external)
         if not n:
@@ -265,40 +349,84 @@ class FloatingRobotParticipant:
             if not isinstance(joint, RobotCommand):
                 raise TypeError("floating scalar children require a RobotCommand")
             target = _vector(joint.target_q, n, "target_q")
-            rate = np.zeros(n) if joint.target_velocity is None else _vector(joint.target_velocity, n, "target_velocity")
+            rate = (
+                np.zeros(n)
+                if joint.target_velocity is None
+                else _vector(joint.target_velocity, n, "target_velocity")
+            )
             if np.any(target < self.lower) or np.any(target > self.upper):
                 raise ValueError("joint position target outside the asset interval")
             if np.any(abs(rate) > self.speed_limit):
                 raise ValueError("joint velocity target outside the asset interval")
-            cap = self.spec.effort_limit if joint.effort_limit is None else _vector(joint.effort_limit, n, "effort_limit")
+            cap = (
+                self.spec.effort_limit
+                if joint.effort_limit is None
+                else _vector(joint.effort_limit, n, "effort_limit")
+            )
             if np.any(cap < 0) or np.any(cap > self.spec.effort_limit):
                 raise ValueError("command effort limit exceeds configured rating")
             # Eliminate the six physical root accelerations, retaining every
             # root-child cross block. This is not the fixed-root child submatrix.
             root_mass = mass[:6, :6]
-            roots_per_joint = np.column_stack([_solve_mass_matrix(root_mass, column) for column in mass[:6, 6:].T])
+            roots_per_joint = np.column_stack(
+                [_solve_mass_matrix(root_mass, column) for column in mass[:6, 6:].T]
+            )
             effective_mass = mass[6:, 6:] - mass[6:, :6] @ roots_per_joint
             free_bias = bias - _project(linear, angular, external.force, external.torque)
-            effective_bias = free_bias[6:] - mass[6:, :6] @ _solve_mass_matrix(root_mass, free_bias[:6])
-            ff = effective_bias if joint.feedforward is None else _vector(joint.feedforward, n, "feedforward")
+            effective_bias = free_bias[6:] - mass[6:, :6] @ _solve_mass_matrix(
+                root_mass, free_bias[:6]
+            )
+            ff = (
+                effective_bias
+                if joint.feedforward is None
+                else _vector(joint.feedforward, n, "feedforward")
+            )
             effort = solve_bounded_pd(
-                effective_mass, effective_bias, entry.q[7:], entry.v[6:], target, rate,
-                self.spec.kp, self.spec.kd, cap, h, feedforward=ff,
+                effective_mass,
+                effective_bias,
+                entry.q[7:],
+                entry.v[6:],
+                target,
+                rate,
+                self.spec.kp,
+                self.spec.kd,
+                cap,
+                h,
+                feedforward=ff,
             ).effort
             resolved = FloatingRobotCommand(RobotCommand(target, rate, cap, ff), external)
         return FloatingRobotPreparation(
-            entry, physical, geometry, linear, angular, mass, bias, _readonly(effort),
-            external, resolved, _asset_snapshot(command),
+            entry,
+            physical,
+            geometry,
+            linear,
+            angular,
+            mass,
+            bias,
+            _readonly(effort),
+            external,
+            resolved,
+            _asset_snapshot(command),
         )
 
     def integrate(self, prepared, measured, dt):
         """Apply every COM wrench and limited drive once; return an unpublished candidate."""
         h = validate_dt(dt, np.float64)
-        contact = _vector(measured.joint_effort_full, self.velocity_count, "floating contact effort")
+        contact = _vector(
+            measured.joint_effort_full, self.velocity_count, "floating contact effort"
+        )
         wrenches = np.asarray(measured.link_wrenches_world, dtype=float)
         fixed_root = np.asarray(measured.fixed_root_contact_wrench, dtype=float)
-        if wrenches.shape != (self.body_count, 6) or not np.isfinite(wrenches).all() or fixed_root.shape != (6,) or not np.isfinite(fixed_root).all() or np.any(fixed_root):
-            raise ValueError("floating contact requires one COM wrench per body and no fixed-root load")
+        if (
+            wrenches.shape != (self.body_count, 6)
+            or not np.isfinite(wrenches).all()
+            or fixed_root.shape != (6,)
+            or not np.isfinite(fixed_root).all()
+            or np.any(fixed_root)
+        ):
+            raise ValueError(
+                "floating contact requires one COM wrench per body and no fixed-root load"
+            )
         inputs = FloatingRobotInputs(
             prepared.effort,
             prepared.external.force + wrenches[:, :3],
@@ -315,7 +443,15 @@ class FloatingRobotParticipant:
         if not np.isfinite(applied).all() or not np.isfinite(acceleration).all():
             raise ValueError("floating load or acceleration exceeds finite range")
         observation = self._observation(
-            candidate, prepared.entry, prepared.effort, contact, wrenches, prepared.external,
-            applied, acceleration, prepared.resolved, prepared.requested,
+            candidate,
+            prepared.entry,
+            prepared.effort,
+            contact,
+            wrenches,
+            prepared.external,
+            applied,
+            acceleration,
+            prepared.resolved,
+            prepared.requested,
         )
         return candidate, observation

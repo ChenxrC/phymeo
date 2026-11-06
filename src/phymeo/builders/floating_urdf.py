@@ -52,8 +52,15 @@ class FloatingRobotAsset:
         result = {}
         for collider in self.collisions:
             body = collider.link_index + 1
-            points = geometry.position[body] + np.asarray(collider.local_vertices) @ geometry.rotation[body].T
-            orientation = None if collider.shape.curved is None else matrix_quaternion(geometry.rotation[body])
+            points = (
+                geometry.position[body]
+                + np.asarray(collider.local_vertices) @ geometry.rotation[body].T
+            )
+            orientation = (
+                None
+                if collider.shape.curved is None
+                else matrix_quaternion(geometry.rotation[body])
+            )
             result[collider.shape.key] = CollisionMotion(points, body_orientation_xyzw=orientation)
         return result
 
@@ -95,12 +102,23 @@ def load_floating_urdf(path: str | Path, *, gravity=(0.0, 0.0, -9.81)) -> Floati
         _children(entries[0], {"inertial", "collision", "visual"}, f"link {root!r}")
         links, order, inbound = {root: entries[0]}, [], {}
     mass, center, inertia = _inertial(links[root], root)
-    root_model = RigidBodyModel(np.array([1.0 / mass]), inertia[None, :], np.asarray(gravity, dtype=float))
+    root_model = RigidBodyModel(
+        np.array([1.0 / mass]), inertia[None, :], np.asarray(gravity, dtype=float)
+    )
     colliders = _link_collisions(links[root], root, -1, path)
     if not order:
         return FloatingRobotAsset(
-            name, root, FloatingRobotModel(root_model, center), (), (), (), (), (), (),
-            tuple(colliders), CollisionModel(tuple(row.shape for row in colliders)),
+            name,
+            root,
+            FloatingRobotModel(root_model, center),
+            (),
+            (),
+            (),
+            (),
+            (),
+            (),
+            tuple(colliders),
+            CollisionModel(tuple(row.shape for row in colliders)),
         )
     indices = {root: -1, **{link: i for i, link in enumerate(order)}}
     parents, names, data, bodies = [], [], [], []
@@ -111,10 +129,19 @@ def load_floating_urdf(path: str | Path, *, gravity=(0.0, 0.0, -9.81)) -> Floati
         data.append(_joint_data(joint, joint_name))
         bodies.append(_inertial(links[link], link))
         colliders.extend(_link_collisions(links[link], link, indices[link], path))
-    child_asset = assemble_robot(name, root, order, parents, names, data, bodies, colliders, gravity)
+    child_asset = assemble_robot(
+        name, root, order, parents, names, data, bodies, colliders, gravity
+    )
     return FloatingRobotAsset(
-        name, root, FloatingRobotModel(root_model, center, child_asset.model),
-        child_asset.link_names, child_asset.joint_names, child_asset.lower, child_asset.upper,
-        child_asset.effort_limit, child_asset.velocity_limit, child_asset.collisions,
+        name,
+        root,
+        FloatingRobotModel(root_model, center, child_asset.model),
+        child_asset.link_names,
+        child_asset.joint_names,
+        child_asset.lower,
+        child_asset.upper,
+        child_asset.effort_limit,
+        child_asset.velocity_limit,
+        child_asset.collisions,
         child_asset.collision_model,
     )

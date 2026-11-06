@@ -1,4 +1,4 @@
-"""Several fixed-root robots and finite rigid bodies in one HOST transaction.
+"""Robot trees with fixed or physical floating roots in one HOST transaction.
 
 Contacts all sample the same entry state. Robot/rigid pairs are evaluated once
 per robot; rigid/rigid pairs once for the entire scene. No live state is changed
@@ -17,11 +17,11 @@ from ..constraints.collision_shapes import CollisionModel, CollisionMotion
 from ..constraints.robot_contact import RobotContactMaterial
 from ..core.coupled import CoupledInputs
 from ..core.rigid import RigidBodyInputs, RigidBodyModel, RigidBodyState
-from ..core.robot import RobotState
 from ..core.validation import validate_dt
 from ..dynamics.rotation import quaternion_matrix
 from ..solvers.collision_loads import SurfaceLoads
 from ..solvers.rigid_semi_implicit import RigidSemiImplicitSolver
+from ._floating_robot_participant import FloatingRobotParticipant, FloatingRobotRegistration
 from ._robot_participant import RobotParticipant
 from ._robot_robot_contacts import RobotRobotContacts
 from ._robot_scene_contacts import RobotSceneContacts, rigid_solid
@@ -42,10 +42,13 @@ def build_multi_robot_scene(bodies, pairs, *, gravity, backend="host", cache_roo
     if backend != "host":
         raise ValueError("multi-robot scenes require HOST; no robot CUDA/interpret path")
     robots = {
-        addr: item for addr, item in sorted(bodies.items()) if isinstance(item, RobotRegistration)
+        addr: item
+        for addr, item in sorted(bodies.items())
+        if isinstance(item, (RobotRegistration, FloatingRobotRegistration))
     }
-    if len(robots) < 2:
-        raise ValueError("multi-robot scenes require at least two fixed-root robots")
+    floating = any(isinstance(item, FloatingRobotRegistration) for item in robots.values())
+    if not robots or (len(robots) < 2 and not floating):
+        raise ValueError("shared robot scenes require multiple fixed trees or a floating tree")
     if len({addr[0] for addr in bodies}) != 1:
         raise ValueError("multi-robot scenes currently require one world")
     from .contact_scene import _Body
@@ -69,11 +72,11 @@ def build_multi_robot_scene(bodies, pairs, *, gravity, backend="host", cache_roo
 
 
 class MultiRobotScene:
-    """HOST fixed-root trees sharing ordinary contact, rigid bodies and one accepted clock.
+    """HOST fixed and floating trees sharing contact, rigid bodies and one accepted clock.
 
     Commands use independent joint coordinates, including existing mimic graphs.
     Direct contacts support a sphere against a sphere, finite capsule or box on
-    another tree. Self-contact, CCD, floating roots, deformable bodies and the
+    another tree. Self-contact, CCD, floating mimic trees, deformable bodies and the
     opt-in coupled tangential-history mode remain unsupported.
     """
 
@@ -83,13 +86,15 @@ class MultiRobotScene:
         self.rigid_rows = MappingProxyType({addr: row for row, addr in enumerate(rigid_items)})
         occupied = {addr[1] for addr in (*registrations, *rigid_items)}
         self._participants = {
-            addr: RobotParticipant(addr, registration, occupied)
+            addr: (
+                FloatingRobotParticipant
+                if isinstance(registration, FloatingRobotRegistration)
+                else RobotParticipant
+            )(addr, registration, occupied)
             for addr, registration in registrations.items()
         }
         self.assets = MappingProxyType({addr: p.asset for addr, p in self._participants.items()})
-        self._arms = {
-            addr: RobotState(p.initial.q, p.initial.v) for addr, p in self._participants.items()
-        }
+        self._arms = {addr: p.copy_state(p.initial) for addr, p in self._participants.items()}
         shapes = [item.shape for item in rigid_items.values()]
         names = {shape.key: f"body:{shape.key.body}" for shape in shapes}
         owners = {item.shape.key: addr for addr, item in rigid_items.items()}
@@ -129,7 +134,7 @@ class MultiRobotScene:
         self._integrator = RigidSemiImplicitSolver()
         self._contacts = {
             addr: RobotSceneContacts(
-                p.tree,
+                p.contact_view,
                 addr,
                 self._items,
                 self.rigid_rows,
@@ -144,7 +149,7 @@ class MultiRobotScene:
         # per-robot calls below explicitly disable that common contribution.
         self._rigid_contacts = next(iter(self._contacts.values()))
         self._event_adapter = RobotContactEventAdapter.for_robots(
-            {addr: (p.tree, p.key_map) for addr, p in self._participants.items()},
+            {addr: (p.contact_view, p.key_map) for addr, p in self._participants.items()},
             self._items,
             self.rigid_rows,
             pairs,
@@ -241,7 +246,10 @@ class MultiRobotScene:
             return RobotSceneState(
                 self._time_s,
                 MappingProxyType(
-                    {addr: RobotState(state.q, state.v) for addr, state in self._arms.items()}
+                    {
+                        addr: self._participants[addr].copy_state(state)
+                        for addr, state in self._arms.items()
+                    }
                 ),
                 self._body.copy(),
             )

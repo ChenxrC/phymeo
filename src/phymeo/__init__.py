@@ -33,6 +33,7 @@ from .backends.tyx_world_contact import (
 )
 from .backends.tyx_xpbd import TyxXPBDSolver
 from .builders.cloth import ClothPatch, cloth_grid
+from .builders.floating_urdf import FloatingRobotAsset, load_floating_urdf
 from .builders.mimic_urdf import load_mimic_urdf
 from .builders.mjcf import load_mjcf
 from .builders.robot import pendulum_chain
@@ -204,6 +205,7 @@ from .geometry.surface_features import (
     closest_point_triangle,
     closest_segment_segment,
 )
+from .runtime._floating_robot_participant import FloatingRobotCommand
 from .runtime.batched_scene import BatchedStepResult, TyxBatchedScene
 from .runtime.contact_events import (
     ContactComponent,
@@ -428,6 +430,8 @@ __all__ = [
     "RobotClosureStep",
     "step_robot_closures",
     "FloatingKinematics",
+    "FloatingRobotAsset",
+    "FloatingRobotCommand",
     "FloatingRobotModel",
     "FloatingRobotState",
     "floating_kinematics",
@@ -476,6 +480,7 @@ __all__ = [
     "make_robot_runtime",
     "pendulum_chain",
     "load_urdf",
+    "load_floating_urdf",
     "load_mimic_urdf",
     "load_mjcf",
     "load_usd",

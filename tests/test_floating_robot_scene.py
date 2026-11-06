@@ -46,31 +46,51 @@ def _inertia(mass, com, diagonal):
 
 
 def _asset(
-    path, *, root_mass=2, root_com=(0, 0, 0), root_inertia=(0.25, 0.5, 0.75),
-    root_collision=None, child=True, child_origin=(0, 0, 0), child_com=(0, 0, 0),
-    child_mass=1, axis=(1, 0, 0), child_collision="", lower=-0.1, upper=0.1,
+    path,
+    *,
+    root_mass=2,
+    root_com=(0, 0, 0),
+    root_inertia=(0.25, 0.5, 0.75),
+    root_collision=None,
+    child=True,
+    child_origin=(0, 0, 0),
+    child_com=(0, 0, 0),
+    child_mass=1,
+    axis=(1, 0, 0),
+    child_collision="",
+    lower=-0.1,
+    upper=0.1,
 ):
     root_collision = _sphere() if root_collision is None else root_collision
     source = (
         '<robot name="floating_mechanism"><link name="base">'
-        + _inertia(root_mass, root_com, root_inertia) + root_collision + '</link>'
+        + _inertia(root_mass, root_com, root_inertia)
+        + root_collision
+        + "</link>"
     )
     if child:
         source += (
-            '<link name="tool">' + _inertia(child_mass, child_com, (0.25, 0.25, 0.25))
-            + child_collision + '</link><joint name="slide" type="prismatic">'
+            '<link name="tool">'
+            + _inertia(child_mass, child_com, (0.25, 0.25, 0.25))
+            + child_collision
+            + '</link><joint name="slide" type="prismatic">'
             '<parent link="base"/><child link="tool"/>'
             f'<origin xyz="{_xyz(child_origin)}"/><axis xyz="{_xyz(axis)}"/>'
             f'<limit lower="{lower}" upper="{upper}" effort="128" velocity="10"/>'
-            '</joint>'
+            "</joint>"
         )
-    path.write_text(source + '</robot>\n', encoding="utf-8")
+    path.write_text(source + "</robot>\n", encoding="utf-8")
     return path
 
 
 def _state(
-    *, q=(0.0,), v=(0.0,), position=(0, 0, 0), xyzw=(0, 0, 0, 1),
-    com_velocity=(0, 0, 0), omega=(0, 0, 0),
+    *,
+    q=(0.0,),
+    v=(0.0,),
+    position=(0, 0, 0),
+    xyzw=(0, 0, 0, 1),
+    com_velocity=(0, 0, 0),
+    omega=(0, 0, 0),
 ):
     return FloatingRobotState(
         np.array((*position, *xyzw, *q), dtype=float),
@@ -82,8 +102,13 @@ def _add(builder, owner, path, state=None, *, kp=0, kd=0, cap=128, **kwargs):
     state = _state() if state is None else state
     n = len(state.v) - 6
     builder.add_floating_urdf(
-        owner, path, robot_state=state, kp=[kp] * n, kd=[kd] * n,
-        effort_limit=[cap] * n, **kwargs,
+        owner,
+        path,
+        robot_state=state,
+        kp=[kp] * n,
+        kd=[kd] * n,
+        effort_limit=[cap] * n,
+        **kwargs,
     )
 
 
@@ -116,7 +141,9 @@ def test_a01_real_root_contact_accelerates_full_tree_and_free_body(tmp_path):
         assert len(row.q) == 8 and len(row.v) == 7 and row.link_wrenches_world.shape == (2, 6)
         np.testing.assert_allclose(row.acceleration_full, [-1, 0, 0, 0, 0, 0, 1], atol=STATE_ATOL)
         np.testing.assert_allclose(row.contact_effort_full, [-2, 0, 0, 0, 0, 0, 0], atol=FORCE_ATOL)
-        np.testing.assert_allclose(row.applied_effort_full, row.contact_effort_full, atol=STATE_ATOL)
+        np.testing.assert_allclose(
+            row.applied_effort_full, row.contact_effort_full, atol=STATE_ATOL
+        )
         np.testing.assert_allclose(row.v, [-H, 0, 0, 0, 0, 0, H], atol=STATE_ATOL)
         np.testing.assert_allclose(row.q, [-H * H, 0, 0, 0, 0, 0, 1, H * H], atol=STATE_ATOL)
         np.testing.assert_array_equal(row.full_q, row.q)
@@ -127,17 +154,25 @@ def test_a01_real_root_contact_accelerates_full_tree_and_free_body(tmp_path):
         np.testing.assert_allclose(measured.com_position[1], [0, 0, 0], atol=STATE_ATOL)
         np.testing.assert_allclose(measured.com_velocity, [[-H, 0, 0], [0, 0, 0]], atol=STATE_ATOL)
         np.testing.assert_allclose(out.rigid.velocity[0], [H / 2, 0, 0], atol=STATE_ATOL)
-        np.testing.assert_allclose(out.rigid.position[0], [0.124 + H * H / 2, 0, 0], atol=STATE_ATOL)
+        np.testing.assert_allclose(
+            out.rigid.position[0], [0.124 + H * H / 2, 0, 0], atol=STATE_ATOL
+        )
         np.testing.assert_allclose(
             2 * measured.com_velocity[0] + measured.com_velocity[1] + 4 * out.rigid.velocity[0],
-            0, atol=STATE_ATOL,
+            0,
+            atol=STATE_ATOL,
         )
         assert out.step_number == 1 and out.load_time_s == 0 and out.time_s == H
-        assert len(out.loads.contacts) == 1 and out.loads.contacts[0].force_n == pytest.approx(2, abs=FORCE_ATOL)
+        assert len(out.loads.contacts) == 1 and out.loads.contacts[0].force_n == pytest.approx(
+            2, abs=FORCE_ATOL
+        )
         event = scene.contact_events.active[0]
         root = next(owner for owner in (event.first_owner, event.second_owner) if owner.body == 10)
         assert (root.kind, root.local_frame, root.link_index, root.link_name) == (
-            "robot_root", "robot_model_link", 0, "base",
+            "robot_root",
+            "robot_model_link",
+            0,
+            "base",
         )
 
 
@@ -161,17 +196,27 @@ def _assert_materials(scene, reading):
                     (record.second_owner, addresses.second, site.material.second_point),
                 ):
                     asset = scene.assets.get((owner.world, owner.body))
-                    if asset is None or not hasattr(asset, "model") or not hasattr(asset.model, "root"):
+                    if (
+                        asset is None
+                        or not hasattr(asset, "model")
+                        or not hasattr(asset.model, "root")
+                    ):
                         continue
                     entry = reading.robots[owner.world, owner.body]
                     geometry = floating_kinematics(
-                        asset.model, FloatingRobotState(entry.entry_q, entry.entry_v),
+                        asset.model,
+                        FloatingRobotState(entry.entry_q, entry.entry_v),
                     )
                     assert owner.local_frame == "robot_model_link"
                     assert owner.link_index >= 0
-                    actual = geometry.position[owner.link_index] + geometry.rotation[owner.link_index] @ address.local_point_m
+                    actual = (
+                        geometry.position[owner.link_index]
+                        + geometry.rotation[owner.link_index] @ address.local_point_m
+                    )
                     np.testing.assert_allclose(actual, point, atol=STATE_ATOL, rtol=0)
-                    assert sum(weight for _, weight in address.weights) == pytest.approx(1, abs=STATE_ATOL)
+                    assert sum(weight for _, weight in address.weights) == pytest.approx(
+                        1, abs=STATE_ATOL
+                    )
 
 
 @pytest.mark.parametrize("spinning", [False, True])
@@ -185,23 +230,35 @@ def test_a02_root_only_com_force_torque_and_eccentric_origin_are_distinct(tmp_pa
         assert scene.state.rigid.body_count == 0
         assert scene.assets[0, 10].model.children is None
         before = floating_kinematics(scene.assets[0, 10].model, initial)
-        np.testing.assert_allclose(before.origin_velocity[0], [0, -0.25 if spinning else 0, 0], atol=STATE_ATOL)
+        np.testing.assert_allclose(
+            before.origin_velocity[0], [0, -0.25 if spinning else 0, 0], atol=STATE_ATOL
+        )
         out = scene.step(H, actions={10: _command(root_only=True, external=applied)})
         row = out.robots[0, 10]
         speed, angle = (2, 2 * H) if spinning else (H, H * H)
         dx = 0 if spinning else H * H
         expected_origin = [dx + (1 - np.cos(angle)) / 8, -np.sin(angle) / 8, 0]
         np.testing.assert_allclose(row.q[:3], expected_origin, atol=STATE_ATOL)
-        np.testing.assert_allclose(row.q[3:7], [0, 0, np.sin(angle / 2), np.cos(angle / 2)], atol=STATE_ATOL)
-        np.testing.assert_allclose(row.v, [0 if spinning else H, 0, 0, 0, 0, speed], atol=STATE_ATOL)
-        np.testing.assert_allclose(row.applied_effort_full, np.r_[applied.force[0], applied.torque[0]], atol=STATE_ATOL)
-        np.testing.assert_allclose(row.acceleration_full, np.zeros(6) if spinning else [1, 0, 0, 0, 0, 1], atol=STATE_ATOL)
+        np.testing.assert_allclose(
+            row.q[3:7], [0, 0, np.sin(angle / 2), np.cos(angle / 2)], atol=STATE_ATOL
+        )
+        np.testing.assert_allclose(
+            row.v, [0 if spinning else H, 0, 0, 0, 0, speed], atol=STATE_ATOL
+        )
+        np.testing.assert_allclose(
+            row.applied_effort_full, np.r_[applied.force[0], applied.torque[0]], atol=STATE_ATOL
+        )
+        np.testing.assert_allclose(
+            row.acceleration_full, np.zeros(6) if spinning else [1, 0, 0, 0, 0, 1], atol=STATE_ATOL
+        )
         assert row.drive_effort.shape == (0,) and row.contact_effort_full.shape == (6,)
         np.testing.assert_array_equal(row.contact_effort_full, np.zeros(6))
         geometry = floating_kinematics(scene.assets[0, 10].model, FloatingRobotState(row.q, row.v))
         np.testing.assert_allclose(geometry.com_position[0], [1 / 8 + dx, 0, 0], atol=STATE_ATOL)
         key = scene.shape_key(10, "base", "root_sphere")
-        np.testing.assert_allclose(scene.geometry().poses[key].start[0], expected_origin, atol=STATE_ATOL)
+        np.testing.assert_allclose(
+            scene.geometry().poses[key].start[0], expected_origin, atol=STATE_ATOL
+        )
 
 
 @pytest.mark.parametrize("drive,cap,expected", [(3, 128, 3), (-3, 128, -3), (3, 2, 2)])
@@ -211,12 +268,25 @@ def test_a02_internal_drive_reacts_on_root_and_is_limited_only_once(tmp_path, dr
     with builder.build() as scene:
         row = scene.step(H, actions={10: _command(drive)}).robots[0, 10]
         np.testing.assert_allclose(row.drive_effort, [expected], atol=STATE_ATOL)
-        np.testing.assert_allclose(row.applied_effort_full, [0, 0, 0, 0, 0, 0, expected], atol=STATE_ATOL)
-        np.testing.assert_allclose(row.acceleration_full, [-expected / 2, 0, 0, 0, 0, 0, 1.5 * expected], atol=STATE_ATOL)
+        np.testing.assert_allclose(
+            row.applied_effort_full, [0, 0, 0, 0, 0, 0, expected], atol=STATE_ATOL
+        )
+        np.testing.assert_allclose(
+            row.acceleration_full, [-expected / 2, 0, 0, 0, 0, 0, 1.5 * expected], atol=STATE_ATOL
+        )
         observed = floating_kinematics(scene.assets[0, 10].model, FloatingRobotState(row.q, row.v))
-        np.testing.assert_allclose(observed.com_velocity, [[-expected * H / 2, 0, 0], [expected * H, 0, 0]], atol=STATE_ATOL)
-        np.testing.assert_allclose(2 * observed.com_velocity[0] + observed.com_velocity[1], 0, atol=STATE_ATOL)
-        kinetic = float(observed.com_velocity[0] @ observed.com_velocity[0] + observed.com_velocity[1] @ observed.com_velocity[1] / 2)
+        np.testing.assert_allclose(
+            observed.com_velocity,
+            [[-expected * H / 2, 0, 0], [expected * H, 0, 0]],
+            atol=STATE_ATOL,
+        )
+        np.testing.assert_allclose(
+            2 * observed.com_velocity[0] + observed.com_velocity[1], 0, atol=STATE_ATOL
+        )
+        kinetic = float(
+            observed.com_velocity[0] @ observed.com_velocity[0]
+            + observed.com_velocity[1] @ observed.com_velocity[1] / 2
+        )
         assert kinetic == pytest.approx(0.75 * expected**2 * H**2, abs=STATE_ATOL)
 
 
@@ -228,7 +298,9 @@ def test_a02_bounded_pd_uses_root_schur_mass_not_fixed_base_child_mass(tmp_path)
         # M_eff = 1 - 1/3 = 2/3 kg; u = 100*(.01 - h*h*u/M_eff).
         effort = 20000 / 20003
         np.testing.assert_allclose(row.drive_effort, [effort], atol=FORCE_ATOL)
-        np.testing.assert_allclose(row.v, [-H * effort / 2, 0, 0, 0, 0, 0, 1.5 * H * effort], atol=STATE_ATOL)
+        np.testing.assert_allclose(
+            row.v, [-H * effort / 2, 0, 0, 0, 0, 0, 1.5 * H * effort], atol=STATE_ATOL
+        )
         assert row.drive_effort[0] == pytest.approx(100 * (0.01 - row.q[7]), abs=FORCE_ATOL)
 
 
@@ -238,16 +310,26 @@ def test_a03_world_gravity_and_declared_com_loads_share_the_full_mass_step(tmp_p
     _add(builder, 10, _asset(tmp_path / "external.urdf"))
     applied = _external(1, force=[[2, 0, 0], [-1, 0, 0]]) if loaded else _external(1)
     with builder.build() as scene:
-        row = scene.step(H, actions={10: _command(3 if loaded else 0, external=applied)}).robots[0, 10]
+        row = scene.step(H, actions={10: _command(3 if loaded else 0, external=applied)}).robots[
+            0, 10
+        ]
         expected = [-0.5, 0, -1, 0, 0, 0, 2.5] if loaded else [0, 0, -1, 0, 0, 0, 0]
         np.testing.assert_allclose(row.acceleration_full, expected, atol=STATE_ATOL)
         np.testing.assert_allclose(row.v, H * np.asarray(expected), atol=STATE_ATOL)
         np.testing.assert_array_equal(row.external.force, applied.force)
         np.testing.assert_array_equal(row.external.torque, applied.torque)
         np.testing.assert_array_equal(row.external.effort, [0])
-        np.testing.assert_allclose(row.applied_effort_full, [1, 0, 0, 0, 0, 0, 2] if loaded else np.zeros(7), atol=STATE_ATOL)
+        np.testing.assert_allclose(
+            row.applied_effort_full,
+            [1, 0, 0, 0, 0, 0, 2] if loaded else np.zeros(7),
+            atol=STATE_ATOL,
+        )
         obs = floating_kinematics(scene.assets[0, 10].model, FloatingRobotState(row.q, row.v))
-        np.testing.assert_allclose(2 * obs.com_velocity[0] + obs.com_velocity[1], H * np.array([1 if loaded else 0, 0, -3]), atol=STATE_ATOL)
+        np.testing.assert_allclose(
+            2 * obs.com_velocity[0] + obs.com_velocity[1],
+            H * np.array([1 if loaded else 0, 0, -3]),
+            atol=STATE_ATOL,
+        )
 
 
 def test_a03_normal_damping_reads_real_root_and_rigid_entry_velocities(tmp_path):
@@ -262,8 +344,12 @@ def test_a03_normal_damping_reads_real_root_and_rigid_entry_velocities(tmp_path)
         assert pair.force_n == pytest.approx(3, abs=FORCE_ATOL)
         assert pair.sites[0].rate_m_per_s == pytest.approx(-1 / 8, abs=STATE_ATOL)
         assert pair.sites[0].power_w == pytest.approx(-3 / 8, abs=STATE_ATOL)
-        np.testing.assert_allclose(row.v, [1 / 16 - 1.5 * H, 0, 0, 0, 0, 0, 1.5 * H], atol=STATE_ATOL)
-        np.testing.assert_allclose(out.rigid.velocity[0], [-1 / 16 + 0.75 * H, 0, 0], atol=STATE_ATOL)
+        np.testing.assert_allclose(
+            row.v, [1 / 16 - 1.5 * H, 0, 0, 0, 0, 0, 1.5 * H], atol=STATE_ATOL
+        )
+        np.testing.assert_allclose(
+            out.rigid.velocity[0], [-1 / 16 + 0.75 * H, 0, 0], atol=STATE_ATOL
+        )
         _assert_materials(scene, out)
 
 
@@ -280,7 +366,9 @@ def test_a04_rotated_translated_boosted_root_has_true_material_frame(tmp_path, r
         if owner == 10:
             _add(builder, owner, path, initial)
         else:
-            builder.add_sphere(owner, RADIUS, mass=4, position=offset + 0.124 * axis, velocity=boost)
+            builder.add_sphere(
+                owner, RADIUS, mass=4, position=offset + 0.124 * axis, velocity=boost
+            )
     builder.pair(10, 20, LAW)
     with builder.build() as scene:
         out = scene.step(H, actions={10: _command()})
@@ -293,22 +381,34 @@ def test_a04_rotated_translated_boosted_root_has_true_material_frame(tmp_path, r
         np.testing.assert_allclose(out.rigid.velocity[0], boost + H * axis / 2, atol=STATE_ATOL)
         obs = floating_kinematics(scene.assets[0, 10].model, FloatingRobotState(row.q, row.v))
         np.testing.assert_allclose(obs.com_position[1], offset + H * boost, atol=STATE_ATOL)
-        np.testing.assert_allclose(2 * obs.com_velocity[0] + obs.com_velocity[1] + 4 * out.rigid.velocity[0], 7 * boost, atol=STATE_ATOL)
+        np.testing.assert_allclose(
+            2 * obs.com_velocity[0] + obs.com_velocity[1] + 4 * out.rigid.velocity[0],
+            7 * boost,
+            atol=STATE_ATOL,
+        )
         _assert_materials(scene, out)
 
 
 def _fixed(builder, owner, path, *, loader=None, q=0, v=0):
     builder.add_urdf(
-        owner, path, loader=loader, robot_state=RobotState(np.array([q], dtype=float), np.array([v], dtype=float)),
-        kp=[0], kd=[0], effort_limit=[128],
+        owner,
+        path,
+        loader=loader,
+        robot_state=RobotState(np.array([q], dtype=float), np.array([v], dtype=float)),
+        kp=[0],
+        kd=[0],
+        effort_limit=[128],
     )
 
 
 def _mimic(path):
     source = (
         '<robot name="fixed_transmission"><link name="base"/>'
-        '<link name="driver">' + _inertia(2, (0, 0, 0), (0.25, 0.25, 0.25)) + '</link>'
-        '<link name="follower">' + _inertia(1, (0, 0, 0), (0.25, 0.25, 0.25)) + _sphere("tool_sphere") + '</link>'
+        '<link name="driver">' + _inertia(2, (0, 0, 0), (0.25, 0.25, 0.25)) + "</link>"
+        '<link name="follower">'
+        + _inertia(1, (0, 0, 0), (0.25, 0.25, 0.25))
+        + _sphere("tool_sphere")
+        + "</link>"
         '<joint name="drive" type="prismatic"><parent link="base"/><child link="driver"/>'
         '<origin xyz="0 2 0"/><axis xyz="1 0 0"/><limit lower="-0.1" upper="0.1" effort="128" velocity="10"/></joint>'
         '<joint name="follow" type="prismatic"><parent link="base"/><child link="follower"/>'
@@ -326,7 +426,17 @@ def test_a04_mixed_fixed_tree_and_independent_rigid_pair_apply_each_load_once(tm
     if mimic:
         _fixed(builder, 20, _mimic(tmp_path / "fixed.urdf"), loader=load_mimic_urdf)
     else:
-        _fixed(builder, 20, _asset(tmp_path / "fixed.urdf", root_collision="", child_mass=2, child_origin=(0.124, 0, 0), child_collision=_sphere("tool_sphere")))
+        _fixed(
+            builder,
+            20,
+            _asset(
+                tmp_path / "fixed.urdf",
+                root_collision="",
+                child_mass=2,
+                child_origin=(0.124, 0, 0),
+                child_collision=_sphere("tool_sphere"),
+            ),
+        )
     builder.add_sphere(30, RADIUS, mass=1, position=(3, 0, RADIUS - 0.001))
     builder.add_box(40, (0.25, 0.25, 0.03125), mass=None, position=(3, 0, -0.03125))
     for a, b in combinations((10, 20, 30, 40), 2):
@@ -338,7 +448,9 @@ def test_a04_mixed_fixed_tree_and_independent_rigid_pair_apply_each_load_once(tm
         if mimic:
             np.testing.assert_allclose(fixed.contact_effort_full, [0, 2], atol=FORCE_ATOL)
             np.testing.assert_allclose(fixed.full_v, [-2 * H / 3, 4 * H / 3], atol=STATE_ATOL)
-            np.testing.assert_allclose(fixed.mimic_loads.constraint_effort_full, [-4 / 3, -2 / 3], atol=FORCE_ATOL)
+            np.testing.assert_allclose(
+                fixed.mimic_loads.constraint_effort_full, [-4 / 3, -2 / 3], atol=FORCE_ATOL
+            )
             assert fixed.mimic_loads.constraint_power_W == pytest.approx(0, abs=STATE_ATOL)
         else:
             np.testing.assert_allclose(fixed.contact_effort_full, [2], atol=FORCE_ATOL)
@@ -349,18 +461,32 @@ def test_a04_mixed_fixed_tree_and_independent_rigid_pair_apply_each_load_once(tm
         np.testing.assert_allclose(out.rigid.velocity[ball], [0, 0, 2 * H], atol=STATE_ATOL)
         np.testing.assert_array_equal(out.rigid.velocity[table], np.zeros(3))
         assert len(out.loads.contacts) == 2 and len(scene.contact_events.active) == 2
-        assert {frozenset((r.first_owner.body, r.second_owner.body)) for r in scene.contact_events.active} == {frozenset((10, 20)), frozenset((30, 40))}
+        assert {
+            frozenset((r.first_owner.body, r.second_owner.body))
+            for r in scene.contact_events.active
+        } == {frozenset((10, 20)), frozenset((30, 40))}
         _assert_materials(scene, out)
 
 
 @pytest.mark.parametrize("child_contact,reverse", [(False, False), (True, False), (True, True)])
-def test_a04_two_floating_owners_keep_root_and_child_dynamics_and_materials_distinct(tmp_path, child_contact, reverse):
+def test_a04_two_floating_owners_keep_root_and_child_dynamics_and_materials_distinct(
+    tmp_path, child_contact, reverse
+):
     builder = ContactSceneBuilder(gravity=(0, 0, 0))
     for owner in (20, 10) if reverse else (10, 20):
         if owner == 10:
             _add(builder, owner, _asset(tmp_path / "left.urdf"))
         elif child_contact:
-            _add(builder, owner, _asset(tmp_path / "right.urdf", root_collision="", child_origin=(0.124, 0, 0), child_collision=_sphere("tool_sphere")))
+            _add(
+                builder,
+                owner,
+                _asset(
+                    tmp_path / "right.urdf",
+                    root_collision="",
+                    child_origin=(0.124, 0, 0),
+                    child_collision=_sphere("tool_sphere"),
+                ),
+            )
         else:
             _add(builder, owner, _asset(tmp_path / "right.urdf"), _state(position=(0.124, 0, 0)))
     builder.pair(10, 20, LAW)
@@ -371,13 +497,19 @@ def test_a04_two_floating_owners_keep_root_and_child_dynamics_and_materials_dist
         expected = [0, 0, 0, 0, 0, 0, 2 * H] if child_contact else [H, 0, 0, 0, 0, 0, -H]
         np.testing.assert_allclose(left.v, [-H, 0, 0, 0, 0, 0, H], atol=STATE_ATOL)
         np.testing.assert_allclose(right.v, expected, atol=STATE_ATOL)
-        np.testing.assert_allclose(right.contact_effort_full, [2, 0, 0, 0, 0, 0, 2 if child_contact else 0], atol=FORCE_ATOL)
+        np.testing.assert_allclose(
+            right.contact_effort_full,
+            [2, 0, 0, 0, 0, 0, 2 if child_contact else 0],
+            atol=FORCE_ATOL,
+        )
         right_load = np.zeros((2, 6))
         right_load[int(child_contact), 0] = 2
         np.testing.assert_allclose(right.link_wrenches_world, right_load, atol=FORCE_ATOL)
         momentum = np.zeros(3)
         for owner, row in ((10, left), (20, right)):
-            obs = floating_kinematics(scene.assets[0, owner].model, FloatingRobotState(row.q, row.v))
+            obs = floating_kinematics(
+                scene.assets[0, owner].model, FloatingRobotState(row.q, row.v)
+            )
             momentum += 2 * obs.com_velocity[0] + obs.com_velocity[1]
         np.testing.assert_allclose(momentum, 0, atol=STATE_ATOL)
         event = scene.contact_events.active[0]
@@ -390,7 +522,9 @@ def test_a04_two_floating_owners_keep_root_and_child_dynamics_and_materials_dist
 def test_a05_forty_step_gravity_support_and_true_lift_use_continuous_state(tmp_path):
     builder = ContactSceneBuilder(gravity=(0, 0, -1))
     _add(
-        builder, 10, _asset(tmp_path / "vertical.urdf", axis=(0, 0, 1)),
+        builder,
+        10,
+        _asset(tmp_path / "vertical.urdf", axis=(0, 0, 1)),
         _state(position=(0, 0, RADIUS - 0.0015)),
     )
     builder.add_box(20, (0.5, 0.5, 0.03125), mass=None, position=(0, 0, -0.03125))
@@ -415,13 +549,20 @@ def test_a05_forty_step_gravity_support_and_true_lift_use_continuous_state(tmp_p
             old_speeds = np.array([old.v[2], old.v[2] + old.v[6]])
             speeds = np.array([row.v[2], row.v[2] + row.v[6]])
             actual_force = np.array([root_force, child_force])
-            np.testing.assert_allclose(np.array([2, 1]) * (speeds - old_speeds), dt * actual_force, atol=STATE_ATOL, rtol=0)
+            np.testing.assert_allclose(
+                np.array([2, 1]) * (speeds - old_speeds), dt * actual_force, atol=STATE_ATOL, rtol=0
+            )
             np.testing.assert_allclose(row.q[:3], old.q[:3] + dt * row.v[:3], atol=STATE_ATOL)
             np.testing.assert_allclose(row.q[7:], old.q[7:] + dt * row.v[6:], atol=STATE_ATOL)
             kinetic = float((np.array([2, 1]) * (speeds**2 - old_speeds**2)).sum() / 2)
-            work = float(dt * (actual_force @ old_speeds) + dt**2 * ((actual_force**2 / np.array([2, 1])).sum()) / 2)
+            work = float(
+                dt * (actual_force @ old_speeds)
+                + dt**2 * ((actual_force**2 / np.array([2, 1])).sum()) / 2
+            )
             assert kinetic == pytest.approx(work, abs=STATE_ATOL)
-            np.testing.assert_allclose(out.loads.inputs.rigid.force[0], [0, 0, -normal], atol=FORCE_ATOL)
+            np.testing.assert_allclose(
+                out.loads.inputs.rigid.force[0], [0, 0, -normal], atol=FORCE_ATOL
+            )
             np.testing.assert_array_equal(out.rigid.velocity[0], np.zeros(3))
             np.testing.assert_array_equal(row.external.force, external.force)
             if holding:
@@ -441,11 +582,25 @@ def test_a05_forty_step_gravity_support_and_true_lift_use_continuous_state(tmp_p
 
 def _assert_unchanged(scene, old, geometry, events):
     current, actual_geometry = scene.observe_scene()
-    assert (current.step_number, current.time_s, current.load_time_s) == (old.step_number, old.time_s, old.load_time_s)
+    assert (current.step_number, current.time_s, current.load_time_s) == (
+        old.step_number,
+        old.time_s,
+        old.load_time_s,
+    )
     assert scene.contact_events is events and actual_geometry.time_s == geometry.time_s
     for owner in old.robots:
-        for field in ("q", "v", "full_q", "full_v", "drive_effort", "contact_effort_full", "link_wrenches_world"):
-            np.testing.assert_array_equal(getattr(current.robots[owner], field), getattr(old.robots[owner], field))
+        for field in (
+            "q",
+            "v",
+            "full_q",
+            "full_v",
+            "drive_effort",
+            "contact_effort_full",
+            "link_wrenches_world",
+        ):
+            np.testing.assert_array_equal(
+                getattr(current.robots[owner], field), getattr(old.robots[owner], field)
+            )
     for field in ("position", "orientation", "velocity", "angular_velocity"):
         np.testing.assert_array_equal(getattr(current.rigid, field), getattr(old.rigid, field))
     np.testing.assert_array_equal(current.loads.inputs.rigid.force, old.loads.inputs.rigid.force)
@@ -458,7 +613,12 @@ def _assert_unchanged(scene, old, geometry, events):
 def test_a06_second_floating_limit_failure_keeps_all_participants_then_retries(tmp_path):
     builder = ContactSceneBuilder(gravity=(0, 0, 0))
     _add(builder, 10, _asset(tmp_path / "first.urdf"))
-    _add(builder, 20, _asset(tmp_path / "second.urdf"), _state(q=(0.099995,), v=(0.01,), position=(1, 0, 0)))
+    _add(
+        builder,
+        20,
+        _asset(tmp_path / "second.urdf"),
+        _state(q=(0.099995,), v=(0.01,), position=(1, 0, 0)),
+    )
     builder.add_sphere(30, RADIUS, mass=1, position=(3, 0, 0))
     for a, b in combinations((10, 20, 30), 2):
         builder.pair(a, b, None)
@@ -467,7 +627,10 @@ def test_a06_second_floating_limit_failure_keeps_all_participants_then_retries(t
         events = scene.contact_events
         external = scene.inputs()
         external.rigid.force[0, 1] = 7
-        actions = {10: _command(external=_external(1, force=[[2, 0, 0], [0, 0, 0]])), 20: _command()}
+        actions = {
+            10: _command(external=_external(1, force=[[2, 0, 0], [0, 0, 0]])),
+            20: _command(),
+        }
         with pytest.raises(ValueError, match="joint position"):
             scene.step(H, actions=actions, external=external)
         _assert_unchanged(scene, old, geometry, events)
@@ -493,8 +656,10 @@ def test_a06_late_event_failure_preserves_dynamic_root_material_and_retry(tmp_pa
         fresh.step(H, actions={10: _command()})
         old, geometry = scene.observe_scene()
         events = scene.contact_events
+
         def fail(*args, **kwargs):
             raise RuntimeError("floating late event failure")
+
         with monkeypatch.context() as patcher:
             patcher.setattr(scene._event_adapter, "stage", fail)
             with pytest.raises(RuntimeError, match="floating late event failure"):
@@ -509,7 +674,9 @@ def test_a06_late_event_failure_preserves_dynamic_root_material_and_retry(tmp_pa
         _assert_materials(scene, actual)
 
 
-@pytest.mark.parametrize("bad", ["effort", "body_count", "joint_target", "wrong_command", "unknown_owner"])
+@pytest.mark.parametrize(
+    "bad", ["effort", "body_count", "joint_target", "wrong_command", "unknown_owner"]
+)
 def test_a06_invalid_action_or_external_cannot_publish_a_partial_step(tmp_path, bad):
     builder = ContactSceneBuilder(gravity=(0, 0, 0))
     _add(builder, 10, _asset(tmp_path / "invalid-action.urdf"))
@@ -545,26 +712,47 @@ def test_a06_coincident_root_geometry_failure_is_atomic(tmp_path):
         assert scene.last_frame is None
 
 
-@pytest.mark.parametrize("point,axis,force", [((0.124, 0, 0), (1, 0, 0), 2), ((0, 0, 0.374), (0, 0, 1), 2), ((0.124, 0, 0.375), (1, 0, 0), 0)])
-def test_a04_floating_sphere_reads_finite_capsule_shaft_end_and_axis_miss(tmp_path, point, axis, force):
+@pytest.mark.parametrize(
+    "point,axis,force",
+    [
+        ((0.124, 0, 0), (1, 0, 0), 2),
+        ((0, 0, 0.374), (0, 0, 1), 2),
+        ((0.124, 0, 0.375), (1, 0, 0), 0),
+    ],
+)
+def test_a04_floating_sphere_reads_finite_capsule_shaft_end_and_axis_miss(
+    tmp_path, point, axis, force
+):
     path = tmp_path / "finite-capsule.xml"
     path.write_text(
         '<mujoco model="finite"><compiler angle="radian"/><worldbody><body name="fixed_base"><body name="rod">'
         f'<joint name="slide" type="slide" axis="{_xyz(axis)}" range="-1 1"/>'
         '<inertial pos="0 0 0" mass="2" diaginertia=".25 .25 .25"/>'
         f'<geom name="capsule" type="capsule" fromto="0 0 -.25 0 0 .25" size="{RADIUS}"/>'
-        '</body></body></worldbody></mujoco>', encoding="utf-8",
+        "</body></body></worldbody></mujoco>",
+        encoding="utf-8",
     )
     builder = ContactSceneBuilder(gravity=(0, 0, 0))
-    _add(builder, 10, _asset(tmp_path / "ball.urdf", child=False, root_mass=4), _state(q=(), v=(), position=point))
+    _add(
+        builder,
+        10,
+        _asset(tmp_path / "ball.urdf", child=False, root_mass=4),
+        _state(q=(), v=(), position=point),
+    )
     _fixed(builder, 20, path, loader=load_mjcf)
     builder.pair(10, 20, LAW)
     with builder.build() as scene:
-        out = scene.step(H, actions={10: _command(root_only=True), 20: RobotCommand([0], feedforward=[0])})
-        np.testing.assert_allclose(out.robots[0, 10].v[:3], np.asarray(axis) * force * H / 4, atol=STATE_ATOL)
+        out = scene.step(
+            H, actions={10: _command(root_only=True), 20: RobotCommand([0], feedforward=[0])}
+        )
+        np.testing.assert_allclose(
+            out.robots[0, 10].v[:3], np.asarray(axis) * force * H / 4, atol=STATE_ATOL
+        )
         np.testing.assert_allclose(out.robots[0, 10].v[3:6], 0, atol=STATE_ATOL)
         np.testing.assert_allclose(out.robots[0, 20].v, [-force * H / 2], atol=STATE_ATOL)
-        assert sum(pair.force_n for pair in out.loads.contacts) == pytest.approx(force, abs=FORCE_ATOL)
+        assert sum(pair.force_n for pair in out.loads.contacts) == pytest.approx(
+            force, abs=FORCE_ATOL
+        )
         _assert_materials(scene, out)
 
 
@@ -575,21 +763,46 @@ def test_a04_floating_sphere_and_rotated_offset_box_keep_actual_face(tmp_path, g
     builder = ContactSceneBuilder(gravity=(0, 0, 0))
     # Local +X face becomes world +Y, offset relative to its moving link.
     position = offset + np.array([0, 0.1 + RADIUS + gap, 0])
-    _add(builder, 10, _asset(tmp_path / "sphere.urdf", child=False, root_mass=4), _state(q=(), v=(), position=position))
-    fixed = _asset(tmp_path / "obb.urdf", root_collision="", child_mass=2, axis=(0, 1, 0), child_collision=box)
+    _add(
+        builder,
+        10,
+        _asset(tmp_path / "sphere.urdf", child=False, root_mass=4),
+        _state(q=(), v=(), position=position),
+    )
+    fixed = _asset(
+        tmp_path / "obb.urdf", root_collision="", child_mass=2, axis=(0, 1, 0), child_collision=box
+    )
     _fixed(builder, 20, fixed)
     builder.pair(10, 20, LAW)
     with builder.build() as scene:
-        out = scene.step(H, actions={10: _command(root_only=True), 20: RobotCommand([0], feedforward=[0])})
+        out = scene.step(
+            H, actions={10: _command(root_only=True), 20: RobotCommand([0], feedforward=[0])}
+        )
         force = max(0, -2000 * gap)
         np.testing.assert_allclose(out.robots[0, 10].v[:3], [0, force * H / 4, 0], atol=STATE_ATOL)
         np.testing.assert_allclose(out.robots[0, 20].v, [-force * H / 2], atol=STATE_ATOL)
-        np.testing.assert_allclose(out.robots[0, 20].link_wrenches_world[0], [0, -force, 0, force * offset[2], 0, -force * offset[0]], atol=FORCE_ATOL)
+        np.testing.assert_allclose(
+            out.robots[0, 20].link_wrenches_world[0],
+            [0, -force, 0, force * offset[2], 0, -force * offset[0]],
+            atol=FORCE_ATOL,
+        )
         _assert_materials(scene, out)
 
 
-@pytest.mark.parametrize("invalid,match", [("missing", "inertial"), ("zero_mass", "positive"), ("products", "non-diagonal"), ("rotated_inertia", "non-diagonal"), ("fixed", "fixed"), ("mimic", "mimic")])
-def test_a06_floating_loader_rejects_unrepresented_root_and_joint_semantics(tmp_path, invalid, match):
+@pytest.mark.parametrize(
+    "invalid,match",
+    [
+        ("missing", "inertial"),
+        ("zero_mass", "positive"),
+        ("products", "non-diagonal"),
+        ("rotated_inertia", "non-diagonal"),
+        ("fixed", "fixed"),
+        ("mimic", "mimic"),
+    ],
+)
+def test_a06_floating_loader_rejects_unrepresented_root_and_joint_semantics(
+    tmp_path, invalid, match
+):
     from phymeo.builders.floating_urdf import load_floating_urdf
 
     path = _asset(tmp_path / "unsupported.urdf")
@@ -601,11 +814,13 @@ def test_a06_floating_loader_rejects_unrepresented_root_and_joint_semantics(tmp_
     elif invalid == "products":
         source = source.replace('ixy="0"', 'ixy="0.01"', 1)
     elif invalid == "rotated_inertia":
-        source = source.replace('<origin xyz="0.0 0.0 0.0"/>', '<origin xyz="0 0 0" rpy="0 0 .3"/>', 1)
+        source = source.replace(
+            '<origin xyz="0.0 0.0 0.0"/>', '<origin xyz="0 0 0" rpy="0 0 .3"/>', 1
+        )
     elif invalid == "fixed":
         source = source.replace('type="prismatic"', 'type="fixed"')
     else:
-        source = source.replace('</joint>', '<mimic joint="slide"/></joint>')
+        source = source.replace("</joint>", '<mimic joint="slide"/></joint>')
     path.write_text(source, encoding="utf-8")
     with pytest.raises(ValueError, match=match):
         load_floating_urdf(path)
@@ -652,7 +867,10 @@ def test_a06_public_asset_and_observation_snapshots_cannot_mutate_live_mass_or_i
     external.force.setflags(write=True)
     external.force[0, 0] = 999
     with builder.build() as scene, builder.build() as fresh:
-        for array in (scene.assets[0, 10].model.root.inverse_mass, scene.assets[0, 10].model.children.mass):
+        for array in (
+            scene.assets[0, 10].model.root.inverse_mass,
+            scene.assets[0, 10].model.children.mass,
+        ):
             with pytest.raises(ValueError):
                 array.setflags(write=True)
         out = scene.step(H, actions={10: command})
@@ -660,7 +878,11 @@ def test_a06_public_asset_and_observation_snapshots_cannot_mutate_live_mass_or_i
         np.testing.assert_array_equal(out.robots[0, 10].q, expected.robots[0, 10].q)
         np.testing.assert_allclose(out.robots[0, 10].v, [H, 0, 0, 0, 0, 0, -H], atol=STATE_ATOL)
         np.testing.assert_array_equal(out.robots[0, 10].external.force, [[2, 0, 0], [0, 0, 0]])
-        for array in (out.robots[0, 10].q, out.robots[0, 10].external.force, out.robots[0, 10].acceleration_full):
+        for array in (
+            out.robots[0, 10].q,
+            out.robots[0, 10].external.force,
+            out.robots[0, 10].acceleration_full,
+        ):
             with pytest.raises(ValueError):
                 array.setflags(write=True)
         snapshot = scene.state

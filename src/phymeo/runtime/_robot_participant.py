@@ -71,6 +71,22 @@ class RobotParticipant:
         self.named_keys = MappingProxyType({key: tuple(value) for key, value in semantic.items()})
         self.shapes = tuple(shapes)
 
+    @property
+    def contact_view(self):
+        return self.tree
+
+    @property
+    def body_count(self):
+        return self.tree.model.dof_count
+
+    @property
+    def velocity_count(self):
+        return self.tree.model.dof_count
+
+    @staticmethod
+    def copy_state(state):
+        return RobotState(state.q, state.v)
+
     def validate(self, state):
         if not isinstance(state, RobotState) or state.q.shape != (len(self.asset.joint_names),):
             raise ValueError("robot state must match the independent joint coordinates")

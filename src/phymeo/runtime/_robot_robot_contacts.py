@@ -43,7 +43,8 @@ class RobotContactContribution:
         )
         if (
             joint.ndim != 1
-            or links.shape != (len(joint), 6)
+            or links.ndim != 2
+            or links.shape[1] != 6
             or root.shape != (6,)
             or not all(np.isfinite(value).all() for value in (joint, links, root))
         ):
@@ -112,8 +113,8 @@ class RobotRobotContacts:
             if not isinstance(law, RobotContactMaterial):
                 raise TypeError("direct robot contacts require RobotContactMaterial")
             for a, b in product(
-                self._robots[first].tree.collisions,
-                self._robots[second].tree.collisions,
+                self._robots[first].contact_view.collisions,
+                self._robots[second].contact_view.collisions,
             ):
                 kinds = _kind(a), _kind(b)
                 if "sphere" not in kinds or any(
@@ -129,7 +130,7 @@ class RobotRobotContacts:
         compiled = {}
         occupied = set()
         for owner, participant in self._robots.items():
-            tree = participant.tree
+            tree = participant.contact_view
             original = {
                 (row.link_index, row.link_name, row.name): row.shape.key for row in tree.collisions
             }
@@ -161,7 +162,7 @@ class RobotRobotContacts:
                 raise ValueError(f"robot {owner}: invalid direct-contact collider: {exc}") from exc
             for solid in solids:
                 source = original[solid.owner_index, solid.link, solid.shape]
-                if solid.owner_index >= tree.model.dof_count:
+                if solid.owner_index >= participant.body_count:
                     raise ValueError(
                         f"robot {owner} {solid.link}/{solid.shape}: invalid link owner"
                     )
@@ -213,11 +214,11 @@ class RobotRobotContacts:
         geometry, twists, roots, link_loads, root_loads = {}, {}, {}, {}, {}
         for owner, participant in self._robots.items():
             physical, geo, linear, angular = terms[owner]
-            n = participant.tree.model.dof_count
+            n, dofs = participant.body_count, participant.velocity_count
             if (
-                physical.v.shape != (n,)
-                or linear.shape != (n, 3, n)
-                or angular.shape != (n, 3, n)
+                physical.v.shape != (dofs,)
+                or linear.shape != (n, 3, dofs)
+                or angular.shape != (n, 3, dofs)
                 or geo.position.shape != (n, 3)
                 or geo.rotation.shape != (n, 3, 3)
                 or geo.com_position.shape != (n, 3)
@@ -225,7 +226,7 @@ class RobotRobotContacts:
                 raise ValueError(f"robot {owner}: inconsistent full-coordinate contact terms")
             geometry[owner] = geo
             twists[owner] = np.column_stack((linear @ physical.v, angular @ physical.v))
-            roots[owner] = np.asarray(participant.tree.root_xyz, dtype=float)
+            roots[owner] = np.asarray(participant.contact_view.root_xyz, dtype=float)
             link_loads[owner] = np.zeros((n, 6))
             root_loads[owner] = np.zeros(6)
         records = _Records(self._shapes, poses)

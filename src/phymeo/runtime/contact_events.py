@@ -206,9 +206,14 @@ class RobotContactEventAdapter:
                 raise ValueError("robot collision remap must be unique in its world")
             link = _index(col.link_index, "robot link", minimum=-1)
             name = tree.root_link if link == -1 else tree.link_names[link]
-            kind, frame = (
-                ("robot_root", "robot_root") if link == -1 else ("robot_link", "robot_model_link")
-            )
+            if getattr(tree, "is_floating", False) and link == 0:
+                kind, frame = "robot_root", "robot_model_link"
+            else:
+                kind, frame = (
+                    ("robot_root", "robot_root")
+                    if link == -1
+                    else ("robot_link", "robot_model_link")
+                )
             frames[key] = _OwnerFrame(
                 ContactOwner(world, body, kind, frame, link, name),
                 frozenset(col.shape.vertex_ids),
@@ -281,7 +286,7 @@ class RobotContactEventAdapter:
         owner = metadata.owner
         if owner.kind == "rigid":
             position, rotation = rigid.position[metadata.row], rotations[metadata.row]
-        elif owner.kind == "robot_root":
+        elif owner.local_frame == "robot_root":
             position, rotation = self._root_frames[owner.world, owner.body]
         else:
             if isinstance(geo, Mapping):

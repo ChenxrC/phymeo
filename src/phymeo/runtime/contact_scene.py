@@ -156,6 +156,42 @@ class ContactSceneBuilder:
         self._bodies[addr] = registration
         self._robots.add(addr)
 
+    def add_floating_urdf(
+        self,
+        body,
+        path,
+        *,
+        robot_state,
+        kp,
+        kd,
+        effort_limit=None,
+        pads=(),
+        loader=None,
+        world=0,
+    ):
+        """Register a physical free root and ordinary scalar-joint tree for HOST.
+
+        Root and joints share one full inertia. External body COM wrenches are
+        supplied in FloatingRobotCommand, separately from joint drive effort.
+        """
+        from ._floating_robot_participant import make_floating_registration
+
+        addr = _address(world, body)
+        if addr in self._bodies:
+            raise ValueError("duplicate world-local body ID")
+        registration = make_floating_registration(
+            path,
+            robot_state=robot_state,
+            kp=kp,
+            kd=kd,
+            effort_limit=effort_limit,
+            pads=pads,
+            loader=loader,
+            gravity=self._gravity,
+        )
+        self._bodies[addr] = registration
+        self._robots.add(addr)
+
     def add_box(
         self,
         body,
@@ -399,7 +435,19 @@ class ContactSceneBuilder:
         if not self._bodies:
             raise ValueError("register at least one physical body")
         if self._robots:
+            from ._floating_robot_participant import FloatingRobotRegistration
             from .robot_scene import build_robot_scene
+
+            if any(isinstance(item, FloatingRobotRegistration) for item in self._bodies.values()):
+                from .multi_robot_scene import build_multi_robot_scene
+
+                return build_multi_robot_scene(
+                    self._bodies,
+                    self._pairs,
+                    gravity=self._gravity,
+                    backend=backend,
+                    cache_root=cache_root,
+                )
 
             return build_robot_scene(
                 self._bodies,

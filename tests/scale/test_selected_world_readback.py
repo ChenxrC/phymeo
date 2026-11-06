@@ -62,6 +62,10 @@ def test_selected_readback_preserves_real_mixed_states_and_counts(kind, tyx_mode
         assert slider["history"] == [0.0, 0.0, 2.0]
         assert slider["control"] == [0.0, 0.0, 2.0, 0.0]
         assert slider["topology"]
+        wire = sample["frames"][-1]["wire_snapshot"]
+        assert len(wire) == 16 and wire[0]["shape"] == [12]
+        assert wire[0]["values"] == [3 / 16384, 0, 0, 1 / 64, 0, 0, 2, 0, 0, 0, 0, 2]
+        assert wire[1]["dtype"] == "int32" and wire[1]["values"] == [3]
     else:
         assert frame["widths"] == [1, 3, 1, 3, 1, 3, 1, 3]
         assert frame["values"][0] == [3 / 16384, 0.0, 0.0, 1 / 64, 0.0, 0.0]
@@ -160,4 +164,36 @@ def test_profile_instrumentation_unwinds_after_real_read_failure(tyx_mode, tmp_p
         batch._read = old_read
         assert batch.snapshot() == old_snapshot
         assert batch.step(1 / 128) == {101: True}
+
+
+def test_frozen_cli_names_resolve_to_the_same_configuration(tmp_path):
+    p = profiler()
+    args = p.parse_args([
+        "--worlds", "128", "--select", "8", "--kind", "kinematics",
+        "--backend", "cuda", "--expected-head", "1" * 40,
+        "--cache-root", str(tmp_path / "cache"), "--out", str(tmp_path / "run.json"),
+    ])
+    assert args.config.worlds == 128 and args.config.selection == 8
+    assert args.config.mode == "cuda" and args.config.kind == "kinematics"
+    assert args.config.steps == 32
+    assert args.config.warm_windows == 5 and args.config.formal_windows == 20
+
+
+@pytest.mark.parametrize("download,submit,expected", [(750, 0, True), (749, 1, False)])
+def test_gate_uses_whole_task_denominator_and_requires_actual_formal_subset(download, submit, expected):
+    p = profiler()
+    config = p.ProfileConfig(32, 1, "kinematics", "cuda")
+    window = dict(
+        steps=32, whole_ns=5000,
+        phases={"observation": dict(wall_ns=1000, download_ns=download,
+                                    submit_ns=submit, sync_ns=0)},
+        exclusive_ns={"all": 5000},
+        batch_counter_delta=dict.fromkeys(p.COUNTERS, 0), native_counter_delta={},
+    )
+    summary, gate = p._summary(config, 1, [window] * 20)
+    assert gate["measured_cost_gate"] is expected
+    assert summary["observation_download_fraction"] == download / 1000
+    assert summary["observation_download_fraction_of_whole"] == download / 5000
+    assert p._summary(config, 1, [window])[1]["measured_cost_gate"] is False
+    assert p._summary(config, 32, [window] * 20)[1]["measured_cost_gate"] is False
 

@@ -549,11 +549,11 @@ def test_a06_coincident_root_geometry_failure_is_atomic(tmp_path):
 def test_a04_floating_sphere_reads_finite_capsule_shaft_end_and_axis_miss(tmp_path, point, axis, force):
     path = tmp_path / "finite-capsule.xml"
     path.write_text(
-        '<mujoco model="finite"><compiler angle="radian"/><worldbody><body name="rod">'
+        '<mujoco model="finite"><compiler angle="radian"/><worldbody><body name="fixed_base"><body name="rod">'
         f'<joint name="slide" type="slide" axis="{_xyz(axis)}" range="-1 1"/>'
         '<inertial pos="0 0 0" mass="2" diaginertia=".25 .25 .25"/>'
         f'<geom name="capsule" type="capsule" fromto="0 0 -.25 0 0 .25" size="{RADIUS}"/>'
-        '</body></worldbody></mujoco>', encoding="utf-8",
+        '</body></body></worldbody></mujoco>', encoding="utf-8",
     )
     builder = ContactSceneBuilder(gravity=(0, 0, 0))
     _add(builder, 10, _asset(tmp_path / "ball.urdf", child=False, root_mass=4), _state(q=(), v=(), position=point))

@@ -456,7 +456,9 @@ def test_a06_multirobot_coupled_history_is_explicitly_unavailable(tmp_path):
 
 
 @pytest.mark.parametrize("accepted", [True, False])
-def test_example_json_boundary_preserves_numpy_boolean_checks(tmp_path, monkeypatch, capsys, accepted):
+def test_example_json_boundary_preserves_numpy_boolean_checks(
+    tmp_path, monkeypatch, capsys, accepted
+):
     import importlib.util
     import json
     import sys

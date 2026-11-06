@@ -125,3 +125,9 @@ python -m pytest tests/scale/test_selected_world_readback.py -k readback_plan -m
 ```
 
 本组包含公共双缓冲、多世界重排/32步零稳态分配、跨实例、空/非法选择、held/history与局部重放、第二次下载故障、局部数值拒步、中途分配失败、两种完整输出无插桩配对和CLI计数命名。作者只交源码与精确节点，不重跑C0的20个已绿实例或14配置。
+
+### C1 清理异常审阅留出（待父修复/执行）
+
+父已完成原C1功能组：35-c interpret 14 passed / 2.69 s，36-c CUDA 13 passed / 4.60 s；style提交为`58a256f9496e8bee3574f3926e658b6ac1c032af`。正式18个配对任务尚未启动。随后交叉审阅发现：batch含两个计划时，首个plan的关闭回调抛错会使旧父hook跳出循环，第二计划未关闭而runtime已经关闭，拥有字节也可能被误置零。
+
+新增唯一节点`test_readback_plan_batch_close_failure_still_closes_all_plans`，先真实创建/读取两个不同kind计划，再定向在实际首关闭计划的ExitStack注入异常；要求传播异常且所有计划/两级live bytes/集合都清理，后续关闭幂等、读取拒绝。本次只提交测试和记录，作者未运行，产品修复及新增节点RED/GREEN由父串行负责；原已绿组和C0不重跑。

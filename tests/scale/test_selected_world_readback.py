@@ -634,3 +634,54 @@ def test_readback_plan_cli_selects_unwrapped_comparison_and_new_counter_namespac
     with_wire = {**public, "wire_snapshot": [{"shape": [12]}]}
     assert p._public_frames([with_wire]) == [public]
     assert p.frames_sha256(p._public_frames([with_wire])) == p.frames_sha256([public])
+
+@pytest.mark.tyx
+def test_readback_plan_batch_close_failure_still_closes_all_plans(tyx_mode, tmp_path):
+    from phymeo.backends.tyx_world_batch import FreeSphere, TyxWorldBatch
+
+    sphere = FreeSphere(2, 0.125, position=(0, 0, 2), gravity=(0, 0, -8))
+    batch = TyxWorldBatch(
+        [(91, sphere), (7, sphere)], tyx_mode, cache_root=tmp_path / "runtime"
+    )
+    plans = []
+    try:
+        assert batch.step(1 / 128) == {91: True, 7: True}
+        plans.append(batch.prepare_readback([91], kind="kinematics"))
+        plans.append(batch.prepare_readback([7, 91], kind="snapshot"))
+        first_read = plans[0].read()
+        second_read = plans[1].read()
+        assert first_read.ticks.tolist() == [1]
+        assert tuple(second_read) == (7, 91)
+        assert all(point.tick == 1 for point in second_read.values())
+        assert batch.stats()["readback_plan_live_count"] == 2
+        callbacks = []
+
+        def fail_close():
+            callbacks.append("called")
+            raise RuntimeError("injected first-plan close callback failure")
+
+        first_to_close = tuple(batch._readback_plans)[0]
+        first_to_close._resources.callback(fail_close)
+        with pytest.raises(RuntimeError, match="injected first-plan close"):
+            batch.close()
+        assert callbacks == ["called"]
+        assert all(plan.stats()["closed"] for plan in plans)
+        assert all(plan.stats()["device_owned_bytes"] == 0 for plan in plans)
+        assert all(plan.stats()["host_workspace_bytes"] == 0 for plan in plans)
+        assert batch.stats()["device_owned_bytes"] == 0
+        assert batch.stats()["readback_plan_owned_bytes"] == 0
+        assert batch.stats()["readback_plan_live_count"] == 0
+        after_close = batch.stats()
+        batch.close()
+        for plan in plans:
+            plan.close()
+            with pytest.raises(RuntimeError, match="closed"):
+                plan.read()
+            with pytest.raises(RuntimeError, match="closed"):
+                batch.readback(plan)
+        assert batch.stats() == after_close
+        assert callbacks == ["called"]
+    finally:
+        for plan in plans:
+            plan.close()
+        batch.close()

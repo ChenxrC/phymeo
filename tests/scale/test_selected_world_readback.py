@@ -6,7 +6,6 @@ from pathlib import Path
 
 import pytest
 
-
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = ROOT / "scripts" / "profile_selected_world_readback.py"
 
@@ -26,8 +25,13 @@ def profiler():
 def test_selected_readback_preserves_real_mixed_states_and_counts(kind, tyx_mode, tmp_path):
     p = profiler()
     config = p.ProfileConfig(
-        worlds=32, selection=8, kind=kind, mode=tyx_mode,
-        warm_windows=0, formal_windows=1, steps=2,
+        worlds=32,
+        selection=8,
+        kind=kind,
+        mode=tyx_mode,
+        warm_windows=0,
+        formal_windows=1,
+        steps=2,
     )
     result = p.run_profile(config, cache_root=tmp_path / "runtime")
     assert result["status"] == "complete"
@@ -44,14 +48,12 @@ def test_selected_readback_preserves_real_mixed_states_and_counts(kind, tyx_mode
     assert counts["synchronizations"] == (18 if kind == "snapshot" else 2)
     assert counts["device_allocations"] == counts["topology_uploaded_bytes"] == 0
     assert counts["control_uploaded_bytes"] == 0
-    expected_read = (832 if kind == "snapshot" else 3328)
+    expected_read = 832 if kind == "snapshot" else 3328
     assert sample["phases"]["observation"]["read_bytes"] == expected_read
     assert sample["phases"]["observation"]["d2h_bytes"] == (
         expected_read if tyx_mode == "cuda" else 0
     )
-    assert counts[kind + "_downloaded_bytes"] == (
-        expected_read if tyx_mode == "cuda" else 0
-    )
+    assert counts[kind + "_downloaded_bytes"] == (expected_read if tyx_mode == "cuda" else 0)
     frame = sample["frames"][-1]["output"]
     if kind == "snapshot":
         slider = frame["checkpoints"][0]
@@ -83,17 +85,31 @@ def test_matrix_deduplicates_one_world_selection_without_comparing_kinds():
     assert len(matrix) == 14
     for kind in ("snapshot", "kinematics"):
         assert [(w, k) for w, k, lane in matrix if lane == kind] == [
-            (1, "all"), (32, 1), (32, 8), (32, "all"),
-            (128, 1), (128, 8), (128, "all"),
+            (1, "all"),
+            (32, 1),
+            (32, 8),
+            (32, "all"),
+            (128, 1),
+            (128, 8),
+            (128, "all"),
         ]
 
 
-@pytest.mark.parametrize("updates", [
-    {"worlds": 2}, {"worlds": True}, {"selection": 0},
-    {"selection": 8, "worlds": 1}, {"selection": True},
-    {"kind": "summary"}, {"mode": "cpu_cpp"},
-    {"steps": 0}, {"warm_windows": -1}, {"formal_windows": 0},
-])
+@pytest.mark.parametrize(
+    "updates",
+    [
+        {"worlds": 2},
+        {"worlds": True},
+        {"selection": 0},
+        {"selection": 8, "worlds": 1},
+        {"selection": True},
+        {"kind": "summary"},
+        {"mode": "cpu_cpp"},
+        {"steps": 0},
+        {"warm_windows": -1},
+        {"formal_windows": 0},
+    ],
+)
 def test_invalid_profile_configuration_rejected_before_device(updates):
     p = profiler()
     arguments = dict(worlds=32, selection=8, kind="snapshot", mode="interpret")
@@ -124,8 +140,18 @@ def test_source_head_mismatch_rejected_without_loading_backend():
 
 def test_cli_requires_head_and_fresh_absolute_output(tmp_path):
     p = profiler()
-    base = ["--worlds", "32", "--selection", "8", "--kind", "snapshot",
-            "--mode", "interpret", "--cache-root", str(tmp_path / "cache")]
+    base = [
+        "--worlds",
+        "32",
+        "--selection",
+        "8",
+        "--kind",
+        "snapshot",
+        "--mode",
+        "interpret",
+        "--cache-root",
+        str(tmp_path / "cache"),
+    ]
     with pytest.raises(SystemExit):
         p.parse_args([*base, "--out", str(tmp_path / "result.json")])
     with pytest.raises(ValueError, match="absolute"):
@@ -143,8 +169,9 @@ def test_profile_instrumentation_unwinds_after_real_read_failure(tyx_mode, tmp_p
     p = profiler()
     from phymeo.backends.tyx_world_batch import FreeSphere, TyxWorldBatch
 
-    with TyxWorldBatch([(101, FreeSphere(2, 0.125))], tyx_mode,
-                       cache_root=tmp_path / "runtime") as batch:
+    with TyxWorldBatch(
+        [(101, FreeSphere(2, 0.125))], tyx_mode, cache_root=tmp_path / "runtime"
+    ) as batch:
         old_read = batch._read
         old_launch = batch._launch
         old_sync = batch._sync
@@ -168,11 +195,24 @@ def test_profile_instrumentation_unwinds_after_real_read_failure(tyx_mode, tmp_p
 
 def test_frozen_cli_names_resolve_to_the_same_configuration(tmp_path):
     p = profiler()
-    args = p.parse_args([
-        "--worlds", "128", "--select", "8", "--kind", "kinematics",
-        "--backend", "cuda", "--expected-head", "1" * 40,
-        "--cache-root", str(tmp_path / "cache"), "--out", str(tmp_path / "run.json"),
-    ])
+    args = p.parse_args(
+        [
+            "--worlds",
+            "128",
+            "--select",
+            "8",
+            "--kind",
+            "kinematics",
+            "--backend",
+            "cuda",
+            "--expected-head",
+            "1" * 40,
+            "--cache-root",
+            str(tmp_path / "cache"),
+            "--out",
+            str(tmp_path / "run.json"),
+        ]
+    )
     assert args.config.worlds == 128 and args.config.selection == 8
     assert args.config.mode == "cuda" and args.config.kind == "kinematics"
     assert args.config.steps == 32
@@ -180,15 +220,20 @@ def test_frozen_cli_names_resolve_to_the_same_configuration(tmp_path):
 
 
 @pytest.mark.parametrize("download,submit,expected", [(750, 0, True), (749, 1, False)])
-def test_gate_uses_whole_task_denominator_and_requires_actual_formal_subset(download, submit, expected):
+def test_gate_uses_whole_task_denominator_and_requires_actual_formal_subset(
+    download, submit, expected
+):
     p = profiler()
     config = p.ProfileConfig(32, 1, "kinematics", "cuda")
     window = dict(
-        steps=32, whole_ns=5000,
-        phases={"observation": dict(wall_ns=1000, download_ns=download,
-                                    submit_ns=submit, sync_ns=0)},
+        steps=32,
+        whole_ns=5000,
+        phases={
+            "observation": dict(wall_ns=1000, download_ns=download, submit_ns=submit, sync_ns=0)
+        },
         exclusive_ns={"all": 5000},
-        batch_counter_delta=dict.fromkeys(p.COUNTERS, 0), native_counter_delta={},
+        batch_counter_delta=dict.fromkeys(p.COUNTERS, 0),
+        native_counter_delta={},
     )
     summary, gate = p._summary(config, 1, [window] * 20)
     assert gate["measured_cost_gate"] is expected
@@ -196,4 +241,3 @@ def test_gate_uses_whole_task_denominator_and_requires_actual_formal_subset(down
     assert summary["observation_download_fraction_of_whole"] == download / 5000
     assert p._summary(config, 1, [window])[1]["measured_cost_gate"] is False
     assert p._summary(config, 32, [window] * 20)[1]["measured_cost_gate"] is False
-

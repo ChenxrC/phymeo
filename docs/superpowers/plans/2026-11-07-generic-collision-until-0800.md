@@ -201,7 +201,7 @@ def test_parallel_capsules_preserve_pair_stiffness(parallel_capsule_pair, zero_d
 
 **首片范围：** 对每一个真实旋转CCD采样点，以保守AABB在TYX上筛面，精确距离/包含与连续时间判断保持HOST。支持现有单转胶囊、单转网格–球及双转轴mesh–球/胶囊的原有效域。显式 mesh_midphase='bvh'；默认 all_facets 保留。全时间cell一次性面集合与全设备窄相不包含在本首片。
 
-**文件：** 原RD作者NEW geometry/_rotating_mesh_candidates.py（位于src/phymeo/）、tests/collision/test_rotating_mesh_candidates.py、tests/collision/test_tyx_rotating_mesh_candidates.py、docs/benchmarks/p65-rotating-mesh-candidates.md。父旧hooks：geometry/collision_pipeline.py、_rotating_capsule_mesh.py、_rotating_mesh_sphere.py、_dual_turn_mesh_round.py；不改 _bounded_contact.py 的既有判据/资源上限。
+**文件：** 原RD作者NEW geometry/_rotating_mesh_candidates.py（位于src/phymeo/）、tests/collision/test_rotating_round_mesh_candidates.py、tests/collision/test_tyx_rotating_round_mesh_candidates.py、docs/benchmarks/p65-rotating-mesh-candidates.md。父旧hooks：geometry/collision_pipeline.py、_rotating_capsule_mesh.py、_rotating_mesh_sphere.py、_dual_turn_mesh_round.py；不改 _bounded_contact.py 的既有判据/资源上限。
 
 **接口：** MeshRoundArcCandidates(mesh, selector).sample_axis(ends, *, radius) 返回稳定原facet索引；复用 MeshRoundFaceSelector.sample 及现有 query_boxes callback。三个转动query接可选selector，最小距离与最终pose中的 MeshRoundQuery 都沿同一接口。新类位于上述NEW helper，不能把本地采样索引冒作跨时刻常驻安全集。
 
@@ -216,8 +216,8 @@ def test_parallel_capsules_preserve_pair_stiffness(parallel_capsule_pair, zero_d
 
 计划测试选择：
 ~~~text
-python -m pytest tests/collision/test_rotating_mesh_candidates.py -q -x
-python -m pytest tests/collision/test_tyx_rotating_mesh_candidates.py -q -x
+python -m pytest tests/collision/test_rotating_round_mesh_candidates.py -q -x
+python -m pytest tests/collision/test_tyx_rotating_round_mesh_candidates.py -q -x
 ~~~
 后者在原环境分别选择interpret/CUDA；同一未改绿组不重复。公共结果字段、首触括区与材料记录全比较，不只比较boolean。
 

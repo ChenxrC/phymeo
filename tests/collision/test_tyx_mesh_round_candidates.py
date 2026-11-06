@@ -6,8 +6,17 @@ from dataclasses import asdict
 import numpy as np
 import pytest
 from mesh_round_candidate_cases import (
-    CLEAR_SWEEP, CROSSING, FACE, INSIDE, NOTCH, SHAFT, THROUGH,
-    build, check_materials, record_facets, required_faces,
+    CLEAR_SWEEP,
+    CROSSING,
+    FACE,
+    INSIDE,
+    NOTCH,
+    SHAFT,
+    THROUGH,
+    build,
+    check_materials,
+    record_facets,
+    required_faces,
 )
 
 import phymeo as ph
@@ -40,12 +49,18 @@ def test_public_face_readback_failure_is_atomic_and_closes_workspace(monkeypatch
 
 
 @pytest.mark.tyx
-def test_device_faces_match_full_output_prune_and_isolate_world_updates(tyx_mode, tmp_path, monkeypatch):
+def test_device_faces_match_full_output_prune_and_isolate_world_updates(
+    tyx_mode, tmp_path, monkeypatch
+):
     shapes, paths, owners = [], {}, []
     for index, case in enumerate((SHAFT, INSIDE, CROSSING, THROUGH, NOTCH, CLEAR_SWEEP)):
         local, motion, mesh, rounded = build(
-            case, dense=index == 0, world=17 + index, reverse=bool(index % 2),
-            reorder=bool(index % 2), variant="rigid" if index == 4 else "identity",
+            case,
+            dense=index == 0,
+            world=17 + index,
+            reverse=bool(index % 2),
+            reorder=bool(index % 2),
+            variant="rigid" if index == 4 else "identity",
         )
         shapes.extend(local.shapes)
         paths.update(motion)
@@ -61,9 +76,16 @@ def test_device_faces_match_full_output_prune_and_isolate_world_updates(tyx_mode
 
     monkeypatch.setattr(BoundsTree, "host_hits", forbidden)
     with (
-        ph.CollisionWorkspace(model, tyx_mode, broad_phase="bvh", cache_root=tmp_path / "full") as full,
-        ph.CollisionWorkspace(model, tyx_mode, broad_phase="bvh", mesh_midphase="bvh",
-                              cache_root=tmp_path / "selected") as work,
+        ph.CollisionWorkspace(
+            model, tyx_mode, broad_phase="bvh", cache_root=tmp_path / "full"
+        ) as full,
+        ph.CollisionWorkspace(
+            model,
+            tyx_mode,
+            broad_phase="bvh",
+            mesh_midphase="bvh",
+            cache_root=tmp_path / "selected",
+        ) as work,
     ):
         expected = ph.detect(model, paths, policy, full)
         calls = record_facets(work, monkeypatch)
@@ -73,7 +95,14 @@ def test_device_faces_match_full_output_prune_and_isolate_world_updates(tyx_mode
         assert actual.pairs == host_result.pairs and actual.bounds == host_result.bounds
         assert sum(row.reason == "different_world" for row in actual.pairs) == 60
         rows = [row for row in actual.pairs if row.first.world == row.second.world]
-        assert [row.status for row in rows] == ["overlap", "overlap", "overlap", "hit", "separated", "separated"]
+        assert [row.status for row in rows] == [
+            "overlap",
+            "overlap",
+            "overlap",
+            "hit",
+            "separated",
+            "separated",
+        ]
         for row, (case, mesh, rounded) in zip(rows, owners, strict=True):
             trace = row.mesh_round
             check_materials(row, trace.start, mesh, rounded, paths)
@@ -100,14 +129,20 @@ def test_device_faces_match_full_output_prune_and_isolate_world_updates(tyx_mode
         assert initial_stats["mesh_bvh_builds"] == len(owners)
         assert initial_stats["mesh_bvh_refits"] == len(calls)
         assert initial_stats["spatial_completed_launches"] == 2 * (
-            initial_stats["mesh_bvh_refits"] + initial_stats["shape_bvh_refits"])
+            initial_stats["mesh_bvh_refits"] + initial_stats["shape_bvh_refits"]
+        )
         assert initial_stats["mesh_bvh_node_visits"] > 0
         if tyx_mode == "cuda":
             assert initial_stats["spatial_uploads"] > 0 and initial_stats["spatial_downloads"] > 0
             assert initial_stats["spatial_synchronizations"] > 0
-            assert initial_stats["spatial_uploaded_bytes"] > 0 and initial_stats["spatial_downloaded_bytes"] > 0
+            assert (
+                initial_stats["spatial_uploaded_bytes"] > 0
+                and initial_stats["spatial_downloaded_bytes"] > 0
+            )
         before, layouts, count = asdict(actual), work._trees.layouts.copy(), len(calls)
-        rejected = ph.detect(model, paths, ph.CollisionPolicy(candidate_capacity=0, margin=1 / 16), work)
+        rejected = ph.detect(
+            model, paths, ph.CollisionPolicy(candidate_capacity=0, margin=1 / 16), work
+        )
         assert rejected.status == "capacity_exceeded" and rejected.required_candidates == 6
         assert work.last_result is actual and len(calls) == count
         assert work._trees.layouts == layouts and asdict(actual) == before
@@ -128,21 +163,41 @@ def test_device_faces_match_full_output_prune_and_isolate_world_updates(tyx_mode
         assert first_calls[0]["key"] == first_calls[-1]["key"]
         assert not np.array_equal(first_calls[0]["leaves"], first_calls[-1]["leaves"])
         assert asdict(actual) == before
-        (tmp_path / "mesh-round-device-candidates.json").write_text(json.dumps(dict(
-            backend=tyx_mode, expected=asdict(expected), actual=before,
-            changed_expected=asdict(changed_expected), changed_actual=asdict(changed_actual),
-            initial_stats=initial_stats, final_stats=work.stats(),
-            face_calls=[dict(world=call["key"][1].key.world, leaves=len(call["leaves"]),
-                             selected=call["rows"]) for call in calls],
-        ), allow_nan=False), encoding="utf8")
+        (tmp_path / "mesh-round-device-candidates.json").write_text(
+            json.dumps(
+                dict(
+                    backend=tyx_mode,
+                    expected=asdict(expected),
+                    actual=before,
+                    changed_expected=asdict(changed_expected),
+                    changed_actual=asdict(changed_actual),
+                    initial_stats=initial_stats,
+                    final_stats=work.stats(),
+                    face_calls=[
+                        dict(
+                            world=call["key"][1].key.world,
+                            leaves=len(call["leaves"]),
+                            selected=call["rows"],
+                        )
+                        for call in calls
+                    ],
+                ),
+                allow_nan=False,
+            ),
+            encoding="utf8",
+        )
 
 
 @pytest.mark.tyx
 @pytest.mark.parametrize("fault", ("exception", "bad_shape", "bad_bit"))
-def test_device_face_failures_preserve_publication_and_fresh_retry(tyx_mode, tmp_path, monkeypatch, fault):
+def test_device_face_failures_preserve_publication_and_fresh_retry(
+    tyx_mode, tmp_path, monkeypatch, fault
+):
     model, paths, _, _ = build(FACE)
     policy = ph.CollisionPolicy()
-    with ph.CollisionWorkspace(model, tyx_mode, mesh_midphase="bvh", cache_root=tmp_path / "cache") as work:
+    with ph.CollisionWorkspace(
+        model, tyx_mode, mesh_midphase="bvh", cache_root=tmp_path / "cache"
+    ) as work:
         previous = ph.detect(model, paths, policy, work)
         before, layouts = asdict(previous), work._trees.layouts.copy()
         assert work.stats()["spatial_completed_launches"] == 2
@@ -170,7 +225,9 @@ def test_device_face_failures_preserve_publication_and_fresh_retry(tyx_mode, tmp
             ph.detect(model, paths, policy, work)
     # A failed device workspace stays closed. Rebuild the public owner and retry
     # the unchanged input; never reset a poisoned engine or reuse partial output.
-    with ph.CollisionWorkspace(model, tyx_mode, mesh_midphase="bvh", cache_root=tmp_path / "retry") as fresh:
+    with ph.CollisionWorkspace(
+        model, tyx_mode, mesh_midphase="bvh", cache_root=tmp_path / "retry"
+    ) as fresh:
         restored = ph.detect(model, paths, policy, fresh)
         assert asdict(restored) == before
         assert fresh.stats()["spatial_completed_launches"] == 2

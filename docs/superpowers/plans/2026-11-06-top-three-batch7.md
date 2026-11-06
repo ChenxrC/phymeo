@@ -9,7 +9,7 @@
 新增公开 `ContactSceneBuilder.add_floating_urdf`，复用现有MultiRobotScene的同入态采样、各物体一次积分、一次共同发布。真实根6DOF与子关节在同一完整质量矩阵中，不拆成独立刚体，不用虚拟关节模拟底座。允许一个浮根+自由刚体、浮树与固定普通/mimic树、多个浮树。HOST单world，普通标量关节；浮树mimic、fixed关节折叠、pads、非对角根惯量首片具名拒绝。根惯量必须正且与body轴对齐；其他原shape限制不扩大。
 
 作者NEW：src/phymeo/builders/floating_urdf.py；src/phymeo/runtime/_floating_robot_participant.py；tests/test_floating_robot_scene.py；examples/floating_robot_contact.py；docs/benchmarks/p65-floating-robot-scene.md。
-父旧文件：contact_scene.py、multi_robot_scene.py、_robot_participant.py、_robot_scene_contacts.py、_robot_robot_contacts.py、contact_events.py（均runtime），必要robot_scene.py的公共说明。禁止另复制完整scene。
+父旧文件：contact_scene.py、multi_robot_scene.py、_robot_participant.py、_robot_scene_contacts.py、_robot_robot_contacts.py、contact_events.py（均runtime），必要robot_scene.py的公共说明与src/phymeo/__init__.py公共导出FloatingRobotAsset/FloatingRobotCommand/load_floating_urdf。禁止另复制完整scene。
 
 新FloatingRobotAsset保留真实根惯量和children；FloatingRobotCommand(joints,external=None)用原RobotCommand控制子关节，root-only joints=None。external为FloatingRobotInputs，世界force/torque关于各体COM；其中effort必须零，内部驱动仅原PD/限幅通道。完整q为7+n、v为6+n、body_count为1+n，三者不能混同。participant提供state复制、body/velocity计数、真实contact geometry/J。根collider使用真实body0，children顺移；事件使用随动材料frame，原fixed-root静止frame不变。观察保留完整入/出态、实际外载、接触广义力/COM wrench、已限幅驱动，外载/接触各一次。
 

@@ -46,6 +46,7 @@ class TyxWorldBatch:
         self._closed = False
         self._unavailable = False
         self._resources = ExitStack()
+        self._readback_plans = set()
         self._active = 0
         self._dirty = False
         self._counts = dict.fromkeys(
@@ -60,6 +61,10 @@ class TyxWorldBatch:
                 "summary_downloaded_bytes",
                 "snapshot_downloaded_bytes",
                 "kinematics_downloaded_bytes",
+                "readback_index_uploaded_bytes",
+                "readback_plan_owned_bytes",
+                "readback_plan_reads",
+                "readback_plan_failed_reads",
                 "launch_attempts",
                 "submitted_kernels",
                 "synchronizations",
@@ -320,6 +325,18 @@ class TyxWorldBatch:
 
         return read_kinematics(self, keys)
 
+    def prepare_readback(self, keys, *, kind="kinematics"):
+        """Prepare reusable selected-world observation buffers; existing reads stay unchanged."""
+        from ._world_readback_plan import WorldReadbackPlan
+
+        return WorldReadbackPlan(self, keys, kind=kind)
+
+    def readback(self, plan):
+        """Read an owned frame from a plan bound to this exact batch instance."""
+        from ._world_readback_plan import readback_for
+
+        return readback_for(self, plan)
+
     def summary(self):
         """Read two FP32 values per world: kinetic energy and sphere bottom z or slider q."""
         with self._lock:
@@ -395,6 +412,7 @@ class TyxWorldBatch:
                 "world_count": self._count,
                 "state_buffer_count": 2 if self._count else 0,
                 "current_buffer": self._active,
+                "readback_plan_live_count": len(self._readback_plans),
             }
 
     def __enter__(self):
@@ -408,5 +426,9 @@ class TyxWorldBatch:
         with self._lock:
             if not self._closed:
                 self._closed = True
-                self._resources.close()
-                self._counts["device_owned_bytes"] = 0
+                try:
+                    for plan in tuple(self._readback_plans):
+                        plan.close()
+                finally:
+                    self._resources.close()
+                    self._counts["device_owned_bytes"] = 0

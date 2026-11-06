@@ -716,7 +716,8 @@ def _detect_pairs(
                 ms, rs, mp, rp = (a, b, ma, mb) if mesh_first else (b, a, mb, ma)
                 mesh_rotates = mp.turn is not None and mp.turn.angle != 0
                 round_rotates = rp.turn is not None and rp.turn.angle != 0
-                if ms.radius or round_rotates:
+                capsule_turn = round_rotates and rs.kind == "capsule" and not mesh_rotates
+                if ms.radius or (round_rotates and not capsule_turn):
                     if not code:
                         analytic = _NarrowFailure("unsupported", "mesh_rounding_or_rotation")
                 elif not mesh_rotates or not code:
@@ -725,11 +726,16 @@ def _detect_pairs(
                         analytic = mesh
                     elif not code:
                         try:
-                            analytic = (
-                                RotatingMeshRoundQuery(mesh, rs, mp, rp, mesh_first)
-                                if mesh_rotates
-                                else MeshRoundQuery(mesh, rs, rp, mesh_first)
-                            )
+                            if capsule_turn:
+                                from ._rotating_capsule_mesh import RotatingCapsuleMeshQuery
+
+                                analytic = RotatingCapsuleMeshQuery(mesh, rs, mp, rp, mesh_first)
+                            else:
+                                analytic = (
+                                    RotatingMeshRoundQuery(mesh, rs, mp, rp, mesh_first)
+                                    if mesh_rotates
+                                    else MeshRoundQuery(mesh, rs, rp, mesh_first)
+                                )
                         except SolverFailure as error:
                             analytic = _NarrowFailure("unresolved", str(error))
             elif {a.kind, b.kind} == {"mesh", "triangle"} and code in (0, 5):

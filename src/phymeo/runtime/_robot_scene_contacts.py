@@ -195,7 +195,7 @@ class RobotSceneContacts:
             kwargs["payload_rotation"] = R
         return registry.evaluate(*args, **kwargs)
 
-    def evaluate(self, physical, geo, linear, angular, body, poses):
+    def evaluate(self, physical, geo, linear, angular, body, poses, *, include_rigid=True):
         n, count = len(physical.q), body.body_count
         force, torque = np.zeros((count, 3)), np.zeros((count, 3))
         link_load = np.zeros((n, 6))
@@ -284,6 +284,23 @@ class RobotSceneContacts:
         joint = np.einsum("nki,nk->i", linear, link_load[:, :3]) + np.einsum(
             "nki,nk->i", angular, link_load[:, 3:]
         )
+        if include_rigid:
+            rigid_loads, rigid_details = self.evaluate_rigid(body, poses)
+            force += rigid_loads.inputs.rigid.force
+            torque += rigid_loads.inputs.rigid.torque
+            records.contacts.extend(rigid_loads.contacts)
+            records.details.extend(rigid_details)
+        loads = SurfaceLoads(
+            CoupledInputs(StepInputs.zeros(0), RigidBodyInputs(force, torque)),
+            tuple(records.contacts),
+        )
+        return AssembledContacts(loads, joint, link_load, root_load, tuple(records.details))
+
+    def evaluate_rigid(self, body, poses):
+        """Sample all rigid-rigid pairs once, without evaluating or advancing a robot."""
+        force = np.zeros((body.body_count, 3))
+        torque = np.zeros_like(force)
+        records = _Records(self.shapes, poses)
         for (a, b), registry in self.free_registry.items():
             law = self.pairs[a, b]
             if law is None:
@@ -315,4 +332,4 @@ class RobotSceneContacts:
             CoupledInputs(StepInputs.zeros(0), RigidBodyInputs(force, torque)),
             tuple(records.contacts),
         )
-        return AssembledContacts(loads, joint, link_load, root_load, tuple(records.details))
+        return loads, tuple(records.details)

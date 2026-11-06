@@ -635,14 +635,13 @@ def test_readback_plan_cli_selects_unwrapped_comparison_and_new_counter_namespac
     assert p._public_frames([with_wire]) == [public]
     assert p.frames_sha256(p._public_frames([with_wire])) == p.frames_sha256([public])
 
+
 @pytest.mark.tyx
 def test_readback_plan_batch_close_failure_still_closes_all_plans(tyx_mode, tmp_path):
     from phymeo.backends.tyx_world_batch import FreeSphere, TyxWorldBatch
 
     sphere = FreeSphere(2, 0.125, position=(0, 0, 2), gravity=(0, 0, -8))
-    batch = TyxWorldBatch(
-        [(91, sphere), (7, sphere)], tyx_mode, cache_root=tmp_path / "runtime"
-    )
+    batch = TyxWorldBatch([(91, sphere), (7, sphere)], tyx_mode, cache_root=tmp_path / "runtime")
     plans = []
     try:
         assert batch.step(1 / 128) == {91: True, 7: True}

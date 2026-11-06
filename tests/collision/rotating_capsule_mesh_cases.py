@@ -141,7 +141,10 @@ def transform(case, matrix, offset=(0.0, 0.0, 0.0), *, name=None):
     matrix = np.asarray(matrix, dtype=float)
     offset = np.asarray(offset, dtype=float)
     sign = 1 if np.linalg.det(matrix) > 0 else -1
-    points = lambda values: tuple(tuple(matrix @ np.asarray(p) + offset) for p in values)
+
+    def points(values):
+        return tuple(tuple(matrix @ np.asarray(p) + offset) for p in values)
+
     faces = case.triangles if sign > 0 else tuple((a, c, b) for a, b, c in case.triangles)
     return replace(case, name=case.name if name is None else name,
         vertices=points(case.vertices), triangles=faces, endpoints=points(case.endpoints),

@@ -13,9 +13,24 @@ class WorldReadbackPlan:
     """
 
     __slots__ = (
-        "_batch", "_keys", "_slots", "_kind", "_width", "_resources", "_closed",
-        "_indices", "_rows", "_ticks", "_kernels", "_cuda_bytes", "_host_bytes",
-        "_allocations", "_index_bytes", "_reads", "_failed_reads", "_downloaded_bytes",
+        "_batch",
+        "_keys",
+        "_slots",
+        "_kind",
+        "_width",
+        "_resources",
+        "_closed",
+        "_indices",
+        "_rows",
+        "_ticks",
+        "_kernels",
+        "_cuda_bytes",
+        "_host_bytes",
+        "_allocations",
+        "_index_bytes",
+        "_reads",
+        "_failed_reads",
+        "_downloaded_bytes",
         "_host_read_bytes",
     )
 
@@ -74,7 +89,9 @@ class WorldReadbackPlan:
             result = np.empty(shape, dtype=dtype) if initial is None else initial.copy()
             self._host_bytes += result.nbytes
             return result
-        result = batch._tx.cuda_empty(shape, dtype) if initial is None else batch._tx.cuda_array(initial)
+        result = (
+            batch._tx.cuda_empty(shape, dtype) if initial is None else batch._tx.cuda_array(initial)
+        )
         nbytes = int(result.nbytes)
         self._resources.callback(self._free_device, result, nbytes)
         self._allocations += 1
@@ -98,7 +115,9 @@ class WorldReadbackPlan:
         if self._kind == "snapshot":
             return {
                 key: self._batch._bindings[slot].checkpoint(
-                    rows[i], ticks[i], self._batch._held[slot],
+                    rows[i],
+                    ticks[i],
+                    self._batch._held[slot],
                 )
                 for i, (key, slot) in enumerate(zip(self._keys, self._slots, strict=True))
             }
@@ -122,15 +141,21 @@ class WorldReadbackPlan:
             try:
                 if not self._keys:
                     result = self._publish(
-                        np.empty((0, self._width), np.float32), np.empty(0, np.int32),
+                        np.empty((0, self._width), np.float32),
+                        np.empty(0, np.int32),
                     )
                 else:
                     with batch._device():
                         source = batch._active
                         batch._launch(
-                            self._kernels[source], len(self._keys), self._width,
-                            self._indices, batch._states[source], batch._ticks[source],
-                            self._rows, self._ticks,
+                            self._kernels[source],
+                            len(self._keys),
+                            self._width,
+                            self._indices,
+                            batch._states[source],
+                            batch._ticks[source],
+                            self._rows,
+                            self._ticks,
                         )
                         batch._sync()
                         rows = self._read_buffer(self._rows)
@@ -147,12 +172,18 @@ class WorldReadbackPlan:
     def stats(self):
         with self._batch._lock:
             return dict(
-                keys=self._keys, kind=self._kind, closed=self._closed,
-                mode=self._batch._mode, selected_worlds=len(self._keys),
-                device_allocations=self._allocations, device_owned_bytes=self._cuda_bytes,
+                keys=self._keys,
+                kind=self._kind,
+                closed=self._closed,
+                mode=self._batch._mode,
+                selected_worlds=len(self._keys),
+                device_allocations=self._allocations,
+                device_owned_bytes=self._cuda_bytes,
                 host_workspace_bytes=self._host_bytes,
-                index_uploaded_bytes=self._index_bytes, reads=self._reads,
-                failed_reads=self._failed_reads, downloaded_bytes=self._downloaded_bytes,
+                index_uploaded_bytes=self._index_bytes,
+                reads=self._reads,
+                failed_reads=self._failed_reads,
+                downloaded_bytes=self._downloaded_bytes,
                 copied_to_host_bytes=self._host_read_bytes,
             )
 

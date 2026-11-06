@@ -726,8 +726,10 @@ def run_profile(config, *, cache_root, on_window=None, required_source_root=None
 
 
 PLAN_COUNTERS = (
-    "readback_index_uploaded_bytes", "readback_plan_owned_bytes",
-    "readback_plan_reads", "readback_plan_failed_reads",
+    "readback_index_uploaded_bytes",
+    "readback_plan_owned_bytes",
+    "readback_plan_reads",
+    "readback_plan_failed_reads",
 )
 
 
@@ -765,8 +767,9 @@ def _comparison_window(batch, config, keys, start_tick, steps, *, plan=None, col
             raise AssertionError("comparison world rejection or ownership mismatch")
         canonical = _canonical_output(output, config.kind)
         _audit_output(canonical, config.kind, keys, tick)
-        frames.append(dict(tick=tick, accepted=[[k, v] for k, v in accepted.items()],
-                           output=canonical))
+        frames.append(
+            dict(tick=tick, accepted=[[k, v] for k, v in accepted.items()], output=canonical)
+        )
     counts, native = _delta(after, before), _delta(native_after, native_before)
     plan_counts = _delta(plan_after, plan_before)
     cuda = config.mode == "cuda"
@@ -780,7 +783,8 @@ def _comparison_window(batch, config, keys, start_tick, steps, *, plan=None, col
         read_launches = steps
         transfers = 3 * steps
     expected = {
-        "completed_steps": steps, "accepted_world_steps": steps * config.worlds,
+        "completed_steps": steps,
+        "accepted_world_steps": steps * config.worlds,
         "submitted_kernels": steps + read_launches,
         "synchronizations": steps + read_launches,
         "status_downloaded_bytes": 4 * config.worlds * steps if cuda else 0,
@@ -788,39 +792,59 @@ def _comparison_window(batch, config, keys, start_tick, steps, *, plan=None, col
     }
     if any(counts[name] != value for name, value in expected.items()):
         raise AssertionError(f"comparison application counts changed: {counts}")
-    zero_fields = ("rejected_world_steps", "failed_steps", "recovery_sync_attempts",
-                   "device_allocations", "topology_uploaded_bytes", "restore_uploaded_bytes")
+    zero_fields = (
+        "rejected_world_steps",
+        "failed_steps",
+        "recovery_sync_attempts",
+        "device_allocations",
+        "topology_uploaded_bytes",
+        "restore_uploaded_bytes",
+    )
     if any(counts[name] for name in zero_fields):
         raise AssertionError("unexpected comparison steady allocation, rejection or upload")
     if not cold and counts["control_uploaded_bytes"]:
         raise AssertionError("warm comparison re-uploaded held controls")
     if plan_counts != dict(
-        readback_index_uploaded_bytes=0, readback_plan_owned_bytes=0,
-        readback_plan_reads=steps if plan is not None else 0, readback_plan_failed_reads=0,
+        readback_index_uploaded_bytes=0,
+        readback_plan_owned_bytes=0,
+        readback_plan_reads=steps if plan is not None else 0,
+        readback_plan_failed_reads=0,
     ):
         raise AssertionError(f"comparison plan accounting changed: {plan_counts}")
     if plan is not None:
-        if stats_after["downloaded_bytes"] - stats_before["downloaded_bytes"] != (read_bytes if cuda else 0):
+        if stats_after["downloaded_bytes"] - stats_before["downloaded_bytes"] != (
+            read_bytes if cuda else 0
+        ):
             raise AssertionError("plan read bytes disagree with the public counter")
         if stats_after["device_allocations"] != stats_before["device_allocations"]:
             raise AssertionError("plan allocated during the measured window")
     expected_native = dict(
         cuda_kernel_launches=(steps + read_launches) if cuda else 0,
         cuda_d2h_bytes=(4 * config.worlds * steps + read_bytes) if cuda else 0,
-        cuda_h2d_bytes=counts["control_uploaded_bytes"], cuda_d2d_bytes=0,
+        cuda_h2d_bytes=counts["control_uploaded_bytes"],
+        cuda_d2d_bytes=0,
         cuda_d2h_transfers=transfers if cuda else 0,
     )
     extra = {name: native[name] - value for name, value in expected_native.items()}
     if any(value < 0 for value in extra.values()) or (not cold and any(extra.values())):
         raise AssertionError(f"comparison native counter discrepancy: {extra}")
     return dict(
-        start_tick=start_tick, end_tick=start_tick + steps, steps=steps, whole_ns=whole_ns,
+        start_tick=start_tick,
+        end_tick=start_tick + steps,
+        steps=steps,
+        whole_ns=whole_ns,
         timing_mode="unwrapped advance plus same-kind public observation; no PhaseProbe",
-        batch_counter_delta=counts, native_counter_delta=native,
-        plan_counter_delta=plan_counts, plan_stats_before=stats_before,
-        plan_stats_after=stats_after, cold_native_extra=extra,
-        counter_audit="passed", frames=frames, public_output_sha256=frames_sha256(frames),
-        max_position_error_m=0.0, max_velocity_error_m_s=0.0,
+        batch_counter_delta=counts,
+        native_counter_delta=native,
+        plan_counter_delta=plan_counts,
+        plan_stats_before=stats_before,
+        plan_stats_after=stats_after,
+        cold_native_extra=extra,
+        counter_audit="passed",
+        frames=frames,
+        public_output_sha256=frames_sha256(frames),
+        max_position_error_m=0.0,
+        max_velocity_error_m_s=0.0,
         offline_audit_ns=perf_counter_ns() - audit_begin,
     )
 
@@ -833,37 +857,47 @@ def _comparison_summary(config, selected_count, windows):
         total = sum(row["whole_ns"] for row in rows)
         lanes[lane] = dict(
             **_quantiles([row["whole_ns"] for row in rows]),
-            timed_total_ns=total, all_world_substeps=steps * config.worlds,
+            timed_total_ns=total,
+            all_world_substeps=steps * config.worlds,
             selected_world_observations=steps * selected_count,
             world_substeps_per_s=steps * config.worlds * 1e9 / total,
             selected_world_observations_per_s=steps * selected_count * 1e9 / total,
-            batch_counter_totals={name: sum(row["batch_counter_delta"][name] for row in rows)
-                                  for name in COUNTERS},
-            native_counter_totals={name: sum(row["native_counter_delta"][name] for row in rows)
-                                   for name in rows[0]["native_counter_delta"]},
-            plan_counter_totals={name: sum(row["plan_counter_delta"][name] for row in rows)
-                                 for name in PLAN_COUNTERS},
+            batch_counter_totals={
+                name: sum(row["batch_counter_delta"][name] for row in rows) for name in COUNTERS
+            },
+            native_counter_totals={
+                name: sum(row["native_counter_delta"][name] for row in rows)
+                for name in rows[0]["native_counter_delta"]
+            },
+            plan_counter_totals={
+                name: sum(row["plan_counter_delta"][name] for row in rows) for name in PLAN_COUNTERS
+            },
         )
-    ratios = [window["lanes"]["original"]["whole_ns"] / window["lanes"]["plan"]["whole_ns"]
-              for window in windows]
+    ratios = [
+        window["lanes"]["original"]["whole_ns"] / window["lanes"]["plan"]["whole_ns"]
+        for window in windows
+    ]
     return dict(
-        lanes=lanes, per_window_original_over_plan=ratios,
+        lanes=lanes,
+        per_window_original_over_plan=ratios,
         median_paired_original_over_plan=median(ratios),
         p50_original_over_plan=lanes["original"]["p50_ms"] / lanes["plan"]["p50_ms"],
         p95_original_over_plan=lanes["original"]["p95_ms"] / lanes["plan"]["p95_ms"],
         throughput_plan_over_original=lanes["plan"]["world_substeps_per_s"]
-                                      / lanes["original"]["world_substeps_per_s"],
+        / lanes["original"]["world_substeps_per_s"],
         ratio_scope="same public kind, W/K, physical trajectory, accepted ticks and complete outputs",
         default_changed=False,
     )
 
 
-def run_comparison(config, *, cache_root, first="original", on_window=None,
-                   required_source_root=None):
+def run_comparison(
+    config, *, cache_root, first="original", on_window=None, required_source_root=None
+):
     if first not in ("original", "plan"):
         raise ValueError("first strategy must be original or plan")
-    import phymeo
     import tyx
+
+    import phymeo
     from phymeo.backends.tyx_world_batch import TyxWorldBatch
 
     if required_source_root is not None:
@@ -872,36 +906,51 @@ def run_comparison(config, *, cache_root, first="original", on_window=None,
             raise RuntimeError(f"wrong imported source: {phymeo.__file__}")
     worlds, controls, inputs = make_worlds(config.worlds)
     keys = tuple(key for key, _ in worlds)
-    selected = keys if config.selection == "all" else tuple(reversed(keys))[:config.selection]
+    selected = keys if config.selection == "all" else tuple(reversed(keys))[: config.selection]
     first_order = (first, "plan" if first == "original" else "original")
     setups, batches, plans = {}, {}, {}
     with ExitStack() as resources:
         for lane in first_order:
             started = perf_counter_ns()
-            batch = resources.enter_context(TyxWorldBatch(
-                worlds, config.mode, cache_root=Path(cache_root) / lane,
-            ))
+            batch = resources.enter_context(
+                TyxWorldBatch(
+                    worlds,
+                    config.mode,
+                    cache_root=Path(cache_root) / lane,
+                )
+            )
             constructed_ns = perf_counter_ns() - started
             batch.set_controls(controls)
             prepare_begin = perf_counter_ns()
             plan = batch.prepare_readback(selected, kind=config.kind) if lane == "plan" else None
             prepare_ns = perf_counter_ns() - prepare_begin
             batches[lane], plans[lane] = batch, plan
-            setups[lane] = dict(batch_construct_ns=constructed_ns, prepare_plan_ns=prepare_ns,
-                                batch_stats=batch.stats(), plan_stats=None if plan is None else plan.stats())
+            setups[lane] = dict(
+                batch_construct_ns=constructed_ns,
+                prepare_plan_ns=prepare_ns,
+                batch_stats=batch.stats(),
+                plan_stats=None if plan is None else plan.stats(),
+            )
         collected = dict(warmups=[], measurements=[])
         tick = 0
         for index in range(1 + config.warm_windows + config.formal_windows):
-            label = "cold" if index == 0 else (
-                "warmups" if index <= config.warm_windows else "measurements"
+            label = (
+                "cold"
+                if index == 0
+                else ("warmups" if index <= config.warm_windows else "measurements")
             )
             order = first_order if index % 2 == 0 else tuple(reversed(first_order))
             steps = 1 if index == 0 else config.steps
             pair = {}
             for lane in order:
                 pair[lane] = _comparison_window(
-                    batches[lane], config, selected, tick, steps,
-                    plan=plans[lane], cold=index == 0,
+                    batches[lane],
+                    config,
+                    selected,
+                    tick,
+                    steps,
+                    plan=plans[lane],
+                    cold=index == 0,
                 )
             original_frames = _public_frames(pair["original"]["frames"])
             plan_frames = _public_frames(pair["plan"]["frames"])
@@ -910,8 +959,13 @@ def run_comparison(config, *, cache_root, first="original", on_window=None,
             if pair["original"]["public_output_sha256"] != pair["plan"]["public_output_sha256"]:
                 raise AssertionError("same public output has different canonical SHA")
             tick += steps
-            window = dict(order=order, end_tick=tick, lanes=pair, same_public_outputs=True,
-                          public_output_sha256=pair["original"]["public_output_sha256"])
+            window = dict(
+                order=order,
+                end_tick=tick,
+                lanes=pair,
+                same_public_outputs=True,
+                public_output_sha256=pair["original"]["public_output_sha256"],
+            )
             if label == "cold":
                 collected[label] = window
             else:
@@ -923,26 +977,45 @@ def run_comparison(config, *, cache_root, first="original", on_window=None,
             raise AssertionError("comparison lanes used different device identities")
         summary = _comparison_summary(config, len(selected), collected["measurements"])
         result = dict(
-            schema="p65-selected-world-readback-comparison-v1", status="complete",
-            config=asdict(config), first=first, dt_s=H, selected_keys=list(selected), inputs=inputs,
-            final_tick=tick, same_public_outputs=True, setup=setups, summary=summary,
+            schema="p65-selected-world-readback-comparison-v1",
+            status="complete",
+            config=asdict(config),
+            first=first,
+            dt_s=H,
+            selected_keys=list(selected),
+            inputs=inputs,
+            final_tick=tick,
+            same_public_outputs=True,
+            setup=setups,
+            summary=summary,
             state_policy="two independent same-input trajectories; each cold1 + warm + formal; no resets",
             timing_mode="unwrapped physical advance + same-kind public output; no PhaseProbe",
             timing_excludes="construction, plan preparation, counter snapshots, JSON/file IO and offline audit",
             raw_scope="complete public frames; C0 wire receipts remain archived separately",
-            runtime=dict(python=sys.version, phymeo=version("phymeo"), tyx=version("tyx-compute"),
-                         phymeo_file=str(Path(phymeo.__file__).resolve()),
-                         tyx_file=str(Path(tyx.__file__).resolve()), lanes=signatures),
-            audit=dict(max_position_error_m=0.0, max_velocity_error_m_s=0.0,
-                       full_checkpoint_history_checked=config.kind == "snapshot"),
+            runtime=dict(
+                python=sys.version,
+                phymeo=version("phymeo"),
+                tyx=version("tyx-compute"),
+                phymeo_file=str(Path(phymeo.__file__).resolve()),
+                tyx_file=str(Path(tyx.__file__).resolve()),
+                lanes=signatures,
+            ),
+            audit=dict(
+                max_position_error_m=0.0,
+                max_velocity_error_m_s=0.0,
+                full_checkpoint_history_checked=config.kind == "snapshot",
+            ),
             **collected,
         )
     result["closed_batch_stats"] = {lane: batch.stats() for lane, batch in batches.items()}
     result["closed_plan_stats"] = plans["plan"].stats()
-    if any(batch.stats()["readback_plan_owned_bytes"] or batch.stats()["readback_plan_live_count"]
-           for batch in batches.values()):
+    if any(
+        batch.stats()["readback_plan_owned_bytes"] or batch.stats()["readback_plan_live_count"]
+        for batch in batches.values()
+    ):
         raise AssertionError("comparison left plan resources alive after batch close")
     return result
+
 
 def parse_args(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
@@ -978,8 +1051,10 @@ def parse_args(argv=None):
 
 def _compact_window(window):
     if "lanes" in window:
-        return {**{name: value for name, value in window.items() if name != "lanes"},
-                "lanes": {lane: _compact_window(row) for lane, row in window["lanes"].items()}}
+        return {
+            **{name: value for name, value in window.items() if name != "lanes"},
+            "lanes": {lane: _compact_window(row) for lane, row in window["lanes"].items()},
+        }
     return {
         **{name: value for name, value in window.items() if name != "frames"},
         "frame_count": len(window["frames"]),
@@ -1002,7 +1077,8 @@ def main(argv=None):
         schema="p65-selected-world-readback-v1",
         status="running",
         config=asdict(args.config),
-        compare_plan=args.compare_plan, first=args.first,
+        compare_plan=args.compare_plan,
+        first=args.first,
         source=source,
         command=sys.argv,
         output_path=str(args.out),
@@ -1015,7 +1091,9 @@ def main(argv=None):
 
         def persist(label, index, window):
             entry = dict(phase=label, index=index, window=window)
-            raw.write(json.dumps(entry, sort_keys=True, separators=(",", ":"), allow_nan=False) + "\n")
+            raw.write(
+                json.dumps(entry, sort_keys=True, separators=(",", ":"), allow_nan=False) + "\n"
+            )
             raw.flush()
             completed.append(dict(phase=label, index=index, **_compact_window(window)))
             print(
@@ -1026,8 +1104,11 @@ def main(argv=None):
             runner = run_comparison if args.compare_plan else run_profile
             extra = {"first": args.first} if args.compare_plan else {}
             result = runner(
-                args.config, cache_root=args.cache_root, on_window=persist,
-                required_source_root=ROOT, **extra,
+                args.config,
+                cache_root=args.cache_root,
+                on_window=persist,
+                required_source_root=ROOT,
+                **extra,
             )
             verify_source(source)
             raw.flush()
@@ -1066,5 +1147,3 @@ def main(argv=None):
 
 if __name__ == "__main__":
     main()
-
-

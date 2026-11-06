@@ -5,8 +5,13 @@ from dataclasses import dataclass, replace
 H = 1 / 256
 STEPS = 4
 WORLD_KEYS = (503, 91) + tuple(1009 + 17 * i for i in range(30))
-MATRIX = ((1, 2, "uniform"), (1, 8, "uniform"), (32, 2, "uniform"),
-          (32, 8, "uniform"), (3, 8, "heterogeneous"))
+MATRIX = (
+    (1, 2, "uniform"),
+    (1, 8, "uniform"),
+    (32, 2, "uniform"),
+    (32, 8, "uniform"),
+    (3, 8, "heterogeneous"),
+)
 
 
 @dataclass(frozen=True)
@@ -33,8 +38,9 @@ def frozen_layout(worlds, faces, case="uniform"):
 def build_worlds(worlds, faces, case="uniform", *, operator=None):
     """Reuse the accepted freely evolving strip and finite-mass shaft inputs."""
     layout = frozen_layout(worlds, faces, case)
-    import phymeo as ph
     from multiface_load_cases import make_world
+
+    import phymeo as ph
 
     result = {}
     for spec in layout:
@@ -42,12 +48,17 @@ def build_worlds(worlds, faces, case="uniform", *, operator=None):
         if spec.cloth_shift_z_m:
             state = world.initial
             cloth = state.domains["cloth"]
-            world = replace(world, initial=ph.SceneState({
-                **state.domains,
-                "cloth": ph.ParticleState(
-                    cloth.position + [0.0, 0.0, spec.cloth_shift_z_m], cloth.velocity
+            world = replace(
+                world,
+                initial=ph.SceneState(
+                    {
+                        **state.domains,
+                        "cloth": ph.ParticleState(
+                            cloth.position + [0.0, 0.0, spec.cloth_shift_z_m], cloth.velocity
+                        ),
+                    }
                 ),
-            }))
+            )
         result[spec.key] = world
     return result
 
@@ -55,19 +66,19 @@ def build_worlds(worlds, faces, case="uniform", *, operator=None):
 # Exact dyadic rows: normal, relative velocity, width, gap, k, fraction, damping,
 # friction, slip speed. Expected forces below are independent scalar calculations.
 _LAW_ROWS = (
-    (0, 0, 1, .25, 0, -.5, .125, .09375, 64, .5, .5, .25, .125),
-    (1, 0, 0, .25, 0, 0, .125, .09375, 128, .25, 0, 0, .125),
-    (0, 1, 0, 0, 1, 1, .125, .1875, 32, 1, 0, .5, .25),
-    (0, 0, 1, 0, 0, -.25, .125, .09375, 64, 0, .5, .25, .125),
-    (0, 1, 0, .0625, 0, .0625, .125, .09375, 128, .5, 0, .5, .25),
-    (0, 0, 1, .125, 0, 4, .125, .09375, 64, 1, .5, .25, .125),
+    (0, 0, 1, 0.25, 0, -0.5, 0.125, 0.09375, 64, 0.5, 0.5, 0.25, 0.125),
+    (1, 0, 0, 0.25, 0, 0, 0.125, 0.09375, 128, 0.25, 0, 0, 0.125),
+    (0, 1, 0, 0, 1, 1, 0.125, 0.1875, 32, 1, 0, 0.5, 0.25),
+    (0, 0, 1, 0, 0, -0.25, 0.125, 0.09375, 64, 0, 0.5, 0.25, 0.125),
+    (0, 1, 0, 0.0625, 0, 0.0625, 0.125, 0.09375, 128, 0.5, 0, 0.5, 0.25),
+    (0, 0, 1, 0.125, 0, 4, 0.125, 0.09375, 64, 1, 0.5, 0.25, 0.125),
 )
 _LAW_RESULTS = (
-    (-.5, 1.25, -.3125, 0, 1.25),
-    (.25, 1, 1, 0, 0),
+    (-0.5, 1.25, -0.3125, 0, 1.25),
+    (0.25, 1, 1, 0, 0),
     (1, 0, 0, 0, 0),
-    (-.25, 0, 0, 0, 0),
-    (0, 2, -.25, 2, -.25),
+    (-0.25, 0, 0, 0, 0),
+    (0, 2, -0.25, 2, -0.25),
     (4, 0, 0, 0, 0),
 )
 
@@ -79,5 +90,7 @@ def law_protocol_rows(count):
     import numpy as np
 
     rows = np.array([_LAW_ROWS[i % 6] for i in range(count)], dtype=np.float64).reshape(-1, 13)
-    expected = np.array([_LAW_RESULTS[i % 6] for i in range(count)], dtype=np.float64).reshape(-1, 5)
+    expected = np.array([_LAW_RESULTS[i % 6] for i in range(count)], dtype=np.float64).reshape(
+        -1, 5
+    )
     return rows, expected

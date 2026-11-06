@@ -26,7 +26,14 @@ from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 PAGE_ROWS = 128
-COUNTERS = ("completed_launches", "sites", "uploads", "downloads", "uploaded_bytes", "downloaded_bytes")
+COUNTERS = (
+    "completed_launches",
+    "sites",
+    "uploads",
+    "downloads",
+    "uploaded_bytes",
+    "downloaded_bytes",
+)
 API_PARTS = ("upload", "kernel_submit", "sync", "download")
 PHASES = ("entry", "midpoint", "endpoint")
 MAX_SUMMARY_BYTES = 2 * 1024 * 1024
@@ -53,13 +60,21 @@ class ProfileConfig:
             valid = self.case == "heterogeneous" and (self.worlds, self.faces) == (3, 8)
         if not valid or self.mode not in ("cuda", "interpret"):
             raise ValueError("unsupported frozen case or mode")
-        for name, low, high in (("warm_windows", 0, 2), ("formal_windows", 1, 3),
-                                ("steps", 1, 4), ("max_raw_bytes", 1, 32 * 1024 * 1024)):
+        for name, low, high in (
+            ("warm_windows", 0, 2),
+            ("formal_windows", 1, 3),
+            ("steps", 1, 4),
+            ("max_raw_bytes", 1, 32 * 1024 * 1024),
+        ):
             value = getattr(self, name)
             if type(value) is not int or not low <= value <= high:
                 raise ValueError(f"{name} outside frozen resource bounds")
-        if (isinstance(self.max_seconds, bool) or not isinstance(self.max_seconds, (int, float))
-                or not math.isfinite(self.max_seconds) or not 0 < self.max_seconds <= 180):
+        if (
+            isinstance(self.max_seconds, bool)
+            or not isinstance(self.max_seconds, (int, float))
+            or not math.isfinite(self.max_seconds)
+            or not 0 < self.max_seconds <= 180
+        ):
             raise ValueError("max_seconds must be finite and in (0, 180]")
 
 
@@ -78,9 +93,11 @@ def summarize_windows(config, *, cold, warmups, formal, complete_output_match, r
         extra = _integer(window["extra_page_api_ns"], "extra page cost")
         total = _integer(window["all_page_api_ns"], "all page cost")
         exclusive = window["exclusive_ns"]
-        if (not 0 <= extra <= total <= whole
-                or any(type(v) is not int or v < 0 for v in exclusive.values())
-                or sum(exclusive.values()) != whole):
+        if (
+            not 0 <= extra <= total <= whole
+            or any(type(v) is not int or v < 0 for v in exclusive.values())
+            or sum(exclusive.values()) != whole
+        ):
             raise ValueError("inconsistent or overlapping cost wall totals")
         for count in window["phase_sites"]:
             _integer(count, "phase site count")
@@ -95,9 +112,14 @@ def summarize_windows(config, *, cold, warmups, formal, complete_output_match, r
         for w in formal
     )
     eligible = bool(
-        config.mode == "cuda" and real_cuda is True and complete_output_match is True
-        and config.steps == 4 and config.warm_windows == 2 and config.formal_windows == 3
-        and dense and complete
+        config.mode == "cuda"
+        and real_cuda is True
+        and complete_output_match is True
+        and config.steps == 4
+        and config.warm_windows == 2
+        and config.formal_windows == 3
+        and dense
+        and complete
     )
     ordered = sorted(w["whole_ns"] for w in formal)
     return dict(
@@ -112,7 +134,7 @@ def summarize_windows(config, *, cold, warmups, formal, complete_output_match, r
         default_changed=False,
         formal_windows=len(formal),
         p50_ms=median(ordered) / 1e6,
-        p95_ms=ordered[math.ceil(.95 * len(ordered)) - 1] / 1e6,
+        p95_ms=ordered[math.ceil(0.95 * len(ordered)) - 1] / 1e6,
         world_substeps_per_s=config.worlds * config.steps * len(formal) * 1e9 / whole,
     )
 
@@ -125,8 +147,10 @@ def audit_page_counters(sites_by_phase, counters, *, mode):
     count = sum(pages)
     cuda = mode == "cuda"
     expected = dict(
-        completed_launches=count, sites=sum(sites),
-        uploads=count if cuda else 0, downloads=count if cuda else 0,
+        completed_launches=count,
+        sites=sum(sites),
+        uploads=count if cuda else 0,
+        downloads=count if cuda else 0,
         uploaded_bytes=6656 * count if cuda else 0,
         downloaded_bytes=2560 * count if cuda else 0,
         explicit_synchronizations=count if cuda else 0,
@@ -134,8 +158,13 @@ def audit_page_counters(sites_by_phase, counters, *, mode):
     for name, value in expected.items():
         if counters.get(name) != value:
             raise ValueError(f"page counter {name}: actual {counters.get(name)} != {value}")
-    return dict(status="passed", pages=count, extra_pages=sum(max(p - 1, 0) for p in pages),
-                sites=sum(sites), expected=expected)
+    return dict(
+        status="passed",
+        pages=count,
+        extra_pages=sum(max(p - 1, 0) for p in pages),
+        sites=sum(sites),
+        expected=expected,
+    )
 
 
 def partition_wall(begin_ns, end_ns, events, *, caller_thread):
@@ -177,8 +206,9 @@ def partition_wall(begin_ns, end_ns, events, *, caller_thread):
             lead = leaf(active[caller_thread], "scheduler_or_other_caller")
             if lead == "await_world":
                 blocked["caller_await_inclusive"] += dt
-            if len(work) > 1 or (work and lead not in (
-                    "await_world", "schedule_world", "scheduler_or_other_caller")):
+            if len(work) > 1 or (
+                work and lead not in ("await_world", "schedule_world", "scheduler_or_other_caller")
+            ):
                 owner = "handoff_overlap"
             elif work:
                 owner = work[0]
@@ -192,8 +222,13 @@ def partition_wall(begin_ns, end_ns, events, *, caller_thread):
         previous = at
     if sum(totals.values()) != end_ns - begin_ns or any(active.values()):
         raise ValueError("wall clock partition did not close")
-    return dict(exclusive_ns=dict(totals), inclusive_wait_ns=dict(blocked),
-                calls=dict(calls), main_thread=caller_thread, spans=spans)
+    return dict(
+        exclusive_ns=dict(totals),
+        inclusive_wait_ns=dict(blocked),
+        calls=dict(calls),
+        main_thread=caller_thread,
+        spans=spans,
+    )
 
 
 def _native(value):
@@ -231,6 +266,7 @@ def _cases():
     if path not in sys.path:
         sys.path.insert(0, path)
     import material_phase_transfer_cases
+
     return material_phase_transfer_cases
 
 
@@ -245,15 +281,18 @@ def _counts(batch):
 
 def _native_counts():
     import tyx
+
     return asdict(tyx.runtime_stats())
 
 
 def _audit_native(native, counters, mode, *, cold):
     cuda = mode == "cuda"
-    expected = dict(cuda_h2d_bytes=counters["uploaded_bytes"],
-                    cuda_d2h_bytes=counters["downloaded_bytes"],
-                    cuda_kernel_launches=counters["completed_launches"] if cuda else 0,
-                    cuda_d2d_bytes=0)
+    expected = dict(
+        cuda_h2d_bytes=counters["uploaded_bytes"],
+        cuda_d2h_bytes=counters["downloaded_bytes"],
+        cuda_kernel_launches=counters["completed_launches"] if cuda else 0,
+        cuda_d2d_bytes=0,
+    )
     extras = {name: native[name] - value for name, value in expected.items()}
     if any(v < 0 for v in extras.values()) or (not cold and any(extras.values())):
         raise ValueError(f"native/layer counter mismatch: {extras}")
@@ -308,7 +347,7 @@ class _Probe:
         if part == "kernel_submit":
             row["count"] = int(args[0])
             if phase["mode"] == "interpret":
-                row["input"] = args[1][:row["count"]].copy()
+                row["input"] = args[1][: row["count"]].copy()
         label = f"page:{phase['ordinal']}:{page}:{part}"
         self.attempts[part] += 1
         tid = get_ident()
@@ -325,7 +364,7 @@ class _Probe:
         # Observer bookkeeping and copies belong to HOST residual, not API time.
         self.completed[part] += 1
         if part == "kernel_submit" and phase["mode"] == "interpret":
-            row["output"] = args[2][:row["count"]].copy()
+            row["output"] = args[2][: row["count"]].copy()
         if part == "upload":
             self.bytes["upload"] += args[1].nbytes
         elif part == "download":
@@ -347,8 +386,14 @@ class _Probe:
         def evaluate(rows):
             parent = self.current
             if parent is None:
-                phase = dict(ordinal=len(self.phases), phase="row-protocol", step=0,
-                             substep=0, requests=(), trace=None)
+                phase = dict(
+                    ordinal=len(self.phases),
+                    phase="row-protocol",
+                    step=0,
+                    substep=0,
+                    requests=(),
+                    trace=None,
+                )
                 self.phases.append(phase)
             else:
                 phase = parent
@@ -364,9 +409,15 @@ class _Probe:
 
         self.hooks.enter_context(patch.object(layer, "evaluate", evaluate))
         kernel = layer._kernel
-        self.hooks.enter_context(patch.object(layer, "_kernel", lambda *a, **kw: self._api(kernel, "kernel_submit", *a, **kw)))
+        self.hooks.enter_context(
+            patch.object(
+                layer, "_kernel", lambda *a, **kw: self._api(kernel, "kernel_submit", *a, **kw)
+            )
+        )
         sync = layer._runtime.sync
-        self.hooks.enter_context(patch.object(layer._runtime, "sync", lambda *a, **kw: self._api(sync, "sync", *a, **kw)))
+        self.hooks.enter_context(
+            patch.object(layer._runtime, "sync", lambda *a, **kw: self._api(sync, "sync", *a, **kw))
+        )
         if layer.mode == "cuda":
             cls = type(layer._in)
             if cls not in self.array_types:
@@ -390,6 +441,7 @@ class _Probe:
         if self.batch is None:
             return self
         from concurrent.futures import ThreadPoolExecutor
+
         from phymeo.backends import tyx_multiface_contact as group
         from phymeo.runtime import scene_stepper
         from phymeo.runtime.registry import StateRegistry
@@ -427,14 +479,25 @@ class _Probe:
 
             def evaluate(requests, index, capacity):
                 substep, phase_index = divmod(index, 3)
-                phase = dict(ordinal=len(self.phases), phase=PHASES[phase_index],
-                             step=self.step, substep=substep,
-                             requests=tuple((k, req.rows, req.faces) for k, req in requests.items()),
-                             trace=None, rows=None, answer=None, page_rows=[])
+                phase = dict(
+                    ordinal=len(self.phases),
+                    phase=PHASES[phase_index],
+                    step=self.step,
+                    substep=substep,
+                    requests=tuple((k, req.rows, req.faces) for k, req in requests.items()),
+                    trace=None,
+                    rows=None,
+                    answer=None,
+                    page_rows=[],
+                )
                 self.phases.append(phase)
                 self.current = phase
                 start = perf_counter_ns()
-                before, native_before, sync_before = _counts(self.batch), _native_counts(), self.syncs
+                before, native_before, sync_before = (
+                    _counts(self.batch),
+                    _native_counts(),
+                    self.syncs,
+                )
                 try:
                     trace, answer = original(requests, index, capacity)
                     phase["trace"], phase["answer"] = trace, answer
@@ -460,6 +523,7 @@ class _Probe:
 
     def receipts(self):
         import numpy as np
+
         receipts = []
         for phase in self.phases:
             trace = phase["trace"]
@@ -468,35 +532,47 @@ class _Probe:
                 source = [r for _, r, _ in phase["requests"]]
                 rows = np.concatenate(source) if source else np.empty((0, 13))
             sites = len(rows)
-            item = dict(step=phase["step"], substep=phase["substep"], phase=phase["phase"],
-                        sites=sites, pages=(sites + 127) // 128,
-                        inputs=_native(rows), outputs=_native(phase["answer"]),
-                        faces=[] if trace is None else _native(trace.faces),
-                        world_offsets=[] if trace is None else _native(trace.world_offsets),
-                        page_receipts=[],
-                        counter_delta=phase.get("counter_delta"),
-                        native_counter_delta=phase.get("native_counter_delta"))
+            item = dict(
+                step=phase["step"],
+                substep=phase["substep"],
+                phase=phase["phase"],
+                sites=sites,
+                pages=(sites + 127) // 128,
+                inputs=_native(rows),
+                outputs=_native(phase["answer"]),
+                faces=[] if trace is None else _native(trace.faces),
+                world_offsets=[] if trace is None else _native(trace.world_offsets),
+                page_receipts=[],
+                counter_delta=phase.get("counter_delta"),
+                native_counter_delta=phase.get("native_counter_delta"),
+            )
             for row in phase["page_rows"]:
                 count = row.get("count", min(128, max(0, sites - 128 * row["index"])))
-                item["page_receipts"].append(dict(
-                    index=row["index"], active_rows=count,
-                    input_fp32=_native(row["input"][:count]) if "input" in row else None,
-                    output_fp32=_native(row["output"][:count]) if "output" in row else None,
-                    **({"error": row["error"]} if "error" in row else {}),
-                ))
+                item["page_receipts"].append(
+                    dict(
+                        index=row["index"],
+                        active_rows=count,
+                        input_fp32=_native(row["input"][:count]) if "input" in row else None,
+                        output_fp32=_native(row["output"][:count]) if "output" in row else None,
+                        **({"error": row["error"]} if "error" in row else {}),
+                    )
+                )
             if "error" in phase:
                 item["error"] = phase["error"]
             receipts.append(item)
         return receipts
 
 
-
 def _device_signature(layer, mode):
     if mode == "interpret":
         return dict(backend=mode, actual_device="HOST", real_cuda=False)
     if layer is None:
-        return dict(backend=mode, actual_device=None, real_cuda=False,
-                    reason="no nonempty material phase executed")
+        return dict(
+            backend=mode,
+            actual_device=None,
+            real_cuda=False,
+            reason="no nonempty material phase executed",
+        )
     from cuda.bindings import driver as cu
 
     def checked(result):
@@ -509,9 +585,14 @@ def _device_signature(layer, mode):
         raise RuntimeError("material buffers span different CUDA devices")
     device = checked(cu.cuDeviceGet(ordinal))
     raw_name = checked(cu.cuDeviceGetName(128, device)).decode("utf8")
-    return dict(backend=mode, actual_device=f"cuda:{ordinal}", real_cuda=True,
-                device_name=raw_name.split("\0", 1)[0].strip(), device_name_raw=raw_name,
-                driver_version=int(checked(cu.cuDriverGetVersion())))
+    return dict(
+        backend=mode,
+        actual_device=f"cuda:{ordinal}",
+        real_cuda=True,
+        device_name=raw_name.split("\0", 1)[0].strip(),
+        device_name_raw=raw_name,
+        driver_version=int(checked(cu.cuDriverGetVersion())),
+    )
 
 
 def _check_loaded_sources(root):
@@ -534,6 +615,7 @@ def _check_loaded_sources(root):
 
 def _check_phase_rows(receipts, worlds, *, mode):
     import numpy as np
+
     for receipt in receipts:
         rows = np.asarray(receipt["inputs"], dtype=float).reshape(-1, 13)
         actual = np.asarray(receipt["outputs"], dtype=float).reshape(-1, 5)
@@ -543,12 +625,18 @@ def _check_phase_rows(receipts, worlds, *, mode):
             audit_page_counters([len(rows)], receipt["counter_delta"], mode=mode)
         if len(rows):
             rate = np.sum(rows[:, :3] * rows[:, 3:6], axis=1)
-            magnitude = (np.maximum(0, rows[:, 6] - rows[:, 7]) * rows[:, 8]
-                         * rows[:, 9] * np.maximum(0, 1 - rows[:, 10] * rate))
+            magnitude = (
+                np.maximum(0, rows[:, 6] - rows[:, 7])
+                * rows[:, 8]
+                * rows[:, 9]
+                * np.maximum(0, 1 - rows[:, 10] * rate)
+            )
             tangent = rows[:, 3:6] - rate[:, None] * rows[:, :3]
             scale = np.maximum(rows[:, 12], np.linalg.norm(tangent, axis=1))
-            force = magnitude[:, None] * rows[:, :3] - (
-                rows[:, 11] * magnitude / scale)[:, None] * tangent
+            force = (
+                magnitude[:, None] * rows[:, :3]
+                - (rows[:, 11] * magnitude / scale)[:, None] * tangent
+            )
             expected = np.column_stack((rate, magnitude, force))
             np.testing.assert_allclose(actual, expected, rtol=4e-6, atol=1e-7)
         position = 0
@@ -560,10 +648,13 @@ def _check_phase_rows(receipts, worlds, *, mode):
                 if address["face"] not in world.keys:
                     raise ValueError("unregistered material face")
                 face_index = world.keys.index(address["face"])
-                if (tuple(address["nodes"]) != world.faces[face_index]
-                        or address["robot"] != "link" or address["link"] != "shaft"
-                        or address["start"] != position
-                        or not position < address["stop"] <= stop):
+                if (
+                    tuple(address["nodes"]) != world.faces[face_index]
+                    or address["robot"] != "link"
+                    or address["link"] != "shaft"
+                    or address["start"] != position
+                    or not position < address["stop"] <= stop
+                ):
                     raise ValueError("phase face/node identity changed")
                 position = address["stop"]
             if position != stop:
@@ -573,10 +664,12 @@ def _check_phase_rows(receipts, worlds, *, mode):
         for page in receipt["page_receipts"]:
             start = 128 * page["index"]
             count = page["active_rows"]
-            np.testing.assert_array_equal(np.asarray(page["input_fp32"]),
-                                          rows[start:start + count].astype(np.float32))
-            np.testing.assert_array_equal(np.asarray(page["output_fp32"]),
-                                          actual[start:start + count])
+            np.testing.assert_array_equal(
+                np.asarray(page["input_fp32"]), rows[start : start + count].astype(np.float32)
+            )
+            np.testing.assert_array_equal(
+                np.asarray(page["output_fp32"]), actual[start : start + count]
+            )
 
 
 def run_row_protocol(count, *, mode, cache_root):
@@ -585,6 +678,7 @@ def run_row_protocol(count, *, mode, cache_root):
     if mode not in ("cuda", "interpret"):
         raise ValueError("row protocol mode must be cuda or interpret")
     import numpy as np
+
     import phymeo as ph
 
     with ph.TyxNormalLayer(mode, cache_root=cache_root) as layer, _Probe() as probe:
@@ -601,26 +695,42 @@ def run_row_protocol(count, *, mode, cache_root):
         np.testing.assert_allclose(result, expected, rtol=0, atol=1e-7)
         receipt = dict(
             scope="arithmetic-row protocol, not a physical trajectory",
-            inputs=rows.tolist(), outputs=result.tolist(), expected_outputs=expected.tolist(),
-            actual_device=_device_signature(layer, mode), whole_ns=elapsed,
-            counter_audit=audit, counter_delta=counts, native_counter_delta=native,
-            cold_native_extra=extra, page_receipts=probe.receipts(),
+            inputs=rows.tolist(),
+            outputs=result.tolist(),
+            expected_outputs=expected.tolist(),
+            actual_device=_device_signature(layer, mode),
+            whole_ns=elapsed,
+            counter_audit=audit,
+            counter_delta=counts,
+            native_counter_delta=native,
+            cold_native_extra=extra,
+            page_receipts=probe.receipts(),
         )
     return receipt
 
 
 def _input_manifest(worlds, config):
     return dict(
-        world_keys=list(worlds), h_s=1 / 256, steps=config.steps,
+        world_keys=list(worlds),
+        h_s=1 / 256,
+        steps=config.steps,
         declared_layout=_native(_cases().frozen_layout(config.worlds, config.faces, config.case)),
-        worlds=[dict(
-            world=key, models=_native(world.program.scene.domains),
-            program_signature=_native(world.program.problem_signature()),
-            reference_position_m=_native(world.reference), areas_m2=_native(world.areas),
-            initial=_native(world.initial), controls=_native(world.controls),
-            faces=[dict(robot="link", link="shaft", face=name, nodes=list(nodes))
-                   for name, nodes in zip(world.keys, world.faces, strict=True)],
-        ) for key, world in worlds.items()],
+        worlds=[
+            dict(
+                world=key,
+                models=_native(world.program.scene.domains),
+                program_signature=_native(world.program.problem_signature()),
+                reference_position_m=_native(world.reference),
+                areas_m2=_native(world.areas),
+                initial=_native(world.initial),
+                controls=_native(world.controls),
+                faces=[
+                    dict(robot="link", link="shaft", face=name, nodes=list(nodes))
+                    for name, nodes in zip(world.keys, world.faces, strict=True)
+                ],
+            )
+            for key, world in worlds.items()
+        ],
     )
 
 
@@ -640,8 +750,9 @@ def _physical_checks(worlds, records, config):
                 data = frame.report.substeps[0].diagnostics["robot_contact"]
                 if data["cloth_links"]:
                     raise ValueError("separated cloth unexpectedly produced a material force")
-            if np.array_equal(frames[-1].state.domains["cloth"].position,
-                              world.initial.domains["cloth"].position):
+            if np.array_equal(
+                frames[-1].state.domains["cloth"].position, world.initial.domains["cloth"].position
+            ):
                 raise ValueError("separated cloth did not advance")
             checks[spec.key] = dict(kind="separated", accepted_steps=len(frames), force_sites=0)
         elif config.steps == 4:
@@ -657,9 +768,15 @@ def _physical_checks(worlds, records, config):
                     for site in row["sites"]:
                         ids, weights = zip(*site["face_weights"], strict=True)
                         lookup = dict(zip(row["face_nodes"], row["face_positions_m"], strict=True))
-                        np.testing.assert_allclose(sum(w * lookup[i] for i, w in zip(ids, weights, strict=True)),
-                                                   site["point_m"], rtol=0, atol=3e-10)
-                        np.testing.assert_array_equal(site["force_on_cloth_n"], -site["force_on_link_n"])
+                        np.testing.assert_allclose(
+                            sum(w * lookup[i] for i, w in zip(ids, weights, strict=True)),
+                            site["point_m"],
+                            rtol=0,
+                            atol=3e-10,
+                        )
+                        np.testing.assert_array_equal(
+                            site["force_on_cloth_n"], -site["force_on_link_n"]
+                        )
             checks[spec.key] = dict(kind="short qualification", accepted_steps=len(frames))
     return _native(checks)
 
@@ -705,7 +822,9 @@ def _measure_window(batch, worlds, config, *, instrumented, cold, budget):
                 if probe is not None:
                     probe.step = tick
                 phases_before = batch.last_phases
-                output = batch.step(1 / 256, {key: world.controls[tick] for key, world in worlds.items()})
+                output = batch.step(
+                    1 / 256, {key: world.controls[tick] for key, world in worlds.items()}
+                )
                 records.append(output)
                 phases.extend(batch.last_phases)
                 if not all(result.report.accepted for result in output.values()):
@@ -717,15 +836,22 @@ def _measure_window(batch, worlds, config, *, instrumented, cold, budget):
             end = perf_counter_ns()
     counts = _delta(_counts(batch), before)
     native = _delta(_native_counts(), native_before)
-    raw_frames = [dict(step=i, worlds=[dict(world=k, result=_native(out[k])) for k in worlds])
-                  for i, out in enumerate(records)]
+    raw_frames = [
+        dict(step=i, worlds=[dict(world=k, result=_native(out[k])) for k in worlds])
+        for i, out in enumerate(records)
+    ]
     if probe is not None:
         timeline = partition_wall(begin, end, probe.events, caller_thread=probe.main)
         receipts = probe.receipts()
         syncs = probe.syncs
     else:
-        timeline = dict(exclusive_ns={"uninstrumented_full_task": end - begin},
-                        inclusive_wait_ns={}, spans=[], calls={}, main_thread=get_ident())
+        timeline = dict(
+            exclusive_ns={"uninstrumented_full_task": end - begin},
+            inclusive_wait_ns={},
+            spans=[],
+            calls={},
+            main_thread=get_ident(),
+        )
         receipts = [_native(phase) | {"step": i // 3} for i, phase in enumerate(phases)]
         # The uninstrumented path does not fabricate a measured sync count.
         syncs = None
@@ -738,27 +864,42 @@ def _measure_window(batch, worlds, config, *, instrumented, cold, budget):
             if int(page) > 0:
                 extra_api[part] += elapsed
     window = dict(
-        whole_ns=end - begin, exclusive_ns=timeline["exclusive_ns"],
-        all_page_api_ns=sum(api.values()), extra_page_api_ns=sum(extra_api.values()),
-        all_page_api_parts_ns=dict(api), extra_page_api_parts_ns=dict(extra_api),
-        inclusive_wait_ns=timeline["inclusive_wait_ns"], raw_timeline=timeline["spans"],
-        phase_sites=[p["sites"] for p in receipts], phase_receipts=receipts,
-        counter_delta=counts, native_counter_delta=native,
-        explicit_synchronizations=syncs, instrumented=instrumented,
-        frames=raw_frames, complete_output_sha256=_digest(canonical_frames(raw_frames)),
-        accepted_world_steps=sum(result.report.accepted for out in records for result in out.values()),
-        counter_audit="incomplete", status="failed" if failure is not None else "complete",
-        actual_device=(probe.device if probe is not None and probe.device is not None
-                       else _device_signature(batch._layer, config.mode)),
+        whole_ns=end - begin,
+        exclusive_ns=timeline["exclusive_ns"],
+        all_page_api_ns=sum(api.values()),
+        extra_page_api_ns=sum(extra_api.values()),
+        all_page_api_parts_ns=dict(api),
+        extra_page_api_parts_ns=dict(extra_api),
+        inclusive_wait_ns=timeline["inclusive_wait_ns"],
+        raw_timeline=timeline["spans"],
+        phase_sites=[p["sites"] for p in receipts],
+        phase_receipts=receipts,
+        counter_delta=counts,
+        native_counter_delta=native,
+        explicit_synchronizations=syncs,
+        instrumented=instrumented,
+        frames=raw_frames,
+        complete_output_sha256=_digest(canonical_frames(raw_frames)),
+        accepted_world_steps=sum(
+            result.report.accepted for out in records for result in out.values()
+        ),
+        counter_audit="incomplete",
+        status="failed" if failure is not None else "complete",
+        actual_device=(
+            probe.device
+            if probe is not None and probe.device is not None
+            else _device_signature(batch._layer, config.mode)
+        ),
     )
     if failure is not None:
         window["error"] = dict(type=type(failure).__name__, message=str(failure))
         window["failure_transaction"] = dict(
-            published_states_sha256=fingerprint(batch.snapshot()),
-            last_completed_states_sha256=fingerprint(step_base),
+            published_states_sha256=fingerprint(tuple(sorted(batch.snapshot().items()))),
+            last_completed_states_sha256=fingerprint(tuple(sorted(step_base.items()))),
             current_phases_sha256=fingerprint(batch.last_phases),
             phases_before_failed_step_sha256=fingerprint(phases_before),
-            completed_step_count=len(records), automatic_retry=False,
+            completed_step_count=len(records),
+            automatic_retry=False,
         )
         failure.profile_window = window
         raise failure
@@ -766,34 +907,50 @@ def _measure_window(batch, worlds, config, *, instrumented, cold, budget):
         if instrumented:
             actual = dict(counts, explicit_synchronizations=syncs)
             audit = audit_page_counters(window["phase_sites"], actual, mode=config.mode)
-            if (probe.completed["kernel_submit"] != counts["completed_launches"]
-                    or probe.completed["upload"] != counts["uploads"]
-                    or probe.completed["download"] != counts["downloads"]
-                    or probe.bytes["upload"] != counts["uploaded_bytes"]
-                    or probe.bytes["download"] != counts["downloaded_bytes"]):
+            if (
+                probe.completed["kernel_submit"] != counts["completed_launches"]
+                or probe.completed["upload"] != counts["uploads"]
+                or probe.completed["download"] != counts["downloads"]
+                or probe.bytes["upload"] != counts["uploaded_bytes"]
+                or probe.bytes["download"] != counts["downloaded_bytes"]
+            ):
                 raise ValueError("observed native calls disagree with material counters")
             _check_phase_rows(receipts, worlds, mode=config.mode)
             window["page_audit"] = audit
         else:
             expected_pages = sum((p["sites"] + 127) // 128 for p in receipts)
-            window['source_expected_synchronizations'] = expected_pages if config.mode == 'cuda' else 0
+            window["source_expected_synchronizations"] = (
+                expected_pages if config.mode == "cuda" else 0
+            )
             # Validate recorded layer counts independently, but label inferred sync separately.
-            audit_page_counters(window["phase_sites"], dict(counts,
-                explicit_synchronizations=expected_pages if config.mode == "cuda" else 0), mode=config.mode)
+            audit_page_counters(
+                window["phase_sites"],
+                dict(
+                    counts, explicit_synchronizations=expected_pages if config.mode == "cuda" else 0
+                ),
+                mode=config.mode,
+            )
         window["cold_native_extra"] = _audit_native(native, counts, config.mode, cold=cold)
         window["physical_checks"] = _physical_checks(worlds, records, config)
         window["counter_audit"] = "passed"
         window["phase_map"] = _native(phases)
     except BaseException as error:
-        window['status'] = 'failed'
-        window['error'] = dict(type=type(error).__name__, message=str(error), stage='offline_audit')
+        window["status"] = "failed"
+        window["error"] = dict(type=type(error).__name__, message=str(error), stage="offline_audit")
         error.profile_window = window
         raise
     return window
 
 
 def _compact_window(window):
-    heavy = {"frames", "raw_timeline", "phase_receipts", "physical_checks", "phase_map", "input_manifest"}
+    heavy = {
+        "frames",
+        "raw_timeline",
+        "phase_receipts",
+        "physical_checks",
+        "phase_map",
+        "input_manifest",
+    }
     result = {key: value for key, value in window.items() if key not in heavy}
     result["frame_count"] = len(window.get("frames", ()))
     result["phase_count"] = len(window.get("phase_receipts", ()))
@@ -812,8 +969,9 @@ def run_profile(config, *, cache_root, on_window=None, required_source_root=None
     worlds = cases.build_worlds(config.worlds, config.faces, config.case)
     manifest = _input_manifest(worlds, config)
     manifest_sha = _digest(manifest)
-    settings = ph.StepSettings(substeps=1, position_iterations=1,
-                               velocity_iterations=1, record_substeps=True)
+    settings = ph.StepSettings(
+        substeps=1, position_iterations=1, velocity_iterations=1, record_substeps=True
+    )
     cache = Path(cache_root)
     collected = dict(warmups=[], measurements=[])
 
@@ -825,17 +983,30 @@ def run_profile(config, *, cache_root, on_window=None, required_source_root=None
         return _compact_window(window) if on_window is not None else window
 
     try:
-        preserve("input-manifest", 0, dict(input_manifest=manifest, input_manifest_sha256=manifest_sha))
+        preserve(
+            "input-manifest", 0, dict(input_manifest=manifest, input_manifest_sha256=manifest_sha)
+        )
         with ph.TyxMultifaceContactBatch(
-            [(key, ph.ClothLinkWorld(world.program, world.initial)) for key, world in worlds.items()],
-            config.mode, settings=settings, cache_root=cache / "instrumented",
+            [
+                (key, ph.ClothLinkWorld(world.program, world.initial))
+                for key, world in worlds.items()
+            ],
+            config.mode,
+            settings=settings,
+            cache_root=cache / "instrumented",
         ) as batch:
-            cold = _measure_window(batch, worlds, config, instrumented=True, cold=True, budget=budget)
+            cold = _measure_window(
+                batch, worlds, config, instrumented=True, cold=True, budget=budget
+            )
             collected["cold"] = preserve("cold", 0, cold)
-            for label, count, key in (("warm", config.warm_windows, "warmups"),
-                                      ("formal", config.formal_windows, "measurements")):
+            for label, count, key in (
+                ("warm", config.warm_windows, "warmups"),
+                ("formal", config.formal_windows, "measurements"),
+            ):
                 for index in range(count):
-                    window = _measure_window(batch, worlds, config, instrumented=True, cold=False, budget=budget)
+                    window = _measure_window(
+                        batch, worlds, config, instrumented=True, cold=False, budget=budget
+                    )
                     collected[key].append(preserve(label, index, window))
             device = _device_signature(batch._layer, config.mode)
         # Rebuild independent programs as well as their workspaces for the plain run.
@@ -843,12 +1014,22 @@ def run_profile(config, *, cache_root, on_window=None, required_source_root=None
         if _digest(_input_manifest(reference_worlds, config)) != manifest_sha:
             raise ValueError("plain-reference physical inputs differ from the frozen manifest")
         with ph.TyxMultifaceContactBatch(
-            [(key, ph.ClothLinkWorld(world.program, world.initial))
-             for key, world in reference_worlds.items()],
-            config.mode, settings=settings, cache_root=cache / "plain-reference",
+            [
+                (key, ph.ClothLinkWorld(world.program, world.initial))
+                for key, world in reference_worlds.items()
+            ],
+            config.mode,
+            settings=settings,
+            cache_root=cache / "plain-reference",
         ) as reference_batch:
-            reference = _measure_window(reference_batch, reference_worlds, config,
-                                        instrumented=False, cold=True, budget=budget)
+            reference = _measure_window(
+                reference_batch,
+                reference_worlds,
+                config,
+                instrumented=False,
+                cold=True,
+                budget=budget,
+            )
             collected["reference"] = preserve("plain-reference", 0, reference)
         expected = collected["reference"]["complete_output_sha256"]
         all_windows = (collected["cold"], *collected["warmups"], *collected["measurements"])
@@ -856,18 +1037,36 @@ def run_profile(config, *, cache_root, on_window=None, required_source_root=None
             raise ValueError("instrumentation changed a complete physical output")
         if _digest(_input_manifest(worlds, config)) != manifest_sha:
             raise ValueError("declared input changed during measurement")
-        gate = summarize_windows(config, cold=collected["cold"], warmups=collected["warmups"],
-                                 formal=collected["measurements"], complete_output_match=True,
-                                 real_cuda=device["real_cuda"])
+        gate = summarize_windows(
+            config,
+            cold=collected["cold"],
+            warmups=collected["warmups"],
+            formal=collected["measurements"],
+            complete_output_match=True,
+            real_cuda=device["real_cuda"],
+        )
         budget.time()
         return dict(
-            status="complete", config=asdict(config),
-            input_manifest=(manifest if on_window is None else dict(
-                world_keys=list(worlds), h_s=1 / 256, steps=config.steps, full_payload_in_raw=True)),
-            input_manifest_sha256=manifest_sha, complete_output_match=True,
+            status="complete",
+            config=asdict(config),
+            input_manifest=(
+                manifest
+                if on_window is None
+                else dict(
+                    world_keys=list(worlds),
+                    h_s=1 / 256,
+                    steps=config.steps,
+                    full_payload_in_raw=True,
+                )
+            ),
+            input_manifest_sha256=manifest_sha,
+            complete_output_match=True,
             canonical_normalization="only report.substeps[*].timings values, keys retained",
-            actual_device=device, gate=gate, **collected,
-            raw_json_bytes=budget.raw_bytes, loaded_modules=_check_loaded_sources(required_source_root),
+            actual_device=device,
+            gate=gate,
+            **collected,
+            raw_json_bytes=budget.raw_bytes,
+            loaded_modules=_check_loaded_sources(required_source_root),
             execution_scope="TYX normal/friction row law; HOST geometry, mechanics, material mapping and publication",
             timer_scope="instrumented HOST wall; not GPU events or an optimization speed ratio",
             budget_scope="180s ceiling checked at safe boundaries; never interrupts a native call",
@@ -895,8 +1094,9 @@ SOURCE_TARGETS = (
 
 
 def _git(root, *args):
-    return subprocess.run(["git", "-C", str(root), *args], check=True,
-                          capture_output=True, text=True).stdout.strip()
+    return subprocess.run(
+        ["git", "-C", str(root), *args], check=True, capture_output=True, text=True
+    ).stdout.strip()
 
 
 def bind_source(root, expected_head):
@@ -913,8 +1113,12 @@ def bind_source(root, expected_head):
     for required in SOURCE_TARGETS[1:]:
         if required not in names:
             raise RuntimeError(f"measurement dependency is not tracked: {required}")
-    return dict(root=str(root), head=actual, tracked_paths=names,
-                files={name: sha256((root / name).read_bytes()).hexdigest() for name in names})
+    return dict(
+        root=str(root),
+        head=actual,
+        tracked_paths=names,
+        files={name: sha256((root / name).read_bytes()).hexdigest() for name in names},
+    )
 
 
 def verify_source(binding):
@@ -944,7 +1148,9 @@ class RawArchive:
         try:
             self.path.parent.mkdir(parents=True, exist_ok=True)
             file = self._resources.enter_context(self.path.open("xb"))
-            self._stream = self._resources.enter_context(gzip.GzipFile(fileobj=file, mode="wb", mtime=0))
+            self._stream = self._resources.enter_context(
+                gzip.GzipFile(fileobj=file, mode="wb", mtime=0)
+            )
             return self
         except BaseException:
             self._resources.close()
@@ -981,8 +1187,15 @@ def parse_args(argv=None):
     parser.add_argument("--max-raw-bytes", type=int, default=32 * 1024 * 1024)
     args = parser.parse_args(argv)
     args.config = ProfileConfig(
-        args.worlds, args.faces, args.mode, args.case, args.warm_windows,
-        args.formal_windows, args.steps, args.max_seconds, args.max_raw_bytes,
+        args.worlds,
+        args.faces,
+        args.mode,
+        args.case,
+        args.warm_windows,
+        args.formal_windows,
+        args.steps,
+        args.max_seconds,
+        args.max_raw_bytes,
     )
     if not re.fullmatch(r"[0-9a-f]{40}", args.expected_head):
         raise ValueError("expected HEAD must be a full lowercase SHA")
@@ -1003,10 +1216,15 @@ def main(argv=None):
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.cache_root.mkdir(parents=True, exist_ok=False)
     base = dict(
-        protocol="p65-material-phase-transfer-c0", status="running", source=source,
+        protocol="p65-material-phase-transfer-c0",
+        status="running",
+        source=source,
         command=list(sys.argv if argv is None else [str(Path(__file__)), *argv]),
-        config=asdict(args.config), output_path=str(args.out), raw_frames_path=str(args.raw_path),
-        cache_root=str(args.cache_root), cache_existed_before=False,
+        config=asdict(args.config),
+        output_path=str(args.out),
+        raw_frames_path=str(args.raw_path),
+        cache_root=str(args.cache_root),
+        cache_existed_before=False,
         timing_scope="complete four-step output; resets, JSON, file IO and offline audits excluded",
     )
     completed = []
@@ -1014,20 +1232,33 @@ def main(argv=None):
     with args.out.open("x", encoding="utf8", newline="\n") as report:
         try:
             with RawArchive(args.raw_path, max_bytes=args.config.max_raw_bytes) as raw:
+
                 def persist(label, index, window):
                     raw.write(dict(phase=label, index=index, window=window))
                     completed.append(dict(phase=label, index=index, **_compact_window(window)))
-                    print(f"{label} {index}: W{args.worlds}, raw JSON {raw.json_bytes} B", flush=True)
+                    print(
+                        f"{label} {index}: W{args.worlds}, raw JSON {raw.json_bytes} B", flush=True
+                    )
 
-                result = run_profile(args.config, cache_root=args.cache_root, on_window=persist,
-                                     required_source_root=ROOT)
+                result = run_profile(
+                    args.config,
+                    cache_root=args.cache_root,
+                    on_window=persist,
+                    required_source_root=ROOT,
+                )
                 verify_source(source)
                 final = dict(base, **result, source_verified_after=True)
         except BaseException as error:
             failure = error
-            final = dict(base, status="failed", error_type=type(error).__name__, error=str(error),
-                         completed_windows=completed, default_changed=False,
-                         error_notes=list(getattr(error, '__notes__', ())))
+            final = dict(
+                base,
+                status="failed",
+                error_type=type(error).__name__,
+                error=str(error),
+                completed_windows=completed,
+                default_changed=False,
+                error_notes=list(getattr(error, "__notes__", ())),
+            )
             try:
                 verify_source(source)
                 final["source_verified_after"] = True
@@ -1041,25 +1272,41 @@ def main(argv=None):
             if raw is not None:
                 final["raw_json_bytes"] = raw.json_bytes
                 final["raw_complete_records"] = raw.records
-            final["storage_cap"] = dict(raw_json_bytes=args.config.max_raw_bytes,
-                                        summary_json_bytes=MAX_SUMMARY_BYTES,
-                                        compression="gzip lossless, complete records")
+            final["storage_cap"] = dict(
+                raw_json_bytes=args.config.max_raw_bytes,
+                summary_json_bytes=MAX_SUMMARY_BYTES,
+                compression="gzip lossless, complete records",
+            )
             encoded = _encoded(final)
             if len(encoded) > MAX_SUMMARY_BYTES:
-                failure = ResourceLimit("summary JSON budget exceeded; complete raw sidecar retained")
-                final = dict(status="failed", error_type=type(failure).__name__, error=str(failure),
-                             raw_frames_path=str(args.raw_path), source_head=source["head"],
-                             raw_frames_sha256=_sha_file(args.raw_path) if args.raw_path.exists() else None)
+                failure = ResourceLimit(
+                    "summary JSON budget exceeded; complete raw sidecar retained"
+                )
+                final = dict(
+                    status="failed",
+                    error_type=type(failure).__name__,
+                    error=str(failure),
+                    raw_frames_path=str(args.raw_path),
+                    source_head=source["head"],
+                    raw_frames_sha256=_sha_file(args.raw_path) if args.raw_path.exists() else None,
+                )
                 encoded = _encoded(final)
             report.write(encoded.decode("utf8") + "\n")
             report.flush()
     if failure is not None:
         raise failure
-    print(json.dumps(dict(output=str(args.out), actual_device=final["actual_device"],
-                          gate=final["gate"], status=final["status"]), allow_nan=False))
+    print(
+        json.dumps(
+            dict(
+                output=str(args.out),
+                actual_device=final["actual_device"],
+                gate=final["gate"],
+                status=final["status"],
+            ),
+            allow_nan=False,
+        )
+    )
 
 
 if __name__ == "__main__":
     main()
-
-

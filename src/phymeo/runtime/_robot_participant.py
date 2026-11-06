@@ -98,12 +98,19 @@ class RobotParticipant:
         full = self.full(self.initial)
         n, full_n = len(self.initial.q), self.tree.model.dof_count
         return RobotJointObservation(
-            _readonly(self.initial.q), _readonly(self.initial.v),
-            _readonly(full.q), _readonly(full.v),
-            _readonly(self.initial.q), _readonly(self.initial.v),
-            _readonly(np.zeros(n)), _readonly(np.zeros(n)),
-            _readonly(np.zeros(full_n)), _readonly(np.zeros((full_n, 6))),
-            _readonly(np.zeros(6)), None, None,
+            _readonly(self.initial.q),
+            _readonly(self.initial.v),
+            _readonly(full.q),
+            _readonly(full.v),
+            _readonly(self.initial.q),
+            _readonly(self.initial.v),
+            _readonly(np.zeros(n)),
+            _readonly(np.zeros(n)),
+            _readonly(np.zeros(full_n)),
+            _readonly(np.zeros((full_n, 6))),
+            _readonly(np.zeros(6)),
+            None,
+            None,
         )
 
     def prepare(self, state, command, dt):
@@ -111,12 +118,16 @@ class RobotParticipant:
             raise TypeError("robot action must be a RobotCommand")
         n = len(state.q)
         target = _vector(command.target_q, n, "target_q")
-        rate = np.zeros(n) if command.target_velocity is None else _vector(
-            command.target_velocity, n, "target_velocity"
+        rate = (
+            np.zeros(n)
+            if command.target_velocity is None
+            else _vector(command.target_velocity, n, "target_velocity")
         )
         self.validate(RobotState(target, rate))
-        cap = self.spec.effort_limit if command.effort_limit is None else _vector(
-            command.effort_limit, n, "effort_limit"
+        cap = (
+            self.spec.effort_limit
+            if command.effort_limit is None
+            else _vector(command.effort_limit, n, "effort_limit")
         )
         if np.any(cap < 0) or np.any(cap > self.spec.effort_limit):
             raise ValueError("command effort limit exceeds configured rating")
@@ -128,12 +139,31 @@ class RobotParticipant:
             mass, bias = projection.T @ full_mass @ projection, projection.T @ full_bias
         ff = bias if command.feedforward is None else _vector(command.feedforward, n, "feedforward")
         effort = solve_bounded_pd(
-            mass, bias, state.q, state.v, target, rate,
-            self.spec.kp, self.spec.kd, cap, dt, feedforward=ff,
+            mass,
+            bias,
+            state.q,
+            state.v,
+            target,
+            rate,
+            self.spec.kp,
+            self.spec.kd,
+            cap,
+            dt,
+            feedforward=ff,
         ).effort
         return RobotPreparation(
-            state, physical, geo, linear, angular, full_mass, full_bias,
-            mass, bias, effort, RobotCommand(target, rate, cap, ff), command,
+            state,
+            physical,
+            geo,
+            linear,
+            angular,
+            full_mass,
+            full_bias,
+            mass,
+            bias,
+            effort,
+            RobotCommand(target, rate, cap, ff),
+            command,
         )
 
     def integrate(self, prepared, measured, dt):
@@ -146,15 +176,32 @@ class RobotParticipant:
             candidate = RobotState(prepared.entry.q + dt * velocity, velocity)
         self.validate(candidate)
         full = self.full(candidate)
-        mimic_loads = None if self.mechanism is None else self.mechanism._receipt(
-            prepared.entry, prepared.full_mass, prepared.full_bias,
-            prepared.effort, full_load, acceleration,
+        mimic_loads = (
+            None
+            if self.mechanism is None
+            else self.mechanism._receipt(
+                prepared.entry,
+                prepared.full_mass,
+                prepared.full_bias,
+                prepared.effort,
+                full_load,
+                acceleration,
+            )
         )
         observation = RobotJointObservation(
-            _readonly(candidate.q), _readonly(candidate.v), _readonly(full.q), _readonly(full.v),
-            _readonly(prepared.entry.q), _readonly(prepared.entry.v),
-            _readonly(prepared.effort), _readonly(load), _readonly(full_load),
-            _readonly(measured.link_wrenches_world), _readonly(measured.fixed_root_contact_wrench),
-            prepared.resolved, mimic_loads, requested_command=prepared.requested,
+            _readonly(candidate.q),
+            _readonly(candidate.v),
+            _readonly(full.q),
+            _readonly(full.v),
+            _readonly(prepared.entry.q),
+            _readonly(prepared.entry.v),
+            _readonly(prepared.effort),
+            _readonly(load),
+            _readonly(full_load),
+            _readonly(measured.link_wrenches_world),
+            _readonly(measured.fixed_root_contact_wrench),
+            prepared.resolved,
+            mimic_loads,
+            requested_command=prepared.requested,
         )
         return candidate, observation

@@ -268,3 +268,316 @@ def test_public_readback_plan_reads_current_accepted_buffer(tyx_mode, tmp_path):
         plan.close()
         with pytest.raises(RuntimeError, match="closed"):
             plan.read()
+
+@pytest.mark.tyx
+@pytest.mark.parametrize("kind,width", [("snapshot", 12), ("kinematics", 6)])
+def test_readback_plan_reorders_mixed_worlds_with_one_gather_and_owned_frames(
+    kind, width, tyx_mode, tmp_path,
+):
+    p = profiler()
+    from phymeo.backends.tyx_world_batch import TyxWorldBatch
+
+    worlds, controls, _ = p.make_worlds(32)
+    keys = [628, 101, 611]
+    with TyxWorldBatch(worlds, tyx_mode, cache_root=tmp_path / "runtime") as batch:
+        batch.set_controls(controls)
+        initial = batch.stats()
+        with batch.prepare_readback(keys, kind=kind) as plan:
+            keys.clear()
+            assert plan.keys == (628, 101, 611) and plan.kind == kind
+            made = batch.stats()
+            device_bytes = 3 * (4 * width + 8) if tyx_mode == "cuda" else 0
+            assert made["device_owned_bytes"] - initial["device_owned_bytes"] == device_bytes
+            assert made["readback_plan_owned_bytes"] == device_bytes
+            assert made["readback_plan_live_count"] == 1
+            assert made["device_allocations"] - initial["device_allocations"] == (
+                3 if tyx_mode == "cuda" else 0
+            )
+            assert made["readback_index_uploaded_bytes"] == (12 if tyx_mode == "cuda" else 0)
+            old_frame = None
+            old_value = None
+            for _ in range(32):
+                assert all(batch.step(1 / 128).values())
+                before = batch.stats()
+                frame = batch.readback(plan)
+                after = batch.stats()
+                assert after["submitted_kernels"] - before["submitted_kernels"] == 1
+                assert after["synchronizations"] - before["synchronizations"] == 1
+                expected_bytes = 3 * (4 * width + 4) if tyx_mode == "cuda" else 0
+                assert after[kind + "_downloaded_bytes"] - before[kind + "_downloaded_bytes"] == expected_bytes
+                assert after["device_allocations"] == made["device_allocations"]
+                assert after["readback_index_uploaded_bytes"] == made["readback_index_uploaded_bytes"]
+                assert after["topology_uploaded_bytes"] == made["topology_uploaded_bytes"]
+                assert p._canonical_output(frame, kind) == p._canonical_output(
+                    getattr(batch, kind)(plan.keys), kind,
+                )
+                if old_frame is None:
+                    old_frame, old_value = frame, p._canonical_output(frame, kind)
+            assert p._canonical_output(old_frame, kind) == old_value
+            if kind == "kinematics":
+                assert not old_frame.values.flags.writeable and not old_frame.ticks.flags.writeable
+                old_frame.values.setflags(write=True)
+                old_frame.values[:] = 123
+                assert p._canonical_output(plan.read(), kind) == p._canonical_output(
+                    batch.kinematics(plan.keys), kind,
+                )
+            else:
+                old_frame.clear()
+                assert tuple(plan.read()) == plan.keys
+            stats = plan.stats()
+            stats["reads"] = -1
+            assert plan.stats()["reads"] > 0
+        closed = batch.stats()
+        assert closed["readback_plan_owned_bytes"] == 0
+        assert closed["readback_plan_live_count"] == 0
+        assert closed["device_owned_bytes"] == initial["device_owned_bytes"]
+        assert closed["device_allocations"] == made["device_allocations"]
+        assert plan.stats()["device_owned_bytes"] == 0
+        assert plan.stats()["host_workspace_bytes"] == 0
+
+
+@pytest.mark.tyx
+def test_readback_plan_public_owner_rejection_and_batch_close(tyx_mode, tmp_path):
+    from phymeo.backends.tyx_world_batch import FreeSphere, TyxWorldBatch
+
+    sphere = FreeSphere(2, 0.125)
+    left = TyxWorldBatch([(91, sphere)], tyx_mode, cache_root=tmp_path / "left")
+    right = TyxWorldBatch([(91, sphere)], tyx_mode, cache_root=tmp_path / "right")
+    try:
+        plan = left.prepare_readback([91], kind="snapshot")
+        import tyx
+        before = right.stats()
+        native_before = tyx.runtime_stats()
+        with pytest.raises(ValueError, match="owner"):
+            right.readback(plan)
+        with pytest.raises(TypeError, match="WorldReadbackPlan"):
+            right.readback(object())
+        assert right.stats() == before
+        assert tyx.runtime_stats() == native_before
+        saved = plan.read()
+        left.close()
+        left.close()
+        plan.close()
+        assert left.stats()["readback_plan_owned_bytes"] == 0
+        assert left.stats()["device_owned_bytes"] == 0
+        assert left.stats()["readback_plan_live_count"] == 0
+        with pytest.raises(RuntimeError, match="closed"):
+            plan.read()
+        assert saved[91].tick == 0
+        assert right.step(1 / 128) == {91: True}
+    finally:
+        left.close()
+        right.close()
+
+
+@pytest.mark.tyx
+@pytest.mark.parametrize("kind", ["snapshot", "kinematics"])
+def test_readback_plan_empty_and_invalid_selections_have_no_device_work(kind, tyx_mode, tmp_path):
+    from phymeo.backends.tyx_world_batch import FreeSphere, TyxWorldBatch
+
+    device_fields = (
+        "device_allocations", "device_owned_bytes", "submitted_kernels", "synchronizations",
+        "readback_index_uploaded_bytes", "readback_plan_owned_bytes",
+        "snapshot_downloaded_bytes", "kinematics_downloaded_bytes",
+    )
+    for worlds in ([], [(91, FreeSphere(2, 0.125))]):
+        with TyxWorldBatch(worlds, tyx_mode, cache_root=tmp_path / f"w{len(worlds)}") as batch:
+            before = batch.stats()
+            with batch.prepare_readback([], kind=kind) as plan:
+                result = batch.readback(plan)
+                if kind == "snapshot":
+                    assert result == {}
+                else:
+                    assert result.keys == result.widths == () and result.values.shape == (0, 6)
+                    assert len(result.ticks) == 0
+                with pytest.raises(ValueError):
+                    batch.prepare_readback([], kind="summary")
+            for name in device_fields:
+                assert batch.stats()[name] == before[name]
+            if worlds:
+                for keys, error in (([91, 91], ValueError), ([True], ValueError), ([8], KeyError)):
+                    before = batch.stats()
+                    with pytest.raises(error):
+                        batch.prepare_readback(keys, kind=kind)
+                    assert batch.stats() == before
+
+
+@pytest.mark.tyx
+def test_readback_plan_snapshot_keeps_held_history_and_local_restore(tyx_mode, tmp_path):
+    p = profiler()
+    from phymeo.backends.tyx_world_batch import TyxWorldBatch
+
+    worlds, controls, _ = p.make_worlds(32)
+    selected = (118, 101)
+    slider_program = worlds[1][1].program
+    import numpy as np
+
+    with TyxWorldBatch(worlds, tyx_mode, cache_root=tmp_path / "runtime") as batch:
+        batch.set_controls(controls)
+        with batch.prepare_readback(selected, kind="snapshot") as plan:
+            assert all(batch.step(1 / 128).values())
+            changed = slider_program.inputs(np.zeros(1), feedforward=np.array([-2.0]))
+            batch.set_controls({118: changed})
+            first = plan.read()[118]
+            assert first.control == (0.0, 0.0, -2.0, 0.0)
+            assert first.history == (0.0, 0.0, 2.0) and first.applied_effort == (0.0,)
+            assert all(batch.step(1 / 128).values())
+            saved = plan.read()[118]
+            assert saved.history == (0.0, 0.0, -2.0) and saved.applied_effort == (2.0,)
+            assert all(batch.step(1 / 128).values())
+            goal = plan.read()[118]
+            batch.restore({118: saved})
+            restored = plan.read()
+            assert restored[118].tick == 2 and restored[101].tick == 3
+            assert all(batch.step(1 / 128).values())
+            assert plan.read()[118] == goal
+            batch.reset([118])
+            reset = plan.read()[118]
+            assert reset.tick == 0 and reset.history == (0.0, 0.0, 0.0)
+            assert reset.position == (0.0,) and reset.velocity == (0.0,)
+
+
+@pytest.mark.tyx
+@pytest.mark.parametrize("kind", ["snapshot", "kinematics"])
+def test_readback_plan_failed_second_download_preserves_state_and_retries(
+    kind, tyx_mode, tmp_path, monkeypatch,
+):
+    p = profiler()
+    from phymeo.backends.tyx_world_batch import FreeSphere, TyxWorldBatch
+
+    with TyxWorldBatch([(91, FreeSphere(2, 0.125))], tyx_mode,
+                       cache_root=tmp_path / "runtime") as batch:
+        plan = batch.prepare_readback([91], kind=kind)
+        assert batch.step(1 / 128) == {91: True}
+        prior = plan.read()
+        expected = p._canonical_output(prior, kind)
+        full = batch.snapshot()
+        stats = batch.stats()
+        original_read = batch._read
+        count = 0
+
+        def fail_second(buffer, category):
+            nonlocal count
+            count += 1
+            if count == 2:
+                raise RuntimeError("injected second plan download failure")
+            return original_read(buffer, category)
+
+        with monkeypatch.context() as patcher:
+            patcher.setattr(batch, "_read", fail_second)
+            with pytest.raises(RuntimeError, match="injected"):
+                plan.read()
+        after = batch.stats()
+        assert after["current_buffer"] == stats["current_buffer"]
+        assert after["completed_steps"] == stats["completed_steps"]
+        assert after["readback_plan_failed_reads"] == stats["readback_plan_failed_reads"] + 1
+        assert after["recovery_sync_attempts"] == stats["recovery_sync_attempts"] + 1
+        assert batch.snapshot() == full
+        assert p._canonical_output(prior, kind) == expected
+        assert p._canonical_output(plan.read(), kind) == expected
+
+
+@pytest.mark.tyx
+def test_readback_plan_observes_per_world_numeric_rejection(tyx_mode, tmp_path):
+    from phymeo.backends.tyx_world_batch import FreeSphere, TyxWorldBatch
+
+    ball = FreeSphere(2, 0.125, gravity=(0, 0, -8))
+    with TyxWorldBatch([(91, ball), (7, ball)], tyx_mode, cache_root=tmp_path / "runtime") as batch:
+        with batch.prepare_readback([7, 91], kind="kinematics") as plan:
+            batch.set_controls({7: (3e38, 0, 0)})
+            assert batch.step(2) == {91: True, 7: False}
+            rejected = plan.read()
+            assert rejected.ticks.tolist() == [0, 1]
+            assert rejected.values[0].tolist() == [0, 0, 0, 0, 0, 0]
+            batch.set_controls({7: (0, 0, 0)})
+            assert batch.step(1 / 128) == {91: True, 7: True}
+            assert plan.read().ticks.tolist() == [1, 2]
+            assert rejected.ticks.tolist() == [0, 1]
+
+@pytest.mark.tyx
+def test_readback_plan_partial_allocation_failure_reclaims_buffers_and_live_bytes(
+    tyx_mode, tmp_path, monkeypatch,
+):
+    from phymeo.backends._world_readback_plan import WorldReadbackPlan
+    from phymeo.backends.tyx_world_batch import FreeSphere, TyxWorldBatch
+
+    with TyxWorldBatch([(91, FreeSphere(2, 0.125))], tyx_mode,
+                       cache_root=tmp_path / "runtime") as batch:
+        before = batch.stats()
+        allocate = WorldReadbackPlan._allocate
+        instances = []
+        calls = 0
+
+        def fail_after_index(self, *args, **kwargs):
+            nonlocal calls
+            calls += 1
+            instances.append(self)
+            if calls == 2:
+                raise MemoryError("injected plan scratch allocation failure")
+            return allocate(self, *args, **kwargs)
+
+        with monkeypatch.context() as patcher:
+            patcher.setattr(WorldReadbackPlan, "_allocate", fail_after_index)
+            with pytest.raises(MemoryError, match="injected"):
+                batch.prepare_readback([91], kind="snapshot")
+        after = batch.stats()
+        assert after["readback_plan_live_count"] == 0
+        assert after["readback_plan_owned_bytes"] == 0
+        assert after["device_owned_bytes"] == before["device_owned_bytes"]
+        assert after["device_allocations"] - before["device_allocations"] == (
+            1 if tyx_mode == "cuda" else 0
+        )
+        assert after["readback_index_uploaded_bytes"] == (4 if tyx_mode == "cuda" else 0)
+        assert instances[0].stats()["closed"] is True
+        assert instances[0].stats()["host_workspace_bytes"] == 0
+        with batch.prepare_readback([91], kind="snapshot") as plan:
+            with pytest.raises(AttributeError):
+                plan.keys = ()
+            with pytest.raises(AttributeError):
+                plan.kind = "kinematics"
+            assert plan.read()[91].tick == 0
+
+
+@pytest.mark.tyx
+@pytest.mark.parametrize("kind", ["snapshot", "kinematics"])
+def test_readback_plan_comparison_preserves_complete_public_outputs(kind, tyx_mode, tmp_path):
+    p = profiler()
+    config = p.ProfileConfig(32, 8, kind, tyx_mode, warm_windows=0, formal_windows=1, steps=2)
+    result = p.run_comparison(config, cache_root=tmp_path / "paired", first="plan")
+    assert result["status"] == "complete" and result["final_tick"] == 3
+    assert result["same_public_outputs"] is True
+    assert tuple(result["cold"]["order"]) == ("plan", "original")
+    pair = result["measurements"][0]
+    assert tuple(pair["order"]) == ("original", "plan")
+    original, planned = pair["lanes"]["original"], pair["lanes"]["plan"]
+    assert original["frames"] == planned["frames"]
+    assert original["public_output_sha256"] == planned["public_output_sha256"]
+    assert p.frames_sha256(planned["frames"]) == planned["public_output_sha256"]
+    assert planned["batch_counter_delta"]["submitted_kernels"] == 4
+    assert original["batch_counter_delta"]["submitted_kernels"] == (18 if kind == "snapshot" else 2)
+    expected_bytes = (832 if kind == "snapshot" else 448) if tyx_mode == "cuda" else 0
+    assert planned["batch_counter_delta"][kind + "_downloaded_bytes"] == expected_bytes
+    assert planned["plan_counter_delta"] == dict(
+        readback_index_uploaded_bytes=0, readback_plan_owned_bytes=0,
+        readback_plan_reads=2, readback_plan_failed_reads=0,
+    )
+    assert planned["counter_audit"] == original["counter_audit"] == "passed"
+    assert result["closed_plan_stats"]["closed"] is True
+    assert result["closed_plan_stats"]["device_owned_bytes"] == 0
+    assert all(row["readback_plan_live_count"] == 0 for row in result["closed_batch_stats"].values())
+    assert result["summary"]["default_changed"] is False
+
+
+def test_readback_plan_cli_selects_unwrapped_comparison_and_new_counter_namespace(tmp_path):
+    p = profiler()
+    args = p.parse_args([
+        "--worlds", "128", "--select", "8", "--kind", "snapshot", "--backend", "cuda",
+        "--compare-plan", "--first", "plan", "--expected-head", "1" * 40,
+        "--cache-root", str(tmp_path / "cache"), "--out", str(tmp_path / "paired.json"),
+    ])
+    assert args.compare_plan is True and args.first == "plan"
+    assert not set(p.PLAN_COUNTERS).intersection(p.COUNTERS)
+    public = dict(tick=1, accepted=[[1, True]], output={"checkpoints": []})
+    with_wire = {**public, "wire_snapshot": [{"shape": [12]}]}
+    assert p._public_frames([with_wire]) == [public]
+    assert p.frames_sha256(p._public_frames([with_wire])) == p.frames_sha256([public])

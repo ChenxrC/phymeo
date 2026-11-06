@@ -6,6 +6,7 @@ sampler rows, not persistent feature IDs and not an averaged contact normal.
 All forces, application points and material coordinates belong to sample_time_s.
 """
 
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from numbers import Integral
 from types import MappingProxyType
@@ -225,6 +226,34 @@ class RobotContactEventAdapter:
         self._root_rotation = tuple(
             map(tuple, quaternion_matrix(np.asarray([tree.root_xyzw], dtype=float))[0])
         )
+        self._root_frames = MappingProxyType(
+            {(world, body): (self._root_position, self._root_rotation)}
+        )
+
+    @classmethod
+    def for_robots(cls, robots, rigid_items, rigid_rows, pairs):
+        """Bind distinct robot owners; stage receives geometry indexed by owner."""
+        if not isinstance(robots, Mapping) or not robots:
+            raise ValueError("at least one keyed robot is required")
+        if len({addr[0] for addr in robots}) != 1:
+            raise ValueError("robot event owners require one world")
+        frames, roots = {}, {}
+        laws = None
+        for addr, (tree, key_map) in sorted(robots.items()):
+            if addr in rigid_items:
+                raise ValueError("a robot owner cannot also be a rigid owner")
+            one = cls(addr, tree, rigid_items, rigid_rows, pairs, key_map)
+            for key, frame in one._frames.items():
+                if key in frames and not (frame.owner.kind == "rigid" and frames[key] == frame):
+                    raise ValueError("collision keys overlap between robot owners")
+                frames[key] = frame
+            roots.update(one._root_frames)
+            laws = one._laws
+        result = cls.__new__(cls)
+        result._frames = MappingProxyType(frames)
+        result._laws = laws
+        result._root_frames = MappingProxyType(roots)
+        return result
 
     def _pair_law(self, first, second):
         if (
@@ -253,8 +282,10 @@ class RobotContactEventAdapter:
         if owner.kind == "rigid":
             position, rotation = rigid.position[metadata.row], rotations[metadata.row]
         elif owner.kind == "robot_root":
-            position, rotation = self._root_position, self._root_rotation
+            position, rotation = self._root_frames[owner.world, owner.body]
         else:
+            if isinstance(geo, Mapping):
+                geo = geo[owner.world, owner.body]
             position = geo.position[owner.link_index]
             rotation = geo.rotation[owner.link_index]
         position = _vector(position, "material frame position")

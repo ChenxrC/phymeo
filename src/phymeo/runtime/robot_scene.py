@@ -229,8 +229,14 @@ def build_robot_scene(bodies, pairs, *, gravity, backend="host", cache_root=None
     if backend != "host":
         raise ValueError("robot scenes currently require HOST; no robot CUDA/interpret path")
     robots = [(addr, item) for addr, item in bodies.items() if isinstance(item, RobotRegistration)]
+    if len(robots) > 1:
+        from .multi_robot_scene import build_multi_robot_scene
+
+        return build_multi_robot_scene(
+            bodies, pairs, gravity=gravity, backend=backend, cache_root=cache_root
+        )
     if len(robots) != 1:
-        raise ValueError("robot scenes require exactly one fixed-root robot")
+        raise ValueError("robot scenes require at least one fixed-root robot")
     if len({addr[0] for addr in bodies}) != 1:
         raise ValueError("robot scenes currently require one world")
     # Local import keeps the public builder and this optional route acyclic.

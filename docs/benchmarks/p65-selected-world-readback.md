@@ -1,6 +1,6 @@
-# 按世界选择观测：C0 受控成本入口
+# 按世界选择观测：成本归因与显式读回实测
 
-状态：**C0父已实测；C1候选UNEXECUTED**。作者始终仅文本/Git，全部项目执行由父串行负责。C0在 `fbdee826f335c135f237f1c861f12d99cdddbfa2` 通过20个interpret专项和3个CUDA专项；14个正式CUDA配置全部完成801tick、RAW_EXIT0。下文前半保留C0方法，C1实现及配对尚待父验证。本报告不沿用旧完整观测、凸包缓存或Newton的倍率。
+**实测结论：snapshot 的 W32/W128、K8 计划有重复收益；W1 snapshot及全部kinematics档更慢，默认入口完全保持。** C0在 `fbdee826f335c135f237f1c861f12d99cdddbfa2` 完成14个CUDA配置；C1在 `c5bdff90a76da5ba49c7a9468a7d42d17a7ba895` 完成18个无插桩配对进程，全部RAW0、每lane801tick、完整公共输出相等、资源关闭归零。功能和源码外wheel组合验收也已通过。作者仅文本/Git，项目执行全部由父串行完成；这里不作整体快于Newton的结论。
 
 基线为 `2027f721a0d1937de6f0e89ec869b6c03951f625`。tests-only 提交为 `beb323b6ff08ba9372ef443e91b123967fdb8c46`；父已在 `artifacts/p65-top-three-batch5-20261106-01/01-c-profiler-red` 保留首个真实 RED：1 failed / 0.19 s / exit 1，明确断言尚无 C0 测量工具。父后续证据为23-c-first-interpret（20 passed / 1.75 s）、24-c-first-cuda（3 passed / 2.02 s），以及25-c-base系列14项完整CUDA计量。
 
@@ -81,7 +81,7 @@ python -m pytest tests/scale/test_selected_world_readback.py -m tyx --tyx-mode c
 | kinematics W32 K1 | — | 0.201247 |
 | kinematics W128 K8 | — | 0.192942 |
 
-以上是父保存的C0插桩归因比例，不是新计划的提速比。以真实门为依据，C1优先减少snapshot的K次提交/同步；kinematics仅确认减少读回字节，端到端收益仍待测。
+以上是父保存的C0插桩归因比例，不是新计划的提速比。以真实门为依据，C1优先减少snapshot的K次提交/同步；kinematics仅确认减少读回字节；下方C1结果表明这不足以抵消新增提交/同步等成本。
 
 公开首红由父保存在`32-c1-public-red`：2 kg自由球旧step和解析状态通过后，`prepare_readback`缺失，1 failed / 1.16 s / RAW1。父共享薄hook提交`933079625fa84744e51ec53edfb1246310bafddc`，作者新增两个模块：
 
@@ -101,7 +101,7 @@ plan.close()
 
 父的`device_allocations`保持累计次数；`device_owned_bytes`和新增`readback_plan_owned_bytes`均为当前CUDA缓冲拥有量，单独plan.close即扣除，batch.close先关闭所有计划再释放旧缓冲。新增readback索引上传/成功读取/失败读取计数单列，`readback_plan_live_count`由集合给出。plan有独立stats，手动与batch关闭均幂等。编译代码缓存由TYX Runtime管理，不计成计划的三个数据缓冲。
 
-## C1 无插桩同任务配对（待父执行）
+## C1 无插桩同任务配对（已实测）
 
 新CLI `--compare-plan --first original|plan`。每个进程建立两个独立相同初态，original使用旧公开方法，plan使用显式计划；两路各cold1＋5预热＋20正式32步，均801tick。首顺序按三独立进程original/plan/original，窗内继续交替先后，以配对的同tick完整public输出逐项比对。配置为W32K8、W128K8、W1all各snapshot/kinematics，共18个配对进程。默认入口不切换。
 
@@ -115,9 +115,9 @@ plan.close()
 --worlds 32 --select 8 --kind snapshot --backend cuda --compare-plan --first original
 ```
 
-三次任务使用不同全新out/cache，首序original、plan、original。其他五个配置同样各三次。C1功能、设备和实际收益均待父执行，不因C0成本门通过而宣称这些新代码已通过。
+三次任务使用不同全新out/cache，首序original、plan、original。六配置各三次共18项，54/55/56系列全部RAW0；57汇总检查通过。执行设备为实际 `cuda:0`、NVIDIA GeForce RTX 4060 Laptop GPU，driver记录12070。源码在整批前后绑定同一 `c5bdff90a76da5ba49c7a9468a7d42d17a7ba895`。
 
-只执行新增节点的入口：
+新增功能组的复现入口（初组已验，关闭异常随后单独重验；无需再跑已绿组）：
 
 ```text
 python -m pytest tests/scale/test_selected_world_readback.py -k readback_plan --tyx-mode interpret --require-tyx -q
@@ -126,8 +126,34 @@ python -m pytest tests/scale/test_selected_world_readback.py -k readback_plan -m
 
 本组包含公共双缓冲、多世界重排/32步零稳态分配、跨实例、空/非法选择、held/history与局部重放、第二次下载故障、局部数值拒步、中途分配失败、两种完整输出无插桩配对和CLI计数命名。作者只交源码与精确节点，不重跑C0的20个已绿实例或14配置。
 
-### C1 清理异常审阅留出（待父修复/执行）
+## C1 实际延时、吞吐与范围
 
-父已完成原C1功能组：35-c interpret 14 passed / 2.69 s，36-c CUDA 13 passed / 4.60 s；style提交为`58a256f9496e8bee3574f3926e658b6ac1c032af`。正式18个配对任务尚未启动。随后交叉审阅发现：batch含两个计划时，首个plan的关闭回调抛错会使旧父hook跳出循环，第二计划未关闭而runtime已经关闭，拥有字节也可能被误置零。
+[18项汇总](../../artifacts/p65-top-three-batch5-20261106-01/comparison-summary.json)及其54/55/56逐任务`profile.json`保留完整数字和raw帧。下表是三独立进程的最小–最大范围，延时单位为**每32步完整任务的ms**；比值在各轮分别计算后取范围，分母是同轮计划p50。吞吐使用每轮实际`W×640 / 正式whole总秒数`，不由p50反推。两路逐帧同tick、世界键、维度、完整checkpoint或六量输出相等，独立解析位置/速度误差均0。
 
-新增唯一节点`test_readback_plan_batch_close_failure_still_closes_all_plans`，先真实创建/读取两个不同kind计划，再定向在实际首关闭计划的ExitStack注入异常；要求传播异常且所有计划/两级live bytes/集合都清理，后续关闭幂等、读取拒绝。本次只提交测试和记录，作者未运行，产品修复及新增节点RED/GREEN由父串行负责；原已绿组和C0不重跑。
+| 同种观测任务 | p50：旧→计划 ms | p95：旧→计划 ms | 三轮p50旧/计划 | 世界子步/s：旧→计划 |
+|---|---|---|---:|---|
+| snapshot W32 K8 | 47.151–53.736 → 10.092–11.535 | 60.380–66.385 → 11.524–13.646 | 4.658–4.815 | 18,434–20,866 → 80,384–98,393 |
+| snapshot W128 K8 | 49.100–49.587 → 10.552–11.142 | 53.170–57.420 → 12.161–13.395 | 4.443–4.699 | 81,963–82,714 → 365,840–383,640 |
+| snapshot W1 all | 5.516–6.132 → 7.509–8.105 | 7.045–8.397 → 8.515–9.868 | 0.728–0.757 | 4,933–5,642 → 3,805–4,217 |
+| kinematics W32 K8 | 6.490–7.742 → 7.602–9.415 | 8.686–9.748 → 9.324–11.418 | 0.822–0.900 | 127,922–147,107 → 107,082–128,180 |
+| kinematics W128 K8 | 7.142–8.117 → 8.299–10.051 | 7.574–10.051 → 9.275–12.652 | 0.808–0.861 | 491,842–580,691 → 391,604–489,730 |
+| kinematics W1 all | 5.670–5.919 → 7.501–8.489 | 5.844–6.783 → 8.644–11.133 | 0.697–0.756 | 5,371–5,626 → 3,641–4,150 |
+
+三轮每项的20个正式窗均有相同计数关系；以下bytes仅为**该观测的D2H**，不含两路都保留的每物理步4W B接受标志。launch计入物理推进与观测，不能当作纯观测核数。
+
+| 任务 | 旧→计划观察D2H B / 640步 | 旧→计划实际launch / 640步 |
+|---|---:|---:|
+| snapshot W32/W128 K8 | 266,240 → 266,240 | 5,760 → 1,280 |
+| snapshot W1 all | 33,280 → 33,280 | 640 → 1,280 |
+| kinematics W32 K8 | 1,064,960 → 143,360 | 640 → 1,280 |
+| kinematics W128 K8 | 4,259,840 → 143,360 | 640 → 1,280 |
+| kinematics W1 all | 33,280 → 17,920 | 640 → 1,280 |
+
+snapshot K8的提交/显式同步减少，实际字节不变，出现重复端到端收益。kinematics字节减少但新增一次gather和显式同步，所有已测档的p50、p95及总吞吐均退化；W1 snapshot也退化。C0的15%门只证明值得试验的归因，不能保证收益。因此保留显式opt-in，不切默认、不扩大到尚未计时的K或一般接触场景。这里推进的是自由球/延迟滑轨，HOST仍构造公共记录，不称完整GPU驻留物理或跨引擎提速。
+
+## 功能、首错与源码外wheel
+
+- C1功能：35 interpret **14 passed / 2.69 s**，36 CUDA **13 passed / 4.60 s**，无数值修复。37/38首style的1项import、4项format失败原样保留；39/40处理后41/42全0，43确认4个Python文件non-import AST及scoped imports一致。
+- 关闭异常：44保留有效RED。首计划清理回调抛错时，旧hook跳出循环，第二计划未关；父以`1ca80f6`统一ExitStack关闭回调修复。仅新增留出重验：47 interpret **1 passed / 1.15 s**，48 CUDA **1 passed / 1.68 s**。49 lint0、50首次format1保留，51/52最终0，53 raw AST相同；最终测量源码为`c5bdff9`。A独立复核确认该finding闭环，无新阻断；没有重跑C0或整套旧绿组。
+- [58 wheel构建](../../artifacts/p65-top-three-batch5-20261106-01/58-integrated-wheel-build/)基于父正常集成`dddb612dcfbbbf9305279ff62214ac9d17095055`，RAW0；wheel为1,107,756 B，SHA256 `8a04551901d5ccc884dc9442ea4d2f1ebfa526b4e06c7d523fa137ab5ee1cc4a`。
+- [59源码外组合验收](../../artifacts/p65-top-three-batch5-20261106-01/59-outside-wheel-integration/) RAW0，cwd为`Temp/phymeo-top-three-wheel-dddb612-20261106-01`，所有Phymeo模块的`__file__`均在解包wheelroot。C用真实CUDA、3个world、非连续选择`[503,91]`验证两kind计划的4个接受tick、旧完整snapshot同状态、空选择与close owned bytes归零；同次还覆盖A反序登记40步9门和B04真正朝向变化的独立首触`asin(7/8)/3`。这是源码外解包wheel的组合验收，不是再次全套、安装依赖或全GPU窄相验收。

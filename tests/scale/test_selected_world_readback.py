@@ -241,3 +241,30 @@ def test_gate_uses_whole_task_denominator_and_requires_actual_formal_subset(
     assert summary["observation_download_fraction_of_whole"] == download / 5000
     assert p._summary(config, 1, [window])[1]["measured_cost_gate"] is False
     assert p._summary(config, 32, [window] * 20)[1]["measured_cost_gate"] is False
+
+@pytest.mark.tyx
+def test_public_readback_plan_reads_current_accepted_buffer(tyx_mode, tmp_path):
+    from phymeo.backends.tyx_world_batch import FreeSphere, TyxWorldBatch
+
+    sphere = FreeSphere(2, 0.125, position=(0, 0, 2), gravity=(0, 0, -8))
+    with TyxWorldBatch([(91, sphere)], tyx_mode, cache_root=tmp_path / "runtime") as batch:
+        assert batch.step(1 / 128) == {91: True}
+        original = batch.kinematics([91])
+        assert original.values.tolist() == [[0, 0, 2 - 1 / 2048, 0, 0, -1 / 16]]
+        plan = batch.prepare_readback([91], kind="kinematics")
+        first = batch.readback(plan)
+        assert first.keys == (91,) and first.widths == (3,)
+        assert first.ticks.tolist() == [1]
+        assert first.values.tolist() == original.values.tolist()
+        for tick in (2, 3, 4):
+            assert batch.step(1 / 128) == {91: True}
+            frame = plan.read()
+            assert frame.ticks.tolist() == [tick]
+            assert frame.values.tolist() == [[
+                0, 0, 2 - tick * (tick + 1) / 4096, 0, 0, -tick / 16,
+            ]]
+        assert first.ticks.tolist() == [1] and first.values.tolist() == original.values.tolist()
+        plan.close()
+        plan.close()
+        with pytest.raises(RuntimeError, match="closed"):
+            plan.read()

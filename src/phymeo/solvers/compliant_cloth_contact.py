@@ -167,6 +167,7 @@ class CompliantClothContactProgram:
         max_joint_violation=None,
         cloth_link_material=None,
         cloth_link_operator=None,
+        cloth_link_local_reuse=False,
         cloth_self_layer=None,
         cloth_self_operator=None,
         cloth_self_geometry="host",
@@ -251,8 +252,9 @@ class CompliantClothContactProgram:
                 robot_contact,
                 cloth_link_material,
                 cloth_link_operator,
+                local_reuse=cloth_link_local_reuse,
             )
-        elif cloth_link_operator is not None:
+        elif cloth_link_operator is not None or cloth_link_local_reuse:
             raise ValueError("cloth-link operator requires an explicit material")
         self.cloth_self = None
         if cloth_self_layer is not None:

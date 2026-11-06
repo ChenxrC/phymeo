@@ -60,7 +60,10 @@ class ClothLinkEvaluation:
             face_motion = CollisionMotion(self._triangles[face_index])
             self._face_motion[face_index] = face_motion
         return static_capsule_face_sample(
-            self._capsules[link_index], self._faces[face_index], cap_motion, face_motion,
+            self._capsules[link_index],
+            self._faces[face_index],
+            cap_motion,
+            face_motion,
         )[0]
 
     def relative_velocity(self, link_index, face_index, ids, weights, point):

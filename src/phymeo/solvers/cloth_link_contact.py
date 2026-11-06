@@ -42,9 +42,14 @@ class ClothLinkMaterial:
 
 
 class ClothLinkContacts:
-    def __init__(self, cloth_domain, surfaces, areas, robots, material, operator):
+    def __init__(
+        self, cloth_domain, surfaces, areas, robots, material, operator, *, local_reuse=False
+    ):
         if not isinstance(material, ClothLinkMaterial):
             raise TypeError("expected a cloth-link material")
+        if type(local_reuse) is not bool:
+            raise TypeError("local_reuse must be a bool")
+        self.local_reuse = local_reuse
         self.cloth_domain = cloth_domain
         self.faces = np.array([s.node_indices for s in surfaces], dtype=np.intp)
         self.rho = np.array([s.half_thickness_m for s in surfaces])
@@ -125,15 +130,20 @@ class ClothLinkContacts:
 
     def evaluate(self, state, geo, *, phase=None):
         cloth = state.domains[self.cloth_domain]
-        tri = cloth.position[self.faces]
+        work = None
+        if self.local_reuse:
+            from ._cloth_link_evaluation import ClothLinkEvaluation
+
+            work = ClothLinkEvaluation(self, state, geo)
+        tri = cloth.position[self.faces] if work is None else work.triangles
         forces = np.zeros_like(cloth.position)
         efforts = {k: np.zeros_like(state.domains[k].v) for k in self.models}
         groups = []
         rows = []
         candidates = 0
         depth = 0.0
-        for link, cap in zip(self.links, self.capsules, strict=True):
-            ends = self.endpoints(link, geo)
+        for link_index, (link, cap) in enumerate(zip(self.links, self.capsules, strict=True)):
+            ends = self.endpoints(link, geo) if work is None else work.endpoints(link_index)
             cutoff = cap.radius + self.rho + self.law.width_m
             indices = np.flatnonzero(self.bounds_distance(ends, tri, cutoff) <= cutoff)
             candidates += len(indices)
@@ -141,7 +151,11 @@ class ClothLinkContacts:
             step_v = state.domains[link.domain].v
             i = link.link_index
             for face in indices:
-                w = self._witness(cap, face, ends, tri[face])
+                w = (
+                    self._witness(cap, face, ends, tri[face])
+                    if work is None
+                    else work.sample(link_index, face)
+                )
                 gap = w.gap_m - self.rho[face]
                 if gap >= self.law.width_m:
                     continue
@@ -155,11 +169,16 @@ class ClothLinkContacts:
                 group = []
                 for site in sites:
                     point = np.asarray(site.second_point)
-                    arm = point - com[i]
                     ids, weights = zip(*site.second_weights, strict=True)
                     weights = np.array(weights)
-                    robot_v = jl[i] @ step_v + np.cross(ja[i] @ step_v, arm)
-                    relative = weights @ cloth.velocity[list(ids)] - robot_v
+                    if work is None:
+                        arm = point - com[i]
+                        robot_v = jl[i] @ step_v + np.cross(ja[i] @ step_v, arm)
+                        relative = weights @ cloth.velocity[list(ids)] - robot_v
+                    else:
+                        arm, relative = work.relative_velocity(
+                            link_index, face, ids, weights, point
+                        )
                     rows.append(
                         (
                             *n,

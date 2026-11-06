@@ -1,4 +1,4 @@
-"""Behavior-first protocol tests; the first RED is a deliberate method stub."""
+"""Protocol invariants and focused original-law/physical qualification for the C0 profiler."""
 
 import importlib.util
 import sys
@@ -197,3 +197,129 @@ def test_short_real_profile_preserves_full_outputs_and_actual_phase_rows(tyx_mod
         assert {face["world"] for face in phase["faces"]} == {503}
     assert result["measurements"][0]["frames"][0]["worlds"][0]["result"]["report"]["accepted"] is True
 
+
+
+def test_canonical_output_only_normalizes_declared_substep_clock_and_owns_data():
+    p = profiler()
+    source = [{"step": 0, "worlds": [{"world": 503, "result": {
+        "state": {"position": [1.0], "timings": {"physical_history": 9.0}},
+        "report": {"accepted": True, "reason": None, "substeps": [{
+            "timings": {"predict": 12.0}, "diagnostics": {"force": [2.0, -2.0]},
+        }]},
+        "substep_states": [{"position": [1.0]}],
+    }}]}]
+    result = p.canonical_frames(source)
+    row = result[0]["worlds"][0]["result"]
+    assert row["report"]["substeps"][0]["timings"] == {"predict": 0.0}
+    assert row["state"]["timings"] == {"physical_history": 9.0}
+    assert row["report"]["substeps"][0]["diagnostics"] == {"force": [2.0, -2.0]}
+    row["state"]["position"][0] = 99
+    assert source[0]["worlds"][0]["result"]["state"]["position"] == [1.0]
+    assert source[0]["worlds"][0]["result"]["report"]["substeps"][0]["timings"] == {"predict": 12.0}
+
+
+def test_gzip_budget_keeps_complete_prior_records_and_never_overwrites(tmp_path):
+    import gzip
+    import json
+
+    p = profiler()
+    target = tmp_path / "complete.frames.jsonl.gz"
+    with p.RawArchive(target, max_bytes=48) as archive:
+        archive.write({"actual": [1, 2, 3]})
+        with pytest.raises(p.ResourceLimit, match="budget"):
+            archive.write({"actual": "x" * 100})
+        assert archive.records == 1
+    with gzip.open(target, "rt", encoding="utf8") as stream:
+        assert [json.loads(line) for line in stream] == [{"actual": [1, 2, 3]}]
+    before = target.read_bytes()
+    with pytest.raises(FileExistsError):
+        with p.RawArchive(target, max_bytes=48):
+            pass
+    assert target.read_bytes() == before
+
+
+def test_cli_rejects_existing_or_relative_output_before_creating_runtime(tmp_path):
+    p = profiler()
+    base = ["--mode", "cuda", "--worlds", "32", "--faces", "8", "--expected-head", "a" * 40]
+    with pytest.raises(ValueError, match="absolute"):
+        p.parse_args([*base, "--out", "relative.json"])
+    target = tmp_path / "existing.json"
+    target.write_text("existing evidence", encoding="utf8")
+    with pytest.raises(FileExistsError):
+        p.parse_args([*base, "--out", str(target)])
+    assert target.read_text(encoding="utf8") == "existing evidence"
+    parsed = p.parse_args([*base, "--out", str(tmp_path / "fresh.json")])
+    assert parsed.config.formal_windows == 3 and parsed.config.steps == 4
+    assert not parsed.cache_root.exists() and not parsed.raw_path.exists()
+
+
+@pytest.mark.tyx
+@pytest.mark.parametrize("fault", ("late_capacity", "device_call"))
+def test_failed_profile_keeps_partial_work_and_retry_uses_original_state(fault, tyx_mode, tmp_path, monkeypatch):
+    import phymeo as ph
+    from unittest.mock import patch
+
+    p = profiler()
+    config = p.ProfileConfig(1, 2, tyx_mode, warm_windows=0, formal_windows=1, steps=1)
+    captured = []
+    original = ph.TyxMultifaceContactBatch._evaluate
+
+    def fail_once(batch, requests, index, capacity):
+        if index != 1:
+            return original(batch, requests, index, capacity)
+        if fault == "late_capacity":
+            return original(batch, requests, index, 0)
+        with patch.object(batch._layer, "_kernel", side_effect=RuntimeError("injected device call")):
+            return original(batch, requests, index, capacity)
+
+    with monkeypatch.context() as context:
+        context.setattr(ph.TyxMultifaceContactBatch, "_evaluate", fail_once)
+        with pytest.raises((ValueError, RuntimeError), match="capacity|injected device"):
+            p.run_profile(config, cache_root=tmp_path / "failed",
+                          on_window=lambda label, index, value: captured.append((label, value)))
+    assert captured[0][0] == "input-manifest" and captured[-1][0] == "failed-attempt"
+    failed = captured[-1][1]
+    assert failed["status"] == "failed" and failed["counter_delta"]["completed_launches"] == 1
+    transaction = failed["failure_transaction"]
+    assert transaction["published_states_sha256"] == transaction["last_completed_states_sha256"]
+    assert transaction["current_phases_sha256"] == transaction["phases_before_failed_step_sha256"]
+    assert transaction["automatic_retry"] is False
+    assert failed["phase_receipts"][0]["outputs"]
+    retry = p.run_profile(config, cache_root=tmp_path / "retry")
+    assert retry["status"] == "complete" and retry["complete_output_match"] is True
+    assert retry["input_manifest_sha256"] == captured[0][1]["input_manifest_sha256"]
+
+def test_source_binding_rejects_untracked_dirty_or_changed_dependency(tmp_path, monkeypatch):
+    p = profiler()
+    head = "a" * 40
+    paths = ("src/phymeo", "script.py", "case.py")
+    package = tmp_path / "src" / "phymeo"
+    package.mkdir(parents=True)
+    names = ("src/phymeo/__init__.py", "script.py", "case.py")
+    for name in names:
+        (tmp_path / name).write_text("frozen input", encoding="utf8")
+    state = {"dirty": "", "names": names}
+
+    def git(_root, *args):
+        if args[:2] == ("rev-parse", "HEAD"):
+            return head
+        if args[0] == "status":
+            return state["dirty"]
+        assert args[0] == "ls-files"
+        return "\n".join(state["names"])
+
+    monkeypatch.setattr(p, "SOURCE_TARGETS", paths)
+    monkeypatch.setattr(p, "_git", git)
+    binding = p.bind_source(tmp_path, head)
+    assert set(binding["files"]) == set(names)
+    p.verify_source(binding)
+    (tmp_path / "case.py").write_text("changed physical input", encoding="utf8")
+    with pytest.raises(RuntimeError, match="source changed"):
+        p.verify_source(binding)
+    state["dirty"] = " M case.py"
+    with pytest.raises(RuntimeError, match="committed and clean"):
+        p.bind_source(tmp_path, head)
+    state["dirty"] = ""
+    state["names"] = names[:-1]
+    with pytest.raises(RuntimeError, match="not tracked"):
+        p.bind_source(tmp_path, head)

@@ -66,3 +66,24 @@ python examples/multi_robot_contact.py --output <fresh-absolute-json>
 - 本报告落盘时 `16` 结果、公开 CLI、static、共享 hook 兼容与最终 wheel 均仍 **PENDING**；不把作者文本检查当作执行通过。后续实际结果单列追加，不覆盖首错。
 
 原始记录由父保存在 `artifacts/p65-top-three-batch6-20261106-01/`。A 作者只进行了文本/文件 I/O/Git；所有 import、collection、pytest、数值、lint、format、build 由父唯一串行执行。本片没有新增 Newton 动力学/原生接触或 GPU 对照声明，既有 mimic 100 g 历史失持窗口及其参数均未改变。
+
+## 父串行最终验收
+
+以下结果更新候选阶段的 PENDING 状态，保留前述 `02` 有效 RED、`15` collection 首错和全部原始输出。最终产品源码为 `3e6dff494d898ad19a3a3695d1de0c368b511805`；本节仅追加报告，不修改产品、用例输入、材料、力帽或容差。
+
+`16-a-host-functional-first` 首次功能执行为 **5 passed / 1 failed**。失败是 MJCF 胶囊正 z 端帽的标签 oracle：`fromto=(0,0,-.25)→(0,0,.25)` 经既有 `_fromto` 与 `make_collider` 后，实际保存的 `local_vertices` 顺序为 `[[0,0,.25],[0,0,-.25]]`，所以正 z 端是 `end0`。父仅把该标签及对应测试分支从 `end1` 修为 `end0`，并增加实际端点数组的精确断言；几何输入、2 N 预期和所有容差不变。`17-a-cap-endpoint-fix` 该节点 **1 passed / 0.67 s / RAW_EXIT=0**。该修正区分实际材料端点编号与世界正负方向，没有为通过而翻转资产或接触法向；首次失败仍在[父原始记录](../../artifacts/p65-top-three-batch6-20261106-01/16-a-host-functional-first/stdout.log)。
+
+| 父作业 | 实际结果 | 含义 |
+| --- | --- | --- |
+| [18 完整专项](../../artifacts/p65-top-three-batch6-20261106-01/18-a-host-complete/stdout.log) | 25 passed / 1.05 s / RAW_EXIT=0 | A01–A06 的真实力学、材料、限域及事务留出全部通过 |
+| 19–24 静态 | 19 Ruff=0；20 format=1，三个文件待格式化；21 repair=0，22 format check=0，23 Ruff=0；24 五份 raw AST 完全相同 | 格式处理前后语法树一致，未修改物理输入或断言 |
+| [25 公开窗口](../../artifacts/p65-top-three-batch6-20261106-01/25-a-public-window/stdout.log) | 40 个实际步、11 项门全部 true、RAW_EXIT=0 | 原 32 步保持与 8 步真实外撤连续完成，`execution_failure=null` |
+| [26 旧共享场景兼容](../../artifacts/p65-top-three-batch6-20261106-01/26-a-shared-scene-compat/stdout.log) | 21 passed / 0.87 s / RAW_EXIT=0 | 原多机器人场景及父薄接缝兼容；不据此宣称本片未支持的形状已可用 |
+| 47 构建 | RAW_EXIT=0 | 从最终产品源码构建 wheel |
+| [48 源码外 wheel](../../artifacts/p65-top-three-batch6-20261106-01/48-outside-wheel-integration/stdout.log) | RAW_EXIT=0 | 反序登记的真实 40 步/11 项门，以及 B01 双转动首触均通过；全部已加载 phymeo 模块来自 wheel |
+
+公开窗口最大冲量误差 **2.7755575615628914e-17 N s**，一次漂移误差 **2.168404344971009e-19 m**，离散动能误差 **3.469446951953614e-18 J**，保持力误差 **1.7763568394002505e-15 N**。合接触力、总线动量和点力虚功的最大误差均为 **0**。这些是实际保存窗口的各项读数，不是重新拟合的容差；完整[同源轨迹与几何](../../artifacts/p65-top-three-batch6-20261106-01/25-a-public-window/result.json)保留。
+
+验收分为作者新模块/专项/例程与父旧共享接缝两层。新模块负责双真实 owner 的有限几何接触、共同作用点速度、各自 COM 矩及完整关节载荷；父 `multi_robot_scene.py` 负责把该载荷与原机器人–刚体及一次刚体–刚体载荷合并，再按原候选/共同发布事务执行。事件继续使用原双侧 owner/material schema。B 原作者对 A 作独立只读审阅，未发现阻断；A 对 B 的双前向旋转、全路径速度界、有限轴/双侧材料、未知/容量与旧路由作只读审阅，也未发现阻断。两项审阅不记作额外物理执行。
+
+最终 wheel 大小 **1,115,791 B**，SHA-256 为 `5cd405e970bd1ef5709769d7b439f143613be69c23c1b9cc58c87c11b775aa09`。源码外验收实际使用该 wheel 中的模块，没有用源码 PYTHONPATH 冒充打包通过。本片范围仍为单世界 HOST 的普通/mimic 固定树、球–球/有限胶囊/OBB，以及原自由体同事务；没有新增机器人 CUDA、浮根、自碰、CCD、多点非球直接接触或一般抓取成功声明。所有执行由父串行完成，作者仅读取既有收据并追加本文，没有重跑项目。

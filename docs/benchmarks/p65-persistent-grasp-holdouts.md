@@ -77,3 +77,5 @@ python examples/persistent_grasp_holdouts.py --case panda-sphere --out-dir <fres
 ```
 
 这四窗仍 UNEXECUTED；唯一执行 owner 仍是父。作者只交上述两个 NEW 产品/工具路径、一个 NEW 短协议测试及本报告更新，T1 原测试与全部旧 shared 不再改动。原 100 g 失败尚未被新的持稳窗口关闭。
+
+父后续 `257` 已返回 **3 passed**：两真实资产的 pad material metadata 正控与 Panda 首次真实正法向载荷、失败回滚、同命令重试均通过；此前 mimic 同节点已在 `251` 通过，未重跑。修复保留 `_pad_points` 默认四返回，仅给实际 `RobotSceneContacts` 增可选 metadata，原 normal/point/force/tolerance 未改。由此关闭此次 sampled-pad 权重桥缺口；不等于原四个完整抓持窗已通过。T2 driver/13短协议实例及四长窗仍待父执行。作者最终保持纯 authoring，无项目执行槽。

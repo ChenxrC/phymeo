@@ -253,7 +253,7 @@ class TyxWorldBatch:
                 )
 
     def prepare_collision(self, model, bindings, *, candidate_capacity=4096):
-        """Prepare current-pose FreeSphere/static broad phase from accepted device state."""
+        """Prepare accepted sphere/slider versus static finite-geometry broad phase."""
         from ._resident_collision_plan import ResidentCollisionPlan
 
         return ResidentCollisionPlan(self, model, bindings, candidate_capacity=candidate_capacity)

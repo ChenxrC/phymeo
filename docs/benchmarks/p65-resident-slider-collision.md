@@ -54,3 +54,18 @@ slots 每 shape 对应 slider slot 或 −1；zero_bounds/axis_bounds/bounds 都
 截至本提交：作者所有项目执行均 **UNEXECUTED**，仅人工源码读取和手推；没有任何性能收益或全域安全结论。
 
 同次证据留存：S05 在各 pytest tmp_path 写 s05-delay{0|1}-{mode}.json，逐步保存实际 acceptance/q/v/历史/控制、完整 bounds/candidates/ticks、plan/batch 计数；S06 写 s06-w{1|4|32}-{mode}.json，warm 前真实 checkpoint 与 warm 内实际 acceptance/完整宽相输出/计数分开保存，解析 q/v 仅标 oracle_q_v。warm 内没有为报告增加任何 snapshot、kinematics 或额外 query。S08 写 cancellation、overflow、正负 small-axis、capacity、empty、normal-close、close-callback 的同次输出/统计。建议父以新证据根下 --basetemp 收集这些 JSON；文件写入不算性能收益测量。负控同时覆盖 slider plan 的 close callback 抛错后其余 plan/原 runtime 仍被清理，以及普通 URDF 来源副本不受外部模型数组攻击。
+## 父本地验证（2026-11-07）
+
+状态更新：**LOCAL_VALIDATED / WHEEL_PENDING**。作者2dfe81b候选已导入；父接真实owned frame、同一borrow中的sphere/static与slider两pass、同world多shape tick核及分项计数。只查询当前接受态dynamic/static有限几何，不增加物理积分、CCD、接触响应或动态体互撞。
+
+证据根 artifacts/p65-generic-collision-20261107-01：
+- 78 HOST绑定18 passed /0.60s，设备20项分组排除；实际18项未在设备组重复。
+- 81 interpret20 passed /2.33s；82 CUDA20 passed /14.32s；各排除已单独执行的18 HOST项。
+- 83仅受影响旧C1入口/过滤/错误绑定/staticmesh/registration六节点的14实例通过 /0.84s，没有重跑C1完整绿集。
+- 76/77静态全6文件通过；79/80修订后的kernel/test在84/85增量Ruff/format均通过。全部真实RAW0收据保存。
+- 70首先发现测试错误地从phymeo顶层引用forward_kinematics；改为既有dynamics.robot_kinematics导入后，71先真实推进q=3/16、v=1/4，再由旧plan拒绝slider binding（1 failed/.76s），才算有效RED。
+- 79实际lowering拒绝if分支内新变量p_lo；父将轴端点变量提前定义，再按符号选轴、执行原两次RN乘积及外向扩张。80继而发现S04测试PD参数为整数存储，改成同值浮点列表。所有首错保留；未改物理参数、窗口、几何、预算或oracle。
+
+S05两个delay各40实际非重置步，S06 W1/W4/W32与两buffer、S08负控共26同次JSON（每端13个）保留。S06暖态不读取snapshot；actual与oracle字段明确分开。CUDA W1/W4/W32各6次query，均第一pass6+slider6、BVH核12；必要读回分别576/2304/21504B、18次。初始设备allocation各14，暖态无新增、无动态envelope上传；metadata静态上传仍照实计费。没有测速或整体性能收益声明。
+
+父纯文件读取核81/82/83源码before/after/current相同，并登记26保存文件bytes/SHA；receipt c2-source-and-saved-receipts.json，SHA a9919587d23db3f01b7f809bd348383875d251f78437b113d717edcab96a6caf。没有再运行producer或oracle。原作者对父三处接缝只读审阅未发现阻断；另一个原agent正在做独立新增源码审阅。新源码外wheel与浮根工具片结合排入下一共同集成验收，当前不能写成wheel已过。

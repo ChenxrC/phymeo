@@ -1,4 +1,4 @@
-"""Versioned broad phase from a resident batch's accepted FreeSphere poses.
+"""Versioned broad phase from accepted sphere and prismatic-slider poses.
 
 The batch owns the runtime, lock and accepted/candidate transaction. This module
 owns only immutable registrations, collision scratch and complete query results.
@@ -20,6 +20,7 @@ from ..constraints.collision_shapes import (
 from ..geometry._collision_bvh import BoundsTree, CollisionTrees
 from ..geometry._collision_spatial import SpatialPairs
 from ..geometry.collision_pipeline import _envelopes, _host_bounds
+from ._resident_slider_binding import ResidentSliderBinding, compile_slider_binding
 from ._world_step_layout import world_key
 from .tyx_collision import TyxCollisionBatch
 
@@ -156,10 +157,10 @@ def _capacity(value):
 
 
 class ResidentCollisionPlan:
-    """One batch-owned, fixed-topology FreeSphere/static-geometry query plan.
+    """One batch-owned fixed-topology dynamic/static finite-geometry query plan.
 
     Each model key has one explicit binding. The only queried pair domain is a
-    sphere and a static shape in the same world. Model masks, revisions and
+    bound sphere or slider shape and a static shape in the same world. Model masks, revisions and
     exclusions remain authoritative. Static/static pairs are outside that domain.
     """
 
@@ -178,6 +179,9 @@ class ResidentCollisionPlan:
         self._closed = False
         self._last = None
         self._kernels = None
+        self._slider_kernels = None
+        self._slider_slots_device = self._slider_axes_device = None
+        self._slider_bounds_launches = 0
         self._slots_device = self._static_device = self._stamp_device = None
         self._queries = self._failed_queries = self._bounds_launches = 0
         self._directions = set()
@@ -208,50 +212,85 @@ class ResidentCollisionPlan:
             raise TypeError("collision bindings must be a finite sequence") from error
         if len(rows) != len(self._shape_keys):
             raise ValueError("bindings must cover exactly every collision model key")
-        if not all(isinstance(b, (ResidentSphereBinding, ResidentStaticBinding)) for b in rows):
+        if not all(
+            isinstance(b, (ResidentSphereBinding, ResidentStaticBinding, ResidentSliderBinding))
+            for b in rows
+        ):
             raise TypeError("unsupported resident collision binding")
         by_key = {b.key: b for b in rows}
         if len(by_key) != len(rows) or set(by_key) != set(self._shape_keys):
             raise ValueError("bindings have duplicate or missing collision keys")
         slots = np.full(len(rows), -1, dtype=np.int32)
+        self._slider_slots = np.full(len(rows), -1, dtype=np.int32)
+        self._slider_axes = np.zeros((len(rows), 6), dtype=np.float32)
         paths = {}
         self._world_shape_rows = {}
+        self._world_rows = {}
+        body_keys = {}
         for row, shape in enumerate(self._model.shapes):
             binding = by_key[shape.key]
-            if isinstance(binding, ResidentSphereBinding):
+            if isinstance(binding, (ResidentSphereBinding, ResidentSliderBinding)):
                 if binding.world != shape.key.world or binding.world not in view.slots:
-                    raise ValueError("sphere binding world must match its collision key and owner")
-                if binding.world in self._world_shape_rows:
-                    raise ValueError("at most one resident sphere may be bound in each world")
+                    raise ValueError("dynamic binding world must match its collision key and owner")
                 slot = view.slots[binding.world]
                 physical = view.bindings[slot]
-                if physical.kind != 0 or shape.kind != "sphere":
-                    raise ValueError(
-                        "C1 requires an actual FreeSphere and a sphere collision shape"
+                if isinstance(binding, ResidentSphereBinding):
+                    if binding.world in self._world_shape_rows:
+                        raise ValueError("at most one resident sphere may be bound in each world")
+                    if physical.kind != 0 or shape.kind != "sphere":
+                        raise ValueError(
+                            "sphere binding requires an actual FreeSphere and sphere shape"
+                        )
+                    radius = physical.topology[3][7]
+                    if shape.radius != radius:
+                        raise ValueError(
+                            "collision sphere radius must equal the actual resident FP32 radius"
+                        )
+                    initial = self._batch._initial[binding.world]
+                    paths[shape.key] = CollisionMotion([initial.position])
+                else:
+                    if physical.kind not in (1, 2):
+                        raise ValueError(
+                            "slider binding requires an actual resident PrismaticSlider"
+                        )
+                    if not shape.rigid or shape.kind == "plane":
+                        raise ValueError("resident slider geometry must be finite and rigid")
+                    zero, axis = compile_slider_binding(
+                        shape, binding, physical.slider_frame, physical.axis
                     )
-                radius = physical.topology[3][7]
-                if shape.radius != radius:
+                    if (
+                        axis.shape != (6,)
+                        or axis.dtype != np.float32
+                        or not np.isfinite(axis).all()
+                    ):
+                        raise ValueError("invalid compiled slider axis enclosure")
+                    if np.any(axis[:3] > np.asarray(physical.axis)) or np.any(
+                        axis[3:] < np.asarray(physical.axis)
+                    ):
+                        raise ValueError(
+                            "compiled slider axis does not enclose the physical world axis"
+                        )
+                    paths[shape.key] = zero
+                    self._slider_slots[row] = slot
+                    self._slider_axes[row] = axis
+                if binding.world in body_keys and body_keys[binding.world] != shape.key.body:
                     raise ValueError(
-                        "collision sphere radius must equal the actual resident FP32 radius"
+                        "all dynamic shapes in one resident world must share its one real body"
                     )
+                body_keys[binding.world] = shape.key.body
                 slots[row] = slot
-                self._world_shape_rows[binding.world] = row
-                # Immutable initial metadata seeds only the tree's split order.
-                # Every query refits from the actual accepted DEVICE buffer.
-                initial = self._batch._initial[binding.world]
-                paths[shape.key] = CollisionMotion([initial.position])
+                self._world_shape_rows.setdefault(binding.world, row)
+                self._world_rows.setdefault(binding.world, []).append(row)
             else:
                 if shape.kind == "plane":
                     raise ValueError(
-                        "C1 static geometry must be finite; half-spaces are unsupported"
+                        "resident static geometry must be finite; half-spaces are unsupported"
                     )
                 if binding.motion.end is not None or binding.motion.turn is not None:
                     raise ValueError("static binding requires one pose, not a moving interval")
                 paths[shape.key] = binding.motion
         if {key.world for key in self._shape_keys} != set(self._world_shape_rows):
-            raise ValueError(
-                "each static geometry world needs its explicitly bound resident sphere"
-            )
+            raise ValueError("each static geometry world needs its explicitly bound resident body")
         return slots, paths
 
     def _prepare_topology(self, slots):
@@ -290,7 +329,14 @@ class ResidentCollisionPlan:
             spatial=self._space,
             runtime=view.runtime,
         )
-        self._slots_device = self._engine._static(slots)
+        sphere_slots = np.where(self._slider_slots >= 0, -1, slots).astype(np.int32)
+        self._slots_device = self._engine._static(sphere_slots)
+        if np.any(self._slider_slots >= 0):
+            from ._tyx_resident_slider_bounds import make_resident_slider_bounds_kernels
+
+            self._slider_kernels = make_resident_slider_bounds_kernels()
+            self._slider_slots_device = self._engine._static(self._slider_slots)
+            self._slider_axes_device = self._engine._static(self._slider_axes)
         self._static_device = self._engine._static(seed_bounds)
         self._stamp_device = self._engine._scratch((len(slots), 2), np.int32)
         if self._space is not None:
@@ -347,13 +393,30 @@ class ResidentCollisionPlan:
             self._stamp_device,
         )
         self._bounds_launches += 1
+        if self._slider_kernels is not None:
+            self._batch._launch(
+                self._slider_kernels[view.active],
+                len(self._shape_keys),
+                self._slider_slots_device,
+                self._static_device,
+                self._slider_axes_device,
+                view.states,
+                view.ticks,
+                engine._bounds,
+                self._stamp_device,
+            )
+            self._slider_bounds_launches += 1
         self._directions.add(view.active)
         self._batch._sync()
         stamp = engine._read(self._stamp_device)
         if stamp.shape != (len(self._shape_keys), 2) or stamp.dtype != np.int32:
             raise ValueError("invalid resident bounds status and tick readback")
         if np.any(stamp[:, 0] != 1) or any(stamp[row, 1] < 0 for row in self._tick_rows):
-            raise ValueError("resident sphere bound overflow or non-finite accepted state")
+            raise ValueError("resident bound overflow or non-finite accepted state")
+        for world, rows in self._world_rows.items():
+            stamps = stamp[np.asarray(rows, dtype=np.int32), 1]
+            if np.any(stamps < 0) or np.any(stamps != stamps[0]):
+                raise ValueError(f"inconsistent accepted shape ticks in world {world}")
         ticks = stamp[np.asarray(self._tick_rows, dtype=np.int32), 1]
         pending = dict(self._trees.layouts)
         bounds, flags = engine.query_device_bounds(trees=self._trees, pending=pending)
@@ -431,6 +494,8 @@ class ResidentCollisionPlan:
                 queries=self._queries,
                 failed_queries=self._failed_queries,
                 bounds_kernel_launches=self._bounds_launches,
+                slider_bounds_kernel_launches=self._slider_bounds_launches,
+                total_bounds_kernel_launches=self._bounds_launches + self._slider_bounds_launches,
                 state_buffer_directions=tuple(sorted(self._directions)),
                 device_allocations=counts.get("allocations", 0)
                 if self._batch._mode == "cuda"
@@ -459,6 +524,7 @@ class ResidentCollisionPlan:
             finally:
                 self._batch._collision_plans.discard(self)
                 self._kernels = self._slots_device = self._static_device = self._stamp_device = None
+                self._slider_kernels = self._slider_slots_device = self._slider_axes_device = None
 
     def __enter__(self):
         with self._batch._lock:

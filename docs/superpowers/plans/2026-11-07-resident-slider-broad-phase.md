@@ -1,6 +1,6 @@
 # C2 实施：真实单滑轨的接受态设备宽相
 
-状态：**ACTIVE / CODE_AUTHORING**。用户已授权持续推进；前置A/B/C1与N4已在b2d8ec9正式限域接受。无截止。依据[作者设计及S01–08](../../benchmarks/p65-resident-slider-design.md)，本页补充父裁定与文件/接口；不是新数值通过。
+状态：**LOCAL_VALIDATED / WHEEL_PENDING**。用户已授权持续推进；前置A/B/C1与N4已在b2d8ec9正式限域接受。无截止。依据[作者设计及S01–08](../../benchmarks/p65-resident-slider-design.md)，本页补充父裁定与文件/接口；不是新数值通过。
 
 ## 目标与验收
 

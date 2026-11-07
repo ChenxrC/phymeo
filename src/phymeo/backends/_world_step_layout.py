@@ -10,6 +10,7 @@ from ..core.robot import RobotInputs, validate_robot_step
 from ..core.scene import SceneInputs, SceneState
 from ..dynamics.rotation import quaternion_matrix
 from ..solvers.driven_robot import DrivenRobotProgram
+from ._resident_slider_binding import SliderGeometryFrame
 
 # State columns are xyz (or scalar q), velocity, last applied effort and delayed packet.
 STATE_WIDTH = 12
@@ -131,6 +132,7 @@ class WorldBinding:
     axis: tuple
     topology: tuple
     plane_height: float | None = None
+    slider_frame: SliderGeometryFrame | None = None
 
     @property
     def width(self):
@@ -207,6 +209,7 @@ def bind_world(world, spec):
     command = np.zeros(4, np.float32)
     axis, domain = (), ""
     plane_height = None
+    slider_frame = None
     if isinstance(spec, FreeSphere):
         kind = 0
         plane = (0, 0, 0)
@@ -247,6 +250,9 @@ def bind_world(world, spec):
             quaternion_matrix(p.model.joint_orientation)[0]
             @ (local_axis / np.linalg.norm(local_axis))
         )
+        slider_frame = SliderGeometryFrame(
+            p.model.joint_position[0], p.model.joint_orientation[0], local_axis
+        )
         mass = float(p.model.mass[0])
         axial_gravity = np.dot(axis, p.model.gravity)
         props = (1 / mass, axial_gravity, 0, 0, p.kp[0], p.kd[0], p.effort_limit[0], 0, mass)
@@ -257,5 +263,5 @@ def bind_world(world, spec):
     topology = (kind, domain, axis, _values(constants))
     if plane_height is not None:
         topology += ("horizontal-sphere-plane-v1", plane_height)
-    binding = WorldBinding(world, kind, domain, axis, topology, plane_height)
+    binding = WorldBinding(world, kind, domain, axis, topology, plane_height, slider_frame)
     return binding, constants, state, command

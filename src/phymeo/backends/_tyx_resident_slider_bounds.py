@@ -42,12 +42,13 @@ def resident_slider_bounds(
                 a_hi = axis_bounds[i, component + 3]
                 z_lo = zero_bounds[i, component]
                 z_hi = zero_bounds[i, component + 3]
-                if q >= 0.0:
-                    p_lo = _lower(tx.mul_rn(q, a_lo))
-                    p_hi = _upper(tx.mul_rn(q, a_hi))
-                else:
-                    p_lo = _lower(tx.mul_rn(q, a_hi))
-                    p_hi = _upper(tx.mul_rn(q, a_lo))
+                lo_axis = a_lo
+                hi_axis = a_hi
+                if q < 0.0:
+                    lo_axis = a_hi
+                    hi_axis = a_lo
+                p_lo = _lower(tx.mul_rn(q, lo_axis))
+                p_hi = _upper(tx.mul_rn(q, hi_axis))
                 # Expand the product BEFORE adding the zero geometry. Its error
                 # depends on the large operands even if their sum nearly cancels.
                 # RN operations prohibit FMA contraction. Minimum-normal floors

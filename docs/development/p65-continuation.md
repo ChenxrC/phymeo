@@ -10,9 +10,10 @@
 
 **C6常驻有限静态接触反馈已正式限域接受**：产品48eeb89，HOST桥50、解释74分组、实际CUDA74、相邻15通过；112完整payload审计与新wheel两backend各41 batch/164 world-steps完成。包含有限球/胶囊/凸体、真实偏心转动/跨分支惯量、732/1463步卸载重入、W1/W4及容量/晚故障共同发布。详[正式接受](../benchmarks/p65-resident-tree-contacts.md#2026-11-08-父执行与正式限域接受)。本片不是affine/floating接触、动态双侧、持续摩擦、CCD或全GPU窄相，不重复已绿组/旧审计。
 
-**C7固定根affine常驻接触反馈已正式限域接受**：产品876ae848，每backend50专项联合覆盖、受影响CUDA3项、90主完整保存记录与两摘要补件通过；新wheel423产品成员同源，两backend各63batch/251接受+1拒绝world-step及21步恢复重放通过。详[正式报告](../benchmarks/p65-resident-affine-contacts.md#2026-11-08-父执行与正式限域接受)。旧generic摘要差异与原失败保持，不重跑已绿组。C7作者与执行已释放；[C8完整tree/forest内双动态计划](../superpowers/plans/2026-11-08-resident-tree-dynamic-contact-feedback.md)已冻结5d85e42，原RD作者NEW多案例/事务，原robot作者NEW Newton参照/公开wheel消费者；父已实现四OLD薄接缝13c3fad，395有效RED→401解释/402CUDA首D01均通过，403/404五项受影响默认/affine兼容通过；完整矩阵/参照/新wheel仍待验收。全部项目执行仍由父独占串行，无截止或周期任务。
+**C7固定根affine常驻接触反馈已正式限域接受**：产品876ae848，每backend50专项联合覆盖、90主保存记录与两摘要补件、新wheel均通过。详[正式报告](../benchmarks/p65-resident-affine-contacts.md#2026-11-08-父执行与正式限域接受)。旧generic摘要差异与原失败保持，不重跑已绿组。
+**C8完整固定根tree/forest内双动态反馈已正式限域接受**：产品13c3fad，各backend74项联合覆盖、112完整保存payload、Newton原生160步及新wheel双backend各251接受+1拒绝world-step完成。CPU原力观察错误由同一80步独立解码补件闭环，原RAW1保留；无物理重跑或matched-law回退。完整源/安装/恢复/材料记录审计均通过，详[正式报告](../benchmarks/p65-resident-tree-dynamic-contacts.md#2026-11-08-父执行与正式限域接受)。当前作者及执行槽已释放。下一片从[普通浮根设备树调研提案](p65-resident-floating-tree-next-proposal.md)冻结状态、完整耦合动力学与设备宽相；浮根接触/affine另扩。全部执行仍由父串行，持续无截止。
 
-[功能差异全景](phymeo-newton-panorama-2026-11-07.md) · [可视化](phymeo-newton-panorama-2026-11-07.html)。完整设备窄相/CCD/动态双侧接触、原100g持续抓持、软布两初态放台等仍开放；历史数学证明或局部几何不代表整个P6.5完成。
+[功能差异全景](phymeo-newton-panorama-2026-11-07.md) · [可视化](phymeo-newton-panorama-2026-11-07.html)。完整设备窄相/CCD/浮根设备树与其接触、跨独立participant的设备共同求解、抓取释放工程精度边界和软布两初态放台等仍开放；历史数学证明或局部几何不代表整个P6.5完成。
 
 ## 最近已验收基线（2026-11-06）
 

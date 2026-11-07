@@ -1,6 +1,6 @@
 # C8 完整驻留树内双动态接触反馈
 
-状态：**FROZEN / TEST_AUTHORING / PRODUCT_PENDING**，2026-11-08。持续任务，无截止。父产品876ae848、C7接受1ce9ced为基线；[源码与Newton1.7调研提案](../../development/p65-resident-dynamic-contact-next-proposal.md)已导入3045acc。本计划覆盖提案中的接口选择与未定项，不把提案或手推当实测。
+状态：**LOCAL_ACCEPTED / SLOTS_RELEASED**，2026-11-08。持续任务，无截止。父产品876ae848、C7接受1ce9ced为基线；[源码与Newton1.7调研提案](../../development/p65-resident-dynamic-contact-next-proposal.md)已导入3045acc。本计划覆盖提案中的接口选择与未定项，不把提案或手推当实测。
 
 ## 可复用主线和边界
 
@@ -72,3 +72,9 @@
 - 403两项旧bridge默认拒绝HOST2 passed/.47s；404受改变影响旧ordinary默认pair拒绝、affine默认pair拒绝、A02实际静态接触CUDA3 passed/4.47s。不重复旧C7/C6完整套。
 
 所有命令、before/after源码和首失败原样保存在artifacts/p65-generic-collision-20261107-01。当前只有首D01与必要兼容通过；D02共享祖先、affine原图/零K载荷、40步/过滤/多形状/事务、多backend完整矩阵、Newton参照、保存审计及新wheel仍待验收。原RD/robot继续NEW作者；父仍唯一执行owner，没有C8正式接受或P6.5完成。
+
+## 当前完成状态（2026-11-08）
+
+上述开发/验证1–7已完成原声明范围：每backend74项联合覆盖、受影响兼容5项、112原保存payload、Newton160实际原生步（CPU原观测错误由只读补件闭环）、新wheel两backend各251接受+1拒绝world-step、全源与保存审计均完成。产品13c3fad，详情与首失败保留于[正式专项报告](../../benchmarks/p65-resident-tree-dynamic-contacts.md#2026-11-08-父执行与正式限域接受)。旧“仍待验”段是历史，不重复执行。
+
+C8仅固定根完整树/森林双动态范围。下一节点依据[浮根调研提案](../../development/p65-resident-floating-tree-next-proposal.md)另行冻结普通浮根设备树，随后扩接触与affine；不得把浮根HOST已有能力当设备驻留已完成。父独占旧共享接缝和全部项目执行，持续目标无截止。

@@ -1,6 +1,8 @@
 # C8 同一完整驻留树内双动态接触：作者交接
 
-状态：**TEST_AUTHORING / UNEXECUTED**。本作者只新增两个测试文件和本报告；没有执行 import、collection、数值、pytest、静态、构建或 native 程序，没有合并父源码。基线为原作者树 `5dd903f`；权威输入与能力域是父 `5d85e42` 的 [C8 计划](../superpowers/plans/2026-11-08-resident-tree-dynamic-contact-feedback.md)。所有 OLD 产品、执行、计量及最终接受均由父负责。
+当前状态：**LOCAL_ACCEPTED / C8_FIXED_TREE_DYNAMIC_CONTACTS / 2026-11-08**。父专项、同次保存审计、Newton原生参照及新wheel源码外验证均完成。以下作者阶段记录保留为历史；当前正式范围见末节。
+
+历史状态：**TEST_AUTHORING / UNEXECUTED**。本作者只新增两个测试文件和本报告；没有执行 import、collection、数值、pytest、静态、构建或 native 程序，没有合并父源码。基线为原作者树 `5dd903f`；权威输入与能力域是父 `5d85e42` 的 [C8 计划](../superpowers/plans/2026-11-08-resident-tree-dynamic-contact-feedback.md)。所有 OLD 产品、执行、计量及最终接受均由父负责。
 
 ## 真实首节点与后续范围
 
@@ -63,3 +65,13 @@
 ## C8 专项矩阵父执行（尚未正式接受）
 
 测试提交58cd34a，父411解释模式73 passed/1 deselected/53.91s，412实际CUDA73 passed/1 deselected/192.28s，均RAW_EXIT=0。唯一排除是此前401/402已通过的公开D01同源首节点；每backend74项联合覆盖，未skip或fallback。新增非盒HH完整COM矩也通过。全部连续窗/原图反力/多world/容量/晚故障/过滤矩阵已真实执行；同次保存审计、Newton参照和新wheel仍待验，不能宣布C8正式接受。
+
+## 2026-11-08 父执行与正式限域接受
+
+产品13c3fad，最终测试58cd34a。401/402首D01各1通过，411解释73/53.91s、412实际CUDA73/192.28s，各只排除已过同源首D01；每backend74项联合覆盖，无skip/fallback。403/404受影响旧行为5项通过；不重跑C6/C7完整套。
+
+433首次同次保存审计通过：固定401/402/411/412共112原gzip，物理1,677,682 B、完整原解压23,033,527 B；每backend56文件、47保存实例及27明确无payload实例。完整W1/W4各40步与tick19后的21步state/geometry/receipt逐字段一致。1580 receipt记录出现次数（ordinary876/affine704）包含重复，不是独立物理步数。原压缩与逻辑字节hash、全部材料/载荷/功/诊断、身份与schema核保留；未重跑producer。来源见 artifacts/p65-generic-collision-20261107-01/c8-saved-audit-v1.json。
+
+独立Newton和公开消费者详[参照报告](p65-resident-dynamic-contacts-reference.md)。419 CPU原80步力观察误标以421只读完整解码补件闭环，419 RAW1保持；422 CUDA原生80步通过，未采用matched-law或重复CPU物理。425新wheel、426源码外安装、427解释/428 CUDA各63batch/251接受+1拒绝world-step，全部40步与21步恢复/容量重试/关闭通过。429核423产品成员及完整消费者数据同源，432核401–404/411/412原before-after快照、早期首节点函数AST和当前源绑定，均0mismatch；430/431审计脚本假设错误原日志保留。
+
+正式范围仅同world、同一完整fixed-root普通/affine树或森林、不同非相邻dynamic groups的有限sphere/capsule/unrounded hull接触，可混合原静态pair；mu0、discrete_entry、HOST几何/法向律+TYX全N mechanics/原K solve/唯一发布。默认False行为保持。浮根设备树、同world独立participant、摩擦历史、CCD和全GPU窄相仍开放。C8作者/执行槽全部释放，不代表整个P6.5或Newton普遍等价。

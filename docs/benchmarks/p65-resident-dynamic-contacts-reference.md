@@ -1,6 +1,8 @@
 # C8 双动态驻留接触：Newton 参考与源码外消费者
 
-状态：**父原生参照已验证，公开wheel消费者待执行**。原作者交接记录如下，实际执行补充在末节。2026-11-08，按父冻结 [C8 计划](../superpowers/plans/2026-11-08-resident-tree-dynamic-contact-feedback.md) 编写；没有运行 import、collection、数值、pytest、静态、build、安装或设备程序。本文不是验收记录，以下计数均是预声明执行规模。
+当前状态：**LOCAL_ACCEPTED / 原生参照与源码外wheel均完成**。历史作者和首失败记录保留，实际接受范围见末节。
+
+历史状态：**父原生参照已验证，公开wheel消费者待执行**。原作者交接记录如下，实际执行补充在末节。2026-11-08，按父冻结 [C8 计划](../superpowers/plans/2026-11-08-resident-tree-dynamic-contact-feedback.md) 编写；没有运行 import、collection、数值、pytest、静态、build、安装或设备程序。本文不是验收记录，以下计数均是预声明执行规模。
 
 ## 精确文件与边界
 
@@ -80,3 +82,11 @@
 父独立补件421仅读取原80步和精确pin源码快照，按固定P/R根的零solve-origin完整解码，全部80行COM载荷、合力/合矩与原独立期望通过；同时确认除此两个观察门外全部原门为真。420首次因Windows默认GBK读UTF8源码失败，421只补显式UTF8，新增物理步0。补件c8-native-cpu-decode-audit-v1.json SHA61962304e4dcef1e7a3e18f1da918707840d7d8d3dc4fc399c826ae4d81a7af1；不改419的失败标记或旧错误标签。
 
 父422使用明确raw/solve-origin/entry-COM/decoded-COM双记录的修复driver，真实CUDA原生D01/D03各40步全部通过，RAW_EXIT=0、源前后同。两个backend共160个实际原生步，没有matched-law回退、CPU重复物理或提高容差。首冻结2N与两COM矩均对齐。423/424修复driver Ruff/format通过。公开wheel消费者及最终同源审计仍待执行，不能据此宣布整个C8或Newton普遍等价。
+
+## 新wheel源码外实际执行与接受
+
+父425从df6c764产品源构建1,245,850 B新wheel，SHA256 8744f1a73fa6eb92b3b9b60bb82f85bbbc272c19a87f8c7aa49c9f8d1f8ad9cd；426以offline/no-deps/no-index方式安装到独立Temp目录。427解释与428 CUDA分别从源码外通过完整公开消费者：各63batch、252 world尝试、251接受/1容量拒绝、0异常失败；普通/affine/静态/free四world连续40步、tick19后的21步完整恢复、容量拒步与原请求重试均通过。实际284个loaded模块都来自新安装的423产品成员；关闭资源归零。
+
+429只读wheel/安装/构建前后源字节与完整保存数据审计PASS，0mismatch，摘要SHA e0c9c3a370f365f1f5469f1ff9179dd2102d2e5328d6a92cd056d247ea39e77f。没有忽略diagnostics/history/energy或entry/current几何。CUDA实际提交1968、同步1302仅作本次运行计量，不是与Newton性能排名。
+
+原生CPU419的RAW1及错误后置标签保持，以421的原80步完整解码独立补件接受力观测；CUDA422为修复driver原生80步PASS。两backend总160实际原生步，无matched-law回退、无CPU物理重跑。419/420/430/431等原始失败不删除、不改写为初次全绿。完整C8接受与能力边界见[专项报告](p65-resident-tree-dynamic-contacts.md#2026-11-08-父执行与正式限域接受)。

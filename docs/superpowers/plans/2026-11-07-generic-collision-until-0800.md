@@ -334,3 +334,9 @@ C4/C5完整ordinary/affine设备树及C6有限静态接触反馈已分别完成�
 [C7正式报告](../../benchmarks/p65-resident-affine-contacts.md#2026-11-08-父执行与正式限域接受)：固定根affine树已复用同一常驻接触入口、full N载荷/原K solve/原图反力/唯一发布。每backend50专项联合覆盖、90主保存记录及新wheel两backend各63batch通过，完整负gain/共享惯量/恢复/拒绝记录保持。此处不代表动态双方、浮根设备、CCD或全GPU窄相。
 
 下一片从[同world完整tree/forest双动态提案](../../development/p65-resident-dynamic-contact-next-proposal.md)冻结，不能拼接world或拆成独立单关节。父旧源码与执行唯一owner，原RD/robot可在冻结后分别作者NEW独立测试与Newton/consumer；不新建助手或重启额度已失败RR。后续多participant同world、浮根驻留有独立状态/事务前置条件，不通过删域门代替。持续任务无08:00限制。
+
+## 2026-11-08 C8正式接受，继续普通浮根设备树
+
+同一完整fixed-root ordinary/affine tree或forest内的有限双动态接触已正式接受：产品13c3fad、各backend74项、112完整保存、原生Newton160步和新wheel双backend均完成。详[C8范围与证据](../../benchmarks/p65-resident-tree-dynamic-contacts.md#2026-11-08-父执行与正式限域接受)。双侧COM载荷和原全N/K耦合进入同一次发布，不把不同世界拼成一个物理世界。
+
+下一片C9基于[本机源码与Newton1.7浮根提案](../../development/p65-resident-floating-tree-next-proposal.md)，先普通浮根完整树设备状态/动力学/碰撞宽相和事务，再独立扩接触/affine。原robot/RD分别可作者NEW产品/测试，父仍唯一旧接缝与串行执行owner，RR额度错误不重试。连续任务ACTIVE，无时间截止。

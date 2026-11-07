@@ -650,37 +650,46 @@ class ResidentCollisionPlan:
             )
         return bounds, ticks, candidates, pending
 
+    def _stage_query(self):
+        """Read a complete candidate query without publishing layouts or a result."""
+        self._check_open()
+        with self._batch._borrow_collision_state(
+            owner=self._owner, topology_generation=self._topology_generation
+        ) as view:
+            if self._shape_keys:
+                bounds, ticks, candidates, pending = self._read_bounds(view)
+            else:
+                bounds = np.empty((0, 6), dtype=np.float32)
+                ticks = np.empty(0, dtype=np.int32)
+                candidates, pending = (), dict(self._trees.layouts)
+            result = ResidentCollisionResult(
+                view.owner,
+                self._registration,
+                view.topology_generation,
+                view.state_epoch,
+                self._world_keys,
+                ticks,
+                self._shape_keys,
+                self._shape_revisions,
+                bounds,
+                self._registered_pairs,
+                candidates,
+            )
+        return result, pending
+
+    def _publish_query(self, result, pending):
+        """Publish preconstructed HOST data only; never perform fallible device IO."""
+        self._trees.layouts = pending
+        self._last = result
+        self._queries += 1
+
     def query(self):
         """Publish a whole result only after genuine device bounds/BVH validation."""
         with self._batch._lock:
             self._check_open()
             try:
-                with self._batch._borrow_collision_state(
-                    owner=self._owner, topology_generation=self._topology_generation
-                ) as view:
-                    if self._shape_keys:
-                        bounds, ticks, candidates, pending = self._read_bounds(view)
-                    else:
-                        bounds = np.empty((0, 6), dtype=np.float32)
-                        ticks = np.empty(0, dtype=np.int32)
-                        candidates, pending = (), dict(self._trees.layouts)
-                    result = ResidentCollisionResult(
-                        view.owner,
-                        self._registration,
-                        view.topology_generation,
-                        view.state_epoch,
-                        self._world_keys,
-                        ticks,
-                        self._shape_keys,
-                        self._shape_revisions,
-                        bounds,
-                        self._registered_pairs,
-                        candidates,
-                    )
-                # No borrowed current-buffer view is retained in the result or plan.
-                self._trees.layouts = pending
-                self._last = result
-                self._queries += 1
+                result, pending = self._stage_query()
+                self._publish_query(result, pending)
                 return result
             except Exception:
                 self._failed_queries += 1

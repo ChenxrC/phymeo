@@ -20,6 +20,7 @@ STATUS_NAMES = {
     4: "PD_NOT_CONVERGED",
     5: "STATE_DOMAIN",
     6: "FK_NOT_FINITE",
+    7: "SITE_CAPACITY_EXCEEDED",
 }
 
 
@@ -324,10 +325,9 @@ class TreeDeviceStorage:
         )
         self.batch._counts["tree_commit_kernel_launches"] += 1
 
-    def stage_advance(self, h, src, dst, tick_src, tick_dst, accepted):
+    def stage_solve(self, h, src, dst, tick_src):
+        """Solve the already assembled full mechanics without publishing."""
         self._check()
-        self.invalidate_diagnostics()
-        self.stage_mechanics(src)
         self.batch._launch(
             self.kernels["solve"][src],
             self.count,
@@ -346,6 +346,12 @@ class TreeDeviceStorage:
             self.diag,
         )
         self.batch._counts["tree_dynamics_kernel_launches"] += 1
+
+    def stage_advance(self, h, src, dst, tick_src, tick_dst, accepted):
+        self._check()
+        self.invalidate_diagnostics()
+        self.stage_mechanics(src)
+        self.stage_solve(h, src, dst, tick_src)
         self.stage_candidate_geometry(dst)
         self.stage_finalize(src, dst, tick_src, tick_dst, accepted)
 

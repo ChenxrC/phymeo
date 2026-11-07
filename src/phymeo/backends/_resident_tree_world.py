@@ -116,7 +116,10 @@ class TreeKinematics:
 
     def __post_init__(self):
         for name in ("position", "velocity", "link_position_m", "link_rotation", "com_position_m"):
-            object.__setattr__(self, name, _owned(getattr(self, name)))
+            # FK is stored relative to the anchor. Keep the exact FP64 expansion
+            # of those FP32 values plus anchor; do not round world points twice.
+            dtype = np.float64 if name in ("link_position_m", "com_position_m") else np.float32
+            object.__setattr__(self, name, _owned(getattr(self, name), dtype))
 
 
 @dataclass(frozen=True, eq=False)

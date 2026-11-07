@@ -367,10 +367,48 @@ class TyxWorldBatch:
             for storage, stage in tree_stages:
                 storage.commit_controls(stage)
 
+    def prepare_contacts(
+        self,
+        model,
+        bindings,
+        materials_by_pair,
+        *,
+        candidate_capacity=4096,
+        site_capacity=128,
+        sampling="discrete_entry",
+    ):
+        """Bind finite static frictionless contact to this batch's accepted tree state."""
+        from ._resident_contact_plan import ResidentContactPlan
+
+        return ResidentContactPlan(
+            self,
+            model,
+            bindings,
+            materials_by_pair,
+            candidate_capacity=candidate_capacity,
+            site_capacity=site_capacity,
+            sampling=sampling,
+        )
+
+    def step_contacts(self, plan, h):
+        """Sample entry contact, solve full mechanics and publish one transaction."""
+        from ._resident_contact_plan import ResidentContactPlan
+
+        if not isinstance(plan, ResidentContactPlan):
+            raise TypeError("expected a ResidentContactPlan")
+        if plan._batch is not self:
+            raise ValueError("contact plan belongs to a different owner")
+        return self._step(h, contacts=plan)
+
     def step(self, h):
         """Advance one positive physical substep and return accepted worlds by key."""
+        return self._step(h)
+
+    def _step(self, h, *, contacts=None):
         with self._lock:
             self._check_open()
+            if contacts is not None:
+                contacts._check_open()
             dt = float(as_fp32(h, "physical substep", ()))
             if dt <= 0:
                 raise ValueError("physical substep must be positive")
@@ -389,6 +427,7 @@ class TyxWorldBatch:
                     self._dirty = False
                     for _, storage in self._tree_storages():
                         storage.controls_uploaded()
+                    attempt = None if contacts is None else contacts._begin_attempt(dt, src, dst)
                     self._launch(
                         self._advance_kernels[src],
                         self._count,
@@ -418,9 +457,12 @@ class TyxWorldBatch:
                         )
                         self._counts["revolute_kernel_launches"] += 1
                     for _, storage in self._tree_storages():
-                        storage.stage_advance(
-                            dt, src, dst, self._ticks[src], self._ticks[dst], self._status
-                        )
+                        if contacts is not None and contacts._handles(storage):
+                            contacts._stage_tree(attempt, dt, src, dst)
+                        else:
+                            storage.stage_advance(
+                                dt, src, dst, self._ticks[src], self._ticks[dst], self._status
+                            )
                     if self._plane_kernels is not None:
                         self._launch(
                             self._plane_kernels[src],
@@ -437,6 +479,10 @@ class TyxWorldBatch:
                     status = self._read_status()
                     for _, storage in self._tree_storages():
                         storage.check_advance(status)
+                    if contacts is not None:
+                        candidate = contacts._read_candidate(attempt, dst)
+                        contact_commit = contacts._finish_attempt(attempt, candidate, status)
+                        contacts._check_attempt(attempt)
                 results = {
                     b.world: bool(value) for b, value in zip(self._bindings, status, strict=True)
                 }
@@ -449,6 +495,8 @@ class TyxWorldBatch:
             self._state_epoch += 1
             for _, storage in self._tree_storages():
                 storage.finish_advance(status)
+            if contacts is not None:
+                contacts._publish(contact_commit)
             accepted = int(np.count_nonzero(status))
             self._counts["completed_steps"] += 1
             self._counts["accepted_world_steps"] += accepted

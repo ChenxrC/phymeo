@@ -1,6 +1,7 @@
 """Real accepted single-slider poses feed the existing resident device broad phase."""
 
-from dataclasses import replace
+import json
+from dataclasses import asdict, replace
 from fractions import Fraction
 from itertools import product
 
@@ -9,6 +10,42 @@ import pytest
 
 import phymeo as ph
 from phymeo.backends.tyx_world_batch import FreeSphere, PrismaticSlider, TyxWorldBatch
+
+
+
+
+def _jsonable(value):
+    if isinstance(value, np.ndarray):
+        return value.tolist()
+    if isinstance(value, np.generic):
+        return value.item()
+    if isinstance(value, dict):
+        return {str(k): _jsonable(v) for k, v in value.items()}
+    if isinstance(value, (tuple, list)):
+        return [_jsonable(v) for v in value]
+    return value
+
+
+def _save_trace(tmp_path, name, data):
+    path = tmp_path / (name + ".json")
+    path.write_text(json.dumps(_jsonable(data), allow_nan=False, indent=2) + "\n", encoding="utf-8")
+
+
+def _result_trace(result):
+    def key(k):
+        return (k.world, k.body, k.shape)
+
+    return {
+        "state_epoch": result.state_epoch,
+        "topology_generation": result.topology_generation,
+        "world_keys": result.world_keys,
+        "ticks": result.ticks,
+        "shape_keys": [key(k) for k in result.shape_keys],
+        "shape_revisions": result.shape_revisions,
+        "bounds": result.bounds,
+        "registered_pairs": [(key(a), key(b)) for a, b in result.registered_pairs],
+        "candidates": [(key(a), key(b)) for a, b in result.candidates],
+    }
 
 
 def _api():
@@ -266,7 +303,8 @@ def test_s04_same_physical_body_keeps_three_material_sets_and_ticks(tyx_mode, tm
                     _contains(_row(result, shape.key), expected.min(0) - shape.radius,
                               expected.max(0) + shape.radius)
                     assert result.shape_revisions[result.shape_keys.index(shape.key)] == 7
-                    assert shape.vertex_ids == next(s.vertex_ids for s in model.shapes if s.key == shape.key)
+                    expected_ids = {21: (41,), 22: (9, 73), 23: (102, 18, 39, 44, 60, 3, 81, 97)}
+                    assert shape.vertex_ids == expected_ids[shape.key.shape]
 
 
 def _folded_asset(tmp_path):
@@ -353,15 +391,21 @@ def test_s05_forty_real_steps_keep_delay_and_exact_candidate_window(delay, tyx_m
     with TyxWorldBatch([(7, PrismaticSlider(drive, initial))], tyx_mode, cache_root=tmp_path) as batch:
         batch.set_controls({7: drive.inputs(np.zeros(1), feedforward=np.array([2.0]))})
         with batch.prepare_collision(model, (_binding(moving, drive, zero), _static(wall, fixed))) as plan:
-            hit_steps = []
+            hit_steps, trace = [], []
             for n in range(1, 41):
-                assert batch.step(1 / 16) == {7: True}
+                accepted = batch.step(1 / 16)
                 actual = batch.snapshot()[7]
+                row = {"step": n, "acceptance": accepted, "actual_checkpoint": asdict(actual)}
+                trace.append(row)
+                _save_trace(tmp_path, f"s05-delay{delay}-{tyx_mode}", trace)
+                assert accepted == {7: True}
                 m = n - delay
                 q, v = Fraction(m * (m + 1), 512), Fraction(m, 16)
                 assert actual.tick == n
                 assert actual.position == (float(q),) and actual.velocity == (float(v),)
                 result = plan.query()
+                row.update(collision=_result_trace(result), plan_stats=plan.stats(), batch_stats=batch.stats())
+                _save_trace(tmp_path, f"s05-delay{delay}-{tyx_mode}", trace)
                 assert result.ticks.tolist() == [n]
                 _contains(_row(result, moving), (q - Fraction(1, 16), -1 / 16, -1 / 16),
                           (q + Fraction(1, 16), 1 / 16, 1 / 16))
@@ -412,10 +456,24 @@ def test_s06_mixed_worlds_full_results_two_buffers_without_warm_snapshots(count,
     with TyxWorldBatch(worlds, tyx_mode, cache_root=tmp_path) as batch:
         batch.set_controls(controls)
         with batch.prepare_collision(model, bindings) as plan:
-            plan.query()
-            assert all(batch.step(1 / 8).values())
-            plan.query()
+            initial_result = plan.query()
+            initial_plan_stats, initial_batch_stats = plan.stats(), batch.stats()
+            initial_acceptance = batch.step(1 / 8)
+            assert all(initial_acceptance.values())
+            stepped_result = plan.query()
+            warm_entry = batch.snapshot()
             before, runtime_before = plan.stats(), batch.stats()
+            trace = {
+                "bootstrap": [
+                    {"step": 0, "collision": _result_trace(initial_result),
+                     "plan_stats": initial_plan_stats, "batch_stats": initial_batch_stats},
+                    {"step": 1, "acceptance": initial_acceptance,
+                     "collision": _result_trace(stepped_result)},
+                ],
+                "actual_warm_entry_checkpoints": {w: asdict(s) for w, s in warm_entry.items()},
+                "initial_plan_stats": before, "initial_batch_stats": runtime_before, "steps": [],
+            }
+            _save_trace(tmp_path, f"s06-w{count}-{tyx_mode}", trace)
 
             def forbidden(*args, **kwargs):
                 raise AssertionError("warm slider query must not snapshot, upload envelopes or allocate")
@@ -430,8 +488,15 @@ def test_s06_mixed_worlds_full_results_two_buffers_without_warm_snapshots(count,
                 monkeypatch.setattr(tx, "cuda_empty", forbidden)
             frozen, saved_bounds = None, None
             for n in range(2, 6):
-                assert all(batch.step(1 / 8).values())
+                accepted = batch.step(1 / 8)
                 result = plan.query()
+                row = {
+                    "step": n, "acceptance": accepted, "collision": _result_trace(result),
+                    "plan_stats": plan.stats(), "batch_stats": batch.stats(), "oracle_q_v": {},
+                }
+                trace["steps"].append(row)
+                _save_trace(tmp_path, f"s06-w{count}-{tyx_mode}", trace)
+                assert all(accepted.values())
                 assert result.world_keys == tuple(sorted(refs))
                 assert result.ticks.tolist() == [n] * count
                 expected_pairs = set()
@@ -440,13 +505,16 @@ def test_s06_mixed_worlds_full_results_two_buffers_without_warm_snapshots(count,
                     if drive is None:
                         center = np.array([-1 / 4 + n / 32, 0, 0])
                         low, high = center - 1 / 8, center + 1 / 8
+                        row["oracle_q_v"][world] = {"position_m": center, "velocity_m_s": [1 / 4, 0, 0]}
                     else:
                         q = q0 + n * (n + 1) / 128
                         motion = zero.start + _world_axis(drive) * q
                         low, high = motion.min(0) - shape.radius, motion.max(0) + shape.radius
+                        row["oracle_q_v"][world] = {"q_m": q, "v_m_s": n / 8}
                     _contains(_row(result, moving), low, high)
                     if np.all(np.asarray(low) <= fixed.start.max(0)) and np.all(np.asarray(high) >= fixed.start.min(0)):
                         expected_pairs.add((moving, wall))
+                _save_trace(tmp_path, f"s06-w{count}-{tyx_mode}", trace)
                 assert set(result.candidates) == expected_pairs
                 assert len(result.registered_pairs) == count
                 assert all(a.world == b.world for a, b in result.candidates)
@@ -454,6 +522,8 @@ def test_s06_mixed_worlds_full_results_two_buffers_without_warm_snapshots(count,
                     frozen, saved_bounds = result, result.bounds.copy()
                 np.testing.assert_array_equal(frozen.bounds, saved_bounds)
             after = plan.stats()
+            trace.update(final_plan_stats=after, final_batch_stats=batch.stats())
+            _save_trace(tmp_path, f"s06-w{count}-{tyx_mode}", trace)
             assert after["device_allocations"] == before["device_allocations"]
             assert after["dynamic_envelope_uploaded_bytes"] == 0
             assert after["bounds_kernel_launches"] - before["bounds_kernel_launches"] == 4
@@ -542,6 +612,9 @@ def test_s08_large_cancellation_and_overflow_are_not_small_final_value_margins(t
     with TyxWorldBatch([(7, PrismaticSlider(drive, initial))], tyx_mode, cache_root=tmp_path / "cancel") as batch:
         with batch.prepare_collision(model, bindings) as plan:
             result = plan.query()
+            _save_trace(tmp_path, f"s08-cancellation-{tyx_mode}", {
+                "collision": _result_trace(result), "plan_stats": plan.stats(), "batch_stats": batch.stats(),
+            })
             low, high = _translated_sphere_bounds(bindings[0].zero_motion, 1 / 32, _world_axis(drive), -2**20)
             _contains(_row(result, moving), low, high)
             _contains(_row(result, moving), (-1 / 32,) * 3, (1 / 32,) * 3)
@@ -554,8 +627,13 @@ def test_s08_large_cancellation_and_overflow_are_not_small_final_value_margins(t
             batch.restore({7: replace(saved, position=(float(2**127),))})
             with pytest.raises(ValueError, match="bound|finite|overflow"):
                 plan.query()
+            actual = batch.snapshot()[7]
+            _save_trace(tmp_path, f"s08-overflow-{tyx_mode}", {
+                "last_valid": _result_trace(good), "actual_checkpoint": asdict(actual),
+                "plan_stats": plan.stats(), "batch_stats": batch.stats(),
+            })
             assert plan.last_result is good
-            assert batch.snapshot()[7].position == (float(2**127),)
+            assert actual.position == (float(2**127),)
 
 
 @pytest.mark.tyx
@@ -566,7 +644,12 @@ def test_s08_subnormal_axis_interval_contains_accepted_physical_displacement(tin
     with TyxWorldBatch([(7, PrismaticSlider(drive, initial))], tyx_mode, cache_root=tmp_path) as batch:
         with batch.prepare_collision(model, bindings) as plan:
             low, high = _translated_sphere_bounds(bindings[0].zero_motion, 1 / 32, _world_axis(drive), 2**100)
-            _contains(_row(plan.query(), moving), low, high)
+            actual = plan.query()
+            sign = "positive" if tiny_axis > 0 else "negative"
+            _save_trace(tmp_path, f"s08-small-axis-{sign}-{tyx_mode}", {
+                "collision": _result_trace(actual), "plan_stats": plan.stats(), "batch_stats": batch.stats(),
+            })
+            _contains(_row(actual, moving), low, high)
 
 
 @pytest.mark.tyx
@@ -584,11 +667,19 @@ def test_s08_zero_capacity_empty_plan_and_runtime_ownership(tyx_mode, tmp_path):
             small.query()
         assert small.last_result is old
         full = batch.prepare_collision(model, bindings, candidate_capacity=1)
-        assert full.query().candidates == ((moving, wall),)
+        touched = full.query()
+        _save_trace(tmp_path, f"s08-capacity-{tyx_mode}", {
+            "before": _result_trace(old), "full_result": _result_trace(touched),
+            "small_stats": small.stats(), "full_stats": full.stats(), "batch_stats": batch.stats(),
+        })
+        assert touched.candidates == ((moving, wall),)
         small.close()
         assert batch.step(1 / 16) == {7: True}
         full.query()
         batch.close()
+        _save_trace(tmp_path, f"s08-normal-close-{tyx_mode}", {
+            "small_stats": small.stats(), "full_stats": full.stats(), "batch_stats": batch.stats(),
+        })
         assert full.stats()["closed"]
         with pytest.raises(RuntimeError, match="closed"):
             full.query()
@@ -596,7 +687,11 @@ def test_s08_zero_capacity_empty_plan_and_runtime_ownership(tyx_mode, tmp_path):
         batch.close()
     with TyxWorldBatch([], tyx_mode, cache_root=tmp_path / "empty") as empty:
         with empty.prepare_collision(ph.CollisionModel(()), ()) as plan:
-            assert plan.query().bounds.shape == (0, 6)
+            result = plan.query()
+            _save_trace(tmp_path, f"s08-empty-{tyx_mode}", {
+                "collision": _result_trace(result), "plan_stats": plan.stats(), "batch_stats": empty.stats(),
+            })
+            assert result.bounds.shape == (0, 6)
             assert plan.stats()["device_allocations"] == 0
             assert plan.stats()["slider_bounds_kernel_launches"] == 0
 
@@ -626,7 +721,7 @@ def test_s08_frame_and_compiled_axis_are_owned_and_rotation_sign_equivalent():
             array.setflags(write=True)
 
 
-@pytest.mark.parametrize("problem", ("origin", "quaternion", "axis", "world", "moving", "turn", "vertices", "plane", "owned_axis"))
+@pytest.mark.parametrize("problem", ("origin", "quaternion", "axis", "world", "moving", "turn", "vertices", "plane", "owned_axis", "missing_frame"))
 def test_s08_invalid_binding_compile_fails_closed(problem):
     resident, frame_type, compile_binding = _api()
     key = ph.CollisionKey(7, 3, 11)
@@ -649,8 +744,10 @@ def test_s08_invalid_binding_compile_fails_closed(problem):
         motion = ph.CollisionMotion([[0, 0, 0], [1, 0, 0]])
     elif problem == "plane":
         shape = ph.CollisionShape(key, "plane", (37,), normal=(0, 0, 1))
-    else:
+    elif problem == "owned_axis":
         owned = (0, 1, 0)
+    else:
+        frame = None
     with pytest.raises((TypeError, ValueError)):
         binding = resident(key, world, motion, **args)
         compile_binding(shape, binding, frame, owned)
@@ -720,3 +817,62 @@ def test_s04_invalid_scene_binding_has_no_collision_allocation(problem, tyx_mode
             batch.prepare_collision(ph.CollisionModel(tuple(shapes)), tuple(bindings))
         assert batch.stats()["device_allocations"] == before
         assert not batch._collision_plans
+
+
+@pytest.mark.tyx
+def test_s08_slider_close_callback_failure_cleans_all_plans_and_runtime(tyx_mode, tmp_path, monkeypatch):
+    drive, initial = _program()
+    model, bindings = _multi_shapes(drive)
+    batch = TyxWorldBatch([(7, PrismaticSlider(drive, initial))], tyx_mode, cache_root=tmp_path)
+    plans = []
+    try:
+        plans = [batch.prepare_collision(model, bindings) for _ in range(2)]
+        results = [p.query() for p in plans]
+        original = plans[0].close
+
+        def failed_callback():
+            original()
+            raise RuntimeError("injected slider close callback")
+
+        monkeypatch.setattr(plans[0], "close", failed_callback)
+        with pytest.raises(RuntimeError, match="slider close callback"):
+            batch.close()
+        stats = [p.stats() for p in plans]
+        _save_trace(tmp_path, f"s08-close-callback-{tyx_mode}", {
+            "results_before_close": [_result_trace(r) for r in results],
+            "plan_stats_after": stats, "batch_stats_after": batch.stats(),
+        })
+        assert all(s["closed"] and s["device_owned_bytes"] == 0 for s in stats)
+        assert batch.stats()["device_owned_bytes"] == 0
+    finally:
+        batch.close()
+
+
+def test_s04_plain_asset_frame_and_zero_geometry_are_owned(tmp_path):
+    resident, frame_type, compile_binding = _api()
+    path = tmp_path / "plain_slider.urdf"
+    path.write_text("""<robot name="ordinary_slider"><link name="base"/>
+<link name="moving"><inertial><mass value="2"/>
+<inertia ixx="1" iyy="1" izz="1" ixy="0" ixz="0" iyz="0"/></inertial>
+<collision name="offset_ball"><origin xyz="0.125 0 0"/>
+<geometry><sphere radius="0.03125"/></geometry></collision></link>
+<joint name="slide" type="prismatic"><parent link="base"/><child link="moving"/>
+<origin xyz="1 0.25 -0.5" rpy="0 0 1.5707963267948966"/><axis xyz="1 0 0"/>
+<limit lower="-10" upper="10" effort="4" velocity="2"/></joint></robot>""", encoding="utf-8")
+    asset = ph.load_urdf(path, gravity=(0, 0, 0), collapse_fixed_joints=False)
+    col = asset.collisions[0]
+    assert col.link_index == 0
+    key = ph.CollisionKey(7, 3, 11)
+    binding = resident.from_asset(asset, col.shape.key, key=key, world=7)
+    original = asset.collision_motion(np.zeros(1))[col.shape.key]
+    np.testing.assert_array_equal(binding.zero_motion.start, original.start)
+    frame = frame_type(asset.model.joint_position[0], asset.model.joint_orientation[0], asset.model.joint_axis[0])
+    from phymeo.dynamics.rotation import quaternion_matrix
+
+    axis = quaternion_matrix(asset.model.joint_orientation)[0] @ asset.model.joint_axis[0]
+    compile_binding(replace(col.shape, key=key), binding, frame, axis)
+    before = binding.zero_motion.start.copy()
+    asset.model.joint_position.setflags(write=True)
+    asset.model.joint_position[0] += 77
+    assert binding.origin_m == (1, 0.25, -0.5)
+    np.testing.assert_array_equal(binding.zero_motion.start, before)

@@ -164,18 +164,24 @@ def _capacity(value):
 class ResidentCollisionPlan:
     """One batch-owned fixed-topology dynamic/static finite-geometry query plan.
 
-    Each model key has one explicit binding. The only queried pair domain is a
-    bound sphere, slider or revolute shape and a static shape in the same world. Masks, revisions and
-    exclusions remain authoritative. Static/static pairs are outside that domain.
+    Each model key has one explicit binding. The default pair domain is accepted
+    finite dynamic geometry versus static geometry in the same world. The opt-in
+    adds distinct, nonadjacent groups of one complete tree. Masks, revisions and
+    exclusions remain authoritative. Static/static pairs stay outside the domain.
     """
 
-    def __init__(self, batch, model, bindings, *, candidate_capacity=4096):
+    def __init__(
+        self, batch, model, bindings, *, candidate_capacity=4096, tree_dynamic_pairs=False
+    ):
         from .tyx_world_batch import TyxWorldBatch
 
         if not isinstance(batch, TyxWorldBatch):
             raise TypeError("resident collision requires a TyxWorldBatch owner")
         if not isinstance(model, CollisionModel):
             raise TypeError("resident collision requires a CollisionModel")
+        if type(tree_dynamic_pairs) is not bool:
+            raise TypeError("tree_dynamic_pairs must be a bool")
+        self._tree_dynamic_pairs = tree_dynamic_pairs
         self._candidate_capacity = _capacity(candidate_capacity)
         self._batch = batch
         self._registration = object()
@@ -260,6 +266,7 @@ class ResidentCollisionPlan:
         self._tree_rows = np.full(len(rows), -1, dtype=np.int32)
         self._affine_tree_rows = np.full(len(rows), -1, dtype=np.int32)
         self._tree_groups = np.full(len(rows), -1, dtype=np.int32)
+        self._tree_parents = np.full(len(rows), -2, dtype=np.int32)
         self._tree_offsets = self._rotor_offsets.copy()
         self._tree_points = np.zeros((int(self._tree_offsets[-1]), 3), dtype=np.float32)
         self._tree_geometry = np.zeros((len(rows), 4), dtype=np.float32)
@@ -382,6 +389,8 @@ class ResidentCollisionPlan:
                     tree_rows = self._affine_tree_rows if affine else self._tree_rows
                     tree_rows[row] = tree_view.rows[binding.world]
                     self._tree_groups[row] = group
+                    spec = physical.tree_spec.physical if affine else physical.tree_spec
+                    self._tree_parents[row] = spec.parents[group]
                     self._tree_points[start:end] = points
                     self._tree_geometry[row] = geometry
                 if (
@@ -428,20 +437,49 @@ class ResidentCollisionPlan:
         for i, j in combinations(range(len(shapes)), 2):
             keys = (shapes[i].key, shapes[j].key)
             same_world = keys[0].world == keys[1].world
-            if (
-                same_world
-                and slots[i] >= 0
-                and slots[j] >= 0
-                and (
-                    self._tree_rows[i] >= 0
-                    or self._tree_rows[j] >= 0
-                    or self._affine_tree_rows[i] >= 0
-                    or self._affine_tree_rows[j] >= 0
-                )
-                and keys not in excluded
-            ):
-                raise ValueError("tree self/moving dynamic pairs require explicit exclusion")
-            in_domain = same_world and ((slots[i] >= 0) != (slots[j] >= 0))
+            dynamic = slots[i] >= 0 and slots[j] >= 0
+            tree_i = self._tree_rows[i] >= 0 or self._affine_tree_rows[i] >= 0
+            tree_j = self._tree_rows[j] >= 0 or self._affine_tree_rows[j] >= 0
+            dynamic_domain = False
+            if same_world and dynamic and (tree_i or tree_j):
+                if not self._tree_dynamic_pairs:
+                    if keys not in excluded:
+                        raise ValueError(
+                            "tree self/moving dynamic pairs require explicit exclusion"
+                        )
+                else:
+                    filtered = (
+                        keys in excluded
+                        or (shapes[i].rigid and keys[0].body == keys[1].body)
+                        or not (shapes[i].group & shapes[j].mask)
+                        or not (shapes[j].group & shapes[i].mask)
+                    )
+                    same_tree = (
+                        tree_i
+                        and tree_j
+                        and slots[i] == slots[j]
+                        and (
+                            (self._tree_rows[i] >= 0 and self._tree_rows[j] >= 0)
+                            or (self._affine_tree_rows[i] >= 0 and self._affine_tree_rows[j] >= 0)
+                        )
+                    )
+                    adjacent = (
+                        self._tree_parents[i] == self._tree_groups[j]
+                        or self._tree_parents[j] == self._tree_groups[i]
+                    )
+                    dynamic_domain = (
+                        same_tree and self._tree_groups[i] != self._tree_groups[j] and not adjacent
+                    )
+                    if not filtered:
+                        if not same_tree or self._tree_groups[i] == self._tree_groups[j]:
+                            raise ValueError(
+                                "dynamic contact requires distinct groups in one complete tree"
+                            )
+                        if adjacent:
+                            raise ValueError(
+                                "direct parent-child contact requires explicit exclusion or mask"
+                            )
+            in_domain = same_world and (((slots[i] >= 0) != (slots[j] >= 0)) or dynamic_domain)
             if in_domain:
                 registered.append(keys)
             pairs.append((i, j, int(not in_domain or keys in excluded)))

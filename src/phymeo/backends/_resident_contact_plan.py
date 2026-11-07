@@ -87,6 +87,7 @@ class ResidentContactPlan(ResidentCollisionPlan):
         candidate_capacity=4096,
         site_capacity=128,
         sampling="discrete_entry",
+        tree_dynamic_pairs=False,
     ):
         if sampling != "discrete_entry":
             raise ValueError("resident contact supports only discrete_entry sampling, not CCD")
@@ -115,7 +116,13 @@ class ResidentContactPlan(ResidentCollisionPlan):
         self._world_groups = {}
         self._last_accepted = MappingProxyType({})
         self._last_status = MappingProxyType({})
-        super().__init__(batch, model, bindings, candidate_capacity=candidate_capacity)
+        super().__init__(
+            batch,
+            model,
+            bindings,
+            candidate_capacity=candidate_capacity,
+            tree_dynamic_pairs=tree_dynamic_pairs,
+        )
 
     @property
     def last_accepted(self):
@@ -407,6 +414,7 @@ class ResidentContactPlan(ResidentCollisionPlan):
                         ),
                         group_count=spec.n,
                         site_capacity=self._site_caps[world],
+                        tree_dynamic_pairs=self._tree_dynamic_pairs,
                     )
                 except ContactSiteCapacityExceeded as error:
                     reject[row] = 1
@@ -549,6 +557,8 @@ class ResidentContactPlan(ResidentCollisionPlan):
                 control_residual=float(final_data["diag"][row, 1]),
                 equation_residual=float(final_data["diag"][row, 2]),
             )
+            if self._tree_dynamic_pairs:
+                diagnostics["tree_dynamic_pairs"] = True
             if group["affine"]:
                 spec = storage.specs[world]
                 diagnostics.update(

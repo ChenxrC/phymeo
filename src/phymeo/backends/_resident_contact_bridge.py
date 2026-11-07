@@ -330,7 +330,14 @@ class ContactSiteCapacityExceeded(ValueError):
 
 
 def sample_tree_contacts(
-    *, world, frames, materials_by_pair, candidates, group_count, site_capacity
+    *,
+    world,
+    frames,
+    materials_by_pair,
+    candidates,
+    group_count,
+    site_capacity,
+    tree_dynamic_pairs=False,
 ):
     """Sample each declared candidate once; return transient HOST loads, never a step.
 
@@ -338,6 +345,8 @@ def sample_tree_contacts(
     All patch sites count before any force is evaluated. No global pair table or
     candidate inference is constructed here; the resident plan supplies candidates.
     """
+    if type(tree_dynamic_pairs) is not bool:
+        raise TypeError("tree_dynamic_pairs must be a bool")
     world = _integer(world, "world")
     count = _integer(group_count, "group count", 1, 16)
     capacity = _integer(site_capacity, "site capacity", 0, 4096)
@@ -349,10 +358,16 @@ def sample_tree_contacts(
         pair = _pair(raw_pair, world)
         if any(key not in frames for key in pair):
             raise ValueError("material pair refers to an absent frame source")
-        if (frames[pair[0]].group_index is None) == (frames[pair[1]].group_index is None):
-            raise ValueError(
-                "first contact slice requires exactly one dynamic and one static owner"
-            )
+        first_group, second_group = (frames[key].group_index for key in pair)
+        if first_group is None and second_group is None:
+            raise ValueError("contact requires at least one actual dynamic owner")
+        if first_group is not None and second_group is not None:
+            if not tree_dynamic_pairs:
+                raise ValueError(
+                    "first contact slice requires exactly one dynamic and one static owner"
+                )
+            if first_group == second_group or pair[0].body == pair[1].body:
+                raise ValueError("dynamic contact requires two distinct physical groups")
         laws[pair] = _law(value)
     maximum_pairs = len(frames) * (len(frames) - 1) // 2
     selected = set()

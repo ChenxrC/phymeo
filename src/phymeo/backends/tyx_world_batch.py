@@ -319,11 +319,19 @@ class TyxWorldBatch:
                     ),
                 )
 
-    def prepare_collision(self, model, bindings, *, candidate_capacity=4096):
-        """Prepare accepted finite geometry versus static shapes in the same world."""
+    def prepare_collision(
+        self, model, bindings, *, candidate_capacity=4096, tree_dynamic_pairs=False
+    ):
+        """Bind accepted finite geometry, optionally including nonadjacent tree groups."""
         from ._resident_collision_plan import ResidentCollisionPlan
 
-        return ResidentCollisionPlan(self, model, bindings, candidate_capacity=candidate_capacity)
+        return ResidentCollisionPlan(
+            self,
+            model,
+            bindings,
+            candidate_capacity=candidate_capacity,
+            tree_dynamic_pairs=tree_dynamic_pairs,
+        )
 
     def collision(self, plan):
         """Query a collision plan owned by this exact resident batch."""
@@ -376,8 +384,9 @@ class TyxWorldBatch:
         candidate_capacity=4096,
         site_capacity=128,
         sampling="discrete_entry",
+        tree_dynamic_pairs=False,
     ):
-        """Bind finite static frictionless contact to this batch's accepted tree state."""
+        """Bind finite frictionless contact to this batch's accepted full tree state."""
         from ._resident_contact_plan import ResidentContactPlan
 
         return ResidentContactPlan(
@@ -388,6 +397,7 @@ class TyxWorldBatch:
             candidate_capacity=candidate_capacity,
             site_capacity=site_capacity,
             sampling=sampling,
+            tree_dynamic_pairs=tree_dynamic_pairs,
         )
 
     def step_contacts(self, plan, h):

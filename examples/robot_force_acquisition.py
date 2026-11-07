@@ -146,6 +146,7 @@ def make_case(case, urdf=None):
             top=top,
             lift=lift,
             pad_keys=keys,
+            pads=tuple(pads),
             primary_key=scene.body_keys[0, 20][0],
             secondary_key=scene.body_keys[0, 30][0],
             table_key=scene.body_keys[0, 40][0],
@@ -258,7 +259,29 @@ def _lift_goal(scene, reading, info):
     return result.configuration if result.converged else None, _plain(result)
 
 
-def run_case(scene, controller, info):
+def _protocol_observation(scene, reading, geometry):
+    """Copy public state for a passive observer, without a new physical sample."""
+    return dict(
+        state=scene.state,
+        reading=reading,
+        geometry=geometry,
+        history=scene.tangent_history,
+        receipt=scene.tangent_receipt,
+        events=scene.contact_events,
+        last_frame=scene.last_frame,
+    )
+
+
+def run_case(scene, controller, info, *, on_accepted=None, on_rejected=None):
+    """Run the original protocol; optional observers never supply control commands.
+
+    Observers receive owned public observations, not the scene. Their failures
+    propagate outside the physical exception handler: an accepted step remains
+    accepted even when its archival observer fails.
+    """
+    for observer in (on_accepted, on_rejected):
+        if observer is not None and not callable(observer):
+            raise TypeError("protocol observers must be callable or None")
     dt = info["dt"]
     stage = "acquiring"
     trace, events = [], [_frame_data(scene, "initial-open-on-table")]
@@ -288,6 +311,12 @@ def run_case(scene, controller, info):
             blend = u**3 * (10 + u * (-15 + 6 * u))
             posture = lift_start_q + blend * (lift_goal - lift_start_q)
         intent = "release" if stage == "releasing" else "acquire"
+        proposal = None
+        entry = (
+            _protocol_observation(scene, before, geometry)
+            if on_accepted is not None or on_rejected is not None
+            else None
+        )
         try:
             proposal = controller.propose(before, dt_s=dt, posture_target=posture, intent=intent)
             if stage == "acquiring" and proposal.contact_ready:
@@ -383,8 +412,32 @@ def run_case(scene, controller, info):
                 accepted_step=before.step_number,
                 accepted_time_s=t,
             )
+            if on_rejected is not None:
+                retained_reading, retained_geometry = scene.observe_scene()
+                on_rejected(
+                    dict(
+                        schema="grasp-protocol-observation-v1",
+                        stage=stage,
+                        dt_s=dt,
+                        proposal=proposal,
+                        entry=entry,
+                        retained=_protocol_observation(scene, retained_reading, retained_geometry),
+                        failure=dict(execution_failure, message=str(exc)),
+                    )
+                )
             break
         after_reading, after_geometry = scene.observe_scene()
+        if on_accepted is not None:
+            on_accepted(
+                dict(
+                    schema="grasp-protocol-observation-v1",
+                    stage=stage,
+                    dt_s=dt,
+                    proposal=proposal,
+                    entry=entry,
+                    accepted=_protocol_observation(scene, after_reading, after_geometry),
+                )
+            )
         rel_after, gap_after, center_after = _relative_and_clearance(
             after_reading, after_geometry, info
         )

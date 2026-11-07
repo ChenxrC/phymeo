@@ -63,3 +63,7 @@ C6已正式限域接受，见[报告](../../benchmarks/p65-resident-tree-contact
 - 原 RD 继续仅四 NEW 完整矩阵/consumer/report；原 robot 新增只读 C7 四接缝审阅，不执行/改源码。父仍唯一项目执行 owner。
 
 本次只完成第一个端到端节点。负gain/fanout/chain/RP交叉、40步、PD延迟、卸载重入、混合/故障/完整保存审计、新wheel源码外仍待验收，不授予整个 C7 或 P6.5 完成。C6原“affine入口明确拒绝”是旧能力边界历史，已由C7正控取代；不重跑该旧拒绝断言或C6整套。
+
+### C7 多世界审阅修复（2026-11-08）
+
+原robot对固定37897e3只读审阅发现一项blocking：动态shape局部group索引遮蔽外层storage组，第二个同storage接触world会TypeError。370用既有C6单个W1/W4对照在新source准确复现（1 failed/8.48s），父仅rename为group_index；371同节点1 passed/14.96s，372/373该文件Ruff/format0。该对照包含真实W1/W4完整结果，非重复旧同源绿集；原C7两affine混合矩阵仍需执行。审阅其余载荷顺序、full/K统一发布、诊断与资源边界无第二项阻断，READ_ONLY_REVIEW_RELEASED；所有首失败保留，不重新派同diff复审。

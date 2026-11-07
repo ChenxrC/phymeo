@@ -312,18 +312,18 @@ class ResidentContactPlan(ResidentCollisionPlan):
                     continue
                 binding = self._contact_bindings[shape.key]
                 if isinstance(binding, ResidentTreeBinding):
-                    group = binding.group_index
-                    p, r = position[group], rotation[group]
+                    group_index = binding.group_index
+                    p, r = position[group_index], rotation[group_index]
                     points = p + binding.local_points_m @ r.T
                     frame = ContactShapeFrame(
                         shape,
                         points,
-                        group,
+                        group_index,
                         p,
                         r,
-                        com[group],
-                        velocity[row, group, :3],
-                        velocity[row, group, 3:],
+                        com[group_index],
+                        velocity[row, group_index, :3],
+                        velocity[row, group_index, 3:],
                     )
                 else:
                     points = binding.motion.start

@@ -93,3 +93,15 @@ python -m pytest tests/scale/test_resident_affine_step.py tests/scale/test_resid
 这里的python指父已接受主环境，native指既有`.venv-newton-1.7.0`；无新安装。正式首次执行在父冻结产品/测试commit后；当前仅230有效缺口RED实测，其余均UNEXECUTED。产品就绪后再授权独立outside-wheel consumer；T1不创建该第五文件。需要证明所有Phymeo导入来自新wheel，原C4 wheel不替代C5。
 
 本片仍不含浮根6D、几何闭环、主动follower、物理限位冲量、设备通用contact force/摩擦历史或CCD。完整当前姿态宽相可用性与真实接触响应分开；不存在mimic抓取/旧100g失持被本测试修复的声明。
+
+## 6. T2 schema/共享 hook 检查点（尚未执行）
+
+父760f593授四NEW backend产品与当前报告。静态入口是 `_resident_affine_tree.compile_affine_tree_world(AffineRobotTree) -> AffineTreeWorldSpec`；`.kind=7+delay`，`.n/.k/.r`分别物理、独立、原图行数。`.physical`是复用 `compile_tree_physical` 的真实N行 `TreeWorldSpec`，full PD/history为零，full命令只使用原后七列。`.topology`含原FP64 graph/model、gains、delay、budget；`.graph_token`独立于控制，保原图和模型。`.matrix/.offset/.constraints`为owned FP32，`.independent/.row_indices/.reverse_rows`为owned int32，`.row_values`存原行(a,b)，full/reduced limits各三列lower/upper/speed。`.initial_state(K,7)/initial_drive(K,3)/initial_loads(N,7)`分开；`.packet(action)`返回owned `(drive,loads)`。输入是 `AffineTreeInputs`，不是改造旧SceneInputs。
+
+`ResidentAffineTreeBinding`继承现有限材料声明，from_asset复用原 ordinary/folded source转换并加原graph proof。`compile_affine_tree_binding(shape,binding,spec)`返回原 `TreeBindingCompiled(group_index,zero_motion,points_m,geometry)`，bounds仍原 `make_tree_bounds_kernels`，不新增bounds kernel。父collision分派应先辨识affine子类，避免被ordinary isinstance分支截获；ordinary/affine slot、physical group和source proof须各对本storage校验。direct topology只是显式安装声明，不冒资产验证。
+
+后续组合 storage 的精确父调用合同：`AffineTreeDeviceStorage(batch,specs_by_world)`，`.worlds/.rows/.specs/.status_codes`；`validate_controls(mapping)->stage`、`commit_controls(stage)`、`upload_controls()`、`controls_uploaded()`；`stage_advance(h,src,dst,tick_src,tick_dst,accepted)`、`check_advance(status)`（父sync/status后、swap前）、`finish_advance(status)`（swap后纯HOST）；`invalidate_diagnostics()`；`validate_restore(mapping)->stage`、`stage_restore(stage,src,dst,tick_src,tick_dst)`、`check_restore()`、`commit_restore(stage)`；`snapshot(keys,active,ticks)`、`kinematics(keys,active,ticks)`、`diagnostics(keys)`、`summary(keys,active)`、`borrow_geometry(active)->TreeGeometryView`、`close()`。restore stage需`.ticks/.mask`供父header同tick操作（顺序按`.rows`），所有stage含owner隔离。borrow view为同锁accepted N/full bank，其`.specs`是physical specs但topology仍完整affine；编译binding使用外层AffineTreeWorldSpec。
+
+K代数solve直接复用现 `make_tree_kernels()['solve'][src]`，K meta仍 `[父global slot,K,delay,budget]`，K gains仍原properties13..15列。它只读投影M/b/e与K state/control，没有dummy RobotModel/program。新增核先full→K投影，再原K solve，再full展开与原图/域/受力平衡门，之后原full geometry/energy/finalize，最后K按同accepted接受或拷回源。不得用K质量方程替代full受力平衡。info/flags的任何失败保留，所有readback异常在父唯一swap前阻止发布。旧kernel无源码改动，无HOST rescue。
+
+此检查点尚无storage/kernel，也不是可执行产品交付；父可按上述签名纯编码薄hook。C5除230已记录缺口RED外仍UNEXECUTED，原测试/输入/预算/工程门未改变。

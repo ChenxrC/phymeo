@@ -43,3 +43,15 @@ kind3/4必须显式分流，不落入旧kernel的“所有非球都当slider”�
 TYX实际CUDA lowering为sinf/cosf且fast_math关闭；NVIDIA误差表的observed maximum不是形式保证。采用工程精度验证，不为该差别新增Taylor区间内核或返回无限精度证明路线。首输入/restore/候选统一有限stored角域拟|q|≤4096 rad，覆盖正负多周回及边界；父审最终casebook后冻结。域外明确拒绝，后续可加入range reduction。
 
 设备AABB按三角函数计算误差、原有限shape尺度、中心/安装与中间FP32计算给显式padding；以固定多姿态、近触、细长shape、大公共平移和真实interpret/CUDA对独立FP64几何oracle验证测试范围内无漏候选，允许少量多候选，不声称全部实数形式认证。动力学仍真实sinf/cosf，不因宽相padding更改积分；不得靠人为紧miss距离倒调padding或夹具。作者保留官方来源和限制，本片不实施Taylor备选。
+
+## T1冻结与T2产品授权（2026-11-07）
+
+父全文审3NEW/896行，导入067793f/d336e9d。父105在clean child47b2805及其src运行唯一interpret首RED，准确缺RevoluteRotor（RAW1/0.90s），无物理执行通过。casebook六组/原几何/工程门和布局按本页冻结。原robot从47b2805继续CODE_ONLY，恰5NEW：src/phymeo/backends/_resident_revolute_world.py、_resident_revolute_binding.py、_tyx_resident_revolute_kernels.py、_tyx_resident_revolute_bounds.py；docs/benchmarks/p65-resident-revolute-collision.md。不merge父，不动旧source/export或原三测试文件，必要真实测试错误先报父。
+
+最小HOST接口：RevoluteRotor(program,state)；compile_revolute_world(spec)返回(kind,domain,axis_tuple,frame,props_f32[16],state_f32[12],command_f32[10])，kind3+delay；revolute_packet(value,domain)返回10列checked command；validate_revolute_angle(value,name)统一检查实际stored有限角域。frame为本NEW binding的RevoluteGeometryFrame。可复用旧layout as_fp32等，父旧bind内部local import NEW world避免循环；tyx_world_batch公开RevoluteRotor。NEW world不新建runtime或WorldBinding。
+
+父旧WorldBinding增加rotor_frame末尾可选字段；packet/checkpoint/unpack识别kind3/4和10列、kind4三history。父旧batch按真实最大宽度pad，只旧4/9，含rotor10/16；设置/恢复按各自真实packet宽度零padding。新step两个handle按casebook完全同参，旧pass仅处理0/1/2，rotor暂copy不accept，NEW pass以后统一sync/status/swap；未知kind拒绝。summary q_rad及I_axis，原scalar/world units文档更新。
+
+NEW bounds/binding签名、geometry[S,8]与原有限points按casebook最后一节；真正owner安装/source一致、bytes-backed输出，形状sphere/capsule/hull。父排除rotor首sphere slots、追加设备pass与独立真实统计，统一query/epoch事务。固定工程padding从已声明公式起，不因单样本失败缩小padding/移动miss；如出现真实编译/精度缺陷以原输入诊断。
+
+作者不得import、collection、数值probe、test、lint、formatter、compile/build/install；父保持唯一串行执行。交接小commits/clean/5NEW精确清单及UNEXECUTED报告，再父审源码/连旧hooks/专项目标interpret+CUDA+必要共享回归。C3仍非完整多关节驻留、CCD或响应。

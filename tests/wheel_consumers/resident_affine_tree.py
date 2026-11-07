@@ -437,6 +437,11 @@ def check_pose(data, asset, state, frame):
             close(R @ quaternion_matrix(site.local_orientation_xyzw), truth["rotation"][body])
     else:
         assert np.asarray(state.control).shape == (len(q), 10)
+        # Original ordinary_control: target/rate/FF, then effort/world COM F/T.
+        expected_control = np.column_stack((
+            np.zeros((len(q), 3)), data["effort"], data["force"], data["torque"]
+        )).astype(np.float32)
+        np.testing.assert_array_equal(state.control, expected_control)
         close(frame.link_position_m, truth["position"])
         close(frame.link_rotation, truth["rotation"])
     assert state.history == ()  # original delay-0 windows, not a new delay test

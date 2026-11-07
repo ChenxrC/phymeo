@@ -25,18 +25,28 @@ _BITS = np.array(list(product((0, 1), repeat=3)))
 
 
 def rigid_solid(item, label, owner=0):
-    """Validate the first slice: a COM-centred sphere or a local-axis cuboid."""
+    """Validate actual COM-local rigid geometry; retain the existing OBB fast path."""
+    from ..constraints.collision_shapes import CollisionMotion
+    from ..geometry._convex_hull import HullShape
+
     shape = item.shape
-    kind = "box" if shape.kind == "hull" else shape.kind
-    if kind not in {"box", "sphere"}:
-        raise ValueError(f"{label}: robot scenes support box/sphere rigid bodies, got {shape.kind}")
-    solid = LinkSolid(label, label, owner, kind, item.vertices, shape.radius)
-    if kind == "box":
+    if shape.kind == "hull":
+        hull = HullShape(shape, CollisionMotion(item.vertices))
+        try:
+            solid = LinkSolid(label, label, owner, "box", item.vertices, shape.radius)
+        except ValueError:
+            return hull
         if not np.allclose(solid._axes, np.eye(3), atol=1e-12, rtol=0) or not np.allclose(
             solid._center, 0.0, atol=1e-12, rtol=0
         ):
-            raise ValueError(f"{label}: rigid box must use its centred principal local axes")
-    elif np.any(np.asarray(item.vertices)[0]):
+            return hull
+        return solid
+    if shape.kind != "sphere":
+        raise ValueError(
+            f"{label}: robot scenes support sphere/convex rigid bodies, got {shape.kind}"
+        )
+    solid = LinkSolid(label, label, owner, "sphere", item.vertices, shape.radius)
+    if np.any(np.asarray(item.vertices)[0]):
         raise ValueError(f"{label}: free sphere must be centred at its COM")
     return solid
 
@@ -75,12 +85,14 @@ class _Records:
         pa, pb = row["link_surface_m"], row["payload_surface_m"]
         ca, cb = row["link_com_world_m"], row["payload_com_world_m"]
         point = tuple(row["point_world_m"])
+        wa, wb = row.get("first_weights"), row.get("second_weights")
         if second < first:
             first, second = second, first
             normal, force = -normal, -force
             pa, pb, ca, cb = pb, pa, cb, ca
-        wa = _weights(self.shapes[first], self.poses[first], pa)
-        wb = _weights(self.shapes[second], self.poses[second], pb)
+            wa, wb = wb, wa
+        wa = _weights(self.shapes[first], self.poses[first], pa) if wa is None else tuple(wa)
+        wb = _weights(self.shapes[second], self.poses[second], pb) if wb is None else tuple(wb)
         material = ConvexContactPoint(tuple(pa), tuple(pb), wa, wb)
         weight = float(row["weight"])
         magnitude = float(row["normal_load_N"])
@@ -151,9 +163,17 @@ class RobotSceneContacts:
         self.items, self.rows, self.pairs = rigid_items, rigid_rows, pairs
         self.key_map = key_map
         self.shapes = {s.key: s for s in model.shapes}
+        from ._convex_owner_contacts import ConvexRobotRigidContacts, requires_convex_owner
+
+        self._convex = None
+        if requires_convex_owner(tree, rigid_items):
+            self._convex = ConvexRobotRigidContacts(
+                tree, robot_addr, rigid_items, rigid_rows, pairs, key_map, pads, model
+            )
+            return
         indices, points, pad_keys, excluded = _pad_points(tree, pads)
         self.pad_indices, self.pad_points, self.pad_keys = indices, points, pad_keys
-        full = TableLinkSolids.from_asset(tree).solids
+        full = TableLinkSolids.from_asset(tree).solids if rigid_items else ()
         self.original = {(c.link_index, c.link_name, c.name): c.shape.key for c in tree.collisions}
         self.robot_registry, self.payloads = {}, {}
         for addr, item in rigid_items.items():
@@ -196,6 +216,10 @@ class RobotSceneContacts:
         return registry.evaluate(*args, **kwargs)
 
     def evaluate(self, physical, geo, linear, angular, body, poses, *, include_rigid=True):
+        if self._convex is not None:
+            return self._convex.evaluate(
+                physical, geo, linear, angular, body, poses, include_rigid=include_rigid
+            )
         # Body count differs from configuration and velocity sizes for free roots.
         n, count = len(geo.position), body.body_count
         force, torque = np.zeros((count, 3)), np.zeros((count, 3))
@@ -299,6 +323,8 @@ class RobotSceneContacts:
 
     def evaluate_rigid(self, body, poses):
         """Sample all rigid-rigid pairs once, without evaluating or advancing a robot."""
+        if self._convex is not None:
+            return self._convex.evaluate_rigid(body, poses)
         force = np.zeros((body.body_count, 3))
         torque = np.zeros_like(force)
         records = _Records(self.shapes, poses)

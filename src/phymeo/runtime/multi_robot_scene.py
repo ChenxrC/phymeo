@@ -75,7 +75,7 @@ class MultiRobotScene:
     """HOST fixed and floating trees sharing contact, rigid bodies and one accepted clock.
 
     Commands use independent joint coordinates, including existing mimic graphs.
-    Direct contacts support a sphere against a sphere, finite capsule or box on
+    Direct contacts support sphere, finite capsule and convex-hull patches on
     another tree. Self-contact, CCD, floating mimic trees, deformable bodies and the
     opt-in coupled tangential-history mode remain unsupported.
     """

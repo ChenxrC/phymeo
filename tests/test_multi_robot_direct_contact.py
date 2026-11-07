@@ -743,7 +743,7 @@ def test_a06_duplicate_local_keys_owned_snapshots_and_old_event_material_do_not_
 @pytest.mark.parametrize("enabled", [False, True])
 def test_a06_every_enabled_collider_combination_is_validated_before_build(tmp_path, enabled):
     builder = ContactSceneBuilder(gravity=(0, 0, 0))
-    # A distant unsupported pair cannot disappear behind the near supported pair.
+    # All enabled finite convex combinations compile; the distant box pair is geometrically separated.
     mixed = _collision() + _collision("far_box", kind="box", xyz=(0, 5, 0))
     _add(builder, 10, _urdf(tmp_path / "mixed.urdf", collisions=mixed))
     _add(
@@ -756,21 +756,16 @@ def test_a06_every_enabled_collider_combination_is_validated_before_build(tmp_pa
         ),
     )
     builder.pair(10, 20, LAW if enabled else None)
-    if enabled:
-        with pytest.raises(ValueError) as failure:
-            builder.build()
-        message = str(failure.value)
-        assert all(text in message for text in ("10", "20", "far_box", "other_box"))
-    else:
-        with builder.build() as scene:
-            out = scene.step(H, actions=_actions())
-            assert not out.loads.contacts and not scene.contact_events.active
-            for joint in out.robots.values():
-                np.testing.assert_array_equal(joint.contact_effort, [0])
-                np.testing.assert_array_equal(joint.q, [0])
+    with builder.build() as scene:
+        out = scene.step(H, actions=_actions())
+        force = 5.0 if enabled else 0.0  # (.0625 - (.16-.1))*2000
+        assert sum(c.force_n for c in out.loads.contacts) == pytest.approx(force, abs=FORCE_ATOL)
+        np.testing.assert_allclose(out.robots[0, 10].v, [-H * force / 2], atol=STATE_ATOL)
+        np.testing.assert_allclose(out.robots[0, 20].v, [H * force / 2], atol=STATE_ATOL)
+        assert len(out.loads.contacts) == int(enabled)
 
 
-def test_a06_capsule_capsule_pair_is_named_rejection_not_a_hidden_exclusion(tmp_path):
+def test_a06_capsule_capsule_pair_has_one_finite_line_load_and_real_response(tmp_path):
     builder = ContactSceneBuilder(gravity=(0, 0, 0))
     for owner, name, center in ((10, "left_rail", (0, 0, 0)), (20, "right_rail", (0.124, 0, 0))):
         _add(
@@ -780,11 +775,13 @@ def test_a06_capsule_capsule_pair_is_named_rejection_not_a_hidden_exclusion(tmp_
             loader=load_mjcf,
         )
     builder.pair(10, 20, LAW)
-    with pytest.raises(ValueError) as failure:
-        builder.build()
-    assert all(
-        text in str(failure.value) for text in ("10", "20", "left_rail", "right_rail", "capsule")
-    )
+    with builder.build() as scene:
+        out = scene.step(H, actions=_actions())
+        assert len(out.loads.contacts) == 2
+        assert sum(c.force_n for c in out.loads.contacts) == pytest.approx(2, abs=FORCE_ATOL)
+        np.testing.assert_allclose(out.robots[0, 10].v, [-H], atol=STATE_ATOL)
+        np.testing.assert_allclose(out.robots[0, 20].v, [H], atol=STATE_ATOL)
+        _assert_event_materials(scene, out)
 
 
 def test_a06_ambiguous_coincident_normal_rejects_before_any_publication(tmp_path):

@@ -87,3 +87,12 @@ Newton的碰撞与求解器也有条件：其凸体/网格按不同算法及表�
 - B：单/双转动mesh–round的每次窄相采样已接真实TYX面级BVH；HOST39、interpret5、CUDA5。完整时间控制/窄相仍HOST。
 - C1：接受FreeSphere状态已直接生成设备AABB并喂BVH；interpret36/CUDA36。滑轨C2仅设计，通用机器人驻留/全设备窄相仍缺。
 - 当前N4进行独立Newton几何留出与源码外wheel。[详细证据和剩余范围](../benchmarks/p65-generic-collision-20261107.md)。其他五大方向和原软布/浮mimic问题不受该局部接受覆盖。
+
+## 最新功能覆盖（F1/C2，2026-11-07）
+
+以下为当前状态，覆盖上面的历史调研表/25c39d8状态；HTML仍是明确标注的原调研快照。
+- A/B/C1与N4均已正式限域接受，独立Newton4几何留出与源码外三线集成已完成，非仍待实施。
+- **场景与机器人新增F1**：浮根可显式折叠fixed工具，质量/COM/惯量/碰撞材料及双侧载荷进入现有共同场景。全固定自由组合体、R+P工具探头、四条真实连续接触轨迹、拒步重试通过；Newton CPU/CUDA独立一步及三姿态J/M也通过。浮mimic、真实非对角root惯量与更广关节仍是下一缺口。
+- **GPU新增C2**：FreeSphere之外，真实prismatic接受态可直接为多个有限shape生成TYX AABB并进入原设备BVH；斜轴、正负q、折叠工具、混合W1/W4/W32、双buffer/复位/拒步通过。当前姿态宽相已有球与滑轨；转动/多关节设备state和全设备窄相仍缺。
+- 新阶段wheel通过F1 2560步公开窗口及C2双世界设备推进，270个实际模块来自包内；无整体性能领先结论。F2浮mimic已进入独立案例与测试编写，C3设备机器人在源码调研，尚不冒功能通过。
+- 其余五大方向与持续静摩擦/密集接触、目标软布两初态未放台、原100g mimic持稳失败不变。[F1](../benchmarks/p65-floating-fixed-tools.md) · [Newton参照](../benchmarks/p65-floating-fixed-newton-reference.md) · [C2](../benchmarks/p65-resident-slider-collision.md)。

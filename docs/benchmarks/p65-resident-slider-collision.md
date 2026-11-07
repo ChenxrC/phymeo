@@ -69,3 +69,11 @@ slots 每 shape 对应 slider slot 或 −1；zero_bounds/axis_bounds/bounds 都
 S05两个delay各40实际非重置步，S06 W1/W4/W32与两buffer、S08负控共26同次JSON（每端13个）保留。S06暖态不读取snapshot；actual与oracle字段明确分开。CUDA W1/W4/W32各6次query，均第一pass6+slider6、BVH核12；必要读回分别576/2304/21504B、18次。初始设备allocation各14，暖态无新增、无动态envelope上传；metadata静态上传仍照实计费。没有测速或整体性能收益声明。
 
 父纯文件读取核81/82/83源码before/after/current相同，并登记26保存文件bytes/SHA；receipt c2-source-and-saved-receipts.json，SHA a9919587d23db3f01b7f809bd348383875d251f78437b113d717edcab96a6caf。没有再运行producer或oracle。原作者对父三处接缝只读审阅未发现阻断；另一个原agent正在做独立新增源码审阅。新源码外wheel与浮根工具片结合排入下一共同集成验收，当前不能写成wheel已过。
+
+## C2 正式限域接受与源码外 wheel
+
+产品6549c3a的HOST18、interpret20、CUDA20和受影响回归14原结果复用；原RD作者完整只读复核几何绑定、FP32保守界、同锁双kernel、多shape tick和失败发布，未见新增阻断。其结论限单真实prismatic body的当前姿态宽相，不是窄相/CCD/反馈力。
+
+F1/C2新阶段run102构建与run103仓库外wheel实际执行已通过。新包装用两个真实滑轨世界：原Rz90安装和(.6,.8,0)斜轴，负q穿过0变正；每滑轨box+sphere及静态wall共6shape，实际6步接受态在双buffer上推进。所有AABB包含独立实际轴/实际q的精确值，全部4注册对的候选与独立包围盒判据相同，旧epoch拒用，暖态分配保持14。6次首pass+6次sliderpass、12BVH核，1728B必要bounds/candidate读回、18读取调用；metadata累计696B，动态包络上传0。不将snapshot观测或必要读回抹为零，不给性能排名。
+
+wheel SHA256 `966ab9e9455fa35ae3f28d53cb5949ec61fc077c22a76e3e5c98131a71147799`，8个相关产品文件字节核对一致。完整包装轨迹/计数见 `artifacts/p65-generic-collision-20261107-01/f1-c2-wheel-saved/integration.json`，原专项26保存轨迹不重跑；两个stage原证据均保留。C2状态 **VALIDATED_ACCEPTED**，通用转动/多关节机器人驻留和全设备窄相仍待后续C3。

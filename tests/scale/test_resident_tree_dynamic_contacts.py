@@ -54,8 +54,8 @@ def _d01(*, velocity=(0, 0), delay=0, kp=0, kd=0, cap=8):
         np.array([2., 1.]), np.zeros((2, 3)), np.full((2, 3), 1 / 8), np.zeros(3),
     )
     program = ph.DrivenRobotProgram(
-        model, kp=np.full(2, kp), kd=np.full(2, kd),
-        effort_limit=np.full(2, cap), delay_steps=delay,
+        model, kp=np.full(2, kp, dtype=float), kd=np.full(2, kd, dtype=float),
+        effort_limit=np.full(2, cap, dtype=float), delay_steps=delay,
     )
     state = program.initial_state(ph.RobotState(np.zeros(2), np.array(velocity, float)))
     world = ph.FixedRobotTree(program, state, control_max_iterations=512)

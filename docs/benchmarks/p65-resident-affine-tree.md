@@ -1,12 +1,12 @@
-# C5 固定根 affine-mimic 驻留：T1 冻结测试库
+# C5 固定根 affine-mimic 驻留：冻结测试与产品候选
 
-状态：**TESTS_AUTHORING_ONLY / CODE_READY_TESTS_PENDING / UNEXECUTED**。本报告是四个 NEW 文件之一，不授权产品实现。父已在 `3c0f793` 冻结公共 K/N schema，在 `beb3e3e` 记录组合 storage 方案；作者未 merge 父、未修改原计划/C4/旧共享源码。
+当前状态：**T2 CODE_READY_TESTS_PENDING / UNEXECUTED / AUTHORING_RELEASED**。父760f593已另授四NEW产品文件；T1测试历史与230首RED原样保留。父已在 `3c0f793` 冻结公共 K/N schema，在 `beb3e3e` 记录组合 storage 方案；作者未 merge 父、未修改原计划/C4/旧共享源码。
 
 2026-11-07 父通报：C4 已以228完成源码外wheel，4world×40步加restore后21重放、164worldsteps，415安装文件/275实际import模块同wheel；这是 C4 历史验收，**不是 C5 通过**。
 
 ## 1. 文件与有效首 RED
 
-仅本次四 NEW：
+T1阶段仅以下四 NEW：
 
 - `tests/scale/test_resident_affine_step.py`：完整力学、独立KKT、PD、图/状态/历史及混合事务。
 - `tests/scale/test_resident_affine_collision.py`：真实accepted full FK→有限材料bounds、原source/group、多world与资源事务。
@@ -105,3 +105,20 @@ python -m pytest tests/scale/test_resident_affine_step.py tests/scale/test_resid
 K代数solve直接复用现 `make_tree_kernels()['solve'][src]`，K meta仍 `[父global slot,K,delay,budget]`，K gains仍原properties13..15列。它只读投影M/b/e与K state/control，没有dummy RobotModel/program。新增核先full→K投影，再原K solve，再full展开与原图/域/受力平衡门，之后原full geometry/energy/finalize，最后K按同accepted接受或拷回源。不得用K质量方程替代full受力平衡。info/flags的任何失败保留，所有readback异常在父唯一swap前阻止发布。旧kernel无源码改动，无HOST rescue。
 
 此检查点尚无storage/kernel，也不是可执行产品交付；父可按上述签名纯编码薄hook。C5除230已记录缺口RED外仍UNEXECUTED，原测试/输入/预算/工程门未改变。
+
+## 7. T2 完整作者交接与尚待验证
+
+产品schema checkpoint为 `6ca064a701a491130fa099cf878a1ca44907364a`；完整source checkpoint为 `5c9e8ea78282a07861a21d6d25d89ca2ed54914b`。本段只补报告，不再改源码或T1测试。四产品文件精确为：
+
+- `src/phymeo/backends/_resident_affine_tree.py`：owned public world/inputs、原FP64图identity、FP32静态编译、K/N checkpoint与具名读回schema。
+- `src/phymeo/backends/_resident_affine_storage.py`：组合真实C4 full bank与K bank，同父锁/runtime/active/tick/epoch，纯stage与counted显式读回。
+- `src/phymeo/backends/_tyx_resident_affine_kernels.py`：P投影、full展开/原图反力、K接受拷回与restore一致性；每个原生方向有独立handle。
+- `src/phymeo/backends/_resident_affine_binding.py`：原图+原model/source shape证明，委托C4完整有限材料和bounds compiler。
+
+NEW核没有复制FK/M/b/J/能量或bounded-PD算法；full mechanics/geometry/energy/finalize调用父0ce0050三stage，K solve和K restore调用原C4代数/复制核。K meta为global slot/K/delay/budget，真实N meta保持N。投影J保每个N物理组×3×K，Mr保全部交叉块；K solve的原5e-5 clipped-PD门、2e-5质量门、512默认预算/4096上限无变更。原始row反力从full `M(Pa)+b−Eτ−e`反拓扑还原，另核其与Cᵀλ的完整平衡；保存各原row lambda/power以及实际全约束功。full平衡归一尺度只使用同量纲受力项，不拿加速度/帽值放大容差。
+
+物理状态先写同dst的N/K候选；full域/原行/平衡门过后才调用原full finalize，再按同一个accepted字段接受K或拷回K源。新status 7为 `AFFINE_CONSTRAINT_RESIDUAL`，8为 `AFFINE_FULL_EQUATION_RESIDUAL`，0–6保旧含义；`check_advance`用新字典读小info并核实际batch status，随后父才可唯一swap。最新拒步/driver异常不发布半步、诊断无效；持有命令不因拒步撤销或吃掉历史。controls两份上传全部成功后才清dirty，partial上传失败可原样重试。restore验证同原图、N/K/full一致、位置/速度域及完整history/held，两个bank与full FK都stage成功后由父共同swap；绝不HOST修补接受态。
+
+统计：新增 `affine_{topology,initial,control,restore,state,fk,diagnostic,status}_{uploaded_bytes,downloaded_bytes,host_read_bytes}`；projection/solve/expand/commit/restore/validation各计实际成功launch，另state/FK/diagnostic/status显式读取计数。full物理阶段仍累计原 `tree_*`，不抹旧成本，不把借用geometry称零总读回。空affine集合由父不构造storage，非空不创建第二runtime；全部设备buffer沿batch resource stack回收。
+
+原隔离树未merge父提取接缝，所以本作者没有尝试导入候选，更没有运行测试或静态/编译。父须将四NEW与旧薄hook组合后，按T1冻结输入首次验证HOST/static domain→interpret→真实CUDA→独立Newton→新源码外wheel。当前只有230缺口RED是真实C5执行证据；98声明节点、五条native窗口、设备驻留/事务和性能均不得由本代码交接冒称通过。现有C4/父共享22+22结果不能替代C5。任何首次失败必须保存原返回、源码与输入，不调门/预算/质量来追绿。原T1三代码文件保持字节不变。

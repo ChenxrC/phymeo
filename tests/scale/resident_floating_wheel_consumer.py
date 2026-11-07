@@ -163,11 +163,10 @@ def bounds_model(ph, checkpoints):
                 bindings.append(ph.ResidentTreeBinding(key, world, 0, np.zeros((1, 3)), topology=checkpoints[world].topology))
             original[key] = (shape, 0, np.zeros((1, 3)))
             dynamic.append(key)
-        # Different moving groups are explicitly excluded; this consumer exercises
-        # current bounds against finite static geometry, not floating contact/CCD.
+        # The default static-only domain requires every dynamic pair to be
+        # explicitly excluded, including two shapes of the same physical body.
         for a, b in combinations(dynamic, 2):
-            if a.body != b.body:
-                excluded.append((a, b))
+            excluded.append((a, b))
         center = np.array([0., 0, 2]) if world == 6 else np.array([1., 1/8, 0]) if world == 1207 else np.zeros(3)
         for body, point, radius in ((900, center, 1/4), (901, center+[2., 0, 0], 1/16)):
             key = ph.CollisionKey(world, body, 41)

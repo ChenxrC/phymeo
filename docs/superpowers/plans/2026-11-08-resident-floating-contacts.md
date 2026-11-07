@@ -78,3 +78,7 @@ D. 原生Newton只另冻F01/F03同FREE系统mu0/d0：真实contact和body force�
 E. 同次完整保存审计、源码绑定、源码外新wheel，交限域接受再启浮根affine/跨participant/设备窄相后继。全部执行只有父唯一串行slot与fresh入口进程guard。
 
 本片成功意味着普通浮根设备运动与有限HOST接触反馈闭环；不代表affine浮根、持续摩擦、CCD、全GPU窄相或整个Newton功能对齐。超过两轮仅增加理论/摘要而没有公开可调用能力或具体失败闭环时，回到已声明的最小公共链路，不扩证明清单。
+
+## C9 历史拒域测试在 C10 接入时迁移
+
+父接入 C10 后，旧 tests/scale/test_resident_floating_collision.py 中 test_p07_floating_contacts_stay_explicitly_unsupported 的“所有浮根接触拒绝”前提失效；其空材料映射还可能让失败来自不相关检查。因此将父 OLD 白名单仅增加该文件的这一节点：在 C9 正式接受后，迁移为明确不支持的连续采样/CCD 请求，验证拒绝前后完整状态和资源不变；合法浮根接触由新 F01–F10 验证。迁移前不修改 run460/455 的源或固定覆盖；原 C9 已接受证据、外部 wheel 消费者和 saved 审计按当次源码保留，不复跑它们或把历史拒域当 C10 当前功能限制。C10 的源码外消费者将另行按新能力验证。

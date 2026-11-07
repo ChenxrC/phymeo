@@ -43,3 +43,13 @@ F01 的微小首步单列更紧门：a/alpha2e−5 m/s²或rad/s²，实际 v2e�
 ```
 
 预期每端为 F01＋F02三姿态共4记录，全部门且无异常才 RAW0。这里的4是执行设计，不是已运行/已通过数量。静态/CPU/CUDA与任何父集成接受均待真实执行补记。
+
+## 父实际执行与只读复核（2026-11-07）
+
+状态：LOCAL_VALIDATED。run95首 Ruff=0；run96首format=1，run97仅排版；run98 final format=0、run101 final Ruff=0。run99 CPU与run100 CUDA各自真实执行原4记录全部通过，RAW_EXIT=0；实际仍为Newton1.7.0/Warp1.17.0，CUDA设备RTX4060 Laptop。没有数值门/原输入修复、安装或旧组重跑。
+
+每端F01 40检查、F02三姿态各78检查；这是每记录的细检查数，不冒额外物理窗口。首步整体加速度最大误差1.1920928955078125e-7，完整M矩阵三姿态最大误差1.3939921106320696e-7，均在预声明门内。原生fixed保留的质量/COM/惯量、材料几何、full J/M、首步真实反作用与坐标转换通过。Newton的旧版本kernel缓存提示原样保留，实际记录来自所要求设备，无fallback。
+
+证据为`artifacts/p65-generic-collision-20261107-01/99-newton-f1-cpu/result.json`及`100-newton-f1-cuda/result.json`，包含全部原读回与来源。父F1对应独立Phymeo解析测试已通过；本参考没有F03接触窗口，不能据此给出两引擎持载/速度排名。
+
+原robot作者另外只读复核父F1两个旧hook：严格opt-in、原root轴不变、完整快照资产转换authored→实际owner-local、普通资产identity路径及事件真实body归属，未发现阻断；未新增执行。

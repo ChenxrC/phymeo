@@ -159,6 +159,7 @@ class FloatingTreeCheckpoint:
     history: tuple
     control: tuple
     generalized_applied: tuple
+    local_origin_m: tuple
 
 
 @dataclass(frozen=True, eq=False)
@@ -266,7 +267,7 @@ class FloatingTreeWorldSpec:
             _nested(velocity), _nested(joint_row[:self.n, 2]),
             _nested(joint_row[:self.n, 4:7]) if self.delay else (),
             (_nested(drive), _nested(effort), _nested(loads[:, :3]), _nested(loads[:, 3:])),
-            _nested(generalized_row[:self.d]))
+            _nested(generalized_row[:self.d]), _nested(root_row[:3]))
 
     def restore_row(self, checkpoint, world):
         if not isinstance(checkpoint, FloatingTreeCheckpoint) or world_key(checkpoint.world) != world:
@@ -279,7 +280,9 @@ class FloatingTreeWorldSpec:
             raise ValueError("floating checkpoint configuration has invalid Q")
         v = as_fp32(checkpoint.velocity, "restored floating velocity", (self.d,))
         root = np.zeros(13, np.float32)
-        root[:3] = _coordinate(q[:3] - self.anchor, "restored floating origin", (3,))
+        root[:3] = _coordinate(checkpoint.local_origin_m, "restored floating local origin", (3,))
+        if not np.array_equal(q[:3], self.anchor + root[:3].astype(np.float64)):
+            raise ValueError("floating world origin disagrees with its complete local checkpoint")
         root[3:7], root[7:13] = _quat(q[3:7]), v[:6]
         row = np.zeros((max(1, self.n), 7), np.float32)
         row[:self.n, 0] = _coordinate(q[7:], "restored floating joints", (self.n,))

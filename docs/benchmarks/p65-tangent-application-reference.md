@@ -47,3 +47,11 @@ e01–e02 另以纯协议记录验证新 driver：application 下不同坐标的
 
 实际七字段是 state、reading、geometry、history、receipt、events、last_frame；以原公开完整序列化比较，不仅比较位置或摘要。原真失败、raw 输出和严格门不覆盖。短矩阵通过后，父才决定原保存拒绝请求与受影响新窗口的同输入 application 对照；本报告不给这些后续结果预判。
 
+
+## 父实现与专项执行（2026-11-08）
+
+2095a2f只修改四个旧共享接缝：合法mode验证、trial密封、receipt/episode保存、prepare与direct commit均拒绝retained切换；两个scene桥传递原mode。默认material保全部旧门。4b88571给原完整窗口driver增加显式keyword/CLI和保存绑定；application的不同坐标差只列diagnostics，不伪造True，相同坐标的运动/逐站及总能量门保留。
+
+305有效RED继续复用；306/307首静态失败为1 import和3格式，308/309修正、310/311通过。312首a01+受影响六旧套共101通过。完整作者7d5dfd2导入后313/314首静态为1 import和2格式，315/316修正、317/318通过；319剩余28个新实例+13受影响驱动协议共41 passed/1 deselected/2.11s/RAW0，未重跑已绿a01。新专项合计29实例全部通过，仍非完整新模型抓持结果。
+
+320对297三个已保存失败candidate仅做独立算术：相同原力/预测/真实末位移，改用共轭application坐标计算功门；G01/G02/G03的总残差分别5.010761311e-11、0、-2.101073790e-9 J，逐站最大8.041320017e-11、0、1.513352046e-9 J，均在原1e-8内，application运动门也通过。**0物理步、未切换/重新解释旧history、未调用solver或制造accepted状态**。它只关闭反例中的坐标差异解释；新模型必须从t=0形成自身历史的321–323完整窗裁定。原G04 material通过继续保留。

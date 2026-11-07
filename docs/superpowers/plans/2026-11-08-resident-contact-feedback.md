@@ -46,3 +46,13 @@ R02跨支、声明重排/整体轴循环和平移；R03实际偏心圆弧、入�
 父唯一执行owner及旧batch/collision/tree storage/kernel接缝owner。首RED后NEW _resident_contact_plan.py/_resident_contact_bridge.py（其他新device scatter仅在确实需要时追加）复用原kernel与几何，不造另一个Scene/runtime/solver。顺序为首接口→R01/R03→R02/W4→全短窗/事务→interpret/CUDA→必要相邻兼容→同源保存/新wheel。原有同源绿组不重跑。首实际失败保存，再按原因修复；不修改物性、h、预算或复制状态让单例通过。
 
 本片成功需完整上述多案例和两真实backend及源码外消费；只R01或Panda单例不足。性能只是按相同输入/输出公开成本，不设虚假超越结论。moving/moving、affine接触投影、持续摩擦、浮根、全GPU窄相/CCD是后继节点，不随本片自动标完成。
+
+### 收据容器与构造一致性补足（2026-11-08，执行前）
+
+sites是immutable tuple[ResidentContactSite]，每项pair为canonical CollisionKey二元组，geometry复用原owned ContactSite完整witness/IDs/weights/skin/world points/load_point/weight，law是原RobotContactMaterial。另保first_velocity_m_s/second_velocity_m_s（共同load_point入步速度）、first_force_n/second_force_n、first_reference_point_m/second_reference_point_m（动态真实COM，static声明顶点均值的固定world点）、first/second_material_displacement_m、first/second_application_displacement_m、application_work_j/material_work_j（双侧合计，可由各force/motion复算）。static_reactions是owned Mapping[CollisionKey,ResidentStaticReaction]，value为reference_point_m/force_n/torque_nm。
+
+input_external为原mechanics external列加接触之前的full N广义载荷、未减bias；selected_drive为本次已选择delay后的N×3 target/rate/feedforward，actual_drive为N。原未投影held/full loads仍保在entry_state.control；总external可独立拆回input_external+contact_generalized。entry/accepted_geometry沿原TreeKinematics。
+
+两种入口world点均由实际stored entry R/p作FP64 solve逆映射，再经实际stored candidate R+/p+运输；static位移为0。不正交化、不HOST重算FK。1e-10 m只是公开记录构造一致性门，不能冒FP32物理精度；独立q/v/FK和圆弧物理门仍5e-6/5e-5、窗口2e-4。晚故障边界方法名冻结plan._read_candidate（实际candidate读回）与plan._finish_attempt（完整owned receipt构造），均在唯一swap之前。
+
+R04原提案的“前1/8s，随后最多再3/4s”明确为总7/8s。上文“原0..3/4s”为简写错误，本补足在任何执行前纠正，不是延长失败测试预算。h/h2在首个真实卸载后再出现正入步N的接受步停止。

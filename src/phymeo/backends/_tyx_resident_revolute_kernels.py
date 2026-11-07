@@ -39,9 +39,18 @@ def advance_revolutes(
             cz = props[i, 12]
             dot = _add(_add(_mul(ax, cx), _mul(ay, cy)), _mul(az, cz))
             parallel = _mul(_add(1.0, -cosine), dot)
-            rx = _add(_add(_mul(cosine, cx), _mul(sine, _add(_mul(ay, cz), -_mul(az, cy)))), _mul(parallel, ax))
-            ry = _add(_add(_mul(cosine, cy), _mul(sine, _add(_mul(az, cx), -_mul(ax, cz)))), _mul(parallel, ay))
-            rz = _add(_add(_mul(cosine, cz), _mul(sine, _add(_mul(ax, cy), -_mul(ay, cx)))), _mul(parallel, az))
+            rx = _add(
+                _add(_mul(cosine, cx), _mul(sine, _add(_mul(ay, cz), -_mul(az, cy)))),
+                _mul(parallel, ax),
+            )
+            ry = _add(
+                _add(_mul(cosine, cy), _mul(sine, _add(_mul(az, cx), -_mul(ax, cz)))),
+                _mul(parallel, ay),
+            )
+            rz = _add(
+                _add(_mul(cosine, cz), _mul(sine, _add(_mul(ax, cy), -_mul(ay, cx)))),
+                _mul(parallel, az),
+            )
             # World COM force includes gravity exactly once. The explicit world
             # torque is about that COM; r x F brings it to the joint pivot.
             fx = _add(_mul(props[i, 9], props[i, 1]), commands[i, 4])
@@ -63,7 +72,10 @@ def advance_revolutes(
                 for j in tx.static_range(3):
                     candidate[i, 9 + j] = commands[i, j]
             d = _add(_mul(h, props[i, 4]), props[i, 5])
-            a_pd = _add(_add(_mul(props[i, 4], _add(target, -q)), _mul(props[i, 5], target_speed)), feedforward)
+            a_pd = _add(
+                _add(_mul(props[i, 4], _add(target, -q)), _mul(props[i, 5], target_speed)),
+                feedforward,
+            )
             numerator = _add(a_pd, -_mul(d, free_speed))
             denominator = _add(1.0, _mul(_mul(d, h), inv_inertia))
             unclipped = _div(numerator, denominator)

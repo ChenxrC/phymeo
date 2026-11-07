@@ -41,3 +41,25 @@
 两个原专项的 interpret/CUDA、40步物理/宽相窗、W1/W4/W32暖态双buffer与完整计数、失败/restore/close、静态和源码外wheel均 **尚未执行**。作者没有 import、collection、numerical probe、pytest、lint、format、compile/build/install，也不填写推测pass数量/时间/性能。
 
 父旧hook仍负责 max command/property宽度（旧纯4/9、含rotor10/16）、WorldBinding checkpoint/control/queue、step的统一事务和未知kind拒绝、`q_rad`/kinematics单位、I_axis动能、plan注册与真实独立统计。仅这些hook接通并实际推进后，才可声称本片有 device state→broadphase 能力。原 `bounds_kernel_launches` 与 `slider_bounds_kernel_launches` 语义保持，新增真实 `revolute_bounds_kernel_launches` 并纳入total。
+
+## 父实际专项结果（2026-11-07）
+
+状态：**HOST / INTERPRET / CUDA 专项及共享接口审阅通过；新组合 wheel 尚待完成**。父导入3afb536/5dbd09e，接通真实kind3/4、异构命令/常量、第二设备pass、原accepted/candidate事务与原宽相，所有旧共享修改由父完成。未更改原物理夹具/数值门或以HOST动态几何替代设备计算。
+
+| 作业 | 实际结果 |
+|---|---|
+| 114/115 首静态 | Ruff 3项import格式；9文件需排版，原失败保留 |
+| 116/117 修复 | 仅import排序/排版，RAW0 |
+| 118 HOST协议 | 4 passed / 71明确设备标记排除，0.63s / RAW0 |
+| 119 interpret | 71 passed / 4 HOST排除，5.45s / RAW0 |
+| 120 CUDA | 71 passed / 4 HOST排除，29.77s / RAW0 |
+| 121 受影响共享CUDA | 7 passed，3.29s / RAW0；球/滑轨边界、restore与清理 |
+| 122/123 最终静态 | Ruff与11文件format-check RAW0 |
+
+证据根为 `artifacts/p65-generic-collision-20261107-01`；`c3-validation-receipt.json`记录上述六个最终作业的原raw exit、源before/after及日志hash。119/120各保存53个测试JSON，共106；另256个JSON是编译等缓存文件，不能充作物理轨迹。保存包含四个正负/延迟40步动力学窗、两个40步当前姿态碰撞窗、完整边界/配对/失败状态及W1/W4/W32暖态记录；暖态后续q/v明确标注解析oracle，不冒设备读回。
+
+CUDA三个规模各5次暖态推进/查询：plan设备分配均保持16，动态envelope上传0，snapshot新增读回0，两个state buffer均经过。实际新增10次bounds pass（通用与rotor各5）、10次BVH kernel；结果读回分别480/1920/17920 bytes，配对metadata上传120/480/3840 bytes，非零成本保留。batch的状态接受标记另行读回。没有性能对照或Newton吞吐胜出结论。
+
+真实动力学覆盖轴惯量、非主轴、当前COM力臂、全部世界力矩、bounded PD、仅驱动三列延迟、混合球/滑轨/rotor、含端点±4096与事务失败。几何覆盖偏心sphere/有限capsule/box-hull、多shape材料ID、资产真实group、正负多周、16m细长体与4096m公共平移下固定近触/miss。限当前单R接受态到静态有限几何宽相；不代表多关节驻留、动态–动态设备窄相、CCD或接触反馈。
+
+原robot对父5共享hook的只读审阅已完成，未发现阻断问题；核异构packet恢复、两pass统一swap/epoch、实际device geometry资源登记/关闭及失败last_result保持。审阅无执行，不代替数值结果。

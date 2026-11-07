@@ -15,38 +15,69 @@ import pytest
 import phymeo as ph
 from phymeo.backends import tyx_world_batch as resident
 
-
 H = 1 / 64
 ANGLE_LIMIT_RAD = 4096.0
 
 
-def _program(*, q=0.0, v=0.0, delay=0, kp=0.0, kd=0.0, cap=8.0,
-             axis=(0, 0, 1), orientation=(0, 0, 0, 1), origin=(0, 0, 0),
-             com=(1 / 4, 0, 0), inertia=(1 / 8, 1 / 8, 1 / 8), gravity=(0, 0, 0)):
+def _program(
+    *,
+    q=0.0,
+    v=0.0,
+    delay=0,
+    kp=0.0,
+    kd=0.0,
+    cap=8.0,
+    axis=(0, 0, 1),
+    orientation=(0, 0, 0, 1),
+    origin=(0, 0, 0),
+    com=(1 / 4, 0, 0),
+    inertia=(1 / 8, 1 / 8, 1 / 8),
+    gravity=(0, 0, 0),
+):
     model = ph.RobotModel(
-        np.array([-1]), ("revolute",), np.array([origin], dtype=float),
-        np.array([orientation], dtype=float), np.array([axis], dtype=float),
-        np.array([2.0]), np.array([com], dtype=float),
-        np.array([inertia], dtype=float), np.array(gravity, dtype=float),
+        np.array([-1]),
+        ("revolute",),
+        np.array([origin], dtype=float),
+        np.array([orientation], dtype=float),
+        np.array([axis], dtype=float),
+        np.array([2.0]),
+        np.array([com], dtype=float),
+        np.array([inertia], dtype=float),
+        np.array(gravity, dtype=float),
     )
     program = ph.DrivenRobotProgram(
-        model, kp=[float(kp)], kd=[float(kd)], effort_limit=[float(cap)], delay_steps=delay,
+        model,
+        kp=[float(kp)],
+        kd=[float(kd)],
+        effort_limit=[float(cap)],
+        delay_steps=delay,
     )
-    initial = program.initial_state(ph.RobotState(np.array([q], dtype=float), np.array([v], dtype=float)))
+    initial = program.initial_state(
+        ph.RobotState(np.array([q], dtype=float), np.array([v], dtype=float))
+    )
     return program, initial
 
 
-def _action(program, *, target=0.0, rate=0.0, ff=0.0, generalized=0.0,
-            force=(0, 0, 0), torque=(0, 0, 0)):
+def _action(
+    program, *, target=0.0, rate=0.0, ff=0.0, generalized=0.0, force=(0, 0, 0), torque=(0, 0, 0)
+):
     loads = ph.RobotInputs(
-        np.array([generalized], dtype=float), np.array([force], dtype=float),
+        np.array([generalized], dtype=float),
+        np.array([force], dtype=float),
         np.array([torque], dtype=float),
     )
-    return program.inputs(np.array([target], dtype=float), np.array([rate], dtype=float), feedforward=np.array([ff], dtype=float), loads=loads)
+    return program.inputs(
+        np.array([target], dtype=float),
+        np.array([rate], dtype=float),
+        feedforward=np.array([ff], dtype=float),
+        loads=loads,
+    )
 
 
 def _save(path, name, value):
-    (path / f"{name}.json").write_text(json.dumps(value, indent=2, allow_nan=False), encoding="utf-8")
+    (path / f"{name}.json").write_text(
+        json.dumps(value, indent=2, allow_nan=False), encoding="utf-8"
+    )
 
 
 @pytest.mark.tyx
@@ -76,9 +107,13 @@ def test_r01_revolute_effort_uses_axis_inertia_actual_accepted_state(tyx_mode, t
 @pytest.mark.tyx
 @pytest.mark.parametrize("delay", (0, 1))
 @pytest.mark.parametrize("sign", (-1, 1))
-def test_r01_forty_unreset_steps_keep_real_rotational_momentum_and_work(delay, sign, tyx_mode, tmp_path):
+def test_r01_forty_unreset_steps_keep_real_rotational_momentum_and_work(
+    delay, sign, tyx_mode, tmp_path
+):
     program, initial = _program(delay=delay)
-    with resident.TyxWorldBatch([(7, resident.RevoluteRotor(program, initial))], tyx_mode, cache_root=tmp_path) as batch:
+    with resident.TyxWorldBatch(
+        [(7, resident.RevoluteRotor(program, initial))], tyx_mode, cache_root=tmp_path
+    ) as batch:
         batch.set_controls({7: _action(program, ff=sign / 4)})
         trace, prior_v, prior_q = [], 0.0, 0.0
         for n in range(1, 41):
@@ -89,11 +124,18 @@ def test_r01_forty_unreset_steps_keep_real_rotational_momentum_and_work(delay, s
             effort = 0.0 if n <= delay else sign / 4
             dq = actual.position[0] - prior_q
             dv = actual.velocity[0] - prior_v
-            delta_ke = (actual.velocity[0] ** 2 - prior_v ** 2) / 8
+            delta_ke = (actual.velocity[0] ** 2 - prior_v**2) / 8
             balance = effort * dq - delta_ke - dv * dv / 8
-            trace.append({"step": n, "acceptance": accepted, "actual": asdict(actual),
-                          "oracle_q_rad": q, "oracle_qd_rad_s": v,
-                          "discrete_work_residual_j": balance})
+            trace.append(
+                {
+                    "step": n,
+                    "acceptance": accepted,
+                    "actual": asdict(actual),
+                    "oracle_q_rad": q,
+                    "oracle_qd_rad_s": v,
+                    "discrete_work_residual_j": balance,
+                }
+            )
             _save(tmp_path, f"r01-window-delay{delay}-sign{sign}-{tyx_mode}", trace)
             assert accepted == {7: True}
             assert actual.position == (q,) and actual.velocity == (v,)
@@ -108,7 +150,9 @@ def test_r01_forty_unreset_steps_keep_real_rotational_momentum_and_work(delay, s
 @pytest.mark.parametrize("q", (0.0, pi / 2, -pi / 2, 2 * pi + 0.37, -6 * pi - 0.51))
 def test_r02_gravity_and_com_force_use_current_accepted_angle(q, tyx_mode, tmp_path):
     program, initial = _program(q=q, gravity=(0, -2, 0))
-    with resident.TyxWorldBatch([(7, resident.RevoluteRotor(program, initial))], tyx_mode, cache_root=tmp_path) as batch:
+    with resident.TyxWorldBatch(
+        [(7, resident.RevoluteRotor(program, initial))], tyx_mode, cache_root=tmp_path
+    ) as batch:
         batch.set_controls({7: _action(program, ff=1 / 4, force=(0, 2, 0))})
         entry = batch.snapshot()[7]
         # m*g contributes -cos(q); the COM force contributes +cos(q)/2.
@@ -116,9 +160,15 @@ def test_r02_gravity_and_com_force_use_current_accepted_angle(q, tyx_mode, tmp_p
         assert batch.step(H) == {7: True}
         actual = batch.snapshot()[7]
         np.testing.assert_allclose(actual.velocity, [H * alpha], rtol=2e-5, atol=2e-6)
-        np.testing.assert_allclose(actual.position, [entry.position[0] + H * H * alpha], rtol=0, atol=4e-6)
+        np.testing.assert_allclose(
+            actual.position, [entry.position[0] + H * H * alpha], rtol=0, atol=4e-6
+        )
         assert actual.applied_effort == (1 / 4,)
-        _save(tmp_path, f"r02-q{q:.6f}-{tyx_mode}", {"entry": asdict(entry), "actual": asdict(actual), "oracle_alpha_rad_s2": alpha})
+        _save(
+            tmp_path,
+            f"r02-q{q:.6f}-{tyx_mode}",
+            {"entry": asdict(entry), "actual": asdict(actual), "oracle_alpha_rad_s2": alpha},
+        )
 
 
 @pytest.mark.tyx
@@ -128,10 +178,16 @@ def test_r02_nonprincipal_axis_real_inertia_and_world_torque_covariance(cycled, 
     orientation = (0.5, 0.5, 0.5, 0.5) if cycled else (0, 0, 0, 1)
     torque = (4 / 5, 3 / 5, 0) if cycled else (3 / 5, 0, 4 / 5)
     program, initial = _program(
-        q=0.37, axis=(3 / 5, 0, 4 / 5), com=(0, 1 / 4, 0),
-        inertia=(1 / 8, 1 / 4, 3 / 8), orientation=orientation, origin=(0.5, -0.25, 0.75),
+        q=0.37,
+        axis=(3 / 5, 0, 4 / 5),
+        com=(0, 1 / 4, 0),
+        inertia=(1 / 8, 1 / 4, 3 / 8),
+        orientation=orientation,
+        origin=(0.5, -0.25, 0.75),
     )
-    with resident.TyxWorldBatch([(7, resident.RevoluteRotor(program, initial))], tyx_mode, cache_root=tmp_path) as batch:
+    with resident.TyxWorldBatch(
+        [(7, resident.RevoluteRotor(program, initial))], tyx_mode, cache_root=tmp_path
+    ) as batch:
         batch.set_controls({7: _action(program, generalized=-59 / 100, torque=torque)})
         entry = batch.snapshot()[7]
         assert batch.step(H) == {7: True}
@@ -140,21 +196,34 @@ def test_r02_nonprincipal_axis_real_inertia_and_world_torque_covariance(cycled, 
         np.testing.assert_allclose(actual.velocity, [H], rtol=2e-5, atol=2e-6)
         np.testing.assert_allclose(actual.position, [entry.position[0] + H * H], rtol=0, atol=2e-6)
         assert actual.applied_effort == (0.0,)
-        assert batch.summary()[7]["kinetic_energy_j"] == pytest.approx(0.5 * 0.41 * H * H, rel=3e-5, abs=1e-8)
+        assert batch.summary()[7]["kinetic_energy_j"] == pytest.approx(
+            0.5 * 0.41 * H * H, rel=3e-5, abs=1e-8
+        )
 
 
 @pytest.mark.tyx
 @pytest.mark.parametrize("cap", (2.0, 1 / 8))
-def test_r03_bounded_pd_and_all_undelayed_load_columns_match_independent_scalar_balance(cap, tyx_mode, tmp_path):
+def test_r03_bounded_pd_and_all_undelayed_load_columns_match_independent_scalar_balance(
+    cap, tyx_mode, tmp_path
+):
     program, initial = _program(q=1 / 8, v=-1 / 4, kp=8, kd=2, cap=cap)
-    command = _action(program, target=1 / 4, rate=1 / 2, ff=1 / 2,
-                      generalized=1 / 4, force=(0, 2, 0), torque=(0, 0, 1 / 8))
+    command = _action(
+        program,
+        target=1 / 4,
+        rate=1 / 2,
+        ff=1 / 2,
+        generalized=1 / 4,
+        force=(0, 2, 0),
+        torque=(0, 0, 1 / 8),
+    )
     h = 1 / 8
     external = 3 / 8 + cos(1 / 8) / 2
     free_v = -1 / 4 + h * external / (1 / 4)
     effort = float(np.clip((2.5 - 3 * free_v) / 2.5, -cap, cap))
     expected_v = free_v + h * effort / (1 / 4)
-    with resident.TyxWorldBatch([(7, resident.RevoluteRotor(program, initial))], tyx_mode, cache_root=tmp_path) as batch:
+    with resident.TyxWorldBatch(
+        [(7, resident.RevoluteRotor(program, initial))], tyx_mode, cache_root=tmp_path
+    ) as batch:
         batch.set_controls({7: command})
         assert batch.snapshot()[7].control == (1 / 4, 1 / 2, 1 / 2, 1 / 4, 0, 2, 0, 0, 0, 1 / 8)
         assert batch.step(h) == {7: True}
@@ -168,8 +237,12 @@ def test_r03_bounded_pd_and_all_undelayed_load_columns_match_independent_scalar_
 @pytest.mark.tyx
 def test_r03_only_drive_triplet_is_delayed_current_cartesian_loads_are_not(tyx_mode, tmp_path):
     program, initial = _program(delay=1)
-    with resident.TyxWorldBatch([(7, resident.RevoluteRotor(program, initial))], tyx_mode, cache_root=tmp_path) as batch:
-        command = _action(program, ff=1 / 4, generalized=1 / 8, force=(0, 1 / 4, 0), torque=(0, 0, 1 / 16))
+    with resident.TyxWorldBatch(
+        [(7, resident.RevoluteRotor(program, initial))], tyx_mode, cache_root=tmp_path
+    ) as batch:
+        command = _action(
+            program, ff=1 / 4, generalized=1 / 8, force=(0, 1 / 4, 0), torque=(0, 0, 1 / 16)
+        )
         batch.set_controls({7: command})
         held = batch.snapshot()[7]
         assert len(held.control) == 10
@@ -187,19 +260,27 @@ def test_r03_only_drive_triplet_is_delayed_current_cartesian_loads_are_not(tyx_m
 
 
 @pytest.mark.tyx
-def test_r05_mixed_kind_routing_uses_batch_width_without_changing_old_only_layout(tyx_mode, tmp_path):
+def test_r05_mixed_kind_routing_uses_batch_width_without_changing_old_only_layout(
+    tyx_mode, tmp_path
+):
     program, initial = _program()
-    slider_model = replace(program.model, joint_types=("prismatic",), joint_axis=np.array([[1.0, 0, 0]]))
+    slider_model = replace(
+        program.model, joint_types=("prismatic",), joint_axis=np.array([[1.0, 0, 0]])
+    )
     slider_program = ph.DrivenRobotProgram(slider_model, kp=[0.0], kd=[0.0], effort_limit=[8.0])
     slider_initial = slider_program.initial_state(ph.RobotState(np.zeros(1), np.zeros(1)))
-    old_worlds = [(9, resident.PrismaticSlider(slider_program, slider_initial)),
-                  (3, resident.FreeSphere(2, 1 / 16, gravity=(0, 0, 0)))]
+    old_worlds = [
+        (9, resident.PrismaticSlider(slider_program, slider_initial)),
+        (3, resident.FreeSphere(2, 1 / 16, gravity=(0, 0, 0))),
+    ]
     with resident.TyxWorldBatch(old_worlds, tyx_mode, cache_root=tmp_path / "old") as old:
         assert old._commands.shape[1] == 4 and old._props.shape[1] == 9
     worlds = [*old_worlds, (7, resident.RevoluteRotor(program, initial))]
     with resident.TyxWorldBatch(worlds, tyx_mode, cache_root=tmp_path / "mixed") as batch:
         assert batch._commands.shape[1] == 10
-        batch.set_controls({3: (2, 0, 0), 9: _action(slider_program, ff=2), 7: _action(program, ff=1 / 4)})
+        batch.set_controls(
+            {3: (2, 0, 0), 9: _action(slider_program, ff=2), 7: _action(program, ff=1 / 4)}
+        )
         assert batch.step(H) == {3: True, 7: True, 9: True}
         actual = batch.snapshot()
         assert actual[3].position == (H * H, 0.0, 0.0)
@@ -213,9 +294,13 @@ def test_r05_mixed_kind_routing_uses_batch_width_without_changing_old_only_layou
 
 @pytest.mark.tyx
 @pytest.mark.parametrize("sign", (-1, 1))
-def test_r06_angle_domain_initial_restore_and_candidate_are_one_transaction(sign, tyx_mode, tmp_path):
+def test_r06_angle_domain_initial_restore_and_candidate_are_one_transaction(
+    sign, tyx_mode, tmp_path
+):
     program, initial = _program(q=sign * ANGLE_LIMIT_RAD, v=sign, delay=1)
-    with resident.TyxWorldBatch([(7, resident.RevoluteRotor(program, initial))], tyx_mode, cache_root=tmp_path) as batch:
+    with resident.TyxWorldBatch(
+        [(7, resident.RevoluteRotor(program, initial))], tyx_mode, cache_root=tmp_path
+    ) as batch:
         batch.set_controls({7: _action(program, ff=1 / 4, force=(0, 1 / 4, 0))})
         before = batch.snapshot()[7]
         assert batch.step(H) == {7: False}
@@ -229,21 +314,31 @@ def test_r06_angle_domain_initial_restore_and_candidate_are_one_transaction(sign
         assert batch.snapshot()[7].history == (0.0, 0.0, 1 / 4)
     bad_program, bad_initial = _program(q=outside)
     with pytest.raises(ValueError, match="angle|domain|4096"):
-        with resident.TyxWorldBatch([(7, resident.RevoluteRotor(bad_program, bad_initial))], tyx_mode, cache_root=tmp_path / "outside"):
+        with resident.TyxWorldBatch(
+            [(7, resident.RevoluteRotor(bad_program, bad_initial))],
+            tyx_mode,
+            cache_root=tmp_path / "outside",
+        ):
             pass
 
 
 @pytest.mark.tyx
-def test_r06_failure_retry_preserves_control_queue_physics_and_neighbor(tyx_mode, tmp_path, monkeypatch):
+def test_r06_failure_retry_preserves_control_queue_physics_and_neighbor(
+    tyx_mode, tmp_path, monkeypatch
+):
     program, initial = _program(delay=1)
-    worlds = [(7, resident.RevoluteRotor(program, initial)),
-              (9, resident.FreeSphere(2, 1 / 16, gravity=(0, 0, 0)))]
+    worlds = [
+        (7, resident.RevoluteRotor(program, initial)),
+        (9, resident.FreeSphere(2, 1 / 16, gravity=(0, 0, 0))),
+    ]
     with resident.TyxWorldBatch(worlds, tyx_mode, cache_root=tmp_path) as batch:
         batch.set_controls({7: _action(program, ff=1 / 4, torque=(0, 0, 1 / 4)), 9: (2, 0, 0)})
         before = batch.snapshot()
         with monkeypatch.context() as patch:
+
             def fail_status():
                 raise RuntimeError("injected before rotor acceptance")
+
             patch.setattr(batch, "_read_status", fail_status)
             with pytest.raises(RuntimeError, match="rotor acceptance"):
                 batch.step(H)
@@ -266,7 +361,15 @@ def test_r06_failure_retry_preserves_control_queue_physics_and_neighbor(tyx_mode
         assert reset.tick == 0 and reset.history == (0.0, 0.0, 0.0)
         assert reset.control == (0.0,) * 10
         assert batch.snapshot()[9].tick == 2
-        _save(tmp_path, f"r06-transaction-{tyx_mode}", {"before": {k: asdict(v) for k, v in before.items()}, "first": {k: asdict(v) for k, v in first.items()}, "reset": asdict(reset)})
+        _save(
+            tmp_path,
+            f"r06-transaction-{tyx_mode}",
+            {
+                "before": {k: asdict(v) for k, v in before.items()},
+                "first": {k: asdict(v) for k, v in first.items()},
+                "reset": asdict(reset),
+            },
+        )
 
 
 @pytest.mark.parametrize("problem", ("prismatic", "two_revolutes", "delay_two", "limits"))
@@ -278,39 +381,60 @@ def test_r06_unsupported_topology_fails_before_runtime_allocation(problem, tmp_p
         initial = program.initial_state(ph.RobotState(np.zeros(1), np.zeros(1)))
     elif problem == "two_revolutes":
         one = program.model
-        model = ph.RobotModel(np.array([-1, 0]), ("revolute", "revolute"),
-            np.vstack((one.joint_position, [1, 0, 0])), np.tile(one.joint_orientation, (2, 1)),
-            np.tile(one.joint_axis, (2, 1)), np.array([2.0, 1.0]), np.tile(one.com, (2, 1)),
-            np.tile(one.inertia_diagonal, (2, 1)), np.zeros(3))
-        program = ph.DrivenRobotProgram(model, kp=[0.0, 0.0], kd=[0.0, 0.0], effort_limit=[8.0, 8.0])
+        model = ph.RobotModel(
+            np.array([-1, 0]),
+            ("revolute", "revolute"),
+            np.vstack((one.joint_position, [1, 0, 0])),
+            np.tile(one.joint_orientation, (2, 1)),
+            np.tile(one.joint_axis, (2, 1)),
+            np.array([2.0, 1.0]),
+            np.tile(one.com, (2, 1)),
+            np.tile(one.inertia_diagonal, (2, 1)),
+            np.zeros(3),
+        )
+        program = ph.DrivenRobotProgram(
+            model, kp=[0.0, 0.0], kd=[0.0, 0.0], effort_limit=[8.0, 8.0]
+        )
         initial = program.initial_state(ph.RobotState(np.zeros(2), np.zeros(2)))
     elif problem == "limits":
         limits = ph.JointLimits(np.array([-1.0]), np.array([1.0]), 2.0, 0.0)
-        program = ph.DrivenRobotProgram(program.model, kp=[0.0], kd=[0.0], effort_limit=[8.0], limits=limits)
+        program = ph.DrivenRobotProgram(
+            program.model, kp=[0.0], kd=[0.0], effort_limit=[8.0], limits=limits
+        )
         initial = program.initial_state(ph.RobotState(np.zeros(1), np.zeros(1)))
     with pytest.raises(ValueError, match="revolute|single|one|delay|stop|limit"):
-        with resident.TyxWorldBatch([(7, resident.RevoluteRotor(program, initial))], "interpret", cache_root=tmp_path):
+        with resident.TyxWorldBatch(
+            [(7, resident.RevoluteRotor(program, initial))], "interpret", cache_root=tmp_path
+        ):
             pass
-
-
-
 
 
 @pytest.mark.tyx
 @pytest.mark.parametrize("cycled", (False, True))
-def test_r02_all_world_com_force_and_torque_columns_share_the_current_pose(cycled, tyx_mode, tmp_path):
+def test_r02_all_world_com_force_and_torque_columns_share_the_current_pose(
+    cycled, tyx_mode, tmp_path
+):
     orientation = (0.5, 0.5, 0.5, 0.5) if cycled else (0, 0, 0, 1)
     gravity = (-1.5, 0, 0) if cycled else (0, 0, -1.5)
     force = (3, 1, 2) if cycled else (1, 2, 3)
     torque = (3 / 4, 1 / 4, -1 / 2) if cycled else (1 / 4, -1 / 2, 3 / 4)
-    program, initial = _program(q=0.37, axis=(3 / 5, 0, 4 / 5), com=(0, 1 / 4, 0),
-        inertia=(1 / 8, 1 / 4, 3 / 8), orientation=orientation, gravity=gravity)
-    with resident.TyxWorldBatch([(7, resident.RevoluteRotor(program, initial))], tyx_mode, cache_root=tmp_path) as batch:
+    program, initial = _program(
+        q=0.37,
+        axis=(3 / 5, 0, 4 / 5),
+        com=(0, 1 / 4, 0),
+        inertia=(1 / 8, 1 / 4, 3 / 8),
+        orientation=orientation,
+        gravity=gravity,
+    )
+    with resident.TyxWorldBatch(
+        [(7, resident.RevoluteRotor(program, initial))], tyx_mode, cache_root=tmp_path
+    ) as batch:
         batch.set_controls({7: _action(program, generalized=1 / 8, force=force, torque=torque)})
         entry = batch.snapshot()[7]
         q = entry.position[0]
         # r=(-sin(q)/5, cos(q)/4, 3*sin(q)/20), F+m*g=(1,2,0).
         from math import sin
+
         alpha = (7 / 8 - sin(q) / 2 - cos(q) / 5) / (41 / 100)
         assert batch.step(H) == {7: True}
         actual = batch.snapshot()[7]

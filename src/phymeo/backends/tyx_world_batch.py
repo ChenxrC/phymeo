@@ -1,4 +1,4 @@
-"""Opt-in TYX batch of independent translating spheres and scalar fixed-base sliders."""
+"""Opt-in TYX batch of translating spheres, scalar sliders and physical revolute rotors."""
 
 from collections.abc import Mapping
 from contextlib import ExitStack, contextmanager
@@ -7,6 +7,7 @@ from types import MappingProxyType
 
 import numpy as np
 
+from ._resident_revolute_world import RevoluteRotor
 from ._world_step_layout import (
     PROPERTY_WIDTH,
     STATE_WIDTH,
@@ -23,6 +24,7 @@ from ._world_step_layout import (
 __all__ = [
     "FreeSphere",
     "PrismaticSlider",
+    "RevoluteRotor",
     "SpherePlaneCheckpoint",
     "SpherePlaneWorld",
     "TyxWorldBatch",
@@ -31,7 +33,7 @@ __all__ = [
 
 
 class TyxWorldBatch:
-    """One device kernel advances all worlds using a pair of persistent state buffers.
+    """Device passes advance independent worlds using a pair of persistent state buffers.
 
     Controls stay held until changed. A step returns a compact per-world acceptance map.
     Numeric rejection retains the affected world's physical state, tick and delayed packet.
@@ -78,6 +80,7 @@ class TyxWorldBatch:
                 "rejected_world_steps",
                 "failed_steps",
                 "recovery_sync_attempts",
+                "revolute_kernel_launches",
             ),
             0,
         )
@@ -97,7 +100,13 @@ class TyxWorldBatch:
             initial_rows.append(row)
             commands.append(command)
         self._count = len(self._bindings)
-        self._held = np.asarray(commands, np.float32).reshape(self._count, 4)
+        self._command_width = max((b.command_width for b in self._bindings), default=4)
+        self._property_width = max((len(row) for row in props), default=PROPERTY_WIDTH)
+        self._held = np.zeros((self._count, self._command_width), np.float32)
+        properties = np.zeros((self._count, self._property_width), np.float32)
+        for i, (command, row) in enumerate(zip(commands, props, strict=True)):
+            self._held[i, : len(command)] = command
+            properties[i, : len(row)] = row
         self._initial = {
             b.world: b.checkpoint(row, 0, command)
             for b, row, command in zip(self._bindings, initial_rows, commands, strict=True)
@@ -113,6 +122,11 @@ class TyxWorldBatch:
             kernels.advance_worlds,
             kernels.advance_worlds_other_buffer if mode == "cuda" else kernels.advance_worlds,
         )
+        self._rotor_kernels = None
+        if any(b.kind in (3, 4) for b in self._bindings):
+            from ._tyx_resident_revolute_kernels import make_revolute_step_kernels
+
+            self._rotor_kernels = make_revolute_step_kernels()
         self._plane_kernels = None
         if any(b.plane_height is not None for b in self._bindings):
             from ._tyx_sphere_plane_kernel import (
@@ -134,8 +148,12 @@ class TyxWorldBatch:
                 self._kind = self._buffer(
                     (n,), np.int32, [b.kind for b in self._bindings], "topology"
                 )
-                self._props = self._buffer((n, PROPERTY_WIDTH), np.float32, props, "topology")
-                self._commands = self._buffer((n, 4), np.float32, self._held, "initial")
+                self._props = self._buffer(
+                    (n, self._property_width), np.float32, properties, "topology"
+                )
+                self._commands = self._buffer(
+                    (n, self._command_width), np.float32, self._held, "initial"
+                )
                 self._states = (
                     self._buffer((n, STATE_WIDTH), np.float32, initial_rows, "initial"),
                     self._buffer((n, STATE_WIDTH), np.float32),
@@ -283,7 +301,9 @@ class TyxWorldBatch:
             held = self._held.copy()
             for key in keys:
                 i = self._slots[key]
-                held[i] = self._bindings[i].packet(by_world[key])
+                packet = self._bindings[i].packet(by_world[key])
+                held[i].fill(0)
+                held[i, : len(packet)] = packet
             if not np.array_equal(held, self._held):
                 self._held, self._dirty = held, True
 
@@ -315,6 +335,21 @@ class TyxWorldBatch:
                         self._ticks[dst],
                         self._status,
                     )
+                    if self._rotor_kernels is not None:
+                        self._launch(
+                            self._rotor_kernels[src],
+                            self._count,
+                            dt,
+                            self._kind,
+                            self._props,
+                            self._commands,
+                            self._states[src],
+                            self._ticks[src],
+                            self._states[dst],
+                            self._ticks[dst],
+                            self._status,
+                        )
+                        self._counts["revolute_kernel_launches"] += 1
                     if self._plane_kernels is not None:
                         self._launch(
                             self._plane_kernels[src],
@@ -390,7 +425,7 @@ class TyxWorldBatch:
         return readback_for(self, plan)
 
     def summary(self):
-        """Read two FP32 values per world: kinetic energy and sphere bottom z or slider q."""
+        """Read energy and sphere bottom z, slider q_m or revolute q_rad."""
         with self._lock:
             self._check_open()
             if not self._count:
@@ -411,7 +446,9 @@ class TyxWorldBatch:
             return {
                 b.world: {
                     "kinetic_energy_j": float(v[0]),
-                    "q_m" if b.kind else "bottom_z_m": float(v[1]),
+                    ("q_rad" if b.kind in (3, 4) else "q_m" if b.kind else "bottom_z_m"): float(
+                        v[1]
+                    ),
                 }
                 for b, v in zip(self._bindings, summary, strict=True)
             }
@@ -430,7 +467,9 @@ class TyxWorldBatch:
             held = self._held.copy()
             for key in keys:
                 i = self._slots[key]
-                states[i], ticks[i], held[i] = self._bindings[i].unpack(by_world[key])
+                states[i], ticks[i], control = self._bindings[i].unpack(by_world[key])
+                held[i].fill(0)
+                held[i, : len(control)] = control
             src, dst = self._active, 1 - self._active
             with self._device():
                 self._upload(self._restore_state, states, "restore")

@@ -10,12 +10,16 @@ import tyx as tx
 
 @tx.func
 def _lower(value: tx.f32) -> tx.f32:
-    return tx.sub_rn(value, tx.max(1.1754943508222875e-38, tx.mul_rn(tx.abs(value), 2.384185791015625e-7)))
+    return tx.sub_rn(
+        value, tx.max(1.1754943508222875e-38, tx.mul_rn(tx.abs(value), 2.384185791015625e-7))
+    )
 
 
 @tx.func
 def _upper(value: tx.f32) -> tx.f32:
-    return tx.add_rn(value, tx.max(1.1754943508222875e-38, tx.mul_rn(tx.abs(value), 2.384185791015625e-7)))
+    return tx.add_rn(
+        value, tx.max(1.1754943508222875e-38, tx.mul_rn(tx.abs(value), 2.384185791015625e-7))
+    )
 
 
 def resident_revolute_bounds(
@@ -64,13 +68,22 @@ def resident_revolute_bounds(
                 for vertex in range(first, last):
                     dot = 0.0
                     for k in tx.static_range(3):
-                        dot = tx.add_rn(dot, tx.mul_rn(geometry[i, 3 + k], zero_relative_points[vertex, k]))
+                        dot = tx.add_rn(
+                            dot, tx.mul_rn(geometry[i, 3 + k], zero_relative_points[vertex, k])
+                        )
                     cross = tx.sub_rn(
-                        tx.mul_rn(geometry[i, 3 + (j + 1) % 3], zero_relative_points[vertex, (j + 2) % 3]),
-                        tx.mul_rn(geometry[i, 3 + (j + 2) % 3], zero_relative_points[vertex, (j + 1) % 3]),
+                        tx.mul_rn(
+                            geometry[i, 3 + (j + 1) % 3], zero_relative_points[vertex, (j + 2) % 3]
+                        ),
+                        tx.mul_rn(
+                            geometry[i, 3 + (j + 2) % 3], zero_relative_points[vertex, (j + 1) % 3]
+                        ),
                     )
                     turned = tx.add_rn(
-                        tx.add_rn(tx.mul_rn(cosine, zero_relative_points[vertex, j]), tx.mul_rn(sine, cross)),
+                        tx.add_rn(
+                            tx.mul_rn(cosine, zero_relative_points[vertex, j]),
+                            tx.mul_rn(sine, cross),
+                        ),
                         tx.mul_rn(tx.mul_rn(remaining, dot), geometry[i, 3 + j]),
                     )
                     point = tx.add_rn(pivot, turned)
@@ -93,4 +106,3 @@ def resident_revolute_bounds(
 def make_resident_revolute_bounds_kernels():
     """Independent query handles for the owner's two accepted state buffers."""
     return tx.kernel(resident_revolute_bounds), tx.kernel(resident_revolute_bounds)
-

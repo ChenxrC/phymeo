@@ -1,6 +1,6 @@
 # C3 单转铰驻留：真实动力学到设备当前姿态宽相
 
-状态：T2_CODE_AUTHORING。无08:00截止。承接[已接受C2](../../benchmarks/p65-resident-slider-collision.md)，与[F2浮根mimic](2026-11-07-floating-mimic.md)隔离编写；项目执行仍仅父串行。
+状态：T3_NATIVE_VERIFIED；新组合wheel待验。无08:00截止。承接[已接受C2](../../benchmarks/p65-resident-slider-collision.md)，与[F2浮根mimic](2026-11-07-floating-mimic.md)隔离编写；项目执行仍仅父串行。
 
 ## 调研与路线选择
 
@@ -55,3 +55,7 @@ TYX实际CUDA lowering为sinf/cosf且fast_math关闭；NVIDIA误差表的observe
 NEW bounds/binding签名、geometry[S,8]与原有限points按casebook最后一节；真正owner安装/source一致、bytes-backed输出，形状sphere/capsule/hull。父排除rotor首sphere slots、追加设备pass与独立真实统计，统一query/epoch事务。固定工程padding从已声明公式起，不因单样本失败缩小padding/移动miss；如出现真实编译/精度缺陷以原输入诊断。
 
 作者不得import、collection、数值probe、test、lint、formatter、compile/build/install；父保持唯一串行执行。交接小commits/clean/5NEW精确清单及UNEXECUTED报告，再父审源码/连旧hooks/专项目标interpret+CUDA+必要共享回归。C3仍非完整多关节驻留、CCD或响应。
+
+## T3实际推进
+
+父已完成共享接入及专项：HOST4、interpret71、CUDA71、受影响球/滑轨CUDA7全部通过；最终11文件静态通过。详见[实际报告](../../benchmarks/p65-resident-revolute-collision.md#父实际专项结果2026-11-07)。原robot已完成父5处共享hook只读审阅，无阻断问题；父完整新模块审查与实际设备执行分别留存。新组合源码外wheel仍待F2共同场景接入后统一验证；不重复本已绿同源组。下一驻留功能切片为完整固定根R/P树，须先调研持久FK/J/M/bias及多关节推进，不能直接以单R通过外推。

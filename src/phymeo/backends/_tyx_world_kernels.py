@@ -29,7 +29,7 @@ def advance_worlds(
                 candidate[i, j] = _add(state[i, j], _mul(h, speed))
                 candidate[i, 3 + j] = speed
                 candidate[i, 6 + j] = external
-        else:
+        elif kind[i] == 1 or kind[i] == 2:
             target = commands[i, 0]
             target_speed = commands[i, 1]
             feedforward = commands[i, 2]
@@ -60,6 +60,9 @@ def advance_worlds(
             candidate[i, 0] = _add(state[i, 0], _mul(h, speed))
             candidate[i, 3] = speed
             candidate[i, 6] = effort
+        else:
+            # A later rotor pass owns kinds 3/4. Unknown kinds also reject.
+            good = 0
         for k in tx.static_range(12):
             if not tx.isfinite(candidate[i, k]):
                 good = 0

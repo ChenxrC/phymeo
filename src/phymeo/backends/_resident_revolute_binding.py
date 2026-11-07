@@ -65,7 +65,11 @@ class RevoluteGeometryFrame:
     axis_local: tuple
 
     def __post_init__(self):
-        object.__setattr__(self, "origin_m", tuple(float(x) for x in _finite_vector(self.origin_m, 3, "revolute origin")))
+        object.__setattr__(
+            self,
+            "origin_m",
+            tuple(float(x) for x in _finite_vector(self.origin_m, 3, "revolute origin")),
+        )
         object.__setattr__(self, "orientation_xyzw", _unit_quaternion(self.orientation_xyzw))
         object.__setattr__(self, "axis_local", _unit_axis(self.axis_local))
 
@@ -98,7 +102,11 @@ class ResidentRevoluteBinding:
     def __post_init__(self):
         if not isinstance(self.key, CollisionKey):
             raise TypeError("resident revolute key must be a CollisionKey")
-        if isinstance(self.world, (bool, np.bool_)) or not isinstance(self.world, Integral) or int(self.world) != self.key.world:
+        if (
+            isinstance(self.world, (bool, np.bool_))
+            or not isinstance(self.world, Integral)
+            or int(self.world) != self.key.world
+        ):
             raise ValueError("revolute binding world must match its collision key")
         frame = RevoluteGeometryFrame(self.origin_m, self.orientation_xyzw, self.axis_local)
         object.__setattr__(self, "world", int(self.world))
@@ -146,12 +154,20 @@ class ResidentRevoluteBinding:
         if len(registered) != 1 or registered[0] != collider.shape:
             raise ValueError("source collider does not match the asset shape registration")
         if collider.shape.kind not in ("sphere", "capsule", "hull"):
-            raise ValueError("resident revolute source supports only finite sphere, capsule or hull")
+            raise ValueError(
+                "resident revolute source supports only finite sphere, capsule or hull"
+            )
         paths = asset.collision_motion(np.zeros(1, dtype=np.float64))
         if source_key not in paths:
             raise ValueError("asset zero pose is missing its registered source collider")
-        result = cls(key, world, paths[source_key], origin_m=model.joint_position[0],
-                     orientation_xyzw=model.joint_orientation[0], axis_local=model.joint_axis[0])
+        result = cls(
+            key,
+            world,
+            paths[source_key],
+            origin_m=model.joint_position[0],
+            orientation_xyzw=model.joint_orientation[0],
+            axis_local=model.joint_axis[0],
+        )
         object.__setattr__(result, "_source_shape", collider.shape)
         return result
 
@@ -185,13 +201,19 @@ def compile_revolute_binding(shape, binding, owned_frame, owned_axis):
     if binding.origin_m != owned_frame.origin_m:
         raise ValueError("revolute binding origin differs from its actual owned frame")
     for name in ("orientation_xyzw", "axis_local"):
-        if not np.allclose(getattr(binding, name), getattr(owned_frame, name), rtol=0, atol=_FRAME_ROUNDOFF):
+        if not np.allclose(
+            getattr(binding, name), getattr(owned_frame, name), rtol=0, atol=_FRAME_ROUNDOFF
+        ):
             raise ValueError(f"revolute binding {name} differs from its actual owned frame")
     axis = _finite_vector(owned_axis, 3, "actual revolute world axis")
-    expected = quaternion_matrix(np.array([owned_frame.orientation_xyzw]))[0] @ np.asarray(owned_frame.axis_local)
+    expected = quaternion_matrix(np.array([owned_frame.orientation_xyzw]))[0] @ np.asarray(
+        owned_frame.axis_local
+    )
     if not np.allclose(axis, expected, rtol=0, atol=_FRAME_ROUNDOFF):
         raise ValueError("actual revolute world axis disagrees with its owned geometry frame")
-    if binding._source_shape is not None and shape != replace(binding._source_shape, key=binding.key):
+    if binding._source_shape is not None and shape != replace(
+        binding._source_shape, key=binding.key
+    ):
         raise ValueError("target shape changed source material IDs, revision or shape content")
     origin = np.asarray(owned_frame.origin_m)
     points = binding.zero_motion.start

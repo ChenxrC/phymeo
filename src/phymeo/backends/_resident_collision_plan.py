@@ -1,4 +1,4 @@
-"""Versioned broad phase from accepted sphere and prismatic-slider poses.
+"""Versioned broad phase from accepted sphere, slider and revolute finite-shape poses.
 
 The batch owns the runtime, lock and accepted/candidate transaction. This module
 owns only immutable registrations, collision scratch and complete query results.
@@ -20,6 +20,7 @@ from ..constraints.collision_shapes import (
 from ..geometry._collision_bvh import BoundsTree, CollisionTrees
 from ..geometry._collision_spatial import SpatialPairs
 from ..geometry.collision_pipeline import _envelopes, _host_bounds
+from ._resident_revolute_binding import ResidentRevoluteBinding, compile_revolute_binding
 from ._resident_slider_binding import ResidentSliderBinding, compile_slider_binding
 from ._world_step_layout import world_key
 from .tyx_collision import TyxCollisionBatch
@@ -160,7 +161,7 @@ class ResidentCollisionPlan:
     """One batch-owned fixed-topology dynamic/static finite-geometry query plan.
 
     Each model key has one explicit binding. The only queried pair domain is a
-    bound sphere or slider shape and a static shape in the same world. Model masks, revisions and
+    bound sphere, slider or revolute shape and a static shape in the same world. Masks, revisions and
     exclusions remain authoritative. Static/static pairs are outside that domain.
     """
 
@@ -182,6 +183,10 @@ class ResidentCollisionPlan:
         self._slider_kernels = None
         self._slider_slots_device = self._slider_axes_device = None
         self._slider_bounds_launches = 0
+        self._rotor_kernels = None
+        self._rotor_slots_device = self._rotor_offsets_device = None
+        self._rotor_points_device = self._rotor_geometry_device = None
+        self._rotor_bounds_launches = 0
         self._slots_device = self._static_device = self._stamp_device = None
         self._queries = self._failed_queries = self._bounds_launches = 0
         self._directions = set()
@@ -213,7 +218,15 @@ class ResidentCollisionPlan:
         if len(rows) != len(self._shape_keys):
             raise ValueError("bindings must cover exactly every collision model key")
         if not all(
-            isinstance(b, (ResidentSphereBinding, ResidentStaticBinding, ResidentSliderBinding))
+            isinstance(
+                b,
+                (
+                    ResidentSphereBinding,
+                    ResidentStaticBinding,
+                    ResidentSliderBinding,
+                    ResidentRevoluteBinding,
+                ),
+            )
             for b in rows
         ):
             raise TypeError("unsupported resident collision binding")
@@ -223,13 +236,25 @@ class ResidentCollisionPlan:
         slots = np.full(len(rows), -1, dtype=np.int32)
         self._slider_slots = np.full(len(rows), -1, dtype=np.int32)
         self._slider_axes = np.zeros((len(rows), 6), dtype=np.float32)
+        self._rotor_slots = np.full(len(rows), -1, dtype=np.int32)
+        self._rotor_offsets = np.asarray(
+            [
+                0,
+                *np.cumsum([len(shape.vertex_ids) for shape in self._model.shapes], dtype=np.int32),
+            ],
+            dtype=np.int32,
+        )
+        self._rotor_points = np.zeros((int(self._rotor_offsets[-1]), 3), dtype=np.float32)
+        self._rotor_geometry = np.zeros((len(rows), 8), dtype=np.float32)
         paths = {}
         self._world_shape_rows = {}
         self._world_rows = {}
         body_keys = {}
         for row, shape in enumerate(self._model.shapes):
             binding = by_key[shape.key]
-            if isinstance(binding, (ResidentSphereBinding, ResidentSliderBinding)):
+            if isinstance(
+                binding, (ResidentSphereBinding, ResidentSliderBinding, ResidentRevoluteBinding)
+            ):
                 if binding.world != shape.key.world or binding.world not in view.slots:
                     raise ValueError("dynamic binding world must match its collision key and owner")
                 slot = view.slots[binding.world]
@@ -248,7 +273,7 @@ class ResidentCollisionPlan:
                         )
                     initial = self._batch._initial[binding.world]
                     paths[shape.key] = CollisionMotion([initial.position])
-                else:
+                elif isinstance(binding, ResidentSliderBinding):
                     if physical.kind not in (1, 2):
                         raise ValueError(
                             "slider binding requires an actual resident PrismaticSlider"
@@ -273,6 +298,34 @@ class ResidentCollisionPlan:
                     paths[shape.key] = zero
                     self._slider_slots[row] = slot
                     self._slider_axes[row] = axis
+                else:
+                    if physical.kind not in (3, 4):
+                        raise ValueError(
+                            "revolute binding requires an actual resident RevoluteRotor"
+                        )
+                    if not shape.rigid or shape.kind not in ("sphere", "capsule", "hull"):
+                        raise ValueError(
+                            "resident revolute geometry must be supported finite rigid geometry"
+                        )
+                    zero, points, geometry = compile_revolute_binding(
+                        shape, binding, physical.rotor_frame, physical.axis
+                    )
+                    start, end = self._rotor_offsets[row : row + 2]
+                    if (
+                        points.shape != (end - start, 3)
+                        or points.dtype != np.float32
+                        or geometry.shape != (8,)
+                        or geometry.dtype != np.float32
+                        or not np.isfinite(points).all()
+                        or not np.isfinite(geometry).all()
+                        or geometry[6] < 0
+                        or geometry[7] <= 0
+                    ):
+                        raise ValueError("invalid compiled revolute geometry envelope")
+                    paths[shape.key] = zero
+                    self._rotor_slots[row] = slot
+                    self._rotor_points[start:end] = points
+                    self._rotor_geometry[row] = geometry
                 if binding.world in body_keys and body_keys[binding.world] != shape.key.body:
                     raise ValueError(
                         "all dynamic shapes in one resident world must share its one real body"
@@ -329,7 +382,9 @@ class ResidentCollisionPlan:
             spatial=self._space,
             runtime=view.runtime,
         )
-        sphere_slots = np.where(self._slider_slots >= 0, -1, slots).astype(np.int32)
+        sphere_slots = np.where(
+            (self._slider_slots >= 0) | (self._rotor_slots >= 0), -1, slots
+        ).astype(np.int32)
         self._slots_device = self._engine._static(sphere_slots)
         if np.any(self._slider_slots >= 0):
             from ._tyx_resident_slider_bounds import make_resident_slider_bounds_kernels
@@ -337,6 +392,14 @@ class ResidentCollisionPlan:
             self._slider_kernels = make_resident_slider_bounds_kernels()
             self._slider_slots_device = self._engine._static(self._slider_slots)
             self._slider_axes_device = self._engine._static(self._slider_axes)
+        if np.any(self._rotor_slots >= 0):
+            from ._tyx_resident_revolute_bounds import make_resident_revolute_bounds_kernels
+
+            self._rotor_kernels = make_resident_revolute_bounds_kernels()
+            self._rotor_slots_device = self._engine._static(self._rotor_slots)
+            self._rotor_offsets_device = self._engine._static(self._rotor_offsets)
+            self._rotor_points_device = self._engine._static(self._rotor_points)
+            self._rotor_geometry_device = self._engine._static(self._rotor_geometry)
         self._static_device = self._engine._static(seed_bounds)
         self._stamp_device = self._engine._scratch((len(slots), 2), np.int32)
         if self._space is not None:
@@ -406,6 +469,20 @@ class ResidentCollisionPlan:
                 self._stamp_device,
             )
             self._slider_bounds_launches += 1
+        if self._rotor_kernels is not None:
+            self._batch._launch(
+                self._rotor_kernels[view.active],
+                len(self._shape_keys),
+                self._rotor_slots_device,
+                self._rotor_offsets_device,
+                self._rotor_points_device,
+                self._rotor_geometry_device,
+                view.states,
+                view.ticks,
+                engine._bounds,
+                self._stamp_device,
+            )
+            self._rotor_bounds_launches += 1
         self._directions.add(view.active)
         self._batch._sync()
         stamp = engine._read(self._stamp_device)
@@ -495,7 +572,12 @@ class ResidentCollisionPlan:
                 failed_queries=self._failed_queries,
                 bounds_kernel_launches=self._bounds_launches,
                 slider_bounds_kernel_launches=self._slider_bounds_launches,
-                total_bounds_kernel_launches=self._bounds_launches + self._slider_bounds_launches,
+                revolute_bounds_kernel_launches=self._rotor_bounds_launches,
+                total_bounds_kernel_launches=(
+                    self._bounds_launches
+                    + self._slider_bounds_launches
+                    + self._rotor_bounds_launches
+                ),
                 state_buffer_directions=tuple(sorted(self._directions)),
                 device_allocations=counts.get("allocations", 0)
                 if self._batch._mode == "cuda"
@@ -525,6 +607,8 @@ class ResidentCollisionPlan:
                 self._batch._collision_plans.discard(self)
                 self._kernels = self._slots_device = self._static_device = self._stamp_device = None
                 self._slider_kernels = self._slider_slots_device = self._slider_axes_device = None
+                self._rotor_kernels = self._rotor_slots_device = self._rotor_offsets_device = None
+                self._rotor_points_device = self._rotor_geometry_device = None
 
     def __enter__(self):
         with self._batch._lock:

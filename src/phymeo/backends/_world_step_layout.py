@@ -127,18 +127,27 @@ class SpherePlaneCheckpoint(WorldCheckpoint):
 @dataclass(frozen=True)
 class WorldBinding:
     world: int
-    kind: int  # 0 sphere, 1 slider without delay, 2 slider with one-step delay
+    kind: int  # 0 sphere, 1/2 slider, 3/4 revolute; even positive kinds delay one step
     domain: str
     axis: tuple
     topology: tuple
     plane_height: float | None = None
     slider_frame: SliderGeometryFrame | None = None
+    rotor_frame: object | None = None
 
     @property
     def width(self):
         return 1 if self.kind else 3
 
+    @property
+    def command_width(self):
+        return 10 if self.kind in (3, 4) else 4
+
     def packet(self, value):
+        if self.kind in (3, 4):
+            from ._resident_revolute_world import revolute_packet
+
+            return revolute_packet(value, self.domain)
         if not self.kind:
             return (*as_fp32(value, "sphere COM force", (3,)), 0.0)
         if not isinstance(value, SceneInputs) or set(value.domains) != {self.domain}:
@@ -165,8 +174,8 @@ class WorldBinding:
             _values(row[:n]),
             _values(row[3 : 3 + n]),
             _values(row[6 : 6 + n]),
-            _values(row[9:12]) if self.kind == 2 else (),
-            _values(control[: 4 if self.kind else 3]),
+            _values(row[9:12]) if self.kind in (2, 4) else (),
+            _values(control[: self.command_width if self.kind else 3]),
         )
 
         if self.plane_height is not None:
@@ -189,7 +198,11 @@ class WorldBinding:
         state = np.zeros(STATE_WIDTH, np.float32)
         for start, value in ((0, point.position), (3, point.velocity), (6, point.applied_effort)):
             state[start : start + self.width] = as_fp32(value, "checkpoint state", (self.width,))
-        count = 3 if self.kind == 2 else 0
+        if self.kind in (3, 4):
+            from ._resident_revolute_world import validate_revolute_angle
+
+            validate_revolute_angle(state[0], "checkpoint angle")
+        count = 3 if self.kind in (2, 4) else 0
         state[9 : 9 + count] = as_fp32(point.history, "checkpoint history", (count,))
         if self.plane_height is not None:
             if not isinstance(point, SpherePlaneCheckpoint):
@@ -198,18 +211,21 @@ class WorldBinding:
             if impulse < 0:
                 raise ValueError("normal impulse must be nonnegative")
             state[9] = impulse
-        n = 4 if self.kind else 3
-        controls = np.zeros(4, np.float32)
+        n = self.command_width if self.kind else 3
+        controls = np.zeros(self.command_width, np.float32)
         controls[:n] = as_fp32(point.control, "checkpoint held control", (n,))
         return state, int(point.tick), controls
 
 
 def bind_world(world, spec):
+    from ._resident_revolute_world import RevoluteRotor, compile_revolute_world
+
     state = np.zeros(STATE_WIDTH, np.float32)
     command = np.zeros(4, np.float32)
     axis, domain = (), ""
     plane_height = None
     slider_frame = None
+    rotor_frame = None
     if isinstance(spec, FreeSphere):
         kind = 0
         plane = (0, 0, 0)
@@ -257,11 +273,23 @@ def bind_world(world, spec):
         axial_gravity = np.dot(axis, p.model.gravity)
         props = (1 / mass, axial_gravity, 0, 0, p.kp[0], p.kd[0], p.effort_limit[0], 0, mass)
         kind = 1 + p.delay_steps
+    elif isinstance(spec, RevoluteRotor):
+        kind, domain, axis, rotor_frame, props, state, command = compile_revolute_world(spec)
     else:
-        raise TypeError("expected FreeSphere or PrismaticSlider")
-    constants = as_fp32(props, "world topology", (PROPERTY_WIDTH,))
+        raise TypeError("expected FreeSphere, PrismaticSlider or RevoluteRotor")
+    width = 16 if kind in (3, 4) else PROPERTY_WIDTH
+    constants = as_fp32(props, "world topology", (width,))
     topology = (kind, domain, axis, _values(constants))
     if plane_height is not None:
         topology += ("horizontal-sphere-plane-v1", plane_height)
-    binding = WorldBinding(world, kind, domain, axis, topology, plane_height, slider_frame)
+    if rotor_frame is not None:
+        topology += (
+            "single-revolute-v1",
+            tuple(rotor_frame.origin_m),
+            tuple(rotor_frame.orientation_xyzw),
+            tuple(rotor_frame.axis_local),
+        )
+    binding = WorldBinding(
+        world, kind, domain, axis, topology, plane_height, slider_frame, rotor_frame
+    )
     return binding, constants, state, command

@@ -10,7 +10,8 @@ class WorldKinematics:
     """Read-only rows in requested world order.
 
     A sphere uses world XYZ in m and world linear velocity in m/s.
-    A slider uses q in column 0 and qd in column 3, with zero padding.
+    A slider uses q (m) in column 0 and qd (m/s) in column 3, with zero padding.
+    A revolute uses the same columns for q (rad) and qd (rad/s).
     Widths are 3 or 1. Ticks count committed substeps independently for each key.
     """
 

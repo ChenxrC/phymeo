@@ -1,4 +1,5 @@
 """Ten convex-family inputs with independent parallel support-plane gaps."""
+
 from itertools import combinations_with_replacement, product
 
 import numpy as np
@@ -32,8 +33,12 @@ def convex_case(first_kind, second_kind, gap, *, world=0):
         else:
             xyz[:, 2] += first_extent + extent + gap
         key = CollisionKey(world, body, 0)
-        shape = CollisionShape(key, "hull" if kind == "box" else kind,
-                               tuple(range(body * 100, body * 100 + len(xyz))), radius=radius)
+        shape = CollisionShape(
+            key,
+            "hull" if kind == "box" else kind,
+            tuple(range(body * 100, body * 100 + len(xyz))),
+            radius=radius,
+        )
         shapes.append(shape)
         paths[key] = CollisionMotion(xyz, xyz)
     return tuple(shapes), paths

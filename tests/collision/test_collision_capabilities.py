@@ -1,13 +1,16 @@
 """Capability facts must not confuse geometry, owners, or execution backends."""
+
 from dataclasses import FrozenInstanceError
 from itertools import combinations_with_replacement
 
 import pytest
+from convex_family_cases import KINDS, PAIRS, convex_case
 
 from phymeo.geometry.collision_capabilities import (
-    CollisionCapability, collision_capabilities, get_collision_capability,
+    CollisionCapability,
+    collision_capabilities,
+    get_collision_capability,
 )
-from convex_family_cases import KINDS, PAIRS, convex_case
 
 
 def test_convex_matrix_covers_every_operation_without_duplicate_keys():
@@ -48,14 +51,16 @@ def test_unknown_scope_does_not_silently_inherit_host_or_geometry_support():
 @pytest.mark.parametrize("status", ["all_green", "", "gpu"])
 def test_invalid_registration_status_is_rejected(status):
     with pytest.raises(ValueError):
-        CollisionCapability("sphere", "box", "static", "geometry", "host",
-                            status, "route", "domain", ())
+        CollisionCapability(
+            "sphere", "box", "static", "geometry", "host", status, "route", "domain", ()
+        )
 
 
 def test_verified_without_revision_or_evidence_is_rejected():
     with pytest.raises(ValueError):
-        CollisionCapability("sphere", "box", "static", "geometry", "host",
-                            "verified", "route", "domain", ())
+        CollisionCapability(
+            "sphere", "box", "static", "geometry", "host", "verified", "route", "domain", ()
+        )
 
 
 @pytest.mark.parametrize("kinds", PAIRS)

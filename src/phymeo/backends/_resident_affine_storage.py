@@ -19,6 +19,7 @@ AFFINE_STATUS_NAMES = {
     **STATUS_NAMES,
     7: "AFFINE_CONSTRAINT_RESIDUAL",
     8: "AFFINE_FULL_EQUATION_RESIDUAL",
+    9: "SITE_CAPACITY_EXCEEDED",
 }
 
 
@@ -237,8 +238,15 @@ class AffineTreeDeviceStorage:
     def stage_advance(self, h, src, dst, tick_src, tick_dst, accepted):
         self._check()
         self.invalidate_diagnostics()
+        self.physical.stage_mechanics(src)
+        self.stage_solve_from_mechanics(h, src, dst, tick_src)
+        self.physical.stage_candidate_geometry(dst)
+        self.stage_finalize_and_retain(src, dst, tick_src, tick_dst, accepted)
+
+    def stage_solve_from_mechanics(self, h, src, dst, tick_src):
+        """Project the complete full loads once, then run the original K solve."""
+        self._check()
         p, launch = self.physical, self.batch._launch
-        p.stage_mechanics(src)
         launch(
             self.kernels["project"][src],
             self.count,
@@ -301,9 +309,12 @@ class AffineTreeDeviceStorage:
             self.metrics,
         )
         self.batch._counts["affine_expand_kernel_launches"] += 1
-        p.stage_candidate_geometry(dst)
-        p.stage_finalize(src, dst, tick_src, tick_dst, accepted)
-        launch(
+
+    def stage_finalize_and_retain(self, src, dst, tick_src, tick_dst, accepted):
+        """Apply the same full-world decision to physical and independent banks."""
+        self._check()
+        self.physical.stage_finalize(src, dst, tick_src, tick_dst, accepted)
+        self.batch._launch(
             self.kernels["retain"][src],
             self.count,
             self.meta,
@@ -492,6 +503,14 @@ class AffineTreeDeviceStorage:
         self._check()
         output = {world: None for world in keys}
         selected = [world for world in keys if self._valid[world]]
+        if selected:
+            output.update(self._read_diagnostics(selected))
+        return output
+
+    def _read_diagnostics(self, selected):
+        """Read this candidate before or after publication, without solving it."""
+        self._check()
+        output = {}
         if not selected:
             return output
         p = self.physical

@@ -458,7 +458,7 @@ class TyxWorldBatch:
                         self._counts["revolute_kernel_launches"] += 1
                     for _, storage in self._tree_storages():
                         if contacts is not None and contacts._handles(storage):
-                            contacts._stage_tree(attempt, dt, src, dst)
+                            contacts._stage_tree(storage, attempt, dt, src, dst)
                         else:
                             storage.stage_advance(
                                 dt, src, dst, self._ticks[src], self._ticks[dst], self._status

@@ -73,12 +73,13 @@ def contact_project(
 
 def contact_reject(
     count: tx.i32,
+    code: tx.i32,
     reject: tx.ndarray(tx.i32, 1),
     info: tx.ndarray(tx.i32, 2),
 ):
     for w in tx.range(count):
         if reject[w] != 0:
-            info[w, 2] = 7
+            info[w, 2] = code
 
 
 def make_contact_kernels():

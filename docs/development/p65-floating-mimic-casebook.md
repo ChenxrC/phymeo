@@ -81,3 +81,31 @@ scene 后续事务应覆盖：一个参与者限位拒步与晚期事件 staging
 父待执行首 RED：`tests/test_floating_mimic.py::test_a01_public_floating_mimic_preserves_mass_and_root_reaction`。后续单文件覆盖 F01/F01-G/F02，参数化实际数量以父 collection 为准。所有状态均 UNEXECUTED，未标 RED/GREEN。没有增加产品源码、共享导出、GPU、pad适配或新求解器；不重跑旧组。
 
 原100 g mimic持稳在1.048 s滑移3.005689 mm、超过3 mm门且净空仅3.499783 mm的 RAW1继续保留。此片补浮根约束和真实反作用，不改摩擦/持稳门，不将 F03 无摩擦被动窗口代替该原失败。[原报告](../benchmarks/p65-force-events-filtered-batch2.md)
+
+## T3 tests-first 冻结（2026-11-07，AUTHORING_ONLY）
+
+此追加接续上面的 F03 候选，未修改原 F01/F02/F03 输入或验收门。父已接受 T2：110 新23项、111受影响旧37项及112/113静态检查通过；这些是父的既有结果，本次未重跑。本 T3 新测试与例程均 **UNEXECUTED**，不得将编写完成标成物理通过。产品 participant 尚未编写，先由父记录公开 builder 的有效 RED。
+
+首节点：`tests/test_floating_mimic_scene.py::test_a01_public_builder_accepts_reduced_controls_and_full_physical_owners`。先调用已验独立资产的 +1 N 单步，核原行乘子 −4/7 N，再通过 `ContactSceneBuilder.add_floating_urdf(loader=load_floating_mimic_urdf)` 登记同一资产；期待当前缺口在 wrapper 注册而非缺失模块。公开观察固定为 q/v 8/7、full_q/full_v 9/8、contact_effort 7、full 接触/加速度/施加载荷8、真实 body COM wrench 3×6。shape/material 仍属于真实 full tree，根不伪装固定支座。
+
+### 补充正控：实际自由根 PD 与普通机器人互碰
+
+PD 四个实例复用 F01 的全部物理参数，初始 q/v=0，g=0，kp=100 N/m、kd=2 N·s/m、target=0.01 m、h=1/128 s。独立电机配置上限1.5 N；命令分别为 `(cap, root COM +X force, feedforward)=(1.5,0,0)、(0.25,0,0)、(1.5,1,None)、(1.5,1,0)`。external 完整三个 COM 行，只有根 +X 力 F 非零，external.effort 全零。真实根 Schur 得 `M_eff=14/5 kg, b_eff=−F/5 N`；令 `a=h(100h+2)/M_eff`，`ff=b_eff` 仅用于 None，显式0保持0，预期 `tau=clip((1+ff+a*b_eff)/(1+a), ±cap)`。根/driver/follower 的 +X 加速度分别 `(3F+tau)/14、(F+5tau)/14、−(F+5tau)/14 m/s²`；原约束行乘子 `(2F−4tau)/7 N`。根完整外载、resolved 和 requested command 都独立保留，不能把接触当默认前馈，也不能把 target 直接写进状态。
+
+普通机器人留出声明另一非 mimic 固定根树：一个 +X prismatic、移动质量1 kg、COM 在关节局部原点，I=(0.01,0.015,0.02) kg·m²，球半径1/16 m；轴原点 `x=1/4+0.004+1/32+1/16−1/1024 m,y=z=0`，q/v=0，关节范围±0.01 m、速度1 m/s、effort4 N。world23/body42，与 jaws body17 配同一 k2048/d0/mu0，h=1/1024 s，两侧驱动均0。球与 right_pad 的有限 +X 面穿深1/1024 m，真实法向采样应为2 N。独立投影载荷 `(root,driver)=(-2,+2) N` 和质量矩阵 `[[5,-1],[-1,3]] kg` 给根 −2/7、driver +4/7、follower −4/7 m/s²，普通轴 +2 m/s²，原行乘子 +2/7 N；各 COM 矩为0，总 +X 线动量为0。两登记顺序均覆盖；每条 material 地址按实际所属 full link 原点重建世界表面点，与共同作用点分开，不借组件序号推材料身份。
+
+### 原 F03 的完整物理保存与有限窗口门
+
+`examples/floating_mimic_contact.py` 只用原 F03 公开声明和 `scene.step` 推进：T=1/4 s，h=1/2048 与1/4096 s；另分别使用 h 跑反序登记和整体轴循环 `R(x,y,z)=(z,x,y)`、平移 `(1/2,−1/4,3/4) m`，同时变换初始速度与位置。没有重置、预设之后姿态、路径/物性/门的再调整。四窗合计计划2560个真实子步，数量不是已执行事实。
+
+每个接受步保存完整 public reading、独立/full 初末状态、完整 SurfaceLoads 与原材料/作用点、各 body COM 力矩、mimic 原行反力/功、事件时间、当前 geometry poses，以及同一入步的 full M/b 与平衡残差。initial 保存完整模型/geometry；静态模型不逐帧复制。另保存自由球累计真实力冲量、声明质量/惯量下的总线/角动量与动能。M/b 是产品收据的逐步余额诊断，不是独立动力学 oracle；独立解析正控在上述 PD/2 N 节点。载荷/功/材料属于 `load_time_s`，状态与 geometry 属于 `time_s`；共同点力矩抵消不等于有限步总角动量精确守恒，实际角动量残差保留而不改名。
+
+窗口要求从层外到真实受载再卸载、末态无正法向力、root/关节确有响应；各步核双侧合力/共同点矩及实际入步功率、约束功与根约束残差。原步长门保持：位移差≤0.5 mm、平移速度差≤5e−3 m/s、角速度/关节速率差≤1e−2（rad/s或m/s）、累计球冲量差≤5e−3 N·s；另本例整体线动量残差上限5e−4 N·s，单步 full 力余额绝对门1e−8（N或N·m），功率门1e−9 W。未从运行结果反调门。若超联合限位/支持域或未离开，文件保真实异常及全部已接受前缀，qualified=false，不把缺失终态作通过。
+
+pytest module fixture 把四份完整结果分别无损写入其明确 basetemp 下 `floating-mimic-full-windows*/{h,half,reverse,transform}.json.gz`，包含失败前缀，不按结果删帧。CLI 要求新的绝对 `--out`，可用 `.json.gz`，固定输入由 `--dt`、`--transformed`、`--reverse-registration` 选择；`--fixture-dir` 只定位随交付的两份既有 URDF 目录。收据带 fixture/driver SHA256，若 standalone 失败退出2。父执行时同时绑定 source 和 wheel 路径，作者本批不执行。
+
+### 事务、所有权与待执行清单
+
+普通轴初态 `(q,v)=(0.0099999 m,0.001 m/s)`，无驱动将于 h=1/1024 s 超 +0.01 m 联合边界；同时给浮根 COM +1 N、远处分离自由球 +Y 7 N，确保存在其他真实候选。失败时全部状态、geometry、reading、time、events 不变；同态普通轴命令 −4 N 的合法重试与 fresh scene 比全量。另一例先接受真实2 N 接触，再注入晚期 events.stage 错误，核共同回滚及合法重试一致。输入数组后改、返回的可写载荷数组后改均不能改引擎旧读数；sample/observe_scene 不消耗 episode。
+
+预期专项为首公开入口1、PD4、普通机器人互碰2、共同回滚/晚期回滚/所有权各1、完整窗口/步长/反序协变各1；手工计13实例，实际 collection 由父报告。首 RED 后才进入已授权的 NEW participant 实现阶段。仍不增加 CUDA、CCD、静摩擦或抓取持稳结论；原100 g 持稳 RAW1与其门原样保留。

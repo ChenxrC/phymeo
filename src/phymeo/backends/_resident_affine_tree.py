@@ -279,8 +279,10 @@ class AffineTreeWorldSpec:
         motor[self.independent] = reduced[:, 2]
         _near(full[:, 2], motor, "full motor effort")
         _near(reduced[:, 3], self.matrix.astype(float).T @ full[:, 3], "generalized applied load")
-        _near(self.constraints.astype(float) @ full[:, 0], self.row_values[:, 1], "original row position")
-        _near(self.constraints.astype(float) @ full[:, 1], np.zeros(self.r), "original row velocity")
+        for row, (driver, follower) in enumerate(self.row_indices):
+            gain, offset = self.row_values[row].astype(float)
+            _near(full[follower, 0], gain*float(full[driver, 0])+offset, "original row position")
+            _near(full[follower, 1], gain*float(full[driver, 1]), "original row velocity")
 
     def checkpoint(self, world, reduced, full, tick, drive, loads):
         a, b = np.asarray(reduced)[:self.k], np.asarray(full)[:self.n]

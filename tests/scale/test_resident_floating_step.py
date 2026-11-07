@@ -7,6 +7,7 @@ to the parent; all literal masses, loads and tolerances are declared inputs.
 
 import gzip
 import json
+from functools import lru_cache
 from collections.abc import Mapping
 from dataclasses import fields, is_dataclass
 
@@ -123,6 +124,7 @@ def test_p03_public_floating_tree_keeps_complete_mass_and_internal_recoil(tyx_mo
 # They do not change its already-frozen physical input or acceptance gates.
 
 
+@lru_cache(maxsize=1)
 def _reference():
     import importlib.util
     from pathlib import Path
@@ -528,3 +530,80 @@ def test_p06_candidate_domain_failure_is_world_local_and_does_not_keep_old_diagn
         assert batch.tree_diagnostics()[503] is None
         batch.restore({503:state}); assert batch.step(H)=={503:True,91:True}
         _save(tmp_path,"floating-domain-retain",dict(kind=kind,input=data,before=before,recovered=batch.snapshot(),geometry=batch.tree_kinematics(),stats=batch.stats()))
+
+@pytest.mark.tyx
+def test_p06_full_cross_motor_mobility_low_budget_rejects_then_full_budget_agrees(tyx_mode,tmp_path):
+    data=_reference().case("P05",n=2)
+    data["root_com"][:]=0; data["root_inertia"][:]=.5; data["root_inertia_frame"][:]=[0,0,0,1]
+    data["q"][:]=[0,0,0,0,0,0,1,0,0]; data["v"][:]=0; data["gravity"][:]=0
+    c=data["children"]
+    c.update(parents=np.array([-1,-1]),kinds=("prismatic","prismatic"),offsets=np.zeros((2,3)),orientations=np.tile([0.,0.,0.,1.],(2,1)),axes=np.tile([1.,0.,0.],(2,1)),mass=np.ones(2),com=np.zeros((2,3)),inertia=np.full((2,3),.25))
+    data["drive"][:]=[[0,1/128,0],[0,-1/128,0]]
+    data["effort"][:]=0; data["force"][:]=0; data["torque"][:]=0
+    kp,kd,caps=np.zeros(2),np.full(2,1024.),np.full(2,64.)
+    truth=_reference().mechanics(data,data["q"],data["v"])
+    _close(truth["mass"][np.ix_([0,6,7],[0,6,7])],[[4,1,1],[1,1,0],[1,0,1]],atol=2e-12,rtol=0)
+    _close(np.linalg.inv(truth["mass"])[6:,6:],[[1.5,.5],[.5,1.5]],atol=2e-12,rtol=0)
+    wide=_tree(data,kp=kp,kd=kd,cap=caps)
+    narrow=_tree(data,kp=kp,kd=kd,cap=caps,iterations=1)
+    with ph.TyxWorldBatch([(503,narrow),(91,ph.FreeSphere(2,1/8,gravity=(0,0,0)))],tyx_mode,cache_root=tmp_path/"budget1") as batch:
+        batch.set_controls({503:_packet(narrow,data)[0]}); before=batch.snapshot()
+        assert batch.step(H)=={503:False,91:True}
+        assert batch.snapshot()[503]==before[503] and batch.tree_diagnostics()[503] is None
+        _save(tmp_path,"floating-low-budget",dict(input=data,before=before,retained=batch.snapshot(),stats=batch.stats()))
+    rows=_window(data,tyx_mode,tmp_path/"budget512",steps=2,kp=kp,kd=kd,cap=caps)
+    _close(rows[0]["diagnostic"].drive,[4,-4])
+    _close(rows[0]["diagnostic"].acceleration,[0,0,0,0,0,0,4,-4])
+    assert wide is not narrow
+
+
+@pytest.mark.parametrize("problem",("n17","gain_width","negative_gain","delay2","bool_iterations","zero_iterations","nonunit_initial","load_effort_width","load_body_width"))
+def test_p06_declared_input_dimensions_and_resources_reject_before_runtime(problem):
+    data=_reference().case("P05",n=17 if problem=="n17" else 1)
+    options={}
+    if problem=="gain_width": options["kp"]=np.ones(2)
+    elif problem=="negative_gain": options["kd"]=np.array([-1.])
+    elif problem=="delay2": options["delay"]=2
+    elif problem=="bool_iterations": options["iterations"]=True
+    elif problem=="zero_iterations": options["iterations"]=0
+    elif problem=="nonunit_initial": data["q"][3:7]=[0,0,0,1.01]
+    if problem.startswith("load_"):
+        tree=_tree(data)
+        with pytest.raises((TypeError,ValueError)):
+            external=FloatingRobotInputs(np.zeros(2 if problem=="load_effort_width" else 1),np.zeros((3 if problem=="load_body_width" else 2,3)),np.zeros((2,3)))
+            tree.inputs(np.zeros((1,3)),external)
+    else:
+        with pytest.raises((TypeError,ValueError)):
+            _tree(data,**options)
+
+
+@pytest.mark.tyx
+def test_p06_owned_outputs_controls_and_invalid_mixed_update_are_atomic(tyx_mode,tmp_path):
+    data=_reference().case("P03")
+    kp,kd,cap=np.zeros(1),np.zeros(1),np.array([8.])
+    tree=_tree(data,kp=kp,kd=kd,cap=cap)
+    drive=data["drive"].copy(); effort=np.zeros(1); force=np.zeros((2,3)); torque=np.zeros((2,3))
+    external=FloatingRobotInputs(effort,force,torque); packet=tree.inputs(drive,external)
+    drive[:]=99; effort[:]=99; force[:]=99; torque[:]=99
+    kp[:]=99; kd[:]=99; cap[:]=0
+    with ph.TyxWorldBatch([(503,tree),(91,_tree(data))],tyx_mode,cache_root=tmp_path) as batch:
+        batch.set_controls({503:packet,91:packet})
+        before=batch.snapshot()
+        wrong_data=_reference().case("P05",n=2); other=_tree(wrong_data)
+        wrong=_packet(other,wrong_data)[0]
+        with pytest.raises((ValueError,TypeError)):
+            batch.set_controls({503:tree.inputs(np.array([[0.,0.,2.]])),91:wrong})
+        assert batch.snapshot()==before
+        assert batch.step(H)=={503:True,91:True}
+        state,geometry,diag=batch.snapshot(),batch.tree_kinematics(),batch.tree_diagnostics()
+        _close(state[503].velocity,H*np.array([-1.5,0,0,0,0,0,4.5]))
+        _close(state[503].velocity,state[91].velocity,atol=0,rtol=0)
+        old_geometry,old_diag=_json(geometry),_json(diag)
+        for value in (geometry[503].link_position_m,geometry[503].link_rotation,geometry[503].linear_velocity_m_s,diag[503].mass,diag[503].acceleration,diag[503].drive):
+            assert not value.flags.writeable
+            with pytest.raises(ValueError): value.setflags(write=True)
+        assert batch.step(H)=={503:True,91:True}
+        assert _json(geometry)==old_geometry and _json(diag)==old_diag
+        with pytest.raises((ValueError,TypeError)): batch.kinematics([503])
+        with pytest.raises((ValueError,TypeError)): batch.prepare_readback([503],kind="kinematics")
+        _save(tmp_path,"floating-owned-update",dict(input=data,packet=packet,before=before,first=state,first_geometry=geometry,first_diagnostic=diag,retained=batch.snapshot(),stats=batch.stats()))

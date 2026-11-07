@@ -30,7 +30,9 @@ WORLD = 503
 
 @lru_cache(maxsize=1)
 def _ref():
-    path = Path(__file__).resolve().parents[1] / "reference_newton/robot/resident_affine_reference.py"
+    path = (
+        Path(__file__).resolve().parents[1] / "reference_newton/robot/resident_affine_reference.py"
+    )
     spec = importlib.util.spec_from_file_location("c7_frozen_independent_reference", path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
@@ -84,28 +86,39 @@ def _asset(directory, data, *, reorder=False):
 def _orders(asset, data):
     names = tuple(data["model"]["joint_names"][i] for i in _ref().coordinates(data["model"]))
     independent = tuple(names[i] for i in data["independent"])
-    return [names.index(name) for name in asset.tree.joint_names], [independent.index(name) for name in asset.joint_names]
+    return [names.index(name) for name in asset.tree.joint_names], [
+        independent.index(name) for name in asset.joint_names
+    ]
 
 
 def _world(asset, data, *, kp=None, kd=None, cap=None, delay=0, iterations=512):
     _, order = _orders(asset, data)
     k = len(order)
+
     def vector(value, default):
         return np.full(k, default) if value is None else np.asarray(value, dtype=float)[order]
+
     return ph.AffineRobotTree(
-        asset, ph.RobotState(np.asarray(data["s"], float)[order], np.asarray(data["u"], float)[order]),
-        kp=vector(kp, 0), kd=vector(kd, 0), effort_limit=vector(cap, 16),
-        delay_steps=delay, control_max_iterations=iterations,
+        asset,
+        ph.RobotState(np.asarray(data["s"], float)[order], np.asarray(data["u"], float)[order]),
+        kp=vector(kp, 0),
+        kd=vector(kd, 0),
+        effort_limit=vector(cap, 16),
+        delay_steps=delay,
+        control_max_iterations=iterations,
     )
 
 
 def _control(world, asset, data, *, target=None, rate=None, ff=None):
     full_order, order = _orders(asset, data)
     active = list(_ref().coordinates(data["model"]))
+
     def vector(value, default):
         return np.asarray(default if value is None else value, dtype=float)[order]
+
     return world.inputs(
-        vector(target, data["s"]), vector(rate, np.zeros(len(order))),
+        vector(target, data["s"]),
+        vector(rate, np.zeros(len(order))),
         feedforward=vector(ff, data["motor"]),
         loads=ph.RobotInputs(
             np.asarray(data["effort"], float)[full_order],
@@ -137,7 +150,9 @@ def test_c701_public_affine_contact_replaces_follower_three_newtons(tyx_mode, tm
     assert asset.tree.model.dof_count == 2 and len(asset.joint_names) == 1
     np.testing.assert_array_equal(asset.matrix, ((1,), (2,)))
     np.testing.assert_array_equal(asset.offset_vector, (0, 1 / 8))
-    np.testing.assert_array_equal(asset.full_state(ph.RobotState(np.zeros(1), np.zeros(1))).q, (0, 1 / 8))
+    np.testing.assert_array_equal(
+        asset.full_state(ph.RobotState(np.zeros(1), np.zeros(1))).q, (0, 1 / 8)
+    )
     np.testing.assert_array_equal(data["force"], 0)
     world = _world(asset, data)
     record = dict(input=data, h_s=H, backend=tyx_mode)
@@ -159,7 +174,14 @@ def test_c701_public_affine_contact_replaces_follower_three_newtons(tyx_mode, tm
             result = collision.query()
             assert result.candidates == (pair,)
             assert batch.snapshot() == before
-        record.update(before=before, geometry=geometry, collision_model=model, bindings=bindings, original_patch=patch, original_force=sampled)
+        record.update(
+            before=before,
+            geometry=geometry,
+            collision_model=model,
+            bindings=bindings,
+            original_patch=patch,
+            original_force=sampled,
+        )
         try:
             # The accepted asset/full FK/binding and actual old 3 N law precede
             # the real missing capability: ordinary-only prepare_contacts.
@@ -191,9 +213,13 @@ def test_c701_public_affine_contact_replaces_follower_three_newtons(tyx_mode, tm
 
 
 _INITIAL_CENTERS = {
-    "A01F": (1 / 8, 1 / 2, 0), "A02": (-1 / 16, -1 / 2, 0),
-    "A03": (1 / 8, -1 / 2, 0), "A03_flat": (1 / 8, -1 / 2, 0),
-    "A04": (1, 1 / 2, 0), "A05": (1 / 8, 1, 0), "A05G": (1 / 8, 1, 0),
+    "A01F": (1 / 8, 1 / 2, 0),
+    "A02": (-1 / 16, -1 / 2, 0),
+    "A03": (1 / 8, -1 / 2, 0),
+    "A03_flat": (1 / 8, -1 / 2, 0),
+    "A04": (1, 1 / 2, 0),
+    "A05": (1 / 8, 1, 0),
+    "A05G": (1 / 8, 1, 0),
 }
 EXACT = {
     "A01F": ((1,), (-1,), (2, -1)),
@@ -228,12 +254,19 @@ def _contact_geometry(batch, asset, data, *, world=WORLD, kind="sphere"):
     if kind == "sphere":
         authored, ids, radius = center_local[None, :], (71,), 1 / 8
     elif kind == "capsule":
-        authored, ids, radius = center_local + np.array(((0, 0, -1 / 16), (0, 0, 1 / 16))), (17, 43), 1 / 8
+        authored, ids, radius = (
+            center_local + np.array(((0, 0, -1 / 16), (0, 0, 1 / 16))),
+            (17, 43),
+            1 / 8,
+        )
     else:
         assert kind == "hull"
         authored = center_local + _box((-1 / 8, -1 / 16, -1 / 16), (1 / 8, 1 / 16, 1 / 16))
         ids, radius = tuple(range(101, 109)), 0
-    local = np.asarray(site.local_position_m) + authored @ _ref().quaternion_matrix(site.local_orientation_xyzw).T
+    local = (
+        np.asarray(site.local_position_m)
+        + authored @ _ref().quaternion_matrix(site.local_orientation_xyzw).T
+    )
     first, second = ph.CollisionKey(world, 100 + group, 11), ph.CollisionKey(world, 900, 1)
     a = ph.CollisionShape(first, kind, ids, radius, revision=7)
     b = ph.CollisionShape(second, "hull", tuple(range(201, 209)), revision=3)
@@ -245,7 +278,9 @@ def _contact_geometry(batch, asset, data, *, world=WORLD, kind="sphere"):
     Q, shift = _placement(data)
     support = _box(low, high) @ Q.T + shift
     bindings = (
-        ph.ResidentAffineTreeBinding(first, world, group, local, topology=batch.snapshot([world])[world].topology),
+        ph.ResidentAffineTreeBinding(
+            first, world, group, local, topology=batch.snapshot([world])[world].topology
+        ),
         ph.ResidentStaticBinding(second, ph.CollisionMotion(support)),
     )
     sources = {first: (a, group, local), second: (b, None, support)}
@@ -286,7 +321,10 @@ def _state(asset, data, checkpoint):
     full_order, order = _orders(asset, data)
     inverse_full, inverse = np.argsort(full_order), np.argsort(order)
     s, u = np.asarray(checkpoint.position)[inverse], np.asarray(checkpoint.velocity)[inverse]
-    q, v = np.asarray(checkpoint.full_position)[inverse_full], np.asarray(checkpoint.full_velocity)[inverse_full]
+    q, v = (
+        np.asarray(checkpoint.full_position)[inverse_full],
+        np.asarray(checkpoint.full_velocity)[inverse_full],
+    )
     _close(q, data["P"] @ s + data["c"], atol=2e-5)
     _close(v, data["P"] @ u, atol=2e-5)
     _close(data["C"] @ q, [row[3] for row in data["rows"]], atol=2e-5)
@@ -301,7 +339,9 @@ def _row_order(asset, data):
 
 
 def _audit_sites(receipt, diagnostic, sources):
-    full_velocity = np.asarray(getattr(receipt.entry_state, "full_velocity", receipt.entry_state.velocity), dtype=float)
+    full_velocity = np.asarray(
+        getattr(receipt.entry_state, "full_velocity", receipt.entry_state.velocity), dtype=float
+    )
     wrench = np.zeros_like(receipt.law_wrench_fp64, dtype=float)
     static, total_work, total_material_work = {}, 0.0, 0.0
     for item in receipt.sites:
@@ -327,15 +367,21 @@ def _audit_sites(receipt, diagnostic, sources):
                 rebuilt = p0 + r0 @ material_local
                 reference = entry.com_position_m[group]
                 omega = diagnostic.angular_jacobian[group] @ full_velocity
-                velocity = diagnostic.linear_jacobian[group] @ full_velocity + np.cross(omega, point - reference)
+                velocity = diagnostic.linear_jacobian[group] @ full_velocity + np.cross(
+                    omega, point - reference
+                )
                 displacement = p1 + r1 @ np.linalg.solve(r0, surface - p0) - surface
                 application = p1 + r1 @ np.linalg.solve(r0, point - p0) - point
             rebuilt = rebuilt + (np.zeros(3) if skin is None else skin)
             _close(rebuilt, surface, atol=1e-10, rtol=0)
             _close(getattr(item, side + "_reference_point_m"), reference, atol=1e-10, rtol=0)
             _close(getattr(item, side + "_velocity_m_s"), velocity)
-            _close(getattr(item, side + "_material_displacement_m"), displacement, atol=1e-10, rtol=0)
-            _close(getattr(item, side + "_application_displacement_m"), application, atol=1e-10, rtol=0)
+            _close(
+                getattr(item, side + "_material_displacement_m"), displacement, atol=1e-10, rtol=0
+            )
+            _close(
+                getattr(item, side + "_application_displacement_m"), application, atol=1e-10, rtol=0
+            )
             force = np.asarray(getattr(item, side + "_force_n"))
             work += float(force @ application)
             material_work += float(force @ displacement)
@@ -351,7 +397,9 @@ def _audit_sites(receipt, diagnostic, sources):
         total_material_work += material_work
     _close(receipt.law_wrench_fp64, wrench)
     np.testing.assert_array_equal(receipt.uploaded_wrench_fp32, np.asarray(wrench, np.float32))
-    projected = np.einsum("bij,bi->j", diagnostic.linear_jacobian, wrench[:, :3]) + np.einsum("bij,bi->j", diagnostic.angular_jacobian, wrench[:, 3:])
+    projected = np.einsum("bij,bi->j", diagnostic.linear_jacobian, wrench[:, :3]) + np.einsum(
+        "bij,bi->j", diagnostic.angular_jacobian, wrench[:, 3:]
+    )
     _close(receipt.contact_generalized, projected)
     for key, reaction in receipt.static_reactions.items():
         _close(reaction.reference_point_m, sources[key][2].mean(axis=0), atol=1e-12, rtol=0)
@@ -409,9 +457,17 @@ def _audit_step(batch, world, asset, data, entry, receipt, sources, *, h=H, moto
     _close(meta["application_work_j"], work["application_work_j"], atol=1e-12, rtol=1e-10)
     _close(meta["material_work_j"], work["material_work_j"], atol=1e-12, rtol=1e-10)
     full_power = float(receipt.contact_generalized @ np.asarray(entry.full_velocity))
-    reduced_power = float((meta["projection_matrix"].T @ receipt.contact_generalized) @ np.asarray(entry.velocity))
+    reduced_power = float(
+        (meta["projection_matrix"].T @ receipt.contact_generalized) @ np.asarray(entry.velocity)
+    )
     _close(full_power, reduced_power, atol=2e-5)
-    return dict(independent=truth, diagnostic=diag, row_multipliers_source=np.asarray(diag.row_multipliers)[np.argsort(rows)], work=work, entry_virtual_power_w=full_power)
+    return dict(
+        independent=truth,
+        diagnostic=diag,
+        row_multipliers_source=np.asarray(diag.row_multipliers)[np.argsort(rows)],
+        work=work,
+        entry_virtual_power_w=full_power,
+    )
 
 
 @pytest.mark.tyx
@@ -419,7 +475,9 @@ def _audit_step(batch, world, asset, data, entry, receipt, sources, *, h=H, moto
 def test_c702_c705_full_coupling_and_original_row_reaction(name, tyx_mode, tmp_path):
     data = _placed_case(name)
     truth = _expected(data, data["s"], data["u"])
-    for actual, exact in zip((truth["acceleration"], truth["multipliers"], truth["reaction"]), EXACT[name], strict=True):
+    for actual, exact in zip(
+        (truth["acceleration"], truth["multipliers"], truth["reaction"]), EXACT[name], strict=True
+    ):
         _close(actual, exact, atol=2e-13, rtol=0)
     asset = _asset(tmp_path, data)
     world = _world(asset, data)
@@ -428,32 +486,47 @@ def test_c702_c705_full_coupling_and_original_row_reaction(name, tyx_mode, tmp_p
         batch.set_controls({WORLD: _control(world, asset, data)})
         model, bindings, sources, pair = _contact_geometry(batch, asset, data)
         before = batch.snapshot()[WORLD]
-        with batch.prepare_contacts(model, bindings, {pair: ph.RobotContactMaterial(64, 0, 0)}) as plan:
+        with batch.prepare_contacts(
+            model, bindings, {pair: ph.RobotContactMaterial(64, 0, 0)}
+        ) as plan:
             try:
                 assert batch.step_contacts(plan, H) == {WORLD: True}
                 receipt = plan.last_accepted[WORLD]
-                record.update(receipt=receipt, audit=_audit_step(batch, WORLD, asset, data, before, receipt, sources))
+                record.update(
+                    receipt=receipt,
+                    audit=_audit_step(batch, WORLD, asset, data, before, receipt, sources),
+                )
             finally:
-                record.update(retained=batch.snapshot(), stats=batch.stats(), plan_stats=plan.stats())
+                record.update(
+                    retained=batch.snapshot(), stats=batch.stats(), plan_stats=plan.stats()
+                )
                 _save(tmp_path, name + "-exact-contact", record)
 
 
 @pytest.mark.tyx
 @pytest.mark.parametrize("kind,sites", [("capsule", 2), ("hull", 4)])
-def test_c701_finite_patch_normalization_does_not_multiply_follower_load(kind, sites, tyx_mode, tmp_path):
+def test_c701_finite_patch_normalization_does_not_multiply_follower_load(
+    kind, sites, tyx_mode, tmp_path
+):
     data = _placed_case("A01F")
     asset = _asset(tmp_path, data)
     with ph.TyxWorldBatch([(WORLD, _world(asset, data))], tyx_mode, cache_root=tmp_path) as batch:
         model, bindings, sources, pair = _contact_geometry(batch, asset, data, kind=kind)
         before = batch.snapshot()[WORLD]
-        with batch.prepare_contacts(model, bindings, {pair: ph.RobotContactMaterial(64, 0, 0)}) as plan:
+        with batch.prepare_contacts(
+            model, bindings, {pair: ph.RobotContactMaterial(64, 0, 0)}
+        ) as plan:
             assert batch.step_contacts(plan, H) == {WORLD: True}
             receipt = plan.last_accepted[WORLD]
             assert len(receipt.sites) == sites
             assert sum(site.geometry.weight for site in receipt.sites) == pytest.approx(1)
             _close(receipt.law_wrench_fp64[-1], (3, 0, 0, 0, 0, 0))
             audit = _audit_step(batch, WORLD, asset, data, before, receipt, sources)
-            _save(tmp_path, kind + "-normalization", dict(input=data, receipt=receipt, audit=audit, stats=batch.stats()))
+            _save(
+                tmp_path,
+                kind + "-normalization",
+                dict(input=data, receipt=receipt, audit=audit, stats=batch.stats()),
+            )
 
 
 def _window(directory, data, mode, *, reorder=False, steps=40):
@@ -464,7 +537,9 @@ def _window(directory, data, mode, *, reorder=False, steps=40):
     with ph.TyxWorldBatch([(WORLD, world)], mode, cache_root=directory) as batch:
         batch.set_controls({WORLD: _control(world, asset, data)})
         model, bindings, sources, pair = _contact_geometry(batch, asset, data)
-        with batch.prepare_contacts(model, bindings, {pair: ph.RobotContactMaterial(64, 0, 0)}) as plan:
+        with batch.prepare_contacts(
+            model, bindings, {pair: ph.RobotContactMaterial(64, 0, 0)}
+        ) as plan:
             try:
                 for index in range(steps):
                     expected = _expected(data, expected_s, expected_u)
@@ -478,9 +553,31 @@ def _window(directory, data, mode, *, reorder=False, steps=40):
                     _close(actual_s, expected_s, atol=WINDOW_ATOL)
                     _close(actual_u, expected_u, atol=WINDOW_ATOL)
                     assert receipt.exit_tick == index + 1
-                    rows.append(dict(receipt=receipt, audit=audit, actual_state=(actual_s.copy(), actual_u.copy()), oracle_state=(expected_s.copy(), expected_u.copy()), stats=batch.stats()))
+                    rows.append(
+                        dict(
+                            receipt=receipt,
+                            audit=audit,
+                            actual_state=(actual_s.copy(), actual_u.copy()),
+                            oracle_state=(expected_s.copy(), expected_u.copy()),
+                            stats=batch.stats(),
+                        )
+                    )
             finally:
-                _save(directory, "continuous-contact", dict(input=data, h_s=H, steps=steps, rows=rows, last_accepted=plan.last_accepted, diagnostic=batch.tree_diagnostics(), retained=batch.snapshot(), plan_stats=plan.stats(), stats=batch.stats()))
+                _save(
+                    directory,
+                    "continuous-contact",
+                    dict(
+                        input=data,
+                        h_s=H,
+                        steps=steps,
+                        rows=rows,
+                        last_accepted=plan.last_accepted,
+                        diagnostic=batch.tree_diagnostics(),
+                        retained=batch.snapshot(),
+                        plan_stats=plan.stats(),
+                        stats=batch.stats(),
+                    ),
+                )
     return rows
 
 
@@ -491,8 +588,12 @@ def test_c701_c705_forty_continuous_steps_use_current_geometry(name, tyx_mode, t
     assert len(rows) == 40
     if name == "A04":
         first = rows[0]["receipt"]
-        assert not np.array_equal(first.entry_geometry.link_rotation, first.accepted_geometry.link_rotation)
-        assert any(np.linalg.norm(site.first_application_displacement_m) > 0 for site in first.sites)
+        assert not np.array_equal(
+            first.entry_geometry.link_rotation, first.accepted_geometry.link_rotation
+        )
+        assert any(
+            np.linalg.norm(site.first_application_displacement_m) > 0 for site in first.sites
+        )
 
 
 @pytest.mark.tyx
@@ -515,12 +616,16 @@ def test_c703_chain_and_flatten_keep_motion_but_preserve_distinct_original_rows(
         _close(a["receipt"].accepted_state.position, b["receipt"].accepted_state.position)
         _close(a["receipt"].accepted_state.full_velocity, b["receipt"].accepted_state.full_velocity)
         assert a["receipt"].diagnostics["graph_token"] != b["receipt"].diagnostics["graph_token"]
-        assert not np.allclose(a["audit"]["diagnostic"].row_multipliers, b["audit"]["diagnostic"].row_multipliers)
+        assert not np.allclose(
+            a["audit"]["diagnostic"].row_multipliers, b["audit"]["diagnostic"].row_multipliers
+        )
 
 
 @pytest.mark.tyx
 @pytest.mark.parametrize("delay", (0, 1))
-def test_c7_pd_delay_retains_current_contact_and_real_independent_history(delay, tyx_mode, tmp_path):
+def test_c7_pd_delay_retains_current_contact_and_real_independent_history(
+    delay, tyx_mode, tmp_path
+):
     data = _placed_case("A01F")
     asset = _asset(tmp_path, data)
     world = _world(asset, data, kd=[6], cap=[1 / 4], delay=delay)
@@ -528,7 +633,9 @@ def test_c7_pd_delay_retains_current_contact_and_real_independent_history(delay,
     with ph.TyxWorldBatch([(WORLD, world)], tyx_mode, cache_root=tmp_path) as batch:
         batch.set_controls({WORLD: _control(world, asset, data, rate=[1 / 4], ff=[1 / 8])})
         model, bindings, sources, pair = _contact_geometry(batch, asset, data)
-        with batch.prepare_contacts(model, bindings, {pair: ph.RobotContactMaterial(64, 0, 0)}) as plan:
+        with batch.prepare_contacts(
+            model, bindings, {pair: ph.RobotContactMaterial(64, 0, 0)}
+        ) as plan:
             for index in range(2):
                 before = batch.snapshot()[WORLD]
                 tau = -6 * H / (1 + H) if delay and index == 0 else 1 / 4
@@ -537,12 +644,18 @@ def test_c7_pd_delay_retains_current_contact_and_real_independent_history(delay,
                 receipt = plan.last_accepted[WORLD]
                 _close(receipt.actual_drive, [tau])
                 _close(receipt.selected_drive, [expected_selected])
-                audit = _audit_step(batch, WORLD, asset, data, before, receipt, sources, motor=[tau])
+                audit = _audit_step(
+                    batch, WORLD, asset, data, before, receipt, sources, motor=[tau]
+                )
                 assert receipt.entry_state.control == receipt.accepted_state.control
                 if delay:
                     _close(receipt.accepted_state.history, [(0, 1 / 4, 1 / 8)])
                 rows.append(dict(receipt=receipt, audit=audit))
-            _save(tmp_path, "pd-delay-contact", dict(input=data, delay=delay, rows=rows, stats=batch.stats()))
+            _save(
+                tmp_path,
+                "pd-delay-contact",
+                dict(input=data, delay=delay, rows=rows, stats=batch.stats()),
+            )
 
 
 @pytest.mark.tyx
@@ -553,14 +666,22 @@ def test_c7_low_motor_cap_does_not_clip_the_external_contact(tyx_mode, tmp_path)
     with ph.TyxWorldBatch([(WORLD, world)], tyx_mode, cache_root=tmp_path) as batch:
         model, bindings, sources, pair = _contact_geometry(batch, asset, data)
         before = batch.snapshot()[WORLD]
-        with batch.prepare_contacts(model, bindings, {pair: ph.RobotContactMaterial(64, 0, 0)}) as plan:
+        with batch.prepare_contacts(
+            model, bindings, {pair: ph.RobotContactMaterial(64, 0, 0)}
+        ) as plan:
             assert batch.step_contacts(plan, H) == {WORLD: True}
             receipt = plan.last_accepted[WORLD]
             _close(receipt.actual_drive, [-1 / 1024])
             _close(receipt.contact_generalized, [0, 3])
             _close(batch.tree_diagnostics([WORLD])[WORLD].acceleration, [1 - 1 / 6144])
-            audit = _audit_step(batch, WORLD, asset, data, before, receipt, sources, motor=[-1 / 1024])
-            _save(tmp_path, "low-cap-contact", dict(input=data, receipt=receipt, audit=audit, stats=batch.stats()))
+            audit = _audit_step(
+                batch, WORLD, asset, data, before, receipt, sources, motor=[-1 / 1024]
+            )
+            _save(
+                tmp_path,
+                "low-cap-contact",
+                dict(input=data, receipt=receipt, audit=audit, stats=batch.stats()),
+            )
 
 
 @pytest.mark.tyx
@@ -576,7 +697,9 @@ def test_c706_actual_unload_and_reentry_without_reset_or_control_change(h, tyx_m
     with ph.TyxWorldBatch([(WORLD, world)], tyx_mode, cache_root=tmp_path) as batch:
         batch.set_controls({WORLD: _control(world, asset, data)})
         model, bindings, sources, pair = _contact_geometry(batch, asset, data)
-        with batch.prepare_contacts(model, bindings, {pair: ph.RobotContactMaterial(64, 0, 0)}) as plan:
+        with batch.prepare_contacts(
+            model, bindings, {pair: ph.RobotContactMaterial(64, 0, 0)}
+        ) as plan:
             try:
                 for index in range(round((7 / 8) / h)):
                     independent_n = max(0.0, 64 * (3 / 64 - 2 * s))
@@ -594,10 +717,34 @@ def test_c706_actual_unload_and_reentry_without_reset_or_control_change(h, tyx_m
                         departed = index + 1
                     elif departed is not None and normal > 0:
                         returned = index + 1
-                    rows.append(dict(receipt=receipt, audit=audit, independent=(s, u, independent_n), departed=departed, returned=returned, stats=batch.stats()))
+                    rows.append(
+                        dict(
+                            receipt=receipt,
+                            audit=audit,
+                            independent=(s, u, independent_n),
+                            departed=departed,
+                            returned=returned,
+                            stats=batch.stats(),
+                        )
+                    )
                     if returned is not None:
                         break
                 assert departed is not None and returned is not None and returned > departed
                 assert rows[-1]["receipt"].exit_tick * h <= 7 / 8
             finally:
-                _save(tmp_path, "unload-reentry", dict(input=data, h_s=h, maximum_time_s=7 / 8, departed=departed, returned=returned, rows=rows, last_accepted=plan.last_accepted, diagnostic=batch.tree_diagnostics(), retained=batch.snapshot(), stats=batch.stats()))
+                _save(
+                    tmp_path,
+                    "unload-reentry",
+                    dict(
+                        input=data,
+                        h_s=h,
+                        maximum_time_s=7 / 8,
+                        departed=departed,
+                        returned=returned,
+                        rows=rows,
+                        last_accepted=plan.last_accepted,
+                        diagnostic=batch.tree_diagnostics(),
+                        retained=batch.snapshot(),
+                        stats=batch.stats(),
+                    ),
+                )

@@ -63,18 +63,41 @@ def rz(angle):
 def declaration(name, *, flat=False):
     """Frozen physical inputs; contact replaces the selected original applied load."""
     if name == "A03":
-        return dict(name=name, mass=(2, 1, 1), inertia=((1 / 8,) * 3,) * 3,
-                    parents=(-1, -1, -1), kinds=("prismatic",) * 3,
-                    offsets=((0, 0, 0), (0, .5, 0), (0, -.5, 0)), axes=((1, 0, 0),) * 3,
-                    rows=((0, 1, 2, .125), (0, 2, -1, .125)) if flat else ((0, 1, 2, .125), (1, 2, -.5, .1875)),
-                    P=((1,), (2,), (-1,)), c=(0, .125, .125), C=((-2, 1, 0), (1, 0, 1)) if flat else ((-2, 1, 0), (0, .5, 1)),
-                    motor=(7,), effort=(0, 0, 0), initial_center=(.125, -.5, 0))
+        return dict(
+            name=name,
+            mass=(2, 1, 1),
+            inertia=((1 / 8,) * 3,) * 3,
+            parents=(-1, -1, -1),
+            kinds=("prismatic",) * 3,
+            offsets=((0, 0, 0), (0, 0.5, 0), (0, -0.5, 0)),
+            axes=((1, 0, 0),) * 3,
+            rows=((0, 1, 2, 0.125), (0, 2, -1, 0.125))
+            if flat
+            else ((0, 1, 2, 0.125), (1, 2, -0.5, 0.1875)),
+            P=((1,), (2,), (-1,)),
+            c=(0, 0.125, 0.125),
+            C=((-2, 1, 0), (1, 0, 1)) if flat else ((-2, 1, 0), (0, 0.5, 1)),
+            motor=(7,),
+            effort=(0, 0, 0),
+            initial_center=(0.125, -0.5, 0),
+        )
     assert name == "A05"
-    return dict(name=name, mass=(2, 1, 1), inertia=((.125, .125, .25), (.0625, .0625, .125), (.0625, .0625, .125)),
-                parents=(-1, 0, 0), kinds=("revolute", "prismatic", "prismatic"),
-                offsets=((0, 0, 0), (1, 0, 0), (0, 1, 0)), axes=((0, 0, 1), (0, 1, 0), (1, 0, 0)),
-                rows=((1, 2, 2, .125),), P=((1, 0), (0, 1), (0, 2)), c=(0, 0, .125), C=((0, -2, 1),),
-                motor=(0, 0), effort=(0, 1, 0), initial_center=(.125, 1, 0))
+    return dict(
+        name=name,
+        mass=(2, 1, 1),
+        inertia=((0.125, 0.125, 0.25), (0.0625, 0.0625, 0.125), (0.0625, 0.0625, 0.125)),
+        parents=(-1, 0, 0),
+        kinds=("revolute", "prismatic", "prismatic"),
+        offsets=((0, 0, 0), (1, 0, 0), (0, 1, 0)),
+        axes=((0, 0, 1), (0, 1, 0), (1, 0, 0)),
+        rows=((1, 2, 2, 0.125),),
+        P=((1, 0), (0, 1), (0, 2)),
+        c=(0, 0, 0.125),
+        C=((0, -2, 1),),
+        motor=(0, 0),
+        effort=(0, 1, 0),
+        initial_center=(0.125, 1, 0),
+    )
 
 
 def xml_source(data):
@@ -86,7 +109,9 @@ def xml_source(data):
         ET.SubElement(inertial, "origin", xyz="0 0 0", rpy="0 0 0")
         ET.SubElement(inertial, "mass", value=str(data["mass"][i]))
         ix, iy, iz = data["inertia"][i]
-        ET.SubElement(inertial, "inertia", ixx=str(ix), iyy=str(iy), izz=str(iz), ixy="0", ixz="0", iyz="0")
+        ET.SubElement(
+            inertial, "inertia", ixx=str(ix), iyy=str(iy), izz=str(iz), ixy="0", ixz="0", iyz="0"
+        )
         joint = ET.SubElement(root, "joint", name=f"joint{i}", type=data["kinds"][i])
         parent = data["parents"][i]
         ET.SubElement(joint, "parent", link="base" if parent < 0 else f"link{parent}")
@@ -96,7 +121,9 @@ def xml_source(data):
         ET.SubElement(joint, "limit", lower="-8", upper="8", velocity="16", effort="16")
         for driver, follower, gain, offset in data["rows"]:
             if follower == i:
-                ET.SubElement(joint, "mimic", joint=f"joint{driver}", multiplier=str(gain), offset=str(offset))
+                ET.SubElement(
+                    joint, "mimic", joint=f"joint{driver}", multiplier=str(gain), offset=str(offset)
+                )
     return ET.tostring(root, encoding="unicode")
 
 
@@ -109,16 +136,43 @@ def make_affine(ph, directory, data):
     k = len(data["motor"])
     np.testing.assert_array_equal(asset.matrix, data["P"])
     np.testing.assert_array_equal(asset.offset_vector, data["c"])
-    world = ph.AffineRobotTree(asset, ph.RobotState(np.zeros(k), np.zeros(k)), kp=np.zeros(k), kd=np.zeros(k), effort_limit=np.full(k, 16.0))
-    command = world.inputs(np.zeros(k), np.zeros(k), feedforward=np.asarray(data["motor"]), loads=ph.RobotInputs(np.asarray(data["effort"], float), np.zeros((3, 3)), np.zeros((3, 3))))
+    world = ph.AffineRobotTree(
+        asset,
+        ph.RobotState(np.zeros(k), np.zeros(k)),
+        kp=np.zeros(k),
+        kd=np.zeros(k),
+        effort_limit=np.full(k, 16.0),
+    )
+    command = world.inputs(
+        np.zeros(k),
+        np.zeros(k),
+        feedforward=np.asarray(data["motor"]),
+        loads=ph.RobotInputs(np.asarray(data["effort"], float), np.zeros((3, 3)), np.zeros((3, 3))),
+    )
     return asset, world, command, path
 
 
 def make_ordinary(ph):
-    model = ph.RobotModel(np.array([-1]), ("prismatic",), np.array([[0, 0, 3 / 32]]), np.array([[0, 0, 0, 1.0]]), np.array([[0, 0, 1.0]]), np.array([2.0]), np.zeros((1, 3)), np.full((1, 3), 1 / 8), np.zeros(3))
-    program = ph.DrivenRobotProgram(model, kp=np.zeros(1), kd=np.zeros(1), effort_limit=np.array([8.0]))
-    world = ph.FixedRobotTree(program, program.initial_state(ph.RobotState(np.zeros(1), np.zeros(1))))
-    command = program.inputs(np.zeros(1), np.zeros(1), feedforward=np.zeros(1), loads=ph.RobotInputs.zeros(1))
+    model = ph.RobotModel(
+        np.array([-1]),
+        ("prismatic",),
+        np.array([[0, 0, 3 / 32]]),
+        np.array([[0, 0, 0, 1.0]]),
+        np.array([[0, 0, 1.0]]),
+        np.array([2.0]),
+        np.zeros((1, 3)),
+        np.full((1, 3), 1 / 8),
+        np.zeros(3),
+    )
+    program = ph.DrivenRobotProgram(
+        model, kp=np.zeros(1), kd=np.zeros(1), effort_limit=np.array([8.0])
+    )
+    world = ph.FixedRobotTree(
+        program, program.initial_state(ph.RobotState(np.zeros(1), np.zeros(1)))
+    )
+    command = program.inputs(
+        np.zeros(1), np.zeros(1), feedforward=np.zeros(1), loads=ph.RobotInputs.zeros(1)
+    )
     return world, command
 
 
@@ -137,9 +191,17 @@ def make_geometry(ph, batch, assets, declarations):
             face = cx - 1 / 8 + 3 / 64
             static = box((face - 1 / 4, cy - 1 / 4, -1 / 4), (face, cy + 1 / 4, 1 / 4))
         first, second = ph.CollisionKey(world, 100 + group, 11), ph.CollisionKey(world, 900, 1)
-        a, b = ph.CollisionShape(first, kind, ids, radius), ph.CollisionShape(second, "hull", tuple(range(201, 209)))
+        a, b = (
+            ph.CollisionShape(first, kind, ids, radius),
+            ph.CollisionShape(second, "hull", tuple(range(201, 209))),
+        )
         cls = ph.ResidentTreeBinding if world == 503 else ph.ResidentAffineTreeBinding
-        bindings.extend((cls(first, world, group, local, topology=batch.snapshot([world])[world].topology), ph.ResidentStaticBinding(second, ph.CollisionMotion(static))))
+        bindings.extend(
+            (
+                cls(first, world, group, local, topology=batch.snapshot([world])[world].topology),
+                ph.ResidentStaticBinding(second, ph.CollisionMotion(static)),
+            )
+        )
         shapes.extend((a, b))
         laws[(first, second)] = ph.RobotContactMaterial(64, 0, 0)
         sources[world] = {first: (a, group, local), second: (b, None, static)}
@@ -160,7 +222,7 @@ def oracle(name, s, u):
     q, v = P @ s + c, P @ u
     jv, jw = np.zeros((3, 3, 3)), np.zeros((3, 3, 3))
     if name == "A03":
-        center = np.column_stack((q, [0, .5, -.5], np.zeros(3)))
+        center = np.column_stack((q, [0, 0.5, -0.5], np.zeros(3)))
         rotation = np.repeat(np.eye(3)[None], 3, axis=0)
         for i in range(3):
             jv[i, 0, i] = 1
@@ -186,7 +248,13 @@ def oracle(name, s, u):
         normal = 64 * max(0.0, 1 / 8 + face - r2[0])
         A = 2.5 + slide * slide + q[2] * q[2]
         M = np.array(((A, 1, -1), (1, 1, 0), (-1, 0, 1)))
-        b = np.array((2 * omega * (slide * speed + q[2] * 2 * speed), -slide * omega * omega, -q[2] * omega * omega))
+        b = np.array(
+            (
+                2 * omega * (slide * speed + q[2] * 2 * speed),
+                -slide * omega * omega,
+                -q[2] * omega * omega,
+            )
+        )
         e = np.array((-r2[1] * normal, 1, cos(theta) * normal))
         rhs = P.T @ (e - b)
         det = 5 * A - 1
@@ -195,13 +263,36 @@ def oracle(name, s, u):
         multiplier = -a[0] + 2 * a[1] - q[2] * omega * omega - cos(theta) * normal
         multipliers = np.array([multiplier])
         reaction = np.array((0, -2 * multiplier, multiplier))
-    return dict(q=q, v=v, P=P, c=c, C=C, center=center, rotation=rotation, jv=jv, jw=jw, M=M, b=b, e=e,
-                Mr=P.T @ M @ P, br=P.T @ b, er=P.T @ e, a=a, full_a=full_a, reaction=reaction, multipliers=multipliers, normal=normal,
-                input_external=np.asarray(d["effort"], float), contact_generalized=e - np.asarray(d["effort"], float))
+    return dict(
+        q=q,
+        v=v,
+        P=P,
+        c=c,
+        C=C,
+        center=center,
+        rotation=rotation,
+        jv=jv,
+        jw=jw,
+        M=M,
+        b=b,
+        e=e,
+        Mr=P.T @ M @ P,
+        br=P.T @ b,
+        er=P.T @ e,
+        a=a,
+        full_a=full_a,
+        reaction=reaction,
+        multipliers=multipliers,
+        normal=normal,
+        input_external=np.asarray(d["effort"], float),
+        contact_generalized=e - np.asarray(d["effort"], float),
+    )
 
 
 def audit_sites(receipt, diagnostic, sources):
-    full_velocity = np.asarray(getattr(receipt.entry_state, "full_velocity", receipt.entry_state.velocity), dtype=float)
+    full_velocity = np.asarray(
+        getattr(receipt.entry_state, "full_velocity", receipt.entry_state.velocity), dtype=float
+    )
     wrench = np.zeros_like(receipt.law_wrench_fp64, dtype=float)
     static, total_work, total_material_work = {}, 0.0, 0.0
     for item in receipt.sites:
@@ -227,15 +318,21 @@ def audit_sites(receipt, diagnostic, sources):
                 rebuilt = p0 + r0 @ material_local
                 reference = entry.com_position_m[group]
                 omega = diagnostic.angular_jacobian[group] @ full_velocity
-                velocity = diagnostic.linear_jacobian[group] @ full_velocity + np.cross(omega, point - reference)
+                velocity = diagnostic.linear_jacobian[group] @ full_velocity + np.cross(
+                    omega, point - reference
+                )
                 displacement = p1 + r1 @ np.linalg.solve(r0, surface - p0) - surface
                 application = p1 + r1 @ np.linalg.solve(r0, point - p0) - point
             rebuilt = rebuilt + (np.zeros(3) if skin is None else skin)
             close(rebuilt, surface, atol=1e-10, rtol=0)
             close(getattr(item, side + "_reference_point_m"), reference, atol=1e-10, rtol=0)
             close(getattr(item, side + "_velocity_m_s"), velocity)
-            close(getattr(item, side + "_material_displacement_m"), displacement, atol=1e-10, rtol=0)
-            close(getattr(item, side + "_application_displacement_m"), application, atol=1e-10, rtol=0)
+            close(
+                getattr(item, side + "_material_displacement_m"), displacement, atol=1e-10, rtol=0
+            )
+            close(
+                getattr(item, side + "_application_displacement_m"), application, atol=1e-10, rtol=0
+            )
             force = np.asarray(getattr(item, side + "_force_n"))
             work += float(force @ application)
             material_work += float(force @ displacement)
@@ -251,14 +348,15 @@ def audit_sites(receipt, diagnostic, sources):
         total_material_work += material_work
     close(receipt.law_wrench_fp64, wrench)
     np.testing.assert_array_equal(receipt.uploaded_wrench_fp32, np.asarray(wrench, np.float32))
-    projected = np.einsum("bij,bi->j", diagnostic.linear_jacobian, wrench[:, :3]) + np.einsum("bij,bi->j", diagnostic.angular_jacobian, wrench[:, 3:])
+    projected = np.einsum("bij,bi->j", diagnostic.linear_jacobian, wrench[:, :3]) + np.einsum(
+        "bij,bi->j", diagnostic.angular_jacobian, wrench[:, 3:]
+    )
     close(receipt.contact_generalized, projected)
     for key, reaction in receipt.static_reactions.items():
         close(reaction.reference_point_m, sources[key][2].mean(axis=0), atol=1e-12, rtol=0)
         close(reaction.force_n, static.get(key, np.zeros(6))[:3])
         close(reaction.torque_nm, static.get(key, np.zeros(6))[3:])
     return dict(application_work_j=total_work, material_work_j=total_material_work)
-
 
 
 def audit_world(world, entry, receipt, state, diagnostic, sources):
@@ -288,14 +386,29 @@ def audit_world(world, entry, receipt, state, diagnostic, sources):
         close(truth["C"] @ np.asarray(state.full_velocity), np.zeros(len(truth["C"])), atol=2e-5)
         close(receipt.entry_geometry.com_position_m, truth["center"])
         close(receipt.entry_geometry.link_rotation, truth["rotation"])
-        for field, expected in (("mass", "M"), ("bias", "b"), ("external", "e"), ("reduced_mass", "Mr"), ("reduced_bias", "br"), ("reduced_external", "er"), ("acceleration", "a"), ("full_acceleration", "full_a"), ("constraint_effort_full", "reaction"), ("row_multipliers", "multipliers"), ("linear_jacobian", "jv"), ("angular_jacobian", "jw")):
+        for field, expected in (
+            ("mass", "M"),
+            ("bias", "b"),
+            ("external", "e"),
+            ("reduced_mass", "Mr"),
+            ("reduced_bias", "br"),
+            ("reduced_external", "er"),
+            ("acceleration", "a"),
+            ("full_acceleration", "full_a"),
+            ("constraint_effort_full", "reaction"),
+            ("row_multipliers", "multipliers"),
+            ("linear_jacobian", "jv"),
+            ("angular_jacobian", "jw"),
+        ):
             close(getattr(diagnostic, field), truth[expected])
         close(diagnostic.row_powers_w, np.zeros(len(truth["C"])), atol=2e-5)
         close(diagnostic.constraint_power_w, 0, atol=2e-5)
         close(receipt.input_external, truth["input_external"])
         close(receipt.contact_generalized, truth["contact_generalized"])
         full_power = float(receipt.contact_generalized @ np.asarray(entry.full_velocity))
-        reduced_power = float((truth["P"].T @ receipt.contact_generalized) @ np.asarray(entry.velocity))
+        reduced_power = float(
+            (truth["P"].T @ receipt.contact_generalized) @ np.asarray(entry.velocity)
+        )
         close(full_power, reduced_power, atol=2e-5)
     work = audit_sites(receipt, diagnostic, sources)
     meta = receipt.diagnostics
@@ -322,16 +435,35 @@ def run_window(ph, mode, output, record):
         data = declaration(NAMES[key])
         assets[key], worlds[key], commands[key], source = make_affine(ph, output, data)
         declarations[key] = data
-        record.setdefault("assets", []).append(dict(path=str(source), content=source.read_text(encoding="utf-8"), sha256=hashlib.sha256(source.read_bytes()).hexdigest()))
-    record.update(declarations=declarations, inputs=commands, world_order=ORDER, trace=[], replay=[], checks={})
+        record.setdefault("assets", []).append(
+            dict(
+                path=str(source),
+                content=source.read_text(encoding="utf-8"),
+                sha256=hashlib.sha256(source.read_bytes()).hexdigest(),
+            )
+        )
+    record.update(
+        declarations=declarations,
+        inputs=commands,
+        world_order=ORDER,
+        trace=[],
+        replay=[],
+        checks={},
+    )
     initial_chain, initial_rp = oracle("A03", [0], [0]), oracle("A05", [0, 0], [0, 0])
     close(initial_chain["a"], [4 / 7], atol=2e-13, rtol=0)
     close(initial_chain["multipliers"], [41 / 14, -25 / 7], atol=2e-13, rtol=0)
     close(initial_rp["a"], [-512 / 741, 935 / 741], atol=2e-13, rtol=0)
     close(initial_rp["multipliers"], [53 / 247], atol=2e-13, rtol=0)
     record["independent_initial_checks"] = dict(chain=initial_chain, coupled_rp=initial_rp)
-    expected = {503: (np.zeros(1), np.zeros(1)), 91: (np.zeros(1), np.zeros(1)), 1207: (np.zeros(2), np.zeros(2))}
-    batch = ph.TyxWorldBatch([(key, worlds[key]) for key in ORDER], mode, cache_root=output / "cache")
+    expected = {
+        503: (np.zeros(1), np.zeros(1)),
+        91: (np.zeros(1), np.zeros(1)),
+        1207: (np.zeros(2), np.zeros(2)),
+    }
+    batch = ph.TyxWorldBatch(
+        [(key, worlds[key]) for key in ORDER], mode, cache_root=output / "cache"
+    )
     plan = None
     try:
         batch.set_controls(commands)
@@ -348,7 +480,14 @@ def run_window(ph, mode, output, record):
                 next_v = v + H * t["a"]
                 predicted[key] = (q + H * next_v, next_v)
             row["acceptance"] = batch.step_contacts(plan, H)
-            row.update(state=batch.snapshot(), geometry=batch.tree_kinematics(), diagnostic=batch.tree_diagnostics(), receipts=dict(plan.last_accepted), expected=predicted, stats=batch.stats())
+            row.update(
+                state=batch.snapshot(),
+                geometry=batch.tree_kinematics(),
+                diagnostic=batch.tree_diagnostics(),
+                receipts=dict(plan.last_accepted),
+                expected=predicted,
+                stats=batch.stats(),
+            )
             assert row["acceptance"] == dict.fromkeys(ORDER, True)
             assert set(row["receipts"]) == {503, 91, 1207}
             audits = {}
@@ -360,7 +499,14 @@ def run_window(ph, mode, output, record):
                     close(state.position, [0, 0, 2 - 4 * H * H * n * (n + 1)], atol=WINDOW_ATOL)
                     close(state.velocity, [0, 0, -8 * H * n], atol=WINDOW_ATOL)
                 else:
-                    audits[key] = audit_world(key, entry[key], row["receipts"][key], state, row["diagnostic"][key], sources[key])
+                    audits[key] = audit_world(
+                        key,
+                        entry[key],
+                        row["receipts"][key],
+                        state,
+                        row["diagnostic"][key],
+                        sources[key],
+                    )
                     close(state.position, predicted[key][0], atol=WINDOW_ATOL)
                     close(state.velocity, predicted[key][1], atol=WINDOW_ATOL)
             row.update(audits=audits, checks_complete=True)
@@ -370,8 +516,12 @@ def run_window(ph, mode, output, record):
         record["checks"]["continuous_40"] = True
         # Equal P/c do not authorize exchanging the original constraint graph.
         _, flat_world, _, source = make_affine(ph, output, declaration("A03", flat=True))
-        record["graph_holdout_asset"] = dict(path=str(source), content=source.read_text(encoding="utf-8"))
-        with ph.TyxWorldBatch([(91, flat_world)], mode, cache_root=output / "flat-cache") as foreign:
+        record["graph_holdout_asset"] = dict(
+            path=str(source), content=source.read_text(encoding="utf-8")
+        )
+        with ph.TyxWorldBatch(
+            [(91, flat_world)], mode, cache_root=output / "flat-cache"
+        ) as foreign:
             before = foreign.snapshot()
             try:
                 foreign.restore({91: record["checkpoint_19"][91]})
@@ -383,12 +533,21 @@ def run_window(ph, mode, output, record):
         record["checks"]["graph_identity_rejected"] = True
         epoch = batch.stats()["state_epoch"]
         batch.restore(record["checkpoint_19"])
-        assert batch.snapshot() == record["checkpoint_19"] and batch.stats()["state_epoch"] == epoch + 1
+        assert (
+            batch.snapshot() == record["checkpoint_19"]
+            and batch.stats()["state_epoch"] == epoch + 1
+        )
         for index in range(REPLAY_FROM, STEPS):
             row = dict(checks_complete=False)
             record["replay"].append(row)
             row["acceptance"] = batch.step_contacts(plan, H)
-            row.update(state=batch.snapshot(), geometry=batch.tree_kinematics(), diagnostic=batch.tree_diagnostics(), receipts=dict(plan.last_accepted), stats=batch.stats())
+            row.update(
+                state=batch.snapshot(),
+                geometry=batch.tree_kinematics(),
+                diagnostic=batch.tree_diagnostics(),
+                receipts=dict(plan.last_accepted),
+                stats=batch.stats(),
+            )
             assert row["acceptance"] == dict.fromkeys(ORDER, True)
             prior = record["trace"][index]
             assert row["state"] == prior["state"]
@@ -396,10 +555,23 @@ def run_window(ph, mode, output, record):
             assert json_value(row["receipts"]) == json_value(prior["receipts"])
             row["checks_complete"] = True
         record["checks"]["checkpoint_19_replay_21"] = True
-        before, old_receipts, energy = batch.snapshot(), json_value(plan.last_accepted), batch.summary()
-        with batch.prepare_contacts(model, bindings, laws, site_capacity={503: 128, 91: 0, 1207: 128}) as limited:
+        before, old_receipts, energy = (
+            batch.snapshot(),
+            json_value(plan.last_accepted),
+            batch.summary(),
+        )
+        with batch.prepare_contacts(
+            model, bindings, laws, site_capacity={503: 128, 91: 0, 1207: 128}
+        ) as limited:
             acceptance = batch.step_contacts(limited, H)
-            record["capacity"] = dict(before=before, acceptance=acceptance, after=batch.snapshot(), statuses=limited.last_status, receipts=limited.last_accepted, stats=batch.stats())
+            record["capacity"] = dict(
+                before=before,
+                acceptance=acceptance,
+                after=batch.snapshot(),
+                statuses=limited.last_status,
+                receipts=limited.last_accepted,
+                stats=batch.stats(),
+            )
             assert acceptance == {503: True, 91: False, 1207: True, 6: True}
             assert batch.snapshot()[91] == before[91]
             assert batch.summary()[91] == energy[91]
@@ -408,10 +580,18 @@ def run_window(ph, mode, output, record):
             assert json_value(plan.last_accepted) == old_receipts
         assert batch.step_contacts(plan, H) == dict.fromkeys(ORDER, True)
         assert plan.last_accepted[91].entry_state == before[91]
-        record["capacity_retry"] = dict(state=batch.snapshot(), receipts=plan.last_accepted, stats=batch.stats())
+        record["capacity_retry"] = dict(
+            state=batch.snapshot(), receipts=plan.last_accepted, stats=batch.stats()
+        )
         record["checks"]["local_capacity_and_retry"] = True
         retained = plan.last_accepted[1207]
-        for array in (retained.contact_generalized, retained.law_wrench_fp64, retained.diagnostics["projection_matrix"], retained.diagnostics["affine_diagnostic"].reduced_mass, retained.accepted_geometry.link_rotation):
+        for array in (
+            retained.contact_generalized,
+            retained.law_wrench_fp64,
+            retained.diagnostics["projection_matrix"],
+            retained.diagnostics["affine_diagnostic"].reduced_mass,
+            retained.accepted_geometry.link_rotation,
+        ):
             assert not np.asarray(array).flags.writeable
             try:
                 np.asarray(array).setflags(write=True)
@@ -426,9 +606,13 @@ def run_window(ph, mode, output, record):
         record["checks"]["owned_readonly_observations"] = True
         record["batch_stats_before_close"] = batch.stats()
         record["plan_stats_before_close"] = plan.stats()
-        assert batch.stats()["submitted_kernels"] > 0 and plan.stats()["contact_kernel_launches"] > 0
+        assert (
+            batch.stats()["submitted_kernels"] > 0 and plan.stats()["contact_kernel_launches"] > 0
+        )
     except Exception as error:
-        record["window_error"] = dict(type=type(error).__name__, message=str(error), traceback=traceback.format_exc())
+        record["window_error"] = dict(
+            type=type(error).__name__, message=str(error), traceback=traceback.format_exc()
+        )
         raise
     finally:
         try:
@@ -538,7 +722,6 @@ def module_provenance(site, package_root, wheel):
     return rows
 
 
-
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--mode", choices=("interpret", "cuda"), required=True)
@@ -549,44 +732,112 @@ def main():
     parser.add_argument("--checkout", type=Path, required=True)
     args = parser.parse_args()
     assert __debug__ and sys.flags.isolated and sys.flags.dont_write_bytecode, "use python -I -B"
-    for path in (args.output_dir, args.wheel_site, args.expected_package_root, args.expected_wheel, args.checkout):
+    for path in (
+        args.output_dir,
+        args.wheel_site,
+        args.expected_package_root,
+        args.expected_wheel,
+        args.checkout,
+    ):
         assert path.is_absolute(), "all external paths must be absolute"
-    site, root, checkout = (x.resolve(strict=True) for x in (args.wheel_site, args.expected_package_root, args.checkout))
+    site, root, checkout = (
+        x.resolve(strict=True) for x in (args.wheel_site, args.expected_package_root, args.checkout)
+    )
     script, output = Path(__file__).resolve(strict=True), args.output_dir.resolve()
     assert root == (site / "phymeo").resolve(strict=True)
     assert Path.cwd().resolve() == script.parent
-    assert not script.is_relative_to(checkout) and not site.is_relative_to(checkout) and not output.is_relative_to(checkout)
+    assert (
+        not script.is_relative_to(checkout)
+        and not site.is_relative_to(checkout)
+        and not output.is_relative_to(checkout)
+    )
     assert "phymeo" not in sys.modules
     output.mkdir(parents=True, exist_ok=False)
-    record = dict(status="running", mode=args.mode, errors=[], script=dict(path=str(script), sha256=hashlib.sha256(script.read_bytes()).hexdigest()), expected_package_root=str(root),
-                  gates=dict(h_s=H, steps=STEPS, replay_steps=STEPS-REPLAY_FROM, rtol=RTOL, state_atol=ATOL, window_atol=WINDOW_ATOL, constraint_atol=2e-5, mass_residual=2e-5, bounded_pd_residual=5e-5, material_record_atol=1e-10),
-                  units=dict(q="R rad/P m; scalar xyz m", v="R rad/s/P m/s; scalar m/s", force="N", torque="N*m", energy="J", time="s"),
-                  limits="Installed public functionality smoke; HOST finite narrow/law plus TYX fixed-root response. No benchmark, floating, moving/moving, friction, CCD, native Newton equivalence or replacement for repository C7 tests.")
+    record = dict(
+        status="running",
+        mode=args.mode,
+        errors=[],
+        script=dict(path=str(script), sha256=hashlib.sha256(script.read_bytes()).hexdigest()),
+        expected_package_root=str(root),
+        gates=dict(
+            h_s=H,
+            steps=STEPS,
+            replay_steps=STEPS - REPLAY_FROM,
+            rtol=RTOL,
+            state_atol=ATOL,
+            window_atol=WINDOW_ATOL,
+            constraint_atol=2e-5,
+            mass_residual=2e-5,
+            bounded_pd_residual=5e-5,
+            material_record_atol=1e-10,
+        ),
+        units=dict(
+            q="R rad/P m; scalar xyz m",
+            v="R rad/s/P m/s; scalar m/s",
+            force="N",
+            torque="N*m",
+            energy="J",
+            time="s",
+        ),
+        limits="Installed public functionality smoke; HOST finite narrow/law plus TYX fixed-root response. No benchmark, floating, moving/moving, friction, CCD, native Newton equivalence or replacement for repository C7 tests.",
+    )
     sys.path.insert(0, str(site))
     try:
         import phymeo as ph
+
         assert Path(ph.__file__).resolve(strict=True).parent == root
         installed = distribution("phymeo")
         assert Path(installed.locate_file("")).resolve(strict=True) == site
         record["wheel"] = archive_identity(installed, args.expected_wheel)
         record["modules_before"] = module_provenance(site, root, args.expected_wheel)
-        record["versions"] = dict(phymeo=installed.version, numpy=np.__version__, tyx=distribution("tyx-compute").version, python=sys.version)
+        record["versions"] = dict(
+            phymeo=installed.version,
+            numpy=np.__version__,
+            tyx=distribution("tyx-compute").version,
+            python=sys.version,
+        )
         run_window(ph, args.mode, output, record)
         record["status"] = "passed"
     except Exception as error:
         record["status"] = "failed"
-        record["errors"].append(dict(stage="wheel_import_or_physical_window", type=type(error).__name__, message=str(error), traceback=traceback.format_exc()))
+        record["errors"].append(
+            dict(
+                stage="wheel_import_or_physical_window",
+                type=type(error).__name__,
+                message=str(error),
+                traceback=traceback.format_exc(),
+            )
+        )
     try:
         if "phymeo" in sys.modules:
             record["modules_after"] = module_provenance(site, root, args.expected_wheel)
     except Exception as error:
         record["status"] = "failed"
-        record["errors"].append(dict(stage="final_module_provenance", type=type(error).__name__, message=str(error), traceback=traceback.format_exc()))
+        record["errors"].append(
+            dict(
+                stage="final_module_provenance",
+                type=type(error).__name__,
+                message=str(error),
+                traceback=traceback.format_exc(),
+            )
+        )
     trace = output / "resident-affine-contacts.trace.json.gz"
     with gzip.open(trace, "xt", encoding="utf-8") as stream:
         json.dump(json_value(record), stream, allow_nan=False, separators=(",", ":"))
-    summary = dict(status=record["status"], raw_exit=0 if record["status"] == "passed" else 1, mode=args.mode, full_steps=sum(bool(row.get("checks_complete")) for row in record.get("trace", ())), full_replay_steps=sum(bool(row.get("checks_complete")) for row in record.get("replay", ())),
-                   checks=record.get("checks", {}), wheel=record.get("wheel"), verified_module_count=len(record.get("modules_after", ())), batch_stats=record.get("batch_stats_after_close"), trace=str(trace), errors=record["errors"], limits=record["limits"])
+    summary = dict(
+        status=record["status"],
+        raw_exit=0 if record["status"] == "passed" else 1,
+        mode=args.mode,
+        full_steps=sum(bool(row.get("checks_complete")) for row in record.get("trace", ())),
+        full_replay_steps=sum(bool(row.get("checks_complete")) for row in record.get("replay", ())),
+        checks=record.get("checks", {}),
+        wheel=record.get("wheel"),
+        verified_module_count=len(record.get("modules_after", ())),
+        batch_stats=record.get("batch_stats_after_close"),
+        trace=str(trace),
+        errors=record["errors"],
+        limits=record["limits"],
+    )
     with (output / "summary.json").open("x", encoding="utf-8") as stream:
         json.dump(json_value(summary), stream, allow_nan=False, indent=2)
     print(json.dumps(json_value(summary), allow_nan=False))

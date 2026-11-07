@@ -195,3 +195,16 @@ A06的有限迭代负控现固定为A05的初态Mr，移除额外effort，h=1/10
 父按上述接缝仅修改旧 `_resident_tree_world.py` 与 `_resident_tree_storage.py`。真实 `compile_tree_physical` 返回MappingProxyType，字段为n/model_token/joint_types及parents/kinds/offsets/zero_rotation/local_axis/mass/com/inertia/gravity/anchor（数组owned）；调用方复制mapping后取前三字段，其余可直接作为TreeWorldSpec物理字段。普通compile仍验证原驱动/state/history，所有物理计算式保持。三个stage方法已实现，普通路径调用顺序保持；mechanics与solve每次实际成功launch分别计1，晚launch失败也保留已发生计数。
 
 231Ruff通过，232仅一行排版待改；233formatter及234/235最终静态通过。236 interpret **22 passed / 3.84 s / RAW0**、237 CUDA **22 passed /20.54 s / RAW0**：只运行此次提取实际影响的既有耦合2R、限幅/迭代拒绝、混合restore/重试、owned输入、能力/模型拒绝、fixed工具及非主轴COM外载控制。未重跑旧101全组、Newton或旧wheel。各执行前后源码/原输出留在[本次串行档案](../../../artifacts/p65-generic-collision-20261107-01/)。这关闭的是父共享提取的相邻兼容，C5新功能仍未实现/未通过。
+
+
+### T2 产品作者授权（2026-11-07，无截止）
+
+父已完整文本审阅原作者 c85c63d8a4337acc9cdec8071e07471dd6f85501 的四文件并正常导入5867e17；230首有效RED继续复用。声明的54+44节点仍是未收集的测试矩阵，不能作为98项已通过。当前进入 **PRODUCT_AUTHORING**；所有实际执行仍仅父串行槽。
+
+原 robot 在原隔离树继续，只新增四个产品文件 `src/phymeo/backends/_resident_affine_tree.py`、`_resident_affine_storage.py`、`_tyx_resident_affine_kernels.py`、`_resident_affine_binding.py` 并更新本片报告。原四T1文件中的测试/参考只准修明确作者错误，须单独说明，禁止改变冻结输入、预算、oracle或缩减矩阵。旧源码、导出、batch和collision共享接缝全由父维护；不merge父、不reset、不push、不另起助手。
+
+直接复用父0ce0050已经落地的 `compile_tree_physical` 和三个TreeDeviceStorage阶段方法；允许只读父文件，不把它们复制进新实现。原隔离树没有这些新提取也不构成执行授权。完整M/b/J、FK/energy和geometry bounds仍调用旧树核，新增核只负责P投影、K驱动/求解、full展开、原图反力与K/N联合检查。任何原有签名不足先给出具体字段/调用顺序，父统一调整，不用普通advance再覆盖从动状态。
+
+先提交编译/schema与storage公开私有接口的小检查点：明确 AffineTreeWorldSpec 的physical字段、n/k/token、初始state/control/history，以及storage lifecycle和binding proof/view接口。父随后可并行接旧batch/root/collision hook；无需等待整个产品完成才对接口。后续kernel/事务按第8节后的父接缝落实。状态接受由同一full accepted结果控制，晚异常在唯一swap前抛出，K/N/history/tick不得分开发布。原图每行反力与完整外载持续可见。
+
+禁止作者运行项目import/collection/pytest/数值probe/lint/formatter/compile/build/install/profile/Newton/CI；完成小commit、clean、精确交付范围与未执行报告后释放作者槽。父将按编译/Host能力→interpret→CUDA→独立Newton→新wheel顺序安排必要检查；任何实质失败先保存真实输入和原返回，按原因修复后只重跑受影响组，不为过门调冻结参数。

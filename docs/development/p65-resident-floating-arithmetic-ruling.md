@@ -84,3 +84,47 @@ Sources: [C9 plan](../superpowers/plans/2026-11-08-resident-floating-tree.md),
 [source integration review](../benchmarks/p65-resident-floating-integration-review.md),
 [test authoring report](../benchmarks/p65-resident-floating-tree-tests.md).
 Execution records are under `artifacts/p65-generic-collision-20261107-01`.
+
+## Principal-frame gyroscopic term and the original pi holdout
+
+Run460 finished with 48 passed, one failed and 21 deselected in 3692.83 s.
+It includes the complete W1/W4/W32 physical windows and replay. The exact-pi
+root-only case failed on its second step: an isotropic inertia with a real
+stored z angular velocity of 3216.990966796875 rad/s acquired x/y velocity
+about -0.001204785 rad/s. Its original tolerance remains 5e-6.
+
+The old test saved only after its assertions, so run460 has no complete
+payload for this failed pi case. Run468 retained the identical two-step
+failure after moving observation before assertions and saving in finally.
+The first accepted quaternion produced an FP32 rotation with an orthogonality
+error about 1.1920929e-7. The second step's old world-frame cross product
+formed artificial angular bias (0.6168503165, 0.6168503761, 0), despite zero
+external torque and isotropic principal inertia.
+
+The general correction uses the full body rotation times principal frame R.
+With u = transpose(R) omega, the local gyro components are
+((Iz-Iy) uy uz, (Ix-Iz) uz ux, (Iy-Ix) ux uy), then multiplied by R.
+The I alpha_bias term stays in the same assembly. The old world cross is
+removed, so the gyro is added exactly once. This is the ordinary principal
+inertia formula, not an object-name/isotropic-input special case.
+
+The two expressions are mathematically equivalent for an orthogonal R;
+their FP32 operations are not bitwise equivalent. The new expression makes
+the isotropic gyro exactly zero without orthogonalizing or repairing the
+stored pose. M, J, energy, physical states, domain gates and original
+residual tolerances are unchanged by this correction. It makes no claim to
+remove every rounding error in the rotated mass or energy calculations.
+
+Run469 passed both original pi-neighbourhood nodes (2 passed, 1.22 s).
+Run470 then passed the original nontrivial principal-frame, eccentric-force,
+rotated eccentric and 16-joint branch cases (4 passed, 184.06 s).
+Runs473/474 passed the exact eight changed Python files' lint/format checks;
+475 confirmed their raw ASTs match the pre-style source exactly. The product,
+holdouts and failure observation are committed as ac082e8.
+
+Run476 continues only the 31 original interpret cases not yet completed.
+The passed run460 prefix remains bound to its actual earlier gyro source;
+it is not relabelled as a final-source rerun. Focused correction qualification
+and the forthcoming complete final-source CUDA matrix are separate evidence.
+Native Newton, outside-source wheel and complete saved-record verification
+remain required before limited C9 acceptance.

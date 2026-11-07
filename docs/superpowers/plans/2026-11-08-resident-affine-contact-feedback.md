@@ -67,3 +67,10 @@ C6已正式限域接受，见[报告](../../benchmarks/p65-resident-tree-contact
 ### C7 多世界审阅修复（2026-11-08）
 
 原robot对固定37897e3只读审阅发现一项blocking：动态shape局部group索引遮蔽外层storage组，第二个同storage接触world会TypeError。370用既有C6单个W1/W4对照在新source准确复现（1 failed/8.48s），父仅rename为group_index；371同节点1 passed/14.96s，372/373该文件Ruff/format0。该对照包含真实W1/W4完整结果，非重复旧同源绿集；原C7两affine混合矩阵仍需执行。审阅其余载荷顺序、full/K统一发布、诊断与资源边界无第二项阻断，READ_ONLY_REVIEW_RELEASED；所有首失败保留，不重新派同diff复审。
+### C7 新矩阵与诊断摘要修正（2026-11-08）
+
+已导入原RD最终5dd903f四文件，父8fe797c仅import/格式化；374首Ruff1（单import）、375首format1，376/377修正、378/379最终0。380完整新增interpret余49 passed/145.94s，381实际CUDA余49 passed/224.49s；各deselect仅已在368/369通过的C701首节点，联合覆盖每backend 50，不重复同源首绿。
+
+父另核摘要口径：原nested AffineTreeDiagnostic和原full/K实际接受门始终检查完整max，但generic receipt.diagnostics.equation_residual此前只显示K残差。382在A02加同次记录一致性断言，真实RED显示0.0与6.811959707420101e-8不等。父仅把generic摘要取已有同次nested完整max；383 interpret1/1.10s、384 CUDA1/3.77s通过，385/386两文件Ruff/format0。没有改动载荷、投影、求解、发布、物理门或容差；380/381完整物理证据按原tested source保留，不冒称新摘要在旧输出已存在。固定两A02补件将与原输出比较，只允许摘要字段这一显式更正，其余完整回执须保持。
+
+当前仍需受阶段拆分影响的少量原接口兼容、同次保存完整性与新wheel源码外验证，尚未正式接受C7。

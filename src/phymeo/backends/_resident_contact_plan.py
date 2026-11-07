@@ -560,6 +560,7 @@ class ResidentContactPlan(ResidentCollisionPlan):
                     offset_vector=spec.offset,
                     constraint_rows=spec.constraints,
                     affine_diagnostic=final_data["affine_diagnostics"][world],
+                    equation_residual=final_data["affine_diagnostics"][world].equation_residual,
                 )
             accepted[world] = ResidentContactReceipt(
                 world,

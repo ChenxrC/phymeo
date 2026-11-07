@@ -445,6 +445,7 @@ def _audit_step(batch, world, asset, data, entry, receipt, sources, *, h=H, moto
     _close(meta["offset_vector"], data["c"][full_order])
     _close(meta["constraint_rows"], data["C"][rows][:, full_order])
     assert _json(meta["affine_diagnostic"]) == _json(diag)
+    assert meta["equation_residual"] == diag.equation_residual
     assert after.control == entry.control
     work = _audit_sites(receipt, diag, sources)
     next_q, next_v = data["P"] @ actual_s + data["c"], data["P"] @ actual_u

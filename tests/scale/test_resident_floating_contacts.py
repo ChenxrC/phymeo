@@ -350,14 +350,15 @@ def _window(item, mode, directory, *, steps=40, reverse=False, world=WORLD):
                     before = batch.snapshot([world])[world]
                     assert batch.step_contacts(plan, H) == {world: True}
                     receipt = plan.last_accepted[world]
-                    audit = _audit(batch, item, receipt, sources, world=world)
+                    row = dict(entry=before, receipt=receipt, state=batch.snapshot(),
+                               geometry=batch.tree_kinematics(), summary=batch.summary())
+                    rows.append(row)
+                    row["audit"] = _audit(batch, item, receipt, sources, world=world)
                     q, v, independent = ref.advance(data, q, v, h=H,
                                                     drive=_selected(item, index), external_packet=item["external"])
+                    row.update(independent_window=independent, independent_q=q.copy(), independent_v=v.copy())
                     _close(receipt.accepted_state.position, q, atol=WINDOW_ATOL)
                     _close(receipt.accepted_state.velocity, v, atol=WINDOW_ATOL)
-                    rows.append(dict(entry=before, receipt=receipt, independent_window=independent,
-                                     independent_q=q.copy(), independent_v=v.copy(), audit=audit,
-                                     state=batch.snapshot(), geometry=batch.tree_kinematics(), summary=batch.summary()))
                 record.update(last_status=plan.last_status, stats=batch.stats())
         except BaseException as exc:
             failure = dict(type=type(exc).__name__, message=str(exc))
@@ -430,7 +431,9 @@ def test_f07_finite_shape_geometry_anchor_then_full_response(variant, tyx_mode, 
                 for index in range(2):
                     assert batch.step_contacts(plan, H) == {WORLD: True}
                     receipt = plan.last_accepted[WORLD]
-                    audit = _audit(batch, item, receipt, sources)
+                    row = dict(receipt=receipt, state=batch.snapshot(), geometry=batch.tree_kinematics(), summary=batch.summary())
+                    rows.append(row)
+                    row["audit"] = _audit(batch, item, receipt, sources)
                     if index == 0:
                         magnitude = max(0., -64 * data["first_gap"])
                         _close(receipt.law_wrench_fp64[1, :3], -magnitude * data["first_normal"])
@@ -450,19 +453,20 @@ def test_f07_finite_shape_geometry_anchor_then_full_response(variant, tyx_mode, 
                             for group, sign in ((1, -1.), (2, 1.)):
                                 expected_torque = np.cross(centroid, sign * magnitude * data["first_normal"])
                                 _close(receipt.law_wrench_fp64[group, 3:], expected_torque)
-                    rows.append(dict(receipt=receipt, audit=audit, state=batch.snapshot(),
-                                     geometry=batch.tree_kinematics(), summary=batch.summary()))
         finally:
             record.update(retained=batch.snapshot(), stats=batch.stats())
             _save(tmp_path, "floating-shape-response", record)
 
 
 @pytest.mark.tyx
-@pytest.mark.parametrize("n,variant", ((9, None), (16, None), (16, "body15")))
+@pytest.mark.parametrize("n,variant", ((9, None), (16, None), (16, "body15"), (16, "both")))
 def test_f08_nonaxis_full_tree_and_last_physical_body(n, variant, tyx_mode, tmp_path):
     rows = _window(_item(_reference().case("F08", n=n, variant=variant)), tyx_mode, tmp_path)
     assert rows[0]["receipt"].law_wrench_fp64.shape == (n + 1, 6)
     assert rows[0]["receipt"].contact_generalized.shape == (n + 6,)
+    if variant == "both":
+        _close(rows[0]["receipt"].law_wrench_fp64[0, :3], [0, 2, 0])
+        _close(rows[0]["receipt"].law_wrench_fp64[n, :3], [2, 0, 0])
 
 
 @pytest.mark.tyx

@@ -167,6 +167,9 @@ def case(name, *, n=None, variant=None, placement="base", boost=False):
         center = observed["position"][group]
         _against_wall(data, _sphere(data, group),
                       _wall(data, [1, 0, 0], center - [3 / 32, 0, 0]))
+        if variant == "both":
+            _against_wall(data, _sphere(data, 0),
+                          _wall(data, [0, 1, 0], observed["position"][0] - [0, 3 / 32, 0]))
     elif name == "F08_branch":
         _children(data, [-1, 0, 0], ["revolute", "prismatic", "prismatic"],
                   [[0, 0, 0], [0, 1 / 4, 0], [7 / 32, 1 / 4, 0]],

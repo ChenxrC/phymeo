@@ -199,3 +199,31 @@ Native `add_urdf(..., collapse_fixed_joints=False)` 保 T03 工具部件；root 
 - `ResidentTreeBinding(key, world, group_index, local_points_m, *, topology)` 为显式 group-local 安装声明；topology 取本 tree checkpoint.topology。`from_asset(asset,source_key,*,key,world)` 携真实 owned model/source/group证明，父在 prepare 与当前物理 tree 全模型交叉核。直接声明不能被报告成 URDF source 证明。
 
 测试 JSON 用相同执行读数写入 tmp_path：input（模型、q/v/history、完整 command、dt、source/shape 定义）、entry/actual checkpoint、attempt acceptance、入步 diagnostic、末态 kinematics、collision result 完整 key/revision/registered_pairs/candidates/bounds/ticks/epoch、batch/plan stats、逐项独立 oracle。每步先保存已取得的原读数再断言；发生失败保留已到达的数据。严格 warm trace 的 q/v 若为独立递推，字段必须明确 `oracle_*`，真实 checkpoint只存区间前后，不增加隐蔽 snapshot。
+
+### T1 完整作者 checkpoint：观察与执行入口（未执行）
+
+父已在固定首 checkpoint 的正常公共入口取得有效 RED：T01 既有模型/状态/输入与输入 JSON 先成功，再因 `FixedRobotTree` 尚不存在失败。该 RED 不能称物理数值失败；作者没有运行 collection、import、数值或静态工具。本节与三份测试/参考脚本为 **TEST_AUTHORING_ONLY / UNEXECUTED**，不是产品交付。
+
+补充既有公开观察名称：`batch.summary()` 的 tree 项仅有 `kinetic_energy_j`，使用真实 q+/v+ 的全树末态动能；不为混合 R/P 输出虚假的单一 q_m/q_rad。其他 world 的原 summary 字段保持。诊断仍是带 entry/exit tick 的入步 M/b/J/载荷，不能混成末态缓存。`tree_kinematics([])`、`tree_diagnostics([])` 返回空映射；空 collision model 沿旧合同没有 registered world/tick 行，即使所属 batch 内有树也不凭空登记几何。
+
+专项分工与固定记录：
+
+- `tests/scale/test_resident_tree_step.py`：T01 解析 2R/非零速度及共同变换，T02 R+双 P 的未驱动分支、重排/负轴，T03 三部件原 URDF 与聚合非对角惯量，T04 当前姿态的重力/COM 外载/虚功；六种机构各真实40步。T05 包括原部分饱和 packet 的0/1步延迟、即时外载、宽 cap/大项相消、原1次 sweep未收敛及完整预算正控。T06 N1/N9/N16/N17、合法物理输入边界、整树拒步/邻域继续/重试、完整 held/history/drive/generalized checkpoint、不可变诊断和同尺寸异模型拒绝。
+- `tests/scale/test_resident_tree_collision.py`：T07 保球/有限轴皮肤/局部旋转盒/非盒凸体的原材料 IDs，含正负多周回、±4096、斜安装、大公共平移、近触/清楚 miss、长16 m细胶囊、真实 q−→q+ 的显著转动、普通/固定工具 source 和两个 P 分支、固定根静态材料。T08 W1/W4/W32 沿原 batch 的40步实际全输出；独立 warm 组先真实用过两个 buffer 方向，再40步只 step/query，禁 snapshot、kinematics、diagnostic、HOST envelope路径与新 device allocation。
+- warm 组的中间 q/v 只有独立递推，明确保存为 `oracle_only_q_v_not_device_readback`；中间几何只作同量纲轨迹一致性检查，位置预算由原40步 `2e-4` 坐标门乘 `P祖先数 + R祖先数×有限链reach` 推得，未增加新的状态验收门。严格 FP64 材料包围在完整读回组的**每个实际 q**及 warm 末态再验。该区间不是靠 HOST FK 上传生成界，也不声称独立递推等于每步实测状态。
+- trace 保存所有当次输入、实际 state/FK/入步诊断、完整 bounds/candidates/注册 pair/ticks/epoch、真实分配/上传/读回计数。数值窗口用 finally 保留已取得的 trace；无效对象/资源前置拒绝另列。`tree_bounds_kernel_launches` 单计新 pass；旧 launch/bytes 计数不改，metadata 与结果实际读回不隐藏。当前无性能测量结论。
+
+唯一参考文件 `tests/reference_newton/robot/resident_tree_reference.py` 同时容纳自包含原始模型常量和独立 FP64 oracle，专项延迟加载其纯 NumPy 函数；该文件从不 import Phymeo。它以齐次变换的一阶坐标导数构造 J，以沿 qdot 的二阶时间导数构造真实 COM/角偏置，加逐物理部件惯量与 Iω项；不是调用产品 FK/M/b，也没有数值差分。T01/T02 的闭式有理数/三角式另外检验该 oracle。T03 保三个 authored 物理部件；与产品折叠后的两真实活动组相比较，不从产品主轴输出反写真值。
+
+Newton CLI 仅 main 导入原安装 Newton1.7.0/Warp1.17.0，CPU/CUDA 显式选且不回退。原 URDF、每个 body/joint/shape 的模型数组、标签/帧/惯量、每步全部 q/qd/body_q/body_qd/body_f、实际 control、solver 原 H/qdd 原量、原始 source 字节快照及 SHA/版本/device 均保存。Native body_qd 为世界 COM 线速度在前/角速度在后，body_f 为世界 COM 力/矩；固定工具不 collapse。先三个静态姿态读原生 FK/速度，再从独立初态连续40步 Featherstone；只有初始/独立静态样本设置 state，不灌入另一引擎的后续状态。原生 PD、armature、damping、stop力显式归零并读回；Featherstone 1.7 声明不支持的 joint friction/effort/velocity limit/target_mode 只作原始元数据，不冒称这些原生控制与 Phymeo隐式PD同义。当前对照是完整耦合惯性、COM外载和时间推进，尚未执行。
+
+父串行入口（必须按父 fresh guard/证据路径运行；以下只是命令合同）：
+
+```text
+python -m pytest tests/scale/test_resident_tree_step.py tests/scale/test_resident_tree_collision.py --tyx-mode interpret --require-tyx
+python -m pytest tests/scale/test_resident_tree_step.py tests/scale/test_resident_tree_collision.py --tyx-mode cuda --require-tyx
+<Newton-1.7-python> tests/reference_newton/robot/resident_tree_reference.py --device cpu --output-dir <fresh-evidence>/tree-newton-cpu
+<Newton-1.7-python> tests/reference_newton/robot/resident_tree_reference.py --device cuda:0 --output-dir <fresh-evidence>/tree-newton-cuda
+```
+
+CLI 默认 T01/T02/T03/T04/N9/N16，各40步；`--case` 可重复做明确子集，`--cycled` 是预声明共同轴循环+平移留出。每例保存真实首错并继续独立下一例，summary 只在所有实际 gates 和40步完整时 exit0。脚本未执行，不将安装、源阅读、手推、有效公共 RED 或可写脚本本身列作 Newton 通过。

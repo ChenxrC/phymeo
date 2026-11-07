@@ -113,3 +113,13 @@ T2 不必等全部控制优化才交第一段真实功能；但在 T4 之前不�
 Newton参考至少T01–T04，同输入各自推进，不喂Phymeo中间态；PD语义区别单列。N9/N16容量亦须独立质量/几何/推进核，N17分配前拒绝。测试不以一组Panda或一条固定姿态代替全部机制与材料。固定工程门沿案例册，不调输入/质量/cap/clearance求过门。
 
 先交小commit、clean、精确文件列表/源码行数及UNEXECUTED报告，释放authoring；父全文review和唯一串行首RED后再授五新product及报告。产品kernel tuple可在那时依据既定storage布局冻结，本轮不得提前实现。原F2/C3所有已验收同源组不重跑，无新项目执行槽。
+
+## 父完整 T1 审阅与 T2–T4 产品编码授权（2026-11-07）
+
+作者 clean 7e6fec51e12636d22ebc650d754f0a5cc609203f 的三个测试/参考脚本与案例册增量已全文审阅，父正常导入3f690d8/fa711b8。136已记录正常公共入口缺 FixedRobotTree 的有效 RED，不重跑；其余完整矩阵仍 UNEXECUTED。
+
+原robot在原隔离树继续 **PRODUCT_AUTHORING_ONLY**：只新增本计划第3节五个 backend product 文件及 docs/benchmarks/p65-resident-tree-collision.md。可修改本次三份新测试/参考脚本中的普通接口错误并追加案例册，须保留固定模型、原独立 oracle、全部阈值/容量/负控；数学或合同矛盾先给父最小文本定位。禁止修改任何旧源码/测试/exports，禁止merge父、创建新runtime、项目import/collection/pytest/数值probe/lint/format/compile/build/install/profile/native/CI。父继续唯一项目执行与旧共享接缝owner。
+
+完整公共 API、mixed 双bank布局、原control law残差门、诊断时间来源、原材料/source绑定及T01–T08验收保持。实施第一小段先交 compile_tree_world/tree_packet 的具体不可变字段和 TreeDeviceStorage 的 constructor/stage_advance/stage_restore/readback/borrow/close hook签名，说明每个buffer的owner、src/dst/tick/失败语义；父据此实现薄共享hook。不得为省事提前决定相互矛盾的长positional tuple，或在storage内部发布active/epoch。静态编译与内核可先纯编码推进，等待父确认hook不妨碍独立工作。
+
+提交顺序建议静态owned编译+storage接口 → 完整设备物理与coupled PD → bindings/bounds与报告。阶段checkpoint均标 CODE_READY_TESTS_PENDING；原共享源码需要的改动给父精确建议、不在子树实施。最后小commits/clean/六新product-report清单和测试增量、尚未执行范围及 AUTHORING_RELEASED。父完成共享集成后按原计划唯一串行 interpret→CUDA→Newton参照→wheel；不得把测试库或源码交付称实际支持。

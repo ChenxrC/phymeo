@@ -11,11 +11,17 @@ from ._tyx_numeric import _add, _div, _mul
 
 
 def floating_geometry(
-    count: tx.i32, meta: tx.ndarray(tx.i32, 2), parents: tx.ndarray(tx.i32, 2),
-    kinds: tx.ndarray(tx.i32, 2), properties: tx.ndarray(tx.f32, 3),
-    zero: tx.ndarray(tx.f32, 3), root: tx.ndarray(tx.f32, 2),
-    state: tx.ndarray(tx.f32, 3), fk: tx.ndarray(tx.f32, 3),
-    frame: tx.ndarray(tx.f32, 3), flags: tx.ndarray(tx.i32, 1),
+    count: tx.i32,
+    meta: tx.ndarray(tx.i32, 2),
+    parents: tx.ndarray(tx.i32, 2),
+    kinds: tx.ndarray(tx.i32, 2),
+    properties: tx.ndarray(tx.f32, 3),
+    zero: tx.ndarray(tx.f32, 3),
+    root: tx.ndarray(tx.f32, 2),
+    state: tx.ndarray(tx.f32, 3),
+    fk: tx.ndarray(tx.f32, 3),
+    frame: tx.ndarray(tx.f32, 3),
+    flags: tx.ndarray(tx.i32, 1),
 ):
     for w in tx.range(count):
         n = meta[w, 1]
@@ -58,10 +64,14 @@ def floating_geometry(
             for a in tx.static_range(3):
                 coordinate = fk[w, parent, a]
                 for b in tx.static_range(3):
-                    coordinate = _add(coordinate, _mul(fk[w, parent, 3 + a * 3 + b], properties[w, body, b]))
+                    coordinate = _add(
+                        coordinate, _mul(fk[w, parent, 3 + a * 3 + b], properties[w, body, b])
+                    )
                     value = 0.0
                     for k in tx.static_range(3):
-                        value = _add(value, _mul(fk[w, parent, 3 + a * 3 + k], zero[w, body, k * 3 + b]))
+                        value = _add(
+                            value, _mul(fk[w, parent, 3 + a * 3 + k], zero[w, body, k * 3 + b])
+                        )
                     frame[w, body, a * 3 + b] = value
                 fk[w, body, a] = coordinate
                 axis = 0.0
@@ -81,7 +91,10 @@ def floating_geometry(
                     if kinds[w, body] == 0:
                         value = 0.0
                         for k in tx.static_range(3):
-                            turn = _mul(_add(1.0, -cosine), _mul(properties[w, body, 3 + k], properties[w, body, 3 + b]))
+                            turn = _mul(
+                                _add(1.0, -cosine),
+                                _mul(properties[w, body, 3 + k], properties[w, body, 3 + b]),
+                            )
                             if k == b:
                                 turn = _add(turn, cosine)
                             elif (k + 1) % 3 == b:
@@ -94,7 +107,9 @@ def floating_geometry(
             for a in tx.static_range(3):
                 point = fk[w, body, a]
                 for b in tx.static_range(3):
-                    point = _add(point, _mul(fk[w, body, 3 + a * 3 + b], properties[w, body, 6 + b]))
+                    point = _add(
+                        point, _mul(fk[w, body, 3 + a * 3 + b], properties[w, body, 6 + b])
+                    )
                 fk[w, body, 15 + a] = point
             for a in tx.static_range(18):
                 if not tx.isfinite(fk[w, body, a]):
@@ -102,12 +117,19 @@ def floating_geometry(
 
 
 def floating_motion_energy(
-    count: tx.i32, meta: tx.ndarray(tx.i32, 2), parents: tx.ndarray(tx.i32, 2),
-    kinds: tx.ndarray(tx.i32, 2), properties: tx.ndarray(tx.f32, 3),
-    principal: tx.ndarray(tx.f32, 3), root: tx.ndarray(tx.f32, 2),
-    state: tx.ndarray(tx.f32, 3), fk: tx.ndarray(tx.f32, 3),
-    origins: tx.ndarray(tx.f32, 3), twist: tx.ndarray(tx.f32, 3),
-    energy: tx.ndarray(tx.f32, 1), flags: tx.ndarray(tx.i32, 1),
+    count: tx.i32,
+    meta: tx.ndarray(tx.i32, 2),
+    parents: tx.ndarray(tx.i32, 2),
+    kinds: tx.ndarray(tx.i32, 2),
+    properties: tx.ndarray(tx.f32, 3),
+    principal: tx.ndarray(tx.f32, 3),
+    root: tx.ndarray(tx.f32, 2),
+    state: tx.ndarray(tx.f32, 3),
+    fk: tx.ndarray(tx.f32, 3),
+    origins: tx.ndarray(tx.f32, 3),
+    twist: tx.ndarray(tx.f32, 3),
+    energy: tx.ndarray(tx.f32, 1),
+    flags: tx.ndarray(tx.i32, 1),
 ):
     for w in tx.range(count):
         n = meta[w, 1]
@@ -119,7 +141,9 @@ def floating_motion_energy(
             ck = _add(fk[w, 0, 15 + k], -fk[w, 0, k])
             twist[w, 0, a] = root[w, 7 + a]
             twist[w, 0, 3 + a] = root[w, 10 + a]
-            origins[w, 0, a] = _add(root[w, 7 + a], -_add(_mul(root[w, 10 + j], ck), -_mul(root[w, 10 + k], cj)))
+            origins[w, 0, a] = _add(
+                root[w, 7 + a], -_add(_mul(root[w, 10 + j], ck), -_mul(root[w, 10 + k], cj))
+            )
         for body in range(1, n + 1):
             parent = parents[w, body]
             rate = state[w, body - 1, 1]
@@ -128,7 +152,10 @@ def floating_motion_energy(
                 k = (a + 2) % 3
                 rj = _add(fk[w, body, j], -fk[w, parent, j])
                 rk = _add(fk[w, body, k], -fk[w, parent, k])
-                speed = _add(origins[w, parent, a], _add(_mul(twist[w, parent, 3 + j], rk), -_mul(twist[w, parent, 3 + k], rj)))
+                speed = _add(
+                    origins[w, parent, a],
+                    _add(_mul(twist[w, parent, 3 + j], rk), -_mul(twist[w, parent, 3 + k], rj)),
+                )
                 omega = twist[w, parent, 3 + a]
                 if kinds[w, body] == 0:
                     omega = _add(omega, _mul(fk[w, body, 12 + a], rate))
@@ -141,7 +168,10 @@ def floating_motion_energy(
                 k = (a + 2) % 3
                 cj = _add(fk[w, body, 15 + j], -fk[w, body, j])
                 ck = _add(fk[w, body, 15 + k], -fk[w, body, k])
-                twist[w, body, a] = _add(origins[w, body, a], _add(_mul(twist[w, body, 3 + j], ck), -_mul(twist[w, body, 3 + k], cj)))
+                twist[w, body, a] = _add(
+                    origins[w, body, a],
+                    _add(_mul(twist[w, body, 3 + j], ck), -_mul(twist[w, body, 3 + k], cj)),
+                )
         for body in range(n + 1):
             for a in tx.static_range(3):
                 speed = twist[w, body, a]
@@ -149,9 +179,21 @@ def floating_motion_energy(
                 for b in tx.static_range(3):
                     rotation = 0.0
                     for k in tx.static_range(3):
-                        rotation = _add(rotation, _mul(fk[w, body, 3 + b * 3 + k], principal[w, body, k * 3 + a]))
+                        rotation = _add(
+                            rotation,
+                            _mul(fk[w, body, 3 + b * 3 + k], principal[w, body, k * 3 + a]),
+                        )
                     local_spin = _add(local_spin, _mul(rotation, twist[w, body, 3 + b]))
-                total = _add(total, _mul(0.5, _add(_mul(properties[w, body, 12], _mul(speed, speed)), _mul(properties[w, body, 9 + a], _mul(local_spin, local_spin)))))
+                total = _add(
+                    total,
+                    _mul(
+                        0.5,
+                        _add(
+                            _mul(properties[w, body, 12], _mul(speed, speed)),
+                            _mul(properties[w, body, 9 + a], _mul(local_spin, local_spin)),
+                        ),
+                    ),
+                )
             for a in tx.static_range(6):
                 if not tx.isfinite(twist[w, body, a]):
                     flags[w] = 0
@@ -161,14 +203,25 @@ def floating_motion_energy(
 
 
 def floating_mechanics(
-    count: tx.i32, meta: tx.ndarray(tx.i32, 2), parents: tx.ndarray(tx.i32, 2),
-    kinds: tx.ndarray(tx.i32, 2), properties: tx.ndarray(tx.f32, 3),
-    principal: tx.ndarray(tx.f32, 3), gravity: tx.ndarray(tx.f32, 2),
-    effort: tx.ndarray(tx.f32, 2), loads: tx.ndarray(tx.f32, 3),
-    root: tx.ndarray(tx.f32, 2), state: tx.ndarray(tx.f32, 3), fk: tx.ndarray(tx.f32, 3),
-    linear: tx.ndarray(tx.f32, 4), angular: tx.ndarray(tx.f32, 4),
-    spatial: tx.ndarray(tx.f32, 3), inertial: tx.ndarray(tx.f32, 3),
-    mass: tx.ndarray(tx.f32, 3), vector: tx.ndarray(tx.f32, 3), entry_pose: tx.ndarray(tx.f32, 2),
+    count: tx.i32,
+    meta: tx.ndarray(tx.i32, 2),
+    parents: tx.ndarray(tx.i32, 2),
+    kinds: tx.ndarray(tx.i32, 2),
+    properties: tx.ndarray(tx.f32, 3),
+    principal: tx.ndarray(tx.f32, 3),
+    gravity: tx.ndarray(tx.f32, 2),
+    effort: tx.ndarray(tx.f32, 2),
+    loads: tx.ndarray(tx.f32, 3),
+    root: tx.ndarray(tx.f32, 2),
+    state: tx.ndarray(tx.f32, 3),
+    fk: tx.ndarray(tx.f32, 3),
+    linear: tx.ndarray(tx.f32, 4),
+    angular: tx.ndarray(tx.f32, 4),
+    spatial: tx.ndarray(tx.f32, 3),
+    inertial: tx.ndarray(tx.f32, 3),
+    mass: tx.ndarray(tx.f32, 3),
+    vector: tx.ndarray(tx.f32, 3),
+    entry_pose: tx.ndarray(tx.f32, 2),
 ):
     for w in tx.range(count):
         n = meta[w, 1]
@@ -188,9 +241,13 @@ def floating_mechanics(
                         j = (a + 1) % 3
                         k = (a + 2) % 3
                         if column == 3 + j:
-                            linear[w, body, a, column] = _add(fk[w, body, 15 + k], -fk[w, 0, 15 + k])
+                            linear[w, body, a, column] = _add(
+                                fk[w, body, 15 + k], -fk[w, 0, 15 + k]
+                            )
                         if column == 3 + k:
-                            linear[w, body, a, column] = -_add(fk[w, body, 15 + j], -fk[w, 0, 15 + j])
+                            linear[w, body, a, column] = -_add(
+                                fk[w, body, 15 + j], -fk[w, 0, 15 + j]
+                            )
             ancestor = body
             for depth in range(n):
                 if ancestor > 0:
@@ -202,7 +259,10 @@ def floating_mechanics(
                             k = (a + 2) % 3
                             rj = _add(fk[w, body, 15 + j], -fk[w, ancestor, j])
                             rk = _add(fk[w, body, 15 + k], -fk[w, ancestor, k])
-                            value = _add(_mul(fk[w, ancestor, 12 + j], rk), -_mul(fk[w, ancestor, 12 + k], rj))
+                            value = _add(
+                                _mul(fk[w, ancestor, 12 + j], rk),
+                                -_mul(fk[w, ancestor, 12 + k], rj),
+                            )
                             angular[w, body, a, column] = fk[w, ancestor, 12 + a]
                         linear[w, body, a, column] = value
                     ancestor = parents[w, ancestor]
@@ -210,7 +270,9 @@ def floating_mechanics(
                 for b in tx.static_range(3):
                     value = 0.0
                     for k in tx.static_range(3):
-                        value = _add(value, _mul(fk[w, body, 3 + a * 3 + k], principal[w, body, k * 3 + b]))
+                        value = _add(
+                            value, _mul(fk[w, body, 3 + a * 3 + k], principal[w, body, k * 3 + b])
+                        )
                     inertial[w, body, a * 3 + b] = value
         # Analytic zero-generalized-acceleration recurrence. Root COM a=0;
         # its eccentric authored origin has a nonzero centripetal bias.
@@ -226,7 +288,9 @@ def floating_mechanics(
                     center = _add(fk[w, 0, 15 + a], -fk[w, 0, a])
                     spatial[w, 0, a] = root[w, 10 + a]
                     spatial[w, 0, 3 + a] = 0.0
-                    spatial[w, 0, 6 + a] = _add(_mul(center, root_square), -_mul(root[w, 10 + a], root_dot))
+                    spatial[w, 0, 6 + a] = _add(
+                        _mul(center, root_square), -_mul(root[w, 10 + a], root_dot)
+                    )
             else:
                 parent = parents[w, body]
                 dot_wr = 0.0
@@ -242,13 +306,27 @@ def floating_mechanics(
                     rj = _add(fk[w, body, j], -fk[w, parent, j])
                     rk = _add(fk[w, body, k], -fk[w, parent, k])
                     wa = spatial[w, parent, a]
-                    cross_axis = _mul(_add(_mul(spatial[w, parent, j], fk[w, body, 12 + k]), -_mul(spatial[w, parent, k], fk[w, body, 12 + j])), state[w, body - 1, 1])
+                    cross_axis = _mul(
+                        _add(
+                            _mul(spatial[w, parent, j], fk[w, body, 12 + k]),
+                            -_mul(spatial[w, parent, k], fk[w, body, 12 + j]),
+                        ),
+                        state[w, body - 1, 1],
+                    )
                     spatial[w, body, a] = wa
                     spatial[w, body, 3 + a] = spatial[w, parent, 3 + a]
-                    oa = _add(spatial[w, parent, 6 + a], _add(_mul(spatial[w, parent, 3 + j], rk), -_mul(spatial[w, parent, 3 + k], rj)))
+                    oa = _add(
+                        spatial[w, parent, 6 + a],
+                        _add(
+                            _mul(spatial[w, parent, 3 + j], rk),
+                            -_mul(spatial[w, parent, 3 + k], rj),
+                        ),
+                    )
                     oa = _add(oa, _add(_mul(wa, dot_wr), -_mul(ra, square_w)))
                     if kinds[w, body] == 0:
-                        spatial[w, body, a] = _add(wa, _mul(fk[w, body, 12 + a], state[w, body - 1, 1]))
+                        spatial[w, body, a] = _add(
+                            wa, _mul(fk[w, body, 12 + a], state[w, body - 1, 1])
+                        )
                         spatial[w, body, 3 + a] = _add(spatial[w, parent, 3 + a], cross_axis)
                     else:
                         oa = _add(oa, _mul(2.0, cross_axis))
@@ -265,10 +343,26 @@ def floating_mechanics(
                     local_omega = 0.0
                     local_alpha = 0.0
                     for k in tx.static_range(3):
-                        local_omega = _add(local_omega, _mul(inertial[w, body, k * 3 + b], spatial[w, body, k]))
-                        local_alpha = _add(local_alpha, _mul(inertial[w, body, k * 3 + b], spatial[w, body, 3 + k]))
-                    momentum = _add(momentum, _mul(inertial[w, body, a * 3 + b], _mul(properties[w, body, 9 + b], local_omega)))
-                    angular_force = _add(angular_force, _mul(inertial[w, body, a * 3 + b], _mul(properties[w, body, 9 + b], local_alpha)))
+                        local_omega = _add(
+                            local_omega, _mul(inertial[w, body, k * 3 + b], spatial[w, body, k])
+                        )
+                        local_alpha = _add(
+                            local_alpha, _mul(inertial[w, body, k * 3 + b], spatial[w, body, 3 + k])
+                        )
+                    momentum = _add(
+                        momentum,
+                        _mul(
+                            inertial[w, body, a * 3 + b],
+                            _mul(properties[w, body, 9 + b], local_omega),
+                        ),
+                    )
+                    angular_force = _add(
+                        angular_force,
+                        _mul(
+                            inertial[w, body, a * 3 + b],
+                            _mul(properties[w, body, 9 + b], local_alpha),
+                        ),
+                    )
                 spatial[w, body, 9 + a] = momentum
                 spatial[w, body, 15 + a] = angular_force
             for a in tx.static_range(3):
@@ -277,23 +371,46 @@ def floating_mechanics(
                 ca = _add(fk[w, body, 15 + a], -fk[w, body, a])
                 cj = _add(fk[w, body, 15 + j], -fk[w, body, j])
                 ck = _add(fk[w, body, 15 + k], -fk[w, body, k])
-                acceleration = _add(spatial[w, body, 6 + a], _add(_mul(spatial[w, body, 3 + j], ck), -_mul(spatial[w, body, 3 + k], cj)))
-                acceleration = _add(acceleration, _add(_mul(spatial[w, body, a], dot_wc), -_mul(ca, square_w)))
+                acceleration = _add(
+                    spatial[w, body, 6 + a],
+                    _add(_mul(spatial[w, body, 3 + j], ck), -_mul(spatial[w, body, 3 + k], cj)),
+                )
+                acceleration = _add(
+                    acceleration, _add(_mul(spatial[w, body, a], dot_wc), -_mul(ca, square_w))
+                )
                 if body == 0:
                     acceleration = 0.0
-                spatial[w, body, 12 + a] = _mul(properties[w, body, 12], _add(acceleration, -gravity[w, a]))
-                spatial[w, body, 15 + a] = _add(spatial[w, body, 15 + a], _add(_mul(spatial[w, body, j], spatial[w, body, 9 + k]), -_mul(spatial[w, body, k], spatial[w, body, 9 + j])))
+                spatial[w, body, 12 + a] = _mul(
+                    properties[w, body, 12], _add(acceleration, -gravity[w, a])
+                )
+                spatial[w, body, 15 + a] = _add(
+                    spatial[w, body, 15 + a],
+                    _add(
+                        _mul(spatial[w, body, j], spatial[w, body, 9 + k]),
+                        -_mul(spatial[w, body, k], spatial[w, body, 9 + j]),
+                    ),
+                )
         for a in range(d):
             for b in range(a, d):
                 value = 0.0
                 for body in range(n + 1):
                     for k in tx.static_range(3):
-                        value = _add(value, _mul(properties[w, body, 12], _mul(linear[w, body, k, a], linear[w, body, k, b])))
+                        value = _add(
+                            value,
+                            _mul(
+                                properties[w, body, 12],
+                                _mul(linear[w, body, k, a], linear[w, body, k, b]),
+                            ),
+                        )
                         la = 0.0
                         lb = 0.0
                         for j in tx.static_range(3):
-                            la = _add(la, _mul(inertial[w, body, j * 3 + k], angular[w, body, j, a]))
-                            lb = _add(lb, _mul(inertial[w, body, j * 3 + k], angular[w, body, j, b]))
+                            la = _add(
+                                la, _mul(inertial[w, body, j * 3 + k], angular[w, body, j, a])
+                            )
+                            lb = _add(
+                                lb, _mul(inertial[w, body, j * 3 + k], angular[w, body, j, b])
+                            )
                         value = _add(value, _mul(properties[w, body, 9 + k], _mul(la, lb)))
                 mass[w, a, b] = value
                 mass[w, b, a] = value
@@ -303,8 +420,20 @@ def floating_mechanics(
                 external = effort[w, a - 6]
             for body in range(n + 1):
                 for k in tx.static_range(3):
-                    bias = _add(bias, _add(_mul(linear[w, body, k, a], spatial[w, body, 12 + k]), _mul(angular[w, body, k, a], spatial[w, body, 15 + k])))
-                    external = _add(external, _add(_mul(linear[w, body, k, a], loads[w, body, k]), _mul(angular[w, body, k, a], loads[w, body, 3 + k])))
+                    bias = _add(
+                        bias,
+                        _add(
+                            _mul(linear[w, body, k, a], spatial[w, body, 12 + k]),
+                            _mul(angular[w, body, k, a], spatial[w, body, 15 + k]),
+                        ),
+                    )
+                    external = _add(
+                        external,
+                        _add(
+                            _mul(linear[w, body, k, a], loads[w, body, k]),
+                            _mul(angular[w, body, k, a], loads[w, body, 3 + k]),
+                        ),
+                    )
             vector[w, a, 0] = bias
             vector[w, a, 1] = external
             vector[w, a, 4] = 0.0
@@ -314,16 +443,27 @@ def floating_mechanics(
                 vector[w, a, 4] = state[w, a - 6, 0]
                 vector[w, a, 5] = state[w, a - 6, 1]
 
+
 def floating_solve(
-    count: tx.i32, h: tx.f32, meta: tx.ndarray(tx.i32, 2),
-    properties: tx.ndarray(tx.f32, 3), commands: tx.ndarray(tx.f32, 3),
-    root: tx.ndarray(tx.f32, 2), state: tx.ndarray(tx.f32, 3),
-    fk: tx.ndarray(tx.f32, 3), applied: tx.ndarray(tx.f32, 2),
-    tick: tx.ndarray(tx.i32, 1), next_root: tx.ndarray(tx.f32, 2),
-    candidate: tx.ndarray(tx.f32, 3), next_applied: tx.ndarray(tx.f32, 2),
-    mass: tx.ndarray(tx.f32, 3), factor: tx.ndarray(tx.f32, 3),
-    mobility: tx.ndarray(tx.f32, 3), vector: tx.ndarray(tx.f32, 3),
-    info: tx.ndarray(tx.i32, 2), diag: tx.ndarray(tx.f32, 2),
+    count: tx.i32,
+    h: tx.f32,
+    meta: tx.ndarray(tx.i32, 2),
+    properties: tx.ndarray(tx.f32, 3),
+    commands: tx.ndarray(tx.f32, 3),
+    root: tx.ndarray(tx.f32, 2),
+    state: tx.ndarray(tx.f32, 3),
+    fk: tx.ndarray(tx.f32, 3),
+    applied: tx.ndarray(tx.f32, 2),
+    tick: tx.ndarray(tx.i32, 1),
+    next_root: tx.ndarray(tx.f32, 2),
+    candidate: tx.ndarray(tx.f32, 3),
+    next_applied: tx.ndarray(tx.f32, 2),
+    mass: tx.ndarray(tx.f32, 3),
+    factor: tx.ndarray(tx.f32, 3),
+    mobility: tx.ndarray(tx.f32, 3),
+    vector: tx.ndarray(tx.f32, 3),
+    info: tx.ndarray(tx.i32, 2),
+    diag: tx.ndarray(tx.f32, 2),
 ):
     for w in tx.range(count):
         n = meta[w, 1]
@@ -382,9 +522,15 @@ def floating_solve(
         for i in range(d):
             response = 0.0
             for j in range(d):
-                response = _add(response, _mul(mobility[w, i, j], _add(vector[w, j, 1], -vector[w, j, 0])))
+                response = _add(
+                    response, _mul(mobility[w, i, j], _add(vector[w, j, 1], -vector[w, j, 0]))
+                )
             vector[w, i, 6] = _add(vector[w, i, 5], _mul(h, response))
-            if not tx.isfinite(vector[w, i, 6]) or not tx.isfinite(vector[w, i, 0]) or not tx.isfinite(vector[w, i, 1]):
+            if (
+                not tx.isfinite(vector[w, i, 6])
+                or not tx.isfinite(vector[w, i, 0])
+                or not tx.isfinite(vector[w, i, 1])
+            ):
                 if code == 0:
                     code = 2
         active = 0
@@ -401,12 +547,20 @@ def floating_solve(
             vector[w, i, 11] = target
             vector[w, i, 12] = rate
             vector[w, i, 13] = ff
-            a = _add(_add(_mul(properties[w, body, 13], _add(target, -state[w, motor, 0])), _mul(properties[w, body, 14], rate)), ff)
+            a = _add(
+                _add(
+                    _mul(properties[w, body, 13], _add(target, -state[w, motor, 0])),
+                    _mul(properties[w, body, 14], rate),
+                ),
+                ff,
+            )
             damping = _add(_mul(h, properties[w, body, 13]), properties[w, body, 14])
             vector[w, i, 7] = a
             vector[w, i, 8] = damping
             if damping == 0.0:
-                vector[w, i, 2] = tx.min(properties[w, body, 15], tx.max(-properties[w, body, 15], a))
+                vector[w, i, 2] = tx.min(
+                    properties[w, body, 15], tx.max(-properties[w, body, 15], a)
+                )
             else:
                 active = active + 1
             if (not tx.isfinite(a) or not tx.isfinite(damping)) and code == 0:
@@ -427,20 +581,32 @@ def floating_solve(
                     if damping > 0.0:
                         response = 0.0
                         for other in range(n):
-                            response = _add(response, _mul(mobility[w, i, other + 6], vector[w, other + 6, 2]))
+                            response = _add(
+                                response, _mul(mobility[w, i, other + 6], vector[w, other + 6, 2])
+                            )
                         speed = _add(vector[w, i, 6], _mul(h, response))
                         denominator = _add(1.0, _mul(_mul(damping, h), mobility[w, i, i]))
-                        numerator = _add(_add(vector[w, i, 7], -_mul(damping, speed)), -vector[w, i, 2])
-                        if not tx.isfinite(denominator) or denominator <= 0.0 or not tx.isfinite(numerator):
+                        numerator = _add(
+                            _add(vector[w, i, 7], -_mul(damping, speed)), -vector[w, i, 2]
+                        )
+                        if (
+                            not tx.isfinite(denominator)
+                            or denominator <= 0.0
+                            or not tx.isfinite(numerator)
+                        ):
                             code = 2
                         value = _add(vector[w, i, 2], _div(numerator, denominator))
                         if not tx.isfinite(value):
                             code = 2
-                        vector[w, i, 2] = tx.min(properties[w, body, 15], tx.max(-properties[w, body, 15], value))
+                        vector[w, i, 2] = tx.min(
+                            properties[w, body, 15], tx.max(-properties[w, body, 15], value)
+                        )
                 for i in range(d):
                     response = 0.0
                     for motor in range(n):
-                        response = _add(response, _mul(mobility[w, i, motor + 6], vector[w, motor + 6, 2]))
+                        response = _add(
+                            response, _mul(mobility[w, i, motor + 6], vector[w, motor + 6, 2])
+                        )
                     vector[w, i, 9] = _add(vector[w, i, 6], _mul(h, response))
                 eligible = 1
                 refined = 1
@@ -457,14 +623,29 @@ def floating_solve(
                     cap = properties[w, body, 15]
                     tau = vector[w, i, 2]
                     nextq = _add(state[w, motor, 0], _mul(h, speed))
-                    raw = _add(_add(_mul(kp, _add(_add(target, -state[w, motor, 0]), -_mul(h, speed))), _mul(kd, _add(rate, -speed))), ff)
-                    rounded = _add(_add(_mul(kp, _add(target, -nextq)), _mul(kd, _add(rate, -speed))), ff)
-                    if not tx.isfinite(raw) or not tx.isfinite(rounded) or not tx.isfinite(speed) or not tx.isfinite(tau):
+                    raw = _add(
+                        _add(
+                            _mul(kp, _add(_add(target, -state[w, motor, 0]), -_mul(h, speed))),
+                            _mul(kd, _add(rate, -speed)),
+                        ),
+                        ff,
+                    )
+                    rounded = _add(
+                        _add(_mul(kp, _add(target, -nextq)), _mul(kd, _add(rate, -speed))), ff
+                    )
+                    if (
+                        not tx.isfinite(raw)
+                        or not tx.isfinite(rounded)
+                        or not tx.isfinite(speed)
+                        or not tx.isfinite(tau)
+                    ):
                         code = 2
                     expected = tx.min(cap, tx.max(-cap, raw))
                     expected_q = tx.min(cap, tx.max(-cap, rounded))
                     residual = tx.max(tx.abs(_add(tau, -expected)), tx.abs(_add(tau, -expected_q)))
-                    scale = tx.max(1.0, tx.max(tx.abs(tau), tx.max(tx.abs(expected), tx.abs(expected_q))))
+                    scale = tx.max(
+                        1.0, tx.max(tx.abs(tau), tx.max(tx.abs(expected), tx.abs(expected_q)))
+                    )
                     absolute_residual = tx.max(absolute_residual, residual)
                     if residual > _mul(5e-5, scale):
                         eligible = 0
@@ -483,10 +664,17 @@ def floating_solve(
                     row_norm = 0.0
                     for j in range(d):
                         row_norm = _add(row_norm, tx.abs(mass[w, i, j]))
-                        equation = _add(equation, _mul(mass[w, i, j], _add(vector[w, j, 9], -vector[w, j, 5])))
+                        equation = _add(
+                            equation, _mul(mass[w, i, j], _add(vector[w, j, 9], -vector[w, j, 5]))
+                        )
                     matrix_norm = tx.max(matrix_norm, row_norm)
                     equation_error = tx.max(equation_error, tx.abs(equation))
-                    if not tx.isfinite(equation) or not tx.isfinite(row_norm) or not tx.isfinite(rhs) or not tx.isfinite(vector[w, i, 9]):
+                    if (
+                        not tx.isfinite(equation)
+                        or not tx.isfinite(row_norm)
+                        or not tx.isfinite(rhs)
+                        or not tx.isfinite(vector[w, i, 9])
+                    ):
                         code = 2
                 equation_scale = tx.max(1.0, tx.max(_mul(matrix_norm, max_delta), max_rhs))
                 equation_residual = _div(equation_error, equation_scale)
@@ -506,7 +694,13 @@ def floating_solve(
             for i in range(d):
                 acceleration = 0.0
                 for j in range(d):
-                    acceleration = _add(acceleration, _mul(mobility[w, i, j], _add(_add(vector[w, j, 2], vector[w, j, 1]), -vector[w, j, 0])))
+                    acceleration = _add(
+                        acceleration,
+                        _mul(
+                            mobility[w, i, j],
+                            _add(_add(vector[w, j, 2], vector[w, j, 1]), -vector[w, j, 0]),
+                        ),
+                    )
                 vector[w, i, 3] = acceleration
                 next_applied[w, i] = _add(vector[w, i, 1], vector[w, i, 2])
                 if not tx.isfinite(acceleration) or not tx.isfinite(next_applied[w, i]):
@@ -585,12 +779,18 @@ def floating_solve(
                                 total = _add(total, _mul(next_root[w, 3 + k], next_root[w, 3 + k]))
                         value = _add(1.0, -_mul(2.0, total))
                     elif (a + 1) % 3 == b:
-                        value = _add(value, -_mul(2.0, _mul(next_root[w, 6], next_root[w, 3 + (a + 2) % 3])))
+                        value = _add(
+                            value, -_mul(2.0, _mul(next_root[w, 6], next_root[w, 3 + (a + 2) % 3]))
+                        )
                     else:
-                        value = _add(value, _mul(2.0, _mul(next_root[w, 6], next_root[w, 3 + (a + 1) % 3])))
+                        value = _add(
+                            value, _mul(2.0, _mul(next_root[w, 6], next_root[w, 3 + (a + 1) % 3]))
+                        )
                     offset = _add(offset, _mul(value, properties[w, 0, 6 + b]))
                 old_offset = _add(fk[w, 0, 15 + a], -fk[w, 0, a])
-                coordinate = _add(root[w, a], _add(_mul(h, vector[w, a, 9]), _add(old_offset, -offset)))
+                coordinate = _add(
+                    root[w, a], _add(_mul(h, vector[w, a, 9]), _add(old_offset, -offset))
+                )
                 next_root[w, a] = coordinate
                 if not tx.isfinite(coordinate) or tx.abs(coordinate) > 4096.0:
                     code = 5
@@ -611,14 +811,25 @@ def floating_solve(
 
 
 def floating_finalize(
-    count: tx.i32, meta: tx.ndarray(tx.i32, 2), root: tx.ndarray(tx.f32, 2),
-    next_root: tx.ndarray(tx.f32, 2), state: tx.ndarray(tx.f32, 3), candidate: tx.ndarray(tx.f32, 3),
-    applied: tx.ndarray(tx.f32, 2), next_applied: tx.ndarray(tx.f32, 2),
-    fk: tx.ndarray(tx.f32, 3), next_fk: tx.ndarray(tx.f32, 3),
-    twist: tx.ndarray(tx.f32, 3), next_twist: tx.ndarray(tx.f32, 3),
-    energy: tx.ndarray(tx.f32, 1), next_energy: tx.ndarray(tx.f32, 1),
-    tick: tx.ndarray(tx.i32, 1), next_tick: tx.ndarray(tx.i32, 1),
-    accepted: tx.ndarray(tx.i32, 1), info: tx.ndarray(tx.i32, 2), flags: tx.ndarray(tx.i32, 1),
+    count: tx.i32,
+    meta: tx.ndarray(tx.i32, 2),
+    root: tx.ndarray(tx.f32, 2),
+    next_root: tx.ndarray(tx.f32, 2),
+    state: tx.ndarray(tx.f32, 3),
+    candidate: tx.ndarray(tx.f32, 3),
+    applied: tx.ndarray(tx.f32, 2),
+    next_applied: tx.ndarray(tx.f32, 2),
+    fk: tx.ndarray(tx.f32, 3),
+    next_fk: tx.ndarray(tx.f32, 3),
+    twist: tx.ndarray(tx.f32, 3),
+    next_twist: tx.ndarray(tx.f32, 3),
+    energy: tx.ndarray(tx.f32, 1),
+    next_energy: tx.ndarray(tx.f32, 1),
+    tick: tx.ndarray(tx.i32, 1),
+    next_tick: tx.ndarray(tx.i32, 1),
+    accepted: tx.ndarray(tx.i32, 1),
+    info: tx.ndarray(tx.i32, 2),
+    flags: tx.ndarray(tx.i32, 1),
 ):
     for w in tx.range(count):
         n = meta[w, 1]
@@ -648,13 +859,21 @@ def floating_finalize(
 
 
 def floating_restore(
-    count: tx.i32, meta: tx.ndarray(tx.i32, 2), mask: tx.ndarray(tx.i32, 1),
-    values_root: tx.ndarray(tx.f32, 2), values_state: tx.ndarray(tx.f32, 3),
-    values_applied: tx.ndarray(tx.f32, 2), values_tick: tx.ndarray(tx.i32, 1),
-    root: tx.ndarray(tx.f32, 2), next_root: tx.ndarray(tx.f32, 2),
-    state: tx.ndarray(tx.f32, 3), candidate: tx.ndarray(tx.f32, 3),
-    applied: tx.ndarray(tx.f32, 2), next_applied: tx.ndarray(tx.f32, 2),
-    tick: tx.ndarray(tx.i32, 1), next_tick: tx.ndarray(tx.i32, 1),
+    count: tx.i32,
+    meta: tx.ndarray(tx.i32, 2),
+    mask: tx.ndarray(tx.i32, 1),
+    values_root: tx.ndarray(tx.f32, 2),
+    values_state: tx.ndarray(tx.f32, 3),
+    values_applied: tx.ndarray(tx.f32, 2),
+    values_tick: tx.ndarray(tx.i32, 1),
+    root: tx.ndarray(tx.f32, 2),
+    next_root: tx.ndarray(tx.f32, 2),
+    state: tx.ndarray(tx.f32, 3),
+    candidate: tx.ndarray(tx.f32, 3),
+    applied: tx.ndarray(tx.f32, 2),
+    next_applied: tx.ndarray(tx.f32, 2),
+    tick: tx.ndarray(tx.i32, 1),
+    next_tick: tx.ndarray(tx.i32, 1),
 ):
     for w in tx.range(count):
         n = meta[w, 1]
@@ -681,7 +900,14 @@ def floating_restore(
 
 
 def make_floating_tree_kernels():
-    functions = {"geometry": floating_geometry, "energy": floating_motion_energy,
-                 "mechanics": floating_mechanics, "solve": floating_solve,
-                 "finalize": floating_finalize, "restore": floating_restore}
-    return {name: (tx.kernel(function), tx.kernel(function)) for name, function in functions.items()}
+    functions = {
+        "geometry": floating_geometry,
+        "energy": floating_motion_energy,
+        "mechanics": floating_mechanics,
+        "solve": floating_solve,
+        "finalize": floating_finalize,
+        "restore": floating_restore,
+    }
+    return {
+        name: (tx.kernel(function), tx.kernel(function)) for name, function in functions.items()
+    }

@@ -22,7 +22,11 @@ FLOATING_COORDINATE_LIMIT = 4096.0
 
 
 def _integer(value, name, lower, upper):
-    if isinstance(value, (bool, np.bool_)) or not isinstance(value, Integral) or not lower <= value <= upper:
+    if (
+        isinstance(value, (bool, np.bool_))
+        or not isinstance(value, Integral)
+        or not lower <= value <= upper
+    ):
         raise ValueError(f"floating {name} must be an integer in [{lower},{upper}]")
     return int(value)
 
@@ -41,18 +45,40 @@ def _model_copy(model):
     _freeze_fields(root, ("inverse_mass", "inertia_diagonal", "gravity"))
     children = model.children
     if children is not None:
-        children = RobotModel(children.parents, children.joint_types, children.joint_position,
-                              children.joint_orientation, children.joint_axis, children.mass,
-                              children.com, children.inertia_diagonal, children.gravity)
-        _freeze_fields(children, ("parents", "joint_position", "joint_orientation", "joint_axis",
-                                  "mass", "com", "inertia_diagonal", "gravity"))
+        children = RobotModel(
+            children.parents,
+            children.joint_types,
+            children.joint_position,
+            children.joint_orientation,
+            children.joint_axis,
+            children.mass,
+            children.com,
+            children.inertia_diagonal,
+            children.gravity,
+        )
+        _freeze_fields(
+            children,
+            (
+                "parents",
+                "joint_position",
+                "joint_orientation",
+                "joint_axis",
+                "mass",
+                "com",
+                "inertia_diagonal",
+                "gravity",
+            ),
+        )
         if not np.array_equal(children.gravity, root.gravity):
             raise ValueError("floating root and children must share world gravity")
-    owned = FloatingRobotModel(root, model.root_com_m, children,
-                               root_inertia_frame_xyzw=model.root_inertia_frame_xyzw)
+    owned = FloatingRobotModel(
+        root, model.root_com_m, children, root_inertia_frame_xyzw=model.root_inertia_frame_xyzw
+    )
     # Preserve the original validated declaration token: do not repeatedly round
     # an already normalized principal frame when copying or compiling.
-    object.__setattr__(owned, "root_inertia_frame_xyzw", _owned(model.root_inertia_frame_xyzw, np.float64))
+    object.__setattr__(
+        owned, "root_inertia_frame_xyzw", _owned(model.root_inertia_frame_xyzw, np.float64)
+    )
     return _freeze_fields(owned, ("root_com_m", "root_inertia_frame_xyzw"))
 
 
@@ -60,10 +86,15 @@ def floating_model_token(model):
     """Original FP64 physical identity, independent of initial pose and controls."""
     if not isinstance(model, FloatingRobotModel):
         raise TypeError("floating model identity needs FloatingRobotModel")
-    return ("floating_model_v1", _nested(model.root.inverse_mass),
-            _nested(model.root.inertia_diagonal), _nested(model.root.gravity),
-            _nested(model.root_com_m), _nested(model.root_inertia_frame_xyzw),
-            () if model.children is None else tree_model_token(model.children))
+    return (
+        "floating_model_v1",
+        _nested(model.root.inverse_mass),
+        _nested(model.root.inertia_diagonal),
+        _nested(model.root.gravity),
+        _nested(model.root_com_m),
+        _nested(model.root_inertia_frame_xyzw),
+        () if model.children is None else tree_model_token(model.children),
+    )
 
 
 def _coordinate(value, name, shape):
@@ -135,8 +166,11 @@ class FloatingRobotTree:
                 raise ValueError("floating gains and effort caps must be nonnegative")
             object.__setattr__(self, name, _owned(value))
         object.__setattr__(self, "delay_steps", _integer(self.delay_steps, "delay", 0, 1))
-        object.__setattr__(self, "control_max_iterations",
-                           _integer(self.control_max_iterations, "iteration budget", 1, 4096))
+        object.__setattr__(
+            self,
+            "control_max_iterations",
+            _integer(self.control_max_iterations, "iteration budget", 1, 4096),
+        )
 
     def inputs(self, drive, external=None):
         n = self.model.body_count - 1
@@ -179,9 +213,20 @@ class FloatingTreeKinematics:
     configuration_count: int
 
     def __post_init__(self):
-        for name in ("position", "velocity", "link_position_m", "link_rotation",
-                     "com_position_m", "linear_velocity_m_s", "angular_velocity_rad_s"):
-            dtype = np.float64 if name in ("position", "link_position_m", "com_position_m") else np.float32
+        for name in (
+            "position",
+            "velocity",
+            "link_position_m",
+            "link_rotation",
+            "com_position_m",
+            "linear_velocity_m_s",
+            "angular_velocity_rad_s",
+        ):
+            dtype = (
+                np.float64
+                if name in ("position", "link_position_m", "com_position_m")
+                else np.float32
+            )
             object.__setattr__(self, name, _owned(getattr(self, name), dtype))
 
 
@@ -204,10 +249,22 @@ class FloatingTreeDiagnostic:
     equation_residual: float
 
     def __post_init__(self):
-        for name in ("entry_position", "entry_velocity", "linear_jacobian", "angular_jacobian",
-                     "mass", "bias", "external", "drive", "acceleration"):
-            object.__setattr__(self, name, _owned(getattr(self, name),
-                               np.float64 if name == "entry_position" else np.float32))
+        for name in (
+            "entry_position",
+            "entry_velocity",
+            "linear_jacobian",
+            "angular_jacobian",
+            "mass",
+            "bias",
+            "external",
+            "drive",
+            "acceleration",
+        ):
+            object.__setattr__(
+                self,
+                name,
+                _owned(getattr(self, name), np.float64 if name == "entry_position" else np.float32),
+            )
 
 
 @dataclass(frozen=True, eq=False)
@@ -261,16 +318,30 @@ class FloatingTreeWorldSpec:
 
     def checkpoint(self, world, root_row, joint_row, generalized_row, tick, control):
         drive, effort, loads = floating_packet(control, self.n)
-        position = np.r_[self.anchor + np.asarray(root_row[:3], dtype=float), root_row[3:7], joint_row[:self.n, 0]]
-        velocity = np.r_[root_row[7:13], joint_row[:self.n, 1]]
-        return FloatingTreeCheckpoint(world_key(world), self.topology, int(tick), _nested(position),
-            _nested(velocity), _nested(joint_row[:self.n, 2]),
-            _nested(joint_row[:self.n, 4:7]) if self.delay else (),
+        position = np.r_[
+            self.anchor + np.asarray(root_row[:3], dtype=float),
+            root_row[3:7],
+            joint_row[: self.n, 0],
+        ]
+        velocity = np.r_[root_row[7:13], joint_row[: self.n, 1]]
+        return FloatingTreeCheckpoint(
+            world_key(world),
+            self.topology,
+            int(tick),
+            _nested(position),
+            _nested(velocity),
+            _nested(joint_row[: self.n, 2]),
+            _nested(joint_row[: self.n, 4:7]) if self.delay else (),
             (_nested(drive), _nested(effort), _nested(loads[:, :3]), _nested(loads[:, 3:])),
-            _nested(generalized_row[:self.d]), _nested(root_row[:3]))
+            _nested(generalized_row[: self.d]),
+            _nested(root_row[:3]),
+        )
 
     def restore_row(self, checkpoint, world):
-        if not isinstance(checkpoint, FloatingTreeCheckpoint) or world_key(checkpoint.world) != world:
+        if (
+            not isinstance(checkpoint, FloatingTreeCheckpoint)
+            or world_key(checkpoint.world) != world
+        ):
             raise ValueError("floating checkpoint world or state kind differs")
         if checkpoint.topology != self.topology:
             raise ValueError("floating checkpoint topology/model differs")
@@ -285,16 +356,18 @@ class FloatingTreeWorldSpec:
             raise ValueError("floating world origin disagrees with its complete local checkpoint")
         root[3:7], root[7:13] = _quat(q[3:7]), v[:6]
         row = np.zeros((max(1, self.n), 7), np.float32)
-        row[:self.n, 0] = _coordinate(q[7:], "restored floating joints", (self.n,))
-        row[:self.n, 1] = v[6:]
-        row[:self.n, 2] = as_fp32(checkpoint.applied_effort, "restored floating drive", (self.n,))
-        applied = as_fp32(checkpoint.generalized_applied, "restored floating generalized load", (self.d,))
-        row[:self.n, 3] = applied[6:]
+        row[: self.n, 0] = _coordinate(q[7:], "restored floating joints", (self.n,))
+        row[: self.n, 1] = v[6:]
+        row[: self.n, 2] = as_fp32(checkpoint.applied_effort, "restored floating drive", (self.n,))
+        applied = as_fp32(
+            checkpoint.generalized_applied, "restored floating generalized load", (self.d,)
+        )
+        row[: self.n, 3] = applied[6:]
         if self.delay:
             history = np.asarray(checkpoint.history)
             if self.n == 0 and history.shape == (0,):
                 history = history.reshape(0, 3)
-            row[:self.n, 4:7] = as_fp32(history, "restored floating queue", (self.n, 3))
+            row[: self.n, 4:7] = as_fp32(history, "restored floating queue", (self.n, 3))
         elif checkpoint.history != ():
             raise ValueError("undelayed floating checkpoint cannot contain a queue")
         if not isinstance(checkpoint.control, tuple) or len(checkpoint.control) != 4:
@@ -305,8 +378,14 @@ class FloatingTreeWorldSpec:
             drive = drive.reshape(0, 3)
         if drive.shape != (self.n, 3):
             raise ValueError("restored floating drive must retain its (n,3) block")
-        packet = FloatingTreeInputs(drive, FloatingRobotInputs(np.asarray(effort, dtype=float),
-                                   np.asarray(force, dtype=float), np.asarray(torque, dtype=float)))
+        packet = FloatingTreeInputs(
+            drive,
+            FloatingRobotInputs(
+                np.asarray(effort, dtype=float),
+                np.asarray(force, dtype=float),
+                np.asarray(torque, dtype=float),
+            ),
+        )
         floating_packet(packet, self.n)
         return _owned(root), _owned(row), _owned(applied), packet, tick
 
@@ -331,7 +410,11 @@ def compile_floating_tree_world(spec):
     zero = np.repeat(np.eye(3)[None], b, axis=0)
     frames = zero.copy()
     mass, com, inertia = np.empty(b), np.empty((b, 3)), np.empty((b, 3))
-    mass[0], com[0], inertia[0] = 1 / model.root.inverse_mass[0], model.root_com_m, model.root.inertia_diagonal[0]
+    mass[0], com[0], inertia[0] = (
+        1 / model.root.inverse_mass[0],
+        model.root_com_m,
+        model.root.inertia_diagonal[0],
+    )
     frames[0] = quaternion_matrix(model.root_inertia_frame_xyzw[None])[0]
     types = ()
     if n:
@@ -354,14 +437,43 @@ def compile_floating_tree_world(spec):
     if spec.delay_steps:
         row[:n, 4:7] = drive
     token = floating_model_token(model)
-    topology = ("floating_tree_v1", token, _nested(anchor), *(_nested(x) for x in
-                (spec.kp, spec.kd, spec.effort_limit)), spec.delay_steps, spec.control_max_iterations)
+    topology = (
+        "floating_tree_v1",
+        token,
+        _nested(anchor),
+        *(_nested(x) for x in (spec.kp, spec.kd, spec.effort_limit)),
+        spec.delay_steps,
+        spec.control_max_iterations,
+    )
+
     def packed(value, name):
         return _owned(as_fp32(value, "floating " + name, value.shape))
-    return FloatingTreeWorldSpec(n, spec.delay_steps, spec.control_max_iterations, topology,
-        token, types, _owned(parents, np.int32), _owned(kinds, np.int32), packed(offsets, "offsets"),
-        packed(zero, "joint rotations"), packed(axes, "joint axes"), packed(mass, "mass"),
-        packed(com, "COM"), packed(inertia, "inertia"), packed(frames, "inertia frames"),
-        packed(model.root.gravity, "gravity"), _owned(spec.kp), _owned(spec.kd), _owned(spec.effort_limit),
-        anchor, _owned(root), _owned(row), _owned(drive), _owned(np.zeros((b, 6))),
-        _owned(np.zeros(n)), _owned(np.zeros(n + 6)))
+
+    return FloatingTreeWorldSpec(
+        n,
+        spec.delay_steps,
+        spec.control_max_iterations,
+        topology,
+        token,
+        types,
+        _owned(parents, np.int32),
+        _owned(kinds, np.int32),
+        packed(offsets, "offsets"),
+        packed(zero, "joint rotations"),
+        packed(axes, "joint axes"),
+        packed(mass, "mass"),
+        packed(com, "COM"),
+        packed(inertia, "inertia"),
+        packed(frames, "inertia frames"),
+        packed(model.root.gravity, "gravity"),
+        _owned(spec.kp),
+        _owned(spec.kd),
+        _owned(spec.effort_limit),
+        anchor,
+        _owned(root),
+        _owned(row),
+        _owned(drive),
+        _owned(np.zeros((b, 6))),
+        _owned(np.zeros(n)),
+        _owned(np.zeros(n + 6)),
+    )

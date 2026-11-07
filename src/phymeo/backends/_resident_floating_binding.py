@@ -32,9 +32,17 @@ class ResidentFloatingTreeBinding:
     def __post_init__(self):
         if not isinstance(self.key, CollisionKey):
             raise TypeError("floating binding requires a CollisionKey")
-        if isinstance(self.world, (bool, np.bool_)) or not isinstance(self.world, Integral) or int(self.world) != self.key.world:
+        if (
+            isinstance(self.world, (bool, np.bool_))
+            or not isinstance(self.world, Integral)
+            or int(self.world) != self.key.world
+        ):
             raise ValueError("floating binding world must match its key")
-        if isinstance(self.group_index, (bool, np.bool_)) or not isinstance(self.group_index, Integral) or not 0 <= self.group_index <= 16:
+        if (
+            isinstance(self.group_index, (bool, np.bool_))
+            or not isinstance(self.group_index, Integral)
+            or not 0 <= self.group_index <= 16
+        ):
             raise ValueError("floating binding group must be a body index in [0,17)")
         object.__setattr__(self, "world", int(self.world))
         object.__setattr__(self, "group_index", int(self.group_index))
@@ -56,7 +64,9 @@ class ResidentFloatingTreeBinding:
         colliders = [c for c in asset.collisions if c.shape.key == source_key]
         shapes = [s for s in asset.collision_model.shapes if s.key == source_key]
         if len(colliders) != 1 or len(shapes) != 1 or colliders[0].shape != shapes[0]:
-            raise ValueError("floating source must identify exactly one complete registered collider")
+            raise ValueError(
+                "floating source must identify exactly one complete registered collider"
+            )
         collider = colliders[0]
         if collider.shape.kind not in ("sphere", "capsule", "hull"):
             raise ValueError("floating source supports finite sphere, capsule or hull only")
@@ -111,7 +121,11 @@ def _zero_pose(spec, group, points):
 
 def compile_floating_tree_binding(shape, binding, spec):
     """Pack original points[V,3] and radius/local/path/depth geometry[4]."""
-    if not isinstance(shape, CollisionShape) or not isinstance(binding, ResidentFloatingTreeBinding) or not isinstance(spec, FloatingTreeWorldSpec):
+    if (
+        not isinstance(shape, CollisionShape)
+        or not isinstance(binding, ResidentFloatingTreeBinding)
+        or not isinstance(spec, FloatingTreeWorldSpec)
+    ):
         raise TypeError("floating binding compilation needs shape, binding and owned spec")
     if shape.key != binding.key or shape.key.world != binding.world:
         raise ValueError("floating shape key/world differs from its binding")
@@ -131,8 +145,17 @@ def compile_floating_tree_binding(shape, binding, spec):
     points = binding.local_points_m
     motion, reach, depth = _zero_pose(spec, binding.group_index, points)
     local_reach = float(np.max(np.sum(abs(points), axis=1)))
-    geometry = _owned([_outward_positive(shape.radius, "floating skin"),
-                       _outward_positive(local_reach, "floating local reach"),
-                       _outward_positive(reach, "floating path reach"), np.float32(depth)])
-    return FloatingBindingCompiled(binding.group_index, motion,
-        _owned(as_fp32(points, "floating body-local material", points.shape)), geometry)
+    geometry = _owned(
+        [
+            _outward_positive(shape.radius, "floating skin"),
+            _outward_positive(local_reach, "floating local reach"),
+            _outward_positive(reach, "floating path reach"),
+            np.float32(depth),
+        ]
+    )
+    return FloatingBindingCompiled(
+        binding.group_index,
+        motion,
+        _owned(as_fp32(points, "floating body-local material", points.shape)),
+        geometry,
+    )

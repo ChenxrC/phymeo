@@ -90,3 +90,8 @@ python -m pytest -q tests/scale/test_resident_floating_contacts.py tests/scale/t
 ## 父执行观察：F07 保存精度口径（2026-11-08）
 
 506解释完整剩余矩阵已通过16项，随后CC在已接受首步的gap断言失败：原0.09 m child offset保存为FP32，与十进制-0.01 m的理想gap相差3.57627868e-9 m，原断言门1e-10 m。原输入/产品/力与运动工程门不变。父仅对CC/HH增加两套独立支持函数锚：原FP64声明仍按1e-10核literal；实际入口由原offset显式FP32转换和原local/radius计算expected gap，同样1e-10核保存witness。完整first_geometry_anchor记录两口径，非从设备witness反求expected。510原失败CC与尚未运行HH各通过，RAW0；506已绿16项不重跑，后续继续F08/F09/F10，最终CUDA仍为首完整剩余矩阵。
+
+
+## 首次延迟历史参照修正（父，2026-11-08）
+
+原511解释组的F08五项与F09均通过，随后F10在W1的N9首步因测试把延迟历史统一预期为零而失败（RAW1保留）。原C9从创建起就把首个延迟target设为已存FP32初始关节角，非零初态应为±1/16；rate/ff为零。父只修独立测试_selected、delay显式断言和同次保存reader，以原声明q的FP32表示构造期望，不从实际selected_drive反推。原产品、模型、控制、工程门和完整保存均未改。517 Ruff与518 format-check均0；全部25功能节点已有分组解释覆盖，接下来仅执行尚未完整通过的51个事务节点，原W矩阵未完成前缀保留，不重跑F01–F09。

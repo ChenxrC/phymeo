@@ -14,6 +14,7 @@ import json
 import math
 from pathlib import Path
 import re
+import struct
 import zipfile
 
 STEP = "tests/scale/test_resident_floating_contacts.py"
@@ -676,7 +677,10 @@ def window_payload(member, record):
         if previous is not None:
             exact(measured["entry_state"], previous, "no reset between actual steps")
         held_matches(measured["entry_state"], record["command"])
-        selected = [[0, 0, 0] for _ in range(n)] if i < data.get("delay", 0) else record["command"]["drive"]
+        selected = (
+            [[struct.unpack("<f", struct.pack("<f", number(q)))[0], 0, 0] for q in data["q"][7:]]
+            if i < data.get("delay", 0) else record["command"]["drive"]
+        )
         close(measured["selected_drive"], selected, "actual delayed request", atol=0, rtol=0)
         saved_independent(measured, row["audit"])
         if member.group != "f07":

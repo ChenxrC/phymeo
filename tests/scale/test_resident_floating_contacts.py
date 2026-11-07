@@ -281,7 +281,13 @@ def _geometry(batch, item, *, world=WORLD, reverse=False):
 
 
 def _selected(item, tick):
-    return np.zeros_like(item["data"]["drive"]) if tick < item["delay"] else item["data"]["drive"]
+    if tick < item["delay"]:
+        # Original C9 delay history holds the declared initial joint target.
+        # Build it from authored input, independently of a product checkpoint.
+        initial = np.zeros_like(item["data"]["drive"])
+        initial[:, 0] = np.asarray(item["data"]["q"][7:], dtype=np.float32)
+        return initial
+    return item["data"]["drive"]
 
 
 def _first_anchors(data):

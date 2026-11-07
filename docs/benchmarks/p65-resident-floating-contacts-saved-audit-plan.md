@@ -76,3 +76,8 @@ RD 指出合法 F06 的 `ResidentFloatingTreeBinding.from_asset` 使用 `topolog
 父实际分组 CLI 对齐：上述两个 `-k` 完整字符串是严格白名单，分别按作者 `Member.function` 排除精确 F01 函数，或保留 `test_f08`/`test_f09`/`test_f10` 前缀。接受独立参数与 `-k=` 拼写但不改表达式内容；多表达式、未识别表达式均拒绝，不 eval、不导入 pytest、不按输出决定选集。过滤后的 authored 顺序仍用于原 tmp prefix/ordinal 与成功前缀绑定；76/61 总身份不变。此为单独执行前 observer 兼容修正，既有四项来源/覆盖修正未重写，仍未执行。
 
 RD 对第4项的限定复核发现：虽然已保存的 diagnostics map 会核全树覆盖，mixed 前19个未参与重放的行仍可整段缺字段。现仅在 authored mixed 的全部40个 forward、21个 replay 行显式要求 `diagnostics`，再复用完整 map 校验。依据原 producer 每行均保存该公开读回，不能依赖后21行的重放比较来证明前19行；其他本来不保存独立 diagnostics map 的 schema 不变。此窄修正仍为纯作者、未执行，也未读取任何实际输出。
+
+
+## 首次延迟历史参照修正（父，2026-11-08）
+
+原511解释组的F08五项与F09均通过，随后F10在W1的N9首步因测试把延迟历史统一预期为零而失败（RAW1保留）。原C9从创建起就把首个延迟target设为已存FP32初始关节角，非零初态应为±1/16；rate/ff为零。父只修独立测试_selected、delay显式断言和同次保存reader，以原声明q的FP32表示构造期望，不从实际selected_drive反推。原产品、模型、控制、工程门和完整保存均未改。517 Ruff与518 format-check均0；全部25功能节点已有分组解释覆盖，接下来仅执行尚未完整通过的51个事务节点，原W矩阵未完成前缀保留，不重跑F01–F09。

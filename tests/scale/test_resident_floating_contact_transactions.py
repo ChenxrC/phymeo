@@ -253,7 +253,10 @@ def test_f10_drive_delay_cap_and_immediate_external_full_response(delay, cap, ty
         assert np.max(abs(row["receipt"].input_external)) > 0
         assert np.all(abs(row["receipt"].actual_drive) <= cap + 5e-5)
     if delay:
-        _close(rows[0]["receipt"].selected_drive, np.zeros((3, 3)), atol=0, rtol=0)
+        initial_target = np.column_stack(
+            (np.asarray(data["q"][7:], dtype=np.float32), np.zeros((3, 2)))
+        )
+        _close(rows[0]["receipt"].selected_drive, initial_target, atol=0, rtol=0)
         _close(rows[1]["receipt"].selected_drive, data["drive"], atol=0, rtol=0)
 
 

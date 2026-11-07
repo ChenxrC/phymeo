@@ -6,6 +6,7 @@ runtime, control advance, or accepted-state publication occurs in this module.
 
 from dataclasses import dataclass
 from numbers import Integral
+from types import MappingProxyType
 
 import numpy as np
 
@@ -236,28 +237,64 @@ def tree_packet(inputs, domain, n):
     return out
 
 
-def compile_tree_world(spec):
-    if not isinstance(spec, FixedRobotTree):
-        raise TypeError("expected FixedRobotTree")
-    program, initial = spec.program, spec.state
-    # Revalidate and own the authored model, including externally re-enabled arrays.
-    m = program.model
-    if not isinstance(m, RobotModel):
+def compile_tree_physical(model):
+    """Own the physical N-row layout without a drive or coordinate policy.
+
+    Both ordinary and affine worlds retain this complete mass/geometry model.
+    This function only compiles static data; it never creates a program/runtime,
+    evaluates current dynamics or changes accepted state.
+    """
+    if not isinstance(model, RobotModel):
         raise TypeError("resident tree requires an ordinary RobotModel")
     model = RobotModel(
-        m.parents,
-        m.joint_types,
-        m.joint_position,
-        m.joint_orientation,
-        m.joint_axis,
-        m.mass,
-        m.com,
-        m.inertia_diagonal,
-        m.gravity,
+        model.parents,
+        model.joint_types,
+        model.joint_position,
+        model.joint_orientation,
+        model.joint_axis,
+        model.mass,
+        model.com,
+        model.inertia_diagonal,
+        model.gravity,
     )
     n = model.dof_count
     if not 1 <= n <= MAX_TREE_JOINTS:
         raise ValueError("resident tree joint count must be in [1,16]")
+    # Every root retains its real installation relative to one fixed anchor.
+    anchor64 = np.array(model.joint_position[0], copy=True)
+    offsets = np.array(model.joint_position, copy=True)
+    offsets[model.parents < 0] -= anchor64
+    return MappingProxyType(
+        dict(
+            n=n,
+            model_token=tree_model_token(model),
+            joint_types=model.joint_types,
+            parents=_owned(model.parents, np.int32),
+            kinds=_owned([0 if k == "revolute" else 1 for k in model.joint_types], np.int32),
+            offsets=_owned(as_fp32(offsets, "tree offsets relative to anchor", (n, 3))),
+            zero_rotation=_owned(
+                as_fp32(
+                    quaternion_matrix(model.joint_orientation), "tree zero rotations", (n, 3, 3)
+                )
+            ),
+            local_axis=_owned(as_fp32(model.joint_axis, "tree axes", (n, 3))),
+            mass=_owned(as_fp32(model.mass, "tree masses", (n,))),
+            com=_owned(as_fp32(model.com, "tree COM", (n, 3))),
+            inertia=_owned(as_fp32(model.inertia_diagonal, "tree inertia", (n, 3))),
+            gravity=_owned(as_fp32(model.gravity, "tree gravity", (3,))),
+            anchor=_owned(as_fp32(anchor64, "tree anchor", (3,))),
+        )
+    )
+
+
+def compile_tree_world(spec):
+    if not isinstance(spec, FixedRobotTree):
+        raise TypeError("expected FixedRobotTree")
+    program, initial = spec.program, spec.state
+    physical = dict(compile_tree_physical(program.model))
+    n = physical.pop("n")
+    model_token = physical.pop("model_token")
+    joint_types = physical.pop("joint_types")
     if program.delay_steps not in (0, 1):
         raise ValueError("resident tree supports delay 0 or 1 only")
     if program.limits is not None:
@@ -266,7 +303,7 @@ def compile_tree_world(spec):
     if set(initial.domains) != {domain} or not isinstance(initial.domains[domain], RobotState):
         raise ValueError("resident tree needs its complete ordinary SceneState")
     state = initial.domains[domain]
-    validate_robot_step(model, state, RobotInputs.zeros(n))
+    validate_robot_step(program.model, state, RobotInputs.zeros(n))
     row = np.zeros((n, TREE_STATE_WIDTH), np.float32)
     row[:, 0] = _coordinate(state.q, "initial tree coordinate", n)
     row[:, 1] = as_fp32(state.v, "initial tree velocity", (n,))
@@ -277,7 +314,6 @@ def compile_tree_world(spec):
         row[:, 4:7] = as_fp32(initial.history[queue_name], "initial tree history", (1, 3, n))[0].T
     command = np.zeros((n, TREE_COMMAND_WIDTH), np.float32)
     command[:, 0] = row[:, 0]
-    model_token = tree_model_token(model)
     gains = [
         as_fp32(getattr(program, name), "tree " + name, (n,))
         for name in ("kp", "kd", "effort_limit")
@@ -293,30 +329,6 @@ def compile_tree_world(spec):
         int(program.delay_steps),
         spec.control_max_iterations,
     )
-    # One fixed anchor is removed before any recursive device addition. Other
-    # root rows retain their real relative installation, including branched roots.
-    anchor64 = np.array(model.joint_position[0], copy=True)
-    offsets = np.array(model.joint_position, copy=True)
-    offsets[model.parents < 0] -= anchor64
-    values = dict(
-        parents=_owned(model.parents, np.int32),
-        kinds=_owned([0 if k == "revolute" else 1 for k in model.joint_types], np.int32),
-        offsets=_owned(as_fp32(offsets, "tree offsets relative to anchor", (n, 3))),
-        zero_rotation=_owned(
-            as_fp32(quaternion_matrix(model.joint_orientation), "tree zero rotations", (n, 3, 3))
-        ),
-        local_axis=_owned(as_fp32(model.joint_axis, "tree axes", (n, 3))),
-        mass=_owned(as_fp32(model.mass, "tree masses", (n,))),
-        com=_owned(as_fp32(model.com, "tree COM", (n, 3))),
-        inertia=_owned(as_fp32(model.inertia_diagonal, "tree inertia", (n, 3))),
-        gravity=_owned(as_fp32(model.gravity, "tree gravity", (3,))),
-        kp=_owned(gains[0]),
-        kd=_owned(gains[1]),
-        cap=_owned(gains[2]),
-        anchor=_owned(as_fp32(anchor64, "tree anchor", (3,))),
-        initial_state=_owned(row),
-        initial_command=_owned(command),
-    )
     return TreeWorldSpec(
         domain,
         n,
@@ -324,6 +336,11 @@ def compile_tree_world(spec):
         spec.control_max_iterations,
         topology,
         model_token,
-        model.joint_types,
-        **values,
+        joint_types,
+        **physical,
+        kp=_owned(gains[0]),
+        kd=_owned(gains[1]),
+        cap=_owned(gains[2]),
+        initial_state=_owned(row),
+        initial_command=_owned(command),
     )

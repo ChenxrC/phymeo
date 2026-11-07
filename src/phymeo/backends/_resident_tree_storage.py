@@ -275,9 +275,9 @@ class TreeDeviceStorage:
         self._valid = {world: False for world in self.worlds}
         self._pending_info = None
 
-    def stage_advance(self, h, src, dst, tick_src, tick_dst, accepted):
+    def stage_mechanics(self, src):
+        """Fill full physical M/b/J at the accepted bank; no solve or publication."""
         self._check()
-        self.invalidate_diagnostics()
         self.batch._launch(
             self.kernels["mechanics"][src],
             self.count,
@@ -295,26 +295,17 @@ class TreeDeviceStorage:
             self.mass,
             self.vector,
         )
-        self.batch._launch(
-            self.kernels["solve"][src],
-            self.count,
-            h,
-            self.meta,
-            self.static,
-            self.commands,
-            self.states[src],
-            tick_src,
-            self.states[dst],
-            self.mass,
-            self.factor,
-            self.mobility,
-            self.vector,
-            self.info,
-            self.diag,
-        )
-        self.batch._counts["tree_dynamics_kernel_launches"] += 2
+        self.batch._counts["tree_dynamics_kernel_launches"] += 1
+
+    def stage_candidate_geometry(self, dst):
+        """Rebuild full candidate FK/energy without changing the active bank."""
+        self._check()
         self._geometry(dst)
         self._energy(dst)
+
+    def stage_finalize(self, src, dst, tick_src, tick_dst, accepted):
+        """Retain or reject the full candidate using its completed physical gates."""
+        self._check()
         self.batch._launch(
             self.kernels["finalize"][src],
             self.count,
@@ -332,6 +323,31 @@ class TreeDeviceStorage:
             self.flags,
         )
         self.batch._counts["tree_commit_kernel_launches"] += 1
+
+    def stage_advance(self, h, src, dst, tick_src, tick_dst, accepted):
+        self._check()
+        self.invalidate_diagnostics()
+        self.stage_mechanics(src)
+        self.batch._launch(
+            self.kernels["solve"][src],
+            self.count,
+            h,
+            self.meta,
+            self.static,
+            self.commands,
+            self.states[src],
+            tick_src,
+            self.states[dst],
+            self.mass,
+            self.factor,
+            self.mobility,
+            self.vector,
+            self.info,
+            self.diag,
+        )
+        self.batch._counts["tree_dynamics_kernel_launches"] += 1
+        self.stage_candidate_geometry(dst)
+        self.stage_finalize(src, dst, tick_src, tick_dst, accepted)
 
     def check_advance(self, status):
         """After parent's sync/status and BEFORE its active swap; may raise."""

@@ -187,3 +187,11 @@ A06的有限迭代负控现固定为A05的初态Mr，移除额外effort，h=1/10
 7. 空affine集合零分配；full物理资源沿已有tree计数，新K资源及projection/solve/expand/candidate-commit计数明确新增。只记录真实launch/上传/读回，不将构造或观察费用藏在零拷贝结论中。无额外runtime，close由父同一资源栈负责。
 
 详细kernel数组顺序在产品grant后由作者提出，父核对上述生命周期再落共享hook；不以本段声明代替实际事务测试或C5运行结果。
+
+### 首次真实 RED 与父复用实现（2026-11-07）
+
+作者c10938a的首两NEW测试/参考文件已由父3ab6296正常导入。230单节点真实运行：原HOST asset加载、N2/K1、P=(1,2)、c=(0,1/8)及full初态全部成立，随后正常公共 `ph.AffineRobotTree` 缺失，1 failed / .87 s / RAW1。不是collection或原模型错误；原输入gzip保留，不重跑。
+
+父按上述接缝仅修改旧 `_resident_tree_world.py` 与 `_resident_tree_storage.py`。真实 `compile_tree_physical` 返回MappingProxyType，字段为n/model_token/joint_types及parents/kinds/offsets/zero_rotation/local_axis/mass/com/inertia/gravity/anchor（数组owned）；调用方复制mapping后取前三字段，其余可直接作为TreeWorldSpec物理字段。普通compile仍验证原驱动/state/history，所有物理计算式保持。三个stage方法已实现，普通路径调用顺序保持；mechanics与solve每次实际成功launch分别计1，晚launch失败也保留已发生计数。
+
+231Ruff通过，232仅一行排版待改；233formatter及234/235最终静态通过。236 interpret **22 passed / 3.84 s / RAW0**、237 CUDA **22 passed /20.54 s / RAW0**：只运行此次提取实际影响的既有耦合2R、限幅/迭代拒绝、混合restore/重试、owned输入、能力/模型拒绝、fixed工具及非主轴COM外载控制。未重跑旧101全组、Newton或旧wheel。各执行前后源码/原输出留在[本次串行档案](../../../artifacts/p65-generic-collision-20261107-01/)。这关闭的是父共享提取的相邻兼容，C5新功能仍未实现/未通过。

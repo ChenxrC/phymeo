@@ -11,9 +11,9 @@
 - `tests/reference_newton/robot/resident_floating_contact_reference.py`
 - 本报告。
 
-首节点 checkpoint 为 `03b57c0`；`35e98a0` 只把读数名称改为实际公共 `link_position_m`，未改输入或数值门。父已纯文本审阅 `3254174` 的 306 行独立参考及 `ec9560d` 的 F01–F09 增量，尚无本片执行结果。此后增量只有 F08 新的 `variant='both'` 独立实例、接受输出先保存后断言、完整 NEW 事务文件与本报告。原 `(9,None)`、`(16,None)`、`(16,'body15')` 三个实例完整保留。 最终代码 checkpoint `890b358`：参考仅追加3行root并载分支；功能测试增量20行；NEW事务测试629行。
+首节点 checkpoint 为 `03b57c0`；`35e98a0` 只把读数名称改为实际公共 `link_position_m`，未改输入或数值门。父已纯文本审阅 `3254174` 的 306 行独立参考及 `ec9560d` 的 F01–F09 增量，尚无本片执行结果。此后增量只有 F08 新的 `variant='both'` 独立实例、接受输出先保存后断言、完整 NEW 事务文件与本报告。原 `(9,None)`、`(16,None)`、`(16,'body15')` 三个实例完整保留。 主要代码 checkpoint `890b358`：参考仅追加3行root并载分支；功能测试增量20行；NEW事务测试629行。
 
-独立参考仅 NumPy/stdlib，按相邻文件路径装载已接受的 `resident_floating_reference.py`：齐次变换一/二阶 time jets 给出每个真实 COM 的完整 J/M/b，原独立 box-face KKT 给出小 N 的有界 PD，一次原半隐式位置/四元数漂移。没有导入 Phymeo、TYX、Newton、产品 M/J/solve 或有限差分。测试的产品构造器只声明模型，不能给参考制造期望。
+独立参考仅 NumPy/stdlib，按相邻文件路径装载已接受的 `resident_floating_reference.py`：齐次变换一/二阶 time jets 给出每个真实 COM 的完整 J/M/b，原独立 box-face KKT 给出小 N 的有界 PD，一次原半隐式位置/四元数漂移。没有导入 Phymeo、TYX、Newton、产品 M/J/solve 或有限差分。实际延迟声明保存在每份 owned input 的 `delay` 字段；`first_independent_zero_delay` 明确只是零延迟首锚，每个实际物理步另按真实选中控制作独立参考。测试的产品构造器只声明模型，不能给参考制造期望。
 
 ## 首个有效 RED 与公共合同
 

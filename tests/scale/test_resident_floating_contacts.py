@@ -167,6 +167,10 @@ def _reference():
 
 
 def _item(data, *, delay=0):
+    import copy
+
+    data = copy.deepcopy(data)
+    data["delay"] = delay
     asset = None
     if data["name"] == "F06":
         asset = ph.load_floating_urdf(
@@ -223,7 +227,7 @@ def _selected(item, tick):
 
 
 def _first_anchors(data):
-    """Literal mechanics first; no product output generates these expected values."""
+    """Zero-delay literal mechanics; actual delayed rows have their own oracle."""
     if data["name"] == "F07":
         return None
     ref = _reference()
@@ -339,7 +343,7 @@ def _window(item, mode, directory, *, steps=40, reverse=False, world=WORLD):
     rows, failure = [], None
     q, v = data["q"].copy(), data["v"].copy()
     record = dict(input=data, command=item["command"], dt_s=H, mode=mode,
-                  steps=steps, first_independent=_first_anchors(data), rows=rows)
+                  steps=steps, first_independent_zero_delay=_first_anchors(data), rows=rows)
     with ph.TyxWorldBatch([(world, item["tree"])], mode, cache_root=directory) as batch:
         batch.set_controls({world: item["command"]})
         model, bindings, sources, laws = _geometry(batch, item, world=world, reverse=reverse)

@@ -57,3 +57,15 @@ NEW _mimic_xml.extract_mimic_relations(order,incoming)从已严格读取的原�
 父独占旧joint_mimic图委托、mimic_urdf XML委托、floating_urdf内部assembly抽取，以及后续登记/factory/控制。作者本轮只standalone effort动力学，不提前scene/PD。完整M/b以真实完整tree计算，S投影求一次约束加速度，原COM/quaternion drift一次，完整root/joint行余额与原顺序行反力均保留。
 
 完成小commit/clean/精确新增清单、报告UNEXECUTED并释放authoring；lint/formatter/import/pytest/数值/构建全部仍父串行。父集成后跑新完整文件及受本次共享抽取影响的最小旧图/浮根兼容组；无同源已绿重跑。
+
+## T3共同场景接续（2026-11-07）
+
+T2已实测110新23pass、111共享兼容37pass，静态112/113=0；父05982ed记录，无数值修补。继续原RD，按先测试checkpoint→父首RED→产品编码的顺序，授权NEW tests/test_floating_mimic_scene.py、examples/floating_mimic_contact.py、runtime/_floating_mimic_participant.py、docs/benchmarks/p65-floating-mimic-scene.md（runtime在src/phymeo下），及原casebook只追加T3冻结输入/门。不修改旧文件、T2源码或已过T2测试；不merge父。先交tests/example/casebook clean checkpoint，父用当前已接通T2的src验证真实builder缺口，然后消息通知实施，用户无需逐阶段确认。
+
+沿原F03 jaws同一层外初态/0.25s/h1/2048和1/4096/原law，保存全部逐步独立/full状态、真实两侧COM力矩、原材料/作用点、mimic行载荷/功、事件和时间。公开example输出完整record而非仅摘要。保反序登记/共同坐标变换留出，失败原值留存，不改原输入强求接触或离开。增加独立受限PD例与另一普通固定根机器人共同受载的单步留出；该补充的质量/位置/载荷/解析或KKT oracle在测试checkpoint先冻结，不能将原单球窗口改为别的任务。第二参与者拒步/late事件失败→所有q/v/几何/事件/时间共同不发布，fresh合法重试同。
+
+NEW FloatingMimicParticipant(address,registration,occupied)使用原FloatingRobotRegistration（asset为wrapper）。父make_floating_registration接wrapper，维数/限位/控制按k、真实tree元数据/重力/full_state按n；parent MultiRobotScene factory按asset类型选participant，不另scene/registry。participant.velocity_count始终6+n，body_count n+1；poses/contact_view/key_map完全来自真实完整tree。可组合原FloatingRobotParticipant作只读完整物理几何适配，其full registration只用于几何/验证/terms，不调用该适配器prepare/integrate/注册第二owner。禁止虚构自由body/DOF或重复占用key。
+
+prepare在同一入态读full M/b/J，投影S后调用父已存在的_resolve_floating_drive(spec,entry,command,h,mass,bias,external_load,external)；接触仍在其后共同采样。积分仅调用机制的约束step一次或等价共用核心；完整COM外载与contact各计一次，实际接触full Jᵀ载荷须与COM汇总一致。观察q/v独立、full_q/full_v完整；contact_effort使用Sᵀfull接触（6+k），contact_effort_full及applied/acceleration均6+n，drive k，根fixed_contact_wrench零，mimic_loads保原行/根余额和入步功。
+
+父独占旧_registration/factory/ContactSceneBuilder说明及必要公开exports。原ResolvePD函数已抽取，原37兼容通过，不再复制浮根控制律。产品最终交接仍UNEXECUTED，所有imports/pytest/数值/static/build由父唯一串行执行；作者可只text/fileIO/Git。

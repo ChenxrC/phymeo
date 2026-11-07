@@ -77,3 +77,11 @@ docs/benchmarks/p65-resident-floating-tree-tests.md。
 结束本片仅C9普通浮根设备树限域接受；通过后才交浮根接触薄接缝。持续目标ACTIVE，不按测试数/清单数称总体完成。
 
 公开spec亦沿原tyx_world_batch模块可见；不会向原空backends/__init__.py添加会提前加载设备依赖的导出。current-pose浮根多dynamic绑定沿C8 tree_dynamic_pairs默认False；True同模型不同非相邻body才入域，root0/childi+1直接父子要显式mask/exclusion。此项仅宽相候选，prepare_contacts仍明确拒浮根几何。
+
+## 作者阶段的可逆大坐标状态裁定（2026-11-08）
+
+源码手推反例：合法anchor=(2**60,0,0)、真实root local=(1/1024,0,0)时，FP64的anchor+local仍等于anchor。仅保存world Q再相减会恢复到local=0。这是存档表示缺口，不是实际数值测试失败，也不通过缩小坐标域或忽略位移消除。
+
+新FloatingTreeCheckpoint末追加immutable `local_origin_m`（3项tuple），逐项保存实际root bank的FP32局部坐标；原position仍为Q=n+7的世界观测，明确包含FP64加法舍入。完整checkpoint而非position单字段承担可逆恢复。restore将local按原normal-FP32-or-zero及±4096校验，要求position[:3]与原FP64 anchor+该stored local的FP64展开精确相同，再由local恢复root bank。root姿态、关节、速度、控制及其原绑定均保持。诊断entry_position仍为世界观测，同次entry checkpoint保留完整local。
+
+原robot仅在NEW schema/storage落实；原RD在NEW测试添加此固定大坐标反例、真实step/restore/相同请求重放及local/world不一致拒绝。合法编辑checkpoint改变root世界观测时须同步local，伪造任一字段不得静默恢复另一状态。父共享接缝与唯一串行执行规则不变，不新增执行权限。

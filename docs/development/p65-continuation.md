@@ -11,7 +11,7 @@
 **C6常驻有限静态接触反馈已正式限域接受**：产品48eeb89，HOST桥50、解释74分组、实际CUDA74、相邻15通过；112完整payload审计与新wheel两backend各41 batch/164 world-steps完成。包含有限球/胶囊/凸体、真实偏心转动/跨分支惯量、732/1463步卸载重入、W1/W4及容量/晚故障共同发布。详[正式接受](../benchmarks/p65-resident-tree-contacts.md#2026-11-08-父执行与正式限域接受)。本片不是affine/floating接触、动态双侧、持续摩擦、CCD或全GPU窄相，不重复已绿组/旧审计。
 
 **C7固定根affine常驻接触反馈已正式限域接受**：产品876ae848，每backend50专项联合覆盖、90主保存记录与两摘要补件、新wheel均通过。详[正式报告](../benchmarks/p65-resident-affine-contacts.md#2026-11-08-父执行与正式限域接受)。旧generic摘要差异与原失败保持，不重跑已绿组。
-**C8完整固定根tree/forest内双动态反馈已正式限域接受**：产品13c3fad，各backend74项联合覆盖、112完整保存payload、Newton原生160步及新wheel双backend各251接受+1拒绝world-step完成。CPU原力观察错误由同一80步独立解码补件闭环，原RAW1保留；无物理重跑或matched-law回退。完整源/安装/恢复/材料记录审计均通过，详[正式报告](../benchmarks/p65-resident-tree-dynamic-contacts.md#2026-11-08-父执行与正式限域接受)。当前作者及执行槽已释放。下一片从[普通浮根设备树调研提案](p65-resident-floating-tree-next-proposal.md)冻结状态、完整耦合动力学与设备宽相；浮根接触/affine另扩。全部执行仍由父串行，持续无截止。
+**C8完整固定根tree/forest内双动态反馈已正式限域接受**：产品13c3fad，各backend74项联合覆盖、112完整保存payload、Newton原生160步及新wheel双backend各251接受+1拒绝world-step完成。CPU原力观察错误由同一80步独立解码补件闭环，原RAW1保留；无物理重跑或matched-law回退。完整源/安装/恢复/材料记录审计均通过，详[正式报告](../benchmarks/p65-resident-tree-dynamic-contacts.md#2026-11-08-父执行与正式限域接受)。C8原执行槽已释放。C9已按[普通浮根设备树计划](../superpowers/plans/2026-11-08-resident-floating-tree.md)冻结P01–P07；原robot作者NEW产品、RD作者NEW测试/独立参考，父实施旧共享接缝并独占执行。434最小P03已在旧HOST完整惯量与反冲真值成立后准确RED于缺失公开入口；新产品尚未执行通过。世界观测与可逆local检查点已按同计划的大坐标反例裁定分开。浮根接触/affine在C9接受后另扩，持续无截止。
 
 [功能差异全景](phymeo-newton-panorama-2026-11-07.md) · [可视化](phymeo-newton-panorama-2026-11-07.html)。完整设备窄相/CCD/浮根设备树与其接触、跨独立participant的设备共同求解、抓取释放工程精度边界和软布两初态放台等仍开放；历史数学证明或局部几何不代表整个P6.5完成。
 

@@ -1,6 +1,6 @@
 """World kinematics of a physical free root and an optional scalar-joint tree (FP64)."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import numpy as np
 
@@ -18,12 +18,14 @@ class FloatingRobotModel:
     Body zero is the root. Body i+1 corresponds to scalar joint/link i of
     children. A child parent of -1 attaches to the root frame. root_com_m is
     measured from its body origin in body axes, in metres. Kinematics uses
-    only geometry; root inertia axes are its body axes.
+    only geometry. root_inertia_frame_xyzw maps the root's principal inertia
+    axes into its authored body axes; identity preserves the original contract.
     """
 
     root: RigidBodyModel
     root_com_m: np.ndarray
     children: RobotModel | None = None
+    root_inertia_frame_xyzw: np.ndarray = field(default=(0.0, 0.0, 0.0, 1.0), kw_only=True)
 
     def __post_init__(self):
         if not isinstance(self.root, RigidBodyModel):
@@ -39,6 +41,13 @@ class FloatingRobotModel:
             raise ValueError("root_com_m must be a three-vector")
         center.flags.writeable = False
         object.__setattr__(self, "root_com_m", center)
+        frame = robot_array(self.root_inertia_frame_xyzw, "root_inertia_frame_xyzw", ndim=1)
+        if frame.shape != (4,) or abs(np.hypot.reduce(frame) - 1.0) > 1e-10:
+            raise ValueError("root inertia frame must be a unit XYZW quaternion")
+        frame = frame / np.hypot.reduce(frame)
+        # A frame is static model data; callers cannot re-enable writes.
+        owned = np.frombuffer(frame.tobytes(), dtype=np.float64)
+        object.__setattr__(self, "root_inertia_frame_xyzw", owned)
 
     @property
     def body_count(self):

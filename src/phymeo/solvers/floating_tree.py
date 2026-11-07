@@ -121,7 +121,13 @@ def _inertial_geometry(model, state):
         principal = np.vstack((principal, model.children.inertia_diagonal))
     obs = floating_kinematics(model, state)
     linear, angular = floating_point_jacobians(model, state, np.arange(model.body_count), local_com)
-    inertia = (obs.rotation * principal[:, None, :]) @ obs.rotation.transpose(0, 2, 1)
+    inertia_frames = obs.rotation
+    if np.any(model.root_inertia_frame_xyzw[:3]):
+        inertia_frames = obs.rotation.copy()
+        inertia_frames[0] = (
+            obs.rotation[0] @ quaternion_matrix(model.root_inertia_frame_xyzw[None, :])[0]
+        )
+    inertia = (inertia_frames * principal[:, None, :]) @ inertia_frames.transpose(0, 2, 1)
     return obs, local_com, masses, linear, angular, _finite(inertia)
 
 

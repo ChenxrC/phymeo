@@ -79,3 +79,27 @@ floating_state/fk/diagnostic读回计数均保留，直接索引实际字段，�
 
 477对两个观察文件lint通过，478保留缺一个空行的format-check失败，
 补空行后480 format-check通过。实际保存审计仍未运行。
+
+## 父实际保存审计结果（2026-11-08）
+
+原作者未执行状态保留为历史。父在最终实际记录上运行495，RAW_EXIT=0，
+状态 saved_records_consistent；20个原始任务、7284个实际文件绑定、192752739
+解压原字节已核，覆盖HOST15、解释86个独立身份和最终CUDA86个身份，
+含native CPU/CUDA与源码外wheel两端。解释重复节点按明确源码修复资格记录，
+不将跨源码分组声称为最终同源整套通过。审计新增物理步为0。
+
+首次485、488、492的RAW1与源码快照全部保留：原读取器分别错误假定
+无保存HOST必有basetemp、混合接触diagnostic单数字段、native配置路径必绝对、
+关闭计数名resident_collision_plans，以及移动工具帧的state必为world映射。
+修正依据原测试/原公开统计/原工作目录；单移动工具检查点、geometry与diagnostic
+按其完整实际结构核验，并显式核原独立points/low/high包围，不修改payload。
+无保存HOST仅在固定membership确实无任何文件时允许缺目录，device缺记录仍拒绝。
+source集合先按原receipt cwd解析配置相对路径，before/after与snapshot/hash门保持。
+每个payload失败现在附原node与逻辑路径，避免缺少定位信息。
+
+最终reader SHA256 d3880a247255f70b93d4156d92c7795ff6b9d17dc32e35825192ca38bbac47e2；
+493 Ruff与494 format均0。完整审计结果
+[495/audit](../../artifacts/p65-generic-collision-20261107-01/495-c9-saved-audit-reader-v4/audit)
+SHA256 7b0a831eaac34e2036a5c1a0770c0dda650e05d5e185dab4c74e7e3a1c353fe2；
+原manifest SHA256 095b3e963ad2d39d03bfa427d208cfbc6730713bf82a6aeee7c5155549e7f646。
+未重跑任何物理窗口或生产者，未补造首失败缺失payload，未删除原失败。

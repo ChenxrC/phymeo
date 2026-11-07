@@ -706,21 +706,25 @@ def binding_schema(record):
             array(binding["local_points_m"], len(shape["vertex_ids"]), 3)
 
 
-def full_frame(row, worlds=None):
-    fields(row, ("state", "geometry", "diagnostic", "energy", "stats"), "complete accepted frame")
+def full_frame(row, worlds=None, *, diagnostic_field="diagnostic"):
+    fields(
+        row, ("state", "geometry", diagnostic_field, "energy", "stats"), "complete accepted frame"
+    )
     state_map(row["state"], worlds)
     for key, geo in row["geometry"].items():
         require(key in row["state"], "geometry world")
         geometry(geo)
         same(geo["tick"], row["state"][key]["tick"], "geometry accepted tick")
-    for key, diag in row["diagnostic"].items():
+    for key, diag in row[diagnostic_field].items():
         require(key in row["state"], "diagnostic world")
         if diag is not None:
             diagnostic(diag)
             same(diag["exit_tick"], row["state"][key]["tick"], "diagnostic accepted attempt")
 
 
-def original_bounds(row, name="independent_material_bounds"):
+def original_bounds(
+    row, name="independent_material_bounds", *, points_field="material_points", radius_saved=True
+):
     fields(row, ("result", name), "material bounds frame")
     result = row["result"]
     broad(result)
@@ -731,12 +735,12 @@ def original_bounds(row, name="independent_material_bounds"):
         label = f"CollisionKey(world={key['world']}, body={key['body']}, shape={key['shape']})"
         fields(
             wanted[label],
-            ("material_points", "radius", "low", "high"),
+            (points_field, "low", "high") + (("radius",) if radius_saved else ()),
             "independent original material bounds",
         )
         item = wanted[label]
-        require(item["material_points"], "empty finite material")
-        array(item["material_points"], len(item["material_points"]), 3)
+        require(item[points_field], "empty finite material")
+        array(item[points_field], len(item[points_field]), 3)
         array(item["low"], 3)
         array(item["high"], 3)
         require(
@@ -1002,7 +1006,11 @@ def physical_payload(member, relative, record, *, partial=False):
         same(len(record["rows"]), 40 if group == "mixed" else 2, "mixed full window")
         data_schema(record["input"])
         for i, row in enumerate(record["rows"]):
-            full_frame(row, KEYS[:4])
+            full_frame(
+                row,
+                KEYS[:4],
+                diagnostic_field="diagnostics" if group == "unbound" else "diagnostic",
+            )
             for key in row["state"]:
                 advance(row["entry"][key], row["state"][key])
                 same(row["state"][key]["tick"], i + 1, "mixed tick")
@@ -1141,11 +1149,24 @@ def physical_payload(member, relative, record, *, partial=False):
         same(len(record["rows"]), 40, "finite materials all40")
         for index, row in enumerate(record["rows"]):
             fields(row, ("state", "result"))
-            state_map(row["state"], (503,))
-            same(row["state"]["503"]["tick"], index + 1, "material state tick")
+            if group == "child-tool":
+                checkpoint(row["state"])
+                same(row["state"]["world"], 503, "child-tool world")
+                saved_state = row["state"]
+            else:
+                state_map(row["state"], (503,))
+                saved_state = row["state"]["503"]
+            same(saved_state["tick"], index + 1, "material state tick")
             same(row["result"]["ticks"], [index + 1], "accepted-bounds tick")
             if group == "child-tool":
                 fields(row, ("geometry", "diagnostic", "independent_authored_material"))
+                geometry(row["geometry"])
+                diagnostic(row["diagnostic"])
+                same(row["geometry"]["tick"], saved_state["tick"], "child-tool geometry tick")
+                same(row["diagnostic"]["exit_tick"], saved_state["tick"], "child-tool attempt")
+                original_bounds(
+                    row, "independent_authored_material", points_field="points", radius_saved=False
+                )
                 require(
                     len(row["independent_authored_material"]) == len(record["model"]["shapes"]),
                     "all authored child-tool surfaces",
@@ -1291,7 +1312,7 @@ def physical_payload(member, relative, record, *, partial=False):
             ),
         )
         same(record["closed_stats"]["device_owned_bytes"], 0, "closed batch bytes")
-        same(record["closed_stats"]["resident_collision_plans"], 0, "closed plan count")
+        same(record["closed_stats"]["collision_plan_live_count"], 0, "closed plan count")
         same(len(record["closed_plans"]), 2, "both plans retained")
         require(
             all(p["closed"] and p["device_owned_bytes"] == 0 for p in record["closed_plans"]),
@@ -1443,7 +1464,10 @@ class Auditor:
             after[key] = hex_sha(item["sha256"])
         same(before, after, "all sources before/after")
         same(before, expected, "caller-declared complete source SHA set")
-        same(set(before), {normalized(p) for p in config["files"]}, "config source coverage")
+        configured_sources = {
+            normalized((Path(start["cwd"]) / p).resolve()) for p in config["files"]
+        }
+        same(set(before), configured_sources, "config source coverage")
         stdout = self.text(directory / "stdout.log", directory)
         stderr = self.text(directory / "stderr.log", directory)
         return (
@@ -1591,7 +1615,10 @@ class Auditor:
                 )
                 expected_paths.add(normalized_path)
                 record = self.json(path, directory, compressed=True)
-                physical_payload(member, relative, record, partial=partial)
+                try:
+                    physical_payload(member, relative, record, partial=partial)
+                except (AuditError, KeyError, TypeError, ValueError, IndexError) as error:
+                    raise AuditError(f"{node} / {relative}: {error}") from error
                 if "mode" in record:
                     same(record["mode"], mode, "saved actual backend label")
                 row["files"].append(normalized_path)
@@ -1600,7 +1627,14 @@ class Auditor:
         basetemp = directory / spec["basetemp"]
         require(basetemp.resolve().is_relative_to(directory), "basetemp root")
         found, entries = set(), 0
-        pending = [basetemp]
+        if not basetemp.exists():
+            require(
+                mode == "host"
+                and not expected_paths
+                and all(not by_node[node].files for node in all_nodes),
+                "missing saved-payload root",
+            )
+        pending = [basetemp] if basetemp.exists() else []
         while pending:
             folder = pending.pop()
             for path in folder.iterdir():

@@ -17,7 +17,7 @@ from ..core.coupled import CoupledInputs
 from ..core.rigid import RigidBodyInputs
 from ..core.validation import finite_real
 from ..solvers.collision_loads import SurfaceLoads
-from ..solvers.tangent_history import TangentHistory
+from ..solvers.tangent_history import TangentHistory, _motion_reference
 from ._coupled_tangent_step import finish_tangent_step, prepare_tangent_step
 from ._scene_coupled_tangent import SceneTangentConfig
 from ._scene_tangent_ports import _array, build_ports, owner_poses, relative_response
@@ -33,6 +33,7 @@ def configure(
     motion_tolerance_m=1e-6,
     energy_tolerance_j=1e-8,
     max_frame_turn_rad=0.25,
+    motion_reference="material",
 ):
     """Configure once under the scene lock; no sampled history is advanced here."""
     if not isinstance(registry, MaterialStationRegistry):
@@ -60,7 +61,7 @@ def configure(
         if not isinstance(law, RobotContactMaterial):
             raise ValueError("robot tangent mode preserves RobotContactMaterial only")
     store = TangentHistory(128, max_frame_turn_rad=max_frame_turn_rad)
-    config = SceneTangentConfig(registry, *values, store)
+    config = SceneTangentConfig(registry, *values, store, _motion_reference(motion_reference))
     state = store.initial_state()
     scene._tangent, scene._tangent_state, scene._tangent_receipt = config, state, None
 
@@ -400,6 +401,7 @@ def prepare(scene, prepared, measured, loads, details, external, h):
                 dt_s=h,
                 stiffness_n_per_m=np.full(len(locations), config.stiffness_n_per_m),
                 friction=np.asarray(friction, dtype=float),
+                motion_reference=config.motion_reference,
             )
             replacement = {
                 location: normal[location] + force

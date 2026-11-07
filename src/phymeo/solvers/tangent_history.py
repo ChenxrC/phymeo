@@ -77,6 +77,7 @@ class TangentUpdate:
     tangent_work_j: float
     regime: str
     stiffness_n_per_m: float | None = None
+    motion_reference: str = "material"
 
 
 @dataclass(frozen=True, order=True)
@@ -290,6 +291,12 @@ def _sample(value):
     return StationSample(key, first, second, tuple(n), tuple(map(tuple, frame)), force)
 
 
+def _motion_reference(value):
+    if not isinstance(value, str) or value not in ("material", "application"):
+        raise ValueError("motion_reference must be 'material' or 'application'")
+    return value
+
+
 def _update(value, normal):
     if not isinstance(value, TangentUpdate):
         raise TypeError("expected a solver-produced TangentUpdate")
@@ -316,7 +323,15 @@ def _update(value, normal):
             raise ValueError("stored energy differs from the supplied tangent stiffness")
     if value.regime == "frictionless" and (length != 0 or energy != 0):
         raise ValueError("frictionless history must have zero elastic strain and energy")
-    return TangentUpdate(elastic, energy, plastic, work, value.regime, stiffness)
+    return TangentUpdate(
+        elastic,
+        energy,
+        plastic,
+        work,
+        value.regime,
+        stiffness,
+        _motion_reference(value.motion_reference),
+    )
 
 
 def _continuity(old, new):
@@ -538,6 +553,11 @@ class TangentHistory:
         records = []
         for prepared in trial.stations:
             update = _update(updates[prepared.identity.key], prepared.sample.normal)
+            if (
+                prepared.prior is not None
+                and update.motion_reference != prepared.prior.motion_reference
+            ):
+                raise ValueError("retained motion_reference cannot change within an episode")
             if prepared.prior is not None and update.plastic_slip_m < prepared.prior.plastic_slip_m:
                 raise ValueError("cumulative plastic slip cannot decrease within an episode")
             records.append(TangentRecord(prepared.identity, prepared.sample, update))

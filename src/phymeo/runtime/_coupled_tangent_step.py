@@ -12,7 +12,13 @@ import numpy as np
 
 from ..core.validation import finite_real
 from ..solvers.coupled_tangent import solve_coupled_tangent
-from ..solvers.tangent_history import StationKey, StationSample, TangentHistory, TangentUpdate
+from ..solvers.tangent_history import (
+    StationKey,
+    StationSample,
+    TangentHistory,
+    TangentUpdate,
+    _motion_reference,
+)
 
 
 def _array(value, shape, name):
@@ -109,6 +115,7 @@ class TangentStepTrial:
     stiffness_n_per_m: np.ndarray
     force_on_second_n: np.ndarray
     predicted_displacement_m: np.ndarray
+    motion_reference: str = "material"
 
 
 @dataclass(frozen=True, eq=False)
@@ -132,6 +139,7 @@ class TangentStepReceipt:
     released_energy_j: float
     actual_material_displacement_m: np.ndarray
     actual_application_displacement_m: np.ndarray
+    motion_reference: str = "material"
 
     def __post_init__(self):
         for name in (
@@ -167,6 +175,7 @@ def prepare_tangent_step(
     dt_s,
     stiffness_n_per_m,
     friction,
+    motion_reference="material",
 ):
     """Project a full 3n world response and complete free velocity, then stage A+B.
 
@@ -175,6 +184,7 @@ def prepare_tangent_step(
     n may be zero and is bounded by both the store capacity and 128 stations.
     Stiffness cannot change within a retained spring episode without a reset.
     """
+    motion_reference = _motion_reference(motion_reference)
     if not isinstance(store, TangentHistory):
         raise TypeError("store must be TangentHistory")
     current = []
@@ -208,6 +218,10 @@ def prepare_tangent_step(
             for p, i in zip(staged.stations, active, strict=True):
                 prior = p.prior
                 if prior is not None:
+                    if prior.motion_reference != motion_reference:
+                        raise ValueError(
+                            "retained motion_reference cannot change within an episode"
+                        )
                     expected = (
                         0.5
                         * kt[i]
@@ -247,7 +261,7 @@ def prepare_tangent_step(
             )
     except (FloatingPointError, OverflowError, np.linalg.LinAlgError) as exc:
         raise ValueError(f"tangent step preparation is not representable: {exc}") from exc
-    values = (keys, staged, result, active, *owned)
+    values = (keys, staged, result, active, *owned, motion_reference)
     binding = _PreparedBinding(
         store,
         history,
@@ -314,8 +328,15 @@ def finish_tangent_step(
             material_error = _maximum_norm(material - trial.predicted_displacement_m)
             application_error = _maximum_norm(application - trial.predicted_displacement_m)
             pair_error = _maximum_norm(material - application)
-            if max(material_error, application_error, pair_error) > mt:
+            material_reference = trial.motion_reference == "material"
+            motion_error = (
+                max(material_error, application_error, pair_error)
+                if material_reference
+                else application_error
+            )
+            if motion_error > mt:
                 raise ValueError("actual material/application displacement failed the motion gate")
+            conjugate = material if material_reference else application
             app_work = np.einsum("ij,ij->i", trial.force_on_second_n, application)
             mat_work = np.einsum("ij,ij->i", trial.force_on_second_n, material)
             residual = np.zeros(n)
@@ -326,14 +347,16 @@ def finish_tangent_step(
             if result is not None:
                 active = list(trial.active_indices)
                 actual_tangent = np.einsum(
-                    "nki,nk->ni", trial.history_trial.frames_world[:, :, :2], material[active]
+                    "nki,nk->ni", trial.history_trial.frames_world[:, :, :2], conjugate[active]
                 )
                 check = result.verify_motion(actual_tangent, tolerance_m=mt)
                 if not check.accepted:
                     raise ValueError("actual tangent displacement failed the motion gate")
                 residual[active] = check.energy_residual_j + app_work[active] - check.work_j
                 if np.max(np.abs(check.energy_residual_j), initial=0.0) > et:
-                    raise ValueError("actual material work failed the spring energy gate")
+                    raise ValueError(
+                        f"actual {trial.motion_reference} work failed the spring energy gate"
+                    )
                 release += fsum(result.released_energy_j)
                 stored = fsum(result.stored_energy_j)
                 losses = fsum((*result.plastic_dissipation_j, *result.implicit_dissipation_j))
@@ -351,6 +374,7 @@ def finish_tangent_step(
                         (0.0 if prior is None else prior.tangent_work_j) + float(app_work[i]),
                         result.regime[a],
                         float(trial.stiffness_n_per_m[i]),
+                        trial.motion_reference,
                     )
             actual_work = fsum(app_work)
             balance = fsum((actual_work, stored, -bound.old_stored_energy_j, losses, release))
@@ -362,7 +386,7 @@ def finish_tangent_step(
             if (
                 abs(balance) > et
                 or np.max(np.abs(residual), initial=0.0) > et
-                or np.max(np.abs(app_work - mat_work), initial=0.0) > et
+                or (material_reference and np.max(np.abs(app_work - mat_work), initial=0.0) > et)
             ):
                 raise ValueError("actual application work failed the spring energy gate")
             receipt = TangentStepReceipt(
@@ -378,6 +402,7 @@ def finish_tangent_step(
                 float(release),
                 material,
                 application,
+                trial.motion_reference,
             )
             candidate = store.commit(history, trial.history_trial, updates)
     except (FloatingPointError, OverflowError, np.linalg.LinAlgError) as exc:

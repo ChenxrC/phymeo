@@ -13,7 +13,7 @@ from ..core.coupled import CoupledInputs
 from ..core.rigid import RigidBodyInputs
 from ..dynamics.rotation import quaternion_matrix
 from ..solvers.collision_loads import SurfaceLoads
-from ..solvers.tangent_history import TangentHistory
+from ..solvers.tangent_history import TangentHistory, _motion_reference
 from ._coupled_tangent_step import finish_tangent_step, prepare_tangent_step
 from .contact_events import (
     ContactComponent,
@@ -33,6 +33,7 @@ class SceneTangentConfig:
     motion_tolerance_m: float
     energy_tolerance_j: float
     store: TangentHistory
+    motion_reference: str = "material"
 
 
 def configure(
@@ -43,6 +44,7 @@ def configure(
     motion_tolerance_m=1e-6,
     energy_tolerance_j=1e-8,
     max_frame_turn_rad=0.25,
+    motion_reference="material",
 ):
     if not isinstance(registry, MaterialStationRegistry):
         raise TypeError("expected MaterialStationRegistry")
@@ -59,7 +61,9 @@ def configure(
     ):
         raise ValueError("scene tangent mode currently requires ordinary prismatic joints")
     store = TangentHistory(128, max_frame_turn_rad=max_frame_turn_rad)
-    config = SceneTangentConfig(registry, *map(float, values), store)
+    config = SceneTangentConfig(
+        registry, *map(float, values), store, _motion_reference(motion_reference)
+    )
     state = store.initial_state()
     scene._tangent, scene._tangent_state, scene._tangent_receipt = config, state, None
 
@@ -294,6 +298,7 @@ class SceneTangentStep:
             dt_s=self.h,
             stiffness_n_per_m=np.full(len(selection.samples), self.config.stiffness_n_per_m),
             friction=np.asarray(friction),
+            motion_reference=self.config.motion_reference,
         )
         replacement = {
             location: normal[location] + force

@@ -80,7 +80,7 @@ def test_authored_pad_metadata_keeps_original_default_geometry_and_folded_frame(
         }
         assert {node for node, _ in weights} == expected_ids
         authored = sum(
-            weight * col.local_vertices[col.shape.vertex_ids.index(node)]
+            weight * np.asarray(col.local_vertices[col.shape.vertex_ids.index(node)])
             for node, weight in weights
         )
         model_local = asset.authored_to_model_points(col.link_name, authored)

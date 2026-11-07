@@ -32,6 +32,7 @@ ORDER = (1207, 6, 91, 503)
 TREE_WORLDS = (503, 91, 1207)
 NAMES = {503: "D01", 91: "D04", 1207: "legacy_static", 6: "free"}
 
+
 def json_value(value):
     if is_dataclass(value):
         return {f.name: json_value(getattr(value, f.name)) for f in fields(value)}
@@ -75,22 +76,42 @@ def make_ordinary(ph, *, static=False):
     offsets = ((0, 0, 3 / 32),) if static else ((0, 0, 0), (7 / 32, 0, 0))
     axis = (0, 0, 1) if static else (1, 0, 0)
     model = ph.RobotModel(
-        np.full(n, -1, dtype=int), ("prismatic",) * n,
-        np.asarray(offsets, float), np.tile((0, 0, 0, 1.0), (n, 1)),
-        np.tile(axis, (n, 1)).astype(float), np.asarray((2.0,) if static else (2.0, 1.0)),
-        np.zeros((n, 3)), np.full((n, 3), 1 / 8), np.zeros(3),
+        np.full(n, -1, dtype=int),
+        ("prismatic",) * n,
+        np.asarray(offsets, float),
+        np.tile((0, 0, 0, 1.0), (n, 1)),
+        np.tile(axis, (n, 1)).astype(float),
+        np.asarray((2.0,) if static else (2.0, 1.0)),
+        np.zeros((n, 3)),
+        np.full((n, 3), 1 / 8),
+        np.zeros(3),
     )
-    program = ph.DrivenRobotProgram(model, kp=np.zeros(n), kd=np.zeros(n),
-                                    effort_limit=np.full(n, 8.0), delay_steps=0)
+    program = ph.DrivenRobotProgram(
+        model, kp=np.zeros(n), kd=np.zeros(n), effort_limit=np.full(n, 8.0), delay_steps=0
+    )
     initial = program.initial_state(ph.RobotState(np.zeros(n), np.zeros(n)))
     world = ph.FixedRobotTree(program, initial, control_max_iterations=512)
-    command = program.inputs(np.zeros(n), np.zeros(n), feedforward=np.zeros(n),
-                             loads=ph.RobotInputs.zeros(n))
-    return world, command, dict(
-        parents=(-1,) * n, kinds=("prismatic",) * n, offsets=offsets, axis=axis,
-        mass=(2.0,) if static else (2.0, 1.0), inertia=((1 / 8,) * 3,) * n,
-        com=((0, 0, 0),) * n, kp=(0,) * n, kd=(0,) * n, effort_cap=(8,) * n,
-        delay_steps=0, control_max_iterations=512, gravity=(0, 0, 0),
+    command = program.inputs(
+        np.zeros(n), np.zeros(n), feedforward=np.zeros(n), loads=ph.RobotInputs.zeros(n)
+    )
+    return (
+        world,
+        command,
+        dict(
+            parents=(-1,) * n,
+            kinds=("prismatic",) * n,
+            offsets=offsets,
+            axis=axis,
+            mass=(2.0,) if static else (2.0, 1.0),
+            inertia=((1 / 8,) * 3,) * n,
+            com=((0, 0, 0),) * n,
+            kp=(0,) * n,
+            kd=(0,) * n,
+            effort_cap=(8,) * n,
+            delay_steps=0,
+            control_max_iterations=512,
+            gravity=(0, 0, 0),
+        ),
     )
 
 
@@ -102,8 +123,9 @@ def affine_xml():
         inertia = ET.SubElement(link, "inertial")
         ET.SubElement(inertia, "origin", xyz="0 0 0", rpy="0 0 0")
         ET.SubElement(inertia, "mass", value=str(mass))
-        ET.SubElement(inertia, "inertia", ixx="0.125", iyy="0.125", izz="0.125",
-                      ixy="0", ixz="0", iyz="0")
+        ET.SubElement(
+            inertia, "inertia", ixx="0.125", iyy="0.125", izz="0.125", ixy="0", ixz="0", iyz="0"
+        )
         joint = ET.SubElement(root, "joint", name=f"joint{i}", type="prismatic")
         ET.SubElement(joint, "parent", link="base")
         ET.SubElement(joint, "child", link=f"link{i}")
@@ -124,20 +146,40 @@ def make_affine(ph, output):
     np.testing.assert_array_equal(asset.matrix, [[1], [-0.5]])
     np.testing.assert_array_equal(asset.offset_vector, [0, 1 / 8])
     world = ph.AffineRobotTree(
-        asset, ph.RobotState(np.zeros(1), np.zeros(1)), kp=np.zeros(1), kd=np.zeros(1),
-        effort_limit=np.array([8.0]), delay_steps=0, control_max_iterations=512,
+        asset,
+        ph.RobotState(np.zeros(1), np.zeros(1)),
+        kp=np.zeros(1),
+        kd=np.zeros(1),
+        effort_limit=np.array([8.0]),
+        delay_steps=0,
+        control_max_iterations=512,
     )
-    command = world.inputs(np.zeros(1), np.zeros(1), feedforward=np.zeros(1),
-                           loads=ph.RobotInputs.zeros(2))
-    return world, command, dict(path=str(path), content=text, sha256=hashlib.sha256(path.read_bytes()).hexdigest(),
-                                P=((1,), (-0.5,)), c=(0, 1 / 8), C=((0.5, 1),),
-                                full_mass=(2, 1), full_inertia=((1 / 8,) * 3,) * 2)
+    command = world.inputs(
+        np.zeros(1), np.zeros(1), feedforward=np.zeros(1), loads=ph.RobotInputs.zeros(2)
+    )
+    return (
+        world,
+        command,
+        dict(
+            path=str(path),
+            content=text,
+            sha256=hashlib.sha256(path.read_bytes()).hexdigest(),
+            P=((1,), (-0.5,)),
+            c=(0, 1 / 8),
+            C=((0.5, 1),),
+            full_mass=(2, 1),
+            full_inertia=((1 / 8,) * 3,) * 2,
+        ),
+    )
 
 
 def geometry(ph, checkpoint):
     shapes, bindings, laws, sources = [], [], {}, {}
     for world in TREE_WORLDS:
-        first, second = ph.CollisionKey(world, 100, 11), ph.CollisionKey(world, 101 if world != 1207 else 900, 7)
+        first, second = (
+            ph.CollisionKey(world, 100, 11),
+            ph.CollisionKey(world, 101 if world != 1207 else 900, 7),
+        )
         if world != 1207:
             left = ph.CollisionShape(first, "sphere", (107,), radius=1 / 8)
             right = ph.CollisionShape(second, "sphere", (211,), radius=1 / 8)
@@ -152,7 +194,8 @@ def geometry(ph, checkpoint):
         cls = ph.ResidentAffineTreeBinding if world == 91 else ph.ResidentTreeBinding
         bindings.append(cls(first, world, groups[0], points_a, topology=checkpoint[world].topology))
         bindings.append(
-            ph.ResidentStaticBinding(second, ph.CollisionMotion(points_b)) if groups[1] is None
+            ph.ResidentStaticBinding(second, ph.CollisionMotion(points_b))
+            if groups[1] is None
             else cls(second, world, groups[1], points_b, topology=checkpoint[world].topology)
         )
         shapes.extend((left, right))
@@ -202,30 +245,61 @@ def oracle(world, q, v):
         reaction, multipliers = np.zeros(len(full_q)), np.zeros(0)
     n = len(full_q)
     return dict(
-        a=acceleration, full_a=P @ acceleration, q=full_q, v=full_v, P=P, c=c,
-        position=positions, rotation=np.repeat(np.eye(3)[None], n, axis=0),
-        mass=mass, reduced_mass=reduced_mass, external=external, reduced_external=reduced_external,
-        bias=np.zeros(n), linear=linear, angular=np.zeros((n, 3, n)),
-        wrench=wrench, normal=normal, reaction=reaction, multipliers=multipliers, axis=axis,
+        a=acceleration,
+        full_a=P @ acceleration,
+        q=full_q,
+        v=full_v,
+        P=P,
+        c=c,
+        position=positions,
+        rotation=np.repeat(np.eye(3)[None], n, axis=0),
+        mass=mass,
+        reduced_mass=reduced_mass,
+        external=external,
+        reduced_external=reduced_external,
+        bias=np.zeros(n),
+        linear=linear,
+        angular=np.zeros((n, 3, n)),
+        wrench=wrench,
+        normal=normal,
+        reaction=reaction,
+        multipliers=multipliers,
+        axis=axis,
         kinetic_energy_j=float(full_v @ mass @ full_v / 2),
     )
 
 
 def broad_record(result):
-    return {name: getattr(result, name) for name in (
-        "topology_generation", "state_epoch", "world_keys", "ticks", "shape_keys",
-        "shape_revisions", "bounds", "registered_pairs", "candidates",
-    )}
+    return {
+        name: getattr(result, name)
+        for name in (
+            "topology_generation",
+            "state_epoch",
+            "world_keys",
+            "ticks",
+            "shape_keys",
+            "shape_revisions",
+            "bounds",
+            "registered_pairs",
+            "candidates",
+        )
+    }
 
 
 def capture(batch, plan):
     entry_broad = None if plan.last_result is None else broad_record(plan.last_result)
     current = plan.query()
     return dict(
-        state=batch.snapshot(), geometry=batch.tree_kinematics(), diagnostics=batch.tree_diagnostics(),
-        energy=batch.summary(), receipts=dict(plan.last_accepted), statuses=dict(plan.last_status),
-        entry_broad_phase=entry_broad, current_broad_phase=broad_record(current),
-        batch_stats=batch.stats(), plan_stats=plan.stats(),
+        state=batch.snapshot(),
+        geometry=batch.tree_kinematics(),
+        diagnostics=batch.tree_diagnostics(),
+        energy=batch.summary(),
+        receipts=dict(plan.last_accepted),
+        statuses=dict(plan.last_status),
+        entry_broad_phase=entry_broad,
+        current_broad_phase=broad_record(current),
+        batch_stats=batch.stats(),
+        plan_stats=plan.stats(),
     )
 
 
@@ -257,6 +331,7 @@ def check_geometry(row, sources, laws):
             assert np.all(bounds[:3] <= low) and np.all(bounds[3:] >= high)
             assert result["shape_revisions"][slot] == 0
     owned_arrays(row["geometry"])
+
 
 def audit_sites(receipt, diagnostic, sources):
     full_velocity = np.asarray(
@@ -329,7 +404,11 @@ def audit_sites(receipt, diagnostic, sources):
 
 
 def audit_world(world, entry, row, source):
-    state, receipt, diagnostic = row["state"][world], row["receipts"][world], row["diagnostics"][world]
+    state, receipt, diagnostic = (
+        row["state"][world],
+        row["receipts"][world],
+        row["diagnostics"][world],
+    )
     truth = oracle(world, entry.position, entry.velocity)
     assert receipt.entry_state == entry and receipt.accepted_state == state
     assert (receipt.entry_tick, receipt.exit_tick, receipt.dt_s) == (entry.tick, entry.tick + 1, H)
@@ -364,9 +443,13 @@ def audit_world(world, entry, row, source):
     close(state.velocity, np.asarray(entry.velocity) + H * truth["a"])
     close(state.position, np.asarray(entry.position) + H * np.asarray(state.velocity))
     for name, expected in (
-        ("mass", truth["mass"]), ("bias", truth["bias"]), ("external", truth["external"]),
-        ("linear_jacobian", truth["linear"]), ("angular_jacobian", truth["angular"]),
-        ("drive", np.zeros(k)), ("acceleration", truth["a"]),
+        ("mass", truth["mass"]),
+        ("bias", truth["bias"]),
+        ("external", truth["external"]),
+        ("linear_jacobian", truth["linear"]),
+        ("angular_jacobian", truth["angular"]),
+        ("drive", np.zeros(k)),
+        ("acceleration", truth["a"]),
     ):
         close(getattr(diagnostic, name), expected)
     assert diagnostic.equation_residual <= 2e-5 and diagnostic.control_residual <= 5e-5
@@ -382,7 +465,13 @@ def audit_world(world, entry, row, source):
         assert not receipt.static_reactions
         assert len(receipt.sites) == 1
         close(receipt.law_wrench_fp64[:, :3].sum(0), np.zeros(3))
-        close((receipt.law_wrench_fp64[:, 3:] + np.cross(truth["position"], receipt.law_wrench_fp64[:, :3])).sum(0), np.zeros(3))
+        close(
+            (
+                receipt.law_wrench_fp64[:, 3:]
+                + np.cross(truth["position"], receipt.law_wrench_fp64[:, :3])
+            ).sum(0),
+            np.zeros(3),
+        )
     else:
         assert len(receipt.static_reactions) == 1
         reaction = next(iter(receipt.static_reactions.values()))
@@ -394,7 +483,9 @@ def audit_world(world, entry, row, source):
     meta = receipt.diagnostics
     close(meta["entry_kinetic_energy_j"], truth["kinetic_energy_j"])
     close(meta["accepted_kinetic_energy_j"], next_truth["kinetic_energy_j"])
-    close(meta["kinetic_energy_change_j"], next_truth["kinetic_energy_j"] - truth["kinetic_energy_j"])
+    close(
+        meta["kinetic_energy_change_j"], next_truth["kinetic_energy_j"] - truth["kinetic_energy_j"]
+    )
     close(meta["application_work_j"], work["application_work_j"], atol=1e-12, rtol=1e-10)
     close(meta["material_work_j"], work["material_work_j"], atol=1e-12, rtol=1e-10)
     owned_arrays(receipt)
@@ -425,7 +516,9 @@ def audit_step(entry, row, sources, laws, predicted, acceptance):
             row["audits"][world] = audit_world(world, entry[world], row, sources[world])
         else:
             close(state.velocity, np.asarray(entry[world].velocity) + [0, 0, -8 * H])
-            close(state.position, np.asarray(entry[world].position) + H * np.asarray(state.velocity))
+            close(
+                state.position, np.asarray(entry[world].position) + H * np.asarray(state.velocity)
+            )
             assert state.control == entry[world].control
     check_geometry(row, sources, laws)
     row["checks_complete"] = True
@@ -439,24 +532,52 @@ def run_window(ph, mode, output, record):
     ordinary, command, ordinary_source = make_ordinary(ph)
     static, static_command, static_source = make_ordinary(ph, static=True)
     affine, affine_command, affine_source = make_affine(ph, output)
-    worlds = {503: ordinary, 91: affine, 1207: static,
-              6: ph.FreeSphere(2, 1 / 8, position=(0, 0, 2), gravity=(0, 0, -8))}
+    worlds = {
+        503: ordinary,
+        91: affine,
+        1207: static,
+        6: ph.FreeSphere(2, 1 / 8, position=(0, 0, 2), gravity=(0, 0, -8)),
+    }
     commands = {503: command, 91: affine_command, 1207: static_command, 6: (0, 0, 0)}
-    record.update(inputs=commands, declarations={503: ordinary_source, 91: affine_source,
-                  1207: static_source, 6: dict(mass=2, radius=1 / 8, position=(0, 0, 2), velocity=(0, 0, 0), gravity=(0, 0, -8))},
-                  world_order=ORDER, trace=[], replay=[], checks={})
-    expected = {503: (np.zeros(2), np.zeros(2)), 91: (np.zeros(1), np.zeros(1)),
-                1207: (np.zeros(1), np.zeros(1)), 6: (np.array([0.0, 0.0, 2.0]), np.zeros(3))}
+    record.update(
+        inputs=commands,
+        declarations={
+            503: ordinary_source,
+            91: affine_source,
+            1207: static_source,
+            6: dict(
+                mass=2, radius=1 / 8, position=(0, 0, 2), velocity=(0, 0, 0), gravity=(0, 0, -8)
+            ),
+        },
+        world_order=ORDER,
+        trace=[],
+        replay=[],
+        checks={},
+    )
+    expected = {
+        503: (np.zeros(2), np.zeros(2)),
+        91: (np.zeros(1), np.zeros(1)),
+        1207: (np.zeros(1), np.zeros(1)),
+        6: (np.array([0.0, 0.0, 2.0]), np.zeros(3)),
+    }
     close(oracle(503, *expected[503])["a"], [-1, 2], atol=0, rtol=0)
     close(oracle(91, *expected[91])["a"], [-4 / 3], atol=0, rtol=0)
     close(oracle(91, *expected[91])["multipliers"], [-4 / 3], atol=0, rtol=0)
-    batch = ph.TyxWorldBatch([(key, worlds[key]) for key in ORDER], mode, cache_root=output / "cache")
+    batch = ph.TyxWorldBatch(
+        [(key, worlds[key]) for key in ORDER], mode, cache_root=output / "cache"
+    )
     plan = None
     try:
         batch.set_controls(commands)
         initial = batch.snapshot()
         model, bindings, laws, sources = geometry(ph, initial)
-        record.update(initial=initial, collision_model=model, bindings=bindings, materials=laws, original_sources=sources)
+        record.update(
+            initial=initial,
+            collision_model=model,
+            bindings=bindings,
+            materials=laws,
+            original_sources=sources,
+        )
         plan = batch.prepare_contacts(model, bindings, laws, tree_dynamic_pairs=True)
         record["initial_observation"] = capture(batch, plan)
         check_geometry(record["initial_observation"], sources, laws)
@@ -486,7 +607,9 @@ def run_window(ph, mode, output, record):
         try:
             batch.restore(invalid)
         except (ValueError, TypeError) as error:
-            record["invalid_restore_rejection"] = dict(type=type(error).__name__, message=str(error))
+            record["invalid_restore_rejection"] = dict(
+                type=type(error).__name__, message=str(error)
+            )
         else:
             raise AssertionError("mixed restore accepted an out-of-domain independent state")
         assert batch.snapshot() == before_restore and batch.stats()["state_epoch"] == before_epoch
@@ -506,8 +629,18 @@ def run_window(ph, mode, output, record):
             assert row["state"] == prior["state"]
             for key in ("geometry", "diagnostics", "energy", "receipts"):
                 assert json_value(row[key]) == json_value(prior[key]), f"replay differs: {key}"
-            for key in ("world_keys", "ticks", "shape_keys", "shape_revisions", "bounds", "registered_pairs", "candidates"):
-                assert json_value(row["current_broad_phase"][key]) == json_value(prior["current_broad_phase"][key])
+            for key in (
+                "world_keys",
+                "ticks",
+                "shape_keys",
+                "shape_revisions",
+                "bounds",
+                "registered_pairs",
+                "candidates",
+            ):
+                assert json_value(row["current_broad_phase"][key]) == json_value(
+                    prior["current_broad_phase"][key]
+                )
             # Epoch, launch/readback counters are not rewindable state and are recorded separately.
             row["checks_complete"] = True
         record["checks"]["tick19_full21_replay"] = True
@@ -515,8 +648,13 @@ def run_window(ph, mode, output, record):
         old_receipts = snapshot_fingerprint(plan.last_accepted)
         energy = batch.summary()
         predicted = predictions(expected)
-        with batch.prepare_contacts(model, bindings, laws, tree_dynamic_pairs=True,
-                                    site_capacity={503: 128, 91: 0, 1207: 128}) as limited:
+        with batch.prepare_contacts(
+            model,
+            bindings,
+            laws,
+            tree_dynamic_pairs=True,
+            site_capacity={503: 128, 91: 0, 1207: 128},
+        ) as limited:
             capacity = dict(entry=before, checks_complete=False)
             record["capacity"] = capacity
             capacity["acceptance"] = batch.step_contacts(limited, H)
@@ -544,8 +682,11 @@ def run_window(ph, mode, output, record):
         assert snapshot_fingerprint(retained) == retained_bytes
         # Stored first-step observations remain byte-serializable and immutable after replay/rejection.
         owned_arrays(retained)
-        for array in (retained[91].contact_generalized, retained[91].diagnostics["projection_matrix"],
-                      retained[503].accepted_geometry.link_position_m):
+        for array in (
+            retained[91].contact_generalized,
+            retained[91].diagnostics["projection_matrix"],
+            retained[503].accepted_geometry.link_position_m,
+        ):
             try:
                 array.setflags(write=True)
             except ValueError:
@@ -554,7 +695,9 @@ def run_window(ph, mode, output, record):
                 raise AssertionError("owned accepted data can be made writeable")
         record["checks"]["public_observations_owned"] = True
     except Exception as error:
-        record["window_error"] = dict(type=type(error).__name__, message=str(error), traceback=traceback.format_exc())
+        record["window_error"] = dict(
+            type=type(error).__name__, message=str(error), traceback=traceback.format_exc()
+        )
         raise
     finally:
         try:
@@ -579,6 +722,7 @@ def run_window(ph, mode, output, record):
     else:
         raise AssertionError("closed batch advanced")
     record["checks"]["closed_resources_released"] = True
+
 
 def archive_identity(installed, expected):
     wheel = expected.resolve(strict=True)
@@ -677,8 +821,12 @@ def save_record(output, record):
     with gzip.open(temporary, "wb") as stream:
         stream.write(encoded)
     temporary.replace(path)
-    return dict(path=str(path), uncompressed_bytes=len(encoded), gzip_bytes=path.stat().st_size,
-                sha256=hashlib.sha256(path.read_bytes()).hexdigest())
+    return dict(
+        path=str(path),
+        uncompressed_bytes=len(encoded),
+        gzip_bytes=path.stat().st_size,
+        sha256=hashlib.sha256(path.read_bytes()).hexdigest(),
+    )
 
 
 def main():
@@ -693,7 +841,9 @@ def main():
     assert __debug__ and sys.flags.isolated and sys.flags.dont_write_bytecode, "use python -I -B"
     for path in (args.output_dir, args.wheel_site, args.expected_package_root, args.expected_wheel):
         assert path.is_absolute(), "external paths must be absolute"
-    site, root = (path.resolve(strict=True) for path in (args.wheel_site, args.expected_package_root))
+    site, root = (
+        path.resolve(strict=True) for path in (args.wheel_site, args.expected_package_root)
+    )
     script, output = Path(__file__).resolve(strict=True), args.output_dir.resolve()
     assert root == (site / "phymeo").resolve(strict=True)
     assert Path.cwd().resolve() == script.parent
@@ -703,14 +853,34 @@ def main():
     assert "phymeo" not in sys.modules
     output.mkdir(parents=True, exist_ok=False)
     record = dict(
-        status="running", mode=args.mode, errors=[],
+        status="running",
+        mode=args.mode,
+        errors=[],
         script=dict(path=str(script), sha256=hashlib.sha256(script.read_bytes()).hexdigest()),
-        expected_package_root=str(root), checks={},
-        gates=dict(h_s=H, continuous_steps=40, replay_from=19, replay_steps=21,
-                   rtol=RTOL, state_atol=ATOL, window_atol=WINDOW_ATOL,
-                   mass_residual=2e-5, bounded_pd_residual=5e-5, constraint_atol=2e-5,
-                   material_record_atol=1e-10, rotation_atol=5e-5),
-        units=dict(q="all declared joints P: m; free xyz m", v="m/s", force="N", torque="N*m", energy="J", time="s"),
+        expected_package_root=str(root),
+        checks={},
+        gates=dict(
+            h_s=H,
+            continuous_steps=40,
+            replay_from=19,
+            replay_steps=21,
+            rtol=RTOL,
+            state_atol=ATOL,
+            window_atol=WINDOW_ATOL,
+            mass_residual=2e-5,
+            bounded_pd_residual=5e-5,
+            constraint_atol=2e-5,
+            material_record_atol=1e-10,
+            rotation_atol=5e-5,
+        ),
+        units=dict(
+            q="all declared joints P: m; free xyz m",
+            v="m/s",
+            force="N",
+            torque="N*m",
+            energy="J",
+            time="s",
+        ),
         limits="Public installed-wheel smoke, not the C8 whole matrix or benchmark. Same-world complete fixed-root ordinary/affine trees; HOST finite narrow/law plus resident device response. No cross-world force, floating, friction, CCD or native Newton equivalence claim.",
     )
     sys.path.insert(0, str(site))
@@ -722,34 +892,62 @@ def main():
         assert Path(installed.locate_file("")).resolve(strict=True) == site
         record["wheel"] = archive_identity(installed, args.expected_wheel)
         record["modules_before"] = module_provenance(site, root, args.expected_wheel)
-        record["versions"] = dict(phymeo=installed.version, tyx=distribution("tyx-compute").version,
-                                  numpy=np.__version__, python=sys.version)
+        record["versions"] = dict(
+            phymeo=installed.version,
+            tyx=distribution("tyx-compute").version,
+            numpy=np.__version__,
+            python=sys.version,
+        )
         run_window(ph, args.mode, output, record)
         record["status"] = "passed"
     except Exception as error:
         record["status"] = "failed"
-        record["errors"].append(dict(stage="import_or_physical_window", type=type(error).__name__,
-                                     message=str(error), traceback=traceback.format_exc()))
+        record["errors"].append(
+            dict(
+                stage="import_or_physical_window",
+                type=type(error).__name__,
+                message=str(error),
+                traceback=traceback.format_exc(),
+            )
+        )
     try:
         if "phymeo" in sys.modules:
             record["modules_after"] = module_provenance(site, root, args.expected_wheel)
     except Exception as error:
         record["status"] = "failed"
-        record["errors"].append(dict(stage="module_provenance", type=type(error).__name__,
-                                     message=str(error), traceback=traceback.format_exc()))
+        record["errors"].append(
+            dict(
+                stage="module_provenance",
+                type=type(error).__name__,
+                message=str(error),
+                traceback=traceback.format_exc(),
+            )
+        )
     # An IO error here is not a physics rollback: all completed/retained steps above remain facts.
     trace = save_record(output, record)
     summary = dict(
-        status=record["status"], raw_exit=int(record["status"] != "passed"), mode=args.mode,
-        complete_forward_steps=sum(bool(row.get("checks_complete")) for row in record.get("trace", ())),
-        complete_replay_steps=sum(bool(row.get("checks_complete")) for row in record.get("replay", ())),
+        status=record["status"],
+        raw_exit=int(record["status"] != "passed"),
+        mode=args.mode,
+        complete_forward_steps=sum(
+            bool(row.get("checks_complete")) for row in record.get("trace", ())
+        ),
+        complete_replay_steps=sum(
+            bool(row.get("checks_complete")) for row in record.get("replay", ())
+        ),
         capacity_complete=bool(record.get("capacity", {}).get("checks_complete")),
         retry_complete=bool(record.get("capacity_retry", {}).get("checks_complete")),
-        checks=record["checks"], wheel=record.get("wheel"), trace=trace,
+        checks=record["checks"],
+        wheel=record.get("wheel"),
+        trace=trace,
         verified_module_count=len(record.get("modules_after", ())),
-        batch_stats=record.get("batch_stats_after_close"), errors=record["errors"], limits=record["limits"],
+        batch_stats=record.get("batch_stats_after_close"),
+        errors=record["errors"],
+        limits=record["limits"],
     )
-    (output / "summary.json").write_text(json.dumps(json_value(summary), indent=2, allow_nan=False), encoding="utf-8")
+    (output / "summary.json").write_text(
+        json.dumps(json_value(summary), indent=2, allow_nan=False), encoding="utf-8"
+    )
     print(json.dumps(json_value(summary), allow_nan=False))
     return summary["raw_exit"]
 

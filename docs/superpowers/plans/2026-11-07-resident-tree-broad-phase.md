@@ -99,3 +99,17 @@ T2 不必等全部控制优化才交第一段真实功能；但在 T4 之前不�
 后继二：mimic/更长 delay/浮根。mimic 应先接完整物理行到独立列的约束投影，不能把 9 行树的两个 finger 删除；浮根要扩 6D 速度/COM/姿态积分与全 M 交叉块，依赖本仓已有 HOST 浮树/机械联动正确合同。各为独立物理任务，难度高，不由“树驻留”名称自动宣告完成。
 
 本轮只会提交上述两份 NEW 文档；没有新增源码、测试、例程或数值证据。所有未来矩阵为 **UNEXECUTED**，等待父冻结后再逐阶段 tests-first。
+
+## 父裁定与T1测试授权（2026-11-07）
+
+研究两docs e07cac9已全文审阅并正常导入299fb73，八组手推输入、N16容量、原batch内tree banks和原子性路线接受为本片合同。父核T01/T02/T03/T05的主要独立解析式；这不是项目数值执行或功能验收。原PD建议已修为按实际tau/完整original clipped expected归一，宽cap及大项相消留出必须保留。
+
+原robot继续同一隔离树、start e07cac9，**TEST_AUTHORING_ONLY**：恰NEW `tests/scale/test_resident_tree_step.py`、`tests/scale/test_resident_tree_collision.py`、`tests/reference_newton/robot/resident_tree_reference.py`；可只追加本casebook中的T1 API/保存schema说明。无product、旧source/tests、公共exports、第二runtime或父merge授权。父独占旧共享源码与全部执行。物理URDF可在这些测试/参考脚本中自包含文本生成；测试oracle禁止import产品几何/动力学函数生成期望，Newton脚本禁止import Phymeo。
+
+正常入口采用`FixedRobotTree(program, state, control_max_iterations=512)`、原`TyxWorldBatch`、`set_controls/step/snapshot/restore/reset`、显式`tree_kinematics(keys)`与原`prepare_collision`。完整树checkpoint、混合单位读回和必要有界诊断的具体字段在T1 checkpoint先声明，父据此接薄hook；不得拿失败候选scratch当最后accepted记录。旧scalar prepared reader选中tree时本片允许明确拒绝，不能静默截断；不为首次核心功能强加新通用读回框架。shape绑定为本册明确group-local构造及`ResidentTreeBinding.from_asset`。
+
+两专项覆盖T01–T08全部固定正负控、三个规模、二缓冲/restore/控制失败。第一有效RED从公共入口真正缺FixedRobotTree开始，先验证既有RobotModel/DrivenRobotProgram能表示T01，不在模块顶层导入尚不存在的新模块使collection报错。不得先运行collection或数值probe；测试、oracle、固定资产和计数规则均文本编写。完整保存每个实际窗口的输入/真实状态/时间/载荷/几何/计数；暖态区间的真读回与oracle明确区分。
+
+Newton参考至少T01–T04，同输入各自推进，不喂Phymeo中间态；PD语义区别单列。N9/N16容量亦须独立质量/几何/推进核，N17分配前拒绝。测试不以一组Panda或一条固定姿态代替全部机制与材料。固定工程门沿案例册，不调输入/质量/cap/clearance求过门。
+
+先交小commit、clean、精确文件列表/源码行数及UNEXECUTED报告，释放authoring；父全文review和唯一串行首RED后再授五新product及报告。产品kernel tuple可在那时依据既定storage布局冻结，本轮不得提前实现。原F2/C3所有已验收同源组不重跑，无新项目执行槽。

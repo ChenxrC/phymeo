@@ -63,3 +63,14 @@ CUDA三个规模各5次暖态推进/查询：plan设备分配均保持16，动�
 真实动力学覆盖轴惯量、非主轴、当前COM力臂、全部世界力矩、bounded PD、仅驱动三列延迟、混合球/滑轨/rotor、含端点±4096与事务失败。几何覆盖偏心sphere/有限capsule/box-hull、多shape材料ID、资产真实group、正负多周、16m细长体与4096m公共平移下固定近触/miss。限当前单R接受态到静态有限几何宽相；不代表多关节驻留、动态–动态设备窄相、CCD或接触反馈。
 
 原robot对父5共享hook的只读审阅已完成，未发现阻断问题；核异构packet恢复、两pass统一swap/epoch、实际device geometry资源登记/关闭及失败last_result保持。审阅无执行，不代替数值结果。
+
+
+## 新组合 wheel 正式限域接受（2026-11-07）
+
+产品fdfa586，133构建RAW0；wheel SHA256 `3BB31FEFC4B66A0CCB45B6500EE2C22566C4D1F5E2566CBCD8C31C4F03D37D7D`，1180542 bytes。18个变更product文件已与解包字节核同。运行cwd及PYTHONPATH均在源码外Temp新目录；实际270个phymeo模块来自该wheel。
+
+134原RAW1保留：F2全部512步/接触/作用点矩/完整mimic余额/事件断言已通过，随后C3最终命中列表错误。脚本把原小盒子组合半宽3/32的[28+delay]误用于这里的两球组合半宽1/8；实际逐步FP64几何、q/v和候选断言均先通过。135只修正独立列表为world7=[27,28]、world24=[28,29]，补完整rotor保存，RAW0；读取并复用原F2完整gzip，未重跑F2物理，未改wheel、源代码、几何或工程门。此失败是新包装验证脚本问题，不改写为首次全绿。
+
+源码外实际F2到0.25s，首/末受力0.00439453125/0.06591796875s、峰值10.11380374689702N，末态卸载，最大线动量残差1.2971987494374595e-6 N·s。实际CUDA双rotor各40步、正负恒矩及delay0/1，q/v、当前有限球AABB、完整候选/tick/epoch与原计数通过；动态包络上传0，分配不增长，两个buffer均使用。完整状态/几何/输入/载荷/事件以及80个world-step设备记录保存在 `artifacts/p65-generic-collision-20261107-01/f2-c3-wheel-results`，父收据 `f2-c3-wheel-acceptance.json` SHA256 `876536F7B6971FBA39CA38610822E7C9876BBB10498D4B0761AB6A981EDC9E11`。
+
+本片正式接受：HOST浮根仿射mimic与原共同场景、CUDA单R接受态到当前姿态宽相。不是浮根GPU、多关节驻留、设备窄相/CCD、持续摩擦或整个Newton功能对齐；原100g mimic和软布目标失败继续保留。当前执行槽释放，后继按原多案例计划继续。

@@ -96,3 +96,11 @@ Newton的碰撞与求解器也有条件：其凸体/网格按不同算法及表�
 - **GPU新增C2**：FreeSphere之外，真实prismatic接受态可直接为多个有限shape生成TYX AABB并进入原设备BVH；斜轴、正负q、折叠工具、混合W1/W4/W32、双buffer/复位/拒步通过。当前姿态宽相已有球与滑轨；转动/多关节设备state和全设备窄相仍缺。
 - 新阶段wheel通过F1 2560步公开窗口及C2双世界设备推进，270个实际模块来自包内；无整体性能领先结论。F2浮mimic已进入独立案例与测试编写，C3设备机器人在源码调研，尚不冒功能通过。
 - 其余五大方向与持续静摩擦/密集接触、目标软布两初态未放台、原100g mimic持稳失败不变。[F1](../benchmarks/p65-floating-fixed-tools.md) · [Newton参照](../benchmarks/p65-floating-fixed-newton-reference.md) · [C2](../benchmarks/p65-resident-slider-collision.md)。
+
+
+## 最新功能覆盖（F2/C3，产品fdfa586）
+
+- **场景与机器人**：浮根affine mimic现已与普通机器人/自由刚体共用场景、真实完整M/b/J、控制/接触/约束反力和原子事件发布；四条完整受载/卸载窗口2560步、新源码外512步均通过。F1 fixed工具与此片已补齐原表相应组合；仍未覆盖浮根pads、更多闭环/关节与全部摩擦历史。
+- **GPU与多场景**：单真实转铰的设备动力学、当前COM力臂、延迟驱动及多shape接受态→AABB→BVH已有HOST/interpret/CUDA与源码外验证。球/滑轨/单R可混合；完整R/P耦合树、浮根驻留、全设备窄相和响应仍是缺口。新的C4计划从真实耦合树推进，不能以独立单R代替。
+- F2/C3共同wheel已正式限域接受，134独立脚本命中列表错误与135修正记录保留，产品及原工程门不变。无新的跨引擎吞吐优势结论。
+- 下一优先功能是通用共同场景持续摩擦及完整固定根R/P设备树；其余五大方向、原100g mimic持稳失败和目标软布两初态未放台保持开放。[F2实际报告](../benchmarks/p65-floating-mimic-scene.md) · [C3实际报告](../benchmarks/p65-resident-revolute-collision.md)。

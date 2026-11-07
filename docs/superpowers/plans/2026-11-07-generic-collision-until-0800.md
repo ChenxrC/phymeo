@@ -315,3 +315,10 @@ K5文件：NEW docs/benchmarks/p65-generic-collision-20261107.md 汇总三线，
 ## 2026-11-07 K3 已接受，继续 N4
 
 A产品25c39d8，58组最终98pass（73新+25旧）；59公开三族/两步长共1152步通过原工程门，原RD最终审阅无残余finding。当前各线专项均通过，下一项已启动Newton固定3组4姿态静态留出与新stage源码外wheel。C2仍为提案，不自动进入implementation。新产品与限制见 ../../benchmarks/p65-generic-collision-20261107.md。
+
+
+## 当前长程接续：F2/C3已接受
+
+fdfa586的F2浮根mimic与C3单R设备姿态宽相已通过专项/兼容/原作者接口审阅以及新源码外wheel。包装脚本134的错误最终命中列表保留，135只修预期后RAW0，原F2已过物理不重跑。实际范围见[F2场景](../../benchmarks/p65-floating-mimic-scene.md)与[C3设备](../../benchmarks/p65-resident-revolute-collision.md)末节。全局仍ACTIVE、无截止。
+
+当前并行只读调研/计划：原robot完整固定根R/P耦合树驻留；原RD通用共同场景持续摩擦。先从真实源码/原失败与Newton1.7 primary资料建立多独立案例，再由父冻结薄接口/共享改动、依序测试先行和产品实施。旧共享源码与所有项目执行仍归父，禁止把N个独立单R批次冒完整树，也不把原mimic单例通过当摩擦矩阵全过。后继不重复本批绿组和证据审计。

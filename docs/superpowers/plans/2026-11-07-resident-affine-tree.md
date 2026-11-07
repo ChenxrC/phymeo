@@ -173,3 +173,17 @@ A06的有限迭代负控现固定为A05的初态Mr，移除额外effort，h=1/10
 `Q=I+Mr^-1=[[1061,64],[64,902]]/741`，
 `tau0=741/1061; tau1=741*997/(1061*902)`，
 第一行残差 `64*tau1/741` 大于原 `5e-5*max(1,abs(actual),abs(expected))` 门。正常512预算的独立解为 `(838*741,997*741)/(1061*902-4096)`。该输入在执行前手推冻结，不靠probe选择失败。
+
+### 父共享复用接缝（源码审阅后确定，产品仍待有效 RED）
+
+本段冻结组合方向，避免作者另造普通program或重复完整树物理。父维护旧文件，作者T1不绑定这些私有字段。
+
+1. 父提取 `compile_tree_physical(model)`：复制/验证完整RobotModel、N≤16、所有静态FP32转换、anchor/相对offset、model_token与完整物理表，返回owned字段。原 `compile_tree_world` 仍自行检查普通program/state/history/gains；新affine编译器由真实MimicRobotAsset构造含图token的physical TreeWorldSpec，N状态由初始K状态按原图展开，physical PD/history置零。它是物理布局复用，不实例化假DrivenRobotProgram或推进一次ordinary再修从动轴。
+2. 父将原 `TreeDeviceStorage.stage_advance` 的调用块提取为 `stage_mechanics(src)`、`stage_candidate_geometry(dst)` 和 `stage_finalize(src,dst,tick_src,tick_dst,accepted)`。普通路径保原mechanics→solve→geometry/energy→finalize顺序、参数和公式。新 `AffineTreeDeviceStorage(batch,specs_by_world)` 组合一个TreeDeviceStorage保存N物理bank；K状态/命令/投影/求解/原图反力为新增bank，借用同一个batch runtime、resource stack、lock和active。
+3. affine stage的固定顺序是：full mechanics(src)→P投影/真实K有界PD solve→N状态和原图反力展开/完整域及误差检查→full geometry/energy(dst)→full finalize→按同一accepted结果接受K候选或拷回K源。所有K/N有效性判定先于full finalize。晚设备异常仍在父swap前抛出；候选写入不等于发布。full与K的实际entry、history、effort和tick同时保留。
+4. full命令N×10只占已有effort/COM force/torque列，前三列零；独立drive/history只放K bank，当前full loads不被延迟。physical vector仍保bias/external/full entry，full drive=E*tau、full acceleration=P*a写回其原诊断列；约束反力单存，不充当外力重复注入。
+5. 新storage沿原生命周期签名 `validate_controls/commit_controls/upload_controls/controls_uploaded`、`stage_advance/check_advance/finish_advance`、`validate_restore/stage_restore/check_restore/commit_restore`、`snapshot/kinematics/diagnostics/summary/borrow_geometry/close`。validate只生成完整stage；commit不做IO、不修改active/epoch；restore先核图与N/K/full一致性，任一world无效全部不发布。full与K的restore/重建检查都成功后父仅一次swap。
+6. batch分别持ordinary与affine storage，scalar header为affine保独立kind7/8；scalar observer/readback不能误读成单关节。accepted collision loan新增 `affine_tree`。affine binding先核原MimicRobotAsset图+完整model/source，然后委托现C4材料编译；物理几何借用仍为TreeGeometryView，实际bounds继续使用原C4 kernel。ordinary/affine row表分开，任意同world/body不能错连另一storage。
+7. 空affine集合零分配；full物理资源沿已有tree计数，新K资源及projection/solve/expand/candidate-commit计数明确新增。只记录真实launch/上传/读回，不将构造或观察费用藏在零拷贝结论中。无额外runtime，close由父同一资源栈负责。
+
+详细kernel数组顺序在产品grant后由作者提出，父核对上述生命周期再落共享hook；不以本段声明代替实际事务测试或C5运行结果。

@@ -74,3 +74,5 @@ RD 指出合法 F06 的 `ResidentFloatingTreeBinding.from_asset` 使用 `topolog
 第4项修正是完整公开 map coverage：按完整 checkpoint 的实际类型确定树 world，geometry 和已保存 diagnostics 必须覆盖所有树（不要求 scalar 有 FK）；summary 必须覆盖全部 state。receipt 按真实 binding 的 world 集合核，初始 tick0 允许空；wheel 新容量 plan 的拒绝 world 仅保此前真实已发布的 receipt，不能把其他 plan 的 receipt 填进来。额外核 wheel 入步、初始和末态公开 map，避免中间行缺一个普通树的 FK/diagnostic 被 receipt 内部数据掩盖。本轮仅观察器文本修正；四项均未执行，原物理模型/门/数据不变。
 
 父实际分组 CLI 对齐：上述两个 `-k` 完整字符串是严格白名单，分别按作者 `Member.function` 排除精确 F01 函数，或保留 `test_f08`/`test_f09`/`test_f10` 前缀。接受独立参数与 `-k=` 拼写但不改表达式内容；多表达式、未识别表达式均拒绝，不 eval、不导入 pytest、不按输出决定选集。过滤后的 authored 顺序仍用于原 tmp prefix/ordinal 与成功前缀绑定；76/61 总身份不变。此为单独执行前 observer 兼容修正，既有四项来源/覆盖修正未重写，仍未执行。
+
+RD 对第4项的限定复核发现：虽然已保存的 diagnostics map 会核全树覆盖，mixed 前19个未参与重放的行仍可整段缺字段。现仅在 authored mixed 的全部40个 forward、21个 replay 行显式要求 `diagnostics`，再复用完整 map 校验。依据原 producer 每行均保存该公开读回，不能依赖后21行的重放比较来证明前19行；其他本来不保存独立 diagnostics map 的 schema 不变。此窄修正仍为纯作者、未执行，也未读取任何实际输出。

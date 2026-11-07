@@ -871,6 +871,7 @@ def physical_payload(member, relative, record, *, partial=False):
         shapes, bindings = bindings_schema(record["model"], record["bindings"])
         same((len(record["rows"]), len(record["replay"])), (40, 21), "mixed complete window")
         for index, row in enumerate(record["rows"]):
+            fields(row, ("diagnostics",), "authored mixed forward diagnostics")
             record_frame(row, WORLDS, shapes=shapes, bindings=bindings)
             same(set(row["receipts"]), {"503", "91"}, "unbound scalar/floating get no fabricated receipt")
             for w in map(str, WORLDS):
@@ -879,6 +880,7 @@ def physical_payload(member, relative, record, *, partial=False):
                 close(row["state"]["1207"][actual], row["independent_floating"][expected], "unbound floating independent window", atol=WINDOW_ATOL)
         exact(record["saved"], record["rows"][18]["state"], "mixed tick19 complete checkpoint")
         for index, row in enumerate(record["replay"]):
+            fields(row, ("diagnostics",), "authored mixed replay diagnostics")
             record_frame(row, WORLDS, shapes=shapes, bindings=bindings)
             for field in ("state", "geometry", "receipts", "summary", "diagnostics"):
                 exact(row[field], record["rows"][index + 19][field], "mixed replay " + field)

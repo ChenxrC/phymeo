@@ -108,3 +108,13 @@ python examples/persistent_grasp_holdouts.py --case panda-sphere --out-dir <fres
 输出新目录、绑定源HEAD/全部相关SHA、原URDF/模型声明/控制量/所选keys/charts/kt/gates。每步gzip完整保存原request/resolved命令、proposal、entry/accepted state、full loads/normal与切向力、material addresses、history/receipt/events、两时刻、台力/净空/滑移及原八门；不能仅保存摘要hash或关键帧。完整geometry保存同锁对应姿态，流式无损gzip，单例预声明256 MiB压缩上限；容量不足在命令自然边界保完整前缀并失败，不删除旧证据/按结果抽帧。源码外验收仅在新声明/应用实际通过后由父同一新wheel执行，不冒称这份计划已验证。
 
 **止损：** 首个未知材料迁移、真正运动/功拒绝、结构冲突或物理持稳失败均保原原因；不扫kt、μ、力目标、时间、步长或容差。原物理失持继续原release以保卸载观察；真正执行/事务错误按原协议终止，不能退回旧摩擦偷偷续算。G01若仍失败，交付稳定声明工具/可重复最短材料负例及其它独立正/负控结果，原F07仍开放；Panda成功不足以替代它。后续只有父明确新grant才能研究迁移或更广的非线性运动响应。
+
+## 父裁定：先验声明测试库（2026-11-07）
+
+父已全文读本110行计划及原make_case/run_case、_pad_points、registry与frictionless实现，正常导入921ac62。允许原RD在clean 4de207a隔离树继续 **TEST_AUTHORING_ONLY**。只NEW `tests/test_persistent_grasp_stations.py` 与 `docs/benchmarks/p65-persistent-grasp-holdouts.md`；先交首个正常公共行为节点的小checkpoint，完整短矩阵随后同一任务补齐。不得写产品、driver、长窗测试或修改任何旧文件；禁止全部项目执行/数值probe/static/format/CI。
+
+冻结公开名称 `phymeo.material_stations_from_pads`，按§3关键字签名：robot=(world,body)，pads原PadFace序列；station_keys/counter_features/chart_ids均以原(link_name,collision_name)为键，分别为与声明offset同序的StationKey元组、payload完整面vertex IDs、(pad_chart_id,payload_chart_id)。只声明并返回owned MaterialStationRegistry，不调用enable、不采样当前contact、不推进时钟/history。原make_case尚未返回pads时，RED测试可用原公开PadFace和已冻结原offset显式重建同一声明作为测试输入；不能因读取未来info字段提前失败。父以后只给原info补同一pads tuple。
+
+首个实际RED先成功构造原mimic-box scene/asset、核初态与8个合法face锚点，再调用上述正常公共行为；缺失函数为预期边界。短矩阵保两个真实资产、mimic完整物理投影/Panda fixed frame、声明重排并同步重排keys、非连续token、错误owner/world/face/重复key、真实首次正N绑定与唯一新连接的rollback/retry。不要重跑既过F06长套或G01–G04旧窗口。首次有载短测试在原dt/原controller下只前进到所需节点，明确不同于完整持稳通过。
+
+每个真正正载样本必须保存真实first/second的owner、local material/application、normal、weights与完整history/receipt；不可把plan静态容量当实际持稳证据。父审阅/串行RED后才授新声明工具与应用driver，原四完整候选窗依然全部UNEXECUTED。若声明接口发现更广能力缺口，给真实最小输入，不调原参数。

@@ -119,3 +119,39 @@ W4两个真实bank各做浮根contact容量0拒步、邻world正常推进、足�
 合法材料对，不能靠空law错误伪通过。一次失败保存完整前缀和原输入，退出非零。
 完整payload/summary/压缩bytes和SHA有界，作者先写固定身份与计数而非运行后挑选。
 此补充只把已冻结能力放入真实安装环境验证，不新增物理域或原生接触结论。
+## Newton 1.7 原生接触对照的纯作者补充
+
+已读本机Newton1.7源码：semi_implicit/kernels_contact.py的eval_body_contact，
+Featherstone solver的真实调用及kernels.py的FREE solve-origin/RNEA写回。
+ke单位N/m，原生法向为显式弹簧，双方同ke64且kd/kf/ka/mu/rolling/torsional=0；
+density0、作者margin/gap0、group1/collision启用、angular_damping0，
+保原质量/惯量和直接父子过滤。active contact margin含有效半径，保存实际值，
+不能把作者margin0误读为原生接触margin数组全0。F03同articulation兄弟未被过滤。
+本补充只授原robot原隔离树NEW两个文件，未授任何执行：
+- tests/reference_newton/robot/resident_floating_contacts_native.py
+- docs/benchmarks/p65-resident-floating-contacts-native.md
+
+每backend cpu/cuda:0固定F01/F03各40步、h1/1024，独立真实builder与FREE树、
+原生pipeline.collide(entry,contacts)→solver.step；不传matched-law body_f。
+F01 m2/I=.5I/COM0，球r1/8/z3/32，静态box中心(0,0,-1/8)、
+halfextents(1,1,1/8)，首gap=-1/32、球Fz=2、az=1。
+F03根m2/I=.5I、两Px子m2/m1/I=.25I、offset±7/64、r1/8；
+首广义力[0(root6),-2,+2]、root-x/两joint质量块[[5,2,1],[2,2,0],[1,0,1]]，
+加速度(0,-1,2)、总动量0。其余原初态/输入取已冻F01/F03，不改fixture。
+独立递推只用自身初态：F01 N=64max(0,1/8-z)，
+F03 N=64max(0,1/32+qleft-qright)；同态5e-6/5e-5、M2e-5、
+40步2e-4等原门不变，真实contact count/normal/gap/力与运动均核。
+不把Newton归一Euler旋转与Phy exp-map、一般多patch/阻尼/摩擦称同模型。
+
+保存每步全部active原生contact rows、双surface/normal/margin/shape identity、
+shape material/filter及完整模型、entry/exit joint/body q/qd、joint_qdd、
+body_qd_fk/body_q_com/body_solve_origin/raw body_f_ext与独立decoded、
+原输入零外载、两侧COM wrench/全M/J/动量/KE和checks。
+FREE public qd的parent-anchor基与world COM区分；post RNEA
+F=-raw[:3], tauCOM=-raw[3:]-(COM-solve_origin)×F，solve_origin实际读取。
+rigid_contact_force尚未填、BODY_PARENT_F不是纯接触力，不借名SensorContact。
+静态箱无body force buffer，其反力只能明确标原生row独立反向重建。
+pin源码、版本/device和原始读数完整保存；check失败仍保完整40步及另一固定case，
+原退出非零，不改门、不另注入力、不重新运行取计数。作者仅text/fileIO/smallGit，
+不改已有C9/C10交付、不merge父、不新增助手、不import/probe/static/build/install。
+父完整读交接、C9正式接受及C10接入后，才可能授唯一串行首次执行。

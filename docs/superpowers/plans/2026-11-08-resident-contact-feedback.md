@@ -56,3 +56,12 @@ input_external为原mechanics external列加接触之前的full N广义载荷、
 两种入口world点均由实际stored entry R/p作FP64 solve逆映射，再经实际stored candidate R+/p+运输；static位移为0。不正交化、不HOST重算FK。1e-10 m只是公开记录构造一致性门，不能冒FP32物理精度；独立q/v/FK和圆弧物理门仍5e-6/5e-5、窗口2e-4。晚故障边界方法名冻结plan._read_candidate（实际candidate读回）与plan._finish_attempt（完整owned receipt构造），均在唯一swap之前。
 
 R04原提案的“前1/8s，随后最多再3/4s”明确为总7/8s。上文“原0..3/4s”为简写错误，本补足在任何执行前纠正，不是延长失败测试预算。h/h2在首个真实卸载后再出现正入步N的接受步停止。
+
+
+### C6内部桥与资源接口补足（2026-11-08）
+
+原RD仅NEW _resident_contact_bridge.py、tests/test_resident_contact_bridge.py、docs/benchmarks/p65-resident-contact-bridge.md，test-first纯作者；不改旧接缝或执行。ContactShapeFrame保存原CollisionShape、world_points_m、group_index、stored position/rotation、真实COM reference_point及COM linear/angular velocity。stored R只检查det>0和maxabs(R.T@R-I)<=5e-5，不修复；1e-10仅点重构一致性。group_count为原ordinary 1..16；空candidate返回full N×6零，空frames仅在materials/candidates同时为空时合法。
+
+sample_tree_contacts(world,frames,materials_by_pair,candidates,group_count,site_capacity)用旧有限patch/法向律返回ContactLoads；完整sites、COM wrench、static反力及原frames均owned。超站点抛ContactSiteCapacityExceeded(count,limit)，未知几何不能返回零。finish_contact_loads(loads,candidate_frames)只运输原入步材料/作用点，核同shape/source/group/static，不重新采样或改变入步力。父receipt.diagnostics固定entry_frames/accepted_frames两Mapping，记录完整形状/来源/实际变换。
+
+plan._buffer为实际scratch分配点，使用batch现有runtime，plan自己的ExitStack登记释放和计数后返回。至少full N×6 contact wrench与world site-reject mask两种实际scratch，第二次真实分配后故障必须完整清理且batch可继续。plan.stats沿closed/device_owned_bytes/device_allocations命名，另计本plan真实上传/读回/launch；close仅释放自己的资源，batch.close关闭所有plan。所有分配、读回、receipt构造、source/epoch复核在唯一swap前；不能预发布collision layouts/last_result。

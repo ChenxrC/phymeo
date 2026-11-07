@@ -362,9 +362,9 @@ def _asset(tmp_path, folded):
 <inertia ixx="0.125" iyy="0.125" izz="0.125" ixy="0" ixz="0" iyz="0"/></inertial>
 <collision name="offset_ball"><origin xyz="1 0 0"/>
 <geometry><sphere radius="0.0625"/></geometry></collision></link>
-<joint name="hinge" type="continuous"><parent link="base"/><child link="arm"/>
+<joint name="hinge" type="revolute"><parent link="base"/><child link="arm"/>
 <origin xyz="0.5 -0.25 0.75" rpy="0 0 1.5707963267948966"/><axis xyz="0 0 1"/>
-<limit effort="8" velocity="4"/></joint>""" + fixed + "</robot>", encoding="utf-8")
+<limit lower="-4096" upper="4096" effort="8" velocity="4"/></joint>""" + fixed + "</robot>", encoding="utf-8")
     return ph.load_urdf(path, gravity=(0, 0, 0), collapse_fixed_joints=folded)
 
 
@@ -492,3 +492,4 @@ def test_r06_capacity_empty_and_plan_close_preserve_borrowed_runtime(tyx_mode, t
             assert result.bounds.shape == (0, 6) and result.candidates == ()
             assert plan.stats()["device_allocations"] == 0
             assert plan.stats()["revolute_bounds_kernel_launches"] == 0
+

@@ -81,3 +81,5 @@ make_resident_revolute_bounds_kernels()  # 两个 accepted buffer 的独立 hand
 
 `slots[S]` 为 rotor world slot、其他行-1；`offsets[S+1]` 保原有限顶点范围；`zero_relative_points[V,3]`、`geometry[S,8]` 是静态上传。球保1球心、胶囊保2有限端点、hull保全部原顶点。只根据 `state[slot,0]` 旋转这些相对点，再加pivot和真实radius/固定误差外扩，写已有 `bounds[S,6]`、`stamp[S,2]=(valid,tick)`；不改非rotor行。父首sphere/static pass应同时把slider/rotor排除出sphere slots，然后原slider pass与NEW rotor pass各写自己的行。同一个world多shape读同accepted q/tick，借用生命周期和失败事务沿 C1/C2。
 
+
+执行前旧解析前提修正：临时 URDF 使用既有 loader 支持的 type='revolute'，limit 明示 lower=-4096、upper=4096、effort=8、velocity=4。原连续型标签没有进入本仓解析支持域，不能作为新 binding 验收的前置条件；本修正不改变任何实际 q、形状、惯量、控制或步长。DrivenRobotProgram 仍不接 compliant stops；这不是新增 continuous importer。

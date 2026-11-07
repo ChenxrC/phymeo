@@ -186,3 +186,16 @@ W1 为 T01；W4 为 sphere/slider/rotor/T02 异构 worlds；W32 按八项循环�
 Native `add_urdf(..., collapse_fixed_joints=False)` 保 T03 工具部件；root 固定，armature/damping/PD/limits/contact 关闭且读回元数据。从关节名和 q/qd start 映射，不把 fixed joint 计作活动行。记录所有 `joint_q/qd`、`body_q/qd/body_f`、原始惯量/COM、shape/frames、control、device/version和 source snapshot；COM/world 与 authored frame 的换算注明。可借鉴已有 `tests/reference_newton/robot/floating_fixed_tools_reference.py` 的元数据/force/完整 JSON做法，但新固定树 oracle 独立，不复跑旧 F1 验收。
 
 只有真实 interpret/CUDA 轨迹、全矩阵物理、事务、材料归属和 warm device-bounds 路径共同通过后，才可称“受限固定根 R/P 树的接受设备状态直接供宽相”。不能据此声称完整机器人场景驻留、接触力反馈、CCD/self collision、浮根/mimic、任意 N、严格实数包围、自动可微或性能更快。上述均为后续独立节点；本册所有新案例仍 **UNEXECUTED**。
+
+## T1 API 与保存 schema（父授权测试作者追加，仍 UNEXECUTED）
+
+正常入口为 `resident.FixedRobotTree(program, initial_scene_state, control_max_iterations=512)`，其中 resident 为 `phymeo.backends.tyx_world_batch`，沿原 TyxWorldBatch/set_controls/step/snapshot/restore/reset/prepare_collision。新增接口在 test function 内取用，首有效 RED 先构造并断言既有 T01 RobotModel/DrivenRobotProgram 有效，不能在 collection 导入缺模块。
+
+- `snapshot()[world]` 为 frozen TreeWorldCheckpoint：沿旧 `world,topology,tick,position,velocity,applied_effort,history,control`，增 `generalized_applied`。position/velocity/applied_effort/generalized_applied 为长度 n 的 tuple；applied_effort 只为实际 actuator drive；generalized_applied=drive+即时广义力/COM wrench 投影，尚未减 bias。control 是 n×10 tuple，delay1 的 history 是 n×3 tuple（每行 target/rate/ff），delay0 为空 tuple。topology 区分种类、n、完整模型/静态帧/增益/延迟；不以只有相同 n 允许跨机构 restore。
+- `tree_kinematics(keys)` 返回按请求顺序 world→owned 不可变条目的 mapping。每项 `tick,joint_types,position,velocity,link_position_m,link_rotation,com_position_m`；position/velocity 每行单位依 joint_types 为 rad/rad/s 或 m/m/s，link/COM 是当前接受末态世界坐标。position/velocity shape[n]，link/COM[n,3]，rotation[n,3,3]。空选择返回空 mapping；旧 prepared scalar reader 选中 tree 允许具名拒绝。
+- `tree_diagnostics(keys)` 为有界的最近接受 attempt 的**入步力学**读回，返回同序 world→record 或 None。record 字段固定 `entry_tick,exit_tick,dt_s,entry_position,entry_velocity,linear_jacobian,angular_jacobian,mass,bias,external,drive,acceleration,iterations,control_residual,equation_residual`；J 为[n,3,n]，mass[n,n]，其余向量[n]；external 不含 drive 或重力，bias 包重力和速度偏置。residual 两项分别是原始律最大绝对 effort 差和归一化质量方程差，iterations 为实际 sweep 数。零 gain 的直接 drive 路径可为0。
+- 初始化、成功 restore/reset 的对应树、该树最新数值拒步时 diagnostic=None；全设备异常的本次尝试也令涉及树的 diagnostic 无效/None，但不改物理 state/epoch。HOST 输入校验失败且未启动设备 attempt 不使既有诊断失效。已返回 record 是 owned 不可变快照，后续失败或成功重试不能改它。不能用被失败 candidate 覆盖的 scratch 继续提供“最后成功诊断”。该小读回不是永久历史库；当前接受 FK 与入步诊断要分别标时刻。
+- 诊断真实 readback 累加 `tree_diagnostic_reads`、`tree_diagnostic_downloaded_bytes`（interpret 使用对应 `tree_diagnostic_host_read_bytes`），不能假称免费；warm 碰撞区间不调用它。新 tree 资源/launch 统计并入原 total 与独立 tree 项，旧计数意义不改。
+- `ResidentTreeBinding(key, world, group_index, local_points_m, *, topology)` 为显式 group-local 安装声明；topology 取本 tree checkpoint.topology。`from_asset(asset,source_key,*,key,world)` 携真实 owned model/source/group证明，父在 prepare 与当前物理 tree 全模型交叉核。直接声明不能被报告成 URDF source 证明。
+
+测试 JSON 用相同执行读数写入 tmp_path：input（模型、q/v/history、完整 command、dt、source/shape 定义）、entry/actual checkpoint、attempt acceptance、入步 diagnostic、末态 kinematics、collision result 完整 key/revision/registered_pairs/candidates/bounds/ticks/epoch、batch/plan stats、逐项独立 oracle。每步先保存已取得的原读数再断言；发生失败保留已到达的数据。严格 warm trace 的 q/v 若为独立递推，字段必须明确 `oracle_*`，真实 checkpoint只存区间前后，不增加隐蔽 snapshot。

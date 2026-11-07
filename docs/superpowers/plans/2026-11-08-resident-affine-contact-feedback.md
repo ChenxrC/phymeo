@@ -1,6 +1,6 @@
 # C7 固定根 affine-mimic 常驻接触反馈
 
-状态：**PRODUCT_IMPLEMENTED / FIRST_NODE_VERIFIED / FULL_MATRIX_PENDING**，2026-11-08。持续任务，无08:00截止。C6产品48eeb89的HOST50、解释74分组、CUDA74、相邻15和同次112完整保存记录已通过，源码外wheel两backend已完成，C6正式限域接受；C7产品改动与执行继续由父唯一持有。本文冻结[提案](../../development/p65-resident-affine-contact-proposal.md)第1–6节的有限功能与案例，不将其手推当实测。
+状态：**LOCALLY_ACCEPTED / C7_COMPLETE**，2026-11-08。持续任务，无08:00截止。C6产品48eeb89的HOST50、解释74分组、CUDA74、相邻15和同次112完整保存记录已通过，源码外wheel两backend已完成，C6正式限域接受；C7产品改动与执行继续由父唯一持有。本文冻结[提案](../../development/p65-resident-affine-contact-proposal.md)第1–6节的有限功能与案例，不将其手推当实测。
 
 ## 目标与复用
 
@@ -74,3 +74,6 @@ C6已正式限域接受，见[报告](../../benchmarks/p65-resident-tree-contact
 父另核摘要口径：原nested AffineTreeDiagnostic和原full/K实际接受门始终检查完整max，但generic receipt.diagnostics.equation_residual此前只显示K残差。382在A02加同次记录一致性断言，真实RED显示0.0与6.811959707420101e-8不等。父仅把generic摘要取已有同次nested完整max；383 interpret1/1.10s、384 CUDA1/3.77s通过，385/386两文件Ruff/format0。没有改动载荷、投影、求解、发布、物理门或容差；380/381完整物理证据按原tested source保留，不冒称新摘要在旧输出已存在。固定两A02补件将与原输出比较，只允许摘要字段这一显式更正，其余完整回执须保持。
 
 当前仍需受阶段拆分影响的少量原接口兼容、同次保存完整性与新wheel源码外验证，尚未正式接受C7。
+### C7正式限域接受与释放（2026-11-08）
+
+上述作者/首节点/待验段保留为历史，当前以[最终报告](../../benchmarks/p65-resident-affine-contacts.md#2026-11-08-父执行与正式限域接受)为准。每backend50专项联合覆盖、相邻3项CUDA、90主保存payload+两修复补件+原RED、423文件新wheel同源以及两backend各63batch/252请求world-steps均已完成。保存388和包393均RAW0，原测试/失败与旧generic摘要差异保持。产品876ae848，所有C7执行已结束，不重跑同源绿组；父将唯一串行执行槽转入下一个已冻结节点。C8目前只有已导入提案，尚未授实现；持续goal仍ACTIVE，无截止。

@@ -10,7 +10,7 @@
 
 **C6常驻有限静态接触反馈已正式限域接受**：产品48eeb89，HOST桥50、解释74分组、实际CUDA74、相邻15通过；112完整payload审计与新wheel两backend各41 batch/164 world-steps完成。包含有限球/胶囊/凸体、真实偏心转动/跨分支惯量、732/1463步卸载重入、W1/W4及容量/晚故障共同发布。详[正式接受](../benchmarks/p65-resident-tree-contacts.md#2026-11-08-父执行与正式限域接受)。本片不是affine/floating接触、动态双侧、持续摩擦、CCD或全GPU窄相，不重复已绿组/旧审计。
 
-**当前下一节点C7**：[affine-mimic常驻接触计划](../superpowers/plans/2026-11-08-resident-affine-contact-feedback.md)已冻结；父产品37897e3已接入full N载荷→原Pᵀ/K solve/原图反力→唯一发布；359有效RED之后，368解释与369实际CUDA首3N节点均通过。完整负gain/chain/RP/连续与事务矩阵、新wheel仍待验收。原RD继续4NEW作者；原robot只读审阅本次四OLD接缝，无编辑或执行。父仍是所有OLD接缝和项目执行唯一owner，无周期任务或固定截止。
+**C7固定根affine常驻接触反馈已正式限域接受**：产品876ae848，每backend50专项联合覆盖、受影响CUDA3项、90主完整保存记录与两摘要补件通过；新wheel423产品成员同源，两backend各63batch/251接受+1拒绝world-step及21步恢复重放通过。详[正式报告](../benchmarks/p65-resident-affine-contacts.md#2026-11-08-父执行与正式限域接受)。旧generic摘要差异与原失败保持，不重跑已绿组。原RD/robot已释放；下一节点从[完整tree/forest内双动态提案](p65-resident-dynamic-contact-next-proposal.md)冻结，仍由父独占旧源码与唯一串行执行槽。无截止或周期任务。
 
 [功能差异全景](phymeo-newton-panorama-2026-11-07.md) · [可视化](phymeo-newton-panorama-2026-11-07.html)。完整设备窄相/CCD/动态双侧接触、原100g持续抓持、软布两初态放台等仍开放；历史数学证明或局部几何不代表整个P6.5完成。
 

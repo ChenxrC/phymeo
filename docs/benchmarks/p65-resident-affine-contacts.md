@@ -1,6 +1,6 @@
-# C7 固定根 affine-mimic 常驻接触：作者交接
+# C7 固定根 affine-mimic 常驻接触：正式限域接受
 
-状态：**MATRIX_UNEXECUTED / AUTHORING_RELEASED**。2026-11-08。作者仅编写四个 NEW 文件，未 import、collection、执行数值、pytest、静态检查、构建或设备探测；未修改旧产品或 merge 父。所有运行由父唯一串行队列持有。
+当前状态：**LOCALLY_ACCEPTED / C7_COMPLETE**，产品876ae848。2026-11-08。下文作者交接是历史记录，实际验收见末节。原作者状态 **MATRIX_UNEXECUTED / AUTHORING_RELEASED**：作者仅编写四个 NEW 文件，未 import、collection、执行数值、pytest、静态检查、构建或设备探测；未修改旧产品或 merge 父。所有运行由父唯一串行队列持有。
 
 权威范围见[冻结计划](../superpowers/plans/2026-11-08-resident-affine-contact-feedback.md)与[原提案](../development/p65-resident-affine-contact-proposal.md)。本片是有限 static、mu=0、discrete-entry 的 **HOST 几何/法向律 + TYX full-N/K 真实受力响应**，不是设备窄相、CCD、floating、moving/moving 或持续摩擦。
 
@@ -66,3 +66,30 @@ python -I -B <outside>/resident_affine_contacts.py --mode cuda --output-dir <fre
 interpret 同命令仅换 mode 和新输出目录。严格核 `direct_url.json` 的实际本地 wheel 路径、可用安装器hash、实际wheel SHA256、所有安装产品成员的完整字节、所有已加载 Phymeo 模块的 `__file__/spec.origin/__path__`；不靠仅包版本或同名路径判断来源。`-I -B`、外部 cwd、新输出不可覆盖为前置条件。
 
 consumer 四世界40步+21步重放，再单次局部容量拒绝及一次恢复；仅公开 API 推进，所有负例有真实错误记录。完整 `resident-affine-contacts.trace.json.gz` 与短 `summary.json` 同时保存。若只通过此烟测，不等于完整 C7/新 Newton 对照或性能验收；未声明速度目标。
+
+## 2026-11-08 父执行与正式限域接受
+
+最终产品 **876ae848f313ed76bbff1bb6533a69f7041bb50d**。本片已完成原冻结功能、工程门和本机验收；没有远程CI或跨引擎速度结论。全部项目执行由父fresh guard串行完成，原作者仅NEW源码/测试/消费者与保存审计脚本作者，现均释放。
+
+| 证据 | 实际结果 |
+| --- | --- |
+| 首公开节点368/369 | interpret 1 / CUDA 1通过；各后续完整组只排除此已绿节点 |
+| 380/381两文件剩余完整矩阵 | interpret 49 passed/145.94s；CUDA 49 passed/224.49s；每backend联合50，未以deselection掩盖未测节点 |
+| 原接口受影响检查387 | CUDA 3 passed/9.33s：无接触affine、PD拒绝后正常solve、接触world与未绑定affine/scalar共存 |
+| 原C6 W1/W4接缝371 | 修复真实group遮蔽后1 passed/14.96s，370原失败保留 |
+| 摘要口径382→383/384 | A02原RED为generic0而nested完整max=6.811959707420101e-8；仅generic摘要修正，各backend单节点通过 |
+| 388同次保存审计 | 90主gzip完整payload、两个独立A02补件、382原失败部分记录；固定身份精确membership通过 |
+| 389–392新wheel | 构建/离线新target安装与源码外interpret/CUDA均RAW0 |
+| 393包与消费者审计 | 423产品文件源码/快照/archive/安装字节全同；两backend全21恢复重放的state/geometry/receipt/diagnostic均同 |
+
+保存审计逐字段保留原N/K、完整输入/graph/P/c/C、owner/material、全部site及能量/功记录。W1/W4与tick19后21步完整重放通过。93个归档包含4782次receipt出现和3052次site出现（含重复保存引用，不冒唯一物理步数）；13个无保存调用的测试实例每backend仍只按真实pytest证据计。主集合固定为368/369+380/381，未将370/371或387混入。
+
+原完整矩阵在8fe797c执行；876ae848只改generic摘要与对应断言，真实full/K门、数值推进和原nested诊断未改。90主记录中3906处旧generic摘要与nested max的字面差异完整保留；两A02补件与各自原记录全字段比较，唯一差异正是receipt.diagnostics.equation_residual，且等于原nested max。不能将新摘要倒灌旧输出。新wheel使用最终876ae848，完整受载与恢复实测补齐实际发布路径。
+
+每backend源码外四混合world完成40主步+21恢复步+局部容量拒绝/重试，共63 batch、251 accepted world-steps和1 rejected world-step；原图身份拒绝、owned只读记录、所有owned device buffers关闭释放均通过。284实际加载Phymeo模块来自新安装target。真实CUDA统计1707 submitted kernels、1036 synchronizations；这是功能观察，未作吞吐比较。
+
+新wheel 1,245,222 bytes，SHA256 **799dde87987d0f6dfe2df5bf66f9a6599f573b25f576763978f3e0818812a6c1**。完整证据在 artifacts/p65-generic-collision-20261107-01；索引为 c7-final-tested-source-v1.json、c7-saved-audit-v1.json、c7-wheel-parity-v1.json。7组最终测试before/after及实际snapshot同源已核，最终current产品复用393的423成员核，无新物理重跑。
+
+原359、370、382功能失败，374/375首style失败，360预执行guard错误与361/362无效只读scope均按原始日志保留。最终专项Ruff/format已过，未放宽预算/更换fixture。原robot只读审阅指出的遮蔽问题已闭环。
+
+**限域仍是固定根ordinary/affine树对有限static S/C/H，mu=0、discrete_entry、HOST窄相/法向律+TYX完整受力响应。** 动态双方、浮根设备树、持续摩擦/CCD与完整设备窄相仍需后续实现；C7接受不等于整个P6.5完成。下一片从[动态双侧提案](../development/p65-resident-dynamic-contact-next-proposal.md)冻结多案例与薄接口。

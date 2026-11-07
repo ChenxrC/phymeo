@@ -110,3 +110,9 @@ Newton的碰撞与求解器也有条件：其凸体/网格按不同算法及表�
 浮根 authored body坐标与惯量主轴已分离，合法完整根惯量、旋转inertial frame、偏置fixed工具的非对角聚合以及floating mimic继承均可进入原共同场景。新6窗4096步、独立Newton CPU/CUDA 8例320窗口步+8静止响应、源码外wheel两窗1024步均通过。覆盖前文“真实非对角root惯量仍缺”这一项；child任意非对角装配、设备浮根、更广关节/闭环仍未因此实现。[F3实际报告](../benchmarks/p65-floating-root-inertia-frame.md)。
 
 C4完整固定根R/P设备树与通用多owner持续摩擦现均正式限域接受，已完成各自专项、必要兼容、完整保存记录和同一新wheel源码外使用。C4覆盖1..16普通物理行、完整M/b/J、设备接受态到当前姿态宽相；摩擦覆盖显式材料站点的普通/mimic/浮根共同HOST场景。设备完整接触反馈、自动chart迁移、浮根设备驻留仍缺。下一片C5固定根mimic设备树进入独立测试库；原100g持稳、Panda持续摩擦接入与目标软布未放台继续作为独立留出。详[设备树](../benchmarks/p65-resident-tree-collision.md)与[摩擦](../benchmarks/p65-general-scene-friction.md)最终接受段。
+
+## 最新功能覆盖（C5–C7，2026-11-08）
+
+固定根ordinary与affine-mimic完整树现均支持TYX驻留动力学、接受态FK→设备宽相，以及有限static球/胶囊/凸体的真实接触反馈。full N惯量/交叉J/双bank事务与affine原P/c/C、K求解、原图反力保持；不是只驱动独立单关节。C7新增每backend50专项、90主完整保存记录与新wheel两backend各63batch验证，详[报告](../benchmarks/p65-resident-affine-contacts.md#2026-11-08-父执行与正式限域接受)。
+
+接触窄相与法向律仍在HOST。驻留动态双方、同world多独立participant、浮根设备树、设备窄相与CCD仍是明确缺口；下一项优先同一完整tree/forest内双动态连杆。HOST共同场景已有的多机器人/浮根和持续摩擦，不因驻留组合未接入而说成全无；也不能反过来冒称驻留已支持。其余大功能族及原100g抓取/软布留出继续开放，无新增Newton吞吐优势结论。

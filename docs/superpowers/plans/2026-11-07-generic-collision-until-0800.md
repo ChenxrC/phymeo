@@ -328,3 +328,9 @@ fdfa586的F2浮根mimic与C3单R设备姿态宽相已通过专项/兼容/原作�
 C4/C5完整ordinary/affine设备树及C6有限静态接触反馈已分别完成本机验收。C6产品48eeb89：HOST50、解释74分组、CUDA74、受影响兼容15、固定112完整payload，新wheel423package文件同源，两backend源码外各41batch/164worldsteps。详[C6报告](../../benchmarks/p65-resident-tree-contacts.md)。继续功能优先，不把HOST窄相+设备mechanics称全GPU，不以本片替代动态双侧或CCD。
 
 当前[C7计划](2026-11-08-resident-affine-contact-feedback.md)冻结同一接触入口的固定根mimic反馈，原RD仅NEW测试/消费者/报告作者；父独占旧接缝及单执行槽。其后再按主线补动态双方、浮根驻留、设备窄相等真实组合缺口。没有截止、没有重新启用旧周期任务，持续goal保持ACTIVE。
+
+## 2026-11-08 C7正式接受，转入动态双侧节点
+
+[C7正式报告](../../benchmarks/p65-resident-affine-contacts.md#2026-11-08-父执行与正式限域接受)：固定根affine树已复用同一常驻接触入口、full N载荷/原K solve/原图反力/唯一发布。每backend50专项联合覆盖、90主保存记录及新wheel两backend各63batch通过，完整负gain/共享惯量/恢复/拒绝记录保持。此处不代表动态双方、浮根设备、CCD或全GPU窄相。
+
+下一片从[同world完整tree/forest双动态提案](../../development/p65-resident-dynamic-contact-next-proposal.md)冻结，不能拼接world或拆成独立单关节。父旧源码与执行唯一owner，原RD/robot可在冻结后分别作者NEW独立测试与Newton/consumer；不新建助手或重启额度已失败RR。后续多participant同world、浮根驻留有独立状态/事务前置条件，不通过删域门代替。持续任务无08:00限制。

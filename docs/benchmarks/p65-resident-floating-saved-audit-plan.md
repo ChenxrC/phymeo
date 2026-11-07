@@ -58,3 +58,24 @@ native独立入口核七声明各40完整step、真实shape/joint/body metadata�
 ## 父执行前观察格式补足
 
 父全文读完原1107行消费者后补足两项输入读取：source snapshot中的wheel等二进制仍全bytes/SHA绑定，但不当UTF8源码解码；外部native/wheel的payload根须与原命令行 --output 的显式绝对路径完全一致，允许合法源码外目录，不搬动输出或改原summary路径。均未改物理、预声明成员/门或payload字段，实际审计和静态仍待父串行槽。导入原874ff199时两文件Git blob相同，工作副本仅LF/CRLF差异，已独立核规范化全文相同。
+## 父已结束首错与必要补集的观察规则（2026-11-08）
+
+460已实际48pass后在原exact-pi节点失败；原节点保存发生在assert之后，
+当次没有该失败完整payload，manifest明确failed_payloads为空。468保原输入
+重现并保存完整失败；469修复后的两个pi节点和470四个异惯量/耦合原节点
+属于改变gyro源码后必要的定向验证，不能重新标记460源码或冒同hash整套通过。
+
+审计现在允许显式 qualifies_completed 映射：键必须恰为本run与此前已成功覆盖
+节点的交集，每个值必须有具体源码变更验证理由。仍全核该run真实CLI、
+原成功前缀、完整payload/源/退出；最终coverage用集合，只计每逻辑节点一次。
+未声明重复、凭空声明资格或用失败填覆盖都会拒绝。禁止为了绕过此规则重跑已绿节点。
+
+476原剩余31项在6pass后停止于warm W1的固定根计数名tree_diagnostic_reads。
+纯浮根storage没有登记该固定根字段；原snapshot/kinematics公共计数和全部
+floating_state/fk/diagnostic读回计数均保留，直接索引实际字段，不以get默认0掩盖。
+暖态测试先保存真实40步再做观察断言；479只运行其尚未完成25项。
+476原失败发生在保存前，不能补称同次完整warm证据存在。
+这些是测试/保存观察修正，不改变产品积分、原物理输入、40步或工程门。
+
+477对两个观察文件lint通过，478保留缺一个空行的format-check失败，
+补空行后480 format-check通过。实际保存审计仍未运行。

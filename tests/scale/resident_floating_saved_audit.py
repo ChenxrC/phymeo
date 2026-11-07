@@ -1191,7 +1191,6 @@ def physical_payload(member, relative, record, *, partial=False):
         frozen_counts = (
             "snapshot_downloaded_bytes",
             "kinematics_downloaded_bytes",
-            "tree_diagnostic_reads",
             "floating_state_downloaded_bytes",
             "floating_fk_downloaded_bytes",
             "floating_diagnostic_downloaded_bytes",
@@ -1496,9 +1495,13 @@ class Auditor:
             )
             same(spec["raw_exit"], 1, "failed prefix original exit")
             require("FAILED " + failed in stdout, "stdout first failure identity")
+        repeated = self.coverage[mode].intersection(completed)
+        qualifications = spec.get("qualifies_completed", {})
+        require(isinstance(qualifications, dict), "explicit repeat qualification mapping")
+        same(set(qualifications), repeated, "only actual already-covered qualifications")
         require(
-            not self.coverage[mode].intersection(completed),
-            "same-mode duplicate successful node coverage",
+            all(isinstance(reason, str) and reason.strip() for reason in qualifications.values()),
+            "every source-change qualification needs its declared reason",
         )
         self.source(sources, STEP)
         self.source(sources, REFERENCE)
@@ -1622,6 +1625,7 @@ class Auditor:
             failed=failed,
             members=rows,
             original_pytest_summary=final_line,
+            qualifies_completed=qualifications,
         )
         self.report["jobs"].append(summary)
 

@@ -19,7 +19,7 @@ from ..solvers.collision_loads import LoadSite, PairLoad, SurfaceLoads
 from ..solvers.sampled_payload import SampledPayload
 from ..solvers.sphere_link_contact import LinkSolid, SphereLinkContacts
 from ..solvers.table_box_patch import TableLinkSolids
-from .robot_payload_scene import _pad_points
+from .robot_payload_scene import _cuboid_face_weights, _pad_points
 
 _BITS = np.array(list(product((0, 1), repeat=3)))
 
@@ -179,7 +179,9 @@ class RobotSceneContacts:
                 tree, robot_addr, rigid_items, rigid_rows, pairs, key_map, pads, model
             )
             return
-        indices, points, pad_keys, excluded = _pad_points(tree, pads)
+        indices, points, pad_keys, excluded, self.pad_weights = _pad_points(
+            tree, pads, with_material_weights=True
+        )
         self.pad_indices, self.pad_points, self.pad_keys = indices, points, pad_keys
         full = TableLinkSolids.from_asset(tree).solids if rigid_items else ()
         self.original = {(c.link_index, c.link_name, c.name): c.shape.key for c in tree.collisions}
@@ -284,10 +286,17 @@ class RobotSceneContacts:
                 p, f = points[k], -samples.forces[k]
                 if payload.radius is not None:
                     normal = (c - p) / np.linalg.norm(c - p)
+                    payload_weights = ((item.shape.vertex_ids[0], 1.0),)
                 else:
                     local = R.T @ (p - c)
                     axis = int(np.argmin(payload.half - np.abs(local)))
                     normal = -np.sign(local[axis]) * R[:, axis]
+                    payload_weights = _cuboid_face_weights(
+                        item.shape.vertex_ids,
+                        axis,
+                        int(np.sign(local[axis])),
+                        0.5 + local / (2 * payload.half),
+                    )
                 rel = (
                     body.velocity[row]
                     + np.cross(body.angular_velocity[row], p - c)
@@ -311,6 +320,8 @@ class RobotSceneContacts:
                     gap_m=-samples.depths[k],
                     pair_power_W=float(f @ rel),
                     feature="sampled-pad",
+                    first_weights=self.pad_weights[k],
+                    second_weights=payload_weights,
                 )
                 records.add(self.key_map[self.pad_keys[k]], item.shape.key, hit, law, "robot-pad")
         # link_load already contains pad COM wrenches; transpose it exactly once.

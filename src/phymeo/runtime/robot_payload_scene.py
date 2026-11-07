@@ -1,6 +1,7 @@
 """Interactive HOST dynamics of a fixed-base robot, one uniform free body and a finite table."""
 
 from dataclasses import dataclass
+from itertools import product
 from numbers import Integral
 from threading import RLock
 from types import MappingProxyType
@@ -102,9 +103,28 @@ class PadFace:
         object.__setattr__(self, "offsets_m", pairs)
 
 
-def _pad_points(asset, pads):
+def _cuboid_face_weights(vertex_ids, axis, side, coordinates):
+    """Use the selected material face, never infer it from a rounded world point."""
+    u = np.array(coordinates, dtype=float, copy=True)
+    if u.shape != (3,) or not np.isfinite(u).all() or axis not in (0, 1, 2) or side not in (-1, 1):
+        raise ValueError("invalid selected cuboid material face")
+    if np.any(u < -1e-8) or np.any(u > 1 + 1e-8):
+        raise ValueError("sample lies outside its selected cuboid material face")
+    u = np.clip(u, 0, 1)
+    u[axis] = float(side > 0)
+    weights = []
+    for node, bits in zip(vertex_ids, product((0, 1), repeat=3), strict=True):
+        if bits[axis] == int(side > 0):
+            weight = float(np.prod([u[j] if bits[j] else 1 - u[j] for j in range(3) if j != axis]))
+            if weight:
+                weights.append((node, weight))
+    return tuple(weights)
+
+
+def _pad_points(asset, pads, *, with_material_weights=False):
     cols = {c.shape.key: c for c in asset.collisions}
     links, points, sample_keys, excluded = [], [], [], set()
+    material_weights = []
     for pad in pads:
         if not isinstance(pad, PadFace):
             raise ValueError("pad must select a registered collision shape")
@@ -138,18 +158,27 @@ def _pad_points(asset, pads):
             raise ValueError(f"{col.name}: pad sample outside actual cuboid face")
         face = box._center + pad.side * box._half[pad.axis] * box._axes[pad.axis]
         local = face + offsets @ box._axes[axes]
+        if with_material_weights:
+            coordinates = np.full((len(offsets), 3), 0.5)
+            coordinates[:, axes] += offsets / (2 * box._half[axes])
+            coordinates[:, pad.axis] = float(pad.side > 0)
+            material_weights.extend(
+                _cuboid_face_weights(col.shape.vertex_ids, pad.axis, pad.side, row)
+                for row in coordinates
+            )
         convert = getattr(asset, "authored_to_model_points", None)
         if convert is not None:
             local = convert(col.link_name, local)
         links.extend([col.link_index] * len(local))
         sample_keys.extend([col.shape.key] * len(local))
         points.extend(local)
-    return (
+    result = (
         np.asarray(links, dtype=np.intp),
         np.asarray(points).reshape(-1, 3),
         tuple(sample_keys),
         excluded,
     )
+    return (*result, tuple(material_weights)) if with_material_weights else result
 
 
 @dataclass(frozen=True, eq=False)

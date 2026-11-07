@@ -220,6 +220,10 @@ def case(name, *, n=None, placement="base", boost=False):
             data["root_inertia_frame"] = np.array([0., 0., np.sin(np.pi/8), np.cos(np.pi/8)])
             data["torque"][0, 0] = 1.
     elif name in ("P04_eccentric", "P05"):
+        if name == "P04_eccentric":
+            children.update(parents=np.array([-1]), kinds=("revolute",), offsets=np.zeros((1,3)),
+                            orientations=np.array([[0.,0.,0.,1.]]), axes=np.array([[0.,0.,1.]]),
+                            mass=np.ones(1), com=np.array([[1/8,0.,0.]]), inertia=np.full((1,3),.25))
         data["root_com"] = np.array([1/16, -1/32, 1/64]); data["root_inertia"] = np.array([.5, .625, .75])
         data["root_inertia_frame"] = np.array([0., 0., .6, .8])
         data["q"][3:7] = [.5, .5, .5, .5]

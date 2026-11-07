@@ -166,6 +166,8 @@ def _audit(data, entry, accepted, geometry, diagnostic, summary, selected, exter
     n, b, d = len(data["q"])-7, len(data["q"])-6, len(data["v"])
     assert accepted.tick == entry.tick+1 and accepted.control == entry.control
     assert len(accepted.position) == n+7 and len(accepted.velocity) == d
+    assert len(accepted.local_origin_m) == 3
+    _close(accepted.local_origin_m, np.asarray(accepted.position[:3])-data["q"][:3], atol=2e-12, rtol=0)
     assert len(accepted.applied_effort) == n and len(accepted.generalized_applied) == d
     assert (geometry.joint_count, geometry.body_count, geometry.velocity_count, geometry.configuration_count) == (n,b,d,n+7)
     assert diagnostic.entry_tick == entry.tick and diagnostic.exit_tick == accepted.tick
@@ -522,7 +524,8 @@ def test_p06_candidate_domain_failure_is_world_local_and_does_not_keep_old_diagn
         if kind=="root_translation": q[0]=4096.; v[0]=1.
         elif kind=="joint_translation": q[7]=4096.; v[6]=1.
         else: v[5]=4096.
-        boundary=replace(state,position=tuple(q),velocity=tuple(v))
+        local=(4096.,0.,0.) if kind=="root_translation" else state.local_origin_m
+        boundary=replace(state,position=tuple(q),velocity=tuple(v),local_origin_m=local)
         batch.restore({503:boundary}); before=batch.snapshot()
         assert batch.step(H)=={503:False,91:True}
         assert batch.snapshot()[503]==before[503]
@@ -607,3 +610,104 @@ def test_p06_owned_outputs_controls_and_invalid_mixed_update_are_atomic(tyx_mode
         with pytest.raises((ValueError,TypeError)): batch.kinematics([503])
         with pytest.raises((ValueError,TypeError)): batch.prepare_readback([503],kind="kinematics")
         _save(tmp_path,"floating-owned-update",dict(input=data,packet=packet,before=before,first=state,first_geometry=geometry,first_diagnostic=diag,retained=batch.snapshot(),stats=batch.stats()))
+
+@pytest.mark.tyx
+def test_p06_large_anchor_checkpoint_retains_actual_local_bank_and_replays(tyx_mode,tmp_path):
+    data=_reference().case("P02_frame")
+    data["q"][:3]=[2.**60,0.,0.]; data["torque"][:]=0
+    data["v"][:]=[1.,0.,0.,0.,0.,0.]
+    tree=_tree(data)
+    with ph.TyxWorldBatch([(503,tree)],tyx_mode,cache_root=tmp_path) as batch:
+        initial=batch.snapshot()[503]
+        assert initial.local_origin_m==(0.,0.,0.)
+        assert batch.step(H)=={503:True}
+        first=batch.snapshot()[503]
+        assert first.local_origin_m==(H,0.,0.)
+        # The global FP64 observation really cannot encode this displacement.
+        assert first.position[:3]==initial.position[:3]==(2.**60,0.,0.)
+        assert batch.step(H)=={503:True}
+        second=_physical_snapshot(batch); second_diag=_json(batch.tree_diagnostics())
+        assert second["state"][503].local_origin_m==(2*H,0.,0.)
+        batch.restore({503:first})
+        assert batch.snapshot()[503]==first and batch.tree_diagnostics()[503] is None
+        assert batch.step(H)=={503:True}
+        replay=_physical_snapshot(batch)
+        assert replay["state"]==second["state"]
+        assert replay["geometry"]==second["geometry"] and replay["energy"]==second["energy"]
+        assert _json(batch.tree_diagnostics())==second_diag
+        _save(tmp_path,"floating-large-anchor-local",dict(input=data,h_s=H,initial=initial,first=first,second=second,second_diagnostic=second_diag,replay=replay,stats=batch.stats()))
+
+
+@pytest.mark.tyx
+@pytest.mark.parametrize("problem",("world","local","width","domain","nan"))
+def test_p06_checkpoint_local_and_world_origin_must_describe_same_state(problem,tyx_mode,tmp_path):
+    from dataclasses import replace
+
+    data=_reference().case("P02_frame")
+    data["q"][:3]=[2.**60,0.,0.]; data["torque"][:]=0
+    data["v"][:]=[1.,0.,0.,0.,0.,0.]
+    with ph.TyxWorldBatch([(503,_tree(data))],tyx_mode,cache_root=tmp_path) as batch:
+        assert batch.step(H)=={503:True}
+        before=_physical_snapshot(batch); state=before["state"][503]
+        local=list(state.local_origin_m); position=list(state.position)
+        if problem=="world": position[0]+=1024.
+        elif problem=="local": local[0]=1024.
+        elif problem=="width": local.pop()
+        elif problem=="domain": local[0]=4097.; position[0]+=4096.
+        else: local[0]=float("nan")
+        with pytest.raises((ValueError,TypeError)):
+            batch.restore({503:replace(state,position=tuple(position),local_origin_m=tuple(local))})
+        assert _physical_snapshot(batch)==before
+        _save(tmp_path,"floating-origin-binding-rejection",dict(problem=problem,input=data,before=before,retained=batch.snapshot(),stats=batch.stats()))
+
+
+@pytest.mark.tyx
+@pytest.mark.parametrize("angle",(np.pi-2.**-20,np.pi))
+def test_p06_pi_neighbourhood_preserves_real_pose_and_quaternion_hemisphere(angle,tyx_mode,tmp_path):
+    data=_reference().case("P02_frame")
+    data["root_inertia"][:]=.5; data["root_inertia_frame"][:]=[0.,0.,0.,1.]
+    data["q"][3:7]=[.5,.5,.5,.5]; data["torque"][:]=0
+    data["v"][:]=[0.,0.,0.,0.,0.,angle/H]
+    rows=[]
+    with ph.TyxWorldBatch([(503,_tree(data))],tyx_mode,cache_root=tmp_path) as batch:
+        for _ in range(2):
+            entry=batch.snapshot()[503]
+            assert batch.step(H)=={503:True}
+            state=batch.snapshot()[503]; geometry=batch.tree_kinematics()[503]
+            # Use the actual stored angular velocity, including FP32 pi rounding;
+            # the declaration is <= pi and no original domain gate is widened.
+            expected=_reference().drift(data,np.asarray(entry.position),np.asarray(entry.velocity),H)
+            _close(_reference().quat_matrix(state.position[3:7]),_reference().quat_matrix(expected[3:7]))
+            _close(geometry.link_rotation[0],_reference().quat_matrix(expected[3:7]))
+            assert np.dot(state.position[3:7],entry.position[3:7])>=0
+            assert abs(np.dot(state.position[3:7],state.position[3:7])-1)<=1e-5
+            _close(state.velocity,entry.velocity)
+            rows.append(dict(entry=entry,state=state,geometry=geometry,diagnostic=batch.tree_diagnostics()[503],expected_position=expected))
+        _save(tmp_path,"floating-pi-hemisphere",dict(input=data,declared_angle=angle,h_s=H,rows=rows,stats=batch.stats()))
+
+@pytest.mark.tyx
+def test_p06_partial_floating_storage_allocation_closes_original_runtime_and_rebuilds(tyx_mode,tmp_path,monkeypatch):
+    data=_reference().case("P03"); tree=_tree(data)
+    original=ph.TyxWorldBatch._buffer; seen=[]; allocated=[]
+    def real_allocation_then_fail(self,shape,dtype,initial=None,category=None):
+        value=original(self,shape,dtype,initial,category)
+        if category=="floating_topology":
+            seen.append(self); allocated.append(dict(shape=tuple(shape),dtype=str(np.dtype(dtype)),category=category))
+            if len(allocated)==2:
+                raise RuntimeError("c9 after real floating allocation")
+        return value
+    with monkeypatch.context() as patch:
+        patch.setattr(ph.TyxWorldBatch,"_buffer",real_allocation_then_fail)
+        with pytest.raises(RuntimeError,match="after real floating allocation"):
+            ph.TyxWorldBatch([(503,tree)],tyx_mode,cache_root=tmp_path/"failed")
+    assert len(allocated)==2 and seen[0] is seen[1]
+    failed=seen[0]
+    assert failed.stats()["device_owned_bytes"]==0
+    failed.close()
+    with pytest.raises(RuntimeError,match="closed"): failed.snapshot()
+    with ph.TyxWorldBatch([(503,tree)],tyx_mode,cache_root=tmp_path/"rebuilt") as batch:
+        packet,external=_packet(tree,data);batch.set_controls({503:packet});entry=batch.snapshot()[503]
+        assert batch.step(H)=={503:True}
+        state=batch.snapshot()[503];geometry=batch.tree_kinematics()[503];diagnostic=batch.tree_diagnostics()[503]
+        audit=_audit(data,entry,state,geometry,diagnostic,batch.summary()[503],data["drive"],external)
+        _save(tmp_path,"floating-partial-allocation",dict(input=data,allocated_before_failure=allocated,closed_stats=failed.stats(),entry=entry,state=state,geometry=geometry,diagnostic=diagnostic,audit=audit,stats=batch.stats()))

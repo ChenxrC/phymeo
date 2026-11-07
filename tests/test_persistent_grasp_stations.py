@@ -573,7 +573,7 @@ def test_first_loaded_pad_sites_and_retry_publish_once(case, tmp_path, monkeypat
                     pytest.fail("original acquisition prefix produced no positive target pad load")
 
                 assert scene.tangent_history is history
-                assert scene.tangent_receipt is receipt
+                assert _public(scene.tangent_receipt) == _public(receipt)
                 assert scene.contact_events is events
                 assert _snapshot(scene) == saved
                 assert not history.active

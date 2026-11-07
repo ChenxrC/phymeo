@@ -1,6 +1,6 @@
 # C4：完整固定根 R/P 树的接受设备状态与有限形状宽相
 
-状态：**INTERPRET_CUDA_VERIFIED / WHEEL_PENDING**。父本机实现、独立Newton及保存记录验证见末节；源码外wheel尚待执行。前述作者交付历史不代表当时已经通过。父已保存第136项有效 RED：真实 T01 模型、program、命令和输入记录先成立，随后正常公共入口缺少 `FixedRobotTree`，1 failed / 0.63 s / RAW1。不是模型或数值失败；不重复该 RED。
+状态：**VALIDATED_ACCEPTED / EXECUTION_RELEASED**。父本机实现、独立Newton、保存审计及新wheel源码外使用均已通过，见末节。前述作者交付历史不代表当时已经通过。父已保存第136项有效 RED：真实 T01 模型、program、命令和输入记录先成立，随后正常公共入口缺少 `FixedRobotTree`，1 failed / 0.63 s / RAW1。不是模型或数值失败；不重复该 RED。
 
 ## 范围及文件
 
@@ -86,3 +86,17 @@ current accepted pose 宽相不等于 CCD、TOI、窄相材料接触或反力反
 证据统一位于 `artifacts/p65-generic-collision-20261107-01`：`c4-host-native-source-receipt.json`、`c4-cuda-keyword-rename.json`、`199-style-ast-proof/proof.json`、`200-c4-saved-audit/summary.json`。首字节source、每条命令、首错和RAW_EXIT随各job保留。上述执行时长含不同初始化/编译/诊断成本，不能据其比值宣称性能超越Newton或整体加速。
 
 新增正常根导出 `ResidentTreeBinding/ResidentSphereBinding/ResidentSliderBinding/ResidentRevoluteBinding/ResidentStaticBinding`，只公开现有声明类型，不改变其物理语义。安装消费者 `tests/installed/check_resident_tree.py` 已纯作者交付并完成静态检查，仍UNEXECUTED；计划同一新wheel验证2R/N9与旧球/滑轨四世界、真实推进/有限材料bounds及restore重放。首片仍不含设备接触反馈、自碰撞/动态对、浮根/mimic、stops、CCD或通用设备窄相。
+
+## 父正式限域接受：同一新 wheel 的源码外使用（2026-11-07）
+
+本片状态 **VALIDATED_ACCEPTED / EXECUTION_RELEASED**。本节覆盖前述历史 WHEEL_PENDING/UNEXECUTED；既有功能、静态、Newton 和保存审计不重复执行。
+
+产品源为 `c595c7660f683fe20d3966a196890bb7ed0397d8`；220以原环境构建 `phymeo-0.1.0a0-py3-none-any.whl`，SHA256 `1aa31cf96062aaaa953b470e77b6e8fe73ef08074ceade04385650222d8371f5`。在源码树外的独立 target 安装，消费者以隔离入口运行。222使用已有 uv 离线、no-deps、no-index 安装，没有修改已有环境或依赖。
+
+228 C4 消费者 RAW0：真实 CUDA 混合 FreeSphere/PrismaticSlider/普通2R/N9 四世界，40步后 restore20→重放21，共41个batch步/164个world步。完整物理状态、逐体动能、独立FK、有限材料bounds与原注册候选均核对；坏restore原子拒绝、同tick旧结果失效、21步重放相同及close后device_owned_bytes=0均通过。消费者为核验主动读回状态/FK，不将这些读回冒充暖态零读回；暖态驻留结论仍只来自原专项。
+
+229 持续摩擦消费者 RAW0：双机器人F01、浮根affine-mimic F04各64步，同一安装包实际推进共128步；F05快速倾斜沿原门拒绝，完整公开状态与history保持，未产生接受步。它不替代已完成的原长窗口，也不关闭原100g mimic留出。
+
+两消费者均核415个安装产品文件的完整成员与全部字节及275个实际import模块的来源/字节。保留原失败：221因主环境无pip，在安装前退出；223因消费者错误要求可选的direct_url archive hash，在首个物理步前退出。225–227只修消费者的元数据兼容与静态；5faf7f9现在强制本地archive路径、实际archive SHA、完整安装文件/metadata及每个import模块绑定，installer hash存在时另核，缺省不伪造。依据[Python直接URL记录规范](https://packaging.python.org/en/latest/specifications/direct-url-data-structure/)。224仅准备，未执行。没有重建或重装产品来消除消费者错误。
+
+完整记录与10个原始consumer文件已经逐字归档至[installed-wheel-evidence](../../artifacts/p65-generic-collision-20261107-01/installed-wheel-evidence/receipt.json)，压缩轨迹保留，不重新展开/求解。当前接受仍受各片原范围限制；无全设备接触反馈、自动材料chart迁移、通用旋转摩擦或总体Newton性能领先结论。

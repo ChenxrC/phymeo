@@ -109,4 +109,4 @@ Newton的碰撞与求解器也有条件：其凸体/网格按不同算法及表�
 
 浮根 authored body坐标与惯量主轴已分离，合法完整根惯量、旋转inertial frame、偏置fixed工具的非对角聚合以及floating mimic继承均可进入原共同场景。新6窗4096步、独立Newton CPU/CUDA 8例320窗口步+8静止响应、源码外wheel两窗1024步均通过。覆盖前文“真实非对角root惯量仍缺”这一项；child任意非对角装配、设备浮根、更广关节/闭环仍未因此实现。[F3实际报告](../benchmarks/p65-floating-root-inertia-frame.md)。
 
-C4完整R/P设备树已完成T01–T08测试库及正常公共RED，原agent正在五个独立模块编码；通用多owner摩擦正在F01–F06测试库。尚未称两项已交付，原100g持稳和软布未放台不变。
+C4完整固定根R/P设备树与通用多owner持续摩擦现均正式限域接受，已完成各自专项、必要兼容、完整保存记录和同一新wheel源码外使用。C4覆盖1..16普通物理行、完整M/b/J、设备接受态到当前姿态宽相；摩擦覆盖显式材料站点的普通/mimic/浮根共同HOST场景。设备完整接触反馈、自动chart迁移、浮根设备驻留仍缺。下一片C5固定根mimic设备树进入独立测试库；原100g持稳、Panda持续摩擦接入与目标软布未放台继续作为独立留出。详[设备树](../benchmarks/p65-resident-tree-collision.md)与[摩擦](../benchmarks/p65-general-scene-friction.md)最终接受段。

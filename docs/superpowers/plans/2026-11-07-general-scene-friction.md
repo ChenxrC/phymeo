@@ -142,3 +142,7 @@ T1 e8cca784 已全文文本审阅并正常导入 884eb6b；仍 UNEXECUTED，151 
 配 registry 时检查实际world/shape/exclusion；当前entry events只作纯测量，不能提交第二episode。有限chart中未匹配的正N拒绝，不冒分离；真实卸载才释放旧spring，重入新generation。finish使用原积分器候选真实FK/COM姿态与原application/material anchors；不末态近邻重采样，不删motion/work/KKT门。owned观测和events完成后由父一次发布全部state/history/receipt/time。
 
 交付小commits/clean，完整报告 source/test变化与局限，所有新结果明确 UNEXECUTED；父审阅后执行短矩阵节点、完整原窗口、故障重试和必要旧兼容。F05若原运动门拒绝保最短证据，F07仍后置，不能把翻过一个案例当一般摩擦已完成。
+
+## 父执行关闭（2026-11-07）
+
+F01–F06状态 **VALIDATED_ACCEPTED / EXECUTION_RELEASED**，覆盖前述历史authoring授权。36项专项、7项材料身份回归、23项兼容、18窗1611步保存审计与同一新wheelF01/F04共128步及F05拒绝回滚通过；原失败/固定门和范围见[正式报告](../../benchmarks/p65-general-scene-friction.md)。F07原100g mimic、Panda原获取轨迹以及软体历史并未据此关闭；下一任务先冻结这些既有留出的接入与验收计划。原grant不授权重跑已过同源组。

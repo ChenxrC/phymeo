@@ -1,6 +1,6 @@
 # 通用场景持续切向摩擦
 
-## 当前验收状态：HOST 已验证，源码外 wheel 待验收
+## 当前验收状态：HOST 与源码外 wheel 已正式限域接受
 
 父于 2026-11-07 接入原 Single/Multi 场景的一次 prepare、真实全 M/b/J 和共同发布。F01–F06 共36项（分组执行）、新增材料记录回归7项、受影响兼容23项通过；18个完整物理窗口共1611步及一次快速倾斜拒绝记录已做同次保存审计。原输入、步长、力律与工程门未调整。本节覆盖下方历史 authoring 状态。
 
@@ -14,7 +14,7 @@
 - [219 保存审计](../../artifacts/p65-generic-collision-20261107-01/219-friction-saved-audit/summary.json)按预定19条文件成员核完整payload：18窗1611步，无缺帧；另一个拒绝文件保留原before与原因，回滚after由实际测试断言。没有重新求解或运行producer。
 - 保存的最大材料运动差 (6.0581\times10^{-13}) m、作用点运动差 (6.0581\times10^{-13}) m、两者差 (2.7106\times10^{-20}) m；切向弹簧能量残差最大 (1.2956\times10^{-17}) J，逐站点最大 (6.4921\times10^{-18}) J。原门分别为1e-6 m和1e-8 J。这是该切向事务的能量账，不是整个引擎能量守恒或跨引擎性能结论。
 
-**范围仍有限：** 显式材料站点、原支持的有限chart、HOST物理与原真实运动审核；未覆盖自动跨面持续身份、任意旋转步、GPU切向物理、软体历史，亦未复验/关闭F07原100g mimic持稳失败。独立wheel consumer已author并静态通过，等待本阶段新wheel实际安装使用；不能现在标包装完成。
+**范围仍有限：** 显式材料站点、原支持的有限chart、HOST物理与原真实运动审核；未覆盖自动跨面持续身份、任意旋转步、GPU切向物理、软体历史，亦未复验/关闭F07原100g mimic持稳失败。源码外新wheel消费者229已通过F01/F04各64步与F05拒绝回滚；详细包装证据见末节。
 
 ## 历史：T2 authoring（保留原交接）
 
@@ -35,3 +35,17 @@
 所有新模块仅HOST适配，未改原物理求解、采样、CCD、default或Newton参数。有限chart正N未匹配拒绝；只真实卸载结束episode，重入冷启动；不自动最近点重认或换面。返回完整公共schema不扩展，不把事件账本称摩擦求解器。父执行结果与必要修复后再补本报告；当前没有新增测试/性能数值。
 
 根身份补充专项仅用F04实际资产的root_marker和对侧原顶点构造**零载材料schema样本**：ordinary/affine两个root0正控、frame/index错配与bool索引拒绝，分别经过OwnerPose和TangentHistory.prepare；不积分、不造root法向/受力。它验证父两处校验接缝，不冒称已经跑完整root碰撞动力学。所有新节点仍UNEXECUTED；F04原窗口未改。
+
+## 父正式限域接受：同一新 wheel 的源码外使用（2026-11-07）
+
+本片状态 **VALIDATED_ACCEPTED / EXECUTION_RELEASED**。本节覆盖前述历史 WHEEL_PENDING/UNEXECUTED；既有功能、静态、Newton 和保存审计不重复执行。
+
+产品源为 `c595c7660f683fe20d3966a196890bb7ed0397d8`；220以原环境构建 `phymeo-0.1.0a0-py3-none-any.whl`，SHA256 `1aa31cf96062aaaa953b470e77b6e8fe73ef08074ceade04385650222d8371f5`。在源码树外的独立 target 安装，消费者以隔离入口运行。222使用已有 uv 离线、no-deps、no-index 安装，没有修改已有环境或依赖。
+
+228 C4 消费者 RAW0：真实 CUDA 混合 FreeSphere/PrismaticSlider/普通2R/N9 四世界，40步后 restore20→重放21，共41个batch步/164个world步。完整物理状态、逐体动能、独立FK、有限材料bounds与原注册候选均核对；坏restore原子拒绝、同tick旧结果失效、21步重放相同及close后device_owned_bytes=0均通过。消费者为核验主动读回状态/FK，不将这些读回冒充暖态零读回；暖态驻留结论仍只来自原专项。
+
+229 持续摩擦消费者 RAW0：双机器人F01、浮根affine-mimic F04各64步，同一安装包实际推进共128步；F05快速倾斜沿原门拒绝，完整公开状态与history保持，未产生接受步。它不替代已完成的原长窗口，也不关闭原100g mimic留出。
+
+两消费者均核415个安装产品文件的完整成员与全部字节及275个实际import模块的来源/字节。保留原失败：221因主环境无pip，在安装前退出；223因消费者错误要求可选的direct_url archive hash，在首个物理步前退出。225–227只修消费者的元数据兼容与静态；5faf7f9现在强制本地archive路径、实际archive SHA、完整安装文件/metadata及每个import模块绑定，installer hash存在时另核，缺省不伪造。依据[Python直接URL记录规范](https://packaging.python.org/en/latest/specifications/direct-url-data-structure/)。224仅准备，未执行。没有重建或重装产品来消除消费者错误。
+
+完整记录与10个原始consumer文件已经逐字归档至[installed-wheel-evidence](../../artifacts/p65-generic-collision-20261107-01/installed-wheel-evidence/receipt.json)，压缩轨迹保留，不重新展开/求解。当前接受仍受各片原范围限制；无全设备接触反馈、自动材料chart迁移、通用旋转摩擦或总体Newton性能领先结论。

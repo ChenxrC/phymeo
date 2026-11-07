@@ -6,14 +6,14 @@
 
 A/K3、B、C1和独立Newton留出/源码外wheel已接受；C2滑轨、F1浮根固定工具亦已接受。新增F2浮根affine mimic共同场景与C3单转铰设备接受态→当前姿态宽相已在fdfa586完成专项、受影响兼容与共享接口审阅，133–135完成同一新wheel的源码外验收。F2四窗2560步，wheel另512步；C3 HOST4/interpret71/CUDA71及共享CUDA7，wheel双世界80步。134脚本沿用小盒子命中列表的失败保留，135只修正两球的独立预期并复用已通过F2轨迹，产品不变。
 
-接续两项**源码调研/案例计划**：原robot完整固定根R/P树设备驻留（真实耦合M/b/J，目标覆盖Panda物理9轴）；原RD现有持续切向核进入普通/mimic/浮根与自由体共同场景。两者可隔离编码，父独占全部旧共享接缝与项目执行。完整树、设备窄相/CCD、通用持续摩擦尚未验收；原100g mimic持稳失败与目标软布两初态未放台保留。无固定截止、无周期任务，原RR额度不可用，不重试或另建替代。
+当前接续C5固定根affine-mimic设备树的独立测试库，以及原100g mimic/Panda抓取留出的持续摩擦接入计划。C4普通完整树与通用摩擦F01–F06已完成新wheel源码外验收；详下方当前检查点。两条新任务仅在隔离树作者阶段，父独占旧共享接缝与全部项目执行。设备窄相/CCD/接触反馈、原100g持稳和目标软布未放台仍开放。无固定截止、无周期任务，原RR额度不可用，不重试或另建替代。
 
 [功能差异全景](phymeo-newton-panorama-2026-11-07.md) · [可视化](phymeo-newton-panorama-2026-11-07.html)。下方已验收基线继续复用；不得将正在实施的计划写成完成。
 
 ### 当前实施检查点：F3 / C4 / 通用摩擦（2026-11-07）
 
 F3核心frame、URDF完整根惯量与真实共同场景已正式限域验收：新6窗4096步、Newton CPU/CUDA八例320窗口步+8静止响应、新wheel源码外两窗1024步通过；详[根惯量frame](../benchmarks/p65-floating-root-inertia-frame.md)。不再重跑这些同源组。
-C4完整固定根R/P树已接入父共享runtime：interpret/CUDA各101项、受影响共享37项、独立Newton CPU/CUDA两变换24窗960步及同次保存审计通过；当前WHEEL_PENDING，详[设备树报告](../benchmarks/p65-resident-tree-collision.md)。首片限1..16普通固定根物理行与当前姿态dynamic/static宽相，不是设备接触反馈。通用摩擦F01–F06已通过36项专项、7项材料权重回归及23项受影响兼容；同次18窗1611步已保存核完，当前也为WHEEL_PENDING，详[持续摩擦报告](../benchmarks/p65-general-scene-friction.md)。原100g mimic失败未复验关闭。下一步以一个新stage wheel做两线源码外使用；原robot并行准备固定根affine-mimic设备树的薄扩展计划。全部执行仍父唯一串行，无截止/周期任务。
+C4完整固定根R/P树已正式限域接受：interpret/CUDA各101项、受影响共享37项、独立Newton两变换24窗960步、保存审计及新wheel CUDA四世界164个world步通过；详[设备树报告](../benchmarks/p65-resident-tree-collision.md)。首片限1..16普通固定根物理行与当前姿态dynamic/static宽相。通用摩擦F01–F06已有36项专项、7项材料回归、23项兼容及18窗1611步；同一wheel另完成F01/F04共128步和F05拒绝回滚，详[持续摩擦报告](../benchmarks/p65-general-scene-friction.md)。两片不是设备接触反馈或自动chart迁移。原100g mimic失败未复验关闭。原robot正在[C5独立测试库](../superpowers/plans/2026-11-07-resident-affine-tree.md)，原RD编写原抓取留出接入计划；父负责共享架构和串行验证。没有截止/周期任务。
 
 
 ## 最近已验收基线（2026-11-06）

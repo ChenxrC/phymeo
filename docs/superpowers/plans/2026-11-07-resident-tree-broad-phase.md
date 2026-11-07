@@ -123,3 +123,7 @@ Newton参考至少T01–T04，同输入各自推进，不喂Phymeo中间态；PD
 完整公共 API、mixed 双bank布局、原control law残差门、诊断时间来源、原材料/source绑定及T01–T08验收保持。实施第一小段先交 compile_tree_world/tree_packet 的具体不可变字段和 TreeDeviceStorage 的 constructor/stage_advance/stage_restore/readback/borrow/close hook签名，说明每个buffer的owner、src/dst/tick/失败语义；父据此实现薄共享hook。不得为省事提前决定相互矛盾的长positional tuple，或在storage内部发布active/epoch。静态编译与内核可先纯编码推进，等待父确认hook不妨碍独立工作。
 
 提交顺序建议静态owned编译+storage接口 → 完整设备物理与coupled PD → bindings/bounds与报告。阶段checkpoint均标 CODE_READY_TESTS_PENDING；原共享源码需要的改动给父精确建议、不在子树实施。最后小commits/clean/六新product-report清单和测试增量、尚未执行范围及 AUTHORING_RELEASED。父完成共享集成后按原计划唯一串行 interpret→CUDA→Newton参照→wheel；不得把测试库或源码交付称实际支持。
+
+## 父执行关闭（2026-11-07）
+
+本计划C4状态 **VALIDATED_ACCEPTED / EXECUTION_RELEASED**，覆盖前述历史authoring授权。已完成完整专项、受影响兼容、独立Newton、保存审计及新wheel源码外CUDA四世界164个world步；原失败与限域见[正式报告](../../benchmarks/p65-resident-tree-collision.md)。原grant不授权重跑旧组。下一独立片为[C5 affine树](2026-11-07-resident-affine-tree.md)，需要自身测试、实现与新wheel；不将C4接受外推为C5完成。

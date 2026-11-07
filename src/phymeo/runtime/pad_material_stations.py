@@ -157,7 +157,16 @@ def material_stations_from_pads(
         indices, points, source_keys, _excluded = _pad_points(tree, tuple(supplied))
         rows, offset = [], 0
         for pad, col, name in zip(supplied, colliders, names, strict=True):
-            key = scene.shape_key(address[1], *name)
+            if isinstance(scene, RobotScene):
+                key = scene.shape_key(address[1], *name)
+            else:
+                # The public body-only lookup can be ambiguous across worlds.
+                # Resolve only this exact compiled participant, never the first
+                # body/name match elsewhere in the scene.
+                matches = scene._participants[address].named_keys.get(name, ())
+                if len(matches) != 1:
+                    raise ValueError("authored pad name is missing or ambiguous for this owner")
+                key = matches[0]
             if key.world != address[0] or key not in scene.body_keys[address]:
                 raise ValueError("pad collision belongs to a different registered owner")
             pair = tuple(sorted((key, payload_key)))
@@ -193,3 +202,4 @@ def material_stations_from_pads(
                 ))
             offset += len(tokens)
         return MaterialStationRegistry(rows)
+

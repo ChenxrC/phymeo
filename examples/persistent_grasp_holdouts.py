@@ -366,8 +366,9 @@ def run_holdout(case, out_dir):
             summary["failure"]["stop_archive_error"] = dict(type=type(archival_error).__name__, message=str(archival_error))
     finally:
         archive.close()
+    elapsed = perf_counter() - started
     source_after = _source_manifest()
-    summary.update(schema="persistent-grasp-holdout-v1", case=case, elapsed_s=perf_counter() - started,
+    summary.update(schema="persistent-grasp-holdout-v1", case=case, elapsed_s=elapsed,
                    source=source, source_after=source_after, source_unchanged=source_after == source,
                    archive_path=str(archive.path.resolve()), max_compressed_bytes=MAX_COMPRESSED_BYTES,
                    scope="HOST original acquisition protocol with explicit kt=200 pad stations",
@@ -397,6 +398,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 

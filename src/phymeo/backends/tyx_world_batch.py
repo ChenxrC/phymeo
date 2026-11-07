@@ -3,6 +3,7 @@
 from collections.abc import Mapping
 from contextlib import ExitStack, contextmanager
 from threading import RLock
+from types import MappingProxyType
 
 import numpy as np
 
@@ -47,6 +48,10 @@ class TyxWorldBatch:
         self._unavailable = False
         self._resources = ExitStack()
         self._readback_plans = set()
+        self._collision_plans = set()
+        self._collision_owner = object()
+        self._topology_generation = 0
+        self._state_epoch = 0
         self._active = 0
         self._dirty = False
         self._counts = dict.fromkeys(
@@ -213,6 +218,52 @@ class TyxWorldBatch:
         if self._unavailable:
             raise RuntimeError("device cannot synchronize; rebuild from a saved checkpoint")
 
+    @contextmanager
+    def _borrow_collision_state(self, *, owner=None, topology_generation=None):
+        """Loan one accepted buffer under the existing lock and device transaction."""
+        from ._resident_collision_plan import AcceptedCollisionState
+
+        with self._lock:
+            self._check_open()
+            if owner is not None and owner is not self._collision_owner:
+                raise ValueError("collision view belongs to a different owner")
+            if topology_generation is not None and topology_generation != self._topology_generation:
+                raise ValueError("collision topology generation changed")
+            common = (
+                self._collision_owner,
+                self._topology_generation,
+                self._state_epoch,
+                self._active,
+                tuple(self._slots),
+                tuple(self._bindings),
+                MappingProxyType(self._slots),
+            )
+            if not self._count:
+                yield AcceptedCollisionState(*common, None, None, None, None, self._mode, None)
+                return
+            with self._device():
+                yield AcceptedCollisionState(
+                    *common,
+                    self._states[self._active],
+                    self._ticks[self._active],
+                    self._props,
+                    self._runtime,
+                    self._mode,
+                    self._tx,
+                )
+
+    def prepare_collision(self, model, bindings, *, candidate_capacity=4096):
+        """Prepare current-pose FreeSphere/static broad phase from accepted device state."""
+        from ._resident_collision_plan import ResidentCollisionPlan
+
+        return ResidentCollisionPlan(self, model, bindings, candidate_capacity=candidate_capacity)
+
+    def collision(self, plan):
+        """Query a collision plan owned by this exact resident batch."""
+        from ._resident_collision_plan import collision_for
+
+        return collision_for(self, plan)
+
     def _keys(self, keys):
         result = list(self._slots) if keys is None else [world_key(k) for k in keys]
         if len(set(result)) != len(result):
@@ -285,6 +336,7 @@ class TyxWorldBatch:
                 self._counts["failed_steps"] += 1
                 raise
             self._active = dst
+            self._state_epoch += 1
             accepted = int(np.count_nonzero(status))
             self._counts["completed_steps"] += 1
             self._counts["accepted_world_steps"] += accepted
@@ -395,6 +447,7 @@ class TyxWorldBatch:
                 )
                 self._sync()
             self._active = dst
+            self._state_epoch += 1
             self._dirty = self._dirty or not np.array_equal(held, self._held)
             self._held = held
 
@@ -413,6 +466,8 @@ class TyxWorldBatch:
                 "state_buffer_count": 2 if self._count else 0,
                 "current_buffer": self._active,
                 "readback_plan_live_count": len(self._readback_plans),
+                "collision_plan_live_count": len(self._collision_plans),
+                "state_epoch": self._state_epoch,
             }
 
     def __enter__(self):
@@ -428,7 +483,7 @@ class TyxWorldBatch:
                 self._closed = True
                 try:
                     with ExitStack() as closing_plans:
-                        for plan in tuple(self._readback_plans):
+                        for plan in (*self._readback_plans, *self._collision_plans):
                             closing_plans.callback(plan.close)
                 finally:
                     self._resources.close()

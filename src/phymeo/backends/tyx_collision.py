@@ -8,7 +8,7 @@ from ..constraints.collision_shapes import MAX_CONVEX_VERTICES
 
 
 class TyxCollisionBatch:
-    def __init__(self, mode, offsets, tags, pairs, cache_root, *, spatial=None):
+    def __init__(self, mode, offsets, tags, pairs, cache_root, *, spatial=None, runtime=None):
         import tyx as tx
 
         from ._tyx_collision_kernels import (
@@ -94,10 +94,12 @@ class TyxCollisionBatch:
             completed_launches=0,
             synchronizations=0,
         )
-        self._runtime = tx.Runtime(
-            backend="cuda" if mode == "cuda" else "cpu", cache_root=cache_root
-        )
-        self._resources.callback(self._runtime.close)
+        self._runtime = runtime
+        if runtime is None:
+            self._runtime = tx.Runtime(
+                backend="cuda" if mode == "cuda" else "cpu", cache_root=cache_root
+            )
+            self._resources.callback(self._runtime.close)
         try:
             with tx.use_runtime(self._runtime):
                 if self._count:
@@ -173,17 +175,36 @@ class TyxCollisionBatch:
                 self._tree_buffers[key] = TreeBuffers(self, tree, self._count, shape)
             return self._tree_buffers[key].hits(tree, leaves, queries, params, shape)
 
+    def prepare_shape_bvh(self, tree):
+        """Allocate reusable shape-tree storage without a bounds upload or launch."""
+        from ._tyx_collision_bvh import TreeBuffers
+
+        if self._spatial is None or self._spatial.mode != "bvh":
+            raise ValueError("shape tree preparation requires BVH spatial pairs")
+        with self._tx.use_runtime(self._runtime):
+            if ("shape",) not in self._tree_buffers:
+                self._tree_buffers[("shape",)] = TreeBuffers(self, tree, self._count, True)
+
+    def query_device_bounds(self, *, trees, pending):
+        """Use already completed bounds from the borrowed runtime, with no HOST envelopes."""
+        if not self._count:
+            return np.empty((0, 6), np.float32), np.empty(0, np.int32)
+        if self._pair_count and (self._spatial is None or self._spatial.mode != "bvh"):
+            raise ValueError("resident bounds require the BVH pair route")
+        with self._tx.use_runtime(self._runtime):
+            return self._spatial_query(trees, pending, count_reduce=False)
+
     def heightfield_face_candidates(self, terrain, sphere, rows, columns):
         return self._heightfield_candidates.select(terrain, sphere, rows, columns)
 
-    def _spatial_query(self, trees, pending):
+    def _spatial_query(self, trees, pending, *, count_reduce=True):
         # Public bounds must be returned on all backends. Reuse that transfer
         # for the deterministic host endpoint order used by the tyx traversal.
         if self._mode == "cuda":
             self._runtime.sync()
             self._counts["synchronizations"] += 1
         bounds = self._read(self._bounds)
-        self._counts["completed_launches"] += 1
+        self._counts["completed_launches"] += int(count_reduce)
         if not self._pair_count:
             return bounds, np.empty(0, np.int32)
         space = self._spatial

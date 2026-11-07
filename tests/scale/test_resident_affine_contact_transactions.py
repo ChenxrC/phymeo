@@ -144,7 +144,7 @@ def _mixed_window(cases, mode, directory, *, replay=False):
                     assert len(repeated) == 21
                 assert batch.stats()["submitted_kernels"] > 0
             finally:
-                _save(directory, "c7-mixed-window", dict(mode=mode, h_s=H, declarations={key: item.get("data", item["kind"]) for key, item in cases.items()}, inputs={key: item["control"] for key, item in cases.items()}, collision_model=model, bindings=bindings, rows=rows, checkpoint_19=saved, replay=repeated, final=batch.snapshot(), stats=batch.stats(), plan_stats=plan.stats()))
+                _save(directory, "c7-mixed-window", dict(mode=mode, h_s=H, declarations={key: item.get("data", item["kind"]) for key, item in cases.items()}, inputs={key: item["control"] for key, item in cases.items()}, collision_model=model, bindings=bindings, rows=rows, checkpoint_19=saved, replay=repeated, last_accepted=plan.last_accepted, diagnostic=batch.tree_diagnostics(), final=batch.snapshot(), stats=batch.stats(), plan_stats=plan.stats()))
     return rows
 
 
@@ -170,13 +170,14 @@ def test_c7_affine_local_capacity_keeps_both_coordinate_banks_and_neighbors_adva
         with batch.prepare_contacts(model, bindings, laws) as full:
             for _ in range(warm):
                 assert batch.step_contacts(full, H) == dict.fromkeys(cases, True)
-            before, fk, previous = batch.snapshot(), _snapshot_geometry(batch), _json(full.last_accepted)
+            before, fk, previous, energy = batch.snapshot(), _snapshot_geometry(batch), _json(full.last_accepted), batch.summary()
             with batch.prepare_contacts(model, bindings, laws, site_capacity={503: 128, 91: 0, 1207: 128}) as limited:
                 assert batch.step_contacts(limited, H) == {503: True, 91: False, 1207: True, 6: True}
                 assert limited.last_status[91] == "SITE_CAPACITY_EXCEEDED"
                 assert batch.stats()["affine_tree_status_codes"][91] == "SITE_CAPACITY_EXCEEDED"
                 assert batch.snapshot()[91] == before[91]
                 assert _snapshot_geometry(batch)["91"] == fk["91"]
+                assert batch.summary()[91] == energy[91]
                 assert 91 not in limited.last_accepted
                 assert _json(full.last_accepted) == previous
                 for key in (503, 1207, 6):
@@ -310,7 +311,7 @@ def test_c7_real_late_failure_retains_full_k_physics_and_retries_identically(war
         with batch.prepare_contacts(model, bindings, laws) as plan, control.prepare_contacts(other_model, other_bindings, other_laws) as reference:
             for _ in range(warm):
                 assert batch.step_contacts(plan, H) == control.step_contacts(reference, H) == dict.fromkeys(cases, True)
-            before, fk, stats = batch.snapshot(), _snapshot_geometry(batch), batch.stats()
+            before, fk, stats, energy = batch.snapshot(), _snapshot_geometry(batch), batch.stats(), batch.summary()
             prior, statuses = _json(plan.last_accepted), dict(plan.last_status)
             # Exercise actual contact upload, after full entry mechanics/law, not
             # a pre-entry dummy error. Candidate/receipt wrappers also call first.
@@ -326,6 +327,7 @@ def test_c7_real_late_failure_retains_full_k_physics_and_retries_identically(war
                     batch.step_contacts(plan, H)
             assert calls and batch.snapshot() == before
             assert _snapshot_geometry(batch) == fk
+            assert batch.summary() == energy
             assert _json(plan.last_accepted) == prior and dict(plan.last_status) == statuses
             assert batch.stats()["state_epoch"] == stats["state_epoch"]
             assert batch.stats()["current_buffer"] == stats["current_buffer"]

@@ -399,6 +399,15 @@ def _audit_step(batch, world, asset, data, entry, receipt, sources, *, h=H, moto
     assert _json(meta["affine_diagnostic"]) == _json(diag)
     assert after.control == entry.control
     work = _audit_sites(receipt, diag, sources)
+    next_q, next_v = data["P"] @ actual_s + data["c"], data["P"] @ actual_u
+    next_mass = _ref().oracle(data["model"], next_q, next_v)["mass"]
+    entry_ke = float(truth["v"] @ truth["full"]["mass"] @ truth["v"] / 2)
+    accepted_ke = float(next_v @ next_mass @ next_v / 2)
+    _close(meta["entry_kinetic_energy_j"], entry_ke)
+    _close(meta["accepted_kinetic_energy_j"], accepted_ke)
+    _close(meta["kinetic_energy_change_j"], accepted_ke - entry_ke)
+    _close(meta["application_work_j"], work["application_work_j"], atol=1e-12, rtol=1e-10)
+    _close(meta["material_work_j"], work["material_work_j"], atol=1e-12, rtol=1e-10)
     full_power = float(receipt.contact_generalized @ np.asarray(entry.full_velocity))
     reduced_power = float((meta["projection_matrix"].T @ receipt.contact_generalized) @ np.asarray(entry.velocity))
     _close(full_power, reduced_power, atol=2e-5)
@@ -471,7 +480,7 @@ def _window(directory, data, mode, *, reorder=False, steps=40):
                     assert receipt.exit_tick == index + 1
                     rows.append(dict(receipt=receipt, audit=audit, actual_state=(actual_s.copy(), actual_u.copy()), oracle_state=(expected_s.copy(), expected_u.copy()), stats=batch.stats()))
             finally:
-                _save(directory, "continuous-contact", dict(input=data, h_s=H, steps=steps, rows=rows, retained=batch.snapshot(), plan_stats=plan.stats(), stats=batch.stats()))
+                _save(directory, "continuous-contact", dict(input=data, h_s=H, steps=steps, rows=rows, last_accepted=plan.last_accepted, diagnostic=batch.tree_diagnostics(), retained=batch.snapshot(), plan_stats=plan.stats(), stats=batch.stats()))
     return rows
 
 
@@ -591,4 +600,4 @@ def test_c706_actual_unload_and_reentry_without_reset_or_control_change(h, tyx_m
                 assert departed is not None and returned is not None and returned > departed
                 assert rows[-1]["receipt"].exit_tick * h <= 7 / 8
             finally:
-                _save(tmp_path, "unload-reentry", dict(input=data, h_s=h, maximum_time_s=7 / 8, departed=departed, returned=returned, rows=rows, retained=batch.snapshot(), stats=batch.stats()))
+                _save(tmp_path, "unload-reentry", dict(input=data, h_s=h, maximum_time_s=7 / 8, departed=departed, returned=returned, rows=rows, last_accepted=plan.last_accepted, diagnostic=batch.tree_diagnostics(), retained=batch.snapshot(), stats=batch.stats()))

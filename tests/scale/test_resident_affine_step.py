@@ -75,7 +75,8 @@ def _permutations(asset, data):
 def _world(asset, data, *, s=None, u=None, kp=None, kd=None, cap=None, delay=0, iterations=512):
     _, p = _permutations(asset, data)
     k = len(p)
-    vector = lambda value, default: np.full(k, default) if value is None else np.asarray(value, float)[p]
+    def vector(value, default):
+        return np.full(k, default) if value is None else np.asarray(value, float)[p]
     initial = ph.RobotState(np.asarray(data["s"] if s is None else s)[p], np.asarray(data["u"] if u is None else u)[p])
     return ph.AffineRobotTree(asset, initial, kp=vector(kp, 0), kd=vector(kd, 0),
                               effort_limit=vector(cap, 16), delay_steps=delay,
@@ -85,7 +86,8 @@ def _world(asset, data, *, s=None, u=None, kp=None, kd=None, cap=None, delay=0, 
 def _action(world, asset, data, *, target=None, rate=None, ff=None, effort=None, force=None, torque=None):
     f, p = _permutations(asset, data)
     active = _ref().coordinates(data["model"])
-    vector = lambda value, fallback: np.asarray(fallback if value is None else value, float)[p]
+    def vector(value, fallback):
+        return np.asarray(fallback if value is None else value, float)[p]
     applied = data["effort"] if effort is None else np.asarray(effort, float)
     forces = data["force"] if force is None else np.asarray(force, float)
     torques = data["torque"] if torque is None else np.asarray(torque, float)

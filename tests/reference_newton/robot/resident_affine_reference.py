@@ -445,6 +445,11 @@ def native_case(newton, name, device, directory, *, flatten=False):
             before = _state_record(model, state, rows, qcols, vcols)
             entry_s, entry_u = before["q"][list(data["independent"])], before["v"][list(data["independent"])]
             expected = kkt(data, entry_s, entry_u)
+            assert model.articulation_count == 1
+            art_joint = int(meta["articulation_start"][0])
+            mass_columns = np.asarray(vcols)-int(meta["joint_qd_start"][art_joint])
+            native_mass_all = newton.eval_mass_matrix(model, state).numpy().copy()
+            native_mass = native_mass_all[0][np.ix_(mass_columns, mass_columns)]
             s, u, _ = advance(data, s, u)
             solver.step(state, after, control, None, H)
             actual = _state_record(model, after, rows, qcols, vcols)
@@ -452,11 +457,13 @@ def native_case(newton, name, device, directory, *, flatten=False):
             balance = expected["full"]["mass"] @ observed_acceleration + expected["full"]["bias"] - motor_full - expected["external_full"]
             item = dict(step=step, entry_time_s=(step-1)*H, commit_time_s=step*H,
                         entry=before, actual=actual, applied_body_f=body_f, applied_joint_f=applied_joint,
+                        native_full_mass=native_mass, native_raw_mass=native_mass_all,
                         oracle=expected, oracle_window_s=s.copy(), oracle_window_u=u.copy(),
                         derived_full_reaction=balance, derived_reaction_reference="KKT at actual input; not native sensor",
                         native_H=native_array(solver, "H"), native_H_mimic=native_array(solver, "H_mimic"))
             report["trace"].append(item)
             save()
+            _gate(item, "full_native_mass", native_mass, expected["full"]["mass"])
             _gate(item, "same_entry_velocity", actual["v"], before["v"]+H*expected["full_acceleration"])
             _gate(item, "same_entry_position", actual["q"], before["q"]+H*actual["v"])
             _gate(item, "full_affine_position", actual["q"], data["P"] @ actual["q"][list(data["independent"])] + data["c"])
@@ -510,6 +517,9 @@ def main():
         chain = dict(accepted=False, error=str(error), expected_rejection="mimic" in str(error).lower())
     else:
         chain = dict(accepted=True, expected_rejection=False)
+    original_chain_path = args.output_dir / "original-chain.urdf"
+    chain["source"] = dict(path=str(original_chain_path), text=original_chain_path.read_text(encoding="utf-8"),
+                           sha256=hashlib.sha256(original_chain_path.read_bytes()).hexdigest(), input=case("A03"))
     report = dict(versions=versions, device=str(wp.get_device(args.device)), sources=sources, original_chain=chain, results=[])
     for name in ("A01", "A02", "A04", "A05G", "A03"):
         result = native_case(newton, name, args.device, args.output_dir, flatten=name == "A03")

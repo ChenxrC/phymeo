@@ -1,6 +1,6 @@
 # 通用凸接触、转动逐面候选与设备接受态宽相
 
-状态：三条功能切片已分别通过专项验证；当前进行 N4 独立参考及源码外 wheel 集成。没有固定结束时间，没有远程 CI、依赖变更或 push。本报告不代表整个引擎已与 Newton 功能对齐。
+状态：三条功能切片已分别通过专项验证；N4独立参考与源码外wheel已完成，详末节。没有固定结束时间，没有远程 CI、依赖变更或 push。本报告不代表整个引擎已与 Newton 功能对齐。
 
 ## A：同一接触表示接入真实所有者
 
@@ -11,7 +11,7 @@
 - A核心：53项斑块/载荷测试已通过，源 e26a4f1；复用既有验证。
 - K3最终：58-a-k3-complete，73项新矩阵/事务/混合分派及25项原直接机器人接触，共98 passed / 6.27 s / RAW_EXIT=0。
 - 59-a-public-windows：公开 examples/convex_contact_family.py，CC、CB、非盒HH各在 h=1/256 与1/512连续推进0.5s，共1152步。真实初速度 .08/- .12 m/s、质量2/3kg、刚度100N/m，完成分离→入层→压缩→卸载→分离，没有逐步回填状态。
-- 三组细化的末态位移差均约1.43736e-6m；总冲量相对差约1.54171e-5，低于预声明1e-3m/5%工程门。平移滑轨角度恒零；不能用该窗口宣称转动路径细化也已完成。离散弹簧独立oracle、总动量及共同点虚功误差均小于1e-9。
+- 三组细化的末态位移差均约1.43736e-6m；总冲量相对差约1.54171e-5，低于预声明1e-3m/5%工程门。平移滑轨角度恒零；不能用该窗口宣称转动路径细化也已完成。离散弹簧独立oracle、总动量以及共同点/广义载荷功率一致性误差（W）均小于1e-9；未将功率积分冒充能量检查。例程 entry_gap_m 来自独立oracle，不是实际几何查询的直接读回。
 - 原RD只读交叉审阅已释放。最后的完整资产 pad 名称歧义先校验再过滤，真实55 RED 1fail/1pass后修复。
 
 失败记录完整保留：36一般H仍被编译成box是有效RED；38测试读取不存在的point_world_m字段；39原.25s窗口未到实际半周期卸载，改为事先按同力律/质量推导的.5s、相对速度.2m/s新窗口，未称原窗口通过；43旧OBB内部见证为有效RED。46/47的excluded-H测试首错是参数名slip_speed（真实名slip_speed_m_s），不算该物理问题的执行RED；46 rounded hull为有效RED。48修复后28通过。49/50首次style失败，51/52修正，57最终Ruff通过；没有重跑旧B/C套件补数字。
@@ -25,3 +25,11 @@
 78ec685 已接受最终 interpret36 / CUDA36。FreeSphere的真实接受缓冲直接生成设备AABB并喂shape BVH，暖态无动态snapshot、envelope上传或新增分配。W1/W4/W32、双缓冲、同tick restore、独立registration、拒步、异常/close均验证。必要status/bounds/candidates读回仍存在。这是当前姿态dynamic/static候选，不是接触响应、滑轨或通用机器人GPU驻留。详 p65-resident-collision.md。
 
 证据统一位于 artifacts/p65-generic-collision-20261107-01；保存所有首错、命令、源码前后快照和原始退出码。C2当前仅原作者设计提案，须在N4完成后冻结实现；Newton留出和源码外wheel完成后追加实际结果。
+
+## N4 已完成：原生留出及源码外 wheel
+
+65/66 原 Newton 1.7 CPU/CUDA 各四姿态全部通过预声明几何门，实际接触行数 CC平行2、CC斜交1、BB4、HH3；不以行数当面积权重或动力学等价。68在新wheel上用同 authored 输入比较，最大gap差1.69874e-8m。原生参考完整皮肤offset/owner/设备与误差保留，未改门或旧参考结果。
+
+67构建RAW_EXIT=0；wheel 1,149,698B，SHA256 48480b5043715fbb8cf336c5244f2597ebcf7e9e3e4136fab7527df9cc46cc0d。68在独立Temp目录、仅wheel PYTHONPATH执行，272个已加载phymeo模块全部来自wheel。A三组两步长1152步通过；B双转轴移动枢轴与HOST完整结果一致，CUDA208次face refit/416次spatial核；C四world两次接受推进/两buffer、epoch陈旧拒绝、设备bounds/BVH通过，动态envelope上传0。必要读回仍保留。14个本批产品源条目与wheel逐字节同，零差异。独立参考、窗口及组合输出归档同一artifact根，未再运行旧完整套件。
+
+本阶段 A/B/C1 与 N4 **正式限域接受**，所有本阶段执行均结束。下一项 C2 滑轨/多形状设备宽相；并按原优先级研究下一场景缺口。整个长期目标仍 ACTIVE。

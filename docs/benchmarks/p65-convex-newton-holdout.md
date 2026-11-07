@@ -67,3 +67,9 @@ Capsule 表面归属使用有界轴段投影及真实半径；BB 使用六个半
 官方文档：[Newton 1.7 碰撞管线](https://newton-physics.github.io/newton/1.7.0/concepts/collisions.html)。本次未联网或执行探针；版本合同以本机已安装官方源码为准。
 
 当前只有源码文本交付，CPU/CUDA 数值、原始退出码及 Ruff/format 均待父运行。旧参考结果不重跑，C2 不因本脚本而获得实施授权。
+
+## 父串行结果（2026-11-07）
+
+父e9439f5原样导入815e44b两NEW；63Ruff0、64format-check0，65CPU/66cuda:0各四姿态全部通过，raw0。原生行数均为2/1/4/3；皮肤归属最大误差约4.00842e-8m。68源码外wheel按同 authored 输入独立运行Phymeo斑块，四姿态gap/法向/材料重建通过，和原生gap最大差1.69874e-8m。原误差门、原输入及raw输出未修改；没有动力学或面积权重等价声明。
+
+证据 artifacts/p65-generic-collision-20261107-01/65-newton-holdout-cpu、66-newton-holdout-cuda、68-outside-wheel-integration 和 outside-integration.json。上方UNEXECUTED为作者历史，当前状态 **HOST/CUDA_STATIC_HOLDOUT_VERIFIED**。

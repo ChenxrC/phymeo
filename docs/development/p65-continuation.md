@@ -4,7 +4,7 @@
 
 用户已取消08:00限制并统一启动[三线开发与测试计划](../superpowers/plans/2026-11-07-generic-collision-until-0800.md)，状态 **ACTIVE**，没有固定截止。父负责A通用凸接触/双侧响应及全部旧共享接缝；原RD负责B转动逐面候选；原robot负责C设备接受态直供宽相。隔离编码并行，项目执行只有父一个串行槽。原RR额度不可用，父承接，不新建替代agent。
 
-先完成A/B/C各自多案例和真实HOST/interpret/CUDA验收、交叉审阅及源码外wheel，再按用户八大方向继续。计划中的旧时间文件名仅作历史标识；不恢复周期任务。当前A/K3、B、C1均已完成专项接受；正在进行N4独立参考及源码外wheel，随后冻结C2。[本批结果](../benchmarks/p65-generic-collision-20261107.md)。
+先完成A/B/C各自多案例和真实HOST/interpret/CUDA验收、交叉审阅及源码外wheel，再按用户八大方向继续。计划中的旧时间文件名仅作历史标识；不恢复周期任务。当前A/K3、B、C1均已完成专项接受；N4独立Newton几何留出及新wheel源码外三线集成也已通过；下一项冻结C2滑轨设备宽相。[本批结果](../benchmarks/p65-generic-collision-20261107.md)。
 
 [功能差异全景](phymeo-newton-panorama-2026-11-07.md) · [可视化](phymeo-newton-panorama-2026-11-07.html)。下方已验收基线继续复用；不得将正在实施的计划写成完成。
 ## 最近已验收基线（2026-11-06）

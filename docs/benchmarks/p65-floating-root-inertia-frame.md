@@ -37,3 +37,11 @@
 receipt `f3-urdf-validation-receipt.json` SHA256：
 `17e7d31e24cef54b20e1e2bf69193516e00132bb4077e1761a7f236ff346221c`。
 **T1+T2已完成；T3新的非对角根受载场景、Newton CPU/CUDA参考与源码外wheel尚待。** 旧93回归没有冒充这些新输入的交付证据。
+
+## T3 真实共同场景窗口（Newton / wheel 待完成）
+
+aa34e67先提交固定测试。root-only偏置工具与浮动mimic完整非对角根各用base、h/2、共同轴循环/平移+逆注册顺序三窗，T=0.25s，共六窗4096真实步。原1kg自由球从层外接近，保留真实入步速度；全M/b、COM载荷、反力/力矩、出生/承载/卸载、末态无载及细分/协变逐步核，另两项晚事件失败回滚及fresh retry。157首次HOST **4 passed /20.54s /RAW0**，无产品数值修复。
+
+154首Ruff报测试分号，155首format报排版，156格式修复；158发现测试局部名l的E741，159当时format通过。只将四个Name节点改为angular_momentum，160审计确认与157源码AST除此完全同、九份tested源before/after与当前产品同；161Ruff通过，162要求长变量换行，163仅formatter修复。未重跑同源物理窗口。六份完整gzip和固定6目录成员、每窗全部帧/载荷时刻/动量误差已一次核，receipt为artifacts/p65-generic-collision-20261107-01/f3-scene-validation-receipt.json。
+
+当前 T1/T2/共同场景物理通过；独立Newton CPU/CUDA原生对照及新wheel源码外运行仍待，F3尚未整体关闭。该窗口记录真实能量但不宣称接触全过程严格能量守恒，沿既定工程动量门5e-4，不扩大为所有浮根/接触模型。

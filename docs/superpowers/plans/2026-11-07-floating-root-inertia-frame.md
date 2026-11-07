@@ -30,3 +30,7 @@ T1三个核心文件已实现，新11项HOST和受影响17项HOST通过；最终
 ## T2 实际交付（2026-11-07）
 
 210eb20测试先行；合法原始矩阵/旋转inertial frame/偏置fixed工具/mimic继承共18项首HOST通过，受影响三个完整文件93项通过，最终静态通过。普通与折叠共用原_mass_component/_principal，root authored COM/shape/site不重定向。tests/test_floating_robot_scene.py中原两合法unsupported拒绝项同步退役，tests/test_floating_fixed_tools.py原off-axis拒绝退役，均有新正控，其他invalid仍拒绝。下一步仅T3实际新输入与交付，不重跑同源已绿组。
+
+## T3 共同场景检查点
+
+新增root-only与浮动mimic非对角根的实际受载/卸载六窗4096步及两晚故障回滚，157 HOST4通过。原计划中的Newton CPU/CUDA和源码外wheel仍待；详细命令/首style失败/透明源码与六份完整保存核见报告。本片无物理数值修复，不重跑这些已绿输入。

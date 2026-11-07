@@ -10,7 +10,7 @@
 
 ## 冻结公共API与状态
 
-- 从phymeo.backends导出 FloatingRobotTree、FloatingTreeInputs、FloatingTreeCheckpoint、FloatingTreeKinematics、FloatingTreeDiagnostic、ResidentFloatingTreeBinding。FloatingRobotModel/State和FloatingRobotInputs沿原公开模块，不再复制模型。
+- 从顶层phymeo导出 FloatingRobotTree、FloatingTreeInputs、FloatingTreeCheckpoint、FloatingTreeKinematics、FloatingTreeDiagnostic、ResidentFloatingTreeBinding。FloatingRobotModel/State和FloatingRobotInputs沿原公开模块，不再复制模型。
 - FloatingRobotTree(model,state,*,kp,kd,effort_limit,delay_steps=0,control_max_iterations=512)。gain/cap长n、非负；n=0显式空数组。delay仅0/1，iterations沿原1..4096整数且非bool。model/state/gains由编译入口深拷贝为真正owned immutable数据，完整FP64模型token保根惯性frame/COM/重力和原children图。
 - spec.inputs(drive, external=None)返回FloatingTreeInputs：drive[n,3]为target/rate/feedforward；external沿FloatingRobotInputs的effort[n]、force[B,3]、torque[B,3]，None为原零外载。输入不绑定某个mutable spec，不兼容SceneInputs猜测。batch.set_controls({key:packet})先验证所有world再上传/提交，delay仅drive triplets；external即时使用。电机与显式非电机effort只各加一次。初始held drive target=原qj，rate/ff与外载0，初始delay队列为同一triplet；n0为空队列。
 - q=[root body-origin world xyz, body-to-world XYZW, child qj]，v=[root-body-COM world velocity, world omega, vj]。body0是真root；child i→body i+1。root COM不是系统COM。
@@ -72,6 +72,8 @@ tests/reference_newton/robot/resident_floating_reference.py；
 docs/benchmarks/p65-resident-floating-tree-tests.md。
 先提交独立P03 public首节点：旧HOST模型/7×7真值成立后在函数内查询新公开API，不能module import缺失导致假RED。随后完整矩阵与自包含独立参考，不使用作者设备中间值作oracle。Newton driver/源码外consumer在产品交接后沿原agents再另行NEW小范围，不同时抢产品owner。
 
-父唯一OLD：_world_step_layout.py、_tyx_world_kernels.py、tyx_world_batch.py、_resident_collision_plan.py、_world_kinematics.py、_world_readback_plan.py、_resident_contact_plan.py（明确拒域）、backends/__init__.py；实际若其他薄接缝需要改先文本记录。父读接口/首test后唯一freshguard有效RED→薄接缝实施→首interpret/CUDA；完整作者后新矩阵/少量受影响旧回归→Newton原参照→同次保存审计→新wheel源码外消费与完整源绑定。所有执行严格串行，绿同源不重复，首失败保留。其他独立能力按计划继续，禁止用长证明循环代替公开链路测试。
+父唯一OLD：_world_step_layout.py、_tyx_world_kernels.py、tyx_world_batch.py、_resident_collision_plan.py、_world_kinematics.py、_world_readback_plan.py、_resident_contact_plan.py（明确拒域）、src/phymeo/__init__.py（原backends包保持无eager exports）；实际若其他薄接缝需要改先文本记录。父读接口/首test后唯一freshguard有效RED→薄接缝实施→首interpret/CUDA；完整作者后新矩阵/少量受影响旧回归→Newton原参照→同次保存审计→新wheel源码外消费与完整源绑定。所有执行严格串行，绿同源不重复，首失败保留。其他独立能力按计划继续，禁止用长证明循环代替公开链路测试。
 
 结束本片仅C9普通浮根设备树限域接受；通过后才交浮根接触薄接缝。持续目标ACTIVE，不按测试数/清单数称总体完成。
+
+公开spec亦沿原tyx_world_batch模块可见；不会向原空backends/__init__.py添加会提前加载设备依赖的导出。current-pose浮根多dynamic绑定沿C8 tree_dynamic_pairs默认False；True同模型不同非相邻body才入域，root0/childi+1直接父子要显式mask/exclusion。此项仅宽相候选，prepare_contacts仍明确拒浮根几何。

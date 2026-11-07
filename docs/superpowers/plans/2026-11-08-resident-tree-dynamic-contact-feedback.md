@@ -60,3 +60,15 @@
 - docs/benchmarks/p65-resident-dynamic-contacts-reference.md
 
 两原agent可读父当前源码/本机Newton/已接受reference，不能merge父或改OLD、跑任何项目命令、安装、建helper或新agent。首次D01后各小commit，最终clean与AUTHORING_RELEASED；不预写pass。父可直接继续已授权开发，无逐阶段用户许可。
+
+## 首节点实现与实际执行（2026-11-08，完整矩阵仍待验）
+
+父产品13c3fad6ec60ff5e411c9fbf2dda7d7d78d5dfe0只改四OLD薄接缝。注册编译真实full physical parents，flag默认False；True用原world/body/mask/excluded规则并显式拒未过滤直接父子。registered_pairs沿原物理域登记语义，可包含被mask/excluded的非相邻域对；真正材料覆盖与候选以SpatialPairs过滤后allowed为准。原逐侧wrench loop现可接双方dynamic，不动M/PD/affine核心核。
+
+- 原RD first6f88ffa的394先在kp整型storage前提失败（1 failed/.65s），不是有效RED；e1c49d只把三np.full显式dtype=float，数值不改。
+- 395有效RED（1 failed/1.24s）：完整双P森林、设备FK、HOST有限patch及独立±2N均成立，准确停在公开tree_dynamic_pairs能力缺口。
+- 401 interpret 1 passed/1.28s、402实际CUDA 1 passed/3.11s：双侧完整wrench、a=(-1,2)、净自由方向动量、一次tick/共同发布成立。
+- 396四产品首Ruff0，397首format1，398格式化，399/400最终Ruff/format0。
+- 403两项旧bridge默认拒绝HOST2 passed/.47s；404受改变影响旧ordinary默认pair拒绝、affine默认pair拒绝、A02实际静态接触CUDA3 passed/4.47s。不重复旧C7/C6完整套。
+
+所有命令、before/after源码和首失败原样保存在artifacts/p65-generic-collision-20261107-01。当前只有首D01与必要兼容通过；D02共享祖先、affine原图/零K载荷、40步/过滤/多形状/事务、多backend完整矩阵、Newton参照、保存审计及新wheel仍待验收。原RD/robot继续NEW作者；父仍唯一执行owner，没有C8正式接受或P6.5完成。

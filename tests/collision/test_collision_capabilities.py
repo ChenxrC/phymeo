@@ -35,7 +35,7 @@ def test_verified_rows_bind_existing_source_and_evidence():
         if row.backend.startswith("hybrid"):
             assert "host" in row.route.lower()
     row = get_collision_capability("box", "box", "response", owner_mode="robot_robot")
-    assert row.status == "missing"  # The new adapter has not passed yet.
+    assert row.status == "verified"  # 25c39d8: real bilateral owners accepted.
     with pytest.raises(FrozenInstanceError):
         row.status = "verified"
 
@@ -77,3 +77,23 @@ def test_input_library_preserves_registered_materials_and_independent_gap(kinds,
     for kind, shape in zip(kinds, shapes, strict=True):
         if kind == "hull":
             assert len(shape.vertex_ids) == 10  # Non-box pentagonal prism.
+
+
+def test_current_owner_and_patch_acceptance_does_not_claim_device_or_free_capsules():
+    for a, b in PAIRS:
+        for owner, operation in (("robot_robot", "response"), ("patch_adapter", "manifold")):
+            row = get_collision_capability(a, b, operation, owner_mode=owner)
+            assert row.status == "verified" and "source:25c39d8" in row.evidence
+            assert "shallow" in row.domain
+            assert (
+                get_collision_capability(a, b, operation, owner_mode=owner, backend="cuda").status
+                == "missing"
+            )
+    assert (
+        get_collision_capability("capsule", "capsule", "response", owner_mode="robot_rigid").status
+        == "missing"
+    )
+    assert (
+        "capsule must be robot"
+        in get_collision_capability("capsule", "hull", "response", owner_mode="robot_rigid").domain
+    )

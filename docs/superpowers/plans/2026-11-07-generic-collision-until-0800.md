@@ -311,3 +311,7 @@ K5文件：NEW docs/benchmarks/p65-generic-collision-20261107.md 汇总三线，
 - A通用斑块/共同作用点载荷ffe9b3a/e26a4f1：首次48，审阅发现可变gap别名和世界原点放大容差，25复现2失败后修复，完整53 passed。含一般H、有限轴、点线面归一、非对称梯形面积质心、平移/旋转功、细分一致性。不是K3真实所有者动力学接受。
 - A接口裁定：显式实际world vertices替代草案pair/time；圆–凸体复用既有finite segment–triangle features构成完整hull边界查询，原OBB专用路线不改，不把任意H当box。父后续K3持有真实姿态和所有者Jacobian。
 - 下一项A/K3：替换非球机器人互碰的专用编译与采样门，保留一般hull材料地址、共同载荷点、真实双方COM/J与原发布事务。完成独立多所有者动力学后，再做阶段组合检查/源码外wheel、C2和后续优先级。没有新时间门或逐阶段许可。
+
+## 2026-11-07 K3 已接受，继续 N4
+
+A产品25c39d8，58组最终98pass（73新+25旧）；59公开三族/两步长共1152步通过原工程门，原RD最终审阅无残余finding。当前各线专项均通过，下一项已启动Newton固定3组4姿态静态留出与新stage源码外wheel。C2仍为提案，不自动进入implementation。新产品与限制见 ../../benchmarks/p65-generic-collision-20261107.md。

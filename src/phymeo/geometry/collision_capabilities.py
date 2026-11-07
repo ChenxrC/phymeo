@@ -11,7 +11,6 @@ _OPERATIONS = ("static", "manifold", "translation_ccd", "rotation_ccd", "respons
 _BASE = "source:8128440"
 _CATALOG = "docs/benchmarks/p65-collision-public-catalog.md"
 _SUPPORT = "docs/benchmarks/p65-convex-support-pairs.md"
-_ROBOT = "docs/benchmarks/p65-top-three-batch6.md"
 
 
 @dataclass(frozen=True)
@@ -116,19 +115,48 @@ def collision_capabilities():
                     backend=backend,
                 )
             )
-        old_robot = "sphere" in (a, b) and "hull" not in (a, b)
+        current = ("source:25c39d8", "docs/benchmarks/p65-generic-collision-20261107.md")
+        domain = (
+            "instantaneous unique-normal shallow contact; finite axes and full hull vertices; "
+            "ambiguous normals, rounded hulls and general deep axis containment unsupported"
+        )
+        result.append(
+            _row(
+                a,
+                b,
+                "manifold",
+                "verified",
+                "host contact_patch_sample",
+                domain,
+                current,
+                owner="patch_adapter",
+            )
+        )
         result.append(
             _row(
                 a,
                 b,
                 "response",
-                "verified" if old_robot else "missing",
-                "host RobotRobotContacts",
-                "direct instantaneous robot pairs; sphere/finite capsule/true OBB only",
-                (_BASE, _ROBOT) if old_robot else (),
+                "verified",
+                "host RobotRobotContacts with common patch loads",
+                domain,
+                current,
                 owner="robot_robot",
             )
         )
+        if (a, b) != ("capsule", "capsule"):
+            result.append(
+                _row(
+                    a,
+                    b,
+                    "response",
+                    "verified",
+                    "host RobotSceneContacts with pair-scoped legacy/convex assembly",
+                    domain + "; robot S/C/B/H versus free S/B/H, capsule must be robot",
+                    current,
+                    owner="robot_rigid",
+                )
+            )
     for a, b, route, domain in (
         ("mesh", "sphere", "host MeshRoundQuery", "closed finite mesh and round surface"),
         ("mesh", "capsule", "host MeshRoundQuery", "closed finite mesh and finite capsule"),

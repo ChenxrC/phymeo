@@ -19,3 +19,8 @@ The new independent library has all ten S/C/B/H unordered pairs, each at +0.02, 
 2026-11-07: the first registry run failed because the new module did not exist (raw exit 2). After implementation, the focused registry/material-input suite passed 37 tests (raw exit 0). This verifies capability lookup, evidence requirements, scope isolation, immutability and case construction only. Real patch, load, dynamics and device tests remain in the [active plan](../superpowers/plans/2026-11-07-generic-collision-until-0800.md).
 
 Receipts: artifacts/p65-generic-collision-20261107-01/01-a-k0-red and 02-a-k0-host. No whole-engine completion percentage is inferred.
+## 2026-11-07 A/K3 专项接受
+
+25c39d8 接通十种 S/C/B/H 组合的固定/浮根真实所有者及机器人–自由体一般凸包。最终98项专项/兼容性通过；公开CC/CB/HH三组各两步长连续0.5s，共1152步，末态位移差约1.43736e-6m、总冲量相对差约1.54171e-5。旧pair保留原采样，混合一般H不改变旧摩擦/pad；完整资产名称歧义先校验。详[当前三线结果](../benchmarks/p65-generic-collision-20261107.md)。
+
+注册表新增 patch_adapter/manifold 和 robot_robot/response 的限定接受域；HOST浅接触及唯一法向，不升格CUDA、一般深穿入、CCD或任意摩擦历史。robot_rigid只含机器人S/C/B/H与自由体S/B/H（胶囊只能在机器人侧）。N4 Newton静态留出、组合wheel仍待本轮完成。

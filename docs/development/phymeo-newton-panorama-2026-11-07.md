@@ -35,7 +35,7 @@ A 通用几何查询 ──> 点/线/面patch ──> 接触律 ──> 双侧�
 - **B 转动路径逐面候选（功能与成本）。** 目前转动mesh–round走完整面枚举。首片将既有单/双转轴查询的每个采样点接入真实TYX面级BVH，同时保留原连续时间排除界和HOST精确窄相。完整时间段面候选可另扩，不能把端点或采样面并集当作整段安全证据。
 - **C 设备状态直接供碰撞宽相（减少搬运）。** 目前已有驻留状态，也已有设备BVH，但中间常需HOST读回位置、构造包络再上传。首片把已有FreeSphere接受状态直接接设备AABB与宽相，滑轨需显式几何绑定后再扩，明确buffer版本、world/key、复位和拒步生命周期。保留必要候选/状态读回，不叫“零读回全引擎”。
 
-A、B、C可以各自编写新模块和测试；旧碰撞管线/场景接缝由父统一修改，所有项目验证串行。三条线共享预算，不把此前单线的全部工作量乘三硬塞进08:00。详见计划的分层交付、排队和截止规则。
+A、B、C可以各自编写新模块和测试；旧碰撞管线/场景接缝由父统一修改，所有项目验证串行。三条线共享预算，不把此前单线的全部工作量乘三硬塞进08:00。详见计划的分层交付和单槽排队规则；原08:00截止已取消。
 
 ## 接触相关的差距需要拆成四层
 
@@ -78,4 +78,12 @@ Newton的碰撞与求解器也有条件：其凸体/网格按不同算法及表�
 - [GPU驻留](../benchmarks/p65-g2-resident-world-step.md)、[原软布目标](../benchmarks/p65-soft-handoff-acquisition.md)、[体软体基础](../benchmarks/p4-softbody.md)。
 - Newton官方：[传感器](https://newton-physics.github.io/newton/1.7.0/concepts/sensors.html)、[Viewer](https://newton-physics.github.io/newton/1.7.0/guide/visualization.html)、[可变形对象与杆](https://newton-physics.github.io/newton/1.7.0/concepts/deformable_objects.html)、[训练生态入口](https://newton-physics.github.io/newton/1.7.0/lab/isaac-lab.html)、[ImplicitMPM](https://newton-physics.github.io/newton/1.7.0/api/_generated/newton.solvers.SolverImplicitMPM.html)。这些是相应模块的参照，不意味着Phymeo应照搬其依赖或全部默认行为。
 
-当前计划仍为 **PLANNED_NOT_STARTED**。本轮新增的是计划和差异图，没有新产品验收或仿真性能结果。
+当前计划为 **ACTIVE，无截止**。本节原调研基线保留；新增实现状态见下方当前进展。
+
+## 当前进展覆盖（25c39d8，专项已接受）
+
+上方八模块表保留8128440的调研基线；以下更新覆盖其中A/B/C“尚缺/待实施”措辞，离线HTML暂为原调研快照。
+- A：十种S/C/B/H的共同patch及真实双侧关节/浮根载荷已接通；机器人–一般自由凸体也通过。有限浅接触、唯一法向，不含全通用摩擦历史/密集堆叠/CCD响应。
+- B：单/双转动mesh–round的每次窄相采样已接真实TYX面级BVH；HOST39、interpret5、CUDA5。完整时间控制/窄相仍HOST。
+- C1：接受FreeSphere状态已直接生成设备AABB并喂BVH；interpret36/CUDA36。滑轨C2仅设计，通用机器人驻留/全设备窄相仍缺。
+- 当前N4进行独立Newton几何留出与源码外wheel。[详细证据和剩余范围](../benchmarks/p65-generic-collision-20261107.md)。其他五大方向和原软布/浮mimic问题不受该局部接受覆盖。

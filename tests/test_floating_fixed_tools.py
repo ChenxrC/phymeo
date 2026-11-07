@@ -255,3 +255,32 @@ def test_a02_probe_preserves_five_mass_geometry_full_inertia_and_tool_work(
         loaded.acceleration, np.linalg.solve(expected_mass, expected_applied), atol=1e-11, rtol=0
     )
     np.testing.assert_allclose(loaded.bias, 0, atol=ATOL, rtol=0)
+
+
+def test_a04_asset_constructor_rejects_duplicate_shape_keys_and_fake_root_frame():
+    from dataclasses import replace
+    from phymeo.builders._floating_fixed_asset import FloatingFixedSite
+
+    asset = load_floating_urdf(COMPOSITE, gravity=(0, 0, 0), collapse_fixed_joints=True)
+    with pytest.raises(ValueError, match="unique|keys"):
+        replace(asset, collisions=(asset.collisions[0], asset.collisions[0]))
+    for site in (
+        FloatingFixedSite(0, (1 / 64, 0, 0)),
+        FloatingFixedSite(0, (0, 0, 0), (0, 0, 1, 0)),
+    ):
+        sites = dict(asset.sites)
+        sites[asset.root_link] = site
+        with pytest.raises(ValueError, match="root.*origin|root.*frame"):
+            replace(asset, sites=sites)
+    with pytest.raises(ValueError, match="body|joint|metadata"):
+        replace(asset, link_names=("invented",), joint_names=("dummy",))
+    sites = dict(asset.sites)
+    sites[asset.root_link] = FloatingFixedSite(0, (0, 0, 0), (0, 0, 0, -1))
+    equivalent = replace(asset, sites=sites)
+    for name in sites:
+        for actual, expected in zip(
+            equivalent.authored_link_pose(name, _root_state().q),
+            asset.authored_link_pose(name, _root_state().q),
+            strict=True,
+        ):
+            np.testing.assert_array_equal(actual, expected)

@@ -124,3 +124,21 @@
 禁止全部project import/collection/pytest/数值probe/lint/formatter/compile/build/install/profile和Newton执行；父唯一串行槽。全部作者测试UNEXECUTED，纯文本/文件IO/小Git即可；不merge父、不覆盖WIP、不新建agent。父F3改根惯量frame不改变公开FK/J/材料语义。先交clean测试checkpoint、精确文件与接口，父运行真实RED后另行授权两个NEW产品模块；不要预写产品。
 
 需直接核首步完整跨ownerW及真实广义载荷，覆盖selected+unselected混合、components多site、零站点释放、同base重试和全部发布数据。长期窗口保存原始逐步读数；不预承诺F05/F07通过，不把未知换面称任意连续碰撞。原门/输入不以通过为目的调整。
+
+## 父裁定：T2 两个新适配模块（2026-11-07）
+
+T1 e8cca784 已全文文本审阅并正常导入 884eb6b；仍 UNEXECUTED，151 的有效公开 RED 保持，不重复执行。当前授原 RD **PRODUCT_AUTHORING_ONLY**，只新增：
+
+- src/phymeo/runtime/_scene_tangent_ports.py；
+- src/phymeo/runtime/_multi_robot_tangent.py；
+- docs/benchmarks/p65-general-scene-friction.md（当前实施/未执行范围和精确接缝）。
+
+作者可修原三份新测试/声明例程中的普通接口错误并追加案例册，不改已冻结质量、控制、窗口、几何、门和独立预期来求通过。真正机制/输入矛盾先报父。全部旧 source/export/hooks 由父唯一负责，不 merge 父、不另建助手、不运行任何 import/collection/pytest/数值/static/format/build/install/profile。父继续唯一串行执行槽。
+
+接受案例册§11.3：configure(scene,registry,**options)；prepare(scene,prepared,measured,loads,details,external,h) 返回 attempt.measured/loads/details；attempt.finish(candidate_body,end_geometry_by_address) 返回纯候选 history/receipt。内部函数可细化，必须及时给父准确字段/维数。Multi 使用现成 participant.prepare 结果；Single由父把一次既有求解准备包装为同形只读条目。任何 helper 不重复 prepare、解析 PD、积分或写 live state；schema/normal law/原耦合切向核保持。
+
+完整 ordinary/fixed mimic/floating/affine floating owner 的 full M/J/Q 和独立质量空间都保留。floating effort 只有 motor k 维，完整质量是6+n，投影是diag(I6,P)；不可补错维度或将root/child拆成独立动力学owner。所有 selected sites共享完整cross W，真实normal只计一次，移除仅被选旧切力再加入新切力；unselected所有原力/矩保留。静态owner响应零但材料姿态仍在；完整边界/多components/逆序不能丢site。
+
+配 registry 时检查实际world/shape/exclusion；当前entry events只作纯测量，不能提交第二episode。有限chart中未匹配的正N拒绝，不冒分离；真实卸载才释放旧spring，重入新generation。finish使用原积分器候选真实FK/COM姿态与原application/material anchors；不末态近邻重采样，不删motion/work/KKT门。owned观测和events完成后由父一次发布全部state/history/receipt/time。
+
+交付小commits/clean，完整报告 source/test变化与局限，所有新结果明确 UNEXECUTED；父审阅后执行短矩阵节点、完整原窗口、故障重试和必要旧兼容。F05若原运动门拒绝保最短证据，F07仍后置，不能把翻过一个案例当一般摩擦已完成。

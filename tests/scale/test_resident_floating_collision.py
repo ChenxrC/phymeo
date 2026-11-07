@@ -233,31 +233,7 @@ def test_p07_warm_bounds_consume_real_banks_without_host_snapshot_or_dynamic_upl
             final = batch.snapshot()
             expected = _audit_bounds(result, final, by_world, sources)
             after, stats = plan.stats(), batch.stats()
-            assert after["device_allocations"] == plan_before["device_allocations"]
-            assert stats["device_allocations"] == batch_before["device_allocations"]
-            assert (
-                after["floating_bounds_kernel_launches"]
-                - plan_before["floating_bounds_kernel_launches"]
-                == 40
-            )
-            assert after["dynamic_envelope_uploaded_bytes"] == 0 and after[
-                "state_buffer_directions"
-            ] == (0, 1)
-            # Account only the warm region, before the explicit final observation.
-            last = rows[-1]["batch_stats"]
-            for field in (
-                "snapshot_downloaded_bytes",
-                "kinematics_downloaded_bytes",
-                "tree_diagnostic_reads",
-                "floating_state_downloaded_bytes",
-                "floating_fk_downloaded_bytes",
-                "floating_diagnostic_downloaded_bytes",
-                "floating_state_reads",
-                "floating_fk_reads",
-                "floating_diagnostic_reads",
-            ):
-                assert last[field] == batch_before[field]
-            assert _record(held) == held_copy
+            # Preserve the real full window before observer assertions.
             _save(
                 tmp_path,
                 "floating-warm-bounds",
@@ -276,6 +252,30 @@ def test_p07_warm_bounds_consume_real_banks_without_host_snapshot_or_dynamic_upl
                     stats=stats,
                 ),
             )
+            assert after["device_allocations"] == plan_before["device_allocations"]
+            assert stats["device_allocations"] == batch_before["device_allocations"]
+            assert (
+                after["floating_bounds_kernel_launches"]
+                - plan_before["floating_bounds_kernel_launches"]
+                == 40
+            )
+            assert after["dynamic_envelope_uploaded_bytes"] == 0 and after[
+                "state_buffer_directions"
+            ] == (0, 1)
+            # Account only the warm region, before the explicit final observation.
+            last = rows[-1]["batch_stats"]
+            for field in (
+                "snapshot_downloaded_bytes",
+                "kinematics_downloaded_bytes",
+                "floating_state_downloaded_bytes",
+                "floating_fk_downloaded_bytes",
+                "floating_diagnostic_downloaded_bytes",
+                "floating_state_reads",
+                "floating_fk_reads",
+                "floating_diagnostic_reads",
+            ):
+                assert last[field] == batch_before[field]
+            assert _record(held) == held_copy
 
 
 @pytest.mark.tyx
@@ -305,7 +305,7 @@ def test_p07_folded_asset_root_and_tool_material_is_transformed_once(tyx_mode, t
             shapes.append(shape)
             bindings.append(binding)
             sources[key] = (0, local, shape.radius)
-        model = ph.CollisionModel(tuple(shapes))
+        model = ph.CollisionModel(tuple(shapes), tuple(combinations(tuple(sources), 2)))
         with batch.prepare_collision(model, tuple(bindings)) as plan:
             rows = []
             for _ in range(40):

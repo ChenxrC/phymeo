@@ -329,12 +329,43 @@ def bindings_schema(model, bindings):
             same(binding["world"], key[0], "binding actual world")
             require(type(binding["group_index"]) is int and binding["group_index"] >= 0, "true physical group")
             array(binding["local_points_m"], len(source["vertex_ids"]), 3)
-            require(binding["topology"], "owned original full topology")
+            if binding.get("_source_shape") is None:
+                require(binding["topology"], "explicit installation needs the owned full topology")
+            else:
+                # from_asset retains original source shape/model independently
+                # of per-world gains/anchor topology; topology=None is valid.
+                original = binding["_source_shape"]
+                shape_schema(original)
+                require(binding.get("_model_token"), "asset binding needs its original full model")
+                exact(dict(original, key=binding["key"]), source, "asset shape with only the declared key remapped")
         else:
             fields(binding, ("motion",), "finite static binding")
             array(binding["motion"]["start"], len(source["vertex_ids"]), 3)
         result[key] = binding
     return shapes, result
+
+
+def binding_matches_state(binding, state):
+    """Read original saved identities; no model/asset compilation or FK."""
+    same(binding["world"], state["world"], "binding physical checkpoint owner")
+    topology = state["topology"]
+    require(isinstance(topology, list) and topology, "owned actual checkpoint topology")
+    if binding.get("_source_shape") is None:
+        exact(binding["topology"], topology, "explicit binding full checkpoint topology")
+        return
+    kind = topology[0]
+    if kind == "floating_tree_v1":
+        model = topology[1]
+    elif kind == "fixed_tree_v1":
+        model = topology[3]
+    elif kind == "affine_tree_v1":
+        graph = topology[1]
+        require(graph[0] == "affine_graph_v1", "original full affine graph")
+        exact(binding["_graph_token"], graph, "asset graph matches owned affine coordinates")
+        model = graph[1]
+    else:
+        raise AuditError("unsupported saved asset topology " + str(kind))
+    exact(binding["_model_token"], model, "asset original physical model matches accepted world")
 
 
 def frames_schema(values, world, geometry_value, shapes=None, bindings=None):
@@ -385,6 +416,11 @@ def receipt(value, state=None, *, shapes=None, bindings=None):
     exact(end["control"], entry["control"], "held not overwritten by temporary contact")
     geometry(value["entry_geometry"], entry)
     geometry(value["accepted_geometry"], end)
+    exact(entry["topology"], end["topology"], "same physical model over accepted step")
+    if bindings is not None:
+        for key, binding in bindings.items():
+            if key[0] == value["world"] and "group_index" in binding:
+                binding_matches_state(binding, entry)
     if state is not None:
         exact(end, state, "receipt accepted complete checkpoint")
     b, d = len(value["law_wrench_fp64"]), len(value["contact_generalized"])
@@ -458,6 +494,23 @@ def receipt(value, state=None, *, shapes=None, bindings=None):
 def record_frame(row, worlds=None, *, shapes=None, bindings=None):
     fields(row, ("state", "geometry", "receipts", "summary"), "complete saved frame")
     state_map(row["state"], worlds)
+    tree_worlds = {w for w, state in row["state"].items() if "generalized_applied" in state}
+    same(set(row["geometry"]), tree_worlds, "complete public FK tree-world coverage")
+    same(set(row["summary"]), set(row["state"]), "complete public summary world coverage")
+    if "diagnostics" in row:
+        same(set(row["diagnostics"]), tree_worlds, "complete public diagnostic tree-world coverage")
+    bound_worlds = (tree_worlds if bindings is None else
+                    {str(key[0]) for key, binding in bindings.items() if "group_index" in binding})
+    require(bound_worlds <= tree_worlds, "contact worlds are actual declared trees")
+    if "acceptance" in row:
+        # A newly prepared limited-capacity plan may have no old receipt even
+        # though its rejected world's checkpoint tick is already positive.
+        wanted_receipts = {w for w in bound_worlds if row["acceptance"][w] or w in row["entry_receipts"]}
+    else:
+        # Original test snapshots are either fresh tick0 or an already stepped
+        # plan; no mid-restore plan publication is silently inferred here.
+        wanted_receipts = {w for w in bound_worlds if row["state"][w]["tick"] > 0}
+    same(set(row["receipts"]), wanted_receipts, "complete actual bound-world receipt coverage")
     for w, geo in row["geometry"].items():
         require(w in row["state"], "FK owner in accepted map")
         geometry(geo, row["state"][w])
@@ -600,6 +653,15 @@ def window_payload(member, record):
         same(record["steps"], steps, "declared complete window")
         same(record["failure"], None, "successful window has no failure")
     shapes, bindings = source_input_binding(data, record["model"], record["bindings"])
+    if member.group == "f03":
+        # CollisionModel canonicalizes shapes, but the saved registration tuple
+        # retains the actual input order supplied by _geometry(reverse=...).
+        declared = [(503, 101 + item["group"] if item["group"] is not None else 900 + i, 7 + i)
+                    for i, item in enumerate(data["shapes"])]
+        if member.parameter["reverse"]:
+            declared.reverse()
+        same([key_tuple(binding["key"]) for binding in record["bindings"]], declared,
+             "original F03 forward/reverse registration order")
     same(len(record["rows"]), steps, "complete real forward steps")
     previous = None
     for i, row in enumerate(record["rows"]):
@@ -1045,6 +1107,23 @@ class Auditor:
         if failed and by_node[failed].files:
             expect_roots.add(failed)
         same(set(roots), expect_roots, "explicit saved-test root mapping")
+        basetemp = (root / spec["basetemp"]).resolve(strict=True)
+        require(basetemp.is_relative_to(root), "original basetemp under run")
+        require("--basetemp" in args, "explicit original pytest basetemp")
+        actual_basetemp = Path(summary["original_command"]["workdir"]) / args[args.index("--basetemp") + 1]
+        same(normalized(actual_basetemp.resolve()), normalized(basetemp), "pytest basetemp resolved from actual original cwd")
+        # Pinned pytest _mk_tmp uses sanitized node.name[:30] and increments
+        # that prefix's ordinal in a fresh --basetemp. Bind identities BEFORE
+        # inspecting payloads, including no-save nodes that consume an ordinal.
+        ordinals, root_names = {}, {}
+        for node in selected:
+            prefix = re.sub(r"[\W]", "_", node.rsplit("::", 1)[-1])[:30]
+            ordinal = ordinals.get(prefix, 0)
+            root_names[node] = prefix + str(ordinal)
+            ordinals[prefix] = ordinal + 1
+        for node, name in roots.items():
+            original_root = (root / name).resolve(strict=True)
+            same(original_root, basetemp / root_names[node], "authored pytest tmp prefix/ordinal for " + node)
         expected_paths, details = set(), []
         for node in completed + ([failed] if failed else []):
             member, partial = by_node[node], node == failed
@@ -1081,9 +1160,6 @@ class Auditor:
                             cross[world] = token
             details.append(row)
         # Inventory is bounded and checks the predefined set; it cannot select it.
-        basetemp = (root / spec["basetemp"]).resolve(strict=True)
-        require(basetemp.is_relative_to(root), "original basetemp under run")
-        require("--basetemp" in args and normalized(Path(args[args.index("--basetemp") + 1]).resolve()) == normalized(basetemp), "actual pytest basetemp binding")
         found, seen, pending = set(), 0, [basetemp]
         while pending:
             for path in pending.pop().iterdir():
@@ -1293,6 +1369,9 @@ def wheel_row(row, section, shapes, bindings, *, expected=None):
     exact(row["input"], section["controls"], "original held request every actual step")
     state_map(row["entry"], worlds)
     state_map(row["state"], worlds)
+    entry_trees = {w for w, state in row["entry"].items() if "generalized_applied" in state}
+    same(set(row["entry_geometry"]), entry_trees, "complete entry public FK tree-world coverage")
+    same(set(row["entry_energy"]), set(row["entry"]), "complete entry public energy coverage")
     record_frame(dict(row, summary=row["energy"]), worlds, shapes=shapes, bindings=bindings)
     broad_schema(row["entry_broad"], row["entry"], shapes)
     broad_schema(row["broad"], row["state"], shapes, row["bounds_audit"])
@@ -1336,6 +1415,9 @@ def wheel_window(section, label, *, success):
     same((section["h_s"], section["steps"], len(section["trace"])), (H, 40, 40), "installed original window")
     shapes, bindings = bindings_schema(section["collision_model"], section["bindings"])
     state_map(section["initial_state"], worlds)
+    initial_trees = {w for w, state in section["initial_state"].items() if "generalized_applied" in state}
+    same(set(section["initial_geometry"]), initial_trees, "complete initial public tree geometry")
+    record_frame(dict(section["final"], summary=section["final"]["energy"]), worlds, shapes=shapes, bindings=bindings)
     broad_schema(section["initial_broad"], section["initial_state"], shapes)
     same(section["inputs"]["503"]["name"], "F03" if label == "f03" else "F01", "installed main frozen input")
     if label == "w4":

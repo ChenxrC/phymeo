@@ -64,3 +64,11 @@ Native 每端 F01/F03 各40，完整 raw contacts/shape/material/filter、FREE s
 - 成本为逐文件 JSON 解码/结构与已有数值比较、原 byte/hash/ZIP成员读核；逐件有界读取、不收集全批 payload；W矩阵跨文件比较只留完整世界帧的摘要指纹。无物理核/全量解压落盘。wheel 当前安装文件只读核与原归档/保存成员一致，任何漂移报告observer不一致。
 
 本文件与脚本尚未执行、静态检查或格式化。没有新增物理 pass；由父之后独占队列运行。作者不修改既交 C9/C10/source/tests/native/wheel，也不读取其运行中的输出。
+
+## 执行前只读审阅修正
+
+RD 指出合法 F06 的 `ResidentFloatingTreeBinding.from_asset` 使用 `topology=None`，真实来源由 `_source_shape/_model_token` 保存。初稿一律要求非空 topology 会误拒该既有输入；这是 observer schema finding，没有产品执行失败。现分别核：直接安装的完整 topology 必须等于同 world 入步 checkpoint；资产绑定的原 shape 只能替换声明 key，其余字段逐项相同，原 model token 必须等于该 checkpoint 的完整物理 model token。保留原材料 IDs/local points 与实际 frame 检查，不通过移除 provenance 门修复。旧 ordinary/affine 资产若采用同来源协议，仍核其真实 model/graph token，不从 K 坐标猜全体。
+
+另两项执行前 finding 一并修正：相对 `--basetemp` 与 `config.files` 一样按原 `start.cwd` 解析；每个 payload root 独立匹配原 selected 顺序下 pytest 的 node.name 非词字符替换、30 字符 prefix 和同 prefix 递增 ordinal（无保存节点也占 ordinal）。该规则来自原解释器安装的 `_pytest/tmpdir.py:282–287` 与 `_pytest/pathlib.py:make_numbered_dir`，只适用于本合同的新 basetemp、正常串行 pytest 次序；不从输出挑目录。F03 另核保存的 binding tuple 原始正/反注册顺序：`CollisionModel.shapes` 会规范排序，不能以它代替未规范化的注册输入。两参数目录交换会在目录身份或原 binding 顺序处被拒，未改 fixture/物理门。
+
+第4项修正是完整公开 map coverage：按完整 checkpoint 的实际类型确定树 world，geometry 和已保存 diagnostics 必须覆盖所有树（不要求 scalar 有 FK）；summary 必须覆盖全部 state。receipt 按真实 binding 的 world 集合核，初始 tick0 允许空；wheel 新容量 plan 的拒绝 world 仅保此前真实已发布的 receipt，不能把其他 plan 的 receipt 填进来。额外核 wheel 入步、初始和末态公开 map，避免中间行缺一个普通树的 FK/diagnostic 被 receipt 内部数据掩盖。本轮仅观察器文本修正；四项均未执行，原物理模型/门/数据不变。

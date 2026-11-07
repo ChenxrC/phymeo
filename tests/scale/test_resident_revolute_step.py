@@ -294,3 +294,26 @@ def test_r06_unsupported_topology_fails_before_runtime_allocation(problem, tmp_p
 
 
 
+
+
+@pytest.mark.tyx
+@pytest.mark.parametrize("cycled", (False, True))
+def test_r02_all_world_com_force_and_torque_columns_share_the_current_pose(cycled, tyx_mode, tmp_path):
+    orientation = (0.5, 0.5, 0.5, 0.5) if cycled else (0, 0, 0, 1)
+    gravity = (-1.5, 0, 0) if cycled else (0, 0, -1.5)
+    force = (3, 1, 2) if cycled else (1, 2, 3)
+    torque = (3 / 4, 1 / 4, -1 / 2) if cycled else (1 / 4, -1 / 2, 3 / 4)
+    program, initial = _program(q=0.37, axis=(3 / 5, 0, 4 / 5), com=(0, 1 / 4, 0),
+        inertia=(1 / 8, 1 / 4, 3 / 8), orientation=orientation, gravity=gravity)
+    with resident.TyxWorldBatch([(7, resident.RevoluteRotor(program, initial))], tyx_mode, cache_root=tmp_path) as batch:
+        batch.set_controls({7: _action(program, generalized=1 / 8, force=force, torque=torque)})
+        entry = batch.snapshot()[7]
+        q = entry.position[0]
+        # r=(-sin(q)/5, cos(q)/4, 3*sin(q)/20), F+m*g=(1,2,0).
+        from math import sin
+        alpha = (7 / 8 - sin(q) / 2 - cos(q) / 5) / (41 / 100)
+        assert batch.step(H) == {7: True}
+        actual = batch.snapshot()[7]
+        np.testing.assert_allclose(actual.velocity, [H * alpha], rtol=2e-5, atol=2e-6)
+        np.testing.assert_allclose(actual.position, [q + H * H * alpha], rtol=0, atol=2e-6)
+        assert actual.applied_effort == (0.0,)

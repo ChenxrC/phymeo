@@ -105,3 +105,69 @@ h=1/1024、64 步各一窗；先 1 步核矩阵和双侧冲量，再长窗。面
 先 F01 首步/8步和 F03/F04 各首步：预估小于20秒只是调度预算，未测。再 F01/F02/F03/F04 的限定64/128步窗、F05的384步与短负控、F06事务。已有 F2 T3 四窗2560步用17.83秒仅是此前不同法则/站点的参考，不能外推本核耗时。父在首个64步真实收据后决定排长窗；每个命令>2分钟先报真实成本，不新增隐藏重复或扩大取样。
 
 最后才跑 F07 三个原控制窗口；先报首窗实耗/预计余量，任何一个机制性失败都保留。新增例程一次保存每步完整状态/原法向载荷/切向前后载荷/材料地址/末态位移/历史/receipt；无损压缩 sidecar，索引标源 SHA、输入、步数、law、HOST 责任。禁止用摘要代替完整验收输出；无性能排名或 Newton 速度比。本册所有数字门和输入须在父授权 tests-first 时转成固定测试，再执行真实 RED/GREEN。
+## 11. T1 authoring 交接：公开接口与完整记录（UNEXECUTED）
+
+2026-11-07。父已将 tests-first `4a81571` 导入 `3079f39`：`151-friction-first-red` 为 **1 failed / .55 s / RAW1**。既有两边各2 N、共同作用点、零净力矩和查询不推进的前提全部通过，唯一失败为 `MultiRobotScene.enable_coupled_tangent` 的原明确拒绝。此 RED 不重跑。以下增量仅文本/Git；尚未执行、收集、格式化或作数值探针，未写产品。F05仍是工程候选域而非已验成功。
+
+### 11.1 声明和公开调用
+
+`examples/general_scene_friction.py` 只建模、声明原输入和保存完整读数，不含 step 循环或状态覆写。返回 `FrictionCase(scene, registry, actions, world, parameters)`，可用 context manager 关闭；公共调用不增加另一套记录类型：
+
+```python
+case = make_two_paddles(directory)
+case.scene.enable_coupled_tangent(case.registry, stiffness_n_per_m=200)
+external = case.scene.inputs()
+external.rigid.force[case.scene.rigid_rows[case.world, BOX], 0] = .5
+reading = case.scene.step(1 / 1024, actions=case.actions, external=external)
+```
+
+- `make_two_paddles(directory, *, world=23, friction=.5, reverse=False, transformed=False, selected_tools=None, box_velocity_x=0., separated=False)`：原五个128步窗口。混合律短留出仅选LOWER、箱初速X=1/64，未选UPPER保原速度律−1 N；empty留出两个初始几何间隙+.01 m，仍由+.5 N实际推动箱。
+- `make_rod(directory, *, friction=.5, center_y=0., drive=.5, world=23)`：原有限杆三种64步窗及y=.2/.4边界。
+- `make_fixed_mimic_pair(directory, *, reverse=False, world=23, partner_cap=8., gravity=(0,0,0))`：原三个64步窗；额外PD语义短留出明定重力(+1,0,0) m/s²，A请求feedforward=None，B分别None/显式0。A/B重力补偿驱动独立为−5/−3 N；B显式0时自由加速度+1，接触首步仍用原2×2 W，`(I/200+h²W)f=−h²(1,1)`。这仅冻结原§5的None/0区分，不改原窗口重力/驱动。
+- `make_floating_clamp(directory, *, fixture_dir, mimic=True, reverse=False, world=23)`：原3个64步窗；fixture_dir指仓库既有URDF目录，仿射/普通资产保持实际同初始几何。
+- `make_rotating_tool(directory, *, common=False, tilted=False, world=23)`：原128/256/8步和合法快速倾倒拒绝；没有为通过而调小实际角速度或放宽运动门。
+- `make_withdrawal(directory, *, world=23)`、`withdrawal_actions(index)`：原三步预先给定电机力，不重置任何状态。
+
+`capture_frame(case, entry, reading)` 保存入步全状态、真实返回reading、当前几何、history、receipt、contact_events。`write_trace(path, *, case, frames, failure=None, actual_dt_s=None)` 用exclusive新文件+无损gzip保存上述完整公共字段、registry/actions和参数；半步窗显式传实际dt，不把工厂声明h误写为h/2。events的公开generation tombstone也保存；只有私有owner/seal排除，完整数组保dtype/shape/全部元素。失败保已接受完整前缀与实际错误；物性/初态由同源声明与父源码快照共同绑定。示例不私自执行Git或生成哈希来冒完整输出。
+
+### 11.2 已写新专项及容量边界
+
+两个测试文件的所有节点都以真实公共场景取法向，完整3N×3N W通过包裹原 `_coupled_tangent_step._validate_world_mobility` 只读截取；未扩公开receipt，不用产品M/J作为预期。浮根独立M由已声明三质量/COM/惯量的动能组装，角J由真实共同点独立构造；F05实际位移由末角的sin/cos圆弧独立重建。
+
+| 文件/节点组 | 冻结验证 |
+|---|---|
+| `test_multi_robot_tangent.py::test_a01...a08` | 有效RED、完整跨ownerW/首步、128步低μ/超载/反向、注册序/刚体协变、selected+legacy、empty、四处拒步重试、跨world/owned读数 |
+| 同文件 `test_b01...b03` | 有限杆两site权重一次、三64步窗、有限裁切/分离、缺漏/错锚点 |
+| 同文件 `test_c01...c02` | fixed mimic full/independent维数、W交叉项、原行反力/功、三个64步窗与帽 |
+| 同文件 `test_d01...` | 真实2N→0→2N、弹簧释放一次、generation重入 |
+| 同文件 `test_e01...e03` | 同锚点不同token歧义、未注册shape、full2维错作independent1维时拒绝与重试、None/0和重力补偿 |
+| `test_floating_rotating_tangent.py::test_a01...a03` | ordinary/affine浮根首步全W/根反作用、三64步窗、同pair多site组件合并/逆序后物理与身份不丢 |
+| 同文件 `test_b01...b04` | 真角J/首步、h/h2实际弧位移/冲量/功、共同转动零相对功、快速倾倒拒步保全旧发布 |
+
+当前静态registry最多128个声明，不能以重新给同一scene注册或私改store伪造第129个动态载荷。本批测试129个独立声明在构造时拒绝；“128已用token再加载第129个”的底层封顶语义复用B3既有证据，未列成本批新增绿例。跨world/不存在shape的registry应在enable拒绝，不得因永远采不到pair而静默变成成功空观测。输入维数失败注入只替换当次测得的full向量，不改实际normal/几何，随后恢复原采样并核同base重试。
+
+完整窗口合计预声明 **1611物理步**（F01 640、F02 192、F03 192、F04 192、F05 392、F06 3），另有短首步/故障/重试节点；这不是已跑步数或时间估计。父先真实首步和短节点后取得成本，再安排完整窗。每个共享module fixture仅推进一次并供相关断言复用；不得重复执行已绿同源旧物理整组。
+
+### 11.3 给父的旧接缝合同提案（待产品grant裁定）
+
+公开仍为 `enable_coupled_tangent(registry, *, stiffness_n_per_m, motion_tolerance_m=1e-6, energy_tolerance_j=1e-8, max_frame_turn_rad=.25)`、`.tangent_history`、`.tangent_receipt`、原`.step`。不改`SceneContactEvents`/`RobotSceneObservation`/`LoadSite` schema，不把配置切换写进物理载荷。只允许在首步前配置一次；getters/sample/geometry不创建或提交episode。
+
+NEW产品候选仍仅 `_scene_tangent_ports.py`（readonly owner响应/姿态映射）和 `_multi_robot_tangent.py`（纯候选编排及site散回），本次均未写。建议后者使用以下最小父hook签名；父裁定后再落源码：
+
+```python
+configure(scene, registry, *, stiffness_n_per_m,
+          motion_tolerance_m=1e-6, energy_tolerance_j=1e-8,
+          max_frame_turn_rad=.25)
+prepare(scene, prepared, measured, loads, details, external, h)
+# -> attempt.measured / attempt.loads / attempt.details
+attempt.finish(candidate_body, end_geometry_by_address)
+# -> (candidate_history, candidate_receipt), still unpublished
+```
+
+`prepared` 的key是实际 `(world, registered_robot_body)`。Multi直接使用现有一次`participant.prepare`结果；普通/fixed mimic条目已有`entry/physical/geometry/linear/angular/full_mass/full_bias/mass/bias/effort`；floating条目的`full_mass/full_bias`是6+n，独立projection从真实asset取得，prepared.effort只有k个motor，不能把它当6+k或full驱动。其已冻结`external`是完整body COM力/矩，仍单独计一次。新helper不得另调用participant.prepare/integrate。
+
+`measured`原值是各owner的`AssembledContacts`；`loads`为同入步聚合`SurfaceLoads`（包括direct robot–robot，不能只取measured[addr].loads）；`details`仍逐原site完整返回。输出保`joint_effort_full`/每body COM wrench/直接rootcontact wrench原义。固定root材料有姿态而响应为0；一个浮根mechanism只占一个full响应块，不给root/各child新建动力学owner。freebody由scene._rigid_model和scene._body的world惯量/重力/原外载处理。
+
+单`RobotScene`父可将已算好的 `arm/physical/geo/linear/angular/mass/bias/M/b/effort` 包成同一既有`RobotPreparation`的只读描述，映射到`{scene._addr: ...}`；不重新解析PD、不构建第二participant。finish的几何为实际候选full FK/COM姿态（fixed mimic须用full_q，floating须保root authored frame），rigid为本次原积分器候选。不能传旧geo或候选末站点最近重采样。
+
+父 `MultiRobotScene.step` 的接点是原 `_sample(terms)` 后、各原integrate前替换三份当次load；finish放候选几何形成后、`_owned(reading)`和events最终成功发布前。候选history/receipt与原7项状态同一tuple assign。Single对应原robot_prepare/finish调用位置；默认分支完全保留。任何中途输入、kernel、实际motion、owned、events失败均不改accepted state/history/time。父可改内部签名以合既有结构，但必须保本表的维数、一次力/一次推进和公共合同；禁止删新断言迁就旧桥。

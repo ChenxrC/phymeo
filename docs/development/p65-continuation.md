@@ -4,8 +4,9 @@
 
 用户已取消08:00限制并统一启动[三线开发与测试计划](../superpowers/plans/2026-11-07-generic-collision-until-0800.md)，状态 **ACTIVE**，没有固定截止。父负责A通用凸接触/双侧响应及全部旧共享接缝；原RD负责B转动逐面候选；原robot负责C设备接受态直供宽相。隔离编码并行，项目执行只有父一个串行槽。原RR额度不可用，父承接，不新建替代agent。
 
-先完成A/B/C各自多案例和真实HOST/interpret/CUDA验收、交叉审阅及源码外wheel，再按用户八大方向继续。计划中的旧时间文件名仅作历史标识；不恢复周期任务。当前A/K3、B、C1均已完成专项接受；N4独立Newton几何留出及新wheel源码外三线集成也已通过；C2滑轨设备宽相及F1浮根固定工具现也正式限域接受：新HOST30与受影响10、Newton CPU/CUDA各4记录、新wheel公开2560步和双世界滑轨设备推进通过。独立审阅结束，当前没有项目执行。原RD的[F2浮根mimic](../superpowers/plans/2026-11-07-floating-mimic.md)四文件独立案例/测试已导入bf3cadb；父104首RED准确命中新loader缺失，现原RD按ab48b9c授权编写共享坐标图、XML解析与浮根约束动力学五NEW，父独占旧共享入口委托。原robot按[单转铰设备驻留计划](../superpowers/plans/2026-11-07-resident-revolute-broad-phase.md)完成三文件案例/测试交接前仍无C3产品授权；采用有限4096rad域和工程AABB外扩，不追加形式三角函数证明。所有项目执行仍父唯一串行。详见[浮根固定工具](../benchmarks/p65-floating-fixed-tools.md)与[滑轨设备宽相](../benchmarks/p65-resident-slider-collision.md)。[本批结果](../benchmarks/p65-generic-collision-20261107.md)。
+A/K3、B、C1和独立Newton留出/源码外wheel已接受，C2滑轨设备宽相及F1浮根固定工具亦已接受。F2浮根mimic的独立动力学与共享坐标图已在05982ed通过新HOST23、受影响兼容37；当前原RD编写T3共同场景测试/公开窗口/案例，父待有效RED后接参与者。C3单转铰真实设备推进→当前姿态宽相已在bbfe7f2通过HOST4、interpret71、CUDA71、受影响共享CUDA7和静态；父完整新模块审查、原作者共享hook只读审阅完成。新F2/C3组合wheel待共同场景完成后一次验证，不重跑已绿同源组。
 
+接续：[F2浮根mimic共同场景](../superpowers/plans/2026-11-07-floating-mimic.md)与[C3报告](../benchmarks/p65-resident-revolute-collision.md)。原robot转入完整固定根R/P树驻留的源码调研/多案例计划，仍无产品或项目执行授权；父独占共享入口与所有串行执行。现有单R不能冒完整树/动态–动态设备窄相/CCD或响应；原软布两初态放台及100g mimic持续抓持失败独立保留。原RR额度不可用，不重试或新建替代agent。
 [功能差异全景](phymeo-newton-panorama-2026-11-07.md) · [可视化](phymeo-newton-panorama-2026-11-07.html)。下方已验收基线继续复用；不得将正在实施的计划写成完成。
 ## 最近已验收基线（2026-11-06）
 

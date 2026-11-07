@@ -1,6 +1,6 @@
 # C9 普通浮根完整树驻留：开发与测试
 
-状态：**FROZEN / AUTHORING_ONLY**，2026-11-08，持续无截止。父基线de2a66c（C8正式接受）；调研来源为[浮根提案](../../development/p65-resident-floating-tree-next-proposal.md)、现有 floating_tree / FloatingRobotParticipant / TYX固定普通与affine storage，以及本机Newton1.7源码。此计划裁定提案未定API、工程域和文件所有权。不是设备通过结论。
+状态：**LOCAL_VERIFIED_ACCEPTED**，2026-11-08，持续无截止。产品基线4927ef9，最终保存审计495通过；详[正式限域接受](../../benchmarks/p65-resident-floating-tree.md)。以下保留原冻结合同与作者阶段记录；浮根接触按C10另行集成。
 
 ## 可交付能力
 

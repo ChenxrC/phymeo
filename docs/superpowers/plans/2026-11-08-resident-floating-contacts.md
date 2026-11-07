@@ -1,6 +1,6 @@
 # C10 普通浮根常驻接触：开发与多案例验收
 
-状态：**AUTHORING_FROZEN / INTEGRATION_AND_EXECUTION_PENDING_C9**，2026-11-08，持续无截止。父基线 f9ab296；C9 解释 run460 正在执行。完整 C9 接受仍是共享接缝集成和所有 C10 项目执行的前置条件。
+状态：**PARENT_INTEGRATION_ACTIVE**，2026-11-08，持续无截止。[C9已正式限域接受](../../benchmarks/p65-resident-floating-tree.md)，前置满足。C10产品、案例、native与wheel的NEW交付已文本审阅；保存审计NEW已交接，待父审阅。父接下来导入NEW、首有效RED、共享接缝实施与串行验证。下文原run460及作者排期均为历史合同记录，不表示旧任务仍在运行；C10尚无实际通过结论。
 
 本计划采用已全文审阅的 [C10 提案](../../development/p65-resident-floating-contact-next-proposal.md)（原提交750dfba、文件SHA256 B157EA687FCC3CBF8233B2D4595FD2069AF3FA1C94BD9A34218D035E855C8197）。其 F01–F10 固定输入、首步锚、工程域与负控纳入本合同。为利用父串行验证期间的空档，调整纯作者次序：原 agents 可先在隔离树编写 NEW 文件；父验收 C9 前不得把 C10 接入旧代码或运行。不是提前接受 C9，也不是全设备窄相。
 

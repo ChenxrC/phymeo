@@ -1067,7 +1067,20 @@ class Auditor:
         if any(by_node[node].group in ("mixed", "old_body") for node in completed):
             self.source(sources, "tests/scale/test_resident_affine_contact_transactions.py")
         require("--tyx-mode" in args and args[args.index("--tyx-mode") + 1] == spec["mode"], "same actual backend")
-        require("-k" not in args, "declare explicit entrypoints/deselect, not an opaque -k selector")
+        keyword_expressions = []
+        for i, arg in enumerate(args):
+            if arg == "-k":
+                require(i + 1 < len(args), "complete literal -k argument")
+                keyword_expressions.append(args[i + 1])
+            elif arg.startswith("-k="):
+                keyword_expressions.append(arg.partition("=")[2])
+            elif arg.startswith("-k"):
+                raise AuditError("unrecognized -k option spelling")
+        require(len(keyword_expressions) <= 1, "at most one frozen keyword expression")
+        keyword = keyword_expressions[0] if keyword_expressions else None
+        require(keyword in (None,
+                            "not test_f01_public_root_contact_keeps_full_six_coordinate_response",
+                            "test_f08 or test_f09 or test_f10"), "unrecognized keyword expression")
         targets, exclusions = [], set()
         for i, arg in enumerate(args):
             if arg == "--deselect":
@@ -1079,6 +1092,12 @@ class Auditor:
         actual_selection = []
         for target in targets:
             for member in members:
+                # Only these two frozen complete expressions are supported.
+                # Judge authored function names, never output or eval/pytest.
+                if keyword == "not test_f01_public_root_contact_keeps_full_six_coordinate_response" and member.function == "test_f01_public_root_contact_keeps_full_six_coordinate_response":
+                    continue
+                if keyword == "test_f08 or test_f09 or test_f10" and not member.function.startswith(("test_f08", "test_f09", "test_f10")):
+                    continue
                 if target in (member.source, member.source + "::" + member.function, member.node) and not any(
                     value in exclusions for value in (member.node, member.source + "::" + member.function)
                 ):

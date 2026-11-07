@@ -55,7 +55,7 @@ Native 每端 F01/F03 各40，完整 raw contacts/shape/material/filter、FREE s
 
 - 本批 `--output` 是 **全新目录**，固定写 `audit.json`；C9 老 auditor 的同名参数是新文件，本脚本明确不沿用那一输出容器。全部 evidence 只读。
 - Run 基础字段：`id/kind/mode/directory/config/head/raw_exit/source_sha256`；`directory/config` 为绝对原路径。config 的相对 `files` 从原 `start.cwd` 解析，不能从 auditor 当前目录解析。完整原 source 集合与 config、start、final、snapshot bytes 一致。
-- Pytest 附加 `selected/completed/failed/payload_roots/basetemp`。`selected` 用代码固定 `.node` 字符串按原 CLI 顺序，CLI 可文件/函数/参数节点及明确 `--deselect`，不接受不透明 `-k`；`completed` 是实际前缀，`failed` 无错时 null。`payload_roots` 明确每个会保存的完成/首失败节点的原 test tmp 路径。首失败的 `failed_payloads` 只能是该节点固定文件名子集，可以空。完整 gzip inventory 仍不能有漏报/多余。20 无保存节点无 payload_root。
+- Pytest 附加 `selected/completed/failed/payload_roots/basetemp`。`selected` 用代码固定 `.node` 字符串按原 CLI 顺序，CLI 可文件/函数/参数节点及明确 `--deselect`；`-k` 仅接受完整字符串 `not test_f01_public_root_contact_keeps_full_six_coordinate_response` 和 `test_f08 or test_f09 or test_f10`，其他表达式拒绝；`completed` 是实际前缀，`failed` 无错时 null。`payload_roots` 明确每个会保存的完成/首失败节点的原 test tmp 路径。首失败的 `failed_payloads` 只能是该节点固定文件名子集，可以空。完整 gzip inventory 仍不能有漏报/多余。20 无保存节点无 payload_root。
 - `qualifies_completed[node]={prior_run,reason}` 只用于确有历史完成的必要复验；每次原记录全验且按原 source 集合单列。未重复的节点不填该键。不同 source 的 union 不命名同源通过。
 - `kind=native|wheel` 附加 `payload_directory`（绑定原 CLI 绝对 `--output`）。native `mode=cpu|cuda:0`，wheel `mode=interpret|cuda`。native 再给 `native_source_sha256`，完整13份 pinned 源的相对名→SHA；它们与 native 自带 `source_snapshot`/before/after 对齐。成功 native 固定两个 gzip；成功 wheel 固定一个 gzip。失败运行明确已有 `failed_payloads` 子集，只保存原状态，不增加通过覆盖。
 - `kind=historical` 可登记原前置/观察器错误，须 `reason`；如存在原 gzip，用显式 `payloads` 逐件有界读取，覆盖计数为0。不能用此类型把 required 节点补绿。
@@ -72,3 +72,5 @@ RD 指出合法 F06 的 `ResidentFloatingTreeBinding.from_asset` 使用 `topolog
 另两项执行前 finding 一并修正：相对 `--basetemp` 与 `config.files` 一样按原 `start.cwd` 解析；每个 payload root 独立匹配原 selected 顺序下 pytest 的 node.name 非词字符替换、30 字符 prefix 和同 prefix 递增 ordinal（无保存节点也占 ordinal）。该规则来自原解释器安装的 `_pytest/tmpdir.py:282–287` 与 `_pytest/pathlib.py:make_numbered_dir`，只适用于本合同的新 basetemp、正常串行 pytest 次序；不从输出挑目录。F03 另核保存的 binding tuple 原始正/反注册顺序：`CollisionModel.shapes` 会规范排序，不能以它代替未规范化的注册输入。两参数目录交换会在目录身份或原 binding 顺序处被拒，未改 fixture/物理门。
 
 第4项修正是完整公开 map coverage：按完整 checkpoint 的实际类型确定树 world，geometry 和已保存 diagnostics 必须覆盖所有树（不要求 scalar 有 FK）；summary 必须覆盖全部 state。receipt 按真实 binding 的 world 集合核，初始 tick0 允许空；wheel 新容量 plan 的拒绝 world 仅保此前真实已发布的 receipt，不能把其他 plan 的 receipt 填进来。额外核 wheel 入步、初始和末态公开 map，避免中间行缺一个普通树的 FK/diagnostic 被 receipt 内部数据掩盖。本轮仅观察器文本修正；四项均未执行，原物理模型/门/数据不变。
+
+父实际分组 CLI 对齐：上述两个 `-k` 完整字符串是严格白名单，分别按作者 `Member.function` 排除精确 F01 函数，或保留 `test_f08`/`test_f09`/`test_f10` 前缀。接受独立参数与 `-k=` 拼写但不改表达式内容；多表达式、未识别表达式均拒绝，不 eval、不导入 pytest、不按输出决定选集。过滤后的 authored 顺序仍用于原 tmp prefix/ordinal 与成功前缀绑定；76/61 总身份不变。此为单独执行前 observer 兼容修正，既有四项来源/覆盖修正未重写，仍未执行。

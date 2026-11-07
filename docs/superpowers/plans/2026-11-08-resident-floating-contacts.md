@@ -155,3 +155,38 @@ pin源码、版本/device和原始读数完整保存；check失败仍保完整40
 原退出非零，不改门、不另注入力、不重新运行取计数。作者仅text/fileIO/smallGit，
 不改已有C9/C10交付、不merge父、不新增助手、不import/probe/static/build/install。
 父完整读交接、C9正式接受及C10接入后，才可能授唯一串行首次执行。
+
+## C10 保存审计的纯作者补充（2026-11-08）
+
+为利用 C9 串行验证窗口，原 robot 在完成外部消费者只读交叉审阅后，可在原隔离树仅新增：
+- tests/scale/resident_floating_contacts_saved_audit.py
+- docs/benchmarks/p65-resident-floating-contacts-saved-audit-plan.md
+
+仍为 AUTHORING_ONLY_UNEXECUTED；不得修改既有 C9/C10 文件、merge 父、另建助手，
+不得 import、collection、数值、pytest、lint、format、build、install 或执行审计。
+父只在 C9 正式接受、C10 实际执行完毕后安排该审计的唯一串行首次执行。
+
+审计器使用标准库和已保存原始字节，不导入 Phymeo、TYX、NumPy、Newton、tests
+或生产者，不重新推进物理、生成几何、求 M/J 或补取计数。
+接口沿 C9：python -I -B SCRIPT --manifest ABS --output ABS_NEW_DIR。
+manifest 允许登记实际分组/首失败/有理由的变更后复验，但固定 authored membership
+必须从冻结的两个专项测试全文预先列出，不按输出目录、hash 或通过记录挑组。
+原作者声明每 backend 76 实例、61 保存记录须逐项由源码结构核实；若计数矛盾，
+先报告父，不改测试或发明缺失记录。HOST 节点按实际定义单独登记，不与 device 混算。
+
+核全部原始 command/head/RAW_EXIT、before/after/source snapshots、payload
+压缩与原始 bytes/SHA、精确 membership、原输入/实际银行/入步/输出/诊断/receipt、
+完整检查点恢复重放和失败事务。禁止删除字段、规范化物理量、把 observer 故障
+当产品失败，或用摘要 pass 取代完整记录；没有保存的首失败只登记原始日志。
+每个必要变更后的重复节点必须显式指向此前完成节点及修改原因，完整记录都验，
+unique coverage 只计一次。不同源码的通过范围分列，不冒同源整套通过。
+
+同时核已冻结 wheel W4/F03 的完整物理窗、恢复重放、双 bank 容量拒步/重试、
+installed 全成员和 loaded origins、source/native pin 绑定、关闭资源；
+核原生 CPU/CUDA F01/F03 各40步的实际原始行、checks、来源与失败状态。
+不拿 Phymeo 输出做 Newton 唯一期望，不把未执行、检查失败或仅 matched 力叫原生通过。
+允许沿用 C9 的 manifest/receipt 结构与有界文件读取方法，但身份与物理字段
+由本批作者源码独立明确；64 MiB compressed、256 MiB decoded/payload、
+2 GiB total decoded、8192 files 等守卫只可更严。
+最终交两 NEW 的小提交、clean、完整身份表/CLI/schema/限制和 AUTHORING_RELEASED；
+父全文审阅后再导入，执行与 C10 正式接受仍由父负责。

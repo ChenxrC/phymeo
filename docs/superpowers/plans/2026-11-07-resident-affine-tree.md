@@ -208,3 +208,7 @@ A06的有限迭代负控现固定为A05的初态Mr，移除额外effort，h=1/10
 先提交编译/schema与storage公开私有接口的小检查点：明确 AffineTreeWorldSpec 的physical字段、n/k/token、初始state/control/history，以及storage lifecycle和binding proof/view接口。父随后可并行接旧batch/root/collision hook；无需等待整个产品完成才对接口。后续kernel/事务按第8节后的父接缝落实。状态接受由同一full accepted结果控制，晚异常在唯一swap前抛出，K/N/history/tick不得分开发布。原图每行反力与完整外载持续可见。
 
 禁止作者运行项目import/collection/pytest/数值probe/lint/formatter/compile/build/install/profile/Newton/CI；完成小commit、clean、精确交付范围与未执行报告后释放作者槽。父将按编译/Host能力→interpret→CUDA→独立Newton→新wheel顺序安排必要检查；任何实质失败先保存真实输入和原返回，按原因修复后只重跑受影响组，不为过门调冻结参数。
+
+## 当前裁定（2026-11-08）
+
+**VALIDATED_ACCEPTED / SLOT_RELEASED**：本合同限域已完成HOST13、解释89、CUDA89、Newton CPU/CUDA400步、固定保存审计和新源码外wheel305 world-steps。原作者/首错历史保留，以下旧PROPOSAL标记仅是历史。详[正式验收报告](../../benchmarks/p65-resident-affine-tree.md#父正式限域接受2026-11-08)。下一项[设备接触反馈](../../development/p65-resident-contact-stage-proposal.md)尚待合同冻结，不属于本项通过。

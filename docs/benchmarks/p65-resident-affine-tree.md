@@ -136,3 +136,16 @@ NEW核没有复制FK/M/b/J/能量或bounded-PD算法；full mechanics/geometry/e
 269剩余49例 **49 passed / 874.28 s / RAW0**。265/266/267/268/269各成功7/16/2/11/49，原85个解释节点完整并集已覆盖；已绿组没有重跑。新增 `test_resident_affine_device_loss.py` 四节点区分warm0/1永久同步失效重建与ordinary+affine+scalar共同控制/restore/partial upload原子性。276这四节点通过，并与抓取相邻测试同一串行进程执行（总19 passed / 5.58 s / RAW0）。故C5目前为13 HOST + 89解释节点；真实CUDA、独立Newton和新wheel仍待执行。
 
 270/271为新增三文件及测试修正的首静态，3项I001、5文件排版；272/273仅imports/format，274/275全过。新增混合事务案例保原A03、ordinary全物理树与2 kg FreeSphere，同时验证任一坏graph/restore不发布、跨命令bank上传失败后重试、完整history/held恢复和按原顺序的两类tree读回。永久失效案例不清除poison，只用预先保存完整checkpoint在新batch重建，再与独立control连续推进。不是模拟真实硬件拔除，仅冻结API故障边界的实际注入执行。
+
+## 父正式限域接受（2026-11-08）
+
+C5 固定根 affine-mimic 设备树已完成本地集成验证。产品范围为原合法 R/P acyclic mimic、完整 N<=16、独立 K<N、原图每行反力与共同状态/控制/history/restore，以及当前接受姿态直供有限几何宽相。浮根设备树、设备窄相/接触力反馈、CCD、训练梯度与性能超越均不在本项接受内。
+
+- 264 HOST 13 项；265–269 成功前缀与276新增事务合为89个解释节点（每个只计一次）；277 CUDA **89 passed / 185.79 s / RAW0**。原失败及各自作者修正保留，原几何、质量、PD/质量残差门和迭代预算不变。
+- 278/279 独立 Newton 1.7.0、Warp 1.17.0 的 CPU/CUDA 各5窗×40步，共400步：A01、fan-out A02、耦合 A04、COM外载 A05G、链展开 A03-flattened。原链直接导入拒绝仍保存，不冒原链直接支持。Newton实际finalized质量/COM/惯量均与独立预期核对；原惯量验证警告保留。
+- 301保存审计 **RAW0 / saved_evidence_audited**：固定10份执行收据、584个有界读取文件、115889654解压payload字节；解释/CUDA各86个完整gzip，加native10窗；完整预声明成员、前缀失败、源快照、K/N、命令、历史、FK/诊断、碰撞bounds/candidates与原门全部核验。无保存节点和warm中间state缺口明确列出，未伪造补轨迹。审计只读原结果，不重新执行物理。
+- 289新wheel构建、290源码外安装与295五混合世界消费全部RAW0。A03/A04/N9与ordinary 2R/FreeSphere完成40步及第19步恢复后的21步重放，共305 world-steps；26个有限球/胶囊/旋转盒/非盒凸体的完整bounds/candidates、错误图/材料源/控制拒绝、同tick旧epoch拒绝及完整held/history均通过，资源关闭后0。
+- wheel SHA256：b4a2a170eb827f0b5daa8acd313f1eea94d60ef2a5a2cb3ea098c7380edf2180。295核420个已安装产品成员与280个加载模块均来自源码外包；298另核420个wheel产品成员与build/current源码同字节。291首次消费只因uv未写可选archive_info.hash在零物理步前失败，a4619d8复用既有C4的真实wheel SHA+文件URL+全成员核验，295通过；没有绕过成员检查或重建产品。
+- 新auditor299 Ruff通过、300首次format失败、302排版、303/304最终静态通过；实际301审计在304前自然完成，两者执行时间不重叠。所有项目执行为父同一队列，旧组不重跑。
+
+完整记录在[串行证据](../../artifacts/p65-generic-collision-20261107-01/)。本项作者槽释放；后续沿[设备接触反馈提案](../development/p65-resident-contact-stage-proposal.md)先冻结合同和多案例测试，不把本接受称整个Newton功能对齐或P6.5完成。

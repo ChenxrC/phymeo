@@ -133,3 +133,17 @@ accepted回调放在原step成功及observe_scene之后、原physical try/except
 新driver流式保存完整观察record、输入/registry与最终原result，复用现 `public_payload`；失败保完整已写前缀、最后实际request/retained及错误，绝不重启前缀或只存关键帧。各窗256MiB原压缩上限保持，IO中止明确incomplete。短驱动测试须覆盖实际callback协议、写失败后已接受态不回滚、原异常request保留及不另推进场景，可用小替身协议测试，不额外跑四个长窗。真实first-load和四窗仍由父唯一串行槽执行。
 
 作者禁止全部项目import/collection/数值probe/pytest/lint/formatter/build/install/profile/native/CI。每个新文件小commit/clean后交父，报告全部未执行及依赖父hook；父按短声明→两个首次受力/重试→G01/两负控/G04→新wheel安排执行。实质反例不改原门、不静默回退旧摩擦。
+
+## T3 显式作用点增量模型（2026-11-08，实施授权）
+
+280–283已实际执行原material模式四完整候选：G01/G02/G03分别在594/618/580接受步后被原功/运动门拒绝；G04 Panda完成3006步、1.87875 s的获取/提升/保持/释放，全部原八门通过。297从三个原保存拒绝入态各执行同一请求一次，七公开字段与原入态完全相同、错误精确复现、失败后七字段仍相同。原失败保持，不调参数追绿。
+
+共轭坐标缺口：现full J/W和力矩以共同作用点构造，而原material模式又要求表面材料点与作用点运输位移相等。穿深与转动使两者不同。G02虽切力/功/储能全部0，材料—作用点差1.008421122e-6 m越门，作用点预测误差仅8.3846e-8 m；G01/G03作用点误差约9.82e-9/4.54e-8 m，而原material能量残差为负约1.11e-8/1.02e-8 J。不能把负残差称注入能量，也不能据此关闭后续物理窗口。
+
+冻结新增 keyword **motion_reference='material'|'application'**：scene.enable_coupled_tangent及prepare_tangent_step接受，默认material全旧行为。SceneTangentConfig、TangentStepTrial、TangentStepReceipt和TangentUpdate均保存mode；后3者末尾字段默认material保持既有构造兼容。trial密封此字段。TangentUpdate随episode保存，retained prior的mode不同一律拒绝，即使能量为0；真实结束后新generation可从零选另一模式。场景配置仍只t=0一次，无热切换。
+
+application是**逐步接触作用点增量弹簧**：同一对入步作用点按双方真实末姿态运输，真实相对位移进入弹簧及work审计；J、W、力矩、位移与功使用同一坐标。原1e-6 m作用点预测门、1e-8 J逐站和总能量门、容量/释放/事务均保持。真实表面材料位移、表面功和两者差仍保存为独立诊断，但不要求该不同坐标与作用点功相等。原material模式仍保三种运动差与两种功相等门。不能把最近点跨帧漂移当滑移；当前作用点每步重新取样，不称Newton的跨帧sticky锚点模型。
+
+父独占旧solvers/tangent_history.py、runtime/_coupled_tangent_step.py、_scene_coupled_tangent.py、_multi_robot_tangent.py及已有driver的最小keyword/记录接入。原RD只NEW tests/test_tangent_application_reference.py和docs/benchmarks/p65-tangent-application-reference.md，先短测试后报告；作者禁全部项目执行。矩阵包括实际普通ContactScene与RobotScene、纯平移新旧一致、共同刚转不同surface点无伪功、单侧转动、真实application超门拒绝并完整回滚/retry、mu0、卸载/重入释放一次、非法/retained切换/篡改拒绝。原normal、kt、dt、controller、几何/质量与八门不改。
+
+父先有效RED、实现和完整新短矩阵/必要相邻兼容，再三个已保存失败请求的application对照；通过后仅执行受模型变更影响的新候选完整窗口。Panda原material成功不重跑取同一结果。所有新结果绑定实际mode，原四条完整轨迹和失败不覆盖。若出现新的共同坐标非线性误差或实际持稳失败，保存最短原请求并按原因处理，不单侧放行能量、不扫描参数或减步长。当前尚无application实现/通过结论。

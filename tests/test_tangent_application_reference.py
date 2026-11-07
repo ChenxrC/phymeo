@@ -653,3 +653,99 @@ def test_d04_scene_mode_is_configured_only_once_before_the_first_step():
         np.testing.assert_array_equal(scene.state.rigid.position, state.rigid.position)
 
 
+
+
+def _grasp_driver():
+    import sys
+    from importlib.util import module_from_spec, spec_from_file_location
+    from pathlib import Path
+
+    name = "phymeo_application_reference_grasp_driver"
+    if name not in sys.modules:
+        path = Path(__file__).resolve().parents[1] / "examples" / "persistent_grasp_holdouts.py"
+        spec = spec_from_file_location(name, path)
+        module = module_from_spec(spec)
+        sys.modules[name] = module
+        spec.loader.exec_module(module)
+    return sys.modules[name]
+
+
+def _audit_observation(*, update_mode="application"):
+    # Protocol-only record, no physical step: kt=200, e_x=1e-4, f_x=-.02,
+    # N=2, mu=.5. E=1e-6 and work=-2e-6 are explicit independent inputs.
+    from types import SimpleNamespace as Record
+
+    first = Record(shape=CollisionKey(4, 1, 0), local_point_m=(0.0, 0.0, 0.125))
+    second = Record(shape=CollisionKey(4, 2, 0), local_point_m=(0.0, 0.0, -0.125))
+    sample = Record(first=first, second=second)
+    update = Record(
+        elastic_displacement_m=(1e-4, 0.0, 0.0),
+        stored_energy_j=1e-6,
+        plastic_slip_m=0.0,
+        motion_reference=update_mode,
+    )
+    site = Record(force_n=2.0, force_on_second_n=(-0.02, 0.0, 2.0))
+    component = Record(
+        load=Record(normal=(0.0, 0.0, 1.0), sites=(site,)),
+        material=(Record(first=first, second=second),),
+        law=Record(friction=0.5),
+    )
+    history = Record(
+        active=(Record(identity=StationKey(4, 77), sample=sample, update=update),),
+        ended=(),
+        dropped_spring_energy_j=0.0,
+    )
+    events = Record(
+        active=(
+            Record(
+                identity=Record(first=first.shape, second=second.shape),
+                components=(component,),
+            ),
+        )
+    )
+    receipt = Record(
+        motion_reference="application",
+        material_motion_error_m=2e-5,
+        application_motion_error_m=2e-9,
+        material_application_error_m=2.0002e-5,
+        energy_residual_j=0.0,
+        actual_application_displacement_m=np.array([[1e-4, 0, 0]]),
+        actual_work_j=-2e-6,
+    )
+    return dict(history=history, receipt=receipt, events=events)
+
+
+def test_e01_application_driver_audit_keeps_surface_differences_only_as_diagnostics():
+    driver = _grasp_driver()
+    observation = _audit_observation()
+    result = driver._tangent_audit(observation, 0.5)
+    assert result["motion_reference"] == "application"
+    assert "material_motion" not in result["checks"]
+    assert "material_application" not in result["checks"]
+    assert result["checks"]["application_motion"]
+    assert result["checks"]["energy_residual"]
+    assert all(result["checks"].values())
+    assert result["motion_diagnostics_m"] == {
+        "material_motion_error_m": 2e-5,
+        "application_motion_error_m": 2e-9,
+        "material_application_error_m": 2.0002e-5,
+    }
+    assert result["actual_work_j"] == pytest.approx(-2e-6, abs=1e-18)
+    assert result["active_stations"] == 1
+    # Original material mode continues to classify the same differences as failed checks.
+    observation["receipt"].motion_reference = "material"
+    observation["history"].active[0].update.motion_reference = "material"
+    strict = driver._tangent_audit(observation, 0.5)
+    assert strict["checks"]["material_motion"] is False
+    assert strict["checks"]["material_application"] is False
+    assert strict["motion_diagnostics_m"] == result["motion_diagnostics_m"]
+
+
+def test_e02_driver_audit_rejects_history_receipt_mode_mismatch_without_relabeling_it():
+    observation = _audit_observation(update_mode="material")
+    result = _grasp_driver()._tangent_audit(observation, 0.5)
+    assert result["checks"]["motion_reference"] is False
+    assert not all(result["checks"].values())
+    assert all(value for key, value in result["checks"].items() if key != "motion_reference")
+    assert observation["history"].active[0].update.motion_reference == "material"
+    assert observation["receipt"].motion_reference == "application"

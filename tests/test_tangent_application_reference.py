@@ -15,7 +15,6 @@ from phymeo.runtime.material_stations import (
 )
 from phymeo.solvers.tangent_history import StationKey
 
-
 MOTION_M = 1e-6
 ENERGY_J = 1e-8
 
@@ -102,7 +101,6 @@ def test_a01_public_contact_scene_accepts_application_reference_after_real_norma
             atol=2e-13,
             rtol=0,
         )
-
 
 
 def _example():
@@ -204,7 +202,9 @@ def rotor_entry(tmp_path_factory):
             example.LOWER_TOOL: (0.0, 0.0, 1 / 32 - 1 / 1024),
             example.BOX: (0.0, 0.0, -0.05),
         }
-        owners = {owner for record in events.active for owner in (record.first_owner, record.second_owner)}
+        owners = {
+            owner for record in events.active for owner in (record.first_owner, record.second_owner)
+        }
         frames = {owner: OwnerPose(owner, positions[owner.body], np.eye(3)) for owner in owners}
         selected = case.registry.bind(events, frames, sample_time_s=0.0)
         assert len(selected.samples) == 12
@@ -212,8 +212,13 @@ def rotor_entry(tmp_path_factory):
             2, abs=1e-9
         )
         for binding in selected.bindings:
-            first = np.asarray(frames[binding.first_owner].position_m) + binding.first_material_local_m
-            second = np.asarray(frames[binding.second_owner].position_m) + binding.second_material_local_m
+            first = (
+                np.asarray(frames[binding.first_owner].position_m) + binding.first_material_local_m
+            )
+            second = (
+                np.asarray(frames[binding.second_owner].position_m)
+                + binding.second_material_local_m
+            )
             np.testing.assert_allclose(second - first, (0, 0, 1 / 1024), atol=2e-14, rtol=0)
             np.testing.assert_allclose(
                 binding.application_point_first_m,
@@ -411,9 +416,7 @@ def _seed(sample, *, mode="application", strain=1 / 4096):
     store = TangentHistory(1)
     initial = store.initial_state()
     prepared = store.prepare(initial, (sample,), sample_time_s=0.0, dt_s=1 / 1024)
-    update = TangentUpdate(
-        (strain, 0, 0), 100 * strain * strain, 0.0, 0.0, "stick", 200.0, mode
-    )
+    update = TangentUpdate((strain, 0, 0), 100 * strain * strain, 0.0, 0.0, "stick", 200.0, mode)
     state = store.commit(initial, prepared, {sample.key: update})
     return store, state
 
@@ -496,9 +499,7 @@ def test_c04_retained_mode_cannot_change_through_prepare_or_direct_commit(
     other = "application" if original == "material" else "material"
     with pytest.raises(ValueError, match="reference|mode"):
         _trial(store, state, (sample,), mode=other)
-    prepared = store.prepare(
-        state, (sample,), sample_time_s=state.commit_time_s, dt_s=1 / 1024
-    )
+    prepared = store.prepare(state, (sample,), sample_time_s=state.commit_time_s, dt_s=1 / 1024)
     changed = replace(state.active[0].update, motion_reference=other)
     with pytest.raises(ValueError, match="reference|mode"):
         store.commit(state, prepared, {sample.key: changed})
@@ -549,7 +550,9 @@ def test_d01_actual_single_robot_rotation_keeps_original_mass_force_and_work(tmp
     example = _example()
     with example.make_rotating_tool(tmp_path) as case:
         assert type(case.scene).__name__ == "RobotScene"
-        assert sum(load.force_n for load in case.scene.sample().contacts) == pytest.approx(2, abs=1e-9)
+        assert sum(load.force_n for load in case.scene.sample().contacts) == pytest.approx(
+            2, abs=1e-9
+        )
         _enable(case.scene, case.registry)
         h = case.parameters["dt_s"]
         anchors = np.asarray(case.parameters["rotor_anchors"])
@@ -591,7 +594,9 @@ def test_d02_actual_application_curvature_rejects_and_identical_request_retries_
     monkeypatch.setattr(bridge, "finish_tangent_step", capture)
     with example.make_rotating_tool(tmp_path, tilted=True) as case:
         assert case.scene.observe().robots[case.world, example.LOWER_TOOL].v[0] == 5.0
-        assert sum(load.force_n for load in case.scene.sample().contacts) == pytest.approx(2, abs=1e-9)
+        assert sum(load.force_n for load in case.scene.sample().contacts) == pytest.approx(
+            2, abs=1e-9
+        )
         _enable(case.scene, case.registry)
         before, history = _seven(case.scene), case.scene.tangent_history
         for attempt in range(2):
@@ -606,7 +611,9 @@ def test_d02_actual_application_curvature_rejects_and_identical_request_retries_
         np.testing.assert_array_equal(calls[0][1], calls[1][1])
 
 
-def test_d03_failed_publication_preserves_all_seven_channels_and_valid_retry_matches(tmp_path, monkeypatch):
+def test_d03_failed_publication_preserves_all_seven_channels_and_valid_retry_matches(
+    tmp_path, monkeypatch
+):
     from phymeo.runtime import _multi_robot_tangent as bridge
 
     example = _example()
@@ -651,8 +658,6 @@ def test_d04_scene_mode_is_configured_only_once_before_the_first_step():
             _enable(scene, registry, "material")
         assert scene.tangent_history is history
         np.testing.assert_array_equal(scene.state.rigid.position, state.rigid.position)
-
-
 
 
 def _grasp_driver():

@@ -200,6 +200,22 @@ def _tangent_audit(observation, friction):
         material_application=receipt.material_application_error_m <= 1e-6,
         energy_residual=abs(receipt.energy_residual_j) <= 1e-8,
     )
+    reference = getattr(receipt, "motion_reference", "material")
+    if reference not in ("material", "application"):
+        raise ValueError("accepted receipt has an invalid motion reference")
+    motion_diagnostics = {
+        "material_motion_error_m": receipt.material_motion_error_m,
+        "application_motion_error_m": receipt.application_motion_error_m,
+        "material_application_error_m": receipt.material_application_error_m,
+    }
+    if reference == "application":
+        # These are different coordinates, so retain their differences as
+        # diagnostics instead of labelling an inapplicable equality as passed.
+        del checks["material_motion"], checks["material_application"]
+    checks["motion_reference"] = all(
+        getattr(record.update, "motion_reference", "material") == reference
+        for record in history.active
+    )
     work, rows = 0.0, []
     for i, active in enumerate(history.active):
         sample, update = active.sample, active.update
@@ -255,6 +271,8 @@ def _tangent_audit(observation, friction):
         checks=checks,
         active_stations=len(history.active),
         stations=rows,
+        motion_reference=reference,
+        motion_diagnostics_m=motion_diagnostics,
         ended=history.ended,
         dropped_spring_energy_j=history.dropped_spring_energy_j,
         actual_work_j=work,
@@ -453,9 +471,11 @@ def _source_manifest():
     )
 
 
-def run_holdout(case, out_dir):
+def run_holdout(case, out_dir, *, motion_reference="material"):
     if case not in CASES:
         raise ValueError("unknown frozen holdout case")
+    if motion_reference not in ("material", "application"):
+        raise ValueError("unknown tangent motion reference")
     output = Path(out_dir)
     if not output.is_absolute():
         raise ValueError("out-dir must be a new absolute path")
@@ -470,7 +490,9 @@ def run_holdout(case, out_dir):
         with scene:
             declaration = declaration_arguments(info)
             registry = ph.material_stations_from_pads(scene, **declaration)
-            scene.enable_coupled_tangent(registry, stiffness_n_per_m=KT)
+            scene.enable_coupled_tangent(
+                registry, stiffness_n_per_m=KT, motion_reference=motion_reference
+            )
             reading, geometry = scene.observe_scene()
             archive.write(
                 "inputs",
@@ -481,6 +503,7 @@ def run_holdout(case, out_dir):
                     declaration=declaration,
                     registry=registry,
                     stiffness_n_per_m=KT,
+                    motion_reference=motion_reference,
                     initial_state=scene.state,
                     initial_reading=reading,
                     initial_geometry=geometry,
@@ -512,6 +535,7 @@ def run_holdout(case, out_dir):
     summary.update(
         schema="persistent-grasp-holdout-v1",
         case=case,
+        motion_reference=motion_reference,
         elapsed_s=elapsed,
         source=source,
         source_after=source_after,
@@ -549,8 +573,11 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--case", choices=CASES, required=True)
     parser.add_argument("--out-dir", type=Path, required=True)
+    parser.add_argument(
+        "--motion-reference", choices=("material", "application"), default="material"
+    )
     args = parser.parse_args()
-    summary = run_holdout(args.case, args.out_dir)
+    summary = run_holdout(args.case, args.out_dir, motion_reference=args.motion_reference)
     print(
         json.dumps(
             {

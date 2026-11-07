@@ -312,3 +312,219 @@ def test_p06_delayed_drive_external_immediate_and_bounded_full_response(delay, c
     if delay:
         _close(rows[0]["selected_drive"][:,2], np.zeros(3), atol=0,rtol=0)
         _close(rows[1]["selected_drive"], data["drive"], atol=0,rtol=0)
+
+def _run_worlds(items, mode, directory, *, replay):
+    from dataclasses import replace
+
+    rows, repeated, saved, failure = [], [], None, None
+    with ph.TyxWorldBatch([(key, item["tree"]) for key,item in items.items()], mode, cache_root=directory) as batch:
+        controls = {key:_packet(item["tree"],item["data"])[0] for key,item in items.items()}
+        batch.set_controls(controls)
+        try:
+            for step in range(40):
+                entry = batch.snapshot()
+                assert batch.step(H) == dict.fromkeys(items, True)
+                state,geometry,diagnostic,energy = batch.snapshot(),batch.tree_kinematics(),batch.tree_diagnostics(),batch.summary()
+                audits, cache = {}, {}
+                for key,item in items.items():
+                    data = item["data"]; n = len(data["q"])-7
+                    selected = np.column_stack((data["q"][7:],np.zeros(n),np.zeros(n))) if step == 0 else data["drive"]
+                    external = _reference().external(data,data["q"])
+                    signature = (n,tuple(entry[key].position),tuple(entry[key].velocity))
+                    if signature not in cache:
+                        audits[key] = _audit(data,entry[key],state[key],geometry[key],diagnostic[key],energy[key],selected,external)
+                        cache[signature] = key
+                    else:
+                        other = cache[signature]
+                        assert replace(entry[key],world=other) == entry[other]
+                        assert replace(state[key],world=other) == state[other]
+                        assert _json(geometry[key]) == _json(geometry[other])
+                        assert _json(diagnostic[key]) == _json(diagnostic[other])
+                        assert energy[key] == energy[other]
+                        audits[key] = dict(exact_same_physics_as_world=other,identity_checked=key)
+                    assert state[key].world == key and state[key].tick == step+1
+                rows.append(dict(entry=entry,state=state,geometry=geometry,diagnostic=diagnostic,energy=energy,audits=audits,stats=batch.stats()))
+                if step == 18:
+                    saved = batch.snapshot()
+            if replay:
+                batch.restore(saved)
+                assert batch.snapshot() == saved
+                assert all(value is None for value in batch.tree_diagnostics().values())
+                for index in range(19,40):
+                    assert batch.step(H) == dict.fromkeys(items,True)
+                    row = dict(state=batch.snapshot(),geometry=batch.tree_kinematics(),diagnostic=batch.tree_diagnostics(),energy=batch.summary(),stats=batch.stats())
+                    repeated.append(row)
+                    for field in ("state","geometry","diagnostic","energy"):
+                        assert _json(row[field]) == _json(rows[index][field])
+        except Exception as error:
+            failure=dict(type=type(error).__name__,message=str(error)); raise
+        finally:
+            _save(directory,"floating-worlds",dict(mode=mode,h_s=H,inputs={k:i["data"] for k,i in items.items()},controls=controls,delay=1,rows=rows,checkpoint_19=saved,replay=repeated,failure=failure,retained=batch.snapshot(),stats=batch.stats()))
+    return rows
+
+
+@pytest.mark.tyx
+def test_p05_w1_w4_w32_all_full_states_and_21_step_replay(tyx_mode,tmp_path):
+    from dataclasses import replace
+
+    keys = [503,91,1207,6]+[2003+17*i for i in range(28)]
+    items = {}
+    for i,key in enumerate(keys):
+        data = _reference().case("P05",n=(0,1,9,16)[i%4])
+        items[key] = dict(data=data,tree=_tree(data,delay=1))
+    baseline = {key:_run_worlds({key:items[key]},tyx_mode,tmp_path/f"w1-{key}",replay=False) for key in keys[:4]}
+    for count in (4,32):
+        selected=dict(reversed(tuple(list(items.items())[:count])))
+        rows = _run_worlds(selected,tyx_mode,tmp_path/f"w{count}",replay=True)
+        for index,row in enumerate(rows):
+            for ordinal,key in enumerate(keys[:count]):
+                equivalent=keys[ordinal%4]; single=baseline[equivalent][index]
+                # Preserve actual world labels in every saved record. Only this
+                # assertion maps distinct declared copies to their W1 counterpart.
+                assert replace(row["state"][key],world=equivalent) == single["state"][equivalent]
+                for field in ("geometry","diagnostic","energy"):
+                    assert _json(row[field][key]) == _json(single[field][equivalent])
+
+
+def _mixed_four(directory):
+    from test_resident_affine_contact_transactions import _ordinary
+    from test_resident_affine_step import _ref as affine_reference, _load, _world, _action
+
+    floating_data=_reference().case("P03")
+    floating=_tree(floating_data,delay=1)
+    ordinary,control=_ordinary()
+    old=affine_reference().case("A01")
+    old["motor"][:]=3.; old["effort"][:]=0.; old["force"][:]=0.; old["torque"][:]=0.
+    asset=_load(directory/"affine",old)
+    affine=_world(asset,old,delay=1)
+    return [(503,floating),(91,ordinary),(1207,affine),(6,ph.FreeSphere(2,1/8,position=(0,0,2),gravity=(0,0,-8)))],{
+        503:_packet(floating,floating_data)[0],91:control,1207:_action(affine,asset,old,ff=old["motor"]),6:(0,0,0),
+    },floating_data,old
+
+
+def _physical_snapshot(batch):
+    return dict(state=batch.snapshot(),geometry=_json(batch.tree_kinematics()),energy=batch.summary(),epoch=batch.stats()["state_epoch"],bank=batch.stats()["current_buffer"])
+
+
+def _floating_storage(batch,world=WORLD):
+    return next(storage for specs,storage in batch._tree_storages() if world in specs and specs[world].kind in (9,10))
+
+
+@pytest.mark.tyx
+def test_p05_mixed_existing_fixed_affine_and_free_worlds_share_one_publish(tyx_mode,tmp_path):
+    worlds,controls,data,affine=_mixed_four(tmp_path)
+    rows=[]
+    with ph.TyxWorldBatch(worlds,tyx_mode,cache_root=tmp_path) as batch:
+        batch.set_controls(controls)
+        for step in range(40):
+            before=batch.snapshot(); epoch=batch.stats()["state_epoch"]
+            assert batch.step(H) == dict.fromkeys(controls,True)
+            after,geo,diag,energy=batch.snapshot(),batch.tree_kinematics(),batch.tree_diagnostics(),batch.summary()
+            assert batch.stats()["state_epoch"] == epoch+1
+            assert all(value.tick == step+1 for value in after.values())
+            # Old ordinary stays unloaded; the affine delay is only its drive.
+            _close(after[91].position,[0.]); _close(after[91].velocity,[0.])
+            active_steps=step
+            _close(after[1207].velocity,[active_steps*H/2])
+            _close(after[1207].position,[active_steps*(active_steps+1)*H*H/4])
+            _close(after[6].velocity,[0,0,-8*(step+1)*H])
+            _close(after[6].position,[0,0,2-4*(step+1)*(step+2)*H*H])
+            selected=np.zeros((1,3)) if step==0 else data["drive"]
+            audit=_audit(data,before[503],after[503],geo[503],diag[503],energy[503],selected,_reference().external(data,data["q"]))
+            rows.append(dict(entry=before,state=after,geometry=geo,diagnostic=diag,energy=energy,audit=audit,stats=batch.stats()))
+        _save(tmp_path,"floating-existing-mixed",dict(input=data,affine_input=affine,controls=controls,h_s=H,rows=rows,stats=batch.stats()))
+
+
+@pytest.mark.tyx
+@pytest.mark.parametrize("phase",("upload","candidate","restore"))
+@pytest.mark.parametrize("warm",(0,1))
+def test_p06_real_late_failure_keeps_both_banks_and_same_request_retries(phase,warm,tyx_mode,tmp_path,monkeypatch):
+    worlds,controls,data,old=_mixed_four(tmp_path)
+    with ph.TyxWorldBatch(worlds,tyx_mode,cache_root=tmp_path/"attempt") as batch, ph.TyxWorldBatch(worlds,tyx_mode,cache_root=tmp_path/"reference") as fresh:
+        batch.set_controls(controls); fresh.set_controls(controls)
+        for _ in range(warm):
+            assert batch.step(H) == fresh.step(H) == dict.fromkeys(controls,True)
+        target=batch.snapshot()
+        if phase=="restore":
+            assert batch.step(H) == fresh.step(H) == dict.fromkeys(controls,True)
+        else:
+            # Dirty a real command on both paths so warm=1 still performs upload.
+            changed=dict(controls); changed[6]=(1.,0.,0.)
+            batch.set_controls(changed); fresh.set_controls(changed)
+            storage=_floating_storage(batch)
+            item=next(spec for key,spec in worlds if key==503)
+            drive=data["drive"].copy(); drive[0,2]=2.
+            changed[503]=item.inputs(drive,FloatingRobotInputs.zeros(1))
+            batch.set_controls(changed); fresh.set_controls(changed)
+        before=_physical_snapshot(batch); storage=_floating_storage(batch)
+        method={"upload":"upload_controls","candidate":"check_advance","restore":"check_restore"}[phase]
+        original=getattr(storage,method); called=[]
+        def real_then_fail(*args,**kwargs):
+            value=original(*args,**kwargs); called.append(True)
+            raise RuntimeError("c9 after real "+phase)
+        with monkeypatch.context() as patch:
+            patch.setattr(storage,method,real_then_fail)
+            with pytest.raises(RuntimeError,match="c9 after real"):
+                batch.restore(target) if phase=="restore" else batch.step(H)
+        assert called and _physical_snapshot(batch)==before
+        assert all(value is None for value in batch.tree_diagnostics().values())
+        if phase=="restore":
+            batch.restore(target); fresh.restore(target)
+        else:
+            assert batch.step(H)==fresh.step(H)==dict.fromkeys(controls,True)
+        assert batch.snapshot()==fresh.snapshot()
+        assert _json(batch.tree_kinematics())==_json(fresh.tree_kinematics())
+        assert _json(batch.tree_diagnostics())==_json(fresh.tree_diagnostics())
+        _save(tmp_path,"floating-late-fault",dict(phase=phase,warm=warm,input=data,affine_input=old,before=before,restore_target=target,retried=batch.snapshot(),reference=fresh.snapshot(),geometry=batch.tree_kinematics(),diagnostic=batch.tree_diagnostics(),stats=batch.stats()))
+
+
+@pytest.mark.tyx
+@pytest.mark.parametrize("problem",("q_length","v_length","zero_quat","quat_norm","nan","local_position","joint_position","foreign_topology"))
+def test_p06_invalid_restore_is_atomic_for_mixed_full_dimensions(problem,tyx_mode,tmp_path):
+    from dataclasses import replace
+
+    worlds,controls,data,old=_mixed_four(tmp_path)
+    with ph.TyxWorldBatch(worlds,tyx_mode,cache_root=tmp_path) as batch:
+        batch.set_controls(controls); assert batch.step(H)==dict.fromkeys(controls,True)
+        before=_physical_snapshot(batch); state=before["state"][503]
+        q=list(state.position); v=list(state.velocity)
+        if problem=="q_length": q.pop()
+        elif problem=="v_length": v.pop()
+        elif problem=="zero_quat": q[3:7]=[0.]*4
+        elif problem=="quat_norm": q[6]=1.01
+        elif problem=="nan": v[0]=float("nan")
+        elif problem=="local_position": q[0]=4097.
+        elif problem=="joint_position": q[7]=4097.
+        else:
+            alien=_reference().case("P04")
+            with ph.TyxWorldBatch([(503,_tree(alien))],tyx_mode,cache_root=tmp_path/"foreign") as other:
+                state=replace(state,topology=other.snapshot()[503].topology)
+        wrong=replace(state,position=tuple(q),velocity=tuple(v))
+        with pytest.raises((ValueError,TypeError)):
+            batch.restore({6:before["state"][6],503:wrong})
+        assert _physical_snapshot(batch)==before
+        _save(tmp_path,"floating-invalid-restore",dict(problem=problem,input=data,before=before,retained=batch.snapshot(),stats=batch.stats()))
+
+
+@pytest.mark.tyx
+@pytest.mark.parametrize("kind",("root_translation","joint_translation","rotation_vector"))
+def test_p06_candidate_domain_failure_is_world_local_and_does_not_keep_old_diagnostic(kind,tyx_mode,tmp_path):
+    from dataclasses import replace
+
+    data=_reference().case("P03" if kind!="rotation_vector" else "P02_frame")
+    data["drive"][:]=0; data["torque"][:]=0
+    tree=_tree(data)
+    with ph.TyxWorldBatch([(503,tree),(91,ph.FreeSphere(2,1/8,gravity=(0,0,0)))],tyx_mode,cache_root=tmp_path) as batch:
+        assert batch.step(H)=={503:True,91:True}
+        state=batch.snapshot()[503]; q=list(state.position); v=[0.]*len(state.velocity)
+        if kind=="root_translation": q[0]=4096.; v[0]=1.
+        elif kind=="joint_translation": q[7]=4096.; v[6]=1.
+        else: v[5]=4096.
+        boundary=replace(state,position=tuple(q),velocity=tuple(v))
+        batch.restore({503:boundary}); before=batch.snapshot()
+        assert batch.step(H)=={503:False,91:True}
+        assert batch.snapshot()[503]==before[503]
+        assert batch.snapshot()[91].tick==before[91].tick+1
+        assert batch.tree_diagnostics()[503] is None
+        batch.restore({503:state}); assert batch.step(H)=={503:True,91:True}
+        _save(tmp_path,"floating-domain-retain",dict(kind=kind,input=data,before=before,recovered=batch.snapshot(),geometry=batch.tree_kinematics(),stats=batch.stats()))

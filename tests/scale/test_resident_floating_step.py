@@ -83,9 +83,7 @@ def test_p03_public_floating_tree_keeps_complete_mass_and_internal_recoil(tyx_mo
         host_premise=host, drive=[[0.0, 0.0, 3.0]], external=None,
     )
     try:
-        from phymeo import backends
-
-        tree = backends.FloatingRobotTree(
+        tree = ph.FloatingRobotTree(
             model, state, kp=np.zeros(1), kd=np.zeros(1), effort_limit=np.array([8.0])
         )
         packet = tree.inputs(np.array([[0.0, 0.0, 3.0]]))

@@ -86,6 +86,14 @@ class _Records:
         ca, cb = row["link_com_world_m"], row["payload_com_world_m"]
         point = tuple(row["point_world_m"])
         wa, wb = row.get("first_weights"), row.get("second_weights")
+        # TableLinkSolids already has face-local quadrature weights. Preserve
+        # those material addresses instead of re-projecting rounded world points.
+        if wa is None and row.get("link_material_weights") is not None:
+            ids = self.shapes[first].vertex_ids
+            wa = tuple((ids[i], weight) for i, weight in row["link_material_weights"])
+        if wb is None and row.get("table_material_weights") is not None:
+            ids = self.shapes[second].vertex_ids
+            wb = tuple((ids[i], weight) for i, weight in row["table_material_weights"])
         if second < first:
             first, second = second, first
             normal, force = -normal, -force

@@ -16,7 +16,6 @@ from phymeo.constraints.collision_shapes import CollisionKey, CollisionMotion, C
 from phymeo.constraints.robot_contact import RobotContactMaterial
 from phymeo.runtime._robot_scene_contacts import _Records
 
-
 LAW = RobotContactMaterial(32.0, 0.0, 0.0, 0.01)
 
 
@@ -49,8 +48,9 @@ def test_f05_real_twelve_sites_keep_declared_faces_and_reconstruct_surface(tmp_p
         # Independently establish the declared physical faces from actual vertices.
         for key, expected_z in ((rotor, -example.DELTA), (support, 0.0)):
             by_id = dict(zip(shapes[key].vertex_ids, geometry.poses[key].start, strict=True))
-            np.testing.assert_allclose([by_id[node][2] for node in declared[key]], expected_z,
-                                       atol=1e-12, rtol=0)
+            np.testing.assert_allclose(
+                [by_id[node][2] for node in declared[key]], expected_z, atol=1e-12, rtol=0
+            )
         assert sum(load.force_n for load in loads.contacts) == pytest.approx(2.0, abs=1e-9)
         assert sum(len(load.sites) for load in loads.contacts) == 12
         for load in loads.contacts:
@@ -66,8 +66,10 @@ def test_f05_real_twelve_sites_keep_declared_faces_and_reconstruct_surface(tmp_p
                     )
                     assert sum(weight for _, weight in weights) == pytest.approx(1, abs=1e-12)
                     np.testing.assert_allclose(
-                        _reconstruct(shapes[key], geometry.poses[key], weights), point,
-                        atol=1e-12, rtol=0,
+                        _reconstruct(shapes[key], geometry.poses[key], weights),
+                        point,
+                        atol=1e-12,
+                        rtol=0,
                     )
         assert example.public_payload(scene.state) == before
         assert scene.observe().step_number == 0
@@ -103,7 +105,9 @@ def _check_record(records, keys, points, expected_weights, row):
     site = load.sites[0]
     sign = 1 if load.first == keys[0] else -1
     np.testing.assert_array_equal(load.normal, sign * np.array([0, 0, 1]))
-    np.testing.assert_array_equal(site.force_on_second_n, sign * np.asarray(row["force_on_payload_N"]))
+    np.testing.assert_array_equal(
+        site.force_on_second_n, sign * np.asarray(row["force_on_payload_N"])
+    )
     assert site.force_n == row["normal_load_N"] and load.gap_m == row["gap_m"]
     assert site.application_point_first_m == site.application_point_second_m == row["point_world_m"]
     for side, key in (("first", load.first), ("second", load.second)):
@@ -121,22 +125,22 @@ def test_records_keep_local_patch_chart_ids_and_explicit_precedence(reverse_keys
     a = CollisionShape(first, "hull", (101, 305, 701, 901, 1001, 1305, 1701, 1901))
     b = CollisionShape(second, "hull", (7, 13, 23, 31, 47, 61, 79, 97))
     corners = np.array(list(product((-1.0, 1.0), repeat=3)))
-    poses = {first: CollisionMotion(corners),
-             second: CollisionMotion(corners + [0, 0, 15 / 8])}
+    poses = {first: CollisionMotion(corners), second: CollisionMotion(corners + [0, 0, 15 / 8])}
     records = _Records({first: a, second: b}, poses)
     points = {first: (0.0, 0.0, 1.0), second: (0.0, 0.0, 7 / 8)}
-    row = _row(points[first], points[second], (0, 0, 0), (0, 0, 15 / 8),
-               normal_load=4.0, gap=-1 / 8)
+    row = _row(
+        points[first], points[second], (0, 0, 0), (0, 0, 15 / 8), normal_load=4.0, gap=-1 / 8
+    )
     # Two diagonal endpoints give each true face centre. A fresh trilinear fit
     # would use four vertices, so equality proves retention of the original chart.
-    row["link_material_weights"] = ((1, .5), (7, .5))
-    row["table_material_weights"] = ((2, .5), (4, .5))
-    expected = {first: ((305, .5), (1901, .5)), second: ((23, .5), (47, .5))}
+    row["link_material_weights"] = ((1, 0.5), (7, 0.5))
+    row["table_material_weights"] = ((2, 0.5), (4, 0.5))
+    expected = {first: ((305, 0.5), (1901, 0.5)), second: ((23, 0.5), (47, 0.5))}
     if explicit:
         # The alternate face diagonals reconstruct the same points. Existing
         # explicit addresses must win without treating material IDs as indices.
-        row["first_weights"] = ((901, .5), (1305, .5))
-        row["second_weights"] = ((7, .5), (79, .5))
+        row["first_weights"] = ((901, 0.5), (1305, 0.5))
+        row["second_weights"] = ((7, 0.5), (79, 0.5))
         expected = {first: row["first_weights"], second: row["second_weights"]}
     records.add(first, second, row, LAW, "robot-structure")
     _check_record(records, (first, second), points, expected, row)
@@ -150,20 +154,29 @@ def test_records_without_metadata_keep_sphere_capsule_material_fallback(reverse_
     sphere = CollisionShape(first, "sphere", (71,), radius=1 / 8)
     capsule = CollisionShape(second, "capsule", (43, 101), radius=1 / 8)
     poses = {
-        first: CollisionMotion([[.5, 0, 0]]),
+        first: CollisionMotion([[0.5, 0, 0]]),
         second: CollisionMotion([[0, 0, 3 / 16], [2, 0, 3 / 16]]),
     }
     records = _Records({first: sphere, second: capsule}, poses)
-    points = {first: (.5, 0, 1 / 8), second: (.5, 0, 1 / 16)}
-    row = _row(points[first], points[second], (.5, 0, 0), (1, 0, 3 / 16),
-               normal_load=2.0, gap=-1 / 16)
-    assert not any(name in row for name in (
-        "first_weights", "second_weights", "link_material_weights", "table_material_weights",
-    ))
+    points = {first: (0.5, 0, 1 / 8), second: (0.5, 0, 1 / 16)}
+    row = _row(
+        points[first], points[second], (0.5, 0, 0), (1, 0, 3 / 16), normal_load=2.0, gap=-1 / 16
+    )
+    assert not any(
+        name in row
+        for name in (
+            "first_weights",
+            "second_weights",
+            "link_material_weights",
+            "table_material_weights",
+        )
+    )
     records.add(first, second, row, LAW, "robot-structure")
-    expected = {first: ((71, 1.0),), second: ((43, .75), (101, .25))}
+    expected = {first: ((71, 1.0),), second: ((43, 0.75), (101, 0.25))}
     _check_record(records, (first, second), points, expected, row)
     # Rounded material addresses name the centre/spine; the recorded physical
     # surface carries the original radius offset, rather than a false hull point.
-    np.testing.assert_array_equal(_reconstruct(sphere, poses[first], expected[first]), [.5, 0, 0])
-    np.testing.assert_array_equal(_reconstruct(capsule, poses[second], expected[second]), [.5, 0, 3 / 16])
+    np.testing.assert_array_equal(_reconstruct(sphere, poses[first], expected[first]), [0.5, 0, 0])
+    np.testing.assert_array_equal(
+        _reconstruct(capsule, poses[second], expected[second]), [0.5, 0, 3 / 16]
+    )

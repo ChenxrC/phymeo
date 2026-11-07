@@ -511,7 +511,7 @@ def main():
                  "ResidentTreeBinding", "ResidentSphereBinding", "ResidentSliderBinding", "ResidentStaticBinding")
         assert all(hasattr(ph, name) for name in names), "public resident inputs are missing"
         record["public_api"] = names
-        record["versions"] = dict(numpy=np.__version__, tyx=distribution("tyx").version,
+        record["versions"] = dict(numpy=np.__version__, tyx=distribution("tyx-compute").version,
                                   python=sys.version, phymeo=installed.version)
         run_window(ph, args.mode, output, record)
         record["status"] = "passed"

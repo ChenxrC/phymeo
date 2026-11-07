@@ -23,6 +23,7 @@ from itertools import combinations, product
 from math import cos, sin
 from pathlib import Path
 from urllib.parse import urlsplit
+from urllib.request import url2pathname
 from zipfile import ZipFile
 
 import numpy as np
@@ -66,15 +67,49 @@ def archive_identity(installed, expected):
         raise AssertionError("install the local wheel directly, retaining direct_url.json")
     direct = json.loads(direct_text)
     origin = urlsplit(direct["url"])
-    assert origin.scheme == "file" and origin.path.lower().endswith(".whl")
+    assert origin.scheme == "file" and origin.netloc in ("", "localhost")
+    assert Path(url2pathname(origin.path)).resolve(strict=True) == wheel.resolve(strict=True)
     archive = direct["archive_info"]
     recorded = archive.get("hashes", {}).get("sha256")
-    if recorded is None:
-        algorithm, _, recorded = archive.get("hash", "").partition("=")
+    if recorded is None and archive.get("hash"):
+        algorithm, _, recorded = archive["hash"].partition("=")
         assert algorithm == "sha256"
-    assert recorded.lower() == digest
+    if recorded is not None:
+        assert recorded.lower() == digest
+    # The direct-URL specification permits an empty archive_info (e.g. uv).
+    # Bind the exact local archive and compare the entire installed product,
+    # rather than depending on optional installer hash metadata.
+    site = Path(installed.locate_file("")).resolve(strict=True)
+    with ZipFile(wheel) as archive:
+        members = {
+            name
+            for name in archive.namelist()
+            if name.startswith("phymeo/") and not name.endswith("/")
+        }
+        actual = {
+            path.relative_to(site).as_posix()
+            for path in (site / "phymeo").rglob("*")
+            if path.is_file()
+        }
+        assert actual == members, "installed product membership differs from wheel"
+        for name in sorted(members):
+            path = (site / name).resolve(strict=True)
+            assert path.is_relative_to(site)
+            assert path.read_bytes() == archive.read(name), f"installed content differs: {name}"
+        for name in archive.namelist():
+            if ".dist-info/" in name and name.rsplit("/", 1)[-1] in {
+                "METADATA",
+                "WHEEL",
+                "top_level.txt",
+            }:
+                assert (site / name).read_bytes() == archive.read(name), name
     return dict(
-        path=str(wheel), sha256=digest, installed_from=direct["url"], version=installed.version
+        path=str(wheel),
+        sha256=digest,
+        installed_from=direct["url"],
+        version=installed.version,
+        installer_recorded_sha256=recorded,
+        installed_product_files_verified=len(members),
     )
 
 

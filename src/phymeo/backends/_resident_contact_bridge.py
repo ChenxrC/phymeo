@@ -110,7 +110,7 @@ class ContactShapeFrame:
         shape = _shape(self.shape)
         points = _owned(self.world_points_m, (len(shape.vertex_ids), 3), "world material points")
         group = (
-            None if self.group_index is None else _integer(self.group_index, "group index", 0, 15)
+            None if self.group_index is None else _integer(self.group_index, "group index", 0, 16)
         )
         values = {
             name: _owned(getattr(self, name), (3,), name)
@@ -285,7 +285,7 @@ class ContactLoads:
         raw = np.asarray(self.wrench_fp64)
         if raw.ndim != 2 or raw.shape[1:] != (6,):
             raise ValueError("contact wrench must contain six COM components per group")
-        count = _integer(len(raw), "group count", 1, 16)
+        count = _integer(len(raw), "group count", 1, 17)
         frames = _frames(self.frames, world, count)
         sites = tuple(self.sites)
         if len(sites) > 4096 or any(not isinstance(site, ResidentContactSite) for site in sites):
@@ -348,7 +348,7 @@ def sample_tree_contacts(
     if type(tree_dynamic_pairs) is not bool:
         raise TypeError("tree_dynamic_pairs must be a bool")
     world = _integer(world, "world")
-    count = _integer(group_count, "group count", 1, 16)
+    count = _integer(group_count, "group count", 1, 17)
     capacity = _integer(site_capacity, "site capacity", 0, 4096)
     frames = _frames(frames, world, count)
     if not isinstance(materials_by_pair, Mapping):

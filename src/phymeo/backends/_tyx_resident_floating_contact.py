@@ -42,6 +42,4 @@ def floating_contact_project(
 
 def make_floating_contact_kernels():
     """Lazy per-plan pair of launch handles; the parent owns all resources."""
-    return {
-        "project": (tx.kernel(floating_contact_project), tx.kernel(floating_contact_project))
-    }
+    return {"project": (tx.kernel(floating_contact_project), tx.kernel(floating_contact_project))}

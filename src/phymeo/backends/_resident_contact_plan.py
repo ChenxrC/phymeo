@@ -22,6 +22,11 @@ from ._resident_contact_bridge import (
     finish_contact_loads,
     sample_tree_contacts,
 )
+from ._resident_floating_binding import ResidentFloatingTreeBinding
+from ._resident_floating_contact import (
+    floating_contact_diagnostics,
+    read_floating_contact_packet,
+)
 from ._resident_tree_binding import ResidentTreeBinding
 from ._resident_tree_world import TreeKinematics, _owned
 from ._world_step_layout import as_fp32
@@ -95,10 +100,18 @@ class ResidentContactPlan(ResidentCollisionPlan):
             raise TypeError("contact materials must be a complete pair mapping")
         bindings = tuple(bindings)
         if not all(
-            type(b) in (ResidentTreeBinding, ResidentAffineTreeBinding, ResidentStaticBinding)
+            type(b)
+            in (
+                ResidentTreeBinding,
+                ResidentAffineTreeBinding,
+                ResidentFloatingTreeBinding,
+                ResidentStaticBinding,
+            )
             for b in bindings
         ):
-            raise ValueError("contact binding requires a fixed-root tree or finite static shape")
+            raise ValueError(
+                "contact binding requires a supported resident tree or finite static shape"
+            )
         self._contact_bindings = MappingProxyType({b.key: b for b in bindings})
         self._materials = MappingProxyType(dict(materials_by_pair))
         self._site_config = site_capacity
@@ -112,6 +125,7 @@ class ResidentContactPlan(ResidentCollisionPlan):
             kernel_launches=0,
         )
         self._contact_kernels = None
+        self._floating_contact_kernels = None
         self._contact_groups = {}
         self._world_groups = {}
         self._last_accepted = MappingProxyType({})
@@ -190,18 +204,27 @@ class ResidentContactPlan(ResidentCollisionPlan):
             worlds = tuple(w for w in self._contact_worlds if w in storage.rows)
             if not worlds:
                 continue
-            affine = storage is not self._batch._trees
+            floating = storage is self._batch._floating_trees
+            affine = storage is not self._batch._trees and not floating
             physical = storage.physical if affine else storage
-            t, n = physical.count, physical.nmax
+            t = physical.count
+            body_max = physical.bmax if floating else physical.nmax
+            velocity_max = physical.dmax if floating else physical.nmax
+            if floating and self._floating_contact_kernels is None:
+                from ._tyx_resident_floating_contact import make_floating_contact_kernels
+
+                self._floating_contact_kernels = make_floating_contact_kernels()
             group = dict(
                 storage=storage,
                 physical=physical,
                 affine=affine,
+                floating=floating,
+                body_max=body_max,
                 worlds=worlds,
-                wrench=self._buffer((t, n, 6), np.float32),
+                wrench=self._buffer((t, body_max, 6), np.float32),
                 reject=self._buffer((t,), np.int32),
-                projected=self._buffer((t, n), np.float32),
-                velocity=self._buffer((t, n, 6), np.float32),
+                projected=self._buffer((t, velocity_max), np.float32),
+                velocity=None if floating else self._buffer((t, body_max, 6), np.float32),
             )
             self._contact_groups[storage] = group
             self._world_groups.update({w: group for w in worlds})
@@ -252,6 +275,8 @@ class ResidentContactPlan(ResidentCollisionPlan):
     def _read_storage_packet(self, group, bank):
         batch, storage = self._batch, group["physical"]
         owner = group["storage"]
+        if group["floating"]:
+            return read_floating_contact_packet(self, owner, group["worlds"], bank)
         self._launch_contact(
             "velocity",
             bank,
@@ -406,10 +431,11 @@ class ResidentContactPlan(ResidentCollisionPlan):
                 for a in (physical.vector, physical.mass, physical.linear, physical.angular)
             ]
             data = dict(entry_vectors=vectors, mass=mass, linear=linear, angular=angular)
-            wrench = np.zeros((physical.count, physical.nmax, 6), np.float32)
+            wrench = np.zeros((physical.count, group["body_max"], 6), np.float32)
             reject = np.zeros(physical.count, np.int32)
             for world in group["worlds"]:
                 row, spec = physical.rows[world], physical.specs[world]
+                body_count = spec.b if group["floating"] else spec.n
                 try:
                     loads = sample_tree_contacts(
                         world=world,
@@ -418,7 +444,7 @@ class ResidentContactPlan(ResidentCollisionPlan):
                         candidates=tuple(
                             pair for pair in result.candidates if pair[0].world == world
                         ),
-                        group_count=spec.n,
+                        group_count=body_count,
                         site_capacity=self._site_caps[world],
                         tree_dynamic_pairs=self._tree_dynamic_pairs,
                     )
@@ -427,8 +453,8 @@ class ResidentContactPlan(ResidentCollisionPlan):
                     attempt["rejected"][world] = (error.count, error.limit)
                     continue
                 attempt["loads"][world] = loads
-                wrench[row, : spec.n] = as_fp32(
-                    loads.wrench_fp64, "contact COM wrench", (spec.n, 6)
+                wrench[row, :body_count] = as_fp32(
+                    loads.wrench_fp64, "contact COM wrench", (body_count, 6)
                 )
             self._upload_contact(group["wrench"], wrench)
             self._upload_contact(group["reject"], reject)
@@ -440,9 +466,7 @@ class ResidentContactPlan(ResidentCollisionPlan):
         batch, group = self._batch, self._contact_groups[storage]
         physical = group["physical"]
         # Entry mechanics is already complete; do not erase contact with a rebuild.
-        self._launch_contact(
-            "project",
-            src,
+        projection_args = (
             physical.count,
             physical.meta,
             physical.linear,
@@ -451,6 +475,11 @@ class ResidentContactPlan(ResidentCollisionPlan):
             physical.vector,
             group["projected"],
         )
+        if group["floating"]:
+            batch._launch(self._floating_contact_kernels["project"][src], *projection_args)
+            self._contact_counts["kernel_launches"] += 1
+        else:
+            self._launch_contact("project", src, *projection_args)
         if group["affine"]:
             storage.stage_solve_from_mechanics(dt, src, dst, batch._ticks[src])
         else:
@@ -487,6 +516,19 @@ class ResidentContactPlan(ResidentCollisionPlan):
                 data["reduced_vectors"] = self._read_contact(storage.vector)
                 selected = [w for w in group["worlds"] if storage._pending_info[0][w]]
                 data["affine_diagnostics"] = storage._read_diagnostics(selected)
+            elif group["floating"]:
+                selected = [w for w in group["worlds"] if storage._pending_info[0][w]]
+                entry_data = attempt["groups"][storage]
+                arrays = {key: entry_data[key] for key in ("linear", "angular", "mass")}
+                arrays.update(
+                    vector=data["vectors"],
+                    entry_pose=self._read_contact(storage.entry_pose),
+                    info=data["info"],
+                    diag=data["diag"],
+                )
+                data["floating_diagnostics"] = floating_contact_diagnostics(
+                    storage, selected, arrays
+                )
             candidate["groups"][storage] = data
         return candidate
 
@@ -524,15 +566,18 @@ class ResidentContactPlan(ResidentCollisionPlan):
             loads = finish_contact_loads(attempt["loads"][world], final["frames"])
             group = self._world_groups[world]
             storage, physical = group["storage"], group["physical"]
-            row, n = physical.rows[world], physical.specs[world].n
+            row, spec = physical.rows[world], physical.specs[world]
+            body_count = spec.b if group["floating"] else spec.n
+            velocity_count = spec.d if group["floating"] else spec.n
             entry_data, final_data = attempt["groups"][storage], candidate["groups"][storage]
-            vector = final_data["vectors"][row, :n]
-            drive_vector = (
-                final_data["reduced_vectors"][row, : storage.specs[world].k]
-                if group["affine"]
-                else vector
-            )
-            wrench = entry_data["uploaded"][row, :n]
+            vector = final_data["vectors"][row, :velocity_count]
+            if group["affine"]:
+                drive_vector = final_data["reduced_vectors"][row, : storage.specs[world].k]
+            elif group["floating"]:
+                drive_vector = vector[6:]
+            else:
+                drive_vector = vector
+            wrench = entry_data["uploaded"][row, :body_count]
             force_power = sum(
                 float(
                     np.dot(site.first_force_n, site.first_velocity_m_s)
@@ -553,10 +598,12 @@ class ResidentContactPlan(ResidentCollisionPlan):
                 wrench_quantization_error=_owned(
                     wrench.astype(float) - loads.wrench_fp64, np.float64
                 ),
-                mass=_owned(entry_data["mass"][row, :n, :n]),
-                linear_jacobian=_owned(entry_data["linear"][row, :n, :, :n]),
-                angular_jacobian=_owned(entry_data["angular"][row, :n, :, :n]),
-                bias=_owned(entry_data["entry_vectors"][row, :n, 0]),
+                mass=_owned(entry_data["mass"][row, :velocity_count, :velocity_count]),
+                linear_jacobian=_owned(entry_data["linear"][row, :body_count, :, :velocity_count]),
+                angular_jacobian=_owned(
+                    entry_data["angular"][row, :body_count, :, :velocity_count]
+                ),
+                bias=_owned(entry_data["entry_vectors"][row, :velocity_count, 0]),
                 total_external=_owned(vector[:, 1]),
                 acceleration=_owned(vector[:, 3]),
                 control_iterations=int(final_data["info"][row, 3]),
@@ -578,6 +625,16 @@ class ResidentContactPlan(ResidentCollisionPlan):
                     affine_diagnostic=final_data["affine_diagnostics"][world],
                     equation_residual=final_data["affine_diagnostics"][world].equation_residual,
                 )
+            elif group["floating"]:
+                diagnostics.update(
+                    coordinate_kind="floating",
+                    joint_count=spec.n,
+                    body_count=spec.b,
+                    velocity_count=spec.d,
+                    position_count=spec.q_count,
+                    floating_diagnostic=final_data["floating_diagnostics"][world],
+                    equation_residual=final_data["floating_diagnostics"][world].equation_residual,
+                )
             accepted[world] = ResidentContactReceipt(
                 world,
                 entry["state"].tick,
@@ -587,11 +644,11 @@ class ResidentContactPlan(ResidentCollisionPlan):
                 final["state"],
                 entry["geometry"],
                 final["geometry"],
-                entry_data["entry_vectors"][row, :n, 1],
+                entry_data["entry_vectors"][row, :velocity_count, 1],
                 drive_vector[:, 11:14],
                 loads.wrench_fp64,
                 wrench,
-                final_data["projected"][row, :n],
+                final_data["projected"][row, :velocity_count],
                 drive_vector[:, 2],
                 loads.sites,
                 loads.static_reactions,
@@ -626,3 +683,4 @@ class ResidentContactPlan(ResidentCollisionPlan):
             self._contact_groups.clear()
             self._world_groups.clear()
             self._contact_kernels = None
+            self._floating_contact_kernels = None

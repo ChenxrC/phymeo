@@ -466,17 +466,25 @@ def test_p07_mismatched_owner_material_source_and_parent_reject_before_allocatio
 
 
 @pytest.mark.tyx
-def test_p07_floating_contacts_stay_explicitly_unsupported(tyx_mode, tmp_path):
+def test_p07_floating_ccd_contacts_stay_explicitly_unsupported(tyx_mode, tmp_path):
     data = _reference().case("P03")
     tree = _tree(data)
     with ph.TyxWorldBatch([(503, tree)], tyx_mode, cache_root=tmp_path) as batch:
         model, bindings, _ = _scene(batch, {503: data})
-        before = batch.snapshot()
-        with pytest.raises(
-            (ValueError, TypeError), match="floating|unsupported|ordinary|affine|contact"
-        ):
-            batch.prepare_contacts(model, bindings, {})
+        dynamic = [b.key for b in bindings if isinstance(b, ph.ResidentFloatingTreeBinding)]
+        static = [b.key for b in bindings if isinstance(b, ph.ResidentStaticBinding)]
+        materials = {
+            tuple(sorted((a, b))): ph.RobotContactMaterial(64, 0, 0)
+            for a in dynamic
+            for b in static
+        }
+        before, stats = batch.snapshot(), batch.stats()
+        with pytest.raises(ValueError, match="discrete_entry.*CCD"):
+            batch.prepare_contacts(model, bindings, materials, sampling="continuous")
         assert batch.snapshot() == before
+        after = batch.stats()
+        for key in ("device_allocations", "device_owned_bytes", "collision_plan_live_count"):
+            assert after[key] == stats[key]
 
 
 @pytest.mark.tyx

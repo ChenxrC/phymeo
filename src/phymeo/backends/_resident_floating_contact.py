@@ -12,7 +12,7 @@ from types import MappingProxyType
 import numpy as np
 
 from ._resident_collision_plan import ResidentStaticBinding
-from ._resident_contact_bridge import ContactShapeFrame, _CONSTRUCTION_M
+from ._resident_contact_bridge import _CONSTRUCTION_M, ContactShapeFrame
 from ._resident_floating_binding import ResidentFloatingTreeBinding
 from ._resident_floating_tree import FloatingTreeDiagnostic, FloatingTreeKinematics
 
@@ -23,7 +23,9 @@ def _worlds(storage, worlds):
     if any(isinstance(w, (bool, np.bool_)) or not isinstance(w, Integral) for w in values):
         raise ValueError("floating contact worlds must be integer identities")
     values = tuple(int(w) for w in values)
-    if len(set(values)) != len(values) or any(w not in storage.specs or w not in storage.rows for w in values):
+    if len(set(values)) != len(values) or any(
+        w not in storage.specs or w not in storage.rows for w in values
+    ):
         raise ValueError("floating contact worlds must be unique members of this storage")
     return values
 
@@ -49,9 +51,18 @@ def _material_points(position, rotation, local_points):
             recovered = np.linalg.solve(rotation, (points - position).T).T
             error = np.max(abs(recovered - local_points))
     except (FloatingPointError, np.linalg.LinAlgError) as error:
-        raise ValueError("floating contact material cannot be represented in its stored frame") from error
-    if not np.isfinite(points).all() or not np.isfinite(recovered).all() or not np.isfinite(error) or error > _CONSTRUCTION_M:
-        raise ValueError("floating contact material lost its declared local source beyond construction consistency")
+        raise ValueError(
+            "floating contact material cannot be represented in its stored frame"
+        ) from error
+    if (
+        not np.isfinite(points).all()
+        or not np.isfinite(recovered).all()
+        or not np.isfinite(error)
+        or error > _CONSTRUCTION_M
+    ):
+        raise ValueError(
+            "floating contact material lost its declared local source beyond construction consistency"
+        )
     return points
 
 
@@ -160,7 +171,9 @@ def read_floating_contact_packet(plan, storage, worlds, bank):
                     shape, points, None, np.zeros(3), np.eye(3), reference, np.zeros(3), np.zeros(3)
                 )
             else:
-                raise ValueError("floating contact packet only accepts its own body or static bindings")
+                raise ValueError(
+                    "floating contact packet only accepts its own body or static bindings"
+                )
             frames[shape.key] = frame
         packets[world] = dict(
             state=checkpoint,

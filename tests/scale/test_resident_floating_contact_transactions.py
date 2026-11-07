@@ -9,20 +9,34 @@ from itertools import product
 
 import numpy as np
 import pytest
+from test_resident_floating_contacts import (
+    WINDOW_ATOL,
+    WORLD,
+    H,
+    _audit,
+    _close,
+    _geometry,
+    _item,
+    _json,
+    _reference,
+    _save,
+    _selected,
+    _window,
+)
 
 import phymeo as ph
-from test_resident_floating_contacts import (
-    H, WINDOW_ATOL, WORLD, _audit, _close, _geometry,
-    _item, _json, _reference, _save, _selected, _window,
-)
 
 KEYS = (503, 91, 1207, 6)
 
 
 def _four():
     ref = _reference()
-    inputs = (ref.case("F01"), ref.case("F02", variant="motor"),
-              ref.case("F08", n=9), ref.case("F08", n=16))
+    inputs = (
+        ref.case("F01"),
+        ref.case("F02", variant="motor"),
+        ref.case("F08", n=9),
+        ref.case("F08", n=16),
+    )
     return {key: _item(data, delay=1) for key, data in zip(KEYS, inputs, strict=True)}
 
 
@@ -42,10 +56,15 @@ def _combined(batch, items, *, reverse=False):
 
 
 def _snapshot(batch, plan):
-    return dict(state=batch.snapshot(), geometry=_json(batch.tree_kinematics()),
-                summary=batch.summary(), receipts=_json(plan.last_accepted),
-                status=dict(plan.last_status), epoch=batch.stats()["state_epoch"],
-                bank=batch.stats()["current_buffer"])
+    return dict(
+        state=batch.snapshot(),
+        geometry=_json(batch.tree_kinematics()),
+        summary=batch.summary(),
+        receipts=_json(plan.last_accepted),
+        status=dict(plan.last_status),
+        epoch=batch.stats()["state_epoch"],
+        bank=batch.stats()["current_buffer"],
+    )
 
 
 def _assert_retained(batch, plan, before, *, epoch=True):
@@ -57,8 +76,12 @@ def _assert_retained(batch, plan, before, *, epoch=True):
 
 
 def _record(batch, plan):
-    return dict(state=batch.snapshot(), geometry=batch.tree_kinematics(),
-                receipts=dict(plan.last_accepted), summary=batch.summary())
+    return dict(
+        state=batch.snapshot(),
+        geometry=batch.tree_kinematics(),
+        receipts=dict(plan.last_accepted),
+        summary=batch.summary(),
+    )
 
 
 def _batch_window(items, mode, directory, *, reverse=False):
@@ -68,10 +91,18 @@ def _batch_window(items, mode, directory, *, reverse=False):
     declarations = [(w, i["tree"]) for w, i in items.items()]
     if reverse:
         declarations.reverse()
-    archive = dict(inputs={w: i["data"] for w, i in items.items()},
-                   commands={w: i["command"] for w, i in items.items()},
-                   mode=mode, dt_s=H, steps=40, restore_tick=19, replay_steps=21,
-                   rows=rows, replay=replay, reverse=reverse)
+    archive = dict(
+        inputs={w: i["data"] for w, i in items.items()},
+        commands={w: i["command"] for w, i in items.items()},
+        mode=mode,
+        dt_s=H,
+        steps=40,
+        restore_tick=19,
+        replay_steps=21,
+        rows=rows,
+        replay=replay,
+        reverse=reverse,
+    )
     with ph.TyxWorldBatch(declarations, mode, cache_root=directory) as batch:
         batch.set_controls(archive["commands"])
         model, bindings, sources, laws = _combined(batch, items, reverse=reverse)
@@ -86,8 +117,13 @@ def _batch_window(items, mode, directory, *, reverse=False):
                     rows.append(row)
                     for w, item in items.items():
                         audits[w] = _audit(batch, item, plan.last_accepted[w], sources[w], world=w)
-                        q, v, truth = _reference().advance(item["data"], *expected[w], h=H,
-                                                          drive=_selected(item, index), external_packet=item["external"])
+                        q, v, truth = _reference().advance(
+                            item["data"],
+                            *expected[w],
+                            h=H,
+                            drive=_selected(item, index),
+                            external_packet=item["external"],
+                        )
                         expected[w] = q, v
                         after = plan.last_accepted[w].accepted_state
                         _close(after.position, q, atol=WINDOW_ATOL)
@@ -110,8 +146,12 @@ def _batch_window(items, mode, directory, *, reverse=False):
             failure = dict(type=type(exc).__name__, message=str(exc))
             raise
         finally:
-            archive.update(failure=failure, retained=batch.snapshot(),
-                           retained_geometry=batch.tree_kinematics(), stats=batch.stats())
+            archive.update(
+                failure=failure,
+                retained=batch.snapshot(),
+                retained_geometry=batch.tree_kinematics(),
+                stats=batch.stats(),
+            )
             _save(directory, "floating-contact-batch", archive)
     return rows
 
@@ -119,8 +159,10 @@ def _batch_window(items, mode, directory, *, reverse=False):
 @pytest.mark.tyx
 def test_f10_single_four_thirtytwo_worlds_and_full_restore21(tyx_mode, tmp_path):
     items = _four()
-    singles = {w: _batch_window({w: item}, tyx_mode, tmp_path / ("w1-" + str(w)))
-               for w, item in items.items()}
+    singles = {
+        w: _batch_window({w: item}, tyx_mode, tmp_path / ("w1-" + str(w)))
+        for w, item in items.items()
+    }
     four = _batch_window(items, tyx_mode, tmp_path / "w4", reverse=True)
     expanded = dict(items)
     for i in range(28):
@@ -141,7 +183,9 @@ def test_f10_single_four_thirtytwo_worlds_and_full_restore21(tyx_mode, tmp_path)
 @pytest.mark.parametrize("warm,limited_world", tuple(product((0, 1), (503, 6))))
 def test_f10_capacity_retains_root_and_last_body_all_banks(warm, limited_world, tyx_mode, tmp_path):
     items = _four()
-    with ph.TyxWorldBatch([(w, i["tree"]) for w, i in items.items()], tyx_mode, cache_root=tmp_path) as batch:
+    with ph.TyxWorldBatch(
+        [(w, i["tree"]) for w, i in items.items()], tyx_mode, cache_root=tmp_path
+    ) as batch:
         commands = {w: i["command"] for w, i in items.items()}
         batch.set_controls(commands)
         model, bindings, sources, laws = _combined(batch, items)
@@ -150,12 +194,17 @@ def test_f10_capacity_retains_root_and_last_body_all_banks(warm, limited_world, 
                 assert batch.step_contacts(full, H) == dict.fromkeys(items, True)
             capacities = dict.fromkeys(items, 128)
             capacities[limited_world] = 0
-            with batch.prepare_contacts(model, bindings, laws, tree_dynamic_pairs=True, site_capacity=capacities) as limited:
+            with batch.prepare_contacts(
+                model, bindings, laws, tree_dynamic_pairs=True, site_capacity=capacities
+            ) as limited:
                 before = _snapshot(batch, full)
                 assert batch.step_contacts(limited, H) == {w: w != limited_world for w in items}
                 assert limited.last_status[limited_world] == "SITE_CAPACITY_EXCEEDED"
                 assert batch.snapshot()[limited_world] == before["state"][limited_world]
-                assert _json(batch.tree_kinematics()[limited_world]) == before["geometry"][str(limited_world)]
+                assert (
+                    _json(batch.tree_kinematics()[limited_world])
+                    == before["geometry"][str(limited_world)]
+                )
                 assert batch.summary()[limited_world] == before["summary"][limited_world]
                 assert limited_world not in limited.last_accepted
                 assert _json(full.last_accepted) == before["receipts"]
@@ -164,22 +213,38 @@ def test_f10_capacity_retains_root_and_last_body_all_banks(warm, limited_world, 
                 retained = batch.snapshot()[limited_world]
                 assert batch.step_contacts(full, H) == dict.fromkeys(items, True)
                 assert full.last_accepted[limited_world].entry_state == retained
-                audits = {w: _audit(batch, i, full.last_accepted[w], sources[w], world=w) for w, i in items.items()}
-                _save(tmp_path, "floating-contact-capacity", dict(inputs={w: i["data"] for w, i in items.items()},
-                      commands=commands, warm=warm, limited_world=limited_world, before=before,
-                      limited_status=limited.last_status, retry=full.last_accepted, audit=audits,
-                      retained=batch.snapshot(), geometry=batch.tree_kinematics(), stats=batch.stats()))
+                audits = {
+                    w: _audit(batch, i, full.last_accepted[w], sources[w], world=w)
+                    for w, i in items.items()
+                }
+                _save(
+                    tmp_path,
+                    "floating-contact-capacity",
+                    dict(
+                        inputs={w: i["data"] for w, i in items.items()},
+                        commands=commands,
+                        warm=warm,
+                        limited_world=limited_world,
+                        before=before,
+                        limited_status=limited.last_status,
+                        retry=full.last_accepted,
+                        audit=audits,
+                        retained=batch.snapshot(),
+                        geometry=batch.tree_kinematics(),
+                        stats=batch.stats(),
+                    ),
+                )
 
 
 @pytest.mark.tyx
-@pytest.mark.parametrize("delay,cap", tuple(product((0, 1), (1 / 8, 8.))))
+@pytest.mark.parametrize("delay,cap", tuple(product((0, 1), (1 / 8, 8.0))))
 def test_f10_drive_delay_cap_and_immediate_external_full_response(delay, cap, tyx_mode, tmp_path):
     data = _reference().case("F08_branch")
     # Same three-axis control declaration as C9 P06; contact replaces no external
     # input. Only this new four-step holdout enables nonzero PD, N <= 4.
-    data["kp"], data["kd"] = np.array([16., 8., 4.]), np.array([2., 1., .5])
+    data["kp"], data["kd"] = np.array([16.0, 8.0, 4.0]), np.array([2.0, 1.0, 0.5])
     data["caps"] = np.full(3, cap)
-    data["drive"] = np.column_stack((np.full(3, 1 / 8), np.full(3, -1 / 16), [1., -1., .5]))
+    data["drive"] = np.column_stack((np.full(3, 1 / 8), np.full(3, -1 / 16), [1.0, -1.0, 0.5]))
     data["effort"][:] = [1 / 32, -1 / 32, 1 / 32]
     data["force"][-1] = [1 / 8, -1 / 16, 1 / 32]
     data["torque"][0] = [-1 / 32, 1 / 64, 0]
@@ -194,29 +259,43 @@ def test_f10_drive_delay_cap_and_immediate_external_full_response(delay, cap, ty
 
 @pytest.mark.tyx
 @pytest.mark.parametrize("phase,warm", tuple(product(("upload", "candidate", "receipt"), (0, 1))))
-def test_f10_actual_late_fault_retains_every_bank_and_retry_matches(phase, warm, tyx_mode, tmp_path, monkeypatch):
+def test_f10_actual_late_fault_retains_every_bank_and_retry_matches(
+    phase, warm, tyx_mode, tmp_path, monkeypatch
+):
     items = {w: i for w, i in _four().items() if w in (503, 91)}
     declarations = [(w, i["tree"]) for w, i in items.items()]
-    with ph.TyxWorldBatch(declarations, tyx_mode, cache_root=tmp_path / "failure") as batch, ph.TyxWorldBatch(
-        declarations, tyx_mode, cache_root=tmp_path / "control"
-    ) as control:
+    with (
+        ph.TyxWorldBatch(declarations, tyx_mode, cache_root=tmp_path / "failure") as batch,
+        ph.TyxWorldBatch(declarations, tyx_mode, cache_root=tmp_path / "control") as control,
+    ):
         commands = {w: i["command"] for w, i in items.items()}
         batch.set_controls(commands)
         control.set_controls(commands)
         model, bindings, _, laws = _combined(batch, items)
         other, other_bindings, _, other_laws = _combined(control, items)
-        with batch.prepare_contacts(model, bindings, laws, tree_dynamic_pairs=True) as plan, control.prepare_contacts(
-            other, other_bindings, other_laws, tree_dynamic_pairs=True
-        ) as reference:
+        with (
+            batch.prepare_contacts(model, bindings, laws, tree_dynamic_pairs=True) as plan,
+            control.prepare_contacts(
+                other, other_bindings, other_laws, tree_dynamic_pairs=True
+            ) as reference,
+        ):
             for _ in range(warm):
-                assert batch.step_contacts(plan, H) == control.step_contacts(reference, H) == dict.fromkeys(items, True)
+                assert (
+                    batch.step_contacts(plan, H)
+                    == control.step_contacts(reference, H)
+                    == dict.fromkeys(items, True)
+                )
             before = _snapshot(batch, plan)
-            method = dict(upload="_upload_contact", candidate="_read_candidate", receipt="_finish_attempt")[phase]
+            method = dict(
+                upload="_upload_contact", candidate="_read_candidate", receipt="_finish_attempt"
+            )[phase]
             original, calls = getattr(plan, method), []
+
             def real_then_fail(*args, **kwargs):
                 result = original(*args, **kwargs)
                 calls.append(result)
                 raise RuntimeError("c10 actual " + phase + " before publication")
+
             with monkeypatch.context() as patch:
                 patch.setattr(plan, method, real_then_fail)
                 with pytest.raises(RuntimeError, match="c10 actual"):
@@ -225,17 +304,34 @@ def test_f10_actual_late_fault_retains_every_bank_and_retry_matches(phase, warm,
             _assert_retained(batch, plan, before)
             plan.close()
             with batch.prepare_contacts(model, bindings, laws, tree_dynamic_pairs=True) as retry:
-                assert batch.step_contacts(retry, H) == control.step_contacts(reference, H) == dict.fromkeys(items, True)
+                assert (
+                    batch.step_contacts(retry, H)
+                    == control.step_contacts(reference, H)
+                    == dict.fromkeys(items, True)
+                )
                 actual, expected = _record(batch, retry), _record(control, reference)
                 assert _json(actual) == _json(expected)
-                _save(tmp_path, "floating-contact-late-fault", dict(inputs={w: i["data"] for w, i in items.items()},
-                      commands=commands, warm=warm, phase=phase, before=before, retry=actual,
-                      control=expected, stats=batch.stats()))
+                _save(
+                    tmp_path,
+                    "floating-contact-late-fault",
+                    dict(
+                        inputs={w: i["data"] for w, i in items.items()},
+                        commands=commands,
+                        warm=warm,
+                        phase=phase,
+                        before=before,
+                        retry=actual,
+                        control=expected,
+                        stats=batch.stats(),
+                    ),
+                )
 
 
 @pytest.mark.tyx
 @pytest.mark.parametrize("warm", (0, 1))
-def test_f10_restore_after_real_candidate_rejects_stale_attempt(warm, tyx_mode, tmp_path, monkeypatch):
+def test_f10_restore_after_real_candidate_rejects_stale_attempt(
+    warm, tyx_mode, tmp_path, monkeypatch
+):
     item = _item(_reference().case("F04"), delay=1)
     with ph.TyxWorldBatch([(WORLD, item["tree"])], tyx_mode, cache_root=tmp_path) as batch:
         batch.set_controls({WORLD: item["command"]})
@@ -244,11 +340,13 @@ def test_f10_restore_after_real_candidate_rejects_stale_attempt(warm, tyx_mode, 
             for _ in range(warm):
                 assert batch.step_contacts(plan, H) == {WORLD: True}
             before, original, calls = _snapshot(batch, plan), plan._read_candidate, []
+
             def read_then_restore(*args, **kwargs):
                 result = original(*args, **kwargs)
                 batch.restore(before["state"])
                 calls.append(batch.stats()["state_epoch"])
                 return result
+
             with monkeypatch.context() as patch:
                 patch.setattr(plan, "_read_candidate", read_then_restore)
                 with pytest.raises((ValueError, RuntimeError), match="stale|epoch|changed|entry"):
@@ -261,19 +359,31 @@ def test_f10_restore_after_real_candidate_rejects_stale_attempt(warm, tyx_mode, 
             with batch.prepare_contacts(model, bindings, laws) as retry:
                 assert batch.step_contacts(retry, H) == {WORLD: True}
                 assert retry.last_accepted[WORLD].entry_state == before["state"][WORLD]
-                _save(tmp_path, "floating-contact-stale", dict(input=item["data"], command=item["command"],
-                      warm=warm, before=before, retry=_record(batch, retry), stats=batch.stats()))
+                _save(
+                    tmp_path,
+                    "floating-contact-stale",
+                    dict(
+                        input=item["data"],
+                        command=item["command"],
+                        warm=warm,
+                        before=before,
+                        retry=_record(batch, retry),
+                        stats=batch.stats(),
+                    ),
+                )
 
 
 @pytest.mark.tyx
 def test_f10_partial_allocation_and_global_candidate_cap_clean_up(tyx_mode, tmp_path, monkeypatch):
     from phymeo.backends._resident_contact_plan import ResidentContactPlan
+
     item = _item(_reference().case("F01"))
     with ph.TyxWorldBatch([(WORLD, item["tree"])], tyx_mode, cache_root=tmp_path) as batch:
         batch.set_controls({WORLD: item["command"]})
         model, bindings, _, laws = _geometry(batch, item)
         original, calls, owners = ResidentContactPlan._buffer, [], []
         before = batch.snapshot()
+
         def allocate_then_fail(self, *args, **kwargs):
             result = original(self, *args, **kwargs)
             calls.append(result)
@@ -281,6 +391,7 @@ def test_f10_partial_allocation_and_global_candidate_cap_clean_up(tyx_mode, tmp_
             if len(calls) == 2:
                 raise MemoryError("c10 actual second contact scratch allocation")
             return result
+
         with monkeypatch.context() as patch:
             patch.setattr(ResidentContactPlan, "_buffer", allocate_then_fail)
             with pytest.raises(MemoryError, match="actual second"):
@@ -295,8 +406,17 @@ def test_f10_partial_allocation_and_global_candidate_cap_clean_up(tyx_mode, tmp_
             _assert_retained(batch, capped, checkpoint)
         with batch.prepare_contacts(model, bindings, laws) as retry:
             assert batch.step_contacts(retry, H) == {WORLD: True}
-            _save(tmp_path, "floating-contact-resource", dict(input=item["data"], before=before,
-                  scratch_closed=owners[0].stats(), retry=_record(batch, retry), stats=batch.stats()))
+            _save(
+                tmp_path,
+                "floating-contact-resource",
+                dict(
+                    input=item["data"],
+                    before=before,
+                    scratch_closed=owners[0].stats(),
+                    retry=_record(batch, retry),
+                    stats=batch.stats(),
+                ),
+            )
 
 
 @pytest.mark.tyx
@@ -304,7 +424,9 @@ def test_f10_partial_allocation_and_global_candidate_cap_clean_up(tyx_mode, tmp_
 def test_f10_owned_receipt_foreign_batch_and_close_rebuild(name, tyx_mode, tmp_path):
     item = _item(_reference().case(name), delay=1)
     batch = ph.TyxWorldBatch([(WORLD, item["tree"])], tyx_mode, cache_root=tmp_path / "first")
-    with ph.TyxWorldBatch([(WORLD, item["tree"])], tyx_mode, cache_root=tmp_path / "foreign") as foreign:
+    with ph.TyxWorldBatch(
+        [(WORLD, item["tree"])], tyx_mode, cache_root=tmp_path / "foreign"
+    ) as foreign:
         try:
             batch.set_controls({WORLD: item["command"]})
             model, bindings, _, laws = _geometry(batch, item)
@@ -318,7 +440,12 @@ def test_f10_owned_receipt_foreign_batch_and_close_rebuild(name, tyx_mode, tmp_p
             frozen = _json(receipt)
             for site in receipt.sites:
                 for side in ("first", "second"):
-                    for suffix in ("_force_n", "_velocity_m_s", "_material_displacement_m", "_application_displacement_m"):
+                    for suffix in (
+                        "_force_n",
+                        "_velocity_m_s",
+                        "_material_displacement_m",
+                        "_application_displacement_m",
+                    ):
                         with pytest.raises(ValueError):
                             np.asarray(getattr(site, side + suffix)).setflags(write=True)
             with pytest.raises(TypeError):
@@ -338,22 +465,41 @@ def test_f10_owned_receipt_foreign_batch_and_close_rebuild(name, tyx_mode, tmp_p
         assert batch.stats()["device_owned_bytes"] == 0
         with pytest.raises(RuntimeError, match="closed"):
             batch.step_contacts(plan, H)
-    with ph.TyxWorldBatch([(WORLD, item["tree"])], tyx_mode, cache_root=tmp_path / "rebuilt") as rebuilt:
+    with ph.TyxWorldBatch(
+        [(WORLD, item["tree"])], tyx_mode, cache_root=tmp_path / "rebuilt"
+    ) as rebuilt:
         rebuilt.restore(saved)
         model, bindings, _, laws = _geometry(rebuilt, item)
         with rebuilt.prepare_contacts(model, bindings, laws, tree_dynamic_pairs=True) as fresh:
             assert rebuilt.step_contacts(fresh, H) == {WORLD: True}
             actual = _record(rebuilt, fresh)
             assert _json(actual) == _json(expected)
-            _save(tmp_path, "floating-contact-close", dict(input=item["data"], saved=saved,
-                  original_receipt=receipt, expected=expected, rebuilt=actual, stats=rebuilt.stats()))
+            _save(
+                tmp_path,
+                "floating-contact-close",
+                dict(
+                    input=item["data"],
+                    saved=saved,
+                    original_receipt=receipt,
+                    expected=expected,
+                    rebuilt=actual,
+                    stats=rebuilt.stats(),
+                ),
+            )
 
 
 @pytest.mark.tyx
 def test_f10_old_fixed_affine_scalar_and_unbound_floating_publish_together(tyx_mode, tmp_path):
     from test_resident_affine_contact_transactions import (
-        _advance_oracle, _audit_mixed, _geometry as old_geometry,
-        _independent_initial, _mixed as old_mixed,
+        _advance_oracle,
+        _audit_mixed,
+        _independent_initial,
+    )
+    from test_resident_affine_contact_transactions import (
+        _geometry as old_geometry,
+    )
+    from test_resident_affine_contact_transactions import (
+        _mixed as old_mixed,
     )
     from test_resident_floating_step import _audit as audit_free_floating
 
@@ -362,7 +508,9 @@ def test_f10_old_fixed_affine_scalar_and_unbound_floating_publish_together(tyx_m
     data = _reference().base().case("P03")
     # This world intentionally has no collision binding. Its original internal
     # motor must still stage through the same root/joint/held banks once.
-    from test_resident_floating_step import _packet as free_packet, _tree as free_tree
+    from test_resident_floating_step import _packet as free_packet
+    from test_resident_floating_step import _tree as free_tree
+
     floating = free_tree(data, delay=1)
     command, external = free_packet(floating, data)
     declarations = [(w, i["world"]) for w, i in old.items()] + [(1207, floating)]
@@ -386,14 +534,25 @@ def test_f10_old_fixed_affine_scalar_and_unbound_floating_publish_together(tyx_m
                     audits = _audit_mixed(batch, old, entry, plan.last_accepted, sources, expected)
                     after = batch.snapshot()
                     diagnostic = batch.tree_diagnostics()[1207]
-                    audits[1207] = audit_free_floating(data, entry[1207], after[1207],
-                        batch.tree_kinematics()[1207], diagnostic, batch.summary()[1207], selected, external)
+                    audits[1207] = audit_free_floating(
+                        data,
+                        entry[1207],
+                        after[1207],
+                        batch.tree_kinematics()[1207],
+                        diagnostic,
+                        batch.summary()[1207],
+                        selected,
+                        external,
+                    )
                     _close(after[1207].position, fq, atol=WINDOW_ATOL)
                     _close(after[1207].velocity, fv, atol=WINDOW_ATOL)
                     assert after[1207].tick == index + 1
                     row = _record(batch, plan)
-                    row.update(audit=audits, independent_floating=dict(q=fq.copy(), v=fv.copy(), truth=truth),
-                               diagnostics=batch.tree_diagnostics())
+                    row.update(
+                        audit=audits,
+                        independent_floating=dict(q=fq.copy(), v=fv.copy(), truth=truth),
+                        diagnostics=batch.tree_diagnostics(),
+                    )
                     rows.append(row)
                     if index == 18:
                         saved = batch.snapshot()
@@ -406,14 +565,29 @@ def test_f10_old_fixed_affine_scalar_and_unbound_floating_publish_together(tyx_m
                     for field in ("state", "geometry", "receipts", "summary", "diagnostics"):
                         assert _json(row[field]) == _json(rows[index][field])
             finally:
-                _save(tmp_path, "floating-contact-old-mixed", dict(
-                    old_inputs={w: i.get("data", i["kind"]) for w, i in old.items()},
-                    floating_input=data, commands=commands, model=model, bindings=bindings, laws=laws,
-                    saved=saved, rows=rows, replay=replay, retained=batch.snapshot(), stats=batch.stats()))
+                _save(
+                    tmp_path,
+                    "floating-contact-old-mixed",
+                    dict(
+                        old_inputs={w: i.get("data", i["kind"]) for w, i in old.items()},
+                        floating_input=data,
+                        commands=commands,
+                        model=model,
+                        bindings=bindings,
+                        laws=laws,
+                        saved=saved,
+                        rows=rows,
+                        replay=replay,
+                        retained=batch.snapshot(),
+                        stats=batch.stats(),
+                    ),
+                )
 
 
 @pytest.mark.tyx
-@pytest.mark.parametrize("filter_kind", ("default", "same_body", "mask", "excluded", "parent_mask", "parent_excluded"))
+@pytest.mark.parametrize(
+    "filter_kind", ("default", "same_body", "mask", "excluded", "parent_mask", "parent_excluded")
+)
 def test_f10_explicit_pair_filters_precede_actual_parent_gate(filter_kind, tyx_mode, tmp_path):
     data = _reference().case("F03")
     if filter_kind.startswith("parent_"):
@@ -431,8 +605,17 @@ def test_f10_explicit_pair_filters_precede_actual_parent_gate(filter_kind, tyx_m
             with batch.prepare_contacts(model, bindings, laws, tree_dynamic_pairs=True) as plan:
                 assert batch.step_contacts(plan, H) == {WORLD: True}
                 assert len(plan.last_accepted[WORLD].sites) == 1
-                _save(tmp_path, "floating-contact-domain", dict(kind=filter_kind, input=data,
-                      before=before, accepted=_record(batch, plan), stats=batch.stats()))
+                _save(
+                    tmp_path,
+                    "floating-contact-domain",
+                    dict(
+                        kind=filter_kind,
+                        input=data,
+                        before=before,
+                        accepted=_record(batch, plan),
+                        stats=batch.stats(),
+                    ),
+                )
             return
         if filter_kind == "same_body":
             key = ph.CollisionKey(WORLD, shapes[0].key.body, 99)
@@ -446,21 +629,50 @@ def test_f10_explicit_pair_filters_precede_actual_parent_gate(filter_kind, tyx_m
         pair = tuple(sorted((shapes[0].key, shapes[1].key)))
         before = batch.snapshot()
         with pytest.raises(ValueError):
-            batch.prepare_contacts(model, bound, {pair: ph.RobotContactMaterial(64, 0, 0)}, tree_dynamic_pairs=True)
+            batch.prepare_contacts(
+                model, bound, {pair: ph.RobotContactMaterial(64, 0, 0)}, tree_dynamic_pairs=True
+            )
         with batch.prepare_contacts(model, bound, {}, tree_dynamic_pairs=True) as plan:
             assert batch.step_contacts(plan, H) == {WORLD: True}
             receipt = plan.last_accepted[WORLD]
             assert not receipt.sites
             _close(receipt.law_wrench_fp64, np.zeros((3, 6)), atol=0, rtol=0)
             assert receipt.accepted_state.position == before[WORLD].position
-            _save(tmp_path, "floating-contact-domain", dict(kind=filter_kind, input=data,
-                  before=before, model=model, bindings=bound, accepted=_record(batch, plan), stats=batch.stats()))
+            _save(
+                tmp_path,
+                "floating-contact-domain",
+                dict(
+                    kind=filter_kind,
+                    input=data,
+                    before=before,
+                    model=model,
+                    bindings=bound,
+                    accepted=_record(batch, plan),
+                    stats=batch.stats(),
+                ),
+            )
 
 
 @pytest.mark.tyx
-@pytest.mark.parametrize("problem", ("parent", "body_alias", "two_bodies_one_group", "world",
-    "missing", "extra", "friction", "law", "sampling", "foreign_topology", "source_revision"))
-def test_f10_invalid_graph_material_source_and_domain_reject_before_allocation(problem, tyx_mode, tmp_path):
+@pytest.mark.parametrize(
+    "problem",
+    (
+        "parent",
+        "body_alias",
+        "two_bodies_one_group",
+        "world",
+        "missing",
+        "extra",
+        "friction",
+        "law",
+        "sampling",
+        "foreign_topology",
+        "source_revision",
+    ),
+)
+def test_f10_invalid_graph_material_source_and_domain_reject_before_allocation(
+    problem, tyx_mode, tmp_path
+):
     data = _reference().case("F06" if problem == "source_revision" else "F03")
     if problem == "parent":
         data["children"]["parents"][1] = 0
@@ -483,7 +695,7 @@ def test_f10_invalid_graph_material_source_and_domain_reject_before_allocation(p
         elif problem == "extra":
             laws[tuple(reversed(pair))] = ph.RobotContactMaterial(64, 0, 0)
         elif problem == "friction":
-            laws[pair] = ph.RobotContactMaterial(64, 0, .5)
+            laws[pair] = ph.RobotContactMaterial(64, 0, 0.5)
         elif problem == "law":
             laws[pair] = ph.NormalLayer(1 / 32, 64)
         elif problem == "sampling":
@@ -492,13 +704,17 @@ def test_f10_invalid_graph_material_source_and_domain_reject_before_allocation(p
             shapes[0] = replace(shapes[0], revision=shapes[0].revision + 1)
         elif problem == "foreign_topology":
             other_data = _reference().case("F03")
-            other_data["root_mass"] = 3.
+            other_data["root_mass"] = 3.0
             other = _item(other_data)
-            with ph.TyxWorldBatch([(WORLD, other["tree"])], tyx_mode, cache_root=tmp_path / "foreign") as foreign:
+            with ph.TyxWorldBatch(
+                [(WORLD, other["tree"])], tyx_mode, cache_root=tmp_path / "foreign"
+            ) as foreign:
                 bound[0] = replace(bound[0], topology=foreign.snapshot()[WORLD].topology)
         before, allocations = batch.snapshot(), batch.stats()["device_allocations"]
         with pytest.raises((ValueError, TypeError)):
-            batch.prepare_contacts(ph.CollisionModel(tuple(shapes)), bound, laws, tree_dynamic_pairs=True, **options)
+            batch.prepare_contacts(
+                ph.CollisionModel(tuple(shapes)), bound, laws, tree_dynamic_pairs=True, **options
+            )
         assert batch.snapshot() == before and batch.stats()["device_allocations"] == allocations
 
 
@@ -532,7 +748,9 @@ def test_f10_physical_body_count_is_not_motor_or_padded_count(n, invalid_group, 
 @pytest.mark.tyx
 @pytest.mark.parametrize("kind", ("ordinary", "affine"))
 def test_f10_larger_floating_body_limit_does_not_invent_fixed_bodies(kind, tyx_mode, tmp_path):
-    from test_resident_affine_contact_transactions import _mixed as old_mixed, _geometry as old_geometry
+    from test_resident_affine_contact_transactions import _geometry as old_geometry
+    from test_resident_affine_contact_transactions import _mixed as old_mixed
+
     old = old_mixed(tmp_path / "assets")
     world = 503 if kind == "ordinary" else 91
     item = old[world]
@@ -549,17 +767,25 @@ def test_f10_larger_floating_body_limit_does_not_invent_fixed_bodies(kind, tyx_m
 @pytest.mark.tyx
 def test_f10_huge_anchor_losing_nonzero_material_offset_rejects_without_repair(tyx_mode, tmp_path):
     data = _reference().case("F01")
-    data["q"][:3] = [float(2**60), 0., 0.]
+    data["q"][:3] = [float(2**60), 0.0, 0.0]
     item = _item(data)
-    local = np.array([[1 / 8, 0., 0.]])
+    local = np.array([[1 / 8, 0.0, 0.0]])
     assert float(2**60) + float(local[0, 0]) == float(2**60)
     first, second = ph.CollisionKey(WORLD, 101, 1), ph.CollisionKey(WORLD, 900, 2)
-    shapes = (ph.CollisionShape(first, "sphere", (11,), 1 / 8),
-              ph.CollisionShape(second, "sphere", (91,), 1 / 8))
+    shapes = (
+        ph.CollisionShape(first, "sphere", (11,), 1 / 8),
+        ph.CollisionShape(second, "sphere", (91,), 1 / 8),
+    )
     with ph.TyxWorldBatch([(WORLD, item["tree"])], tyx_mode, cache_root=tmp_path) as batch:
         batch.set_controls({WORLD: item["command"]})
-        bindings = (ph.ResidentFloatingTreeBinding(first, WORLD, 0, local, topology=batch.snapshot()[WORLD].topology),
-                    ph.ResidentStaticBinding(second, ph.CollisionMotion(np.array([[float(2**60), 0., 7 / 32]]))))
+        bindings = (
+            ph.ResidentFloatingTreeBinding(
+                first, WORLD, 0, local, topology=batch.snapshot()[WORLD].topology
+            ),
+            ph.ResidentStaticBinding(
+                second, ph.CollisionMotion(np.array([[float(2**60), 0.0, 7 / 32]]))
+            ),
+        )
         before = batch.snapshot()
         geometry = _json(batch.tree_kinematics())
         with batch.prepare_collision(ph.CollisionModel(shapes), bindings) as broad:
@@ -569,17 +795,32 @@ def test_f10_huge_anchor_losing_nonzero_material_offset_rejects_without_repair(t
         plan = None
         try:
             with pytest.raises(ValueError) as caught:
-                plan = batch.prepare_contacts(ph.CollisionModel(shapes), bindings,
-                                              {(first, second): ph.RobotContactMaterial(64, 0, 0)})
+                plan = batch.prepare_contacts(
+                    ph.CollisionModel(shapes),
+                    bindings,
+                    {(first, second): ph.RobotContactMaterial(64, 0, 0)},
+                )
                 batch.step_contacts(plan, H)
             assert batch.snapshot() == before
             assert _json(batch.tree_kinematics()) == geometry
             if plan is not None:
                 assert not plan.last_accepted
-            _save(tmp_path, "floating-contact-source-representability", dict(input=data,
-                  local_points=local, model=ph.CollisionModel(shapes), bindings=bindings, broad_candidates=broad_candidates,
-                  before=before, error=dict(type=type(caught.value).__name__, message=str(caught.value)),
-                  retained=batch.snapshot(), geometry=batch.tree_kinematics(), stats=batch.stats()))
+            _save(
+                tmp_path,
+                "floating-contact-source-representability",
+                dict(
+                    input=data,
+                    local_points=local,
+                    model=ph.CollisionModel(shapes),
+                    bindings=bindings,
+                    broad_candidates=broad_candidates,
+                    before=before,
+                    error=dict(type=type(caught.value).__name__, message=str(caught.value)),
+                    retained=batch.snapshot(),
+                    geometry=batch.tree_kinematics(),
+                    stats=batch.stats(),
+                ),
+            )
         finally:
             if plan is not None:
                 plan.close()
@@ -588,13 +829,16 @@ def test_f10_huge_anchor_losing_nonzero_material_offset_rejects_without_repair(t
 
 @pytest.mark.tyx
 @pytest.mark.parametrize("field", ("shape", "group", "world"))
-def test_f10_actual_candidate_material_packet_mismatch_is_not_published(field, tyx_mode, tmp_path, monkeypatch):
+def test_f10_actual_candidate_material_packet_mismatch_is_not_published(
+    field, tyx_mode, tmp_path, monkeypatch
+):
     item = _item(_reference().case("F02", variant="motor"), delay=1)
     with ph.TyxWorldBatch([(WORLD, item["tree"])], tyx_mode, cache_root=tmp_path) as batch:
         batch.set_controls({WORLD: item["command"]})
         model, bindings, _, laws = _geometry(batch, item)
         with batch.prepare_contacts(model, bindings, laws) as plan:
             before, original, calls = _snapshot(batch, plan), plan._read_candidate, []
+
             def actual_then_wrong_source(*args, **kwargs):
                 result = original(*args, **kwargs)
                 packet = dict(result["packet"])
@@ -603,17 +847,22 @@ def test_f10_actual_candidate_material_packet_mismatch_is_not_published(field, t
                 key = next(k for k, frame in frames.items() if frame.group_index is not None)
                 frame = frames[key]
                 if field == "shape":
-                    changed = replace(frame, shape=replace(frame.shape, revision=frame.shape.revision + 1))
+                    changed = replace(
+                        frame, shape=replace(frame.shape, revision=frame.shape.revision + 1)
+                    )
                 elif field == "group":
                     changed = replace(frame, group_index=0)
                 else:
-                    changed = replace(frame, shape=replace(frame.shape,
-                        key=ph.CollisionKey(999, key.body, key.shape)))
+                    changed = replace(
+                        frame,
+                        shape=replace(frame.shape, key=ph.CollisionKey(999, key.body, key.shape)),
+                    )
                 frames[key] = changed
                 world_packet["frames"] = frames
                 packet[WORLD] = world_packet
                 calls.append(dict(original=frame, changed=changed))
                 return dict(result, packet=packet)
+
             with monkeypatch.context() as patch:
                 patch.setattr(plan, "_read_candidate", actual_then_wrong_source)
                 with pytest.raises(ValueError):
@@ -624,6 +873,16 @@ def test_f10_actual_candidate_material_packet_mismatch_is_not_published(field, t
             with batch.prepare_contacts(model, bindings, laws) as retry:
                 assert batch.step_contacts(retry, H) == {WORLD: True}
                 assert retry.last_accepted[WORLD].entry_state == before["state"][WORLD]
-                _save(tmp_path, "floating-contact-candidate-source", dict(input=item["data"],
-                      command=item["command"], field=field, injected=calls, before=before,
-                      retry=_record(batch, retry), stats=batch.stats()))
+                _save(
+                    tmp_path,
+                    "floating-contact-candidate-source",
+                    dict(
+                        input=item["data"],
+                        command=item["command"],
+                        field=field,
+                        injected=calls,
+                        before=before,
+                        retry=_record(batch, retry),
+                        stats=batch.stats(),
+                    ),
+                )

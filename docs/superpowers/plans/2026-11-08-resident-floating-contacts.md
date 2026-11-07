@@ -190,3 +190,9 @@ installed 全成员和 loaded origins、source/native pin 绑定、关闭资源�
 2 GiB total decoded、8192 files 等守卫只可更严。
 最终交两 NEW 的小提交、clean、完整身份表/CLI/schema/限制和 AUTHORING_RELEASED；
 父全文审阅后再导入，执行与 C10 正式接受仍由父负责。
+
+## 父共享接缝与首公开节点（2026-11-08）
+
+C9正式接受8214cca后，父导入已审11 NEW至5ecd084；496 F01先核旧HOST有限patch的2N及完整6D真值，随后在旧prepare_contacts固定根限制处有效RED（RAW1）。父按预审草稿接OLD plan/bridge，分别保B/D/N维数、实际entry/candidate bank、完整J投影与原唯一solve/publish；旧C9单节点迁移为合法完整材料下的CCD拒域。
+
+497首Ruff的5个I001与6个E402、498首format的8文件保持原日志。仅import relocation/order和格式修复；501独立源码AST核10文件，7个rawAST相同，全部non-import AST及scoped import bindings相同；502/503最终静态RAW0。504解释和505实际CUDA的原F01各首次通过，保持原2N/6D/反作用/状态/receipt工程门。它们只闭环最小公开入口，不代表完整C10已验收。下一次两个完整新矩阵各排除该已绿F01，随后最小相邻兼容、原生F01/F03、新wheel和同次保存审计；仍严格唯一串行执行。

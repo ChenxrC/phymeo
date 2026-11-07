@@ -118,3 +118,18 @@ python examples/persistent_grasp_holdouts.py --case panda-sphere --out-dir <fres
 首个实际RED先成功构造原mimic-box scene/asset、核初态与8个合法face锚点，再调用上述正常公共行为；缺失函数为预期边界。短矩阵保两个真实资产、mimic完整物理投影/Panda fixed frame、声明重排并同步重排keys、非连续token、错误owner/world/face/重复key、真实首次正N绑定与唯一新连接的rollback/retry。不要重跑既过F06长套或G01–G04旧窗口。首次有载短测试在原dt/原controller下只前进到所需节点，明确不同于完整持稳通过。
 
 每个真正正载样本必须保存真实first/second的owner、local material/application、normal、weights与完整history/receipt；不可把plan静态容量当实际持稳证据。父审阅/串行RED后才授新声明工具与应用driver，原四完整候选窗依然全部UNEXECUTED。若声明接口发现更广能力缺口，给真实最小输入，不调原参数。
+
+
+## T2 产品与一次长窗驱动作者授权（2026-11-07，无截止）
+
+父已完整审阅 d3a32a65e1ba77ab82c87d004a7f2660c71e1353 的增量测试与报告，正常导入8b6d819。238的有效RED继续复用，其余16实例矩阵尚无通过结论。原RD继续 **PRODUCT_AUTHORING**：NEW `src/phymeo/runtime/pad_material_stations.py`、NEW `examples/persistent_grasp_holdouts.py`、NEW `tests/test_persistent_grasp_holdouts.py`（只新驱动/归档合同的短测试）并更新本报告；既有T1新测试只修明确作者错误并单列原因。全部旧shared文件/root export/原例程由父独占，不merge父、不另起助手，不改原物理参数或八门。
+
+纯声明工具按前述公开API，只借原 `_pad_points` 与原资产/碰撞注册，不从当前接触生成身份。先交声明工具checkpoint及精确接口，父接root export后执行短矩阵；长窗驱动可同一作者继续独立编写。四完整窗仍UNEXECUTED，不能因静态容量成立当真实持稳。工具能力限本合同支持的moving cuboid pad与sphere/cuboid payload；非法owner、整盒伪面和未知chart拒绝。
+
+父将给原 `make_case` 的info补 `pads=tuple(pads)`（完全相同原声明），并给原 `run_case(scene,controller,info,*,on_accepted=None,on_rejected=None)` 添加可选观测器。两个回调均接收一个独立record，不接收live scene、不返回控制指令。记录schema为 `grasp-protocol-observation-v1`，含 `stage,dt_s,proposal,entry`；entry含本次真实入步 `state,reading,geometry,history,receipt,events,last_frame`。accepted回调另含同一步真实 `accepted`（同七字段）；rejected回调另含 `retained`（同七字段）与 `failure`（原exception type/message及原accepted step/time）。proposal是实际最后提交命令的原proposal，若propose本身失败则None。状态是原public owned拷贝，history/events为原immutable值，无重算物理样本。
+
+accepted回调放在原step成功及observe_scene之后、原physical try/except之外；rejected回调在原异常被记录之后且break之前。回调异常原样传播，由新driver标为观测/IO incomplete，不能当物理拒绝或撤销已接受步。未设置回调时保持原控制和观测路径，不额外sample/step/力学计算。新driver只配置一次registry/kt并调用原run_case，不复制controller、阶段机、IK或八门。
+
+新driver流式保存完整观察record、输入/registry与最终原result，复用现 `public_payload`；失败保完整已写前缀、最后实际request/retained及错误，绝不重启前缀或只存关键帧。各窗256MiB原压缩上限保持，IO中止明确incomplete。短驱动测试须覆盖实际callback协议、写失败后已接受态不回滚、原异常request保留及不另推进场景，可用小替身协议测试，不额外跑四个长窗。真实first-load和四窗仍由父唯一串行槽执行。
+
+作者禁止全部项目import/collection/数值probe/pytest/lint/formatter/build/install/profile/native/CI。每个新文件小commit/clean后交父，报告全部未执行及依赖父hook；父按短声明→两个首次受力/重试→G01/两负控/G04→新wheel安排执行。实质反例不改原门、不静默回退旧摩擦。

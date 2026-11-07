@@ -322,3 +322,9 @@ A产品25c39d8，58组最终98pass（73新+25旧）；59公开三族/两步长�
 fdfa586的F2浮根mimic与C3单R设备姿态宽相已通过专项/兼容/原作者接口审阅以及新源码外wheel。包装脚本134的错误最终命中列表保留，135只修预期后RAW0，原F2已过物理不重跑。实际范围见[F2场景](../../benchmarks/p65-floating-mimic-scene.md)与[C3设备](../../benchmarks/p65-resident-revolute-collision.md)末节。全局仍ACTIVE、无截止。
 
 当前并行只读调研/计划：原robot完整固定根R/P耦合树驻留；原RD通用共同场景持续摩擦。先从真实源码/原失败与Newton1.7 primary资料建立多独立案例，再由父冻结薄接口/共享改动、依序测试先行和产品实施。旧共享源码与所有项目执行仍归父，禁止把N个独立单R批次冒完整树，也不把原mimic单例通过当摩擦矩阵全过。后继不重复本批绿组和证据审计。
+
+## 2026-11-08 C6已接受，C7作者阶段
+
+C4/C5完整ordinary/affine设备树及C6有限静态接触反馈已分别完成本机验收。C6产品48eeb89：HOST50、解释74分组、CUDA74、受影响兼容15、固定112完整payload，新wheel423package文件同源，两backend源码外各41batch/164worldsteps。详[C6报告](../../benchmarks/p65-resident-tree-contacts.md)。继续功能优先，不把HOST窄相+设备mechanics称全GPU，不以本片替代动态双侧或CCD。
+
+当前[C7计划](2026-11-08-resident-affine-contact-feedback.md)冻结同一接触入口的固定根mimic反馈，原RD仅NEW测试/消费者/报告作者；父独占旧接缝及单执行槽。其后再按主线补动态双方、浮根驻留、设备窄相等真实组合缺口。没有截止、没有重新启用旧周期任务，持续goal保持ACTIVE。

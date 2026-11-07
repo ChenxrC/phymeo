@@ -1,6 +1,6 @@
 # C6 设备接受态到有限静态接触反馈
 
-状态：**TEST_AUTHORING_ACTIVE / PRODUCT_PENDING**，2026-11-08，无固定截止。C4/C5已接受，父沿既有持续计划推进。本文冻结[首片提案](../../development/p65-resident-contact-stage-proposal.md)的R01–R05及下列补足；不是全设备窄相、CCD或整个P6.5接受。
+状态：**LOCAL_ACCEPTED / SLOT_RELEASED**，2026-11-08，无固定截止。C4/C5已接受，父沿既有持续计划推进。本文冻结[首片提案](../../development/p65-resident-contact-stage-proposal.md)的R01–R05及下列补足；不是全设备窄相、CCD或整个P6.5接受。
 
 ## 行为与接口
 
@@ -65,3 +65,7 @@ R04原提案的“前1/8s，随后最多再3/4s”明确为总7/8s。上文“�
 sample_tree_contacts(world,frames,materials_by_pair,candidates,group_count,site_capacity)用旧有限patch/法向律返回ContactLoads；完整sites、COM wrench、static反力及原frames均owned。超站点抛ContactSiteCapacityExceeded(count,limit)，未知几何不能返回零。finish_contact_loads(loads,candidate_frames)只运输原入步材料/作用点，核同shape/source/group/static，不重新采样或改变入步力。父receipt.diagnostics固定entry_frames/accepted_frames两Mapping，记录完整形状/来源/实际变换。
 
 plan._buffer为实际scratch分配点，使用batch现有runtime，plan自己的ExitStack登记释放和计数后返回。至少full N×6 contact wrench与world site-reject mask两种实际scratch，第二次真实分配后故障必须完整清理且batch可继续。plan.stats沿closed/device_owned_bytes/device_allocations命名，另计本plan真实上传/读回/launch；close仅释放自己的资源，batch.close关闭所有plan。所有分配、读回、receipt构造、source/epoch复核在唯一swap前；不能预发布collision layouts/last_result。
+
+## 2026-11-08 验收关闭
+
+本片 **LOCAL_ACCEPTED / SLOT_RELEASED**。产品48eeb89、解释74分组/CUDA74、HOST桥50、相邻CUDA15、112完整保存记录及新wheel两backend各164 world-steps完成。原作者任务均释放，实际范围、342输入类型首错、静态首错和全部证据见[正式报告](../../benchmarks/p65-resident-tree-contacts.md#2026-11-08-父执行与正式限域接受)。不重跑同源绿组；原接口/数值/资源/非目标边界不变。后继[C7 affine反馈](2026-11-08-resident-affine-contact-feedback.md)按独立用例推进；本计划最初authoring/grant叙述仅作历史。

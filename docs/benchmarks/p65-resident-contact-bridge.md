@@ -1,5 +1,7 @@
 # C6 HOST finite-contact bridge
 
+当前已由父实测并限域接受；结果、失败保留与范围见本文末节。下方最初作者交接的UNEXECUTED标签属于历史。
+
 状态：**AUTHORING_COMPLETE / UNEXECUTED**。本片只新增 `_resident_contact_bridge.py`、`test_resident_contact_bridge.py` 与本文；作者没有执行 import、collection、数值脚本、pytest、lint、format 或设备命令。父已保存公开入口 325 的有效 RED，本片不重复。父后续执行结果须另记，不能从本文推出 HOST/CUDA 已通过。
 
 ## 接口和职责
@@ -39,3 +41,7 @@ python -m pytest -q tests/test_resident_contact_bridge.py
 ```
 
 tests-first `fc1b9dc`；schema-only checkpoint `f09bc26`。实现 source 绑定以最后交付提交为准；需要父当前已有 finite patch/law 模块，作者按授权未 merge 父。
+
+## 2026-11-08 父实测
+
+当前 **HOST_VERIFIED_AND_C6_INTEGRATED**。原作者UNEXECUTED为历史交接标签。340对完整本文件专项实际50 passed/1.18s/RAW0，原import/format首错与最终静态记录保留；产品只style整理后随C6同源使用。C6解释74分组、实际CUDA74、相邻15、同次112完整payload和两backend源码外wheel消费均完成，完整范围/原始任务和失败记录见[父正式接受](p65-resident-tree-contacts.md#2026-11-08-父执行与正式限域接受)。桥仍是HOST有限几何与载荷/锚点运输；设备运动、容量拒步及共同发布由原batch负责，不扩到affine/floating/CCD/moving pairs或持续摩擦。

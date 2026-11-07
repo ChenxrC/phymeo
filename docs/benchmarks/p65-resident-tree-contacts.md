@@ -1,5 +1,7 @@
 # C6：设备接受树状态的有限静态接触反馈专项
 
+当前已由父实测并限域接受；结果、失败保留与范围见本文末节。下方最初作者交接的UNEXECUTED标签属于历史。
+
 状态：**TESTS_AUTHORED / FULL_MATRIX_UNEXECUTED / PRODUCT_PARENT_OWNED**。作者仅文本、文件 IO 和 Git；没有 import、collection、pytest、数值探测、静态或构建执行。依据父冻结合同 [resident-contact-feedback](../superpowers/plans/2026-11-08-resident-contact-feedback.md)（7623c39 及父后续字段裁定）；不延伸旧摩擦或机器人抓持窗口。
 
 父作业 **325** 已完成首个有效 RED：真实有限盒 patch、旧材料律双侧 ±2 N、原 FixedRobotTree / batch / snapshot / 输入 gzip 前置全部成立，只在缺失 `TyxWorldBatch.prepare_contacts` 失败；1 failed / 1.23 s / RAW1。首节点提交 9e13414d6097706c24b19becddfeac1add364ab8，后续原输入及断言保留。这只证明当前公开入口缺口，不能冒称新物理通过。其余结果、两后端、最终静态及源码外 wheel 均待父唯一串行验证。
@@ -83,3 +85,36 @@ entry/accepted 的 checkpoint 和 TreeKinematics 保相同tick，position/veloci
 主要文件前缀：`r01-public-input/result`、`r01-damping/pd/delay/geometry`、`r02-first/window`、`r03-first/window`、`r04-unload-reentry`、各W1及W4子目录的`r05-world-window`、`r05-site-capacity/zero-force-sites/candidate-capacity/unbound-kinds/undefined-normal/fault-retry/stale-same-tick/owned-observation/allocation-recovery/retained-receipt`。参数化tmp_path分别隔离，不能只glob选择成功行。
 
 父建议执行边界：保留325首RED，产品到位后先功能文件与事务文件，再真实interpret/CUDA必要分组、静态、源码外wheel；不重跑旧C4/C5全套。这里没有预先虚构collection数量、后端pass或wheel结果。任何fixture/API作者错误需明确首日志和改动，不重调物理。
+
+## 2026-11-08 父执行与正式限域接受
+
+**LOCAL_ACCEPTED / EXECUTION_SLOT_RELEASED。** 产品48eeb89；作者历史UNEXECUTED只指最初交接。完整C6 ordinary固定根树对有限静态mu=0接触反馈已通过本机验收，所有本片执行结束。没有whole-P6.5、moving/moving、affine/floating接触、持续摩擦、CCD或全GPU窄相的接受结论。
+
+| 实际组 | 原任务号 | 结果 |
+|---|---|---|
+| 纯HOST有限桥 | 340 | 50 passed / 1.18s / RAW0 |
+| 首真实公开反馈 | 341 interpret | 1 passed / 1.03s / RAW0，2N进入原M/PD/积分 |
+| 其余首批R01 | 342 interpret | 12 passed，随后R02 fixture构造1 failed，原RAW1保留 |
+| 修正fixture后的剩余矩阵 | 343 interpret | 61 passed / 99.70s / RAW0；已绿13个R01明确排除 |
+| 完整实际CUDA矩阵 | 344 | 74 passed / 197.81s / RAW0 |
+| 改动接缝的相邻CUDA兼容 | 345 | 15 passed / 43.98s / RAW0；旧query/当前FK、混合上传/restore/affine/scalar |
+| 同次保存审计 | 348 | RAW0，固定112完整gzip、原字节143414071、compressed4345516 |
+| 新wheel构建/安装 | 349 / 350 | RAW0 / RAW0，离线无依赖安装到全新源码外target |
+| 源码外公开消费 | 356 interpret / 357 CUDA | 各41 batch steps、164 world steps，全部5门通过，RAW0 |
+| wheel/source/install和消费记录核 | 358 | 423 package members全同，282实际导入module/后端，0 mismatch，RAW0 |
+
+342的真实首错发生在任何R02物理步之前：测试重排joint_types时把普通字符串变成numpy.str_，现有Scene指纹只接有限数值NumPy与builtin str。仅将该fixture重排改为原builtin字符串索引；质量/惯量/形状/命令/预期/门槛不变。341与342已绿R01不依赖该helper，348核旧快照到当前只有这一确切替换。没有重跑已绿同源组。
+
+所有实际saved记录按源码固定function前30字符/ordinal/filename预配membership，不按结果挑成功行。解释2+12+42与CUDA56各覆盖同一56份完整payload；gzip透明解压核所有JSON、完整receipt字段/tick/双侧work、source绑定432项、W1/W4的8个完整world对。5296是完整文件内receipt出现次数，3100是site出现次数，不能当唯一物理步数。R04两backend各自h窗732步、h/2窗1463步，首次零力分别第63/124步，随后第732/1463步真实重入；无reset、旧力残留或延长7/8s上限。W1/W4保存完整checkpoint/FK/诊断/receipt相等。
+
+父产品修正与文本复核：将旧碰撞query拆为pure stage及最终publish；旧tree solve从mechanics提取后原step顺序不变；contact每步清零临时COM wrench、一次实际Jᵀ散回、原PD前加入，完整candidate/receipt与epoch复核在唯一swap前。只读复核发现的mixed affine held存储差异与同tick restore失效均已补足。公开world link/COM坐标保raw FP32+anchor的FP64展开，避免第二次FP32舍入；设备bank/q/v/R与物理误差门不变。
+
+原326/327、332–335静态首错及修复记录保留，最终330/331、338/339与fixture346/347通过；没有把style首错叫物理失败。独立公共consumer首次lint351通过、format352要求排版，353排版后354/355通过；358验证原作者consumer与格式化版AST完全相同。consumer纯author b747447→父6620c98，格式提交ff479fa，完整文本经父审阅。
+
+新wheel为1,244,215 bytes，SHA256 `6bd4fc632716c3161355b4aae02dc4d3ae1b0ae23b94ddfa3e7c558c6c599044`。路径[349 wheels](../../artifacts/p65-generic-collision-20261107-01/349-c6-wheel-build/wheels/phymeo-0.1.0a0-py3-none-any.whl)。全新target在系统Temp/phymeo-c6-wheel-48eeb89-20261108-01/package；用-I/-B及只插入该wheel target的bootstrap，不使用checkout作为import路径。实际加载282模块全部来自安装target，423文件与新wheel及构建source逐字节同。消费包含平移接触树、偏心转动接触树、无接触普通树与FreeSphere，40主步后合法恢复tick20并只重放第21步一次；完整state/FK/诊断/energy/receipt与原第21步相同，旧receipt跨推进/restore/close不变，资源清零。
+
+CUDA消费者真实有584 kernel submissions、417 sync、contact164 launches，接触plan上传3612/读回53956bytes；同一步的batch/plan统计有包含关系，不能相加冒总量。HOST narrow phase与诊断读回仍存在，不称零搬运、纯GPU物理或超越Newton性能。349启动前曾被外项目apply_month03.py的真实Python执行挡住，待其自然退出后build成功；无kill、并行项目执行或环境/pin更改。
+
+可复现入口为[公开示例](../../examples/resident_contact_feedback.py)，详细原始命令、首错、source快照和完整payload在[本批证据根](../../artifacts/p65-generic-collision-20261107-01)；摘要为[c6-saved-audit-v1.json](../../artifacts/p65-generic-collision-20261107-01/c6-saved-audit-v1.json)与[c6-wheel-parity-v1.json](../../artifacts/p65-generic-collision-20261107-01/c6-wheel-parity-v1.json)。不重复本片已绿组、审计或原C5消费。
+
+后继[C7计划](../superpowers/plans/2026-11-08-resident-affine-contact-feedback.md)已冻结独立多案例，原RD在隔离树仅编NEW tests/consumer/report；父继续持旧共享接缝与唯一项目执行所有权。C7未实施或验收，不改变本片边界。

@@ -1,6 +1,6 @@
 # C7 固定根 affine-mimic 常驻接触反馈
 
-状态：**TEST_AUTHORING_AUTHORIZED / PRODUCT_PENDING**，2026-11-08。持续任务，无08:00截止。C6产品48eeb89的HOST50、解释74分组、CUDA74、相邻15和同次112完整保存记录已通过，源码外wheel仍在串行队列；C7产品改动与执行必须等C6完成。本文冻结[提案](../../development/p65-resident-affine-contact-proposal.md)第1–6节的有限功能与案例，不将其手推当实测。
+状态：**TEST_AUTHORING_AUTHORIZED / PRODUCT_PENDING**，2026-11-08。持续任务，无08:00截止。C6产品48eeb89的HOST50、解释74分组、CUDA74、相邻15和同次112完整保存记录已通过，源码外wheel两backend已完成，C6正式限域接受；C7产品改动与执行继续由父唯一持有。本文冻结[提案](../../development/p65-resident-affine-contact-proposal.md)第1–6节的有限功能与案例，不将其手推当实测。
 
 ## 目标与复用
 
@@ -46,3 +46,7 @@ ordinary容量状态保7；affine原7约束残差/8全方程残差保留，新�
 允许复用已接受C5独立reference case/full-component oracle或在NEW文件写纯独立公式；不能以产品M/J/接触输出生成预期。先提交C7-01有效RED节点，再完整作者；所有项目import/collection/数值/pytest/static/build均禁，作者报告UNEXECUTED/clean/AUTHORING_RELEASED。不改OLD测试/父接缝、merge父、新建助手或重跑旧Newton。
 
 父独占OLD _resident_contact_plan.py、_resident_affine_storage.py、_tyx_resident_contact_kernels.py、tyx_world_batch.py及必要公共记录文档；C6 bridge/原求解核原则上原样复用。**C6正式接受前不修改这些产品文件，也不授C7执行槽。** 原robot继续完成C6新wheel独立使用示例，不重复派审阅。发现必须新增不同本构/第二求解器/放宽预算时给最小具体矛盾，不能先实施。
+
+### C6完成与C7诊断字段补足（2026-11-08，C7执行前）
+
+C6已正式限域接受，见[报告](../../benchmarks/p65-resident-tree-contacts.md#2026-11-08-父执行与正式限域接受)；C7仍仅NEW作者阶段，原RD首test checkpoint043c200已提交但未执行。精确affine receipt.diagnostics字段固定为 `coordinate_kind='affine'`、`full_dof_count`、`independent_dof_count`、`graph_token`、`projection_matrix`、`offset_vector`、`constraint_rows`；完整实际full/reduced mechanics放 `affine_diagnostic`，复用原owned AffineTreeDiagnostic类型及字段，同次candidate真实数据且swap前构造。原C6通用诊断字段语义保留。公共tree_diagnostics只作同次实际输出的一致性核，独立case/full-component oracle仍是物理真值来源，不据产品输出制造预期。

@@ -8,7 +8,9 @@
 
 **抓取应用当前边界**：原material模式四窗280–283均已执行，Panda完成3006步/1.87875s，原八门通过；G01/G02/G03在594/618/580接受步因原功/运动门拒绝。297精确复现三个原请求，312/319新作用点模型和相邻兼容通过。新显式motion_reference=application使J/W/力矩/弹簧功使用同一对入口作用点；默认material保旧门，模式绑定episode，不热切换。320只对297已保存候选做独立功坐标算术对照：三组application门成立，0物理步、无历史重新解释；这不等于新模型可达轨迹或持稳通过。321–323从原初态的application完整窗口已结束：G01实现原获取/20mm抬升/100ms持稳，1420步后释放阶段总功门拒绝；G02零摩擦1681步完整滑落、释放并恢复台面支撑，通过原八门；G03超载597步后总功门拒绝，不能叫完整负控通过。324仅精确复现两拒绝请求，七字段保留，原总功残差为+1.002949414e-8/-1.165306988e-8 J，逐站与运动门通过；没有重复释放证据。该工程精度边界保留，独立C6继续，不再重复绿窗或长前缀。详[原四窗计划T3](../superpowers/plans/2026-11-07-persistent-grasp-holdouts.md)及[专项报告](../benchmarks/p65-tangent-application-reference.md)。
 
-**下一功能节点C6**：[设备接受态→有限静态接触反馈合同](../superpowers/plans/2026-11-08-resident-contact-feedback.md)已冻结。原robot在原树只编两个NEW测试与报告；首R01 checkpoint 9e13414已导入d24d7be，325完成有效RED：真实原有限patch/2N、设备树与保存前提成立，仅缺prepare_contacts，1 failed/1.23s/RAW1，不重跑。ordinary R/P设备树+HOST有限窄相+原mu0法向律+同次TYX PD/积分+唯一发布；R01–R05和球/有限胶囊/转盒非盒凸体多案例，不用单一抓取替代矩阵。父负责全部旧batch/collision/tree接缝；原RD已转入NEW纯HOST接触桥（test/schema/product三文件），与robot独立作者并行；全部项目执行仍仅父串行。整个C6未验收。
+**C6常驻有限静态接触反馈已正式限域接受**：产品48eeb89，HOST桥50、解释74分组、实际CUDA74、相邻15通过；112完整payload审计与新wheel两backend各41 batch/164 world-steps完成。包含有限球/胶囊/凸体、真实偏心转动/跨分支惯量、732/1463步卸载重入、W1/W4及容量/晚故障共同发布。详[正式接受](../benchmarks/p65-resident-tree-contacts.md#2026-11-08-父执行与正式限域接受)。本片不是affine/floating接触、动态双侧、持续摩擦、CCD或全GPU窄相，不重复已绿组/旧审计。
+
+**当前下一节点C7**：[affine-mimic常驻接触计划](../superpowers/plans/2026-11-08-resident-affine-contact-feedback.md)已冻结；原RD在隔离树仅编4NEW tests/consumer/report，首有效RED节点043c200已交但未执行。父将接触先加入full N载荷再复用原Pᵀ投影/K solve/原图反力，保统一一次发布。原robot的C6公共consumer已释放并通过两backend源码外验证。父仍是所有OLD接缝和项目执行唯一owner，无周期任务或固定截止。
 
 [功能差异全景](phymeo-newton-panorama-2026-11-07.md) · [可视化](phymeo-newton-panorama-2026-11-07.html)。完整设备窄相/CCD/动态双侧接触、原100g持续抓持、软布两初态放台等仍开放；历史数学证明或局部几何不代表整个P6.5完成。
 

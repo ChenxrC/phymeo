@@ -557,7 +557,32 @@ def test_f06_authored_fixed_tool_is_folded_once_and_reacts(tyx_mode, tmp_path):
 def test_f07_finite_shape_geometry_anchor_then_full_response(variant, tyx_mode, tmp_path):
     data = _reference().case("F07", variant=variant)
     item, rows = _item(data), []
+    entry_gap = data["first_gap"]
+    anchor = None
+    if variant in ("CC", "HH"):
+        # Identity-pose support arithmetic independently binds both original
+        # decimal geometry and the declared FP32 child-offset representation.
+        first, second = data["shapes"]
+        normal = data["first_normal"]
+        local_gap = (
+            np.min(second["points"] @ normal)
+            - np.max(first["points"] @ normal)
+            - first["radius"]
+            - second["radius"]
+        )
+        offsets = data["children"]["offsets"]
+        authored_gap = float((offsets[1] - offsets[0]) @ normal + local_gap)
+        _close(authored_gap, data["first_gap"], atol=1e-10, rtol=0)
+        stored_offsets = offsets.astype(np.float32).astype(float)
+        entry_gap = float((stored_offsets[1] - stored_offsets[0]) @ normal + local_gap)
+        anchor = dict(
+            authored_gap=authored_gap,
+            stored_offsets=stored_offsets,
+            expected_entry_gap=entry_gap,
+            local_support_gap=float(local_gap),
+        )
     record = dict(
+        first_geometry_anchor=anchor,
         input=data,
         command=item["command"],
         mode=tyx_mode,
@@ -583,7 +608,7 @@ def test_f07_finite_shape_geometry_anchor_then_full_response(variant, tyx_mode, 
                     rows.append(row)
                     row["audit"] = _audit(batch, item, receipt, sources)
                     if index == 0:
-                        magnitude = max(0.0, -64 * data["first_gap"])
+                        magnitude = max(0.0, -64 * entry_gap)
                         _close(receipt.law_wrench_fp64[1, :3], -magnitude * data["first_normal"])
                         _close(receipt.law_wrench_fp64[2, :3], magnitude * data["first_normal"])
                         if variant == "cap_miss":
@@ -598,7 +623,7 @@ def test_f07_finite_shape_geometry_anchor_then_full_response(variant, tyx_mode, 
                             for site in receipt.sites:
                                 _close(
                                     site.geometry.witness.gap_m,
-                                    data["first_gap"],
+                                    entry_gap,
                                     atol=1e-10,
                                     rtol=0,
                                 )

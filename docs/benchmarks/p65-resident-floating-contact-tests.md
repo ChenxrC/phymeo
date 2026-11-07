@@ -86,3 +86,7 @@ python -m pytest -q tests/scale/test_resident_floating_contacts.py tests/scale/t
 ```
 
 如首节点此前已在同源通过，完整组按该唯一精确identity排除；不重做 C6–C9 整套。独立 reference 不是 Newton native 对照，wheel/native后续授权。本线未执行任何上述命令、import/数值/static/format/build，最终源码须经父 review、实际 interpret/CUDA 与同次保存审核。能力域只 ordinary floating、有限 HOST mu0离散入步窄相+真实设备 full-tree响应；affine浮根、跨独立参与方、持续摩擦、CCD、全设备窄相仍未支持。
+
+## 父执行观察：F07 保存精度口径（2026-11-08）
+
+506解释完整剩余矩阵已通过16项，随后CC在已接受首步的gap断言失败：原0.09 m child offset保存为FP32，与十进制-0.01 m的理想gap相差3.57627868e-9 m，原断言门1e-10 m。原输入/产品/力与运动工程门不变。父仅对CC/HH增加两套独立支持函数锚：原FP64声明仍按1e-10核literal；实际入口由原offset显式FP32转换和原local/radius计算expected gap，同样1e-10核保存witness。完整first_geometry_anchor记录两口径，非从设备witness反求expected。510原失败CC与尚未运行HH各通过，RAW0；506已绿16项不重跑，后续继续F08/F09/F10，最终CUDA仍为首完整剩余矩阵。

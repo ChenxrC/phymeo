@@ -57,15 +57,22 @@ class ContactSite:
 
     def __post_init__(self):
         w = self.witness
-        if not isinstance(w, CollisionWitness) or not np.isfinite(w.gap_m):
+        if not isinstance(w, CollisionWitness) or np.ndim(w.gap_m) != 0 or not np.isfinite(w.gap_m):
             raise ValueError("finite material witness required")
         n, a, b, p = (_vec(x) for x in (w.normal, w.first_point, w.second_point, self.load_point))
         if abs(np.linalg.norm(n) - 1) > 1e-10:
             raise ValueError("contact normal must be unit")
-        scale = max(1.0, np.linalg.norm(a), np.linalg.norm(b))
-        if abs((b - a) @ n - w.gap_m) > 1e-10 * scale:
+        gap = float(w.gap_m)
+        local_scale = max(1.0, np.linalg.norm(b - a), abs(gap))
+        # Coordinate subtraction only contributes rounding along the normal.
+        # A far-away perpendicular coordinate must not turn separation into load.
+        eps = np.finfo(float).eps
+        gap_rounding = 8 * eps * (abs(n) @ (abs(a) + abs(b)) + np.linalg.norm(b - a))
+        if abs((b - a) @ n - gap) > 1e-10 * local_scale + gap_rounding:
             raise ValueError("witness local gap differs from its material points")
-        if np.linalg.norm(p - (a + b) / 2) > 1e-10 * scale:
+        midpoint = a / 2 + b / 2
+        point_rounding = 8 * eps * (abs(a) + abs(b) + abs(p))
+        if np.any(abs(p - midpoint) > 1e-10 * local_scale + point_rounding):
             raise ValueError("both owners must use the common midpoint load point")
         weight = float(self.weight)
         if not np.isfinite(weight) or weight <= 0:
@@ -75,6 +82,7 @@ class ContactSite:
             "witness",
             replace(
                 w,
+                gap_m=gap,
                 normal=_xyz(n),
                 first_point=_xyz(a),
                 second_point=_xyz(b),

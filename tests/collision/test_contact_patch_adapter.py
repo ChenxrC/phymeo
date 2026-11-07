@@ -105,3 +105,31 @@ def test_ambiguous_deep_overlap_and_malformed_frames_are_explicit():
         contact_patch_sample(
             a, replace(b, key=replace(b.key, world=5)), paths[a.key].start, paths[b.key].start
         )
+
+
+def test_asymmetric_trapezoid_area_centroid_and_refinement():
+    from phymeo.constraints.collision_shapes import CollisionKey, CollisionShape
+    from phymeo.constraints.robot_contact import RobotContactMaterial
+    from phymeo.solvers.contact_patch_loads import sample_patch_loads
+
+    ring = ((0, 0), (2, 0), (1, 1), (0, 1))
+    first = np.array([(x, y, z) for z in (-0.1, 0.1) for x, y in ring])
+    second = first + (0, 0, 0.19)
+    a = CollisionShape(CollisionKey(0, 1, 1), "hull", tuple(range(8)))
+    b = CollisionShape(CollisionKey(0, 2, 1), "hull", tuple(range(10, 18)))
+    base = contact_patch_sample(a, b, first, second)
+    extra = replace(a, vertex_ids=(*a.vertex_ids, 99))
+    refined = contact_patch_sample(extra, b, np.vstack((first, (1, 0, 0.1))), second)
+    # Rectangle minus the upper right triangle: area=3/2, centroid=(7/9,4/9).
+    for result in (base, refined):
+        assert result.dimension == 2
+        points = np.array([s.load_point for s in result.sites])
+        weights = np.array([s.weight for s in result.sites])
+        np.testing.assert_allclose(weights @ points, (7 / 9, 4 / 9, 0.095), atol=1e-12)
+        loads = sample_patch_loads(
+            result, RobotContactMaterial(100, 0, 0), np.zeros_like(points), np.zeros_like(points)
+        )
+        np.testing.assert_allclose(loads["first_force"].sum(axis=0), (0, 0, -1), atol=1e-12)
+        np.testing.assert_allclose(
+            np.cross(points, loads["first_force"]).sum(axis=0), (-4 / 9, 7 / 9, 0), atol=1e-12
+        )

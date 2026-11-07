@@ -70,3 +70,54 @@ def test_invalid_weights_points_and_velocities_reject_before_loads():
             np.array([[0, 0, float("nan")], [0, 0, 0]]),
             np.zeros((2, 3)),
         )
+
+
+def test_mutable_gap_input_cannot_change_frozen_contact_or_force():
+    original = patch(1).sites[0]
+    gap = np.array(-0.01)
+    copied = ContactSite(replace(original.witness, gap_m=gap), original.load_point, 1.0)
+    sample = ContactPatchSample((copied,), 0, "mutable-input")
+    gap[...] = -1.0
+    assert sample.sites[0].witness.gap_m == -0.01
+    loads = sample_patch_loads(
+        sample, RobotContactMaterial(100, 0, 0), np.zeros((1, 3)), np.zeros((1, 3))
+    )
+    np.testing.assert_allclose(loads["first_force"][0], (0, 0, -1), atol=1e-12)
+
+
+@pytest.mark.parametrize("shift", (0.0, 1e6))
+def test_world_translation_cannot_turn_separated_points_into_compression(shift):
+    witness = CollisionWitness(
+        -1e-5,
+        (0, 0, 1),
+        (shift, 0, 0),
+        (shift, 0, 1e-5),
+        ((1, 1.0),),
+        ((2, 1.0),),
+    )
+    with pytest.raises(ValueError, match="gap"):
+        ContactSite(witness, (shift, 0, 0.5e-5), 1.0)
+
+
+def test_rotating_common_point_power_equals_both_com_wrench_powers():
+    sample = patch(4)
+    points = np.array([s.load_point for s in sample.sites])
+    ca, cb = np.array((0.2, -0.3, 0.4)), np.array((-0.1, 0.2, -0.4))
+    va, vb = np.array((0.4, -0.2, 0.3)), np.array((-0.1, 0.1, -0.2))
+    wa, wb = np.array((0.7, -0.3, 0.9)), np.array((-0.4, 0.5, -0.6))
+    ua = va + np.cross(wa, points - ca)
+    ub = vb + np.cross(wb, points - cb)
+    loads = sample_patch_loads(sample, RobotContactMaterial(100, 4, 0.25), ua, ub)
+    fa, fb = loads["first_force"], loads["second_force"]
+    site_power = np.sum(fa * ua + fb * ub)
+    wrench_power = (
+        fa.sum(axis=0) @ va
+        + np.cross(points - ca, fa).sum(axis=0) @ wa
+        + fb.sum(axis=0) @ vb
+        + np.cross(points - cb, fb).sum(axis=0) @ wb
+    )
+    assert site_power == pytest.approx(wrench_power, abs=1e-12)
+    # Distinct penetrated surface points give a different rotational work.
+    wrong_a = va + np.cross(wa, np.array([s.witness.first_point for s in sample.sites]) - ca)
+    wrong_b = vb + np.cross(wb, np.array([s.witness.second_point for s in sample.sites]) - cb)
+    assert abs(np.sum(fa * wrong_a + fb * wrong_b) - site_power) > 1e-5

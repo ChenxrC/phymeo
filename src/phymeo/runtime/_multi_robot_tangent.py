@@ -26,18 +26,27 @@ from .robot_payload_scene import _frozen, _readonly
 
 
 def configure(
-    scene, registry, *, stiffness_n_per_m, motion_tolerance_m=1e-6,
-    energy_tolerance_j=1e-8, max_frame_turn_rad=.25,
+    scene,
+    registry,
+    *,
+    stiffness_n_per_m,
+    motion_tolerance_m=1e-6,
+    energy_tolerance_j=1e-8,
+    max_frame_turn_rad=0.25,
 ):
     """Configure once under the scene lock; no sampled history is advanced here."""
     if not isinstance(registry, MaterialStationRegistry):
         raise TypeError("expected MaterialStationRegistry")
     if scene._time_s != 0 or getattr(scene, "_tangent", None) is not None:
         raise ValueError("configure tangent mode once before advancing the scene")
-    values = tuple(finite_real(value, name) for value, name in (
-        (stiffness_n_per_m, "stiffness"), (motion_tolerance_m, "motion tolerance"),
-        (energy_tolerance_j, "energy tolerance"),
-    ))
+    values = tuple(
+        finite_real(value, name)
+        for value, name in (
+            (stiffness_n_per_m, "stiffness"),
+            (motion_tolerance_m, "motion tolerance"),
+            (energy_tolerance_j, "energy tolerance"),
+        )
+    )
     if min(values) <= 0:
         raise ValueError("tangent stiffness and actual-motion/energy tolerances must be positive")
     shapes = {shape.key: shape for shape in scene._model.shapes}
@@ -59,21 +68,37 @@ def configure(
 def _site_signature(load, site):
     """Exact current-sample locator, never a persistent history identity."""
     return (
-        load.first, load.second, tuple(load.normal), load.gap_m,
-        tuple(site.material.first_point), tuple(site.material.second_point),
-        tuple(site.material.first_weights), tuple(site.material.second_weights),
-        tuple(site.application_point_first_m), tuple(site.application_point_second_m),
-        site.force_n, site.fraction, tuple(site.force_on_second_n),
+        load.first,
+        load.second,
+        tuple(load.normal),
+        load.gap_m,
+        tuple(site.material.first_point),
+        tuple(site.material.second_point),
+        tuple(site.material.first_weights),
+        tuple(site.material.second_weights),
+        tuple(site.application_point_first_m),
+        tuple(site.application_point_second_m),
+        site.force_n,
+        site.fraction,
+        tuple(site.force_on_second_n),
     )
 
 
 def _detail_signature(row):
     return (
-        row["first"], row["second"], tuple(row["normal_world"]), row["gap_m"],
-        tuple(row["first_surface_m"]), tuple(row["second_surface_m"]),
-        tuple(row["first_weights"]), tuple(row["second_weights"]),
-        tuple(row["application_point_first_m"]), tuple(row["application_point_second_m"]),
-        row["normal_load_N"], row["fraction"], tuple(row["force_on_second_N"]),
+        row["first"],
+        row["second"],
+        tuple(row["normal_world"]),
+        row["gap_m"],
+        tuple(row["first_surface_m"]),
+        tuple(row["second_surface_m"]),
+        tuple(row["first_weights"]),
+        tuple(row["second_weights"]),
+        tuple(row["application_point_first_m"]),
+        tuple(row["application_point_second_m"]),
+        row["normal_load_N"],
+        row["fraction"],
+        tuple(row["force_on_second_N"]),
     )
 
 
@@ -100,17 +125,24 @@ def _details(rows, changes, *, require_all):
         if key in matched:
             raise ValueError("ambiguous duplicate selected contact detail")
         matched.add(key)
-        for name, expected in (("first_com_world_m", change.first_center),
-                               ("second_com_world_m", change.second_center)):
+        for name, expected in (
+            ("first_com_world_m", change.first_center),
+            ("second_com_world_m", change.second_center),
+        ):
             if not np.allclose(original[name], expected, atol=1e-12, rtol=1e-12):
                 raise ValueError("contact detail COM differs from its physical material owner")
         site = change.new
         force = np.asarray(site.force_on_second_n)
         row = dict(original)
         row.update(
-            force_on_first_N=tuple(-force), force_on_second_N=tuple(force),
-            torque_on_first_Nm=tuple(np.cross(np.asarray(site.application_point_first_m)-change.first_center, -force)),
-            torque_on_second_Nm=tuple(np.cross(np.asarray(site.application_point_second_m)-change.second_center, force)),
+            force_on_first_N=tuple(-force),
+            force_on_second_N=tuple(force),
+            torque_on_first_Nm=tuple(
+                np.cross(np.asarray(site.application_point_first_m) - change.first_center, -force)
+            ),
+            torque_on_second_Nm=tuple(
+                np.cross(np.asarray(site.application_point_second_m) - change.second_center, force)
+            ),
             power_W=site.power_w,
         )
         output.append(_frozen(row))
@@ -129,21 +161,29 @@ def _validate_measured(ports, measured):
         wrenches = _array(value.link_wrenches_world, (port.body_count, 6), "physical COM wrenches")
         root = _array(value.fixed_root_contact_wrench, (6,), "direct fixed root contact wrench")
         projected = np.einsum("nki,nk->i", port.linear, wrenches[:, :3]) + np.einsum(
-            "nki,nk->i", port.angular, wrenches[:, 3:],
+            "nki,nk->i",
+            port.angular,
+            wrenches[:, 3:],
         )
         if not np.allclose(projected, contact, atol=1e-9, rtol=1e-10):
             raise ValueError("full contact effort differs from the actual COM wrenches")
-        if port.full_count == port.body_count+5 and np.any(root):
+        if port.full_count == port.body_count + 5 and np.any(root):
             raise ValueError("moving floating root cannot also carry a fixed root wrench")
 
 
 def _rewrite(scene, ports, frames, events, measured, loads, details, replacements):
     """Scatter only current site force differences; preserve every other original row."""
     _validate_measured(ports, measured)
-    owners = {(record.identity.first, record.identity.second):
-              (record.first_owner, record.second_owner) for record in events.active}
-    joint_delta = {address: np.zeros(port.full_count) for address, port in ports.items() if port.robot}
-    link_delta = {address: np.zeros((port.body_count, 6)) for address, port in ports.items() if port.robot}
+    owners = {
+        (record.identity.first, record.identity.second): (record.first_owner, record.second_owner)
+        for record in events.active
+    }
+    joint_delta = {
+        address: np.zeros(port.full_count) for address, port in ports.items() if port.robot
+    }
+    link_delta = {
+        address: np.zeros((port.body_count, 6)) for address, port in ports.items() if port.robot
+    }
     root_delta = {address: np.zeros(6) for address, port in ports.items() if port.robot}
     rigid_force = np.zeros_like(loads.inputs.rigid.force)
     rigid_torque = np.zeros_like(loads.inputs.rigid.torque)
@@ -163,16 +203,18 @@ def _rewrite(scene, ports, frames, events, measured, loads, details, replacement
             difference = force - np.asarray(site.force_on_second_n)
             relative = np.zeros(3)
             centers = []
-            for owner, point, sign in ((first, site.application_point_first_m, -1.),
-                                        (second, site.application_point_second_m, 1.)):
+            for owner, point, sign in (
+                (first, site.application_point_first_m, -1.0),
+                (second, site.application_point_second_m, 1.0),
+            ):
                 address = owner.world, owner.body
                 port = ports[address]
                 jacobian = port.jacobian(owner, point)
                 center = port.center(owner, frames)
                 centers.append(center)
-                relative += sign*(jacobian @ port.full_velocity)
-                signed = sign*difference
-                moment = np.cross(np.asarray(point)-center, signed)
+                relative += sign * (jacobian @ port.full_velocity)
+                signed = sign * difference
+                moment = np.cross(np.asarray(point) - center, signed)
                 if port.robot:
                     joint_delta[address] += jacobian.T @ signed
                     index = port.index(owner)
@@ -193,16 +235,25 @@ def _rewrite(scene, ports, frames, events, measured, loads, details, replacement
             changes[signature] = _Change(first, second, centers[0], centers[1], site, updated)
             sites.append(updated)
             changed = True
-        revised = replace(load, sites=tuple(sites), power_w=sum(site.power_w for site in sites)) if changed else load
+        revised = (
+            replace(load, sites=tuple(sites), power_w=sum(site.power_w for site in sites))
+            if changed
+            else load
+        )
         rewritten.append(revised)
         if changed:
             changed_loads.append((load, revised, local_force, local_torque))
     if used != set(replacements):
         raise ValueError("selected site index differs from its current load component")
     revised_loads = SurfaceLoads(
-        CoupledInputs(loads.inputs.particles, RigidBodyInputs(
-            loads.inputs.rigid.force+rigid_force, loads.inputs.rigid.torque+rigid_torque,
-        )), tuple(rewritten),
+        CoupledInputs(
+            loads.inputs.particles,
+            RigidBodyInputs(
+                loads.inputs.rigid.force + rigid_force,
+                loads.inputs.rigid.torque + rigid_torque,
+            ),
+        ),
+        tuple(rewritten),
     )
     revised_measured = {}
     for address, value in measured.items():
@@ -221,16 +272,23 @@ def _rewrite(scene, ports, frames, events, measured, loads, details, replacement
             else:
                 local_contacts.append(load)
         local_loads = SurfaceLoads(
-            CoupledInputs(value.loads.inputs.particles, RigidBodyInputs(
-                value.loads.inputs.rigid.force+local_force,
-                value.loads.inputs.rigid.torque+local_torque,
-            )), tuple(local_contacts),
+            CoupledInputs(
+                value.loads.inputs.particles,
+                RigidBodyInputs(
+                    value.loads.inputs.rigid.force + local_force,
+                    value.loads.inputs.rigid.torque + local_torque,
+                ),
+            ),
+            tuple(local_contacts),
         )
         revised_measured[address] = replace(
-            value, loads=local_loads,
-            joint_effort_full=_readonly(value.joint_effort_full+joint_delta[address]),
-            link_wrenches_world=_readonly(value.link_wrenches_world+link_delta[address]),
-            fixed_root_contact_wrench=_readonly(value.fixed_root_contact_wrench+root_delta[address]),
+            value,
+            loads=local_loads,
+            joint_effort_full=_readonly(value.joint_effort_full + joint_delta[address]),
+            link_wrenches_world=_readonly(value.link_wrenches_world + link_delta[address]),
+            fixed_root_contact_wrench=_readonly(
+                value.fixed_root_contact_wrench + root_delta[address]
+            ),
             details=_details(value.details, changes, require_all=False),
         )
     result = MappingProxyType(revised_measured)
@@ -253,14 +311,20 @@ class SceneTangentAttempt:
     _sample_time_s: float
 
     def finish(self, candidate_body, end_geometry_by_address):
-        if (self._scene._tangent is not self._config
-                or self._scene._tangent_state is not self._history
-                or self._scene._time_s != self._sample_time_s):
+        if (
+            self._scene._tangent is not self._config
+            or self._scene._tangent_state is not self._history
+            or self._scene._time_s != self._sample_time_s
+        ):
             raise ValueError("stale tangent attempt or changed scene history base")
         frames = owner_poses(self._scene, candidate_body, end_geometry_by_address)
         material, application = self._selection.measure_motion(frames)
         return finish_tangent_step(
-            self._config.store, self._history, self._trial, material, application,
+            self._config.store,
+            self._history,
+            self._trial,
+            material,
+            application,
             motion_tolerance_m=self._config.motion_tolerance_m,
             energy_tolerance_j=self._config.energy_tolerance_j,
         )
@@ -281,13 +345,19 @@ def prepare(scene, prepared, measured, loads, details, external, h):
             ports = build_ports(scene, prepared, external)
             frames = owner_poses(scene, scene._body, geometries)
             events = scene._event_adapter.stage(
-                scene._contact_events, loads, geo=geometries, rigid=scene._body,
-                sample_time_s=sample_time, commit_time_s=sample_time+h,
+                scene._contact_events,
+                loads,
+                geo=geometries,
+                rigid=scene._body,
+                sample_time_s=sample_time,
+                commit_time_s=sample_time + h,
             )
             selection = config.registry.bind(events, frames, sample_time_s=sample_time)
             locations, friction = [], []
             for binding in selection.bindings:
-                indices = [i for i, load in enumerate(loads.contacts) if load == binding.component.load]
+                indices = [
+                    i for i, load in enumerate(loads.contacts) if load == binding.component.load
+                ]
                 if len(indices) != 1:
                     raise ValueError("material station requires a unique current load component")
                 location = indices[0], binding.site_index
@@ -298,29 +368,63 @@ def prepare(scene, prepared, measured, loads, details, external, h):
                     raise ValueError("selected robot material must retain its original law")
                 friction.append(binding.component.law.friction)
             selected = set(config.registry.pairs)
-            normal = {(i, j): site.force_n*np.asarray(load.normal)
-                      for i, load in enumerate(loads.contacts) if (load.first, load.second) in selected
-                      for j, site in enumerate(load.sites) if site.force_n > 0}
+            normal = {
+                (i, j): site.force_n * np.asarray(load.normal)
+                for i, load in enumerate(loads.contacts)
+                if (load.first, load.second) in selected
+                for j, site in enumerate(load.sites)
+                if site.force_n > 0
+            }
             if set(locations) != set(normal):
                 raise ValueError("every selected positive normal site needs one material station")
             normal_measured, normal_loads, normal_details = _rewrite(
-                scene, ports, frames, events, measured, loads, details, normal,
+                scene,
+                ports,
+                frames,
+                events,
+                measured,
+                loads,
+                details,
+                normal,
             )
-            world, free = relative_response(ports, selection.bindings, normal_measured,
-                                            normal_loads, scene.rigid_rows, h)
+            world, free = relative_response(
+                ports, selection.bindings, normal_measured, normal_loads, scene.rigid_rows, h
+            )
             trial = prepare_tangent_step(
-                config.store, history, selection.samples, world, free,
-                sample_time_s=sample_time, dt_s=h,
+                config.store,
+                history,
+                selection.samples,
+                world,
+                free,
+                sample_time_s=sample_time,
+                dt_s=h,
                 stiffness_n_per_m=np.full(len(locations), config.stiffness_n_per_m),
                 friction=np.asarray(friction, dtype=float),
             )
-            replacement = {location: normal[location]+force
-                           for location, force in zip(locations, trial.force_on_second_n, strict=True)}
+            replacement = {
+                location: normal[location] + force
+                for location, force in zip(locations, trial.force_on_second_n, strict=True)
+            }
             revised, revised_loads, revised_details = _rewrite(
-                scene, ports, frames, events, normal_measured, normal_loads, normal_details,
+                scene,
+                ports,
+                frames,
+                events,
+                normal_measured,
+                normal_loads,
+                normal_details,
                 replacement,
             )
     except (FloatingPointError, OverflowError, np.linalg.LinAlgError) as exc:
         raise ValueError(f"scene tangent response is not representable: {exc}") from exc
-    return SceneTangentAttempt(revised, revised_loads, revised_details, scene, config,
-                               history, selection, trial, sample_time)
+    return SceneTangentAttempt(
+        revised,
+        revised_loads,
+        revised_details,
+        scene,
+        config,
+        history,
+        selection,
+        trial,
+        sample_time,
+    )

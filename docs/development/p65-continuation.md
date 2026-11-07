@@ -13,7 +13,7 @@ A/K3、B、C1和独立Newton留出/源码外wheel已接受；C2滑轨、F1浮根
 ### 当前实施检查点：F3 / C4 / 通用摩擦（2026-11-07）
 
 F3核心frame、URDF完整根惯量与真实共同场景已正式限域验收：新6窗4096步、Newton CPU/CUDA八例320窗口步+8静止响应、新wheel源码外两窗1024步通过；详[根惯量frame](../benchmarks/p65-floating-root-inertia-frame.md)。不再重跑这些同源组。
-C4完整固定根R/P树已接入父共享runtime：interpret/CUDA各101项、受影响共享37项、独立Newton CPU/CUDA两变换24窗960步及同次保存审计通过；当前WHEEL_PENDING，详[设备树报告](../benchmarks/p65-resident-tree-collision.md)。首片限1..16普通固定根物理行与当前姿态dynamic/static宽相，不是设备接触反馈。原RD的F01–F06测试库与两个新持续切向适配模块已导入，共享Single/Multi/full-root接缝完成文本复核和静态检查；实际物理矩阵即将由父串行执行，151首RED不重复。全部执行仍父唯一串行，无截止/周期任务。
+C4完整固定根R/P树已接入父共享runtime：interpret/CUDA各101项、受影响共享37项、独立Newton CPU/CUDA两变换24窗960步及同次保存审计通过；当前WHEEL_PENDING，详[设备树报告](../benchmarks/p65-resident-tree-collision.md)。首片限1..16普通固定根物理行与当前姿态dynamic/static宽相，不是设备接触反馈。通用摩擦F01–F06已通过36项专项、7项材料权重回归及23项受影响兼容；同次18窗1611步已保存核完，当前也为WHEEL_PENDING，详[持续摩擦报告](../benchmarks/p65-general-scene-friction.md)。原100g mimic失败未复验关闭。下一步以一个新stage wheel做两线源码外使用；原robot并行准备固定根affine-mimic设备树的薄扩展计划。全部执行仍父唯一串行，无截止/周期任务。
 
 
 ## 最近已验收基线（2026-11-06）

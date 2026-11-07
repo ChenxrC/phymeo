@@ -352,6 +352,10 @@ class FloatingRobotParticipant:
         )
         return state, geometry, linear, angular, dynamics.mass_matrix, dynamics.bias
 
+    def kinematics(self, state):
+        """Read candidate authored body frames without another dynamics preparation."""
+        return floating_kinematics(self.asset.model, self.full(state))
+
     def poses(self, state):
         self.validate(state)
         source = self.asset.collision_motion(state.q)

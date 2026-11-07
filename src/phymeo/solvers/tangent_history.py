@@ -201,7 +201,12 @@ def _address(value, world):
         not isinstance(owner.kind, str)
         or owner.kind not in frames
         or not isinstance(owner.local_frame, str)
-        or owner.local_frame != frames[owner.kind]
+        or owner.local_frame
+        not in (
+            ("robot_root", "robot_model_link")
+            if owner.kind == "robot_root"
+            else (frames[owner.kind],)
+        )
     ):
         raise ValueError("unsupported physical owner material frame")
     if owner.kind in {"rigid", "particle"}:
@@ -217,13 +222,14 @@ def _address(value, world):
         if owner.kind == "robot_link":
             link_index = _index(owner.link_index, "robot link")
         else:
+            expected = -1 if owner.local_frame == "robot_root" else 0
             if (
                 isinstance(owner.link_index, (bool, np.bool_))
                 or not isinstance(owner.link_index, Integral)
-                or owner.link_index != -1
+                or owner.link_index != expected
             ):
-                raise ValueError("invalid fixed root owner")
-            link_index = -1
+                raise ValueError("invalid fixed or floating root owner")
+            link_index = expected
     owner = ContactOwner(
         owner_world, body, str(owner.kind), str(owner.local_frame), link_index, link_name
     )

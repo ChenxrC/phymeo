@@ -472,7 +472,7 @@ class RobotScene:
         """Select explicit material-station spring/Coulomb friction before the first step."""
         with self._lock:
             self._require_open()
-            from ._scene_coupled_tangent import configure
+            from ._multi_robot_tangent import configure
 
             configure(self, registry, **options)
 
@@ -550,12 +550,36 @@ class RobotScene:
                 physical, geo, linear, angular, body, self._geometry.poses
             )
             tangent = None
+            loads, details = measured.loads, measured.details
             if getattr(self, "_tangent", None) is not None:
-                from ._scene_coupled_tangent import robot_prepare
+                from ._multi_robot_tangent import prepare
+                from ._robot_participant import RobotPreparation
 
-                measured, tangent = robot_prepare(
-                    self, measured, geo, linear, M, b, effort, external, h
+                prepared = RobotPreparation(
+                    arm,
+                    physical,
+                    geo,
+                    linear,
+                    angular,
+                    mass,
+                    bias,
+                    M,
+                    b,
+                    effort,
+                    RobotCommand(target, rate, cap, ff),
+                    command,
                 )
+                tangent = prepare(
+                    self,
+                    {self._addr: prepared},
+                    {self._addr: measured},
+                    loads,
+                    details,
+                    external,
+                    h,
+                )
+                measured = tangent.measured[self._addr]
+                loads, details = tangent.loads, tangent.details
             full_load = measured.joint_effort_full
             load = full_load if P is None else P.T @ full_load
             acceleration = _solve_mass_matrix(M, effort + load - b)
@@ -563,8 +587,8 @@ class RobotScene:
             candidate_arm = RobotState(arm.q + h * v, v)
             self._validate_robot(candidate_arm)
             forces = RigidBodyInputs(
-                external.rigid.force + measured.loads.inputs.rigid.force,
-                external.rigid.torque + measured.loads.inputs.rigid.torque,
+                external.rigid.force + loads.inputs.rigid.force,
+                external.rigid.torque + loads.inputs.rigid.torque,
             )
             result = self._integrator.step(self._rigid_model, body, forces, h)
             if not result.report.accepted:
@@ -576,8 +600,8 @@ class RobotScene:
             if tangent is not None:
                 from ..dynamics.robot_kinematics import forward_kinematics
 
-                end_geo = forward_kinematics(self._tree.model, candidate_arm.q)
-                staged_tangent = tangent.finish(candidate_body, end_geo)
+                end_geo = forward_kinematics(self._tree.model, full.q)
+                staged_tangent = tangent.finish(candidate_body, {self._addr: end_geo})
             mimic_loads = (
                 None
                 if P is None
@@ -607,14 +631,14 @@ class RobotScene:
                 RigidSceneObservation.from_state(candidate_body),
                 RigidSceneObservation.from_state(body),
                 external,
-                measured.loads,
-                tuple(_frozen(row) for row in measured.details),
+                loads,
+                tuple(_frozen(row) for row in details),
             )
             # Finish every allocation and public copy before the one state publication.
             public = _owned(reading)
             staged_events = self._event_adapter.stage(
                 self._contact_events,
-                measured.loads,
+                loads,
                 geo=geo,
                 rigid=body,
                 sample_time_s=self._time_s,

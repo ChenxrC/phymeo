@@ -76,6 +76,10 @@ class FloatingMimicParticipant:
     def terms(self, state):
         return self._geometry_adapter.terms(self.full(state))
 
+    def kinematics(self, state):
+        """Expand affine coordinates once for actual candidate body frames."""
+        return self._geometry_adapter.kinematics(self.full(state))
+
     def poses(self, state):
         return self._geometry_adapter.poses(self.full(state))
 

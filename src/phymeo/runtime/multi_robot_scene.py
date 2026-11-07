@@ -79,8 +79,8 @@ class MultiRobotScene:
     Commands use independent joint coordinates, including existing mimic graphs.
     Direct contacts support sphere, finite capsule and convex-hull patches on
     another tree, including affine scalar mimic trees with a real floating root.
-    Self-contact, CCD, deformable bodies and the opt-in coupled tangential-history
-    mode remain unsupported.
+    Explicit material stations can opt into coupled tangential history. Self-contact,
+    CCD and deformable bodies remain unsupported.
     """
 
     def __init__(self, registrations, rigid_items, pairs, gravity):
@@ -302,17 +302,20 @@ class MultiRobotScene:
     def enable_coupled_tangent(self, registry, **options):
         with self._lock:
             self._require_open()
-            raise ValueError(
-                "multi-robot tangent history requires a separate coupled-motion adapter"
-            )
+            from ._multi_robot_tangent import configure
+
+            configure(self, registry, **options)
 
     @property
     def tangent_history(self):
-        return None
+        with self._lock:
+            return getattr(self, "_tangent_state", None)
 
     @property
     def tangent_receipt(self):
-        return None
+        with self._lock:
+            value = getattr(self, "_tangent_receipt", None)
+            return None if value is None else replace(value)
 
     def step(self, dt, *, actions, external=None):
         with self._lock:
@@ -344,6 +347,12 @@ class MultiRobotScene:
                 addr: (p.physical, p.geometry, p.linear, p.angular) for addr, p in prepared.items()
             }
             measured, loads, details = self._sample(terms)
+            tangent = None
+            if getattr(self, "_tangent", None) is not None:
+                from ._multi_robot_tangent import prepare
+
+                tangent = prepare(self, prepared, measured, loads, details, external, h)
+                measured, loads, details = tangent.measured, tangent.loads, tangent.details
             candidates, joints = {}, {}
             for addr, participant in self._participants.items():
                 candidates[addr], joints[addr] = participant.integrate(
@@ -358,6 +367,13 @@ class MultiRobotScene:
                 raise ValueError(rigid_step.report.reason)
             candidate_body = rigid_step.state
             geometry = self._geometry_for(candidates, candidate_body, end_time)
+            staged_tangent = None
+            if tangent is not None:
+                end_geometry = {
+                    addr: participant.kinematics(candidates[addr])
+                    for addr, participant in self._participants.items()
+                }
+                staged_tangent = tangent.finish(candidate_body, end_geometry)
             reading = RobotSceneObservation(
                 self._step_number + 1,
                 end_time,
@@ -378,6 +394,9 @@ class MultiRobotScene:
                 sample_time_s=self._time_s,
                 commit_time_s=end_time,
             )
+            tangent_state, tangent_receipt = (
+                staged_tangent if staged_tangent is not None else (None, None)
+            )
             publication = (
                 candidates,
                 candidate_body,
@@ -386,6 +405,8 @@ class MultiRobotScene:
                 events,
                 reading.step_number,
                 end_time,
+                tangent_state,
+                tangent_receipt,
             )
             (
                 self._arms,
@@ -395,6 +416,8 @@ class MultiRobotScene:
                 self._contact_events,
                 self._step_number,
                 self._time_s,
+                self._tangent_state,
+                self._tangent_receipt,
             ) = publication
             return public
 

@@ -104,6 +104,12 @@ class RobotParticipant:
         physical = self.full(state)
         return (physical, *robot_dynamics_terms(self.tree.model, physical))
 
+    def kinematics(self, state):
+        """Read candidate full-coordinate frames without resolving drive or dynamics."""
+        from ..dynamics.robot_kinematics import forward_kinematics
+
+        return forward_kinematics(self.tree.model, self.full(state).q)
+
     def poses(self, state):
         source = self.asset.collision_motion(state.q)
         if set(source) != set(self.key_map):

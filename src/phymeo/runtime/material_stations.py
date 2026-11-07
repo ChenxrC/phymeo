@@ -58,7 +58,12 @@ def _owner(value):
         not isinstance(value.kind, str)
         or value.kind not in kinds
         or not isinstance(value.local_frame, str)
-        or value.local_frame != kinds[value.kind]
+        or value.local_frame
+        not in (
+            ("robot_root", "robot_model_link")
+            if value.kind == "robot_root"
+            else (kinds[value.kind],)
+        )
     ):
         raise ValueError("station motion supports rigid/link/root owners only")
     if value.kind == "rigid":
@@ -69,7 +74,8 @@ def _owner(value):
         if not isinstance(value.link_name, str) or not value.link_name:
             raise ValueError("robot owner needs a computational link name")
         index = _index(value.link_index, "robot link index", minimum=-1)
-        if (value.kind == "robot_root" and index != -1) or (
+        root_index = -1 if value.local_frame == "robot_root" else 0
+        if (value.kind == "robot_root" and index != root_index) or (
             value.kind == "robot_link" and index < 0
         ):
             raise ValueError("invalid robot link/root index")
@@ -79,7 +85,7 @@ def _owner(value):
 
 @dataclass(frozen=True)
 class OwnerPose:
-    """One actual COM, computational-link or fixed-root frame; values are owned."""
+    """An actual COM, link, fixed-root or floating-root frame with owned values."""
 
     owner: ContactOwner
     position_m: tuple

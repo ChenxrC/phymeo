@@ -454,11 +454,12 @@ def test_a06_direct_robot_contact_now_applies_bilateral_loads(tmp_path):
         np.testing.assert_allclose(result.robots[0, 20].v, [H], atol=2e-14)
 
 
-def test_a06_multirobot_coupled_history_is_explicitly_unavailable(tmp_path):
+def test_a06_multirobot_coupled_history_rejects_invalid_registry_atomically(tmp_path):
     with _symmetric_builder(tmp_path).build() as scene:
-        with pytest.raises(ValueError, match="multi.robot.*tangent|tangent.*multi.robot"):
-            scene.enable_coupled_tangent(None)
+        with pytest.raises(TypeError, match="MaterialStationRegistry"):
+            scene.enable_coupled_tangent(None, stiffness_n_per_m=200)
         assert scene.observe().step_number == 0
+        assert scene.tangent_history is None and scene.tangent_receipt is None
 
 
 @pytest.mark.parametrize("accepted", [True, False])

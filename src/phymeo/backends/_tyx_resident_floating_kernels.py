@@ -566,6 +566,12 @@ def floating_solve(
             next_root[w, 4] = _div(ny, norm)
             next_root[w, 5] = _div(nz, norm)
             next_root[w, 6] = _div(nw, norm)
+            alignment = 0.0
+            for a in tx.static_range(4):
+                alignment = _add(alignment, _mul(next_root[w, 3 + a], root[w, 3 + a]))
+            if alignment < 0.0:
+                for a in tx.static_range(4):
+                    next_root[w, 3 + a] = -next_root[w, 3 + a]
             for a in tx.static_range(3):
                 offset = 0.0
                 for b in tx.static_range(3):

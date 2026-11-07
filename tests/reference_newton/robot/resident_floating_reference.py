@@ -138,7 +138,7 @@ def bounded_drive(M, bias, load, q, v, drive, kp, kd, caps, h):
     free = np.linalg.solve(M, load-bias)[6:]
     mobility = np.linalg.inv(M)[6:, 6:]
     beta = h*h*kp+h*kd
-    rhs = drive[:, 2]+kp*(drive[:, 0]-q[7:]-h*v[6:])-kd*v[6:]-beta*free
+    rhs = drive[:, 2]+kp*(drive[:, 0]-q[7:]-h*v[6:])+kd*(drive[:, 1]-v[6:])-beta*free
     fixed, moving = np.flatnonzero(beta == 0), np.flatnonzero(beta > 0)
     tau = np.clip(rhs, -caps, caps)
     if not len(moving):

@@ -18,3 +18,15 @@ C1 每个已注册 world 最多绑定一个真实 FreeSphere，查它与同 worl
 不承诺零读回。静态注册和索引上传、原 BVH 参数上传、状态戳/完整公共 bounds/候选读回均须分别计数。暖态不得 snapshot/kinematics 下载完整动态状态、不得重新上传动态 envelope、不得新增设备分配。interpret 是真实 TYX 解释路径，CUDA 必须实际使用同源设备核。
 
 固定测试库依计划涵盖真实推进后的分离→恰触、W1/W4/W32 与同 ID 异 world、FP32 外向恰触与近失、mask/exclusion、restore同tick不同位置与reset、数值拒步/设备失败、两个active buffer、空/close/容量和输入绑定错误。每项保持独立几何 oracle；保守候选允许 false positive，但不能遗漏独立HOST oracle的可能碰撞对。完整宽相输出不得冒作原窄相材料点或接触力结果。
+
+## 冻结实现与待验证项
+
+首有效 RED 为父作业 `05-c-valid-red`：绑定 tests-only `fc19dfe`，真实 interpret 球推进 0.25 s 后，在 `batch.prepare_collision` 缺失处失败，1 failed / 0.93 s / RAW 1。此前作业04使用旧虚拟环境，缺 tyx 的 fixture 错误保留，不能当有效功能 RED。作者没有执行这些作业。
+
+完整用例检查点 `d25ae60` 先于两个产品模块，保留原 C01 输入。当前源码和其余用例均 UNEXECUTED，待父统一真实 interpret/CUDA 与静态检查。不得把下述实现说明作为通过证明。
+
+设备核取当前 state 的 xyz 和真实 props 第7列半径，对每个 RN 的 c-r/c+r 端点分别增加外扩量 `max(FP32 normal_min, 2*FP32_epsilon*abs(endpoint))`。显式 add_rn/sub_rn/mul_rn 保留舍入屏障；正常范围内保守包围原 FP32 球，零/FTZ附近也外扩。它可能比既有 Fraction→最小外向 FP32 盒更宽，测试比较包含关系及已分辨的完整候选，而不谎称盒逐bit相同。任何溢出/非有限结果在 BVH 查询及结果发布前拒绝。极接近 FP32 最大值的合法中心也可能因无法表达有限保守盒而拒绝。
+
+查询先读 compact shape status/tick 表，再用原 shape BVH 从同一设备 bounds refit 和筛选；不读 xyz/v 的完整状态。每个计划、每个 accepted-buffer 方向各有一个核绑定句柄。静态表和布局准备时分配，暖态继续上传原 BVH 参数元数据并诚实计数。`plan.stats()` 记录本计划碰撞资源/传输和所有 HOST copy，原 batch.stats 仍记录原世界状态与提交/同步；它们不是同一全局聚合计数。宽相只描述当前接受姿态，对运动段的穿越和实际施力没有新保证。
+
+容量为显式0至32640的整数，超过容量抛 ValueError，不发布部分候选。完整输入校验在碰撞设备分配前完成；静态几何复用既有有限几何包络，shape revision随结果返回。模型固定后不支持原地重新绑定；需要关闭旧计划并创建新计划。restore/reset改接受epoch；它们不是拓扑变更。

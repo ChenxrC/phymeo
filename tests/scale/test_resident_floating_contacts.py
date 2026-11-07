@@ -98,7 +98,7 @@ def test_f01_public_root_contact_keeps_full_six_coordinate_response(tyx_mode, tm
             before = batch.snapshot()[WORLD]
             before_geometry = batch.tree_kinematics()[WORLD]
             assert (before_geometry.body_count, before_geometry.velocity_count) == (1, 6)
-            _close(before_geometry.position_m, [[0, 0, 3 / 32]])
+            _close(before_geometry.link_position_m, [[0, 0, 3 / 32]])
             collision = ph.CollisionModel((ball, wall))
             bindings = (
                 ph.ResidentFloatingTreeBinding(ball_key, WORLD, 0, np.zeros((1, 3)), topology=before.topology),

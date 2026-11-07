@@ -727,7 +727,11 @@ class Auditor:
             require(snapshot.resolve().parent == directory, "snapshot must be job local")
             raw = self.read(snapshot, directory)
             same(hashlib.sha256(raw).hexdigest(), before[key], "source snapshot hash")
-            text[key] = raw.decode("utf-8-sig")
+            try:
+                text[key] = raw.decode("utf-8-sig")
+            except UnicodeDecodeError:
+                # Binary artifacts remain fully hash-bound, never parsed as source.
+                text[key] = None
         for item in final["sources_after"]:
             key = normalized(item["path"])
             require(key not in after, "duplicate after source")
@@ -742,7 +746,7 @@ class Auditor:
     @staticmethod
     def source(sources, path):
         matches = [v for k, v in sources.items() if k.endswith("/" + path.casefold())]
-        require(len(matches) == 1, "missing/ambiguous bound source " + path)
+        require(len(matches) == 1 and isinstance(matches[0], str), "missing/ambiguous/non-text bound source " + path)
         return matches[0]
 
     def pytest_run(self, spec):
@@ -1026,10 +1030,14 @@ def external_run(audit, spec):
         source, filename, option = WHEEL_SOURCE, "resident-floating-wheel.trace.json.gz", "--mode"
         require(option in args and args[args.index(option)+1] == mode, "actual external backend")
     require(any(path.endswith("/" + source.rsplit("/", 1)[-1]) for path in sources), "bound original or copied external driver source")
-    root = directory / spec["payload_directory"]
-    require(root.resolve().is_relative_to(directory), "external saved output root")
-    document = audit.json(root / filename, directory, compressed=True)
-    summary = audit.json(root / "summary.json", directory)
+    declared_root = Path(spec["payload_directory"])
+    root = (declared_root if declared_root.is_absolute() else directory / declared_root).resolve(strict=True)
+    require("--output" in args, "external actual output option missing")
+    actual_root = Path(args[args.index("--output") + 1])
+    require(actual_root.is_absolute(), "external output must be explicitly absolute")
+    same(root, actual_root.resolve(strict=True), "payload root bound to original external CLI")
+    document = audit.json(root / filename, root, compressed=True)
+    summary = audit.json(root / "summary.json", root)
     scan(document)
     scan(summary)
     saved = audit.files[str((root / filename).resolve())]

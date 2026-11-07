@@ -54,3 +54,7 @@ CLI：`python -I -B <审计脚本> --manifest <绝对JSON> --output <尚不存�
 native独立入口核七声明各40完整step、真实shape/joint/body metadata、FREE父锚基底与世界COM转换数据、完整原M/J、原输入力与post-RNEA raw/actual solve-origin/decoded COM同存、所有原named checks、pin版本及原Newton源snapshot；绝不把normalized-Euler与exp-map混为一个轨迹门。wheel入口核W4 40+21与两个bank的原完整输入/拒步/重试、P07显式unsupported、关闭字节、实际loaded module origin和归档SHA/安装成员回执。离线不重新安装/遍历原机器安装目录，其来源验证是保存的同run消费者结果。
 
 输出仅 `saved_records_consistent` 或 `incomplete_or_inconsistent`，始终 `new_physics_pass_count=0`。不把保存审计另加到86/15或native物理通过次数中。当前无审计执行、无静态检查、无新增物理结果。
+
+## 父执行前观察格式补足
+
+父全文读完原1107行消费者后补足两项输入读取：source snapshot中的wheel等二进制仍全bytes/SHA绑定，但不当UTF8源码解码；外部native/wheel的payload根须与原命令行 --output 的显式绝对路径完全一致，允许合法源码外目录，不搬动输出或改原summary路径。均未改物理、预声明成员/门或payload字段，实际审计和静态仍待父串行槽。导入原874ff199时两文件Git blob相同，工作副本仅LF/CRLF差异，已独立核规范化全文相同。

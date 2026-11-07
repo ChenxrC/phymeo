@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<robot name="floating_fixed_composite">
+  <!-- SI. Independent composite: M=3, C=(1/12,0,0),
+       I_C=diag(3/10,53/120,13/24). No moving or dummy joint. -->
+  <link name="base">
+    <inertial>
+      <mass value="2"/>
+      <inertia ixx="0.2" iyy="0.3" izz="0.4" ixy="0" ixz="0" iyz="0"/>
+    </inertial>
+    <collision name="base_marker">
+      <geometry><sphere radius="0.0625"/></geometry>
+    </collision>
+  </link>
+  <link name="tool">
+    <inertial>
+      <mass value="1"/>
+      <inertia ixx="0.1" iyy="0.1" izz="0.1" ixy="0" ixz="0" iyz="0"/>
+    </inertial>
+    <collision name="tool_box">
+      <geometry><box size="0.125 0.125 0.125"/></geometry>
+    </collision>
+  </link>
+  <joint name="tool_mount" type="fixed">
+    <parent link="base"/><child link="tool"/>
+    <origin xyz="0.25 0 0"/>
+  </joint>
+</robot>

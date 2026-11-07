@@ -1,0 +1,62 @@
+<?xml version="1.0"?>
+<robot name="floating_fixed_probe">
+  <!-- Two independent scalar joints. Root and tool groups contain real
+       positive masses; witness is a massless authored frame, not a DOF. -->
+  <link name="base">
+    <inertial>
+      <mass value="2"/>
+      <inertia ixx="0.2" iyy="0.3" izz="0.4" ixy="0" ixz="0" iyz="0"/>
+    </inertial>
+    <collision name="base_marker">
+      <geometry><sphere radius="0.03125"/></geometry>
+    </collision>
+  </link>
+  <link name="mount">
+    <inertial>
+      <mass value="0.5"/>
+      <inertia ixx="0.02" iyy="0.03" izz="0.04" ixy="0" ixz="0" iyz="0"/>
+    </inertial>
+  </link>
+  <joint name="mount_fixed" type="fixed">
+    <parent link="base"/><child link="mount"/><origin xyz="0.25 0 0"/>
+  </joint>
+  <link name="arm">
+    <inertial>
+      <origin xyz="0.25 0 0"/><mass value="1"/>
+      <inertia ixx="0.05" iyy="0.075" izz="0.1" ixy="0" ixz="0" iyz="0"/>
+    </inertial>
+  </link>
+  <joint name="hinge" type="revolute">
+    <parent link="mount"/><child link="arm"/><axis xyz="0 0 1"/>
+    <limit lower="-1.5" upper="1.5" effort="16" velocity="4"/>
+  </joint>
+  <link name="carriage">
+    <inertial>
+      <mass value="0.5"/>
+      <inertia ixx="0.025" iyy="0.025" izz="0.025" ixy="0" ixz="0" iyz="0"/>
+    </inertial>
+  </link>
+  <joint name="extension" type="prismatic">
+    <parent link="arm"/><child link="carriage"/>
+    <origin xyz="0.5 0 0"/><axis xyz="1 0 0"/>
+    <limit lower="-0.125" upper="0.25" effort="32" velocity="2"/>
+  </joint>
+  <link name="tool">
+    <inertial>
+      <mass value="0.25"/>
+      <inertia ixx="0.01" iyy="0.02" izz="0.03" ixy="0" ixz="0" iyz="0"/>
+    </inertial>
+    <collision name="tip_box">
+      <geometry><box size="0.125 0.25 0.125"/></geometry>
+    </collision>
+  </link>
+  <joint name="tool_fixed" type="fixed">
+    <parent link="carriage"/><child link="tool"/>
+    <origin xyz="0.125 0 0" rpy="0 0 1.5707963267948966"/>
+  </joint>
+  <link name="witness"/>
+  <joint name="witness_fixed" type="fixed">
+    <parent link="tool"/><child link="witness"/>
+    <origin xyz="0.03125 0 0"/>
+  </joint>
+</robot>

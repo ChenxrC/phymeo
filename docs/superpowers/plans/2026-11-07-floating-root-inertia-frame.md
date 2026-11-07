@@ -26,3 +26,7 @@ FP64这些有界核门：M/b/a rtol2e-11/atol2e-12；40步q/v/姿态/COM atol2e-
 ## T1 实际交付（2026-11-07）
 
 T1三个核心文件已实现，新11项HOST和受影响17项HOST通过；最终Ruff/format通过，两条40步完整轨迹保存。首RED精确为缺构造参数，未调物理输入/门；详[实际报告](../../benchmarks/p65-floating-root-inertia-frame.md)。T2/T3仍未完成，不将核心通过当作URDF或共同场景通过。下一步测试先行固定完整root tensor、偏心COM、folded fixed-tool和mimic继承，随后复用原静态惯量装配。
+
+## T2 实际交付（2026-11-07）
+
+210eb20测试先行；合法原始矩阵/旋转inertial frame/偏置fixed工具/mimic继承共18项首HOST通过，受影响三个完整文件93项通过，最终静态通过。普通与折叠共用原_mass_component/_principal，root authored COM/shape/site不重定向。tests/test_floating_robot_scene.py中原两合法unsupported拒绝项同步退役，tests/test_floating_fixed_tools.py原off-axis拒绝退役，均有新正控，其他invalid仍拒绝。下一步仅T3实际新输入与交付，不重跑同源已绿组。

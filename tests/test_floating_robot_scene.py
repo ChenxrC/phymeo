@@ -792,10 +792,8 @@ def test_a04_floating_sphere_and_rotated_offset_box_keep_actual_face(tmp_path, g
 @pytest.mark.parametrize(
     "invalid,match",
     [
-        ("missing", "inertial"),
-        ("zero_mass", "positive"),
-        ("products", "non-diagonal"),
-        ("rotated_inertia", "non-diagonal"),
+        ("missing", "inertial|mass"),
+        ("zero_mass", "positive|mass"),
         ("fixed", "fixed"),
         ("mimic", "mimic"),
     ],
@@ -811,12 +809,6 @@ def test_a06_floating_loader_rejects_unrepresented_root_and_joint_semantics(
         source = source.replace(_inertia(2, (0, 0, 0), (0.25, 0.5, 0.75)), "", 1)
     elif invalid == "zero_mass":
         source = source.replace('<mass value="2"/>', '<mass value="0"/>', 1)
-    elif invalid == "products":
-        source = source.replace('ixy="0"', 'ixy="0.01"', 1)
-    elif invalid == "rotated_inertia":
-        source = source.replace(
-            '<origin xyz="0.0 0.0 0.0"/>', '<origin xyz="0 0 0" rpy="0 0 .3"/>', 1
-        )
     elif invalid == "fixed":
         source = source.replace('type="prismatic"', 'type="fixed"')
     else:

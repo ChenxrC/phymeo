@@ -9,6 +9,12 @@ A/K3、B、C1和独立Newton留出/源码外wheel已接受；C2滑轨、F1浮根
 接续两项**源码调研/案例计划**：原robot完整固定根R/P树设备驻留（真实耦合M/b/J，目标覆盖Panda物理9轴）；原RD现有持续切向核进入普通/mimic/浮根与自由体共同场景。两者可隔离编码，父独占全部旧共享接缝与项目执行。完整树、设备窄相/CCD、通用持续摩擦尚未验收；原100g mimic持稳失败与目标软布两初态未放台保留。无固定截止、无周期任务，原RR额度不可用，不重试或另建替代。
 
 [功能差异全景](phymeo-newton-panorama-2026-11-07.md) · [可视化](phymeo-newton-panorama-2026-11-07.html)。下方已验收基线继续复用；不得将正在实施的计划写成完成。
+
+### 当前实施检查点：F3 / C4 / 通用摩擦（2026-11-07）
+
+F3核心frame与URDF完整根惯量装配已通过：T1新11/受影响17；T2新18/受影响93，实际报告见[根惯量frame](../benchmarks/p65-floating-root-inertia-frame.md)。下一步T3非对角根受载场景、Newton CPU/CUDA与源码外wheel，不能提前称F3整体完成。
+原robot已提交C4首测试并继续完整T01–T08；136实际RED在缺FixedRobotTree，尚无产品。原RD持续切向多owner研究已导入，首测试3079f39；151实际先过真实两边2N，再在旧公开enable guard失败，正在补F01–F06，不是已支持通用摩擦。两原agent纯编码，项目执行仍父唯一串行，无截止/周期任务。
+
 ## 最近已验收基线（2026-11-06）
 
 [第七批：浮根共同场景、逐面设备候选与局部复用](../benchmarks/p65-top-three-batch7.md)已本地集成，产品8128440，新wheel已在源码外通过三线组合。浮根专项43+共享回归73与40步承重/撤离通过；B逐面HOST44+故障1、interpret4/CUDA4通过；C复用HOST29、interpret2/CUDA2通过。三原作者交叉审阅完成。

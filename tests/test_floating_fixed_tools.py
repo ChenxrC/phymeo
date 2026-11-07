@@ -333,7 +333,6 @@ def test_a01_composite_quarter_second_point_force_follows_independent_recurrence
     "bad,pattern",
     [
         ("massless_group", "positive mass"),
-        ("off_axis_root", "non-diagonal"),
         ("invalid_inertia", "inertia"),
         ("fixed_control", "unsupported|dynamics"),
         ("mimic", "mimic"),
@@ -349,8 +348,6 @@ def test_a04_invalid_mass_inertia_and_control_are_explicit(tmp_path, bad, patter
             inertial = link.find("inertial")
             if inertial is not None:
                 link.remove(inertial)
-    elif bad == "off_axis_root":
-        doc.find(".//joint/origin").set("xyz", "0.25 0.125 0")
     elif bad == "invalid_inertia":
         doc.find(".//link[@name='tool']/inertial/inertia").set("ixx", "1")
     elif bad == "fixed_control":

@@ -2,7 +2,8 @@
 
 The explicit loader preserves authored link frames and root COM inertia. It
 shares the existing strict URDF geometry and scalar-joint parser. Fixed-joint
-folding is explicit; mimic and a new root principal-axis frame remain unsupported.
+folding is explicit; affine mimic uses its separate opt-in loader. Root inertia
+principal axes are independent of the authored geometry frame.
 """
 
 from dataclasses import dataclass
@@ -28,7 +29,7 @@ class FloatingRobotAsset:
     separate. Collision link indices retain the file-import convention (-1 for
     the root, i for child i), while FloatingRobotModel body indices are 0 and i+1.
     Full q is world root-origin XYZ, body-to-world XYZW, then child coordinates.
-    The root body's axes must be principal inertia axes; COM may be eccentric.
+    Root COM and geometry retain authored axes; inertia has a separate frame.
     """
 
     name: str
@@ -70,8 +71,8 @@ def load_floating_urdf(
 ) -> FloatingRobotAsset:
     """Load local URDF 1.0 with positive massive root and bounded scalar children.
 
-    Root-only assets are valid. All COM inertia tensors must be diagonal after
-    rotating the authored inertial frame into its link frame. Legal unsupported
+    Root-only assets and full root COM tensors are valid. Without fixed folding,
+    child COM tensors must still be diagonal in their link frames. Legal unsupported
     fixed joints require collapse_fixed_joints=True; mimic still fails explicitly.
     Fixed members then contribute complete group mass/inertia and material frames.
     The ordinary fixed-base loader is unchanged.
@@ -140,7 +141,11 @@ def _floating_from_tree(
         from ._floating_fixed_asset import folded_floating_robot
 
         return folded_floating_robot(name, root, links, order, inbound, gravity, path)
-    mass, center, inertia = _inertial(links[root], root)
+    from ._floating_fixed_asset import _root_group
+    from ._urdf_fixed import _mass_component
+
+    component = _mass_component(links[root], root, np.zeros(3), np.eye(3))
+    mass, center, inertia, root_frame = _root_group([] if component is None else [component], root)
     root_model = RigidBodyModel(
         np.array([1.0 / mass]), inertia[None, :], np.asarray(gravity, dtype=float)
     )
@@ -149,7 +154,7 @@ def _floating_from_tree(
         return FloatingRobotAsset(
             name,
             root,
-            FloatingRobotModel(root_model, center),
+            FloatingRobotModel(root_model, center, root_inertia_frame_xyzw=root_frame),
             (),
             (),
             (),
@@ -174,7 +179,9 @@ def _floating_from_tree(
     return FloatingRobotAsset(
         name,
         root,
-        FloatingRobotModel(root_model, center, child_asset.model),
+        FloatingRobotModel(
+            root_model, center, child_asset.model, root_inertia_frame_xyzw=root_frame
+        ),
         child_asset.link_names,
         child_asset.joint_names,
         child_asset.lower,

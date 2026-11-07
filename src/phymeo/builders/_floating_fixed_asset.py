@@ -2,7 +2,7 @@
 
 This compiler only assembles rigid groups and authored frames. It does not
 integrate, constrain, weld, or advance a scene. Root axes keep their existing
-public meaning; only moving child groups may use a new principal-axis frame.
+public meaning; a separate root inertia frame retains its complete tensor.
 """
 
 from collections import defaultdict
@@ -165,37 +165,24 @@ class FoldedFloatingRobotAsset(FloatingRobotAsset):
 
 
 def _root_group(parts, root):
-    """Aggregate about COM in original root axes; reject genuine products."""
+    """Reuse rigid-group principal assembly, retaining the authored root COM."""
     if not parts:
         raise ValueError(f"{root}: root rigid group has no positive mass and inertia")
     try:
         with np.errstate(over="raise", invalid="raise", divide="raise"):
-            mass = sum(m for m, _, _ in parts)
+            axes, (mass, _, moments) = _principal(parts, f"root group {root!r}")
+            # Preserve the authored COM directly, not a rotated round trip.
             center = sum(m * point for m, point, _ in parts) / mass
-            tensor = np.zeros((3, 3))
-            for m, point, inertia in parts:
-                delta = point - center
-                tensor += inertia + m * ((delta @ delta) * np.eye(3) - np.outer(delta, delta))
-    except (FloatingPointError, OverflowError) as exc:
+    except (FloatingPointError, OverflowError, np.linalg.LinAlgError) as exc:
         raise ValueError(f"{root}: root group mass or inertia exceeds FP64 range") from exc
-    if not np.isfinite(mass) or not np.isfinite(center).all() or not np.isfinite(tensor).all():
-        raise ValueError(f"{root}: root group mass or inertia exceeds FP64 range")
-    scale = np.max(np.abs(tensor))
-    if scale <= 0:
-        raise ValueError(f"{root}: root group needs positive inertia")
-    normalized = tensor / scale
-    # Same relative 32-epsilon rotation budget as principal_inertia. Here the
-    # rotation and parallel-axis sums have already been applied per component.
-    products = normalized - np.diag(normalized.diagonal())
-    if np.max(np.abs(products)) > 32 * np.finfo(float).eps:
-        raise ValueError(f"{root}: non-diagonal root group inertia is not supported")
-    return principal_inertia(
+    mass, center, moments = principal_inertia(
         mass,
         center,
         np.array([0.0, 0.0, 0.0, 1.0]),
-        np.diag(tensor.diagonal()),
+        np.diag(moments),
         f"root group {root!r}",
     )
+    return mass, center, moments, matrix_quaternion(axes)
 
 
 def folded_floating_robot(name, root, links, order, incoming, gravity, path):
@@ -226,7 +213,7 @@ def folded_floating_robot(name, root, links, order, incoming, gravity, path):
         value = _mass_component(links[link], link, position, rotation, allow_massless=True)
         if value is not None:
             components[owner].append(value)
-    root_mass, root_com, root_inertia = _root_group(components[-1], root)
+    root_mass, root_com, root_inertia, root_frame = _root_group(components[-1], root)
     axes, bodies = [], []
     for owner, link in enumerate(moving):
         frame, body = _principal(components[owner], link)
@@ -266,6 +253,7 @@ def folded_floating_robot(name, root, links, order, incoming, gravity, path):
         ),
         root_com,
         None if child is None else child.model,
+        root_inertia_frame_xyzw=root_frame,
     )
     return FoldedFloatingRobotAsset(
         name=name,

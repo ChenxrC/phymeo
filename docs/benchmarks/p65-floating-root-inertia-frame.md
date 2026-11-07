@@ -25,3 +25,15 @@
 `049c433fa7f50b291c814cd2d1b5e91e2d24c3ae36c2a216bd282d0fdd7571b0`。
 
 后续按[原计划](../superpowers/plans/2026-11-07-floating-root-inertia-frame.md)先扩合法非对角URDF root / folded fixed-tool装配，再验真实场景。原100g持稳与软布失败继续保留，未因本核心通过而改写。
+
+## T2 实际 URDF / fixed-tool / mimic 装配
+
+产品沿原 _mass_component 严格解析完整 COM tensor，复用 _principal 的静态合成/主轴分解；root COM直接在 authored frame求和，独立惯量frame传入T1核心。普通root-only、带子树和折叠工具共用同一root组装配，mimic直接继承，不复制parser或改关节几何。
+
+测试先行210eb20，145真实RED为合法非对角根被旧principal_inertia拒绝。146首Ruff通过，147格式检查仅2文件需排版，148修复。149首完整新HOST **18 passed / 0.58s / RAW0**；150受影响完整 fixed-tools / floating-scene / floating-mimic **93 passed / 12.88s / RAW0**；152/153最终Ruff/format均RAW0。无数值修复、预算调整或输入调参。
+
+新正控覆盖完整矩阵与旋转inertial-frame两种等价URDF、偏置fixed tool的parallel-axis非对角项、共同旋转/平移、原collision/sites保持，以及ordinary/folded affine mimic完整root惯量继承。原三个“合法但未支持”拒绝项退役，由上述正控替代；非正/非法triangle/NaN惯量、零/缺质量和其他未实现模式仍显式拒绝。旧错误文案的测试允许mass/inertial同义，不改变拒绝结论。
+
+receipt `f3-urdf-validation-receipt.json` SHA256：
+`17e7d31e24cef54b20e1e2bf69193516e00132bb4077e1761a7f236ff346221c`。
+**T1+T2已完成；T3新的非对角根受载场景、Newton CPU/CUDA参考与源码外wheel尚待。** 旧93回归没有冒充这些新输入的交付证据。

@@ -63,7 +63,7 @@ def test_root_frame_preserves_authored_pose_and_exact_tensor_response(pose):
     expected_mass = np.zeros((6, 6))
     expected_mass[:3, :3] = 2 * np.eye(3)
     expected_mass[3:, 3:] = rotation @ BODY_I @ rotation.T
-    _close(terms.mass, expected_mass)
+    _close(terms.mass_matrix, expected_mass)
     _close(terms.acceleration[:3], 0)
     _close(terms.acceleration[3:], rotation @ [3., 1., 0.])
     result = ph.step_free_root(model, state, ph.RigidBodyInputs(force, torque), 1 / 128)
@@ -125,7 +125,7 @@ def test_root_frame_full_tree_mass_bias_external_and_acceleration(pose):
     children = ph.RobotModel(
         np.array([-1]), ("revolute",), np.array([[.5, 0., 0.]]), IDENTITY[None, :],
         np.array([[0., 0., 1.]]), np.ones(1), np.array([[.25, 0., 0.]]),
-        np.array([[1 / 16, 1 / 8, 3 / 16]]), np.zeros(3),
+        np.array([[1 / 16, 1 / 8, 3 / 16]]), r0 @ [0., 0., -.5],
     )
     gravity = r0 @ [0., 0., -.5]
     model = _model(children=children, gravity=gravity)
@@ -161,7 +161,7 @@ def test_root_frame_full_tree_mass_bias_external_and_acceleration(pose):
     applied[6] += 1 / 8
     loads = ph.FloatingRobotInputs(np.array([1 / 8]), force, torque)
     actual = ph.floating_dynamics_terms(model, state, loads)
-    _close(actual.mass, mass)
+    _close(actual.mass_matrix, mass)
     _close(actual.bias, bias)
     _close(actual.applied, applied)
     _close(actual.acceleration, np.linalg.solve(mass, applied - bias))

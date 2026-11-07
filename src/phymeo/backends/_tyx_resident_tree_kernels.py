@@ -295,7 +295,10 @@ def tree_solve(count: tx.i32, h: tx.f32, meta: tx.ndarray(tx.i32, 2),
         # Projected coordinate method for the full SPD box QP. The scalar update
         # below is algebraically the original diag(1/d)+h*inverse(M) system;
         # fixed d=0 rows participate in every cross-mobility sum.
-        for iteration in range(meta[w, 3]):
+        sweep_limit = meta[w, 3]
+        if active == 0:
+            sweep_limit = 1
+        for iteration in range(sweep_limit):
             if code == 0 and solved == 0:
                 for i in range(n):
                     d = vector[w, i, 8]
@@ -495,3 +498,4 @@ def make_tree_kernels():
     functions = {"geometry": tree_geometry, "mechanics": tree_mechanics, "solve": tree_solve,
                  "energy": tree_energy, "finalize": tree_finalize, "restore": tree_restore}
     return {name: (tx.kernel(function), tx.kernel(function)) for name, function in functions.items()}
+

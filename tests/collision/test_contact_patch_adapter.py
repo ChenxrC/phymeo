@@ -1,4 +1,5 @@
 """Independent finite convex patch geometry and material reconstruction."""
+
 from dataclasses import replace
 
 import numpy as np
@@ -43,11 +44,12 @@ def test_ten_families_have_true_finite_material_patches(kinds, gap):
             (shapes[0], points[0], w.first_weights, w.first_offset, w.first_point),
             (shapes[1], points[1], w.second_weights, w.second_offset, w.second_point),
         ):
-            np.testing.assert_allclose(reconstruct(shape, coords, weights, offset), point,
-                                       atol=1e-10, rtol=0)
-        np.testing.assert_allclose(site.load_point,
-                                   (np.asarray(w.first_point) + w.second_point) / 2,
-                                   atol=1e-12, rtol=0)
+            np.testing.assert_allclose(
+                reconstruct(shape, coords, weights, offset), point, atol=1e-10, rtol=0
+            )
+        np.testing.assert_allclose(
+            site.load_point, (np.asarray(w.first_point) + w.second_point) / 2, atol=1e-12, rtol=0
+        )
 
 
 @pytest.mark.parametrize("kinds", PAIRS)
@@ -57,9 +59,12 @@ def test_exchange_and_rigid_frame_preserve_patch_and_normal(kinds):
     reverse, _, _ = sample(kinds, -0.01, reverse=True, matrix=rotation)
     assert reverse.dimension == forward.dimension
     assert len(reverse.sites) == len(forward.sites)
-    np.testing.assert_allclose(sum(s.weight * np.asarray(s.load_point) for s in reverse.sites),
-                               rotation @ sum(s.weight * np.asarray(s.load_point) for s in forward.sites)
-                               + (2, -3, 0.25), atol=1e-10, rtol=0)
+    np.testing.assert_allclose(
+        sum(s.weight * np.asarray(s.load_point) for s in reverse.sites),
+        rotation @ sum(s.weight * np.asarray(s.load_point) for s in forward.sites) + (2, -3, 0.25),
+        atol=1e-10,
+        rtol=0,
+    )
     for site in reverse.sites:
         np.testing.assert_allclose(site.witness.normal, (-1, 0, 0), atol=1e-10)
         assert site.witness.gap_m == pytest.approx(-0.01, abs=1e-10)
@@ -84,8 +89,9 @@ def test_coplanar_vertex_refinement_preserves_resultant_centroid():
     refined = contact_patch_sample(more, b, np.vstack((x, (0, 0, 0.1))), y)
     for patch in (base, refined):
         assert sum(s.weight for s in patch.sites) == pytest.approx(1)
-        np.testing.assert_allclose(sum(s.weight * np.asarray(s.load_point) for s in patch.sites),
-                                   (0, 0, 0.095), atol=1e-12)
+        np.testing.assert_allclose(
+            sum(s.weight * np.asarray(s.load_point) for s in patch.sites), (0, 0, 0.095), atol=1e-12
+        )
 
 
 def test_ambiguous_deep_overlap_and_malformed_frames_are_explicit():
@@ -96,5 +102,6 @@ def test_ambiguous_deep_overlap_and_malformed_frames_are_explicit():
     with pytest.raises(ValueError):
         contact_patch_sample(a, b, [[float("nan"), 0, 0]], paths[b.key].start)
     with pytest.raises(ValueError, match="world"):
-        contact_patch_sample(a, replace(b, key=replace(b.key, world=5)),
-                             paths[a.key].start, paths[b.key].start)
+        contact_patch_sample(
+            a, replace(b, key=replace(b.key, world=5)), paths[a.key].start, paths[b.key].start
+        )

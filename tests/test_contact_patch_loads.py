@@ -1,4 +1,5 @@
 """Weighted common-point loads preserve stiffness, power, force and moment."""
+
 from dataclasses import replace
 
 import numpy as np
@@ -11,20 +12,25 @@ from phymeo.solvers.contact_patch_loads import sample_patch_loads
 
 
 def patch(count):
-    coordinates = {1: ((0, 0),), 2: ((-0.5, 0), (0.5, 0)),
-                   4: ((-0.5, -0.1), (0.5, -0.1), (0.5, 0.1), (-0.5, 0.1))}
+    coordinates = {
+        1: ((0, 0),),
+        2: ((-0.5, 0), (0.5, 0)),
+        4: ((-0.5, -0.1), (0.5, -0.1), (0.5, 0.1), (-0.5, 0.1)),
+    }
     sites = []
     for i, (x, y) in enumerate(coordinates[count]):
-        witness = CollisionWitness(-0.01, (0, 0, 1), (x, y, 0.1), (x, y, 0.09),
-                                   ((i, 1.0),), ((i + 10, 1.0),))
+        witness = CollisionWitness(
+            -0.01, (0, 0, 1), (x, y, 0.1), (x, y, 0.09), ((i, 1.0),), ((i + 10, 1.0),)
+        )
         sites.append(ContactSite(witness, (x, y, 0.095), 1 / count))
     return ContactPatchSample(tuple(sites), {1: 0, 2: 1, 4: 2}[count], "independent-oracle")
 
 
 @pytest.mark.parametrize("count", (1, 2, 4))
 def test_normal_stiffness_is_per_pair_and_bilateral(count):
-    loads = sample_patch_loads(patch(count), RobotContactMaterial(100, 0, 0),
-                               np.zeros((count, 3)), np.zeros((count, 3)))
+    loads = sample_patch_loads(
+        patch(count), RobotContactMaterial(100, 0, 0), np.zeros((count, 3)), np.zeros((count, 3))
+    )
     np.testing.assert_allclose(loads["first_force"].sum(axis=0), (0, 0, -1), atol=1e-12)
     np.testing.assert_array_equal(loads["second_force"], -loads["first_force"])
     origin = np.array((0.02, 0, 0))
@@ -58,5 +64,9 @@ def test_invalid_weights_points_and_velocities_reject_before_loads():
     with pytest.raises(ValueError):
         replace(sample.sites[0], load_point=(10, 0, 0))
     with pytest.raises(ValueError):
-        sample_patch_loads(sample, RobotContactMaterial(100, 0, 0),
-                           np.array([[0, 0, float("nan")], [0, 0, 0]]), np.zeros((2, 3)))
+        sample_patch_loads(
+            sample,
+            RobotContactMaterial(100, 0, 0),
+            np.array([[0, 0, float("nan")], [0, 0, 0]]),
+            np.zeros((2, 3)),
+        )

@@ -82,3 +82,40 @@ E. 同次完整保存审计、源码绑定、源码外新wheel，交限域接受
 ## C9 历史拒域测试在 C10 接入时迁移
 
 父接入 C10 后，旧 tests/scale/test_resident_floating_collision.py 中 test_p07_floating_contacts_stay_explicitly_unsupported 的“所有浮根接触拒绝”前提失效；其空材料映射还可能让失败来自不相关检查。因此将父 OLD 白名单仅增加该文件的这一节点：在 C9 正式接受后，迁移为明确不支持的连续采样/CCD 请求，验证拒绝前后完整状态和资源不变；合法浮根接触由新 F01–F10 验证。迁移前不修改 run460/455 的源或固定覆盖；原 C9 已接受证据、外部 wheel 消费者和 saved 审计按当次源码保留，不复跑它们或把历史拒域当 C10 当前功能限制。C10 的源码外消费者将另行按新能力验证。
+
+## 源码外消费者纯作者补充（2026-11-08）
+
+原RD完成 d221065 四NEW测试交接后，允许在其原隔离树只新增：
+- tests/scale/resident_floating_contact_wheel_consumer.py
+- docs/benchmarks/p65-resident-floating-contact-wheel-validation.md
+
+状态仍 AUTHORING_ONLY_UNEXECUTED。不修改已交接四文件，不merge父、不新增助手；
+不运行import/collection/数值/pytest/static/build/install。全部C10执行仍等C9正式接受。
+原robot同期只读本机Newton1.7的真实接触源码，消息交F01/F03原生对照建议；
+未授native driver编码或执行，不能将外部匹配力当原生接触通过。
+
+消费者沿C9公开wheel规范，独立复制到checkout外，python -I -B，原CLI
+--mode / --output / --wheel-site / --expected-package-root / --expected-wheel /
+--forbidden-checkout，完整installed成员/hash及loaded origins/owned-resource核验。
+不导入repo tests或私有backend，不调用私有求解或HOST补状态。
+
+固定W4顺序(503,91,1207,6)：F01 root-only球/有限箱、F02 motor原child接触、
+C9外部消费者原ordinary P、原FreeSphere。后两world不绑定接触仍参与同一次推进。
+前两world按F01/F02原模型/初态/载荷/控制/材料，h=1/1024，40真实步；
+tick19完整检查点恢复后21步全部input/entry/state/FK/diagnostic/receipt/
+material/candidate按原物理字段完整相同，epoch/计数另外核单调。
+同一次真实入口力、广义力、root与joint响应/原工程门独立核；
+独立轨迹只从原初态和自身状态推进，不读设备M/J/force作唯一期望。
+
+另外F03原同FREE树兄弟P子体双球mu0原输入40步，动态opt-in；
+完整两侧力/COM力矩、全树M/J耦合和总动量，独立原球-球法向律逐步推进。
+独立公式可复制原参考的低级数学为本消费者自包含代码，但不得import产品求M/J。
+F01/F02/F03首载literal、same-entry 5e-6/5e-5、M/方程2e-5、
+原PD5e-5及40步2e-4不变，不能修改数据或阈值取绿。
+
+W4两个真实bank各做浮根contact容量0拒步、邻world正常推进、足额合法重试；
+保存原完整retained和最后accepted，不reset物理窗伪装连续。错误owner、
+关闭/重复close、owned回执不变及资源0保留。公开unsupported sampling使用完整
+合法材料对，不能靠空law错误伪通过。一次失败保存完整前缀和原输入，退出非零。
+完整payload/summary/压缩bytes和SHA有界，作者先写固定身份与计数而非运行后挑选。
+此补充只把已冻结能力放入真实安装环境验证，不新增物理域或原生接触结论。

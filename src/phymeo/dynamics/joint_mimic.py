@@ -1,6 +1,5 @@
 """Acyclic passive scalar URDF linkages expressed in independent generalized coordinates."""
 
-from collections import deque
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
@@ -8,7 +7,8 @@ import numpy as np
 
 from ..core.capabilities import SolverFailure
 from ..core.robot import RobotInputs, RobotState, validate_robot_step
-from ..core.validation import finite_real, validate_dt
+from ..core.validation import validate_dt
+from ._mimic_coordinates import compile_mimic_coordinates
 from .robot_dynamics import _solve_mass_matrix, robot_dynamics_terms
 
 if TYPE_CHECKING:
@@ -107,103 +107,44 @@ class MimicRobotAsset:
     effort_limit: tuple = field(init=False)
 
     def __post_init__(self):
-        names = self.tree.joint_names
         extra = tuple(self.additional_relations)
         relations = (
             MimicRelation(self.driver, self.follower, self.multiplier, self.offset),
             *extra,
         )
-        name_index = {name: i for i, name in enumerate(names)}
-        followers = set()
-        outgoing = [[] for _ in names]
-        edges = []
-        rows = np.zeros((len(relations), len(names)))
-        for i, relation in enumerate(relations):
-            if not isinstance(relation, MimicRelation):
-                raise TypeError("additional mimic relations must be MimicRelation objects")
-            d = name_index.get(relation.driver)
-            f = name_index.get(relation.follower)
-            if d is None or f is None:
-                raise ValueError(
-                    f"unknown mimic driver or follower in {relation.driver!r} -> {relation.follower!r}"
-                )
-            if d == f:
-                raise ValueError(f"mimic cycle at joint {relation.follower!r}")
-            if f in followers:
-                raise ValueError(f"mimic follower {relation.follower!r} has multiple drivers")
-            if self.tree.model.joint_types[d] != self.tree.model.joint_types[f]:
-                raise ValueError(
-                    f"mimic {relation.follower!r} and driver must use the same scalar joint type"
-                )
-            a = finite_real(relation.multiplier, "mimic multiplier")
-            b = finite_real(relation.offset, "mimic offset")
-            if a == 0:
-                raise ValueError(f"zero mimic multiplier on {relation.follower!r}")
-            followers.add(f)
-            outgoing[d].append(i)
-            edges.append((d, f, a, b))
-            rows[i, d] = -a
-            rows[i, f] = 1.0
-        roots = tuple(i for i in range(len(names)) if i not in followers)
-        columns = {i: k for k, i in enumerate(roots)}
-        P = np.eye(len(names))[:, roots]
-        off = np.zeros(len(names))
-        lower = np.asarray(self.tree.lower)[list(roots)].copy()
-        upper = np.asarray(self.tree.upper)[list(roots)].copy()
-        speed = np.array(self.tree.velocity_limit, dtype=float)[list(roots)].copy()
-        queue = deque(roots)
-        forward = []
-        while queue:
-            parent = queue.popleft()
-            for i in outgoing[parent]:
-                d, f, a, b = edges[i]
-                column = columns[d]
-                gain = a * P[d, column]
-                intercept = a * off[d] + b
-                if gain == 0 or not np.isfinite((gain, intercept)).all():
-                    raise ValueError(f"mimic chain to {names[f]!r} cannot be represented in FP64")
-                P[f, column], off[f], columns[f] = gain, intercept, column
-                lo, hi = sorted(
-                    (
-                        (self.tree.lower[f] - intercept) / gain,
-                        (self.tree.upper[f] - intercept) / gain,
-                    )
-                )
-                if not np.isfinite((lo, hi)).all():
-                    raise ValueError(
-                        f"mimic position interval at {names[f]!r} is outside FP64 range"
-                    )
-                lower[column] = max(lower[column], lo)
-                upper[column] = min(upper[column], hi)
-                if lower[column] >= upper[column]:
-                    raise ValueError(
-                        f"empty movable intersection for {names[roots[column]]!r} at mimic follower {names[f]!r}"
-                    )
-                speed[column] = min(speed[column], self.tree.velocity_limit[f] / abs(gain))
-                forward.append(i)
-                queue.append(f)
-        if len(forward) != len(edges):
-            unresolved = [names[f] for _, f, _, _ in edges if f not in columns]
-            raise ValueError(f"mimic cycle prevents resolving joints {unresolved}")
+        if any(not isinstance(row, MimicRelation) for row in relations):
+            raise TypeError("additional mimic relations must be MimicRelation objects")
+        coordinates = compile_mimic_coordinates(
+            self.tree.joint_names,
+            self.tree.model.joint_types,
+            self.tree.lower,
+            self.tree.upper,
+            self.tree.velocity_limit,
+            self.tree.effort_limit,
+            tuple((row.driver, row.follower, row.multiplier, row.offset) for row in relations),
+        )
         for key, value in (
             ("additional_relations", extra),
             ("relations", relations),
-            ("_indices", tuple(edges)),
-            ("_forward", tuple(forward)),
-            ("driver_index", edges[0][0]),
-            ("follower_index", edges[0][1]),
-            ("independent_indices", roots),
-            ("matrix", _frozen(P)),
-            ("offset_vector", _frozen(off)),
-            ("constraint_row", _frozen(rows[0])),
-            ("constraint_rows", _frozen(rows)),
-            ("joint_names", tuple(names[i] for i in roots)),
-            ("lower", tuple(lower)),
-            ("upper", tuple(upper)),
-            ("velocity_limit", tuple(speed)),
-            ("effort_limit", tuple(self.tree.effort_limit[i] for i in roots)),
+            ("_indices", coordinates.indices),
+            ("_forward", coordinates.forward),
+            ("driver_index", coordinates.indices[0][0]),
+            ("follower_index", coordinates.indices[0][1]),
+            ("constraint_row", _frozen(coordinates.constraint_rows[0])),
         ):
             object.__setattr__(self, key, value)
+        for key in (
+            "independent_indices",
+            "matrix",
+            "offset_vector",
+            "constraint_rows",
+            "joint_names",
+            "lower",
+            "upper",
+            "velocity_limit",
+            "effort_limit",
+        ):
+            object.__setattr__(self, key, getattr(coordinates, key))
 
     def configuration(self, q):
         u = _vector(q, len(self.joint_names), "independent q")

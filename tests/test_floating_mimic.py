@@ -22,7 +22,6 @@ from phymeo.dynamics.floating_robot import (
 )
 from phymeo.solvers.floating_tree import FloatingRobotInputs, floating_dynamics_terms
 
-
 ASSETS = Path(__file__).parent / "fixtures" / "urdf"
 JAWS = ASSETS / "floating_mimic_jaws.urdf"
 ELBOW = ASSETS / "floating_mimic_elbow.urdf"
@@ -67,7 +66,9 @@ def _assert_load_receipt(loads, count, full_speed):
     assert loads.constraint_power_W == pytest.approx(
         loads.constraint_effort_full @ full_speed, abs=ATOL
     )
-    assert loads.constraint_power_W == pytest.approx(sum(row.constraint_power_W for row in loads.row_forces), abs=ATOL)
+    assert loads.constraint_power_W == pytest.approx(
+        sum(row.constraint_power_W for row in loads.row_forces), abs=ATOL
+    )
     assert abs(loads.constraint_power_W) < ATOL
     assert all(abs(row.constraint_power_W) < ATOL for row in loads.row_forces)
 
@@ -135,7 +136,9 @@ def test_a02_sixteen_real_steps_preserve_affine_state_and_linear_momentum(quater
         np.testing.assert_allclose(full.v[7], -full.v[6], atol=ATOL, rtol=0)
         # Original body velocities, not a projected generalized-momentum proxy.
         v_root = full.v[:3]
-        momentum = 2 * v_root + (v_root + direction * full.v[6]) + 2 * (v_root + direction * full.v[7])
+        momentum = (
+            2 * v_root + (v_root + direction * full.v[6]) + 2 * (v_root + direction * full.v[7])
+        )
         np.testing.assert_allclose(momentum, 0, atol=ATOL, rtol=0)
         _assert_load_receipt(result.loads, 2, entry.v)
 
@@ -146,7 +149,9 @@ def _graph_asset(tmp_path, chain):
     link = ET.SubElement(root, "link", name="gauge")
     inertial = ET.SubElement(link, "inertial")
     ET.SubElement(inertial, "mass", value="0.5")
-    ET.SubElement(inertial, "inertia", ixx="0.02", iyy="0.03", izz="0.04", ixy="0", ixz="0", iyz="0")
+    ET.SubElement(
+        inertial, "inertia", ixx="0.02", iyy="0.03", izz="0.04", ixy="0", ixz="0", iyz="0"
+    )
     joint = ET.SubElement(root, "joint", name="gauge_axis", type="prismatic")
     ET.SubElement(joint, "parent", link="base")
     ET.SubElement(joint, "child", link="gauge")
@@ -154,7 +159,11 @@ def _graph_asset(tmp_path, chain):
     ET.SubElement(joint, "axis", xyz="1 0 0")
     ET.SubElement(joint, "limit", lower="-0.003", upper="0.007", effort="0.05", velocity="0.03")
     ET.SubElement(
-        joint, "mimic", joint="follower" if chain else "driver", multiplier="-0.5" if chain else "0.5", offset="0.002"
+        joint,
+        "mimic",
+        joint="follower" if chain else "driver",
+        multiplier="-0.5" if chain else "0.5",
+        offset="0.002",
     )
     path = tmp_path / ("chain.urdf" if chain else "fan.urdf")
     document.write(path, encoding="utf-8", xml_declaration=True)
@@ -173,7 +182,9 @@ def test_b01_original_graph_rows_match_unreduced_kkt_and_descendant_bounds(tmp_p
     asset = _graph_asset(tmp_path, chain)
     assert asset.tree.joint_names == ("driver", "follower", "gauge_axis")
     np.testing.assert_array_equal(asset.matrix, [[1.0], [-1.0], [0.5]])
-    np.testing.assert_allclose(asset.offset_vector, [0.0, 0.004, 0.0 if chain else 0.002], atol=ATOL)
+    np.testing.assert_allclose(
+        asset.offset_vector, [0.0, 0.004, 0.0 if chain else 0.002], atol=ATOL
+    )
     np.testing.assert_allclose(asset.lower, [-0.006 if chain else -0.01], atol=ATOL)
     np.testing.assert_allclose(asset.upper, [0.014 if chain else 0.01], atol=ATOL)
     np.testing.assert_allclose(asset.velocity_limit, [0.06], atol=ATOL)
@@ -198,13 +209,20 @@ def test_b01_original_graph_rows_match_unreduced_kkt_and_descendant_bounds(tmp_p
     expected_acc = np.r_[acceleration[0], np.zeros(5), acceleration[1:]]
     expected_reaction = np.r_[np.zeros(6), (constraints.T @ multipliers)[1:]]
     np.testing.assert_allclose(result.loads.acceleration_full, expected_acc, atol=2e-11, rtol=0)
-    np.testing.assert_allclose(result.loads.constraint_effort_full, expected_reaction, atol=2e-11, rtol=0)
-    np.testing.assert_allclose(result.loads.contact_effort_full, np.r_[projected[0], np.zeros(5), projected[1:]], atol=ATOL)
-    np.testing.assert_allclose(result.loads.actuator_effort_full, np.r_[np.zeros(6), motor[1:]], atol=ATOL)
+    np.testing.assert_allclose(
+        result.loads.constraint_effort_full, expected_reaction, atol=2e-11, rtol=0
+    )
+    np.testing.assert_allclose(
+        result.loads.contact_effort_full, np.r_[projected[0], np.zeros(5), projected[1:]], atol=ATOL
+    )
+    np.testing.assert_allclose(
+        result.loads.actuator_effort_full, np.r_[np.zeros(6), motor[1:]], atol=ATOL
+    )
     assert result.loads.multiplier_force is None
     rows = result.loads.row_forces
     assert [(r.driver, r.follower) for r in rows] == [
-        ("driver", "follower"), ("follower" if chain else "driver", "gauge_axis")
+        ("driver", "follower"),
+        ("follower" if chain else "driver", "gauge_axis"),
     ]
     for row, value in zip(rows, multipliers, strict=True):
         assert row.multiplier_force == pytest.approx(value, abs=2e-11)
@@ -233,7 +251,9 @@ def test_b02_reduce_rejects_inconsistent_full_state_without_changing_inputs(fiel
     np.testing.assert_array_equal(asset.full_state(state).v, full.v)
 
 
-@pytest.mark.parametrize("problem", ["cycle", "zero", "unknown", "mixed-type", "empty", "duplicate"])
+@pytest.mark.parametrize(
+    "problem", ["cycle", "zero", "unknown", "mixed-type", "empty", "duplicate"]
+)
 def test_b03_invalid_graph_is_explicitly_rejected(tmp_path, problem):
     document = ET.parse(JAWS)
     follower = document.find(".//joint[@name='follower']")
@@ -257,7 +277,9 @@ def test_b03_invalid_graph_is_explicitly_rejected(tmp_path, problem):
         _load(path)
 
 
-@pytest.mark.parametrize("problem", ["motor-cap", "external-motor", "external-size", "candidate-limit"])
+@pytest.mark.parametrize(
+    "problem", ["motor-cap", "external-motor", "external-size", "candidate-limit"]
+)
 def test_b04_rejected_candidate_keeps_state_and_same_input_retry(problem):
     asset, state = _load(JAWS), _state()
     effort, external, step = np.array([1.0]), None, H
@@ -279,7 +301,9 @@ def test_b04_rejected_candidate_keeps_state_and_same_input_retry(problem):
     retry = asset.step(retry_state, effort=np.array([1.0]), dt_s=H)
     np.testing.assert_array_equal(retry.state.q, expected.state.q)
     np.testing.assert_array_equal(retry.state.v, expected.state.v)
-    np.testing.assert_array_equal(retry.loads.constraint_effort_full, expected.loads.constraint_effort_full)
+    np.testing.assert_array_equal(
+        retry.loads.constraint_effort_full, expected.loads.constraint_effort_full
+    )
 
 
 # F02: four original authored parts, not the loader's principal-frame aggregates.
@@ -348,9 +372,17 @@ def _elbow_geometry(full_q):
     elbow = shoulder + upper_r @ np.array([3 / 8, 0, 0])
     tool = elbow + forearm_r @ np.array([3 / 16, 1 / 16, -1 / 32])
     frames = (
-        (root, root_r), (shoulder, upper_r), (elbow, forearm_r), (tool, forearm_r @ _rz(np.pi / 2))
+        (root, root_r),
+        (shoulder, upper_r),
+        (elbow, forearm_r),
+        (tool, forearm_r @ _rz(np.pi / 2)),
     )
-    centers = np.array([origin + rotation @ np.array(part[1]) for (origin, rotation), part in zip(frames, ELBOW_PARTS, strict=True)])
+    centers = np.array(
+        [
+            origin + rotation @ np.array(part[1])
+            for (origin, rotation), part in zip(frames, ELBOW_PARTS, strict=True)
+        ]
+    )
     root_com = centers[0]
     axes = (root_r[:, 2], upper_r[:, 1])
 
@@ -385,7 +417,9 @@ def _elbow_oracle(full_q, full_v, gravity, delta):
         t: _elbow_geometry(_constant_speed_configuration(full_q, full_v, t * delta))[1]
         for t in (-2, -1, 1, 2)
     }
-    com_bias = (-samples[2] + 16 * samples[1] - 30 * centers + 16 * samples[-1] - samples[-2]) / (12 * delta * delta)
+    com_bias = (-samples[2] + 16 * samples[1] - 30 * centers + 16 * samples[-1] - samples[-2]) / (
+        12 * delta * delta
+    )
     omega0 = full_v[3:6]
     omega1 = omega0 + axes[0] * full_v[6]
     omega2 = omega1 + axes[1] * full_v[7]
@@ -445,7 +479,9 @@ def test_c01_nonparallel_gears_match_raw_parts_mass_bias_and_full_kkt(case):
     np.testing.assert_allclose(full.q, expected_q, atol=ATOL, rtol=0)
     np.testing.assert_allclose(full.v, expected_v, atol=ATOL, rtol=0)
     coarse = _elbow_oracle(expected_q, expected_v, GRAVITY, 1 / 512)
-    mass, bias, energy, groups, frames, jacobian = _elbow_oracle(expected_q, expected_v, GRAVITY, 1 / 1024)
+    mass, bias, energy, groups, frames, jacobian = _elbow_oracle(
+        expected_q, expected_v, GRAVITY, 1 / 1024
+    )
     # FD values and absolute SI tolerances are fixed before any execution.
     np.testing.assert_allclose(coarse[1], bias, atol=BIAS_ATOL, rtol=0)
     assert energy == pytest.approx(0.5 * expected_v @ mass @ expected_v, abs=2e-12)
@@ -455,26 +491,41 @@ def test_c01_nonparallel_gears_match_raw_parts_mass_bias_and_full_kkt(case):
     assert np.linalg.norm(mass[:6, 6:]) > 0.01
     geo = floating_kinematics(asset.tree.model, full)
     np.testing.assert_allclose(geo.com_position, [group[0] for group in groups], atol=2e-12, rtol=0)
-    np.testing.assert_allclose(geo.com_velocity, [group[1] @ expected_v for group in groups], atol=2e-12, rtol=0)
-    np.testing.assert_allclose(geo.angular_velocity, [group[2] @ expected_v for group in groups], atol=2e-12, rtol=0)
+    np.testing.assert_allclose(
+        geo.com_velocity, [group[1] @ expected_v for group in groups], atol=2e-12, rtol=0
+    )
+    np.testing.assert_allclose(
+        geo.angular_velocity, [group[2] @ expected_v for group in groups], atol=2e-12, rtol=0
+    )
     anchor = np.array([1 / 16, 1 / 32, 1 / 32])
     local = asset.tree.authored_to_model_points("tool", anchor[None, :])
     material = frames[3][0] + frames[3][1] @ anchor
-    np.testing.assert_allclose(geo.position[2] + geo.rotation[2] @ local[0], material, atol=ATOL, rtol=0)
+    np.testing.assert_allclose(
+        geo.position[2] + geo.rotation[2] @ local[0], material, atol=ATOL, rtol=0
+    )
     linear, angular = floating_point_jacobians(asset.tree.model, full, np.array([2]), local)
     expected_j, expected_w = jacobian(material, 2)
     np.testing.assert_allclose(linear[0], expected_j, atol=2e-12, rtol=0)
     np.testing.assert_allclose(angular[0], expected_w, atol=2e-12, rtol=0)
     external = FloatingRobotInputs(np.zeros(2), FORCES, TORQUES)
-    applied = sum(group[1].T @ FORCES[i] + group[2].T @ TORQUES[i] for i, group in enumerate(groups))
+    applied = sum(
+        group[1].T @ FORCES[i] + group[2].T @ TORQUES[i] for i, group in enumerate(groups)
+    )
     motor = np.r_[np.zeros(6), 13 / 32, 0.0]
     constraints = np.array([[0.0, 0, 0, 0, 0, 0, -1.5, 1.0]])
     acceleration, multipliers = _kkt(mass, bias, applied + motor, constraints)
     result = asset.step(state, effort=np.array([13 / 32]), external=external, dt_s=ELBOW_H)
-    np.testing.assert_allclose(result.loads.acceleration_full, acceleration, atol=ACCEL_ATOL, rtol=0)
+    np.testing.assert_allclose(
+        result.loads.acceleration_full, acceleration, atol=ACCEL_ATOL, rtol=0
+    )
     np.testing.assert_allclose(result.loads.actuator_effort_full, motor, atol=ATOL, rtol=0)
     np.testing.assert_allclose(result.loads.contact_effort_full, applied, atol=2e-11, rtol=0)
-    np.testing.assert_allclose(result.loads.constraint_effort_full, constraints.T[:, 0] * multipliers[0], atol=ACCEL_ATOL, rtol=0)
+    np.testing.assert_allclose(
+        result.loads.constraint_effort_full,
+        constraints.T[:, 0] * multipliers[0],
+        atol=ACCEL_ATOL,
+        rtol=0,
+    )
     row = result.loads.row_forces[0]
     assert (row.driver, row.follower) == ("shaft", "gear")
     assert row.multiplier_force == pytest.approx(multipliers[0], abs=ACCEL_ATOL)
@@ -496,19 +547,45 @@ def test_c01_nonparallel_gears_match_raw_parts_mass_bias_and_full_kkt(case):
 def test_c02_rigid_world_change_preserves_gear_reactions_and_com_drift():
     original = _elbow_state(1)
     shifted = FloatingRobotState(
-        np.r_[CYCLE @ original.q[:3] + [1 / 2, -1 / 4, 1 / 8], _quat_multiply(np.full(4, 0.5), original.q[3:7]), original.q[7:]],
+        np.r_[
+            CYCLE @ original.q[:3] + [1 / 2, -1 / 4, 1 / 8],
+            _quat_multiply(np.full(4, 0.5), original.q[3:7]),
+            original.q[7:],
+        ],
         np.r_[CYCLE @ original.v[:3], CYCLE @ original.v[3:6], original.v[6:]],
     )
     first = _load(ELBOW, gravity=tuple(GRAVITY), collapse_fixed_joints=True).step(
-        original, effort=np.array([13 / 32]), external=FloatingRobotInputs(np.zeros(2), FORCES, TORQUES), dt_s=ELBOW_H
+        original,
+        effort=np.array([13 / 32]),
+        external=FloatingRobotInputs(np.zeros(2), FORCES, TORQUES),
+        dt_s=ELBOW_H,
     )
     second = _load(ELBOW, gravity=tuple(CYCLE @ GRAVITY), collapse_fixed_joints=True).step(
-        shifted, effort=np.array([13 / 32]), external=FloatingRobotInputs(np.zeros(2), FORCES @ CYCLE.T, TORQUES @ CYCLE.T), dt_s=ELBOW_H
+        shifted,
+        effort=np.array([13 / 32]),
+        external=FloatingRobotInputs(np.zeros(2), FORCES @ CYCLE.T, TORQUES @ CYCLE.T),
+        dt_s=ELBOW_H,
     )
-    np.testing.assert_allclose(second.full_state.v[:3], CYCLE @ first.full_state.v[:3], atol=ATOL, rtol=0)
-    np.testing.assert_allclose(second.full_state.v[3:6], CYCLE @ first.full_state.v[3:6], atol=ATOL, rtol=0)
+    np.testing.assert_allclose(
+        second.full_state.v[:3], CYCLE @ first.full_state.v[:3], atol=ATOL, rtol=0
+    )
+    np.testing.assert_allclose(
+        second.full_state.v[3:6], CYCLE @ first.full_state.v[3:6], atol=ATOL, rtol=0
+    )
     np.testing.assert_allclose(second.full_state.v[6:], first.full_state.v[6:], atol=ATOL, rtol=0)
-    np.testing.assert_allclose(second.full_state.q[:3], CYCLE @ first.full_state.q[:3] + [1 / 2, -1 / 4, 1 / 8], atol=ATOL, rtol=0)
-    np.testing.assert_allclose(_rotation(second.full_state.q[3:7]), CYCLE @ _rotation(first.full_state.q[3:7]), atol=ATOL, rtol=0)
+    np.testing.assert_allclose(
+        second.full_state.q[:3],
+        CYCLE @ first.full_state.q[:3] + [1 / 2, -1 / 4, 1 / 8],
+        atol=ATOL,
+        rtol=0,
+    )
+    np.testing.assert_allclose(
+        _rotation(second.full_state.q[3:7]),
+        CYCLE @ _rotation(first.full_state.q[3:7]),
+        atol=ATOL,
+        rtol=0,
+    )
     np.testing.assert_allclose(second.full_state.q[7:], first.full_state.q[7:], atol=ATOL, rtol=0)
-    np.testing.assert_allclose(second.loads.constraint_effort_full, first.loads.constraint_effort_full, atol=2e-11, rtol=0)
+    np.testing.assert_allclose(
+        second.loads.constraint_effort_full, first.loads.constraint_effort_full, atol=2e-11, rtol=0
+    )

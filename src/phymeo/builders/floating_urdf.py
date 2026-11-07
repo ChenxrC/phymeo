@@ -107,6 +107,35 @@ def load_floating_urdf(
         _attributes(entries[0], {"name"}, f"link {root!r}")
         _children(entries[0], {"inertial", "collision", "visual"}, f"link {root!r}")
         links, order, inbound = {root: entries[0]}, [], {}
+
+    return _floating_from_tree(
+        name,
+        root,
+        links,
+        order,
+        inbound,
+        gravity,
+        path,
+        collapse_fixed_joints=collapse_fixed_joints,
+    )
+
+
+def _floating_from_tree(
+    name, root, links, order, inbound, gravity, path, *, collapse_fixed_joints=False
+):
+    """Assemble one already validated XML tree using the same physical importer.
+
+    Opt-in mimic loading removes only its strictly checked relation tags before
+    entering here. Every remaining joint, inertia and shape keeps ordinary checks.
+    """
+    if not isinstance(collapse_fixed_joints, (bool, np.bool_)):
+        raise ValueError("collapse_fixed_joints must be True or False")
+    for link in order:
+        _, label, joint = inbound[link]
+        if joint.get("type") == "fixed" and not collapse_fixed_joints:
+            raise ValueError(f"joint {label!r}: floating fixed-joint folding is not implemented")
+        if joint.find("mimic") is not None:
+            raise ValueError(f"joint {label!r}: floating mimic is not implemented")
     if collapse_fixed_joints:
         from ._floating_fixed_asset import folded_floating_robot
 

@@ -33,3 +33,13 @@
 此 T2 不包含 scene/PD、接触响应新律、浮根 pads、CCD 响应、CUDA 求解或性能结论。T3 的共同参与者事务与 F03 有限受载窗口还未授权/实现。父后续只运行新增完整单文件与共享抽取确实影响的旧图/普通浮根兼容节点；没有要求重跑 F1 或历史已绿矩阵。
 
 原 100 g mimic 持稳在 1.048 s 滑移 3.005689 mm，仍保留超过 3 mm 门的原 RAW1。此候选不能把浮根约束和无摩擦窗口等同于持续静摩擦或抓取成功。[原失败范围](p65-force-events-filtered-batch2.md)
+
+## 父T2本机验证（2026-11-07，覆盖上文UNEXECUTED候选状态）
+
+原作者452758a五NEW已导入52c9c52，父四旧接缝接通：共享图/XML委托、原floating assembly内部入口，以及原浮根Schur/受限PD纯函数抽取（控制律不变，供后续T3复用）。全部F01/F01-G/F02原物理输入/误差门不变。
+
+唯一串行110完整tests/test_floating_mimic.py首轮 **23 passed / 0.89s / RAW0**；111共享抽取影响的旧mechanical_mimic/mimic_graph和选定root-only/PD/外载/非法命令/F1装配节点 **37 passed / 0.90s / RAW0**。不是重跑已验收原F1窗口或原Newton参考。新23项含16步解析反冲、三姿态独立原部件M/bias/KKT、原约束行力和功及错误输入重试；本轮这些断言在pytest中完成，没有声称保存完整接触轨迹。
+
+静态按实际顺序保留：106首Ruff=1（仅测试import block），107首format=1（7文件）；108import style=0，109format=0；112最终Ruff=0，113最终format九文件不变=0。源before/after与原始失败/raw/log在artifacts/p65-generic-collision-20261107-01对应目录，未调数值或几何以通过。
+
+结论为**T2 HOST standalone及共享兼容验证完成**，尚非完整F2共同场景接受。下一T3仍须共同场景真实入触/峰值/离开、受限控制与晚期失败原子发布，再完成新交叉审阅与源码外wheel。本次未测CUDA浮根求解、浮根pads、CCD、持续摩擦或性能；原100g持稳失败继续保留。

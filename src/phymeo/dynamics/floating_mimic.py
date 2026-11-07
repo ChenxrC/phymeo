@@ -86,7 +86,11 @@ class FloatingMimicRobotAsset:
             raise TypeError("tree must be a full FloatingRobotAsset")
         children = self.tree.model.children
         count = len(self.tree.joint_names)
-        if children is None or self.tree.model.body_count != count + 1 or len(self.tree.link_names) != count:
+        if (
+            children is None
+            or self.tree.model.body_count != count + 1
+            or len(self.tree.link_names) != count
+        ):
             raise ValueError("floating mimic requires a complete physical scalar-child tree")
         coordinates = compile_mimic_coordinates(
             self.tree.joint_names,
@@ -105,8 +109,15 @@ class FloatingMimicRobotAsset:
         projection[:6, :6] = np.eye(6)
         projection[6:, 6:] = coordinates.matrix
         for name in (
-            "matrix", "offset_vector", "constraint_rows", "independent_indices",
-            "joint_names", "lower", "upper", "velocity_limit", "effort_limit",
+            "matrix",
+            "offset_vector",
+            "constraint_rows",
+            "independent_indices",
+            "joint_names",
+            "lower",
+            "upper",
+            "velocity_limit",
+            "effort_limit",
         ):
             object.__setattr__(self, name, getattr(coordinates, name))
         object.__setattr__(self, "relations_tuple", raw)
@@ -188,7 +199,10 @@ class FloatingMimicRobotAsset:
             raise SolverFailure("floating mimic full-coordinate force balance failed")
         projected = _finite(self.velocity_projection.T @ reaction)
         projected_scale = _scale(reaction) * _scale(self.velocity_projection)
-        if not np.isfinite(projected_scale) or np.linalg.norm(projected, np.inf) > 2e-10 * projected_scale:
+        if (
+            not np.isfinite(projected_scale)
+            or np.linalg.norm(projected, np.inf) > 2e-10 * projected_scale
+        ):
             raise SolverFailure("floating mimic constraint has independent generalized work")
         power = float(reaction @ full.v)
         power_scale = max(1.0, float(np.sum(abs(reaction) * abs(full.v))))
@@ -202,9 +216,16 @@ class FloatingMimicRobotAsset:
             driver = -ratio * value
             row_power = float(value * (full.v[6 + f] - ratio * full.v[6 + d]))
             row_scale = max(1.0, abs(value * full.v[6 + f]), abs(driver * full.v[6 + d]))
-            if not np.isfinite((driver, row_power, row_scale)).all() or abs(row_power) > 2e-10 * row_scale:
-                raise SolverFailure(f"floating mimic row to {relation.follower!r} has invalid power")
-            rows.append(MimicRowForce(relation.driver, relation.follower, value, driver, value, row_power))
+            if (
+                not np.isfinite((driver, row_power, row_scale)).all()
+                or abs(row_power) > 2e-10 * row_scale
+            ):
+                raise SolverFailure(
+                    f"floating mimic row to {relation.follower!r} has invalid power"
+                )
+            rows.append(
+                MimicRowForce(relation.driver, relation.follower, value, driver, value, row_power)
+            )
         if abs(sum(row.constraint_power_W for row in rows) - power) > 2e-10 * power_scale:
             raise SolverFailure("floating mimic row and total powers disagree")
         return MimicLoads(

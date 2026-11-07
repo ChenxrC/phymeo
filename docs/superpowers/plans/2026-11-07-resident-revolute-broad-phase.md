@@ -1,6 +1,6 @@
 # C3 单转铰驻留：真实动力学到设备当前姿态宽相
 
-状态：TESTS_FIRST_AUTHORING。无08:00截止。承接[已接受C2](../../benchmarks/p65-resident-slider-collision.md)，与[F2浮根mimic](2026-11-07-floating-mimic.md)隔离编写；项目执行仍仅父串行。
+状态：T2_CODE_AUTHORING。无08:00截止。承接[已接受C2](../../benchmarks/p65-resident-slider-collision.md)，与[F2浮根mimic](2026-11-07-floating-mimic.md)隔离编写；项目执行仍仅父串行。
 
 ## 调研与路线选择
 

@@ -182,6 +182,74 @@ def _project(linear, angular, force, torque):
     return np.einsum("nki,nk->i", linear, force) + np.einsum("nki,nk->i", angular, torque)
 
 
+def _resolve_floating_drive(spec, entry, command, h, mass, bias, external_load, external):
+    """Bound independent motors after eliminating the real six-dimensional free root.
+
+    The mass, bias and external load already use the caller's velocity basis:
+    full scalar joints for ordinary trees, or affine independent joints for mimic.
+    Contact sampling and physical state publication remain outside this function.
+    """
+    n = len(entry.v) - 6
+    lower, upper = np.asarray(spec.asset.lower), np.asarray(spec.asset.upper)
+    speed_limit = np.array(
+        [np.inf if value is None else value for value in spec.asset.velocity_limit]
+    )
+    if not n:
+        if command.joints is not None:
+            raise ValueError("a root-only body requires joints=None")
+        effort, resolved = np.zeros(0), FloatingRobotCommand(None, external)
+    else:
+        joint = command.joints
+        if not isinstance(joint, RobotCommand):
+            raise TypeError("floating scalar children require a RobotCommand")
+        target = _vector(joint.target_q, n, "target_q")
+        rate = (
+            np.zeros(n)
+            if joint.target_velocity is None
+            else _vector(joint.target_velocity, n, "target_velocity")
+        )
+        if np.any(target < lower) or np.any(target > upper):
+            raise ValueError("joint position target outside the asset interval")
+        if np.any(abs(rate) > speed_limit):
+            raise ValueError("joint velocity target outside the asset interval")
+        cap = (
+            spec.effort_limit
+            if joint.effort_limit is None
+            else _vector(joint.effort_limit, n, "effort_limit")
+        )
+        if np.any(cap < 0) or np.any(cap > spec.effort_limit):
+            raise ValueError("command effort limit exceeds configured rating")
+        # Eliminate the six physical root accelerations, retaining every
+        # root-child cross block. This is not the fixed-root child submatrix.
+        root_mass = mass[:6, :6]
+        roots_per_joint = np.column_stack(
+            [_solve_mass_matrix(root_mass, column) for column in mass[:6, 6:].T]
+        )
+        effective_mass = mass[6:, 6:] - mass[6:, :6] @ roots_per_joint
+        free_bias = bias - external_load
+        effective_bias = free_bias[6:] - mass[6:, :6] @ _solve_mass_matrix(root_mass, free_bias[:6])
+        ff = (
+            effective_bias
+            if joint.feedforward is None
+            else _vector(joint.feedforward, n, "feedforward")
+        )
+        effort = solve_bounded_pd(
+            effective_mass,
+            effective_bias,
+            entry.q[7:],
+            entry.v[6:],
+            target,
+            rate,
+            spec.kp,
+            spec.kd,
+            cap,
+            h,
+            feedforward=ff,
+        ).effort
+        resolved = FloatingRobotCommand(RobotCommand(target, rate, cap, ff), external)
+    return effort, resolved
+
+
 class FloatingRobotParticipant:
     """Independent full-M candidate step inside the parent's one-scene transaction."""
 
@@ -352,61 +420,16 @@ class FloatingRobotParticipant:
         ):
             raise ValueError("external COM loads must cover root and children with zero effort")
         external = _asset_snapshot(external)
-        if not n:
-            if command.joints is not None:
-                raise ValueError("a root-only body requires joints=None")
-            effort, resolved = np.zeros(0), FloatingRobotCommand(None, external)
-        else:
-            joint = command.joints
-            if not isinstance(joint, RobotCommand):
-                raise TypeError("floating scalar children require a RobotCommand")
-            target = _vector(joint.target_q, n, "target_q")
-            rate = (
-                np.zeros(n)
-                if joint.target_velocity is None
-                else _vector(joint.target_velocity, n, "target_velocity")
-            )
-            if np.any(target < self.lower) or np.any(target > self.upper):
-                raise ValueError("joint position target outside the asset interval")
-            if np.any(abs(rate) > self.speed_limit):
-                raise ValueError("joint velocity target outside the asset interval")
-            cap = (
-                self.spec.effort_limit
-                if joint.effort_limit is None
-                else _vector(joint.effort_limit, n, "effort_limit")
-            )
-            if np.any(cap < 0) or np.any(cap > self.spec.effort_limit):
-                raise ValueError("command effort limit exceeds configured rating")
-            # Eliminate the six physical root accelerations, retaining every
-            # root-child cross block. This is not the fixed-root child submatrix.
-            root_mass = mass[:6, :6]
-            roots_per_joint = np.column_stack(
-                [_solve_mass_matrix(root_mass, column) for column in mass[:6, 6:].T]
-            )
-            effective_mass = mass[6:, 6:] - mass[6:, :6] @ roots_per_joint
-            free_bias = bias - _project(linear, angular, external.force, external.torque)
-            effective_bias = free_bias[6:] - mass[6:, :6] @ _solve_mass_matrix(
-                root_mass, free_bias[:6]
-            )
-            ff = (
-                effective_bias
-                if joint.feedforward is None
-                else _vector(joint.feedforward, n, "feedforward")
-            )
-            effort = solve_bounded_pd(
-                effective_mass,
-                effective_bias,
-                entry.q[7:],
-                entry.v[6:],
-                target,
-                rate,
-                self.spec.kp,
-                self.spec.kd,
-                cap,
-                h,
-                feedforward=ff,
-            ).effort
-            resolved = FloatingRobotCommand(RobotCommand(target, rate, cap, ff), external)
+        effort, resolved = _resolve_floating_drive(
+            self.spec,
+            entry,
+            command,
+            h,
+            mass,
+            bias,
+            _project(linear, angular, external.force, external.torque),
+            external,
+        )
         return FloatingRobotPreparation(
             entry,
             physical,

@@ -1,6 +1,6 @@
 # F2 浮根 mimic：共享坐标映射、完整动力学和共同场景
 
-状态：TESTS_FIRST_AUTHORING。用户已取消08:00截止，持续推进；当前只授原RD四个NEW案例/测试文件，产品实施在父审阅冻结输入和接口后接续，无需用户重复逐阶段授权。C2/F1已正式限域接受，证据见[固定工具](../../benchmarks/p65-floating-fixed-tools.md)和[滑轨宽相](../../benchmarks/p65-resident-slider-collision.md)。
+状态：T2_HOST_VERIFIED，T3待接续。用户已取消08:00截止，持续推进；当前只授原RD四个NEW案例/测试文件，产品实施在父审阅冻结输入和接口后接续，无需用户重复逐阶段授权。C2/F1已正式限域接受，证据见[固定工具](../../benchmarks/p65-floating-fixed-tools.md)和[滑轨宽相](../../benchmarks/p65-resident-slider-collision.md)。
 
 ## 为什么是下一节点
 

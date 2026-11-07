@@ -16,7 +16,13 @@ def load_floating_mimic_urdf(path, *, gravity=(0.0, 0.0, -9.81), collapse_fixed_
     name, root, links, order, incoming = _read_tree(path)
     relations = extract_mimic_relations(order, incoming)
     tree = _floating_from_tree(
-        name, root, links, order, incoming, gravity, path,
+        name,
+        root,
+        links,
+        order,
+        incoming,
+        gravity,
+        path,
         collapse_fixed_joints=collapse_fixed_joints,
     )
     return FloatingMimicRobotAsset(tree, relations)

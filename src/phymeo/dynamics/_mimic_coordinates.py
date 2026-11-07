@@ -118,7 +118,9 @@ def compile_mimic_coordinates(names, types, lower, upper, velocity, effort, rela
                 intercept = a * offsets[d] + b
                 if gain == 0 or not np.isfinite((gain, intercept)).all():
                     raise ValueError(f"mimic chain to {names[f]!r} cannot be represented in FP64")
-                lo, hi = sorted(((full_lower[f] - intercept) / gain, (full_upper[f] - intercept) / gain))
+                lo, hi = sorted(
+                    ((full_lower[f] - intercept) / gain, (full_upper[f] - intercept) / gain)
+                )
                 bound = speeds[f] / abs(gain)
             if not np.isfinite((lo, hi, bound)).all() or (bound == 0 and speeds[f] > 0):
                 raise ValueError(f"mimic interval or speed at {names[f]!r} is outside FP64 range")

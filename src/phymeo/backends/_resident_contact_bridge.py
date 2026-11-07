@@ -29,7 +29,11 @@ _CONSTRUCTION_M = 1e-10
 
 
 def _integer(value, name, low=0, high=2**31 - 1):
-    if isinstance(value, (bool, np.bool_)) or not isinstance(value, Integral) or not low <= value <= high:
+    if (
+        isinstance(value, (bool, np.bool_))
+        or not isinstance(value, Integral)
+        or not low <= value <= high
+    ):
         raise ValueError(f"{name} must be an integer in [{low}, {high}]")
     return int(value)
 
@@ -65,7 +69,9 @@ def _shape(value):
     if not isinstance(value, CollisionShape):
         raise TypeError("expected CollisionShape")
     result = replace(value, key=_key(value.key))
-    if result.kind not in ("sphere", "capsule", "hull") or (result.kind == "hull" and result.radius):
+    if result.kind not in ("sphere", "capsule", "hull") or (
+        result.kind == "hull" and result.radius
+    ):
         raise ValueError("resident contact supports sphere, finite capsule and unrounded hull only")
     return result
 
@@ -73,7 +79,9 @@ def _shape(value):
 def _law(value):
     if not isinstance(value, RobotContactMaterial):
         raise TypeError("expected the original RobotContactMaterial")
-    result = RobotContactMaterial(value.stiffness, value.damping, value.friction, value.slip_speed_m_s)
+    result = RobotContactMaterial(
+        value.stiffness, value.damping, value.friction, value.slip_speed_m_s
+    )
     if result.friction != 0:
         raise ValueError("resident contact first slice requires zero friction")
     return result
@@ -101,10 +109,17 @@ class ContactShapeFrame:
     def __post_init__(self):
         shape = _shape(self.shape)
         points = _owned(self.world_points_m, (len(shape.vertex_ids), 3), "world material points")
-        group = None if self.group_index is None else _integer(self.group_index, "group index", 0, 15)
+        group = (
+            None if self.group_index is None else _integer(self.group_index, "group index", 0, 15)
+        )
         values = {
             name: _owned(getattr(self, name), (3,), name)
-            for name in ("position_m", "reference_point_m", "linear_velocity_m_s", "angular_velocity_rad_s")
+            for name in (
+                "position_m",
+                "reference_point_m",
+                "linear_velocity_m_s",
+                "angular_velocity_rad_s",
+            )
         }
         rotation = _owned(self.rotation, (3, 3), "stored rotation")
         try:
@@ -114,7 +129,9 @@ class ContactShapeFrame:
         except (FloatingPointError, np.linalg.LinAlgError) as exc:
             raise ValueError("stored rotation is not representable") from exc
         if not np.isfinite(determinant) or determinant <= 0 or error > _ROTATION_DOMAIN:
-            raise ValueError("stored rotation lies outside the positive near-rigid engineering domain")
+            raise ValueError(
+                "stored rotation lies outside the positive near-rigid engineering domain"
+            )
         if group is None:
             with np.errstate(over="ignore", invalid="ignore"):
                 center = points.mean(axis=0)
@@ -126,11 +143,15 @@ class ContactShapeFrame:
                 or not np.isfinite(center).all()
                 or np.max(abs(values["reference_point_m"] - center)) > _CONSTRUCTION_M
             ):
-                raise ValueError("static frame must retain world vertices, mean reference and zero motion")
+                raise ValueError(
+                    "static frame must retain world vertices, mean reference and zero motion"
+                )
         if shape.kind == "capsule" and np.array_equal(points[0], points[1]):
             raise ValueError("capsule requires a nonzero finite axis")
         if shape.kind == "hull":
-            HullShape(shape, CollisionMotion(points))  # Invalid full geometry cannot hide behind no candidates.
+            HullShape(
+                shape, CollisionMotion(points)
+            )  # Invalid full geometry cannot hide behind no candidates.
         object.__setattr__(self, "shape", shape)
         object.__setattr__(self, "world_points_m", points)
         object.__setattr__(self, "group_index", group)
@@ -163,22 +184,35 @@ class ResidentContactSite:
     def __post_init__(self):
         if not isinstance(self.geometry, ContactSite):
             raise TypeError("resident site requires the original ContactSite")
-        if not isinstance(self.pair, tuple) or len(self.pair) != 2 or not isinstance(self.pair[0], CollisionKey):
+        if (
+            not isinstance(self.pair, tuple)
+            or len(self.pair) != 2
+            or not isinstance(self.pair[0], CollisionKey)
+        ):
             raise ValueError("resident site requires a canonical two-key pair")
         pair = _pair(self.pair, self.pair[0].world)
         object.__setattr__(self, "pair", pair)
         object.__setattr__(self, "geometry", replace(self.geometry))
         object.__setattr__(self, "law", _law(self.law))
         for name in (
-            "first_velocity_m_s", "second_velocity_m_s", "first_force_n", "second_force_n",
-            "first_reference_point_m", "second_reference_point_m",
+            "first_velocity_m_s",
+            "second_velocity_m_s",
+            "first_force_n",
+            "second_force_n",
+            "first_reference_point_m",
+            "second_reference_point_m",
         ):
             object.__setattr__(self, name, _owned(getattr(self, name), (3,), name))
         motion_fields = (
-            "first_material_displacement_m", "second_material_displacement_m",
-            "first_application_displacement_m", "second_application_displacement_m",
+            "first_material_displacement_m",
+            "second_material_displacement_m",
+            "first_application_displacement_m",
+            "second_application_displacement_m",
         )
-        values = [getattr(self, name) for name in (*motion_fields, "application_work_j", "material_work_j")]
+        values = [
+            getattr(self, name)
+            for name in (*motion_fields, "application_work_j", "material_work_j")
+        ]
         if all(value is None for value in values):
             return
         if any(value is None for value in values):
@@ -221,10 +255,16 @@ def _frames(values, world, group_count):
                 raise ValueError("contact group index exceeds the real tree group count")
             previous = groups.setdefault(group, frame)
             for name in (
-                "position_m", "rotation", "reference_point_m", "linear_velocity_m_s", "angular_velocity_rad_s",
+                "position_m",
+                "rotation",
+                "reference_point_m",
+                "linear_velocity_m_s",
+                "angular_velocity_rad_s",
             ):
                 if not np.array_equal(getattr(previous, name), getattr(frame, name)):
-                    raise ValueError("shapes in one group must share the same stored FK/COM/velocity source")
+                    raise ValueError(
+                        "shapes in one group must share the same stored FK/COM/velocity source"
+                    )
         # ContactShapeFrame owns immutable arrays and a canonical immutable shape;
         # sharing that value cannot alias the caller's engine or source arrays.
         result[key] = frame
@@ -262,7 +302,11 @@ class ContactLoads:
         reactions = {}
         for raw_key, value in self.static_reactions.items():
             key = _key(raw_key)
-            if key not in frames or frames[key].group_index is not None or not isinstance(value, ResidentStaticReaction):
+            if (
+                key not in frames
+                or frames[key].group_index is not None
+                or not isinstance(value, ResidentStaticReaction)
+            ):
                 raise ValueError("static reaction must name its actual static frame")
             if not np.array_equal(value.reference_point_m, frames[key].reference_point_m):
                 raise ValueError("static reaction reference differs from the declared frame")
@@ -271,7 +315,9 @@ class ContactLoads:
         object.__setattr__(self, "sites", sites)
         object.__setattr__(self, "wrench_fp64", _owned(raw, (count, 6), "contact COM wrench"))
         object.__setattr__(self, "frames", frames)
-        object.__setattr__(self, "static_reactions", MappingProxyType(dict(sorted(reactions.items()))))
+        object.__setattr__(
+            self, "static_reactions", MappingProxyType(dict(sorted(reactions.items())))
+        )
 
 
 class ContactSiteCapacityExceeded(ValueError):
@@ -283,7 +329,9 @@ class ContactSiteCapacityExceeded(ValueError):
         super().__init__(f"contact site count {count} exceeds capacity {limit}")
 
 
-def sample_tree_contacts(*, world, frames, materials_by_pair, candidates, group_count, site_capacity):
+def sample_tree_contacts(
+    *, world, frames, materials_by_pair, candidates, group_count, site_capacity
+):
     """Sample each declared candidate once; return transient HOST loads, never a step.
 
     Pair ordering is canonicalized for deterministic rows, not persistent identity.
@@ -302,7 +350,9 @@ def sample_tree_contacts(*, world, frames, materials_by_pair, candidates, group_
         if any(key not in frames for key in pair):
             raise ValueError("material pair refers to an absent frame source")
         if (frames[pair[0]].group_index is None) == (frames[pair[1]].group_index is None):
-            raise ValueError("first contact slice requires exactly one dynamic and one static owner")
+            raise ValueError(
+                "first contact slice requires exactly one dynamic and one static owner"
+            )
         laws[pair] = _law(value)
     maximum_pairs = len(frames) * (len(frames) - 1) // 2
     selected = set()
@@ -316,7 +366,9 @@ def sample_tree_contacts(*, world, frames, materials_by_pair, candidates, group_
     patches, sites_count = [], 0
     for pair in sorted(selected):
         first, second = (frames[key] for key in pair)
-        patch = contact_patch_sample(first.shape, second.shape, first.world_points_m, second.world_points_m)
+        patch = contact_patch_sample(
+            first.shape, second.shape, first.world_points_m, second.world_points_m
+        )
         sites_count += len(patch.sites)
         if sites_count <= capacity:
             patches.append((pair, patch))
@@ -331,21 +383,33 @@ def sample_tree_contacts(*, world, frames, materials_by_pair, candidates, group_
                 first, second = (frames[key] for key in pair)
                 points = np.array([site.load_point for site in patch.sites])
                 velocities = [
-                    frame.linear_velocity_m_s + np.cross(frame.angular_velocity_rad_s, points - frame.reference_point_m)
+                    frame.linear_velocity_m_s
+                    + np.cross(frame.angular_velocity_rad_s, points - frame.reference_point_m)
                     for frame in (first, second)
                 ]
                 loads = sample_patch_loads(patch, laws[pair], *velocities)
                 for index, geometry in enumerate(patch.sites):
                     forces = loads["first_force"][index], loads["second_force"][index]
                     for key, frame, force in zip(pair, (first, second), forces, strict=True):
-                        moment = np.cross(np.asarray(geometry.load_point) - frame.reference_point_m, force)
-                        target = static[key] if frame.group_index is None else wrench[frame.group_index]
+                        moment = np.cross(
+                            np.asarray(geometry.load_point) - frame.reference_point_m, force
+                        )
+                        target = (
+                            static[key] if frame.group_index is None else wrench[frame.group_index]
+                        )
                         target[:3] += force
                         target[3:] += moment
                     rows.append(
                         ResidentContactSite(
-                            pair, geometry, laws[pair], velocities[0][index], velocities[1][index],
-                            forces[0], forces[1], first.reference_point_m, second.reference_point_m,
+                            pair,
+                            geometry,
+                            laws[pair],
+                            velocities[0][index],
+                            velocities[1][index],
+                            forces[0],
+                            forces[1],
+                            first.reference_point_m,
+                            second.reference_point_m,
                         )
                     )
     except (FloatingPointError, OverflowError, np.linalg.LinAlgError) as exc:
@@ -374,15 +438,21 @@ def finish_contact_loads(loads, candidate_frames):
             for key, entry in loads.frames.items():
                 end = candidates[key]
                 if end.shape != entry.shape or end.group_index != entry.group_index:
-                    raise ValueError("candidate shape/material IDs/radius/group source differs from entry")
+                    raise ValueError(
+                        "candidate shape/material IDs/radius/group source differs from entry"
+                    )
                 if entry.group_index is None:
                     if not np.array_equal(entry.world_points_m, end.world_points_m):
                         raise ValueError("static material geometry changed during the candidate")
                     continue
-                local = np.linalg.solve(entry.rotation, (entry.world_points_m - entry.position_m).T).T
+                local = np.linalg.solve(
+                    entry.rotation, (entry.world_points_m - entry.position_m).T
+                ).T
                 reproduced = local @ end.rotation.T + end.position_m
                 if np.max(abs(reproduced - end.world_points_m)) > _CONSTRUCTION_M:
-                    raise ValueError("candidate local material source changed beyond construction consistency")
+                    raise ValueError(
+                        "candidate local material source changed beyond construction consistency"
+                    )
                 # Actual device COM has independent FP32 rounding. The parent
                 # proves its model/group source; do not reconstruct or replace it.
 
@@ -408,10 +478,14 @@ def finish_contact_loads(loads, candidate_frames):
                         second_material_displacement_m=d2,
                         first_application_displacement_m=a1,
                         second_application_displacement_m=a2,
-                        application_work_j=float(site.first_force_n @ a1 + site.second_force_n @ a2),
+                        application_work_j=float(
+                            site.first_force_n @ a1 + site.second_force_n @ a2
+                        ),
                         material_work_j=float(site.first_force_n @ d1 + site.second_force_n @ d2),
                     )
                 )
     except (FloatingPointError, OverflowError, np.linalg.LinAlgError) as exc:
         raise ValueError("candidate contact transport is not representable") from exc
-    return ContactLoads(tuple(rows), loads.wrench_fp64, loads.static_reactions, loads.frames, loads.world, True)
+    return ContactLoads(
+        tuple(rows), loads.wrench_fp64, loads.static_reactions, loads.frames, loads.world, True
+    )

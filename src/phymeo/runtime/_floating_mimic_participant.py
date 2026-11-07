@@ -59,9 +59,7 @@ class FloatingMimicParticipant:
             kd=_readonly(np.zeros(count)),
             effort_limit=_readonly(np.zeros(count)),
         )
-        self._geometry_adapter = FloatingRobotParticipant(
-            address, geometry_registration, occupied
-        )
+        self._geometry_adapter = FloatingRobotParticipant(address, geometry_registration, occupied)
         for name in ("contact_view", "key_map", "names", "named_keys", "shapes"):
             setattr(self, name, getattr(self._geometry_adapter, name))
 
@@ -82,8 +80,20 @@ class FloatingMimicParticipant:
         return self._geometry_adapter.poses(self.full(state))
 
     def _observation(
-        self, state, full, entry, effort, contact, wrenches, external,
-        applied, acceleration, *, command=None, requested=None, receipt=None,
+        self,
+        state,
+        full,
+        entry,
+        effort,
+        contact,
+        wrenches,
+        external,
+        applied,
+        acceleration,
+        *,
+        command=None,
+        requested=None,
+        receipt=None,
     ):
         return FloatingRobotObservation(
             q=_readonly(state.q),
@@ -108,10 +118,15 @@ class FloatingMimicParticipant:
     def initial_observation(self):
         zero = np.zeros(self.velocity_count)
         return self._observation(
-            self.initial, self.full(self.initial), self.initial,
-            np.zeros(len(self.asset.joint_names)), zero,
-            np.zeros((self.body_count, 6)), FloatingRobotInputs.zeros(self.body_count - 1),
-            zero, zero,
+            self.initial,
+            self.full(self.initial),
+            self.initial,
+            np.zeros(len(self.asset.joint_names)),
+            zero,
+            np.zeros((self.body_count, 6)),
+            FloatingRobotInputs.zeros(self.body_count - 1),
+            zero,
+            zero,
         )
 
     def prepare(self, state, command, dt):
@@ -140,21 +155,33 @@ class FloatingMimicParticipant:
         projection = self.asset.velocity_projection
         reduced_mass = projection.T @ mass @ projection
         reduced_bias = projection.T @ bias
-        reduced_external = projection.T @ _project(
-            linear, angular, external.force, external.torque
-        )
+        reduced_external = projection.T @ _project(linear, angular, external.force, external.torque)
         if not all(
-            np.isfinite(value).all()
-            for value in (reduced_mass, reduced_bias, reduced_external)
+            np.isfinite(value).all() for value in (reduced_mass, reduced_bias, reduced_external)
         ):
             raise ValueError("floating mimic drive projection exceeds finite range")
         effort, resolved = _resolve_floating_drive(
-            self.spec, entry, command, h, reduced_mass, reduced_bias,
-            reduced_external, external,
+            self.spec,
+            entry,
+            command,
+            h,
+            reduced_mass,
+            reduced_bias,
+            reduced_external,
+            external,
         )
         return FloatingRobotPreparation(
-            entry, physical, geometry, linear, angular, mass, bias,
-            _readonly(effort), external, resolved, command,
+            entry,
+            physical,
+            geometry,
+            linear,
+            angular,
+            mass,
+            bias,
+            _readonly(effort),
+            external,
+            resolved,
+            command,
         )
 
     def integrate(self, prepared, measured, dt):
@@ -180,9 +207,7 @@ class FloatingMimicParticipant:
             or np.any(fixed_root)
         ):
             raise ValueError("floating contact needs each physical COM wrench and no fixed root")
-        projected = _project(
-            prepared.linear, prepared.angular, wrenches[:, :3], wrenches[:, 3:]
-        )
+        projected = _project(prepared.linear, prepared.angular, wrenches[:, :3], wrenches[:, 3:])
         if not np.isfinite(projected).all() or not np.allclose(
             contact, projected, rtol=2e-10, atol=2e-10
         ):
@@ -194,16 +219,23 @@ class FloatingMimicParticipant:
         )
         # The read-only full-tree adapter is never stepped. This is the only
         # physical advance: constrained solve followed by the existing one drift.
-        result = self.asset.step(
-            prepared.entry, effort=prepared.effort, dt_s=h, external=external
-        )
+        result = self.asset.step(prepared.entry, effort=prepared.effort, dt_s=h, external=external)
         self.validate(result.state)
         applied = result.loads.actuator_effort_full + result.loads.contact_effort_full
         if not np.isfinite(applied).all():
             raise ValueError("floating mimic applied load exceeds finite range")
         observation = self._observation(
-            result.state, result.full_state, prepared.entry, prepared.effort,
-            contact, wrenches, prepared.external, applied, result.loads.acceleration_full,
-            command=prepared.resolved, requested=prepared.requested, receipt=result.loads,
+            result.state,
+            result.full_state,
+            prepared.entry,
+            prepared.effort,
+            contact,
+            wrenches,
+            prepared.external,
+            applied,
+            result.loads.acceleration_full,
+            command=prepared.resolved,
+            requested=prepared.requested,
+            receipt=result.loads,
         )
         return result.state, observation

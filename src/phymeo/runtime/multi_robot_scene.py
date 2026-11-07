@@ -18,9 +18,11 @@ from ..constraints.robot_contact import RobotContactMaterial
 from ..core.coupled import CoupledInputs
 from ..core.rigid import RigidBodyInputs, RigidBodyModel, RigidBodyState
 from ..core.validation import validate_dt
+from ..dynamics.floating_mimic import FloatingMimicRobotAsset
 from ..dynamics.rotation import quaternion_matrix
 from ..solvers.collision_loads import SurfaceLoads
 from ..solvers.rigid_semi_implicit import RigidSemiImplicitSolver
+from ._floating_mimic_participant import FloatingMimicParticipant
 from ._floating_robot_participant import FloatingRobotParticipant, FloatingRobotRegistration
 from ._robot_participant import RobotParticipant
 from ._robot_robot_contacts import RobotRobotContacts
@@ -76,8 +78,9 @@ class MultiRobotScene:
 
     Commands use independent joint coordinates, including existing mimic graphs.
     Direct contacts support sphere, finite capsule and convex-hull patches on
-    another tree. Self-contact, CCD, floating mimic trees, deformable bodies and the
-    opt-in coupled tangential-history mode remain unsupported.
+    another tree, including affine scalar mimic trees with a real floating root.
+    Self-contact, CCD, deformable bodies and the opt-in coupled tangential-history
+    mode remain unsupported.
     """
 
     def __init__(self, registrations, rigid_items, pairs, gravity):
@@ -87,7 +90,11 @@ class MultiRobotScene:
         occupied = {addr[1] for addr in (*registrations, *rigid_items)}
         self._participants = {
             addr: (
-                FloatingRobotParticipant
+                (
+                    FloatingMimicParticipant
+                    if isinstance(registration.asset, FloatingMimicRobotAsset)
+                    else FloatingRobotParticipant
+                )
                 if isinstance(registration, FloatingRobotRegistration)
                 else RobotParticipant
             )(addr, registration, occupied)

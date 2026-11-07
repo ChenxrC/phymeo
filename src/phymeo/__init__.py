@@ -20,6 +20,7 @@ from .backends.tyx_sphere_island import SphereIslandWorld, TyxSphereIslandBatch
 from .backends.tyx_world_batch import (
     FreeSphere,
     PrismaticSlider,
+    RevoluteRotor,
     SpherePlaneCheckpoint,
     SpherePlaneWorld,
     TyxWorldBatch,
@@ -33,6 +34,7 @@ from .backends.tyx_world_contact import (
 )
 from .backends.tyx_xpbd import TyxXPBDSolver
 from .builders.cloth import ClothPatch, cloth_grid
+from .builders.floating_mimic_urdf import load_floating_mimic_urdf
 from .builders.floating_urdf import FloatingRobotAsset, load_floating_urdf
 from .builders.mimic_urdf import load_mimic_urdf
 from .builders.mjcf import load_mjcf
@@ -105,6 +107,7 @@ from .coupling.robot_port import RobotPointPort
 from .coupling.surface_port import PointPairOperator, WeightedPointPort
 from .coupling.tetrahedral_port import TetrahedralPointPort
 from .coupling.witness_impulses import solve_witness_impulses
+from .dynamics.floating_mimic import FloatingMimicRobotAsset, FloatingMimicStep
 from .dynamics.floating_robot import (
     FloatingKinematics,
     FloatingRobotModel,
@@ -417,6 +420,7 @@ __all__ = [
     "SpherePlaneCheckpoint",
     "SpherePlaneWorld",
     "PrismaticSlider",
+    "RevoluteRotor",
     "TyxWorldBatch",
     "TyxBatchedScene",
     "BatchedStepResult",
@@ -431,6 +435,8 @@ __all__ = [
     "step_robot_closures",
     "FloatingKinematics",
     "FloatingRobotAsset",
+    "FloatingMimicRobotAsset",
+    "FloatingMimicStep",
     "FloatingRobotCommand",
     "FloatingRobotModel",
     "FloatingRobotState",
@@ -481,6 +487,7 @@ __all__ = [
     "pendulum_chain",
     "load_urdf",
     "load_floating_urdf",
+    "load_floating_mimic_urdf",
     "load_mimic_urdf",
     "load_mjcf",
     "load_usd",

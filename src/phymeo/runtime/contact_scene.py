@@ -169,10 +169,13 @@ class ContactSceneBuilder:
         loader=None,
         world=0,
     ):
-        """Register a physical free root and ordinary scalar-joint tree for HOST.
+        """Register a physical free root and scalar-joint tree for HOST.
 
-        Root and joints share one full inertia. External body COM wrenches are
-        supplied in FloatingRobotCommand, separately from joint drive effort.
+        Pass load_floating_mimic_urdf as loader for an affine mimic mechanism;
+        its state, gains and motor limits use independent joint coordinates.
+        Both forms retain the complete physical tree and every material owner.
+        External body COM wrenches use full body order in FloatingRobotCommand,
+        separately from independent joint drive effort.
         """
         from ._floating_robot_participant import make_floating_registration
 

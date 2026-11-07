@@ -14,6 +14,7 @@ from ..builders.floating_urdf import FloatingRobotAsset, load_floating_urdf
 from ..constraints.collision_shapes import CollisionKey
 from ..control.bounded_pd import solve_bounded_pd
 from ..core.validation import validate_dt
+from ..dynamics.floating_mimic import FloatingMimicRobotAsset
 from ..dynamics.floating_robot import (
     FloatingRobotState,
     floating_kinematics,
@@ -55,7 +56,7 @@ class FloatingRobotCommand:
 
 @dataclass(frozen=True, eq=False)
 class FloatingRobotRegistration:
-    asset: FloatingRobotAsset
+    asset: FloatingRobotAsset | FloatingMimicRobotAsset
     q: np.ndarray
     v: np.ndarray
     kp: np.ndarray
@@ -71,26 +72,32 @@ def make_floating_registration(
     if tuple(pads):
         raise ValueError("floating robot pads are not implemented")
     asset = (load_floating_urdf if loader is None else loader)(path, gravity=tuple(gravity))
-    if not isinstance(asset, FloatingRobotAsset):
-        raise TypeError("floating loader must return FloatingRobotAsset")
-    n = len(asset.joint_names)
+    if not isinstance(asset, (FloatingRobotAsset, FloatingMimicRobotAsset)):
+        raise TypeError(
+            "floating loader must return a FloatingRobotAsset or FloatingMimicRobotAsset"
+        )
+    physical = asset.tree if isinstance(asset, FloatingMimicRobotAsset) else asset
+    n, full_n = len(asset.joint_names), len(physical.joint_names)
     if (
-        asset.model.body_count != n + 1
+        physical.model.body_count != full_n + 1
         or not isinstance(robot_state, FloatingRobotState)
         or robot_state.q.shape != (7 + n,)
+        or robot_state.v.shape != (6 + n,)
     ):
-        raise ValueError("floating robot state must match the root and scalar-joint order")
+        raise ValueError("floating robot state must match the root and independent-joint order")
     if any(
-        len(values) != n
+        len(values) != full_n
         for values in (
-            asset.link_names,
-            asset.lower,
-            asset.upper,
-            asset.effort_limit,
-            asset.velocity_limit,
+            physical.link_names,
+            physical.lower,
+            physical.upper,
+            physical.effort_limit,
+            physical.velocity_limit,
         )
     ):
-        raise ValueError("floating asset metadata must match its scalar children")
+        raise ValueError("floating asset metadata must match its physical scalar children")
+    if isinstance(asset, FloatingMimicRobotAsset):
+        asset.full_state(robot_state)  # Validate every authored driver/follower limit.
     kp, kd = _vector(kp, n, "kp"), _vector(kd, n, "kd")
     if np.any(kp < 0) or np.any(kd < 0):
         raise ValueError("controller gains must be nonnegative")
@@ -100,9 +107,9 @@ def make_floating_registration(
     cap = _vector(hard if effort_limit is None else effort_limit, n, "effort_limit")
     if np.any(cap < 0) or np.any(cap > hard):
         raise ValueError("effort limit is negative or exceeds the URDF rating")
-    if not np.array_equal(asset.model.root.gravity, np.asarray(gravity, dtype=float)) or (
-        asset.model.children is not None
-        and not np.array_equal(asset.model.children.gravity, asset.model.root.gravity)
+    if not np.array_equal(physical.model.root.gravity, np.asarray(gravity, dtype=float)) or (
+        physical.model.children is not None
+        and not np.array_equal(physical.model.children.gravity, physical.model.root.gravity)
     ):
         raise ValueError("floating loader must preserve the scene gravity for every body")
     return FloatingRobotRegistration(

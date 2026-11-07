@@ -5,13 +5,13 @@ All accepted frames are retained, including full physical/reduced state and
 material loads. A failed or unqualified window is saved and exits nonzero.
 """
 
+import gzip
+import json
 from argparse import ArgumentParser
 from collections.abc import Mapping
 from dataclasses import fields, is_dataclass
 from enum import Enum
-import gzip
 from hashlib import sha256
-import json
 from pathlib import Path
 
 import numpy as np
@@ -23,7 +23,6 @@ from phymeo.runtime._floating_robot_participant import FloatingRobotCommand
 from phymeo.runtime.contact_scene import ContactSceneBuilder
 from phymeo.runtime.robot_scene import RobotCommand
 from phymeo.solvers.floating_tree import FloatingRobotInputs, floating_dynamics_terms
-
 
 FIXTURES = Path(__file__).resolve().parents[1] / "tests" / "fixtures" / "urdf"
 WORLD, ROBOT, BALL = 23, 17, 91
@@ -74,19 +73,26 @@ def build_contact_scene(*, transformed=False, reverse=False, fixture_dir=FIXTURE
 
     def robot():
         builder.add_floating_urdf(
-            ROBOT, Path(fixture_dir) / "floating_mimic_jaws.urdf",
-            robot_state=initial_state(transformed=transformed), kp=[0], kd=[0],
-            effort_limit=[1.5], loader=load_floating_mimic_urdf, world=WORLD,
+            ROBOT,
+            Path(fixture_dir) / "floating_mimic_jaws.urdf",
+            robot_state=initial_state(transformed=transformed),
+            kp=[0],
+            kd=[0],
+            effort_limit=[1.5],
+            loader=load_floating_mimic_urdf,
+            world=WORLD,
         )
 
     def ball():
         builder.add_sphere(
-            BALL, 1 / 16, mass=1,
+            BALL,
+            1 / 16,
+            mass=1,
             position=shift + rotation @ np.array([0.254, 1 / 8 + 1 / 1024, 0]),
             world=WORLD,
         )
 
-    for add in ((ball, robot) if reverse else (robot, ball)):
+    for add in (ball, robot) if reverse else (robot, ball):
         add()
     builder.pair(ROBOT, BALL, RobotContactMaterial(2048, 0, 0), world=WORLD)
     return builder.build(backend="host")
@@ -97,7 +103,9 @@ def zero_drive():
 
 
 def robot_reading(frame):
-    return next(item["value"] for item in frame["reading"]["robots"] if item["key"] == [WORLD, ROBOT])
+    return next(
+        item["value"] for item in frame["reading"]["robots"] if item["key"] == [WORLD, ROBOT]
+    )
 
 
 def sites(frame):
@@ -111,9 +119,17 @@ def _totals(geometry, rigid, row):
     linear = momentum.sum(axis=0) + rigid.velocity[row]
     angular = np.cross(geometry.com_position, momentum).sum(axis=0) + spin.sum(axis=0)
     ball_inertia = (2 / 5) * (1 / 16) ** 2
-    angular += np.cross(rigid.position[row], rigid.velocity[row]) + ball_inertia * rigid.angular_velocity[row]
-    energy = np.sum(momentum * geometry.com_velocity) / 2 + np.sum(spin * geometry.angular_velocity) / 2
-    energy += (rigid.velocity[row] @ rigid.velocity[row] + ball_inertia * (rigid.angular_velocity[row] @ rigid.angular_velocity[row])) / 2
+    angular += (
+        np.cross(rigid.position[row], rigid.velocity[row])
+        + ball_inertia * rigid.angular_velocity[row]
+    )
+    energy = (
+        np.sum(momentum * geometry.com_velocity) / 2 + np.sum(spin * geometry.angular_velocity) / 2
+    )
+    energy += (
+        rigid.velocity[row] @ rigid.velocity[row]
+        + ball_inertia * (rigid.angular_velocity[row] @ rigid.angular_velocity[row])
+    ) / 2
     return linear, angular, float(energy)
 
 
@@ -125,17 +141,26 @@ def _frame(scene, reading, asset, ball_row, impulse, initial_totals):
     end_geo = floating_kinematics(asset.tree.model, end)
     terms = floating_dynamics_terms(asset.tree.model, entry, FloatingRobotInputs.zeros(2))
     totals = _totals(end_geo, reading.rigid, ball_row)
-    residual = None if row.mimic_loads is None else (
-        terms.mass_matrix @ row.acceleration_full + terms.bias
-        - row.applied_effort_full - row.mimic_loads.constraint_effort_full
+    residual = (
+        None
+        if row.mimic_loads is None
+        else (
+            terms.mass_matrix @ row.acceleration_full
+            + terms.bias
+            - row.applied_effort_full
+            - row.mimic_loads.constraint_effort_full
+        )
     )
     geometry = scene.geometry()
     return {
-        "reading": plain(reading), "events": plain(scene.contact_events),
-        "entry_full": plain(entry), "entry_geometry": plain(entry_geo),
+        "reading": plain(reading),
+        "events": plain(scene.contact_events),
+        "entry_full": plain(entry),
+        "entry_geometry": plain(entry_geo),
         "end_geometry": plain(end_geo),
         "geometry": {"time_s": geometry.time_s, "poses": plain(geometry.poses)},
-        "entry_mass": terms.mass_matrix.tolist(), "entry_bias": terms.bias.tolist(),
+        "entry_mass": terms.mass_matrix.tolist(),
+        "entry_bias": terms.bias.tolist(),
         "full_balance_residual": plain(residual),
         "ball_impulse_ns": impulse.tolist(),
         "linear_momentum_ns": totals[0].tolist(),
@@ -152,13 +177,21 @@ def run_contact_window(*, dt_s=1 / 2048, transformed=False, reverse=False, fixtu
         raise ValueError("frozen dt_s must be 1/2048 or 1/4096")
     fixture = Path(fixture_dir) / "floating_mimic_jaws.urdf"
     protocol = {
-        "backend": "host", "dt_s": dt_s, "duration_s": DURATION,
-        "world": WORLD, "robot": ROBOT, "ball": BALL,
-        "transformed": transformed, "reverse_registration": reverse,
-        "gravity": [0, 0, 0], "external": "zero", "drive": "explicit zero",
+        "backend": "host",
+        "dt_s": dt_s,
+        "duration_s": DURATION,
+        "world": WORLD,
+        "robot": ROBOT,
+        "ball": BALL,
+        "transformed": transformed,
+        "reverse_registration": reverse,
+        "gravity": [0, 0, 0],
+        "external": "zero",
+        "drive": "explicit zero",
         "law": {"stiffness_n_per_m": 2048, "damping": 0, "friction": 0},
         "initial_gap_m": 1 / 1024,
-        "fixture": str(fixture.resolve()), "fixture_sha256": sha256(fixture.read_bytes()).hexdigest(),
+        "fixture": str(fixture.resolve()),
+        "fixture_sha256": sha256(fixture.read_bytes()).hexdigest(),
         "driver_sha256": sha256(Path(__file__).read_bytes()).hexdigest(),
         "scope": "HOST passive physical encounter; no grasp, state reset, CCD response or static-friction claim",
     }
@@ -166,13 +199,22 @@ def run_contact_window(*, dt_s=1 / 2048, transformed=False, reverse=False, fixtu
     initial = final = None
     last_returned = None
     try:
-        with build_contact_scene(transformed=transformed, reverse=reverse, fixture_dir=fixture_dir) as scene:
+        with build_contact_scene(
+            transformed=transformed, reverse=reverse, fixture_dir=fixture_dir
+        ) as scene:
             asset, ball_row = scene.assets[WORLD, ROBOT], scene.rigid_rows[WORLD, BALL]
             start = scene.observe()
             start_row = start.robots[WORLD, ROBOT]
-            start_geo = floating_kinematics(asset.tree.model, FloatingRobotState(start_row.full_q, start_row.full_v))
+            start_geo = floating_kinematics(
+                asset.tree.model, FloatingRobotState(start_row.full_q, start_row.full_v)
+            )
             totals = _totals(start_geo, start.rigid, ball_row)
-            initial = {"reading": plain(start), "geometry": plain(scene.geometry()), "events": plain(scene.contact_events), "totals": plain(totals)}
+            initial = {
+                "reading": plain(start),
+                "geometry": plain(scene.geometry()),
+                "events": plain(scene.contact_events),
+                "totals": plain(totals),
+            }
             impulse = np.zeros(3)
             try:
                 for _ in range(round(DURATION / dt_s)):
@@ -182,25 +224,67 @@ def run_contact_window(*, dt_s=1 / 2048, transformed=False, reverse=False, fixtu
                     impulse += dt_s * reading.loads.inputs.rigid.force[ball_row]
                     frames.append(_frame(scene, reading, asset, ball_row, impulse, totals))
             except Exception as exc:
-                failure = {"type": type(exc).__name__, "message": str(exc), "attempt": len(frames) + 1, "returned_reading": plain(last_returned)}
-            final = {"reading": plain(scene.observe()), "geometry": plain(scene.geometry()), "events": plain(scene.contact_events)}
+                failure = {
+                    "type": type(exc).__name__,
+                    "message": str(exc),
+                    "attempt": len(frames) + 1,
+                    "returned_reading": plain(last_returned),
+                }
+            final = {
+                "reading": plain(scene.observe()),
+                "geometry": plain(scene.geometry()),
+                "events": plain(scene.contact_events),
+            }
     except Exception as exc:
-        failure = {"type": type(exc).__name__, "message": str(exc), "attempt": len(frames) + 1, "returned_reading": plain(last_returned)}
+        failure = {
+            "type": type(exc).__name__,
+            "message": str(exc),
+            "attempt": len(frames) + 1,
+            "returned_reading": plain(last_returned),
+        }
     loaded = [frame for frame in frames if any(site["force_n"] > 0 for site in sites(frame))]
     summary = {
-        "status": "complete" if failure is None and len(frames) == round(DURATION / dt_s) else "failed",
-        "steps": len(frames), "time_s": None if final is None else final["reading"]["time_s"],
+        "status": "complete"
+        if failure is None and len(frames) == round(DURATION / dt_s)
+        else "failed",
+        "steps": len(frames),
+        "time_s": None if final is None else final["reading"]["time_s"],
         "first_load_time_s": None if not loaded else loaded[0]["reading"]["load_time_s"],
         "last_load_time_s": None if not loaded else loaded[-1]["reading"]["load_time_s"],
-        "peak_force_n": max((sum(site["force_n"] for site in sites(frame)) for frame in frames), default=0.0),
-        "has_begin": any(event["kind"] == "begin" for frame in frames for event in frame["events"]["events"]),
-        "has_end": any(event["kind"] == "end" for frame in frames for event in frame["events"]["events"]),
-        "final_unloaded": bool(frames) and not any(site["force_n"] > 0 for site in sites(frames[-1])),
-        "max_linear_residual_ns": max((float(np.linalg.norm(frame["linear_momentum_residual_ns"])) for frame in frames), default=0.0),
-        "max_angular_residual_nms": max((float(np.linalg.norm(frame["angular_momentum_residual_nms"])) for frame in frames), default=0.0),
+        "peak_force_n": max(
+            (sum(site["force_n"] for site in sites(frame)) for frame in frames), default=0.0
+        ),
+        "has_begin": any(
+            event["kind"] == "begin" for frame in frames for event in frame["events"]["events"]
+        ),
+        "has_end": any(
+            event["kind"] == "end" for frame in frames for event in frame["events"]["events"]
+        ),
+        "final_unloaded": bool(frames)
+        and not any(site["force_n"] > 0 for site in sites(frames[-1])),
+        "max_linear_residual_ns": max(
+            (float(np.linalg.norm(frame["linear_momentum_residual_ns"])) for frame in frames),
+            default=0.0,
+        ),
+        "max_angular_residual_nms": max(
+            (float(np.linalg.norm(frame["angular_momentum_residual_nms"])) for frame in frames),
+            default=0.0,
+        ),
     }
-    summary["qualified"] = summary["status"] == "complete" and summary["has_begin"] and summary["has_end"] and summary["final_unloaded"]
-    return {"protocol": protocol, "summary": summary, "failure": failure, "initial": initial, "frames": frames, "final": final}
+    summary["qualified"] = (
+        summary["status"] == "complete"
+        and summary["has_begin"]
+        and summary["has_end"]
+        and summary["final_unloaded"]
+    )
+    return {
+        "protocol": protocol,
+        "summary": summary,
+        "failure": failure,
+        "initial": initial,
+        "frames": frames,
+        "final": final,
+    }
 
 
 def main():
@@ -213,7 +297,12 @@ def main():
     args = parser.parse_args()
     if not args.out.is_absolute() or args.out.exists():
         parser.error("--out must be a new absolute .json or .json.gz file")
-    result = run_contact_window(dt_s=args.dt, transformed=args.transformed, reverse=args.reverse_registration, fixture_dir=args.fixture_dir)
+    result = run_contact_window(
+        dt_s=args.dt,
+        transformed=args.transformed,
+        reverse=args.reverse_registration,
+        fixture_dir=args.fixture_dir,
+    )
     payload = (json.dumps(result, allow_nan=False, separators=(",", ":")) + "\n").encode("utf-8")
     args.out.parent.mkdir(parents=True, exist_ok=True)
     with args.out.open("xb") as stream:

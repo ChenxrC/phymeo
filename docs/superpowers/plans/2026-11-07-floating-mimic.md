@@ -69,3 +69,7 @@ NEW FloatingMimicParticipant(address,registration,occupied)使用原FloatingRobo
 prepare在同一入态读full M/b/J，投影S后调用父已存在的_resolve_floating_drive(spec,entry,command,h,mass,bias,external_load,external)；接触仍在其后共同采样。积分仅调用机制的约束step一次或等价共用核心；完整COM外载与contact各计一次，实际接触full Jᵀ载荷须与COM汇总一致。观察q/v独立、full_q/full_v完整；contact_effort使用Sᵀfull接触（6+k），contact_effort_full及applied/acceleration均6+n，drive k，根fixed_contact_wrench零，mimic_loads保原行/根余额和入步功。
 
 父独占旧_registration/factory/ContactSceneBuilder说明及必要公开exports。原ResolvePD函数已抽取，原37兼容通过，不再复制浮根控制律。产品最终交接仍UNEXECUTED，所有imports/pytest/数值/static/build由父唯一串行执行；作者可只text/fileIO/Git。
+
+## T3 HOST完成
+
+父129首次完整13pass/17.83s，四原窗口2560步及全部解析/事务/步长/协变门通过；130受影响共享13pass，131/132静态0。父与原作者源码/接口审阅完成。详见[实际共同场景报告](../../benchmarks/p65-floating-mimic-scene.md#父实际共同场景结果2026-11-07)。没有数值修补、物性/门更改或重复T2绿组。接下来将本片与C3一起做新源码外wheel验证，再正式关闭本片；整个Newton功能差距与原静摩擦/软布问题继续。

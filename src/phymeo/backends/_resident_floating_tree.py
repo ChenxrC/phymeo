@@ -50,6 +50,9 @@ def _model_copy(model):
             raise ValueError("floating root and children must share world gravity")
     owned = FloatingRobotModel(root, model.root_com_m, children,
                                root_inertia_frame_xyzw=model.root_inertia_frame_xyzw)
+    # Preserve the original validated declaration token: do not repeatedly round
+    # an already normalized principal frame when copying or compiling.
+    object.__setattr__(owned, "root_inertia_frame_xyzw", _owned(model.root_inertia_frame_xyzw, np.float64))
     return _freeze_fields(owned, ("root_com_m", "root_inertia_frame_xyzw"))
 
 
@@ -266,7 +269,7 @@ class FloatingTreeWorldSpec:
             _nested(generalized_row[:self.d]))
 
     def restore_row(self, checkpoint, world):
-        if not isinstance(checkpoint, FloatingTreeCheckpoint) or checkpoint.world != world:
+        if not isinstance(checkpoint, FloatingTreeCheckpoint) or world_key(checkpoint.world) != world:
             raise ValueError("floating checkpoint world or state kind differs")
         if checkpoint.topology != self.topology:
             raise ValueError("floating checkpoint topology/model differs")
@@ -294,7 +297,11 @@ class FloatingTreeWorldSpec:
         if not isinstance(checkpoint.control, tuple) or len(checkpoint.control) != 4:
             raise ValueError("floating checkpoint control must contain all four blocks")
         drive, effort, force, torque = checkpoint.control
-        drive = np.asarray(drive, dtype=float).reshape(self.n, 3)
+        drive = np.asarray(drive, dtype=float)
+        if self.n == 0 and drive.shape == (0,):
+            drive = drive.reshape(0, 3)
+        if drive.shape != (self.n, 3):
+            raise ValueError("restored floating drive must retain its (n,3) block")
         packet = FloatingTreeInputs(drive, FloatingRobotInputs(np.asarray(effort, dtype=float),
                                    np.asarray(force, dtype=float), np.asarray(torque, dtype=float)))
         floating_packet(packet, self.n)

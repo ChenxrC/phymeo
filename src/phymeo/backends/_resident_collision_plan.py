@@ -21,6 +21,7 @@ from ..geometry._collision_bvh import BoundsTree, CollisionTrees
 from ..geometry._collision_spatial import SpatialPairs
 from ..geometry.collision_pipeline import _envelopes, _host_bounds
 from ._resident_affine_binding import ResidentAffineTreeBinding, compile_affine_tree_binding
+from ._resident_floating_binding import ResidentFloatingTreeBinding, compile_floating_tree_binding
 from ._resident_revolute_binding import ResidentRevoluteBinding, compile_revolute_binding
 from ._resident_slider_binding import ResidentSliderBinding, compile_slider_binding
 from ._resident_tree_binding import ResidentTreeBinding, compile_tree_binding
@@ -51,6 +52,7 @@ class AcceptedCollisionState:
     tx: object
     tree: object | None = None
     affine_tree: object | None = None
+    floating_tree: object | None = None
 
 
 @dataclass(frozen=True)
@@ -203,6 +205,8 @@ class ResidentCollisionPlan:
         self._tree_bounds_launches = 0
         self._affine_tree_kernels = self._affine_tree_rows_device = None
         self._affine_tree_bounds_launches = 0
+        self._floating_tree_kernels = self._floating_tree_rows_device = None
+        self._floating_tree_bounds_launches = 0
         self._slots_device = self._static_device = self._stamp_device = None
         self._queries = self._failed_queries = self._bounds_launches = 0
         self._directions = set()
@@ -242,6 +246,7 @@ class ResidentCollisionPlan:
                     ResidentSliderBinding,
                     ResidentRevoluteBinding,
                     ResidentTreeBinding,
+                    ResidentFloatingTreeBinding,
                 ),
             )
             for b in rows
@@ -265,6 +270,7 @@ class ResidentCollisionPlan:
         self._rotor_geometry = np.zeros((len(rows), 8), dtype=np.float32)
         self._tree_rows = np.full(len(rows), -1, dtype=np.int32)
         self._affine_tree_rows = np.full(len(rows), -1, dtype=np.int32)
+        self._floating_tree_rows = np.full(len(rows), -1, dtype=np.int32)
         self._tree_groups = np.full(len(rows), -1, dtype=np.int32)
         self._tree_parents = np.full(len(rows), -2, dtype=np.int32)
         self._tree_offsets = self._rotor_offsets.copy()
@@ -284,6 +290,7 @@ class ResidentCollisionPlan:
                     ResidentSliderBinding,
                     ResidentRevoluteBinding,
                     ResidentTreeBinding,
+                    ResidentFloatingTreeBinding,
                 ),
             ):
                 if binding.world != shape.key.world or binding.world not in view.slots:
@@ -358,12 +365,25 @@ class ResidentCollisionPlan:
                     self._rotor_points[start:end] = points
                     self._rotor_geometry[row] = geometry
                 else:
+                    floating = isinstance(binding, ResidentFloatingTreeBinding)
                     affine = isinstance(binding, ResidentAffineTreeBinding)
-                    tree_view = view.affine_tree if affine else view.tree
-                    required_kinds = (7, 8) if affine else (5, 6)
+                    tree_view = (
+                        view.floating_tree
+                        if floating
+                        else view.affine_tree
+                        if affine
+                        else view.tree
+                    )
+                    required_kinds = (9, 10) if floating else (7, 8) if affine else (5, 6)
                     if physical.kind not in required_kinds or tree_view is None:
                         raise ValueError("tree binding must match its resident tree law")
-                    compiler = compile_affine_tree_binding if affine else compile_tree_binding
+                    compiler = (
+                        compile_floating_tree_binding
+                        if floating
+                        else compile_affine_tree_binding
+                        if affine
+                        else compile_tree_binding
+                    )
                     compiled = compiler(shape, binding, physical.tree_spec)
                     start, end = self._tree_offsets[row : row + 2]
                     points, geometry = compiled.points_m, compiled.geometry
@@ -376,7 +396,9 @@ class ResidentCollisionPlan:
                         or not np.isfinite(points).all()
                         or not np.isfinite(geometry).all()
                         or np.any(geometry < 0)
-                        or not 0 <= group < physical.tree_spec.n
+                        or not 0
+                        <= group
+                        < (physical.tree_spec.b if floating else physical.tree_spec.n)
                     ):
                         raise ValueError("invalid compiled tree group/source geometry")
                     body_key, group_key = (binding.world, shape.key.body), (binding.world, group)
@@ -386,7 +408,13 @@ class ResidentCollisionPlan:
                         raise ValueError("tree body/group registry must be unambiguous")
                     tree_bodies[body_key], tree_groups[group_key] = group, shape.key.body
                     paths[shape.key] = compiled.zero_motion
-                    tree_rows = self._affine_tree_rows if affine else self._tree_rows
+                    tree_rows = (
+                        self._floating_tree_rows
+                        if floating
+                        else self._affine_tree_rows
+                        if affine
+                        else self._tree_rows
+                    )
                     tree_rows[row] = tree_view.rows[binding.world]
                     self._tree_groups[row] = group
                     spec = physical.tree_spec.physical if affine else physical.tree_spec
@@ -438,8 +466,14 @@ class ResidentCollisionPlan:
             keys = (shapes[i].key, shapes[j].key)
             same_world = keys[0].world == keys[1].world
             dynamic = slots[i] >= 0 and slots[j] >= 0
-            tree_i = self._tree_rows[i] >= 0 or self._affine_tree_rows[i] >= 0
-            tree_j = self._tree_rows[j] >= 0 or self._affine_tree_rows[j] >= 0
+            tree_i = any(
+                rows[i] >= 0
+                for rows in (self._tree_rows, self._affine_tree_rows, self._floating_tree_rows)
+            )
+            tree_j = any(
+                rows[j] >= 0
+                for rows in (self._tree_rows, self._affine_tree_rows, self._floating_tree_rows)
+            )
             dynamic_domain = False
             if same_world and dynamic and (tree_i or tree_j):
                 if not self._tree_dynamic_pairs:
@@ -461,6 +495,10 @@ class ResidentCollisionPlan:
                         and (
                             (self._tree_rows[i] >= 0 and self._tree_rows[j] >= 0)
                             or (self._affine_tree_rows[i] >= 0 and self._affine_tree_rows[j] >= 0)
+                            or (
+                                self._floating_tree_rows[i] >= 0
+                                and self._floating_tree_rows[j] >= 0
+                            )
                         )
                     )
                     adjacent = (
@@ -506,7 +544,8 @@ class ResidentCollisionPlan:
             (self._slider_slots >= 0)
             | (self._rotor_slots >= 0)
             | (self._tree_rows >= 0)
-            | (self._affine_tree_rows >= 0),
+            | (self._affine_tree_rows >= 0)
+            | (self._floating_tree_rows >= 0),
             -1,
             slots,
         ).astype(np.int32)
@@ -525,7 +564,10 @@ class ResidentCollisionPlan:
             self._rotor_offsets_device = self._engine._static(self._rotor_offsets)
             self._rotor_points_device = self._engine._static(self._rotor_points)
             self._rotor_geometry_device = self._engine._static(self._rotor_geometry)
-        if np.any(self._tree_rows >= 0) or np.any(self._affine_tree_rows >= 0):
+        if any(
+            np.any(rows >= 0)
+            for rows in (self._tree_rows, self._affine_tree_rows, self._floating_tree_rows)
+        ):
             from ._tyx_resident_tree_bounds import make_tree_bounds_kernels
 
             if np.any(self._tree_rows >= 0):
@@ -534,6 +576,11 @@ class ResidentCollisionPlan:
             if np.any(self._affine_tree_rows >= 0):
                 self._affine_tree_kernels = make_tree_bounds_kernels()
                 self._affine_tree_rows_device = self._engine._static(self._affine_tree_rows)
+            if np.any(self._floating_tree_rows >= 0):
+                from ._tyx_resident_floating_bounds import make_floating_bounds_kernels
+
+                self._floating_tree_kernels = make_floating_bounds_kernels()
+                self._floating_tree_rows_device = self._engine._static(self._floating_tree_rows)
             self._tree_groups_device = self._engine._static(self._tree_groups)
             self._tree_offsets_device = self._engine._static(self._tree_offsets)
             self._tree_points_device = self._engine._static(self._tree_points)
@@ -628,6 +675,12 @@ class ResidentCollisionPlan:
                 self._affine_tree_rows_device,
                 view.affine_tree,
                 "_affine_tree_bounds_launches",
+            ),
+            (
+                self._floating_tree_kernels,
+                self._floating_tree_rows_device,
+                view.floating_tree,
+                "_floating_tree_bounds_launches",
             ),
         ):
             if kernels is None:
@@ -749,12 +802,14 @@ class ResidentCollisionPlan:
                 revolute_bounds_kernel_launches=self._rotor_bounds_launches,
                 tree_bounds_kernel_launches=self._tree_bounds_launches,
                 affine_tree_bounds_kernel_launches=self._affine_tree_bounds_launches,
+                floating_bounds_kernel_launches=self._floating_tree_bounds_launches,
                 total_bounds_kernel_launches=(
                     self._bounds_launches
                     + self._slider_bounds_launches
                     + self._rotor_bounds_launches
                     + self._tree_bounds_launches
                     + self._affine_tree_bounds_launches
+                    + self._floating_tree_bounds_launches
                 ),
                 state_buffer_directions=tuple(sorted(self._directions)),
                 device_allocations=counts.get("allocations", 0)
@@ -789,6 +844,7 @@ class ResidentCollisionPlan:
                 self._rotor_points_device = self._rotor_geometry_device = None
                 self._tree_kernels = self._tree_rows_device = self._tree_groups_device = None
                 self._affine_tree_kernels = self._affine_tree_rows_device = None
+                self._floating_tree_kernels = self._floating_tree_rows_device = None
                 self._tree_offsets_device = self._tree_points_device = (
                     self._tree_geometry_device
                 ) = None

@@ -1,4 +1,4 @@
-"""Opt-in TYX batch of spheres, scalar joints and full ordinary fixed-root trees."""
+"""Opt-in TYX batch of spheres, scalar joints, fixed and floating complete trees."""
 
 from collections.abc import Mapping
 from contextlib import ExitStack, contextmanager
@@ -8,6 +8,7 @@ from types import MappingProxyType
 import numpy as np
 
 from ._resident_affine_tree import AffineRobotTree
+from ._resident_floating_tree import FloatingRobotTree, FloatingTreeInputs
 from ._resident_revolute_world import RevoluteRotor
 from ._resident_tree_world import FixedRobotTree
 from ._world_step_layout import (
@@ -27,6 +28,7 @@ __all__ = [
     "AffineRobotTree",
     "FreeSphere",
     "FixedRobotTree",
+    "FloatingRobotTree",
     "PrismaticSlider",
     "RevoluteRotor",
     "SpherePlaneCheckpoint",
@@ -94,6 +96,8 @@ class TyxWorldBatch:
         self._tree_specs = {}
         self._affine_trees = None
         self._affine_specs = {}
+        self._floating_trees = None
+        self._floating_specs = {}
         props, initial_rows, commands = [], [], []
         for key, spec in worlds:
             key = world_key(key)
@@ -105,7 +109,13 @@ class TyxWorldBatch:
             self._slots[key] = len(self._bindings)
             self._bindings.append(binding)
             if binding.tree_spec is not None:
-                specs = self._affine_specs if binding.kind in (7, 8) else self._tree_specs
+                specs = (
+                    self._floating_specs
+                    if binding.kind in (9, 10)
+                    else self._affine_specs
+                    if binding.kind in (7, 8)
+                    else self._tree_specs
+                )
                 specs[key] = binding.tree_spec
             props.append(properties)
             initial_rows.append(row)
@@ -123,6 +133,25 @@ class TyxWorldBatch:
             spec = binding.tree_spec
             if spec is None:
                 point = binding.checkpoint(row, 0, command)
+            elif binding.kind in (9, 10):
+                from ..solvers.floating_tree import FloatingRobotInputs
+
+                control = FloatingTreeInputs(
+                    spec.initial_drive,
+                    FloatingRobotInputs(
+                        spec.initial_effort.astype(np.float64),
+                        spec.initial_loads[:, :3].astype(np.float64),
+                        spec.initial_loads[:, 3:].astype(np.float64),
+                    ),
+                )
+                point = spec.checkpoint(
+                    binding.world,
+                    spec.initial_root,
+                    spec.initial_state,
+                    spec.initial_generalized,
+                    0,
+                    control,
+                )
             elif binding.kind in (7, 8):
                 point = spec.checkpoint(
                     binding.world,
@@ -200,17 +229,22 @@ class TyxWorldBatch:
                     from ._resident_affine_storage import AffineTreeDeviceStorage
 
                     self._affine_trees = AffineTreeDeviceStorage(self, self._affine_specs)
+                if self._floating_specs:
+                    from ._resident_floating_storage import FloatingTreeDeviceStorage
+
+                    self._floating_trees = FloatingTreeDeviceStorage(self, self._floating_specs)
         except BaseException:
             self.close()
             raise
 
     def _tree_storages(self):
-        """Both tree laws share this batch's transaction, never a second owner."""
+        """All tree laws share this batch's transaction, never a second owner."""
         return tuple(
             (specs, storage)
             for specs, storage in (
                 (self._tree_specs, self._trees),
                 (self._affine_specs, self._affine_trees),
+                (self._floating_specs, self._floating_trees),
             )
             if storage is not None
         )
@@ -316,6 +350,11 @@ class TyxWorldBatch:
                         None
                         if self._affine_trees is None
                         else self._affine_trees.borrow_geometry(self._active)
+                    ),
+                    floating_tree=(
+                        None
+                        if self._floating_trees is None
+                        else self._floating_trees.borrow_geometry(self._active)
                     ),
                 )
 
@@ -717,6 +756,10 @@ class TyxWorldBatch:
                 "state_epoch": self._state_epoch,
                 "tree_world_count": len(self._tree_specs),
                 "affine_tree_world_count": len(self._affine_specs),
+                "floating_world_count": len(self._floating_specs),
+                "floating_tree_status_codes": (
+                    {} if self._floating_trees is None else dict(self._floating_trees.status_codes)
+                ),
                 "affine_tree_status_codes": (
                     {} if self._affine_trees is None else dict(self._affine_trees.status_codes)
                 ),

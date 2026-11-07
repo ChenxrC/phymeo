@@ -228,6 +228,7 @@ class WorldBinding:
 
 def bind_world(world, spec):
     from ._resident_affine_tree import AffineRobotTree, compile_affine_tree_world
+    from ._resident_floating_tree import FloatingRobotTree, compile_floating_tree_world
     from ._resident_revolute_world import RevoluteRotor, compile_revolute_world
     from ._resident_tree_world import FixedRobotTree, compile_tree_world
 
@@ -243,8 +244,12 @@ def bind_world(world, spec):
             np.zeros(4, np.float32),
         )
 
-    if isinstance(spec, FixedRobotTree):
-        tree = compile_tree_world(spec)
+    if isinstance(spec, (FixedRobotTree, FloatingRobotTree)):
+        tree = (
+            compile_floating_tree_world(spec)
+            if isinstance(spec, FloatingRobotTree)
+            else compile_tree_world(spec)
+        )
         binding = WorldBinding(world, tree.kind, tree.domain, (), tree.topology, tree_spec=tree)
         return (
             binding,
@@ -310,7 +315,8 @@ def bind_world(world, spec):
         kind, domain, axis, rotor_frame, props, state, command = compile_revolute_world(spec)
     else:
         raise TypeError(
-            "expected FreeSphere, PrismaticSlider, RevoluteRotor, FixedRobotTree or AffineRobotTree"
+            "expected FreeSphere, PrismaticSlider, RevoluteRotor, FixedRobotTree, "
+            "AffineRobotTree or FloatingRobotTree"
         )
     width = 16 if kind in (3, 4) else PROPERTY_WIDTH
     constants = as_fp32(props, "world topology", (width,))

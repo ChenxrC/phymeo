@@ -358,6 +358,12 @@ class ResidentContactPlan(ResidentCollisionPlan):
         for _, storage in self._batch._tree_storages():
             if storage is self._batch._trees:
                 targets = ((storage, "_held"),)
+            elif storage is self._batch._floating_trees:
+                targets = (
+                    (storage, "_held_drive"),
+                    (storage, "_held_effort"),
+                    (storage, "_held_loads"),
+                )
             else:
                 targets = (
                     (storage, "_held_drive"),

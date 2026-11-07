@@ -26,6 +26,8 @@ def read_kinematics(batch, keys):
     with batch._lock:
         batch._check_open()
         selected = tuple(batch._slots) if keys is None else tuple(batch._keys(keys))
+        if any(batch._bindings[batch._slots[key]].tree_spec is not None for key in selected):
+            raise ValueError("tree worlds require tree_kinematics; scalar rows would truncate")
         if not selected:
             values = np.empty((0, 6), np.float32)
             ticks = np.empty(0, np.int32)

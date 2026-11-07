@@ -47,6 +47,7 @@ class ResidentTreeBinding:
     from_asset supplies a separate original FP64 model and source-shape proof.
     No group is inferred from a collision body's integer ID.
     """
+
     key: CollisionKey
     world: int
     group_index: int
@@ -58,10 +59,18 @@ class ResidentTreeBinding:
     def __post_init__(self):
         if not isinstance(self.key, CollisionKey):
             raise TypeError("tree binding requires a CollisionKey")
-        if isinstance(self.world, (bool, np.bool_)) or not isinstance(self.world, Integral) or int(self.world) != self.key.world:
+        if (
+            isinstance(self.world, (bool, np.bool_))
+            or not isinstance(self.world, Integral)
+            or int(self.world) != self.key.world
+        ):
             raise ValueError("tree binding world must match its key")
         group = self.group_index
-        if isinstance(group, (bool, np.bool_)) or not isinstance(group, Integral) or not 0 <= group < MAX_TREE_JOINTS:
+        if (
+            isinstance(group, (bool, np.bool_))
+            or not isinstance(group, Integral)
+            or not 0 <= group < MAX_TREE_JOINTS
+        ):
             raise ValueError("tree binding group must be a moving group index in [0,16)")
         object.__setattr__(self, "world", int(self.world))
         object.__setattr__(self, "group_index", int(group))
@@ -171,7 +180,11 @@ def compile_tree_binding(shape, binding, spec):
     geometry = radius_upper, local_reach_upper, fixed_path_reach_upper, depth.
     Per-query actual prismatic travel is added on device from the accepted bank.
     """
-    if not isinstance(shape, CollisionShape) or not isinstance(binding, ResidentTreeBinding) or not isinstance(spec, TreeWorldSpec):
+    if (
+        not isinstance(shape, CollisionShape)
+        or not isinstance(binding, ResidentTreeBinding)
+        or not isinstance(spec, TreeWorldSpec)
+    ):
         raise TypeError("tree compilation requires a shape, binding and owned tree spec")
     if shape.key != binding.key or shape.key.world != binding.world:
         raise ValueError("tree shape key/world differs from its binding")
@@ -192,8 +205,13 @@ def compile_tree_binding(shape, binding, spec):
     motion, path_reach, depth = _zero_pose_and_path(spec, binding.group_index, points)
     with np.errstate(over="ignore", invalid="ignore"):
         local_reach = float(np.max(np.sum(np.abs(points), axis=1)))
-    geometry = _owned([_outward_positive(shape.radius, "skin radius"),
-        _outward_positive(local_reach, "local reach"),
-        _outward_positive(path_reach, "fixed path reach"), np.float32(depth)])
+    geometry = _owned(
+        [
+            _outward_positive(shape.radius, "skin radius"),
+            _outward_positive(local_reach, "local reach"),
+            _outward_positive(path_reach, "fixed path reach"),
+            np.float32(depth),
+        ]
+    )
     packed = _owned(as_fp32(points, "tree group-local material points", points.shape))
     return TreeBindingCompiled(binding.group_index, motion, packed, geometry)

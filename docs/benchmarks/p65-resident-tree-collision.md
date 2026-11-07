@@ -1,6 +1,6 @@
 # C4：完整固定根 R/P 树的接受设备状态与有限形状宽相
 
-状态：**CODE_READY_TESTS_PENDING / UNEXECUTED**。本报告记录纯文本作者实现及已冻结的接口，不代表物理、设备、Newton、静态或 wheel 验收。父已保存第136项有效 RED：真实 T01 模型、program、命令和输入记录先成立，随后正常公共入口缺少 `FixedRobotTree`，1 failed / 0.63 s / RAW1。不是模型或数值失败；不重复该 RED。
+状态：**INTERPRET_CUDA_VERIFIED / WHEEL_PENDING**。父本机实现、独立Newton及保存记录验证见末节；源码外wheel尚待执行。前述作者交付历史不代表当时已经通过。父已保存第136项有效 RED：真实 T01 模型、program、命令和输入记录先成立，随后正常公共入口缺少 `FixedRobotTree`，1 failed / 0.63 s / RAW1。不是模型或数值失败；不重复该 RED。
 
 ## 范围及文件
 
@@ -16,7 +16,7 @@
 | `_resident_tree_binding.py` | 真实活动组与原材料/source 校验；普通/折叠资产的一次静态局部变换 |
 | `_tyx_resident_tree_bounds.py` | 同接受态 FK 的有限材料范围，直接写原 device bounds，再交原 BVH |
 
-父拥有的旧接缝、公共导出与新事务测试另计；作者没有改旧源码或另造 runtime。原已冻结的两 scale 专项与一个独立 Newton 参考脚本保持输入、oracle、门和容量。当前没有新实测 pass 数或性能收益。
+父拥有的旧接缝、公共导出与新事务测试另计；作者没有改旧源码或另造 runtime。原已冻结的两 scale 专项与一个独立 Newton 参考脚本保持输入、oracle、门和容量。本机实测见末节，未作性能收益结论。
 
 ## 公共输入与单位
 
@@ -34,7 +34,7 @@ snapshot 保全 n 行位置、速度、实际电机 `applied_effort`、未减 bi
 
 完整 M 做 Cholesky，再解各列获得完整逆质量响应。没有对角替代、正则位移、特征值裁剪或 HOST rescue。限幅隐式 PD 使用全耦合投影坐标更新；d=0 的已知电机力也进入所有交叉响应。所有真实 effort 再按原 clipping 式检查，保每轴 `5e-5*max(1,|tau|,|expected|)` 的量纲门与归一质量方程 `2e-5`。宽 cap 不放宽小实际力；大项相消使用原式而非相消前 a 或 d*u 归一。
 
-迭代上限为原 1..4096/default512；内部继续细化至实际 effort 尺度 1e-6，资源末尾仍只依原5e-5/2e-5门接受，不新增更宽门。无 PD 的已知电机行只需一次全方程检查，diagnostic iterations 可为0。任何非有限、中间不正常算术、非 SPD、未收敛或候选坐标越域均有状态码并整 world 拒绝。
+迭代上限为原 1..4096/default512；内部继续细化至实际 effort 尺度 1e-6，资源末尾仍只依原5e-5/2e-5门接受，不新增更宽门。无 PD 的已知电机行只需一次全方程检查，diagnostic iterations 可为0。检测到非有限、非 SPD、未收敛或候选坐标越域时给出状态码并整 world 拒绝。输入要求normal FP32或零，内部采用TYX normal-math；不声称逐个中间量均拒绝subnormal。
 
 一次求解后仅漂移一次 q+=q+h*v+，重新计算 q+ 的 FK 和逐体动能，再由父统一发布。候选失败同时复制旧 n×7 状态、FK、能量、tick；不只恢复 q 而消费新控制历史。
 
@@ -58,7 +58,7 @@ TreeDeviceStorage 通过父 `_buffer/_launch/_device/_read/_upload/_sync` 工作
 
 首域为 sphere、有限 capsule、hull（包括 box 的原全部角点），每组可多 shape；固定 root 使用原 static binding。直接构造 `ResidentTreeBinding(key,world,group_index,local_points_m,*,topology)` 是显式安装；`from_asset` 才证明原模型/shape/source/实际 group。folded 原 authored 材料经 site 的局部变换一次到动力学组，ID/revision/radius/内容均交叉核，绝不把 authored link 序号当组序号。
 
-bounds 包全原材料点及真实 sphere/capsule 皮肤。按真实 accepted state 添加该路径实际 P 位移，并采用冻结预算：`64 eps32 max(1,|anchor|inf,L) + 128(d+1)eps32 L + 16(d+1)2^-20 L + 32(d+1)tiny32`。非负预算及端点向外 FP32，FTZ 项保底；读取 normal-math FK，不改物理积分。它是待真实 interpret/CUDA 留出验证的工程 envelope，不是所有实数 sin/cos 的形式认证。允许保守多候选，不能用现场误差反调 padding 或移动 miss fixture。
+bounds 包全原材料点及真实 sphere/capsule 皮肤。按真实 accepted state 添加该路径实际 P 位移，并采用冻结预算：`64 eps32 max(1,|anchor|inf,L) + 128(d+1)eps32 L + 16(d+1)2^-20 L + 32(d+1)tiny32`。非负预算及端点向外 FP32，FTZ 项保底；读取 normal-math FK，不改物理积分。它已通过本片真实interpret/CUDA留出的工程验证，不是所有实数sin/cos的形式认证。允许保守多候选，不能用现场误差反调 padding 或移动 miss fixture。
 
 current accepted pose 宽相不等于 CCD、TOI、窄相材料接触或反力反馈。自碰撞/动态–动态、浮根/mimic/stops、任意N、完整多机器人设备场景和自动微分均不在首片。旧场景/材料默认行为不受这六个新增文件替代。
 
@@ -68,4 +68,21 @@ current accepted pose 宽相不等于 CCD、TOI、窄相材料接触或反力反
 
 父唯一串行执行两 scale 专项及共享事务专项、interpret/CUDA、必要相邻兼容、原 Newton CPU/CUDA 自有状态推进、静态与源码外 wheel。参考脚本 `tests/reference_newton/robot/resident_tree_reference.py` 不 import Phymeo，采用独立齐次变换导数/逐部件惯性，Newton保 fixed joints；它不是 HOST 当前 FK 上传路径。所有未来 pass、原失败、修复、准确 bytes/launch/allocation 和设备版本由父实际收据补充。
 
-当前作者只做源码文本/Git，未执行 import、collection、pytest、数值、lint、format、compile、native 或 build。六 NEW 产品/报告与此前测试库不能单独作为“实际支持”结论；阶段完成需完整真实验收后另行标记。
+作者交付阶段只做源码文本/Git，未执行项目。父后续实际结果如下；阶段正式完成仍待源码外wheel。
+
+## 父集成与本机验证（2026-11-07）
+
+当前状态：**INTERPRET_CUDA_VERIFIED / WHEEL_PENDING**。父接入七个旧共享文件及公共入口，原作者只读复核无新的阻断问题；源码外 wheel 尚待本阶段统一构建和实际消费，因此本片还未正式关闭。
+
+- 179 interpret 短组8 passed / 3.84 s；180 剩余93 passed / 1200.82 s，明确 deselect 已由179覆盖的4节点。188 CUDA短组8 passed / 14.75 s；184剩余93 passed / 110.75 s，同样明确复用4节点。每后端合计101项，含创建前HOST拒绝检查；不是101个独立设备窗口。
+- 187 受影响共享兼容37 passed / 8.56 s：旧球、滑轨、转铰、sphere-plane、选择读回、混合控制/restore/查询及失败清理。未重跑此前无关验收。
+- 185/186与189/190：Newton 1.7.0 CPU、真实CUDA，各自原初态、原模型和外载，base及共同轴循环/平移两组，T01/T02/T03/T04/N9/N16各40步。共24窗960步及56静态姿态样本通过独立门；原生PD关闭，对照惯性/载荷/积分而非隐式PD等价。
+- Newton在T01/T02/T03部分原部件执行惯量有效性修正，保存的最大逐项差约1.133e-6 kg m²，原5e-6+5e-5相对门内；原警告/模型/实际每步数据完整保留，不声称逐位同模型。
+- 200保存审计从同次完整JSON核24个Phymeo核心窗、6548 world-steps（含warm真实bootstrap）和上述Newton记录。W1/W4/W32的warm每窗40次真实bounds提交，动态几何上传、新分配、状态/FK/诊断读回增量均0；返回候选结果的正常读回保留。没有再运行物理或oracle。
+- 181/182原16文件静态通过；公开wheel consumer及C++参数改名后的191/192首检查发现仅导入/排版，195–198修复并最终通过。199确认14文件除顶层imports和一个未使用测试局部名外AST同，已通过物理的kernel排版前后raw AST相同。固定输入、门、模型和控制均未改变。
+
+原失败：174/175首lint/format；178因TYX前端不接受两处整数 `+=`，改为相同普通赋值；183因CUDA生成参数 `static` 为C++保留字，精确改名 `properties`，全部调用仍同一positional布局。两个缺陷均发生在首个数值步之前，原source/log/exit保留。不是改变TYX pin或增加HOST fallback。
+
+证据统一位于 `artifacts/p65-generic-collision-20261107-01`：`c4-host-native-source-receipt.json`、`c4-cuda-keyword-rename.json`、`199-style-ast-proof/proof.json`、`200-c4-saved-audit/summary.json`。首字节source、每条命令、首错和RAW_EXIT随各job保留。上述执行时长含不同初始化/编译/诊断成本，不能据其比值宣称性能超越Newton或整体加速。
+
+新增正常根导出 `ResidentTreeBinding/ResidentSphereBinding/ResidentSliderBinding/ResidentRevoluteBinding/ResidentStaticBinding`，只公开现有声明类型，不改变其物理语义。安装消费者 `tests/installed/check_resident_tree.py` 已纯作者交付并完成静态检查，仍UNEXECUTED；计划同一新wheel验证2R/N9与旧球/滑轨四世界、真实推进/有限材料bounds及restore重放。首片仍不含设备接触反馈、自碰撞/动态对、浮根/mimic、stops、CCD或通用设备窄相。

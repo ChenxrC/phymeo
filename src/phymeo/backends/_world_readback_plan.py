@@ -44,6 +44,8 @@ class WorldReadbackPlan:
             if type(kind) is not str or kind not in ("kinematics", "snapshot"):
                 raise ValueError("readback kind must be kinematics or snapshot")
             selected = tuple(batch._keys(keys))
+            if any(batch._bindings[batch._slots[key]].tree_spec is not None for key in selected):
+                raise ValueError("tree worlds require typed tree snapshot/kinematics")
             self._batch = batch
             self._keys = selected
             self._slots = tuple(batch._slots[key] for key in selected)

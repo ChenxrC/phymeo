@@ -61,7 +61,8 @@ def advance_worlds(
             candidate[i, 3] = speed
             candidate[i, 6] = effort
         else:
-            # A later rotor pass owns kinds 3/4. Unknown kinds also reject.
+            # Later rotor/tree passes own kinds 3/4 and 5/6 respectively.
+            # Keep their legacy headers/ticks unchanged until those passes succeed.
             good = 0
         for k in tx.static_range(12):
             if not tx.isfinite(candidate[i, k]):
@@ -93,12 +94,17 @@ def observe_worlds(
 ):
     for i in tx.range(count):
         vv = _mul(state[i, 3], state[i, 3])
-        if kind[i] == 0:
+        if kind[i] == 5 or kind[i] == 6:
+            # No physical scalar fields for a full tree. Its typed bank owns energy.
+            summary[i, 0] = 0.0
+            summary[i, 1] = 0.0
+        elif kind[i] == 0:
             vv = _add(vv, _add(_mul(state[i, 4], state[i, 4]), _mul(state[i, 5], state[i, 5])))
             summary[i, 1] = _add(state[i, 2], -props[i, 7])
         else:
             summary[i, 1] = state[i, 0]
-        summary[i, 0] = _mul(_mul(0.5, props[i, 8]), vv)
+        if kind[i] < 5:
+            summary[i, 0] = _mul(_mul(0.5, props[i, 8]), vv)
 
 
 @tx.kernel

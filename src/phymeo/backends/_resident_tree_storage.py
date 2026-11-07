@@ -12,8 +12,15 @@ import numpy as np
 
 from ._resident_tree_world import TreeDiagnostic, TreeKinematics, TreeWorldSpec, _owned, tree_packet
 
-STATUS_NAMES = {0: "ACCEPTED", 1: "M_NOT_SPD", 2: "NONFINITE", 3: "M_RESIDUAL",
-                4: "PD_NOT_CONVERGED", 5: "STATE_DOMAIN", 6: "FK_NOT_FINITE"}
+STATUS_NAMES = {
+    0: "ACCEPTED",
+    1: "M_NOT_SPD",
+    2: "NONFINITE",
+    3: "M_RESIDUAL",
+    4: "PD_NOT_CONVERGED",
+    5: "STATE_DOMAIN",
+    6: "FK_NOT_FINITE",
+}
 
 
 @dataclass(frozen=True, eq=False)
@@ -30,6 +37,7 @@ class TreeRestoreStage:
 @dataclass(frozen=True, eq=False)
 class TreeGeometryView:
     """A same-lock loan of one accepted tree bank in anchor-relative world axes."""
+
     owner: object
     topology_generation: int
     state_epoch: int
@@ -43,11 +51,39 @@ class TreeGeometryView:
     state: object
     fk: object
 
-    def write_bounds(self, launch, kernels, *, count, rows, groups, offsets, points,
-                     geometry, ticks, bounds, stamp):
-        launch(kernels[self.active], count, rows, groups, offsets, points, geometry,
-               self.meta, self.parents, self.kinds, self.anchor, self.state, self.fk,
-               ticks, bounds, stamp)
+    def write_bounds(
+        self,
+        launch,
+        kernels,
+        *,
+        count,
+        rows,
+        groups,
+        offsets,
+        points,
+        geometry,
+        ticks,
+        bounds,
+        stamp,
+    ):
+        launch(
+            kernels[self.active],
+            count,
+            rows,
+            groups,
+            offsets,
+            points,
+            geometry,
+            self.meta,
+            self.parents,
+            self.kinds,
+            self.anchor,
+            self.state,
+            self.fk,
+            ticks,
+            bounds,
+            stamp,
+        )
 
 
 class TreeDeviceStorage:
@@ -61,6 +97,7 @@ class TreeDeviceStorage:
 
     def __init__(self, batch, specs_by_world):
         from ._tyx_resident_tree_kernels import make_tree_kernels
+
         if not isinstance(specs_by_world, Mapping) or not specs_by_world:
             raise ValueError("tree storage requires a nonempty compiled-world mapping")
         self.batch = batch
@@ -78,13 +115,31 @@ class TreeDeviceStorage:
         self.status_codes = MappingProxyType({w: "INITIALIZED" for w in self.worlds})
         self._pending_info = None
         self.kernels = make_tree_kernels()
-        for category in ("tree_topology", "tree_initial", "tree_control", "tree_restore",
-                         "tree_state", "tree_fk", "tree_summary", "tree_diagnostic", "tree_status"):
+        for category in (
+            "tree_topology",
+            "tree_initial",
+            "tree_control",
+            "tree_restore",
+            "tree_state",
+            "tree_fk",
+            "tree_summary",
+            "tree_diagnostic",
+            "tree_status",
+        ):
             for suffix in ("uploaded_bytes", "downloaded_bytes", "host_read_bytes"):
                 batch._counts.setdefault(category + "_" + suffix, 0)
-        for name in ("tree_dynamics_kernel_launches", "tree_fk_kernel_launches", "tree_energy_kernel_launches",
-                     "tree_restore_kernel_launches", "tree_commit_kernel_launches", "tree_diagnostic_reads",
-                     "tree_state_reads", "tree_fk_reads", "tree_summary_reads", "tree_status_reads"):
+        for name in (
+            "tree_dynamics_kernel_launches",
+            "tree_fk_kernel_launches",
+            "tree_energy_kernel_launches",
+            "tree_restore_kernel_launches",
+            "tree_commit_kernel_launches",
+            "tree_diagnostic_reads",
+            "tree_state_reads",
+            "tree_fk_reads",
+            "tree_summary_reads",
+            "tree_status_reads",
+        ):
             batch._counts.setdefault(name, 0)
         t, n = self.count, self.nmax
         meta = np.zeros((t, 4), np.int32)
@@ -109,12 +164,20 @@ class TreeDeviceStorage:
         self._held = held
         self._meta_host = _owned(meta, np.int32)
         with batch._device():
+
             def put(a, category="tree_topology"):
                 return batch._buffer(a.shape, a.dtype, a, category)
+
             def blank(shape, dtype=np.float32):
                 return batch._buffer(shape, dtype, np.zeros(shape, dtype), "tree_initial")
+
             self.meta, self.parents, self.kinds = put(meta), put(parents), put(kinds)
-            self.static, self.zero, self.gravity, self.anchor = put(static), put(zero), put(gravity), put(anchor)
+            self.static, self.zero, self.gravity, self.anchor = (
+                put(static),
+                put(zero),
+                put(gravity),
+                put(anchor),
+            )
             self.commands = put(held, "tree_initial")
             self.states = (put(states, "tree_initial"), put(states, "tree_initial"))
             self.fk = (blank((t, n, 18)), blank((t, n, 18)))
@@ -123,7 +186,11 @@ class TreeDeviceStorage:
             self.flags = blank((t,), np.int32)
             self.linear, self.angular = blank((t, n, 3, n)), blank((t, n, 3, n))
             self.spatial = blank((t, n, 18))
-            self.mass, self.factor, self.mobility = blank((t, n, n)), blank((t, n, n)), blank((t, n, n))
+            self.mass, self.factor, self.mobility = (
+                blank((t, n, n)),
+                blank((t, n, n)),
+                blank((t, n, n)),
+            )
             self.vector = blank((t, n, 14))
             self.info, self.diag = blank((t, 4), np.int32), blank((t, 3))
             self.restore_mask, self.restore_ticks = blank((t,), np.int32), blank((t,), np.int32)
@@ -147,13 +214,35 @@ class TreeDeviceStorage:
         return value
 
     def _geometry(self, bank):
-        self.batch._launch(self.kernels["geometry"][bank], self.count, self.meta, self.parents,
-            self.kinds, self.static, self.zero, self.states[bank], self.fk[bank], self.frame, self.flags)
+        self.batch._launch(
+            self.kernels["geometry"][bank],
+            self.count,
+            self.meta,
+            self.parents,
+            self.kinds,
+            self.static,
+            self.zero,
+            self.states[bank],
+            self.fk[bank],
+            self.frame,
+            self.flags,
+        )
         self.batch._counts["tree_fk_kernel_launches"] += 1
 
     def _energy(self, bank):
-        self.batch._launch(self.kernels["energy"][bank], self.count, self.meta, self.parents, self.kinds,
-            self.static, self.states[bank], self.fk[bank], self.spatial, self.energy[bank], self.flags)
+        self.batch._launch(
+            self.kernels["energy"][bank],
+            self.count,
+            self.meta,
+            self.parents,
+            self.kinds,
+            self.static,
+            self.states[bank],
+            self.fk[bank],
+            self.spatial,
+            self.energy[bank],
+            self.flags,
+        )
         self.batch._counts["tree_energy_kernel_launches"] += 1
 
     def validate_controls(self, by_world):
@@ -165,7 +254,7 @@ class TreeDeviceStorage:
             if world not in self.rows:
                 raise KeyError(world)
             spec = self.specs[world]
-            held[self.rows[world], :spec.n] = tree_packet(packet, spec.domain, spec.n)
+            held[self.rows[world], : spec.n] = tree_packet(packet, spec.domain, spec.n)
         return _owned(held)
 
     def commit_controls(self, held):
@@ -189,18 +278,59 @@ class TreeDeviceStorage:
     def stage_advance(self, h, src, dst, tick_src, tick_dst, accepted):
         self._check()
         self.invalidate_diagnostics()
-        self.batch._launch(self.kernels["mechanics"][src], self.count, self.meta, self.parents,
-            self.kinds, self.static, self.gravity, self.commands, self.states[src], self.fk[src],
-            self.linear, self.angular, self.spatial, self.mass, self.vector)
-        self.batch._launch(self.kernels["solve"][src], self.count, h, self.meta, self.static,
-            self.commands, self.states[src], tick_src, self.states[dst], self.mass, self.factor,
-            self.mobility, self.vector, self.info, self.diag)
+        self.batch._launch(
+            self.kernels["mechanics"][src],
+            self.count,
+            self.meta,
+            self.parents,
+            self.kinds,
+            self.static,
+            self.gravity,
+            self.commands,
+            self.states[src],
+            self.fk[src],
+            self.linear,
+            self.angular,
+            self.spatial,
+            self.mass,
+            self.vector,
+        )
+        self.batch._launch(
+            self.kernels["solve"][src],
+            self.count,
+            h,
+            self.meta,
+            self.static,
+            self.commands,
+            self.states[src],
+            tick_src,
+            self.states[dst],
+            self.mass,
+            self.factor,
+            self.mobility,
+            self.vector,
+            self.info,
+            self.diag,
+        )
         self.batch._counts["tree_dynamics_kernel_launches"] += 2
         self._geometry(dst)
         self._energy(dst)
-        self.batch._launch(self.kernels["finalize"][src], self.count, self.meta, self.states[src],
-            self.states[dst], self.fk[src], self.fk[dst], self.energy[src], self.energy[dst],
-            tick_src, tick_dst, accepted, self.info, self.flags)
+        self.batch._launch(
+            self.kernels["finalize"][src],
+            self.count,
+            self.meta,
+            self.states[src],
+            self.states[dst],
+            self.fk[src],
+            self.fk[dst],
+            self.energy[src],
+            self.energy[dst],
+            tick_src,
+            tick_dst,
+            accepted,
+            self.info,
+            self.flags,
+        )
         self.batch._counts["tree_commit_kernel_launches"] += 1
 
     def check_advance(self, status):
@@ -214,7 +344,8 @@ class TreeDeviceStorage:
                 raise RuntimeError("tree status code disagrees with batch acceptance")
         self._pending_info = (
             {w: int(info[r, 2]) == 0 for w, r in self.rows.items()},
-            MappingProxyType({w: STATUS_NAMES[int(info[r, 2])] for w, r in self.rows.items()}),)
+            MappingProxyType({w: STATUS_NAMES[int(info[r, 2])] for w, r in self.rows.items()}),
+        )
 
     def finish_advance(self, status):
         """Pure HOST publication after the owner's one successful swap; no IO."""
@@ -231,11 +362,21 @@ class TreeDeviceStorage:
                 raise KeyError(world)
             row, spec = self.rows[world], self.specs[world]
             values, control, tick = spec.restore_row(checkpoint, world)
-            state[row, :spec.n], held[row, :spec.n] = values, control
+            state[row, : spec.n], held[row, : spec.n] = values, control
             masks[row], ticks[row] = 1, tick
         validity = {w: False if masks[r] else self._valid[w] for w, r in self.rows.items()}
-        codes = MappingProxyType({w: "RESTORED" if masks[r] else self.status_codes[w] for w, r in self.rows.items()})
-        return TreeRestoreStage(self._owner, _owned(masks, np.int32), _owned(state), _owned(held), _owned(ticks, np.int32), validity, codes)
+        codes = MappingProxyType(
+            {w: "RESTORED" if masks[r] else self.status_codes[w] for w, r in self.rows.items()}
+        )
+        return TreeRestoreStage(
+            self._owner,
+            _owned(masks, np.int32),
+            _owned(state),
+            _owned(held),
+            _owned(ticks, np.int32),
+            validity,
+            codes,
+        )
 
     def stage_restore(self, stage, src, dst, tick_src, tick_dst):
         if not isinstance(stage, TreeRestoreStage) or stage.owner is not self._owner:
@@ -243,8 +384,18 @@ class TreeDeviceStorage:
         self.batch._upload(self.restore_mask, stage.mask, "tree_restore")
         self.batch._upload(self.restore_state, stage.state, "tree_restore")
         self.batch._upload(self.restore_ticks, stage.ticks, "tree_restore")
-        self.batch._launch(self.kernels["restore"][src], self.count, self.meta, self.restore_mask,
-            self.restore_state, self.restore_ticks, self.states[src], self.states[dst], tick_src, tick_dst)
+        self.batch._launch(
+            self.kernels["restore"][src],
+            self.count,
+            self.meta,
+            self.restore_mask,
+            self.restore_state,
+            self.restore_ticks,
+            self.states[src],
+            self.states[dst],
+            tick_src,
+            tick_dst,
+        )
         self.batch._counts["tree_restore_kernel_launches"] += 1
         self._geometry(dst)
         self._energy(dst)
@@ -259,17 +410,23 @@ class TreeDeviceStorage:
         self.commit_controls(stage.held)
         self._valid, self.status_codes = stage.validity, stage.status_codes
 
-
     def snapshot(self, keys, active, ticks):
         self._check()
         if not keys:
             return {}
         with self.batch._device():
             self.batch._sync()
-            state, time = self._read(self.states[active], "tree_state"), self._read(ticks, "tree_state")
+            state, time = (
+                self._read(self.states[active], "tree_state"),
+                self._read(ticks, "tree_state"),
+            )
         self.batch._counts["tree_state_reads"] += 1
-        return {w: self.specs[w].checkpoint(w, state[self.rows[w]], time[self.batch._slots[w]],
-                                          self._held[self.rows[w]]) for w in keys}
+        return {
+            w: self.specs[w].checkpoint(
+                w, state[self.rows[w]], time[self.batch._slots[w]], self._held[self.rows[w]]
+            )
+            for w in keys
+        }
 
     def kinematics(self, keys, active, ticks):
         self._check()
@@ -277,15 +434,25 @@ class TreeDeviceStorage:
             return {}
         with self.batch._device():
             self.batch._sync()
-            state, fk, time = self._read(self.states[active], "tree_fk"), self._read(self.fk[active], "tree_fk"), self._read(ticks, "tree_fk")
+            state, fk, time = (
+                self._read(self.states[active], "tree_fk"),
+                self._read(self.fk[active], "tree_fk"),
+                self._read(ticks, "tree_fk"),
+            )
         self.batch._counts["tree_fk_reads"] += 1
         out = {}
         for w in keys:
             r, spec = self.rows[w], self.specs[w]
-            data = fk[r, :spec.n]
-            out[w] = TreeKinematics(int(time[self.batch._slots[w]]), spec.joint_types,
-                state[r, :spec.n, 0], state[r, :spec.n, 1], data[:, :3].astype(float)+spec.anchor,
-                data[:, 3:12].reshape(spec.n, 3, 3), data[:, 15:18].astype(float)+spec.anchor)
+            data = fk[r, : spec.n]
+            out[w] = TreeKinematics(
+                int(time[self.batch._slots[w]]),
+                spec.joint_types,
+                state[r, : spec.n, 0],
+                state[r, : spec.n, 1],
+                data[:, :3].astype(float) + spec.anchor,
+                data[:, 3:12].reshape(spec.n, 3, 3),
+                data[:, 15:18].astype(float) + spec.anchor,
+            )
         return out
 
     def diagnostics(self, keys):
@@ -296,15 +463,31 @@ class TreeDeviceStorage:
             return out
         with self.batch._device():
             self.batch._sync()
-            linear, angular, mass, vectors, info, diag = [self._read(a, "tree_diagnostic") for a in
-                (self.linear, self.angular, self.mass, self.vector, self.info, self.diag)]
+            linear, angular, mass, vectors, info, diag = [
+                self._read(a, "tree_diagnostic")
+                for a in (self.linear, self.angular, self.mass, self.vector, self.info, self.diag)
+            ]
         self.batch._counts["tree_diagnostic_reads"] += 1
         for w in valid:
             r, n = self.rows[w], self.specs[w].n
             v = vectors[r, :n]
-            out[w] = TreeDiagnostic(int(info[r, 0]), int(info[r, 1]), float(diag[r, 0]),
-                v[:, 4], v[:, 5], linear[r, :n, :, :n], angular[r, :n, :, :n], mass[r, :n, :n],
-                v[:, 0], v[:, 1], v[:, 2], v[:, 3], int(info[r, 3]), float(diag[r, 1]), float(diag[r, 2]))
+            out[w] = TreeDiagnostic(
+                int(info[r, 0]),
+                int(info[r, 1]),
+                float(diag[r, 0]),
+                v[:, 4],
+                v[:, 5],
+                linear[r, :n, :, :n],
+                angular[r, :n, :, :n],
+                mass[r, :n, :n],
+                v[:, 0],
+                v[:, 1],
+                v[:, 2],
+                v[:, 3],
+                int(info[r, 3]),
+                float(diag[r, 1]),
+                float(diag[r, 2]),
+            )
         return out
 
     def summary(self, keys, active):
@@ -321,9 +504,20 @@ class TreeDeviceStorage:
 
     def borrow_geometry(self, active):
         self._check()
-        return TreeGeometryView(self.batch._collision_owner, self.batch._topology_generation,
-            self.batch._state_epoch, active, self.rows, self.specs, self.meta, self.parents,
-            self.kinds, self.anchor, self.states[active], self.fk[active])
+        return TreeGeometryView(
+            self.batch._collision_owner,
+            self.batch._topology_generation,
+            self.batch._state_epoch,
+            active,
+            self.rows,
+            self.specs,
+            self.meta,
+            self.parents,
+            self.kinds,
+            self.anchor,
+            self.states[active],
+            self.fk[active],
+        )
 
     def close(self):
         # Every device buffer belongs to batch._resources. Never close its runtime

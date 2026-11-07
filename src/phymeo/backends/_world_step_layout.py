@@ -134,9 +134,12 @@ class WorldBinding:
     plane_height: float | None = None
     slider_frame: SliderGeometryFrame | None = None
     rotor_frame: object | None = None
+    tree_spec: object | None = None
 
     @property
     def width(self):
+        if self.tree_spec is not None:
+            raise ValueError("tree worlds require typed tree kinematics")
         return 1 if self.kind else 3
 
     @property
@@ -144,6 +147,8 @@ class WorldBinding:
         return 10 if self.kind in (3, 4) else 4
 
     def packet(self, value):
+        if self.tree_spec is not None:
+            raise ValueError("tree controls require the tree storage packet")
         if self.kind in (3, 4):
             from ._resident_revolute_world import revolute_packet
 
@@ -166,6 +171,8 @@ class WorldBinding:
         return as_fp32([*target, float(effort) + np.dot(self.axis, force)], "slider command", (4,))
 
     def checkpoint(self, row, tick, control):
+        if self.tree_spec is not None:
+            raise ValueError("tree checkpoint requires its complete tree bank")
         n = self.width
         args = (
             self.world,
@@ -183,6 +190,8 @@ class WorldBinding:
         return WorldCheckpoint(*args)
 
     def unpack(self, point):
+        if self.tree_spec is not None:
+            raise ValueError("tree restore requires its complete tree bank")
         if (
             not isinstance(point, WorldCheckpoint)
             or point.world != self.world
@@ -219,6 +228,17 @@ class WorldBinding:
 
 def bind_world(world, spec):
     from ._resident_revolute_world import RevoluteRotor, compile_revolute_world
+    from ._resident_tree_world import FixedRobotTree, compile_tree_world
+
+    if isinstance(spec, FixedRobotTree):
+        tree = compile_tree_world(spec)
+        binding = WorldBinding(world, tree.kind, tree.domain, (), tree.topology, tree_spec=tree)
+        return (
+            binding,
+            np.zeros(PROPERTY_WIDTH, np.float32),
+            np.zeros(STATE_WIDTH, np.float32),
+            np.zeros(4, np.float32),
+        )
 
     state = np.zeros(STATE_WIDTH, np.float32)
     command = np.zeros(4, np.float32)
@@ -276,7 +296,7 @@ def bind_world(world, spec):
     elif isinstance(spec, RevoluteRotor):
         kind, domain, axis, rotor_frame, props, state, command = compile_revolute_world(spec)
     else:
-        raise TypeError("expected FreeSphere, PrismaticSlider or RevoluteRotor")
+        raise TypeError("expected FreeSphere, PrismaticSlider, RevoluteRotor or FixedRobotTree")
     width = 16 if kind in (3, 4) else PROPERTY_WIDTH
     constants = as_fp32(props, "world topology", (width,))
     topology = (kind, domain, axis, _values(constants))

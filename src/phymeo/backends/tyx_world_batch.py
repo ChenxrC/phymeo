@@ -1,4 +1,4 @@
-"""Opt-in TYX batch of translating spheres, scalar sliders and physical revolute rotors."""
+"""Opt-in TYX batch of spheres, scalar joints and full ordinary fixed-root trees."""
 
 from collections.abc import Mapping
 from contextlib import ExitStack, contextmanager
@@ -8,6 +8,7 @@ from types import MappingProxyType
 import numpy as np
 
 from ._resident_revolute_world import RevoluteRotor
+from ._resident_tree_world import FixedRobotTree
 from ._world_step_layout import (
     PROPERTY_WIDTH,
     STATE_WIDTH,
@@ -23,6 +24,7 @@ from ._world_step_layout import (
 
 __all__ = [
     "FreeSphere",
+    "FixedRobotTree",
     "PrismaticSlider",
     "RevoluteRotor",
     "SpherePlaneCheckpoint",
@@ -86,6 +88,8 @@ class TyxWorldBatch:
         )
         self._slots = {}
         self._bindings = []
+        self._trees = None
+        self._tree_specs = {}
         props, initial_rows, commands = [], [], []
         for key, spec in worlds:
             key = world_key(key)
@@ -96,6 +100,8 @@ class TyxWorldBatch:
             binding, properties, row, command = bind_world(key, spec)
             self._slots[key] = len(self._bindings)
             self._bindings.append(binding)
+            if binding.tree_spec is not None:
+                self._tree_specs[key] = binding.tree_spec
             props.append(properties)
             initial_rows.append(row)
             commands.append(command)
@@ -108,7 +114,13 @@ class TyxWorldBatch:
             self._held[i, : len(command)] = command
             properties[i, : len(row)] = row
         self._initial = {
-            b.world: b.checkpoint(row, 0, command)
+            b.world: (
+                b.checkpoint(row, 0, command)
+                if b.tree_spec is None
+                else b.tree_spec.checkpoint(
+                    b.world, b.tree_spec.initial_state, 0, b.tree_spec.initial_command
+                )
+            )
             for b, row, command in zip(self._bindings, initial_rows, commands, strict=True)
         }
         if not self._count:
@@ -168,6 +180,10 @@ class TyxWorldBatch:
                 self._row_tick = self._buffer((1,), np.int32)
                 self._restore_state = self._buffer((n, STATE_WIDTH), np.float32)
                 self._restore_tick = self._buffer((n,), np.int32)
+                if self._tree_specs:
+                    from ._resident_tree_storage import TreeDeviceStorage
+
+                    self._trees = TreeDeviceStorage(self, self._tree_specs)
         except BaseException:
             self.close()
             raise
@@ -268,10 +284,11 @@ class TyxWorldBatch:
                     self._runtime,
                     self._mode,
                     self._tx,
+                    tree=None if self._trees is None else self._trees.borrow_geometry(self._active),
                 )
 
     def prepare_collision(self, model, bindings, *, candidate_capacity=4096):
-        """Prepare accepted sphere/slider versus static finite-geometry broad phase."""
+        """Prepare accepted finite geometry versus static shapes in the same world."""
         from ._resident_collision_plan import ResidentCollisionPlan
 
         return ResidentCollisionPlan(self, model, bindings, candidate_capacity=candidate_capacity)
@@ -299,13 +316,19 @@ class TyxWorldBatch:
                 raise TypeError("controls must be a world mapping")
             keys = self._keys(by_world)
             held = self._held.copy()
+            tree_inputs = {key: by_world[key] for key in keys if key in self._tree_specs}
+            tree_held = None if self._trees is None else self._trees.validate_controls(tree_inputs)
             for key in keys:
+                if key in self._tree_specs:
+                    continue
                 i = self._slots[key]
                 packet = self._bindings[i].packet(by_world[key])
                 held[i].fill(0)
                 held[i, : len(packet)] = packet
             if not np.array_equal(held, self._held):
                 self._held, self._dirty = held, True
+            if self._trees is not None:
+                self._trees.commit_controls(tree_held)
 
     def step(self, h):
         """Advance one positive physical substep and return accepted worlds by key."""
@@ -317,11 +340,18 @@ class TyxWorldBatch:
             if not self._count:
                 return {}
             src, dst = self._active, 1 - self._active
+            if self._trees is not None:
+                self._trees.invalidate_diagnostics()
             try:
                 with self._device(), np.errstate(all="ignore"):
                     if self._dirty:
                         self._upload(self._commands, self._held, "control")
-                        self._dirty = False
+                    if self._trees is not None:
+                        self._trees.upload_controls()
+                    # Clear dirty only after every command bank was uploaded.
+                    self._dirty = False
+                    if self._trees is not None:
+                        self._trees.controls_uploaded()
                     self._launch(
                         self._advance_kernels[src],
                         self._count,
@@ -350,6 +380,10 @@ class TyxWorldBatch:
                             self._status,
                         )
                         self._counts["revolute_kernel_launches"] += 1
+                    if self._trees is not None:
+                        self._trees.stage_advance(
+                            dt, src, dst, self._ticks[src], self._ticks[dst], self._status
+                        )
                     if self._plane_kernels is not None:
                         self._launch(
                             self._plane_kernels[src],
@@ -364,14 +398,20 @@ class TyxWorldBatch:
                         )
                     self._sync()
                     status = self._read_status()
+                    if self._trees is not None:
+                        self._trees.check_advance(status)
                 results = {
                     b.world: bool(value) for b, value in zip(self._bindings, status, strict=True)
                 }
             except Exception:
+                if self._trees is not None:
+                    self._trees.invalidate_diagnostics()
                 self._counts["failed_steps"] += 1
                 raise
             self._active = dst
             self._state_epoch += 1
+            if self._trees is not None:
+                self._trees.finish_advance(status)
             accepted = int(np.count_nonzero(status))
             self._counts["completed_steps"] += 1
             self._counts["accepted_world_steps"] += accepted
@@ -379,13 +419,20 @@ class TyxWorldBatch:
             return results
 
     def snapshot(self, keys=None):
-        """Read selected accepted states and held controls. A subset downloads only those rows."""
+        """Read complete accepted states; tree bank readback is counted separately."""
         with self._lock:
             self._check_open()
             keys = self._keys(keys)
             if not keys:
                 return {}
             state, tick = self._states[self._active], self._ticks[self._active]
+            tree_keys = [key for key in keys if key in self._tree_specs]
+            if tree_keys:
+                result = self._trees.snapshot(tree_keys, self._active, tick)
+                legacy = [key for key in keys if key not in self._tree_specs]
+                if legacy:
+                    result.update(self.snapshot(legacy))
+                return {key: result[key] for key in keys}
             with self._device():
                 if len(keys) == self._count:
                     rows, ticks = self._read(state, "snapshot"), self._read(tick, "snapshot")
@@ -411,6 +458,30 @@ class TyxWorldBatch:
         from ._world_kinematics import read_kinematics
 
         return read_kinematics(self, keys)
+
+    def _selected_tree_keys(self, keys):
+        selected = list(self._tree_specs) if keys is None else self._keys(keys)
+        if any(key not in self._tree_specs for key in selected):
+            raise ValueError("tree observation requires tree world keys")
+        return selected
+
+    def tree_kinematics(self, keys=None):
+        """Own complete accepted mixed R/P coordinates and FK at the same tick."""
+        with self._lock:
+            self._check_open()
+            selected = self._selected_tree_keys(keys)
+            return (
+                {}
+                if not selected
+                else self._trees.kinematics(selected, self._active, self._ticks[self._active])
+            )
+
+    def tree_diagnostics(self, keys=None):
+        """Return detached entry-time dynamics for the latest accepted attempt."""
+        with self._lock:
+            self._check_open()
+            selected = self._selected_tree_keys(keys)
+            return {} if not selected else self._trees.diagnostics(selected)
 
     def prepare_readback(self, keys, *, kind="kinematics"):
         """Prepare reusable selected-world observation buffers; existing reads stay unchanged."""
@@ -443,7 +514,7 @@ class TyxWorldBatch:
                 summary = self._read(self._summary, "summary")
             if not np.isfinite(summary).all():
                 raise FloatingPointError("resident summary is not representable in FP32")
-            return {
+            result = {
                 b.world: {
                     "kinetic_energy_j": float(v[0]),
                     ("q_rad" if b.kind in (3, 4) else "q_m" if b.kind else "bottom_z_m"): float(
@@ -451,7 +522,11 @@ class TyxWorldBatch:
                     ),
                 }
                 for b, v in zip(self._bindings, summary, strict=True)
+                if b.tree_spec is None
             }
+            if self._trees is not None:
+                result.update(self._trees.summary(list(self._tree_specs), self._active))
+            return {key: result[key] for key in self._slots}
 
     def restore(self, by_world):
         """Replace chosen physical states, ticks, drive histories and their held controls."""
@@ -465,30 +540,47 @@ class TyxWorldBatch:
             states = np.zeros((self._count, STATE_WIDTH), np.float32)
             ticks = np.full(self._count, -1, np.int32)
             held = self._held.copy()
+            tree_points = {key: by_world[key] for key in keys if key in self._tree_specs}
+            tree_stage = None if self._trees is None else self._trees.validate_restore(tree_points)
             for key in keys:
+                if key in self._tree_specs:
+                    continue
                 i = self._slots[key]
                 states[i], ticks[i], control = self._bindings[i].unpack(by_world[key])
                 held[i].fill(0)
                 held[i, : len(control)] = control
             src, dst = self._active, 1 - self._active
-            with self._device():
-                self._upload(self._restore_state, states, "restore")
-                self._upload(self._restore_tick, ticks, "restore")
-                self._launch(
-                    self._kernels.restore_worlds,
-                    self._count,
-                    self._restore_state,
-                    self._restore_tick,
-                    self._states[src],
-                    self._ticks[src],
-                    self._states[dst],
-                    self._ticks[dst],
-                )
-                self._sync()
+            try:
+                with self._device():
+                    self._upload(self._restore_state, states, "restore")
+                    self._upload(self._restore_tick, ticks, "restore")
+                    self._launch(
+                        self._kernels.restore_worlds,
+                        self._count,
+                        self._restore_state,
+                        self._restore_tick,
+                        self._states[src],
+                        self._ticks[src],
+                        self._states[dst],
+                        self._ticks[dst],
+                    )
+                    if self._trees is not None:
+                        self._trees.stage_restore(
+                            tree_stage, src, dst, self._ticks[src], self._ticks[dst]
+                        )
+                    self._sync()
+                    if self._trees is not None:
+                        self._trees.check_restore()
+            except Exception:
+                if self._trees is not None:
+                    self._trees.invalidate_diagnostics()
+                raise
             self._active = dst
             self._state_epoch += 1
             self._dirty = self._dirty or not np.array_equal(held, self._held)
             self._held = held
+            if self._trees is not None:
+                self._trees.commit_restore(tree_stage)
 
     def reset(self, keys=None):
         """Return selected worlds to their initial accepted state and command."""
@@ -507,6 +599,8 @@ class TyxWorldBatch:
                 "readback_plan_live_count": len(self._readback_plans),
                 "collision_plan_live_count": len(self._collision_plans),
                 "state_epoch": self._state_epoch,
+                "tree_world_count": len(self._tree_specs),
+                "tree_status_codes": {} if self._trees is None else dict(self._trees.status_codes),
             }
 
     def __enter__(self):

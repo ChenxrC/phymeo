@@ -38,10 +38,22 @@ def tree_model_token(model):
     """Full authored physical model identity, independent of controls and assets."""
     if not isinstance(model, RobotModel):
         raise TypeError("resident tree needs an ordinary RobotModel")
-    return (tuple(int(x) for x in model.parents), tuple(model.joint_types), *(
-        _nested(getattr(model, name)) for name in (
-            "joint_position", "joint_orientation", "joint_axis", "mass", "com",
-            "inertia_diagonal", "gravity")))
+    return (
+        tuple(int(x) for x in model.parents),
+        tuple(model.joint_types),
+        *(
+            _nested(getattr(model, name))
+            for name in (
+                "joint_position",
+                "joint_orientation",
+                "joint_axis",
+                "mass",
+                "com",
+                "inertia_diagonal",
+                "gravity",
+            )
+        ),
+    )
 
 
 def _coordinate(value, name, n):
@@ -58,6 +70,7 @@ class FixedRobotTree:
     Limits, mimic coordinates and floating bases require different physical laws
     and are rejected. This is a world specification, not a runtime of its own.
     """
+
     program: DrivenRobotProgram
     state: SceneState
     control_max_iterations: int = 512
@@ -68,7 +81,11 @@ class FixedRobotTree:
         if not isinstance(self.state, SceneState):
             raise TypeError("FixedRobotTree requires the program's complete SceneState")
         budget = self.control_max_iterations
-        if isinstance(budget, (bool, np.bool_)) or not isinstance(budget, Integral) or not 1 <= budget <= 4096:
+        if (
+            isinstance(budget, (bool, np.bool_))
+            or not isinstance(budget, Integral)
+            or not 1 <= budget <= 4096
+        ):
             raise ValueError("tree control iterations must be an integer in [1,4096]")
         object.__setattr__(self, "control_max_iterations", int(budget))
 
@@ -120,8 +137,17 @@ class TreeDiagnostic:
     equation_residual: float
 
     def __post_init__(self):
-        for name in ("entry_position", "entry_velocity", "linear_jacobian", "angular_jacobian",
-                     "mass", "bias", "external", "drive", "acceleration"):
+        for name in (
+            "entry_position",
+            "entry_velocity",
+            "linear_jacobian",
+            "angular_jacobian",
+            "mass",
+            "bias",
+            "external",
+            "drive",
+            "acceleration",
+        ):
             object.__setattr__(self, name, _owned(getattr(self, name)))
 
 
@@ -157,10 +183,17 @@ class TreeWorldSpec:
     def checkpoint(self, world, row, tick, held):
         n = self.n
         row = np.asarray(row)
-        return TreeWorldCheckpoint(world_key(world), self.topology, int(tick),
-            _nested(row[:n, 0]), _nested(row[:n, 1]), _nested(row[:n, 2]),
-            _nested(row[:n, 4:7]) if self.delay else (), _nested(np.asarray(held)[:n]),
-            _nested(row[:n, 3]))
+        return TreeWorldCheckpoint(
+            world_key(world),
+            self.topology,
+            int(tick),
+            _nested(row[:n, 0]),
+            _nested(row[:n, 1]),
+            _nested(row[:n, 2]),
+            _nested(row[:n, 4:7]) if self.delay else (),
+            _nested(np.asarray(held)[:n]),
+            _nested(row[:n, 3]),
+        )
 
     def restore_row(self, checkpoint, world):
         if not isinstance(checkpoint, TreeWorldCheckpoint) or checkpoint.world != world:
@@ -168,7 +201,11 @@ class TreeWorldSpec:
         if checkpoint.topology != self.topology:
             raise ValueError("tree checkpoint topology/model does not match")
         t = checkpoint.tick
-        if isinstance(t, (bool, np.bool_)) or not isinstance(t, Integral) or not 0 <= t <= 2147483647:
+        if (
+            isinstance(t, (bool, np.bool_))
+            or not isinstance(t, Integral)
+            or not 0 <= t <= 2147483647
+        ):
             raise ValueError("tree checkpoint tick is outside the i32 domain")
         row = np.zeros((self.n, TREE_STATE_WIDTH), np.float32)
         row[:, 0] = _coordinate(checkpoint.position, "restored tree coordinate", self.n)
@@ -187,7 +224,9 @@ def tree_packet(inputs, domain, n):
     if not isinstance(inputs, SceneInputs) or set(inputs.domains) != {domain}:
         raise ValueError("tree command must use its bound drive domain")
     action = inputs.domains[domain]
-    if not isinstance(action, RobotInputs) or not all(hasattr(action, name) for name in ("target", "target_velocity", "feedforward")):
+    if not isinstance(action, RobotInputs) or not all(
+        hasattr(action, name) for name in ("target", "target_velocity", "feedforward")
+    ):
         raise TypeError("tree command needs target/rate/feedforward and RobotInputs loads")
     out = np.empty((n, TREE_COMMAND_WIDTH), np.float32)
     for column, name in enumerate(("target", "target_velocity", "feedforward", "effort")):
@@ -205,8 +244,17 @@ def compile_tree_world(spec):
     m = program.model
     if not isinstance(m, RobotModel):
         raise TypeError("resident tree requires an ordinary RobotModel")
-    model = RobotModel(m.parents, m.joint_types, m.joint_position, m.joint_orientation,
-        m.joint_axis, m.mass, m.com, m.inertia_diagonal, m.gravity)
+    model = RobotModel(
+        m.parents,
+        m.joint_types,
+        m.joint_position,
+        m.joint_orientation,
+        m.joint_axis,
+        m.mass,
+        m.com,
+        m.inertia_diagonal,
+        m.gravity,
+    )
     n = model.dof_count
     if not 1 <= n <= MAX_TREE_JOINTS:
         raise ValueError("resident tree joint count must be in [1,16]")
@@ -230,27 +278,52 @@ def compile_tree_world(spec):
     command = np.zeros((n, TREE_COMMAND_WIDTH), np.float32)
     command[:, 0] = row[:, 0]
     model_token = tree_model_token(model)
-    gains = [as_fp32(getattr(program, name), "tree " + name, (n,)) for name in ("kp", "kd", "effort_limit")]
+    gains = [
+        as_fp32(getattr(program, name), "tree " + name, (n,))
+        for name in ("kp", "kd", "effort_limit")
+    ]
     if any(np.any(value < 0) for value in gains):
         raise ValueError("tree gains and effort caps must be nonnegative")
-    topology = ("fixed_tree_v1", domain, n, model_token, *(_nested(x) for x in gains),
-                int(program.delay_steps), spec.control_max_iterations)
+    topology = (
+        "fixed_tree_v1",
+        domain,
+        n,
+        model_token,
+        *(_nested(x) for x in gains),
+        int(program.delay_steps),
+        spec.control_max_iterations,
+    )
     # One fixed anchor is removed before any recursive device addition. Other
     # root rows retain their real relative installation, including branched roots.
     anchor64 = np.array(model.joint_position[0], copy=True)
     offsets = np.array(model.joint_position, copy=True)
     offsets[model.parents < 0] -= anchor64
-    values = dict(parents=_owned(model.parents, np.int32),
+    values = dict(
+        parents=_owned(model.parents, np.int32),
         kinds=_owned([0 if k == "revolute" else 1 for k in model.joint_types], np.int32),
         offsets=_owned(as_fp32(offsets, "tree offsets relative to anchor", (n, 3))),
-        zero_rotation=_owned(as_fp32(quaternion_matrix(model.joint_orientation), "tree zero rotations", (n, 3, 3))),
+        zero_rotation=_owned(
+            as_fp32(quaternion_matrix(model.joint_orientation), "tree zero rotations", (n, 3, 3))
+        ),
         local_axis=_owned(as_fp32(model.joint_axis, "tree axes", (n, 3))),
         mass=_owned(as_fp32(model.mass, "tree masses", (n,))),
         com=_owned(as_fp32(model.com, "tree COM", (n, 3))),
         inertia=_owned(as_fp32(model.inertia_diagonal, "tree inertia", (n, 3))),
         gravity=_owned(as_fp32(model.gravity, "tree gravity", (3,))),
-        kp=_owned(gains[0]), kd=_owned(gains[1]), cap=_owned(gains[2]),
+        kp=_owned(gains[0]),
+        kd=_owned(gains[1]),
+        cap=_owned(gains[2]),
         anchor=_owned(as_fp32(anchor64, "tree anchor", (3,))),
-        initial_state=_owned(row), initial_command=_owned(command))
-    return TreeWorldSpec(domain, n, int(program.delay_steps), spec.control_max_iterations,
-                         topology, model_token, model.joint_types, **values)
+        initial_state=_owned(row),
+        initial_command=_owned(command),
+    )
+    return TreeWorldSpec(
+        domain,
+        n,
+        int(program.delay_steps),
+        spec.control_max_iterations,
+        topology,
+        model_token,
+        model.joint_types,
+        **values,
+    )

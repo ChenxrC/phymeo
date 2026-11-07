@@ -59,7 +59,7 @@ def resident_tree_bounds(
                         if kinds[row, ancestor] == 1:
                             length = _upper(tx.add_rn(length, tx.abs(q)))
                         ancestor = parents[row, ancestor]
-                        depth += 1
+                        depth = depth + 1
                 if ancestor >= 0 or declared_depth != tx.cast_f32(depth):
                     stamp[shape, 0] = 0
                 scale = tx.max(1.0, length)
@@ -74,10 +74,19 @@ def resident_tree_bounds(
                 composition_error = _upper(tx.mul_rn(tx.mul_rn(1.52587890625e-5, layers), length))
                 trigonometric_error = _upper(tx.mul_rn(tx.mul_rn(1.52587890625e-5, layers), length))
                 ftz_error = _upper(tx.mul_rn(3.76158192263132e-37, layers))
-                padding = _upper(tx.add_rn(_upper(tx.add_rn(base_error, composition_error)),
-                    _upper(tx.add_rn(trigonometric_error, ftz_error))))
+                padding = _upper(
+                    tx.add_rn(
+                        _upper(tx.add_rn(base_error, composition_error)),
+                        _upper(tx.add_rn(trigonometric_error, ftz_error)),
+                    )
+                )
                 skin = _upper(tx.add_rn(radius, padding))
-                if not tx.isfinite(length) or not tx.isfinite(padding) or not tx.isfinite(skin) or padding <= 0.0:
+                if (
+                    not tx.isfinite(length)
+                    or not tx.isfinite(padding)
+                    or not tx.isfinite(skin)
+                    or padding <= 0.0
+                ):
                     stamp[shape, 0] = 0
                 for axis in tx.static_range(3):
                     low = 0.0
@@ -85,7 +94,13 @@ def resident_tree_bounds(
                     for vertex in range(first, last):
                         point = fk[row, group, axis]
                         for local_axis in tx.static_range(3):
-                            point = tx.add_rn(point, tx.mul_rn(fk[row, group, 3+axis*3+local_axis], points[vertex, local_axis]))
+                            point = tx.add_rn(
+                                point,
+                                tx.mul_rn(
+                                    fk[row, group, 3 + axis * 3 + local_axis],
+                                    points[vertex, local_axis],
+                                ),
+                            )
                         point = tx.add_rn(anchor[row, axis], point)
                         if not tx.isfinite(point):
                             stamp[shape, 0] = 0
@@ -98,7 +113,7 @@ def resident_tree_bounds(
                     lo = _lower(tx.sub_rn(low, skin))
                     hi = _upper(tx.add_rn(high, skin))
                     bounds[shape, axis] = lo
-                    bounds[shape, axis+3] = hi
+                    bounds[shape, axis + 3] = hi
                     if not tx.isfinite(lo) or not tx.isfinite(hi) or lo > hi:
                         stamp[shape, 0] = 0
 
@@ -106,4 +121,3 @@ def resident_tree_bounds(
 def make_tree_bounds_kernels():
     """Independent handles selected with the parent's accepted active bank."""
     return tx.kernel(resident_tree_bounds), tx.kernel(resident_tree_bounds)
-

@@ -1,5 +1,9 @@
 """Explicit physical models and independently implemented simulation solvers."""
 
+from .backends._resident_collision_plan import ResidentSphereBinding, ResidentStaticBinding
+from .backends._resident_revolute_binding import ResidentRevoluteBinding
+from .backends._resident_slider_binding import ResidentSliderBinding
+from .backends._resident_tree_binding import ResidentTreeBinding
 from .backends.tyx import TyxSemiImplicitSolver
 from .backends.tyx_articulated import (
     TyxArticulatedCouplingProgram,
@@ -18,6 +22,7 @@ from .backends.tyx_rigid import TyxRigidSemiImplicitSolver
 from .backends.tyx_sdf import TyxSdfSampler
 from .backends.tyx_sphere_island import SphereIslandWorld, TyxSphereIslandBatch
 from .backends.tyx_world_batch import (
+    FixedRobotTree,
     FreeSphere,
     PrismaticSlider,
     RevoluteRotor,
@@ -421,6 +426,12 @@ __all__ = [
     "SpherePlaneWorld",
     "PrismaticSlider",
     "RevoluteRotor",
+    "FixedRobotTree",
+    "ResidentSphereBinding",
+    "ResidentStaticBinding",
+    "ResidentSliderBinding",
+    "ResidentRevoluteBinding",
+    "ResidentTreeBinding",
     "TyxWorldBatch",
     "TyxBatchedScene",
     "BatchedStepResult",

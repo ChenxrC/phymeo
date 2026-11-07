@@ -101,7 +101,7 @@
 
 **文件：** NEW src/phymeo/geometry/contact_patch_adapter.py、tests/collision/test_contact_patch_adapter.py。父必要修改 collision_pipeline.py / collision_witness.py；复用 box_capsule_witnesses、现有 HullPairQuery 和 support-map 路由。
 
-**接口草案：** frozen ContactSite(witness: CollisionWitness, load_point: tuple[float, float, float], weight: float)；frozen ContactPatchSample(sites: tuple[ContactSite, ...], dimension: int, source: str)；contact_patch_sample(pair: CollisionPair, *, time: float) -> ContactPatchSample。pair 的材料/shape身份必须保留；time 必须绑定 pair 实际保存的姿态/见证时刻，不允许任意取 end witness 冒作首碰。
+**已实现接口：** frozen ContactSite(witness: CollisionWitness, load_point: tuple[float, float, float], weight: float)；frozen ContactPatchSample(sites: tuple[ContactSite, ...], dimension: int, source: str)；contact_patch_sample(first: CollisionShape, second: CollisionShape, first_points, second_points) -> ContactPatchSample。两组点是同一真实采样时刻的世界坐标，保持原vertex IDs。源码核实 CollisionPair 不保存任意时刻姿态与完整有限轴，故不接受仅pair/time来猜姿态；调用方从同一接受或试算状态显式提供坐标。
 
 - [ ] 先实现点、有限最近线段、多边形的归一权重测试与坏材料地址/负权重/错误时刻负控。
 - [ ] 直接适配已有解析结果与完整 patch，不重写胶囊–盒子算法；通用 H 与 C–H 真正缺失的部分落到共同 support/feature 层。
@@ -113,7 +113,7 @@
 
 **文件：** NEW src/phymeo/solvers/contact_patch_loads.py、tests/test_contact_patch_loads.py。读取 sampled_box_contact.py、RobotContactContribution；既有共享文件由父接入。
 
-**接口草案：** sample_patch_loads(sample: ContactPatchSample, law: RobotContactMaterial, first_site_velocity: np.ndarray, second_site_velocity: np.ndarray) -> dict[str, np.ndarray]。两速度均为 (n,3)；返回每站点 first_force、second_force，形状也是 (n,3)，均包含 weight。几何 adapter 不调用接触律；此函数不积分、不发布、不管理 robot ID。
+**已实现接口：** sample_patch_loads(sample: ContactPatchSample, law: RobotContactMaterial, first_site_velocity: np.ndarray, second_site_velocity: np.ndarray) -> dict[str, np.ndarray]。两速度均为 (n,3)；返回每站点 first_force、second_force，形状也是 (n,3)，均包含 weight。几何 adapter 不调用接触律；此函数不积分、不发布、不管理 robot ID。
 
 - [ ] 使用 K0 的固定解析向量先写 RED，包含 1 点、2 点线、4 点面的相同总刚度。
 - [ ] 按现有 sample_loads 原法向/切向语义逐站点求力，权重只乘一次；保留原真实速度阻尼和摩擦上限。
@@ -182,7 +182,7 @@ python -m pytest tests/test_convex_robot_contacts.py -q -x
 
 ~~~python
 def test_parallel_capsules_preserve_pair_stiffness(parallel_capsule_pair, zero_damping_law):
-    sample = contact_patch_sample(parallel_capsule_pair, time=0.0)
+    sample = contact_patch_sample(first_shape, second_shape, first_world_vertices, second_world_vertices)
     assert len(sample.sites) == 2
     assert sum(site.weight for site in sample.sites) == pytest.approx(1.0)
     v = np.zeros((2, 3))
@@ -302,3 +302,12 @@ K5文件：NEW docs/benchmarks/p65-generic-collision-20261107.md 汇总三线，
 用户已统一授权三线开发和测试，并取消固定截止。先完成本阶段可独立验收的功能，再按既定八大方向继续缩小差距；保持原验收门和失败记录。无需重复请求逐批许可，不恢复已退役周期任务。
 
 更广机器人驻留、完整时间cell面候选、全设备窄相、浮mimic/闭环、可微训练和其他物理族见[差异全景](../../development/phymeo-newton-panorama-2026-11-07.md)。它们不因本阶段三线首片通过而自动完成。
+
+
+## 2026-11-07 当前执行检查点
+
+- B已正常集成5d3bbce：有限转动mesh–round逐面设备候选，HOST39、interpret5、CUDA5完整专项通过；原作者只读审阅挂接无新发现。尚非全设备窄相。
+- C1已正常集成78ec685：接受FreeSphere状态直接喂shape BVH，最终interpret36、CUDA36。同batch不同静态注册误用负控27先失败，独立registration修复后过；当前只dynamic/static姿态宽相。
+- A通用斑块/共同作用点载荷ffe9b3a/e26a4f1：首次48，审阅发现可变gap别名和世界原点放大容差，25复现2失败后修复，完整53 passed。含一般H、有限轴、点线面归一、非对称梯形面积质心、平移/旋转功、细分一致性。不是K3真实所有者动力学接受。
+- A接口裁定：显式实际world vertices替代草案pair/time；圆–凸体复用既有finite segment–triangle features构成完整hull边界查询，原OBB专用路线不改，不把任意H当box。父后续K3持有真实姿态和所有者Jacobian。
+- 下一项A/K3：替换非球机器人互碰的专用编译与采样门，保留一般hull材料地址、共同载荷点、真实双方COM/J与原发布事务。完成独立多所有者动力学后，再做阶段组合检查/源码外wheel、C2和后续优先级。没有新时间门或逐阶段许可。

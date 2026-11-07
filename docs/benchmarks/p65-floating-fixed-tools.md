@@ -33,3 +33,22 @@ F04：无正质量组、非对角根、无效惯量、fixed控制/mimic、错误
 作者仅六个 NEW 路径：新资产模块、专项测试、两份URDF、公开例程、本报告。父维护旧 loader opt-in 与浮根 contact_view 转换桥。sites 使用真实 body_index 0=root、i+1=child；collider.link_index 保留资产 -1=root、i=child。root 工具转换后仍为 root-local，不是静态 world。
 
 Newton 仅引用已验收的 pinned 1.7.0 机制边界；本片未运行新的原生对照。旧 fixed-collapse 惯量反例不丢弃，后续新参考应保留原生 fixed joints 与显式 free root。能力/测试/窗口结果待父独占执行后补录。
+
+
+## 交接候选（仍未执行）
+
+源码检查点 64e2c74；父在纯文本审阅中指出 collider 重复 key 可蒙混覆盖，已先提交 dd9c3a1 的精确反例并修为“唯一且集合相等”。同时验证 root site 原点/轴及真实 body/metadata 数量；q 和 −q 的同一 identity 旋转保留。该发现属于执行前审阅，不标成已执行 RED。首入口 RED 只有前述69。
+
+专项文件现在覆盖：独立 F01 首步/连续外载和实际 root 工具两侧接触；F02 三组姿态的五部件 oracle、固定旋转圆柱几何（仅几何）；F03 四个完整窗口（h、h/2、反向登记、整体变换）；F04 构造/物性/控制/所有权/迟发事件/第二参与者拒绝及重试。实际 collection 数量与 PASS 数待父执行。公开例程只跑 F03 探头窗口；F01 独立连续外载在专项测试内。
+
+例程输出完整逐步入态/末态、全部接触点与双侧材料地址、实际力/COM矩/功率、事件入步和提交时间、自由球冲量、真实线/角动量残差和动能。动能及角动量为观测诊断，不添加未授权“通过预算”；不会把功率等式说成整个离散算法严格守恒。JSON写入在全窗口之后；正常数值但阶段门失败时仍保存全输出并返回2。运行异常仍由父守卫保原异常，未声称可恢复中途失败的完整JSON。
+
+父接好两旧hook后，建议先跑轻量组：
+python -m pytest -q tests/test_floating_fixed_tools.py -k "not a03"
+再跑4个冻结窗口：
+python -m pytest -q tests/test_floating_fixed_tools.py -k a03
+公开归档例程：
+python examples/floating_fixed_tools.py --dt 0.00048828125 --out <新的绝对路径.json>
+h/2用0.000244140625；反向/变换分别用 --reverse-registration / --transformed。这些是待执行命令，作者没有运行。
+
+本树没有合并父；父旧 loader/contact_view、最终style、必要兼容及wheel仍由父负责。当前交付为 CODE_READY_TESTS_PENDING，不是功能已验收。

@@ -47,7 +47,7 @@ class DualTurnMeshRoundQuery(RotatingMeshRoundQuery):
     sampled geometry or publication is shared across queries or worlds.
     """
 
-    def __init__(self, mesh, round_shape, mesh_path, round_path, mesh_first):
+    def __init__(self, mesh, round_shape, mesh_path, round_path, mesh_first, *, face_selector=None):
         mesh_turn, round_turn = mesh_path.turn, round_path.turn
         if (
             round_shape.kind not in ("sphere", "capsule")
@@ -58,6 +58,12 @@ class DualTurnMeshRoundQuery(RotatingMeshRoundQuery):
         ):
             raise ValueError("dual-turn mesh-round requires two nonzero rigid turns")
         self.mesh = mesh
+        self.face_selector = face_selector
+        self.face_candidates = None
+        if face_selector is not None:
+            from ._rotating_mesh_candidates import MeshRoundArcCandidates
+
+            self.face_candidates = MeshRoundArcCandidates(mesh, face_selector)
         self.shape = round_shape
         self.mesh_first = mesh_first
         self.radius = F(round_shape.radius)
@@ -134,7 +140,9 @@ class DualTurnMeshRoundQuery(RotatingMeshRoundQuery):
             best = self._minimum(stored)
             error += rounding
         self.observed_error = max(self.observed_error, error)
-        query = MeshRoundQuery(self.mesh, self.shape, path, self.mesh_first)
+        query = MeshRoundQuery(
+            self.mesh, self.shape, path, self.mesh_first, face_selector=self.face_selector
+        )
         if error:
             far = max(query._axis_distance(p, stored[0])[0] for p in self.mesh.points.values())
             low, high = max(_ZERO, self.radius - error) ** 2, (self.radius + error) ** 2

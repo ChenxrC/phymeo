@@ -41,8 +41,14 @@ class RotatingMeshCapsuleTrace(MeshRoundTrace):
 class RotatingMeshRoundQuery(MeshRoundQuery):
     """Use the full inverse-rotated spine in the original, validated material mesh."""
 
-    def __init__(self, mesh, shape, mesh_path, round_path, mesh_first):
+    def __init__(self, mesh, shape, mesh_path, round_path, mesh_first, *, face_selector=None):
         self.mesh = mesh
+        self.face_selector = face_selector
+        self.face_candidates = None
+        if face_selector is not None:
+            from ._rotating_mesh_candidates import MeshRoundArcCandidates
+
+            self.face_candidates = MeshRoundArcCandidates(mesh, face_selector)
         self.shape = shape
         self.mesh_first = mesh_first
         self.radius = F(shape.radius)
@@ -73,12 +79,18 @@ class RotatingMeshRoundQuery(MeshRoundQuery):
         self.observed_error = _ZERO
 
     def _minimum(self, ends):
+        indices = (
+            range(len(self.mesh.facets))
+            if self.face_candidates is None
+            else self.face_candidates.sample_axis(ends, radius=self.radius)
+        )
+        facets = tuple(self.mesh.facets[i] for i in indices)
         if len(ends) == 1:
-            return _point_nearest(self.mesh.facets, ends[0])[0]
+            return _point_nearest(facets, ends[0])[0]
         a, b = ends
         lo, hi = np.minimum(a, b), np.maximum(a, b)
         bounds = []
-        for facet in self.mesh.facets:
+        for facet in facets:
             delta = np.maximum(0, np.maximum(facet.lo - hi, lo - facet.hi))
             bounds.append((delta @ delta, facet.ids))
         best = None
@@ -186,7 +198,9 @@ class RotatingMeshRoundQuery(MeshRoundQuery):
             best = self._minimum(stored)
             error += rounding
         self.observed_error = max(self.observed_error, error)
-        query = MeshRoundQuery(self.mesh, self.shape, path, self.mesh_first)
+        query = MeshRoundQuery(
+            self.mesh, self.shape, path, self.mesh_first, face_selector=self.face_selector
+        )
         if error:
             far = max(query._axis_distance(p, stored[0])[0] for p in self.mesh.points.values())
             lo, hi = max(_ZERO, self.radius - error) ** 2, (self.radius + error) ** 2

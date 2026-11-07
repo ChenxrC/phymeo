@@ -436,12 +436,7 @@ def _mesh_candidates(workspace, paths, flags, envelopes, bounds, pending):
         if shapes[j].kind == "mesh":
             i, j = j, i
         shape, other = shapes[i], shapes[j]
-        if (
-            shape.kind != "mesh"
-            or other.kind not in ("sphere", "capsule")
-            or shape.radius
-            or any(paths[s.key].turn and paths[s.key].turn.angle for s in (shape, other))
-        ):
+        if shape.kind != "mesh" or other.kind not in ("sphere", "capsule") or shape.radius:
             continue
 
         def selector(mesh, shape=shape):
@@ -770,14 +765,41 @@ def _detect_pairs(
                             if dual_turn:
                                 from ._dual_turn_mesh_round import DualTurnMeshRoundQuery
 
-                                analytic = DualTurnMeshRoundQuery(mesh, rs, mp, rp, mesh_first)
+                                analytic = DualTurnMeshRoundQuery(
+                                    mesh,
+                                    rs,
+                                    mp,
+                                    rp,
+                                    mesh_first,
+                                    face_selector=(
+                                        selected[slot](mesh) if slot in selected else None
+                                    ),
+                                )
                             elif capsule_turn:
                                 from ._rotating_capsule_mesh import RotatingCapsuleMeshQuery
 
-                                analytic = RotatingCapsuleMeshQuery(mesh, rs, mp, rp, mesh_first)
+                                analytic = RotatingCapsuleMeshQuery(
+                                    mesh,
+                                    rs,
+                                    mp,
+                                    rp,
+                                    mesh_first,
+                                    face_selector=(
+                                        selected[slot](mesh) if slot in selected else None
+                                    ),
+                                )
                             else:
                                 analytic = (
-                                    RotatingMeshRoundQuery(mesh, rs, mp, rp, mesh_first)
+                                    RotatingMeshRoundQuery(
+                                        mesh,
+                                        rs,
+                                        mp,
+                                        rp,
+                                        mesh_first,
+                                        face_selector=(
+                                            selected[slot](mesh) if slot in selected else None
+                                        ),
+                                    )
                                     if mesh_rotates
                                     else MeshRoundQuery(
                                         mesh,

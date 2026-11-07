@@ -51,7 +51,7 @@ class RotatingCapsuleMeshQuery(MeshRoundQuery):
     five-field result without a separate response path.
     """
 
-    def __init__(self, mesh, capsule, mesh_path, capsule_path, mesh_first):
+    def __init__(self, mesh, capsule, mesh_path, capsule_path, mesh_first, *, face_selector=None):
         turn = capsule_path.turn
         if (
             capsule.kind != "capsule"
@@ -61,6 +61,12 @@ class RotatingCapsuleMeshQuery(MeshRoundQuery):
         ):
             raise ValueError("requires one turning capsule and a nonrotating unrounded mesh")
         self.mesh = mesh
+        self.face_selector = face_selector
+        self.face_candidates = None
+        if face_selector is not None:
+            from ._rotating_mesh_candidates import MeshRoundArcCandidates
+
+            self.face_candidates = MeshRoundArcCandidates(mesh, face_selector)
         self.shape = capsule
         self.mesh_first = mesh_first
         self.radius = F(capsule.radius)
@@ -88,10 +94,16 @@ class RotatingCapsuleMeshQuery(MeshRoundQuery):
         self.observed_error = _ZERO
 
     def _minimum(self, ends):
+        indices = (
+            range(len(self.mesh.facets))
+            if self.face_candidates is None
+            else self.face_candidates.sample_axis(ends, radius=self.radius)
+        )
+        facets = tuple(self.mesh.facets[i] for i in indices)
         a, b = ends
         low, high = np.minimum(a, b), np.maximum(a, b)
         bounds = []
-        for facet in self.mesh.facets:
+        for facet in facets:
             delta = np.maximum(0, np.maximum(facet.lo - high, low - facet.hi))
             bounds.append((delta @ delta, facet.ids))
         best = None
@@ -143,7 +155,9 @@ class RotatingCapsuleMeshQuery(MeshRoundQuery):
             best = self._minimum(stored)
             error += rounding
         self.observed_error = max(self.observed_error, error)
-        query = MeshRoundQuery(self.mesh, self.shape, path, self.mesh_first)
+        query = MeshRoundQuery(
+            self.mesh, self.shape, path, self.mesh_first, face_selector=self.face_selector
+        )
         if error:
             far = max(query._axis_distance(p, stored[0])[0] for p in self.mesh.points.values())
             low, high = max(_ZERO, self.radius - error) ** 2, (self.radius + error) ** 2

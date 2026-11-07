@@ -104,3 +104,9 @@ Newton的碰撞与求解器也有条件：其凸体/网格按不同算法及表�
 - **GPU与多场景**：单真实转铰的设备动力学、当前COM力臂、延迟驱动及多shape接受态→AABB→BVH已有HOST/interpret/CUDA与源码外验证。球/滑轨/单R可混合；完整R/P耦合树、浮根驻留、全设备窄相和响应仍是缺口。新的C4计划从真实耦合树推进，不能以独立单R代替。
 - F2/C3共同wheel已正式限域接受，134独立脚本命中列表错误与135修正记录保留，产品及原工程门不变。无新的跨引擎吞吐优势结论。
 - 下一优先功能是通用共同场景持续摩擦及完整固定根R/P设备树；其余五大方向、原100g mimic持稳失败和目标软布两初态未放台保持开放。[F2实际报告](../benchmarks/p65-floating-mimic-scene.md) · [C3实际报告](../benchmarks/p65-resident-revolute-collision.md)。
+
+## 最新功能覆盖（F3，2026-11-07）
+
+浮根 authored body坐标与惯量主轴已分离，合法完整根惯量、旋转inertial frame、偏置fixed工具的非对角聚合以及floating mimic继承均可进入原共同场景。新6窗4096步、独立Newton CPU/CUDA 8例320窗口步+8静止响应、源码外wheel两窗1024步均通过。覆盖前文“真实非对角root惯量仍缺”这一项；child任意非对角装配、设备浮根、更广关节/闭环仍未因此实现。[F3实际报告](../benchmarks/p65-floating-root-inertia-frame.md)。
+
+C4完整R/P设备树已完成T01–T08测试库及正常公共RED，原agent正在五个独立模块编码；通用多owner摩擦正在F01–F06测试库。尚未称两项已交付，原100g持稳和软布未放台不变。

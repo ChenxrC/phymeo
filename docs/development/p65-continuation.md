@@ -12,8 +12,9 @@ A/K3、B、C1和独立Newton留出/源码外wheel已接受；C2滑轨、F1浮根
 
 ### 当前实施检查点：F3 / C4 / 通用摩擦（2026-11-07）
 
-F3核心frame与URDF完整根惯量装配已通过：T1新11/受影响17；T2新18/受影响93，实际报告见[根惯量frame](../benchmarks/p65-floating-root-inertia-frame.md)。下一步T3非对角根受载场景、Newton CPU/CUDA与源码外wheel，不能提前称F3整体完成。
-原robot已提交C4首测试并继续完整T01–T08；136实际RED在缺FixedRobotTree，尚无产品。原RD持续切向多owner研究已导入，首测试3079f39；151实际先过真实两边2N，再在旧公开enable guard失败，正在补F01–F06，不是已支持通用摩擦。两原agent纯编码，项目执行仍父唯一串行，无截止/周期任务。
+F3核心frame、URDF完整根惯量与真实共同场景已正式限域验收：新6窗4096步、Newton CPU/CUDA八例320窗口步+8静止响应、新wheel源码外两窗1024步通过；详[根惯量frame](../benchmarks/p65-floating-root-inertia-frame.md)。不再重跑这些同源组。
+原robot完整C4 T01–T08测试库7e6fec5已审阅导入，136有效RED保持；1af862c授五个独立新product，现afb3bab静态/storage hook checkpoint，仍未执行。原RD持续切向首测151在真实双边2N后旧公开guard失败，继续F01–F06完整测试库。父下一步接C4旧共享hooks并审阅摩擦交接；全部执行仍父唯一串行，无截止/周期任务。
+
 
 ## 最近已验收基线（2026-11-06）
 

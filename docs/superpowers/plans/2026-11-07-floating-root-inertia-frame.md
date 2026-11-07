@@ -34,3 +34,7 @@ T1三个核心文件已实现，新11项HOST和受影响17项HOST通过；最终
 ## T3 共同场景检查点
 
 新增root-only与浮动mimic非对角根的实际受载/卸载六窗4096步及两晚故障回滚，157 HOST4通过。原计划中的Newton CPU/CUDA和源码外wheel仍待；详细命令/首style失败/透明源码与六份完整保存核见报告。本片无物理数值修复，不重跑这些已绿输入。
+
+## F3 限域验收完成
+
+T1核心、T2装配、T3共同场景/独立Newton CPU与CUDA/源码外wheel均实际通过。父36bb560产品源构建的新包完成root与mimic两窗1024步；267实际Phy模块全来自wheel，完整输出已归档。[报告](../../benchmarks/p65-floating-root-inertia-frame.md)保全部首次失败、执行和剩余边界。当前节点关闭，后续优先C4与通用摩擦，不重复F3已绿组。

@@ -1,6 +1,6 @@
 # F3 浮根惯量 frame：分阶段验证
 
-2026-11-07。**T1 核心已验证；T2 loader / 固定工具与 T3 场景、Newton 对照、wheel 仍待完成。**
+2026-11-07。**T1/T2/T3已正式限域验收；下文保留各阶段原始状态和证据。**
 
 模型新增可选 `root_inertia_frame_xyzw`，表示惯量主轴到 authored root-body 的旋转。根质量及主惯量仍使用原 RigidBodyModel；q、COM、子关节与碰撞材料坐标不变。完整树 M/b 只复合根的惯量朝向；root-only 委托原刚体积分后将姿态转回原 body frame。默认 identity 保持原路径。
 
@@ -51,3 +51,11 @@ aa34e67先提交固定测试。root-only偏置工具与浮动mimic完整非对�
 新增 floating_root_inertia_reference.py 不import Phymeo：直接完整root tensor、两个原始刚体+fixed joint（不collapse）各做identity/cycle，两后端共8例。保存每例完整原模型、静止M/J与一次扭矩响应、原始q/qd/body_q/body_qd/body_f/H/qdd和独立推进40步；不是回灌Phy轨迹。两种表示的COM、惯量、施力杆臂分别核；Newton姿态归一Euler与Phy Rodrigues在预声明8e-6工程门内比较，不要求bitwise同算法。
 
 164Ruff0；165format1/166format修复；**167 CPU、168 CUDA均RAW0**，各四例160窗口步+4静止扭矩步。169/170最终静态0；171一次保存/源码与formatter AST核0，合计320窗口步+8静止响应。没有阈值修复或CPU fallback。receipt f3-newton-validation-receipt.json SHA256 93b4b0f3815939f7fbebf63a08cbd8a0d6a6a951dc0640d5a370f34623e747b5；场景六窗receipt SHA256 060bba73bae5514a262eb570bad5a4ea36df3445453cbd5495fb65c77f1e74c7。下一步只做本次新wheel的源码外真实共同场景，不重跑既绿套。
+
+## T3 源码外 wheel 与 F3 限域完成
+
+172 --wheel --no-isolation构建RAW0。新wheel 1,180,925 bytes，SHA256 7a7acc2aa6e4ac56936a5913cfb740d411653b2c5ad093f94449e1127663c1e7；八个相关产品文件与包内字节相同。173在全新Temp目录、仅wheel package的PYTHONPATH运行，267个实际Phy模块均来自包内。root-only / floating mimic各512真实受载/卸载步，总1024步RAW0；出生、承载、卸载、完整M/b/实际载荷及末态无载均通过。完整两gzip及integration保存在父 f3-wheel-results，未因源码外转存重跑轨迹。
+
+唯一新wheel receipt为 f3-wheel-acceptance-v2.json，SHA256 dfc6703a3059af728186882ceac6006fddf005f4cbbfdf7124a17099393630b7。v1误将PowerShell属性集合Count枚举为267个1，v2只纠正模块数量元数据；原v1、原始输出、所有hash和物理结果保留，没有重验或产品修复。
+
+**F3 T1/T2/T3在上述普通root、fixed-tool与mimic根域正式完成。** 这补齐root authored坐标与惯性主轴的独立表示、合法完整根tensor装配及真实场景使用。不是所有child非对角URDF、所有关节/闭环、设备浮根或全摩擦通过。后续仍推进C4真实R/P设备树与通用多owner切向；原100g mimic持稳失败、目标软布两初态未放台继续开放。

@@ -166,10 +166,16 @@ def test_rotated_payload_sample_publishes_both_material_faces_and_reversed_keys(
         expected_normal = sign * NORMAL_ROBOT_TO_PAYLOAD
         expected_force = sign * FORCE_ON_PAYLOAD
         np.testing.assert_allclose(load.normal, expected_normal, atol=GEOMETRY_ATOL, rtol=0)
-        np.testing.assert_allclose(detail["normal_world"], expected_normal, atol=GEOMETRY_ATOL, rtol=0)
+        np.testing.assert_allclose(
+            detail["normal_world"], expected_normal, atol=GEOMETRY_ATOL, rtol=0
+        )
         np.testing.assert_allclose(site.force_on_second_n, expected_force, atol=FORCE_ATOL, rtol=0)
-        np.testing.assert_allclose(detail["force_on_second_N"], expected_force, atol=FORCE_ATOL, rtol=0)
-        np.testing.assert_allclose(detail["force_on_first_N"], -expected_force, atol=FORCE_ATOL, rtol=0)
+        np.testing.assert_allclose(
+            detail["force_on_second_N"], expected_force, atol=FORCE_ATOL, rtol=0
+        )
+        np.testing.assert_allclose(
+            detail["force_on_first_N"], -expected_force, atol=FORCE_ATOL, rtol=0
+        )
         assert load.force_n == pytest.approx(2, rel=0, abs=FORCE_ATOL)
         assert site.force_n == pytest.approx(2, rel=0, abs=FORCE_ATOL)
         assert load.gap_m == pytest.approx(-DEPTH, rel=0, abs=GEOMETRY_ATOL)
@@ -193,7 +199,8 @@ def test_rotated_payload_sample_publishes_both_material_faces_and_reversed_keys(
         # material, not just a new local point fitted from the accepted end pose.
         by_key = {}
         for key, side, owner in (
-            (first, "first", record.first_owner), (second, "second", record.second_owner)
+            (first, "first", record.first_owner),
+            (second, "second", record.second_owner),
         ):
             address = getattr(material, side)
             surface = np.asarray(getattr(site.material, f"{side}_point"))
@@ -221,7 +228,9 @@ def test_rotated_payload_sample_publishes_both_material_faces_and_reversed_keys(
             payload_address.local_point_m, PAYLOAD_SURFACE_LOCAL, atol=GEOMETRY_ATOL, rtol=0
         )
         _assert_weights(robot_address.weights, PAD_WEIGHTS, pad_world_vertices, APPLICATION_POINT)
-        _assert_weights(payload_address.weights, PAYLOAD_WEIGHTS, payload_world_vertices, PAYLOAD_SURFACE)
+        _assert_weights(
+            payload_address.weights, PAYLOAD_WEIGHTS, payload_world_vertices, PAYLOAD_SURFACE
+        )
         np.testing.assert_allclose(
             sum(weight * pad_local_vertices[node] for node, weight in robot_address.weights),
             robot_address.local_point_m,
@@ -238,7 +247,9 @@ def test_rotated_payload_sample_publishes_both_material_faces_and_reversed_keys(
             -DEPTH, rel=0, abs=GEOMETRY_ATOL
         )
         # The material surface is on +X; the common force point remains inside it.
-        assert np.asarray(payload_address.local_point_m)[0] == pytest.approx(1 / 8, rel=0, abs=GEOMETRY_ATOL)
+        assert np.asarray(payload_address.local_point_m)[0] == pytest.approx(
+            1 / 8, rel=0, abs=GEOMETRY_ATOL
+        )
         assert float(np.linalg.norm(payload_surface - APPLICATION_POINT)) == pytest.approx(
             DEPTH, rel=0, abs=GEOMETRY_ATOL
         )

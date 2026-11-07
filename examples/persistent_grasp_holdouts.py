@@ -17,10 +17,9 @@ from pathlib import Path
 from time import perf_counter
 
 import numpy as np
+
 import phymeo as ph
-
 from phymeo.solvers.tangent_history import StationKey
-
 
 CASES = ("mimic-box", "mimic-zero-friction", "mimic-overload", "panda-sphere")
 KT = 200.0
@@ -54,7 +53,10 @@ def _public(value):
 
 def _member(kind, value):
     row = dict(schema="persistent-grasp-stream-v1", kind=kind, value=_public(value))
-    raw = json.dumps(row, ensure_ascii=False, allow_nan=False, separators=(",", ":")).encode("utf-8") + b"\n"
+    raw = (
+        json.dumps(row, ensure_ascii=False, allow_nan=False, separators=(",", ":")).encode("utf-8")
+        + b"\n"
+    )
     return gzip.compress(raw, mtime=0)
 
 
@@ -73,11 +75,22 @@ class ObservationArchive:
     written boundary; an inability to restore that boundary is reported.
     """
 
-    def __init__(self, path, *, max_bytes=MAX_COMPRESSED_BYTES, reserve_bytes=RESERVE_BYTES, footer_bytes=FOOTER_BYTES):
+    def __init__(
+        self,
+        path,
+        *,
+        max_bytes=MAX_COMPRESSED_BYTES,
+        reserve_bytes=RESERVE_BYTES,
+        footer_bytes=FOOTER_BYTES,
+    ):
         if not 0 < footer_bytes < reserve_bytes < max_bytes:
             raise ValueError("invalid archive and failure reserve budgets")
         self.path = Path(path)
-        self.max_bytes, self.reserve_bytes, self.footer_bytes = max_bytes, reserve_bytes, footer_bytes
+        self.max_bytes, self.reserve_bytes, self.footer_bytes = (
+            max_bytes,
+            reserve_bytes,
+            footer_bytes,
+        )
         self.bytes_written = self.records_written = 0
         self.pending = None
         self.prefix_intact = True
@@ -124,8 +137,10 @@ class ObservationArchive:
                 self._append(payload)
                 self.pending = None
                 saved = True
-        footer = _member("incomplete", dict(failure, last_record_saved=saved,
-                                            complete_prefix_intact=self.prefix_intact))
+        footer = _member(
+            "incomplete",
+            dict(failure, last_record_saved=saved, complete_prefix_intact=self.prefix_intact),
+        )
         if len(footer) > self.footer_bytes:
             raise ArchiveLimit("failure receipt exceeds its reserved capacity")
         self._append(footer)
@@ -139,15 +154,23 @@ def _validate_record(record, outcome):
     expected = {"schema", "stage", "dt_s", "proposal", "entry", outcome}
     if outcome == "retained":
         expected.add("failure")
-    if not isinstance(record, dict) or set(record) != expected or record["schema"] != PROTOCOL_SCHEMA:
+    if (
+        not isinstance(record, dict)
+        or set(record) != expected
+        or record["schema"] != PROTOCOL_SCHEMA
+    ):
         raise ValueError("unexpected original grasp callback protocol")
     for name in ("entry", outcome):
         if set(record[name]) != PUBLIC_FIELDS:
             raise ValueError("callback must contain all seven public observation fields")
     before, after = record["entry"]["reading"], record[outcome]["reading"]
     if outcome == "accepted":
-        if (after.step_number != before.step_number + 1 or after.load_time_s != before.time_s
-                or after.time_s != before.time_s + record["dt_s"] or record["proposal"] is None):
+        if (
+            after.step_number != before.step_number + 1
+            or after.load_time_s != before.time_s
+            or after.time_s != before.time_s + record["dt_s"]
+            or record["proposal"] is None
+        ):
             raise ValueError("accepted callback has inconsistent physical clocks or request")
     elif _public(record["entry"]) != _public(record["retained"]):
         raise ValueError("rejected callback did not retain the complete entry state")
@@ -155,30 +178,49 @@ def _validate_record(record, outcome):
 
 def _tangent_audit(observation, friction):
     history, receipt, events = observation["history"], observation["receipt"], observation["events"]
-    checks = dict(receipt_present=receipt is not None, material_motion=True, application_motion=True,
-                  material_application=True, energy_residual=True, force_law=True,
-                  coulomb=True, spring_energy=True, actual_work=True, frictionless=True)
+    checks = dict(
+        receipt_present=receipt is not None,
+        material_motion=True,
+        application_motion=True,
+        material_application=True,
+        energy_residual=True,
+        force_law=True,
+        coulomb=True,
+        spring_energy=True,
+        actual_work=True,
+        frictionless=True,
+    )
     if receipt is None:
-        return dict(checks=checks, active_stations=len(history.active), reason="missing accepted receipt")
-    checks.update(material_motion=receipt.material_motion_error_m <= 1e-6,
-                  application_motion=receipt.application_motion_error_m <= 1e-6,
-                  material_application=receipt.material_application_error_m <= 1e-6,
-                  energy_residual=abs(receipt.energy_residual_j) <= 1e-8)
+        return dict(
+            checks=checks, active_stations=len(history.active), reason="missing accepted receipt"
+        )
+    checks.update(
+        material_motion=receipt.material_motion_error_m <= 1e-6,
+        application_motion=receipt.application_motion_error_m <= 1e-6,
+        material_application=receipt.material_application_error_m <= 1e-6,
+        energy_residual=abs(receipt.energy_residual_j) <= 1e-8,
+    )
     work, rows = 0.0, []
     for i, active in enumerate(history.active):
         sample, update = active.sample, active.update
         found = [
-            (site, component) for event in events.active
-            if (event.identity.first, event.identity.second) == (sample.first.shape, sample.second.shape)
+            (site, component)
+            for event in events.active
+            if (event.identity.first, event.identity.second)
+            == (sample.first.shape, sample.second.shape)
             for component in event.components
             for site, material in zip(component.load.sites, component.material, strict=True)
-            if (material.first.local_point_m == sample.first.local_point_m
-                and material.second.local_point_m == sample.second.local_point_m)
+            if (
+                material.first.local_point_m == sample.first.local_point_m
+                and material.second.local_point_m == sample.second.local_point_m
+            )
         ]
         if len(found) != 1:
             raise ValueError("accepted history does not identify one actual current material site")
         site, component = found[0]
-        traction = np.asarray(site.force_on_second_n) - site.force_n * np.asarray(component.load.normal)
+        traction = np.asarray(site.force_on_second_n) - site.force_n * np.asarray(
+            component.load.normal
+        )
         elastic = np.asarray(update.elastic_displacement_m)
         energy = 0.5 * KT * float(elastic @ elastic)
         law_error = float(np.max(abs(traction + KT * elastic)))
@@ -189,16 +231,34 @@ def _tangent_audit(observation, friction):
         checks["coulomb"] &= cone_excess <= 1e-9
         checks["spring_energy"] &= abs(energy - update.stored_energy_j) <= 1e-12
         if friction == 0:
-            checks["frictionless"] &= bool(np.all(traction == 0) and np.all(elastic == 0)
-                                           and update.stored_energy_j == 0 and update.plastic_slip_m == 0)
-        rows.append(dict(identity=active.identity, normal_force_n=site.force_n, traction_n=traction,
-                         elastic_m=elastic, stored_energy_j=update.stored_energy_j,
-                         plastic_slip_m=update.plastic_slip_m, actual_work_j=actual_work,
-                         force_law_error_n=law_error, cone_excess_n=cone_excess))
+            checks["frictionless"] &= bool(
+                np.all(traction == 0)
+                and np.all(elastic == 0)
+                and update.stored_energy_j == 0
+                and update.plastic_slip_m == 0
+            )
+        rows.append(
+            dict(
+                identity=active.identity,
+                normal_force_n=site.force_n,
+                traction_n=traction,
+                elastic_m=elastic,
+                stored_energy_j=update.stored_energy_j,
+                plastic_slip_m=update.plastic_slip_m,
+                actual_work_j=actual_work,
+                force_law_error_n=law_error,
+                cone_excess_n=cone_excess,
+            )
+        )
     checks["actual_work"] = abs(work - receipt.actual_work_j) <= 1e-9
-    return dict(checks=checks, active_stations=len(history.active), stations=rows,
-                ended=history.ended, dropped_spring_energy_j=history.dropped_spring_energy_j,
-                actual_work_j=work)
+    return dict(
+        checks=checks,
+        active_stations=len(history.active),
+        stations=rows,
+        ended=history.ended,
+        dropped_spring_energy_j=history.dropped_spring_energy_j,
+        actual_work_j=work,
+    )
 
 
 class ProtocolRecorder:
@@ -233,15 +293,29 @@ class ProtocolRecorder:
                 self.rejected_records += 1
             self.archive.write(outcome, dict(record=record, tangent_audit=audit))
             self.last_saved = True
-            if (outcome == "accepted" and self._first_loaded_count is not None
-                    and self.accepted_records - self._first_loaded_count == 64 and not self._progress_reported):
+            if (
+                outcome == "accepted"
+                and self._first_loaded_count is not None
+                and self.accepted_records - self._first_loaded_count == 64
+                and not self._progress_reported
+            ):
                 self._progress_reported = True
-                print(json.dumps(dict(event="first-load-plus-64-accepted", elapsed_s=perf_counter() - self._started,
-                                      accepted_steps=record["accepted"]["reading"].step_number,
-                                      active_stations=audit["active_stations"],
-                                      clock_scope="protocol plus passive audit/JSON/gzip/IO")), flush=True)
+                print(
+                    json.dumps(
+                        dict(
+                            event="first-load-plus-64-accepted",
+                            elapsed_s=perf_counter() - self._started,
+                            accepted_steps=record["accepted"]["reading"].step_number,
+                            active_stations=audit["active_stations"],
+                            clock_scope="protocol plus passive audit/JSON/gzip/IO",
+                        )
+                    ),
+                    flush=True,
+                )
         except Exception as error:
-            self.observer_failure = dict(type=type(error).__name__, message=str(error), outcome=outcome)
+            self.observer_failure = dict(
+                type=type(error).__name__, message=str(error), outcome=outcome
+            )
             raise
 
     def accepted(self, record):
@@ -257,18 +331,27 @@ def declaration_arguments(info):
         raise ValueError("original holdout must retain its two four-point pad declarations")
     names = tuple((pad.shape_key.link_name, pad.shape_key.collision_name) for pad in pads)
     if info["case"] == "panda-sphere":
-        expected = (("panda_leftfinger", "panda_leftfinger_pad"), ("panda_rightfinger", "panda_rightfinger_pad"))
+        expected = (
+            ("panda_leftfinger", "panda_leftfinger_pad"),
+            ("panda_rightfinger", "panda_rightfinger_pad"),
+        )
         counter = ((0,), (0,))
     else:
         expected = (("left", "left_rubber"), ("right", "right_rubber"))
         counter = ((0, 1, 2, 3), (4, 5, 6, 7))
     if names != expected:
         raise ValueError("original authored pad order or names changed")
-    return dict(robot=(0, 10), payload_key=info["primary_key"], pads=pads,
-                station_keys={name: tuple(StationKey(0, token) for token in tokens)
-                              for name, tokens in zip(names, TOKENS, strict=True)},
-                counter_features=dict(zip(names, counter, strict=True)),
-                chart_ids={name: (1001 + i, 2001 + i) for i, name in enumerate(names)})
+    return dict(
+        robot=(0, 10),
+        payload_key=info["primary_key"],
+        pads=pads,
+        station_keys={
+            name: tuple(StationKey(0, token) for token in tokens)
+            for name, tokens in zip(names, TOKENS, strict=True)
+        },
+        counter_features=dict(zip(names, counter, strict=True)),
+        chart_ids={name: (1001 + i, 2001 + i) for i, name in enumerate(names)},
+    )
 
 
 def _run_protocol(protocol, scene, controller, info, archive):
@@ -276,8 +359,9 @@ def _run_protocol(protocol, scene, controller, info, archive):
     result, failure, status = None, None, "complete"
     result_archive = False
     try:
-        result = protocol.run_case(scene, controller, info, on_accepted=recorder.accepted,
-                                   on_rejected=recorder.rejected)
+        result = protocol.run_case(
+            scene, controller, info, on_accepted=recorder.accepted, on_rejected=recorder.rejected
+        )
         result_archive = True
         if result["accepted_steps"] != recorder.accepted_records:
             raise ValueError("callback stream does not cover the original accepted-step count")
@@ -285,29 +369,57 @@ def _run_protocol(protocol, scene, controller, info, archive):
         if result["execution_failure"] is not None:
             status = "physics_rejected"
     except Exception as error:
-        status = "observation_incomplete" if recorder.observer_failure is not None or result_archive else "execution_incomplete"
-        failure = dict(type=type(error).__name__, message=str(error), status=status,
-                       observer_failure=recorder.observer_failure)
+        status = (
+            "observation_incomplete"
+            if recorder.observer_failure is not None or result_archive
+            else "execution_incomplete"
+        )
+        failure = dict(
+            type=type(error).__name__,
+            message=str(error),
+            status=status,
+            observer_failure=recorder.observer_failure,
+        )
         if recorder.last_record is not None:
             outcome = recorder.last_kind
-            snapshot = recorder.last_record.get(outcome, {}) if isinstance(recorder.last_record, dict) else {}
+            snapshot = (
+                recorder.last_record.get(outcome, {})
+                if isinstance(recorder.last_record, dict)
+                else {}
+            )
             reading = snapshot.get("reading") if isinstance(snapshot, dict) else None
-            failure.update(last_outcome=outcome, accepted_step=getattr(reading, "step_number", None),
-                           accepted_time_s=getattr(reading, "time_s", None),
-                           physical_state_not_rolled_back=None if reading is None else outcome == "accepted")
+            failure.update(
+                last_outcome=outcome,
+                accepted_step=getattr(reading, "step_number", None),
+                accepted_time_s=getattr(reading, "time_s", None),
+                physical_state_not_rolled_back=None if reading is None else outcome == "accepted",
+            )
         try:
-            if recorder.last_record is not None and not recorder.last_saved and archive.pending is None:
+            if (
+                recorder.last_record is not None
+                and not recorder.last_saved
+                and archive.pending is None
+            ):
                 try:
                     archive.write("observer_failed_record", recorder.last_record)
                 except ArchiveLimit:
                     pass  # stop() uses the reserved space for this complete pending member.
             failure["last_record_saved"] = archive.stop(failure)
         except Exception as archival_error:
-            failure["stop_archive_error"] = dict(type=type(archival_error).__name__, message=str(archival_error))
-    return dict(status=status, original_result=result, failure=failure,
-                accepted_callback_count=recorder.accepted_records, rejected_callback_count=recorder.rejected_records,
-                tangent_checks=recorder.checks, complete_prefix_intact=archive.prefix_intact,
-                compressed_bytes=archive.bytes_written, written_records=archive.records_written)
+            failure["stop_archive_error"] = dict(
+                type=type(archival_error).__name__, message=str(archival_error)
+            )
+    return dict(
+        status=status,
+        original_result=result,
+        failure=failure,
+        accepted_callback_count=recorder.accepted_records,
+        rejected_callback_count=recorder.rejected_records,
+        tangent_checks=recorder.checks,
+        complete_prefix_intact=archive.prefix_intact,
+        compressed_bytes=archive.bytes_written,
+        written_records=archive.records_written,
+    )
 
 
 def _source_manifest():
@@ -322,12 +434,23 @@ def _source_manifest():
                 raise RuntimeError(f"mixed phymeo source: {name}: {filename}")
     head = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root, text=True).strip()
     files = set((root / "src" / "phymeo").rglob("*.py"))
-    files.update(Path(__file__).resolve().parent / (name + ".py") for name in (
-        "robot_force_acquisition", "general_scene_friction", "persistent_grasp_holdouts"))
+    files.update(
+        Path(__file__).resolve().parent / (name + ".py")
+        for name in (
+            "robot_force_acquisition",
+            "general_scene_friction",
+            "persistent_grasp_holdouts",
+        )
+    )
     files.add(root / "tests" / "reference_newton" / "robot" / "mimic_jaws.urdf")
     files.add(Path(_example("robot_force_acquisition").PANDA_URDF))
-    return dict(source_head=head, files=[dict(path=str(path.resolve()),
-                sha256=hashlib.sha256(path.read_bytes()).hexdigest()) for path in sorted(files)])
+    return dict(
+        source_head=head,
+        files=[
+            dict(path=str(path.resolve()), sha256=hashlib.sha256(path.read_bytes()).hexdigest())
+            for path in sorted(files)
+        ],
+    )
 
 
 def run_holdout(case, out_dir):
@@ -349,38 +472,74 @@ def run_holdout(case, out_dir):
             registry = ph.material_stations_from_pads(scene, **declaration)
             scene.enable_coupled_tangent(registry, stiffness_n_per_m=KT)
             reading, geometry = scene.observe_scene()
-            archive.write("inputs", dict(case=case, source=source, original_info=info,
-                                         declaration=declaration, registry=registry, stiffness_n_per_m=KT,
-                                         initial_state=scene.state, initial_reading=reading, initial_geometry=geometry,
-                                         archive_limit_bytes=MAX_COMPRESSED_BYTES,
-                                         failure_reserve_bytes=RESERVE_BYTES))
+            archive.write(
+                "inputs",
+                dict(
+                    case=case,
+                    source=source,
+                    original_info=info,
+                    declaration=declaration,
+                    registry=registry,
+                    stiffness_n_per_m=KT,
+                    initial_state=scene.state,
+                    initial_reading=reading,
+                    initial_geometry=geometry,
+                    archive_limit_bytes=MAX_COMPRESSED_BYTES,
+                    failure_reserve_bytes=RESERVE_BYTES,
+                ),
+            )
             summary = _run_protocol(protocol, scene, controller, info, archive)
     except Exception as error:
-        summary = dict(status="setup_or_archive_incomplete", failure=dict(type=type(error).__name__, message=str(error)),
-                       original_result=None, tangent_checks={}, compressed_bytes=archive.bytes_written,
-                       complete_prefix_intact=archive.prefix_intact)
+        summary = dict(
+            status="setup_or_archive_incomplete",
+            failure=dict(type=type(error).__name__, message=str(error)),
+            original_result=None,
+            tangent_checks={},
+            compressed_bytes=archive.bytes_written,
+            complete_prefix_intact=archive.prefix_intact,
+        )
         try:
             archive.stop(summary["failure"])
             summary["compressed_bytes"] = archive.bytes_written
         except Exception as archival_error:
-            summary["failure"]["stop_archive_error"] = dict(type=type(archival_error).__name__, message=str(archival_error))
+            summary["failure"]["stop_archive_error"] = dict(
+                type=type(archival_error).__name__, message=str(archival_error)
+            )
     finally:
         archive.close()
     elapsed = perf_counter() - started
     source_after = _source_manifest()
-    summary.update(schema="persistent-grasp-holdout-v1", case=case, elapsed_s=elapsed,
-                   source=source, source_after=source_after, source_unchanged=source_after == source,
-                   archive_path=str(archive.path.resolve()), max_compressed_bytes=MAX_COMPRESSED_BYTES,
-                   scope="HOST original acquisition protocol with explicit kt=200 pad stations",
-                   clock_scope="configuration/protocol/passive audit/JSON/gzip/IO; source hashing excluded")
+    summary.update(
+        schema="persistent-grasp-holdout-v1",
+        case=case,
+        elapsed_s=elapsed,
+        source=source,
+        source_after=source_after,
+        source_unchanged=source_after == source,
+        archive_path=str(archive.path.resolve()),
+        max_compressed_bytes=MAX_COMPRESSED_BYTES,
+        scope="HOST original acquisition protocol with explicit kt=200 pad stations",
+        clock_scope="configuration/protocol/passive audit/JSON/gzip/IO; source hashing excluded",
+    )
     original = summary.pop("original_result")
     # The complete original result is already a full gzip member, not a changed gate set.
     summary["original_checks"] = None if original is None else original["checks"]
-    summary["original_outcome"] = None if original is None else {
-        key: value for key, value in original.items() if key not in {"trace", "events", "checks"}}
-    summary["passed"] = bool(summary["status"] == "complete" and summary["source_unchanged"]
-                             and original is not None and all(original["checks"].values())
-                             and all(summary["tangent_checks"].values()))
+    summary["original_outcome"] = (
+        None
+        if original is None
+        else {
+            key: value
+            for key, value in original.items()
+            if key not in {"trace", "events", "checks"}
+        }
+    )
+    summary["passed"] = bool(
+        summary["status"] == "complete"
+        and summary["source_unchanged"]
+        and original is not None
+        and all(original["checks"].values())
+        and all(summary["tangent_checks"].values())
+    )
     with (output / "summary.json").open("x", encoding="utf-8") as stream:
         json.dump(summary, stream, ensure_ascii=False, allow_nan=False, indent=2)
     return summary
@@ -392,15 +551,17 @@ def main():
     parser.add_argument("--out-dir", type=Path, required=True)
     args = parser.parse_args()
     summary = run_holdout(args.case, args.out_dir)
-    print(json.dumps({key: summary[key] for key in ("case", "status", "passed", "elapsed_s", "compressed_bytes")}), flush=True)
+    print(
+        json.dumps(
+            {
+                key: summary[key]
+                for key in ("case", "status", "passed", "elapsed_s", "compressed_bytes")
+            }
+        ),
+        flush=True,
+    )
     raise SystemExit(0 if summary["passed"] else 1)
 
 
 if __name__ == "__main__":
     main()
-
-
-
-
-
-

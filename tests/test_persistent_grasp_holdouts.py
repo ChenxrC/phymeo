@@ -15,10 +15,16 @@ from types import SimpleNamespace
 import numpy as np
 import pytest
 
-
-CHECK_NAMES = ("actual_bilateral_acquisition", "expected_holding_outcome", "actual_release",
-               "primary_supported_after_release", "second_body_has_real_support", "actuator_caps",
-               "free_body_impulses", "no_execution_failure")
+CHECK_NAMES = (
+    "actual_bilateral_acquisition",
+    "expected_holding_outcome",
+    "actual_release",
+    "primary_supported_after_release",
+    "second_body_has_real_support",
+    "actuator_caps",
+    "free_body_impulses",
+    "no_execution_failure",
+)
 
 
 def _driver():
@@ -43,6 +49,7 @@ def test_original_accepted_callback_io_error_keeps_real_step_and_owned_record():
     scene, controller, info = original.make_case("mimic-box")
     accepted, rejected = [], []
     with scene:
+
         def stop_after_accepted(record):
             driver._validate_record(record, "accepted")
             accepted.append(record)
@@ -55,8 +62,13 @@ def test_original_accepted_callback_io_error_keeps_real_step_and_owned_record():
             raise OSError("passive archive failed after real acceptance")
 
         with pytest.raises(OSError, match="after real acceptance"):
-            original.run_case(scene, controller, info, on_accepted=stop_after_accepted,
-                              on_rejected=rejected.append)
+            original.run_case(
+                scene,
+                controller,
+                info,
+                on_accepted=stop_after_accepted,
+                on_rejected=rejected.append,
+            )
         assert len(accepted) == 1 and rejected == []
         assert scene.observe().step_number == 1
         assert scene.observe().time_s == info["dt"]
@@ -64,16 +76,27 @@ def test_original_accepted_callback_io_error_keeps_real_step_and_owned_record():
         declarations = driver.declaration_arguments(info)
         assert declarations["pads"] == info["pads"]
         assert tuple(k.token for keys in declarations["station_keys"].values() for k in keys) == (
-            101, 107, 131, 149, 211, 239, 263, 307)
+            101,
+            107,
+            131,
+            149,
+            211,
+            239,
+            263,
+            307,
+        )
 
 
 @pytest.mark.parametrize("failure_at", ["step", "propose"])
-def test_original_rejected_callback_preserves_request_and_full_retained_state(failure_at, monkeypatch):
+def test_original_rejected_callback_preserves_request_and_full_retained_state(
+    failure_at, monkeypatch
+):
     driver = _driver()
     original = driver._example("robot_force_acquisition")
     scene, controller, info = original.make_case("mimic-box")
     accepted, rejected, requests = [], [], []
     with scene:
+
         def reject_step(dt, *, actions, **kwargs):
             assert dt == info["dt"]
             requests.append(actions[10])
@@ -85,8 +108,9 @@ def test_original_rejected_callback_preserves_request_and_full_retained_state(fa
         monkeypatch.setattr(scene, "step", reject_step)
         if failure_at == "propose":
             monkeypatch.setattr(controller, "propose", reject_propose)
-        result = original.run_case(scene, controller, info, on_accepted=accepted.append,
-                                   on_rejected=rejected.append)
+        result = original.run_case(
+            scene, controller, info, on_accepted=accepted.append, on_rejected=rejected.append
+        )
         assert accepted == [] and len(rejected) == 1
         record = rejected[0]
         driver._validate_record(record, "retained")
@@ -94,7 +118,8 @@ def test_original_rejected_callback_preserves_request_and_full_retained_state(fa
         assert record["failure"]["accepted_step"] == 0
         assert record["failure"]["accepted_time_s"] == 0
         assert record["failure"]["message"] == (
-            "frozen protocol rejection" if failure_at == "step" else "frozen proposal rejection")
+            "frozen protocol rejection" if failure_at == "step" else "frozen proposal rejection"
+        )
         if failure_at == "step":
             assert len(requests) == 1
             assert driver._public(record["proposal"].command) == driver._public(requests[0])
@@ -112,6 +137,7 @@ def test_rejected_callback_io_failure_is_not_reclassified_or_retried(monkeypatch
     scene, controller, info = original.make_case("mimic-box")
     calls = []
     with scene:
+
         def reject(*args, **kwargs):
             calls.append("physical-attempt")
             raise ValueError("original physical error")
@@ -131,8 +157,11 @@ def test_rejected_callback_io_failure_is_not_reclassified_or_retried(monkeypatch
 def test_archive_roundtrip_retains_complete_public_arrays_and_forbids_reuse(tmp_path):
     driver = _driver()
     path = tmp_path / "owned.jsonl.gz"
-    payload = dict(q=np.array([1 / 8, -1 / 16], dtype=np.float64), keys=((0, 101), (0, 307)),
-                   request=dict(feedforward=None, target_velocity=np.zeros(2)))
+    payload = dict(
+        q=np.array([1 / 8, -1 / 16], dtype=np.float64),
+        keys=((0, 101), (0, 307)),
+        request=dict(feedforward=None, target_velocity=np.zeros(2)),
+    )
     archive = driver.ObservationArchive(path)
     try:
         archive.write("input", payload)
@@ -144,7 +173,9 @@ def test_archive_roundtrip_retains_complete_public_arrays_and_forbids_reuse(tmp_
     saved = _rows(path)
     assert [row["kind"] for row in saved] == ["input", "result"]
     assert saved[0]["value"] == driver._public(payload)
-    assert saved[1]["value"] == driver._public(dict(checks={name: True for name in CHECK_NAMES}, trace=[payload]))
+    assert saved[1]["value"] == driver._public(
+        dict(checks={name: True for name in CHECK_NAMES}, trace=[payload])
+    )
     before = path.read_bytes()
     with pytest.raises(FileExistsError):
         driver.ObservationArchive(path)
@@ -157,8 +188,9 @@ def test_archive_cap_keeps_pending_complete_record_and_reports_stop(tmp_path):
     record_size = len(driver._member("accepted", payload))
     footer = 8192
     cap, reserve = 2 * record_size + footer, record_size + footer
-    archive = driver.ObservationArchive(tmp_path / "capacity.jsonl.gz", max_bytes=cap,
-                                        reserve_bytes=reserve, footer_bytes=footer)
+    archive = driver.ObservationArchive(
+        tmp_path / "capacity.jsonl.gz", max_bytes=cap, reserve_bytes=reserve, footer_bytes=footer
+    )
     try:
         archive.write("accepted", payload)
         with pytest.raises(driver.ArchiveLimit, match="ordinary observation budget"):
@@ -232,9 +264,15 @@ class _Receipt:
 
 
 def _snapshot(step):
-    return dict(state=dict(q=np.array([0.0, 0.0])), reading=_Reading(step, step * 0.001, None if step == 0 else 0.0),
-                geometry=dict(time_s=step * 0.001), history=_History(), receipt=_Receipt(),
-                events=SimpleEvents(), last_frame=None)
+    return dict(
+        state=dict(q=np.array([0.0, 0.0])),
+        reading=_Reading(step, step * 0.001, None if step == 0 else 0.0),
+        geometry=dict(time_s=step * 0.001),
+        history=_History(),
+        receipt=_Receipt(),
+        events=SimpleEvents(),
+        last_frame=None,
+    )
 
 
 @dataclass(frozen=True)
@@ -243,13 +281,23 @@ class SimpleEvents:
 
 
 def _record(accepted=True):
-    result = dict(schema="grasp-protocol-observation-v1", stage="acquiring", dt_s=0.001,
-                  proposal=dict(command=dict(target_q=(0.0, 0.001), feedforward=None)), entry=_snapshot(0))
+    result = dict(
+        schema="grasp-protocol-observation-v1",
+        stage="acquiring",
+        dt_s=0.001,
+        proposal=dict(command=dict(target_q=(0.0, 0.001), feedforward=None)),
+        entry=_snapshot(0),
+    )
     if accepted:
         result["accepted"] = _snapshot(1)
     else:
         result["retained"] = _snapshot(0)
-        result["failure"] = dict(type="ValueError", message="real boundary rejection", accepted_step=0, accepted_time_s=0.0)
+        result["failure"] = dict(
+            type="ValueError",
+            message="real boundary rejection",
+            accepted_step=0,
+            accepted_time_s=0.0,
+        )
     return result
 
 
@@ -258,9 +306,13 @@ def test_driver_calls_original_protocol_once_and_preserves_its_gate_set(accepted
     driver = _driver()
     calls, scene, controller, info = [], object(), object(), {"friction": 0.65}
     record = _record(accepted)
-    original = dict(checks={name: True for name in CHECK_NAMES}, trace=[dict(original="entire row")],
-                    events=[dict(original="entire event")], accepted_steps=int(accepted),
-                    execution_failure=None if accepted else record["failure"])
+    original = dict(
+        checks={name: True for name in CHECK_NAMES},
+        trace=[dict(original="entire row")],
+        events=[dict(original="entire event")],
+        accepted_steps=int(accepted),
+        execution_failure=None if accepted else record["failure"],
+    )
     if not accepted:
         original["checks"]["no_execution_failure"] = False
 
@@ -272,7 +324,9 @@ def test_driver_calls_original_protocol_once_and_preserves_its_gate_set(accepted
 
     archive = driver.ObservationArchive(tmp_path / "protocol.jsonl.gz")
     try:
-        summary = driver._run_protocol(SimpleNamespace(run_case=run), scene, controller, info, archive)
+        summary = driver._run_protocol(
+            SimpleNamespace(run_case=run), scene, controller, info, archive
+        )
     finally:
         archive.close()
     assert calls == ["original protocol"]
@@ -305,7 +359,9 @@ def test_driver_observer_write_failure_does_not_retry_accepted_protocol(tmp_path
 
     monkeypatch.setattr(archive, "write", fail_one)
     try:
-        summary = driver._run_protocol(SimpleNamespace(run_case=run), object(), object(), {"friction": 0.65}, archive)
+        summary = driver._run_protocol(
+            SimpleNamespace(run_case=run), object(), object(), {"friction": 0.65}, archive
+        )
     finally:
         archive.close()
     assert calls == ["one accepted step"]
@@ -345,7 +401,9 @@ def test_callback_schema_failure_preserves_original_error_and_raw_record(tmp_pat
 
     archive = driver.ObservationArchive(tmp_path / "schema-error.jsonl.gz")
     try:
-        summary = driver._run_protocol(SimpleNamespace(run_case=run), object(), object(), {"friction": 0.65}, archive)
+        summary = driver._run_protocol(
+            SimpleNamespace(run_case=run), object(), object(), {"friction": 0.65}, archive
+        )
     finally:
         archive.close()
     assert summary["status"] == "observation_incomplete"
@@ -353,4 +411,3 @@ def test_callback_schema_failure_preserves_original_error_and_raw_record(tmp_pat
     assert summary["failure"]["message"] == "unexpected original grasp callback protocol"
     assert summary["failure"]["accepted_step"] is None
     assert _rows(archive.path)[0]["value"] == driver._public(malformed)
-

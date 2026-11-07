@@ -79,3 +79,7 @@ python examples/persistent_grasp_holdouts.py --case panda-sphere --out-dir <fres
 这四窗仍 UNEXECUTED；唯一执行 owner 仍是父。作者只交上述两个 NEW 产品/工具路径、一个 NEW 短协议测试及本报告更新，T1 原测试与全部旧 shared 不再改动。原 100 g 失败尚未被新的持稳窗口关闭。
 
 父后续 `257` 已返回 **3 passed**：两真实资产的 pad material metadata 正控与 Panda 首次真实正法向载荷、失败回滚、同命令重试均通过；此前 mimic 同节点已在 `251` 通过，未重跑。修复保留 `_pad_points` 默认四返回，仅给实际 `RobotSceneContacts` 增可选 metadata，原 normal/point/force/tolerance 未改。由此关闭此次 sampled-pad 权重桥缺口；不等于原四个完整抓持窗已通过。T2 driver/13短协议实例及四长窗仍待父执行。作者最终保持纯 authoring，无项目执行槽。
+
+## 父短协议与相邻载荷验证（2026-11-07）
+
+父已全文审阅并导入driver/短测试c03ee19、1057e01、ecc31ce；原robot独立只读审阅未发现blocker。270/271首静态保留，272/273仅imports/format，274/275通过。276统一串行短组 **19 passed / 5.58 s / RAW0**：其中本片13协议/IO测试、两种键顺序的真实旋转非立方payload材料/2 N载荷/COM力矩/运动专项通过；另4个C5事务节点独立计入C5。两个新载荷专项独立有理权重与真实step，不调用新权重helper生成预期。四个完整抓取窗仍未运行，不能据短组声称原100 g保持门关闭。原八门、kt200、几何、质量、dt、夹力与获取/抬升/保持/释放协议不变。

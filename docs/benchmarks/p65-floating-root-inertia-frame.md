@@ -45,3 +45,9 @@ aa34e67先提交固定测试。root-only偏置工具与浮动mimic完整非对�
 154首Ruff报测试分号，155首format报排版，156格式修复；158发现测试局部名l的E741，159当时format通过。只将四个Name节点改为angular_momentum，160审计确认与157源码AST除此完全同、九份tested源before/after与当前产品同；161Ruff通过，162要求长变量换行，163仅formatter修复。未重跑同源物理窗口。六份完整gzip和固定6目录成员、每窗全部帧/载荷时刻/动量误差已一次核，receipt为artifacts/p65-generic-collision-20261107-01/f3-scene-validation-receipt.json。
 
 当前 T1/T2/共同场景物理通过；独立Newton CPU/CUDA原生对照及新wheel源码外运行仍待，F3尚未整体关闭。该窗口记录真实能量但不宣称接触全过程严格能量守恒，沿既定工程动量门5e-4，不扩大为所有浮根/接触模型。
+
+## T3 独立 Newton 1.7 对照
+
+新增 floating_root_inertia_reference.py 不import Phymeo：直接完整root tensor、两个原始刚体+fixed joint（不collapse）各做identity/cycle，两后端共8例。保存每例完整原模型、静止M/J与一次扭矩响应、原始q/qd/body_q/body_qd/body_f/H/qdd和独立推进40步；不是回灌Phy轨迹。两种表示的COM、惯量、施力杆臂分别核；Newton姿态归一Euler与Phy Rodrigues在预声明8e-6工程门内比较，不要求bitwise同算法。
+
+164Ruff0；165format1/166format修复；**167 CPU、168 CUDA均RAW0**，各四例160窗口步+4静止扭矩步。169/170最终静态0；171一次保存/源码与formatter AST核0，合计320窗口步+8静止响应。没有阈值修复或CPU fallback。receipt f3-newton-validation-receipt.json SHA256 93b4b0f3815939f7fbebf63a08cbd8a0d6a6a951dc0640d5a370f34623e747b5；场景六窗receipt SHA256 060bba73bae5514a262eb570bad5a4ea36df3445453cbd5495fb65c77f1e74c7。下一步只做本次新wheel的源码外真实共同场景，不重跑既绿套。

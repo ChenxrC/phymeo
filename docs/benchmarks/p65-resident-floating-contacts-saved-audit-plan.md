@@ -50,3 +50,17 @@ CLI：`python -I -B SCRIPT --manifest ABS --output ABS_NEW_DIR`。manifest 固�
 Native 每端 F01/F03 各40，完整 raw contacts/shape/material/filter、FREE state/COM velocity、body_solve_origin/raw RNEA/decoded wrench、full M/J、独立轨迹、checks 与 pin source 均保存；零 matched 外力。失配和 observer/IO 失败保持原状态，不冒 native 通过。Wheel 两模式分别 W4 40+21、两个真实 bank capacity/retry、最多2 alignment 步，以及 F03 40；逐行完整物理记录、安装成员/loaded origins/关闭资源。F03 不额外声称有 replay/capacity。
 
 资源上限：每 gzip 64 MiB 压缩、每 payload 256 MiB 解压、全部累计 2 GiB、8192 文件、JSON 深度96；metadata 单件16 MiB。只在内存有界读解压，不落解压副本，不删除证据。原文件 SHA/压缩与原 bytes 均记录。未执行 observer 不报告 pass；最终返回 audit coverage 与原生产者状态，不能替代物理验收。
+
+## 交接 schema 与执行前注意
+
+- 本批 `--output` 是 **全新目录**，固定写 `audit.json`；C9 老 auditor 的同名参数是新文件，本脚本明确不沿用那一输出容器。全部 evidence 只读。
+- Run 基础字段：`id/kind/mode/directory/config/head/raw_exit/source_sha256`；`directory/config` 为绝对原路径。config 的相对 `files` 从原 `start.cwd` 解析，不能从 auditor 当前目录解析。完整原 source 集合与 config、start、final、snapshot bytes 一致。
+- Pytest 附加 `selected/completed/failed/payload_roots/basetemp`。`selected` 用代码固定 `.node` 字符串按原 CLI 顺序，CLI 可文件/函数/参数节点及明确 `--deselect`，不接受不透明 `-k`；`completed` 是实际前缀，`failed` 无错时 null。`payload_roots` 明确每个会保存的完成/首失败节点的原 test tmp 路径。首失败的 `failed_payloads` 只能是该节点固定文件名子集，可以空。完整 gzip inventory 仍不能有漏报/多余。20 无保存节点无 payload_root。
+- `qualifies_completed[node]={prior_run,reason}` 只用于确有历史完成的必要复验；每次原记录全验且按原 source 集合单列。未重复的节点不填该键。不同 source 的 union 不命名同源通过。
+- `kind=native|wheel` 附加 `payload_directory`（绑定原 CLI 绝对 `--output`）。native `mode=cpu|cuda:0`，wheel `mode=interpret|cuda`。native 再给 `native_source_sha256`，完整13份 pinned 源的相对名→SHA；它们与 native 自带 `source_snapshot`/before/after 对齐。成功 native 固定两个 gzip；成功 wheel 固定一个 gzip。失败运行明确已有 `failed_payloads` 子集，只保存原状态，不增加通过覆盖。
+- `kind=historical` 可登记原前置/观察器错误，须 `reason`；如存在原 gzip，用显式 `payloads` 逐件有界读取，覆盖计数为0。不能用此类型把 required 节点补绿。
+- 最低成功源码集在 `REQUIRED_SOURCE` 明列：本批两专项/两个独立参考、实际 test helper、contact plan/bridge、浮根 packet/projection、原 C9 storage/kernel/bounds 与最终 `_tyx_floating_numeric.py`。F06 要包含真实 URDF；mixed/old-body 包含旧 affine 事务 helper。父仍在原 config 完整列真正依赖，其余也逐字节绑定，不只验这个最低子集。
+- 数据边界：partial node 的所有 bytes、字段与 nonfinite wrapper 原样保存并类型扫描，不施成功门掩盖原失败；不会把 `_audit` 未返回的半行补成完整 oracle。成功记录比较已有保存真值、实际帧及完整重放；不重新算 M/J/几何/轨迹。正式 producer 修正若改变 schema，必须按确切源码调整 observer并保首错，不能按输出删除字段凑过。
+- 成本为逐文件 JSON 解码/结构与已有数值比较、原 byte/hash/ZIP成员读核；逐件有界读取、不收集全批 payload；W矩阵跨文件比较只留完整世界帧的摘要指纹。无物理核/全量解压落盘。wheel 当前安装文件只读核与原归档/保存成员一致，任何漂移报告observer不一致。
+
+本文件与脚本尚未执行、静态检查或格式化。没有新增物理 pass；由父之后独占队列运行。作者不修改既交 C9/C10/source/tests/native/wheel，也不读取其运行中的输出。

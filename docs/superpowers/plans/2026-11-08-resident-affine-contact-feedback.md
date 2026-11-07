@@ -1,6 +1,6 @@
 # C7 固定根 affine-mimic 常驻接触反馈
 
-状态：**TEST_AUTHORING_AUTHORIZED / PRODUCT_PENDING**，2026-11-08。持续任务，无08:00截止。C6产品48eeb89的HOST50、解释74分组、CUDA74、相邻15和同次112完整保存记录已通过，源码外wheel两backend已完成，C6正式限域接受；C7产品改动与执行继续由父唯一持有。本文冻结[提案](../../development/p65-resident-affine-contact-proposal.md)第1–6节的有限功能与案例，不将其手推当实测。
+状态：**PRODUCT_IMPLEMENTED / FIRST_NODE_VERIFIED / FULL_MATRIX_PENDING**，2026-11-08。持续任务，无08:00截止。C6产品48eeb89的HOST50、解释74分组、CUDA74、相邻15和同次112完整保存记录已通过，源码外wheel两backend已完成，C6正式限域接受；C7产品改动与执行继续由父唯一持有。本文冻结[提案](../../development/p65-resident-affine-contact-proposal.md)第1–6节的有限功能与案例，不将其手推当实测。
 
 ## 目标与复用
 
@@ -50,3 +50,16 @@ ordinary容量状态保7；affine原7约束残差/8全方程残差保留，新�
 ### C6完成与C7诊断字段补足（2026-11-08，C7执行前）
 
 C6已正式限域接受，见[报告](../../benchmarks/p65-resident-tree-contacts.md#2026-11-08-父执行与正式限域接受)；C7仍仅NEW作者阶段，原RD首test checkpoint043c200已提交但未执行。精确affine receipt.diagnostics字段固定为 `coordinate_kind='affine'`、`full_dof_count`、`independent_dof_count`、`graph_token`、`projection_matrix`、`offset_vector`、`constraint_rows`；完整实际full/reduced mechanics放 `affine_diagnostic`，复用原owned AffineTreeDiagnostic类型及字段，同次candidate真实数据且swap前构造。原C6通用诊断字段语义保留。公共tree_diagnostics只作同次实际输出的一致性核，独立case/full-component oracle仍是物理真值来源，不据产品输出制造预期。
+
+### C7 首节点接入（2026-11-08，仍待完整矩阵）
+
+父产品 `37897e3` 已把真实 full N 接触载荷加入原 affine 投影之前，薄提取原 project/K solve/expand/finalize/retain；普通树仍走原 full solve。两个 storage 各自保存 row/scratch，所有回执和原 AffineTreeDiagnostic 在唯一 swap 前构造；affine 容量码9与原约束7/全方程8分开。
+
+- 359 首有效 RED：原 asset/FK/binding/真实3N成立，只在 ordinary-only 公开入口失败。
+- 368 原首节点 interpret：1 passed/1.32s/RAW_EXIT0。
+- 369 同节点实际 CUDA：1 passed/3.97s/RAW_EXIT0。独立 a=1、full a=(1,2)、原行 lambda=-1 与接触力共同通过。
+- 363 首有效 exact Ruff0；364 exact format1；365仅两个产品文件格式化；366/367四产品文件最终 Ruff/format0。NEW test 的最终格式化留待完整作者交接，不改原子任务 WIP。
+- 360 在项目执行前的进程 guard 遇 CIM 内存错误，未启动 Ruff、无 RAW_EXIT；361/362 的嵌套作业数组遗漏文件选择，分别为只读全仓 format-check1/Ruff0，标记 INVALID_SCOPE_READONLY，不冒充有效专项静态检查。原命令/快照/失败/修正都在 artifacts/p65-generic-collision-20261107-01；source before/after 无改写。
+- 原 RD 继续仅四 NEW 完整矩阵/consumer/report；原 robot 新增只读 C7 四接缝审阅，不执行/改源码。父仍唯一项目执行 owner。
+
+本次只完成第一个端到端节点。负gain/fanout/chain/RP交叉、40步、PD延迟、卸载重入、混合/故障/完整保存审计、新wheel源码外仍待验收，不授予整个 C7 或 P6.5 完成。C6原“affine入口明确拒绝”是旧能力边界历史，已由C7正控取代；不重跑该旧拒绝断言或C6整套。

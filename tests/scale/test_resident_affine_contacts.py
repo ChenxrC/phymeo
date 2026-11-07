@@ -301,7 +301,7 @@ def _row_order(asset, data):
 
 
 def _audit_sites(receipt, diagnostic, sources):
-    full_velocity = np.asarray(receipt.entry_state.full_velocity, dtype=float)
+    full_velocity = np.asarray(getattr(receipt.entry_state, "full_velocity", receipt.entry_state.velocity), dtype=float)
     wrench = np.zeros_like(receipt.law_wrench_fp64, dtype=float)
     static, total_work, total_material_work = {}, 0.0, 0.0
     for item in receipt.sites:

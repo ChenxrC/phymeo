@@ -122,6 +122,17 @@ class _FloatingContactView:
     root_xyz: tuple = (0.0, 0.0, 0.0)
     root_xyzw: tuple = (0.0, 0.0, 0.0, 1.0)
     is_floating: bool = True
+    authored_asset: FloatingRobotAsset | None = None
+
+    def authored_to_model_points(self, name, points_m):
+        """Map original named material into the actual moving body, including root."""
+        convert = getattr(self.authored_asset, "authored_to_model_points", None)
+        if convert is not None:
+            return convert(name, points_m)
+        points = np.asarray(points_m, dtype=float)
+        if points.ndim not in (1, 2) or points.shape[-1] != 3 or not np.isfinite(points).all():
+            raise ValueError("authored points must be finite 3-vectors")
+        return points.copy()
 
 
 @dataclass(frozen=True, eq=False)
@@ -200,6 +211,7 @@ class FloatingRobotParticipant:
             (self.asset.root_link, *self.asset.link_names),
             collisions,
             self.asset.collision_model,
+            authored_asset=self.asset,
         )
         body_remap, next_body = {}, 0
         for body in sorted({shape.key.body for shape in self.asset.collision_model.shapes}):

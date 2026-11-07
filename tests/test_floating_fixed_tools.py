@@ -14,7 +14,6 @@ from phymeo.builders.floating_urdf import load_floating_urdf
 from phymeo.dynamics.floating_robot import FloatingRobotState, floating_kinematics
 from phymeo.solvers.floating_tree import FloatingRobotInputs, step_floating_robot
 
-
 ASSETS = Path(__file__).parent / "fixtures" / "urdf"
 COMPOSITE = ASSETS / "floating_fixed_composite.urdf"
 PROBE = ASSETS / "floating_fixed_probe.urdf"
@@ -33,9 +32,7 @@ def test_a01_public_opt_in_keeps_real_root_mass_and_point_load_response():
     with pytest.raises(ValueError, match="fixed"):
         load_floating_urdf(COMPOSITE, gravity=(0, 0, 0))
 
-    asset = load_floating_urdf(
-        COMPOSITE, gravity=(0, 0, 0), collapse_fixed_joints=True
-    )
+    asset = load_floating_urdf(COMPOSITE, gravity=(0, 0, 0), collapse_fixed_joints=True)
     assert asset.joint_names == () and asset.link_names == ()
     assert asset.model.children is None and asset.model.body_count == 1
     np.testing.assert_allclose(asset.model.root.inverse_mass, [1 / 3], atol=ATOL, rtol=0)
@@ -55,9 +52,7 @@ def test_a01_public_opt_in_keeps_real_root_mass_and_point_load_response():
     )
     result = step_floating_robot(asset.model, initial, applied, H)
     assert result.report.accepted
-    np.testing.assert_allclose(
-        result.state.v, [0, H, 0, 0, 0, H * 12 / 13], atol=ATOL, rtol=0
-    )
+    np.testing.assert_allclose(result.state.v, [0, H, 0, 0, 0, H * 12 / 13], atol=ATOL, rtol=0)
     theta = H * H * 12 / 13
     np.testing.assert_allclose(
         result.state.q,
@@ -74,11 +69,10 @@ def test_a01_public_opt_in_keeps_real_root_mass_and_point_load_response():
         rtol=0,
     )
     geometry = floating_kinematics(asset.model, result.state)
-    np.testing.assert_allclose(
-        geometry.com_position[0], [1 / 12, H * H, 0], atol=ATOL, rtol=0
-    )
+    np.testing.assert_allclose(geometry.com_position[0], [1 / 12, H * H, 0], atol=ATOL, rtol=0)
     np.testing.assert_array_equal(initial.q, _root_state().q)
     np.testing.assert_array_equal(initial.v, np.zeros(6))
+
 
 # F02 constants come from the five original components, never from loaded model
 # arrays. F03 is a passive elastic contact window, not a prescribed withdrawal.
@@ -205,7 +199,9 @@ def test_a02_probe_preserves_five_mass_geometry_full_inertia_and_tool_work(
         np.testing.assert_allclose(geometry.com_position[i], center, atol=ATOL, rtol=0)
         np.testing.assert_allclose(
             geometry.rotation[i] @ np.diag(observed_inertia[i]) @ geometry.rotation[i].T,
-            tensor, atol=ATOL, rtol=0,
+            tensor,
+            atol=ATOL,
+            rtol=0,
         )
     for name, (point, orient, owner) in frames.items():
         assert asset.sites[name].body_index == owner
@@ -216,18 +212,16 @@ def test_a02_probe_preserves_five_mass_geometry_full_inertia_and_tool_work(
         np.testing.assert_allclose(
             geometry.position[owner] + geometry.rotation[owner] @ mapped,
             point + orient @ np.array([1 / 32, -1 / 64, 1 / 128]),
-            atol=ATOL, rtol=0,
+            atol=ATOL,
+            rtol=0,
         )
     terms = floating_dynamics_terms(asset.model, state, FloatingRobotInputs.zeros(2))
     np.testing.assert_allclose(terms.mass_matrix, expected_mass, atol=1e-11, rtol=0)
     expected_energy = sum(
-        0.5 * m * np.dot(j @ state.v, j @ state.v)
-        + 0.5 * (a @ state.v) @ tensor @ (a @ state.v)
+        0.5 * m * np.dot(j @ state.v, j @ state.v) + 0.5 * (a @ state.v) @ tensor @ (a @ state.v)
         for _, m, _, tensor, j, a in parts
     )
-    assert 0.5 * state.v @ terms.mass_matrix @ state.v == pytest.approx(
-        expected_energy, abs=1e-11
-    )
+    assert 0.5 * state.v @ terms.mass_matrix @ state.v == pytest.approx(expected_energy, abs=1e-11)
     local = np.array([[1 / 32, -1 / 64, 0.0]])
     point = frames["tool"][0] + frames["tool"][1] @ local[0]
     expected_j, expected_a = point_j(point, 2)
@@ -259,6 +253,7 @@ def test_a02_probe_preserves_five_mass_geometry_full_inertia_and_tool_work(
 
 def test_a04_asset_constructor_rejects_duplicate_shape_keys_and_fake_root_frame():
     from dataclasses import replace
+
     from phymeo.builders._floating_fixed_asset import FloatingFixedSite
 
     asset = load_floating_urdf(COMPOSITE, gravity=(0, 0, 0), collapse_fixed_joints=True)
@@ -310,8 +305,10 @@ def test_a01_composite_quarter_second_point_force_follows_independent_recurrence
         np.testing.assert_allclose(current.rotation[0], expected_rotation, atol=1e-11, rtol=0)
         np.testing.assert_allclose(current.com_position[0], expected_com, atol=1e-11, rtol=0)
         np.testing.assert_allclose(
-            out.state.q[:3], expected_com - expected_rotation @ [1 / 12, 0, 0],
-            atol=1e-11, rtol=0,
+            out.state.q[:3],
+            expected_com - expected_rotation @ [1 / 12, 0, 0],
+            atol=1e-11,
+            rtol=0,
         )
         np.testing.assert_allclose(out.state.v[:3], rotation @ [0, step * H, 0], atol=ATOL, rtol=0)
         np.testing.assert_allclose(out.state.v[3:6], rotation @ [0, 0, spin], atol=1e-11, rtol=0)
@@ -392,6 +389,7 @@ def test_a04_massless_original_root_is_valid_when_its_fixed_group_has_mass(tmp_p
 
 def test_a04_owned_sites_outputs_and_source_arrays_cannot_move_an_asset():
     from dataclasses import replace
+
     from phymeo.builders._floating_fixed_asset import FloatingFixedSite
 
     asset = load_floating_urdf(COMPOSITE, gravity=(0, 0, 0), collapse_fixed_joints=True)
@@ -427,6 +425,7 @@ def test_a04_owned_sites_outputs_and_source_arrays_cannot_move_an_asset():
 
 def test_a02_curved_tool_world_orientation_uses_its_authored_fixed_frame(tmp_path):
     from xml.etree import ElementTree as ET
+
     from phymeo.dynamics.rotation import quaternion_matrix
 
     doc = ET.parse(COMPOSITE)
@@ -443,7 +442,9 @@ def test_a02_curved_tool_world_orientation_uses_its_authored_fixed_frame(tmp_pat
     fixed = np.array([[1.0, 0, 0], [0, 0, -1], [0, 1, 0]])
     np.testing.assert_allclose(
         quaternion_matrix(np.array([pose.body_orientation_xyzw]))[0],
-        CYCLE @ fixed, atol=ATOL, rtol=0,
+        CYCLE @ fixed,
+        atol=ATOL,
+        rtol=0,
     )
     np.testing.assert_allclose(pose.start[0], q[:3] + CYCLE @ [1 / 4, 0, 0], atol=ATOL, rtol=0)
 
@@ -542,16 +543,25 @@ def test_a03_reversed_registration_and_world_covariance_preserve_real_response(c
             np.testing.assert_allclose(
                 np.asarray(a[field]) @ CYCLE.T + shift, c[field], atol=1e-10, rtol=0
             )
-        for field in ("body_com_velocity_m_s", "ball_velocity_m_s", "ball_force_n", "ball_impulse_ns"):
+        for field in (
+            "body_com_velocity_m_s",
+            "ball_velocity_m_s",
+            "ball_force_n",
+            "ball_impulse_ns",
+        ):
             np.testing.assert_allclose(np.asarray(a[field]) @ CYCLE.T, c[field], atol=1e-10, rtol=0)
-        np.testing.assert_allclose(np.asarray(a["v"])[6:], np.asarray(c["v"])[6:], atol=1e-10, rtol=0)
+        np.testing.assert_allclose(
+            np.asarray(a["v"])[6:], np.asarray(c["v"])[6:], atol=1e-10, rtol=0
+        )
         assert a["events"] == b["events"] == c["events"]
 
 
 def _unchanged(scene, reading, geometry, events):
     current, current_geometry = scene.observe_scene()
     assert (current.step_number, current.time_s, current.load_time_s) == (
-        reading.step_number, reading.time_s, reading.load_time_s
+        reading.step_number,
+        reading.time_s,
+        reading.load_time_s,
     )
     assert scene.contact_events is events
     for address in reading.robots:
@@ -566,9 +576,10 @@ def _unchanged(scene, reading, geometry, events):
 
 def test_a04_late_material_failure_has_no_state_event_or_clock_commit(monkeypatch):
     example = _example()
-    with example.build_contact_scene(gap_m=-1 / 1024) as scene, example.build_contact_scene(
-        gap_m=-1 / 1024
-    ) as fresh:
+    with (
+        example.build_contact_scene(gap_m=-1 / 1024) as scene,
+        example.build_contact_scene(gap_m=-1 / 1024) as fresh,
+    ):
         old, geometry = scene.observe_scene()
         events = scene.contact_events
 
@@ -610,7 +621,11 @@ def test_a04_second_participant_limit_failure_rolls_back_first_loaded_tool():
             np.array([0, 0, 0, 0, 0, 0, 0, rate], dtype=float),
         )
         builder.add_floating_urdf(
-            owner, PROBE, robot_state=state, kp=[0, 0], kd=[0, 0],
+            owner,
+            PROBE,
+            robot_state=state,
+            kp=[0, 0],
+            kd=[0, 0],
             loader=example.load_tools,
         )
     builder.pair(10, 20, None)
@@ -648,11 +663,17 @@ def test_a01_root_fixed_tool_contact_has_real_root_reaction_and_material_owner(t
     state = FloatingRobotState(np.r_[shift, quaternion], np.zeros(6))
     builder = ContactSceneBuilder(gravity=(0, 0, 0))
     builder.add_floating_urdf(
-        10, COMPOSITE, robot_state=state, kp=[], kd=[],
+        10,
+        COMPOSITE,
+        robot_state=state,
+        kp=[],
+        kd=[],
         loader=example.load_tools,
     )
     builder.add_sphere(
-        20, 1 / 16, mass=1,
+        20,
+        1 / 16,
+        mass=1,
         position=shift + rotation @ [1 / 4, 1 / 8 - 1 / 1024, 0],
     )
     builder.pair(10, 20, RobotContactMaterial(2048, 0, 0))
@@ -665,9 +686,12 @@ def test_a01_root_fixed_tool_contact_has_real_root_reaction_and_material_owner(t
         np.testing.assert_allclose(
             row.acceleration_full,
             np.r_[rotation @ [0, -2 / 3, 0], rotation @ [0, 0, -8 / 13]],
-            atol=1e-10, rtol=0,
+            atol=1e-10,
+            rtol=0,
         )
-        np.testing.assert_allclose(out.rigid.velocity[0], H * (rotation @ [0, 2, 0]), atol=ATOL, rtol=0)
+        np.testing.assert_allclose(
+            out.rigid.velocity[0], H * (rotation @ [0, 2, 0]), atol=ATOL, rtol=0
+        )
         np.testing.assert_allclose(3 * row.v[:3] + out.rigid.velocity[0], 0, atol=ATOL, rtol=0)
         np.testing.assert_array_equal(row.fixed_root_contact_wrench, np.zeros(6))
         events = scene.contact_events
@@ -678,13 +702,20 @@ def test_a01_root_fixed_tool_contact_has_real_root_reaction_and_material_owner(t
         for component in record.components:
             for site, material in zip(component.load.sites, component.material, strict=True):
                 local = material.first if record.first_owner.body == 10 else material.second
-                world = site.material.first_point if record.first_owner.body == 10 else site.material.second_point
-                np.testing.assert_allclose(shift + rotation @ local.local_point_m, world, atol=ATOL, rtol=0)
+                world = (
+                    site.material.first_point
+                    if record.first_owner.body == 10
+                    else site.material.second_point
+                )
+                np.testing.assert_allclose(
+                    shift + rotation @ local.local_point_m, world, atol=ATOL, rtol=0
+                )
                 assert local.local_point_m[0] == pytest.approx(1 / 4, abs=ATOL)
 
 
 def test_a04_fixed_descendant_cannot_be_rebound_to_another_valid_body():
     from dataclasses import replace
+
     from phymeo.builders._floating_fixed_asset import FloatingFixedSite
 
     asset = load_floating_urdf(PROBE, gravity=(0, 0, 0), collapse_fixed_joints=True)

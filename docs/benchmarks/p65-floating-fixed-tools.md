@@ -52,3 +52,13 @@ python examples/floating_fixed_tools.py --dt 0.00048828125 --out <新的绝对�
 h/2用0.000244140625；反向/变换分别用 --reverse-registration / --transformed。这些是待执行命令，作者没有运行。
 
 本树没有合并父；父旧 loader/contact_view、最终style、必要兼容及wheel仍由父负责。当前交付为 CODE_READY_TESTS_PENDING，不是功能已验收。
+
+## 父本地集成验证（2026-11-07）
+
+状态：LOCAL_VALIDATED / NEWTON_AND_WHEEL_PENDING。父通过显式 `collapse_fixed_joints=True` 接入通用浮根 loader，并让原 contact view 将 authored 材料坐标转换到实际移动 owner 的局部坐标；普通资产仍为 identity，原完整动力学、碰撞力律及一次共同发布保持。固定工具真正贡献根/子组质量、COM、惯量和力矩，不添加虚构关节。
+
+原首入口行为 RED 为 run69；本轮 run86 首 Ruff 发现6项 import 排列，run87 首 format 为3文件。run88/89仅排列 import 与格式；run93/94最终5文件全部通过。功能首次 run90：27 passed / 1.04s（3窗口断言未选）；run91：3 passed / 11.90s（27组件测试未选），同一模块 fixture 执行 h、h/2、反向登记与整体变换4条轨迹，共2560步；run92：4个受影响旧节点展开10 passed / 0.59s。全部功能 RAW_EXIT=0，无数值修复或阈值变动。
+
+F01解析惯量、首步/连续外载及真实root工具接触，F02三姿态五部件质量/J/M/虚功，F03真实出生/受载/反弹离开、全部实际站点力矩/功率/冲量、h收敛与协变，F04非法装配、迟发失败与另一参与者拒步/重试均按预声明断言通过。run91保存命令、源码快照和实际pytest结果；原fixture只在内存保存完整轨迹，不能把它说成已归档逐帧JSON。新阶段源码外 wheel 将通过公开例程保存完整窗口，避免为补文件重跑这套已绿专项。
+
+证据根：`artifacts/p65-generic-collision-20261107-01/86-f1-first-ruff` 至 `94-f1-final-format`。这仍是 HOST fixed-tool 浮根支持；mimic、真实非对角root惯量、浮根区间CCD、设备浮根求解未由本片解决。Newton独立未折叠参照、交叉审阅与新阶段wheel验证尚待完成。

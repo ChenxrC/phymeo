@@ -2,7 +2,7 @@
 
 The explicit loader preserves authored link frames and root COM inertia. It
 shares the existing strict URDF geometry and scalar-joint parser. Fixed-joint
-folding, mimic and inertia requiring a new principal-axis frame are not implicit.
+folding is explicit; mimic and a new root principal-axis frame remain unsupported.
 """
 
 from dataclasses import dataclass
@@ -65,14 +65,20 @@ class FloatingRobotAsset:
         return result
 
 
-def load_floating_urdf(path: str | Path, *, gravity=(0.0, 0.0, -9.81)) -> FloatingRobotAsset:
+def load_floating_urdf(
+    path: str | Path, *, gravity=(0.0, 0.0, -9.81), collapse_fixed_joints=False
+) -> FloatingRobotAsset:
     """Load local URDF 1.0 with positive massive root and bounded scalar children.
 
     Root-only assets are valid. All COM inertia tensors must be diagonal after
     rotating the authored inertial frame into its link frame. Legal unsupported
-    fixed/mimic joints fail explicitly; the ordinary fixed-base loader is unchanged.
+    fixed joints require collapse_fixed_joints=True; mimic still fails explicitly.
+    Fixed members then contribute complete group mass/inertia and material frames.
+    The ordinary fixed-base loader is unchanged.
     Lengths/masses/inertia are SI. Visual elements do not become collision shapes.
     """
+    if not isinstance(collapse_fixed_joints, (bool, np.bool_)):
+        raise ValueError("collapse_fixed_joints must be True or False")
     try:
         robot = ET.parse(path).getroot()
     except ET.ParseError as exc:
@@ -87,7 +93,7 @@ def load_floating_urdf(path: str | Path, *, gravity=(0.0, 0.0, -9.81)) -> Floati
     joints = robot.findall("joint")
     for joint in joints:
         label = _name(joint, "name", "joint")
-        if joint.get("type") == "fixed":
+        if joint.get("type") == "fixed" and not collapse_fixed_joints:
             raise ValueError(f"joint {label!r}: floating fixed-joint folding is not implemented")
         if joint.find("mimic") is not None:
             raise ValueError(f"joint {label!r}: floating mimic is not implemented")
@@ -101,6 +107,10 @@ def load_floating_urdf(path: str | Path, *, gravity=(0.0, 0.0, -9.81)) -> Floati
         _attributes(entries[0], {"name"}, f"link {root!r}")
         _children(entries[0], {"inertial", "collision", "visual"}, f"link {root!r}")
         links, order, inbound = {root: entries[0]}, [], {}
+    if collapse_fixed_joints:
+        from ._floating_fixed_asset import folded_floating_robot
+
+        return folded_floating_robot(name, root, links, order, inbound, gravity, path)
     mass, center, inertia = _inertial(links[root], root)
     root_model = RigidBodyModel(
         np.array([1.0 / mass]), inertia[None, :], np.asarray(gravity, dtype=float)

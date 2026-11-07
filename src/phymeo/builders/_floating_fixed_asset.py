@@ -90,10 +90,7 @@ class FoldedFloatingRobotAsset(FloatingRobotAsset):
             if name not in sites or sites[name].body_index != body:
                 raise ValueError("floating root/child authored frame has the wrong physical owner")
         root_site = sites[self.root_link]
-        if (
-            any(root_site.local_position_m)
-            or any(root_site.local_orientation_xyzw[:3])
-        ):
+        if any(root_site.local_position_m) or any(root_site.local_orientation_xyzw[:3]):
             raise ValueError("floating root frame must retain its original origin and axes")
         collisions = tuple(self.collisions)
         keys = tuple(col.shape.key for col in collisions)
@@ -103,7 +100,9 @@ class FoldedFloatingRobotAsset(FloatingRobotAsset):
         for col in collisions:
             site = sites.get(col.link_name)
             if site is None or site.body_index != col.link_index + 1:
-                raise ValueError("floating collider and authored material site have different owners")
+                raise ValueError(
+                    "floating collider and authored material site have different owners"
+                )
             if col.shape.key.world != 0 or col.shape.key.body != site.body_index:
                 raise ValueError("floating asset shape key must identify its physical body group")
             if model_shapes.get(col.shape.key) != col.shape:
@@ -125,9 +124,10 @@ class FoldedFloatingRobotAsset(FloatingRobotAsset):
         points = np.asarray(raw, dtype=np.float64)
         with np.errstate(over="raise", invalid="raise"):
             try:
-                result = np.asarray(site.local_position_m) + points @ _rotation(
-                    site.local_orientation_xyzw
-                ).T
+                result = (
+                    np.asarray(site.local_position_m)
+                    + points @ _rotation(site.local_orientation_xyzw).T
+                )
             except FloatingPointError as exc:
                 raise ValueError("authored material transform exceeds FP64 range") from exc
         if not np.isfinite(result).all():
@@ -175,9 +175,7 @@ def _root_group(parts, root):
             tensor = np.zeros((3, 3))
             for m, point, inertia in parts:
                 delta = point - center
-                tensor += inertia + m * (
-                    (delta @ delta) * np.eye(3) - np.outer(delta, delta)
-                )
+                tensor += inertia + m * ((delta @ delta) * np.eye(3) - np.outer(delta, delta))
     except (FloatingPointError, OverflowError) as exc:
         raise ValueError(f"{root}: root group mass or inertia exceeds FP64 range") from exc
     if not np.isfinite(mass) or not np.isfinite(center).all() or not np.isfinite(tensor).all():
@@ -192,8 +190,11 @@ def _root_group(parts, root):
     if np.max(np.abs(products)) > 32 * np.finfo(float).eps:
         raise ValueError(f"{root}: non-diagonal root group inertia is not supported")
     return principal_inertia(
-        mass, center, np.array([0.0, 0.0, 0.0, 1.0]),
-        np.diag(tensor.diagonal()), f"root group {root!r}",
+        mass,
+        center,
+        np.array([0.0, 0.0, 0.0, 1.0]),
+        np.diag(tensor.diagonal()),
+        f"root group {root!r}",
     )
 
 
@@ -236,8 +237,13 @@ def folded_floating_robot(name, root, links, order, incoming, gravity, path):
         parent = parents[i]
         before = np.eye(3) if parent < 0 else axes[parent].T
         native.append(
-            (kind, before @ position, matrix_quaternion(before @ rotation @ axes[i]),
-             axes[i].T @ axis, bounds)
+            (
+                kind,
+                before @ position,
+                matrix_quaternion(before @ rotation @ axes[i]),
+                axes[i].T @ axis,
+                bounds,
+            )
         )
     sites, colliders, ordinal = {}, [], defaultdict(int)
     for link, (owner, position, rotation) in frames.items():

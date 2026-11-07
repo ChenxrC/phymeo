@@ -5,20 +5,19 @@ The probe URDF is a declared input asset; no target state is written after build
 The probe performs a passive elastic encounter and separates, not a grasp.
 """
 
+import json
 from argparse import ArgumentParser
 from hashlib import sha256
-import json
 from pathlib import Path
 
 import numpy as np
 
+from phymeo import FloatingRobotCommand
 from phymeo.builders.floating_urdf import load_floating_urdf
 from phymeo.constraints.robot_contact import RobotContactMaterial
 from phymeo.dynamics.floating_robot import FloatingRobotState, floating_kinematics
-from phymeo import FloatingRobotCommand
 from phymeo.runtime.contact_scene import ContactSceneBuilder
 from phymeo.runtime.robot_scene import RobotCommand
-
 
 FIXTURES = Path(__file__).resolve().parents[1] / "tests" / "fixtures" / "urdf"
 WORLD, ROBOT, BALL = 7, 101, 205
@@ -43,19 +42,26 @@ def build_contact_scene(*, transformed=False, reverse=False, fixture_dir=FIXTURE
 
     def robot():
         builder.add_floating_urdf(
-            ROBOT, Path(fixture_dir) / "floating_fixed_probe.urdf",
-            robot_state=state, kp=[0, 0], kd=[0, 0], effort_limit=[16, 32],
-            loader=load_tools, world=WORLD,
+            ROBOT,
+            Path(fixture_dir) / "floating_fixed_probe.urdf",
+            robot_state=state,
+            kp=[0, 0],
+            kd=[0, 0],
+            effort_limit=[16, 32],
+            loader=load_tools,
+            world=WORLD,
         )
 
     def ball():
         builder.add_sphere(
-            BALL, 1 / 16, mass=1,
+            BALL,
+            1 / 16,
+            mass=1,
             position=shift + rotation @ np.array([1, 1 / 8 + gap_m, 0]),
             world=WORLD,
         )
 
-    for add in ((ball, robot) if reverse else (robot, ball)):
+    for add in (ball, robot) if reverse else (robot, ball):
         add()
     builder.pair(ROBOT, BALL, RobotContactMaterial(2048, 0, 0), world=WORLD)
     return builder.build(backend="host")
@@ -74,21 +80,26 @@ def _site_rows(reading):
     rows = []
     for pair in reading.loads.contacts:
         for site in pair.sites:
-            rows.append({
-                "first": _key(pair.first), "second": _key(pair.second),
-                "normal": list(pair.normal), "gap_m": pair.gap_m,
-                "fraction": site.fraction, "force_n": site.force_n,
-                "force_on_second_n": list(site.force_on_second_n),
-                "application_first_m": list(site.application_point_first_m),
-                "application_second_m": list(site.application_point_second_m),
-                "material_first_m": list(site.material.first_point),
-                "material_second_m": list(site.material.second_point),
-                "first_weights": list(site.material.first_weights),
-                "second_weights": list(site.material.second_weights),
-                "rate_m_per_s": site.rate_m_per_s, "power_w": site.power_w,
-            })
+            rows.append(
+                {
+                    "first": _key(pair.first),
+                    "second": _key(pair.second),
+                    "normal": list(pair.normal),
+                    "gap_m": pair.gap_m,
+                    "fraction": site.fraction,
+                    "force_n": site.force_n,
+                    "force_on_second_n": list(site.force_on_second_n),
+                    "application_first_m": list(site.application_point_first_m),
+                    "application_second_m": list(site.application_point_second_m),
+                    "material_first_m": list(site.material.first_point),
+                    "material_second_m": list(site.material.second_point),
+                    "first_weights": list(site.material.first_weights),
+                    "second_weights": list(site.material.second_weights),
+                    "rate_m_per_s": site.rate_m_per_s,
+                    "power_w": site.power_w,
+                }
+            )
     return rows
-
 
 
 def _physical_totals(masses, diagonal, geometry, rigid, row):
@@ -106,6 +117,7 @@ def _physical_totals(masses, diagonal, geometry, rigid, row):
     kinetic += 0.5 * np.dot(rigid.velocity[row], rigid.velocity[row])
     kinetic += 0.5 * ball_inertia * np.dot(rigid.angular_velocity[row], rigid.angular_velocity[row])
     return linear, angular, float(kinetic)
+
 
 def run_contact_window(*, dt_s=1 / 2048, transformed=False, reverse=False, fixture_dir=FIXTURES):
     """Return complete public per-step state/loads for the fixed quarter-second input."""
@@ -136,9 +148,7 @@ def run_contact_window(*, dt_s=1 / 2048, transformed=False, reverse=False, fixtu
         for _ in range(round(DURATION / dt_s)):
             reading = scene.step(dt_s, actions={ROBOT: zero_drive()})
             row = reading.robots[WORLD, ROBOT]
-            geometry = floating_kinematics(
-                asset.model, FloatingRobotState(row.q, row.v)
-            )
+            geometry = floating_kinematics(asset.model, FloatingRobotState(row.q, row.v))
             entry_geometry = floating_kinematics(
                 asset.model, FloatingRobotState(row.entry_q, row.entry_v)
             )
@@ -159,44 +169,63 @@ def run_contact_window(*, dt_s=1 / 2048, transformed=False, reverse=False, fixtu
             for record in events.active:
                 for component in record.components:
                     for item in component.material:
-                        materials.append({
-                            "first_kind": record.first_owner.kind,
-                            "second_kind": record.second_owner.kind,
-                            "first_owner": [record.first_owner.world, record.first_owner.body, record.first_owner.link_index],
-                            "first_local_m": item.first.local_point_m,
-                            "second_owner": [record.second_owner.world, record.second_owner.body, record.second_owner.link_index],
-                            "second_local_m": item.second.local_point_m,
-                        })
-            frames.append({
-                "step": reading.step_number,
-                "time_s": reading.time_s, "load_time_s": reading.load_time_s,
-                "q": row.q.tolist(), "v": row.v.tolist(),
-                "entry_q": row.entry_q.tolist(), "entry_v": row.entry_v.tolist(),
-                "drive_effort": row.drive_effort.tolist(),
-                "contact_effort_full": row.contact_effort_full.tolist(),
-                "link_wrenches_world": row.link_wrenches_world.tolist(),
-                "entry_body_com_m": entry_geometry.com_position.tolist(),
-                "body_com_m": geometry.com_position.tolist(),
-                "body_com_velocity_m_s": geometry.com_velocity.tolist(),
-                "body_rotation_world": geometry.rotation.tolist(),
-                "body_omega_rad_s": geometry.angular_velocity.tolist(),
-                "entry_ball_position_m": reading.entry_rigid.position[ball_row].tolist(),
-                "entry_ball_velocity_m_s": reading.entry_rigid.velocity[ball_row].tolist(),
-                "entry_ball_omega_rad_s": reading.entry_rigid.angular_velocity[ball_row].tolist(),
-                "ball_position_m": reading.rigid.position[ball_row].tolist(),
-                "ball_velocity_m_s": reading.rigid.velocity[ball_row].tolist(),
-                "ball_omega_rad_s": reading.rigid.angular_velocity[ball_row].tolist(),
-                "ball_force_n": force.tolist(), "ball_torque_nm": torque.tolist(),
-                "ball_impulse_ns": accumulated_impulse.tolist(),
-                "linear_momentum_residual_ns": residual.tolist(),
-                "angular_momentum_residual_nms": angular_residual.tolist(),
-                "kinetic_energy_j": kinetic,
-                "contact_potential_j": sum(pair.potential_j for pair in reading.loads.contacts),
-                "sites": sites, "materials": materials,
-                "events": [event.kind for event in events.events],
-                "event_sample_time_s": events.sample_time_s,
-                "event_commit_time_s": events.commit_time_s,
-            })
+                        materials.append(
+                            {
+                                "first_kind": record.first_owner.kind,
+                                "second_kind": record.second_owner.kind,
+                                "first_owner": [
+                                    record.first_owner.world,
+                                    record.first_owner.body,
+                                    record.first_owner.link_index,
+                                ],
+                                "first_local_m": item.first.local_point_m,
+                                "second_owner": [
+                                    record.second_owner.world,
+                                    record.second_owner.body,
+                                    record.second_owner.link_index,
+                                ],
+                                "second_local_m": item.second.local_point_m,
+                            }
+                        )
+            frames.append(
+                {
+                    "step": reading.step_number,
+                    "time_s": reading.time_s,
+                    "load_time_s": reading.load_time_s,
+                    "q": row.q.tolist(),
+                    "v": row.v.tolist(),
+                    "entry_q": row.entry_q.tolist(),
+                    "entry_v": row.entry_v.tolist(),
+                    "drive_effort": row.drive_effort.tolist(),
+                    "contact_effort_full": row.contact_effort_full.tolist(),
+                    "link_wrenches_world": row.link_wrenches_world.tolist(),
+                    "entry_body_com_m": entry_geometry.com_position.tolist(),
+                    "body_com_m": geometry.com_position.tolist(),
+                    "body_com_velocity_m_s": geometry.com_velocity.tolist(),
+                    "body_rotation_world": geometry.rotation.tolist(),
+                    "body_omega_rad_s": geometry.angular_velocity.tolist(),
+                    "entry_ball_position_m": reading.entry_rigid.position[ball_row].tolist(),
+                    "entry_ball_velocity_m_s": reading.entry_rigid.velocity[ball_row].tolist(),
+                    "entry_ball_omega_rad_s": reading.entry_rigid.angular_velocity[
+                        ball_row
+                    ].tolist(),
+                    "ball_position_m": reading.rigid.position[ball_row].tolist(),
+                    "ball_velocity_m_s": reading.rigid.velocity[ball_row].tolist(),
+                    "ball_omega_rad_s": reading.rigid.angular_velocity[ball_row].tolist(),
+                    "ball_force_n": force.tolist(),
+                    "ball_torque_nm": torque.tolist(),
+                    "ball_impulse_ns": accumulated_impulse.tolist(),
+                    "linear_momentum_residual_ns": residual.tolist(),
+                    "angular_momentum_residual_nms": angular_residual.tolist(),
+                    "kinetic_energy_j": kinetic,
+                    "contact_potential_j": sum(pair.potential_j for pair in reading.loads.contacts),
+                    "sites": sites,
+                    "materials": materials,
+                    "events": [event.kind for event in events.events],
+                    "event_sample_time_s": events.sample_time_s,
+                    "event_commit_time_s": events.commit_time_s,
+                }
+            )
         final = scene.observe()
         final_geometry = scene.geometry()
         tip_key = scene.shape_key(ROBOT, "tool", "tip_box")
@@ -204,7 +233,8 @@ def run_contact_window(*, dt_s=1 / 2048, transformed=False, reverse=False, fixtu
         # Preserve actual final vertices; no final nearest-feature guess is a force.
         loaded = [frame for frame in frames if any(site["force_n"] > 0 for site in frame["sites"])]
         summary = {
-            "steps": len(frames), "time_s": final.time_s,
+            "steps": len(frames),
+            "time_s": final.time_s,
             "first_positive_load_time_s": None if not loaded else loaded[0]["load_time_s"],
             "last_positive_load_time_s": None if not loaded else loaded[-1]["load_time_s"],
             "peak_force_n": max(
@@ -216,7 +246,9 @@ def run_contact_window(*, dt_s=1 / 2048, transformed=False, reverse=False, fixtu
             "initial_kinetic_energy_j": initial_energy,
             "final_kinetic_energy_j": frames[-1]["kinetic_energy_j"],
             "final_angular_momentum_residual_nms": frames[-1]["angular_momentum_residual_nms"],
-            "max_angular_momentum_residual_nms": max(float(np.linalg.norm(f["angular_momentum_residual_nms"])) for f in frames),
+            "max_angular_momentum_residual_nms": max(
+                float(np.linalg.norm(f["angular_momentum_residual_nms"])) for f in frames
+            ),
             "ball_impulse_ns": accumulated_impulse.tolist(),
             "max_linear_momentum_residual_ns": max_linear_residual,
             "final_tool_vertices_m": tip_points.tolist(),
@@ -227,16 +259,25 @@ def run_contact_window(*, dt_s=1 / 2048, transformed=False, reverse=False, fixtu
     fixture = Path(fixture_dir) / "floating_fixed_probe.urdf"
     return {
         "protocol": {
-            "backend": "host", "dt_s": dt_s, "duration_s": DURATION,
-            "transformed": transformed, "reverse_registration": reverse,
-            "world": WORLD, "robot": ROBOT, "ball": BALL,
-            "gravity": [0, 0, 0], "external": "zero", "drive": "explicit zero",
+            "backend": "host",
+            "dt_s": dt_s,
+            "duration_s": DURATION,
+            "transformed": transformed,
+            "reverse_registration": reverse,
+            "world": WORLD,
+            "robot": ROBOT,
+            "ball": BALL,
+            "gravity": [0, 0, 0],
+            "external": "zero",
+            "drive": "explicit zero",
             "law": {"stiffness_n_per_m": 2048, "damping": 0, "friction": 0},
             "initial_side_gap_m": 1 / 1024,
-            "fixture": str(fixture.resolve()), "fixture_sha256": sha256(fixture.read_bytes()).hexdigest(),
+            "fixture": str(fixture.resolve()),
+            "fixture_sha256": sha256(fixture.read_bytes()).hexdigest(),
             "scope": "passive elastic encounter; no grasp, pin, reset, or floating CCD claim",
         },
-        "summary": summary, "frames": frames,
+        "summary": summary,
+        "frames": frames,
     }
 
 
@@ -251,7 +292,9 @@ def main():
     if not args.out.is_absolute() or args.out.exists():
         parser.error("--out must be a new absolute file")
     result = run_contact_window(
-        dt_s=args.dt, transformed=args.transformed, reverse=args.reverse_registration,
+        dt_s=args.dt,
+        transformed=args.transformed,
+        reverse=args.reverse_registration,
         fixture_dir=args.fixture_dir,
     )
     args.out.parent.mkdir(parents=True, exist_ok=True)

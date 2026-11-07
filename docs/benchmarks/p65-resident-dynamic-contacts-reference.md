@@ -1,6 +1,6 @@
 # C8 双动态驻留接触：Newton 参考与源码外消费者
 
-状态：**CODE_AUTHORING / UNEXECUTED**。2026-11-08，按父冻结 [C8 计划](../superpowers/plans/2026-11-08-resident-tree-dynamic-contact-feedback.md) 编写；没有运行 import、collection、数值、pytest、静态、build、安装或设备程序。本文不是验收记录，以下计数均是预声明执行规模。
+状态：**父原生参照已验证，公开wheel消费者待执行**。原作者交接记录如下，实际执行补充在末节。2026-11-08，按父冻结 [C8 计划](../superpowers/plans/2026-11-08-resident-tree-dynamic-contact-feedback.md) 编写；没有运行 import、collection、数值、pytest、静态、build、安装或设备程序。本文不是验收记录，以下计数均是预声明执行规模。
 
 ## 精确文件与边界
 
@@ -25,7 +25,7 @@
 
 模型用真实 `ModelBuilder.begin_world/add_link/add_joint_prismatic|revolute/add_articulation/add_shape_sphere`，两个 native articulation 位于同一明确 world；这与 D01/D03 的 block-diagonal forest 物理一致，但不声称验证 D02 共享祖先 cross-M 或 affine 图。`CollisionPipeline.collide` 在真实入态产生行，`SolverFeatherstone.step` 原生施加双方载荷、独立积分，只有初始化调用 `eval_fk`；之后不写 q/v、不上传 Phymeo 状态。
 
-默认原生力读数来自本机 pin 的 `solver.body_f_ext`：`solver_featherstone.py:591–604`先拷贝 public 外载，`:717–746`叠加原生 contact，随后 `:767–775`进入原 articulation 动力学。本通道 public `state.body_f` 为零，因此该 scratch 是本次真实接触合载荷；同时保存真实 `body_qd_fk`（同次接触用 COM 线速率+世界角速率）。这是有源码绑定的 private **读回**，不是第二求解器、接触力注入或通用稳定观测 API。Featherstone `SUPPORTED_OBSERVABLES` 当前只含 BODY_PARENT_F；`Contacts.rigid_contact_force` 声明为 unused，脚本原样保存但不把它当力传感器。
+实际原生力读数同时保留 step 后 `solver.body_f_ext` 原始 scratch、同次 `body_q_com` 与 `body_solve_origin`。pin 的 `eval_rigid_tau` 会将原COM/world外力原位转为负的solve-origin wrench（kernels.py:1498–1503），所以后置记录必须解码 F=-rawF、tauCOM=-rawTau-(COM-origin)×F。固定P/R根的origin确为0；此事实不能外推浮根。初版作者误将后置scratch标为COM力，父419的首失败与修复见末节。仍保存同次接触用 `body_qd_fk`；这是有源码绑定的private只读观测，不是接触力注入。`Contacts.rigid_contact_force` 未被Featherstone使用，不作为力传感器。
 
 每步保存所有有效 raw contact 行的 shape/body owner、point/offset/margin/normal、材料 override、原 model metadata、原 state 全 q/qd/body pose/twist/force、原 native 合载荷及 qdd/H（若存在），并从这些行独立重建两侧真实 COM 力矩。raw normal 为 A→B；effective point0=support0+margin0*n，point1=support1−margin1*n。世界角矩合计零只验接触力本身；D03 固定轴的支座约束不被冒作自由刚体总动量守恒。
 
@@ -72,3 +72,11 @@
 `--forbidden-checkout`只做路径排除、可省略；没有该目录内容依赖。要求确切local wheel URL、实际archive SHA256、全部installed/wheel成员与字节相同，允许规范许可的空 `archive_info`；所有loaded Phymeo模块origin/spec/search path都必须在指定新wheel target并匹配wheel字节。`tyx-compute`使用实际distribution名。依赖安装/构建及外层source parity由父唯一串行执行。
 
 结果写完整 `resident-dynamic-contacts.trace.json.gz`（未压缩上限256 MiB）和 `summary.json`，保存异常前已完成或保留状态，IO failure与物理拒步不同。gzip先写临时文件再替换，摘要绑定gzip字节数/hash；没有按输出挑选成功帧。本文件未执行，Ruff/format/两backend/Newton/native实际对齐与新wheel结果全部待父记录。
+
+## 父原生参照执行与观测修复
+
+父418在初始metadata保存时遇到Newton特殊filter-pair集合不可JSON序列化，未推进物理步。改用pin公开shape_collision_filter_pairs_array()保存完整数组，并纳入model.py来源快照。父419原生CPU已完成D01/D03各40步：所有运动、FK、gap、双方owner与40步独立轨迹门通过，两个力观察门因后置scratch误标而失败；原RAW_EXIT=1及完整数据保持。
+
+父独立补件421仅读取原80步和精确pin源码快照，按固定P/R根的零solve-origin完整解码，全部80行COM载荷、合力/合矩与原独立期望通过；同时确认除此两个观察门外全部原门为真。420首次因Windows默认GBK读UTF8源码失败，421只补显式UTF8，新增物理步0。补件c8-native-cpu-decode-audit-v1.json SHA61962304e4dcef1e7a3e18f1da918707840d7d8d3dc4fc399c826ae4d81a7af1；不改419的失败标记或旧错误标签。
+
+父422使用明确raw/solve-origin/entry-COM/decoded-COM双记录的修复driver，真实CUDA原生D01/D03各40步全部通过，RAW_EXIT=0、源前后同。两个backend共160个实际原生步，没有matched-law回退、CPU重复物理或提高容差。首冻结2N与两COM矩均对齐。423/424修复driver Ruff/format通过。公开wheel消费者及最终同源审计仍待执行，不能据此宣布整个C8或Newton普遍等价。

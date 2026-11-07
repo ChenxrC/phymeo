@@ -92,6 +92,7 @@ MODEL_FIELDS = (
 )
 SOURCES = (
     "_src/sim/builder.py",
+    "_src/sim/model.py",
     "_src/sim/state.py",
     "_src/sim/articulation.py",
     "_src/sim/collide.py",
@@ -322,6 +323,8 @@ def make_model(newton, wp, case, device):
 
 
 def native_array(owner, name):
+    if name == "shape_collision_filter_pairs":
+        return owner.shape_collision_filter_pairs_array().copy()
     value = getattr(owner, name, None)
     if value is None:
         return None
@@ -439,7 +442,7 @@ def run_case(newton, wp, case, channel, device, output):
         units=dict(
             q="D01 m; D03 rad", v="D01 m/s; D03 rad/s", wrench="world N then N*m about each COM"
         ),
-        force_observation="Pinned solver.body_f_ext after actual step: original external + native contact, before RNEA; original external is zero in native channel.",
+        force_observation="Pinned post-RNEA raw scratch is negative solve-origin wrench; saved raw/COM/origin decode to original external plus native contact in COM/world coordinates.",
         native_force_buffer="Contacts.rigid_contact_force is unused; Featherstone supports BODY_PARENT_F, not CONTACT_F observables.",
     )
     try:
@@ -533,7 +536,12 @@ def run_case(newton, wp, case, channel, device, output):
             record["trace"].append(row)
             solver.step(state, candidate, control, contacts if channel == "native" else None, H)
             actual = state_record(candidate)
-            actual_force = solver.body_f_ext.numpy().copy()
+            raw_rnea_force = solver.body_f_ext.numpy().copy()
+            solve_origin = solver.body_solve_origin.numpy().copy()
+            entry_com = solver.body_q_com.numpy().copy()[:, :3]
+            actual_force = -raw_rnea_force.astype(float)
+            actual_force[:, 3:] -= np.cross(entry_com - solve_origin, actual_force[:, :3])
+            assert np.array_equal(solve_origin, np.zeros((model.body_count, 3)))
             actual_twist = solver.body_qd_fk.numpy().copy()
             raw_force, rows = reconstruct_rows(model, entry, raw, actual_twist)
             q_next, v_next = actual["joint_q"][qcols], actual["joint_qd"][vcols]
@@ -541,6 +549,9 @@ def run_case(newton, wp, case, channel, device, output):
             row.update(
                 actual=actual,
                 native_entry_twist=actual_twist,
+                native_raw_post_rnea_scratch=raw_rnea_force,
+                native_solve_origin=solve_origin,
+                native_entry_com=entry_com,
                 native_applied_body_wrench=actual_force,
                 reconstructed_rows=rows,
                 reconstructed_native_contact_wrench=raw_force,

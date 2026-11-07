@@ -203,6 +203,29 @@ def _audit_receipt(receipt, diagnostic, sources):
     np.testing.assert_array_equal(receipt.entry_geometry.position, receipt.entry_state.position)
     np.testing.assert_array_equal(receipt.accepted_geometry.position, receipt.accepted_state.position)
     n = len(receipt.entry_state.position)
+    for packet_name, geometry in (("entry_frames", receipt.entry_geometry), ("accepted_frames", receipt.accepted_geometry)):
+        frames = receipt.diagnostics[packet_name]
+        assert set(frames) == set(sources)
+        for key, (shape, group, points) in sources.items():
+            frame = frames[key]
+            assert frame.shape == shape and frame.group_index == group
+            if group is None:
+                expected_points, expected_com = points, points.mean(axis=0)
+                np.testing.assert_array_equal(frame.linear_velocity_m_s, [0, 0, 0])
+                np.testing.assert_array_equal(frame.angular_velocity_rad_s, [0, 0, 0])
+            else:
+                position = np.asarray(geometry.link_position_m[group], dtype=float)
+                rotation = np.asarray(geometry.link_rotation[group], dtype=float)
+                expected_points = points @ rotation.T + position
+                expected_com = geometry.com_position_m[group]
+                np.testing.assert_array_equal(frame.position_m, position)
+                np.testing.assert_array_equal(frame.rotation, rotation)
+                if packet_name == "entry_frames":
+                    qd = np.asarray(receipt.entry_state.velocity)
+                    _close(frame.linear_velocity_m_s, np.asarray(diagnostic.linear_jacobian[group], float) @ qd)
+                    _close(frame.angular_velocity_rad_s, np.asarray(diagnostic.angular_jacobian[group], float) @ qd)
+            np.testing.assert_allclose(frame.world_points_m, expected_points, atol=1e-10, rtol=0)
+            np.testing.assert_allclose(frame.reference_point_m, expected_com, atol=1e-10, rtol=0)
     wrench = np.zeros((n, 6))
     static = {}
     work, material_work = 0.0, 0.0
@@ -468,11 +491,17 @@ def test_r02_forty_real_steps_keep_full_cross_branch_mass_and_bias(reordered, tr
                     kinetic_before = 0.5 * v @ mass @ v
                     v = v + H * acceleration
                     q = q + H * v
-                    assert batch.step_contacts(plan, H) == {103: True}
+                    accepted = batch.step_contacts(plan, H)
+                    row = dict(accepted=accepted, status=dict(plan.last_status), oracle_q=q.copy(), oracle_v=v.copy(), oracle_mass=mass, oracle_bias=bias, oracle_load=load)
+                    rows.append(row)
+                    assert accepted == {103: True}
                     receipt, diagnostic = plan.last_accepted[103], batch.tree_diagnostics()[103]
+                    row.update(receipt=receipt, diagnostic=diagnostic)
                     audit = _audit_receipt(receipt, diagnostic, sources)
                     next_mass = _branch_oracle(q, v)[0]
-                    rows.append(dict(receipt=receipt, diagnostic=diagnostic, oracle_q=q.copy(), oracle_v=v.copy(), oracle_mass=mass, oracle_bias=bias, oracle_load=load, oracle_delta_kinetic_j=float(0.5 * v @ next_mass @ v - kinetic_before), audit=audit))
+                    actual_energy = batch.summary()[103]["kinetic_energy_j"]
+                    _close(actual_energy, 0.5 * v @ next_mass @ v, atol=WINDOW_ATOL)
+                    row.update(oracle_delta_kinetic_j=float(0.5 * v @ next_mass @ v - kinetic_before), actual_kinetic_energy_j=actual_energy, audit=audit)
                     _close(receipt.accepted_state.position, q[order], atol=WINDOW_ATOL)
                     _close(receipt.accepted_state.velocity, v[order], atol=WINDOW_ATOL)
                     _close(diagnostic.mass, mass[np.ix_(order, order)], atol=WINDOW_ATOL)
@@ -534,11 +563,17 @@ def test_r03_forty_rotating_steps_record_actual_material_and_application_work(ve
                     torque, old_v, old_depth = cx * normal, v, depth
                     v += H * 4 * torque
                     q += H * v
-                    assert batch.step_contacts(plan, H) == {7: True}
+                    accepted = batch.step_contacts(plan, H)
+                    row = dict(accepted=accepted, status=dict(plan.last_status), oracle_q=q, oracle_v=v, oracle_force_n=normal, oracle_torque_nm=torque)
+                    rows.append(row)
+                    assert accepted == {7: True}
                     receipt, diagnostic = plan.last_accepted[7], batch.tree_diagnostics()[7]
+                    row.update(receipt=receipt, diagnostic=diagnostic)
                     audit = _audit_receipt(receipt, diagnostic, sources)
                     new_depth = max(0.0, 1 / 8 - (_rz(q) @ [1 / 2, 3 / 32, 0])[1])
-                    rows.append(dict(receipt=receipt, diagnostic=diagnostic, oracle_q=q, oracle_v=v, oracle_force_n=normal, oracle_torque_nm=torque, entry_power_times_h_j=torque * old_v * H, oracle_delta_kinetic_j=(v * v - old_v * old_v) / 8, oracle_delta_spring_j=32 * (new_depth * new_depth - old_depth * old_depth), audit=audit))
+                    actual_energy = batch.summary()[7]["kinetic_energy_j"]
+                    _close(actual_energy, v * v / 8, atol=WINDOW_ATOL)
+                    row.update(entry_power_times_h_j=torque * old_v * H, oracle_delta_kinetic_j=(v * v - old_v * old_v) / 8, oracle_delta_spring_j=32 * (new_depth * new_depth - old_depth * old_depth), actual_kinetic_energy_j=actual_energy, audit=audit)
                     _close(receipt.accepted_state.position, [q], atol=WINDOW_ATOL)
                     _close(receipt.accepted_state.velocity, [v], atol=WINDOW_ATOL)
                     _close(receipt.contact_generalized, [torque], atol=WINDOW_ATOL)
@@ -568,12 +603,16 @@ def test_r04_continuous_unload_and_reentry_has_no_stale_contact_force(dt, tyx_mo
                     normal = 64 * max(0.0, 1 / 32 - q)
                     v += dt * (normal + external) / 2
                     q += dt * v
-                    assert batch.step_contacts(plan, dt) == {17: True}
+                    accepted = batch.step_contacts(plan, dt)
+                    row = dict(accepted=accepted, status=dict(plan.last_status), command=command, before=before, oracle_q=q, oracle_v=v, oracle_normal_n=normal)
+                    rows.append(row)
+                    assert accepted == {17: True}
                     receipt, diagnostic = plan.last_accepted[17], batch.tree_diagnostics()[17]
+                    row.update(receipt=receipt, diagnostic=diagnostic)
                     audit = _audit_receipt(receipt, diagnostic, sources)
                     actual_entry_depth = max(0.0, 1 / 32 - before.position[0])
                     actual_n = float(receipt.contact_generalized[0])
-                    rows.append(dict(command=command, before=before, receipt=receipt, diagnostic=diagnostic, oracle_q=q, oracle_v=v, oracle_normal_n=normal, actual_entry_depth_m=actual_entry_depth, audit=audit))
+                    row.update(actual_entry_depth_m=actual_entry_depth, audit=audit)
                     _close(receipt.accepted_state.position, [q], atol=WINDOW_ATOL)
                     _close(receipt.accepted_state.velocity, [v], atol=WINDOW_ATOL)
                     _close(receipt.contact_generalized, [normal], atol=WINDOW_ATOL)

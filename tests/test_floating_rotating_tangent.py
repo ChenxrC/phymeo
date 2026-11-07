@@ -344,3 +344,64 @@ def test_b04_legal_fast_tilt_is_rejected_by_real_motion_gate_without_publishing(
         assert case.scene.tangent_history is history
         print("F05 genuine motion rejection", example.write_trace(tmp_path/"rejected.json.gz", case=case, frames=[],
             failure={"type": type(caught.value).__name__, "message": str(caught.value), "before": before}))
+
+def _actual_root_material_sample(case):
+    """Zero-load schema sample from actual declared vertices, not a root collision oracle."""
+    from phymeo.solvers.tangent_history import MaterialAddress, StationKey, StationSample
+
+    example = _helpers()._example()
+    root = case.scene.shape_key(example.LOWER_TOOL, "base", "root_marker")
+    partner = case.scene.shape_key(example.UPPER_TOOL, "tool", "lower")
+    assert root < partner
+    frames = case.scene._event_adapter._frames
+    root_owner, partner_owner = frames[root].owner, frames[partner].owner
+    assert (root_owner.kind, root_owner.local_frame, root_owner.link_index) == (
+        "robot_root", "robot_model_link", 0,
+    )
+    shape = next(shape for shape in case.scene.geometry().model.shapes if shape.key == partner)
+    vertex = shape.vertex_ids[0]
+    actual_world = np.asarray(case.scene.geometry().poses[partner].start)[0]
+    actual_local = tuple(actual_world-np.array([.254, 0, 0]))
+    first = MaterialAddress(root_owner, root, 0, (0,), ((0, 1.),), (0., 0., 1/32), 910)
+    second = MaterialAddress(partner_owner, partner, 0, (vertex,), ((vertex, 1.),), actual_local, 911)
+    return StationSample(StationKey(case.world, 910), first, second, (0., 0., 1.),
+                         ((1., 0., 0.), (0., 1., 0.), (0., 0., 1.)), 0.)
+
+
+@pytest.mark.parametrize("mimic", [False, True], ids=["ordinary-root", "affine-root"])
+def test_c01_real_root_material_frame_accepts_moving_root_zero_without_renaming_it(tmp_path, mimic):
+    from phymeo.runtime.material_stations import OwnerPose
+    from phymeo.solvers.tangent_history import TangentHistory
+
+    example = _helpers()._example()
+    with example.make_floating_clamp(tmp_path, fixture_dir=ASSETS, mimic=mimic) as case:
+        sample = _actual_root_material_sample(case)
+        pose = OwnerPose(sample.first.owner, (0, 0, 0), np.eye(3))
+        assert pose.owner == sample.first.owner
+        before = case.scene.observe().step_number
+        store = TangentHistory(128)
+        initial = store.initial_state()
+        trial = store.prepare(initial, (sample,), sample_time_s=0, dt_s=example.H)
+        assert trial.stations == ()  # Declared zero load: no fictitious root episode.
+        assert initial.active == initial.generations == ()
+        assert case.scene.observe().step_number == before == 0
+
+
+@pytest.mark.parametrize("frame,index", [("robot_root", 0), ("robot_model_link", -1),
+                                         ("robot_model_link", 1), ("robot_model_link", False)])
+def test_c02_root_frame_index_cross_mismatches_reject_in_both_material_layers(tmp_path, frame, index):
+    from phymeo.runtime.material_stations import OwnerPose
+    from phymeo.solvers.tangent_history import TangentHistory
+
+    example = _helpers()._example()
+    with example.make_floating_clamp(tmp_path, fixture_dir=ASSETS) as case:
+        sample = _actual_root_material_sample(case)
+        owner = replace(sample.first.owner, local_frame=frame, link_index=index)
+        with pytest.raises(ValueError, match="root|owner|frame|link|index"):
+            OwnerPose(owner, (0, 0, 0), np.eye(3))
+        bad = replace(sample, first=replace(sample.first, owner=owner))
+        store = TangentHistory(128)
+        initial = store.initial_state()
+        with pytest.raises(ValueError, match="root|owner|frame|link|index"):
+            store.prepare(initial, (bad,), sample_time_s=0, dt_s=example.H)
+        assert initial.active == initial.generations == ()

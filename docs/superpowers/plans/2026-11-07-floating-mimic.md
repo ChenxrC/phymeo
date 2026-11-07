@@ -43,3 +43,17 @@ participant.velocity_count仍为完整6+n_full，供原RobotRobotContacts完整v
 ## 并行独立后继
 
 原robot作者只读调研C3真实设备转动关节，当前没有C3产品授权；C2的球/滑轨接受态不能冒成多关节机器人驻留。待源码与案例矩阵形成后再冻结C3。F2和C3新文件可并行，旧共享接缝与所有验证串行。
+
+## T1审阅与T2实施授权（2026-11-07）
+
+父已全文审4NEW（673行），导入bf3cadb；唯一串行104首RED为新loader缺失，旧浮根拒mimic/旧固定mimic识别原资产均先通过，RAW1保留。固定输入/门与独立oracle不变，不预collection或数值probe。
+
+原RD从24506a0继续CODE_ONLY，不merge父，只NEW五文件：src/phymeo/dynamics/_mimic_coordinates.py、src/phymeo/dynamics/floating_mimic.py、src/phymeo/builders/_mimic_xml.py、src/phymeo/builders/floating_mimic_urdf.py、docs/benchmarks/p65-floating-mimic.md。原4NEW测试/案例仅允许确诊API拼写或实现揭示的真实测试错误，须报告理由；不调物理输入/容差。T3仍未授权。
+
+公共图helper返回frozen MimicCoordinates：indices、forward、independent_indices、matrix、offset_vector、constraint_rows、joint_names、lower、upper、velocity_limit、effort_limit；矩阵bytes-backed不可变。compile签名沿上节，relations为(driver,follower,multiplier,offset)原tuple。原MimicRelation/RowForce/Loads类型保持，可复用；root6维完整反力/功独立校验。
+
+NEW _mimic_xml.extract_mimic_relations(order,incoming)从已严格读取的原树按order提取、验证并移除mimic tags，返回nonempty tuple；共享原_child等严格拒重复。新loader用原_read_tree只读XML一次，再调用父将提供的floating_urdf._floating_from_tree(name,root,links,order,inbound,gravity,path,collapse_fixed_joints=False)；该内部入口复用原所有质量/shape/固定分组装配，仍严格bool/剩余mimic/fixed opt-in guard。作者不要复制floating importer或写临时URDF。
+
+父独占旧joint_mimic图委托、mimic_urdf XML委托、floating_urdf内部assembly抽取，以及后续登记/factory/控制。作者本轮只standalone effort动力学，不提前scene/PD。完整M/b以真实完整tree计算，S投影求一次约束加速度，原COM/quaternion drift一次，完整root/joint行余额与原顺序行反力均保留。
+
+完成小commit/clean/精确新增清单、报告UNEXECUTED并释放authoring；lint/formatter/import/pytest/数值/构建全部仍父串行。父集成后跑新完整文件及受本次共享抽取影响的最小旧图/浮根兼容组；无同源已绿重跑。

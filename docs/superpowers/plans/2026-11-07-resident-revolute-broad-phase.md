@@ -37,3 +37,9 @@ kind3/4必须显式分流，不落入旧kernel的“所有非球都当slider”�
 - T2拟NEW product：_resident_revolute_world.py、_resident_revolute_binding.py、_tyx_resident_revolute_kernels.py、_tyx_resident_revolute_bounds.py；类型/编译/packet/checkpoint/step/pose-reader按薄接口分离。须先冻结具体签名才授编码。
 - 父独占旧_world_step_layout、tyx_world_batch、_tyx_world_kernels、_resident_collision_plan及必要kinematics/readback文档或units。既有球/滑轨行为与纯旧batch字节/计数应保留；必要旧测试因接缝变更才执行。
 - T3父串行HOST协议/interpret/CUDA/混合真实窗口，原agent交叉审阅及新源码外wheel；不预collection/probe/重复已绿旧组。性能只有同输出实测后可陈述；本片不默认声称提速、全GPU窄相、通用机器人或CCD。
+
+## 工程三角函数裁定（2026-11-07）
+
+TYX实际CUDA lowering为sinf/cosf且fast_math关闭；NVIDIA误差表的observed maximum不是形式保证。采用工程精度验证，不为该差别新增Taylor区间内核或返回无限精度证明路线。首输入/restore/候选统一有限stored角域拟|q|≤4096 rad，覆盖正负多周回及边界；父审最终casebook后冻结。域外明确拒绝，后续可加入range reduction。
+
+设备AABB按三角函数计算误差、原有限shape尺度、中心/安装与中间FP32计算给显式padding；以固定多姿态、近触、细长shape、大公共平移和真实interpret/CUDA对独立FP64几何oracle验证测试范围内无漏候选，允许少量多候选，不声称全部实数形式认证。动力学仍真实sinf/cosf，不因宽相padding更改积分；不得靠人为紧miss距离倒调padding或夹具。作者保留官方来源和限制，本片不实施Taylor备选。

@@ -110,3 +110,17 @@
 6. 最后正常源码外wheel验证一个两普通P/freebody窗、一个affine浮根窗和独立运动拒绝；实际所有模块来自wheel。若目标是HOST，不能以同进程存在CUDA或别线宽相结果称全链GPU。
 
 达到首个可用切片就小提交；对于尚不能成立的材料换面/有限转动，保最短反例和明确拒绝。首批不扩大到柔体、接触拓扑自动发现、通用滚动/自旋阻力、任意连续碰撞或全场景CUDA。后续仅两个依赖节点：先为确有需求的有限chart切换提供显式材料重绑定/释放合同，再按真实成本证据考虑多世界/设备接口；两者都不能作为本片迟迟不交付的前提。
+## 父裁定：T1 测试与声明式案例先行（2026-11-07）
+
+研究 d934846 已导入 b7cad91，父全文审阅。接受复用原 full-W / history / material-motion / 事务路线；不复制求解器，不自动换面。F01/F03/F04先形成公开调用能力，F02/F05/F06为独立几何、转动、生命周期门；F07后置且不替代通用多例。
+
+原 RD 在原隔离树，**TEST_AND_CASE_AUTHORING_ONLY**。允许仅新增：
+- tests/test_multi_robot_tangent.py；
+- tests/test_floating_rotating_tangent.py；
+- examples/general_scene_friction.py（仅真实声明式建模、输入、完整保存/独立参考辅助；不得实现物理推进或覆写状态）。
+
+可在本案例册追加公共API/实际数据布局澄清；旧源码、旧测试、其他exports由父唯一负责。先提交最小F01公开调用/法向前提测试，再补原F01–F06完整输入与门。F07只复用已有控制例程，不复制/改其物理输入。若任何候选几何离散/构造API与源码不符，报告具体差异，修正作者接口或先由父裁定，不能从输出反算目标。
+
+禁止全部project import/collection/pytest/数值probe/lint/formatter/compile/build/install/profile和Newton执行；父唯一串行槽。全部作者测试UNEXECUTED，纯文本/文件IO/小Git即可；不merge父、不覆盖WIP、不新建agent。父F3改根惯量frame不改变公开FK/J/材料语义。先交clean测试checkpoint、精确文件与接口，父运行真实RED后另行授权两个NEW产品模块；不要预写产品。
+
+需直接核首步完整跨ownerW及真实广义载荷，覆盖selected+unselected混合、components多site、零站点释放、同base重试和全部发布数据。长期窗口保存原始逐步读数；不预承诺F05/F07通过，不把未知换面称任意连续碰撞。原门/输入不以通过为目的调整。

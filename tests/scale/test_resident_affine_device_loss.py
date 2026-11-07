@@ -33,12 +33,8 @@ def test_permanent_restore_sync_loss_requires_checkpoint_rebuild(
     actions = {7: _action(world, asset, data), 23: (1.0, 0.0, 0.0)}
     record = dict(input=data, h_s=H, warm_steps=warm_steps, mode=tyx_mode, commands=actions)
     try:
-        with resident.TyxWorldBatch(
-            worlds, tyx_mode, cache_root=tmp_path / "control"
-        ) as control:
-            with resident.TyxWorldBatch(
-                worlds, tyx_mode, cache_root=tmp_path / "lost"
-            ) as lost:
+        with resident.TyxWorldBatch(worlds, tyx_mode, cache_root=tmp_path / "control") as control:
+            with resident.TyxWorldBatch(worlds, tyx_mode, cache_root=tmp_path / "lost") as lost:
                 lost.set_controls(actions)
                 control.set_controls(actions)
                 for _ in range(warm_steps):
@@ -110,14 +106,19 @@ def test_permanent_restore_sync_loss_requires_checkpoint_rebuild(
                     ("reset", lost.reset),
                 )
                 for name, operation in operations:
-                    with pytest.raises(RuntimeError, match="rebuild from a saved checkpoint") as error:
+                    with pytest.raises(
+                        RuntimeError, match="rebuild from a saved checkpoint"
+                    ) as error:
                         operation()
                     blocked[name] = dict(type=type(error.value).__name__, message=str(error.value))
                 assert calls == ["restore", "recovery"]
                 assert lost._unavailable is True
                 after_blocked = lost.stats()
                 for name in (
-                    "current_buffer", "state_epoch", "launch_attempts", "synchronizations",
+                    "current_buffer",
+                    "state_epoch",
+                    "launch_attempts",
+                    "synchronizations",
                     "recovery_sync_attempts",
                 ):
                     assert after_blocked[name] == failed_stats[name]
@@ -164,10 +165,134 @@ def test_permanent_restore_sync_loss_requires_checkpoint_rebuild(
                     _close(after[23].position, [H * H * tick * (tick + 1) / 4, 0, 0])
                     record["continuation"].append(
                         dict(
-                            before=entry, rebuilt=after, independent_control=expected,
-                            diagnostic=diagnostic, kinematics=fk, oracle=oracle,
+                            before=entry,
+                            rebuilt=after,
+                            independent_control=expected,
+                            diagnostic=diagnostic,
+                            kinematics=fk,
+                            oracle=oracle,
                         )
                     )
                 record.update(rebuilt_stats=rebuilt.stats(), control_stats=control.stats())
     finally:
         _save(tmp_path, "permanent-device-loss-result", record)
+
+
+@pytest.mark.tyx
+@pytest.mark.parametrize("warm_steps", (0, 1))
+def test_ordinary_affine_and_scalar_share_control_restore_and_retry_transaction(
+    warm_steps, tyx_mode, tmp_path, monkeypatch
+):
+    from dataclasses import replace
+
+    import numpy as np
+
+    import phymeo as ph
+
+    data = _ref().case("A03")
+    asset = _load(tmp_path, data)
+    affine = _world(asset, data, delay=1)
+    program = ph.DrivenRobotProgram(
+        asset.tree.model,
+        kp=np.zeros(3),
+        kd=np.zeros(3),
+        effort_limit=np.full(3, 16.0),
+        delay_steps=1,
+    )
+    ordinary = resident.FixedRobotTree(
+        program, program.initial_state(ph.RobotState(np.zeros(3), np.zeros(3)))
+    )
+    worlds = [(101, ordinary), (7, affine), (23, resident.FreeSphere(2, 1 / 16, gravity=(0, 0, 0)))]
+    actions = {
+        101: program.inputs(np.zeros(3), feedforward=np.array([1.0, -2.0, 3.0])),
+        7: _action(affine, asset, data),
+        23: (1.0, 0.0, 0.0),
+    }
+    accepted = {101: True, 7: True, 23: True}
+    with (
+        resident.TyxWorldBatch(worlds, tyx_mode, cache_root=tmp_path / "trial") as trial,
+        resident.TyxWorldBatch(worlds, tyx_mode, cache_root=tmp_path / "control") as control,
+    ):
+        for batch in (trial, control):
+            batch.set_controls(actions)
+        for _ in range(warm_steps):
+            assert trial.step(H) == control.step(H) == accepted
+        before, stats = trial.snapshot(), trial.stats()
+        changed = {
+            101: program.inputs(np.zeros(3), feedforward=np.array([-1.0, 2.0, -3.0])),
+            23: (0.0, 1.0, 0.0),
+            7: _action(affine, asset, data, ff=[-3]),
+        }
+        bad = changed.copy()  # ordinary/scalar inputs precede the invalid affine input.
+        bad[7] = replace(changed[7], graph_token=("foreign graph",))
+        with pytest.raises(ValueError, match="graph"):
+            trial.set_controls(bad)
+        after_validation = trial.stats()
+        assert trial.snapshot() == before
+        assert trial.stats()["current_buffer"] == stats["current_buffer"]
+        assert trial.stats()["state_epoch"] == stats["state_epoch"]
+        assert after_validation["launch_attempts"] == stats["launch_attempts"]
+        for batch in (trial, control):
+            batch.set_controls(changed)
+        changed_snapshot = trial.snapshot()
+        original_upload, calls = trial._upload, []
+
+        def partial_bank_upload(buffer, values, category):
+            original_upload(buffer, values, category)
+            calls.append(category)
+            # Ordinary controls have uploaded; fail at the subsequent affine command bank.
+            if len(calls) == 3:
+                raise RuntimeError("mixed ordinary/affine upload failure")
+
+        with monkeypatch.context() as patch:
+            patch.setattr(trial, "_upload", partial_bank_upload)
+            with pytest.raises(RuntimeError, match="mixed ordinary/affine"):
+                trial.step(H)
+        assert len(calls) == 3
+        assert trial.snapshot() == changed_snapshot
+        assert trial.stats()["current_buffer"] == stats["current_buffer"]
+        assert trial.stats()["state_epoch"] == stats["state_epoch"]
+        assert trial.tree_diagnostics() == {101: None, 7: None}
+        assert trial.step(H) == control.step(H) == accepted
+        assert trial.snapshot() == control.snapshot()
+        successful = trial.snapshot()
+        after_stats = trial.stats()
+        bad_restore = dict(before)
+        point = bad_restore[7]
+        bad_restore[7] = replace(
+            point, full_position=(point.full_position[0] + 1 / 4, *point.full_position[1:])
+        )
+        with pytest.raises(ValueError, match="affine|full|graph|state|constraint"):
+            trial.restore(bad_restore)
+        assert trial.snapshot() == successful
+        assert trial.stats()["current_buffer"] == after_stats["current_buffer"]
+        assert trial.stats()["state_epoch"] == after_stats["state_epoch"]
+        assert trial.stats()["restore_uploaded_bytes"] == after_stats["restore_uploaded_bytes"]
+        for batch in (trial, control):
+            batch.restore(before)
+        assert trial.snapshot() == control.snapshot() == before
+        trace = []
+        for _ in range(2):
+            assert trial.step(H) == control.step(H) == accepted
+            got, expected = trial.snapshot(), control.snapshot()
+            assert got == expected
+            assert _json(trial.tree_kinematics()) == _json(control.tree_kinematics())
+            assert tuple(got) == (101, 7, 23)
+            assert tuple(trial.tree_kinematics()) == (101, 7)
+            trace.append(dict(actual=got, control=expected, diagnostics=trial.tree_diagnostics()))
+        _save(
+            tmp_path,
+            "mixed-tree-transaction",
+            dict(
+                input=data,
+                ordinary_initial=ordinary.state,
+                commands=actions,
+                changed=changed,
+                before=before,
+                partial_upload_calls=calls,
+                accepted_after_retry=successful,
+                invalid_restore=bad_restore,
+                trace=trace,
+                stats=trial.stats(),
+            ),
+        )

@@ -1,5 +1,7 @@
 """Explicit physical models and independently implemented simulation solvers."""
 
+from .backends._resident_affine_binding import ResidentAffineTreeBinding
+from .backends._resident_affine_tree import AffineRobotTree
 from .backends._resident_collision_plan import ResidentSphereBinding, ResidentStaticBinding
 from .backends._resident_revolute_binding import ResidentRevoluteBinding
 from .backends._resident_slider_binding import ResidentSliderBinding
@@ -428,6 +430,8 @@ __all__ = [
     "PrismaticSlider",
     "RevoluteRotor",
     "FixedRobotTree",
+    "AffineRobotTree",
+    "ResidentAffineTreeBinding",
     "ResidentSphereBinding",
     "ResidentStaticBinding",
     "ResidentSliderBinding",

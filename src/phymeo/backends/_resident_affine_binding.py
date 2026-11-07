@@ -34,7 +34,9 @@ class ResidentAffineTreeBinding(ResidentTreeBinding):
 
 def compile_affine_tree_binding(shape, binding, spec):
     """Return the existing TreeBindingCompiled; no new geometry kernel or upload."""
-    if not isinstance(binding, ResidentAffineTreeBinding) or not isinstance(spec, AffineTreeWorldSpec):
+    if not isinstance(binding, ResidentAffineTreeBinding) or not isinstance(
+        spec, AffineTreeWorldSpec
+    ):
         raise TypeError("affine material compilation needs an affine binding and world")
     if binding._source_shape is not None and binding._graph_token != spec.graph_token:
         raise ValueError("affine source graph differs from its owned mechanical graph")

@@ -30,8 +30,12 @@ def _coordinates(asset):
         raise TypeError("AffineRobotTree needs a MimicRobotAsset")
     tree = asset.tree
     return compile_mimic_coordinates(
-        tree.joint_names, tree.model.joint_types, tree.lower, tree.upper,
-        tree.velocity_limit, tree.effort_limit,
+        tree.joint_names,
+        tree.model.joint_types,
+        tree.lower,
+        tree.upper,
+        tree.velocity_limit,
+        tree.effort_limit,
         tuple((r.driver, r.follower, r.multiplier, r.offset) for r in asset.relations),
     )
 
@@ -41,17 +45,28 @@ def affine_model_token(asset):
     coordinates = _coordinates(asset)
     tree = asset.tree
     return (
-        "affine_graph_v1", tree_model_token(tree.model), tuple(tree.joint_names),
-        tuple(tree.lower), tuple(tree.upper), tuple(tree.velocity_limit),
+        "affine_graph_v1",
+        tree_model_token(tree.model),
+        tuple(tree.joint_names),
+        tuple(tree.lower),
+        tuple(tree.upper),
+        tuple(tree.velocity_limit),
         tuple(tree.effort_limit),
-        tuple((r.driver, r.follower, float(r.multiplier), float(r.offset)) for r in asset.relations),
-        tuple(coordinates.independent_indices), _nested(coordinates.matrix),
+        tuple(
+            (r.driver, r.follower, float(r.multiplier), float(r.offset)) for r in asset.relations
+        ),
+        tuple(coordinates.independent_indices),
+        _nested(coordinates.matrix),
         _nested(coordinates.offset_vector),
     )
 
 
 def _budget(value, name, lo, hi):
-    if isinstance(value, (bool, np.bool_)) or not isinstance(value, Integral) or not lo <= value <= hi:
+    if (
+        isinstance(value, (bool, np.bool_))
+        or not isinstance(value, Integral)
+        or not lo <= value <= hi
+    ):
         raise ValueError(f"affine {name} must be an integer in [{lo},{hi}]")
     return int(value)
 
@@ -65,8 +80,12 @@ def _nonnegative(value, name, count):
 
 def _near(actual, expected, name):
     actual, expected = np.asarray(actual), np.asarray(expected)
-    scale = np.maximum(1., np.maximum(abs(actual), abs(expected)))
-    if not np.isfinite(actual).all() or not np.isfinite(expected).all() or np.any(abs(actual-expected) > 2e-5*scale):
+    scale = np.maximum(1.0, np.maximum(abs(actual), abs(expected)))
+    if (
+        not np.isfinite(actual).all()
+        or not np.isfinite(expected).all()
+        or np.any(abs(actual - expected) > 2e-5 * scale)
+    ):
         raise ValueError(f"inconsistent affine {name}")
 
 
@@ -79,10 +98,14 @@ def _intervals(full_limits, matrix, offset, independent):
         for i in range(len(matrix)):
             gain = float(matrix[i, j])
             if gain != 0:
-                lo, hi = sorted(((float(full_limits[i, 0])-float(offset[i]))/gain,
-                                 (float(full_limits[i, 1])-float(offset[i]))/gain))
+                lo, hi = sorted(
+                    (
+                        (float(full_limits[i, 0]) - float(offset[i])) / gain,
+                        (float(full_limits[i, 1]) - float(offset[i])) / gain,
+                    )
+                )
                 lower, upper = max(lower, lo), min(upper, hi)
-                speed = min(speed, float(full_limits[i, 2])/abs(gain))
+                speed = min(speed, float(full_limits[i, 2]) / abs(gain))
         if not np.isfinite((lower, upper, speed)).all() or lower >= upper:
             raise ValueError("affine FP32 graph has an empty feasible interval")
         low32, high32, speed32 = np.float32(lower), np.float32(upper), np.float32(speed)
@@ -141,14 +164,24 @@ class AffineRobotTree:
             raise TypeError("affine state must be an independent RobotState")
         if np.asarray(self.state.q).shape != (k,) or np.asarray(self.state.v).shape != (k,):
             raise ValueError("affine state must use K independent coordinates")
-        object.__setattr__(self, "state", RobotState(_owned(self.state.q, np.float64), _owned(self.state.v, np.float64)))
+        object.__setattr__(
+            self,
+            "state",
+            RobotState(_owned(self.state.q, np.float64), _owned(self.state.v, np.float64)),
+        )
         original_cap = np.asarray(self.effort_limit, dtype=float)
-        if original_cap.shape != (k,) or np.any(original_cap > np.asarray(coordinates.effort_limit)):
+        if original_cap.shape != (k,) or np.any(
+            original_cap > np.asarray(coordinates.effort_limit)
+        ):
             raise ValueError("affine effort cap exceeds the independent source motor rating")
         for name in ("kp", "kd", "effort_limit"):
             object.__setattr__(self, name, _nonnegative(getattr(self, name), name, k))
         object.__setattr__(self, "delay_steps", _budget(self.delay_steps, "delay", 0, 1))
-        object.__setattr__(self, "control_max_iterations", _budget(self.control_max_iterations, "iteration budget", 1, 4096))
+        object.__setattr__(
+            self,
+            "control_max_iterations",
+            _budget(self.control_max_iterations, "iteration budget", 1, 4096),
+        )
         object.__setattr__(self, "_graph_token", affine_model_token(self.asset))
 
     def inputs(self, target, target_velocity=None, *, feedforward=None, loads=None):
@@ -217,9 +250,19 @@ class AffineTreeDiagnostic(TreeDiagnostic):
 
     def __post_init__(self):
         super().__post_init__()
-        for name in ("full_entry_position", "full_entry_velocity", "reduced_mass", "reduced_bias",
-                     "reduced_external", "reduced_linear_jacobian", "reduced_angular_jacobian",
-                     "full_acceleration", "constraint_effort_full", "row_multipliers", "row_powers_w"):
+        for name in (
+            "full_entry_position",
+            "full_entry_velocity",
+            "reduced_mass",
+            "reduced_bias",
+            "reduced_external",
+            "reduced_linear_jacobian",
+            "reduced_angular_jacobian",
+            "full_acceleration",
+            "constraint_effort_full",
+            "row_multipliers",
+            "row_powers_w",
+        ):
             object.__setattr__(self, name, _owned(getattr(self, name)))
         object.__setattr__(self, "constraint_power_w", float(self.constraint_power_w))
 
@@ -263,15 +306,24 @@ class AffineTreeWorldSpec:
     def packet(self, value):
         if not isinstance(value, AffineTreeInputs) or value.graph_token != self.graph_token:
             raise ValueError("affine command belongs to a different graph or input kind")
-        return (_owned(as_fp32(value.drive, "affine drive", (self.k, 3))),
-                _owned(as_fp32(value.loads, "affine loads", (self.n, 7))))
+        return (
+            _owned(as_fp32(value.drive, "affine drive", (self.k, 3))),
+            _owned(as_fp32(value.loads, "affine loads", (self.n, 7))),
+        )
 
     def check_state(self, reduced, full):
-        for row, limits, name in ((reduced, self.limits, "independent"), (full, self.full_limits, "full")):
+        for row, limits, name in (
+            (reduced, self.limits, "independent"),
+            (full, self.full_limits, "full"),
+        ):
             q, v = row[:, 0], row[:, 1]
             if not np.isfinite(row).all() or np.any(abs(q) > TREE_COORDINATE_LIMIT):
                 raise ValueError(f"affine {name} state exceeds finite coordinate domain")
-            if np.any(q < limits[:, 0]) or np.any(q > limits[:, 1]) or np.any(abs(v) > limits[:, 2]):
+            if (
+                np.any(q < limits[:, 0])
+                or np.any(q > limits[:, 1])
+                or np.any(abs(v) > limits[:, 2])
+            ):
                 raise ValueError(f"affine {name} state exceeds joint interval or velocity limit")
         _near(full[:, 0], self.matrix.astype(float) @ reduced[:, 0] + self.offset, "full position")
         _near(full[:, 1], self.matrix.astype(float) @ reduced[:, 1], "full velocity")
@@ -281,25 +333,43 @@ class AffineTreeWorldSpec:
         _near(reduced[:, 3], self.matrix.astype(float).T @ full[:, 3], "generalized applied load")
         for row, (driver, follower) in enumerate(self.row_indices):
             gain, offset = self.row_values[row].astype(float)
-            _near(full[follower, 0], gain*float(full[driver, 0])+offset, "original row position")
-            _near(full[follower, 1], gain*float(full[driver, 1]), "original row velocity")
+            _near(
+                full[follower, 0], gain * float(full[driver, 0]) + offset, "original row position"
+            )
+            _near(full[follower, 1], gain * float(full[driver, 1]), "original row velocity")
 
     def checkpoint(self, world, reduced, full, tick, drive, loads):
-        a, b = np.asarray(reduced)[:self.k], np.asarray(full)[:self.n]
-        return AffineTreeCheckpoint(world_key(world), self.topology, int(tick),
-            _nested(a[:, 0]), _nested(a[:, 1]), _nested(a[:, 2]),
+        a, b = np.asarray(reduced)[: self.k], np.asarray(full)[: self.n]
+        return AffineTreeCheckpoint(
+            world_key(world),
+            self.topology,
+            int(tick),
+            _nested(a[:, 0]),
+            _nested(a[:, 1]),
+            _nested(a[:, 2]),
             _nested(a[:, 4:7]) if self.delay else (),
-            (_nested(np.asarray(drive)[:self.k]), _nested(np.asarray(loads)[:self.n])),
-            _nested(a[:, 3]), _nested(b[:, 0]), _nested(b[:, 1]), _nested(b[:, 2]), _nested(b[:, 3]))
+            (_nested(np.asarray(drive)[: self.k]), _nested(np.asarray(loads)[: self.n])),
+            _nested(a[:, 3]),
+            _nested(b[:, 0]),
+            _nested(b[:, 1]),
+            _nested(b[:, 2]),
+            _nested(b[:, 3]),
+        )
 
     def restore_row(self, checkpoint, world):
-        if not isinstance(checkpoint, AffineTreeCheckpoint) or checkpoint.world != world or checkpoint.topology != self.topology:
+        if (
+            not isinstance(checkpoint, AffineTreeCheckpoint)
+            or checkpoint.world != world
+            or checkpoint.topology != self.topology
+        ):
             raise ValueError("affine checkpoint world/topology/graph does not match")
         tick = _budget(checkpoint.tick, "checkpoint tick", 0, 2147483647)
         reduced, full = np.zeros((self.k, 7), np.float32), np.zeros((self.n, 7), np.float32)
         for j, name in enumerate(("position", "velocity", "applied_effort", "generalized_applied")):
             reduced[:, j] = as_fp32(getattr(checkpoint, name), "restored affine " + name, (self.k,))
-            full[:, j] = as_fp32(getattr(checkpoint, "full_" + name), "restored affine full " + name, (self.n,))
+            full[:, j] = as_fp32(
+                getattr(checkpoint, "full_" + name), "restored affine full " + name, (self.n,)
+            )
         if self.delay:
             reduced[:, 4:7] = as_fp32(checkpoint.history, "restored affine history", (self.k, 3))
         elif checkpoint.history != ():
@@ -327,9 +397,17 @@ def compile_affine_tree_world(world):
         raise ValueError("affine source model/graph changed after world construction")
     matrix = _owned(as_fp32(coordinates.matrix, "affine composed multiplier matrix", (n, k)))
     offset = _owned(as_fp32(coordinates.offset_vector, "affine composed offset", (n,)))
-    constraints = _owned(as_fp32(coordinates.constraint_rows, "affine original constraint rows", (n-k, n)))
+    constraints = _owned(
+        as_fp32(coordinates.constraint_rows, "affine original constraint rows", (n - k, n))
+    )
     row_indices = _owned([(d, f) for d, f, _, _ in coordinates.indices], np.int32)
-    row_values = _owned(as_fp32([(a, b) for _, _, a, b in coordinates.indices], "affine original row multiplier/offset", (n-k, 2)))
+    row_values = _owned(
+        as_fp32(
+            [(a, b) for _, _, a, b in coordinates.indices],
+            "affine original row multiplier/offset",
+            (n - k, 2),
+        )
+    )
     full_limits = np.column_stack((asset.tree.lower, asset.tree.upper, asset.tree.velocity_limit))
     full_limits[:, 0] = np.maximum(full_limits[:, 0], -TREE_COORDINATE_LIMIT)
     full_limits[:, 1] = np.minimum(full_limits[:, 1], TREE_COORDINATE_LIMIT)
@@ -347,17 +425,56 @@ def compile_affine_tree_world(world):
     full[:, 0] = matrix @ initial[:, 0] + offset
     full[:, 1] = matrix @ initial[:, 1]
     zeros = _owned(np.zeros(n, np.float32))
-    topology = ("affine_tree_v1", graph_token, _nested(world.kp), _nested(world.kd),
-                _nested(world.effort_limit), world.delay_steps, world.control_max_iterations)
-    full_spec = TreeWorldSpec("affine_physical", n, 0, world.control_max_iterations,
-        topology, model_token, joint_types, **physical, kp=zeros, kd=zeros, cap=zeros,
-        initial_state=_owned(full), initial_command=_owned(np.zeros((n, 10), np.float32)))
-    result = AffineTreeWorldSpec(full_spec, n, k, n-k, world.delay_steps,
-        world.control_max_iterations, topology, graph_token, coordinates.joint_names,
-        tuple(asset.tree.joint_names), matrix, offset, constraints,
-        _owned(coordinates.independent_indices, np.int32), row_indices, row_values,
-        _owned(tuple(reversed(coordinates.forward)), np.int32), full_limits, limits,
-        _owned(world.kp), _owned(world.kd), _owned(world.effort_limit), _owned(initial),
-        _owned(drive), _owned(np.zeros((n, 7), np.float32)))
+    topology = (
+        "affine_tree_v1",
+        graph_token,
+        _nested(world.kp),
+        _nested(world.kd),
+        _nested(world.effort_limit),
+        world.delay_steps,
+        world.control_max_iterations,
+    )
+    full_spec = TreeWorldSpec(
+        "affine_physical",
+        n,
+        0,
+        world.control_max_iterations,
+        topology,
+        model_token,
+        joint_types,
+        **physical,
+        kp=zeros,
+        kd=zeros,
+        cap=zeros,
+        initial_state=_owned(full),
+        initial_command=_owned(np.zeros((n, 10), np.float32)),
+    )
+    result = AffineTreeWorldSpec(
+        full_spec,
+        n,
+        k,
+        n - k,
+        world.delay_steps,
+        world.control_max_iterations,
+        topology,
+        graph_token,
+        coordinates.joint_names,
+        tuple(asset.tree.joint_names),
+        matrix,
+        offset,
+        constraints,
+        _owned(coordinates.independent_indices, np.int32),
+        row_indices,
+        row_values,
+        _owned(tuple(reversed(coordinates.forward)), np.int32),
+        full_limits,
+        limits,
+        _owned(world.kp),
+        _owned(world.kd),
+        _owned(world.effort_limit),
+        _owned(initial),
+        _owned(drive),
+        _owned(np.zeros((n, 7), np.float32)),
+    )
     result.check_state(initial, full)
     return result

@@ -122,3 +122,17 @@ NEW核没有复制FK/M/b/J/能量或bounded-PD算法；full mechanics/geometry/e
 统计：新增 `affine_{topology,initial,control,restore,state,fk,diagnostic,status}_{uploaded_bytes,downloaded_bytes,host_read_bytes}`；projection/solve/expand/commit/restore/validation各计实际成功launch，另state/FK/diagnostic/status显式读取计数。full物理阶段仍累计原 `tree_*`，不抹旧成本，不把借用geometry称零总读回。空affine集合由父不构造storage，非空不创建第二runtime；全部设备buffer沿batch resource stack回收。
 
 原隔离树未merge父提取接缝，所以本作者没有尝试导入候选，更没有运行测试或静态/编译。父须将四NEW与旧薄hook组合后，按T1冻结输入首次验证HOST/static domain→interpret→真实CUDA→独立Newton→新源码外wheel。当前只有230缺口RED是真实C5执行证据；98声明节点、五条native窗口、设备驻留/事务和性能均不得由本代码交接冒称通过。现有C4/父共享22+22结果不能替代C5。任何首次失败必须保存原返回、源码与输入，不调门/预算/质量来追绿。原T1三代码文件保持字节不变。
+
+## 父集成与首次验证检查点（2026-11-07，仍在验证）
+
+父在82e200b之后接入五个旧共享文件：世界编译/public export、TyxWorldBatch的ordinary/affine/scalar同事务分派、scalar观察占位与accepted collision loan/独立row map。两个tree storage共用唯一runtime/lock/active/tick/epoch；控制全部校验后提交，所有bank状态检查成功后才一次swap，宽相只借已接受full FK。原robot只读交叉审阅未发现blocker，不能代替实测。
+
+258首次Ruff只两项I001；259首次format为10文件。260仅imports、261排版，262/263最终静态全过。264 HOST **13 passed / 41 deselected / RAW0**。265解释执行前7例通过，A05T的初态velocity整数数组触发原RobotState dtype拒绝；父只将测试_world输入显式float。266再通过16例，在原隐式PD断言abs(tuple)处失败，父两处转np.asarray，不改误差门。267两个PD例通过；随后宽帽小力预期1/128但得到0，源码定位reference.case的A01 motor数组为整数，切片写1/128被截断；父在reference返回处将s/u/motor统一float，输入数值/独立oracle公式不变。
+
+268又有11例通过，restore_sync测试把原同步和补救同步每次都注入失败，却要求原batch继续读取/重试；原设备不可用保护正确触发。父把既有retry测试限定第一次同步抛错，另授权原作者补永久同步失败→必须重建的独立相邻测试。所有首次raw/完整快照在本次串行档案保留，未覆盖或拿新结果改写旧失败。当前已有13 HOST与36解释节点分段通过；269其余解释矩阵正在运行，不能声称整个85解释/CUDA/Newton/wheel完成。产品数学/域/原512迭代/物理门没有因上述测试作者错误而修改。
+
+### 原解释矩阵与新增事务检查完成
+
+269剩余49例 **49 passed / 874.28 s / RAW0**。265/266/267/268/269各成功7/16/2/11/49，原85个解释节点完整并集已覆盖；已绿组没有重跑。新增 `test_resident_affine_device_loss.py` 四节点区分warm0/1永久同步失效重建与ordinary+affine+scalar共同控制/restore/partial upload原子性。276这四节点通过，并与抓取相邻测试同一串行进程执行（总19 passed / 5.58 s / RAW0）。故C5目前为13 HOST + 89解释节点；真实CUDA、独立Newton和新wheel仍待执行。
+
+270/271为新增三文件及测试修正的首静态，3项I001、5文件排版；272/273仅imports/format，274/275全过。新增混合事务案例保原A03、ordinary全物理树与2 kg FreeSphere，同时验证任一坏graph/restore不发布、跨命令bank上传失败后重试、完整history/held恢复和按原顺序的两类tree读回。永久失效案例不清除poison，只用预先保存完整checkpoint在新batch重建，再与独立control连续推进。不是模拟真实硬件拔除，仅冻结API故障边界的实际注入执行。

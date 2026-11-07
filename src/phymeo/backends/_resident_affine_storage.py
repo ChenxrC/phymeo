@@ -15,7 +15,11 @@ from ._resident_affine_tree import AffineTreeDiagnostic, AffineTreeKinematics, A
 from ._resident_tree_storage import STATUS_NAMES, TreeDeviceStorage
 from ._resident_tree_world import _owned
 
-AFFINE_STATUS_NAMES = {**STATUS_NAMES, 7: "AFFINE_CONSTRAINT_RESIDUAL", 8: "AFFINE_FULL_EQUATION_RESIDUAL"}
+AFFINE_STATUS_NAMES = {
+    **STATUS_NAMES,
+    7: "AFFINE_CONSTRAINT_RESIDUAL",
+    8: "AFFINE_FULL_EQUATION_RESIDUAL",
+}
 
 
 @dataclass(frozen=True, eq=False)
@@ -69,14 +73,30 @@ class AffineTreeDeviceStorage:
         self._pending_info = None
         self._valid = {world: False for world in self.worlds}
         self.status_codes = MappingProxyType({world: "INITIALIZED" for world in self.worlds})
-        for category in ("affine_topology", "affine_initial", "affine_control", "affine_restore",
-                         "affine_state", "affine_fk", "affine_diagnostic", "affine_status"):
+        for category in (
+            "affine_topology",
+            "affine_initial",
+            "affine_control",
+            "affine_restore",
+            "affine_state",
+            "affine_fk",
+            "affine_diagnostic",
+            "affine_status",
+        ):
             for suffix in ("uploaded_bytes", "downloaded_bytes", "host_read_bytes"):
                 batch._counts.setdefault(category + "_" + suffix, 0)
-        for name in ("affine_projection_kernel_launches", "affine_solve_kernel_launches",
-                     "affine_expand_kernel_launches", "affine_commit_kernel_launches",
-                     "affine_restore_kernel_launches", "affine_validation_kernel_launches",
-                     "affine_state_reads", "affine_fk_reads", "affine_diagnostic_reads", "affine_status_reads"):
+        for name in (
+            "affine_projection_kernel_launches",
+            "affine_solve_kernel_launches",
+            "affine_expand_kernel_launches",
+            "affine_commit_kernel_launches",
+            "affine_restore_kernel_launches",
+            "affine_validation_kernel_launches",
+            "affine_state_reads",
+            "affine_fk_reads",
+            "affine_diagnostic_reads",
+            "affine_status_reads",
+        ):
             batch._counts.setdefault(name, 0)
         self.physical = TreeDeviceStorage(batch, {w: s.physical for w, s in self.specs.items()})
         self.kernels = make_affine_kernels()
@@ -92,30 +112,52 @@ class AffineTreeDeviceStorage:
         for world, spec in self.specs.items():
             i = self.rows[world]
             meta[i] = (batch._slots[world], spec.k, spec.delay, spec.control_max_iterations)
-            matrix[i, :spec.n, :spec.k], offset[i, :spec.n] = spec.matrix, spec.offset
-            independent[i, :spec.k] = spec.independent
-            row_indices[i, :spec.r], reverse_rows[i, :spec.r] = spec.row_indices, spec.reverse_rows
-            row_values[i, :spec.r] = spec.row_values
-            full_limits[i, :spec.n], limits[i, :spec.k] = spec.full_limits, spec.limits
-            properties[i, :spec.k, 13], properties[i, :spec.k, 14], properties[i, :spec.k, 15] = spec.kp, spec.kd, spec.cap
-            states[i, :spec.k], held_drive[i, :spec.k], held_loads[i, :spec.n] = spec.initial_state, spec.initial_drive, spec.initial_loads
+            matrix[i, : spec.n, : spec.k], offset[i, : spec.n] = spec.matrix, spec.offset
+            independent[i, : spec.k] = spec.independent
+            row_indices[i, : spec.r], reverse_rows[i, : spec.r] = (
+                spec.row_indices,
+                spec.reverse_rows,
+            )
+            row_values[i, : spec.r] = spec.row_values
+            full_limits[i, : spec.n], limits[i, : spec.k] = spec.full_limits, spec.limits
+            (
+                properties[i, : spec.k, 13],
+                properties[i, : spec.k, 14],
+                properties[i, : spec.k, 15],
+            ) = spec.kp, spec.kd, spec.cap
+            states[i, : spec.k], held_drive[i, : spec.k], held_loads[i, : spec.n] = (
+                spec.initial_state,
+                spec.initial_drive,
+                spec.initial_loads,
+            )
         self._held_drive, self._held_loads = _owned(held_drive), _owned(held_loads)
         commands = np.zeros((a, k, 10), np.float32)
         commands[:, :, :3] = held_drive
         self._held_commands = _owned(commands)
         with batch._device():
+
             def put(value, category="affine_topology"):
                 return batch._buffer(value.shape, value.dtype, value, category)
+
             def blank(shape, dtype=np.float32):
                 return put(np.zeros(shape, dtype), "affine_initial")
+
             self.meta, self.matrix, self.offset = put(meta), put(matrix), put(offset)
             self.independent = put(independent)
-            self.row_indices, self.row_values, self.reverse_rows = put(row_indices), put(row_values), put(reverse_rows)
+            self.row_indices, self.row_values, self.reverse_rows = (
+                put(row_indices),
+                put(row_values),
+                put(reverse_rows),
+            )
             self.full_limits, self.limits = put(full_limits), put(limits)
             self.properties = put(properties)
             self.commands = put(commands, "affine_initial")
             self.states = (put(states, "affine_initial"), put(states, "affine_initial"))
-            self.mass, self.factor, self.mobility = blank((a, k, k)), blank((a, k, k)), blank((a, k, k))
+            self.mass, self.factor, self.mobility = (
+                blank((a, k, k)),
+                blank((a, k, k)),
+                blank((a, k, k)),
+            )
             self.vector = blank((a, k, 14))
             self.linear, self.angular = blank((a, n, 3, k)), blank((a, n, 3, k))
             self.reaction, self.row_receipt = blank((a, n, 3)), blank((a, r, 2))
@@ -144,7 +186,9 @@ class AffineTreeDeviceStorage:
         commands[:, :, :3] = drive
         full = np.zeros((self.count, self.nmax, 10), np.float32)
         full[:, :, 3:] = loads
-        return AffineControlStage(self._owner, _owned(drive), _owned(loads), _owned(full), _owned(commands))
+        return AffineControlStage(
+            self._owner, _owned(drive), _owned(loads), _owned(full), _owned(commands)
+        )
 
     def validate_controls(self, by_world):
         self._check()
@@ -156,18 +200,25 @@ class AffineTreeDeviceStorage:
                 raise KeyError(world)
             spec, row = self.specs[world], self.rows[world]
             motor, external = spec.packet(value)
-            drive[row, :spec.k], loads[row, :spec.n] = motor, external
+            drive[row, : spec.k], loads[row, : spec.n] = motor, external
         return self._control_stage(drive, loads)
 
     def commit_controls(self, stage):
         if not isinstance(stage, AffineControlStage) or stage.owner is not self._owner:
             raise ValueError("affine control stage belongs to a different storage")
-        if stage.drive.shape != self._held_drive.shape or stage.loads.shape != self._held_loads.shape:
+        if (
+            stage.drive.shape != self._held_drive.shape
+            or stage.loads.shape != self._held_loads.shape
+        ):
             raise ValueError("affine held-control shape changed")
         self.physical.commit_controls(stage.physical)
         if not np.array_equal(stage.drive, self._held_drive):
             self._dirty = True
-        self._held_drive, self._held_loads, self._held_commands = stage.drive, stage.loads, stage.commands
+        self._held_drive, self._held_loads, self._held_commands = (
+            stage.drive,
+            stage.loads,
+            stage.commands,
+        )
 
     def upload_controls(self):
         self.physical.upload_controls()
@@ -188,24 +239,78 @@ class AffineTreeDeviceStorage:
         self.invalidate_diagnostics()
         p, launch = self.physical, self.batch._launch
         p.stage_mechanics(src)
-        launch(self.kernels["project"][src], self.count, p.meta, self.meta, self.matrix,
-               self.states[src], p.mass, p.vector, p.linear, p.angular,
-               self.mass, self.vector, self.linear, self.angular)
+        launch(
+            self.kernels["project"][src],
+            self.count,
+            p.meta,
+            self.meta,
+            self.matrix,
+            self.states[src],
+            p.mass,
+            p.vector,
+            p.linear,
+            p.angular,
+            self.mass,
+            self.vector,
+            self.linear,
+            self.angular,
+        )
         self.batch._counts["affine_projection_kernel_launches"] += 1
         # Original C4 algebraic solve. K is not a fabricated physical tree.
-        launch(p.kernels["solve"][src], self.count, h, self.meta, self.properties,
-               self.commands, self.states[src], tick_src, self.states[dst],
-               self.mass, self.factor, self.mobility, self.vector, p.info, p.diag)
+        launch(
+            p.kernels["solve"][src],
+            self.count,
+            h,
+            self.meta,
+            self.properties,
+            self.commands,
+            self.states[src],
+            tick_src,
+            self.states[dst],
+            self.mass,
+            self.factor,
+            self.mobility,
+            self.vector,
+            p.info,
+            p.diag,
+        )
         self.batch._counts["affine_solve_kernel_launches"] += 1
-        launch(self.kernels["expand"][src], self.count, p.meta, self.meta, self.matrix,
-               self.offset, self.independent, self.row_indices, self.row_values, self.reverse_rows,
-               self.full_limits, self.limits, p.states[src], self.states[src], p.states[dst],
-               self.states[dst], p.mass, p.vector, self.vector, self.reaction, self.row_receipt,
-               p.info, self.metrics)
+        launch(
+            self.kernels["expand"][src],
+            self.count,
+            p.meta,
+            self.meta,
+            self.matrix,
+            self.offset,
+            self.independent,
+            self.row_indices,
+            self.row_values,
+            self.reverse_rows,
+            self.full_limits,
+            self.limits,
+            p.states[src],
+            self.states[src],
+            p.states[dst],
+            self.states[dst],
+            p.mass,
+            p.vector,
+            self.vector,
+            self.reaction,
+            self.row_receipt,
+            p.info,
+            self.metrics,
+        )
         self.batch._counts["affine_expand_kernel_launches"] += 1
         p.stage_candidate_geometry(dst)
         p.stage_finalize(src, dst, tick_src, tick_dst, accepted)
-        launch(self.kernels["retain"][src], self.count, self.meta, self.states[src], self.states[dst], accepted)
+        launch(
+            self.kernels["retain"][src],
+            self.count,
+            self.meta,
+            self.states[src],
+            self.states[dst],
+            accepted,
+        )
         self.batch._counts["affine_commit_kernel_launches"] += 1
 
     def check_advance(self, status):
@@ -217,7 +322,11 @@ class AffineTreeDeviceStorage:
         valid, names = {}, {}
         for world, row in self.rows.items():
             code = int(info[row, 2])
-            accepted = bool(status[world]) if isinstance(status, Mapping) else bool(status[self.batch._slots[world]])
+            accepted = (
+                bool(status[world])
+                if isinstance(status, Mapping)
+                else bool(status[self.batch._slots[world]])
+            )
             if code not in AFFINE_STATUS_NAMES or accepted != (code == 0):
                 raise RuntimeError("affine status disagrees with full-world acceptance")
             valid[world], names[world] = accepted, AFFINE_STATUS_NAMES[code]
@@ -242,21 +351,51 @@ class AffineTreeDeviceStorage:
                 raise KeyError(world)
             row, spec = self.rows[world], self.specs[world]
             reduced, full, motor, external, tick = spec.restore_row(checkpoint, world)
-            state[row, :spec.k], drive[row, :spec.k], loads[row, :spec.n] = reduced, motor, external
+            state[row, : spec.k], drive[row, : spec.k], loads[row, : spec.n] = (
+                reduced,
+                motor,
+                external,
+            )
             command = np.zeros((spec.n, 10), np.float32)
             command[:, 3:] = external
             physical_points[world] = spec.physical.checkpoint(world, full, tick, command)
         physical = self.physical.validate_restore(physical_points)
-        validity = {w: False if physical.mask[row] else self._valid[w] for w, row in self.rows.items()}
-        codes = MappingProxyType({w: "RESTORED" if physical.mask[row] else self.status_codes[w] for w, row in self.rows.items()})
-        return AffineRestoreStage(self._owner, physical.mask, physical.ticks, _owned(state),
-                                  self._control_stage(drive, loads), physical, MappingProxyType(validity), codes)
+        validity = {
+            w: False if physical.mask[row] else self._valid[w] for w, row in self.rows.items()
+        }
+        codes = MappingProxyType(
+            {
+                w: "RESTORED" if physical.mask[row] else self.status_codes[w]
+                for w, row in self.rows.items()
+            }
+        )
+        return AffineRestoreStage(
+            self._owner,
+            physical.mask,
+            physical.ticks,
+            _owned(state),
+            self._control_stage(drive, loads),
+            physical,
+            MappingProxyType(validity),
+            codes,
+        )
 
     def _validate_state(self, bank):
         p = self.physical
-        self.batch._launch(self.kernels["validate_state"][bank], self.count, p.meta, self.meta,
-            self.matrix, self.offset, self.independent, self.full_limits, self.limits,
-            p.states[bank], self.states[bank], self.restore_flags)
+        self.batch._launch(
+            self.kernels["validate_state"][bank],
+            self.count,
+            p.meta,
+            self.meta,
+            self.matrix,
+            self.offset,
+            self.independent,
+            self.full_limits,
+            self.limits,
+            p.states[bank],
+            self.states[bank],
+            self.restore_flags,
+        )
         self.batch._counts["affine_validation_kernel_launches"] += 1
 
     def stage_restore(self, stage, src, dst, tick_src, tick_dst):
@@ -267,8 +406,18 @@ class AffineTreeDeviceStorage:
         p.stage_restore(stage.physical, src, dst, tick_src, tick_dst)
         self.batch._upload(self.restore_state, stage.state, "affine_restore")
         # The original copy/restore primitive uses the same mask/ticks but K rows.
-        self.batch._launch(p.kernels["restore"][src], self.count, self.meta,
-            p.restore_mask, self.restore_state, p.restore_ticks, self.states[src], self.states[dst], tick_src, tick_dst)
+        self.batch._launch(
+            p.kernels["restore"][src],
+            self.count,
+            self.meta,
+            p.restore_mask,
+            self.restore_state,
+            p.restore_ticks,
+            self.states[src],
+            self.states[dst],
+            tick_src,
+            tick_dst,
+        )
         self.batch._counts["affine_restore_kernel_launches"] += 1
         self._validate_state(dst)
 
@@ -296,8 +445,17 @@ class AffineTreeDeviceStorage:
             time = self._read(ticks, "affine_state")
         self.batch._counts["affine_state_reads"] += 1
         self.batch._counts["tree_state_reads"] += 1
-        return {w: self.specs[w].checkpoint(w, reduced[self.rows[w]], full[self.rows[w]],
-            time[self.batch._slots[w]], self._held_drive[self.rows[w]], self._held_loads[self.rows[w]]) for w in keys}
+        return {
+            w: self.specs[w].checkpoint(
+                w,
+                reduced[self.rows[w]],
+                full[self.rows[w]],
+                time[self.batch._slots[w]],
+                self._held_drive[self.rows[w]],
+                self._held_loads[self.rows[w]],
+            )
+            for w in keys
+        }
 
     def kinematics(self, keys, active, ticks):
         self._check()
@@ -314,12 +472,20 @@ class AffineTreeDeviceStorage:
         output = {}
         for world in keys:
             row, spec = self.rows[world], self.specs[world]
-            geom = fk[row, :spec.n]
-            output[world] = AffineTreeKinematics(int(time[self.batch._slots[world]]), spec.physical.joint_types,
-                full[row, :spec.n, 0], full[row, :spec.n, 1],
-                geom[:, :3].astype(float)+spec.physical.anchor, geom[:, 3:12].reshape(spec.n, 3, 3),
-                geom[:, 15:18].astype(float)+spec.physical.anchor,
-                reduced[row, :spec.k, 0], reduced[row, :spec.k, 1], spec.joint_names, spec.full_joint_names)
+            geom = fk[row, : spec.n]
+            output[world] = AffineTreeKinematics(
+                int(time[self.batch._slots[world]]),
+                spec.physical.joint_types,
+                full[row, : spec.n, 0],
+                full[row, : spec.n, 1],
+                geom[:, :3].astype(float) + spec.physical.anchor,
+                geom[:, 3:12].reshape(spec.n, 3, 3),
+                geom[:, 15:18].astype(float) + spec.physical.anchor,
+                reduced[row, : spec.k, 0],
+                reduced[row, : spec.k, 1],
+                spec.joint_names,
+                spec.full_joint_names,
+            )
         return output
 
     def diagnostics(self, keys):
@@ -331,10 +497,22 @@ class AffineTreeDeviceStorage:
         p = self.physical
         with self.batch._device():
             self.batch._sync()
-            full_linear, full_angular, full_mass, full_vectors, info, diag = [p._read(a, "tree_diagnostic")
-                for a in (p.linear, p.angular, p.mass, p.vector, p.info, p.diag)]
-            linear, angular, mass, vectors, reaction, rows, metrics = [self._read(a, "affine_diagnostic")
-                for a in (self.linear, self.angular, self.mass, self.vector, self.reaction, self.row_receipt, self.metrics)]
+            full_linear, full_angular, full_mass, full_vectors, info, diag = [
+                p._read(a, "tree_diagnostic")
+                for a in (p.linear, p.angular, p.mass, p.vector, p.info, p.diag)
+            ]
+            linear, angular, mass, vectors, reaction, rows, metrics = [
+                self._read(a, "affine_diagnostic")
+                for a in (
+                    self.linear,
+                    self.angular,
+                    self.mass,
+                    self.vector,
+                    self.reaction,
+                    self.row_receipt,
+                    self.metrics,
+                )
+            ]
         self.batch._counts["affine_diagnostic_reads"] += 1
         self.batch._counts["tree_diagnostic_reads"] += 1
         for world in selected:
@@ -342,17 +520,34 @@ class AffineTreeDeviceStorage:
             n, k, r = spec.n, spec.k, spec.r
             v, f = vectors[row, :k], full_vectors[row, :n]
             output[world] = AffineTreeDiagnostic(
-                entry_tick=int(info[row, 0]), exit_tick=int(info[row, 1]), dt_s=float(diag[row, 0]),
-                entry_position=v[:, 4], entry_velocity=v[:, 5],
-                linear_jacobian=full_linear[row, :n, :, :n], angular_jacobian=full_angular[row, :n, :, :n],
-                mass=full_mass[row, :n, :n], bias=f[:, 0], external=f[:, 1], drive=v[:, 2], acceleration=v[:, 3],
-                iterations=int(info[row, 3]), control_residual=float(diag[row, 1]),
+                entry_tick=int(info[row, 0]),
+                exit_tick=int(info[row, 1]),
+                dt_s=float(diag[row, 0]),
+                entry_position=v[:, 4],
+                entry_velocity=v[:, 5],
+                linear_jacobian=full_linear[row, :n, :, :n],
+                angular_jacobian=full_angular[row, :n, :, :n],
+                mass=full_mass[row, :n, :n],
+                bias=f[:, 0],
+                external=f[:, 1],
+                drive=v[:, 2],
+                acceleration=v[:, 3],
+                iterations=int(info[row, 3]),
+                control_residual=float(diag[row, 1]),
                 equation_residual=max(float(diag[row, 2]), float(metrics[row, 0])),
-                full_entry_position=f[:, 4], full_entry_velocity=f[:, 5],
-                reduced_mass=mass[row, :k, :k], reduced_bias=v[:, 0], reduced_external=v[:, 1],
-                reduced_linear_jacobian=linear[row, :n, :, :k], reduced_angular_jacobian=angular[row, :n, :, :k],
-                full_acceleration=f[:, 3], constraint_effort_full=reaction[row, :n, 0],
-                row_multipliers=rows[row, :r, 0], row_powers_w=rows[row, :r, 1], constraint_power_w=float(metrics[row, 1]))
+                full_entry_position=f[:, 4],
+                full_entry_velocity=f[:, 5],
+                reduced_mass=mass[row, :k, :k],
+                reduced_bias=v[:, 0],
+                reduced_external=v[:, 1],
+                reduced_linear_jacobian=linear[row, :n, :, :k],
+                reduced_angular_jacobian=angular[row, :n, :, :k],
+                full_acceleration=f[:, 3],
+                constraint_effort_full=reaction[row, :n, 0],
+                row_multipliers=rows[row, :r, 0],
+                row_powers_w=rows[row, :r, 1],
+                constraint_power_w=float(metrics[row, 1]),
+            )
         return output
 
     def summary(self, keys, active):

@@ -94,7 +94,7 @@ def observe_worlds(
 ):
     for i in tx.range(count):
         vv = _mul(state[i, 3], state[i, 3])
-        if kind[i] == 5 or kind[i] == 6:
+        if kind[i] >= 5:
             # No physical scalar fields for a full tree. Its typed bank owns energy.
             summary[i, 0] = 0.0
             summary[i, 1] = 0.0

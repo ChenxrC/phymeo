@@ -87,7 +87,7 @@ def affine_expand(
     for w in tx.range(count):
         n = full_meta[w, 1]
         k = reduced_meta[w, 1]
-        r = n-k
+        r = n - k
         code = info[w, 2]
         for j in tx.static_range(3):
             metrics[w, j] = 0.0
@@ -121,10 +121,15 @@ def affine_expand(
                 full_candidate[w, i, 2] = motor
                 full_candidate[w, i, 3] = _add(motor, full_vector[w, i, 1])
                 for j in tx.static_range(3):
-                    full_candidate[w, i, 4+j] = 0.0
+                    full_candidate[w, i, 4 + j] = 0.0
                 full_vector[w, i, 2] = motor
                 full_vector[w, i, 3] = acceleration
-                if q < full_limits[w, i, 0] or q > full_limits[w, i, 1] or tx.abs(q) > 4096.0 or tx.abs(v) > full_limits[w, i, 2]:
+                if (
+                    q < full_limits[w, i, 0]
+                    or q > full_limits[w, i, 1]
+                    or tx.abs(q) > 4096.0
+                    or tx.abs(v) > full_limits[w, i, 2]
+                ):
                     code = 5
                 for j in tx.static_range(7):
                     if not tx.isfinite(full_candidate[w, i, j]):
@@ -137,7 +142,10 @@ def affine_expand(
                 inertia = 0.0
                 for j in range(n):
                     inertia = _add(inertia, _mul(full_mass[w, i, j], full_vector[w, j, 3]))
-                value = _add(_add(inertia, full_vector[w, i, 0]), -_add(full_vector[w, i, 2], full_vector[w, i, 1]))
+                value = _add(
+                    _add(inertia, full_vector[w, i, 0]),
+                    -_add(full_vector[w, i, 2], full_vector[w, i, 1]),
+                )
                 reaction[w, i, 0] = value
                 reaction[w, i, 1] = value
                 full_scale = tx.max(full_scale, tx.abs(inertia))
@@ -177,7 +185,12 @@ def affine_expand(
             full_residual = _div(full_error, full_scale)
             metrics[w, 0] = full_residual
             metrics[w, 1] = power
-            if not tx.isfinite(full_scale) or not tx.isfinite(full_residual) or not tx.isfinite(power) or not tx.isfinite(power_scale):
+            if (
+                not tx.isfinite(full_scale)
+                or not tx.isfinite(full_residual)
+                or not tx.isfinite(power)
+                or not tx.isfinite(power_scale)
+            ):
                 code = 2
             elif code == 0 and full_residual > 2e-5:
                 code = 8
@@ -210,7 +223,9 @@ def affine_expand(
                         right = _mul(a, full_state[w, driver, 1])
                         offset_value = 0.0
                     error = _add(_add(left, -right), -offset_value)
-                    scale = tx.max(1.0, tx.max(tx.abs(left), tx.max(tx.abs(right), tx.abs(offset_value))))
+                    scale = tx.max(
+                        1.0, tx.max(tx.abs(left), tx.max(tx.abs(right), tx.abs(offset_value)))
+                    )
                     residual = _div(tx.abs(error), scale)
                     row_error = tx.max(row_error, residual)
                     if not tx.isfinite(residual) or not tx.isfinite(scale):
@@ -260,7 +275,12 @@ def affine_validate_state(
         for a in range(k):
             q = reduced[w, a, 0]
             v = reduced[w, a, 1]
-            if tx.abs(q) > 4096.0 or q < limits[w, a, 0] or q > limits[w, a, 1] or tx.abs(v) > limits[w, a, 2]:
+            if (
+                tx.abs(q) > 4096.0
+                or q < limits[w, a, 0]
+                or q > limits[w, a, 1]
+                or tx.abs(v) > limits[w, a, 2]
+            ):
                 good = 0
             for j in tx.static_range(7):
                 if not tx.isfinite(reduced[w, a, j]):
@@ -269,7 +289,9 @@ def affine_validate_state(
             for i in range(n):
                 projected_load = _add(projected_load, _mul(matrix[w, i, a], full[w, i, 3]))
             scale = tx.max(1.0, tx.max(tx.abs(projected_load), tx.abs(reduced[w, a, 3])))
-            if not tx.isfinite(projected_load) or tx.abs(_add(projected_load, -reduced[w, a, 3])) > _mul(2e-5, scale):
+            if not tx.isfinite(projected_load) or tx.abs(
+                _add(projected_load, -reduced[w, a, 3])
+            ) > _mul(2e-5, scale):
                 good = 0
         for i in range(n):
             expected_q = offset[w, i]
@@ -282,7 +304,12 @@ def affine_validate_state(
                     expected_motor = reduced[w, a, 2]
             q = full[w, i, 0]
             v = full[w, i, 1]
-            if tx.abs(q) > 4096.0 or q < full_limits[w, i, 0] or q > full_limits[w, i, 1] or tx.abs(v) > full_limits[w, i, 2]:
+            if (
+                tx.abs(q) > 4096.0
+                or q < full_limits[w, i, 0]
+                or q > full_limits[w, i, 1]
+                or tx.abs(v) > full_limits[w, i, 2]
+            ):
                 good = 0
             for j in tx.static_range(7):
                 if not tx.isfinite(full[w, i, j]):
@@ -302,6 +329,12 @@ def affine_validate_state(
 
 def make_affine_kernels():
     """Separate handles for both parent active-bank directions; normal math."""
-    functions = {"project": affine_project, "expand": affine_expand,
-                 "retain": affine_retain, "validate_state": affine_validate_state}
-    return {name: (tx.kernel(function), tx.kernel(function)) for name, function in functions.items()}
+    functions = {
+        "project": affine_project,
+        "expand": affine_expand,
+        "retain": affine_retain,
+        "validate_state": affine_validate_state,
+    }
+    return {
+        name: (tx.kernel(function), tx.kernel(function)) for name, function in functions.items()
+    }

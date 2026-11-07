@@ -142,3 +142,34 @@ A08 多周子例单独声明源关节位置界[-4096,4096]，取 A04 的 s=±2π
 后续 floating-affine 需要6+K速度、root COM偏心、惯性frame、世界角速率及完整root–joint交叉块，同事务接入；不能将root拆为独立刚体。后续设备接触需要真实same-step normal/material samples、全参与方 mobility和Jᵀ、摩擦/历史与实际位移共同发布，不由bounds候选自动获得。闭环需独立约束Jacobian/反力/秩/漂移处理，也不能拿无环mimic图冒闭环求解。
 
 本次交付仅当前一份计划，小commit/clean后交父审定；全部未来测试/源码/计时仍 **UNEXECUTED**，没有自动开始下一阶段的授权。
+
+## 父裁定：T1 测试库冻结与作者授权（2026-11-07）
+
+本段为当前授权，覆盖开头历史 PROPOSAL。父已全文审阅原 `fcf79eadc408d5b91804d8fcfd01331013cd559f` 计划并以 d2eeba5 正常导入。C4 与通用摩擦的新 wheel 已分别通过228/229，详各正式报告；C5自身仍 **TEST_AUTHORING / UNEXECUTED**，尚无产品或执行授权。
+
+原 robot 作者在原隔离树继续，仅允许四个 NEW 文件：
+- `tests/scale/test_resident_affine_step.py`；
+- `tests/scale/test_resident_affine_collision.py`；
+- `tests/reference_newton/robot/resident_affine_reference.py`；
+- `docs/benchmarks/p65-resident-affine-tree.md`。
+
+A01–A08原质量/惯量/安装/图/控制/窗口/故障/工程门完整保留。测试独立闭式、逐部件几何和完整 KKT，不调用产品oracle；Newton脚本不import Phymeo，原生链拒绝与合成fan-out参考分开。首次父RED须先由已有API构造合法asset/state，再调用缺失公共入口；不以缺测试依赖的collection失败冒功能RED。先测试作者小commit、clean、完整报告及AUTHORING_RELEASED，父实际RED后另授产品。
+
+禁止作者修改原计划、旧source/test/export或创建产品文件；禁止项目import/collection/pytest/数值/probe/lint/formatter/build/install/profile/native/CI。父是旧共享文件与串行执行唯一owner。私有storage复用签名尚未冻结，T1异常注入只沿已有batch upload/read-status/sync边界，不提前绑定猜测的私有实现。
+
+### 公开字段及维数
+
+在第3–4节基础上冻结下列区分，防止从动轴被丢失或重复施力。K是独立坐标，N是全部物理行：
+- checkpoint的 `position/velocity/applied_effort/generalized_applied` 为K；`full_position/full_velocity/full_applied_effort/full_generalized_applied` 为N。
+- `control` 是两份owned不可变tuple：K×3的drive与N×7的full loads。delay0的history为空，delay1保存K×3。
+- kinematics的 `position/velocity` 为N，`independent_position/independent_velocity` 为K；`joint_names` 为K个独立名称，`full_joint_names` 为N个物理名称，几何/COM依然为N。
+- diagnostic沿C4名称 `mass/bias/external/linear_jacobian/angular_jacobian` 表示full；另设 `reduced_mass/reduced_bias/reduced_external/reduced_linear_jacobian/reduced_angular_jacobian`。
+- `entry_*` 为K、`full_entry_*` 为N；`drive/acceleration` 为K、`full_acceleration` 为N。
+- 保存 `constraint_effort_full/row_multipliers/row_powers_w/constraint_power_w`，原图每一行均可观察，链式中间关节反力不按合成图抹掉。
+- 返回数组全部owned。checkpoint/binding保图、模型、N/K、owner/generation/epoch/world，不能只检查数组shape。
+- 原FP64图编译到FP32后按预声明工程残差核C/P与状态，不能要求bit-exact CP=0后以HOST修补状态。full受力/惯性及独立驱动各只施一次。
+
+A06的有限迭代负控现固定为A05的初态Mr，移除额外effort，h=1/1024，kp=(0,0)，kd=(1024,1024)，rate=(1/1024,1/1024)，cap16。从零effort按0→1坐标一sweep，有
+`Q=I+Mr^-1=[[1061,64],[64,902]]/741`，
+`tau0=741/1061; tau1=741*997/(1061*902)`，
+第一行残差 `64*tau1/741` 大于原 `5e-5*max(1,abs(actual),abs(expected))` 门。正常512预算的独立解为 `(838*741,997*741)/(1061*902-4096)`。该输入在执行前手推冻结，不靠probe选择失败。

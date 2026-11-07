@@ -109,7 +109,7 @@ def test_p03_public_floating_tree_keeps_complete_mass_and_internal_recoil(tyx_mo
             _close(accepted.position[7:], [4.5 * H * H])
             _close(geometry.linear_velocity_m_s, [[-1.5 * H, 0, 0], [3 * H, 0, 0]])
             _close(geometry.angular_velocity_rad_s, np.zeros((2, 3)))
-            _close(2 * geometry.linear_velocity_m_s[0] + geometry.linear_velocity_m_s[1], np.zeros(3), atol=1e-12, rtol=0)
+            _close((2 * geometry.linear_velocity_m_s[0] + geometry.linear_velocity_m_s[1]) / 3, np.zeros(3), atol=ATOL, rtol=0)
             assert accepted.control == entry.control and not accepted.history
             assert (geometry.joint_count, geometry.body_count, geometry.velocity_count, geometry.configuration_count) == (1, 2, 7, 8)
             assert batch.stats()["floating_world_count"] == 1

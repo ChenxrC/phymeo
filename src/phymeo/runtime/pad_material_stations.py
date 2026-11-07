@@ -18,9 +18,12 @@ from ..core.robot import RobotModel
 from ..dynamics.joint_mimic import MimicRobotAsset
 from ..solvers.sphere_link_contact import LinkSolid
 from ..solvers.tangent_history import StationKey
-from .material_stations import MAX_MATERIAL_STATIONS, MaterialStationRegistration, MaterialStationRegistry
+from .material_stations import (
+    MAX_MATERIAL_STATIONS,
+    MaterialStationRegistration,
+    MaterialStationRegistry,
+)
 from .robot_payload_scene import PadFace, _pad_points
-
 
 _BITS = tuple(product((0, 1), repeat=3))
 
@@ -35,10 +38,15 @@ def _resolve(tree, pad):
     if not isinstance(pad, PadFace):
         raise TypeError("pads must contain original PadFace declarations")
     selector = pad.shape_key
-    found = [col for col in tree.collisions if (
-        col.shape.key == selector if isinstance(selector, CollisionKey)
-        else (col.link_name, col.name) == (selector.link_name, selector.collision_name)
-    )]
+    found = [
+        col
+        for col in tree.collisions
+        if (
+            col.shape.key == selector
+            if isinstance(selector, CollisionKey)
+            else (col.link_name, col.name) == (selector.link_name, selector.collision_name)
+        )
+    ]
     if len(found) != 1 or not found[0].name_is_authored:
         raise ValueError("pad must select one unambiguous authored collision")
     col = found[0]
@@ -63,7 +71,9 @@ def _counter_feature(shape, vertices, declared):
     if shape.kind == "sphere":
         LinkSolid("payload", "payload", 0, "sphere", vertices, shape.radius)
         if ids != tuple(shape.vertex_ids) or len(ids) != 1 or np.any(np.asarray(vertices)[0]):
-            raise ValueError("sphere counter feature must be its actual COM-centred material vertex")
+            raise ValueError(
+                "sphere counter feature must be its actual COM-centred material vertex"
+            )
     elif shape.kind == "hull":
         box = LinkSolid("payload", "payload", 0, "box", vertices, shape.radius)
         # The native sampled-pad payload operator uses a COM-centred axis-aligned
@@ -128,7 +138,9 @@ def material_stations_from_pads(
         asset = scene.assets[address]
         tree = asset.tree if isinstance(asset, MimicRobotAsset) else asset
         if not isinstance(tree, RobotAsset) or not isinstance(tree.model, RobotModel):
-            raise ValueError("pad declarations currently support fixed-root ordinary or mimic assets")
+            raise ValueError(
+                "pad declarations currently support fixed-root ordinary or mimic assets"
+            )
         spec = scene._spec if isinstance(scene, RobotScene) else scene._participants[address].spec
         registered = {}
         for pad in spec.pads:
@@ -141,7 +153,9 @@ def material_stations_from_pads(
         names = tuple((col.link_name, col.name) for col in colliders)
         if len(set(names)) != len(names):
             raise ValueError("duplicate declared pad collision")
-        if any(set(mapping) != set(names) for mapping in (station_keys, counter_features, chart_ids)):
+        if any(
+            set(mapping) != set(names) for mapping in (station_keys, counter_features, chart_ids)
+        ):
             raise ValueError("material mappings must exactly cover the declared authored pad names")
         for pad, name in zip(supplied, names, strict=True):
             if registered.get(name) != (pad.axis, pad.side, frozenset(pad.offsets_m)):
@@ -181,14 +195,18 @@ def material_stations_from_pads(
             if convert is not None:
                 axis = convert(col.link_name, axis) - convert(col.link_name, np.zeros(3))
             tokens = tuple(station_keys[name])
-            if len(tokens) != len(pad.offsets_m) or any(not isinstance(token, StationKey) for token in tokens):
+            if len(tokens) != len(pad.offsets_m) or any(
+                not isinstance(token, StationKey) for token in tokens
+            ):
                 raise ValueError("each declared offset requires one explicit StationKey")
             charts = tuple(chart_ids[name])
             if len(charts) != 2:
                 raise ValueError("each pad requires explicit pad and payload chart IDs")
             charts = tuple(_integer(value, "material chart ID") for value in charts)
-            features = (_face_ids(shape, pad.axis, pad.side),
-                        _counter_feature(item.shape, item.vertices, counter_features[name]))
+            features = (
+                _face_ids(shape, pad.axis, pad.side),
+                _counter_feature(item.shape, item.vertices, counter_features[name]),
+            )
             side = "first" if pair[0] == key else "second"
             if side == "second":
                 charts, features = charts[::-1], features[::-1]
@@ -196,10 +214,17 @@ def material_stations_from_pads(
                 i = offset + j
                 if indices[i] != col.link_index or source_keys[i] != col.shape.key:
                     raise ValueError("pad material mapping disagrees with the actual sampler")
-                rows.append(MaterialStationRegistration(
-                    token, *pair, side, tuple(points[i]), tuple(axis), *charts,
-                    first_feature=features[0], second_feature=features[1],
-                ))
+                rows.append(
+                    MaterialStationRegistration(
+                        token,
+                        *pair,
+                        side,
+                        tuple(points[i]),
+                        tuple(axis),
+                        *charts,
+                        first_feature=features[0],
+                        second_feature=features[1],
+                    )
+                )
             offset += len(tokens)
         return MaterialStationRegistry(rows)
-

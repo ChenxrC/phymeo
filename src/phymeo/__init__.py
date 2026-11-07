@@ -231,6 +231,7 @@ from .runtime.material_stations import (
     MaterialStationRegistry,
     OwnerPose,
 )
+from .runtime.pad_material_stations import material_stations_from_pads
 from .runtime.program import (
     ProgramCapabilities,
     SceneProgram,
@@ -511,6 +512,7 @@ __all__ = [
     "ContactSceneBuilder",
     "MaterialStationRegistration",
     "MaterialStationRegistry",
+    "material_stations_from_pads",
     "OwnerPose",
     "ContactHistory",
     "ContactIdentity",

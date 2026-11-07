@@ -1232,39 +1232,44 @@ def test_p06_pi_neighbourhood_preserves_real_pose_and_quaternion_hemisphere(
     data["torque"][:] = 0
     data["v"][:] = [0.0, 0.0, 0.0, 0.0, 0.0, angle / H]
     rows = []
+    record = dict(input=data, declared_angle=angle, h_s=H, rows=rows)
     with ph.TyxWorldBatch([(503, _tree(data))], tyx_mode, cache_root=tmp_path) as batch:
-        for _ in range(2):
-            entry = batch.snapshot()[503]
-            assert batch.step(H) == {503: True}
-            state = batch.snapshot()[503]
-            geometry = batch.tree_kinematics()[503]
-            # Use the actual stored angular velocity, including FP32 pi rounding;
-            # the declaration is <= pi and no original domain gate is widened.
-            expected = _reference().drift(
-                data, np.asarray(entry.position), np.asarray(entry.velocity), H
-            )
-            _close(
-                _reference().quat_matrix(state.position[3:7]),
-                _reference().quat_matrix(expected[3:7]),
-            )
-            _close(geometry.link_rotation[0], _reference().quat_matrix(expected[3:7]))
-            assert np.dot(state.position[3:7], entry.position[3:7]) >= 0
-            assert abs(np.dot(state.position[3:7], state.position[3:7]) - 1) <= 1e-5
-            _close(state.velocity, entry.velocity)
-            rows.append(
-                dict(
+        try:
+            for _ in range(2):
+                entry = batch.snapshot()[503]
+                accepted = batch.step(H)
+                state = batch.snapshot()[503]
+                geometry = batch.tree_kinematics()[503]
+                # Save the real current candidate before any observer assertion.
+                row = dict(
                     entry=entry,
+                    accepted=accepted,
                     state=state,
                     geometry=geometry,
                     diagnostic=batch.tree_diagnostics()[503],
-                    expected_position=expected,
                 )
-            )
-        _save(
-            tmp_path,
-            "floating-pi-hemisphere",
-            dict(input=data, declared_angle=angle, h_s=H, rows=rows, stats=batch.stats()),
-        )
+                rows.append(row)
+                assert accepted == {503: True}
+                # The actual stored angular velocity includes FP32 pi rounding.
+                # The original angle, domain and engineering tolerances remain.
+                expected = _reference().drift(
+                    data, np.asarray(entry.position), np.asarray(entry.velocity), H
+                )
+                row["expected_position"] = expected
+                _close(
+                    _reference().quat_matrix(state.position[3:7]),
+                    _reference().quat_matrix(expected[3:7]),
+                )
+                _close(geometry.link_rotation[0], _reference().quat_matrix(expected[3:7]))
+                assert np.dot(state.position[3:7], entry.position[3:7]) >= 0
+                assert abs(np.dot(state.position[3:7], state.position[3:7]) - 1) <= 1e-5
+                _close(state.velocity, entry.velocity)
+        except BaseException as error:
+            record["failure"] = dict(type=type(error).__name__, message=str(error))
+            raise
+        finally:
+            record.update(stats=batch.stats(), retained=batch.snapshot())
+            _save(tmp_path, "floating-pi-hemisphere", record)
 
 
 @pytest.mark.tyx
@@ -1324,3 +1329,53 @@ def test_p06_partial_floating_storage_allocation_closes_original_runtime_and_reb
                 stats=batch.stats(),
             ),
         )
+
+
+@pytest.mark.tyx
+@pytest.mark.parametrize(
+    "case_name",
+    (
+        "product_underflow",
+        "division_underflow",
+        "cancellation_underflow",
+        "overflow",
+        "invalid_division",
+    ),
+)
+def test_p06_floating_fp32_arithmetic_flushes_underflow_but_retains_nonfinite(
+    case_name, tyx_mode, tmp_path
+):
+    import tyx as tx
+    from _floating_numeric_kernel import evaluate
+
+    from phymeo.backends.tyx_math import TyxMath
+    from phymeo.core.capabilities import SolverFailure
+
+    vectors = {
+        "product_underflow": (2.0**-80, 2.0**-80),
+        "division_underflow": (1.0, 2.0**127),
+        "cancellation_underflow": (2.0**-126, -(2.0**-126 + 2.0**-149)),
+        "overflow": (2.0**100, 2.0**100),
+        "invalid_division": (0.0, 0.0),
+    }
+    values = np.array([vectors[case_name]], np.float32)
+    output = np.zeros((1, 3), np.float32)
+    record = dict(case=case_name, input=values, mode=tyx_mode)
+    with TyxMath(tyx_mode, cache_root=tmp_path) as engine:
+        kernel = tx.kernel(evaluate)
+        if case_name in ("overflow", "invalid_division"):
+            with pytest.raises(SolverFailure, match="non-finite") as error:
+                engine.call(kernel, values, output, outputs=(1,))
+            record["actual_rejection"] = str(error.value)
+        else:
+            result = engine.call(kernel, values, output, outputs=(1,))[0]
+            if case_name == "product_underflow":
+                np.testing.assert_array_equal(result, [[0.0, 1.0, 2.0**-79]])
+            elif case_name == "division_underflow":
+                np.testing.assert_array_equal(result, [[2.0**127, 0.0, 2.0**127]])
+            else:
+                assert result[0, 0] == result[0, 2] == 0.0
+                assert -1.0 <= result[0, 1] < -0.999999
+            record["actual_result"] = result
+        record["stats"] = engine.stats()
+    _save(tmp_path, "floating-fp32-underflow-policy", record)

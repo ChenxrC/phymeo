@@ -7,7 +7,7 @@ the batch owner alone swaps accepted banks after every status/receipt check.
 
 import tyx as tx
 
-from ._tyx_numeric import _add, _div, _mul
+from ._tyx_floating_numeric import _add, _div, _mul
 
 
 def floating_geometry(
@@ -184,16 +184,13 @@ def floating_motion_energy(
                             _mul(fk[w, body, 3 + b * 3 + k], principal[w, body, k * 3 + a]),
                         )
                     local_spin = _add(local_spin, _mul(rotation, twist[w, body, 3 + b]))
-                total = _add(
-                    total,
-                    _mul(
-                        0.5,
-                        _add(
-                            _mul(properties[w, body, 12], _mul(speed, speed)),
-                            _mul(properties[w, body, 9 + a], _mul(local_spin, local_spin)),
-                        ),
-                    ),
-                )
+                # Nonnegative kinetic-energy terms use native FP32 products.
+                # Weight first avoids rejecting a tiny v*v before a large mass
+                # can scale it. An underflowed final energy contribution is zero;
+                # overflow/NaN remain visible to the final finite/positive gate.
+                linear_energy = (properties[w, body, 12] * speed) * speed * 0.5
+                angular_energy = (properties[w, body, 9 + a] * local_spin) * local_spin * 0.5
+                total = total + linear_energy + angular_energy
             for a in tx.static_range(6):
                 if not tx.isfinite(twist[w, body, a]):
                     flags[w] = 0
@@ -331,39 +328,42 @@ def floating_mechanics(
                     else:
                         oa = _add(oa, _mul(2.0, cross_axis))
                     spatial[w, body, 6 + a] = oa
+            # Principal-frame gyro avoids a spurious isotropic torque from
+            # the rounded world rotation's R R^T error at high angular speed.
+            # Complete all three local components before their cross products.
+            for b in tx.static_range(3):
+                local_spin = 0.0
+                for k in tx.static_range(3):
+                    local_spin = _add(
+                        local_spin, _mul(inertial[w, body, k * 3 + b], spatial[w, body, k])
+                    )
+                spatial[w, body, 9 + b] = local_spin
             dot_wc = 0.0
             square_w = 0.0
             for a in tx.static_range(3):
                 center = _add(fk[w, body, 15 + a], -fk[w, body, a])
                 dot_wc = _add(dot_wc, _mul(spatial[w, body, a], center))
                 square_w = _add(square_w, _mul(spatial[w, body, a], spatial[w, body, a]))
-                momentum = 0.0
                 angular_force = 0.0
                 for b in tx.static_range(3):
-                    local_omega = 0.0
                     local_alpha = 0.0
                     for k in tx.static_range(3):
-                        local_omega = _add(
-                            local_omega, _mul(inertial[w, body, k * 3 + b], spatial[w, body, k])
-                        )
                         local_alpha = _add(
                             local_alpha, _mul(inertial[w, body, k * 3 + b], spatial[w, body, 3 + k])
                         )
-                    momentum = _add(
-                        momentum,
-                        _mul(
-                            inertial[w, body, a * 3 + b],
-                            _mul(properties[w, body, 9 + b], local_omega),
-                        ),
+                    j = (b + 1) % 3
+                    k = (b + 2) % 3
+                    local_gyro = _mul(
+                        _add(properties[w, body, 9 + k], -properties[w, body, 9 + j]),
+                        _mul(spatial[w, body, 9 + j], spatial[w, body, 9 + k]),
                     )
                     angular_force = _add(
                         angular_force,
                         _mul(
                             inertial[w, body, a * 3 + b],
-                            _mul(properties[w, body, 9 + b], local_alpha),
+                            _add(_mul(properties[w, body, 9 + b], local_alpha), local_gyro),
                         ),
                     )
-                spatial[w, body, 9 + a] = momentum
                 spatial[w, body, 15 + a] = angular_force
             for a in tx.static_range(3):
                 j = (a + 1) % 3
@@ -382,13 +382,6 @@ def floating_mechanics(
                     acceleration = 0.0
                 spatial[w, body, 12 + a] = _mul(
                     properties[w, body, 12], _add(acceleration, -gravity[w, a])
-                )
-                spatial[w, body, 15 + a] = _add(
-                    spatial[w, body, 15 + a],
-                    _add(
-                        _mul(spatial[w, body, j], spatial[w, body, 9 + k]),
-                        -_mul(spatial[w, body, k], spatial[w, body, 9 + j]),
-                    ),
                 )
         for a in range(d):
             for b in range(a, d):

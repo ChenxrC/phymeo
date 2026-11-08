@@ -89,3 +89,16 @@ same-entry atol5e-6/rtol5e-5，窗口2e-4，原PD5e-5/方程2e-5。新增full约
 首短档实际成本用于排程；预计单61步窗>5min或W1/W4代表>15min，可先交短档阶段结果、把原完整节点明确NOT_RUN排后，不改steps冒通过。W32仅核心通过且4步预计<=3min时一次后置；容量/内存不合适可明确留未跑。没有性能收益也可接受新功能，禁止为凑倍率重复测量。
 
 连续两次修改无新增入口/缩小复现/排除明确假设，或60min只在扩写条件而没有最小能力进展，暂停该节点扩域并回到可审薄接口。full/reduced漂移、漏原图反力、漏root余额、错误材料或半发布是功能问题；数值精度按原工程域明确报告，不追逐无限精确接触。全部P6.5与Newton功能对齐仍持续，C11局部通过不等于全引擎完成。
+
+## 7. 作者接缝补充（2026-11-08）
+
+已确认的私有交接结构如下；它细化第2–3节，不改变物理、输入或验收范围：
+
+- checkpoint.control=(graph_token,drive[K,3],effort[n]全0,force[B,3],torque[B,3])，每块独立owned并绑定原图。
+- spec.packet(packet)返回(owned_drive,owned_effort,owned_loads[B,6])。
+- spec.restore_row(checkpoint,world)返回(root[13],reduced[K,7],full[n,7],reduced_applied[6+K],full_applied[6+n],packet,tick)。
+- physical spec可以共用C11 topology，但调用ordinary验证helpers时必须构造明确full临时数据/control，不能把K packet交给floating_packet(n)。公开checkpoint保持floating-affine身份。
+- 诊断逐行功的精确公开字段名为row_powers_w，总功为constraint_power_w；第2节row_powers仅语义简写，不创建别名。root_constraint_residual保完整6维实际余额。
+- 新floating-affine storage沿C5状态名：7=AFFINE_CONSTRAINT_RESIDUAL、8=AFFINE_FULL_EQUATION_RESIDUAL、9=SITE_CAPACITY_EXCEEDED；0..6沿C9。ordinary floating原7=SITE_CAPACITY_EXCEEDED不变。父contact reject按明确affine事实选9，禁止跨storage误解码。
+
+RD已先交A01有效测试checkpoint 91099315bf6ee1c015327eaa7c7c68d592b73e03，首节点test_a01_public_affine_floating_root_reaction；原robot随后开始五NEW产品作者。该记录仅证明tests-first作者顺序，无C11执行或通过结论。

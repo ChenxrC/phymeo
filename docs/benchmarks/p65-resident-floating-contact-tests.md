@@ -95,3 +95,9 @@ python -m pytest -q tests/scale/test_resident_floating_contacts.py tests/scale/t
 ## 首次延迟历史参照修正（父，2026-11-08）
 
 原511解释组的F08五项与F09均通过，随后F10在W1的N9首步因测试把延迟历史统一预期为零而失败（RAW1保留）。原C9从创建起就把首个延迟target设为已存FP32初始关节角，非零初态应为±1/16；rate/ff为零。父只修独立测试_selected、delay显式断言和同次保存reader，以原声明q的FP32表示构造期望，不从实际selected_drive反推。原产品、模型、控制、工程门和完整保存均未改。517 Ruff与518 format-check均0；全部25功能节点已有分组解释覆盖，接下来仅执行尚未完整通过的51个事务节点，原W矩阵未完成前缀保留，不重跑F01–F09。
+
+## 混合旧 affine 的延迟电机参照（父，2026-11-08）
+
+519 解释事务组实际20通过/1失败、3805.42s/RAW1：W1×4/W4/W32的40+恢复21、容量、延迟、真实晚故障、stale、分配及关闭重建均完成；下一混合旧 fixed/affine/自由球/无绑定浮根节点首步失败。旧 C7 `_advance_oracle` / `_audit_mixed` 默认立即使用声明 motor=7，新用例实际声明 delay=1、kp=kd=0，首步应使用 held motor=0。A03 reduced mass=7，故原参照速度高估恰 h=1/1024；实际首步 -0.00041852681897580624，错误期望 +0.0005580357142857145。原 raw/source/保存失败前缀保留。
+
+父仅在新测试构造独立的首步 oracle_cases motor=0，随后恢复原声明；不改旧 helper、world、command、外载、产品或门。另直接核真实 selected_drive 与 actual_drive，保存 independent_old / selected_affine_motor；同次保存reader补对这两个字段和完整旧窗口的检查（reader此时仍未执行）。525 Ruff0；526首次format1后只手工换行，527最终format0；528精确失败节点1通过/13.93s/RAW0，包含原40+恢复21。已绿20项与25功能节点不重跑；下一组是原尚未执行30事务节点，不能把本记录称C10正式接受。

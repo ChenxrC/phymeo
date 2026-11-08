@@ -529,12 +529,31 @@ def test_f10_old_fixed_affine_scalar_and_unbound_floating_publish_together(tyx_m
             try:
                 for index in range(40):
                     entry = batch.snapshot()
-                    expected = _advance_oracle(old, expected)
+                    # The reused C7 helper assumes immediate motor delivery.
+                    # This authored mixed window has delay=1, kp=kd=0: select
+                    # the declared held-zero motor on step 1 without changing
+                    # the worlds, commands, external loads or old helper.
+                    oracle_cases = old
+                    if index == 0:
+                        oracle_cases = {
+                            w: dict(
+                                i, data=dict(i["data"], motor=np.zeros_like(i["data"]["motor"]))
+                            )
+                            if i["kind"] == "affine"
+                            else i
+                            for w, i in old.items()
+                        }
+                    expected = _advance_oracle(oracle_cases, expected)
                     selected = np.zeros((1, 3)) if index == 0 else data["drive"]
                     fq, fv, truth = _reference().base().advance(data, fq, fv, selected, external, H)
                     assert batch.step_contacts(plan, H) == dict.fromkeys(commands, True)
                     assert 1207 not in plan.last_accepted and 6 not in plan.last_accepted
-                    audits = _audit_mixed(batch, old, entry, plan.last_accepted, sources, expected)
+                    audits = _audit_mixed(
+                        batch, oracle_cases, entry, plan.last_accepted, sources, expected
+                    )
+                    selected_motor = oracle_cases[91]["data"]["motor"]
+                    _close(plan.last_accepted[91].actual_drive, selected_motor)
+                    _close(plan.last_accepted[91].selected_drive, [[0, 0, selected_motor[0]]])
                     after = batch.snapshot()
                     diagnostic = batch.tree_diagnostics()[1207]
                     audits[1207] = audit_free_floating(
@@ -554,6 +573,8 @@ def test_f10_old_fixed_affine_scalar_and_unbound_floating_publish_together(tyx_m
                     row.update(
                         audit=audits,
                         independent_floating=dict(q=fq.copy(), v=fv.copy(), truth=truth),
+                        independent_old=expected,
+                        selected_affine_motor=selected_motor.copy(),
                         diagnostics=batch.tree_diagnostics(),
                     )
                     rows.append(row)

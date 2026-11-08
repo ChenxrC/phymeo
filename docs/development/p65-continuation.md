@@ -15,9 +15,9 @@
 
 **C9普通浮根完整设备树已正式限域接受**：产品4927ef9，HOST15、解释分组86、最终源码完整CUDA86、相邻双backend各8、独立Newton七例每端280步，以及新wheel两backend各258接受/2拒绝world-step完成。最终495只读保存审计核20原始任务、172完整gzip、7284绑定文件，RAW0；原FP32下溢、精确pi伪陀螺及观察器首失败与不同源码通过范围全部保留，详[正式报告](../benchmarks/p65-resident-floating-tree.md)。C9项目执行已全部结束，不重跑同源绿组或同次保存审计。当前能力含真实root COM/世界角速度、根–关节完整M/b/J、0–16关节、PD、可逆local检查点、当前姿态设备宽相与原事务；尚非浮根接触或affine。
 
-**C10普通浮根接触正在串行验证**：[冻结计划](../superpowers/plans/2026-11-08-resident-floating-contacts.md)的13个NEW交付与父共享接缝已导入，F01有效RED及其interpret/CUDA正控已完成。解释模式25个功能节点已按原始成功分组覆盖；原F07小数几何与非零初态延迟队列两项参照错误已精确修正，失败收据保留，物理输入/产品/门不变。519正在执行51项事务；507剩余CUDA、相邻兼容、Newton原生、源码外wheel及同次保存审计尚未执行/验收，不重复已绿功能节点。父是唯一执行owner。
+**C10普通浮根接触正在串行验证**：[冻结计划](../superpowers/plans/2026-11-08-resident-floating-contacts.md)的13个NEW交付与父共享接缝已导入，F01有效RED及其interpret/CUDA正控已完成。解释模式25个功能节点已按原始成功分组覆盖；原F07小数几何与非零初态延迟队列两项参照错误已精确修正，失败收据保留，物理输入/产品/门不变。519实际20通过/1失败，混合旧affine复用参照误用了未延迟电机；528修正新观察器后该原40+恢复21节点通过。原输入、产品和门不变；剩余30事务、507 CUDA、相邻、Newton原生、源码外wheel及同次保存审计待执行/验收，已绿45节点不重跑。父是唯一执行owner。
 
-**C11浮根affine/mimic产品与测试已完成首轮纯作者和交叉审阅**：[开发计划](../superpowers/plans/2026-11-08-resident-floating-affine.md)当前核心预声明52节点/46gzip，后置W32另1/1。父已审五NEW产品与五NEW测试；原RD发现诊断构造缺selected finite/单步tick门，robot已以4ad81d9窄修，父与RD只读确认，X07三项真实读回负控正在补写。全部C11仍UNEXECUTED、尚未导入父，不把文本闭环当测试通过。原robot继续§8三条Newton原生短参照作者，RD的§9源码外消费者须待X07 clean交接后启动；父OLD接入与C11执行仍以C10正式接受为前置。独立K与完整n/B/D、原图反力/根余额/两bank共同发布保持。设备窄相[分层提案](p65-device-convex-narrowphase-next-proposal.md)仍NOT_FROZEN。
+**C11浮根affine/mimic产品与测试已完成首轮纯作者和交叉审阅**：[开发计划](../superpowers/plans/2026-11-08-resident-floating-affine.md)当前核心预声明52节点/46gzip，后置W32另1/1。父已审五NEW产品与五NEW测试；原RD发现诊断构造缺selected finite/单步tick门，robot已以4ad81d9窄修，父与RD只读确认，X07三项真实读回负控已纯作者交接2c3a931并经父增量审阅。全部C11仍UNEXECUTED、尚未导入父，不把文本闭环当测试通过。原robot的§8三条Newton原生短参照已交接5b34f120、RD的§9源码外消费者已交接0b12b394，现交叉只读审阅，消费者已发现一处局部名遮蔽待修；父OLD接入与C11执行仍以C10正式接受为前置。独立K与完整n/B/D、原图反力/根余额/两bank共同发布保持。设备窄相[分层提案](p65-device-convex-narrowphase-next-proposal.md)仍NOT_FROZEN。
 
 [功能差异全景](phymeo-newton-panorama-2026-11-07.md) · [可视化](phymeo-newton-panorama-2026-11-07.html)。完整设备窄相/CCD/浮根接触与affine、跨独立participant的设备共同求解、抓取释放工程精度边界和软布两初态放台等仍开放；历史数学证明或局部几何不代表整个P6.5完成。
 

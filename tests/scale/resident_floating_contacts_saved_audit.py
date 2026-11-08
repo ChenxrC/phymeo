@@ -875,7 +875,14 @@ def physical_payload(member, relative, record, *, partial=False):
         shapes, bindings = bindings_schema(record["model"], record["bindings"])
         same((len(record["rows"]), len(record["replay"])), (40, 21), "mixed complete window")
         for index, row in enumerate(record["rows"]):
-            fields(row, ("diagnostics",), "authored mixed forward diagnostics")
+            fields(row, ("diagnostics", "independent_old", "selected_affine_motor"), "authored mixed forward diagnostics")
+            motor = [0.0] if index == 0 else record["old_inputs"]["91"]["motor"]
+            close(row["selected_affine_motor"], motor, "declared mixed affine delay selection")
+            close(row["receipts"]["91"]["actual_drive"], motor, "actual mixed affine motor")
+            close(row["receipts"]["91"]["selected_drive"], [[0.0, 0.0, motor[0]]], "held-zero then original command")
+            for world in ("503", "91"):
+                for field, coordinate in (("position", 0), ("velocity", 1)):
+                    close(row["state"][world][field], row["independent_old"][world][coordinate], "independent old mixed window", atol=WINDOW_ATOL)
             record_frame(row, WORLDS, shapes=shapes, bindings=bindings)
             same(set(row["receipts"]), {"503", "91"}, "unbound scalar/floating get no fabricated receipt")
             for w in map(str, WORLDS):

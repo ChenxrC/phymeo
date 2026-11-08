@@ -15,7 +15,9 @@
 
 **C9普通浮根完整设备树已正式限域接受**：产品4927ef9，HOST15、解释分组86、最终源码完整CUDA86、相邻双backend各8、独立Newton七例每端280步，以及新wheel两backend各258接受/2拒绝world-step完成。最终495只读保存审计核20原始任务、172完整gzip、7284绑定文件，RAW0；原FP32下溢、精确pi伪陀螺及观察器首失败与不同源码通过范围全部保留，详[正式报告](../benchmarks/p65-resident-floating-tree.md)。C9项目执行已全部结束，不重跑同源绿组或同次保存审计。当前能力含真实root COM/世界角速度、根–关节完整M/b/J、0–16关节、PD、可逆local检查点、当前姿态设备宽相与原事务；尚非浮根接触或affine。
 
-**C10普通浮根接触正在父集成**：[冻结计划](../superpowers/plans/2026-11-08-resident-floating-contacts.md)的产品/多案例/独立参考及native/wheel共11个NEW已全文审阅与交接核验；另外两个NEW保存审计已交接，原RD做只读交叉审阅。父先导入NEW并执行F01有效RED，再接既有共享入口；旧C9仅迁移已失效的“全部浮根接触拒绝”节点为合法材料下的CCD拒域。全部C10仍UNEXECUTED，父是唯一项目执行owner。原RD已提交浮根affine单文档后继提案，尚未冻结/实施；设备窄相的[分层提案](p65-device-convex-narrowphase-next-proposal.md)也仍NOT_FROZEN。继续多案例、一次完整力学、两bank共同发布、原工程门和源码外验证，不以放开类型检查冒物理接入。
+**C10普通浮根接触正在串行验证**：[冻结计划](../superpowers/plans/2026-11-08-resident-floating-contacts.md)的13个NEW交付与父共享接缝已导入，F01有效RED及其interpret/CUDA正控已完成。解释模式25个功能节点已按原始成功分组覆盖；原F07小数几何与非零初态延迟队列两项参照错误已精确修正，失败收据保留，物理输入/产品/门不变。519正在执行51项事务；507剩余CUDA、相邻兼容、Newton原生、源码外wheel及同次保存审计尚未执行/验收，不重复已绿功能节点。父是唯一执行owner。
+
+**C11浮根affine/mimic独立作者已启动**：[开发计划](../superpowers/plans/2026-11-08-resident-floating-affine.md)冻结49核心节点与后置W32。RD先交A01有效测试，原robot再开始NEW产品；两树并行纯编码，父OLD接缝与C11执行仍以C10正式接受为前置。独立控制K与真实完整n/B/D始终分开，完整原图反力/根余额/两bank共同发布均保留。设备窄相的[分层提案](p65-device-convex-narrowphase-next-proposal.md)仍NOT_FROZEN。
 
 [功能差异全景](phymeo-newton-panorama-2026-11-07.md) · [可视化](phymeo-newton-panorama-2026-11-07.html)。完整设备窄相/CCD/浮根接触与affine、跨独立participant的设备共同求解、抓取释放工程精度边界和软布两初态放台等仍开放；历史数学证明或局部几何不代表整个P6.5完成。
 

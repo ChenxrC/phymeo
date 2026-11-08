@@ -44,7 +44,9 @@ def floating_affine_project(
                     code = 2
             for body in range(n + 1):
                 for axis in tx.static_range(3):
-                    if not tx.isfinite(full_linear[w, body, axis, i]) or not tx.isfinite(full_angular[w, body, axis, i]):
+                    if not tx.isfinite(full_linear[w, body, axis, i]) or not tx.isfinite(
+                        full_angular[w, body, axis, i]
+                    ):
                         code = 2
         for a in range(dr):
             for column in tx.static_range(14):
@@ -176,7 +178,12 @@ def floating_affine_expand(
                 full_vector[w, i + 6, 2] = motor
                 full_vector[w, i + 6, 3] = acceleration
                 next_full_applied[w, i + 6] = applied
-                if q < full_limits[w, i, 0] or q > full_limits[w, i, 1] or tx.abs(q) > 4096.0 or tx.abs(v) > full_limits[w, i, 2]:
+                if (
+                    q < full_limits[w, i, 0]
+                    or q > full_limits[w, i, 1]
+                    or tx.abs(q) > 4096.0
+                    or tx.abs(v) > full_limits[w, i, 2]
+                ):
                     code = 5
                 for channel in tx.static_range(7):
                     if not tx.isfinite(full_candidate[w, i, channel]):
@@ -189,14 +196,21 @@ def floating_affine_expand(
                 inertia = 0.0
                 for j in range(df):
                     inertia = _add(inertia, _mul(full_mass[w, i, j], full_vector[w, j, 3]))
-                value = _add(_add(inertia, full_vector[w, i, 0]), -_add(full_vector[w, i, 2], full_vector[w, i, 1]))
+                value = _add(
+                    _add(inertia, full_vector[w, i, 0]),
+                    -_add(full_vector[w, i, 2], full_vector[w, i, 1]),
+                )
                 reaction[w, i, 0] = value
                 reaction[w, i, 1] = value
                 full_scale = tx.max(full_scale, tx.abs(inertia))
                 for channel in tx.static_range(3):
                     full_scale = tx.max(full_scale, tx.abs(full_vector[w, i, channel]))
                 full_scale = tx.max(full_scale, tx.abs(value))
-                if not tx.isfinite(value) or not tx.isfinite(inertia) or not tx.isfinite(next_full_applied[w, i]):
+                if (
+                    not tx.isfinite(value)
+                    or not tx.isfinite(inertia)
+                    or not tx.isfinite(next_full_applied[w, i])
+                ):
                     code = 2
             row_power_sum = 0.0
             for order in range(r):
@@ -206,11 +220,19 @@ def floating_affine_expand(
                 ratio = row_values[w, row, 0]
                 value = reaction[w, follower, 1]
                 row_receipt[w, row, 0] = value
-                relative = _add(full_vector[w, follower, 5], -_mul(ratio, full_vector[w, driver, 5]))
+                relative = _add(
+                    full_vector[w, follower, 5], -_mul(ratio, full_vector[w, driver, 5])
+                )
                 power = _mul(value, relative)
                 row_receipt[w, row, 1] = power
                 row_power_sum = _add(row_power_sum, power)
-                row_scale = tx.max(1.0, tx.max(tx.abs(_mul(value, full_vector[w, follower, 5])), tx.abs(_mul(_mul(ratio, value), full_vector[w, driver, 5]))))
+                row_scale = tx.max(
+                    1.0,
+                    tx.max(
+                        tx.abs(_mul(value, full_vector[w, follower, 5])),
+                        tx.abs(_mul(_mul(ratio, value), full_vector[w, driver, 5])),
+                    ),
+                )
                 reaction[w, follower, 1] = _add(reaction[w, follower, 1], -value)
                 reaction[w, driver, 1] = _add(reaction[w, driver, 1], _mul(ratio, value))
                 reaction[w, follower, 2] = _add(reaction[w, follower, 2], value)
@@ -233,11 +255,20 @@ def floating_affine_expand(
             full_residual = _div(full_error, full_scale)
             metrics[w, 0] = full_residual
             metrics[w, 1] = power
-            if not tx.isfinite(full_scale) or not tx.isfinite(full_residual) or not tx.isfinite(power) or not tx.isfinite(power_scale) or not tx.isfinite(row_power_sum):
+            if (
+                not tx.isfinite(full_scale)
+                or not tx.isfinite(full_residual)
+                or not tx.isfinite(power)
+                or not tx.isfinite(power_scale)
+                or not tx.isfinite(row_power_sum)
+            ):
                 code = 2
             elif code == 0 and full_residual > 2e-5:
                 code = 8
-            elif code == 0 and (tx.abs(power) > _mul(2e-5, power_scale) or tx.abs(_add(power, -row_power_sum)) > _mul(2e-5, power_scale)):
+            elif code == 0 and (
+                tx.abs(power) > _mul(2e-5, power_scale)
+                or tx.abs(_add(power, -row_power_sum)) > _mul(2e-5, power_scale)
+            ):
                 code = 7
             projected_error = 0.0
             for a in range(dr):
@@ -279,7 +310,9 @@ def floating_affine_expand(
                         right = _mul(ratio, full_state[w, driver, 1])
                         intercept = 0.0
                     error = _add(_add(left, -right), -intercept)
-                    scale = tx.max(1.0, tx.max(tx.abs(left), tx.max(tx.abs(right), tx.abs(intercept))))
+                    scale = tx.max(
+                        1.0, tx.max(tx.abs(left), tx.max(tx.abs(right), tx.abs(intercept)))
+                    )
                     residual = _div(tx.abs(error), scale)
                     row_error = tx.max(row_error, residual)
                     if not tx.isfinite(residual) or not tx.isfinite(scale):
@@ -368,14 +401,21 @@ def floating_affine_validate_state(
         for a in range(k):
             q = state[w, a, 0]
             v = state[w, a, 1]
-            if tx.abs(q) > 4096.0 or q < limits[w, a, 0] or q > limits[w, a, 1] or tx.abs(v) > limits[w, a, 2]:
+            if (
+                tx.abs(q) > 4096.0
+                or q < limits[w, a, 0]
+                or q > limits[w, a, 1]
+                or tx.abs(v) > limits[w, a, 2]
+            ):
                 good = 0
             for channel in tx.static_range(7):
                 if not tx.isfinite(state[w, a, channel]):
                     good = 0
             expected = applied[w, a + 6]
             scale = tx.max(1.0, tx.max(tx.abs(expected), tx.abs(state[w, a, 3])))
-            if not tx.isfinite(expected) or tx.abs(_add(expected, -state[w, a, 3])) > _mul(2e-5, scale):
+            if not tx.isfinite(expected) or tx.abs(_add(expected, -state[w, a, 3])) > _mul(
+                2e-5, scale
+            ):
                 good = 0
         for a in range(k + 6):
             projected = 0.0
@@ -384,12 +424,21 @@ def floating_affine_validate_state(
                 if not tx.isfinite(full_applied[w, i]):
                     good = 0
             scale = tx.max(1.0, tx.max(tx.abs(projected), tx.abs(applied[w, a])))
-            if not tx.isfinite(projected) or not tx.isfinite(applied[w, a]) or tx.abs(_add(projected, -applied[w, a])) > _mul(2e-5, scale):
+            if (
+                not tx.isfinite(projected)
+                or not tx.isfinite(applied[w, a])
+                or tx.abs(_add(projected, -applied[w, a])) > _mul(2e-5, scale)
+            ):
                 good = 0
         for i in range(n):
             q = full[w, i, 0]
             v = full[w, i, 1]
-            if tx.abs(q) > 4096.0 or q < full_limits[w, i, 0] or q > full_limits[w, i, 1] or tx.abs(v) > full_limits[w, i, 2]:
+            if (
+                tx.abs(q) > 4096.0
+                or q < full_limits[w, i, 0]
+                or q > full_limits[w, i, 1]
+                or tx.abs(v) > full_limits[w, i, 2]
+            ):
                 good = 0
             expected_q = offset[w, i]
             expected_v = 0.0
@@ -443,4 +492,6 @@ def make_floating_affine_kernels():
         "restore": floating_affine_restore,
         "validate_state": floating_affine_validate_state,
     }
-    return {name: (tx.kernel(function), tx.kernel(function)) for name, function in functions.items()}
+    return {
+        name: (tx.kernel(function), tx.kernel(function)) for name, function in functions.items()
+    }

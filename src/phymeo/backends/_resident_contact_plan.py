@@ -22,6 +22,7 @@ from ._resident_contact_bridge import (
     finish_contact_loads,
     sample_tree_contacts,
 )
+from ._resident_floating_affine_binding import ResidentFloatingAffineTreeBinding
 from ._resident_floating_binding import ResidentFloatingTreeBinding
 from ._resident_floating_contact import (
     floating_contact_diagnostics,
@@ -105,6 +106,7 @@ class ResidentContactPlan(ResidentCollisionPlan):
                 ResidentTreeBinding,
                 ResidentAffineTreeBinding,
                 ResidentFloatingTreeBinding,
+                ResidentFloatingAffineTreeBinding,
                 ResidentStaticBinding,
             )
             for b in bindings
@@ -204,8 +206,8 @@ class ResidentContactPlan(ResidentCollisionPlan):
             worlds = tuple(w for w in self._contact_worlds if w in storage.rows)
             if not worlds:
                 continue
-            floating = storage is self._batch._floating_trees
-            affine = storage is not self._batch._trees and not floating
+            floating = storage in (self._batch._floating_trees, self._batch._floating_affine_trees)
+            affine = storage in (self._batch._affine_trees, self._batch._floating_affine_trees)
             physical = storage.physical if affine else storage
             t = physical.count
             body_max = physical.bmax if floating else physical.nmax
@@ -383,6 +385,12 @@ class ResidentContactPlan(ResidentCollisionPlan):
         for _, storage in self._batch._tree_storages():
             if storage is self._batch._trees:
                 targets = ((storage, "_held"),)
+            elif storage is self._batch._floating_affine_trees:
+                targets = tuple(
+                    (target, name)
+                    for target in (storage, storage.physical)
+                    for name in ("_held_drive", "_held_effort", "_held_loads")
+                )
             elif storage is self._batch._floating_trees:
                 targets = (
                     (storage, "_held_drive"),
@@ -572,7 +580,10 @@ class ResidentContactPlan(ResidentCollisionPlan):
             entry_data, final_data = attempt["groups"][storage], candidate["groups"][storage]
             vector = final_data["vectors"][row, :velocity_count]
             if group["affine"]:
-                drive_vector = final_data["reduced_vectors"][row, : storage.specs[world].k]
+                start = 6 if group["floating"] else 0
+                drive_vector = final_data["reduced_vectors"][
+                    row, start : start + storage.specs[world].k
+                ]
             elif group["floating"]:
                 drive_vector = vector[6:]
             else:
@@ -612,7 +623,25 @@ class ResidentContactPlan(ResidentCollisionPlan):
             )
             if self._tree_dynamic_pairs:
                 diagnostics["tree_dynamic_pairs"] = True
-            if group["affine"]:
+            if group["affine"] and group["floating"]:
+                spec = storage.specs[world]
+                diagnostics.update(
+                    coordinate_kind="floating_affine",
+                    full_dof_count=spec.d,
+                    reduced_dof_count=spec.reduced_d,
+                    independent_dof_count=spec.k,
+                    joint_count=spec.n,
+                    body_count=spec.b,
+                    velocity_count=spec.d,
+                    position_count=spec.q_count,
+                    graph_token=spec.graph_token,
+                    projection_matrix=spec.projection,
+                    offset_vector=spec.offset,
+                    constraint_rows=spec.constraints,
+                    floating_affine_diagnostic=final_data["affine_diagnostics"][world],
+                    equation_residual=final_data["affine_diagnostics"][world].equation_residual,
+                )
+            elif group["affine"]:
                 spec = storage.specs[world]
                 diagnostics.update(
                     coordinate_kind="affine",

@@ -228,14 +228,27 @@ class WorldBinding:
 
 def bind_world(world, spec):
     from ._resident_affine_tree import AffineRobotTree, compile_affine_tree_world
+    from ._resident_floating_affine_tree import (
+        FloatingAffineRobotTree,
+        compile_floating_affine_tree_world,
+    )
     from ._resident_floating_tree import FloatingRobotTree, compile_floating_tree_world
     from ._resident_revolute_world import RevoluteRotor, compile_revolute_world
     from ._resident_tree_world import FixedRobotTree, compile_tree_world
 
-    if isinstance(spec, AffineRobotTree):
-        tree = compile_affine_tree_world(spec)
+    if isinstance(spec, (AffineRobotTree, FloatingAffineRobotTree)):
+        tree = (
+            compile_floating_affine_tree_world(spec)
+            if isinstance(spec, FloatingAffineRobotTree)
+            else compile_affine_tree_world(spec)
+        )
         binding = WorldBinding(
-            world, tree.kind, tree.physical.domain, (), tree.topology, tree_spec=tree
+            world,
+            tree.kind,
+            tree.domain if isinstance(spec, FloatingAffineRobotTree) else tree.physical.domain,
+            (),
+            tree.topology,
+            tree_spec=tree,
         )
         return (
             binding,

@@ -13,6 +13,7 @@ import numpy as np
 
 from ._resident_collision_plan import ResidentStaticBinding
 from ._resident_contact_bridge import _CONSTRUCTION_M, ContactShapeFrame
+from ._resident_floating_affine_tree import FloatingAffineTreeKinematics
 from ._resident_floating_binding import ResidentFloatingTreeBinding
 from ._resident_floating_tree import FloatingTreeDiagnostic, FloatingTreeKinematics
 
@@ -85,6 +86,9 @@ def read_floating_contact_packet(plan, storage, worlds, bank):
         raise ValueError("floating contact packet requested an unregistered world")
     if not worlds:
         return {}
+    owner = storage
+    affine = owner is batch._floating_affine_trees
+    storage = owner.physical if affine else owner
     with batch._device():
         batch._sync()
         roots, states, applied, fk, twist, energy, ticks = [
@@ -99,7 +103,17 @@ def read_floating_contact_packet(plan, storage, worlds, bank):
                 batch._ticks[bank],
             )
         ]
+        reduced = plan._read_contact(owner.states[bank]) if affine else None
+        reduced_applied = plan._read_contact(owner.applied[bank]) if affine else None
     count, body_max, velocity_max = storage.count, storage.bmax, storage.dmax
+    if affine:
+        reduced = _array(reduced, (count, owner.kmax, 7), np.float32, "reduced joint bank")
+        reduced_applied = _array(
+            reduced_applied,
+            (count, owner.reduced_dmax),
+            np.float32,
+            "reduced generalized load bank",
+        )
     roots = _array(roots, (count, 13), np.float32, "root bank")
     states = _array(states, (count, storage.npad, 7), np.float32, "joint bank")
     applied = _array(applied, (count, velocity_max), np.float32, "generalized load bank")
@@ -122,9 +136,23 @@ def read_floating_contact_packet(plan, storage, worlds, bank):
         velocity = twist[row, :bodies]
         _finite(roots[row], states[row, :n], applied[row, :dofs], body, velocity, energy[row])
         tick = int(ticks[slot])
-        checkpoint = spec.checkpoint(
-            world, roots[row], states[row], applied[row], tick, storage._packet(world)
-        )
+        if affine:
+            affine_spec = owner.specs[world]
+            _finite(reduced[row, : affine_spec.k], reduced_applied[row, : affine_spec.reduced_d])
+            checkpoint = affine_spec.checkpoint(
+                world,
+                roots[row],
+                reduced[row],
+                states[row],
+                reduced_applied[row],
+                applied[row],
+                tick,
+                owner._packet(world),
+            )
+        else:
+            checkpoint = spec.checkpoint(
+                world, roots[row], states[row], applied[row], tick, storage._packet(world)
+            )
         # The actual bank's local origin remains in checkpoint.local_origin_m.
         # World positions are FP64 expansions; never invert their rounded sum
         # to reconstruct the local root state or normalize stored rotations.
@@ -133,11 +161,11 @@ def read_floating_contact_packet(plan, storage, worlds, bank):
             rotation = body[:, 3:12].astype(np.float64).reshape(bodies, 3, 3)
             com = body[:, 15:18].astype(np.float64) + spec.anchor
         _finite(position, rotation, com)
-        geometry = FloatingTreeKinematics(
+        geometry_args = (
             tick,
             spec.joint_types,
-            checkpoint.position,
-            checkpoint.velocity,
+            checkpoint.full_position if affine else checkpoint.position,
+            checkpoint.full_velocity if affine else checkpoint.velocity,
             position,
             rotation,
             com,
@@ -147,6 +175,17 @@ def read_floating_contact_packet(plan, storage, worlds, bank):
             bodies,
             dofs,
             spec.q_count,
+        )
+        geometry = (
+            FloatingAffineTreeKinematics(
+                *geometry_args,
+                checkpoint.position,
+                checkpoint.velocity,
+                affine_spec.joint_names,
+                affine_spec.full_joint_names,
+            )
+            if affine
+            else FloatingTreeKinematics(*geometry_args)
         )
         frames = {}
         for shape in plan._model.shapes:

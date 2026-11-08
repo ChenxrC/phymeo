@@ -441,7 +441,8 @@ def floating_solve(
     count: tx.i32,
     h: tx.f32,
     meta: tx.ndarray(tx.i32, 2),
-    properties: tx.ndarray(tx.f32, 3),
+    motor_gains: tx.ndarray(tx.f32, 3),
+    physical_root_com: tx.ndarray(tx.f32, 2),
     commands: tx.ndarray(tx.f32, 3),
     root: tx.ndarray(tx.f32, 2),
     state: tx.ndarray(tx.f32, 3),
@@ -529,7 +530,6 @@ def floating_solve(
         active = 0
         for motor in range(n):
             i = motor + 6
-            body = motor + 1
             target = commands[w, motor, 0]
             rate = commands[w, motor, 1]
             ff = commands[w, motor, 2]
@@ -542,17 +542,17 @@ def floating_solve(
             vector[w, i, 13] = ff
             a = _add(
                 _add(
-                    _mul(properties[w, body, 13], _add(target, -state[w, motor, 0])),
-                    _mul(properties[w, body, 14], rate),
+                    _mul(motor_gains[w, motor, 0], _add(target, -state[w, motor, 0])),
+                    _mul(motor_gains[w, motor, 1], rate),
                 ),
                 ff,
             )
-            damping = _add(_mul(h, properties[w, body, 13]), properties[w, body, 14])
+            damping = _add(_mul(h, motor_gains[w, motor, 0]), motor_gains[w, motor, 1])
             vector[w, i, 7] = a
             vector[w, i, 8] = damping
             if damping == 0.0:
                 vector[w, i, 2] = tx.min(
-                    properties[w, body, 15], tx.max(-properties[w, body, 15], a)
+                    motor_gains[w, motor, 2], tx.max(-motor_gains[w, motor, 2], a)
                 )
             else:
                 active = active + 1
@@ -569,7 +569,6 @@ def floating_solve(
             if code == 0 and solved == 0:
                 for motor in range(n):
                     i = motor + 6
-                    body = motor + 1
                     damping = vector[w, i, 8]
                     if damping > 0.0:
                         response = 0.0
@@ -592,7 +591,7 @@ def floating_solve(
                         if not tx.isfinite(value):
                             code = 2
                         vector[w, i, 2] = tx.min(
-                            properties[w, body, 15], tx.max(-properties[w, body, 15], value)
+                            motor_gains[w, motor, 2], tx.max(-motor_gains[w, motor, 2], value)
                         )
                 for i in range(d):
                     response = 0.0
@@ -606,14 +605,13 @@ def floating_solve(
                 absolute_residual = 0.0
                 for motor in range(n):
                     i = motor + 6
-                    body = motor + 1
                     speed = vector[w, i, 9]
                     target = vector[w, i, 11]
                     rate = vector[w, i, 12]
                     ff = vector[w, i, 13]
-                    kp = properties[w, body, 13]
-                    kd = properties[w, body, 14]
-                    cap = properties[w, body, 15]
+                    kp = motor_gains[w, motor, 0]
+                    kd = motor_gains[w, motor, 1]
+                    cap = motor_gains[w, motor, 2]
                     tau = vector[w, i, 2]
                     nextq = _add(state[w, motor, 0], _mul(h, speed))
                     raw = _add(
@@ -779,7 +777,7 @@ def floating_solve(
                         value = _add(
                             value, _mul(2.0, _mul(next_root[w, 6], next_root[w, 3 + (a + 1) % 3]))
                         )
-                    offset = _add(offset, _mul(value, properties[w, 0, 6 + b]))
+                    offset = _add(offset, _mul(value, physical_root_com[w, b]))
                 old_offset = _add(fk[w, 0, 15 + a], -fk[w, 0, a])
                 coordinate = _add(
                     root[w, a], _add(_mul(h, vector[w, a, 9]), _add(old_offset, -offset))

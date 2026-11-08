@@ -233,3 +233,12 @@ full/reduced world-position arrays are also checked after the FP64 anchor sum.
 The adapter raises ValueError before returning any candidate mapping; it changes
 no mechanics, tolerances, device arrays, publication or test inputs. These checks
 and the corresponding new RD fault tests remain UNEXECUTED by this author.
+## 父共享接缝首轮接入（2026-11-08，待实际设备验证）
+
+父先导入 tests-first 91099315；542 在 HOST 完整 M/b/a 与反力锚之后，测试浮点恒等式自身失败，非有效能力 RED。仅改该恒等式为 Fraction 后，543 的相同 A01 在公开 FloatingAffineRobotTree 缺失处实际 RAW1，成为有效 RED；未放宽原输入/阈值。
+
+父随后导入已审五产品与最终测试/独立参考/原生/源码外消费者。OLD 仅8个入口：public export、world binding、batch、floating storage/shared solve、collision plan、contact plan、floating packet。kind11/12独立分桶，仅外层storage进入同一事务；完整n/B/D mechanics与接触载荷先保留，再S转置投影一次，共享原PD/root drift，full/reduced/原关系反力在唯一swap前校验。接触与几何同时携带floating和affine事实、完整graph/source身份；K电机切片跳过根6维。没有新runtime、第二次根推进或第二次力应用。
+
+544首次exact18 Ruff报10 import块、67分号、3局部I命名与1已失用body赋值；545首次format-check报17文件。546仅imports排序、547排版；手工3局部惯量变量重命名与删除shared solve中3个无load的body赋值。548 Ruff和549 format-check均RAW0；550标准库AST检查证18文件的限定非import AST及scoped import bindings相同，三局部重命名和3无读赋值另明列，不能把它写作全部raw AST相同。原失败、source快照保留。
+
+当前为 IMPLEMENTED_TESTS_PENDING。此节不是设备物理或C11验收；下一唯一串行任务是A01 interpret/CUDA，随后按原计划推进不同案例、事务、原生与wheel。

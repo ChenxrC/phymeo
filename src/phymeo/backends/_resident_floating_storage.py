@@ -209,6 +209,10 @@ class FloatingTreeDeviceStorage:
 
             self.meta, self.parents, self.kinds = put(meta), put(parents), put(kinds)
             self.properties, self.zero, self.principal = put(properties), put(zero), put(principal)
+            gains = np.zeros((t, n, 3), np.float32)
+            gains[:, : self.nmax] = properties[:, 1:b, 13:16]
+            self.motor_gains = put(gains)
+            self.physical_root_com = put(properties[:, 0, 6:9].copy())
             self.gravity, self.anchor = put(gravity), put(anchor)
             self.commands = put(drive, "floating_initial")
             self.effort = put(effort, "floating_initial")
@@ -371,7 +375,8 @@ class FloatingTreeDeviceStorage:
             self.count,
             h,
             self.meta,
-            self.properties,
+            self.motor_gains,
+            self.physical_root_com,
             self.commands,
             self.roots[src],
             self.states[src],

@@ -8,6 +8,7 @@ from types import MappingProxyType
 import numpy as np
 
 from ._resident_affine_tree import AffineRobotTree
+from ._resident_floating_affine_tree import FloatingAffineRobotTree, FloatingAffineTreeInputs
 from ._resident_floating_tree import FloatingRobotTree, FloatingTreeInputs
 from ._resident_revolute_world import RevoluteRotor
 from ._resident_tree_world import FixedRobotTree
@@ -29,6 +30,7 @@ __all__ = [
     "FreeSphere",
     "FixedRobotTree",
     "FloatingRobotTree",
+    "FloatingAffineRobotTree",
     "PrismaticSlider",
     "RevoluteRotor",
     "SpherePlaneCheckpoint",
@@ -98,6 +100,8 @@ class TyxWorldBatch:
         self._affine_specs = {}
         self._floating_trees = None
         self._floating_specs = {}
+        self._floating_affine_trees = None
+        self._floating_affine_specs = {}
         props, initial_rows, commands = [], [], []
         for key, spec in worlds:
             key = world_key(key)
@@ -110,7 +114,9 @@ class TyxWorldBatch:
             self._bindings.append(binding)
             if binding.tree_spec is not None:
                 specs = (
-                    self._floating_specs
+                    self._floating_affine_specs
+                    if binding.kind in (11, 12)
+                    else self._floating_specs
                     if binding.kind in (9, 10)
                     else self._affine_specs
                     if binding.kind in (7, 8)
@@ -133,6 +139,28 @@ class TyxWorldBatch:
             spec = binding.tree_spec
             if spec is None:
                 point = binding.checkpoint(row, 0, command)
+            elif binding.kind in (11, 12):
+                from ..solvers.floating_tree import FloatingRobotInputs
+
+                control = FloatingAffineTreeInputs(
+                    spec.graph_token,
+                    spec.initial_drive,
+                    FloatingRobotInputs(
+                        spec.initial_effort.astype(np.float64),
+                        spec.initial_loads[:, :3].astype(np.float64),
+                        spec.initial_loads[:, 3:].astype(np.float64),
+                    ),
+                )
+                point = spec.checkpoint(
+                    binding.world,
+                    spec.initial_root,
+                    spec.initial_state,
+                    spec.physical.initial_state,
+                    spec.initial_generalized,
+                    spec.physical.initial_generalized,
+                    0,
+                    control,
+                )
             elif binding.kind in (9, 10):
                 from ..solvers.floating_tree import FloatingRobotInputs
 
@@ -233,6 +261,12 @@ class TyxWorldBatch:
                     from ._resident_floating_storage import FloatingTreeDeviceStorage
 
                     self._floating_trees = FloatingTreeDeviceStorage(self, self._floating_specs)
+                if self._floating_affine_specs:
+                    from ._resident_floating_affine_storage import FloatingAffineTreeDeviceStorage
+
+                    self._floating_affine_trees = FloatingAffineTreeDeviceStorage(
+                        self, self._floating_affine_specs
+                    )
         except BaseException:
             self.close()
             raise
@@ -245,6 +279,7 @@ class TyxWorldBatch:
                 (self._tree_specs, self._trees),
                 (self._affine_specs, self._affine_trees),
                 (self._floating_specs, self._floating_trees),
+                (self._floating_affine_specs, self._floating_affine_trees),
             )
             if storage is not None
         )
@@ -355,6 +390,11 @@ class TyxWorldBatch:
                         None
                         if self._floating_trees is None
                         else self._floating_trees.borrow_geometry(self._active)
+                    ),
+                    floating_affine_tree=(
+                        None
+                        if self._floating_affine_trees is None
+                        else self._floating_affine_trees.borrow_geometry(self._active)
                     ),
                 )
 
@@ -757,6 +797,12 @@ class TyxWorldBatch:
                 "tree_world_count": len(self._tree_specs),
                 "affine_tree_world_count": len(self._affine_specs),
                 "floating_world_count": len(self._floating_specs),
+                "floating_affine_world_count": len(self._floating_affine_specs),
+                "floating_affine_tree_status_codes": (
+                    {}
+                    if self._floating_affine_trees is None
+                    else dict(self._floating_affine_trees.status_codes)
+                ),
                 "floating_tree_status_codes": (
                     {} if self._floating_trees is None else dict(self._floating_trees.status_codes)
                 ),

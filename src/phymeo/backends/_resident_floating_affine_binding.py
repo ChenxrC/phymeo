@@ -37,8 +37,12 @@ class ResidentFloatingAffineTreeBinding(ResidentFloatingTreeBinding):
             raise TypeError("floating affine material source must be FloatingMimicRobotAsset")
         base = ResidentFloatingTreeBinding.from_asset(asset.tree, source_key, key=key, world=world)
         result = cls(
-            base.key, base.world, base.group_index, base.local_points_m,
-            topology=None, graph_token=floating_affine_model_token(asset),
+            base.key,
+            base.world,
+            base.group_index,
+            base.local_points_m,
+            topology=None,
+            graph_token=floating_affine_model_token(asset),
         )
         object.__setattr__(result, "_source_shape", base._source_shape)
         object.__setattr__(result, "_model_token", base._model_token)
@@ -47,7 +51,9 @@ class ResidentFloatingAffineTreeBinding(ResidentFloatingTreeBinding):
 
 def compile_floating_affine_tree_binding(shape, binding, spec):
     """Reuse the full-body FloatingBindingCompiled and the existing device bounds."""
-    if not isinstance(binding, ResidentFloatingAffineTreeBinding) or not isinstance(spec, FloatingAffineTreeWorldSpec):
+    if not isinstance(binding, ResidentFloatingAffineTreeBinding) or not isinstance(
+        spec, FloatingAffineTreeWorldSpec
+    ):
         raise TypeError("floating affine material needs an affine floating binding and world")
     if binding.graph_token != spec.graph_token:
         raise ValueError("floating affine source graph differs from the owned graph")

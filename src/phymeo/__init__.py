@@ -3,6 +3,14 @@
 from .backends._resident_affine_binding import ResidentAffineTreeBinding
 from .backends._resident_affine_tree import AffineRobotTree
 from .backends._resident_collision_plan import ResidentSphereBinding, ResidentStaticBinding
+from .backends._resident_floating_affine_binding import ResidentFloatingAffineTreeBinding
+from .backends._resident_floating_affine_tree import (
+    FloatingAffineRobotTree,
+    FloatingAffineTreeCheckpoint,
+    FloatingAffineTreeDiagnostic,
+    FloatingAffineTreeInputs,
+    FloatingAffineTreeKinematics,
+)
 from .backends._resident_floating_binding import ResidentFloatingTreeBinding
 from .backends._resident_floating_tree import (
     FloatingRobotTree,
@@ -439,6 +447,12 @@ __all__ = [
     "RevoluteRotor",
     "FixedRobotTree",
     "FloatingRobotTree",
+    "FloatingAffineRobotTree",
+    "FloatingAffineTreeCheckpoint",
+    "FloatingAffineTreeDiagnostic",
+    "FloatingAffineTreeInputs",
+    "FloatingAffineTreeKinematics",
+    "ResidentFloatingAffineTreeBinding",
     "FloatingTreeCheckpoint",
     "FloatingTreeDiagnostic",
     "FloatingTreeInputs",

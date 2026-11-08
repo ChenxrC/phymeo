@@ -153,3 +153,17 @@ RD仅在原NEW transactions/test报告补X07，不新增测试文件或物理长
 注入在storage正常 `diagnostics_from_arrays(worlds,full_arrays,reduced_arrays)` 入口，实际设备IO完成后、原构造校验之前；随后call-through原构造，让真实finite/tick门触发，不能手工throw代替。分别只修改selected full.mass[row,0,0]、reduced.mass[row,0,0]为NaN，或code0下info.exit=entry。保原读回、完整修改后selected数组、dtype/shape/uint32实际位模式（NaN两例）及int32 ticks；原encoder非有限语义标签不代替位模式。无需迁移父_finish_attempt或创造新candidate schema。失败时full/reduced/root/history/held/FK/summary/acceptedreceipt/epoch/bank保持，transient diagnostics按原失败语义无效；retry与同输入应有的合法推进相符。
 
 当前核心预声明更新为 **52实例/46完整gzip/backend**（原49/43 + X07三例/三文件）；14个无保存preflight不变，38个节点有保存。step15、contacts5、transactions32；后置W32仍额外1/1。数字仍未collection/未执行，不是通过数。§8 native三短例和§9消费者范围不扩张；§9由RD完成本次窄修并重新clean交接后再开始。
+
+## 11. C11 同次保存审计作者授权（2026-11-08）
+
+原robot已完成native交接5b34f120及wheel只读交叉审阅；从该clean点另授 **SAVED_AUDITOR_AUTHORING_ONLY**，恰两NEW：`tests/scale/resident_floating_affine_saved_audit.py`、`docs/benchmarks/p65-resident-floating-affine-saved-audit-plan.md`。父与child四路径已确认不存在。仅文本/file IO/Git作者，不改原产品/native/tests/OLD、不merge父、不import/数值/静态/执行、不建助手。C10仍占父唯一执行槽；C11原执行前置不变。
+
+命令沿原 `python -I -B <auditor> --manifest <absolute> --output <fresh absolute directory>`。只stdlib读取同次完整保存输出、原raw/commands/receipts/source snapshots/metadata。禁止调用NumPy/Phy/TYX/Newton/producer/reference重算动力学或重新推进来取得统计。可复用已明确独立的低级IO方法，但不依赖执行pytest collection生成预期身份、不改旧auditor。严格目录/成员/大小/哈希/重复key/非有限表示/解压上限与精确命令来源，源前后相同，运行失败保留原前缀；不存在或失败的未来组不能算完成。
+
+按当前原三tests源码和case manifest手工固定每backend **52 core nodes / 46 gzip / 14 no-save**：step15、contact5、transactions32；不能按输出挑组或以manifest自报计数为准。真实CLI的exact targets/deselect和预声明参数顺序推导pytest30字符prefix/ordinal，完整原payload逐字段保留。分组成功union可用于最终覆盖，重复只在明确修复影响资格下允许；原RED/首失败是历史，失败prefix不填覆盖。后置W32另1/1，未运行时明确NOT_RUN，不能阻断原core也不能冒通过。
+
+核所有原input/graph/P/c/C/full与reduced维数、full/root/independent状态与控制history、完整M/J/外载/drive/加速度/原图反力与逐行功/root余额、geometry/材料/application及各自功、status/tick/epoch/bank/owned资源。保存读者只验证来源、结构、协议关系与已保存独立比较，不用被测矩阵反算新物理expected。40+19→21完整重放按原允许字段分开累计调度与物理字段，不删物理值。X07三类必须保原/破坏后actual readback、dtype/shape和uint32位模式或int32 ticks、原构造拒绝、全bank保留及合法retry；code0不能吞非有限或同tick。
+
+§8每device三native gzip与summary共9实际步，原精确device/模型/全部required checks/source bytes/delta-v与原行balance口径分别核；不把原生reaction观察门套到产品。§9每backend一个wheel gzip与summary，原W4 40+21、A04四步、两bank拒步/足额retry及最多2alignment，真实接受计数262–270/world-steps、两拒绝attempt，所有来源/installed成员/loaded origins/关闭owned0完整。raw失败、IO失败、prefix_only均不得升级完整。
+
+沿单payload64MiB压缩/256MiB解码、合计2GiB、8192文件、嵌套深度96/metadata16MiB有界读；超界明确失败，不解压全目录或删除记录。最终audit.json应给每原run和固定identity的实际覆盖、原失败、未运行W32、来源与完整保存计数，不能凭hash叫物理正确。该脚本本身最终经父静态与唯一串行同次审计；无新物理测试次数。两NEW小commit/clean/公开schema/预声明membership/UNEXECUTED/AUTHORING_RELEASED交接，父文本核后再导入。

@@ -17,7 +17,7 @@
 
 **C10普通浮根接触已正式限域接受，保留URDF来源限定**：[正式报告](../benchmarks/p65-resident-floating-contacts.md)。interpret分组与CUDA各76唯一节点、相邻各3、独立Newton原生每端80步、新wheel源码外每端302接受/2拒绝world-step完成。541保存补件RAW0核14原任务/133完整gzip，复用原9项完整审计、只补5项；原URDF漏快照以明确retrospective qualification保留，不能称同次raw来源齐全。三项观察器首失败与536均留证。431产品构建成员全同。C10项目执行已结束，不重复绿组或已完审计；能力仍限ordinary浮根、HOST有限mu0离散窄相及TYX完整响应。
 
-**C11浮根affine/mimic已正式限域接受**：[正式报告](../benchmarks/p65-resident-floating-affine.md)。每backend核心52唯一节点/46完整保存身份、相邻各6、W32各4步；Newton原生每端9步、新wheel源码外每端266接受/2拒绝world-step全部完成。587同次保存审计RAW0核20原任务/7751文件，102完整输出及3原失败产物分开记录，435产品成员与wheel逐字节一致。完整6+n载荷→6+K归约、原关系行反力/root余额和共同发布已验；553保存token、580观察器零反力集合首失败均保留。所有C11执行结束，不重复已绿组/同次审计。下一片[K0整族设备查询案例](p65-device-convex-query-case-manifest.md)及API提案进入父裁定，尚无产品执行或GPU窄相接受。
+**C11浮根affine/mimic已正式限域接受**：[正式报告](../benchmarks/p65-resident-floating-affine.md)。每backend核心52唯一节点/46完整保存身份、相邻各6、W32各4步；Newton原生每端9步、新wheel源码外每端266接受/2拒绝world-step全部完成。587同次保存审计RAW0核20原任务/7751文件，102完整输出及3原失败产物分开记录，435产品成员与wheel逐字节一致。完整6+n载荷→6+K归约、原关系行反力/root余额和共同发布已验；553保存token、580观察器零反力集合首失败均保留。所有C11执行结束，不重复已绿组/同次审计。下一片[K0整族设备查询计划](../superpowers/plans/2026-11-08-device-convex-query.md)已冻结tests-first：原robot先写独立测试/参考，原RD随后作者统一support/query；父持旧接缝与唯一执行槽。尚无K0产品执行或GPU窄相接受。
 
 [功能差异全景](phymeo-newton-panorama-2026-11-07.md) · [可视化](phymeo-newton-panorama-2026-11-07.html)。完整设备窄相/CCD、跨独立participant的设备共同求解、抓取释放工程精度边界和软布两初态放台等仍开放；历史数学证明或局部几何不代表整个P6.5完成。
 

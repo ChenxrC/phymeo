@@ -2,7 +2,7 @@
 
 ## 当前安排（2026-11-08，持续实施）
 
-用户已取消08:00限制，持续目标 **ACTIVE**，无固定截止、无周期任务。主线仍是[三线开发与测试计划](../superpowers/plans/2026-11-07-generic-collision-until-0800.md)的通用功能补齐。原RR额度不可用，不重试或新建替代；父是所有旧共享接缝与全部项目执行唯一owner。原RD/robot仅在隔离树作者阶段并行，所有项目import/pytest/数值/静态/build/install/native严格串行。
+用户先取消08:00限制，后于11月8日11:24清除长期目标；get_goal实际返回null。当前 **NO_ACTIVE_GOAL / CHECKPOINTING**，不继续派工或启动项目执行，也不新建goal；原两作者仅保存当前WIP并交接。主线仍是[三线开发与测试计划](../superpowers/plans/2026-11-07-generic-collision-until-0800.md)的通用功能补齐。原RR额度不可用，不重试或新建替代；父是所有旧共享接缝与全部项目执行唯一owner。原RD/robot仅在隔离树作者阶段并行，所有项目import/pytest/数值/静态/build/install/native严格串行。
 
 **C5固定根affine-mimic设备树已正式限域接受**：HOST13、解释89、CUDA89，独立Newton CPU/CUDA共400步，301固定保存审计及新wheel源码外五混合世界305 world-steps完成。详[验收报告](../benchmarks/p65-resident-affine-tree.md)。C4普通完整树、F3浮根惯量与F01–F06摩擦接受继续复用；禁止重复同源已绿组、旧wheel或完整证据审计。C5不是设备接触反馈、浮根设备树或CCD通过。
 

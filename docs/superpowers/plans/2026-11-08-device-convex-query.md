@@ -131,3 +131,8 @@ d255b0b仅增加来源保存、依赖关闭和两public薄入口；NEW query尚�
 前者检查一项close异常后其它plan/runtime仍全释放；后者检查from_asset普通分支与固定根static来源、原过滤、一次真实运动后的设备bounds。完整参考生成器、source/test/config同次快照与原保存结果保留。它们只验证已改变的OLD兼容接缝，不执行缺失NEW query，也不计K0的142身份。§8等待产品交接的限制继续适用于K0首正控。无新agent执行槽，父fresh guard→interpret→CUDA严格串行；同源已绿不重跑。
 
 594 interpret：2passed/1.57s/RAW0；595 CUDA：2passed/3.83s/RAW0。每次443 source/config快照前后无改动，两个完整原JSON与同次生成URDF保留；仅文件读取核原退出和保存存在，未重算旧物理或旧验收。记录 artifacts/p65-generic-collision-20261107-01/k0-parent-adjacent-01.json。两执行已完成；K0首正控仍待作者交接。
+## 11. 用户清除长期目标后的保存点（2026-11-08 11:24）
+
+get_goal实际返回null。父停止继续扩展/派工和项目执行，不建立替代goal；原RD/robot仅将当前作者内容保存为UNEXECUTED检查点并交接，不能因此称K0完成或恢复执行。已有有效RED588、共享接缝静态589–593、相邻594/595均保留，不重跑；下一次推进须依据用户新的指令。
+
+父已全文读RD接口checkpoint d2c90e1（664行）；同次accepted ticks核验和FP32非零→零下溢分类两处已反馈作者，最终修订仍待交接，设备算法尚无执行。原142身份已预配至 artifacts/p65-generic-collision-20261107-01/k0-predeclared-execution-membership-v1.json（SHA256 235218b6600fc9160fc3619f9ac02f6e5dd26cd9bbc18e7cb74e4eeda851bc67）；分组4/16/59/38/8/15/2，最后两个W32后置。该清单来自冻结声明与作者参数文本，无collection或产品probe，不是142项通过。

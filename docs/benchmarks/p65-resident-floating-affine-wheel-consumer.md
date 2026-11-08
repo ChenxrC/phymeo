@@ -108,3 +108,9 @@ Only these two references changed in the consumer. Original inputs, windows,
 delay0, gates and saved records are unchanged. This was a source review finding,
 not an executed failure. **UNEXECUTED / AUTHORING_RELEASED** remains in effect;
 no import, test, numerical or static command was run for this correction.
+
+## 父580源码外首轮观察器修复（2026-11-08）
+
+新wheel578/离线安装579完成。580 interpret在W4第4实际接受步观察失败（前三完整、16 accepted world-steps），A04未开始；完整prefix、原RAW1与原copy保持。原record显示world503此步sites为空，static_reactions仍保原登记静态key，符合产品对全部注册静态形状发布零反力的合同。
+
+consumer旧material_audit从空dict只累计active site，却用该集合要求完整static_reactions相等。仅将expected初始化为独立sources声明中全部group=None的零六维反力，再累加sites；严格集合相等、逐key参考点/力/矩与全部材料/application功及J转置检查保留。零site的登记形状现在必须明确给零反力，缺/多key仍失败。无产品、fixture或阈值修改。重试沿同一已构建wheel与全新consumer目录，不重建同字节产品或重跑已绿源码组。

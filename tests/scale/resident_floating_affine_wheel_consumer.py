@@ -1216,7 +1216,8 @@ def material_audit(receipt, diagnostic, sources):
         getattr(receipt.entry_state, "full_velocity", receipt.entry_state.velocity), dtype=float
     )
     wrench = np.zeros_like(receipt.law_wrench_fp64, dtype=float)
-    static, total_work, total_material_work = {}, 0.0, 0.0
+    static = {key: np.zeros(6) for key, (_, group, _) in sources.items() if group is None}
+    total_work, total_material_work = 0.0, 0.0
     for item in receipt.sites:
         witness = item.geometry.witness
         point = np.asarray(item.geometry.load_point, float)
@@ -1260,7 +1261,6 @@ def material_audit(receipt, diagnostic, sources):
             material_work += float(force @ displacement)
             contribution = np.r_[force, np.cross(point - reference, force)]
             if group is None:
-                static.setdefault(key, np.zeros(6))
                 static[key] += contribution
             else:
                 wrench[group] += contribution
@@ -1277,8 +1277,8 @@ def material_audit(receipt, diagnostic, sources):
     assert set(receipt.static_reactions) == set(static)
     for key, reaction in receipt.static_reactions.items():
         close(reaction.reference_point_m, sources[key][2].mean(axis=0), atol=1e-12, rtol=0)
-        close(reaction.force_n, static.get(key, np.zeros(6))[:3])
-        close(reaction.torque_nm, static.get(key, np.zeros(6))[3:])
+        close(reaction.force_n, static[key][:3])
+        close(reaction.torque_nm, static[key][3:])
     return dict(application_work_j=total_work, material_work_j=total_material_work)
 
 

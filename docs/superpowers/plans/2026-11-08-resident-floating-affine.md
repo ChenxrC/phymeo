@@ -136,7 +136,7 @@ core W1/W4的旧root-only身份同步明确为原C9 `reference.case('P05', n=0)`
 
 消费者只通过未来新wheel公共API构建及推进。CLI沿C10的 `--mode interpret|cuda --output --wheel-site --expected-package-root --expected-wheel --forbidden-checkout`；以 `python -I -B` 从全新源码外目录运行。自含原URDF、完整声明与独立NumPy/stdlib比较，不import仓库tests/reference、Phy私有推进核或用产品M/J生成期望。可从原独立reference逐字移植通用time-jet/KKT辅助到本NEW消费者；不要把old runtime实现复制进消费者。用公开checkpoint/kinematics/diagnostics/receipt核同次真实输出，编译表仅由公开结果可见部分记载，缺公开字段不可伪造。
 
-固定一个完整gzip/backend：原contact W4（503=lifecycle、91=A05、1207=原ordinary P、6=原fixed-affine A03）40步，保存19后恢复再21步；A04-p1另4步；两bank各一次真实容量0拒步及足额重试，必要bank对齐最多2个真实接受步并显式记录。沿案例清单原h、物性、原始非零速度/COM载荷、delay1初始FP32 independent target、图身份与材料；不额外运行W1或49矩阵。容量拒步world的full/reduced/root/history/held/FK/原accepted receipt保留，其余世界按原合同前进，恢复/重放只归一协议允许的epoch/调度统计，物理字段不删不改。
+固定一个完整gzip/backend：原contact W4（503=lifecycle、91=A05、1207=原ordinary P、6=原fixed-affine A03）40步，保存19后恢复再21步；A04-p1另4步；两bank各一次真实容量0拒步及足额重试，必要bank对齐最多2个真实接受步并显式记录。沿案例清单原h、物性、原始非零速度/COM载荷、原delay0及完整控制/history、图身份与材料；不额外运行W1或49矩阵。容量拒步world的full/reduced/root/history/held/FK/原accepted receipt保留，其余世界按原合同前进，恢复/重放只归一协议允许的epoch/调度统计，物理字段不删不改。
 
 完整原input/URDF/model/P/c/C/graph、即时control、entry/accepted、full/reduced M/J/b/载荷/加速度/原行lambda与功/root余额、材料与application位移/功、状态/资源及failure prefix都保存。lifecycle原40步要求正载→零载→再正载；A05双侧完整作用/反作用与真实根运动；A04完整四惯性部件及非零根角速；K维数与full物理B/D分别核。沿原same-entry/窗口/PD/方程工程门，不为wheel另放宽。
 

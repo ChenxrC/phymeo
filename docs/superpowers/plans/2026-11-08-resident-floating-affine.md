@@ -102,3 +102,5 @@ same-entry atol5e-6/rtol5e-5，窗口2e-4，原PD5e-5/方程2e-5。新增full约
 - 新floating-affine storage沿C5状态名：7=AFFINE_CONSTRAINT_RESIDUAL、8=AFFINE_FULL_EQUATION_RESIDUAL、9=SITE_CAPACITY_EXCEEDED；0..6沿C9。ordinary floating原7=SITE_CAPACITY_EXCEEDED不变。父contact reject按明确affine事实选9，禁止跨storage误解码。
 
 RD已先交A01有效测试checkpoint 91099315bf6ee1c015327eaa7c7c68d592b73e03，首节点test_a01_public_affine_floating_root_reaction；原robot随后开始五NEW产品作者。该记录仅证明tests-first作者顺序，无C11执行或通过结论。
+
+直接binding签名固定为ResidentFloatingAffineTreeBinding(key,world,group_index,local_points_m,*,topology,graph_token)，graph_token为必填tuple；from_asset自动证明原图/形状。编译返回既有FloatingBindingCompiled，复用原full bounds核。receipt diagnostics固定coordinate_kind='floating_affine'、floating_affine_diagnostic；full_dof_count=6+n、reduced_dof_count=6+K、independent_dof_count=K，joint_count=n/body_count=n+1/velocity_count=6+n/position_count=7+n仍指真实full。projection_matrix保存完整S=diag(I6,P)，offset_vector为n关节c，constraint_rows为原(n-K)×n的C（根六列隐含零），graph_token保原图。storage提供_read_diagnostics(selected)和纯数组diagnostics_from_arrays(worlds,full_arrays,reduced_arrays)，父使用同次预swap数据，不为receipt再求mechanics。

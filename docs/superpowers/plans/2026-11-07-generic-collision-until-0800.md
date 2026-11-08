@@ -340,3 +340,9 @@ C4/C5完整ordinary/affine设备树及C6有限静态接触反馈已分别完成�
 同一完整fixed-root ordinary/affine tree或forest内的有限双动态接触已正式接受：产品13c3fad、各backend74项、112完整保存、原生Newton160步和新wheel双backend均完成。详[C8范围与证据](../../benchmarks/p65-resident-tree-dynamic-contacts.md#2026-11-08-父执行与正式限域接受)。双侧COM载荷和原全N/K耦合进入同一次发布，不把不同世界拼成一个物理世界。
 
 下一片C9基于[本机源码与Newton1.7浮根提案](../../development/p65-resident-floating-tree-next-proposal.md)，先普通浮根完整树设备状态/动力学/碰撞宽相和事务，再独立扩接触/affine。原robot/RD分别可作者NEW产品/测试，父仍唯一旧接缝与串行执行owner，RR额度错误不重试。连续任务ACTIVE，无时间截止。
+
+## 2026-11-08 C9/C10已接受，转入浮根affine
+
+[C9](../../benchmarks/p65-resident-floating-tree.md)普通浮根运动/宽相与[C10](../../benchmarks/p65-resident-floating-contacts.md)root/child及同树双动态接触均已本机限域接受。C10每backend76唯一节点、相邻各3、Newton原生每端80步、新wheel每端302接受/2拒绝world-step；541保存审计补件RAW0。URDF原当次快照遗漏明确标为retrospective qualification，完整加载模型与原Git身份已核，不能抹成全输入当次bytes齐全。原物理首失败与536观察失败保留；不重跑已绿组。
+
+[C11计划](2026-11-08-resident-floating-affine.md)以同一求解器的完整6+n力学→diag(I6,P)归约→原图反力/root余额→一次发布为下一实施。原产品/测试/native/wheel已文本交接与交叉审阅，全部仍UNEXECUTED；父接共享接口，原robot继续两NEW保存审计作者。原RD的[K0整族设备查询清单](../../development/p65-device-convex-query-case-manifest.md)已导入提案，先距离/有限材料见证，再patch与消费者；尚不冻结API或发实现grant。更新后的[全景](../../development/phymeo-newton-panorama-2026-11-07.md)保留八大优先级。无新截止、无周期任务，goal持续ACTIVE。

@@ -1,6 +1,6 @@
 # C10 普通浮根常驻接触：开发与多案例验收
 
-状态：**SERIAL_VALIDATION_ACTIVE**，2026-11-08，持续无截止。[C9已正式限域接受](../../benchmarks/p65-resident-floating-tree.md)。13个NEW（含独立saved auditor）已文本审阅并导入；父OLD薄接缝已实施，原始有效RED保留。F01 interpret/CUDA已过，interpret的25个功能节点通过原分组联合覆盖；F07 stored-FP32预期与初始延迟target参照两次修正仅影响observer，原失败/输入/门保留。519现执行51项事务；其余CUDA、相邻兼容、Newton、wheel、同次保存审计待完成，尚未正式接受C10。下文旧排期作为合同历史保留。
+状态：**LOCAL_VERIFIED_SOURCE_QUALIFIED**，2026-11-08。[正式接受](../../benchmarks/p65-resident-floating-contacts.md)：两个backend各76唯一节点、相邻各3、Newton原生每端80步、新wheel每端302接受/2拒绝world-step完成。541保存补件RAW0，原URDF当次快照缺口明确限定，原失败保留。项目执行结束，C11可接续；不重跑同源绿组或已完同次审计。下文原作者/执行状态是合同历史，不覆盖此当前结论。
 
 本计划采用已全文审阅的 [C10 提案](../../development/p65-resident-floating-contact-next-proposal.md)（原提交750dfba、文件SHA256 B157EA687FCC3CBF8233B2D4595FD2069AF3FA1C94BD9A34218D035E855C8197）。其 F01–F10 固定输入、首步锚、工程域与负控纳入本合同。为利用父串行验证期间的空档，调整纯作者次序：原 agents 可先在隔离树编写 NEW 文件；父验收 C9 前不得把 C10 接入旧代码或运行。不是提前接受 C9，也不是全设备窄相。
 

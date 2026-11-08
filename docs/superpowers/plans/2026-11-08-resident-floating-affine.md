@@ -79,7 +79,7 @@ same-entry atol5e-6/rtol5e-5，窗口2e-4，原PD5e-5/方程2e-5。新增full约
 ## 6. 执行与止损
 
 - [ ] NEW纯作者：A01 tests-first → 产品/案例并行 → 源码文本交叉审阅/精确NEW导入。
-- [ ] 前置：C10专项、原生/保存/源码外wheel正式限域接受，释放队列。
+- [x] 前置：C10专项、原生/保存/源码外wheel已正式限域接受，URDF来源限定详C10报告；原执行结束，父接续C11。
 - [ ] 父首A01有效RED → OLD窄接缝 → 最小A01 interpret/CUDA → A03/A04短档 → A02/A05真实接触。
 - [ ] 其余短档及新增事务，原工程门通过后再代表窗；只对修复影响范围复验，同源绿节点不重复。
 - [ ] Newton CPU/CUDA原生3短例/端；记录其原法则/限制，不matched外力，不将BODY_PARENT_F当mimic lambda。

@@ -91,3 +91,17 @@ reference为独立NumPy/stdlib声明/有限公式/材料检查，不import新产
 每次执行fresh entrypoint-aware guard，父唯一owner，真实foreign任务自然结束。保原所有首失败、无remote CI/no pin/no旧绿色组重跑。受影响adjacent旧入口只选少数能证旧默认未改的节点，冻结具体清单后一次执行，不整套C6–C11重来。runtime异常和geometry UNKNOWN分别记录。
 
 同一非零族连续两次无缩小复现/新能力，或60min只扩写数学而无可执行入口，应停止该分支扩域，记录最小失败并处理接口/算法；不能无限加迭代/改gap/改质量/放宽门。精度按既定工程合同，不追求精确接触恒等。没有速度提升也可验收功能；性能后置必须同硬件、同完整输出、同输入/容差，不拿query对完整patch或kernel对端到端算倍率。
+
+## 7. source记录精确键名（作者对齐补充）
+
+result.source 为不可变 mapping，schema='resident-convex-source-v1'，以下必填且包含完整注册源；不因当次无候选删去源表：
+- model：原 CollisionModel；bindings：按 model.shapes 顺序的完整原不可变绑定（含已有拓扑、from_asset来源证明）。不另造几何声明替换原输入。
+- world_keys：model涉及的有序world tuple；world_origins_m：FP64[W,3]，由各world实际 spec.anchor 的FP32字扩宽；shape_world_rows：int32[S]，索引此world_keys。
+- shape_keys、shape_revisions、shape_kinds：有序tuple；shape_rows、shape_groups：int32[S]，原tree row/group或静态-1；vertex_offsets：int32[S+1]；vertex_ids：int32[V]原ID。
+- declared_local_points_m：FP64[V,3]，动态为原binding group-local点，静态为原motion.start世界点；upload_frame：长度S的tuple，分别'body_local'或'world_anchor_relative'。
+- uploaded_local_points_m：FP32[V,3]，动态为原local最近FP32，静态先FP64减本world真实参考再舍入；point_quantization_error_m：FP64[V,3]，上传字扩宽减对应同frame的FP64值。
+- declared_radius_m：FP64[S]；uploaded_radius_m：FP32[S]真实skin；radius_quantization_error_m：FP64[S]同样actual-minus-declared，不用bounds padding。
+- pose：实际同次device gather FP32[S,12]，前三为参考origin相对位置、后九R row-major；静态为0和I，其已rebase点由uploaded_local_points_m给出。stamp：实际int32[S,3] valid/tick/global_world_slot，最后一列是accepted.slots的真实slot，不混shape_world_rows。
+- allowed_pairs：同world、全部原filter之后的canonical key pairs。资源/上传表若另存buffer ledger可追加键，不能重解释以上字段。
+
+result.raw 的固定七个主键为meta/gap/normal/surface/material_ids/barycentric/skin_offset；pose/stamp完整实际字只存source中，避免两份可分歧来源。测试用这些明确键逐字段保存，未知附加ledger也保留，不通过删字段规避比较。所有浮点数组完整保dtype/shape/bytes；公开表面/offset和raw仍沿§2，不从source重新搜索生成raw。

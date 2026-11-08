@@ -17,7 +17,7 @@
 
 **C10普通浮根接触正在串行验证**：[冻结计划](../superpowers/plans/2026-11-08-resident-floating-contacts.md)的13个NEW交付与父共享接缝已导入，F01有效RED及其interpret/CUDA正控已完成。解释模式25个功能节点已按原始成功分组覆盖；原F07小数几何与非零初态延迟队列两项参照错误已精确修正，失败收据保留，物理输入/产品/门不变。519正在执行51项事务；507剩余CUDA、相邻兼容、Newton原生、源码外wheel及同次保存审计尚未执行/验收，不重复已绿功能节点。父是唯一执行owner。
 
-**C11浮根affine/mimic独立作者已启动**：[开发计划](../superpowers/plans/2026-11-08-resident-floating-affine.md)冻结49核心节点与后置W32。RD先交A01有效测试，原robot再开始NEW产品；两树并行纯编码，父OLD接缝与C11执行仍以C10正式接受为前置。独立控制K与真实完整n/B/D始终分开，完整原图反力/根余额/两bank共同发布均保留。设备窄相的[分层提案](p65-device-convex-narrowphase-next-proposal.md)仍NOT_FROZEN。
+**C11浮根affine/mimic产品与测试已完成首轮纯作者和交叉审阅**：[开发计划](../superpowers/plans/2026-11-08-resident-floating-affine.md)当前核心预声明52节点/46gzip，后置W32另1/1。父已审五NEW产品与五NEW测试；原RD发现诊断构造缺selected finite/单步tick门，robot已以4ad81d9窄修，父与RD只读确认，X07三项真实读回负控正在补写。全部C11仍UNEXECUTED、尚未导入父，不把文本闭环当测试通过。原robot继续§8三条Newton原生短参照作者，RD的§9源码外消费者须待X07 clean交接后启动；父OLD接入与C11执行仍以C10正式接受为前置。独立K与完整n/B/D、原图反力/根余额/两bank共同发布保持。设备窄相[分层提案](p65-device-convex-narrowphase-next-proposal.md)仍NOT_FROZEN。
 
 [功能差异全景](phymeo-newton-panorama-2026-11-07.md) · [可视化](phymeo-newton-panorama-2026-11-07.html)。完整设备窄相/CCD/浮根接触与affine、跨独立participant的设备共同求解、抓取释放工程精度边界和软布两初态放台等仍开放；历史数学证明或局部几何不代表整个P6.5完成。
 

@@ -9,6 +9,7 @@ import hashlib
 import json
 from collections.abc import Mapping
 from dataclasses import fields, is_dataclass
+from fractions import Fraction
 from pathlib import Path
 
 import numpy as np
@@ -107,7 +108,7 @@ def test_a01_public_affine_floating_root_reaction(tyx_mode, tmp_path):
     assert host_step.loads.multiplier_force == pytest.approx(-4 / 7, abs=2e-12)
     assert host_step.loads.constraint_power_W == pytest.approx(0.0, abs=2e-12)
     # Independent momentum identity: 2 ar + (ar+u'') + 2(ar-u'') = 0.
-    assert 5 * (1 / 14) - 5 / 14 == 0
+    assert 5 * Fraction(1, 14) - Fraction(5, 14) == 0
     record = dict(case="A01", mode=tyx_mode, dt_s=H, asset=asset,
                   fixture=_fixture_record(JAWS), initial=initial, full_initial=full,
                   external=external, drive=[[0.0, 0.0, 1.0]],

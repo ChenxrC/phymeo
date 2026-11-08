@@ -103,3 +103,11 @@ Wheel后置每backend一个完整gzip：仅public API，contact W4原40+21、A04
 6. 任何full/reduced漂移不一致、原图行缺失、模型来源不符、晚异常半发布、未定义法向/无材料来源或真正超原数值门，都保存原请求并收束。未知域不降格成分离，不把HOST narrow称device narrow，不把W次HOST调用称设备批；A04/生命周期若不成立，不靠调物性、放门或增加证明循环救绿。
 
 当前交付只有本页；所有拟NEW产品/测试/consumer未获本页实施授权，未运行任何import、数值、collection、测试、静态检查、构建或原生对照。**AUTHORING_RELEASED / PROPOSAL_NOT_FROZEN**，由父审后另冻实施范围。
+
+## 8. 父预执行审阅补充：X07实际读回拒步
+
+本节是父当前实施清单补足，原49/43全部保留。C11产品final6eb43b8诊断构造遗漏selected full/reduced finite与entry/exit一次推进门，经父与RD文本确认，原robot修NEW storage；这是预执行finding，无已运行失败。
+
+新增T函数 `test_x07_candidate_diagnostics_reject_corrupted_readback`，三个明确ID `full_nan/reduced_nan/stale_tick`，保存 `diagnostic-{variant}.json.gz`。原A05 W1、h1/1024，warm1→一次实际读回破坏→拒步→合法retry1；两接受/一次拒绝attempt，原控制/模型不变。实际IO后在原 `diagnostics_from_arrays` 入口一次修改selected full.mass、reduced.mass或info.exit=entry，再call-through原校验，不手工抛错代替验证。完整原/修改后读回、NaN数组uint32位模式、原错误和全态保留/合法retry证据同次保存。详细语义以[父计划§10](../superpowers/plans/2026-11-08-resident-floating-affine.md#10-预执行交叉审阅闭环实际诊断读回门)为准。
+
+更新核心 **52实例/46gzip/backend**；14个无保存preflight不变、38个节点保存，step15/contacts5/transactions32；后置W32额外1/1不变。仍为手工预声明，未collection/未执行。native与wheel不增窗口。本节优先于上述原始作者阶段数量和未授权历史描述。

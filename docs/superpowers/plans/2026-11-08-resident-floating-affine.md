@@ -143,3 +143,13 @@ core W1/W4的旧root-only身份同步明确为原C9 `reference.case('P05', n=0)`
 实际新wheel文件SHA、dist-info/direct_url和wheel内部每个Phy成员与完整installed成员的字节/membership、所有loaded Phymeo模块来源在expected-package-root且逐字同wheel、消费者自身bytes/SHA、解释器/依赖版本均核并存。环境的cwd/script/package/output均在forbidden checkout之外，无editable或源码fallback。before/after身份不变，关闭所有batch/plan后owned资源归零。gzip沿64MiB压缩/256MiB解码门，summary实际计数；IO失败和物理拒绝分别保留，不把partial叫complete、不删旧证据。
 
 小commit、exact2NEW、clean、CLI/schema/真实调用上界/限制、UNEXECUTED和AUTHORING_RELEASED交接。C11 wheel build/install/interpret/CUDA及saved audit仍由父在C11实际核心通过之后按唯一串行队列执行。
+
+## 10. 预执行交叉审阅闭环：实际诊断读回门
+
+RD对产品 final6eb43b8 的全文只读审阅确认一项P2：`diagnostics_from_arrays` 原仅核dtype/shape及code0，未核selected实际full/reduced字段finite及entry/exit tick一次推进；旧C10同类构造已有这些门。不是已有物理执行失败。robot仅修原NEW storage和implementation报告；父不改C9/C10已验收代码。核实际B/Dfull/Dred/R切片和assembled full/reduced q，不能让未选world或padding控制别的world成功。
+
+RD仅在原NEW transactions/test报告补X07，不新增测试文件或物理长窗。固定函数 `test_x07_candidate_diagnostics_reject_corrupted_readback`，参数 `full_nan/reduced_nan/stale_tick`，每个保存 `diagnostic-{variant}.json.gz`。原A05 W1、h1/1024，真实warm1步→一次破坏读回拒步→恢复原调用合法retry1步。总2接受/1拒绝attempt；原49核心节点全保。
+
+注入在storage正常 `diagnostics_from_arrays(worlds,full_arrays,reduced_arrays)` 入口，实际设备IO完成后、原构造校验之前；随后call-through原构造，让真实finite/tick门触发，不能手工throw代替。分别只修改selected full.mass[row,0,0]、reduced.mass[row,0,0]为NaN，或code0下info.exit=entry。保原读回、完整修改后selected数组、dtype/shape/uint32实际位模式（NaN两例）及int32 ticks；原encoder非有限语义标签不代替位模式。无需迁移父_finish_attempt或创造新candidate schema。失败时full/reduced/root/history/held/FK/summary/acceptedreceipt/epoch/bank保持，transient diagnostics按原失败语义无效；retry与同输入应有的合法推进相符。
+
+当前核心预声明更新为 **52实例/46完整gzip/backend**（原49/43 + X07三例/三文件）；14个无保存preflight不变，38个节点有保存。step15、contacts5、transactions32；后置W32仍额外1/1。数字仍未collection/未执行，不是通过数。§8 native三短例和§9消费者范围不扩张；§9由RD完成本次窄修并重新clean交接后再开始。

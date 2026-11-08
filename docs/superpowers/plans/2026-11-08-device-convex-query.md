@@ -121,3 +121,13 @@ result.raw 的固定七个主键为meta/gap/normal/surface/material_ids/barycent
 原case manifest的loss声明未指定第二体。保持该负控身份和原B八个local点，明确B为ordinary dynamic group、origin=(2**60,0,0)；第二体为static S，r=.05，center=origin+(0,0,.17)，仍用两侧原keys/100与200系列IDs。未丢表示的几何gap=.02；保存原local/安装及实际world FP64丢B的x半宽两份输入。只允许明确SOURCE_PRECISION或原完整有限源拒绝，不能恢复成另一套成功world输入。仍一个loss身份，不新增query计数，不改其它case。
 
 wire未使用material槽固定ID=-1、weight=0；非logical输出padding的meta/数值固定0，未使用material IDs仍-1。UNWRITTEN=0对logical行是错误，对明确padding不冒执行。公开row无效gap estimate/lower/upper、normal、surface/offset固定0并valid=False；scale_m只描述实际工程尺度，不靠占位值宣称几何。完整raw padding仍保留。
+
+## 10. 父共享接缝相邻兼容（2026-11-08，执行前固定）
+
+d255b0b仅增加来源保存、依赖关闭和两public薄入口；NEW query尚未交接。父在两作者继续纯文本工作期间，唯一串行执行以下原ordinary tree两个节点，每backend各一次，不扩为旧整套：
+- tests/scale/test_resident_tree_collision.py::test_t08_close_callback_cleans_all_tree_plans_and_runtime
+- tests/scale/test_resident_tree_collision.py::test_t07_separate_prismatic_branches_and_fixed_root_static_material
+
+前者检查一项close异常后其它plan/runtime仍全释放；后者检查from_asset普通分支与固定根static来源、原过滤、一次真实运动后的设备bounds。完整参考生成器、source/test/config同次快照与原保存结果保留。它们只验证已改变的OLD兼容接缝，不执行缺失NEW query，也不计K0的142身份。§8等待产品交接的限制继续适用于K0首正控。无新agent执行槽，父fresh guard→interpret→CUDA严格串行；同源已绿不重跑。
+
+594 interpret：2passed/1.57s/RAW0；595 CUDA：2passed/3.83s/RAW0。每次443 source/config快照前后无改动，两个完整原JSON与同次生成URDF保留；仅文件读取核原退出和保存存在，未重算旧物理或旧验收。记录 artifacts/p65-generic-collision-20261107-01/k0-parent-adjacent-01.json。两执行已完成；K0首正控仍待作者交接。

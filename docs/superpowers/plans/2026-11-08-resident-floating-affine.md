@@ -125,3 +125,21 @@ CLI 固定 `--device cpu|cuda:0 --output <fresh absolute directory>`；三例顺
 本片不比较不等价的非零PD/effort/velocity-limit、一般转动积分或性能；实际native短窗结束后才有功能结论。父C10正式接受→C11首RED/最小TYX通过后才另发串行执行。交付小commit、clean、精确两NEW、公开CLI/保存schema/限制、UNEXECUTED及AUTHORING_RELEASED。
 
 core W1/W4的旧root-only身份同步明确为原C9 `reference.case('P05', n=0)`，delay1，保其真实COM/主轴/非零初速/外载；另FreeSphere仍2 kg、r1/8、z2、g−8。此为先前父消息确认的身份补足，不是新调参或额外案例。
+
+## 9. C11 源码外消费者作者授权（2026-11-08）
+
+原 RD 完成 final6eb43b8 产品只读交叉审阅后，若无尚未处理的阻断，可从其 clean final8c5107b 继续 **WHEEL_CONSUMER_AUTHORING_ONLY**，恰两 NEW：
+- `tests/scale/resident_floating_affine_wheel_consumer.py`
+- `docs/benchmarks/p65-resident-floating-affine-wheel-consumer.md`
+
+原五测试/参考/报告及所有OLD不改，不merge父，不持执行槽，无import/数值/collection/pytest/static/format/build/install/native。若交叉审阅发现产品阻断先报父，不能并行静默修其产品。父C10正式接受后才导入C11；此授权仅减少后置消费者等待，不预先确认产品成功。
+
+消费者只通过未来新wheel公共API构建及推进。CLI沿C10的 `--mode interpret|cuda --output --wheel-site --expected-package-root --expected-wheel --forbidden-checkout`；以 `python -I -B` 从全新源码外目录运行。自含原URDF、完整声明与独立NumPy/stdlib比较，不import仓库tests/reference、Phy私有推进核或用产品M/J生成期望。可从原独立reference逐字移植通用time-jet/KKT辅助到本NEW消费者；不要把old runtime实现复制进消费者。用公开checkpoint/kinematics/diagnostics/receipt核同次真实输出，编译表仅由公开结果可见部分记载，缺公开字段不可伪造。
+
+固定一个完整gzip/backend：原contact W4（503=lifecycle、91=A05、1207=原ordinary P、6=原fixed-affine A03）40步，保存19后恢复再21步；A04-p1另4步；两bank各一次真实容量0拒步及足额重试，必要bank对齐最多2个真实接受步并显式记录。沿案例清单原h、物性、原始非零速度/COM载荷、delay1初始FP32 independent target、图身份与材料；不额外运行W1或49矩阵。容量拒步world的full/reduced/root/history/held/FK/原accepted receipt保留，其余世界按原合同前进，恢复/重放只归一协议允许的epoch/调度统计，物理字段不删不改。
+
+完整原input/URDF/model/P/c/C/graph、即时control、entry/accepted、full/reduced M/J/b/载荷/加速度/原行lambda与功/root余额、材料与application位移/功、状态/资源及failure prefix都保存。lifecycle原40步要求正载→零载→再正载；A05双侧完整作用/反作用与真实根运动；A04完整四惯性部件及非零根角速；K维数与full物理B/D分别核。沿原same-entry/窗口/PD/方程工程门，不为wheel另放宽。
+
+实际新wheel文件SHA、dist-info/direct_url和wheel内部每个Phy成员与完整installed成员的字节/membership、所有loaded Phymeo模块来源在expected-package-root且逐字同wheel、消费者自身bytes/SHA、解释器/依赖版本均核并存。环境的cwd/script/package/output均在forbidden checkout之外，无editable或源码fallback。before/after身份不变，关闭所有batch/plan后owned资源归零。gzip沿64MiB压缩/256MiB解码门，summary实际计数；IO失败和物理拒绝分别保留，不把partial叫complete、不删旧证据。
+
+小commit、exact2NEW、clean、CLI/schema/真实调用上界/限制、UNEXECUTED和AUTHORING_RELEASED交接。C11 wheel build/install/interpret/CUDA及saved audit仍由父在C11实际核心通过之后按唯一串行队列执行。

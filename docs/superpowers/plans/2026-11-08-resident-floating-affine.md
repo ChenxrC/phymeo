@@ -104,3 +104,24 @@ same-entry atol5e-6/rtol5e-5，窗口2e-4，原PD5e-5/方程2e-5。新增full约
 RD已先交A01有效测试checkpoint 91099315bf6ee1c015327eaa7c7c68d592b73e03，首节点test_a01_public_affine_floating_root_reaction；原robot随后开始五NEW产品作者。该记录仅证明tests-first作者顺序，无C11执行或通过结论。
 
 直接binding签名固定为ResidentFloatingAffineTreeBinding(key,world,group_index,local_points_m,*,topology,graph_token)，graph_token为必填tuple；from_asset自动证明原图/形状。编译返回既有FloatingBindingCompiled，复用原full bounds核。receipt diagnostics固定coordinate_kind='floating_affine'、floating_affine_diagnostic；full_dof_count=6+n、reduced_dof_count=6+K、independent_dof_count=K，joint_count=n/body_count=n+1/velocity_count=6+n/position_count=7+n仍指真实full。projection_matrix保存完整S=diag(I6,P)，offset_vector为n关节c，constraint_rows为原(n-K)×n的C（根六列隐含零），graph_token保原图。storage提供_read_diagnostics(selected)和纯数组diagnostics_from_arrays(worlds,full_arrays,reduced_arrays)，父使用同次预swap数据，不为receipt再求mechanics。
+## 8. C11 原生短参照作者授权（2026-11-08）
+
+父已只读核本机 pinned Newton 1.7.0 的 `_src/sim/builder.py::set_joint_mimic`、`_src/sim/joint_mimic.py`、`_src/solvers/featherstone/solver_featherstone.py` 与 `kernels.py::{reduce_mimic_inertia,reduce_mimic_forces,expand_mimic_accelerations}`。源码支持同一 articulation 内 FREE 根加 P/R mimic，FREE 自身不能为 mimic；不支持 follower-chain。当前三例均为直接 leader/follower，不需要 flatten。源码可用性不是执行通过，未知行为必须由实际短参照保留。
+
+原 robot 完成 RD final8c5107b 的只读交叉审阅、无阻断后，允许在原隔离树 final6eb43b8 上继续 **NATIVE_AUTHORING_ONLY**，恰两 NEW：
+- `tests/reference_newton/robot/resident_floating_affine_native.py`
+- `docs/benchmarks/p65-resident-floating-affine-native.md`
+
+不改已交五产品、旧参考/C5/C9/C10、依赖/pin或父共享接缝；不merge父，不import/数值/collection/pytest/static/format/native/build/install，不持执行槽。可从RD final8c5107b只读原独立参考和数据；未来父同目录集成后才用显式路径载入该 NumPy/stdlib reference，绝不 import Phymeo/TYX 或测试 fixture。若需要额外路径先以具体缺口报父，不扩域。
+
+CLI 固定 `--device cpu|cuda:0 --output <fresh absolute directory>`；三例顺序 A01-motor 1步、A03-fan 4步、A05-native-contact 4步，h全部1/1024，分别一个完整gzip和统一summary。输入严格采用[案例清单](../../development/p65-resident-floating-affine-case-manifest.md)及 RD reference，原质量/惯量/COM/轴/offset/图/非零入速/即时外载不变；禁止为了原生通过改变场景。A01真实独立joint_f=1 N，A03同完整COM力和独立3/8 N；A05只原生collision及原生penalty contact，不喂reference/Phy力，不matched-law回退。模型使用显式body/link/关节与 `set_joint_mimic`，所有真实关节含FREE归于一个articulation；保原尺寸/关节/shape ID来源。
+
+独立保存并核模型全部body质量/COM/惯量、FREE与P真实类型、原mimic系数/leader、articulation归属、完整q/qd起止/shape过滤/材料；armature、被动damping、target gains、limit springs为原0，root无伪motor。根公共COM世界速度与Featherstone内部anchor速度分别存原数组和明确基变换，不能把内部qdd直接叫公共加速度。三例初始角运动0且共线对称力维持角运动0，但仍核实际全部角分量，不能丢根六维响应。
+
+每实际step保存完整entry/exit状态、原始control/body_f/contact rows、full M/J及内部力/加速度scratch、原生mimic reduction后的字段、full/independent图关系、完整动量/能量；A05以同一次真实contact原行独立解码材料/接触点/两侧wrench及full generalized load，只作观察，不回写推进。对照独立未约化KKT的full acceleration与原行lambda，lambda来自完整余额重建，明确不是Newton原生反力传感器或BODY_PARENT_F。记录根六余额、原约束残差与功、full反力，并保存模型和driver/reference/native来源bytes与SHA。
+
+沿原C5/C9 native对照：same-entry M/J/FK atol5e-6/rtol5e-5，短窗q/v atol2e-4；实际Δv/h推导acceleration/row reaction采用原C5 atol3e-4、rtol5e-5并标明差分FP32误差。该原生观察门不改变C11产品2e-5门。每个比较保存actual/expected/atol/rtol与实际结果；任一失败保完整前缀/最后返回字/原异常，RAW1，不补状态、不跳case报全过。只有实际device精确匹配允许通过，不静默CPUfallback。完整原输出沿64MiB压缩/256MiB解码上限；不删除旧证据或裁剪字段。
+
+本片不比较不等价的非零PD/effort/velocity-limit、一般转动积分或性能；实际native短窗结束后才有功能结论。父C10正式接受→C11首RED/最小TYX通过后才另发串行执行。交付小commit、clean、精确两NEW、公开CLI/保存schema/限制、UNEXECUTED及AUTHORING_RELEASED。
+
+core W1/W4的旧root-only身份同步明确为原C9 `reference.case('P05', n=0)`，delay1，保其真实COM/主轴/非零初速/外载；另FreeSphere仍2 kg、r1/8、z2、g−8。此为先前父消息确认的身份补足，不是新调参或额外案例。

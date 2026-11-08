@@ -167,3 +167,10 @@ RD仅在原NEW transactions/test报告补X07，不新增测试文件或物理长
 §8每device三native gzip与summary共9实际步，原精确device/模型/全部required checks/source bytes/delta-v与原行balance口径分别核；不把原生reaction观察门套到产品。§9每backend一个wheel gzip与summary，原W4 40+21、A04四步、两bank拒步/足额retry及最多2alignment，真实接受计数262–270/world-steps、两拒绝attempt，所有来源/installed成员/loaded origins/关闭owned0完整。raw失败、IO失败、prefix_only均不得升级完整。
 
 沿单payload64MiB压缩/256MiB解码、合计2GiB、8192文件、嵌套深度96/metadata16MiB有界读；超界明确失败，不解压全目录或删除记录。最终audit.json应给每原run和固定identity的实际覆盖、原失败、未运行W32、来源与完整保存计数，不能凭hash叫物理正确。该脚本本身最终经父静态与唯一串行同次审计；无新物理测试次数。两NEW小commit/clean/公开schema/预声明membership/UNEXECUTED/AUTHORING_RELEASED交接，父文本核后再导入。
+## 12. 已通过节点复用与保存失败的原始证据（2026-11-08）
+
+553原RAW1不变：11个明确PASSED节点的完整保存输出可经固定身份、日志、源快照与全部payload检查后计入不相交覆盖；失败n16-k1的partial及未执行n16-k15不计。此项澄清§11“失败prefix不填覆盖”：失败节点未完成的前缀不通过，已完成且日志明确通过的其他节点不因同进程后续IO失败而重跑。保原每backend52/46/14、实际源码归属和全部原失败。
+
+仅保存审计允许可选failed_opaque_artifacts条目，逐个含path/bytes/sha256/reason/log_contains。它必须对应本次失败节点的预声明路径与tmp ordinal，与failed_payloads互斥，大小有界并直接核原始字节及原RAW1异常日志。不得解码这类不完整gzip、不得计payloadpass或物理通过，不得隐藏额外文件。completed仍逐项验完整JSON/输入/独立比较/发布协议。此补充只改变失败证据表示，不改变物理、测试输入、门或计数。
+
+counts保存的ResidentCollisionResult保全部字段；owner和registration明确编码为{opaque_process_local_type: builtins.object, identity_serialized: false}。标记不表示两个token相同或可重建；真实require_current(result) is result仍在原测试执行。reader仅counts专支精确核标记，不向wheel原有物理子集强加能力字段。

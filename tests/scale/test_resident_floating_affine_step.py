@@ -31,6 +31,12 @@ COMPRESSED_LIMIT = 64 * 1024 * 1024
 
 
 def _json(value):
+    if type(value) is object:
+        # Process-local capability tokens remain runtime-only, not replay authority.
+        return {
+            "opaque_process_local_type": "builtins.object",
+            "identity_serialized": False,
+        }
     if isinstance(value, ph.DrivenRobotProgram):
         return _json(value.problem_signature())
     if is_dataclass(value):

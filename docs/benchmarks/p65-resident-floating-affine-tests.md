@@ -82,3 +82,9 @@ CUDA 同 node 只切 `--tyx-mode=cuda`。核心三文件使用 `-k 'not test_w32
 作者树此前 `8a98c29` 已用乘 14 后的整数恒等式避免该问题。本次按父裁定统一为 `5 * Fraction(1, 14) - Fraction(5, 14) == 0` 并仅增加标准库导入，以原有理数直接表达独立动量恒等式。原 literal 物理值、HOST/device 数值门、资产、控制和窗口均不变。
 
 该增量仍为纯文本作者，未 import、运行测试或静态工具；父负责唯一 A01 重试及结果归档。**UNEXECUTED / AUTHORING_RELEASED**。
+
+## 父短档实际结果与保存修复（2026-11-08）
+
+551 A01 interpret 1 passed/1.32s、552 CUDA 1 passed/3.19s，均 RAW0。553 interpret 短档首11节点通过，第12 n16-k1 在最后保存 ResidentCollisionResult 时因 owner/registration 两个进程局部 object 无 JSON 编码失败，RAW1；n16-k15未执行。失败节点的最后 literal 断言在 _run 返回后，未执行，不能称该节点通过。原部分 gzip、完整日志和源码快照保留。
+
+仅 _json 精确 type(value) is object 输出显式不可恢复标记，两个能力字段仍保留；其余 dataclass 完整字段不删，未知类型仍失败。标记不表达不同 token 相等，不保存身份或提供重放权限；实际 plan.require_current(result) is result 继续在运行时执行。物理实现、输入、工程阈值和窗口不变。后续只重试计数函数两项；此前完整绿节点不重复。

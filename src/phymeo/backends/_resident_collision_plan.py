@@ -5,6 +5,7 @@ owns only immutable registrations, collision scratch and complete query results.
 """
 
 from collections.abc import Mapping
+from contextlib import ExitStack
 from dataclasses import dataclass
 from itertools import combinations
 from numbers import Integral
@@ -196,6 +197,8 @@ class ResidentCollisionPlan:
         self._engine = None
         self._closed = False
         self._last = None
+        self._convex_bindings = ()
+        self._convex_dependents = set()
         self._kernels = None
         self._slider_kernels = None
         self._slider_slots_device = self._slider_axes_device = None
@@ -472,6 +475,7 @@ class ResidentCollisionPlan:
                 raise ValueError("static body cannot alias a moving tree group")
         if {key.world for key in self._shape_keys} != set(self._world_shape_rows):
             raise ValueError("each static geometry world needs its explicitly bound resident body")
+        self._convex_bindings = tuple(by_key[key] for key in self._shape_keys)
         return slots, paths
 
     def _prepare_topology(self, slots):
@@ -641,6 +645,12 @@ class ResidentCollisionPlan:
             tree = BoundsTree(seed_bounds, self._space.worlds, self._space.tags[:, 5])
             self._trees.layouts[("shape",)] = tree
             self._engine.prepare_shape_bvh(tree)
+
+    def _borrow_convex_state(self):
+        """Loan original ordinary/static sources under one accepted runtime scope."""
+        from ._resident_convex_source import borrow_convex_state
+
+        return borrow_convex_state(self)
 
     @property
     def last_result(self):
@@ -892,9 +902,13 @@ class ResidentCollisionPlan:
                 return
             self._closed = True
             try:
-                if self._engine is not None:
-                    self._engine.close()
+                with ExitStack() as closing:
+                    if self._engine is not None:
+                        closing.callback(self._engine.close)
+                    for query in tuple(self._convex_dependents):
+                        closing.callback(query.close)
             finally:
+                self._convex_dependents.clear()
                 self._batch._collision_plans.discard(self)
                 self._kernels = self._slots_device = self._static_device = self._stamp_device = None
                 self._slider_kernels = self._slider_slots_device = self._slider_axes_device = None

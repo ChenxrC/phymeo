@@ -418,6 +418,39 @@ class TyxWorldBatch:
 
         return collision_for(self, plan)
 
+    def prepare_convex_query(
+        self,
+        broad,
+        *,
+        pairs=None,
+        pair_capacity=None,
+        gjk_iterations=64,
+        epa_iterations=192,
+        epa_vertex_capacity=64,
+        epa_face_capacity=128,
+        memory_limit_bytes=67108864,
+    ):
+        """Prepare bounded device distances and bilateral material witnesses."""
+        from ._device_convex_query import ConvexQueryPlan
+
+        return ConvexQueryPlan(
+            self,
+            broad,
+            pairs=pairs,
+            pair_capacity=pair_capacity,
+            gjk_iterations=gjk_iterations,
+            epa_iterations=epa_iterations,
+            epa_vertex_capacity=epa_vertex_capacity,
+            epa_face_capacity=epa_face_capacity,
+            memory_limit_bytes=memory_limit_bytes,
+        )
+
+    def convex_query(self, plan):
+        """Query only a plan owned by this exact batch, without a physical step."""
+        from ._device_convex_query import convex_query_for
+
+        return convex_query_for(self, plan)
+
     def _keys(self, keys):
         result = list(self._slots) if keys is None else [world_key(k) for k in keys]
         if len(set(result)) != len(result):
@@ -785,6 +818,9 @@ class TyxWorldBatch:
 
     def stats(self):
         with self._lock:
+            convex_queries = tuple(
+                query for broad in self._collision_plans for query in broad._convex_dependents
+            )
             return {
                 **self._counts,
                 "mode": self._mode,
@@ -793,6 +829,10 @@ class TyxWorldBatch:
                 "current_buffer": self._active,
                 "readback_plan_live_count": len(self._readback_plans),
                 "collision_plan_live_count": len(self._collision_plans),
+                "convex_query_plan_live_count": len(convex_queries),
+                "convex_query_live_bytes": sum(
+                    int(query.stats["live_bytes"]) for query in convex_queries
+                ),
                 "state_epoch": self._state_epoch,
                 "tree_world_count": len(self._tree_specs),
                 "affine_tree_world_count": len(self._affine_specs),

@@ -105,3 +105,13 @@ result.source 为不可变 mapping，schema='resident-convex-source-v1'，以下
 - allowed_pairs：同world、全部原filter之后的canonical key pairs。资源/上传表若另存buffer ledger可追加键，不能重解释以上字段。
 
 result.raw 的固定七个主键为meta/gap/normal/surface/material_ids/barycentric/skin_offset；pose/stamp完整实际字只存source中，避免两份可分歧来源。测试用这些明确键逐字段保存，未知附加ledger也保留，不通过删字段规避比较。所有浮点数组完整保dtype/shape/bytes；公开表面/offset和raw仍沿§2，不从source重新搜索生成raw。
+
+## 8. tests-first有效RED及故障接缝（2026-11-08）
+
+原robot fdc3c77先交SS/CH非零四身份。父463a70d原样导入；588首SS-sep interpret实际先通过独立支持面literal与原HOST finite patch，构造真实ordinary batch/broad后，在缺prepare_convex_query处AttributeError。RAW1、1failed/1.27s，443源快照与完整失败gzip保留，是有效RED，不能冒查询运行或成功。原RD随后并行NEW产品作者，原robot继续其余原身份。
+
+故障注入固定NEW ConvexQueryPlan三个真实接缝：_allocate(shape,dtype,initial=None)原调用成功且登记资源后注入半构造失败；_read_raw()完整七数组实际读回后、真实validator之前改gap/ID，再call-through；_build_result(view,raw,pose,stamp,pairs,attempt_delta,broadphase_delta)全部owned记录构造成功后、任何publish前抛一次late_record。原值/改后字/阶段/清理/同请求retry均保存，不能以手工throw替代raw验证。
+
+父开始NEW source适配与OLD薄入口/依赖close作者；ordinary/static来源与defaults5过滤、单次借用stage→owned→publish保持。此父接入尚未执行。顶层exports待NEW产品完整导入后接，不把缺module的过渡调用冒有效功能。下一次项目执行须等产品/测试交接、文本审阅和唯一父队列；不重跑588。
+
+父source适配及两OLD薄接缝已作者：589 exact3 Ruff RAW0；590首format RAW1仅两长行，591仅排版、592 final format RAW0；593标准库AST对三文件原始树完全相同。没有运行新query、动力学或旧已绿组。batch stats新增convex_query_plan_live_count/convex_query_live_bytes，不把新plan资源藏在旧collision计数内。有效RED之后首正控仍待NEW产品和最终测试交接。

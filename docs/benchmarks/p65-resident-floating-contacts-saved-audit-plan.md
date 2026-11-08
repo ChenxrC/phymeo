@@ -1,6 +1,6 @@
 # C10 保存审计：固定身份与纯作者计划
 
-状态：**AUTHORING_ONLY / UNEXECUTED**。这是离线 observer，不运行生产者、物理、几何、M/J、独立参考或任何项目 import。父唯一串行执行，C9/C10 物理接受与本审计是独立状态。
+当前状态：**SAVED_RECORDS_CONSISTENT_WITH_SOURCE_QUALIFICATION**（541 / RAW0；原作者说明与536首失败保留在下文）。这是离线 observer，不运行生产者、物理、几何、M/J、独立参考或任何项目 import。父唯一串行执行，C9/C10 物理接受与本审计是独立状态。
 
 依据父 `d75cdaf4be0ce751f6fd27b39b4d4982f4460689` 的 C10 合同末节；作者测试固定于 RD `d7bed1556fe630f5ace96bc7c251f4cd4e056fae`。原生 driver 使用本树 `5c959c8868e215e8eb6208173fa45882b9a658f0`，外部 wheel consumer 使用同一 RD 提交。未读取任何运行中的输出，也未按输出选身份。
 
@@ -81,3 +81,13 @@ RD 对第4项的限定复核发现：虽然已保存的 diagnostics map 会核�
 ## 首次延迟历史参照修正（父，2026-11-08）
 
 原511解释组的F08五项与F09均通过，随后F10在W1的N9首步因测试把延迟历史统一预期为零而失败（RAW1保留）。原C9从创建起就把首个延迟target设为已存FP32初始关节角，非零初态应为±1/16；rate/ff为零。父只修独立测试_selected、delay显式断言和同次保存reader，以原声明q的FP32表示构造期望，不从实际selected_drive反推。原产品、模型、控制、工程门和完整保存均未改。517 Ruff与518 format-check均0；全部25功能节点已有分组解释覆盖，接下来仅执行尚未完整通过的51个事务节点，原W矩阵未完成前缀保留，不重跑F01–F09。
+
+## 2026-11-08 实际执行与限定来源补件
+
+523 首 Ruff 仅1个导入排序问题、524 首 format1；530/531修正后532/533通过，534证明非import AST及scoped import bindings全同。536首次同次保存审计 RAW1：9组完整审计成功；506/507/529遗漏URDF原文件快照，521/522误要求batch.stats不存在的closed字段。原报告、错误与全部物理记录保留，不能称536通过。
+
+父只修observer：plan仍核closed；batch核live bytes/plans/readbacks全0及原公共step-after-close RuntimeError。URDF缺口经原RD独立只读审阅，使用原run HEAD、原Git blob及完整保存模型作明确的 `retrospective_git_identity_not_same_run_bytes` 限定，`same_run_bytes_verified=False`。它不能证明当时临时WIP或未被消费的XML内容；F06功能记录和source_revision原pytest断言按各自证据保留，不回填原source集合、不修改原运行收据、不补跑物理。三个run都对应原blob473cdaeecf77d7ec21797d28d8810f30fbb06e75；补件receipt SHA256 5601d620f568a798c5a2d67cf25b1c007c46d8cfb612b351e08cd65ae759cabd。
+
+新manifest-v3以原报告/manifest SHA绑定9个已完成jobs及其完整覆盖和inventory，原errors保存在reused_audit.original_errors；只补审5个未完成jobs。537 Ruff0、538排版0、539 raw AST同、540 format-check0。541实际09:39:39→09:40:27 RAW0，状态为 **saved_records_consistent_with_source_qualification**，不是无条件同次源码齐全。14原始jobs、两backend各76唯一节点、四外部模式齐；5176文件、133完整gzip（含失败前缀）、唯一解压原bytes484015828。保守累计解压收费514589710含首次失败读入，低于原2GiB上限，无删字段或新物理步。
+
+完整报告：`artifacts/p65-generic-collision-20261107-01/541-c10-saved-audit-supplement/audit-output/audit.json`，SHA256 623724c9ebbe9346ef87f8ed261e48bb7153ad038fc042865109c293f435cda5。新C10 wheel另一次构建源到archive的431成员核全同，receipt `c10-final-wheel-source-parity-01.json`，SHA25677ce50b09cd2390109ef4dadfb5505cae105a39c7adf078ad851f7829b39fc99；复用521/522原安装成员核，不重审同一安装。后继C11在执行前明确列齐真实fixture依赖，避免再次遗漏。

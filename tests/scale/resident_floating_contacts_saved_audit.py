@@ -1825,8 +1825,21 @@ class Auditor:
         if completed:
             for path in REQUIRED_SOURCE:
                 self.source(sources, path)
-        if any(by_node[node].group in ("f06", "invalid_graph") for node in completed):
-            self.source(sources, "tests/fixtures/urdf/floating_fixed_composite.urdf")
+        fixture_nodes = [
+            node
+            for node in completed
+            if by_node[node].group == "f06"
+            or (
+                by_node[node].group == "invalid_graph"
+                and by_node[node].parameter["problem"] == "source_revision"
+            )
+        ]
+        if fixture_nodes:
+            fixture_path = "tests/fixtures/urdf/floating_fixed_composite.urdf"
+            if any(key.endswith("/" + fixture_path) for key in sources):
+                self.source(sources, fixture_path)
+            else:
+                retrospective_fixture(self, spec, fixture_path, summary, fixture_nodes)
         if any(by_node[node].group in ("mixed", "old_body") for node in completed):
             self.source(sources, "tests/scale/test_resident_affine_contact_transactions.py")
         require(
@@ -2802,7 +2815,10 @@ def wheel_window(section, label, *, success):
         exact(section["final"]["state"], section["trace"][-1]["state"], "F03 complete final state")
     for field in ("closed_plan_stats", "closed_batch_stats"):
         same(section[field]["device_owned_bytes"], 0, "actual resource release " + field)
-        same(section[field]["closed"], True, "actual closed owner " + field)
+    # Only the collision plan exposes a closed flag. Batch closure is evidenced
+    # by reclaimed owners, no live plans, and the saved public rejection below.
+    same(section["closed_plan_stats"]["closed"], True, "actual closed collision plan")
+    same(section["closed_batch_stats"]["readback_plan_live_count"], 0, "no surviving readbacks")
     same(section["closed_plan_stats"]["contact_device_owned_bytes"], 0, "contact scratch closed")
     same(section["closed_batch_stats"]["collision_plan_live_count"], 0, "no surviving plans")
     same(section["read_after_close"]["type"], "RuntimeError", "public step after real close")
@@ -3261,6 +3277,142 @@ def external_run(audit, spec):
     audit.report["jobs"].append(job)
 
 
+def retrospective_fixture(audit, spec, path, summary, nodes):
+    """Qualify an omitted fixture without claiming contemporaneous bytes."""
+    binding = spec.get("fixture_source_qualification")
+    fields(binding, ("receipt", "sha256"), "explicit retrospective fixture binding")
+    receipt_path = Path(binding["receipt"])
+    require(receipt_path.is_absolute(), "absolute retrospective receipt")
+    raw = audit.read(receipt_path, receipt_path.parent)
+    same(
+        hashlib.sha256(raw).hexdigest(),
+        hex_sha(binding["sha256"]),
+        "same retrospective receipt bytes",
+    )
+    receipt = strict_load(raw)
+    same(receipt["schema"], "c10-retrospective-fixture-identity-v1", "qualification schema")
+    same(
+        receipt["source_kind"],
+        "retrospective_git_identity_not_same_run_bytes",
+        "cannot claim contemporaneous fixture bytes",
+    )
+    same(receipt["fixture"], path, "exact omitted fixture")
+    entries = [row for row in receipt["runs"] if row["id"] == spec["id"]]
+    require(len(entries) == 1, "retrospective original run membership")
+    same(entries[0]["head"], spec["head"], "original run Git head")
+    blob = entries[0]["blob"]
+    require(
+        isinstance(blob, str) and re.fullmatch(r"[0-9a-f]{40}", blob), "explicit Git blob identity"
+    )
+    data = audit.read(Path(receipt["git_snapshot"]), receipt_path.parent)
+    same(len(data), receipt["git_snapshot_bytes"], "original Git fixture length")
+    same(
+        hashlib.sha256(data).hexdigest(),
+        hex_sha(receipt["git_snapshot_sha256"]),
+        "original Git fixture SHA",
+    )
+    same(
+        hashlib.sha1(b"blob " + str(len(data)).encode() + b"\0" + data).hexdigest(),
+        blob,
+        "canonical Git blob content",
+    )
+    same(receipt["current_working_blob"], blob, "recorded current filtered blob")
+    same(receipt["current_path_clean"], True, "recorded path clean at supplement time")
+    require(
+        isinstance(receipt["limitation"], str) and receipt["limitation"],
+        "explicit missing same-run evidence limitation",
+    )
+    result = dict(
+        run=spec["id"],
+        nodes=nodes,
+        fixture=path,
+        source_kind=receipt["source_kind"],
+        original_head=spec["head"],
+        git_blob=blob,
+        receipt=str(receipt_path),
+        receipt_sha256=binding["sha256"],
+        same_run_bytes_verified=False,
+        limitation=receipt["limitation"],
+    )
+    summary["fixture_source_qualification"] = result
+    audit.report.setdefault("source_qualifications", []).append(result)
+
+
+def reuse_completed(audit, manifest):
+    """Carry only fully audited jobs; preserve the prior failed report."""
+    resume = manifest.get("resume_completed")
+    if resume is None:
+        return set()
+    fields(
+        resume,
+        ("report", "sha256", "manifest", "manifest_sha256", "run_ids"),
+        "explicit prior audit binding",
+    )
+    report_path, manifest_path = Path(resume["report"]), Path(resume["manifest"])
+    require(
+        report_path.is_absolute() and manifest_path.is_absolute(),
+        "absolute original audit bindings",
+    )
+    report_raw = audit.read(report_path, report_path.parent)
+    same(
+        hashlib.sha256(report_raw).hexdigest(),
+        hex_sha(resume["sha256"]),
+        "unchanged original failed audit",
+    )
+    prior = strict_load(report_raw)
+    old_raw = audit.read(manifest_path, manifest_path.parent)
+    old_sha = hashlib.sha256(old_raw).hexdigest()
+    same(old_sha, hex_sha(resume["manifest_sha256"]), "original audit manifest bytes")
+    same(prior["manifest_sha256"], old_sha, "prior report bound original manifest")
+    old = strict_load(old_raw)
+    old_runs = {row["id"]: row for row in old["runs"]}
+    current = {row["id"]: row for row in manifest["runs"]}
+    require(len(current) == len(manifest["runs"]), "unique complete run declarations")
+    ids = resume["run_ids"]
+    require(isinstance(ids, list) and len(ids) == len(set(ids)), "unique reused run ids")
+    jobs = {row["id"]: row for row in prior["jobs"]}
+    same(set(ids), set(jobs), "all and only completed prior audit jobs")
+    error_ids = {row.get("id") for row in prior["errors"] if row.get("id")}
+    require(not set(ids).intersection(error_ids), "failed audit jobs cannot be reused")
+    for name in ids:
+        exact(current[name], old_runs[name], "reused original run declaration")
+        job = jobs[name]
+        audit.job_ids.add(name)
+        audit.report["jobs"].append(job)
+        if job["kind"] == "pytest":
+            for node in job["completed"]:
+                require(node not in audit.coverage[job["mode"]], "unique reused node")
+                audit.coverage[job["mode"]][node] = [
+                    dict(run=name, source_set_sha256=job["source_set_sha256"])
+                ]
+        elif job["kind"] in ("native", "wheel") and job["producer_complete"]:
+            audit.external.setdefault(job["kind"] + ":" + job["mode"], []).append(name)
+    exact(
+        audit.coverage,
+        {mode: row["nodes"] for mode, row in prior["coverage"].items()},
+        "reused coverage derived from completed jobs",
+    )
+    exact(audit.external, prior["external_coverage"], "reused external coverage")
+    for path, value in prior["files"].items():
+        if path in audit.files:
+            exact(audit.files[path], value, "same carried evidence identity")
+        else:
+            audit.files[path] = value
+    require(len(audit.files) <= MAX_FILES, "combined evidence file limit")
+    audit.total = prior["decoded_bytes"]
+    require(0 <= audit.total <= MAX_TOTAL, "prior decoded resource bound")
+    audit.report["reused_audit"] = dict(
+        report=str(report_path),
+        sha256=resume["sha256"],
+        completed_run_ids=ids,
+        original_status=prior["status"],
+        original_errors=prior["errors"],
+        carried_file_count=len(prior["files"]),
+        policy="Prior completed jobs reused by report SHA; only failed jobs are re-audited.",
+    )
+    return set(ids)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--manifest", type=Path, required=True)
@@ -3311,7 +3463,10 @@ def main():
         ),
         manifest_sha256=hashlib.sha256(raw).hexdigest(),
     )
+    reused_ids = reuse_completed(audit, manifest)
     for spec in manifest["runs"]:
+        if spec["id"] in reused_ids:
+            continue
         try:
             if spec["kind"] == "pytest":
                 audit.pytest_run(spec)
@@ -3388,9 +3543,13 @@ def main():
         external_coverage=audit.external,
         decoded_bytes=audit.total,
         new_physics_pass_count=0,
-        status="saved_records_consistent"
-        if not audit.report["errors"]
-        else "incomplete_or_inconsistent",
+        status=(
+            "incomplete_or_inconsistent"
+            if audit.report["errors"]
+            else "saved_records_consistent_with_source_qualification"
+            if audit.report.get("source_qualifications")
+            else "saved_records_consistent"
+        ),
     )
     args.output.mkdir(parents=True, exist_ok=False)
     with (args.output / "audit.json").open("x", encoding="utf-8") as stream:

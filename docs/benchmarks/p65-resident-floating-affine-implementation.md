@@ -242,3 +242,6 @@ and the corresponding new RD fault tests remain UNEXECUTED by this author.
 544首次exact18 Ruff报10 import块、67分号、3局部I命名与1已失用body赋值；545首次format-check报17文件。546仅imports排序、547排版；手工3局部惯量变量重命名与删除shared solve中3个无load的body赋值。548 Ruff和549 format-check均RAW0；550标准库AST检查证18文件的限定非import AST及scoped import bindings相同，三局部重命名和3无读赋值另明列，不能把它写作全部raw AST相同。原失败、source快照保留。
 
 当前为 IMPLEMENTED_TESTS_PENDING。此节不是设备物理或C11验收；下一唯一串行任务是A01 interpret/CUDA，随后按原计划推进不同案例、事务、原生与wheel。
+## 父实际验证完成（2026-11-08）
+
+此前 IMPLEMENTED_TESTS_PENDING 为历史检查点。现已完成核心两backend、相邻、W32、独立Newton、新wheel源码外与同次保存审计，正式状态 LOCAL_VERIFIED / EXECUTION_SLOT_RELEASED，见[验收报告](p65-resident-floating-affine.md)。最终产品沿17769c5，后续修正仅保存/观察/排版，不修改物理输入或工程门。此限域接受不代表全设备窄相或整个P6.5完成。

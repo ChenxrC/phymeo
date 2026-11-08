@@ -78,13 +78,13 @@ same-entry atol5e-6/rtol5e-5，窗口2e-4，原PD5e-5/方程2e-5。新增full约
 
 ## 6. 执行与止损
 
-- [ ] NEW纯作者：A01 tests-first → 产品/案例并行 → 源码文本交叉审阅/精确NEW导入。
+- [x] NEW纯作者：A01 tests-first → 产品/案例并行 → 源码文本交叉审阅/精确NEW导入。
 - [x] 前置：C10专项、原生/保存/源码外wheel已正式限域接受，URDF来源限定详C10报告；原执行结束，父接续C11。
-- [ ] 父首A01有效RED → OLD窄接缝 → 最小A01 interpret/CUDA → A03/A04短档 → A02/A05真实接触。
-- [ ] 其余短档及新增事务，原工程门通过后再代表窗；只对修复影响范围复验，同源绿节点不重复。
-- [ ] Newton CPU/CUDA原生3短例/端；记录其原法则/限制，不matched外力，不将BODY_PARENT_F当mimic lambda。
-- [ ] 新wheel源码外公共API、完整安装/loaded origins、contact W4 40+21及A04短档、两bank拒步恢复；随后同次保存审计，无重算几何/动力学。
-- [ ] 更新功能全景与正式范围，再择下一高优先级缺口。
+- [x] 父首A01有效RED → OLD窄接缝 → 最小A01 interpret/CUDA → A03/A04短档 → A02/A05真实接触。
+- [x] 其余短档及新增事务，原工程门通过后再代表窗；只对修复影响范围复验，同源绿节点不重复。
+- [x] Newton CPU/CUDA原生3短例/端；记录其原法则/限制，不matched外力，不将BODY_PARENT_F当mimic lambda。
+- [x] 新wheel源码外公共API、完整安装/loaded origins、contact W4 40+21及A04短档、两bank拒步恢复；随后同次保存审计，无重算几何/动力学。
+- [x] 更新功能全景与正式范围，再择下一高优先级缺口。
 
 首短档实际成本用于排程；预计单61步窗>5min或W1/W4代表>15min，可先交短档阶段结果、把原完整节点明确NOT_RUN排后，不改steps冒通过。W32仅核心通过且4步预计<=3min时一次后置；容量/内存不合适可明确留未跑。没有性能收益也可接受新功能，禁止为凑倍率重复测量。
 
@@ -174,3 +174,6 @@ RD仅在原NEW transactions/test报告补X07，不新增测试文件或物理长
 仅保存审计允许可选failed_opaque_artifacts条目，逐个含path/bytes/sha256/reason/log_contains。它必须对应本次失败节点的预声明路径与tmp ordinal，与failed_payloads互斥，大小有界并直接核原始字节及原RAW1异常日志。不得解码这类不完整gzip、不得计payloadpass或物理通过，不得隐藏额外文件。completed仍逐项验完整JSON/输入/独立比较/发布协议。此补充只改变失败证据表示，不改变物理、测试输入、门或计数。
 
 counts保存的ResidentCollisionResult保全部字段；owner和registration明确编码为{opaque_process_local_type: builtins.object, identity_serialized: false}。标记不表示两个token相同或可重建；真实require_current(result) is result仍在原测试执行。reader仅counts专支精确核标记，不向wheel原有物理子集强加能力字段。
+## 13. 父正式限域接受（2026-11-08）
+
+C11现为LOCAL_VERIFIED / EXECUTION_SLOT_RELEASED，全部第6节任务已完成。每backend核心52、相邻6、后置W32通过；原生每端9步；新wheel每端266接受/2预期拒绝world-step。587固定同次保存审计RAW0，435产品成员与源码/包内字节一致。102完整输出与3原失败产物分别记录，不把105gzip全部叫通过。543有效RED、553保存失败及580静态零反力观察失败的来源和修复范围见[正式报告](../../benchmarks/p65-resident-floating-affine.md)。历史作者UNEXECUTED只描述当时交接，不能覆盖本次实际验证；不重跑已绿组、原生、wheel或同次审计。下一节点为K0通用设备查询接口冻结，完整P6.5仍持续。

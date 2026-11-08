@@ -115,3 +115,9 @@ result.raw 的固定七个主键为meta/gap/normal/surface/material_ids/barycent
 父开始NEW source适配与OLD薄入口/依赖close作者；ordinary/static来源与defaults5过滤、单次借用stage→owned→publish保持。此父接入尚未执行。顶层exports待NEW产品完整导入后接，不把缺module的过渡调用冒有效功能。下一次项目执行须等产品/测试交接、文本审阅和唯一父队列；不重跑588。
 
 父source适配及两OLD薄接缝已作者：589 exact3 Ruff RAW0；590首format RAW1仅两长行，591仅排版、592 final format RAW0；593标准库AST对三文件原始树完全相同。没有运行新query、动力学或旧已绿组。batch stats新增convex_query_plan_live_count/convex_query_live_bytes，不把新plan资源藏在旧collision计数内。有效RED之后首正控仍待NEW产品和最终测试交接。
+
+## 9. Q06-loss缺项补足（执行前）
+
+原case manifest的loss声明未指定第二体。保持该负控身份和原B八个local点，明确B为ordinary dynamic group、origin=(2**60,0,0)；第二体为static S，r=.05，center=origin+(0,0,.17)，仍用两侧原keys/100与200系列IDs。未丢表示的几何gap=.02；保存原local/安装及实际world FP64丢B的x半宽两份输入。只允许明确SOURCE_PRECISION或原完整有限源拒绝，不能恢复成另一套成功world输入。仍一个loss身份，不新增query计数，不改其它case。
+
+wire未使用material槽固定ID=-1、weight=0；非logical输出padding的meta/数值固定0，未使用material IDs仍-1。UNWRITTEN=0对logical行是错误，对明确padding不冒执行。公开row无效gap estimate/lower/upper、normal、surface/offset固定0并valid=False；scale_m只描述实际工程尺度，不靠占位值宣称几何。完整raw padding仍保留。

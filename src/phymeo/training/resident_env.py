@@ -10,16 +10,20 @@ from numbers import Integral
 
 import numpy as np
 
+from .resident_stepper import PhysicsStepFailure, ResidentContactStepper, _exact_acceptance
+
 
 def _owned(value, dtype=None):
     array = np.asarray(value, dtype=dtype)
     return np.frombuffer(array.tobytes(), dtype=array.dtype).reshape(array.shape)
 
 
-class VectorEnvStepError(RuntimeError):
-    """A task/readback failure after physics accepted requires an explicit reset."""
+class VectorEnvStepError(PhysicsStepFailure):
+    """No env transition was emitted; the mask says which physics advanced.
 
-    physics_accepted = True
+    Known all-False permits retry. Partial or unknown acceptance and post-step
+    callback failures require full reset; physical rollback is not claimed.
+    """
 
 
 @dataclass(frozen=True)
@@ -47,9 +51,12 @@ class ResidentVectorEnv:
     and boolean terminated [world]. Callbacks cannot advance physical state.
     Deterministic reset uses the batch's original state. Randomized reset and
     seed/normalizer checkpointing are separate follow-up capabilities.
+    stepper(h) may explicitly select contact physics; None borrows batch.step.
+    The backend protocol is snapshot(keys=None), set_controls(mapping),
+    step(h)->exact bool mapping, reset(keys). No backend is owned or closed.
     """
 
-    def __init__(self, batch, task, world_keys, *, action_size, dt, horizon):
+    def __init__(self, batch, task, world_keys, *, action_size, dt, horizon, stepper=None):
         keys = tuple(world_keys)
         if not keys or len(set(keys)) != len(keys):
             raise ValueError("world keys must be nonempty and unique")
@@ -68,6 +75,12 @@ class ResidentVectorEnv:
             limits = np.full(len(keys), int(limits))
         if limits.shape != (len(keys),):
             raise ValueError("horizon must be scalar or one value per world")
+        selected_stepper = batch.step if stepper is None else stepper
+        if not callable(selected_stepper):
+            raise TypeError("stepper must be callable with one physical dt")
+        if isinstance(selected_stepper, ResidentContactStepper) and selected_stepper.batch is not batch:
+            raise ValueError("contact stepper belongs to a different environment batch owner")
+        self._stepper = selected_stepper
         self.batch, self.task, self.world_keys = batch, task, keys
         self.action_size, self.dt = int(action_size), float(dt)
         self._horizon = _owned(limits, np.int64)
@@ -127,9 +140,7 @@ class ResidentVectorEnv:
         if set(controls) != set(self.world_keys):
             raise ValueError("task must provide exactly one control per environment world")
         self.batch.set_controls(controls)
-        # A batch rejection preserves environment episode counters. The batch
-        # remains the authority for accepted physical state and staged controls.
-        self.batch.step(self.dt)
+        accepted = self._step_physics()
         try:
             after = self.batch.snapshot(self.world_keys)
             final = self._observe(after)
@@ -154,20 +165,76 @@ class ResidentVectorEnv:
                 observation = self._observe(self.batch.snapshot(self.world_keys))
             else:
                 observation = final
+            next_length = np.where(completed, 0, length)
+            next_episode_id = self._episode_id + completed
+            result = VectorStep(
+                observation, reward, terminated, truncated, final, completed,
+                next_episode_id, next_length,
+            )
         except Exception as error:
             self._poisoned = True
             raise VectorEnvStepError(
-                "physics accepted; task/readback failed; reset all worlds"
+                "physics accepted; task/readback failed; reset all worlds",
+                accepted_worlds=accepted,
             ) from error
-        self._length = np.where(completed, 0, length)
-        self._episode_id += completed
-        return VectorStep(
-            observation,
-            reward,
-            terminated,
-            truncated,
-            final,
-            completed,
-            self._episode_id,
-            self._length,
+        self._length = next_length
+        self._episode_id = next_episode_id
+        return result
+
+    def _step_physics(self):
+        """Validate publication before reward, observation or episode transition."""
+        try:
+            returned = self._stepper(self.dt)
+        except PhysicsStepFailure as error:
+            if not error.acceptance_known:
+                self._poisoned = True
+                raise VectorEnvStepError(
+                    "physical publication is uncertain; reset all worlds",
+                    accepted_worlds=error.accepted_worlds,
+                    acceptance_known=False,
+                ) from error
+            try:
+                accepted = _exact_acceptance(error.accepted_worlds, self.world_keys)
+            except Exception as invalid:
+                self._poisoned = True
+                raise VectorEnvStepError(
+                    "physical failure has an incomplete/invalid acceptance map; reset all worlds",
+                    accepted_worlds={}, acceptance_known=False,
+                ) from invalid
+            self._raise_rejected(accepted, cause=error)
+            # A failure after every world accepted is still not an env transition.
+            self._poisoned = True
+            raise VectorEnvStepError(
+                "physics accepted; backend failed afterward; reset all worlds",
+                accepted_worlds=accepted,
+            ) from error
+        except Exception as error:
+            self._poisoned = True
+            raise VectorEnvStepError(
+                "physical step failed with unknown publication state; reset all worlds",
+                accepted_worlds={}, acceptance_known=False,
+            ) from error
+        try:
+            accepted = _exact_acceptance(returned, self.world_keys)
+        except Exception as error:
+            self._poisoned = True
+            raise VectorEnvStepError(
+                "physical step returned an invalid acceptance map; reset all worlds",
+                accepted_worlds={}, acceptance_known=False,
+            ) from error
+        self._raise_rejected(accepted)
+        return accepted
+
+    def _raise_rejected(self, accepted, *, cause=None):
+        if all(accepted.values()):
+            return
+        self._poisoned = any(accepted.values())
+        message = (
+            "some physical worlds advanced; no env transition; reset all worlds"
+            if self._poisoned
+            else "all physical worlds rejected; no env transition; retry is permitted"
         )
+        error = VectorEnvStepError(message, accepted_worlds=accepted)
+        if cause is None:
+            raise error
+        raise error from cause

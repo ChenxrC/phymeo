@@ -33,6 +33,7 @@
 | 无状态公共PolicyRunner | 动作保持、逐世界整数时钟、真实原命令、独立reset | 不是RNN/完整物理checkpoint协议 |
 | 完整tree body载荷包 | 30body实际RED后修复旧17body门；完整HOST桥53项通过 | 既有32joint+root对应33body，原shape/site/candidate上限不变 |
 | 29/32joint最后body设备接触 | interpret/CUDA各2项，通过完整M/J、仅最后body施加2N和偏心-.5Nm、根运动与双侧反作用 | 解析同轴树，不是设备G1舞蹈；μ=0 |
+| 速度摩擦混合桥 | 新旧HOST63项，interpret/CUDA各12项；两个真实运动case各8步 | HOST几何/力律→设备fullM/J；不声称静摩擦历史或G1设备窗口 |
 | W256公共连接 | interpret/CUDA各256world×8步=2048world-steps | 128平动球+128真实转动关节；无接触几何，NumPy策略边界，无吞吐结论 |
 | W256受载注册边界 | 512个有效shape在原256单模型门被拒，0物理步 | 是准确缺口负控，不是受载W256通过 |
 | 可选RSL-RL | 10项可选适配测试真实执行/通过，未skip | HOST/TensorDict复制；不包含GPU互操作 |
@@ -64,12 +65,13 @@ PPO使用原RSL-RL rollout/update/save/load，两任务均为16个HOST环境、s
 - `14–19`为隔离依赖、适配测试及两任务PPO；`ppo-outcome.json`、`41-training-freeze`、`42-training-pip-check`记录实际版本与学习结果。
 - `23–29`为W256作者格式修复、原shape边界与两backend物理结果；`30–40`为旧body门RED、HOST53、纯格式AST同一和两backend高body正控。
 - `20b/21b/22b`为加入33body修复后的wheel构建/安装/源码外消费者。`22`首次消费者漏必需robot_state而失败；`22b`仅补显式原初态后通过，无产品修复。后续若再改产品，需新wheel绑定，不沿用旧包通过标签。
+- `44–53`为速度摩擦真实RED、原静态/AST及新旧桥63、两backend各12；`54–59`为产品37aa1c40的新wheel、448成员0mismatch、源码外HOST32world-steps及interpret/CUDA各8摩擦受载接受步。后者为当前产品包，不借此前旧包标签。
 
 未重跑既有同源全套、旧审计或旧长窗。未动原三个K1未提交文件、未推main或发布包、未改TYX pin、未启动远程CI。
 
 ## 剩余连接与后续顺序
 
-1. **设备受载速度摩擦**：当前高body留出仍为μ0；非零μ混合桥作为N7独立验证，不借HOST G1的摩擦通过标签。它也不同于固定材料点的静摩擦/滚动历史。
+1. **G1设备组合与站点力核**：高bodyμ0与非零μ两运动机制已分别验证；[N7混合桥](p65-resident-friction-connections.md)不借HOST G1标签。N8先检查完整G1设备短窗，再迁移站点力核；固定材料点静摩擦/滚动历史仍为另一能力。
 2. **受载W256**：先做完整world分页、FP64合载、每storage一次solve和一次共同发布；不能循环调用旧plan两次或只把256改大。
 3. **公开策略张量数据面**：基于固定TYX的公开Torch互操作，明确stream/owner/epoch/reset/拒步及终态副本，再减少HOST往返；CPU PPO不是该结果。
 4. **全动作工程质量**：14.91倍峰值力和1.275m参考误差保持开放。在通用离散、支撑/滑移诊断及控制协议上改进，不改原质量/门槛、不给G1专用姿态修补。

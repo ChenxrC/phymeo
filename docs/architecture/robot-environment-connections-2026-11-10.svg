@@ -44,7 +44,7 @@
 <rect class="existing" x="40" y="690" width="270" height="90" rx="6"/>
 <text class="title" x="175" y="716" text-anchor="middle">RobotScene / MultiRobotScene</text><text class="sub" x="175" y="740" text-anchor="middle">全M/J、限幅驱动、接触、共同发布</text><text class="small" x="175" y="762" text-anchor="middle">G1全131.48s无跌倒；两工程门未过</text>
 <rect class="existing" x="690" y="690" width="270" height="90" rx="6"/>
-<text class="title" x="825" y="716" text-anchor="middle">TyxWorldBatch</text><text class="sub" x="825" y="740" text-anchor="middle">完整树 / 浮根 / 有界32关节</text><text class="small" x="825" y="762" text-anchor="middle">受载窄相仍在HOST；设备mu0有限域</text>
+<text class="title" x="825" y="716" text-anchor="middle">TyxWorldBatch</text><text class="sub" x="825" y="740" text-anchor="middle">完整树 / 浮根 / 有界32关节</text><text class="small" x="825" y="762" text-anchor="middle">HOST几何/速度摩擦 → 设备完整M/J</text>
 <rect class="data" x="360" y="690" width="270" height="90" rx="6"/>
 <text class="title" x="495" y="716" text-anchor="middle">接受状态与逐世界结果</text><text class="sub" x="495" y="740" text-anchor="middle">q/v · effort · 接触力 · 事件</text><text class="small" x="495" y="762" text-anchor="middle">部分推进明确报告，不能伪回滚</text>
 <rect class="data" x="360" y="850" width="270" height="90" rx="6"/>
@@ -54,7 +54,7 @@
 <rect class="existing" x="690" y="850" width="270" height="90" rx="6"/>
 <text class="title" x="825" y="876" text-anchor="middle">可选RSL-RL / PPO</text><text class="sub" x="825" y="900" text-anchor="middle">TensorDict适配 · 两HOST任务实训</text><text class="small" x="825" y="922" text-anchor="middle">原生checkpoint重载 · CPU非GPU训练</text>
 <text class="sub" x="40" y="985">绿色：已实现且运行；紫色：数据与证据；青色：外部策略。通过范围见报告。</text>
-<text class="small" x="40" y="1010">下一批：设备摩擦、跨participant共同求解、策略张量；W256运动已验，受载规模未通。</text>
+<text class="small" x="40" y="1010">下一批：设备站点力核、跨participant共同求解、策略张量；W256受载规模未通。</text>
 <text class="small" x="40" y="1032">独立物理族：软布/体软体、更广耦合、杆缆、MPM/流体仍按全景分别验收。</text>
 <text class="small" x="40" y="1063">证据：HOST72 / TYX各12 · G1公共20s / 全131.48s · PPO两任务 · W256运动 · wheel。</text>
 </svg>

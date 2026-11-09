@@ -6,7 +6,7 @@
 
 公共连接HOST72、interpret/CUDA各12，真实29/32joint最后body受载各2，CPU RSL适配10项与两真实物理任务PPO/checkpoint重载，W256混合运动各2048world-steps均已通过。33body bridge修复c1292647不改变shape cap；受载W256的512声明仍被原256shape门拒。源码外新wheel受载调用已验，实际长动作Three.js回放已导出并浏览核实。
 
-当前所有权：父唯一项目执行/共享接缝owner；复用原三个作者，只纯编码/研究并行。原K1三个未提交文件保持，不远程CI/推main/发包/改pin。N7非零μ混合桥正按本批计划独立作者/验证，未完成之前仍不能说G1设备接触/训练已通。后续重点是通用设备摩擦、单次发布分页受载W256与公开策略张量/stream/epoch接口，依据[规模调研](p65-resident-contact-scale-research.md)和[设备连接调研](p65-device-policy-contact-research.md)。CPU PPO、几何查询和受载GPU训练是三项不同能力。
+当前所有权：父唯一项目执行/共享接缝owner；复用原三个作者，只纯编码/研究并行。原K1三个未提交文件保持，不远程CI/推main/发包/改pin。[N7非零μ混合桥](../benchmarks/p65-resident-friction-connections.md)已按产品37aa1c40完成HOST63、interpret/CUDA各12和新wheel源码外验证；仍为HOST几何/力律→设备完整M/J，不是设备站点力核或静摩擦。N8只准备G1设备受载2秒新短窗，未执行前不能称G1设备已通。后续重点是站点力设备化、单次发布分页受载W256与公开策略张量/stream/epoch接口，依据[规模调研](p65-resident-contact-scale-research.md)和[设备连接调研](p65-device-policy-contact-research.md)。CPU PPO、几何查询和受载GPU训练是三项不同能力。
 
 下文是既有验收与历史，不用旧pending覆盖本节。整个P6.5/全部Newton对齐仍未完成。
 

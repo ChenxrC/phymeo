@@ -14,7 +14,7 @@
 | 任务环境 | `training/resident_env.py::ResidentVectorEnv` | controls/observe/evaluate、reward/done、final observation、选择复位 | NumPy/HOST边界；新受载stepper与拒步mask已通过专项 |
 | HOST场景适配 | `training/scene_backend.py::SceneBatchBackend` | 一个逻辑world拥有一个原RobotScene/MultiRobotScene；factory复位 | CPU逐scene循环，不能称设备批处理；不覆盖裸ContactScene |
 | TYX受载适配 | `training/resident_stepper.py::ResidentContactStepper` | 借用原batch/plan，调用原step_contacts | 不复制solver、不替换owner、不关闭借用资源；已通过两backend专项 |
-| 真实物理推进 | `runtime/multi_robot_scene.py`、`backends/tyx_world_batch.py` | 接触载荷、完整M/J、驱动、候选与共同发布 | HOST和TYX能力域不同；设备受载几何仍有HOST路径，持续摩擦受限 |
+| 真实物理推进 | `runtime/multi_robot_scene.py`、`backends/tyx_world_batch.py` | 接触载荷、完整M/J、驱动、候选与共同发布 | HOST和TYX能力域不同；原速度摩擦已混合接通，几何/力律仍在HOST，静摩擦历史未接 |
 | 观测与传感 | `sensors/`、`experiments/humanoid_support.py` | 接受q/v、载荷、IMU、力矩、深度/法线/ID、输入时刻 | 力采样在步入口，姿态在步末；不能混作同一时刻量 |
 | 学习器连接 | `training/rsl_rl.py`、`examples/train_scene_ppo.py` | 可选TensorDict接口、原RSL-RL PPO、保存/重载 | 两个HOST任务实训通过；HOST拷贝，非GPU训练；不宣称G1从头学习 |
 | 回放/审计 | `examples/export_g1_policy_replay.py`与离线Three.js | 从保存的实际q做FK，可见真实受力与失败 | 全131.48秒已导出并浏览检查；不重放参考NPZ，不生成新物理步 |
@@ -44,7 +44,7 @@ PPO是另一条上层闭环：RSL-RL自己的rollout runner → `RslRlVecEnv` �
 
 这条公共链连接场景与机器人、碰撞响应、GPU/多世界、训练、传感与求解编排。G1是一个实际留出，独立受载机械任务与拒步/复位仍必须通过。
 
-尚未完成的设备持续摩擦、跨独立participant联合设备求解、无HOST往返的策略张量、受载W256/W1024及吞吐，以及软布/体软体/杆缆/MPM物理族，不因这条HOST链成功而被标为完成。W256已过的只是两运动族、8步的公共连接留出。
+原速度摩擦混合桥已过HOST63、interpret/CUDA各12，并通过新wheel源码外受载调用；[限域结果](../benchmarks/p65-resident-friction-connections.md)分别列出两个连续运动机制。设备站点力核、材料锚点静摩擦历史、跨独立participant联合设备求解、无HOST往返策略张量、受载W256/W1024及吞吐，以及软布/体软体/杆缆/MPM物理族仍需分别推进。W256已过的只是两运动族、8步公共连接。
 
 ## 本批证据
 

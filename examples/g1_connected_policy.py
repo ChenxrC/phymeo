@@ -148,7 +148,7 @@ def run(args, journal):
     steps = round(args.duration / args.dt)
     if steps < 1 or not math.isclose(steps * args.dt, args.duration, abs_tol=1e-12):
         raise ValueError("duration must contain whole physical steps")
-    if math.ceil(args.duration / .02) > len(task.motion["joint_pos"]):
+    if (steps + task.decimation - 1) // task.decimation > len(task.motion["joint_pos"]):
         raise ValueError("requested duration exceeds the unchanged motion")
     session = ort.InferenceSession(str(task.assets / "policy.onnx"), providers=["CPUExecutionProvider"])
     keys = tuple(range(args.worlds))

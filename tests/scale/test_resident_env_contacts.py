@@ -159,6 +159,43 @@ def test_env_contact_stepper_advances_real_load_and_preserves_final_observation(
                                                [0, -np.sin(H * H / 2), 0, np.cos(H * H / 2)],
                                                rtol=0, atol=5e-6)
                 assert stepper.batch is batch and stepper.plan is plan
+                # Reuse this very same open plan after env's automatic reset.
+                # A fresh episode must sample/load/advance again, not replay its
+                # first receipt or silently switch to ordinary unloaded physics.
+                second = env.step(np.zeros((1, 1)))
+                second_receipt = plan.last_accepted[WORLD]
+                second_accepted = task.records[1]["after"][WORLD]
+                record.update(second_transition=second, second_receipt=second_receipt,
+                              second_accepted=second_accepted,
+                              after_second_reset=batch.snapshot(),
+                              plan_stats_after_second=plan.stats(), batch_stats_after_second=batch.stats())
+                assert stepper.batch is batch and stepper.plan is plan
+                assert second_receipt is not receipt and plan.last_accepted[WORLD] is second_receipt
+                assert second_receipt.entry_state == initial
+                assert second_receipt.accepted_state == second_accepted
+                assert (second_receipt.entry_tick, second_receipt.exit_tick) == (0, 1)
+                assert second_accepted.tick == 1 and batch.snapshot()[WORLD] == initial
+                assert batch.stats()["completed_steps"] == 2
+                assert task.evaluate_calls == 2 and not env.needs_reset
+                np.testing.assert_allclose(second.final_observation, [[H * H, H]], rtol=0, atol=5e-6)
+                np.testing.assert_allclose(second.observation, [[0, 0]], rtol=0, atol=5e-6)
+                np.testing.assert_allclose(second.reward, [H], rtol=0, atol=5e-6)
+                assert second.final_mask.tolist() == [True]
+                assert second.terminated.tolist() == [kind == "fixed-box"]
+                assert second.truncated.tolist() == [kind != "fixed-box"]
+                assert second.episode_id.tolist() == [2] and second.episode_length.tolist() == [0]
+                assert transition.episode_id.tolist() == [1] and receipt.accepted_state == accepted
+                if kind == "fixed-box":
+                    np.testing.assert_allclose(second_receipt.law_wrench_fp64, [[0, 0, 2, 0, 0, 0]], rtol=0, atol=5e-6)
+                    np.testing.assert_allclose(second_receipt.contact_generalized, [2], rtol=0, atol=5e-6)
+                    np.testing.assert_allclose(second_receipt.diagnostics["mass"], [[2]], rtol=0, atol=5e-6)
+                else:
+                    np.testing.assert_allclose(second_receipt.law_wrench_fp64, [[0, 0, 2, 0, -.5, 0]], rtol=0, atol=5e-6)
+                    np.testing.assert_allclose(second_receipt.contact_generalized, [0, 0, 2, 0, -.5, 0], rtol=0, atol=5e-6)
+                    np.testing.assert_allclose(second_accepted.velocity, [0, 0, H, 0, -H, 0], rtol=0, atol=5e-6)
+                    np.testing.assert_allclose(second_accepted.position[3:7],
+                                               [0, -np.sin(H * H / 2), 0, np.cos(H * H / 2)],
+                                               rtol=0, atol=5e-6)
                 record["status"] = "passed"
     except Exception as error:
         record.update(status="failed", error_type=type(error).__name__, error=str(error), traceback=traceback.format_exc())

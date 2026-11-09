@@ -62,3 +62,7 @@
 调研入口：[官方环境接口](https://github.com/leggedrobotics/rsl_rl/blob/main/rsl_rl/env/vec_env.py)、[官方训练/保存/载入流程](https://leggedrobotics.github.io/rsl_rl/guide/overview.html)。该适配不是零拷贝或大规模GPU训练完成。
 
 启动前状态与后续任务收据保存在 `artifacts/p65-connections-20261110-0800-01`，每项实际结果回填本节。
+
+04:48长窗结果：通用轴入盒缺口修复并通过17HOST相邻/独立例后，从原q/v一次完成全6574帧、131.48秒/262960步，没有跌倒/拒步、没有状态修补。最低根高.439279m，最大倾角.630023rad、最大关节RMSE.291702rad、稳定段平均支撑1.00000865倍体重。原工程门峰值14.9124倍体重与参考XY误差1.274907m未过，RAW_EXIT1和两个failedcriteria完整保留；这不是全部工程门通过。新run结果在`artifacts/p65-connections-20261110-0800-01/g1-full-outcome.json`。原27.0495s失败仍在01，不重跑该旧前缀。
+
+04:52连接专项：HOST72通过；interpret/CUDA各12通过。包含新受载计划跨episode、真实逐世界拒步、公共策略runner、真实HOST场景与日志语义。原firstlint5项与format14files失败已保存并修正；16源qualifiedAST证明和最终静态通过。新G1公共入口20秒、真实回放、可选PPO、源码外wheel及最终图继续按唯一父队列执行。

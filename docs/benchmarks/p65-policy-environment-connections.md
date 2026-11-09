@@ -1,5 +1,15 @@
 # 策略与环境的共同连接：PolicyRunner
 
+## Parent execution — 2026-11-10
+
+This connection is now exercised on parent source `31058805`. The complete HOST connection suite passed **72 tests** in1.61s: environment publication protocol, real loaded HOST scenes, common policy scheduling, and saved-publication parser semantics. The exact combined TYX suite passed **12 tests per backend** (interpret1.64s; actual CUDA7.13s), including real contact loads, the same borrowed plan across two reset episodes, actual all/partial rejection, policy holding and adjacent vector-env compatibility. No skip/deselection or fallback was used in these commands.
+
+Evidence: `artifacts/p65-connections-20261110-0800-01/08-connections-host`, `09-connections-interpret`, `10-connections-cuda`. Each command retains argv/environment, before/after source snapshots/hashes, stdout/stderr and raw exit. Actual numerical assertions are in the tests; parser protocol fixtures do not claim physical results. The subsequent G1 common-connection and optional learner runs are separate acceptance items.
+
+The first exact16-file lint found one import-order issue and four E402 diagnostics in the optional-dependency test. The latter now have local explained annotations after intentional dependency admission. Fourteen files needed formatting. Final lint/format passed; 15/16 raw ASTs remained equal, and all16 retained the same non-import AST and contiguous scoped import bindings. This qualification does not claim import execution order was unchanged. Original failures remain in08a/08b, with repairs/proof/final results in08c–08g.
+
+The author handoff below is historical.
+
 当前状态：**AUTHORING_ONLY / UNEXECUTED**。本文件只记录接口和待执行验收；不把源码作者、手算固定向量或既有 G1 窗口计为本模块通过。父唯一执行槽正在运行独立长窗，本作者没有 import、collection、数值执行、pytest、lint、formatter 或 build。
 
 ## 目标与公共入口

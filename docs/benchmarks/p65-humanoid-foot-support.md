@@ -1,5 +1,37 @@
 # Finite-foot sustained support: authored acceptance and public recipe
 
+## Parent results, 2026-11-10
+
+Normal support is verified for the actual free-root two-foot fixture: three
+128-step stance/load-moment windows and one continuous 528-step lift/reentry
+window. A separate late-failure/retry test passed. The six adjacent box-patch
+cases and two new subresolution-orientation regressions also passed.
+Evidence is `artifacts/p65-h1-20261109-01`, tasks 13–18.
+
+The first stance attempt failed when a ~1e-22 stored orientation changed a face
+load into a full-force corner load. The parent repaired only the OBB load
+manifold's coordinate-resolution admission: reconstructed vertex displacement
+must stay within the existing FP64 coordinate bound. Actual material points,
+site gaps, velocities and reciprocal application points are retained. The
+admission and its displacement/bound are exposed in contact details. Exact
+convex collision predicates are unchanged; resolved tilt 2^-25 still gives the
+original edge result. This is an engineering load-manifold convention below
+coordinate resolution, not proof that the nonsmooth maximum-gap potential has
+an unchanged angular derivative.
+
+The planned 128-step lateral-history target **failed on its second request**
+when real tilt changed the foot patch. Its original positive target and raw
+failure remain in task 14. The current test explicitly verifies rejection and
+unchanged accepted state for this unsupported transition; it is not counted as
+successful lateral support. General resolved-tilt distributed pressure and
+rolling/feature-changing material history remain open. No matcher tolerance,
+mass, friction coefficient, root constraint or physical acceptance gate was
+relaxed.
+
+Actual G1 standing is assessed separately by
+`examples/g1_phymeo_support.py`; success on the small fixture does not establish
+humanoid balance or dance. The author-only handoff below is retained as history.
+
 Status: **AUTHORING_ONLY / UNEXECUTED**. Base `666dd66184869ff36401551abcd0904e7564128a`, branch `codex/h1-foot-support`. The parent owns all project execution. This checkpoint changes three new files only; it does not change existing dynamics, collision, material history, limits or numerical tolerances.
 
 The task is reusable physical foot support, independent of the G1 demonstration. A real floating trunk and two massive articulated feet exercise finite box-ground contact, asymmetric force/moment balance, unloading/reentry, explicit friction history and atomic rejection. The parent separately integrates the official G1 model and its actual foot capsules.

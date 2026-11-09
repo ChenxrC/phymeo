@@ -78,6 +78,21 @@ class TableLinkSolids(BoxLinkContacts):
         relative[np.abs(relative) <= rounding] = 0.0
         aligned = np.abs(np.abs(relative) - 1) <= rounding
         relative[aligned] = np.sign(relative[aligned])
+        # A stored quaternion can retain a rotation far below the resolution of
+        # the transformed material vertices. Do not turn that unresolved angle
+        # into a full-force corner contact. This is a load-manifold coordinate
+        # reconstruction bound, not a change to exact convex-query predicates.
+        candidate = relative.copy()
+        angular_bound = tol / max(float(np.min(solid._half)), np.finfo(float).tiny)
+        candidate[np.abs(candidate) <= angular_bound] = 0.0
+        aligned = np.abs(np.abs(candidate) - 1) <= angular_bound
+        candidate[aligned] = np.sign(candidate[aligned])
+        local_corners = (np.asarray(_BITS) * 2 - 1) * solid._half
+        displacement = local_corners @ (candidate - relative).T
+        reconstruction_m = float(np.max(np.abs(displacement)))
+        admitted = reconstruction_m > 0 and reconstruction_m <= tol
+        if reconstruction_m <= tol:
+            relative = candidate
         local_center = _vector(R.T @ ((link_position - center) + link_rotation @ solid._center))
         B = np.array(
             [
@@ -107,14 +122,22 @@ class TableLinkSolids(BoxLinkContacts):
             pa, pb = wa @ world, wb @ table_points
             if not np.allclose(pb - pa, gap * normal, atol=tol * 8, rtol=0):
                 raise ValueError(f"{solid.shape}: box/table material witness cannot be rebound")
+            # Keep the actual material witnesses and local spring depth even if
+            # the load patch required resolution-bounded reconstruction.
+            site_gap = float((pb - pa) @ normal)
+            if site_gap >= 0:
+                continue
             yield (
-                gap,
+                site_gap,
                 normal,
                 pa,
                 pb,
                 ("point", "edge", "face")[patch.dimension],
                 float(weight),
                 dict(
+                    load_patch_admission="coordinate_resolution" if admitted else "exact_support",
+                    load_patch_reconstruction_m=reconstruction_m if admitted else 0.0,
+                    load_patch_resolution_bound_m=tol,
                     patch_dimension=patch.dimension,
                     patch_area_m2=patch.area_m2,
                     area_weight_m2=float(area),

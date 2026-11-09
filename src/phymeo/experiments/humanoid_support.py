@@ -111,7 +111,9 @@ def read_foot_support(
             moment += actual.torque_nm
             friction += actual.friction_force_n
             sites += actual.site_sides
-        rows.append(FootWrench(name, tuple(force), tuple(moment), tuple(friction), float(force @ up), sites))
+        rows.append(
+            FootWrench(name, tuple(force), tuple(moment), tuple(friction), float(force @ up), sites)
+        )
         total_force += force
         total_moment += moment
     selected = tuple(key for keys in feet.values() for key in keys)
@@ -123,9 +125,13 @@ def read_foot_support(
     published = None
     floor_rows = tuple(floor_rigid_rows)
     if floor_rows:
-        if any(isinstance(row, bool) or not isinstance(row, (int, np.integer)) for row in floor_rows):
+        if any(
+            isinstance(row, bool) or not isinstance(row, (int, np.integer)) for row in floor_rows
+        ):
             raise ValueError("floor rigid rows must be integer indices")
-        if len(set(floor_rows)) != len(floor_rows) or any(row < 0 or row >= len(reading.loads.inputs.rigid.force) for row in floor_rows):
+        if len(set(floor_rows)) != len(floor_rows) or any(
+            row < 0 or row >= len(reading.loads.inputs.rigid.force) for row in floor_rows
+        ):
             raise ValueError("floor rigid rows must be distinct and in range")
         published = tuple(reading.loads.inputs.rigid.force[list(floor_rows)].sum(axis=0))
     displacement = velocity = root_up = root_tilt = None
@@ -142,10 +148,18 @@ def read_foot_support(
     elif reference_root_position_m is not None:
         raise ValueError("reference root position requires a robot address")
     return FootSupportReading(
-        float(sample), commit, tuple(rows), tuple(total_force), tuple(total_moment),
-        tuple(reaction), published,
+        float(sample),
+        commit,
+        tuple(rows),
+        tuple(total_force),
+        tuple(total_moment),
+        tuple(reaction),
+        published,
         tuple(row.name for row in rows if row.normal_force_n > threshold),
-        displacement, velocity, root_up, root_tilt,
+        displacement,
+        velocity,
+        root_up,
+        root_tilt,
     )
 
 
@@ -171,7 +185,11 @@ def foot_material_registry(
     feet, ground = _feet(foot_shapes, ground_shapes)
     selected = {key for keys in feet.values() for key in keys}
     axis = _vector(tangent_axis_local, "tangent axis")
-    if isinstance(token_start, bool) or not isinstance(token_start, (int, np.integer)) or token_start < 0:
+    if (
+        isinstance(token_start, bool)
+        or not isinstance(token_start, (int, np.integer))
+        or token_start < 0
+    ):
         raise ValueError("token_start must be a nonnegative integer")
     declarations = []
     for load in sampled_loads.contacts:
@@ -184,7 +202,12 @@ def foot_material_registry(
         position, rotation = frames_by_shape[foot]
         position = _vector(position, "foot origin")
         rotation = np.asarray(rotation, dtype=float)
-        if rotation.shape != (3, 3) or not np.isfinite(rotation).all() or not np.allclose(rotation.T @ rotation, np.eye(3), atol=1e-10, rtol=0) or not np.isclose(np.linalg.det(rotation), 1.0, atol=1e-10, rtol=0):
+        if (
+            rotation.shape != (3, 3)
+            or not np.isfinite(rotation).all()
+            or not np.allclose(rotation.T @ rotation, np.eye(3), atol=1e-10, rtol=0)
+            or not np.isclose(np.linalg.det(rotation), 1.0, atol=1e-10, rtol=0)
+        ):
             raise ValueError("foot rotation must be proper orthonormal")
         for site in load.sites:
             if site.force_n <= 0:
@@ -197,11 +220,18 @@ def foot_material_registry(
         raise ValueError("duplicate local foot station")
     registrations = []
     for ordinal, (first, second, side, local) in enumerate(declarations):
-        registrations.append(MaterialStationRegistration(
-            StationKey(first.world, int(token_start) + ordinal),
-            first, second, side, local, tuple(axis),
-            chart_ids[first], chart_ids[second],
-            first_feature=tuple(shape_vertex_ids[first]),
-            second_feature=tuple(shape_vertex_ids[second]),
-        ))
+        registrations.append(
+            MaterialStationRegistration(
+                StationKey(first.world, int(token_start) + ordinal),
+                first,
+                second,
+                side,
+                local,
+                tuple(axis),
+                chart_ids[first],
+                chart_ids[second],
+                first_feature=tuple(shape_vertex_ids[first]),
+                second_feature=tuple(shape_vertex_ids[second]),
+            )
+        )
     return MaterialStationRegistry(registrations)

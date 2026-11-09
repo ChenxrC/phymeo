@@ -150,6 +150,15 @@ class _Records:
                 normal_load_N=magnitude,
                 fraction=weight,
                 power_W=site.power_w,
+                **{
+                    name: row[name]
+                    for name in (
+                        "load_patch_admission",
+                        "load_patch_reconstruction_m",
+                        "load_patch_resolution_bound_m",
+                    )
+                    if name in row
+                },
             )
         )
 

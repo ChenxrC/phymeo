@@ -1,5 +1,7 @@
 # 浮根关节反射惯量与黏性阻尼：作者交接
 
+当前状态：HOST与共享场景执行器模型已验证；见本文末尾 parent validation。下述 AUTHORING_ONLY 是原作者交接历史。
+
 状态：**AUTHORING_ONLY / UNEXECUTED**。基于父 `666dd66`，本分支仅做源码、手推和 Git 检查；没有 import、collection、pytest、数值 probe、lint、formatter、build 或安装结果。父是唯一项目执行 owner。
 
 ## 模型与接口

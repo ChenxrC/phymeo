@@ -1,8 +1,8 @@
 # P6.5 人工续作入口
 
-## 当前安排（2026-11-08，持续实施）
+## 当前安排（2026-11-09）
 
-用户先取消08:00限制，后于11月8日11:24清除长期目标；get_goal实际返回null。当前 **NO_ACTIVE_GOAL / CHECKPOINTED**，不继续派工或启动项目执行，也不新建goal；原两作者已保存当前WIP并释放；恢复入口见K0计划§11。主线仍是[三线开发与测试计划](../superpowers/plans/2026-11-07-generic-collision-until-0800.md)的通用功能补齐。原RR额度不可用，不重试或新建替代；父是所有旧共享接缝与全部项目执行唯一owner。原RD/robot仅在隔离树作者阶段并行，所有项目import/pytest/数值/静态/build/install/native严格串行。
+用户最新要求：立即收束 K0，提高大规模训练优先级，并使用真实人形机器人和公开驱动策略完成舞蹈。**K0 默认距离/见证已完成本机限域验收**：最终 interpret/CUDA 各142通过，284完整gzip留存，新wheel源码外各4接受，440产品成员同源；见[正式报告](../benchmarks/p65-device-convex-query-acceptance.md)。新的最高优先主线是[训练与G1舞蹈计划](../superpowers/plans/2026-11-09-training-humanoid-priority.md)。不重建长期goal或周期任务。所有项目执行仍父唯一owner、严格串行；已有可选K1作者内容继续保持未验收。原11月8日缺明细记录见K0计划§12，本轮完整留档见§13。
 
 **C5固定根affine-mimic设备树已正式限域接受**：HOST13、解释89、CUDA89，独立Newton CPU/CUDA共400步，301固定保存审计及新wheel源码外五混合世界305 world-steps完成。详[验收报告](../benchmarks/p65-resident-affine-tree.md)。C4普通完整树、F3浮根惯量与F01–F06摩擦接受继续复用；禁止重复同源已绿组、旧wheel或完整证据审计。C5不是设备接触反馈、浮根设备树或CCD通过。
 
@@ -17,7 +17,7 @@
 
 **C10普通浮根接触已正式限域接受，保留URDF来源限定**：[正式报告](../benchmarks/p65-resident-floating-contacts.md)。interpret分组与CUDA各76唯一节点、相邻各3、独立Newton原生每端80步、新wheel源码外每端302接受/2拒绝world-step完成。541保存补件RAW0核14原任务/133完整gzip，复用原9项完整审计、只补5项；原URDF漏快照以明确retrospective qualification保留，不能称同次raw来源齐全。三项观察器首失败与536均留证。431产品构建成员全同。C10项目执行已结束，不重复绿组或已完审计；能力仍限ordinary浮根、HOST有限mu0离散窄相及TYX完整响应。
 
-**C11浮根affine/mimic已正式限域接受**：[正式报告](../benchmarks/p65-resident-floating-affine.md)。每backend核心52唯一节点/46完整保存身份、相邻各6、W32各4步；Newton原生每端9步、新wheel源码外每端266接受/2拒绝world-step全部完成。587同次保存审计RAW0核20原任务/7751文件，102完整输出及3原失败产物分开记录，435产品成员与wheel逐字节一致。完整6+n载荷→6+K归约、原关系行反力/root余额和共同发布已验；553保存token、580观察器零反力集合首失败均保留。所有C11执行结束，不重复已绿组/同次审计。下一片[K0整族设备查询计划](../superpowers/plans/2026-11-08-device-convex-query.md)已冻结tests-first：原robot先写独立测试/参考，原RD随后作者统一support/query；父持旧接缝与唯一执行槽。尚无K0产品执行或GPU窄相接受。
+**C11浮根affine/mimic已正式限域接受**：[正式报告](../benchmarks/p65-resident-floating-affine.md)。每backend核心52唯一节点/46完整保存身份、相邻各6、W32各4步；Newton原生每端9步、新wheel源码外每端266接受/2拒绝world-step全部完成。587同次保存审计RAW0核20原任务/7751文件，102完整输出及3原失败产物分开记录，435产品成员与wheel逐字节一致。完整6+n载荷→6+K归约、原关系行反力/root余额和共同发布已验；553保存token、580观察器零反力集合首失败均保留。所有C11执行结束，不重复已绿组/同次审计。K0默认设备查询现已限域验收，见[报告](../benchmarks/p65-device-convex-query-acceptance.md)。K1可选patch仍未验收，K2真实消费者尚未冻结。
 
 [功能差异全景](phymeo-newton-panorama-2026-11-07.md) · [可视化](phymeo-newton-panorama-2026-11-07.html)。完整设备窄相/CCD、跨独立participant的设备共同求解、抓取释放工程精度边界和软布两初态放台等仍开放；历史数学证明或局部几何不代表整个P6.5完成。
 

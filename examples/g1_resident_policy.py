@@ -86,8 +86,7 @@ class ResidentG1Task(G1Task):
             row = self.states[key].robots[0, original.ROBOT]
             target = self.offset + self.scale * action
             torque = (
-                self.kp * (target - row.q[7:][self.o_from_p])
-                - self.kd * row.v[6:][self.o_from_p]
+                self.kp * (target - row.q[7:][self.o_from_p]) - self.kd * row.v[6:][self.o_from_p]
             )[self.p_from_o]
             drive = np.column_stack(
                 (
@@ -184,7 +183,8 @@ def foot_support(receipt, feet, floor):
         selected_ground_force_n=reaction,
         published_floor_force_n=published,
         loaded_feet=tuple(
-            side for side, force in by_foot.items()
+            side
+            for side, force in by_foot.items()
             if force[2] > original.CRITERIA["positive_foot_load_threshold_n"]
         ),
     )
@@ -242,16 +242,27 @@ def assess_step(task, stat, receipt, feet, floor, initial_feet):
     return support, geometry
 
 
-def retain_failure(journal, batch, plan, runner, error, transition_emitted):
+def retain_failure(journal, batch, plan, runner, task, error, transition_emitted):
     publication = dict(
         accepted_worlds=getattr(
             error, "accepted_worlds", {WORLD: True} if transition_emitted else {}
         ),
         acceptance_known=getattr(error, "acceptance_known", transition_emitted),
-        physics_accepted=getattr(error, "physics_accepted", True),
+        physics_accepted=getattr(error, "physics_accepted", True if transition_emitted else None),
         environment_transition_emitted=transition_emitted,
         plan_status=plan.last_status,
         last_accepted_contact_receipts=plan.last_accepted,
+        task_endpoints_before_possible_reset={
+            key: dict(
+                tick=item["reading"].step_number,
+                q=item["reading"].robots[0, original.ROBOT].q,
+                v=item["reading"].robots[0, original.ROBOT].v,
+                frame=item["frame"],
+                tilt=item["tilt"],
+                error=item["error"],
+            )
+            for key, item in task.last_transition.items()
+        },
     )
     for name, read in (
         ("states", batch.snapshot),
@@ -289,7 +300,10 @@ def run(args, journal):
     sources = {
         name: original.source_record(task.assets / name)
         for name in (
-            "g1_primitive_actuated.xml", "deploy.yaml", "dance1_subject2.npz", "policy.onnx"
+            "g1_primitive_actuated.xml",
+            "deploy.yaml",
+            "dance1_subject2.npz",
+            "policy.onnx",
         )
     }
     if (task.assets / "policy.onnx.data").exists():
@@ -384,7 +398,9 @@ def run(args, journal):
                     transition_emitted = True
                     receipt = plan.last_accepted[WORLD]
                     if receipt.entry_tick != tick or receipt.exit_tick != tick + 1:
-                        raise RuntimeError("accepted contact receipt does not bind this physical step")
+                        raise RuntimeError(
+                            "accepted contact receipt does not bind this physical step"
+                        )
                     journal.context["last_accepted"] = receipt
                     support, geometry = assess_step(task, stat, receipt, feet, floor, initial_feet)
                     journal.append(
@@ -400,11 +416,15 @@ def run(args, journal):
                         batch_stats=batch.stats(),
                     )
                     if not stat["effort_caps_observed"] or not stat["reaction_balance_observed"]:
-                        raise RuntimeError("accepted state failed the original effort or reaction gate")
+                        raise RuntimeError(
+                            "accepted state failed the original effort or reaction gate"
+                        )
                     if bool(result.transition.terminated[0]):
-                        raise RuntimeError("actual resident G1 trajectory fell; no reset continuation")
+                        raise RuntimeError(
+                            "actual resident G1 trajectory fell; no reset continuation"
+                        )
                 except Exception as error:
-                    retain_failure(journal, batch, plan, runner, error, transition_emitted)
+                    retain_failure(journal, batch, plan, runner, task, error, transition_emitted)
                     raise
     assessment = original.evaluate("policy", stat, True, None)
     failure = None
@@ -424,6 +444,7 @@ def run(args, journal):
         success=assessment["success"],
         first_failure=failure,
     )
+
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)

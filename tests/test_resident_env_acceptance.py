@@ -191,6 +191,13 @@ def test_failure_owns_a_read_only_copy_of_its_boolean_mask():
         PhysicsStepFailure("bad flags", accepted_worlds={4: 1})
 
 
+def test_legacy_message_only_env_error_conservatively_retains_unknown_publication():
+    error = VectorEnvStepError("legacy callback failure")
+    assert str(error) == "legacy callback failure"
+    assert dict(error.accepted_worlds) == {}
+    assert not error.acceptance_known and error.physics_accepted
+
+
 def test_custom_stepper_is_called_once_and_noncallable_is_rejected():
     backend, task = PublicationBackend([{7: np.bool_(True), 4: np.bool_(True)}]), Task()
     calls = []

@@ -25,6 +25,16 @@ class VectorEnvStepError(PhysicsStepFailure):
     callback failures require full reset; physical rollback is not claimed.
     """
 
+    def __init__(self, message, *, accepted_worlds=None, acceptance_known=True):
+        if type(acceptance_known) is not bool:
+            raise TypeError("acceptance_known must be boolean")
+        if accepted_worlds is None:
+            # Preserve the original message-only exception API. Without a mask
+            # it cannot prove that physics did not publish.
+            accepted_worlds, acceptance_known = {}, False
+        super().__init__(message, accepted_worlds=accepted_worlds,
+                         acceptance_known=acceptance_known)
+
 
 @dataclass(frozen=True)
 class VectorStep:

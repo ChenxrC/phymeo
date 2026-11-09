@@ -20,9 +20,9 @@ from pathlib import Path
 
 import numpy as np
 import torch
+import train_scene_ppo as original
 
 import phymeo as ph
-import train_scene_ppo as original
 from phymeo.core.robot import RobotState
 from phymeo.runtime.contact_scene import ContactSceneBuilder
 from phymeo.runtime.robot_scene import RobotCommand
@@ -53,7 +53,9 @@ PLAN = {
     "floor_position_m": (0.0, 0.0, -0.05),
     "gravity_m_s2": (0.0, 0.0, -9.81),
     "contact": {
-        "stiffness_n_m": 1000, "damping_ns_m": 8, "friction": 0,
+        "stiffness_n_m": 1000,
+        "damping_ns_m": 8,
+        "friction": 0,
         "slip_speed_m_s": LAW.slip_speed_m_s,
     },
     "dt_s": DT,
@@ -174,7 +176,9 @@ class ContactTask:
 
     def evaluate(self, before, after, actions, keys):
         self.last_transition = {
-            "before": before, "after": after, "actions": np.array(actions, copy=True),
+            "before": before,
+            "after": after,
+            "actions": np.array(actions, copy=True),
             "contact": {},
         }
         cost = self.cost(after, keys)
@@ -191,9 +195,12 @@ def make_environment(paths):
     def factory(world):
         builder = ContactSceneBuilder(gravity=(0, 0, -9.81))
         builder.add_urdf(
-            ROBOT, paths[float(task.masses[world])],
+            ROBOT,
+            paths[float(task.masses[world])],
             robot_state=RobotState([0.0], [task.v0[world]]),
-            kp=[0.0], kd=[0.0], effort_limit=[16.0],
+            kp=[0.0],
+            kd=[0.0],
+            effort_limit=[16.0],
         )
         builder.add_box(FLOOR, (1, 1, 0.05), mass=None, position=(0, 0, -0.05))
         builder.pair(ROBOT, FLOOR, LAW)
@@ -229,7 +236,8 @@ def capture_backend_failure(backend, record, name):
             yield backend
         except BaseException as error:
             failure = {
-                "type": type(error).__name__, "message": str(error),
+                "type": type(error).__name__,
+                "message": str(error),
                 "accepted_worlds": getattr(error, "accepted_worlds", None),
                 "acceptance_known": getattr(error, "acceptance_known", None),
                 "physics_accepted": getattr(error, "physics_accepted", None),
@@ -249,10 +257,17 @@ def evaluate(policy, adapter, record, label):
     frames = [observations["policy"].cpu().numpy().copy()]
     actions, costs, qv, efforts, terminal, masks, rewards, physics = [], [], [], [], [], [], [], []
     progress = {
-        "label": label, "initial_worlds": initial_worlds, "observations": frames,
-        "actions": actions, "costs": costs, "accepted_joint_qv": qv,
-        "actual_effort_n": efforts, "terminal_observations": terminal,
-        "final_masks": masks, "adapter_rewards": rewards, "physics_frames": physics,
+        "label": label,
+        "initial_worlds": initial_worlds,
+        "observations": frames,
+        "actions": actions,
+        "costs": costs,
+        "accepted_joint_qv": qv,
+        "actual_effort_n": efforts,
+        "terminal_observations": terminal,
+        "final_masks": masks,
+        "adapter_rewards": rewards,
+        "physics_frames": physics,
     }
     record["evaluation_in_progress"] = progress
     with torch.inference_mode():
@@ -270,18 +285,22 @@ def evaluate(policy, adapter, record, label):
             frames.append(observations["policy"].cpu().numpy().copy())
             terminal.append(extras["final_observation"]["policy"].cpu().numpy().copy())
             masks.append(extras["final_mask"].cpu().numpy().copy())
-            physics.append({
-                "accepted_worlds": transition["after"],
-                "actual_contact": transition["contact"],
-                "raw_actions": transition["actions"],
-                "actual_effort_n": transition["actual_effort_n"],
-                "actual_cost": transition["cost"],
-            })
+            physics.append(
+                {
+                    "accepted_worlds": transition["after"],
+                    "actual_contact": transition["contact"],
+                    "raw_actions": transition["actions"],
+                    "actual_effort_n": transition["actual_effort_n"],
+                    "actual_cost": transition["cost"],
+                }
+            )
     cost_array = np.array(costs)
-    contact = np.array([
-        [frame["actual_contact"][key]["robot_wrench"].force_n[2] for key in keys]
-        for frame in physics
-    ])
+    contact = np.array(
+        [
+            [frame["actual_contact"][key]["robot_wrench"].force_n[2] for key in keys]
+            for frame in physics
+        ]
+    )
     result = {
         "initial_worlds": initial_worlds,
         "mean_cost": float(cost_array.mean()),
@@ -349,13 +368,17 @@ def run(output, provenance):
             )
             checkpoint = output / "trained.pt"
             infos = {
-                "seed": SEED, "plan": PLAN, "sources": provenance,
+                "seed": SEED,
+                "plan": PLAN,
+                "sources": provenance,
                 "environment_resume": "new original worlds; no mid-episode state resume claim",
             }
             runner.save(str(checkpoint), infos=infos)
             record.update(
-                after=after, actor_parameters_changed=changed,
-                checkpoint=original.fact(checkpoint), stage="reload",
+                after=after,
+                actor_parameters_changed=changed,
+                checkpoint=original.fact(checkpoint),
+                stage="reload",
             )
         restored_backend, restored_task, restored_adapter = make_environment(paths)
         with capture_backend_failure(restored_backend, record, "reload_backend_failure"):
@@ -371,8 +394,12 @@ def run(output, provenance):
             save_gzip(output / "restored_evaluation.json.gz", restored)
             record["restored"] = restored
             for name in (
-                "observations", "costs", "accepted_joint_qv", "actual_effort_n",
-                "actual_robot_contact_force_z_n", "terminal_observations",
+                "observations",
+                "costs",
+                "accepted_joint_qv",
+                "actual_effort_n",
+                "actual_robot_contact_force_z_n",
+                "terminal_observations",
             ):
                 np.testing.assert_allclose(restored[name], after[name], rtol=0, atol=1e-10)
             np.testing.assert_allclose(restored["actions"], after["actions"], rtol=0, atol=1e-7)
@@ -395,35 +422,47 @@ def run(output, provenance):
             raise AssertionError("initial cost is not a meaningful learning comparison")
         overall = 1 - after["mean_cost"] / before["mean_cost"]
         groups = {
-            str(mass): 1 - after["mean_cost_by_mass"][str(mass)]
-            / before["mean_cost_by_mass"][str(mass)]
+            str(mass): 1
+            - after["mean_cost_by_mass"][str(mass)] / before["mean_cost_by_mass"][str(mass)]
             for mass in MASSES
         }
         contact_ok = all(
             all(evaluation["nonzero_contact_by_mass"].values())
             for evaluation in (before, after, restored)
         )
-        passed = changed and overall >= IMPROVEMENT and all(
-            value >= IMPROVEMENT for value in groups.values()
-        ) and contact_ok
+        passed = (
+            changed
+            and overall >= IMPROVEMENT
+            and all(value >= IMPROVEMENT for value in groups.values())
+            and contact_ok
+        )
         record.update(
-            status="passed" if passed else "learning_target_missed", stage="finished",
-            relative_cost_reduction=overall, relative_cost_reduction_by_mass=groups,
-            actual_public_contact_observed=contact_ok, checkpoint_evaluation_reproduced=True,
+            status="passed" if passed else "learning_target_missed",
+            stage="finished",
+            relative_cost_reduction=overall,
+            relative_cost_reduction_by_mass=groups,
+            actual_public_contact_observed=contact_ok,
+            checkpoint_evaluation_reproduced=True,
         )
         return {
             "status": record["status"],
-            "before_cost": before["mean_cost"], "after_cost": after["mean_cost"],
+            "before_cost": before["mean_cost"],
+            "after_cost": after["mean_cost"],
             "before_cost_by_mass": before["mean_cost_by_mass"],
             "after_cost_by_mass": after["mean_cost_by_mass"],
-            "relative_cost_reduction": overall, "relative_cost_reduction_by_mass": groups,
-            "actor_parameters_changed": changed, "actual_public_contact_observed": contact_ok,
-            "checkpoint": record["checkpoint"], "checkpoint_evaluation_reproduced": True,
+            "relative_cost_reduction": overall,
+            "relative_cost_reduction_by_mass": groups,
+            "actor_parameters_changed": changed,
+            "actual_public_contact_observed": contact_ok,
+            "checkpoint": record["checkpoint"],
+            "checkpoint_evaluation_reproduced": True,
         }
     except BaseException as error:
         record.update(
-            status="failed", error_type=type(error).__name__,
-            error=str(error), traceback=traceback.format_exc(),
+            status="failed",
+            error_type=type(error).__name__,
+            error=str(error),
+            traceback=traceback.format_exc(),
         )
         raise
     finally:
@@ -444,17 +483,23 @@ def main():
     output = args.output_dir.resolve()
     output.mkdir(parents=True, exist_ok=False)
     report = {
-        "schema": "phymeo-rsl-ppo-host-contact-v1", "plan": PLAN, "status": "starting",
-        "python": sys.version, "platform": platform.platform(),
+        "schema": "phymeo-rsl-ppo-host-contact-v1",
+        "plan": PLAN,
+        "status": "starting",
+        "python": sys.version,
+        "platform": platform.platform(),
         "versions": {
             name: version(name) for name in ("torch", "rsl-rl-lib", "tensordict", "numpy")
         },
         "actual_module_files": {
-            "phymeo": ph.__file__, "torch": torch.__file__,
+            "phymeo": ph.__file__,
+            "torch": torch.__file__,
             "training_package": sys.modules["phymeo.training"].__file__,
             "rsl_runner": sys.modules[original.OnPolicyRunner.__module__].__file__,
-            "resident_env": resident_env.__file__, "rsl_adapter": rsl_rl.__file__,
-            "scene_backend": scene_backend.__file__, "application_helper": original.__file__,
+            "resident_env": resident_env.__file__,
+            "rsl_adapter": rsl_rl.__file__,
+            "scene_backend": scene_backend.__file__,
+            "application_helper": original.__file__,
         },
     }
     try:
@@ -465,9 +510,11 @@ def main():
         provenance = {
             name: original.fact(path)
             for name, path in {
-                "example": __file__, "application_helper": original.__file__,
+                "example": __file__,
+                "application_helper": original.__file__,
                 "training_package": sys.modules["phymeo.training"].__file__,
-                "resident_env": resident_env.__file__, "rsl_adapter": rsl_rl.__file__,
+                "resident_env": resident_env.__file__,
+                "rsl_adapter": rsl_rl.__file__,
                 "scene_backend": scene_backend.__file__,
             }.items()
         }
@@ -475,7 +522,8 @@ def main():
         original.write_json(
             output / "declared_plan.json",
             {
-                "plan": PLAN, "sources": provenance,
+                "plan": PLAN,
+                "sources": provenance,
                 "actual_module_files": report["actual_module_files"],
                 "versions": report["versions"],
             },
@@ -483,8 +531,10 @@ def main():
         report.update(run(output, provenance))
     except BaseException as error:
         report.update(
-            status="failed", error_type=type(error).__name__,
-            error=str(error), traceback=traceback.format_exc(),
+            status="failed",
+            error_type=type(error).__name__,
+            error=str(error),
+            traceback=traceback.format_exc(),
         )
         raise
     finally:

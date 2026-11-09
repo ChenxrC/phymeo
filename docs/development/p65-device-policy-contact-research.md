@@ -1,5 +1,7 @@
 # 设备策略与受载接触连接调研（2026-11-10）
 
+**父后续更新：** 下文是7e378f7时的调研快照。33body不一致已由c1292647修复并经29/32joint真实受载验证；原速度摩擦混合桥由37aa1c40接通，HOST63/interpret与CUDA各12及新wheel已过，见[实际结果](../benchmarks/p65-resident-friction-connections.md)。因此A前半不应重复开发；下一步是完整G1设备组合留出、B站点力核及C公开张量数据面。研究中的静摩擦历史、设备几何、分页和无HOST往返仍未实现。
+
 **RESEARCH_NOT_IMPLEMENTED。** 这是下一批连接顺序和验收建议，不是冻结实施合同。本轮只读源码/官方文档并新增此文；没有项目 import、探针、数值运行、lint、build、安装、pin 或容量修改。父当前仍为唯一执行 owner。观察基线为父 7e378f7 与固定 TYX 99f6df7c0fd8fdeef77f97df83914da27b64b7ee。
 
 今晚已经完成的能力应复用：G1 实际全 131.48 s 未跌倒，但峰值足力 14.9124 倍体重、参考 XY 偏差 1.2749 m，原两工程门仍失败；公共 HOST SceneBackend→Env→Policy 的 20 s 全门通过；CPU PPO 学习/重载通过；W256 混合运动各端 2048 world-steps 通过。受载 W256 的 512 shapes 被现 256 全局登记上限挡住。它们不是完整设备摩擦、GPU PPO 或受载 W256 的通过证据。

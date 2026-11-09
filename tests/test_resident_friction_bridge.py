@@ -50,12 +50,24 @@ def _inputs(speed=1 / 4, *, height=3 / 32, normal_speed=-1 / 8, dynamic_second=F
     shared_speed = 1 / 8 if dynamic_second else 0
     frames = {
         first.key: ContactShapeFrame(
-            first, points, 0, center, np.eye(3), center,
-            [speed + shared_speed, 0, normal_speed], np.zeros(3),
+            first,
+            points,
+            0,
+            center,
+            np.eye(3),
+            center,
+            [speed + shared_speed, 0, normal_speed],
+            np.zeros(3),
         ),
         second.key: ContactShapeFrame(
-            second, support, 1 if dynamic_second else None, np.zeros(3), np.eye(3),
-            support.mean(axis=0), [shared_speed, 0, 0], np.zeros(3),
+            second,
+            support,
+            1 if dynamic_second else None,
+            np.zeros(3),
+            np.eye(3),
+            support.mean(axis=0),
+            [shared_speed, 0, 0],
+            np.zeros(3),
         ),
     }
     return frames, (first.key, second.key)
@@ -81,16 +93,16 @@ def _close(actual, expected):
 def test_mu_half_regularized_force_weight_and_reciprocal_moment(speed, fx, tmp_path):
     frames, pair = _inputs(speed)
     patch = contact_patch_sample(
-        frames[pair[0]].shape, frames[pair[1]].shape,
-        frames[pair[0]].world_points_m, frames[pair[1]].world_points_m,
+        frames[pair[0]].shape,
+        frames[pair[1]].shape,
+        frames[pair[0]].world_points_m,
+        frames[pair[1]].world_points_m,
     )
     assert len(patch.sites) == 4 and patch.dimension == 2
     _close([site.weight for site in patch.sites], np.full(4, 1 / 4))
     # Literal spring/dashpot force: 64/32 - 4*(-1/8) = 5/2.
     force = np.array([fx, 0, 5 / 2])
-    original = sample_patch_loads(
-        patch, LAW, np.tile([speed, 0, -1 / 8], (4, 1)), np.zeros((4, 3))
-    )
+    original = sample_patch_loads(patch, LAW, np.tile([speed, 0, -1 / 8], (4, 1)), np.zeros((4, 3)))
     _close(original["first_force"].sum(axis=0), force)
     record = dict(frames=frames, law=LAW, literal_force=force, host_precondition=original)
     try:
@@ -209,8 +221,12 @@ def test_negative_mu_wrong_group_and_site_capacity_are_still_rejected():
     assert (caught.value.count, caught.value.limit) == (4, 3)
     with pytest.raises(ValueError, match="world|key|source"):
         sample_tree_contacts(
-            world=WORLD + 1, frames=frames, materials_by_pair={pair: LAW},
-            candidates=(pair,), group_count=1, site_capacity=4,
+            world=WORLD + 1,
+            frames=frames,
+            materials_by_pair={pair: LAW},
+            candidates=(pair,),
+            group_count=1,
+            site_capacity=4,
         )
 
 
@@ -223,9 +239,8 @@ def test_rotation_retains_distinct_material_and_common_point_work():
     candidate = dict(frames)
     candidate[pair[0]] = replace(
         original,
-        world_points_m=(
-            original.world_points_m - original.position_m
-        ) @ rotation.T + original.position_m,
+        world_points_m=(original.world_points_m - original.position_m) @ rotation.T
+        + original.position_m,
         rotation=rotation,
         linear_velocity_m_s=np.zeros(3),
     )

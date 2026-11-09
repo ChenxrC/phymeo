@@ -172,11 +172,8 @@ class ResidentContactPlan(ResidentCollisionPlan):
             raise ValueError(
                 "contact materials must exactly cover the allowed canonical pair domain"
             )
-        if any(
-            not isinstance(m, RobotContactMaterial) or m.friction != 0
-            for m in self._materials.values()
-        ):
-            raise ValueError("resident contact requires explicit frictionless RobotContactMaterial")
+        if any(not isinstance(m, RobotContactMaterial) for m in self._materials.values()):
+            raise ValueError("resident contact requires explicit RobotContactMaterial")
         worlds = tuple(sorted(self._world_shape_rows))
         if isinstance(self._site_config, Mapping):
             if any(

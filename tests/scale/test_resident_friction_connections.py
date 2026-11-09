@@ -68,8 +68,10 @@ def _world_moment(receipt, com):
     reaction = next(iter(receipt.static_reactions.values()))
     _close(wrench[:3] + reaction.force_n, np.zeros(3))
     _close(
-        np.cross(com, wrench[:3]) + wrench[3:]
-        + np.cross(reaction.reference_point_m, reaction.force_n) + reaction.torque_nm,
+        np.cross(com, wrench[:3])
+        + wrench[3:]
+        + np.cross(reaction.reference_point_m, reaction.force_n)
+        + reaction.torque_nm,
         np.zeros(3),
     )
 
@@ -139,8 +141,15 @@ def test_floating_offset_sphere_friction_has_real_six_coordinate_response(tyx_mo
     support = _box([-1, -1, -1 / 4], [1, 1, 0])
     mass = np.diag([2.0, 2, 2, 1 / 2, 1 / 2, 1 / 2])
     record = dict(
-        mode=tyx_mode, h=H, model=model, initial=state, local_sphere=local,
-        static_points=support, law=LAW, literal_mass=mass, steps=[],
+        mode=tyx_mode,
+        h=H,
+        model=model,
+        initial=state,
+        local_sphere=local,
+        static_points=support,
+        law=LAW,
+        literal_mass=mass,
+        steps=[],
     )
     try:
         with ph.TyxWorldBatch([(world, tree)], tyx_mode, cache_root=tmp_path) as batch:
@@ -190,12 +199,21 @@ def test_floating_offset_sphere_friction_has_real_six_coordinate_response(tyx_mo
                         _close(torque, [0, -125 / 256, 0])
                     assert batch.step_contacts(plan, H) == {world: True}
                     after, receipt = batch.snapshot()[world], plan.last_accepted[world]
-                    record["steps"].append(dict(
-                        entry=before, accepted=after, receipt=receipt,
-                        oracle_gap=gap, oracle_point=point, oracle_velocity=contact_velocity,
-                        oracle_force=force, oracle_torque=torque,
-                        oracle_acceleration=acceleration, oracle_q=expected_q, oracle_v=expected_v,
-                    ))
+                    record["steps"].append(
+                        dict(
+                            entry=before,
+                            accepted=after,
+                            receipt=receipt,
+                            oracle_gap=gap,
+                            oracle_point=point,
+                            oracle_velocity=contact_velocity,
+                            oracle_force=force,
+                            oracle_torque=torque,
+                            oracle_acceleration=acceleration,
+                            oracle_q=expected_q,
+                            oracle_v=expected_v,
+                        )
+                    )
                     assert receipt.entry_state == before and receipt.accepted_state == after
                     assert (receipt.entry_tick, receipt.exit_tick) == (step, step + 1)
                     _close(receipt.diagnostics["mass"], mass)
@@ -214,8 +232,14 @@ def test_floating_offset_sphere_friction_has_real_six_coordinate_response(tyx_mo
                     _close(receipt.sites[0].geometry.load_point, point)
                     _world_moment(receipt, center)
                     _works(
-                        receipt, force, contact_velocity, axis - [0, 0, 1 / 8], point,
-                        center, _ry_from_quaternion(q), expected_q[:3],
+                        receipt,
+                        force,
+                        contact_velocity,
+                        axis - [0, 0, 1 / 8],
+                        point,
+                        center,
+                        _ry_from_quaternion(q),
+                        expected_q[:3],
                         _ry_from_quaternion(expected_q),
                     )
                 record.update(stats=plan.stats(), batch_stats=batch.stats())
@@ -230,9 +254,14 @@ def test_floating_offset_sphere_friction_has_real_six_coordinate_response(tyx_mo
 def test_fixed_rotor_friction_uses_arc_velocity_and_true_joint_inertia(tyx_mode, tmp_path):
     world = 149
     model = ph.RobotModel(
-        np.array([-1]), ("revolute",), np.zeros((1, 3)),
-        np.array([[0.0, 0, 0, 1]]), np.array([[0.0, 0, 1]]),
-        np.array([1.0]), np.zeros((1, 3)), np.array([[1 / 8, 1 / 8, 1 / 4]]),
+        np.array([-1]),
+        ("revolute",),
+        np.zeros((1, 3)),
+        np.array([[0.0, 0, 0, 1]]),
+        np.array([[0.0, 0, 1]]),
+        np.array([1.0]),
+        np.zeros((1, 3)),
+        np.array([[1 / 8, 1 / 8, 1 / 4]]),
         np.zeros(3),
     )
     program = ph.DrivenRobotProgram(
@@ -241,14 +270,23 @@ def test_fixed_rotor_friction_uses_arc_velocity_and_true_joint_inertia(tyx_mode,
     state = program.initial_state(ph.RobotState(np.zeros(1), np.array([-1 / 2])))
     tree = ph.FixedRobotTree(program, state, control_max_iterations=512)
     command = program.inputs(
-        np.zeros(1), np.zeros(1), feedforward=np.zeros(1),
+        np.zeros(1),
+        np.zeros(1),
+        feedforward=np.zeros(1),
         loads=ph.RobotInputs(np.zeros(1), np.zeros((1, 3)), np.zeros((1, 3))),
     )
     local = np.array([1 / 2, 3 / 32, 0])
     support = _box([-1, -1 / 4, -1 / 2], [1, 0, 1 / 2])
     record = dict(
-        mode=tyx_mode, h=H, model=model, initial=state, command=command,
-        local_sphere=local, static_points=support, law=LAW, steps=[],
+        mode=tyx_mode,
+        h=H,
+        model=model,
+        initial=state,
+        command=command,
+        local_sphere=local,
+        static_points=support,
+        law=LAW,
+        steps=[],
     )
     try:
         with ph.TyxWorldBatch([(world, tree)], tyx_mode, cache_root=tmp_path) as batch:
@@ -275,12 +313,21 @@ def test_fixed_rotor_friction_uses_arc_velocity_and_true_joint_inertia(tyx_mode,
                         _close(torque, [0, 0, 3075 / 2048])
                     assert batch.step_contacts(plan, H) == {world: True}
                     after, receipt = batch.snapshot()[world], plan.last_accepted[world]
-                    record["steps"].append(dict(
-                        entry=before, accepted=after, receipt=receipt,
-                        oracle_gap=gap, oracle_point=point, oracle_velocity=contact_velocity,
-                        oracle_force=force, oracle_torque=torque,
-                        oracle_acceleration=acceleration, oracle_q=expected_q, oracle_v=expected_v,
-                    ))
+                    record["steps"].append(
+                        dict(
+                            entry=before,
+                            accepted=after,
+                            receipt=receipt,
+                            oracle_gap=gap,
+                            oracle_point=point,
+                            oracle_velocity=contact_velocity,
+                            oracle_force=force,
+                            oracle_torque=torque,
+                            oracle_acceleration=acceleration,
+                            oracle_q=expected_q,
+                            oracle_v=expected_v,
+                        )
+                    )
                     assert receipt.entry_state == before and receipt.accepted_state == after
                     assert (receipt.entry_tick, receipt.exit_tick) == (step, step + 1)
                     _close(receipt.diagnostics["mass"], [[1 / 4]])
@@ -297,8 +344,15 @@ def test_fixed_rotor_friction_uses_arc_velocity_and_true_joint_inertia(tyx_mode,
                     c1, s1 = np.cos(expected_q), np.sin(expected_q)
                     exit_rotation = np.array([[c1, -s1, 0], [s1, c1, 0], [0, 0, 1]])
                     _works(
-                        receipt, force, contact_velocity, axis - [0, 1 / 8, 0], point,
-                        np.zeros(3), rotation, np.zeros(3), exit_rotation,
+                        receipt,
+                        force,
+                        contact_velocity,
+                        axis - [0, 1 / 8, 0],
+                        point,
+                        np.zeros(3),
+                        rotation,
+                        np.zeros(3),
+                        exit_rotation,
                     )
                 record.update(stats=plan.stats(), batch_stats=batch.stats())
     except Exception as error:

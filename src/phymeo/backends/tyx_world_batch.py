@@ -500,7 +500,7 @@ class TyxWorldBatch:
         sampling="discrete_entry",
         tree_dynamic_pairs=False,
     ):
-        """Bind finite frictionless contact to this batch's accepted full tree state."""
+        """Bind finite compliant/velocity-friction contact to accepted full tree state."""
         from ._resident_contact_plan import ResidentContactPlan
 
         return ResidentContactPlan(

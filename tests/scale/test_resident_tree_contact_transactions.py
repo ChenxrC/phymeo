@@ -406,7 +406,7 @@ def test_r05_site_capacity_is_bounded_and_exactly_covers_bound_worlds(capacity, 
 @pytest.mark.parametrize(
     "problem",
     (
-        "friction",
+        "noncanonical-law-key",
         "wrong-law",
         "missing-law",
         "missing-binding",
@@ -423,8 +423,8 @@ def test_r05_invalid_configuration_never_allocates_contact_scratch(problem, tyx_
     with resident.TyxWorldBatch([(17, world)], tyx_mode, cache_root=tmp_path) as batch:
         model, bindings, _, pair = _r01_bound(batch)
         laws, kwargs = {pair: _law()}, {}
-        if problem == "friction":
-            laws[pair] = ph.RobotContactMaterial(stiffness=64, damping=0, friction=1 / 2)
+        if problem == "noncanonical-law-key":
+            laws = {tuple(reversed(pair)): _law()}
         elif problem == "wrong-law":
             laws[pair] = ph.NormalLayer(1 / 32, 64)
         elif problem == "missing-law":

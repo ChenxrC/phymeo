@@ -375,7 +375,7 @@ def test_b02_empty_candidates_and_empty_world_preserve_real_group_dimensions():
         "static_static",
         "group_range",
         "group_source",
-        "friction",
+        "wrong-law",
     ],
 )
 def test_b03_source_owner_law_and_candidate_contract_rejects(fault):
@@ -409,9 +409,9 @@ def test_b03_source_owner_law_and_candidate_contract_rejects(fault):
     elif fault == "group_source":
         extra = replace(frames[first].shape, key=CollisionKey(WORLD, 100, 99))
         frames[extra.key] = replace(frames[first], shape=extra, linear_velocity_m_s=(1, 0, 0))
-    elif fault == "friction":
-        laws[pair] = RobotContactMaterial(64, 0, 0.1)
-    with pytest.raises(ValueError):
+    elif fault == "wrong-law":
+        laws[pair] = None
+    with pytest.raises(TypeError if fault == "wrong-law" else ValueError):
         sample_tree_contacts(
             world=world,
             frames=frames,

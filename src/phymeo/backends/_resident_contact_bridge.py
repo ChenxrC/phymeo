@@ -1,8 +1,9 @@
-"""Owned HOST narrow-phase/normal-load packets for resident fixed-root trees.
+"""Owned HOST narrow-phase/three-dimensional load packets for resident trees.
 
 This module neither integrates nor publishes a physical state. It consumes the
 actual stored entry/candidate frames supplied by the resident plan. All forces
-come from the existing finite patch and normal law, with friction explicitly zero.
+come from the existing finite patch and velocity-regularized friction law.
+No static-friction history or device narrow phase is introduced here.
 """
 
 from collections.abc import Mapping
@@ -81,12 +82,9 @@ def _shape(value):
 def _law(value):
     if not isinstance(value, RobotContactMaterial):
         raise TypeError("expected the original RobotContactMaterial")
-    result = RobotContactMaterial(
+    return RobotContactMaterial(
         value.stiffness, value.damping, value.friction, value.slip_speed_m_s
     )
-    if result.friction != 0:
-        raise ValueError("resident contact first slice requires zero friction")
-    return result
 
 
 @dataclass(frozen=True, eq=False)

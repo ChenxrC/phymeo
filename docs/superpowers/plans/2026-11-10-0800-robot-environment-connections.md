@@ -66,3 +66,4 @@
 04:48长窗结果：通用轴入盒缺口修复并通过17HOST相邻/独立例后，从原q/v一次完成全6574帧、131.48秒/262960步，没有跌倒/拒步、没有状态修补。最低根高.439279m，最大倾角.630023rad、最大关节RMSE.291702rad、稳定段平均支撑1.00000865倍体重。原工程门峰值14.9124倍体重与参考XY误差1.274907m未过，RAW_EXIT1和两个failedcriteria完整保留；这不是全部工程门通过。新run结果在`artifacts/p65-connections-20261110-0800-01/g1-full-outcome.json`。原27.0495s失败仍在01，不重跑该旧前缀。
 
 04:52连接专项：HOST72通过；interpret/CUDA各12通过。包含新受载计划跨episode、真实逐世界拒步、公共策略runner、真实HOST场景与日志语义。原firstlint5项与format14files失败已保存并修正；16源qualifiedAST证明和最终静态通过。新G1公共入口20秒、真实回放、可选PPO、源码外wheel及最终图继续按唯一父队列执行。
+04:57可选N6增补（核心已通过后）：利用原capacity作者余量，在隔离树只写W256通用连接留出与报告，不改核心/旧案例/资源上限、不执行。最多两例：已有free/rigid families的真实多world策略/复位，以及原site/candidate容量允许时的受载prismatic spring多episode递推。8步、独立力–运动期望、完整actualreceipt留存；先核源码容量，不支持就明确缺口，不扩cap。该留出不叫PPO、纯GPU窄相或G1 GPU舞蹈。父在公共G1/回放/PPO/安装包优先队列和08:00余量内串行验证；无余量则保留UNEXECUTED。

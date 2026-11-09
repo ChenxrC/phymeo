@@ -180,16 +180,25 @@ def protocol(config, asset, scene_path):
     names = tuple(entry.get("joint") for entry in entries)
     if len(names) != 29 or len(set(names)) != 29 or set(names) != set(asset.joint_names):
         raise ValueError("motor names must cover every physical joint exactly once")
-    expected = tuple(
-        side + "_" + part + "_joint"
-        for side in ("left", "right")
-        for part in ("hip_pitch", "hip_roll", "hip_yaw", "knee", "ankle_pitch", "ankle_roll")
-    ) + ("waist_yaw_joint", "waist_roll_joint", "waist_pitch_joint") + tuple(
-        side + "_" + part + "_joint"
-        for side in ("left", "right")
-        for part in (
-            "shoulder_pitch", "shoulder_roll", "shoulder_yaw", "elbow",
-            "wrist_roll", "wrist_pitch", "wrist_yaw",
+    expected = (
+        tuple(
+            side + "_" + part + "_joint"
+            for side in ("left", "right")
+            for part in ("hip_pitch", "hip_roll", "hip_yaw", "knee", "ankle_pitch", "ankle_roll")
+        )
+        + ("waist_yaw_joint", "waist_roll_joint", "waist_pitch_joint")
+        + tuple(
+            side + "_" + part + "_joint"
+            for side in ("left", "right")
+            for part in (
+                "shoulder_pitch",
+                "shoulder_roll",
+                "shoulder_yaw",
+                "elbow",
+                "wrist_roll",
+                "wrist_pitch",
+                "wrist_yaw",
+            )
         )
     )
     if names != expected:
@@ -243,8 +252,7 @@ def foot_geometry(asset, q, colliders):
     for name, rows in colliders.items():
         points = np.vstack([motion[row.shape.key].start for row in rows])
         sole = min(
-            float(np.min(motion[row.shape.key].start[:, 2]) - row.shape.radius)
-            for row in rows
+            float(np.min(motion[row.shape.key].start[:, 2]) - row.shape.radius) for row in rows
         )
         result[name] = {"capsule_endpoint_center_m": points.mean(axis=0), "sole_height_m": sole}
     return result
@@ -326,8 +334,7 @@ def evaluate(mode, stats, completed, failure):
             mean_load is not None and ratios[0] <= mean_load <= ratios[1]
         ),
         "joint_tracking": (
-            stats["maximum_joint_rmse_rad"]
-            <= CRITERIA[mode + "_maximum_joint_rmse_rad"]
+            stats["maximum_joint_rmse_rad"] <= CRITERIA[mode + "_maximum_joint_rmse_rad"]
         ),
     }
     if mode == "stand":
@@ -341,8 +348,7 @@ def evaluate(mode, stats, completed, failure):
                 <= CRITERIA["stand_maximum_foot_center_xy_drift_m"]
             ),
             both_feet_carry_load=(
-                both is not None
-                and both >= CRITERIA["stand_minimum_both_feet_loaded_fraction"]
+                both is not None and both >= CRITERIA["stand_minimum_both_feet_loaded_fraction"]
             ),
             no_nonfoot_ground_support=(
                 stats["maximum_nonfoot_ground_force_n"]
@@ -351,8 +357,7 @@ def evaluate(mode, stats, completed, failure):
         )
     else:
         gates["bounded_reference_drift"] = (
-            stats["maximum_reference_xy_error_m"]
-            <= CRITERIA["policy_maximum_reference_xy_error_m"]
+            stats["maximum_reference_xy_error_m"] <= CRITERIA["policy_maximum_reference_xy_error_m"]
         )
     return {
         "success": all(gates.values()),
@@ -371,9 +376,7 @@ def run(args, journal):
     config_path = assets / "deploy.yaml"
     config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
     asset = load_floating_mjcf(scene_path)
-    names, p_from_o, o_from_p, default, kp, kd, scale, offset = protocol(
-        config, asset, scene_path
-    )
+    names, p_from_o, o_from_p, default, kp, kd, scale, offset = protocol(config, asset, scene_path)
     policy_dt = float(config["step_dt"])
     if not math.isclose(policy_dt, 0.02, rel_tol=0, abs_tol=1e-12):
         raise ValueError("official G1 policy must run at 50 Hz")
@@ -389,9 +392,8 @@ def run(args, journal):
     cap = vector(asset.effort_limit, 29, "physical effort limits")
     if np.any(cap <= 0):
         raise ValueError("all official motor caps must be positive")
-    if (
-        np.any(default[p_from_o] < np.asarray(asset.lower))
-        or np.any(default[p_from_o] > np.asarray(asset.upper))
+    if np.any(default[p_from_o] < np.asarray(asset.lower)) or np.any(
+        default[p_from_o] > np.asarray(asset.upper)
     ):
         raise ValueError("official default target violates the physical joint limits")
     colliders = foot_colliders(asset)
@@ -412,14 +414,9 @@ def run(args, journal):
         if len(motion["joint_pos"]) < math.ceil(args.duration / policy_dt):
             raise ValueError("requested duration exceeds the unchanged reference motion")
         session = ort.InferenceSession(str(policy_path), providers=["CPUExecutionProvider"])
-        if (
-            session.get_inputs()[0].name != "obs"
-            or session.get_outputs()[0].name != "actions"
-        ):
+        if session.get_inputs()[0].name != "obs" or session.get_outputs()[0].name != "actions":
             raise ValueError("official ONNX obs/actions names have changed")
-    state, placement = initial_state(
-        args.mode, asset, default, p_from_o, colliders, motion
-    )
+    state, placement = initial_state(args.mode, asset, default, p_from_o, colliders, motion)
     initial_feet = foot_geometry(asset, state.q, colliders)
     weight = GRAVITY * (
         1 / float(asset.model.root.inverse_mass[0]) + float(asset.model.children.mass.sum())
@@ -427,9 +424,10 @@ def run(args, journal):
     initial_root = state.q[:3].copy()
     alignment = None
     if args.mode == "policy":
-        alignment = yaw(torso(state.q[[6, 3, 4, 5]], state.q[7:][o_from_p])) @ yaw(
-            rotation(motion["body_quat_w"][0, 0])
-        ).T
+        alignment = (
+            yaw(torso(state.q[[6, 3, 4, 5]], state.q[7:][o_from_p]))
+            @ yaw(rotation(motion["body_quat_w"][0, 0])).T
+        )
     journal.append(
         "initialization",
         sources=records,
@@ -464,9 +462,7 @@ def run(args, journal):
         effort_limit=cap,
     )
     builder.add_box(FLOOR, (10, 10, 0.1), mass=None, position=(0, 0, -0.1))
-    builder.pair(
-        ROBOT, FLOOR, ph.RobotContactMaterial(stiffness=50000, damping=100, friction=1)
-    )
+    builder.pair(ROBOT, FLOOR, ph.RobotContactMaterial(stiffness=50000, damping=100, friction=1))
     stats = {
         "accepted_steps": 0,
         "accepted_duration_s": 0.0,
@@ -497,7 +493,10 @@ def run(args, journal):
         for tick in range(steps):
             entry = scene.observe().robots[0, ROBOT]
             journal.context["last_entry"] = {
-                "tick": tick, "entry_time_s": tick * args.dt, "q": entry.q, "v": entry.v
+                "tick": tick,
+                "entry_time_s": tick * args.dt,
+                "q": entry.q,
+                "v": entry.v,
             }
             if args.mode == "policy" and tick % decimation == 0:
                 # Exact 50 Hz tick index equals round(time * 50) in the reference.
@@ -535,18 +534,15 @@ def run(args, journal):
             target = raw_target[p_from_o].copy()
             if args.mode == "policy":
                 target = np.clip(target, asset.lower, asset.upper)
-                torque = (
-                    kp * (raw_target - entry.q[7:][o_from_p])
-                    - kd * entry.v[6:][o_from_p]
-                )[p_from_o]
+                torque = (kp * (raw_target - entry.q[7:][o_from_p]) - kd * entry.v[6:][o_from_p])[
+                    p_from_o
+                ]
                 feedforward = np.clip(torque, -cap, cap)
             else:
                 torque, feedforward = None, np.zeros(29)
             # In policy mode zero registered gains make the bounded packet target
             # inactive. Clipping only this packet does not alter raw PD or q/v.
-            packet = ph.FloatingRobotCommand(
-                ph.RobotCommand(target, feedforward=feedforward)
-            )
+            packet = ph.FloatingRobotCommand(ph.RobotCommand(target, feedforward=feedforward))
             attempted = {
                 "tick": tick,
                 "entry_time_s": tick * args.dt,
@@ -595,10 +591,7 @@ def run(args, journal):
                     int(round(accepted.time_s / policy_dt)), len(motion["joint_pos"]) - 1
                 )
                 expected_q = motion["joint_pos"][reference_tick]
-                ref_delta = (
-                    motion["body_pos_w"][reference_tick, 0]
-                    - motion["body_pos_w"][0, 0]
-                )
+                ref_delta = motion["body_pos_w"][reference_tick, 0] - motion["body_pos_w"][0, 0]
                 expected_root = initial_root + alignment @ ref_delta
                 reference_xy_error = float(np.linalg.norm(robot.q[:2] - expected_root[:2]))
             rmse = float(np.sqrt(np.mean((robot.q[7:][o_from_p] - expected_q) ** 2)))
@@ -607,8 +600,7 @@ def run(args, journal):
             floor_force = np.asarray(support.published_floor_force_n)
             cap_ok = bool(
                 np.all(
-                    np.abs(robot.drive_effort)
-                    <= cap + CRITERIA["effort_cap_absolute_tolerance_nm"]
+                    np.abs(robot.drive_effort) <= cap + CRITERIA["effort_cap_absolute_tolerance_nm"]
                 )
             )
             balance_ok = bool(
@@ -635,7 +627,10 @@ def run(args, journal):
                 stats["settled_vertical_load_sum"] += float(force[2] / weight)
                 stats["both_loaded_samples"] += int(len(support.loaded_feet) == 2)
             journal.context["last_accepted"] = {
-                "tick": tick, "time_s": accepted.time_s, "q": robot.q, "v": robot.v
+                "tick": tick,
+                "time_s": accepted.time_s,
+                "q": robot.q,
+                "v": robot.v,
             }
             journal.append(
                 "accepted",

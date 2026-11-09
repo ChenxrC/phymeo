@@ -30,7 +30,12 @@ relaxed.
 
 Actual G1 standing is assessed separately by
 `examples/g1_phymeo_support.py`; success on the small fixture does not establish
-humanoid balance or dance. The author-only handoff below is retained as history.
+humanoid balance or dance. The actual official-policy G1 window subsequently
+passed 2 seconds / 4000 HOST steps at h=.0005 (task 29): mean settled vertical
+support .999624 bodyweights, both feet loaded throughout the settled segment,
+no fall and bounded real efforts/reactions. The default-target-only stance
+attempts remain failed; see the [joint report](p65-h1-actuator-capacity-support.md).
+The author-only handoff below is retained as history.
 
 Status: **AUTHORING_ONLY / UNEXECUTED**. Base `666dd66184869ff36401551abcd0904e7564128a`, branch `codex/h1-foot-support`. The parent owns all project execution. This checkpoint changes three new files only; it does not change existing dynamics, collision, material history, limits or numerical tolerances.
 

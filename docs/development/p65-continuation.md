@@ -2,7 +2,9 @@
 
 ## 当前安排（2026-11-09）
 
-**训练/人形首批已完成可复用入口**：ResidentVectorEnv的interpret/CUDA各5项、浮根MJCF10项通过；G1完整模型的独立MuJoCo策略参考完成20秒。Phymeo实际尝试仅2步/.004秒后关节越界，不能称站立/舞蹈通过。下一优先先通用执行器惯量/阻尼语义和动态对照，再29关节设备容量与足地接触。详[首批结果](../benchmarks/p65-training-humanoid-first.md)。
+**H1本机首个受载窗口通过（11月10日）**：执行器反射惯量/隐式阻尼已接入HOST、共享场景与普通浮根设备；HOST44项+MuJoCo8例、实际G1三个姿态动力学通过。32关节有界容量的interpret/CUDA各7专项+2相邻，以及真实29关节G1各两步通过。有限双脚静态/偏载、528步离地重入和拒步通过。G1使用原始q/v与官方反馈策略，在Phymeo HOST以h=.0005完成2秒/4000步，稳定段平均支撑99.9624%体重，未跌倒；默认姿态PD的两次站立失败仍保留。详[本批结果与精度边界](../benchmarks/p65-h1-actuator-capacity-support.md)。下一步为完整20秒反馈舞蹈与设备受载窗口；固定材料站点的接触片转换、非零affine执行器和W32训练吞吐仍开放。不重复本批已绿组。
+
+**训练首批入口保持**：ResidentVectorEnv的interpret/CUDA各5项、独立MuJoCo完整G1参考20秒已完成；不是大规模训练或Phymeo完整舞蹈验收。详[首批历史](../benchmarks/p65-training-humanoid-first.md)。
 
 
 用户最新要求：立即收束 K0，提高大规模训练优先级，并使用真实人形机器人和公开驱动策略完成舞蹈。**K0 默认距离/见证已完成本机限域验收**：最终 interpret/CUDA 各142通过，284完整gzip留存，新wheel源码外各4接受，440产品成员同源；见[正式报告](../benchmarks/p65-device-convex-query-acceptance.md)。新的最高优先主线是[训练与G1舞蹈计划](../superpowers/plans/2026-11-09-training-humanoid-priority.md)。不重建长期goal或周期任务。所有项目执行仍父唯一owner、严格串行；已有可选K1作者内容继续保持未验收。原11月8日缺明细记录见K0计划§12，本轮完整留档见§13。

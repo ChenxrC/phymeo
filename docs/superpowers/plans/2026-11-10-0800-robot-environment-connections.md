@@ -96,8 +96,31 @@ N8修正与存储：66在注册阶段因新示例把全部连杆误标同一body
 
 N4两真实任务无环境接触；N2受载env与N7设备力学分别已通，仍需要一条真正含接触的学习轨迹。原actuator作者仅NEW `examples/train_contact_ppo.py`，复用原RSL-RL5.5.2/SceneBatchBackend/Env适配和学习/保存/重载方法，不改引擎、旧训练例子或已过门。
 
-预先固定：16个HOST原URDF竖直prismatic scene，mass按(.5,1)kg交替；sphere半径1/16、初始深度.003m，q0/v=±.02m/s交替，原gravity−9.81、有限盒地面；原RobotContactMaterial(k1000,c8,mu0)。h=1/128、horizon96，目标q按(-.004,-.008,-.012)m循环；实际动作clip[-1,1]×12N、原物理effort cap16N，joint范围±8m、速度128m/s以预声明最坏上抛域容纳，不作状态夹紧。观测实际q/.02、v/.5、goal/.02、mass；cost=((q-goal)/.02)^2+.01*(v/.5)^2+.001*实际effort²。
+预先固定：16个HOST原URDF竖直prismatic scene，mass按(.5,1)kg交替；sphere半径1/16、初始深度.003m，q0=0、v0=±.02m/s交替，原gravity−9.81、有限盒地面；原RobotContactMaterial(k1000,c8,mu0)。h=1/128、horizon96，目标q按(-.004,-.008,-.012)m循环；实际动作clip[-1,1]×12N、原物理effort cap16N，joint范围±8m、速度128m/s以预声明最坏上抛域容纳，不作状态夹紧。观测实际q/.02、v/.5、goal/.02、mass；cost=((q-goal)/.02)^2+.01*(v/.5)^2+.001*实际effort²。
 
 固定seed20261110、100迭代×24rollout、原小PPO网络/优化配置、各192步同条件deterministic评估。要求actor实际改变、总体及每mass组cost均下降至少20%、实际公开接触载荷非零且双侧反作用可核、native checkpoint在新原世界重载复现；若没达门，原RAW1与数据保留，不改seed/预算/质量/目标/容差追结果。原真实载荷/时刻来自scene公开观察或contact_events，不根据目标编造力。
 
 父等69结束/释放后再唯一串行执行；预检依赖/实际代码与作者声明一致才启动。若08:00余量不足，保留UNEXECUTED。HOST PPO受载闭环不等于GPU PPO、大规模吞吐或G1从头训练。
+
+### N10：只从已保存输入定位后续成本
+
+69完整CUDA2秒已通过，但带全M/J读回及逐步fsync日志的验证wall为25分45秒，不能把GPU标签当作速度优势。77只读取已保存生产者计数，确认4000接受步、100次策略、4000次控制，以及batch的40005 submitted kernels/28007 synchronizations；这些重叠模块计数不相加成总成本，也不能据计数猜时间瓶颈。
+
+下一次仅做一个**离线、0物理步**的有界profile：从69已保存最后受载帧重建原34个frame和原实际candidate/law，分别计构造及原HOST采样桥的cProfile；核输出与该保存wrench一致。只测一个真实输入，无重复物理长窗/fixture或参数搜索；完整原gzip保持不变。结果仅作为HOST构造/几何路径后续调研证据，不外推未插桩性能或wall占比，不在本批仓促新增缓存/删除检查。随后收尾架构、报告和08:00概览，不启动新长执行。
+
+## 收尾事实与下一批节点
+
+本批N0–N9的必要连接均已有实际结果；N1原HOST全动作完成且不跌倒，但两个工程质量门仍未过，不能勾成全门通过。N8 CUDA4000步/2秒原九门全过；N9直接从最终安装包完成实际接触PPO，总体cost下降64.8555%，两质量组44.1993%/84.1158%，新原世界checkpoint复现。N10只从保存输入做0物理步剖析，不增加接受窗口。
+
+后续不以“再调一个形状组合”排队，按通用源布局、静态形状/特征和物理消费模块推进。具体源码事实与多案例库入口见[新研究](../../development/p65-static-contact-throughput-next.md)；当前不是给未测路线贴通过标签。
+
+| 节点 / 难度 | 下一项可调用能力 | 成功/停止标准 |
+|---|---|---|
+| P1 accepted-source / 高 | K0明确适配floating、affine、floating-affine实际accepted布局；保原ordinary/static | 源布局×形状族矩阵的姿态/材料/owner/epoch/reset/close/capacity正负控过；不能只删类型guard |
+| P2 K1→K2 / 高 | 原owner先闭环现有完整query patch，再让设备patch真正进入原力/矩、fullM/J和唯一发布 | point/line/face、平行/边/顶点、全部tie/零力site、摩擦与晚故障多案例；距离点不冒充完整patch，不重复派原K1 WIP |
+| P2A 静态路径 / 中高、可并行研究 | 通用round/convex瞬时路径分离时间结构，明确prepared不可变静态几何 | 完整输出/原失败域相同，多几何族独立未插桩测量后决定收益；不以单G1或缓存假说代替证据，不阻塞P1/P2 |
+| P3 训练数据面 / 高 | 公开TYX/Torch action/obs工作区、stream/owner/epoch与终态副本 | 两受载任务和G1短窗的真实传输/同步减少、partial/unknown/reset语义仍正确；data_ptr相同不是完成 |
+| P4 受载规模 / 高 | 每页原cap的完整world bundle，合载后每storage一次solve、一次发布 | W127/128/129/256与G1页边界，全部world/状态/力矩/资源/失败；不能调大cap或把旧step_contacts循环两次 |
+| P5 长窗质量 / 中高 | 新设备长窗与多任务接触/控制改进，原HOST全动作证据复用 | 固定观察/预算、无状态修补；峰值8倍/漂移1m原门分别报告，不以短窗替长窗 |
+
+用户允许工程精度损失；新训练路径可显式采用已声明工程精度与多案例物理误差验收，保留原审计路径，不能偷偷改旧门。任何支线连续两批既不新增可调用能力，也不关闭一个实质失败/减少可测成本，就停止该支线重选方案；不把更长证明、更多日志、单夹具调参或重复已绿窗口当进展。下一批实施前固定接口/文件所有权/多案例，编码可隔离并行，执行仍父单槽。

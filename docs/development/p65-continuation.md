@@ -4,9 +4,11 @@
 
 优先读[本批实际结果](../benchmarks/p65-robot-environment-connections-20261110.md)和[已实现连接架构](../architecture/robot-environment-connections-2026-11-10.md)。原HOST G1从原初态完成官方全131.48秒/262960步，无跌倒/拒步；峰值14.9124倍体重和XY偏差1.2749m仍使原两个工程门失败，RAW1保留。新的公共SceneBackend→Env→PolicyRunner独立完成20秒，全部原工程门通过。不要再按下面旧2秒pending段重跑长窗或重派实现。
 
+**追加完成**：[CUDA原G1受载2秒](../benchmarks/p65-g1-resident-policy.md)4000步全部原门通过，完整11源绑定无漂移；HOST几何/力律与CPU ONNX仍在链上，设备长舞蹈尚未测。[安装包真实接触PPO](../benchmarks/p65-contact-ppo-connections.md)16world/固定100轮通过，总体成本下降64.9%，两质量组44.2%/84.1%，实际接触力/事件与新世界checkpoint重载均核。原N4两任务不重训。
+
 公共连接HOST72、interpret/CUDA各12，真实29/32joint最后body受载各2，CPU RSL适配10项与两真实物理任务PPO/checkpoint重载，W256混合运动各2048world-steps均已通过。33body bridge修复c1292647不改变shape cap；受载W256的512声明仍被原256shape门拒。源码外新wheel受载调用已验，实际长动作Three.js回放已导出并浏览核实。
 
-当前所有权：父唯一项目执行/共享接缝owner；复用原三个作者，只纯编码/研究并行。原K1三个未提交文件保持，不远程CI/推main/发包/改pin。[N7非零μ混合桥](../benchmarks/p65-resident-friction-connections.md)已按产品37aa1c40完成HOST63、interpret/CUDA各12和新wheel源码外验证；仍为HOST几何/力律→设备完整M/J，不是设备站点力核或静摩擦。N8只准备G1设备受载2秒新短窗，未执行前不能称G1设备已通。后续重点是站点力设备化、单次发布分页受载W256与公开策略张量/stream/epoch接口，依据[规模调研](p65-resident-contact-scale-research.md)和[设备连接调研](p65-device-policy-contact-research.md)。CPU PPO、几何查询和受载GPU训练是三项不同能力。
+当前所有权：父唯一项目执行/共享接缝owner；原三个作者均已交接。原K1三个未提交文件保持，不远程CI/推main/发包/改pin。[N7非零μ混合桥](../benchmarks/p65-resident-friction-connections.md)已按产品37aa1c40完成HOST63、interpret/CUDA各12和新wheel源码外验证。N8/N9已完成，不按旧pending段重派。下一步先读[静态接触/accepted-source后续研究](p65-static-contact-throughput-next.md)：K0尚不支持floating/affine输入，K1有可选query patch代码但与受力消费仍分离；静态C/H复用的是静态助手，不是每步跑CCD。优先通用source布局与K1→K2，不以exact证明阻塞工程训练模式；并行研究静态路径。随后推进[单次发布分页规模](p65-resident-contact-scale-research.md)与[公开策略张量/stream/epoch](p65-device-policy-contact-research.md)。CPU PPO、几何查询和受载GPU训练是三项不同能力。
 
 下文是既有验收与历史，不用旧pending覆盖本节。整个P6.5/全部Newton对齐仍未完成。
 

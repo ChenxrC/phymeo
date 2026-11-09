@@ -207,3 +207,39 @@ def test_custom_stepper_is_called_once_and_noncallable_is_rejected():
     with pytest.raises(TypeError, match="callable"):
         ResidentVectorEnv(backend, task, KEYS, action_size=1, dt=1 / 64,
                           horizon=10, stepper=0)
+
+def test_reset_publication_then_readback_failure_poison_keeps_counters_and_cause():
+    cause = ValueError("original reset readback detail")
+    failure = RuntimeError("observer failed after physical reset")
+
+    class ResetTask(Task):
+        fail_reset_read = False
+
+        def observe(self, states, keys):
+            result = super().observe(states, keys)
+            if self.fail_reset_read:
+                raise failure from cause
+            return result
+
+    backend, task, env = environment([dict.fromkeys(KEYS, True), dict.fromkeys(KEYS, True)],
+                                     task=ResetTask())
+    env.step(np.zeros((2, 1)))
+    assert backend.ticks == {4: 1, 7: 1}
+    task.fail_reset_read = True
+    with pytest.raises(RuntimeError, match="after physical reset") as caught:
+        env.reset([0])
+    assert caught.value is failure and caught.value.__cause__ is cause
+    assert backend.ticks == {4: 0, 7: 1} and env.needs_reset
+    np.testing.assert_array_equal(env._length, [1, 1])
+    np.testing.assert_array_equal(env._episode_id, [0, 0])
+    with pytest.raises(RuntimeError, match="reset all"):
+        env.step(np.zeros((2, 1)))
+    with pytest.raises(RuntimeError, match="reset all"):
+        env.reset([0])
+    assert len(backend.step_calls) == 1 and backend.ticks == {4: 0, 7: 1}
+    task.fail_reset_read = False
+    env.reset()
+    assert not env.needs_reset and backend.ticks == {4: 0, 7: 0}
+    result = env.step(np.zeros((2, 1)))
+    np.testing.assert_array_equal(result.episode_length, [1, 1])
+    np.testing.assert_array_equal(result.episode_id, [1, 1])

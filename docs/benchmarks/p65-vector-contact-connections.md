@@ -50,7 +50,7 @@ The error mask reports **physical publication**, not a fictitious rollback. On p
 
 ## Authored validation
 
-All tests below are **uncollected and unexecuted**. Seventeen small protocol cases are handwritten from public failure categories, plus five real TYX cases. The original `tests/scale/test_resident_vector_env.py` is unchanged and remains the compatibility selection.
+All tests below are **uncollected and unexecuted**. Eighteen small protocol cases are handwritten from public failure categories, plus five real TYX cases. The original `tests/scale/test_resident_vector_env.py` is unchanged and remains the compatibility selection.
 
 [test_resident_env_acceptance.py](../../tests/test_resident_env_acceptance.py) uses only logical publication clocks, never a synthetic numerical dynamics oracle. It covers returned/raised all-False, returned/raised partial acceptance, invalid/missing/extra/non-bool maps, unknown and incomplete exceptions, late all-True failure, post-accept task failure, immutable owned masks, and explicit/default stepper dispatch. It checks that no task evaluation or counters are fabricated for failed transitions, partial state is retained, and reset/retry behavior is exact.
 
@@ -78,3 +78,8 @@ python -m pytest tests/scale/test_resident_env_contacts.py tests/scale/test_resi
 ```
 
 CUDA uses the same real/compatibility files with `--tyx-mode=cuda` and a different fresh output root. Keep first static/test failures and tested-source bindings. The HOST scene adapter and policy scheduler have independent authors and require parent integration on this public protocol. This patch does not add PPO, randomized resets, zero-copy GPU tensors, larger-scale throughput, device narrowphase/friction, resolved-tilt pressure distribution, or a new humanoid physical success claim.
+## Reset failure follow-up
+
+Read-only connection review found that a failed reset observation could leave the environment retryable after physical worlds had already reset. `reset()` now marks the environment reset-required if either the backend reset or its snapshot/task observation raises. Original exceptions and their causes are re-raised unchanged; episode counters remain at their pre-request values. No physical rollback is claimed. A full successful reset is required before stepping and is the only operation that clears this uncertainty.
+
+The added `test_reset_publication_then_readback_failure_poison_keeps_counters_and_cause` first accepts a step, resets only world4, then fails the observation. It checks the retained physical clocks `{4:0,7:1}`, unchanged counters, original exception/cause, blocked step/partial-reset, and successful full-reset recovery. This is a single additional pure publication-protocol regression, still **UNEXECUTED**. It changes no contact law, stepper, HOST adapter, policy runner, optional RSL module or learning configuration.

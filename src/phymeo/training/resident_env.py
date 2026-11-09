@@ -117,8 +117,14 @@ class ResidentVectorEnv:
                 raise ValueError("reset indices must be unique and in range")
         if self._poisoned and len(selected) != len(self.world_keys):
             raise RuntimeError("reset all worlds after a post-accept task failure")
-        self.batch.reset(tuple(self.world_keys[int(index)] for index in selected))
-        observation = self._observe(self.batch.snapshot(self.world_keys))
+        try:
+            self.batch.reset(tuple(self.world_keys[int(index)] for index in selected))
+            observation = self._observe(self.batch.snapshot(self.world_keys))
+        except Exception:
+            # Reset may already have published new physical worlds. Without a
+            # successful readback, old episode counters cannot describe them.
+            self._poisoned = True
+            raise
         self._length[selected] = 0
         self._episode_id[selected] += 1
         self._poisoned = False

@@ -207,6 +207,184 @@ def _latest_publication(prior, current):
         raise ValueError("failure publication counter/time ordering is inconsistent")
     return prior
 
+def scan_journal(source, *, stride=40, world=0, on_initialization=None, on_frame=None):
+    """Stream selection/provenance without loading a scene or computing FK.
+
+    Optional on_frame(item) receives original record/source_line/physical_tick/
+    initial. A caller may write it immediately; the scanner retains no frame
+    list. Only publication semantics, saved storage validity and source hashes
+    are checked here. This does not validate a physical trajectory.
+    """
+    if type(stride) is not int or stride < 1 or type(world) is not int or world < 0:
+        raise ValueError("stride must be positive and world must be nonnegative")
+    source = Path(source).resolve()
+    request = initialization = summary = failure = None
+    pending = failure_publication = None
+    extra_publication_frames = 0
+    selected_frames = accepted_records = lines = logical_bytes = 0
+    last_tick = last_emitted_tick = 0
+    last_time = 0.0
+    started = False
+    trace_error = None
+    logical_digest = hashlib.sha256()
+    logical_complete = True
+    initial_stat = source.stat()
+
+    def emit(record, source_line, tick, *, initial=False):
+        nonlocal selected_frames
+        if on_frame is not None:
+            on_frame(dict(record=record, source_line=source_line, physical_tick=tick, initial=initial))
+        selected_frames += 1
+
+    with source.open("rb") as original:
+        hashed = _HashedReader(original)
+        buffered = io.BufferedReader(hashed, buffer_size=BLOCK_BYTES)
+        compressed = buffered.peek(2)[:2] == b"\x1f\x8b"
+        decoded = gzip.GzipFile(fileobj=buffered, mode="rb") if compressed else buffered
+        while True:
+            try:
+                line = decoded.readline(MAX_LINE_BYTES + 1)
+                if not line:
+                    break
+                logical_digest.update(line)
+                logical_bytes += len(line)
+                lines += 1
+                if len(line) > MAX_LINE_BYTES:
+                    raise ValueError("journal line exceeds the bounded 32 MiB record limit")
+                record = json.loads(line)
+                if not isinstance(record, dict):
+                    raise ValueError("journal records must be JSON objects")
+                event = record.get("event")
+                if event in ("failure_publication_snapshot", "first_failure", "summary"):
+                    try:
+                        for candidate in _failure_publications(record, world, lines):
+                            failure_publication = _latest_publication(failure_publication, candidate)
+                    except (ValueError, KeyError, TypeError):
+                        # Conflicting evidence cannot establish a terminal pose.
+                        failure_publication = None
+                        raise
+                if event == "request":
+                    request = record
+                elif event == "initialization":
+                    if initialization is not None:
+                        raise ValueError("multiple initialization publications are unsupported")
+                    requested_worlds = (request or {}).get("arguments", {}).get("worlds")
+                    if requested_worlds is not None and world >= int(requested_worlds):
+                        raise ValueError("selected world is outside the recorded request")
+                    if "scene" in record.get("sources", {}) and world != 0:
+                        raise ValueError("standalone G1 journals contain only logical world zero")
+                    q = _initial_vector(record, "initial_q", world)
+                    v = _initial_vector(record, "initial_v", world)
+                    FloatingRobotState(_vector(q, 36, "initial q"), _vector(v, 35, "initial v"))
+                    if on_initialization is not None:
+                        on_initialization(record)
+                    initialization = record
+                    emit(dict(state=dict(q=q, v=v), time_s=0.0), lines, 0, initial=True)
+                    started = True
+                elif event == "accepted" and int(record.get("world", 0)) == world:
+                    if initialization is None:
+                        raise ValueError("accepted state precedes initialization")
+                    tick = record.get("tick")
+                    if type(tick) is not int or tick < 0 or tick != last_tick:
+                        raise ValueError("selected-world accepted physical ticks must be contiguous from zero")
+                    time = float(record["time_s"])
+                    if not math.isfinite(time) or time <= last_time:
+                        raise ValueError("accepted physical publication time must strictly advance")
+                    FloatingRobotState(_vector(record["state"]["q"], 36, "accepted q"),
+                                       _vector(record["state"]["v"], 35, "accepted v"))
+                    last_tick, last_time = tick + 1, time
+                    accepted_records += 1
+                    pending = (record, lines, last_tick)
+                    if last_tick % stride == 0:
+                        emit(record, lines, last_tick)
+                        last_emitted_tick = last_tick
+                elif event == "first_failure" and failure is None:
+                    failure = record
+                elif event == "summary":
+                    summary = record
+            except (ValueError, KeyError, TypeError, OSError, EOFError, zlib.error) as error:
+                if not started:
+                    raise
+                trace_error = dict(type=type(error).__name__, message=str(error), source_line=lines)
+                # The selected valid prefix remains usable; drain the same stream
+                # for original-byte provenance, never restart or read the full file.
+                try:
+                    for block in iter(lambda: decoded.read(BLOCK_BYTES), b""):
+                        logical_digest.update(block)
+                        logical_bytes += len(block)
+                except (OSError, EOFError, zlib.error):
+                    logical_complete = False
+                break
+        for block in iter(lambda: buffered.read(BLOCK_BYTES), b""):
+            pass
+        if not started:
+            raise ValueError("journal has no supported initialization")
+        if accepted_records == 0 and failure_publication is None:
+            trace_error = trace_error or dict(type="NoAcceptedStates", message="selected world has no accepted physical state")
+        if pending is not None and pending[2] != last_emitted_tick:
+            emit(pending[0], pending[1], pending[2])
+        if summary is not None:
+            stats = summary.get("statistics") or summary.get("statistics_by_world", {}).get(str(world), {})
+            duration = stats.get("accepted_duration_s")
+            count = stats.get("accepted_steps")
+            statistics_bases = [(last_time, accepted_records)]
+            if failure_publication is not None and (
+                failure_publication["step_number"] > last_tick and failure_publication["time_s"] > last_time
+            ):
+                statistics_bases.append((failure_publication["time_s"], failure_publication["step_number"]))
+            if not any(
+                (duration is None or math.isclose(float(duration), time, rel_tol=1e-12, abs_tol=1e-12))
+                and (count is None or int(count) == steps) for time, steps in statistics_bases
+            ):
+                trace_error = trace_error or dict(type="SummaryStateMismatch", message="summary statistics differ from ordinary accepted records and actual failure publication")
+            requested = summary.get("requested_duration_s", summary.get("duration_s"))
+            if summary.get("success") is True and requested is not None and not math.isclose(
+                float(requested), last_time, rel_tol=1e-10, abs_tol=1e-10
+            ):
+                trace_error = trace_error or dict(type="IncompleteAcceptedWindow", message="reported success lacks the full requested accepted window")
+        normal_accepted_duration, normal_accepted_tick = last_time, last_tick
+        if failure_publication is not None:
+            published_step, published_time = failure_publication["step_number"], failure_publication["time_s"]
+            if published_step > last_tick and published_time > last_time:
+                evidence = {name: failure_publication[name] for name in
+                            ("source_line", "source_event", "source_path", "step_number", "time_s")}
+                terminal = dict(time_s=published_time, state=failure_publication["state"],
+                                support=None, load_time_s=None,
+                                publication_without_env_transition=True, publication_evidence=evidence)
+                emit(terminal, failure_publication["source_line"], published_step)
+                extra_publication_frames = 1
+                last_time, last_tick = published_time, published_step
+            elif published_step == last_tick:
+                expected_state = None if pending is None else {
+                    "q": pending[0]["state"]["q"], "v": pending[0]["state"]["v"]}
+                if published_time != last_time or failure_publication["state"] != expected_state:
+                    trace_error = trace_error or dict(type="ConflictingPublication", message="failure snapshot disagrees with the ordinary accepted record")
+            elif published_step > last_tick or published_time >= last_time:
+                trace_error = trace_error or dict(type="PublicationOrdering", message="failure snapshot counter and accepted time disagree")
+        final_stat = source.stat()
+        unchanged = (initial_stat.st_size, initial_stat.st_mtime_ns) == (final_stat.st_size, final_stat.st_mtime_ns)
+        metadata = dict(
+            world=world, stride_physical_ticks=stride,
+            selected_frames=selected_frames, accepted_records=accepted_records,
+            actual_accepted_duration_s=last_time, actual_published_duration_s=last_time,
+            last_accepted_physical_tick=last_tick,
+            ordinary_accepted_duration_s=normal_accepted_duration,
+            ordinary_accepted_physical_tick=normal_accepted_tick,
+            extra_failure_publication_frames=extra_publication_frames,
+            failure_publication=failure_publication,
+            journal_summary_present=summary is not None,
+            journal_complete=summary is not None and trace_error is None and unchanged and logical_complete,
+            reported_success=None if summary is None else summary.get("success"),
+            first_failure=failure, trace_error=trace_error,
+            source=dict(path=str(source), original_bytes=hashed.bytes_read,
+                        original_sha256=hashed.digest.hexdigest(), gzip=compressed,
+                        decoded_jsonl_bytes=logical_bytes, decoded_jsonl_sha256=logical_digest.hexdigest(),
+                        decoded_hash_complete=logical_complete, unchanged_during_export=unchanged,
+                        processed_lines=lines),
+            frame_selection="initial, every Nth ordinary accepted tick, final ordinary accepted, strictly later actual failure publication")
+        return dict(metadata=metadata, request=request, initialization=initialization, summary=summary)
+
+
 def export(args):
     source, scene_path, output = args.input.resolve(), args.scene.resolve(), args.output.resolve()
     sidecar = output.with_suffix(".summary.json")
@@ -225,199 +403,53 @@ def export(args):
     if template.count("__G1_REPLAY_DATA__") != 1:
         raise ValueError("viewer template must contain exactly one data marker")
     prefix, suffix = template.split("__G1_REPLAY_DATA__")
-    request = initialization = summary = failure = None
     asset = model = binding = writer = html_stream = summary_stream = None
-    pending = failure_publication = None
-    extra_publication_frames = 0
-    selected_frames = accepted_records = lines = logical_bytes = 0
-    last_tick = last_emitted_tick = 0
-    last_time = 0.0
-    trace_error = None
-    logical_digest = hashlib.sha256()
-    logical_complete = True
-    initial_stat = source.stat()
+    emitted = 0
     output.parent.mkdir(parents=True, exist_ok=True)
+
+    def initialize(record):
+        nonlocal asset, model, binding, writer, html_stream, summary_stream
+        asset, model, binding = _bind_scene(record, scene_path, scene_data)
+        html_stream = output.open("xb")
+        try:
+            summary_stream = sidecar.open("x", encoding="utf-8")
+        except Exception:
+            html_stream.close()
+            raise
+        writer = _HTML(html_stream)
+        writer.write(prefix)
+        writer.write('{"schema":"g1-actual-physics-replay-v1","model":' + _json(model) + ',"frames":[')
+
+    def render(item):
+        nonlocal emitted
+        frame = _frame(asset, model, **item)
+        writer.write(("," if emitted else "") + _json(frame))
+        emitted += 1
+
     try:
-        with source.open("rb") as original:
-            hashed = _HashedReader(original)
-            buffered = io.BufferedReader(hashed, buffer_size=BLOCK_BYTES)
-            compressed = buffered.peek(2)[:2] == b"\x1f\x8b"
-            decoded = gzip.GzipFile(fileobj=buffered, mode="rb") if compressed else buffered
-            while True:
-                try:
-                    line = decoded.readline(MAX_LINE_BYTES + 1)
-                    if not line:
-                        break
-                    logical_digest.update(line)
-                    logical_bytes += len(line)
-                    lines += 1
-                    if len(line) > MAX_LINE_BYTES:
-                        raise ValueError("journal line exceeds the bounded 32 MiB record limit")
-                    record = json.loads(line)
-                    if not isinstance(record, dict):
-                        raise ValueError("journal records must be JSON objects")
-                    event = record.get("event")
-                    if event in ("failure_publication_snapshot", "first_failure", "summary"):
-                        for candidate in _failure_publications(record, args.world, lines):
-                            failure_publication = _latest_publication(failure_publication, candidate)
-                    if event == "request":
-                        request = record
-                    elif event == "initialization":
-                        if initialization is not None:
-                            raise ValueError("multiple initialization publications are unsupported")
-                        asset, model, binding = _bind_scene(record, scene_path, scene_data)
-                        initialization = record
-                        requested_worlds = (request or {}).get("arguments", {}).get("worlds")
-                        if requested_worlds is not None and args.world >= int(requested_worlds):
-                            raise ValueError("selected world is outside the recorded request")
-                        if "scene" in record.get("sources", {}) and args.world != 0:
-                            raise ValueError("standalone G1 journals contain only logical world zero")
-                        q = _initial_vector(record, "initial_q", args.world)
-                        v = _initial_vector(record, "initial_v", args.world)
-                        first = _frame(asset, model, dict(state=dict(q=q, v=v), time_s=0.0), lines, 0, initial=True)
-                        html_stream = output.open("xb")
-                        try:
-                            summary_stream = sidecar.open("x", encoding="utf-8")
-                        except Exception:
-                            html_stream.close()
-                            raise
-                        writer = _HTML(html_stream)
-                        writer.write(prefix)
-                        writer.write('{"schema":"g1-actual-physics-replay-v1","model":' + _json(model) + ',"frames":[')
-                        writer.write(_json(first))
-                        selected_frames = 1
-                    elif event == "accepted" and int(record.get("world", 0)) == args.world:
-                        if asset is None:
-                            raise ValueError("accepted state precedes hash-bound initialization")
-                        tick = record.get("tick")
-                        if type(tick) is not int or tick < 0 or tick != last_tick:
-                            raise ValueError("selected-world accepted physical ticks must be contiguous from zero")
-                        time = float(record["time_s"])
-                        if not math.isfinite(time) or time <= last_time:
-                            raise ValueError("accepted physical publication time must strictly advance")
-                        _vector(record["state"]["q"], 36, "accepted q")
-                        _vector(record["state"]["v"], 35, "accepted v")
-                        last_tick, last_time = tick + 1, time
-                        accepted_records += 1
-                        pending = (record, lines, last_tick)
-                        if last_tick % args.stride == 0:
-                            writer.write("," + _json(_frame(asset, model, record, lines, last_tick)))
-                            selected_frames += 1
-                            last_emitted_tick = last_tick
-                    elif event == "first_failure" and failure is None:
-                        failure = record
-                    elif event == "summary":
-                        summary = record
-                except (ValueError, KeyError, TypeError, OSError, EOFError, zlib.error) as error:
-                    if writer is None:
-                        raise
-                    trace_error = dict(type=type(error).__name__, message=str(error), source_line=lines)
-                    # Preserve the valid accepted prefix, then drain/hash the same
-                    # stream without parsing or buffering the remaining journal.
-                    try:
-                        for block in iter(lambda: decoded.read(BLOCK_BYTES), b""):
-                            logical_digest.update(block)
-                            logical_bytes += len(block)
-                    except (OSError, EOFError, zlib.error):
-                        logical_complete = False
-                    break
-            # A damaged gzip may prevent logical decoding; the remaining original
-            # compressed bytes still receive their own complete physical hash.
-            for block in iter(lambda: buffered.read(BLOCK_BYTES), b""):
-                pass
-            if writer is None:
-                raise ValueError("journal has no supported hash-bound initialization")
-            if accepted_records == 0 and failure_publication is None:
-                trace_error = trace_error or dict(type="NoAcceptedStates", message="selected world has no accepted physical state")
-            if pending is not None and pending[2] != last_emitted_tick:
-                record, line_number, tick = pending
-                writer.write("," + _json(_frame(asset, model, record, line_number, tick)))
-                selected_frames += 1
-            if summary is not None:
-                stats = summary.get("statistics") or summary.get("statistics_by_world", {}).get(str(args.world), {})
-                duration = stats.get("accepted_duration_s")
-                count = stats.get("accepted_steps")
-                statistics_bases = [(last_time, accepted_records)]
-                if failure_publication is not None and (
-                    failure_publication["step_number"] > last_tick and failure_publication["time_s"] > last_time
-                ):
-                    statistics_bases.append((failure_publication["time_s"], failure_publication["step_number"]))
-                if not any(
-                    (duration is None or math.isclose(float(duration), time, rel_tol=1e-12, abs_tol=1e-12))
-                    and (count is None or int(count) == steps) for time, steps in statistics_bases
-                ):
-                    trace_error = trace_error or dict(type="SummaryStateMismatch", message="summary statistics differ from ordinary accepted records and actual failure publication")
-                requested = summary.get("requested_duration_s", summary.get("duration_s"))
-                if summary.get("success") is True and requested is not None and not math.isclose(
-                    float(requested), last_time, rel_tol=1e-10, abs_tol=1e-10
-                ):
-                    trace_error = trace_error or dict(type="IncompleteAcceptedWindow", message="reported success lacks the full requested accepted window")
-            normal_accepted_duration = last_time
-            normal_accepted_tick = last_tick
-            if failure_publication is not None:
-                published_step = failure_publication["step_number"]
-                published_time = failure_publication["time_s"]
-                if published_step > last_tick and published_time > last_time:
-                    evidence = {name: failure_publication[name] for name in
-                                ("source_line", "source_event", "source_path", "step_number", "time_s")}
-                    terminal = dict(time_s=published_time, state=failure_publication["state"],
-                                    support=None, load_time_s=None,
-                                    publication_without_env_transition=True,
-                                    publication_evidence=evidence)
-                    writer.write("," + _json(_frame(asset, model, terminal,
-                                 failure_publication["source_line"], published_step)))
-                    selected_frames += 1
-                    extra_publication_frames = 1
-                    last_time, last_tick = published_time, published_step
-                elif published_step == last_tick:
-                    expected_state = None if pending is None else {
-                        "q": pending[0]["state"]["q"], "v": pending[0]["state"]["v"]}
-                    if published_time != last_time or failure_publication["state"] != expected_state:
-                        trace_error = trace_error or dict(type="ConflictingPublication", message="failure snapshot disagrees with the ordinary accepted record")
-                elif published_step > last_tick or published_time >= last_time:
-                    trace_error = trace_error or dict(type="PublicationOrdering", message="failure snapshot counter and accepted time disagree")
-            final_stat = source.stat()
-            unchanged = (initial_stat.st_size, initial_stat.st_mtime_ns) == (final_stat.st_size, final_stat.st_mtime_ns)
-            complete = summary is not None and trace_error is None and unchanged and logical_complete
-            metadata = dict(
-                world=args.world, stride_physical_ticks=args.stride,
-                selected_frames=selected_frames, accepted_records=accepted_records,
-                actual_accepted_duration_s=last_time, actual_published_duration_s=last_time,
-                last_accepted_physical_tick=last_tick,
-                ordinary_accepted_duration_s=normal_accepted_duration,
-                ordinary_accepted_physical_tick=normal_accepted_tick,
-                extra_failure_publication_frames=extra_publication_frames,
-                failure_publication=failure_publication,
-                journal_summary_present=summary is not None, journal_complete=complete,
-                reported_success=None if summary is None else summary.get("success"),
-                first_failure=failure, trace_error=trace_error,
-                source=dict(path=str(source), original_bytes=hashed.bytes_read,
-                            original_sha256=hashed.digest.hexdigest(), gzip=compressed,
-                            decoded_jsonl_bytes=logical_bytes, decoded_jsonl_sha256=logical_digest.hexdigest(),
-                            decoded_hash_complete=logical_complete, unchanged_during_export=unchanged,
-                            processed_lines=lines), scene=binding,
-                geometry_source="static hash-bound model and saved actual q/v only",
-                frame_selection="initial, every Nth ordinary accepted tick, final ordinary accepted, strictly later actual failure publication",
-                visual_fields="saved actual q/v and full support plus derived visual FK; all site/command/policy details remain in the unmodified original journal",
-                force_display="input-state sampled force; resultant arrows at accepted foot origins are debug anchors, not actual application points",
-                reference_motion_loaded=False, physics_advanced=False)
-            writer.write('],"metadata":' + _json(metadata) + ',"initialization":' + _json(initialization)
-                         + ',"request":' + _json(request) + ',"summary":' + _json(summary) + "}")
-            writer.write(suffix)
-            html_stream.flush()
-            receipt = dict(schema="g1-actual-physics-replay-export-v1", export_complete=True,
-                           output=str(output), html_bytes=writer.bytes_written,
-                           html_sha256=writer.digest.hexdigest(), metadata=metadata,
-                           actual_summary=summary)
-            json.dump(receipt, summary_stream, ensure_ascii=False, allow_nan=False, indent=2)
-            summary_stream.flush()
-            return receipt
+        scan = scan_journal(source, stride=args.stride, world=args.world,
+                            on_initialization=initialize, on_frame=render)
+        metadata = scan["metadata"]
+        metadata.update(scene=binding,
+                        geometry_source="static hash-bound model and saved actual q/v only",
+                        visual_fields="saved actual q/v and full support plus derived visual FK; all site/command/policy details remain in the unmodified original journal",
+                        force_display="input-state sampled force; resultant arrows at accepted foot origins are debug anchors, not actual application points",
+                        reference_motion_loaded=False, physics_advanced=False)
+        writer.write('],"metadata":' + _json(metadata) + ',"initialization":' + _json(scan["initialization"])
+                     + ',"request":' + _json(scan["request"]) + ',"summary":' + _json(scan["summary"]) + "}")
+        writer.write(suffix)
+        html_stream.flush()
+        receipt = dict(schema="g1-actual-physics-replay-export-v1", export_complete=True,
+                       output=str(output), html_bytes=writer.bytes_written,
+                       html_sha256=writer.digest.hexdigest(), metadata=metadata, actual_summary=scan["summary"])
+        json.dump(receipt, summary_stream, ensure_ascii=False, allow_nan=False, indent=2)
+        summary_stream.flush()
+        return receipt
     finally:
         if html_stream is not None:
             html_stream.close()
         if summary_stream is not None:
             summary_stream.close()
-
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)

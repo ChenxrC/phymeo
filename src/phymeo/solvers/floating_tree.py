@@ -131,11 +131,46 @@ def _inertial_geometry(model, state):
     return obs, local_com, masses, linear, angular, _finite(inertia)
 
 
+def _with_joint_armature(model, mass):
+    if np.any(model.joint_armature):
+        indices = np.arange(model.body_count - 1) + 6
+        mass[indices, indices] += model.joint_armature
+        _finite(mass)
+    return mass
+
+
 @_numerical
 def floating_mass_matrix(model, state):
     """Full inertia at this pose in root COM, root angular and joint-rate coordinates."""
     _, _, masses, linear, angular, inertia = _inertial_geometry(model, state)
-    return _mass_from_terms(masses, linear, angular, inertia)
+    return _with_joint_armature(model, _mass_from_terms(masses, linear, angular, inertia))
+
+
+def _with_implicit_joint_damping(model, mass, h):
+    if np.any(model.joint_damping):
+        mass = mass.copy()
+        indices = np.arange(model.body_count - 1) + 6
+        mass[indices, indices] += h * model.joint_damping
+        _finite(mass)
+    return mass
+
+
+@_numerical
+def floating_step_mass_matrix(model, state, dt):
+    """Entry M+hD for the implicit-damping velocity update, not kinetic energy."""
+    h = validate_dt(dt, np.float64)
+    return _with_implicit_joint_damping(model, floating_mass_matrix(model, state), h)
+
+
+@_numerical
+def floating_kinetic_energy(model, state):
+    """Effective kinetic energy, including reflected joint inertia.
+
+    The additional energy is .5*sum(armature*qdot**2). This function does not
+    reinterpret the body-only linear/angular momentum as resolved rotor momentum.
+    """
+    mass = floating_mass_matrix(model, state)
+    return float(_finite(np.asarray(0.5 * (state.v @ mass @ state.v))))
 
 
 @_numerical
@@ -143,7 +178,7 @@ def floating_dynamics_terms(model, state, inputs):
     """Return full inertia, inertial/gravity bias, projected external/drive loads and acceleration."""
     _validate(model, state, inputs)
     obs, local_com, masses, linear, angular, inertia = _inertial_geometry(model, state)
-    mass = _mass_from_terms(masses, linear, angular, inertia)
+    mass = _with_joint_armature(model, _mass_from_terms(masses, linear, angular, inertia))
     com_acc, alpha = _bias_accelerations(model, state, obs, local_com)
     forces = masses[:, None] * (com_acc - model.root.gravity)
     spin_momentum = np.einsum("nij,nj->ni", inertia, obs.angular_velocity)
@@ -155,6 +190,9 @@ def floating_dynamics_terms(model, state, inputs):
         return np.einsum("nki,nk->i", linear, force) + np.einsum("nki,nk->i", angular, torque)
 
     bias = _finite(project(forces, torques))
+    if np.any(model.joint_damping):
+        bias[6:] += model.joint_damping * state.v[6:]
+        _finite(bias)
     applied = project(inputs.force, inputs.torque)
     applied[6:] += inputs.effort
     acceleration = _solve_mass_matrix(mass, _finite(applied - bias))
@@ -174,7 +212,11 @@ def _drift_floating_state(model, state, velocity, dt):
 
 
 def step_floating_robot(model, state, inputs, dt) -> StepResult[FloatingRobotState]:
-    """Take one velocity-first physical step for the full coupled tree, with root COM drift."""
+    """Take one velocity-first step, treating passive linear damping implicitly.
+
+    Geometry/bias stay at entry, while (M+hD)*delta_v=h*(applied-bias) evaluates
+    viscous resistance at the updated velocity. Zero D retains the old path.
+    """
     _validate(model, state, inputs)
     h = validate_dt(dt, np.float64)
     if model.children is None:
@@ -182,7 +224,14 @@ def step_floating_robot(model, state, inputs, dt) -> StepResult[FloatingRobotSta
     try:
         with np.errstate(over="raise", invalid="raise", divide="raise"):
             terms = floating_dynamics_terms(model, state, inputs)
-            v = _finite(state.v + h * terms.acceleration)
+            if np.any(model.joint_damping):
+                effective = _with_implicit_joint_damping(model, terms.mass_matrix, h)
+                delta = _solve_mass_matrix(
+                    _finite(effective), _finite(h * (terms.applied - terms.bias))
+                )
+                v = _finite(state.v + delta)
+            else:
+                v = _finite(state.v + h * terms.acceleration)
             candidate = _drift_floating_state(model, state, v, h)
     except (FloatingPointError, OverflowError, SolverFailure) as exc:
         return StepResult(state, StepReport(accepted=False, reason=str(exc)))

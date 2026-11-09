@@ -20,12 +20,18 @@ class FloatingRobotModel:
     measured from its body origin in body axes, in metres. Kinematics uses
     only geometry. root_inertia_frame_xyzw maps the root's principal inertia
     axes into its authored body axes; identity preserves the original contract.
+    joint_armature is effective reflected inertia in joint coordinates (kg m^2
+    for hinges, kg for slides). joint_damping is passive viscous resistance in
+    the same coordinates. These scalar-joint terms do not add body COM mass or
+    a resolved rotor body; explicit rotor momentum requires an explicit body.
     """
 
     root: RigidBodyModel
     root_com_m: np.ndarray
     children: RobotModel | None = None
     root_inertia_frame_xyzw: np.ndarray = field(default=(0.0, 0.0, 0.0, 1.0), kw_only=True)
+    joint_armature: np.ndarray | None = field(default=None, kw_only=True)
+    joint_damping: np.ndarray | None = field(default=None, kw_only=True)
 
     def __post_init__(self):
         if not isinstance(self.root, RigidBodyModel):
@@ -48,6 +54,15 @@ class FloatingRobotModel:
         # A frame is static model data; callers cannot re-enable writes.
         owned = np.frombuffer(frame.tobytes(), dtype=np.float64)
         object.__setattr__(self, "root_inertia_frame_xyzw", owned)
+        count = 0 if self.children is None else self.children.dof_count
+        for name in ("joint_armature", "joint_damping"):
+            value = getattr(self, name)
+            array = np.zeros(count, dtype=np.float64) if value is None else robot_array(
+                value, name, ndim=1
+            )
+            if array.shape != (count,) or np.any(array < 0):
+                raise ValueError(f"{name} must be a nonnegative vector of length {count}")
+            object.__setattr__(self, name, np.frombuffer(array.tobytes(), dtype=np.float64))
 
     @property
     def body_count(self):

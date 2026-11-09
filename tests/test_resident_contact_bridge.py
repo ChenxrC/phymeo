@@ -426,7 +426,7 @@ def test_b03_source_owner_law_and_candidate_contract_rejects(fault):
     "field,value",
     [
         ("group_count", 0),
-        ("group_count", 17),
+        ("group_count", 34),
         ("group_count", True),
         ("site_capacity", -1),
         ("site_capacity", 4097),
@@ -442,6 +442,30 @@ def test_b04_existing_resource_limits_are_explicit(field, value):
     args[field] = value
     with pytest.raises(ValueError):
         sample_tree_contacts(**args)
+
+
+@pytest.mark.parametrize("groups", (17, 30, 33))
+def test_high_tree_group_retains_force_moment_and_finished_work(groups):
+    """The last real body owns the load; preceding bodies receive no ghost load."""
+    from dataclasses import replace
+
+    from phymeo.backends._resident_contact_bridge import finish_contact_loads
+
+    frames = _rotor_frames()
+    first = min(frames)
+    frames[first] = replace(frames[first], group_index=groups - 1)
+    loads = _sample(frames, groups=groups)
+    assert loads.wrench_fp64.shape == (groups, 6)
+    np.testing.assert_array_equal(loads.wrench_fp64[:-1], 0)
+    # F=(0,2,0) at x=1/2 gives a real +z COM moment of 1 Nm.
+    np.testing.assert_allclose(loads.wrench_fp64[-1], (0, 2, 0, 0, 0, 1), atol=1e-12, rtol=0)
+    finished = finish_contact_loads(loads, _rotated_candidate(frames))
+    assert finished.finalized
+    np.testing.assert_array_equal(finished.wrench_fp64, loads.wrench_fp64)
+    assert finished.sites[0].application_work_j == pytest.approx(13 / 16, abs=1e-12)
+    assert finished.sites[0].material_work_j == pytest.approx(33 / 40, abs=1e-12)
+    with pytest.raises(ValueError, match="group count"):
+        replace(loads, wrench_fp64=np.zeros((34, 6)))
 
 
 def test_b05_unsupported_and_invalid_finite_geometry_cannot_become_zero_load():

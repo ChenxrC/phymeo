@@ -26,6 +26,8 @@ from ..solvers.contact_patch_loads import sample_patch_loads
 
 _ROTATION_DOMAIN = 5e-5
 _CONSTRUCTION_M = 1e-10
+# A floating resident tree has up to 32 joints plus its actual root body.
+_MAX_TREE_GROUPS = 33
 
 
 def _integer(value, name, low=0, high=2**31 - 1):
@@ -110,7 +112,9 @@ class ContactShapeFrame:
         shape = _shape(self.shape)
         points = _owned(self.world_points_m, (len(shape.vertex_ids), 3), "world material points")
         group = (
-            None if self.group_index is None else _integer(self.group_index, "group index", 0, 32)
+            None
+            if self.group_index is None
+            else _integer(self.group_index, "group index", 0, _MAX_TREE_GROUPS - 1)
         )
         values = {
             name: _owned(getattr(self, name), (3,), name)
@@ -285,7 +289,7 @@ class ContactLoads:
         raw = np.asarray(self.wrench_fp64)
         if raw.ndim != 2 or raw.shape[1:] != (6,):
             raise ValueError("contact wrench must contain six COM components per group")
-        count = _integer(len(raw), "group count", 1, 17)
+        count = _integer(len(raw), "group count", 1, _MAX_TREE_GROUPS)
         frames = _frames(self.frames, world, count)
         sites = tuple(self.sites)
         if len(sites) > 4096 or any(not isinstance(site, ResidentContactSite) for site in sites):
@@ -348,7 +352,7 @@ def sample_tree_contacts(
     if type(tree_dynamic_pairs) is not bool:
         raise TypeError("tree_dynamic_pairs must be a bool")
     world = _integer(world, "world")
-    count = _integer(group_count, "group count", 1, 17)
+    count = _integer(group_count, "group count", 1, _MAX_TREE_GROUPS)
     capacity = _integer(site_capacity, "site capacity", 0, 4096)
     frames = _frames(frames, world, count)
     if not isinstance(materials_by_pair, Mapping):

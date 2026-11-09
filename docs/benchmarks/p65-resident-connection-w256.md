@@ -1,5 +1,11 @@
 # N6 bounded W256 connection holdout
 
+## Parent execution — 2026-11-10
+
+Both authored nodes were executed under the sole parent slot. The512-shape declaration negative passed once on HOST, with0 physical steps. The exact mixed-motion positive passed once per backend: interpret4.23s and actual CUDA2.81s, **256 worlds×8 steps=2048 actual world-steps per backend**, complete original state/action/reset/energy assertions and full gzip records retained. No skip/deselection/fallback. Positive scope contains no contact geometry; this does not establish loadedW256, PPO/G1 GPU dance, zero-copy data flow or throughput.
+
+Evidence: `artifacts/p65-connections-20261110-0800-01/27-w256-contact-boundary`, `28-w256-interpret`, `29-w256-cuda`. First lint passed; first format-check failed for the new file, pure formatting retained exact raw AST, and final lint/format passed. Parent source at execution was`7e378f7c`. Historical author-only text below remains as the original declaration, not current execution status.
+
 **AUTHORING_ONLY / UNEXECUTED.** Exact two new files: this report and [test_resident_connection_w256.py](../../tests/scale/test_resident_connection_w256.py). No core, old test, fixture, shape/site/candidate capacity, plant or physical tolerance was changed. The parent owns all project execution; this author performed only source inspection, file IO and Git checks while the parent runs the G1 common-entry window. No import/collection, numerical probe, pytest, lint/formatter, build or installation was run.
 
 ## Capacity check before authoring

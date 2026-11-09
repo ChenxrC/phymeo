@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1110" role="img" aria-label="Phymeo机器人环境策略连接：实际执行与后端边界">
+<defs>
+  <marker id="arrow" markerWidth="9" markerHeight="8" refX="8" refY="4" orient="auto-start-reverse"><path d="M0 0L8 4L0 8Z" fill="#94a3b8"/></marker>
+  <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M40 0H0V40" fill="none" stroke="#1e293b" stroke-width=".5"/></pattern>
+  <style>text{font-family:'Cascadia Mono','Microsoft YaHei',monospace}.title{fill:#f1f5f9;font-size:13px;font-weight:600}.sub{fill:#cbd5e1;font-size:10px}.small{fill:#94a3b8;font-size:9px}.line{fill:none;stroke:#94a3b8;stroke-width:1.6;marker-end:url(#arrow)}.planned{stroke-dasharray:6 5}.existing{fill:#052e28;stroke:#34d399;stroke-width:1.5}.pending{fill:#382610;stroke:#fbbf24;stroke-width:1.5;stroke-dasharray:6 4}.data{fill:#23183f;stroke:#a78bfa;stroke-width:1.5}.external{fill:#12333d;stroke:#22d3ee;stroke-width:1.5}.future{fill:#172033;stroke:#64748b;stroke-dasharray:5 5;stroke-width:1.5}</style>
+</defs>
+<rect width="1000" height="1110" fill="#0f172a"/><rect width="1000" height="1110" fill="url(#grid)"/>
+<!-- Arrows precede components. -->
+<path class="line" d="M495 150V218"/><text class="small" x="510" y="187">50Hz 策略 / 通用控制律</text>
+<path class="line" d="M495 300V368"/><text class="small" x="510" y="336">持有动作 · 整数子步节拍</text>
+<path class="line" d="M360 410H165V528"/><path class="line" d="M630 410H825V528"/>
+<path class="line" d="M630 440H672V716H688"/><text class="small" transform="translate(678 644) rotate(-90)">普通步：直接 batch.step</text>
+<text class="small" x="180" y="444">HOST 场景分支</text><text class="small" x="710" y="444">resident 分支</text>
+<path class="line" d="M165 615V688"/><path class="line" d="M825 615V688"/>
+<path class="line" d="M310 735H358"/><path class="line" d="M690 735H632"/>
+<path class="line" d="M495 780V848"/>
+<path class="line" d="M360 895H312"/>
+<path class="line" d="M630 735H660V260H632"/><text class="small" transform="translate(650 627) rotate(-90)">真实接受状态反馈 / HOST NumPy</text>
+<path class="line" d="M175 150V180H20V735H38"/><text class="small" transform="translate(14 490) rotate(-90)">真实质量 / 惯量 / 拓扑 / 碰撞体</text>
+<path class="line" d="M690 105H675V390H632"/>
+<path class="line" marker-start="url(#arrow)" d="M960 895H985V410H632"/><text class="small" transform="translate(980 660) rotate(-90)">RSL直接step/reset环境 · HOST TensorDict拷贝</text>
+<!-- Real runtime boundaries. -->
+<rect x="30" y="500" width="290" height="300" rx="12" fill="none" stroke="#34d399" stroke-opacity=".4"/>
+<rect x="680" y="500" width="290" height="300" rx="12" fill="none" stroke="#34d399" stroke-opacity=".4"/>
+<text class="small" x="45" y="519">HOST：每个逻辑环境一个原始scene</text>
+<text class="small" x="695" y="519">TYX：一个batch中多个world</text>
+<!-- Top declarations. -->
+<rect class="existing" x="40" y="60" width="270" height="90" rx="6"/>
+<text class="title" x="175" y="86" text-anchor="middle">资产与模型</text><text class="sub" x="175" y="110" text-anchor="middle">URDF / MJCF / 受限USD</text><text class="small" x="175" y="133" text-anchor="middle">G1：29关节 · a/D · 原物理胶囊</text>
+<rect class="external" x="360" y="60" width="270" height="90" rx="6"/>
+<text class="title" x="495" y="86" text-anchor="middle">策略 / 控制器</text><text class="sub" x="495" y="110" text-anchor="middle">官方ONNX：CPU推理 · 154→29</text><text class="small" x="495" y="133" text-anchor="middle">PD / 固定根多目标IK已有</text>
+<rect class="existing" x="690" y="60" width="270" height="90" rx="6"/>
+<text class="title" x="825" y="86" text-anchor="middle">任务映射</text><text class="sub" x="825" y="110" text-anchor="middle">controls / observe / evaluate</text><text class="small" x="825" y="133" text-anchor="middle">G1公共20s / 独立受载场景已验</text>
+<!-- Public connection verified by HOST72 and interpret/CUDA12 each. -->
+<rect class="existing" x="360" y="220" width="270" height="80" rx="6"/>
+<text class="title" x="495" y="246" text-anchor="middle">PolicyRunner</text><text class="sub" x="495" y="269" text-anchor="middle">逐世界时钟 / 动作保持 / due mask</text><text class="small" x="495" y="289" text-anchor="middle">纯策略调度，不改物理状态</text>
+<rect class="existing" x="360" y="370" width="270" height="80" rx="6"/>
+<text class="title" x="495" y="396" text-anchor="middle">ResidentVectorEnv</text><text class="sub" x="495" y="419" text-anchor="middle">action / obs / reward / done / reset</text><text class="small" x="495" y="439" text-anchor="middle">本批：受载步、逐世界拒步语义</text>
+<rect class="existing" x="40" y="530" width="270" height="85" rx="6"/>
+<text class="title" x="175" y="557" text-anchor="middle">SceneBatchBackend</text><text class="sub" x="175" y="581" text-anchor="middle">借用观测 / 原命令 / factory复位</text><text class="small" x="175" y="602" text-anchor="middle">独立HOST scene循环，非GPU批处理</text>
+<rect class="existing" x="690" y="530" width="270" height="85" rx="6"/>
+<text class="title" x="825" y="557" text-anchor="middle">ResidentContactStepper</text><text class="sub" x="825" y="581" text-anchor="middle">借用原batch / plan / owner</text><text class="small" x="825" y="602" text-anchor="middle">仅受载步；普通步直达batch</text>
+<!-- Previously verified physical mechanisms. -->
+<rect class="existing" x="40" y="690" width="270" height="90" rx="6"/>
+<text class="title" x="175" y="716" text-anchor="middle">RobotScene / MultiRobotScene</text><text class="sub" x="175" y="740" text-anchor="middle">全M/J、限幅驱动、接触、共同发布</text><text class="small" x="175" y="762" text-anchor="middle">G1全131.48s无跌倒；两工程门未过</text>
+<rect class="existing" x="690" y="690" width="270" height="90" rx="6"/>
+<text class="title" x="825" y="716" text-anchor="middle">TyxWorldBatch</text><text class="sub" x="825" y="740" text-anchor="middle">完整树 / 浮根 / 有界32关节</text><text class="small" x="825" y="762" text-anchor="middle">受载窄相仍在HOST；设备mu0有限域</text>
+<rect class="data" x="360" y="690" width="270" height="90" rx="6"/>
+<text class="title" x="495" y="716" text-anchor="middle">接受状态与逐世界结果</text><text class="sub" x="495" y="740" text-anchor="middle">q/v · effort · 接触力 · 事件</text><text class="small" x="495" y="762" text-anchor="middle">部分推进明确报告，不能伪回滚</text>
+<rect class="data" x="360" y="850" width="270" height="90" rx="6"/>
+<text class="title" x="495" y="876" text-anchor="middle">观察 / 传感 / 证据</text><text class="sub" x="495" y="900" text-anchor="middle">IMU · 力矩 · 深度/法线/ID</text><text class="small" x="495" y="922" text-anchor="middle">输入载荷时刻与接受姿态时刻分开</text>
+<rect class="existing" x="40" y="850" width="270" height="90" rx="6"/>
+<text class="title" x="175" y="876" text-anchor="middle">实际物理回放与诊断</text><text class="sub" x="175" y="900" text-anchor="middle">保存q做FK · 离线Three.js</text><text class="small" x="175" y="922" text-anchor="middle">全131.48s实际状态/力 · 浏览已验</text>
+<rect class="existing" x="690" y="850" width="270" height="90" rx="6"/>
+<text class="title" x="825" y="876" text-anchor="middle">可选RSL-RL / PPO</text><text class="sub" x="825" y="900" text-anchor="middle">TensorDict适配 · 两HOST任务实训</text><text class="small" x="825" y="922" text-anchor="middle">原生checkpoint重载 · CPU非GPU训练</text>
+<text class="sub" x="40" y="985">绿色：已实现且运行；紫色：数据与证据；青色：外部策略。通过范围见报告。</text>
+<text class="small" x="40" y="1010">下一批：设备摩擦、跨participant共同求解、策略张量；W256运动已验，受载规模未通。</text>
+<text class="small" x="40" y="1032">独立物理族：软布/体软体、更广耦合、杆缆、MPM/流体仍按全景分别验收。</text>
+<text class="small" x="40" y="1063">证据：HOST72 / TYX各12 · G1公共20s / 全131.48s · PPO两任务 · W256运动 · wheel。</text>
+</svg>

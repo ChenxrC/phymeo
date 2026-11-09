@@ -1,5 +1,15 @@
 # P6.5 人工续作入口
 
+## 当前续作（2026-11-10，到08:00连接批次）
+
+优先读[本批实际结果](../benchmarks/p65-robot-environment-connections-20261110.md)和[已实现连接架构](../architecture/robot-environment-connections-2026-11-10.md)。原HOST G1从原初态完成官方全131.48秒/262960步，无跌倒/拒步；峰值14.9124倍体重和XY偏差1.2749m仍使原两个工程门失败，RAW1保留。新的公共SceneBackend→Env→PolicyRunner独立完成20秒，全部原工程门通过。不要再按下面旧2秒pending段重跑长窗或重派实现。
+
+公共连接HOST72、interpret/CUDA各12，真实29/32joint最后body受载各2，CPU RSL适配10项与两真实物理任务PPO/checkpoint重载，W256混合运动各2048world-steps均已通过。33body bridge修复c1292647不改变shape cap；受载W256的512声明仍被原256shape门拒。源码外新wheel受载调用已验，实际长动作Three.js回放已导出并浏览核实。
+
+当前所有权：父唯一项目执行/共享接缝owner；复用原三个作者，只纯编码/研究并行。原K1三个未提交文件保持，不远程CI/推main/发包/改pin。N7非零μ混合桥正按本批计划独立作者/验证，未完成之前仍不能说G1设备接触/训练已通。后续重点是通用设备摩擦、单次发布分页受载W256与公开策略张量/stream/epoch接口，依据[规模调研](p65-resident-contact-scale-research.md)和[设备连接调研](p65-device-policy-contact-research.md)。CPU PPO、几何查询和受载GPU训练是三项不同能力。
+
+下文是既有验收与历史，不用旧pending覆盖本节。整个P6.5/全部Newton对齐仍未完成。
+
 ## 当前安排（2026-11-09）
 
 **H1本机首个受载窗口通过（11月10日）**：执行器反射惯量/隐式阻尼已接入HOST、共享场景与普通浮根设备；HOST44项+MuJoCo8例、实际G1三个姿态动力学通过。32关节有界容量的interpret/CUDA各7专项+2相邻，以及真实29关节G1各两步通过。有限双脚静态/偏载、528步离地重入和拒步通过。G1使用原始q/v与官方反馈策略，在Phymeo HOST以h=.0005完成2秒/4000步，稳定段平均支撑99.9624%体重，未跌倒；默认姿态PD的两次站立失败仍保留。详[本批结果与精度边界](../benchmarks/p65-h1-actuator-capacity-support.md)。下一步为完整20秒反馈舞蹈与设备受载窗口；固定材料站点的接触片转换、非零affine执行器和W32训练吞吐仍开放。不重复本批已绿组。

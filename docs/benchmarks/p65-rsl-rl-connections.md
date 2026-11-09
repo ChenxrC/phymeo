@@ -1,5 +1,13 @@
 # N4 optional RSL-RL connection and two physical learning targets
 
+## Parent execution — 2026-11-10
+
+The complete optional adapter file ran with actual dependencies: **10 passed**, no skip. Both predeclared real HOST tasks passed their unchanged20% learning gate with the original seed20261110 and100 iterations: prismatic cost .4059548378→.0620736182 (84.7092% reduction), revolute cost .7493789196→.0074049751 (99.0119%). Actor weights changed. Native RSL checkpoint save/load reproduced192 evaluation steps on fresh original worlds, including actions/observations/costs and accepted q/v/final masks. RAW_EXIT0.
+
+Actual resolved versions are **Torch2.15.0 CPU, TensorDict0.15.5, RSL-RL5.5.2, NumPy2.4.6**. The initial Torch2.10 installation was superseded by dependency resolution; it is not the accepted final environment. Full freeze and pip check are retained; no broken requirements. The separate TYX environment/pin and NumPy-only core remain unchanged. Evidence is `artifacts/p65-connections-20261110-0800-01/17–19`, `41-training-freeze`, `42-training-pip-check`, and `ppo-outcome.json`.
+
+This is CPU policy/HOST physics with copies, no contact in the two learning tasks, no G1 training and no GPU training or differentiation claim. The author-only statements below are historical; the frozen experiment and limitations remain.
+
 **AUTHORING_ONLY / UNEXECUTED.** This conditional work follows N2 at `be835102e613f3bd978c41c5f80adcd8d9bf8711`. No package installation, project import, Torch calculation, pytest, collection, lint/format, compilation or training was executed. The parent retains the single execution slot while the original G1 long window runs. Four new files only; base exports, core physics, dependencies/pins and existing tests are unchanged.
 
 ## Research before implementation

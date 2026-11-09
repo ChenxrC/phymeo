@@ -67,3 +67,15 @@
 
 04:52连接专项：HOST72通过；interpret/CUDA各12通过。包含新受载计划跨episode、真实逐世界拒步、公共策略runner、真实HOST场景与日志语义。原firstlint5项与format14files失败已保存并修正；16源qualifiedAST证明和最终静态通过。新G1公共入口20秒、真实回放、可选PPO、源码外wheel及最终图继续按唯一父队列执行。
 04:57可选N6增补（核心已通过后）：利用原capacity作者余量，在隔离树只写W256通用连接留出与报告，不改核心/旧案例/资源上限、不执行。最多两例：已有free/rigid families的真实多world策略/复位，以及原site/candidate容量允许时的受载prismatic spring多episode递推。8步、独立力–运动期望、完整actualreceipt留存；先核源码容量，不支持就明确缺口，不扩cap。该留出不叫PPO、纯GPU窄相或G1 GPU舞蹈。父在公共G1/回放/PPO/安装包优先队列和08:00余量内串行验证；无余量则保留UNEXECUTED。
+
+05:55连接状态：公共G1完整20秒全部原工程门通过；全131.48秒实际回放已生成/浏览验收。可选CPU PPO两任务各以原固定seed/预算达到20%成本下降门并完成原生checkpoint重载，实际下降84.71%/99.01%。W256混合运动interpret/CUDA各2048world-steps通过，受载512-shape声明按原256上限拒绝。新wheel在源码目录外两真实受载scene完成32world-steps与隔离reset。消费者首次漏传必需robot_state导致API错误，22保留，22b补显式初态后通过，无产品修改。
+
+### 可选N7：解除真实受载连接阻塞，不追G1专用路径
+
+源码调研定位ContactShapeFrame已支持group_index0..32，但ContactLoads/sample_tree_contacts仍限17body。父c1292647已统一到32joint+root=33body；新30body最小测试先真实RED，修复后完整HOST53通过。原MAX_SHAPES256、site/candidate预算不变。原capacity作者只新增29/32joint最后body受载测试；父检查独立全M/J、根加速度/角加速度、双侧反作用和真实发布，不能拿无载容量当受载通过。
+
+随后在余量内做**现有速度摩擦律的混合受载桥**。这是已用RobotContactMaterial/原HOST patch law到现TYX fullJ/M的连接，不增加静摩擦历史、设备几何或GPU策略张量。父范围仅`backends/_resident_contact_bridge.py`、`_resident_contact_plan.py`的材料admission与准确描述，和原bridge测试中已经过时的“正μ必须拒绝”预期；原actuator作者仅NEW `tests/test_resident_friction_bridge.py`、`tests/scale/test_resident_friction_connections.py`。不改G1参数、原力律、物理门、pin、caps、owner或发布流程。
+
+先保留正μ被拒的实际RED，再连通原law；HOST独立核Fn/Ft、切速分段、patch权重一次、双方共同作用点/力矩和实际功；interpret/CUDA各用有真实入步速度的floating偏置球及fixed rotor解析全M/J/运动，保存原请求与完整收据。保持分离无力和非法材料拒绝。只靠删guard不算通过，未执行项继续标明；若出现额外物理/审计矛盾先保首失败，不调质量/阈值追结果。源码变更后新wheel重新验证受影响能力，之前wheel收据保留原source binding。
+
+N5架构/结果优先；到08:00不启动新的长窗。设备站点力核、公开Torch缓冲/stream/epoch接口及单次发布分页仅完成调研，见两research文档，不画作已实现。

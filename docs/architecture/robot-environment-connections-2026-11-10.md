@@ -1,6 +1,6 @@
 # 机器人—环境—策略：当前连接架构
 
-执行中草稿，2026-11-10到08:00批次。橙色作者代码尚待父串行验证，不能当作全部已验收。最终结果将以本批收据更新。
+2026-11-10到08:00批次执行中。公共连接已过HOST72与interpret/CUDA各12；G1独立入口已完成全131.48秒无跌倒，但原峰值力/参考XY两工程门未过。公共入口G1、回放与可选学习器的状态分别更新，不能互借通过标签。
 
 [离线架构图](robot-environment-connections-2026-11-10.html) · [批次计划](../superpowers/plans/2026-11-10-0800-robot-environment-connections.md) · [本批前已验收H1](../benchmarks/p65-h1-actuator-capacity-support.md)
 
@@ -10,10 +10,10 @@
 |---|---|---|---|
 | 资产与物理声明 | `builders/floating_mjcf.py`、`dynamics/floating_robot.py` | 导入原关节/惯量/几何；不可变a/D；真实自由根 | MJCF仍为明确子集；不从动作参考生成发布姿态 |
 | 任务映射 | `examples/g1_connected_policy.py::G1Task` | 当前实际观测→154维协议；原动作缩放/限幅力矩→公共command | G1协议保留在案例层，不写入通用物理核心；新连接待验 |
-| 策略调度 | `control/policy_runner.py::PolicyRunner` | due mask、动作保持、每世界整数节拍；一次调用一个真实物理步 | 不拥有物理，不提供RNN或完整物理checkpoint；新连接待验 |
-| 任务环境 | `training/resident_env.py::ResidentVectorEnv` | controls/observe/evaluate、reward/done、final observation、选择复位 | NumPy/HOST边界；新受载stepper与拒步mask待验 |
+| 策略调度 | `control/policy_runner.py::PolicyRunner` | due mask、动作保持、每世界整数节拍；一次调用一个真实物理步 | 不拥有物理，不提供RNN或完整物理checkpoint；已通过专项 |
+| 任务环境 | `training/resident_env.py::ResidentVectorEnv` | controls/observe/evaluate、reward/done、final observation、选择复位 | NumPy/HOST边界；新受载stepper与拒步mask已通过专项 |
 | HOST场景适配 | `training/scene_backend.py::SceneBatchBackend` | 一个逻辑world拥有一个原RobotScene/MultiRobotScene；factory复位 | CPU逐scene循环，不能称设备批处理；不覆盖裸ContactScene |
-| TYX受载适配 | `training/resident_stepper.py::ResidentContactStepper` | 借用原batch/plan，调用原step_contacts | 不复制solver、不替换owner、不关闭借用资源；新连接待验 |
+| TYX受载适配 | `training/resident_stepper.py::ResidentContactStepper` | 借用原batch/plan，调用原step_contacts | 不复制solver、不替换owner、不关闭借用资源；已通过两backend专项 |
 | 真实物理推进 | `runtime/multi_robot_scene.py`、`backends/tyx_world_batch.py` | 接触载荷、完整M/J、驱动、候选与共同发布 | HOST和TYX能力域不同；设备受载几何仍有HOST路径，持续摩擦受限 |
 | 观测与传感 | `sensors/`、`experiments/humanoid_support.py` | 接受q/v、载荷、IMU、力矩、深度/法线/ID、输入时刻 | 力采样在步入口，姿态在步末；不能混作同一时刻量 |
 | 学习器连接 | 候选 `training/rsl_rl.py` | 可选TensorDict接口、外部PPO | 当前尚未安装/验证；不宣称零拷贝或G1从头学习 |
@@ -66,3 +66,5 @@
 数据所有权仍分三层：静态模型/资产声明由builder校验；真实状态和物理接受发布由原scene/batch/SceneStepper持有；任务、策略和训练层只持有输入、观测副本与episode时钟。一个策略动作数组不能当作物理checkpoint，一个查询法向也不能当作已经施加的力。
 
 [较大功能族全景与原验收入口](../development/phymeo-newton-panorama-2026-11-07.md)保留更广范围；本批最终状态以本页实际执行证据为准。这里的源码路径相对`src/phymeo/`。
+
+规模边界（05:00源码核实）：CollisionModel单模型最多256个shape。W256每world一物体加独立地面需512个声明，当前单contact plan尚不能容纳；不通过增cap或隐藏分页把该缺口称作通过。原W32接口和纯运动world数与该shape域是不同维度。

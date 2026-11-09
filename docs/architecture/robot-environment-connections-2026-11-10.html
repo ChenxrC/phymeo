@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -128,6 +128,7 @@
       color: #475569;
       font-size: 0.75rem;
     }
+    a { color: #7dd3fc; }
   </style>
 </head>
 <body>
@@ -138,7 +139,7 @@
         <div class="pulse-dot"></div>
         <h1>Phymeo · 机器人—环境—策略连接</h1>
       </div>
-      <p class="subtitle">2026-11-10 执行中草稿；只以实际源码和父串行验证更新已实现状态。</p>
+      <p class="subtitle">2026-11-10 执行中：公共连接 HOST72 + interpret/CUDA各12 已过；公共G1与可选学习器另验。</p>
     </div>
 
     <!-- Main Diagram -->
@@ -175,18 +176,18 @@
 <text class="title" x="495" y="86" text-anchor="middle">策略 / 控制器</text><text class="sub" x="495" y="110" text-anchor="middle">官方ONNX：CPU推理 · 154→29</text><text class="small" x="495" y="133" text-anchor="middle">PD / 固定根多目标IK已有</text>
 <rect class="pending" x="690" y="60" width="270" height="90" rx="6"/>
 <text class="title" x="825" y="86" text-anchor="middle">任务映射</text><text class="sub" x="825" y="110" text-anchor="middle">controls / observe / evaluate</text><text class="small" x="825" y="133" text-anchor="middle">G1 / 独立受载留出：本批待验证</text>
-<!-- Generic public connection, pending actual parent validation. -->
-<rect class="pending" x="360" y="220" width="270" height="80" rx="6"/>
+<!-- Public connection verified by HOST72 and interpret/CUDA12 each. -->
+<rect class="existing" x="360" y="220" width="270" height="80" rx="6"/>
 <text class="title" x="495" y="246" text-anchor="middle">PolicyRunner</text><text class="sub" x="495" y="269" text-anchor="middle">逐世界时钟 / 动作保持 / due mask</text><text class="small" x="495" y="289" text-anchor="middle">纯策略调度，不改物理状态</text>
-<rect class="pending" x="360" y="370" width="270" height="80" rx="6"/>
+<rect class="existing" x="360" y="370" width="270" height="80" rx="6"/>
 <text class="title" x="495" y="396" text-anchor="middle">ResidentVectorEnv</text><text class="sub" x="495" y="419" text-anchor="middle">action / obs / reward / done / reset</text><text class="small" x="495" y="439" text-anchor="middle">本批：受载步、逐世界拒步语义</text>
-<rect class="pending" x="40" y="530" width="270" height="85" rx="6"/>
+<rect class="existing" x="40" y="530" width="270" height="85" rx="6"/>
 <text class="title" x="175" y="557" text-anchor="middle">SceneBatchBackend</text><text class="sub" x="175" y="581" text-anchor="middle">借用观测 / 原命令 / factory复位</text><text class="small" x="175" y="602" text-anchor="middle">独立HOST scene循环，非GPU批处理</text>
-<rect class="pending" x="690" y="530" width="270" height="85" rx="6"/>
+<rect class="existing" x="690" y="530" width="270" height="85" rx="6"/>
 <text class="title" x="825" y="557" text-anchor="middle">ResidentContactStepper</text><text class="sub" x="825" y="581" text-anchor="middle">借用原batch / plan / owner</text><text class="small" x="825" y="602" text-anchor="middle">普通步与受载步显式选择</text>
 <!-- Previously verified physical mechanisms. -->
 <rect class="existing" x="40" y="690" width="270" height="90" rx="6"/>
-<text class="title" x="175" y="716" text-anchor="middle">RobotScene / MultiRobotScene</text><text class="sub" x="175" y="740" text-anchor="middle">全M/J、限幅驱动、接触、共同发布</text><text class="small" x="175" y="762" text-anchor="middle">G1舞蹈：HOST h=.0005实际运行</text>
+<text class="title" x="175" y="716" text-anchor="middle">RobotScene / MultiRobotScene</text><text class="sub" x="175" y="740" text-anchor="middle">全M/J、限幅驱动、接触、共同发布</text><text class="small" x="175" y="762" text-anchor="middle">G1全131.48s无跌倒；两工程门未过</text>
 <rect class="existing" x="690" y="690" width="270" height="90" rx="6"/>
 <text class="title" x="825" y="716" text-anchor="middle">TyxWorldBatch</text><text class="sub" x="825" y="740" text-anchor="middle">完整树 / 浮根 / 有界32关节</text><text class="small" x="825" y="762" text-anchor="middle">受载窄相仍在HOST；设备mu0有限域</text>
 <rect class="data" x="360" y="690" width="270" height="90" rx="6"/>
@@ -197,10 +198,10 @@
 <text class="title" x="175" y="876" text-anchor="middle">实际物理回放与诊断</text><text class="sub" x="175" y="900" text-anchor="middle">保存q做FK · 离线Three.js</text><text class="small" x="175" y="922" text-anchor="middle">G1全动作回放待长窗结束后生成</text>
 <rect class="future" x="690" y="850" width="270" height="90" rx="6"/>
 <text class="title" x="825" y="876" text-anchor="middle">可选RSL-RL / PPO</text><text class="sub" x="825" y="900" text-anchor="middle">TensorDict适配 · 本批候选</text><text class="small" x="825" y="922" text-anchor="middle">尚未安装/验证，不是已实现训练链</text>
-<text class="sub" x="40" y="985">实线：已有调用边界；橙色虚框：本批作者内容，父执行待验。当前是执行中草稿。</text>
+<text class="sub" x="40" y="985">绿色：已验调用；橙色：代码已接入、实际留出待验；灰色：选装尚未运行。</text>
 <text class="small" x="40" y="1010">未接本链路：完整设备持续摩擦、跨participant设备联合求解、零拷贝张量、W256/W1024。</text>
 <text class="small" x="40" y="1032">独立物理族：软布/体软体、更广耦合、杆缆、MPM/流体仍按全景分别验收。</text>
-<text class="small" x="40" y="1063">来源：5a84d38 + 2026-11-10到08:00计划；最终颜色与证据将在父串行验证后更新。</text>
+<text class="small" x="40" y="1063">来源：31058805连接专项；G1 0cd6dec全轨迹；最终回放/学习器结果另行更新。</text>
 </svg>
 
     </div>

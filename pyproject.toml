@@ -12,6 +12,7 @@ dependencies = ["numpy>=2,<3"]
 
 [project.optional-dependencies]
 usd = ["usd-core==26.8"]
+training = ["torch>=2.6,<3", "tensordict>=0.7,<1", "rsl-rl-lib==5.5.2"]
 
 [project.urls]
 Repository = "https://github.com/ChenxrC/phymeo"

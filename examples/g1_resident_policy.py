@@ -120,8 +120,9 @@ def contact_registration(task):
     ):
         raise ValueError("the unchanged 33 G1 sphere/capsule colliders are required")
     shapes, bindings, by_name = [], [], {}
-    for ordinal, collider in enumerate(asset.collisions, 1):
-        key = ph.CollisionKey(WORLD, original.ROBOT, ordinal)
+    for collider in asset.collisions:
+        # CollisionKey.body identifies a physical body, not the whole robot.
+        key = ph.CollisionKey(WORLD, collider.shape.key.body, collider.shape.key.shape)
         shape = replace(collider.shape, key=key)
         shapes.append(shape)
         bindings.append(
@@ -130,7 +131,7 @@ def contact_registration(task):
             )
         )
         by_name[(collider.link_name, collider.name)] = key
-    floor = ph.CollisionKey(WORLD, original.FLOOR, 1)
+    floor = ph.CollisionKey(WORLD, 1 + max(shape.key.body for shape in shapes), 1)
     floor_shape = ph.CollisionShape(floor, "hull", tuple(range(10001, 10009)))
     floor_points = np.array(list(product((-10.0, 10.0), (-10.0, 10.0), (-0.2, 0.0))))
     bindings.append(ph.ResidentStaticBinding(floor, ph.CollisionMotion(floor_points)))

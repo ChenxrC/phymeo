@@ -11,6 +11,14 @@ Example (parent serial queue only):
 
 The new HTML and its .summary.json sibling are exclusively created. The source
 journal stays untouched, including all fields not duplicated in this visual artifact.
+
+Text-only validation cases for the parent serial queue:
+- ordinary accepted prefix followed by an atomic refusal: no extra frame;
+- post-publication failure snapshot at next step: append actual q/v, force absent;
+- postprocessing failure with context.last_accepted: append that later publication;
+- reset snapshot at step zero: never replace a later accepted endpoint;
+- duplicate equal snapshots: one frame; contradictory step/time/q/v: report error;
+- attempted or entry q/v without step_number: never promote into replay frames.
 """
 
 import argparse
@@ -132,6 +140,8 @@ def _frame(asset, model, record, source_line, physical_tick, initial=False):
         load_time = support.get("sample_time_s")
     return dict(source_line=source_line, physical_tick=physical_tick,
                 initial=initial, time_s=record["time_s"], load_time_s=load_time,
+                publication_without_env_transition=record.get("publication_without_env_transition", False),
+                publication_evidence=record.get("publication_evidence"),
                 state=dict(q=q.tolist(), v=v.tolist()), support=support,
                 body_positions_m=pose.position.tolist(), geometry_points_m=geometry,
                 foot_origins_m={side: pose.position[index].tolist()
@@ -141,6 +151,61 @@ def _frame(asset, model, record, source_line, physical_tick, initial=False):
                               "root_xy_drift_m", "reference_xy_error_m",
                               "effort_caps_observed", "reaction_balance_observed") if name in record})
 
+
+def _failure_publications(record, world, source_line):
+    """Read actual public snapshots only; attempted and entry q/v are excluded."""
+    event = record.get("event")
+    containers = []
+    if event == "failure_publication_snapshot":
+        containers.append(("publications", record.get("publications", {})))
+    for label, context in (
+        ("context", record.get("context", {})),
+        ("first_failure.context", (record.get("first_failure") or {}).get("context", {})),
+    ):
+        if isinstance(context, dict):
+            containers.extend((label + "." + name, context.get(name, {}))
+                              for name in ("failure_publications", "last_accepted"))
+    for path, values in containers:
+        if not isinstance(values, dict):
+            continue
+        value = values.get(str(world), values.get(world))
+        if not isinstance(value, dict):
+            continue
+        step = value.get("step_number")
+        # A reset publication at step zero is not a missing accepted endpoint.
+        # Legacy context.tick or attempted/entry vectors are never promoted.
+        if type(step) is not int or step <= 0:
+            continue
+        time = float(value["time_s"])
+        if not math.isfinite(time) or time <= 0:
+            raise ValueError("failure publication needs a positive finite actual time")
+        state = value.get("state")
+        if state is None:
+            robots = value.get("robots")
+            if not isinstance(robots, dict) or len(robots) != 1:
+                raise ValueError("failure publication must identify the single actual G1 robot")
+            state = next(iter(robots.values()))
+        q = _vector(state["q"], 36, "published failure q")
+        v = _vector(state["v"], 35, "published failure v")
+        FloatingRobotState(q, v)  # Validate the saved storage boundary; no step.
+        yield dict(time_s=time, step_number=step, state=dict(q=state["q"], v=state["v"]),
+                   source_line=source_line, source_event=event, source_path=path)
+
+
+def _latest_publication(prior, current):
+    if prior is None:
+        return current
+    if current["step_number"] == prior["step_number"]:
+        if (current["time_s"] != prior["time_s"] or current["state"] != prior["state"]):
+            raise ValueError("conflicting actual failure publications at the same physical step")
+        return prior
+    if current["step_number"] > prior["step_number"]:
+        if current["time_s"] <= prior["time_s"]:
+            raise ValueError("failure publication counter/time ordering is inconsistent")
+        return current
+    if current["time_s"] >= prior["time_s"]:
+        raise ValueError("failure publication counter/time ordering is inconsistent")
+    return prior
 
 def export(args):
     source, scene_path, output = args.input.resolve(), args.scene.resolve(), args.output.resolve()
@@ -162,7 +227,8 @@ def export(args):
     prefix, suffix = template.split("__G1_REPLAY_DATA__")
     request = initialization = summary = failure = None
     asset = model = binding = writer = html_stream = summary_stream = None
-    pending = None
+    pending = failure_publication = None
+    extra_publication_frames = 0
     selected_frames = accepted_records = lines = logical_bytes = 0
     last_tick = last_emitted_tick = 0
     last_time = 0.0
@@ -191,6 +257,9 @@ def export(args):
                     if not isinstance(record, dict):
                         raise ValueError("journal records must be JSON objects")
                     event = record.get("event")
+                    if event in ("failure_publication_snapshot", "first_failure", "summary"):
+                        for candidate in _failure_publications(record, args.world, lines):
+                            failure_publication = _latest_publication(failure_publication, candidate)
                     if event == "request":
                         request = record
                     elif event == "initialization":
@@ -258,7 +327,7 @@ def export(args):
                 pass
             if writer is None:
                 raise ValueError("journal has no supported hash-bound initialization")
-            if accepted_records == 0:
+            if accepted_records == 0 and failure_publication is None:
                 trace_error = trace_error or dict(type="NoAcceptedStates", message="selected world has no accepted physical state")
             if pending is not None and pending[2] != last_emitted_tick:
                 record, line_number, tick = pending
@@ -268,22 +337,57 @@ def export(args):
                 stats = summary.get("statistics") or summary.get("statistics_by_world", {}).get(str(args.world), {})
                 duration = stats.get("accepted_duration_s")
                 count = stats.get("accepted_steps")
-                if (duration is not None and not math.isclose(float(duration), last_time, rel_tol=1e-12, abs_tol=1e-12)) or (
-                    count is not None and int(count) != accepted_records
+                statistics_bases = [(last_time, accepted_records)]
+                if failure_publication is not None and (
+                    failure_publication["step_number"] > last_tick and failure_publication["time_s"] > last_time
                 ):
-                    trace_error = trace_error or dict(type="SummaryStateMismatch", message="summary statistics differ from selected accepted records")
+                    statistics_bases.append((failure_publication["time_s"], failure_publication["step_number"]))
+                if not any(
+                    (duration is None or math.isclose(float(duration), time, rel_tol=1e-12, abs_tol=1e-12))
+                    and (count is None or int(count) == steps) for time, steps in statistics_bases
+                ):
+                    trace_error = trace_error or dict(type="SummaryStateMismatch", message="summary statistics differ from ordinary accepted records and actual failure publication")
                 requested = summary.get("requested_duration_s", summary.get("duration_s"))
                 if summary.get("success") is True and requested is not None and not math.isclose(
                     float(requested), last_time, rel_tol=1e-10, abs_tol=1e-10
                 ):
                     trace_error = trace_error or dict(type="IncompleteAcceptedWindow", message="reported success lacks the full requested accepted window")
+            normal_accepted_duration = last_time
+            normal_accepted_tick = last_tick
+            if failure_publication is not None:
+                published_step = failure_publication["step_number"]
+                published_time = failure_publication["time_s"]
+                if published_step > last_tick and published_time > last_time:
+                    evidence = {name: failure_publication[name] for name in
+                                ("source_line", "source_event", "source_path", "step_number", "time_s")}
+                    terminal = dict(time_s=published_time, state=failure_publication["state"],
+                                    support=None, load_time_s=None,
+                                    publication_without_env_transition=True,
+                                    publication_evidence=evidence)
+                    writer.write("," + _json(_frame(asset, model, terminal,
+                                 failure_publication["source_line"], published_step)))
+                    selected_frames += 1
+                    extra_publication_frames = 1
+                    last_time, last_tick = published_time, published_step
+                elif published_step == last_tick:
+                    expected_state = None if pending is None else {
+                        "q": pending[0]["state"]["q"], "v": pending[0]["state"]["v"]}
+                    if published_time != last_time or failure_publication["state"] != expected_state:
+                        trace_error = trace_error or dict(type="ConflictingPublication", message="failure snapshot disagrees with the ordinary accepted record")
+                elif published_step > last_tick or published_time >= last_time:
+                    trace_error = trace_error or dict(type="PublicationOrdering", message="failure snapshot counter and accepted time disagree")
             final_stat = source.stat()
             unchanged = (initial_stat.st_size, initial_stat.st_mtime_ns) == (final_stat.st_size, final_stat.st_mtime_ns)
             complete = summary is not None and trace_error is None and unchanged and logical_complete
             metadata = dict(
                 world=args.world, stride_physical_ticks=args.stride,
                 selected_frames=selected_frames, accepted_records=accepted_records,
-                actual_accepted_duration_s=last_time, last_accepted_physical_tick=last_tick,
+                actual_accepted_duration_s=last_time, actual_published_duration_s=last_time,
+                last_accepted_physical_tick=last_tick,
+                ordinary_accepted_duration_s=normal_accepted_duration,
+                ordinary_accepted_physical_tick=normal_accepted_tick,
+                extra_failure_publication_frames=extra_publication_frames,
+                failure_publication=failure_publication,
                 journal_summary_present=summary is not None, journal_complete=complete,
                 reported_success=None if summary is None else summary.get("success"),
                 first_failure=failure, trace_error=trace_error,
@@ -293,7 +397,7 @@ def export(args):
                             decoded_hash_complete=logical_complete, unchanged_during_export=unchanged,
                             processed_lines=lines), scene=binding,
                 geometry_source="static hash-bound model and saved actual q/v only",
-                frame_selection="initial, every Nth accepted physical tick, final accepted",
+                frame_selection="initial, every Nth ordinary accepted tick, final ordinary accepted, strictly later actual failure publication",
                 visual_fields="saved actual q/v and full support plus derived visual FK; all site/command/policy details remain in the unmodified original journal",
                 force_display="input-state sampled force; resultant arrows at accepted foot origins are debug anchors, not actual application points",
                 reference_motion_loaded=False, physics_advanced=False)

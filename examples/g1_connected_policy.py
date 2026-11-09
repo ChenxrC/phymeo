@@ -185,6 +185,18 @@ def run(args, journal):
             try:
                 result = runner.step()
             except Exception:
+                # evaluate() may retain a real endpoint before an automatic reset
+                # or reset observer fails. Preserve it before reading the current
+                # backend, which may already expose a rebuilt step-zero scene.
+                if task.last_transition:
+                    endpoints = {key: {
+                        "step_number": item["reading"].step_number,
+                        "time_s": item["reading"].time_s,
+                        "state": original.state_record(item["reading"].robots[0, original.ROBOT]),
+                    } for key, item in task.last_transition.items()}
+                    journal.context["last_accepted"] = endpoints
+                    journal.append("physical_publication", publications=endpoints,
+                                   environment_transition=False)
                 try:
                     publications = {key: {
                         "step_number": reading.step_number, "time_s": reading.time_s,

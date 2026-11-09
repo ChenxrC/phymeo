@@ -76,7 +76,9 @@ def _model_copy(model):
         if hasattr(model, name):
             actuator_fields[name] = _owned(getattr(model, name), np.float64)
     owned = FloatingRobotModel(
-        root, model.root_com_m, children,
+        root,
+        model.root_com_m,
+        children,
         root_inertia_frame_xyzw=model.root_inertia_frame_xyzw,
         **actuator_fields,
     )

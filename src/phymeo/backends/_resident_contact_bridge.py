@@ -110,7 +110,7 @@ class ContactShapeFrame:
         shape = _shape(self.shape)
         points = _owned(self.world_points_m, (len(shape.vertex_ids), 3), "world material points")
         group = (
-            None if self.group_index is None else _integer(self.group_index, "group index", 0, 16)
+            None if self.group_index is None else _integer(self.group_index, "group index", 0, 32)
         )
         values = {
             name: _owned(getattr(self, name), (3,), name)

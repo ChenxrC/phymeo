@@ -36,7 +36,9 @@ def _coordinates(asset):
     tree = asset.tree
     for term in ("joint_armature", "joint_damping"):
         if np.any(getattr(tree.model, term, 0)):
-            raise ValueError("floating affine effective actuator terms require reduced damping support")
+            raise ValueError(
+                "floating affine effective actuator terms require reduced damping support"
+            )
     if tree.model.children is None:
         raise ValueError("floating affine needs a nonempty physical child tree")
     return compile_mimic_coordinates(

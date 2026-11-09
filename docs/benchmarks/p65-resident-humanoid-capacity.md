@@ -1,5 +1,20 @@
 # H1 bounded 29-joint resident capacity and passive actuators
 
+## Parent execution, 2026-11-09
+
+The seven focused cases passed in both TYX interpret (50.79 s) and CUDA
+(8.52 s). They include full 35-coordinate dynamics for an actuated 29-joint
+tree, N=32 storage/bounds/restore, N=33 rejection, and actuator identity.
+Two adjacent ordinary/affine floating response cases additionally passed per
+backend after the shared gain-width change. Exact-file Ruff checks passed;
+the parent formatter changed five author files. Evidence is in
+`artifacts/p65-h1-20261109-01`, tasks 09–12 and 16–17.
+
+This accepts the bounded device mechanics and declarations exercised here;
+it does not establish G1 balance, device foot friction, unbounded capacity or
+large-environment throughput. Nonzero affine actuator terms remain unsupported.
+The following author handoff is historical.
+
 **AUTHORING_ONLY / UNEXECUTED.** This is an implementation/test handoff at base `666dd66184869ff36401551abcd0904e7564128a`, branch `codex/h1-device-capacity`. No project import, collection, numerical calculation, pytest, lint, formatter, compile, build, install or profile was run. Only source inspection, file IO and Git checks were performed. The parent owns the single execution queue and the HOST actuator model integration.
 
 ## Scope and storage contract

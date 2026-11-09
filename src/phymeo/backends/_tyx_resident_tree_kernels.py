@@ -1,6 +1,6 @@
 """Full fixed-root R/P tree mechanics in persistent TYX arrays.
 
-Each device lane owns one heterogeneous tree. All loops use its real n<=16;
+Each device lane owns one heterogeneous tree. All loops use its real n<=32;
 there is no asset-specialized topology, HOST dynamics rescue or per-joint model.
 The owner alone publishes after all passes and status reads succeed.
 """

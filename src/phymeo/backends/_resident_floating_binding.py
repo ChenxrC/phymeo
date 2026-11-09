@@ -41,9 +41,9 @@ class ResidentFloatingTreeBinding:
         if (
             isinstance(self.group_index, (bool, np.bool_))
             or not isinstance(self.group_index, Integral)
-            or not 0 <= self.group_index <= 16
+            or not 0 <= self.group_index <= 32
         ):
-            raise ValueError("floating binding group must be a body index in [0,17)")
+            raise ValueError("floating binding group must be a body index in [0,33)")
         object.__setattr__(self, "world", int(self.world))
         object.__setattr__(self, "group_index", int(self.group_index))
         object.__setattr__(self, "local_points_m", _points(self.local_points_m))

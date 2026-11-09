@@ -38,7 +38,7 @@ def resident_tree_bounds(
             last = offsets[shape + 1]
             stamp[shape, 0] = 1
             stamp[shape, 1] = ticks[slot]
-            if group < 0 or group >= n or n < 1 or n > 16 or first >= last:
+            if group < 0 or group >= n or n < 1 or n > 32 or first >= last:
                 stamp[shape, 0] = 0
             else:
                 radius = geometry[shape, 0]

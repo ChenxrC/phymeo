@@ -16,7 +16,7 @@ from ..dynamics.rotation import quaternion_matrix
 from ..solvers.driven_robot import DrivenRobotProgram
 from ._world_step_layout import as_fp32, world_key
 
-MAX_TREE_JOINTS = 16
+MAX_TREE_JOINTS = 32
 TREE_COORDINATE_LIMIT = 4096.0
 TREE_STATE_WIDTH = 7
 TREE_COMMAND_WIDTH = 10
@@ -262,7 +262,7 @@ def compile_tree_physical(model):
     )
     n = model.dof_count
     if not 1 <= n <= MAX_TREE_JOINTS:
-        raise ValueError("resident tree joint count must be in [1,16]")
+        raise ValueError("resident tree joint count must be in [1,32]")
     # Every root retains its real installation relative to one fixed anchor.
     anchor64 = np.array(model.joint_position[0], copy=True)
     offsets = np.array(model.joint_position, copy=True)

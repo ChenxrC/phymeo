@@ -17,7 +17,7 @@ from ..solvers.floating_tree import FloatingRobotInputs
 from ._resident_tree_world import _nested, _owned, tree_model_token
 from ._world_step_layout import as_fp32, world_key
 
-MAX_FLOATING_JOINTS = 16
+MAX_FLOATING_JOINTS = 32
 FLOATING_COORDINATE_LIMIT = 4096.0
 
 
@@ -71,8 +71,14 @@ def _model_copy(model):
         )
         if not np.array_equal(children.gravity, root.gravity):
             raise ValueError("floating root and children must share world gravity")
+    actuator_fields = {}
+    for name in ("joint_armature", "joint_damping"):
+        if hasattr(model, name):
+            actuator_fields[name] = _owned(getattr(model, name), np.float64)
     owned = FloatingRobotModel(
-        root, model.root_com_m, children, root_inertia_frame_xyzw=model.root_inertia_frame_xyzw
+        root, model.root_com_m, children,
+        root_inertia_frame_xyzw=model.root_inertia_frame_xyzw,
+        **actuator_fields,
     )
     # Preserve the original validated declaration token: do not repeatedly round
     # an already normalized principal frame when copying or compiling.
@@ -86,7 +92,7 @@ def floating_model_token(model):
     """Original FP64 physical identity, independent of initial pose and controls."""
     if not isinstance(model, FloatingRobotModel):
         raise TypeError("floating model identity needs FloatingRobotModel")
-    return (
+    token = (
         "floating_model_v1",
         _nested(model.root.inverse_mass),
         _nested(model.root.inertia_diagonal),
@@ -95,6 +101,12 @@ def floating_model_token(model):
         _nested(model.root_inertia_frame_xyzw),
         () if model.children is None else tree_model_token(model.children),
     )
+    n = model.body_count - 1
+    armature = np.asarray(getattr(model, "joint_armature", np.zeros(n)))
+    damping = np.asarray(getattr(model, "joint_damping", np.zeros(n)))
+    if np.any(armature) or np.any(damping):
+        return (*token, ("effective_joint_actuators_v1", _nested(armature), _nested(damping)))
+    return token
 
 
 def _coordinate(value, name, shape):
@@ -121,7 +133,7 @@ class FloatingTreeInputs:
     def __post_init__(self):
         raw = np.asarray(self.drive)
         if raw.ndim != 2 or raw.shape[1] != 3 or not 0 <= len(raw) <= MAX_FLOATING_JOINTS:
-            raise ValueError("floating drive must have shape (n,3), 0<=n<=16")
+            raise ValueError("floating drive must have shape (n,3), 0<=n<=32")
         n = len(raw)
         if not isinstance(self.external, FloatingRobotInputs):
             raise TypeError("floating external must be FloatingRobotInputs")
@@ -151,7 +163,7 @@ class FloatingRobotTree:
         model = _model_copy(self.model)
         n = model.body_count - 1
         if not 0 <= n <= MAX_FLOATING_JOINTS:
-            raise ValueError("floating scalar joint count must be in [0,16]")
+            raise ValueError("floating scalar joint count must be in [0,32]")
         if not isinstance(self.state, FloatingRobotState):
             raise TypeError("floating initial state must be FloatingRobotState")
         state = FloatingRobotState(self.state.q, self.state.v)
@@ -284,6 +296,8 @@ class FloatingTreeWorldSpec:
     com: np.ndarray
     inertia: np.ndarray
     inertia_frame: np.ndarray
+    joint_armature: np.ndarray
+    joint_damping: np.ndarray
     gravity: np.ndarray
     kp: np.ndarray
     kd: np.ndarray
@@ -465,6 +479,8 @@ def compile_floating_tree_world(spec):
         packed(com, "COM"),
         packed(inertia, "inertia"),
         packed(frames, "inertia frames"),
+        packed(np.asarray(getattr(model, "joint_armature", np.zeros(n))), "joint armature"),
+        packed(np.asarray(getattr(model, "joint_damping", np.zeros(n))), "joint damping"),
         packed(model.root.gravity, "gravity"),
         _owned(spec.kp),
         _owned(spec.kd),

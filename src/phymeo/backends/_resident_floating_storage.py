@@ -98,8 +98,8 @@ class FloatingTreeGeometryView:
 class FloatingTreeDeviceStorage:
     """B=n+1 bodies, D=n+6 velocities and n motors; no dummy program or root motor.
 
-    meta int32[T,4] stores global slot,n,delay,budget. properties[T,B,16]
-    stores offset3,axis3,COM3,I3,mass,kp,kd,cap; root has no gains. Root state
+    meta int32[T,4] stores global slot,n,delay,budget. properties[T,B,18]
+    stores offset3,axis3,COM3,I3,mass,kp,kd,cap,armature,passive damping; root has no gains. Root state
     [T,13], child state[T,max(1,n),7], generalized load[T,D], FK[T,B,18],
     COM/world twists[T,B,6] and energy[T] are all paired by one active index.
     """
@@ -157,7 +157,7 @@ class FloatingTreeDeviceStorage:
         parents = np.full((t, b), -1, np.int32)
         kinds = np.full((t, b), 2, np.int32)
         properties, zero, principal = (
-            np.zeros((t, b, 16), np.float32),
+            np.zeros((t, b, 18), np.float32),
             np.zeros((t, b, 9), np.float32),
             np.zeros((t, b, 9), np.float32),
         )
@@ -181,6 +181,8 @@ class FloatingTreeDeviceStorage:
             ):
                 properties[r, :size, start : start + 3] = values
             properties[r, :size, 12] = spec.mass
+            properties[r, 1:size, 16] = spec.joint_armature
+            properties[r, 1:size, 17] = spec.joint_damping
             for column, values in ((13, spec.kp), (14, spec.kd), (15, spec.cap)):
                 properties[r, 1:size, column] = values
             zero[r, :size] = spec.zero_rotation.reshape(size, 9)
@@ -209,8 +211,9 @@ class FloatingTreeDeviceStorage:
 
             self.meta, self.parents, self.kinds = put(meta), put(parents), put(kinds)
             self.properties, self.zero, self.principal = put(properties), put(zero), put(principal)
-            gains = np.zeros((t, n, 3), np.float32)
-            gains[:, : self.nmax] = properties[:, 1:b, 13:16]
+            gains = np.zeros((t, n, 4), np.float32)
+            gains[:, : self.nmax, :3] = properties[:, 1:b, 13:16]
+            gains[:, : self.nmax, 3] = properties[:, 1:b, 17]
             self.motor_gains = put(gains)
             self.physical_root_com = put(properties[:, 0, 6:9].copy())
             self.gravity, self.anchor = put(gravity), put(anchor)

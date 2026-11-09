@@ -71,7 +71,7 @@ class ResidentTreeBinding:
             or not isinstance(group, Integral)
             or not 0 <= group < MAX_TREE_JOINTS
         ):
-            raise ValueError("tree binding group must be a moving group index in [0,16)")
+            raise ValueError("tree binding group must be a moving group index in [0,32)")
         object.__setattr__(self, "world", int(self.world))
         object.__setattr__(self, "group_index", int(group))
         object.__setattr__(self, "local_points_m", _points(self.local_points_m))

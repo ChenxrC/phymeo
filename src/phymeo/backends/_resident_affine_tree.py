@@ -158,8 +158,8 @@ class AffineRobotTree:
     def __post_init__(self):
         coordinates = _coordinates(self.asset)
         n, k = coordinates.matrix.shape
-        if not 1 <= k < n <= 16:
-            raise ValueError("affine physical joint count must satisfy 1<=K<N<=16")
+        if not 1 <= k < n <= 32:
+            raise ValueError("affine physical joint count must satisfy 1<=K<N<=32")
         if not isinstance(self.state, RobotState):
             raise TypeError("affine state must be an independent RobotState")
         if np.asarray(self.state.q).shape != (k,) or np.asarray(self.state.v).shape != (k,):
@@ -390,8 +390,8 @@ def compile_affine_tree_world(world):
     physical = dict(compile_tree_physical(asset.tree.model))
     n, k = physical.pop("n"), len(coordinates.joint_names)
     model_token, joint_types = physical.pop("model_token"), physical.pop("joint_types")
-    if not 1 <= k < n <= 16:
-        raise ValueError("affine physical joint count must satisfy 1<=K<N<=16")
+    if not 1 <= k < n <= 32:
+        raise ValueError("affine physical joint count must satisfy 1<=K<N<=32")
     graph_token = affine_model_token(asset)
     if graph_token != world._graph_token:
         raise ValueError("affine source model/graph changed after world construction")

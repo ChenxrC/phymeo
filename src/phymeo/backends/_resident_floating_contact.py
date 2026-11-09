@@ -128,7 +128,7 @@ def read_floating_contact_packet(plan, storage, worlds, bank):
         row, spec = storage.rows[world], storage.specs[world]
         n, bodies, dofs = spec.n, spec.b, spec.d
         slot = batch._slots[world]
-        if not (0 <= n <= 16 and bodies == n + 1 and dofs == n + 6):
+        if not (0 <= n <= 32 and bodies == n + 1 and dofs == n + 6):
             raise ValueError("floating contact physical B/D/N mismatch")
         if not 0 <= slot < len(ticks) or int(ticks[slot]) < 0:
             raise ValueError("floating contact world has an invalid global tick slot")
@@ -256,7 +256,7 @@ def floating_contact_diagnostics(storage, worlds, arrays):
     for world in worlds:
         row, spec = storage.rows[world], storage.specs[world]
         n, b, d = spec.n, spec.b, spec.d
-        if not (0 <= n <= 16 and b == n + 1 and d == n + 6):
+        if not (0 <= n <= 32 and b == n + 1 and d == n + 6):
             raise ValueError("floating contact diagnostic B/D/N mismatch")
         info, diag = values["info"][row], values["diag"][row]
         if int(info[2]) != 0:

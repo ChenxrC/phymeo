@@ -38,7 +38,7 @@ def resident_floating_bounds(
             last = offsets[shape + 1]
             stamp[shape, 0] = 1
             stamp[shape, 1] = ticks[slot]
-            if n < 0 or n > 16 or group < 0 or group > n or first >= last:
+            if n < 0 or n > 32 or group < 0 or group > n or first >= last:
                 stamp[shape, 0] = 0
             else:
                 radius = geometry[shape, 0]

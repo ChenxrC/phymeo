@@ -34,6 +34,9 @@ def _coordinates(asset):
     if not isinstance(asset, FloatingMimicRobotAsset):
         raise TypeError("FloatingAffineRobotTree needs a FloatingMimicRobotAsset")
     tree = asset.tree
+    for term in ("joint_armature", "joint_damping"):
+        if np.any(getattr(tree.model, term, 0)):
+            raise ValueError("floating affine effective actuator terms require reduced damping support")
     if tree.model.children is None:
         raise ValueError("floating affine needs a nonempty physical child tree")
     return compile_mimic_coordinates(
@@ -83,8 +86,8 @@ class FloatingAffineTreeInputs:
             raise TypeError("floating affine external must be full FloatingRobotInputs")
         raw = np.asarray(self.drive)
         n = len(self.external.effort)
-        if raw.ndim != 2 or raw.shape[1] != 3 or not 1 <= len(raw) < n <= 16:
-            raise ValueError("floating affine drive needs (K,3), 1<=K<n<=16")
+        if raw.ndim != 2 or raw.shape[1] != 3 or not 1 <= len(raw) < n <= 32:
+            raise ValueError("floating affine drive needs (K,3), 1<=K<n<=32")
         values = []
         for name, shape in (("effort", (n,)), ("force", (n + 1, 3)), ("torque", (n + 1, 3))):
             value = as_fp32(getattr(self.external, name), "floating affine " + name, shape)
@@ -113,8 +116,8 @@ class FloatingAffineRobotTree:
     def __post_init__(self):
         coordinates = _coordinates(self.asset)
         n, k = coordinates.matrix.shape
-        if not 1 <= k < n <= 16:
-            raise ValueError("floating affine must satisfy 1<=K<n<=16")
+        if not 1 <= k < n <= 32:
+            raise ValueError("floating affine must satisfy 1<=K<n<=32")
         if not isinstance(self.state, FloatingRobotState):
             raise TypeError("floating affine state must be independent FloatingRobotState")
         if self.state.q.shape != (7 + k,) or self.state.v.shape != (6 + k,):

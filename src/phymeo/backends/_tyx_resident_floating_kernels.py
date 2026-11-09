@@ -194,6 +194,11 @@ def floating_motion_energy(
             for a in tx.static_range(6):
                 if not tx.isfinite(twist[w, body, a]):
                     flags[w] = 0
+        for motor in range(n):
+            armature = properties[w, motor + 1, 16]
+            if armature > 0.0:
+                rate = state[w, motor, 1]
+                total = total + ((armature * rate) * rate) * 0.5
         energy[w] = total
         if not tx.isfinite(total) or total < 0.0:
             flags[w] = 0
@@ -405,6 +410,10 @@ def floating_mechanics(
                                 lb, _mul(inertial[w, body, j * 3 + k], angular[w, body, j, b])
                             )
                         value = _add(value, _mul(properties[w, body, 9 + k], _mul(la, lb)))
+                if a == b and a >= 6:
+                    armature = properties[w, a - 5, 16]
+                    if armature > 0.0:
+                        value = _add(value, armature)
                 mass[w, a, b] = value
                 mass[w, b, a] = value
             bias = 0.0
@@ -427,6 +436,10 @@ def floating_mechanics(
                             _mul(angular[w, body, k, a], loads[w, body, 3 + k]),
                         ),
                     )
+            if a >= 6:
+                passive_damping = properties[w, a - 5, 17]
+                if passive_damping > 0.0:
+                    bias = _add(bias, _mul(passive_damping, state[w, a - 6, 1]))
             vector[w, a, 0] = bias
             vector[w, a, 1] = external
             vector[w, a, 4] = 0.0
@@ -481,10 +494,17 @@ def floating_solve(
             for j in range(d):
                 factor[w, i, j] = 0.0
                 mobility[w, i, j] = 0.0
+        # M is physical inertia; the step response uses M+hD for passive damping.
+        passive = 0
+        for motor in range(n):
+            if motor_gains[w, motor, 3] > 0.0:
+                passive = 1
         # Full D Cholesky/inverse. Only the true n motors are optimized below.
         for i in range(d):
             for j in range(i + 1):
                 value = mass[w, i, j]
+                if passive == 1 and i == j and i >= 6:
+                    value = _add(value, _mul(h, motor_gains[w, i - 6, 3]))
                 for k in range(j):
                     value = _add(value, -_mul(factor[w, i, k], factor[w, j, k]))
                 if i == j:
@@ -653,6 +673,10 @@ def floating_solve(
                     max_rhs = tx.max(max_rhs, tx.abs(rhs))
                     equation = -rhs
                     row_norm = 0.0
+                    if passive == 1 and i >= 6:
+                        hd = _mul(h, motor_gains[w, i - 6, 3])
+                        equation = _add(equation, _mul(hd, delta))
+                        row_norm = hd
                     for j in range(d):
                         row_norm = _add(row_norm, tx.abs(mass[w, i, j]))
                         equation = _add(
@@ -682,16 +706,44 @@ def floating_solve(
         if code == 0 and eligible == 0:
             code = 4
         if code == 0:
+            # Report continuous acceleration against physical M, not the
+            # implicit step matrix. Reuse factor/work only after v+ is fixed.
+            if passive == 1:
+                for i in range(d):
+                    for j in range(i + 1):
+                        value = mass[w, i, j]
+                        for k in range(j):
+                            value = _add(value, -_mul(factor[w, i, k], factor[w, j, k]))
+                        if i == j:
+                            if not tx.isfinite(value) or value <= 0.0:
+                                code = 1
+                                factor[w, i, j] = 1.0
+                            else:
+                                factor[w, i, j] = tx.sqrt(value)
+                        else:
+                            factor[w, i, j] = _div(value, factor[w, j, j])
+                for i in range(d):
+                    value = _add(_add(vector[w, i, 2], vector[w, i, 1]), -vector[w, i, 0])
+                    for j in range(i):
+                        value = _add(value, -_mul(factor[w, i, j], vector[w, j, 10]))
+                    vector[w, i, 10] = _div(value, factor[w, i, i])
+                for i in range(d - 1, -1, -1):
+                    value = vector[w, i, 10]
+                    for j in range(i + 1, d):
+                        value = _add(value, -_mul(factor[w, j, i], vector[w, j, 3]))
+                    vector[w, i, 3] = _div(value, factor[w, i, i])
             for i in range(d):
-                acceleration = 0.0
-                for j in range(d):
-                    acceleration = _add(
-                        acceleration,
-                        _mul(
-                            mobility[w, i, j],
-                            _add(_add(vector[w, j, 2], vector[w, j, 1]), -vector[w, j, 0]),
-                        ),
-                    )
+                acceleration = vector[w, i, 3]
+                if passive == 0:
+                    acceleration = 0.0
+                    for j in range(d):
+                        acceleration = _add(
+                            acceleration,
+                            _mul(
+                                mobility[w, i, j],
+                                _add(_add(vector[w, j, 2], vector[w, j, 1]), -vector[w, j, 0]),
+                            ),
+                        )
                 vector[w, i, 3] = acceleration
                 next_applied[w, i] = _add(vector[w, i, 1], vector[w, i, 2])
                 if not tx.isfinite(acceleration) or not tx.isfinite(next_applied[w, i]):

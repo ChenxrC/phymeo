@@ -120,7 +120,7 @@ class FloatingAffineTreeDeviceStorage:
         indices, reverse = np.zeros((t, r, 2), np.int32), np.zeros((t, r), np.int32)
         values = np.zeros((t, r, 2), np.float32)
         full_limits, limits = np.zeros((t, n, 3), np.float32), np.zeros((t, k, 3), np.float32)
-        gains, root_com = np.zeros((t, k, 3), np.float32), np.zeros((t, 3), np.float32)
+        gains, root_com = np.zeros((t, k, 4), np.float32), np.zeros((t, 3), np.float32)
         state, applied = np.zeros((t, k, 7), np.float32), np.zeros((t, dr), np.float32)
         drive, effort, loads = (
             np.zeros((t, k, 3), np.float32),

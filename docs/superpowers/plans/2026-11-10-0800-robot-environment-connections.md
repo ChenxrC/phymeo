@@ -57,4 +57,8 @@
 
 ## 执行记录
 
+02:25增补：N2/N3纯作者检查点已提前交接，尚未执行；利用长舞蹈独占执行槽期间的作者余量，追加**可选N4训练器连接**。按RSL-RL官方VecEnv/OnPolicyRunner文档和5.5.2接口作者适配，不自行发明PPO。先支持明确HOST拷贝的TensorDict边界，保留final observation/timeout，原NumPy接口不变。固定两个简单真实机器人任务、固定训练预算与未训练/训练后同条件评估；checkpoint保存/载入验证。只有核心连接与G1验证完成、安装和时间余量足够时才串行执行；否则保留UNEXECUTED，不能挤占完整舞蹈与架构交付。Torch/RSL-RL可选隔离环境，不更改TYX pin或核心依赖。
+
+调研入口：[官方环境接口](https://github.com/leggedrobotics/rsl_rl/blob/main/rsl_rl/env/vec_env.py)、[官方训练/保存/载入流程](https://leggedrobotics.github.io/rsl_rl/guide/overview.html)。该适配不是零拷贝或大规模GPU训练完成。
+
 启动前状态与后续任务收据保存在 `artifacts/p65-connections-20261110-0800-01`，每项实际结果回填本节。

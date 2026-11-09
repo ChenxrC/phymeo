@@ -83,10 +83,12 @@ reference为独立NumPy/stdlib声明/有限公式/材料检查，不import新产
 - [x] C11正式接受和释放；案例/API提案全文审阅、父来源接缝裁定。
 - [ ] 原robot先4身份tests-first checkpoint，原RD随后并行产品作者；父真实RED只一次。
 - [ ] final交叉源码review/NEW精确导入；首valid Ruff/format原错误留证，必要最小修复后静态。
-- [ ] 原4身份最小interpret→CUDA，随后非零余16→有限/协变→近零/域→协议/额外参数；已绿同源节点不重跑。
-- [ ] 核心通过后W32 sparse/dense，每端两节点；实际memory/launch/copy报告，不猜收益。
-- [ ] 同一几何的pinned Newton独立原生短参照、源码外新wheel、只读同次保存审计后置另授具体NEW文件/固定输出，不能仅hash替代实际调用。
-- [ ] 更新正式范围与全景；K1完整patch，K2真实消费者随后各自冻结，未知缺口不抹去。
+- [x] 原4身份最小interpret→CUDA，随后非零余16→有限/协变→近零/域（含十个 Q01-touch）→协议/额外参数；已绿同源节点不重跑。142 份 gzip 未留存，未验收，见§12。
+- [x] 核心通过后W32 sparse/dense，每端两节点；实际memory/launch/copy报告，不猜收益。
+- [x] 同一几何的pinned Newton独立原生短参照、源码外新wheel、只读同次保存审计。范围见§12：四个首批正控，不是142，不能仅hash替代实际调用。
+- [x] 更新正式范围与全景。
+- [x] K1 范围已冻结，见 [device-convex-patch](2026-11-08-device-convex-patch.md)。未实施。
+- [ ] K2 真实消费者另冻，未知缺口不抹去。
 
 每次执行fresh entrypoint-aware guard，父唯一owner，真实foreign任务自然结束。保原所有首失败、无remote CI/no pin/no旧绿色组重跑。受影响adjacent旧入口只选少数能证旧默认未改的节点，冻结具体清单后一次执行，不整套C6–C11重来。runtime异常和geometry UNKNOWN分别记录。
 
@@ -137,3 +139,36 @@ get_goal实际返回null。父停止继续扩展/派工和项目执行，不建�
 
 父已全文读RD接口checkpoint d2c90e1（664行）；同次accepted ticks核验和FP32非零→零下溢分类两处已反馈作者，最终修订仍待交接，设备算法尚无执行。原142身份已预配至 artifacts/p65-generic-collision-20261107-01/k0-predeclared-execution-membership-v1.json（SHA256 235218b6600fc9160fc3619f9ac02f6e5dd26cd9bbc18e7cb74e4eeda851bc67）；分组4/16/59/38/8/15/2，最后两个W32后置。该清单来自冻结声明与作者参数文本，无collection或产品probe，不是142项通过。
 两作者已释放，父fresh Git确认两child clean：RD 21ac9932e9e351f6efaebb632ed40803b50480c2（精确原4NEW、schema/support/kernel/report）；robot c3f9de5f51bf694513885963f4da9c57a8e30362（精确原4NEW、两test/reference/report）。未将最终WIP导入父，不称CODE_READY。待恢复时先审全部最终增量：result.stats的attempt_delta嵌套键期待与当前平铺schema差异、EPA等深面的歧义判定、TYX分支降级/编译，以及三测试文件独立oracle/source/protocol全文核；142身份和保存basename作者确认保持。tick核与下溢修正仅作者声明已写，父尚未审最终增量或执行。所有已启动项目命令已结束，没有后继任务。
+
+## 12. 父执行范围（2026-11-08未验收）
+
+§11 的 11:24 保存点保留。同日晚间用户直接指令父执行，没有新建长期目标，也不把 K0 写成验收。父 HEAD 仍是 `9a05eac`。查询产品、测试、Newton/wheel/审计脚本和 `artifacts/p65-generic-collision-20261107-01/k0-closeout/` 都在工作区，尚未提交。
+
+解释器和 CUDA 各有一份 pytest 通过记录，合计 142 个身份：
+
+- 4：`K0-Q01-SS-sep`、`SS-overlap`、`CH-sep`、`CH-overlap`。
+- 16：SC、SB、SH、CC、CB、BB、BH、HH 的分离与重叠。
+- 10：`K0-Q01-{SS,SC,SB,SH,CC,CB,CH,BB,BH,HH}-touch`。这一组在其余身份之后补跑。解释器 10 passed / 3.71 秒，CUDA 10 passed / 16.57 秒，没有改代码。相触间隙落在容差带内时，未决可以通过，只要不报成分离。gzip 已删，没有逐条留下是已解出零间隙还是未决。
+- 9：Q02 有限特征。50：Q03 协变。12：Q06 近零带，SS/CH/HH 的 `g=±2**-10` 与 `±2**-20`。
+- 16：Q06 域声明。8：公开预检，0 次 query。15：Q08 协议，不含 W32。2：W32 稀疏与稠密。
+
+142 份 pytest gzip 随临时目录删除，没有留存；上面的通过记录来自当次 pytest 退出。审计原文写明不计数它们。审计写成时这 10 个 touch 还没跑，审计本身没有重跑。
+
+留在未提交源里的修正：重复支撑点发布当前最近点；EPA 面距保持有符号，面深不超过 −1e-4 的面不参与最近面搜索，重复且 reach−depth 大于 1e-3 时淘汰该面；两侧都是多面体且距离不超过 1e-5 时进入 EPA；圆核距离不超过 8e-7 记 `CORE_CONTAINMENT`；65 顶点在设备查询前变成 `ValueError`；`ConvexQueryCapacityExceeded` 从 `phymeo` 导出。已经通过的身份没有在这些修正之后重跑。SS 走解析段，CH 不是双侧多面体，后两条多面体修正不覆盖它们。
+
+W32 当次计数，两边相同的部分：容量 96、tile 32、查询分配 28、峰值 350980 字节，关闭后 live 为 0。查询打开时批次 `device_allocations` 69、`device_owned_bytes` 423224。稀疏 0 个宽相候选、查询启动 2、计划启动 4、批次提交 kernel 12。稠密 64 个候选、查询启动 6、计划启动 8、批次提交 kernel 16。两边 batch sync 都是 7。静态上传第一次查询 8 次、10884 字节，第二次只加 768 字节的 pair 索引；每次下载 25472 字节。0 个物理步。这些计数不是加速。
+
+Newton 1.7.0 短参照只跑四个首批正控。CPU 与 CUDA 各 `collide` 4 次，共 8 次，`within_1e_4_L` 各 4。shape gap 为 0，每个形状 margin 0.03 m，只为让 0.02 m 分离通过 AABB；`gjk_separation_cutoff` 仍开着。比较的是加回两个 shape margin 之后的间隙。CH 分离的绝对误差是 9.996e-5 m，刚落在 1e-4 m 门内。这不是 142 个身份的 Newton 对照，也不比较接触律、流形或性能。记录是 `k0-closeout/newton-short.json`。
+
+源码外 wheel 是 `phymeo-0.1.0a0-py3-none-any.whl`，SHA256 `fc337afbd5ae4dc1748c0b9f5094269c89650189e5a67558f1260613d0179c78`，1311131 字节。执行环境没有 pip，安装方式是把 wheel 解压到工作区外。`python -I -B` 只从该安装位置导入。解释器与 CUDA 各接受 4 次查询、拒绝 0 次，共 8 次接受，也只跑那四个身份。
+
+审计 schema `k0-saved-audit-v1`，状态 `complete-saved-evidence`，`errors` 为空。它核 Newton 记录、两份 wheel gzip，以及工作区、wheel 和安装树里这 6 个成员逐字节相同：`phymeo/__init__.py`、`backends/tyx_world_batch.py`、`_resident_convex_source.py`、`_device_convex_query.py`、`_tyx_convex_query_kernels.py`、`_tyx_convex_support.py`。它不重跑查询，也不覆盖其余包成员。
+
+驻留接触链的几何和法向律仍是 HOST。K0 是每对一个有限见证，不是完整接触斑、摩擦或受载步。身份队列已经两端跑完，仍未验收。K1 的范围已另文冻结，实现还没开始。K2 还没冻结。提交仍要另有用户指令。
+## 13. 2026-11-09 最终源码留档验收
+
+用户直接授权收束。默认 K0 distance/witness 当前位姿查询 **ACCEPTED**，见[正式报告](../../benchmarks/p65-device-convex-query-acceptance.md)。§12 原缺记录历史保留，不倒灌。
+
+最终集成源码经最小style修复后，interpret142/52.32s、CUDA142/213.71s均RAW0；284完整gzip按预声明身份留存于 artifacts/p65-k0-final-20261109-01。新wheel源码外两端各4接受/0拒绝；只读审计284份、440产品成员同源，RAW0。十touch每端9解出contact-band、1法向不唯一UNKNOWN，没有伪称全唯一法向。原Newton四身份/两端8调用限定复用。本轮不重跑其它已接受组。
+
+已有K1可选参数/核与测试作者内容没有作为K0验收范围；默认site_capacity=None。本次不推进K1/K2。后继优先级由[训练与G1舞蹈计划](2026-11-09-training-humanoid-priority.md)覆盖：先向量训练接口、真实29关节资产/策略、设备容量和必要接触能力，再大规模训练。

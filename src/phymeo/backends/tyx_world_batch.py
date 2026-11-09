@@ -429,6 +429,7 @@ class TyxWorldBatch:
         epa_vertex_capacity=64,
         epa_face_capacity=128,
         memory_limit_bytes=67108864,
+        site_capacity=None,
     ):
         """Prepare bounded device distances and bilateral material witnesses."""
         from ._device_convex_query import ConvexQueryPlan
@@ -443,6 +444,7 @@ class TyxWorldBatch:
             epa_vertex_capacity=epa_vertex_capacity,
             epa_face_capacity=epa_face_capacity,
             memory_limit_bytes=memory_limit_bytes,
+            site_capacity=site_capacity,
         )
 
     def convex_query(self, plan):

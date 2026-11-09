@@ -1,5 +1,6 @@
 """Explicit physical models and independently implemented simulation solvers."""
 
+from .backends._device_convex_query import ConvexQueryCapacityExceeded
 from .backends._resident_affine_binding import ResidentAffineTreeBinding
 from .backends._resident_affine_tree import AffineRobotTree
 from .backends._resident_collision_plan import ResidentSphereBinding, ResidentStaticBinding
@@ -465,6 +466,7 @@ __all__ = [
     "ResidentSliderBinding",
     "ResidentRevoluteBinding",
     "ResidentTreeBinding",
+    "ConvexQueryCapacityExceeded",
     "TyxWorldBatch",
     "TyxBatchedScene",
     "BatchedStepResult",

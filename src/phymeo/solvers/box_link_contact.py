@@ -1,10 +1,14 @@
-"""Finite round link against an oriented box, for capsule spines outside the box solid."""
+"""Finite round link against an oriented box with unique material separation witnesses."""
 
 from fractions import Fraction as F
 
 import numpy as np
 
 from .sphere_link_contact import _RigidLinkContacts
+
+
+class _AxisInsideBox(ValueError):
+    pass
 
 
 def _closest_span(start, end, half):
@@ -40,7 +44,7 @@ def _closest_span(start, end, half):
         elif dsq == best:
             first, last = min(first, u), max(last, v)
     if not best:
-        raise ValueError(
+        raise _AxisInsideBox(
             "capsule or sphere axis intersects the payload box; unique exterior separation unavailable"
         )
     if not any(direction):
@@ -51,7 +55,7 @@ def _closest_span(start, end, half):
 
 
 class BoxLinkContacts(_RigidLinkContacts):
-    """Free OBB versus finite capsules or spheres with a unique exterior separation normal."""
+    """Free OBB versus finite capsules or spheres with a unique separation normal."""
 
     def __init__(self, solids):
         super().__init__(solids)
@@ -126,6 +130,65 @@ class BoxLinkContacts(_RigidLinkContacts):
             )
 
 
+def _interior_span(start, end, half):
+    """Exact nearest facet of box minus segment, including finite support clipping.
+
+    The axis intersects the box, so zero belongs to this zonotope. Its generators
+    are the three box axes and the segment: pairwise cross products give every
+    facet ray. A tied escape direction remains unsupported, rather than choosing
+    an arbitrary impulse. Radius adds the same distance to every facet.
+    """
+    a, b, h = ([F(float(v)) for v in row] for row in (start, end, half))
+    d = [v - u for u, v in zip(a, b, strict=True)]
+    axes = [(F(1), F(0), F(0)), (F(0), F(1), F(0)), (F(0), F(0), F(1))]
+    cross = [(F(0), -d[2], d[1]), (d[2], F(0), -d[0]), (-d[1], d[0], F(0))]
+    rays = set()
+    for ray in axes + cross:
+        if not any(ray):
+            continue
+        scale = abs(next(v for v in ray if v))
+        for sign in (-1, 1):
+            rays.add(tuple(sign * v / scale for v in ray))
+    best, winners = None, []
+    for w in sorted(rays):
+        norm2 = sum(v * v for v in w)
+        da, db = (sum(v * x for v, x in zip(w, p, strict=True)) for p in (a, b))
+        height = sum(x * abs(v) for x, v in zip(h, w, strict=True)) - min(da, db)
+        if height < 0:
+            raise ValueError("axis/box interior separation predicate inconsistent")
+        score = height * height / norm2
+        if best is None or score < best:
+            best, winners = score, [(w, norm2, height, da, db)]
+        elif score == best:
+            winners.append((w, norm2, height, da, db))
+    if len(winners) != 1:
+        raise ValueError("capsule axis inside box has ambiguous minimum separation normals")
+    w, norm2, height, da, db = winners[0]
+    lo, hi = (F(0), F(0)) if da < db else (F(1), F(1)) if db < da else (F(0), F(1))
+    shift = [height * v / norm2 for v in w]
+    for x, delta, extent, offset in zip(a, d, h, shift, strict=True):
+        x += offset
+        if delta:
+            lower, upper = sorted(((-extent - x) / delta, (extent - x) / delta))
+            lo, hi = max(lo, lower), min(hi, upper)
+        elif abs(x) > extent:
+            raise ValueError("axis/box interior facet has no finite material witness")
+    if lo > hi:
+        raise ValueError("axis/box interior facet has no finite material witness")
+    if not any(d):
+        lo = hi = F(0)
+    if lo != hi and float(lo) == float(hi):
+        raise ValueError("distinct capsule material parameters are below output resolution")
+    us = (lo,) if lo == hi else (lo, hi)
+    direction = np.array([float(v) for v in w]) / np.sqrt(float(norm2))
+    distance = float(height) / np.sqrt(float(norm2))
+    sites = [
+        (float(u), np.array([float(x + u * v + s) for x, v, s in zip(a, d, shift, strict=True)]))
+        for u in us
+    ]
+    return direction, distance, sites
+
+
 def box_capsule_witnesses(center, R, half, world, radius, *, capsule_first):
     """Yield ordered material witnesses. Normal points from the first participant to the second.
 
@@ -151,7 +214,25 @@ def box_capsule_witnesses(center, R, half, world, radius, *, capsule_first):
     separation = np.maximum(np.minimum(a, b) - half, -half - np.maximum(a, b))
     if np.linalg.norm(np.maximum(separation, 0)) >= radius:
         return
-    us = _closest_span(a, b, half)
+    try:
+        us = _closest_span(a, b, half)
+    except _AxisInsideBox:
+        escape, distance, sites = _interior_span(a, b, half)
+        normal = -(R @ escape)
+        for u, closest in sites:
+            line = (1 - u) * world[0] + u * world[-1]
+            surface = line + radius * normal
+            skin = center + R @ closest
+            yield dict(
+                gap_m=-(radius + distance),
+                normal=normal if capsule_first else -normal,
+                first_surface=surface if capsule_first else skin,
+                second_surface=skin if capsule_first else surface,
+                axis_parameter=u,
+                weight=1 / len(sites),
+                axis_point=line,
+            )
+        return
     for u in us:
         axis = (1 - u) * a + u * b
         closest = np.clip(axis, -half, half)

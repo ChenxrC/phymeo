@@ -89,3 +89,15 @@ N7源码核对补充：public `tyx_world_batch.prepare_contacts`仅改过时fric
 在高body和非零μ各自独立物理留出均过后，原capacity作者仅NEW `examples/g1_resident_policy.py`，先源码核适用域/输入协议，再纯编码。复用原资产、原ONNX/154维协议/初始qv/限额、原球胶囊与有限地面；把同一29joint模型、真实geometry/group绑定、每h更新PD和接触载荷接到公共TyxWorldBatch/Env/PolicyRunner。案例协议保持在examples层，不动核心物理、旧G1例子、质量/h/pin/caps/物理门，不把HOST窄相说成GPU。
 
 父在图/报告/最终包优先完成后，若08:00前余量足够，只先单CUDA2秒、从原初态、h=.0005做真正受载策略短窗，首失败停止/保原请求、真实状态、力矩/力与mask；不降h/换姿态/关摩擦或改容差追结果。新后端是新运行，不重跑旧HOST已绿长窗。若作者发现任何模型/法向/控制语义不相容则先最小文本报告，不复制HOST解算替代设备。未执行则保UNEXECUTED；不影响已完成的HOST全动作交付，也不自动授完整设备20/131秒长窗。
+
+N8修正与存储：66在注册阶段因新示例把全部连杆误标同一body ID而失败，0物理步。父5bc3c380保留资产逐body/shape身份，地面另用不冲突ID，未改引擎歧义guard；67/68静态通过后启动69原CUDA2秒。当前生产者持唯一执行槽，依赖源码冻结。正式退出/关闭后才允许对69的完整JSONL做独立same-byte gzip事务，原hash/解压hash/大小、源再次未变与durable收据都通过后，精确移除冗余plain；不涉及其他run/旧TempJunction/字段删改，脚本`compress-closed-resident-g1.ps1`已准备但未执行。
+
+### 可选N9：学习器到真实接触的闭环留出
+
+N4两真实任务无环境接触；N2受载env与N7设备力学分别已通，仍需要一条真正含接触的学习轨迹。原actuator作者仅NEW `examples/train_contact_ppo.py`，复用原RSL-RL5.5.2/SceneBatchBackend/Env适配和学习/保存/重载方法，不改引擎、旧训练例子或已过门。
+
+预先固定：16个HOST原URDF竖直prismatic scene，mass按(.5,1)kg交替；sphere半径1/16、初始深度.003m，q0/v=±.02m/s交替，原gravity−9.81、有限盒地面；原RobotContactMaterial(k1000,c8,mu0)。h=1/128、horizon96，目标q按(-.004,-.008,-.012)m循环；实际动作clip[-1,1]×12N、原物理effort cap16N，joint范围±8m、速度128m/s以预声明最坏上抛域容纳，不作状态夹紧。观测实际q/.02、v/.5、goal/.02、mass；cost=((q-goal)/.02)^2+.01*(v/.5)^2+.001*实际effort²。
+
+固定seed20261110、100迭代×24rollout、原小PPO网络/优化配置、各192步同条件deterministic评估。要求actor实际改变、总体及每mass组cost均下降至少20%、实际公开接触载荷非零且双侧反作用可核、native checkpoint在新原世界重载复现；若没达门，原RAW1与数据保留，不改seed/预算/质量/目标/容差追结果。原真实载荷/时刻来自scene公开观察或contact_events，不根据目标编造力。
+
+父等69结束/释放后再唯一串行执行；预检依赖/实际代码与作者声明一致才启动。若08:00余量不足，保留UNEXECUTED。HOST PPO受载闭环不等于GPU PPO、大规模吞吐或G1从头训练。

@@ -79,3 +79,13 @@
 先保留正μ被拒的实际RED，再连通原law；HOST独立核Fn/Ft、切速分段、patch权重一次、双方共同作用点/力矩和实际功；interpret/CUDA各用有真实入步速度的floating偏置球及fixed rotor解析全M/J/运动，保存原请求与完整收据。保持分离无力和非法材料拒绝。只靠删guard不算通过，未执行项继续标明；若出现额外物理/审计矛盾先保首失败，不调质量/阈值追结果。源码变更后新wheel重新验证受影响能力，之前wheel收据保留原source binding。
 
 N5架构/结果优先；到08:00不启动新的长窗。设备站点力核、公开Torch缓冲/stream/epoch接口及单次发布分页仅完成调研，见两research文档，不画作已实现。
+
+N7源码核对补充：public `tyx_world_batch.prepare_contacts`仅改过时frictionless描述，无逻辑变更；旧`test_resident_tree_contact_transactions`中的“正μ必须拒绝”改为非canonical材料pair key负控，原wrong-law/owner/topology/cap不删。全功/双侧力矩/输入速度/finish检查均为原3D路径，保留原诊断而不是新增豁免。44实际RED已证首个正μHOST例先通过原patch/law字面向量，再被bridge旧admission拒绝。当前源变更仍需首静态、HOST完整新旧桥及两backend新例/受影响admission负控，不能凭源码检查标绿。
+
+06:16 N7实际通过：HOST完整新旧桥63项；interpret/CUDA各12项（两物理case各8连续接受步，加10个admission负控）；实际site cap0拒步保态与错owner仍拒。原Fn/Ft、全M/J、偏心力矩、入步速度、实际材料/作用点功均核对。仍为HOST几何/原HOST力律→设备响应，未做设备站点力核、卸载重入或G1设备窗口。
+
+### 可选N8：完整G1设备受载入口短留出
+
+在高body和非零μ各自独立物理留出均过后，原capacity作者仅NEW `examples/g1_resident_policy.py`，先源码核适用域/输入协议，再纯编码。复用原资产、原ONNX/154维协议/初始qv/限额、原球胶囊与有限地面；把同一29joint模型、真实geometry/group绑定、每h更新PD和接触载荷接到公共TyxWorldBatch/Env/PolicyRunner。案例协议保持在examples层，不动核心物理、旧G1例子、质量/h/pin/caps/物理门，不把HOST窄相说成GPU。
+
+父在图/报告/最终包优先完成后，若08:00前余量足够，只先单CUDA2秒、从原初态、h=.0005做真正受载策略短窗，首失败停止/保原请求、真实状态、力矩/力与mask；不降h/换姿态/关摩擦或改容差追结果。新后端是新运行，不重跑旧HOST已绿长窗。若作者发现任何模型/法向/控制语义不相容则先最小文本报告，不复制HOST解算替代设备。未执行则保UNEXECUTED；不影响已完成的HOST全动作交付，也不自动授完整设备20/131秒长窗。

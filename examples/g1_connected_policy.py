@@ -116,7 +116,10 @@ class G1Task:
         for key in keys:
             reading = after[key]
             row = reading.robots[0, original.ROBOT]
-            frame = min(round(reading.time_s / .02), len(self.motion["joint_pos"]) - 1)
+            # Match the standalone journal's held control-frame reference for
+            # this completed substep, without floating clock rounding.
+            frame = min((reading.step_number - 1) // self.decimation,
+                        len(self.motion["joint_pos"]) - 1)
             error = float(np.sqrt(np.mean((row.q[7:][self.o_from_p]
                                           - self.motion["joint_pos"][frame]) ** 2)))
             up = original.rotation(row.q[[6, 3, 4, 5]])[:, 2]
@@ -159,6 +162,7 @@ def run(args, journal):
         sources["policy.onnx.data"] = original.source_record(task.assets / "policy.onnx.data")
     journal.append("initialization", schema="g1-connected-policy-v1", sources=sources,
         initial_q=task.initial.q, initial_v=task.initial.v, dt_s=args.dt,
+        physical_joint_names=task.asset.joint_names,
         control_decimation=task.decimation, bodyweight_n=task.weight,
         criteria=original.CRITERIA, backend="HOST_scene_NumPy_CPU_ONNX",
         connection="SceneBatchBackend -> ResidentVectorEnv -> PolicyRunner")

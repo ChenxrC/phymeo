@@ -102,10 +102,16 @@ def state_from_motion(asset, motion, frame, policy_to_asset):
     offset = rotation @ asset.model.root_com_m
     # Same common translation as the already executed fixed-pose HOST/native check.
     translation = np.array([0.0, 0.0, 2.0])
-    q = np.r_[np.asarray(motion["body_pos_w"][frame, 0], dtype=np.float64) + translation,
-              xyzw, np.asarray(motion["joint_pos"][frame, policy_to_asset], dtype=np.float64)]
-    v = np.r_[origin_velocity + np.cross(omega, offset), omega,
-              np.asarray(motion["joint_vel"][frame, policy_to_asset], dtype=np.float64)]
+    q = np.r_[
+        np.asarray(motion["body_pos_w"][frame, 0], dtype=np.float64) + translation,
+        xyzw,
+        np.asarray(motion["joint_pos"][frame, policy_to_asset], dtype=np.float64),
+    ]
+    v = np.r_[
+        origin_velocity + np.cross(omega, offset),
+        omega,
+        np.asarray(motion["joint_vel"][frame, policy_to_asset], dtype=np.float64),
+    ]
     provenance = {
         "official_root_position": motion["body_pos_w"][frame, 0],
         "official_root_quaternion_wxyz": motion["body_quat_w"][frame, 0],
@@ -121,36 +127,58 @@ def state_from_motion(asset, motion, frame, policy_to_asset):
 
 def run_pose(asset, state, provenance, effort, frame, mode, cache_root, row):
     inputs = FloatingRobotInputs(effort, np.zeros((30, 3)), np.zeros((30, 3)))
-    row.update(stage="host_preparation", source_state=state, source_motion=provenance,
-               inputs=inputs, physical_model=asset.model)
+    row.update(
+        stage="host_preparation",
+        source_state=state,
+        source_motion=provenance,
+        inputs=inputs,
+        physical_model=asset.model,
+    )
     terms = floating_dynamics_terms(asset.model, state, inputs)
     host = step_floating_robot(asset.model, state, inputs, H)
-    row.update(host_entry_terms=terms, host_step=host,
-               host_entry_fk=floating_kinematics(asset.model, state),
-               host_entry_kinetic_energy_j=floating_kinetic_energy(asset.model, state))
+    row.update(
+        host_entry_terms=terms,
+        host_step=host,
+        host_entry_fk=floating_kinematics(asset.model, state),
+        host_entry_kinetic_energy_j=floating_kinetic_energy(asset.model, state),
+    )
     if not host.report.accepted:
         raise AssertionError(f"frame {frame}: HOST step rejected: {host.report.reason}")
     host_fk = floating_kinematics(asset.model, host.state)
     host_energy = floating_kinetic_energy(asset.model, host.state)
     row.update(host_accepted_fk=host_fk, host_accepted_kinetic_energy_j=host_energy)
-    tree = ph.FloatingRobotTree(asset.model, state, kp=np.zeros(29), kd=np.zeros(29),
-                                effort_limit=np.asarray(asset.effort_limit, dtype=np.float64))
+    tree = ph.FloatingRobotTree(
+        asset.model,
+        state,
+        kp=np.zeros(29),
+        kd=np.zeros(29),
+        effort_limit=np.asarray(asset.effort_limit, dtype=np.float64),
+    )
     command = tree.inputs(np.column_stack((np.zeros(29), np.zeros(29), effort)))
     row.update(command=command, declared_effort_limit=tree.effort_limit, stage="device_create")
     batch = None
     try:
-        batch = ph.TyxWorldBatch([(WORLD, tree)], mode, cache_root=cache_root / f"frame-{frame:04d}")
+        batch = ph.TyxWorldBatch(
+            [(WORLD, tree)], mode, cache_root=cache_root / f"frame-{frame:04d}"
+        )
         with batch:
             entry = batch.snapshot()[WORLD]
-            row.update(device_entry=entry, device_entry_fk=batch.tree_kinematics()[WORLD],
-                       device_entry_summary=batch.summary()[WORLD], stage="device_step")
+            row.update(
+                device_entry=entry,
+                device_entry_fk=batch.tree_kinematics()[WORLD],
+                device_entry_summary=batch.summary()[WORLD],
+                stage="device_step",
+            )
             batch.set_controls({WORLD: command})
             flags = batch.step(H)
             row.update(device_acceptance=flags, physical_steps=int(flags == {WORLD: True}))
-            row.update(device_accepted=batch.snapshot()[WORLD],
-                       device_diagnostic=batch.tree_diagnostics()[WORLD],
-                       device_accepted_fk=batch.tree_kinematics()[WORLD],
-                       device_accepted_summary=batch.summary()[WORLD], device_stats=batch.stats())
+            row.update(
+                device_accepted=batch.snapshot()[WORLD],
+                device_diagnostic=batch.tree_diagnostics()[WORLD],
+                device_accepted_fk=batch.tree_kinematics()[WORLD],
+                device_accepted_summary=batch.summary()[WORLD],
+                device_stats=batch.stats(),
+            )
             if flags != {WORLD: True}:
                 raise AssertionError(f"frame {frame}: resident physical step rejected")
             diagnostic = row["device_diagnostic"]
@@ -158,11 +186,17 @@ def run_pose(asset, state, provenance, effort, frame, mode, cache_root, row):
             accepted = row["device_accepted"]
             if diagnostic is None:
                 raise AssertionError(f"frame {frame}: accepted step has no physical diagnostic")
-            if (geometry.joint_count, geometry.body_count, geometry.velocity_count,
-                    geometry.configuration_count) != (29, 30, 35, 36):
+            if (
+                geometry.joint_count,
+                geometry.body_count,
+                geometry.velocity_count,
+                geometry.configuration_count,
+            ) != (29, 30, 35, 36):
                 raise AssertionError("G1 physical N/B/D/Q do not match 29/30/35/36")
             if entry.tick != 0 or accepted.tick != 1:
-                raise AssertionError("each source frame must independently reset and advance one step")
+                raise AssertionError(
+                    "each source frame must independently reset and advance one step"
+                )
             checks = {
                 "physical_mass": comparison(diagnostic.mass, terms.mass_matrix),
                 "physical_bias": comparison(diagnostic.bias, terms.bias),
@@ -171,13 +205,25 @@ def run_pose(asset, state, provenance, effort, frame, mode, cache_root, row):
                 "entry_v": comparison(entry.velocity, state.v, rtol=0, atol=STATE_ATOL),
                 "accepted_q": comparison(accepted.position, host.state.q, rtol=0, atol=STATE_ATOL),
                 "accepted_v": comparison(accepted.velocity, host.state.v, rtol=0, atol=STATE_ATOL),
-                "accepted_body_origins": comparison(geometry.link_position_m, host_fk.position, rtol=0, atol=STATE_ATOL),
-                "accepted_body_rotations": comparison(geometry.link_rotation, host_fk.rotation, rtol=0, atol=STATE_ATOL),
-                "accepted_body_com": comparison(geometry.com_position_m, host_fk.com_position, rtol=0, atol=STATE_ATOL),
-                "accepted_body_com_velocity": comparison(geometry.linear_velocity_m_s, host_fk.com_velocity),
-                "accepted_body_angular_velocity": comparison(geometry.angular_velocity_rad_s, host_fk.angular_velocity),
-                "kinetic_energy": comparison(np.array([row["device_accepted_summary"]["kinetic_energy_j"]]),
-                                               np.array([host_energy])),
+                "accepted_body_origins": comparison(
+                    geometry.link_position_m, host_fk.position, rtol=0, atol=STATE_ATOL
+                ),
+                "accepted_body_rotations": comparison(
+                    geometry.link_rotation, host_fk.rotation, rtol=0, atol=STATE_ATOL
+                ),
+                "accepted_body_com": comparison(
+                    geometry.com_position_m, host_fk.com_position, rtol=0, atol=STATE_ATOL
+                ),
+                "accepted_body_com_velocity": comparison(
+                    geometry.linear_velocity_m_s, host_fk.com_velocity
+                ),
+                "accepted_body_angular_velocity": comparison(
+                    geometry.angular_velocity_rad_s, host_fk.angular_velocity
+                ),
+                "kinetic_energy": comparison(
+                    np.array([row["device_accepted_summary"]["kinetic_energy_j"]]),
+                    np.array([host_energy]),
+                ),
                 "joint_drive": comparison(diagnostic.drive, effort, rtol=0, atol=STATE_ATOL),
             }
             row.update(stage="agreement_checks", checks=checks)
@@ -196,8 +242,11 @@ def run_pose(asset, state, provenance, effort, frame, mode, cache_root, row):
 def run(args, report):
     assets = args.assets.resolve(strict=True)
     path, motion_path = assets / "g1_primitive_actuated.xml", assets / "dance1_subject2.npz"
-    report["sources"] = {"mjcf": file_fact(path), "motion": file_fact(motion_path),
-                         "script": file_fact(__file__)}
+    report["sources"] = {
+        "mjcf": file_fact(path),
+        "motion": file_fact(motion_path),
+        "script": file_fact(__file__),
+    }
     asset = load_floating_mjcf(path)
     if asset.model.body_count != 30 or len(asset.joint_names) != 29:
         raise ValueError("expected the actual 29-joint G1 primitive asset")
@@ -207,16 +256,27 @@ def run(args, report):
         raise ValueError("the supplied G1 must retain actual armature and damping")
     motors = ET.parse(path).getroot().findall("actuator/motor")
     policy_names = tuple(motor.get("joint") for motor in motors)
-    if len(policy_names) != 29 or len(set(policy_names)) != 29 or set(policy_names) != set(asset.joint_names):
+    if (
+        len(policy_names) != 29
+        or len(set(policy_names)) != 29
+        or set(policy_names) != set(asset.joint_names)
+    ):
         raise ValueError("actuator-order official motion mapping is incomplete or ambiguous")
-    policy_to_asset = np.array([policy_names.index(name) for name in asset.joint_names], dtype=np.int64)
+    policy_to_asset = np.array(
+        [policy_names.index(name) for name in asset.joint_names], dtype=np.int64
+    )
     policy_effort = 0.2 * np.sin(np.arange(29) + 1)
     effort = policy_effort[policy_to_asset]
     if np.any(abs(effort) >= asset.effort_limit):
         raise ValueError("fixed declared effort must lie strictly within original caps")
-    report.update(imported_joint_names=asset.joint_names, official_motor_joint_order=policy_names,
-                  policy_index_for_asset_joint=policy_to_asset, official_order_effort=policy_effort,
-                  physical_joint_effort=effort, asset=asset)
+    report.update(
+        imported_joint_names=asset.joint_names,
+        official_motor_joint_order=policy_names,
+        policy_index_for_asset_joint=policy_to_asset,
+        official_order_effort=policy_effort,
+        physical_joint_effort=effort,
+        asset=asset,
+    )
     with np.load(motion_path, allow_pickle=False) as motion:
         for frame in FRAMES:
             row = {"frame": frame, "mode": args.mode, "stage": "prepare"}
@@ -233,13 +293,23 @@ def main():
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--cache-root", type=Path, required=True)
     args = parser.parse_args()
-    report = {"schema": "g1-h1-device-capacity-v1", "status": "running", "poses": [],
-              "comparison_kind": "device_host_implementation_agreement_not_independent_oracle",
-              "backend": args.mode, "dt_s": H, "declared_frames": FRAMES,
-              "python": sys.version, "platform": platform.platform(),
-              "tolerances": {"dynamics_rtol": DYNAMICS_RTOL, "dynamics_atol": DYNAMICS_ATOL,
-                             "state_absolute": STATE_ATOL},
-              "scope": "two independent free-flight single steps; no contacts or policy rollout"}
+    report = {
+        "schema": "g1-h1-device-capacity-v1",
+        "status": "running",
+        "poses": [],
+        "comparison_kind": "device_host_implementation_agreement_not_independent_oracle",
+        "backend": args.mode,
+        "dt_s": H,
+        "declared_frames": FRAMES,
+        "python": sys.version,
+        "platform": platform.platform(),
+        "tolerances": {
+            "dynamics_rtol": DYNAMICS_RTOL,
+            "dynamics_atol": DYNAMICS_ATOL,
+            "state_absolute": STATE_ATOL,
+        },
+        "scope": "two independent free-flight single steps; no contacts or policy rollout",
+    }
     failed = False
     # Reserve the output before physics. Re-running cannot erase a first failure.
     with args.output.open("x", encoding="utf-8") as stream:
@@ -247,16 +317,29 @@ def main():
             run(args, report)
         except Exception as exc:
             failed = True
-            report.update(status="failed", error_type=type(exc).__name__, error=str(exc),
-                          traceback=traceback.format_exc())
+            report.update(
+                status="failed",
+                error_type=type(exc).__name__,
+                error=str(exc),
+                traceback=traceback.format_exc(),
+            )
         report["physical_steps"] = sum(row.get("physical_steps", 0) for row in report["poses"])
         payload = json.dumps(encode(report), ensure_ascii=False, allow_nan=False, indent=2)
         if len(payload.encode("utf-8")) > MAX_OUTPUT_BYTES:
             raise OSError("full G1 device agreement record exceeds the fixed 64 MiB output bound")
         stream.write(payload)
         stream.flush()
-    print(json.dumps({"status": report["status"], "mode": args.mode, "output": str(args.output),
-                      "poses_recorded": len(report["poses"]), "error": report.get("error")}))
+    print(
+        json.dumps(
+            {
+                "status": report["status"],
+                "mode": args.mode,
+                "output": str(args.output),
+                "poses_recorded": len(report["poses"]),
+                "error": report.get("error"),
+            }
+        )
+    )
     return 1 if failed else 0
 
 

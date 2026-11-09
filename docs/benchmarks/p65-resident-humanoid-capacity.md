@@ -13,6 +13,16 @@ the parent formatter changed five author files. Evidence is in
 This accepts the bounded device mechanics and declarations exercised here;
 it does not establish G1 balance, device foot friction, unbounded capacity or
 large-environment throughput. Nonzero affine actuator terms remain unsupported.
+
+Actual G1 validation subsequently passed in tasks 27–28: frames 0 and 200,
+29 revolute joints / 30 bodies / 35 velocities, each advanced independently by
+one physical step in both interpret and CUDA. Full M/b/continuous acceleration,
+q/v, all-body FK/twists and kinetic energy matched HOST within the predefined
+FP32 comparison gates. On CUDA the maximum configuration error was `6.36e-8`
+and velocity error `5.48e-7`; maximum continuous-acceleration error was
+`2.17e-4`, within its relative-plus-absolute gate. This is implementation
+agreement, backed by the separate HOST/native mass/bias checks; it is not an
+independent native trajectory or contact validation.
 The following author handoff is historical.
 
 **AUTHORING_ONLY / UNEXECUTED.** This is an implementation/test handoff at base `666dd66184869ff36401551abcd0904e7564128a`, branch `codex/h1-device-capacity`. No project import, collection, numerical calculation, pytest, lint, formatter, compile, build, install or profile was run. Only source inspection, file IO and Git checks were performed. The parent owns the single execution queue and the HOST actuator model integration.

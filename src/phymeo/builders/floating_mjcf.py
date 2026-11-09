@@ -4,7 +4,7 @@ This importer admits one free root and one limited hinge per massive child.
 Visual meshes are ignored only when their collision masks are both zero.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from xml.etree import ElementTree as ET
 
@@ -170,7 +170,14 @@ def load_floating_mjcf(path, *, gravity=(0.0, 0.0, -9.81)):
                 )
                 colliders.append(
                     LinkCollision(
-                        label, name, index, (0, 0, 0), (0, 0, 0, 1), shape, tuple(map(tuple, ends))
+                        label,
+                        name,
+                        index,
+                        (0, 0, 0),
+                        (0, 0, 0, 1),
+                        shape,
+                        tuple(map(tuple, ends)),
+                        name_is_authored="name" in geom.attrib,
                     )
                 )
             elif kind in ("sphere", "box", "capsule"):
@@ -179,7 +186,12 @@ def load_floating_mjcf(path, *, gravity=(0.0, 0.0, -9.81)):
                 element = ET.Element("geom", attrs)
                 pos = frame.T @ _numbers(attrs.get("pos", "0 0 0"), 3, "geometry position")
                 quat = matrix_quaternion(frame.T @ _rotation(element))
-                colliders.append(make_collider(label, name, index, ordinal, pos, quat, kind, size))
+                colliders.append(
+                    replace(
+                        make_collider(label, name, index, ordinal, pos, quat, kind, size),
+                        name_is_authored="name" in geom.attrib,
+                    )
+                )
             else:
                 raise ValueError(f"unsupported physical MJCF geometry: {kind}")
         for child in body.findall("body"):

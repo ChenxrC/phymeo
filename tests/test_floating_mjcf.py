@@ -65,3 +65,30 @@ def test_implicit_actuator_terms_are_not_silently_dropped(tmp_path, attribute):
 def test_implicit_degree_units_are_rejected(tmp_path):
     with pytest.raises(ValueError, match="radian"):
         asset(tmp_path, XML.replace('<compiler angle="radian"/>', ""))
+
+
+def test_named_physical_geometries_resolve_through_the_shared_scene(tmp_path):
+    import phymeo as ph
+
+    text = XML.replace('<geom type="capsule"', '<geom name="sole" type="capsule"')
+    text = text.replace(
+        "</body></body>",
+        '<geom name="toe" type="sphere" size=".03"/>'
+        '<geom type="box" size=".02 .02 .02"/></body></body>',
+    )
+    robot = asset(tmp_path, text)
+    assert [row.name_is_authored for row in robot.collisions] == [True, True, False]
+    builder = ph.ContactSceneBuilder(gravity=(0, 0, -9.81))
+    builder.add_floating_urdf(
+        1,
+        tmp_path / "robot.xml",
+        loader=load_floating_mjcf,
+        robot_state=FloatingRobotState(np.array([0, 0, 2, 0, 0, 0, 1, 0.0]), np.zeros(7)),
+        kp=[0.0],
+        kd=[0.0],
+        effort_limit=[10.0],
+    )
+    with builder.build(backend="host") as scene:
+        assert scene.shape_key(1, "arm", "sole") != scene.shape_key(1, "arm", "toe")
+        with pytest.raises(ValueError, match="missing or ambiguous"):
+            scene.shape_key(1, "arm", "arm-collision-2")

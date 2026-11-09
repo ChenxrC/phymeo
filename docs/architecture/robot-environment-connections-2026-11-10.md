@@ -47,3 +47,22 @@
 ## 本批证据
 
 `artifacts/p65-connections-20261110-0800-01` 保存长舞蹈与后续命令/源绑定/首失败；最终检查点、实际通过组、安装调用和图的视觉检查待回填。G1长动作当前只在原HOST物理入口运行，统一工具入口不借用其通过标签。
+
+## 全引擎定位：已实现模块与连接边界
+
+上图聚焦本批补的机器人闭环。它不是所有物理族已经共用一套设备求解器的声明。现有模块按源码可以放进以下结构；本批不重跑其历史验收，具体适用域沿原报告保留。
+
+| 功能层 | 当前已实现入口 | 与本批连接的关系 | 仍未接通 |
+|---|---|---|---|
+| 场景与机器人 | `builders/urdf.py`、`floating_mjcf.py`、`mimic_urdf.py`、`usd.py`；`runtime/contact_scene.py` | 原公共场景经SceneBatchBackend进入相同任务/策略接口 | 资产schema仍为子集；更广闭环、多自由度关节和批量IK不能由G1推断 |
+| 碰撞与响应 | `geometry/collision_pipeline.py`；有限形状/网格/BVH、独立查询、原场景双侧载荷 | G1使用真实球/胶囊–有限盒地面和原力律；N2借用原resident contact plan | 查询覆盖与受载响应覆盖不同；设备完整patch、持续换特征摩擦及更广CCD分别验收 |
+| GPU与多世界 | `backends/tyx_world_batch.py`与resident树/浮根绑定 | ResidentContactStepper选择原受载发布；HOST场景适配另走逐scene循环 | HOST窄相、NumPy读回仍在链上；不是零拷贝，也不是W256/1024吞吐已通过 |
+| 控制、任务与训练 | `control/policy_runner.py`、`training/resident_env.py`与本批适配 | 真观测→策略→原command→真实物理→reward/final-observation/复位 | RSL-RL列为可选连接；PPO学习与可微多步反传是两项不同能力 |
+| 传感与交互 | `sensors/depth_camera.py`、`robot_imu.py`、`contact_wrench.py`；已有在线Python控制与离线Three.js | 读取接受态和注明输入时刻的载荷；本批回放直接消费日志 | RGB/材质/光照、批量传感和通用编辑器未因回放而完成 |
+| 跨域编排 | `runtime/scene_stepper.py`、`coupling/domain_graph.py`与点端口 | 有场景事务和指定多域共同推进；新env只借用后端，不另造物理事务 | 任意域自动选后端、跨独立participant设备联合求解仍需专门组合层 |
+| 布与体软体 | `solvers/cloth.py`、`compliant_cloth_contact.py`、`tetrahedral.py`、`materials/stvk.py` | 各自已有程序、材料和交互接口；不混入本批G1动力学 | 密集持续折叠/静摩擦、目标软布放台、软块抓捏与训练接口仍分域推进 |
+| 杆缆、MPM/流体 | 当前刚性连杆、粒子和弹性固体不能代替这些本构族 | 不画成已经连接的训练物理后端 | 柔性截面弯扭、粒子–网格与塑性/流动需另立物理族 |
+
+数据所有权仍分三层：静态模型/资产声明由builder校验；真实状态和物理接受发布由原scene/batch/SceneStepper持有；任务、策略和训练层只持有输入、观测副本与episode时钟。一个策略动作数组不能当作物理checkpoint，一个查询法向也不能当作已经施加的力。
+
+[较大功能族全景与原验收入口](../development/phymeo-newton-panorama-2026-11-07.md)保留更广范围；本批最终状态以本页实际执行证据为准。这里的源码路径相对`src/phymeo/`。

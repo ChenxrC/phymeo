@@ -73,8 +73,9 @@ class Task:
 
 def environment(outcomes, *, task=None, stepper=None):
     backend, task = PublicationBackend(outcomes), Task() if task is None else task
-    env = ResidentVectorEnv(backend, task, KEYS, action_size=1, dt=1 / 64,
-                            horizon=10, stepper=stepper)
+    env = ResidentVectorEnv(
+        backend, task, KEYS, action_size=1, dt=1 / 64, horizon=10, stepper=stepper
+    )
     return backend, task, env
 
 
@@ -127,10 +128,18 @@ def test_partial_publication_is_retained_but_never_emits_an_env_transition(raise
     np.testing.assert_array_equal(result.episode_length, [1, 1])
 
 
-@pytest.mark.parametrize("outcome", (
-    None, [(4, True), (7, True)], {4: True}, {4: True, 7: True, 99: False},
-    {4: True, 7: 1}, {4: True, 7: "False"},
-), ids=("missing-return", "not-a-map", "missing-world", "extra-world", "int-flag", "str-flag"))
+@pytest.mark.parametrize(
+    "outcome",
+    (
+        None,
+        [(4, True), (7, True)],
+        {4: True},
+        {4: True, 7: True, 99: False},
+        {4: True, 7: 1},
+        {4: True, 7: "False"},
+    ),
+    ids=("missing-return", "not-a-map", "missing-world", "extra-world", "int-flag", "str-flag"),
+)
 def test_invalid_return_poison_is_conservative(outcome):
     _, task, env = environment([outcome])
     with pytest.raises(VectorEnvStepError) as caught:
@@ -140,12 +149,17 @@ def test_invalid_return_poison_is_conservative(outcome):
     assert_no_transition(task, env)
 
 
-@pytest.mark.parametrize("failure", (
-    RuntimeError("unknown publication timing"),
-    PhysicsStepFailure("unknown backend timing", accepted_worlds={4: False, 7: False},
-                       acceptance_known=False),
-    PhysicsStepFailure("bad partial report", accepted_worlds={4: True}),
-), ids=("unknown-exception", "explicit-unknown", "incomplete-exception-map"))
+@pytest.mark.parametrize(
+    "failure",
+    (
+        RuntimeError("unknown publication timing"),
+        PhysicsStepFailure(
+            "unknown backend timing", accepted_worlds={4: False, 7: False}, acceptance_known=False
+        ),
+        PhysicsStepFailure("bad partial report", accepted_worlds={4: True}),
+    ),
+    ids=("unknown-exception", "explicit-unknown", "incomplete-exception-map"),
+)
 def test_unknown_or_incomplete_failure_needs_full_reset(failure):
     _, task, env = environment([failure])
     with pytest.raises(VectorEnvStepError) as caught:
@@ -206,14 +220,15 @@ def test_custom_stepper_is_called_once_and_noncallable_is_rejected():
         calls.append(h)
         return backend.step(h)
 
-    env = ResidentVectorEnv(backend, task, KEYS, action_size=1, dt=1 / 64,
-                            horizon=10, stepper=selected)
+    env = ResidentVectorEnv(
+        backend, task, KEYS, action_size=1, dt=1 / 64, horizon=10, stepper=selected
+    )
     result = env.step(np.zeros((2, 1)))
     assert calls == [1 / 64] and backend.step_calls == calls
     np.testing.assert_array_equal(result.episode_length, [1, 1])
     with pytest.raises(TypeError, match="callable"):
-        ResidentVectorEnv(backend, task, KEYS, action_size=1, dt=1 / 64,
-                          horizon=10, stepper=0)
+        ResidentVectorEnv(backend, task, KEYS, action_size=1, dt=1 / 64, horizon=10, stepper=0)
+
 
 def test_reset_publication_then_readback_failure_poison_keeps_counters_and_cause():
     cause = ValueError("original reset readback detail")
@@ -228,8 +243,9 @@ def test_reset_publication_then_readback_failure_poison_keeps_counters_and_cause
                 raise failure from cause
             return result
 
-    backend, task, env = environment([dict.fromkeys(KEYS, True), dict.fromkeys(KEYS, True)],
-                                     task=ResetTask())
+    backend, task, env = environment(
+        [dict.fromkeys(KEYS, True), dict.fromkeys(KEYS, True)], task=ResetTask()
+    )
     env.step(np.zeros((2, 1)))
     assert backend.ticks == {4: 1, 7: 1}
     task.fail_reset_read = True

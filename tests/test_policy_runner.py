@@ -65,7 +65,7 @@ class ToyEnv:
         self.episode_id += terminated
         self.last_transition = SimpleNamespace(
             observation=self.observation.copy(),
-            reward=-final[:, 0] ** 2,
+            reward=-(final[:, 0] ** 2),
             terminated=np.zeros(2, dtype=bool) if self.truncate else terminated,
             truncated=terminated if self.truncate else np.zeros(2, dtype=bool),
             final_mask=terminated.copy(),
@@ -318,6 +318,7 @@ def test_non_due_callback_rows_still_require_valid_full_batch_actions():
     runner.step()
     runner.reset([0])
     before = runner.snapshot()
+
     def invalid(observation, due):
         return np.array([[2.0], [np.nan]])
 

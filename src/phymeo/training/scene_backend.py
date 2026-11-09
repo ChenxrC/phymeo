@@ -41,10 +41,14 @@ def _pack(value):
             raise TypeError("scene controls require real numeric arrays")
         return _ArrayValue(value.dtype.str, value.shape, value.tobytes(order="C"))
     if is_dataclass(value) and not isinstance(value, type):
-        return _RecordValue(type(value), tuple(
-            (field.name, _pack(getattr(value, field.name)))
-            for field in fields(value) if field.init
-        ))
+        return _RecordValue(
+            type(value),
+            tuple(
+                (field.name, _pack(getattr(value, field.name)))
+                for field in fields(value)
+                if field.init
+            ),
+        )
     if isinstance(value, Mapping):
         return _MappingValue(tuple((key, _pack(item)) for key, item in value.items()))
     if isinstance(value, (tuple, list)):
@@ -97,7 +101,10 @@ class SceneControl:
 
 def _keys(values):
     result = tuple(values)
-    if any(isinstance(key, (bool, np.bool_)) or not isinstance(key, Integral) or key < 0 for key in result):
+    if any(
+        isinstance(key, (bool, np.bool_)) or not isinstance(key, Integral) or key < 0
+        for key in result
+    ):
         raise ValueError("logical world keys must be nonnegative integers")
     result = tuple(map(int, result))
     if len(set(result)) != len(result):
@@ -164,21 +171,31 @@ class SceneBatchBackend:
                 if id(scene) in existing or any(scene is other for other in prepared.values()):
                     raise ValueError("factory must transfer a fresh independent scene")
                 prepared[key] = scene
-                if any(not callable(getattr(scene, name, None)) for name in ("observe", "step", "close")):
+                if any(
+                    not callable(getattr(scene, name, None))
+                    for name in ("observe", "step", "close")
+                ):
                     raise TypeError("factory must return an original public scene")
                 time, counter = _stamp(scene.observe())
                 if time != 0 or counter not in (None, 0):
                     raise ValueError("factory must return the scene's original initial publication")
         except Exception as error:
             # Aliases of existing owners never enter prepared, and are not closed.
-            _cleanup(tuple(scene for scene in prepared.values() if callable(getattr(scene, "close", None))), error)
+            _cleanup(
+                tuple(
+                    scene for scene in prepared.values() if callable(getattr(scene, "close", None))
+                ),
+                error,
+            )
             raise
         return prepared
 
     def snapshot(self, keys=None):
         with self._lock:
             self._require_open()
-            return MappingProxyType({key: self._scenes[key].observe() for key in self._selected(keys)})
+            return MappingProxyType(
+                {key: self._scenes[key].observe() for key in self._selected(keys)}
+            )
 
     def set_controls(self, controls):
         with self._lock:
@@ -224,7 +241,8 @@ class SceneBatchBackend:
                             known = False
                     raise PhysicsStepFailure(
                         f"scene world {key} failed; accepted publications are retained",
-                        accepted_worlds=accepted, acceptance_known=known,
+                        accepted_worlds=accepted,
+                        acceptance_known=known,
                     ) from error
             return MappingProxyType(accepted)
 
@@ -263,7 +281,9 @@ class SceneBatchBackend:
                     self._retired.append(scene)
                     errors.append(error)
             if errors:
-                raise RuntimeError("owned scene cleanup failed; close may be retried") from errors[0]
+                raise RuntimeError("owned scene cleanup failed; close may be retried") from errors[
+                    0
+                ]
 
     def __enter__(self):
         with self._lock:

@@ -9,11 +9,11 @@ import argparse
 import math
 from pathlib import Path
 
+import g1_phymeo_support as original
 import numpy as np
 import yaml
 
 import phymeo as ph
-import g1_phymeo_support as original
 from phymeo.builders.floating_mjcf import load_floating_mjcf
 from phymeo.control.policy_runner import PolicyRunner
 from phymeo.experiments.humanoid_support import read_foot_support
@@ -34,40 +34,66 @@ class G1Task:
         self.assets, self.dt, self.journal = assets, dt, journal
         self.asset = load_floating_mjcf(assets / "g1_primitive_actuated.xml")
         config = yaml.safe_load((assets / "deploy.yaml").read_text(encoding="utf-8"))
-        (self.names, self.p_from_o, self.o_from_p, self.default,
-         self.kp, self.kd, self.scale, self.offset) = original.protocol(
-             config, self.asset, assets / "g1_primitive_actuated.xml")
+        (
+            self.names,
+            self.p_from_o,
+            self.o_from_p,
+            self.default,
+            self.kp,
+            self.kd,
+            self.scale,
+            self.offset,
+        ) = original.protocol(config, self.asset, assets / "g1_primitive_actuated.xml")
         with np.load(assets / "dance1_subject2.npz", allow_pickle=False) as data:
             self.motion = {name: data[name].copy() for name in data.files}
         self.decimation = round(float(config["step_dt"]) / dt)
-        if self.decimation < 1 or not math.isclose(self.decimation * dt, .02, abs_tol=1e-12):
+        if self.decimation < 1 or not math.isclose(self.decimation * dt, 0.02, abs_tol=1e-12):
             raise ValueError("physical dt must divide the official .02 second control period")
         self.colliders = original.foot_colliders(self.asset)
         self.initial, self.placement = original.initial_state(
-            "policy", self.asset, self.default, self.p_from_o, self.colliders, self.motion)
-        self.alignment = original.yaw(original.torso(
-            self.initial.q[[6, 3, 4, 5]], self.initial.q[7:][self.o_from_p])) @ original.yaw(
-                original.rotation(self.motion["body_quat_w"][0, 0])).T
+            "policy", self.asset, self.default, self.p_from_o, self.colliders, self.motion
+        )
+        self.alignment = (
+            original.yaw(
+                original.torso(self.initial.q[[6, 3, 4, 5]], self.initial.q[7:][self.o_from_p])
+            )
+            @ original.yaw(original.rotation(self.motion["body_quat_w"][0, 0])).T
+        )
         self.cap = np.asarray(self.asset.effort_limit, dtype=float)
         self.context, self.states, self.seen, self.pending, self.previous = {}, {}, {}, {}, {}
         self.last_transition = {}
         self.weight = original.GRAVITY * (
-            1 / self.asset.model.root.inverse_mass[0] + self.asset.model.children.mass.sum())
+            1 / self.asset.model.root.inverse_mass[0] + self.asset.model.children.mass.sum()
+        )
 
     def factory(self, world):
         builder = ph.ContactSceneBuilder(gravity=(0, 0, -original.GRAVITY))
         builder.add_floating_urdf(
-            original.ROBOT, self.assets / "g1_primitive_actuated.xml", loader=load_floating_mjcf,
-            robot_state=self.initial, kp=np.zeros(29), kd=np.zeros(29), effort_limit=self.cap)
-        builder.add_box(original.FLOOR, (10, 10, .1), mass=None, position=(0, 0, -.1))
-        builder.pair(original.ROBOT, original.FLOOR,
-                     ph.RobotContactMaterial(stiffness=50000, damping=100, friction=1))
+            original.ROBOT,
+            self.assets / "g1_primitive_actuated.xml",
+            loader=load_floating_mjcf,
+            robot_state=self.initial,
+            kp=np.zeros(29),
+            kd=np.zeros(29),
+            effort_limit=self.cap,
+        )
+        builder.add_box(original.FLOOR, (10, 10, 0.1), mass=None, position=(0, 0, -0.1))
+        builder.pair(
+            original.ROBOT,
+            original.FLOOR,
+            ph.RobotContactMaterial(stiffness=50000, damping=100, friction=1),
+        )
         scene = builder.build(backend="host")
         self.context[world] = dict(
-            feet={name: tuple(scene.shape_key(original.ROBOT, row.link_name, row.name)
-                              for row in rows) for name, rows in self.colliders.items()},
+            feet={
+                name: tuple(
+                    scene.shape_key(original.ROBOT, row.link_name, row.name) for row in rows
+                )
+                for name, rows in self.colliders.items()
+            },
             ground=scene.body_keys[0, original.FLOOR],
-            floor_row=scene.rigid_rows[0, original.FLOOR])
+            floor_row=scene.rigid_rows[0, original.FLOOR],
+        )
         return scene
 
     def observe(self, states, keys):
@@ -83,14 +109,22 @@ class G1Task:
             row = reading.robots[0, original.ROBOT]
             frame = min(tick // self.decimation, len(self.motion["joint_pos"]) - 1)
             relative = original.torso(row.q[[6, 3, 4, 5]], row.q[7:][self.o_from_p]).T @ (
-                self.alignment @ original.torso(self.motion["body_quat_w"][frame, 0],
-                                               self.motion["joint_pos"][frame]))
-            observations.append(np.r_[
-                self.motion["joint_pos"][frame], self.motion["joint_vel"][frame],
-                relative[:, :2].reshape(-1),
-                original.rotation(row.q[[6, 3, 4, 5]]).T @ row.v[3:6],
-                row.q[7:][self.o_from_p] - self.default, row.v[6:][self.o_from_p],
-                self.previous[key]])
+                self.alignment
+                @ original.torso(
+                    self.motion["body_quat_w"][frame, 0], self.motion["joint_pos"][frame]
+                )
+            )
+            observations.append(
+                np.r_[
+                    self.motion["joint_pos"][frame],
+                    self.motion["joint_vel"][frame],
+                    relative[:, :2].reshape(-1),
+                    original.rotation(row.q[[6, 3, 4, 5]]).T @ row.v[3:6],
+                    row.q[7:][self.o_from_p] - self.default,
+                    row.v[6:][self.o_from_p],
+                    self.previous[key],
+                ]
+            )
         return np.asarray(observations, dtype=np.float32)
 
     def controls(self, actions, keys):
@@ -99,16 +133,28 @@ class G1Task:
             self.pending[key] = np.array(action, copy=True)
             row = self.states[key].robots[0, original.ROBOT]
             target = self.offset + self.scale * action
-            torque = (self.kp * (target - row.q[7:][self.o_from_p])
-                      - self.kd * row.v[6:][self.o_from_p])[self.p_from_o]
-            packet = ph.FloatingRobotCommand(ph.RobotCommand(
-                np.clip(target[self.p_from_o], self.asset.lower, self.asset.upper),
-                feedforward=np.clip(torque, -self.cap, self.cap)))
+            torque = (
+                self.kp * (target - row.q[7:][self.o_from_p]) - self.kd * row.v[6:][self.o_from_p]
+            )[self.p_from_o]
+            packet = ph.FloatingRobotCommand(
+                ph.RobotCommand(
+                    np.clip(target[self.p_from_o], self.asset.lower, self.asset.upper),
+                    feedforward=np.clip(torque, -self.cap, self.cap),
+                )
+            )
             result[key] = SceneControl(actions={original.ROBOT: packet})
-        self.journal.append("control_request", entry_steps={key: self.seen[key] for key in keys},
-                            raw_actions=actions, controls={key: {
-                                "actions": packet.actions, "external": packet.external,
-                            } for key, packet in result.items()})
+        self.journal.append(
+            "control_request",
+            entry_steps={key: self.seen[key] for key in keys},
+            raw_actions=actions,
+            controls={
+                key: {
+                    "actions": packet.actions,
+                    "external": packet.external,
+                }
+                for key, packet in result.items()
+            },
+        )
         return result
 
     def evaluate(self, before, after, actions, keys):
@@ -118,27 +164,41 @@ class G1Task:
             row = reading.robots[0, original.ROBOT]
             # Match the standalone journal's held control-frame reference for
             # this completed substep, without floating clock rounding.
-            frame = min((reading.step_number - 1) // self.decimation,
-                        len(self.motion["joint_pos"]) - 1)
-            error = float(np.sqrt(np.mean((row.q[7:][self.o_from_p]
-                                          - self.motion["joint_pos"][frame]) ** 2)))
+            frame = min(
+                (reading.step_number - 1) // self.decimation, len(self.motion["joint_pos"]) - 1
+            )
+            error = float(
+                np.sqrt(np.mean((row.q[7:][self.o_from_p] - self.motion["joint_pos"][frame]) ** 2))
+            )
             up = original.rotation(row.q[[6, 3, 4, 5]])[:, 2]
             tilt = float(np.arctan2(np.linalg.norm(up[:2]), up[2]))
             self.last_transition[key] = dict(reading=reading, error=error, tilt=tilt, frame=frame)
             rewards.append(-error * error)
-            terminated.append(row.q[2] < original.CRITERIA["minimum_root_height_m"]
-                              or tilt > original.CRITERIA["maximum_fall_tilt_rad"])
+            terminated.append(
+                row.q[2] < original.CRITERIA["minimum_root_height_m"]
+                or tilt > original.CRITERIA["maximum_fall_tilt_rad"]
+            )
         return np.asarray(rewards), np.asarray(terminated, dtype=bool)
 
 
 def statistics():
-    return dict(accepted_steps=0, accepted_duration_s=0., minimum_root_height_m=float("inf"),
-                maximum_root_tilt_rad=0., maximum_root_xy_drift_m=0.,
-                maximum_foot_center_xy_drift_m=0., maximum_reference_xy_error_m=0.,
-                maximum_joint_rmse_rad=0., maximum_force_bodyweight_ratio=0.,
-                maximum_nonfoot_ground_force_n=0., settled_samples=0,
-                settled_vertical_load_sum=0., both_loaded_samples=0,
-                effort_caps_observed=True, reaction_balance_observed=True)
+    return dict(
+        accepted_steps=0,
+        accepted_duration_s=0.0,
+        minimum_root_height_m=float("inf"),
+        maximum_root_tilt_rad=0.0,
+        maximum_root_xy_drift_m=0.0,
+        maximum_foot_center_xy_drift_m=0.0,
+        maximum_reference_xy_error_m=0.0,
+        maximum_joint_rmse_rad=0.0,
+        maximum_force_bodyweight_ratio=0.0,
+        maximum_nonfoot_ground_force_n=0.0,
+        settled_samples=0,
+        settled_vertical_load_sum=0.0,
+        both_loaded_samples=0,
+        effort_caps_observed=True,
+        reaction_balance_observed=True,
+    )
 
 
 def run(args, journal):
@@ -150,42 +210,67 @@ def run(args, journal):
         raise ValueError("duration must contain whole physical steps")
     if (steps + task.decimation - 1) // task.decimation > len(task.motion["joint_pos"]):
         raise ValueError("requested duration exceeds the unchanged motion")
-    session = ort.InferenceSession(str(task.assets / "policy.onnx"), providers=["CPUExecutionProvider"])
+    session = ort.InferenceSession(
+        str(task.assets / "policy.onnx"), providers=["CPUExecutionProvider"]
+    )
     keys = tuple(range(args.worlds))
     stats = {key: statistics() for key in keys}
     initial_feet = original.foot_geometry(task.asset, task.initial.q, task.colliders)
     journal.context["statistics_by_world"] = stats
     sources = {
-        name: original.source_record(task.assets / name) for name in
-        ("g1_primitive_actuated.xml", "deploy.yaml", "dance1_subject2.npz", "policy.onnx")}
+        name: original.source_record(task.assets / name)
+        for name in (
+            "g1_primitive_actuated.xml",
+            "deploy.yaml",
+            "dance1_subject2.npz",
+            "policy.onnx",
+        )
+    }
     if (task.assets / "policy.onnx.data").exists():
         sources["policy.onnx.data"] = original.source_record(task.assets / "policy.onnx.data")
-    journal.append("initialization", schema="g1-connected-policy-v1", sources=sources,
-        initial_q=task.initial.q, initial_v=task.initial.v, dt_s=args.dt,
+    journal.append(
+        "initialization",
+        schema="g1-connected-policy-v1",
+        sources=sources,
+        initial_q=task.initial.q,
+        initial_v=task.initial.v,
+        dt_s=args.dt,
         physical_joint_names=task.asset.joint_names,
-        control_decimation=task.decimation, bodyweight_n=task.weight,
-        criteria=original.CRITERIA, backend="HOST_scene_NumPy_CPU_ONNX",
-        connection="SceneBatchBackend -> ResidentVectorEnv -> PolicyRunner")
+        control_decimation=task.decimation,
+        bodyweight_n=task.weight,
+        criteria=original.CRITERIA,
+        backend="HOST_scene_NumPy_CPU_ONNX",
+        connection="SceneBatchBackend -> ResidentVectorEnv -> PolicyRunner",
+    )
 
     def policy(observations, due):
         journal.append("policy_request", observation=observations, due_mask=due)
         actions = np.zeros((len(keys), 29))
         for index in np.flatnonzero(due):
-            raw = session.run(["actions"], {
-                "obs": observations[index:index + 1].astype(np.float32)})[0][0]
+            raw = session.run(
+                ["actions"], {"obs": observations[index : index + 1].astype(np.float32)}
+            )[0][0]
             actions[index] = original.vector(raw, 29, "actual ONNX action")
         journal.append("policy_response", due_mask=due, actions=actions)
         return actions
 
     with SceneBatchBackend(keys, task.factory) as backend:
-        env = ResidentVectorEnv(backend, task, keys, action_size=29, dt=args.dt,
-                                horizon=steps + 1)
-        runner = PolicyRunner(env, policy, control_decimation=task.decimation,
-                              initial_observation=task.observe(backend.snapshot(), keys))
+        env = ResidentVectorEnv(backend, task, keys, action_size=29, dt=args.dt, horizon=steps + 1)
+        runner = PolicyRunner(
+            env,
+            policy,
+            control_decimation=task.decimation,
+            initial_observation=task.observe(backend.snapshot(), keys),
+        )
         for tick in range(steps):
-            journal.append("attempt", tick=tick,
-                           states={key: original.state_record(task.states[key].robots[0, original.ROBOT])
-                                   for key in keys})
+            journal.append(
+                "attempt",
+                tick=tick,
+                states={
+                    key: original.state_record(task.states[key].robots[0, original.ROBOT])
+                    for key in keys
+                },
+            )
             try:
                 result = runner.step()
             except Exception:
@@ -193,42 +278,62 @@ def run(args, journal):
                 # or reset observer fails. Preserve it before reading the current
                 # backend, which may already expose a rebuilt step-zero scene.
                 if task.last_transition:
-                    endpoints = {key: {
-                        "step_number": item["reading"].step_number,
-                        "time_s": item["reading"].time_s,
-                        "state": original.state_record(item["reading"].robots[0, original.ROBOT]),
-                    } for key, item in task.last_transition.items()}
+                    endpoints = {
+                        key: {
+                            "step_number": item["reading"].step_number,
+                            "time_s": item["reading"].time_s,
+                            "state": original.state_record(
+                                item["reading"].robots[0, original.ROBOT]
+                            ),
+                        }
+                        for key, item in task.last_transition.items()
+                    }
                     journal.context["last_accepted"] = endpoints
-                    journal.append("physical_publication", publications=endpoints,
-                                   environment_transition=False)
+                    journal.append(
+                        "physical_publication", publications=endpoints, environment_transition=False
+                    )
                 try:
-                    publications = {key: {
-                        "step_number": reading.step_number, "time_s": reading.time_s,
-                        "robots": {str(address): original.state_record(row)
-                                   for address, row in reading.robots.items()},
-                    } for key, reading in backend.snapshot().items()}
+                    publications = {
+                        key: {
+                            "step_number": reading.step_number,
+                            "time_s": reading.time_s,
+                            "robots": {
+                                str(address): original.state_record(row)
+                                for address, row in reading.robots.items()
+                            },
+                        }
+                        for key, reading in backend.snapshot().items()
+                    }
                     journal.context["failure_publications"] = publications
                     journal.append("failure_publication_snapshot", publications=publications)
                 except Exception as snapshot_error:
                     journal.context["failure_snapshot_error"] = str(snapshot_error)
                 raise
-            journal.context["last_accepted"] = {key: {
-                "step_number": item["reading"].step_number,
-                "time_s": item["reading"].time_s,
-                "state": original.state_record(item["reading"].robots[0, original.ROBOT]),
-            } for key, item in task.last_transition.items()}
+            journal.context["last_accepted"] = {
+                key: {
+                    "step_number": item["reading"].step_number,
+                    "time_s": item["reading"].time_s,
+                    "state": original.state_record(item["reading"].robots[0, original.ROBOT]),
+                }
+                for key, item in task.last_transition.items()
+            }
             for key in keys:
                 item, context = task.last_transition[key], task.context[key]
                 reading = item["reading"]
                 row = reading.robots[0, original.ROBOT]
                 support = read_foot_support(
-                    reading, context["feet"], context["ground"],
-                    floor_rigid_rows=(context["floor_row"],), robot_address=(0, original.ROBOT),
-                    reference_root_position_m=task.initial.q[:3], positive_load_threshold_n=1.)
+                    reading,
+                    context["feet"],
+                    context["ground"],
+                    floor_rigid_rows=(context["floor_row"],),
+                    robot_address=(0, original.ROBOT),
+                    reference_root_position_m=task.initial.q[:3],
+                    positive_load_threshold_n=1.0,
+                )
                 geometry = original.foot_geometry(task.asset, row.q, task.colliders)
                 root_reference = task.initial.q[:3] + task.alignment @ (
-                    task.motion["body_pos_w"][item["frame"], 0]
-                    - task.motion["body_pos_w"][0, 0])
+                    task.motion["body_pos_w"][item["frame"], 0] - task.motion["body_pos_w"][0, 0]
+                )
                 force = np.asarray(support.total_force_n)
                 reaction = np.asarray(support.selected_ground_force_n)
                 stat = stats[key]
@@ -238,54 +343,102 @@ def run(args, journal):
                 for name, value in (
                     ("maximum_root_tilt_rad", item["tilt"]),
                     ("maximum_root_xy_drift_m", np.linalg.norm(row.q[:2] - task.initial.q[:2])),
-                    ("maximum_foot_center_xy_drift_m", max(np.linalg.norm(
-                        geometry[name]["capsule_endpoint_center_m"][:2]
-                        - initial_feet[name]["capsule_endpoint_center_m"][:2]) for name in geometry)),
-                    ("maximum_reference_xy_error_m", np.linalg.norm(row.q[:2] - root_reference[:2])),
+                    (
+                        "maximum_foot_center_xy_drift_m",
+                        max(
+                            np.linalg.norm(
+                                geometry[name]["capsule_endpoint_center_m"][:2]
+                                - initial_feet[name]["capsule_endpoint_center_m"][:2]
+                            )
+                            for name in geometry
+                        ),
+                    ),
+                    (
+                        "maximum_reference_xy_error_m",
+                        np.linalg.norm(row.q[:2] - root_reference[:2]),
+                    ),
                     ("maximum_joint_rmse_rad", item["error"]),
                     ("maximum_force_bodyweight_ratio", np.linalg.norm(force) / task.weight),
-                    ("maximum_nonfoot_ground_force_n", np.linalg.norm(
-                        np.asarray(support.published_floor_force_n) - reaction)),
+                    (
+                        "maximum_nonfoot_ground_force_n",
+                        np.linalg.norm(np.asarray(support.published_floor_force_n) - reaction),
+                    ),
                 ):
                     stat[name] = max(stat[name], float(value))
-                stat["effort_caps_observed"] &= bool(np.all(np.abs(row.drive_effort) <= task.cap + 1e-9))
-                stat["reaction_balance_observed"] &= bool(np.linalg.norm(force + reaction) <= 1e-8 * task.weight)
-                if support.sample_time_s >= .25:
+                stat["effort_caps_observed"] &= bool(
+                    np.all(np.abs(row.drive_effort) <= task.cap + 1e-9)
+                )
+                stat["reaction_balance_observed"] &= bool(
+                    np.linalg.norm(force + reaction) <= 1e-8 * task.weight
+                )
+                if support.sample_time_s >= 0.25:
                     stat["settled_samples"] += 1
                     stat["settled_vertical_load_sum"] += float(force[2] / task.weight)
                     stat["both_loaded_samples"] += int(len(support.loaded_feet) == 2)
-                journal.append("accepted", tick=tick, world=key, time_s=reading.time_s,
-                               state=original.state_record(row), support=support,
-                               foot_contacts=original.foot_contacts(reading, context["feet"], context["ground"]),
-                               joint_rmse_rad=item["error"], policy_result=result)
+                journal.append(
+                    "accepted",
+                    tick=tick,
+                    world=key,
+                    time_s=reading.time_s,
+                    state=original.state_record(row),
+                    support=support,
+                    foot_contacts=original.foot_contacts(
+                        reading, context["feet"], context["ground"]
+                    ),
+                    joint_rmse_rad=item["error"],
+                    policy_result=result,
+                )
                 if not stat["effort_caps_observed"] or not stat["reaction_balance_observed"]:
                     raise RuntimeError("accepted state failed original effort or reaction gate")
-            if any(row["tilt"] > original.CRITERIA["maximum_fall_tilt_rad"]
-                   or row["reading"].robots[0, original.ROBOT].q[2] < .35
-                   for row in task.last_transition.values()):
-                raise RuntimeError("actual connected-policy trajectory fell; no continued reset episode")
-    assessments = {key: original.evaluate("policy", value, True, None) for key, value in stats.items()}
+            if any(
+                row["tilt"] > original.CRITERIA["maximum_fall_tilt_rad"]
+                or row["reading"].robots[0, original.ROBOT].q[2] < 0.35
+                for row in task.last_transition.values()
+            ):
+                raise RuntimeError(
+                    "actual connected-policy trajectory fell; no continued reset episode"
+                )
+    assessments = {
+        key: original.evaluate("policy", value, True, None) for key, value in stats.items()
+    }
     success = all(item["success"] for item in assessments.values())
-    failure = None if success else dict(
-        type="EngineeringAssessment", message="original engineering gates failed",
-        failed_criteria={key: [name for name, passed in item["gates"].items() if not passed]
-                         for key, item in assessments.items()})
+    failure = (
+        None
+        if success
+        else dict(
+            type="EngineeringAssessment",
+            message="original engineering gates failed",
+            failed_criteria={
+                key: [name for name, passed in item["gates"].items() if not passed]
+                for key, item in assessments.items()
+            },
+        )
+    )
     if failure is not None:
         journal.append("first_failure", **failure)
-    return dict(schema="g1-connected-policy-summary-v1", duration_s=args.duration,
-                statistics_by_world=stats, assessments=assessments,
-                success=success, first_failure=failure)
+    return dict(
+        schema="g1-connected-policy-summary-v1",
+        duration_s=args.duration,
+        statistics_by_world=stats,
+        assessments=assessments,
+        success=success,
+        first_failure=failure,
+    )
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--assets", type=Path, required=True)
-    parser.add_argument("--duration", type=float, default=20.)
-    parser.add_argument("--dt", type=float, default=.0005)
+    parser.add_argument("--duration", type=float, default=20.0)
+    parser.add_argument("--dt", type=float, default=0.0005)
     parser.add_argument("--worlds", type=int, default=1)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
-    if not 1 <= args.worlds <= 32 or not np.isfinite([args.dt, args.duration]).all() or min(args.dt, args.duration) <= 0:
+    if (
+        not 1 <= args.worlds <= 32
+        or not np.isfinite([args.dt, args.duration]).all()
+        or min(args.dt, args.duration) <= 0
+    ):
         parser.error("positive finite dt/duration and 1..32 HOST logical worlds required")
     journal = original.Journal(args.output)
     try:
@@ -294,11 +447,17 @@ def main():
             report = run(args, journal)
         except Exception as error:
             import traceback
-            report = dict(success=False, error=type(error).__name__, message=str(error),
-                          traceback=traceback.format_exc(), context=journal.context,
-                          accepted_worlds=getattr(error, "accepted_worlds", None),
-                          acceptance_known=getattr(error, "acceptance_known", None),
-                          physics_accepted=getattr(error, "physics_accepted", None))
+
+            report = dict(
+                success=False,
+                error=type(error).__name__,
+                message=str(error),
+                traceback=traceback.format_exc(),
+                context=journal.context,
+                accepted_worlds=getattr(error, "accepted_worlds", None),
+                acceptance_known=getattr(error, "acceptance_known", None),
+                physics_accepted=getattr(error, "physics_accepted", None),
+            )
             journal.append("first_failure", **report)
         journal.finish(report)
     finally:

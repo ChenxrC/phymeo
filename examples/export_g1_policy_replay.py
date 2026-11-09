@@ -75,7 +75,9 @@ class _HTML:
 
 def _json(value):
     # Preserve Python's complete round-trip float representation in the dataset.
-    return json.dumps(value, ensure_ascii=False, separators=(",", ":"), allow_nan=False).replace("<", "\\u003c")
+    return json.dumps(value, ensure_ascii=False, separators=(",", ":"), allow_nan=False).replace(
+        "<", "\\u003c"
+    )
 
 
 def _vector(value, size, name):
@@ -99,7 +101,9 @@ def _bind_scene(initialization, scene_path, scene_data):
         raise ValueError("initialization.sources has no explicit scene binding")
     digest = hashlib.sha256(scene_data).hexdigest()
     for binding in candidates:
-        if binding.get("sha256") != digest or binding.get("bytes", len(scene_data)) != len(scene_data):
+        if binding.get("sha256") != digest or binding.get("bytes", len(scene_data)) != len(
+            scene_data
+        ):
             raise ValueError("--scene bytes differ from initialization.sources binding")
     # Load the captured, hash-bound bytes, not a file that may change during export.
     with tempfile.TemporaryDirectory(prefix="phymeo-g1-replay-model-") as directory:
@@ -115,15 +119,36 @@ def _bind_scene(initialization, scene_path, scene_data):
         raise ValueError("saved physical joint order differs from the bound scene")
     bodies = [asset.root_link, *asset.link_names]
     parents = [-1, *[int(parent) + 1 for parent in asset.model.children.parents]]
-    model = dict(name=asset.name, body_names=bodies, body_parents=parents,
-                 joint_names=list(asset.joint_names), geometry=[
-                     dict(name=row.name, body_index=row.link_index + 1, link_name=row.link_name,
-                          kind=row.shape.kind, radius_m=row.shape.radius,
-                          local_vertices_m=row.local_vertices) for row in asset.collisions],
-                 foot_body_indices={side: bodies.index(side + "_ankle_roll_link")
-                                    for side in ("left", "right")})
-    return asset, model, dict(path=str(scene_path), bytes=len(scene_data), sha256=digest,
-                             initialization_bindings=candidates)
+    model = dict(
+        name=asset.name,
+        body_names=bodies,
+        body_parents=parents,
+        joint_names=list(asset.joint_names),
+        geometry=[
+            dict(
+                name=row.name,
+                body_index=row.link_index + 1,
+                link_name=row.link_name,
+                kind=row.shape.kind,
+                radius_m=row.shape.radius,
+                local_vertices_m=row.local_vertices,
+            )
+            for row in asset.collisions
+        ],
+        foot_body_indices={
+            side: bodies.index(side + "_ankle_roll_link") for side in ("left", "right")
+        },
+    )
+    return (
+        asset,
+        model,
+        dict(
+            path=str(scene_path),
+            bytes=len(scene_data),
+            sha256=digest,
+            initialization_bindings=candidates,
+        ),
+    )
 
 
 def _frame(asset, model, record, source_line, physical_tick, initial=False):
@@ -131,25 +156,47 @@ def _frame(asset, model, record, source_line, physical_tick, initial=False):
     q = _vector(state["q"], 36, "saved q")
     v = _vector(state["v"], 35, "saved v")
     pose = floating_kinematics(asset.model, FloatingRobotState(q, v))
-    geometry = [(pose.position[row.link_index + 1]
-                 + np.asarray(row.local_vertices) @ pose.rotation[row.link_index + 1].T).tolist()
-                for row in asset.collisions]
+    geometry = [
+        (
+            pose.position[row.link_index + 1]
+            + np.asarray(row.local_vertices) @ pose.rotation[row.link_index + 1].T
+        ).tolist()
+        for row in asset.collisions
+    ]
     support = record.get("support")
     load_time = record.get("load_time_s")
     if load_time is None and isinstance(support, dict):
         load_time = support.get("sample_time_s")
-    return dict(source_line=source_line, physical_tick=physical_tick,
-                initial=initial, time_s=record["time_s"], load_time_s=load_time,
-                publication_without_env_transition=record.get("publication_without_env_transition", False),
-                publication_evidence=record.get("publication_evidence"),
-                state=dict(q=q.tolist(), v=v.tolist()), support=support,
-                body_positions_m=pose.position.tolist(), geometry_points_m=geometry,
-                foot_origins_m={side: pose.position[index].tolist()
-                                for side, index in model["foot_body_indices"].items()},
-                diagnostics={name: record[name] for name in
-                             ("joint_rmse_rad", "root_height_m", "root_tilt_rad",
-                              "root_xy_drift_m", "reference_xy_error_m",
-                              "effort_caps_observed", "reaction_balance_observed") if name in record})
+    return dict(
+        source_line=source_line,
+        physical_tick=physical_tick,
+        initial=initial,
+        time_s=record["time_s"],
+        load_time_s=load_time,
+        publication_without_env_transition=record.get("publication_without_env_transition", False),
+        publication_evidence=record.get("publication_evidence"),
+        state=dict(q=q.tolist(), v=v.tolist()),
+        support=support,
+        body_positions_m=pose.position.tolist(),
+        geometry_points_m=geometry,
+        foot_origins_m={
+            side: pose.position[index].tolist()
+            for side, index in model["foot_body_indices"].items()
+        },
+        diagnostics={
+            name: record[name]
+            for name in (
+                "joint_rmse_rad",
+                "root_height_m",
+                "root_tilt_rad",
+                "root_xy_drift_m",
+                "reference_xy_error_m",
+                "effort_caps_observed",
+                "reaction_balance_observed",
+            )
+            if name in record
+        },
+    )
 
 
 def _failure_publications(record, world, source_line):
@@ -163,8 +210,10 @@ def _failure_publications(record, world, source_line):
         ("first_failure.context", (record.get("first_failure") or {}).get("context", {})),
     ):
         if isinstance(context, dict):
-            containers.extend((label + "." + name, context.get(name, {}))
-                              for name in ("failure_publications", "last_accepted"))
+            containers.extend(
+                (label + "." + name, context.get(name, {}))
+                for name in ("failure_publications", "last_accepted")
+            )
     for path, values in containers:
         if not isinstance(values, dict):
             continue
@@ -188,15 +237,21 @@ def _failure_publications(record, world, source_line):
         q = _vector(state["q"], 36, "published failure q")
         v = _vector(state["v"], 35, "published failure v")
         FloatingRobotState(q, v)  # Validate the saved storage boundary; no step.
-        yield dict(time_s=time, step_number=step, state=dict(q=state["q"], v=state["v"]),
-                   source_line=source_line, source_event=event, source_path=path)
+        yield dict(
+            time_s=time,
+            step_number=step,
+            state=dict(q=state["q"], v=state["v"]),
+            source_line=source_line,
+            source_event=event,
+            source_path=path,
+        )
 
 
 def _latest_publication(prior, current):
     if prior is None:
         return current
     if current["step_number"] == prior["step_number"]:
-        if (current["time_s"] != prior["time_s"] or current["state"] != prior["state"]):
+        if current["time_s"] != prior["time_s"] or current["state"] != prior["state"]:
             raise ValueError("conflicting actual failure publications at the same physical step")
         return prior
     if current["step_number"] > prior["step_number"]:
@@ -206,6 +261,7 @@ def _latest_publication(prior, current):
     if current["time_s"] >= prior["time_s"]:
         raise ValueError("failure publication counter/time ordering is inconsistent")
     return prior
+
 
 def scan_journal(source, *, stride=40, world=0, on_initialization=None, on_frame=None):
     """Stream selection/provenance without loading a scene or computing FK.
@@ -233,7 +289,9 @@ def scan_journal(source, *, stride=40, world=0, on_initialization=None, on_frame
     def emit(record, source_line, tick, *, initial=False):
         nonlocal selected_frames
         if on_frame is not None:
-            on_frame(dict(record=record, source_line=source_line, physical_tick=tick, initial=initial))
+            on_frame(
+                dict(record=record, source_line=source_line, physical_tick=tick, initial=initial)
+            )
         selected_frames += 1
 
     with source.open("rb") as original:
@@ -258,7 +316,9 @@ def scan_journal(source, *, stride=40, world=0, on_initialization=None, on_frame
                 if event in ("failure_publication_snapshot", "first_failure", "summary"):
                     try:
                         for candidate in _failure_publications(record, world, lines):
-                            failure_publication = _latest_publication(failure_publication, candidate)
+                            failure_publication = _latest_publication(
+                                failure_publication, candidate
+                            )
                     except (ValueError, KeyError, TypeError):
                         # Conflicting evidence cannot establish a terminal pose.
                         failure_publication = None
@@ -286,12 +346,16 @@ def scan_journal(source, *, stride=40, world=0, on_initialization=None, on_frame
                         raise ValueError("accepted state precedes initialization")
                     tick = record.get("tick")
                     if type(tick) is not int or tick < 0 or tick != last_tick:
-                        raise ValueError("selected-world accepted physical ticks must be contiguous from zero")
+                        raise ValueError(
+                            "selected-world accepted physical ticks must be contiguous from zero"
+                        )
                     time = float(record["time_s"])
                     if not math.isfinite(time) or time <= last_time:
                         raise ValueError("accepted physical publication time must strictly advance")
-                    FloatingRobotState(_vector(record["state"]["q"], 36, "accepted q"),
-                                       _vector(record["state"]["v"], 35, "accepted v"))
+                    FloatingRobotState(
+                        _vector(record["state"]["q"], 36, "accepted q"),
+                        _vector(record["state"]["v"], 35, "accepted v"),
+                    )
                     last_tick, last_time = tick + 1, time
                     accepted_records += 1
                     pending = (record, lines, last_tick)
@@ -320,69 +384,132 @@ def scan_journal(source, *, stride=40, world=0, on_initialization=None, on_frame
         if not started:
             raise ValueError("journal has no supported initialization")
         if accepted_records == 0 and failure_publication is None:
-            trace_error = trace_error or dict(type="NoAcceptedStates", message="selected world has no accepted physical state")
+            trace_error = trace_error or dict(
+                type="NoAcceptedStates", message="selected world has no accepted physical state"
+            )
         if pending is not None and pending[2] != last_emitted_tick:
             emit(pending[0], pending[1], pending[2])
         if summary is not None:
-            stats = summary.get("statistics") or summary.get("statistics_by_world", {}).get(str(world), {})
+            stats = summary.get("statistics") or summary.get("statistics_by_world", {}).get(
+                str(world), {}
+            )
             duration = stats.get("accepted_duration_s")
             count = stats.get("accepted_steps")
             statistics_bases = [(last_time, accepted_records)]
             if failure_publication is not None and (
-                failure_publication["step_number"] > last_tick and failure_publication["time_s"] > last_time
+                failure_publication["step_number"] > last_tick
+                and failure_publication["time_s"] > last_time
             ):
-                statistics_bases.append((failure_publication["time_s"], failure_publication["step_number"]))
+                statistics_bases.append(
+                    (failure_publication["time_s"], failure_publication["step_number"])
+                )
             if not any(
-                (duration is None or math.isclose(float(duration), time, rel_tol=1e-12, abs_tol=1e-12))
-                and (count is None or int(count) == steps) for time, steps in statistics_bases
+                (
+                    duration is None
+                    or math.isclose(float(duration), time, rel_tol=1e-12, abs_tol=1e-12)
+                )
+                and (count is None or int(count) == steps)
+                for time, steps in statistics_bases
             ):
-                trace_error = trace_error or dict(type="SummaryStateMismatch", message="summary statistics differ from ordinary accepted records and actual failure publication")
+                trace_error = trace_error or dict(
+                    type="SummaryStateMismatch",
+                    message="summary statistics differ from ordinary accepted records and actual failure publication",
+                )
             requested = summary.get("requested_duration_s", summary.get("duration_s"))
-            if summary.get("success") is True and requested is not None and not math.isclose(
-                float(requested), last_time, rel_tol=1e-10, abs_tol=1e-10
+            if (
+                summary.get("success") is True
+                and requested is not None
+                and not math.isclose(float(requested), last_time, rel_tol=1e-10, abs_tol=1e-10)
             ):
-                trace_error = trace_error or dict(type="IncompleteAcceptedWindow", message="reported success lacks the full requested accepted window")
+                trace_error = trace_error or dict(
+                    type="IncompleteAcceptedWindow",
+                    message="reported success lacks the full requested accepted window",
+                )
         normal_accepted_duration, normal_accepted_tick = last_time, last_tick
         if failure_publication is not None:
-            published_step, published_time = failure_publication["step_number"], failure_publication["time_s"]
+            published_step, published_time = (
+                failure_publication["step_number"],
+                failure_publication["time_s"],
+            )
             if published_step > last_tick and published_time > last_time:
-                evidence = {name: failure_publication[name] for name in
-                            ("source_line", "source_event", "source_path", "step_number", "time_s")}
-                terminal = dict(time_s=published_time, state=failure_publication["state"],
-                                support=None, load_time_s=None,
-                                publication_without_env_transition=True, publication_evidence=evidence)
+                evidence = {
+                    name: failure_publication[name]
+                    for name in (
+                        "source_line",
+                        "source_event",
+                        "source_path",
+                        "step_number",
+                        "time_s",
+                    )
+                }
+                terminal = dict(
+                    time_s=published_time,
+                    state=failure_publication["state"],
+                    support=None,
+                    load_time_s=None,
+                    publication_without_env_transition=True,
+                    publication_evidence=evidence,
+                )
                 emit(terminal, failure_publication["source_line"], published_step)
                 extra_publication_frames = 1
                 last_time, last_tick = published_time, published_step
             elif published_step == last_tick:
-                expected_state = None if pending is None else {
-                    "q": pending[0]["state"]["q"], "v": pending[0]["state"]["v"]}
+                expected_state = (
+                    None
+                    if pending is None
+                    else {"q": pending[0]["state"]["q"], "v": pending[0]["state"]["v"]}
+                )
                 if published_time != last_time or failure_publication["state"] != expected_state:
-                    trace_error = trace_error or dict(type="ConflictingPublication", message="failure snapshot disagrees with the ordinary accepted record")
+                    trace_error = trace_error or dict(
+                        type="ConflictingPublication",
+                        message="failure snapshot disagrees with the ordinary accepted record",
+                    )
             elif published_step > last_tick or published_time >= last_time:
-                trace_error = trace_error or dict(type="PublicationOrdering", message="failure snapshot counter and accepted time disagree")
+                trace_error = trace_error or dict(
+                    type="PublicationOrdering",
+                    message="failure snapshot counter and accepted time disagree",
+                )
         final_stat = source.stat()
-        unchanged = (initial_stat.st_size, initial_stat.st_mtime_ns) == (final_stat.st_size, final_stat.st_mtime_ns)
+        unchanged = (initial_stat.st_size, initial_stat.st_mtime_ns) == (
+            final_stat.st_size,
+            final_stat.st_mtime_ns,
+        )
         metadata = dict(
-            world=world, stride_physical_ticks=stride,
-            selected_frames=selected_frames, accepted_records=accepted_records,
-            actual_accepted_duration_s=last_time, actual_published_duration_s=last_time,
+            world=world,
+            stride_physical_ticks=stride,
+            selected_frames=selected_frames,
+            accepted_records=accepted_records,
+            actual_accepted_duration_s=last_time,
+            actual_published_duration_s=last_time,
             last_accepted_physical_tick=last_tick,
             ordinary_accepted_duration_s=normal_accepted_duration,
             ordinary_accepted_physical_tick=normal_accepted_tick,
             extra_failure_publication_frames=extra_publication_frames,
             failure_publication=failure_publication,
             journal_summary_present=summary is not None,
-            journal_complete=summary is not None and trace_error is None and unchanged and logical_complete,
+            journal_complete=summary is not None
+            and trace_error is None
+            and unchanged
+            and logical_complete,
             reported_success=None if summary is None else summary.get("success"),
-            first_failure=failure, trace_error=trace_error,
-            source=dict(path=str(source), original_bytes=hashed.bytes_read,
-                        original_sha256=hashed.digest.hexdigest(), gzip=compressed,
-                        decoded_jsonl_bytes=logical_bytes, decoded_jsonl_sha256=logical_digest.hexdigest(),
-                        decoded_hash_complete=logical_complete, unchanged_during_export=unchanged,
-                        processed_lines=lines),
-            frame_selection="initial, every Nth ordinary accepted tick, final ordinary accepted, strictly later actual failure publication")
-        return dict(metadata=metadata, request=request, initialization=initialization, summary=summary)
+            first_failure=failure,
+            trace_error=trace_error,
+            source=dict(
+                path=str(source),
+                original_bytes=hashed.bytes_read,
+                original_sha256=hashed.digest.hexdigest(),
+                gzip=compressed,
+                decoded_jsonl_bytes=logical_bytes,
+                decoded_jsonl_sha256=logical_digest.hexdigest(),
+                decoded_hash_complete=logical_complete,
+                unchanged_during_export=unchanged,
+                processed_lines=lines,
+            ),
+            frame_selection="initial, every Nth ordinary accepted tick, final ordinary accepted, strictly later actual failure publication",
+        )
+        return dict(
+            metadata=metadata, request=request, initialization=initialization, summary=summary
+        )
 
 
 def export(args):
@@ -398,8 +525,12 @@ def export(args):
     template = (DEMOS / "g1-physics-replay-template.html").read_text(encoding="utf-8")
     vendor = (DEMOS / "vendor/three-r160.min.js").read_text(encoding="utf-8")
     license_text = (DEMOS / "vendor/three-r160.LICENSE").read_text(encoding="utf-8")
-    template = template.replace('<script src="./vendor/three-r160.min.js"></script>', "<script>\n" + vendor + "\n</script>")
-    template = template.replace("</html>", "<!-- Three.js r160 license\n" + license_text + "\n-->\n</html>")
+    template = template.replace(
+        '<script src="./vendor/three-r160.min.js"></script>', "<script>\n" + vendor + "\n</script>"
+    )
+    template = template.replace(
+        "</html>", "<!-- Three.js r160 license\n" + license_text + "\n-->\n</html>"
+    )
     if template.count("__G1_REPLAY_DATA__") != 1:
         raise ValueError("viewer template must contain exactly one data marker")
     prefix, suffix = template.split("__G1_REPLAY_DATA__")
@@ -418,7 +549,9 @@ def export(args):
             raise
         writer = _HTML(html_stream)
         writer.write(prefix)
-        writer.write('{"schema":"g1-actual-physics-replay-v1","model":' + _json(model) + ',"frames":[')
+        writer.write(
+            '{"schema":"g1-actual-physics-replay-v1","model":' + _json(model) + ',"frames":['
+        )
 
     def render(item):
         nonlocal emitted
@@ -427,21 +560,44 @@ def export(args):
         emitted += 1
 
     try:
-        scan = scan_journal(source, stride=args.stride, world=args.world,
-                            on_initialization=initialize, on_frame=render)
+        scan = scan_journal(
+            source,
+            stride=args.stride,
+            world=args.world,
+            on_initialization=initialize,
+            on_frame=render,
+        )
         metadata = scan["metadata"]
-        metadata.update(scene=binding,
-                        geometry_source="static hash-bound model and saved actual q/v only",
-                        visual_fields="saved actual q/v and full support plus derived visual FK; all site/command/policy details remain in the unmodified original journal",
-                        force_display="input-state sampled force; resultant arrows at accepted foot origins are debug anchors, not actual application points",
-                        reference_motion_loaded=False, physics_advanced=False)
-        writer.write('],"metadata":' + _json(metadata) + ',"initialization":' + _json(scan["initialization"])
-                     + ',"request":' + _json(scan["request"]) + ',"summary":' + _json(scan["summary"]) + "}")
+        metadata.update(
+            scene=binding,
+            geometry_source="static hash-bound model and saved actual q/v only",
+            visual_fields="saved actual q/v and full support plus derived visual FK; all site/command/policy details remain in the unmodified original journal",
+            force_display="input-state sampled force; resultant arrows at accepted foot origins are debug anchors, not actual application points",
+            reference_motion_loaded=False,
+            physics_advanced=False,
+        )
+        writer.write(
+            '],"metadata":'
+            + _json(metadata)
+            + ',"initialization":'
+            + _json(scan["initialization"])
+            + ',"request":'
+            + _json(scan["request"])
+            + ',"summary":'
+            + _json(scan["summary"])
+            + "}"
+        )
         writer.write(suffix)
         html_stream.flush()
-        receipt = dict(schema="g1-actual-physics-replay-export-v1", export_complete=True,
-                       output=str(output), html_bytes=writer.bytes_written,
-                       html_sha256=writer.digest.hexdigest(), metadata=metadata, actual_summary=scan["summary"])
+        receipt = dict(
+            schema="g1-actual-physics-replay-export-v1",
+            export_complete=True,
+            output=str(output),
+            html_bytes=writer.bytes_written,
+            html_sha256=writer.digest.hexdigest(),
+            metadata=metadata,
+            actual_summary=scan["summary"],
+        )
         json.dump(receipt, summary_stream, ensure_ascii=False, allow_nan=False, indent=2)
         summary_stream.flush()
         return receipt
@@ -450,6 +606,7 @@ def export(args):
             html_stream.close()
         if summary_stream is not None:
             summary_stream.close()
+
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
@@ -464,12 +621,24 @@ def main():
     try:
         receipt = export(args)
     except Exception as error:
-        print(json.dumps(dict(export_complete=False, error=type(error).__name__, message=str(error))), file=sys.stderr)
+        print(
+            json.dumps(dict(export_complete=False, error=type(error).__name__, message=str(error))),
+            file=sys.stderr,
+        )
         return 1
     metadata = receipt["metadata"]
-    print(json.dumps(dict(output=receipt["output"], html_bytes=receipt["html_bytes"],
-                          selected_frames=metadata["selected_frames"], actual_duration_s=metadata["actual_accepted_duration_s"],
-                          journal_complete=metadata["journal_complete"], reported_success=metadata["reported_success"])))
+    print(
+        json.dumps(
+            dict(
+                output=receipt["output"],
+                html_bytes=receipt["html_bytes"],
+                selected_frames=metadata["selected_frames"],
+                actual_duration_s=metadata["actual_accepted_duration_s"],
+                journal_complete=metadata["journal_complete"],
+                reported_success=metadata["reported_success"],
+            )
+        )
+    )
     return 0 if metadata["journal_complete"] else 2
 
 

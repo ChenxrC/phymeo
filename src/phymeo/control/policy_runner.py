@@ -183,11 +183,7 @@ class PolicyRunner:
         counters = {}
         for name in ("episode_id", "episode_length"):
             array = np.asarray(getattr(raw, name))
-            if (
-                array.shape != (self._count,)
-                or array.dtype.kind not in "iu"
-                or np.any(array < 0)
-            ):
+            if array.shape != (self._count,) or array.dtype.kind not in "iu" or np.any(array < 0):
                 raise ValueError(f"{name} must contain nonnegative integer world counters")
             counters[name] = _owned(array)
         return VectorStep(
@@ -224,9 +220,8 @@ class PolicyRunner:
         except Exception as error:
             # Only an explicit atomic refusal can be retried safely. N2's
             # partial/unknown acceptance metadata remains on the original error.
-            if (
-                getattr(error, "physics_accepted", None) is not False
-                or bool(getattr(self.env, "needs_reset", False))
+            if getattr(error, "physics_accepted", None) is not False or bool(
+                getattr(self.env, "needs_reset", False)
             ):
                 self._poisoned = True
             raise

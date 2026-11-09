@@ -32,8 +32,9 @@ class VectorEnvStepError(PhysicsStepFailure):
             # Preserve the original message-only exception API. Without a mask
             # it cannot prove that physics did not publish.
             accepted_worlds, acceptance_known = {}, False
-        super().__init__(message, accepted_worlds=accepted_worlds,
-                         acceptance_known=acceptance_known)
+        super().__init__(
+            message, accepted_worlds=accepted_worlds, acceptance_known=acceptance_known
+        )
 
 
 @dataclass(frozen=True)
@@ -88,7 +89,10 @@ class ResidentVectorEnv:
         selected_stepper = batch.step if stepper is None else stepper
         if not callable(selected_stepper):
             raise TypeError("stepper must be callable with one physical dt")
-        if isinstance(selected_stepper, ResidentContactStepper) and selected_stepper.batch is not batch:
+        if (
+            isinstance(selected_stepper, ResidentContactStepper)
+            and selected_stepper.batch is not batch
+        ):
             raise ValueError("contact stepper belongs to a different environment batch owner")
         self._stepper = selected_stepper
         self.batch, self.task, self.world_keys = batch, task, keys
@@ -184,8 +188,14 @@ class ResidentVectorEnv:
             next_length = np.where(completed, 0, length)
             next_episode_id = self._episode_id + completed
             result = VectorStep(
-                observation, reward, terminated, truncated, final, completed,
-                next_episode_id, next_length,
+                observation,
+                reward,
+                terminated,
+                truncated,
+                final,
+                completed,
+                next_episode_id,
+                next_length,
             )
         except Exception as error:
             self._poisoned = True
@@ -215,7 +225,8 @@ class ResidentVectorEnv:
                 self._poisoned = True
                 raise VectorEnvStepError(
                     "physical failure has an incomplete/invalid acceptance map; reset all worlds",
-                    accepted_worlds={}, acceptance_known=False,
+                    accepted_worlds={},
+                    acceptance_known=False,
                 ) from invalid
             self._raise_rejected(accepted, cause=error)
             # A failure after every world accepted is still not an env transition.
@@ -228,7 +239,8 @@ class ResidentVectorEnv:
             self._poisoned = True
             raise VectorEnvStepError(
                 "physical step failed with unknown publication state; reset all worlds",
-                accepted_worlds={}, acceptance_known=False,
+                accepted_worlds={},
+                acceptance_known=False,
             ) from error
         try:
             accepted = _exact_acceptance(returned, self.world_keys)
@@ -236,7 +248,8 @@ class ResidentVectorEnv:
             self._poisoned = True
             raise VectorEnvStepError(
                 "physical step returned an invalid acceptance map; reset all worlds",
-                accepted_worlds={}, acceptance_known=False,
+                accepted_worlds={},
+                acceptance_known=False,
             ) from error
         self._raise_rejected(accepted)
         return accepted

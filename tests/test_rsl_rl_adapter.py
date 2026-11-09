@@ -13,11 +13,12 @@ torch = pytest.importorskip("torch")
 pytest.importorskip("tensordict")
 pytest.importorskip("rsl_rl")
 
-from rsl_rl.runners import OnPolicyRunner
-from tensordict import TensorDict
+# These imports intentionally follow the optional-dependency admission above.
+from rsl_rl.runners import OnPolicyRunner  # noqa: E402
+from tensordict import TensorDict  # noqa: E402
 
-from phymeo.training import ResidentVectorEnv, VectorEnvStepError
-from phymeo.training.rsl_rl import RslRlVecEnv
+from phymeo.training import ResidentVectorEnv, VectorEnvStepError  # noqa: E402
+from phymeo.training.rsl_rl import RslRlVecEnv  # noqa: E402
 
 
 @dataclass(frozen=True)
@@ -32,7 +33,9 @@ class Backend:
         self.calls = 0
 
     def snapshot(self, keys=None):
-        return {key: Clock(value) for key, value in self.ticks.items() if keys is None or key in keys}
+        return {
+            key: Clock(value) for key, value in self.ticks.items() if keys is None or key in keys
+        }
 
     def set_controls(self, controls):
         self.controls = {key: np.array(value, copy=True) for key, value in controls.items()}
@@ -86,19 +89,21 @@ def test_fresh_tensordicts_preserve_prior_frames_and_timeout_terminal_observatio
     final, _, done, extras = adapter.step(action)
     torch.testing.assert_close(initial["policy"], torch.zeros(2, 1))
     torch.testing.assert_close(first["policy"], first_saved)
-    torch.testing.assert_close(second["policy"], torch.full((2, 1), 2.))
+    torch.testing.assert_close(second["policy"], torch.full((2, 1), 2.0))
     torch.testing.assert_close(final["policy"], torch.zeros(2, 1))
-    torch.testing.assert_close(extras["final_observation"]["policy"], torch.full((2, 1), 3.))
+    torch.testing.assert_close(extras["final_observation"]["policy"], torch.full((2, 1), 3.0))
     assert first["policy"].data_ptr() != second["policy"].data_ptr()
     assert reward.dtype == torch.float32 and done.dtype == torch.bool and bool(done.all())
     assert bool(extras["time_outs"].all()) and bool(extras["final_mask"].all())
     assert backend.ticks == {4: 0, 7: 0}
-    action.fill_(100.)
-    np.testing.assert_array_equal(backend.controls[4], [0.])
+    action.fill_(100.0)
+    np.testing.assert_array_equal(backend.controls[4], [0.0])
 
 
-@pytest.mark.parametrize("actions", (torch.ones(2, 1, dtype=torch.long),
-                                      torch.full((2, 1), float("nan")), torch.zeros(1, 1)))
+@pytest.mark.parametrize(
+    "actions",
+    (torch.ones(2, 1, dtype=torch.long), torch.full((2, 1), float("nan")), torch.zeros(1, 1)),
+)
 def test_invalid_tensor_action_never_enters_physics(actions):
     backend, _, adapter = make()
     with pytest.raises((TypeError, ValueError)):
@@ -149,12 +154,18 @@ def test_episode_clock_copy_and_unsupported_clock_only_randomization():
 def test_actual_runner_constructs_and_checkpoint_restores_inference(tmp_path):
     torch.manual_seed(20261110)
     _, _, adapter = make()
-    cfg = {"num_steps_per_env": 2, "save_interval": 100,
-           "obs_groups": {"actor": ["policy"], "critic": ["policy"]},
-           "algorithm": {"class_name": "PPO"},
-           "actor": {"class_name": "MLPModel", "hidden_dims": [8],
-                     "distribution_cfg": {"class_name": "GaussianDistribution", "init_std": .4}},
-           "critic": {"class_name": "MLPModel", "hidden_dims": [8]}}
+    cfg = {
+        "num_steps_per_env": 2,
+        "save_interval": 100,
+        "obs_groups": {"actor": ["policy"], "critic": ["policy"]},
+        "algorithm": {"class_name": "PPO"},
+        "actor": {
+            "class_name": "MLPModel",
+            "hidden_dims": [8],
+            "distribution_cfg": {"class_name": "GaussianDistribution", "init_std": 0.4},
+        },
+        "critic": {"class_name": "MLPModel", "hidden_dims": [8]},
+    }
     runner = OnPolicyRunner(adapter, cfg, log_dir=None, device="cpu")
     observation = adapter.get_observations()
     with torch.no_grad():

@@ -183,6 +183,7 @@ class FloatingRobotPreparation:
     external: FloatingRobotInputs
     resolved: FloatingRobotCommand
     requested: FloatingRobotCommand
+    full_step_mass: np.ndarray | None = None
 
 
 def _project(linear, angular, force, torque):
@@ -422,6 +423,11 @@ class FloatingRobotParticipant:
         self.validate(state)
         entry = self.copy_state(state)
         physical, geometry, linear, angular, mass, bias = self.terms(entry)
+        damping = getattr(self.asset.model, "joint_damping", None)
+        step_mass = mass
+        if damping is not None and np.any(damping):
+            step_mass = mass.copy()
+            step_mass[6:, 6:] += h * np.diag(damping)
         n = self.body_count - 1
         external = FloatingRobotInputs.zeros(n) if command.external is None else command.external
         if (
@@ -436,7 +442,7 @@ class FloatingRobotParticipant:
             entry,
             command,
             h,
-            mass,
+            step_mass,
             bias,
             _project(linear, angular, external.force, external.torque),
             external,
@@ -453,6 +459,7 @@ class FloatingRobotParticipant:
             external,
             resolved,
             _asset_snapshot(command),
+            _readonly(step_mass),
         )
 
     def integrate(self, prepared, measured, dt):

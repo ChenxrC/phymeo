@@ -56,8 +56,7 @@ def body_totals(model, state):
     momenta = np.array([2.0, 1.0])[:, None] * geometry.com_velocity
     spins = np.array([2.0, 1.0])[:, None] * geometry.angular_velocity
     kinetic = 0.5 * (
-        np.sum(momenta * geometry.com_velocity)
-        + np.sum(spins * geometry.angular_velocity)
+        np.sum(momenta * geometry.com_velocity) + np.sum(spins * geometry.angular_velocity)
     )
     angular = np.cross(geometry.com_position, momenta).sum(axis=0) + spins.sum(axis=0)
     return momenta.sum(axis=0), angular, kinetic
@@ -232,10 +231,10 @@ def test_mjcf_resolves_defaults_and_explicit_overrides(tmp_path, change, armatur
         ('name="hinge"', 'name="hinge" damping="1 2 3"', "1 finite"),
         ('class="fast" axis=', 'class="missing" axis=', "default class"),
         ('damping="4"', 'damping="4" frictionloss=".2"', "frictionloss"),
-        ('<freejoint/>', '<freejoint damping=".1"/>', "freejoint"),
-        ('<motor joint=', '<motor armature="1" joint=', "joint properties"),
-        ('</actuator>', '<motor joint="hinge" ctrlrange="-8 8"/></actuator>', "one named"),
-        ('</actuator>', '<motor joint="missing" ctrlrange="-8 8"/></actuator>', "motor mapping"),
+        ("<freejoint/>", '<freejoint damping=".1"/>', "freejoint"),
+        ("<motor joint=", '<motor armature="1" joint=', "joint properties"),
+        ("</actuator>", '<motor joint="hinge" ctrlrange="-8 8"/></actuator>', "one named"),
+        ("</actuator>", '<motor joint="missing" ctrlrange="-8 8"/></actuator>', "motor mapping"),
     ),
 )
 def test_mjcf_rejects_unsupported_or_invalid_actuator_data(tmp_path, old, new, match):

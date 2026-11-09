@@ -47,6 +47,12 @@ class OwnerPort:
     angular: np.ndarray
     centers: np.ndarray
     free_effort: np.ndarray
+    response_mass: np.ndarray | None = None
+
+    @property
+    def response_metric(self):
+        """Integrator response; physical mass remains distinct for diagnostics."""
+        return self.mass if self.response_mass is None else self.response_mass
 
     @property
     def full_count(self):
@@ -95,7 +101,7 @@ class OwnerPort:
         if not len(self.velocity):
             return np.empty(0)
         return self.velocity + h * np.linalg.solve(
-            self.mass,
+            self.response_metric,
             self.free_effort + self.projection.T @ contact,
         )
 
@@ -137,6 +143,11 @@ def _robot_port(scene, address, prepared):
     full_mass = _array(prepared.full_mass, (full_n, full_n), "full mass")
     bias = _array(prepared.full_bias, (full_n,), "full dynamics bias")
     mass = _mass(projection.T @ full_mass @ projection, reduced_n)
+    response_mass = None
+    step_mass = getattr(prepared, "full_step_mass", None)
+    if step_mass is not None:
+        step_mass = _array(step_mass, (full_n, full_n), "full step response metric")
+        response_mass = _mass(projection.T @ step_mass @ projection, reduced_n)
     if floating:
         if reduced_n < 6 or full_n != count + 5:
             raise ValueError("floating physical root/joint dimensions disagree")
@@ -166,6 +177,7 @@ def _robot_port(scene, address, prepared):
         angular,
         centers,
         _array(free_effort, (reduced_n,), "free effort"),
+        response_mass,
     )
 
 
@@ -269,6 +281,6 @@ def relative_response(ports, bindings, measured, loads, rigid_rows, h):
         velocity = port.free_velocity(contact, h)
         rows = matrices[address]
         if len(velocity):
-            world += rows @ np.linalg.solve(port.mass, rows.T)
+            world += rows @ np.linalg.solve(port.response_metric, rows.T)
             free += rows @ velocity
     return world, free.reshape(count, 3)

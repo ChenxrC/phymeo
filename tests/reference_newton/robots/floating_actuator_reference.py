@@ -68,9 +68,13 @@ def main():
             mj, model = pair(kind, armature, damping)
             for pose, orientation, rate in (
                 ("identity-rest", [0.0, 0.0, 0.0, 1.0], np.zeros(7)),
-                ("tilted-moving", [0.0, 0.6, 0.0, 0.8], np.array([.1, -.2, .03, .2, -.1, .4, -.3])),
+                (
+                    "tilted-moving",
+                    [0.0, 0.6, 0.0, 0.8],
+                    np.array([0.1, -0.2, 0.03, 0.2, -0.1, 0.4, -0.3]),
+                ),
             ):
-                q = np.array([.2, -.1, .7, *orientation, .25])
+                q = np.array([0.2, -0.1, 0.7, *orientation, 0.25])
                 state = FloatingRobotState(q, rate)
                 rotation = quaternion_matrix(state.q[None, 3:7])[0]
                 offset = rotation @ model.root_com_m
@@ -84,7 +88,7 @@ def main():
                 data.qpos[3:7] = q[[6, 3, 4, 5]]
                 data.qpos[7] = q[7]
                 data.qvel[:] = transform @ rate
-                data.qfrc_applied[6] = .7
+                data.qfrc_applied[6] = 0.7
                 mujoco.mj_forward(mj, data)
                 mass_native = np.zeros((7, 7))
                 try:
@@ -98,27 +102,33 @@ def main():
                     data.qfrc_bias - data.qfrc_passive + mass_native @ derivative
                 )
                 acceleration_expected = np.linalg.solve(transform, data.qacc - derivative)
-                inputs = FloatingRobotInputs(np.array([.7]), np.zeros((2, 3)), np.zeros((2, 3)))
+                inputs = FloatingRobotInputs(np.array([0.7]), np.zeros((2, 3)), np.zeros((2, 3)))
                 actual = floating_dynamics_terms(model, state, inputs)
-                np.testing.assert_allclose(actual.mass_matrix, mass_expected, rtol=1e-10, atol=1e-11)
+                np.testing.assert_allclose(
+                    actual.mass_matrix, mass_expected, rtol=1e-10, atol=1e-11
+                )
                 np.testing.assert_allclose(actual.bias, bias_expected, rtol=1e-10, atol=1e-10)
-                np.testing.assert_allclose(actual.acceleration, acceleration_expected, rtol=1e-9, atol=1e-10)
-                rows.append({
-                    "identity": f"{kind}-{label}-{pose}",
-                    "q": q.tolist(),
-                    "v": rate.tolist(),
-                    "armature": armature,
-                    "damping": damping,
-                    "basis_transform": transform.tolist(),
-                    "basis_derivative_velocity": derivative.tolist(),
-                    "mujoco_mass": mass_expected.tolist(),
-                    "phymeo_mass": actual.mass_matrix.tolist(),
-                    "mujoco_bias": bias_expected.tolist(),
-                    "phymeo_bias": actual.bias.tolist(),
-                    "mujoco_acceleration": acceleration_expected.tolist(),
-                    "phymeo_acceleration": actual.acceleration.tolist(),
-                    "full_m_api": full_m_api,
-                })
+                np.testing.assert_allclose(
+                    actual.acceleration, acceleration_expected, rtol=1e-9, atol=1e-10
+                )
+                rows.append(
+                    {
+                        "identity": f"{kind}-{label}-{pose}",
+                        "q": q.tolist(),
+                        "v": rate.tolist(),
+                        "armature": armature,
+                        "damping": damping,
+                        "basis_transform": transform.tolist(),
+                        "basis_derivative_velocity": derivative.tolist(),
+                        "mujoco_mass": mass_expected.tolist(),
+                        "phymeo_mass": actual.mass_matrix.tolist(),
+                        "mujoco_bias": bias_expected.tolist(),
+                        "phymeo_bias": actual.bias.tolist(),
+                        "mujoco_acceleration": acceleration_expected.tolist(),
+                        "phymeo_acceleration": actual.acceleration.tolist(),
+                        "full_m_api": full_m_api,
+                    }
+                )
     report = {
         "schema": "floating-joint-actuator-mujoco-reference-v1",
         "mujoco_version": mujoco.__version__,

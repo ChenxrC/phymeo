@@ -72,3 +72,25 @@ K_old-K_new = h*v_new.T*D*v_new + 0.5*delta_v.T*M*delta_v
 ## 一手语义参考
 
 [MuJoCo joint armature/damping](https://mujoco.readthedocs.io/en/stable/XMLreference.html#body-joint-armature) 定义关节附加反射惯量和黏性阻力；其 Euler 积分使用隐式阻尼。这里仅实现线性标量项，不泛化到新版本的多项式阻尼或其它 actuator 传动。
+## 2026-11-09 parent validation
+
+The HOST implementation and shared scene integration passed 44 focused tests
+(`tests/test_floating_actuators.py`, `tests/test_floating_actuator_scene.py`,
+`tests/test_floating_mjcf.py`). Eight independent MuJoCo fixed-state cases
+checked physical mass, bias and continuous acceleration. Three actual G1
+poses additionally checked all 35 velocity coordinates: maximum mass error
+`5.5511e-15`, acceleration error `3.3840e-13`, and kinetic-energy error
+`5.5511e-16`. These are dynamics comparisons, not a Phymeo standing result.
+
+The shared scene keeps physical inertia separate from `M+hD` step mobility,
+including bounded drive and coupled tangent preparation. A two-body analytic
+scene checks the resulting free-root angular reaction and joint decay.
+Default zero damping retains the old path.
+
+Evidence: `artifacts/p65-h1-20261109-01`, tasks 03–08. Task 07 retains an
+initial reference-script import error; task 08 corrects the import and completes
+the G1 comparison. The same official primitive model with the original
+deployment armature/viscous damping completed a separate 20-second MuJoCo policy
+reference; dry friction was explicitly zero in this matched primitive variant.
+This does not replace the preserved full-mesh reference or establish policy
+transfer to Phymeo.

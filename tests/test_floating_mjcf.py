@@ -55,7 +55,7 @@ def test_unsupported_declarations_are_rejected(tmp_path, old, new):
         asset(tmp_path, XML.replace(old, new))
 
 
-@pytest.mark.parametrize("attribute", ("armature", "damping", "frictionloss"))
+@pytest.mark.parametrize("attribute", ("frictionloss",))
 def test_implicit_actuator_terms_are_not_silently_dropped(tmp_path, attribute):
     modified = XML.replace('<joint name="hinge"', f'<joint {attribute}=".01" name="hinge"')
     with pytest.raises(ValueError, match=attribute):

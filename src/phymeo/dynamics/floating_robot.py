@@ -57,8 +57,10 @@ class FloatingRobotModel:
         count = 0 if self.children is None else self.children.dof_count
         for name in ("joint_armature", "joint_damping"):
             value = getattr(self, name)
-            array = np.zeros(count, dtype=np.float64) if value is None else robot_array(
-                value, name, ndim=1
+            array = (
+                np.zeros(count, dtype=np.float64)
+                if value is None
+                else robot_array(value, name, ndim=1)
             )
             if array.shape != (count,) or np.any(array < 0):
                 raise ValueError(f"{name} must be a nonnegative vector of length {count}")

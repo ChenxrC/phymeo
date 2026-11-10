@@ -139,8 +139,26 @@ def test_bad_representation_cannot_become_a_physical_site(fault, tyx_mode, tmp_p
         elif fault == "surface":
             site = replace(site, first=replace(site.first, surface_relative_m=(100, 100, 100)))
         if fault in ("negative_bary", "missing_material", "nonunit_site_normal", "zero_weight", "surface", "quadrature"):
+            # Mutate both representations consistently. These negatives must
+            # reach semantic admission, not merely typed/raw binding checks.
+            wire = dict(result.patch)
+            for name in ("patch_weight", "patch_normal", "patch_ids", "patch_bary", "patch_surface"):
+                wire[name] = np.array(wire[name], copy=True)
+            wire["patch_weight"][0] = site.weight
+            wire["patch_normal"][0] = site.normal
+            count = len(site.first.vertex_ids)
+            wire["patch_ids"][0, 0, :count] = site.first.vertex_ids
+            wire["patch_bary"][0, 0, :count] = site.first.weights
+            wire["patch_surface"][0, 0] = site.first.surface_relative_m
+            site = replace(
+                site, weight=float(wire["patch_weight"][0]),
+                normal=tuple(map(float, wire["patch_normal"][0])),
+                first=replace(site.first,
+                    vertex_ids=tuple(map(int, wire["patch_ids"][0, 0, :count])),
+                    weights=tuple(map(float, wire["patch_bary"][0, 0, :count])),
+                    surface_relative_m=tuple(map(float, wire["patch_surface"][0, 0]))))
             row = replace(row, patch=replace(row.patch, sites=(site,) + row.patch.sites[1:]))
-            result = replace(result, rows=(row,))
+            result = replace(result, rows=(row,), patch=wire)
         elif fault in ("resource", "unresolved"):
             row = replace(row, patch=replace(row.patch, status="RESOURCE_LIMIT" if fault == "resource" else "UNRESOLVED"))
             result = replace(result, rows=(row,))

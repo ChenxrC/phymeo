@@ -55,7 +55,7 @@ It factors physical M once and forms a0=M^-1(applied+passive-bias), Z=M^-1 J.T a
 
 Starting at f=0, an improving inactive coordinate enters the working face. A Cholesky solve obtains the unconstrained minimizer on that face. A blocking negative component causes a feasible line segment update and removal of the blocking face. Every face solve, including blocked candidates, consumes the same finite budget. No per-point physical update or extra hidden budget occurs.
 
-The final gate is checked again after the last permitted face solve. For each active row, the projected gradient violation is abs(gradient) if force>0, otherwise max(-gradient,0). The common scale is max(1, max rows of abs(linear_i)+sum_j abs(A_ij f_j)). normalized_kkt is max violation divided by that scale. Negative force, nonfinite intermediates, nonpositive factor pivots or unmet final tolerance reject publication.
+The final gate is checked again after the last permitted face solve. For each active row, the projected gradient violation is abs(gradient) if force>0, otherwise max(-gradient,0). The common scale is max(1, max rows of abs(linear_i)+sum_j abs(A_ij f_j)). normalized_kkt is max violation divided by that scale. Final acceptance compares the actual stored FP32 normalized_kkt against the stored tolerance, so the public diagnostic and publication gate cannot disagree by a division-rounding ULP. Negative force, nonfinite intermediates, nonpositive factor pivots or unmet final tolerance reject publication.
 
 Status codes retain 1 capacity, 2 nonfinite, 3 joint limits, 4 nonpositive physical matrix; T3 uses 5 for nonconvergence/no improving face despite unmet stationarity and 6 for nonpositive normal face matrix. Parent decodes these statuses and owns batch rejection/publication.
 

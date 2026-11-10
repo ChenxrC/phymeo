@@ -247,7 +247,7 @@ def solve(
             diagnostics[w, 2] = residual
             diagnostics[w, 3] = min_force
             if status[w] == 0:
-                if residual <= tolerance * scale and min_force >= 0.0:
+                if diagnostics[w, 1] <= tolerance and min_force >= 0.0:
                     diagnostics[w, 6] = 1.0
                 else:
                     status[w] = 5

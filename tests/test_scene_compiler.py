@@ -49,21 +49,38 @@ def _asset(kind="prismatic", *, floating=False, n=1, collider=True):
     key = ph.CollisionKey(0, 42, 71)
     shape = ph.CollisionShape(key, "sphere", (901,), radius=1 / 8)
     collisions = (
-        LinkCollision(
-            "probe", "link0", 0, (0.0, 0.0, 0.0), (0.0, 0.0, 0.0, 1.0),
-            shape, ((0.0, 0.0, 0.0),), True,
-        ),
-    ) if collider else ()
+        (
+            LinkCollision(
+                "probe",
+                "link0",
+                0,
+                (0.0, 0.0, 0.0),
+                (0.0, 0.0, 0.0, 1.0),
+                shape,
+                ((0.0, 0.0, 0.0),),
+                True,
+            ),
+        )
+        if collider
+        else ()
+    )
     fields = (
-        "analytic", "root", tuple(f"link{i}" for i in range(n)),
-        tuple(f"joint{i}" for i in range(n)), (-2.0,) * n, (2.0,) * n,
-        (100.0,) * n, (20.0,) * n, collisions,
+        "analytic",
+        "root",
+        tuple(f"link{i}" for i in range(n)),
+        tuple(f"joint{i}" for i in range(n)),
+        (-2.0,) * n,
+        (2.0,) * n,
+        (100.0,) * n,
+        (20.0,) * n,
+        collisions,
         ph.CollisionModel(tuple(row.shape for row in collisions)),
     )
     if floating:
         full = ph.FloatingRobotModel(
             ph.RigidBodyModel(np.array([0.25]), np.full((1, 3), 0.5), np.zeros(3)),
-            np.zeros(3), model,
+            np.zeros(3),
+            model,
         )
         return FloatingRobotAsset(fields[0], fields[1], full, *fields[2:])
     return RobotAsset(fields[0], fields[1], model, *fields[2:])
@@ -74,30 +91,45 @@ def _world(world=17, *, kind="prismatic", floating=False, affine=False, contact=
     if affine:
         asset = (
             FloatingMimicRobotAsset(asset, (("joint0", "joint1", -1.0, 0.0),))
-            if floating else MimicRobotAsset(asset, "joint0", "joint1", -1.0, 0.0)
+            if floating
+            else MimicRobotAsset(asset, "joint0", "joint1", -1.0, 0.0)
         )
     state = (
-        ph.FloatingRobotState(
-            np.r_[[0.0, 0.0, 3 / 32], [0.0, 0.0, 0.0, 1.0], 0.0], np.zeros(7)
-        ) if floating else ph.RobotState(np.zeros(1), np.zeros(1))
+        ph.FloatingRobotState(np.r_[[0.0, 0.0, 3 / 32], [0.0, 0.0, 0.0, 1.0], 0.0], np.zeros(7))
+        if floating
+        else ph.RobotState(np.zeros(1), np.zeros(1))
     )
     environment = (
-        FiniteStaticShape.box(
-            world, 900, (1.0, 1.0, 1 / 8), position=(0.0, 0.0, -1 / 8),
-            material=ph.RobotContactMaterial(64, 0, 0),
-        ),
-    ) if contact else ()
+        (
+            FiniteStaticShape.box(
+                world,
+                900,
+                (1.0, 1.0, 1 / 8),
+                position=(0.0, 0.0, -1 / 8),
+                material=ph.RobotContactMaterial(64, 0, 0),
+            ),
+        )
+        if contact
+        else ()
+    )
     return ArticulationWorld(
-        world, asset, state, kp=np.zeros(1), kd=np.zeros(1),
-        effort_limit=np.full(1, 100.0), static_shapes=environment,
+        world,
+        asset,
+        state,
+        kp=np.zeros(1),
+        kd=np.zeros(1),
+        effort_limit=np.full(1, 100.0),
+        static_shapes=environment,
     )
 
 
 def _command(world, effort):
     joint = ph.RobotCommand(np.zeros(1), feedforward=np.array([float(effort)]))
-    return ph.FloatingRobotCommand(joint) if isinstance(
-        world.initial_state, ph.FloatingRobotState
-    ) else joint
+    return (
+        ph.FloatingRobotCommand(joint)
+        if isinstance(world.initial_state, ph.FloatingRobotState)
+        else joint
+    )
 
 
 def test_declaration_owns_original_asset_state_controls_and_geometry():
@@ -121,7 +153,10 @@ def test_declaration_owns_original_asset_state_controls_and_geometry():
 def test_capability_is_explicit_for_static_capsule_and_self_contact():
     world = _world()
     capsule = FiniteStaticShape.capsule(
-        world.world, 900, ((0.0, 0.0, 2.0), (0.0, 0.0, 3.0)), 0.1,
+        world.world,
+        900,
+        ((0.0, 0.0, 2.0), (0.0, 0.0, 3.0)),
+        0.1,
         material=ph.RobotContactMaterial(64, 0, 0),
     )
     declaration = SceneDeclaration((replace(world, static_shapes=(capsule,)),))
@@ -132,14 +167,20 @@ def test_capability_is_explicit_for_static_capsule_and_self_contact():
         compile_scene(declaration, "host")
     assert captured.value.report == report
     self_contact = SceneDeclaration((replace(world, self_collision=True),))
-    assert any(row.feature == "self_collision" for row in scene_capabilities(self_contact, "cuda").issues)
+    assert any(
+        row.feature == "self_collision" for row in scene_capabilities(self_contact, "cuda").issues
+    )
 
 
 def test_capability_rejects_33_joints_without_allocating_a_runtime():
     asset = _asset(n=33, collider=False)
     world = ArticulationWorld(
-        409, asset, ph.RobotState(np.zeros(33), np.zeros(33)),
-        kp=np.zeros(33), kd=np.zeros(33), effort_limit=np.full(33, 100.0),
+        409,
+        asset,
+        ph.RobotState(np.zeros(33), np.zeros(33)),
+        kp=np.zeros(33),
+        kd=np.zeros(33),
+        effort_limit=np.full(33, 100.0),
     )
     report = scene_capabilities(SceneDeclaration((world,)), "cuda")
     assert not report.supported
@@ -148,8 +189,12 @@ def test_capability_rejects_33_joints_without_allocating_a_runtime():
 
 def test_static_box_pose_keeps_complete_material_vertices():
     shape = FiniteStaticShape.box(
-        71, 900, (1.0, 2.0, 3.0), position=(4.0, -2.0, 1.0),
-        orientation_xyzw=(0.0, 0.0, 1.0, 0.0), material=None,
+        71,
+        900,
+        (1.0, 2.0, 3.0),
+        position=(4.0, -2.0, 1.0),
+        orientation_xyzw=(0.0, 0.0, 1.0, 0.0),
+        material=None,
     )
     expected = np.array(list(product((-1.0, 1.0), (-2.0, 2.0), (-3.0, 3.0))))
     expected = expected @ np.diag([-1.0, -1.0, 1.0]) + [4, -2, 1]
@@ -161,9 +206,12 @@ def _free_matrix(backend, tmp_path):
     kinds = ("prismatic", "revolute", "fixed_affine", "floating", "floating_affine")
     worlds = tuple(
         _world(
-            key, kind="revolute" if kind == "revolute" else "prismatic",
-            floating=kind.startswith("floating"), affine="affine" in kind,
-        ) for key, kind in zip((7, 103, 409, 711, 907), kinds, strict=True)
+            key,
+            kind="revolute" if kind == "revolute" else "prismatic",
+            floating=kind.startswith("floating"),
+            affine="affine" in kind,
+        )
+        for key, kind in zip((7, 103, 409, 711, 907), kinds, strict=True)
     )
     declaration = SceneDeclaration(worlds)
     with compile_scene(declaration, backend, cache_root=tmp_path) as scene:
@@ -220,10 +268,14 @@ def _contact_oracle(backend, tmp_path, floating):
             forces = receipt.loads.inputs.rigid.force
             np.testing.assert_allclose(forces.sum(axis=0), [0, 0, -2], atol=1e-10, rtol=0)
         else:
-            np.testing.assert_allclose(receipt.law_wrench_fp64[-1, :3], [0, 0, 2], atol=1e-10, rtol=0)
+            np.testing.assert_allclose(
+                receipt.law_wrench_fp64[-1, :3], [0, 0, 2], atol=1e-10, rtol=0
+            )
             np.testing.assert_allclose(
                 sum((row.force_n for row in receipt.static_reactions.values()), np.zeros(3)),
-                [0, 0, -2], atol=1e-10, rtol=0,
+                [0, 0, -2],
+                atol=1e-10,
+                rtol=0,
             )
         assert len(scene.shape_keys[world.world]) == len(world.asset.collisions)
 
@@ -274,6 +326,7 @@ def test_actual_host_partial_publication_requires_full_reset():
         scene.set_controls({7: _command(first, 0), 103: _command(second, 0)})
         assert scene.step(H) == {7: True, 103: True}
 
+
 def _passive_oracle(backend, tmp_path):
     world = _world(floating=True)
     model = replace(
@@ -282,7 +335,8 @@ def _passive_oracle(backend, tmp_path):
     velocity = np.zeros(7)
     velocity[-1] = 0.2
     world = replace(
-        world, asset=replace(world.asset, model=model),
+        world,
+        asset=replace(world.asset, model=model),
         initial_state=ph.FloatingRobotState(world.initial_state.q, velocity),
     )
     with compile_scene(SceneDeclaration((world,)), backend, cache_root=tmp_path) as scene:
@@ -341,8 +395,12 @@ def test_declaration_does_not_depend_on_callers_mutable_asset_or_cap():
     asset = _asset()
     cap = np.array([100.0])
     world = ArticulationWorld(
-        17, asset, ph.RobotState(np.zeros(1), np.zeros(1)),
-        kp=np.zeros(1), kd=np.zeros(1), effort_limit=cap,
+        17,
+        asset,
+        ph.RobotState(np.zeros(1), np.zeros(1)),
+        kp=np.zeros(1),
+        kd=np.zeros(1),
+        effort_limit=cap,
     )
     asset.model.mass.flags.writeable = True
     asset.model.mass[0] = 9

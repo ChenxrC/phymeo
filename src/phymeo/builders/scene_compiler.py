@@ -22,7 +22,12 @@ from types import MappingProxyType
 import numpy as np
 
 from ..constraints.collision_shapes import (
-    MAX_SHAPES, MAX_VERTICES, CollisionKey, CollisionModel, CollisionMotion, CollisionShape,
+    MAX_SHAPES,
+    MAX_VERTICES,
+    CollisionKey,
+    CollisionModel,
+    CollisionMotion,
+    CollisionShape,
 )
 from ..constraints.robot_contact import RobotContactMaterial
 from ..core.robot import RobotState
@@ -42,7 +47,11 @@ _ASSETS = (RobotAsset, FloatingRobotAsset, MimicRobotAsset, FloatingMimicRobotAs
 
 
 def _integer(value, label):
-    if isinstance(value, (bool, np.bool_)) or not isinstance(value, Integral) or not 0 <= value < 2**31:
+    if (
+        isinstance(value, (bool, np.bool_))
+        or not isinstance(value, Integral)
+        or not 0 <= value < 2**31
+    ):
         raise ValueError(f"{label} must be a nonnegative i32 integer")
     return int(value)
 
@@ -103,8 +112,16 @@ class FiniteStaticShape:
         object.__setattr__(self, "material", _asset_snapshot(self.material))
 
     @classmethod
-    def box(cls, world, body, half_extents, *, position=(0, 0, 0),
-            orientation_xyzw=(0, 0, 0, 1), material=None):
+    def box(
+        cls,
+        world,
+        body,
+        half_extents,
+        *,
+        position=(0, 0, 0),
+        orientation_xyzw=(0, 0, 0, 1),
+        material=None,
+    ):
         half = _array(half_extents, "box half extents", (3,))
         if np.any(half <= 0):
             raise ValueError("box half extents must be positive")
@@ -144,7 +161,9 @@ class ArticulationWorld:
     def __post_init__(self):
         world, body = _integer(self.world, "world"), _integer(self.robot_body, "robot body")
         if not isinstance(self.asset, _ASSETS):
-            raise TypeError("world asset must be an existing fixed/floating ordinary or affine asset")
+            raise TypeError(
+                "world asset must be an existing fixed/floating ordinary or affine asset"
+            )
         asset = _asset_snapshot(self.asset)
         n = len(asset.joint_names)
         expected = FloatingRobotState if _floating(asset) else RobotState
@@ -176,7 +195,9 @@ class ArticulationWorld:
         if any(not isinstance(row, FiniteStaticShape) for row in static):
             raise TypeError("static_shapes must contain FiniteStaticShape declarations")
         if any(row.shape.key.world != world or row.shape.key.body == body for row in static):
-            raise ValueError("static world must agree and body IDs must differ from the articulation")
+            raise ValueError(
+                "static world must agree and body IDs must differ from the articulation"
+            )
         if len({row.shape.key.body for row in static}) != len(static):
             raise ValueError("one original finite collider per static body is required")
         if type(self.self_collision) is not bool:
@@ -229,8 +250,12 @@ class CompileReport:
     features: tuple[str, ...]
     issues: tuple[CompilationIssue, ...]
     unavailable: tuple[str, ...] = (
-        "self_collision", "ccd", "moving_environment", "multi_articulation_world",
-        "per_command_effort_cap", "joint_stop_law",
+        "self_collision",
+        "ccd",
+        "moving_environment",
+        "multi_articulation_world",
+        "per_command_effort_cap",
+        "joint_stop_law",
     )
     contact_law: str = "phymeo-compliant-velocity-friction"
     narrow_phase: str = "host"
@@ -242,9 +267,10 @@ class CompileReport:
 
 class SceneCompilationError(ValueError):
     def __init__(self, report):
-        super().__init__("scene compilation unsupported: " + "; ".join(
-            f"world={row.world} {row.feature}: {row.reason}" for row in report.issues
-        ))
+        super().__init__(
+            "scene compilation unsupported: "
+            + "; ".join(f"world={row.world} {row.feature}: {row.reason}" for row in report.issues)
+        )
         self.report = report
 
 
@@ -265,6 +291,7 @@ class WorldSnapshot:
             object.__setattr__(self, name, _array(value, name, value.shape))
         object.__setattr__(self, "raw", _asset_snapshot(self.raw))
 
+
 def _validated_control(world, control):
     n = len(world.asset.joint_names)
     floating = _floating(world.asset)
@@ -274,8 +301,11 @@ def _validated_control(world, control):
         joint = control.joints
         if control.external is not None:
             full_n = len(_physical(world.asset).joint_names)
-            for name, shape in (("effort", (full_n,)), ("force", (full_n + 1, 3)),
-                                ("torque", (full_n + 1, 3))):
+            for name, shape in (
+                ("effort", (full_n,)),
+                ("force", (full_n + 1, 3)),
+                ("torque", (full_n + 1, 3)),
+            ):
                 _array(getattr(control.external, name), "external " + name, shape)
     else:
         joint = control
@@ -286,7 +316,9 @@ def _validated_control(world, control):
         if not isinstance(joint, RobotCommand):
             raise TypeError("fixed world or floating child drive needs RobotCommand")
         target = _array(joint.target_q, "joint target", (n,))
-        if np.any(target < np.asarray(world.asset.lower)) or np.any(target > np.asarray(world.asset.upper)):
+        if np.any(target < np.asarray(world.asset.lower)) or np.any(
+            target > np.asarray(world.asset.upper)
+        ):
             raise ValueError("command target outside asset metadata limits")
         if joint.target_velocity is not None:
             velocity = _array(joint.target_velocity, "target velocity", (n,))
@@ -331,10 +363,14 @@ def _source_identity(world):
             following += 1
         bodies[body] = following
         occupied.add(following)
-    return MappingProxyType({
-        row.shape.key: CollisionKey(world.world, bodies[row.shape.key.body], row.shape.key.shape)
-        for row in physical.collisions
-    })
+    return MappingProxyType(
+        {
+            row.shape.key: CollisionKey(
+                world.world, bodies[row.shape.key.body], row.shape.key.shape
+            )
+            for row in physical.collisions
+        }
+    )
 
 
 def _tyx_geometry(declaration):
@@ -355,16 +391,22 @@ def _tyx_geometry(declaration):
             shape = replace(collider.shape, key=key)
             shapes.append(shape)
             if _floating(asset):
-                kind = ResidentFloatingAffineTreeBinding if isinstance(
-                    asset, FloatingMimicRobotAsset
-                ) else ResidentFloatingTreeBinding
+                kind = (
+                    ResidentFloatingAffineTreeBinding
+                    if isinstance(asset, FloatingMimicRobotAsset)
+                    else ResidentFloatingTreeBinding
+                )
                 binding = kind.from_asset(asset, collider.shape.key, key=key, world=world.world)
             elif collider.link_index < 0:
                 if fixed_poses is None:
                     fixed_poses = asset.collision_motion(world.initial_state.q)
                 binding = ResidentStaticBinding(key, fixed_poses[collider.shape.key])
             else:
-                kind = ResidentAffineTreeBinding if isinstance(asset, MimicRobotAsset) else ResidentTreeBinding
+                kind = (
+                    ResidentAffineTreeBinding
+                    if isinstance(asset, MimicRobotAsset)
+                    else ResidentTreeBinding
+                )
                 binding = kind.from_asset(asset, collider.shape.key, key=key, world=world.world)
                 robot_shapes[key] = shape
             if _floating(asset):
@@ -393,7 +435,10 @@ def scene_capabilities(declaration, backend="host"):
     if backend not in ("host", "interpret", "cuda"):
         raise ValueError("backend must be host, interpret or cuda; no implicit fallback")
     declaration.assert_unchanged()
-    issues, features = [], {"independent_worlds", "owned_declaration", "capped_pd", "explicit_static_pairs"}
+    issues, features = (
+        [],
+        {"independent_worlds", "owned_declaration", "capped_pd", "explicit_static_pairs"},
+    )
     total_shapes = total_vertices = 0
     for world in declaration.worlds:
         physical = _physical(world.asset)
@@ -403,7 +448,13 @@ def scene_capabilities(declaration, backend="host"):
         if isinstance(world.asset, (MimicRobotAsset, FloatingMimicRobotAsset)):
             features.add("affine_coordinates")
         if world.self_collision:
-            issues.append(CompilationIssue(world.world, "self_collision", "not available in the common HOST/TYX assembly domain"))
+            issues.append(
+                CompilationIssue(
+                    world.world,
+                    "self_collision",
+                    "not available in the common HOST/TYX assembly domain",
+                )
+            )
         source = tuple(physical.collision_model.shapes)
         count = len(source) + len(world.static_shapes)
         vertices = sum(len(shape.vertex_ids) for shape in source) + sum(
@@ -412,46 +463,96 @@ def scene_capabilities(declaration, backend="host"):
         total_shapes += count
         total_vertices += vertices
         if count > MAX_SHAPES or vertices > MAX_VERTICES:
-            issues.append(CompilationIssue(world.world, "geometry_capacity", "world exceeds original shape/vertex bounds"))
+            issues.append(
+                CompilationIssue(
+                    world.world, "geometry_capacity", "world exceeds original shape/vertex bounds"
+                )
+            )
         table = {shape.key: shape for shape in source}
-        if len({row.shape.key for row in physical.collisions}) != len(physical.collisions) or (
-            set(table) != {row.shape.key for row in physical.collisions}
-        ) or any(table.get(row.shape.key) != row.shape for row in physical.collisions):
-            issues.append(CompilationIssue(world.world, "asset_geometry", "collider declarations must exactly cover the source shape table"))
-        if any(shape.kind not in ("sphere", "capsule", "hull") or (
-            shape.kind == "hull" and shape.radius != 0
-        ) for shape in source):
-            issues.append(CompilationIssue(world.world, "asset_geometry", "common domain admits sphere/capsule/unrounded hull only"))
+        if (
+            len({row.shape.key for row in physical.collisions}) != len(physical.collisions)
+            or (set(table) != {row.shape.key for row in physical.collisions})
+            or any(table.get(row.shape.key) != row.shape for row in physical.collisions)
+        ):
+            issues.append(
+                CompilationIssue(
+                    world.world,
+                    "asset_geometry",
+                    "collider declarations must exactly cover the source shape table",
+                )
+            )
+        if any(
+            shape.kind not in ("sphere", "capsule", "hull")
+            or (shape.kind == "hull" and shape.radius != 0)
+            for shape in source
+        ):
+            issues.append(
+                CompilationIssue(
+                    world.world,
+                    "asset_geometry",
+                    "common domain admits sphere/capsule/unrounded hull only",
+                )
+            )
         if backend == "host":
             if any(
-                row.material is not None and not (
-                    shape.group & row.shape.mask and row.shape.group & shape.mask
-                ) for shape in source for row in world.static_shapes
+                row.material is not None
+                and not (shape.group & row.shape.mask and row.shape.group & shape.mask)
+                for shape in source
+                for row in world.static_shapes
             ):
-                issues.append(CompilationIssue(world.world, "collision_filter", "HOST body-pair robot contacts cannot discard an individual masked collider"))
+                issues.append(
+                    CompilationIssue(
+                        world.world,
+                        "collision_filter",
+                        "HOST body-pair robot contacts cannot discard an individual masked collider",
+                    )
+                )
             if any(row.shape.kind not in ("sphere", "hull") for row in world.static_shapes):
-                issues.append(CompilationIssue(world.world, "static_geometry", "existing HOST robot scene does not support static capsules"))
+                issues.append(
+                    CompilationIssue(
+                        world.world,
+                        "static_geometry",
+                        "existing HOST robot scene does not support static capsules",
+                    )
+                )
         else:
-            if not _floating(world.asset) and any(row.link_index < 0 for row in physical.collisions) and any(
-                row.material is not None for row in world.static_shapes
+            if (
+                not _floating(world.asset)
+                and any(row.link_index < 0 for row in physical.collisions)
+                and any(row.material is not None for row in world.static_shapes)
             ):
-                issues.append(CompilationIssue(world.world, "fixed_root_contact", "resident static-static root/environment reaction differs from HOST; no contact is silently discarded"))
+                issues.append(
+                    CompilationIssue(
+                        world.world,
+                        "fixed_root_contact",
+                        "resident static-static root/environment reaction differs from HOST; no contact is silently discarded",
+                    )
+                )
             try:
                 from ..backends._world_step_layout import bind_world
+
                 bind_world(world.world, _world_spec(world))
             except (TypeError, ValueError, OverflowError) as error:
                 issues.append(CompilationIssue(world.world, "tyx_lowering", str(error)))
     if backend != "host":
         if total_shapes > MAX_SHAPES or total_vertices > MAX_VERTICES:
-            issues.append(CompilationIssue(None, "geometry_capacity", "one resident plan exceeds original aggregate shape/vertex bounds"))
+            issues.append(
+                CompilationIssue(
+                    None,
+                    "geometry_capacity",
+                    "one resident plan exceeds original aggregate shape/vertex bounds",
+                )
+            )
         if not issues:
             try:
                 _tyx_geometry(declaration)
             except (TypeError, ValueError, OverflowError) as error:
                 issues.append(CompilationIssue(None, "tyx_geometry", str(error)))
     return CompileReport(
-        backend, "float64" if backend == "host" else "float32-dynamics-with-original-fp64-anchors",
-        tuple(sorted(features)), tuple(issues),
+        backend,
+        "float64" if backend == "host" else "float32-dynamics-with-original-fp64-anchors",
+        tuple(sorted(features)),
+        tuple(issues),
     )
 
 
@@ -466,7 +567,11 @@ class CompiledScene:
     """
 
     def __init__(self, declaration, backend, report, *, cache_root=None):
-        if not isinstance(report, CompileReport) or not report.supported or report.backend != backend:
+        if (
+            not isinstance(report, CompileReport)
+            or not report.supported
+            or report.backend != backend
+        ):
             raise ValueError("a supported matching compilation report is required")
         declaration.assert_unchanged()
         self.declaration, self.backend, self.report = declaration, backend, report
@@ -485,15 +590,19 @@ class CompiledScene:
         try:
             if backend == "host":
                 from ..training.scene_backend import SceneBatchBackend
+
                 self._raw = SceneBatchBackend(self.world_keys, self._host_factory)
                 self._owners.append(self._raw)
             else:
                 from ..backends.tyx_world_batch import TyxWorldBatch
+
                 self._specs = {world.world: _world_spec(world) for world in declaration.worlds}
                 model, bindings, materials, identities = _tyx_geometry(declaration)
                 self._shape_keys.update(identities)
                 self._models = {world: model for world in self.world_keys}
-                self._raw = TyxWorldBatch(tuple(self._specs.items()), backend, cache_root=cache_root)
+                self._raw = TyxWorldBatch(
+                    tuple(self._specs.items()), backend, cache_root=cache_root
+                )
                 self._owners.append(self._raw)
                 if materials:
                     self._plan = self._raw.prepare_contacts(
@@ -521,9 +630,14 @@ class CompiledScene:
 
         add = builder.add_floating_urdf if _floating(world.asset) else builder.add_urdf
         add(
-            world.robot_body, "frozen-scene-asset", robot_state=world.initial_state,
-            kp=world.kp, kd=world.kd, effort_limit=world.effort_limit,
-            loader=loader, world=key,
+            world.robot_body,
+            "frozen-scene-asset",
+            robot_state=world.initial_state,
+            kp=world.kp,
+            kd=world.kd,
+            effort_limit=world.effort_limit,
+            loader=loader,
+            world=key,
         )
         for row in world.static_shapes:
             # Reuse the existing typed rigid installation rather than recreate
@@ -561,7 +675,9 @@ class CompiledScene:
             raise RuntimeError("reset all worlds after partial or uncertain physical publication")
 
     def _selected(self, keys):
-        selected = self.world_keys if keys is None else tuple(_integer(key, "world") for key in keys)
+        selected = (
+            self.world_keys if keys is None else tuple(_integer(key, "world") for key in keys)
+        )
         if len(set(selected)) != len(selected) or not set(selected) <= set(self.world_keys):
             raise ValueError("selected world keys must be unique members of this compiled scene")
         return selected
@@ -608,8 +724,14 @@ class CompiledScene:
                     full_v = getattr(value, "full_velocity", v)
                     time, tick = self._times[key], value.tick
                 result[key] = WorldSnapshot(
-                    key, np.asarray(q), np.asarray(v), np.asarray(full_q), np.asarray(full_v),
-                    float(time), int(tick), value,
+                    key,
+                    np.asarray(q),
+                    np.asarray(v),
+                    np.asarray(full_q),
+                    np.asarray(full_v),
+                    float(time),
+                    int(tick),
+                    value,
                 )
             return MappingProxyType(result)
 
@@ -620,8 +742,14 @@ class CompiledScene:
             joint = command.joints if _floating(world.asset) else command
             n = len(world.asset.joint_names)
             target = np.zeros(n) if joint is None else joint.target_q
-            rate = np.zeros(n) if joint is None or joint.target_velocity is None else joint.target_velocity
-            effort = np.zeros(n) if joint is None or joint.feedforward is None else joint.feedforward
+            rate = (
+                np.zeros(n)
+                if joint is None or joint.target_velocity is None
+                else joint.target_velocity
+            )
+            effort = (
+                np.zeros(n) if joint is None or joint.feedforward is None else joint.feedforward
+            )
             if _floating(world.asset):
                 drive = np.column_stack((target, rate, effort))
                 result[key] = spec.inputs(drive, external=command.external)
@@ -643,6 +771,7 @@ class CompiledScene:
             }
             if self.backend == "host":
                 from ..training.scene_backend import SceneControl
+
                 converted = {
                     key: SceneControl({self._worlds[key].robot_body: owned[key]})
                     for key in self.world_keys
@@ -680,13 +809,17 @@ class CompiledScene:
                 effective = requested if self.backend == "host" else float(np.float32(requested))
             if not np.isfinite((requested, effective)).all() or min(requested, effective) <= 0:
                 raise ValueError("physical dt must be positive and finite in the selected backend")
-            if any(not np.isfinite(time + effective) or time + effective <= time for time in self._times.values()):
+            if any(
+                not np.isfinite(time + effective) or time + effective <= time
+                for time in self._times.values()
+            ):
                 raise ValueError("time must advance by a representable positive interval")
             self._requested_dt, self._effective_dt = requested, effective
             try:
                 returned = (
                     self._raw.step_contacts(self._plan, effective)
-                    if self._plan is not None else self._raw.step(effective)
+                    if self._plan is not None
+                    else self._raw.step(effective)
                 )
             except PhysicsStepFailure as error:
                 if not error.acceptance_known:
@@ -698,7 +831,8 @@ class CompiledScene:
                     self._poisoned = True
                     raise PhysicsStepFailure(
                         "backend failed with an invalid publication mask; reset all worlds",
-                        accepted_worlds={}, acceptance_known=False,
+                        accepted_worlds={},
+                        acceptance_known=False,
                     ) from invalid
                 self._poisoned = any(accepted.values())
                 try:
@@ -711,7 +845,8 @@ class CompiledScene:
                 self._poisoned = True
                 raise PhysicsStepFailure(
                     "physical publication is uncertain; reset all worlds",
-                    accepted_worlds={}, acceptance_known=False,
+                    accepted_worlds={},
+                    acceptance_known=False,
                 ) from error
             try:
                 accepted = self._acceptance(returned)
@@ -719,7 +854,8 @@ class CompiledScene:
                 self._poisoned = True
                 raise PhysicsStepFailure(
                     "backend returned an invalid publication mask; reset all worlds",
-                    accepted_worlds={}, acceptance_known=False,
+                    accepted_worlds={},
+                    acceptance_known=False,
                 ) from error
             self._poisoned = any(accepted.values()) and not all(accepted.values())
             try:
@@ -745,13 +881,12 @@ class CompiledScene:
                 raise RuntimeError("reset all worlds after partial or uncertain publication")
             if not selected:
                 return
-            held = {**self._held, **{
-                key: self._worlds[key].initial_control for key in selected
-            }}
+            held = {**self._held, **{key: self._worlds[key].initial_control for key in selected}}
             try:
                 self._raw.reset(selected)
                 if self.backend == "host":
                     from ..training.scene_backend import SceneControl
+
                     controls = {
                         key: SceneControl({self._worlds[key].robot_body: held[key]})
                         for key in self.world_keys
@@ -761,7 +896,8 @@ class CompiledScene:
                 self._raw.set_controls(controls)
                 published = self._raw.snapshot(selected)
                 if any(
-                    (published[key].step_number if self.backend == "host" else published[key].tick) != 0
+                    (published[key].step_number if self.backend == "host" else published[key].tick)
+                    != 0
                     for key in selected
                 ):
                     raise RuntimeError("reset did not publish the original step-zero worlds")
@@ -779,16 +915,18 @@ class CompiledScene:
     def stats(self):
         with self._lock:
             self._check_open()
-            return MappingProxyType(dict(
-                backend=self.backend,
-                declaration_identity=self.identity,
-                world_count=len(self.world_keys),
-                needs_reset=self._poisoned,
-                last_requested_dt_s=self._requested_dt,
-                last_effective_dt_s=self._effective_dt,
-                batch=None if self.backend == "host" else self._raw.stats(),
-                contacts=None if self._plan is None else self._plan.stats(),
-            ))
+            return MappingProxyType(
+                dict(
+                    backend=self.backend,
+                    declaration_identity=self.identity,
+                    world_count=len(self.world_keys),
+                    needs_reset=self._poisoned,
+                    last_requested_dt_s=self._requested_dt,
+                    last_effective_dt_s=self._effective_dt,
+                    batch=None if self.backend == "host" else self._raw.stats(),
+                    contacts=None if self._plan is None else self._plan.stats(),
+                )
+            )
 
     def close(self):
         with self._lock:
@@ -802,7 +940,9 @@ class CompiledScene:
                     errors.append(error)
             self._owners = list(reversed(failed))
             if errors:
-                raise RuntimeError("compiled scene cleanup failed; close may be retried") from errors[0]
+                raise RuntimeError(
+                    "compiled scene cleanup failed; close may be retried"
+                ) from errors[0]
 
     def __enter__(self):
         with self._lock:
@@ -828,7 +968,14 @@ def compile_scene(declaration, backend="host", *, cache_root=None):
 
 
 __all__ = [
-    "ArticulationWorld", "CompilationIssue", "CompileReport", "CompiledScene",
-    "FiniteStaticShape", "SceneCompilationError", "SceneDeclaration", "WorldSnapshot",
-    "compile_scene", "scene_capabilities",
+    "ArticulationWorld",
+    "CompilationIssue",
+    "CompileReport",
+    "CompiledScene",
+    "FiniteStaticShape",
+    "SceneCompilationError",
+    "SceneDeclaration",
+    "WorldSnapshot",
+    "compile_scene",
+    "scene_capabilities",
 ]

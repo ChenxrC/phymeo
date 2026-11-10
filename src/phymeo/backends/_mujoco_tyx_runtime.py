@@ -516,6 +516,13 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                 data, receipts, ticks = {}, {}, {}
                 for index, key in enumerate(self._world_keys):
                     original = self._data[key]
+                    if self._plan.kind in (2, 3) and (
+                        not np.array_equal(result["input_q"][index, : self._plan.nq], original.qpos)
+                        or not np.array_equal(
+                            result["input_v"][index, : self._plan.nv], original.qvel
+                        )
+                    ):
+                        raise RuntimeError("TYX input state does not match its accepted world")
                     candidate = copy.copy(original)
                     candidate.qpos[:] = result["q"][index, : self._plan.nq]
                     candidate.qvel[:] = result["v"][index, : self._plan.nv]

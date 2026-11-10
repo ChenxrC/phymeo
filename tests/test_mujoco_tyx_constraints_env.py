@@ -24,7 +24,7 @@ XML = """<mujoco model="normal-policy"><compiler angle="radian" fusestatic="fals
 <actuator><motor joint="shoulder"/><motor joint="elbow"/></actuator></mujoco>"""
 
 
-class NormalTask:
+class MixedTask:
     def controls(self, actions, keys):
         return {key: MuJoCoControl(actions[index]) for index, key in enumerate(keys)}
 
@@ -37,7 +37,17 @@ class NormalTask:
                 if state.last_step is None
                 else sum(contact.normal_force for contact in state.last_step.contacts)
             )
-            values.append(np.r_[state.q, state.v, force])
+            tangent = np.zeros(5)
+            limit_force = dry_force = 0.0
+            if state.last_step is not None:
+                for contact in state.last_step.contacts:
+                    tangent += contact.wrench_contact_frame[1:]
+                for row in state.last_step.constraints:
+                    if row.constraint_type == 3:
+                        limit_force += row.force * row.jacobian.sum()
+                    elif row.constraint_type == 1:
+                        dry_force += row.force
+            values.append(np.r_[state.q, state.v, force, tangent, limit_force, dry_force])
         return np.asarray(values)
 
     def evaluate(self, before, after, actions, keys):
@@ -51,9 +61,7 @@ def test_mixed_policy_continuous_reference_and_reset(mode, tmp_path):
     compiled = compile_mujoco_xml(XML, require_asset=False)
     native_model = mj.MjModel.from_xml_string(XML)
     with MuJoCoRuntime(compiled, mode=mode, world_keys=(4, 31)) as runtime:
-        env = ResidentVectorEnv(
-            runtime, NormalTask(), (4, 31), action_size=2, dt=0.001, horizon=100
-        )
+        env = ResidentVectorEnv(runtime, MixedTask(), (4, 31), action_size=2, dt=0.001, horizon=100)
         calls = []
 
         def policy(observation, due):
@@ -62,7 +70,8 @@ def test_mixed_policy_continuous_reference_and_reset(mode, tmp_path):
             return (
                 -0.3 * observation[:, 7:9]
                 - 0.1 * observation[:, 15:17]
-                - 0.001 * observation[:, -1:]
+                - 0.001 * observation[:, 17:18]
+                - 0.0001 * observation[:, 18:].sum(axis=1, keepdims=True)
             )
 
         runner = PolicyRunner(env, policy, control_decimation=3)

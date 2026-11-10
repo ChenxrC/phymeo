@@ -34,6 +34,7 @@ def solve(
     working: tx.ndarray(tx.i32, 2),
     previous_working: tx.ndarray(tx.i32, 2),
     previous_force: tx.ndarray(tx.f32, 2),
+    free_ids: tx.ndarray(tx.i32, 2),
     constraint: tx.ndarray(tx.f32, 2),
     total_applied: tx.ndarray(tx.f32, 2),
     physical_acc: tx.ndarray(tx.f32, 2),
@@ -203,6 +204,7 @@ def solve(
                 residual = 0.0
                 scale = 1.0
                 bound_violation = 0.0
+                bound_kkt = 0.0
                 free_count = 0
                 for r in range(nrow):
                     value = -efc_data[w, r, 3]
@@ -222,8 +224,10 @@ def solve(
                     violation = tx.abs(value)
                     if force_value == lower:
                         violation = tx.max(0.0, -value)
+                        bound_kkt = tx.max(bound_kkt, violation / tx.max(1.0, tx.abs(term)))
                     elif upper_mask == 1.0 and force_value == upper:
                         violation = tx.max(0.0, value)
+                        bound_kkt = tx.max(bound_kkt, violation / tx.max(1.0, tx.abs(term)))
                     residual = tx.max(residual, violation)
                     scale = tx.max(scale, row_scale)
                     if force_value < lower:
@@ -261,7 +265,7 @@ def solve(
                 if status[w] == 0:
                     if bound_violation > 0.0 or diagnostics[w, 8] > tolerance:
                         status[w] = 5
-                    elif diagnostics[w, 1] <= tolerance:
+                    elif diagnostics[w, 1] <= tolerance and bound_kkt <= tolerance:
                         done = 1
                         diagnostics[w, 6] = 1.0
                     elif stalled == 1:
@@ -272,82 +276,164 @@ def solve(
                     for r in range(nrow):
                         previous_working[w, r] = working[w, r]
                         previous_force[w, r] = efc_data[w, r, 9]
-                    # Block release, only after completing the prior feasible face.
+                    # Release the most violated bound only after the feasible face.
                     # Internal blocking repairs cannot immediately re-add the hits.
                     if refine_face == 0:
+                        entering = -1
+                        largest = 0.0
                         for r in range(nrow):
-                            if working[w, r] == 0 and efc_data[w, r, 10] < 0.0:
-                                working[w, r] = 1
-                            elif working[w, r] == 2 and efc_data[w, r, 10] > 0.0:
-                                working[w, r] = 1
-                    # Same face optimum in correction coordinates:
-                    # H*da=-J_F^T D_F*g_F; df=-D_F*(g_F+J_F*da).
-                    # The freshly checked physical gradient avoids repeating
-                    # cancellation of two large absolute forces.
-                    for i in range(nv):
-                        face_rhs[w, i] = 0.0
-                        for j in range(i + 1):
-                            face_matrix[w, i, j] = mass[w, i, j]
+                            violation = 0.0
+                            if working[w, r] == 0:
+                                violation = -efc_data[w, r, 10]
+                            elif working[w, r] == 2:
+                                violation = efc_data[w, r, 10]
+                            if violation > largest:
+                                largest = violation
+                                entering = r
+                        if entering >= 0:
+                            working[w, entering] = 1
+                    face_size = 0
                     for r in range(nrow):
                         if working[w, r] == 1:
-                            inverse_r = 1.0 / efc_data[w, r, 4]
-                            for i in range(nv):
-                                weighted_j = efc_J[w, r, i] * inverse_r
-                                face_rhs[w, i] = face_rhs[w, i] - weighted_j * efc_data[w, r, 10]
-                                for j in range(i + 1):
-                                    face_matrix[w, i, j] = (
-                                        face_matrix[w, i, j] + weighted_j * efc_J[w, r, j]
-                                    )
-                    for i in range(nv):
-                        if not tx.isfinite(face_rhs[w, i]):
-                            status[w] = 2
-                        for j in range(i + 1):
-                            face_matrix[w, j, i] = face_matrix[w, i, j]
-                            if not tx.isfinite(face_matrix[w, i, j]):
-                                status[w] = 2
-                    if status[w] == 0:
+                            if face_size < nv:
+                                free_ids[w, face_size] = r
+                            face_size = face_size + 1
+                    # Select the smaller face representation before factorization.
+                    # For k<=nv, QR of [L^-1 J_F^T; sqrt(R_F) I] preserves
+                    # tiny regularization without adding it to an O(1) Gram term.
+                    if face_size <= nv:
+                        for i in range(face_size):
+                            r = free_ids[w, i]
+                            for d in range(nv):
+                                value = efc_J[w, r, d]
+                                for j in range(d):
+                                    value = value - physical_factor[w, d, j] * face_matrix[w, i, j]
+                                face_matrix[w, i, d] = value / physical_factor[w, d, d]
+                            for j in range(face_size):
+                                face_factor[w, i, j] = 0.0
+                            face_factor[w, i, i] = tx.sqrt(efc_data[w, r, 4])
                         diagnostics[w, 0] = diagnostics[w, 0] + 1.0
-                        for i in range(nv):
-                            for j in range(i + 1):
-                                value = face_matrix[w, i, j]
-                                for k in range(j):
-                                    value = value - face_factor[w, i, k] * face_factor[w, j, k]
-                                if i == j:
-                                    if not tx.isfinite(value) or value <= 0.0:
-                                        status[w] = 6
-                                        value = 1.0
-                                    face_factor[w, i, j] = tx.sqrt(value)
+                        for d in range(nv):
+                            for i in range(face_size):
+                                face_rhs[w, i] = face_matrix[w, i, d]
+                            for i in range(face_size):
+                                diagonal = face_factor[w, i, i]
+                                incoming = face_rhs[w, i]
+                                magnitude = tx.max(tx.abs(diagonal), tx.abs(incoming))
+                                radius = 1.0
+                                cosine = 1.0
+                                sine = 0.0
+                                if magnitude <= 0.0 or not tx.isfinite(magnitude):
+                                    status[w] = 6
                                 else:
-                                    if not tx.isfinite(value):
-                                        status[w] = 6
-                                        value = 0.0
-                                    face_factor[w, i, j] = value / face_factor[w, j, j]
-                                    if not tx.isfinite(face_factor[w, i, j]):
-                                        status[w] = 6
-                    if status[w] == 0:
+                                    scaled_d = diagonal / magnitude
+                                    scaled_x = incoming / magnitude
+                                    radius = magnitude * tx.sqrt(
+                                        scaled_d * scaled_d + scaled_x * scaled_x
+                                    )
+                                    cosine = diagonal / radius
+                                    sine = incoming / radius
+                                face_factor[w, i, i] = radius
+                                for j in range(i + 1, face_size):
+                                    old_u = face_factor[w, i, j]
+                                    old_x = face_rhs[w, j]
+                                    face_factor[w, i, j] = cosine * old_u + sine * old_x
+                                    face_rhs[w, j] = cosine * old_x - sine * old_u
+                                    if not tx.isfinite(face_factor[w, i, j]) or not tx.isfinite(
+                                        face_rhs[w, j]
+                                    ):
+                                        status[w] = 2
+                        if status[w] == 0:
+                            for i in range(face_size):
+                                r = free_ids[w, i]
+                                value = -efc_data[w, r, 10]
+                                for j in range(i):
+                                    value = value - face_factor[w, j, i] * face_forward[w, j]
+                                face_forward[w, i] = value / face_factor[w, i, i]
+                            for reverse in range(face_size):
+                                i = face_size - 1 - reverse
+                                value = face_forward[w, i]
+                                for j in range(i + 1, face_size):
+                                    value = value - face_factor[w, i, j] * trial_acc[w, j]
+                                trial_acc[w, i] = value / face_factor[w, i, i]
+                                if not tx.isfinite(trial_acc[w, i]):
+                                    status[w] = 2
+                            for r in range(nrow):
+                                trial_force[w, r] = efc_data[w, r, 9]
+                            for i in range(face_size):
+                                r = free_ids[w, i]
+                                trial_force[w, r] = efc_data[w, r, 9] + trial_acc[w, i]
+                    else:
+                        # Same face optimum in correction coordinates:
+                        # H*da=-J_F^T D_F*g_F; df=-D_F*(g_F+J_F*da).
+                        # The freshly checked physical gradient avoids repeating
+                        # cancellation of two large absolute forces.
                         for i in range(nv):
-                            value = face_rhs[w, i]
-                            for j in range(i):
-                                value = value - face_factor[w, i, j] * face_forward[w, j]
-                            face_forward[w, i] = value / face_factor[w, i, i]
-                        for reverse in range(nv):
-                            i = nv - 1 - reverse
-                            value = face_forward[w, i]
-                            for j in range(i + 1, nv):
-                                value = value - face_factor[w, j, i] * trial_acc[w, j]
-                            trial_acc[w, i] = value / face_factor[w, i, i]
-                            if not tx.isfinite(trial_acc[w, i]):
-                                status[w] = 2
+                            face_rhs[w, i] = 0.0
+                            for j in range(i + 1):
+                                face_matrix[w, i, j] = mass[w, i, j]
                         for r in range(nrow):
-                            value = efc_data[w, r, 9]
                             if working[w, r] == 1:
-                                correction = efc_data[w, r, 10]
+                                inverse_r = 1.0 / efc_data[w, r, 4]
                                 for i in range(nv):
-                                    correction = correction + efc_J[w, r, i] * trial_acc[w, i]
-                                value = value - correction / efc_data[w, r, 4]
-                            trial_force[w, r] = value
-                            if not tx.isfinite(value):
+                                    weighted_j = efc_J[w, r, i] * inverse_r
+                                    face_rhs[w, i] = (
+                                        face_rhs[w, i] - weighted_j * efc_data[w, r, 10]
+                                    )
+                                    for j in range(i + 1):
+                                        face_matrix[w, i, j] = (
+                                            face_matrix[w, i, j] + weighted_j * efc_J[w, r, j]
+                                        )
+                        for i in range(nv):
+                            if not tx.isfinite(face_rhs[w, i]):
                                 status[w] = 2
+                            for j in range(i + 1):
+                                face_matrix[w, j, i] = face_matrix[w, i, j]
+                                if not tx.isfinite(face_matrix[w, i, j]):
+                                    status[w] = 2
+                        if status[w] == 0:
+                            diagnostics[w, 0] = diagnostics[w, 0] + 1.0
+                            for i in range(nv):
+                                for j in range(i + 1):
+                                    value = face_matrix[w, i, j]
+                                    for k in range(j):
+                                        value = value - face_factor[w, i, k] * face_factor[w, j, k]
+                                    if i == j:
+                                        if not tx.isfinite(value) or value <= 0.0:
+                                            status[w] = 6
+                                            value = 1.0
+                                        face_factor[w, i, j] = tx.sqrt(value)
+                                    else:
+                                        if not tx.isfinite(value):
+                                            status[w] = 6
+                                            value = 0.0
+                                        face_factor[w, i, j] = value / face_factor[w, j, j]
+                                        if not tx.isfinite(face_factor[w, i, j]):
+                                            status[w] = 6
+                        if status[w] == 0:
+                            for i in range(nv):
+                                value = face_rhs[w, i]
+                                for j in range(i):
+                                    value = value - face_factor[w, i, j] * face_forward[w, j]
+                                face_forward[w, i] = value / face_factor[w, i, i]
+                            for reverse in range(nv):
+                                i = nv - 1 - reverse
+                                value = face_forward[w, i]
+                                for j in range(i + 1, nv):
+                                    value = value - face_factor[w, j, i] * trial_acc[w, j]
+                                trial_acc[w, i] = value / face_factor[w, i, i]
+                                if not tx.isfinite(trial_acc[w, i]):
+                                    status[w] = 2
+                            for r in range(nrow):
+                                value = efc_data[w, r, 9]
+                                if working[w, r] == 1:
+                                    correction = efc_data[w, r, 10]
+                                    for i in range(nv):
+                                        correction = correction + efc_J[w, r, i] * trial_acc[w, i]
+                                    value = value - correction / efc_data[w, r, 4]
+                                trial_force[w, r] = value
+                                if not tx.isfinite(value):
+                                    status[w] = 2
                     if status[w] == 0:
                         alpha = 1.0
                         blocking = 0
@@ -416,6 +502,15 @@ def solve(
                                 ):
                                     changed = 1
                             if changed == 0:
-                                stalled = 1
+                                # Finishing a blocked face can leave identical f.
+                                # Another violated bound must get its release turn.
+                                can_release = 0
+                                for r in range(nrow):
+                                    if (working[w, r] == 0 and efc_data[w, r, 10] < 0.0) or (
+                                        working[w, r] == 2 and efc_data[w, r, 10] > 0.0
+                                    ):
+                                        can_release = 1
+                                if blocking == 1 or can_release == 0:
+                                    stalled = 1
         # Successful outputs were rebuilt from stored forces in the check pass.
         # On failure the caller rejects this entire attempt, including all worlds.

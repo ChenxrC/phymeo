@@ -46,14 +46,20 @@ def assemble(
         width = nv
         if width < 8:
             width = 8
-        for r in range(efc_capacity):
+        efc_storage = efc_capacity
+        contact_storage = contact_capacity
+        if efc_storage < 1:
+            efc_storage = 1
+        if contact_storage < 1:
+            contact_storage = 1
+        for r in range(efc_storage):
             for k in range(5):
                 efc_ids[w, r, k] = -1
             for k in range(14):
                 efc_data[w, r, k] = 0.0
             for d in range(width):
                 efc_J[w, r, d] = 0.0
-        for c in range(contact_capacity):
+        for c in range(contact_storage):
             for k in range(3):
                 contact_map[w, c, k] = -1
             contact_map[w, c, 2] = 0
@@ -382,7 +388,10 @@ def decode(
     status: tx.ndarray(tx.i32, 1),
 ):
     for w in tx.range(count):
-        for c in range(contact_capacity):
+        contact_storage = contact_capacity
+        if contact_storage < 1:
+            contact_storage = 1
+        for c in range(contact_storage):
             for k in range(6):
                 contact_wrench[w, c, k] = 0.0
         if status[w] == 0:

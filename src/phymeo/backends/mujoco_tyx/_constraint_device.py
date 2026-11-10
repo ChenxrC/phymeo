@@ -78,6 +78,7 @@ class TyxConstraintDevice(TyxDevice):
                     "constraint_counts": (w, 3),
                     "working": (w, efc_slots),
                     "previous_working": (w, efc_slots),
+                    "free_ids": (w, vsize),
                 }.items():
                     setattr(self, name, self._buffer(np.zeros(shape, np.int32)))
         except BaseException:
@@ -249,6 +250,7 @@ class TyxConstraintDevice(TyxDevice):
                 self.working,
                 self.previous_working,
                 self.previous_force,
+                self.free_ids,
                 self.mixed_constraint,
                 self.total_applied,
                 self.physical_acc,

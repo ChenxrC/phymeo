@@ -46,7 +46,7 @@ W世界，V=max(8,nv)，S静态geometry slots；C=max(1,用户contact cap)，E=m
 NEW _constraint_rows.py：
 assemble(count,nv,nslot,nfriction,nlimit,contact_capacity,efc_capacity,h,impratio,slot_ids,geom_ids,pair_condim,pair_friction,pair_law,friction_ids,friction_law,limit_ids,limit_law,q,v,motion,body_jacobian,normal_rows,efc_ids,efc_data,efc_J,contact_map,contact_J,counts,status)。
 decode(count,nv,contact_capacity,efc_capacity,slot_ids,pair_condim,pair_friction,contact_map,counts,efc_data,contact_wrench,status)。
-q/v双bank需独立kernel handles assemble/assemble_other，与原TYX模式一致。motion COM位置沿原[w,body,5,:]，完整body_jacobian沿[w,body,6,V]。assemble独立按固定源重算全部K/B/imp/R/D/aref/diagApprox，包括condim1，不依赖原normal-only近似参数。所有多余槽清零/map置-1；超cap先置status1，不越界，继续记录实际所需count；数据错误status2。
+q/v双bank需独立kernel handles assemble/assemble_other，与原TYX模式一致。motion COM位置沿原[w,body,5,:]，完整body_jacobian沿[w,body,6,V]。assemble独立按固定源重算全部K/B/imp/R/D/aref/diagApprox，包括condim1，不依赖原normal-only近似参数。所有多余数据槽清零，unused map的slot/first=-1而row_count=0；超cap先置status1，不越界，继续记录实际所需count；数据错误status2。
 
 NEW _constraint_solver.py：
 solve(count,nv,efc_capacity,budget,tolerance,mass,bias,passive,applied,efc_data,efc_J,counts,physical_factor,mass_work,smooth_acc,face_matrix,face_factor,face_rhs,face_forward,trial_acc,trial_force,working,previous_working,previous_force,constraint,total_applied,physical_acc,diagnostics,status)。
@@ -88,3 +88,16 @@ matrix/factor[W,V,V]，其余dof向量[W,V]，row向量[W,E]。更新efc_data的
 13 ENV interpret与14 ENV CUDA各1通过，原两个世界/12步/反馈控制/selected reset/clone下一步。此时只完成首控，不冒A–E完整矩阵或G1通过。raw/首次失败全部位于artifacts/p65-mujoco-tyx-t4-20261110-01。
 
 补充ABI：limit side lower=-1/upper=+1、dry=-1。typed row schema=mujoco-tyx-constraint-row-v1，字段constraint_type/source_id/side_or_edge/geometry_slot/dof/jacobian/position/margin/velocity/reference_acceleration/regularization/inverse_regularization/impedance/diag_approx/lower/upper(optional)/force/gradient。typed contact schema=mujoco-tyx-pyramidal-contact-v1，完整6×nv Jacobian与6D wrench。mass residual归一尺度为max(1,max_i(abs(rhs_i)+abs(constraint_i)+sum_j abs(Mij*aj)))，status5，原tau；全部原量保留，未虚构直接保存rawmass标量。
+
+## 7. 极小摩擦首例与按尺寸选择的平方根 face
+
+23 首个完整短组在 native MINMU(condim3、authored friction=0) 拒步，前6项通过；完整同入步native与failed device scratch保留。实际R=3.529405934e-11、D=2.8333379584e10，所需12.43N力在primal回收式中的余量仅4.39e-10，而相消项约12.43的FP32 ulp为9.54e-7。24仅分析已保存失败：primal条件数约1.7e10；最大违反edge2单行direct dual给12.433907984N，native为12.433901233N，其余三行梯度严格正。没有改摩擦、R或tau，也不把MINMU当condim1。
+
+父据此保留原box-QP，改为每轮只释放最大违反的bound，完成feasible face后才释放下一个。free_count<=nv时直接求dual correction：先用physical M=L L^T得到B=J_F L^-T，从U=diag(sqrt(R_F))开始，用scaled-hypot/Givens逐DOF追加B的列，得到U^T U=R_F+B B^T；解U^T y=-g_F、U delta_f=y。这样避免把微小R先加到O(1)的Gram对角、也不从两个大数相消回收力。超过nv的face仍用第6节primal增量。分支在factor前仅按尺寸选择，不以失败回退；相同边界line search、物理M和KKT独立校验、预算与拒步语义保持。新增free_ids[W,V]；face_matrix[W,V,V]在dual分支存B，face_factor存上三角U，trial_acc临时存delta_f；没有EFC平方矩阵。ABI在previous_force之后新增free_ids。
+
+25针对原MINMU失败的interpret节点通过；26短组前6项通过，signed slide的末步耗散断言失败（逐步native/force/state门此前均通过），正在核实该断言是否错误地把已经离面后的末步当作仍在接触。27其余独立短组正在首次运行。以上不是完整T4或G1验收。
+27 其余短组首次71通过/16失败（原RAW1保留）；其中两组倾斜偏心体暴露了global KKT尺度掩盖负bound梯度导致提前停止，稀疏world/retry暴露了完成blocked face但f不变时被误判stall。29只分析27已保存的三份scratch：倾斜体遗漏edge的native力为.0045246/.0224702N；另一个候选free梯度已很小、仍有未释放bound梯度-2.3064。28分析脚本误把padded input_v宽度当nv，碰到零padding导致离线矩阵奇异；29按保存physical M有效块纠正，不是新物理失败。
+
+修复：原normalized KKT门之外，bound方向KKT用max(1,abs(R*f))归一后亦要求原tau，避免大aref掩盖应激活边；同一feasible face无force变化但已完成且另有违反bound时允许下一release，而非宣告stall。数值模型、预算、原global门与原子发布不变。30的8个倾斜/稀疏reset/顺序/篡改重试针对节点全部通过。源作者复核small-dual转置/Givens/索引/预算正确；单边release可能对G1原100预算形成压力，尚待实际G1观察，不增预算或删接触。
+
+同次native证据反驳了部分行为测试假设：signed slide末窗已经离面；±1.2mg外载短窗也有同步分离；部分rolling角速由切向点力消散，原生pure couple为0。对应测试改为同轨迹耗散/真实COM反作用，并保全部逐步native分量门，不能用错误的末步必须接触或每个旋转必须pure couple替代。五个unsupported断言误读异常.code，实际公开为issues中的code/detail。单face预算负控旧fixture实为一个active边即可完成，需保原budget1、以正交独立normal解析负控替换错误假设。上述修订由原测试作者处理，未提前写为通过。

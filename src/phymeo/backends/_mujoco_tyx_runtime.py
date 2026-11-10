@@ -219,6 +219,10 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
             contact_capacity=self._contact_capacity,
             constraint_capacity=self._constraint_capacity,
             endpoint_observer="detached-cpu-mj-forward",
+            capability_scope="admitted-model-domain; trajectory-validation-separate",
+            mixed_articulated_constraints_supported=False,
+            floating_mixed_constraints_supported=False,
+            deprecated_capabilities=("g1_supported",),
             g1_supported=False,
         )
         if getattr(self._plan, "normal_contact", False):
@@ -256,6 +260,10 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                 solver_iteration_semantics="source-iterations-as-active-set-face-solve-budget",
                 warmstart="cold-feasible-zero-force",
                 sensors="detached-cpu-observation-only",
+                mixed_articulated_constraints_supported=self._plan.kind in (2, 3),
+                floating_mixed_constraints_supported=self._plan.kind == 3,
+                # Compatibility alias: model-domain support, not a trajectory claim.
+                g1_supported=self._plan.kind == 3,
             )
             self._capabilities = MappingProxyType(info)
 

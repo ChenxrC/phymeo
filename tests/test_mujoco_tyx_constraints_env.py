@@ -61,6 +61,13 @@ def test_mixed_policy_continuous_reference_and_reset(mode, tmp_path):
     compiled = compile_mujoco_xml(XML, require_asset=False)
     native_model = mj.MjModel.from_xml_string(XML)
     with MuJoCoRuntime(compiled, mode=mode, world_keys=(4, 31)) as runtime:
+        assert runtime.capabilities["mixed_articulated_constraints_supported"]
+        assert runtime.capabilities["floating_mixed_constraints_supported"]
+        assert runtime.capabilities["g1_supported"]
+        assert "g1_supported" in runtime.capabilities["deprecated_capabilities"]
+        assert runtime.capabilities["capability_scope"] == (
+            "admitted-model-domain; trajectory-validation-separate"
+        )
         env = ResidentVectorEnv(runtime, MixedTask(), (4, 31), action_size=2, dt=0.001, horizon=100)
         calls = []
 

@@ -31,7 +31,6 @@ import numpy as np
 
 from ..training.resident_stepper import PhysicsStepFailure
 
-
 COORDINATE_SYSTEM = "mujoco-native-qpos-qvel-v1"
 CONTACT_LAW = "mujoco-native-constraint-v1"
 
@@ -47,7 +46,9 @@ def _frozen(value, *, finite=True, dtype=np.float64):
     array = np.asarray(value, dtype=dtype)
     if finite and not np.all(np.isfinite(array)):
         raise ValueError("MuJoCo values must be finite")
-    return np.frombuffer(np.ascontiguousarray(array).tobytes(), dtype=array.dtype).reshape(array.shape)
+    return np.frombuffer(np.ascontiguousarray(array).tobytes(), dtype=array.dtype).reshape(
+        array.shape
+    )
 
 
 def _optional(value):
@@ -254,7 +255,9 @@ class MuJoCoRuntime:
 
     def __init__(self, compilation, *, world_keys=(0,), initial_states=None, mode="cpu"):
         if mode != "cpu":
-            raise NotImplementedError("unknown MuJoCo GPU mode; use cpu or explicit cuda, no fallback")
+            raise NotImplementedError(
+                "unknown MuJoCo GPU mode; use cpu or explicit cuda, no fallback"
+            )
         mj = _mujoco()
         factory = getattr(compilation, "fresh_native_model", None)
         if not callable(factory):
@@ -269,16 +272,28 @@ class MuJoCoRuntime:
         from ..builders.mujoco_compiler import compile_mujoco
 
         record = compile_mujoco(path, require_asset=False)
-        return cls(record, world_keys=world_keys, initial_states=initial_states, mode=mode, **options)
+        return cls(
+            record, world_keys=world_keys, initial_states=initial_states, mode=mode, **options
+        )
 
     @classmethod
     def from_xml(
-        cls, xml, *, assets=None, includes=None, world_keys=(0,), initial_states=None, mode="cpu", **options
+        cls,
+        xml,
+        *,
+        assets=None,
+        includes=None,
+        world_keys=(0,),
+        initial_states=None,
+        mode="cpu",
+        **options,
     ):
         from ..builders.mujoco_compiler import compile_mujoco_xml
 
         record = compile_mujoco_xml(xml, assets=assets, includes=includes, require_asset=False)
-        return cls(record, world_keys=world_keys, initial_states=initial_states, mode=mode, **options)
+        return cls(
+            record, world_keys=world_keys, initial_states=initial_states, mode=mode, **options
+        )
 
     def _initialize(self, compilation, model, keys, initial_states, mj):
         self._lock = RLock()
@@ -326,8 +341,10 @@ class MuJoCoRuntime:
             data[key] = candidate
         self._initial = initial
         self._data = data
-        self._controls = {key: self._validated_control(MuJoCoControl(np.zeros(model.nu)))
-                          for key in self._world_keys}
+        self._controls = {
+            key: self._validated_control(MuJoCoControl(np.zeros(model.nu)))
+            for key in self._world_keys
+        }
         self._ticks = dict.fromkeys(self._world_keys, 0)
         self._receipts = dict.fromkeys(self._world_keys)
 
@@ -407,7 +424,9 @@ class MuJoCoRuntime:
                 raise ValueError("named controls must cover exactly every native actuator")
             packet = MuJoCoControl([packet[name] for name in names])
         if not isinstance(packet, MuJoCoControl):
-            raise TypeError("control values must be MuJoCoControl or a complete actuator-name mapping")
+            raise TypeError(
+                "control values must be MuJoCoControl or a complete actuator-name mapping"
+            )
         qforce = np.zeros(model.nv) if packet.qfrc_applied is None else packet.qfrc_applied
         xforce = np.zeros((model.nbody, 6)) if packet.xfrc_applied is None else packet.xfrc_applied
         for name, value, shape in (
@@ -441,7 +460,9 @@ class MuJoCoRuntime:
         with self._lock:
             self._check_open()
             if self._poisoned:
-                raise RuntimeError("MuJoCo partial publication requires a full reset before stepping")
+                raise RuntimeError(
+                    "MuJoCo partial publication requires a full reset before stepping"
+                )
             if not np.isfinite(h) or float(h) != self._timestep:
                 raise ValueError("step h must equal the original compiled MuJoCo timestep")
             accepted = dict.fromkeys(self._world_keys, False)
@@ -457,18 +478,27 @@ class MuJoCoRuntime:
                     before_warnings = self._warnings(candidate)
                     self._mj.mj_step(self._model, candidate)
                     self._finite_state(candidate)
-                    if (float(candidate.time) != input_time + self._timestep
-                            or candidate.time <= input_time):
+                    if (
+                        float(candidate.time) != input_time + self._timestep
+                        or candidate.time <= input_time
+                    ):
                         raise RuntimeError("MuJoCo did not advance exactly one source timestep")
                     after_warnings = self._warnings(candidate)
-                    if any(after > before for after, before in zip(
-                        after_warnings, before_warnings, strict=True
-                    )):
-                        raise RuntimeError("MuJoCo raised a native warning during the unpublished step")
+                    if any(
+                        after > before
+                        for after, before in zip(after_warnings, before_warnings, strict=True)
+                    ):
+                        raise RuntimeError(
+                            "MuJoCo raised a native warning during the unpublished step"
+                        )
                     receipt = MuJoCoStepReceipt(
-                        world=key, tick=self._ticks[key] + 1,
-                        input_time=input_time, output_time=float(candidate.time), h=self._timestep,
-                        control=control, contacts=_contacts(self._mj, self._model, candidate),
+                        world=key,
+                        tick=self._ticks[key] + 1,
+                        input_time=input_time,
+                        output_time=float(candidate.time),
+                        h=self._timestep,
+                        control=control,
+                        contacts=_contacts(self._mj, self._model, candidate),
                         qacc=_frozen(candidate.qacc),
                         qfrc_actuator=_frozen(candidate.qfrc_actuator),
                         qfrc_constraint=_frozen(candidate.qfrc_constraint),
@@ -496,19 +526,28 @@ class MuJoCoRuntime:
                 self._mj.mj_forward(self._model, endpoint)
                 self._finite_state(endpoint)
                 result[key] = MuJoCoState(
-                    world=key, q=_frozen(committed.qpos), v=_frozen(committed.qvel),
-                    act=_frozen(committed.act), ctrl=_frozen(committed.ctrl),
-                    time=float(committed.time), tick=self._ticks[key],
-                    body_positions=_frozen(endpoint.xpos), body_quaternions=_frozen(endpoint.xquat),
+                    world=key,
+                    q=_frozen(committed.qpos),
+                    v=_frozen(committed.qvel),
+                    act=_frozen(committed.act),
+                    ctrl=_frozen(committed.ctrl),
+                    time=float(committed.time),
+                    tick=self._ticks[key],
+                    body_positions=_frozen(endpoint.xpos),
+                    body_quaternions=_frozen(endpoint.xquat),
                     geometry_positions=_frozen(endpoint.geom_xpos),
                     geometry_matrices=_frozen(endpoint.geom_xmat.reshape(-1, 3, 3)),
-                    qacc=_frozen(endpoint.qacc), qfrc_actuator=_frozen(endpoint.qfrc_actuator),
+                    qacc=_frozen(endpoint.qacc),
+                    qfrc_actuator=_frozen(endpoint.qfrc_actuator),
                     qfrc_passive=_frozen(endpoint.qfrc_passive),
                     qfrc_constraint=_frozen(endpoint.qfrc_constraint),
                     qfrc_applied=_frozen(committed.qfrc_applied),
-                    xfrc_applied=_frozen(committed.xfrc_applied), sensordata=_frozen(endpoint.sensordata),
-                    energy=_frozen(endpoint.energy), contacts=_contacts(self._mj, self._model, endpoint),
-                    contact_time=float(committed.time), held_control=self._controls[key],
+                    xfrc_applied=_frozen(committed.xfrc_applied),
+                    sensordata=_frozen(endpoint.sensordata),
+                    energy=_frozen(endpoint.energy),
+                    contacts=_contacts(self._mj, self._model, endpoint),
+                    contact_time=float(committed.time),
+                    held_control=self._controls[key],
                     last_step=self._receipts[key],
                 )
             return MappingProxyType(result)
@@ -520,8 +559,10 @@ class MuJoCoRuntime:
             if self._poisoned and set(selected) != set(self._world_keys):
                 raise ValueError("partial publication requires resetting all MuJoCo worlds")
             prepared = {key: self._initial_data(self._initial[key]) for key in selected}
-            controls = {key: self._validated_control(MuJoCoControl(np.zeros(self._model.nu)))
-                        for key in selected}
+            controls = {
+                key: self._validated_control(MuJoCoControl(np.zeros(self._model.nu)))
+                for key in selected
+            }
             for key in selected:
                 self._data[key] = prepared[key]
                 self._controls[key] = controls[key]
@@ -540,8 +581,11 @@ class MuJoCoRuntime:
             model = copy.copy(self._model)
             clone = object.__new__(type(self))
             clone._initialize(
-                self._compilation, model, selected,
-                {key: self._initial[key] for key in selected}, self._mj,
+                self._compilation,
+                model,
+                selected,
+                {key: self._initial[key] for key in selected},
+                self._mj,
             )
             signature = self._mj.mjtState.mjSTATE_INTEGRATION
             for key in selected:

@@ -18,7 +18,6 @@ from phymeo.backends.mujoco_runtime import (
 )
 from phymeo.training.resident_stepper import PhysicsStepFailure
 
-
 SLIDER_XML = """<mujoco model="native-slider">
   <option timestep="0.002" gravity="0 0 0" integrator="Euler"/>
   <worldbody><body name="slider">
@@ -236,7 +235,9 @@ def test_explicit_initial_state_restores_native_free_root_without_injection(mj):
 
 def test_partial_native_failure_reports_only_published_worlds_and_requires_reset(mj, monkeypatch):
     with MuJoCoRuntime(compiled(SLIDER_XML), world_keys=(7, 19, 23)) as runtime:
-        runtime.set_controls({7: MuJoCoControl([1]), 19: MuJoCoControl([-1]), 23: MuJoCoControl([2])})
+        runtime.set_controls(
+            {7: MuJoCoControl([1]), 19: MuJoCoControl([-1]), 23: MuJoCoControl([2])}
+        )
         original = mj.mj_step
 
         def fail_second(model, data):

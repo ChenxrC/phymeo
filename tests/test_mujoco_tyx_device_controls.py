@@ -18,7 +18,7 @@ H = .002
 INERTIAL = '<inertial pos=".02 -.01 .03" mass="1.2" fullinertia=".04 .05 .06 .001 -.001 .001"/>'
 VISUAL = '<geom type="sphere" size=".04" contype="0" conaffinity="0"/>'
 CHILD = f"""<body pos=".2 0 .1"><joint name="a" type="hinge" axis="0 1 0"
- damping=".03" armature=".02" limited="true" range="-.5 .5"/>{INERTIAL}{VISUAL}
+ damping=".03" armature=".02"/>{INERTIAL}{VISUAL}
  <body pos=".1 .1 0"><joint name="b" type="slide" axis="1 0 0"
  damping=".03" stiffness=".4" springref=".04"/>{INERTIAL}{VISUAL}</body></body>"""
 
@@ -29,6 +29,8 @@ def engine(case, mode, keys=KEYS):
     if case != "fixed":
         shape = '<geom type="sphere" size=".1"/>' if case == "mixed" else VISUAL
         body = f'<body pos="0 0 .099"><freejoint/>{INERTIAL}{shape}{CHILD}</body>'
+    if case == "mixed":
+        body = body.replace('name="a"', 'name="a" limited="true" range="-.5 .5"')
     ground = '<geom type="plane" size="2 2 .1"/>' if case == "mixed" else ""
     actuator = "" if case == "mixed" else """<actuator><general joint="a"
       gaintype="fixed" gainprm="1.2" biastype="affine" biasprm="0 -.2 -.04"
@@ -301,6 +303,10 @@ def test_stale_alias_wrong_owner_and_closed_inputs(mode, monkeypatch):
             with pytest.raises(ValueError, match="epoch"):
                 e._control_packet.inputs(e)
         if mode == "cuda":
+            freed = tx.CudaArray(np.zeros((2, 1), np.float32))
+            freed.free()
+            with pytest.raises(Exception):
+                submit(e, (freed, values[1], values[2]))
             dead = tx.CudaStream()
             dead.close()
             with pytest.raises(Exception):
@@ -350,6 +356,14 @@ def test_physics_failure_reset_restore_and_host_supersession(mode, monkeypatch):
         assert state(e) == before and exact(e._controls) == held and e.checkpoint_revision == revision
         e.step(H)
         cp = e.checkpoint()
+        old_packet, before_restore = e._control_packet, state(e)
+        def fail_restore(*args, **kwargs):
+            raise RuntimeError("authored restore allocation")
+        with monkeypatch.context() as patch:
+            patch.setattr(e, "_build_device", fail_restore)
+            with pytest.raises(RuntimeError, match="authored restore"):
+                e.restore(cp, expected_revision=e.checkpoint_revision)
+        assert e._control_packet is old_packet and state(e) == before_restore
         e.step(H)
         expected = state(e)
         e.restore(cp, expected_revision=e.checkpoint_revision)
@@ -403,3 +417,18 @@ def test_post_commit_cleanup_failure_is_retained_and_close_attempts_all(mode, mo
             assert not e._control_retired
     finally:
         e.close()
+
+
+@pytest.mark.parametrize("mode", MODES)
+def test_action_receipt_remains_immutable_after_runtime_close(mode):
+    with ExitStack() as stack:
+        e = engine("fixed", mode)
+        stack.callback(e.close)
+        receipt = submit(e, device_values(stack, mode, channels(e)))
+        saved = exact(receipt)
+        with pytest.raises(TypeError):
+            receipt.controls[KEYS[0]] = MuJoCoControl([0.])
+        with pytest.raises(ValueError):
+            receipt.controls[KEYS[0]].ctrl[0] = 2
+        e.close()
+        assert exact(receipt) == saved

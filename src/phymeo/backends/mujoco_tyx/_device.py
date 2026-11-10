@@ -68,9 +68,17 @@ class TyxDevice:
     def _put(self, buffer, value):
         if self.mode == "interpret":
             np.copyto(buffer, value)
+        elif isinstance(value, self.tx.CudaArray):
+            buffer.copy_from_device(value)
+            self.counts["device_control_d2d_bytes"] = (
+                self.counts.get("device_control_d2d_bytes", 0) + value.nbytes
+            )
         else:
             buffer.copy_from(value)
             self.counts["uploaded_bytes"] += value.nbytes
+            self.counts["control_host_uploaded_bytes"] = (
+                self.counts.get("control_host_uploaded_bytes", 0) + value.nbytes
+            )
 
     def _get(self, buffer):
         if self.mode == "interpret":

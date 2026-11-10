@@ -181,7 +181,15 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                 raise ValueError("T4 contact/constraint capacities cannot exceed 128/512")
         self._checkpoint_revision = 0
         self._checkpoint_retired = []
-        self._extra_counts = dict(completed_steps=0, accepted_world_steps=0, failed_batches=0)
+        self._control_packet, self._control_retired = None, []
+        self._control_epoch, self._control_cleanup_errors = 0, ()
+        self._extra_counts = dict(
+            completed_steps=0, accepted_world_steps=0, failed_batches=0,
+            device_control_submissions=0, device_control_refusals=0,
+            control_copy_d2d_bytes=0, control_audit_downloaded_bytes=0,
+            control_status_downloaded_bytes=0, control_initial_uploaded_bytes=0,
+            control_pack_kernels=0,
+        )
         self._device = self._build_device(self._data)
         self._quantize_mirrors()
         info = dict(self._capabilities)
@@ -226,6 +234,8 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
             floating_mixed_constraints_supported=False,
             deprecated_capabilities=("g1_supported",),
             checkpoint="exact-accepted-tyx-batch-v1",
+            device_controls="copy-owned-native-batch-cas-v1",
+            device_control_host_audit="exact-channels-on-submission",
             g1_supported=False,
         )
         if getattr(self._plan, "normal_contact", False):
@@ -324,7 +334,7 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
             from .mujoco_tyx._floating_device import TyxFloatingDevice
 
             device_type = TyxFloatingDevice
-        return device_type(
+        device = device_type(
             self._plan,
             self._mode,
             self._cache_root,
@@ -333,6 +343,11 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
             self._timestep,
             (self._contact_capacity, self._constraint_capacity),
         )
+        # All device subclasses expose the same transport counters, including
+        # fresh replacement owners used by A1's exact checkpoint continuation.
+        device.counts["device_control_d2d_bytes"] = 0
+        device.counts["control_host_uploaded_bytes"] = 0
+        return device
 
     def _quantize_mirrors(self):
         q, v, time = self._pack_states(self._data)
@@ -349,10 +364,42 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
             for packet in prepared.values():
                 for value in (packet.ctrl, packet.qfrc_applied, packet.xfrc_applied):
                     fp32(value, "held native control")
-            self._controls = prepared
-            self._checkpoint_revision += 1
+            from .mujoco_device_controls import invalidate, retirement_list
+
+            retired = retirement_list(self)
+            revision = self._checkpoint_revision + 1
+            self._controls, self._control_retired = prepared, retired
+            self._checkpoint_revision = revision
+            invalidate(self)
+
+    def set_controls_from_device(self, ctrl, *, qfrc_applied=None, xfrc_applied=None,
+                                 expected_revision, producer_stream=None):
+        """Copy one ordered native action batch, then atomically publish held controls.
+
+        Inputs use world_keys order; equal-shaped row permutations cannot be inferred.
+        None forces are fresh zeros. After return callers may mutate/free their arrays.
+        A later failed physics step retains this successfully submitted held action.
+        """
+        from .mujoco_device_controls import submit
+
+        with self._lock:
+            self._check_open()
+            try:
+                return submit(self, (ctrl, qfrc_applied, xfrc_applied),
+                              expected_revision, producer_stream)
+            except BaseException:
+                self._extra_counts["device_control_refusals"] += 1
+                raise
+
+    @property
+    def control_cleanup_errors(self):
+        """Separate resource errors; never a rejection of an accepted action."""
+        with self._lock:
+            return self._control_cleanup_errors
 
     def _pack_controls(self):
+        if self._control_packet is not None:
+            return self._control_packet.inputs(self)
         ctrl = np.zeros((len(self._world_keys), max(self._plan.nu, 1)), np.float32)
         applied = np.zeros((len(self._world_keys), max(8, self._plan.nv)), np.float32)
         body_force = np.zeros((len(self._world_keys), self._model.nbody, 6), np.float32)
@@ -662,6 +709,9 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                 proposed[key] = self._initial_data(self._initial[key])
                 controls[key] = self._validated_control(MuJoCoControl(np.zeros(self._model.nu)))
                 ticks[key], receipts[key] = 0, None
+            from .mujoco_device_controls import invalidate, retirement_list
+
+            retired_controls = retirement_list(self)
             replacement = self._build_device(proposed)
             old = self._device
             self._device = replacement
@@ -673,6 +723,8 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
             )
             self._quantize_mirrors()
             self._checkpoint_revision += 1
+            self._control_retired = retired_controls
+            invalidate(self)
             old.close()
 
     @property
@@ -702,13 +754,18 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
         restorable when the caller supplies the current destination revision.
         """
         from .mujoco_checkpoint import restore
+        from .mujoco_device_controls import invalidate, retirement_list
 
         with self._lock:
             self._check_open()
-            return restore(self, checkpoint, expected_revision)
+            retired_controls = retirement_list(self)
+            result = restore(self, checkpoint, expected_revision)
+            self._control_retired = retired_controls
+            invalidate(self)
+            return result
 
     def prepare_task_workspace(self, spec, *, cache_root=None):
-        """Prepare owned device task outputs; physical actions remain HOST packets."""
+        """Prepare owned device task outputs; physics retains full HOST audit."""
         from .mujoco_task_workspace import MuJoCoTyxTaskWorkspace
 
         with self._lock:
@@ -758,23 +815,28 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
     def close(self):
         with self._lock:
             retired = list(getattr(self, "_checkpoint_retired", ()))
-            if self._closed and not retired:
+            controls = list(getattr(self, "_control_retired", ()))
+            packet = getattr(self, "_control_packet", None)
+            if packet is not None:
+                controls.append(packet)
+            if self._closed and not retired and not controls:
                 return
             device = getattr(self, "_device", None)
-            owners = retired + ([] if device is None else [device])
-            failed, errors = [], []
-            for owner in owners:
-                try:
-                    owner.close()
-                except Exception as error:
-                    failed.append(owner)
-                    errors.append(error)
-            # Physics access closes even if resource cleanup needs a retry.
-            # Successful owners are dropped; every actual failed owner survives.
-            self._checkpoint_retired = failed
+            physical = retired + ([] if device is None else [device])
+            failed_controls, failed_physical, errors = [], [], []
+            for owners, failed in ((controls, failed_controls), (physical, failed_physical)):
+                for owner in owners:
+                    try:
+                        owner.close()
+                    except BaseException as error:
+                        failed.append(owner)
+                        errors.append(error)
+            self._control_packet = None
+            self._control_retired, self._checkpoint_retired = failed_controls, failed_physical
+            self._control_cleanup_errors = tuple(repr(error) for error in errors)
             self._device = None
             super().close()
             if errors:
-                raise ExceptionGroup(
+                raise BaseExceptionGroup(
                     "TYX cleanup failed; close() can retry retained owners", errors
                 )

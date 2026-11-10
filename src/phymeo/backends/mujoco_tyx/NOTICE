@@ -44,3 +44,15 @@ engine_core_smooth.c, engine_util_spatial.c and engine_forward.c.
 The bounded TYX dense solve and transactional device resources are independent;
 CPU MuJoCo compiles the model but does not execute these per-step dynamics.
 Free-joint springs and possible contacts in this tree domain remain unsupported.
+
+T3 coupled frictionless contacts (_normal_*): primitive geometry also follows
+MuJoCo 3.3.7 engine_collision_primitive.c and frame construction in
+engine_util_spatial.c, Copyright 2021 DeepMind Technologies Limited;
+sphere-box attribution includes Copyright 2016 Svetoslav Kolev.
+The CPU plane-box contact selection and degenerate primitive conventions are
+retained where they differ from mujoco-warp v0.0.2.
+Native condim=1 impedance/reference-acceleration formulas define a coupled
+nonnegative force QP. Phymeo supplies a bounded TYX dual active-set solver,
+explicitly distinct from native Newton/CG iteration and warmstart behavior.
+Existing TYX tree dynamics and Euler integration consume its complete J^T f
+in one candidate step. No native CPU or Warp contact solver runs per step.

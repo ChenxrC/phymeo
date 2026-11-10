@@ -100,22 +100,33 @@ def contacts(
                         # Keep native corner identity; choose first four qualifying corners.
                         for j in range(3):
                             sign = 1.0
-                            if (feature // (1 << j)) % 2 == 0:
+                            bit_weight = 1
+                            if j == 1:
+                                bit_weight = 2
+                            elif j == 2:
+                                bit_weight = 4
+                            if (feature // bit_weight) % 2 == 0:
                                 sign = -1.0
                             scratch[w, 5, j] = sign * geom_data[gb, 12 + j]
                         for i in range(3):
                             corner = 0.0
                             for j in range(3):
-                                corner = corner + geom_world[w, gb, 3 + 3 * i + j] * scratch[w, 5, j]
+                                corner = (
+                                    corner + geom_world[w, gb, 3 + 3 * i + j] * scratch[w, 5, j]
+                                )
                             scratch[w, 1, i] = scratch[w, 1, i] + corner
                             local_distance = local_distance + scratch[w, 2, i] * corner
                         if local_distance > 0.0 or plane_box_count >= 4:
                             eligible = 0
                     distance = -radius
                     for i in range(3):
-                        distance = distance + (scratch[w, 1, i] - scratch[w, 0, i]) * scratch[w, 2, i]
+                        distance = (
+                            distance + (scratch[w, 1, i] - scratch[w, 0, i]) * scratch[w, 2, i]
+                        )
                     for i in range(3):
-                        scratch[w, 3, i] = scratch[w, 1, i] - (radius + 0.5 * distance) * scratch[w, 2, i]
+                        scratch[w, 3, i] = (
+                            scratch[w, 1, i] - (radius + 0.5 * distance) * scratch[w, 2, i]
+                        )
                     if tb == 6 and eligible == 1 and distance <= margin:
                         plane_box_count = plane_box_count + 1
                 elif tb == 2 or tb == 3:
@@ -123,10 +134,18 @@ def contacts(
                     if tb == 3:
                         projection = 0.0
                         for i in range(3):
-                            projection = projection + (scratch[w, 0, i] - scratch[w, 1, i]) * geom_world[w, gb, 5 + 3 * i]
-                        projection = tx.max(-geom_data[gb, 13], tx.min(geom_data[gb, 13], projection))
+                            projection = (
+                                projection
+                                + (scratch[w, 0, i] - scratch[w, 1, i])
+                                * geom_world[w, gb, 5 + 3 * i]
+                            )
+                        projection = tx.max(
+                            -geom_data[gb, 13], tx.min(geom_data[gb, 13], projection)
+                        )
                         for i in range(3):
-                            scratch[w, 1, i] = scratch[w, 1, i] + projection * geom_world[w, gb, 5 + 3 * i]
+                            scratch[w, 1, i] = (
+                                scratch[w, 1, i] + projection * geom_world[w, gb, 5 + 3 * i]
+                            )
                     length2 = 0.0
                     for i in range(3):
                         value = scratch[w, 1, i] - scratch[w, 0, i]
@@ -139,7 +158,10 @@ def contacts(
                         for i in range(3):
                             j = (i + 1) % 3
                             k = (i + 2) % 3
-                            value = geom_world[w, ga, 5 + 3 * j] * geom_world[w, gb, 5 + 3 * k] - geom_world[w, ga, 5 + 3 * k] * geom_world[w, gb, 5 + 3 * j]
+                            value = (
+                                geom_world[w, ga, 5 + 3 * j] * geom_world[w, gb, 5 + 3 * k]
+                                - geom_world[w, ga, 5 + 3 * k] * geom_world[w, gb, 5 + 3 * j]
+                            )
                             scratch[w, 2, i] = value
                             length2 = length2 + value * value
                         length = tx.sqrt(length2)
@@ -151,14 +173,19 @@ def contacts(
                         for i in range(3):
                             scratch[w, 2, i] = scratch[w, 2, i] / length
                     for i in range(3):
-                        scratch[w, 3, i] = scratch[w, 0, i] + (geom_data[ga, 12] + 0.5 * distance) * scratch[w, 2, i]
+                        scratch[w, 3, i] = (
+                            scratch[w, 0, i]
+                            + (geom_data[ga, 12] + 0.5 * distance) * scratch[w, 2, i]
+                        )
                 else:
                     # Sphere-box: closest feature outside; first nearest native face inside.
                     length2 = 0.0
                     for i in range(3):
                         local = 0.0
                         for j in range(3):
-                            local = local + geom_world[w, gb, 3 + 3 * j + i] * (scratch[w, 0, j] - scratch[w, 1, j])
+                            local = local + geom_world[w, gb, 3 + 3 * j + i] * (
+                                scratch[w, 0, j] - scratch[w, 1, j]
+                            )
                         scratch[w, 5, i] = local
                         clamp = tx.max(-geom_data[gb, 12 + i], tx.min(geom_data[gb, 12 + i], local))
                         scratch[w, 6, i] = clamp
@@ -172,7 +199,9 @@ def contacts(
                             sign = -1.0
                             if face % 2 == 1:
                                 sign = 1.0
-                            candidate = tx.abs(sign * geom_data[gb, 12 + face // 2] - scratch[w, 5, face // 2])
+                            candidate = tx.abs(
+                                sign * geom_data[gb, 12 + face // 2] - scratch[w, 5, face // 2]
+                            )
                             if candidate < closest:
                                 closest = candidate
                                 nearest_face = face
@@ -184,18 +213,31 @@ def contacts(
                         scratch[w, 7, nearest_face // 2] = sign
                         distance = -closest - geom_data[ga, 12]
                         for i in range(3):
-                            scratch[w, 6, i] = scratch[w, 5, i] + scratch[w, 7, i] * (geom_data[ga, 12] - closest) * 0.5
+                            scratch[w, 6, i] = (
+                                scratch[w, 5, i]
+                                + scratch[w, 7, i] * (geom_data[ga, 12] - closest) * 0.5
+                            )
                     else:
                         distance = length - geom_data[ga, 12]
                         for i in range(3):
                             scratch[w, 7, i] = scratch[w, 7, i] / length
-                            scratch[w, 6, i] = 0.5 * (scratch[w, 6, i] + scratch[w, 5, i] + geom_data[ga, 12] * scratch[w, 7, i])
+                            scratch[w, 6, i] = 0.5 * (
+                                scratch[w, 6, i]
+                                + scratch[w, 5, i]
+                                + geom_data[ga, 12] * scratch[w, 7, i]
+                            )
                     for i in range(3):
                         scratch[w, 2, i] = 0.0
                         scratch[w, 3, i] = scratch[w, 1, i]
                         for j in range(3):
-                            scratch[w, 2, i] = scratch[w, 2, i] + geom_world[w, gb, 3 + 3 * i + j] * scratch[w, 7, j]
-                            scratch[w, 3, i] = scratch[w, 3, i] + geom_world[w, gb, 3 + 3 * i + j] * scratch[w, 6, j]
+                            scratch[w, 2, i] = (
+                                scratch[w, 2, i]
+                                + geom_world[w, gb, 3 + 3 * i + j] * scratch[w, 7, j]
+                            )
+                            scratch[w, 3, i] = (
+                                scratch[w, 3, i]
+                                + geom_world[w, gb, 3 + 3 * i + j] * scratch[w, 6, j]
+                            )
                 if not tx.isfinite(distance):
                     status[w] = 2
                 if eligible == 1 and distance <= margin:
@@ -245,15 +287,30 @@ def contacts(
                         rows[w, row, 9 + i] = scratch[w, 3, i]
                         rows[w, row, 12 + i] = scratch[w, 2, i]
                         rows[w, row, 15 + i] = scratch[w, 4, i]
-                        rows[w, row, 18 + i] = scratch[w, 2, j] * scratch[w, 4, k] - scratch[w, 2, k] * scratch[w, 4, j]
+                        rows[w, row, 18 + i] = (
+                            scratch[w, 2, j] * scratch[w, 4, k]
+                            - scratch[w, 2, k] * scratch[w, 4, j]
+                        )
                     row_velocity = 0.0
                     for d in range(nv):
                         value = 0.0
                         for i in range(3):
                             j = (i + 1) % 3
                             k = (i + 2) % 3
-                            ja = jacobian[w, ba, i, d] + jacobian[w, ba, 3 + j, d] * (scratch[w, 3, k] - motion[w, ba, 5, k]) - jacobian[w, ba, 3 + k, d] * (scratch[w, 3, j] - motion[w, ba, 5, j])
-                            jb = jacobian[w, bb, i, d] + jacobian[w, bb, 3 + j, d] * (scratch[w, 3, k] - motion[w, bb, 5, k]) - jacobian[w, bb, 3 + k, d] * (scratch[w, 3, j] - motion[w, bb, 5, j])
+                            ja = (
+                                jacobian[w, ba, i, d]
+                                + jacobian[w, ba, 3 + j, d]
+                                * (scratch[w, 3, k] - motion[w, ba, 5, k])
+                                - jacobian[w, ba, 3 + k, d]
+                                * (scratch[w, 3, j] - motion[w, ba, 5, j])
+                            )
+                            jb = (
+                                jacobian[w, bb, i, d]
+                                + jacobian[w, bb, 3 + j, d]
+                                * (scratch[w, 3, k] - motion[w, bb, 5, k])
+                                - jacobian[w, bb, 3 + k, d]
+                                * (scratch[w, 3, j] - motion[w, bb, 5, j])
+                            )
                             value = value + scratch[w, 2, i] * (jb - ja)
                         normal_jacobian[w, row, d] = value
                         row_velocity = row_velocity + value * velocity[w, d]
@@ -277,18 +334,30 @@ def contacts(
                                 if x < midpoint:
                                     y = tx.pow(x, power) / tx.pow(midpoint, power - 1.0)
                                 else:
-                                    y = 1.0 - tx.pow(1.0 - x, power) / tx.pow(1.0 - midpoint, power - 1.0)
+                                    y = 1.0 - tx.pow(1.0 - x, power) / tx.pow(
+                                        1.0 - midpoint, power - 1.0
+                                    )
                                 impedance = dmin + y * (dmax - dmin)
                         stiffness = 0.0
                         damping = 0.0
                         if pair_law[p, 3] > 0.0:
                             timeconst = tx.max(pair_law[p, 3], 2.0 * h)
-                            stiffness = 1.0 / tx.max(minimum, dmax * dmax * timeconst * timeconst * pair_law[p, 4] * pair_law[p, 4])
+                            stiffness = 1.0 / tx.max(
+                                minimum,
+                                dmax
+                                * dmax
+                                * timeconst
+                                * timeconst
+                                * pair_law[p, 4]
+                                * pair_law[p, 4],
+                            )
                             damping = 2.0 / tx.max(minimum, dmax * timeconst)
                         else:
                             stiffness = -pair_law[p, 3] / (dmax * dmax)
                             damping = -pair_law[p, 4] / dmax
-                        regularization = tx.max(minimum, pair_law[p, 2] * (1.0 - impedance) / impedance)
+                        regularization = tx.max(
+                            minimum, pair_law[p, 2] * (1.0 - impedance) / impedance
+                        )
                         rows[w, row, 4] = regularization
                         rows[w, row, 5] = 1.0 / regularization
                         rows[w, row, 6] = -stiffness * impedance * position - damping * row_velocity

@@ -54,6 +54,36 @@ class MuJoCoTyxContact:
 
 
 @dataclass(frozen=True)
+class MuJoCoTyxNormalContact:
+    """One detected site; world wrenches use the same point and each body COM."""
+
+    schema: str
+    geometry_ids: tuple
+    body_ids: tuple
+    feature_index: int
+    dimension: int
+    distance: float
+    position: np.ndarray
+    frame: np.ndarray
+    include_margin: float
+    friction: np.ndarray
+    solref: np.ndarray
+    solimp: np.ndarray
+    active: bool
+    wrench_contact_frame: np.ndarray
+    force_on_geometry1_world: np.ndarray
+    force_on_geometry2_world: np.ndarray
+    wrench_on_body1_world: np.ndarray
+    wrench_on_body2_world: np.ndarray
+    impedance: float
+    regularization: float
+    reference_acceleration: float
+    normal_velocity: float
+    jacobian: np.ndarray
+    normal_force: float
+
+
+@dataclass(frozen=True)
 class MuJoCoTyxDynamics:
     """Same input-step device fields; linear/angular Jacobian rows in world axes.
 
@@ -155,7 +185,9 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
             native_model=False,
             contact_law=LAW,
             domain=(
-                "free-root-hinge-slide-no-contact-v1"
+                "tree-primitive-coupled-normal-v1"
+                if getattr(self._plan, "normal_contact", False)
+                else "free-root-hinge-slide-no-contact-v1"
                 if self._plan.kind == 3
                 else "fixed-hinge-slide-no-contact-v1"
                 if self._plan.kind == 2
@@ -163,10 +195,18 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
             ),
             state_precision="fp32-device-integration",
             publication="whole-batch-atomic",
-            possible_contact_pairs=int(self._plan.pair is not None),
+            possible_contact_pairs=(
+                len(self._plan.pair_ids)
+                if getattr(self._plan, "normal_contact", False)
+                else int(self._plan.pair is not None)
+            ),
             limits="strict-interior-reject-on-exit",
             numerical_solver=(
-                "tree-dense-cholesky" if self._plan.kind in (2, 3) else "single-normal-direct-qp"
+                "normal-dual-active-set-v1"
+                if getattr(self._plan, "normal_contact", False)
+                else "tree-dense-cholesky"
+                if self._plan.kind in (2, 3)
+                else "single-normal-direct-qp"
             ),
             source_solver=self._plan.source_solver,
             source_iterations=self._plan.source_iterations,
@@ -175,6 +215,13 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
             endpoint_observer="detached-cpu-mj-forward",
             g1_supported=False,
         )
+        if getattr(self._plan, "normal_contact", False):
+            info.update(
+                normal_candidate_slots=len(self._plan.slot_ids),
+                solver_tolerance=self._plan.solver_tolerance,
+                solver_iteration_semantics="source-iterations-as-active-set-face-solve-budget",
+                warmstart="cold-feasible-zero-force",
+            )
         self._capabilities = MappingProxyType(info)
 
     @property
@@ -214,7 +261,11 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
         from .mujoco_tyx._device import TyxDevice
 
         device_type = TyxDevice
-        if self._plan.kind == 2:
+        if getattr(self._plan, "normal_contact", False):
+            from .mujoco_tyx._normal_device import TyxNormalDevice
+
+            device_type = TyxNormalDevice
+        elif self._plan.kind == 2:
             from .mujoco_tyx._tree_device import TyxTreeDevice
 
             device_type = TyxTreeDevice
@@ -297,6 +348,105 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
             ),
         )
 
+    def _normal_publication(self, result, index):
+        plan = self._plan
+        rows = result["normal_rows"][index]
+        jacobian = result["normal_jacobian"][index, :, : plan.nv]
+        matrix = result["dual_matrix"][index]
+        diag = result["solver_diagnostics"][index]
+        count = len(plan.slot_ids)
+        if rows.shape != (count, 32) or jacobian.shape != (count, plan.nv):
+            raise RuntimeError("invalid normal row shape")
+        if matrix.shape != (count, count) or diag.shape != (8,):
+            raise RuntimeError("invalid normal solver shape")
+        if not all(np.all(np.isfinite(x)) for x in (rows, jacobian, matrix, diag)):
+            raise RuntimeError("nonfinite normal contact result")
+        if np.any(~np.isin(rows[:, :2], (0, 1))) or np.any(rows[:, 1] > rows[:, 0]):
+            raise RuntimeError("invalid detected/active normal flags")
+        present = int(np.sum(rows[:, 0]))
+        active = int(np.sum(rows[:, 1]))
+        if (
+            present > self._contact_capacity
+            or active > self._constraint_capacity
+            or diag[4] != present
+            or diag[5] != active
+            or diag[6] != 1
+            or diag[1] > plan.solver_tolerance
+            or diag[7] != plan.solver_iterations
+            or not 0 <= diag[0] <= plan.solver_iterations
+            or diag[0] != int(diag[0])
+            or np.any(diag[1:4] < 0)
+        ):
+            raise RuntimeError("invalid normal capacity or convergence receipt")
+        contacts = []
+        for slot, row in enumerate(rows):
+            if not row[0]:
+                continue
+            pair, feature, geom1, geom2 = map(int, plan.slot_ids[slot])
+            body1, body2 = map(int, plan.geom_ids[[geom1, geom2], 0])
+            law = plan.pair_law[pair]
+            frame = row[12:21].reshape(3, 3)
+            point = row[9:12]
+            force = float(row[3]) * frame[0].astype(np.float64)
+            if row[3] < 0 or (not row[1] and row[3] != 0):
+                raise RuntimeError("invalid normal force")
+            com1, com2 = result["body_com"][index, [body1, body2]]
+            contacts.append(
+                MuJoCoTyxNormalContact(
+                    schema="mujoco-tyx-primitive-normal-v1",
+                    geometry_ids=(geom1, geom2),
+                    body_ids=(body1, body2),
+                    feature_index=feature,
+                    dimension=1,
+                    distance=float(row[2]),
+                    position=_frozen(point),
+                    frame=_frozen(frame),
+                    include_margin=float(row[21]),
+                    friction=_frozen(plan.pair_friction[pair]),
+                    solref=_frozen(law[3:5]),
+                    solimp=_frozen(law[5:10]),
+                    active=bool(row[1]),
+                    wrench_contact_frame=_frozen(np.r_[row[3], np.zeros(5)]),
+                    force_on_geometry1_world=_frozen(-force),
+                    force_on_geometry2_world=_frozen(force),
+                    wrench_on_body1_world=_frozen(np.r_[-force, np.cross(point - com1, -force)]),
+                    wrench_on_body2_world=_frozen(np.r_[force, np.cross(point - com2, force)]),
+                    impedance=float(row[8]),
+                    regularization=float(row[4]),
+                    reference_acceleration=float(row[6]),
+                    normal_velocity=float(row[7]),
+                    jacobian=_frozen(jacobian[slot]),
+                    normal_force=float(row[3]),
+                )
+            )
+        diagnostics = MappingProxyType(
+            dict(
+                zip(
+                    (
+                        "iterations",
+                        "normalized_kkt",
+                        "absolute_kkt",
+                        "min_force",
+                        "present_count",
+                        "active_count",
+                        "converged",
+                        "budget",
+                    ),
+                    map(float, diag),
+                    strict=True,
+                )
+            )
+        )
+        return tuple(contacts), MappingProxyType(
+            {
+                "device_rows": _frozen(rows),
+                "normal_jacobian": _frozen(jacobian),
+                "dual_matrix": _frozen(matrix),
+                "slot_ids": _frozen(plan.slot_ids, dtype=np.int32),
+                "solver_diagnostics": diagnostics,
+            }
+        )
+
     def step(self, h):
         with self._lock:
             self._check_open()
@@ -313,6 +463,8 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                         2: "nonfinite_candidate",
                         3: "joint_limit_domain",
                         4: "nonpositive_mass_matrix",
+                        5: "normal_solver_not_converged",
+                        6: "nonpositive_normal_matrix",
                     }
                     codes = tuple(
                         reasons.get(int(code), "invalid_status")
@@ -360,6 +512,11 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                             input_v=_frozen(result["input_v"][index, :n]),
                             time=float(result["input_time"][index]),
                         )
+                    if getattr(self._plan, "normal_contact", False):
+                        contacts, raw_fields = self._normal_publication(result, index)
+                    else:
+                        contacts = self._contacts_from_row(row)
+                        raw_fields = MappingProxyType({"device_row": _frozen(row)})
                     receipts[key] = MuJoCoTyxStepReceipt(
                         world=key,
                         tick=ticks[key],
@@ -368,7 +525,7 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                         h=self._timestep,
                         control=self._controls[key],
                         stored_control=stored[key],
-                        contacts=self._contacts_from_row(row),
+                        contacts=contacts,
                         input_q=_frozen(original.qpos),
                         input_v=_frozen(original.qvel),
                         qacc=_frozen(candidate.qacc),
@@ -377,10 +534,12 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                         ),
                         qfrc_actuator=_frozen(candidate.qfrc_actuator),
                         qfrc_constraint=_frozen(candidate.qfrc_constraint),
-                        raw_contact_fields=MappingProxyType({"device_row": _frozen(row)}),
+                        raw_contact_fields=raw_fields,
                         source_solver=self._plan.source_solver,
                         numerical_solver=(
-                            "tree-dense-cholesky"
+                            "normal-dual-active-set-v1"
+                            if getattr(self._plan, "normal_contact", False)
+                            else "tree-dense-cholesky"
                             if self._plan.kind in (2, 3)
                             else "single-normal-direct-qp"
                         ),

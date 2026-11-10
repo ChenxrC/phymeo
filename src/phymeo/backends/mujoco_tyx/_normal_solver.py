@@ -200,7 +200,9 @@ def solve(
                                         blocking = r
                             if blocking >= 0:
                                 for r in range(nslot):
-                                    force[w, r] = tx.max(0.0, force[w, r] + alpha * (trial[w, r] - force[w, r]))
+                                    force[w, r] = tx.max(
+                                        0.0, force[w, r] + alpha * (trial[w, r] - force[w, r])
+                                    )
                                     if force[w, r] == 0.0:
                                         working[w, r] = 0
                                 force[w, blocking] = 0.0
@@ -239,7 +241,11 @@ def solve(
                 rows[w, r, 3] = force[w, r]
                 rows[w, r, 25] = value
                 rows[w, r, 26] = force[w, r] * value
-                if not tx.isfinite(value) or not tx.isfinite(force[w, r]):
+                if (
+                    not tx.isfinite(value)
+                    or not tx.isfinite(force[w, r])
+                    or not tx.isfinite(rows[w, r, 26])
+                ):
                     status[w] = 2
                 for d in range(nv):
                     constraint[w, d] = constraint[w, d] + jacobian[w, r, d] * force[w, r]

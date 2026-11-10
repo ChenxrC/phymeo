@@ -30,22 +30,36 @@ class TyxNormalDevice(TyxDevice):
                 self.pair_law = self._buffer(plan.pair_law)
                 self.geom_world = self._buffer(np.zeros((self.nworld, self.ngeom, 12), np.float32))
                 self.normal_rows = self._buffer(np.zeros((self.nworld, self.nslot, 32), np.float32))
-                self.normal_jacobian = self._buffer(np.zeros((self.nworld, self.nslot, self.width), np.float32))
+                self.normal_jacobian = self._buffer(
+                    np.zeros((self.nworld, self.nslot, self.width), np.float32)
+                )
                 self.contact_work = self._buffer(np.zeros((self.nworld, 8, 3), np.float32))
                 self.solver_diagnostics = self._buffer(np.zeros((self.nworld, 8), np.float32))
-                self.normal_factor = self._buffer(np.zeros((self.nworld, self.width, self.width), np.float32))
-                self.normal_mass_work = self._buffer(np.zeros((self.nworld, self.width), np.float32))
+                self.normal_factor = self._buffer(
+                    np.zeros((self.nworld, self.width, self.width), np.float32)
+                )
+                self.normal_mass_work = self._buffer(
+                    np.zeros((self.nworld, self.width), np.float32)
+                )
                 self.smooth_acc = self._buffer(np.zeros((self.nworld, self.width), np.float32))
-                self.response = self._buffer(np.zeros((self.nworld, self.nslot, self.width), np.float32))
-                self.dual_matrix = self._buffer(np.zeros((self.nworld, self.nslot, self.nslot), np.float32))
+                self.response = self._buffer(
+                    np.zeros((self.nworld, self.nslot, self.width), np.float32)
+                )
+                self.dual_matrix = self._buffer(
+                    np.zeros((self.nworld, self.nslot, self.nslot), np.float32)
+                )
                 self.normal_linear = self._buffer(np.zeros((self.nworld, self.nslot), np.float32))
                 self.normal_force = self._buffer(np.zeros((self.nworld, self.nslot), np.float32))
                 self.normal_gradient = self._buffer(np.zeros((self.nworld, self.nslot), np.float32))
                 self.normal_working = self._buffer(np.zeros((self.nworld, self.nslot), np.int32))
-                self.face_factor = self._buffer(np.zeros((self.nworld, self.nslot, self.nslot), np.float32))
+                self.face_factor = self._buffer(
+                    np.zeros((self.nworld, self.nslot, self.nslot), np.float32)
+                )
                 self.face_forward = self._buffer(np.zeros((self.nworld, self.nslot), np.float32))
                 self.normal_trial = self._buffer(np.zeros((self.nworld, self.nslot), np.float32))
-                self.normal_constraint = self._buffer(np.zeros((self.nworld, self.width), np.float32))
+                self.normal_constraint = self._buffer(
+                    np.zeros((self.nworld, self.width), np.float32)
+                )
                 self.total_applied = self._buffer(np.zeros((self.nworld, self.width), np.float32))
         except BaseException:
             self.close()

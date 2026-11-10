@@ -88,7 +88,10 @@ def _mix_contact(model, left, right, mj):
 
 
 def compile_model(mj, model):
+    from ._normal_model import compile_normal_model, possible_pairs
+
     free_ids = np.flatnonzero(model.jnt_type == mj.mjtJoint.mjJNT_FREE)
+    legacy_free = False
     if len(free_ids):
         root = int(model.jnt_bodyid[free_ids[0]])
         # Preserve the established T0 free-body route. Select the new tree
@@ -101,6 +104,18 @@ def compile_model(mj, model):
             and not np.any(model.jnt_stiffness)
             and model.nu == 0
         )
+    pairs = possible_pairs(model)
+    legacy_pair = len(pairs) == 1 and tuple(model.geom_type[list(pairs[0])]) == (
+        mj.mjtGeom.mjGEOM_PLANE,
+        mj.mjtGeom.mjGEOM_SPHERE,
+    )
+    if pairs and (
+        not legacy_pair
+        or np.any(model.jnt_type == mj.mjtJoint.mjJNT_HINGE)
+        or (len(free_ids) and not legacy_free)
+    ):
+        return compile_normal_model(mj, model, pairs)
+    if len(free_ids):
         if not legacy_free:
             from ._floating_model import compile_floating_model
 

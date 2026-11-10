@@ -2,26 +2,31 @@
 
 Authored after preregistration; project execution belongs to the parent.
 """
+
 import itertools
 import sys
 from dataclasses import dataclass
 
 import numpy as np
 import pytest
+from test_mujoco_tyx_floating import _same, _save
 
 from phymeo.backends._mujoco_tyx_runtime import MuJoCoTyxRuntime, MuJoCoTyxUnsupported
 from phymeo.backends.mujoco_runtime import MuJoCoControl, MuJoCoInitialState
 from phymeo.builders.mujoco_compiler import compile_mujoco_xml
 from phymeo.training.resident_stepper import PhysicsStepFailure
-from test_mujoco_tyx_floating import _same, _save
 
 MODES = ("interpret", pytest.param("cuda", marks=pytest.mark.cuda))
-H = .001
+H = 0.001
 TOL = {
-    "body_position": (3e-5, 4e-5), "body_rotation": (3e-5, 4e-5),
-    "body_com": (3e-5, 4e-5), "jacobian_com": (2e-4, 5e-5),
-    "mass_matrix": (3e-4, 5e-5), "bias": (4e-4, 4e-4),
-    "passive": (4e-4, 4e-4), "applied": (4e-4, 4e-4),
+    "body_position": (3e-5, 4e-5),
+    "body_rotation": (3e-5, 4e-5),
+    "body_com": (3e-5, 4e-5),
+    "jacobian_com": (2e-4, 5e-5),
+    "mass_matrix": (3e-4, 5e-5),
+    "bias": (4e-4, 4e-4),
+    "passive": (4e-4, 4e-4),
+    "applied": (4e-4, 4e-4),
     "smooth_acceleration": (2e-3, 4e-3),
 }
 FORCE_TOL = dict(rtol=3e-3, atol=3e-3)
@@ -57,33 +62,40 @@ def _free(shape, position, *, static=FLOOR, gravity="0 0 -9.81", quat="1 0 0 0")
 
 def _slider_pair(count=2, *, z=".099", inactive=False):
     material = 'margin=".015625" gap=".0078125"' if inactive else ""
-    geoms = "".join(f'<geom name="ball{i}" type="sphere" size=".1" '
-                    f'pos="{.3 * i - .15} 0 0" {material}/>' for i in range(count))
-    body = f'''<body name="root" pos="0 0 {z}">
+    geoms = "".join(
+        f'<geom name="ball{i}" type="sphere" size=".1" pos="{0.3 * i - 0.15} 0 0" {material}/>'
+        for i in range(count)
+    )
+    body = f"""<body name="root" pos="0 0 {z}">
     <joint name="vertical" type="slide" axis="0 0 1" armature="0" damping="0"/>
-    <inertial mass="1" pos="0 0 0" diaginertia=".04 .05 .06"/>{geoms}</body>'''
+    <inertial mass="1" pos="0 0 0" diaginertia=".04 .05 .06"/>{geoms}</body>"""
     return _xml(body, static=FLOOR)
 
 
 def _two_feet():
-    return _xml(f'''<body name="root" pos="0 0 .4"><freejoint/>{ROOT_INERTIA}
+    return _xml(
+        f"""<body name="root" pos="0 0 .4"><freejoint/>{ROOT_INERTIA}
       <body name="foot0" pos="-.18 0 -.301"><joint name="ankle" axis="0 1 0"/>
       <inertial mass=".4" pos=".02 0 .01" diaginertia=".01 .012 .014"/>
       <geom name="toe0" type="sphere" size=".1" pos=".04 0 0"/></body>
       <body name="foot1" pos=".18 0 -.301"><joint name="leg" type="slide" axis="0 0 1"/>
       <inertial mass=".5" pos="-.01 0 .01" diaginertia=".012 .014 .016"/>
-      <geom name="toe1" type="sphere" size=".1"/></body></body>''', static=FLOOR)
+      <geom name="toe1" type="sphere" size=".1"/></body></body>""",
+        static=FLOOR,
+    )
 
 
 def _siblings():
-    return _xml('''<body name="root">
+    return _xml(
+        """<body name="root">
     <body name="left" pos="-.099 0 .2"><joint name="a" type="slide" axis="1 0 0"/>
       <inertial mass="1" pos="0 .02 0" diaginertia=".03 .04 .05"/>
       <geom name="left-shape" type="sphere" size=".1"/></body>
     <body name="right" pos=".099 0 .2"><joint name="b" type="slide" axis="1 0 0"/>
       <inertial mass="1.4" pos="0 -.01 0" diaginertia=".04 .05 .06"/>
-      <geom name="right-shape" type="sphere" size=".1"/></body></body>''',
-      gravity="0 0 0")
+      <geom name="right-shape" type="sphere" size=".1"/></body></body>""",
+        gravity="0 0 0",
+    )
 
 
 def _tree29():
@@ -91,16 +103,22 @@ def _tree29():
         if i >= 29:
             return ""
         kind = "slide" if i % 3 == 2 else "hinge"
-        geom = '<geom name="last-foot" type="sphere" size=".1" pos=".06 0 -.061"/>' if i == 14 else ""
+        geom = (
+            '<geom name="last-foot" type="sphere" size=".1" pos=".06 0 -.061"/>' if i == 14 else ""
+        )
         return f'''<body name="link{i}" pos=".03 .02 -.06">
-        <joint name="j{i}" type="{kind}" axis="{'0 0 1' if i == 14 else '0 1 0'}"/>
+        <joint name="j{i}" type="{kind}" axis="{"0 0 1" if i == 14 else "0 1 0"}"/>
         <inertial mass=".3" pos=".015 -.01 .02" diaginertia=".01 .012 .014"/>
-        {geom}{node(2*i+1)}{node(2*i+2)}</body>'''
-    return _xml(f'''<body name="marker" pos="2 0 0"><inertial mass=".2" pos="0 0 0"
+        {geom}{node(2 * i + 1)}{node(2 * i + 2)}</body>'''
+
+    return _xml(
+        f"""<body name="marker" pos="2 0 0"><inertial mass=".2" pos="0 0 0"
       diaginertia=".01 .01 .01"/></body>
       <body name="root" pos="0 0 .4"><freejoint/>{ROOT_INERTIA}{node(0)}
       <body name="tool" pos=".1 0 .1"><inertial mass=".2" pos="0 0 .02"
-      diaginertia=".01 .012 .014"/></body></body>''', static=FLOOR)
+      diaginertia=".01 .012 .014"/></body></body>""",
+        static=FLOOR,
+    )
 
 
 @dataclass(frozen=True)
@@ -114,16 +132,24 @@ class Case:
 
 BOX = '<geom name="obstacle" type="box" size=".2 .2 .05"/>'
 CASES = (
-    Case("redundant-slider", _slider_pair(), 32, (-.03,), 2),
-    Case("eccentric-box", _free('<geom name="shape" type="box" size=".18 .12 .08"/>',
-                               "0 0 .079"), 48, (.02, -.01, -.06, .04, -.03, .02), 4),
-    Case("two-feet", _two_feet(), 48, (.01, 0, -.06, .04, -.03, .02, .015, -.02), 2),
-    Case("sibling-moving", _siblings(), 24, (.06, -.04), 1),
-    Case("finite-withdraw", _free('<geom name="shape" type="sphere" size=".1"/>',
-                                ".19 0 .149", static=BOX), 128,
-         (1., 0, 0, 0, 0, 0), 1),
-    Case("tree29-last-contact", _tree29(), 8,
-         (0, 0, -.04, .02, -.01, .015) + (0.,) * 29, 1),
+    Case("redundant-slider", _slider_pair(), 32, (-0.03,), 2),
+    Case(
+        "eccentric-box",
+        _free('<geom name="shape" type="box" size=".18 .12 .08"/>', "0 0 .079"),
+        48,
+        (0.02, -0.01, -0.06, 0.04, -0.03, 0.02),
+        4,
+    ),
+    Case("two-feet", _two_feet(), 48, (0.01, 0, -0.06, 0.04, -0.03, 0.02, 0.015, -0.02), 2),
+    Case("sibling-moving", _siblings(), 24, (0.06, -0.04), 1),
+    Case(
+        "finite-withdraw",
+        _free('<geom name="shape" type="sphere" size=".1"/>', ".19 0 .149", static=BOX),
+        128,
+        (1.0, 0, 0, 0, 0, 0),
+        1,
+    ),
+    Case("tree29-last-contact", _tree29(), 8, (0, 0, -0.04, 0.02, -0.01, 0.015) + (0.0,) * 29, 1),
 )
 
 
@@ -133,10 +159,25 @@ def _geometry_cases():
     box = '<geom name="shape" type="box" size=".18 .12 .08"/>'
     out = [
         Case("plane-sphere", _free(sphere, "0 0 .099"), 1, initial_contacts=1),
-        Case("plane-capsule-two", _free(capsule.format(quat=".7071067811865476 0 .7071067811865476 0"), "0 0 .099"), 1, initial_contacts=2),
-        Case("plane-capsule-one", _free(capsule.format(quat="1 0 0 0"), "0 0 .299"), 1, initial_contacts=1),
+        Case(
+            "plane-capsule-two",
+            _free(capsule.format(quat=".7071067811865476 0 .7071067811865476 0"), "0 0 .099"),
+            1,
+            initial_contacts=2,
+        ),
+        Case(
+            "plane-capsule-one",
+            _free(capsule.format(quat="1 0 0 0"), "0 0 .299"),
+            1,
+            initial_contacts=1,
+        ),
         Case("plane-box-four", _free(box, "0 0 .079"), 1, initial_contacts=4),
-        Case("plane-box-tilted", _free(box, "0 0 .11", quat=".9659258262890683 0 .2588190451025207 0"), 1, initial_contacts=2),
+        Case(
+            "plane-box-tilted",
+            _free(box, "0 0 .11", quat=".9659258262890683 0 .2588190451025207 0"),
+            1,
+            initial_contacts=2,
+        ),
     ]
     obstacles = (
         ("sphere-sphere", '<geom name="obstacle" type="sphere" size=".1"/>', ".199 0 0"),
@@ -147,8 +188,10 @@ def _geometry_cases():
         ("sphere-box-corner", BOX, ".25 .25 .11"),
         ("sphere-box-inside", BOX, ".18 0 .01"),
     )
-    out.extend(Case(name, _free(sphere, pos, static=obstacle, gravity="0 0 0"),
-                    1, initial_contacts=1) for name, obstacle, pos in obstacles)
+    out.extend(
+        Case(name, _free(sphere, pos, static=obstacle, gravity="0 0 0"), 1, initial_contacts=1)
+        for name, obstacle, pos in obstacles
+    )
     return tuple(out)
 
 
@@ -162,10 +205,10 @@ def _initial(model, case, slot=0):
         v[:] = case.velocity
     if slot:
         if model.nq == model.nv:
-            q[:] += .002 * slot
+            q[:] += 0.002 * slot
         else:
-            q[2] += .002 * slot
-        v *= 1 + .1 * slot
+            q[2] += 0.002 * slot
+        v *= 1 + 0.1 * slot
     return MuJoCoInitialState(q, v)
 
 
@@ -173,20 +216,25 @@ def _packet(model, case, tick=0, slot=0):
     qforce = np.zeros(model.nv)
     wrench = np.zeros((model.nbody, 6))
     if case.name in ("eccentric-box", "two-feet", "tree29-last-contact"):
-        qforce[-1] = .015 * (-1 if tick >= case.steps // 2 else 1)
-        wrench[-1] = [0.05, -.03, .1 + .02 * slot, .003, -.002, .004]
+        qforce[-1] = 0.015 * (-1 if tick >= case.steps // 2 else 1)
+        wrench[-1] = [0.05, -0.03, 0.1 + 0.02 * slot, 0.003, -0.002, 0.004]
     return MuJoCoControl(np.zeros(model.nu), qfrc_applied=qforce, xfrc_applied=wrench)
 
 
 def _stored(packet):
-    return MuJoCoControl(np.asarray(packet.ctrl, np.float32),
-                        qfrc_applied=np.asarray(packet.qfrc_applied, np.float32),
-                        xfrc_applied=np.asarray(packet.xfrc_applied, np.float32))
+    return MuJoCoControl(
+        np.asarray(packet.ctrl, np.float32),
+        qfrc_applied=np.asarray(packet.qfrc_applied, np.float32),
+        xfrc_applied=np.asarray(packet.xfrc_applied, np.float32),
+    )
 
 
 def _set(data, packet):
     data.ctrl[:], data.qfrc_applied[:], data.xfrc_applied[:] = (
-        packet.ctrl, packet.qfrc_applied, packet.xfrc_applied)
+        packet.ctrl,
+        packet.qfrc_applied,
+        packet.xfrc_applied,
+    )
 
 
 def _compile(xml):
@@ -242,15 +290,28 @@ def _native(mj, model, q, v, packet, time):
         adr = int(c.efc_address)
         force = np.zeros(6)
         mj.mj_contactForce(model, data, index, force)
-        item = dict(geometry_ids=geom, body_ids=bodies, distance=float(c.dist),
-                    position=c.pos.copy(), frame=c.frame.reshape(3, 3).copy(),
-                    include_margin=float(c.includemargin), friction=c.friction.copy(),
-                    solref=c.solref.copy(), solimp=c.solimp.copy(), active=adr >= 0,
-                    jacobian=j, normal_velocity=float(j @ v), normal_force=float(force[0]),
-                    wrench_contact_frame=force, efc_address=adr)
+        item = dict(
+            geometry_ids=geom,
+            body_ids=bodies,
+            distance=float(c.dist),
+            position=c.pos.copy(),
+            frame=c.frame.reshape(3, 3).copy(),
+            include_margin=float(c.includemargin),
+            friction=c.friction.copy(),
+            solref=c.solref.copy(),
+            solimp=c.solimp.copy(),
+            active=adr >= 0,
+            jacobian=j,
+            normal_velocity=float(j @ v),
+            normal_force=float(force[0]),
+            wrench_contact_frame=force,
+            efc_address=adr,
+        )
         if adr >= 0:
-            item.update(regularization=float(data.efc_R[adr]),
-                        reference_acceleration=float(data.efc_aref[adr]))
+            item.update(
+                regularization=float(data.efc_R[adr]),
+                reference_acceleration=float(data.efc_aref[adr]),
+            )
             native_j = data.efc_J.reshape(data.nefc, model.nv)[adr]
             np.testing.assert_allclose(j, native_j, rtol=1e-11, atol=1e-11)
             invweight = sum(model.body_invweight0[body, 0] for body in bodies)
@@ -261,11 +322,11 @@ def _native(mj, model, q, v, packet, time):
             rotation = data.geom_xmat[other].reshape(3, 3)
             center = data.geom_xpos[other]
             if model.geom_type[other] == mj.mjtGeom.mjGEOM_CAPSULE:
-                endpoint = c.pos + normal * (model.geom_size[other, 0] + .5 * c.dist)
+                endpoint = c.pos + normal * (model.geom_size[other, 0] + 0.5 * c.dist)
                 coordinate = float((endpoint - center) @ rotation[:, 2])
                 feature = 0 if coordinate > 0 else 1
             elif model.geom_type[other] == mj.mjtGeom.mjGEOM_BOX:
-                corner = rotation.T @ (c.pos + .5 * c.dist * normal - center)
+                corner = rotation.T @ (c.pos + 0.5 * c.dist * normal - center)
                 feature = sum((1 << axis) for axis in range(3) if corner[axis] > 0)
         item["feature_index"] = feature
 
@@ -280,15 +341,26 @@ def _native(mj, model, q, v, packet, time):
         np.testing.assert_allclose(forces, _small_qp(dual, linear), rtol=2e-6, atol=2e-6)
     np.testing.assert_allclose(j.T @ forces, data.qfrc_constraint, rtol=1e-10, atol=1e-9)
     np.testing.assert_allclose(smooth, data.qacc_smooth, rtol=1e-10, atol=1e-9)
-    return dict(body_position=data.xpos.copy(),
-                body_rotation=data.xmat.reshape(model.nbody, 3, 3).copy(),
-                body_com=data.xipos.copy(), jacobian_com=jaccom, mass_matrix=mass,
-                bias=data.qfrc_bias.copy(), passive=data.qfrc_passive.copy(), applied=applied,
-                smooth_acceleration=smooth, qacc=data.qacc.copy(),
-                qfrc_constraint=data.qfrc_constraint.copy(),
-                integration_acceleration=np.linalg.solve(
-                    mass + H * np.diag(model.dof_damping), rhs + data.qfrc_constraint),
-                contacts=contacts, dual_matrix=dual, linear=linear, active_force=forces)
+    return dict(
+        body_position=data.xpos.copy(),
+        body_rotation=data.xmat.reshape(model.nbody, 3, 3).copy(),
+        body_com=data.xipos.copy(),
+        jacobian_com=jaccom,
+        mass_matrix=mass,
+        bias=data.qfrc_bias.copy(),
+        passive=data.qfrc_passive.copy(),
+        applied=applied,
+        smooth_acceleration=smooth,
+        qacc=data.qacc.copy(),
+        qfrc_constraint=data.qfrc_constraint.copy(),
+        integration_acceleration=np.linalg.solve(
+            mass + H * np.diag(model.dof_damping), rhs + data.qfrc_constraint
+        ),
+        contacts=contacts,
+        dual_matrix=dual,
+        linear=linear,
+        active_force=forces,
+    )
 
 
 def _match(actual, expected):
@@ -297,8 +369,12 @@ def _match(actual, expected):
     order = []
     unused = set(range(len(expected)))
     for contact in actual:
-        candidates = [i for i in unused if tuple(contact.geometry_ids) == expected[i]["geometry_ids"]
-                      and np.max(np.abs(contact.position - expected[i]["position"])) <= 4e-5]
+        candidates = [
+            i
+            for i in unused
+            if tuple(contact.geometry_ids) == expected[i]["geometry_ids"]
+            and np.max(np.abs(contact.position - expected[i]["position"])) <= 4e-5
+        ]
         assert len(candidates) == 1, ("ambiguous or missing native contact", candidates)
         found = candidates[0]
         unused.remove(found)
@@ -344,39 +420,58 @@ def _assert_receipt(row, expected, model):
         for name in ("include_margin", "friction", "solref", "solimp"):
             np.testing.assert_allclose(getattr(contact, name), oracle[name], rtol=3e-6, atol=3e-7)
         np.testing.assert_allclose(contact.jacobian, oracle["jacobian"], rtol=2e-4, atol=5e-5)
-        assert contact.normal_velocity == pytest.approx(oracle["normal_velocity"], rel=5e-4, abs=4e-4)
+        assert contact.normal_velocity == pytest.approx(
+            oracle["normal_velocity"], rel=5e-4, abs=4e-4
+        )
         assert contact.normal_force >= 0
         np.testing.assert_allclose(contact.normal_force, oracle["normal_force"], **FORCE_TOL)
-        np.testing.assert_allclose(contact.wrench_contact_frame,
-                                   [contact.normal_force, 0, 0, 0, 0, 0], rtol=0, atol=1e-7)
+        np.testing.assert_allclose(
+            contact.wrench_contact_frame, [contact.normal_force, 0, 0, 0, 0, 0], rtol=0, atol=1e-7
+        )
         force = normal * contact.normal_force
         np.testing.assert_allclose(contact.force_on_geometry1_world, -force, rtol=1e-6, atol=1e-6)
         np.testing.assert_allclose(contact.force_on_geometry2_world, force, rtol=1e-6, atol=1e-6)
         for side, sign in ((1, -1), (2, 1)):
             body = contact.body_ids[side - 1]
-            wrench = np.r_[sign * force,
-                           np.cross(contact.position - dyn.body_com[body], sign * force)]
-            np.testing.assert_allclose(getattr(contact, f"wrench_on_body{side}_world"),
-                                       wrench, rtol=2e-5, atol=2e-5)
+            wrench = np.r_[
+                sign * force, np.cross(contact.position - dyn.body_com[body], sign * force)
+            ]
+            np.testing.assert_allclose(
+                getattr(contact, f"wrench_on_body{side}_world"), wrench, rtol=2e-5, atol=2e-5
+            )
         generalized += np.asarray(contact.jacobian) * contact.normal_force
-        locations = np.flatnonzero((slots[:, 1] == contact.feature_index)
-                                  & (slots[:, 2] == contact.geometry_ids[0])
-                                  & (slots[:, 3] == contact.geometry_ids[1]))
+        locations = np.flatnonzero(
+            (slots[:, 1] == contact.feature_index)
+            & (slots[:, 2] == contact.geometry_ids[0])
+            & (slots[:, 3] == contact.geometry_ids[1])
+        )
         assert len(locations) == 1
         k = int(locations[0])
         raw_indices.append(k)
         assert device[k, 0] == 1 and bool(device[k, 1]) == contact.active
         np.testing.assert_array_equal(jac[k], contact.jacobian)
-        np.testing.assert_allclose(device[k, [2, 3, 4, 6, 7, 8, 21]],
-            [contact.distance, contact.normal_force, contact.regularization,
-             contact.reference_acceleration, contact.normal_velocity, contact.impedance,
-             contact.include_margin], rtol=0, atol=0)
+        np.testing.assert_allclose(
+            device[k, [2, 3, 4, 6, 7, 8, 21]],
+            [
+                contact.distance,
+                contact.normal_force,
+                contact.regularization,
+                contact.reference_acceleration,
+                contact.normal_velocity,
+                contact.impedance,
+                contact.include_margin,
+            ],
+            rtol=0,
+            atol=0,
+        )
         np.testing.assert_array_equal(device[k, 9:12], contact.position)
         np.testing.assert_array_equal(device[k, 12:21].reshape(3, 3), contact.frame)
         np.testing.assert_array_equal(device[k, 27:32], np.zeros(5))
         if contact.active:
             for name in ("regularization", "reference_acceleration", "impedance"):
-                np.testing.assert_allclose(getattr(contact, name), oracle[name], rtol=5e-4, atol=4e-4)
+                np.testing.assert_allclose(
+                    getattr(contact, name), oracle[name], rtol=5e-4, atol=4e-4
+                )
             actual_active.append(contact)
             expected_active.append(oracle)
         else:
@@ -388,15 +483,20 @@ def _assert_receipt(row, expected, model):
         r = np.array([c["regularization"] for c in expected_active])
         matrix = j @ np.linalg.solve(expected["mass_matrix"], j.T) + np.diag(r)
         linear = j @ expected["smooth_acceleration"] - np.array(
-            [c["reference_acceleration"] for c in expected_active])
+            [c["reference_acceleration"] for c in expected_active]
+        )
         force = np.array([c.normal_force for c in actual_active])
         gradient = matrix @ force + linear
         violation = np.where(force > 0, np.abs(gradient), np.maximum(0, -gradient))
-        scale = max(1., float(np.max(np.abs(linear) + np.abs(matrix) @ np.abs(force))))
+        scale = max(1.0, float(np.max(np.abs(linear) + np.abs(matrix) @ np.abs(force))))
         assert np.max(violation) / scale <= 5e-5
         active_slots = [k for k in raw_indices if device[k, 1]]
-        np.testing.assert_allclose(np.asarray(raw["dual_matrix"])[np.ix_(active_slots, active_slots)],
-                                   matrix, rtol=7e-4, atol=5e-4)
+        np.testing.assert_allclose(
+            np.asarray(raw["dual_matrix"])[np.ix_(active_slots, active_slots)],
+            matrix,
+            rtol=7e-4,
+            atol=5e-4,
+        )
     diagnostics = raw["solver_diagnostics"]
     assert diagnostics["converged"]
     assert diagnostics["iterations"] <= diagnostics["budget"] == model.opt.iterations
@@ -412,13 +512,25 @@ def _run_case(mode, case, tmp_path):
     mj = _deps()
     model = mj.MjModel.from_xml_string(case.xml)
     packet_path = tmp_path / "normal-trajectory.jsonl"
-    _save(packet_path, dict(schema="mujoco-tyx-t3-cases-v1", case=case.name,
-                           source_xml=case.xml, mode=mode, tolerances=TOL,
-                           force_tolerance=FORCE_TOL, q_atol=Q_ATOL, v_atol=V_ATOL,
-                           native_version=mj.__version__, steps=case.steps))
+    _save(
+        packet_path,
+        dict(
+            schema="mujoco-tyx-t3-cases-v1",
+            case=case.name,
+            source_xml=case.xml,
+            mode=mode,
+            tolerances=TOL,
+            force_tolerance=FORCE_TOL,
+            q_atol=Q_ATOL,
+            v_atol=V_ATOL,
+            native_version=mj.__version__,
+            steps=case.steps,
+        ),
+    )
     counts, receipts = [], []
-    with MuJoCoTyxRuntime(_compile(case.xml), mode=mode, world_keys=(19,),
-                         initial_states={19: _initial(model, case)}) as runtime:
+    with MuJoCoTyxRuntime(
+        _compile(case.xml), mode=mode, world_keys=(19,), initial_states={19: _initial(model, case)}
+    ) as runtime:
         assert runtime.capabilities["domain"] == "tree-primitive-coupled-normal-v1"
         assert runtime.capabilities["numerical_solver"] == "normal-dual-active-set-v1"
         start = runtime.snapshot()[19]
@@ -450,9 +562,17 @@ def _run_case(mode, case, tmp_path):
                 if tick not in selected:
                     _save(packet_path, detail)
                 raise
-            _save(packet_path, dict(step=tick + 1, q=state.q, v=state.v,
-                                   control=stored, contacts=len(row.contacts),
-                                   normal_force=sum(c.normal_force for c in row.contacts)))
+            _save(
+                packet_path,
+                dict(
+                    step=tick + 1,
+                    q=state.q,
+                    v=state.v,
+                    control=stored,
+                    contacts=len(row.contacts),
+                    normal_force=sum(c.normal_force for c in row.contacts),
+                ),
+            )
             counts.append(len(row.contacts))
             if tick in selected:
                 receipts.append(row)
@@ -476,7 +596,7 @@ def test_coupled_contacts_and_continuous_native_trajectory(mode, case, tmp_path)
         assert (model.nq, model.nv) == (36, 35)
         assert model.joint("j14").dofadr[0] == 34
         last = receipts[0]
-        assert any(abs(c.jacobian[-1]) > .01 for c in last.contacts)
+        assert any(abs(c.jacobian[-1]) > 0.01 for c in last.contacts)
         assert np.max(np.abs(last.dynamics.mass_matrix[-1, :-1])) > 1e-4
     if case.name == "sibling-moving":
         c = receipts[0].contacts[0]
@@ -495,20 +615,31 @@ def test_two_normals_discriminate_independent_single_contact_solves(mode, tmp_pa
         oracle = _native(mj, model, before.q, before.v, packet, before.time)
         assert len(oracle["contacts"]) == 2
         r = oracle["contacts"][0]["regularization"]
-        np.testing.assert_allclose(oracle["dual_matrix"], [[1+r, 1], [1, 1+r]], atol=1e-10)
+        np.testing.assert_allclose(oracle["dual_matrix"], [[1 + r, 1], [1, 1 + r]], atol=1e-10)
         beta = -oracle["linear"][0]
         assert beta > 0
-        exact = beta / (2+r)
-        independent = beta / (1+r)
-        assert abs(independent - exact) > .05 * exact
+        exact = beta / (2 + r)
+        independent = beta / (1 + r)
+        assert abs(independent - exact) > 0.05 * exact
         runtime.set_controls({0: packet})
         runtime.step(H)
         row = runtime.snapshot()[0].last_step
         _assert_receipt(row, oracle, model)
-        np.testing.assert_allclose([c.normal_force for c in row.contacts], [exact, exact], **FORCE_TOL)
-        _save(tmp_path / "coupled-counterexample.jsonl",
-              dict(source_xml=case.xml, beta=beta, regularization=r,
-                   coupled=exact, wrong_independent=independent, oracle=oracle, actual=row))
+        np.testing.assert_allclose(
+            [c.normal_force for c in row.contacts], [exact, exact], **FORCE_TOL
+        )
+        _save(
+            tmp_path / "coupled-counterexample.jsonl",
+            dict(
+                source_xml=case.xml,
+                beta=beta,
+                regularization=r,
+                coupled=exact,
+                wrong_independent=independent,
+                oracle=oracle,
+                actual=row,
+            ),
+        )
 
 
 def _many_contacts(kind, count):
@@ -520,22 +651,27 @@ def _many_contacts(kind, count):
             spec = 'type="capsule" size=".1 .12" quat=".7071067811865476 0 .7071067811865476 0"'
         else:
             spec = 'type="sphere" size=".1"'
-        shapes.append(f'<geom name="shape{i}" {spec} pos="{.4 * i} 0 0"/>')
-    return _xml(f'''<body name="root" pos="0 0 .099">
+        shapes.append(f'<geom name="shape{i}" {spec} pos="{0.4 * i} 0 0"/>')
+    return _xml(
+        f"""<body name="root" pos="0 0 .099">
       <joint name="vertical" type="slide" axis="0 0 1"/>
       <inertial mass="2" pos="0 0 0" diaginertia=".1 .12 .14"/>
-      {"".join(shapes)}</body>''', static=FLOOR)
+      {"".join(shapes)}</body>""",
+        static=FLOOR,
+    )
 
 
 @pytest.mark.parametrize("mode", MODES)
-@pytest.mark.parametrize("kind,count,contacts", [("sphere", 16, 16), ("box", 4, 16),
-                                               ("capsule", 16, 32)])
+@pytest.mark.parametrize(
+    "kind,count,contacts", [("sphere", 16, 16), ("box", 4, 16), ("capsule", 16, 32)]
+)
 def test_exact_layout_and_runtime_contact_capacity(mode, kind, count, contacts, tmp_path):
     mj = _deps()
     xml = _many_contacts(kind, count)
     model = mj.MjModel.from_xml_string(xml)
-    with MuJoCoTyxRuntime(_compile(xml), mode=mode, contact_capacity=contacts,
-                         constraint_capacity=contacts) as runtime:
+    with MuJoCoTyxRuntime(
+        _compile(xml), mode=mode, contact_capacity=contacts, constraint_capacity=contacts
+    ) as runtime:
         before = runtime.snapshot()[0]
         packet = _packet(model, Case(kind, xml, 1))
         oracle = _native(mj, model, before.q, before.v, packet, before.time)
@@ -545,8 +681,10 @@ def test_exact_layout_and_runtime_contact_capacity(mode, kind, count, contacts, 
         actual = runtime.snapshot()[0].last_step
         _assert_receipt(actual, oracle, model)
         assert len(actual.contacts) == contacts
-        _save(tmp_path / "capacity-exact.jsonl",
-              dict(xml=xml, contacts=contacts, oracle=oracle, actual=actual))
+        _save(
+            tmp_path / "capacity-exact.jsonl",
+            dict(xml=xml, contacts=contacts, oracle=oracle, actual=actual),
+        )
     for field in ("contact_capacity", "constraint_capacity"):
         limits = dict(contact_capacity=contacts, constraint_capacity=contacts)
         limits[field] -= 1
@@ -560,16 +698,21 @@ def test_exact_layout_and_runtime_contact_capacity(mode, kind, count, contacts, 
 
 
 @pytest.mark.parametrize("mode", MODES)
-@pytest.mark.parametrize("height,active", [(".140625", False), (".1328125", False),
-                                          (".12890625", True)])
+@pytest.mark.parametrize(
+    "height,active", [(".140625", False), (".1328125", False), (".12890625", True)]
+)
 def test_detection_margin_and_include_gap_boundaries(mode, height, active, tmp_path):
     mj = _deps()
-    xml = _free('<geom name="shape" type="sphere" size=".125" margin=".015625" gap=".0078125"/>',
-                f"0 0 {height}", gravity="0 0 0")
+    xml = _free(
+        '<geom name="shape" type="sphere" size=".125" margin=".015625" gap=".0078125"/>',
+        f"0 0 {height}",
+        gravity="0 0 0",
+    )
     case = Case("exact-boundary", xml, 1, initial_contacts=1)
     model = mj.MjModel.from_xml_string(xml)
-    with MuJoCoTyxRuntime(_compile(xml), mode=mode, contact_capacity=1,
-                         constraint_capacity=int(active)) as runtime:
+    with MuJoCoTyxRuntime(
+        _compile(xml), mode=mode, contact_capacity=1, constraint_capacity=int(active)
+    ) as runtime:
         before = runtime.snapshot()[0]
         packet = _packet(model, case)
         oracle = _native(mj, model, before.q, before.v, packet, before.time)
@@ -600,9 +743,11 @@ def test_geometry_capacity_keeps_all_masked_native_ids(count, accepted):
     _deps()
     xml = CASES[0].xml
     # Existing floor and two balls: three geoms. Masked world markers are real IDs.
-    markers = "".join(f'<geom name="marker{i}" type="sphere" size=".01" '
-                      f'pos="{10 + i} 0 0" contype="0" conaffinity="0"/>'
-                      for i in range(count - 3))
+    markers = "".join(
+        f'<geom name="marker{i}" type="sphere" size=".01" '
+        f'pos="{10 + i} 0 0" contype="0" conaffinity="0"/>'
+        for i in range(count - 3)
+    )
     xml = xml.replace("<worldbody>", "<worldbody>" + markers)
     compiled = _compile(xml)
     assert compiled.mj_model.ngeom == count
@@ -625,7 +770,8 @@ def test_native_or_mask_and_no_contact_route(mode, tmp_path):
     positive = Case("mask-or", _free(shape, "0 0 .099", static=floor), 1, initial_contacts=1)
     _run_case(mode, positive, tmp_path)
     blocked = positive.xml.replace('conaffinity="1"', 'conaffinity="0"').replace(
-        'name="shape" type="sphere"', 'name="shape" type="sphere" condim="3"')
+        'name="shape" type="sphere"', 'name="shape" type="sphere" condim="3"'
+    )
     model = mj.MjModel.from_xml_string(blocked)
     with MuJoCoTyxRuntime(_compile(blocked), mode=mode) as runtime:
         assert runtime.capabilities["domain"] == "free-root-hinge-slide-no-contact-v1"
@@ -647,13 +793,13 @@ def test_native_or_mask_and_no_contact_route(mode, tmp_path):
 def test_same_body_welded_and_parent_geom_exclusions(mode, tmp_path):
     # Three overlapping round geoms in one weld group and its child must not
     # become extra contacts; floor remains the genuine dynamic interaction.
-    shapes = '''<geom name="shape" type="sphere" size=".1"/>
+    shapes = """<geom name="shape" type="sphere" size=".1"/>
       <geom name="same-body" type="sphere" size=".1" pos=".02 0 0"/>
       <body name="weld"><inertial mass=".2" pos="0 0 0" diaginertia=".01 .01 .01"/>
         <geom name="welded-shape" type="sphere" size=".1" pos="-.02 0 0"/></body>
       <body name="child" pos="0 0 .02"><joint name="child-slide" type="slide" axis="0 0 1"/>
         <inertial mass=".3" pos="0 0 0" diaginertia=".01 .012 .014"/>
-        <geom name="child-shape" type="sphere" size=".1"/></body>'''
+        <geom name="child-shape" type="sphere" size=".1"/></body>"""
     case = Case("native-parent-filter", _free(shapes, "0 0 .099"), 1, initial_contacts=3)
     _, _, rows = _run_case(mode, case, tmp_path)
     assert all(0 in c.body_ids for c in rows[0].contacts)
@@ -669,8 +815,9 @@ def test_sparse_batch_reset_clone_then_real_contact_step(mode, tmp_path):
     compiled = _compile(case.xml)
     with MuJoCoTyxRuntime(compiled, mode=mode, world_keys=keys, initial_states=states) as runtime:
         for tick in range(3):
-            runtime.set_controls({key: _packet(model, case, tick, slot)
-                                  for slot, key in enumerate(keys)})
+            runtime.set_controls(
+                {key: _packet(model, case, tick, slot) for slot, key in enumerate(keys)}
+            )
             runtime.step(H)
         with runtime.clone() as cloned:
             before = runtime.snapshot()
@@ -678,8 +825,12 @@ def test_sparse_batch_reset_clone_then_real_contact_step(mode, tmp_path):
             runtime.reset((keys[0],))
             for key in keys[1:]:
                 _same({key: before[key]}, {key: runtime.snapshot()[key]})
-            with MuJoCoTyxRuntime(compiled, mode=mode, world_keys=(keys[0],),
-                                 initial_states={keys[0]: states[keys[0]]}) as fresh:
+            with MuJoCoTyxRuntime(
+                compiled,
+                mode=mode,
+                world_keys=(keys[0],),
+                initial_states={keys[0]: states[keys[0]]},
+            ) as fresh:
                 packets = {key: _packet(model, case, 3, slot) for slot, key in enumerate(keys)}
                 runtime.set_controls(packets)
                 cloned.set_controls(packets)
@@ -691,8 +842,10 @@ def test_sparse_batch_reset_clone_then_real_contact_step(mode, tmp_path):
                 _same({keys[0]: actual[keys[0]]}, fresh.snapshot())
                 for key in keys[1:]:
                     _same({key: actual[key]}, {key: expected[key]})
-                _save(tmp_path / "batch-reset-next.jsonl",
-                      dict(before=before, actual=actual, clone=expected, fresh=fresh.snapshot()))
+                _save(
+                    tmp_path / "batch-reset-next.jsonl",
+                    dict(before=before, actual=actual, clone=expected, fresh=fresh.snapshot()),
+                )
 
 
 @pytest.mark.parametrize("mode", MODES)
@@ -702,17 +855,19 @@ def test_late_readback_failure_all_world_rollback_and_retry(mode, monkeypatch, t
     model = mj.MjModel.from_xml_string(case.xml)
     keys = (7, 29, 113, 211)
     initial = {key: _initial(model, case, slot) for slot, key in enumerate(keys)}
-    with MuJoCoTyxRuntime(_compile(case.xml), mode=mode, world_keys=keys,
-                         initial_states=initial) as runtime:
-        runtime.set_controls({key: _packet(model, case, 0, slot)
-                              for slot, key in enumerate(keys)})
+    with MuJoCoTyxRuntime(
+        _compile(case.xml), mode=mode, world_keys=keys, initial_states=initial
+    ) as runtime:
+        runtime.set_controls({key: _packet(model, case, 0, slot) for slot, key in enumerate(keys)})
         runtime.step(H)
         with runtime.clone() as clone:
             before, count = runtime.snapshot(), runtime.counters["completed_kernels"]
             original = runtime._device.download
+
             def fail_after_download():
                 original()
                 raise RuntimeError("T3 injected after actual device readback")
+
             monkeypatch.setattr(runtime._device, "download", fail_after_download)
             with pytest.raises(PhysicsStepFailure) as caught:
                 runtime.step(H)
@@ -720,37 +875,57 @@ def test_late_readback_failure_all_world_rollback_and_retry(mode, monkeypatch, t
             assert caught.value.acceptance_known and not caught.value.physics_accepted
             assert runtime.counters["completed_kernels"] > count
             _same(before, runtime.snapshot())
-            _save(tmp_path / "late-failure.jsonl", dict(before=before, after=runtime.snapshot(),
-                                                       mask=caught.value.accepted_worlds))
+            _save(
+                tmp_path / "late-failure.jsonl",
+                dict(before=before, after=runtime.snapshot(), mask=caught.value.accepted_worlds),
+            )
             monkeypatch.setattr(runtime._device, "download", original)
             runtime.step(H)
             clone.step(H)
             _same(runtime.snapshot(), clone.snapshot())
-            _save(tmp_path / "late-failure.jsonl", dict(retry=runtime.snapshot(), clone=clone.snapshot()))
+            _save(
+                tmp_path / "late-failure.jsonl",
+                dict(retry=runtime.snapshot(), clone=clone.snapshot()),
+            )
 
 
 @pytest.mark.parametrize("mode", MODES)
 def test_contact_step_has_no_cpu_warp_host_or_numpy_solver(mode, monkeypatch, tmp_path):
     import importlib
+
     mj = _deps()
     case = CASES[2]
     model = mj.MjModel.from_xml_string(case.xml)
-    modules = [(importlib.import_module(name), functions) for name, functions in (
-        ("phymeo.dynamics.robot_dynamics", ("forward_dynamics", "mass_matrix", "bias_forces")),
-        ("phymeo.dynamics.robot_kinematics", ("forward_kinematics", "point_jacobians")),
-        ("phymeo.solvers.floating_tree", ("step_floating_robot", "floating_dynamics_terms")),
-    )]
-    with MuJoCoTyxRuntime(_compile(case.xml), mode=mode,
-                         initial_states={0: _initial(model, case)}) as runtime:
+    modules = [
+        (importlib.import_module(name), functions)
+        for name, functions in (
+            ("phymeo.dynamics.robot_dynamics", ("forward_dynamics", "mass_matrix", "bias_forces")),
+            ("phymeo.dynamics.robot_kinematics", ("forward_kinematics", "point_jacobians")),
+            ("phymeo.solvers.floating_tree", ("step_floating_robot", "floating_dynamics_terms")),
+        )
+    ]
+    with MuJoCoTyxRuntime(
+        _compile(case.xml), mode=mode, initial_states={0: _initial(model, case)}
+    ) as runtime:
         before = runtime.snapshot()[0]
         packet = _packet(model, case)
         oracle = _native(mj, model, before.q, before.v, _stored(packet), before.time)
         runtime.set_controls({0: packet})
         count = runtime.counters["completed_kernels"]
+
         def forbidden(*args, **kwargs):
             raise AssertionError("T3 step must perform genuine TYX contact dynamics")
+
         with monkeypatch.context() as patch:
-            for name in ("mj_step", "mj_forward", "mj_fullM", "mj_rne", "mj_jac", "mj_collision", "mj_fwdConstraint"):
+            for name in (
+                "mj_step",
+                "mj_forward",
+                "mj_fullM",
+                "mj_rne",
+                "mj_jac",
+                "mj_collision",
+                "mj_fwdConstraint",
+            ):
                 patch.setattr(mj, name, forbidden)
             for name in ("solve", "inv", "cholesky", "lstsq"):
                 patch.setattr(np.linalg, name, forbidden)
@@ -783,23 +958,55 @@ def test_normal_control_overflow_is_atomic(mode):
         _same(before, runtime.snapshot())
 
 
-@pytest.mark.parametrize("mutation", ["explicit-pair", "exclude", "condim3", "unsupported-shape",
-                                     "nondefault-flags", "iterations-zero", "iterations-large", "negative-margin"])
+@pytest.mark.parametrize("mode", MODES)
+def test_joint_solve_budget_exhaustion_rejects_whole_batch(mode):
+    _deps()
+    # Two equal loaded normals require two active faces from zero. One solve
+    # cannot produce their joint optimum and must not publish a partial answer.
+    xml = CASES[0].xml.replace('iterations="128"', 'iterations="1"')
+    with MuJoCoTyxRuntime(_compile(xml), mode=mode, world_keys=(5, 113)) as runtime:
+        before = runtime.snapshot()
+        with pytest.raises(PhysicsStepFailure) as caught:
+            runtime.step(H)
+        assert caught.value.accepted_worlds == {5: False, 113: False}
+        _same(before, runtime.snapshot())
+        assert runtime.counters["completed_kernels"] == 5
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        "explicit-pair",
+        "exclude",
+        "condim3",
+        "unsupported-shape",
+        "nondefault-flags",
+        "iterations-zero",
+        "iterations-large",
+        "negative-margin",
+    ],
+)
 def test_unsupported_contact_semantics_are_rejected_before_execution(mutation):
     _deps()
     xml = CASES[0].xml
     if mutation == "explicit-pair":
-        xml = xml.replace("</mujoco>", '<contact><pair geom1="floor" geom2="ball0"/></contact></mujoco>')
+        xml = xml.replace(
+            "</mujoco>", '<contact><pair geom1="floor" geom2="ball0"/></contact></mujoco>'
+        )
     elif mutation == "exclude":
-        xml = xml.replace("</mujoco>", '<contact><exclude body1="world" body2="root"/></contact></mujoco>')
+        xml = xml.replace(
+            "</mujoco>", '<contact><exclude body1="world" body2="root"/></contact></mujoco>'
+        )
     elif mutation == "condim3":
         xml = xml.replace('condim="1"', 'condim="3"')
     elif mutation == "unsupported-shape":
         xml = xml.replace('type="sphere" size=".1"', 'type="ellipsoid" size=".1 .12 .13"')
     elif mutation == "nondefault-flags":
-        xml = xml.replace('jacobian="dense"/>', 'jacobian="dense"><flag filterparent="disable"/></option>')
+        xml = xml.replace(
+            'jacobian="dense"/>', 'jacobian="dense"><flag filterparent="disable"/></option>'
+        )
     elif mutation == "negative-margin":
-        xml = GEOMETRY_CASES[8].xml.replace('<geom name=', '<geom margin="-.2" name=')
+        xml = GEOMETRY_CASES[8].xml.replace("<geom name=", '<geom margin="-.2" name=')
     elif mutation == "iterations-zero":
         xml = xml.replace('iterations="128"', 'iterations="0"')
     else:

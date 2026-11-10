@@ -22,7 +22,7 @@ class TyxFloatingModel(TyxTreeModel):
     root_body: int
 
 
-def compile_floating_model(mj, model):
+def compile_floating_model(mj, model, *, allow_normal_contacts=False):
     issues = []
 
     def issue(code, detail):
@@ -122,7 +122,8 @@ def compile_floating_model(mj, model):
             if (int(model.geom_contype[left]) & int(model.geom_conaffinity[right])) or (
                 int(model.geom_contype[right]) & int(model.geom_conaffinity[left])
             ):
-                issue("contact-domain", f"T2 has a possible native contact pair {left}/{right}")
+                if not allow_normal_contacts:
+                    issue("contact-domain", f"T2 has a possible native contact pair {left}/{right}")
                 break
     if issues:
         raise MuJoCoTyxUnsupported(issues)

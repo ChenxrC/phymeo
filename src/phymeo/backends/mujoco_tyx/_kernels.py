@@ -97,16 +97,19 @@ def advance(
                 + (1.0 - 2.0 * (qx * qx + qy * qy)) * tzw
             )
         for a in range(nu):
+            qa = act_ids[a, 0]
+            va = act_ids[a, 1]
+            gear = act_values[a, 0]
+            value = 0.0
             if act_ids[a, 2] == 0:
-                qa = act_ids[a, 0]
-                va = act_ids[a, 1]
-                gear = act_values[a, 0]
                 ctrl = tx.min(act_values[a, 6], tx.max(act_values[a, 5], controls[w, a]))
                 value = act_values[a, 1] * ctrl + act_values[a, 2]
                 value = value + (act_values[a, 3] * gear * q[w, qa])
                 value = value + (act_values[a, 4] * gear * v[w, va])
-                value = tx.min(act_values[a, 8], tx.max(act_values[a, 7], value))
-                actuator[w, va] = actuator[w, va] + (gear * value)
+            # CPU MuJoCo clamps all actuator forces after skipping disabled
+            # groups, including a range that does not contain zero.
+            value = tx.min(act_values[a, 8], tx.max(act_values[a, 7], value))
+            actuator[w, va] = actuator[w, va] + (gear * value)
         for i in range(nv):
             force[w, i] = force[w, i] + (actuator[w, i])
         for i in range(nv):

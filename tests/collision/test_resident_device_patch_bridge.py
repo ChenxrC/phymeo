@@ -70,6 +70,17 @@ def assert_effective(converted, result, spec):
     wanted = sum((s["weight"] * (np.asarray(s["surfaces"][0]) + s["surfaces"][1]) / 2
                   for s in spec["sites"]), np.zeros(3))
     np.testing.assert_allclose(moment, wanted, atol=2e-4 * scale, rtol=0)
+    raw_moment = sum((s.weight * np.asarray(s.common_m) for s in row.patch.sites), np.zeros(3))
+    delta = moment - raw_moment
+    assert np.linalg.norm(delta) <= 2e-4 * scale
+    patch_delta = converted.patch_differences[row.pair]
+    np.testing.assert_array_equal(patch_delta["origin_m"], origin)
+    np.testing.assert_array_equal(patch_delta["raw_first_moment_m"], raw_moment)
+    np.testing.assert_array_equal(patch_delta["effective_first_moment_m"], moment)
+    np.testing.assert_array_equal(patch_delta["first_moment_delta_m"], delta)
+    assert not patch_delta["first_moment_delta_m"].flags.writeable
+    with pytest.raises(TypeError):
+        converted.patch_differences[row.pair] = patch_delta
     assert converted.query is result
     assert len(converted.differences[row.pair]) == len(sample.sites)
     with pytest.raises(TypeError):
@@ -178,3 +189,62 @@ def test_bad_representation_cannot_become_a_physical_site(fault, tyx_mode, tmp_p
             frames[key.world][key] = replace(original, world_points_m=original.world_points_m + [0.1, 0, 0])
         with pytest.raises((ValueError, RuntimeError)):
             patches_from_device(result, frames, candidates=(row.pair,))
+
+
+@pytest.mark.tyx
+@pytest.mark.parametrize("common_x", (0, 2**20))
+def test_patch_first_moment_bounds_weight_normalization(common_x, tyx_mode, tmp_path):
+    # Exact dyadic source in the existing SS domain. The body's anchor stays
+    # zero; the local sphere center may be far from it without a larger
+    # geometry length scale. This is a coherent raw/typed forgery, not output
+    # claimed to come from the unmodified one-site producer (which returns 1).
+    case = k0.reference().family_case("SS", -1 / 16)
+    first = np.array([[common_x, 0.0, 0.0]])
+    second = np.array([[common_x, 0.0, 3 / 16]])
+    case.update(local=(first.copy(), second.copy()), points=(first, second),
+                positions=(np.zeros(3), np.zeros(3)), radii=(1 / 8, 1 / 8))
+    spec = dict(
+        gap_m=-1 / 16, normal=np.array([0.0, 0.0, 1.0]), dimension=0, length_m=1.0,
+        sites=(dict(weight=1.0, surfaces=(
+            np.array([common_x, 0.0, 1 / 8]),
+            np.array([common_x, 0.0, 1 / 16]))),))
+    with b1.saved(tmp_path, "B2-moment-" + str(common_x), tyx_mode, case) as saved:
+        with b1.prepared(case, tyx_mode, tmp_path) as (_, _, query, _):
+            result = query.query()
+            saved["raw"] = result
+            raw_before = k0.canonical((result.raw, result.patch, result.source))
+            frames = frames_for(result)
+            converted = patches_from_device(result, frames, candidates=(result.rows[0].pair,))
+            assert_effective(converted, result, spec)
+            saved["effective"] = converted
+            assert k0.canonical((result.raw, result.patch, result.source)) == raw_before
+            row = result.rows[0]
+            assert row.origin_m == (0.0, 0.0, 0.0)
+            assert len(row.patch.sites) == 1
+            original = row.patch.sites[0]
+            np.testing.assert_array_equal(original.common_m, [common_x, 0, 3 / 32])
+            np.testing.assert_array_equal(converted.differences[row.pair][0]["common_delta_m"], np.zeros(3))
+            wire = dict(result.patch)
+            wire["patch_weight"] = np.array(wire["patch_weight"], copy=True)
+            wire["patch_weight"][0] = 1 + 2**-23
+            bad_site = replace(original, weight=float(wire["patch_weight"][0]))
+            bad_row = replace(row, patch=replace(row.patch, sites=(bad_site,)))
+            changed = replace(result, rows=(bad_row,), patch=wire)
+            saved["coherent_changed_raw"] = changed
+            # Every common point and material identity is unchanged. Only the
+            # quadrature sum is normalized: relative moment delta is exactly
+            # -2^-23 * (common_x, 0, 3/32). At x=2^20 its x component is -1/8,
+            # exceeding the original 2e-4*1 gate despite zero point deltas.
+            expected_delta = -2**-23 * np.array([common_x, 0, 3 / 32])
+            saved["independent_moment_delta_m"] = expected_delta
+            if common_x:
+                with pytest.raises(ValueError, match="first moment"):
+                    patches_from_device(changed, frames, candidates=(row.pair,))
+                assert expected_delta[0] == -1 / 8
+            else:
+                allowed = patches_from_device(changed, frames, candidates=(row.pair,))
+                assert_effective(allowed, changed, spec)
+                np.testing.assert_array_equal(
+                    allowed.patch_differences[row.pair]["first_moment_delta_m"], expected_delta)
+                saved["normalized_effective"] = allowed
+            assert k0.canonical((result.raw, result.patch, result.source)) == raw_before

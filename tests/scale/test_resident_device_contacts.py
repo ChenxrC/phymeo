@@ -72,7 +72,8 @@ def compact_record(conversion):
         shape_keys=query.shape_keys, shape_revisions=query.shape_revisions,
         rows=query.rows, raw=query.raw, source=query.source, patch=query.patch,
         stats=query.stats, attempt_tag=query.attempt_tag,
-        samples=conversion.samples, differences=conversion.differences
+        samples=conversion.samples, differences=conversion.differences,
+        patch_differences=conversion.patch_differences
     )
 
 

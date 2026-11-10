@@ -735,8 +735,17 @@ def actuator_check(protocol, receipt):
 
 def inventory(protocol, compilation, derived, capabilities):
     model = protocol.model
+    if (capabilities.get("possible_contact_pairs"), capabilities.get("candidate_slots")) != (502, 942):
+        raise ValueError("G1 candidate layout differs from its complete source inventory")
+    source = compilation.source
     return {
-        "compilation_source": compilation.source, "derived_timestep": derived,
+        "compilation_source": {
+            "origin": source.origin, "primary_sha256": source.primary_sha256,
+            "archive_sha256": source.archive_sha256, "model_sha256": source.model_sha256,
+            "mujoco_version": source.mujoco_version,
+            "primary_xml_bytes": len(source.primary_xml),
+            "archive_bytes": len(source.archive_bytes), "model_binary_bytes": len(source.model_binary),
+        }, "derived_timestep": derived,
         "mujoco_version": mj.__version__, "capabilities": capabilities,
         "nq": model.nq, "nv": model.nv, "nu": model.nu,
         "nbody": model.nbody, "ngeom": model.ngeom, "njnt": model.njnt,
@@ -744,6 +753,11 @@ def inventory(protocol, compilation, derived, capabilities):
                            "tolerance": model.opt.tolerance, "cone": int(model.opt.cone),
                            "impratio": model.opt.impratio, "integrator": int(model.opt.integrator),
                            "gravity": model.opt.gravity.copy()},
+        "bodies": {"names": [mj.mj_id2name(model, mj.mjtObj.mjOBJ_BODY, i)
+                              for i in range(model.nbody)],
+                   "parent": model.body_parentid.copy(), "mass": model.body_mass.copy(),
+                   "inertia": model.body_inertia.copy(), "inertial_position": model.body_ipos.copy(),
+                   "inertial_quaternion": model.body_iquat.copy()},
         "joints": {"names": protocol.names, "type": model.jnt_type.copy(),
                    "qpos_address": model.jnt_qposadr.copy(), "dof_address": model.jnt_dofadr.copy(),
                    "limited": model.jnt_limited.copy(), "range": model.jnt_range.copy(),
@@ -751,13 +765,19 @@ def inventory(protocol, compilation, derived, capabilities):
                    "damping": model.dof_damping.copy(), "frictionloss": model.dof_frictionloss.copy()},
         "actuators": {"joint": model.actuator_trnid.copy(), "gear": model.actuator_gear.copy(),
                       "ctrl_limited": model.actuator_ctrllimited.copy(),
-                      "ctrl_range": model.actuator_ctrlrange.copy()},
+                      "ctrl_range": model.actuator_ctrlrange.copy(),
+                      "force_limited": model.actuator_forcelimited.copy(),
+                      "force_range": model.actuator_forcerange.copy(),
+                      "gain": model.actuator_gainprm.copy(), "bias": model.actuator_biasprm.copy()},
         "geometries": {"names": [mj.mj_id2name(model, mj.mjtObj.mjOBJ_GEOM, g)
                                    for g in range(model.ngeom)],
                        "body": model.geom_bodyid.copy(), "type": model.geom_type.copy(),
                        "size": model.geom_size.copy(), "condim": model.geom_condim.copy(),
                        "contype": model.geom_contype.copy(), "conaffinity": model.geom_conaffinity.copy(),
-                       "friction": model.geom_friction.copy(), "priority": model.geom_priority.copy()},
+                       "friction": model.geom_friction.copy(), "priority": model.geom_priority.copy(),
+                       "local_position": model.geom_pos.copy(), "local_quaternion": model.geom_quat.copy(),
+                       "solref": model.geom_solref.copy(), "solimp": model.geom_solimp.copy(),
+                       "margin": model.geom_margin.copy(), "gap": model.geom_gap.copy()},
         "exclude_signature": model.exclude_signature.copy(),
         "foot_geometry_to_side": protocol.foot_geoms,
         "foot_geometry_count": len(protocol.foot_geoms),

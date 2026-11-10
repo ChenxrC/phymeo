@@ -54,14 +54,39 @@ run123对原完整压缩流只读一次，复用run106协议审计；处理23145
 
 当前模型的统一armature/damping、左右踝不对称限幅、condim6和h=.002/Euler，与固定训练源码默认候选存在差异。但该ONNX准确训练配置仍unknown；这是一组可检验候选，不能一次性照抄默认值或声称“恢复原训练模型”。详本机 `g1-policy-provenance-followup.md` 与 `g1-drift-source-review.md`。
 
-## 下一项只做具体差异定位
+## D4：同输入峰值已定位到接触检出集合
 
-先针对已保存tick17855完整捕获，检查同输入接触身份/几何、J/R/aref、力与M/bias，区分差异先出现在接触装配还是同一问题的求解。它是根据已有峰值选择的**后验诊断**，不是新的预注册正控。多点接触不能按后端数组下标强行拼接；字段缺失或身份歧义应报告unknown。不得重新跑整段舞蹈、重做123统计或修改模型/门。
+run126于06:09:39结束RAW0，只读取原gzip至输出tick17855，保留原source/initial/attempt/step四行；完整流hash/CRC复用123，不重做全流审计或物理。固定脚本v2的新增内容只澄清来源：设备请求/存储控制逐字绑定；native没有保存三项原始控制数组，其控制由固定harness传参链绑定。
 
-若需要部署兼容变体，先取得来源支持并固定一个改动、同输入小案例与停止条件；没有训练run时明确叫兼容变体。下一主线仍为[GPU训练N1–N3](../superpowers/plans/2026-11-11-mujoco-tyx-gpu-training.md)，G1小诊断不阻塞其环境/接口工作。
+本步设备检测出3个接触、30条EFC；same-input native有4个接触、40条EFC。差异先出现在检测集合，不能按“同一个约束问题、仅求解器结果不同”解释。
+
+| 保存事实 | 结果 |
+|---|---|
+| native独有接触 | geom(0,22)、body(0,13)、condim6 |
+| 几何22 | right_foot6_collision，胶囊，right_ankle_roll_link；半径0.01m、半长0.0835m |
+| native距离/门 | -3.2631712111944045e-8m（约-33nm），include_margin=0，active=true |
+| native该点法向力 | 109.281806N；同组完整Jᵀf最大分量109.281806，与全约束力差111.180494同量级 |
+| 设备候选是否缺枚举 | 没有。静态pair21的41/42两槽明确对应胶囊两端，保存candidate与J均为零 |
+| 共同3点的几何差 | normal完全同；position最大约4.0e-8m，J最大约9.3e-8（各自单位按字段） |
+| 动力学输入差 | applied和qfrc_actuator完全同；M最大分量差2.56e-6，bias约8.67e-6 |
+
+冻结run93源码给出具体层级：source-14-_normal_geometry.py先清零槽，枚举全部注册pair，再对plane/capsule两端计算距离；第254行只有`distance <= margin`才写present，第329行之后才判active。source-4-_constraint_rows.py只消费present，source-3-_constraint_publication.py保留原候选槽。因此该pair的差异发生在**窄相检出margin门**，不是漏注册、动态宽相遗漏、active筛选或QP删行。
+
+已接受步与该分支的eligible=1控制流支持“设备两端距离均大于零”的推断，但拒绝候选的实际距离没有保存。不能编造设备距离，也不能进一步指定是FK、局部变换、胶囊端点或半径运算导致符号差异。native约-33nm的结果说明这里靠近零margin的精度敏感边界；这不等于证明全部长期跟踪漂移由它造成。
+
+设备normalized KKT约4.05e-7，只描述自己的30行问题。两侧完整行Jᵀf可分别重构；多点/切向基不完全相同的行不强制一一对齐。质量方程中applied已含执行器，未重复加力。该局部差异是具体工程边界，不把它升级成“全引擎必须精确相触”的新前提。
+
+## 后继：两个小问题，不阻塞GPU训练
+
+1. 接触边界资格：下一批在预声明小案例中保留**被拒候选的距离/理由**，用plane–sphere/capsule/box的正/零/负间隙、非零margin/gap及接近/分离速度核对检测与激活语义。复用这一已保存输入作回归，但不能只为G1单点调epsilon；精度差与持续支撑稳定性分开验收。先界定工程接触策略，再决定是否需要产品修复，避免无休止追逐FP32与FP64的零点逐字相同。
+2. 部署兼容：先取得来源支持并固定一个改动、同输入小案例与停止条件；缺原训练run时明确叫兼容变体。不能一口气改动作scale、armature、限幅、condim或h后重跑舞蹈并宣称定位完成。
+
+本夜此诊断到此收口，不重跑全窗、不改模型/门/内核。下一主线仍为[GPU训练N1–N3](../superpowers/plans/2026-11-11-mujoco-tyx-gpu-training.md)，其环境/两任务训练连接无需等待G1全程成功。
 
 ## 本机证据与代码入口
 
 根目录 `artifacts/p65-parity-20261111-01`：93原失败；106失败前缀保存审计；123离线诊断及 `123-g1-drift-analysis-output/report.json`。123脚本SHA256 `e7ea0d33df374b1f9841e4a98fffb15aa2929d361232ad1661ef833de3d1c028`。原gzip SHA256 `574bff1d33dc16d1390bcf698b1763f9caa233fb866edb77704b5a7f7e57c12f`，保持压缩，不全量解压落盘。
 
 [harness](../../examples/g1_mujoco_tyx_policy.py)中same-input fresh forward、独立CPU输入/输出缓存、观测/PD分别保留独立字段。[runtime](../../src/phymeo/backends/_mujoco_tyx_runtime.py)分别发布物理与积分加速度。所有新统计均来自保存证据；完整动作成功仍未实现。
+
+run126：`126-g1-peak-localization-output/report.json`，SHA256 `5818b01c18b1967f4f7cfb9d59891879854a9aa424c2b30ef708cbf806eeee05`；脚本 `analyze_saved_step_v2.py` SHA256 `9d45bd20b56e2caca1f3b204a0d76bf8f98611b1605dfdcbd4b90e7f1532b0cd`。原始四行与前后文件stat保留，无重算完整gzip hash。执行owner已于06:12释放，matching execution=0。

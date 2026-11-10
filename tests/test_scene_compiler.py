@@ -273,3 +273,79 @@ def test_actual_host_partial_publication_requires_full_reset():
         scene.reset()
         scene.set_controls({7: _command(first, 0), 103: _command(second, 0)})
         assert scene.step(H) == {7: True, 103: True}
+
+def _passive_oracle(backend, tmp_path):
+    world = _world(floating=True)
+    model = replace(
+        world.asset.model, joint_armature=np.array([0.5]), joint_damping=np.array([0.25])
+    )
+    velocity = np.zeros(7)
+    velocity[-1] = 0.2
+    world = replace(
+        world, asset=replace(world.asset, model=model),
+        initial_state=ph.FloatingRobotState(world.initial_state.q, velocity),
+    )
+    with compile_scene(SceneDeclaration((world,)), backend, cache_root=tmp_path) as scene:
+        scene.set_controls({world.world: _command(world, 1)})
+        assert scene.step(H) == {world.world: True}
+        actual = scene.snapshot()[world.world]
+        # M=[[6,2],[2,5/2]], D_joint=1/4; old joint v=1/5.
+        # (M+hD) delta_v = h*[0,19/20]. Passive inertia is not body mass.
+        denominator = 11 + 3 * H / 2
+        root_v = -19 * H / (10 * denominator)
+        joint_v = 1 / 5 + 57 * H / (10 * denominator)
+        np.testing.assert_allclose(actual.v[2], root_v, atol=2e-7, rtol=3e-5)
+        np.testing.assert_allclose(actual.v[-1], joint_v, atol=2e-7, rtol=3e-5)
+        np.testing.assert_allclose(actual.q[2], 3 / 32 + H * root_v, atol=2e-7, rtol=3e-5)
+        np.testing.assert_allclose(actual.q[-1], H * joint_v, atol=2e-7, rtol=3e-5)
+
+
+def test_host_preserves_original_floating_armature_and_damping(tmp_path):
+    _passive_oracle("host", tmp_path)
+
+
+@pytest.mark.tyx
+def test_tyx_preserves_original_floating_armature_and_damping(tyx_mode, tmp_path):
+    _passive_oracle(tyx_mode, tmp_path)
+
+
+def test_actual_host_all_rejected_is_retryable_without_reset():
+    world = _world()
+    world = replace(world, asset=replace(world.asset, upper=(0.001,)))
+    with compile_scene(SceneDeclaration((world,))) as scene:
+        scene.set_controls({world.world: _command(world, 1)})
+        with pytest.raises(PhysicsStepFailure) as captured:
+            scene.step(1 / 8)
+        assert captured.value.acceptance_known
+        assert captured.value.accepted_worlds == {world.world: False}
+        assert not scene.needs_reset
+        assert scene.snapshot()[world.world].tick == 0
+        scene.set_controls({world.world: _command(world, 0)})
+        assert scene.step(H) == {world.world: True}
+
+
+def test_command_validation_is_complete_before_any_control_replacement():
+    first, second = _world(7), _world(103)
+    with compile_scene(SceneDeclaration((first, second))) as scene:
+        scene.set_controls({7: _command(first, 1), 103: _command(second, -1)})
+        invalid = ph.RobotCommand(np.zeros(1), effort_limit=np.array([0.5]))
+        with pytest.raises(ValueError, match="effort cap"):
+            scene.set_controls({7: _command(first, 0), 103: invalid})
+        scene.step(H)
+        state = scene.snapshot()
+        np.testing.assert_allclose(state[7].v, [H / 2], atol=1e-12, rtol=0)
+        np.testing.assert_allclose(state[103].v, [-H / 2], atol=1e-12, rtol=0)
+
+
+def test_declaration_does_not_depend_on_callers_mutable_asset_or_cap():
+    asset = _asset()
+    cap = np.array([100.0])
+    world = ArticulationWorld(
+        17, asset, ph.RobotState(np.zeros(1), np.zeros(1)),
+        kp=np.zeros(1), kd=np.zeros(1), effort_limit=cap,
+    )
+    asset.model.mass.flags.writeable = True
+    asset.model.mass[0] = 9
+    cap[0] = 0
+    np.testing.assert_array_equal(world.asset.model.mass, [2])
+    np.testing.assert_array_equal(world.effort_limit, [100])

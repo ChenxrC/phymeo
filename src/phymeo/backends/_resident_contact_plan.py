@@ -363,6 +363,16 @@ class _ResidentContactMechanics:
             records.extend((target, name, getattr(target, name).copy()) for target, name in targets)
         return tuple(records)
 
+    def _stage_contact_geometry(self, attempt, entry):
+        """HOST plans and bundles need no additional geometry transaction."""
+        return None
+
+    def _check_contact_geometry(self, geometry):
+        return None
+
+    def _publish_contact_geometry(self, geometry):
+        return None
+
     def _begin_attempt(self, dt, src, dst):
         self._check_open()
         result, pending = self._stage_query()
@@ -376,6 +386,7 @@ class _ResidentContactMechanics:
             pending=pending,
             loads={},
             rejected={},
+            device_patch=None,
             held=batch._held.copy(),
             tree_held=self._control_snapshot(),
         )
@@ -388,6 +399,7 @@ class _ResidentContactMechanics:
             physical.stage_mechanics(src)
         entry = self._read_packet(src)
         attempt["entry"] = entry
+        attempt["device_patch"] = self._stage_contact_geometry(attempt, entry)
         for group in self._contact_groups.values():
             storage, physical = group["storage"], group["physical"]
             vectors, mass, linear, angular = [
@@ -411,6 +423,10 @@ class _ResidentContactMechanics:
                         group_count=body_count,
                         site_capacity=self._site_caps[world],
                         tree_dynamic_pairs=self._tree_dynamic_pairs,
+                        patches=None if attempt["device_patch"] is None else {
+                            pair: patch for pair, patch in attempt["device_patch"].samples.items()
+                            if pair[0].world == world
+                        },
                     )
                 except ContactSiteCapacityExceeded as error:
                     reject[row] = 1
@@ -499,6 +515,7 @@ class _ResidentContactMechanics:
     def _check_attempt(self, attempt):
         batch = self._batch
         self.require_current(attempt["result"])
+        self._check_contact_geometry(attempt["device_patch"])
         if (
             batch._state_epoch != attempt["epoch"]
             or batch._active != attempt["src"]
@@ -620,6 +637,8 @@ class _ResidentContactMechanics:
                     floating_diagnostic=final_data["floating_diagnostics"][world],
                     equation_residual=final_data["floating_diagnostics"][world].equation_residual,
                 )
+            if attempt["device_patch"] is not None:
+                diagnostics["device_patch"] = attempt["device_patch"]
             accepted[world] = ResidentContactReceipt(
                 world,
                 entry["state"].tick,
@@ -644,12 +663,14 @@ class _ResidentContactMechanics:
             MappingProxyType(names),
             attempt["result"],
             attempt["pending"],
+            attempt["device_patch"],
         )
         return commit
 
     def _publish(self, commit):
-        self._last_accepted, self._last_status, result, pending = commit
+        self._last_accepted, self._last_status, result, pending, geometry = commit
         self._publish_query(result, pending)
+        self._publish_contact_geometry(geometry)
 
     def _contact_stats(self, result):
         counts = self._contact_counts
@@ -681,7 +702,19 @@ class ResidentContactPlan(_ResidentContactMechanics, ResidentCollisionPlan):
         site_capacity=128,
         sampling="discrete_entry",
         tree_dynamic_pairs=False,
+        narrow_phase="host_patch",
+        device_patch_site_capacity=None,
     ):
+        if narrow_phase not in ("host_patch", "device_patch"):
+            raise ValueError("narrow_phase must be host_patch or device_patch")
+        if narrow_phase == "host_patch" and device_patch_site_capacity is not None:
+            raise ValueError("device patch capacity requires device_patch narrow phase")
+        capacity = 4096 if device_patch_site_capacity is None else _site_limit(device_patch_site_capacity)
+        if narrow_phase == "device_patch" and capacity == 0:
+            raise ValueError("device patch site capacity must be positive")
+        self._narrow_phase = narrow_phase
+        self._device_patch_query = None
+        self._device_patch_capacity = capacity
         if sampling != "discrete_entry":
             raise ValueError("resident contact supports only discrete_entry sampling, not CCD")
         if not isinstance(materials_by_pair, Mapping):
@@ -705,13 +738,59 @@ class ResidentContactPlan(_ResidentContactMechanics, ResidentCollisionPlan):
         self._materials = MappingProxyType(dict(materials_by_pair))
         self._site_config = site_capacity
         self._initialize_contact_mechanics()
-        super().__init__(
-            batch,
-            model,
-            bindings,
-            candidate_capacity=candidate_capacity,
-            tree_dynamic_pairs=tree_dynamic_pairs,
-        )
+        try:
+            super().__init__(
+                batch,
+                model,
+                bindings,
+                candidate_capacity=candidate_capacity,
+                tree_dynamic_pairs=tree_dynamic_pairs,
+            )
+            # The shared mechanics setup also serves bundles. Construct this
+            # dependent only after this single-page registration is complete.
+            if narrow_phase == "device_patch":
+                from ._device_convex_query import ConvexQueryPlan
+                self._device_patch_query = ConvexQueryPlan(
+                    batch, self, site_capacity=capacity)
+        except BaseException:
+            if hasattr(self, "_closed"):
+                self.close()
+            else:
+                self._close_contact_mechanics()
+            raise
+
+    @property
+    def last_device_query(self):
+        """Entry-bank evidence of the last committed step, not an endpoint query."""
+        with self._batch._lock:
+            query = self._device_patch_query
+            return None if query is None else query.last_result
+
+    def _stage_contact_geometry(self, attempt, entry):
+        query = self._device_patch_query
+        if query is None:
+            return None
+        from ._resident_device_patch_bridge import patches_from_device
+        result, broad, pending = query._stage_query(
+            (attempt["result"], attempt["pending"], attempt["src"]))
+        if broad is not attempt["result"] or pending is not attempt["pending"]:
+            raise RuntimeError("device patch did not retain the staged broad phase")
+        query.require_current(result)
+        if (result.state_epoch != attempt["epoch"] or result.active != attempt["src"]
+                or tuple(row.pair for row in result.rows)
+                != tuple(sorted(attempt["result"].candidates))):
+            raise ValueError("device patch result differs from the complete entry candidates")
+        return patches_from_device(
+            result, {world: packet["frames"] for world, packet in entry.items()},
+            candidates=attempt["result"].candidates)
+
+    def _check_contact_geometry(self, geometry):
+        if geometry is not None:
+            self._device_patch_query.require_current(geometry.query)
+
+    def _publish_contact_geometry(self, geometry):
+        if geometry is not None:
+            self._device_patch_query._publish_staged(geometry.query)
 
     def _prepare_topology(self, slots):
         super()._prepare_topology(slots)
@@ -722,7 +801,12 @@ class ResidentContactPlan(_ResidentContactMechanics, ResidentCollisionPlan):
         self._prepare_contact_device()
 
     def stats(self):
-        return self._contact_stats(super().stats())
+        result = self._contact_stats(super().stats())
+        result["narrow_phase"] = self._narrow_phase
+        query = self._device_patch_query
+        if query is not None:
+            result.update({("device_patch_" + key): value for key, value in query.stats.items()})
+        return result
 
     def close(self):
         try:

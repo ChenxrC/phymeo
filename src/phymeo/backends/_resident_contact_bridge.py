@@ -22,7 +22,7 @@ from ..constraints.collision_shapes import (
 )
 from ..constraints.robot_contact import RobotContactMaterial
 from ..geometry._convex_hull import HullShape
-from ..geometry.contact_patch_adapter import ContactSite, contact_patch_sample
+from ..geometry.contact_patch_adapter import ContactPatchSample, ContactSite, contact_patch_sample
 from ..solvers.contact_patch_loads import sample_patch_loads
 
 _ROTATION_DOMAIN = 5e-5
@@ -340,6 +340,7 @@ def sample_tree_contacts(
     group_count,
     site_capacity,
     tree_dynamic_pairs=False,
+    patches=None,
 ):
     """Sample each declared candidate once; return transient HOST loads, never a step.
 
@@ -380,11 +381,20 @@ def sample_tree_contacts(
         if pair in selected or pair not in laws:
             raise ValueError("candidate requires one unique pair with an explicit material law")
         selected.add(pair)
+    supplied = patches
+    if supplied is not None and (
+        not isinstance(supplied, Mapping) or set(supplied) != selected
+        or any(not isinstance(patch, ContactPatchSample) for patch in supplied.values())
+    ):
+        raise ValueError("supplied device patches require exact candidate membership")
     patches, sites_count = [], 0
     for pair in sorted(selected):
         first, second = (frames[key] for key in pair)
-        patch = contact_patch_sample(
-            first.shape, second.shape, first.world_points_m, second.world_points_m
+        patch = (
+            contact_patch_sample(
+                first.shape, second.shape, first.world_points_m, second.world_points_m
+            )
+            if supplied is None else supplied[pair]
         )
         sites_count += len(patch.sites)
         if sites_count <= capacity:

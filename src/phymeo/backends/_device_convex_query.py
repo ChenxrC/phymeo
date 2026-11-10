@@ -968,7 +968,12 @@ class ConvexQueryPlan:
             patch,
         )
 
-    def query(self):
+    def _stage_query(self, staged_broadphase=None):
+        """Build owned geometry without publishing either query.
+
+        Contact passes its just-staged broad result, pending layouts and entry
+        bank. The public query path stages its own broad phase as before.
+        """
         with self._batch._lock:
             self._check_open()
             before = dict(self._counts)
@@ -990,7 +995,25 @@ class ConvexQueryPlan:
                         raise ValueError("convex plan source registration has changed")
                     broad_before = dict(self._broad.stats())
                     broad_result = pending = None
-                    if self._requested is None:
+                    if staged_broadphase is not None:
+                        if self._requested is not None:
+                            raise ValueError("staged contact geometry cannot use explicit query pairs")
+                        broad_result, pending, entry_bank = staged_broadphase
+                        self._broad.require_current(broad_result)
+                        if (entry_bank != view.accepted.active
+                                or broad_result.owner is not view.owner
+                                or broad_result.registration is not view.registration
+                                or broad_result.state_epoch != view.accepted.state_epoch
+                                or broad_result.topology_generation != view.accepted.topology_generation
+                                or broad_result.shape_keys != tuple(view.shape_keys)
+                                or broad_result.shape_revisions != tuple(view.shape_revisions)
+                                or broad_result.registered_pairs != self._broad._registered_pairs
+                                or broad_result.world_keys != tuple(view.world_keys)):
+                            raise ValueError("staged broad phase differs from the entry source")
+                        pairs = tuple(sorted(tuple(pair) for pair in broad_result.candidates))
+                        if len(set(pairs)) != len(pairs) or any(pair != _canonical(pair) for pair in pairs):
+                            raise ValueError("staged broad phase candidate membership differs")
+                    elif self._requested is None:
                         broad_result, pending = view.stage_broadphase()
                         pairs = tuple(sorted(tuple(pair) for pair in broad_result.candidates))
                     else:
@@ -1135,16 +1158,30 @@ class ConvexQueryPlan:
                     result = self._build_result(
                         view, raw, pose, stamp, pairs, delta, broad_delta, patch_raw
                     )
-                    if broad_result is not None:
-                        self._broad._publish_query(broad_result, pending)
-                    self._last_result = result
-                    self._counts["queries"] += 1
-                    return result
+                    if staged_broadphase is not None:
+                        expected_ticks = dict(zip(broad_result.world_keys, broad_result.ticks, strict=True))
+                        if any(int(result.ticks[i]) != int(expected_ticks[world])
+                               for i, world in enumerate(result.world_keys)):
+                            raise ValueError("staged broad phase ticks differ from convex entry")
+                    return result, broad_result, pending
             except BaseException:
                 self._counts["failed_queries"] += 1
                 raise
             finally:
                 self._attempt_ticks = None
+
+    def _publish_staged(self, result):
+        """Assignment-only publication; all geometry construction precedes swap."""
+        self._last_result = result
+        self._counts["queries"] += 1
+
+    def query(self):
+        with self._batch._lock:
+            result, broad_result, pending = self._stage_query()
+            if broad_result is not None:
+                self._broad._publish_query(broad_result, pending)
+            self._publish_staged(result)
+            return result
 
     def require_current(self, result):
         with self._batch._lock:
@@ -1162,6 +1199,20 @@ class ConvexQueryPlan:
                     or result.shape_revisions != tuple(view.shape_revisions)
                 ):
                     raise ValueError("convex result belongs to another or stale accepted state")
+            for key, expected in self._source.items():
+                actual = result.source.get(key)
+                if isinstance(expected, np.ndarray):
+                    valid = (isinstance(actual, np.ndarray) and actual.dtype == expected.dtype
+                             and np.array_equal(actual, expected))
+                elif key == "model":
+                    valid = actual is expected
+                elif key == "bindings":
+                    valid = (isinstance(actual, tuple) and len(actual) == len(expected)
+                             and all(a is b for a, b in zip(actual, expected, strict=True)))
+                else:
+                    valid = actual == expected
+                if not valid:
+                    raise ValueError("convex result immutable source binding differs: " + key)
             return result
 
 

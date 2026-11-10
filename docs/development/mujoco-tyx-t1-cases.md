@@ -1,5 +1,7 @@
 # T1 固定根旋转树独立案例（预登记）
 
+**当前执行结果：** 原误差门保持，解释21/CUDA17均通过，环境连接与源码外运行也完成，见[父验收](../benchmarks/p65-mujoco-tyx-rotational-tree.md)。下文是首次物理执行前登记的案例与作者历史。
+
 状态：**AUTHORING_ONLY / UNEXECUTED**。2026-11-10，基线父 `af3a78545d00cfbfa18d4efeb5da324352923a81`；`codex/mujoco-tyx-t1-tests` 独立新增测试，不改产品或旧测试。原 support 作者负责产品，父唯一执行。这里的参数/容差先于任何执行固定；不是已测成功，也不在运行后追调质量、初态或门。
 
 ## 域和公共量

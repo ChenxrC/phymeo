@@ -1,5 +1,7 @@
 # mujoco-tyx T1：固定根旋转/平移树源码交接
 
+**当前父验收：T1_LOCAL_VALIDATED。** `71ea1dc0` 的解释21、CUDA17、相邻8及源码外wheel两路径均通过；详[实际验收](../benchmarks/p65-mujoco-tyx-rotational-tree.md)。下文保留作者执行前交接历史，不将通过结果倒灌给原作者检查点。
+
 **CODE_READY_TESTS_PENDING / UNEXECUTED，2026-11-10。** 产品作者分支 `codex/mujoco-tyx-t1-source` 基于父已验 `af3a78545d00cfbfa18d4efeb5da324352923a81`，保留旧 `codex/h1-foot-support` 分支。本文对应源码检查点 `f358489d`；作者没有 import、collection、数值 probe、测试、lint、formatter、编译、安装或新执行槽。父唯一串行执行，独立案例由原 actuator 作者维护；本作者没有修改测试文件。
 
 ## 新增的实际路径

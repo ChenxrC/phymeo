@@ -1,6 +1,12 @@
 # P6.5 人工续作入口
 
-## 当前续作（2026-11-10，统一场景编译与 MuJoCo-TYX）
+## 当前续作（2026-11-10，MuJoCo-TYX T1旋转树）
+
+先读[T1实际验收](../benchmarks/p65-mujoco-tyx-rotational-tree.md)。产品/测试 `71ea1dc0` 完成固定根1–8DOF hinge/slide混合树：解释21、CUDA17、相邻8项，新wheel源码外两路径各48 world-steps。每步重算完整FK/J/M/bias，支持welded body、偏心惯量/外载、弹簧与affine驱动；Env/PolicyRunner动作保持、selected reset及实际晚故障回滚已核。T0 disabled-group force-clamp修复另有6项通过。所有组已结束，不重跑同源绿组。
+
+当前新后端支持T0与无可能接触对的固定根T1树，默认CUDA仍为MuJoCo-TYX。下一项按[扩展路线T2](mujoco-tyx-expansion-plan.md)做原生free-root树/容量及根–关节耦合，再补T3/T4多接触与摩擦；G1尚未迁移。父唯一项目执行/共享接缝owner，原K1三个WIP保留，不新建周期任务；整个P6.5没有标记完成。
+
+## 历史基线（2026-11-10，统一场景编译与 MuJoCo-TYX T0）
 
 先读[本批验收](../benchmarks/p65-unified-scene-compilation.md)、[已实现架构/用法](../architecture/unified-scene-compilation.md)与[统一入口接手说明](unified-scene-handoff.md)。新增同源SceneDeclaration→HOST/TYX、可选CPU MjSpec编译/显式资产转换、native CPU/显式Warp适配和真正MuJoCo-TYX首域。MuJoCoRuntime的默认CUDA为TYX，仅显式implementation="warp"选Warp。新wheel源码外七路径均通过，LICENSE/NOTICE随包；详细原始日志在artifacts/p65-unified-scene-20261110-01。
 

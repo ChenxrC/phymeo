@@ -1,12 +1,12 @@
 # MuJoCo-Warp → TYX 的机器人与 G1 扩展计划
 
-状态：**RESEARCH_NOT_IMPLEMENTED**，2026-11-10。本文只做固定源码与现有接口研究，不是新实施 grant，不宣称任何新模块已执行通过。作者没有 import、数值 probe、pytest、lint、formatter、build 或安装；只新增本文件。父保持唯一项目执行 owner。主计划是[统一场景编译](../superpowers/plans/2026-11-10-unified-scene-compilation.md)，首域 kernel 由原 support 作者实现，本文不重复该工作。
+当前状态：**T0/T1_LOCAL_VALIDATED，T2_NEXT**，2026-11-10。T0见[统一入口验收](../benchmarks/p65-unified-scene-compilation.md)，T1见[旋转树实际结果](../benchmarks/p65-mujoco-tyx-rotational-tree.md)。T2–T6仍待实施和各自验收，父保持唯一项目执行owner。下文来源研究原由独立作者在零项目执行下完成，新的验收不倒灌为当时已运行。主计划是[统一场景编译](../superpowers/plans/2026-11-10-unified-scene-compilation.md)。
 
 ## 1. 目标与真实起点
 
 目标是把**MuJoCo 模型语义的设备求解**逐层移植到 TYX。CPU `MjSpec.compile` 可以继续作为一次性模型编译，不能在每个物理步调用 CPU `mj_step`、HOST 动力学或 Warp 求解，再把结果包装成 TYX。TYX 的解释模式与真实 CUDA launch 应分别留证；显式 Warp 模式保留自己的名称和精度声明。
 
-当前进行中的首域是 1–8 DOF 纯平移树、独立自由球及单个 plane–sphere 法向接触。其意义是打通数据、控制、真实设备步、观察和拒绝协议。它**不覆盖旋转关节、自由根关节树、多接触、摩擦、G1 或通用 MuJoCo**。本计划不把“换默认 backend”本身当功能扩展，也不以一个舞蹈例子代替模块矩阵。
+已完成的T0是1–8DOF纯平移树、独立自由球及单个plane–sphere法向接触；T1进一步完成无接触固定根hinge/slide混合树、每步完整动力学及公共策略环境连接。它们**不覆盖自由根关节树、多接触、摩擦、G1或通用MuJoCo**。本计划不把“换默认backend”本身当功能扩展，也不以一个舞蹈例子代替模块矩阵。
 
 已有可复用资产：
 
@@ -103,4 +103,4 @@ G1 的优先依赖是 T1→T2→T3/T4→T5，不先追全部 mesh、tendon 或 r
 - G1支撑不过但小模块已过：保留失败并找第一个错误时刻/量，分别判断几何、动力学、求解还是策略域；不调质量/关节阻尼/初态去追一个舞蹈结果。
 - 低吞吐：在模块正确和真实受载多 world过后测热点，再选 dense→sparse、批并行、减少回读或排序优化；没有profile数据不先造大型缓存或更换后端。
 
-下一个高价值节点是 **T1有限旋转树的无接触多案例矩阵与真实 TYX FK/M/b/a步**。G1完整移植是数个高难模块的组合，应持续小批推进，不声称本次首域已经完成。
+T0/T1表格现为已验收能力的历史设计要求，后续不重复实施或重跑已绿组。下一个高价值节点是 **T2原生自由根树：坐标、偏心惯量、根–关节耦合及29关节容量**。G1完整移植依赖T2–T5的组合，固定根通过不等于G1支撑通过。

@@ -1,5 +1,7 @@
 # 统一场景编译接手说明
 
+**2026-11-10更新：** 默认CUDA已是独立MuJoCo-TYX，显式 `implementation="warp"` 才走Warp。T0及无接触固定根T1旋转树已完成本机验证，见[T1实际报告](../benchmarks/p65-mujoco-tyx-rotational-tree.md)。以下M1/M2和坐标/导出边界继续适用；新TYX运行源码入口是 `_mujoco_tyx_runtime.py` 与 `backends/mujoco_tyx/`，下一项为原生自由根树，不能从旧接手基线推断它已支持。
+
 本说明整理 2026-11-10 这批统一入口。核对基线为父集成 `fab6961fe345fd4699336a8dd9ac40568bafb9cb` 及当时父工作副本；不将未提交的后续修改自动计入已验证结果。这里只做源码和文本整理，没有重新运行项目命令。
 
 先读[架构与使用示例](../architecture/unified-scene-compilation.md)，再读[实施计划](../superpowers/plans/2026-11-10-unified-scene-compilation.md)。具体能力以 `scene_capabilities`、MuJoCo 编译记录的 `lowering_issues` 和每个后端各自的实际验收为准。
@@ -21,7 +23,8 @@
           -> 上面的 Phymeo SceneDeclaration 路线
        -> 完整 native MJB 快照 + 新建独立 native model
           -> MuJoCoRuntime CPU mj_step
-          -> MuJoCo-Warp CUDA 原生适配
+          -> 默认 MuJoCo-TYX interpret / CUDA，有限T0/T1支持域
+          -> 显式 MuJoCo-Warp CUDA 原生适配
 ```
 
 这不是一条“MuJoCo 编译后，全部 MuJoCo 物理自然在 TYX 运行”的链路。M2 的资产转换只交付被明确支持的公共模型；完整 native 编译物是另一条可选运行路线。

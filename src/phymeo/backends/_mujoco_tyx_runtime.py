@@ -15,7 +15,7 @@ import numpy as np
 
 from ..training.resident_stepper import PhysicsStepFailure
 from .mujoco_runtime import MuJoCoControl, MuJoCoRuntime, _frozen
-from .mujoco_tyx import MuJoCoTyxUnsupported
+from .mujoco_tyx import MuJoCoTyxUnsupported as MuJoCoTyxUnsupported
 from .mujoco_tyx._model import compile_model, fp32
 
 LAW = "mujoco-soft-normal-constraint-v1"
@@ -91,8 +91,16 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
     """
 
     def __init__(
-        self, compilation, *, world_keys=(0,), initial_states=None, mode="cuda",
-        implementation=None, contact_capacity=64, constraint_capacity=256, cache_root=None,
+        self,
+        compilation,
+        *,
+        world_keys=(0,),
+        initial_states=None,
+        mode="cuda",
+        implementation=None,
+        contact_capacity=64,
+        constraint_capacity=256,
+        cache_root=None,
     ):
         if implementation not in (None, "tyx"):
             raise ValueError("MuJoCoTyxRuntime requires implementation='tyx'")
@@ -101,22 +109,33 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
         self._contact_capacity = _capacity(contact_capacity, "contact_capacity")
         self._constraint_capacity = _capacity(constraint_capacity, "constraint_capacity")
         self._mode, self._cache_root = mode, cache_root
-        super().__init__(compilation, world_keys=world_keys, initial_states=initial_states, mode="cpu")
+        super().__init__(
+            compilation, world_keys=world_keys, initial_states=initial_states, mode="cpu"
+        )
         self._plan = compile_model(self._mj, self._model)
         self._extra_counts = dict(completed_steps=0, accepted_world_steps=0, failed_batches=0)
         self._device = self._build_device(self._data)
         self._quantize_mirrors()
         info = dict(self._capabilities)
         info.update(
-            backend=f"mujoco-tyx-{mode}", mode=mode, implementation="tyx",
-            gpu=mode == "cuda", native_model=False, contact_law=LAW,
+            backend=f"mujoco-tyx-{mode}",
+            mode=mode,
+            implementation="tyx",
+            gpu=mode == "cuda",
+            native_model=False,
+            contact_law=LAW,
             domain="prismatic-or-isotropic-free/one-normal-pair-v1",
-            state_precision="fp32-device-integration", publication="whole-batch-atomic",
+            state_precision="fp32-device-integration",
+            publication="whole-batch-atomic",
             possible_contact_pairs=int(self._plan.pair is not None),
-            limits="strict-interior-reject-on-exit", numerical_solver="single-normal-direct-qp",
-            source_solver=self._plan.source_solver, source_iterations=self._plan.source_iterations,
-            contact_capacity=self._contact_capacity, constraint_capacity=self._constraint_capacity,
-            endpoint_observer="detached-cpu-mj-forward", g1_supported=False,
+            limits="strict-interior-reject-on-exit",
+            numerical_solver="single-normal-direct-qp",
+            source_solver=self._plan.source_solver,
+            source_iterations=self._plan.source_iterations,
+            contact_capacity=self._contact_capacity,
+            constraint_capacity=self._constraint_capacity,
+            endpoint_observer="detached-cpu-mj-forward",
+            g1_supported=False,
         )
         self._capabilities = MappingProxyType(info)
 
@@ -130,12 +149,14 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
         clock = np.zeros(len(self._world_keys), np.float32)
         for index, key in enumerate(self._world_keys):
             original = data[key]
-            q[index, :self._plan.nq] = fp32(original.qpos, "initial qpos")
-            v[index, :self._plan.nv] = fp32(original.qvel, "initial qvel")
-            clock[index] = fp32(original.time, "initial time")
+            q[index, : self._plan.nq] = fp32(original.qpos, "initial qpos")
+            v[index, : self._plan.nv] = fp32(original.qvel, "initial qvel")
+            clock[index] = fp32(original.time, "initial time").item()
             if self._plan.kind == 0:
-                low, high = self._plan.vectors[7:9, :self._plan.nv]
-                if np.any(q[index, :self._plan.nq] <= low) or np.any(q[index, :self._plan.nq] >= high):
+                low, high = self._plan.vectors[7:9, : self._plan.nv]
+                if np.any(q[index, : self._plan.nq] <= low) or np.any(
+                    q[index, : self._plan.nq] >= high
+                ):
                     raise ValueError("initial native q is outside the strict joint-limit interior")
         return q, v, clock
 
@@ -143,16 +164,20 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
         from .mujoco_tyx._device import TyxDevice
 
         return TyxDevice(
-            self._plan, self._mode, self._cache_root, *self._pack_states(data),
-            self._model.nbody, self._timestep,
+            self._plan,
+            self._mode,
+            self._cache_root,
+            *self._pack_states(data),
+            self._model.nbody,
+            self._timestep,
             (self._contact_capacity, self._constraint_capacity),
         )
 
     def _quantize_mirrors(self):
         q, v, time = self._pack_states(self._data)
         for index, key in enumerate(self._world_keys):
-            self._data[key].qpos[:] = q[index, :self._plan.nq]
-            self._data[key].qvel[:] = v[index, :self._plan.nv]
+            self._data[key].qpos[:] = q[index, : self._plan.nq]
+            self._data[key].qvel[:] = v[index, : self._plan.nv]
             self._data[key].time = time[index]
 
     def set_controls(self, mapping):
@@ -172,11 +197,12 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
         stored = {}
         for index, key in enumerate(self._world_keys):
             packet = self._controls[key]
-            ctrl[index, :self._plan.nu] = fp32(packet.ctrl, "ctrl")
-            applied[index, :self._plan.nv] = fp32(packet.qfrc_applied, "qfrc_applied")
+            ctrl[index, : self._plan.nu] = fp32(packet.ctrl, "ctrl")
+            applied[index, : self._plan.nv] = fp32(packet.qfrc_applied, "qfrc_applied")
             body_force[index] = fp32(packet.xfrc_applied, "xfrc_applied")
             stored[key] = MuJoCoControl(
-                ctrl[index, :self._plan.nu], qfrc_applied=applied[index, :self._plan.nv],
+                ctrl[index, : self._plan.nu],
+                qfrc_applied=applied[index, : self._plan.nv],
                 xfrc_applied=body_force[index],
             )
         return ctrl, applied, body_force, stored
@@ -189,16 +215,28 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
         law = self._plan.contact
         force = np.r_[row[3], np.zeros(5)]
         world_force = float(row[3]) * law[3:6].astype(np.float64)
-        return (MuJoCoTyxContact(
-            schema="mujoco-tyx-plane-sphere-normal-v1", geometry_ids=self._plan.pair,
-            dimension=1, distance=float(row[2]), position=_frozen(row[9:12]),
-            frame=_frozen(self._plan.frame), include_margin=float(law[10]-law[11]),
-            friction=_frozen(law[24:29]), solref=_frozen(law[14:16]), solimp=_frozen(law[16:21]),
-            active=bool(row[1]), wrench_contact_frame=_frozen(force),
-            force_on_sphere_world=_frozen(world_force), static_reaction_world=_frozen(-world_force),
-            impedance=float(row[8]), regularization=float(row[4]),
-            reference_acceleration=float(row[6]), normal_velocity=float(row[7]),
-        ),)
+        return (
+            MuJoCoTyxContact(
+                schema="mujoco-tyx-plane-sphere-normal-v1",
+                geometry_ids=self._plan.pair,
+                dimension=1,
+                distance=float(row[2]),
+                position=_frozen(row[9:12]),
+                frame=_frozen(self._plan.frame),
+                include_margin=float(law[10] - law[11]),
+                friction=_frozen(law[24:29]),
+                solref=_frozen(law[14:16]),
+                solimp=_frozen(law[16:21]),
+                active=bool(row[1]),
+                wrench_contact_frame=_frozen(force),
+                force_on_sphere_world=_frozen(world_force),
+                static_reaction_world=_frozen(-world_force),
+                impedance=float(row[8]),
+                regularization=float(row[4]),
+                reference_acceleration=float(row[6]),
+                normal_velocity=float(row[7]),
+            ),
+        )
 
     def step(self, h):
         with self._lock:
@@ -211,25 +249,34 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                 self._device.advance(ctrl, applied, body_force)
                 result = self._device.download()
                 if np.any(result["status"]):
-                    reasons = {1: "contact_or_constraint_capacity", 2: "nonfinite_candidate",
-                               3: "joint_limit_domain"}
-                    codes = tuple(reasons.get(int(code), "invalid_status") for code in result["status"] if code)
+                    reasons = {
+                        1: "contact_or_constraint_capacity",
+                        2: "nonfinite_candidate",
+                        3: "joint_limit_domain",
+                    }
+                    codes = tuple(
+                        reasons.get(int(code), "invalid_status")
+                        for code in result["status"]
+                        if code
+                    )
                     raise RuntimeError(f"MuJoCo TYX candidate rejected: {codes}")
                 data, receipts, ticks = {}, {}, {}
                 for index, key in enumerate(self._world_keys):
                     original = self._data[key]
                     candidate = copy.copy(original)
-                    candidate.qpos[:] = result["q"][index, :self._plan.nq]
-                    candidate.qvel[:] = result["v"][index, :self._plan.nv]
-                    candidate.qacc[:] = result["qacc"][index, :self._plan.nv]
+                    candidate.qpos[:] = result["q"][index, : self._plan.nq]
+                    candidate.qvel[:] = result["v"][index, : self._plan.nv]
+                    candidate.qacc[:] = result["qacc"][index, : self._plan.nv]
                     candidate.ctrl[:] = stored[key].ctrl
                     candidate.qfrc_applied[:] = stored[key].qfrc_applied
                     candidate.xfrc_applied[:] = stored[key].xfrc_applied
-                    candidate.qfrc_actuator[:] = result["actuator"][index, :self._plan.nv]
-                    candidate.qfrc_constraint[:] = result["constraint"][index, :self._plan.nv]
+                    candidate.qfrc_actuator[:] = result["actuator"][index, : self._plan.nv]
+                    candidate.qfrc_constraint[:] = result["constraint"][index, : self._plan.nv]
                     candidate.time = float(result["time"][index])
                     self._finite_state(candidate)
-                    expected = float(np.float32(np.float32(original.time) + np.float32(self._timestep)))
+                    expected = float(
+                        np.float32(np.float32(original.time) + np.float32(self._timestep))
+                    )
                     if candidate.time != expected or candidate.time <= original.time:
                         raise RuntimeError("TYX did not advance exactly one FP32 native timestep")
                     ticks[key] = self._ticks[key] + 1
@@ -237,17 +284,27 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                         raise RuntimeError("TYX logical tick exceeds i32 capacity")
                     row = result["rows"][index]
                     receipts[key] = MuJoCoTyxStepReceipt(
-                        world=key, tick=ticks[key], input_time=float(original.time),
-                        output_time=float(candidate.time), h=self._timestep,
-                        control=self._controls[key], stored_control=stored[key],
-                        contacts=self._contacts_from_row(row), input_q=_frozen(original.qpos),
-                        input_v=_frozen(original.qvel), qacc=_frozen(candidate.qacc),
-                        integration_acceleration=_frozen(result["integration_acc"][index, :self._plan.nv]),
+                        world=key,
+                        tick=ticks[key],
+                        input_time=float(original.time),
+                        output_time=float(candidate.time),
+                        h=self._timestep,
+                        control=self._controls[key],
+                        stored_control=stored[key],
+                        contacts=self._contacts_from_row(row),
+                        input_q=_frozen(original.qpos),
+                        input_v=_frozen(original.qvel),
+                        qacc=_frozen(candidate.qacc),
+                        integration_acceleration=_frozen(
+                            result["integration_acc"][index, : self._plan.nv]
+                        ),
                         qfrc_actuator=_frozen(candidate.qfrc_actuator),
                         qfrc_constraint=_frozen(candidate.qfrc_constraint),
                         raw_contact_fields=MappingProxyType({"device_row": _frozen(row)}),
-                        source_solver=self._plan.source_solver, numerical_solver="single-normal-direct-qp",
-                        contact_time=float(original.time), backend=f"mujoco-tyx-{self._mode}",
+                        source_solver=self._plan.source_solver,
+                        numerical_solver="single-normal-direct-qp",
+                        contact_time=float(original.time),
+                        backend=f"mujoco-tyx-{self._mode}",
                     )
                     data[key] = candidate
             except Exception as error:
@@ -263,9 +320,14 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
 
     def snapshot(self, keys=None):
         states = super().snapshot(keys)
-        return MappingProxyType({key: replace(state, contact_law=LAW,
-                                              contact_phase="endpoint-cpu-forward-recomputed")
-                                 for key, state in states.items()})
+        return MappingProxyType(
+            {
+                key: replace(
+                    state, contact_law=LAW, contact_phase="endpoint-cpu-forward-recomputed"
+                )
+                for key, state in states.items()
+            }
+        )
 
     def reset(self, keys=None):
         with self._lock:
@@ -282,7 +344,12 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
             replacement = self._build_device(proposed)
             old = self._device
             self._device = replacement
-            self._data, self._controls, self._ticks, self._receipts = proposed, controls, ticks, receipts
+            self._data, self._controls, self._ticks, self._receipts = (
+                proposed,
+                controls,
+                ticks,
+                receipts,
+            )
             self._quantize_mirrors()
             old.close()
 
@@ -291,10 +358,14 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
             self._check_open()
             selected = self._select(world_keys)
             cloned = type(self)(
-                self._compilation, world_keys=selected,
-                initial_states={key: self._initial[key] for key in selected}, mode=self._mode,
-                implementation="tyx", contact_capacity=self._contact_capacity,
-                constraint_capacity=self._constraint_capacity, cache_root=self._cache_root,
+                self._compilation,
+                world_keys=selected,
+                initial_states={key: self._initial[key] for key in selected},
+                mode=self._mode,
+                implementation="tyx",
+                contact_capacity=self._contact_capacity,
+                constraint_capacity=self._constraint_capacity,
+                cache_root=self._cache_root,
             )
             proposed = {key: copy.copy(self._data[key]) for key in selected}
             replacement = cloned._build_device(proposed)

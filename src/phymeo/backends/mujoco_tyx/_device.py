@@ -8,6 +8,7 @@ import numpy as np
 class TyxDevice:
     def __init__(self, plan, mode, cache_root, q, v, time, nbody, h, capacities):
         import tyx as tx
+
         from . import _kernels
 
         self.tx, self.kernels = tx, (_kernels.advance, _kernels.advance_other)
@@ -15,11 +16,19 @@ class TyxDevice:
         self.nbody, self.capacities = nbody, capacities
         self.nworld = len(q)
         self.resources = ExitStack()
-        self.runtime = tx.Runtime(backend="cuda" if mode == "cuda" else "cpu", cache_root=cache_root)
+        self.runtime = tx.Runtime(
+            backend="cuda" if mode == "cuda" else "cpu", cache_root=cache_root
+        )
         self.resources.callback(self.runtime.close)
         self.active = 0
-        self.counts = dict(completed_kernels=0, synchronizations=0, device_allocations=0,
-                           static_uploaded_bytes=0, uploaded_bytes=0, downloaded_bytes=0)
+        self.counts = dict(
+            completed_kernels=0,
+            synchronizations=0,
+            device_allocations=0,
+            static_uploaded_bytes=0,
+            uploaded_bytes=0,
+            downloaded_bytes=0,
+        )
         try:
             with tx.use_runtime(self.runtime):
                 self.matrices = self._buffer(plan.matrices)
@@ -78,14 +87,41 @@ class TyxDevice:
             self._put(self.applied, applied)
             self._put(self.body_force, body_force)
             self.kernels[old](
-                self.nworld, plan.kind, plan.nq, plan.nv, plan.nu, self.nbody,
-                plan.body, int(plan.pair is not None), *self.capacities, self.h,
-                self.matrices, self.vectors, self.body_jac, self.point_jac,
-                self.law, self.act_ids, self.act_values, self.controls, self.applied,
-                self.body_force, self.q[old], self.v[old], self.time[old],
-                self.q[new], self.v[new], self.time[new], self.force, self.smooth_acc,
-                self.acceleration, self.integration_acc, self.actuator,
-                self.constraint, self.rows, self.status, mode=self.mode,
+                self.nworld,
+                plan.kind,
+                plan.nq,
+                plan.nv,
+                plan.nu,
+                self.nbody,
+                plan.body,
+                int(plan.pair is not None),
+                *self.capacities,
+                self.h,
+                self.matrices,
+                self.vectors,
+                self.body_jac,
+                self.point_jac,
+                self.law,
+                self.act_ids,
+                self.act_values,
+                self.controls,
+                self.applied,
+                self.body_force,
+                self.q[old],
+                self.v[old],
+                self.time[old],
+                self.q[new],
+                self.v[new],
+                self.time[new],
+                self.force,
+                self.smooth_acc,
+                self.acceleration,
+                self.integration_acc,
+                self.actuator,
+                self.constraint,
+                self.rows,
+                self.status,
+                mode=self.mode,
             )
             self.counts["completed_kernels"] += 1
             self.runtime.sync()
@@ -94,12 +130,20 @@ class TyxDevice:
     def download(self):
         target = 1 - self.active
         with self.tx.use_runtime(self.runtime):
-            return {name: self._get(value) for name, value in (
-                ("q", self.q[target]), ("v", self.v[target]), ("time", self.time[target]),
-                ("qacc", self.acceleration), ("integration_acc", self.integration_acc),
-                ("actuator", self.actuator), ("constraint", self.constraint),
-                ("rows", self.rows), ("status", self.status),
-            )}
+            return {
+                name: self._get(value)
+                for name, value in (
+                    ("q", self.q[target]),
+                    ("v", self.v[target]),
+                    ("time", self.time[target]),
+                    ("qacc", self.acceleration),
+                    ("integration_acc", self.integration_acc),
+                    ("actuator", self.actuator),
+                    ("constraint", self.constraint),
+                    ("rows", self.rows),
+                    ("status", self.status),
+                )
+            }
 
     def publish(self):
         self.active = 1 - self.active

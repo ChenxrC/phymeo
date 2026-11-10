@@ -23,10 +23,14 @@ SLIDER = """<mujoco model="tyx-slider"><option timestep="0.001" gravity="0 0 0"/
 
 
 def source(*, free=False, mass=0.5, plane=True, condim=1, angle=False):
-    q = '.9238795325112867 0 .3826834323650898 0' if angle else '1 0 0 0'
-    center = '.0700035713374682 0 .0700035713374682' if angle else '0 0 .099'
-    joint = '<freejoint/>' if free else '<joint name="slide" type="slide" axis="0 0 1"/>'
-    floor = f'<geom name="floor" type="plane" size="2 2 .1" quat="{q}" condim="{condim}"/>' if plane else ''
+    q = ".9238795325112867 0 .3826834323650898 0" if angle else "1 0 0 0"
+    center = ".0700035713374682 0 .0700035713374682" if angle else "0 0 .099"
+    joint = "<freejoint/>" if free else '<joint name="slide" type="slide" axis="0 0 1"/>'
+    floor = (
+        f'<geom name="floor" type="plane" size="2 2 .1" quat="{q}" condim="{condim}"/>'
+        if plane
+        else ""
+    )
     return f'''<mujoco><option timestep="0.001" gravity="0 0 -9.81"/>
     <worldbody>{floor}<body name="body" pos="{center}">{joint}
     <geom name="ball" type="sphere" size=".1" mass="{mass}" condim="{condim}"
@@ -75,7 +79,9 @@ def test_sparse_slider_native_gear_damping_and_no_contact_condim3(mode):
             assert state.tick == 24
             assert state.last_step.backend == f"mujoco-tyx-{mode}"
             assert runtime.capabilities["implementation"] == "tyx"
-            assert runtime.capabilities["domain"] == "prismatic-or-isotropic-free/one-normal-pair-v1"
+            assert (
+                runtime.capabilities["domain"] == "prismatic-or-isotropic-free/one-normal-pair-v1"
+            )
 
 
 @pytest.mark.parametrize("mode", MODES)
@@ -98,10 +104,19 @@ def test_same_native_soft_law_loaded_hold_unload_and_reentry(mode, free, mass, t
             runtime.step(0.001)
             state = runtime.snapshot()[17]
             compare_native(mj, model, native, state, atol=8e-5)
-            history.append({"tick": state.tick, "time": state.time, "q": state.q.tolist(),
-                            "v": state.v.tolist(), "external_z": upward,
-                            "contacts": len(state.last_step.contacts),
-                            "normal_force": sum(c.wrench_contact_frame[0] for c in state.last_step.contacts)})
+            history.append(
+                {
+                    "tick": state.tick,
+                    "time": state.time,
+                    "q": state.q.tolist(),
+                    "v": state.v.tolist(),
+                    "external_z": upward,
+                    "contacts": len(state.last_step.contacts),
+                    "normal_force": sum(
+                        c.wrench_contact_frame[0] for c in state.last_step.contacts
+                    ),
+                }
+            )
         assert history[150]["normal_force"] == pytest.approx(mass * 9.81, rel=0.06)
         assert any(row["contacts"] == 0 for row in history[180:260])
         assert history[-1]["normal_force"] > 0
@@ -114,14 +129,19 @@ def test_same_native_soft_law_loaded_hold_unload_and_reentry(mode, free, mass, t
 @pytest.mark.parametrize("mode", MODES)
 def test_slanted_plane_and_two_axis_prismatic_tree_use_full_coupled_mass(mode):
     mj = deps(mode)
-    xml = source(angle=True).replace(
-        '<joint name="slide" type="slide" axis="0 0 1"/>',
-        '<joint name="x" type="slide" axis="1 0 0"/>'
-    ).replace(
-        '<geom name="ball"',
-        '<geom name="hidden" type="sphere" size=".03" mass=".2" contype="0" conaffinity="0"/>'
-        '<body name="child"><joint name="z" type="slide" axis=".6 0 .8"/><geom name="ball"'
-    ).replace('</body></worldbody>', '</body></body></worldbody>')
+    xml = (
+        source(angle=True)
+        .replace(
+            '<joint name="slide" type="slide" axis="0 0 1"/>',
+            '<joint name="x" type="slide" axis="1 0 0"/>',
+        )
+        .replace(
+            '<geom name="ball"',
+            '<geom name="hidden" type="sphere" size=".03" mass=".2" contype="0" conaffinity="0"/>'
+            '<body name="child"><joint name="z" type="slide" axis=".6 0 .8"/><geom name="ball"',
+        )
+        .replace("</body></worldbody>", "</body></body></worldbody>")
+    )
     compilation = compile_source(xml)
     native = mj.MjData(compilation.mj_model)
     with MuJoCoTyxRuntime(compilation, mode=mode) as runtime:
@@ -176,8 +196,10 @@ def test_no_warp_or_cpu_step_or_per_step_cpu_forward(mode, monkeypatch):
     monkeypatch.setitem(sys.modules, "mujoco_warp", None)
     with MuJoCoTyxRuntime(compile_source(SLIDER), mode=mode) as runtime:
         forward = mj.mj_forward
+
         def forbidden(*args, **kwargs):
             raise AssertionError("TYX integration cannot call a CPU/Warp physics path")
+
         monkeypatch.setattr(mj, "mj_step", forbidden)
         monkeypatch.setattr(mj, "mj_forward", forbidden)
         runtime.step(0.001)
@@ -189,8 +211,10 @@ def test_no_warp_or_cpu_step_or_per_step_cpu_forward(mode, monkeypatch):
 @pytest.mark.parametrize("mode", MODES)
 def test_capacity_failure_preserves_zero_force_site_and_published_state(mode):
     deps(mode)
-    xml = source().replace('pos="0 0 .099"', 'pos="0 0 .1015"').replace(
-        'solref=".006 1"', 'margin=".002" gap=".001" solref=".006 1"'
+    xml = (
+        source()
+        .replace('pos="0 0 .099"', 'pos="0 0 .1015"')
+        .replace('solref=".006 1"', 'margin=".002" gap=".001" solref=".006 1"')
     )
     with MuJoCoTyxRuntime(compile_source(xml), mode=mode, contact_capacity=0) as runtime:
         before = runtime.snapshot()[0]
@@ -206,8 +230,10 @@ def test_late_download_failure_is_not_a_partial_publication(mode, monkeypatch):
     deps(mode)
     with MuJoCoTyxRuntime(compile_source(SLIDER), mode=mode, world_keys=(2, 19)) as runtime:
         original = runtime._device.download
+
         def failed():
             raise RuntimeError("injected readback failure after TYX candidate work")
+
         monkeypatch.setattr(runtime._device, "download", failed)
         with pytest.raises(PhysicsStepFailure) as error:
             runtime.step(0.001)
@@ -217,12 +243,26 @@ def test_late_download_failure_is_not_a_partial_publication(mode, monkeypatch):
         assert runtime.step(0.001) == {2: True, 19: True}
 
 
-@pytest.mark.parametrize("change,code", [
-    (lambda x: x.replace('type="slide"', 'type="hinge"'), "joint-domain"),
-    (lambda x: x.replace('<option ', '<option iterations="0" '), "solver-options"),
-    (lambda x: x.replace('</mujoco>', '<equality><joint joint1="slide"/></equality></mujoco>'), "equality"),
-    (lambda x: x.replace('</mujoco>', '<tendon><fixed name="t"><joint joint="slide" coef="1"/></fixed></tendon></mujoco>'), "tendon"),
-])
+@pytest.mark.parametrize(
+    "change,code",
+    [
+        (lambda x: x.replace('type="slide"', 'type="hinge"'), "joint-domain"),
+        (lambda x: x.replace("<option ", '<option iterations="0" '), "solver-options"),
+        (
+            lambda x: x.replace(
+                "</mujoco>", '<equality><joint joint1="slide"/></equality></mujoco>'
+            ),
+            "equality",
+        ),
+        (
+            lambda x: x.replace(
+                "</mujoco>",
+                '<tendon><fixed name="t"><joint joint="slide" coef="1"/></fixed></tendon></mujoco>',
+            ),
+            "tendon",
+        ),
+    ],
+)
 def test_unsupported_source_semantics_have_capability_diagnostics(change, code):
     deps("interpret")
     with pytest.raises(MuJoCoTyxUnsupported) as error:
@@ -239,56 +279,73 @@ def test_possible_friction_contact_is_rejected_but_not_no_contact_condim3():
 
 
 @pytest.mark.parametrize("mode", MODES)
-@pytest.mark.parametrize("plane_priority,sphere_priority,plane_ref,sphere_ref", [
-    (2, 1, ".01 1", "-500 -30"), (1, 2, "-500 -30", ".01 1"),
-    (2, 1, "-500 -30", ".01 1"), (1, 1, "-500 -30", "-700 -20"),
-])
+@pytest.mark.parametrize(
+    "plane_priority,sphere_priority,plane_ref,sphere_ref",
+    [
+        (2, 1, ".01 1", "-500 -30"),
+        (1, 2, "-500 -30", ".01 1"),
+        (2, 1, "-500 -30", ".01 1"),
+        (1, 1, "-500 -30", "-700 -20"),
+    ],
+)
 def test_contact_priority_and_direct_reference_match_original_cpu_parameters(
     mode, plane_priority, sphere_priority, plane_ref, sphere_ref
 ):
     mj = deps(mode)
-    xml = source().replace('name="floor"', f'name="floor" priority="{plane_priority}" solref="{plane_ref}"')
+    xml = source().replace(
+        'name="floor"', f'name="floor" priority="{plane_priority}" solref="{plane_ref}"'
+    )
     xml = xml.replace('name="ball"', f'name="ball" priority="{sphere_priority}"')
     xml = xml.replace('solref=".006 1"', f'solref="{sphere_ref}"')
     compilation = compile_source(xml)
     native = mj.MjData(compilation.mj_model)
     with MuJoCoTyxRuntime(compilation, mode=mode) as runtime:
         mj.mj_step(compilation.mj_model, native)
-        runtime.step(.001)
+        runtime.step(0.001)
         state = runtime.snapshot()[0]
         assert len(native.contact) >= native.ncon > 0
         assert state.last_step.contacts
-        np.testing.assert_allclose(state.last_step.contacts[0].solref, native.contact[0].solref,
-                                   rtol=2e-7, atol=1e-8)
-        np.testing.assert_allclose(state.last_step.contacts[0].solimp, native.contact[0].solimp,
-                                   rtol=2e-7, atol=1e-8)
+        np.testing.assert_allclose(
+            state.last_step.contacts[0].solref, native.contact[0].solref, rtol=2e-7, atol=1e-8
+        )
+        np.testing.assert_allclose(
+            state.last_step.contacts[0].solimp, native.contact[0].solimp, rtol=2e-7, atol=1e-8
+        )
         compare_native(mj, compilation.mj_model, native, state)
 
 
 @pytest.mark.parametrize("mode", MODES)
 def test_eight_dof_branched_mass_has_shared_ancestor_off_diagonals(mode):
     mj = deps(mode)
+
     def body(index, axis, children=""):
-        return (f'<body name="b{index}" pos=".02 .01 .03">'
-                f'<joint name="j{index}" type="slide" axis="{axis}" ref=".02" armature=".03"/>'
-                '<geom type="sphere" size=".03" mass=".2" contype="0" conaffinity="0"/>'
-                f'{children}</body>')
-    a = body(1, '1 0 0', body(2, '.6 0 .8', body(3, '0 0 1')))
-    b = body(4, '1 0 0', body(5, '.8 .6 0', body(6, '0 0 1', body(7, '.6 0 .8'))))
-    xml = '<mujoco><option timestep=".001" gravity=".2 -.3 -9.81"/><worldbody>' + body(0, '0 0 1', a+b) + '</worldbody></mujoco>'
+        return (
+            f'<body name="b{index}" pos=".02 .01 .03">'
+            f'<joint name="j{index}" type="slide" axis="{axis}" ref=".02" armature=".03"/>'
+            '<geom type="sphere" size=".03" mass=".2" contype="0" conaffinity="0"/>'
+            f"{children}</body>"
+        )
+
+    a = body(1, "1 0 0", body(2, ".6 0 .8", body(3, "0 0 1")))
+    b = body(4, "1 0 0", body(5, ".8 .6 0", body(6, "0 0 1", body(7, ".6 0 .8"))))
+    xml = (
+        '<mujoco><option timestep=".001" gravity=".2 -.3 -9.81"/><worldbody>'
+        + body(0, "0 0 1", a + b)
+        + "</worldbody></mujoco>"
+    )
     compilation = compile_source(xml)
     native = mj.MjData(compilation.mj_model)
     mj.mj_forward(compilation.mj_model, native)
     dense = np.empty((8, 8))
     mj.mj_fullM(compilation.mj_model, dense, native.qM)
-    assert np.max(abs(dense - np.diag(np.diag(dense)))) > .1
-    external = np.linspace(.1, .8, 8)
+    assert np.max(abs(dense - np.diag(np.diag(dense)))) > 0.1
+    external = np.linspace(0.1, 0.8, 8)
     with MuJoCoTyxRuntime(compilation, mode=mode) as runtime:
         runtime.set_controls({0: MuJoCoControl([], qfrc_applied=external)})
         for _ in range(30):
             native.qfrc_applied[:] = external
             mj.mj_step(compilation.mj_model, native)
-            runtime.step(.001)
+            runtime.step(0.001)
         compare_native(mj, compilation.mj_model, native, runtime.snapshot()[0], atol=8e-5)
 
 
@@ -312,7 +369,76 @@ def test_finite_joint_limit_is_guarded_before_publishing_stop_domain(mode):
         runtime.set_controls({0: MuJoCoControl([5])})
         before = runtime.snapshot()[0]
         with pytest.raises(PhysicsStepFailure) as error:
-            runtime.step(.001)
+            runtime.step(0.001)
         assert "joint_limit_domain" in str(error.value.__cause__)
         np.testing.assert_array_equal(runtime.snapshot()[0].q, before.q)
         assert runtime.snapshot()[0].tick == 0
+
+
+@pytest.mark.parametrize("mode", MODES)
+@pytest.mark.parametrize("solimp", [".95 .85 .002 .4 2", ".85 .95 0 .4 2"])
+def test_decreasing_and_flat_impedance_follow_cpu_semantics(mode, solimp):
+    mj = deps(mode)
+    xml = source().replace('solimp=".85 .95 .002 .4 2"', f'solimp="{solimp}" priority="2"')
+    compilation = compile_source(xml)
+    native = mj.MjData(compilation.mj_model)
+    with MuJoCoTyxRuntime(compilation, mode=mode) as runtime:
+        for _ in range(8):
+            mj.mj_step(compilation.mj_model, native)
+            runtime.step(0.001)
+            compare_native(mj, compilation.mj_model, native, runtime.snapshot()[0])
+
+
+@pytest.mark.parametrize("mode", MODES)
+def test_exact_detection_margin_preserves_inactive_contact(mode):
+    mj = deps(mode)
+    xml = (
+        source()
+        .replace('pos="0 0 .099"', 'pos="0 0 .140625"')
+        .replace('size=".1"', 'size=".125"')
+        .replace('solref=".006 1"', 'margin=".015625" gap=".0078125" solref=".006 1"')
+    )
+    compilation = compile_source(xml)
+    native = mj.MjData(compilation.mj_model)
+    with MuJoCoTyxRuntime(compilation, mode=mode) as runtime:
+        mj.mj_step(compilation.mj_model, native)
+        runtime.step(0.001)
+        state = runtime.snapshot()[0]
+        assert native.ncon == 1
+        assert len(state.last_step.contacts) == 1
+        assert not state.last_step.contacts[0].active
+        np.testing.assert_array_equal(state.last_step.contacts[0].wrench_contact_frame, np.zeros(6))
+
+
+def test_disabled_source_line_search_is_not_silently_replaced():
+    deps("interpret")
+    xml = SLIDER.replace("<option ", '<option ls_iterations="0" ')
+    with pytest.raises(MuJoCoTyxUnsupported, match="solver-options"):
+        MuJoCoTyxRuntime(compile_source(xml), mode="interpret")
+
+
+@pytest.mark.parametrize("mode", MODES)
+def test_affine_actuator_spring_reference_and_disabled_group_match_native(mode):
+    mj = deps(mode)
+    xml = SLIDER.replace("<option ", '<option actuatorgroupdisable="1" ')
+    xml = xml.replace('armature="0.04"', 'ref=".2" springref=".1" stiffness=".7" armature="0.04"')
+    xml = xml.replace(
+        '<motor name="drive" joint="slide" gear="2"',
+        '<general name="drive" joint="slide" gear="2" gainprm="2" biastype="affine" biasprm=".1 -.4 -.2" forcelimited="true" forcerange="-3 3"',
+    )
+    xml = xml.replace(
+        "</actuator>", '<motor name="disabled" joint="slide" gear="5" group="1"/></actuator>'
+    )
+    compilation = compile_source(xml)
+    native = mj.MjData(compilation.mj_model)
+    with MuJoCoTyxRuntime(compilation, mode=mode) as runtime:
+        runtime.set_controls({0: MuJoCoControl([2, 100])})
+        for _ in range(25):
+            native.ctrl[:] = [2, 100]
+            mj.mj_step(compilation.mj_model, native)
+            runtime.step(0.001)
+            state = runtime.snapshot()[0]
+            compare_native(mj, compilation.mj_model, native, state)
+            np.testing.assert_allclose(
+                state.last_step.qfrc_actuator, native.qfrc_actuator, rtol=2e-6, atol=1e-6
+            )

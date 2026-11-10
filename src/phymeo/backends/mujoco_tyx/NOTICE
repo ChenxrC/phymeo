@@ -21,3 +21,7 @@ through this package. This is a limited port, not complete MuJoCo support.
 Contact priority/direct-reference selection follows MuJoCo 3.3.7
 src/engine/engine_collision_driver.c::mj_contactParam, correcting a v0.0.2
 Warp discrepancy for unequal priorities with positive/direct solref.
+
+Decreasing and zero-width impedance and denominator guards follow MuJoCo
+3.3.7 src/engine/engine_core_constraint.c::getimpedance/mj_makeImpedance.
+Detection includes the exact margin boundary, retaining inactive contact sites.

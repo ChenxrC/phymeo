@@ -25,10 +25,12 @@ class DevicePatchConsumption:
     query: ConvexQueryResult
     samples: Mapping
     differences: Mapping
+    patch_differences: Mapping
 
     def __post_init__(self):
         object.__setattr__(self, "samples", _freeze(self.samples))
         object.__setattr__(self, "differences", _freeze(self.differences))
+        object.__setattr__(self, "patch_differences", _freeze(self.patch_differences))
 
 
 def _exact(left, right, message):
@@ -153,7 +155,7 @@ def patches_from_device(result, frames_by_world, *, candidates):
     if any(pair not in result.source["allowed_pairs"] for pair in pairs):
         raise ValueError("device patch candidate is not registered")
     frames = _source_frames(result, frames_by_world)
-    wire, samples, differences = result.patch, {}, {}
+    wire, samples, differences, patch_differences = result.patch, {}, {}, {}
     if wire.get("schema") != "resident-convex-patch-v1" or not wire.get("enabled"):
         raise ValueError("device patch output is absent")
     used = 0
@@ -253,8 +255,24 @@ def patches_from_device(result, frames_by_world, *, candidates):
                 weight_delta=weight - raw_site.weight, gap_delta_m=gap_delta,
                 normal_delta=normal - site_normal, common_delta_m=common_delta,
                 material=tuple(side_changes)))
+        # Normalizing individually qualified weights can still move the whole
+        # first moment. Use this row's original anchor for both sums; absolute
+        # world/body-local coordinates must not enlarge the local B1 gate.
+        raw_moment = sum((site.weight * _vector(site.common_m, "invalid raw common point")
+                          for site in row.patch.sites), np.zeros(3))
+        effective_moment = sum((site.weight * (np.asarray(site.load_point) - origin)
+                                for site in effective), np.zeros(3))
+        moment_delta = effective_moment - raw_moment
+        if (not np.isfinite(raw_moment).all() or not np.isfinite(effective_moment).all()
+                or not np.isfinite(moment_delta).all()
+                or np.linalg.norm(moment_delta) > _SURFACE * scale):
+            raise ValueError("effective patch first moment exceeds the original local gate")
         samples[row.pair] = ContactPatchSample(
             tuple(effective), row.patch.dimension, "resident-device-patch-effective-v1")
         differences[row.pair] = tuple(changes)
+        patch_differences[row.pair] = dict(
+            origin_m=origin, local_scale_m=scale,
+            raw_first_moment_m=raw_moment, effective_first_moment_m=effective_moment,
+            first_moment_delta_m=moment_delta, first_moment_limit_m=_SURFACE * scale)
         used += len(row.patch.sites)
-    return DevicePatchConsumption(result, samples, differences)
+    return DevicePatchConsumption(result, samples, differences, patch_differences)

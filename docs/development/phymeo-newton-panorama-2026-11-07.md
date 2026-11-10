@@ -1,4 +1,8 @@
-# Phymeo / Newton 功能差异全景（2026-11-10：机器人连接与训练闭环）
+# Phymeo / Newton 功能差异全景（2026-11-11：双后端与训练规模）
+
+**11月11日已验基线：** [MuJoCo-TYX T4](../benchmarks/p65-mujoco-tyx-mixed-constraints.md)已实现设备端九类 primitive 接触、pyramidal condim1/3/4/6、soft limits、dry friction、完整共享 M/J 约束求解及力/运动共同发布；单free-root加0–29 scalar joints或已声明固定根域。G1原策略20秒及h细化/双向推扰共14000接受步、0拒步；210个最终测试节点、新wheel公共ENV/reset/clone均通过。它采用明确命名的bounded active-set算法，不冒MuJoCo原Newton/CG；CPU MjSpec编译、脱离设备的CPU观察与示例ONNX仍在链上。全量已推codex/dev，详细边界见[统一架构](../architecture/unified-scene-compilation.md)。
+
+**当前进行中，不提前计通过：** 用户确认的[至今日08:00计划](../superpowers/plans/2026-11-11-newton-parity-until-0800.md)并行补公共精确中途恢复、K1设备patch及浮根/affine来源、真实受载W256分页；父单槽验证原G1全131.48秒。最高主线仍为训练/规模，原八大模块顺序是覆盖台账。下述11月10日HOST/旧resident记录保留其原后端边界；旧“CUDA仅2秒”不再代表新MuJoCo-TYX当前范围。
 
 [当前已实现连接图](../architecture/robot-environment-connections-2026-11-10.html) · [本批实际结果](../benchmarks/p65-robot-environment-connections-20261110.md) · [11月9日历史全景图](phymeo-newton-panorama-2026-11-07.html) · [C11浮根affine接受](../benchmarks/p65-resident-floating-affine.md)
 
@@ -16,7 +20,7 @@
 
 [正式验收](../benchmarks/p65-device-convex-query-acceptance.md)：默认距离/见证通过，K1可选patch作者内容未验收，K2受载消费未冻结。十touch每端9解出contact-band、1法向不唯一UNKNOWN。旧缺失明细的11月8日记录保留在原专项计划§12，本轮补足见§13。
 
-**下一主线：K0通用accepted-source与K1→K2受力消费 → 公开策略张量端口 → 分页单次发布受载W256 → W256/W1024吞吐实测。** G1设备受载2秒已过，长窗另验；HOST完整舞蹈/PPO与公共环境基础已经完成，复用其证据。静态几何路径优化可并行研究，不以更多exact证明阻塞显式工程训练模式。训练列原序号04但当前优先级已提升；其余大模块清单仍作为覆盖台账。
+**下一主线并行拆分：K0通用accepted-source与K1→K2受力消费；分页单次发布受载W256；精确中途恢复与公开策略张量端口。** 只有前置完成后才做W256/W1024吞吐与设备训练扩域。新MuJoCo-TYX G1设备20秒已过，完整131.48秒另验；HOST完整舞蹈/PPO与公共环境基础复用其证据。静态几何优化不能替代新的可调用能力。训练列原序号04但优先级已提升，其余大模块继续作为覆盖台账。
 
 ## 八大模块差异
 
@@ -32,6 +36,8 @@
 | 08 杆缆、MPM / 流体 | 刚性连杆、自由粒子与弹性体基础。 | **缺完整物理族**：杆截面取向、弯扭本构与接触；MPM粒子–网格、塑性/流动及双向边界。 | rod / cable、ImplicitMPM等独立求解器路线。 | 分别立项：扭转绕柱、倒砂/溃坝。 |
 
 ## 目前这条链路走到哪里
+
+以下第一条是原Phymeo resident力学链。新MuJoCo-TYX是第二条独立已验路径：CPU MjSpec编译 → 设备FK/COM/J/M/bias → 设备primitive接触/混合约束 → bounded active-set求解 → 力与运动共同发布 → 公共ENV/策略。前者的K1/K2、mesh/变形能力与后者的native primitive语义不能相互倒灌；后者有完整设备接触也不表示已经消除逐步HOST观察/诊断或支持全GPU PPO。
 
 ~~~text
 普通 / affine 固定根与浮根接受态

@@ -371,26 +371,32 @@ def test_dynamic_compaction_preserves_late_candidates_and_native_excludes(mode, 
 @pytest.mark.parametrize("mode", MODES)
 def test_source_iteration_budget_is_real_and_failure_is_atomic(mode, tmp_path):
     mj = normal._deps()
-    xml = mixed.slider_xml(dim=1, limits=True)
-    side = '<geom name="side" type="plane" size="2 2 .1" quat=".7071067811865476 0 .7071067811865476 0"/>'
-    xml = xml.replace(mixed.FLOOR, mixed.FLOOR + side)
-    xml = xml.replace('<body name="root" pos="0 0 ', '<body name="root" pos=".099 0 ')
+    xml = mixed.slider_xml(dim=1, limits=True).replace(
+        '<geom name="moving" type="sphere" size=".1"/>',
+        '<geom name="deep" type="sphere" size=".1" pos="-.12 0 -.008"/>'
+        '<geom name="shallow" type="sphere" size=".1" pos=".12 0 .0009"/>',
+    )
     xml = xml.replace('iterations="128"', 'iterations="1"')
     model = mj.MjModel.from_xml_string(xml)
     assert model.opt.iterations == 1
-    oracle = mixed.native(mj, model, model.qpos0, np.zeros(model.nv), mixed.packet(model))
+    oracle = mixed.native(
+        mj, model, model.qpos0, np.zeros(model.nv), mixed.packet(model), tiny=True
+    )
     assert len(oracle["rows"]) == 2
     assert np.all(oracle["linear"] < -0.01)
-    np.testing.assert_allclose(
-        oracle["matrix"], np.diag(np.diag(oracle["matrix"])), rtol=0, atol=1e-12
-    )
     unrestricted = np.linalg.solve(oracle["matrix"], -oracle["linear"])
-    assert np.all(unrestricted > 0.01)
-    # Three translation DOFs give orthogonal x/z normal rows and diagonal H.
-    # Both optima are positive. The named solver releases one violated bound
-    # per face, so one solve leaves the other independent negative gradient.
+    assert unrestricted[0] > 0.01 and unrestricted[1] < -0.01
+    reduced = np.array([-oracle["linear"][0] / oracle["matrix"][0, 0], 0.0])
+    reduced_gradient = oracle["matrix"] @ reduced + oracle["linear"]
+    np.testing.assert_allclose(reduced_gradient[0], 0.0, rtol=0, atol=1e-10)
+    assert reduced[0] > 0.01 and reduced_gradient[1] > 0.01
+    np.testing.assert_allclose(oracle["force"], reduced, rtol=2e-6, atol=2e-6)
+    # Batch release admits both initially violated rows (2 <= nv). Their first
+    # all-free face has a negative shallow force, so the feasible line search
+    # hits its lower bound at alpha=0. A second, reduced face is indispensable.
     _save(
-        tmp_path / "budget.jsonl", {"xml": xml, "unrestricted_face": unrestricted, "oracle": oracle}
+        tmp_path / "budget.jsonl",
+        {"xml": xml, "unrestricted_face": unrestricted, "reduced_face": reduced, "oracle": oracle},
     )
     with MuJoCoTyxRuntime(normal._compile(xml), mode=mode, world_keys=(5, 71)) as runtime:
         assert runtime.capabilities["source_iterations"] == 1
@@ -402,7 +408,9 @@ def test_source_iteration_budget_is_real_and_failure_is_atomic(mode, tmp_path):
         assert_publication(before, runtime.snapshot())
         scratch = attempt_scratch(runtime)
         np.testing.assert_array_equal(scratch["status"], 7)
-        np.testing.assert_array_equal(np.asarray(scratch["solver_diagnostics"])[:, 7], 1)
+        diagnostics = np.asarray(scratch["solver_diagnostics"])
+        np.testing.assert_array_equal(diagnostics[:, 0], 1)
+        np.testing.assert_array_equal(diagnostics[:, 7], 1)
         _save(
             tmp_path / "budget.jsonl",
             {
@@ -410,6 +418,51 @@ def test_source_iteration_budget_is_real_and_failure_is_atomic(mode, tmp_path):
                 "after": runtime.snapshot(),
                 "error": str(caught.value),
                 "attempt_scratch": scratch,
+            },
+        )
+
+
+@pytest.mark.parametrize("mode", MODES)
+def test_independent_active_normals_share_one_source_budget_face(mode, tmp_path):
+    mj = normal._deps()
+    xml = mixed.slider_xml(dim=1, limits=True)
+    side = '<geom name="side" type="plane" size="2 2 .1" quat=".7071067811865476 0 .7071067811865476 0"/>'
+    xml = xml.replace(mixed.FLOOR, mixed.FLOOR + side)
+    xml = xml.replace('<body name="root" pos="0 0 ', '<body name="root" pos=".099 0 ')
+    xml = xml.replace('iterations="128"', 'iterations="1"')
+    model = mj.MjModel.from_xml_string(xml)
+    assert model.opt.iterations == 1
+    with MuJoCoTyxRuntime(normal._compile(xml), mode=mode, world_keys=(5, 71)) as runtime:
+        assert runtime.capabilities["source_iterations"] == 1
+        before = runtime.snapshot()
+        oracle = mixed.native(mj, model, before[5].q, before[5].v, mixed.packet(model), tiny=True)
+        assert len(oracle["rows"]) == 2
+        assert np.all(oracle["linear"] < -0.01)
+        np.testing.assert_allclose(
+            oracle["matrix"], np.diag(np.diag(oracle["matrix"])), rtol=0, atol=1e-12
+        )
+        unrestricted = np.linalg.solve(oracle["matrix"], -oracle["linear"])
+        assert np.all(unrestricted > 0.01)
+        # Independent x/z rows have a positive interior solution. Releasing
+        # both before one completed face must use one source-budget unit.
+        runtime.step(model.opt.timestep)
+        after = runtime.snapshot()
+        for state in after.values():
+            row = state.last_step
+            mixed.assert_receipt(row, oracle, model)
+            assert len(row.contacts) == 2
+            assert all(contact.normal_force > 0.01 for contact in row.contacts)
+            diagnostics = row.raw_contact_fields["solver_diagnostics"]
+            assert diagnostics["face_solves"] == 1 and diagnostics["budget"] == 1
+            assert diagnostics["converged"] == 1
+        _save(
+            tmp_path / "one-face-normals.jsonl",
+            {
+                "xml": xml,
+                "before": before,
+                "after": after,
+                "unrestricted_face": unrestricted,
+                "oracle": oracle,
             },
         )
 

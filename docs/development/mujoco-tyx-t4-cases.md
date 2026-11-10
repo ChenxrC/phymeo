@@ -149,3 +149,12 @@ F2/F3 h矩阵是新MuJoCo-TYX的工程验证，不借旧HOST h=.0005通过；若
 - 原预算负控两collinear normal的保存H=[[1.1111111111,1],[1,1.249219238]]、b=(-34.81,-10.0570679012)，无界解虽然第二项负，但非负最优为(31.329,0)。当前命名算法每次只释放最大违反的一行，因此一次face就能正确完成；原DID NOT RAISE是错误预算假设。预算负控单独改为原3slide球与两个正交plane，center=(.099,0,.099)，h和law不变。J沿x/z、M=I，H对角且两b负、两最优normal力正；一次只释放一行后另一独立KKT仍违反，故source iterations=1必须不足。测试同时核native source与capabilities的budget1、真实attempt status7/diag budget1及整批原子拒绝，不mock、不增加预算；该新负控输入须由父首次验证，不能追认旧预算例失败。
 
 父首次修订验证：41-revised-short-interpret 实际24 passed / 184 deselected / RAW_EXIT0（53.52s），涵盖上述三行为函数全部参数、五准入负控、预算负控、两mixed同入步、晚下载回滚及公共ENV。静态37/38原失败保留，39只format，40lint0。此结果不替代D01连续窗或CUDA验收。
+
+
+## 11. 批量释放后的预算正负控（执行前登记）
+
+父在原 G1 首姿态观察到 source iterations=100、280 EFC 下仍有96个free行，单行释放耗尽预算；本节不修改G1输入、资产、100预算或任何门。父拟在每个已完成face后按normalized bound KKT选择最多nv个新违反边界，稳定处理ties；bound-hit后的reduced-face/refinement保持。这是通用求解结构调整，不按G1身份特判。作者本轮仅纯文本读取原收据/源码并登记两项预算案例，尚未执行修订。
+
+- 恢复原deep/shallow两同向接触为budget1负控，原质量1、3slide、h=.001、law、初态、几何位置均复用原run27。独立保存H=[[1.1111111111111112,1],[1,1.2492192379762648]]、b=(-34.81000000000002,-10.057067901234575)，两初始梯度负；batch一次释放2<=nv行后，全自由解(86.15054705975875,-60.912830066398605)触及第二行下界。由初始f=0到该解的可行步长alpha=0，必须重解保第一行自由的reduced face；其最优(31.329,0)具有第二行正梯度约21.271932。故一轮真实face solve不能完成该blocked-face路径。测试独立tiny box-QP/native验证解与上述符号裕量，要求实际status7、face_solves=1、budget=1和两world原子拒绝；不通过mock制造拒绝。
+- 将上一节两个正交plane/原3slide球原样保留为新正控test_independent_active_normals_share_one_source_budget_face，仍source iterations=1。J沿x/z、M=I给对角H及两正最优力，无bound hit；批量释放应一轮face完成。两个world均检查完整native receipt/J/EFC/力/运动、两法向力>原.01裕量，以及实际face_solves=1/budget=1/converged。不增加预算或改变原几何、law、质量、h、控制输入和所有独立工程门。
+- 第10节是旧单行释放算法的真实首次失败诊断，原DID NOT RAISE及后来正交双行负控的执行历史保留。这里不倒灌历史结论；旧负控在旧算法可一次正确完成，新负控针对实际bound-hit/reduced-face路径。只修改protocol中原预算函数、紧邻新增一个双backend正控和本节，其他矩阵及main测试不变；人工枚举节点较原206增加2，未collection。

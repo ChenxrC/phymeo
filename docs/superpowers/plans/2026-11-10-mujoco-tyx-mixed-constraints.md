@@ -108,3 +108,12 @@ matrix/factor[W,V,V]，其余dof向量[W,V]，row向量[W,E]。更新efc_data的
 父在任何当前working==free时初始化refine_face=1，先优化初始可行面再释放bound；没有dry行的分支不变。独立文本反例H=[[2,1],[1,1]],b=(-2,-1/2),x∈[-2,2],y≥0说明先release y得到不可行(1.5,-1)，而先解x面得到正确KKT(1,0)。每次face仍计原source budget，物理模型和容差不变。
 
 37/38窄静态首失败保留，39仅排版两个修订测试文件，40 lint0。41受影响短组24通过/184 deselected（53.52s），含原子晚下载回滚、原budget1真正不足、两mixed同入步和ENV。42从原初态重跑四个D01窗口，4通过/204 deselected（416.96s）。D02八组按无dry分支复用36，不重跑；这不是CUDA或G1验收。下一步为43/44首次完整CUDA和原G1。
+## 9. G1规模触发的结构性批量释放
+
+43 CUDA短组86通过，44 CUDA完整12个一秒窗口通过；52旧五类共享route双backend共10通过。45仅缺Python3.12 ONNX依赖，57隔离安装原版本后59准入成功；58是快照路径数组错误，项目执行前拒绝。46 G1首个source-default真实姿态因source100预算耗尽拒步：28接触/280 EFC、96自由行、100face，normalized KKT约1.92e-4；完整首失败保留。未改G1资产、source预算或接触列表。
+
+父把完成面的单bound释放改为最多nv个最违反原normalized bound-KKT门的bound，稳定行序打破并列。仅旧free残差满足原scaled门且refine_face==0时允许新批量；blocking后的零步长重绑及缩小面修复先完成，所有face仍计原预算。MINMU冷起nv3首先最多3行，可使用既有QR小面；后续真实过门的行仍不得丢弃。can_release与实际选择使用完全同一FP32除法谓词。无新E平方缓冲、模型标签或失败fallback。
+
+62双backend风险组22通过。原预算负控的正交两normal在batch下一面即可完成，故保原输入改为新正控；负控恢复原deep/shallow相关两normal，完整独立oracle给全自由解第二分量负，必须先alpha0碰界再解第二面，budget1因此真实拒绝。68两正反控×backend共4通过，真实face计数和全批原子性保持；旧single-release下的历史失败解释不改写。
+
+63 G1解释三个真实姿态全部通过，47 CUDA同组三姿态通过。65格式首失败保留、66排版、67lint0。当前48开始原h=.001连续两秒；G1持续支撑尚未验收。最终core稳定后补完整受影响T4矩阵，避免在每个新的G1规模缺口前反复跑昂贵长组。

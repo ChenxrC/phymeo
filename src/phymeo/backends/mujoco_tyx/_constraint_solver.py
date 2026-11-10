@@ -211,6 +211,7 @@ def solve(
                 bound_violation = 0.0
                 bound_kkt = 0.0
                 free_count = 0
+                free_residual = 0.0
                 for r in range(nrow):
                     value = -efc_data[w, r, 3]
                     row_scale = tx.abs(efc_data[w, r, 3])
@@ -241,6 +242,7 @@ def solve(
                         bound_violation = tx.max(bound_violation, force_value - upper)
                     if working[w, r] == 1:
                         free_count = free_count + 1
+                        free_residual = tx.max(free_residual, tx.abs(value))
                     if (
                         not tx.isfinite(value)
                         or not tx.isfinite(row_scale)
@@ -281,22 +283,29 @@ def solve(
                     for r in range(nrow):
                         previous_working[w, r] = working[w, r]
                         previous_force[w, r] = efc_data[w, r, 9]
-                    # Release the most violated bound only after the feasible face.
-                    # Internal blocking repairs cannot immediately re-add the hits.
-                    if refine_face == 0:
-                        entering = -1
-                        largest = 0.0
-                        for r in range(nrow):
-                            violation = 0.0
-                            if working[w, r] == 0:
-                                violation = -efc_data[w, r, 10]
-                            elif working[w, r] == 2:
-                                violation = efc_data[w, r, 10]
-                            if violation > largest:
-                                largest = violation
-                                entering = r
-                        if entering >= 0:
-                            working[w, entering] = 1
+                    # Release a structural batch only after the feasible face is
+                    # stationary. Stable row order breaks normalized-KKT ties.
+                    # At most nv new rows avoids an unbounded cold face; blocking
+                    # repairs finish before any hit may enter again.
+                    if refine_face == 0 and free_residual <= tolerance * scale:
+                        for release_pass in range(nv):
+                            entering = -1
+                            largest = tolerance
+                            for r in range(nrow):
+                                violation = 0.0
+                                if working[w, r] == 0:
+                                    violation = -efc_data[w, r, 10]
+                                elif working[w, r] == 2:
+                                    violation = efc_data[w, r, 10]
+                                row_scale = tx.max(
+                                    1.0, tx.abs(efc_data[w, r, 4] * efc_data[w, r, 9])
+                                )
+                                violation = violation / row_scale
+                                if violation > largest:
+                                    largest = violation
+                                    entering = r
+                            if entering >= 0:
+                                working[w, entering] = 1
                     face_size = 0
                     for r in range(nrow):
                         if working[w, r] == 1:
@@ -511,9 +520,16 @@ def solve(
                                 # Another violated bound must get its release turn.
                                 can_release = 0
                                 for r in range(nrow):
-                                    if (working[w, r] == 0 and efc_data[w, r, 10] < 0.0) or (
-                                        working[w, r] == 2 and efc_data[w, r, 10] > 0.0
-                                    ):
+                                    violation = 0.0
+                                    if working[w, r] == 0:
+                                        violation = -efc_data[w, r, 10]
+                                    elif working[w, r] == 2:
+                                        violation = efc_data[w, r, 10]
+                                    row_scale = tx.max(
+                                        1.0, tx.abs(efc_data[w, r, 4] * efc_data[w, r, 9])
+                                    )
+                                    violation = violation / row_scale
+                                    if free_residual <= tolerance * scale and violation > tolerance:
                                         can_release = 1
                                 if blocking == 1 or can_release == 0:
                                     stalled = 1

@@ -500,6 +500,8 @@ class TyxWorldBatch:
         site_capacity=128,
         sampling="discrete_entry",
         tree_dynamic_pairs=False,
+        narrow_phase="host_patch",
+        device_patch_site_capacity=None,
     ):
         """Bind finite compliant/velocity-friction contact to accepted full tree state."""
         from ._resident_contact_plan import ResidentContactPlan
@@ -513,6 +515,8 @@ class TyxWorldBatch:
             site_capacity=site_capacity,
             sampling=sampling,
             tree_dynamic_pairs=tree_dynamic_pairs,
+            narrow_phase=narrow_phase,
+            device_patch_site_capacity=device_patch_site_capacity,
         )
 
     def prepare_contact_bundle(

@@ -714,14 +714,22 @@ def test_retired_packet_cleanup_retry_does_not_close_borrowed_runtime(mode):
         first, runtime = e._control_packet, e._device.runtime
         assert first.runtime is runtime
         attempts = []
+        close_stream = first.resources[0] if mode == "cuda" else None
 
         def fail_once():
             attempts.append("cleanup")
             assert not runtime.closed
             if len(attempts) == 1:
                 raise RuntimeError("authored retryable packet cleanup")
+            if close_stream is not None:
+                close_stream()
 
-        first.resources.append(fail_once)
+        if mode == "cuda":
+            # The packet registers its own stream before allocating its buffers.
+            # A failed stream remains live until this retained closer succeeds.
+            first.resources[0] = fail_once
+        else:
+            first.resources.append(fail_once)
         revision = e.checkpoint_revision
         receipt = submit(e, device_values(stack, mode, tuple(value.copy() for value in raw)))
         second = e._control_packet

@@ -211,12 +211,9 @@ class _DeviceControlPacket:
         )
 
     def prepare(self, values, producer_stream):
-        self.runtime = self.tx.Runtime(
-            backend="cuda" if self.mode == "cuda" else "cpu",
-            device=self.ordinal,
-            cache_root=self.engine._cache_root,
-        )
-        self.resources.append(self.runtime.close)
+        # Compilation belongs to the live physical owner. Packets retain their
+        # own buffers/stream, but must never close this borrowed Runtime.
+        self.runtime = self.device_owner.runtime
         self.stream = None
         if self.mode == "cuda":
             self.stream = self.tx.CudaStream(device=self.ordinal)

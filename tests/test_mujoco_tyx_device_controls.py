@@ -392,7 +392,7 @@ def test_channel_overlap_refused(mode):
             overlapping = values[1][:, :1]
         else:
             overlapping = tx.CudaArray.from_external(
-                values[1].device_ptr, (2, 1), np.float32, owner=values[1]
+                int(values[1].device_ptr), (2, 1), np.float32, owner=values[1]
             )
             stack.callback(overlapping.free)
         with pytest.raises(ValueError, match="overlap|storage"):

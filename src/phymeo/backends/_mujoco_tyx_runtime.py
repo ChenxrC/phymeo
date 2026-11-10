@@ -179,6 +179,8 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
         if getattr(self._plan, "constraint_contact", False):
             if self._contact_capacity > 128 or self._constraint_capacity > 512:
                 raise ValueError("T4 contact/constraint capacities cannot exceed 128/512")
+        self._checkpoint_revision = 0
+        self._checkpoint_retired = []
         self._extra_counts = dict(completed_steps=0, accepted_world_steps=0, failed_batches=0)
         self._device = self._build_device(self._data)
         self._quantize_mirrors()
@@ -223,6 +225,7 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
             mixed_articulated_constraints_supported=False,
             floating_mixed_constraints_supported=False,
             deprecated_capabilities=("g1_supported",),
+            checkpoint="exact-accepted-tyx-batch-v1",
             g1_supported=False,
         )
         if getattr(self._plan, "normal_contact", False):
@@ -301,7 +304,7 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                     raise ValueError("initial native q is outside the strict joint-limit interior")
         return q, v, clock
 
-    def _build_device(self, data):
+    def _build_device(self, data, *, packed=None):
         from .mujoco_tyx._device import TyxDevice
 
         device_type = TyxDevice
@@ -325,7 +328,7 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
             self._plan,
             self._mode,
             self._cache_root,
-            *self._pack_states(data),
+            *(self._pack_states(data) if packed is None else packed),
             self._model.nbody,
             self._timestep,
             (self._contact_capacity, self._constraint_capacity),
@@ -347,6 +350,7 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                 for value in (packet.ctrl, packet.qfrc_applied, packet.xfrc_applied):
                     fp32(value, "held native control")
             self._controls = prepared
+            self._checkpoint_revision += 1
 
     def _pack_controls(self):
         ctrl = np.zeros((len(self._world_keys), max(self._plan.nu, 1)), np.float32)
@@ -628,6 +632,7 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                 ) from error
             self._device.publish()
             self._data, self._receipts, self._ticks = data, receipts, ticks
+            self._checkpoint_revision += 1
             self._extra_counts["completed_steps"] += 1
             self._extra_counts["accepted_world_steps"] += len(self._world_keys)
             return MappingProxyType(dict.fromkeys(self._world_keys, True))
@@ -667,7 +672,40 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                 receipts,
             )
             self._quantize_mirrors()
+            self._checkpoint_revision += 1
             old.close()
+
+    @property
+    def checkpoint_revision(self):
+        """Monotonic destination CAS revision, independent of rewindable ticks."""
+        with self._lock:
+            self._check_open()
+            return self._checkpoint_revision
+
+    def checkpoint(self):
+        """Capture the whole accepted TYX batch, including exact clock bits.
+
+        The immutable capsule is separate from user-authored initial states.
+        Policy/Env/application histories remain explicitly caller-owned.
+        """
+        from .mujoco_checkpoint import capture
+
+        with self._lock:
+            self._check_open()
+            return capture(self)
+
+    def restore(self, checkpoint, *, expected_revision):
+        """Atomically restore a compatible capsule without altering its q/v.
+
+        expected_revision protects the destination against intervening controls,
+        steps, resets or restores. Historical capsules remain intentionally
+        restorable when the caller supplies the current destination revision.
+        """
+        from .mujoco_checkpoint import restore
+
+        with self._lock:
+            self._check_open()
+            return restore(self, checkpoint, expected_revision)
 
     def clone(self, world_keys=None):
         with self._lock:
@@ -697,7 +735,14 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
         with self._lock:
             if self._closed:
                 return
-            device = getattr(self, "_device", None)
-            if device is not None:
-                device.close()
-            super().close()
+            try:
+                for retired in getattr(self, "_checkpoint_retired", ()):
+                    retired.close()
+            finally:
+                self._checkpoint_retired = []
+                device = getattr(self, "_device", None)
+                try:
+                    if device is not None:
+                        device.close()
+                finally:
+                    super().close()

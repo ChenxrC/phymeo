@@ -211,7 +211,7 @@ def solve(
                 bound_violation = 0.0
                 bound_kkt = 0.0
                 free_count = 0
-                free_residual = 0.0
+                free_kkt = 0.0
                 for r in range(nrow):
                     value = -efc_data[w, r, 3]
                     row_scale = tx.abs(efc_data[w, r, 3])
@@ -242,7 +242,7 @@ def solve(
                         bound_violation = tx.max(bound_violation, force_value - upper)
                     if working[w, r] == 1:
                         free_count = free_count + 1
-                        free_residual = tx.max(free_residual, tx.abs(value))
+                        free_kkt = tx.max(free_kkt, tx.abs(value) / tx.max(1.0, tx.abs(term)))
                     if (
                         not tx.isfinite(value)
                         or not tx.isfinite(row_scale)
@@ -284,10 +284,12 @@ def solve(
                         previous_working[w, r] = working[w, r]
                         previous_force[w, r] = efc_data[w, r, 9]
                     # Release a structural batch only after the feasible face is
-                    # stationary. Stable row order breaks normalized-KKT ties.
+                    # stationary at the same local scale as entering bounds.
+                    # A large unrelated row must not hide an unfinished face.
+                    # Stable row order breaks normalized-KKT ties.
                     # At most nv new rows avoids an unbounded cold face; blocking
                     # repairs finish before any hit may enter again.
-                    if refine_face == 0 and free_residual <= tolerance * scale:
+                    if refine_face == 0 and free_kkt <= tolerance:
                         for release_pass in range(nv):
                             entering = -1
                             largest = tolerance
@@ -529,7 +531,7 @@ def solve(
                                         1.0, tx.abs(efc_data[w, r, 4] * efc_data[w, r, 9])
                                     )
                                     violation = violation / row_scale
-                                    if free_residual <= tolerance * scale and violation > tolerance:
+                                    if free_kkt <= tolerance and violation > tolerance:
                                         can_release = 1
                                 if blocking == 1 or can_release == 0:
                                     stalled = 1

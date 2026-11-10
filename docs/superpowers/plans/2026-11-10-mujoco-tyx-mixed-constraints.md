@@ -117,3 +117,14 @@ matrix/factor[W,V,V]，其余dof向量[W,V]，row向量[W,E]。更新efc_data的
 62双backend风险组22通过。原预算负控的正交两normal在batch下一面即可完成，故保原输入改为新正控；负控恢复原deep/shallow相关两normal，完整独立oracle给全自由解第二分量负，必须先alpha0碰界再解第二面，budget1因此真实拒绝。68两正反控×backend共4通过，真实face计数和全批原子性保持；旧single-release下的历史失败解释不改写。
 
 63 G1解释三个真实姿态全部通过，47 CUDA同组三姿态通过。65格式首失败保留、66排版、67lint0。当前48开始原h=.001连续两秒；G1持续支撑尚未验收。最终core稳定后补完整受影响T4矩阵，避免在每个新的G1规模缺口前反复跑昂贵长组。
+## 10. 完成当前自由面后再释放新边界
+
+48原h=.001两秒2000步通过；49/50原h=.002正反x推扰各1000步通过。原51二十秒轨迹在17.284秒、8642已接受步后status5拒步。此前最低高度0.668329656m、最大倾角0.367177304rad、全窗平均足载0.999752336mg、非足地反力0，未触发跌倒或行为门。51失败完整保留，不把前缀写成20秒通过。
+
+72只分析同次保存的M/J/R/b及工作集：原27自由行残差约2.6e-4，被全局scale148掩盖，bound row27因此过早释放。独立精化原自由面后，row27梯度由负5.95e-5转正3.83e-5，全部原free force仍正，最大力修正3.30e-4。这是下一面进入条件失配，不改QP、模型或容差。
+
+父用free_kkt=max_free |g|/max(1,|R*f|)作为release和can_release的共同前提，与bound选择使用同一局部尺度。最终global KKT、strict bound KKT、可行性和质量方程门全不变；已满足原成功证书的状态仍立即通过。每次精化计原source iterations，不加预算。原作者已文本复核term生命周期与两谓词。
+
+75公共初态诊断在任何device step前被原FP64 unit quaternion门拒；77尝试合法unit声明不能量化回完全相同四元数，严格同字节断言拒绝，未用近邻输入代替。79/80改为直接构造保存的精确device bank并各advance一次，不调用公共初态修复或发布。两后端均status0/5face/70EFC/27free，独立KKT分别4.56e-8/2.74e-8，全部输入q/v/双字clock、row身份与原失败绑定；同输入原生力/加速度比较通过。这只闭环设备失败步，不是公开checkpoint支持或连续轨迹通过。原公共已发布FP32四元数不能直接作为FP64unit初态的互操作缺口另列后续，不在本修复中放宽门。
+
+能力元数据新增通用mixed_articulated_constraints_supported和floating_mixed_constraints_supported，按实际constraint plan/kind决定，旧g1_supported只作后者的deprecated alias。scope明确admitted-model-domain与trajectory validation分开；无G1名称/资产/策略特判。原通用free-root混合ENV验证这些字段。73lint与74format均0，69完整短矩阵、81从原合法初态无reset的20秒公共轨迹及最终长组/安装包继续验证。

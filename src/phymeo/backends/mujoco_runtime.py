@@ -161,6 +161,7 @@ class MuJoCoStepReceipt:
     warning_counts: tuple
     contact_phase: str = "last-mj-step-constraint-evaluation"
     contact_time: None = None
+    stored_control: MuJoCoControl | None = None
     raw_contact_fields: Mapping | None = None
     raw_constraint_fields: Mapping | None = None
     backend: str = "mujoco-cpu"
@@ -503,6 +504,11 @@ class MuJoCoRuntime:
                         qfrc_actuator=_frozen(candidate.qfrc_actuator),
                         qfrc_constraint=_frozen(candidate.qfrc_constraint),
                         warning_counts=after_warnings,
+                        stored_control=MuJoCoControl(
+                            candidate.ctrl,
+                            qfrc_applied=candidate.qfrc_applied,
+                            xfrc_applied=candidate.xfrc_applied,
+                        ),
                     )
                 except Exception as error:
                     self._poisoned = any(accepted.values())

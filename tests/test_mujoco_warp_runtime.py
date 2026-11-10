@@ -223,3 +223,40 @@ def test_cuda_reset_allocation_failure_keeps_old_batch(deps, monkeypatch):
         for key, state in runtime.snapshot().items():
             np.testing.assert_array_equal(state.q, before[key].q)
             assert state.tick == before[key].tick and state.time == before[key].time
+
+
+@pytest.mark.parametrize("kind,capacity", [("connect", 3), ("weld", 6)])
+def test_exact_full_equality_capacity_is_rejected_before_readback(deps, kind, capacity):
+    anchor = ' anchor="0 0 0"' if kind == "connect" else ""
+    xml = f'''<mujoco><option gravity="0 0 0"/><worldbody>
+      <body name="body"><freejoint/><geom type="sphere" size=".1" mass="1"/></body>
+      </worldbody><equality><{kind} body1="body"{anchor}/></equality></mujoco>'''
+    with pytest.raises(RuntimeError, match="constraint capacity"):
+        gpu(record(xml), constraint_capacity=capacity)
+
+
+@pytest.mark.parametrize("channel", ("ctrl", "qfrc_applied", "xfrc_applied"))
+def test_finite_fp64_control_overflow_cannot_replace_any_gpu_packet(deps, channel):
+    xml = SLIDER.replace('name="drive"', 'name="drive" ctrllimited="true" ctrlrange="-1 1"')
+    with gpu(record(xml), world_keys=(4, 19)) as runtime:
+        runtime.set_controls({4: MuJoCoControl([0.7]), 19: MuJoCoControl([-0.3])})
+        arguments = {"ctrl": [0.1]}
+        if channel == "ctrl":
+            arguments[channel] = [1e100]
+        elif channel == "qfrc_applied":
+            arguments[channel] = [1e100]
+        else:
+            applied = np.zeros((2, 6))
+            applied[1, 0] = 1e100
+            arguments[channel] = applied
+        with pytest.raises(ValueError, match="FP32"):
+            runtime.set_controls({4: MuJoCoControl([0]), 19: MuJoCoControl(**arguments)})
+        before = runtime.snapshot()
+        assert all(state.tick == 0 for state in before.values())
+        np.testing.assert_array_equal(before[4].held_control.ctrl, [0.7])
+        np.testing.assert_array_equal(before[19].held_control.ctrl, [-0.3])
+        runtime.step(0.002)
+        actual = runtime.snapshot()[4]
+        np.testing.assert_array_equal(actual.last_step.stored_control.ctrl, actual.ctrl)
+        assert actual.ctrl[0] == float(np.float32(0.7))
+        assert actual.last_step.control.ctrl[0] == 0.7

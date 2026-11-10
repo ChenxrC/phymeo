@@ -24,7 +24,7 @@ from types import MappingProxyType
 import numpy as np
 
 from ..training.resident_stepper import PhysicsStepFailure
-from .mujoco_runtime import MuJoCoRuntime, MuJoCoStepReceipt, _frozen
+from .mujoco_runtime import MuJoCoControl, MuJoCoRuntime, MuJoCoStepReceipt, _frozen
 
 GPU_CONTACT_LAW = "mujoco-warp-native-constraint-v0.0.2"
 _INTEGRATION_FIELDS = (
@@ -164,6 +164,7 @@ class MuJoCoWarpRuntime(MuJoCoRuntime):
             contact_capacity=self._contact_capacity,
             total_contact_capacity=len(self._world_keys) * self._contact_capacity,
             constraint_capacity=self._constraint_capacity,
+            constraint_rows_strictly_below_capacity=True,
             solver_tolerance=float(self._gpu_model.opt.tolerance.numpy()[0]),
             endpoint_observer="detached-cpu-mj-forward",
             native_model=False,
@@ -210,8 +211,10 @@ class MuJoCoWarpRuntime(MuJoCoRuntime):
             raise RuntimeError("MuJoCo-Warp contact capacity exceeded before readback")
         if constraints.shape != (len(self._world_keys),) or np.any(constraints < 0):
             raise RuntimeError("MuJoCo-Warp returned invalid per-world constraint counts")
-        if np.any(constraints > data.njmax):
-            raise RuntimeError("MuJoCo-Warp constraint capacity exceeded before readback")
+        # v0.0.2 connect/weld kernels can return before writing a final row
+        # group when it exactly fills njmax. Reserve one row conservatively.
+        if np.any(constraints >= data.njmax):
+            raise RuntimeError("MuJoCo-Warp constraint capacity reached before readback")
         return count, constraints.astype(np.int64)
 
     def _readback(self, data, template):
@@ -222,6 +225,11 @@ class MuJoCoWarpRuntime(MuJoCoRuntime):
             observed = copy.copy(template[key])
             self._mw.get_data_into(observed, self._model, data, slot)
             self._finite_state(observed)
+            if any(
+                not np.isfinite(value).all()
+                for value in (observed.ctrl, observed.qfrc_applied, observed.xfrc_applied)
+            ):
+                raise RuntimeError("MuJoCo-Warp returned nonfinite stored control channels")
             result[key] = observed
         return result
 
@@ -233,6 +241,16 @@ class MuJoCoWarpRuntime(MuJoCoRuntime):
         self._upload_integration(work, native)
         self._wp.synchronize_device(self._device)
         return active, work, self._readback(active, native)
+
+    def _validated_control(self, packet):
+        result = super()._validated_control(packet)
+        with np.errstate(over="ignore", under="ignore", invalid="ignore"):
+            if any(
+                not np.isfinite(np.asarray(value, dtype=np.float32)).all()
+                for value in (result.ctrl, result.qfrc_applied, result.xfrc_applied)
+            ):
+                raise ValueError("CUDA control channels must be finite when represented as FP32")
+        return result
 
     def _upload_controls(self, data):
         for name in ("ctrl", "qfrc_applied", "xfrc_applied"):
@@ -344,6 +362,11 @@ class MuJoCoWarpRuntime(MuJoCoRuntime):
                         contact_phase="last-mjwarp-step-constraint-evaluation",
                         raw_contact_fields=raw_contacts[key],
                         raw_constraint_fields=raw_constraints[key],
+                        stored_control=MuJoCoControl(
+                            candidate.ctrl,
+                            qfrc_applied=candidate.qfrc_applied,
+                            xfrc_applied=candidate.xfrc_applied,
+                        ),
                     )
             except Exception as error:
                 raise PhysicsStepFailure(

@@ -6,7 +6,7 @@ four layouts, ordering/reset/capacity and last-page rollback. Public CUDA job 18
 also completed 16 continuous steps at W1/32/128/256; comparable single-page runs
 matched complete states and receipts. This establishes scale support, not a
 Newton speed advantage. Evidence is in `artifacts/p65-parity-20261111-01` and
-[the rolling report](p65-parity-2026-11-11-progress.md). New wheel checks remain pending.
+[the rolling report](p65-parity-2026-11-11-progress.md). Final installed-wheel A1/C1 public calls passed in interpret/CUDA (125/114); device-patch paging is separately accepted as B3. See [final batch acceptance](../benchmarks/p65-parity-20261111-connections.md).
 
 The original authoring account below is historical. The parent owns
 the only execution slot. This extends the accepted resident contact transaction;

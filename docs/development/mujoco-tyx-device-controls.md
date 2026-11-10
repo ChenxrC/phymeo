@@ -6,7 +6,7 @@ sections below. Public CUDA W1/8/32 action-path comparisons passed eight
 continuous steps per route with exact full state, action and receipt equality.
 Measured steady submission cost in this bounded case fell from about13–15ms to
 0.65/0.80/0.98ms, with unchanged full copies and auditing. This is not a Newton
-or total-simulation speed claim. New wheel checks remain pending.
+or total-simulation speed claim. Final installed-wheel public action-to-physics calls passed in interpret/CUDA (117/118); see [batch acceptance](../benchmarks/p65-parity-20261111-connections.md).
 
 The original authoring account and hashes below are historical. No import, collection, numerical probe,
 pytest, lint, formatter, compile, build, install or native execution occurred in this lane.

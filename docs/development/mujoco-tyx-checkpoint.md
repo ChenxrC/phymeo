@@ -5,8 +5,9 @@ passed 24 interpret / 23 CUDA nodes on source 6ba6ec40. First execution exposed
 the native `mj_setState` writable-array ABI requirement; two detached copies
 fixed it while the capsule stays immutable. After C2b runtime integration,
 four exact-restore continuation cases passed on each backend (jobs 37/38).
-Evidence is in `artifacts/p65-parity-20261111-01`; the new installed-wheel
-public check is still pending. Controller memory remains a caller-owned
+Evidence is in `artifacts/p65-parity-20261111-01`; final installed-wheel
+public restore-and-continue calls passed in interpret/CUDA (125/114), see
+[batch acceptance](../benchmarks/p65-parity-20261111-connections.md). Controller memory remains a caller-owned
 composition boundary, not automatically part of the engine capsule.
 
 The original authoring account below is historical. The author had not imported

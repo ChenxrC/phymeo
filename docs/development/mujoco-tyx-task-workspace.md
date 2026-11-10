@@ -6,8 +6,9 @@ consumers and lifecycle/failure cases. Evidence is in
 `artifacts/p65-parity-20261111-01`. The explicit nonfinite-output negative case
 emitted the expected overflow warning. CUDA Torch is still unqualified.
 The [device action input](mujoco-tyx-device-controls.md) now provides a separately
-qualified return path; full physical HOST auditing remains. New installed-wheel
-checks are pending. The authoring labels and manifests below are historical.
+qualified return path; full physical HOST auditing remains. Final installed-wheel
+public task calls passed in interpret/CUDA (115/116), see [batch acceptance](../benchmarks/p65-parity-20261111-connections.md). CUDA Torch/PPO remains pending.
+The authoring labels and manifests below are historical.
 
 This is the bounded first slice of C2 in
 [the 2026-11-11 plan](../superpowers/plans/2026-11-11-newton-parity-until-0800.md),

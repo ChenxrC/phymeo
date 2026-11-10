@@ -30,7 +30,7 @@ def _gyro_model(sensor="gyro", site_quat="0.9238795325112867 0.3826834323650898 
     sensor_xml = (
         ""
         if sensor == "missing"
-        else f'<{("accelerometer" if sensor == "wrong_type" else "gyro")} '
+        else f"<{('accelerometer' if sensor == 'wrong_type' else 'gyro')} "
         f'name="imu_ang_vel" site="{site}"/>'
     )
     return mj.MjModel.from_xml_string(
@@ -207,7 +207,7 @@ def _controller_protocol(example, protocol_id):
         'mass="2" diaginertia=".07 .08 .09"/>'
         '<site name="sensor_frame" quat=".9238795325112867 .3826834323650898 0 0"/>'
         + children
-        + '</body></worldbody><actuator>'
+        + "</body></worldbody><actuator>"
         + motors
         + '</actuator><sensor><gyro name="imu_ang_vel" site="sensor_frame"/></sensor></mujoco>'
     )
@@ -276,7 +276,9 @@ def test_version_switch_changes_only_gyro_words_and_preserves_legacy_and_hold(ex
 
 
 @pytest.mark.parametrize("explicit", [False, True], ids=["default_site_v2", "explicit_legacy_v1"])
-def test_cli_selects_explicit_version_without_changing_motion_options(example, monkeypatch, explicit):
+def test_cli_selects_explicit_version_without_changing_motion_options(
+    example, monkeypatch, explicit
+):
     args = ["g1_mujoco_tyx_policy.py", "--assets", ".", "--output", "result.json", "--mode", "cuda"]
     if explicit:
         args += ["--observation-protocol", example.BODY_INERTIAL_PROTOCOL]

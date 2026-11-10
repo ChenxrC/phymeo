@@ -240,9 +240,7 @@ class GyroObservation:
         self._inertial_quat = tuple(float(x) for x in model.body_iquat[root])
         if not 0 <= self._dof <= self._nv - 6:
             raise ValueError("free root angular DOF addresses are invalid")
-        observed_quat = (
-            self._site_quat if protocol_id == IMU_SITE_PROTOCOL else self._inertial_quat
-        )
+        observed_quat = self._site_quat if protocol_id == IMU_SITE_PROTOCOL else self._inertial_quat
         self._from_body = rotation(observed_quat).T
 
     def angular_velocity(self, velocity):

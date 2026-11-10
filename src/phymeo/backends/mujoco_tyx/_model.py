@@ -88,6 +88,10 @@ def _mix_contact(model, left, right, mj):
 
 
 def compile_model(mj, model):
+    if np.any(model.jnt_type == mj.mjtJoint.mjJNT_HINGE):
+        from ._tree_model import compile_tree_model
+
+        return compile_tree_model(mj, model)
     issues = []
 
     def issue(code, detail):

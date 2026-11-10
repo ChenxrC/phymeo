@@ -52,6 +52,24 @@ class MuJoCoTyxContact:
 
 
 @dataclass(frozen=True)
+class MuJoCoTyxDynamics:
+    """Same input-step device fields; linear/angular Jacobian rows in world axes."""
+
+    body_position: np.ndarray
+    body_rotation: np.ndarray
+    body_com: np.ndarray
+    jacobian_com: np.ndarray
+    mass_matrix: np.ndarray
+    bias: np.ndarray
+    passive: np.ndarray
+    applied: np.ndarray
+    smooth_acceleration: np.ndarray
+    input_q: np.ndarray
+    input_v: np.ndarray
+    time: float
+    phase: str = "tyx-euler-input-dynamics"
+
+@dataclass(frozen=True)
 class MuJoCoTyxStepReceipt:
     world: int
     tick: int
@@ -75,6 +93,7 @@ class MuJoCoTyxStepReceipt:
     contact_phase: str = "tyx-euler-input-constraint-evaluation"
     contact_law: str = LAW
     state_precision: str = "fp32-device-integration"
+    dynamics: MuJoCoTyxDynamics | None = None
 
 
 class MuJoCoTyxRuntime(MuJoCoRuntime):
@@ -124,12 +143,14 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
             gpu=mode == "cuda",
             native_model=False,
             contact_law=LAW,
-            domain="prismatic-or-isotropic-free/one-normal-pair-v1",
+            domain=("fixed-hinge-slide-no-contact-v1" if self._plan.kind == 2
+                    else "prismatic-or-isotropic-free/one-normal-pair-v1"),
             state_precision="fp32-device-integration",
             publication="whole-batch-atomic",
             possible_contact_pairs=int(self._plan.pair is not None),
             limits="strict-interior-reject-on-exit",
-            numerical_solver="single-normal-direct-qp",
+            numerical_solver=("tree-dense-cholesky" if self._plan.kind == 2
+                              else "single-normal-direct-qp"),
             source_solver=self._plan.source_solver,
             source_iterations=self._plan.source_iterations,
             contact_capacity=self._contact_capacity,
@@ -152,7 +173,7 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
             q[index, : self._plan.nq] = fp32(original.qpos, "initial qpos")
             v[index, : self._plan.nv] = fp32(original.qvel, "initial qvel")
             clock[index] = fp32(original.time, "initial time").item()
-            if self._plan.kind == 0:
+            if self._plan.kind != 1:
                 low, high = self._plan.vectors[7:9, : self._plan.nv]
                 if np.any(q[index, : self._plan.nq] <= low) or np.any(
                     q[index, : self._plan.nq] >= high
@@ -163,7 +184,12 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
     def _build_device(self, data):
         from .mujoco_tyx._device import TyxDevice
 
-        return TyxDevice(
+        device_type = TyxDevice
+        if self._plan.kind == 2:
+            from .mujoco_tyx._tree_device import TyxTreeDevice
+
+            device_type = TyxTreeDevice
+        return device_type(
             self._plan,
             self._mode,
             self._cache_root,
@@ -253,6 +279,7 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                         1: "contact_or_constraint_capacity",
                         2: "nonfinite_candidate",
                         3: "joint_limit_domain",
+                        4: "nonpositive_mass_matrix",
                     }
                     codes = tuple(
                         reasons.get(int(code), "invalid_status")
@@ -283,6 +310,23 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                     if ticks[key] > np.iinfo(np.int32).max:
                         raise RuntimeError("TYX logical tick exceeds i32 capacity")
                     row = result["rows"][index]
+                    dynamics = None
+                    if self._plan.kind == 2:
+                        n = self._plan.nv
+                        dynamics = MuJoCoTyxDynamics(
+                            body_position=_frozen(result["body_position"][index]),
+                            body_rotation=_frozen(result["body_rotation"][index]),
+                            body_com=_frozen(result["body_com"][index]),
+                            jacobian_com=_frozen(result["jacobian_com"][index, :, :, :n]),
+                            mass_matrix=_frozen(result["mass_matrix"][index, :n, :n]),
+                            bias=_frozen(result["bias"][index, :n]),
+                            passive=_frozen(result["passive"][index, :n]),
+                            applied=_frozen(result["applied"][index, :n]),
+                            smooth_acceleration=_frozen(result["smooth_acceleration"][index, :n]),
+                            input_q=_frozen(result["input_q"][index, :n]),
+                            input_v=_frozen(result["input_v"][index, :n]),
+                            time=float(result["input_time"][index]),
+                        )
                     receipts[key] = MuJoCoTyxStepReceipt(
                         world=key,
                         tick=ticks[key],
@@ -302,8 +346,10 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                         qfrc_constraint=_frozen(candidate.qfrc_constraint),
                         raw_contact_fields=MappingProxyType({"device_row": _frozen(row)}),
                         source_solver=self._plan.source_solver,
-                        numerical_solver="single-normal-direct-qp",
+                        numerical_solver=("tree-dense-cholesky" if self._plan.kind == 2
+                              else "single-normal-direct-qp"),
                         contact_time=float(original.time),
+                        dynamics=dynamics,
                         backend=f"mujoco-tyx-{self._mode}",
                     )
                     data[key] = candidate

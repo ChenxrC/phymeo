@@ -707,6 +707,29 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
             self._check_open()
             return restore(self, checkpoint, expected_revision)
 
+    def prepare_task_workspace(self, spec, *, cache_root=None):
+        """Prepare owned device task outputs; physical actions remain HOST packets."""
+        from .mujoco_task_workspace import MuJoCoTyxTaskWorkspace
+
+        with self._lock:
+            self._check_open()
+            return MuJoCoTyxTaskWorkspace(self, spec, cache_root=cache_root)
+
+    def _refresh_task_workspace(self, workspace, expected_revision):
+        from .mujoco_task_workspace import MuJoCoTyxTaskWorkspace
+
+        with self._lock:
+            self._check_open()
+            if type(workspace) is not MuJoCoTyxTaskWorkspace or workspace._engine is not self:
+                raise ValueError("task workspace belongs to another runtime")
+            if type(expected_revision) is not int or expected_revision != self._checkpoint_revision:
+                raise ValueError("task workspace source revision is stale")
+            return workspace._refresh_locked(
+                self._device, self._checkpoint_revision,
+                tuple(self._ticks[key] for key in self._world_keys),
+                tuple(float(self._data[key].time) for key in self._world_keys),
+            )
+
     def clone(self, world_keys=None):
         with self._lock:
             self._check_open()

@@ -104,7 +104,7 @@ def test_all_families_raw_and_effective_share_independent_reference(
 def test_partial_faces_preserve_every_id_and_first_moment(name, variant, tyx_mode, tmp_path):
     case, spec = b1.reference().polygon_case(name, variant)
     with b1.saved(tmp_path, "B2-" + name + "-" + variant, tyx_mode, case) as saved:
-        with b1.prepared(case, tyx_mode, tmp_path) as (_, _, query, _):
+        with b1.prepared(case, tyx_mode, tmp_path, requested_reverse=variant == "reverse") as (_, _, query, _):
             result = query.query()
             saved["raw"] = result
             b1.assert_patch(result.rows[0], spec, case)

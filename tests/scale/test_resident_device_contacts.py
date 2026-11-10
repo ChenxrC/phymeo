@@ -4,7 +4,10 @@ Predeclared: three continuous steps; original physical gates 5e-6 absolute,
 5e-5 relative (mass 2e-5). Geometry gates are B1's original local-scale bounds.
 No physics state is reset between the positive trajectory steps.
 """
-from dataclasses import replace
+from collections.abc import Mapping
+from dataclasses import fields, is_dataclass, replace
+import gzip
+import json
 
 import numpy as np
 import pytest
@@ -17,7 +20,6 @@ from test_resident_contact_bundle import _spies
 import phymeo as ph
 from phymeo.backends import _resident_contact_bridge as bridge
 from phymeo.backends import _resident_contact_plan as contact_module
-from phymeo.backends import _resident_device_patch_bridge as device_bridge
 
 
 def fixture(layout, path):
@@ -25,7 +27,7 @@ def fixture(layout, path):
         data = dynamic._case("D03" if layout == "ordinary" else "D04",
                              velocity=(1 / 128, -1 / 256) if layout == "ordinary" else (1 / 128,))
         data["motor"][0] = 1 / 16
-        data["force"][-1, 1] = 1 / 32
+        data["force"][-1, 0] = 1 / 32
         data["torque"][0, 2] = 1 / 64
         item = dynamic._build(data, path)
         return item, item["world"], item["control"]
@@ -74,8 +76,28 @@ def compact_record(conversion):
     )
 
 
+def encode(value):
+    if isinstance(value, np.ndarray):
+        return dict(dtype=value.dtype.str, shape=value.shape,
+                    bytes_hex=value.tobytes(order="C").hex(), values=encode(value.tolist()))
+    if isinstance(value, np.generic):
+        return encode(value.item())
+    if type(value) is object:
+        return dict(opaque_process_local_type="builtins.object", identity_serialized=False)
+    if is_dataclass(value):
+        return {f.name: encode(getattr(value, f.name)) for f in fields(value)}
+    if isinstance(value, Mapping):
+        return dict(mapping_entries=[(encode(k), encode(v)) for k, v in value.items()])
+    if isinstance(value, (list, tuple)):
+        return [encode(v) for v in value]
+    if value is None or isinstance(value, (str, int, float, bool)):
+        return value
+    raise TypeError("unrecorded value " + type(value).__qualname__)
+
+
 def save_rows(tmp_path, name, rows):
-    dynamic._save(tmp_path, name, rows)
+    with gzip.open(tmp_path / (name + ".json.gz"), "wt", encoding="utf-8") as stream:
+        json.dump(encode(rows), stream, allow_nan=False)
 
 
 @pytest.mark.tyx
@@ -184,7 +206,9 @@ def test_default_host_and_device_same_input_and_independent_slider(tyx_mode, tmp
 
 
 @pytest.mark.tyx
-@pytest.mark.parametrize("fault", ("patch_readback", "last_load", "post_solve", "unknown_patch", "source_epoch"))
+@pytest.mark.parametrize("fault", ("patch_readback", "last_load", "post_solve", "unknown_patch",
+                                  "source_epoch", "source_owner", "source_registration",
+                                  "source_bank", "source_layout", "source_membership"))
 def test_late_failure_retains_all_publications_and_retry(fault, tyx_mode, tmp_path, monkeypatch):
     batch, model, bindings, laws = slider_batch(tyx_mode, tmp_path / "cache")
     with batch:
@@ -221,6 +245,18 @@ def test_late_failure_retains_all_publications_and_retry(fault, tyx_mode, tmp_pa
                         result = original(*args, **kwargs)
                         if fault == "source_epoch":
                             return replace(result, state_epoch=result.state_epoch + 1)
+                        if fault == "source_owner":
+                            return replace(result, owner=object())
+                        if fault == "source_registration":
+                            return replace(result, registration=object())
+                        if fault == "source_bank":
+                            return replace(result, active=1 - result.active)
+                        if fault == "source_layout":
+                            source = dict(result.source)
+                            source["shape_layouts"] = np.ones_like(source["shape_layouts"])
+                            return replace(result, source=source)
+                        if fault == "source_membership":
+                            return replace(result, rows=result.rows[:-1])
                         row = result.rows[-1]
                         row = replace(row, patch=replace(row.patch, status="UNRESOLVED"))
                         return replace(result, rows=result.rows[:-1] + (row,))
@@ -308,3 +344,59 @@ def test_public_device_options_fail_before_registration(option, tyx_mode, tmp_pa
         with pytest.raises((TypeError, ValueError)):
             batch.prepare_contacts(model, bindings, laws, **kwargs)
         assert batch.snapshot() == before
+
+
+@pytest.mark.tyx
+@pytest.mark.parametrize("sign", (-1, 1))
+def test_same_entry_sliding_friction_has_one_weight_and_real_drive(sign, tyx_mode, tmp_path, monkeypatch):
+    from test_resident_tree_contacts import _program
+    model = ph.RobotModel(
+        np.array([-1]), ("prismatic",), np.array([[0.0, 0.0, 3 / 32]]),
+        np.array([[0.0, 0.0, 0.0, 1.0]]), np.array([[1.0, 0.0, 0.0]]),
+        np.array([2.0]), np.zeros((1, 3)), np.full((1, 3), 1 / 8), np.zeros(3)
+    )
+    program, tree = _program(model, v=[sign / 16])
+    command = _action(program, ff=[1 / 8], effort=[1 / 4])
+    with ph.TyxWorldBatch([(7, tree)], tyx_mode, cache_root=tmp_path) as batch:
+        batch.set_controls({7: command})
+        collision, bindings, _, pair = _r01_bound(batch, 7)
+        law = ph.RobotContactMaterial(64, 1, 1 / 2, 1 / 32)
+        with batch.prepare_contacts(collision, bindings, {pair: law}, narrow_phase="device_patch") as plan:
+            monkeypatch.setattr(bridge, "contact_patch_sample", no_host_search)
+            q, v, rows = 0.0, sign / 16, []
+            for _ in range(3):
+                # Full patch N=2 N, saturated tangential magnitude=1 N.
+                # Two kg actual slider, plus original 1/8 drive + 1/4 load.
+                v += H * (-sign + 3 / 8) / 2
+                q += H * v
+                assert batch.step_contacts(plan, H) == {7: True}
+                receipt = plan.last_accepted[7]
+                np.testing.assert_allclose(receipt.law_wrench_fp64[0],
+                    [-sign, 0, 2, 0, sign * 7 / 64, 0], atol=5e-6, rtol=5e-5)
+                np.testing.assert_allclose(receipt.contact_generalized, [-sign], atol=5e-6, rtol=5e-5)
+                np.testing.assert_allclose(receipt.accepted_state.velocity, [v], atol=5e-6, rtol=5e-5)
+                np.testing.assert_allclose(receipt.accepted_state.position, [q], atol=5e-6, rtol=5e-5)
+                assert len(receipt.sites) == 4
+                for site in receipt.sites:
+                    assert site.first_force_n @ site.first_velocity_m_s < 0
+                rows.append(dict(state=receipt.accepted_state, wrench=receipt.law_wrench_fp64,
+                                 sites=receipt.sites,
+                                 geometry=compact_record(receipt.diagnostics["device_patch"])))
+            save_rows(tmp_path, "B2-sliding-" + str(sign), dict(law=law, command=command, rows=rows))
+
+
+@pytest.mark.tyx
+def test_zero_force_sites_still_consume_the_complete_capacity(tyx_mode, tmp_path):
+    batch, model, bindings, laws = slider_batch(tyx_mode, tmp_path)
+    laws = {pair: ph.RobotContactMaterial(64, 256, 0) for pair in laws}
+    with batch:
+        before = batch.snapshot()
+        with batch.prepare_contacts(model, bindings, laws, narrow_phase="device_patch",
+                                    site_capacity={7: 4, 31: 3}) as plan:
+            assert batch.step_contacts(plan, H) == {7: True, 31: False}
+            assert batch.snapshot()[31] == before[31]
+            receipt = plan.last_accepted[7]
+            assert len(receipt.sites) == 4
+            np.testing.assert_array_equal(receipt.law_wrench_fp64, np.zeros((1, 6)))
+            assert plan.last_status[31] == "SITE_CAPACITY_EXCEEDED"
+            assert len(plan.last_device_query.rows[-1].patch.sites) == 4

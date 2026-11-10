@@ -136,3 +136,16 @@ F2/F3 h矩阵是新MuJoCo-TYX的工程验证，不借旧HOST h=.0005通过；若
 - unused contact_map两身份列为-1、计数列0；inactive contact的first=-1/count0。这个字段勘误不改变物理模型或阈值。G1表的左右foot capsule已按原资产核实各7个，33个总shape及原资产SHA不变。
 
 本轮只有文本/文件IO/Git：两新文件与作者串逐字回读一致；精确两文件staged scope、git diff --cached --check成功，源码commit后clean。**未运行import、collection、算术probe、pytest、lint、formatter、compile/build、install、native或CI。** 首次静态/项目执行及任何实际缺陷判断交父串行队列。任何首次native对照反驳某行为假设都应保存原失败并分类，不能倒改输入或放宽阈值追绿。
+
+
+## 10. 首次执行后行为 oracle 勘误（26/27 原失败保留）
+
+本节仅记录父串行执行的既有证据与窄测试修正；作者没有执行新的项目命令。原证据位于父 artifacts/p65-mujoco-tyx-t4-20261110-01 的 26-short-interpret-qr、27-short-interpret-remaining；保存日志/JSONL均未修改。run26报告6 passed后signed slide失败；run27报告71 passed、16 failed。这里不把尚未执行的修订称为通过，也不处理父负责的2个oblique force差异和4个solver拒绝。
+
+- A03原末步必须摩擦功率<0假设错误。原24步保存中tick0–14两端都有contact，tick15–23 TYX和持续CPU同时离面；第一步Fx=15.3053789139 N与input vx=-.40000000596 m/s反向，末速vx=-.25362700224 m/s。修订只读同一24步完整saved actual receipt，以各步input_v/J/切向wrench计算h加权摩擦功，要求真实非零摩擦、全窗功<0及原末速下降；原fixture、24步与全部逐步native门不变。
+- A04的±1.2mg原64步两端在tick29–41、50–57、62–63出现合法离面，其他段接触/重入一致。将“每步count必须1及末步normal>0”改为初始接触、整窗真实支撑和摩擦；count仍只能0/1，原高载末速方向/幅度及全部原生逐步检查保持。不是强行延长接触或改正常物理输入。
+- A07 axis1±2并未离面：原12步两端均有contact，但native和TYX的纯couple分量全为0；实际切向力及lever×force的COM矩承担阻转。axis0原生末步有约±.0002506 Nm纯couple、torsion约±.2149 Nm，原非零门仍有效。修订读取同一完整窗，计算接触点切向功加纯couple角功，不再次加lever矩重复计功；要求实际COM torque和总摩擦耗散。对native整窗达到原1e-5门的couple分量，actual也必须达到原门；完整6D wrench、10 EFC/J/R/aref、运动和所有逐步force容差不改，不凭“旋转”要求native没有的纯力偶。
+- 5个准入负控原来访问不存在的exception.code，实际公开结构为MuJoCoTyxUnsupported.issues中的MuJoCoTyxIssue(code,detail)。改核非空issues及每项code/detail，原拒绝类型和所有非法source保持。
+- 原预算负控两collinear normal的保存H=[[1.1111111111,1],[1,1.249219238]]、b=(-34.81,-10.0570679012)，无界解虽然第二项负，但非负最优为(31.329,0)。当前命名算法每次只释放最大违反的一行，因此一次face就能正确完成；原DID NOT RAISE是错误预算假设。预算负控单独改为原3slide球与两个正交plane，center=(.099,0,.099)，h和law不变。J沿x/z、M=I，H对角且两b负、两最优normal力正；一次只释放一行后另一独立KKT仍违反，故source iterations=1必须不足。测试同时核native source与capabilities的budget1、真实attempt status7/diag budget1及整批原子拒绝，不mock、不增加预算；该新负控输入须由父首次验证，不能追认旧预算例失败。
+
+父首次修订验证：41-revised-short-interpret 实际24 passed / 184 deselected / RAW_EXIT0（53.52s），涵盖上述三行为函数全部参数、五准入负控、预算负控、两mixed同入步、晚下载回滚及公共ENV。静态37/38原失败保留，39只format，40lint0。此结果不替代D01连续窗或CUDA验收。

@@ -371,35 +371,45 @@ def test_dynamic_compaction_preserves_late_candidates_and_native_excludes(mode, 
 @pytest.mark.parametrize("mode", MODES)
 def test_source_iteration_budget_is_real_and_failure_is_atomic(mode, tmp_path):
     mj = normal._deps()
-    xml = mixed.slider_xml(dim=1, limits=True).replace(
-        '<geom name="moving" type="sphere" size=".1"/>',
-        '<geom name="deep" type="sphere" size=".1" pos="-.12 0 -.008"/>'
-        '<geom name="shallow" type="sphere" size=".1" pos=".12 0 .0009"/>',
-    )
+    xml = mixed.slider_xml(dim=1, limits=True)
+    side = '<geom name="side" type="plane" size="2 2 .1" quat=".7071067811865476 0 .7071067811865476 0"/>'
+    xml = xml.replace(mixed.FLOOR, mixed.FLOOR + side)
+    xml = xml.replace('<body name="root" pos="0 0 ', '<body name="root" pos=".099 0 ')
     xml = xml.replace('iterations="128"', 'iterations="1"')
     model = mj.MjModel.from_xml_string(xml)
+    assert model.opt.iterations == 1
     oracle = mixed.native(mj, model, model.qpos0, np.zeros(model.nv), mixed.packet(model))
     assert len(oracle["rows"]) == 2
-    assert np.all(oracle["linear"] < 0)
+    assert np.all(oracle["linear"] < -0.01)
+    np.testing.assert_allclose(
+        oracle["matrix"], np.diag(np.diag(oracle["matrix"])), rtol=0, atol=1e-12
+    )
     unrestricted = np.linalg.solve(oracle["matrix"], -oracle["linear"])
-    assert np.min(unrestricted) < -0.01  # first all-free face must bind a row and be re-solved
+    assert np.all(unrestricted > 0.01)
+    # Three translation DOFs give orthogonal x/z normal rows and diagonal H.
+    # Both optima are positive. The named solver releases one violated bound
+    # per face, so one solve leaves the other independent negative gradient.
     _save(
         tmp_path / "budget.jsonl", {"xml": xml, "unrestricted_face": unrestricted, "oracle": oracle}
     )
     with MuJoCoTyxRuntime(normal._compile(xml), mode=mode, world_keys=(5, 71)) as runtime:
+        assert runtime.capabilities["source_iterations"] == 1
         before = runtime.snapshot()
         with pytest.raises(PhysicsStepFailure) as caught:
             runtime.step(model.opt.timestep)
         assert caught.value.accepted_worlds == {5: False, 71: False}
         assert caught.value.acceptance_known and not caught.value.physics_accepted
         assert_publication(before, runtime.snapshot())
+        scratch = attempt_scratch(runtime)
+        np.testing.assert_array_equal(scratch["status"], 7)
+        np.testing.assert_array_equal(np.asarray(scratch["solver_diagnostics"])[:, 7], 1)
         _save(
             tmp_path / "budget.jsonl",
             {
                 "before": before,
                 "after": runtime.snapshot(),
                 "error": str(caught.value),
-                "attempt_scratch": attempt_scratch(runtime),
+                "attempt_scratch": scratch,
             },
         )
 
@@ -447,7 +457,8 @@ def test_native_valid_unsupported_source_is_explicit(change):
     mj.MjModel.from_xml_string(xml)
     with pytest.raises(MuJoCoTyxUnsupported) as caught:
         MuJoCoTyxRuntime(normal._compile(xml), mode="interpret")
-    assert caught.value.code and str(caught.value)
+    assert caught.value.issues and str(caught.value)
+    assert all(issue.code and issue.detail for issue in caught.value.issues)
 
 
 @pytest.mark.parametrize("contact_cap,efc_cap", [(129, 512), (128, 513)])
@@ -479,7 +490,8 @@ def test_potential_pair_capacity_cannot_drop_candidates():
     )  # supported geometry count, but 64*64 potential body-pair combinations
     with pytest.raises(MuJoCoTyxUnsupported) as caught:
         MuJoCoTyxRuntime(normal._compile(xml), mode="interpret")
-    assert caught.value.code
+    assert caught.value.issues
+    assert all(issue.code and issue.detail for issue in caught.value.issues)
 
 
 def test_geometry_matcher_rejects_missing_duplicate_and_ignores_force():

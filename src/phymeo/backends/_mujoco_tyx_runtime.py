@@ -106,6 +106,8 @@ class MuJoCoTyxStepReceipt:
 class MuJoCoTyxRuntime(MuJoCoRuntime):
     """Own TYX interpret/CUDA execution and atomic publication for sparse worlds.
 
+    Floating domain: one native free root and 0..29 hinge/slide joints, full
+    root/joint coupling, origin world linear and local angular velocities.
     Rotational domain: fixed-root 1..8 hinge/slide DOFs, complete live M/J/bias,
     welded bodies and off-center world wrenches, without possible contact pairs.
     Original domain: 1..8 all-prismatic native DOFs with full coupled static
@@ -153,7 +155,9 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
             native_model=False,
             contact_law=LAW,
             domain=(
-                "fixed-hinge-slide-no-contact-v1"
+                "free-root-hinge-slide-no-contact-v1"
+                if self._plan.kind == 3
+                else "fixed-hinge-slide-no-contact-v1"
                 if self._plan.kind == 2
                 else "prismatic-or-isotropic-free/one-normal-pair-v1"
             ),
@@ -162,7 +166,7 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
             possible_contact_pairs=int(self._plan.pair is not None),
             limits="strict-interior-reject-on-exit",
             numerical_solver=(
-                "tree-dense-cholesky" if self._plan.kind == 2 else "single-normal-direct-qp"
+                "tree-dense-cholesky" if self._plan.kind in (2, 3) else "single-normal-direct-qp"
             ),
             source_solver=self._plan.source_solver,
             source_iterations=self._plan.source_iterations,
@@ -178,15 +182,27 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
         return MappingProxyType({**self._device.counts, **self._extra_counts})
 
     def _pack_states(self, data):
-        q = np.zeros((len(self._world_keys), 8), np.float32)
-        v = np.zeros_like(q)
+        q = np.zeros((len(self._world_keys), max(8, self._plan.nq)), np.float32)
+        v = np.zeros((len(self._world_keys), max(8, self._plan.nv)), np.float32)
         clock = np.zeros(len(self._world_keys), np.float32)
         for index, key in enumerate(self._world_keys):
             original = data[key]
             q[index, : self._plan.nq] = fp32(original.qpos, "initial qpos")
             v[index, : self._plan.nv] = fp32(original.qvel, "initial qvel")
             clock[index] = fp32(original.time, "initial time").item()
-            if self._plan.kind != 1:
+            if self._plan.kind == 3:
+                scalar = np.flatnonzero(
+                    np.isin(
+                        self._model.jnt_type,
+                        (self._mj.mjtJoint.mjJNT_HINGE, self._mj.mjtJoint.mjJNT_SLIDE),
+                    )
+                )
+                qa = self._model.jnt_qposadr[scalar]
+                dof = self._model.jnt_dofadr[scalar]
+                low, high = self._plan.vectors[7:9, dof]
+                if np.any(q[index, qa] <= low) or np.any(q[index, qa] >= high):
+                    raise ValueError("initial native q is outside the strict joint-limit interior")
+            elif self._plan.kind != 1:
                 low, high = self._plan.vectors[7:9, : self._plan.nv]
                 if np.any(q[index, : self._plan.nq] <= low) or np.any(
                     q[index, : self._plan.nq] >= high
@@ -202,6 +218,10 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
             from .mujoco_tyx._tree_device import TyxTreeDevice
 
             device_type = TyxTreeDevice
+        elif self._plan.kind == 3:
+            from .mujoco_tyx._floating_device import TyxFloatingDevice
+
+            device_type = TyxFloatingDevice
         return device_type(
             self._plan,
             self._mode,
@@ -231,7 +251,7 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
 
     def _pack_controls(self):
         ctrl = np.zeros((len(self._world_keys), max(self._plan.nu, 1)), np.float32)
-        applied = np.zeros((len(self._world_keys), 8), np.float32)
+        applied = np.zeros((len(self._world_keys), max(8, self._plan.nv)), np.float32)
         body_force = np.zeros((len(self._world_keys), self._model.nbody, 6), np.float32)
         stored = {}
         for index, key in enumerate(self._world_keys):
@@ -324,7 +344,7 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                         raise RuntimeError("TYX logical tick exceeds i32 capacity")
                     row = result["rows"][index]
                     dynamics = None
-                    if self._plan.kind == 2:
+                    if self._plan.kind in (2, 3):
                         n = self._plan.nv
                         dynamics = MuJoCoTyxDynamics(
                             body_position=_frozen(result["body_position"][index]),
@@ -336,7 +356,7 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                             passive=_frozen(result["passive"][index, :n]),
                             applied=_frozen(result["applied"][index, :n]),
                             smooth_acceleration=_frozen(result["smooth_acceleration"][index, :n]),
-                            input_q=_frozen(result["input_q"][index, :n]),
+                            input_q=_frozen(result["input_q"][index, : self._plan.nq]),
                             input_v=_frozen(result["input_v"][index, :n]),
                             time=float(result["input_time"][index]),
                         )
@@ -361,7 +381,7 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                         source_solver=self._plan.source_solver,
                         numerical_solver=(
                             "tree-dense-cholesky"
-                            if self._plan.kind == 2
+                            if self._plan.kind in (2, 3)
                             else "single-normal-direct-qp"
                         ),
                         contact_time=float(original.time),

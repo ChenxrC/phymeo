@@ -84,7 +84,7 @@ def geometry(
                     qx = q[w, 4]
                     qy = q[w, 5]
                     qz = q[w, 6]
-                    length = tx.sqrt(qw*qw + qx*qx + qy*qy + qz*qz)
+                    length = tx.sqrt(qw * qw + qx * qx + qy * qy + qz * qz)
                     if not tx.isfinite(length) or length <= 0.0:
                         status[w] = 2
                         length = 1.0
@@ -92,15 +92,15 @@ def geometry(
                     qx = qx / length
                     qy = qy / length
                     qz = qz / length
-                    rotation[w, b, 0, 0] = 1.0 - 2.0*(qy*qy + qz*qz)
-                    rotation[w, b, 0, 1] = 2.0*(qx*qy - qw*qz)
-                    rotation[w, b, 0, 2] = 2.0*(qx*qz + qw*qy)
-                    rotation[w, b, 1, 0] = 2.0*(qx*qy + qw*qz)
-                    rotation[w, b, 1, 1] = 1.0 - 2.0*(qx*qx + qz*qz)
-                    rotation[w, b, 1, 2] = 2.0*(qy*qz - qw*qx)
-                    rotation[w, b, 2, 0] = 2.0*(qx*qz - qw*qy)
-                    rotation[w, b, 2, 1] = 2.0*(qy*qz + qw*qx)
-                    rotation[w, b, 2, 2] = 1.0 - 2.0*(qx*qx + qy*qy)
+                    rotation[w, b, 0, 0] = 1.0 - 2.0 * (qy * qy + qz * qz)
+                    rotation[w, b, 0, 1] = 2.0 * (qx * qy - qw * qz)
+                    rotation[w, b, 0, 2] = 2.0 * (qx * qz + qw * qy)
+                    rotation[w, b, 1, 0] = 2.0 * (qx * qy + qw * qz)
+                    rotation[w, b, 1, 1] = 1.0 - 2.0 * (qx * qx + qz * qz)
+                    rotation[w, b, 1, 2] = 2.0 * (qy * qz - qw * qx)
+                    rotation[w, b, 2, 0] = 2.0 * (qx * qz - qw * qy)
+                    rotation[w, b, 2, 1] = 2.0 * (qy * qz + qw * qx)
+                    rotation[w, b, 2, 2] = 1.0 - 2.0 * (qx * qx + qy * qy)
                     for i in range(3):
                         motion[w, b, 0, i] = q[w, i]
                         motion[w, b, 1, i] = v[w, i]
@@ -108,13 +108,15 @@ def geometry(
                         motion[w, b, 3, i] = 0.0
                         motion[w, b, 4, i] = 0.0
                         for j in range(3):
-                            motion[w, b, 2, i] = motion[w, b, 2, i] + rotation[w, b, i, j]*v[w, 3+j]
+                            motion[w, b, 2, i] = (
+                                motion[w, b, 2, i] + rotation[w, b, i, j] * v[w, 3 + j]
+                            )
                             axes[w, j, i] = 0.0
                             if i == j:
                                 axes[w, j, i] = 1.0
-                            axes[w, 3+j, i] = rotation[w, b, i, j]
+                            axes[w, 3 + j, i] = rotation[w, b, i, j]
                             anchors[w, j, i] = q[w, i]
-                            anchors[w, 3+j, i] = q[w, i]
+                            anchors[w, 3 + j, i] = q[w, i]
                     # qddot=0 => origin acceleration=0 and alpha=R(omega x omega)=0.
                     # Descendant and COM centripetal/transport terms remain below.
                 start = body_ranges[b, 0]
@@ -312,7 +314,7 @@ def mechanics(
             mass[w, i, i] = vectors[5, i]
             passive[w, i] = -vectors[1, i] * v[w, i]
             if i >= 6:
-                passive[w, i] = passive[w, i] - vectors[2, i] * (q[w, i+1] - vectors[3, i])
+                passive[w, i] = passive[w, i] - vectors[2, i] * (q[w, i + 1] - vectors[3, i])
             applied[w, i] = applied_input[w, i]
         for a in range(nu):
             value = 0.0
@@ -491,11 +493,14 @@ def solve(
         for i in range(nv):
             vnext[w, i] = v[w, i] + h * integration_acc[w, i]
             if i >= 6:
-                qnext[w, i+1] = q[w, i+1] + h * vnext[w, i]
-                if qnext[w, i+1] <= vectors[7, i] or qnext[w, i+1] >= vectors[8, i]:
+                qnext[w, i + 1] = q[w, i + 1] + h * vnext[w, i]
+                if qnext[w, i + 1] <= vectors[7, i] or qnext[w, i + 1] >= vectors[8, i]:
                     status[w] = 3
-            if (not tx.isfinite(vnext[w, i]) or not tx.isfinite(acceleration[w, i])
-                    or not tx.isfinite(integration_acc[w, i])):
+            if (
+                not tx.isfinite(vnext[w, i])
+                or not tx.isfinite(acceleration[w, i])
+                or not tx.isfinite(integration_acc[w, i])
+            ):
                 status[w] = 2
         for i in range(3):
             qnext[w, i] = q[w, i] + h * vnext[w, i]
@@ -503,7 +508,7 @@ def solve(
         qx = q[w, 4]
         qy = q[w, 5]
         qz = q[w, 6]
-        length = tx.sqrt(qw*qw + qx*qx + qy*qy + qz*qz)
+        length = tx.sqrt(qw * qw + qx * qx + qy * qy + qz * qz)
         if not tx.isfinite(length) or length <= 0.0:
             status[w] = 2
             length = 1.0
@@ -514,21 +519,21 @@ def solve(
         wx = vnext[w, 3]
         wy = vnext[w, 4]
         wz = vnext[w, 5]
-        norm = tx.sqrt(wx*wx + wy*wy + wz*wz)
+        norm = tx.sqrt(wx * wx + wy * wy + wz * wz)
         scalar = 1.0
         scale = 0.0
         if norm > 0.0:
-            scalar = tx.cos(0.5*h*norm)
-            scale = tx.sin(0.5*h*norm) / norm
+            scalar = tx.cos(0.5 * h * norm)
+            scale = tx.sin(0.5 * h * norm) / norm
         dx = scale * wx
         dy = scale * wy
         dz = scale * wz
         # Right multiplication: increment is in native root-local angular axes.
-        nw = qw*scalar - qx*dx - qy*dy - qz*dz
-        nx = qw*dx + qx*scalar + qy*dz - qz*dy
-        ny = qw*dy - qx*dz + qy*scalar + qz*dx
-        nz = qw*dz + qx*dy - qy*dx + qz*scalar
-        length = tx.sqrt(nw*nw + nx*nx + ny*ny + nz*nz)
+        nw = qw * scalar - qx * dx - qy * dy - qz * dz
+        nx = qw * dx + qx * scalar + qy * dz - qz * dy
+        ny = qw * dy - qx * dz + qy * scalar + qz * dx
+        nz = qw * dz + qx * dy - qy * dx + qz * scalar
+        length = tx.sqrt(nw * nw + nx * nx + ny * ny + nz * nz)
         if not tx.isfinite(length) or length <= 0.0:
             status[w] = 2
             length = 1.0

@@ -21,6 +21,7 @@ MAX_BODIES = 128
 class TyxFloatingModel(TyxTreeModel):
     root_body: int
 
+
 def compile_floating_model(mj, model):
     issues = []
 
@@ -29,14 +30,23 @@ def compile_floating_model(mj, model):
 
     free = np.flatnonzero(model.jnt_type == mj.mjtJoint.mjJNT_FREE)
     scalar = np.isin(model.jnt_type, [mj.mjtJoint.mjJNT_HINGE, mj.mjtJoint.mjJNT_SLIDE])
-    if (len(free) != 1 or int(free[0]) != 0 or not np.all(scalar[1:])
-            or not 6 <= model.nv <= 35 or model.nq != model.nv + 1
-            or model.njnt != model.nv - 5):
+    if (
+        len(free) != 1
+        or int(free[0]) != 0
+        or not np.all(scalar[1:])
+        or not 6 <= model.nv <= 35
+        or model.nq != model.nv + 1
+        or model.njnt != model.nv - 5
+    ):
         issue("joint-domain", "T2 requires one leading native free root and 0..29 hinge/slide DOFs")
         raise MuJoCoTyxUnsupported(issues)
     root = int(model.jnt_bodyid[0])
-    if (model.body_parentid[root] != 0 or model.body_jntnum[root] != 1
-            or model.jnt_qposadr[0] != 0 or model.jnt_dofadr[0] != 0):
+    if (
+        model.body_parentid[root] != 0
+        or model.body_jntnum[root] != 1
+        or model.jnt_qposadr[0] != 0
+        or model.jnt_dofadr[0] != 0
+    ):
         issue("root-domain", "native free root must be a world child with only its free joint")
     for joint in range(1, model.njnt):
         cursor = int(model.jnt_bodyid[joint])

@@ -33,3 +33,14 @@ The TYX rewrite uses world-origin motion recursion, COM Jacobian assembly and
 per-step full mass/bias with bounded dense Cholesky; it does not freeze a
 configuration-specific MuJoCo mass or invoke Warp/CPU dynamics at each step.
 Disabled actuator force clamping follows CPU MuJoCo 3.3.7 before gear aggregation.
+
+T2 free-root tree port (_floating_model.py/_floating_kernels.py/_floating_device.py):
+the same v0.0.2 smooth/passive/forward algorithms are rewritten for a native
+free root and up to 29 scalar joints, including root-COM offsets and the full
+root/joint inertia coupling. Root linear velocity is world-frame and angular
+velocity is root-local; quaternion integration uses a right local increment.
+Coordinate, Jacobian and Euler semantics are checked against MuJoCo 3.3.7
+engine_core_smooth.c, engine_util_spatial.c and engine_forward.c.
+The bounded TYX dense solve and transactional device resources are independent;
+CPU MuJoCo compiles the model but does not execute these per-step dynamics.
+Free-joint springs and possible contacts in this tree domain remain unsupported.

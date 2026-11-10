@@ -88,6 +88,23 @@ def _mix_contact(model, left, right, mj):
 
 
 def compile_model(mj, model):
+    free_ids = np.flatnonzero(model.jnt_type == mj.mjtJoint.mjJNT_FREE)
+    if len(free_ids):
+        root = int(model.jnt_bodyid[free_ids[0]])
+        # Preserve the established T0 free-body route. Select the new tree
+        # domain from source structure, never by retrying a failed lowering.
+        legacy_free = (
+            model.njnt == 1
+            and np.count_nonzero(model.body_rootid == root) == 1
+            and not np.any(model.body_ipos[root])
+            and np.all(model.body_inertia[root] == model.body_inertia[root, 0])
+            and not np.any(model.jnt_stiffness)
+            and model.nu == 0
+        )
+        if not legacy_free:
+            from ._floating_model import compile_floating_model
+
+            return compile_floating_model(mj, model)
     if np.any(model.jnt_type == mj.mjtJoint.mjJNT_HINGE):
         from ._tree_model import compile_tree_model
 

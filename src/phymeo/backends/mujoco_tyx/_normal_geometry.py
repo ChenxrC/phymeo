@@ -32,6 +32,7 @@ def contacts(
     rows: tx.ndarray(tx.f32, 3),
     normal_jacobian: tx.ndarray(tx.f32, 3),
     scratch: tx.ndarray(tx.f32, 3),
+    raw_rows: tx.ndarray(tx.f32, 3),
     diagnostics: tx.ndarray(tx.f32, 2),
     status: tx.ndarray(tx.i32, 1),
 ):
@@ -80,7 +81,17 @@ def contacts(
                     scratch[w, 4, i] = 0.0
                 distance = 0.0
                 eligible = 1
-                if ta == 0:
+                if ta >= 3:
+                    # Extended pair rows already follow native compact manifold order.
+                    eligible = 0
+                    if raw_rows[w, row, 0] == 1.0:
+                        eligible = 1
+                        distance = raw_rows[w, row, 1]
+                        for i in range(3):
+                            scratch[w, 3, i] = raw_rows[w, row, 2 + i]
+                            scratch[w, 2, i] = raw_rows[w, row, 5 + i]
+                            scratch[w, 4, i] = raw_rows[w, row, 8 + i]
+                elif ta == 0:
                     # Plane is first by native type order; native normal is its Z axis.
                     for i in range(3):
                         scratch[w, 2, i] = geom_world[w, ga, 5 + 3 * i]

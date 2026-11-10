@@ -182,9 +182,9 @@ def test_four_layouts_true_entry_velocity_drive_and_loads(layout, tyx_mode, tmp_
                             )
                         host_samples[pair] = host_sample
                     assert plan.last_device_query is converted.query
-                    assert converted.query.state_epoch == plan.last_query.state_epoch
+                    assert converted.query.state_epoch == plan.last_result.state_epoch
                     assert tuple(converted.query.requested_pairs) == tuple(
-                        plan.last_query.candidates
+                        plan.last_result.candidates
                     )
                     assert converted.query.ticks[0] == entry.tick
                     assert receipt.accepted_state.tick == tick + 1
@@ -318,7 +318,7 @@ def test_late_failure_retains_all_publications_and_retry(fault, tyx_mode, tmp_pa
             accepted, status, broad, device = (
                 plan.last_accepted,
                 plan.last_status,
-                plan.last_query,
+                plan.last_result,
                 plan.last_device_query,
             )
             query = plan._device_patch_query
@@ -375,7 +375,7 @@ def test_late_failure_retains_all_publications_and_retry(fault, tyx_mode, tmp_pa
                     batch.step_contacts(plan, H)
             assert batch.snapshot() == before
             assert plan.last_accepted is accepted and plan.last_status is status
-            assert plan.last_query is broad and plan.last_device_query is device
+            assert plan.last_result is broad and plan.last_device_query is device
             assert query.stats["queries"] == queries
             assert batch.step_contacts(plan, H) == {7: True, 31: True}
             assert all(s.tick == 2 for s in batch.snapshot().values())
@@ -410,7 +410,7 @@ def test_global_resource_error_and_exact_per_world_site_capacity(tyx_mode, tmp_p
                     with pytest.raises((RuntimeError, ValueError), match="patch|resource|RESOURCE"):
                         batch.step_contacts(plan, H)
                     assert batch.snapshot() == before
-                    assert not plan.last_accepted and plan.last_query is None
+                    assert not plan.last_accepted and plan.last_result is None
                     assert plan.last_device_query is None
                 else:
                     assert batch.step_contacts(plan, H) == {7: True, 31: False}
@@ -438,7 +438,7 @@ def test_independent_query_still_publishes_and_bundle_stays_host(tyx_mode, tmp_p
         with batch.prepare_collision(model, bindings) as broad:
             with closing(batch.prepare_convex_query(broad, site_capacity=8)) as query:
                 result = query.query()
-                assert query.last_result is result and broad.last_query is not None
+                assert query.last_result is result and broad.last_result is not None
                 assert query.stats["queries"] == 1
                 assert query.require_current(result) is result
         calls = []

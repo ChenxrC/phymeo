@@ -143,7 +143,8 @@ def test_defaults_include_inferred_inertia_and_owned_source_snapshot(tmp_path):
     assert isinstance(record.asset, FloatingRobotAsset)
     assert record.asset.model.children is None
     assert record.asset.model.root.inverse_mass[0] == pytest.approx(1 / 24)
-    np.testing.assert_allclose(record.asset.model.root.inertia[0], [1.04, .8, .4], atol=1e-12)
+    rotation = quaternion_matrix(record.asset.model.root_inertia_frame_xyzw[None])[0]
+    np.testing.assert_allclose(rotation @ np.diag(record.asset.model.root.inertia_diagonal[0]) @ rotation.T, np.diag([1.04, .8, .4]), atol=1e-12)
     included.unlink()
     main.unlink()
     restored = record.fresh_native_model()
@@ -185,7 +186,7 @@ def test_world_environment_and_contact_law_are_explicit_metadata():
 
 
 @pytest.mark.parametrize("change,issue", [
-    (lambda x: x.replace('type="hinge"', 'type="ball"').replace('ref=".17" range="-.7 .9"', ''), "joint-type"),
+    (lambda x: x.replace('type="hinge"', 'type="ball" limited="false"').replace('ref=".17" range="-.7 .9"', ''), "joint-type"),
     (lambda x: x.replace('name="turn"', 'name="turn" frictionloss=".2"'), "joint-frictionloss"),
     (lambda x: x.replace('name="turn"', 'name="turn" stiffness="2"'), "joint-stiffness"),
     (lambda x: x.replace('</mujoco>', '<equality><joint joint1="turn" joint2="slide"/></equality></mujoco>'), "equality"),
@@ -238,3 +239,58 @@ def test_invalid_xml_is_compile_error_and_coordinate_shapes_are_checked():
     ):
         with pytest.raises(ValueError):
             method(*args)
+
+
+def test_full_inertia_tensor_is_decoded_without_diagonal_loss():
+    mj = native()
+    xml = xml_tree(True).replace(
+        'quat=".9238795325 0 0 .3826834324"\n              diaginertia=".06 .08 .1"',
+        'fullinertia=".06 .08 .1 .005 .003 -.002"',
+    )
+    record = compiler.compile_mujoco_xml(xml)
+    reference = mj.MjModel.from_xml_string(xml)
+    data = mj.MjData(reference)
+    data.qpos[:] = record.q_to_qpos(record.initial_q)
+    mj.mj_forward(reference, data)
+    dense = np.empty((reference.nv, reference.nv))
+    mj.mj_fullM(reference, dense, data.qM)
+    transform = record.velocity_map(record.initial_q)
+    state = FloatingRobotState(record.initial_q, record.initial_v)
+    np.testing.assert_allclose(floating_mass_matrix(record.asset.model, state), transform.T @ dense @ transform, atol=2e-12)
+
+
+def test_asymmetric_source_or_collision_filter_is_not_silently_reinterpreted():
+    native()
+    xml = xml_tree(True).replace('name="base-sphere"', 'name="base-sphere" contype="1" conaffinity="0"')
+    with pytest.raises(compiler.MuJoCoLoweringError, match="collision-filter"):
+        compiler.compile_mujoco_xml(xml)
+
+
+def test_native_tendon_and_fixed_welded_child_have_explicit_capability_errors():
+    native()
+    tendon = '<tendon><fixed name="coupled"><joint joint="turn" coef="1"/></fixed></tendon>'
+    with pytest.raises(compiler.MuJoCoLoweringError, match="tendon"):
+        compiler.compile_mujoco_xml(xml_tree(True, extra=tendon))
+    welded = xml_tree(True).replace('</worldbody>', '<body name="other"><joint name="other-joint"/><geom size=".1"/></body></worldbody>')
+    with pytest.raises(compiler.MuJoCoLoweringError, match="multiple-articulations"):
+        compiler.compile_mujoco_xml(welded)
+
+
+def test_virtual_include_bytes_and_unlimited_joint_metadata():
+    native()
+    part = BODY.format(free='<freejoint name="root-free"/>', actuator='').replace('range="-.7 .9"', 'limited="false"').replace('range="-.2 .4"', 'limited="false"')
+    record = compiler.compile_mujoco_xml(
+        '<mujoco><compiler angle="radian"/><include file="part.xml"/></mujoco>',
+        includes={"part.xml": f'<mujoco><worldbody>{part}</worldbody></mujoco>'.encode()},
+    )
+    assert record.asset.name == "MuJoCo Model"
+    assert np.all(np.isneginf(record.asset.lower))
+    assert np.all(np.isposinf(record.asset.upper))
+    assert record.asset.effort_limit == (None, None)
+
+
+def test_physical_unsupported_geometry_is_not_treated_as_visual():
+    native()
+    xml = xml_tree(True).replace('name="arm-capsule" type="capsule"', 'name="arm-capsule" type="cylinder"')
+    with pytest.raises(compiler.MuJoCoLoweringError, match="geometry-type"):
+        compiler.compile_mujoco_xml(xml)

@@ -364,3 +364,62 @@ def test_physical_unsupported_geometry_is_not_treated_as_visual():
     )
     with pytest.raises(compiler.MuJoCoLoweringError, match="geometry-type"):
         compiler.compile_mujoco_xml(xml)
+
+
+@pytest.mark.parametrize("kind", ("pair", "exclude", "disabled-actuator"))
+def test_native_collision_overrides_and_disabled_actuators_require_explicit_admission(kind):
+    native()
+    if kind == "pair":
+        xml = (
+            xml_tree(True)
+            .replace("<worldbody>", '<worldbody><geom name="floor" type="plane" size="1 1 .1"/>')
+            .replace('name="arm-capsule"', 'name="arm-capsule" contype="0" conaffinity="0"')
+        )
+        xml = xml.replace(
+            "</mujoco>", '<contact><pair geom1="arm-capsule" geom2="floor"/></contact></mujoco>'
+        )
+        code = "contact-pair"
+    elif kind == "exclude":
+        xml = xml_tree(True, extra='<contact><exclude body1="base" body2="slider"/></contact>')
+        code = "contact-exclude"
+    else:
+        xml = xml_tree(
+            True, extra='<actuator><motor name="disabled" joint="turn" group="1"/></actuator>'
+        )
+        xml = xml.replace("<option ", '<option actuatorgroupdisable="1" ')
+        code = "actuator-group-disable"
+    record = compiler.compile_mujoco_xml(xml, require_asset=False)
+    assert record.asset is None
+    assert code in {issue.code for issue in record.lowering_issues}
+    if kind == "pair":
+        assert not next(
+            row for row in record.mapping.geoms if row.name == "arm-capsule"
+        ).visual_only
+    with pytest.raises(compiler.MuJoCoLoweringError, match=code):
+        compiler.compile_mujoco_xml(xml)
+
+
+def test_urdf_uses_cpu_mujoco_compiler_and_preserves_slider_mass(tmp_path):
+    mj = native()
+    path = tmp_path / "slider.urdf"
+    path.write_text(
+        """<robot name="urdf_slider">
+      <link name="base"/>
+      <link name="carriage"><inertial><mass value="0.5"/>
+        <inertia ixx=".002" iyy=".003" izz=".004" ixy="0" ixz="0" iyz="0"/>
+      </inertial><collision><geometry><sphere radius=".05"/></geometry></collision></link>
+      <joint name="slide" type="prismatic"><parent link="base"/><child link="carriage"/>
+        <axis xyz="1 0 0"/><limit lower="-1" upper="1" effort="5" velocity="2"/>
+      </joint></robot>""",
+        encoding="utf-8",
+    )
+    record = compiler.compile_mujoco(path)
+    assert record.asset.joint_names == ("slide",)
+    np.testing.assert_array_equal(record.initial_q, [0])
+    np.testing.assert_array_equal(record.asset.lower, [-1])
+    model = record.fresh_native_model()
+    data = mj.MjData(model)
+    mj.mj_forward(model, data)
+    dense = np.zeros((model.nv, model.nv))
+    mj.mj_fullM(model, dense, data.qM)
+    np.testing.assert_allclose(dense, [[0.5]], atol=1e-15)

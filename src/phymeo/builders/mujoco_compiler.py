@@ -378,6 +378,8 @@ def _semantic_issues(mj, model, floating):
     issues = []
     for field, code in (
         ("ntendon", "tendon"),
+        ("npair", "contact-pair"),
+        ("nexclude", "contact-exclude"),
         ("neq", "equality"),
         ("nflex", "flex"),
         ("nplugin", "plugin"),
@@ -417,6 +419,13 @@ def _semantic_issues(mj, model, floating):
             LoweringIssue(
                 "native-option-flags",
                 "nondefault native enable/disable flags require explicit backend semantics",
+            )
+        )
+    if int(model.opt.disableactuator):
+        issues.append(
+            LoweringIssue(
+                "actuator-group-disable",
+                "disabled native actuator groups require explicit scene semantics",
             )
         )
     return issues
@@ -526,11 +535,12 @@ def _decode(mj, model):
         link_names.append(bodies[body_ids[index]].name)
     world_geoms = []
     shape_counts = {}
+    paired_geoms = set(map(int, model.pair_geom1)) | set(map(int, model.pair_geom2))
     for geom in range(model.ngeom):
         authored, name = _name(mj, model, mj.mjtObj.mjOBJ_GEOM, geom)
         body = int(model.geom_bodyid[geom])
         contype, affinity = int(model.geom_contype[geom]), int(model.geom_conaffinity[geom])
-        visual = contype == 0 and affinity == 0
+        visual = contype == 0 and affinity == 0 and geom not in paired_geoms
         world_static = body not in selected or body == 0
         key = None
         if world_static:

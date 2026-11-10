@@ -71,14 +71,15 @@ def _source_frames(result, frames_by_world):
         if frame.shape != shape:
             raise ValueError("entry material IDs/radius/revision differs")
         world_row = result.world_keys.index(shape.key.world)
-        origin = source["world_origins_m"][world_row]
+        origin = _vector(source["world_origins_m"][world_row], "nonfinite device source origin")
         first, last = map(int, source["vertex_offsets"][i:i + 2])
         declared = source["declared_local_points_m"][first:last]
         uploaded = source["uploaded_local_points_m"][first:last]
         _exact(source["vertex_ids"][first:last], shape.vertex_ids,
                "device patch material source IDs differ")
-        if declared.shape != (len(shape.vertex_ids), 3):
-            raise ValueError("device patch declared source shape differs")
+        if (declared.shape != (len(shape.vertex_ids), 3) or uploaded.shape != declared.shape
+                or not np.isfinite(declared).all() or not np.isfinite(uploaded).all()):
+            raise ValueError("device patch declared/uploaded source shape or finiteness differs")
         expected_group = -1 if frame.group_index is None else frame.group_index
         if (int(source["shape_groups"][i]) != expected_group
                 or int(source["shape_world_rows"][i]) != world_row):
@@ -126,7 +127,10 @@ def _local_scale(first, second):
     for frame, cloud in zip((first, second), clouds, strict=True):
         diameter = max((float(np.linalg.norm(a - b)) for a in cloud for b in cloud), default=0)
         scale = max(scale, diameter + 2 * frame.shape.radius)
-    return max(scale, float(np.linalg.norm(clouds[1].mean(axis=0) - clouds[0].mean(axis=0))))
+    scale = max(scale, float(np.linalg.norm(clouds[1].mean(axis=0) - clouds[0].mean(axis=0))))
+    if not np.isfinite(scale):
+        raise ValueError("device patch local scale is not representable")
+    return scale
 
 
 def patches_from_device(result, frames_by_world, *, candidates):

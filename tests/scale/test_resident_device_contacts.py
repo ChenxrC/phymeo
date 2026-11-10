@@ -111,6 +111,7 @@ def test_four_layouts_true_entry_velocity_drive_and_loads(layout, tyx_mode, tmp_
         with batch.prepare_contacts(
             model, bindings, laws, tree_dynamic_pairs=True, narrow_phase="device_patch"
         ) as plan:
+            host_search = bridge.contact_patch_sample
             monkeypatch.setattr(bridge, "contact_patch_sample", no_host_search)
             counts = _spies(monkeypatch, batch, plan)
             try:
@@ -121,6 +122,35 @@ def test_four_layouts_true_entry_velocity_drive_and_loads(layout, tyx_mode, tmp_
                     receipt = plan.last_accepted[world]
                     converted = receipt.diagnostics["device_patch"]
                     truth = audit(layout, batch, item, entry, receipt, sources, world)
+                    host_samples = {}
+                    entry_frames = receipt.diagnostics["entry_frames"]
+                    for pair, effective in converted.samples.items():
+                        first, second = (entry_frames[key] for key in pair)
+                        host_sample = host_search(first.shape, second.shape,
+                                                  first.world_points_m, second.world_points_m)
+                        # These four predeclared sphere-based physical cases have
+                        # a unique point. General face bijections are in the other file.
+                        assert len(host_sample.sites) == len(effective.sites) == 1
+                        wanted = host_sample.sites[0]
+                        raw_row = next(row for row in converted.query.rows if row.pair == pair)
+                        raw = raw_row.patch.sites[0]
+                        raw_origin = np.asarray(raw_row.origin_m)
+                        scale = max(1.0, first.shape.radius, second.shape.radius,
+                                    float(np.ptp(first.world_points_m, axis=0).max()),
+                                    float(np.ptp(second.world_points_m, axis=0).max()))
+                        for observed_gap in (raw.gap_m, effective.sites[0].witness.gap_m):
+                            assert abs(observed_gap - wanted.witness.gap_m) <= 1e-4 * scale
+                        for side in ("first", "second"):
+                            wanted_point = getattr(wanted.witness, side + "_point")
+                            for observed in (
+                                raw_origin + getattr(raw, side).surface_relative_m,
+                                getattr(effective.sites[0].witness, side + "_point")
+                            ):
+                                np.testing.assert_allclose(observed, wanted_point,
+                                                           atol=2e-4 * scale, rtol=0)
+                        for observed in (raw.normal, effective.sites[0].witness.normal):
+                            np.testing.assert_allclose(observed, wanted.witness.normal, atol=2e-3, rtol=0)
+                        host_samples[pair] = host_sample
                     assert plan.last_device_query is converted.query
                     assert converted.query.state_epoch == plan.last_query.state_epoch
                     assert tuple(converted.query.requested_pairs) == tuple(plan.last_query.candidates)
@@ -150,7 +180,7 @@ def test_four_layouts_true_entry_velocity_drive_and_loads(layout, tyx_mode, tmp_
                             np.testing.assert_allclose(actual.force_n, force, atol=1e-12, rtol=0)
                             np.testing.assert_allclose(actual.torque_nm, moment, atol=1e-12, rtol=0)
                     rows.append(dict(entry=entry, accepted=receipt.accepted_state, truth=truth,
-                                     geometry=compact_record(converted), sites=receipt.sites,
+                                     host_same_entry=host_samples, geometry=compact_record(converted), sites=receipt.sites,
                                      wrench=receipt.law_wrench_fp64, diagnostics={
                                          k: v for k, v in receipt.diagnostics.items() if k != "device_patch"}))
             finally:

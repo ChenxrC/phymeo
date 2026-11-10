@@ -488,7 +488,9 @@ class ConvexQueryPlan:
             sites = self._site_capacity
             scratch.update(
                 {
-                    "patch_meta": ((p, 8), np.int32),
+                    # CUDA kernels require a device array even for a zero-pair
+                    # query. One physical row is charged; publication slices it.
+                    "patch_meta": ((max(1, p) if s else p, 8), np.int32),
                     "patch_weight": ((sites,), np.float32),
                     "patch_gap": ((sites,), np.float32),
                     "patch_normal": ((sites, 3), np.float32),
@@ -755,7 +757,10 @@ class ConvexQueryPlan:
             "patch_skin",
             "patch_mcount",
         )
-        return {name: self._read(self._buffers[name]) for name in names}
+        result = {name: self._read(self._buffers[name]) for name in names}
+        if self._capacity == 0:
+            result["patch_meta"] = result["patch_meta"][:0].copy()
+        return result
 
     def _patches(self, view, raw, pose, pairs, patch_raw):
         absent = ConvexQueryPatch("ABSENT", -1, (), False, False, False)
@@ -1089,12 +1094,42 @@ class ConvexQueryPlan:
                                     b["simplex_slots"],
                                     *(b[name] for name in _WIRE),
                                 )
-                            if self._patch_kernels is not None:
+                        # Patch sites need canonical padding even when no pairs are allowed.
+                        if self._patch_kernels is not None:
+                            self._launch(
+                                self._patch_kernels["clear"],
+                                "query_launches",
+                                max(1, self._capacity),
+                                self._site_capacity,
+                                b["patch_meta"],
+                                b["patch_weight"],
+                                b["patch_gap"],
+                                b["patch_normal"],
+                                b["patch_common"],
+                                b["patch_ids"],
+                                b["patch_bary"],
+                                b["patch_surface"],
+                                b["patch_skin"],
+                                b["patch_mcount"],
+                            )
+                            base = 0
+                            for index in range(len(pairs)):
                                 self._launch(
-                                    self._patch_kernels["clear"],
+                                    self._patch_kernels["fill"],
                                     "query_launches",
-                                    self._capacity,
+                                    index,
+                                    base,
                                     self._site_capacity,
+                                    b["tags"],
+                                    b["ids"],
+                                    b["radius"],
+                                    b["world_points"],
+                                    b["pairs"],
+                                    b["meta"],
+                                    b["gap"],
+                                    b["normal"],
+                                    b["patch_work"],
+                                    b["patch_work_i"],
                                     b["patch_meta"],
                                     b["patch_weight"],
                                     b["patch_gap"],
@@ -1106,40 +1141,11 @@ class ConvexQueryPlan:
                                     b["patch_skin"],
                                     b["patch_mcount"],
                                 )
-                                base = 0
-                                for index in range(len(pairs)):
-                                    self._launch(
-                                        self._patch_kernels["fill"],
-                                        "query_launches",
-                                        index,
-                                        base,
-                                        self._site_capacity,
-                                        b["tags"],
-                                        b["ids"],
-                                        b["radius"],
-                                        b["world_points"],
-                                        b["pairs"],
-                                        b["meta"],
-                                        b["gap"],
-                                        b["normal"],
-                                        b["patch_work"],
-                                        b["patch_work_i"],
-                                        b["patch_meta"],
-                                        b["patch_weight"],
-                                        b["patch_gap"],
-                                        b["patch_normal"],
-                                        b["patch_common"],
-                                        b["patch_ids"],
-                                        b["patch_bary"],
-                                        b["patch_surface"],
-                                        b["patch_skin"],
-                                        b["patch_mcount"],
-                                    )
-                                    self._sync()
-                                    written = self._read(b["patch_meta"])
-                                    base += (
-                                        int(written[index, 2]) if int(written[index, 0]) == 1 else 0
-                                    )
+                                self._sync()
+                                written = self._read(b["patch_meta"])
+                                base += (
+                                    int(written[index, 2]) if int(written[index, 0]) == 1 else 0
+                                )
                         self._sync()
                         pose, stamp = self._read(b["pose"]), self._read(b["stamp"])
                         self._attempt_ticks = self._read(view.accepted.ticks)

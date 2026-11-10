@@ -283,16 +283,16 @@ def solve(
                     for r in range(nrow):
                         previous_working[w, r] = working[w, r]
                         previous_force[w, r] = efc_data[w, r, 9]
-                    # Release a structural batch only after the feasible face is
-                    # stationary at the same local scale as entering bounds.
-                    # A large unrelated row must not hide an unfinished face.
+                    # Release bounds whose local violation dominates the current
+                    # free-face error. Small violations wait for refinement;
+                    # large ones need not wait below FP32 face-rounding noise.
                     # Stable row order breaks normalized-KKT ties.
                     # At most nv new rows avoids an unbounded cold face; blocking
                     # repairs finish before any hit may enter again.
-                    if refine_face == 0 and free_kkt <= tolerance:
+                    if refine_face == 0:
                         for release_pass in range(nv):
                             entering = -1
-                            largest = tolerance
+                            largest = tx.max(tolerance, free_kkt)
                             for r in range(nrow):
                                 violation = 0.0
                                 if working[w, r] == 0:
@@ -531,7 +531,7 @@ def solve(
                                         1.0, tx.abs(efc_data[w, r, 4] * efc_data[w, r, 9])
                                     )
                                     violation = violation / row_scale
-                                    if free_kkt <= tolerance and violation > tolerance:
+                                    if violation > tx.max(tolerance, free_kkt):
                                         can_release = 1
                                 if blocking == 1 or can_release == 0:
                                     stalled = 1

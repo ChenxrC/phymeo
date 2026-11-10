@@ -128,3 +128,13 @@ matrix/factor[W,V,V]，其余dof向量[W,V]，row向量[W,E]。更新efc_data的
 75公共初态诊断在任何device step前被原FP64 unit quaternion门拒；77尝试合法unit声明不能量化回完全相同四元数，严格同字节断言拒绝，未用近邻输入代替。79/80改为直接构造保存的精确device bank并各advance一次，不调用公共初态修复或发布。两后端均status0/5face/70EFC/27free，独立KKT分别4.56e-8/2.74e-8，全部输入q/v/双字clock、row身份与原失败绑定；同输入原生力/加速度比较通过。这只闭环设备失败步，不是公开checkpoint支持或连续轨迹通过。原公共已发布FP32四元数不能直接作为FP64unit初态的互操作缺口另列后续，不在本修复中放宽门。
 
 能力元数据新增通用mixed_articulated_constraints_supported和floating_mixed_constraints_supported，按实际constraint plan/kind决定，旧g1_supported只作后者的deprecated alias。scope明确admitted-model-domain与trajectory validation分开；无G1名称/资产/策略特判。原通用free-root混合ENV验证这些字段。73lint与74format均0，69完整短矩阵、81从原合法初态无reset的20秒公共轨迹及最终长组/安装包继续验证。
+## 11. 比例选择当前自由面与违反边界
+
+81新公共20秒轨迹在9.296秒、4648已接受步后耗尽原100-face预算；原2秒检查通过，至拒步前最低高度0.732166052m、最大倾角0.196138582rad、settled足载0.997864665mg，没有行为门失败。85仅分析该保存问题：180行/120自由行，free残差约3.60e-5，最大bound违反0.861673；精化原face后该bound仍违反0.861681。绝对free<=tau的进入门会在FP32底噪附近反复精化已足够好的face，而不能处理真正大的边界违反。这与51弱bound过早进入是同一工作分配规则的两端。
+
+先调研通用有界QP的proportioning方法：[Dostál 1997](https://epubs.siam.org/doi/10.1137/S1052623494266250)以active变量违反与free梯度的相对规模决定探索当前face或改变工作集，并允许辅助问题近似求解。这里据此采用自己的有界工程调度规则，不声称完整复现该论文算法或继承其收敛定理。
+
+冻结本次完整梯度后的phi=max_free |g_i|/max(1,|R_i f_i|)，每个bound的beta仍用已有相同局部尺度。仅beta>max(tau,phi)可入面，保持refine_face==0、稳定最大优先和最多nv个新bound；can_release使用同一除法与阈值。51的弱违反先等待free精化，81的真实大违反立即获得处理机会。不存在按G1标签、时间、行号或试验输出选择常数。
+
+最终global/strict-bound KKT、质量方程、可行性、100预算及原native力比较全部不变。beta>phi不是误差传播证书，也不保证所选变量一定属于最终active set；跨行耦合仍由完整QP、可行线搜索和最终检查处理。90/91静态0；86–89按两条原失败的精确device bank及两后端检查，尚未以任何新长窗通过替代原失败。
+86/87原51输入双后端均5face通过；88/89原81输入双后端均26face通过，原预算100、输入字节、完整row身份及native力/加速度门保持。92通用风险/预算/ENV双后端26通过，90/91静态0；尚未因此声明完整20秒通过。

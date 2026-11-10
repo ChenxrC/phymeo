@@ -4,6 +4,7 @@ Original B1 gates: gap 1e-4 L, paired surfaces/moment 2e-4 L, normal 2e-3,
 weights 1e-5. Both representations independently meet those same references.
 No old K1 WIP imports or force-selected correspondences.
 """
+
 from dataclasses import replace
 
 import numpy as np
@@ -21,7 +22,7 @@ def frames_for(result):
     for index, shape in enumerate(source["model"].shapes):
         world = shape.key.world
         origin = np.asarray(source["world_origins_m"][source["world_keys"].index(world)])
-        start, end = source["vertex_offsets"][index:index + 2]
+        start, end = source["vertex_offsets"][index : index + 2]
         declared = source["declared_local_points_m"][start:end]
         group = int(source["shape_groups"][index])
         if group < 0:
@@ -33,8 +34,14 @@ def frames_for(result):
             points = declared @ rotation.T + position
             reference = position
         frames.setdefault(world, {})[shape.key] = ContactShapeFrame(
-            shape, points, None if group < 0 else group, position, rotation,
-            reference, np.zeros(3), np.zeros(3)
+            shape,
+            points,
+            None if group < 0 else group,
+            position,
+            rotation,
+            reference,
+            np.zeros(3),
+            np.zeros(3),
         )
     return frames
 
@@ -43,8 +50,12 @@ def assert_effective(converted, result, spec):
     row = result.rows[0]
     sample = converted.samples[row.pair]
     origin, scale = np.asarray(row.origin_m), spec["length_m"]
-    actual = [np.r_[np.asarray(s.witness.first_point) - origin,
-                    np.asarray(s.witness.second_point) - origin] for s in sample.sites]
+    actual = [
+        np.r_[
+            np.asarray(s.witness.first_point) - origin, np.asarray(s.witness.second_point) - origin
+        ]
+        for s in sample.sites
+    ]
     expected = [np.concatenate(s["surfaces"]) for s in spec["sites"]]
     match = b1.complete_match(actual, expected, 2e-4 * scale)
     assert sample.dimension == spec["dimension"]
@@ -64,11 +75,18 @@ def assert_effective(converted, result, spec):
             assert len(weights) == len(raw.vertex_ids)
             np.testing.assert_allclose(
                 [dict(weights)[node] for node in raw.vertex_ids],
-                np.asarray(raw.weights) / sum(raw.weights), atol=1e-15, rtol=0
+                np.asarray(raw.weights) / sum(raw.weights),
+                atol=1e-15,
+                rtol=0,
             )
         moment += site.weight * (np.asarray(site.load_point) - origin)
-    wanted = sum((s["weight"] * (np.asarray(s["surfaces"][0]) + s["surfaces"][1]) / 2
-                  for s in spec["sites"]), np.zeros(3))
+    wanted = sum(
+        (
+            s["weight"] * (np.asarray(s["surfaces"][0]) + s["surfaces"][1]) / 2
+            for s in spec["sites"]
+        ),
+        np.zeros(3),
+    )
     np.testing.assert_allclose(moment, wanted, atol=2e-4 * scale, rtol=0)
     raw_moment = sum((s.weight * np.asarray(s.common_m) for s in row.patch.sites), np.zeros(3))
     delta = moment - raw_moment
@@ -103,7 +121,9 @@ def test_all_families_raw_and_effective_share_independent_reference(
         with b1.prepared(case, tyx_mode, tmp_path) as (batch, broad, query, before):
             result = k0.query_attempt(batch, query, saved, "raw")
             b1.assert_patch(result.rows[0], spec, case)
-            converted = patches_from_device(result, frames_for(result), candidates=(result.rows[0].pair,))
+            converted = patches_from_device(
+                result, frames_for(result), candidates=(result.rows[0].pair,)
+            )
             assert_effective(converted, result, spec)
             saved["effective"] = converted
             assert k0.canonical(batch.snapshot()) == k0.canonical(before)
@@ -115,21 +135,41 @@ def test_all_families_raw_and_effective_share_independent_reference(
 def test_partial_faces_preserve_every_id_and_first_moment(name, variant, tyx_mode, tmp_path):
     case, spec = b1.reference().polygon_case(name, variant)
     with b1.saved(tmp_path, "B2-" + name + "-" + variant, tyx_mode, case) as saved:
-        with b1.prepared(case, tyx_mode, tmp_path, requested_reverse=variant == "reverse") as (_, _, query, _):
+        with b1.prepared(case, tyx_mode, tmp_path, requested_reverse=variant == "reverse") as (
+            _,
+            _,
+            query,
+            _,
+        ):
             result = query.query()
             saved["raw"] = result
             b1.assert_patch(result.rows[0], spec, case)
-            converted = patches_from_device(result, frames_for(result), candidates=(result.rows[0].pair,))
+            converted = patches_from_device(
+                result, frames_for(result), candidates=(result.rows[0].pair,)
+            )
             assert_effective(converted, result, spec)
             saved["effective"] = converted
 
 
 @pytest.mark.tyx
-@pytest.mark.parametrize("fault", (
-    "negative_bary", "missing_material", "nonunit_site_normal", "zero_weight",
-    "missing_row", "duplicate_row", "declared_source", "uploaded_source", "frame_source",
-    "resource", "unresolved", "surface", "quadrature"
-))
+@pytest.mark.parametrize(
+    "fault",
+    (
+        "negative_bary",
+        "missing_material",
+        "nonunit_site_normal",
+        "zero_weight",
+        "missing_row",
+        "duplicate_row",
+        "declared_source",
+        "uploaded_source",
+        "frame_source",
+        "resource",
+        "unresolved",
+        "surface",
+        "quadrature",
+    ),
+)
 def test_bad_representation_cannot_become_a_physical_site(fault, tyx_mode, tmp_path):
     spec = b1.reference().cc_overlap()
     case = k0.reference().family_case("CC", spec["gap_m"])
@@ -140,7 +180,10 @@ def test_bad_representation_cannot_become_a_physical_site(fault, tyx_mode, tmp_p
         if fault == "negative_bary":
             site = replace(site, first=replace(site.first, weights=(-0.1, 1.1)))
         elif fault == "missing_material":
-            site = replace(site, first=replace(site.first, vertex_ids=(2147483647,) + site.first.vertex_ids[1:]))
+            site = replace(
+                site,
+                first=replace(site.first, vertex_ids=(2147483647,) + site.first.vertex_ids[1:]),
+            )
         elif fault == "nonunit_site_normal":
             site = replace(site, normal=(0, 0, 0))
         elif fault == "zero_weight":
@@ -149,11 +192,24 @@ def test_bad_representation_cannot_become_a_physical_site(fault, tyx_mode, tmp_p
             site = replace(site, weight=site.weight + 0.1)
         elif fault == "surface":
             site = replace(site, first=replace(site.first, surface_relative_m=(100, 100, 100)))
-        if fault in ("negative_bary", "missing_material", "nonunit_site_normal", "zero_weight", "surface", "quadrature"):
+        if fault in (
+            "negative_bary",
+            "missing_material",
+            "nonunit_site_normal",
+            "zero_weight",
+            "surface",
+            "quadrature",
+        ):
             # Mutate both representations consistently. These negatives must
             # reach semantic admission, not merely typed/raw binding checks.
             wire = dict(result.patch)
-            for name in ("patch_weight", "patch_normal", "patch_ids", "patch_bary", "patch_surface"):
+            for name in (
+                "patch_weight",
+                "patch_normal",
+                "patch_ids",
+                "patch_bary",
+                "patch_surface",
+            ):
                 wire[name] = np.array(wire[name], copy=True)
             wire["patch_weight"][0] = site.weight
             wire["patch_normal"][0] = site.normal
@@ -162,23 +218,36 @@ def test_bad_representation_cannot_become_a_physical_site(fault, tyx_mode, tmp_p
             wire["patch_bary"][0, 0, :count] = site.first.weights
             wire["patch_surface"][0, 0] = site.first.surface_relative_m
             site = replace(
-                site, weight=float(wire["patch_weight"][0]),
+                site,
+                weight=float(wire["patch_weight"][0]),
                 normal=tuple(map(float, wire["patch_normal"][0])),
-                first=replace(site.first,
+                first=replace(
+                    site.first,
                     vertex_ids=tuple(map(int, wire["patch_ids"][0, 0, :count])),
                     weights=tuple(map(float, wire["patch_bary"][0, 0, :count])),
-                    surface_relative_m=tuple(map(float, wire["patch_surface"][0, 0]))))
+                    surface_relative_m=tuple(map(float, wire["patch_surface"][0, 0])),
+                ),
+            )
             row = replace(row, patch=replace(row.patch, sites=(site,) + row.patch.sites[1:]))
             result = replace(result, rows=(row,), patch=wire)
         elif fault in ("resource", "unresolved"):
-            row = replace(row, patch=replace(row.patch, status="RESOURCE_LIMIT" if fault == "resource" else "UNRESOLVED"))
+            row = replace(
+                row,
+                patch=replace(
+                    row.patch, status="RESOURCE_LIMIT" if fault == "resource" else "UNRESOLVED"
+                ),
+            )
             result = replace(result, rows=(row,))
         elif fault == "missing_row":
             result = replace(result, rows=())
         elif fault == "duplicate_row":
             result = replace(result, rows=(row, row))
         elif fault in ("declared_source", "uploaded_source"):
-            key = "declared_local_points_m" if fault == "declared_source" else "uploaded_local_points_m"
+            key = (
+                "declared_local_points_m"
+                if fault == "declared_source"
+                else "uploaded_local_points_m"
+            )
             source = dict(result.source)
             source[key] = np.array(source[key], copy=True)
             source[key][0, 0] += 0.1
@@ -186,7 +255,9 @@ def test_bad_representation_cannot_become_a_physical_site(fault, tyx_mode, tmp_p
         elif fault == "frame_source":
             key = row.pair[0]
             original = frames[key.world][key]
-            frames[key.world][key] = replace(original, world_points_m=original.world_points_m + [0.1, 0, 0])
+            frames[key.world][key] = replace(
+                original, world_points_m=original.world_points_m + [0.1, 0, 0]
+            )
         with pytest.raises((ValueError, RuntimeError)):
             patches_from_device(result, frames, candidates=(row.pair,))
 
@@ -201,13 +272,24 @@ def test_patch_first_moment_bounds_weight_normalization(common_x, tyx_mode, tmp_
     case = k0.reference().family_case("SS", -1 / 16)
     first = np.array([[common_x, 0.0, 0.0]])
     second = np.array([[common_x, 0.0, 3 / 16]])
-    case.update(local=(first.copy(), second.copy()), points=(first, second),
-                positions=(np.zeros(3), np.zeros(3)), radii=(1 / 8, 1 / 8))
+    case.update(
+        local=(first.copy(), second.copy()),
+        points=(first, second),
+        positions=(np.zeros(3), np.zeros(3)),
+        radii=(1 / 8, 1 / 8),
+    )
     spec = dict(
-        gap_m=-1 / 16, normal=np.array([0.0, 0.0, 1.0]), dimension=0, length_m=1.0,
-        sites=(dict(weight=1.0, surfaces=(
-            np.array([common_x, 0.0, 1 / 8]),
-            np.array([common_x, 0.0, 1 / 16]))),))
+        gap_m=-1 / 16,
+        normal=np.array([0.0, 0.0, 1.0]),
+        dimension=0,
+        length_m=1.0,
+        sites=(
+            dict(
+                weight=1.0,
+                surfaces=(np.array([common_x, 0.0, 1 / 8]), np.array([common_x, 0.0, 1 / 16])),
+            ),
+        ),
+    )
     with b1.saved(tmp_path, "B2-moment-" + str(common_x), tyx_mode, case) as saved:
         with b1.prepared(case, tyx_mode, tmp_path) as (_, _, query, _):
             result = query.query()
@@ -223,7 +305,9 @@ def test_patch_first_moment_bounds_weight_normalization(common_x, tyx_mode, tmp_
             assert len(row.patch.sites) == 1
             original = row.patch.sites[0]
             np.testing.assert_array_equal(original.common_m, [common_x, 0, 3 / 32])
-            np.testing.assert_array_equal(converted.differences[row.pair][0]["common_delta_m"], np.zeros(3))
+            np.testing.assert_array_equal(
+                converted.differences[row.pair][0]["common_delta_m"], np.zeros(3)
+            )
             wire = dict(result.patch)
             wire["patch_weight"] = np.array(wire["patch_weight"], copy=True)
             wire["patch_weight"][0] = 1 + 2**-23
@@ -235,7 +319,7 @@ def test_patch_first_moment_bounds_weight_normalization(common_x, tyx_mode, tmp_
             # quadrature sum is normalized: relative moment delta is exactly
             # -2^-23 * (common_x, 0, 3/32). At x=2^20 its x component is -1/8,
             # exceeding the original 2e-4*1 gate despite zero point deltas.
-            expected_delta = -2**-23 * np.array([common_x, 0, 3 / 32])
+            expected_delta = -(2**-23) * np.array([common_x, 0, 3 / 32])
             saved["independent_moment_delta_m"] = expected_delta
             if common_x:
                 with pytest.raises(ValueError, match="first moment"):
@@ -245,6 +329,7 @@ def test_patch_first_moment_bounds_weight_normalization(common_x, tyx_mode, tmp_
                 allowed = patches_from_device(changed, frames, candidates=(row.pair,))
                 assert_effective(allowed, changed, spec)
                 np.testing.assert_array_equal(
-                    allowed.patch_differences[row.pair]["first_moment_delta_m"], expected_delta)
+                    allowed.patch_differences[row.pair]["first_moment_delta_m"], expected_delta
+                )
                 saved["normalized_effective"] = allowed
             assert k0.canonical((result.raw, result.patch, result.source)) == raw_before

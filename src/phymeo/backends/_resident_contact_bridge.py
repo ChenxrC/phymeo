@@ -383,7 +383,8 @@ def sample_tree_contacts(
         selected.add(pair)
     supplied = patches
     if supplied is not None and (
-        not isinstance(supplied, Mapping) or set(supplied) != selected
+        not isinstance(supplied, Mapping)
+        or set(supplied) != selected
         or any(not isinstance(patch, ContactPatchSample) for patch in supplied.values())
     ):
         raise ValueError("supplied device patches require exact candidate membership")
@@ -394,7 +395,8 @@ def sample_tree_contacts(
             contact_patch_sample(
                 first.shape, second.shape, first.world_points_m, second.world_points_m
             )
-            if supplied is None else supplied[pair]
+            if supplied is None
+            else supplied[pair]
         )
         sites_count += len(patch.sites)
         if sites_count <= capacity:

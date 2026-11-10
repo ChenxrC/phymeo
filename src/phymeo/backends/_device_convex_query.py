@@ -997,21 +997,27 @@ class ConvexQueryPlan:
                     broad_result = pending = None
                     if staged_broadphase is not None:
                         if self._requested is not None:
-                            raise ValueError("staged contact geometry cannot use explicit query pairs")
+                            raise ValueError(
+                                "staged contact geometry cannot use explicit query pairs"
+                            )
                         broad_result, pending, entry_bank = staged_broadphase
                         self._broad.require_current(broad_result)
-                        if (entry_bank != view.accepted.active
-                                or broad_result.owner is not view.owner
-                                or broad_result.registration is not view.registration
-                                or broad_result.state_epoch != view.accepted.state_epoch
-                                or broad_result.topology_generation != view.accepted.topology_generation
-                                or broad_result.shape_keys != tuple(view.shape_keys)
-                                or broad_result.shape_revisions != tuple(view.shape_revisions)
-                                or broad_result.registered_pairs != self._broad._registered_pairs
-                                or broad_result.world_keys != tuple(view.world_keys)):
+                        if (
+                            entry_bank != view.accepted.active
+                            or broad_result.owner is not view.owner
+                            or broad_result.registration is not view.registration
+                            or broad_result.state_epoch != view.accepted.state_epoch
+                            or broad_result.topology_generation != view.accepted.topology_generation
+                            or broad_result.shape_keys != tuple(view.shape_keys)
+                            or broad_result.shape_revisions != tuple(view.shape_revisions)
+                            or broad_result.registered_pairs != self._broad._registered_pairs
+                            or broad_result.world_keys != tuple(view.world_keys)
+                        ):
                             raise ValueError("staged broad phase differs from the entry source")
                         pairs = tuple(sorted(tuple(pair) for pair in broad_result.candidates))
-                        if len(set(pairs)) != len(pairs) or any(pair != _canonical(pair) for pair in pairs):
+                        if len(set(pairs)) != len(pairs) or any(
+                            pair != _canonical(pair) for pair in pairs
+                        ):
                             raise ValueError("staged broad phase candidate membership differs")
                     elif self._requested is None:
                         broad_result, pending = view.stage_broadphase()
@@ -1159,9 +1165,13 @@ class ConvexQueryPlan:
                         view, raw, pose, stamp, pairs, delta, broad_delta, patch_raw
                     )
                     if staged_broadphase is not None:
-                        expected_ticks = dict(zip(broad_result.world_keys, broad_result.ticks, strict=True))
-                        if any(int(result.ticks[i]) != int(expected_ticks[world])
-                               for i, world in enumerate(result.world_keys)):
+                        expected_ticks = dict(
+                            zip(broad_result.world_keys, broad_result.ticks, strict=True)
+                        )
+                        if any(
+                            int(result.ticks[i]) != int(expected_ticks[world])
+                            for i, world in enumerate(result.world_keys)
+                        ):
                             raise ValueError("staged broad phase ticks differ from convex entry")
                     return result, broad_result, pending
             except BaseException:
@@ -1202,13 +1212,19 @@ class ConvexQueryPlan:
             for key, expected in self._source.items():
                 actual = result.source.get(key)
                 if isinstance(expected, np.ndarray):
-                    valid = (isinstance(actual, np.ndarray) and actual.dtype == expected.dtype
-                             and np.array_equal(actual, expected))
+                    valid = (
+                        isinstance(actual, np.ndarray)
+                        and actual.dtype == expected.dtype
+                        and np.array_equal(actual, expected)
+                    )
                 elif key == "model":
                     valid = actual is expected
                 elif key == "bindings":
-                    valid = (isinstance(actual, tuple) and len(actual) == len(expected)
-                             and all(a is b for a, b in zip(actual, expected, strict=True)))
+                    valid = (
+                        isinstance(actual, tuple)
+                        and len(actual) == len(expected)
+                        and all(a is b for a, b in zip(actual, expected, strict=True))
+                    )
                 else:
                     valid = actual == expected
                 if not valid:

@@ -423,8 +423,11 @@ class _ResidentContactMechanics:
                         group_count=body_count,
                         site_capacity=self._site_caps[world],
                         tree_dynamic_pairs=self._tree_dynamic_pairs,
-                        patches=None if attempt["device_patch"] is None else {
-                            pair: patch for pair, patch in attempt["device_patch"].samples.items()
+                        patches=None
+                        if attempt["device_patch"] is None
+                        else {
+                            pair: patch
+                            for pair, patch in attempt["device_patch"].samples.items()
                             if pair[0].world == world
                         },
                     )
@@ -709,7 +712,9 @@ class ResidentContactPlan(_ResidentContactMechanics, ResidentCollisionPlan):
             raise ValueError("narrow_phase must be host_patch or device_patch")
         if narrow_phase == "host_patch" and device_patch_site_capacity is not None:
             raise ValueError("device patch capacity requires device_patch narrow phase")
-        capacity = 4096 if device_patch_site_capacity is None else _site_limit(device_patch_site_capacity)
+        capacity = (
+            4096 if device_patch_site_capacity is None else _site_limit(device_patch_site_capacity)
+        )
         if narrow_phase == "device_patch" and capacity == 0:
             raise ValueError("device patch site capacity must be positive")
         self._narrow_phase = narrow_phase
@@ -750,8 +755,8 @@ class ResidentContactPlan(_ResidentContactMechanics, ResidentCollisionPlan):
             # dependent only after this single-page registration is complete.
             if narrow_phase == "device_patch":
                 from ._device_convex_query import ConvexQueryPlan
-                self._device_patch_query = ConvexQueryPlan(
-                    batch, self, site_capacity=capacity)
+
+                self._device_patch_query = ConvexQueryPlan(batch, self, site_capacity=capacity)
         except BaseException:
             if hasattr(self, "_closed"):
                 self.close()
@@ -771,18 +776,24 @@ class ResidentContactPlan(_ResidentContactMechanics, ResidentCollisionPlan):
         if query is None:
             return None
         from ._resident_device_patch_bridge import patches_from_device
+
         result, broad, pending = query._stage_query(
-            (attempt["result"], attempt["pending"], attempt["src"]))
+            (attempt["result"], attempt["pending"], attempt["src"])
+        )
         if broad is not attempt["result"] or pending is not attempt["pending"]:
             raise RuntimeError("device patch did not retain the staged broad phase")
         query.require_current(result)
-        if (result.state_epoch != attempt["epoch"] or result.active != attempt["src"]
-                or tuple(row.pair for row in result.rows)
-                != tuple(sorted(attempt["result"].candidates))):
+        if (
+            result.state_epoch != attempt["epoch"]
+            or result.active != attempt["src"]
+            or tuple(row.pair for row in result.rows) != tuple(sorted(attempt["result"].candidates))
+        ):
             raise ValueError("device patch result differs from the complete entry candidates")
         return patches_from_device(
-            result, {world: packet["frames"] for world, packet in entry.items()},
-            candidates=attempt["result"].candidates)
+            result,
+            {world: packet["frames"] for world, packet in entry.items()},
+            candidates=attempt["result"].candidates,
+        )
 
     def _check_contact_geometry(self, geometry):
         if geometry is not None:

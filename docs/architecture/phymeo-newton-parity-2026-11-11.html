@@ -135,7 +135,7 @@ body{font-family:'Cascadia Mono','Microsoft YaHei',monospace}.container{max-widt
 <body>
 <div class="container">
 <header class="header"><div class="header-row"><span class="pulse-dot"></span><h1>Phymeo / Newton · 功能连接全景</h1></div>
-<p class="subtitle">2026-11-11 · 本轮执行中 · 基线 e4d00bfc · 对照 Newton 1.7.0</p></header>
+<p class="subtitle">2026-11-11 04:50 · 本轮执行中 · 对照 Newton 1.7.0</p></header>
 <div class="banner">本轮主线：训练规模优先，机器人、碰撞、GPU 三线并行。绿色只表示已验的限定范围；黄色为本轮待验，灰色为后继缺口。各后端能力不互相倒灌。</div>
 <section class="diagram-container">
 <svg viewBox="0 0 1120 900" role="img" aria-label="资产编译、两条TYX力学路径与公共环境及训练连接">
@@ -158,33 +158,33 @@ body{font-family:'Cascadia Mono','Microsoft YaHei',monospace}.container{max-widt
 <g class="box green"><rect x="630" y="134" width="420" height="76"/><text x="840" y="163">不可变编译记录 / 身份映射</text><text class="sub" x="840" y="186">CPU native · 默认 CUDA TYX · 显式 Warp</text></g>
 <g class="box green"><rect x="70" y="274" width="420" height="76"/><text x="280" y="303">原 Phymeo TYX resident</text><text class="sub" x="280" y="326">ordinary / affine / floating / floating-affine</text></g>
 <g class="box green"><rect x="630" y="274" width="420" height="76"/><text x="840" y="303">MuJoCo-TYX 完整 FK / COM / J / M / bias</text><text class="sub" x="840" y="326">固定根域；单自由根 + 0–29 scalar joints</text></g>
-<g class="box green"><rect x="70" y="394" width="420" height="76"/><text x="280" y="423">TYX AABB / BVH → HOST patch / 力律</text><text class="sub" x="280" y="446">K0 限域设备查询；完整受载几何仍有 HOST</text></g>
+<g class="box green"><rect x="70" y="394" width="420" height="76"/><text x="280" y="423">TYX AABB / BVH → HOST 或设备 patch</text><text class="sub" x="280" y="446">限定设备 S/C/OBB/H；HOST 材料点与力装配</text></g>
 <g class="box green"><rect x="630" y="394" width="420" height="76"/><text x="840" y="423">设备 primitive 接触 / 混合约束</text><text class="sub" x="840" y="446">九类配对 · pyramidal condim1/3/4/6</text></g>
 <g class="box green"><rect x="70" y="514" width="420" height="76"/><text x="280" y="543">完整力学响应 / 唯一接受发布</text><text class="sub" x="280" y="566">双侧力矩 · 原图投影 · 每 storage 一次推进</text></g>
 <g class="box green"><rect x="630" y="514" width="420" height="76"/><text x="840" y="543">共享 M 的有界 active-set 求解</text><text class="sub" x="840" y="566">limits / dry friction · 力与运动共同发布</text></g>
 <g class="box violet"><rect x="295" y="676" width="530" height="76"/><text x="560" y="705">公共运行协议 → ResidentVectorEnv → PolicyRunner</text><text class="sub" x="560" y="728">accepted mask / 动作保持 / 时钟 / final observation / reset</text></g>
-<g class="box green"><rect x="295" y="799" width="530" height="76"/><text x="560" y="828">已验 CPU PPO / ONNX 策略 / 真实状态回放</text><text class="sub" x="560" y="851">设备物理 ≠ 全 GPU 训练；端到端张量数据面尚待补</text></g>
+<g class="box green"><rect x="295" y="799" width="530" height="76"/><text x="560" y="828">设备 task/action 端口 · CPU PPO / ONNX</text><text class="sub" x="560" y="851">保留 HOST 审计/诊断；真实 GPU PPO 尚待接入</text></g>
 <text x="560" y="246" text-anchor="middle" fill="#fbbf24" font-size="13">两条独立物理路径，分别验收与报告</text>
 </svg>
 </section>
 <section class="cards">
-<div class="card"><h3><span class="dot amber"></span>A · 机器人与工作流</h3><p id="lane-a">进行中：公共原样中途 checkpoint/restore，模型/布局/CAS 绑定；G1 原策略完整131.48秒为组合留出，尚无本轮通过结论。</p></div>
-<div class="card"><h3><span class="dot amber"></span>B · 通用碰撞</h3><p id="lane-b">进行中：既有K1剩余点/线/面资格、部分交面与四类树 accepted source；完整设备载荷消费须在几何资格后验证。</p></div>
-<div class="card"><h3><span class="dot amber"></span>C · GPU 与训练规模</h3><p id="lane-c">进行中：按完整world分页、每页原容量、一次求解与共同发布。真实受载W256与设备张量端口尚未验收。</p></div>
+<div class="card"><h3><span class="dot amber"></span>A · 机器人与工作流</h3><p id="lane-a">已验公共中途 checkpoint/restore 与继续推进。G1 新 IMU 协议通过语义与2秒双路径；完整131.48秒运行中。旧版112.372秒参考XY门失败保留。</p></div>
+<div class="card"><h3><span class="dot amber"></span>B · 通用碰撞</h3><p id="lane-b">设备十类凸体配对和四类树来源已验；单页 patch 消费两端各67项通过，保留完整力与COM力矩。保存审计/新wheel待验；分页组合正在编码。</p></div>
+<div class="card"><h3><span class="dot amber"></span>C · GPU 与训练规模</h3><p id="lane-c">真实受载W256分页、设备 task/action 及29执行器宽度已验。动作提交缓存复用在固定案例降至约0.65–0.98ms；仍有HOST装配/诊断，不是全GPU训练。</p></div>
 </section>
 <section class="matrix"><h2>八方向差异台账</h2>
 <table><thead><tr><th>方向</th><th>当前已验基础</th><th>仍需补齐的大颗粒能力</th></tr></thead><tbody>
-<tr><td>01 场景与机器人</td><td>资产、PD/IK、fixed/floating/affine、工具与双方反力</td><td>广泛关节/闭环/传动；持续抓放工作流；同world独立participants设备联合求解</td></tr>
-<tr><td>02 碰撞</td><td>RR/RD/DD，多形状HOST patch、部分CCD、设备逐面候选；TYX native primitive响应</td><td>通用设备mesh/凹体/变形组合、广泛CCD、跨特征材料身份与持续摩擦</td></tr>
-<tr><td>03 GPU 与多场景</td><td>四类树与W256混合运动；MuJoCo-TYX混合约束</td><td>真实受载大批量、异构场景/约束容量、少往返数据面与同条件吞吐</td></tr>
-<tr><td>04 训练 / 可微</td><td>公共ENV与接受语义、CPU PPO三真实任务、策略保存重载</td><td>全GPU训练数据面、物理随机化/RNN、精确中途resume；多步梯度/辨识</td></tr>
+<tr><td>01 场景与机器人</td><td>资产、PD/IK、fixed/floating/affine、工具/双方反力、物理中途恢复</td><td>广泛关节/闭环/传动；持续抓放工作流；同world独立participants设备联合求解</td></tr>
+<tr><td>02 碰撞</td><td>RR/RD/DD、有限面边、部分CCD、设备逐面候选；限定设备凸体patch真实受力</td><td>通用设备mesh/凹体/变形组合、广泛CCD、跨特征材料身份与持续摩擦</td></tr>
+<tr><td>03 GPU 与多场景</td><td>四类树与真实受载W256分页；MuJoCo-TYX混合约束</td><td>分页设备patch组合、异构场景/约束容量、HOST装配/诊断热点与同条件吞吐</td></tr>
+<tr><td>04 训练 / 可微</td><td>公共ENV、CPU PPO三任务、设备task/action端口、物理检查点</td><td>真实GPU策略/PPO、随机化/RNN与完整训练resume；多步梯度/辨识</td></tr>
 <tr><td>05 传感与交互</td><td>深度/法线/ID、TYX射线、IMU、Three.js真实回放</td><td>RGB/材质光照、广泛相机、批量传感与编辑生态</td></tr>
 <tr><td>06 跨域求解编排</td><td>事务/点端口/域图与指定刚–布–软体共同推进</td><td>通用多后端耦合调度、界面约束与统一失败恢复</td></tr>
 <tr><td>07 布与体软体</td><td>布拉伸/剪切/弯曲/自接触，StVK四面体与双向载荷</td><td>密集折叠、持续静摩擦/换特征、软块抓捏与软布放台稳健性</td></tr>
 <tr><td>08 杆缆 / MPM / 流体</td><td>连杆、粒子与弹性体基础</td><td>完整弯扭杆缆、粒子–网格、塑性/流动、双向边界</td></tr>
 </tbody></table></section>
 <footer class="footer">绿色：已验限定能力 · 黄色：执行中 · 不按测试数计算完成百分比<br>
-<a href="../development/phymeo-newton-panorama-2026-11-07.md">详细全景与证据</a> ·
+<a href="../development/phymeo-newton-panorama-2026-11-11.md">当前详细全景与证据</a> ·
 <a href="../superpowers/plans/2026-11-11-newton-parity-until-0800.md">本轮计划</a> ·
 <a href="https://newton-physics.github.io/newton/1.7.0/solvers/index.html">Newton 1.7 求解器矩阵</a><br>
 模板基础：Cocoon AI MIT，许可随附于 licenses/architecture-diagram-template-MIT.txt</footer>

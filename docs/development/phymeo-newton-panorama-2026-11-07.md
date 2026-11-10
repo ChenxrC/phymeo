@@ -1,5 +1,7 @@
 # Phymeo / Newton 功能差异全景（2026-11-11：双后端与训练规模）
 
+> 历史快照：本页保留此前各批次的验收和当时开放项。当前状态请读[2026-11-11全景](phymeo-newton-panorama-2026-11-11.md)与[续作入口](p65-continuation.md)；下文旧“进行中”“尚未验收”不能覆盖新结果。
+
 **11月11日已验基线：** [MuJoCo-TYX T4](../benchmarks/p65-mujoco-tyx-mixed-constraints.md)已实现设备端九类 primitive 接触、pyramidal condim1/3/4/6、soft limits、dry friction、完整共享 M/J 约束求解及力/运动共同发布；单free-root加0–29 scalar joints或已声明固定根域。G1原策略20秒及h细化/双向推扰共14000接受步、0拒步；210个最终测试节点、新wheel公共ENV/reset/clone均通过。它采用明确命名的bounded active-set算法，不冒MuJoCo原Newton/CG；CPU MjSpec编译、脱离设备的CPU观察与示例ONNX仍在链上。全量已推codex/dev，详细边界见[统一架构](../architecture/unified-scene-compilation.md)。
 
 **当前进行中，不提前计通过：** 用户确认的[至今日08:00计划](../superpowers/plans/2026-11-11-newton-parity-until-0800.md)并行补公共精确中途恢复、K1设备patch及浮根/affine来源、真实受载W256分页；父单槽验证原G1全131.48秒。最高主线仍为训练/规模，原八大模块顺序是覆盖台账。下述11月10日HOST/旧resident记录保留其原后端边界；旧“CUDA仅2秒”不再代表新MuJoCo-TYX当前范围。

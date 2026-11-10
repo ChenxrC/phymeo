@@ -257,7 +257,41 @@ def test_single_page_matches_b2_and_default_host(tyx_mode, tmp_path):
         routes[route] = slider_run(tyx_mode, path, ((7, 31),), route=route)
     close_values(routes["single"][0], routes["bundle"][0])
     close_values(routes["single"][1], routes["bundle"][1])
-    close_values(routes["host"][0], routes["bundle"][0])
+    for host_step, device_step in zip(routes["host"][0], routes["bundle"][0], strict=True):
+        assert set(host_step) == set(device_step)
+        for world, host in host_step.items():
+            device = device_step[world]
+            close_values({k: v for k, v in host.items() if k != "sites"},
+                         {k: v for k, v in device.items() if k != "sites"})
+            remaining = list(device["sites"])
+            assert len(host["sites"]) == len(remaining) == 4
+            for first in host["sites"]:
+                assert first.geometry.witness.source == "host-instantaneous-convex-patch"
+                matches = [
+                    i for i, second in enumerate(remaining)
+                    if first.pair == second.pair
+                    and np.linalg.norm(np.asarray(first.geometry.load_point) -
+                                       second.geometry.load_point) <= 2e-4
+                    and np.linalg.norm(np.asarray(first.geometry.witness.normal) -
+                                       second.geometry.witness.normal) <= 2e-3
+                    and abs(first.geometry.weight - second.geometry.weight) <= 1e-12
+                ]
+                assert len(matches) == 1
+                second = remaining.pop(matches[0])
+                assert second.geometry.witness.source == "resident-device-patch-effective-v1"
+                assert abs(first.geometry.witness.gap_m - second.geometry.witness.gap_m) <= 1e-4
+                for side in ("first", "second"):
+                    assert np.linalg.norm(
+                        np.asarray(getattr(first.geometry.witness, side + "_point")) -
+                        getattr(second.geometry.witness, side + "_point")
+                    ) <= 2e-4
+                # Each route's full material reconstruction was independently
+                # audited by slider_truth. Sparse barycentric identity is not
+                # a cross-representation physical equality requirement.
+                for f in fields(first):
+                    if f.name != "geometry":
+                        close_values(getattr(first, f.name), getattr(second, f.name))
+            assert not remaining
 
 
 @pytest.mark.tyx

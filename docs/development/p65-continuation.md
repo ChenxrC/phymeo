@@ -1,12 +1,14 @@
 # P6.5 人工续作入口
 
-## 当前执行（2026-11-11 05:20，用户确认至北京时间08:00）
+## 当前执行（2026-11-11 06:00，用户确认至北京时间08:00）
 
-先读[今日差异全景](phymeo-newton-panorama-2026-11-11.md)、[实际进度](p65-parity-2026-11-11-progress.md)和[执行计划](../superpowers/plans/2026-11-11-newton-parity-until-0800.md)。公共中途 checkpoint/restore、真实受载 W256 分页、设备 task/action 端口及 29 执行器动作宽度已完成专项验证。单页设备凸体 patch 已接入原材料点、完整 J/M、真实力与 COM 力矩，interpret/CUDA 各67项通过；同次47份/后端保存审计已通过，新安装包仍待执行。两条物理路径分别验收：resident 的新设备几何消费不能倒灌成 MuJoCo-TYX 的能力，反之亦然。
+先读[本批正式验收](../benchmarks/p65-parity-20261111-connections.md)、[八方向全景](phymeo-newton-panorama-2026-11-11.md)与[执行计划](../superpowers/plans/2026-11-11-newton-parity-until-0800.md)。产品/测试冻结e3d15707，父继续仅做有限保存诊断及最终文档/dev同步。当前没有物理测试或构建进程；所有项目执行仍父唯一串行owner。
 
-G1旧 observation v1 完整尝试在112.372秒触发独立CPU参考的原1米XY门，未完成；设备拒步数为0，失败与完整前缀审计保留。新的 v2 明确使用当前 IMU-site 角速度，16项语义测试和原条件2秒/1000步双路径及保存审计均通过。run93于05:12结束RAW_EXIT1：46.29秒/23145接受步时设备参考XY误差1.000277米，独立CPU同时0.999777米；没有设备拒步或reset，但未完成131.48秒。run106正在核完整失败前缀；今晚不重复全窗或改门追结果。该结果不否定IMU坐标语义，也不足以单独归因长期漂移。
+本批已完成公共中途恢复、真实受载W256分页、设备task/action与29执行器宽度、十类设备凸体patch资格、单页和分页真实力消费。B2各67节点/47保存，B3各29节点/28保存；最终新wheel483产品成员同源，十组源码外公共调用全过。113/124两个环境预检首错、父汇总JSONL抽取错误均保留，正式wheel汇总为v2，不重复旧绿组或112字节审计。resident与MuJoCo-TYX两条物理路径分别验收，HOST装配/诊断仍保留，不称全GPU训练。
 
-父是唯一串行项目执行 owner。[冻结B3计划](../superpowers/plans/2026-11-11-paged-device-contact.md)的分页设备接触已编码整合，全部页转换后一次求解与共同发布；专项验证待队列执行。下一批GPU训练已有[源码研究](mujoco-tyx-gpu-training-research.md)与[三个可验节点](../superpowers/plans/2026-11-11-mujoco-tyx-gpu-training.md)，尚未安装CUDA Torch或实现PPO闭环。当前新证据归于`artifacts/p65-parity-20261111-01`。06:30停止扩大范围，08:00依据真实结果收口并同步已验增量到codex/dev；当前尚未完成本轮推送。三个旧K1未跟踪文件和全部既验记录保留，旧pending段不覆盖本节。
+G1 v2 run93完整尝试在46.29秒/23145步触发设备原1米参考XY门，未完成131.48秒；无设备拒步/reset。106失败保存审计、123全前缀离线诊断已结束。两条独立轨迹直接XY差最大17.30mm、末步3.29mm，双方相对参考均近1m；同输入局部qacc/constraint差异另待定位。原v1失败亦保留，不重跑全窗/改模型或门。见[G1诊断](g1-drift-diagnosis-20261111.md)。下一条有限工作是保存tick17855差异定位，不重新推理/物理执行。
+
+下一主线为[GPU训练N1–N3](../superpowers/plans/2026-11-11-mujoco-tyx-gpu-training.md)：独立CUDA Torch环境/真实策略消费、两任务PPO更新、训练边界组合恢复。已调研，未安装或实现；本夜不插入该新执行范围。06:30停止扩大范围，08:00据真实结果收口。dev尚待本轮最终同步，三份旧K1未跟踪WIP保留；旧heartbeat/pending不覆盖本节，既验grant不重开。
 
 ## 历史基线（2026-11-11，MuJoCo-TYX T4与G1有限持续支撑已验收）
 

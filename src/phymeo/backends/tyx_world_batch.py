@@ -520,9 +520,16 @@ class TyxWorldBatch:
         )
 
     def prepare_contact_bundle(
-        self, pages, *, site_capacity=128, sampling="discrete_entry", tree_dynamic_pairs=False
+        self,
+        pages,
+        *,
+        site_capacity=128,
+        sampling="discrete_entry",
+        tree_dynamic_pairs=False,
+        narrow_phase="host_patch",
+        device_patch_site_capacity=None,
     ):
-        """Register bounded whole-world pages sharing one loaded physical step."""
+        """Register whole-world pages for one step, with an optional device query per page."""
         from ._resident_contact_bundle import ResidentContactBundle
 
         return ResidentContactBundle(
@@ -531,6 +538,8 @@ class TyxWorldBatch:
             site_capacity=site_capacity,
             sampling=sampling,
             tree_dynamic_pairs=tree_dynamic_pairs,
+            narrow_phase=narrow_phase,
+            device_patch_site_capacity=device_patch_site_capacity,
         )
 
     def step_contacts(self, plan, h):

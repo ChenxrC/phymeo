@@ -66,3 +66,7 @@ The result will establish finite normal contact only. Native friction, general m
 ## Author handoff
 
 The new test file contains fourteen test functions, a twelve-case primitive matrix and six continuous scenarios (288 main trajectory steps per backend). These are authored counts, not a collected or executed result. The 29-scalar binary tree uses native DFS order: j14 is the last scalar and carries the floor-contact point; the label28 is not assumed to be the final native DOF. Test-only JSONL and exact-state comparison reuse T2 serialization helpers, while geometry/dynamics/contact oracles are independently generated from original native XML. No import, collection, numerical probe, pytest, lint, formatter, compile, build or install was run in this author lane.
+
+Parent pre-execution addition: two equal loaded slider normals with source iterations=1 must reject the whole W2 batch after the real five launches; no partial single-face answer may publish. This adds two parameter cases before any T3 project execution.
+
+Execution is now recorded separately in the [parent acceptance report](../benchmarks/p65-mujoco-tyx-coupled-normal.md). The authoring/UNEXECUTED labels above describe preregistration history; actual results bind the final product/test snapshot there. The finite-edge case covers withdrawal only; the complete unload/reentry matrix remains T3b.

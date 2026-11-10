@@ -8,9 +8,13 @@
 
 本批形状矩阵为plane–sphere/capsule/box，以及sphere–sphere/capsule/box；固定根1–8scalar或单free-root加0–29scalar。隐式碰撞mask按native OR，保same-weld/parent过滤。仅混合结果condim=1，明确拒绝其它可能配对、显式pair/exclude、非默认flags及未迁移模型语义。硬界128geom、16possible pairs、32预分配候选槽；plane-box保8角身份但按CPU原corner顺序/ldist≤0/最多4真实contact。容量按实际detected与active分别计，恰满可接受，溢出共同拒绝。
 
+首次执行前独立源码审阅补足：混合margin要求非负，负margin的各primitive原生前置拒绝语义暂明确不支持；negative gap仍保原字段。scope限制由构造诊断`contact-margin`和独立负控覆盖，不静默改参数。
+
 每row在原contact中点用完整两体当前J，正normal指geom1→geom2。`a0=M^-1 rhs`，`A=J M^-1 J^T+diag(R)`，`b=J a0-aref`，解 `min(f>=0) .5 f^T A f+b^T f`。R使用compiled body_invweight0两体之和及native impedance；不把实际A对角当diagApprox，不加额外Jdotv。Euler随后解`(M+hD) a_int=rhs+J^Tf`。
 
 数值求解明确称`normal-dual-active-set-v1`，只声明同一frictionless QP；不复现或伪称native Newton/PGS迭代与warmstart。source iterations（1..512）映射为有限active-set线性解预算；scaled KKT门为max(source tolerance,2e-5)，公开actual iteration、绝对/归一残差和预算。未收敛、非有限或坏pivot全批拒绝，不退为各行独立clamp。有限FP32解不称精确解。
+
+归一残差定义在首次执行前固定：令g=Af+b，绝对违反为max_i(f_i>0时|g_i|，否则max(0,-g_i))，除以max(1,max_i(|b_i|+Σ_j|A_ij f_j|))，同时要求全部f≥0。门存为实际FP32值并在capabilities公布；独立测试另用原5e-5归一门及原force/qacc误差门。32slot是静态布局界（例如4个plane-box用32slot但最多16检测contact），超过布局在构造时拒绝；运行用户contact/constraint容量分别可更小，按实际计数检查。
 
 ## 所有权与接口
 
@@ -22,12 +26,17 @@
 
 ## 开发与验收
 
-- [ ] 原生固定来源研究、预登记六配对/多接触/反例/工程容差。
-- [ ] 新几何/共同求解、父准入/公共receipt和真实设备接线，独立源码审阅。
-- [ ] 父首次静态与interpret、CUDA专项；首次失败保留，仅诊断修复。
-- [ ] 同slider双接触独立解析反例、偏心四角、双脚树、双活动兄弟body、有限边缘撤离/重入、29scalar末body负载。
-- [ ] W4稀疏world、detected/active恰满与溢出、选reset/clone下一步、晚故障重试和禁CPU/Warp/HOST负控。
-- [ ] 少量受影响T0/T1/T2相邻、公共ENV与源码外新wheel双backend。
-- [ ] 同次保存/源码/包绑定、正式结果及续作入口；本批释放后进入T3余下形状或T4摩擦。
+- [x] 原生固定来源研究、预登记六配对/多接触/反例/工程容差。
+- [x] 新几何/共同求解、父准入/公共receipt和真实设备接线，独立源码审阅。
+- [x] 父首次静态与interpret、CUDA专项；首次失败保留，仅诊断修复。
+- [x] 同slider双接触独立解析反例、偏心四角、双脚树、双活动兄弟body、有限边缘撤离、29scalar末body负载。
+- [ ] 有限面完整卸载/重入矩阵：实际预登记128步用例仅覆盖撤离，本项明确留在T3b，不把撤离冒称重入已验。
+- [x] W4稀疏world、detected/active恰满与溢出、选reset/clone下一步、晚故障重试和禁CPU/Warp/HOST负控。
+- [x] 少量受影响T0/T1/T2相邻、公共ENV与源码外新wheel双backend。
+- [x] 同次保存/源码/包绑定、正式结果及续作入口；本批释放后进入T3余下形状或T4摩擦。
 
 案例与容差由独立作者在首次执行前登记，禁止观测后改模型/容差掩盖漏项。一次新可调用能力作为结束物，不用一个人形动作代替通用矩阵，不重跑旧完整已绿组。无远程CI/push/main合并/pin变更。
+
+## 本批实际结束
+
+产品/测试 `a9a39dcb5228218bf4d65998fabcdabd15183b1f`；interpret45按44+ENV1联合覆盖、CUDA33、相邻9、新wheel源码外两后端通过。原ENV同时双正力预期由native逐步力对照纠正，原模型/容差不变。20命令/60保存JSONL/470包成员文件核对0差异，父和三个作者均已释放。本批状态 **T3a_LOCAL_VALIDATED_SLOT_RELEASED**，不等同完整T3/T4/G1。详[实际结果与保留的首错](../../benchmarks/p65-mujoco-tyx-coupled-normal.md)。

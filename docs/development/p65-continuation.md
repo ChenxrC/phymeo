@@ -1,6 +1,12 @@
 # P6.5 人工续作入口
 
-## 当前续作（2026-11-10，MuJoCo-TYX T2原生自由根树）
+## 当前续作（2026-11-10，MuJoCo-TYX T3a共同法向接触）
+
+先读[T3a实际验收](../benchmarks/p65-mujoco-tyx-coupled-normal.md)。产品/测试 `a9a39dcb` 在T1/T2完整动力学上增加六类primitive配对、多个condim1行和共同QP；实际发布双方力/力矩与运动。解释45节点按44+ENV1联合覆盖、CUDA33、相邻9项通过，新wheel源码外两路径完成公共ENV和reset/clone下一步。20命令/60同次JSONL/470包成员核对0差异，所有执行结束，不重复已绿组。
+
+下一项为[扩展路线](mujoco-tyx-expansion-plan.md)的T3b：capsule–capsule、capsule–box、box–box及有限面完整卸载/重入矩阵，再接T4摩擦/限制与T5 G1。T3a仅混合condim1、非负margin、单free-root或固定根树，不能写成全MuJoCo/G1已迁移。原三个作者已释放，父保共享接缝及后续唯一执行owner；K1三个原WIP保留，无周期任务。下面各历史“下一项”不覆盖本节。
+
+## 历史基线（2026-11-10，MuJoCo-TYX T2原生自由根树）
 
 先读[T2实际验收](../benchmarks/p65-mujoco-tyx-floating-tree.md)。产品/测试 `1cb47675` 已完成单free-root加0–29 scalar joints，nq≤36/nv≤35、完整偏心惯量及根–关节耦合。解释20、真实CUDA16、相邻10项通过；新wheel源码外两路径均完成连续ENV/PolicyRunner、reset与clone下一步，466个安装产品成员同源。原始13命令/28保存文件和最终核对在artifacts/p65-mujoco-tyx-t2-20261110-01，全部执行已结束，不重复同源绿组。
 

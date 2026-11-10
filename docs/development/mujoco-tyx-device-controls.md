@@ -1,7 +1,12 @@
 # MuJoCo-TYX C2b device control input
 
-Status: CODE_READY_TESTS_PENDING / AUTHORING_SLOT_RELEASED.
-All new product and test code is UNEXECUTED. No import, collection, numerical probe,
+Current status: **FOCUSED_INTERPRET_AND_CUDA_VERIFIED**, 22 nodes per backend;
+see the parent qualification section below. Public CUDA W1/8/32 action-path
+comparisons also passed eight continuous steps per route with exact full state,
+action and receipt equality. Device submission currently has measured overhead;
+this is a functional connection, not a speedup claim. New wheel checks are pending.
+
+The original authoring account and hashes below are historical. No import, collection, numerical probe,
 pytest, lint, formatter, compile, build, install or native execution occurred in this lane.
 The parent owns focused serial validation after A1/C2 acceptance.
 

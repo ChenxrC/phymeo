@@ -1,6 +1,14 @@
 # C2 first slice — owned MuJoCo-TYX device task workspace
 
-Status: **CODE_READY_TESTS_PENDING / AUTHORING_ONLY / UNEXECUTED**.
+Current status: **FOCUSED_INTERPRET_AND_CUDA_VERIFIED**. Parent jobs 16/17
+passed 13 interpret / 12 CUDA nodes on source 6ba6ec40, including real TYX
+consumers and lifecycle/failure cases. Evidence is in
+`artifacts/p65-parity-20261111-01`. The explicit nonfinite-output negative case
+emitted the expected overflow warning. CUDA Torch is still unqualified.
+The [device action input](mujoco-tyx-device-controls.md) now provides a separately
+qualified return path; full physical HOST auditing remains. New installed-wheel
+checks are pending. The authoring labels and manifests below are historical.
+
 This is the bounded first slice of C2 in
 [the 2026-11-11 plan](../superpowers/plans/2026-11-11-newton-parity-until-0800.md),
 following the independently frozen [A1 checkpoint](mujoco-tyx-checkpoint.md).

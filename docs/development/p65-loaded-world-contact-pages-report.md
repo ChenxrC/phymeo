@@ -1,7 +1,14 @@
 # C1 world-complete loaded contact pages
 
-Status: **CODE_READY_TESTS_PENDING / AUTHORING_ONLY**. This lane has not imported
-the project, collected or run tests, or run static tools/builds. The parent owns
+Current status: **FOCUSED_INTERPRET_AND_CUDA_VERIFIED**. Parent jobs 12/13 passed
+all 17 cases per backend on source 6ba6ec40, including loaded W127/128/129/256,
+four layouts, ordering/reset/capacity and last-page rollback. Public CUDA job 18
+also completed 16 continuous steps at W1/32/128/256; comparable single-page runs
+matched complete states and receipts. This establishes scale support, not a
+Newton speed advantage. Evidence is in `artifacts/p65-parity-20261111-01` and
+[the rolling report](p65-parity-2026-11-11-progress.md). New wheel checks remain pending.
+
+The original authoring account below is historical. The parent owns
 the only execution slot. This extends the accepted resident contact transaction;
 it is unrelated to the separate MuJoCo-TYX mixed-constraint solver.
 
@@ -12,7 +19,7 @@ owns a tuple of bindings and an immutable material mapping. Its CollisionModel
 retains the original shape, vertex, revision, filter and exclusion contracts.
 `TyxWorldBatch.prepare_contact_bundle(pages, site_capacity=128,
 sampling="discrete_entry", tree_dynamic_pairs=False)` returns a
-`ResidentContactBundle`. The parent will add the three facade exports for the
+`ResidentContactBundle`. The parent integrated the three facade exports for the
 spec, bundle and `ResidentContactBundleResult`.
 
 A bundle contains zero through eight pages. Each page retains the original

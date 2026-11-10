@@ -1,7 +1,16 @@
 # A1 — exact MuJoCo-TYX accepted-state checkpoint
 
-Status: **CODE_READY_TESTS_PENDING / AUTHORING_ONLY / UNEXECUTED**.
-The author has not imported this product or its tests, collected tests, run a
+Current status: **FOCUSED_INTERPRET_AND_CUDA_VERIFIED**. Parent jobs 25 and 11
+passed 24 interpret / 23 CUDA nodes on source 6ba6ec40. First execution exposed
+the native `mj_setState` writable-array ABI requirement; two detached copies
+fixed it while the capsule stays immutable. After C2b runtime integration,
+four exact-restore continuation cases passed on each backend (jobs 37/38).
+Evidence is in `artifacts/p65-parity-20261111-01`; the new installed-wheel
+public check is still pending. Controller memory remains a caller-owned
+composition boundary, not automatically part of the engine capsule.
+
+The original authoring account below is historical. The author had not imported
+this product or its tests, collected tests, run a
 numerical probe, linted, formatted, built, installed, or executed native code.
 The parent owns the single execution slot and all acceptance decisions.
 

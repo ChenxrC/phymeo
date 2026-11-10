@@ -1,12 +1,12 @@
 # P6.5 人工续作入口
 
-## 当前执行（2026-11-11 04:50，用户确认至北京时间08:00）
+## 当前执行（2026-11-11 05:20，用户确认至北京时间08:00）
 
-先读[今日差异全景](phymeo-newton-panorama-2026-11-11.md)、[实际进度](p65-parity-2026-11-11-progress.md)和[执行计划](../superpowers/plans/2026-11-11-newton-parity-until-0800.md)。公共中途 checkpoint/restore、真实受载 W256 分页、设备 task/action 端口及 29 执行器动作宽度已完成专项验证。单页设备凸体 patch 已接入原材料点、完整 J/M、真实力与 COM 力矩，interpret/CUDA 各67项通过；同次47份保存证据的独立审计和新安装包仍待执行。两条物理路径分别验收：resident 的新设备几何消费不能倒灌成 MuJoCo-TYX 的能力，反之亦然。
+先读[今日差异全景](phymeo-newton-panorama-2026-11-11.md)、[实际进度](p65-parity-2026-11-11-progress.md)和[执行计划](../superpowers/plans/2026-11-11-newton-parity-until-0800.md)。公共中途 checkpoint/restore、真实受载 W256 分页、设备 task/action 端口及 29 执行器动作宽度已完成专项验证。单页设备凸体 patch 已接入原材料点、完整 J/M、真实力与 COM 力矩，interpret/CUDA 各67项通过；同次47份/后端保存审计已通过，新安装包仍待执行。两条物理路径分别验收：resident 的新设备几何消费不能倒灌成 MuJoCo-TYX 的能力，反之亦然。
 
-G1旧 observation v1 完整尝试在112.372秒触发独立CPU参考的原1米XY门，未完成；设备拒步数为0，失败与完整前缀审计保留。新的 v2 明确使用当前 IMU-site 角速度，16项语义测试和原条件2秒/1000步双路径及保存审计均通过。run93正在进行唯一一次新的131.48秒全窗口；运行中不计通过，不改变原模型、策略、初态、h或工程门。早先时钟检查中断另留历史，不与这一物理失败混称。
+G1旧 observation v1 完整尝试在112.372秒触发独立CPU参考的原1米XY门，未完成；设备拒步数为0，失败与完整前缀审计保留。新的 v2 明确使用当前 IMU-site 角速度，16项语义测试和原条件2秒/1000步双路径及保存审计均通过。run93于05:12结束RAW_EXIT1：46.29秒/23145接受步时设备参考XY误差1.000277米，独立CPU同时0.999777米；没有设备拒步或reset，但未完成131.48秒。run106正在核完整失败前缀；今晚不重复全窗或改门追结果。该结果不否定IMU坐标语义，也不足以单独归因长期漂移。
 
-父是唯一串行项目执行 owner，run93结束前不启动其他项目执行。原作者正按[冻结B3计划](../superpowers/plans/2026-11-11-paged-device-contact.md)在隔离树组合分页设备接触，全部页转换后一次求解与共同发布；尚未执行。当前新证据归于`artifacts/p65-parity-20261111-01`。06:30停止扩大范围，08:00依据真实结果收口并同步已验增量到codex/dev；当前尚未完成本轮推送。三个旧K1未跟踪文件和全部既验记录保留，旧pending段不覆盖本节。
+父是唯一串行项目执行 owner。[冻结B3计划](../superpowers/plans/2026-11-11-paged-device-contact.md)的分页设备接触已编码整合，全部页转换后一次求解与共同发布；专项验证待队列执行。下一批GPU训练已有[源码研究](mujoco-tyx-gpu-training-research.md)与[三个可验节点](../superpowers/plans/2026-11-11-mujoco-tyx-gpu-training.md)，尚未安装CUDA Torch或实现PPO闭环。当前新证据归于`artifacts/p65-parity-20261111-01`。06:30停止扩大范围，08:00依据真实结果收口并同步已验增量到codex/dev；当前尚未完成本轮推送。三个旧K1未跟踪文件和全部既验记录保留，旧pending段不覆盖本节。
 
 ## 历史基线（2026-11-11，MuJoCo-TYX T4与G1有限持续支撑已验收）
 

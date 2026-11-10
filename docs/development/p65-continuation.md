@@ -1,5 +1,9 @@
 # P6.5 人工续作入口
 
+## 当前续作（2026-11-10，MuJoCo-TYX T4/T5 正在验证）
+
+全量已提交基线73a85f8已推送codex/dev。当前新混合摩擦/限位/干摩擦共解已集成，父唯一串行执行，原三个作者只纯编码/审阅。先读[本批当前结果与剩余项](../benchmarks/p65-mujoco-tyx-mixed-constraints.md)及[执行计划](../superpowers/plans/2026-11-10-mujoco-tyx-mixed-constraints.md)。短组和首次失败修复正在执行，长窗尚未全过；原G1验证入口已交接，不能把准备或旧HOST支撑结果当作新MuJoCo-TYX通过。K1三个旧WIP继续保留，不重跑旧T3已绿组或开启周期任务。
+
 ## 当前续作（2026-11-10，MuJoCo-TYX T3b有限配对）
 
 先读[T3b实际验收](../benchmarks/p65-mujoco-tyx-finite-contacts.md)。产品/测试 `de623915` 补齐capsule–capsule、capsule–box、box–box，共享完整动力学/共同法向QP/原子发布；默认CUDA仍为真正MuJoCo-TYX。interpret36按16+20联合覆盖、CUDA34、相邻33、新wheel源码外两后端通过。每后端八条轨迹在不reset下连续1秒完成分离/重入/恢复；原.512s四条胶囊支撑门失败保留，不叫原门全过。28任务尝试含一次未启动pip的无效配置，296绑定/67保存JSONL/471包成员核对0差异。

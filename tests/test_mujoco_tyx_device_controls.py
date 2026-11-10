@@ -800,3 +800,52 @@ def test_borrowed_runtime_follows_reset_restore_owner_replacement(mode, monkeypa
         submit(e, device_values(stack, mode, tuple(value.copy() for value in raw)))
         assert e._control_packet.runtime is reset_runtime
         assert all(e.step(H).values())
+
+
+
+@pytest.mark.parametrize("mode", MODES)
+def test_buffer_cleanup_retry_after_stream_closed_keeps_physical_runtime(mode):
+    with engine("fixed", mode) as e, engine("fixed", mode) as reference, ExitStack() as stack:
+        raw = channels(e)
+        inputs = device_values(stack, mode, raw)
+        submit(e, inputs)
+        first, runtime = e._control_packet, e._device.runtime
+        attempts = []
+        close_buffer = None
+        if mode == "cuda":
+            target = first.native[0]
+            slots = [
+                i for i, close in enumerate(first.resources)
+                if getattr(close, "__self__", None) is target
+            ]
+            assert len(slots) == 1
+            close_buffer = first.resources[slots[0]]
+
+        def fail_buffer_once():
+            attempts.append("buffer")
+            assert not runtime.closed
+            if len(attempts) == 1:
+                raise RuntimeError("authored buffer cleanup before actual free")
+            if close_buffer is not None:
+                close_buffer()
+
+        if mode == "cuda":
+            first.resources[slots[0]] = fail_buffer_once
+        else:
+            first.resources.append(fail_buffer_once)
+        revision = e.checkpoint_revision
+        receipt = submit(e, device_values(stack, mode, tuple(value.copy() for value in raw)))
+        assert receipt.revision == e.checkpoint_revision == revision + 1
+        assert first in e._control_retired and e.control_cleanup_errors
+        assert first.closed and first.stream is None
+        assert first.resources == [fail_buffer_once] and attempts == ["buffer"]
+        assert e._control_packet.runtime is runtime and not runtime.closed
+        first.close()
+        assert attempts == ["buffer", "buffer"] and not first.resources
+        assert first.stream is None and not runtime.closed
+        submit(e, device_values(stack, mode, tuple(value.copy() for value in raw)))
+        assert not e._control_retired and not e.control_cleanup_errors
+        host_submit(reference, raw)
+        e.step(H)
+        reference.step(H)
+        assert state(e) == state(reference)

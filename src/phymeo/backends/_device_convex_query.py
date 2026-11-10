@@ -335,16 +335,15 @@ class ConvexQueryPlan:
         from ..core.capabilities import SolverFailure
         from ..geometry._convex_hull import HullShape
         from ._resident_collision_plan import ResidentStaticBinding
-        from ._resident_tree_binding import ResidentTreeBinding
+        from ._resident_convex_source import _DYNAMIC_BINDINGS, _LAYOUT_NAMES
 
         keys = tuple(view.world_keys)
         self._world_keys = keys
-        tree = view.accepted.tree
         origins = np.zeros((len(keys), 3), dtype=np.float64)
         for i, world in enumerate(keys):
-            if tree is None or world not in tree.specs:
-                raise ValueError("convex source requires an ordinary tree world reference")
-            origins[i] = np.asarray(tree.specs[world].anchor, dtype=np.float32).astype(np.float64)
+            source = view.sources[view.world_layouts[i]]
+            origins[i] = np.asarray(source.specs[world].anchor, dtype=np.float32).astype(np.float64)
+        self._source_layouts = tuple(sorted(set(map(int, view.shape_layouts))))
         shape_index = {key: i for i, key in enumerate(self._shape_keys)}
         self._shape_index = shape_index
         self._world_index = {world: i for i, world in enumerate(keys)}
@@ -360,7 +359,7 @@ class ConvexQueryPlan:
                 raise ValueError("convex source shape order does not match its binding")
             world_row = self._world_index[shape.key.world]
             shape_world_rows.append(world_row)
-            if type(binding) is ResidentTreeBinding:
+            if type(binding) in _DYNAMIC_BINDINGS:
                 points = np.asarray(binding.local_points_m, dtype=np.float64)
                 local = points
                 frame = "body_local"
@@ -395,7 +394,7 @@ class ConvexQueryPlan:
                 np.max(np.abs((points - origins[world_row]) + origins[world_row] - points))
                 > 1e-4 * max(1.0, float(np.max(np.abs(local))))
             )
-            if type(binding) is ResidentTreeBinding:
+            if type(binding) in _DYNAMIC_BINDINGS:
                 lost = bool(
                     np.max(np.abs((origins[world_row] + points) - origins[world_row] - points))
                     > 1e-4 * max(1.0, float(np.max(np.abs(points))))
@@ -434,6 +433,8 @@ class ConvexQueryPlan:
             shape_kinds=tuple(kinds),
             shape_rows=source_rows,
             shape_groups=source_groups,
+            shape_layouts=np.asarray(view.shape_layouts, dtype=np.int32),
+            world_layouts=tuple(_LAYOUT_NAMES[item] for item in view.world_layouts),
             vertex_offsets=np.asarray(offsets, dtype=np.int32),
             vertex_ids=np.asarray(ids, dtype=np.int32),
             declared_local_points_m=np.asarray(declared, dtype=np.float64).reshape(-1, 3),
@@ -459,6 +460,7 @@ class ConvexQueryPlan:
             "tags": self._tags,
             "rows": self._source["shape_rows"],
             "groups": self._source["shape_groups"],
+            "layouts": self._source["shape_layouts"],
             "offsets": self._source["vertex_offsets"],
             "points": self._source["uploaded_local_points_m"],
             "ids": self._source["vertex_ids"],
@@ -496,8 +498,8 @@ class ConvexQueryPlan:
                     "patch_surface": ((sites, 2, 3), np.float32),
                     "patch_skin": ((sites, 2, 3), np.float32),
                     "patch_mcount": ((sites, 2), np.int32),
-                    "patch_work": ((t, 16, 16), np.float32),
-                    "patch_work_i": ((t, 16, 8), np.int32),
+                    "patch_work": ((t, 32, 24), np.float32),
+                    "patch_work_i": ((t, 32, 8), np.int32),
                 }
             )
         layouts.update({name: (shape, dtype, None) for name, (shape, dtype) in scratch.items()})
@@ -981,6 +983,9 @@ class ConvexQueryPlan:
                         or tuple(view.shape_keys) != self._shape_keys
                         or tuple(view.shape_revisions) != self._shape_revisions
                         or tuple(sorted(view.allowed_pairs)) != self._allowed
+                        or not np.array_equal(view.shape_layouts, self._source["shape_layouts"])
+                        or not np.array_equal(view.shape_rows, self._source["shape_rows"])
+                        or not np.array_equal(view.shape_groups, self._source["shape_groups"])
                     ):
                         raise ValueError("convex plan source registration has changed")
                     broad_before = dict(self._broad.stats())
@@ -998,23 +1003,27 @@ class ConvexQueryPlan:
                         )
                     if self._shape_keys:
                         b = self._buffers
-                        tree = view.accepted.tree
-                        self._launch(
-                            self._kernels["gather"][view.accepted.active],
-                            "pose_gather_launches",
-                            len(self._shape_keys),
-                            b["tags"],
-                            b["rows"],
-                            b["groups"],
-                            b["offsets"],
-                            b["points"],
-                            tree.meta,
-                            tree.fk,
-                            view.accepted.ticks,
-                            b["pose"],
-                            b["stamp"],
-                            b["world_points"],
-                        )
+                        for layout in self._source_layouts:
+                            source = view.sources[layout]
+                            self._launch(
+                                self._kernels["gather"][view.accepted.active],
+                                "pose_gather_launches",
+                                len(self._shape_keys),
+                                layout,
+                                int(layout >= 2),
+                                b["layouts"],
+                                b["tags"],
+                                b["rows"],
+                                b["groups"],
+                                b["offsets"],
+                                b["points"],
+                                source.meta,
+                                source.fk,
+                                view.accepted.ticks,
+                                b["pose"],
+                                b["stamp"],
+                                b["world_points"],
+                            )
                         if self._capacity:
                             self._upload_pairs(pairs)
                             self._launch(

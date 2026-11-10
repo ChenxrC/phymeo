@@ -12,6 +12,9 @@ from ._tyx_convex_support import clamp01, det3, dot3
 
 def gather_convex_pose(
     count: tx.i32,
+    selected_layout: tx.i32,
+    body_extra: tx.i32,
+    layouts: tx.ndarray(tx.i32, 1),
     tags: tx.ndarray(tx.i32, 2),
     rows: tx.ndarray(tx.i32, 1),
     groups: tx.ndarray(tx.i32, 1),
@@ -25,33 +28,36 @@ def gather_convex_pose(
     points: tx.ndarray(tx.f32, 2),
 ):
     for shape in tx.range(count):
-        row = rows[shape]
-        group = groups[shape]
-        slot = tags[shape, 3]
-        stamp[shape, 0] = 1
-        stamp[shape, 1] = ticks[slot]
-        stamp[shape, 2] = slot
-        for c in tx.static_range(12):
-            pose[shape, c] = 0.0
-        for a in tx.static_range(3):
-            pose[shape, 3 + 4 * a] = 1.0
-        if row >= 0:
-            if group < 0 or group >= tree_meta[row, 1] or slot != tree_meta[row, 0]:
-                stamp[shape, 0] = 0
-            else:
-                for c in tx.static_range(12):
-                    pose[shape, c] = fk[row, group, c]
-        for c in tx.static_range(12):
-            if not tx.isfinite(pose[shape, c]):
-                stamp[shape, 0] = 0
-        for i in range(offsets[shape], offsets[shape + 1]):
+        if layouts[shape] == selected_layout:
+            row = rows[shape]
+            group = groups[shape]
+            slot = tags[shape, 3]
+            stamp[shape, 0] = 1
+            stamp[shape, 1] = ticks[slot]
+            stamp[shape, 2] = slot
+            for c in tx.static_range(12):
+                pose[shape, c] = 0.0
             for a in tx.static_range(3):
-                value = pose[shape, a]
-                for b in tx.static_range(3):
-                    value = tx.add_rn(value, tx.mul_rn(pose[shape, 3 + a * 3 + b], local[i, b]))
-                points[i, a] = value
-                if not tx.isfinite(value):
+                pose[shape, 3 + 4 * a] = 1.0
+            if row >= 0:
+                # Floating metadata counts child joints; FK includes root body 0.
+                # Both affine sources already loan their expanded physical FK.
+                if group < 0 or group >= tree_meta[row, 1] + body_extra or slot != tree_meta[row, 0]:
                     stamp[shape, 0] = 0
+                else:
+                    for c in tx.static_range(12):
+                        pose[shape, c] = fk[row, group, c]
+            for c in tx.static_range(12):
+                if not tx.isfinite(pose[shape, c]):
+                    stamp[shape, 0] = 0
+            for i in range(offsets[shape], offsets[shape + 1]):
+                for a in tx.static_range(3):
+                    value = pose[shape, a]
+                    for b in tx.static_range(3):
+                        value = tx.add_rn(value, tx.mul_rn(pose[shape, 3 + a * 3 + b], local[i, b]))
+                    points[i, a] = value
+                    if not tx.isfinite(value):
+                        stamp[shape, 0] = 0
 
 
 def clear_convex_output(

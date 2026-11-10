@@ -8,7 +8,7 @@ A segment is the overlap of two parallel finite axes, or the part of one
 capsule axis that projects into a single flat support face. The flat face may
 be either shape. An area is the
 shared support face when the two convex faces coincide, or the inner face
-when one flat support polygon lies inside the other.
+when one flat support polygon lies inside the other. Partially intersecting convex support faces use bounded device polygon clipping, with full original material barycentrics on both sides.
 Anything else stays unresolved and writes no sites. No load is solved and no
 nearest face is searched on the host.
 """
@@ -2211,6 +2211,204 @@ def fill_convex_patch(
                                         count = inner_count
                                     elif area_sum > 1e-12 and site_base + inner_count > site_capacity:
                                         status = 4
+                            if emit == 0:
+                                # Two finite convex support polygons: clip A by every closed B edge.
+                                # Rows 0..15 retain original material vertices. Rows 16..31 are
+                                # bounded intersection scratch; no host face search or device append.
+                                clip_count = face_count
+                                clip_ok = 1
+                                for clip_i in tx.static_range(16):
+                                    for clip_column in tx.static_range(24):
+                                        work[lane, 16 + clip_i, clip_column] = 0.0
+                                    for clip_column in tx.static_range(8):
+                                        work_i[lane, 16 + clip_i, clip_column] = -1
+                                    if clip_i < clip_count:
+                                        work[lane, 16 + clip_i, 0] = work[lane, clip_i, 3]
+                                        work[lane, 16 + clip_i, 1] = work[lane, clip_i, 4]
+                                for clip_edge in tx.static_range(8):
+                                    if clip_edge < other_count and clip_ok == 1 and clip_count >= 3:
+                                        clip_next = clip_edge + 1
+                                        if clip_next == other_count:
+                                            clip_next = 0
+                                        clip_ax = work[lane, 8 + clip_edge, 3]
+                                        clip_ay = work[lane, 8 + clip_edge, 4]
+                                        clip_ex = work[lane, 8 + clip_next, 3] - clip_ax
+                                        clip_ey = work[lane, 8 + clip_next, 4] - clip_ay
+                                        clip_written = 0
+                                        for clip_i in tx.static_range(16):
+                                            if clip_i < clip_count and clip_ok == 1:
+                                                clip_previous = clip_i - 1
+                                                if clip_i == 0:
+                                                    clip_previous = clip_count - 1
+                                                clip_px = work[lane, 16 + clip_previous, 0]
+                                                clip_py = work[lane, 16 + clip_previous, 1]
+                                                clip_cx = work[lane, 16 + clip_i, 0]
+                                                clip_cy = work[lane, 16 + clip_i, 1]
+                                                clip_ps = clip_ex * (clip_py - clip_ay) - clip_ey * (clip_px - clip_ax)
+                                                clip_cs = clip_ex * (clip_cy - clip_ay) - clip_ey * (clip_cx - clip_ax)
+                                                if (clip_ps < 0.0 and clip_cs >= 0.0) or (clip_ps >= 0.0 and clip_cs < 0.0):
+                                                    clip_t = clip_ps / (clip_ps - clip_cs)
+                                                    clip_x = clip_px + clip_t * (clip_cx - clip_px)
+                                                    clip_y = clip_py + clip_t * (clip_cy - clip_py)
+                                                    clip_duplicate = 0
+                                                    if clip_written > 0:
+                                                        if clip_x == work[lane, 16 + clip_written - 1, 2] and clip_y == work[lane, 16 + clip_written - 1, 3]:
+                                                            clip_duplicate = 1
+                                                    if clip_duplicate == 0:
+                                                        if clip_written < 16:
+                                                            work[lane, 16 + clip_written, 2] = clip_x
+                                                            work[lane, 16 + clip_written, 3] = clip_y
+                                                            clip_written = clip_written + 1
+                                                        else:
+                                                            clip_ok = 0
+                                                if clip_cs >= 0.0 and clip_ok == 1:
+                                                    clip_duplicate = 0
+                                                    if clip_written > 0:
+                                                        if clip_cx == work[lane, 16 + clip_written - 1, 2] and clip_cy == work[lane, 16 + clip_written - 1, 3]:
+                                                            clip_duplicate = 1
+                                                    if clip_duplicate == 0:
+                                                        if clip_written < 16:
+                                                            work[lane, 16 + clip_written, 2] = clip_cx
+                                                            work[lane, 16 + clip_written, 3] = clip_cy
+                                                            clip_written = clip_written + 1
+                                                        else:
+                                                            clip_ok = 0
+                                        if clip_written > 1:
+                                            if work[lane, 16, 2] == work[lane, 16 + clip_written - 1, 2] and work[lane, 16, 3] == work[lane, 16 + clip_written - 1, 3]:
+                                                clip_written = clip_written - 1
+                                        clip_count = clip_written
+                                        for clip_i in tx.static_range(16):
+                                            if clip_i < clip_count:
+                                                work[lane, 16 + clip_i, 0] = work[lane, 16 + clip_i, 2]
+                                                work[lane, 16 + clip_i, 1] = work[lane, 16 + clip_i, 3]
+                                if clip_ok == 0:
+                                    status = 4
+                                if clip_ok == 1 and clip_count >= 3:
+                                    clip_ready = 0
+                                    clip_cu = 0.0
+                                    clip_cv = 0.0
+                                    clip_nf = 0.0
+                                    for clip_i in tx.static_range(16):
+                                        if clip_i < clip_count:
+                                            clip_cu = clip_cu + work[lane, 16 + clip_i, 0]
+                                            clip_cv = clip_cv + work[lane, 16 + clip_i, 1]
+                                            clip_nf = clip_nf + 1.0
+                                            for clip_side in tx.static_range(2):
+                                                clip_base = 0
+                                                clip_n = face_count
+                                                if clip_side == 1:
+                                                    clip_base = 8
+                                                    clip_n = other_count
+                                                clip_u = work[lane, 16 + clip_i, 0]
+                                                clip_v = work[lane, 16 + clip_i, 1]
+                                                clip_found = 0
+                                                for clip_j in tx.static_range(8):
+                                                    if clip_j < clip_n:
+                                                        work[lane, clip_base + clip_j, 5] = 0.0
+                                                for clip_tri in tx.static_range(6):
+                                                    clip_j = clip_tri + 1
+                                                    clip_k = clip_tri + 2
+                                                    if clip_found == 0 and clip_k < clip_n:
+                                                        clip_u0 = work[lane, clip_base, 3]
+                                                        clip_v0 = work[lane, clip_base, 4]
+                                                        clip_u1 = work[lane, clip_base + clip_j, 3]
+                                                        clip_v1 = work[lane, clip_base + clip_j, 4]
+                                                        clip_u2 = work[lane, clip_base + clip_k, 3]
+                                                        clip_v2 = work[lane, clip_base + clip_k, 4]
+                                                        clip_den = (clip_v1 - clip_v2) * (clip_u0 - clip_u2) + (clip_u2 - clip_u1) * (clip_v0 - clip_v2)
+                                                        if tx.abs(clip_den) > 1e-12:
+                                                            clip_alpha = ((clip_v1 - clip_v2) * (clip_u - clip_u2) + (clip_u2 - clip_u1) * (clip_v - clip_v2)) / clip_den
+                                                            clip_beta = ((clip_v2 - clip_v0) * (clip_u - clip_u2) + (clip_u0 - clip_u2) * (clip_v - clip_v2)) / clip_den
+                                                            clip_gamma = 1.0 - clip_alpha - clip_beta
+                                                            if clip_alpha >= -1e-5 and clip_beta >= -1e-5 and clip_gamma >= -1e-5:
+                                                                clip_alpha = tx.max(0.0, clip_alpha)
+                                                                clip_beta = tx.max(0.0, clip_beta)
+                                                                clip_gamma = tx.max(0.0, clip_gamma)
+                                                                clip_total = clip_alpha + clip_beta + clip_gamma
+                                                                work[lane, clip_base, 5] = clip_alpha / clip_total
+                                                                work[lane, clip_base + clip_j, 5] = clip_beta / clip_total
+                                                                work[lane, clip_base + clip_k, 5] = clip_gamma / clip_total
+                                                                clip_found = 1
+                                                if clip_found == 1:
+                                                    clip_packed = 0
+                                                    clip_rx = 0.0
+                                                    clip_ry = 0.0
+                                                    clip_rz = 0.0
+                                                    for clip_j in tx.static_range(8):
+                                                        if clip_j < clip_n and work[lane, clip_base + clip_j, 5] > 0.0:
+                                                            clip_w = work[lane, clip_base + clip_j, 5]
+                                                            clip_rx = clip_rx + clip_w * work[lane, clip_base + clip_j, 0]
+                                                            clip_ry = clip_ry + clip_w * work[lane, clip_base + clip_j, 1]
+                                                            clip_rz = clip_rz + clip_w * work[lane, clip_base + clip_j, 2]
+                                                            if clip_packed < 3:
+                                                                work_i[lane, 16 + clip_i, 3 * clip_side + clip_packed] = work_i[lane, clip_base + clip_j, 0]
+                                                                work[lane, 16 + clip_i, 5 + 3 * clip_side + clip_packed] = clip_w
+                                                            clip_packed = clip_packed + 1
+                                                    clip_eu = dot3(clip_rx, clip_ry, clip_rz, tangent_x, tangent_y, tangent_z) - clip_u
+                                                    clip_ev = dot3(clip_rx, clip_ry, clip_rz, bitangent_x, bitangent_y, bitangent_z) - clip_v
+                                                    if clip_packed >= 1 and clip_packed <= 3 and clip_eu * clip_eu + clip_ev * clip_ev <= 4e-8 * scale * scale:
+                                                        work_i[lane, 16 + clip_i, 6 + clip_side] = clip_packed
+                                                        work[lane, 16 + clip_i, 11 + 3 * clip_side] = clip_rx
+                                                        work[lane, 16 + clip_i, 12 + 3 * clip_side] = clip_ry
+                                                        work[lane, 16 + clip_i, 13 + 3 * clip_side] = clip_rz
+                                                        clip_ready = clip_ready + 1
+                                    clip_cu = clip_cu / clip_nf
+                                    clip_cv = clip_cv / clip_nf
+                                    clip_area = 0.0
+                                    for clip_i in tx.static_range(16):
+                                        if clip_i < clip_count:
+                                            clip_next = clip_i + 1
+                                            if clip_next == clip_count:
+                                                clip_next = 0
+                                            clip_ux = work[lane, 16 + clip_i, 0] - clip_cu
+                                            clip_uy = work[lane, 16 + clip_i, 1] - clip_cv
+                                            clip_vx = work[lane, 16 + clip_next, 0] - clip_cu
+                                            clip_vy = work[lane, 16 + clip_next, 1] - clip_cv
+                                            clip_twice = clip_ux * clip_vy - clip_uy * clip_vx
+                                            if clip_twice < 0.0:
+                                                clip_ready = -100
+                                            work[lane, 16 + clip_i, 17] = clip_twice
+                                            clip_area = clip_area + clip_twice
+                                            clip_dx = work[lane, 16 + clip_i, 14] - work[lane, 16 + clip_i, 11]
+                                            clip_dy = work[lane, 16 + clip_i, 15] - work[lane, 16 + clip_i, 12]
+                                            clip_dz = work[lane, 16 + clip_i, 16] - work[lane, 16 + clip_i, 13]
+                                            clip_signed = dot3(clip_dx, clip_dy, clip_dz, nx, ny, nz)
+                                            if tx.abs(clip_signed - query_gap) > 1e-4 * scale:
+                                                clip_ready = -100
+                                    if clip_ready == 2 * clip_count and clip_area > 1e-12:
+                                        if site_base + clip_count > site_capacity:
+                                            status = 4
+                                        else:
+                                            for clip_i in tx.static_range(16):
+                                                if clip_i < clip_count:
+                                                    clip_previous = clip_i - 1
+                                                    if clip_i == 0:
+                                                        clip_previous = clip_count - 1
+                                                    clip_site = site_base + clip_i
+                                                    weight[clip_site] = (work[lane, 16 + clip_i, 17] + work[lane, 16 + clip_previous, 17]) / (3.0 * clip_area) + 1.0 / (3.0 * clip_nf)
+                                                    clip_dx = work[lane, 16 + clip_i, 14] - work[lane, 16 + clip_i, 11]
+                                                    clip_dy = work[lane, 16 + clip_i, 15] - work[lane, 16 + clip_i, 12]
+                                                    clip_dz = work[lane, 16 + clip_i, 16] - work[lane, 16 + clip_i, 13]
+                                                    gap[clip_site] = dot3(clip_dx, clip_dy, clip_dz, nx, ny, nz)
+                                                    normal[clip_site, 0] = nx
+                                                    normal[clip_site, 1] = ny
+                                                    normal[clip_site, 2] = nz
+                                                    for clip_axis in tx.static_range(3):
+                                                        common[clip_site, clip_axis] = 0.5 * (work[lane, 16 + clip_i, 11 + clip_axis] + work[lane, 16 + clip_i, 14 + clip_axis])
+                                                    for clip_side in tx.static_range(2):
+                                                        clip_mcount = work_i[lane, 16 + clip_i, 6 + clip_side]
+                                                        material_count[clip_site, clip_side] = clip_mcount
+                                                        for clip_j in tx.static_range(3):
+                                                            if clip_j < clip_mcount:
+                                                                material_ids[clip_site, clip_side, clip_j] = original_ids[work_i[lane, 16 + clip_i, 3 * clip_side + clip_j]]
+                                                                barycentric[clip_site, clip_side, clip_j] = work[lane, 16 + clip_i, 5 + 3 * clip_side + clip_j]
+                                                        for clip_axis in tx.static_range(3):
+                                                            surface[clip_site, clip_side, clip_axis] = work[lane, 16 + clip_i, 11 + 3 * clip_side + clip_axis]
+                                                            skin[clip_site, clip_side, clip_axis] = 0.0
+                                            status = 1
+                                            dimension = 2
+                                            count = clip_count
+
         meta[out, 0] = status
         meta[out, 1] = dimension
         meta[out, 2] = count

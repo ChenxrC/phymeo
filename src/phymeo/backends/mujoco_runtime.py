@@ -9,12 +9,12 @@ MuJoCo 3.3.7 documents MjModel/MjData copy semantics and mj_contactForce:
 https://mujoco.readthedocs.io/en/3.3.7/python.html
 https://mujoco.readthedocs.io/en/3.3.7/APIreference/APIfunctions.html#mj-contactforce
 
-The separate explicit CUDA adapter uses mujoco-warp v0.0.2 declares mujoco>=3.3.7 and
-warp-lang>=1.9.1. Its put_model/make_data/step/get_data_into are real APIs,
-but get_data_into truncates overflowing contacts/constraints. A future GPU
-adapter must check the device counts before readback, preserve its narrower
-feature set and FP32/tolerance semantics, and separately qualify ownership,
-reset and publication. Its lazy mode="cuda" dispatch has no CPU integration fallback.
+CUDA defaults to the separate MuJoCo-TYX implementation. MuJoCo-Warp requires
+implementation="warp" and has independent capability and precision reports.
+The explicit Warp adapter uses the tested 3.3.7 / 0.0.2 / 1.17.0 dependency set.
+Its put_model/make_data/step/get_data_into are real APIs; device capacity is
+checked before the upstream truncating readback. Neither GPU route silently
+falls back to CPU integration or to another GPU implementation.
 https://github.com/google-deepmind/mujoco_warp/blob/v0.0.2/mujoco_warp/_src/io.py
 https://github.com/google-deepmind/mujoco_warp/blob/v0.0.2/pyproject.toml
 """
@@ -247,15 +247,29 @@ class MuJoCoRuntime:
     retained. Reading snapshots never modifies the next step's warm start.
     """
 
-    def __new__(cls, compilation, *, mode="cpu", **options):
-        if cls is MuJoCoRuntime and mode == "cuda":
-            from ._mujoco_warp_runtime import MuJoCoWarpRuntime
+    def __new__(cls, compilation, *, mode="cpu", implementation=None, **options):
+        if cls is MuJoCoRuntime:
+            if mode in {"cuda", "interpret"}:
+                selected = "tyx" if implementation is None else implementation
+                if selected == "tyx":
+                    from ._mujoco_tyx_runtime import MuJoCoTyxRuntime
 
-            return object.__new__(MuJoCoWarpRuntime)
+                    return object.__new__(MuJoCoTyxRuntime)
+                if selected == "warp" and mode == "cuda":
+                    from ._mujoco_warp_runtime import MuJoCoWarpRuntime
+
+                    return object.__new__(MuJoCoWarpRuntime)
+                raise ValueError(
+                    "MuJoCo GPU implementation must be tyx or explicit warp (cuda only)"
+                )
+            if mode != "cpu" or implementation not in (None, "native"):
+                raise ValueError("CPU MuJoCo requires mode='cpu', implementation=None or 'native'")
         return object.__new__(cls)
 
-    def __init__(self, compilation, *, world_keys=(0,), initial_states=None, mode="cpu"):
-        if mode != "cpu":
+    def __init__(
+        self, compilation, *, world_keys=(0,), initial_states=None, mode="cpu", implementation=None
+    ):
+        if mode != "cpu" or implementation not in (None, "native"):
             raise NotImplementedError(
                 "unknown MuJoCo GPU mode; use cpu or explicit cuda, no fallback"
             )

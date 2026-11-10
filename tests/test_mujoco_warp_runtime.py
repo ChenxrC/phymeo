@@ -45,7 +45,9 @@ def record(xml):
 
 
 def gpu(compilation, **options):
-    return MuJoCoRuntime(compilation, mode="cuda", device="cuda:0", **options)
+    return MuJoCoRuntime(
+        compilation, mode="cuda", implementation="warp", device="cuda:0", **options
+    )
 
 
 def test_sparse_loaded_worlds_run_actual_cuda_with_native_control_law(deps):

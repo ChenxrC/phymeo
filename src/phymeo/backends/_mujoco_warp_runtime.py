@@ -112,11 +112,12 @@ class MuJoCoWarpRuntime(MuJoCoRuntime):
         world_keys=(0,),
         initial_states=None,
         mode="cuda",
+        implementation=None,
         device="cuda:0",
         contact_capacity=64,
         constraint_capacity=256,
     ):
-        if mode != "cuda":
+        if mode != "cuda" or implementation not in (None, "warp"):
             raise ValueError("MuJoCoWarpRuntime requires explicit cuda mode")
         self._contact_capacity = _capacity(contact_capacity, "contact_capacity")
         self._constraint_capacity = _capacity(constraint_capacity, "constraint_capacity")

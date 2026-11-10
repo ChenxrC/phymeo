@@ -1,6 +1,12 @@
 # P6.5 人工续作入口
 
-## 当前续作（2026-11-10，MuJoCo-TYX T3a共同法向接触）
+## 当前续作（2026-11-10，MuJoCo-TYX T3b有限配对）
+
+先读[T3b实际验收](../benchmarks/p65-mujoco-tyx-finite-contacts.md)。产品/测试 `de623915` 补齐capsule–capsule、capsule–box、box–box，共享完整动力学/共同法向QP/原子发布；默认CUDA仍为真正MuJoCo-TYX。interpret36按16+20联合覆盖、CUDA34、相邻33、新wheel源码外两后端通过。每后端八条轨迹在不reset下连续1秒完成分离/重入/恢复；原.512s四条胶囊支撑门失败保留，不叫原门全过。28任务尝试含一次未启动pip的无效配置，296绑定/67保存JSONL/471包成员核对0差异。
+
+下一项按[扩展路线T4](mujoco-tyx-expansion-plan.md)补native摩擦cone/共同求解、joint limits及实际G1需要的frictionloss，再T5 G1持续支撑。先固定源研究和多案例，不能把condim1通过叫摩擦或G1通过。当前所有执行结束，三个原作者释放，父保共享接缝和未来唯一串行执行owner；K1三份旧WIP保留，无周期任务/CI/push/pin变更。下面旧“下一项”不覆盖本节。
+
+## 历史基线（2026-11-10，MuJoCo-TYX T3a共同法向接触）
 
 先读[T3a实际验收](../benchmarks/p65-mujoco-tyx-coupled-normal.md)。产品/测试 `a9a39dcb` 在T1/T2完整动力学上增加六类primitive配对、多个condim1行和共同QP；实际发布双方力/力矩与运动。解释45节点按44+ENV1联合覆盖、CUDA33、相邻9项通过，新wheel源码外两路径完成公共ENV和reset/clone下一步。20命令/60同次JSONL/470包成员核对0差异，所有执行结束，不重复已绿组。
 

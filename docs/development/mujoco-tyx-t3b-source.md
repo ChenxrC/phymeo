@@ -1,5 +1,12 @@
 # MuJoCo-TYX T3b primitive manifold source handoff
 
+## 父最终验证（2026-11-10）
+
+产品/测试 `de623915` 已由父单一串行槽完成实际验证：interpret36联合覆盖、CUDA34、相邻33、新wheel源码外两backend均通过。完整结果及原失败见[实际验收报告](../benchmarks/p65-mujoco-tyx-finite-contacts.md)。本文件下文的UNEXECUTED/PENDING指原作者交接快照，不能覆盖当前结果，也不把新结果倒灌到旧commit。
+
+最终三pair的局部ordinal独立于跨精度对应；完整几何双射保重复数和全部物理检查。原.512s四条胶囊的支撑门未过，每后端另外四条盒子通过；全部八条保持同一初态/参数/pulse与误差门连续至1s，恢复检查通过。Kahan设备时钟、reset/clone/rollback和受影响旧积分路径已验，保留高位每步严格增加的范围限制。原作者无执行owner，父本批执行已全部结束。
+
+
 Status: **CODE_READY_TESTS_PENDING / UNEXECUTED**. This is pure authoring and source review, not native, interpreted, CUDA, lint, build, or integration success.
 
 Base: accepted T3a parent 275872beca81767bdc2ee8a1d0ca52fb5ae9c100.
@@ -111,3 +118,11 @@ No import, collection, numerical probe, pytest, lint, formatter, compile, build,
 | _normal_geometry.py | 101582d59a994d21719dd1aad726212f27b89910fdd18cec2aaabb881631ed39 | 53459fcea6ce50c73665ddc533caff5eb3ad7b4c |
 
 Ready for parent integration and first execution. This handoff grants no execution to this source lane.
+
+## 父首次执行后的稳定性修正
+
+保留08/09/12/13原始失败。12倾斜box出现4点对2点及深度/力翻倍，不能当容差差异接受。原因是精确共轴产生重复SAT轴，FP32使它错误替换已有face为原生edge深度分支。修复只在penetration>=0时阻止精确单位行/列证明冗余的cross轴替换feature，仍保全部15轴分离检查；A_i=±B_k使A_i×B_j为第三B面法向，反向同理。零epsilon、无fixture/坐标/时间分支。原比较等价重排为c3-penetration < -penetration*1e-12，保负penetration原语义，另加正margin分离盒的两backend回归。
+
+13双活动胶囊第1步：native已为1点，而FP32 Gram相减det丢失近共轴差异，误留2点并改变共同力。改为同一解析公式的稳定表达：det=|a×b|²，x1=-[(d×b)·(a×b)]/det，x2=-[(d×a)·(a×b)]/det，后续原顺序夹紧、mjMINVAL、重复规则不变。不扩大平行阈值或改物理模型。
+
+补充后的完整测试节点数为70：interpret36（含两个无后端合成/准入节点），CUDA34。最终以实际collection/日志为准。8原连续0.512s轨迹、所有原误差门仍保持。

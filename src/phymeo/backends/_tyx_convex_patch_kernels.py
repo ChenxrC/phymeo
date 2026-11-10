@@ -113,13 +113,13 @@ def fill_convex_patch(
                 s1x = bx - radius_b * nx
                 s1y = by - radius_b * ny
                 s1z = bz - radius_b * nz
-                signed = dot3(s1x - s0x, s1y - s0y, s1z - s0z, nx, ny, nz)
-                if tx.abs(signed - query_gap) <= 1e-4 * scale and site_base + 1 <= site_capacity:
+                signed_gap = dot3(s1x - s0x, s1y - s0y, s1z - s0z, nx, ny, nz)
+                if tx.abs(signed_gap - query_gap) <= 1e-4 * scale and site_base + 1 <= site_capacity:
                     status = 1
                     dimension = 0
                     count = 1
                     weight[site_base] = 1.0
-                    gap[site_base] = signed
+                    gap[site_base] = signed_gap
                     normal[site_base, 0] = nx
                     normal[site_base, 1] = ny
                     normal[site_base, 2] = nz
@@ -400,16 +400,16 @@ def fill_convex_patch(
                                             work[lane, packed, 5] = work[lane, slot, 4]
                                             packed = packed + 1
                                     ready = 1
-                signed = dot3(s1x - s0x, s1y - s0y, s1z - s0z, nx, ny, nz)
+                signed_gap = dot3(s1x - s0x, s1y - s0y, s1z - s0z, nx, ny, nz)
                 if (
                     ready == 1
-                    and tx.abs(signed - query_gap) <= 1e-4 * scale
+                    and tx.abs(signed_gap - query_gap) <= 1e-4 * scale
                     and packed >= 1
                     and site_base + 1 <= site_capacity
                 ):
                     site = site_base
                     weight[site] = 1.0
-                    gap[site] = signed
+                    gap[site] = signed_gap
                     normal[site, 0] = nx
                     normal[site, 1] = ny
                     normal[site, 2] = nz
@@ -494,15 +494,15 @@ def fill_convex_patch(
                         work_i[lane, packed, 1] = a0 + 1
                         work[lane, packed, 5] = second_weight
                         packed = packed + 1
-                signed = dot3(s1x - s0x, s1y - s0y, s1z - s0z, nx, ny, nz)
+                signed_gap = dot3(s1x - s0x, s1y - s0y, s1z - s0z, nx, ny, nz)
                 if (
                     packed >= 1
-                    and tx.abs(signed - query_gap) <= 1e-4 * scale
+                    and tx.abs(signed_gap - query_gap) <= 1e-4 * scale
                     and site_base + 1 <= site_capacity
                 ):
                     site = site_base
                     weight[site] = 1.0
-                    gap[site] = signed
+                    gap[site] = signed_gap
                     normal[site, 0] = nx
                     normal[site, 1] = ny
                     normal[site, 2] = nz
@@ -534,7 +534,7 @@ def fill_convex_patch(
                     count = 1
                 elif (
                     packed >= 1
-                    and tx.abs(signed - query_gap) <= 1e-4 * scale
+                    and tx.abs(signed_gap - query_gap) <= 1e-4 * scale
                     and site_base + 1 > site_capacity
                 ):
                     status = 4
@@ -608,8 +608,8 @@ def fill_convex_patch(
                             s1x = c1x - radius_b * nx
                             s1y = c1y - radius_b * ny
                             s1z = c1z - radius_b * nz
-                            signed = dot3(s1x - s0x, s1y - s0y, s1z - s0z, nx, ny, nz)
-                            if tx.abs(signed - query_gap) > 1e-4 * scale:
+                            signed_gap = dot3(s1x - s0x, s1y - s0y, s1z - s0z, nx, ny, nz)
+                            if tx.abs(signed_gap - query_gap) > 1e-4 * scale:
                                 ready = 0
                             bdenom = dot3(bxx, bxy, bxz, bxx, bxy, bxz)
                             bparameter = (
@@ -629,7 +629,7 @@ def fill_convex_patch(
                             if ready == 1:
                                 site = site_base + end
                                 weight[site] = 0.5
-                                gap[site] = signed
+                                gap[site] = signed_gap
                                 normal[site, 0] = nx
                                 normal[site, 1] = ny
                                 normal[site, 2] = nz
@@ -710,7 +710,7 @@ def fill_convex_patch(
                     s1x = hx - radius_b * nx
                     s1y = hy - radius_b * ny
                     s1z = hz - radius_b * nz
-                    signed = dot3(s1x - s0x, s1y - s0y, s1z - s0z, nx, ny, nz)
+                    signed_gap = dot3(s1x - s0x, s1y - s0y, s1z - s0z, nx, ny, nz)
                     aw0 = 1.0 - sa
                     aw1 = sa
                     if aw0 < 1e-5:
@@ -752,12 +752,12 @@ def fill_convex_patch(
                     if (
                         packed_a >= 1
                         and packed_b >= 1
-                        and tx.abs(signed - query_gap) <= 1e-4 * scale
+                        and tx.abs(signed_gap - query_gap) <= 1e-4 * scale
                         and site_base + 1 <= site_capacity
                     ):
                         site = site_base
                         weight[site] = 1.0
-                        gap[site] = signed
+                        gap[site] = signed_gap
                         normal[site, 0] = nx
                         normal[site, 1] = ny
                         normal[site, 2] = nz
@@ -791,7 +791,7 @@ def fill_convex_patch(
                     elif (
                         packed_a >= 1
                         and packed_b >= 1
-                        and tx.abs(signed - query_gap) <= 1e-4 * scale
+                        and tx.abs(signed_gap - query_gap) <= 1e-4 * scale
                         and site_base + 1 > site_capacity
                     ):
                         status = 4
@@ -965,7 +965,7 @@ def fill_convex_patch(
                                 s1x = cx + (best - core_h) * nx
                                 s1y = cy + (best - core_h) * ny
                                 s1z = cz + (best - core_h) * nz
-                                signed = dot3(s1x - s0x, s1y - s0y, s1z - s0z, nx, ny, nz)
+                                signed_gap = dot3(s1x - s0x, s1y - s0y, s1z - s0z, nx, ny, nz)
                                 qu = dot3(s1x, s1y, s1z, tangent_x, tangent_y, tangent_z) - center_u
                                 qv = (
                                     dot3(s1x, s1y, s1z, bitangent_x, bitangent_y, bitangent_z)
@@ -1012,7 +1012,7 @@ def fill_convex_patch(
                                                     work[lane, second, 4] = beta / total
                                                     work[lane, third, 4] = gamma / total
                                                     chosen = 1
-                                if chosen == 1 and tx.abs(signed - query_gap) <= 1e-4 * scale:
+                                if chosen == 1 and tx.abs(signed_gap - query_gap) <= 1e-4 * scale:
                                     rx = 0.0
                                     ry = 0.0
                                     rz = 0.0
@@ -1049,7 +1049,7 @@ def fill_convex_patch(
                                         work[lane, end, 12] = s1x
                                         work[lane, end, 13] = s1y
                                         work[lane, end, 14] = s1z
-                                        work[lane, end, 15] = signed
+                                        work[lane, end, 15] = signed_gap
                                         work_i[lane, end, 7] = packed
                                         ready_ends = ready_ends + 1
                         if ready_ends == 2 and site_base + 2 <= site_capacity:
@@ -1181,7 +1181,7 @@ def fill_convex_patch(
                     s1x = hx
                     s1y = hy
                     s1z = hz
-                    signed = dot3(s1x - s0x, s1y - s0y, s1z - s0z, nx, ny, nz)
+                    signed_gap = dot3(s1x - s0x, s1y - s0y, s1z - s0z, nx, ny, nz)
                     cross_x = uy * vz - uz * vy
                     cross_y = uz * vx - ux * vz
                     cross_z = ux * vy - uy * vx
@@ -1235,12 +1235,12 @@ def fill_convex_patch(
                         skew == 1
                         and packed >= 1
                         and edge_count >= 1
-                        and tx.abs(signed - query_gap) <= 1e-4 * scale
+                        and tx.abs(signed_gap - query_gap) <= 1e-4 * scale
                         and site_base + 1 <= site_capacity
                     ):
                         site = site_base
                         weight[site] = 1.0
-                        gap[site] = signed
+                        gap[site] = signed_gap
                         normal[site, 0] = nx
                         normal[site, 1] = ny
                         normal[site, 2] = nz
@@ -1275,7 +1275,7 @@ def fill_convex_patch(
                         skew == 1
                         and packed >= 1
                         and edge_count >= 1
-                        and tx.abs(signed - query_gap) <= 1e-4 * scale
+                        and tx.abs(signed_gap - query_gap) <= 1e-4 * scale
                         and site_base + 1 > site_capacity
                     ):
                         status = 4
@@ -1449,7 +1449,7 @@ def fill_convex_patch(
                                 s1x = cx - radius_b * nx
                                 s1y = cy - radius_b * ny
                                 s1z = cz - radius_b * nz
-                                signed = dot3(s1x - s0x, s1y - s0y, s1z - s0z, nx, ny, nz)
+                                signed_gap = dot3(s1x - s0x, s1y - s0y, s1z - s0z, nx, ny, nz)
                                 qu = dot3(s0x, s0y, s0z, tangent_x, tangent_y, tangent_z) - center_u
                                 qv = (
                                     dot3(s0x, s0y, s0z, bitangent_x, bitangent_y, bitangent_z)
@@ -1496,7 +1496,7 @@ def fill_convex_patch(
                                                     work[lane, second, 4] = beta / total
                                                     work[lane, third, 4] = gamma / total
                                                     chosen = 1
-                                if chosen == 1 and tx.abs(signed - query_gap) <= 1e-4 * scale:
+                                if chosen == 1 and tx.abs(signed_gap - query_gap) <= 1e-4 * scale:
                                     rx = 0.0
                                     ry = 0.0
                                     rz = 0.0
@@ -1533,7 +1533,7 @@ def fill_convex_patch(
                                         work[lane, end, 12] = s1x
                                         work[lane, end, 13] = s1y
                                         work[lane, end, 14] = s1z
-                                        work[lane, end, 15] = signed
+                                        work[lane, end, 15] = signed_gap
                                         work_i[lane, end, 7] = packed
                                         ready_ends = ready_ends + 1
                         if ready_ends == 2 and site_base + 2 <= site_capacity:
@@ -1788,16 +1788,16 @@ def fill_convex_patch(
                                         work[lane, packed, 5] = work[lane, slot, 4]
                                         packed = packed + 1
                                 ready = 1
-                signed = dot3(s1x - s0x, s1y - s0y, s1z - s0z, nx, ny, nz)
+                signed_gap = dot3(s1x - s0x, s1y - s0y, s1z - s0z, nx, ny, nz)
                 if (
                     ready == 1
                     and packed >= 1
-                    and tx.abs(signed - query_gap) <= 1e-4 * scale
+                    and tx.abs(signed_gap - query_gap) <= 1e-4 * scale
                     and site_base + 1 <= site_capacity
                 ):
                     site = site_base
                     weight[site] = 1.0
-                    gap[site] = signed
+                    gap[site] = signed_gap
                     normal[site, 0] = nx
                     normal[site, 1] = ny
                     normal[site, 2] = nz
@@ -1830,7 +1830,7 @@ def fill_convex_patch(
                 elif (
                     ready == 1
                     and packed >= 1
-                    and tx.abs(signed - query_gap) <= 1e-4 * scale
+                    and tx.abs(signed_gap - query_gap) <= 1e-4 * scale
                     and site_base + 1 > site_capacity
                 ):
                     status = 4
@@ -2040,15 +2040,15 @@ def fill_convex_patch(
                                     s1x = work[lane, 4 + other, 0]
                                     s1y = work[lane, 4 + other, 1]
                                     s1z = work[lane, 4 + other, 2]
-                                    signed = dot3(s1x - s0x, s1y - s0y, s1z - s0z, nx, ny, nz)
-                                    if tx.abs(signed - query_gap) > 1e-4 * scale:
+                                    signed_gap = dot3(s1x - s0x, s1y - s0y, s1z - s0z, nx, ny, nz)
+                                    if tx.abs(signed_gap - query_gap) > 1e-4 * scale:
                                         ready = 0
                                     if ready == 1:
                                         site = site_base + slot
                                         first_id = original_ids[work_i[lane, slot, 0]]
                                         second_id = original_ids[work_i[lane, 4 + other, 0]]
                                         weight[site] = site_weight
-                                        gap[site] = signed
+                                        gap[site] = signed_gap
                                         normal[site, 0] = nx
                                         normal[site, 1] = ny
                                         normal[site, 2] = nz
@@ -2428,14 +2428,14 @@ def fill_convex_patch(
                                                 s1x = rx
                                                 s1y = ry
                                                 s1z = rz
-                                            signed = dot3(
+                                            signed_gap = dot3(
                                                 s1x - s0x, s1y - s0y, s1z - s0z, nx, ny, nz
                                             )
                                             if (
                                                 used >= 1
                                                 and used <= 4
                                                 and error <= bound * bound
-                                                and tx.abs(signed - query_gap) <= 1e-4 * scale
+                                                and tx.abs(signed_gap - query_gap) <= 1e-4 * scale
                                             ):
                                                 packed = 0
                                                 for slot in tx.static_range(8):
@@ -2546,12 +2546,12 @@ def fill_convex_patch(
                                                     s1x = ox
                                                     s1y = oy
                                                     s1z = oz
-                                                signed = dot3(
+                                                signed_gap = dot3(
                                                     s1x - s0x, s1y - s0y, s1z - s0z, nx, ny, nz
                                                 )
                                                 mcount = work_i[lane, inner_base + slot, 1]
                                                 weight[site] = work[lane, inner_base + slot, 9]
-                                                gap[site] = signed
+                                                gap[site] = signed_gap
                                                 normal[site, 0] = nx
                                                 normal[site, 1] = ny
                                                 normal[site, 2] = nz

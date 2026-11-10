@@ -210,6 +210,13 @@ class _DeviceControlPacket:
             "device control pack rejected",
         )
 
+    def _close_stream(self):
+        stream = self.stream
+        if stream is not None:
+            stream.close()
+            # Other resources may still need a retry after this stream closed.
+            self.stream = None
+
     def prepare(self, values, producer_stream):
         # Compilation belongs to the live physical owner. Packets retain their
         # own buffers/stream, but must never close this borrowed Runtime.
@@ -217,7 +224,7 @@ class _DeviceControlPacket:
         self.stream = None
         if self.mode == "cuda":
             self.stream = self.tx.CudaStream(device=self.ordinal)
-            self.resources.append(self.stream.close)
+            self.resources.append(self._close_stream)
         with self.tx.use_runtime(self.runtime):
             if producer_stream is not None:
                 producer_stream.synchronize()

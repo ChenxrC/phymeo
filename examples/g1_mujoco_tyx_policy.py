@@ -1111,6 +1111,10 @@ def snapshots(args, journal, protocol, compilation, derived):
 
 def trajectory(args, journal, protocol, compilation, derived):
     model, h = protocol.model, args.h
+    # The device integrates its declared FP32 timestep using a two-word clock.
+    # Keep the source grid for policy/reference scheduling, but check numerical
+    # clock residual against that stored timestep, not its FP64 source value.
+    stored_h = float(np.float32(h))
     stand = args.phase == "stand"
     q, v = protocol.initial(None if stand else 0)
     count = int(round(args.duration / h))
@@ -1135,6 +1139,8 @@ def trajectory(args, journal, protocol, compilation, derived):
             independent_cpu_initial={"q": cpu.qpos.copy(), "v": cpu.qvel.copy(), "time": cpu.time},
             inventory=inventory(protocol, compilation, derived, runtime.capabilities),
             policy_history="zeros at initial state; commits only after successful step",
+            nominal_step_s=h,
+            device_clock_step_s=stored_h,
         )
         for tick in range(count):
             grid_time = tick * h
@@ -1171,7 +1177,7 @@ def trajectory(args, journal, protocol, compilation, derived):
                 )
                 after = runtime.snapshot()[0]
                 receipt = after.last_step
-                if after.tick != tick + 1 or abs(after.time - output_grid_time) > 2e-6:
+                if after.tick != tick + 1 or abs(after.time - (tick + 1) * stored_h) > 2e-6:
                     raise RuntimeError("device output tick/source time binding failed")
                 input_checks(receipt, state, stored)
                 device_controller.commit(proposal)
@@ -1288,6 +1294,8 @@ def trajectory(args, journal, protocol, compilation, derived):
                     constraint_identity=constraint_identity,
                     source_grid_time=grid_time,
                     source_output_time=output_grid_time,
+                    expected_device_clock_s=(tick + 1) * stored_h,
+                    nominal_clock_drift_s=after.time - output_grid_time,
                     device={
                         "state": compact_state(after),
                         "input_time": receipt.input_time,
@@ -1387,6 +1395,9 @@ def trajectory(args, journal, protocol, compilation, derived):
             else "DIAGNOSTIC_ONLY",
             "complete_requested_window": completed,
             "requested_duration": args.duration,
+            "device_clock_step_s": stored_h,
+            "expected_device_clock_s": device_stats.steps * stored_h,
+            "final_nominal_clock_drift_s": state.time - device_stats.steps * h,
             "device": device_stats.summary(assessed=assessed and completed),
             "independent_cpu": cpu_stats.summary(assessed=assessed and completed),
             "checkpoints": checkpoints,

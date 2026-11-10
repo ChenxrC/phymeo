@@ -93,8 +93,9 @@ def test_cuda_selected_reset_clone_and_owned_model_keep_other_world_exact(deps):
 
 
 def test_cuda_free_root_load_keeps_real_gpu_contact_fields_and_wrench(deps):
-    with gpu(record(CONTACT), world_keys=(8, 103), contact_capacity=16,
-             constraint_capacity=64) as runtime:
+    with gpu(
+        record(CONTACT), world_keys=(8, 103), contact_capacity=16, constraint_capacity=64
+    ) as runtime:
         runtime.set_controls({8: MuJoCoControl([]), 103: MuJoCoControl([])})
         for _ in range(120):
             runtime.step(0.001)
@@ -108,8 +109,18 @@ def test_cuda_free_root_load_keeps_real_gpu_contact_fields_and_wrench(deps):
             assert 0.095 < state.q[2] < 0.105
             assert np.linalg.norm(state.v) < 0.03
             raw = state.last_step.raw_contact_fields
-            assert set(raw) >= {"dist", "pos", "frame", "geom", "worldid", "type",
-                                "geomcollisionid", "efc_address", "solref", "solimp"}
+            assert set(raw) >= {
+                "dist",
+                "pos",
+                "frame",
+                "geom",
+                "worldid",
+                "type",
+                "geomcollisionid",
+                "efc_address",
+                "solref",
+                "solimp",
+            }
             assert len(raw["dist"]) == len(contacts)
             assert state.last_step.raw_constraint_fields["force"].size > 0
             with pytest.raises(ValueError):
@@ -118,8 +129,9 @@ def test_cuda_free_root_load_keeps_real_gpu_contact_fields_and_wrench(deps):
 
 def test_cuda_overflow_rejected_before_clipping_readback_or_publication(deps, monkeypatch):
     _, mw, wp = deps
-    with gpu(record(SLIDER), world_keys=(7, 19), contact_capacity=4,
-             constraint_capacity=16) as runtime:
+    with gpu(
+        record(SLIDER), world_keys=(7, 19), contact_capacity=4, constraint_capacity=16
+    ) as runtime:
         runtime.set_controls({7: MuJoCoControl([1]), 19: MuJoCoControl([-1])})
         before = runtime.snapshot()
         original_step = mw.step
@@ -184,6 +196,7 @@ def test_cuda_capacities_are_explicit_positive_integers(deps, capacity):
 def test_cuda_step_never_calls_cpu_mj_step(deps, monkeypatch):
     mj, _, _ = deps
     with gpu(record(SLIDER)) as runtime:
+
         def forbidden_cpu_step(*args, **kwargs):
             raise AssertionError("CPU integration is forbidden in explicit CUDA mode")
 

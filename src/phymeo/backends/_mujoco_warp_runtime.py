@@ -26,11 +26,19 @@ import numpy as np
 from ..training.resident_stepper import PhysicsStepFailure
 from .mujoco_runtime import MuJoCoRuntime, MuJoCoStepReceipt, _frozen
 
-
 GPU_CONTACT_LAW = "mujoco-warp-native-constraint-v0.0.2"
 _INTEGRATION_FIELDS = (
-    "time", "qpos", "qvel", "act", "qacc_warmstart", "ctrl", "qfrc_applied",
-    "xfrc_applied", "eq_active", "mocap_pos", "mocap_quat",
+    "time",
+    "qpos",
+    "qvel",
+    "act",
+    "qacc_warmstart",
+    "ctrl",
+    "qfrc_applied",
+    "xfrc_applied",
+    "eq_active",
+    "mocap_pos",
+    "mocap_quat",
 )
 
 
@@ -47,7 +55,9 @@ def _dependencies():
         mw = import_module("mujoco_warp")
         wp = import_module("warp")
     except ImportError as error:
-        raise ImportError("explicit CUDA mode requires optional MuJoCo-Warp and warp-lang") from error
+        raise ImportError(
+            "explicit CUDA mode requires optional MuJoCo-Warp and warp-lang"
+        ) from error
     return mw, wp
 
 
@@ -96,8 +106,15 @@ class MuJoCoWarpRuntime(MuJoCoRuntime):
     """
 
     def __init__(
-        self, compilation, *, world_keys=(0,), initial_states=None, mode="cuda",
-        device="cuda:0", contact_capacity=64, constraint_capacity=256,
+        self,
+        compilation,
+        *,
+        world_keys=(0,),
+        initial_states=None,
+        mode="cuda",
+        device="cuda:0",
+        contact_capacity=64,
+        constraint_capacity=256,
     ):
         if mode != "cuda":
             raise ValueError("MuJoCoWarpRuntime requires explicit cuda mode")
@@ -125,7 +142,9 @@ class MuJoCoWarpRuntime(MuJoCoRuntime):
         self._device = wp.get_device(device)
         if not self._device.is_cuda:
             raise ValueError("MuJoCo CUDA mode requires an actual CUDA device; no CPU fallback")
-        self._world_slots = MappingProxyType({key: slot for slot, key in enumerate(self._world_keys)})
+        self._world_slots = MappingProxyType(
+            {key: slot for slot, key in enumerate(self._world_keys)}
+        )
         with wp.ScopedDevice(self._device):
             self._gpu_model = mw.put_model(self._model)
             active, work, mirror = self._new_buffers(self._data)
@@ -133,14 +152,19 @@ class MuJoCoWarpRuntime(MuJoCoRuntime):
         self._data = mirror
         info = dict(self._capabilities)
         info.update(
-            backend="mujoco-warp-cuda", mode="cuda", gpu=True,
-            device=str(self._device), mujoco_warp_version=mw.__version__,
-            warp_version=wp.__version__, state_precision="fp32-device-integration",
-            contact_law=GPU_CONTACT_LAW, publication="whole-batch-atomic",
+            backend="mujoco-warp-cuda",
+            mode="cuda",
+            gpu=True,
+            device=str(self._device),
+            mujoco_warp_version=mw.__version__,
+            warp_version=wp.__version__,
+            state_precision="fp32-device-integration",
+            contact_law=GPU_CONTACT_LAW,
+            publication="whole-batch-atomic",
             contact_capacity=self._contact_capacity,
             total_contact_capacity=len(self._world_keys) * self._contact_capacity,
             constraint_capacity=self._constraint_capacity,
-            solver_tolerance=float(self._gpu_model.opt.tolerance),
+            solver_tolerance=float(self._gpu_model.opt.tolerance.numpy()[0]),
             endpoint_observer="detached-cpu-mj-forward",
             native_model=False,
         )
@@ -152,8 +176,11 @@ class MuJoCoWarpRuntime(MuJoCoRuntime):
 
     def _make_data(self, native):
         return self._mw.put_data(
-            self._model, native, nworld=len(self._world_keys),
-            nconmax=self._contact_capacity, njmax=self._constraint_capacity,
+            self._model,
+            native,
+            nworld=len(self._world_keys),
+            nconmax=self._contact_capacity,
+            njmax=self._constraint_capacity,
         )
 
     def _upload_integration(self, target, native):
@@ -235,8 +262,7 @@ class MuJoCoWarpRuntime(MuJoCoRuntime):
             self._wp.synchronize_device(self._device)
             wrenches = forces.numpy()
         raw_constraints = {
-            field.name: (getattr(data.efc, field.name).numpy(),
-                         getattr(field.type, "shape", ()))
+            field.name: (getattr(data.efc, field.name).numpy(), getattr(field.type, "shape", ()))
             for field in fields(data.efc)
         }
         contacts, contact_fields, constraint_fields = {}, {}, {}
@@ -244,10 +270,14 @@ class MuJoCoWarpRuntime(MuJoCoRuntime):
             selected = np.flatnonzero(world_ids == slot)
             contacts[key] = tuple(
                 MuJoCoWarpContact(
-                    index=int(index), world=key, world_slot=slot,
+                    index=int(index),
+                    world=key,
+                    world_slot=slot,
                     geometry_ids=tuple(int(value) for value in raw["geom"][index]),
-                    dimension=int(raw["dim"][index]), distance=float(raw["dist"][index]),
-                    position=_frozen(raw["pos"][index]), frame=_frozen(raw["frame"][index]),
+                    dimension=int(raw["dim"][index]),
+                    distance=float(raw["dist"][index]),
+                    position=_frozen(raw["pos"][index]),
+                    frame=_frozen(raw["frame"][index]),
                     include_margin=float(raw["includemargin"][index]),
                     friction=_frozen(raw["friction"][index]),
                     solref=_frozen(raw["solref"][index]),
@@ -257,7 +287,8 @@ class MuJoCoWarpRuntime(MuJoCoRuntime):
                     contact_type=int(raw["type"][index]),
                     geometry_collision_id=int(raw["geomcollisionid"][index]),
                     wrench_contact_frame=_frozen(wrenches[index]),
-                ) for index in selected
+                )
+                for index in selected
             )
             contact_fields[key] = MappingProxyType(
                 {name: _raw_array(value[selected]) for name, value in raw.items()}
@@ -266,7 +297,7 @@ class MuJoCoWarpRuntime(MuJoCoRuntime):
             for name, (value, shape) in raw_constraints.items():
                 # Solver scalars/vectors use nworld/nv dimensions, not nefc.
                 if len(shape) > 1 and shape[1] in ("njmax", "njmax_pad"):
-                    rows[name] = _raw_array(value[slot, :constraints[slot]])
+                    rows[name] = _raw_array(value[slot, : constraints[slot]])
                 else:
                     rows[name] = _raw_array(value[slot])
             constraint_fields[key] = MappingProxyType(rows)
@@ -298,12 +329,18 @@ class MuJoCoWarpRuntime(MuJoCoRuntime):
                     if candidate.time != float(expected_time) or candidate.time <= original.time:
                         raise RuntimeError("MuJoCo-Warp did not advance exactly one FP32 timestep")
                     receipts[key] = MuJoCoStepReceipt(
-                        world=key, tick=self._ticks[key] + 1,
-                        input_time=float(original.time), output_time=float(candidate.time),
-                        h=self._timestep, control=self._controls[key], contacts=contacts[key],
-                        qacc=_frozen(candidate.qacc), qfrc_actuator=_frozen(candidate.qfrc_actuator),
+                        world=key,
+                        tick=self._ticks[key] + 1,
+                        input_time=float(original.time),
+                        output_time=float(candidate.time),
+                        h=self._timestep,
+                        control=self._controls[key],
+                        contacts=contacts[key],
+                        qacc=_frozen(candidate.qacc),
+                        qfrc_actuator=_frozen(candidate.qfrc_actuator),
                         qfrc_constraint=_frozen(candidate.qfrc_constraint),
-                        warning_counts=(), backend="mujoco-warp-cuda",
+                        warning_counts=(),
+                        backend="mujoco-warp-cuda",
                         contact_phase="last-mjwarp-step-constraint-evaluation",
                         raw_contact_fields=raw_contacts[key],
                         raw_constraint_fields=raw_constraints[key],
@@ -322,9 +359,14 @@ class MuJoCoWarpRuntime(MuJoCoRuntime):
     def snapshot(self, keys=None):
         states = super().snapshot(keys)
         return MappingProxyType(
-            {key: replace(state, contact_law=GPU_CONTACT_LAW,
-                          contact_phase="endpoint-cpu-forward-recomputed")
-             for key, state in states.items()}
+            {
+                key: replace(
+                    state,
+                    contact_law=GPU_CONTACT_LAW,
+                    contact_phase="endpoint-cpu-forward-recomputed",
+                )
+                for key, state in states.items()
+            }
         )
 
     def reset(self, keys=None):
@@ -336,7 +378,11 @@ class MuJoCoWarpRuntime(MuJoCoRuntime):
             proposed = dict(self._data)
             for key in selected:
                 proposed[key] = self._initial_data(self._initial[key])
-            controls, ticks, receipts = dict(self._controls), dict(self._ticks), dict(self._receipts)
+            controls, ticks, receipts = (
+                dict(self._controls),
+                dict(self._ticks),
+                dict(self._receipts),
+            )
             for key in selected:
                 controls[key] = self._validated_control(
                     type(self._controls[key])(np.zeros(self._model.nu))
@@ -355,8 +401,11 @@ class MuJoCoWarpRuntime(MuJoCoRuntime):
             cloned._contact_capacity = self._contact_capacity
             cloned._constraint_capacity = self._constraint_capacity
             cloned._initialize(
-                self._compilation, copy.copy(self._model), selected,
-                {key: self._initial[key] for key in selected}, self._mj,
+                self._compilation,
+                copy.copy(self._model),
+                selected,
+                {key: self._initial[key] for key in selected},
+                self._mj,
             )
             for key in selected:
                 cloned._data[key] = copy.copy(self._data[key])

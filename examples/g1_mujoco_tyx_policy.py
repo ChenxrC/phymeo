@@ -7,6 +7,7 @@ are separate oracles, never fallback state producers.
 """
 
 import argparse
+import gzip
 import hashlib
 import json
 import math
@@ -84,7 +85,13 @@ class Journal:
         if self.path.exists() or self.summary_path.exists():
             raise FileExistsError("output and summary must both be fresh paths")
         self.path.parent.mkdir(parents=True, exist_ok=True)
-        self.stream = self.path.open("x", encoding="utf-8")
+        # Large G1 receipts retain every field while streaming lossless storage.
+        # Exclusive creation and normal finally-close preserve the original policy.
+        self.stream = (
+            gzip.open(self.path, "xt", encoding="utf-8")
+            if self.path.suffix == ".gz"
+            else self.path.open("x", encoding="utf-8")
+        )
         self.sequence = 0
 
     def write(self, event, *, durable=False, **payload):

@@ -104,3 +104,8 @@ Current source: 59,110 bytes; SHA256 `0170f0646f795160467c5b7b6ba4100b973a53d4ab
 Author strings were compared with complete file readback. Small commits used exact paths and Git diff whitespace checks. **No import, collection, numerical calculation/probe, lint, formatter, pytest, build, install, profile, interpret or CUDA execution was performed.** The source may still contain ordinary syntax/API/style defects; parent static and runtime checks remain required. There is no actual G1 result in this report.
 
 The example intentionally depends on the parent's T4 public typed receipts and larger candidate layout; the child branch alone has not integrated all parent shared changes. Parent is responsible for the combined source snapshot, first raw failures, static repair, independent cases and serial G1 execution. This report releases authoring only and does not grant any execution or claim T4/P6.5 completion.
+
+## Parent storage supplement before first G1 execution
+
+The parent added optional streaming gzip output selected by a .gz suffix. Exclusive file creation, flush/fsync and finally-close remain; the exact JSON records and all fields are unchanged, with no redundant plain copy and no deletion of old evidence. The summary sidecar remains ordinary JSON. This is storage only, not a change to the model, comparison thresholds or selected-event policy. It is unexecuted until the parent admission/trajectory jobs below supply actual results.
+父首次准入：45因Python3.12现有环境缺onnxruntime而在harness import前失败，未执行G1物理；原Python3.11 humanoid环境版本为onnxruntime1.22.0/PyYAML6.0.3。57以原版本安装对应3.12 wheel到本批独立policy-deps-py312目录（--no-deps，不改原venv/项目pin）。58因快照路径数组组装错误在执行前被拒，无RAW；59修正路径后ADMITTED_NOT_PHYSICS/RAW0，所有原资产before/after绑定相同，lossless .gz记录已正常关闭。F1及持续窗口仍需真实执行。

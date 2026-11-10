@@ -317,3 +317,39 @@ def test_world_identity_is_explicit_and_unique(mj, keys):
 def test_gpu_mode_never_silently_falls_back_to_cpu(mj):
     with pytest.raises(NotImplementedError, match="Warp|GPU"):
         MuJoCoRuntime(compiled(SLIDER_XML), mode="warp")
+
+
+def test_runtime_uses_frozen_source_even_if_public_native_model_was_mutated(mj):
+    record = compiled(SLIDER_XML)
+    record.mj_model.opt.timestep = 0.05
+    record.mj_model.body_mass[1] = 500
+    with MuJoCoRuntime(record) as runtime:
+        runtime.set_controls({0: MuJoCoControl([2])})
+        runtime.step(0.002)
+        assert runtime.timestep == 0.002
+        assert runtime.snapshot()[0].v[0] == pytest.approx(
+            0.002 * 6.0 / (2.4 + 0.002 * 0.3), rel=1e-12
+        )
+
+
+def test_reset_prepare_failure_preserves_all_owned_worlds(mj, monkeypatch):
+    with MuJoCoRuntime(compiled(SLIDER_XML), world_keys=(3, 77)) as runtime:
+        runtime.set_controls({3: MuJoCoControl([1]), 77: MuJoCoControl([2])})
+        runtime.step(0.002)
+        before = runtime.snapshot()
+        original = mj.mj_forward
+        calls = []
+
+        def fail_second(model, data):
+            calls.append(True)
+            original(model, data)
+            if len(calls) == 2:
+                raise RuntimeError("injected reset preparation failure")
+
+        monkeypatch.setattr(mj, "mj_forward", fail_second)
+        with pytest.raises(RuntimeError, match="reset preparation"):
+            runtime.reset()
+        monkeypatch.setattr(mj, "mj_forward", original)
+        for key, state in runtime.snapshot().items():
+            np.testing.assert_array_equal(state.q, before[key].q)
+            assert state.tick == before[key].tick and state.time == before[key].time

@@ -9,12 +9,12 @@ MuJoCo 3.3.7 documents MjModel/MjData copy semantics and mj_contactForce:
 https://mujoco.readthedocs.io/en/3.3.7/python.html
 https://mujoco.readthedocs.io/en/3.3.7/APIreference/APIfunctions.html#mj-contactforce
 
-GPU follow-up research: mujoco-warp v0.0.2 declares mujoco>=3.3.7 and
+The separate explicit CUDA adapter uses mujoco-warp v0.0.2 declares mujoco>=3.3.7 and
 warp-lang>=1.9.1. Its put_model/make_data/step/get_data_into are real APIs,
 but get_data_into truncates overflowing contacts/constraints. A future GPU
 adapter must check the device counts before readback, preserve its narrower
 feature set and FP32/tolerance semantics, and separately qualify ownership,
-reset and publication. No GPU implementation or CPU fallback is exposed here.
+reset and publication. Its lazy mode="cuda" dispatch has no CPU integration fallback.
 https://github.com/google-deepmind/mujoco_warp/blob/v0.0.2/mujoco_warp/_src/io.py
 https://github.com/google-deepmind/mujoco_warp/blob/v0.0.2/pyproject.toml
 """
@@ -160,6 +160,9 @@ class MuJoCoStepReceipt:
     warning_counts: tuple
     contact_phase: str = "last-mj-step-constraint-evaluation"
     contact_time: None = None
+    raw_contact_fields: Mapping | None = None
+    raw_constraint_fields: Mapping | None = None
+    backend: str = "mujoco-cpu"
 
 
 @dataclass(frozen=True)
@@ -242,30 +245,40 @@ class MuJoCoRuntime:
     retained. Reading snapshots never modifies the next step's warm start.
     """
 
+    def __new__(cls, compilation, *, mode="cpu", **options):
+        if cls is MuJoCoRuntime and mode == "cuda":
+            from ._mujoco_warp_runtime import MuJoCoWarpRuntime
+
+            return object.__new__(MuJoCoWarpRuntime)
+        return object.__new__(cls)
+
     def __init__(self, compilation, *, world_keys=(0,), initial_states=None, mode="cpu"):
         if mode != "cpu":
-            raise NotImplementedError("MuJoCo-Warp GPU execution is not implemented; no CPU fallback")
+            raise NotImplementedError("unknown MuJoCo GPU mode; use cpu or explicit cuda, no fallback")
         mj = _mujoco()
-        model = getattr(compilation, "mj_model", None)
+        factory = getattr(compilation, "fresh_native_model", None)
+        if not callable(factory):
+            raise TypeError("MuJoCoRuntime requires a source-bound MuJoCo compilation record")
+        model = factory()
         if not isinstance(model, mj.MjModel):
-            raise TypeError("MuJoCoRuntime requires a native MuJoCo compilation record")
-        self._initialize(compilation, copy.copy(model), world_keys, initial_states, mj)
+            raise TypeError("fresh_native_model must return a native MuJoCo MjModel")
+        self._initialize(compilation, model, world_keys, initial_states, mj)
 
     @classmethod
-    def from_source(cls, path, *, world_keys=(0,), initial_states=None, mode="cpu"):
+    def from_source(cls, path, *, world_keys=(0,), initial_states=None, mode="cpu", **options):
         from ..builders.mujoco_compiler import compile_mujoco
 
         record = compile_mujoco(path, require_asset=False)
-        return cls(record, world_keys=world_keys, initial_states=initial_states, mode=mode)
+        return cls(record, world_keys=world_keys, initial_states=initial_states, mode=mode, **options)
 
     @classmethod
     def from_xml(
-        cls, xml, *, assets=None, includes=None, world_keys=(0,), initial_states=None, mode="cpu"
+        cls, xml, *, assets=None, includes=None, world_keys=(0,), initial_states=None, mode="cpu", **options
     ):
         from ..builders.mujoco_compiler import compile_mujoco_xml
 
         record = compile_mujoco_xml(xml, assets=assets, includes=includes, require_asset=False)
-        return cls(record, world_keys=world_keys, initial_states=initial_states, mode=mode)
+        return cls(record, world_keys=world_keys, initial_states=initial_states, mode=mode, **options)
 
     def _initialize(self, compilation, model, keys, initial_states, mj):
         self._lock = RLock()
@@ -444,7 +457,8 @@ class MuJoCoRuntime:
                     before_warnings = self._warnings(candidate)
                     self._mj.mj_step(self._model, candidate)
                     self._finite_state(candidate)
-                    if float(candidate.time) != input_time + self._timestep:
+                    if (float(candidate.time) != input_time + self._timestep
+                            or candidate.time <= input_time):
                         raise RuntimeError("MuJoCo did not advance exactly one source timestep")
                     after_warnings = self._warnings(candidate)
                     if any(after > before for after, before in zip(

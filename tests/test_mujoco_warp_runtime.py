@@ -179,3 +179,34 @@ def test_missing_cuda_dependency_is_an_error_not_cpu_fallback(monkeypatch):
 def test_cuda_capacities_are_explicit_positive_integers(deps, capacity):
     with pytest.raises((TypeError, ValueError)):
         gpu(record(SLIDER), contact_capacity=capacity)
+
+
+def test_cuda_step_never_calls_cpu_mj_step(deps, monkeypatch):
+    mj, _, _ = deps
+    with gpu(record(SLIDER)) as runtime:
+        def forbidden_cpu_step(*args, **kwargs):
+            raise AssertionError("CPU integration is forbidden in explicit CUDA mode")
+
+        monkeypatch.setattr(mj, "mj_step", forbidden_cpu_step)
+        runtime.set_controls({0: MuJoCoControl([1])})
+        runtime.step(0.002)
+        assert runtime.snapshot()[0].v[0] > 0
+
+
+def test_cuda_reset_allocation_failure_keeps_old_batch(deps, monkeypatch):
+    _, mw, _ = deps
+    with gpu(record(SLIDER), world_keys=(3, 77)) as runtime:
+        runtime.step(0.002)
+        before = runtime.snapshot()
+        original = mw.put_data
+
+        def fail_allocation(*args, **kwargs):
+            raise RuntimeError("injected CUDA replacement allocation failure")
+
+        monkeypatch.setattr(mw, "put_data", fail_allocation)
+        with pytest.raises(RuntimeError, match="allocation failure"):
+            runtime.reset((3,))
+        monkeypatch.setattr(mw, "put_data", original)
+        for key, state in runtime.snapshot().items():
+            np.testing.assert_array_equal(state.q, before[key].q)
+            assert state.tick == before[key].tick and state.time == before[key].time

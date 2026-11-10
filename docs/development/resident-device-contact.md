@@ -1,6 +1,6 @@
 # Resident 设备接触的公开使用边界
 
-2026-11-11：单页 `prepare_contacts` 的新设备 patch 消费已完成 interpret/CUDA 各67项功能验证；47份/后端的同次保存审计与本轮安装包验证尚待执行。分页 `prepare_contact_bundle` 的设备模式正在实现，不能把单页结果外推给它。实际状态以[本轮记录](p65-parity-2026-11-11-progress.md)为准。
+2026-11-11：单页 `prepare_contacts` 的新设备 patch 消费已完成 interpret/CUDA 各67项功能验证及每后端47份同次保存审计。本轮安装包验证尚待执行。分页 `prepare_contact_bundle` 的设备模式已整合，专项验证尚待执行，不能把单页结果外推给它。实际状态以[本轮记录](p65-parity-2026-11-11-progress.md)为准。
 
 ## 调用与结果
 
@@ -44,6 +44,26 @@ with batch.prepare_contacts(
 | 原逐 world 站点容量拒绝 | 只拒该 world，其余合法 world 可在同一次事务中接受；拒绝 world 保留旧状态与旧收据。 |
 
 设备浮点表示到有效材料点的转换不是免费或无损假设。逐点误差和完整 patch 的原始/有效一阶矩都必须通过已有局部尺度门，完整差分保存在收据；相同合力不自动证明力矩正确。当前 `discrete_entry` 也不是 CCD，快速穿越需要单独的连续碰撞路径。
+
+## 分页接口（已编码，待专项验证）
+
+`pages` 是已构建的 `ResidentContactPageSpec` 序列；每个 world 完整属于一页。公开接线如下：
+
+```python
+with batch.prepare_contact_bundle(
+    pages,
+    narrow_phase="device_patch",
+    device_patch_site_capacity=1024,
+    site_capacity=128,
+) as contacts:
+    accepted_by_world = batch.step_contacts(contacts, h)
+    page_queries = contacts.last_device_queries
+    aggregate = contacts.last_device_patch
+```
+
+设备站点上限按每个非空页分别计；`site_capacity` 仍按 world 计。各页完成源绑定和表示转换后，共享同一次力装配、求解与发布。最后一页的 query 或转换失败不得发布前面页的状态或收据。真正空页的窄相结果为 `None`；有 shape 而无 allowed pair 的页仍保留完整源绑定和合格的零行 query。无页或全空页走一次原自由推进。
+
+`last_device_queries` 按声明页序排列；聚合保留各页原 query、raw/source、有效材料点和转换差分，不伪造统一的页 registration。它与单页结果一样属于入步历史。当前最高已声明分页资源边界不变，不能用此入口绕过每页容量或把一个 world 拆到多页。
 
 ## 验证范围与后继
 

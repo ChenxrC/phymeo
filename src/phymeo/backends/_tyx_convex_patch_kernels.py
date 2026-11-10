@@ -114,7 +114,10 @@ def fill_convex_patch(
                 s1y = by - radius_b * ny
                 s1z = bz - radius_b * nz
                 signed_gap = dot3(s1x - s0x, s1y - s0y, s1z - s0z, nx, ny, nz)
-                if tx.abs(signed_gap - query_gap) <= 1e-4 * scale and site_base + 1 <= site_capacity:
+                if (
+                    tx.abs(signed_gap - query_gap) <= 1e-4 * scale
+                    and site_base + 1 <= site_capacity
+                ):
                     status = 1
                     dimension = 0
                     count = 1

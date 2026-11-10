@@ -158,3 +158,30 @@ blobs equal their corresponding HEAD blobs.
 This report's own SHA/blob belongs in the final handoff manifest after its commit, avoiding
 self-referential content. Author-string readback and git diff --check were the only checks;
 they do not establish syntax importability, TYX frontend admission or numerical correctness.
+
+
+## Pre-execution capacity coverage supplement
+
+Parent review requested explicit coverage of the native width ceiling; no product change
+was requested or made. The test file now adds one independent inline model with one
+anisotropic offset-COM free root, 29 scalar hinge/slide branches and 29 motors:
+nq=36, nv=35, nu=29, nbody=31 including world. All dynamic bodies have ordinary positive
+mass and strictly positive inertias; root full inertia is strictly diagonally dominant
+and satisfies the triangle inequalities. Each scalar DOF has positive armature/damping.
+The collision-disabled primitives do not substitute geometry to bypass an actual contact
+test: this case specifically exercises the admitted T2 transport width, while the
+existing mixed contact/limit case remains unchanged.
+
+Two sparse worlds begin with nonidentity unit quaternion declarations, nonzero root and
+scalar velocities and scalar positions. All 29 controls, all 35 generalized-force entries
+and all six COM-wrench entries on each dynamic body are nonzero FP32. A separate HOST
+route receives exactly the same stored FP32 requests. Three actual consecutive steps are
+authored, comparing the complete public state/control/physics receipt after every step,
+plus explicit nq/nv/nu and full 35-by-35 mass-matrix publication checks.
+
+This is source-only authoring, not a successful capacity result or a G1 rerun. No asset
+download, product edit, test import, collection, numeric probe or execution was performed.
+The earlier 42-node count and test-file SHA/blob above remain historical at f812f88e.
+The updated manual count is 12 test functions / 44 nodes: 22 interpret and 22 CUDA,
+all still UNCOLLECTED and UNEXECUTED in this lane. The supplement's two current hashes
+are supplied in the final handoff rather than rewriting historical product bindings.

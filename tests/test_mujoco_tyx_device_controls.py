@@ -432,3 +432,72 @@ def test_action_receipt_remains_immutable_after_runtime_close(mode):
             receipt.controls[KEYS[0]].ctrl[0] = 2
         e.close()
         assert exact(receipt) == saved
+
+
+@pytest.mark.parametrize("mode", MODES)
+def test_native_width_boundary_free_root_twenty_nine_actuators(mode):
+    """Independent inline nq36/nv35/nu29 positive-mass articulated batch."""
+    assert pytest.importorskip("mujoco").__version__ == "3.3.7"
+    branches, motors = [], []
+    axes = ("1 0 0", "0 1 0", "0 0 1")
+    for joint in range(29):
+        kind = "slide" if joint % 4 == 0 else "hinge"
+        position = f"{.04 * (joint % 5)} {.03 * (joint // 5)} .05"
+        branches.append(f"""<body name="branch{joint}" pos="{position}">
+          <joint name="joint{joint}" type="{kind}" axis="{axes[joint % 3]}"
+          damping=".03" armature=".02"/>
+          <inertial pos=".01 -.005 .007" mass=".2" diaginertia=".004 .005 .006"/>
+          <geom type="sphere" size=".025" contype="0" conaffinity="0"/></body>""")
+        motors.append(f"""<motor name="motor{joint}" joint="joint{joint}" gear="1"
+          ctrllimited="true" ctrlrange="-.3 .3"/>""")
+    xml = f"""<mujoco model="device-action-capacity"><compiler angle="radian"/>
+      <option timestep=".002" gravity="0 0 -9.81" integrator="Euler"/>
+      <worldbody><body name="root" pos=".1 -.05 1.2"><freejoint/>
+      <inertial pos=".02 -.01 .03" mass="3" fullinertia=".4 .5 .6 .01 -.01 .01"/>
+      <geom type="box" size=".07 .06 .05" contype="0" conaffinity="0"/>
+      {''.join(branches)}</body></worldbody><actuator>{''.join(motors)}</actuator></mujoco>"""
+    compilation = compile_mujoco_xml(xml, require_asset=False)
+    model = compilation.fresh_native_model()
+    assert (model.nq, model.nv, model.nu, model.nbody) == (36, 35, 29, 31)
+    initial = {}
+    for world, key in enumerate(KEYS):
+        sign = 1 if world == 0 else -1
+        q, v = model.qpos0.copy(), np.zeros(35)
+        orientation = np.array([1., .02, -.03, .01])
+        q[3:7] = orientation / np.linalg.norm(orientation)
+        q[0] = q[0] + world * .01
+        q[7:] = [sign * .001 * (joint + 1) for joint in range(29)]
+        v[:6] = np.array([.02, -.01, .03, .04, -.03, .02]) * sign
+        v[6:] = [sign * .005 * (joint + 1) for joint in range(29)]
+        initial[key] = MuJoCoInitialState(q, v)
+    ctrl = np.array([[sign * .01 * (joint + 1) for joint in range(29)]
+                     for sign in (1, -1)], np.float32)
+    qfrc = np.array([[sign * .0005 * (dof + 1) for dof in range(35)]
+                     for sign in (1, -1)], np.float32)
+    xfrc = np.zeros((2, 31, 6), np.float32)
+    for world, sign in enumerate((1, -1)):
+        for body in range(1, 31):
+            xfrc[world, body] = [sign * .0002 * body * (axis + 1) for axis in range(6)]
+    assert np.all(ctrl != 0) and np.all(qfrc != 0) and np.all(xfrc[:, 1:] != 0)
+    declarations = dict(world_keys=KEYS, initial_states=initial, mode=mode,
+                        contact_capacity=16, constraint_capacity=64)
+    with MuJoCoRuntime(compilation, **declarations) as e, (
+        MuJoCoRuntime(compilation, **declarations)
+    ) as reference, ExitStack() as stack:
+        assert e.capabilities["domain"] == "free-root-hinge-slide-no-contact-v1"
+        assert (e.capabilities["nq"], e.capabilities["nv"], e.capabilities["nu"]) == (36, 35, 29)
+        values = device_values(stack, mode, (ctrl, qfrc, xfrc))
+        receipt = submit(e, values)
+        assert receipt.binding["native_layout"] == (36, 35, 29, 31)
+        assert receipt.binding["world_keys"] == KEYS
+        host_submit(reference, (ctrl, qfrc, xfrc))
+        for tick in range(1, 4):
+            assert all(e.step(H).values()) and all(reference.step(H).values())
+            assert state(e) == state(reference)
+            for key in KEYS:
+                published = e.snapshot()[key]
+                assert published.tick == tick
+                assert published.q.shape == (36,) and published.v.shape == (35,)
+                assert published.last_step.dynamics.mass_matrix.shape == (35, 35)
+                assert published.last_step.control.ctrl.shape == (29,)
+                assert exact(published.last_step.stored_control) == exact(receipt.controls[key])

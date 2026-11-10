@@ -47,3 +47,19 @@ Keep exact three-channel D2H audit bytes once per device-action submission, plus
 Author source/tests/small commits and exact delivery manifest, without import, collection, numeric probes, pytest, lint, format, build or install. Parent reviews the changed scope, then grants a focused serial run. No re-running old complete green suites.
 
 Basis: [main plan](2026-11-11-newton-parity-until-0800.md), original source-only assessment in the author's ignored `artifacts/p65-device-wheel-20261111-authoring/c2-device-action-interface-assessment.md` (SHA256 ffddab62a932bae9fda9aa533043eda5e20f4aba208e21c2001ffff865fcebb9).
+
+
+## 03:55 follow-up: retain the live action-pack compilation cache
+
+Original C2b is qualified: run35 interpret 22 passed; run43 CUDA 22 passed. Fixed benchmark52 matched both lanes at W=1/8/32 but measured approximately 13 ms of device-action ingress per submission. Profile56 locates most submission time in pack -> Kernel.__call__; allocation and raw-copy costs are smaller. These measurements justify this narrow implementation change, not buffer pooling or audit removal.
+
+Parent accepts the source-only assessment at child artifacts/p65-device-controls-authoring-20261111/action-runtime-cache-assessment.md, SHA256 7ed7966bf4391ce677ffae963ba302bf5cfe027ea6b42dc5e606132a0b7eaa59. Original author mtyx_t2_source may start a fresh branch from parent a8123e6b in its existing clean worktree, preserving its previous branch. AUTHORING_ONLY, no project execution. Exactly two modified paths:
+
+- src/phymeo/backends/mujoco_device_controls.py
+- tests/test_mujoco_tyx_device_controls.py
+
+Borrow packet.device_owner.runtime; remove the per-packet Runtime constructor and Runtime-close callback. Keep independent packet streams and all five buffers, three D2D channel copies, raw HOST bit audit, status readback, canonical controls, single CAS, failure retention and all existing physics checks. No physical kernel, solver, public API, dependency, tolerance, pooling or stream-sharing changes.
+
+Tests first: repeated submissions preserve physical Runtime while owning independent resources; packet close/failing preparation/cleanup retry cannot close that Runtime or alter accepted state/CAS; successful partial reset and checkpoint restore use replacement owners; failed restore preserves old accepted packet; stale packets remain rejected. Cover fresh inputs after pointer/resource retirement and meaningful cache reuse without a timing threshold. Preserve all existing C2b cases, especially 29 controls/35 DOFs and three-channel coupling.
+
+Return two-file commits, exact manifest, source-only review notes and clean release. Parent alone reviews and runs exact-file Ruff/format, complete changed C2b suites on interpret then CUDA, focused affected restore/reset checks if not covered there, and the unchanged benchmark52 on the new source. First versus steady costs and unchanged copies/audits remain explicit. A fixed-W1 profile may confirm compiled cache reuse. No GPU PPO, zero-readback or Newton speed claim follows from this change.

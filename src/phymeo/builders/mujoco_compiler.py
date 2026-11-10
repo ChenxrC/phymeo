@@ -42,7 +42,7 @@ def _rotation(wxyz):
 
 def _skew(v):
     x, y, z = v
-    return np.array([[0., -z, y], [z, 0., -x], [-y, x, 0.]])
+    return np.array([[0.0, -z, y], [z, 0.0, -x], [-y, x, 0.0]])
 
 
 def _mujoco():
@@ -162,12 +162,16 @@ class MuJoCoCompilation:
     native_initial_qvel: np.ndarray
     lowering_issues: tuple[LoweringIssue, ...]
     unlowered_world_geom_ids: tuple[int, ...]
-    asset_scope: str = "articulation-only; environment and contact law require explicit scene assembly"
+    asset_scope: str = (
+        "articulation-only; environment and contact law require explicit scene assembly"
+    )
 
     def fresh_native_model(self):
         """Fresh MjModel, including geometry/assets/options/keys, without source IO."""
         mj = _mujoco()
-        return mj.MjModel.from_binary_path("compiled.mjb", {"compiled.mjb": self.source.model_binary})
+        return mj.MjModel.from_binary_path(
+            "compiled.mjb", {"compiled.mjb": self.source.model_binary}
+        )
 
     def _mapping(self):
         if self.mapping is None:
@@ -246,9 +250,15 @@ def _source(mj, spec, model, primary_xml, origin):
     mj.mj_saveModel(model, None, binary)
     archive_bytes, model_bytes = archive.getvalue(), binary.tobytes()
     return MuJoCoSource(
-        origin, primary_xml, sha256(primary_xml).hexdigest(), spec.to_xml(),
-        archive_bytes, sha256(archive_bytes).hexdigest(), model_bytes,
-        sha256(model_bytes).hexdigest(), str(mj.__version__),
+        origin,
+        primary_xml,
+        sha256(primary_xml).hexdigest(),
+        spec.to_xml(),
+        archive_bytes,
+        sha256(archive_bytes).hexdigest(),
+        model_bytes,
+        sha256(model_bytes).hexdigest(),
+        str(mj.__version__),
     )
 
 
@@ -296,16 +306,32 @@ def _tree_layout(mj, model):
     issues = []
     kinds = np.asarray(model.jnt_type)
     free = np.flatnonzero(kinds == int(mj.mjtJoint.mjJNT_FREE))
-    scalar = np.flatnonzero((kinds == int(mj.mjtJoint.mjJNT_HINGE)) | (kinds == int(mj.mjtJoint.mjJNT_SLIDE)))
+    scalar = np.flatnonzero(
+        (kinds == int(mj.mjtJoint.mjJNT_HINGE)) | (kinds == int(mj.mjtJoint.mjJNT_SLIDE))
+    )
     if len(free) > 1 or len(free) + len(scalar) != model.njnt:
-        return None, [LoweringIssue("joint-type", "one free root and scalar hinge/slide joints only")]
+        return None, [
+            LoweringIssue("joint-type", "one free root and scalar hinge/slide joints only")
+        ]
     if model.njnt == 0:
-        return None, [LoweringIssue("fixed-empty", "fixed assets require at least one scalar joint")]
+        return None, [
+            LoweringIssue("fixed-empty", "fixed assets require at least one scalar joint")
+        ]
     if len(free):
         free_id = int(free[0])
         root = int(model.jnt_bodyid[free_id])
-        if int(model.body_parentid[root]) != 0 or int(model.body_jntnum[root]) != 1 or int(model.jnt_qposadr[free_id]) != 0 or int(model.jnt_dofadr[free_id]) != 0:
-            return None, [LoweringIssue("free-root", "free root must directly attach to world and own native addresses 0/0")]
+        if (
+            int(model.body_parentid[root]) != 0
+            or int(model.body_jntnum[root]) != 1
+            or int(model.jnt_qposadr[free_id]) != 0
+            or int(model.jnt_dofadr[free_id]) != 0
+        ):
+            return None, [
+                LoweringIssue(
+                    "free-root",
+                    "free root must directly attach to world and own native addresses 0/0",
+                )
+            ]
         top = root
     else:
         free_id = None
@@ -316,7 +342,11 @@ def _tree_layout(mj, model):
                 body = int(model.body_parentid[body])
             tops.add(body)
         if len(tops) != 1:
-            return None, [LoweringIssue("multiple-articulations", "asset lowering admits one connected scalar tree")]
+            return None, [
+                LoweringIssue(
+                    "multiple-articulations", "asset lowering admits one connected scalar tree"
+                )
+            ]
         top = tops.pop()
         root = top if int(model.body_jntnum[top]) == 0 else 0
     selected = {root}
@@ -328,10 +358,17 @@ def _tree_layout(mj, model):
             selected.add(body)
     moving = [int(model.jnt_bodyid[j]) for j in scalar]
     if any(body not in selected for body in moving):
-        issues.append(LoweringIssue("multiple-articulations", "all scalar joints must belong to the one root"))
+        issues.append(
+            LoweringIssue("multiple-articulations", "all scalar joints must belong to the one root")
+        )
     for body in sorted(selected - {root}):
         if int(model.body_jntnum[body]) != 1:
-            issues.append(LoweringIssue("fixed-child", f"body {body} requires fixed-body folding or multi-joint decomposition"))
+            issues.append(
+                LoweringIssue(
+                    "fixed-child",
+                    f"body {body} requires fixed-body folding or multi-joint decomposition",
+                )
+            )
     if issues:
         return None, issues
     return (root, free_id, tuple(int(j) for j in scalar), selected), []
@@ -339,22 +376,49 @@ def _tree_layout(mj, model):
 
 def _semantic_issues(mj, model, floating):
     issues = []
-    for field, code in (("ntendon", "tendon"), ("neq", "equality"), ("nflex", "flex"), ("nplugin", "plugin"), ("nmocap", "mocap")):
+    for field, code in (
+        ("ntendon", "tendon"),
+        ("neq", "equality"),
+        ("nflex", "flex"),
+        ("nplugin", "plugin"),
+        ("nmocap", "mocap"),
+    ):
         if int(getattr(model, field, 0)):
-            issues.append(LoweringIssue(code, f"native {field} is not represented by current articulation assets"))
-    for field, code in (("dof_frictionloss", "joint-frictionloss"), ("jnt_stiffness", "joint-stiffness"), ("body_gravcomp", "body-gravcomp")):
+            issues.append(
+                LoweringIssue(
+                    code, f"native {field} is not represented by current articulation assets"
+                )
+            )
+    for field, code in (
+        ("dof_frictionloss", "joint-frictionloss"),
+        ("jnt_stiffness", "joint-stiffness"),
+        ("body_gravcomp", "body-gravcomp"),
+    ):
         if np.any(getattr(model, field)):
             issues.append(LoweringIssue(code, f"nonzero {field} requires its own physical adapter"))
     if np.any(model.dof_armature < 0) or np.any(model.dof_damping < 0):
         issues.append(LoweringIssue("joint-actuators", "armature/damping must be nonnegative"))
     if not floating and (np.any(model.dof_armature) or np.any(model.dof_damping)):
-        issues.append(LoweringIssue("fixed-actuators", "current RobotModel has no armature/damping physical fields"))
+        issues.append(
+            LoweringIssue(
+                "fixed-actuators", "current RobotModel has no armature/damping physical fields"
+            )
+        )
     if floating and (np.any(model.dof_armature[:6]) or np.any(model.dof_damping[:6])):
-        issues.append(LoweringIssue("free-actuators", "free-root armature/damping is not a scalar-joint field"))
+        issues.append(
+            LoweringIssue(
+                "free-actuators", "free-root armature/damping is not a scalar-joint field"
+            )
+        )
     if np.any(model.opt.wind) or float(model.opt.viscosity) or float(model.opt.density):
         issues.append(LoweringIssue("fluid-forces", "ambient fluid forces need their own adapter"))
     if int(model.opt.disableflags) or int(model.opt.enableflags):
-        issues.append(LoweringIssue("native-option-flags", "nondefault native enable/disable flags require explicit backend semantics"))
+        issues.append(
+            LoweringIssue(
+                "native-option-flags",
+                "nondefault native enable/disable flags require explicit backend semantics",
+            )
+        )
     return issues
 
 
@@ -362,10 +426,11 @@ def _motor_limits(mj, model, scalar):
     limits, issues, seen = {}, [], set()
     for actuator in range(model.nu):
         joint = int(model.actuator_trnid[actuator, 0])
-        expected_gear = np.array([1., 0., 0., 0., 0., 0.])
+        expected_gear = np.array([1.0, 0.0, 0.0, 0.0, 0.0, 0.0])
         valid = (
             int(model.actuator_trntype[actuator]) == int(mj.mjtTrn.mjTRN_JOINT)
-            and joint in scalar and joint not in seen
+            and joint in scalar
+            and joint not in seen
             and int(model.actuator_dyntype[actuator]) == int(mj.mjtDyn.mjDYN_NONE)
             and int(model.actuator_gaintype[actuator]) == int(mj.mjtGain.mjGAIN_FIXED)
             and int(model.actuator_biastype[actuator]) == int(mj.mjtBias.mjBIAS_NONE)
@@ -375,15 +440,28 @@ def _motor_limits(mj, model, scalar):
             and not np.any(model.actuator_biasprm[actuator])
         )
         if not valid:
-            issues.append(LoweringIssue("actuator-transmission", f"actuator {actuator} requires a unique unit-gear direct motor"))
+            issues.append(
+                LoweringIssue(
+                    "actuator-transmission",
+                    f"actuator {actuator} requires a unique unit-gear direct motor",
+                )
+            )
             continue
         seen.add(joint)
         bounds = []
-        for flag, field in (("actuator_ctrllimited", "actuator_ctrlrange"), ("actuator_forcelimited", "actuator_forcerange")):
+        for flag, field in (
+            ("actuator_ctrllimited", "actuator_ctrlrange"),
+            ("actuator_forcelimited", "actuator_forcerange"),
+        ):
             if bool(getattr(model, flag)[actuator]):
                 low, high = getattr(model, field)[actuator]
                 if low != -high or high <= 0:
-                    issues.append(LoweringIssue("actuator-limits", f"actuator {actuator} has a non-symmetric effort range"))
+                    issues.append(
+                        LoweringIssue(
+                            "actuator-limits",
+                            f"actuator {actuator} has a non-symmetric effort range",
+                        )
+                    )
                 else:
                     bounds.append(float(high))
         limits[joint] = min(bounds) if bounds else None
@@ -393,7 +471,11 @@ def _motor_limits(mj, model, scalar):
             if bool(model.jnt_actfrclimited[joint]):
                 low, high = model.jnt_actfrcrange[joint]
                 if low != -high or high <= 0:
-                    issues.append(LoweringIssue("actuator-limits", f"joint {joint} has non-symmetric force clamping"))
+                    issues.append(
+                        LoweringIssue(
+                            "actuator-limits", f"joint {joint} has non-symmetric force clamping"
+                        )
+                    )
                 else:
                     previous = limits.get(joint)
                     limits[joint] = float(high) if previous is None else min(previous, float(high))
@@ -424,11 +506,22 @@ def _decode(mj, model):
         link_index = index_by_body.get(body)
         frame = frames.get(body, np.eye(3))
         anchor = anchors.get(body, np.zeros(3))
-        bodies.append(BodyMapping(body, name, authored, link_index, tuple(-frame.T @ anchor), tuple(matrix_quaternion(frame))))
+        bodies.append(
+            BodyMapping(
+                body,
+                name,
+                authored,
+                link_index,
+                tuple(-frame.T @ anchor),
+                tuple(matrix_quaternion(frame)),
+            )
+        )
     for index, joint in enumerate(scalar):
         authored, name = _name(mj, model, mj.mjtObj.mjOBJ_JOINT, joint)
         qa, va = int(model.jnt_qposadr[joint]), int(model.jnt_dofadr[joint])
-        joint_rows.append(JointMapping(joint, name, authored, index, qa, va, float(model.qpos0[qa])))
+        joint_rows.append(
+            JointMapping(joint, name, authored, index, qa, va, float(model.qpos0[qa]))
+        )
         joint_names.append(name)
         link_names.append(bodies[body_ids[index]].name)
     world_geoms = []
@@ -444,12 +537,25 @@ def _decode(mj, model):
             if not visual:
                 world_geoms.append(geom)
         elif not visual:
-            kinds = {int(mj.mjtGeom.mjGEOM_SPHERE): ("sphere", 1), int(mj.mjtGeom.mjGEOM_CAPSULE): ("capsule", 2), int(mj.mjtGeom.mjGEOM_BOX): ("box", 3)}
+            kinds = {
+                int(mj.mjtGeom.mjGEOM_SPHERE): ("sphere", 1),
+                int(mj.mjtGeom.mjGEOM_CAPSULE): ("capsule", 2),
+                int(mj.mjtGeom.mjGEOM_BOX): ("box", 3),
+            }
             kind_size = kinds.get(int(model.geom_type[geom]))
             if kind_size is None:
-                issues.append(LoweringIssue("geometry-type", f"physical geom {name!r} is not sphere/capsule/box"))
+                issues.append(
+                    LoweringIssue(
+                        "geometry-type", f"physical geom {name!r} is not sphere/capsule/box"
+                    )
+                )
             elif contype < 0 or affinity < 0 or max(contype, affinity) > 2**31 - 1:
-                issues.append(LoweringIssue("collision-filter", f"geom {name!r} masks exceed the current nonnegative i32 format"))
+                issues.append(
+                    LoweringIssue(
+                        "collision-filter",
+                        f"geom {name!r} masks exceed the current nonnegative i32 format",
+                    )
+                )
             else:
                 frame, anchor = frames[body], anchors[body]
                 position = frame.T @ (model.geom_pos[geom] - anchor)
@@ -458,35 +564,79 @@ def _decode(mj, model):
                 ordinal = shape_counts.get(body, 0)
                 shape_counts[body] = ordinal + 1
                 kind, count = kind_size
-                collider = make_collider(name, bodies[body].name, index, ordinal, position, matrix_quaternion(rotation), kind, np.asarray(model.geom_size[geom, :count]), name_is_authored=authored is not None)
-                collider = replace(collider, shape=replace(collider.shape, group=contype, mask=affinity))
+                collider = make_collider(
+                    name,
+                    bodies[body].name,
+                    index,
+                    ordinal,
+                    position,
+                    matrix_quaternion(rotation),
+                    kind,
+                    np.asarray(model.geom_size[geom, :count]),
+                    name_is_authored=authored is not None,
+                )
+                collider = replace(
+                    collider, shape=replace(collider.shape, group=contype, mask=affinity)
+                )
                 colliders.append(collider)
                 key = collider.shape.key
-        geom_rows.append(GeometryMapping(geom, name, authored, body, key, contype, affinity, world_static, visual))
+        geom_rows.append(
+            GeometryMapping(
+                geom, name, authored, body, key, contype, affinity, world_static, visual
+            )
+        )
     # MuJoCo masks use OR; current Phymeo pair filters use AND. Refuse asymmetric
     # cases where direct bit preservation would actually alter source eligibility.
     physical = [row for row in geom_rows if not row.visual_only]
     for index, left in enumerate(physical):
-        for right in physical[index + 1:]:
+        for right in physical[index + 1 :]:
             if left.shape_key is None and right.shape_key is None:
                 continue
             first = bool(left.contype & right.conaffinity)
             second = bool(right.contype & left.conaffinity)
             if (first or second) != (first and second):
-                issues.append(LoweringIssue("collision-filter", f"source OR masks for geoms {left.mj_id}/{right.mj_id} differ from current AND filtering"))
+                issues.append(
+                    LoweringIssue(
+                        "collision-filter",
+                        f"source OR masks for geoms {left.mj_id}/{right.mj_id} differ from current AND filtering",
+                    )
+                )
                 break
         else:
             continue
         break
-    mapping = MuJoCoMapping(tuple(bodies), tuple(joint_rows), tuple(geom_rows), root, free_id, int(model.nq), int(model.nv), tuple(model.body_ipos[root]) if floating else (0., 0., 0.))
+    mapping = MuJoCoMapping(
+        tuple(bodies),
+        tuple(joint_rows),
+        tuple(geom_rows),
+        root,
+        free_id,
+        int(model.nq),
+        int(model.nv),
+        tuple(model.body_ipos[root]) if floating else (0.0, 0.0, 0.0),
+    )
     if issues:
         return None, mapping, tuple(issues), tuple(world_geoms)
-    parents, kinds, positions, rotations, axes, masses, centers, moments = [], [], [], [], [], [], [], []
+    parents, kinds, positions, rotations, axes, masses, centers, moments = (
+        [],
+        [],
+        [],
+        [],
+        [],
+        [],
+        [],
+        [],
+    )
     lowers, uppers, forces = [], [], []
     for joint, body in zip(scalar, body_ids, strict=True):
         parent = int(model.body_parentid[body])
         if parent not in index_by_body:
-            return None, mapping, (LoweringIssue("fixed-child", "unfolded fixed ancestor is not an asset body"),), tuple(world_geoms)
+            return (
+                None,
+                mapping,
+                (LoweringIssue("fixed-child", "unfolded fixed ancestor is not an asset body"),),
+                tuple(world_geoms),
+            )
         parent_index = index_by_body[parent]
         frame, parent_frame = frames[body], frames[parent]
         local_rotation = _rotation(model.body_quat[body])
@@ -498,7 +648,11 @@ def _decode(mj, model):
             joint_position = parent_frame.T @ (joint_position - anchors[parent])
             joint_rotation = parent_frame.T @ local_rotation @ frame
         parents.append(parent_index)
-        kinds.append("revolute" if int(model.jnt_type[joint]) == int(mj.mjtJoint.mjJNT_HINGE) else "prismatic")
+        kinds.append(
+            "revolute"
+            if int(model.jnt_type[joint]) == int(mj.mjtJoint.mjJNT_HINGE)
+            else "prismatic"
+        )
         positions.append(joint_position)
         rotations.append(matrix_quaternion(joint_rotation))
         axes.append(frame.T @ model.jnt_axis[joint])
@@ -512,21 +666,74 @@ def _decode(mj, model):
         forces.append(effort.get(joint))
     children = None
     if scalar:
-        children = RobotModel(np.asarray(parents, dtype=np.int64), tuple(kinds), np.asarray(positions), np.asarray(rotations), np.asarray(axes), np.asarray(masses), np.asarray(centers), np.asarray(moments), np.array(model.opt.gravity, dtype=np.float64))
+        children = RobotModel(
+            np.asarray(parents, dtype=np.int64),
+            tuple(kinds),
+            np.asarray(positions),
+            np.asarray(rotations),
+            np.asarray(axes),
+            np.asarray(masses),
+            np.asarray(centers),
+            np.asarray(moments),
+            np.array(model.opt.gravity, dtype=np.float64),
+        )
     common = (
-        str(getattr(model, "name", "compiled-mujoco")), bodies[root].name,
-        tuple(link_names), tuple(joint_names), tuple(lowers), tuple(uppers),
-        tuple(forces), tuple(None for _ in scalar), tuple(colliders),
+        str(getattr(model, "name", "compiled-mujoco")),
+        bodies[root].name,
+        tuple(link_names),
+        tuple(joint_names),
+        tuple(lowers),
+        tuple(uppers),
+        tuple(forces),
+        tuple(None for _ in scalar),
+        tuple(colliders),
         CollisionModel(tuple(collider.shape for collider in colliders)),
     )
     name, root_name, links, joints, lower, upper, force, speed, collisions, collision_model = common
     if floating:
-        root_model = RigidBodyModel(np.array([1 / model.body_mass[root]]), np.array(model.body_inertia[root][None]), np.array(model.opt.gravity))
+        root_model = RigidBodyModel(
+            np.array([1 / model.body_mass[root]]),
+            np.array(model.body_inertia[root][None]),
+            np.array(model.opt.gravity),
+        )
         va = [int(model.jnt_dofadr[j]) for j in scalar]
-        physical = FloatingRobotModel(root_model, np.array(model.body_ipos[root]), children, root_inertia_frame_xyzw=np.array(model.body_iquat[root])[[1, 2, 3, 0]], joint_armature=np.array(model.dof_armature[va]), joint_damping=np.array(model.dof_damping[va]))
-        asset = FloatingRobotAsset(name, root_name, physical, links, joints, lower, upper, force, speed, collisions, collision_model)
+        physical = FloatingRobotModel(
+            root_model,
+            np.array(model.body_ipos[root]),
+            children,
+            root_inertia_frame_xyzw=np.array(model.body_iquat[root])[[1, 2, 3, 0]],
+            joint_armature=np.array(model.dof_armature[va]),
+            joint_damping=np.array(model.dof_damping[va]),
+        )
+        asset = FloatingRobotAsset(
+            name,
+            root_name,
+            physical,
+            links,
+            joints,
+            lower,
+            upper,
+            force,
+            speed,
+            collisions,
+            collision_model,
+        )
     else:
-        asset = RobotAsset(name, root_name, children, links, joints, lower, upper, force, speed, collisions, collision_model, tuple(root_position), tuple(matrix_quaternion(root_rotation)))
+        asset = RobotAsset(
+            name,
+            root_name,
+            children,
+            links,
+            joints,
+            lower,
+            upper,
+            force,
+            speed,
+            collisions,
+            collision_model,
+            tuple(root_position),
+            tuple(matrix_quaternion(root_rotation)),
+        )
     return asset, mapping, (), tuple(world_geoms)
 
 
@@ -534,13 +741,30 @@ def _compilation(mj, spec, model, source, require_asset):
     try:
         asset, mapping, issues, world_geoms = _decode(mj, model)
     except (ValueError, FloatingPointError) as exc:
-        asset, mapping, issues, world_geoms = None, None, (LoweringIssue("asset-domain", str(exc)),), tuple(range(model.ngeom))
+        asset, mapping, issues, world_geoms = (
+            None,
+            None,
+            (LoweringIssue("asset-domain", str(exc)),),
+            tuple(range(model.ngeom)),
+        )
     if require_asset and issues:
         raise MuJoCoLoweringError(issues)
     if asset is not None:
         asset = replace(asset, name=str(spec.modelname))
     native_q, native_v = _owned(model.qpos0), _owned(np.zeros(model.nv))
-    record = MuJoCoCompilation(model, spec, asset, mapping, source, None, None, native_q, native_v, tuple(issues), tuple(world_geoms))
+    record = MuJoCoCompilation(
+        model,
+        spec,
+        asset,
+        mapping,
+        source,
+        None,
+        None,
+        native_q,
+        native_v,
+        tuple(issues),
+        tuple(world_geoms),
+    )
     if mapping is not None:
         initial_q = record.qpos_to_q(native_q)
         record = replace(record, initial_q=initial_q, initial_v=_owned(np.zeros(mapping.native_nv)))

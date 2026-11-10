@@ -13,15 +13,16 @@ import pytest
 from phymeo.builders import mujoco_compiler as compiler
 from phymeo.builders.floating_urdf import FloatingRobotAsset
 from phymeo.dynamics.floating_robot import (
-    FloatingRobotState, floating_kinematics, floating_point_jacobians,
+    FloatingRobotState,
+    floating_kinematics,
+    floating_point_jacobians,
 )
 from phymeo.dynamics.robot_dynamics import mass_matrix
 from phymeo.dynamics.robot_kinematics import forward_kinematics, point_jacobians
 from phymeo.dynamics.rotation import quaternion_matrix
 from phymeo.solvers.floating_tree import floating_mass_matrix
 
-
-BODY = '''<body name="base" pos=".3 -.2 .5" quat=".9238795325 0 0 .3826834324">
+BODY = """<body name="base" pos=".3 -.2 .5" quat=".9238795325 0 0 .3826834324">
   {free}
   <inertial mass="2" pos=".07 -.04 .02" quat=".9238795325 .3826834324 0 0"
             diaginertia=".2 .3 .4"/>
@@ -40,19 +41,19 @@ BODY = '''<body name="base" pos=".3 -.2 .5" quat=".9238795325 0 0 .3826834324">
             pos=".01 .02 .03" quat=".9238795325 .3826834324 0 0"/>
     </body>
   </body>
-</body>'''
+</body>"""
 
 
 def xml_tree(floating=False, actuators=False, extra=""):
     body = BODY.format(
-        free='<freejoint name="root-free"/>' if floating else '',
-        actuator='armature=".13" damping=".21"' if actuators else '',
+        free='<freejoint name="root-free"/>' if floating else "",
+        actuator='armature=".13" damping=".21"' if actuators else "",
     )
-    return f'''<mujoco model="compiler-oracle">
+    return f"""<mujoco model="compiler-oracle">
       <compiler angle="radian" fusestatic="false"/>
       <option gravity=".2 -.3 -9.5"/>
       <default><joint limited="true"/><geom contype="2" conaffinity="3"/></default>
-      <worldbody>{body}</worldbody>{extra}</mujoco>'''
+      <worldbody>{body}</worldbody>{extra}</mujoco>"""
 
 
 def native():
@@ -73,7 +74,7 @@ def test_missing_optional_dependency_has_explicit_error(monkeypatch, tmp_path):
 
 
 @pytest.mark.parametrize("floating,actuators", [(False, False), (True, False), (True, True)])
-@pytest.mark.parametrize("offset", [0.0, .23, -.31])
+@pytest.mark.parametrize("offset", [0.0, 0.23, -0.31])
 def test_independent_fk_full_mass_and_point_jacobians(floating, actuators, offset):
     mj = native()
     xml = xml_tree(floating, actuators)
@@ -81,11 +82,11 @@ def test_independent_fk_full_mass_and_point_jacobians(floating, actuators, offse
     reference = mj.MjModel.from_xml_string(xml)
     data = mj.MjData(reference)
     q = record.initial_q.copy()
-    q[-2:] += [offset, -.4 * offset]
+    q[-2:] += [offset, -0.4 * offset]
     if floating:
-        q[:3] += [.1, -.2, .3]
-        q[3:7] = [.2, -.1, .3, np.sqrt(.86)]
-    velocity = np.linspace(-.3, .4, reference.nv)
+        q[:3] += [0.1, -0.2, 0.3]
+        q[3:7] = [0.2, -0.1, 0.3, np.sqrt(0.86)]
+    velocity = np.linspace(-0.3, 0.4, reference.nv)
     data.qpos[:] = record.q_to_qpos(q)
     data.qvel[:] = record.v_to_qvel(q, velocity)
     mj.mj_forward(reference, data)
@@ -101,12 +102,14 @@ def test_independent_fk_full_mass_and_point_jacobians(floating, actuators, offse
     else:
         geometry = forward_kinematics(record.asset.model, q)
         physical_mass = mass_matrix(record.asset.model, q)
-    np.testing.assert_allclose(physical_mass, transform.T @ dense @ transform, rtol=2e-12, atol=2e-12)
+    np.testing.assert_allclose(
+        physical_mass, transform.T @ dense @ transform, rtol=2e-12, atol=2e-12
+    )
     for body in record.mapping.bodies:
         if body.link_index is None or (not floating and body.link_index == -1):
             continue
         index = body.link_index + 1 if floating else body.link_index
-        point = np.array([.025, -.018, .04])
+        point = np.array([0.025, -0.018, 0.04])
         origin = np.array(body.authored_origin_in_link)
         local = origin + quaternion_matrix(np.array([body.principal_to_authored_xyzw]))[0].T @ point
         expected_point = data.xpos[body.mj_id] + data.xmat[body.mj_id].reshape(3, 3) @ point
@@ -115,7 +118,9 @@ def test_independent_fk_full_mass_and_point_jacobians(floating, actuators, offse
         jp, jr = np.zeros((3, reference.nv)), np.zeros((3, reference.nv))
         mj.mj_jac(reference, data, jp, jr, expected_point, body.mj_id)
         if floating:
-            actual_jp, actual_jr = floating_point_jacobians(record.asset.model, state, [index], local[None])
+            actual_jp, actual_jr = floating_point_jacobians(
+                record.asset.model, state, [index], local[None]
+            )
         else:
             actual_jp, actual_jr = point_jacobians(record.asset.model, q, [index], local[None])
         np.testing.assert_allclose(actual_jp[0], jp @ transform, atol=2e-12)
@@ -124,27 +129,31 @@ def test_independent_fk_full_mass_and_point_jacobians(floating, actuators, offse
     assert record.asset.joint_names == ("turn", "slide")
     assert turn.qpos_address == (7 if floating else 0)
     assert slide.dof_address == (7 if floating else 1)
-    np.testing.assert_allclose(record.asset.lower, [-.87, -.28], atol=1e-14)
-    np.testing.assert_allclose(record.asset.upper, [.73, .32], atol=1e-14)
+    np.testing.assert_allclose(record.asset.lower, [-0.87, -0.28], atol=1e-14)
+    np.testing.assert_allclose(record.asset.upper, [0.73, 0.32], atol=1e-14)
     if actuators:
-        np.testing.assert_array_equal(record.asset.model.joint_armature, [.13, .13])
-        np.testing.assert_array_equal(record.asset.model.joint_damping, [.21, .21])
+        np.testing.assert_array_equal(record.asset.model.joint_armature, [0.13, 0.13])
+        np.testing.assert_array_equal(record.asset.model.joint_damping, [0.21, 0.21])
 
 
 def test_defaults_include_inferred_inertia_and_owned_source_snapshot(tmp_path):
     mj = native()
     included = tmp_path / "part.xml"
-    included.write_text('''<mujoco><worldbody><body name="payload"><freejoint/>
+    included.write_text("""<mujoco><worldbody><body name="payload"><freejoint/>
       <geom name="solid" type="box" size=".1 .2 .3" density="500"/>
-      </body></worldbody></mujoco>''')
+      </body></worldbody></mujoco>""")
     main = tmp_path / "model.xml"
-    main.write_text('''<mujoco><compiler angle="radian"/><include file="part.xml"/></mujoco>''')
+    main.write_text("""<mujoco><compiler angle="radian"/><include file="part.xml"/></mujoco>""")
     record = compiler.compile_mujoco(main)
     assert isinstance(record.asset, FloatingRobotAsset)
     assert record.asset.model.children is None
     assert record.asset.model.root.inverse_mass[0] == pytest.approx(1 / 24)
     rotation = quaternion_matrix(record.asset.model.root_inertia_frame_xyzw[None])[0]
-    np.testing.assert_allclose(rotation @ np.diag(record.asset.model.root.inertia_diagonal[0]) @ rotation.T, np.diag([1.04, .8, .4]), atol=1e-12)
+    np.testing.assert_allclose(
+        rotation @ np.diag(record.asset.model.root.inertia_diagonal[0]) @ rotation.T,
+        np.diag([1.04, 0.8, 0.4]),
+        atol=1e-12,
+    )
     included.unlink()
     main.unlink()
     restored = record.fresh_native_model()
@@ -164,12 +173,21 @@ def test_defaults_include_inferred_inertia_and_owned_source_snapshot(tmp_path):
 
 def test_default_joint_actuators_and_visual_physical_geometries_are_preserved():
     native()
-    xml = xml_tree(True).replace('<joint limited="true"/>', '<joint limited="true" armature=".3" damping=".4"/>')
-    xml = xml.replace('<geom name="base-sphere"', '<geom name="visual-only" type="sphere" size=".2" contype="0" conaffinity="0"/><geom name="base-sphere"')
+    xml = xml_tree(True).replace(
+        '<joint limited="true"/>', '<joint limited="true" armature=".3" damping=".4"/>'
+    )
+    xml = xml.replace(
+        '<geom name="base-sphere"',
+        '<geom name="visual-only" type="sphere" size=".2" contype="0" conaffinity="0"/><geom name="base-sphere"',
+    )
     record = compiler.compile_mujoco_xml(xml)
-    np.testing.assert_array_equal(record.asset.model.joint_armature, [.3, .3])
-    np.testing.assert_array_equal(record.asset.model.joint_damping, [.4, .4])
-    assert {row.name for row in record.asset.collisions} == {"base-sphere", "arm-capsule", "slider-box"}
+    np.testing.assert_array_equal(record.asset.model.joint_armature, [0.3, 0.3])
+    np.testing.assert_array_equal(record.asset.model.joint_damping, [0.4, 0.4])
+    assert {row.name for row in record.asset.collisions} == {
+        "base-sphere",
+        "arm-capsule",
+        "slider-box",
+    }
     visual = next(row for row in record.mapping.geoms if row.name == "visual-only")
     assert visual.shape_key is None and visual.visual_only
     assert all(row.shape.group == 2 and row.shape.mask == 3 for row in record.asset.collisions)
@@ -177,21 +195,44 @@ def test_default_joint_actuators_and_visual_physical_geometries_are_preserved():
 
 def test_world_environment_and_contact_law_are_explicit_metadata():
     native()
-    xml = xml_tree(True).replace('<worldbody>', '<worldbody><geom name="floor" type="plane" size="1 1 .1"/>')
+    xml = xml_tree(True).replace(
+        "<worldbody>", '<worldbody><geom name="floor" type="plane" size="1 1 .1"/>'
+    )
     record = compiler.compile_mujoco_xml(xml)
     floor = next(row for row in record.mapping.geoms if row.name == "floor")
     assert floor.world_static and floor.shape_key is None
     assert record.unlowered_world_geom_ids == (floor.mj_id,)
-    assert record.asset_scope == "articulation-only; environment and contact law require explicit scene assembly"
+    assert (
+        record.asset_scope
+        == "articulation-only; environment and contact law require explicit scene assembly"
+    )
 
 
-@pytest.mark.parametrize("change,issue", [
-    (lambda x: x.replace('type="hinge"', 'type="ball" limited="false"').replace('ref=".17" range="-.7 .9"', ''), "joint-type"),
-    (lambda x: x.replace('name="turn"', 'name="turn" frictionloss=".2"'), "joint-frictionloss"),
-    (lambda x: x.replace('name="turn"', 'name="turn" stiffness="2"'), "joint-stiffness"),
-    (lambda x: x.replace('</mujoco>', '<equality><joint joint1="turn" joint2="slide"/></equality></mujoco>'), "equality"),
-    (lambda x: x.replace('</mujoco>', '<actuator><motor joint="turn" gear="2"/></actuator></mujoco>'), "actuator-transmission"),
-])
+@pytest.mark.parametrize(
+    "change,issue",
+    [
+        (
+            lambda x: x.replace('type="hinge"', 'type="ball" limited="false"').replace(
+                'ref=".17" range="-.7 .9"', ""
+            ),
+            "joint-type",
+        ),
+        (lambda x: x.replace('name="turn"', 'name="turn" frictionloss=".2"'), "joint-frictionloss"),
+        (lambda x: x.replace('name="turn"', 'name="turn" stiffness="2"'), "joint-stiffness"),
+        (
+            lambda x: x.replace(
+                "</mujoco>", '<equality><joint joint1="turn" joint2="slide"/></equality></mujoco>'
+            ),
+            "equality",
+        ),
+        (
+            lambda x: x.replace(
+                "</mujoco>", '<actuator><motor joint="turn" gear="2"/></actuator></mujoco>'
+            ),
+            "actuator-transmission",
+        ),
+    ],
+)
 def test_valid_native_unsupported_semantics_do_not_silently_lower(change, issue):
     native()
     xml = change(xml_tree(True))
@@ -210,16 +251,19 @@ def test_fixed_joint_actuators_require_explicit_native_only_boundary():
         compiler.compile_mujoco_xml(xml_tree(False, True))
     record = compiler.compile_mujoco_xml(xml_tree(False, True), require_asset=False)
     assert record.asset is None
-    np.testing.assert_array_equal(record.mj_model.dof_armature, [.13, .13])
-    np.testing.assert_array_equal(record.mj_model.dof_damping, [.21, .21])
+    np.testing.assert_array_equal(record.mj_model.dof_armature, [0.13, 0.13])
+    np.testing.assert_array_equal(record.mj_model.dof_damping, [0.21, 0.21])
 
 
 def test_unit_motor_effort_limit_preserved_and_native_data_does_not_alias():
     native()
-    xml = xml_tree(True, extra='''<actuator><motor name="motor" joint="turn" ctrlrange="-7 7"/>
-      <motor name="slide-motor" joint="slide" ctrlrange="-3 3"/></actuator>''')
+    xml = xml_tree(
+        True,
+        extra="""<actuator><motor name="motor" joint="turn" ctrlrange="-7 7"/>
+      <motor name="slide-motor" joint="slide" ctrlrange="-3 3"/></actuator>""",
+    )
     record = compiler.compile_mujoco_xml(xml)
-    assert record.asset.effort_limit == (7., 3.)
+    assert record.asset.effort_limit == (7.0, 3.0)
     before = record.native_initial_qpos.copy()
     record.mj_model.qpos0[:] = 999
     np.testing.assert_array_equal(record.native_initial_qpos, before)
@@ -229,7 +273,7 @@ def test_unit_motor_effort_limit_preserved_and_native_data_does_not_alias():
 def test_invalid_xml_is_compile_error_and_coordinate_shapes_are_checked():
     native()
     with pytest.raises(compiler.MuJoCoCompilationError):
-        compiler.compile_mujoco_xml('<mujoco><not-a-real-tag/></mujoco>')
+        compiler.compile_mujoco_xml("<mujoco><not-a-real-tag/></mujoco>")
     record = compiler.compile_mujoco_xml(xml_tree(True))
     for method, args in (
         (record.q_to_qpos, (np.zeros(2),)),
@@ -256,32 +300,56 @@ def test_full_inertia_tensor_is_decoded_without_diagonal_loss():
     mj.mj_fullM(reference, dense, data.qM)
     transform = record.velocity_map(record.initial_q)
     state = FloatingRobotState(record.initial_q, record.initial_v)
-    np.testing.assert_allclose(floating_mass_matrix(record.asset.model, state), transform.T @ dense @ transform, atol=2e-12)
+    np.testing.assert_allclose(
+        floating_mass_matrix(record.asset.model, state), transform.T @ dense @ transform, atol=2e-12
+    )
 
 
 def test_asymmetric_source_or_collision_filter_is_not_silently_reinterpreted():
     native()
-    xml = xml_tree(True).replace('name="base-sphere"', 'name="base-sphere" contype="1" conaffinity="0"')
+    xml = xml_tree(True).replace(
+        'name="base-sphere"', 'name="base-sphere" contype="1" conaffinity="0"'
+    )
     with pytest.raises(compiler.MuJoCoLoweringError, match="collision-filter"):
         compiler.compile_mujoco_xml(xml)
 
 
-def test_native_tendon_and_fixed_welded_child_have_explicit_capability_errors():
+def test_native_tendon_and_multiple_articulations_have_explicit_capability_errors():
     native()
     tendon = '<tendon><fixed name="coupled"><joint joint="turn" coef="1"/></fixed></tendon>'
     with pytest.raises(compiler.MuJoCoLoweringError, match="tendon"):
         compiler.compile_mujoco_xml(xml_tree(True, extra=tendon))
-    welded = xml_tree(True).replace('</worldbody>', '<body name="other"><joint name="other-joint"/><geom size=".1"/></body></worldbody>')
+    welded = xml_tree(True).replace(
+        "</worldbody>",
+        '<body name="other"><joint name="other-joint" limited="false"/>'
+        '<geom size=".1"/></body></worldbody>',
+    )
     with pytest.raises(compiler.MuJoCoLoweringError, match="multiple-articulations"):
         compiler.compile_mujoco_xml(welded)
 
 
+def test_unfolded_fixed_child_has_an_explicit_capability_error():
+    native()
+    xml = xml_tree(True).replace(
+        '<body name="slider"',
+        '<body name="weld" pos=".2 0 0">'
+        '<geom name="weld-shape" type="sphere" size=".02" mass=".2"/></body>'
+        '<body name="slider"',
+    )
+    with pytest.raises(compiler.MuJoCoLoweringError, match="fixed-child"):
+        compiler.compile_mujoco_xml(xml)
+
+
 def test_virtual_include_bytes_and_unlimited_joint_metadata():
     native()
-    part = BODY.format(free='<freejoint name="root-free"/>', actuator='').replace('range="-.7 .9"', 'limited="false"').replace('range="-.2 .4"', 'limited="false"')
+    part = (
+        BODY.format(free='<freejoint name="root-free"/>', actuator="")
+        .replace('range="-.7 .9"', 'limited="false"')
+        .replace('range="-.2 .4"', 'limited="false"')
+    )
     record = compiler.compile_mujoco_xml(
         '<mujoco><compiler angle="radian"/><include file="part.xml"/></mujoco>',
-        includes={"part.xml": f'<mujoco><worldbody>{part}</worldbody></mujoco>'.encode()},
+        includes={"part.xml": f"<mujoco><worldbody>{part}</worldbody></mujoco>".encode()},
     )
     assert record.asset.name == "MuJoCo Model"
     assert np.all(np.isneginf(record.asset.lower))
@@ -291,6 +359,8 @@ def test_virtual_include_bytes_and_unlimited_joint_metadata():
 
 def test_physical_unsupported_geometry_is_not_treated_as_visual():
     native()
-    xml = xml_tree(True).replace('name="arm-capsule" type="capsule"', 'name="arm-capsule" type="cylinder"')
+    xml = xml_tree(True).replace(
+        'name="arm-capsule" type="capsule"', 'name="arm-capsule" type="cylinder"'
+    )
     with pytest.raises(compiler.MuJoCoLoweringError, match="geometry-type"):
         compiler.compile_mujoco_xml(xml)

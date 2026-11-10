@@ -135,7 +135,7 @@ body{font-family:'Cascadia Mono','Microsoft YaHei',monospace}.container{max-widt
 <body>
 <div class="container">
 <header class="header"><div class="header-row"><span class="pulse-dot"></span><h1>Phymeo / Newton · 功能连接全景</h1></div>
-<p class="subtitle">2026-11-11 04:50 · 本轮执行中 · 对照 Newton 1.7.0</p></header>
+<p class="subtitle">2026-11-11 05:20 · 本轮执行中 · 对照 Newton 1.7.0</p></header>
 <div class="banner">本轮主线：训练规模优先，机器人、碰撞、GPU 三线并行。绿色只表示已验的限定范围；黄色为本轮待验，灰色为后继缺口。各后端能力不互相倒灌。</div>
 <section class="diagram-container">
 <svg viewBox="0 0 1120 900" role="img" aria-label="资产编译、两条TYX力学路径与公共环境及训练连接">
@@ -168,8 +168,8 @@ body{font-family:'Cascadia Mono','Microsoft YaHei',monospace}.container{max-widt
 </svg>
 </section>
 <section class="cards">
-<div class="card"><h3><span class="dot amber"></span>A · 机器人与工作流</h3><p id="lane-a">已验公共中途 checkpoint/restore 与继续推进。G1 新 IMU 协议通过语义与2秒双路径；完整131.48秒运行中。旧版112.372秒参考XY门失败保留。</p></div>
-<div class="card"><h3><span class="dot amber"></span>B · 通用碰撞</h3><p id="lane-b">设备十类凸体配对和四类树来源已验；单页 patch 消费两端各67项通过，保留完整力与COM力矩。保存审计/新wheel待验；分页组合正在编码。</p></div>
+<div class="card"><h3><span class="dot amber"></span>A · 机器人与工作流</h3><p id="lane-a">已验公共中途 checkpoint/restore 与继续推进。G1 新 IMU 协议长窗于46.29秒触发原1米参考XY门；未完成131.48秒，CPU同步接近门限，无设备拒步。旧版失败另保留。</p></div>
+<div class="card"><h3><span class="dot amber"></span>B · 通用碰撞</h3><p id="lane-b">设备十类凸体配对和四类树来源已验；单页 patch 消费两端各67项及47份/端保存审计通过。分页组合已整合待专项验证；新wheel待验。</p></div>
 <div class="card"><h3><span class="dot amber"></span>C · GPU 与训练规模</h3><p id="lane-c">真实受载W256分页、设备 task/action 及29执行器宽度已验。动作提交缓存复用在固定案例降至约0.65–0.98ms；仍有HOST装配/诊断，不是全GPU训练。</p></div>
 </section>
 <section class="matrix"><h2>八方向差异台账</h2>
@@ -186,6 +186,7 @@ body{font-family:'Cascadia Mono','Microsoft YaHei',monospace}.container{max-widt
 <footer class="footer">绿色：已验限定能力 · 黄色：执行中 · 不按测试数计算完成百分比<br>
 <a href="../development/phymeo-newton-panorama-2026-11-11.md">当前详细全景与证据</a> ·
 <a href="../superpowers/plans/2026-11-11-newton-parity-until-0800.md">本轮计划</a> ·
+<a href="../superpowers/plans/2026-11-11-mujoco-tyx-gpu-training.md">GPU训练后续节点</a> ·
 <a href="https://newton-physics.github.io/newton/1.7.0/solvers/index.html">Newton 1.7 求解器矩阵</a><br>
 模板基础：Cocoon AI MIT，许可随附于 licenses/architecture-diagram-template-MIT.txt</footer>
 </div></body></html>

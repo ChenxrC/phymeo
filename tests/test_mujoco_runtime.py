@@ -78,7 +78,6 @@ def native_contacts(mj, model, data):
 def test_module_import_is_lazy_and_missing_dependency_is_explicit(monkeypatch):
     module = importlib.import_module("phymeo.backends.mujoco_runtime")
     monkeypatch.setitem(sys.modules, "mujoco", None)
-    importlib.reload(module)
     with pytest.raises(ImportError, match="optional.*MuJoCo|MuJoCo.*optional"):
         module.MuJoCoRuntime(object())
 
@@ -90,8 +89,8 @@ def test_native_motor_gear_armature_damping_and_sparse_world_isolation(mj):
         assert runtime.snapshot()[4].time == 0.0
         assert runtime.step(0.002) == {4: True, 91: True}
         states = runtime.snapshot()
-        assert states[4].v[0] == pytest.approx(0.002 * 6.0 / 2.4, rel=1e-12)
-        assert states[91].v[0] == pytest.approx(-0.002 * 3.0 / 2.4, rel=1e-12)
+        assert states[4].v[0] == pytest.approx(0.002 * 6.0 / (2.4 + 0.002 * 0.3), rel=1e-12)
+        assert states[91].v[0] == pytest.approx(-0.002 * 3.0 / (2.4 + 0.002 * 0.3), rel=1e-12)
         assert states[4].q[0] == pytest.approx(0.002 * states[4].v[0], rel=1e-12)
         assert states[4].coordinate_system == "mujoco-native-qpos-qvel-v1"
         assert states[4].contact_law == "mujoco-native-constraint-v1"

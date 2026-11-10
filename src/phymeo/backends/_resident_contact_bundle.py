@@ -6,16 +6,18 @@ physics independently. All registrations are validated before device allocation.
 
 from collections.abc import Mapping
 from contextlib import ExitStack
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from numbers import Integral
 from types import MappingProxyType
 
 import numpy as np
 
 from ..constraints.collision_shapes import CollisionModel
+from ._device_convex_query import ConvexQueryPlan
 from ._resident_affine_binding import ResidentAffineTreeBinding
 from ._resident_collision_plan import ResidentCollisionPlan, ResidentStaticBinding, _capacity
 from ._resident_contact_plan import _ResidentContactMechanics, _site_limit
+from ._resident_device_patch_bridge import DevicePatchConsumption, patches_from_device
 from ._resident_floating_affine_binding import ResidentFloatingAffineTreeBinding
 from ._resident_floating_binding import ResidentFloatingTreeBinding
 from ._resident_tree_binding import ResidentTreeBinding
@@ -72,6 +74,49 @@ class ResidentContactBundleResult:
             object.__setattr__(self, name, tuple(getattr(self, name)))
 
 
+@dataclass(frozen=True, eq=False)
+class ResidentDevicePatchBundleConsumption:
+    """Owned entry geometry from every page, published with one physical step.
+
+    Page records retain their original independent registrations and complete
+    raw-to-effective conversion evidence. No combined query identity is invented.
+    """
+
+    owner: object
+    registration: object
+    topology_generation: int
+    state_epoch: int
+    active: int
+    page_consumptions: tuple
+    page_queries: tuple = field(init=False)
+    samples: Mapping = field(init=False)
+
+    def __post_init__(self):
+        consumptions = tuple(self.page_consumptions)
+        queries, samples = [], {}
+        for consumption in consumptions:
+            if consumption is None:
+                queries.append(None)
+                continue
+            if not isinstance(consumption, DevicePatchConsumption):
+                raise TypeError("bundle requires qualified per-page device patch consumption")
+            query = consumption.query
+            if (
+                query.owner is not self.owner
+                or query.topology_generation != self.topology_generation
+                or query.state_epoch != self.state_epoch
+                or query.active != self.active
+            ):
+                raise ValueError("device contact pages differ from the shared entry state")
+            if set(samples).intersection(consumption.samples):
+                raise ValueError("device contact page samples overlap")
+            samples.update(consumption.samples)
+            queries.append(query)
+        object.__setattr__(self, "page_consumptions", consumptions)
+        object.__setattr__(self, "page_queries", tuple(queries))
+        object.__setattr__(self, "samples", MappingProxyType(samples))
+
+
 class _ContactCollisionPage(ResidentCollisionPlan):
     """Validate with the original collision code, defer all device resources."""
 
@@ -114,11 +159,22 @@ class ResidentContactBundle(_ResidentContactMechanics):
         site_capacity=128,
         sampling="discrete_entry",
         tree_dynamic_pairs=False,
+        narrow_phase="host_patch",
+        device_patch_site_capacity=None,
     ):
         from .tyx_world_batch import TyxWorldBatch
 
         if not isinstance(batch, TyxWorldBatch):
             raise TypeError("contact bundle requires a TyxWorldBatch owner")
+        if narrow_phase not in ("host_patch", "device_patch"):
+            raise ValueError("narrow_phase must be host_patch or device_patch")
+        if narrow_phase == "host_patch" and device_patch_site_capacity is not None:
+            raise ValueError("HOST contact pages do not take a device patch capacity")
+        patch_capacity = (
+            4096 if device_patch_site_capacity is None else _site_limit(device_patch_site_capacity)
+        )
+        if patch_capacity < 1:
+            raise ValueError("device patch capacity must be an integer from 1 to 4096")
         if sampling != "discrete_entry":
             raise ValueError("resident contact supports only discrete_entry sampling, not CCD")
         if type(tree_dynamic_pairs) is not bool:
@@ -132,6 +188,11 @@ class ResidentContactBundle(_ResidentContactMechanics):
                 raise TypeError("expected ResidentContactPageSpec entries")
             specs.append(spec)
         self._page_specs = tuple(specs)
+        self._narrow_phase = narrow_phase
+        self._device_patch_capacity = patch_capacity
+        self._device_patch_queries = (None,) * len(specs)
+        self._last_device_patch = None
+        self._last_device_queries = (None,) * len(specs)
         worlds, keys, page_worlds = set(), set(), []
         for spec in specs:
             _capacity(spec.candidate_capacity)
@@ -204,6 +265,14 @@ class ResidentContactBundle(_ResidentContactMechanics):
                         page._allocate_device(view)
                     if self._contact_worlds:
                         self._prepare_contact_device()
+                # All pages exist before dependent queries bind their native
+                # source/layout registrations. Each page owns its own query.
+                if self._narrow_phase == "device_patch":
+                    self._device_patch_queries = tuple(
+                        ConvexQueryPlan(batch, page, site_capacity=patch_capacity)
+                        if spec.model.shapes else None
+                        for page, spec in zip(self._pages, self._page_specs, strict=True)
+                    )
                 batch._contact_bundles.add(self)
             except BaseException:
                 self.close()
@@ -226,6 +295,18 @@ class ResidentContactBundle(_ResidentContactMechanics):
     def last_page_results(self):
         with self._batch._lock:
             return () if self._last is None else self._last.page_results
+
+    @property
+    def last_device_patch(self):
+        """Last committed entry aggregate; never an endpoint-current query."""
+        with self._batch._lock:
+            return self._last_device_patch
+
+    @property
+    def last_device_queries(self):
+        """Page-aligned committed queries; empty and HOST pages have None."""
+        with self._batch._lock:
+            return self._last_device_queries
 
     def _check_open(self):
         if self._closed:
@@ -292,6 +373,83 @@ class ResidentContactBundle(_ResidentContactMechanics):
                     raise ValueError("stale resident contact bundle state epoch")
             return result
 
+    def _stage_contact_geometry(self, attempt, entry):
+        if self._narrow_phase == "host_patch":
+            return None
+        if len(attempt["pending"]) != len(self._pages):
+            raise ValueError("device contact pages differ from the staged broad phase")
+        consumptions = []
+        for page, query, worlds, broad, pending in zip(
+            self._pages, self._device_patch_queries, self._page_worlds,
+            attempt["result"].page_results, attempt["pending"], strict=True,
+        ):
+            pending_page, pending_broad, layouts = pending
+            if pending_page is not page or pending_broad is not broad:
+                raise ValueError("staged page owner or result identity differs")
+            if query is None:
+                if worlds or broad.shape_keys or broad.candidates:
+                    raise ValueError("nonempty device contact page has no query")
+                consumptions.append(None)
+                continue
+            result, retained_broad, retained_layouts = query._stage_query(
+                (broad, layouts, attempt["src"])
+            )
+            if retained_broad is not broad or retained_layouts is not layouts:
+                raise RuntimeError("device page did not retain its staged broad phase")
+            query.require_current(result)
+            if (
+                result.state_epoch != attempt["epoch"]
+                or result.active != attempt["src"]
+                or tuple(row.pair for row in result.rows) != tuple(sorted(broad.candidates))
+            ):
+                raise ValueError("device page differs from complete entry candidates")
+            consumptions.append(
+                patches_from_device(
+                    result, {world: entry[world]["frames"] for world in worlds},
+                    candidates=broad.candidates,
+                )
+            )
+        return ResidentDevicePatchBundleConsumption(
+            self._owner, self._registration, self._topology_generation,
+            attempt["epoch"], attempt["src"], tuple(consumptions),
+        )
+
+    def _check_contact_geometry(self, geometry):
+        if geometry is None:
+            if self._narrow_phase == "device_patch" and self._contact_worlds:
+                raise ValueError("nonempty device contact bundle lost its geometry")
+            return
+        if (
+            self._narrow_phase != "device_patch"
+            or not isinstance(geometry, ResidentDevicePatchBundleConsumption)
+            or geometry.owner is not self._owner
+            or geometry.registration is not self._registration
+            or geometry.topology_generation != self._topology_generation
+            or len(geometry.page_consumptions) != len(self._pages)
+        ):
+            raise ValueError("device patch aggregate belongs to different contact pages")
+        for query, consumption in zip(
+            self._device_patch_queries, geometry.page_consumptions, strict=True
+        ):
+            if query is None:
+                if consumption is not None:
+                    raise ValueError("empty page acquired device geometry")
+            else:
+                if consumption is None:
+                    raise ValueError("nonempty page lost device geometry")
+                query.require_current(consumption.query)
+
+    def _publish_contact_geometry(self, geometry):
+        # No conversion, validation, allocation or device operation after swap.
+        if geometry is not None:
+            for query, result in zip(
+                self._device_patch_queries, geometry.page_queries, strict=True
+            ):
+                if query is not None:
+                    query._publish_staged(result)
+            self._last_device_patch = geometry
+            self._last_device_queries = geometry.page_queries
+
     def _publish_query(self, result, pending):
         # All objects and receipts already exist; no query, device IO or validation
         # is permitted after the batch's single bank publication.
@@ -325,6 +483,20 @@ class ResidentContactBundle(_ResidentContactMechanics):
                 device_allocations=sum(p["device_allocations"] for p in pages),
                 pages=pages,
             )
+            device_pages = tuple(
+                None if query is None else query.stats for query in self._device_patch_queries
+            )
+            result.update(
+                narrow_phase=self._narrow_phase,
+                device_patch_site_capacity=(
+                    self._device_patch_capacity if self._narrow_phase == "device_patch" else 0
+                ),
+                device_patch_pages=device_pages,
+                device_patch_live_bytes=sum(p["live_bytes"] for p in device_pages if p is not None),
+                device_patch_allocations=sum(p["allocations"] for p in device_pages if p is not None),
+            )
+            result["device_owned_bytes"] += result["device_patch_live_bytes"]
+            result["device_allocations"] += result["device_patch_allocations"]
             return self._contact_stats(result)
 
     def close(self):

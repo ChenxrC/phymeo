@@ -55,7 +55,8 @@ The caller must finish enqueueing producer writes and must not modify/free input
 the call. A supplied producer stream is synchronized; None is the explicitly synchronous
 default-stream contract, not automatic discovery of hidden asynchronous producers.
 
-A fresh packet owns its own runtime/stream and native copies. CUDA copy_from_device
+A fresh packet borrows its physical owner's live TYX runtime/cache and owns a
+separate stream and native copies. CUDA copy_from_device
 preserves raw bits. The single required HOST audit reads these copies before arithmetic:
 uint32 exponent and mantissa reject NaN/Inf and nonzero positive/negative subnormal values.
 Signed zero is accepted unchanged. No clipping, normalization or flush-to-zero repair occurs.

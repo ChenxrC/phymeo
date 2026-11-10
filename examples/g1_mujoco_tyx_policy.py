@@ -804,6 +804,25 @@ def runtime_for(compilation, q, v, time, mode, cache_root):
     )
 
 
+def step_with_failure_capture(runtime, h, journal, **context):
+    """Failure-only diagnostic read, explicitly authorized by the parent."""
+    try:
+        return runtime.step(h)
+    except Exception:
+        try:
+            # No advance, retry, publication, reset, or CPU solve occurs here.
+            # Read before context-manager close while the rejected bank exists.
+            scratch = runtime._device.download()
+        except Exception as download_error:
+            scratch = {"download_failure": repr(download_error)}
+        journal.write("rejected_device_candidate", durable=True,
+                      full_failed_device_scratch=scratch,
+                      additional_step_calls=0, diagnostic_download_only=True,
+                      counters=runtime.counters, context=context,
+                      traceback=traceback.format_exc())
+        raise
+
+
 def snapshots(args, journal, protocol, compilation, derived):
     outcomes = []
     for label, frame in (("source-default", None), ("motion-0", 0), ("motion-200", 200)):
@@ -822,7 +841,8 @@ def snapshots(args, journal, protocol, compilation, derived):
             journal.write("snapshot_attempt", durable=True, label=label, input=compact_state(state),
                           control=stored, policy=proposal, same_input_native=native)
             runtime.set_controls({0: packet})
-            runtime.step(args.h)
+            step_with_failure_capture(runtime, args.h, journal, phase="snapshots", label=label,
+                                      input=compact_state(state), control=stored)
             after = runtime.snapshot()[0]
             receipt = after.last_step
             input_checks(receipt, state, stored)
@@ -891,7 +911,8 @@ def trajectory(args, journal, protocol, compilation, derived):
                               source_grid_time=grid_time, requested_control=packet,
                               stored_oracle_control=stored, policy=proposal)
                 runtime.set_controls({0: packet})
-                runtime.step(h)
+                step_with_failure_capture(runtime, h, journal, phase=args.phase,
+                                          input=compact_state(state), control=stored)
                 after = runtime.snapshot()[0]
                 receipt = after.last_step
                 input_checks(receipt, state, stored)

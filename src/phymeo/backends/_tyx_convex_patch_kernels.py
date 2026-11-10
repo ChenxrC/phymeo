@@ -32,23 +32,26 @@ def clear_convex_patch(
     skin: tx.ndarray(tx.f32, 3),
     material_count: tx.ndarray(tx.i32, 2),
 ):
-    for pair in tx.range(pairs):
-        for column in tx.static_range(8):
-            meta[pair, column] = 0
-    for site in tx.range(sites):
-        weight[site] = 0.0
-        gap[site] = 0.0
-        for axis in tx.static_range(3):
-            normal[site, axis] = 0.0
-            common[site, axis] = 0.0
-        for side in tx.static_range(2):
-            material_count[site, side] = 0
-            for slot in tx.static_range(4):
-                material_ids[site, side, slot] = -1
-                barycentric[site, side, slot] = 0.0
+    # One parallel root covers two disjoint output domains without another launch.
+    for index in tx.range(pairs + sites):
+        if index < pairs:
+            for column in tx.static_range(8):
+                meta[index, column] = 0
+        else:
+            site = index - pairs
+            weight[site] = 0.0
+            gap[site] = 0.0
             for axis in tx.static_range(3):
-                surface[site, side, axis] = 0.0
-                skin[site, side, axis] = 0.0
+                normal[site, axis] = 0.0
+                common[site, axis] = 0.0
+            for side in tx.static_range(2):
+                material_count[site, side] = 0
+                for slot in tx.static_range(4):
+                    material_ids[site, side, slot] = -1
+                    barycentric[site, side, slot] = 0.0
+                for axis in tx.static_range(3):
+                    surface[site, side, axis] = 0.0
+                    skin[site, side, axis] = 0.0
 
 
 def fill_convex_patch(

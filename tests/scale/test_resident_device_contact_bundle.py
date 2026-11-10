@@ -49,8 +49,10 @@ def receipt_record(receipt, *, geometry_ref=None):
         geometry = result["diagnostics"]["device_patch"]
         query = geometry.query if hasattr(geometry, "query") else geometry
         result["diagnostics"]["device_patch"] = dict(
-            shared_payload_ref=geometry_ref, scope="this-step-record",
-            state_epoch=query.state_epoch, active=query.active,
+            shared_payload_ref=geometry_ref,
+            scope="this-step-record",
+            state_epoch=query.state_epoch,
+            active=query.active,
         )
     return result
 
@@ -71,10 +73,15 @@ def capture(batch, plan, entry):
                 reference = f"/retained_geometry/{index}"
         receipts[world] = receipt_record(receipt, geometry_ref=reference)
     return dict(
-        entry=entry, states=batch.snapshot(), receipts=receipts,
-        geometry=aggregate, retained_geometry=tuple(retained),
-        broad=plan.last_result, status=plan.last_status,
-        stats=plan.stats(), batch_stats=batch.stats(),
+        entry=entry,
+        states=batch.snapshot(),
+        receipts=receipts,
+        geometry=aggregate,
+        retained_geometry=tuple(retained),
+        broad=plan.last_result,
+        status=plan.last_status,
+        stats=plan.stats(),
+        batch_stats=batch.stats(),
     )
 
 
@@ -156,14 +163,12 @@ def slider_truth(batch, receipt, sources, expected_q, expected_v, expected_force
     state = receipt.accepted_state
     np.testing.assert_allclose(state.position, [expected_q], atol=5e-6, rtol=5e-5)
     np.testing.assert_allclose(state.velocity, [expected_v], atol=5e-6, rtol=5e-5)
-    np.testing.assert_allclose(
-        receipt.contact_generalized, [expected_force], atol=5e-6, rtol=5e-5
-    )
+    np.testing.assert_allclose(receipt.contact_generalized, [expected_force], atol=5e-6, rtol=5e-5)
     np.testing.assert_allclose(
         receipt.law_wrench_fp64, [[0, 0, expected_force, 0, 0, 0]], atol=5e-6, rtol=5e-5
     )
     assert len(receipt.sites) == 4
-    np.testing.assert_allclose([s.geometry.weight for s in receipt.sites], .25, atol=1e-12, rtol=0)
+    np.testing.assert_allclose([s.geometry.weight for s in receipt.sites], 0.25, atol=1e-12, rtol=0)
     for site in receipt.sites:
         np.testing.assert_allclose(
             np.asarray(site.first_force_n) + site.second_force_n, 0, atol=1e-12, rtol=0
@@ -172,7 +177,9 @@ def slider_truth(batch, receipt, sources, expected_q, expected_v, expected_force
     np.testing.assert_allclose(reaction.force_n, [0, 0, -expected_force], atol=5e-6, rtol=5e-5)
     np.testing.assert_allclose(reaction.torque_nm, 0, atol=5e-6, rtol=5e-5)
     return _audit_receipt(
-        receipt, batch.tree_diagnostics()[receipt.world] if diagnostic is None else diagnostic, sources
+        receipt,
+        batch.tree_diagnostics()[receipt.world] if diagnostic is None else diagnostic,
+        sources,
     )
 
 
@@ -199,14 +206,23 @@ def test_all_worlds_loaded_four_site_pages(count, tyx_mode, tmp_path, monkeypatc
                 diagnostics = batch.tree_diagnostics()
                 for world in worlds:
                     assert plan.last_accepted[world].exit_tick == tick + 1
-                    slider_truth(batch, plan.last_accepted[world], sources[world], q, v, force,
-                                 diagnostics[world])
+                    slider_truth(
+                        batch,
+                        plan.last_accepted[world],
+                        sources[world],
+                        q,
+                        v,
+                        force,
+                        diagnostics[world],
+                    )
                 assert calls[(0, "mechanics")] == calls[(0, "solve")] == tick + 1
                 assert calls["packets"] == 2 * (tick + 1)
                 records.append(capture(batch, plan, entry))
             assert batch.stats()["completed_steps"] == 3
             b2.save_rows(
-                tmp_path, f"B3-loaded-{count}", dict(worlds=worlds, h=H, records=records, calls=calls)
+                tmp_path,
+                f"B3-loaded-{count}",
+                dict(worlds=worlds, h=H, records=records, calls=calls),
             )
 
 
@@ -223,27 +239,61 @@ def keyed_query_evidence(plan):
             continue
         query, source = conversion.query, conversion.query.source
         assert set(source) == {
-            "schema", "model", "bindings", "world_keys", "world_origins_m",
-            "shape_world_rows", "shape_keys", "shape_revisions", "shape_kinds",
-            "shape_rows", "shape_groups", "shape_layouts", "world_layouts",
-            "vertex_offsets", "vertex_ids", "declared_local_points_m", "upload_frame",
-            "uploaded_local_points_m", "point_quantization_error_m", "declared_radius_m",
-            "uploaded_radius_m", "radius_quantization_error_m", "allowed_pairs",
-            "pose", "stamp", "accepted_ticks", "accepted_slots", "owned_buffer_layout",
+            "schema",
+            "model",
+            "bindings",
+            "world_keys",
+            "world_origins_m",
+            "shape_world_rows",
+            "shape_keys",
+            "shape_revisions",
+            "shape_kinds",
+            "shape_rows",
+            "shape_groups",
+            "shape_layouts",
+            "world_layouts",
+            "vertex_offsets",
+            "vertex_ids",
+            "declared_local_points_m",
+            "upload_frame",
+            "uploaded_local_points_m",
+            "point_quantization_error_m",
+            "declared_radius_m",
+            "uploaded_radius_m",
+            "radius_quantization_error_m",
+            "allowed_pairs",
+            "pose",
+            "stamp",
+            "accepted_ticks",
+            "accepted_slots",
+            "owned_buffer_layout",
         }
         slots = source["accepted_slots"]
         assert len(set(slots.values())) == len(slots)
         for i, world in enumerate(query.world_keys):
             assert source["accepted_ticks"][slots[world]] == query.ticks[i]
             output["worlds"][world] = dict(
-                tick=query.ticks[i], origin=source["world_origins_m"][i],
+                tick=query.ticks[i],
+                origin=source["world_origins_m"][i],
                 layout=source["world_layouts"][i],
             )
-        shape_names = ("shape_revisions", "shape_kinds", "shape_groups", "shape_layouts",
-                       "upload_frame", "declared_radius_m", "uploaded_radius_m",
-                       "radius_quantization_error_m", "pose")
-        vertex_names = ("vertex_ids", "declared_local_points_m",
-                        "uploaded_local_points_m", "point_quantization_error_m")
+        shape_names = (
+            "shape_revisions",
+            "shape_kinds",
+            "shape_groups",
+            "shape_layouts",
+            "upload_frame",
+            "declared_radius_m",
+            "uploaded_radius_m",
+            "radius_quantization_error_m",
+            "pose",
+        )
+        vertex_names = (
+            "vertex_ids",
+            "declared_local_points_m",
+            "uploaded_local_points_m",
+            "point_quantization_error_m",
+        )
         for i, key in enumerate(query.shape_keys):
             assert source["world_keys"][source["shape_world_rows"][i]] == key.world
             binding = source["bindings"][i]
@@ -256,12 +306,16 @@ def keyed_query_evidence(plan):
             stamp = source["stamp"][i].copy()
             assert stamp[2] == slots[key.world]
             stamp[2] = key.world
-            first, last = map(int, source["vertex_offsets"][i:i + 2])
+            first, last = map(int, source["vertex_offsets"][i : i + 2])
             data = {name: source[name][i] for name in shape_names}
             data.update({name: source[name][first:last] for name in vertex_names})
-            data.update(shape=shape, binding=binding, stamp=stamp,
-                        physical_row_world=None if row == -1 else key.world,
-                        schema=source["schema"])
+            data.update(
+                shape=shape,
+                binding=binding,
+                stamp=stamp,
+                physical_row_world=None if row == -1 else key.world,
+                schema=source["schema"],
+            )
             assert key not in output["shapes"]
             output["shapes"][key] = data
         assert source["model"].excluded == ()
@@ -278,20 +332,33 @@ def keyed_query_evidence(plan):
             count, offset = int(meta[2]), int(meta[6])
             assert offset == used and count == len(row.patch.sites)
             meta[6] = 0
-            patch = {"schema": query.patch["schema"], "enabled": query.patch["enabled"],
-                     "patch_meta": meta}
-            patch.update({name: value[offset:offset + count]
-                          for name, value in query.patch.items()
-                          if name not in ("schema", "enabled", "patch_meta")})
+            patch = {
+                "schema": query.patch["schema"],
+                "enabled": query.patch["enabled"],
+                "patch_meta": meta,
+            }
+            patch.update(
+                {
+                    name: value[offset : offset + count]
+                    for name, value in query.patch.items()
+                    if name not in ("schema", "enabled", "patch_meta")
+                }
+            )
             used += count
             assert row.pair not in output["pairs"]
             output["pairs"][row.pair] = dict(
-                row=row, raw=raw, patch=patch, sample=conversion.samples[row.pair],
+                row=row,
+                raw=raw,
+                patch=patch,
+                sample=conversion.samples[row.pair],
                 differences=conversion.differences[row.pair],
                 patch_differences=conversion.patch_differences[row.pair],
-                topology_generation=query.topology_generation, state_epoch=query.state_epoch,
-                active=query.active, pair_source=query.pair_source,
-                attempt_tag=query.attempt_tag, stats=query.stats,
+                topology_generation=query.topology_generation,
+                state_epoch=query.state_epoch,
+                active=query.active,
+                pair_source=query.pair_source,
+                attempt_tag=query.attempt_tag,
+                stats=query.stats,
                 owned_buffer_layout=source["owned_buffer_layout"],
             )
         for name, value in query.patch.items():
@@ -327,9 +394,17 @@ def slider_run(mode, path, groups, *, route="bundle", order=None):
                 if route == "single":
                     conversion = plan.last_accepted[worlds[0]].diagnostics["device_patch"]
                     samples.append(conversion.samples)
-                    records.append(dict(entry=entry, states=batch.snapshot(), geometry=conversion,
-                                        receipts={w: receipt_record(r, geometry_ref="/geometry")
-                                                  for w, r in plan.last_accepted.items()}))
+                    records.append(
+                        dict(
+                            entry=entry,
+                            states=batch.snapshot(),
+                            geometry=conversion,
+                            receipts={
+                                w: receipt_record(r, geometry_ref="/geometry")
+                                for w, r in plan.last_accepted.items()
+                            },
+                        )
+                    )
                 else:
                     if route != "host":
                         samples.append(assert_geometry(plan, entry).samples)
@@ -352,19 +427,26 @@ def test_single_page_matches_b2_and_default_host(tyx_mode, tmp_path):
         assert set(host_step) == set(device_step)
         for world, host in host_step.items():
             device = device_step[world]
-            close_values({k: v for k, v in host.items() if k != "sites"},
-                         {k: v for k, v in device.items() if k != "sites"})
+            close_values(
+                {k: v for k, v in host.items() if k != "sites"},
+                {k: v for k, v in device.items() if k != "sites"},
+            )
             remaining = list(device["sites"])
             assert len(host["sites"]) == len(remaining) == 4
             for first in host["sites"]:
                 assert first.geometry.witness.source == "host-instantaneous-convex-patch"
                 matches = [
-                    i for i, second in enumerate(remaining)
+                    i
+                    for i, second in enumerate(remaining)
                     if first.pair == second.pair
-                    and np.linalg.norm(np.asarray(first.geometry.load_point) -
-                                       second.geometry.load_point) <= 2e-4
-                    and np.linalg.norm(np.asarray(first.geometry.witness.normal) -
-                                       second.geometry.witness.normal) <= 2e-3
+                    and np.linalg.norm(
+                        np.asarray(first.geometry.load_point) - second.geometry.load_point
+                    )
+                    <= 2e-4
+                    and np.linalg.norm(
+                        np.asarray(first.geometry.witness.normal) - second.geometry.witness.normal
+                    )
+                    <= 2e-3
                     and abs(first.geometry.weight - second.geometry.weight) <= 1e-12
                 ]
                 assert len(matches) == 1
@@ -372,10 +454,13 @@ def test_single_page_matches_b2_and_default_host(tyx_mode, tmp_path):
                 assert second.geometry.witness.source == "resident-device-patch-effective-v1"
                 assert abs(first.geometry.witness.gap_m - second.geometry.witness.gap_m) <= 1e-4
                 for side in ("first", "second"):
-                    assert np.linalg.norm(
-                        np.asarray(getattr(first.geometry.witness, side + "_point")) -
-                        getattr(second.geometry.witness, side + "_point")
-                    ) <= 2e-4
+                    assert (
+                        np.linalg.norm(
+                            np.asarray(getattr(first.geometry.witness, side + "_point"))
+                            - getattr(second.geometry.witness, side + "_point")
+                        )
+                        <= 2e-4
+                    )
                 # Each route's full material reconstruction was independently
                 # audited by slider_truth. Sparse barycentric identity is not
                 # a cross-representation physical equality requirement.
@@ -412,7 +497,9 @@ def test_all_four_layouts_are_mixed_across_two_pages(tyx_mode, tmp_path, monkeyp
             worlds.append((world, tree))
             entries[world] = (layout, item)
             commands[world] = command
-    with ph.TyxWorldBatch(tuple(reversed(worlds)), tyx_mode, cache_root=tmp_path / "cache") as batch:
+    with ph.TyxWorldBatch(
+        tuple(reversed(worlds)), tyx_mode, cache_root=tmp_path / "cache"
+    ) as batch:
         batch.set_controls(commands)
         specs, originals = [], {}
         for page in range(2):
@@ -425,7 +512,9 @@ def test_all_four_layouts_are_mixed_across_two_pages(tyx_mode, tmp_path, monkeyp
                 bindings.extend(bound)
                 laws.update(pair_laws)
                 originals[world] = source
-            specs.append(ResidentContactPageSpec(ph.CollisionModel(tuple(shapes)), tuple(bindings), laws))
+            specs.append(
+                ResidentContactPageSpec(ph.CollisionModel(tuple(shapes)), tuple(bindings), laws)
+            )
         with batch.prepare_contact_bundle(
             tuple(specs), tree_dynamic_pairs=True, narrow_phase="device_patch"
         ) as plan:
@@ -439,7 +528,9 @@ def test_all_four_layouts_are_mixed_across_two_pages(tyx_mode, tmp_path, monkeyp
                 aggregate = assert_geometry(plan, before)
                 assert all(len(c.query.world_keys) == 4 for c in aggregate.page_consumptions)
                 audits = {
-                    w: b2.audit(layout, batch, item, before[w], plan.last_accepted[w], originals[w], w)
+                    w: b2.audit(
+                        layout, batch, item, before[w], plan.last_accepted[w], originals[w], w
+                    )
                     for w, (layout, item) in entries.items()
                 }
                 for index in range(4):
@@ -449,26 +540,47 @@ def test_all_four_layouts_are_mixed_across_two_pages(tyx_mode, tmp_path, monkeyp
                 record["independent_audits"] = audits
                 records.append(record)
             b2.save_rows(
-                tmp_path, "B3-four-layout-two-pages",
-                dict(commands=commands, inputs={w: item["data"] for w, (_, item) in entries.items()},
-                     records=records, calls=calls),
+                tmp_path,
+                "B3-four-layout-two-pages",
+                dict(
+                    commands=commands,
+                    inputs={w: item["data"] for w, (_, item) in entries.items()},
+                    records=records,
+                    calls=calls,
+                ),
             )
 
 
 @pytest.mark.tyx
-@pytest.mark.parametrize("fault", (
-    "patch_readback", "unknown_patch", "source_epoch", "source_owner",
-    "source_registration", "source_bank", "source_layout", "source_membership",
-    "moment_conversion", "post_solve", "precommit",
-))
+@pytest.mark.parametrize(
+    "fault",
+    (
+        "patch_readback",
+        "unknown_patch",
+        "source_epoch",
+        "source_owner",
+        "source_registration",
+        "source_bank",
+        "source_layout",
+        "source_membership",
+        "moment_conversion",
+        "post_solve",
+        "precommit",
+    ),
+)
 def test_last_page_fault_never_publishes_partial_result(fault, tyx_mode, tmp_path, monkeypatch):
     with _batch(tyx_mode, tmp_path / "cache", (7, 31)) as batch:
         specs, _ = pages(batch, ((7,), (31,)))
         with batch.prepare_contact_bundle(specs, narrow_phase="device_patch") as plan:
             assert batch.step_contacts(plan, H) == {7: True, 31: True}
             before = batch.snapshot()
-            old = (plan.last_accepted, plan.last_status, plan.last_result,
-                   plan.last_device_patch, plan.last_device_queries)
+            old = (
+                plan.last_accepted,
+                plan.last_status,
+                plan.last_result,
+                plan.last_device_patch,
+                plan.last_device_queries,
+            )
             old_layouts = tuple(p._trees.layouts for p in plan._pages)
             old_broads = tuple(p.last_result for p in plan._pages)
             old_device_results = tuple(q.last_result for q in plan._device_patch_queries)
@@ -529,24 +641,35 @@ def test_last_page_fault_never_publishes_partial_result(fault, tyx_mode, tmp_pat
                             return replace(result, rows=result.rows[:-1])
                         row = result.rows[-1]
                         return replace(
-                            result, rows=result.rows[:-1] +
-                            (replace(row, patch=replace(row.patch, status="UNRESOLVED")),)
+                            result,
+                            rows=result.rows[:-1]
+                            + (replace(row, patch=replace(row.patch, status="UNRESOLVED")),),
                         )
+
                 patch.setattr(target, name, broken)
                 with pytest.raises((RuntimeError, ValueError)):
                     batch.step_contacts(plan, H)
             assert batch.snapshot() == before
             assert batch._active == old_bank and batch._state_epoch == old_epoch
-            assert all(q.last_result is r for q, r in
-                       zip(plan._device_patch_queries, old_device_results, strict=True))
-            current = (plan.last_accepted, plan.last_status, plan.last_result,
-                       plan.last_device_patch, plan.last_device_queries)
+            assert all(
+                q.last_result is r
+                for q, r in zip(plan._device_patch_queries, old_device_results, strict=True)
+            )
+            current = (
+                plan.last_accepted,
+                plan.last_status,
+                plan.last_result,
+                plan.last_device_patch,
+                plan.last_device_queries,
+            )
             assert all(a is b for a, b in zip(old, current, strict=True))
             assert all(p.last_result is r for p, r in zip(plan._pages, old_broads, strict=True))
             assert all(p._trees.layouts is v for p, v in zip(plan._pages, old_layouts, strict=True))
             assert tuple(q.stats["queries"] for q in plan._device_patch_queries) == success_counts
-            assert all(q.stats["attempts"] > a for q, a in
-                       zip(plan._device_patch_queries, attempts, strict=True))
+            assert all(
+                q.stats["attempts"] > a
+                for q, a in zip(plan._device_patch_queries, attempts, strict=True)
+            )
             assert batch.step_contacts(plan, H) == {7: True, 31: True}
             assert all(s.tick == 2 for s in batch.snapshot().values())
             b2.save_rows(tmp_path, "B3-last-page-" + fault, capture(batch, plan, before))
@@ -566,8 +689,9 @@ def test_last_page_resource_cap_is_per_page_and_rolls_back(tyx_mode, tmp_path):
             assert bad.last_result is None and bad.last_device_patch is None
             assert bad.last_device_queries == (None, None)
             assert all(p.last_result is None for p in bad._pages)
-            assert all(q.last_result is None and q.stats["queries"] == 0
-                       for q in bad._device_patch_queries)
+            assert all(
+                q.last_result is None and q.stats["queries"] == 0 for q in bad._device_patch_queries
+            )
             failed_stats = bad.stats()
         with batch.prepare_contact_bundle(
             specs, narrow_phase="device_patch", device_patch_site_capacity=8
@@ -576,7 +700,11 @@ def test_last_page_resource_cap_is_per_page_and_rolls_back(tyx_mode, tmp_path):
             assert batch.step_contacts(plan, H) == {7: True, 31: True, 103: True}
             assert_geometry(plan, before)
             assert sum(len(r.sites) for r in plan.last_accepted.values()) == 12
-            b2.save_rows(tmp_path, "B3-page-cap", dict(failed=failed_stats, accepted=capture(batch, plan, before)))
+            b2.save_rows(
+                tmp_path,
+                "B3-page-cap",
+                dict(failed=failed_stats, accepted=capture(batch, plan, before)),
+            )
 
 
 @pytest.mark.tyx
@@ -637,7 +765,9 @@ def test_empty_interleaved_and_nonempty_zero_pair_pages(tyx_mode, tmp_path, monk
         # One original dynamic shape, hence no possible collision pair.
         zero = ResidentContactPageSpec(
             ph.CollisionModel((specs[1].model.shapes[0],)),
-            (specs[1].bindings[0],), {}, 0,
+            (specs[1].bindings[0],),
+            {},
+            0,
         )
         with batch.prepare_contact_bundle(
             (empty_page(), specs[0], zero, empty_page()), narrow_phase="device_patch"
@@ -645,8 +775,15 @@ def test_empty_interleaved_and_nonempty_zero_pair_pages(tyx_mode, tmp_path, monk
             monkeypatch.setattr(bridge, "contact_patch_sample", b2.no_host_search)
             zero_query = plan._device_patch_queries[2]
             sentinel_fields = (
-                "patch_weight", "patch_gap", "patch_normal", "patch_common", "patch_ids",
-                "patch_bary", "patch_surface", "patch_skin", "patch_mcount",
+                "patch_weight",
+                "patch_gap",
+                "patch_normal",
+                "patch_common",
+                "patch_ids",
+                "patch_bary",
+                "patch_surface",
+                "patch_skin",
+                "patch_mcount",
             )
             for name in sentinel_fields:
                 buffer = zero_query._buffers[name]
@@ -701,7 +838,9 @@ def test_invalid_device_options_precede_any_allocation(option, tyx_mode, tmp_pat
 
 
 @pytest.mark.tyx
-def test_last_query_constructor_failure_closes_every_prepared_owner(tyx_mode, tmp_path, monkeypatch):
+def test_last_query_constructor_failure_closes_every_prepared_owner(
+    tyx_mode, tmp_path, monkeypatch
+):
     with _batch(tyx_mode, tmp_path / "cache", (7, 31)) as batch:
         specs, _ = pages(batch, ((7,), (31,)))
         original = bundle_module.ConvexQueryPlan
@@ -725,7 +864,9 @@ def test_last_query_constructor_failure_closes_every_prepared_owner(tyx_mode, tm
         assert not batch._collision_plans and not batch._contact_bundles
         assert batch.snapshot() == before
         assert batch.step(H) == {7: True, 31: True}
-        b2.save_rows(tmp_path, "B3-constructor-cleanup", dict(before=before, after=batch.snapshot()))
+        b2.save_rows(
+            tmp_path, "B3-constructor-cleanup", dict(before=before, after=batch.snapshot())
+        )
 
 
 @pytest.mark.tyx

@@ -270,7 +270,8 @@ class ResidentContactBundle(_ResidentContactMechanics):
                 if self._narrow_phase == "device_patch":
                     self._device_patch_queries = tuple(
                         ConvexQueryPlan(batch, page, site_capacity=patch_capacity)
-                        if spec.model.shapes else None
+                        if spec.model.shapes
+                        else None
                         for page, spec in zip(self._pages, self._page_specs, strict=True)
                     )
                 batch._contact_bundles.add(self)
@@ -380,8 +381,12 @@ class ResidentContactBundle(_ResidentContactMechanics):
             raise ValueError("device contact pages differ from the staged broad phase")
         consumptions = []
         for page, query, worlds, broad, pending in zip(
-            self._pages, self._device_patch_queries, self._page_worlds,
-            attempt["result"].page_results, attempt["pending"], strict=True,
+            self._pages,
+            self._device_patch_queries,
+            self._page_worlds,
+            attempt["result"].page_results,
+            attempt["pending"],
+            strict=True,
         ):
             pending_page, pending_broad, layouts = pending
             if pending_page is not page or pending_broad is not broad:
@@ -405,13 +410,18 @@ class ResidentContactBundle(_ResidentContactMechanics):
                 raise ValueError("device page differs from complete entry candidates")
             consumptions.append(
                 patches_from_device(
-                    result, {world: entry[world]["frames"] for world in worlds},
+                    result,
+                    {world: entry[world]["frames"] for world in worlds},
                     candidates=broad.candidates,
                 )
             )
         return ResidentDevicePatchBundleConsumption(
-            self._owner, self._registration, self._topology_generation,
-            attempt["epoch"], attempt["src"], tuple(consumptions),
+            self._owner,
+            self._registration,
+            self._topology_generation,
+            attempt["epoch"],
+            attempt["src"],
+            tuple(consumptions),
         )
 
     def _check_contact_geometry(self, geometry):
@@ -493,7 +503,9 @@ class ResidentContactBundle(_ResidentContactMechanics):
                 ),
                 device_patch_pages=device_pages,
                 device_patch_live_bytes=sum(p["live_bytes"] for p in device_pages if p is not None),
-                device_patch_allocations=sum(p["allocations"] for p in device_pages if p is not None),
+                device_patch_allocations=sum(
+                    p["allocations"] for p in device_pages if p is not None
+                ),
             )
             result["device_owned_bytes"] += result["device_patch_live_bytes"]
             result["device_allocations"] += result["device_patch_allocations"]

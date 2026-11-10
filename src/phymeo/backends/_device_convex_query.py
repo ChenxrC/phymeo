@@ -1143,9 +1143,7 @@ class ConvexQueryPlan:
                                 )
                                 self._sync()
                                 written = self._read(b["patch_meta"])
-                                base += (
-                                    int(written[index, 2]) if int(written[index, 0]) == 1 else 0
-                                )
+                                base += int(written[index, 2]) if int(written[index, 0]) == 1 else 0
                         self._sync()
                         pose, stamp = self._read(b["pose"]), self._read(b["stamp"])
                         self._attempt_ticks = self._read(view.accepted.ticks)

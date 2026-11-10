@@ -1,14 +1,14 @@
 # P6.5 人工续作入口
 
-## 当前执行（2026-11-11 06:00，用户确认至北京时间08:00）
+## 当前交付（2026-11-11，本轮窗口至北京时间08:00）
 
-先读[本批正式验收](../benchmarks/p65-parity-20261111-connections.md)、[八方向全景](phymeo-newton-panorama-2026-11-11.md)与[执行计划](../superpowers/plans/2026-11-11-newton-parity-until-0800.md)。产品/测试冻结e3d15707，父继续仅做有限保存诊断及最终文档/dev同步。当前没有物理测试或构建进程；所有项目执行仍父唯一串行owner。
+先读[本批正式验收](../benchmarks/p65-parity-20261111-connections.md)、[八方向全景](phymeo-newton-panorama-2026-11-11.md)与[执行计划](../superpowers/plans/2026-11-11-newton-parity-until-0800.md)。产品/测试冻结e3d15707，有限保存诊断已结束，父仅做最终文档/dev同步。当前没有物理测试或构建进程；所有项目执行仍父唯一串行owner。
 
 本批已完成公共中途恢复、真实受载W256分页、设备task/action与29执行器宽度、十类设备凸体patch资格、单页和分页真实力消费。B2各67节点/47保存，B3各29节点/28保存；最终新wheel483产品成员同源，十组源码外公共调用全过。113/124两个环境预检首错、父汇总JSONL抽取错误均保留，正式wheel汇总为v2，不重复旧绿组或112字节审计。resident与MuJoCo-TYX两条物理路径分别验收，HOST装配/诊断仍保留，不称全GPU训练。
 
 G1 v2 run93完整尝试在46.29秒/23145步触发设备原1米参考XY门，未完成131.48秒；无设备拒步/reset。106失败保存审计、123全前缀离线诊断已结束。两条独立轨迹直接XY差最大17.30mm、末步3.29mm，双方相对参考均近1m；126已把同输入峰值定位到零margin附近的接触检出集合不同：device3点/30行，native4点/40行；native多出约-33nm间隙的右足胶囊接触。设备拒绝距离未保存，精确误差来源仍unknown；不是已证明的同问题QP差异或长期漂移原因。原v1失败亦保留，不重跑全窗/改模型或门。见[G1诊断](g1-drift-diagnosis-20261111.md)。该有限诊断已结束/放槽；下一项是计划中的GPU训练资格。
 
-下一主线为[GPU训练N1–N3](../superpowers/plans/2026-11-11-mujoco-tyx-gpu-training.md)：独立CUDA Torch环境/真实策略消费、两任务PPO更新、训练边界组合恢复。已调研，未安装或实现；本夜不插入该新执行范围。06:30停止扩大范围，08:00据真实结果收口。dev尚待本轮最终同步，三份旧K1未跟踪WIP保留；旧heartbeat/pending不覆盖本节，既验grant不重开。
+下一主线为[GPU训练N1–N3](../superpowers/plans/2026-11-11-mujoco-tyx-gpu-training.md)：独立CUDA Torch环境/真实策略消费、两任务PPO更新、训练边界组合恢复。已调研，未安装或实现；本夜不插入该新执行范围。功能范围已收口，08:00结束本轮。交付分支为codex/dev；实际远端提交以父最终同步收据为准。三份旧K1未跟踪WIP保留；旧heartbeat/pending不覆盖本节，既验grant不重开。
 
 ## 历史基线（2026-11-11，MuJoCo-TYX T4与G1有限持续支撑已验收）
 

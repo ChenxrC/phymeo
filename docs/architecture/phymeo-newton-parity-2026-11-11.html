@@ -135,7 +135,7 @@ body{font-family:'Cascadia Mono','Microsoft YaHei',monospace}.container{max-widt
 <body>
 <div class="container">
 <header class="header"><div class="header-row"><span class="pulse-dot"></span><h1>Phymeo / Newton · 功能连接全景</h1></div>
-<p class="subtitle">2026-11-11 06:00 · 本批功能与安装已验 · 对照 Newton 1.7.0</p></header>
+<p class="subtitle">2026-11-11 · 本批功能与安装已验 · 对照 Newton 1.7.0</p></header>
 <div class="banner">本轮主线：训练规模优先，机器人、碰撞、GPU 三线并行。绿色只表示已验的限定范围；黄色为待补齐能力，表中列明后继缺口。各后端能力不互相倒灌。</div>
 <section class="diagram-container">
 <svg viewBox="0 0 1120 900" role="img" aria-label="资产编译、两条TYX力学路径与公共环境及训练连接">
@@ -168,7 +168,7 @@ body{font-family:'Cascadia Mono','Microsoft YaHei',monospace}.container{max-widt
 </svg>
 </section>
 <section class="cards">
-<div class="card"><h3><span class="dot amber"></span>A · 机器人与工作流</h3><p id="lane-a">已验公共中途 checkpoint/restore 与继续推进。G1于46.29秒触发原1米参考XY门，未完成131.48秒；无设备拒步。两闭环轨迹最大XY距离17.30mm，共同部署偏差与局部求解差异分开定位。</p></div>
+<div class="card"><h3><span class="dot amber"></span>A · 机器人与工作流</h3><p id="lane-a">已验公共中途 checkpoint/restore 与继续推进。G1于46.29秒触发原1米参考XY门，未完成131.48秒；无设备拒步。两轨迹XY差最大17.30mm；局部峰值已定位为零margin附近接触集不同，长期漂移原因仍待查。</p></div>
 <div class="card"><h3><span class="dot amber"></span>B · 通用碰撞</h3><p id="lane-b">设备十类凸体配对、四类树来源、单页与分页真实受力均已验。B3两端各29项及28份保存；新wheel两端公共调用通过。HOST材料点转换与力装配仍保留。</p></div>
 <div class="card"><h3><span class="dot amber"></span>C · GPU 与训练规模</h3><p id="lane-c">W256隔离slider/support设备接触分页已验，非256台G1训练。设备task/action与29执行器宽度已验；下一步是CUDA策略→两任务PPO→训练恢复。此三节点尚未实现。</p></div>
 </section>

@@ -583,7 +583,6 @@ def test_native_width_boundary_free_root_twenty_nine_actuators(mode):
                 assert exact(published.last_step.stored_control) == exact(receipt.controls[key])
 
 
-
 @pytest.mark.parametrize("mode", MODES)
 def test_action_packets_borrow_live_runtime_and_reuse_compilation(mode, monkeypatch):
     from phymeo.backends.mujoco_device_controls import _DeviceControlPacket
@@ -597,7 +596,9 @@ def test_action_packets_borrow_live_runtime_and_reuse_compilation(mode, monkeypa
         def inspect_pack(packet):
             assert packet.runtime is runtime and not runtime.closed
             assert len(packet.buffers) == 5
-            assert all(getattr(close, "__self__", None) is not runtime for close in packet.resources)
+            assert all(
+                getattr(close, "__self__", None) is not runtime for close in packet.resources
+            )
             previous = e._control_packet
             for i, current in enumerate(packet.buffers):
                 others = packet.buffers[:i]
@@ -616,9 +617,7 @@ def test_action_packets_borrow_live_runtime_and_reuse_compilation(mode, monkeypa
             original_pack(packet)
             if mode == "cuda":
                 entries = [
-                    entry[2]
-                    for entry in runtime._gpu_execution_cache.values()
-                    if entry[0] is pack
+                    entry[2] for entry in runtime._gpu_execution_cache.values() if entry[0] is pack
                 ]
                 assert entries and all(value is entries[0] for value in entries)
                 if compiled:
@@ -802,7 +801,6 @@ def test_borrowed_runtime_follows_reset_restore_owner_replacement(mode, monkeypa
         assert all(e.step(H).values())
 
 
-
 @pytest.mark.parametrize("mode", MODES)
 def test_buffer_cleanup_retry_after_stream_closed_keeps_physical_runtime(mode):
     with engine("fixed", mode) as e, engine("fixed", mode) as reference, ExitStack() as stack:
@@ -815,7 +813,8 @@ def test_buffer_cleanup_retry_after_stream_closed_keeps_physical_runtime(mode):
         if mode == "cuda":
             target = first.native[0]
             slots = [
-                i for i, close in enumerate(first.resources)
+                i
+                for i, close in enumerate(first.resources)
                 if getattr(close, "__self__", None) is target
             ]
             assert len(slots) == 1

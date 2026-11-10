@@ -974,7 +974,7 @@ def inventory(protocol, compilation, derived, capabilities):
         "gates": GATES,
         "observation": "snapshot is a detached CPU FK observer; device loads come only from last_step",
         "native_oracles": "same-input forward and independent feedback CPU trajectory are distinct",
-        "dance_scope": "at most 20 seconds, not the complete 131.48-second motion",
+        "dance_scope": "requested window up to the original complete 131.48-second motion",
     }
 
 
@@ -1414,12 +1414,12 @@ def parse_args():
     parser.add_argument("--cache-root", type=Path)
     args = parser.parse_args()
     args.assets = args.assets.resolve()
-    if not 0 < args.duration <= 20 or not math.isfinite(args.duration):
-        parser.error("duration must be positive and at most 20 seconds")
+    if not 0 < args.duration <= 131.48 or not math.isfinite(args.duration):
+        parser.error("duration must be positive and at most 131.48 seconds")
     if not np.isclose(args.duration / args.h, round(args.duration / args.h), rtol=0, atol=1e-9):
         parser.error("duration must contain an integer number of physics steps")
     if args.duration > 2 and (args.h != 0.002 or args.push_sign or args.phase != "trajectory"):
-        parser.error("the predeclared 20-second extension uses h=.002, no push, original policy")
+        parser.error("the predeclared long extension uses h=.002, no push, original policy")
     if args.push_sign and (args.h != 0.002 or args.phase != "trajectory" or args.duration != 2):
         parser.error("the predeclared push cases use h=.002 and a two-second policy window")
     return args

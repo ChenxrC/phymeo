@@ -18,7 +18,7 @@ All project execution belongs to the parent, in one serial queue. Raw evidence i
 - 27 remaining short interpret: **71 passed / 16 failed**. Failures included incorrect endpoint/couple assumptions and exception attribute access, a budget fixture that actually needed only one face, two prematurely stopped oblique responses and four solver/protocol failures.
 - Saved-only analysis28 used padded width incorrectly and failed; corrected29 read the actual nonzero physical-M block. Product fixes retained original parameters and global thresholds, additionally checked bound KKT and allowed release after a completed blocked face. Targeted30: **8 passed**.
 - First G1 harness lint31 passed; format32 reported two files; format33 and final lint34/format35 passed. This is not G1 physics evidence.
-- Long interpret matrix36 is running. Its D01 mixed branch exposed an initial dry-free-face ordering defect; correction is prepared only after the running source snapshot is released. No result is declared for the whole matrix yet.
+- Long interpret36: 4 D01 failures / 8 D02 passes. After completing the initial dry free face before releasing bound rows, targeted short41 passed all 24 selected nodes and original-initial-state D01 run42 passed all four complete one-second windows. Unaffected no-dry D02 evidence is reused from36. CUDA and G1 remain pending.
 
 These are per-run results with source bindings, not a single final-source union or a complete T4 acceptance.
 

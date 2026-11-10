@@ -101,3 +101,10 @@ matrix/factor[W,V,V]，其余dof向量[W,V]，row向量[W,E]。更新efc_data的
 修复：原normalized KKT门之外，bound方向KKT用max(1,abs(R*f))归一后亦要求原tau，避免大aref掩盖应激活边；同一feasible face无force变化但已完成且另有违反bound时允许下一release，而非宣告stall。数值模型、预算、原global门与原子发布不变。30的8个倾斜/稀疏reset/顺序/篡改重试针对节点全部通过。源作者复核small-dual转置/Givens/索引/预算正确；单边release可能对G1原100预算形成压力，尚待实际G1观察，不增预算或删接触。
 
 同次native证据反驳了部分行为测试假设：signed slide末窗已经离面；±1.2mg外载短窗也有同步分离；部分rolling角速由切向点力消散，原生pure couple为0。对应测试改为同轨迹耗散/真实COM反作用，并保全部逐步native分量门，不能用错误的末步必须接触或每个旋转必须pure couple替代。五个unsupported断言误读异常.code，实际公开为issues中的code/detail。单face预算负控旧fixture实为一个active边即可完成，需保原budget1、以正交独立normal解析负控替换错误假设。上述修订由原测试作者处理，未提前写为通过。
+## 8. 初始干摩擦自由面与连续窗闭环
+
+36首次完整解释长组实际4失败/8通过/196 deselected（2499.23s，RAW1）。D02八个有限表面完整一秒窗口全部通过；D01四个接触/限位/干摩擦窗口在初始dry自由行尚未优化时先release bound，形成零步长重绑而拒步。全部34项源before/after相同，原失败保留。
+
+父在任何当前working==free时初始化refine_face=1，先优化初始可行面再释放bound；没有dry行的分支不变。独立文本反例H=[[2,1],[1,1]],b=(-2,-1/2),x∈[-2,2],y≥0说明先release y得到不可行(1.5,-1)，而先解x面得到正确KKT(1,0)。每次face仍计原source budget，物理模型和容差不变。
+
+37/38窄静态首失败保留，39仅排版两个修订测试文件，40 lint0。41受影响短组24通过/184 deselected（53.52s），含原子晚下载回滚、原budget1真正不足、两mixed同入步和ENV。42从原初态重跑四个D01窗口，4通过/204 deselected（416.96s）。D02八组按无dry分支复用36，不重跑；这不是CUDA或G1验收。下一步为43/44首次完整CUDA和原G1。

@@ -171,6 +171,11 @@ def solve(
                         status[w] = 2
         done = 0
         refine_face = 0
+        # Dry friction starts in the interior. Optimize this initial face
+        # before releasing any lower/upper-bound variable.
+        for r in range(nrow):
+            if working[w, r] == 1:
+                refine_face = 1
         stalled = 0
         iteration_limit = budget
         if budget < 1 or budget > 512:

@@ -10,14 +10,15 @@
 
 ## 必须先冻结的三件事
 
-1. **同一个事务发布。** 把凸体查询拆为暂存结果和无失败操作的最终发布。设备宽相、凸体结果、原始/effective patch、力收据与 accepted bank 在同一提交点生效。后续材料转换、装配、求解或收据构造失败，不能留下看似成功的新查询。独立 `query()` 保持原公共语义。失败的资源计费保留。
-2. **显式表示转换。** 旧 `ContactSite` 要求 FP64 单位法向、重心和积分权重严格归一，不能把近似 FP32 字直接塞入，或降低旧构造门。仅允许确定性表示转换：保全部原始字；对非负、有界且已合格的重心/积分权重按和归一；使用一条明确的共同单位法向；按原材料 ID、同入步接受帧和原半径重建双方材料点，公共施力点取双方中点，gap 为法向投影。不能做新的 HOST 接触搜索、按力选点、截掉负权重、增删接触点或修复未知几何。
-3. **转换有证据和限界。** 收据同时保存 raw 与 effective 数据及每项差值。重建点与设备原点、gap、offset、法向和一阶矩必须满足 B1 原有相应工程门。shape/world/owner/topology/epoch/active bank、原局部点与实际上传点的来源全部绑定。已有门不能覆盖的情况明确拒绝，先保最小反例，不用未声明的额外容差解释。
+1. **同一个事务发布。** 把凸体查询拆为暂存结果和无失败操作的最终发布，消费 `_begin_attempt` 已暂存的同一宽相候选/source loan，不再做第二次宽相。设备宽相、凸体结果、原始/effective patch、力收据与 accepted bank 在同一提交点生效；query 仍绑定原入步 epoch/bank，不改标为步末。后续材料转换、装配、求解或收据构造发生异常，不能留下看似成功的新查询。独立 `query()` 保持原公共语义。失败的资源计费保留。
+2. **显式表示转换。** 旧 `ContactSite` 要求 FP64 单位法向、重心和积分权重严格归一，不能把近似 FP32 字直接塞入，或降低旧构造门。仅允许确定性表示转换：保全部原始字；对非负、有界且已合格的重心/积分权重按各自原和归一，保留零权重项和全部 ID；归一后的距离行法向是唯一共同法向，站点法向作一致性检查；按原材料 ID、同入步 `ContactShapeFrame` 重建材料核点，圆形 offset 使用原半径的 `±radius*n`，hull offset 为零。公共施力点取双方中点，gap 为法向投影。不能做新的 HOST 接触搜索、按力选点、截掉负权重、增删接触点或修复未知几何。
+3. **转换有证据和限界。** 收据同时保存 raw 与 effective 数据及每项差值。重建点与设备原点、gap、offset、法向和一阶矩必须满足 B1 原有相应工程门。所有比较使用原局部几何尺度，巨大世界坐标不能放宽容差。shape/world/owner/topology/epoch/active bank、原局部点与实际上传点的来源分别绑定。验收还必须独立检查 raw 和 effective 对原几何参考均满足原门，不能把两段误差预算重复使用；这项测试不引入 runtime HOST 几何搜索。已有门不能覆盖的情况明确拒绝，先保最小反例，不用未声明的额外容差解释。
 
 ## 载荷和失败语义
 
 - 所有 candidate 都有原显式材料律；只有合格 `RESOLVED` patch 可消费。`UNRESOLVED/ABSENT/RESOURCE_LIMIT` 不能落回 HOST 搜索或算作零力。设备资源状态没有精确 required-site count 时，失败整个尝试，不能编造逐世界溢出计数。
 - 真实几何站点先全部计数，含零力站点。既有逐世界 site-cap 保留，失败世界保留原状态及上一接受收据。
+- 原正常 `REJECTED` 状态允许其他世界前进；不能把它误改成整批回滚。上文的整批不发布指异常、未知几何和全局资源错误，完整保留 C1 已有区别。
 - 用真实入步 COM 线速度与角速度计算共同施力点速度。原 `sample_patch_loads` 只施加一次积分权重；双方力相反，分别对真实 COM 计算力矩。各 body 的所有贡献完整汇总后，每 storage 一次完整求解。
 - 候选末态只输运原材料点，不能重采样改变入步力。保留 application/material work、量化误差、原控制、真实输入、完整动态与静态反作用。
 - 普通、affine、floating、floating-affine 使用各自完整物理 FK/J/M；不能把约化自由度当 link 索引。第一片仍是设备几何加 HOST 载荷装配，不声称全 GPU 接触或训练。
@@ -30,6 +31,8 @@
 | B2b 共同发布 | query 暂存接缝、可选设备 narrow 路径、原力学复用 | 后置 patch 失败、最后载荷失败、求解后收据失败均无部分发布；计费保留；重试和 stale result；原 HOST 默认路径受影响专项回归 |
 | B2c 真受载矩阵 | 多初态连续步，含真实入步速度、执行器和外载 | 四类树、动态–静态及双方动态，双侧力/COM 力矩、权重一次、完整 J/M、逐世界隔离；同一输入 HOST 与设备几何路径的工程误差对照；不可仅验证 query 状态 |
 
-候选文件：新 `_resident_device_patch_bridge.py`、新专项 tests；最小修改 `_device_convex_query.py`、`_resident_contact_bridge.py`、共享 `_resident_contact_plan.py`，公共准备接口由父持有。编码前根据已集成 C1 版本明确精确路径，不并行编辑共享接缝。不得修改旧三个 K1 untracked 文件。
+首片候选七文件：新 `backends/_resident_device_patch_bridge.py`、`tests/collision/test_resident_device_patch_bridge.py`、`tests/scale/test_resident_device_contacts.py`；修改 `backends/_device_convex_query.py`、`backends/_resident_contact_bridge.py`、`backends/_resident_contact_plan.py`；父持有 `backends/tyx_world_batch.py` 的公共参数转发。其余共享物理核、bundle 和严格 `ContactSite` 不改。共享 mechanics 的默认 geometry hooks 不改变旧 plan/bundle；设备 query 只在单页 plan 注册完成后创建，不能由 bundle 共用的准备函数隐式创建。所有转换记录和收据在 swap 前构造。
+
+拟定公共参数为 `narrow_phase="host_patch" | "device_patch"` 和 `device_patch_site_capacity=None`；设备模式的 `None` 使用原 4096 上限，原 `site_capacity` 仍管每世界真实载荷点数，原 `candidate_capacity` 仍管宽相。首片不开放外部 query-plan 注入。编码前根据已集成 C1 版本冻结精确范围，不并行编辑共享接缝；仍不得修改旧三个 K1 untracked 文件。
 
 首轮专项验证保留原始失败。两个修复循环仍不能缩小具体缺口时，停止扩展并保留最小反例；先完成已独立可验收的检查点、训练数据面与分页。判定完成依据是公共受载能力及共同发布证据，不能用计划行数、组合数或单个舞蹈作为验收。

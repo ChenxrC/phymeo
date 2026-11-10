@@ -89,8 +89,12 @@ class Journal:
 
     def write(self, event, *, durable=False, **payload):
         self.stream.write(
-            json.dumps(json_value({"sequence": self.sequence, "event": event, **payload}),
-                       allow_nan=False, separators=(",", ":")) + "\n"
+            json.dumps(
+                json_value({"sequence": self.sequence, "event": event, **payload}),
+                allow_nan=False,
+                separators=(",", ":"),
+            )
+            + "\n"
         )
         self.sequence += 1
         self.stream.flush()
@@ -128,8 +132,10 @@ def axis_rotation(axis, angle):
 
 def torso(q, joints):
     return (
-        rotation(q) @ axis_rotation(2, joints[12])
-        @ axis_rotation(0, joints[13]) @ axis_rotation(1, joints[14])
+        rotation(q)
+        @ axis_rotation(2, joints[12])
+        @ axis_rotation(0, joints[13])
+        @ axis_rotation(1, joints[14])
     )
 
 
@@ -151,8 +157,11 @@ def compile_source(assets, h):
             option = ET.SubElement(xml, "option")
         option.set("timestep", format(h, ".17g"))
         text = ET.tostring(xml, encoding="unicode")
-        derived = {"change": "option.timestep only", "h": h,
-                   "sha256": hashlib.sha256(text.encode("utf-8")).hexdigest()}
+        derived = {
+            "change": "option.timestep only",
+            "h": h,
+            "sha256": hashlib.sha256(text.encode("utf-8")).hexdigest(),
+        }
         compiled = compile_mujoco_xml(text, require_asset=False)
     model = compiled.fresh_native_model()
     if (model.nq, model.nv, model.nu, model.nbody, model.ngeom) != (36, 35, 29, 31, 34):
@@ -188,8 +197,7 @@ class Protocol:
         self.va = model.jnt_dofadr[self.joints].astype(int)
         if len(set(self.qa)) != 29 or self.config["joint_ids_map"] != list(range(29)):
             raise ValueError("unexpected native actuator or policy ordering")
-        self.names = tuple(mj.mj_id2name(model, mj.mjtObj.mjOBJ_JOINT, int(j))
-                           for j in self.joints)
+        self.names = tuple(mj.mj_id2name(model, mj.mjtObj.mjOBJ_JOINT, int(j)) for j in self.joints)
         self.root = mj.mj_name2id(model, mj.mjtObj.mjOBJ_BODY, "pelvis")
         self.floor = mj.mj_name2id(model, mj.mjtObj.mjOBJ_GEOM, "floor")
         self.foot_geoms = {}
@@ -199,8 +207,7 @@ class Protocol:
                 mj.mj_name2id(model, mj.mjtObj.mjOBJ_BODY, prefix + "_ankle_roll_link")
             )
             for i in range(1, 8):
-                geom = mj.mj_name2id(model, mj.mjtObj.mjOBJ_GEOM,
-                                    f"{prefix}_foot{i}_collision")
+                geom = mj.mj_name2id(model, mj.mjtObj.mjOBJ_GEOM, f"{prefix}_foot{i}_collision")
                 if geom < 0:
                     raise ValueError("original foot geometry is absent")
                 self.foot_geoms[geom] = side
@@ -214,8 +221,10 @@ class Protocol:
         self.default = np.asarray(self.config["default_joint_pos"], float)
         if float(self.config["step_dt"]) != 0.02:
             raise ValueError("original policy period changed")
-        if any(x.shape != (29,) or not np.isfinite(x).all()
-               for x in (self.kp, self.kd, self.scale, self.offset, self.default)):
+        if any(
+            x.shape != (29,) or not np.isfinite(x).all()
+            for x in (self.kp, self.kd, self.scale, self.offset, self.default)
+        ):
             raise ValueError("invalid original controller vectors")
         self.inertial_from_body = rotation(model.body_iquat[self.root]).T
         self.mass = float(np.sum(model.body_mass))
@@ -223,9 +232,10 @@ class Protocol:
         if not np.array_equal(model.opt.gravity, (0.0, 0.0, -9.81)):
             raise ValueError("the source gravity was changed")
         self.q0, self.v0 = self.initial(0)
-        self.alignment = yaw(torso(self.q0[3:7], self.q0[self.qa])) @ yaw(
-            rotation(self.motion["body_quat_w"][0, 0])
-        ).T
+        self.alignment = (
+            yaw(torso(self.q0[3:7], self.q0[self.qa]))
+            @ yaw(rotation(self.motion["body_quat_w"][0, 0])).T
+        )
 
     def initial(self, frame=None):
         q, v = self.model.qpos0.copy(), np.zeros(self.model.nv)
@@ -245,9 +255,13 @@ class Protocol:
     def metrics(self, q, v, time, stand=False):
         frame = self.frame(time)
         reference = self.default if stand else self.motion["joint_pos"][frame]
-        root_ref = self.model.qpos0[:3] if stand else (
-            self.q0[:3] + self.alignment @ (
-                self.motion["body_pos_w"][frame, 0] - self.motion["body_pos_w"][0, 0]
+        root_ref = (
+            self.model.qpos0[:3]
+            if stand
+            else (
+                self.q0[:3]
+                + self.alignment
+                @ (self.motion["body_pos_w"][frame, 0] - self.motion["body_pos_w"][0, 0])
             )
         )
         low, high = self.model.jnt_range[self.joints].T
@@ -274,19 +288,25 @@ class Controller:
         action, target, observation = self.action.copy(), self.target.copy(), None
         if not self.stand and tick % self.decimation == 0:
             frame = p.frame(time)
-            reference_q, reference_v = (
-                p.motion["joint_pos"][frame], p.motion["joint_vel"][frame]
-            )
-            relative = torso(q[3:7], q[p.qa]).T @ p.alignment @ torso(
-                p.motion["body_quat_w"][frame, 0], reference_q
+            reference_q, reference_v = (p.motion["joint_pos"][frame], p.motion["joint_vel"][frame])
+            relative = (
+                torso(q[3:7], q[p.qa]).T
+                @ p.alignment
+                @ torso(p.motion["body_quat_w"][frame, 0], reference_q)
             )
             # Match native BODY local observation axes (body inertial frame),
             # evaluated from the current state rather than stale cached cvel.
-            observation = np.concatenate((
-                reference_q, reference_v, relative[:, :2].reshape(-1),
-                p.inertial_from_body @ v[3:6],
-                q[p.qa] - p.default, v[p.va], self.action,
-            )).astype(np.float32)[None]
+            observation = np.concatenate(
+                (
+                    reference_q,
+                    reference_v,
+                    relative[:, :2].reshape(-1),
+                    p.inertial_from_body @ v[3:6],
+                    q[p.qa] - p.default,
+                    v[p.va],
+                    self.action,
+                )
+            ).astype(np.float32)[None]
             if observation.shape != (1, 154) or not np.isfinite(observation).all():
                 raise ValueError("invalid policy observation")
             action = p.session.run(["actions"], {"obs": observation})[0][0]
@@ -295,8 +315,14 @@ class Controller:
             target = p.offset + p.scale * action
         raw = p.kp * (target - q[p.qa]) - p.kd * v[p.va]
         ctrl = np.clip(raw, p.model.actuator_ctrlrange[:, 0], p.model.actuator_ctrlrange[:, 1])
-        return {"action": action, "target": target, "observation": observation,
-                "ctrl": ctrl, "unclamped_ctrl": raw, "saturated": raw != ctrl}
+        return {
+            "action": action,
+            "target": target,
+            "observation": observation,
+            "ctrl": ctrl,
+            "unclamped_ctrl": raw,
+            "saturated": raw != ctrl,
+        }
 
     def commit(self, proposal):
         self.action = proposal["action"].copy()
@@ -343,14 +369,22 @@ def native_fields(model, data, input_q, input_v, packet, *, full):
         jac = np.vstack((frame @ (jp[1] - jp[0]), frame @ (jr[1] - jr[0])))
         force = np.zeros(6)
         mj.mj_contactForce(model, data, index, force)
-        contacts.append({
-            "index": index, "geometry_ids": tuple(map(int, contact.geom)),
-            "body_ids": bodies, "dimension": int(contact.dim), "distance": float(contact.dist),
-            "position": contact.pos.copy(), "frame": frame,
-            "include_margin": float(contact.includemargin), "active": contact.efc_address >= 0,
-            "wrench_contact_frame": force, "jacobian": jac,
-            "efc_address": int(contact.efc_address),
-        })
+        contacts.append(
+            {
+                "index": index,
+                "geometry_ids": tuple(map(int, contact.geom)),
+                "body_ids": bodies,
+                "dimension": int(contact.dim),
+                "distance": float(contact.dist),
+                "position": contact.pos.copy(),
+                "frame": frame,
+                "include_margin": float(contact.includemargin),
+                "active": contact.efc_address >= 0,
+                "wrench_contact_frame": force,
+                "jacobian": jac,
+                "efc_address": int(contact.efc_address),
+            }
+        )
     mass = np.empty((model.nv, model.nv))
     mj.mj_fullM(model, mass, data.qM)
     jaccom = np.zeros((model.nbody, 6, model.nv))
@@ -359,34 +393,57 @@ def native_fields(model, data, input_q, input_v, packet, *, full):
         mj.mj_jac(model, data, jaccom[body, :3], jaccom[body, 3:], data.xipos[body], body)
         applied += jaccom[body].T @ packet.xfrc_applied[body]
     energy = energy_fields(
-        model, input_v, mass, data.xipos, data.qfrc_actuator, applied,
-        data.qfrc_passive, data.qfrc_constraint,
+        model,
+        input_v,
+        mass,
+        data.xipos,
+        data.qfrc_actuator,
+        applied,
+        data.qfrc_passive,
+        data.qfrc_constraint,
     )
-    result = {"contacts": contacts, "qacc": data.qacc.copy(),
-              "qfrc_constraint": data.qfrc_constraint.copy(),
-              "qfrc_actuator": data.qfrc_actuator.copy(), "energy": energy,
-              "nefc": int(data.nefc), "body_com": data.xipos.copy(),
-              "geom_position": data.geom_xpos.copy()}
+    result = {
+        "contacts": contacts,
+        "qacc": data.qacc.copy(),
+        "qfrc_constraint": data.qfrc_constraint.copy(),
+        "qfrc_actuator": data.qfrc_actuator.copy(),
+        "energy": energy,
+        "nefc": int(data.nefc),
+        "body_com": data.xipos.copy(),
+        "geom_position": data.geom_xpos.copy(),
+    }
     if full:
         jac = np.asarray(data.efc_J).reshape(data.nefc, model.nv).copy()
-        result.update({
-            "input_q": input_q.copy(), "input_v": input_v.copy(),
-            "body_position": data.xpos.copy(),
-            "body_rotation": data.xmat.reshape(model.nbody, 3, 3).copy(),
-            "body_com": data.xipos.copy(), "jacobian_com": jaccom, "mass_matrix": mass,
-            "bias": data.qfrc_bias.copy(), "passive": data.qfrc_passive.copy(),
-            "applied": applied, "smooth_acceleration": data.qacc_smooth.copy(),
-            "integration_acceleration": np.linalg.solve(
-                mass + model.opt.timestep * np.diag(model.dof_damping), mass @ data.qacc
-            ),
-            "efc_type": data.efc_type.copy(), "efc_id": data.efc_id.copy(),
-            "efc_J": jac, "efc_pos": data.efc_pos.copy(),
-            "efc_margin": data.efc_margin.copy(), "efc_vel": data.efc_vel.copy(),
-            "efc_R": data.efc_R.copy(), "efc_D": data.efc_D.copy(),
-            "efc_aref": data.efc_aref.copy(), "efc_force": data.efc_force.copy(),
-            "efc_diagApprox": data.efc_diagApprox.copy(),
-            "efc_imp": data.efc_KBIP.reshape(data.nefc, 4)[:, 2].copy(),
-        })
+        result.update(
+            {
+                "input_q": input_q.copy(),
+                "input_v": input_v.copy(),
+                "body_position": data.xpos.copy(),
+                "body_rotation": data.xmat.reshape(model.nbody, 3, 3).copy(),
+                "body_com": data.xipos.copy(),
+                "jacobian_com": jaccom,
+                "mass_matrix": mass,
+                "bias": data.qfrc_bias.copy(),
+                "passive": data.qfrc_passive.copy(),
+                "applied": applied,
+                "smooth_acceleration": data.qacc_smooth.copy(),
+                "integration_acceleration": np.linalg.solve(
+                    mass + model.opt.timestep * np.diag(model.dof_damping), mass @ data.qacc
+                ),
+                "efc_type": data.efc_type.copy(),
+                "efc_id": data.efc_id.copy(),
+                "efc_J": jac,
+                "efc_pos": data.efc_pos.copy(),
+                "efc_margin": data.efc_margin.copy(),
+                "efc_vel": data.efc_vel.copy(),
+                "efc_R": data.efc_R.copy(),
+                "efc_D": data.efc_D.copy(),
+                "efc_aref": data.efc_aref.copy(),
+                "efc_force": data.efc_force.copy(),
+                "efc_diagApprox": data.efc_diagApprox.copy(),
+                "efc_imp": data.efc_KBIP.reshape(data.nefc, 4)[:, 2].copy(),
+            }
+        )
     return result
 
 
@@ -417,10 +474,23 @@ def field(item, name):
 
 
 def contact_rows(contacts):
-    return [{name: field(c, name) for name in (
-        "geometry_ids", "body_ids", "dimension", "distance", "position", "frame",
-        "include_margin", "active", "wrench_contact_frame",
-    )} for c in contacts]
+    return [
+        {
+            name: field(c, name)
+            for name in (
+                "geometry_ids",
+                "body_ids",
+                "dimension",
+                "distance",
+                "position",
+                "frame",
+                "include_margin",
+                "active",
+                "wrench_contact_frame",
+            )
+        }
+        for c in contacts
+    ]
 
 
 def support(protocol, contacts, v, body_com):
@@ -446,11 +516,15 @@ def support(protocol, contacts, v, body_com):
         )
         velocity = np.asarray(field(contact, "jacobian")) @ v
         slip[side] = max(slip[side], float(np.linalg.norm(velocity[1:3])))
-    return {"foot_force_world": foot_force, "foot_couple_world": foot_torque,
-            "foot_moment_about_body_com_world": foot_moment,
-            "foot_tangent_speed": slip, "loaded": foot_force[:, 2] > 1.0,
-            "foot_vertical": float(foot_force[:, 2].sum()),
-            "nonfoot_ground_force_world": ground_other}
+    return {
+        "foot_force_world": foot_force,
+        "foot_couple_world": foot_torque,
+        "foot_moment_about_body_com_world": foot_moment,
+        "foot_tangent_speed": slip,
+        "loaded": foot_force[:, 2] > 1.0,
+        "foot_vertical": float(foot_force[:, 2].sum()),
+        "nonfoot_ground_force_world": ground_other,
+    }
 
 
 def compact_state(state):
@@ -478,8 +552,10 @@ class Stats:
         metric = self.p.metrics(q, v, output_time, self.stand)
         if self.foot_origin is None:
             self.foot_origin = foot_centers[:, :2].copy()
-        self.maximum_foot_xy = max(self.maximum_foot_xy, float(
-            np.max(np.linalg.norm(foot_centers[:, :2] - self.foot_origin, axis=1))))
+        self.maximum_foot_xy = max(
+            self.maximum_foot_xy,
+            float(np.max(np.linalg.norm(foot_centers[:, :2] - self.foot_origin, axis=1))),
+        )
         self.steps += 1
         self.minimum_height = min(self.minimum_height, metric["height"])
         self.maximum_tilt = max(self.maximum_tilt, metric["tilt"])
@@ -492,7 +568,9 @@ class Stats:
             self.settled_sum += load
             self.settled_steps += 1
             self.both_loaded += int(np.all(loads["loaded"]))
-        self.max_nonfoot = max(self.max_nonfoot, float(np.linalg.norm(loads["nonfoot_ground_force_world"])))
+        self.max_nonfoot = max(
+            self.max_nonfoot, float(np.linalg.norm(loads["nonfoot_ground_force_world"]))
+        )
         self.slip += self.h * loads["foot_tangent_speed"] * loads["loaded"]
         total = energy["kinetic"] + energy["gravity_potential"]
         balance = None
@@ -508,8 +586,12 @@ class Stats:
         events = []
         for side in range(2):
             if loaded[side] != self.previous_loaded[side]:
-                events.append({"foot": ("left", "right")[side],
-                               "kind": "loaded" if loaded[side] else "unloaded"})
+                events.append(
+                    {
+                        "foot": ("left", "right")[side],
+                        "kind": "loaded" if loaded[side] else "unloaded",
+                    }
+                )
         self.previous_loaded = loaded
         failures = []
         if not metric["finite"]:
@@ -543,30 +625,49 @@ class Stats:
             if not self.settled_steps or self.both_loaded / self.settled_steps < 0.9:
                 failures.append("stand_both_feet")
         return {
-            "steps": self.steps, "minimum_height": self.minimum_height,
-            "maximum_tilt": self.maximum_tilt, "maximum_joint_rmse": self.maximum_rmse,
-            "maximum_reference_xy_error": self.maximum_xy, "peak_foot_load_ratio": self.peak_load,
+            "steps": self.steps,
+            "minimum_height": self.minimum_height,
+            "maximum_tilt": self.maximum_tilt,
+            "maximum_joint_rmse": self.maximum_rmse,
+            "maximum_reference_xy_error": self.maximum_xy,
+            "peak_foot_load_ratio": self.peak_load,
             "maximum_foot_center_xy_drift": self.maximum_foot_xy,
             "foot_center_phase": "output_fk" if self.stand else "input_fk",
             "all_window_mean_foot_load_ratio": self.sum_load / max(1, self.steps),
             "settled_mean_foot_load_ratio": mean,
-            "settled_steps": self.settled_steps, "settled_both_loaded": self.both_loaded,
+            "settled_steps": self.settled_steps,
+            "settled_both_loaded": self.both_loaded,
             "accumulated_loaded_foot_slip_m": self.slip,
-            "max_nonfoot_ground_force_n": self.max_nonfoot, "work_joules": self.work,
+            "max_nonfoot_ground_force_n": self.max_nonfoot,
+            "work_joules": self.work,
             "max_input_energy_balance_j": self.max_energy_balance,
-            "assessed": assessed, "checkpoint_failures": failures,
+            "assessed": assessed,
+            "checkpoint_failures": failures,
         }
 
 
 def compare_array(checks, name, actual, expected, rtol, atol):
     actual, expected = np.asarray(actual), np.asarray(expected)
     same_shape = actual.shape == expected.shape
-    passed = same_shape and bool(np.all(np.isfinite(actual))) and bool(
-        np.all(np.isfinite(expected))) and bool(np.allclose(actual, expected, rtol=rtol, atol=atol))
-    checks.append({"field": name, "passed": passed, "rtol": rtol, "atol": atol,
-                   "actual_shape": actual.shape, "native_shape": expected.shape,
-                   "max_abs_error": float(np.max(np.abs(actual - expected)))
-                   if same_shape and actual.size else 0.0})
+    passed = (
+        same_shape
+        and bool(np.all(np.isfinite(actual)))
+        and bool(np.all(np.isfinite(expected)))
+        and bool(np.allclose(actual, expected, rtol=rtol, atol=atol))
+    )
+    checks.append(
+        {
+            "field": name,
+            "passed": passed,
+            "rtol": rtol,
+            "atol": atol,
+            "actual_shape": actual.shape,
+            "native_shape": expected.shape,
+            "max_abs_error": float(np.max(np.abs(actual - expected)))
+            if same_shape and actual.size
+            else 0.0,
+        }
+    )
 
 
 def match_contacts(actual, native):
@@ -581,9 +682,11 @@ def match_contacts(actual, native):
                 continue
             if contact.dimension != other["dimension"] or contact.active != other["active"]:
                 continue
-            if (np.allclose(contact.position, other["position"], rtol=3e-5, atol=4e-5)
-                    and np.isclose(contact.distance, other["distance"], rtol=3e-5, atol=4e-5)
-                    and np.allclose(contact.frame[0], other["frame"][0], rtol=0, atol=1e-4)):
+            if (
+                np.allclose(contact.position, other["position"], rtol=3e-5, atol=4e-5)
+                and np.isclose(contact.distance, other["distance"], rtol=3e-5, atol=4e-5)
+                and np.allclose(contact.frame[0], other["frame"][0], rtol=0, atol=1e-4)
+            ):
                 options.append(index)
         choices.append(options)
     owner = {}
@@ -616,12 +719,15 @@ def compare_receipt(model, receipt, native):
     for index, contact in enumerate(receipt.contacts):
         other = native["contacts"][mapping[index]]
         for name, rtol, atol in (
-            ("position", 3e-5, 4e-5), ("distance", 3e-5, 4e-5),
-            ("frame", 0, 1e-4), ("jacobian", 2e-4, 5e-5),
+            ("position", 3e-5, 4e-5),
+            ("distance", 3e-5, 4e-5),
+            ("frame", 0, 1e-4),
+            ("jacobian", 2e-4, 5e-5),
             ("wrench_contact_frame", 3e-3, 3e-3),
         ):
-            compare_array(checks, f"contact[{index}].{name}",
-                          getattr(contact, name), other[name], rtol, atol)
+            compare_array(
+                checks, f"contact[{index}].{name}", getattr(contact, name), other[name], rtol, atol
+            )
     native_keys = {}
     for index in range(native["nefc"]):
         kind, source = int(native["efc_type"][index]), int(native["efc_id"][index])
@@ -639,10 +745,14 @@ def compare_receipt(model, receipt, native):
         native_keys[key] = index
     visited = set()
     columns = (
-        ("position", "efc_pos"), ("margin", "efc_margin"),
-        ("velocity", "efc_vel"), ("reference_acceleration", "efc_aref"),
-        ("regularization", "efc_R"), ("inverse_regularization", "efc_D"),
-        ("impedance", "efc_imp"), ("diag_approx", "efc_diagApprox"),
+        ("position", "efc_pos"),
+        ("margin", "efc_margin"),
+        ("velocity", "efc_vel"),
+        ("reference_acceleration", "efc_aref"),
+        ("regularization", "efc_R"),
+        ("inverse_regularization", "efc_D"),
+        ("impedance", "efc_imp"),
+        ("diag_approx", "efc_diagApprox"),
     )
     for index, row in enumerate(receipt.constraints):
         source = mapping[row.source_id] if row.constraint_type in (5, 6) else row.source_id
@@ -653,14 +763,17 @@ def compare_receipt(model, receipt, native):
         ni = native_keys[key]
         compare_array(checks, f"efc[{index}].J", row.jacobian, native["efc_J"][ni], 2e-4, 5e-5)
         for public, cpu in columns:
-            compare_array(checks, f"efc[{index}].{public}", getattr(row, public),
-                          native[cpu][ni], 5e-4, 4e-4)
-        compare_array(checks, f"efc[{index}].force", row.force,
-                      native["efc_force"][ni], 3e-3, 3e-3)
+            compare_array(
+                checks, f"efc[{index}].{public}", getattr(row, public), native[cpu][ni], 5e-4, 4e-4
+            )
+        compare_array(checks, f"efc[{index}].force", row.force, native["efc_force"][ni], 3e-3, 3e-3)
     if visited != set(native_keys):
         raise ValueError("native constraint rows were omitted")
-    return {"checks": checks, "contact_mapping": mapping,
-            "passed": all(check["passed"] for check in checks)}
+    return {
+        "checks": checks,
+        "contact_mapping": mapping,
+        "passed": all(check["passed"] for check in checks),
+    }
 
 
 def independent_kkt(receipt):
@@ -675,7 +788,8 @@ def independent_kkt(receipt):
     mass = receipt.dynamics.mass_matrix
     hessian = jac @ np.linalg.solve(mass, jac.T) + np.diag(regularization)
     linear = jac @ receipt.dynamics.smooth_acceleration - np.asarray(
-        [row.reference_acceleration for row in rows])
+        [row.reference_acceleration for row in rows]
+    )
     gradient = hessian @ force + linear
     violation = np.abs(gradient)
     violation[force <= lower] = np.maximum(0, -gradient[force <= lower])
@@ -685,36 +799,57 @@ def independent_kkt(receipt):
     bounds = float(max(0, np.max(lower - force), np.max(force - upper)))
     reconstruction = jac.T @ force
     force_ok = bool(np.allclose(reconstruction, receipt.qfrc_constraint, rtol=3e-3, atol=3e-3))
-    return {"normalized_kkt": residual, "bound_violation": bounds,
-            "generalized_force_max_abs_error": float(np.max(
-                np.abs(reconstruction - receipt.qfrc_constraint))),
-            "passed": residual <= 5e-5 and bounds == 0 and force_ok}
+    return {
+        "normalized_kkt": residual,
+        "bound_violation": bounds,
+        "generalized_force_max_abs_error": float(
+            np.max(np.abs(reconstruction - receipt.qfrc_constraint))
+        ),
+        "passed": residual <= 5e-5 and bounds == 0 and force_ok,
+    }
 
 
 def receipt_energy(model, receipt):
     dyn = receipt.dynamics
     result = energy_fields(
-        model, receipt.input_v, dyn.mass_matrix, dyn.body_com, receipt.qfrc_actuator,
-        dyn.applied, dyn.passive, receipt.qfrc_constraint,
+        model,
+        receipt.input_v,
+        dyn.mass_matrix,
+        dyn.body_com,
+        receipt.qfrc_actuator,
+        dyn.applied,
+        dyn.passive,
+        receipt.qfrc_constraint,
     )
     result["constraint_power_by_type"] = {
-        str(kind): float(sum(row.force * row.velocity for row in receipt.constraints
-                            if row.constraint_type == kind))
+        str(kind): float(
+            sum(
+                row.force * row.velocity
+                for row in receipt.constraints
+                if row.constraint_type == kind
+            )
+        )
         for kind in (1, 3, 5, 6)
     }
     return result
 
 
 def foot_centers(protocol, positions):
-    return np.asarray([
-        np.mean([positions[geom] for geom, side in protocol.foot_geoms.items() if side == index], axis=0)
-        for index in range(2)
-    ])
+    return np.asarray(
+        [
+            np.mean(
+                [positions[geom] for geom, side in protocol.foot_geoms.items() if side == index],
+                axis=0,
+            )
+            for index in range(2)
+        ]
+    )
 
 
 def input_checks(receipt, state, packet):
     for name, actual, expected in (
-        ("q", receipt.input_q, state.q), ("v", receipt.input_v, state.v),
+        ("q", receipt.input_q, state.q),
+        ("v", receipt.input_v, state.v),
         ("ctrl", receipt.stored_control.ctrl, packet.ctrl),
         ("qfrc", receipt.stored_control.qfrc_applied, packet.qfrc_applied),
         ("xfrc", receipt.stored_control.xfrc_applied, packet.xfrc_applied),
@@ -732,59 +867,104 @@ def actuator_check(protocol, receipt):
     low, high = protocol.model.actuator_ctrlrange.T
     allowance = 3e-5 * np.maximum(np.abs(low), np.abs(high)) + 3e-5
     valid = valid and np.all(actual >= low - allowance) and np.all(actual <= high + allowance)
-    return {"passed": bool(valid), "actual_joint_torque": actual,
-            "stored_control": requested, "minimum": low, "maximum": high}
+    return {
+        "passed": bool(valid),
+        "actual_joint_torque": actual,
+        "stored_control": requested,
+        "minimum": low,
+        "maximum": high,
+    }
 
 
 def inventory(protocol, compilation, derived, capabilities):
     model = protocol.model
-    if (capabilities.get("possible_contact_pairs"), capabilities.get("candidate_slots")) != (502, 942):
+    if (capabilities.get("possible_contact_pairs"), capabilities.get("candidate_slots")) != (
+        502,
+        942,
+    ):
         raise ValueError("G1 candidate layout differs from its complete source inventory")
     source = compilation.source
     return {
         "compilation_source": {
-            "origin": source.origin, "primary_sha256": source.primary_sha256,
-            "archive_sha256": source.archive_sha256, "model_sha256": source.model_sha256,
+            "origin": source.origin,
+            "primary_sha256": source.primary_sha256,
+            "archive_sha256": source.archive_sha256,
+            "model_sha256": source.model_sha256,
             "mujoco_version": source.mujoco_version,
             "primary_xml_bytes": len(source.primary_xml),
-            "archive_bytes": len(source.archive_bytes), "model_binary_bytes": len(source.model_binary),
-        }, "derived_timestep": derived,
-        "mujoco_version": mj.__version__, "capabilities": capabilities,
-        "nq": model.nq, "nv": model.nv, "nu": model.nu,
-        "nbody": model.nbody, "ngeom": model.ngeom, "njnt": model.njnt,
-        "source_options": {"h": model.opt.timestep, "iterations": model.opt.iterations,
-                           "tolerance": model.opt.tolerance, "cone": int(model.opt.cone),
-                           "impratio": model.opt.impratio, "integrator": int(model.opt.integrator),
-                           "gravity": model.opt.gravity.copy()},
-        "bodies": {"names": [mj.mj_id2name(model, mj.mjtObj.mjOBJ_BODY, i)
-                              for i in range(model.nbody)],
-                   "parent": model.body_parentid.copy(), "mass": model.body_mass.copy(),
-                   "inertia": model.body_inertia.copy(), "inertial_position": model.body_ipos.copy(),
-                   "inertial_quaternion": model.body_iquat.copy()},
-        "joints": {"names": protocol.names, "type": model.jnt_type.copy(),
-                   "qpos_address": model.jnt_qposadr.copy(), "dof_address": model.jnt_dofadr.copy(),
-                   "limited": model.jnt_limited.copy(), "range": model.jnt_range.copy(),
-                   "margin": model.jnt_margin.copy(), "armature": model.dof_armature.copy(),
-                   "damping": model.dof_damping.copy(), "frictionloss": model.dof_frictionloss.copy()},
-        "actuators": {"joint": model.actuator_trnid.copy(), "gear": model.actuator_gear.copy(),
-                      "ctrl_limited": model.actuator_ctrllimited.copy(),
-                      "ctrl_range": model.actuator_ctrlrange.copy(),
-                      "force_limited": model.actuator_forcelimited.copy(),
-                      "force_range": model.actuator_forcerange.copy(),
-                      "gain": model.actuator_gainprm.copy(), "bias": model.actuator_biasprm.copy()},
-        "geometries": {"names": [mj.mj_id2name(model, mj.mjtObj.mjOBJ_GEOM, g)
-                                   for g in range(model.ngeom)],
-                       "body": model.geom_bodyid.copy(), "type": model.geom_type.copy(),
-                       "size": model.geom_size.copy(), "condim": model.geom_condim.copy(),
-                       "contype": model.geom_contype.copy(), "conaffinity": model.geom_conaffinity.copy(),
-                       "friction": model.geom_friction.copy(), "priority": model.geom_priority.copy(),
-                       "local_position": model.geom_pos.copy(), "local_quaternion": model.geom_quat.copy(),
-                       "solref": model.geom_solref.copy(), "solimp": model.geom_solimp.copy(),
-                       "margin": model.geom_margin.copy(), "gap": model.geom_gap.copy()},
+            "archive_bytes": len(source.archive_bytes),
+            "model_binary_bytes": len(source.model_binary),
+        },
+        "derived_timestep": derived,
+        "mujoco_version": mj.__version__,
+        "capabilities": capabilities,
+        "nq": model.nq,
+        "nv": model.nv,
+        "nu": model.nu,
+        "nbody": model.nbody,
+        "ngeom": model.ngeom,
+        "njnt": model.njnt,
+        "source_options": {
+            "h": model.opt.timestep,
+            "iterations": model.opt.iterations,
+            "tolerance": model.opt.tolerance,
+            "cone": int(model.opt.cone),
+            "impratio": model.opt.impratio,
+            "integrator": int(model.opt.integrator),
+            "gravity": model.opt.gravity.copy(),
+        },
+        "bodies": {
+            "names": [mj.mj_id2name(model, mj.mjtObj.mjOBJ_BODY, i) for i in range(model.nbody)],
+            "parent": model.body_parentid.copy(),
+            "mass": model.body_mass.copy(),
+            "inertia": model.body_inertia.copy(),
+            "inertial_position": model.body_ipos.copy(),
+            "inertial_quaternion": model.body_iquat.copy(),
+        },
+        "joints": {
+            "names": protocol.names,
+            "type": model.jnt_type.copy(),
+            "qpos_address": model.jnt_qposadr.copy(),
+            "dof_address": model.jnt_dofadr.copy(),
+            "limited": model.jnt_limited.copy(),
+            "range": model.jnt_range.copy(),
+            "margin": model.jnt_margin.copy(),
+            "armature": model.dof_armature.copy(),
+            "damping": model.dof_damping.copy(),
+            "frictionloss": model.dof_frictionloss.copy(),
+        },
+        "actuators": {
+            "joint": model.actuator_trnid.copy(),
+            "gear": model.actuator_gear.copy(),
+            "ctrl_limited": model.actuator_ctrllimited.copy(),
+            "ctrl_range": model.actuator_ctrlrange.copy(),
+            "force_limited": model.actuator_forcelimited.copy(),
+            "force_range": model.actuator_forcerange.copy(),
+            "gain": model.actuator_gainprm.copy(),
+            "bias": model.actuator_biasprm.copy(),
+        },
+        "geometries": {
+            "names": [mj.mj_id2name(model, mj.mjtObj.mjOBJ_GEOM, g) for g in range(model.ngeom)],
+            "body": model.geom_bodyid.copy(),
+            "type": model.geom_type.copy(),
+            "size": model.geom_size.copy(),
+            "condim": model.geom_condim.copy(),
+            "contype": model.geom_contype.copy(),
+            "conaffinity": model.geom_conaffinity.copy(),
+            "friction": model.geom_friction.copy(),
+            "priority": model.geom_priority.copy(),
+            "local_position": model.geom_pos.copy(),
+            "local_quaternion": model.geom_quat.copy(),
+            "solref": model.geom_solref.copy(),
+            "solimp": model.geom_solimp.copy(),
+            "margin": model.geom_margin.copy(),
+            "gap": model.geom_gap.copy(),
+        },
         "exclude_signature": model.exclude_signature.copy(),
         "foot_geometry_to_side": protocol.foot_geoms,
         "foot_geometry_count": len(protocol.foot_geoms),
-        "policy_provider": protocol.session.get_providers(), "gates": GATES,
+        "policy_provider": protocol.session.get_providers(),
+        "gates": GATES,
         "observation": "snapshot is a detached CPU FK observer; device loads come only from last_step",
         "native_oracles": "same-input forward and independent feedback CPU trajectory are distinct",
         "dance_scope": "at most 20 seconds, not the complete 131.48-second motion",
@@ -801,9 +981,13 @@ def endpoint_foot_centers(protocol, q):
 
 def runtime_for(compilation, q, v, time, mode, cache_root):
     return MuJoCoRuntime(
-        compilation, mode=mode, world_keys=(0,),
+        compilation,
+        mode=mode,
+        world_keys=(0,),
         initial_states={0: MuJoCoInitialState(q=q, v=v, time=time)},
-        contact_capacity=128, constraint_capacity=512, cache_root=cache_root,
+        contact_capacity=128,
+        constraint_capacity=512,
+        cache_root=cache_root,
     )
 
 
@@ -818,11 +1002,16 @@ def step_with_failure_capture(runtime, h, journal, **context):
             scratch = runtime._device.download()
         except Exception as download_error:
             scratch = {"download_failure": repr(download_error)}
-        journal.write("rejected_device_candidate", durable=True,
-                      full_failed_device_scratch=scratch,
-                      additional_step_calls=0, diagnostic_download_only=True,
-                      counters=runtime.counters, context=context,
-                      traceback=traceback.format_exc())
+        journal.write(
+            "rejected_device_candidate",
+            durable=True,
+            full_failed_device_scratch=scratch,
+            additional_step_calls=0,
+            diagnostic_download_only=True,
+            counters=runtime.counters,
+            context=context,
+            traceback=traceback.format_exc(),
+        )
         raise
 
 
@@ -833,24 +1022,48 @@ def snapshots(args, journal, protocol, compilation, derived):
         time = 0.0 if frame is None else frame / 50
         with runtime_for(compilation, q, v, time, args.mode, args.cache_root) as runtime:
             state = runtime.snapshot()[0]
-            journal.write("snapshot_initial", label=label, state=compact_state(state),
-                          inventory=inventory(protocol, compilation, derived, runtime.capabilities))
+            journal.write(
+                "snapshot_initial",
+                label=label,
+                state=compact_state(state),
+                inventory=inventory(protocol, compilation, derived, runtime.capabilities),
+            )
             controller = Controller(protocol, state.q, args.h, stand=frame is None)
             proposal = controller.propose(state.q, state.v, state.time, 0)
             packet = packet_for(protocol, proposal, 0.0, 0)
             stored = stored_packet(packet)
             native, native_data = native_oracle(
-                protocol.model, state.q, state.v, stored, state.time, full=True)
-            journal.write("snapshot_attempt", durable=True, label=label, input=compact_state(state),
-                          control=stored, policy=proposal, same_input_native=native)
+                protocol.model, state.q, state.v, stored, state.time, full=True
+            )
+            journal.write(
+                "snapshot_attempt",
+                durable=True,
+                label=label,
+                input=compact_state(state),
+                control=stored,
+                policy=proposal,
+                same_input_native=native,
+            )
             runtime.set_controls({0: packet})
-            step_with_failure_capture(runtime, args.h, journal, phase="snapshots", label=label,
-                                      input=compact_state(state), control=stored)
+            step_with_failure_capture(
+                runtime,
+                args.h,
+                journal,
+                phase="snapshots",
+                label=label,
+                input=compact_state(state),
+                control=stored,
+            )
             after = runtime.snapshot()[0]
             receipt = after.last_step
             input_checks(receipt, state, stored)
-            journal.write("snapshot_device_receipt", durable=True, label=label,
-                          state=compact_state(after), full_device_receipt=receipt)
+            journal.write(
+                "snapshot_device_receipt",
+                durable=True,
+                label=label,
+                state=compact_state(after),
+                full_device_receipt=receipt,
+            )
             comparison = compare_receipt(protocol.model, receipt, native)
             kkt = independent_kkt(receipt)
             actuator = actuator_check(protocol, receipt)
@@ -860,17 +1073,33 @@ def snapshots(args, journal, protocol, compilation, derived):
             compare_array(endpoint, "q", after.q, native_data.qpos, 0, 2e-4)
             compare_array(endpoint, "v", after.v, native_data.qvel, 0, 3e-3)
             compare_array(endpoint, "time", after.time, native_data.time, 0, 2e-6)
-            passed = comparison["passed"] and kkt["passed"] and actuator["passed"] and all(
-                check["passed"] for check in endpoint)
-            journal.write("snapshot_result", durable=True, label=label, passed=passed,
-                          state=compact_state(after), full_device_receipt=receipt,
-                          same_input_native=native, comparison=comparison, kkt=kkt,
-                          actuator=actuator, endpoint_checks=endpoint)
+            passed = (
+                comparison["passed"]
+                and kkt["passed"]
+                and actuator["passed"]
+                and all(check["passed"] for check in endpoint)
+            )
+            journal.write(
+                "snapshot_result",
+                durable=True,
+                label=label,
+                passed=passed,
+                state=compact_state(after),
+                full_device_receipt=receipt,
+                same_input_native=native,
+                comparison=comparison,
+                kkt=kkt,
+                actuator=actuator,
+                endpoint_checks=endpoint,
+            )
             outcomes.append({"label": label, "passed": passed})
             if not passed:
                 break
-    return {"status": "PASS" if len(outcomes) == 3 and all(x["passed"] for x in outcomes)
-            else "FAIL", "phase": "snapshots", "outcomes": outcomes}
+    return {
+        "status": "PASS" if len(outcomes) == 3 and all(x["passed"] for x in outcomes) else "FAIL",
+        "phase": "snapshots",
+        "outcomes": outcomes,
+    }
 
 
 def trajectory(args, journal, protocol, compilation, derived):
@@ -892,11 +1121,14 @@ def trajectory(args, journal, protocol, compilation, derived):
         initial_feet = foot_centers(protocol, state.geometry_positions)
         device_stats.foot_origin = initial_feet[:, :2].copy()
         cpu_stats.foot_origin = initial_feet[:, :2].copy()
-        journal.write("trajectory_initial", durable=True,
-                      state=compact_state(state), independent_cpu_initial={
-                          "q": cpu.qpos.copy(), "v": cpu.qvel.copy(), "time": cpu.time},
-                      inventory=inventory(protocol, compilation, derived, runtime.capabilities),
-                      policy_history="zeros at initial state; commits only after successful step")
+        journal.write(
+            "trajectory_initial",
+            durable=True,
+            state=compact_state(state),
+            independent_cpu_initial={"q": cpu.qpos.copy(), "v": cpu.qvel.copy(), "time": cpu.time},
+            inventory=inventory(protocol, compilation, derived, runtime.capabilities),
+            policy_history="zeros at initial state; commits only after successful step",
+        )
         for tick in range(count):
             grid_time = tick * h
             output_grid_time = (tick + 1) * h
@@ -909,14 +1141,27 @@ def trajectory(args, journal, protocol, compilation, derived):
                 packet = packet_for(protocol, proposal, grid_time, args.push_sign)
                 stored = stored_packet(packet)
                 native, native_data = native_oracle(
-                    model, state.q, state.v, stored, state.time, full=selected)
+                    model, state.q, state.v, stored, state.time, full=selected
+                )
                 same_input_forwards += 1
-                journal.write("attempt", durable=selected, input=compact_state(state),
-                              source_grid_time=grid_time, requested_control=packet,
-                              stored_oracle_control=stored, policy=proposal)
+                journal.write(
+                    "attempt",
+                    durable=selected,
+                    input=compact_state(state),
+                    source_grid_time=grid_time,
+                    requested_control=packet,
+                    stored_oracle_control=stored,
+                    policy=proposal,
+                )
                 runtime.set_controls({0: packet})
-                step_with_failure_capture(runtime, h, journal, phase=args.phase,
-                                          input=compact_state(state), control=stored)
+                step_with_failure_capture(
+                    runtime,
+                    h,
+                    journal,
+                    phase=args.phase,
+                    input=compact_state(state),
+                    control=stored,
+                )
                 after = runtime.snapshot()[0]
                 receipt = after.last_step
                 if after.tick != tick + 1 or abs(after.time - output_grid_time) > 2e-6:
@@ -924,12 +1169,20 @@ def trajectory(args, journal, protocol, compilation, derived):
                 input_checks(receipt, state, stored)
                 device_controller.commit(proposal)
                 actuator = actuator_check(protocol, receipt)
-                loads = support(protocol, receipt.contacts, receipt.input_v, receipt.dynamics.body_com)
+                loads = support(
+                    protocol, receipt.contacts, receipt.input_v, receipt.dynamics.body_com
+                )
                 energy = receipt_energy(model, receipt)
                 metrics, events, device_failures, balance = device_stats.update(
-                    after.q, after.v, after.time, receipt.input_time, loads, energy,
-                    foot_centers(protocol, after.geometry_positions) if stand else
-                    foot_centers(protocol, state.geometry_positions),
+                    after.q,
+                    after.v,
+                    after.time,
+                    receipt.input_time,
+                    loads,
+                    energy,
+                    foot_centers(protocol, after.geometry_positions)
+                    if stand
+                    else foot_centers(protocol, state.geometry_positions),
                 )
                 if not actuator["passed"]:
                     device_failures.append("actuator_limit")
@@ -944,9 +1197,14 @@ def trajectory(args, journal, protocol, compilation, derived):
                 mj.mj_step(model, cpu)
                 cpu_steps += 1
                 if abs(float(cpu.time) - (cpu_time + h)) > 2e-12:
-                    raise RuntimeError("native reference time changed unexpectedly; possible auto-reset")
-                for warning in (mj.mjtWarning.mjWARN_BADQPOS, mj.mjtWarning.mjWARN_BADQVEL,
-                                mj.mjtWarning.mjWARN_BADQACC):
+                    raise RuntimeError(
+                        "native reference time changed unexpectedly; possible auto-reset"
+                    )
+                for warning in (
+                    mj.mjtWarning.mjWARN_BADQPOS,
+                    mj.mjtWarning.mjWARN_BADQVEL,
+                    mj.mjtWarning.mjWARN_BADQACC,
+                ):
                     if cpu.warning[int(warning)].number != warnings_before[int(warning)]:
                         raise RuntimeError("native reference reported invalid state/acceleration")
                 # Euler's cached M/FK/contact fields are the just-completed input
@@ -955,31 +1213,52 @@ def trajectory(args, journal, protocol, compilation, derived):
                 cpu_controller.commit(cpu_proposal)
                 cpu_loads = support(protocol, cpu_fields["contacts"], cpu_v, cpu_fields["body_com"])
                 cpu_metrics, cpu_events, cpu_failures, cpu_balance = cpu_stats.update(
-                    cpu.qpos, cpu.qvel, cpu.time, cpu_time, cpu_loads, cpu_fields["energy"],
-                    endpoint_foot_centers(protocol, cpu.qpos) if stand else
-                    foot_centers(protocol, cpu_fields["geom_position"]),
+                    cpu.qpos,
+                    cpu.qvel,
+                    cpu.time,
+                    cpu_time,
+                    cpu_loads,
+                    cpu_fields["energy"],
+                    endpoint_foot_centers(protocol, cpu.qpos)
+                    if stand
+                    else foot_centers(protocol, cpu_fields["geom_position"]),
                 )
                 operation = "device_or_harness"
-                aggregate_failure = (
-                    [{"trajectory": "device", "gate": item} for item in device_failures]
-                    + [{"trajectory": "native_reference", "gate": item} for item in cpu_failures]
-                )
+                aggregate_failure = [
+                    {"trajectory": "device", "gate": item} for item in device_failures
+                ] + [{"trajectory": "native_reference", "gate": item} for item in cpu_failures]
                 if at_two or tick + 1 == count:
                     assessed = output_grid_time >= 2.0
                     device_summary = device_stats.summary(assessed=assessed)
                     cpu_summary = cpu_stats.summary(assessed=assessed)
                     aggregate_failure.extend(
                         {"trajectory": lane, "gate": gate}
-                        for lane, summary in (("device", device_summary), ("native_reference", cpu_summary))
+                        for lane, summary in (
+                            ("device", device_summary),
+                            ("native_reference", cpu_summary),
+                        )
                         for gate in summary["checkpoint_failures"]
                     )
-                    checkpoint = {"source_time": output_grid_time,
-                                  "device": device_summary, "independent_cpu": cpu_summary}
+                    checkpoint = {
+                        "source_time": output_grid_time,
+                        "device": device_summary,
+                        "independent_cpu": cpu_summary,
+                    }
                     checkpoints.append(checkpoint)
-                    journal.write("checkpoint", durable=True, **checkpoint,
-                                  same_runtime_continues=at_two and count > tick + 1)
+                    journal.write(
+                        "checkpoint",
+                        durable=True,
+                        **checkpoint,
+                        same_runtime_continues=at_two and count > tick + 1,
+                    )
                 constraint_identity = tuple(
-                    (row.constraint_type, row.source_id, row.side_or_edge, row.geometry_slot, row.dof)
+                    (
+                        row.constraint_type,
+                        row.source_id,
+                        row.side_or_edge,
+                        row.geometry_slot,
+                        row.dof,
+                    )
                     for row in receipt.constraints
                 )
                 identity_changed = constraint_identity != previous_constraint_identity
@@ -991,39 +1270,68 @@ def trajectory(args, journal, protocol, compilation, derived):
                     native = native_fields(model, native_data, state.q, state.v, stored, full=True)
                     cpu_fields = native_fields(model, cpu, cpu_q, cpu_v, cpu_packet, full=True)
                 journal.write(
-                    "step", durable=full_selected,
-                    full_capture_reasons={"fixed_checkpoint": selected,
-                                          "foot_event": bool(events or cpu_events),
-                                          "constraint_identity_changed": identity_changed,
-                                          "first_failure": bool(aggregate_failure)},
+                    "step",
+                    durable=full_selected,
+                    full_capture_reasons={
+                        "fixed_checkpoint": selected,
+                        "foot_event": bool(events or cpu_events),
+                        "constraint_identity_changed": identity_changed,
+                        "first_failure": bool(aggregate_failure),
+                    },
                     constraint_identity=constraint_identity,
-                    source_grid_time=grid_time, source_output_time=output_grid_time,
-                    device={"state": compact_state(after), "input_time": receipt.input_time,
-                            "control": receipt.stored_control, "policy": proposal,
-                            "contacts": contact_rows(receipt.contacts), "support": loads,
-                            "metrics": metrics, "events": events, "energy": energy,
-                            "input_energy_balance": balance, "actuator": actuator,
-                            "constraint_type_force": [
-                                {"type": row.constraint_type, "source": row.source_id,
-                                 "side_or_edge": row.side_or_edge, "force": row.force,
-                                 "velocity": row.velocity, "position": row.position}
-                                for row in receipt.constraints],
-                            "qfrc_constraint": receipt.qfrc_constraint,
-                            "full_receipt": receipt if full_selected else None},
+                    source_grid_time=grid_time,
+                    source_output_time=output_grid_time,
+                    device={
+                        "state": compact_state(after),
+                        "input_time": receipt.input_time,
+                        "control": receipt.stored_control,
+                        "policy": proposal,
+                        "contacts": contact_rows(receipt.contacts),
+                        "support": loads,
+                        "metrics": metrics,
+                        "events": events,
+                        "energy": energy,
+                        "input_energy_balance": balance,
+                        "actuator": actuator,
+                        "constraint_type_force": [
+                            {
+                                "type": row.constraint_type,
+                                "source": row.source_id,
+                                "side_or_edge": row.side_or_edge,
+                                "force": row.force,
+                                "velocity": row.velocity,
+                                "position": row.position,
+                            }
+                            for row in receipt.constraints
+                        ],
+                        "qfrc_constraint": receipt.qfrc_constraint,
+                        "full_receipt": receipt if full_selected else None,
+                    },
                     same_input_native={
                         "contacts": contact_rows(native["contacts"]),
-                        "qacc": native["qacc"], "qfrc_constraint": native["qfrc_constraint"],
+                        "qacc": native["qacc"],
+                        "qfrc_constraint": native["qfrc_constraint"],
                         "energy": native["energy"],
-                        "full_fields": native if full_selected else None},
+                        "full_fields": native if full_selected else None,
+                    },
                     independent_cpu={
-                        "input_q": cpu_q, "input_v": cpu_v, "input_time": cpu_time,
-                        "q": cpu.qpos.copy(), "v": cpu.qvel.copy(), "time": float(cpu.time),
-                        "control": cpu_packet, "policy": cpu_proposal,
-                        "contacts": contact_rows(cpu_fields["contacts"]), "support": cpu_loads,
-                        "metrics": cpu_metrics, "events": cpu_events, "energy": cpu_fields["energy"],
+                        "input_q": cpu_q,
+                        "input_v": cpu_v,
+                        "input_time": cpu_time,
+                        "q": cpu.qpos.copy(),
+                        "v": cpu.qvel.copy(),
+                        "time": float(cpu.time),
+                        "control": cpu_packet,
+                        "policy": cpu_proposal,
+                        "contacts": contact_rows(cpu_fields["contacts"]),
+                        "support": cpu_loads,
+                        "metrics": cpu_metrics,
+                        "events": cpu_events,
+                        "energy": cpu_fields["energy"],
                         "input_energy_balance": cpu_balance,
                         "qfrc_constraint": cpu_fields["qfrc_constraint"],
-                        "full_fields": cpu_fields if full_selected else None},
+                        "full_fields": cpu_fields if full_selected else None,
+                    },
                     failures=aggregate_failure,
                 )
                 state = after
@@ -1032,37 +1340,55 @@ def trajectory(args, journal, protocol, compilation, derived):
                     failures = aggregate_failure
                     break
             except Exception as error:
-                failures = [{"trajectory": operation, "gate": type(error).__name__,
-                             "message": str(error)}]
+                failures = [
+                    {"trajectory": operation, "gate": type(error).__name__, "message": str(error)}
+                ]
                 full_native = None
                 if native_data is not None:
                     try:
                         full_native = native_fields(
-                            model, native_data, state.q, state.v, stored, full=True)
+                            model, native_data, state.q, state.v, stored, full=True
+                        )
                     except Exception as diagnostic_error:
                         full_native = {"diagnostic_error": repr(diagnostic_error)}
                 journal.write(
-                    "first_failure", durable=True, source_grid_time=grid_time,
-                    input=compact_state(state), requested_control=packet, policy=proposal,
-                    full_device_receipt=receipt, same_input_native=full_native,
-                    independent_cpu_last={"q": cpu.qpos.copy(), "v": cpu.qvel.copy(),
-                                          "time": float(cpu.time)},
-                    failures=failures, traceback=traceback.format_exc(),
+                    "first_failure",
+                    durable=True,
+                    source_grid_time=grid_time,
+                    input=compact_state(state),
+                    requested_control=packet,
+                    policy=proposal,
+                    full_device_receipt=receipt,
+                    same_input_native=full_native,
+                    independent_cpu_last={
+                        "q": cpu.qpos.copy(),
+                        "v": cpu.qvel.copy(),
+                        "time": float(cpu.time),
+                    },
+                    failures=failures,
+                    traceback=traceback.format_exc(),
                 )
                 break
         assessed = count * h >= 2.0
         completed = device_stats.steps == count and not failures
         return {
             "phase": args.phase,
-            "status": "FAIL" if failures else "PASS" if completed and assessed else "DIAGNOSTIC_ONLY",
+            "status": "FAIL"
+            if failures
+            else "PASS"
+            if completed and assessed
+            else "DIAGNOSTIC_ONLY",
             "complete_requested_window": completed,
             "requested_duration": args.duration,
             "device": device_stats.summary(assessed=assessed and completed),
             "independent_cpu": cpu_stats.summary(assessed=assessed and completed),
-            "checkpoints": checkpoints, "failures": failures,
+            "checkpoints": checkpoints,
+            "failures": failures,
             "same_input_native_forward_calls": same_input_forwards,
-            "independent_native_steps": cpu_steps, "runtime_counters": runtime.counters,
-            "continuous_runtime": True, "resets_after_initialization": 0,
+            "independent_native_steps": cpu_steps,
+            "runtime_counters": runtime.counters,
+            "continuous_runtime": True,
+            "resets_after_initialization": 0,
             "stand_is_diagnostic": stand,
         }
 
@@ -1072,8 +1398,9 @@ def parse_args():
     parser.add_argument("--assets", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--mode", choices=("interpret", "cuda"), required=True)
-    parser.add_argument("--phase", choices=("admission", "snapshots", "trajectory", "stand"),
-                        default="trajectory")
+    parser.add_argument(
+        "--phase", choices=("admission", "snapshots", "trajectory", "stand"), default="trajectory"
+    )
     parser.add_argument("--h", type=float, choices=(0.001, 0.002), default=0.002)
     parser.add_argument("--duration", type=float, default=2.0)
     parser.add_argument("--push-sign", type=int, choices=(-1, 0, 1), default=0)
@@ -1100,29 +1427,48 @@ def main():
         if mj.__version__ != "3.3.7":
             raise ValueError("this harness binds the predeclared MuJoCo 3.3.7 oracle")
         initial_bindings = {name: binding(args.assets / name) for name in FILES}
-        journal.write("source_binding", durable=True, files=initial_bindings,
-                      harness=binding(Path(__file__)), options=vars(args),
-                      execution_role="parent-owned serial queue; no CPU fallback",
-                      status="RUNNING")
+        journal.write(
+            "source_binding",
+            durable=True,
+            files=initial_bindings,
+            harness=binding(Path(__file__)),
+            options=vars(args),
+            execution_role="parent-owned serial queue; no CPU fallback",
+            status="RUNNING",
+        )
         compilation, model, derived = compile_source(args.assets, args.h)
         protocol = Protocol(model, args.assets)
         if args.phase == "admission":
             q, v = protocol.initial(0)
             with runtime_for(compilation, q, v, 0.0, args.mode, args.cache_root) as runtime:
-                journal.write("admission", durable=True,
-                              inventory=inventory(protocol, compilation, derived, runtime.capabilities),
-                              state=compact_state(runtime.snapshot()[0]))
-                summary = {"status": "ADMITTED_NOT_PHYSICS", "phase": "admission",
-                           "runtime_counters": runtime.counters}
+                journal.write(
+                    "admission",
+                    durable=True,
+                    inventory=inventory(protocol, compilation, derived, runtime.capabilities),
+                    state=compact_state(runtime.snapshot()[0]),
+                )
+                summary = {
+                    "status": "ADMITTED_NOT_PHYSICS",
+                    "phase": "admission",
+                    "runtime_counters": runtime.counters,
+                }
         elif args.phase == "snapshots":
             summary = snapshots(args, journal, protocol, compilation, derived)
         else:
             summary = trajectory(args, journal, protocol, compilation, derived)
     except Exception as error:
-        journal.write("first_failure", durable=True, error_type=type(error).__name__,
-                      message=str(error), traceback=traceback.format_exc())
-        summary = {"status": "FAIL", "phase": args.phase,
-                   "failure": {"type": type(error).__name__, "message": str(error)}}
+        journal.write(
+            "first_failure",
+            durable=True,
+            error_type=type(error).__name__,
+            message=str(error),
+            traceback=traceback.format_exc(),
+        )
+        summary = {
+            "status": "FAIL",
+            "phase": args.phase,
+            "failure": {"type": type(error).__name__, "message": str(error)},
+        }
     finally:
         try:
             final_bindings = {name: binding(args.assets / name) for name in FILES}
@@ -1132,7 +1478,9 @@ def main():
             summary["final_bindings"] = final_bindings
             if not unchanged:
                 summary["status"] = "FAIL"
-                summary["source_binding_failure"] = "start/end file bindings differ or start incomplete"
+                summary["source_binding_failure"] = (
+                    "start/end file bindings differ or start incomplete"
+                )
         except Exception as error:
             summary = {} if summary is None else summary
             summary["status"] = "FAIL"

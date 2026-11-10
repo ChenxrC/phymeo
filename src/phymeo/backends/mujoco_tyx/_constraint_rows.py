@@ -10,54 +10,6 @@
 import tyx as tx
 
 
-@tx.func
-def _power(value: tx.f32, exponent: tx.f32) -> tx.f32:
-    result = value
-    if exponent == 2.0:
-        result = value * value
-    elif exponent != 1.0:
-        result = tx.pow(value, exponent)
-    return result
-
-
-@tx.func
-def _impedance(
-    position: tx.f32,
-    dmin: tx.f32,
-    dmax: tx.f32,
-    width: tx.f32,
-    midpoint: tx.f32,
-    power: tx.f32,
-    minimum: tx.f32,
-) -> tx.f32:
-    # Endpoints are individually clamped by the caller, never sorted.
-    result = 0.5 * (dmin + dmax)
-    if dmin != dmax and width > minimum:
-        x = tx.abs(position / width)
-        result = dmin
-        if x >= 1.0:
-            result = dmax
-        elif x > 0.0:
-            y = x
-            valid = 1
-            if power != 1.0:
-                denominator = _power(midpoint, power - 1.0)
-                if x > midpoint:
-                    denominator = _power(1.0 - midpoint, power - 1.0)
-                if not tx.isfinite(denominator) or denominator <= 0.0:
-                    valid = 0
-                elif x <= midpoint:
-                    y = (1.0 / denominator) * _power(x, power)
-                else:
-                    y = 1.0 - (1.0 / denominator) * _power(1.0 - x, power)
-            result = 0.0
-            if valid == 1:
-                result = dmin + y * (dmax - dmin)
-            # Zero is outside the admitted impedance interval: the caller
-            # reports status 2 rather than repairing an underflowed power.
-    return result
-
-
 def assemble(
     count: tx.i32,
     nv: tx.i32,
@@ -322,9 +274,38 @@ def assemble(
                     midpoint = tx.min(maximp, tx.max(minimp, raw_midpoint))
                     power = tx.max(1.0, raw_power)
                     position = efc_data[w, r, 0] - efc_data[w, r, 1]
-                    impedance = _impedance(
-                        position, dmin, dmax, law_width, midpoint, power, minimum
-                    )
+                    impedance = 0.5 * (dmin + dmax)
+                    if dmin != dmax and law_width > minimum:
+                        x = tx.abs(position / law_width)
+                        impedance = dmin
+                        if x >= 1.0:
+                            impedance = dmax
+                        elif x > 0.0:
+                            y = x
+                            valid = 1
+                            if power != 1.0:
+                                base = midpoint
+                                numerator_base = x
+                                if x > midpoint:
+                                    base = 1.0 - midpoint
+                                    numerator_base = 1.0 - x
+                                denominator = base
+                                if power == 3.0:
+                                    denominator = base * base
+                                elif power != 2.0:
+                                    denominator = tx.pow(base, power - 1.0)
+                                numerator = numerator_base * numerator_base
+                                if power != 2.0:
+                                    numerator = tx.pow(numerator_base, power)
+                                if not tx.isfinite(denominator) or denominator <= 0.0:
+                                    valid = 0
+                                else:
+                                    y = (1.0 / denominator) * numerator
+                                    if x > midpoint:
+                                        y = 1.0 - y
+                            impedance = 0.0
+                            if valid == 1:
+                                impedance = dmin + y * (dmax - dmin)
                     if (
                         found != 1
                         or not tx.isfinite(impedance)
@@ -365,15 +346,12 @@ def assemble(
                                 status[w] = 2
                             else:
                                 efc_data[w, r, 3] = (
-                                    -damping * efc_data[w, r, 2]
-                                    - stiffness * impedance * position
+                                    -damping * efc_data[w, r, 2] - stiffness * impedance * position
                                 )
                                 efc_data[w, r, 4] = regularization
                                 efc_data[w, r, 5] = 1.0 / regularization
                                 efc_data[w, r, 6] = impedance
-                                efc_data[w, r, 13] = (
-                                    regularization * impedance / (1.0 - impedance)
-                                )
+                                efc_data[w, r, 13] = regularization * impedance / (1.0 - impedance)
                     for k in range(14):
                         if not tx.isfinite(efc_data[w, r, k]):
                             status[w] = 2
@@ -445,9 +423,9 @@ def decode(
                                     for component in range(1, dim):
                                         plus = efc_data[w, first + 2 * (component - 1), 9]
                                         minus = efc_data[w, first + 2 * (component - 1) + 1, 9]
-                                        contact_wrench[w, c, component] = (
-                                            pair_friction[pair, component - 1] * (plus - minus)
-                                        )
+                                        contact_wrench[w, c, component] = pair_friction[
+                                            pair, component - 1
+                                        ] * (plus - minus)
                         elif first != -1:
                             status[w] = 2
                         for k in range(6):

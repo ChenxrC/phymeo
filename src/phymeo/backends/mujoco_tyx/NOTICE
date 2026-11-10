@@ -64,3 +64,13 @@ The CPU parallel capsule manifold, box distance and stable filter/dedup rules
 take precedence over differing mujoco-warp v0.0.2 primitive-core behavior.
 The imperative algorithms use new bounded TYX buffers/loops, with full raw
 box candidate storage instead of truncation to Warp's eight outputs.
+
+T4 mixed constraints (_constraint_*): scalar joint-limit and DOF dry-friction
+rows, condim1/3/4/6 pyramidal edge construction, impedance, regularization,
+reference acceleration and wrench decoding follow MuJoCo 3.3.7
+engine_core_constraint.c, engine_collision_driver.c and engine_support.c,
+Copyright 2021 DeepMind Technologies Limited. The source comparison includes
+MuJoCo-Warp 0.0.2 constraint.py; CPU semantics take precedence where they differ.
+Phymeo supplies an independent TYX primal-face box-QP solver and stable active
+row compaction. It preserves the full physical mass coupling and separately
+integrates implicit Euler damping. No native CPU/Warp solver executes per step.

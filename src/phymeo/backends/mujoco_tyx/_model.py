@@ -88,8 +88,12 @@ def _mix_contact(model, left, right, mj):
 
 
 def compile_model(mj, model):
+    from ._constraint_model import compile_constraint_model, constraint_pairs, needs_constraints
     from ._normal_model import compile_normal_model, possible_pairs
 
+    candidate_pairs = constraint_pairs(model)
+    if needs_constraints(mj, model, candidate_pairs):
+        return compile_constraint_model(mj, model, candidate_pairs)
     free_ids = np.flatnonzero(model.jnt_type == mj.mjtJoint.mjJNT_FREE)
     legacy_free = False
     if len(free_ids):

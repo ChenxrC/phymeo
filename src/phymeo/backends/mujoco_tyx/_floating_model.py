@@ -22,7 +22,7 @@ class TyxFloatingModel(TyxTreeModel):
     root_body: int
 
 
-def compile_floating_model(mj, model, *, allow_normal_contacts=False):
+def compile_floating_model(mj, model, *, allow_normal_contacts=False, allow_constraints=False):
     issues = []
 
     def issue(code, detail):
@@ -68,7 +68,7 @@ def compile_floating_model(mj, model, *, allow_normal_contacts=False):
         ("npair", "explicit-pairs"),
         ("nexclude", "explicit-excludes"),
     ):
-        if int(getattr(model, field, 0)):
+        if int(getattr(model, field, 0)) and not (allow_constraints and field == "nexclude"):
             issue(code, f"native {field} is not migrated in T2")
     if model.na:
         issue("actuator-state", "activation dynamics are not migrated")
@@ -90,7 +90,7 @@ def compile_floating_model(mj, model, *, allow_normal_contacts=False):
         issue("option-flags", "nondefault native simulation flags are not migrated")
     if np.any(model.opt.wind) or model.opt.viscosity or model.opt.density:
         issue("fluid", "fluid dynamics are not migrated")
-    if np.any(model.body_gravcomp) or np.any(model.dof_frictionloss):
+    if np.any(model.body_gravcomp) or (np.any(model.dof_frictionloss) and not allow_constraints):
         issue("passive", "gravity compensation and dry joint friction are not migrated")
     if np.any(model.dof_armature < 0) or np.any(model.dof_damping < 0):
         issue("passive", "negative reflected inertia/damping is outside T2")
@@ -161,7 +161,7 @@ def compile_floating_model(mj, model, *, allow_normal_contacts=False):
         vectors[2, dof] = model.jnt_stiffness[joint]
         vectors[3, dof] = model.qpos_spring[q]
         vectors[5, dof] = model.dof_armature[dof]
-        if model.jnt_limited[joint]:
+        if model.jnt_limited[joint] and not allow_constraints:
             low, high = model.jnt_range[joint]
             margin = model.jnt_margin[joint]
             vectors[7, dof], vectors[8, dof] = low + margin, high - margin

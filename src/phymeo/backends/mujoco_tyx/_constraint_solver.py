@@ -185,10 +185,7 @@ def solve(
                         value = value + efc_J[w, r, i] * efc_data[w, r, 9]
                     constraint[w, i] = value
                     total_applied[w, i] = applied[w, i] + value
-                    if (
-                        not tx.isfinite(value)
-                        or not tx.isfinite(total_applied[w, i])
-                    ):
+                    if not tx.isfinite(value) or not tx.isfinite(total_applied[w, i]):
                         status[w] = 2
                 for i in range(nv):
                     value = total_applied[w, i] + passive[w, i] - bias[w, i]
@@ -279,19 +276,16 @@ def solve(
                     # Internal blocking repairs cannot immediately re-add the hits.
                     if refine_face == 0:
                         for r in range(nrow):
-                            if (
-                                working[w, r] == 0
-                                and efc_data[w, r, 10] < 0.0
-                            ):
+                            if working[w, r] == 0 and efc_data[w, r, 10] < 0.0:
                                 working[w, r] = 1
-                            elif (
-                                working[w, r] == 2
-                                and efc_data[w, r, 10] > 0.0
-                            ):
+                            elif working[w, r] == 2 and efc_data[w, r, 10] > 0.0:
                                 working[w, r] = 1
-                    # H=M+J_F^T D_F J_F, rhs=rhs0+J_F^T D_F aref_F+J_B^T f_B.
+                    # Same face optimum in correction coordinates:
+                    # H*da=-J_F^T D_F*g_F; df=-D_F*(g_F+J_F*da).
+                    # The freshly checked physical gradient avoids repeating
+                    # cancellation of two large absolute forces.
                     for i in range(nv):
-                        face_rhs[w, i] = applied[w, i] + passive[w, i] - bias[w, i]
+                        face_rhs[w, i] = 0.0
                         for j in range(i + 1):
                             face_matrix[w, i, j] = mass[w, i, j]
                     for r in range(nrow):
@@ -299,18 +293,11 @@ def solve(
                             inverse_r = 1.0 / efc_data[w, r, 4]
                             for i in range(nv):
                                 weighted_j = efc_J[w, r, i] * inverse_r
-                                face_rhs[w, i] = (
-                                    face_rhs[w, i] + weighted_j * efc_data[w, r, 3]
-                                )
+                                face_rhs[w, i] = face_rhs[w, i] - weighted_j * efc_data[w, r, 10]
                                 for j in range(i + 1):
                                     face_matrix[w, i, j] = (
                                         face_matrix[w, i, j] + weighted_j * efc_J[w, r, j]
                                     )
-                        else:
-                            for i in range(nv):
-                                face_rhs[w, i] = (
-                                    face_rhs[w, i] + efc_J[w, r, i] * efc_data[w, r, 9]
-                                )
                     for i in range(nv):
                         if not tx.isfinite(face_rhs[w, i]):
                             status[w] = 2
@@ -354,10 +341,10 @@ def solve(
                         for r in range(nrow):
                             value = efc_data[w, r, 9]
                             if working[w, r] == 1:
-                                value = efc_data[w, r, 3]
+                                correction = efc_data[w, r, 10]
                                 for i in range(nv):
-                                    value = value - efc_J[w, r, i] * trial_acc[w, i]
-                                value = value / efc_data[w, r, 4]
+                                    correction = correction + efc_J[w, r, i] * trial_acc[w, i]
+                                value = value - correction / efc_data[w, r, 4]
                             trial_force[w, r] = value
                             if not tx.isfinite(value):
                                 status[w] = 2
@@ -385,11 +372,7 @@ def solve(
                                     else:
                                         candidate = (upper - force_value) / denominator
                                     blocking = 1
-                                if (
-                                    not tx.isfinite(candidate)
-                                    or candidate < 0.0
-                                    or candidate > 1.0
-                                ):
+                                if not tx.isfinite(candidate) or candidate < 0.0 or candidate > 1.0:
                                     status[w] = 2
                                 alpha = tx.min(alpha, candidate)
                         if status[w] == 0:
@@ -399,6 +382,7 @@ def solve(
                                     upper = efc_data[w, r, 8]
                                     upper_mask = efc_data[w, r, 12]
                                     force_value = previous_force[w, r]
+                                    value = force_value
                                     candidate = 1.0
                                     bound_side = 1
                                     if trial_force[w, r] < lower:
@@ -418,9 +402,8 @@ def solve(
                                         value = trial_force[w, r]
                                         if alpha < 1.0:
                                             value = (
-                                                (1.0 - alpha) * force_value
-                                                + alpha * trial_force[w, r]
-                                            )
+                                                1.0 - alpha
+                                            ) * force_value + alpha * trial_force[w, r]
                                     efc_data[w, r, 9] = value
                                     if not tx.isfinite(value):
                                         status[w] = 2

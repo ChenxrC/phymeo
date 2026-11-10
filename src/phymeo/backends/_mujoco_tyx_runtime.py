@@ -21,6 +21,7 @@ from .mujoco_tyx import MuJoCoTyxUnsupported as MuJoCoTyxUnsupported
 from .mujoco_tyx._model import compile_model, fp32
 
 LAW = "mujoco-soft-normal-constraint-v1"
+MIXED_LAW = "mujoco-pyramidal-joint-constraint-v1"
 
 
 def _capacity(value, name):
@@ -131,6 +132,7 @@ class MuJoCoTyxStepReceipt:
     contact_law: str = LAW
     state_precision: str = "fp32-device-integration"
     dynamics: MuJoCoTyxDynamics | None = None
+    constraints: tuple = ()
 
 
 class MuJoCoTyxRuntime(MuJoCoRuntime):
@@ -174,6 +176,9 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
             compilation, world_keys=world_keys, initial_states=initial_states, mode="cpu"
         )
         self._plan = compile_model(self._mj, self._model)
+        if getattr(self._plan, "constraint_contact", False):
+            if self._contact_capacity > 128 or self._constraint_capacity > 512:
+                raise ValueError("T4 contact/constraint capacities cannot exceed 128/512")
         self._extra_counts = dict(completed_steps=0, accepted_world_steps=0, failed_batches=0)
         self._device = self._build_device(self._data)
         self._quantize_mirrors()
@@ -237,6 +242,22 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                 warmstart="cold-feasible-zero-force",
             )
         self._capabilities = MappingProxyType(info)
+        if getattr(self._plan, "constraint_contact", False):
+            info.update(
+                contact_law=MIXED_LAW,
+                domain="tree-pyramidal-mixed-constraints-v1",
+                possible_contact_pairs=self._plan.npair,
+                candidate_slots=self._plan.nslot,
+                limits="native-scalar-soft-constraints",
+                friction="native-dof-loss-and-pyramidal-condim1-3-4-6",
+                numerical_solver="pyramidal-box-active-set-v1",
+                constraint_compaction="stable-device-active-rows",
+                solver_tolerance=self._plan.solver_tolerance,
+                solver_iteration_semantics="source-iterations-as-active-set-face-solve-budget",
+                warmstart="cold-feasible-zero-force",
+                sensors="detached-cpu-observation-only",
+            )
+            self._capabilities = MappingProxyType(info)
 
     @property
     def counters(self):
@@ -276,7 +297,11 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
         from .mujoco_tyx._device import TyxDevice
 
         device_type = TyxDevice
-        if getattr(self._plan, "normal_contact", False):
+        if getattr(self._plan, "constraint_contact", False):
+            from .mujoco_tyx._constraint_device import TyxConstraintDevice
+
+            device_type = TyxConstraintDevice
+        elif getattr(self._plan, "normal_contact", False):
             from .mujoco_tyx._normal_device import TyxNormalDevice
 
             device_type = TyxNormalDevice
@@ -480,6 +505,7 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                         4: "nonpositive_mass_matrix",
                         5: "normal_solver_not_converged",
                         6: "nonpositive_normal_matrix",
+                        7: "constraint_solver_budget",
                     }
                     codes = tuple(
                         reasons.get(int(code), "invalid_status")
@@ -535,7 +561,12 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                             input_v=_frozen(result["input_v"][index, :n]),
                             time=float(old_clock[0]) - float(old_clock[1]),
                         )
-                    if getattr(self._plan, "normal_contact", False):
+                    constraints = ()
+                    if getattr(self._plan, "constraint_contact", False):
+                        from .mujoco_tyx._constraint_publication import publish
+
+                        contacts, constraints, raw_fields = publish(self, result, index)
+                    elif getattr(self._plan, "normal_contact", False):
                         contacts, raw_fields = self._normal_publication(result, index)
                     else:
                         contacts = self._contacts_from_row(row)
@@ -560,7 +591,9 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                         raw_contact_fields=raw_fields,
                         source_solver=self._plan.source_solver,
                         numerical_solver=(
-                            "normal-dual-active-set-v1"
+                            "pyramidal-box-active-set-v1"
+                            if getattr(self._plan, "constraint_contact", False)
+                            else "normal-dual-active-set-v1"
                             if getattr(self._plan, "normal_contact", False)
                             else "tree-dense-cholesky"
                             if self._plan.kind in (2, 3)
@@ -568,6 +601,8 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                         ),
                         contact_time=float(original.time),
                         dynamics=dynamics,
+                        constraints=constraints,
+                        contact_law=self._capabilities["contact_law"],
                         backend=f"mujoco-tyx-{self._mode}",
                     )
                     data[key] = candidate
@@ -587,7 +622,9 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
         return MappingProxyType(
             {
                 key: replace(
-                    state, contact_law=LAW, contact_phase="endpoint-cpu-forward-recomputed"
+                    state,
+                    contact_law=self._capabilities["contact_law"],
+                    contact_phase="endpoint-cpu-forward-recomputed",
                 )
                 for key, state in states.items()
             }

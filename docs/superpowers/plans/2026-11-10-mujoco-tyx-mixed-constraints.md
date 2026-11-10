@@ -78,3 +78,13 @@ matrix/factor[W,V,V]，其余dof向量[W,V]，row向量[W,E]。更新efc_data的
 - [ ] 新wheel源码外interpret/CUDA、证据和架构/续作入口、小commit；已验增量同步codex/dev。
 
 工程门以案例文档§4/§7为准；上面调整只消除了重复大矩阵与冻结字段，不调物理阈值。失败保first-state/rows/force/native对照，先分geometry→J→law→solver→integration→policy；两轮无新能力/失败闭环/测量就停止该死支线重选最小差异，不扩大纯证明。T4成功不是mesh部署scene、椭圆cone或整体Newton对齐。
+
+## 6. 首次真实联调与数值实现修正
+
+父14前已完成共享模型/设备/typed publication 接入（另NEW _constraint_publication.py，父所有）。同一native EFC问题不变：08首ENV在import因TYX purefunc只能单表达式拒绝，父将命令式impedance inline；09 solver分支局部value未预声明，父显式初始化。10/11实际face求解在6次后FP32停滞，normalized KKT=4.8445989e-5，原门2e-5未过；完整failed-device保存。12只分析该保存数据，物理M残差2.54e-8，dual条件数约4268；没有参数搜索或物理重跑。
+
+父将同一face最优问题改写为增量式：当前实际f的physical a和g全部重算；H=M+J_F^T D_F J_F，H*delta_a=-J_F^T D_F*g_F，trial_f=f-D_F*(g_F+J_F*delta_a)，固定边界不动。独立原solver作者纯文本复核等价。trial_acc现在是delta_a；每次分解计原budget，最终physical M/KKT仍独立重算，既不改R/摩擦/资产也不放宽阈值。该改写减少绝对力消去误差，不保证任意条件数通过。
+
+13 ENV interpret与14 ENV CUDA各1通过，原两个世界/12步/反馈控制/selected reset/clone下一步。此时只完成首控，不冒A–E完整矩阵或G1通过。raw/首次失败全部位于artifacts/p65-mujoco-tyx-t4-20261110-01。
+
+补充ABI：limit side lower=-1/upper=+1、dry=-1。typed row schema=mujoco-tyx-constraint-row-v1，字段constraint_type/source_id/side_or_edge/geometry_slot/dof/jacobian/position/margin/velocity/reference_acceleration/regularization/inverse_regularization/impedance/diag_approx/lower/upper(optional)/force/gradient。typed contact schema=mujoco-tyx-pyramidal-contact-v1，完整6×nv Jacobian与6D wrench。mass residual归一尺度为max(1,max_i(abs(rhs_i)+abs(constraint_i)+sum_j abs(Mij*aj)))，status5，原tau；全部原量保留，未虚构直接保存rawmass标量。

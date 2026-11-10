@@ -238,3 +238,132 @@ def test_geometry_bijection_rejects_missing_replaced_and_duplicate_points():
                   np.asarray([[0., 0.], [1., 0.], [0., 2.]])):
         with pytest.raises(AssertionError):
             complete_match(wrong, expected, 1e-4)
+
+
+
+# Changed-source regression / first CUDA coverage only. These 16 fixed identities
+# do not qualify the remaining 58 historical K1 identities on the new source.
+_AFFECTED_K1_IDENTITIES = (
+    "ss_overlap_point",
+    "sc_overlap_point",
+    "sb_overlap_point",
+    "sh_overlap_point",
+    "cc_parallel_segment",
+    "cc_skew_point",
+    "cc_end_end_point",
+    "cap_oblique_point",
+    "h_slant_point",
+    "end_box_point",
+    "cb_cycle_reverse_ids_segment",
+    "ch_cycle_reverse_ids_segment",
+    "ss_touch_point",
+    "cb_touch_segment",
+    "hh_touch_face",
+    "cb_sep_segment",
+)
+
+
+def _affected_patch_geometry(row, spec):
+    """Preserve old literal/ID gates; match geometry before examining weights."""
+    length = spec["length_m"]
+    patch = row.patch
+    assert row.status == "RESOLVED" and patch.status == "RESOLVED"
+    assert patch.dimension == spec["dimension"]
+    assert patch.device_resolved and patch.skip_host_patch_search and not patch.host_completed
+    assert abs(row.gap_m - spec["gap_m"]) <= 1e-4 * length
+    assert len(patch.sites) == len(spec["sites"])
+    assert abs(sum(site.weight for site in patch.sites) - 1) <= 64 * reference().U32
+    candidates = [
+        [j for j, wanted in enumerate(spec["sites"])
+         if all(np.linalg.norm(np.asarray(witness.surface_relative_m) - point) <= 2e-4 * length
+                for witness, point in zip((site.first, site.second), wanted["surfaces"], strict=True))]
+        for site in patch.sites
+    ]
+    assigned = {}
+
+    def augment(i, seen):
+        for j in candidates[i]:
+            if j in seen:
+                continue
+            seen.add(j)
+            if j not in assigned or augment(assigned[j], seen):
+                assigned[j] = i
+                return True
+        return False
+
+    assert all(augment(i, set()) for i in range(len(patch.sites)))
+    assert len(assigned) == len(spec["sites"])
+    for expected_index, actual_index in assigned.items():
+        site, wanted = patch.sites[actual_index], spec["sites"][expected_index]
+        assert abs(site.weight - wanted["weight"]) <= 1e-5
+        for side, witness in enumerate((site.first, site.second)):
+            if wanted["bary"][side] is not None:
+                assert tuple(witness.vertex_ids) == tuple(wanted["ids"][side])
+                assert np.allclose(witness.weights, wanted["bary"][side], atol=1e-5)
+            else:
+                assert set(witness.vertex_ids) <= set(wanted["allowed"][side])
+                assert len(set(witness.vertex_ids)) == len(witness.vertex_ids)
+                bary = np.asarray(witness.weights)
+                assert np.all(bary >= 0)
+                assert abs(float(bary.sum()) - 1) <= 64 * reference().U32
+                core = sum((weight * wanted["cores"][side][int(node)]
+                            for node, weight in zip(witness.vertex_ids, bary, strict=True)), np.zeros(3))
+                skin = (1 if side == 0 else -1) * wanted["radii"][side] * spec["normal"]
+                assert np.linalg.norm(np.asarray(witness.offset_m) - skin) <= 2e-4 * length
+                assert np.linalg.norm(core + skin - wanted["surfaces"][side]) <= 2e-4 * length
+    moment = sum((site.weight * np.asarray(site.common_m) for site in patch.sites), np.zeros(3))
+    assert np.linalg.norm(moment - reference().moment(spec)) <= 2e-4 * length
+
+
+@pytest.mark.tyx
+@pytest.mark.parametrize("identity", _AFFECTED_K1_IDENTITIES)
+def test_affected_k1_identity(identity, tyx_mode, tmp_path):
+    cycle_ids = "_cycle_reverse_ids_" in identity
+    name = identity.rsplit("_", 1)[0]
+    if cycle_ids:
+        name = identity[:2] + "_overlap"
+    spec = getattr(reference(), name)()
+    geometry = k0.reference()
+    case = (geometry.finite_case(spec["case"]) if "case" in spec
+            else geometry.family_case(spec["family"], spec["gap_m"]))
+    if cycle_ids:
+        case = geometry.transformed(case, "cycle_reverse_ids")
+        spec = reference().cycle_reverse_ids(spec)
+    touch = "_touch_" in identity
+    with saved(tmp_path, f"B1-affected-{identity}", tyx_mode, dict(case=case, expected=spec)) as record:
+        with prepared(case, tyx_mode, tmp_path, site_capacity=8,
+                      requested_reverse=cycle_ids) as (batch, broad, plan, before):
+            result = k0.query_attempt(batch, plan, record, "affected")
+            row = result.rows[0]
+            assert result.patch["enabled"] is True
+            assert result.request_reversed == (False,)
+            if touch:
+                # The frozen old zero-gap contract permits an honest UNKNOWN.
+                assert row.relation != "SEPARATED"
+                if row.normal_valid:
+                    assert abs(np.linalg.norm(row.normal) - 1) <= 2e-4
+                    assert np.linalg.norm(np.asarray(row.normal) - spec["normal"]) <= 2e-3
+                if row.patch.status == "RESOLVED":
+                    _affected_patch_geometry(row, spec)
+                else:
+                    assert row.patch.status == "UNRESOLVED"
+                    assert row.patch.sites == ()
+                    assert not row.patch.device_resolved
+                    assert not row.patch.skip_host_patch_search and not row.patch.host_completed
+                    if row.status == "RESOLVED":
+                        assert row.gap_valid and abs(row.gap_m) <= 1e-4 * spec["length_m"]
+            else:
+                _affected_patch_geometry(row, spec)
+            if cycle_ids:
+                keys = tuple(ph.CollisionKey(*key) for key in case["keys"])
+                assert result.requested_pairs == (tuple(reversed(keys)),)
+                assert tuple(result.shape_keys) == tuple(sorted(keys)) == row.pair
+                assert result.source["vertex_ids"].dtype == np.dtype(np.int32)
+                assert tuple(map(int, result.source["vertex_ids"])) == tuple(case["ids"][1]) + tuple(case["ids"][0])
+                anchor = np.asarray(case["positions"][0])
+                expected_upload = np.vstack((case["points"][1] - anchor, case["local"][0]))
+                assert np.allclose(result.source["uploaded_local_points_m"], expected_upload, atol=1e-6)
+                assert abs(np.linalg.norm(row.normal) - 1) <= 2e-4
+                assert np.linalg.norm(np.asarray(row.normal) - spec["normal"]) <= 2e-3
+            assert k0.canonical(batch.snapshot()) == k0.canonical(before)
+            assert plan.require_current(result) is result

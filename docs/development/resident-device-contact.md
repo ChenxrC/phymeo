@@ -1,6 +1,6 @@
 # Resident 设备接触的公开使用边界
 
-2026-11-11：单页 `prepare_contacts` 的新设备 patch 消费已完成 interpret/CUDA 各67项功能验证及每后端47份同次保存审计。本轮安装包验证尚待执行。分页 `prepare_contact_bundle` 的设备模式已整合，专项验证尚待执行，不能把单页结果外推给它。实际状态以[本轮记录](p65-parity-2026-11-11-progress.md)为准。
+2026-11-11：单页 `prepare_contacts` 已完成 interpret/CUDA 各67项及每后端47份保存审计；分页 `prepare_contact_bundle` 另行完成各29项、各28份保存审计与相邻HOST兼容。最终新wheel的两种公共调用均已在源码外实际通过，见[正式结果](../benchmarks/p65-parity-20261111-connections.md)。两者分别验收，不以单页通过外推分页。
 
 ## 调用与结果
 
@@ -45,7 +45,7 @@ with batch.prepare_contacts(
 
 设备浮点表示到有效材料点的转换不是免费或无损假设。逐点误差和完整 patch 的原始/有效一阶矩都必须通过已有局部尺度门，完整差分保存在收据；相同合力不自动证明力矩正确。当前 `discrete_entry` 也不是 CCD，快速穿越需要单独的连续碰撞路径。
 
-## 分页接口（已编码，待专项验证）
+## 分页接口（已完成限定范围验收）
 
 `pages` 是已构建的 `ResidentContactPageSpec` 序列；每个 world 完整属于一页。公开接线如下：
 
@@ -69,6 +69,6 @@ with batch.prepare_contact_bundle(
 
 本轮多案例包含独立形状参考、部分面、反序/旋转、四类树真实入步速度和驱动/外载、连续三步、滑动两方向、同输入 HOST 对照、末期失败与重试。一阶矩负控使用相同原始局部预算，不为特定位置扩大容差。详[消费合同](../superpowers/plans/2026-11-11-resident-device-patch-consumption.md)。
 
-[B3分页合同](../superpowers/plans/2026-11-11-paged-device-contact.md)把多个 world-complete 页的全部转换合并到一次力装配/推进/发布；每页保持原容量。完成实际多页矩阵、同次证据和源码外安装包之前，仍记为待验。
+[B3分页合同](../superpowers/plans/2026-11-11-paged-device-contact.md)已完成W129/W256连续三步、四类树、partial reset、容量与末页故障矩阵；原每页容量和单次共同发布保持。新wheel另以三世界两页完成连续受载、重置和同输入失败重试。W256主例是每世界一个slider和有限support，不是256台G1或PPO训练吞吐。
 
 MuJoCo-TYX 是另一条物理路径：CPU MuJoCo 编译模型、TYX 原生 primitive/约束与混合求解。这里的 resident patch API 不修改其模型或求解器，也不自动扩大它的形状范围。两条路径与 GPU 训练的关系见[当前全景](phymeo-newton-panorama-2026-11-11.md)。

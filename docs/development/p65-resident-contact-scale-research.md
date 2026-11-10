@@ -1,6 +1,6 @@
 # 驻留接触规模：分页 bundle 与原型实例化研究
 
-**父后续更新：** 本文基于7e378f7，保留当时限制与推理。旧17body门现已对齐33且通过高body受载；原速度摩擦混合桥亦已通过，见[实际结果](../benchmarks/p65-resident-friction-connections.md)。单模型256shape、HOST几何、每storage单次solve/共同发布以及分页未实现等规模结论不变，不重做已完成的body/摩擦接通。
+**父后续更新（2026-11-11）：** 本文是7e378f7时期的研究，不代表当前未实现项。旧body/摩擦连接已验；C1 world-complete受载分页及B3设备patch分页消费也已实际完成，含W256限定案例、共同发布和新wheel，见[当前验收](../benchmarks/p65-parity-20261111-connections.md)。每页原256shape等容量、每storage单次solve保持；设备几何之后仍有HOST转换/力装配/诊断。下文旧接口缺口仅作历史，不再派重复实现。
 
 **RESEARCH_NOT_IMPLEMENTED，2026-11-10。** 仅阅读父 `7e378f7cec775ca7e4c7f7c8cd92c4048fb8d0b1` 源码、原 K1 未提交计划及 Newton 1.7.0 官方资料；本轮没有项目 import、数值、测试、编译、安装或实现。下文新类型/方法均为讨论边界，不是已存在接口，也未冻结实施合同。目标是 W256 各自的动态物体与有限静态地面，在保留每页 256 shape 等原容量的前提下，经过**一次物理发布**。
 

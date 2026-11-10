@@ -1,0 +1,19 @@
+MuJoCo algorithms ported to Phymeo TYX
+
+This package includes modified algorithms from mujoco-warp v0.0.2,
+Copyright 2025 The Newton Developers, licensed under Apache License 2.0.
+The upstream AUTHORS attribution list and full license are retained here.
+Upstream: https://github.com/google-deepmind/mujoco_warp/tree/v0.0.2
+
+Modified source/algorithm origins:
+- _src/collision_primitive.py: static contact parameter priority/solmix rules.
+- _src/collision_primitive_core.py: plane-sphere distance/contact midpoint.
+- _src/constraint.py: _update_efc_row impedance, regularization and reference acceleration.
+- _src/forward.py: Euler velocity/position order and implicit joint damping.
+- _src/math.py: local-angular-velocity quaternion integration.
+
+Phymeo changes: independent TYX kernels/resources and model admission,
+constant full mass operators for all-prismatic trees/centered isotropic free body,
+closed-form single frictionless normal QP, transactional publication and
+explicit capability/precision diagnostics. No Warp kernel or runtime executes
+through this package. This is a limited port, not complete MuJoCo support.

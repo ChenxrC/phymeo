@@ -99,8 +99,6 @@ def compile_model(mj, model):
         issue("fluid", "fluid dynamics are not migrated")
     if np.any(model.body_gravcomp) or np.any(model.dof_frictionloss):
         issue("passive", "gravity compensation and dry joint friction are not migrated")
-    if np.any(model.jnt_limited):
-        issue("joint-limits", "native joint-limit constraint rows are not migrated")
     free = model.njnt == 1 and model.jnt_type[0] == mj.mjtJoint.mjJNT_FREE
     prismatic = model.njnt > 0 and np.all(model.jnt_type == mj.mjtJoint.mjJNT_SLIDE)
     if not (free or prismatic) or not 1 <= model.nv <= WIDTH:
@@ -189,7 +187,9 @@ def compile_model(mj, model):
     matrices = np.zeros((2, WIDTH, WIDTH))
     matrices[0, :model.nv, :model.nv] = inverse
     matrices[1, :model.nv, :model.nv] = euler
-    vectors = np.zeros((7, WIDTH))
+    vectors = np.zeros((9, WIDTH))
+    vectors[7, :] = -np.inf
+    vectors[8, :] = np.inf
     vectors[0, :model.nv] = data.qfrc_bias
     vectors[1, :model.nv] = model.dof_damping
     vectors[4, :model.nq] = model.qpos0
@@ -198,6 +198,12 @@ def compile_model(mj, model):
             dof, q = int(model.jnt_dofadr[joint]), int(model.jnt_qposadr[joint])
             vectors[2, dof] = model.jnt_stiffness[joint]
             vectors[3, dof] = model.qpos_spring[q]
+            if model.jnt_limited[joint]:
+                lo, hi = model.jnt_range[joint]
+                margin = model.jnt_margin[joint]
+                vectors[7, dof], vectors[8, dof] = lo + margin, hi - margin
+                if not lo + margin < model.qpos0[q] < hi - margin:
+                    raise MuJoCoTyxUnsupported((Issue("joint-limits", "source initial q enters native limit domain"),))
     body_jac = np.zeros((model.nbody, 3, WIDTH))
     point_jac = np.zeros((3, WIDTH))
     if not free:

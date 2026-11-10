@@ -581,3 +581,214 @@ def test_native_width_boundary_free_root_twenty_nine_actuators(mode):
                 assert published.last_step.dynamics.mass_matrix.shape == (35, 35)
                 assert published.last_step.control.ctrl.shape == (29,)
                 assert exact(published.last_step.stored_control) == exact(receipt.controls[key])
+
+
+
+@pytest.mark.parametrize("mode", MODES)
+def test_action_packets_borrow_live_runtime_and_reuse_compilation(mode, monkeypatch):
+    from phymeo.backends.mujoco_device_controls import _DeviceControlPacket
+    from phymeo.backends.mujoco_tyx._control_kernels import pack
+
+    with engine("fixed", mode) as e, engine("fixed", mode) as reference, ExitStack() as stack:
+        runtime = e._device.runtime
+        original_pack = _DeviceControlPacket._pack
+        compiled, packets = [], []
+
+        def inspect_pack(packet):
+            assert packet.runtime is runtime and not runtime.closed
+            assert len(packet.buffers) == 5
+            assert all(getattr(close, "__self__", None) is not runtime for close in packet.resources)
+            previous = e._control_packet
+            for i, current in enumerate(packet.buffers):
+                others = packet.buffers[:i]
+                if previous is not None:
+                    assert not previous.closed
+                    others = [*others, *previous.buffers]
+                for other in others:
+                    assert current is not other
+                    if mode == "interpret":
+                        assert not np.shares_memory(current, other)
+                    else:
+                        a, b = int(current.device_ptr), int(other.device_ptr)
+                        assert a + current.nbytes <= b or b + other.nbytes <= a
+            if previous is not None and mode == "cuda":
+                assert packet.stream is not previous.stream
+            original_pack(packet)
+            if mode == "cuda":
+                entries = [
+                    entry[2]
+                    for entry in runtime._gpu_execution_cache.values()
+                    if entry[0] is pack
+                ]
+                assert entries and all(value is entries[0] for value in entries)
+                if compiled:
+                    assert all(value is compiled[0] for value in entries)
+                else:
+                    compiled.append(entries[0])
+            packets.append(packet)
+
+        with monkeypatch.context() as patch:
+            patch.setattr(_DeviceControlPacket, "_pack", inspect_pack)
+            for scale in (1.0, 0.5, -0.5):
+                raw = tuple(value * np.float32(scale) for value in channels(e))
+                inputs = device_values(stack, mode, raw)
+                submit(e, inputs)
+                host_submit(reference, raw)
+                assert e._device.runtime is runtime and not runtime.closed
+                for retired in packets[:-1]:
+                    assert retired.closed
+                    retired.close()  # Idempotent packet cleanup cannot close its borrowed Runtime.
+                    assert not runtime.closed
+                e.step(H)
+                reference.step(H)
+                assert state(e) == state(reference)
+        assert len(packets) == 3
+        assert e.counters["device_control_submissions"] == 3
+        assert e.counters["control_pack_kernels"] == 3
+        if mode == "cuda":
+            assert len(compiled) == 1
+            assert e.counters["control_audit_downloaded_bytes"] == 3 * sum(
+                value.nbytes for value in channels(e)
+            )
+    assert runtime.closed  # The physical owner, rather than any packet, closes it.
+
+
+@pytest.mark.parametrize("mode", MODES)
+@pytest.mark.parametrize("stage", ("audit", "pack"))
+def test_failed_staging_keeps_borrowed_runtime_and_previous_action(mode, stage, monkeypatch):
+    from phymeo.backends.mujoco_device_controls import _DeviceControlPacket
+
+    with engine("fixed", mode) as e, engine("fixed", mode) as reference, ExitStack() as stack:
+        raw = channels(e)
+        inputs = device_values(stack, mode, raw)
+        submit(e, inputs)
+        host_submit(reference, raw)
+        runtime, accepted = e._device.runtime, e._control_packet
+        before, revision = state(e), e.checkpoint_revision
+        captured = []
+        if stage == "audit":
+            invalid = tuple(value.copy() for value in raw)
+            invalid[0].view(np.uint32)[0, 0] = 0x7FC00001
+            candidate = device_values(stack, mode, invalid)
+            name, error, message = "_audit", ValueError, "finite"
+        else:
+            candidate = device_values(stack, mode, tuple(value.copy() for value in raw))
+            name, error, message = "_pack", RuntimeError, "authored pack failure"
+        original = getattr(_DeviceControlPacket, name)
+
+        def fail(packet, *args, **kwargs):
+            captured.append(packet)
+            assert packet.runtime is runtime
+            result = original(packet, *args, **kwargs)
+            if stage == "pack":
+                raise RuntimeError("authored pack failure after actual completed pack")
+            return result
+
+        with monkeypatch.context() as patch:
+            patch.setattr(_DeviceControlPacket, name, fail)
+            with pytest.raises(error, match=message):
+                submit(e, candidate)
+        assert len(captured) == 1 and captured[0].closed and not captured[0].resources
+        assert e._device.runtime is runtime and not runtime.closed
+        assert e._control_packet is accepted and e.checkpoint_revision == revision
+        assert state(e) == before
+        e.step(H)
+        reference.step(H)
+        assert state(e) == state(reference)
+        # Fresh source arrays after failed packet retirement still reach the cached kernel.
+        fresh = device_values(stack, mode, tuple(value.copy() for value in raw))
+        submit(e, fresh)
+        host_submit(reference, raw)
+        assert e._control_packet.runtime is runtime and not runtime.closed
+        e.step(H)
+        reference.step(H)
+        assert state(e) == state(reference)
+
+
+@pytest.mark.parametrize("mode", MODES)
+def test_retired_packet_cleanup_retry_does_not_close_borrowed_runtime(mode):
+    with engine("fixed", mode) as e, engine("fixed", mode) as reference, ExitStack() as stack:
+        raw = channels(e)
+        inputs = device_values(stack, mode, raw)
+        submit(e, inputs)
+        first, runtime = e._control_packet, e._device.runtime
+        assert first.runtime is runtime
+        attempts = []
+
+        def fail_once():
+            attempts.append("cleanup")
+            assert not runtime.closed
+            if len(attempts) == 1:
+                raise RuntimeError("authored retryable packet cleanup")
+
+        first.resources.append(fail_once)
+        revision = e.checkpoint_revision
+        receipt = submit(e, device_values(stack, mode, tuple(value.copy() for value in raw)))
+        second = e._control_packet
+        assert receipt.revision == revision + 1 == e.checkpoint_revision
+        assert first.closed and first in e._control_retired and e.control_cleanup_errors
+        assert second.runtime is runtime and not runtime.closed
+        host_submit(reference, raw)
+        e.step(H)
+        reference.step(H)
+        assert state(e) == state(reference)
+        first.close()
+        assert attempts == ["cleanup", "cleanup"] and not first.resources
+        assert not runtime.closed
+        submit(e, device_values(stack, mode, tuple(value.copy() for value in raw)))
+        assert not e._control_retired and not e.control_cleanup_errors
+        assert second.closed and not runtime.closed
+        host_submit(reference, raw)
+        e.step(H)
+        reference.step(H)
+        assert state(e) == state(reference)
+
+
+@pytest.mark.parametrize("mode", MODES)
+def test_borrowed_runtime_follows_reset_restore_owner_replacement(mode, monkeypatch):
+    with engine("free", mode) as e, ExitStack() as stack:
+        raw = channels(e)
+        inputs = device_values(stack, mode, raw)
+        submit(e, inputs)
+        first, runtime = e._control_packet, e._device.runtime
+        assert first.runtime is runtime
+        e.step(H)
+        checkpoint = e.checkpoint()
+        before, revision = state(e), e.checkpoint_revision
+
+        def reject_replacement(*args, **kwargs):
+            raise RuntimeError("authored replacement allocation")
+
+        with monkeypatch.context() as patch:
+            patch.setattr(e, "_build_device", reject_replacement)
+            with pytest.raises(RuntimeError, match="authored replacement"):
+                e.restore(checkpoint, expected_revision=revision)
+        assert state(e) == before and e.checkpoint_revision == revision
+        assert e._control_packet is first and e._device.runtime is runtime and not runtime.closed
+        e.step(H)
+        expected = state(e)
+        stale_revision = e.checkpoint_revision
+        e.restore(checkpoint, expected_revision=stale_revision)
+        replacement = e._device.runtime
+        assert replacement is not runtime and runtime.closed and not replacement.closed
+        assert first.closed and e._control_packet is None
+        with pytest.raises(ValueError, match="owner"):
+            first.inputs(e)
+        with pytest.raises(ValueError, match="revision"):
+            e.set_controls_from_device(inputs[0], expected_revision=stale_revision)
+        submit(e, device_values(stack, mode, tuple(value.copy() for value in raw)))
+        second = e._control_packet
+        assert second.runtime is replacement
+        e.step(H)
+        assert state(e) == expected
+        kept = exact(e._controls[KEYS[1]])
+        e.reset(keys=(KEYS[0],))
+        reset_runtime = e._device.runtime
+        assert reset_runtime is not replacement and replacement.closed and not reset_runtime.closed
+        assert second.closed and e._control_packet is None
+        assert exact(e._controls[KEYS[1]]) == kept
+        with pytest.raises(ValueError, match="owner"):
+            second.inputs(e)
+        submit(e, device_values(stack, mode, tuple(value.copy() for value in raw)))
+        assert e._control_packet.runtime is reset_runtime
+        assert all(e.step(H).values())

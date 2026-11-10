@@ -36,7 +36,7 @@ The protocol follows [the original native reference example](../../examples/g1_p
 
 Motion initialization copies original frame-0 nonzero q/v. The root linear velocity remains world root-origin velocity; angular velocity is converted from original world angular velocity to native local coordinates. The initial quaternion is normalized as in the original reference; later published q is never repaired. FK/observation quaternion normalization is a local observation copy only.
 
-The root angular observation reads current native local `qvel[3:6]`, which is the free-root body's current local angular velocity. This avoids reading a stale cached `mj_objectVelocity` after Euler. Both new feedback streams use this same declared current-state observation protocol; old native reference results are not imported as new execution evidence.
+The root angular observation reads `R(model.body_iquat[root]).T @ qvel[3:6]`: native free-root qvel is body-local, whereas native `mj_objectVelocity(BODY, local=1)` reports the body inertial-frame axes. The original pelvis inertial quaternion is nonidentity and is preserved. Both new feedback streams apply the same transformation from their own current state. This explicitly corrects the old script's stale cached cvel after Euler, rather than reproducing the one-step observation lag. It is a current-state observation protocol correction; old native reference results are not imported as new execution evidence.
 
 Push cases apply ±.1mg along world x at the pelvis COM during source-grid time [.5,.6). They do not add an artificial torque, teleport the body or clamp orientation. The requested and actual stored FP32 device packets are both saved.
 
@@ -61,7 +61,9 @@ The standard trajectory run with duration20 uses one runtime, one controller his
 
 Per-step JSONL includes actual device q/v/time/tick, requested/stored control, action/target/observation, all contact six-wrenches, typed constraint force summaries, qfrc_constraint, same-input native force/qacc, independent native q/v/control/action/contact forces, source time, foot load/unload events and diagnostics. Output paths must be fresh; records are streamed and flushed. Source bindings, selected records, failures and summary are fsynced. No evidence compression/deletion is performed.
 
-Full device receipts, including dynamics and complete raw EFC/J buffers, plus full native fields are selected at the first step, 2 s checkpoint, final requested step and first failure. A first behavior failure expands the already evaluated native data without another `mj_forward` or TYX step. The rejected-candidate path additionally saves the real device scratch before close. Full F1 receipts are saved before matching, so a matcher exception cannot lose the failed physical output.
+Full device receipts, including dynamics and complete raw EFC/J buffers, plus full native fields are selected at the first step, 2 s checkpoint, final requested step, first failure, either feedback stream's foot load/unload event, or any change in the complete device constraint identity tuple `(type, source_id, side_or_edge, geometry_slot, dof)`. Each full record states its capture reasons. Event-driven native expansion reads the same cached evaluation; it adds no forward or step. A first behavior failure expands the already evaluated native data without another `mj_forward` or TYX step. The rejected-candidate path additionally saves the real device scratch before close. Full F1 receipts are saved before matching, so a matcher exception cannot lose the failed physical output.
+
+Each accepted device output must additionally bind to `tick+1` and the source output grid time within the original 2e-6 s clock gate. A mismatch records the current full receipt as the first failure.
 
 Robot gates retain height>=.35 m, tilt<=1 rad, joint RMSE<=.5 rad, reference XY<=1 m and all-window peak foot vertical force<=8mg. Both all-window and settled mean are recorded; the mean acceptance interval [.5,1.5]mg uses the existing .25 s settling boundary. The mean window is explicit in metadata. The parent should preserve this declared boundary or adjudicate a change before execution, not silently reinterpret a resulting mean.
 
@@ -95,8 +97,9 @@ Author-only checkpoints:
 - `80b1185911795a749cce8976a99d71ac98433ee4`: complete first harness.
 - `57d86b2b129f1561961a424d675aa1f0e18f40e9`: pure-text review correction of JSON source binding and explicit full model inventory.
 - `8d3acd4b86f33be37ca8ad26b42f143a234af712`: parent-requested rejected-device scratch capture.
+- `3a34b9e0e448eac7e58cfadf5ab4fbf223bc713f`: parent-authorized narrow review corrections: current inertial-frame gyro, clock/tick gate and same-run contact/constraint event evidence. No model, policy action mapping, frequency, physical gate or .25 s settling boundary changed.
 
-Current source: 57,852 bytes; SHA256 `abf26dd1dbe793dc06f884d8f23710504cf1dd1b599b43f77e1e904b16052f0c`; Git blob `31393aa799a822b0f446a8a8ce6f09754f06e757`.
+Current source: 59,110 bytes; SHA256 `0170f0646f795160467c5b7b6ba4100b973a53d4aba3764505b466195fdc4d6d`; Git blob `ef8112233675a5fe6fad40e743885631eb9530c3`.
 
 Author strings were compared with complete file readback. Small commits used exact paths and Git diff whitespace checks. **No import, collection, numerical calculation/probe, lint, formatter, pytest, build, install, profile, interpret or CUDA execution was performed.** The source may still contain ordinary syntax/API/style defects; parent static and runtime checks remain required. There is no actual G1 result in this report.
 

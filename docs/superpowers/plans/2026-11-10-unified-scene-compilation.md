@@ -45,3 +45,9 @@ GPU MuJoCo-Warp是独立可选执行后端，TYX仍为主线；缺依赖或功�
 - M4：同一无接触XML小树经CPU编译后进入HOST/TYX，另由原生MuJoCo实际步对照；原Env/PolicyRunner使用这些runtime协议。完整 `SceneDeclaration` 反向导出为MjSpec不属于本批交付，原生MuJoCo分支消费原编译记录。
 
 父已在新artifact隔离target安装 `mujoco-warp==0.0.2 --no-deps`，复用原MuJoCo3.3.7/Warp1.17.0。固定两world正负力、各三实际CUDA步与CPU对照通过（03-warp-compatibility），只证明这组依赖可运行，尚不是新adapter通过。M3新增GPU实现及专项测试，必须先检查原生contact/constraint容量再回读，禁止截断后声称成功。既有环境及TYX pins未修改，所有执行仍父唯一串行槽。
+
+## 用户追加：MuJoCo 的默认 CUDA 后端迁移到 TYX
+
+用户要求单独原 agent 实现 mujoco-tyx，尽量复用 MuJoCo-Warp 算法及代码，只有显式选择 Warp 时使用 MuJoCo-Warp。原 support 作者负责新 TYX 后端及新专项测试，父负责公共 dispatch、打包与唯一串行执行。
+
+先审查上游许可证、算子/数据结构与 TYX 能力，再按可验证模型域移植 forward dynamics、积分及接触约束。不得把原 Phymeo 不同接触律、Warp wrapper 或 CPU mj_step 改名为 mujoco-tyx；必须有真实 TYX CUDA launch、无 Warp/CPU 步进负控及原 MuJoCo 多案例数值对照。尚未支持的模型特征在分配或步进前拒绝，保留明确 capability report。默认切换以新后端实际验证为前提；本段是进行中工作，不代表完整 MuJoCo 已移植。

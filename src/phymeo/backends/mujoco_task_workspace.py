@@ -4,10 +4,10 @@ Own output storage never aliases physical banks. HOST actions and complete
 physical diagnostic validation retain their existing contracts.
 """
 
+import json
 from contextlib import ExitStack
 from dataclasses import dataclass
 from hashlib import sha256
-import json
 from threading import RLock
 from types import MappingProxyType
 from uuid import uuid4
@@ -30,13 +30,19 @@ def _frozen(value, dtype):
 
 def _indices(values, name):
     result = tuple(values)
-    _require(all(type(value) is int and 0 <= value <= np.iinfo(np.int32).max for value in result),
-             name + " must contain nonnegative integer native indices")
+    _require(
+        all(type(value) is int and 0 <= value <= np.iinfo(np.int32).max for value in result),
+        name + " must contain nonnegative integer native indices",
+    )
     return result
 
 
 def _parameter(value, default, width, name):
-    supplied = np.full(width, default, dtype=np.float64) if value is None else np.asarray(value, dtype=np.float64)
+    supplied = (
+        np.full(width, default, dtype=np.float64)
+        if value is None
+        else np.asarray(value, dtype=np.float64)
+    )
     _require(supplied.shape == (width,) and np.isfinite(supplied).all(), name + " shape/finite")
     if name == "weight":
         _require(np.all(supplied >= 0), "quadratic reward weights must be nonnegative")
@@ -66,25 +72,43 @@ class MuJoCoTyxTaskSpec:
     upper: np.ndarray
     sha256: str
 
-    def __init__(self, q_indices=(), v_indices=(), *, scale=None, bias=None,
-                 target=None, weight=None, lower=None, upper=None):
+    def __init__(
+        self,
+        q_indices=(),
+        v_indices=(),
+        *,
+        scale=None,
+        bias=None,
+        target=None,
+        weight=None,
+        lower=None,
+        upper=None,
+    ):
         qi, vi = _indices(q_indices, "q_indices"), _indices(v_indices, "v_indices")
         width = len(qi) + len(vi)
         _require(0 < width <= MAX_FEATURES, "feature count must be 1..256")
         object.__setattr__(self, "q_indices", qi)
         object.__setattr__(self, "v_indices", vi)
         for name, supplied, default in (
-            ("scale", scale, 1.0), ("bias", bias, 0.0), ("target", target, 0.0),
-            ("weight", weight, 0.0), ("lower", lower, -float(np.finfo(np.float32).max)),
+            ("scale", scale, 1.0),
+            ("bias", bias, 0.0),
+            ("target", target, 0.0),
+            ("weight", weight, 0.0),
+            ("lower", lower, -float(np.finfo(np.float32).max)),
             ("upper", upper, float(np.finfo(np.float32).max)),
         ):
             object.__setattr__(self, name, _parameter(supplied, default, width, name))
         _require(np.all(self.weight >= 0), "quadratic reward weights must be nonnegative")
         _require(np.all(self.lower <= self.upper), "lower bound must not exceed upper bound")
-        metadata = json.dumps({"schema": "mujoco-tyx-native-task-v1", "q": qi, "v": vi},
-                              sort_keys=True, separators=(",", ":")).encode()
-        numeric = b"".join(getattr(self, name).tobytes() for name in
-                           ("scale", "bias", "target", "weight", "lower", "upper"))
+        metadata = json.dumps(
+            {"schema": "mujoco-tyx-native-task-v1", "q": qi, "v": vi},
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode()
+        numeric = b"".join(
+            getattr(self, name).tobytes()
+            for name in ("scale", "bias", "target", "weight", "lower", "upper")
+        )
         object.__setattr__(self, "sha256", sha256(metadata + b"\n" + numeric).hexdigest())
 
     @property
@@ -141,24 +165,38 @@ class MuJoCoTyxTaskWorkspace:
             self._lock, self._closed = RLock(), False
             self._epoch, self._active, self._frame = 0, 0, None
             source = engine._compilation.source
-            self._binding = MappingProxyType({
-                "schema": "mujoco-tyx-task-workspace-v1", "workspace_owner": uuid4().hex,
-                "runtime_owner": id(engine), "spec_sha256": spec.sha256,
-                "source_sha256": sha256(source.primary_xml).hexdigest(),
-                "archive_sha256": sha256(source.archive_bytes).hexdigest(),
-                "model_sha256": sha256(source.model_binary).hexdigest(),
-                "world_keys": engine.world_keys, "mode": self._mode, "device": self._device_id,
-                "native_layout": (plan.nq, plan.nv), "output_layout": (nworld, spec.width),
-                "precision": "FP32-device-native-features",
-                "actions": "existing-HOST-control-and-receipt-path",
-                "physics_diagnostics": "existing-complete-HOST-validation",
-            })
-            self._counts = dict(task_kernels=0, source_synchronizations=0,
-                                task_status_downloaded_bytes=0, explicit_output_readback_bytes=0,
-                                output_d2d_bytes=0, published_frames=0, failed_refreshes=0)
+            self._binding = MappingProxyType(
+                {
+                    "schema": "mujoco-tyx-task-workspace-v1",
+                    "workspace_owner": uuid4().hex,
+                    "runtime_owner": id(engine),
+                    "spec_sha256": spec.sha256,
+                    "source_sha256": sha256(source.primary_xml).hexdigest(),
+                    "archive_sha256": sha256(source.archive_bytes).hexdigest(),
+                    "model_sha256": sha256(source.model_binary).hexdigest(),
+                    "world_keys": engine.world_keys,
+                    "mode": self._mode,
+                    "device": self._device_id,
+                    "native_layout": (plan.nq, plan.nv),
+                    "output_layout": (nworld, spec.width),
+                    "precision": "FP32-device-native-features",
+                    "actions": "existing-HOST-control-and-receipt-path",
+                    "physics_diagnostics": "existing-complete-HOST-validation",
+                }
+            )
+            self._counts = dict(
+                task_kernels=0,
+                source_synchronizations=0,
+                task_status_downloaded_bytes=0,
+                explicit_output_readback_bytes=0,
+                output_d2d_bytes=0,
+                published_frames=0,
+                failed_refreshes=0,
+            )
             self._resources = ExitStack()
             self._runtime = self._tx.Runtime(
-                backend="cuda" if self._mode == "cuda" else "cpu", device=self._device_id,
+                backend="cuda" if self._mode == "cuda" else "cpu",
+                device=self._device_id,
                 cache_root=engine._cache_root if cache_root is None else cache_root,
             )
             self._resources.callback(self._runtime.close)
@@ -168,13 +206,26 @@ class MuJoCoTyxTaskWorkspace:
                     self._stream = self._tx.CudaStream(device=self._device_id)
                     self._resources.callback(self._stream.close)
                 with self._tx.use_runtime(self._runtime):
-                    ids = np.asarray([(0, i) for i in spec.q_indices] + [(1, i) for i in spec.v_indices], dtype=np.int32)
-                    parameters = np.column_stack(tuple(getattr(spec, name) for name in
-                        ("scale", "bias", "target", "weight", "lower", "upper")))
+                    ids = np.asarray(
+                        [(0, i) for i in spec.q_indices] + [(1, i) for i in spec.v_indices],
+                        dtype=np.int32,
+                    )
+                    parameters = np.column_stack(
+                        tuple(
+                            getattr(spec, name)
+                            for name in ("scale", "bias", "target", "weight", "lower", "upper")
+                        )
+                    )
                     self._ids, self._parameters = self._buffer(ids), self._buffer(parameters)
-                    self._observation = tuple(self._buffer(np.zeros((nworld, spec.width), np.float32)) for _ in range(2))
-                    self._reward = tuple(self._buffer(np.zeros(nworld, np.float32)) for _ in range(2))
-                    self._terminated = tuple(self._buffer(np.zeros(nworld, np.int32)) for _ in range(2))
+                    self._observation = tuple(
+                        self._buffer(np.zeros((nworld, spec.width), np.float32)) for _ in range(2)
+                    )
+                    self._reward = tuple(
+                        self._buffer(np.zeros(nworld, np.float32)) for _ in range(2)
+                    )
+                    self._terminated = tuple(
+                        self._buffer(np.zeros(nworld, np.int32)) for _ in range(2)
+                    )
                     self._status = self._buffer(np.zeros(nworld, np.int32))
             except BaseException:
                 self._resources.close()
@@ -213,8 +264,10 @@ class MuJoCoTyxTaskWorkspace:
         # The parent runtime lock is held for the complete source read.
         with self._lock:
             self._open()
-            _require(int(device.runtime.device) == self._device_id and device.mode == self._mode,
-                     "source backend/device changed")
+            _require(
+                int(device.runtime.device) == self._device_id and device.mode == self._mode,
+                "source backend/device changed",
+            )
             destination = 1 - self._active
             try:
                 with self._tx.use_runtime(device.runtime):
@@ -226,10 +279,17 @@ class MuJoCoTyxTaskWorkspace:
                     if self._stream is not None:
                         options["stream"] = self._stream
                     self._kernel(
-                        self._count, self._width, self._ids, self._parameters,
-                        device.q[device.active], device.v[device.active],
-                        self._observation[destination], self._reward[destination],
-                        self._terminated[destination], self._status, **options,
+                        self._count,
+                        self._width,
+                        self._ids,
+                        self._parameters,
+                        device.q[device.active],
+                        device.v[device.active],
+                        self._observation[destination],
+                        self._reward[destination],
+                        self._terminated[destination],
+                        self._status,
+                        **options,
                     )
                     self._counts["task_kernels"] += 1
                     if self._stream is None:
@@ -240,12 +300,20 @@ class MuJoCoTyxTaskWorkspace:
                         status = self._status.to_numpy(stream=self._stream)
                         self._stream.synchronize()
                         self._counts["task_status_downloaded_bytes"] += status.nbytes
-                if status.shape != (self._count,) or status.dtype != np.int32 or np.any(status != 0):
-                    raise RuntimeError("task kernel rejected nonfinite feature/output: " + repr(status.tolist()))
+                if (
+                    status.shape != (self._count,)
+                    or status.dtype != np.int32
+                    or np.any(status != 0)
+                ):
+                    raise RuntimeError(
+                        "task kernel rejected nonfinite feature/output: " + repr(status.tolist())
+                    )
                 frame = MuJoCoTyxTaskFrame(self.binding, revision, self._epoch + 1, ticks, times)
             except Exception as error:
                 self._counts["failed_refreshes"] += 1
-                raise MuJoCoTyxTaskFailure("task outputs rejected; accepted physics unchanged") from error
+                raise MuJoCoTyxTaskFailure(
+                    "task outputs rejected; accepted physics unchanged"
+                ) from error
             self._active, self._epoch, self._frame = destination, frame.epoch, frame
             self._counts["published_frames"] += 1
             return frame
@@ -253,12 +321,19 @@ class MuJoCoTyxTaskWorkspace:
     def _check_frame(self, frame):
         self._open()
         self._engine._check_open()
-        _require(frame is self._frame and type(frame) is MuJoCoTyxTaskFrame,
-                 "foreign or superseded task frame")
-        _require(frame.revision == self._engine._checkpoint_revision,
-                 "task frame source revision is stale")
-        return (self._observation[self._active], self._reward[self._active],
-                self._terminated[self._active])
+        _require(
+            frame is self._frame and type(frame) is MuJoCoTyxTaskFrame,
+            "foreign or superseded task frame",
+        )
+        _require(
+            frame.revision == self._engine._checkpoint_revision,
+            "task frame source revision is stale",
+        )
+        return (
+            self._observation[self._active],
+            self._reward[self._active],
+            self._terminated[self._active],
+        )
 
     def readback(self, frame):
         """Explicit diagnostic HOST copies; does not expose device storage."""
@@ -270,7 +345,9 @@ class MuJoCoTyxTaskWorkspace:
                 else:
                     result = tuple(value.to_numpy(stream=self._stream) for value in values)
                     self._stream.synchronize()
-                    self._counts["explicit_output_readback_bytes"] += sum(value.nbytes for value in result)
+                    self._counts["explicit_output_readback_bytes"] += sum(
+                        value.nbytes for value in result
+                    )
             return tuple(_frozen(value, value.dtype) for value in result)
 
     def _overlaps(self, left, right):
@@ -289,33 +366,58 @@ class MuJoCoTyxTaskWorkspace:
             if self._mode == "interpret":
                 _require(stream is None, "interpret copies cannot use a device stream")
                 for target, shape, dtype in zip(targets, shapes, dtypes, strict=True):
-                    _require(isinstance(target, np.ndarray) and target.shape == shape
-                             and target.dtype == dtype and target.flags.c_contiguous
-                             and target.flags.writeable, "output dtype/shape/storage")
+                    _require(
+                        isinstance(target, np.ndarray)
+                        and target.shape == shape
+                        and target.dtype == dtype
+                        and target.flags.c_contiguous
+                        and target.flags.writeable,
+                        "output dtype/shape/storage",
+                    )
             else:
                 if stream is not None:
-                    _require(isinstance(stream, self._tx.CudaStream)
-                             and stream.device_ordinal == self._device_id, "consumer stream device")
+                    _require(
+                        isinstance(stream, self._tx.CudaStream)
+                        and stream.device_ordinal == self._device_id,
+                        "consumer stream device",
+                    )
                     stream._ensure_alive()
                 for target, shape, dtype in zip(targets, shapes, dtypes, strict=True):
-                    _require(isinstance(target, self._tx.CudaArray) and target.shape == shape
-                             and np.dtype(target.host_dtype) == dtype
-                             and target.device_ordinal == self._device_id, "output dtype/shape/device")
+                    _require(
+                        isinstance(target, self._tx.CudaArray)
+                        and target.shape == shape
+                        and np.dtype(target.host_dtype) == dtype
+                        and target.device_ordinal == self._device_id,
+                        "output dtype/shape/device",
+                    )
                     target._ensure_alive()
             device = self._engine._device
             physical = []
             for value in vars(device).values():
                 items = value if isinstance(value, (tuple, list)) else (value,)
                 for item in items:
-                    if isinstance(item, np.ndarray if self._mode == "interpret" else self._tx.CudaArray):
+                    if isinstance(
+                        item, np.ndarray if self._mode == "interpret" else self._tx.CudaArray
+                    ):
                         physical.append(item)
-            forbidden = (*physical, *self._observation, *self._reward, *self._terminated,
-                         self._ids, self._parameters, self._status)
+            forbidden = (
+                *physical,
+                *self._observation,
+                *self._reward,
+                *self._terminated,
+                self._ids,
+                self._parameters,
+                self._status,
+            )
             for i, target in enumerate(targets):
-                _require(not any(self._overlaps(target, other) for other in forbidden),
-                         "output must not alias physical or workspace storage")
-                _require(not any(self._overlaps(target, other) for other in targets[:i]),
-                         "caller outputs overlap")
+                _require(
+                    not any(self._overlaps(target, other) for other in forbidden),
+                    "output must not alias physical or workspace storage",
+                )
+                _require(
+                    not any(self._overlaps(target, other) for other in targets[:i]),
+                    "caller outputs overlap",
+                )
             with self._tx.use_runtime(self._runtime):
                 for target, value in zip(targets, values, strict=True):
                     if self._mode == "interpret":
@@ -349,7 +451,9 @@ class MuJoCoTyxTaskWorkspace:
             consumer = torch.cuda.current_stream(device=self._device_id)
             try:
                 with torch.cuda.device(self._device_id):
-                    result = tuple(to_torch(value, copy=True, stream=self._stream) for value in values)
+                    result = tuple(
+                        to_torch(value, copy=True, stream=self._stream) for value in values
+                    )
             finally:
                 consumer.synchronize()
             self._counts["output_d2d_bytes"] += sum(value.nbytes for value in values)

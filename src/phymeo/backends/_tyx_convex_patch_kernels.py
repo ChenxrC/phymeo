@@ -19,11 +19,17 @@ from ._tyx_convex_support import dot3
 
 
 def clear_convex_patch(
-    pairs: tx.i32, sites: tx.i32, meta: tx.ndarray(tx.i32, 2),
-    weight: tx.ndarray(tx.f32, 1), gap: tx.ndarray(tx.f32, 1),
-    normal: tx.ndarray(tx.f32, 2), common: tx.ndarray(tx.f32, 2),
-    material_ids: tx.ndarray(tx.i32, 3), barycentric: tx.ndarray(tx.f32, 3),
-    surface: tx.ndarray(tx.f32, 3), skin: tx.ndarray(tx.f32, 3),
+    pairs: tx.i32,
+    sites: tx.i32,
+    meta: tx.ndarray(tx.i32, 2),
+    weight: tx.ndarray(tx.f32, 1),
+    gap: tx.ndarray(tx.f32, 1),
+    normal: tx.ndarray(tx.f32, 2),
+    common: tx.ndarray(tx.f32, 2),
+    material_ids: tx.ndarray(tx.i32, 3),
+    barycentric: tx.ndarray(tx.f32, 3),
+    surface: tx.ndarray(tx.f32, 3),
+    skin: tx.ndarray(tx.f32, 3),
     material_count: tx.ndarray(tx.i32, 2),
 ):
     for pair in tx.range(pairs):
@@ -46,17 +52,29 @@ def clear_convex_patch(
 
 
 def fill_convex_patch(
-    pair_index: tx.i32, site_base: tx.i32, site_capacity: tx.i32,
-    tags: tx.ndarray(tx.i32, 2), original_ids: tx.ndarray(tx.i32, 1),
-    radii: tx.ndarray(tx.f32, 1), points: tx.ndarray(tx.f32, 2),
-    pairs: tx.ndarray(tx.i32, 2), distance_meta: tx.ndarray(tx.i32, 2),
-    distance_gap: tx.ndarray(tx.f32, 2), distance_normal: tx.ndarray(tx.f32, 2),
-    work: tx.ndarray(tx.f32, 3), work_i: tx.ndarray(tx.i32, 3),
-    meta: tx.ndarray(tx.i32, 2), weight: tx.ndarray(tx.f32, 1),
-    gap: tx.ndarray(tx.f32, 1), normal: tx.ndarray(tx.f32, 2),
-    common: tx.ndarray(tx.f32, 2), material_ids: tx.ndarray(tx.i32, 3),
-    barycentric: tx.ndarray(tx.f32, 3), surface: tx.ndarray(tx.f32, 3),
-    skin: tx.ndarray(tx.f32, 3), material_count: tx.ndarray(tx.i32, 2),
+    pair_index: tx.i32,
+    site_base: tx.i32,
+    site_capacity: tx.i32,
+    tags: tx.ndarray(tx.i32, 2),
+    original_ids: tx.ndarray(tx.i32, 1),
+    radii: tx.ndarray(tx.f32, 1),
+    points: tx.ndarray(tx.f32, 2),
+    pairs: tx.ndarray(tx.i32, 2),
+    distance_meta: tx.ndarray(tx.i32, 2),
+    distance_gap: tx.ndarray(tx.f32, 2),
+    distance_normal: tx.ndarray(tx.f32, 2),
+    work: tx.ndarray(tx.f32, 3),
+    work_i: tx.ndarray(tx.i32, 3),
+    meta: tx.ndarray(tx.i32, 2),
+    weight: tx.ndarray(tx.f32, 1),
+    gap: tx.ndarray(tx.f32, 1),
+    normal: tx.ndarray(tx.f32, 2),
+    common: tx.ndarray(tx.f32, 2),
+    material_ids: tx.ndarray(tx.i32, 3),
+    barycentric: tx.ndarray(tx.f32, 3),
+    surface: tx.ndarray(tx.f32, 3),
+    skin: tx.ndarray(tx.f32, 3),
+    material_count: tx.ndarray(tx.i32, 2),
 ):
     for lane in tx.range(1):
         out = pair_index
@@ -129,7 +147,13 @@ def fill_convex_patch(
                     skin[site_base, 1, 2] = -radius_b * nz
                 elif site_base + 1 > site_capacity:
                     status = 4
-            elif kind_a == 0 and a1 == a0 + 1 and ((kind_b == 1 and b1 == b0 + 2) or (kind_b == 2 and radius_b == 0.0 and b1 > b0)):
+            elif (
+                kind_a == 0
+                and a1 == a0 + 1
+                and (
+                    (kind_b == 1 and b1 == b0 + 2) or (kind_b == 2 and radius_b == 0.0 and b1 > b0)
+                )
+            ):
                 ax = points[a0, 0]
                 ay = points[a0, 1]
                 az = points[a0, 2]
@@ -148,7 +172,17 @@ def fill_convex_patch(
                     denom = dot3(bxx, bxy, bxz, bxx, bxy, bxz)
                     parameter = 0.0
                     if denom > 1e-12:
-                        parameter = dot3(ax - points[b0, 0], ay - points[b0, 1], az - points[b0, 2], bxx, bxy, bxz) / denom
+                        parameter = (
+                            dot3(
+                                ax - points[b0, 0],
+                                ay - points[b0, 1],
+                                az - points[b0, 2],
+                                bxx,
+                                bxy,
+                                bxz,
+                            )
+                            / denom
+                        )
                     if parameter < 0.0:
                         parameter = 0.0
                     if parameter > 1.0:
@@ -181,12 +215,16 @@ def fill_convex_patch(
                 else:
                     best = 1.0e30
                     for index in range(b0, b1):
-                        height = dot3(points[index, 0], points[index, 1], points[index, 2], nx, ny, nz)
+                        height = dot3(
+                            points[index, 0], points[index, 1], points[index, 2], nx, ny, nz
+                        )
                         if height < best:
                             best = height
                     face_count = 0
                     for index in range(b0, b1):
-                        height = dot3(points[index, 0], points[index, 1], points[index, 2], nx, ny, nz)
+                        height = dot3(
+                            points[index, 0], points[index, 1], points[index, 2], nx, ny, nz
+                        )
                         if height - best <= 2e-4 * scale and face_count < 8:
                             work[lane, face_count, 0] = points[index, 0]
                             work[lane, face_count, 1] = points[index, 1]
@@ -212,7 +250,9 @@ def fill_convex_patch(
                         else:
                             tangent_x = ny
                             tangent_y = -nx
-                        tangent_length = tx.sqrt(dot3(tangent_x, tangent_y, tangent_z, tangent_x, tangent_y, tangent_z))
+                        tangent_length = tx.sqrt(
+                            dot3(tangent_x, tangent_y, tangent_z, tangent_x, tangent_y, tangent_z)
+                        )
                         if tangent_length > 1e-8:
                             tangent_x = tangent_x / tangent_length
                             tangent_y = tangent_y / tangent_length
@@ -231,8 +271,22 @@ def fill_convex_patch(
                             count_f = 0.0
                             for slot in tx.static_range(8):
                                 if slot < face_count:
-                                    uu = dot3(work[lane, slot, 0], work[lane, slot, 1], work[lane, slot, 2], tangent_x, tangent_y, tangent_z)
-                                    vv = dot3(work[lane, slot, 0], work[lane, slot, 1], work[lane, slot, 2], bitangent_x, bitangent_y, bitangent_z)
+                                    uu = dot3(
+                                        work[lane, slot, 0],
+                                        work[lane, slot, 1],
+                                        work[lane, slot, 2],
+                                        tangent_x,
+                                        tangent_y,
+                                        tangent_z,
+                                    )
+                                    vv = dot3(
+                                        work[lane, slot, 0],
+                                        work[lane, slot, 1],
+                                        work[lane, slot, 2],
+                                        bitangent_x,
+                                        bitangent_y,
+                                        bitangent_z,
+                                    )
                                     work[lane, slot, 6] = uu
                                     work[lane, slot, 7] = vv
                                     center_u = center_u + uu
@@ -270,7 +324,9 @@ def fill_convex_patch(
                                         if swap == 1:
                                             for column in tx.static_range(8):
                                                 held = work[lane, slot, column]
-                                                work[lane, slot, column] = work[lane, slot + 1, column]
+                                                work[lane, slot, column] = work[
+                                                    lane, slot + 1, column
+                                                ]
                                                 work[lane, slot + 1, column] = held
                                             held_index = work_i[lane, slot, 0]
                                             work_i[lane, slot, 0] = work_i[lane, slot + 1, 0]
@@ -288,8 +344,12 @@ def fill_convex_patch(
                                     v2 = work[lane, third, 7]
                                     denom = (v1 - v2) * (u0 - u2) + (u2 - u1) * (v0 - v2)
                                     if tx.abs(denom) > 1e-12:
-                                        alpha = ((v1 - v2) * (qu - u2) + (u2 - u1) * (qv - v2)) / denom
-                                        beta = ((v2 - v0) * (qu - u2) + (u0 - u2) * (qv - v2)) / denom
+                                        alpha = (
+                                            (v1 - v2) * (qu - u2) + (u2 - u1) * (qv - v2)
+                                        ) / denom
+                                        beta = (
+                                            (v2 - v0) * (qu - u2) + (u0 - u2) * (qv - v2)
+                                        ) / denom
                                         gamma = 1.0 - alpha - beta
                                         if alpha >= -1e-5 and beta >= -1e-5 and gamma >= -1e-5:
                                             if alpha < 1e-5:
@@ -328,13 +388,22 @@ def fill_convex_patch(
                                     s1y = qy
                                     s1z = qz
                                     for slot in tx.static_range(8):
-                                        if slot < face_count and work[lane, slot, 4] > 0.0 and packed < 4:
+                                        if (
+                                            slot < face_count
+                                            and work[lane, slot, 4] > 0.0
+                                            and packed < 4
+                                        ):
                                             work_i[lane, packed, 1] = work_i[lane, slot, 0]
                                             work[lane, packed, 5] = work[lane, slot, 4]
                                             packed = packed + 1
                                     ready = 1
                 signed = dot3(s1x - s0x, s1y - s0y, s1z - s0z, nx, ny, nz)
-                if ready == 1 and tx.abs(signed - query_gap) <= 1e-4 * scale and packed >= 1 and site_base + 1 <= site_capacity:
+                if (
+                    ready == 1
+                    and tx.abs(signed - query_gap) <= 1e-4 * scale
+                    and packed >= 1
+                    and site_base + 1 <= site_capacity
+                ):
                     site = site_base
                     weight[site] = 1.0
                     gap[site] = signed
@@ -379,7 +448,17 @@ def fill_convex_patch(
                 denom = dot3(axx, axy, axz, axx, axy, axz)
                 parameter = 0.0
                 if denom > 1e-12:
-                    parameter = dot3(bx - points[a0, 0], by - points[a0, 1], bz - points[a0, 2], axx, axy, axz) / denom
+                    parameter = (
+                        dot3(
+                            bx - points[a0, 0],
+                            by - points[a0, 1],
+                            bz - points[a0, 2],
+                            axx,
+                            axy,
+                            axz,
+                        )
+                        / denom
+                    )
                 if parameter < 0.0:
                     parameter = 0.0
                 if parameter > 1.0:
@@ -413,7 +492,11 @@ def fill_convex_patch(
                         work[lane, packed, 5] = second_weight
                         packed = packed + 1
                 signed = dot3(s1x - s0x, s1y - s0y, s1z - s0z, nx, ny, nz)
-                if packed >= 1 and tx.abs(signed - query_gap) <= 1e-4 * scale and site_base + 1 <= site_capacity:
+                if (
+                    packed >= 1
+                    and tx.abs(signed - query_gap) <= 1e-4 * scale
+                    and site_base + 1 <= site_capacity
+                ):
                     site = site_base
                     weight[site] = 1.0
                     gap[site] = signed
@@ -446,7 +529,11 @@ def fill_convex_patch(
                     status = 1
                     dimension = 0
                     count = 1
-                elif packed >= 1 and tx.abs(signed - query_gap) <= 1e-4 * scale and site_base + 1 > site_capacity:
+                elif (
+                    packed >= 1
+                    and tx.abs(signed - query_gap) <= 1e-4 * scale
+                    and site_base + 1 > site_capacity
+                ):
                     status = 4
             elif kind_a == 1 and kind_b == 1 and a1 == a0 + 2 and b1 == b0 + 2:
                 axx = points[a0 + 1, 0] - points[a0, 0]
@@ -455,22 +542,42 @@ def fill_convex_patch(
                 bxx = points[b0 + 1, 0] - points[b0, 0]
                 bxy = points[b0 + 1, 1] - points[b0, 1]
                 bxz = points[b0 + 1, 2] - points[b0, 2]
-                cross = tx.sqrt(dot3(
-                    axy * bxz - axz * bxy, axz * bxx - axx * bxz, axx * bxy - axy * bxx,
-                    axy * bxz - axz * bxy, axz * bxx - axx * bxz, axx * bxy - axy * bxx,
-                ))
+                cross = tx.sqrt(
+                    dot3(
+                        axy * bxz - axz * bxy,
+                        axz * bxx - axx * bxz,
+                        axx * bxy - axy * bxx,
+                        axy * bxz - axz * bxy,
+                        axz * bxx - axx * bxz,
+                        axx * bxy - axy * bxx,
+                    )
+                )
                 length_a = tx.sqrt(dot3(axx, axy, axz, axx, axy, axz))
                 length_b = tx.sqrt(dot3(bxx, bxy, bxz, bxx, bxy, bxz))
                 if cross <= 1e-4 * length_a * length_b and length_a > 1e-8 and length_b > 1e-8:
                     denom = dot3(axx, axy, axz, axx, axy, axz)
-                    t0 = dot3(
-                        points[b0, 0] - points[a0, 0], points[b0, 1] - points[a0, 1],
-                        points[b0, 2] - points[a0, 2], axx, axy, axz,
-                    ) / denom
-                    t1 = dot3(
-                        points[b0 + 1, 0] - points[a0, 0], points[b0 + 1, 1] - points[a0, 1],
-                        points[b0 + 1, 2] - points[a0, 2], axx, axy, axz,
-                    ) / denom
+                    t0 = (
+                        dot3(
+                            points[b0, 0] - points[a0, 0],
+                            points[b0, 1] - points[a0, 1],
+                            points[b0, 2] - points[a0, 2],
+                            axx,
+                            axy,
+                            axz,
+                        )
+                        / denom
+                    )
+                    t1 = (
+                        dot3(
+                            points[b0 + 1, 0] - points[a0, 0],
+                            points[b0 + 1, 1] - points[a0, 1],
+                            points[b0 + 1, 2] - points[a0, 2],
+                            axx,
+                            axy,
+                            axz,
+                        )
+                        / denom
+                    )
                     low = tx.max(0.0, tx.min(t0, t1))
                     high = tx.min(1.0, tx.max(t0, t1))
                     if high - low > 1e-5 and site_base + 2 <= site_capacity:
@@ -502,7 +609,17 @@ def fill_convex_patch(
                             if tx.abs(signed - query_gap) > 1e-4 * scale:
                                 ready = 0
                             bdenom = dot3(bxx, bxy, bxz, bxx, bxy, bxz)
-                            bparameter = dot3(c1x - points[b0, 0], c1y - points[b0, 1], c1z - points[b0, 2], bxx, bxy, bxz) / bdenom
+                            bparameter = (
+                                dot3(
+                                    c1x - points[b0, 0],
+                                    c1y - points[b0, 1],
+                                    c1z - points[b0, 2],
+                                    bxx,
+                                    bxy,
+                                    bxz,
+                                )
+                                / bdenom
+                            )
                             if bparameter < -1e-4 or bparameter > 1.0 + 1e-4:
                                 ready = 0
                             bparameter = tx.max(0.0, tx.min(1.0, bparameter))
@@ -629,7 +746,12 @@ def fill_convex_patch(
                             work_i[lane, packed_b, 2] = b0 + 1
                             work[lane, packed_b, 3] = bw1
                             packed_b = packed_b + 1
-                    if packed_a >= 1 and packed_b >= 1 and tx.abs(signed - query_gap) <= 1e-4 * scale and site_base + 1 <= site_capacity:
+                    if (
+                        packed_a >= 1
+                        and packed_b >= 1
+                        and tx.abs(signed - query_gap) <= 1e-4 * scale
+                        and site_base + 1 <= site_capacity
+                    ):
                         site = site_base
                         weight[site] = 1.0
                         gap[site] = signed
@@ -663,7 +785,12 @@ def fill_convex_patch(
                         status = 1
                         dimension = 0
                         count = 1
-                    elif packed_a >= 1 and packed_b >= 1 and tx.abs(signed - query_gap) <= 1e-4 * scale and site_base + 1 > site_capacity:
+                    elif (
+                        packed_a >= 1
+                        and packed_b >= 1
+                        and tx.abs(signed - query_gap) <= 1e-4 * scale
+                        and site_base + 1 > site_capacity
+                    ):
                         status = 4
             elif kind_a == 1 and kind_b == 2 and radius_b == 0.0 and a1 == a0 + 2 and b1 > b0:
                 best = 1.0e30
@@ -699,7 +826,9 @@ def fill_convex_patch(
                     else:
                         tangent_x = ny
                         tangent_y = -nx
-                    tangent_length = tx.sqrt(dot3(tangent_x, tangent_y, tangent_z, tangent_x, tangent_y, tangent_z))
+                    tangent_length = tx.sqrt(
+                        dot3(tangent_x, tangent_y, tangent_z, tangent_x, tangent_y, tangent_z)
+                    )
                     if tangent_length > 1e-8:
                         tangent_x = tangent_x / tangent_length
                         tangent_y = tangent_y / tangent_length
@@ -712,8 +841,22 @@ def fill_convex_patch(
                         count_f = 0.0
                         for slot in tx.static_range(8):
                             if slot < face_count:
-                                uu = dot3(work[lane, slot, 0], work[lane, slot, 1], work[lane, slot, 2], tangent_x, tangent_y, tangent_z)
-                                vv = dot3(work[lane, slot, 0], work[lane, slot, 1], work[lane, slot, 2], bitangent_x, bitangent_y, bitangent_z)
+                                uu = dot3(
+                                    work[lane, slot, 0],
+                                    work[lane, slot, 1],
+                                    work[lane, slot, 2],
+                                    tangent_x,
+                                    tangent_y,
+                                    tangent_z,
+                                )
+                                vv = dot3(
+                                    work[lane, slot, 0],
+                                    work[lane, slot, 1],
+                                    work[lane, slot, 2],
+                                    bitangent_x,
+                                    bitangent_y,
+                                    bitangent_z,
+                                )
                                 work[lane, slot, 6] = uu
                                 work[lane, slot, 7] = vv
                                 center_u = center_u + uu
@@ -821,7 +964,10 @@ def fill_convex_patch(
                                 s1z = cz + (best - core_h) * nz
                                 signed = dot3(s1x - s0x, s1y - s0y, s1z - s0z, nx, ny, nz)
                                 qu = dot3(s1x, s1y, s1z, tangent_x, tangent_y, tangent_z) - center_u
-                                qv = dot3(s1x, s1y, s1z, bitangent_x, bitangent_y, bitangent_z) - center_v
+                                qv = (
+                                    dot3(s1x, s1y, s1z, bitangent_x, bitangent_y, bitangent_z)
+                                    - center_v
+                                )
                                 for slot in tx.static_range(8):
                                     work[lane, slot, 4] = 0.0
                                 chosen = 0
@@ -837,8 +983,12 @@ def fill_convex_patch(
                                         v2 = work[lane, third, 7]
                                         denom = (v1 - v2) * (u0 - u2) + (u2 - u1) * (v0 - v2)
                                         if tx.abs(denom) > 1e-12:
-                                            alpha = ((v1 - v2) * (qu - u2) + (u2 - u1) * (qv - v2)) / denom
-                                            beta = ((v2 - v0) * (qu - u2) + (u0 - u2) * (qv - v2)) / denom
+                                            alpha = (
+                                                (v1 - v2) * (qu - u2) + (u2 - u1) * (qv - v2)
+                                            ) / denom
+                                            beta = (
+                                                (v2 - v0) * (qu - u2) + (u0 - u2) * (qv - v2)
+                                            ) / denom
                                             gamma = 1.0 - alpha - beta
                                             if alpha >= -1e-5 and beta >= -1e-5 and gamma >= -1e-5:
                                                 if alpha < 1e-5:
@@ -870,12 +1020,18 @@ def fill_convex_patch(
                                             ry = ry + work[lane, slot, 4] * work[lane, slot, 1]
                                             rz = rz + work[lane, slot, 4] * work[lane, slot, 2]
                                             used = used + 1
-                                    error = dot3(rx - s1x, ry - s1y, rz - s1z, rx - s1x, ry - s1y, rz - s1z)
+                                    error = dot3(
+                                        rx - s1x, ry - s1y, rz - s1z, rx - s1x, ry - s1y, rz - s1z
+                                    )
                                     limit = 2e-4 * scale
                                     if used >= 1 and used <= 4 and error <= limit * limit:
                                         packed = 0
                                         for slot in tx.static_range(8):
-                                            if slot < face_count and work[lane, slot, 4] > 0.0 and packed < 4:
+                                            if (
+                                                slot < face_count
+                                                and work[lane, slot, 4] > 0.0
+                                                and packed < 4
+                                            ):
                                                 if end == 0:
                                                     work_i[lane, packed, 1] = work_i[lane, slot, 0]
                                                     work[lane, packed, 5] = work[lane, slot, 4]
@@ -915,10 +1071,14 @@ def fill_convex_patch(
                                 for slot in tx.static_range(4):
                                     if slot < mcount:
                                         if end == 0:
-                                            material_ids[site, 1, slot] = original_ids[work_i[lane, slot, 1]]
+                                            material_ids[site, 1, slot] = original_ids[
+                                                work_i[lane, slot, 1]
+                                            ]
                                             barycentric[site, 1, slot] = work[lane, slot, 5]
                                         else:
-                                            material_ids[site, 1, slot] = original_ids[work_i[lane, slot, 2]]
+                                            material_ids[site, 1, slot] = original_ids[
+                                                work_i[lane, slot, 2]
+                                            ]
                                             barycentric[site, 1, slot] = work[lane, slot, 3]
                                 surface[site, 0, 0] = work[lane, end, 9]
                                 surface[site, 0, 1] = work[lane, end, 10]
@@ -975,13 +1135,33 @@ def fill_convex_patch(
                     if axis_t > 1.0:
                         axis_t = 1.0
                     if cc > 1e-12:
-                        edge_t = dot3(p0x + axis_t * ux - e0x, p0y + axis_t * uy - e0y, p0z + axis_t * uz - e0z, vx, vy, vz) / cc
+                        edge_t = (
+                            dot3(
+                                p0x + axis_t * ux - e0x,
+                                p0y + axis_t * uy - e0y,
+                                p0z + axis_t * uz - e0z,
+                                vx,
+                                vy,
+                                vz,
+                            )
+                            / cc
+                        )
                     if edge_t < 0.0:
                         edge_t = 0.0
                     if edge_t > 1.0:
                         edge_t = 1.0
                     if aa > 1e-12:
-                        axis_t = dot3(e0x + edge_t * vx - p0x, e0y + edge_t * vy - p0y, e0z + edge_t * vz - p0z, ux, uy, uz) / aa
+                        axis_t = (
+                            dot3(
+                                e0x + edge_t * vx - p0x,
+                                e0y + edge_t * vy - p0y,
+                                e0z + edge_t * vz - p0z,
+                                ux,
+                                uy,
+                                uz,
+                            )
+                            / aa
+                        )
                     if axis_t < 0.0:
                         axis_t = 0.0
                     if axis_t > 1.0:
@@ -1004,7 +1184,11 @@ def fill_convex_patch(
                     cross_z = ux * vy - uy * vx
                     cross_len = tx.sqrt(dot3(cross_x, cross_y, cross_z, cross_x, cross_y, cross_z))
                     skew = 0
-                    if tx.sqrt(aa) > 1e-8 and tx.sqrt(cc) > 1e-8 and cross_len > 1e-4 * tx.sqrt(aa) * tx.sqrt(cc):
+                    if (
+                        tx.sqrt(aa) > 1e-8
+                        and tx.sqrt(cc) > 1e-8
+                        and cross_len > 1e-4 * tx.sqrt(aa) * tx.sqrt(cc)
+                    ):
                         skew = 1
                     first_weight = 1.0 - axis_t
                     second_weight = axis_t
@@ -1044,7 +1228,13 @@ def fill_convex_patch(
                             work_i[lane, edge_count, 2] = work_i[lane, 1, 0]
                             work[lane, edge_count, 3] = edge1
                             edge_count = edge_count + 1
-                    if skew == 1 and packed >= 1 and edge_count >= 1 and tx.abs(signed - query_gap) <= 1e-4 * scale and site_base + 1 <= site_capacity:
+                    if (
+                        skew == 1
+                        and packed >= 1
+                        and edge_count >= 1
+                        and tx.abs(signed - query_gap) <= 1e-4 * scale
+                        and site_base + 1 <= site_capacity
+                    ):
                         site = site_base
                         weight[site] = 1.0
                         gap[site] = signed
@@ -1078,7 +1268,13 @@ def fill_convex_patch(
                         status = 1
                         dimension = 0
                         count = 1
-                    elif skew == 1 and packed >= 1 and edge_count >= 1 and tx.abs(signed - query_gap) <= 1e-4 * scale and site_base + 1 > site_capacity:
+                    elif (
+                        skew == 1
+                        and packed >= 1
+                        and edge_count >= 1
+                        and tx.abs(signed - query_gap) <= 1e-4 * scale
+                        and site_base + 1 > site_capacity
+                    ):
                         status = 4
             elif kind_a == 2 and kind_b == 1 and radius_a == 0.0 and a1 > a0 and b1 == b0 + 2:
                 best = -1.0e30
@@ -1114,7 +1310,9 @@ def fill_convex_patch(
                     else:
                         tangent_x = ny
                         tangent_y = -nx
-                    tangent_length = tx.sqrt(dot3(tangent_x, tangent_y, tangent_z, tangent_x, tangent_y, tangent_z))
+                    tangent_length = tx.sqrt(
+                        dot3(tangent_x, tangent_y, tangent_z, tangent_x, tangent_y, tangent_z)
+                    )
                     if tangent_length > 1e-8:
                         tangent_x = tangent_x / tangent_length
                         tangent_y = tangent_y / tangent_length
@@ -1127,8 +1325,22 @@ def fill_convex_patch(
                         count_f = 0.0
                         for slot in tx.static_range(8):
                             if slot < face_count:
-                                uu = dot3(work[lane, slot, 0], work[lane, slot, 1], work[lane, slot, 2], tangent_x, tangent_y, tangent_z)
-                                vv = dot3(work[lane, slot, 0], work[lane, slot, 1], work[lane, slot, 2], bitangent_x, bitangent_y, bitangent_z)
+                                uu = dot3(
+                                    work[lane, slot, 0],
+                                    work[lane, slot, 1],
+                                    work[lane, slot, 2],
+                                    tangent_x,
+                                    tangent_y,
+                                    tangent_z,
+                                )
+                                vv = dot3(
+                                    work[lane, slot, 0],
+                                    work[lane, slot, 1],
+                                    work[lane, slot, 2],
+                                    bitangent_x,
+                                    bitangent_y,
+                                    bitangent_z,
+                                )
                                 work[lane, slot, 6] = uu
                                 work[lane, slot, 7] = vv
                                 center_u = center_u + uu
@@ -1236,7 +1448,10 @@ def fill_convex_patch(
                                 s1z = cz - radius_b * nz
                                 signed = dot3(s1x - s0x, s1y - s0y, s1z - s0z, nx, ny, nz)
                                 qu = dot3(s0x, s0y, s0z, tangent_x, tangent_y, tangent_z) - center_u
-                                qv = dot3(s0x, s0y, s0z, bitangent_x, bitangent_y, bitangent_z) - center_v
+                                qv = (
+                                    dot3(s0x, s0y, s0z, bitangent_x, bitangent_y, bitangent_z)
+                                    - center_v
+                                )
                                 for slot in tx.static_range(8):
                                     work[lane, slot, 4] = 0.0
                                 chosen = 0
@@ -1252,8 +1467,12 @@ def fill_convex_patch(
                                         v2 = work[lane, third, 7]
                                         denom = (v1 - v2) * (u0 - u2) + (u2 - u1) * (v0 - v2)
                                         if tx.abs(denom) > 1e-12:
-                                            alpha = ((v1 - v2) * (qu - u2) + (u2 - u1) * (qv - v2)) / denom
-                                            beta = ((v2 - v0) * (qu - u2) + (u0 - u2) * (qv - v2)) / denom
+                                            alpha = (
+                                                (v1 - v2) * (qu - u2) + (u2 - u1) * (qv - v2)
+                                            ) / denom
+                                            beta = (
+                                                (v2 - v0) * (qu - u2) + (u0 - u2) * (qv - v2)
+                                            ) / denom
                                             gamma = 1.0 - alpha - beta
                                             if alpha >= -1e-5 and beta >= -1e-5 and gamma >= -1e-5:
                                                 if alpha < 1e-5:
@@ -1285,12 +1504,18 @@ def fill_convex_patch(
                                             ry = ry + work[lane, slot, 4] * work[lane, slot, 1]
                                             rz = rz + work[lane, slot, 4] * work[lane, slot, 2]
                                             used = used + 1
-                                    error = dot3(rx - s0x, ry - s0y, rz - s0z, rx - s0x, ry - s0y, rz - s0z)
+                                    error = dot3(
+                                        rx - s0x, ry - s0y, rz - s0z, rx - s0x, ry - s0y, rz - s0z
+                                    )
                                     limit = 2e-4 * scale
                                     if used >= 1 and used <= 4 and error <= limit * limit:
                                         packed = 0
                                         for slot in tx.static_range(8):
-                                            if slot < face_count and work[lane, slot, 4] > 0.0 and packed < 4:
+                                            if (
+                                                slot < face_count
+                                                and work[lane, slot, 4] > 0.0
+                                                and packed < 4
+                                            ):
                                                 if end == 0:
                                                     work_i[lane, packed, 1] = work_i[lane, slot, 0]
                                                     work[lane, packed, 5] = work[lane, slot, 4]
@@ -1330,10 +1555,14 @@ def fill_convex_patch(
                                 for slot in tx.static_range(4):
                                     if slot < mcount:
                                         if end == 0:
-                                            material_ids[site, 0, slot] = original_ids[work_i[lane, slot, 1]]
+                                            material_ids[site, 0, slot] = original_ids[
+                                                work_i[lane, slot, 1]
+                                            ]
                                             barycentric[site, 0, slot] = work[lane, slot, 5]
                                         else:
-                                            material_ids[site, 0, slot] = original_ids[work_i[lane, slot, 2]]
+                                            material_ids[site, 0, slot] = original_ids[
+                                                work_i[lane, slot, 2]
+                                            ]
                                             barycentric[site, 0, slot] = work[lane, slot, 3]
                                 surface[site, 0, 0] = work[lane, end, 9]
                                 surface[site, 0, 1] = work[lane, end, 10]
@@ -1415,7 +1644,9 @@ def fill_convex_patch(
                     else:
                         tangent_x = ny
                         tangent_y = -nx
-                    tangent_length = tx.sqrt(dot3(tangent_x, tangent_y, tangent_z, tangent_x, tangent_y, tangent_z))
+                    tangent_length = tx.sqrt(
+                        dot3(tangent_x, tangent_y, tangent_z, tangent_x, tangent_y, tangent_z)
+                    )
                     if tangent_length > 1e-8:
                         tangent_x = tangent_x / tangent_length
                         tangent_y = tangent_y / tangent_length
@@ -1434,8 +1665,22 @@ def fill_convex_patch(
                         count_f = 0.0
                         for slot in tx.static_range(8):
                             if slot < face_count:
-                                uu = dot3(work[lane, slot, 0], work[lane, slot, 1], work[lane, slot, 2], tangent_x, tangent_y, tangent_z)
-                                vv = dot3(work[lane, slot, 0], work[lane, slot, 1], work[lane, slot, 2], bitangent_x, bitangent_y, bitangent_z)
+                                uu = dot3(
+                                    work[lane, slot, 0],
+                                    work[lane, slot, 1],
+                                    work[lane, slot, 2],
+                                    tangent_x,
+                                    tangent_y,
+                                    tangent_z,
+                                )
+                                vv = dot3(
+                                    work[lane, slot, 0],
+                                    work[lane, slot, 1],
+                                    work[lane, slot, 2],
+                                    bitangent_x,
+                                    bitangent_y,
+                                    bitangent_z,
+                                )
                                 work[lane, slot, 6] = uu
                                 work[lane, slot, 7] = vv
                                 center_u = center_u + uu
@@ -1531,13 +1776,22 @@ def fill_convex_patch(
                                 s0y = qy
                                 s0z = qz
                                 for slot in tx.static_range(8):
-                                    if slot < face_count and work[lane, slot, 4] > 0.0 and packed < 4:
+                                    if (
+                                        slot < face_count
+                                        and work[lane, slot, 4] > 0.0
+                                        and packed < 4
+                                    ):
                                         work_i[lane, packed, 1] = work_i[lane, slot, 0]
                                         work[lane, packed, 5] = work[lane, slot, 4]
                                         packed = packed + 1
                                 ready = 1
                 signed = dot3(s1x - s0x, s1y - s0y, s1z - s0z, nx, ny, nz)
-                if ready == 1 and packed >= 1 and tx.abs(signed - query_gap) <= 1e-4 * scale and site_base + 1 <= site_capacity:
+                if (
+                    ready == 1
+                    and packed >= 1
+                    and tx.abs(signed - query_gap) <= 1e-4 * scale
+                    and site_base + 1 <= site_capacity
+                ):
                     site = site_base
                     weight[site] = 1.0
                     gap[site] = signed
@@ -1570,9 +1824,21 @@ def fill_convex_patch(
                     status = 1
                     dimension = 0
                     count = 1
-                elif ready == 1 and packed >= 1 and tx.abs(signed - query_gap) <= 1e-4 * scale and site_base + 1 > site_capacity:
+                elif (
+                    ready == 1
+                    and packed >= 1
+                    and tx.abs(signed - query_gap) <= 1e-4 * scale
+                    and site_base + 1 > site_capacity
+                ):
                     status = 4
-            elif kind_a == 2 and kind_b == 2 and radius_a == 0.0 and radius_b == 0.0 and a1 > a0 and b1 > b0:
+            elif (
+                kind_a == 2
+                and kind_b == 2
+                and radius_a == 0.0
+                and radius_b == 0.0
+                and a1 > a0
+                and b1 > b0
+            ):
                 best = -1.0e30
                 for index in range(a0, a1):
                     height = dot3(points[index, 0], points[index, 1], points[index, 2], nx, ny, nz)
@@ -1621,7 +1887,9 @@ def fill_convex_patch(
                     else:
                         tangent_x = ny
                         tangent_y = -nx
-                    tangent_length = tx.sqrt(dot3(tangent_x, tangent_y, tangent_z, tangent_x, tangent_y, tangent_z))
+                    tangent_length = tx.sqrt(
+                        dot3(tangent_x, tangent_y, tangent_z, tangent_x, tangent_y, tangent_z)
+                    )
                     if tangent_length > 1e-8:
                         tangent_x = tangent_x / tangent_length
                         tangent_y = tangent_y / tangent_length
@@ -1630,8 +1898,22 @@ def fill_convex_patch(
                         bitangent_y = nz * tangent_x - nx * tangent_z
                         bitangent_z = nx * tangent_y - ny * tangent_x
                         for slot in tx.static_range(8):
-                            work[lane, slot, 6] = dot3(work[lane, slot, 0], work[lane, slot, 1], work[lane, slot, 2], tangent_x, tangent_y, tangent_z)
-                            work[lane, slot, 7] = dot3(work[lane, slot, 0], work[lane, slot, 1], work[lane, slot, 2], bitangent_x, bitangent_y, bitangent_z)
+                            work[lane, slot, 6] = dot3(
+                                work[lane, slot, 0],
+                                work[lane, slot, 1],
+                                work[lane, slot, 2],
+                                tangent_x,
+                                tangent_y,
+                                tangent_z,
+                            )
+                            work[lane, slot, 7] = dot3(
+                                work[lane, slot, 0],
+                                work[lane, slot, 1],
+                                work[lane, slot, 2],
+                                bitangent_x,
+                                bitangent_y,
+                                bitangent_z,
+                            )
                         for _pass in tx.static_range(3):
                             for slot in tx.static_range(3):
                                 left_u = work[lane, slot, 6]
@@ -1735,7 +2017,9 @@ def fill_convex_patch(
                                 cross_x = uy * vz - uz * vy
                                 cross_y = uz * vx - ux * vz
                                 cross_z = ux * vy - uy * vx
-                                work[lane, slot, 8] = tx.abs(dot3(nx, ny, nz, cross_x, cross_y, cross_z))
+                                work[lane, slot, 8] = tx.abs(
+                                    dot3(nx, ny, nz, cross_x, cross_y, cross_z)
+                                )
                                 area_sum = area_sum + work[lane, slot, 8]
                             if area_sum > 1e-12:
                                 ready = 1
@@ -1743,7 +2027,9 @@ def fill_convex_patch(
                                     previous = 3
                                     if slot > 0:
                                         previous = slot - 1
-                                    site_weight = (work[lane, slot, 8] + work[lane, previous, 8]) / (3.0 * area_sum) + 1.0 / 12.0
+                                    site_weight = (
+                                        work[lane, slot, 8] + work[lane, previous, 8]
+                                    ) / (3.0 * area_sum) + 1.0 / 12.0
                                     other = work_i[lane, slot, 1]
                                     s0x = work[lane, slot, 0]
                                     s0y = work[lane, slot, 1]
@@ -1797,12 +2083,16 @@ def fill_convex_patch(
                 if status == 2:
                     best = -1.0e30
                     for index in range(a0, a1):
-                        height = dot3(points[index, 0], points[index, 1], points[index, 2], nx, ny, nz)
+                        height = dot3(
+                            points[index, 0], points[index, 1], points[index, 2], nx, ny, nz
+                        )
                         if height > best:
                             best = height
                     face_count = 0
                     for index in range(a0, a1):
-                        height = dot3(points[index, 0], points[index, 1], points[index, 2], nx, ny, nz)
+                        height = dot3(
+                            points[index, 0], points[index, 1], points[index, 2], nx, ny, nz
+                        )
                         if best - height <= 2e-4 * scale and face_count < 8:
                             work[lane, face_count, 0] = points[index, 0]
                             work[lane, face_count, 1] = points[index, 1]
@@ -1813,12 +2103,16 @@ def fill_convex_patch(
                             face_count = 9
                     other_best = 1.0e30
                     for index in range(b0, b1):
-                        height = dot3(points[index, 0], points[index, 1], points[index, 2], nx, ny, nz)
+                        height = dot3(
+                            points[index, 0], points[index, 1], points[index, 2], nx, ny, nz
+                        )
                         if height < other_best:
                             other_best = height
                     other_count = 0
                     for index in range(b0, b1):
-                        height = dot3(points[index, 0], points[index, 1], points[index, 2], nx, ny, nz)
+                        height = dot3(
+                            points[index, 0], points[index, 1], points[index, 2], nx, ny, nz
+                        )
                         if height - other_best <= 2e-4 * scale and other_count < 8:
                             work[lane, 8 + other_count, 0] = points[index, 0]
                             work[lane, 8 + other_count, 1] = points[index, 1]
@@ -1827,7 +2121,12 @@ def fill_convex_patch(
                             other_count = other_count + 1
                         elif height - other_best <= 2e-4 * scale:
                             other_count = 9
-                    if face_count >= 3 and face_count <= 8 and other_count >= 3 and other_count <= 8:
+                    if (
+                        face_count >= 3
+                        and face_count <= 8
+                        and other_count >= 3
+                        and other_count <= 8
+                    ):
                         absolute_x = tx.abs(nx)
                         absolute_y = tx.abs(ny)
                         absolute_z = tx.abs(nz)
@@ -1843,7 +2142,9 @@ def fill_convex_patch(
                         else:
                             tangent_x = ny
                             tangent_y = -nx
-                        tangent_length = tx.sqrt(dot3(tangent_x, tangent_y, tangent_z, tangent_x, tangent_y, tangent_z))
+                        tangent_length = tx.sqrt(
+                            dot3(tangent_x, tangent_y, tangent_z, tangent_x, tangent_y, tangent_z)
+                        )
                         if tangent_length > 1e-8:
                             tangent_x = tangent_x / tangent_length
                             tangent_y = tangent_y / tangent_length
@@ -1866,8 +2167,22 @@ def fill_convex_patch(
                                 count_f = 0.0
                                 for slot in tx.static_range(8):
                                     if slot < poly_count:
-                                        uu = dot3(work[lane, poly_base + slot, 0], work[lane, poly_base + slot, 1], work[lane, poly_base + slot, 2], tangent_x, tangent_y, tangent_z)
-                                        vv = dot3(work[lane, poly_base + slot, 0], work[lane, poly_base + slot, 1], work[lane, poly_base + slot, 2], bitangent_x, bitangent_y, bitangent_z)
+                                        uu = dot3(
+                                            work[lane, poly_base + slot, 0],
+                                            work[lane, poly_base + slot, 1],
+                                            work[lane, poly_base + slot, 2],
+                                            tangent_x,
+                                            tangent_y,
+                                            tangent_z,
+                                        )
+                                        vv = dot3(
+                                            work[lane, poly_base + slot, 0],
+                                            work[lane, poly_base + slot, 1],
+                                            work[lane, poly_base + slot, 2],
+                                            bitangent_x,
+                                            bitangent_y,
+                                            bitangent_z,
+                                        )
                                         work[lane, poly_base + slot, 3] = uu
                                         work[lane, poly_base + slot, 4] = vv
                                         work[lane, poly_base + slot, 6] = uu
@@ -1885,8 +2200,12 @@ def fill_convex_patch(
                                     center_v1 = center_v
                                 for slot in tx.static_range(8):
                                     if slot < poly_count:
-                                        work[lane, poly_base + slot, 6] = work[lane, poly_base + slot, 6] - center_u
-                                        work[lane, poly_base + slot, 7] = work[lane, poly_base + slot, 7] - center_v
+                                        work[lane, poly_base + slot, 6] = (
+                                            work[lane, poly_base + slot, 6] - center_u
+                                        )
+                                        work[lane, poly_base + slot, 7] = (
+                                            work[lane, poly_base + slot, 7] - center_v
+                                        )
                                 for _pass in tx.static_range(7):
                                     for slot in tx.static_range(7):
                                         if slot + 1 < poly_count:
@@ -1911,10 +2230,14 @@ def fill_convex_patch(
                                             if swap == 1:
                                                 for column in tx.static_range(8):
                                                     held = work[lane, poly_base + slot, column]
-                                                    work[lane, poly_base + slot, column] = work[lane, poly_base + slot + 1, column]
+                                                    work[lane, poly_base + slot, column] = work[
+                                                        lane, poly_base + slot + 1, column
+                                                    ]
                                                     work[lane, poly_base + slot + 1, column] = held
                                                 held_index = work_i[lane, poly_base + slot, 0]
-                                                work_i[lane, poly_base + slot, 0] = work_i[lane, poly_base + slot + 1, 0]
+                                                work_i[lane, poly_base + slot, 0] = work_i[
+                                                    lane, poly_base + slot + 1, 0
+                                                ]
                                                 work_i[lane, poly_base + slot + 1, 0] = held_index
                             a_inside = 1
                             b_inside = 1
@@ -1930,7 +2253,9 @@ def fill_convex_patch(
                                                 nxt = 0
                                             ex = work[lane, 8 + nxt, 3] - work[lane, 8 + edge, 3]
                                             ey = work[lane, 8 + nxt, 4] - work[lane, 8 + edge, 4]
-                                            side = ex * (vv - work[lane, 8 + edge, 4]) - ey * (uu - work[lane, 8 + edge, 3])
+                                            side = ex * (vv - work[lane, 8 + edge, 4]) - ey * (
+                                                uu - work[lane, 8 + edge, 3]
+                                            )
                                             if side < -band:
                                                 a_inside = 0
                             for slot in tx.static_range(8):
@@ -1944,7 +2269,9 @@ def fill_convex_patch(
                                                 nxt = 0
                                             ex = work[lane, nxt, 3] - work[lane, edge, 3]
                                             ey = work[lane, nxt, 4] - work[lane, edge, 4]
-                                            side = ex * (vv - work[lane, edge, 4]) - ey * (uu - work[lane, edge, 3])
+                                            side = ex * (vv - work[lane, edge, 4]) - ey * (
+                                                uu - work[lane, edge, 3]
+                                            )
                                             if side < -band:
                                                 b_inside = 0
                             emit = 0
@@ -2006,12 +2333,24 @@ def fill_convex_patch(
                                                     v1 = work[lane, outer_base + second, 7]
                                                     u2 = work[lane, outer_base + third, 6]
                                                     v2 = work[lane, outer_base + third, 7]
-                                                    denom = (v1 - v2) * (u0 - u2) + (u2 - u1) * (v0 - v2)
+                                                    denom = (v1 - v2) * (u0 - u2) + (u2 - u1) * (
+                                                        v0 - v2
+                                                    )
                                                     if tx.abs(denom) > 1e-12:
-                                                        alpha = ((v1 - v2) * (qu - u2) + (u2 - u1) * (qv - v2)) / denom
-                                                        beta = ((v2 - v0) * (qu - u2) + (u0 - u2) * (qv - v2)) / denom
+                                                        alpha = (
+                                                            (v1 - v2) * (qu - u2)
+                                                            + (u2 - u1) * (qv - v2)
+                                                        ) / denom
+                                                        beta = (
+                                                            (v2 - v0) * (qu - u2)
+                                                            + (u0 - u2) * (qv - v2)
+                                                        ) / denom
                                                         gamma = 1.0 - alpha - beta
-                                                        if alpha >= -1e-5 and beta >= -1e-5 and gamma >= -1e-5:
+                                                        if (
+                                                            alpha >= -1e-5
+                                                            and beta >= -1e-5
+                                                            and gamma >= -1e-5
+                                                        ):
                                                             if alpha < 1e-5:
                                                                 alpha = 0.0
                                                             if beta < 1e-5:
@@ -2026,9 +2365,15 @@ def fill_convex_patch(
                                                                 gamma = 0.0
                                                             total = alpha + beta + gamma
                                                             if total > 0.0:
-                                                                work[lane, outer_base, 5] = alpha / total
-                                                                work[lane, outer_base + second, 5] = beta / total
-                                                                work[lane, outer_base + third, 5] = gamma / total
+                                                                work[lane, outer_base, 5] = (
+                                                                    alpha / total
+                                                                )
+                                                                work[
+                                                                    lane, outer_base + second, 5
+                                                                ] = beta / total
+                                                                work[
+                                                                    lane, outer_base + third, 5
+                                                                ] = gamma / total
                                                                 chosen = 1
                                         if chosen == 1:
                                             px = work[lane, inner_base + vert, 0]
@@ -2043,12 +2388,29 @@ def fill_convex_patch(
                                             rz = 0.0
                                             used = 0
                                             for slot in tx.static_range(8):
-                                                if slot < outer_count and work[lane, outer_base + slot, 5] > 0.0:
-                                                    rx = rx + work[lane, outer_base + slot, 5] * work[lane, outer_base + slot, 0]
-                                                    ry = ry + work[lane, outer_base + slot, 5] * work[lane, outer_base + slot, 1]
-                                                    rz = rz + work[lane, outer_base + slot, 5] * work[lane, outer_base + slot, 2]
+                                                if (
+                                                    slot < outer_count
+                                                    and work[lane, outer_base + slot, 5] > 0.0
+                                                ):
+                                                    rx = (
+                                                        rx
+                                                        + work[lane, outer_base + slot, 5]
+                                                        * work[lane, outer_base + slot, 0]
+                                                    )
+                                                    ry = (
+                                                        ry
+                                                        + work[lane, outer_base + slot, 5]
+                                                        * work[lane, outer_base + slot, 1]
+                                                    )
+                                                    rz = (
+                                                        rz
+                                                        + work[lane, outer_base + slot, 5]
+                                                        * work[lane, outer_base + slot, 2]
+                                                    )
                                                     used = used + 1
-                                            error = dot3(rx - hx, ry - hy, rz - hz, rx - hx, ry - hy, rz - hz)
+                                            error = dot3(
+                                                rx - hx, ry - hy, rz - hz, rx - hx, ry - hy, rz - hz
+                                            )
                                             bound = 2e-4 * scale
                                             s0x = rx
                                             s0y = ry
@@ -2063,23 +2425,50 @@ def fill_convex_patch(
                                                 s1x = rx
                                                 s1y = ry
                                                 s1z = rz
-                                            signed = dot3(s1x - s0x, s1y - s0y, s1z - s0z, nx, ny, nz)
-                                            if used >= 1 and used <= 4 and error <= bound * bound and tx.abs(signed - query_gap) <= 1e-4 * scale:
+                                            signed = dot3(
+                                                s1x - s0x, s1y - s0y, s1z - s0z, nx, ny, nz
+                                            )
+                                            if (
+                                                used >= 1
+                                                and used <= 4
+                                                and error <= bound * bound
+                                                and tx.abs(signed - query_gap) <= 1e-4 * scale
+                                            ):
                                                 packed = 0
                                                 for slot in tx.static_range(8):
-                                                    if slot < outer_count and work[lane, outer_base + slot, 5] > 0.0 and packed < 4:
+                                                    if (
+                                                        slot < outer_count
+                                                        and work[lane, outer_base + slot, 5] > 0.0
+                                                        and packed < 4
+                                                    ):
                                                         if packed == 0:
-                                                            work_i[lane, inner_base + vert, 2] = work_i[lane, outer_base + slot, 0]
-                                                            work[lane, inner_base + vert, 10] = work[lane, outer_base + slot, 5]
+                                                            work_i[lane, inner_base + vert, 2] = (
+                                                                work_i[lane, outer_base + slot, 0]
+                                                            )
+                                                            work[lane, inner_base + vert, 10] = (
+                                                                work[lane, outer_base + slot, 5]
+                                                            )
                                                         elif packed == 1:
-                                                            work_i[lane, inner_base + vert, 3] = work_i[lane, outer_base + slot, 0]
-                                                            work[lane, inner_base + vert, 11] = work[lane, outer_base + slot, 5]
+                                                            work_i[lane, inner_base + vert, 3] = (
+                                                                work_i[lane, outer_base + slot, 0]
+                                                            )
+                                                            work[lane, inner_base + vert, 11] = (
+                                                                work[lane, outer_base + slot, 5]
+                                                            )
                                                         elif packed == 2:
-                                                            work_i[lane, inner_base + vert, 4] = work_i[lane, outer_base + slot, 0]
-                                                            work[lane, inner_base + vert, 12] = work[lane, outer_base + slot, 5]
+                                                            work_i[lane, inner_base + vert, 4] = (
+                                                                work_i[lane, outer_base + slot, 0]
+                                                            )
+                                                            work[lane, inner_base + vert, 12] = (
+                                                                work[lane, outer_base + slot, 5]
+                                                            )
                                                         else:
-                                                            work_i[lane, inner_base + vert, 5] = work_i[lane, outer_base + slot, 0]
-                                                            work[lane, inner_base + vert, 13] = work[lane, outer_base + slot, 5]
+                                                            work_i[lane, inner_base + vert, 5] = (
+                                                                work_i[lane, outer_base + slot, 0]
+                                                            )
+                                                            work[lane, inner_base + vert, 13] = (
+                                                                work[lane, outer_base + slot, 5]
+                                                            )
                                                         packed = packed + 1
                                                 work[lane, inner_base + vert, 5] = rx
                                                 work[lane, inner_base + vert, 14] = ry
@@ -2115,15 +2504,23 @@ def fill_convex_patch(
                                             cross_x = uy * vz - uz * vy
                                             cross_y = uz * vx - ux * vz
                                             cross_z = ux * vy - uy * vx
-                                            work[lane, inner_base + slot, 8] = tx.abs(dot3(nx, ny, nz, cross_x, cross_y, cross_z))
+                                            work[lane, inner_base + slot, 8] = tx.abs(
+                                                dot3(nx, ny, nz, cross_x, cross_y, cross_z)
+                                            )
                                             area_sum = area_sum + work[lane, inner_base + slot, 8]
-                                    if area_sum > 1e-12 and site_base + inner_count <= site_capacity:
+                                    if (
+                                        area_sum > 1e-12
+                                        and site_base + inner_count <= site_capacity
+                                    ):
                                         for slot in tx.static_range(8):
                                             if slot < inner_count:
                                                 previous = slot - 1
                                                 if slot == 0:
                                                     previous = inner_count - 1
-                                                work[lane, inner_base + slot, 9] = (work[lane, inner_base + slot, 8] + work[lane, inner_base + previous, 8]) / (3.0 * area_sum) + 1.0 / (3.0 * count_f)
+                                                work[lane, inner_base + slot, 9] = (
+                                                    work[lane, inner_base + slot, 8]
+                                                    + work[lane, inner_base + previous, 8]
+                                                ) / (3.0 * area_sum) + 1.0 / (3.0 * count_f)
                                         for slot in tx.static_range(8):
                                             if slot < inner_count:
                                                 site = site_base + slot
@@ -2146,7 +2543,9 @@ def fill_convex_patch(
                                                     s1x = ox
                                                     s1y = oy
                                                     s1z = oz
-                                                signed = dot3(s1x - s0x, s1y - s0y, s1z - s0z, nx, ny, nz)
+                                                signed = dot3(
+                                                    s1x - s0x, s1y - s0y, s1z - s0z, nx, ny, nz
+                                                )
                                                 mcount = work_i[lane, inner_base + slot, 1]
                                                 weight[site] = work[lane, inner_base + slot, 9]
                                                 gap[site] = signed
@@ -2158,42 +2557,78 @@ def fill_convex_patch(
                                                 common[site, 2] = (s0z + s1z) * 0.5
                                                 if emit_b == 1:
                                                     material_count[site, 1] = 1
-                                                    material_ids[site, 1, 0] = original_ids[work_i[lane, inner_base + slot, 0]]
+                                                    material_ids[site, 1, 0] = original_ids[
+                                                        work_i[lane, inner_base + slot, 0]
+                                                    ]
                                                     barycentric[site, 1, 0] = 1.0
                                                     material_count[site, 0] = mcount
                                                 else:
                                                     material_count[site, 0] = 1
-                                                    material_ids[site, 0, 0] = original_ids[work_i[lane, inner_base + slot, 0]]
+                                                    material_ids[site, 0, 0] = original_ids[
+                                                        work_i[lane, inner_base + slot, 0]
+                                                    ]
                                                     barycentric[site, 0, 0] = 1.0
                                                     material_count[site, 1] = mcount
                                                 if mcount > 0:
                                                     if emit_b == 1:
-                                                        material_ids[site, 0, 0] = original_ids[work_i[lane, inner_base + slot, 2]]
-                                                        barycentric[site, 0, 0] = work[lane, inner_base + slot, 10]
+                                                        material_ids[site, 0, 0] = original_ids[
+                                                            work_i[lane, inner_base + slot, 2]
+                                                        ]
+                                                        barycentric[site, 0, 0] = work[
+                                                            lane, inner_base + slot, 10
+                                                        ]
                                                     else:
-                                                        material_ids[site, 1, 0] = original_ids[work_i[lane, inner_base + slot, 2]]
-                                                        barycentric[site, 1, 0] = work[lane, inner_base + slot, 10]
+                                                        material_ids[site, 1, 0] = original_ids[
+                                                            work_i[lane, inner_base + slot, 2]
+                                                        ]
+                                                        barycentric[site, 1, 0] = work[
+                                                            lane, inner_base + slot, 10
+                                                        ]
                                                 if mcount > 1:
                                                     if emit_b == 1:
-                                                        material_ids[site, 0, 1] = original_ids[work_i[lane, inner_base + slot, 3]]
-                                                        barycentric[site, 0, 1] = work[lane, inner_base + slot, 11]
+                                                        material_ids[site, 0, 1] = original_ids[
+                                                            work_i[lane, inner_base + slot, 3]
+                                                        ]
+                                                        barycentric[site, 0, 1] = work[
+                                                            lane, inner_base + slot, 11
+                                                        ]
                                                     else:
-                                                        material_ids[site, 1, 1] = original_ids[work_i[lane, inner_base + slot, 3]]
-                                                        barycentric[site, 1, 1] = work[lane, inner_base + slot, 11]
+                                                        material_ids[site, 1, 1] = original_ids[
+                                                            work_i[lane, inner_base + slot, 3]
+                                                        ]
+                                                        barycentric[site, 1, 1] = work[
+                                                            lane, inner_base + slot, 11
+                                                        ]
                                                 if mcount > 2:
                                                     if emit_b == 1:
-                                                        material_ids[site, 0, 2] = original_ids[work_i[lane, inner_base + slot, 4]]
-                                                        barycentric[site, 0, 2] = work[lane, inner_base + slot, 12]
+                                                        material_ids[site, 0, 2] = original_ids[
+                                                            work_i[lane, inner_base + slot, 4]
+                                                        ]
+                                                        barycentric[site, 0, 2] = work[
+                                                            lane, inner_base + slot, 12
+                                                        ]
                                                     else:
-                                                        material_ids[site, 1, 2] = original_ids[work_i[lane, inner_base + slot, 4]]
-                                                        barycentric[site, 1, 2] = work[lane, inner_base + slot, 12]
+                                                        material_ids[site, 1, 2] = original_ids[
+                                                            work_i[lane, inner_base + slot, 4]
+                                                        ]
+                                                        barycentric[site, 1, 2] = work[
+                                                            lane, inner_base + slot, 12
+                                                        ]
                                                 if mcount > 3:
                                                     if emit_b == 1:
-                                                        material_ids[site, 0, 3] = original_ids[work_i[lane, inner_base + slot, 5]]
-                                                        barycentric[site, 0, 3] = work[lane, inner_base + slot, 13]
+                                                        material_ids[site, 0, 3] = original_ids[
+                                                            work_i[lane, inner_base + slot, 5]
+                                                        ]
+                                                        barycentric[site, 0, 3] = work[
+                                                            lane, inner_base + slot, 13
+                                                        ]
                                                     else:
-                                                        material_ids[site, 1, 3] = original_ids[work_i[lane, inner_base + slot, 5]]
-                                                        barycentric[site, 1, 3] = work[lane, inner_base + slot, 13]
+                                                        material_ids[site, 1, 3] = original_ids[
+                                                            work_i[lane, inner_base + slot, 5]
+                                                        ]
+                                                        barycentric[site, 1, 3] = work[
+                                                            lane, inner_base + slot, 13
+                                                        ]
                                                 surface[site, 0, 0] = s0x
                                                 surface[site, 0, 1] = s0y
                                                 surface[site, 0, 2] = s0z
@@ -2209,7 +2644,9 @@ def fill_convex_patch(
                                         status = 1
                                         dimension = 2
                                         count = inner_count
-                                    elif area_sum > 1e-12 and site_base + inner_count > site_capacity:
+                                    elif (
+                                        area_sum > 1e-12 and site_base + inner_count > site_capacity
+                                    ):
                                         status = 4
                             if emit == 0:
                                 # Two finite convex support polygons: clip A by every closed B edge.
@@ -2244,43 +2681,76 @@ def fill_convex_patch(
                                                 clip_py = work[lane, 16 + clip_previous, 1]
                                                 clip_cx = work[lane, 16 + clip_i, 0]
                                                 clip_cy = work[lane, 16 + clip_i, 1]
-                                                clip_ps = clip_ex * (clip_py - clip_ay) - clip_ey * (clip_px - clip_ax)
-                                                clip_cs = clip_ex * (clip_cy - clip_ay) - clip_ey * (clip_cx - clip_ax)
-                                                if (clip_ps < 0.0 and clip_cs >= 0.0) or (clip_ps >= 0.0 and clip_cs < 0.0):
+                                                clip_ps = clip_ex * (
+                                                    clip_py - clip_ay
+                                                ) - clip_ey * (clip_px - clip_ax)
+                                                clip_cs = clip_ex * (
+                                                    clip_cy - clip_ay
+                                                ) - clip_ey * (clip_cx - clip_ax)
+                                                if (clip_ps < 0.0 and clip_cs >= 0.0) or (
+                                                    clip_ps >= 0.0 and clip_cs < 0.0
+                                                ):
                                                     clip_t = clip_ps / (clip_ps - clip_cs)
                                                     clip_x = clip_px + clip_t * (clip_cx - clip_px)
                                                     clip_y = clip_py + clip_t * (clip_cy - clip_py)
                                                     clip_duplicate = 0
                                                     if clip_written > 0:
-                                                        if clip_x == work[lane, 16 + clip_written - 1, 2] and clip_y == work[lane, 16 + clip_written - 1, 3]:
+                                                        if (
+                                                            clip_x
+                                                            == work[lane, 16 + clip_written - 1, 2]
+                                                            and clip_y
+                                                            == work[lane, 16 + clip_written - 1, 3]
+                                                        ):
                                                             clip_duplicate = 1
                                                     if clip_duplicate == 0:
                                                         if clip_written < 16:
-                                                            work[lane, 16 + clip_written, 2] = clip_x
-                                                            work[lane, 16 + clip_written, 3] = clip_y
+                                                            work[lane, 16 + clip_written, 2] = (
+                                                                clip_x
+                                                            )
+                                                            work[lane, 16 + clip_written, 3] = (
+                                                                clip_y
+                                                            )
                                                             clip_written = clip_written + 1
                                                         else:
                                                             clip_ok = 0
                                                 if clip_cs >= 0.0 and clip_ok == 1:
                                                     clip_duplicate = 0
                                                     if clip_written > 0:
-                                                        if clip_cx == work[lane, 16 + clip_written - 1, 2] and clip_cy == work[lane, 16 + clip_written - 1, 3]:
+                                                        if (
+                                                            clip_cx
+                                                            == work[lane, 16 + clip_written - 1, 2]
+                                                            and clip_cy
+                                                            == work[lane, 16 + clip_written - 1, 3]
+                                                        ):
                                                             clip_duplicate = 1
                                                     if clip_duplicate == 0:
                                                         if clip_written < 16:
-                                                            work[lane, 16 + clip_written, 2] = clip_cx
-                                                            work[lane, 16 + clip_written, 3] = clip_cy
+                                                            work[lane, 16 + clip_written, 2] = (
+                                                                clip_cx
+                                                            )
+                                                            work[lane, 16 + clip_written, 3] = (
+                                                                clip_cy
+                                                            )
                                                             clip_written = clip_written + 1
                                                         else:
                                                             clip_ok = 0
                                         if clip_written > 1:
-                                            if work[lane, 16, 2] == work[lane, 16 + clip_written - 1, 2] and work[lane, 16, 3] == work[lane, 16 + clip_written - 1, 3]:
+                                            if (
+                                                work[lane, 16, 2]
+                                                == work[lane, 16 + clip_written - 1, 2]
+                                                and work[lane, 16, 3]
+                                                == work[lane, 16 + clip_written - 1, 3]
+                                            ):
                                                 clip_written = clip_written - 1
                                         clip_count = clip_written
                                         for clip_i in tx.static_range(16):
                                             if clip_i < clip_count:
-                                                work[lane, 16 + clip_i, 0] = work[lane, 16 + clip_i, 2]
-                                                work[lane, 16 + clip_i, 1] = work[lane, 16 + clip_i, 3]
+                                                work[lane, 16 + clip_i, 0] = work[
+                                                    lane, 16 + clip_i, 2
+                                                ]
+                                                work[lane, 16 + clip_i, 1] = work[
+                                                    lane, 16 + clip_i, 3
+                                                ]
                                 if clip_ok == 0:
                                     status = 4
                                 if clip_ok == 1 and clip_count >= 3:
@@ -2315,19 +2785,49 @@ def fill_convex_patch(
                                                         clip_v1 = work[lane, clip_base + clip_j, 4]
                                                         clip_u2 = work[lane, clip_base + clip_k, 3]
                                                         clip_v2 = work[lane, clip_base + clip_k, 4]
-                                                        clip_den = (clip_v1 - clip_v2) * (clip_u0 - clip_u2) + (clip_u2 - clip_u1) * (clip_v0 - clip_v2)
+                                                        clip_den = (clip_v1 - clip_v2) * (
+                                                            clip_u0 - clip_u2
+                                                        ) + (clip_u2 - clip_u1) * (
+                                                            clip_v0 - clip_v2
+                                                        )
                                                         if tx.abs(clip_den) > 1e-12:
-                                                            clip_alpha = ((clip_v1 - clip_v2) * (clip_u - clip_u2) + (clip_u2 - clip_u1) * (clip_v - clip_v2)) / clip_den
-                                                            clip_beta = ((clip_v2 - clip_v0) * (clip_u - clip_u2) + (clip_u0 - clip_u2) * (clip_v - clip_v2)) / clip_den
-                                                            clip_gamma = 1.0 - clip_alpha - clip_beta
-                                                            if clip_alpha >= -1e-5 and clip_beta >= -1e-5 and clip_gamma >= -1e-5:
+                                                            clip_alpha = (
+                                                                (clip_v1 - clip_v2)
+                                                                * (clip_u - clip_u2)
+                                                                + (clip_u2 - clip_u1)
+                                                                * (clip_v - clip_v2)
+                                                            ) / clip_den
+                                                            clip_beta = (
+                                                                (clip_v2 - clip_v0)
+                                                                * (clip_u - clip_u2)
+                                                                + (clip_u0 - clip_u2)
+                                                                * (clip_v - clip_v2)
+                                                            ) / clip_den
+                                                            clip_gamma = (
+                                                                1.0 - clip_alpha - clip_beta
+                                                            )
+                                                            if (
+                                                                clip_alpha >= -1e-5
+                                                                and clip_beta >= -1e-5
+                                                                and clip_gamma >= -1e-5
+                                                            ):
                                                                 clip_alpha = tx.max(0.0, clip_alpha)
                                                                 clip_beta = tx.max(0.0, clip_beta)
                                                                 clip_gamma = tx.max(0.0, clip_gamma)
-                                                                clip_total = clip_alpha + clip_beta + clip_gamma
-                                                                work[lane, clip_base, 5] = clip_alpha / clip_total
-                                                                work[lane, clip_base + clip_j, 5] = clip_beta / clip_total
-                                                                work[lane, clip_base + clip_k, 5] = clip_gamma / clip_total
+                                                                clip_total = (
+                                                                    clip_alpha
+                                                                    + clip_beta
+                                                                    + clip_gamma
+                                                                )
+                                                                work[lane, clip_base, 5] = (
+                                                                    clip_alpha / clip_total
+                                                                )
+                                                                work[
+                                                                    lane, clip_base + clip_j, 5
+                                                                ] = clip_beta / clip_total
+                                                                work[
+                                                                    lane, clip_base + clip_k, 5
+                                                                ] = clip_gamma / clip_total
                                                                 clip_found = 1
                                                 if clip_found == 1:
                                                     clip_packed = 0
@@ -2335,22 +2835,83 @@ def fill_convex_patch(
                                                     clip_ry = 0.0
                                                     clip_rz = 0.0
                                                     for clip_j in tx.static_range(8):
-                                                        if clip_j < clip_n and work[lane, clip_base + clip_j, 5] > 0.0:
-                                                            clip_w = work[lane, clip_base + clip_j, 5]
-                                                            clip_rx = clip_rx + clip_w * work[lane, clip_base + clip_j, 0]
-                                                            clip_ry = clip_ry + clip_w * work[lane, clip_base + clip_j, 1]
-                                                            clip_rz = clip_rz + clip_w * work[lane, clip_base + clip_j, 2]
+                                                        if (
+                                                            clip_j < clip_n
+                                                            and work[lane, clip_base + clip_j, 5]
+                                                            > 0.0
+                                                        ):
+                                                            clip_w = work[
+                                                                lane, clip_base + clip_j, 5
+                                                            ]
+                                                            clip_rx = (
+                                                                clip_rx
+                                                                + clip_w
+                                                                * work[lane, clip_base + clip_j, 0]
+                                                            )
+                                                            clip_ry = (
+                                                                clip_ry
+                                                                + clip_w
+                                                                * work[lane, clip_base + clip_j, 1]
+                                                            )
+                                                            clip_rz = (
+                                                                clip_rz
+                                                                + clip_w
+                                                                * work[lane, clip_base + clip_j, 2]
+                                                            )
                                                             if clip_packed < 3:
-                                                                work_i[lane, 16 + clip_i, 3 * clip_side + clip_packed] = work_i[lane, clip_base + clip_j, 0]
-                                                                work[lane, 16 + clip_i, 5 + 3 * clip_side + clip_packed] = clip_w
+                                                                work_i[
+                                                                    lane,
+                                                                    16 + clip_i,
+                                                                    3 * clip_side + clip_packed,
+                                                                ] = work_i[
+                                                                    lane, clip_base + clip_j, 0
+                                                                ]
+                                                                work[
+                                                                    lane,
+                                                                    16 + clip_i,
+                                                                    5 + 3 * clip_side + clip_packed,
+                                                                ] = clip_w
                                                             clip_packed = clip_packed + 1
-                                                    clip_eu = dot3(clip_rx, clip_ry, clip_rz, tangent_x, tangent_y, tangent_z) - clip_u
-                                                    clip_ev = dot3(clip_rx, clip_ry, clip_rz, bitangent_x, bitangent_y, bitangent_z) - clip_v
-                                                    if clip_packed >= 1 and clip_packed <= 3 and clip_eu * clip_eu + clip_ev * clip_ev <= 4e-8 * scale * scale:
-                                                        work_i[lane, 16 + clip_i, 6 + clip_side] = clip_packed
-                                                        work[lane, 16 + clip_i, 11 + 3 * clip_side] = clip_rx
-                                                        work[lane, 16 + clip_i, 12 + 3 * clip_side] = clip_ry
-                                                        work[lane, 16 + clip_i, 13 + 3 * clip_side] = clip_rz
+                                                    clip_eu = (
+                                                        dot3(
+                                                            clip_rx,
+                                                            clip_ry,
+                                                            clip_rz,
+                                                            tangent_x,
+                                                            tangent_y,
+                                                            tangent_z,
+                                                        )
+                                                        - clip_u
+                                                    )
+                                                    clip_ev = (
+                                                        dot3(
+                                                            clip_rx,
+                                                            clip_ry,
+                                                            clip_rz,
+                                                            bitangent_x,
+                                                            bitangent_y,
+                                                            bitangent_z,
+                                                        )
+                                                        - clip_v
+                                                    )
+                                                    if (
+                                                        clip_packed >= 1
+                                                        and clip_packed <= 3
+                                                        and clip_eu * clip_eu + clip_ev * clip_ev
+                                                        <= 4e-8 * scale * scale
+                                                    ):
+                                                        work_i[lane, 16 + clip_i, 6 + clip_side] = (
+                                                            clip_packed
+                                                        )
+                                                        work[
+                                                            lane, 16 + clip_i, 11 + 3 * clip_side
+                                                        ] = clip_rx
+                                                        work[
+                                                            lane, 16 + clip_i, 12 + 3 * clip_side
+                                                        ] = clip_ry
+                                                        work[
+                                                            lane, 16 + clip_i, 13 + 3 * clip_side
+                                                        ] = clip_rz
                                                         clip_ready = clip_ready + 1
                                     clip_cu = clip_cu / clip_nf
                                     clip_cv = clip_cv / clip_nf
@@ -2369,10 +2930,21 @@ def fill_convex_patch(
                                                 clip_ready = -100
                                             work[lane, 16 + clip_i, 17] = clip_twice
                                             clip_area = clip_area + clip_twice
-                                            clip_dx = work[lane, 16 + clip_i, 14] - work[lane, 16 + clip_i, 11]
-                                            clip_dy = work[lane, 16 + clip_i, 15] - work[lane, 16 + clip_i, 12]
-                                            clip_dz = work[lane, 16 + clip_i, 16] - work[lane, 16 + clip_i, 13]
-                                            clip_signed = dot3(clip_dx, clip_dy, clip_dz, nx, ny, nz)
+                                            clip_dx = (
+                                                work[lane, 16 + clip_i, 14]
+                                                - work[lane, 16 + clip_i, 11]
+                                            )
+                                            clip_dy = (
+                                                work[lane, 16 + clip_i, 15]
+                                                - work[lane, 16 + clip_i, 12]
+                                            )
+                                            clip_dz = (
+                                                work[lane, 16 + clip_i, 16]
+                                                - work[lane, 16 + clip_i, 13]
+                                            )
+                                            clip_signed = dot3(
+                                                clip_dx, clip_dy, clip_dz, nx, ny, nz
+                                            )
                                             if tx.abs(clip_signed - query_gap) > 1e-4 * scale:
                                                 clip_ready = -100
                                     if clip_ready == 2 * clip_count and clip_area > 1e-12:
@@ -2385,26 +2957,71 @@ def fill_convex_patch(
                                                     if clip_i == 0:
                                                         clip_previous = clip_count - 1
                                                     clip_site = site_base + clip_i
-                                                    weight[clip_site] = (work[lane, 16 + clip_i, 17] + work[lane, 16 + clip_previous, 17]) / (3.0 * clip_area) + 1.0 / (3.0 * clip_nf)
-                                                    clip_dx = work[lane, 16 + clip_i, 14] - work[lane, 16 + clip_i, 11]
-                                                    clip_dy = work[lane, 16 + clip_i, 15] - work[lane, 16 + clip_i, 12]
-                                                    clip_dz = work[lane, 16 + clip_i, 16] - work[lane, 16 + clip_i, 13]
-                                                    gap[clip_site] = dot3(clip_dx, clip_dy, clip_dz, nx, ny, nz)
+                                                    weight[clip_site] = (
+                                                        work[lane, 16 + clip_i, 17]
+                                                        + work[lane, 16 + clip_previous, 17]
+                                                    ) / (3.0 * clip_area) + 1.0 / (3.0 * clip_nf)
+                                                    clip_dx = (
+                                                        work[lane, 16 + clip_i, 14]
+                                                        - work[lane, 16 + clip_i, 11]
+                                                    )
+                                                    clip_dy = (
+                                                        work[lane, 16 + clip_i, 15]
+                                                        - work[lane, 16 + clip_i, 12]
+                                                    )
+                                                    clip_dz = (
+                                                        work[lane, 16 + clip_i, 16]
+                                                        - work[lane, 16 + clip_i, 13]
+                                                    )
+                                                    gap[clip_site] = dot3(
+                                                        clip_dx, clip_dy, clip_dz, nx, ny, nz
+                                                    )
                                                     normal[clip_site, 0] = nx
                                                     normal[clip_site, 1] = ny
                                                     normal[clip_site, 2] = nz
                                                     for clip_axis in tx.static_range(3):
-                                                        common[clip_site, clip_axis] = 0.5 * (work[lane, 16 + clip_i, 11 + clip_axis] + work[lane, 16 + clip_i, 14 + clip_axis])
+                                                        common[clip_site, clip_axis] = 0.5 * (
+                                                            work[lane, 16 + clip_i, 11 + clip_axis]
+                                                            + work[
+                                                                lane, 16 + clip_i, 14 + clip_axis
+                                                            ]
+                                                        )
                                                     for clip_side in tx.static_range(2):
-                                                        clip_mcount = work_i[lane, 16 + clip_i, 6 + clip_side]
-                                                        material_count[clip_site, clip_side] = clip_mcount
+                                                        clip_mcount = work_i[
+                                                            lane, 16 + clip_i, 6 + clip_side
+                                                        ]
+                                                        material_count[clip_site, clip_side] = (
+                                                            clip_mcount
+                                                        )
                                                         for clip_j in tx.static_range(3):
                                                             if clip_j < clip_mcount:
-                                                                material_ids[clip_site, clip_side, clip_j] = original_ids[work_i[lane, 16 + clip_i, 3 * clip_side + clip_j]]
-                                                                barycentric[clip_site, clip_side, clip_j] = work[lane, 16 + clip_i, 5 + 3 * clip_side + clip_j]
+                                                                material_ids[
+                                                                    clip_site, clip_side, clip_j
+                                                                ] = original_ids[
+                                                                    work_i[
+                                                                        lane,
+                                                                        16 + clip_i,
+                                                                        3 * clip_side + clip_j,
+                                                                    ]
+                                                                ]
+                                                                barycentric[
+                                                                    clip_site, clip_side, clip_j
+                                                                ] = work[
+                                                                    lane,
+                                                                    16 + clip_i,
+                                                                    5 + 3 * clip_side + clip_j,
+                                                                ]
                                                         for clip_axis in tx.static_range(3):
-                                                            surface[clip_site, clip_side, clip_axis] = work[lane, 16 + clip_i, 11 + 3 * clip_side + clip_axis]
-                                                            skin[clip_site, clip_side, clip_axis] = 0.0
+                                                            surface[
+                                                                clip_site, clip_side, clip_axis
+                                                            ] = work[
+                                                                lane,
+                                                                16 + clip_i,
+                                                                11 + 3 * clip_side + clip_axis,
+                                                            ]
+                                                            skin[
+                                                                clip_site, clip_side, clip_axis
+                                                            ] = 0.0
                                             status = 1
                                             dimension = 2
                                             count = clip_count

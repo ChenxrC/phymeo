@@ -142,7 +142,9 @@ def _qualified_layouts(plan, accepted, bindings):
             row = int(row_tables[layout][index])
             if row != source.rows[world] or row < 0:
                 raise ValueError("convex binding row differs from its accepted source")
-            if any(int(table[index]) != -1 for other, table in enumerate(row_tables) if other != layout):
+            if any(
+                int(table[index]) != -1 for other, table in enumerate(row_tables) if other != layout
+            ):
                 raise ValueError("convex binding aliases multiple physical layouts")
             spec = source.specs[world]
             body_count = spec.b if layout >= 2 else spec.n
@@ -164,7 +166,9 @@ def borrow_convex_state(plan):
         bindings = plan._convex_bindings
         if len(bindings) != len(plan._shape_keys):
             raise ValueError("convex source registration is incomplete")
-        if any(type(binding) not in (*_DYNAMIC_BINDINGS, ResidentStaticBinding) for binding in bindings):
+        if any(
+            type(binding) not in (*_DYNAMIC_BINDINGS, ResidentStaticBinding) for binding in bindings
+        ):
             raise ValueError("convex query requires a supported full physical or static binding")
         allowed = ()
         if plan._space is not None:

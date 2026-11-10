@@ -3,6 +3,7 @@
 K0 helper reuse is serialization, public installation and independent literals.
 No old K0/K1 test function is collected by this new module.
 """
+
 import hashlib
 import importlib.util
 from contextlib import closing, contextmanager
@@ -18,7 +19,10 @@ import phymeo as ph
 
 @lru_cache(maxsize=1)
 def reference():
-    path = Path(__file__).resolve().parents[1] / "reference_newton/rr/device_convex_patch_qualification_reference.py"
+    path = (
+        Path(__file__).resolve().parents[1]
+        / "reference_newton/rr/device_convex_patch_qualification_reference.py"
+    )
     spec = importlib.util.spec_from_file_location("b1_patch_independent_literals", path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
@@ -30,7 +34,8 @@ def saved(tmp_path, identity, mode, inputs):
     with k0.saved(tmp_path, identity, mode, inputs) as record:
         record["qualification_sources"] = tuple(
             dict(path=str(path), sha256=hashlib.sha256(path.read_bytes()).hexdigest())
-            for path in (Path(__file__).resolve(), Path(reference().__file__).resolve()))
+            for path in (Path(__file__).resolve(), Path(reference().__file__).resolve())
+        )
         yield record
 
 
@@ -45,7 +50,9 @@ def prepared(case, mode, tmp_path, site_capacity=16, requested_reverse=False):
         keys = tuple(ph.CollisionKey(*key) for key in case["keys"])
         request = tuple(reversed(keys)) if requested_reverse else keys
         with batch.prepare_collision(model, bindings) as broad:
-            with closing(batch.prepare_convex_query(broad, pairs=(request,), site_capacity=site_capacity)) as plan:
+            with closing(
+                batch.prepare_convex_query(broad, pairs=(request,), site_capacity=site_capacity)
+            ) as plan:
                 yield batch, broad, plan, before
 
 
@@ -53,8 +60,10 @@ def complete_match(actual, expected, tolerance):
     """Geometry-only bijection, preserving all points and multiplicities."""
     if len(actual) != len(expected):
         raise AssertionError("patch cardinality differs")
-    candidates = [[j for j, wanted in enumerate(expected)
-                   if np.linalg.norm(point - wanted) <= tolerance] for point in actual]
+    candidates = [
+        [j for j, wanted in enumerate(expected) if np.linalg.norm(point - wanted) <= tolerance]
+        for point in actual
+    ]
     assigned = {}
 
     def augment(i, seen):
@@ -67,26 +76,37 @@ def complete_match(actual, expected, tolerance):
                 return True
         return False
 
-    assert all(augment(i, set()) for i in range(len(actual))), "patch lacks a complete geometric bijection"
+    assert all(augment(i, set()) for i in range(len(actual))), (
+        "patch lacks a complete geometric bijection"
+    )
     return {i: j for j, i in assigned.items()}
 
 
 def assert_patch(row, spec, case):
     scale = spec["length_m"]
     patch = row.patch
-    assert row.status == "RESOLVED" and patch.status == "RESOLVED", (row.status, patch.status, row.reason)
+    assert row.status == "RESOLVED" and patch.status == "RESOLVED", (
+        row.status,
+        patch.status,
+        row.reason,
+    )
     assert patch.dimension == spec["dimension"]
     assert patch.device_resolved and patch.skip_host_patch_search and not patch.host_completed
     assert abs(row.gap_m - spec["gap_m"]) <= 1e-4 * scale
     np.testing.assert_allclose(row.normal, spec["normal"], atol=2e-3, rtol=0)
-    actual = [np.concatenate((site.first.surface_relative_m, site.second.surface_relative_m)) for site in patch.sites]
+    actual = [
+        np.concatenate((site.first.surface_relative_m, site.second.surface_relative_m))
+        for site in patch.sites
+    ]
     expected = [np.concatenate(site["surfaces"]) for site in spec["sites"]]
     matching = complete_match(actual, expected, 2e-4 * scale)
     weights = np.asarray([site.weight for site in patch.sites])
     assert np.all(weights > 0) and abs(float(weights.sum()) - 1) <= 64 * 2**-23
     origin = np.asarray(row.origin_m)
-    points = {tuple(key): dict(zip(ids, world - origin, strict=True))
-              for key, ids, world in zip(case["keys"], case["ids"], case["points"], strict=True)}
+    points = {
+        tuple(key): dict(zip(ids, world - origin, strict=True))
+        for key, ids, world in zip(case["keys"], case["ids"], case["points"], strict=True)
+    }
     radius = dict(zip(map(tuple, case["keys"]), case["radii"], strict=True))
     for i, site in enumerate(patch.sites):
         wanted = spec["sites"][matching[i]]
@@ -98,18 +118,37 @@ def assert_patch(row, spec, case):
             assert len(set(witness.vertex_ids)) == len(witness.vertex_ids)
             bary = np.asarray(witness.weights)
             assert np.all(bary >= 0) and abs(float(bary.sum()) - 1) <= 64 * 2**-23
-            reconstructed = sum((w * points[key][int(node)] for node, w in
-                                 zip(witness.vertex_ids, bary, strict=True)), np.zeros(3))
+            reconstructed = sum(
+                (
+                    w * points[key][int(node)]
+                    for node, w in zip(witness.vertex_ids, bary, strict=True)
+                ),
+                np.zeros(3),
+            )
             expected_skin = sign * radius[key] * np.asarray(spec["normal"])
             np.testing.assert_allclose(witness.offset_m, expected_skin, atol=2e-4 * scale, rtol=0)
-            np.testing.assert_allclose(reconstructed + witness.offset_m, witness.surface_relative_m,
-                                       atol=2e-4 * scale, rtol=0)
-        np.testing.assert_allclose(site.common_m,
-                                   .5 * (np.asarray(site.first.surface_relative_m) + site.second.surface_relative_m),
-                                   atol=2e-4 * scale, rtol=0)
-    actual_moment = sum((site.weight * np.asarray(site.common_m) for site in patch.sites), np.zeros(3))
-    expected_moment = sum((site["weight"] * .5 * (np.asarray(site["surfaces"][0]) + site["surfaces"][1])
-                           for site in spec["sites"]), np.zeros(3))
+            np.testing.assert_allclose(
+                reconstructed + witness.offset_m,
+                witness.surface_relative_m,
+                atol=2e-4 * scale,
+                rtol=0,
+            )
+        np.testing.assert_allclose(
+            site.common_m,
+            0.5 * (np.asarray(site.first.surface_relative_m) + site.second.surface_relative_m),
+            atol=2e-4 * scale,
+            rtol=0,
+        )
+    actual_moment = sum(
+        (site.weight * np.asarray(site.common_m) for site in patch.sites), np.zeros(3)
+    )
+    expected_moment = sum(
+        (
+            site["weight"] * 0.5 * (np.asarray(site["surfaces"][0]) + site["surfaces"][1])
+            for site in spec["sites"]
+        ),
+        np.zeros(3),
+    )
     np.testing.assert_allclose(actual_moment, expected_moment, atol=2e-4 * scale, rtol=0)
 
 
@@ -121,10 +160,19 @@ def test_remaining_face_covariance(family, variant, tyx_mode, tmp_path):
     case = k0.reference().family_case(family, spec["gap_m"])
     if variant != "reverse":
         case = k0.reference().transformed(case, variant)
-        spec = getattr(reference(), {"cycle": "cycled", "tilt": "tilted", "permute": "permuted",
-                                     "cycle_reverse_ids": "cycle_reverse_ids"}[variant])(spec)
+        spec = getattr(
+            reference(),
+            {
+                "cycle": "cycled",
+                "tilt": "tilted",
+                "permute": "permuted",
+                "cycle_reverse_ids": "cycle_reverse_ids",
+            }[variant],
+        )(spec)
     with saved(tmp_path, f"B1-face-{family}-{variant}", tyx_mode, case) as record:
-        with prepared(case, tyx_mode, tmp_path, requested_reverse=variant in ("reverse", "cycle_reverse_ids")) as (batch, broad, plan, before):
+        with prepared(
+            case, tyx_mode, tmp_path, requested_reverse=variant in ("reverse", "cycle_reverse_ids")
+        ) as (batch, broad, plan, before):
             result = k0.query_attempt(batch, plan, record, "face")
             assert_patch(result.rows[0], spec, case)
             assert result.request_reversed == (variant == "reverse",)
@@ -137,8 +185,15 @@ def test_remaining_face_covariance(family, variant, tyx_mode, tmp_path):
 @pytest.mark.parametrize("variant", ("identity", "reverse", "cycle", "tilt", "permute"))
 def test_partial_finite_support_polygons(name, variant, tyx_mode, tmp_path):
     case, spec = reference().polygon_case(name, variant)
-    with saved(tmp_path, f"B1-{name}-{variant}", tyx_mode, dict(case=case, expected=spec)) as record:
-        with prepared(case, tyx_mode, tmp_path, requested_reverse=variant == "reverse") as (batch, broad, plan, before):
+    with saved(
+        tmp_path, f"B1-{name}-{variant}", tyx_mode, dict(case=case, expected=spec)
+    ) as record:
+        with prepared(case, tyx_mode, tmp_path, requested_reverse=variant == "reverse") as (
+            batch,
+            broad,
+            plan,
+            before,
+        ):
             result = k0.query_attempt(batch, plan, record, "partial")
             assert_patch(result.rows[0], spec, case)
             assert k0.canonical(batch.snapshot()) == k0.canonical(before)
@@ -152,19 +207,35 @@ def test_trapezoid_area_moment_survives_edge_refinement(variant, tyx_mode, tmp_p
     for name in ("trapezoid", "trapezoid_refined"):
         case, spec = reference().polygon_case(name, variant)
         assert spec["area_m2"] == pytest.approx(1.5, abs=1e-13)
-        with saved(tmp_path, f"B1-{name}-{variant}", tyx_mode, dict(case=case, expected=spec)) as record:
+        with saved(
+            tmp_path, f"B1-{name}-{variant}", tyx_mode, dict(case=case, expected=spec)
+        ) as record:
             with prepared(case, tyx_mode, tmp_path) as (batch, broad, plan, before):
                 result = k0.query_attempt(batch, plan, record, "q04")
                 row = result.rows[0]
                 assert_patch(row, spec, case)
                 # Frozen K1 algebra check, not a physical delivery or contact step.
-                force = sum((-100 * site.gap_m * site.weight * np.asarray(site.normal)
-                             for site in row.patch.sites), np.zeros(3))
-                torque = sum((np.cross(site.common_m, -100 * site.gap_m * site.weight * np.asarray(site.normal))
-                              for site in row.patch.sites), np.zeros(3))
+                force = sum(
+                    (
+                        -100 * site.gap_m * site.weight * np.asarray(site.normal)
+                        for site in row.patch.sites
+                    ),
+                    np.zeros(3),
+                )
+                torque = sum(
+                    (
+                        np.cross(
+                            site.common_m, -100 * site.gap_m * site.weight * np.asarray(site.normal)
+                        )
+                        for site in row.patch.sites
+                    ),
+                    np.zeros(3),
+                )
                 np.testing.assert_allclose(force, spec["normal"], atol=1e-2, rtol=0)
                 expected_torque = np.cross(spec["centroid"], spec["normal"])
-                np.testing.assert_allclose(torque, expected_torque, atol=2e-3 * spec["length_m"], rtol=0)
+                np.testing.assert_allclose(
+                    torque, expected_torque, atol=2e-3 * spec["length_m"], rtol=0
+                )
                 outputs.append((force, torque))
     np.testing.assert_allclose(outputs[0], outputs[1], atol=2e-3 * spec["length_m"], rtol=0)
 
@@ -176,7 +247,12 @@ def test_site_capacity_is_exact_and_never_truncates(name, tyx_mode, tmp_path):
     needed = len(spec["sites"])
     with saved(tmp_path, f"B1-capacity-{name}", tyx_mode, dict(case=case, needed=needed)) as record:
         for capacity in (needed, needed - 1):
-            with prepared(case, tyx_mode, tmp_path, site_capacity=capacity) as (batch, broad, plan, before):
+            with prepared(case, tyx_mode, tmp_path, site_capacity=capacity) as (
+                batch,
+                broad,
+                plan,
+                before,
+            ):
                 result = k0.query_attempt(batch, plan, record, f"capacity-{capacity}")
                 row = result.rows[0]
                 if capacity == needed:
@@ -232,13 +308,15 @@ def test_late_patch_failure_keeps_both_publications(field, tyx_mode, tmp_path, m
 
 
 def test_geometry_bijection_rejects_missing_replaced_and_duplicate_points():
-    expected = np.asarray([[0., 0.], [1., 0.], [0., 1.]])
+    expected = np.asarray([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0]])
     assert len(complete_match(expected[::-1], expected, 1e-4)) == 3
-    for wrong in (expected[:2], np.asarray([[0., 0.], [1., 0.], [1., 0.]]),
-                  np.asarray([[0., 0.], [1., 0.], [0., 2.]])):
+    for wrong in (
+        expected[:2],
+        np.asarray([[0.0, 0.0], [1.0, 0.0], [1.0, 0.0]]),
+        np.asarray([[0.0, 0.0], [1.0, 0.0], [0.0, 2.0]]),
+    ):
         with pytest.raises(AssertionError):
             complete_match(wrong, expected, 1e-4)
-
 
 
 # Changed-source regression / first CUDA coverage only. These 16 fixed identities
@@ -274,9 +352,16 @@ def _affected_patch_geometry(row, spec):
     assert len(patch.sites) == len(spec["sites"])
     assert abs(sum(site.weight for site in patch.sites) - 1) <= 64 * reference().U32
     candidates = [
-        [j for j, wanted in enumerate(spec["sites"])
-         if all(np.linalg.norm(np.asarray(witness.surface_relative_m) - point) <= 2e-4 * length
-                for witness, point in zip((site.first, site.second), wanted["surfaces"], strict=True))]
+        [
+            j
+            for j, wanted in enumerate(spec["sites"])
+            if all(
+                np.linalg.norm(np.asarray(witness.surface_relative_m) - point) <= 2e-4 * length
+                for witness, point in zip(
+                    (site.first, site.second), wanted["surfaces"], strict=True
+                )
+            )
+        ]
         for site in patch.sites
     ]
     assigned = {}
@@ -306,8 +391,13 @@ def _affected_patch_geometry(row, spec):
                 bary = np.asarray(witness.weights)
                 assert np.all(bary >= 0)
                 assert abs(float(bary.sum()) - 1) <= 64 * reference().U32
-                core = sum((weight * wanted["cores"][side][int(node)]
-                            for node, weight in zip(witness.vertex_ids, bary, strict=True)), np.zeros(3))
+                core = sum(
+                    (
+                        weight * wanted["cores"][side][int(node)]
+                        for node, weight in zip(witness.vertex_ids, bary, strict=True)
+                    ),
+                    np.zeros(3),
+                )
                 skin = (1 if side == 0 else -1) * wanted["radii"][side] * spec["normal"]
                 assert np.linalg.norm(np.asarray(witness.offset_m) - skin) <= 2e-4 * length
                 assert np.linalg.norm(core + skin - wanted["surfaces"][side]) <= 2e-4 * length
@@ -324,15 +414,24 @@ def test_affected_k1_identity(identity, tyx_mode, tmp_path):
         name = identity[:2] + "_overlap"
     spec = getattr(reference(), name)()
     geometry = k0.reference()
-    case = (geometry.finite_case(spec["case"]) if "case" in spec
-            else geometry.family_case(spec["family"], spec["gap_m"]))
+    case = (
+        geometry.finite_case(spec["case"])
+        if "case" in spec
+        else geometry.family_case(spec["family"], spec["gap_m"])
+    )
     if cycle_ids:
         case = geometry.transformed(case, "cycle_reverse_ids")
         spec = reference().cycle_reverse_ids(spec)
     touch = "_touch_" in identity
-    with saved(tmp_path, f"B1-affected-{identity}", tyx_mode, dict(case=case, expected=spec)) as record:
-        with prepared(case, tyx_mode, tmp_path, site_capacity=8,
-                      requested_reverse=cycle_ids) as (batch, broad, plan, before):
+    with saved(
+        tmp_path, f"B1-affected-{identity}", tyx_mode, dict(case=case, expected=spec)
+    ) as record:
+        with prepared(case, tyx_mode, tmp_path, site_capacity=8, requested_reverse=cycle_ids) as (
+            batch,
+            broad,
+            plan,
+            before,
+        ):
             result = k0.query_attempt(batch, plan, record, "affected")
             row = result.rows[0]
             assert result.patch["enabled"] is True
@@ -359,10 +458,14 @@ def test_affected_k1_identity(identity, tyx_mode, tmp_path):
                 assert result.requested_pairs == (tuple(reversed(keys)),)
                 assert tuple(result.shape_keys) == tuple(sorted(keys)) == row.pair
                 assert result.source["vertex_ids"].dtype == np.dtype(np.int32)
-                assert tuple(map(int, result.source["vertex_ids"])) == tuple(case["ids"][1]) + tuple(case["ids"][0])
+                assert tuple(map(int, result.source["vertex_ids"])) == tuple(
+                    case["ids"][1]
+                ) + tuple(case["ids"][0])
                 anchor = np.asarray(case["positions"][0])
                 expected_upload = np.vstack((case["points"][1] - anchor, case["local"][0]))
-                assert np.allclose(result.source["uploaded_local_points_m"], expected_upload, atol=1e-6)
+                assert np.allclose(
+                    result.source["uploaded_local_points_m"], expected_upload, atol=1e-6
+                )
                 assert abs(np.linalg.norm(row.normal) - 1) <= 2e-4
                 assert np.linalg.norm(np.asarray(row.normal) - spec["normal"]) <= 2e-3
             assert k0.canonical(batch.snapshot()) == k0.canonical(before)

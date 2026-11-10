@@ -75,7 +75,9 @@ class ResidentContactStepper:
         if not isinstance(batch, TyxWorldBatch):
             raise TypeError("contact stepper requires a TyxWorldBatch owner")
         if not isinstance(plan, (ResidentContactPlan, ResidentContactBundle)):
-            raise TypeError("contact stepper requires a ResidentContactPlan or ResidentContactBundle")
+            raise TypeError(
+                "contact stepper requires a ResidentContactPlan or ResidentContactBundle"
+            )
         if plan._batch is not batch:
             raise ValueError("contact stepper plan belongs to a different batch owner")
         with batch._lock:

@@ -42,7 +42,11 @@ def gather_convex_pose(
             if row >= 0:
                 # Floating metadata counts child joints; FK includes root body 0.
                 # Both affine sources already loan their expanded physical FK.
-                if group < 0 or group >= tree_meta[row, 1] + body_extra or slot != tree_meta[row, 0]:
+                if (
+                    group < 0
+                    or group >= tree_meta[row, 1] + body_extra
+                    or slot != tree_meta[row, 0]
+                ):
                     stamp[shape, 0] = 0
                 else:
                     for c in tx.static_range(12):

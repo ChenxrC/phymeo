@@ -522,7 +522,10 @@ class TyxWorldBatch:
         from ._resident_contact_bundle import ResidentContactBundle
 
         return ResidentContactBundle(
-            self, pages, site_capacity=site_capacity, sampling=sampling,
+            self,
+            pages,
+            site_capacity=site_capacity,
+            sampling=sampling,
             tree_dynamic_pairs=tree_dynamic_pairs,
         )
 
@@ -881,7 +884,11 @@ class TyxWorldBatch:
                 self._closed = True
                 try:
                     with ExitStack() as closing_plans:
-                        for plan in (*self._readback_plans, *self._collision_plans, *self._contact_bundles):
+                        for plan in (
+                            *self._readback_plans,
+                            *self._collision_plans,
+                            *self._contact_bundles,
+                        ):
                             closing_plans.callback(plan.close)
                 finally:
                     self._resources.close()

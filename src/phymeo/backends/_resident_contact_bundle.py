@@ -48,7 +48,9 @@ class ResidentContactPageSpec:
         if not all(type(b) in _CONTACT_BINDING_TYPES for b in bindings):
             raise ValueError("contact page requires supported tree/static bindings")
         object.__setattr__(self, "bindings", bindings)
-        object.__setattr__(self, "materials_by_pair", MappingProxyType(dict(self.materials_by_pair)))
+        object.__setattr__(
+            self, "materials_by_pair", MappingProxyType(dict(self.materials_by_pair))
+        )
         object.__setattr__(self, "candidate_capacity", _capacity(self.candidate_capacity))
 
 
@@ -79,8 +81,11 @@ class _ContactCollisionPage(ResidentCollisionPlan):
         self._site_config = caps
         self._deferred_device = None
         super().__init__(
-            batch, spec.model, spec.bindings,
-            candidate_capacity=spec.candidate_capacity, tree_dynamic_pairs=tree_dynamic_pairs,
+            batch,
+            spec.model,
+            spec.bindings,
+            candidate_capacity=spec.candidate_capacity,
+            tree_dynamic_pairs=tree_dynamic_pairs,
         )
 
     def _prepare_topology(self, slots):
@@ -102,8 +107,13 @@ class ResidentContactBundle(_ResidentContactMechanics):
     """At most eight complete-world pages, one solve per resident tree storage."""
 
     def __init__(
-        self, batch, pages, *, site_capacity=128,
-        sampling="discrete_entry", tree_dynamic_pairs=False,
+        self,
+        batch,
+        pages,
+        *,
+        site_capacity=128,
+        sampling="discrete_entry",
+        tree_dynamic_pairs=False,
     ):
         from .tyx_world_batch import TyxWorldBatch
 
@@ -133,10 +143,13 @@ class ResidentContactBundle(_ResidentContactMechanics):
             worlds.update(current_worlds)
             page_worlds.append(tuple(sorted(current_worlds)))
         if isinstance(site_capacity, Mapping):
-            if any(
-                isinstance(w, (bool, np.bool_)) or not isinstance(w, Integral)
-                for w in site_capacity
-            ) or set(site_capacity) != worlds:
+            if (
+                any(
+                    isinstance(w, (bool, np.bool_)) or not isinstance(w, Integral)
+                    for w in site_capacity
+                )
+                or set(site_capacity) != worlds
+            ):
                 raise ValueError("site capacities must cover exactly the contact-bound worlds")
             caps = {w: _site_limit(site_capacity[w]) for w in worlds}
         else:
@@ -165,15 +178,23 @@ class ResidentContactBundle(_ResidentContactMechanics):
                 self._pages = tuple(self._pages)
                 self._contact_worlds = tuple(sorted(worlds))
                 self._site_caps = MappingProxyType(caps)
-                self._contact_bindings = MappingProxyType({
-                    key: binding for page in self._pages
-                    for key, binding in page._contact_bindings.items()
-                })
-                self._contact_shapes = MappingProxyType({
-                    w: shapes for page in self._pages for w, shapes in page._contact_shapes.items()
-                })
+                self._contact_bindings = MappingProxyType(
+                    {
+                        key: binding
+                        for page in self._pages
+                        for key, binding in page._contact_bindings.items()
+                    }
+                )
+                self._contact_shapes = MappingProxyType(
+                    {
+                        w: shapes
+                        for page in self._pages
+                        for w, shapes in page._contact_shapes.items()
+                    }
+                )
                 self._world_materials = {
-                    w: material for page in self._pages
+                    w: material
+                    for page in self._pages
                     for w, material in page._world_materials.items()
                 }
                 with batch._borrow_collision_state() as view:
@@ -231,8 +252,12 @@ class ResidentContactBundle(_ResidentContactMechanics):
             if any(r.state_epoch != view.state_epoch for r in results):
                 raise ValueError("contact pages do not share one accepted entry epoch")
             result = ResidentContactBundleResult(
-                view.owner, self._registration, view.topology_generation, view.state_epoch,
-                self._contact_worlds, results,
+                view.owner,
+                self._registration,
+                view.topology_generation,
+                view.state_epoch,
+                self._contact_worlds,
+                results,
                 tuple(pair for r in results for pair in r.candidates),
                 self._candidate_capacity,
             )
@@ -250,7 +275,8 @@ class ResidentContactBundle(_ResidentContactMechanics):
                 or result.world_keys != self._contact_worlds
                 or len(result.page_results) != len(self._pages)
                 or result.candidate_capacity != self._candidate_capacity
-                or result.candidates != tuple(
+                or result.candidates
+                != tuple(
                     pair for page_result in result.page_results for pair in page_result.candidates
                 )
             ):
@@ -286,11 +312,15 @@ class ResidentContactBundle(_ResidentContactMechanics):
         with self._batch._lock:
             pages = tuple(page.stats() for page in self._pages)
             result = dict(
-                mode=self._batch._mode, closed=self._closed, page_count=len(self._pages),
-                page_worlds=self._page_worlds, world_count=len(self._contact_worlds),
+                mode=self._batch._mode,
+                closed=self._closed,
+                page_count=len(self._pages),
+                page_worlds=self._page_worlds,
+                world_count=len(self._contact_worlds),
                 candidate_capacity=self._candidate_capacity,
                 page_candidate_capacities=tuple(s.candidate_capacity for s in self._page_specs),
-                queries=self._queries, failed_queries=self._failed_queries,
+                queries=self._queries,
+                failed_queries=self._failed_queries,
                 device_owned_bytes=sum(p["device_owned_bytes"] for p in pages),
                 device_allocations=sum(p["device_allocations"] for p in pages),
                 pages=pages,

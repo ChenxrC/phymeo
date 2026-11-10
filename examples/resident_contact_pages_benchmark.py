@@ -15,17 +15,17 @@ No Newton comparison or performance superiority is implied.
 """
 
 import argparse
+import hashlib
+import json
+import platform
+import sys
+import traceback
 from collections.abc import Mapping
 from dataclasses import fields, is_dataclass
 from datetime import datetime, timezone
-import hashlib
 from itertools import product
-import json
 from pathlib import Path
-import platform
-import sys
 from time import perf_counter
-import traceback
 
 import numpy as np
 
@@ -80,17 +80,29 @@ def _box(low, high):
 
 def _world():
     model = ph.RobotModel(
-        np.array([-1]), ("prismatic",), np.array([[0.0, 0.0, 3 / 32]]),
-        np.array([[0.0, 0.0, 0.0, 1.0]]), np.array([[0.0, 0.0, 1.0]]),
-        np.array([MASS]), np.zeros((1, 3)), np.full((1, 3), 1 / 8), np.zeros(3),
+        np.array([-1]),
+        ("prismatic",),
+        np.array([[0.0, 0.0, 3 / 32]]),
+        np.array([[0.0, 0.0, 0.0, 1.0]]),
+        np.array([[0.0, 0.0, 1.0]]),
+        np.array([MASS]),
+        np.zeros((1, 3)),
+        np.full((1, 3), 1 / 8),
+        np.zeros(3),
     )
     program = ph.DrivenRobotProgram(
-        model, kp=np.zeros(1), kd=np.zeros(1), effort_limit=np.array([8.0]), delay_steps=0,
+        model,
+        kp=np.zeros(1),
+        kd=np.zeros(1),
+        effort_limit=np.array([8.0]),
+        delay_steps=0,
     )
     initial = program.initial_state(ph.RobotState(np.zeros(1), np.array([INITIAL_VELOCITY])))
     tree = ph.FixedRobotTree(program, initial, control_max_iterations=512)
     command = program.inputs(
-        np.zeros(1), np.zeros(1), feedforward=np.array([MOTOR]),
+        np.zeros(1),
+        np.zeros(1),
+        feedforward=np.array([MOTOR]),
         loads=ph.RobotInputs(np.array([EXTERNAL]), np.zeros((1, 3)), np.zeros((1, 3))),
     )
     return model, tree, command
@@ -103,17 +115,23 @@ def _page(worlds, initial):
     support = _box((-1 / 2, -1 / 2, -1 / 4), (1 / 2, 1 / 2, 0))
     for world in worlds:
         moving, fixed = ph.CollisionKey(world, 100, 11), ph.CollisionKey(world, 900, 1)
-        shapes.extend((
-            ph.CollisionShape(moving, "hull", tuple(range(101, 109))),
-            ph.CollisionShape(fixed, "hull", tuple(range(201, 209))),
-        ))
-        bindings.extend((
-            ph.ResidentTreeBinding(moving, world, 0, local, topology=initial[world].topology),
-            ph.ResidentStaticBinding(fixed, ph.CollisionMotion(support)),
-        ))
+        shapes.extend(
+            (
+                ph.CollisionShape(moving, "hull", tuple(range(101, 109))),
+                ph.CollisionShape(fixed, "hull", tuple(range(201, 209))),
+            )
+        )
+        bindings.extend(
+            (
+                ph.ResidentTreeBinding(moving, world, 0, local, topology=initial[world].topology),
+                ph.ResidentStaticBinding(fixed, ph.CollisionMotion(support)),
+            )
+        )
         materials[(moving, fixed)] = ph.RobotContactMaterial(STIFFNESS, 0, 0)
     return ph.ResidentContactPageSpec(
-        ph.CollisionModel(tuple(shapes)), tuple(bindings), materials,
+        ph.CollisionModel(tuple(shapes)),
+        tuple(bindings),
+        materials,
         candidate_capacity=len(worlds),
     )
 
@@ -130,7 +148,10 @@ def _check_step(worlds, before, states, receipts, acceptance, tick, q, v):
             receipt.world == world and receipt.entry_tick == tick - 1 and receipt.exit_tick == tick,
             "receipt world/tick mismatch",
         )
-        _require(receipt.entry_state == entry and receipt.accepted_state == state, "state/force publication mismatch")
+        _require(
+            receipt.entry_state == entry and receipt.accepted_state == state,
+            "state/force publication mismatch",
+        )
         _require(receipt.dt_s == H, "receipt time step changed")
         _require(state.control == entry.control, "held control changed")
         maxima["position_error"] = max(maxima["position_error"], _close(state.position, [q]))
@@ -162,12 +183,15 @@ def _check_step(worlds, before, states, receipts, acceptance, tick, q, v):
         same_v = float(entry.velocity[0]) + H * acceleration
         same_q = float(entry.position[0]) + H * same_v
         maxima["same_input_error"] = max(
-            maxima["same_input_error"], _close(state.velocity, [same_v]),
+            maxima["same_input_error"],
+            _close(state.velocity, [same_v]),
             _close(state.position, [same_q]),
         )
         forces.append(force)
     return dict(
-        checked_worlds=len(worlds), force_min_n=min(forces), force_max_n=max(forces),
+        checked_worlds=len(worlds),
+        force_min_n=min(forces),
+        force_max_n=max(forces),
         **maxima,
     )
 
@@ -180,33 +204,49 @@ def run_case(count, mode, steps, path, cache_root):
     _require(path != "single" or count <= 128, "single-page path requires W<=128")
     worlds = tuple(1001 + 3 * index for index in range(count))
     result = dict(
-        status="RUNNING", mode=mode, path=path, world_count=count, world_keys=worlds,
-        requested_steps=steps, dt_s=H, resets=0, warmup_steps=0,
+        status="RUNNING",
+        mode=mode,
+        path=path,
+        world_count=count,
+        world_keys=worlds,
+        requested_steps=steps,
+        dt_s=H,
+        resets=0,
+        warmup_steps=0,
         timing_scope="in-process construction; public synchronized step calls; checks timed separately",
-        cache_root=str(cache_root.resolve()), steps=[],
+        cache_root=str(cache_root.resolve()),
+        steps=[],
     )
     batch = plan = None
     first_step_s = steady_step_total_s = checks_total_s = 0.0
     started = perf_counter()
     try:
         model, tree, command = _world()
-        batch = ph.TyxWorldBatch(tuple((world, tree) for world in worlds), mode, cache_root=cache_root)
+        batch = ph.TyxWorldBatch(
+            tuple((world, tree) for world in worlds), mode, cache_root=cache_root
+        )
         batch.set_controls(dict.fromkeys(worlds, command))
         initial = batch.snapshot()
-        specs = tuple(_page(worlds[start:start + 128], initial) for start in range(0, count, 128))
+        specs = tuple(_page(worlds[start : start + 128], initial) for start in range(0, count, 128))
         if path == "single":
             _require(len(specs) == 1, "single-page path cannot represent W256")
             spec = specs[0]
             plan = batch.prepare_contacts(
-                spec.model, spec.bindings, spec.materials_by_pair,
+                spec.model,
+                spec.bindings,
+                spec.materials_by_pair,
                 candidate_capacity=spec.candidate_capacity,
             )
         else:
             plan = batch.prepare_contact_bundle(specs)
         construction_s = perf_counter() - started
         result.update(
-            model=model, command=command, initial_state=initial,
-            page_worlds=tuple(tuple(sorted({s.key.world for s in spec.model.shapes})) for spec in specs),
+            model=model,
+            command=command,
+            initial_state=initial,
+            page_worlds=tuple(
+                tuple(sorted({s.key.world for s in spec.model.shapes})) for spec in specs
+            ),
             page_shape_counts=tuple(len(spec.model.shapes) for spec in specs),
             page_candidate_capacities=tuple(spec.candidate_capacity for spec in specs),
             candidate_capacity=sum(spec.candidate_capacity for spec in specs),
@@ -238,23 +278,36 @@ def run_case(count, mode, steps, path, cache_root):
             checks = _check_step(worlds, previous, states, receipts, acceptance, tick, q, v)
             check_s = perf_counter() - check_started
             checks_total_s += check_s
-            result["steps"].append(dict(
-                tick=tick, time_s=tick * H, acceptance=acceptance, step_s=step_s,
-                check_s=check_s, reference_position=q, reference_velocity=v,
-                checks=checks, counters_after_step=counters_after_step,
-            ))
+            result["steps"].append(
+                dict(
+                    tick=tick,
+                    time_s=tick * H,
+                    acceptance=acceptance,
+                    step_s=step_s,
+                    check_s=check_s,
+                    reference_position=q,
+                    reference_velocity=v,
+                    checks=checks,
+                    counters_after_step=counters_after_step,
+                )
+            )
             previous = states
             result["last_attempt"]["phase"] = "completed"
         result["timing"].update(
-            first_step_s=first_step_s, steady_step_count=steps - 1,
-            steady_step_total_s=steady_step_total_s, checks_total_s=checks_total_s,
+            first_step_s=first_step_s,
+            steady_step_count=steps - 1,
+            steady_step_total_s=steady_step_total_s,
+            checks_total_s=checks_total_s,
             continuous_loop_total_s=perf_counter() - loop_started,
         )
         result.update(
-            final_state=previous, final_receipts=plan.last_accepted,
+            final_state=previous,
+            final_receipts=plan.last_accepted,
             final_status=plan.last_status,
             counters_after_observation=dict(batch=batch.stats(), contact=plan.stats()),
-            checked_steps=len(result["steps"]), accepted_steps=batch.stats()["completed_steps"], status="PASS",
+            checked_steps=len(result["steps"]),
+            accepted_steps=batch.stats()["completed_steps"],
+            status="PASS",
         )
         _require(
             batch.stats()["completed_steps"] == steps
@@ -264,8 +317,12 @@ def run_case(count, mode, steps, path, cache_root):
         )
     except Exception as error:
         result.update(
-            status="FAIL", failure=dict(type=type(error).__name__, message=str(error), traceback=traceback.format_exc()),
-            checked_steps=len(result["steps"]), accepted_steps=0 if batch is None else None,
+            status="FAIL",
+            failure=dict(
+                type=type(error).__name__, message=str(error), traceback=traceback.format_exc()
+            ),
+            checked_steps=len(result["steps"]),
+            accepted_steps=0 if batch is None else None,
         )
         if batch is not None:
             try:
@@ -273,7 +330,9 @@ def run_case(count, mode, steps, path, cache_root):
                 result["accepted_steps"] = result["counters_at_failure"]["completed_steps"]
                 result["retained_state"] = batch.snapshot()
             except Exception as read_error:
-                result["failure_readback"] = dict(type=type(read_error).__name__, message=str(read_error))
+                result["failure_readback"] = dict(
+                    type=type(read_error).__name__, message=str(read_error)
+                )
         if plan is not None:
             result["retained_receipts"] = plan.last_accepted
             result["retained_status"] = plan.last_status
@@ -286,12 +345,15 @@ def run_case(count, mode, steps, path, cache_root):
                 owner.close()
                 counters = owner.stats()
                 result[label + "_counters_after_close"] = counters
-                _require(counters["device_owned_bytes"] == 0, label + " retained live device bytes after close")
+                _require(
+                    counters["device_owned_bytes"] == 0,
+                    label + " retained live device bytes after close",
+                )
             except Exception as error:
                 result["status"] = "FAIL"
-                result.setdefault("cleanup_failures", []).append(dict(
-                    owner=label, type=type(error).__name__, message=str(error)
-                ))
+                result.setdefault("cleanup_failures", []).append(
+                    dict(owner=label, type=type(error).__name__, message=str(error))
+                )
     return result
 
 
@@ -303,7 +365,9 @@ def _steps(value):
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     parser.add_argument("--mode", choices=("interpret", "cuda"), default="cuda")
     parser.add_argument("--worlds", type=int, nargs="+", choices=SUPPORTED_WORLDS, default=[32])
     parser.add_argument("--steps", type=_steps, default=16)
@@ -320,39 +384,63 @@ def main(argv=None):
         parser.error("output already exists; preserve prior evidence and choose a new path")
     cache_root = args.cache_root or args.output.parent / "resident-contact-pages-cache"
     report = dict(
-        schema="resident-contact-pages-benchmark-v1", created_utc=datetime.now(timezone.utc).isoformat(),
-        status="RUNNING", performance_claim="none; no Newton comparison",
+        schema="resident-contact-pages-benchmark-v1",
+        created_utc=datetime.now(timezone.utc).isoformat(),
+        status="RUNNING",
+        performance_claim="none; no Newton comparison",
         source=dict(
             example=str(Path(__file__).resolve()),
             example_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
             phymeo_module=str(Path(ph.__file__).resolve()),
-            python=platform.python_version(), numpy=np.__version__,
+            python=platform.python_version(),
+            numpy=np.__version__,
         ),
-        options=dict(mode=args.mode, worlds=args.worlds, steps=args.steps, path=args.path, compare_single=args.compare_single),
+        options=dict(
+            mode=args.mode,
+            worlds=args.worlds,
+            steps=args.steps,
+            path=args.path,
+            compare_single=args.compare_single,
+        ),
         checks=dict(state_atol=STATE_ATOL, state_rtol=STATE_RTOL, force_atol=FORCE_ATOL),
-        results=[], comparisons=[],
+        results=[],
+        comparisons=[],
     )
     for count in args.worlds:
-        selected = run_case(count, args.mode, args.steps, args.path, cache_root / f"w{count}-{args.path}")
+        selected = run_case(
+            count, args.mode, args.steps, args.path, cache_root / f"w{count}-{args.path}"
+        )
         report["results"].append(selected)
         if selected["status"] != "PASS":
             break
         if args.compare_single and count <= 128:
-            single = run_case(count, args.mode, args.steps, "single", cache_root / f"w{count}-single")
+            single = run_case(
+                count, args.mode, args.steps, "single", cache_root / f"w{count}-single"
+            )
             report["results"].append(single)
             if single["status"] != "PASS":
                 break
             state_same = _json(selected["final_state"]) == _json(single["final_state"])
             receipts_same = _json(selected["final_receipts"]) == _json(single["final_receipts"])
-            report["comparisons"].append(dict(
-                world_count=count, final_state_exact=state_same, final_receipts_exact=receipts_same,
-                status="PASS" if state_same and receipts_same else "FAIL",
-                timing_note="serial independent initial trajectories; process/compiler caching may differ",
-            ))
+            report["comparisons"].append(
+                dict(
+                    world_count=count,
+                    final_state_exact=state_same,
+                    final_receipts_exact=receipts_same,
+                    status="PASS" if state_same and receipts_same else "FAIL",
+                    timing_note="serial independent initial trajectories; process/compiler caching may differ",
+                )
+            )
             if not (state_same and receipts_same):
                 break
         elif args.compare_single:
-            report["comparisons"].append(dict(world_count=count, status="NOT_APPLICABLE", reason="W256 exceeds one original model page"))
+            report["comparisons"].append(
+                dict(
+                    world_count=count,
+                    status="NOT_APPLICABLE",
+                    reason="W256 exceeds one original model page",
+                )
+            )
     completed = sum(result["path"] == args.path for result in report["results"])
     passed = (
         completed == len(args.worlds)
@@ -364,7 +452,15 @@ def main(argv=None):
     with args.output.open("x", encoding="utf-8") as stream:
         json.dump(_json(report), stream, ensure_ascii=False, allow_nan=False, separators=(",", ":"))
         stream.write("\n")
-    print(json.dumps(dict(status=report["status"], output=str(args.output.resolve()), runs=len(report["results"]))))
+    print(
+        json.dumps(
+            dict(
+                status=report["status"],
+                output=str(args.output.resolve()),
+                runs=len(report["results"]),
+            )
+        )
+    )
     return 0 if passed else 1
 
 

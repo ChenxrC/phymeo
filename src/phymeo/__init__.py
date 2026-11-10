@@ -4,6 +4,11 @@ from .backends._device_convex_query import ConvexQueryCapacityExceeded
 from .backends._resident_affine_binding import ResidentAffineTreeBinding
 from .backends._resident_affine_tree import AffineRobotTree
 from .backends._resident_collision_plan import ResidentSphereBinding, ResidentStaticBinding
+from .backends._resident_contact_bundle import (
+    ResidentContactBundle,
+    ResidentContactBundleResult,
+    ResidentContactPageSpec,
+)
 from .backends._resident_floating_affine_binding import ResidentFloatingAffineTreeBinding
 from .backends._resident_floating_affine_tree import (
     FloatingAffineRobotTree,
@@ -460,6 +465,9 @@ __all__ = [
     "FloatingTreeKinematics",
     "AffineRobotTree",
     "ResidentAffineTreeBinding",
+    "ResidentContactBundle",
+    "ResidentContactBundleResult",
+    "ResidentContactPageSpec",
     "ResidentFloatingTreeBinding",
     "ResidentSphereBinding",
     "ResidentStaticBinding",

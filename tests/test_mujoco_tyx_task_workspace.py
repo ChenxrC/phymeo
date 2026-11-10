@@ -1,23 +1,24 @@
 """Predeclared C2 device task tests; no HOST policy observations in refresh."""
 
+import sys
 from contextlib import ExitStack
 from dataclasses import replace
-import sys
 from types import SimpleNamespace
 
 import numpy as np
 import pytest
 import tyx as tx
 
-from phymeo.backends.mujoco_task_workspace import (
-    MuJoCoTyxTaskFailure, MuJoCoTyxTaskSpec,
-)
 from phymeo.backends.mujoco_runtime import MuJoCoControl, MuJoCoInitialState, MuJoCoRuntime
+from phymeo.backends.mujoco_task_workspace import (
+    MuJoCoTyxTaskFailure,
+    MuJoCoTyxTaskSpec,
+)
 from phymeo.builders.mujoco_compiler import compile_mujoco_xml
 
 MODES = ("interpret", pytest.param("cuda", marks=pytest.mark.cuda))
 KEYS = (3, 19)
-H = .002
+H = 0.002
 INERTIAL = '<inertial pos=".02 -.01 .03" mass="1.2" fullinertia=".04 .05 .06 .001 -.001 .001"/>'
 SHAPE = '<geom type="sphere" size=".04" contype="0" conaffinity="0"/>'
 CHILD = f"""<body name="link" pos=".2 0 .1"><joint name="a" type="hinge" axis="0 0 1"
@@ -45,30 +46,42 @@ def engine_for(case, mode):
     model = source.fresh_native_model()
     declarations = {}
     for slot, key in enumerate(KEYS):
-        q, v = model.qpos0.copy(), np.full(model.nv, .015)
+        q, v = model.qpos0.copy(), np.full(model.nv, 0.015)
         if case != "fixed":
-            orientation = np.array([1., .01, -.015, .02])
+            orientation = np.array([1.0, 0.01, -0.015, 0.02])
             q[3:7] = orientation / np.linalg.norm(orientation)
-            v[:6] = [.025, -.03, -.01, .08, -.05, .03]
-        q[-1] = .03 + .01 * slot
-        v[-1] = .02 + .06 * slot
+            v[:6] = [0.025, -0.03, -0.01, 0.08, -0.05, 0.03]
+        q[-1] = 0.03 + 0.01 * slot
+        v[-1] = 0.02 + 0.06 * slot
         declarations[key] = MuJoCoInitialState(q, v)
-    return MuJoCoRuntime(source, mode=mode, world_keys=KEYS, initial_states=declarations,
-                        contact_capacity=16, constraint_capacity=64)
+    return MuJoCoRuntime(
+        source,
+        mode=mode,
+        world_keys=KEYS,
+        initial_states=declarations,
+        contact_capacity=16,
+        constraint_capacity=64,
+    )
 
 
 def task_spec(engine):
     nq, nv = engine.capabilities["nq"], engine.capabilities["nv"]
     return MuJoCoTyxTaskSpec(
-        (0, nq - 1), (0, nv - 1), scale=[1.2, -.7, 2., .3],
-        bias=[.2, .3, -.4, .1], target=[.1, -.1, .03, .02], weight=[.2, .4, .6, .8],
-        lower=[-10.] * 4, upper=[10., 10., 10., .05],
+        (0, nq - 1),
+        (0, nv - 1),
+        scale=[1.2, -0.7, 2.0, 0.3],
+        bias=[0.2, 0.3, -0.4, 0.1],
+        target=[0.1, -0.1, 0.03, 0.02],
+        weight=[0.2, 0.4, 0.6, 0.8],
+        lower=[-10.0] * 4,
+        upper=[10.0, 10.0, 10.0, 0.05],
     )
 
 
 def reference(states, spec):
-    feature = np.stack([np.r_[s.q[list(spec.q_indices)], s.v[list(spec.v_indices)]]
-                       for s in states.values()])
+    feature = np.stack(
+        [np.r_[s.q[list(spec.q_indices)], s.v[list(spec.v_indices)]] for s in states.values()]
+    )
     observation = feature * spec.scale + spec.bias
     reward = -np.sum(spec.weight * (feature - spec.target) ** 2, axis=1)
     terminated = np.any((feature < spec.lower) | (feature > spec.upper), axis=1).astype(np.int32)
@@ -76,13 +89,15 @@ def reference(states, spec):
 
 
 def qv(engine):
-    return tuple((s.q.tobytes(), s.v.tobytes(), s.time, s.tick)
-                 for s in engine.snapshot().values())
+    return tuple((s.q.tobytes(), s.v.tobytes(), s.time, s.tick) for s in engine.snapshot().values())
 
 
 def output_arrays(stack, mode, count, width, *, sentinel=0):
-    arrays = (np.full((count, width), sentinel, np.float32),
-              np.full(count, sentinel, np.float32), np.full(count, sentinel, np.int32))
+    arrays = (
+        np.full((count, width), sentinel, np.float32),
+        np.full(count, sentinel, np.float32),
+        np.full(count, sentinel, np.int32),
+    )
     if mode == "interpret":
         return arrays
     values = tuple(tx.CudaArray(value) for value in arrays)
@@ -100,9 +115,14 @@ def host(values, mode, stream=None):
     return result
 
 
-def consume(count: tx.i32, width: tx.i32,
-            observation: tx.ndarray(tx.f32, 2), reward: tx.ndarray(tx.f32, 1),
-            terminated: tx.ndarray(tx.i32, 1), output: tx.ndarray(tx.f32, 1)):
+def consume(
+    count: tx.i32,
+    width: tx.i32,
+    observation: tx.ndarray(tx.f32, 2),
+    reward: tx.ndarray(tx.f32, 1),
+    terminated: tx.ndarray(tx.i32, 1),
+    output: tx.ndarray(tx.f32, 1),
+):
     for w in tx.range(count):
         value = reward[w] + 100.0 * terminated[w]
         for feature in range(width):
@@ -117,26 +137,36 @@ consume = tx.kernel(consume)
 @pytest.mark.parametrize("case", ("fixed", "free", "mixed"))
 def test_device_outputs_and_real_consumer_without_host_observation(case, mode, monkeypatch):
     with engine_for(case, mode) as engine:
-        engine.set_controls({key: MuJoCoControl([.02]) for key in KEYS})
+        engine.set_controls({key: MuJoCoControl([0.02]) for key in KEYS})
         for _ in range(3):
             engine.step(H)
         spec = task_spec(engine)
         expected = reference(engine.snapshot(), spec)
         physical = qv(engine)
         with engine.prepare_task_workspace(spec) as workspace:
+
             def forbidden(*args, **kwargs):
                 raise AssertionError("task refresh read physics/observations to HOST")
+
             with monkeypatch.context() as patch:
                 patch.setattr(engine, "snapshot", forbidden)
                 patch.setattr(engine._mj, "mj_forward", forbidden)
                 patch.setattr(engine._device, "_get", forbidden)
                 if mode == "cuda":
-                    for array in (*engine._device.q, *engine._device.v, *engine._device.time,
-                                  *workspace._observation, *workspace._reward, *workspace._terminated):
+                    for array in (
+                        *engine._device.q,
+                        *engine._device.v,
+                        *engine._device.time,
+                        *workspace._observation,
+                        *workspace._reward,
+                        *workspace._terminated,
+                    ):
                         patch.setattr(array, "to_numpy", forbidden)
                 frame = workspace.refresh(expected_revision=engine.checkpoint_revision)
             assert qv(engine) == physical
-            assert workspace.counters["task_status_downloaded_bytes"] == (8 if mode == "cuda" else 0)
+            assert workspace.counters["task_status_downloaded_bytes"] == (
+                8 if mode == "cuda" else 0
+            )
             assert workspace.counters["explicit_output_readback_bytes"] == 0
             assert frame.binding["spec_sha256"] == spec.sha256
             assert frame.binding["world_keys"] == KEYS
@@ -164,8 +194,12 @@ def test_device_outputs_and_real_consumer_without_host_observation(case, mode, m
             np.testing.assert_allclose(actual[1], expected[1], rtol=2e-5, atol=2e-6)
             np.testing.assert_array_equal(actual[2], expected[2])
             assert set(actual[2]) == {0, 1}
-            np.testing.assert_allclose(scalar, actual[1] + 100 * actual[2]
-                                       + actual[0] @ np.arange(1, 5), rtol=3e-6, atol=3e-6)
+            np.testing.assert_allclose(
+                scalar,
+                actual[1] + 100 * actual[2] + actual[0] @ np.arange(1, 5),
+                rtol=3e-6,
+                atol=3e-6,
+            )
             assert workspace.counters["explicit_output_readback_bytes"] == 0
 
 
@@ -205,7 +239,10 @@ def test_same_and_other_consumer_stream_copies_are_independent(mode):
 
 @pytest.mark.parametrize("mode", MODES)
 def test_all_copy_destinations_preflight_before_any_write(mode, monkeypatch):
-    with engine_for("fixed", mode) as engine, engine.prepare_task_workspace(task_spec(engine)) as ws:
+    with (
+        engine_for("fixed", mode) as engine,
+        engine.prepare_task_workspace(task_spec(engine)) as ws,
+    ):
         frame = ws.refresh(expected_revision=engine.checkpoint_revision)
         with ExitStack() as stack:
             targets = output_arrays(stack, mode, 2, 4, sentinel=17)
@@ -252,7 +289,8 @@ def test_physical_bank_alias_and_overlapping_caller_outputs_refused(mode):
                 overlapping = targets[1].view(np.int32)
             else:
                 overlapping = tx.CudaArray.from_external(
-                    int(targets[1].device_ptr), (2,), np.int32, owner=targets[1])
+                    int(targets[1].device_ptr), (2,), np.int32, owner=targets[1]
+                )
                 stack.callback(overlapping.free)
             with pytest.raises(ValueError, match="overlap"):
                 ws.copy_to(frame, targets[0], targets[1], overlapping)
@@ -271,7 +309,7 @@ def test_revision_owner_reset_restore_and_close_lifetimes(mode):
         with engine.prepare_task_workspace(ws.spec) as other:
             with pytest.raises(ValueError, match="foreign|superseded"):
                 other.readback(frame)
-        engine.set_controls({key: MuJoCoControl([.01]) for key in KEYS})
+        engine.set_controls({key: MuJoCoControl([0.01]) for key in KEYS})
         with pytest.raises(ValueError, match="stale"):
             ws.readback(frame)
         with pytest.raises(ValueError, match="stale"):
@@ -303,10 +341,14 @@ def test_revision_owner_reset_restore_and_close_lifetimes(mode):
 
 @pytest.mark.parametrize("mode", MODES)
 def test_failed_refresh_preserves_latest_frame_only_for_same_physics_revision(mode, monkeypatch):
-    with engine_for("fixed", mode) as engine, engine.prepare_task_workspace(task_spec(engine)) as ws:
+    with (
+        engine_for("fixed", mode) as engine,
+        engine.prepare_task_workspace(task_spec(engine)) as ws,
+    ):
         frame = ws.refresh(expected_revision=engine.checkpoint_revision)
         original = ws.readback(frame)
         kernel = ws._kernel
+
         def rejected(*args, **kwargs):
             kernel(*args, **kwargs)
             if mode == "interpret":
@@ -318,6 +360,7 @@ def test_failed_refresh_preserves_latest_frame_only_for_same_physics_revision(mo
                 args[6].copy_from(bad_output, stream=kwargs["stream"])
                 args[-1].copy_from(bad_status, stream=kwargs["stream"])
                 kwargs["stream"].synchronize()
+
         with monkeypatch.context() as patch:
             patch.setattr(ws, "_kernel", rejected)
             with pytest.raises(MuJoCoTyxTaskFailure) as caught:
@@ -352,10 +395,14 @@ def test_actual_nonfinite_task_output_rejects_without_physics_mutation(mode):
 
 @pytest.mark.parametrize("mode", MODES)
 def test_torch_export_explicitly_refuses_cpu_only_torch(mode, monkeypatch):
-    with engine_for("fixed", mode) as engine, engine.prepare_task_workspace(task_spec(engine)) as ws:
+    with (
+        engine_for("fixed", mode) as engine,
+        engine.prepare_task_workspace(task_spec(engine)) as ws,
+    ):
         frame = ws.refresh(expected_revision=engine.checkpoint_revision)
-        fake = SimpleNamespace(version=SimpleNamespace(cuda=None),
-                               cuda=SimpleNamespace(is_available=lambda: False))
+        fake = SimpleNamespace(
+            version=SimpleNamespace(cuda=None), cuda=SimpleNamespace(is_available=lambda: False)
+        )
         with monkeypatch.context() as patch:
             patch.setitem(sys.modules, "torch", fake)
             with pytest.raises(RuntimeError, match="CUDA"):
@@ -368,8 +415,9 @@ def test_native_bounds_are_inclusive_and_do_not_compare_scaled_observation(mode)
     with engine_for("fixed", mode) as engine:
         states = engine.snapshot()
         bound = float(states[KEYS[0]].q[-1])
-        spec = MuJoCoTyxTaskSpec((engine.capabilities["nq"] - 1,), scale=[-10], bias=[20],
-                                lower=[bound], upper=[bound])
+        spec = MuJoCoTyxTaskSpec(
+            (engine.capabilities["nq"] - 1,), scale=[-10], bias=[20], lower=[bound], upper=[bound]
+        )
         with engine.prepare_task_workspace(spec) as ws:
             frame = ws.refresh(expected_revision=engine.checkpoint_revision)
             observation, reward, terminated = ws.readback(frame)
@@ -379,18 +427,21 @@ def test_native_bounds_are_inclusive_and_do_not_compare_scaled_observation(mode)
 
 
 def test_spec_is_immutable_and_bounded():
-    scale = np.array([2., 3.])
+    scale = np.array([2.0, 3.0])
     spec = MuJoCoTyxTaskSpec((0,), (1,), scale=scale)
     digest = spec.sha256
     scale[:] = 99
-    np.testing.assert_array_equal(spec.scale, [2., 3.])
+    np.testing.assert_array_equal(spec.scale, [2.0, 3.0])
     with pytest.raises(ValueError):
         spec.scale[0] = 7
     assert spec.sha256 == digest
     assert MuJoCoTyxTaskSpec((0,), (1,), scale=[2, 3]).sha256 == digest
     for args, kwargs in [
-        (((), ()), {}), (((True,), ()), {}), (((-1,), ()), {}),
-        (((0,) * 257, ()), {}), (((0,), ()), {"weight": [-1e-100]}),
+        (((), ()), {}),
+        (((True,), ()), {}),
+        (((-1,), ()), {}),
+        (((0,) * 257, ()), {}),
+        (((0,), ()), {"weight": [-1e-100]}),
         (((0,), ()), {"lower": [2], "upper": [1]}),
         (((0,), ()), {"scale": [float("nan")]}),
     ]:
@@ -403,8 +454,10 @@ def test_native_indices_reject_before_workspace_runtime_allocation(mode, monkeyp
     with engine_for("fixed", mode) as engine:
         physical = qv(engine)
         nq, nv = engine.capabilities["nq"], engine.capabilities["nv"]
+
         def forbidden(*args, **kwargs):
             raise AssertionError("invalid native index allocated a task runtime")
+
         with monkeypatch.context() as patch:
             patch.setattr(tx, "Runtime", forbidden)
             for spec in (MuJoCoTyxTaskSpec((nq,)), MuJoCoTyxTaskSpec((), (nv,))):

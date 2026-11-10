@@ -725,7 +725,8 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
             if type(expected_revision) is not int or expected_revision != self._checkpoint_revision:
                 raise ValueError("task workspace source revision is stale")
             return workspace._refresh_locked(
-                self._device, self._checkpoint_revision,
+                self._device,
+                self._checkpoint_revision,
                 tuple(self._ticks[key] for key in self._world_keys),
                 tuple(float(self._data[key].time) for key in self._world_keys),
             )
@@ -774,4 +775,6 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
             self._device = None
             super().close()
             if errors:
-                raise ExceptionGroup("TYX cleanup failed; close() can retry retained owners", errors)
+                raise ExceptionGroup(
+                    "TYX cleanup failed; close() can retry retained owners", errors
+                )

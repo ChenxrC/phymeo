@@ -21,12 +21,14 @@ def ss_overlap():
         "normal": normal,
         "dimension": 0,
         "length_m": 1.0,
-        "sites": ({
-            "weight": 1.0,
-            "surfaces": (np.array([0.0, 0.0, 0.05]), np.array([0.0, 0.0, 0.04])),
-            "ids": ((100,), (200,)),
-            "bary": ((1.0,), (1.0,)),
-        },),
+        "sites": (
+            {
+                "weight": 1.0,
+                "surfaces": (np.array([0.0, 0.0, 0.05]), np.array([0.0, 0.0, 0.04])),
+                "ids": ((100,), (200,)),
+                "bary": ((1.0,), (1.0,)),
+            },
+        ),
     }
 
 
@@ -37,12 +39,14 @@ def cc_parallel():
     b_parameters = (0.0, 0.75)
     sites = []
     for parameter, b_parameter, end in zip(parameters, b_parameters, ends, strict=True):
-        sites.append({
-            "weight": 0.5,
-            "surfaces": (np.array([end, 0.0, 0.05]), np.array([end, 0.0, 0.04])),
-            "ids": ((100, 101), (200, 201)),
-            "bary": ((1.0 - parameter, parameter), (1.0 - b_parameter, b_parameter)),
-        })
+        sites.append(
+            {
+                "weight": 0.5,
+                "surfaces": (np.array([end, 0.0, 0.05]), np.array([end, 0.0, 0.04])),
+                "ids": ((100, 101), (200, 201)),
+                "bary": ((1.0 - parameter, parameter), (1.0 - b_parameter, b_parameter)),
+            }
+        )
     return {
         "name": "cc_parallel",
         "family": "CC",
@@ -62,12 +66,14 @@ def bb_overlap():
     second_ids = {(-0.6, -0.1): 200, (-0.6, 0.1): 202, (0.6, -0.1): 204, (0.6, 0.1): 206}
     sites = []
     for x, y in corners:
-        sites.append({
-            "weight": 0.25,
-            "surfaces": (np.array([x, y, 0.1]), np.array([x, y, 0.09])),
-            "ids": ((first_ids[(x, y)],), (second_ids[(x, y)],)),
-            "bary": ((1.0,), (1.0,)),
-        })
+        sites.append(
+            {
+                "weight": 0.25,
+                "surfaces": (np.array([x, y, 0.1]), np.array([x, y, 0.09])),
+                "ids": ((first_ids[(x, y)],), (second_ids[(x, y)],)),
+                "bary": ((1.0,), (1.0,)),
+            }
+        )
     return {
         "name": "BB-overlap",
         "family": "BB",
@@ -98,17 +104,21 @@ def sc_overlap():
         "normal": normal,
         "dimension": 0,
         "length_m": _length((np.zeros((1, 3)), 0.05), (capsule, 0.05)),
-        "sites": ({
-            "weight": 1.0,
-            "surfaces": (np.array([0.0, 0.0, 0.05]), np.array([0.0, 0.0, 0.04])),
-            "ids": ((100,), (200, 201)),
-            "bary": ((1.0,), (0.5, 0.5)),
-        },),
+        "sites": (
+            {
+                "weight": 1.0,
+                "surfaces": (np.array([0.0, 0.0, 0.05]), np.array([0.0, 0.0, 0.04])),
+                "ids": ((100,), (200, 201)),
+                "bary": ((1.0,), (0.5, 0.5)),
+            },
+        ),
     }
 
 
 def _support_point(vertices, ids):
-    cores = {int(node): np.asarray(point, dtype=float) for node, point in zip(ids, vertices, strict=True)}
+    cores = {
+        int(node): np.asarray(point, dtype=float) for node, point in zip(ids, vertices, strict=True)
+    }
     return {
         "weight": 1.0,
         "surfaces": (np.array([0.0, 0.0, 0.05]), np.array([0.0, 0.0, 0.04])),
@@ -162,12 +172,14 @@ def ss_sep():
         "normal": np.array([0.0, 0.0, 1.0]),
         "dimension": 0,
         "length_m": 1.0,
-        "sites": ({
-            "weight": 1.0,
-            "surfaces": (np.array([0.0, 0.0, 0.05]), np.array([0.0, 0.0, 0.07])),
-            "ids": ((100,), (200,)),
-            "bary": ((1.0,), (1.0,)),
-        },),
+        "sites": (
+            {
+                "weight": 1.0,
+                "surfaces": (np.array([0.0, 0.0, 0.05]), np.array([0.0, 0.0, 0.07])),
+                "ids": ((100,), (200,)),
+                "bary": ((1.0,), (1.0,)),
+            },
+        ),
     }
 
 
@@ -180,17 +192,21 @@ def sc_sep():
         "normal": np.array([0.0, 0.0, 1.0]),
         "dimension": 0,
         "length_m": _length((np.zeros((1, 3)), 0.05), (capsule, 0.05)),
-        "sites": ({
-            "weight": 1.0,
-            "surfaces": (np.array([0.0, 0.0, 0.05]), np.array([0.0, 0.0, 0.07])),
-            "ids": ((100,), (200, 201)),
-            "bary": ((1.0,), (0.5, 0.5)),
-        },),
+        "sites": (
+            {
+                "weight": 1.0,
+                "surfaces": (np.array([0.0, 0.0, 0.05]), np.array([0.0, 0.0, 0.07])),
+                "ids": ((100,), (200, 201)),
+                "bary": ((1.0,), (0.5, 0.5)),
+            },
+        ),
     }
 
 
 def _separated_face(vertices, ids):
-    cores = {int(node): np.asarray(point, dtype=float) for node, point in zip(ids, vertices, strict=True)}
+    cores = {
+        int(node): np.asarray(point, dtype=float) for node, point in zip(ids, vertices, strict=True)
+    }
     return {
         "weight": 1.0,
         "surfaces": (np.array([0.0, 0.0, 0.05]), np.array([0.0, 0.0, 0.07])),
@@ -235,7 +251,9 @@ def sh_sep():
 
 
 def _touch_face(vertices, ids):
-    cores = {int(node): np.asarray(point, dtype=float) for node, point in zip(ids, vertices, strict=True)}
+    cores = {
+        int(node): np.asarray(point, dtype=float) for node, point in zip(ids, vertices, strict=True)
+    }
     return {
         "weight": 1.0,
         "surfaces": (np.array([0.0, 0.0, 0.05]), np.array([0.0, 0.0, 0.05])),
@@ -255,12 +273,14 @@ def ss_touch():
         "normal": np.array([0.0, 0.0, 1.0]),
         "dimension": 0,
         "length_m": 1.0,
-        "sites": ({
-            "weight": 1.0,
-            "surfaces": (np.array([0.0, 0.0, 0.05]), np.array([0.0, 0.0, 0.05])),
-            "ids": ((100,), (200,)),
-            "bary": ((1.0,), (1.0,)),
-        },),
+        "sites": (
+            {
+                "weight": 1.0,
+                "surfaces": (np.array([0.0, 0.0, 0.05]), np.array([0.0, 0.0, 0.05])),
+                "ids": ((100,), (200,)),
+                "bary": ((1.0,), (1.0,)),
+            },
+        ),
     }
 
 
@@ -273,12 +293,14 @@ def sc_touch():
         "normal": np.array([0.0, 0.0, 1.0]),
         "dimension": 0,
         "length_m": _length((np.zeros((1, 3)), 0.05), (capsule, 0.05)),
-        "sites": ({
-            "weight": 1.0,
-            "surfaces": (np.array([0.0, 0.0, 0.05]), np.array([0.0, 0.0, 0.05])),
-            "ids": ((100,), (200, 201)),
-            "bary": ((1.0,), (0.5, 0.5)),
-        },),
+        "sites": (
+            {
+                "weight": 1.0,
+                "surfaces": (np.array([0.0, 0.0, 0.05]), np.array([0.0, 0.0, 0.05])),
+                "ids": ((100,), (200, 201)),
+                "bary": ((1.0,), (0.5, 0.5)),
+            },
+        ),
     }
 
 
@@ -317,12 +339,14 @@ def sh_touch():
 def cc_overlap():
     sites = []
     for parameter, end in ((0.0, -0.5), (1.0, 0.5)):
-        sites.append({
-            "weight": 0.5,
-            "surfaces": (np.array([end, 0.0, 0.05]), np.array([end, 0.0, 0.04])),
-            "ids": ((100, 101), (200, 201)),
-            "bary": ((1.0 - parameter, parameter), (1.0 - parameter, parameter)),
-        })
+        sites.append(
+            {
+                "weight": 0.5,
+                "surfaces": (np.array([end, 0.0, 0.05]), np.array([end, 0.0, 0.04])),
+                "ids": ((100, 101), (200, 201)),
+                "bary": ((1.0 - parameter, parameter), (1.0 - parameter, parameter)),
+            }
+        )
     capsule = np.array([[-0.5, 0.0, 0.0], [0.5, 0.0, 0.0]])
     return {
         "name": "CC-overlap",
@@ -336,18 +360,23 @@ def cc_overlap():
 
 
 def _capsule_on_face(name, family, shape, face):
-    cores = {int(node): np.asarray(point, dtype=float) for node, point in zip(face[1], face[0], strict=True)}
+    cores = {
+        int(node): np.asarray(point, dtype=float)
+        for node, point in zip(face[1], face[0], strict=True)
+    }
     sites = []
     for parameter, end in ((0.0, -0.5), (1.0, 0.5)):
-        sites.append({
-            "weight": 0.5,
-            "surfaces": (np.array([end, 0.0, 0.05]), np.array([end, 0.0, 0.04])),
-            "ids": ((100, 101), None),
-            "bary": ((1.0 - parameter, parameter), None),
-            "allowed": (None, tuple(cores)),
-            "cores": (None, cores),
-            "radii": (0.05, 0.0),
-        })
+        sites.append(
+            {
+                "weight": 0.5,
+                "surfaces": (np.array([end, 0.0, 0.05]), np.array([end, 0.0, 0.04])),
+                "ids": ((100, 101), None),
+                "bary": ((1.0 - parameter, parameter), None),
+                "allowed": (None, tuple(cores)),
+                "cores": (None, cores),
+                "radii": (0.05, 0.0),
+            }
+        )
     capsule = np.array([[-0.5, 0.0, 0.0], [0.5, 0.0, 0.0]])
     return {
         "name": name,
@@ -377,12 +406,14 @@ def ch_overlap():
 def cc_sep():
     sites = []
     for parameter, end in ((0.0, -0.5), (1.0, 0.5)):
-        sites.append({
-            "weight": 0.5,
-            "surfaces": (np.array([end, 0.0, 0.05]), np.array([end, 0.0, 0.07])),
-            "ids": ((100, 101), (200, 201)),
-            "bary": ((1.0 - parameter, parameter), (1.0 - parameter, parameter)),
-        })
+        sites.append(
+            {
+                "weight": 0.5,
+                "surfaces": (np.array([end, 0.0, 0.05]), np.array([end, 0.0, 0.07])),
+                "ids": ((100, 101), (200, 201)),
+                "bary": ((1.0 - parameter, parameter), (1.0 - parameter, parameter)),
+            }
+        )
     capsule = np.array([[-0.5, 0.0, 0.0], [0.5, 0.0, 0.0]])
     return {
         "name": "CC-sep",
@@ -396,18 +427,23 @@ def cc_sep():
 
 
 def _separated_capsule_on_face(name, family, shape, face):
-    cores = {int(node): np.asarray(point, dtype=float) for node, point in zip(face[1], face[0], strict=True)}
+    cores = {
+        int(node): np.asarray(point, dtype=float)
+        for node, point in zip(face[1], face[0], strict=True)
+    }
     sites = []
     for parameter, end in ((0.0, -0.5), (1.0, 0.5)):
-        sites.append({
-            "weight": 0.5,
-            "surfaces": (np.array([end, 0.0, 0.05]), np.array([end, 0.0, 0.07])),
-            "ids": ((100, 101), None),
-            "bary": ((1.0 - parameter, parameter), None),
-            "allowed": (None, tuple(cores)),
-            "cores": (None, cores),
-            "radii": (0.05, 0.0),
-        })
+        sites.append(
+            {
+                "weight": 0.5,
+                "surfaces": (np.array([end, 0.0, 0.05]), np.array([end, 0.0, 0.07])),
+                "ids": ((100, 101), None),
+                "bary": ((1.0 - parameter, parameter), None),
+                "allowed": (None, tuple(cores)),
+                "cores": (None, cores),
+                "radii": (0.05, 0.0),
+            }
+        )
     capsule = np.array([[-0.5, 0.0, 0.0], [0.5, 0.0, 0.0]])
     return {
         "name": name,
@@ -431,18 +467,22 @@ def ch_sep():
     ring = ((-0.5, -0.1), (0.5, -0.1), (0.6, 0.0), (0.3, 0.1), (-0.5, 0.1))
     prism = np.array([(x, y, z + 0.17) for x, y in ring for z in (-0.1, 0.1)], dtype=float)
     face = np.isclose(prism[:, 2], 0.07)
-    return _separated_capsule_on_face("CH-sep", "CH", prism, (prism[face], np.arange(200, 210)[face]))
+    return _separated_capsule_on_face(
+        "CH-sep", "CH", prism, (prism[face], np.arange(200, 210)[face])
+    )
 
 
 def cc_touch():
     sites = []
     for parameter, end in ((0.0, -0.5), (1.0, 0.5)):
-        sites.append({
-            "weight": 0.5,
-            "surfaces": (np.array([end, 0.0, 0.05]), np.array([end, 0.0, 0.05])),
-            "ids": ((100, 101), (200, 201)),
-            "bary": ((1.0 - parameter, parameter), (1.0 - parameter, parameter)),
-        })
+        sites.append(
+            {
+                "weight": 0.5,
+                "surfaces": (np.array([end, 0.0, 0.05]), np.array([end, 0.0, 0.05])),
+                "ids": ((100, 101), (200, 201)),
+                "bary": ((1.0 - parameter, parameter), (1.0 - parameter, parameter)),
+            }
+        )
     capsule = np.array([[-0.5, 0.0, 0.0], [0.5, 0.0, 0.0]])
     return {
         "name": "CC-touch",
@@ -456,18 +496,23 @@ def cc_touch():
 
 
 def _touch_capsule_on_face(name, family, shape, face):
-    cores = {int(node): np.asarray(point, dtype=float) for node, point in zip(face[1], face[0], strict=True)}
+    cores = {
+        int(node): np.asarray(point, dtype=float)
+        for node, point in zip(face[1], face[0], strict=True)
+    }
     sites = []
     for parameter, end in ((0.0, -0.5), (1.0, 0.5)):
-        sites.append({
-            "weight": 0.5,
-            "surfaces": (np.array([end, 0.0, 0.05]), np.array([end, 0.0, 0.05])),
-            "ids": ((100, 101), None),
-            "bary": ((1.0 - parameter, parameter), None),
-            "allowed": (None, tuple(cores)),
-            "cores": (None, cores),
-            "radii": (0.05, 0.0),
-        })
+        sites.append(
+            {
+                "weight": 0.5,
+                "surfaces": (np.array([end, 0.0, 0.05]), np.array([end, 0.0, 0.05])),
+                "ids": ((100, 101), None),
+                "bary": ((1.0 - parameter, parameter), None),
+                "allowed": (None, tuple(cores)),
+                "cores": (None, cores),
+                "radii": (0.05, 0.0),
+            }
+        )
     capsule = np.array([[-0.5, 0.0, 0.0], [0.5, 0.0, 0.0]])
     return {
         "name": name,
@@ -497,10 +542,12 @@ def ch_touch():
 def _fan_weights(points):
     points = np.asarray(points, dtype=float)
     center = points.mean(axis=0)
-    areas = np.array([
-        np.linalg.norm(np.cross(points[i] - center, points[(i + 1) % len(points)] - center))
-        for i in range(len(points))
-    ])
+    areas = np.array(
+        [
+            np.linalg.norm(np.cross(points[i] - center, points[(i + 1) % len(points)] - center))
+            for i in range(len(points))
+        ]
+    )
     return (areas + np.roll(areas, 1)) / (3.0 * areas.sum()) + 1.0 / (3.0 * len(points))
 
 
@@ -513,19 +560,24 @@ def bh_overlap():
     weights = _fan_weights(np.column_stack((ring, np.zeros(len(ring)))))
     box = np.array(list(product((-0.6, 0.6), (-0.1, 0.1), (-0.1, 0.1))), dtype=float)
     top = np.isclose(box[:, 2], 0.1)
-    cores = {int(node): point.copy() for node, point in zip(np.arange(100, 108)[top], box[top], strict=True)}
+    cores = {
+        int(node): point.copy()
+        for node, point in zip(np.arange(100, 108)[top], box[top], strict=True)
+    }
     prism = np.array([(x, y, z + 0.19) for x, y in ring for z in (-0.1, 0.1)], dtype=float)
     sites = []
     for index, (xy, weight) in enumerate(zip(ring, weights, strict=True)):
-        sites.append({
-            "weight": float(weight),
-            "surfaces": (np.array([xy[0], xy[1], 0.1]), np.array([xy[0], xy[1], 0.09])),
-            "ids": (None, (200 + 2 * index,)),
-            "bary": (None, (1.0,)),
-            "allowed": (tuple(cores), None),
-            "cores": (cores, None),
-            "radii": (0.0, 0.0),
-        })
+        sites.append(
+            {
+                "weight": float(weight),
+                "surfaces": (np.array([xy[0], xy[1], 0.1]), np.array([xy[0], xy[1], 0.09])),
+                "ids": (None, (200 + 2 * index,)),
+                "bary": (None, (1.0,)),
+                "allowed": (tuple(cores), None),
+                "cores": (cores, None),
+                "radii": (0.0, 0.0),
+            }
+        )
     return {
         "name": "BH-overlap",
         "family": "BH",
@@ -544,12 +596,14 @@ def hh_overlap():
     shifted = prism + (0.0, 0.0, 0.19)
     sites = []
     for index, (xy, weight) in enumerate(zip(ring, weights, strict=True)):
-        sites.append({
-            "weight": float(weight),
-            "surfaces": (np.array([xy[0], xy[1], 0.1]), np.array([xy[0], xy[1], 0.09])),
-            "ids": ((101 + 2 * index,), (200 + 2 * index,)),
-            "bary": ((1.0,), (1.0,)),
-        })
+        sites.append(
+            {
+                "weight": float(weight),
+                "surfaces": (np.array([xy[0], xy[1], 0.1]), np.array([xy[0], xy[1], 0.09])),
+                "ids": ((101 + 2 * index,), (200 + 2 * index,)),
+                "bary": ((1.0,), (1.0,)),
+            }
+        )
     return {
         "name": "HH-overlap",
         "family": "HH",
@@ -569,12 +623,14 @@ def bb_sep():
     box = np.array(list(product((-0.6, 0.6), (-0.1, 0.1), (-0.1, 0.1))), dtype=float)
     sites = []
     for x, y in corners:
-        sites.append({
-            "weight": 0.25,
-            "surfaces": (np.array([x, y, 0.1]), np.array([x, y, 0.12])),
-            "ids": ((first_ids[(x, y)],), (second_ids[(x, y)],)),
-            "bary": ((1.0,), (1.0,)),
-        })
+        sites.append(
+            {
+                "weight": 0.25,
+                "surfaces": (np.array([x, y, 0.1]), np.array([x, y, 0.12])),
+                "ids": ((first_ids[(x, y)],), (second_ids[(x, y)],)),
+                "bary": ((1.0,), (1.0,)),
+            }
+        )
     return {
         "name": "BB-sep",
         "family": "BB",
@@ -591,19 +647,24 @@ def bh_sep():
     weights = _fan_weights(np.column_stack((ring, np.zeros(len(ring)))))
     box = np.array(list(product((-0.6, 0.6), (-0.1, 0.1), (-0.1, 0.1))), dtype=float)
     top = np.isclose(box[:, 2], 0.1)
-    cores = {int(node): point.copy() for node, point in zip(np.arange(100, 108)[top], box[top], strict=True)}
+    cores = {
+        int(node): point.copy()
+        for node, point in zip(np.arange(100, 108)[top], box[top], strict=True)
+    }
     prism = np.array([(x, y, z + 0.22) for x, y in ring for z in (-0.1, 0.1)], dtype=float)
     sites = []
     for index, (xy, weight) in enumerate(zip(ring, weights, strict=True)):
-        sites.append({
-            "weight": float(weight),
-            "surfaces": (np.array([xy[0], xy[1], 0.1]), np.array([xy[0], xy[1], 0.12])),
-            "ids": (None, (200 + 2 * index,)),
-            "bary": (None, (1.0,)),
-            "allowed": (tuple(cores), None),
-            "cores": (cores, None),
-            "radii": (0.0, 0.0),
-        })
+        sites.append(
+            {
+                "weight": float(weight),
+                "surfaces": (np.array([xy[0], xy[1], 0.1]), np.array([xy[0], xy[1], 0.12])),
+                "ids": (None, (200 + 2 * index,)),
+                "bary": (None, (1.0,)),
+                "allowed": (tuple(cores), None),
+                "cores": (cores, None),
+                "radii": (0.0, 0.0),
+            }
+        )
     return {
         "name": "BH-sep",
         "family": "BH",
@@ -622,12 +683,14 @@ def hh_sep():
     shifted = prism + (0.0, 0.0, 0.22)
     sites = []
     for index, (xy, weight) in enumerate(zip(ring, weights, strict=True)):
-        sites.append({
-            "weight": float(weight),
-            "surfaces": (np.array([xy[0], xy[1], 0.1]), np.array([xy[0], xy[1], 0.12])),
-            "ids": ((101 + 2 * index,), (200 + 2 * index,)),
-            "bary": ((1.0,), (1.0,)),
-        })
+        sites.append(
+            {
+                "weight": float(weight),
+                "surfaces": (np.array([xy[0], xy[1], 0.1]), np.array([xy[0], xy[1], 0.12])),
+                "ids": ((101 + 2 * index,), (200 + 2 * index,)),
+                "bary": ((1.0,), (1.0,)),
+            }
+        )
     return {
         "name": "HH-sep",
         "family": "HH",
@@ -647,12 +710,14 @@ def bb_touch():
     box = np.array(list(product((-0.6, 0.6), (-0.1, 0.1), (-0.1, 0.1))), dtype=float)
     sites = []
     for x, y in corners:
-        sites.append({
-            "weight": 0.25,
-            "surfaces": (np.array([x, y, 0.1]), np.array([x, y, 0.1])),
-            "ids": ((first_ids[(x, y)],), (second_ids[(x, y)],)),
-            "bary": ((1.0,), (1.0,)),
-        })
+        sites.append(
+            {
+                "weight": 0.25,
+                "surfaces": (np.array([x, y, 0.1]), np.array([x, y, 0.1])),
+                "ids": ((first_ids[(x, y)],), (second_ids[(x, y)],)),
+                "bary": ((1.0,), (1.0,)),
+            }
+        )
     return {
         "name": "BB-touch",
         "family": "BB",
@@ -669,19 +734,24 @@ def bh_touch():
     weights = _fan_weights(np.column_stack((ring, np.zeros(len(ring)))))
     box = np.array(list(product((-0.6, 0.6), (-0.1, 0.1), (-0.1, 0.1))), dtype=float)
     top = np.isclose(box[:, 2], 0.1)
-    cores = {int(node): point.copy() for node, point in zip(np.arange(100, 108)[top], box[top], strict=True)}
+    cores = {
+        int(node): point.copy()
+        for node, point in zip(np.arange(100, 108)[top], box[top], strict=True)
+    }
     prism = np.array([(x, y, z + 0.20) for x, y in ring for z in (-0.1, 0.1)], dtype=float)
     sites = []
     for index, (xy, weight) in enumerate(zip(ring, weights, strict=True)):
-        sites.append({
-            "weight": float(weight),
-            "surfaces": (np.array([xy[0], xy[1], 0.1]), np.array([xy[0], xy[1], 0.1])),
-            "ids": (None, (200 + 2 * index,)),
-            "bary": (None, (1.0,)),
-            "allowed": (tuple(cores), None),
-            "cores": (cores, None),
-            "radii": (0.0, 0.0),
-        })
+        sites.append(
+            {
+                "weight": float(weight),
+                "surfaces": (np.array([xy[0], xy[1], 0.1]), np.array([xy[0], xy[1], 0.1])),
+                "ids": (None, (200 + 2 * index,)),
+                "bary": (None, (1.0,)),
+                "allowed": (tuple(cores), None),
+                "cores": (cores, None),
+                "radii": (0.0, 0.0),
+            }
+        )
     return {
         "name": "BH-touch",
         "family": "BH",
@@ -700,12 +770,14 @@ def hh_touch():
     shifted = prism + (0.0, 0.0, 0.20)
     sites = []
     for index, (xy, weight) in enumerate(zip(ring, weights, strict=True)):
-        sites.append({
-            "weight": float(weight),
-            "surfaces": (np.array([xy[0], xy[1], 0.1]), np.array([xy[0], xy[1], 0.1])),
-            "ids": ((101 + 2 * index,), (200 + 2 * index,)),
-            "bary": ((1.0,), (1.0,)),
-        })
+        sites.append(
+            {
+                "weight": float(weight),
+                "surfaces": (np.array([xy[0], xy[1], 0.1]), np.array([xy[0], xy[1], 0.1])),
+                "ids": ((101 + 2 * index,), (200 + 2 * index,)),
+                "bary": ((1.0,), (1.0,)),
+            }
+        )
     return {
         "name": "HH-touch",
         "family": "HH",
@@ -729,12 +801,14 @@ def cap_side():
         "normal": normal,
         "dimension": 0,
         "length_m": _length((capsule, 0.05), (sphere, 0.05)),
-        "sites": ({
-            "weight": 1.0,
-            "surfaces": (np.array([0.0, 0.0, 0.05]), np.array([0.0, 0.0, 0.04])),
-            "ids": ((100, 101), (200,)),
-            "bary": ((0.5, 0.5), (1.0,)),
-        },),
+        "sites": (
+            {
+                "weight": 1.0,
+                "surfaces": (np.array([0.0, 0.0, 0.05]), np.array([0.0, 0.0, 0.04])),
+                "ids": ((100, 101), (200,)),
+                "bary": ((0.5, 0.5), (1.0,)),
+            },
+        ),
     }
 
 
@@ -750,12 +824,14 @@ def cap_end():
         "normal": normal,
         "dimension": 0,
         "length_m": _length((capsule, 0.05), (sphere, 0.05)),
-        "sites": ({
-            "weight": 1.0,
-            "surfaces": (np.array([0.55, 0.0, 0.0]), np.array([0.54, 0.0, 0.0])),
-            "ids": ((101,), (200,)),
-            "bary": ((1.0,), (1.0,)),
-        },),
+        "sites": (
+            {
+                "weight": 1.0,
+                "surfaces": (np.array([0.55, 0.0, 0.0]), np.array([0.54, 0.0, 0.0])),
+                "ids": ((101,), (200,)),
+                "bary": ((1.0,), (1.0,)),
+            },
+        ),
     }
 
 
@@ -771,12 +847,14 @@ def cap_oblique():
         "normal": normal,
         "dimension": 0,
         "length_m": _length((capsule, 0.05), (sphere, 0.05)),
-        "sites": ({
-            "weight": 1.0,
-            "surfaces": (np.array([0.53, 0.0, 0.04]), np.array([0.545, 0.0, 0.06])),
-            "ids": ((101,), (200,)),
-            "bary": ((1.0,), (1.0,)),
-        },),
+        "sites": (
+            {
+                "weight": 1.0,
+                "surfaces": (np.array([0.53, 0.0, 0.04]), np.array([0.545, 0.0, 0.06])),
+                "ids": ((101,), (200,)),
+                "bary": ((1.0,), (1.0,)),
+            },
+        ),
     }
 
 
@@ -794,12 +872,14 @@ def h_vertex():
         "normal": normal,
         "dimension": 0,
         "length_m": _length((prism, 0.0), (center.reshape(1, 3), 0.05)),
-        "sites": ({
-            "weight": 1.0,
-            "surfaces": (vertex, center - 0.05 * normal),
-            "ids": ((105,), (200,)),
-            "bary": ((1.0,), (1.0,)),
-        },),
+        "sites": (
+            {
+                "weight": 1.0,
+                "surfaces": (vertex, center - 0.05 * normal),
+                "ids": ((105,), (200,)),
+                "bary": ((1.0,), (1.0,)),
+            },
+        ),
     }
 
 
@@ -823,15 +903,17 @@ def h_slant():
         "normal": normal,
         "dimension": 0,
         "length_m": _length((prism, 0.0), (center.reshape(1, 3), 0.05)),
-        "sites": ({
-            "weight": 1.0,
-            "surfaces": (face, center - 0.05 * normal),
-            "ids": (None, (200,)),
-            "bary": (None, (1.0,)),
-            "allowed": (tuple(cores), None),
-            "cores": (cores, None),
-            "radii": (0.0, 0.05),
-        },),
+        "sites": (
+            {
+                "weight": 1.0,
+                "surfaces": (face, center - 0.05 * normal),
+                "ids": (None, (200,)),
+                "bary": (None, (1.0,)),
+                "allowed": (tuple(cores), None),
+                "cores": (cores, None),
+                "radii": (0.0, 0.05),
+            },
+        ),
     }
 
 
@@ -850,12 +932,14 @@ def end_box():
         "normal": normal,
         "dimension": 0,
         "length_m": _length((capsule, 0.05), (box, 0.0)),
-        "sites": ({
-            "weight": 1.0,
-            "surfaces": (core + 0.05 * normal, face),
-            "ids": ((100,), (204, 206)),
-            "bary": ((1.0,), (0.5, 0.5)),
-        },),
+        "sites": (
+            {
+                "weight": 1.0,
+                "surfaces": (core + 0.05 * normal, face),
+                "ids": ((100,), (204, 206)),
+                "bary": ((1.0,), (0.5, 0.5)),
+            },
+        ),
     }
 
 
@@ -871,12 +955,14 @@ def cc_skew():
         "normal": normal,
         "dimension": 0,
         "length_m": _length((first, 0.05), (second, 0.05)),
-        "sites": ({
-            "weight": 1.0,
-            "surfaces": (np.array([0.0, 0.0, 0.05]), np.array([0.0, 0.0, 0.04])),
-            "ids": ((100, 101), (200, 201)),
-            "bary": ((0.5, 0.5), (0.5, 0.5)),
-        },),
+        "sites": (
+            {
+                "weight": 1.0,
+                "surfaces": (np.array([0.0, 0.0, 0.05]), np.array([0.0, 0.0, 0.04])),
+                "ids": ((100, 101), (200, 201)),
+                "bary": ((0.5, 0.5), (0.5, 0.5)),
+            },
+        ),
     }
 
 
@@ -894,12 +980,14 @@ def cc_end_end():
         "normal": normal,
         "dimension": 0,
         "length_m": _length((first, 0.05), (second, 0.05)),
-        "sites": ({
-            "weight": 1.0,
-            "surfaces": (core_a + 0.05 * normal, core_b - 0.05 * normal),
-            "ids": ((101,), (200,)),
-            "bary": ((1.0,), (1.0,)),
-        },),
+        "sites": (
+            {
+                "weight": 1.0,
+                "surfaces": (core_a + 0.05 * normal, core_b - 0.05 * normal),
+                "ids": ((101,), (200,)),
+                "bary": ((1.0,), (1.0,)),
+            },
+        ),
     }
 
 
@@ -974,7 +1062,9 @@ def permuted(spec):
     for site in spec["sites"]:
         updated = dict(site)
         updated["ids"] = tuple(None if ids is None else tuple(reversed(ids)) for ids in site["ids"])
-        updated["bary"] = tuple(None if weights is None else tuple(reversed(weights)) for weights in site["bary"])
+        updated["bary"] = tuple(
+            None if weights is None else tuple(reversed(weights)) for weights in site["bary"]
+        )
         sites.append(updated)
     viewed = dict(spec)
     viewed["name"] = spec["name"] + "-permute"
@@ -998,7 +1088,9 @@ def cycle_reverse_ids(spec):
         )
         if "cores" in site:
             remapped["cores"] = tuple(
-                None if cores is None else {relabel(side, node): point for node, point in cores.items()}
+                None
+                if cores is None
+                else {relabel(side, node): point for node, point in cores.items()}
                 for side, cores in enumerate(site["cores"])
             )
         if "allowed" in site:
@@ -1048,41 +1140,52 @@ def polygon_quadrature(polygon):
 
 
 def polygon_case(name, variant="identity"):
-    rectangle = [(-1., -.4), (1., -.4), (1., .4), (-1., .4)]
-    diamond = [(0., -1.), (1., 0.), (0., 1.), (-1., 0.)]
+    rectangle = [(-1.0, -0.4), (1.0, -0.4), (1.0, 0.4), (-1.0, 0.4)]
+    diamond = [(0.0, -1.0), (1.0, 0.0), (0.0, 1.0), (-1.0, 0.0)]
     if name in ("trapezoid", "trapezoid_refined"):
-        a = [(0., 0.), (2., 0.), (1., 1.), (0., 1.)]
+        a = [(0.0, 0.0), (2.0, 0.0), (1.0, 1.0), (0.0, 1.0)]
         if name.endswith("refined"):
-            a = [point for i, p in enumerate(a) for point in
-                 (p, tuple((np.asarray(p) + a[(i + 1) % 4]) / 2))]
+            a = [
+                point
+                for i, p in enumerate(a)
+                for point in (p, tuple((np.asarray(p) + a[(i + 1) % 4]) / 2))
+            ]
         b, intersection = list(a), list(a)
     elif name == "partial_bb":
-        a, b = rectangle, [(-.4, -1.), (.4, -1.), (.4, 1.), (-.4, 1.)]
-        intersection = [(-.4, -.4), (.4, -.4), (.4, .4), (-.4, .4)]
+        a, b = rectangle, [(-0.4, -1.0), (0.4, -1.0), (0.4, 1.0), (-0.4, 1.0)]
+        intersection = [(-0.4, -0.4), (0.4, -0.4), (0.4, 0.4), (-0.4, 0.4)]
     elif name == "partial_bh":
-        a = [(-1., -.5), (1., -.5), (1., .5), (-1., .5)]
+        a = [(-1.0, -0.5), (1.0, -0.5), (1.0, 0.5), (-1.0, 0.5)]
         b = diamond
-        intersection = [(-1., 0.), (-.5, -.5), (.5, -.5), (1., 0.), (.5, .5), (-.5, .5)]
+        intersection = [(-1.0, 0.0), (-0.5, -0.5), (0.5, -0.5), (1.0, 0.0), (0.5, 0.5), (-0.5, 0.5)]
     elif name == "partial_hh":
-        a, b = diamond, [(-.8, -.8), (.8, -.8), (.8, .8), (-.8, .8)]
-        intersection = [(-.8, -.2), (-.2, -.8), (.2, -.8), (.8, -.2),
-                        (.8, .2), (.2, .8), (-.2, .8), (-.8, .2)]
+        a, b = diamond, [(-0.8, -0.8), (0.8, -0.8), (0.8, 0.8), (-0.8, 0.8)]
+        intersection = [
+            (-0.8, -0.2),
+            (-0.2, -0.8),
+            (0.2, -0.8),
+            (0.8, -0.2),
+            (0.8, 0.2),
+            (0.2, 0.8),
+            (-0.2, 0.8),
+            (-0.8, 0.2),
+        ]
     else:
         raise ValueError(name)
-    core0 = np.asarray([(x, y, z) for x, y in a for z in (-.1, .1)])
-    core1 = np.asarray([(x, y, z) for x, y in b for z in (.09, .29)])
-    surface0 = np.asarray([(x, y, .1) for x, y in intersection])
-    surface1 = np.asarray([(x, y, .09) for x, y in intersection])
+    core0 = np.asarray([(x, y, z) for x, y in a for z in (-0.1, 0.1)])
+    core1 = np.asarray([(x, y, z) for x, y in b for z in (0.09, 0.29)])
+    surface0 = np.asarray([(x, y, 0.1) for x, y in intersection])
+    surface1 = np.asarray([(x, y, 0.09) for x, y in intersection])
     weights, area, centroid = polygon_quadrature(intersection)
-    rotation, quaternion = np.eye(3), (0., 0., 0., 1.)
+    rotation, quaternion = np.eye(3), (0.0, 0.0, 0.0, 1.0)
     anchor = np.zeros(3)
     if variant == "cycle":
-        rotation = np.asarray([[0., 0., 1.], [1., 0., 0.], [0., 1., 0.]])
-        quaternion = (.5, .5, .5, .5)
-        anchor = np.asarray([4., -2., 1.])
+        rotation = np.asarray([[0.0, 0.0, 1.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0]])
+        quaternion = (0.5, 0.5, 0.5, 0.5)
+        anchor = np.asarray([4.0, -2.0, 1.0])
     elif variant == "tilt":
-        rotation = np.asarray([[.6, 0., .8], [0., 1., 0.], [-.8, 0., .6]])
-        quaternion = (0., 5 ** -.5, 0., 2 * 5 ** -.5)
+        rotation = np.asarray([[0.6, 0.0, 0.8], [0.0, 1.0, 0.0], [-0.8, 0.0, 0.6]])
+        quaternion = (0.0, 5**-0.5, 0.0, 2 * 5**-0.5)
     elif variant not in ("identity", "reverse", "permute"):
         raise ValueError(variant)
     ids0 = tuple(100 + i for i in range(len(core0)))
@@ -1096,17 +1199,28 @@ def polygon_case(name, variant="identity"):
         ids0 = tuple(ids0[i] for i in order0)
         ids1 = tuple(ids1[i] for i in order1)
     case = dict(
-        name=f"{name}-{variant}", keys=((17, 2, 11), (17, 3, 21)), kinds=("H", "H"),
-        ids=(ids0, ids1), radii=(0., 0.), local=(core0, core1),
-        points=(world0, world1), positions=(anchor, anchor),
-        registration_reverse=variant == "permute", quaternion=quaternion,
+        name=f"{name}-{variant}",
+        keys=((17, 2, 11), (17, 3, 21)),
+        kinds=("H", "H"),
+        ids=(ids0, ids1),
+        radii=(0.0, 0.0),
+        local=(core0, core1),
+        points=(world0, world1),
+        positions=(anchor, anchor),
+        registration_reverse=variant == "permute",
+        quaternion=quaternion,
     )
     spec = dict(
-        name=case["name"], dimension=2, gap_m=-.01,
-        normal=rotation @ np.array([0., 0., 1.]),
-        length_m=_length((world0, 0.), (world1, 0.)), area_m2=area,
-        centroid=rotation @ np.array([*centroid, .095]),
-        sites=tuple(dict(weight=float(w), surfaces=(s0 @ rotation.T, s1 @ rotation.T))
-                    for w, s0, s1 in zip(weights, surface0, surface1, strict=True)),
+        name=case["name"],
+        dimension=2,
+        gap_m=-0.01,
+        normal=rotation @ np.array([0.0, 0.0, 1.0]),
+        length_m=_length((world0, 0.0), (world1, 0.0)),
+        area_m2=area,
+        centroid=rotation @ np.array([*centroid, 0.095]),
+        sites=tuple(
+            dict(weight=float(w), surfaces=(s0 @ rotation.T, s1 @ rotation.T))
+            for w, s0, s1 in zip(weights, surface0, surface1, strict=True)
+        ),
     )
     return case, spec

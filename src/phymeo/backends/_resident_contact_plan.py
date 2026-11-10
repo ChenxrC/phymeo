@@ -146,9 +146,9 @@ class _ResidentContactMechanics:
             caps = dict.fromkeys(worlds, cap)
         self._site_caps = MappingProxyType(caps)
         self._contact_worlds = worlds
-        self._contact_shapes = MappingProxyType({
-            w: tuple(s for s in self._model.shapes if s.key.world == w) for w in worlds
-        })
+        self._contact_shapes = MappingProxyType(
+            {w: tuple(s for s in self._model.shapes if s.key.world == w) for w in worlds}
+        )
         self._world_materials = {
             w: MappingProxyType(
                 {pair: law for pair, law in self._materials.items() if pair[0].world == w}

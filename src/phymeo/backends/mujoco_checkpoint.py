@@ -393,7 +393,7 @@ def restore(runtime, checkpoint, expected_revision):
             "CPU observer integration-state dimensions",
         )
         runtime._mj.mj_setState(
-            runtime._model, candidate, cpu_state, runtime._mj.mjtState.mjSTATE_INTEGRATION
+            runtime._model, candidate, cpu_state.copy(), runtime._mj.mjtState.mjSTATE_INTEGRATION
         )
         mirror = item["mirror"]
         _require(isinstance(mirror, Mapping) and set(mirror) == set(MIRROR_FIELDS), "mirror schema")
@@ -410,7 +410,7 @@ def restore(runtime, checkpoint, expected_revision):
         # The CPU integration packet and explicit published channels must agree.
         check = runtime._mj.MjData(runtime._model)
         runtime._mj.mj_setState(
-            runtime._model, check, cpu_state, runtime._mj.mjtState.mjSTATE_INTEGRATION
+            runtime._model, check, cpu_state.copy(), runtime._mj.mjtState.mjSTATE_INTEGRATION
         )
         for name in ("qpos", "qvel", "act", "ctrl", "qfrc_applied", "xfrc_applied"):
             _require(

@@ -185,3 +185,26 @@ The earlier 42-node count and test-file SHA/blob above remain historical at f812
 The updated manual count is 12 test functions / 44 nodes: 22 interpret and 22 CUDA,
 all still UNCOLLECTED and UNEXECUTED in this lane. The supplement's two current hashes
 are supplied in the final handoff rather than rewriting historical product bindings.
+
+## Parent qualification, 2026-11-11
+
+The earlier authoring labels and hashes above are historical. Parent source baseline
+6ad1290a passed the complete interpret selection: 22 passed / 22 deselected. The first
+CUDA selection passed 17 nodes, then the overlap-negative fixture failed before calling
+the product: TYX `CudaArray.from_external` requires an integer, whereas `device_ptr`
+is a CUDA pointer wrapper. Commit ded3662b changes only that fixture argument to
+`int(device_ptr)`, retaining the same live allocation and deliberate overlap. The exact
+failed CUDA node and the complete CUDA selection then passed: 22 passed / 22 deselected.
+No numerical, product, tolerance or capacity repair was required.
+
+The complete new selection includes the free-root plus 29-joint/29-actuator maximum-width
+case and the original mixed contact/limit case. Four narrowly affected A1 exact-restore
+continuation cases passed on each backend after this runtime integration. Exact new-file
+Ruff and format checks passed; first failures and before/after source bindings remain in
+`artifacts/p65-parity-20261111-01`, jobs 35--38 and 42--45. No accepted older complete suite
+was rerun. Installed-wheel public validation remains a separate pending check.
+
+This acceptance is the declared device-owned input transaction and its connection to the
+existing physical step. It retains HOST canonical action auditing and full physical
+diagnostic readback. It does not qualify CUDA Torch, a GPU PPO trainer, or an end-to-end
+zero-readback simulation loop.

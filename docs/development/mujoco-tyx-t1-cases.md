@@ -42,3 +42,5 @@
 W1/W4稀疏keys/不同原初态与controls；selected reset后未reset worlds的**下一步**与clone相同，而不只snapshot相同。晚download/decode故障在candidate工作完成后注入，整个batch无q/v/tick/控制发布，再原请求重试；CPU/Warp/HOST物理入口禁用，snapshot允许明确标记的detached CPU观察。
 
 每例保原XML/参数、全部步q/v与controls摘要；预定 step 1、中点、末点保存完整oracle和同次actual dynamics/receipt/input/storedcontrol，失败所在步也完整保存。文件只写本test tmp_path，不新跑producer取数，不造大规模冗余轨迹。父另负责Env/PolicyRunner与源码外wheel consumer，避免本测试复制该连接任务。
+
+附加独立驱动语义留出（实施作者源审阅后、运行前声明）：disabled actuator group=1 且motor `forcerange=[2,3]`、gear=2；原CPU3.3.7在disabled置零后仍clamp产生4Nm generalized effort。这检查group/force顺序，不能改成“disabled一律跳过”。此case初态q=.2/v=.25，h=.001，原有容差不变。

@@ -25,3 +25,11 @@ Warp discrepancy for unequal priorities with positive/direct solref.
 Decreasing and zero-width impedance and denominator guards follow MuJoCo
 3.3.7 src/engine/engine_core_constraint.c::getimpedance/mj_makeImpedance.
 Detection includes the exact margin boundary, retaining inactive contact sites.
+
+T1 fixed-root hinge/slide tree port (_tree_model.py/_tree_kernels.py/_tree_device.py):
+source field and algorithm references include v0.0.2 smooth.py kinematics/com_vel/
+crb/rne, passive.py scalar spring/damper, and scalar transmission/Euler.
+The TYX rewrite uses world-origin motion recursion, COM Jacobian assembly and
+per-step full mass/bias with bounded dense Cholesky; it does not freeze a
+configuration-specific MuJoCo mass or invoke Warp/CPU dynamics at each step.
+Disabled actuator force clamping follows CPU MuJoCo 3.3.7 before gear aggregation.

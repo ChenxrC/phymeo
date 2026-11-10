@@ -1,4 +1,5 @@
 """Predeclared C2b native device action cases; parent owns all execution."""
+
 from collections.abc import Mapping
 from contextlib import ExitStack
 from dataclasses import fields, is_dataclass
@@ -14,7 +15,7 @@ from phymeo.training.resident_stepper import PhysicsStepFailure
 
 MODES = ("interpret", pytest.param("cuda", marks=pytest.mark.cuda))
 KEYS = (5, 41)
-H = .002
+H = 0.002
 INERTIAL = '<inertial pos=".02 -.01 .03" mass="1.2" fullinertia=".04 .05 .06 .001 -.001 .001"/>'
 VISUAL = '<geom type="sphere" size=".04" contype="0" conaffinity="0"/>'
 CHILD = f"""<body pos=".2 0 .1"><joint name="a" type="hinge" axis="0 1 0"
@@ -32,36 +33,51 @@ def engine(case, mode, keys=KEYS):
     if case == "mixed":
         body = body.replace('name="a"', 'name="a" limited="true" range="-.5 .5"')
     ground = '<geom type="plane" size="2 2 .1"/>' if case == "mixed" else ""
-    actuator = "" if case == "mixed" else """<actuator><general joint="a"
+    actuator = (
+        ""
+        if case == "mixed"
+        else """<actuator><general joint="a"
       gaintype="fixed" gainprm="1.2" biastype="affine" biasprm="0 -.2 -.04"
       ctrllimited="true" ctrlrange="-.05 .05" forcelimited="true"
       forcerange="-.08 .08"/></actuator>"""
-    source = compile_mujoco_xml(f"""<mujoco><compiler angle="radian" autolimits="true"/>
+    )
+    source = compile_mujoco_xml(
+        f"""<mujoco><compiler angle="radian" autolimits="true"/>
       <option timestep=".002" gravity="0 0 -9.81" integrator="Euler" cone="pyramidal"
       iterations="128" tolerance="1e-10"/><default><geom condim="3" friction=".6 .02 .003"
       solref=".02 1"/></default><worldbody>{ground}{body}</worldbody>{actuator}</mujoco>""",
-      require_asset=False)
+        require_asset=False,
+    )
     model = source.fresh_native_model()
     initial = {}
     for key in keys:
-        q, v = model.qpos0.copy(), np.full(model.nv, .015)
+        q, v = model.qpos0.copy(), np.full(model.nv, 0.015)
         if case != "fixed":
-            orientation = np.array([1., .01, -.015, .02])
+            orientation = np.array([1.0, 0.01, -0.015, 0.02])
             q[3:7] = orientation / np.linalg.norm(orientation)
-            v[:6] = [.025, -.03, -.01, .08, -.05, .03]
-        q[-1], v[-1] = (.03, .02) if key == 5 else (.04, .08)
+            v[:6] = [0.025, -0.03, -0.01, 0.08, -0.05, 0.03]
+        q[-1], v[-1] = (0.03, 0.02) if key == 5 else (0.04, 0.08)
         if case == "mixed":
-            q[-2] = .501
+            q[-2] = 0.501
         initial[key] = MuJoCoInitialState(q, v)
-    return MuJoCoRuntime(source, mode=mode, world_keys=keys, initial_states=initial,
-                        contact_capacity=16, constraint_capacity=64)
+    return MuJoCoRuntime(
+        source,
+        mode=mode,
+        world_keys=keys,
+        initial_states=initial,
+        contact_capacity=16,
+        constraint_capacity=64,
+    )
 
 
 def exact(value):
     if isinstance(value, np.ndarray):
         return (value.dtype.str, value.shape, value.tobytes())
     if is_dataclass(value):
-        return (type(value).__name__, tuple((f.name, exact(getattr(value, f.name))) for f in fields(value)))
+        return (
+            type(value).__name__,
+            tuple((f.name, exact(getattr(value, f.name))) for f in fields(value)),
+        )
     if isinstance(value, Mapping):
         return tuple((k, exact(v)) for k, v in value.items())
     if isinstance(value, (tuple, list)):
@@ -75,11 +91,11 @@ def state(e):
 
 def channels(e):
     model = e._model
-    ctrl = None if model.nu == 0 else np.array([[.12], [-.11]], np.float32)
-    force = np.full((2, model.nv), .017, np.float32)
+    ctrl = None if model.nu == 0 else np.array([[0.12], [-0.11]], np.float32)
+    force = np.full((2, model.nv), 0.017, np.float32)
     force[1] *= -1
     wrench = np.zeros((2, model.nbody, 6), np.float32)
-    wrench[:, -1] = [.03, -.02, .04, .005, -.004, .003]
+    wrench[:, -1] = [0.03, -0.02, 0.04, 0.005, -0.004, 0.003]
     return (ctrl, force, wrench)
 
 
@@ -98,30 +114,48 @@ def device_values(stack, mode, values):
 
 
 def submit(e, values, **kwargs):
-    return e.set_controls_from_device(values[0], qfrc_applied=values[1],
-        xfrc_applied=values[2], expected_revision=e.checkpoint_revision, **kwargs)
+    return e.set_controls_from_device(
+        values[0],
+        qfrc_applied=values[1],
+        xfrc_applied=values[2],
+        expected_revision=e.checkpoint_revision,
+        **kwargs,
+    )
 
 
 def host_submit(e, values):
-    e.set_controls({key: MuJoCoControl([] if values[0] is None else values[0][i],
-        qfrc_applied=None if values[1] is None else values[1][i],
-        xfrc_applied=None if values[2] is None else values[2][i])
-        for i, key in enumerate(e.world_keys)})
+    e.set_controls(
+        {
+            key: MuJoCoControl(
+                [] if values[0] is None else values[0][i],
+                qfrc_applied=None if values[1] is None else values[1][i],
+                xfrc_applied=None if values[2] is None else values[2][i],
+            )
+            for i, key in enumerate(e.world_keys)
+        }
+    )
 
 
-def policy(count: tx.i32, nu: tx.i32, nv: tx.i32, nbody: tx.i32,
-           observation: tx.ndarray(tx.f32, 2), ctrl: tx.ndarray(tx.f32, 2),
-           force: tx.ndarray(tx.f32, 2), wrench: tx.ndarray(tx.f32, 3)):
+def policy(
+    count: tx.i32,
+    nu: tx.i32,
+    nv: tx.i32,
+    nbody: tx.i32,
+    observation: tx.ndarray(tx.f32, 2),
+    ctrl: tx.ndarray(tx.f32, 2),
+    force: tx.ndarray(tx.f32, 2),
+    wrench: tx.ndarray(tx.f32, 3),
+):
     for w in tx.range(count):
         for i in range(nu):
-            ctrl[w, i] = .02 + .1 * observation[w, 0]
+            ctrl[w, i] = 0.02 + 0.1 * observation[w, 0]
         for i in range(nv):
-            force[w, i] = .01 * (i + 1) * observation[w, 1]
+            force[w, i] = 0.01 * (i + 1) * observation[w, 1]
         for b in range(nbody):
             for i in range(6):
                 wrench[w, b, i] = 0.0
                 if b == nbody - 1:
-                    wrench[w, b, i] = .002 * (i + 1) * observation[w, 0]
+                    wrench[w, b, i] = 0.002 * (i + 1) * observation[w, 0]
 
 
 policy = tx.kernel(policy)
@@ -130,11 +164,14 @@ policy = tx.kernel(policy)
 @pytest.mark.parametrize("mode", MODES)
 def test_real_task_policy_actions_and_complete_host_equivalence(mode):
     with engine("fixed", mode) as e, engine("fixed", mode) as ref, ExitStack() as stack:
-        spec = MuJoCoTyxTaskSpec((0,), (1,), scale=[1.2, -.7], bias=[.1, .2])
+        spec = MuJoCoTyxTaskSpec((0,), (1,), scale=[1.2, -0.7], bias=[0.1, 0.2])
         with e.prepare_task_workspace(spec) as ws:
             frame = ws.refresh(expected_revision=e.checkpoint_revision)
-            values = device_values(stack, mode, (np.zeros((2, 2), np.float32),
-                np.zeros(2, np.float32), np.zeros(2, np.int32)))
+            values = device_values(
+                stack,
+                mode,
+                (np.zeros((2, 2), np.float32), np.zeros(2, np.float32), np.zeros(2, np.int32)),
+            )
             runtime = tx.Runtime(backend="cuda" if mode == "cuda" else "cpu")
             stack.callback(runtime.close)
             stream = None
@@ -149,7 +186,9 @@ def test_real_task_policy_actions_and_complete_host_equivalence(mode):
                     options["stream"] = stream
                 policy(2, e._model.nu, e._model.nv, e._model.nbody, values[0], *actions, **options)
                 runtime.sync()
-            expected = tuple(x.copy() if mode == "interpret" else x.to_numpy(stream=stream) for x in actions)
+            expected = tuple(
+                x.copy() if mode == "interpret" else x.to_numpy(stream=stream) for x in actions
+            )
             if stream is not None:
                 stream.synchronize()
             revision = e.checkpoint_revision
@@ -166,7 +205,8 @@ def test_real_task_policy_actions_and_complete_host_equivalence(mode):
                 assert state(e) == state(ref)
             assert e.counters["uploaded_bytes"] == uploaded
             assert e.counters["control_audit_downloaded_bytes"] == (
-                sum(x.nbytes for x in expected) if mode == "cuda" else 0)
+                sum(x.nbytes for x in expected) if mode == "cuda" else 0
+            )
             assert e.counters["device_control_submissions"] == 1
 
 
@@ -183,22 +223,30 @@ def test_native_channels_clipping_coupling_and_omitted_channels(case, mode):
             ref.step(H)
             assert state(e) == state(ref)
         for key in KEYS:
-            np.testing.assert_array_equal(e.snapshot()[key].last_step.stored_control.qfrc_applied,
-                                          receipt.controls[key].qfrc_applied)
+            np.testing.assert_array_equal(
+                e.snapshot()[key].last_step.stored_control.qfrc_applied,
+                receipt.controls[key].qfrc_applied,
+            )
         submit(e, (values[0], None, None))
         host_submit(ref, (original[0], None, None))
         e.step(H)
         ref.step(H)
         assert state(e) == state(ref)
-        assert all(not np.any(s.held_control.qfrc_applied) and not np.any(s.held_control.xfrc_applied)
-                   for s in e.snapshot().values())
+        assert all(
+            not np.any(s.held_control.qfrc_applied) and not np.any(s.held_control.xfrc_applied)
+            for s in e.snapshot().values()
+        )
         if case == "mixed":
             assert any(s.last_step.constraints for s in e.snapshot().values())
 
 
 @pytest.mark.parametrize("mode", MODES)
 def test_caller_lifetime_and_explicit_world_permutation(mode):
-    with engine("free", mode) as e, engine("free", mode, KEYS[::-1]) as permuted, ExitStack() as stack:
+    with (
+        engine("free", mode) as e,
+        engine("free", mode, KEYS[::-1]) as permuted,
+        ExitStack() as stack,
+    ):
         original = channels(e)
         values = device_values(stack, mode, original)
         swapped = device_values(stack, mode, tuple(x[::-1].copy() for x in original))
@@ -219,7 +267,9 @@ def test_caller_lifetime_and_explicit_world_permutation(mode):
 
 
 @pytest.mark.parametrize("mode", MODES)
-@pytest.mark.parametrize("bad", ("nan", "inf", "subnormal", "negative_subnormal", "shape", "dtype", "noncontiguous"))
+@pytest.mark.parametrize(
+    "bad", ("nan", "inf", "subnormal", "negative_subnormal", "shape", "dtype", "noncontiguous")
+)
 def test_bad_values_metadata_preserve_complete_previous_state(mode, bad):
     with engine("fixed", mode) as e, ExitStack() as stack:
         original = channels(e)
@@ -228,8 +278,12 @@ def test_bad_values_metadata_preserve_complete_previous_state(mode, bad):
         before, revision, old = state(e), e.checkpoint_revision, e._control_packet
         wrong = original[0].copy()
         if bad in ("nan", "inf", "subnormal", "negative_subnormal"):
-            bits = {"nan": 0x7FC00001, "inf": 0x7F800000,
-                    "subnormal": 1, "negative_subnormal": 0x80000001}[bad]
+            bits = {
+                "nan": 0x7FC00001,
+                "inf": 0x7F800000,
+                "subnormal": 1,
+                "negative_subnormal": 0x80000001,
+            }[bad]
             wrong.view(np.uint32)[0, 0] = bits
         elif bad == "shape":
             wrong = np.zeros((2, 2), np.float32)
@@ -256,8 +310,11 @@ def test_negative_zero_is_preserved_in_device_audit_and_physics_receipt(mode):
             value.view(np.uint32).flat[0] = 0x80000000
         values = device_values(stack, mode, original)
         receipt = submit(e, values)
-        for value in (receipt.controls[KEYS[0]].ctrl, receipt.controls[KEYS[0]].qfrc_applied,
-                      receipt.controls[KEYS[0]].xfrc_applied):
+        for value in (
+            receipt.controls[KEYS[0]].ctrl,
+            receipt.controls[KEYS[0]].qfrc_applied,
+            receipt.controls[KEYS[0]].xfrc_applied,
+        ):
             assert value.astype(np.float32).view(np.uint32).flat[0] == 0x80000000
         e.step(H)
         stored = e.snapshot()[KEYS[0]].last_step.stored_control
@@ -269,15 +326,18 @@ def test_negative_zero_is_preserved_in_device_audit_and_physics_receipt(mode):
 @pytest.mark.parametrize("stage", ("copy", "audit", "pack"))
 def test_late_submission_failure_never_publishes(mode, stage, monkeypatch):
     from phymeo.backends.mujoco_device_controls import _DeviceControlPacket
+
     with engine("fixed", mode) as e, ExitStack() as stack:
         values = device_values(stack, mode, channels(e))
         submit(e, values)
         before, revision, old = state(e), e.checkpoint_revision, e._control_packet
         name = {"copy": "_copy_native", "audit": "_audit", "pack": "_pack"}[stage]
         method = getattr(_DeviceControlPacket, name)
+
         def fail(self, *args, **kwargs):
             method(self, *args, **kwargs)
             raise RuntimeError("authored " + stage + " failure")
+
         with monkeypatch.context() as patch:
             patch.setattr(_DeviceControlPacket, name, fail)
             with pytest.raises(RuntimeError, match="authored"):
@@ -331,8 +391,9 @@ def test_channel_overlap_refused(mode):
         if mode == "interpret":
             overlapping = values[1][:, :1]
         else:
-            overlapping = tx.CudaArray.from_external(values[1].device_ptr, (2, 1), np.float32,
-                                                      owner=values[1])
+            overlapping = tx.CudaArray.from_external(
+                values[1].device_ptr, (2, 1), np.float32, owner=values[1]
+            )
             stack.callback(overlapping.free)
         with pytest.raises(ValueError, match="overlap|storage"):
             submit(e, (overlapping, values[1], values[2]))
@@ -346,19 +407,25 @@ def test_physics_failure_reset_restore_and_host_supersession(mode, monkeypatch):
         held, revision = exact(e._controls), e.checkpoint_revision
         before = state(e)
         advance = e._device.advance
+
         def rejected(*args):
             advance(*args)
             raise RuntimeError("authored physics fault")
+
         with monkeypatch.context() as patch:
             patch.setattr(e._device, "advance", rejected)
             with pytest.raises(PhysicsStepFailure):
                 e.step(H)
-        assert state(e) == before and exact(e._controls) == held and e.checkpoint_revision == revision
+        assert (
+            state(e) == before and exact(e._controls) == held and e.checkpoint_revision == revision
+        )
         e.step(H)
         cp = e.checkpoint()
         old_packet, before_restore = e._control_packet, state(e)
+
         def fail_restore(*args, **kwargs):
             raise RuntimeError("authored restore allocation")
+
         with monkeypatch.context() as patch:
             patch.setattr(e, "_build_device", fail_restore)
             with pytest.raises(RuntimeError, match="authored restore"):
@@ -391,9 +458,11 @@ def test_post_commit_cleanup_failure_is_retained_and_close_attempts_all(mode, mo
             first = e._control_packet
             first_close = first.close
             attempts = []
+
             def fail_first():
                 attempts.append("first")
                 raise RuntimeError("authored cleanup")
+
             with monkeypatch.context() as patch:
                 patch.setattr(first, "close", fail_first)
                 receipt = submit(e, values)
@@ -402,9 +471,11 @@ def test_post_commit_cleanup_failure_is_retained_and_close_attempts_all(mode, mo
                 assert first in e._control_retired
                 assert e.control_cleanup_errors
                 second_close = second.close
+
                 def fail_second():
                     attempts.append("second")
                     raise RuntimeError("second cleanup")
+
                 patch.setattr(second, "close", fail_second)
                 attempts.clear()
                 with pytest.raises(ExceptionGroup):
@@ -427,7 +498,7 @@ def test_action_receipt_remains_immutable_after_runtime_close(mode):
         receipt = submit(e, device_values(stack, mode, channels(e)))
         saved = exact(receipt)
         with pytest.raises(TypeError):
-            receipt.controls[KEYS[0]] = MuJoCoControl([0.])
+            receipt.controls[KEYS[0]] = MuJoCoControl([0.0])
         with pytest.raises(ValueError):
             receipt.controls[KEYS[0]].ctrl[0] = 2
         e.close()
@@ -442,7 +513,7 @@ def test_native_width_boundary_free_root_twenty_nine_actuators(mode):
     axes = ("1 0 0", "0 1 0", "0 0 1")
     for joint in range(29):
         kind = "slide" if joint % 4 == 0 else "hinge"
-        position = f"{.04 * (joint % 5)} {.03 * (joint // 5)} .05"
+        position = f"{0.04 * (joint % 5)} {0.03 * (joint // 5)} .05"
         branches.append(f"""<body name="branch{joint}" pos="{position}">
           <joint name="joint{joint}" type="{kind}" axis="{axes[joint % 3]}"
           damping=".03" armature=".02"/>
@@ -455,7 +526,7 @@ def test_native_width_boundary_free_root_twenty_nine_actuators(mode):
       <worldbody><body name="root" pos=".1 -.05 1.2"><freejoint/>
       <inertial pos=".02 -.01 .03" mass="3" fullinertia=".4 .5 .6 .01 -.01 .01"/>
       <geom type="box" size=".07 .06 .05" contype="0" conaffinity="0"/>
-      {''.join(branches)}</body></worldbody><actuator>{''.join(motors)}</actuator></mujoco>"""
+      {"".join(branches)}</body></worldbody><actuator>{"".join(motors)}</actuator></mujoco>"""
     compilation = compile_mujoco_xml(xml, require_asset=False)
     model = compilation.fresh_native_model()
     assert (model.nq, model.nv, model.nu, model.nbody) == (36, 35, 29, 31)
@@ -463,27 +534,36 @@ def test_native_width_boundary_free_root_twenty_nine_actuators(mode):
     for world, key in enumerate(KEYS):
         sign = 1 if world == 0 else -1
         q, v = model.qpos0.copy(), np.zeros(35)
-        orientation = np.array([1., .02, -.03, .01])
+        orientation = np.array([1.0, 0.02, -0.03, 0.01])
         q[3:7] = orientation / np.linalg.norm(orientation)
-        q[0] = q[0] + world * .01
-        q[7:] = [sign * .001 * (joint + 1) for joint in range(29)]
-        v[:6] = np.array([.02, -.01, .03, .04, -.03, .02]) * sign
-        v[6:] = [sign * .005 * (joint + 1) for joint in range(29)]
+        q[0] = q[0] + world * 0.01
+        q[7:] = [sign * 0.001 * (joint + 1) for joint in range(29)]
+        v[:6] = np.array([0.02, -0.01, 0.03, 0.04, -0.03, 0.02]) * sign
+        v[6:] = [sign * 0.005 * (joint + 1) for joint in range(29)]
         initial[key] = MuJoCoInitialState(q, v)
-    ctrl = np.array([[sign * .01 * (joint + 1) for joint in range(29)]
-                     for sign in (1, -1)], np.float32)
-    qfrc = np.array([[sign * .0005 * (dof + 1) for dof in range(35)]
-                     for sign in (1, -1)], np.float32)
+    ctrl = np.array(
+        [[sign * 0.01 * (joint + 1) for joint in range(29)] for sign in (1, -1)], np.float32
+    )
+    qfrc = np.array(
+        [[sign * 0.0005 * (dof + 1) for dof in range(35)] for sign in (1, -1)], np.float32
+    )
     xfrc = np.zeros((2, 31, 6), np.float32)
     for world, sign in enumerate((1, -1)):
         for body in range(1, 31):
-            xfrc[world, body] = [sign * .0002 * body * (axis + 1) for axis in range(6)]
+            xfrc[world, body] = [sign * 0.0002 * body * (axis + 1) for axis in range(6)]
     assert np.all(ctrl != 0) and np.all(qfrc != 0) and np.all(xfrc[:, 1:] != 0)
-    declarations = dict(world_keys=KEYS, initial_states=initial, mode=mode,
-                        contact_capacity=16, constraint_capacity=64)
-    with MuJoCoRuntime(compilation, **declarations) as e, (
-        MuJoCoRuntime(compilation, **declarations)
-    ) as reference, ExitStack() as stack:
+    declarations = dict(
+        world_keys=KEYS,
+        initial_states=initial,
+        mode=mode,
+        contact_capacity=16,
+        constraint_capacity=64,
+    )
+    with (
+        MuJoCoRuntime(compilation, **declarations) as e,
+        MuJoCoRuntime(compilation, **declarations) as reference,
+        ExitStack() as stack,
+    ):
         assert e.capabilities["domain"] == "free-root-hinge-slide-no-contact-v1"
         assert (e.capabilities["nq"], e.capabilities["nv"], e.capabilities["nu"]) == (36, 35, 29)
         values = device_values(stack, mode, (ctrl, qfrc, xfrc))

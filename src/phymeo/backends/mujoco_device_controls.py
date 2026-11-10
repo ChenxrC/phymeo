@@ -3,6 +3,7 @@
 No policy scaling, actuator clipping, physics or implicit partial-world writes.
 CUDA subnormal rejection reads the original copied bits before FP32 arithmetic.
 """
+
 from dataclasses import dataclass
 from hashlib import sha256
 from types import MappingProxyType
@@ -57,21 +58,31 @@ def _preflight(engine, values, stream):
     if mode == "interpret":
         _require(stream is None, "interpret cannot use a producer stream")
     elif stream is not None:
-        _require(isinstance(stream, tx.CudaStream) and stream.device_ordinal == ordinal,
-                 "producer stream device/type")
+        _require(
+            isinstance(stream, tx.CudaStream) and stream.device_ordinal == ordinal,
+            "producer stream device/type",
+        )
         stream._ensure_alive()
     supplied = []
     for value, shape in zip(values, shapes, strict=True):
         if value is None:
             continue
         if mode == "interpret":
-            _require(isinstance(value, np.ndarray) and value.dtype == np.float32
-                     and value.shape == shape and value.flags.c_contiguous,
-                     "control dtype/shape/storage")
+            _require(
+                isinstance(value, np.ndarray)
+                and value.dtype == np.float32
+                and value.shape == shape
+                and value.flags.c_contiguous,
+                "control dtype/shape/storage",
+            )
         else:
-            _require(isinstance(value, tx.CudaArray) and value.shape == shape
-                     and np.dtype(value.host_dtype) == np.float32
-                     and value.device_ordinal == ordinal, "control dtype/shape/device")
+            _require(
+                isinstance(value, tx.CudaArray)
+                and value.shape == shape
+                and np.dtype(value.host_dtype) == np.float32
+                and value.device_ordinal == ordinal,
+                "control dtype/shape/device",
+            )
             value._ensure_alive()
         supplied.append(value)
     forbidden = _arrays(engine._device, tx, mode)
@@ -79,10 +90,14 @@ def _preflight(engine, values, stream):
         if owner is not None:
             forbidden.extend(_arrays(owner, tx, mode))
     for i, value in enumerate(supplied):
-        _require(not any(_overlap(value, old, mode) for old in forbidden),
-                 "control input aliases physical/action storage")
-        _require(not any(_overlap(value, old, mode) for old in supplied[:i]),
-                 "supplied control channels overlap")
+        _require(
+            not any(_overlap(value, old, mode) for old in forbidden),
+            "control input aliases physical/action storage",
+        )
+        _require(
+            not any(_overlap(value, old, mode) for old in supplied[:i]),
+            "supplied control channels overlap",
+        )
 
 
 class _DeviceControlPacket:
@@ -92,24 +107,38 @@ class _DeviceControlPacket:
         self.engine, self.device_owner = engine, engine._device
         self.tx, self.mode = engine._device.tx, engine._mode
         self.ordinal = int(engine._device.runtime.device)
-        self.plan, self.count, self.nbody = engine._plan, len(engine.world_keys), engine._model.nbody
+        self.plan, self.count, self.nbody = (
+            engine._plan,
+            len(engine.world_keys),
+            engine._model.nbody,
+        )
         self.epoch = engine._control_epoch + 1
         self.resources, self.buffers = [], []
         self.closed = False
-        self.counts = dict(control_copy_d2d_bytes=0, control_audit_downloaded_bytes=0,
-                           control_status_downloaded_bytes=0, control_initial_uploaded_bytes=0,
-                           control_pack_kernels=0)
+        self.counts = dict(
+            control_copy_d2d_bytes=0,
+            control_audit_downloaded_bytes=0,
+            control_status_downloaded_bytes=0,
+            control_initial_uploaded_bytes=0,
+            control_pack_kernels=0,
+        )
         source = engine._compilation.source
-        self.binding = MappingProxyType({
-            "schema": "mujoco-tyx-device-controls-v1", "runtime_owner": id(engine),
-            "source_sha256": sha256(source.primary_xml).hexdigest(),
-            "archive_sha256": sha256(source.archive_bytes).hexdigest(),
-            "model_sha256": sha256(source.model_binary).hexdigest(),
-            "world_keys": engine.world_keys, "mode": self.mode, "device": self.ordinal,
-            "native_layout": (self.plan.nq, self.plan.nv, self.plan.nu, self.nbody),
-            "epoch": self.epoch, "precision": "FP32-native-requested-controls",
-            "world_order": "caller-declared-runtime-order-not-inferred",
-        })
+        self.binding = MappingProxyType(
+            {
+                "schema": "mujoco-tyx-device-controls-v1",
+                "runtime_owner": id(engine),
+                "source_sha256": sha256(source.primary_xml).hexdigest(),
+                "archive_sha256": sha256(source.archive_bytes).hexdigest(),
+                "model_sha256": sha256(source.model_binary).hexdigest(),
+                "world_keys": engine.world_keys,
+                "mode": self.mode,
+                "device": self.ordinal,
+                "native_layout": (self.plan.nq, self.plan.nv, self.plan.nu, self.nbody),
+                "epoch": self.epoch,
+                "precision": "FP32-native-requested-controls",
+                "world_order": "caller-declared-runtime-order-not-inferred",
+            }
+        )
 
     def _buffer(self, shape, dtype=np.float32):
         value = np.zeros(shape, dtype)
@@ -144,17 +173,29 @@ class _DeviceControlPacket:
             words = value.view(np.uint32)
             exponent, mantissa = words & 0x7F800000, words & 0x007FFFFF
             _require(not np.any(exponent == 0x7F800000), "device action must be finite")
-            _require(not np.any((exponent == 0) & (mantissa != 0)),
-                     "device action must be normal-or-zero FP32")
+            _require(
+                not np.any((exponent == 0) & (mantissa != 0)),
+                "device action must be normal-or-zero FP32",
+            )
         return values
 
     def _pack(self):
         from .mujoco_tyx._control_kernels import pack
+
         options = {"mode": self.mode}
         if self.stream is not None:
             options["stream"] = self.stream
-        pack(self.count, self.plan.nu, self.plan.nv, self.nbody, max(8, self.plan.nv),
-             *self.native, self.padded, self.status, **options)
+        pack(
+            self.count,
+            self.plan.nu,
+            self.plan.nv,
+            self.nbody,
+            max(8, self.plan.nv),
+            *self.native,
+            self.padded,
+            self.status,
+            **options,
+        )
         self.counts["control_pack_kernels"] += 1
         if self.mode == "interpret":
             self.runtime.sync()
@@ -164,12 +205,17 @@ class _DeviceControlPacket:
             status = self.status.to_numpy(stream=self.stream)
             self.stream.synchronize()
             self.counts["control_status_downloaded_bytes"] += status.nbytes
-        _require(status.shape == (self.count,) and status.dtype == np.int32
-                 and not np.any(status), "device control pack rejected")
+        _require(
+            status.shape == (self.count,) and status.dtype == np.int32 and not np.any(status),
+            "device control pack rejected",
+        )
 
     def prepare(self, values, producer_stream):
-        self.runtime = self.tx.Runtime(backend="cuda" if self.mode == "cuda" else "cpu",
-                                       device=self.ordinal, cache_root=self.engine._cache_root)
+        self.runtime = self.tx.Runtime(
+            backend="cuda" if self.mode == "cuda" else "cpu",
+            device=self.ordinal,
+            cache_root=self.engine._cache_root,
+        )
         self.resources.append(self.runtime.close)
         self.stream = None
         if self.mode == "cuda":
@@ -195,16 +241,21 @@ class _DeviceControlPacket:
             audit = self._audit()
             self._pack()
         self.controls = {
-            key: MuJoCoControl(audit[0][i, :self.plan.nu],
-                              qfrc_applied=audit[1][i], xfrc_applied=audit[2][i])
+            key: MuJoCoControl(
+                audit[0][i, : self.plan.nu], qfrc_applied=audit[1][i], xfrc_applied=audit[2][i]
+            )
             for i, key in enumerate(self.engine.world_keys)
         }
 
     def inputs(self, engine):
-        _require(engine is self.engine and engine._device is self.device_owner,
-                 "device action packet owner changed")
-        _require(not self.closed and engine._control_packet is self,
-                 "device action packet is not the accepted owner")
+        _require(
+            engine is self.engine and engine._device is self.device_owner,
+            "device action packet owner changed",
+        )
+        _require(
+            not self.closed and engine._control_packet is self,
+            "device action packet is not the accepted owner",
+        )
         _require(engine._control_epoch == self.epoch, "device action packet epoch changed")
         _require(engine._controls is self.controls, "device action canonical controls changed")
         return (*self.native[:1], self.padded, self.native[2], self.controls)
@@ -259,12 +310,17 @@ def invalidate(engine):
 
 
 def retirement_list(engine):
-    return [*engine._control_retired, *(() if engine._control_packet is None else (engine._control_packet,))]
+    return [
+        *engine._control_retired,
+        *(() if engine._control_packet is None else (engine._control_packet,)),
+    ]
 
 
 def submit(engine, values, expected_revision, producer_stream):
-    _require(type(expected_revision) is int and expected_revision == engine._checkpoint_revision,
-             "stale device action source revision")
+    _require(
+        type(expected_revision) is int and expected_revision == engine._checkpoint_revision,
+        "stale device action source revision",
+    )
     _preflight(engine, values, producer_stream)
     packet = _DeviceControlPacket(engine)
     # Reserve ownership before any device allocation, so a failed staging cleanup
@@ -273,8 +329,13 @@ def submit(engine, values, expected_revision, producer_stream):
     try:
         packet.prepare(values, producer_stream)
         revision = engine._checkpoint_revision + 1
-        receipt = MuJoCoTyxDeviceControlReceipt(packet.binding, expected_revision, revision,
-                                                packet.epoch, MappingProxyType(dict(packet.controls)))
+        receipt = MuJoCoTyxDeviceControlReceipt(
+            packet.binding,
+            expected_revision,
+            revision,
+            packet.epoch,
+            MappingProxyType(dict(packet.controls)),
+        )
         retired = retirement_list(engine)
         counts = dict(engine._extra_counts)
         for name, value in packet.counts.items():

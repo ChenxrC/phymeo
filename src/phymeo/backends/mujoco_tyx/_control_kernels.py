@@ -1,11 +1,20 @@
 """Transport-only padding and finite guards; no dynamics or action clipping."""
+
 import tyx as tx
 
 
-def pack(count: tx.i32, nu: tx.i32, nv: tx.i32, nbody: tx.i32, width: tx.i32,
-         controls: tx.ndarray(tx.f32, 2), forces: tx.ndarray(tx.f32, 2),
-         body_force: tx.ndarray(tx.f32, 3), padded_force: tx.ndarray(tx.f32, 2),
-         status: tx.ndarray(tx.i32, 1)):
+def pack(
+    count: tx.i32,
+    nu: tx.i32,
+    nv: tx.i32,
+    nbody: tx.i32,
+    width: tx.i32,
+    controls: tx.ndarray(tx.f32, 2),
+    forces: tx.ndarray(tx.f32, 2),
+    body_force: tx.ndarray(tx.f32, 3),
+    padded_force: tx.ndarray(tx.f32, 2),
+    status: tx.ndarray(tx.i32, 1),
+):
     for w in tx.range(count):
         status[w] = 0
         for i in range(nu):

@@ -184,10 +184,15 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
         self._control_packet, self._control_retired = None, []
         self._control_epoch, self._control_cleanup_errors = 0, ()
         self._extra_counts = dict(
-            completed_steps=0, accepted_world_steps=0, failed_batches=0,
-            device_control_submissions=0, device_control_refusals=0,
-            control_copy_d2d_bytes=0, control_audit_downloaded_bytes=0,
-            control_status_downloaded_bytes=0, control_initial_uploaded_bytes=0,
+            completed_steps=0,
+            accepted_world_steps=0,
+            failed_batches=0,
+            device_control_submissions=0,
+            device_control_refusals=0,
+            control_copy_d2d_bytes=0,
+            control_audit_downloaded_bytes=0,
+            control_status_downloaded_bytes=0,
+            control_initial_uploaded_bytes=0,
             control_pack_kernels=0,
         )
         self._device = self._build_device(self._data)
@@ -372,8 +377,9 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
             self._checkpoint_revision = revision
             invalidate(self)
 
-    def set_controls_from_device(self, ctrl, *, qfrc_applied=None, xfrc_applied=None,
-                                 expected_revision, producer_stream=None):
+    def set_controls_from_device(
+        self, ctrl, *, qfrc_applied=None, xfrc_applied=None, expected_revision, producer_stream=None
+    ):
         """Copy one ordered native action batch, then atomically publish held controls.
 
         Inputs use world_keys order; equal-shaped row permutations cannot be inferred.
@@ -385,8 +391,9 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
         with self._lock:
             self._check_open()
             try:
-                return submit(self, (ctrl, qfrc_applied, xfrc_applied),
-                              expected_revision, producer_stream)
+                return submit(
+                    self, (ctrl, qfrc_applied, xfrc_applied), expected_revision, producer_stream
+                )
             except BaseException:
                 self._extra_counts["device_control_refusals"] += 1
                 raise

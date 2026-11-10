@@ -184,8 +184,107 @@ def compile_source(assets, h):
     return compiled, model, derived
 
 
+BODY_INERTIAL_PROTOCOL = "g1-current-body-inertial-round50-v1"
+IMU_SITE_PROTOCOL = "g1-current-imu-site-round50-v2"
+OBSERVATION_PROTOCOLS = (BODY_INERTIAL_PROTOCOL, IMU_SITE_PROTOCOL)
+
+
+class GyroObservation:
+    """Root-mounted current-state axes for this example, not a sensor subsystem."""
+
+    def __init__(
+        self, model, *, root_body, protocol_id=IMU_SITE_PROTOCOL, sensor_name="imu_ang_vel"
+    ):
+        if protocol_id not in OBSERVATION_PROTOCOLS:
+            raise ValueError("unknown observation protocol")
+        if (
+            isinstance(root_body, bool)
+            or not isinstance(root_body, (int, np.integer))
+            or not 0 < root_body < model.nbody
+        ):
+            raise ValueError("free root body is absent")
+        root = int(root_body)
+        joint = int(model.body_jntadr[root])
+        if (
+            int(model.body_parentid[root]) != 0
+            or int(model.body_jntnum[root]) != 1
+            or not 0 <= joint < model.njnt
+            or int(model.jnt_type[joint]) != int(mj.mjtJoint.mjJNT_FREE)
+            or int(model.jnt_bodyid[joint]) != root
+        ):
+            raise ValueError("observation root must have exactly one free joint")
+        sensor = mj.mj_name2id(model, mj.mjtObj.mjOBJ_SENSOR, sensor_name)
+        if sensor < 0:
+            raise ValueError("gyro sensor is absent")
+        if (
+            int(model.sensor_type[sensor]) != int(mj.mjtSensor.mjSENS_GYRO)
+            or int(model.sensor_dim[sensor]) != 3
+        ):
+            raise ValueError("sensor must be a gyro with three components")
+        if int(model.sensor_objtype[sensor]) != int(mj.mjtObj.mjOBJ_SITE):
+            raise ValueError("gyro sensor must reference a site")
+        site = int(model.sensor_objid[sensor])
+        if not 0 <= site < model.nsite:
+            raise ValueError("gyro site is absent")
+        if int(model.site_bodyid[site]) != root:
+            raise ValueError("gyro site must be mounted on the declared free root")
+        self.protocol_id = protocol_id
+        self._nv = int(model.nv)
+        self._sensor = (int(sensor), mj.mj_id2name(model, mj.mjtObj.mjOBJ_SENSOR, sensor))
+        self._site = (site, mj.mj_id2name(model, mj.mjtObj.mjOBJ_SITE, site))
+        self._body = (root, mj.mj_id2name(model, mj.mjtObj.mjOBJ_BODY, root))
+        self._joint = (joint, mj.mj_id2name(model, mj.mjtObj.mjOBJ_JOINT, joint))
+        self._dof = int(model.jnt_dofadr[joint])
+        self._qpos = int(model.jnt_qposadr[joint])
+        self._site_quat = tuple(float(x) for x in model.site_quat[site])
+        self._inertial_quat = tuple(float(x) for x in model.body_iquat[root])
+        if not 0 <= self._dof <= self._nv - 6:
+            raise ValueError("free root angular DOF addresses are invalid")
+        observed_quat = (
+            self._site_quat if protocol_id == IMU_SITE_PROTOCOL else self._inertial_quat
+        )
+        self._from_body = rotation(observed_quat).T
+
+    def angular_velocity(self, velocity):
+        # Free-root angular DOFs are body-local. Site position has no angular
+        # transport term. This reads the current input, never cached cvel/gyro.
+        velocity = np.asarray(velocity)
+        if velocity.shape != (self._nv,) or not np.isfinite(velocity).all():
+            raise ValueError("invalid current velocity for gyro observation")
+        return self._from_body @ velocity[self._dof + 3 : self._dof + 6]
+
+    def metadata(self):
+        return {
+            "protocol_id": self.protocol_id,
+            "sensor": {"id": self._sensor[0], "name": self._sensor[1], "type": "gyro"},
+            "site": {
+                "id": self._site[0],
+                "name": self._site[1],
+                "local_quaternion": list(self._site_quat),
+            },
+            "body": {"id": self._body[0], "name": self._body[1]},
+            "free_joint": {
+                "id": self._joint[0],
+                "name": self._joint[1],
+                "dof_address": self._dof,
+                "qpos_address": self._qpos,
+            },
+            "body_inertial_quaternion": list(self._inertial_quat),
+            "angular_dof_addresses": list(range(self._dof + 3, self._dof + 6)),
+            "angular_convention": (
+                "R(site_quat).T @ current free-root body-local angular velocity"
+                if self.protocol_id == IMU_SITE_PROTOCOL
+                else "R(body_iquat).T @ current free-root body-local angular velocity"
+            ),
+            "timing": "current accepted input state before policy inference",
+            "frame_rule": "min(round(stored_time * 50), last_frame)",
+            "control_period_s": 0.02,
+            "scope": "root-mounted angular observation only; no native FK or sensor cache",
+        }
+
+
 class Protocol:
-    def __init__(self, model, assets):
+    def __init__(self, model, assets, *, observation_protocol=IMU_SITE_PROTOCOL):
         self.model = model
         self.config = yaml.safe_load((assets / "deploy.yaml").read_text(encoding="utf-8"))
         with np.load(assets / "dance1_subject2.npz", allow_pickle=False) as archive:
@@ -233,7 +332,7 @@ class Protocol:
             for x in (self.kp, self.kd, self.scale, self.offset, self.default)
         ):
             raise ValueError("invalid original controller vectors")
-        self.inertial_from_body = rotation(model.body_iquat[self.root]).T
+        self.gyro = GyroObservation(model, root_body=self.root, protocol_id=observation_protocol)
         self.mass = float(np.sum(model.body_mass))
         self.weight = self.mass * float(-model.opt.gravity[2])
         if not np.array_equal(model.opt.gravity, (0.0, 0.0, -9.81)):
@@ -301,14 +400,14 @@ class Controller:
                 @ p.alignment
                 @ torso(p.motion["body_quat_w"][frame, 0], reference_q)
             )
-            # Match native BODY local observation axes (body inertial frame),
-            # evaluated from the current state rather than stale cached cvel.
+            # The selected explicit protocol observes this current input state;
+            # no native cvel/sensordata cache supplies the policy's angular velocity.
             observation = np.concatenate(
                 (
                     reference_q,
                     reference_v,
                     relative[:, :2].reshape(-1),
-                    p.inertial_from_body @ v[3:6],
+                    p.gyro.angular_velocity(v),
                     q[p.qa] - p.default,
                     v[p.va],
                     self.action,
@@ -971,6 +1070,7 @@ def inventory(protocol, compilation, derived, capabilities):
         "foot_geometry_to_side": protocol.foot_geoms,
         "foot_geometry_count": len(protocol.foot_geoms),
         "policy_provider": protocol.session.get_providers(),
+        "observation_protocol": protocol.gyro.metadata(),
         "gates": GATES,
         "observation": "snapshot is a detached CPU FK observer; device loads come only from last_step",
         "native_oracles": "same-input forward and independent feedback CPU trajectory are distinct",
@@ -1423,6 +1523,12 @@ def parse_args():
     parser.add_argument("--duration", type=float, default=2.0)
     parser.add_argument("--push-sign", type=int, choices=(-1, 0, 1), default=0)
     parser.add_argument("--cache-root", type=Path)
+    parser.add_argument(
+        "--observation-protocol",
+        choices=OBSERVATION_PROTOCOLS,
+        default=IMU_SITE_PROTOCOL,
+        help="current IMU-site axes (v2) or explicit legacy body-inertial axes (v1)",
+    )
     args = parser.parse_args()
     args.assets = args.assets.resolve()
     if not 0 < args.duration <= 131.48 or not math.isfinite(args.duration):
@@ -1451,11 +1557,18 @@ def main():
             files=initial_bindings,
             harness=binding(Path(__file__)),
             options=vars(args),
+            observation_protocol_id=args.observation_protocol,
             execution_role="parent-owned serial queue; no CPU fallback",
             status="RUNNING",
         )
         compilation, model, derived = compile_source(args.assets, args.h)
-        protocol = Protocol(model, args.assets)
+        protocol = Protocol(model, args.assets, observation_protocol=args.observation_protocol)
+        journal.write(
+            "observation_protocol_binding",
+            durable=True,
+            observation_protocol=protocol.gyro.metadata(),
+            source_role="compiled sensor/site/root binding; current-state algebra",
+        )
         if args.phase == "admission":
             q, v = protocol.initial(0)
             with runtime_for(compilation, q, v, 0.0, args.mode, args.cache_root) as runtime:
@@ -1492,6 +1605,7 @@ def main():
             final_bindings = {name: binding(args.assets / name) for name in FILES}
             unchanged = initial_bindings == final_bindings
             summary = {} if summary is None else summary
+            summary["observation_protocol_id"] = args.observation_protocol
             summary["source_bindings_unchanged"] = unchanged
             summary["final_bindings"] = final_bindings
             if not unchanged:

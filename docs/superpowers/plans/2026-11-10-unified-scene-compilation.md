@@ -36,3 +36,12 @@ M1首域为每world一个独立关节系统加有限静态环境；多关节机�
 - [ ] M4组合、源码外安装、架构和报告。
 
 GPU MuJoCo-Warp是独立可选执行后端，TYX仍为主线；缺依赖或功能时保持明确未验证，不能把CPU编译成功写成GPU求解通过。
+
+## 本批接口与执行补充
+
+- M1：`SceneDeclaration(tuple[ArticulationWorld])` 只冻结装配声明，复用原资产/模型。`ArticulationWorld(world, asset, initial_state, kp=..., kd=..., effort_limit=..., static_shapes=...)`；`FiniteStaticShape` 保留完整world坐标几何与显式接触材料。`scene_capabilities` 给出拒绝项，`compile_scene(..., backend="host"|"interpret"|"cuda")` 返回独立运行时。同一资产使用原 `RobotCommand` / `FloatingRobotCommand`，控制格式不随后端改变。首域不启用机器人自身互碰，不把内部全排除包装成已支持self-collision。
+- M2：`compile_mujoco(path)` / `compile_mujoco_xml(xml, assets=...)` 返回编译记录，含 `.asset`、公共坐标的 `.initial_q/.initial_v`、原ID/地址/坐标映射、完整compiled-native bytes。`require_asset=False` 可以保留只能由原生MuJoCo运行的模型，lowering issues不得被消去。固定根原模型未实现非零armature/damping的情况明确拒绝lowering；世界静态几何单列，不把资产加载冒充完整环境导入。公开native对象可变，独立runtime通过 `fresh_native_model()` 拥有自己的模型与timestep。
+- M3：`MuJoCoRuntime(compilation, world_keys=(...), mode="cpu"|"cuda")`；`MuJoCoControl` 明确使用原生actuator/dof/body顺序。其q/v为原生qpos/qvel，并非Phymeo浮根COM速度。所有后端共享 `snapshot/set_controls/step/reset/close` 环境协议，但坐标和接触律在能力/结果中显式标记。原求解步contact与端点forward读数分别标注，不把端点force乘h冒充整步冲量。
+- M4：同一无接触XML小树经CPU编译后进入HOST/TYX，另由原生MuJoCo实际步对照；原Env/PolicyRunner使用这些runtime协议。完整 `SceneDeclaration` 反向导出为MjSpec不属于本批交付，原生MuJoCo分支消费原编译记录。
+
+父已在新artifact隔离target安装 `mujoco-warp==0.0.2 --no-deps`，复用原MuJoCo3.3.7/Warp1.17.0。固定两world正负力、各三实际CUDA步与CPU对照通过（03-warp-compatibility），只证明这组依赖可运行，尚不是新adapter通过。M3新增GPU实现及专项测试，必须先检查原生contact/constraint容量再回读，禁止截断后声称成功。既有环境及TYX pins未修改，所有执行仍父唯一串行槽。

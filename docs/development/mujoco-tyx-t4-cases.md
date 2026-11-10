@@ -82,7 +82,7 @@ E至少包含：每种condim的contact count与expanded efc分别恰满/超一�
 | 原资产 | 本次文本核实 | 对本批的含义 |
 |---|---|---|
 | scene_g1.xml | default D=.05/a=.01/frictionloss=.2，原物理mesh/cylinder与足球 | 完整模型尚不能由primitive-only T4冒称迁移；不静默去mesh或dry |
-| g1_primitive_actuated.xml | collision priority1/condim6；原33个球/胶囊；左右脚各8个foot_capsule；floor摩擦(1,.005,.0001)；4个body exclude；29个scalar joints有原限位，显式a=.01/D=.05/dry0 | T5选用这一已存在明确变体，保原condim/质量/几何/驱动/初态；新支持exclude及完整potential-pair/efc容量是前置 |
+| g1_primitive_actuated.xml | collision priority1/condim6；原33个球/胶囊；左右脚各7个foot_capsule；floor摩擦(1,.005,.0001)；4个body exclude；29个scalar joints有原限位，显式a=.01/D=.05/dry0 | T5选用这一已存在明确变体，保原condim/质量/几何/驱动/初态；新支持exclude及完整potential-pair/efc容量是前置 |
 | 原策略参照 | 原生primitive-actuated独立20秒报告failure=null；老HOST全131.48秒无跌倒，但峰力14.91mg与XY1.275m两旧门失败 | 可复用来源/协议证据，不倒灌新MuJoCo-TYX结果，也不再为这份计划重跑旧参考 |
 
 现T3静态P16/C32不足以直接代表G1完整候选；父已要求通用动态compact研究，保全部候选/排除/身份，不只挑脚或删自碰。F0必须输出真实编译nq/nv/nu/nbody/ngeom、所有joint/type/limits/a/D/dry、所有geom/condim/mask、4排除与完整layout/capacity说明；本文件没有运行编译或推测native实际接触峰值。
@@ -111,3 +111,28 @@ F2/F3 h矩阵是新MuJoCo-TYX的工程验证，不借旧HOST h=.0005通过；若
 所有正式输入、h/m/窗口和工程门在首次生产执行前固定。若原生CPU本身反驳某“必须静止/必须承载”的测试假设，保原RAW失败并修正错误oracle分类，不改产品或同律参数遮掩。T3b已示范接触序号不是跨精度物理身份；摩擦比较继续保完整几何双向匹配、重复点数量及原阈值，绝不按force挑配。
 
 两轮没有新增可调用能力、失败闭环或可归因测量时，停止扩大文档/长窗，提取最小同入步差异：geometry→frame/J→参数R/aref→边解码→共同solve→积分→策略。已绿同源组不重跑。API冻结后另行授权NEW tests编码；当前没有任何project import、collection、numerical probe、pytest、lint/format、build或native执行结果。
+
+
+## 9. T4 API 冻结后的纯测试交接
+
+当前状态覆盖开头研究时的 API_PENDING：**CODE_READY_TESTS_PENDING / UNCOLLECTED / UNEXECUTED**。父已冻结 [mixed constraints 计划](../superpowers/plans/2026-11-10-mujoco-tyx-mixed-constraints.md) 2fe2e3f8 和逐 EFC typed receipt；父唯一项目执行 owner。作者源码 checkpoint 54e1fceba2d930c62c9f21547fc65ead11364cd1 只新增两个测试文件，不修改产品或旧绿组。
+
+| 文件 | 纯源码规模与 SHA256 |
+|---|---|
+| [test_mujoco_tyx_constraints.py](../../tests/test_mujoco_tyx_constraints.py) | 839 行 / 21 个 test 定义；d7026ef2ecedbe7fd46f86a8cf8b332878f2a81067f81819f47ca8048c1c5938 |
+| [test_mujoco_tyx_constraints_protocol.py](../../tests/test_mujoco_tyx_constraints_protocol.py) | 455 行 / 15 个 test 定义；d8e7e8548d751314557bcf058a7c369b89ba07d72d3aa286102e7aa3d728b1cd |
+
+按源码 decorators **手工展开**为主文件164、protocol42、合计206个预计节点：97 interpret、97 CUDA、12个不带mode的独立解析/准入节点。没有 collection，这不是实际节点结果或通过数。每个backend保留12个完整1秒窗口（D01四个h/m、D02两形状八个h/m），没有把原1秒缩回短窗。公共ENV和G1由父独立消费者负责，不重复实现。
+
+源码落实：
+
+- 新native oracle读取全部原始efc type/id/J/pos/margin/R/D/KBIP/diagApprox/aref/force；接触按geometry/normal完整双向匹配，保重复点 multiplicity，不按force选对应。再映射compact contact source_id核全行，不要求跨精度序号相同。
+- 独立≤6行box-QP枚举lower/free/upper完整faces，另有4个固定手算参照；全部实际行另重构小H/b和原5e-5 KKT，验证完整Jᵀf及physical M质量方程。physical qacc与M+hD积分加速度分别核对；不读取solver face scratch作为期望。
+- 全1/3/4/6、signed滑/扭/滚、native MINMU、source-only解析阈值、偏心/斜面/双活动body、双侧limit和6个free-root dry行保留。追加父指定的五个 **单步** law分支：default、direct solref=(-1000,-30)、width0 solimp=(.2,.8,0,.5,2)、decreasing solimp=(.9,.2,.002,.5,2)、REFSAFE solref=(.0001,1)。没有新增长窗或变更原容差。
+- D01/D02实际、同入步native与持续native均先按双方body ID保存完整COM wrench。支撑/冲量行为门明确选择D01的tip、D02的root；capsule-box的moving body可能是geometry1，绝不固定把geometry2平台反力叫支撑力。所有body的完整wrench仍保存。未指定目标body的诊断和只是各自COM wrench分量之和，不冒充一个共同参考点的总空间wrench。
+- D01显式检查初始limit激活、随后退出和contact分离/重入，并对持续CPU事件时间；D02保原支撑、无接触区间、重入时限、末窗载荷/速度/高度门。完整q/v/control/力/count每步保存；首末、脉冲边界、接触数或EFC(type/source/side)变化时保存完整receipt/oracle。失败增加已执行attempt的readback scratch，不重跑producer或solver补数据。
+- Protocol保每种condim恰满/超一、inactive完整6D J、稀疏W4/reset/clone/输入顺序、预算耗尽、晚下载故障和禁止CPU/Warp/HOST/linalg fallback。新有限input_q/input_v单world篡改要求全批拒绝、旧发布原样、恢复真实download后retry等于clone。
+- 通用compact正控保40个有限marker及最后一个真实接触、native body exclude，不裁到旧32槽；另61个geom构成60个condim6接触/600 EFC，静态布局合法但实际行数超过512时必须全批拒绝。不同world中无接触者也不得抢先发布。hard requested cap及potential pair超域另核显式拒绝。
+- unused contact_map两身份列为-1、计数列0；inactive contact的first=-1/count0。这个字段勘误不改变物理模型或阈值。G1表的左右foot capsule已按原资产核实各7个，33个总shape及原资产SHA不变。
+
+本轮只有文本/文件IO/Git：两新文件与作者串逐字回读一致；精确两文件staged scope、git diff --cached --check成功，源码commit后clean。**未运行import、collection、算术probe、pytest、lint、formatter、compile/build、install、native或CI。** 首次静态/项目执行及任何实际缺陷判断交父串行队列。任何首次native对照反驳某行为假设都应保存原失败并分类，不能倒改输入或放宽阈值追绿。

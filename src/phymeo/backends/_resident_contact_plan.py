@@ -80,43 +80,10 @@ def _site_limit(value):
     return int(value)
 
 
-class ResidentContactPlan(ResidentCollisionPlan):
-    """Immutable registration plus owned temporary load/velocity storage."""
+class _ResidentContactMechanics:
+    """Shared one-entry/one-solve contact transaction for plans and page bundles."""
 
-    def __init__(
-        self,
-        batch,
-        model,
-        bindings,
-        materials_by_pair,
-        *,
-        candidate_capacity=4096,
-        site_capacity=128,
-        sampling="discrete_entry",
-        tree_dynamic_pairs=False,
-    ):
-        if sampling != "discrete_entry":
-            raise ValueError("resident contact supports only discrete_entry sampling, not CCD")
-        if not isinstance(materials_by_pair, Mapping):
-            raise TypeError("contact materials must be a complete pair mapping")
-        bindings = tuple(bindings)
-        if not all(
-            type(b)
-            in (
-                ResidentTreeBinding,
-                ResidentAffineTreeBinding,
-                ResidentFloatingTreeBinding,
-                ResidentFloatingAffineTreeBinding,
-                ResidentStaticBinding,
-            )
-            for b in bindings
-        ):
-            raise ValueError(
-                "contact binding requires a supported resident tree or finite static shape"
-            )
-        self._contact_bindings = MappingProxyType({b.key: b for b in bindings})
-        self._materials = MappingProxyType(dict(materials_by_pair))
-        self._site_config = site_capacity
+    def _initialize_contact_mechanics(self):
         self._contact_resources = ExitStack()
         self._contact_counts = dict(
             device_allocations=0,
@@ -132,13 +99,6 @@ class ResidentContactPlan(ResidentCollisionPlan):
         self._world_groups = {}
         self._last_accepted = MappingProxyType({})
         self._last_status = MappingProxyType({})
-        super().__init__(
-            batch,
-            model,
-            bindings,
-            candidate_capacity=candidate_capacity,
-            tree_dynamic_pairs=tree_dynamic_pairs,
-        )
 
     @property
     def last_accepted(self):
@@ -150,8 +110,7 @@ class ResidentContactPlan(ResidentCollisionPlan):
         with self._batch._lock:
             return self._last_status
 
-    def _prepare_topology(self, slots):
-        super()._prepare_topology(slots)
+    def _prepare_contact_registration(self):
         if any(
             not s.rigid
             or s.kind not in ("sphere", "capsule", "hull")
@@ -187,6 +146,9 @@ class ResidentContactPlan(ResidentCollisionPlan):
             caps = dict.fromkeys(worlds, cap)
         self._site_caps = MappingProxyType(caps)
         self._contact_worlds = worlds
+        self._contact_shapes = MappingProxyType({
+            w: tuple(s for s in self._model.shapes if s.key.world == w) for w in worlds
+        })
         self._world_materials = {
             w: MappingProxyType(
                 {pair: law for pair, law in self._materials.items() if pair[0].world == w}
@@ -194,8 +156,7 @@ class ResidentContactPlan(ResidentCollisionPlan):
             for w in worlds
         }
 
-    def _prepare_device(self, view, slots, paths):
-        super()._prepare_device(view, slots, paths)
+    def _prepare_contact_device(self):
         from ._tyx_resident_contact_kernels import make_contact_kernels
 
         self._contact_kernels = make_contact_kernels()
@@ -338,9 +299,7 @@ class ResidentContactPlan(ResidentCollisionPlan):
                 checkpoint = spec.checkpoint(world, state[row], tick, storage._held[row])
                 geometry = TreeKinematics(*geometry_args)
             frames = {}
-            for shape in self._model.shapes:
-                if shape.key.world != world:
-                    continue
+            for shape in self._contact_shapes[world]:
                 binding = self._contact_bindings[shape.key]
                 if isinstance(binding, ResidentTreeBinding):
                     group_index = binding.group_index
@@ -692,21 +651,81 @@ class ResidentContactPlan(ResidentCollisionPlan):
         self._last_accepted, self._last_status, result, pending = commit
         self._publish_query(result, pending)
 
-    def stats(self):
-        result = super().stats()
+    def _contact_stats(self, result):
         counts = self._contact_counts
         result["device_owned_bytes"] += counts["device_owned_bytes"]
         result["device_allocations"] += counts["device_allocations"]
         result.update({("contact_" + key): value for key, value in counts.items()})
         return result
 
+    def _close_contact_mechanics(self):
+        self._contact_resources.close()
+        self._contact_counts["device_owned_bytes"] = 0
+        self._contact_groups.clear()
+        self._world_groups.clear()
+        self._contact_kernels = None
+        self._floating_contact_kernels = None
+
+
+class ResidentContactPlan(_ResidentContactMechanics, ResidentCollisionPlan):
+    """Immutable single-page registration plus temporary load/velocity storage."""
+
+    def __init__(
+        self,
+        batch,
+        model,
+        bindings,
+        materials_by_pair,
+        *,
+        candidate_capacity=4096,
+        site_capacity=128,
+        sampling="discrete_entry",
+        tree_dynamic_pairs=False,
+    ):
+        if sampling != "discrete_entry":
+            raise ValueError("resident contact supports only discrete_entry sampling, not CCD")
+        if not isinstance(materials_by_pair, Mapping):
+            raise TypeError("contact materials must be a complete pair mapping")
+        bindings = tuple(bindings)
+        if not all(
+            type(b)
+            in (
+                ResidentTreeBinding,
+                ResidentAffineTreeBinding,
+                ResidentFloatingTreeBinding,
+                ResidentFloatingAffineTreeBinding,
+                ResidentStaticBinding,
+            )
+            for b in bindings
+        ):
+            raise ValueError(
+                "contact binding requires a supported resident tree or finite static shape"
+            )
+        self._contact_bindings = MappingProxyType({b.key: b for b in bindings})
+        self._materials = MappingProxyType(dict(materials_by_pair))
+        self._site_config = site_capacity
+        self._initialize_contact_mechanics()
+        super().__init__(
+            batch,
+            model,
+            bindings,
+            candidate_capacity=candidate_capacity,
+            tree_dynamic_pairs=tree_dynamic_pairs,
+        )
+
+    def _prepare_topology(self, slots):
+        super()._prepare_topology(slots)
+        self._prepare_contact_registration()
+
+    def _prepare_device(self, view, slots, paths):
+        super()._prepare_device(view, slots, paths)
+        self._prepare_contact_device()
+
+    def stats(self):
+        return self._contact_stats(super().stats())
+
     def close(self):
         try:
             super().close()
         finally:
-            self._contact_resources.close()
-            self._contact_counts["device_owned_bytes"] = 0
-            self._contact_groups.clear()
-            self._world_groups.clear()
-            self._contact_kernels = None
-            self._floating_contact_kernels = None
+            self._close_contact_mechanics()

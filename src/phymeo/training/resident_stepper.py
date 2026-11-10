@@ -68,13 +68,14 @@ class ResidentContactStepper:
     __slots__ = ("_batch", "_plan")
 
     def __init__(self, batch, plan):
+        from ..backends._resident_contact_bundle import ResidentContactBundle
         from ..backends._resident_contact_plan import ResidentContactPlan
         from ..backends.tyx_world_batch import TyxWorldBatch
 
         if not isinstance(batch, TyxWorldBatch):
             raise TypeError("contact stepper requires a TyxWorldBatch owner")
-        if not isinstance(plan, ResidentContactPlan):
-            raise TypeError("contact stepper requires a ResidentContactPlan")
+        if not isinstance(plan, (ResidentContactPlan, ResidentContactBundle)):
+            raise TypeError("contact stepper requires a ResidentContactPlan or ResidentContactBundle")
         if plan._batch is not batch:
             raise ValueError("contact stepper plan belongs to a different batch owner")
         with batch._lock:

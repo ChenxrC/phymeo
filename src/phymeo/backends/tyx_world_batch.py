@@ -59,6 +59,7 @@ class TyxWorldBatch:
         self._resources = ExitStack()
         self._readback_plans = set()
         self._collision_plans = set()
+        self._contact_bundles = set()
         self._collision_owner = object()
         self._topology_generation = 0
         self._state_epoch = 0
@@ -514,12 +515,24 @@ class TyxWorldBatch:
             tree_dynamic_pairs=tree_dynamic_pairs,
         )
 
+    def prepare_contact_bundle(
+        self, pages, *, site_capacity=128, sampling="discrete_entry", tree_dynamic_pairs=False
+    ):
+        """Register bounded whole-world pages sharing one loaded physical step."""
+        from ._resident_contact_bundle import ResidentContactBundle
+
+        return ResidentContactBundle(
+            self, pages, site_capacity=site_capacity, sampling=sampling,
+            tree_dynamic_pairs=tree_dynamic_pairs,
+        )
+
     def step_contacts(self, plan, h):
         """Sample entry contact, solve full mechanics and publish one transaction."""
+        from ._resident_contact_bundle import ResidentContactBundle
         from ._resident_contact_plan import ResidentContactPlan
 
-        if not isinstance(plan, ResidentContactPlan):
-            raise TypeError("expected a ResidentContactPlan")
+        if not isinstance(plan, (ResidentContactPlan, ResidentContactBundle)):
+            raise TypeError("expected a ResidentContactPlan or ResidentContactBundle")
         if plan._batch is not self:
             raise ValueError("contact plan belongs to a different owner")
         return self._step(h, contacts=plan)
@@ -831,6 +844,7 @@ class TyxWorldBatch:
                 "current_buffer": self._active,
                 "readback_plan_live_count": len(self._readback_plans),
                 "collision_plan_live_count": len(self._collision_plans),
+                "contact_bundle_live_count": len(self._contact_bundles),
                 "convex_query_plan_live_count": len(convex_queries),
                 "convex_query_live_bytes": sum(
                     int(query.stats["live_bytes"]) for query in convex_queries
@@ -867,7 +881,7 @@ class TyxWorldBatch:
                 self._closed = True
                 try:
                     with ExitStack() as closing_plans:
-                        for plan in (*self._readback_plans, *self._collision_plans):
+                        for plan in (*self._readback_plans, *self._collision_plans, *self._contact_bundles):
                             closing_plans.callback(plan.close)
                 finally:
                     self._resources.close()

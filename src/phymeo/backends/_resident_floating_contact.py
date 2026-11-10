@@ -188,9 +188,7 @@ def read_floating_contact_packet(plan, storage, worlds, bank):
             else FloatingTreeKinematics(*geometry_args)
         )
         frames = {}
-        for shape in plan._model.shapes:
-            if shape.key.world != world:
-                continue
+        for shape in plan._contact_shapes[world]:
             binding = plan._contact_bindings[shape.key]
             if isinstance(binding, ResidentFloatingTreeBinding):
                 group = binding.group_index

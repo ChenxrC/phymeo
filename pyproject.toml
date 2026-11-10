@@ -12,6 +12,8 @@ dependencies = ["numpy>=2,<3"]
 
 [project.optional-dependencies]
 usd = ["usd-core==26.8"]
+mujoco = ["mujoco==3.3.7"]
+mujoco-warp = ["mujoco==3.3.7", "mujoco-warp==0.0.2", "warp-lang==1.17.0"]
 training = ["torch>=2.6,<3", "tensordict>=0.7,<1", "rsl-rl-lib==5.5.2"]
 
 [project.urls]
@@ -44,4 +46,5 @@ line-length = 100
 select = ["E4", "E7", "E9", "F", "I"]
 
 [tool.setuptools.package-data]
+"phymeo.backends.mujoco_tyx" = ["LICENSE", "NOTICE", "AUTHORS"]
 "phymeo.builders" = ["panda_assets/*.urdf", "panda_assets/LICENSE", "panda_assets/NOTICE", "panda_assets/SOURCES.md"]

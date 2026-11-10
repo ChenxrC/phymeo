@@ -33,7 +33,8 @@ M1首域为每world一个独立关节系统加有限静态环境；多关节机�
 - [x] M1作者/父验证：HOST13，TYX解释/CUDA各4；Panda/G1装配留出三后端通过。
 - [x] M2作者/父验证：原27、新增语义拒绝3、独立URDF1通过。
 - [x] M3原生CPU与显式Warp验证：CPU21+Env1，Warp12+新增边界5；新增TYX移植另列M5，不借用结果。
-- [ ] M4组合、源码外安装、架构和报告。
+- [x] M4组合、源码外安装、架构和报告：七后端选择各2world×20步，新增12产品/许可成员三方字节一致。
+- [x] M5用户追加：mujoco-tyx首域真实kernel、默认CUDA选择、解释27/CUDA20及驱动/环境补充3通过；完整机器人扩域另按T1–T6计划。
 
 GPU MuJoCo-Warp是独立可选执行后端，TYX仍为主线；缺依赖或功能时保持明确未验证，不能把CPU编译成功写成GPU求解通过。
 
@@ -50,4 +51,6 @@ GPU MuJoCo-Warp是独立可选执行后端，TYX仍为主线；缺依赖或功�
 
 用户要求单独原 agent 实现 mujoco-tyx，尽量复用 MuJoCo-Warp 算法及代码，只有显式选择 Warp 时使用 MuJoCo-Warp。原 support 作者负责新 TYX 后端及新专项测试，父负责公共 dispatch、打包与唯一串行执行。
 
-先审查上游许可证、算子/数据结构与 TYX 能力，再按可验证模型域移植 forward dynamics、积分及接触约束。不得把原 Phymeo 不同接触律、Warp wrapper 或 CPU mj_step 改名为 mujoco-tyx；必须有真实 TYX CUDA launch、无 Warp/CPU 步进负控及原 MuJoCo 多案例数值对照。尚未支持的模型特征在分配或步进前拒绝，保留明确 capability report。默认切换以新后端实际验证为前提；本段是进行中工作，不代表完整 MuJoCo 已移植。
+先审查上游许可证、算子/数据结构与 TYX 能力，再按可验证模型域移植 forward dynamics、积分及接触约束。不得把原 Phymeo 不同接触律、Warp wrapper 或 CPU mj_step 改名为 mujoco-tyx；必须有真实 TYX CUDA launch、无 Warp/CPU 步进负控及原 MuJoCo 多案例数值对照。尚未支持的模型特征在分配或步进前拒绝，保留明确 capability report。默认切换以新后端实际验证为前提；本轮首域验证已完成并切换，不代表完整 MuJoCo 已移植。
+
+实际交付见[验收报告](../../benchmarks/p65-unified-scene-compilation.md)、[架构与用法](../../architecture/unified-scene-compilation.md)、[MuJoCo-TYX扩展计划](../../development/mujoco-tyx-expansion-plan.md)。M1–M5为本批明确域，不表示通用MuJoCo或整个P6.5完成。

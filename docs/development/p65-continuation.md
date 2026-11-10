@@ -1,5 +1,15 @@
 # P6.5 人工续作入口
 
+## 当前续作（2026-11-10，统一场景编译与 MuJoCo-TYX）
+
+先读[本批验收](../benchmarks/p65-unified-scene-compilation.md)、[已实现架构/用法](../architecture/unified-scene-compilation.md)与[统一入口接手说明](unified-scene-handoff.md)。新增同源SceneDeclaration→HOST/TYX、可选CPU MjSpec编译/显式资产转换、native CPU/显式Warp适配和真正MuJoCo-TYX首域。MuJoCoRuntime的默认CUDA为TYX，仅显式implementation="warp"选Warp。新wheel源码外七路径均通过，LICENSE/NOTICE随包；详细原始日志在artifacts/p65-unified-scene-20261110-01。
+
+**新MuJoCo-TYX仅1–8DOF全平移树/居中各向同性自由体/单plane-sphere法向软约束**；旋转树、多接触/摩擦、G1未支持，不把原Phymeo TYX resident或Warp通过倒灌。下一步按[通用机器人移植矩阵](mujoco-tyx-expansion-plan.md)的T1旋转tree→T2自由根→T3/T4多contact/friction→T5 G1支撑推进。任意SceneDeclaration反向导出MjSpec也未实现。
+
+本批源代码集成fd8b5198，作者全部释放；父保持共享接缝和唯一项目执行owner。原K1三个未提交文件保留，无远程CI/push/发包/原pin变更。下文旧G1连接结果继续复用，整个P6.5和Newton功能对齐没有标记完成。
+
+
+
 ## 当前续作（2026-11-10，到08:00连接批次）
 
 优先读[本批实际结果](../benchmarks/p65-robot-environment-connections-20261110.md)和[已实现连接架构](../architecture/robot-environment-connections-2026-11-10.md)。原HOST G1从原初态完成官方全131.48秒/262960步，无跌倒/拒步；峰值14.9124倍体重和XY偏差1.2749m仍使原两个工程门失败，RAW1保留。新的公共SceneBackend→Env→PolicyRunner独立完成20秒，全部原工程门通过。不要再按下面旧2秒pending段重跑长窗或重派实现。

@@ -1,5 +1,7 @@
 # mujoco-tyx：首批独立设备迁移
 
+**当前：父已完成首域解释/CUDA、环境连接和源码外wheel验证，见文末父验收节。下面保留作者交接原记录。**
+
 **CODE_READY_TESTS_PENDING / AUTHORING_ONLY，2026-11-10。** 本文对应作者源码检查点 `1a45fb87`，以及下列新增文件。作者没有 import、collection、pytest、数值 probe、lint、formatter、编译或安装；实际 interpret/CUDA 由父唯一串行执行槽验证后另记。首批是可验证的有限算法域，**不是 G1 或完整 MuJoCo 已迁移**，没有性能对标结论。
 
 用户新选择：Phymeo MuJoCo 的默认 CUDA implementation 由父共享 dispatch 切向 `tyx`；只有显式 `implementation='warp'` 才进入原 MuJoCo-Warp。CPU native 模式继续独立存在。未知或未迁移的源模型返回明确能力问题，不降级到 Warp 或 CPU。
@@ -62,3 +64,16 @@
 [LICENSE](../../src/phymeo/backends/mujoco_tyx/LICENSE)、[NOTICE](../../src/phymeo/backends/mujoco_tyx/NOTICE) 和 [AUTHORS](../../src/phymeo/backends/mujoco_tyx/AUTHORS) 随包保留 Apache-2.0 与 Newton Developers 归属、修改说明。AUTHORS 只规范了末尾空白，姓名内容保留。父负责 wheel package-data，不能只保网页链接。
 
 主要来源：[MuJoCo-Warp v0.0.2](https://github.com/google-deepmind/mujoco_warp/tree/v0.0.2/mujoco_warp/_src)、[CPU MuJoCo 3.3.7 contact 参数实现](https://github.com/google-deepmind/mujoco/blob/3.3.7/src/engine/engine_collision_driver.c)、[MuJoCo solver 参数](https://mujoco.readthedocs.io/en/3.3.7/modeling.html#solver-parameters)。
+
+## 父实际验收与交付（2026-11-10）
+
+当前状态：**首域已执行通过并集成**，不是完整 MuJoCo / G1 迁移。代码修复与实际选择提交为 `bc759365`、`d52d5b86`，集成与打包源码 `fd8b5198`。
+
+- 首个最终解释组 53：27 passed，含20个物理/事务参数案例、6个准入负控和原Env/PolicyRunner的解释集成。CUDA组50：20 passed。
+- 新增affine actuator、springref、disabled group同源对照两模式，及CUDA Env/PolicyRunner：54组3 passed。工程容差保持作者预先声明。
+- 父补齐CPU语义的下降/零width impedance、极小分母guard、精确margin边界零力site；Newton/CG的zero line-search预算明确拒绝。对应新增案例已在上述组内实际执行。来源为[CPU getimpedance / mj_makeImpedance](https://github.com/google-deepmind/mujoco/blob/3.3.7/src/engine/engine_core_constraint.c)。
+- 首失败保留：49的公开异常重导出被Ruff删除导致collection错误；51为NumPy新版本标量赋值拒绝length-one array；52为TYX不支持augmented assignment。分别改为明确重导出、标量item、显式赋值与内部串行range；未改质量、接触参数或验收误差。
+- 新wheel在源码外安装，移除开发editable路径后核所有实际加载的phymeo模块均来自新target。HOST、原TYX interpret/CUDA、native CPU、新默认MuJoCo-TYX CUDA、显式Warp、新MuJoCo-TYX interpret共7路径，各2world×20步通过。MuJoCo-TYX消费路径不把Warp目录加入环境。
+- 新wheel SHA256：`6e72c312afaf99f37ea40542a7e64b0c2fce6c14288e21723b80316ec98b5c5b`。12个新产品/许可成员在源码、wheel和installed target三方字节相同，LICENSE/NOTICE/AUTHORS随包保留。
+
+完整原命令/source snapshot/raw exit/日志在 `artifacts/p65-unified-scene-20261110-01`，总览见[统一入口验收](../benchmarks/p65-unified-scene-compilation.md)。首域只解决有限平移/自由球/单法向方程；后续按[旋转树到G1的模块计划](mujoco-tyx-expansion-plan.md)推进，不把默认选择当作G1支持。

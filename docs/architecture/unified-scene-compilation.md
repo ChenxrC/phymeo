@@ -15,7 +15,7 @@ flowchart TD
   H --> J[TYX interpret / CUDA resident runtime]
   E --> K[独立 MjModel / MjData → CPU mj_step]
   E --> L[显式 Warp：put_model / put_data → CUDA]
-  E --> T[默认 CUDA：MuJoCo-TYX T0与固定根T1]
+  E --> T[默认 CUDA：MuJoCo-TYX T0/T1/T2]
   I --> M[共同运行协议：snapshot / controls / step / reset / close]
   J --> M
   K --> M
@@ -90,9 +90,9 @@ with MuJoCoRuntime(compiled, world_keys=(4, 19), mode="cuda") as runtime:
 
 `mode="cpu"` 使用 `mj_step`；`mode="cuda"` 默认选择新 MuJoCo-TYX，显式 `implementation="warp"` 才使用 MuJoCo-Warp。TYX的CPU解释验证用 `mode="interpret"`。缺少依赖、不支持特性或设备不可用均报错，没有CPU或Warp静默回退。控制长度必须匹配原生actuator数。含多后端选择的示例入口见 `examples/unified_scene.py`。
 
-新MuJoCo-TYX是有限模型域的算法移植，独立于原Phymeo TYX resident。T0支持纯平移树、中心各向同性自由球、单个plane–sphere法向接触；[T1已验收](../benchmarks/p65-mujoco-tyx-rotational-tree.md)增加固定根1–8DOF hinge/slide混合树，每步重算完整FK/J/M/bias，要求没有可能接触对。自由根关节树、多接触、摩擦和G1尚不在该新后端支持域。详[扩展路线与多案例矩阵](../development/mujoco-tyx-expansion-plan.md)。
+新MuJoCo-TYX是有限模型域的算法移植，独立于原Phymeo TYX resident。T0支持纯平移树、中心各向同性自由球、单个plane–sphere法向接触；[T1已验收](../benchmarks/p65-mujoco-tyx-rotational-tree.md)增加固定根1–8DOF hinge/slide混合树；[T2已验收](../benchmarks/p65-mujoco-tyx-floating-tree.md)增加一个原生自由根加0–29 scalar joints，nq≤36/nv≤35，保留偏心COM、非球惯量和完整根–关节耦合。T1/T2每步重算完整FK/J/M/bias，要求没有可能接触对。多接触、摩擦和G1持续支撑尚不在该新后端支持域。详[扩展路线与多案例矩阵](../development/mujoco-tyx-expansion-plan.md)。
 
-T1的 `states[world].last_step.dynamics` 提供同次设备入步body pose/COM、世界COM Jacobian、M、bias、passive、applied和smooth acceleration；`integration_acceleration`另保Euler隐式阻尼解。端点CPU观察不能替代这些入步量。
+T1/T2的 `states[world].last_step.dynamics` 提供同次设备入步body pose/COM、世界COM Jacobian、M、bias、passive、applied和smooth acceleration；`integration_acceleration`另保Euler隐式阻尼解。T2的input_q/input_v保原生不同维度，root-origin世界线速度与root-local角速度不改为Phymeo资产坐标。端点CPU观察不能替代这些入步量。
 
 ## 身份、坐标和发布
 

@@ -45,3 +45,7 @@ scalar spring使用qpos_spring而非FK ref；affine驱动使用raw q×gear，保
 ## 固定来源与归属
 
 参照固定MuJoCo-Warp0.0.2的`_src/smooth.py` kinematics/com_vel/crb/rne及scalar transmission、`passive.py`、`forward.py` Euler/_advance，另以CPU MuJoCo3.3.7的free FK/J、native quaternion integration与passive语义为准。三新模块是TYX数组/世界COM完整装配改写，沿用Apache LICENSE与原Newton归属头部，追加PhyMeo修改归属；没有通过改import包装Warp执行。前两者与父T1实现共享公式和低级schema/helper，T0/T1源码字节未修改。
+
+## 父集成验证追加（2026-11-10）
+
+父完成共享路由、独立nq/nv打包、原生限位地址和receipt连接，并补包内NOTICE。产品/测试 `1cb47675` 已通过解释20、CUDA16、相邻10项和新wheel源码外双路径；作者阶段hash保留为历史，最终源码由实际命令快照绑定。详[正式结果](../benchmarks/p65-mujoco-tyx-floating-tree.md)。本次未扩到可能接触或G1支撑。

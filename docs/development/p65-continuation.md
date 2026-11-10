@@ -1,5 +1,11 @@
 # P6.5 人工续作入口
 
+## 当前续作（2026-11-10，MuJoCo-TYX T2原生自由根树）
+
+先读[T2实际验收](../benchmarks/p65-mujoco-tyx-floating-tree.md)。产品/测试 `1cb47675` 已完成单free-root加0–29 scalar joints，nq≤36/nv≤35、完整偏心惯量及根–关节耦合。解释20、真实CUDA16、相邻10项通过；新wheel源码外两路径均完成连续ENV/PolicyRunner、reset与clone下一步，466个安装产品成员同源。原始13命令/28保存文件和最终核对在artifacts/p65-mujoco-tyx-t2-20261110-01，全部执行已结束，不重复同源绿组。
+
+默认CUDA仍是真MuJoCo-TYX，CPU只编译/明确端点观察；T2要求无可能接触对。下一项按[扩展路线T3/T4](mujoco-tyx-expansion-plan.md)补多接触、有限形状与native摩擦，再做T5 G1持续支撑。父唯一项目执行/共享接缝owner，三个T2作者已释放，原K1三个WIP保留；无周期任务或整个P6.5完成声明。下面T1及更早的“下一项”是历史，不覆盖本节。
+
 ## 当前续作（2026-11-10，MuJoCo-TYX T1旋转树）
 
 先读[T1实际验收](../benchmarks/p65-mujoco-tyx-rotational-tree.md)。产品/测试 `71ea1dc0` 完成固定根1–8DOF hinge/slide混合树：解释21、CUDA17、相邻8项，新wheel源码外两路径各48 world-steps。每步重算完整FK/J/M/bias，支持welded body、偏心惯量/外载、弹簧与affine驱动；Env/PolicyRunner动作保持、selected reset及实际晚故障回滚已核。T0 disabled-group force-clamp修复另有6项通过。所有组已结束，不重跑同源绿组。

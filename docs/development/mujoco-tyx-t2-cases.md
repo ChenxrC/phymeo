@@ -39,3 +39,7 @@ gyro0另用解析M=diag(mI,Ibody)、bias=(0,omega×Iomega)、角加速度检验�
 W1/W4稀疏ID、不同初态/控制、selected reset/clone后下一步；实际download之后故障全batch不发布并原请求重试；实际step禁CPU/Warp/HOST/NumPy求解；FP32 overflow不替换任何控制；strict scalar limit越界全拒；30scalar、ball、free spring、潜在接触等显式拒绝。所有case和门在实际执行之前固定，不在观测输出后追改。
 
 本矩阵不是G1支撑/接触/摩擦验收，也不是29关节长窗性能保证。Parent另做Env/PolicyRunner和新wheel源码外连接。首次执行结果由父单独追加，不倒灌作者历史。
+
+## 父实际验证追加（2026-11-10）
+
+以上预登记输入、步数和容差未变。产品/测试 `1cb47675` 的完整解释20项、CUDA16项首轮通过（含父ENV用例），相邻10项及源码外新wheel两路径通过。原作者UNEXECUTED描述保留为历史；当前结果和完整边界见[正式验收](../benchmarks/p65-mujoco-tyx-floating-tree.md)。

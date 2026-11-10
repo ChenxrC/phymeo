@@ -82,7 +82,27 @@ def extended_contacts(
                     mc = mc + b * b
                     u = u - a * d
                     v = v + b * d
-                det = ma * mc - mb * mb
+                # Equivalent Gram determinant and line numerators without
+                # subtracting nearly equal squared dot products in FP32.
+                det = 0.0
+                numerator1 = 0.0
+                numerator2 = 0.0
+                for i in range(3):
+                    j = (i + 1) % 3
+                    k = (i + 2) % 3
+                    cross = (
+                        extended_scratch[w, 0, j] * extended_scratch[w, 1, k]
+                        - extended_scratch[w, 0, k] * extended_scratch[w, 1, j]
+                    )
+                    dj = geom_world[w, ga, j] - geom_world[w, gb, j]
+                    dk = geom_world[w, ga, k] - geom_world[w, gb, k]
+                    det = det + cross * cross
+                    numerator1 = numerator1 + cross * (
+                        extended_scratch[w, 1, j] * dk - extended_scratch[w, 1, k] * dj
+                    )
+                    numerator2 = numerator2 + cross * (
+                        extended_scratch[w, 0, j] * dk - extended_scratch[w, 0, k] * dj
+                    )
                 attempts = 1
                 if tx.abs(det) < minimum:
                     attempts = 4
@@ -94,8 +114,8 @@ def extended_contacts(
                         x1 = 0.0
                         x2 = 0.0
                         if attempts == 1:
-                            x1 = (mc * u - mb * v) / det
-                            x2 = (ma * v - mb * u) / det
+                            x1 = numerator1 / det
+                            x2 = numerator2 / det
                             if x1 > 1.0:
                                 x1 = 1.0
                                 x2 = (v - mb) / mc
@@ -130,8 +150,11 @@ def extended_contacts(
                                 for i in range(3):
                                     j = (i + 1) % 3
                                     k = (i + 2) % 3
-                                    value = (geom_world[w, ga, 5 + 3 * j] * geom_world[w, gb, 5 + 3 * k]
-                                             - geom_world[w, ga, 5 + 3 * k] * geom_world[w, gb, 5 + 3 * j])
+                                    value = (
+                                        geom_world[w, ga, 5 + 3 * j] * geom_world[w, gb, 5 + 3 * k]
+                                        - geom_world[w, ga, 5 + 3 * k]
+                                        * geom_world[w, gb, 5 + 3 * j]
+                                    )
                                     extended_scratch[w, 3, i] = value
                                     length2 = length2 + value * value
                                 length = tx.sqrt(length2)
@@ -147,7 +170,9 @@ def extended_contacts(
                                 for i in range(3):
                                     normal = extended_scratch[w, 3, i] / length
                                     raw_rows[w, row, 5 + i] = normal
-                                    raw_rows[w, row, 2 + i] = extended_scratch[w, 2, i] + normal * (geom_data[ga, 12] + 0.5 * distance)
+                                    raw_rows[w, row, 2 + i] = extended_scratch[w, 2, i] + normal * (
+                                        geom_data[ga, 12] + 0.5 * distance
+                                    )
                                 n = n + 1
                             else:
                                 status[w] = 1
@@ -158,14 +183,25 @@ def extended_contacts(
                     pos = 0.0
                     axis_component = 0.0
                     for j in range(3):
-                        pos = pos + geom_world[w, gb, 3 + 3 * j + i] * (geom_world[w, ga, j] - geom_world[w, gb, j])
-                        axis_component = axis_component + geom_world[w, gb, 3 + 3 * j + i] * geom_world[w, ga, 5 + 3 * j]
+                        pos = pos + geom_world[w, gb, 3 + 3 * j + i] * (
+                            geom_world[w, ga, j] - geom_world[w, gb, j]
+                        )
+                        axis_component = (
+                            axis_component
+                            + geom_world[w, gb, 3 + 3 * j + i] * geom_world[w, ga, 5 + 3 * j]
+                        )
                     extended_scratch[w, 0, i] = pos
                     extended_scratch[w, 1, i] = axis_component
                     extended_scratch[w, 2, i] = axis_component * geom_data[ga, 13]
                     if axis_component * geom_data[ga, 13] > 0.0:
                         axisdir = axisdir + 1 + i * (i + 1) // 2
-                bestdist = margin + 2.0 * (geom_data[ga, 12] + geom_data[ga, 13] + geom_data[gb, 12] + geom_data[gb, 13] + geom_data[gb, 14])
+                bestdist = margin + 2.0 * (
+                    geom_data[ga, 12]
+                    + geom_data[ga, 13]
+                    + geom_data[gb, 12]
+                    + geom_data[gb, 13]
+                    + geom_data[gb, 14]
+                )
                 best = 0.0
                 bestbox = 0.0
                 cltype = -4
@@ -243,7 +279,9 @@ def extended_contacts(
                                         s1 = 0
                                 distance2 = 0.0
                                 for k in range(3):
-                                    value = extended_scratch[w, 3, k] - extended_scratch[w, 2, k] * x2
+                                    value = (
+                                        extended_scratch[w, 3, k] - extended_scratch[w, 2, k] * x2
+                                    )
                                     if k == j:
                                         value = value + geom_data[gb, 12 + j] * x1
                                     distance2 = distance2 + value * value
@@ -300,7 +338,9 @@ def extended_contacts(
                         ax = cledge
                         ax1 = (ax + 1) % 3
                         ax2 = (ax + 2) % 3
-                        if tx.abs(extended_scratch[w, 1, ax1]) > tx.abs(extended_scratch[w, 1, ax2]):
+                        if tx.abs(extended_scratch[w, 1, ax1]) > tx.abs(
+                            extended_scratch[w, 1, ax2]
+                        ):
                             ax1 = ax2
                         ax2 = 3 - ax - ax1
                         mul = -1.0
@@ -327,7 +367,11 @@ def extended_contacts(
                         if i != clface and extended_scratch[w, 2, i] != 0.0:
                             tip = extended_scratch[w, 0, i] - extended_scratch[w, 2, i] * mul
                             for side in range(2):
-                                value = ((1.0 - 2.0 * side) * geom_data[gb, 12 + i] - tip) / extended_scratch[w, 2, i] * mul
+                                value = (
+                                    ((1.0 - 2.0 * side) * geom_data[gb, 12 + i] - tip)
+                                    / extended_scratch[w, 2, i]
+                                    * mul
+                                )
                                 if value > 0.0:
                                     second = tx.min(second, value)
                     second = second * mul
@@ -343,7 +387,9 @@ def extended_contacts(
                     length2 = 0.0
                     for i in range(3):
                         center = extended_scratch[w, 0, i] + segment * extended_scratch[w, 2, i]
-                        closest = tx.max(-geom_data[gb, 12 + i], tx.min(geom_data[gb, 12 + i], center))
+                        closest = tx.max(
+                            -geom_data[gb, 12 + i], tx.min(geom_data[gb, 12 + i], center)
+                        )
                         extended_scratch[w, 4, i] = center
                         extended_scratch[w, 5, i] = closest - center
                         length2 = length2 + (closest - center) * (closest - center)
@@ -352,11 +398,15 @@ def extended_contacts(
                     if length - radius <= margin:
                         distance = length - radius
                         if length <= minimum:
-                            closest = 2.0 * (geom_data[gb, 12] + geom_data[gb, 13] + geom_data[gb, 14])
+                            closest = 2.0 * (
+                                geom_data[gb, 12] + geom_data[gb, 13] + geom_data[gb, 14]
+                            )
                             for face in range(6):
                                 axis = face // 2
                                 sign = 1.0 - 2.0 * (face % 2)
-                                value = tx.abs(geom_data[gb, 12 + axis] + sign * extended_scratch[w, 4, axis])
+                                value = tx.abs(
+                                    geom_data[gb, 12 + axis] + sign * extended_scratch[w, 4, axis]
+                                )
                                 if closest > value:
                                     closest = value
                                     for i in range(3):
@@ -364,11 +414,16 @@ def extended_contacts(
                                     extended_scratch[w, 5, axis] = sign
                             distance = -closest - radius
                             for i in range(3):
-                                extended_scratch[w, 6, i] = extended_scratch[w, 4, i] + extended_scratch[w, 5, i] * (radius - closest) * 0.5
+                                extended_scratch[w, 6, i] = (
+                                    extended_scratch[w, 4, i]
+                                    + extended_scratch[w, 5, i] * (radius - closest) * 0.5
+                                )
                         else:
                             for i in range(3):
                                 extended_scratch[w, 5, i] = extended_scratch[w, 5, i] / length
-                                extended_scratch[w, 6, i] = extended_scratch[w, 4, i] + extended_scratch[w, 5, i] * (radius + 0.5 * distance)
+                                extended_scratch[w, 6, i] = extended_scratch[
+                                    w, 4, i
+                                ] + extended_scratch[w, 5, i] * (radius + 0.5 * distance)
                         if n < slots:
                             row = start + n
                             raw_rows[w, row, 0] = 1.0
@@ -377,8 +432,16 @@ def extended_contacts(
                                 point = geom_world[w, gb, i]
                                 normal = 0.0
                                 for j in range(3):
-                                    point = point + geom_world[w, gb, 3 + 3 * i + j] * extended_scratch[w, 6, j]
-                                    normal = normal + geom_world[w, gb, 3 + 3 * i + j] * extended_scratch[w, 5, j]
+                                    point = (
+                                        point
+                                        + geom_world[w, gb, 3 + 3 * i + j]
+                                        * extended_scratch[w, 6, j]
+                                    )
+                                    normal = (
+                                        normal
+                                        + geom_world[w, gb, 3 + 3 * i + j]
+                                        * extended_scratch[w, 5, j]
+                                    )
                                 raw_rows[w, row, 2 + i] = point
                                 raw_rows[w, row, 5 + i] = normal
                             n = n + 1
@@ -394,7 +457,9 @@ def extended_contacts(
                 inverse = 0
                 penetration = margin
                 for i in range(3):
-                    penetration = penetration + 3.0 * (geom_data[ga, 12 + i] + geom_data[gb, 12 + i])
+                    penetration = penetration + 3.0 * (
+                        geom_data[ga, 12 + i] + geom_data[gb, 12 + i]
+                    )
                     pa = 0.0
                     pb = 0.0
                     for k in range(3):
@@ -406,7 +471,11 @@ def extended_contacts(
                     for j in range(3):
                         value = 0.0
                         for k in range(3):
-                            value = value + geom_world[w, ga, 3 + 3 * k + i] * geom_world[w, gb, 3 + 3 * k + j]
+                            value = (
+                                value
+                                + geom_world[w, ga, 3 + 3 * k + i]
+                                * geom_world[w, gb, 3 + 3 * k + j]
+                            )
                         extended_scratch[w, i, j] = value
                 if not tx.isfinite(penetration):
                     status[w] = 2
@@ -452,13 +521,44 @@ def extended_contacts(
                                 if k != i:
                                     c3 = c3 + geom_data[ga, 12 + k] * tx.abs(value)
                                 if k != j:
-                                    c3 = c3 + geom_data[gb, 12 + k] * tx.abs(extended_scratch[w, i, 3 - k - j]) / length
+                                    c3 = (
+                                        c3
+                                        + geom_data[gb, 12 + k]
+                                        * tx.abs(extended_scratch[w, i, 3 - k - j])
+                                        / length
+                                    )
                             c3 = c3 - tx.abs(center)
                             if not tx.isfinite(c3):
                                 status[w] = 2
                             if c3 < -margin:
                                 separated = 1
-                            if c3 < penetration * (1.0 - 1.0e-12):
+                            # An exactly shared box axis makes this cross axis
+                            # an already-tested face axis. Preserve the face
+                            # manifold: FP32 roundoff must not turn a redundant
+                            # axis into the different native edge-depth branch.
+                            redundant = 0
+                            for shared in range(3):
+                                if shared != j and tx.abs(extended_scratch[w, i, shared]) == 1.0:
+                                    aligned = 1
+                                    for other in range(3):
+                                        if other != i and extended_scratch[w, other, shared] != 0.0:
+                                            aligned = 0
+                                        if other != shared and extended_scratch[w, i, other] != 0.0:
+                                            aligned = 0
+                                    if aligned == 1:
+                                        redundant = 1
+                                if shared != i and tx.abs(extended_scratch[w, shared, j]) == 1.0:
+                                    aligned = 1
+                                    for other in range(3):
+                                        if other != shared and extended_scratch[w, other, j] != 0.0:
+                                            aligned = 0
+                                        if other != j and extended_scratch[w, shared, other] != 0.0:
+                                            aligned = 0
+                                    if aligned == 1:
+                                        redundant = 1
+                            if (
+                                redundant == 0 or penetration < 0.0
+                            ) and c3 - penetration < -penetration * 1.0e-12:
                                 penetration = c3
                                 cle1 = 0
                                 cle2 = 0
@@ -467,7 +567,9 @@ def extended_contacts(
                                         if (extended_scratch[w, 5, k] > 0.0) != (center < 0.0):
                                             cle1 = cle1 + 1 + k * (k + 1) // 2
                                     if k != j:
-                                        first = (extended_scratch[w, i, 3 - k - j] > 0.0) != (center < 0.0)
+                                        first = (extended_scratch[w, i, 3 - k - j] > 0.0) != (
+                                            center < 0.0
+                                        )
                                         if first != ((k - j + 3) % 3 == 1):
                                             cle2 = cle2 + 1 + k * (k + 1) // 2
                                     extended_scratch[w, 15, k] = extended_scratch[w, 5, k]
@@ -503,10 +605,14 @@ def extended_contacts(
                             pax1 = 0
                         elif q1 == 2:
                             pax2 = 0
-                        if tx.abs(extended_scratch[w, q1, ax1]) < tx.abs(extended_scratch[w, q1, ax2]):
+                        if tx.abs(extended_scratch[w, q1, ax1]) < tx.abs(
+                            extended_scratch[w, q1, ax2]
+                        ):
                             ax1 = ax2
                             ax2 = 3 - q2 - ax1
-                        if tx.abs(extended_scratch[w, pax1, q2]) < tx.abs(extended_scratch[w, pax2, q2]):
+                        if tx.abs(extended_scratch[w, pax1, q2]) < tx.abs(
+                            extended_scratch[w, pax2, q2]
+                        ):
                             pax1 = pax2
                             pax2 = 3 - q1 - pax1
                         face = pax2
@@ -550,7 +656,10 @@ def extended_contacts(
                             pos = pos + extended_scratch[w, 6 + i, k] * relative
                             size = size + extended_scratch[w, 6 + i, k] * geom_data[ref, 12 + k]
                             if code >= 12:
-                                rnormal = rnormal + extended_scratch[w, 6 + i, k] * extended_scratch[w, 15, k]
+                                rnormal = (
+                                    rnormal
+                                    + extended_scratch[w, 6 + i, k] * extended_scratch[w, 15, k]
+                                )
                         extended_scratch[w, 12, i] = pos
                         extended_scratch[w, 13, i] = tx.abs(size)
                         extended_scratch[w, 14, i] = geom_data[incident, 12 + i]
@@ -564,7 +673,11 @@ def extended_contacts(
                                 if ref == gb:
                                     relative = extended_scratch[w, j, k]
                                 value = value + extended_scratch[w, 6 + i, k] * relative
-                                world = world + geom_world[w, ref, 3 + 3 * i + k] * extended_scratch[w, 6 + j, k]
+                                world = (
+                                    world
+                                    + geom_world[w, ref, 3 + 3 * i + k]
+                                    * extended_scratch[w, 6 + j, k]
+                                )
                             extended_scratch[w, 9 + i, j] = value
                             extended_scratch[w, 44 + i, j] = world
                     lx = extended_scratch[w, 13, 0]
@@ -579,7 +692,9 @@ def extended_contacts(
                         for k in range(3):
                             value = extended_scratch[w, 12, k]
                             for i in range(3):
-                                value = value + extended_scratch[w, 9 + k, i] * extended_scratch[w, 14, i] * (2.0 * _bit(clcorner, i) - 1.0)
+                                value = value + extended_scratch[w, 9 + k, i] * extended_scratch[
+                                    w, 14, i
+                                ] * (2.0 * _bit(clcorner, i) - 1.0)
                             extended_scratch[w, 17, k] = value
                             extended_scratch[w, 18, k] = 0.0
                             extended_scratch[w, 19, k] = 0.0
@@ -588,7 +703,11 @@ def extended_contacts(
                             if tx.abs(extended_scratch[w, 11, i]) < 0.5:
                                 if directions < 2:
                                     for k in range(3):
-                                        extended_scratch[w, 18 + directions, k] = extended_scratch[w, 9 + k, i] * extended_scratch[w, 14, i] * (2.0 - 4.0 * _bit(clcorner, i))
+                                        extended_scratch[w, 18 + directions, k] = (
+                                            extended_scratch[w, 9 + k, i]
+                                            * extended_scratch[w, 14, i]
+                                            * (2.0 - 4.0 * _bit(clcorner, i))
+                                        )
                                     directions = directions + 1
                                 else:
                                     status[w] = 1
@@ -619,10 +738,17 @@ def extended_contacts(
                                         boundary = extended_scratch[w, 13, q] * (-1.0 + 2.0 * side)
                                         t = (boundary - a) / b
                                         other = c + d * t
-                                        if t >= 0.0 and t <= 1.0 and tx.abs(other) <= extended_scratch[w, 13, 1 - q]:
+                                        if (
+                                            t >= 0.0
+                                            and t <= 1.0
+                                            and tx.abs(other) <= extended_scratch[w, 13, 1 - q]
+                                        ):
                                             if n < slots and n < 24:
                                                 for k in range(3):
-                                                    raw_rows[w, start + n, 2 + k] = extended_scratch[w, 28 + line, k] + extended_scratch[w, 32 + line, k] * t
+                                                    raw_rows[w, start + n, 2 + k] = (
+                                                        extended_scratch[w, 28 + line, k]
+                                                        + extended_scratch[w, 32 + line, k] * t
+                                                    )
                                                 n = n + 1
                                             else:
                                                 status[w] = 1
@@ -646,7 +772,11 @@ def extended_contacts(
                                         if n < slots and n < 24:
                                             raw_rows[w, start + n, 2] = x
                                             raw_rows[w, start + n, 3] = y
-                                            raw_rows[w, start + n, 4] = extended_scratch[w, 17, 2] + u * extended_scratch[w, 18, 2] + v * extended_scratch[w, 19, 2]
+                                            raw_rows[w, start + n, 4] = (
+                                                extended_scratch[w, 17, 2]
+                                                + u * extended_scratch[w, 18, 2]
+                                                + v * extended_scratch[w, 19, 2]
+                                            )
                                             n = n + 1
                                         else:
                                             status[w] = 1
@@ -663,7 +793,10 @@ def extended_contacts(
                                 extended_scratch[w, 48, k] = value
                             inside = 1
                             if corner != 0:
-                                if tx.abs(extended_scratch[w, 48, 0]) >= lx or tx.abs(extended_scratch[w, 48, 1]) >= ly:
+                                if (
+                                    tx.abs(extended_scratch[w, 48, 0]) >= lx
+                                    or tx.abs(extended_scratch[w, 48, 1]) >= ly
+                                ):
                                     inside = 0
                             if inside == 1:
                                 if n < slots and n < 24:
@@ -694,10 +827,18 @@ def extended_contacts(
                             sign2 = 2.0 * _bit(cle2, ax2) - 1.0
                             signq = 1.0 - 2.0 * (vertex % 2)
                             for i in range(3):
-                                value = (extended_scratch[w, 12, i]
-                                         + extended_scratch[w, 9 + i, ax1] * geom_data[gb, 12 + ax1] * sign1
-                                         + extended_scratch[w, 9 + i, ax2] * geom_data[gb, 12 + ax2] * sign2
-                                         + extended_scratch[w, 9 + i, q2] * geom_data[gb, 12 + q2] * signq)
+                                value = (
+                                    extended_scratch[w, 12, i]
+                                    + extended_scratch[w, 9 + i, ax1]
+                                    * geom_data[gb, 12 + ax1]
+                                    * sign1
+                                    + extended_scratch[w, 9 + i, ax2]
+                                    * geom_data[gb, 12 + ax2]
+                                    * sign2
+                                    + extended_scratch[w, 9 + i, q2]
+                                    * geom_data[gb, 12 + q2]
+                                    * signq
+                                )
                                 extended_scratch[w, 20 + vertex, i] = value
                         rnz = extended_scratch[w, 16, 2]
                         if tx.abs(rnz) >= minimum:
@@ -707,20 +848,35 @@ def extended_contacts(
                             for vertex in range(4):
                                 scale = -extended_scratch[w, 20 + vertex, 2] / rnz
                                 for i in range(3):
-                                    extended_scratch[w, 24 + vertex, i] = extended_scratch[w, 20 + vertex, i] + extended_scratch[w, 16, i] * scale
+                                    extended_scratch[w, 24 + vertex, i] = (
+                                        extended_scratch[w, 20 + vertex, i]
+                                        + extended_scratch[w, 16, i] * scale
+                                    )
                             for i in range(3):
                                 extended_scratch[w, 17, i] = extended_scratch[w, 24, i]
-                                extended_scratch[w, 18, i] = extended_scratch[w, 25, i] - extended_scratch[w, 24, i]
-                                extended_scratch[w, 19, i] = extended_scratch[w, 26, i] - extended_scratch[w, 24, i]
+                                extended_scratch[w, 18, i] = (
+                                    extended_scratch[w, 25, i] - extended_scratch[w, 24, i]
+                                )
+                                extended_scratch[w, 19, i] = (
+                                    extended_scratch[w, 26, i] - extended_scratch[w, 24, i]
+                                )
                             for line in range(4):
                                 for i in range(3):
                                     base = extended_scratch[w, 24, i]
-                                    direction = extended_scratch[w, 25, i] - extended_scratch[w, 24, i]
+                                    direction = (
+                                        extended_scratch[w, 25, i] - extended_scratch[w, 24, i]
+                                    )
                                     original = extended_scratch[w, 20, i]
-                                    original_direction = extended_scratch[w, 21, i] - extended_scratch[w, 20, i]
+                                    original_direction = (
+                                        extended_scratch[w, 21, i] - extended_scratch[w, 20, i]
+                                    )
                                     if line == 1 or line == 2:
-                                        direction = extended_scratch[w, 26, i] - extended_scratch[w, 24, i]
-                                        original_direction = extended_scratch[w, 22, i] - extended_scratch[w, 20, i]
+                                        direction = (
+                                            extended_scratch[w, 26, i] - extended_scratch[w, 24, i]
+                                        )
+                                        original_direction = (
+                                            extended_scratch[w, 22, i] - extended_scratch[w, 20, i]
+                                        )
                                     if line == 2:
                                         base = extended_scratch[w, 25, i]
                                         original = extended_scratch[w, 21, i]
@@ -738,17 +894,32 @@ def extended_contacts(
                                     d = extended_scratch[w, 32 + line, 1 - q]
                                     if tx.abs(b) > minimum:
                                         for side in range(2):
-                                            boundary = extended_scratch[w, 13, q] * (-1.0 + 2.0 * side)
+                                            boundary = extended_scratch[w, 13, q] * (
+                                                -1.0 + 2.0 * side
+                                            )
                                             t = (boundary - a) / b
                                             other = c + d * t
-                                            depth = (extended_scratch[w, 36 + line, 2] + extended_scratch[w, 40 + line, 2] * t) * innorm
-                                            if t >= 0.0 and t <= 1.0 and tx.abs(other) <= extended_scratch[w, 13, 1 - q] and depth <= margin:
+                                            depth = (
+                                                extended_scratch[w, 36 + line, 2]
+                                                + extended_scratch[w, 40 + line, 2] * t
+                                            ) * innorm
+                                            if (
+                                                t >= 0.0
+                                                and t <= 1.0
+                                                and tx.abs(other) <= extended_scratch[w, 13, 1 - q]
+                                                and depth <= margin
+                                            ):
                                                 if n < slots and n < 24:
                                                     row = start + n
                                                     raw_rows[w, row, 0] = 1.0
                                                     raw_rows[w, row, 1] = depth
                                                     for i in range(3):
-                                                        value = 0.5 * extended_scratch[w, 36 + line, i] + 0.5 * t * extended_scratch[w, 40 + line, i]
+                                                        value = (
+                                                            0.5 * extended_scratch[w, 36 + line, i]
+                                                            + 0.5
+                                                            * t
+                                                            * extended_scratch[w, 40 + line, i]
+                                                        )
                                                         if i == q:
                                                             value = value + 0.5 * boundary
                                                         elif i == 1 - q:
@@ -786,18 +957,25 @@ def extended_contacts(
                                         v = tx.max(0.0, tx.min(1.0, v))
                                         distance2 = 0.0
                                         for i in range(3):
-                                            value = (extended_scratch[w, 20, i] * (1.0 - u - v)
-                                                     + extended_scratch[w, 21, i] * u
-                                                     + extended_scratch[w, 22, i] * v)
+                                            value = (
+                                                extended_scratch[w, 20, i] * (1.0 - u - v)
+                                                + extended_scratch[w, 21, i] * u
+                                                + extended_scratch[w, 22, i] * v
+                                            )
                                             extended_scratch[w, 48, i] = value
                                             target = 0.0
                                             if i == 0:
                                                 target = x
                                             elif i == 1:
                                                 target = y
-                                            distance2 = distance2 + (target - value) * (target - value)
+                                            distance2 = distance2 + (target - value) * (
+                                                target - value
+                                            )
                                         denominator = distance2
-                                        if extended_scratch[w, 48, 2] <= 0.0 or distance2 <= margin * margin:
+                                        if (
+                                            extended_scratch[w, 48, 2] <= 0.0
+                                            or distance2 <= margin * margin
+                                        ):
                                             if n < slots and n < 24:
                                                 row = start + n
                                                 depth = tx.sqrt(distance2)
@@ -805,9 +983,15 @@ def extended_contacts(
                                                     depth = -depth
                                                 raw_rows[w, row, 0] = 1.0
                                                 raw_rows[w, row, 1] = depth
-                                                raw_rows[w, row, 2] = 0.5 * (x + extended_scratch[w, 48, 0])
-                                                raw_rows[w, row, 3] = 0.5 * (y + extended_scratch[w, 48, 1])
-                                                raw_rows[w, row, 4] = 0.5 * extended_scratch[w, 48, 2]
+                                                raw_rows[w, row, 2] = 0.5 * (
+                                                    x + extended_scratch[w, 48, 0]
+                                                )
+                                                raw_rows[w, row, 3] = 0.5 * (
+                                                    y + extended_scratch[w, 48, 1]
+                                                )
+                                                raw_rows[w, row, 4] = (
+                                                    0.5 * extended_scratch[w, 48, 2]
+                                                )
                                                 n = n + 1
                                             else:
                                                 status[w] = 1
@@ -827,9 +1011,16 @@ def extended_contacts(
                                     distance2 = 0.0
                                     for i in range(2):
                                         projected = extended_scratch[w, 24 + vertex, i]
-                                        limited = tx.max(-extended_scratch[w, 13, i], tx.min(extended_scratch[w, 13, i], projected))
-                                        distance2 = distance2 + (projected - limited) * (projected - limited)
-                                        extended_scratch[w, 48, i] = 0.5 * (limited + extended_scratch[w, 20 + vertex, i])
+                                        limited = tx.max(
+                                            -extended_scratch[w, 13, i],
+                                            tx.min(extended_scratch[w, 13, i], projected),
+                                        )
+                                        distance2 = distance2 + (projected - limited) * (
+                                            projected - limited
+                                        )
+                                        extended_scratch[w, 48, i] = 0.5 * (
+                                            limited + extended_scratch[w, 20 + vertex, i]
+                                        )
                                     z = extended_scratch[w, 20 + vertex, 2]
                                     distance2 = distance2 + z * innorm * z * innorm
                                     if z <= 0.0 or distance2 <= margin * margin:
@@ -862,8 +1053,14 @@ def extended_contacts(
                             point = extended_scratch[w, 47, i]
                             normal = 0.0
                             for j in range(3):
-                                point = point + extended_scratch[w, 44 + i, j] * extended_scratch[w, 48, j]
-                                normal = normal + extended_scratch[w, 44 + i, j] * extended_scratch[w, 16, j]
+                                point = (
+                                    point
+                                    + extended_scratch[w, 44 + i, j] * extended_scratch[w, 48, j]
+                                )
+                                normal = (
+                                    normal
+                                    + extended_scratch[w, 44 + i, j] * extended_scratch[w, 16, j]
+                                )
                             raw_rows[w, row, 2 + i] = point
                             raw_rows[w, row, 5 + i] = normal
                         out1 = 0
@@ -877,7 +1074,9 @@ def extended_contacts(
                             for i in range(3):
                                 local = 0.0
                                 for j in range(3):
-                                    local = local + geom_world[w, g, 3 + 3 * j + i] * (raw_rows[w, row, 2 + j] - geom_world[w, g, j])
+                                    local = local + geom_world[w, g, 3 + 3 * j + i] * (
+                                        raw_rows[w, row, 2 + j] - geom_world[w, g, j]
+                                    )
                                 size = geom_data[g, 12 + i] + margin
                                 if tx.abs(local) > 1.01 * size:
                                     outside = 1
@@ -902,7 +1101,10 @@ def extended_contacts(
                                 if duplicate == 0 and raw_rows[w, start + j, 0] == 1.0:
                                     same = 1
                                     for k in range(3):
-                                        if raw_rows[w, start + i, 2 + k] != raw_rows[w, start + j, 2 + k]:
+                                        if (
+                                            raw_rows[w, start + i, 2 + k]
+                                            != raw_rows[w, start + j, 2 + k]
+                                        ):
                                             same = 0
                                     if same == 1:
                                         duplicate = 1

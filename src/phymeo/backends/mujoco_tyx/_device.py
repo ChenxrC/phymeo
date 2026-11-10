@@ -136,6 +136,7 @@ class TyxDevice:
                     ("q", self.q[target]),
                     ("v", self.v[target]),
                     ("time", self.time[target]),
+                    ("input_time", self.time[self.active]),
                     ("qacc", self.acceleration),
                     ("integration_acc", self.integration_acc),
                     ("actuator", self.actuator),

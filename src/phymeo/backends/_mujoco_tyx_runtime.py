@@ -3,9 +3,9 @@
 The source-bound MjModel is decoded once. No per-step mj_step, mj_forward,
 Warp import or inherited Phymeo contact law implements dynamics. Explicit
 snapshot() observation uses a detached CPU forward pass and is labelled as
-such. The fixed hinge/slide tree recomputes full dynamics each step and admits
-no possible contact pairs; the original constant-mass single-normal domain
-remains a separate route.
+such. Fixed and floating trees recompute full dynamics each step. Admitted
+primitive manifolds share one normal QP; the original constant-mass
+single-normal domain remains a separate route.
 """
 
 import copy
@@ -139,7 +139,8 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
     Floating domain: one native free root and 0..29 hinge/slide joints, full
     root/joint coupling, origin world linear and local angular velocities.
     Rotational domain: fixed-root 1..8 hinge/slide DOFs, complete live M/J/bias,
-    welded bodies and off-center world wrenches, without possible contact pairs.
+    welded bodies and off-center world wrenches. Both tree domains admit the
+    bounded primitive condim=1 manifold with coupled normal forces.
     Original domain: 1..8 all-prismatic native DOFs with full coupled static
     mass, stateless direct/affine motors, scalar stiffness/armature/damping; or
     one centered isotropic free body, with native local angular coordinates and
@@ -218,6 +219,19 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
         if getattr(self._plan, "normal_contact", False):
             info.update(
                 normal_candidate_slots=len(self._plan.slot_ids),
+                normal_geometry_launches=2 if self._plan.extended_contacts else 1,
+                normal_pair_families=(
+                    "plane-sphere",
+                    "plane-capsule",
+                    "plane-box",
+                    "sphere-sphere",
+                    "sphere-capsule",
+                    "sphere-box",
+                    "capsule-capsule",
+                    "capsule-box",
+                    "box-box",
+                ),
+                extended_feature_identity="current-manifold-local-ordinal",
                 solver_tolerance=self._plan.solver_tolerance,
                 solver_iteration_semantics="source-iterations-as-active-set-face-solve-budget",
                 warmstart="cold-feasible-zero-force",
@@ -231,12 +245,13 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
     def _pack_states(self, data):
         q = np.zeros((len(self._world_keys), max(8, self._plan.nq)), np.float32)
         v = np.zeros((len(self._world_keys), max(8, self._plan.nv)), np.float32)
-        clock = np.zeros(len(self._world_keys), np.float32)
+        clock = np.zeros((len(self._world_keys), 2), np.float32)
         for index, key in enumerate(self._world_keys):
             original = data[key]
             q[index, : self._plan.nq] = fp32(original.qpos, "initial qpos")
             v[index, : self._plan.nv] = fp32(original.qvel, "initial qvel")
-            clock[index] = fp32(original.time, "initial time").item()
+            clock[index, 0] = fp32(original.time, "initial time").item()
+            clock[index, 1] = np.float32(float(clock[index, 0]) - original.time)
             if self._plan.kind == 3:
                 scalar = np.flatnonzero(
                     np.isin(
@@ -288,7 +303,7 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
         for index, key in enumerate(self._world_keys):
             self._data[key].qpos[:] = q[index, : self._plan.nq]
             self._data[key].qvel[:] = v[index, : self._plan.nv]
-            self._data[key].time = time[index]
+            self._data[key].time = float(time[index, 0]) - float(time[index, 1])
 
     def set_controls(self, mapping):
         with self._lock:
@@ -484,13 +499,21 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                     candidate.xfrc_applied[:] = stored[key].xfrc_applied
                     candidate.qfrc_actuator[:] = result["actuator"][index, : self._plan.nv]
                     candidate.qfrc_constraint[:] = result["constraint"][index, : self._plan.nv]
-                    candidate.time = float(result["time"][index])
+                    old_clock = result["input_time"][index]
+                    new_clock = result["time"][index]
+                    candidate.time = float(new_clock[0]) - float(new_clock[1])
                     self._finite_state(candidate)
-                    expected = float(
-                        np.float32(np.float32(original.time) + np.float32(self._timestep))
-                    )
-                    if candidate.time != expected or candidate.time <= original.time:
-                        raise RuntimeError("TYX did not advance exactly one FP32 native timestep")
+                    increment = np.float32(np.float32(self._timestep) - old_clock[1])
+                    total = np.float32(old_clock[0] + increment)
+                    compensation = np.float32(np.float32(total - old_clock[0]) - increment)
+                    if (
+                        float(old_clock[0]) - float(old_clock[1]) != original.time
+                        or not np.array_equal(new_clock, [total, compensation])
+                        or candidate.time <= original.time
+                    ):
+                        raise RuntimeError(
+                            "TYX clock did not perform one compensated device timestep"
+                        )
                     ticks[key] = self._ticks[key] + 1
                     if ticks[key] > np.iinfo(np.int32).max:
                         raise RuntimeError("TYX logical tick exceeds i32 capacity")
@@ -510,7 +533,7 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                             smooth_acceleration=_frozen(result["smooth_acceleration"][index, :n]),
                             input_q=_frozen(result["input_q"][index, : self._plan.nq]),
                             input_v=_frozen(result["input_v"][index, :n]),
-                            time=float(result["input_time"][index]),
+                            time=float(old_clock[0]) - float(old_clock[1]),
                         )
                     if getattr(self._plan, "normal_contact", False):
                         contacts, raw_fields = self._normal_publication(result, index)

@@ -384,10 +384,10 @@ def solve(
     applied: tx.ndarray(tx.f32, 2),
     q: tx.ndarray(tx.f32, 2),
     v: tx.ndarray(tx.f32, 2),
-    clock: tx.ndarray(tx.f32, 1),
+    clock: tx.ndarray(tx.f32, 2),
     qnext: tx.ndarray(tx.f32, 2),
     vnext: tx.ndarray(tx.f32, 2),
-    tnext: tx.ndarray(tx.f32, 1),
+    tnext: tx.ndarray(tx.f32, 2),
     factor: tx.ndarray(tx.f32, 3),
     rhs: tx.ndarray(tx.f32, 2),
     forward: tx.ndarray(tx.f32, 2),
@@ -455,8 +455,13 @@ def solve(
                 or not tx.isfinite(acceleration[w, i])
             ):
                 status[w] = 2
-        tnext[w] = clock[w] + h
-        if not tx.isfinite(tnext[w]) or tnext[w] <= clock[w]:
+        # Kahan clock: keep the rounding compensation in the transaction buffer.
+        increment = h - clock[w, 1]
+        total = clock[w, 0] + increment
+        compensation = (total - clock[w, 0]) - increment
+        tnext[w, 0] = total
+        tnext[w, 1] = compensation
+        if not tx.isfinite(total) or not tx.isfinite(compensation) or total <= clock[w, 0]:
             status[w] = 2
 
 

@@ -48,6 +48,7 @@ class TyxNormalModel:
     slot_ids: np.ndarray
     solver_tolerance: float
     solver_iterations: int
+    extended_contacts: bool = False
     normal_contact: bool = True
 
     def __getattr__(self, name):
@@ -70,6 +71,10 @@ def compile_normal_model(mj, model, pairs):
         (int(mj.mjtGeom.mjGEOM_SPHERE), int(mj.mjtGeom.mjGEOM_SPHERE)): 1,
         (int(mj.mjtGeom.mjGEOM_SPHERE), int(mj.mjtGeom.mjGEOM_CAPSULE)): 1,
         (int(mj.mjtGeom.mjGEOM_SPHERE), int(mj.mjtGeom.mjGEOM_BOX)): 1,
+        (int(mj.mjtGeom.mjGEOM_CAPSULE), int(mj.mjtGeom.mjGEOM_CAPSULE)): 2,
+        (int(mj.mjtGeom.mjGEOM_CAPSULE), int(mj.mjtGeom.mjGEOM_BOX)): 2,
+        # CPU raw box manifold enumerates up to 24 candidates before filtering.
+        (int(mj.mjtGeom.mjGEOM_BOX), int(mj.mjtGeom.mjGEOM_BOX)): 24,
     }
     pair_ids, laws, frictions, slots = [], [], [], []
     for pair_index, (left, right) in enumerate(pairs):
@@ -125,4 +130,5 @@ def compile_normal_model(mj, model, pairs):
         slot_ids=np.asarray(slots, np.int32),
         solver_tolerance=fp32(max(float(model.opt.tolerance), 2e-5), "normal KKT tolerance").item(),
         solver_iterations=int(model.opt.iterations),
+        extended_contacts=any(int(model.geom_type[left]) >= 3 for left, _ in pairs),
     )

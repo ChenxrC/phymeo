@@ -56,3 +56,11 @@ nonnegative force QP. Phymeo supplies a bounded TYX dual active-set solver,
 explicitly distinct from native Newton/CG iteration and warmstart behavior.
 Existing TYX tree dynamics and Euler integration consume its complete J^T f
 in one candidate step. No native CPU or Warp contact solver runs per step.
+
+T3b finite pairs (_normal_extended_geometry.py and _normal_geometry.py):
+capsule-capsule, capsule-box and box-box follow MuJoCo 3.3.7
+engine_collision_primitive.c, engine_collision_box.c and driver filtering.
+The CPU parallel capsule manifold, box distance and stable filter/dedup rules
+take precedence over differing mujoco-warp v0.0.2 primitive-core behavior.
+The imperative algorithms use new bounded TYX buffers/loops, with full raw
+box candidate storage instead of truncation to Warp's eight outputs.

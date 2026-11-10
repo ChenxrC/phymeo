@@ -37,10 +37,10 @@ def advance(
     body_force: tx.ndarray(tx.f32, 3),
     q: tx.ndarray(tx.f32, 2),
     v: tx.ndarray(tx.f32, 2),
-    clock: tx.ndarray(tx.f32, 1),
+    clock: tx.ndarray(tx.f32, 2),
     qnext: tx.ndarray(tx.f32, 2),
     vnext: tx.ndarray(tx.f32, 2),
-    tnext: tx.ndarray(tx.f32, 1),
+    tnext: tx.ndarray(tx.f32, 2),
     force: tx.ndarray(tx.f32, 2),
     smooth_acc: tx.ndarray(tx.f32, 2),
     acceleration: tx.ndarray(tx.f32, 2),
@@ -241,8 +241,13 @@ def advance(
             qnext[w, 4] = nx / length
             qnext[w, 5] = ny / length
             qnext[w, 6] = nz / length
-        tnext[w] = clock[w] + h
-        if not tx.isfinite(tnext[w]) or tnext[w] <= clock[w]:
+        # Kahan clock: keep the rounding compensation in the transaction buffer.
+        increment = h - clock[w, 1]
+        total = clock[w, 0] + increment
+        compensation = (total - clock[w, 0]) - increment
+        tnext[w, 0] = total
+        tnext[w, 1] = compensation
+        if not tx.isfinite(total) or not tx.isfinite(compensation) or total <= clock[w, 0]:
             status[w] = 2
         for i in range(nq):
             if not tx.isfinite(qnext[w, i]):

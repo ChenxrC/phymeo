@@ -8,16 +8,22 @@ from ._tree_device import TyxTreeDevice
 
 
 class TyxNormalDevice(TyxDevice):
-    """Cold-start normal QP, five launches, one candidate publication boundary."""
+    """Cold-start normal QP, five/six launches, one publication boundary."""
 
     def __init__(self, plan, mode, cache_root, q, v, time, nbody, h, capacities):
         from . import _normal_geometry, _normal_solver
 
+        extended_contacts = None
+        if plan.extended_contacts:
+            from . import _normal_extended_geometry
+
+            extended_contacts = _normal_extended_geometry.extended_contacts
         self._base_type = TyxFloatingDevice if plan.base.kind == 3 else TyxTreeDevice
         self._base_type.__init__(self, plan, mode, cache_root, q, v, time, nbody, h, capacities)
         self.capacities = tuple(map(int, capacities))
         self.contacts = (_normal_geometry.contacts, _normal_geometry.contacts_other)
         self.normal_solve = _normal_solver.solve
+        self.extended_contacts = extended_contacts
         self.ngeom = len(plan.geom_ids)
         self.npair = len(plan.pair_ids)
         self.nslot = len(plan.slot_ids)
@@ -34,6 +40,10 @@ class TyxNormalDevice(TyxDevice):
                     np.zeros((self.nworld, self.nslot, self.width), np.float32)
                 )
                 self.contact_work = self._buffer(np.zeros((self.nworld, 8, 3), np.float32))
+                self.raw_contacts = self._buffer(
+                    np.zeros((self.nworld, self.nslot, 11), np.float32)
+                )
+                self.extended_work = self._buffer(np.zeros((self.nworld, 64, 3), np.float32))
                 self.solver_diagnostics = self._buffer(np.zeros((self.nworld, 8), np.float32))
                 self.normal_factor = self._buffer(
                     np.zeros((self.nworld, self.width, self.width), np.float32)
@@ -127,6 +137,25 @@ class TyxNormalDevice(TyxDevice):
                 mode=self.mode,
             )
             self.counts["completed_kernels"] += 1
+            if self.extended_contacts is not None:
+                self.extended_contacts(
+                    self.nworld,
+                    self.ngeom,
+                    self.npair,
+                    self.nslot,
+                    self.geom_ids,
+                    self.geom_data,
+                    self.pair_ids,
+                    self.pair_law,
+                    self.motion,
+                    self.rotation,
+                    self.geom_world,
+                    self.raw_contacts,
+                    self.extended_work,
+                    self.status,
+                    mode=self.mode,
+                )
+                self.counts["completed_kernels"] += 1
             self.contacts[old](
                 self.nworld,
                 self.plan.nv,
@@ -147,6 +176,7 @@ class TyxNormalDevice(TyxDevice):
                 self.normal_rows,
                 self.normal_jacobian,
                 self.contact_work,
+                self.raw_contacts,
                 self.solver_diagnostics,
                 self.status,
                 mode=self.mode,

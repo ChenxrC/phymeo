@@ -52,8 +52,17 @@ def _joint(name, *, kind="hinge", axis="0 1 0", anchor="0 0 0", ref="0", extra="
     )
 
 
-def _body(name, joint="", child="", *, pos=".1 .02 .04", quat="1 0 0 0",
-          mass="1.1", com=".04 -.03 .02", inertia=".02 .025 .03 .001 -.0005 .0008"):
+def _body(
+    name,
+    joint="",
+    child="",
+    *,
+    pos=".1 .02 .04",
+    quat="1 0 0 0",
+    mass="1.1",
+    com=".04 -.03 .02",
+    inertia=".02 .025 .03 .001 -.0005 .0008",
+):
     return f'''<body name="{name}" pos="{pos}" quat="{quat}">{joint}
       <inertial mass="{mass}" pos="{com}" fullinertia="{inertia}"/>
       <geom name="{name}-visual" type="box" size=".04 .03 .05" contype="0" conaffinity="0"/>
@@ -62,7 +71,7 @@ def _body(name, joint="", child="", *, pos=".1 .02 .04", quat="1 0 0 0",
 
 def _model(name, body, joints, *, gravity=".2 -.3 -9.81", gears=None, extra=""):
     gears = tuple(1 if index % 2 else 2 for index in range(len(joints))) if gears is None else gears
-    motors = ''.join(
+    motors = "".join(
         f'<motor name="motor-{index}" joint="{joint}" gear="{gear}" '
         'ctrllimited="true" ctrlrange="-.4 .4" forcelimited="true" forcerange="-.35 .35"/>'
         for index, (joint, gear) in enumerate(zip(joints, gears, strict=True))
@@ -73,68 +82,118 @@ def _model(name, body, joints, *, gravity=".2 -.3 -9.81", gears=None, extra=""):
 
 
 def _chain(count):
-    child = ''
+    child = ""
     axes = ("0 1 0", "1 0 0", "0 0 1")
     for index in reversed(range(count)):
-        joint = _joint(f"j{index}", axis=axes[index % 3], anchor=".01 -.02 .015",
-                       ref=str(.025 * (index + 1)))
-        child = _body(f"link{index}", joint, child,
-                      quat=".9659258262890683 0 0 .2588190451025207")
+        joint = _joint(
+            f"j{index}", axis=axes[index % 3], anchor=".01 -.02 .015", ref=str(0.025 * (index + 1))
+        )
+        child = _body(f"link{index}", joint, child, quat=".9659258262890683 0 0 .2588190451025207")
     return _model(f"chain-{count}", child, tuple(f"j{i}" for i in range(count)))
 
 
-PENDULUM_XML = '''<mujoco model="eccentric-pendulum"><compiler angle="radian"/>
+PENDULUM_XML = """<mujoco model="eccentric-pendulum"><compiler angle="radian"/>
 <option timestep=".001" gravity="0 0 -9.81" integrator="Euler"/>
 <worldbody><body name="pendulum" pos=".1 -.08 .25">
 <joint name="j0" type="hinge" axis="0 1 0" ref=".125" armature=".11" damping=".17"/>
 <inertial mass="2" pos=".4 0 0" diaginertia=".03 .07 .08"/>
 <geom name="shape" type="sphere" size=".05" contype="0" conaffinity="0"/>
 </body></worldbody><actuator><motor name="motor-0" joint="j0" gear="2"
- ctrllimited="true" ctrlrange="-2 2"/></actuator></mujoco>'''
+ ctrllimited="true" ctrlrange="-2 2"/></actuator></mujoco>"""
 
 DOUBLE_XML = _model(
     "double-pendulum",
-    _body("upper", _joint("j0", ref=".05"),
-          _body("lower", _joint("j1", axis="0 1 0", ref="-.07"),
-                pos=".45 0 .03", com=".2 .01 -.03", mass=".8"),
-          pos="0 0 .4", com=".22 -.01 .02", mass="1.4"),
+    _body(
+        "upper",
+        _joint("j0", ref=".05"),
+        _body(
+            "lower",
+            _joint("j1", axis="0 1 0", ref="-.07"),
+            pos=".45 0 .03",
+            com=".2 .01 -.03",
+            mass=".8",
+        ),
+        pos="0 0 .4",
+        com=".22 -.01 .02",
+        mass="1.4",
+    ),
     ("j0", "j1"),
 )
 MIXED_XML = _model(
     "mixed-same-body-rp",
-    _body("carriage", _joint("j0", axis="0 0 1", anchor=".02 -.01 .03", ref=".08")
-          + _joint("j1", kind="slide", axis="1 0 0", anchor="-.01 .02 0", ref="-.03"),
-          _body("tip", _joint("j2", axis="1 0 0", anchor=".01 .01 -.02", ref=".04"), mass=".6")),
-    ("j0", "j1", "j2"), gears=(2, -1, .5),
+    _body(
+        "carriage",
+        _joint("j0", axis="0 0 1", anchor=".02 -.01 .03", ref=".08")
+        + _joint("j1", kind="slide", axis="1 0 0", anchor="-.01 .02 0", ref="-.03"),
+        _body("tip", _joint("j2", axis="1 0 0", anchor=".01 .01 -.02", ref=".04"), mass=".6"),
+    ),
+    ("j0", "j1", "j2"),
+    gears=(2, -1, 0.5),
 )
 FORK_XML = _model(
     "shared-ancestor-fork",
-    _body("shoulder", _joint("j0", axis="0 0 1", ref=".03"),
-          _body("left", _joint("j1", axis="1 0 0", ref="-.04"), pos=".3 .18 .02", mass=".8")
-          + _body("right", _joint("j2", axis="0 1 0", ref=".06"), pos="-.2 -.14 .1", mass="1.5"),
-          pos="0 0 .3", mass="2"),
+    _body(
+        "shoulder",
+        _joint("j0", axis="0 0 1", ref=".03"),
+        _body("left", _joint("j1", axis="1 0 0", ref="-.04"), pos=".3 .18 .02", mass=".8")
+        + _body("right", _joint("j2", axis="0 1 0", ref=".06"), pos="-.2 -.14 .1", mass="1.5"),
+        pos="0 0 .3",
+        mass="2",
+    ),
     ("j0", "j1", "j2"),
 )
 WELDED_XML = _model(
     "welded-tool-load",
-    _body("shoulder", _joint("j0", ref=".04"),
-          _body("wrist", _joint("j1", axis="0 0 1", anchor=".02 -.01 .01", ref="-.06"),
-                _body("tool", pos=".14 -.07 .11", quat=".9238795325112867 .3826834323650898 0 0",
-                      mass=".7", com=".04 .02 -.03"), mass=".9"), mass="1.6")
+    _body(
+        "shoulder",
+        _joint("j0", ref=".04"),
+        _body(
+            "wrist",
+            _joint("j1", axis="0 0 1", anchor=".02 -.01 .01", ref="-.06"),
+            _body(
+                "tool",
+                pos=".14 -.07 .11",
+                quat=".9238795325112867 .3826834323650898 0 0",
+                mass=".7",
+                com=".04 .02 -.03",
+            ),
+            mass=".9",
+        ),
+        mass="1.6",
+    )
     + _body("fixed-marker", pos="-.2 .1 .4", mass=".4"),
     ("j0", "j1"),
 )
+SPRING_AFFINE_XML = PENDULUM_XML.replace(
+    'ref=".125" armature=', 'ref=".125" springref="-.2" stiffness="1.25" armature='
+).replace(
+    '<motor name="motor-0" joint="j0" gear="2"\n ctrllimited="true" ctrlrange="-2 2"/>',
+    '<general name="motor-0" joint="j0" gear="-2" gaintype="fixed" gainprm="1.7" '
+    'biastype="affine" biasprm=".13 -.8 -.12" ctrllimited="true" ctrlrange="-.4 .4" '
+    'forcelimited="true" forcerange="-1 1"/>',
+)
 
 CASES = (
-    TreeCase("pendulum", PENDULUM_XML, (.295,), (-.6,), "pendulum"),
-    TreeCase("double", DOUBLE_XML, (.21, -.28), (.7, -.5), "lower", 48),
-    TreeCase("mixed", MIXED_XML, (.18, .035, -.22), (-.4, .12, .55), "tip", 48),
-    TreeCase("fork", FORK_XML, (.2, -.17, .25), (.45, -.35, .5), "right"),
-    TreeCase("seven", _chain(7), (.11, -.13, .15, -.17, .19, -.21, .23),
-             (.2, -.25, .3, -.35, .4, -.45, .5), "link6"),
-    TreeCase("welded", WELDED_XML, (.24, -.19), (.65, -.45), "tool", 48),
-    TreeCase("eight", _chain(8), (.11, -.13, .15, -.17, .19, -.21, .23, -.25),
-             (.2, -.25, .3, -.35, .4, -.45, .5, -.55), "link7"),
+    TreeCase("pendulum", PENDULUM_XML, (0.295,), (-0.6,), "pendulum"),
+    TreeCase("double", DOUBLE_XML, (0.21, -0.28), (0.7, -0.5), "lower", 48),
+    TreeCase("mixed", MIXED_XML, (0.18, 0.035, -0.22), (-0.4, 0.12, 0.55), "tip", 48),
+    TreeCase("fork", FORK_XML, (0.2, -0.17, 0.25), (0.45, -0.35, 0.5), "right"),
+    TreeCase(
+        "seven",
+        _chain(7),
+        (0.11, -0.13, 0.15, -0.17, 0.19, -0.21, 0.23),
+        (0.2, -0.25, 0.3, -0.35, 0.4, -0.45, 0.5),
+        "link6",
+    ),
+    TreeCase("welded", WELDED_XML, (0.24, -0.19), (0.65, -0.45), "tool", 48),
+    TreeCase(
+        "eight",
+        _chain(8),
+        (0.11, -0.13, 0.15, -0.17, 0.19, -0.21, 0.23, -0.25),
+        (0.2, -0.25, 0.3, -0.35, 0.4, -0.45, 0.5, -0.55),
+        "link7",
+    ),
+    TreeCase("spring-affine", SPRING_AFFINE_XML, (0.295,), (-0.6,), "pendulum"),
 )
 
 
@@ -155,8 +214,8 @@ def _initial(model, case, slot=0):
     # Each world starts independently from its declared native qpos0. The runtime
     # stores FP32; the independent continuous CPU reference starts at those same
     # representable values and subsequently evolves in its original FP64 model.
-    q = np.asarray(model.qpos0) + np.asarray(case.offsets) + slot * .013
-    v = np.asarray(case.velocity) * (1 + slot * .09)
+    q = np.asarray(model.qpos0) + np.asarray(case.offsets) + slot * 0.013
+    v = np.asarray(case.velocity) * (1 + slot * 0.09)
     return MuJoCoInitialState(q.astype(np.float32), v.astype(np.float32))
 
 
@@ -170,13 +229,14 @@ def _stored(packet):
 
 def _packet(mj, model, case, tick, slot=0):
     sign = -1 if (tick // 8 + slot) % 2 else 1
-    ctrl = np.array([sign * (-1 if i % 2 else 1) * (.25 + .055 * i + .01 * slot)
-                     for i in range(model.nu)])
-    qforce = np.array([sign * .03 * (i + 1) for i in range(model.nv)])
+    ctrl = np.array(
+        [sign * (-1 if i % 2 else 1) * (0.25 + 0.055 * i + 0.01 * slot) for i in range(model.nu)]
+    )
+    qforce = np.array([sign * 0.03 * (i + 1) for i in range(model.nv)])
     world_force = np.zeros((model.nbody, 6))
     body = mj.mj_name2id(model, mj.mjtObj.mjOBJ_BODY, case.wrench_body)
     assert body > 0
-    world_force[body] = np.array([.3, -.2, .4, .01, -.03, .02]) * (1 + slot * .25)
+    world_force[body] = np.array([0.3, -0.2, 0.4, 0.01, -0.03, 0.02]) * (1 + slot * 0.25)
     return MuJoCoControl(ctrl, qfrc_applied=qforce, xfrc_applied=world_force)
 
 
@@ -253,13 +313,16 @@ def _assert_dynamics(receipt, expected):
     np.testing.assert_array_equal(actual.input_q, receipt.input_q)
     np.testing.assert_array_equal(actual.input_v, receipt.input_v)
     for name, (rtol, atol) in TOL.items():
-        value = receipt.integration_acceleration if name == "integration_acceleration" else getattr(actual, name)
+        value = (
+            receipt.integration_acceleration
+            if name == "integration_acceleration"
+            else getattr(actual, name)
+        )
         assert value.shape == expected[name].shape
         np.testing.assert_allclose(value, expected[name], rtol=rtol, atol=atol, err_msg=name)
         with pytest.raises(ValueError):
             value.setflags(write=True)
-    np.testing.assert_allclose(receipt.qacc, expected["smooth_acceleration"],
-                               rtol=5e-4, atol=8e-4)
+    np.testing.assert_allclose(receipt.qacc, expected["smooth_acceleration"], rtol=5e-4, atol=8e-4)
 
 
 @pytest.mark.parametrize("mode", MODES)
@@ -273,13 +336,24 @@ def test_rotational_tree_native_input_dynamics_and_continuous_euler(mode, case, 
     reference = mj.MjData(model)
     reference.qpos[:], reference.qvel[:] = initial.q, initial.v
     path = tmp_path / "same-run-dynamics.jsonl"
-    _append(path, {"schema": "mujoco-tyx-t1-v1", "case": case.name, "mode": mode,
-                   "source_xml": case.xml, "tolerances": TOL, "initial": initial,
-                   "steps": case.steps, "native_version": mj.__version__})
+    _append(
+        path,
+        {
+            "schema": "mujoco-tyx-t1-v1",
+            "case": case.name,
+            "mode": mode,
+            "source_xml": case.xml,
+            "tolerances": TOL,
+            "initial": initial,
+            "steps": case.steps,
+            "native_version": mj.__version__,
+        },
+    )
     selected = {0, case.steps // 2 - 1, case.steps - 1}
     world = 19
-    with MuJoCoTyxRuntime(compiled, mode=mode, world_keys=(world,),
-                          initial_states={world: initial}) as runtime:
+    with MuJoCoTyxRuntime(
+        compiled, mode=mode, world_keys=(world,), initial_states={world: initial}
+    ) as runtime:
         first_mass = None
         for tick in range(case.steps):
             before = runtime.snapshot()[world]
@@ -292,14 +366,31 @@ def test_rotational_tree_native_input_dynamics_and_continuous_euler(mode, case, 
             assert runtime.step(H) == {world: True}
             state = runtime.snapshot()[world]
             receipt = state.last_step
-            detail = {"step": tick + 1, "oracle": expected, "actual": receipt,
-                      "continuous_cpu_q": reference.qpos.copy(), "continuous_cpu_v": reference.qvel.copy(),
-                      "published_q": state.q, "published_v": state.v}
-            _append(path, detail if tick in selected else {
-                "step": tick + 1, "input_q": before.q, "input_v": before.v,
-                "q": state.q, "v": state.v, "request": packet,
-                "stored_control": receipt.stored_control,
-                "cpu_q": reference.qpos.copy(), "cpu_v": reference.qvel.copy()})
+            detail = {
+                "step": tick + 1,
+                "oracle": expected,
+                "actual": receipt,
+                "continuous_cpu_q": reference.qpos.copy(),
+                "continuous_cpu_v": reference.qvel.copy(),
+                "published_q": state.q,
+                "published_v": state.v,
+            }
+            _append(
+                path,
+                detail
+                if tick in selected
+                else {
+                    "step": tick + 1,
+                    "input_q": before.q,
+                    "input_v": before.v,
+                    "q": state.q,
+                    "v": state.v,
+                    "request": packet,
+                    "stored_control": receipt.stored_control,
+                    "cpu_q": reference.qpos.copy(),
+                    "cpu_v": reference.qvel.copy(),
+                },
+            )
             try:
                 np.testing.assert_array_equal(receipt.input_q, before.q)
                 np.testing.assert_array_equal(receipt.input_v, before.v)
@@ -309,6 +400,13 @@ def test_rotational_tree_native_input_dynamics_and_continuous_euler(mode, case, 
                 assert receipt.tick == state.tick == tick + 1
                 assert receipt.contacts == ()
                 _assert_dynamics(receipt, expected)
+                if case.name == "spring-affine":
+                    q, v = float(before.q[0]), float(before.v[0])
+                    passive = -0.17 * v - 1.25 * (q + 0.2)
+                    force = 1.7 * np.clip(stored.ctrl[0], -0.4, 0.4) + 0.13 + 1.6 * q + 0.24 * v
+                    effort = -2 * np.clip(force, -1, 1)
+                    assert receipt.dynamics.passive[0] == pytest.approx(passive, rel=3e-4, abs=2e-4)
+                    assert receipt.qfrc_actuator[0] == pytest.approx(effort, rel=3e-4, abs=2e-4)
                 np.testing.assert_allclose(state.q, reference.qpos, rtol=0, atol=SHORT_Q_ATOL)
                 np.testing.assert_allclose(state.v, reference.qvel, rtol=0, atol=SHORT_V_ATOL)
                 assert state.time == pytest.approx(reference.time, abs=TIME_ATOL)
@@ -317,7 +415,9 @@ def test_rotational_tree_native_input_dynamics_and_continuous_euler(mode, case, 
                     assert np.all(receipt.input_v != 0)
                     first_mass = expected["mass_matrix"]
                     if case.name == "double":
-                        gravity = _native_dynamics(mj, model, before.q, np.zeros(model.nv), stored, before.time)
+                        gravity = _native_dynamics(
+                            mj, model, before.q, np.zeros(model.nv), stored, before.time
+                        )
                         assert np.max(np.abs(expected["bias"] - gravity["bias"])) > 1e-4
                 if tick == case.steps - 1 and case.name in {"double", "mixed", "seven", "eight"}:
                     assert np.max(np.abs(expected["mass_matrix"] - first_mass)) > 1e-6
@@ -332,8 +432,10 @@ def test_eccentric_pendulum_has_independent_analytic_mass_gravity_wrench_and_eul
     mj = _deps()
     case = CASES[0]
     initial = _initial(mj.MjModel.from_xml_string(case.xml), case)
-    wrench = np.array([[0., 0., 0., 0., 0., 0.], [.25, -.125, .5, .03125, .0625, -.015625]])
-    packet = MuJoCoControl([.375], qfrc_applied=[.125], xfrc_applied=wrench)
+    wrench = np.array(
+        [[0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.25, -0.125, 0.5, 0.03125, 0.0625, -0.015625]]
+    )
+    packet = MuJoCoControl([0.375], qfrc_applied=[0.125], xfrc_applied=wrench)
     with MuJoCoTyxRuntime(_compile(case), mode=mode, initial_states={0: initial}) as runtime:
         before = runtime.snapshot()[0]
         runtime.set_controls({0: packet})
@@ -341,18 +443,27 @@ def test_eccentric_pendulum_has_independent_analytic_mass_gravity_wrench_and_eul
         state = runtime.snapshot()[0]
         row = state.last_step
         q, v = float(before.q[0]), float(before.v[0])
-        delta = q - .125
-        mass = .07 + .11 + 2 * .4**2
-        bias = -2 * 9.81 * .4 * np.cos(delta)
-        passive = -.17 * v
-        applied = 2 * .375 + .125 - .4 * (.25 * np.sin(delta) + .5 * np.cos(delta)) + .0625
+        delta = q - 0.125
+        mass = 0.07 + 0.11 + 2 * 0.4**2
+        bias = -2 * 9.81 * 0.4 * np.cos(delta)
+        passive = -0.17 * v
+        applied = 2 * 0.375 + 0.125 - 0.4 * (0.25 * np.sin(delta) + 0.5 * np.cos(delta)) + 0.0625
         acceleration = (applied + passive - bias) / mass
-        integration = (applied + passive - bias) / (mass + H * .17)
-        expected = {"mass": mass, "bias": bias, "passive": passive, "applied": applied,
-                    "acceleration": acceleration, "integration": integration,
-                    "next_v": v + H * integration, "next_q": q + H * (v + H * integration)}
-        _append(tmp_path / "analytic-pendulum.jsonl", {"oracle": expected, "actual": row,
-                                                       "published_q": state.q, "published_v": state.v})
+        integration = (applied + passive - bias) / (mass + H * 0.17)
+        expected = {
+            "mass": mass,
+            "bias": bias,
+            "passive": passive,
+            "applied": applied,
+            "acceleration": acceleration,
+            "integration": integration,
+            "next_v": v + H * integration,
+            "next_q": q + H * (v + H * integration),
+        }
+        _append(
+            tmp_path / "analytic-pendulum.jsonl",
+            {"oracle": expected, "actual": row, "published_q": state.q, "published_v": state.v},
+        )
         dyn = row.dynamics
         assert dyn.mass_matrix[0, 0] == pytest.approx(mass, rel=2e-4, abs=3e-5)
         for name in ("bias", "passive", "applied"):
@@ -389,8 +500,12 @@ def test_sparse_controls_clone_and_selected_reset_preserve_next_real_step(mode, 
             before = runtime.snapshot()
             _assert_same_published(before, cloned.snapshot())
             selected = keys[0]
-            with MuJoCoTyxRuntime(compiled, mode=mode, world_keys=(selected,),
-                                  initial_states={selected: initial[selected]}) as fresh:
+            with MuJoCoTyxRuntime(
+                compiled,
+                mode=mode,
+                world_keys=(selected,),
+                initial_states={selected: initial[selected]},
+            ) as fresh:
                 runtime.reset((selected,))
                 after_reset = runtime.snapshot()
                 assert after_reset[selected].tick == 0
@@ -404,14 +519,27 @@ def test_sparse_controls_clone_and_selected_reset_preserve_next_real_step(mode, 
                 runtime.step(H)
                 cloned.step(H)
                 fresh.step(H)
-                actual, untouched, restarted = runtime.snapshot(), cloned.snapshot(), fresh.snapshot()
+                actual, untouched, restarted = (
+                    runtime.snapshot(),
+                    cloned.snapshot(),
+                    fresh.snapshot(),
+                )
                 _assert_same_published({selected: actual[selected]}, restarted)
                 for key in keys[1:]:
                     _assert_same_published({key: actual[key]}, {key: untouched[key]})
-                _append(tmp_path / "reset-next-step.jsonl", {
-                    "source_xml": case.xml, "keys": keys, "initial": initial,
-                    "before": before, "reset": after_reset, "actual_next": actual,
-                    "clone_next": untouched, "fresh_next": restarted})
+                _append(
+                    tmp_path / "reset-next-step.jsonl",
+                    {
+                        "source_xml": case.xml,
+                        "keys": keys,
+                        "initial": initial,
+                        "before": before,
+                        "reset": after_reset,
+                        "actual_next": actual,
+                        "clone_next": untouched,
+                        "fresh_next": restarted,
+                    },
+                )
 
 
 @pytest.mark.parametrize("mode", MODES)
@@ -420,11 +548,15 @@ def test_late_real_download_failure_is_atomic_and_same_request_retries(mode, mon
     case = CASES[5]
     model = mj.MjModel.from_xml_string(case.xml)
     keys = (7, 29, 113, 211)
-    with MuJoCoTyxRuntime(_compile(case), mode=mode, world_keys=keys,
-                          initial_states={key: _initial(model, case, slot)
-                                          for slot, key in enumerate(keys)}) as runtime:
-        runtime.set_controls({key: _packet(mj, model, case, 0, slot)
-                              for slot, key in enumerate(keys)})
+    with MuJoCoTyxRuntime(
+        _compile(case),
+        mode=mode,
+        world_keys=keys,
+        initial_states={key: _initial(model, case, slot) for slot, key in enumerate(keys)},
+    ) as runtime:
+        runtime.set_controls(
+            {key: _packet(mj, model, case, 0, slot) for slot, key in enumerate(keys)}
+        )
         runtime.step(H)
         packets = {key: _packet(mj, model, case, 1, slot) for slot, key in enumerate(keys)}
         runtime.set_controls(packets)
@@ -446,15 +578,24 @@ def test_late_real_download_failure_is_atomic_and_same_request_retries(mode, mon
             assert runtime.counters["completed_kernels"] > kernels_before
             after = runtime.snapshot()
             _assert_same_published(before, after)
-            _append(tmp_path / "atomic-failure.jsonl", {
-                "source_xml": case.xml, "request": packets, "before": before,
-                "accepted_worlds": caught.value.accepted_worlds, "after": after})
+            _append(
+                tmp_path / "atomic-failure.jsonl",
+                {
+                    "source_xml": case.xml,
+                    "request": packets,
+                    "before": before,
+                    "accepted_worlds": caught.value.accepted_worlds,
+                    "after": after,
+                },
+            )
             monkeypatch.setattr(runtime._device, "download", original)
             assert runtime.step(H) == dict.fromkeys(keys, True)
             assert reference.step(H) == dict.fromkeys(keys, True)
             _assert_same_published(runtime.snapshot(), reference.snapshot())
-            _append(tmp_path / "atomic-failure.jsonl", {"retry": runtime.snapshot(),
-                                                        "independent_clone": reference.snapshot()})
+            _append(
+                tmp_path / "atomic-failure.jsonl",
+                {"retry": runtime.snapshot(), "independent_clone": reference.snapshot()},
+            )
 
 
 @pytest.mark.parametrize("mode", MODES)
@@ -501,28 +642,45 @@ def test_rotational_step_cannot_call_cpu_warp_or_host_dynamics(mode, monkeypatch
         assert runtime.capabilities["gpu"] is (mode == "cuda")
         np.testing.assert_allclose(state.q, reference.qpos, rtol=0, atol=SHORT_Q_ATOL)
         np.testing.assert_allclose(state.v, reference.qvel, rtol=0, atol=SHORT_V_ATOL)
-        _append(tmp_path / "producer-guard.jsonl", {"source_xml": case.xml, "actual": state,
-                                                   "native_q": reference.qpos, "native_v": reference.qvel,
-                                                   "counters": runtime.counters})
+        _append(
+            tmp_path / "producer-guard.jsonl",
+            {
+                "source_xml": case.xml,
+                "actual": state,
+                "native_q": reference.qpos,
+                "native_v": reference.qvel,
+                "counters": runtime.counters,
+            },
+        )
 
 
 @pytest.mark.parametrize("mode", MODES)
 def test_limit_crossing_rejects_whole_coupled_batch_without_stop_repair(mode, tmp_path):
     _deps()
-    xml = PENDULUM_XML.replace('ref=".125"', 'ref=".125" limited="true" range="-1 .46" margin=".005"')
-    limited = TreeCase("strict-limit", xml, (.329,), (8.,), "pendulum")
+    xml = PENDULUM_XML.replace(
+        'ref=".125"', 'ref=".125" limited="true" range="-1 .46" margin=".005"'
+    )
+    limited = TreeCase("strict-limit", xml, (0.329,), (8.0,), "pendulum")
     keys = (5, 91)
-    initial = {5: MuJoCoInitialState([.454], [8.]), 91: MuJoCoInitialState([.2], [.25])}
-    with MuJoCoTyxRuntime(_compile(limited), mode=mode, world_keys=keys,
-                          initial_states=initial) as runtime:
+    initial = {5: MuJoCoInitialState([0.454], [8.0]), 91: MuJoCoInitialState([0.2], [0.25])}
+    with MuJoCoTyxRuntime(
+        _compile(limited), mode=mode, world_keys=keys, initial_states=initial
+    ) as runtime:
         before = runtime.snapshot()
         with pytest.raises(PhysicsStepFailure) as caught:
             runtime.step(H)
         assert caught.value.accepted_worlds == dict.fromkeys(keys, False)
         _assert_same_published(before, runtime.snapshot())
-        _append(tmp_path / "limit-rejection.jsonl", {"source_xml": xml, "initial": initial,
-                                                    "before": before, "after": runtime.snapshot(),
-                                                    "accepted_worlds": caught.value.accepted_worlds})
+        _append(
+            tmp_path / "limit-rejection.jsonl",
+            {
+                "source_xml": xml,
+                "initial": initial,
+                "before": before,
+                "after": runtime.snapshot(),
+                "accepted_worlds": caught.value.accepted_worlds,
+            },
+        )
 
 
 @pytest.mark.parametrize("mode", MODES)
@@ -530,23 +688,37 @@ def test_invalid_control_batch_keeps_all_previous_packets(mode):
     mj = _deps()
     case = CASES[3]
     model = mj.MjModel.from_xml_string(case.xml)
-    with MuJoCoTyxRuntime(_compile(case), mode=mode, world_keys=(7, 113),
-                          initial_states={7: _initial(model, case), 113: _initial(model, case, 1)}) as runtime:
+    with MuJoCoTyxRuntime(
+        _compile(case),
+        mode=mode,
+        world_keys=(7, 113),
+        initial_states={7: _initial(model, case), 113: _initial(model, case, 1)},
+    ) as runtime:
         packets = {7: _packet(mj, model, case, 0), 113: _packet(mj, model, case, 0, 1)}
         runtime.set_controls(packets)
         before = runtime.snapshot()
         with pytest.raises(ValueError):
-            runtime.set_controls({7: packets[7], 113: MuJoCoControl([1.])})
+            runtime.set_controls({7: packets[7], 113: MuJoCoControl([1.0])})
         _assert_same_published(before, runtime.snapshot())
         runtime.step(H)
         assert all(state.tick == 1 for state in runtime.snapshot().values())
 
 
-@pytest.mark.parametrize("xml,code", [
-    (PENDULUM_XML.replace('integrator="Euler"', 'integrator="RK4"'), "integrator"),
-    (_chain(9), "joint-domain"),
-    (PENDULUM_XML.replace('type="hinge"', 'type="ball"').replace('ref=".125"', ''), "joint-domain"),
-])
+@pytest.mark.parametrize(
+    "xml,code",
+    [
+        (PENDULUM_XML.replace('integrator="Euler"', 'integrator="RK4"'), "integrator"),
+        (_chain(9), "joint-domain"),
+        (
+            PENDULUM_XML.replace('type="hinge"', 'type="ball"').replace('ref=".125"', ""),
+            "joint-domain",
+        ),
+        (
+            FORK_XML.replace('contype="0" conaffinity="0"', 'contype="1" conaffinity="1"'),
+            "contact-domain",
+        ),
+    ],
+)
 def test_native_valid_unsupported_features_have_construction_diagnostics(xml, code):
     _deps()
     from phymeo.builders.mujoco_compiler import compile_mujoco_xml
@@ -560,24 +732,31 @@ def test_native_valid_unsupported_features_have_construction_diagnostics(xml, co
 @pytest.mark.parametrize("mode", MODES)
 def test_disabled_motor_group_keeps_native_positive_force_range_clamp(mode, tmp_path):
     mj = _deps()
-    xml = _model("disabled-positive-force", _body("body", _joint("j0", ref=".1")),
-                 ("j0",), gravity="0 0 0", gears=(2,))
-    xml = xml.replace('<option timestep=', '<option actuatorgroupdisable="1" timestep=')
+    xml = _model(
+        "disabled-positive-force",
+        _body("body", _joint("j0", ref=".1")),
+        ("j0",),
+        gravity="0 0 0",
+        gears=(2,),
+    )
+    xml = xml.replace("<option timestep=", '<option actuatorgroupdisable="1" timestep=')
     xml = xml.replace('name="motor-0"', 'name="motor-0" group="1"')
     xml = xml.replace('forcerange="-.35 .35"', 'forcerange="2 3"')
-    special = TreeCase("disabled-positive-force", xml, (.1,), (.25,), "body")
+    special = TreeCase("disabled-positive-force", xml, (0.1,), (0.25,), "body")
     model = mj.MjModel.from_xml_string(xml)
     initial = _initial(model, special)
-    packet = MuJoCoControl([.8], qfrc_applied=[0.], xfrc_applied=np.zeros((model.nbody, 6)))
+    packet = MuJoCoControl([0.8], qfrc_applied=[0.0], xfrc_applied=np.zeros((model.nbody, 6)))
     with MuJoCoTyxRuntime(_compile(special), mode=mode, initial_states={0: initial}) as runtime:
         before = runtime.snapshot()[0]
         expected = _native_dynamics(mj, model, before.q, before.v, _stored(packet), before.time)
         # Native 3.3.7 zeroes the disabled actuator before force-range clamping:
         # max(2,min(3,0)) * gear(2) = 4 Nm, not zero generalized force.
-        np.testing.assert_allclose(expected["applied"], [4.], atol=1e-12)
+        np.testing.assert_allclose(expected["applied"], [4.0], atol=1e-12)
         runtime.set_controls({0: packet})
         runtime.step(H)
         state = runtime.snapshot()[0]
-        _append(tmp_path / "disabled-motor-clamp.jsonl", {"source_xml": xml,
-                                                          "oracle": expected, "actual": state.last_step})
+        _append(
+            tmp_path / "disabled-motor-clamp.jsonl",
+            {"source_xml": xml, "oracle": expected, "actual": state.last_step},
+        )
         _assert_dynamics(state.last_step, expected)

@@ -3,7 +3,9 @@
 The source-bound MjModel is decoded once. No per-step mj_step, mj_forward,
 Warp import or inherited Phymeo contact law implements dynamics. Explicit
 snapshot() observation uses a detached CPU forward pass and is labelled as
-such. Only the declared constant-mass / single soft-normal domain is admitted.
+such. The fixed hinge/slide tree recomputes full dynamics each step and admits
+no possible contact pairs; the original constant-mass single-normal domain
+remains a separate route.
 """
 
 import copy
@@ -53,7 +55,11 @@ class MuJoCoTyxContact:
 
 @dataclass(frozen=True)
 class MuJoCoTyxDynamics:
-    """Same input-step device fields; linear/angular Jacobian rows in world axes."""
+    """Same input-step device fields; linear/angular Jacobian rows in world axes.
+
+    applied includes actuator effort, qfrc_applied and the COM world wrench
+    projection. passive is separate; M @ smooth_acceleration = applied + passive - bias.
+    """
 
     body_position: np.ndarray
     body_rotation: np.ndarray
@@ -68,6 +74,7 @@ class MuJoCoTyxDynamics:
     input_v: np.ndarray
     time: float
     phase: str = "tyx-euler-input-dynamics"
+
 
 @dataclass(frozen=True)
 class MuJoCoTyxStepReceipt:
@@ -99,7 +106,9 @@ class MuJoCoTyxStepReceipt:
 class MuJoCoTyxRuntime(MuJoCoRuntime):
     """Own TYX interpret/CUDA execution and atomic publication for sparse worlds.
 
-    Actual first domain: 1..8 all-prismatic native DOFs with full coupled static
+    Rotational domain: fixed-root 1..8 hinge/slide DOFs, complete live M/J/bias,
+    welded bodies and off-center world wrenches, without possible contact pairs.
+    Original domain: 1..8 all-prismatic native DOFs with full coupled static
     mass, stateless direct/affine motors, scalar stiffness/armature/damping; or
     one centered isotropic free body, with native local angular coordinates and
     real world Cartesian body torque. At most one possible static plane/sphere
@@ -143,14 +152,18 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
             gpu=mode == "cuda",
             native_model=False,
             contact_law=LAW,
-            domain=("fixed-hinge-slide-no-contact-v1" if self._plan.kind == 2
-                    else "prismatic-or-isotropic-free/one-normal-pair-v1"),
+            domain=(
+                "fixed-hinge-slide-no-contact-v1"
+                if self._plan.kind == 2
+                else "prismatic-or-isotropic-free/one-normal-pair-v1"
+            ),
             state_precision="fp32-device-integration",
             publication="whole-batch-atomic",
             possible_contact_pairs=int(self._plan.pair is not None),
             limits="strict-interior-reject-on-exit",
-            numerical_solver=("tree-dense-cholesky" if self._plan.kind == 2
-                              else "single-normal-direct-qp"),
+            numerical_solver=(
+                "tree-dense-cholesky" if self._plan.kind == 2 else "single-normal-direct-qp"
+            ),
             source_solver=self._plan.source_solver,
             source_iterations=self._plan.source_iterations,
             contact_capacity=self._contact_capacity,
@@ -346,8 +359,11 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                         qfrc_constraint=_frozen(candidate.qfrc_constraint),
                         raw_contact_fields=MappingProxyType({"device_row": _frozen(row)}),
                         source_solver=self._plan.source_solver,
-                        numerical_solver=("tree-dense-cholesky" if self._plan.kind == 2
-                              else "single-normal-direct-qp"),
+                        numerical_solver=(
+                            "tree-dense-cholesky"
+                            if self._plan.kind == 2
+                            else "single-normal-direct-qp"
+                        ),
                         contact_time=float(original.time),
                         dynamics=dynamics,
                         backend=f"mujoco-tyx-{self._mode}",

@@ -44,3 +44,5 @@ W1/W4稀疏keys/不同原初态与controls；selected reset后未reset worlds的
 每例保原XML/参数、全部步q/v与controls摘要；预定 step 1、中点、末点保存完整oracle和同次actual dynamics/receipt/input/storedcontrol，失败所在步也完整保存。文件只写本test tmp_path，不新跑producer取数，不造大规模冗余轨迹。父另负责Env/PolicyRunner与源码外wheel consumer，避免本测试复制该连接任务。
 
 附加独立驱动语义留出（实施作者源审阅后、运行前声明）：disabled actuator group=1 且motor `forcerange=[2,3]`、gear=2；原CPU3.3.7在disabled置零后仍clamp产生4Nm generalized effort。这检查group/force顺序，不能改成“disabled一律跳过”。此case初态q=.2/v=.25，h=.001，原有容差不变。
+
+父在首次物理执行前补充覆盖：`spring-affine` 保原偏心摆 q/v 和24步，增加 stiffness=1.25、springref=-.2（不同于 ref=.125）、负gear=-2、fixed gain=1.7、affine bias=(.13,-.8,-.12)、ctrlrange=[-.4,.4]、forcerange=[-1,1]；逐步独立核 `-.17v-1.25(q+.2)` 与 clamp 后驱动转矩，沿用全部原误差门。另用原 fork 的碰撞mask打开构成潜在兄弟接触对，要求构造时明确拒绝，不仅依据当前 ncon。

@@ -246,7 +246,7 @@ def test_late_download_failure_is_not_a_partial_publication(mode, monkeypatch):
 @pytest.mark.parametrize(
     "change,code",
     [
-        (lambda x: x.replace('type="slide"', 'type="hinge"'), "joint-domain"),
+        (lambda x: x.replace('type="slide"', 'type="ball"'), "joint-domain"),
         (lambda x: x.replace("<option ", '<option iterations="0" '), "solver-options"),
         (
             lambda x: x.replace(

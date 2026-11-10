@@ -7,7 +7,8 @@
 # Unless required by law or agreed in writing, distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND. See LICENSE in this package.
 #
-# Contact parameter mixing adapted from mujoco-warp v0.0.2
+# Contact parameter mixing adapted from mujoco-warp v0.0.2; priority/direct
+# handling corrected to MuJoCo 3.3.7 engine_collision_driver.c::mj_contactParam.
 # _src/collision_primitive.py. Added native model admission/constant-mass lowering.
 
 """Compile a narrow native model domain to static TYX data; no per-step CPU solver."""
@@ -70,11 +71,18 @@ def _mix_contact(model, left, right, mj):
             mix = 1.0
         dimension = int(max(model.geom_condim[left], model.geom_condim[right]))
         friction = np.maximum(model.geom_friction[left], model.geom_friction[right])
-    if model.geom_solref[left, 0] > 0 and model.geom_solref[right, 0] > 0:
-        ref = mix * model.geom_solref[left] + (1 - mix) * model.geom_solref[right]
+    # CPU 3.3.7 semantics differ from Warp 0.0.2 here: priority wins before
+    # deciding whether to mix positive or min direct-format reference values.
+    if p1 > p2:
+        ref, imp = model.geom_solref[left].copy(), model.geom_solimp[left].copy()
+    elif p2 > p1:
+        ref, imp = model.geom_solref[right].copy(), model.geom_solimp[right].copy()
     else:
-        ref = np.minimum(model.geom_solref[left], model.geom_solref[right])
-    imp = mix * model.geom_solimp[left] + (1 - mix) * model.geom_solimp[right]
+        if model.geom_solref[left, 0] > 0 and model.geom_solref[right, 0] > 0:
+            ref = mix * model.geom_solref[left] + (1 - mix) * model.geom_solref[right]
+        else:
+            ref = np.minimum(model.geom_solref[left], model.geom_solref[right])
+        imp = mix * model.geom_solimp[left] + (1 - mix) * model.geom_solimp[right]
     friction = np.maximum(friction[[0, 0, 1, 2, 2]], mj.mjMINMU)
     return dimension, ref, imp, friction
 
@@ -97,6 +105,8 @@ def compile_model(mj, model):
         issue("option-flags", "nondefault native simulation flags are not migrated")
     if np.any(model.opt.wind) or model.opt.viscosity or model.opt.density:
         issue("fluid", "fluid dynamics are not migrated")
+    if np.any(model.dof_armature < 0) or np.any(model.dof_damping < 0):
+        issue("passive", "negative reflected inertia/damping is outside the first domain")
     if np.any(model.body_gravcomp) or np.any(model.dof_frictionloss):
         issue("passive", "gravity compensation and dry joint friction are not migrated")
     free = model.njnt == 1 and model.jnt_type[0] == mj.mjtJoint.mjJNT_FREE
@@ -171,6 +181,8 @@ def compile_model(mj, model):
         contact[10] = max(model.geom_margin[plane], model.geom_margin[sphere])
         contact[11] = max(model.geom_gap[plane], model.geom_gap[sphere])
         contact[12] = sum(model.body_invweight0[int(model.geom_bodyid[g]), 0] for g in pair)
+        if not ((ref[0] > 0 and ref[1] > 0) or (ref[0] <= 0 and ref[1] <= 0)):
+            issue("contact-reference", "mixed-sign solref format is outside the first domain")
         contact[14:16], contact[16:21], contact[24:29] = ref, imp, friction
         normal = contact[3:6]
         tangent = np.eye(3)[int(np.argmin(abs(normal)))]
@@ -228,7 +240,9 @@ def compile_model(mj, model):
             bool(model.opt.disableactuator & (1 << int(model.actuator_group[index])))
         )
         actuator_values[index, :5] = (model.actuator_gear[index, 0], model.actuator_gainprm[index, 0],
-                                    *model.actuator_biasprm[index, :3])
+                                    *(model.actuator_biasprm[index, :3] if
+                                      model.actuator_biastype[index] == mj.mjtBias.mjBIAS_AFFINE
+                                      else np.zeros(3)))
         for start, flag, limits in ((5, model.actuator_ctrllimited, model.actuator_ctrlrange),
                                     (7, model.actuator_forcelimited, model.actuator_forcerange)):
             actuator_values[index, start:start + 2] = limits[index] if flag[index] else (-np.inf, np.inf)

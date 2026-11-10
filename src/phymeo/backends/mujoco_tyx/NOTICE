@@ -17,3 +17,7 @@ constant full mass operators for all-prismatic trees/centered isotropic free bod
 closed-form single frictionless normal QP, transactional publication and
 explicit capability/precision diagnostics. No Warp kernel or runtime executes
 through this package. This is a limited port, not complete MuJoCo support.
+
+Contact priority/direct-reference selection follows MuJoCo 3.3.7
+src/engine/engine_collision_driver.c::mj_contactParam, correcting a v0.0.2
+Warp discrepancy for unequal priorities with positive/direct solref.

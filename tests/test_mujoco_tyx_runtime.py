@@ -120,7 +120,7 @@ def test_slanted_plane_and_two_axis_prismatic_tree_use_full_coupled_mass(mode):
     ).replace(
         '<geom name="ball"',
         '<geom name="hidden" type="sphere" size=".03" mass=".2" contype="0" conaffinity="0"/>'
-        '<body name="child"><joint name="z" type="slide" axis="0 0 1"/><geom name="ball"'
+        '<body name="child"><joint name="z" type="slide" axis=".6 0 .8"/><geom name="ball"'
     ).replace('</body></worldbody>', '</body></body></worldbody>')
     compilation = compile_source(xml)
     native = mj.MjData(compilation.mj_model)
@@ -189,7 +189,7 @@ def test_no_warp_or_cpu_step_or_per_step_cpu_forward(mode, monkeypatch):
 @pytest.mark.parametrize("mode", MODES)
 def test_capacity_failure_preserves_zero_force_site_and_published_state(mode):
     deps(mode)
-    xml = source().replace('pos="0 0 .099"', 'pos="0 0 .1"').replace(
+    xml = source().replace('pos="0 0 .099"', 'pos="0 0 .1015"').replace(
         'solref=".006 1"', 'margin=".002" gap=".001" solref=".006 1"'
     )
     with MuJoCoTyxRuntime(compile_source(xml), mode=mode, contact_capacity=0) as runtime:
@@ -236,3 +236,83 @@ def test_possible_friction_contact_is_rejected_but_not_no_contact_condim3():
         MuJoCoTyxRuntime(compile_source(source(condim=3)), mode="interpret")
     with MuJoCoTyxRuntime(compile_source(SLIDER), mode="interpret") as runtime:
         assert runtime.capabilities["possible_contact_pairs"] == 0
+
+
+@pytest.mark.parametrize("mode", MODES)
+@pytest.mark.parametrize("plane_priority,sphere_priority,plane_ref,sphere_ref", [
+    (2, 1, ".01 1", "-500 -30"), (1, 2, "-500 -30", ".01 1"),
+    (2, 1, "-500 -30", ".01 1"), (1, 1, "-500 -30", "-700 -20"),
+])
+def test_contact_priority_and_direct_reference_match_original_cpu_parameters(
+    mode, plane_priority, sphere_priority, plane_ref, sphere_ref
+):
+    mj = deps(mode)
+    xml = source().replace('name="floor"', f'name="floor" priority="{plane_priority}" solref="{plane_ref}"')
+    xml = xml.replace('name="ball"', f'name="ball" priority="{sphere_priority}"')
+    xml = xml.replace('solref=".006 1"', f'solref="{sphere_ref}"')
+    compilation = compile_source(xml)
+    native = mj.MjData(compilation.mj_model)
+    with MuJoCoTyxRuntime(compilation, mode=mode) as runtime:
+        mj.mj_step(compilation.mj_model, native)
+        runtime.step(.001)
+        state = runtime.snapshot()[0]
+        assert len(native.contact) >= native.ncon > 0
+        assert state.last_step.contacts
+        np.testing.assert_allclose(state.last_step.contacts[0].solref, native.contact[0].solref,
+                                   rtol=2e-7, atol=1e-8)
+        np.testing.assert_allclose(state.last_step.contacts[0].solimp, native.contact[0].solimp,
+                                   rtol=2e-7, atol=1e-8)
+        compare_native(mj, compilation.mj_model, native, state)
+
+
+@pytest.mark.parametrize("mode", MODES)
+def test_eight_dof_branched_mass_has_shared_ancestor_off_diagonals(mode):
+    mj = deps(mode)
+    def body(index, axis, children=""):
+        return (f'<body name="b{index}" pos=".02 .01 .03">'
+                f'<joint name="j{index}" type="slide" axis="{axis}" ref=".02" armature=".03"/>'
+                '<geom type="sphere" size=".03" mass=".2" contype="0" conaffinity="0"/>'
+                f'{children}</body>')
+    a = body(1, '1 0 0', body(2, '.6 0 .8', body(3, '0 0 1')))
+    b = body(4, '1 0 0', body(5, '.8 .6 0', body(6, '0 0 1', body(7, '.6 0 .8'))))
+    xml = '<mujoco><option timestep=".001" gravity=".2 -.3 -9.81"/><worldbody>' + body(0, '0 0 1', a+b) + '</worldbody></mujoco>'
+    compilation = compile_source(xml)
+    native = mj.MjData(compilation.mj_model)
+    mj.mj_forward(compilation.mj_model, native)
+    dense = np.empty((8, 8))
+    mj.mj_fullM(compilation.mj_model, dense, native.qM)
+    assert np.max(abs(dense - np.diag(np.diag(dense)))) > .1
+    external = np.linspace(.1, .8, 8)
+    with MuJoCoTyxRuntime(compilation, mode=mode) as runtime:
+        runtime.set_controls({0: MuJoCoControl([], qfrc_applied=external)})
+        for _ in range(30):
+            native.qfrc_applied[:] = external
+            mj.mj_step(compilation.mj_model, native)
+            runtime.step(.001)
+        compare_native(mj, compilation.mj_model, native, runtime.snapshot()[0], atol=8e-5)
+
+
+@pytest.mark.parametrize("mode", MODES)
+def test_fp32_control_overflow_rejects_whole_control_change(mode):
+    deps(mode)
+    with MuJoCoTyxRuntime(compile_source(SLIDER), mode=mode, world_keys=(5, 77)) as runtime:
+        runtime.set_controls({5: MuJoCoControl([1]), 77: MuJoCoControl([-1])})
+        with pytest.raises(MuJoCoTyxUnsupported, match="fp32-range"):
+            runtime.set_controls({5: MuJoCoControl([2]), 77: MuJoCoControl([1e300])})
+        assert runtime.snapshot()[5].tick == runtime.snapshot()[77].tick == 0
+        np.testing.assert_array_equal(runtime.snapshot()[5].held_control.ctrl, [1])
+        np.testing.assert_array_equal(runtime.snapshot()[77].held_control.ctrl, [-1])
+
+
+@pytest.mark.parametrize("mode", MODES)
+def test_finite_joint_limit_is_guarded_before_publishing_stop_domain(mode):
+    deps(mode)
+    xml = SLIDER.replace('name="slide"', 'name="slide" limited="true" range="-.00001 .00001"')
+    with MuJoCoTyxRuntime(compile_source(xml), mode=mode) as runtime:
+        runtime.set_controls({0: MuJoCoControl([5])})
+        before = runtime.snapshot()[0]
+        with pytest.raises(PhysicsStepFailure) as error:
+            runtime.step(.001)
+        assert "joint_limit_domain" in str(error.value.__cause__)
+        np.testing.assert_array_equal(runtime.snapshot()[0].q, before.q)
+        assert runtime.snapshot()[0].tick == 0

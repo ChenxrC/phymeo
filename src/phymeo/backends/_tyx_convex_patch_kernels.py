@@ -309,9 +309,9 @@ def fill_convex_patch(
                                         right_v = work[lane, slot + 1, 7]
                                         left_negative = 0
                                         right_negative = 0
-                                        if left_v < 0.0:
+                                        if left_v < 0.0 or (left_v == 0.0 and left_u < 0.0):
                                             left_negative = 1
-                                        if right_v < 0.0:
+                                        if right_v < 0.0 or (right_v == 0.0 and right_u < 0.0):
                                             right_negative = 1
                                         swap = 0
                                         if left_negative != right_negative:
@@ -877,9 +877,9 @@ def fill_convex_patch(
                                     right_v = work[lane, slot + 1, 7]
                                     left_negative = 0
                                     right_negative = 0
-                                    if left_v < 0.0:
+                                    if left_v < 0.0 or (left_v == 0.0 and left_u < 0.0):
                                         left_negative = 1
-                                    if right_v < 0.0:
+                                    if right_v < 0.0 or (right_v == 0.0 and right_u < 0.0):
                                         right_negative = 1
                                     swap = 0
                                     if left_negative != right_negative:
@@ -1361,9 +1361,9 @@ def fill_convex_patch(
                                     right_v = work[lane, slot + 1, 7]
                                     left_negative = 0
                                     right_negative = 0
-                                    if left_v < 0.0:
+                                    if left_v < 0.0 or (left_v == 0.0 and left_u < 0.0):
                                         left_negative = 1
-                                    if right_v < 0.0:
+                                    if right_v < 0.0 or (right_v == 0.0 and right_u < 0.0):
                                         right_negative = 1
                                     swap = 0
                                     if left_negative != right_negative:
@@ -1703,9 +1703,9 @@ def fill_convex_patch(
                                     right_v = work[lane, slot + 1, 7]
                                     left_negative = 0
                                     right_negative = 0
-                                    if left_v < 0.0:
+                                    if left_v < 0.0 or (left_v == 0.0 and left_u < 0.0):
                                         left_negative = 1
-                                    if right_v < 0.0:
+                                    if right_v < 0.0 or (right_v == 0.0 and right_u < 0.0):
                                         right_negative = 1
                                     swap = 0
                                     if left_negative != right_negative:
@@ -1922,9 +1922,9 @@ def fill_convex_patch(
                                 right_v = work[lane, slot + 1, 7]
                                 left_negative = 0
                                 right_negative = 0
-                                if left_v < 0.0:
+                                if left_v < 0.0 or (left_v == 0.0 and left_u < 0.0):
                                     left_negative = 1
-                                if right_v < 0.0:
+                                if right_v < 0.0 or (right_v == 0.0 and right_u < 0.0):
                                     right_negative = 1
                                 swap = 0
                                 if left_negative != right_negative:
@@ -1958,9 +1958,9 @@ def fill_convex_patch(
                                 right_v = work[lane, slot + 1, 7]
                                 left_negative = 0
                                 right_negative = 0
-                                if left_v < 0.0:
+                                if left_v < 0.0 or (left_v == 0.0 and left_u < 0.0):
                                     left_negative = 1
-                                if right_v < 0.0:
+                                if right_v < 0.0 or (right_v == 0.0 and right_u < 0.0):
                                     right_negative = 1
                                 swap = 0
                                 if left_negative != right_negative:
@@ -2215,9 +2215,9 @@ def fill_convex_patch(
                                             right_v = work[lane, poly_base + slot + 1, 7]
                                             left_negative = 0
                                             right_negative = 0
-                                            if left_v < 0.0:
+                                            if left_v < 0.0 or (left_v == 0.0 and left_u < 0.0):
                                                 left_negative = 1
-                                            if right_v < 0.0:
+                                            if right_v < 0.0 or (right_v == 0.0 and right_u < 0.0):
                                                 right_negative = 1
                                             swap = 0
                                             if left_negative != right_negative:

@@ -213,3 +213,13 @@ This acceptance is the declared device-owned input transaction and its connectio
 existing physical step. It retains HOST canonical action auditing and full physical
 diagnostic readback. It does not qualify CUDA Torch, a GPU PPO trainer, or an end-to-end
 zero-readback simulation loop.
+
+## 04:10 measured action-pack cache reuse
+
+Parent product integration 90951628, test-only formatting c1422ccd: the packet borrows its live physical owner's TYX Runtime, while retaining five independent buffers, an independent stream, exact raw-bit auditing, status readback and single control CAS. An adjacent resource-retry defect was fixed: successful owned-stream close clears that reference, so later failed-buffer cleanup retries do not synchronize a destroyed stream. Failed stream close remains owned and retryable.
+
+Complete changed C2b qualification: run65 interpret 28 passed/28 deselected in 65.06 s; run66 CUDA 28 passed/28 deselected in 5.78 s. Original 44 nodes remain, with 12 new lifecycle/cache nodes. Tests include actual cache-object reuse, independent live packet allocations, audit/pack failure, stream/buffer cleanup failure, reset/restore owner replacement and continued state equality. Exact-file Ruff passed; initial format check required one test file, and complete raw AST equality plus final format check passed.
+
+The unchanged run52 benchmark was rerun as run67 on the new source. Both real TYX-policy routes passed at W1/8/32, each with eight continuing steps and no warmup/reset. Complete task/action words, public state and receipts matched the independent HOST-action route. Steady-seven device-ingress totals changed from 0.1073208/0.0913893/0.0899252 s to 0.0045356/0.0055732/0.0068556 s: approximately 0.65/0.80/0.98 ms per submission in this new measurement. First submissions remain separately measured at 25.09/11.14/11.15 ms. The original complete copy/audit/status and physical-readback counters are unchanged; all three channels still have exact HOST auditing.
+
+This is a bounded local transport comparison, not a Newton benchmark, broad statistical throughput result, buffer-pooling implementation, zero-readback claim or GPU PPO acceptance. The physical equations and kernels did not change. Canonical evidence: artifacts/p65-parity-20261111-01 jobs60–67, action-cache-parent-review.json and action-cache-format-ast-equivalence.json. No second profile is needed after the measured improvement and actual compiled-object identity test; continue with the independent collision integration.

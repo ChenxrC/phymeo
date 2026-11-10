@@ -1,10 +1,12 @@
 # MuJoCo-TYX C2b device control input
 
-Current status: **FOCUSED_INTERPRET_AND_CUDA_VERIFIED**, 22 nodes per backend;
-see the parent qualification section below. Public CUDA W1/8/32 action-path
-comparisons also passed eight continuous steps per route with exact full state,
-action and receipt equality. Device submission currently has measured overhead;
-this is a functional connection, not a speedup claim. New wheel checks are pending.
+Current status: **FOCUSED_INTERPRET_AND_CUDA_VERIFIED**, 28 nodes per backend
+after the Runtime-cache reuse and cleanup repair; see the parent qualification
+sections below. Public CUDA W1/8/32 action-path comparisons passed eight
+continuous steps per route with exact full state, action and receipt equality.
+Measured steady submission cost in this bounded case fell from about13–15ms to
+0.65/0.80/0.98ms, with unchanged full copies and auditing. This is not a Newton
+or total-simulation speed claim. New wheel checks remain pending.
 
 The original authoring account and hashes below are historical. No import, collection, numerical probe,
 pytest, lint, formatter, compile, build, install or native execution occurred in this lane.

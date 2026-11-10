@@ -217,6 +217,7 @@ class Protocol:
         if any(x.shape != (29,) or not np.isfinite(x).all()
                for x in (self.kp, self.kd, self.scale, self.offset, self.default)):
             raise ValueError("invalid original controller vectors")
+        self.inertial_from_body = rotation(model.body_iquat[self.root]).T
         self.mass = float(np.sum(model.body_mass))
         self.weight = self.mass * float(-model.opt.gravity[2])
         if not np.array_equal(model.opt.gravity, (0.0, 0.0, -9.81)):
@@ -279,9 +280,11 @@ class Controller:
             relative = torso(q[3:7], q[p.qa]).T @ p.alignment @ torso(
                 p.motion["body_quat_w"][frame, 0], reference_q
             )
-            # For this native free root, body-local angular velocity is qvel[3:6].
+            # Match native BODY local observation axes (body inertial frame),
+            # evaluated from the current state rather than stale cached cvel.
             observation = np.concatenate((
-                reference_q, reference_v, relative[:, :2].reshape(-1), v[3:6],
+                reference_q, reference_v, relative[:, :2].reshape(-1),
+                p.inertial_from_body @ v[3:6],
                 q[p.qa] - p.default, v[p.va], self.action,
             )).astype(np.float32)[None]
             if observation.shape != (1, 154) or not np.isfinite(observation).all():
@@ -878,6 +881,7 @@ def trajectory(args, journal, protocol, compilation, derived):
     device_stats, cpu_stats = Stats(protocol, h, stand), Stats(protocol, h, stand)
     checkpoints, failures = [], []
     same_input_forwards = cpu_steps = 0
+    previous_constraint_identity = None
     with runtime_for(compilation, q, v, 0.0, args.mode, args.cache_root) as runtime:
         state = runtime.snapshot()[0]
         device_controller = Controller(protocol, state.q, h, stand)
@@ -915,6 +919,8 @@ def trajectory(args, journal, protocol, compilation, derived):
                                           input=compact_state(state), control=stored)
                 after = runtime.snapshot()[0]
                 receipt = after.last_step
+                if after.tick != tick + 1 or abs(after.time - output_grid_time) > 2e-6:
+                    raise RuntimeError("device output tick/source time binding failed")
                 input_checks(receipt, state, stored)
                 device_controller.commit(proposal)
                 actuator = actuator_check(protocol, receipt)
@@ -972,13 +978,25 @@ def trajectory(args, journal, protocol, compilation, derived):
                     checkpoints.append(checkpoint)
                     journal.write("checkpoint", durable=True, **checkpoint,
                                   same_runtime_continues=at_two and count > tick + 1)
-                if aggregate_failure and not selected:
+                constraint_identity = tuple(
+                    (row.constraint_type, row.source_id, row.side_or_edge, row.geometry_slot, row.dof)
+                    for row in receipt.constraints
+                )
+                identity_changed = constraint_identity != previous_constraint_identity
+                event_selected = bool(events or cpu_events or identity_changed)
+                full_selected = selected or event_selected or bool(aggregate_failure)
+                if full_selected and not selected:
                     # Expand fields from the SAME cached native evaluation;
                     # no second mj_forward or device step is performed.
                     native = native_fields(model, native_data, state.q, state.v, stored, full=True)
                     cpu_fields = native_fields(model, cpu, cpu_q, cpu_v, cpu_packet, full=True)
                 journal.write(
-                    "step", durable=selected or bool(aggregate_failure),
+                    "step", durable=full_selected,
+                    full_capture_reasons={"fixed_checkpoint": selected,
+                                          "foot_event": bool(events or cpu_events),
+                                          "constraint_identity_changed": identity_changed,
+                                          "first_failure": bool(aggregate_failure)},
+                    constraint_identity=constraint_identity,
                     source_grid_time=grid_time, source_output_time=output_grid_time,
                     device={"state": compact_state(after), "input_time": receipt.input_time,
                             "control": receipt.stored_control, "policy": proposal,
@@ -991,12 +1009,12 @@ def trajectory(args, journal, protocol, compilation, derived):
                                  "velocity": row.velocity, "position": row.position}
                                 for row in receipt.constraints],
                             "qfrc_constraint": receipt.qfrc_constraint,
-                            "full_receipt": receipt if selected or aggregate_failure else None},
+                            "full_receipt": receipt if full_selected else None},
                     same_input_native={
                         "contacts": contact_rows(native["contacts"]),
                         "qacc": native["qacc"], "qfrc_constraint": native["qfrc_constraint"],
                         "energy": native["energy"],
-                        "full_fields": native if selected or aggregate_failure else None},
+                        "full_fields": native if full_selected else None},
                     independent_cpu={
                         "input_q": cpu_q, "input_v": cpu_v, "input_time": cpu_time,
                         "q": cpu.qpos.copy(), "v": cpu.qvel.copy(), "time": float(cpu.time),
@@ -1005,10 +1023,11 @@ def trajectory(args, journal, protocol, compilation, derived):
                         "metrics": cpu_metrics, "events": cpu_events, "energy": cpu_fields["energy"],
                         "input_energy_balance": cpu_balance,
                         "qfrc_constraint": cpu_fields["qfrc_constraint"],
-                        "full_fields": cpu_fields if selected or aggregate_failure else None},
+                        "full_fields": cpu_fields if full_selected else None},
                     failures=aggregate_failure,
                 )
                 state = after
+                previous_constraint_identity = constraint_identity
                 if aggregate_failure:
                     failures = aggregate_failure
                     break

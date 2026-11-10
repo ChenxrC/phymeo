@@ -444,3 +444,57 @@ def test_postcommit_cleanup_failure_does_not_report_false_rollback(mode, monkeyp
         assert engine.checkpoint_revision == revision + 1
         assert advance(engine, compiled, 1) == expected
         # Public close retries the old owner, while the new owner was already valid.
+
+
+@pytest.mark.parametrize("mode", MODES)
+def test_close_attempts_all_retired_owners_and_retains_only_actual_failures(mode, monkeypatch):
+    compiled = compile_case("fixed-tree")
+    engine = runtime(compiled, mode)
+    attempts = []
+    try:
+        cp = engine.checkpoint()
+        first = engine._device
+        first_close = first.close
+        def first_failure():
+            attempts.append("first")
+            raise RuntimeError("first retired owner remains allocated")
+        with monkeypatch.context() as patch:
+            patch.setattr(first, "close", first_failure)
+            engine.restore(cp, expected_revision=engine.checkpoint_revision)
+            second = engine._device
+            second_close = second.close
+            def second_failure():
+                raise RuntimeError("second temporarily fails during retirement")
+            patch.setattr(second, "close", second_failure)
+            engine.restore(cp, expected_revision=engine.checkpoint_revision)
+            current = engine._device
+            current_close = current.close
+            def second_success():
+                attempts.append("second")
+                second_close()
+            def current_success():
+                attempts.append("current")
+                current_close()
+            patch.setattr(second, "close", second_success)
+            patch.setattr(current, "close", current_success)
+            attempts.clear()
+            with pytest.raises(ExceptionGroup) as caught:
+                engine.close()
+            assert attempts == ["first", "second", "current"]
+            assert len(caught.value.exceptions) == 1
+            assert str(caught.value.exceptions[0]) == "first retired owner remains allocated"
+            assert engine._checkpoint_retired == [first]
+            with pytest.raises(RuntimeError):
+                engine.checkpoint()
+        # The same public close retries even though physics access is closed.
+        with monkeypatch.context() as patch:
+            def first_success():
+                attempts.append("first-retry")
+                first_close()
+            patch.setattr(first, "close", first_success)
+            engine.close()
+        assert attempts == ["first", "second", "current", "first-retry"]
+        assert engine._checkpoint_retired == []
+        engine.close()
+    finally:
+        engine.close()

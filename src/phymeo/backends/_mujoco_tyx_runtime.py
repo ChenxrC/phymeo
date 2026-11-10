@@ -733,16 +733,22 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
 
     def close(self):
         with self._lock:
-            if self._closed:
+            retired = list(getattr(self, "_checkpoint_retired", ()))
+            if self._closed and not retired:
                 return
-            try:
-                for retired in getattr(self, "_checkpoint_retired", ()):
-                    retired.close()
-            finally:
-                self._checkpoint_retired = []
-                device = getattr(self, "_device", None)
+            device = getattr(self, "_device", None)
+            owners = retired + ([] if device is None else [device])
+            failed, errors = [], []
+            for owner in owners:
                 try:
-                    if device is not None:
-                        device.close()
-                finally:
-                    super().close()
+                    owner.close()
+                except Exception as error:
+                    failed.append(owner)
+                    errors.append(error)
+            # Physics access closes even if resource cleanup needs a retry.
+            # Successful owners are dropped; every actual failed owner survives.
+            self._checkpoint_retired = failed
+            self._device = None
+            super().close()
+            if errors:
+                raise ExceptionGroup("TYX cleanup failed; close() can retry retained owners", errors)

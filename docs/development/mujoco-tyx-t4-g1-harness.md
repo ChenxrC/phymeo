@@ -1,6 +1,8 @@
 # G1 MuJoCo-TYX public policy harness — authoring handoff
 
-Status: **CODE_READY_TESTS_PENDING / UNEXECUTED**. This report describes authored code, not an admission result, simulated trajectory, CUDA pass, or completed dance. Authoring slot released after the report commit. Parent retains the only project execution slot.
+Current parent acceptance: the original20s CUDA trajectory, h=.001/2s and both signed push/2s windows passed on the final solver, alongside210 matrix nodes, six same-input pose checks, outside-source wheel consumers and the complete saved-evidence audit. See the [current validation report](../benchmarks/p65-mujoco-tyx-mixed-constraints.md). The original asset URLs and redistribution boundary are in the [G1 source plan](../superpowers/plans/2026-11-09-training-humanoid-priority.md); external policy weights and motions are not bundled into the product.
+
+Historical authoring status: **CODE_READY_TESTS_PENDING / UNEXECUTED**. The handoff below describes the authored snapshot; subsequent parent execution does not retroactively change that snapshot's status. Authoring slot was released after the report commit; parent validation is now complete and its execution slot is released.
 
 ## Scope and immutable inputs
 

@@ -1,12 +1,14 @@
 # MuJoCo-Warp → TYX 的机器人与 G1 扩展计划
 
-当前状态：**T0/T1/T2/T3a/T3b_LOCAL_VALIDATED，T4_NEXT**，2026-11-10。T0见[统一入口验收](../benchmarks/p65-unified-scene-compilation.md)，T1见[旋转树实际结果](../benchmarks/p65-mujoco-tyx-rotational-tree.md)，T2见[原生自由根树实际结果](../benchmarks/p65-mujoco-tyx-floating-tree.md)，T3a见[共同法向接触实际结果](../benchmarks/p65-mujoco-tyx-coupled-normal.md)。T3b见[有限配对与连续重入实际结果](../benchmarks/p65-mujoco-tyx-finite-contacts.md)；T4–T6仍待实施和各自验收，父保持唯一项目执行owner。下文来源研究原由独立作者在零项目执行下完成，新的验收不倒灌为当时已运行。主计划是[统一场景编译](../superpowers/plans/2026-11-10-unified-scene-compilation.md)。
+当前状态：**T0/T1/T2/T3a/T3b_LOCAL_VALIDATED，T4/T5_FINITE_G1_LOCAL_VALIDATED**，2026-11-11。T0见[统一入口验收](../benchmarks/p65-unified-scene-compilation.md)，T1见[旋转树实际结果](../benchmarks/p65-mujoco-tyx-rotational-tree.md)，T2见[原生自由根树实际结果](../benchmarks/p65-mujoco-tyx-floating-tree.md)，T3a见[共同法向接触实际结果](../benchmarks/p65-mujoco-tyx-coupled-normal.md)。T3b见[有限配对与连续重入实际结果](../benchmarks/p65-mujoco-tyx-finite-contacts.md)。T4/T5当前实现和逐组验证以[新混合约束报告](../benchmarks/p65-mujoco-tyx-mixed-constraints.md)为准；原G1两次拒步保留；最终20秒、h细化/双向推扰、210项矩阵、新wheel与保存审计均通过。T6仍待实施，后续仍由父安排唯一串行执行owner，当前执行槽已释放。下文来源研究和原路线保留历史含义，新的结果不倒灌为当时已运行。主计划是[统一场景编译](../superpowers/plans/2026-11-10-unified-scene-compilation.md)。
 
 ## 1. 目标与真实起点
 
 目标是把**MuJoCo 模型语义的设备求解**逐层移植到 TYX。CPU `MjSpec.compile` 可以继续作为一次性模型编译，不能在每个物理步调用 CPU `mj_step`、HOST 动力学或 Warp 求解，再把结果包装成 TYX。TYX 的解释模式与真实 CUDA launch 应分别留证；显式 Warp 模式保留自己的名称和精度声明。
 
-已完成的T0是1–8DOF纯平移树、独立自由球及单个plane–sphere法向接触；T1进一步完成固定根hinge/slide混合树，T2完成原生自由根与0–29 scalar joints。T3a新增plane–sphere/capsule/box与sphere–sphere/capsule/box六类配对、完整J与共享M的多个condim1法向共同求解，公共策略环境和真实CUDA已验。T3b已补齐capsule–capsule/box、box–box及八条1秒连续卸载重入，原.512s胶囊恢复门失败保持；**摩擦、G1持续支撑和通用MuJoCo仍未覆盖**。本计划不把“换默认backend”本身当功能扩展，也不以一个舞蹈例子代替模块矩阵。
+已完成的T0是1–8DOF纯平移树、独立自由球及单个plane–sphere法向接触；T1进一步完成固定根hinge/slide混合树，T2完成原生自由根与0–29 scalar joints。T3a新增plane–sphere/capsule/box与sphere–sphere/capsule/box六类配对、完整J与共享M的多个condim1法向共同求解，公共策略环境和真实CUDA已验。T3b已补齐capsule–capsule/box、box–box及八条1秒连续卸载重入，原.512s胶囊恢复门失败保持；T4已补齐pyramidal摩擦/soft limits/dry friction，T5完成有限20秒原策略支撑；**完整舞蹈与通用MuJoCo仍未覆盖**。本计划不把“换默认backend”本身当功能扩展，也不以一个舞蹈例子代替模块矩阵。
+
+当前T4已实现原pyramidal condim1/3/4/6、soft joint limits和dry friction，使用明确命名的有界box active-set算法；并未移植MuJoCo原Newton/CG迭代。它保留原M/J/R/aref与力学目标，原生solver选项和实际TYX算法分别在能力报告中声明。原路线表中的“source选定Newton/CG”是早期设想，以后续[冻结T4计划](../superpowers/plans/2026-11-10-mujoco-tyx-mixed-constraints.md)裁定为准；condim4/6已进入T4，不再作为尚未实施的T6项。
 
 已有可复用资产：
 

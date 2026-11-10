@@ -1,8 +1,8 @@
 # P6.5 人工续作入口
 
-## 当前续作（2026-11-10，MuJoCo-TYX T4/T5 正在验证）
+## 当前续作（2026-11-11，MuJoCo-TYX T4与G1有限持续支撑已验收）
 
-全量已提交基线73a85f8已推送codex/dev。当前新混合摩擦/限位/干摩擦共解已集成，父唯一串行执行，原三个作者只纯编码/审阅。先读[本批当前结果与剩余项](../benchmarks/p65-mujoco-tyx-mixed-constraints.md)及[执行计划](../superpowers/plans/2026-11-10-mujoco-tyx-mixed-constraints.md)。短组和首次失败修复正在执行，长窗尚未全过；原G1验证入口已交接，不能把准备或旧HOST支撑结果当作新MuJoCo-TYX通过。K1三个旧WIP继续保留，不重跑旧T3已绿组或开启周期任务。
+全量基线与本批已验增量同步到codex/dev。先读[本批正式结果](../benchmarks/p65-mujoco-tyx-mixed-constraints.md)和[已实现架构](../architecture/unified-scene-compilation.md)。最终产品源5538c18f：混合pyramidal condim1/3/4/6、soft limits、dry friction共用完整M/J求解并共同发布；210个最终测试节点、G1六个同入步姿态对照、原策略20s/10000步及h细化/双向推扰共14000接受步均通过，无拒步。新wheel两后端源码外公共ENV/reset/clone通过，476产品文件源码/包/安装一致，97保存审计核四条成功轨迹与两条原失败通过。原51/81失败、75/77初始化互操作缺口和旧检查点两字段缺陷均保留。所有项目执行结束，原三个作者释放；无周期任务或远程CI。K1三个旧WIP仍未验收，不覆盖或重复派作。下一步按[扩展路线](mujoco-tyx-expansion-plan.md)区分完整131.48s动作、mesh/更多约束以及设备训练与规模，不以本批有限支撑标整个P6.5或Newton对齐完成。
 
 ## 当前续作（2026-11-10，MuJoCo-TYX T3b有限配对）
 

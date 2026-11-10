@@ -84,3 +84,11 @@ N8的首次注册错误正是混淆了整台robot ID与逐body ID，原guard在0
 [较大功能族全景与原验收入口](../development/phymeo-newton-panorama-2026-11-07.md)保留更广范围；本批最终状态以本页实际执行证据为准。这里的源码路径相对`src/phymeo/`。
 
 规模边界：CollisionModel单模型最多256个shape。W256每world一物体加独立地面需512个声明，当前单contact plan尚不能容纳；不通过增cap或隐藏分页把该缺口称作通过。原W32接口和纯运动world数与该shape域是不同维度。[分页单次发布调研](../development/p65-resident-contact-scale-research.md)和[设备摩擦/张量接口调研](../development/p65-device-policy-contact-research.md)只画后续路线，不冒充实现。
+
+## 新增并行分支：MuJoCo-TYX
+
+本页上方的原HOST/resident链和验收保持独立。新分支为CPU MuJoCo编译记录 → 默认CUDA MuJoCo-TYX → 同一公共controls/step/snapshot/reset协议；可以继续接ResidentVectorEnv/PolicyRunner。设备内完成primitive窄相、当前Jacobian、dry/limit/pyramid行装配、共同质量矩阵求解和Euler，整批共同发布力与运动。详[统一编译与T4管线](unified-scene-compilation.md)。
+
+组合消费者为examples/g1_mujoco_tyx_policy.py，保留原G1策略/输入并分别推进TYX与CPU反馈轨迹。同入步native力学字段在F1严格比较，长窗保存同入步诊断并使用固定支撑/姿态/载荷/跟踪工程门。最新窗口状态见[T4/G1报告](../benchmarks/p65-mujoco-tyx-mixed-constraints.md)。它尚未复用本页旧Three.js长动作播放器，也不把原resident CUDA2秒或HOST全舞蹈当作自己的结果。
+
+当前性能边界：CPU编译与准入、CPU ONNX示例、NumPy控制/快照和完整验证回读仍在链上；新几何/求解已在TYX设备内，不等于无HOST往返训练。下一步可在已验证的共同物理接口上独立推进批量world、选择性观测、设备策略张量与吞吐测量。

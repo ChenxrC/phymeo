@@ -15,7 +15,7 @@ flowchart TD
   H --> J[TYX interpret / CUDA resident runtime]
   E --> K[独立 MjModel / MjData → CPU mj_step]
   E --> L[显式 Warp：put_model / put_data → CUDA]
-  E --> T[默认 CUDA：MuJoCo-TYX T0/T1/T2/T3a/T3b]
+  E --> T[默认 CUDA：MuJoCo-TYX T0/T1/T2/T3a/T3b/T4]
   I --> M[共同运行协议：snapshot / controls / step / reset / close]
   J --> M
   K --> M
@@ -34,7 +34,7 @@ flowchart TD
 | MuJoCo运行 | `phymeo.backends.mujoco_runtime.MuJoCoRuntime` | 选择原生CPU或独立CUDA路径；同一编译模型的多个独立world |
 | 环境与策略 | 已有 `ResidentVectorEnv` / `PolicyRunner` | 消费运行协议，维护episode、动作保持、时钟和失败后的reset要求 |
 
-`interpret` 是 TYX 的 CPU 解释路径，不表示已有通用原生 CPU 编译后端。TYX 接触路径仍可能包含 HOST 几何与力律；选择 CUDA 不代表整个管线都驻留 GPU。
+`interpret` 是 TYX 的 CPU 解释路径，不表示已有通用原生 CPU 编译后端。原Phymeo resident接触路径仍可能包含HOST几何与力律；新的MuJoCo-TYX T4几何、行装配和共同求解在设备内执行。两条路径分别标注，CPU编译、观察与示例策略推理仍存在。
 
 当前 MuJoCo 分支消费原编译记录；本批没有实现任意 `SceneDeclaration` 反向生成 `MjSpec`。这样可以保留原生模型中的 tendon 等功能，同时防止把原生 MuJoCo 能力错误归给 Phymeo/TYX。
 
@@ -90,7 +90,7 @@ with MuJoCoRuntime(compiled, world_keys=(4, 19), mode="cuda") as runtime:
 
 `mode="cpu"` 使用 `mj_step`；`mode="cuda"` 默认选择新 MuJoCo-TYX，显式 `implementation="warp"` 才使用 MuJoCo-Warp。TYX的CPU解释验证用 `mode="interpret"`。缺少依赖、不支持特性或设备不可用均报错，没有CPU或Warp静默回退。控制长度必须匹配原生actuator数。含多后端选择的示例入口见 `examples/unified_scene.py`。
 
-新MuJoCo-TYX是有限模型域的算法移植，独立于原Phymeo TYX resident。T0支持纯平移树、中心各向同性自由球、单个plane–sphere法向接触；[T1已验收](../benchmarks/p65-mujoco-tyx-rotational-tree.md)增加固定根1–8DOF hinge/slide混合树；[T2已验收](../benchmarks/p65-mujoco-tyx-floating-tree.md)增加一个原生自由根加0–29 scalar joints，nq≤36/nv≤35，保留偏心COM、非球惯量和完整根–关节耦合。T1/T2每步重算完整FK/J/M/bias；[T3a已验收](../benchmarks/p65-mujoco-tyx-coupled-normal.md)进一步在相同树上支持plane–sphere/capsule/box和sphere–sphere/capsule/box、多condim1法向共同求解。[T3b已验收](../benchmarks/p65-mujoco-tyx-finite-contacts.md)补齐capsule–capsule/box、box–box，合计九类配对，并完成八条连续1秒卸载重入轨迹。原.512秒胶囊静支撑门失败仍保留；摩擦、joint limits和G1持续支撑尚未覆盖。详[扩展路线与多案例矩阵](../development/mujoco-tyx-expansion-plan.md)。
+新MuJoCo-TYX是有限模型域的算法移植，独立于原Phymeo TYX resident。T0支持纯平移树、中心各向同性自由球、单个plane–sphere法向接触；[T1已验收](../benchmarks/p65-mujoco-tyx-rotational-tree.md)增加固定根1–8DOF hinge/slide混合树；[T2已验收](../benchmarks/p65-mujoco-tyx-floating-tree.md)增加一个原生自由根加0–29 scalar joints，nq≤36/nv≤35，保留偏心COM、非球惯量和完整根–关节耦合。T1/T2每步重算完整FK/J/M/bias；[T3a已验收](../benchmarks/p65-mujoco-tyx-coupled-normal.md)进一步在相同树上支持plane–sphere/capsule/box和sphere–sphere/capsule/box、多condim1法向共同求解。[T3b已验收](../benchmarks/p65-mujoco-tyx-finite-contacts.md)补齐capsule–capsule/box、box–box，合计九类配对，并完成八条连续1秒卸载重入轨迹。原.512秒胶囊静支撑门失败仍保留。后续T4已接入摩擦、soft limits和dry friction；最新逐组结果与G1窗口范围见[混合约束验证](../benchmarks/p65-mujoco-tyx-mixed-constraints.md)，不倒灌为T3b结果。详[扩展路线与多案例矩阵](../development/mujoco-tyx-expansion-plan.md)。
 
 T1/T2的 `states[world].last_step.dynamics` 提供同次设备入步body pose/COM、世界COM Jacobian、M、bias、passive、applied和smooth acceleration；`integration_acceleration`另保Euler隐式阻尼解。T2的input_q/input_v保原生不同维度，root-origin世界线速度与root-local角速度不改为Phymeo资产坐标。端点CPU观察不能替代这些入步量。
 
@@ -113,3 +113,31 @@ MuJoCo到Phymeo资产转换支持单个固定树或自由根、每活动body一�
 Phymeo统一场景首域是每world一个独立关节系统与有限静态环境。机器人自身互碰、多机器人同world联合设备求解、静态胶囊HOST装配和固定根碰撞形状的部分跨后端反力场景，按能力报告拒绝。此处没有通过多次独立step模拟同world共同求解。
 
 后续优先补全场景声明到MjSpec导出、更多显式资产转换和后端能力交集，再推进更大的GPU训练world数。不能用原生MuJoCo运行通过替代Phymeo自身碰撞、软体或联合求解验收。
+
+## MuJoCo-TYX T4：原生语义的共同约束管线
+
+```mermaid
+flowchart LR
+  M[CPU MjSpec编译 / 静态准入] --> S[冻结TYX模型与设备状态]
+  S --> F[设备 FK / COM / J / physical M / bias]
+  F --> G[全部primitive候选与当前manifold]
+  G --> R[设备压紧：dry / soft limits / pyramid edges]
+  R --> Q[共同有界QP：physical M与全部EFC]
+  Q --> W[设备接触坐标六维力]
+  W --> H[HOST回读：双方世界力 / COM力矩]
+  Q --> I[Euler：M+hD积分]
+  H --> P[整批原子检查与共同发布]
+  I --> P
+  P --> O[公共快照 / Task / PolicyRunner]
+  O --> C[下一步显式控制]
+  C --> F
+```
+
+T4保留原pyramidal condim1/3/4/6、scalar soft joint limits、DOF dry friction与黏性阻尼。所有接触共用完整根—关节质量矩阵，不逐点独立推进。当前混合算法按模型自由度规模批量释放违反KKT的bound，处理可行线搜索和边界重绑；face仍计原source iterations，最终从存储力独立回算质量方程与KKT。它不是CPU mj_step，也不要求复制MuJoCo Newton的迭代轨迹。
+
+模型容量为G128/P1024/static slots2048，实际contacts128/EFC512（默认64/256）；超域或超实际容量整批拒绝。小自由面用平方根QR，大面用等价primal修正，不预分配EFC平方矩阵。全当前Jacobian、边界变量、零力接触与pure couple保留；接触力对应步入口，发布q/v对应步末。
+
+公开last_step包含动力学、完整六维contact与typed constraints。设备输出接触坐标六维力；HOST回读发布层作双方世界坐标转换、COM力矩搬移及一致性检查，不重新求接触力。CPU detached mj_forward只作端点观察，不能替代设备真实载荷；验证harness的同入步native oracle和独立CPU反馈轨迹也只作对照。示例G1用CPU ONNX 50Hz反馈，这是该示例的策略选择，不是引擎固定要求CPU策略。现有快照/完整证据回读仍是HOST边界，尚未建立全设备训练或吞吐优势。
+
+最新G1使用原primitive资产、502可能配对/942几何槽、原非零初态和原策略。F1三姿态在解释/CUDA通过；当前最终源码已完成原策略20秒/10000步、h=.001两秒/2000步及正反推扰各两秒/1000步，全部原工程门通过，未重置或拒步。最终210项通用矩阵、源码外双后端wheel和完整保存审计均已通过，476产品文件同源。实际验收持续更新到上面的混合约束报告；原HOST/resident的131.48秒结果不属于这条新后端。Mesh部署、椭圆cone、equality/tendon、GPU native sensors及完整舞蹈仍需独立扩展。
+公开能力使用 mixed_articulated_constraints_supported 与 floating_mixed_constraints_supported 描述当前模型准入域；旧 g1_supported 是后者的弃用兼容别名。capability_scope 明确 admitted-model-domain; trajectory-validation-separate，支持此模型域不等于某个策略、时长或所有人形机器人都通过。

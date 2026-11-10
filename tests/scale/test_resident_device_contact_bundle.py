@@ -643,9 +643,26 @@ def test_empty_interleaved_and_nonempty_zero_pair_pages(tyx_mode, tmp_path, monk
             (empty_page(), specs[0], zero, empty_page()), narrow_phase="device_patch"
         ) as plan:
             monkeypatch.setattr(bridge, "contact_patch_sample", b2.no_host_search)
+            zero_query = plan._device_patch_queries[2]
+            sentinel_fields = (
+                "patch_weight", "patch_gap", "patch_normal", "patch_common", "patch_ids",
+                "patch_bary", "patch_surface", "patch_skin", "patch_mcount",
+            )
+            for name in sentinel_fields:
+                buffer = zero_query._buffers[name]
+                sentinel = np.full(buffer.shape, 7, dtype=buffer.dtype)
+                if isinstance(buffer, np.ndarray):
+                    np.copyto(buffer, sentinel)
+                else:
+                    buffer.copy_from(sentinel)
             entry = batch.snapshot()
             assert batch.step_contacts(plan, H) == {7: True, 31: True}
             aggregate = assert_geometry(plan, entry)
+            zero_result = aggregate.page_queries[2]
+            assert zero_result.patch["patch_meta"].shape == (0, 8)
+            assert not zero_result.requested_pairs
+            for name in sentinel_fields:
+                assert np.all(zero_result.patch[name] == (-1 if name == "patch_ids" else 0))
             assert aggregate.page_consumptions[0] is aggregate.page_consumptions[3] is None
             assert aggregate.page_consumptions[2] is not None
             assert not aggregate.page_consumptions[2].samples

@@ -210,6 +210,96 @@ def test_all_worlds_loaded_four_site_pages(count, tyx_mode, tmp_path, monkeypatc
             )
 
 
+def keyed_query_evidence(plan):
+    """Complete pair/shape evidence, with only address permutations removed.
+
+    Original raw buffers remain fully saved. Pair indices, packed site offsets,
+    shape/world table rows and accepted slots are checked then mapped to keys.
+    Opaque runtime owners and page registrations are compared inside each run.
+    """
+    output = {"pairs": {}, "shapes": {}, "worlds": {}}
+    for conversion in plan.last_device_patch.page_consumptions:
+        if conversion is None:
+            continue
+        query, source = conversion.query, conversion.query.source
+        assert set(source) == {
+            "schema", "model", "bindings", "world_keys", "world_origins_m",
+            "shape_world_rows", "shape_keys", "shape_revisions", "shape_kinds",
+            "shape_rows", "shape_groups", "shape_layouts", "world_layouts",
+            "vertex_offsets", "vertex_ids", "declared_local_points_m", "upload_frame",
+            "uploaded_local_points_m", "point_quantization_error_m", "declared_radius_m",
+            "uploaded_radius_m", "radius_quantization_error_m", "allowed_pairs",
+            "pose", "stamp", "accepted_ticks", "accepted_slots", "owned_buffer_layout",
+        }
+        slots = source["accepted_slots"]
+        assert len(set(slots.values())) == len(slots)
+        for i, world in enumerate(query.world_keys):
+            assert source["accepted_ticks"][slots[world]] == query.ticks[i]
+            output["worlds"][world] = dict(
+                tick=query.ticks[i], origin=source["world_origins_m"][i],
+                layout=source["world_layouts"][i],
+            )
+        shape_names = ("shape_revisions", "shape_kinds", "shape_groups", "shape_layouts",
+                       "upload_frame", "declared_radius_m", "uploaded_radius_m",
+                       "radius_quantization_error_m", "pose")
+        vertex_names = ("vertex_ids", "declared_local_points_m",
+                        "uploaded_local_points_m", "point_quantization_error_m")
+        for i, key in enumerate(query.shape_keys):
+            assert source["world_keys"][source["shape_world_rows"][i]] == key.world
+            binding = source["bindings"][i]
+            shape = source["model"].shapes[i]
+            assert shape.key == binding.key == key
+            row = int(source["shape_rows"][i])
+            # This permutation fixture has ordinary full tree rows only.
+            assert int(source["shape_layouts"][i]) == 0
+            assert row == (-1 if type(binding) is ph.ResidentStaticBinding else slots[key.world])
+            stamp = source["stamp"][i].copy()
+            assert stamp[2] == slots[key.world]
+            stamp[2] = key.world
+            first, last = map(int, source["vertex_offsets"][i:i + 2])
+            data = {name: source[name][i] for name in shape_names}
+            data.update({name: source[name][first:last] for name in vertex_names})
+            data.update(shape=shape, binding=binding, stamp=stamp,
+                        physical_row_world=None if row == -1 else key.world,
+                        schema=source["schema"])
+            assert key not in output["shapes"]
+            output["shapes"][key] = data
+        assert source["model"].excluded == ()
+        assert set(source["allowed_pairs"]) == set(query.requested_pairs)
+        assert len(query.rows) == query.stats["logical_pairs"] == query.stats["padded_pairs"]
+        used = 0
+        for i, row in enumerate(query.rows):
+            assert query.requested_pairs[query.request_row[i]] == row.pair
+            assert not query.request_reversed[i]
+            raw = {name: value[i].copy() for name, value in query.raw.items()}
+            assert raw["meta"][12] == query.attempt_tag and raw["meta"][13] == i
+            raw["meta"][13] = 0
+            meta = query.patch["patch_meta"][i].copy()
+            count, offset = int(meta[2]), int(meta[6])
+            assert offset == used and count == len(row.patch.sites)
+            meta[6] = 0
+            patch = {"schema": query.patch["schema"], "enabled": query.patch["enabled"],
+                     "patch_meta": meta}
+            patch.update({name: value[offset:offset + count]
+                          for name, value in query.patch.items()
+                          if name not in ("schema", "enabled", "patch_meta")})
+            used += count
+            assert row.pair not in output["pairs"]
+            output["pairs"][row.pair] = dict(
+                row=row, raw=raw, patch=patch, sample=conversion.samples[row.pair],
+                differences=conversion.differences[row.pair],
+                patch_differences=conversion.patch_differences[row.pair],
+                topology_generation=query.topology_generation, state_epoch=query.state_epoch,
+                active=query.active, pair_source=query.pair_source,
+                attempt_tag=query.attempt_tag, stats=query.stats,
+                owned_buffer_layout=source["owned_buffer_layout"],
+            )
+        for name, value in query.patch.items():
+            if name not in ("schema", "enabled", "patch_meta"):
+                assert np.all(value[used:] == (-1 if name == "patch_ids" else 0))
+    return output
+
+
 def slider_run(mode, path, groups, *, route="bundle", order=None):
     worlds = tuple(sorted(w for group in groups for w in group))
     with _batch(mode, path / "cache", worlds if order is None else order) as batch:
@@ -223,7 +313,7 @@ def slider_run(mode, path, groups, *, route="bundle", order=None):
             kwargs = {} if route == "host" else dict(narrow_phase="device_patch")
             plan = batch.prepare_contact_bundle(specs, **kwargs)
         with plan:
-            records, physical, samples = [], [], []
+            records, physical, samples, query_sets = [], [], [], []
             q, v = 0.0, 1 / 64
             for _ in range(3):
                 entry = batch.snapshot()
@@ -243,9 +333,10 @@ def slider_run(mode, path, groups, *, route="bundle", order=None):
                 else:
                     if route != "host":
                         samples.append(assert_geometry(plan, entry).samples)
+                        query_sets.append(keyed_query_evidence(plan))
                     records.append(capture(batch, plan, entry))
             b2.save_rows(path, "complete", dict(h=H, route=route, groups=groups, records=records))
-            return physical, samples
+            return physical, samples, query_sets
 
 
 @pytest.mark.tyx
@@ -307,6 +398,7 @@ def test_world_page_and_partition_permutation(tyx_mode, tmp_path, monkeypatch):
     for observed in runs[1:]:
         close_values(observed[0], runs[0][0])
         close_values(observed[1], runs[0][1])
+        close_values(observed[2], runs[0][2])
 
 
 @pytest.mark.tyx
@@ -379,6 +471,8 @@ def test_last_page_fault_never_publishes_partial_result(fault, tyx_mode, tmp_pat
                    plan.last_device_patch, plan.last_device_queries)
             old_layouts = tuple(p._trees.layouts for p in plan._pages)
             old_broads = tuple(p.last_result for p in plan._pages)
+            old_device_results = tuple(q.last_result for q in plan._device_patch_queries)
+            old_bank, old_epoch = batch._active, batch._state_epoch
             query = plan._device_patch_queries[-1]
             success_counts = tuple(q.stats["queries"] for q in plan._device_patch_queries)
             attempts = tuple(q.stats["attempts"] for q in plan._device_patch_queries)
@@ -442,6 +536,9 @@ def test_last_page_fault_never_publishes_partial_result(fault, tyx_mode, tmp_pat
                 with pytest.raises((RuntimeError, ValueError)):
                     batch.step_contacts(plan, H)
             assert batch.snapshot() == before
+            assert batch._active == old_bank and batch._state_epoch == old_epoch
+            assert all(q.last_result is r for q, r in
+                       zip(plan._device_patch_queries, old_device_results, strict=True))
             current = (plan.last_accepted, plan.last_status, plan.last_result,
                        plan.last_device_patch, plan.last_device_queries)
             assert all(a is b for a, b in zip(old, current, strict=True))

@@ -39,20 +39,24 @@ def setup_asset(tmp_path, floating):
         spec = compile_floating_tree_world(world)
         return asset, spec, ph.ResidentFloatingTreeBinding, compile_floating_tree_binding, 1
     program = ph.DrivenRobotProgram(asset.model, **gains)
-    world = ph.FixedRobotTree(program, program.initial_state(ph.RobotState([0.125], [0])))
+    world = ph.FixedRobotTree(program, program.initial_state(ph.RobotState([0.125], [0.0])))
     return asset, compile_tree_world(world), ph.ResidentTreeBinding, compile_tree_binding, 0
 
 
 @pytest.mark.parametrize("floating", (False, True))
-@pytest.mark.parametrize("kind,dims", (
-    ("cylinder", (1/8, 1/4)), ("cone", (3/16, 1/4)),
-    ("ellipsoid", (1/4, 3/16, 1/8)),
-))
+@pytest.mark.parametrize(
+    "kind,dims",
+    (
+        ("cylinder", (1 / 8, 1 / 4)),
+        ("cone", (3 / 16, 1 / 4)),
+        ("ellipsoid", (1 / 4, 3 / 16, 1 / 8)),
+    ),
+)
 def test_complete_solid_broad_bound_preserves_single_material(tmp_path, floating, kind, dims):
     _, spec, binding_type, compile_binding, group = setup_asset(tmp_path, floating)
     key = ph.CollisionKey(17, 23, 5)
-    shape = ph.CollisionShape(key, kind, (71,), curved=ph.CurvedSolid(kind, dims, (0, .6, 0, .8)))
-    binding = binding_type(key, 17, group, [[1/32, -1/64, 1/128]], topology=spec.topology)
+    shape = ph.CollisionShape(key, kind, (71,), curved=ph.CurvedSolid(kind, dims, (0, 0.6, 0, 0.8)))
+    binding = binding_type(key, 17, group, [[1 / 32, -1 / 64, 1 / 128]], topology=spec.topology)
     compiled = compile_binding(shape, binding, spec)
     bound = max(map(Fraction, dims)) if kind == "ellipsoid" else sum(map(Fraction, dims))
     assert Fraction(float(compiled.geometry[0])) >= bound
@@ -64,7 +68,9 @@ def test_complete_solid_broad_bound_preserves_single_material(tmp_path, floating
 
 def test_radius_addition_cannot_lose_tiny_positive_height_or_overflow():
     key = ph.CollisionKey(17, 23, 5)
-    shape = ph.CollisionShape(key, "cylinder", (71,), curved=ph.CurvedSolid("cylinder", (1.0, 2**-100)))
+    shape = ph.CollisionShape(
+        key, "cylinder", (71,), curved=ph.CurvedSolid("cylinder", (1.0, 2**-100))
+    )
     assert Fraction(float(_shape_radius_upper(shape))) >= Fraction(1) + Fraction(1, 2**100)
     huge = replace(shape, curved=ph.CurvedSolid("cylinder", (1e308, 1e308)))
     with pytest.raises(ValueError, match="finite"):
@@ -80,7 +86,7 @@ def test_nonfolded_asset_keeps_original_orientation_and_source_proof(tmp_path, f
     shape = replace(original, key=key)
     assert shape.curved.orientation_xyzw != (0, 0, 0, 1)
     compile_binding(shape, binding, spec)
-    changed = replace(shape, curved=replace(shape.curved, dimensions_m=(1/4, 1/4)))
+    changed = replace(shape, curved=replace(shape.curved, dimensions_m=(1 / 4, 1 / 4)))
     with pytest.raises(ValueError, match="source shape"):
         compile_binding(changed, binding, spec)
 
@@ -92,7 +98,9 @@ def test_folded_curved_source_refuses_unrepresented_site_rotation(tmp_path, floa
     literal = '<box size="0.125 0.25 0.125"/>'
     assert xml.count(literal) == 1
     path = tmp_path / "folded-curved.urdf"
-    path.write_text(xml.replace(literal, '<cylinder radius="0.125" length="0.5"/>'), encoding="utf-8")
+    path.write_text(
+        xml.replace(literal, '<cylinder radius="0.125" length="0.5"/>'), encoding="utf-8"
+    )
     asset = (ph.load_floating_urdf if floating else ph.load_urdf)(
         path, gravity=np.zeros(3), collapse_fixed_joints=True
     )

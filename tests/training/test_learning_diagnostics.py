@@ -63,15 +63,54 @@ def transition(tick, *, action=0.25, end=False, episode=0):
             "tick": tick,
             "time": tick * 0.1,
             "last_step": {
-                "__type__": "fixture.Step",
-                "backend": "mujoco-tyx-cuda",
+                "__type__": "phymeo.backends._mujoco_tyx_runtime.MuJoCoTyxStepReceipt",
+                "world": key,
+                "tick": tick,
+                "input_time": (tick - 1) * 0.1,
+                "output_time": tick * 0.1,
+                "h": 0.1,
+                "control": {
+                    "__type__": "phymeo.backends.mujoco_runtime.MuJoCoControl",
+                    "ctrl": ctrl.copy(),
+                    "qfrc_applied": array([0.0]),
+                    "xfrc_applied": np.zeros((2, 6)),
+                },
+                "stored_control": {
+                    "__type__": "phymeo.backends.mujoco_runtime.MuJoCoControl",
+                    "ctrl": ctrl.copy(),
+                    "qfrc_applied": array([0.0]),
+                    "xfrc_applied": np.zeros((2, 6)),
+                },
                 "contacts": (),
                 "input_q": q.copy(),
+                "input_v": v.copy(),
+                "qacc": array([0.0]),
+                "integration_acceleration": array([0.0]),
+                "qfrc_actuator": ctrl.copy(),
+                "qfrc_constraint": array([0.0]),
+                "raw_contact_fields": {},
+                "source_solver": "fixture-source",
+                "numerical_solver": "fixture-numerical",
+                "contact_time": (tick - 1) * 0.1,
+                "backend": "mujoco-tyx-cuda",
+                "contact_phase": "tyx-euler-input-constraint-evaluation",
+                "contact_law": "synthetic-schema-only",
+                "state_precision": "fp32-device-integration",
+                "dynamics": None,
+                "constraints": (),
             },
         }
     return {
         "__type__": "phymeo.training.mujoco_tyx_env.MuJoCoTyxTransition",
         "sequence": episode * 2 + tick,
+        "input_frame": {
+            "__type__": "phymeo.backends.mujoco_task_workspace.MuJoCoTyxTaskFrame",
+            "binding": {},
+            "revision": episode * 2 + tick - 1,
+            "epoch": episode * 2 + tick,
+            "ticks": (tick - 1, tick - 1),
+            "times": ((tick - 1) * 0.1, (tick - 1) * 0.1),
+        },
         "world_keys": keys,
         "states": states,
         "accepted_worlds": dict.fromkeys(keys, True),
@@ -214,6 +253,47 @@ def test_phase_refuses_wrong_world_control_reward_and_incomplete_window(defect):
         stats.finish()
 
 
+@pytest.mark.parametrize(
+    "defect",
+    [
+        "receipt_type",
+        "wrong_world",
+        "stale_tick",
+        "output_time",
+        "input_time",
+        "h",
+        "stored_ctrl",
+        "stored_qfrc",
+        "stored_xfrc",
+    ],
+)
+def test_phase_refuses_unbound_actual_step_receipt(defect):
+    stats = PhaseAccumulator(protocol(), (5, 41), steps=2, horizon=2)
+    item = transition(1)
+    receipt = item["states"][5]["last_step"]
+    if defect == "receipt_type":
+        receipt["__type__"] = "fixture.Step"
+    elif defect == "wrong_world":
+        receipt["world"] = 41
+    elif defect == "stale_tick":
+        receipt["tick"] = 0
+    elif defect == "output_time":
+        receipt["output_time"] = 0.2
+    elif defect == "input_time":
+        receipt["input_time"] = 0.01
+    elif defect == "h":
+        receipt["h"] = 0.2
+    else:
+        channel = {
+            "stored_ctrl": "ctrl",
+            "stored_qfrc": "qfrc_applied",
+            "stored_xfrc": "xfrc_applied",
+        }[defect]
+        receipt["stored_control"][channel].flat[0] = 0.5
+    with pytest.raises(ValueError):
+        stats.add(item)
+
+
 def test_gradient_norms_are_post_clip_and_missing_is_unknown():
     known = gradient_evidence(
         {"finite_gradient": True, "optimizer_step": 3, "gradient_norms": (0.3, 0.4)}, 3
@@ -290,6 +370,15 @@ def seed_fixture(tmp_path, *, missing_gradient=False):
                     "iteration": index,
                     "next_iteration": index + 1,
                     "transitions": tuple(transition(t, end=t == 2, episode=index) for t in (1, 2)),
+                    "step_requests": tuple(
+                        {
+                            "ordinal": ordinal,
+                            "status": "accepted",
+                            "requested_action": np.full((2, 1), 0.25, np.float32),
+                            "transition_index": ordinal,
+                        }
+                        for ordinal in range(2)
+                    ),
                     "loss": loss,
                     "optimization": optimization,
                 },
@@ -446,6 +535,33 @@ def test_bound_but_structurally_invalid_stream_cannot_return_success(tmp_path, d
             records[index]["payload"] = wire(
                 {"tick": 1, "action": np.full((2, 1), 0.5, np.float32)}
             )
+
+    rebind_synthetic_trace(root, binding, edit)
+    with pytest.raises(ValueError):
+        diagnose_seed(root, binding, expected_task="fixture", expected_seed=7, budget=budget)
+
+
+@pytest.mark.parametrize("defect", ["missing", "order", "action", "status", "transition_index"])
+def test_training_requests_are_complete_ordered_and_bound(tmp_path, defect):
+    root, binding, budget = seed_fixture(tmp_path)
+
+    def edit(records):
+        record = next(item for item in records if item["kind"] == "update")
+        payload = dict(record["payload"]["mapping"])
+        requests = payload["step_requests"]["items"]
+        if defect == "missing":
+            requests.pop()
+        elif defect == "order":
+            requests.reverse()
+        else:
+            request = dict(requests[0]["mapping"])
+            if defect == "action":
+                request["requested_action"] = wire(np.full((2, 1), 0.5, np.float32))
+            elif defect == "status":
+                request["status"] = "calling-public-step"
+            else:
+                request["transition_index"] = 1
+            requests[0]["mapping"] = list(request.items())
 
     rebind_synthetic_trace(root, binding, edit)
     with pytest.raises(ValueError):

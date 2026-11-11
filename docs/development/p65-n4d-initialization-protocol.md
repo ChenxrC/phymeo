@@ -163,3 +163,10 @@ collection, numerical probe, lint/format, test, training or build was run here.
 Final four-path SHA256/Git-blob manifest is handed off separately after this
 report commit. Parent serial validation and actual three-seed outcomes remain
 pending.
+
+
+## Parent serial qualification (02:31)
+
+Author UNEXECUTED above is historical. First HOST run89 retained an RSL layout failure: the pinned MLP reuses the same Tanh object, so children() removes repeated applications. Sequential iteration now validates the actual forward registration order without relaxing the Linear/Tanh whitelist. Run93 passed 24 HOST cases and run90 passed 4 CUDA cases. Independent text review also identified frozen mean bias admission; the head must remain trainable, and a new frozen-bias refusal plus the actual trainable positive passed run96 (2 cases). Runs91/92 and94/95 are exact-scope static successes. The CUDA model publication and all existing cases retain their earlier qualified source bindings; run96 is the focused admission delta, not a claim that all cases were rerun on that delta.
+
+The original failure is preserved. No physics or optimization was run by these tests except the declared unit test optimizer step. The fixed three-seed physical learning experiment follows separately; its outcome is still pending.

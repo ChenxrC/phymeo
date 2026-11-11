@@ -147,6 +147,7 @@ def test_real_cpu_model_only_bias_changes_and_remains_trainable():
         "adam",
         "owner",
         "gradient",
+        "frozen_bias",
         "parameter",
     ),
 )
@@ -176,6 +177,8 @@ def test_validation_refuses_before_any_model_publication(fault):
         optimizer = torch.optim.Adam(critic.parameters(), lr=0.0003)
     elif fault == "gradient":
         next(actor.parameters()).grad = torch.zeros_like(next(actor.parameters()))
+    elif fault == "frozen_bias":
+        actor.mlp[-1].bias.requires_grad_(False)
     else:
         with torch.no_grad():
             next(actor.parameters()).flatten()[0] = float("inf")

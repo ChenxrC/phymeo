@@ -99,7 +99,9 @@ def _validate(actor, critic, optimizer, observation, expected_policy_hash, torch
         "only the upstream MLP with state-independent Gaussian mean",
     )
     _require(actor.distribution._distribution is None, "fresh Gaussian cache required")
-    layers = tuple(actor.mlp.children())
+    # RSL reuses one activation instance. Sequential iteration preserves each
+    # registered application; children() deduplicates it and loses the layout.
+    layers = tuple(actor.mlp)
     _require(1 <= len(layers) <= 33 and len(layers) % 2 == 1, "bounded alternating MLP layout")
     _require(
         all(
@@ -110,7 +112,8 @@ def _validate(actor, critic, optimizer, observation, expected_policy_hash, torch
     )
     head = layers[-1]
     _require(
-        head.bias is not None and 1 <= head.out_features <= 35, "actual bounded mean head bias"
+        head.bias is not None and head.bias.requires_grad and 1 <= head.out_features <= 35,
+        "actual bounded trainable mean head bias",
     )
     _require(type(optimizer) is torch.optim.Adam and not optimizer.state, "fresh Adam required")
     parameters = list(actor.parameters()) + list(critic.parameters())

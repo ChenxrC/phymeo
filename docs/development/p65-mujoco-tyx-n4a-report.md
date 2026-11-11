@@ -182,3 +182,41 @@ Only text/manual reasoning, exact file reads/hashes and small Git commits were
 used. A PowerShell hash-list command initially had a parser error before any
 read; the corrected file-I/O command produced the bindings above. No product
 failure or verification result is inferred from authoring checks.
+
+## Post-run31 repair handoff (supersedes only accounting claims above)
+
+Parent tested source5a3957a6: HOST20 and the three fixed CUDA preflights passed.
+Original J14011 learning run31 failed at upstream-update-7 after its first
+all-world256-step reset. The update returned before `counter_delta` rejected
+completed_kernels decreasing on the replacement device. The outer failure writer
+then tried counters after runtime close and recorded a secondary NoneType error.
+Baseline and zero-action evaluations had completed; the original run is still
+FAIL_N4A_RETAINED and its full update7 payload is missing. This repair does not
+backfill it or call that attempt a completed fixed-budget learning run.
+
+Pure-author repair base is5a3957a6. Tests-first5ba721bb adds six HOST nodes;
+current manual total is56 (HOST26, CUDA30), still uncollected for this revision.
+The three already-passed physical preflights are not a rerun requirement.
+
+Implementation changes stay in the original NEW helper/CLI/tests and two docs:
+
+- `measurement_counter_snapshot` uses public env/runtime/frame ownership and
+  transaction identities. No private device bank or generation identifier.
+- `counter_accounting` strictly enumerates5 env fields,10 runtime-extra fields,
+  seven task fields, and six device base plus two optional transport fields.
+  The first three scopes have strict monotonic differences under the same public
+  owners. Current-device fields instead preserve before/after and signed
+  snapshot differences with cumulative work/absolute generation UNKNOWN.
+- Real transition ticks distinguish reset calls from reset worlds and bind the
+  latter to env.resets. A revision/epoch delta is never called device generation.
+- `measure_update` retains its32-step attempt list through every post-update
+  measurement exception, with the actual returned record when one exists.
+  Final CUDA completion, counter-read and finite-audit evidence paths are covered.
+- `_observed_environment` captures public exit metadata before resource owners
+  close. `_output` only uses that saved metadata afterward.
+
+No numerical/policy/physical parameter or budget was changed. The tasks registry
+is byte-unchanged. The author ran no import, collection, tests, arithmetic probe,
+lint, formatter or physical execution. Parent owns focused affected HOST checks
+and the single fresh restart of the original J14011 full fixed budget. Historical
+hashes above remain the original implementation checkpoint, not this repair.

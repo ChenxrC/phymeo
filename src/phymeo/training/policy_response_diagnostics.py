@@ -216,23 +216,51 @@ def read_policy_pair(directory, binding, *, expected_task, expected_seed):
             "manifest_sha256": manifest_digest, "evidence": evidence}
 
 
+def _computation_flags(torch):
+    return {
+        "matmul_allow_tf32": torch.backends.cuda.matmul.allow_tf32,
+        "cudnn_allow_tf32": torch.backends.cudnn.allow_tf32,
+        "float32_matmul_precision": torch.get_float32_matmul_precision(),
+    }
+
+
 @contextmanager
-def _preserved_rng(torch):
+def _preserved_execution_state(torch):
     python_state, numpy_state = random.getstate(), np.random.get_state()
     cpu_state, cuda_states = torch.get_rng_state(), torch.cuda.get_rng_state_all()
+    flags = _computation_flags(torch)
     try:
-        yield
+        # Exactly the two computation assignments in original tasks.seed_all.
+        torch.backends.cuda.matmul.allow_tf32 = False
+        torch.backends.cudnn.allow_tf32 = False
+        actual = _computation_flags(torch)
+        require(not actual["matmul_allow_tf32"] and not actual["cudnn_allow_tf32"],
+                "original task computation flags")
+        yield actual
     finally:
-        # Try every restoration even if one API unexpectedly fails.
+        # Try every restoration even if one API unexpectedly fails. Restore the
+        # precision enum last: a bool alone cannot preserve caller medium/high.
         errors = []
-        for restore, state in ((random.setstate, python_state), (np.random.set_state, numpy_state),
-                               (torch.set_rng_state, cpu_state), (torch.cuda.set_rng_state_all, cuda_states)):
+        restorations = (
+            (random.setstate, (python_state,)),
+            (np.random.set_state, (numpy_state,)),
+            (torch.set_rng_state, (cpu_state,)),
+            (torch.cuda.set_rng_state_all, (cuda_states,)),
+            (setattr, (torch.backends.cuda.matmul, "allow_tf32", flags["matmul_allow_tf32"])),
+            (setattr, (torch.backends.cudnn, "allow_tf32", flags["cudnn_allow_tf32"])),
+            (torch.set_float32_matmul_precision, (flags["float32_matmul_precision"],)),
+        )
+        for restore, arguments in restorations:
             try:
-                restore(state)
+                restore(*arguments)
             except BaseException as error:
                 errors.append(error)
+        try:
+            require(_computation_flags(torch) == flags, "caller computation flag restoration")
+        except BaseException as error:
+            errors.append(error)
         if errors:
-            raise BaseExceptionGroup("caller RNG restoration failed", errors)
+            raise BaseExceptionGroup("caller RNG/computation restoration failed", errors)
 
 
 def _load_network(model, saved, torch, device):
@@ -378,7 +406,7 @@ def evaluate_pair(pair, *, device="cuda:0"):
     require(0 <= index < torch.cuda.device_count(), "CUDA device ordinal")
     selected = torch.device("cuda", index)
     grid = fixed_grid(pair["protocol"], pair["entry"])
-    with _preserved_rng(torch):
+    with _preserved_execution_state(torch) as computation_flags:
         actors, state_bindings = _models(pair, torch, selected)
         implementations = {}
         sample = actors["initial"]
@@ -414,6 +442,7 @@ def evaluate_pair(pair, *, device="cuda:0"):
                 }
         return {"status": "PASS_FIXED_POLICY_RESPONSE", "task": pair["task"], "seed": pair["seed"],
                 "device": str(selected), "dependencies": dependencies, "implementation_sources": implementations,
+                "computation_flags": computation_flags,
                 "source_binding": {"summary_sha256": pair["summary_sha256"],
                                    "manifest_sha256": pair["manifest_sha256"], "evidence": pair["evidence"],
                                    "feature_source": feature_source},

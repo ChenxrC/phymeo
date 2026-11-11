@@ -263,7 +263,7 @@ def test_bad_action_does_not_commit_any_substep():
 
 @pytest.mark.cuda
 @pytest.mark.tyx
-@pytest.mark.parametrize("operation", ("step", "reset", "capture", "restore"))
+@pytest.mark.parametrize("operation", ("step", "reset", "capture", "restore", "close"))
 def test_same_thread_reentrancy_is_rejected_inside_window(operation, monkeypatch):
     helper = api()
     torch = helper.require_cuda()
@@ -281,6 +281,8 @@ def test_same_thread_reentrancy_is_rejected_inside_window(operation, monkeypatch
                         env.reset()
                     elif operation == "capture":
                         env.capture_training_state()
+                    elif operation == "close":
+                        env.close()
                     else:
                         env.restore_training_state(capsule, state, expected_revision=env.runtime.checkpoint_revision)
                 checked.append(True)
@@ -319,3 +321,89 @@ def test_endpoint_mode_does_not_latch_an_intermediate_task_bound():
         assert not tr.final_mask.any().item()
         assert dict(env.reset_indices) == dict.fromkeys(KEYS, 0)
         assert all(s.tick == 4 for s in env.runtime.snapshot().values())
+
+
+@pytest.mark.cuda
+@pytest.mark.tyx
+def test_real_action_commit_survives_post_release_baseexception(monkeypatch, tmp_path):
+    import tyx.torch as interop
+
+    from phymeo.training.mujoco_tyx_env import MuJoCoTyxEnvError
+
+    helper = api()
+    torch = helper.require_cuda()
+    with helper.make_environment("J", 2) as env:
+        before, revision = env.runtime.snapshot(), env.runtime.checkpoint_revision
+        original_from, original_stream = interop.from_torch, interop.stream_from_torch
+        originals, released = [], []
+        view_count = 0
+
+        def from_torch(tensor, **kwargs):
+            nonlocal view_count
+            view = original_from(tensor, **kwargs)
+            ordinal = view_count
+            view_count += 1
+            actual_free = view.free
+            originals.append(actual_free)
+
+            def free():
+                actual_free()
+                released.append("view" + str(ordinal))
+                # ctrl is registered first and therefore released last by ExitStack.
+                # All actual borrowed owners have been freed before the injected signal.
+                if ordinal == 0:
+                    raise KeyboardInterrupt("after genuine borrowed resource release")
+
+            monkeypatch.setattr(view, "free", free)
+            return view
+
+        def stream_from_torch(stream, **kwargs):
+            producer = original_stream(stream, **kwargs)
+            actual_close = producer.close
+            originals.append(actual_close)
+
+            def close():
+                actual_close()
+                released.append("producer")
+
+            monkeypatch.setattr(producer, "close", close)
+            return producer
+
+        monkeypatch.setattr(interop, "from_torch", from_torch)
+        monkeypatch.setattr(interop, "stream_from_torch", stream_from_torch)
+        try:
+            action = torch.full((4, 2), 0.1, device=env.device)
+            with pytest.raises(MuJoCoTyxEnvError) as caught:
+                env.step(action, world_keys=KEYS, expected_frame=env.current_frame)
+            failure = caught.value
+            assert view_count == 3
+            assert released == ["producer", "view2", "view1", "view0"]
+            causes, error = [], failure
+            while error is not None:
+                causes.append(error)
+                error = error.__cause__
+            assert any(isinstance(error, KeyboardInterrupt) for error in causes)
+            assert failure.action_accepted and failure.action_receipt is not None
+            assert not failure.state_accepted and not failure.reset_accepted
+            assert env.needs_recovery and env.last_transition is None
+            assert env.runtime.checkpoint_revision == revision + 1
+            assert env.runtime.counters["device_control_submissions"] == 1
+            assert env.counters["physical_steps"] == env.counters["transitions"] == 0
+            window = failure.control_window
+            assert window.attempted == window.completed == 0 and window.substeps == ()
+            assert helper.json_text(window.action_receipt) == helper.json_text(failure.action_receipt)
+            after = env.runtime.snapshot()
+            for key in KEYS:
+                np.testing.assert_array_equal(after[key].q, before[key].q)
+                np.testing.assert_array_equal(after[key].v, before[key].v)
+                assert after[key].tick == before[key].tick == 0
+                assert helper.json_text(after[key].held_control) == helper.json_text(failure.action_receipt.controls[key])
+            (tmp_path / "post-release-interrupt.json").write_text(
+                helper.json_text({"window": window, "state": after, "release_order": released}),
+                encoding="utf-8",
+            )
+        finally:
+            # Originals are idempotent genuine release methods. Even an earlier
+            # test assertion/setup failure must not strand a borrowed owner.
+            for close in reversed(originals):
+                close()

@@ -1,6 +1,6 @@
 # COL affine simplex reconstruction — authoring report
 
-Status: **UNEXECUTED / tests first**. Baseline
+Status: **CODE_READY_TESTS_PENDING / UNEXECUTED**. Baseline
 `ff478eaa6ee570562b229491cb25c95e17783740`. Parent alone owns project execution.
 This is one bounded arithmetic hypothesis motivated by
 [the six actual trace findings](p65-convex-query-trace-findings-20261111.md).
@@ -88,3 +88,31 @@ retaining any failure and using bounded diagnostics. Changed-algorithm
 regressions are selected by parent from the existing matrices. Original
 64 GJK /192 EPA /64 vertices /128 faces and all prior geometry gates remain.
 No blind third arithmetic alternative follows if this one fails.
+
+## Authoring handoff
+
+Tests-first checkpoint: `5628e958`. Product arithmetic is now authored.
+Pure source review confirmed that the only product delta is the helper plus
+its three q-component calls. Existing selected index slots and trace writes,
+all normalized stored weights, and final witness accumulation remain intact.
+The new helper has no array parameter or memory access.
+
+Manual review and `git diff --check` are complete. No project import,
+collection, numerical execution, pytest, lint, formatter, compile or build
+was performed in this lane. The declared six nodes per backend have not been
+collected. Parent owns all validation and should retain original failures.
+
+Suggested focused order under the parent's existing environment and guard:
+
+1. The three arithmetic-frame nodes in the new test file.
+2. The three full-query/material-witness nodes in the new test file.
+3. Unchanged HN separation and reversed/cyclic HN nodes from
+   `test_device_convex_support_family.py`.
+4. Unchanged kind-Y ordinary/affine/floating/floating_affine nodes from
+   `test_device_convex_family_sources.py`.
+
+Run on interpret and real CUDA as assigned by parent, retaining the complete
+same-run source and saved inputs/results/traces. A remaining Y normal failure
+does not justify changing stopping rules in this patch. If the HN hypothesis
+fails, preserve the new trace and report the observed limitation; do not add
+another algorithm or change gates inside this grant.

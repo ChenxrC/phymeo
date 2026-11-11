@@ -190,7 +190,9 @@ class MuJoCoTyxVectorEnv:
             self._scale = torch.tensor(action_spec.scale.copy(), device=self.device)
             self._bias = torch.tensor(action_spec.bias.copy(), device=self.device)
             self._returns = torch.zeros(self.num_envs, dtype=torch.float32, device=self.device)
-            self._previous_action = torch.zeros((self.num_envs, self.num_actions), dtype=torch.float32, device=self.device)
+            self._previous_action = torch.zeros(
+                (self.num_envs, self.num_actions), dtype=torch.float32, device=self.device
+            )
             self._frame, self._observation, _, _ = self._export()
             self.binding = MappingProxyType(
                 {
@@ -516,17 +518,22 @@ class MuJoCoTyxVectorEnv:
         """Stable owner-free binding; runtime/source binding lives in its capsule."""
         return {
             "schema": "mujoco-tyx-training-env-v1",
-            "world_keys": list(self.world_keys), "task": self.task_spec.sha256,
-            "action": self.action_spec.sha256, "h": self.h,
-            "horizons": self.horizons.tolist(), "device": str(self.device),
-            "num_actions": self.num_actions, "observation_width": self.task_spec.width,
+            "world_keys": list(self.world_keys),
+            "task": self.task_spec.sha256,
+            "action": self.action_spec.sha256,
+            "h": self.h,
+            "horizons": self.horizons.tolist(),
+            "device": str(self.device),
+            "num_actions": self.num_actions,
+            "observation_width": self.task_spec.width,
         }
 
     def capture_training_state(self):
         """Owned HOST copies at a synchronous accepted boundary."""
         with self.training_boundary():
             return {
-                "sequence": self._sequence, "length": self._length.copy(),
+                "sequence": self._sequence,
+                "length": self._length.copy(),
                 "episode_id": self._episode_id.copy(),
                 "returns": self._returns.detach().cpu().clone(),
                 "observation": self._observation.detach().cpu().clone(),
@@ -538,7 +545,9 @@ class MuJoCoTyxVectorEnv:
         with self._lock:
             self._needs_recovery = True
             self.last_failure = MuJoCoTyxEnvError(
-                str(reason), phase="training-restore", state_accepted=True,
+                str(reason),
+                phase="training-restore",
+                state_accepted=True,
                 needs_recovery=True,
             )
 
@@ -551,8 +560,14 @@ class MuJoCoTyxVectorEnv:
         import torch
 
         with self.training_boundary():
-            required = {"sequence", "length", "episode_id", "returns",
-                        "observation", "previous_action"}
+            required = {
+                "sequence",
+                "length",
+                "episode_id",
+                "returns",
+                "observation",
+                "previous_action",
+            }
             if type(state) is not dict or set(state) != required:
                 raise ValueError("training environment state schema")
             sequence = state["sequence"]
@@ -561,8 +576,10 @@ class MuJoCoTyxVectorEnv:
             arrays = {}
             for name in ("length", "episode_id"):
                 value = state[name]
-                if not isinstance(value, np.ndarray) or value.dtype != np.int64 or (
-                    value.shape != (self.num_envs,) or np.any(value < 0)
+                if (
+                    not isinstance(value, np.ndarray)
+                    or value.dtype != np.int64
+                    or (value.shape != (self.num_envs,) or np.any(value < 0))
                 ):
                     raise ValueError("training " + name + " layout/value")
                 arrays[name] = value.copy()
@@ -575,9 +592,14 @@ class MuJoCoTyxVectorEnv:
                 ("previous_action", (self.num_envs, self.num_actions)),
             ):
                 value = state[name]
-                if not isinstance(value, torch.Tensor) or value.device.type != "cpu" or (
-                    value.dtype != torch.float32 or tuple(value.shape) != shape
-                    or not bool(torch.isfinite(value).all().item())
+                if (
+                    not isinstance(value, torch.Tensor)
+                    or value.device.type != "cpu"
+                    or (
+                        value.dtype != torch.float32
+                        or tuple(value.shape) != shape
+                        or not bool(torch.isfinite(value).all().item())
+                    )
                 ):
                     raise ValueError("training " + name + " layout/value")
                 tensors[name] = value.to(self.device).clone()
@@ -588,8 +610,9 @@ class MuJoCoTyxVectorEnv:
             try:
                 receipt = self.runtime.restore(checkpoint, expected_revision=expected_revision)
                 frame, observation, _, _ = self._export()
-                if not torch.equal(observation.view(torch.uint8),
-                                   tensors["observation"].view(torch.uint8)):
+                if not torch.equal(
+                    observation.view(torch.uint8), tensors["observation"].view(torch.uint8)
+                ):
                     raise ValueError("restored task observation differs from saved bits")
                 torch.cuda.synchronize(self.device)
             except BaseException as error:
@@ -598,7 +621,9 @@ class MuJoCoTyxVectorEnv:
                     self.invalidate_training_state("physics restored; task publication failed")
                     raise MuJoCoTyxEnvError(
                         "physics restored; training task publication failed",
-                        phase="training-restore", state_accepted=True, needs_recovery=True,
+                        phase="training-restore",
+                        state_accepted=True,
+                        needs_recovery=True,
                     ) from error
                 raise
             self._sequence = sequence

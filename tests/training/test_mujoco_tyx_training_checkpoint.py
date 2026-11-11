@@ -1,4 +1,5 @@
 """N3 exact continuation; original N2 models and actual upstream CUDA PPO."""
+
 import base64
 import hashlib
 import importlib.util
@@ -56,7 +57,10 @@ def _rewrite_training(path, body):
     raw = json.dumps(body, sort_keys=True, allow_nan=False, separators=(",", ":")).encode()
     (path / "training.json").write_bytes(raw)
     manifest = json.loads((path / "manifest.json").read_text())
-    manifest["files"]["training.json"] = {"bytes": len(raw), "sha256": hashlib.sha256(raw).hexdigest()}
+    manifest["files"]["training.json"] = {
+        "bytes": len(raw),
+        "sha256": hashlib.sha256(raw).hexdigest(),
+    }
     (path / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
 
 
@@ -76,10 +80,24 @@ def _first_array(value):
     return None
 
 
-@pytest.mark.parametrize("fault", (
-    "hash", "truncate", "model", "world", "task", "action", "h", "config",
-    "policy-size", "missing-rng", "missing-rnn", "missing-generator", "filename",
-))
+@pytest.mark.parametrize(
+    "fault",
+    (
+        "hash",
+        "truncate",
+        "model",
+        "world",
+        "task",
+        "action",
+        "h",
+        "config",
+        "policy-size",
+        "missing-rng",
+        "missing-rnn",
+        "missing-generator",
+        "filename",
+    ),
+)
 def test_bad_bundle_is_rejected_before_physical_cas(fault, api, prepared, tmp_path):
     session, original = prepared
     bundle = tmp_path / "bad"
@@ -139,7 +157,9 @@ def test_real_other_model_and_stale_cas_refused(api, prepared):
     with api.make_session("support-slide") as other:
         before = other.env.runtime.checkpoint().to_bytes()
         with pytest.raises(ValueError, match="binding"):
-            other.restore_checkpoint(bundle, expected_revision=other.env.runtime.checkpoint_revision)
+            other.restore_checkpoint(
+                bundle, expected_revision=other.env.runtime.checkpoint_revision
+            )
         assert other.env.runtime.checkpoint().to_bytes() == before
     revision = session.env.runtime.checkpoint_revision
     before = session.training_state()
@@ -151,21 +171,26 @@ def test_real_other_model_and_stale_cas_refused(api, prepared):
 def test_candidate_construction_rng_effects_are_rolled_back(api, prepared, monkeypatch):
     session, bundle = prepared
     torch = api.n2().require_cuda()
-    import numpy as np
     import random
+
+    import numpy as np
 
     before = session.training_state()
     physical = session.env.runtime.checkpoint().to_bytes()
     algorithm = session.algorithm
+
     def fail(observation):
         torch.rand(9, device=session.env.device)
         torch.rand(7)
         np.random.random(5)
         random.random()
         raise RuntimeError("injected candidate load failure after RNG use")
+
     monkeypatch.setattr(session, "_construct_algorithm", fail)
     with pytest.raises(RuntimeError, match="candidate load"):
-        session.restore_checkpoint(bundle, expected_revision=session.env.runtime.checkpoint_revision)
+        session.restore_checkpoint(
+            bundle, expected_revision=session.env.runtime.checkpoint_revision
+        )
     assert session.algorithm is algorithm
     assert session.env.runtime.checkpoint().to_bytes() == physical
     api.exact(before, session.training_state())
@@ -173,8 +198,10 @@ def test_candidate_construction_rng_effects_are_rolled_back(api, prepared, monke
 
 def test_existing_target_not_overwritten(prepared):
     session, path = prepared
-    before = {name: (path / name).read_bytes()
-              for name in ("manifest.json", "physics.bin", "training.json")}
+    before = {
+        name: (path / name).read_bytes()
+        for name in ("manifest.json", "physics.bin", "training.json")
+    }
     with pytest.raises(FileExistsError):
         session.save_checkpoint(path)
     assert before == {name: (path / name).read_bytes() for name in before}
@@ -187,11 +214,13 @@ def test_nonempty_pending_and_mid_update_boundaries(api, tmp_path, monkeypatch):
             session.save_checkpoint(tmp_path / "initial")
         original = session.algorithm.update
         seen = []
+
         def update():
             with pytest.raises(RuntimeError, match="boundary|progress"):
                 session.save_checkpoint(tmp_path / "during")
             seen.append(True)
             return original()
+
         monkeypatch.setattr(session.algorithm, "update", update)
         session.update()
         assert seen
@@ -219,12 +248,16 @@ def test_post_cas_failure_is_honest_and_poisoned(fault, api, tmp_path, monkeypat
         session.update()
         revision = session.env.runtime.checkpoint_revision
         if fault == "task-refresh":
+
             def fail(frame):
                 raise RuntimeError("injected post-CAS task export failure")
+
             monkeypatch.setattr(session.env.workspace, "to_torch", fail)
         else:
+
             def fail(state):
                 raise RuntimeError("injected post-CAS RNG installation failure")
+
             monkeypatch.setattr(session, "_install_rng", fail)
         with pytest.raises(MuJoCoTyxTrainingRestoreError) as caught:
             session.restore_checkpoint(path, expected_revision=revision)

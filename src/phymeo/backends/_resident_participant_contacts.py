@@ -249,7 +249,9 @@ class ResidentParticipantContactPlan:
             if left is not None and right is not None and left[0] == right[0]:
                 if not self._intra:
                     continue
-                parents = participants[left[0]].compiled.parents
+                compiled = participants[left[0]].compiled
+                physical = getattr(compiled, "physical", compiled)
+                parents = physical.parents
                 if parents[left[1]] == right[1] or parents[right[1]] == left[1]:
                     raise ValueError("direct parent-child pair requires exclusion or mask")
             allowed.append(pair)

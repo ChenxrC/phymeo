@@ -150,6 +150,8 @@ class NativeTemplate:
     qualification: str = "native-only/physolve; resident-unqualified"
     contract_version: int = 1
     collision_plans: tuple = ()
+    # (public joint, native actuator, kp, kd, initial target q, initial target qd).
+    scalar_controls: tuple = ()
     # Private cold compiler owner. XML serialization rounds native authoring
     # values; the public compilation.mj_spec is caller-mutable. Never expose or
     # edit this snapshot, only copy it for a newly requested rule compilation.
@@ -197,6 +199,7 @@ class HomogeneousNativeBinding:
             self.template.compilation,
             payload=payload,
             initial_state=self.template.initial_state,
+            scalar_controls=self.template.scalar_controls,
             nworld=self.nworld,
             **options,
         )
@@ -339,6 +342,7 @@ def compile_native_template(assets, *, timestep, gravity, static_shapes=(), inte
         raise NotImplementedError("PhySolve template excludes native sensors/plugins/flex/userdata")
     data = mj.MjData(model)
     actuator_ids = {}
+    scalar_controls = []
     for prefix, row in pending:
         joint = model.joint(prefix + row.name)
         qa, va = int(joint.qposadr[0]), int(joint.dofadr[0])
@@ -350,6 +354,8 @@ def compile_native_template(assets, *, timestep, gravity, static_shapes=(), inte
         data.ctrl[actuator.id] = row.kp * target + row.kd * row.target_velocity
         data.qfrc_applied[va] = row.applied_force
         actuator_ids[joint.id] = actuator.id
+        scalar_controls.append((prefix + row.name, actuator.id, row.kp, row.kd,
+                                float(target), row.target_velocity))
     joints = tuple(
         (
             model.joint(i).name,
@@ -367,5 +373,6 @@ def compile_native_template(assets, *, timestep, gravity, static_shapes=(), inte
         tuple((model.body(i).name, i) for i in range(1, model.nbody)),
         tuple((model.geom(i).name, i) for i in range(model.ngeom)),
         tuple(sources),
+        scalar_controls=tuple(scalar_controls),
         _source_spec=compilation.mj_spec.copy(),
     )

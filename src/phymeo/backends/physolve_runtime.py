@@ -56,6 +56,7 @@ class PhySolveRuntime:
         njmax=256,
         device="cuda:0",
         initial_state=None,
+        scalar_controls=(),
     ):
         world = compilation if isinstance(compilation, CompiledMuJoCoWorld) else None
         if world is not None:
@@ -93,6 +94,7 @@ class PhySolveRuntime:
         self._banks, self._handles = [], []
         self._stream = self._model = None
         self._reset = None
+        self._controls_binding = None
         self._validation = self._storage = None
         self._storage_generation = 1
         self._pending = None
@@ -151,8 +153,15 @@ class PhySolveRuntime:
 
                     self._validation = PreparedValidation(self._banks, selected)
                     self._validation.prepare(self._stream)
+                    if scalar_controls:
+                        from ._physolve_controls import PreparedControls
+                        self._controls_binding = PreparedControls(
+                            scalar_controls, self._banks, cpu, self.nworld, device
+                        )
+                        self._controls_binding.prepare(self._stream)
                     self._storage = bind_storage(
-                        self, self._banks, self._stream, selected, self._storage_generation
+                        self, self._banks, self._stream, selected, self._storage_generation,
+                        self._controls_binding,
                     )
                     self._complete()
         except Exception as error:
@@ -227,6 +236,8 @@ class PhySolveRuntime:
     def step(self, *, ctrl=None, qfrc_applied=None):
         """Advance one compiled timestep; controls persist until changed/reset."""
         with self._scope():
+            if ctrl is not None and self._controls_binding is not None:
+                raise ValueError("managed scalar controls require target fields, not raw ctrl")
             controls = self._controls(dict(ctrl=ctrl, qfrc_applied=qfrc_applied))
             with self._synchronous_execution() as ticket:
                 for name, value in controls.items():
@@ -323,6 +334,8 @@ class PhySolveRuntime:
             # On failure retain the candidate until discard/close confirms completion.
             self._validation.clear(self._stream)
             self._candidate()
+            if self._controls_binding is not None:
+                self._controls_binding.copy(self._active, ticket[1], self._stream)
             self._pending["phase"] = "prepared"
             return ticket
 
@@ -355,6 +368,40 @@ class PhySolveRuntime:
                 self._pending["phase"] = "failed"
                 raise
 
+    def enqueue_update(self, ticket, *, refresh_state=False, compose_controls=False):
+        """Accept prepared field edits without advancing time.
+
+        Command-only updates retain existing solve-time observations using D2D
+        copies. State edits perform one native forward. No CPU physics or full
+        host snapshot is involved; failed candidates remain unpublished.
+
+        Callers writing target_position/target_velocity must request
+        compose_controls=True; qpos/qvel edits require refresh_state=True.
+        These flags describe the prepared write plan, not automatic dirty tracking.
+        """
+        with self._scope():
+            index = self._require_ticket(ticket, "prepared")
+            self._pending["phase"] = "enqueued"
+            try:
+                if compose_controls:
+                    if self._controls_binding is None:
+                        raise ValueError("this model has no managed scalar controls")
+                    self._controls_binding.compose(index, self._stream)
+                if refresh_state:
+                    self._native._forward_runtime(self._handles[index])
+                else:
+                    # Capacity counts belong to the preserved solve-time result,
+                    # not a previous discarded candidate in this bank.
+                    for name in (*OBSERVATION_FIELDS, "nacon", "ncollision", "nefc"):
+                        if name not in INTEGRATION_FIELDS:
+                            getattr(self._banks[index], name).assign(
+                                getattr(self._banks[self._active], name), stream=self._stream
+                            )
+                self._validation.enqueue(index, self._stream)
+            except Exception:
+                self._pending["phase"] = "failed"
+                raise
+
     def enqueue_reset(self, ticket, mask=None):
         with self._scope():
             index = self._require_ticket(ticket, "prepared")
@@ -365,6 +412,11 @@ class PhySolveRuntime:
             self._pending["phase"] = "enqueued"
             try:
                 self._reset.restore(index, mask, self._stream)
+                if self._controls_binding is not None:
+                    self._controls_binding.reset(
+                        index, self._reset.all_mask if mask is None else self._reset.mask,
+                        self._stream,
+                    )
                 self._native._forward_runtime(self._handles[index])
                 # Error bits latch before unselected observations overwrite qacc.
                 self._validation.enqueue(index, self._stream)
@@ -432,6 +484,7 @@ class PhySolveRuntime:
             self._storage = self._validation = self._pending = None
             self._storage_generation += 1
             self._reset = None
+            self._controls_binding = None
             self._model = None
             self._closed = True
 

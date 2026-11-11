@@ -86,6 +86,26 @@ contact 借用、resident 及实际 C ABI 尚未因此获得资格。并发仅�
 
 ## 分批验收
 
+### 标量控制与字段更新
+
+`NativeTemplate.scalar_controls` 绑定公开关节名、原生 actuator、增益和初始目标。
+标量 PD profile 的 `target_position` / `target_velocity` 是 runtime 持有的命令；
+`ctrl` 是按 `kp*q_target + kd*qd_target` 生成的执行输入，不是目标角度。
+此 profile 拒绝 writable ctrl 和同步 step(ctrl=...)，避免双来源控制。
+其他原生 profile 保留原有 ctrl 语义，不隐式加入这些字段。
+
+写候选目标后必须调用 `enqueue_update(compose_controls=True)`；写 qpos/qvel 必须
+请求 `refresh_state=True`，两个标志可组合。它们描述调用方已准备的写入计划，
+不是自动 dirty tracking。更新不推进时间；状态写入执行一次原生 forward，纯命令
+更新不做 forward，而保留上次 solve-time 观测及容量计数。discard 后不能因旧失败
+候选的容量计数再次拒绝合法命令。目标与原生 ctrl 一起接受，masked reset 一起恢复。
+
+每次候选准备复制 11 个 integration 字段及两个目标 bank；纯命令更新另外 D2D
+保留 qacc、actuator/constraint force、xpos/xquat 和三个容量计数。复制量随 world
+和相应字段宽度线性增长，主机调用次数不随 world 数增长；这不是零复制动作。
+没有整批 host snapshot，完成仍是一次 4 字节检查读回；原生 direct 内部同步另计。
+URDF dynamics/mimic 的 scalar_pd 转换尚未承接，不能把拒绝视为机器人资格通过。
+
 B1 先实现公共表达到原生输入的最小转换，并用 resident 小样证明其不依赖 PhySolve
 格式；覆盖固定/自由根、偏心 COM、多 shape、初态/控制、来源和 world 映射。
 B2 接通原生 step/forward/reset，关闭机器人历史失败，逐层记录分配/传输/同步成本。

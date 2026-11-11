@@ -373,10 +373,16 @@ def test_public_storage_and_delayed_publication(payload, nworld):
         q = tuple(storage.borrow("qpos", bank) for bank in (0, 1))
         assert q[0].ptr != q[1].ptr
         old = runtime.active_bank
+        assert runtime.observation_execution_contract_version == 1
+        assert runtime.observation_bank == old
+        assert not storage.fields['execution_error'].writable
+        assert storage.borrow('execution_error', 0).ptr == storage.borrow('execution_error', 1).ptr
         initial = runtime.snapshot()
         ticket = runtime.begin_execution()
         bank = runtime.writable_bank
         assert bank == 1 - old
+        with pytest.raises(RuntimeError, match='observations require'):
+            _ = runtime.observation_bank
         with pytest.raises(RuntimeError, match="pending"):
             runtime.begin_execution()
         with pytest.raises(RuntimeError, match="completed"):
@@ -389,6 +395,7 @@ def test_public_storage_and_delayed_publication(payload, nworld):
         storage.borrow("qfrc_applied", bank, write=True).assign(force, stream=storage.stream)
         runtime.enqueue_step(ticket, steps=4)
         assert runtime.active_bank == old
+        assert runtime.observation_bank == bank
         runtime.complete_execution(ticket)
         assert runtime.active_bank == old
         for name, value in runtime.snapshot().items():
@@ -409,6 +416,7 @@ def test_public_storage_and_delayed_publication(payload, nworld):
         for name, value in runtime.snapshot().items():
             np.testing.assert_array_equal(value, after[name])
         assert storage.borrow("qpos", 0) is q[0]
+        assert runtime.observation_bank == runtime.active_bank
     with pytest.raises(RuntimeError, match="stale"):
         storage.borrow("qpos", 0)
 
@@ -465,7 +473,9 @@ def test_nonfinite_latches_across_substeps_and_recovers(payload, monkeypatch):
                 runtime.complete_execution(ticket)
             with pytest.raises(RuntimeError, match="completed"):
                 runtime.accept_execution(ticket)
+            assert runtime.storage_binding().borrow('execution_error', 0).numpy()[0] != 0
             runtime.discard_execution(ticket)
+            assert runtime.storage_binding().borrow('execution_error', 0).numpy(stream=runtime.storage_binding().stream)[0] == 0
         for name, value in runtime.snapshot().items():
             np.testing.assert_array_equal(value, before[name])
         runtime.step()

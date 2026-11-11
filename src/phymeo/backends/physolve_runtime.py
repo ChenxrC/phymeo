@@ -194,6 +194,7 @@ class PhySolveRuntime:
                         self._controls_binding,
                         self._body_observations,
                         self._contact_observations,
+                        self._validation.flags,
                     )
                     self._complete()
         except Exception as error:
@@ -320,6 +321,22 @@ class PhySolveRuntime:
     @property
     def active_bank(self):
         return self._active
+
+    observation_execution_contract_version = 1
+
+    @property
+    def observation_bank(self):
+        """Ordered device reads may consume an enqueued candidate before acceptance.
+
+        Consumers must gate dependent device writes on storage.execution_error.
+        This does not publish the candidate or remove complete/accept obligations.
+        """
+        with self._scope():
+            if self._pending is None:
+                return self._active
+            if self._pending['phase'] not in {'enqueued', 'completed'}:
+                raise RuntimeError('observations require an enqueued or accepted execution')
+            return self._pending['ticket'][1]
 
     @property
     def pending_execution(self):
@@ -519,6 +536,7 @@ class PhySolveRuntime:
         with self._scope():
             self._require_ticket(ticket)
             self._complete()
+            self._validation.clear(self._stream)
             self._pending = None
 
     def snapshot(self):

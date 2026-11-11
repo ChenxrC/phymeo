@@ -600,3 +600,12 @@ owner 保留。四子步只增加一次端点运动学；forward/reset 不重复
 实际执行套件先有 26 项通过；审查收尾修正采样捕获/初始化 owner 后，接触专项
 8 项全部通过（含新增 6D 斜面 wrench 转换/摩擦方向及 prepare/close 双失败），
 其余 20 项未重复运行。全仓文档仍有 479 条历史缺失链接，日志散列与 B3f 完全相同。
+
+## B3i：候选设备观测
+
+公开 observation_bank 与只读 execution_error 合同支持 P2PE 在物理完成前排入
+受门禁保护的设备 gather；语义见[候选设备观测](../architecture/engine-integration.md#候选设备观测执行-v1)。
+只调整 PHYMEO 公开借用边界，求解 Host、六 CUBIN、TYX、生产排序和容差均不变。
+实际 CUDA 定向测试 4 项通过：N=1/8/64 的 bank/权限/stale/延迟发布，以及错误
+锁存、discard 清 gate 和恢复；日志为配套实验根 evidence/b3i-native.log。
+继续复用 env-b1j 源码验证，不声明独立安装、Graph 或 GUI 已通过。

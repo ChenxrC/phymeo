@@ -135,6 +135,17 @@ SensorView 或 D2D C ABI 资格；这些后续沿同一公共存储消费。
 URDF dynamics/mimic 的 scalar_pd 转换在 B3e 承接，见[原生装配](native-assembly.md)；
 转换通过仍不能替代机器人运动资格。
 
+### 候选设备观测执行 v1
+
+`observation_execution_contract_version=1` 增加只读 `observation_bank`：idle 返回
+已接受 bank，enqueued/completed 返回待接受 bank；prepared 阶段明确拒绝。
+消费者在同一 canonical stream 排入观测 kernel，须以公开 RuntimeStorage 的
+`execution_error` int32[1] 为门禁，非零时不写消费者输出。它是 runtime 全局错误
+位，不是按 world 分配的物理字段；两个 bank 借用同一数组，只读。
+这个入口不提前接受物理状态，仍须 complete/accept；discard 等待已提交工作后
+清除该 gate，再回到原 bank。执行失败和异常观测仍须通过显式完成边界报告。
+借用有效期、stream 顺序和关闭重试沿用存储合同，不新增物理状态副本。
+
 ### 步后 body 观测 v1
 
 PhySolveRuntime 的 `body_observations=True` 在冷准备启用端点观测，默认 False

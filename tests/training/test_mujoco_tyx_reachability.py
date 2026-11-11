@@ -39,7 +39,7 @@ def test_original_protocol_and_fixed_window(api):
     assert protocol["xml_sha256"] == api.XML_SHA256
     assert protocol["seeds"] == [14011, 14012, 14013]
     assert api.WORLD_KEYS == tuple(5 + 36 * i for i in range(8))
-    assert (api.STEPS, api.SWITCH, api.H) == (256, 128, .002)
+    assert (api.STEPS, api.SWITCH, api.H) == (256, 128, 0.002)
     assert (api.Q_ATOL, api.V_ATOL) == (2e-4, 3e-3)
 
 
@@ -49,13 +49,17 @@ def test_schedule_terminal_and_strict_force_bounds(api):
     assert schedule["raw_action"].shape == (256, 8, 2)
     assert schedule["raw_action"].dtype == np.float32
     assert np.max(np.abs(schedule["force"])) < 2
-    assert np.array_equal(schedule["force"][:128], np.broadcast_to(schedule["force"][0], (128, 8, 2)))
-    assert np.array_equal(schedule["force"][128:], np.broadcast_to(schedule["force"][128], (128, 8, 2)))
+    assert np.array_equal(
+        schedule["force"][:128], np.broadcast_to(schedule["force"][0], (128, 8, 2))
+    )
+    assert np.array_equal(
+        schedule["force"][128:], np.broadcast_to(schedule["force"][128], (128, 8, 2))
+    )
     # Independent scalar Euler loop, not the example's A/B or advance helper.
     x, velocity = q.astype(np.float64), v.astype(np.float64)
-    h = float(np.float32(.002))
+    h = float(np.float32(0.002))
     for force in schedule["force"]:
-        velocity = velocity + h * (force - .1 * velocity) / (1.01 + h * .1)
+        velocity = velocity + h * (force - 0.1 * velocity) / (1.01 + h * 0.1)
         x = x + h * velocity
     np.testing.assert_allclose(x, 0, atol=1e-12, rtol=0)
     np.testing.assert_allclose(velocity, 0, atol=1e-12, rtol=0)
@@ -78,7 +82,7 @@ def test_inverse_tanh_mapping_is_not_linear_raw(api):
     schedule = api.make_schedule(*inputs(api))
     recovered = 2 * np.tanh(schedule["raw_action"].astype(np.float64))
     np.testing.assert_allclose(recovered, schedule["force"], atol=2e-7, rtol=0)
-    assert np.max(np.abs(schedule["raw_action"] - schedule["force"] / 2)) > .01
+    assert np.max(np.abs(schedule["raw_action"] - schedule["force"] / 2)) > 0.01
     assert np.max(np.abs(schedule["mapped_reference_q"][-1])) < api.Q_ATOL
     assert np.max(np.abs(schedule["mapped_reference_v"][-1])) < api.V_ATOL
 
@@ -91,10 +95,10 @@ def test_infeasible_schedule_never_clips_or_changes_switch(api, fault):
     elif fault == "nonfinite":
         v[0, 0] = np.inf
     elif fault == "force":
-        q[0, 0] = .9
+        q[0, 0] = 0.9
     elif fault == "not-fp32":
         q = q.astype(np.float64)
-        q[0, 0] = .04
+        q[0, 0] = 0.04
     else:
         q[0, 0] = 1.1
     with pytest.raises(api.ReferenceInfeasible):
@@ -136,15 +140,16 @@ class FakeEnv:
         self.q, self.v = inputs(api)
         self.initial_q, self.initial_v = self.q.copy(), self.v.copy()
         self.world_keys, self.num_envs = api.WORLD_KEYS, 8
-        self.h, self.num_actions, self.device = .002, 2, "synthetic-HOST-only"
+        self.h, self.num_actions, self.device = 0.002, 2, "synthetic-HOST-only"
         self.current_frame = self.frame(0)
         self.episode_length = np.zeros(8, np.int64)
         self.episode_id = np.zeros(8, np.int64)
         self.calls = 0
 
     def frame(self, tick):
-        return MuJoCoTyxTaskFrame({"test": "owned"}, tick * 2, tick, (tick,) * 8,
-                                  (tick * float(np.float32(.002)),) * 8)
+        return MuJoCoTyxTaskFrame(
+            {"test": "owned"}, tick * 2, tick, (tick,) * 8, (tick * float(np.float32(0.002)),) * 8
+        )
 
     def step(self, raw, **kwargs):
         assert kwargs["world_keys"] == self.world_keys
@@ -155,9 +160,9 @@ class FakeEnv:
         tick, before = self.calls, self.current_frame
         q0, v0 = self.q.copy(), self.v.copy()
         ctrl = (np.float32(2) * np.tanh(raw)).astype(np.float32)
-        h = float(np.float32(.002))
+        h = float(np.float32(0.002))
         # Deliberately distinct from production reference implementation.
-        dv = h * (ctrl.astype(np.float64) - .1 * v0) / (1.01 + h * .1)
+        dv = h * (ctrl.astype(np.float64) - 0.1 * v0) / (1.01 + h * 0.1)
         self.v = (v0 + dv).astype(np.float32)
         self.q = (q0 + h * self.v).astype(np.float32)
         qfrc, xfrc = np.zeros((8, 2), np.float32), np.zeros((8, 3, 6), np.float32)
@@ -166,29 +171,56 @@ class FakeEnv:
             control = MuJoCoControl(ctrl[row], qfrc_applied=qfrc[row], xfrc_applied=xfrc[row])
             controls[key] = control
             receipt = MuJoCoTyxStepReceipt(
-                world=key, tick=tick, input_time=before.times[row], output_time=tick*h,
-                h=.002, control=control, stored_control=control, contacts=(),
-                input_q=q0[row].astype(float), input_v=v0[row].astype(float),
-                qacc=(ctrl[row]-.1*v0[row])/1.01,
-                integration_acceleration=dv[row]/h, qfrc_actuator=ctrl[row].astype(float),
-                qfrc_constraint=np.zeros(2), raw_contact_fields={},
-                source_solver="Newton", numerical_solver="single-normal-direct-qp",
-                contact_time=before.times[row], backend="mujoco-tyx-cuda",
+                world=key,
+                tick=tick,
+                input_time=before.times[row],
+                output_time=tick * h,
+                h=0.002,
+                control=control,
+                stored_control=control,
+                contacts=(),
+                input_q=q0[row].astype(float),
+                input_v=v0[row].astype(float),
+                qacc=(ctrl[row] - 0.1 * v0[row]) / 1.01,
+                integration_acceleration=dv[row] / h,
+                qfrc_actuator=ctrl[row].astype(float),
+                qfrc_constraint=np.zeros(2),
+                raw_contact_fields={},
+                source_solver="Newton",
+                numerical_solver="single-normal-direct-qp",
+                contact_time=before.times[row],
+                backend="mujoco-tyx-cuda",
             )
             states[key] = MuJoCoState(
-                world=key, q=self.q[row].astype(float), v=self.v[row].astype(float),
-                act=np.zeros(0), ctrl=ctrl[row].astype(float), time=tick*h, tick=tick,
-                body_positions=np.zeros((3, 3)), body_quaternions=np.zeros((3, 4)),
-                geometry_positions=np.zeros((2, 3)), geometry_matrices=np.zeros((2, 3, 3)),
-                qacc=receipt.qacc, qfrc_actuator=receipt.qfrc_actuator,
-                qfrc_passive=-.1*self.v[row], qfrc_constraint=np.zeros(2),
-                qfrc_applied=qfrc[row], xfrc_applied=xfrc[row], sensordata=np.zeros(0),
-                energy=np.zeros(2), contacts=(), contact_time=tick*h,
-                held_control=control, last_step=receipt,
+                world=key,
+                q=self.q[row].astype(float),
+                v=self.v[row].astype(float),
+                act=np.zeros(0),
+                ctrl=ctrl[row].astype(float),
+                time=tick * h,
+                tick=tick,
+                body_positions=np.zeros((3, 3)),
+                body_quaternions=np.zeros((3, 4)),
+                geometry_positions=np.zeros((2, 3)),
+                geometry_matrices=np.zeros((2, 3, 3)),
+                qacc=receipt.qacc,
+                qfrc_actuator=receipt.qfrc_actuator,
+                qfrc_passive=-0.1 * self.v[row],
+                qfrc_constraint=np.zeros(2),
+                qfrc_applied=qfrc[row],
+                xfrc_applied=xfrc[row],
+                sensordata=np.zeros(0),
+                energy=np.zeros(2),
+                contacts=(),
+                contact_time=tick * h,
+                held_control=control,
+                last_step=receipt,
             )
-        cost = np.mean((self.q.astype(float)/.2)**2, axis=1)+.01*np.mean(self.v.astype(float)**2, axis=1)
+        cost = np.mean((self.q.astype(float) / 0.2) ** 2, axis=1) + 0.01 * np.mean(
+            self.v.astype(float) ** 2, axis=1
+        )
         timeout = np.full(8, tick == 256)
-        final_obs = np.concatenate((self.q*5, self.v), axis=1)
+        final_obs = np.concatenate((self.q * 5, self.v), axis=1)
         if tick == 256:
             self.q, self.v = self.initial_q.copy(), self.initial_v.copy()
             self.episode_length[:], self.episode_id[:] = 0, 1
@@ -196,13 +228,28 @@ class FakeEnv:
         else:
             self.episode_length[:] = tick
             self.current_frame = self.frame(tick)
-        action_receipt = MuJoCoTyxDeviceControlReceipt({}, before.revision, before.revision+1, tick, controls)
+        action_receipt = MuJoCoTyxDeviceControlReceipt(
+            {}, before.revision, before.revision + 1, tick, controls
+        )
         value = MuJoCoTyxTransition(
-            tick, self.world_keys, before, self.current_frame,
-            np.concatenate((self.q*5, self.v), axis=1), -cost, np.zeros(8, bool), timeout,
-            final_obs, timeout.copy(), np.zeros(8, np.int64), np.full(8, tick), -cost,
-            raw.copy(), (ctrl, qfrc, xfrc), action_receipt,
-            dict.fromkeys(self.world_keys, True), states,
+            tick,
+            self.world_keys,
+            before,
+            self.current_frame,
+            np.concatenate((self.q * 5, self.v), axis=1),
+            -cost,
+            np.zeros(8, bool),
+            timeout,
+            final_obs,
+            timeout.copy(),
+            np.zeros(8, np.int64),
+            np.full(8, tick),
+            -cost,
+            raw.copy(),
+            (ctrl, qfrc, xfrc),
+            action_receipt,
+            dict.fromkeys(self.world_keys, True),
+            states,
         )
         fault_tick = 256 if self.fault == "final-timeout" else 2
         if tick == fault_tick:
@@ -210,12 +257,21 @@ class FakeEnv:
             if self.fault == "wrong-world":
                 states[key] = replace(states[key], world=99)
             elif self.fault == "stale-tick":
-                states[key] = replace(states[key], last_step=replace(states[key].last_step, tick=tick-1))
+                states[key] = replace(
+                    states[key], last_step=replace(states[key].last_step, tick=tick - 1)
+                )
             elif self.fault == "stored-control":
-                states[key] = replace(states[key], last_step=replace(states[key].last_step,
-                    stored_control=MuJoCoControl(ctrl[0]+1, qfrc_applied=qfrc[0], xfrc_applied=xfrc[0])))
+                states[key] = replace(
+                    states[key],
+                    last_step=replace(
+                        states[key].last_step,
+                        stored_control=MuJoCoControl(
+                            ctrl[0] + 1, qfrc_applied=qfrc[0], xfrc_applied=xfrc[0]
+                        ),
+                    ),
+                )
             elif self.fault == "requested-action":
-                value = replace(value, action=raw+1)
+                value = replace(value, action=raw + 1)
             elif self.fault == "early-timeout":
                 value = replace(value, time_outs=np.ones(8, bool))
             elif self.fault == "final-timeout":
@@ -223,9 +279,9 @@ class FakeEnv:
             elif self.fault == "nonzero-qfrc":
                 qfrc[0, 0] = 1
             elif self.fault == "prediction":
-                states[key] = replace(states[key], q=states[key].q + .1)
+                states[key] = replace(states[key], q=states[key].q + 0.1)
             elif self.fault == "reward":
-                value = replace(value, reward=-cost+1)
+                value = replace(value, reward=-cost + 1)
         return value
 
 
@@ -246,7 +302,9 @@ def test_complete_window_keeps_actual_last_pre_reset_state(api):
     assert np.all(transitions[-1].time_outs)
     np.testing.assert_array_equal(transitions[-1].states[5].q, result["terminal_q"][0])
     # Independent recurrence consumed receipt controls, not ideal schedule forces.
-    np.testing.assert_allclose(result["terminal_v"], result["reference_terminal_v"], atol=api.V_ATOL, rtol=0)
+    np.testing.assert_allclose(
+        result["terminal_v"], result["reference_terminal_v"], atol=api.V_ATOL, rtol=0
+    )
 
 
 def test_second_step_refusal_preserves_complete_prefix_and_request(api):
@@ -260,10 +318,20 @@ def test_second_step_refusal_preserves_complete_prefix_and_request(api):
     assert [k for k, _ in writer.records].count("transition") == 1
 
 
-@pytest.mark.parametrize("fault", (
-    "wrong-world", "stale-tick", "stored-control", "requested-action", "early-timeout",
-    "final-timeout", "nonzero-qfrc", "prediction", "reward",
-))
+@pytest.mark.parametrize(
+    "fault",
+    (
+        "wrong-world",
+        "stale-tick",
+        "stored-control",
+        "requested-action",
+        "early-timeout",
+        "final-timeout",
+        "nonzero-qfrc",
+        "prediction",
+        "reward",
+    ),
+)
 def test_wrong_publication_or_failed_gate_never_produces_short_cost(api, fault):
     env, writer = FakeEnv(api, fault=fault), Writer()
     with pytest.raises(api.WindowFailure) as caught:
@@ -271,7 +339,7 @@ def test_wrong_publication_or_failed_gate_never_produces_short_cost(api, fault):
     detail = caught.value.detail
     assert detail["cost"] is None
     assert detail["transitions_saved"] == (256 if fault == "final-timeout" else 2)
-    assert detail["validated_steps"] == detail["transitions_saved"]-1
+    assert detail["validated_steps"] == detail["transitions_saved"] - 1
 
 
 def test_post_step_evidence_failure_keeps_transition_and_no_cost(api):
@@ -286,8 +354,8 @@ def test_post_step_evidence_failure_keeps_transition_and_no_cost(api):
 def synthetic_history(api, root, monkeypatch):
     protocol = api.protocol_binding()
     seeds = [14011, 14012, 14013]
-    original_binding = {"anchor_sha256": "a"*64, "source_bindings": {}}
-    zero = {"status": "COMPLETE_DIAGNOSTIC", "world_steps": 2048, "cost": .5}
+    original_binding = {"anchor_sha256": "a" * 64, "source_bindings": {}}
+    zero = {"status": "COMPLETE_DIAGNOSTIC", "world_steps": 2048, "cost": 0.5}
     originals, rows, bindings = {}, [], {}
 
     def write(path, value):
@@ -296,42 +364,91 @@ def synthetic_history(api, root, monkeypatch):
         return sha256(raw).hexdigest()
 
     for seed in seeds:
-        directory = root / ("J-"+str(seed))
+        directory = root / ("J-" + str(seed))
         directory.mkdir()
         original = {
-            "protocol_binding": protocol, "baseline": {"cost": 1.2}, "learned": {"cost": 1.1},
-            "source_files": {"original.py": "b"*64}, "dependencies": {"mujoco": "3.3.7"},
-            "zero_action_diagnostic": {"cost": .6},
+            "protocol_binding": protocol,
+            "baseline": {"cost": 1.2},
+            "learned": {"cost": 1.1},
+            "source_files": {"original.py": "b" * 64},
+            "dependencies": {"mujoco": "3.3.7"},
+            "zero_action_diagnostic": {"cost": 0.6},
         }
         originals[seed] = original
         saved = {
-            "task": "J", "seed": seed, "status": "COMPLETE_N4A_SEED", "updates": 128,
-            "worlds": 8, "accepted_world_steps": 32768, "evidence": {"logical_sha256": "c"*64},
-            "protocol_binding": protocol, "ppo_config": {"fixed": True},
-            "source_files": {"variant.py": "d"*64}, "dependencies": original["dependencies"],
-            "baseline": {"cost": 1., "world_steps": 2048},
-            "learned": {"cost": 1., "world_steps": 2048}, "zero_action_diagnostic": zero,
+            "task": "J",
+            "seed": seed,
+            "status": "COMPLETE_N4A_SEED",
+            "updates": 128,
+            "worlds": 8,
+            "accepted_world_steps": 32768,
+            "evidence": {"logical_sha256": "c" * 64},
+            "protocol_binding": protocol,
+            "ppo_config": {"fixed": True},
+            "source_files": {"variant.py": "d" * 64},
+            "dependencies": original["dependencies"],
+            "baseline": {"cost": 1.0, "world_steps": 2048},
+            "learned": {"cost": 1.0, "world_steps": 2048},
+            "zero_action_diagnostic": zero,
         }
         digest = write(directory / "summary.json", saved)
         write(directory / "publication.json", {"summary_sha256": digest})
-        write(directory / "manifest.json", {name: saved[name] for name in
-              ("task", "seed", "protocol_binding", "ppo_config", "source_files", "dependencies")})
-        bindings[str(seed)] = {"directory": str(directory), "summary_sha256": digest, "evidence": saved["evidence"]}
-        rows.append({"seed": seed, "directory": str(directory), "status": "COMPLETE", "baseline_cost": 1.,
-                     "final_cost": 1., "original_baseline_cost": 1.2, "original_final_cost": 1.1})
+        write(
+            directory / "manifest.json",
+            {
+                name: saved[name]
+                for name in (
+                    "task",
+                    "seed",
+                    "protocol_binding",
+                    "ppo_config",
+                    "source_files",
+                    "dependencies",
+                )
+            },
+        )
+        bindings[str(seed)] = {
+            "directory": str(directory),
+            "summary_sha256": digest,
+            "evidence": saved["evidence"],
+        }
+        rows.append(
+            {
+                "seed": seed,
+                "directory": str(directory),
+                "status": "COMPLETE",
+                "baseline_cost": 1.0,
+                "final_cost": 1.0,
+                "original_baseline_cost": 1.2,
+                "original_final_cost": 1.1,
+            }
+        )
     variant = {
-        "schema": "n4d-j-ablation-comparison-v1", "classification": "FIXED_BUDGET_NOT_LEARNED",
-        "original_classification": "FIXED_BUDGET_NOT_LEARNED", "original_bindings": original_binding,
-        "rows": rows, "variant_three_seed": {
-            "task": "J", "seeds": seeds, "protocol_binding": protocol,
+        "schema": "n4d-j-ablation-comparison-v1",
+        "classification": "FIXED_BUDGET_NOT_LEARNED",
+        "original_classification": "FIXED_BUDGET_NOT_LEARNED",
+        "original_bindings": original_binding,
+        "rows": rows,
+        "variant_three_seed": {
+            "task": "J",
+            "seeds": seeds,
+            "protocol_binding": protocol,
             "outcome": {"classification": "FIXED_BUDGET_NOT_LEARNED"},
-            "source_bindings": bindings, "zero_action_diagnostic": zero,
+            "source_bindings": bindings,
+            "zero_action_diagnostic": zero,
         },
     }
     monkeypatch.setattr(api, "N4D_SHA256", write(root / "summary.json", variant))
     original_loader = api._example
-    monkeypatch.setattr(api, "_example", lambda name: SimpleNamespace(load_originals=lambda path: (original_binding, originals))
-                        if name == "evaluate_mujoco_tyx_initialization_ablation.py" else original_loader(name))
+    monkeypatch.setattr(
+        api,
+        "_example",
+        lambda name: (
+            SimpleNamespace(load_originals=lambda path: (original_binding, originals))
+            if name == "evaluate_mujoco_tyx_initialization_ablation.py"
+            else original_loader(name)
+        ),
+    )
     return protocol
 
 
@@ -339,7 +456,7 @@ def test_history_keeps_distinct_source_and_zero_comparisons(api, tmp_path, monke
     protocol = synthetic_history(api, tmp_path, monkeypatch)
     result = api.load_history(tmp_path, tmp_path, protocol)
     assert len(result["rows"]) == 3
-    assert result["original_zero_cost"] == .6 and result["centered_zero_cost"] == .5
+    assert result["original_zero_cost"] == 0.6 and result["centered_zero_cost"] == 0.5
     assert result["rows"][0]["original_source_files"] != result["rows"][0]["variant_source_files"]
 
 
@@ -347,14 +464,14 @@ def test_history_keeps_distinct_source_and_zero_comparisons(api, tmp_path, monke
 def test_history_binding_failure_prevents_a_window(api, tmp_path, monkeypatch, fault):
     protocol = synthetic_history(api, tmp_path, monkeypatch)
     if fault == "protocol":
-        protocol = {**protocol, "h": .001}
+        protocol = {**protocol, "h": 0.001}
     else:
-        path = tmp_path / "J-14012" / (fault+".json")
+        path = tmp_path / "J-14012" / (fault + ".json")
         value = json.loads(path.read_text())
         if fault == "manifest":
-            value["source_files"] = {"changed.py": "e"*64}
+            value["source_files"] = {"changed.py": "e" * 64}
         else:
-            value["summary_sha256"] = "0"*64
+            value["summary_sha256"] = "0" * 64
         path.write_text(json.dumps(value))
     with pytest.raises(ValueError):
         api.load_history(tmp_path, tmp_path, protocol)

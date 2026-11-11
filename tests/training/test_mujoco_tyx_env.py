@@ -99,7 +99,9 @@ def test_final_observation_and_terminated_over_timeout(api):
                               expected_frame=env.current_frame)
         assert transition.time_outs[0].item() and not transition.terminated[0].item()
         assert transition.terminated[1].item() and not transition.time_outs[1].item()
-        assert transition.final_mask[:2].all().item()
+        assert transition.terminated.cpu().tolist() == [False] + [True] * 7
+        assert transition.time_outs.cpu().tolist() == [True] + [False] * 7
+        assert transition.final_mask.all().item()
         assert not api.require_cuda().equal(transition.final_observation, transition.observation)
         assert api.require_cuda().equal(transition.observation, start)
         assert np.all(transition.episode_id == 0)
@@ -272,3 +274,21 @@ def test_action_borrow_cleanup_failure_reports_real_commit(api, monkeypatch):
         assert env.needs_recovery and env.last_transition is None
         assert all(state.tick == 0 for state in env.runtime.snapshot().values())
         assert env.runtime.counters["device_control_submissions"] == 1
+
+
+def test_external_runtime_mutation_cannot_be_adopted_by_subset_reset(api):
+    with api.make_environment("hinge-slide") as env:
+        initial = env.runtime.snapshot()
+        assert all(env.runtime.step(env.h).values())
+        before = env.runtime.checkpoint().to_bytes()
+        revision = env.runtime.checkpoint_revision
+        with pytest.raises(RuntimeError, match="all"):
+            env.reset((env.world_keys[0],))
+        assert env.needs_recovery
+        assert env.runtime.checkpoint_revision == revision
+        assert env.runtime.checkpoint().to_bytes() == before
+        env.reset()
+        assert not env.needs_recovery
+        api.load_n1().assert_exact(initial, env.runtime.snapshot())
+        assert all(env.step(zeros(api, env), world_keys=env.world_keys,
+                            expected_frame=env.current_frame).accepted_worlds.values())

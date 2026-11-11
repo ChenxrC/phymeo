@@ -1,0 +1,112 @@
+# N4c fixed saved-policy response diagnosis
+
+Status: AUTHORING / UNEXECUTED. Parent is the only project execution owner.
+Base is the accepted a18305cf plan, normally merged into the existing support
+worktree without reset or lost work. Deadline is2026-11-12 07:20+08; this slice
+contains no new training and does not change the N4a learning gates.
+
+## Frozen interface and ownership
+
+Only four NEW paths:
+
+- src/phymeo/training/policy_response_diagnostics.py: bounded saved-model
+  extraction, fixed native observation grid, actual TYX feature generation,
+  pinned RSL deterministic inference and descriptive response decomposition.
+- examples/diagnose_mujoco_tyx_policy_response.py: all nine fixed identities,
+  original three summary anchors, fresh atomic output and failure evidence.
+- tests/training/test_policy_response_diagnostics.py: independent synthetic
+  evidence/response arithmetic and actual CUDA feature/MLP tests.
+- This report.
+
+The module's callable entry points are read_policy_pair(directory,binding,
+expected_task,expected_seed), fixed_grid(protocol,entry), evaluate_pair(pair,
+device='cuda:0'), and response_components(raw_action,mapped_ctrl,grid).
+The CLI takes --evidence-root, --output and --device. It predeclares all nine
+identities before opening a stream; it never selects a seed or grid by output.
+No old source, test, task configuration, export or dependency is modified.
+
+## Provenance and precision
+
+Original initial_policy contains full actor and critic state_dict. Final
+final_policy_and_adam contains both plus optimizer and next_iteration. The
+original parameter hash covers sorted actor+critic tensor names/dtypes/shapes/
+bytes; it is checked before loading either actor. Initial state is not inferred
+from a seed. Normalizer state is included in strict state_dict loading. The
+actual frozen MLP[32,32]/tanh has obs_normalization=False and Identity; unknown
+network/distribution classes and absent/extra/layout-changed tensors are refused.
+No class path from evidence is imported dynamically, and no pickle is accepted.
+
+The N4b bounded data decoder/stream reader/hash are reused without editing them.
+Every original stream is read sequentially once for this new extraction and
+bound by its full compressed/logical hash/byte count. Only initial/final models
+and the first held-out request/transition remain resident. This is not a repeat
+of the N4b cost/gradient analysis. Complete summary/publication/manifest and
+original dependency/config/source bindings must agree. All nine extractions
+complete before the first inference is published.
+
+Original held-out tick1 requested_action saved input_frame metadata, not a
+standalone input observation tensor. Use its first actual receipt input_q/v,
+prove the original held-out templates cast to FP32 match those stored q/v bits,
+and pass them with original FP32 scale/bias to the unchanged TYX task kernel.
+The resulting observations are newly generated from saved native state, not
+claimed to be original saved observation bytes. The original requested action
+is retained as a reference, not an equality gate or a sampled training action.
+
+The low-level feature entry is _task_kernels.evaluate on completely owned arrays
+and an owned TYX Runtime/stream. It does not construct a physical runtime,
+MuJoCo model/data, environment, optimizer or workspace, and cannot step physics.
+Features are explicitly downloaded and uploaded to Torch for this diagnostic;
+there is no zero-HOST-transfer or training-throughput claim. The current feature
+source hash must match the originally bound repository source. Device status,
+finite observations and full resource cleanup are checked. HOST formula values
+are descriptive only and cannot replace the real feature kernel.
+
+## Fixed inputs and outputs
+
+For each original seed, both hash-bound checkpoints use exactly this ordered
+native grid:8 original held-out starts; q=target/v=0; each q_j=target_j +/-
+q_scale_j/4 with all other errors/v zero; each v_j=+/-v_scale_j/4 with q=target.
+Thus J has17, S13 and R21 points per checkpoint. Original centered/scaled task
+observation is reused, not normalized a second time. Counterfactual grid points
+are policy diagnostics, not validated new physical trajectories.
+
+Each result saves all native FP32 q/v, labels, FP32 scale/bias and actual device
+features, raw deterministic action and original scale*tanh(action) mapped ctrl.
+For each input coordinate and all output joints, retain paired even response,
+odd response, even-minus-target offset, and finite-difference secant per native
+input unit. Zero denominators are rejected when input FP32 points collapse;
+there is no hidden epsilon, new gain threshold or grid expansion.
+
+The actual pinned RSL MLP/Gaussian distribution implementation is used with
+stochastic_output=False and eval mode. No PPO code is copied or reimplemented.
+Python, NumPy, Torch CPU and all CUDA RNG states are restored in finally, even
+if model loading, feature launch or inference fails. This preserves random
+state, not CUDA initialization, allocator/cache state or execution timing.
+Strict dependency versions and full loaded model states are saved in the result.
+All old scalar learning outcomes remain unchanged.
+
+J's paired restoring direction is descriptive for its uncoupled direct-force
+coordinates. R's coupled response does not impose a per-joint sign criterion.
+S may legitimately have nonzero equilibrium ctrl. A completed report means a
+complete bound response experiment; it does not upgrade J/R learning quality.
+If the fixed experiment does not distinguish the offset/feedback hypothesis,
+stop it; do not enlarge the grid, choose new seeds or add training iterations.
+Any subsequent single learning ablation needs a separate preregistration using
+all three original seeds and the original128-update budget and gates.
+
+## Predeclared tests
+
+HOST tests cover the three exact grid sizes/order/centering, original-template
+FP32 binding, collapsed/nonfinite/invalid metadata, known even/odd/cross response,
+complete model/first-input extraction, whole-policy hashes, wrong identity,
+missing/duplicate model or first-input records, stream truncation, and source/
+class/dependency rejection. Synthetic fixtures are independent minimal stream
+fixtures for the extractor, not fabricated successful physics trajectories.
+
+CUDA tests use the actual pinned MLP and actual unchanged TYX feature kernel:
+full initial/final state loading and finite complete output, all global RNGs
+unchanged after success, strict missing/extra/wrong-layout tensor rejection, and
+injected feature/inference failure followed by a successful clean retry. CUDA
+availability is mandatory for this slice; optional dependency absence may skip
+ordinary HOST collection but cannot count as N4c qualification. Exact manual
+node count and executed parent results will be appended at handoff/acceptance.

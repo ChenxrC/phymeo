@@ -79,3 +79,14 @@ N4d原三种子已完整结束，中位ratio0.993057、一个变差，学习门�
 B-point首轮touch-SE暴露原已接受法向误差与同法向singleton点位门不相容，11pass/1fail后按表示停止规则隔离，不合入、不C-point、不改原门。剩余几何与CUDA未执行。完整载荷合同仅保留研究稿；后续要另定共同候选或明确近似消费合同。
 
 GPU内存改进转为完整compact HOST mirror+单native观察scratch，已通过新29、受影响55、训练续接9项。原source研究证明固定MuJoCo3.3.7无公开Python目标copy API，因此不借私有指针/pin更换；原CPU求解/TYX物理核不改。父下一次固定S256仅测新表示下的native构造/copy与进程commit/RSS、原两mode完整48步/三PPO更新一致性；不重跑九格或旧轨迹。随后仍按06:20长实验截止与07:20交接推进。
+
+
+## 03:18 后继功能节点
+
+已关闭S256表示诊断与N4e固定控制可达性，结果见实际报告。保持J学习门失败，停止无新证据的训练调参。
+
+- BALL1（高，原audit作者）：固定根ball+hinge/slide，nv<=8/nq<=10、无执行器/接触/限制/干摩擦/球spring；native-joint与DOF分别映射，SO(3)右乘积分与完整M/J/bias。多结构、各方向力矩、恢复/失败、原scalar接缝回归。父负责路由与共享ABI。
+- COL2（高，原tests作者）：新的设备finite segment–triangle边界距离，sphere为零长segment、capsule为有限segment+radius。全部候选/参数/重心/两见证/未决状态绑定；独立精确oracle和多形状姿态、共面/平行/退化/事务案例。距离并非solid内外或响应；旧B-point隔离保留。
+- N5（中高，原source作者）：先调研原Newton随机重置和本项目事务/checkpoint接口，冻结按stable world和reset index的独立采样；父拥有runtime/env共享接缝。仅状态随机化，不暗加模型质量/摩擦随机化。
+
+BALL1目标05:30交接，COL2目标06:00；06:20后不启新长验证。任一实现无法保原兼容或独立验收即明确保留未完成，不把已编写称通过。

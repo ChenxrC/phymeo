@@ -73,3 +73,12 @@ these HOST cases before one fixed S256 run with `--memory-diagnostic`.
 ## Parent qualification before the fixed S256 measurement
 
 118/119 retained first Ruff/format failures: two F821 reports from a test closure whose local owner was explicitly deleted, and one unformatted example. The test adapter now owns an explicit runtime reference; deleting the adapter still checks owner release. 121 formatter, 122 Ruff and 123 format-check passed. 120 selected all eight new fake-owner cases plus the two existing copy-facade cases: 10 passed in 1.13s, RAW_EXIT=0. No physical benchmark has run for this source yet.
+
+
+## 03:03 fixed S256 completed
+
+Run124, tested8550a3d5, completed both original 48-step modes and three PPO updates per mode, RAW_EXIT=0. All common physics, learner, Adam and RNG fields matched. Across the 96 exact runtime.step intervals, intercepted native constructors and runtime native copies were zero. Each accepted bank held 256 compact mirrors; the full observer lazily owned one native scratch, integration owned none. All 513 intercepted public constructions were outside ordinary step (256+1+256); these counters do not claim a census of hidden C allocations.
+
+Whole-process commit at full-mode construction completion changed from old run64's 4,886,155,264 B to 1,267,666,944 B; integration construction completion changed from 6,215,569,408 B to 2,570,547,200 B. These are observed matching stages, not true peaks: v2 sampling is denser. The public native arena remains 13,631,488 B per native data object; no budget was reduced. Old copy count24,576 versus current0 is scoped to the runtime copy wrapper. The original OOM's sole cause and process-wide leaks are not established. Diagnostic timings are excluded from performance claims.
+
+Full/integration complete saved gzip sizes are61,465,591/42,945,697 B. Original trajectory and learner checks ran in the same command; no second numerical audit or nine-grid rerun was needed. Parent receipt `artifacts/p65-parity-until-0720-20261112-01/compact-observer-reachability-qualification.json` binds before/after sources and merged Python bytes.

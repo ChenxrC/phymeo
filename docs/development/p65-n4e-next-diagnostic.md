@@ -210,3 +210,12 @@ cost improvement remain **UNKNOWN until the parent executes the fixed window**.
 CODE_READY_TESTS_PENDING. AUTHORING_SLOT_RELEASED after the final documentation
 commit; parent retains sole execution ownership and may perform focused static
 checks and the declared tests/window. No follow-on optimizer experiment is started.
+
+
+## Parent actual qualification, 03:07
+
+Tested51b1d77e. Runs125/126 retained the first lint pass and two-file format failure;128 formatter and129/130 final static checks passed. Run127 complete HOST suite:26 passed in1.71s. Run131 actual CUDA window: original8 held-out states×256 steps=2,048 world-transitions, RAW_EXIT=0, PASS_FIXED_REFERENCE_DIAGNOSTIC. No learner or optimizer ran.
+
+Mean normalized cost0.023813799676380473; maximum final |q|3.6288483329371957e-8 and |v|8.736260070918433e-8. Independent FP64 recurrence versus actual published trajectory errors were at most2.7403840176796132e-8(q) and7.853073543534483e-8(v); maximum reward error1.1039317016070527e-8. Stored force remained0.5751821994781494 inside the original bound. All eight final timeout/reset publications and original pre-reset transitions were checked. The complete774-record stream is2,497,923 compressed bytes,21,330,862 logical bytes.
+
+This establishes that this fixed J window is reachable through the actual public force/step/publication chain. The historical zero cost0.063695137045106 and policy costs are explicitly cross-source historical controls, not contemporaneous policy trials. It does not identify PPO's cause, prove optimality, validate R learning or change the failed N4d classification. No follow-on J training is authorized by this result alone.

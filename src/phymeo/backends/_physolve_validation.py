@@ -83,6 +83,8 @@ class PreparedValidation:
             raise RuntimeError("non-finite PhySolve contact measurement; not published")
         if bits & 262144:
             raise RuntimeError("PhySolve mixed contact observation capacity exceeded; not published")
+        if bits & 524288:
+            raise RuntimeError("invalid PhySolve free-body input or converted coordinates; not published")
         names = [name for i, name in enumerate(self.finite_fields) if bits & (1 << (i + 1))]
         if names:
             raise RuntimeError(f"non-finite PhySolve {', '.join(names)}; not published")

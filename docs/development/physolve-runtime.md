@@ -629,3 +629,25 @@ reset/forward 和未选观测保持，没有修改 Host 或六 CUBIN。合同见
 并回归 selected update 和 host masked reset。热阶段禁止 host assign、numpy 和
 tx.empty；记录为配套实验根 evidence/b3l-native.log。实际 C ABI 由 P2PE 配套验证，
 不以本测试替代 Graph、安装、GUI 或完整发行资格。
+
+## B3m：自由根写入前置合同
+
+FREE 根的公共世界 origin pose / COM twist 通过 prepared native binding 转换为
+PhySolve qpos/qvel。一次冷准备、一次候选更新与原生 forward；不改变 CUBIN。
+具体字段、四元数检查、保留分量和成本以
+[FREE body update v1](../architecture/engine-integration.md#free-body-update-v1) 为准。
+
+正式入口仍在 test_physolve_execution.py：12 项 CUDA 选择集通过，其中新增
+6 项覆盖 N=1/8/64、两个非零 COM 自由体及受约束 child、分量保持、step/reset、
+非法输入原子拒绝/丢弃恢复、空绑定及准备/关闭失败保活；另六项回归设备 reset
+和 selected update。增强选择测试三项通过，未选 body/未写分量含 NaN 不被消费；
+补充一项负例通过，有限 twist 经 COM 转换溢出、真实 native storage/input alias
+在修改候选前拒绝。CPU MuJoCo 矩阵和 mj_objectVelocity 仅作隔离测试参考。
+当前 kernel 容差在首次比较前固定，未因候选失败改变。
+最终 N=1/8/64 再验三项通过，execution_costs 的新增准备缓冲容量分别为
+147/896/6888 字节（两个 FREE body）；此数不是整个 runtime 峰值显存或吞吐。
+
+首次三失败均发生于测试末尾误用同步 step 的 steps 参数，改为既有
+begin/enqueue_step(steps=4)/complete/accept；前面的坐标/速度检查已通过，原日志保留。
+独立只读复审无剩余生产阻断。未执行完整库、Graph、P2PE body C ABI 或 GUI；
+证据为配套实验根 evidence/b3m-{free-final,free-selected,free-negative}.log。

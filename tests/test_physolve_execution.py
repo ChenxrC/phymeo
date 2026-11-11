@@ -10,6 +10,232 @@ from phymeo.builders.mujoco_compiler import compile_mujoco_xml
 
 payload = payload_fixture
 
+FREE_OFFSET = '''<mujoco><option gravity="0 0 -9.81" timestep=".002" jacobian="dense"/>
+<worldbody>
+<body name="a" pos="-2 0 2"><freejoint name="root_a"/>
+<inertial pos=".1 -.04 .03" mass="2" diaginertia=".1 .15 .2"/>
+<geom type="sphere" size=".2"/>
+<body name="child" pos="0 0 .4"><joint name="hinge" axis="0 1 0"/>
+<geom type="sphere" size=".05" mass=".1"/></body></body>
+<body name="b" pos="2 0 2"><freejoint name="root_b"/>
+<inertial pos="-.08 .03 .07" mass="3" diaginertia=".2 .25 .3"/>
+<geom type="sphere" size=".2"/></body>
+</worldbody></mujoco>'''
+
+
+@pytest.mark.cuda
+@pytest.mark.parametrize('nworld', [1, 8, 64])
+def test_free_body_origin_com_updates_and_reset(payload, nworld, monkeypatch):
+    import mujoco as mj
+    import tyx as tx
+
+    record = compile_mujoco_xml(FREE_OFFSET, require_asset=False)
+    cpu = record.fresh_native_model()
+    def rotation(q):
+        result = np.empty(9)
+        mj.mju_quat2Mat(result, np.asarray(q, np.float64))
+        return result.reshape(3, 3)
+    with PhySolveRuntime(record, payload=payload, nworld=nworld, body_observations=True) as runtime:
+        bindings = runtime.prepare_free_body_updates()
+        assert [r[0] for r in bindings] == ['a', 'b']  # constrained child excluded
+        assert runtime.prepare_free_body_updates() is bindings
+        assert runtime.execution_costs()['free_body_update_device_bytes'] == 40 + 107*nworld
+        storage = runtime.storage_binding()
+        initial = runtime.snapshot()
+        expected_q, expected_v = initial['qpos'].copy(), initial['qvel'].copy()
+        old_bodies = storage.borrow('body_com_twist', runtime.active_bank).numpy().copy()
+        values = np.zeros((nworld, 2, 13), np.float32)
+        values[:, :, :3] = [[-2, .1, 3], [2, -.2, 3]]
+        values[:, :, 3:7] = [0, 0, np.sin(.35), np.cos(.35)]
+        values[:, :, 7:10] = [.25, -.5, .125]
+        values[:, :, 10:13] = [.3, .4, -.2]
+        mask = np.zeros((nworld, 2), bool)
+        mask[::2, 0] = True
+        mask[::4, 1] = True
+        device_values = tx.Array(values, device=storage.device)
+        device_mask = tx.Array(mask, device=storage.device)
+        for components in (('position','rotation','linear_velocity','angular_velocity'),
+                           ('rotation',), ('angular_velocity',), ('linear_velocity',), ('position',)):
+            if components == ('rotation',):
+                values[:, :, 3:7] = [-np.sin(.6), 0, 0, -np.cos(.6)]
+            if components == ('angular_velocity',):
+                values[:, :, 10:13] = [-.3, -.1, .6]
+            if components == ('linear_velocity',):
+                values[:, :, 7:10] = [.4, -.2, .1]
+            if components == ('position',):
+                values[:, :, 2] += .25
+            # Independent CPU matrix/COM reference, no production conversion helper.
+            for world in range(nworld):
+                for column, (_, body, qa, va, com) in enumerate(bindings):
+                    if not mask[world,column]:
+                        continue
+                    r = rotation(expected_q[world,qa+3:qa+7])
+                    omega = r @ expected_v[world,va+3:va+6]
+                    linear = expected_v[world,va:va+3] + np.cross(omega, r @ com)
+                    row = values[world,column]
+                    if 'position' in components:
+                        expected_q[world,qa:qa+3] = row[:3]
+                    if 'rotation' in components:
+                        q = row[[6,3,4,5]].astype(np.float64)
+                        expected_q[world,qa+3:qa+7] = q / np.linalg.norm(q)
+                    if 'linear_velocity' in components:
+                        linear = row[7:10]
+                    if 'angular_velocity' in components:
+                        omega = row[10:13]
+                    r = rotation(expected_q[world,qa+3:qa+7])
+                    expected_v[world,va:va+3] = linear - np.cross(omega, r @ com)
+                    expected_v[world,va+3:va+6] = r.T @ omega
+            submitted = values.copy()
+            for field, span in (('position',slice(0,3)), ('rotation',slice(3,7)),
+                                ('linear_velocity',slice(7,10)), ('angular_velocity',slice(10,13))):
+                if field not in components:
+                    submitted[:,:,span] = np.nan
+            submitted[~mask] = np.nan
+            device_values.assign(submitted)
+            previous_v = runtime.snapshot()['qvel']
+            ticket = runtime.begin_execution()
+            with monkeypatch.context() as patch:
+                patch.setattr(tx, 'empty', lambda *a, **k: pytest.fail('hot allocation'))
+                patch.setattr(tx.Array, 'numpy', lambda *a, **k: pytest.fail('hot snapshot'))
+                runtime.enqueue_free_body_update(ticket, device_values, selected_bodies=device_mask,
+                                                 components=components)
+                runtime.complete_execution(ticket)
+                runtime.accept_execution(ticket)
+            actual = runtime.snapshot()
+            np.testing.assert_allclose(actual['qpos'], expected_q, atol=2e-6, rtol=1e-6)
+            np.testing.assert_allclose(actual['qvel'], expected_v, atol=2e-6, rtol=1e-6)
+            if components == ('position',):
+                np.testing.assert_array_equal(actual['qvel'], previous_v)
+            bodies = storage.borrow('body_com_twist', runtime.active_bank).numpy()
+            np.testing.assert_array_equal(bodies[~mask.any(axis=1)], old_bodies[~mask.any(axis=1)])
+            for world in np.flatnonzero(mask.any(axis=1)):
+                data = mj.MjData(cpu)
+                data.qpos[:] = expected_q[world]
+                data.qvel[:] = expected_v[world]
+                mj.mj_forward(cpu, data)
+                for _, body, *_ in bindings:
+                    velocity = np.empty(6)
+                    mj.mj_objectVelocity(cpu, data, mj.mjtObj.mjOBJ_BODY, body, velocity, 0)
+                    np.testing.assert_allclose(bodies[world,body], velocity[[3,4,5,0,1,2]], atol=5e-6, rtol=1e-6)
+        ticket = runtime.begin_execution()
+        runtime.enqueue_step(ticket, steps=4)
+        runtime.complete_execution(ticket)
+        runtime.accept_execution(ticket)
+        stepped = runtime.snapshot()
+        runtime.reset(mask=mask.any(axis=1))
+        reset = runtime.snapshot()
+        for name in ('qpos', 'qvel'):
+            np.testing.assert_array_equal(reset[name][mask.any(axis=1)], initial[name][mask.any(axis=1)])
+            np.testing.assert_array_equal(reset[name][~mask.any(axis=1)], stepped[name][~mask.any(axis=1)])
+
+
+@pytest.mark.cuda
+def test_free_body_input_rejection_atomicity_and_recovery(payload):
+    from types import SimpleNamespace
+
+    import tyx as tx
+
+    with PhySolveRuntime(compile_mujoco_xml(FREE_OFFSET, require_asset=False), payload=payload,
+                        nworld=8) as runtime:
+        runtime.prepare_free_body_updates()
+        storage = runtime.storage_binding()
+        before = runtime.snapshot()
+        values = np.zeros((8,2,13), np.float32)
+        values[:,:,6] = 1
+        mask = tx.Array(np.ones((8,2),bool), device=storage.device)
+        source = tx.Array(values, device=storage.device)
+        for bad in (0., 2., np.nan):
+            values[-1,-1,6] = bad
+            source.assign(values)
+            ticket = runtime.begin_execution()
+            runtime.enqueue_free_body_update(ticket, source, selected_bodies=mask)
+            with pytest.raises(RuntimeError, match='free-body input'):
+                runtime.complete_execution(ticket)
+            for name in ('qpos','qvel'):
+                candidate = storage.borrow(name, ticket[1]).numpy(stream=storage.stream)
+                np.testing.assert_array_equal(candidate, before[name])
+                np.testing.assert_array_equal(runtime.snapshot()[name], before[name])
+            runtime.discard_execution(ticket)
+        # Finite inputs can overflow only after origin/COM conversion.
+        values[-1,-1,6] = 1
+        values[0,0,7:13] = np.finfo(np.float32).max
+        source.assign(values)
+        ticket = runtime.begin_execution()
+        runtime.enqueue_free_body_update(ticket, source, selected_bodies=mask)
+        with pytest.raises(RuntimeError, match='free-body input'):
+            runtime.complete_execution(ticket)
+        for name in ('qpos', 'qvel'):
+            np.testing.assert_array_equal(storage.borrow(name,ticket[1]).numpy(stream=storage.stream), before[name])
+        runtime.discard_execution(ticket)
+        values[0,0,7:13] = 0
+        source.assign(values)
+        # Borrow real allocated addresses, but never read the aliased mask.
+        for pointer in (storage.borrow('qpos',runtime.active_bank).ptr, source.ptr):
+            owner = SimpleNamespace(__cuda_array_interface__=dict(
+                version=3, shape=(8,2), strides=None, typestr='|b1', data=(pointer,False)))
+            aliased = tx.Array.from_cuda_array_interface(owner, device=storage.device)
+            ticket = runtime.begin_execution()
+            with pytest.raises(ValueError, match='alias'):
+                runtime.enqueue_free_body_update(ticket, source, selected_bodies=aliased)
+            runtime.discard_execution(ticket)
+        ticket = runtime.begin_execution()
+        with pytest.raises(ValueError, match='contiguous'):
+            runtime.enqueue_free_body_update(ticket, source, selected_bodies=tx.zeros((8,2),tx.i32,device=storage.device))
+        runtime.discard_execution(ticket)
+        values[-1,-1,6] = 1
+        source.assign(values)
+        mask.zero_()  # no values consumed, no motion or publication of stale errors
+        ticket = runtime.begin_execution()
+        runtime.enqueue_free_body_update(ticket, source, selected_bodies=mask)
+        runtime.complete_execution(ticket)
+        runtime.accept_execution(ticket)
+        for name in ('qpos','qvel'):
+            np.testing.assert_array_equal(runtime.snapshot()[name], before[name])
+
+
+@pytest.mark.cuda
+def test_free_body_prepare_failure_retains_owner_until_close(payload, monkeypatch):
+    from phymeo.backends._physolve_free import PreparedFreeBodies
+
+    runtime = PhySolveRuntime(compile_mujoco_xml(FREE_OFFSET, require_asset=False), payload=payload)
+    enqueue = PreparedFreeBodies.enqueue
+    def fail_after_submit(plan, *args, **kwargs):
+        enqueue(plan, *args, **kwargs)
+        raise MemoryError('free-body warmup submitted')
+    with monkeypatch.context() as patch:
+        patch.setattr(PreparedFreeBodies, 'enqueue', fail_after_submit)
+        with pytest.raises(MemoryError, match='warmup'):
+            runtime.prepare_free_body_updates()
+        retained = runtime._free_body_updates
+        assert retained.resources and not retained.ready
+        with pytest.raises(RuntimeError, match='close the retained'):
+            runtime.prepare_free_body_updates()
+        patch.setattr(runtime, '_complete', lambda: (_ for _ in ()).throw(RuntimeError('close wait')))
+        with pytest.raises(RuntimeError, match='close wait'):
+            runtime.close()
+        assert runtime._free_body_updates is retained and retained.scratch.ptr
+    runtime.close()
+    assert runtime._free_body_updates is None
+
+
+@pytest.mark.cuda
+def test_free_body_empty_binding_and_cold_preconditions(payload):
+    import tyx as tx
+
+    with PhySolveRuntime(compile_mujoco_xml(SLIDER, require_asset=False), payload=payload) as runtime:
+        assert runtime.prepare_free_body_updates() == ()
+        ticket = runtime.begin_execution()
+        with pytest.raises(RuntimeError, match='pending'):
+            runtime.prepare_free_body_updates()
+        values = tx.empty((1,0,13), tx.f32, device='cuda:0')
+        selected = tx.empty((1,0), tx.bool1, device='cuda:0')
+        for components in ((), ('rotation','rotation'), ('unknown',)):
+            with pytest.raises(ValueError, match='components'):
+                runtime.enqueue_free_body_update(ticket, values, selected_bodies=selected, components=components)
+        runtime.enqueue_free_body_update(ticket, values, selected_bodies=selected)
+        runtime.complete_execution(ticket)
+        runtime.accept_execution(ticket)
+
 
 @pytest.mark.cuda
 @pytest.mark.parametrize('nworld', [1, 8, 64])

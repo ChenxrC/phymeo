@@ -155,6 +155,40 @@ forward，未选世界保留旧派生观测和接触；设备全选/空选不读
 本接口不增加 H2D 或 host snapshot，完成仍检查紧凑状态；原生 direct 条件同步存在。
 host reset 不传 selected_worlds 时保持原路径。该合同不是 Graph 或并发资格声明。
 
+### FREE body update v1
+
+`free_body_update_contract_version=1` 提供显式冷准备
+`prepare_free_body_updates()`，返回当前编译的 `(name, native_body, q_address,
+dof_address, local_com)` 不可变绑定。仅 world-parent 单 FREE joint 的 body 合格，
+受约束 child 不拥有独立绝对位姿。返回的原生地址不充当跨编译公共实体身份。
+
+准备一次后，`enqueue_free_body_update(ticket, values, selected_bodies=mask,
+components=...)` 使用既有 begin/complete/accept/discard 事务。输入是 canonical
+device 连续 float32[N,F,13]：世界 body-origin XYZ、body-to-world XYZW、世界系
+COM 线速度及角速度；mask 是 bool[N,F]。F 和列序来自本次冷绑定。components
+支持 position/rotation/linear_velocity/angular_velocity 的非空无重复子集；忽略
+未请求分量，未选 body 不写，未选世界的派生观测保持。调用方持有并保持输入不变到
+完成或丢弃；runtime 留存借用，拒绝与原生公开存储或彼此重叠的输入。
+本入口的观测发布范围由 body mask 的 world 并集决定；同一 ticket 的其他原生
+字段写入不得影响该并集之外的世界，消费层应合并选择范围或分别完成事务。
+
+旋转改变时保留未写的世界 COM twist，原生 qvel 转换为 origin/world 线速度和
+body-local 角速度。位置单独修改直接保留原生 qvel，不增加无用的往返误差。
+单位四元数的 float64 平方范数误差须 <=64*float32.eps，通过后归一化；不翻转符号。
+有限值、范数及转换溢出在 device 上整批预检，所有写入受同一错误位门控。非法值
+不进入原生 q/qd，完成时报错；丢弃后可再用。有效输入执行一次原生 forward，
+不推进时间、不改变结构 qpos0。原生条件循环同步依旧存在，不宣称异步/Graph 已合格。
+
+该 PhySolve 专用适配使用已有原生坐标及 COM，不建立通用 Newton-like 模型。
+冷分配为地址 8F、COM 12F、转换 scratch 52NF、body mask NF 和 world mask N 字节，
+共 20F+53NF+N；scratch 只用于验证后 scatter，不是第二份权威物理状态。
+每次 O(NF) 三个批量转换/选择/scatter 内核，随后一次现有 forward；无逐 world
+Host 调用、热期 TYX 分配或 host mask/状态快照。错误归并复用现有 4-byte completion。
+准备失败资源保留到成功 close；关闭后原绑定不能用于新的 runtime。
+
+P2PE 的 Stage 自由刚体/浮根建模、q/DOF 布局及 body Array/TensorView 消费仍需后续
+接入，本合同通过不能被记为 P2PE C ABI body-write、安装或 GUI 资格。
+
 ### 候选设备观测执行 v1
 
 `observation_execution_contract_version=1` 增加只读 `observation_bank`：idle 返回

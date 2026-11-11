@@ -339,7 +339,7 @@ def build(data, directory, *, worlds=WORLDS[:1], reverse=False):
                     revision=1,
                 )
                 kwargs = dict(topology=p.compiled.topology)
-                if p.graph_token is not None:
+                if s["family"] == "floating_affine":
                     kwargs["graph_token"] = p.graph_token
                 binding = binding_class(c, world, group, local, **kwargs)
                 shapes.append(registered)
@@ -847,7 +847,11 @@ def test_r05_sparse_coincident_worlds_reverse_registration(count, tyx_mode, tmp_
     )
     for wi, world in enumerate(WORLDS[:count]):
         for tick in range(3):
-            assert batch[tick]["accepted"][world] == singles[wi][tick]["accepted"][world]
+            many, one = batch[tick]["accepted"][world], singles[wi][tick]["accepted"][world]
+            # Separate scene owners intentionally have different registry/CAS identity.
+            assert many.owner is not one.owner
+            assert many.world == one.world and many.tick == one.tick
+            assert many.participants == one.participants
             for key, item in batch[tick]["receipts"][world].participants.items():
                 other = singles[wi][tick]["receipts"][world].participants[key]
                 close(item.contact_generalized, other.contact_generalized, atol=0, rtol=0)

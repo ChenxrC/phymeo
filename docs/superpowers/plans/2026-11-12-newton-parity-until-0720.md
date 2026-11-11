@@ -71,3 +71,11 @@ COL1a retained-candidate 修复已实际通过两后端各10项新例、12项原
 根据[曲面后继研究](../../development/p65-curved-patch-next-batch.md)，原碰撞作者先做 B-point：任一侧 S/E 的九个新增曲面族统一零维 device patch，完整材料/offset/pair anchor、同次 source 和固定工程门。只验证并传递同一候选的合法 witness，不 HOST 搜索/投影；旧十族有限 patch 和已验 GJK/EPA 不改，剩余九族母线/圆盘 patch 仍 unsupported。这是已解析法向下的点接触离散，不承诺全局唯一 MTD、连续面积压力。旧未决状态不能出点；多解/包含若已解析，仍须全部独立支持/边界/闭合检查，不能新加按输出挑选的阈值或声称唯一法向。
 
 先固定九族三态27身份、九协变、四来源三步和容量/错源/晚失败，再实现 NEW point-patch 核与 query 接线。旧三个 K1 WIP 不动。C-point 的真实载荷必须等几何资格和表示桥审阅后另接；时间不足则明列待办，不能将点 patch 通过称受力通过。该支线与 N4d/资源账本纯编码并行，执行继续父唯一串行。
+
+## 02:43 实证后的调整
+
+N4d原三种子已完整结束，中位ratio0.993057、一个变差，学习门仍失败；停止居中因素，禁止扩大预算/搜索。后继只做N4e一次J原8个held-out起点、256步的固定两段解析控制可达性诊断，使用原公开动作/成本/边界，固定128/128切换，不可行则直接保留失败；它不替代learner验收，也不外推R。原source作者只增example/tests和协议，父唯一执行。
+
+B-point首轮touch-SE暴露原已接受法向误差与同法向singleton点位门不相容，11pass/1fail后按表示停止规则隔离，不合入、不C-point、不改原门。剩余几何与CUDA未执行。完整载荷合同仅保留研究稿；后续要另定共同候选或明确近似消费合同。
+
+GPU内存改进转为完整compact HOST mirror+单native观察scratch，已通过新29、受影响55、训练续接9项。原source研究证明固定MuJoCo3.3.7无公开Python目标copy API，因此不借私有指针/pin更换；原CPU求解/TYX物理核不改。父下一次固定S256仅测新表示下的native构造/copy与进程commit/RSS、原两mode完整48步/三PPO更新一致性；不重跑九格或旧轨迹。随后仍按06:20长实验截止与07:20交接推进。

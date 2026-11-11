@@ -165,8 +165,20 @@ report commit. Parent serial validation and actual three-seed outcomes remain
 pending.
 
 
-## Parent serial qualification (02:31)
+## Parent serial qualification
 
 Author UNEXECUTED above is historical. First HOST run89 retained an RSL layout failure: the pinned MLP reuses the same Tanh object, so children() removes repeated applications. Sequential iteration now validates the actual forward registration order without relaxing the Linear/Tanh whitelist. Run93 passed 24 HOST cases and run90 passed 4 CUDA cases. Independent text review also identified frozen mean bias admission; the head must remain trainable, and a new frozen-bias refusal plus the actual trainable positive passed run96 (2 cases). Runs91/92 and94/95 are exact-scope static successes. The CUDA model publication and all existing cases retain their earlier qualified source bindings; run96 is the focused admission delta, not a claim that all cases were rerun on that delta.
 
-The original failure is preserved. No physics or optimization was run by these tests except the declared unit test optimizer step. The fixed three-seed physical learning experiment follows separately; its outcome is still pending.
+The original failure is preserved. No physics or optimization was run by these tests except the declared unit test optimizer step.
+
+## Actual fixed-budget outcome
+
+Run97 completed all three original seeds with one frozen product source at e14c56e6. Each used the original 128 updates / 32,768 training transitions and complete 2,048-transition untrained/final held-out windows. Its original summary validation checked all 128 update/Adam records, equal source/config/dependencies across seeds and complete compressed evidence bindings. RAW_EXIT=1 reports the declared learning-gate failure, not an interrupted experiment.
+
+| Seed | Original untrained | Original final | Centered untrained | Centered final |
+| --- | ---: | ---: | ---: | ---: |
+| 14011 | 0.0798635333 | 0.0740519219 | 0.0724930774 | 0.0708867624 |
+| 14012 | 0.0651763097 | 0.0647360449 | 0.0648595589 | 0.0644092488 |
+| 14013 | 0.0669394627 | 0.0631858401 | 0.0606432051 | 0.0623545636 |
+
+Classification remains FIXED_BUDGET_NOT_LEARNED. The centered learned/untrained ratios are 0.977842, 0.993057 and 1.028220; median 0.993057. Zero-action cost remains 0.0636951370; only the third final policy is lower than zero action, and that seed worsened relative to its own centered untrained policy. The lower final costs versus the historical original package do not establish the cause of weak learning. One-shot centering is insufficient under the original gate. This factor is closed for this batch: no larger budget, new seed, repeated centering or parameter search.

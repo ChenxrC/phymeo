@@ -80,6 +80,18 @@ B-point首轮touch-SE暴露原已接受法向误差与同法向singleton点位�
 
 GPU内存改进转为完整compact HOST mirror+单native观察scratch，已通过新29、受影响55、训练续接9项。原source研究证明固定MuJoCo3.3.7无公开Python目标copy API，因此不借私有指针/pin更换；原CPU求解/TYX物理核不改。父下一次固定S256仅测新表示下的native构造/copy与进程commit/RSS、原两mode完整48步/三PPO更新一致性；不重跑九格或旧轨迹。随后仍按06:20长实验截止与07:20交接推进。
 
+## 04:00 N6 控制与物理频率接线
+
+已完成的 BALL1、N5、COL2 新结果进入集成与安装包资格，不重复旧同源绿套。下一独立节点 N6 根据原 Newton/IsaacLab/RSL 源码研究，在现有设备 VecEnv 上增加显式 control-window 规格；父拥有 Env/RSL 接缝，原 source 作者拥有 NEW 规格、测试、例子，原 audit 作者只读复核。执行仍父唯一串行。
+
+冻结范围：D 为 1..8 的整数，默认未启用保持旧 Transition 类型和 checkpoint binding。opt-in 一次映射/提交原三类 native action，保持它推进 D 次原 runtime.step(h)，逐次保留真实完整 public state/last-step、time/tick/revision。原始双精度时钟仍由 N3 公共 checkpoint 在更新边界保存，不额外每个子步制造 capsule。h 是物理步长，policy_dt=D*h；horizon、reward、done、gamma、lambda 都按 policy transition，奖励只用原 endpoint 值，不隐含乘 dt 或子步累加；终止在窗口末判断一次，重置一次。不承诺中途终止锁存或逐世界冻结。
+
+新记录保留 attempted/completed、每步 acceptance、真实诊断或 missing-diagnostics、首次失败位置。runtime.step 成功返回即计完成，随后 snapshot/export 失败不能抹去真实状态。BaseException 也记失败前缀；接受后失败 poison，不声称窗口原子回滚。N5 reset 已消费索引在 reset 后 export 失败时保留。Env 与 RSL publication 使用短 busy guard 阻止同线程重入；N3 整个 training_boundary 不能被标 busy，因为正常更新需要在其内部调用 Env.step。
+
+恢复语义不扩展：失败的 N3 session 自身永久 poisoned；Env 全重置不清除 session poison。需要丢弃失败 session，并由健康新 session/owner 在合法空更新边界装载有效 checkpoint，不能声称原 poisoned session 直接恢复。
+
+预登记验证：J 四世界 D=1/2/4 各8窗口、S 四世界 D=4 共8窗口；独立 held-action HOST/public-runtime 对照、逐步完整接触诊断、endpoint任务公式及 N5 部分重置。J 原 GRU D=2、8步 rollout 的实际更新/save/A/restore/B，保完整 Adam/RNG/hidden/物理与 reset stream；跨 D checkpoint 必须在物理 CAS 前拒绝。第二次 physics 失败、第二次诊断失败、末端 export/reset-export 失败、同线程 step/reset/capture/restore 重入均有真实故障例。新功能不更改原学习预算、fixture、精度门，也不声称 PPO 已学会。原 06:20/07:20 截止和安装包计划保持。
+
 
 ## 03:18 后继功能节点
 

@@ -1,4 +1,5 @@
 """COL2 tests first: 24 fixed geometry nodes per actual TYX backend."""
+import copy
 import dataclasses
 import gzip
 import hashlib
@@ -139,12 +140,20 @@ def assert_packet(data,packet):
 @pytest.mark.parametrize("name",reference().NAMES)
 def test_fixed_finite_geometry(mode,name,tmp_path):
     data=reference().make_case(name)
+    bvh_evidence=None
     if name=="bvh_pruned":
         from phymeo.backends.tyx_collision import TyxCollisionBatch
         from phymeo.geometry._collision_bvh import CollisionTrees
         triangles=data["vertices"][data["faces"]]
         leaves=np.concatenate((triangles.min(axis=1),triangles.max(axis=1)),axis=1).astype(np.float32)
         driver=TyxCollisionBatch(mode,np.array((0,3),np.int32),np.zeros((1,6),np.int32),np.empty((0,2),np.int32),None)
+        captured={}
+        original=driver.tree_hits
+        def capture(*args,**kwargs):
+            raw=original(*args,**kwargs)
+            captured["raw"]=raw.copy()
+            return raw
+        driver.tree_hits=capture
         try:
             ids=CollisionTrees().facets({},("mesh","COL2"),leaves,np.array(((-1,-1,-.5,3,3,.5),),np.float32),driver)[0]
             assert ids==[0,1] and len(ids)<len(data["faces"])
@@ -152,14 +161,28 @@ def test_fixed_finite_geometry(mode,name,tmp_path):
             produced=np.array([(data["segment_ids"][0],data["facet_ids"][i]) for i in ids],np.int64)
             np.testing.assert_array_equal(produced,data["candidates"])
             data["candidates"]=produced
+            bvh_evidence=dict(leaves=leaves,query=np.array(((-1,-1,-.5,3,3,.5),),np.float32),raw=captured["raw"],ids=ids,stats=driver.stats())
         finally:
             driver.close()
     with new_batch(mode,data) as batch:
         with saved(tmp_path,name,mode,data,batch) as record:
+            prior=None
+            if name=="deformed_snapshot":
+                entry=copy.deepcopy(data)
+                entry["vertices"][2,2]=0
+                entry["snapshot_id"]="before-deformation"
+                prior=batch.query(**entry)
+                assert_packet(entry,prior)
+                record["prior"]=prior
             packet=batch.query(**data)
+            if prior is not None:
+                assert packet.input_binding!=prior.input_binding
+                with pytest.raises(ValueError,match="current"):
+                    batch.require_current(prior,**entry)
             record["packet"]=packet
+            record["bvh"]=bvh_evidence
             assert_packet(data,packet)
             assert batch.last_packet is packet
-            assert batch.stats["completed_launches"]==1
+            assert batch.stats["completed_launches"]==(2 if prior is not None else 1)
             assert batch.stats["live_bytes"]==0
             batch.require_current(packet,**data)

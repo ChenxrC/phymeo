@@ -79,6 +79,10 @@ def make_case(name):
     if name == "distinct_segment_owners":
         segments = np.concatenate((segments,segments), axis=0)
     vertex_ids = np.arange(len(vertices),dtype=np.int64)*7+101
+    if name == "reverse_winding":
+        vertices = vertices[[2,0,1]].copy()
+        vertex_ids = vertex_ids[[2,0,1]].copy()
+        faces = np.array(((0,2,1),),dtype=np.int64)
     facet_ids = np.arange(len(faces),dtype=np.int64)*11+307
     segment_ids = np.arange(len(segments),dtype=np.int64)*13+509
     candidates = np.array([(int(s),int(f)) for s in segment_ids for f in facet_ids],dtype=np.int64)

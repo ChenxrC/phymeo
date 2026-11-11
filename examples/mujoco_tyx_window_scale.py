@@ -608,7 +608,7 @@ def run_mode(p, mode, target):
             exclusive_host_or_unobserved_sync="UNKNOWN",
             evidence=writer.receipt(),
         )
-        evidence.json_write(target / (mode + "-summary.json"), summary)
+        # The finally block writes this exclusive summary exactly once.
         return mode_summary(summary)
     except BaseException as error:
         summary.update(

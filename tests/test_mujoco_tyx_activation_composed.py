@@ -3,7 +3,6 @@
 The native oracle always receives the actual entry act, in addition to q/v.
 Independent continuous native states are initialized once and never reseeded.
 """
-import copy
 
 import numpy as np
 import pytest
@@ -360,7 +359,7 @@ def test_scalar_activation_rejects_nonscalar_joint_target(mode, target, monkeypa
 
 
 @pytest.mark.parametrize("mode", MODES)
-@pytest.mark.parametrize("case,dim,launches", (("free", 1, 3), ("support", 1, 5), ("mixed", 3, 7)))
+@pytest.mark.parametrize("case,dim,launches", (("free", 1, 3), ("contact", 1, 5), ("mixed", 3, 7)))
 def test_stateless_composed_routes_keep_original_banks_and_launches(mode, case, dim, launches):
     _, model, _, _, runtime = fixture(source(case, dim, stateless=True), mode, case)
     with runtime:

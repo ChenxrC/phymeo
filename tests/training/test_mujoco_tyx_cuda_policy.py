@@ -170,6 +170,7 @@ def test_torch_channel_alias_rejected_before_commit():
 
 @pytest.mark.parametrize("closed", ("view", "stream"))
 def test_closed_borrowed_torch_handle_preserves_accepted_state(closed):
+    from tyx.backends.cuda_runtime import CudaBackendError
     from tyx.torch import stream_from_torch
 
     with ExitStack() as stack:
@@ -185,7 +186,9 @@ def test_closed_borrowed_torch_handle_preserves_accepted_state(closed):
         else:
             wrapped.close()
         before, revision = runtime.checkpoint().to_bytes(), runtime.checkpoint_revision
-        with pytest.raises((ValueError, RuntimeError), match="destroyed|freed|closed"):
+        with pytest.raises(
+            (ValueError, RuntimeError, CudaBackendError), match="destroyed|freed|closed"
+        ):
             raw_submit(runtime, views, wrapped)
         unchanged(runtime, before, revision)
         # Closing the borrowed handle never owns or destroys the original Torch allocation/stream.

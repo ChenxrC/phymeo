@@ -16,6 +16,7 @@ from ._resident_contact_bridge import _CONSTRUCTION_M, ContactShapeFrame
 from ._resident_floating_affine_tree import FloatingAffineTreeKinematics
 from ._resident_floating_binding import ResidentFloatingTreeBinding
 from ._resident_floating_tree import FloatingTreeDiagnostic, FloatingTreeKinematics
+from ._resident_tree_world import _owned
 
 
 def _worlds(storage, worlds):
@@ -217,6 +218,7 @@ def read_floating_contact_packet(plan, storage, worlds, bank):
             geometry=geometry,
             frames=MappingProxyType(frames),
             energy=float(energy[row]),
+            body_twist=_owned(velocity),
         )
     return packets
 

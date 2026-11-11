@@ -333,6 +333,7 @@ class _ResidentContactMechanics:
                 geometry=geometry,
                 frames=MappingProxyType(frames),
                 energy=float(energy[row]),
+                body_twist=_owned(velocity[row, :n]),
             )
         return packets
 

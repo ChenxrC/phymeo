@@ -616,6 +616,10 @@ class TyxWorldBatch:
                             storage.stage_advance(
                                 dt, src, dst, self._ticks[src], self._ticks[dst], self._status
                             )
+                    if contacts is not None:
+                        finalize_trees = getattr(contacts, "_finalize_trees", None)
+                        if finalize_trees is not None:
+                            finalize_trees(attempt, dt, src, dst)
                     if self._plane_kernels is not None:
                         self._launch(
                             self._plane_kernels[src],
@@ -786,6 +790,10 @@ class TyxWorldBatch:
 
     def restore(self, by_world):
         """Replace chosen physical states, ticks, drive histories and their held controls."""
+        return self._restore(by_world)
+
+    def _restore(self, by_world, *, before_commit=None):
+        """Internal composition hook runs only after all staged restore checks."""
         with self._lock:
             self._check_open()
             if not isinstance(by_world, Mapping):
@@ -830,6 +838,8 @@ class TyxWorldBatch:
                     self._sync()
                     for _, storage in self._tree_storages():
                         storage.check_restore()
+                    if before_commit is not None:
+                        before_commit()
             except Exception:
                 for _, storage in self._tree_storages():
                     storage.invalidate_diagnostics()

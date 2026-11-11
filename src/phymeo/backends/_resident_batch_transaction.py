@@ -1,8 +1,8 @@
-"""Shared multi-participant transaction over the existing floating TYX storage.
+"""Shared multi-participant transaction over the existing four TYX tree storages.
 
 Mechanical row IDs are private storage addresses. Public identities and failure
 domains remain logical worlds. This service never duplicates the integrator.
-The first domain is ordinary floating trees, at most 33 physical bodies/world.
+The bounded domain retains at most 33 physical bodies per logical world.
 """
 
 from collections.abc import Mapping
@@ -12,11 +12,10 @@ from types import MappingProxyType
 
 import numpy as np
 
-from ._resident_floating_contact import (
-    floating_contact_diagnostics,
-    read_floating_contact_packet,
-)
+from ._resident_contact_plan import _ResidentContactMechanics
+from ._resident_floating_contact import floating_contact_diagnostics
 from ._resident_participant_layout import ResidentParticipantLayout
+from ._resident_tree_world import TreeDiagnostic
 from ._world_step_layout import as_fp32, world_key
 from .tyx_world_batch import TyxWorldBatch
 
@@ -38,10 +37,8 @@ class ResidentBatchTransaction:
         if type(layout) is not ResidentParticipantLayout:
             raise TypeError("transaction requires a ResidentParticipantLayout")
         layout.require_current()
-        if any(item.family != "floating" for item in layout.participants):
-            raise ValueError("ROB1b currently requires ordinary floating participants")
         if any(world.body_count > 33 for world in layout.worlds.values()):
-            raise ValueError("ROB1b supports at most 33 physical bodies per logical world")
+            raise ValueError("resident scene supports at most 33 physical bodies per logical world")
         self.layout = layout
         self._mechanical = {key: index for index, key in enumerate(layout.participant_keys)}
         self._keys = {index: key for key, index in self._mechanical.items()}
@@ -64,26 +61,70 @@ class ResidentBatchTransaction:
         self._contact_worlds = tuple(self._keys)
         self._contact_shapes = {world: () for world in self._contact_worlds}
         self._contact_bindings = {}
-        storage = self._batch._floating_trees
-        self._storage = storage
-        self._rows = {key: storage.rows[index] for key, index in self._mechanical.items()}
+        self._groups = {}
+        self._storage_stages = {}
+        self._key_groups = {}
+        self._rows = {}
         try:
             from ._tyx_participant_transaction import make_participant_transaction_kernels
+            from ._tyx_resident_contact_kernels import make_contact_kernels
             from ._tyx_resident_floating_contact import make_floating_contact_kernels
 
-            self._project = make_floating_contact_kernels()["project"]
-            self._reduce = make_participant_transaction_kernels().reduce
-            offsets, rows = [0], []
+            self._contact_kernels = make_contact_kernels()
+            self._floating_contact_kernels = make_floating_contact_kernels()
+            self._transaction_kernels = make_participant_transaction_kernels()
+            offsets, slots = [0], []
             for world in layout.worlds.values():
-                rows.extend(self._rows[key] for key in world.participant_keys)
-                offsets.append(len(rows))
+                slots.extend(
+                    self._batch._slots[self._mechanical[key]] for key in world.participant_keys
+                )
+                offsets.append(len(slots))
             with self._batch._device():
                 self._world_offsets = self._batch._buffer(
                     (len(offsets),), np.int32, offsets, "topology"
                 )
-                self._world_rows = self._batch._buffer((len(rows),), np.int32, rows, "topology")
-                self._wrench = self._batch._buffer((storage.count, storage.bmax, 6), np.float32)
-                self._projected = self._batch._buffer((storage.count, storage.dmax), np.float32)
+                self._world_slots = self._batch._buffer((len(slots),), np.int32, slots, "topology")
+                self._failed_slots = self._batch._buffer((len(slots),), np.int32)
+                for _, storage in self._batch._tree_storages():
+                    floating = storage in (
+                        self._batch._floating_trees,
+                        self._batch._floating_affine_trees,
+                    )
+                    affine = storage in (
+                        self._batch._affine_trees,
+                        self._batch._floating_affine_trees,
+                    )
+                    physical = storage.physical if affine else storage
+                    body_max = physical.bmax if floating else physical.nmax
+                    dof_max = physical.dmax if floating else physical.nmax
+                    row_slots = [0] * physical.count
+                    group = dict(
+                        storage=storage,
+                        physical=physical,
+                        floating=floating,
+                        affine=affine,
+                        body_max=body_max,
+                        dof_max=dof_max,
+                        worlds=tuple(storage.rows),
+                        wrench=self._batch._buffer((physical.count, body_max, 6), np.float32),
+                        projected=self._batch._buffer((physical.count, dof_max), np.float32),
+                        velocity=None
+                        if floating
+                        else self._batch._buffer((physical.count, body_max, 6), np.float32),
+                    )
+                    group["family"] = ("floating_" if floating else "") + (
+                        "affine" if affine else "tree"
+                    )
+                    self._storage_stages[group["family"]] = dict.fromkeys(self._stages, 0)
+                    self._groups[storage] = group
+                    for index, row in storage.rows.items():
+                        key = self._keys[index]
+                        self._rows[key] = row
+                        self._key_groups[key] = group
+                        row_slots[row] = self._batch._slots[index]
+                    group["row_slots"] = self._batch._buffer(
+                        (physical.count,), np.int32, row_slots, "topology"
+                    )
         except Exception:
             self._batch.close()
             raise
@@ -177,14 +218,19 @@ class ResidentBatchTransaction:
                     or len({value.tick for value in values}) != 1
                 ):
                     raise ValueError("restore logical world or common tick differs")
-            self._batch.restore(
+            self._batch._restore(
                 {
                     self._mechanical[key]: replace(value, world=self._mechanical[key])
                     for key, value in checkpoints.items()
-                }
+                },
+                before_commit=self._before_restore_commit,
             )
             if checkpoints:
                 self.last_publication = None
+
+    def _before_restore_commit(self):
+        """Fault seam after all restore checks, before any accepted bank changes."""
+        return None
 
     def reset(self, world_keys=None):
         with self.locked():
@@ -207,6 +253,9 @@ class ResidentBatchTransaction:
                 "world_count": len(self.layout.world_keys),
                 "participant_count": len(self.layout.participant_keys),
                 **self._stages,
+                "storage_stage_counts": {
+                    key: dict(value) for key, value in self._storage_stages.items()
+                },
                 "participant_packet_downloaded_bytes": self._transfers["downloaded_bytes"],
                 "participant_wrench_uploaded_bytes": self._transfers["uploaded_bytes"],
             }
@@ -237,7 +286,10 @@ class ResidentBatchTransaction:
         return value
 
     def _read_packets(self, bank):
-        raw = read_floating_contact_packet(self, self._storage, self._contact_worlds, bank)
+        raw = {}
+        with self._batch._device():
+            for group in self._groups.values():
+                raw.update(_ResidentContactMechanics._read_storage_packet(self, group, bank))
         result = {}
         for index, packet in raw.items():
             key = self._keys[index]
@@ -245,6 +297,7 @@ class ResidentBatchTransaction:
                 "state": replace(packet["state"], world=key.world),
                 "geometry": packet["geometry"],
                 "energy": packet["energy"],
+                "body_twist": packet["body_twist"],
             }
         for world in self.layout.worlds.values():
             if len({result[key]["state"].tick for key in world.participant_keys}) != 1:
@@ -252,29 +305,39 @@ class ResidentBatchTransaction:
         return result
 
     def _handles(self, storage):
-        return storage is self._storage
+        return storage in self._groups
+
+    def _launch_contact(self, name, bank, *args):
+        self._batch._launch(self._contact_kernels[name][bank], *args)
+
+    def _record_stage(self, group, name):
+        self._stages[name] += 1
+        self._storage_stages[group["family"]][name] += 1
 
     def _begin_attempt(self, dt, src, dst):
-        storage = self._storage
-        held = tuple(
-            getattr(storage, name).copy() for name in ("_held_drive", "_held_effort", "_held_loads")
-        )
-        storage.stage_mechanics(src)
-        self._stages["entry_mechanics_stages"] += 1
+        held = _ResidentContactMechanics._control_snapshot(self)
+        for group in self._groups.values():
+            group["physical"].stage_mechanics(src)
+            self._record_stage(group, "entry_mechanics_stages")
         entry = self._read_packets(src)
-        arrays = {
-            name: self._read_contact(getattr(storage, name))
-            for name in ("linear", "angular", "mass", "vector")
-        }
+        arrays = {}
+        for storage, group in self._groups.items():
+            arrays[storage] = {
+                name: self._read_contact(getattr(group["physical"], name))
+                for name in ("linear", "angular", "mass", "vector")
+            }
         for key, packet in entry.items():
             row = self._rows[key]
-            spec = storage.specs[self._mechanical[key]]
+            group = self._key_groups[key]
+            spec = group["physical"].specs[self._mechanical[key]]
+            b, d = (spec.b, spec.d) if group["floating"] else (spec.n, spec.n)
+            data = arrays[group["storage"]]
             packet.update(
-                linear=_owned(arrays["linear"][row, : spec.b, :, : spec.d]),
-                angular=_owned(arrays["angular"][row, : spec.b, :, : spec.d]),
-                mass=_owned(arrays["mass"][row, : spec.d, : spec.d]),
-                bias=_owned(arrays["vector"][row, : spec.d, 0]),
-                external=_owned(arrays["vector"][row, : spec.d, 1]),
+                linear=_owned(data["linear"][row, :b, :, :d]),
+                angular=_owned(data["angular"][row, :b, :, :d]),
+                mass=_owned(data["mass"][row, :d, :d]),
+                bias=_owned(data["vector"][row, :d, 0]),
+                external=_owned(data["vector"][row, :d, 1]),
             )
         entry = MappingProxyType({key: MappingProxyType(value) for key, value in entry.items()})
         sample = self._adapter.sample(entry, dt)
@@ -286,14 +349,19 @@ class ResidentBatchTransaction:
             type(value) is not bool for value in sample["rejected"].values()
         ):
             raise ValueError("contact rejection must cover every logical world")
-        wrench = np.zeros((storage.count, storage.bmax, 6), np.float32)
+        wrenches = {
+            storage: np.zeros((group["physical"].count, group["body_max"], 6), np.float32)
+            for storage, group in self._groups.items()
+        }
         for key, value in sample["wrenches"].items():
             count = self.layout.entries[key].body_count
-            wrench[self._rows[key], :count] = as_fp32(
+            group = self._key_groups[key]
+            wrenches[group["storage"]][self._rows[key], :count] = as_fp32(
                 value, "participant contact wrench", (count, 6)
             )
-        self._batch._upload(self._wrench, wrench, "control")
-        self._transfers["uploaded_bytes"] += wrench.nbytes
+        for storage, wrench in wrenches.items():
+            self._batch._upload(self._groups[storage]["wrench"], wrench, "control")
+            self._transfers["uploaded_bytes"] += wrench.nbytes
         return dict(
             dt=dt,
             src=src,
@@ -301,7 +369,8 @@ class ResidentBatchTransaction:
             epoch=self._batch._state_epoch,
             held=held,
             entry=entry,
-            arrays=arrays,
+            groups=arrays,
+            staged=set(),
             sample=sample,
             rows=MappingProxyType(self._rows),
         )
@@ -312,21 +381,40 @@ class ResidentBatchTransaction:
 
     def _stage_tree(self, storage, attempt, dt, src, dst):
         batch = self._batch
+        group = self._groups[storage]
+        physical = group["physical"]
+        if storage in attempt["staged"]:
+            raise RuntimeError("participant storage was solved twice")
+        kernels = self._floating_contact_kernels if group["floating"] else self._contact_kernels
         batch._launch(
-            self._project[src],
-            storage.count,
-            storage.meta,
-            storage.linear,
-            storage.angular,
-            self._wrench,
-            storage.vector,
-            self._projected,
+            kernels["project"][src],
+            physical.count,
+            physical.meta,
+            physical.linear,
+            physical.angular,
+            group["wrench"],
+            physical.vector,
+            group["projected"],
         )
-        storage.stage_solve(dt, src, dst, batch._ticks[src])
-        self._stages["candidate_solve_stages"] += 1
-        storage.stage_candidate_geometry(dst)
+        if group["affine"]:
+            storage.stage_solve_from_mechanics(dt, src, dst, batch._ticks[src])
+        else:
+            storage.stage_solve(dt, src, dst, batch._ticks[src])
+        self._record_stage(group, "candidate_solve_stages")
+        physical.stage_candidate_geometry(dst)
+        attempt["staged"].add(storage)
+
+    def _finalize_trees(self, attempt, dt, src, dst):
+        """Reduce every physical family's status before retaining any candidate."""
+        if attempt["staged"] != set(self._groups):
+            raise RuntimeError("participant storages did not all produce candidates")
+        batch = self._batch
         failures = self._before_finalize(attempt)
-        forced = {key: 7 for key in self._mechanical if attempt["sample"]["rejected"][key.world]}
+        forced = {
+            key: 9 if self._key_groups[key]["affine"] else 7
+            for key in self._mechanical
+            if attempt["sample"]["rejected"][key.world]
+        }
         if failures is not None:
             if not isinstance(failures, Mapping) or any(
                 key not in self._mechanical or type(code) is not int or code != 6
@@ -334,43 +422,106 @@ class ResidentBatchTransaction:
             ):
                 raise ValueError("invalid internal participant failure injection")
             forced.update(failures)
-        if forced:
-            info = self._read_contact(storage.info)
-            for key, code in forced.items():
-                if info[self._rows[key], 2] == 0:
-                    info[self._rows[key], 2] = code
-            batch._upload(storage.info, info, "control")
+        for storage, group in self._groups.items():
+            physical = group["physical"]
+            local = {key: code for key, code in forced.items() if self._key_groups[key] is group}
+            if local:
+                info = self._read_contact(physical.info)
+                for key, code in local.items():
+                    if info[self._rows[key], 2] == 0:
+                        info[self._rows[key], 2] = code
+                batch._upload(physical.info, info, "control")
+            batch._launch(
+                self._transaction_kernels.collect,
+                physical.count,
+                group["row_slots"],
+                physical.info,
+                physical.flags,
+                self._failed_slots,
+            )
         batch._launch(
-            self._reduce,
+            self._transaction_kernels.reduce_slots,
             len(self.layout.world_keys),
             self._world_offsets,
-            self._world_rows,
-            storage.info,
-            storage.flags,
+            self._world_slots,
+            self._failed_slots,
         )
-        storage.stage_finalize(src, dst, batch._ticks[src], batch._ticks[dst], batch._status)
-        self._stages["candidate_finalize_stages"] += 1
+        for storage, group in self._groups.items():
+            physical = group["physical"]
+            batch._launch(
+                self._transaction_kernels.scatter,
+                physical.count,
+                group["row_slots"],
+                self._failed_slots,
+                physical.info,
+            )
+            if group["affine"]:
+                storage.stage_finalize_and_retain(
+                    src, dst, batch._ticks[src], batch._ticks[dst], batch._status
+                )
+            else:
+                storage.stage_finalize(
+                    src, dst, batch._ticks[src], batch._ticks[dst], batch._status
+                )
+            self._record_stage(group, "candidate_finalize_stages")
 
     def _read_candidate(self, attempt, dst):
-        storage = self._storage
         packet = self._read_packets(dst)
-        arrays = {name: attempt["arrays"][name] for name in ("linear", "angular", "mass")}
-        arrays.update(
-            {
-                name: self._read_contact(getattr(storage, name))
-                for name in ("vector", "entry_pose", "info", "diag")
-            }
-        )
-        selected = [index for index in self._keys if storage._pending_info[0][index]]
-        diagnostics = floating_contact_diagnostics(storage, selected, arrays)
-        projected = self._read_contact(self._projected)
+        diagnostics, projected = {}, {}
+        for storage, group in self._groups.items():
+            physical = group["physical"]
+            selected = [index for index in group["worlds"] if storage._pending_info[0][index]]
+            if group["affine"]:
+                local_diagnostics = storage._read_diagnostics(selected)
+            else:
+                arrays = {
+                    name: attempt["groups"][storage][name] for name in ("linear", "angular", "mass")
+                }
+                arrays.update(
+                    {
+                        name: self._read_contact(getattr(physical, name))
+                        for name in ("vector", "info", "diag")
+                    }
+                )
+                if group["floating"]:
+                    arrays["entry_pose"] = self._read_contact(physical.entry_pose)
+                    local_diagnostics = floating_contact_diagnostics(storage, selected, arrays)
+                else:
+                    local_diagnostics = {}
+                    for index in selected:
+                        row, n = physical.rows[index], physical.specs[index].n
+                        v = arrays["vector"][row, :n]
+                        info, diag = arrays["info"][row], arrays["diag"][row]
+                        local_diagnostics[index] = TreeDiagnostic(
+                            int(info[0]),
+                            int(info[1]),
+                            float(diag[0]),
+                            v[:, 4],
+                            v[:, 5],
+                            arrays["linear"][row, :n, :, :n],
+                            arrays["angular"][row, :n, :, :n],
+                            arrays["mass"][row, :n, :n],
+                            v[:, 0],
+                            v[:, 1],
+                            v[:, 2],
+                            v[:, 3],
+                            int(info[3]),
+                            float(diag[1]),
+                            float(diag[2]),
+                        )
+            diagnostics.update(
+                {self._keys[index]: value for index, value in local_diagnostics.items()}
+            )
+            values = self._read_contact(group["projected"])
+            for index in group["worlds"]:
+                key = self._keys[index]
+                projected[key] = _owned(
+                    values[self._rows[key], : self.layout.entries[key].physical_velocity_count]
+                )
         return dict(
             packet=packet,
-            diagnostics={self._keys[index]: value for index, value in diagnostics.items()},
-            projected={
-                key: _owned(projected[self._rows[key], : self.layout.entries[key].velocity_count])
-                for key in self._mechanical
-            },
+            diagnostics=diagnostics,
+            projected=projected,
         )
 
     def _finish_attempt(self, attempt, candidate, status):
@@ -422,10 +573,8 @@ class ResidentBatchTransaction:
         self._check_open()
         if self._batch._state_epoch != attempt["epoch"] or self._batch._active != attempt["src"]:
             raise ValueError("stale participant transaction")
-        for name, value in zip(
-            ("_held_drive", "_held_effort", "_held_loads"), attempt["held"], strict=True
-        ):
-            if not np.array_equal(getattr(self._storage, name), value):
+        for storage, name, value in attempt["held"]:
+            if not np.array_equal(getattr(storage, name), value):
                 raise ValueError("held controls changed during participant transaction")
 
     def _publish(self, commit):

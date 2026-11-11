@@ -1,6 +1,7 @@
 # N4d: one target-mean initialization ablation
 
-Status: PREDECLARED / AUTHORING_ONLY. This protocol is frozen before any
+Status: CODE_READY_TESTS_PENDING / AUTHORING_SLOT_RELEASED.
+This protocol was frozen before any
 ablation training. It does not replace the original J failure or alter S/R.
 
 ## Identity, factor and budget
@@ -98,3 +99,66 @@ Tests do not execute the 128-update experiment themselves; the parent owns that
 single fixed execution and all static/collection/test/build commands.
 
 No implementation or learning result is claimed by this preregistration.
+## Final authoring handoff (2026-11-12)
+
+All four new files are authored, not executed by this author. Product commits
+are d5bb38ba (protocol), 184edc83 (tests first), e8691f9b (generic operation),
+01f847fe (fixed wrapper), d7d5856c (metadata/hook cases), a5157b67 (CUDA rollback
+and owned receipt evidence), and 2453f013 (failed-receipt classification).
+The parent has text-reviewed these files and applied the separate shared hook
+patch; source review is not a test or learning pass.
+
+The exact ignored hook artifact is
+artifacts/p65-n4d-authoring-20261112/initializer-hook.patch, SHA256
+5ca094c32c8283a955bae46cbf7538d175a79324536fbf2fb9d449d02baf52dd.
+It contains 11 insertions and one deletion in the parent's original learning
+entry. The child has not modified that shared file. Hook-dependent tests need
+that parent integration before execution.
+
+The original state_dict evidence is copied through owned immutable bytes before
+publication, rather than retaining Tensor aliases. mean_after is the independent
+candidate's actual deterministic inference; after publication the complete
+actor/critic hash must match that candidate. No original Gaussian distribution
+cache is populated or replaced. All original caller RNG/computation flags are
+restored before the unique real copy. Successful rollback is distinguished from
+prepublication refusal. A real copy/synchronization failure followed by rollback
+failure propagates both failures and never reports atomic refusal.
+
+Manual authored enumeration is 28 nodes: 24 HOST and four CUDA. This count is
+not a collection result. It covers the actual pinned MLP/Adam, ten admission
+negatives, candidate/copy/verification failures on each backend, owned receipt
+history, fixed-three-run orchestration, five original-metadata bindings, three
+shared-hook paths and one actual CUDA TYX target-feature case. The parent alone
+may run qualified static checks and the following focused commands:
+
+```text
+<qualified-training-python> -m pytest tests/training/test_policy_initialization.py -m "not cuda" -q -x
+<qualified-training-python> -m pytest tests/training/test_policy_initialization.py -m cuda -q -x
+<qualified-training-python> examples/evaluate_mujoco_tyx_initialization_ablation.py --evidence-root artifacts/p65-parity-n4a-rob1d-col-reducer-20261111-01 --output <fresh-N4d-output>
+```
+
+The training command calls the original learning entry for exactly the three
+fixed seeds, retains all actual prefixes/failures and calls the original gate.
+Neither these tests nor this wrapper authorize a fourth seed, larger budget,
+changed target, repeated centering or an alternative learning threshold.
+
+## Historical-control interpretation boundary
+
+The original N4a J control is preserved historical evidence with its original
+source hashes. The present complete package also includes subsequently qualified
+ROB2b/lifecycle and other shared changes. The task/configuration/seed/initial
+policy bindings are strict, and the three new runs will use one frozen product
+source snapshot, but this is not a simultaneous same-package unmodified control.
+No claim of uniquely isolated causal attribution across those package revisions
+is made, and the old control is not rerun for this slice. The experiment is one
+fixed-budget test of the initialization hypothesis. Absolute old/new untrained,
+final and zero-action costs, original/new source bindings and all contradictory
+outcomes remain visible. A successful variant gate would not retroactively turn
+the original J failure into a success or establish that initialization was the
+only weak-learning cause.
+
+Current result: UNEXECUTED by author. No new inference, project import,
+collection, numerical probe, lint/format, test, training or build was run here.
+Final four-path SHA256/Git-blob manifest is handed off separately after this
+report commit. Parent serial validation and actual three-seed outcomes remain
+pending.

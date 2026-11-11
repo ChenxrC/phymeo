@@ -3,6 +3,7 @@
 Four updates are an interface/optimizer qualification, not evidence of a solved
 task. Public task exports supply observations; HOST copies below are diagnostics.
 """
+
 import argparse
 import hashlib
 import importlib.util
@@ -47,19 +48,30 @@ def make_environment(case, *, count=8, horizons=HORIZONS, task_spec=None):
     keys = n1.world_keys(count)
     spec = n1.task_spec(model) if task_spec is None else task_spec
     action_spec = MuJoCoTyxActionSpec(
-        tuple(range(model.nu)), tuple(range(model.nv)),
+        tuple(range(model.nu)),
+        tuple(range(model.nv)),
         tuple((model.nbody - 1, component) for component in range(6)),
         scale=[0.02] * model.nu + [0.01] * (model.nv + 6),
         bias=[0.01] * model.nu + [0.005] * model.nv + [0.001 * (i + 1) for i in range(6)],
     )
     with ExitStack() as owners:
-        runtime = owners.enter_context(MuJoCoRuntime(
-            source, mode="cuda", world_keys=keys,
-            initial_states=n1.initial_states(case, model, keys),
-        ))
-        env = owners.enter_context(MuJoCoTyxVectorEnv(
-            runtime, spec, action_spec, h=n1.H[case], horizons=horizons,
-        ))
+        runtime = owners.enter_context(
+            MuJoCoRuntime(
+                source,
+                mode="cuda",
+                world_keys=keys,
+                initial_states=n1.initial_states(case, model, keys),
+            )
+        )
+        env = owners.enter_context(
+            MuJoCoTyxVectorEnv(
+                runtime,
+                spec,
+                action_spec,
+                h=n1.H[case],
+                horizons=horizons,
+            )
+        )
         yield env
 
 
@@ -70,8 +82,12 @@ def diagnostic(value):
     if isinstance(value, torch.Tensor):
         return value.detach().cpu().numpy().copy()
     if is_dataclass(value):
-        return {"type": type(value).__module__ + "." + type(value).__name__,
-                "fields": {field.name: diagnostic(getattr(value, field.name)) for field in fields(value)}}
+        return {
+            "type": type(value).__module__ + "." + type(value).__name__,
+            "fields": {
+                field.name: diagnostic(getattr(value, field.name)) for field in fields(value)
+            },
+        }
     if isinstance(value, Mapping):
         return {str(key): diagnostic(item) for key, item in value.items()}
     if isinstance(value, (tuple, list)):
@@ -106,19 +122,30 @@ def _setup(torch, seed):
 
 def _configuration(case, seed, env, algorithm, recurrent):
     from importlib.metadata import version
+
     from phymeo.training.rsl_mujoco_tyx import ppo_config
 
     n1 = load_n1()
     return {
-        "event": "configuration", "case": case, "seed": seed,
-        "world_keys": env.world_keys, "h": env.h, "horizons": env.horizons,
-        "xml": n1.XML[case], "xml_sha256": hashlib.sha256(n1.XML[case].encode()).hexdigest(),
+        "event": "configuration",
+        "case": case,
+        "seed": seed,
+        "world_keys": env.world_keys,
+        "h": env.h,
+        "horizons": env.horizons,
+        "xml": n1.XML[case],
+        "xml_sha256": hashlib.sha256(n1.XML[case].encode()).hexdigest(),
         "binding": diagnostic(env.binding),
-        "task": diagnostic(env.task_spec), "action": diagnostic(env.action_spec),
+        "task": diagnostic(env.task_spec),
+        "action": diagnostic(env.action_spec),
         "config": ppo_config(steps=8 if recurrent else STEPS, recurrent=recurrent),
-        "upstream": {"rsl": version("rsl-rl-lib"), "torch": version("torch"),
-                     "tensordict": version("tensordict")},
-        "actor": str(algorithm.actor), "critic": str(algorithm.critic),
+        "upstream": {
+            "rsl": version("rsl-rl-lib"),
+            "torch": version("torch"),
+            "tensordict": version("tensordict"),
+        },
+        "actor": str(algorithm.actor),
+        "critic": str(algorithm.critic),
         "initial_parameters": parameter_snapshot(algorithm)[1],
         "script_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
         "scope": "short-PPO-protocol-not-task-learning; physical-HOST-audit-retained",
@@ -128,15 +155,25 @@ def _configuration(case, seed, env, algorithm, recurrent):
 
 def _failure(log, n1, phase, error, env):
     data = {
-        "event": "failure", "phase": phase, "type": type(error).__name__,
-        "message": str(error), "traceback": traceback.format_exc(),
+        "event": "failure",
+        "phase": phase,
+        "type": type(error).__name__,
+        "message": str(error),
+        "traceback": traceback.format_exc(),
     }
     failure = None if env is None else env.last_failure
     if failure is not None:
         data["wrapper_failure"] = {
-            name: diagnostic(getattr(failure, name)) for name in
-            ("phase", "action_accepted", "state_accepted", "reset_accepted",
-             "action_receipt", "accepted_worlds", "needs_recovery")
+            name: diagnostic(getattr(failure, name))
+            for name in (
+                "phase",
+                "action_accepted",
+                "state_accepted",
+                "reset_accepted",
+                "action_receipt",
+                "accepted_worlds",
+                "needs_recovery",
+            )
         }
     if env is not None:
         data["last_successful_transition"] = (
@@ -148,7 +185,9 @@ def _failure(log, n1, phase, error, env):
 def train_case(case, output):
     """Original upstream PPO loop, fixed four updates; save complete transitions."""
     from phymeo.training.rsl_mujoco_tyx import (
-        RslMuJoCoTyxVecEnv, make_ppo, optimization_evidence,
+        RslMuJoCoTyxVecEnv,
+        make_ppo,
+        optimization_evidence,
     )
 
     if case not in SEEDS:
@@ -184,23 +223,34 @@ def train_case(case, output):
                             phase = "upstream-storage"
                             algorithm.process_env_step(observation, reward, done, extras)
                             if algorithm.storage.step != step + 1:
-                                raise RuntimeError("upstream storage did not consume exactly one transition")
-                            n1.append(log, {
-                                "event": "transition", "update": update, "rollout_step": step,
-                                **transition_record(transition),
-                                "entry_values": diagnostic(entry_values),
-                                "stored_reward": diagnostic(algorithm.storage.rewards[step]),
-                                "stored_done": diagnostic(algorithm.storage.dones[step]),
-                                "storage_step": algorithm.storage.step,
-                            })
+                                raise RuntimeError(
+                                    "upstream storage did not consume exactly one transition"
+                                )
+                            n1.append(
+                                log,
+                                {
+                                    "event": "transition",
+                                    "update": update,
+                                    "rollout_step": step,
+                                    **transition_record(transition),
+                                    "entry_values": diagnostic(entry_values),
+                                    "stored_reward": diagnostic(algorithm.storage.rewards[step]),
+                                    "stored_done": diagnostic(algorithm.storage.dones[step]),
+                                    "storage_step": algorithm.storage.step,
+                                },
+                            )
                         phase = "upstream-returns"
                         algorithm.compute_returns(observation)
-                        n1.append(log, {
-                            "event": "returns", "update": update,
-                            "values": diagnostic(algorithm.storage.values),
-                            "returns": diagnostic(algorithm.storage.returns),
-                            "advantages": diagnostic(algorithm.storage.advantages),
-                        })
+                        n1.append(
+                            log,
+                            {
+                                "event": "returns",
+                                "update": update,
+                                "values": diagnostic(algorithm.storage.values),
+                                "returns": diagnostic(algorithm.storage.returns),
+                                "advantages": diagnostic(algorithm.storage.advantages),
+                            },
+                        )
                     phase = "upstream-backward-and-optimizer"
                     loss = algorithm.update()
                     if not all(np.isfinite(value) for value in loss.values()):
@@ -213,24 +263,37 @@ def train_case(case, output):
                         raise RuntimeError("upstream update did not change parameters")
                     optimizer_steps.append(evidence["optimizer_step"])
                     losses.append(loss)
-                    n1.append(log, {
-                        "event": "update", "update": update,
-                        "loss": loss, **evidence,
-                        "optimizer_step_after": evidence["optimizer_step"],
-                        "parameter_hash_before": before_hash, "parameter_hash_after": after_hash,
-                        "parameters_before": before_parameters, "parameters_after": after_parameters,
-                        "transitions_consumed": (update + 1) * STEPS * env.num_envs,
-                    })
+                    n1.append(
+                        log,
+                        {
+                            "event": "update",
+                            "update": update,
+                            "loss": loss,
+                            **evidence,
+                            "optimizer_step_after": evidence["optimizer_step"],
+                            "parameter_hash_before": before_hash,
+                            "parameter_hash_after": after_hash,
+                            "parameters_before": before_parameters,
+                            "parameters_after": after_parameters,
+                            "transitions_consumed": (update + 1) * STEPS * env.num_envs,
+                        },
+                    )
                 final_hash, _ = parameter_snapshot(algorithm)
                 if env.counters["transitions"] != UPDATES * STEPS or not np.all(ends[:2] > 0):
                     raise RuntimeError("fixed transition/partial-episode coverage incomplete")
                 summary = {
-                    "status": "PASS_N2_SHORT_PPO", "case": case, "seed": seed,
-                    "updates": UPDATES, "transitions": UPDATES * STEPS * env.num_envs,
+                    "status": "PASS_N2_SHORT_PPO",
+                    "case": case,
+                    "seed": seed,
+                    "updates": UPDATES,
+                    "transitions": UPDATES * STEPS * env.num_envs,
                     "optimizer_steps": optimizer_steps,
-                    "parameter_hash_before": initial_hash, "parameter_hash_after": final_hash,
-                    "all_losses_finite": True, "all_gradients_finite": True,
-                    "losses": losses, "episode_end_counts": ends,
+                    "parameter_hash_before": initial_hash,
+                    "parameter_hash_after": final_hash,
+                    "all_losses_finite": True,
+                    "all_gradients_finite": True,
+                    "losses": losses,
+                    "episode_end_counts": ends,
                     "policy_device": str(env.device),
                     "runtime_counters": dict(env.runtime.counters),
                     "wrapper_counters": diagnostic(env.counters),
@@ -249,7 +312,9 @@ def train_case(case, output):
 def train_recurrent(output):
     """One short upstream GRU rollout/update with independently checked masks."""
     from phymeo.training.rsl_mujoco_tyx import (
-        RslMuJoCoTyxVecEnv, make_ppo, optimization_evidence,
+        RslMuJoCoTyxVecEnv,
+        make_ppo,
+        optimization_evidence,
     )
 
     torch, n1 = require_cuda(), load_n1()
@@ -271,13 +336,17 @@ def train_recurrent(output):
                     for step in range(8):
                         phase = "recurrent-policy-and-physics"
                         action = algorithm.act(observation)
-                        before = tuple(network.get_hidden_state().clone()
-                                       for network in (algorithm.actor, algorithm.critic))
+                        before = tuple(
+                            network.get_hidden_state().clone()
+                            for network in (algorithm.actor, algorithm.critic)
+                        )
                         observation, reward, done, extras = adapter.step(action)
                         phase = "recurrent-storage-and-mask"
                         algorithm.process_env_step(observation, reward, done, extras)
-                        after = tuple(network.get_hidden_state().clone()
-                                      for network in (algorithm.actor, algorithm.critic))
+                        after = tuple(
+                            network.get_hidden_state().clone()
+                            for network in (algorithm.actor, algorithm.critic)
+                        )
                         for index, (old, new) in enumerate(zip(before, after, strict=True)):
                             if not torch.equal(new[:, ~done, :], old[:, ~done, :]):
                                 raise RuntimeError("GRU reset modified a non-done world")
@@ -287,29 +356,43 @@ def train_recurrent(output):
                                 if torch.count_nonzero(new[:, done, :]).item():
                                     raise RuntimeError("GRU done world retained nonzero hidden")
                                 mask_checks[index] += 1
-                        n1.append(log, {
-                            "event": "transition", "rollout_step": step,
-                            **transition_record(adapter.last_transition),
-                            "hidden_before_reset": diagnostic(before),
-                            "hidden_after_reset": diagnostic(after), "done": diagnostic(done),
-                        })
+                        n1.append(
+                            log,
+                            {
+                                "event": "transition",
+                                "rollout_step": step,
+                                **transition_record(adapter.last_transition),
+                                "hidden_before_reset": diagnostic(before),
+                                "hidden_after_reset": diagnostic(after),
+                                "done": diagnostic(done),
+                            },
+                        )
                     phase = "recurrent-returns"
                     algorithm.compute_returns(observation)
                 phase = "recurrent-backward-and-optimizer"
                 loss = algorithm.update()
                 evidence = optimization_evidence(algorithm)
-                if not all(np.isfinite(value) for value in loss.values()) or evidence["optimizer_step"] != 1:
+                if (
+                    not all(np.isfinite(value) for value in loss.values())
+                    or evidence["optimizer_step"] != 1
+                ):
                     raise RuntimeError("recurrent upstream update failed")
                 final_hash, _ = parameter_snapshot(algorithm)
                 if initial_hash == final_hash or min(mask_checks) < 2:
                     raise RuntimeError("recurrent optimizer/mask coverage incomplete")
                 summary = {
-                    "status": "PASS_N2_GRU_PROTOCOL", "steps": 8, "transitions": 64,
-                    "masked_actor_checks": mask_checks[0], "masked_critic_checks": mask_checks[1],
+                    "status": "PASS_N2_GRU_PROTOCOL",
+                    "steps": 8,
+                    "transitions": 64,
+                    "masked_actor_checks": mask_checks[0],
+                    "masked_critic_checks": mask_checks[1],
                     "optimizer_steps": evidence["optimizer_step"],
-                    "finite_loss": True, "finite_gradient": evidence["finite_gradient"],
-                    "parameter_hash_before": initial_hash, "parameter_hash_after": final_hash,
-                    "loss": loss, "optimization": evidence,
+                    "finite_loss": True,
+                    "finite_gradient": evidence["finite_gradient"],
+                    "parameter_hash_before": initial_hash,
+                    "parameter_hash_after": final_hash,
+                    "loss": loss,
+                    "optimization": evidence,
                     "runtime_counters": dict(env.runtime.counters),
                 }
                 phase = "owner-cleanup"
@@ -325,7 +408,9 @@ def main():
     parser.add_argument("--case", choices=tuple(SEEDS) + ("gru",), required=True)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
-    result = train_recurrent(args.output) if args.case == "gru" else train_case(args.case, args.output)
+    result = (
+        train_recurrent(args.output) if args.case == "gru" else train_case(args.case, args.output)
+    )
     print(json.dumps({key: result[key] for key in ("status", "transitions")}, sort_keys=True))
 
 

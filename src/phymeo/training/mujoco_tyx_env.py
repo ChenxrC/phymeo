@@ -4,6 +4,7 @@ The runtime is borrowed and must be mutated exclusively through this wrapper
 during a rollout. Physics, policy/optimizer and wrapper metadata have separate
 transactions. N2 deliberately does not expose a training restore API.
 """
+
 import json
 from contextlib import ExitStack
 from dataclasses import dataclass
@@ -21,7 +22,9 @@ def _frozen(value, dtype):
 
 def _indices(values, name):
     result = tuple(values)
-    if any(type(index) is not int or index < 0 for index in result) or len(set(result)) != len(result):
+    if any(type(index) is not int or index < 0 for index in result) or len(set(result)) != len(
+        result
+    ):
         raise ValueError(name + " requires distinct nonnegative native indices")
     return result
 
@@ -33,6 +36,7 @@ class MuJoCoTyxActionSpec:
     Native selected value = bias + scale * tanh(raw policy action).
     Other native values are zero. There is no implied motor/clipping policy.
     """
+
     ctrl_indices: tuple
     qfrc_indices: tuple
     xfrc_indices: tuple
@@ -44,8 +48,10 @@ class MuJoCoTyxActionSpec:
         ctrl = _indices(ctrl_indices, "ctrl")
         qfrc = _indices(qfrc_indices, "qfrc")
         xfrc = tuple(tuple(pair) for pair in xfrc_indices)
-        if any(len(pair) != 2 or any(type(i) is not int or i < 0 for i in pair)
-               or pair[1] >= 6 for pair in xfrc) or len(set(xfrc)) != len(xfrc):
+        if any(
+            len(pair) != 2 or any(type(i) is not int or i < 0 for i in pair) or pair[1] >= 6
+            for pair in xfrc
+        ) or len(set(xfrc)) != len(xfrc):
             raise ValueError("xfrc requires unique (body, component0..5) native addresses")
         width = len(ctrl) + len(qfrc) + len(xfrc)
         if not 0 < width <= 1024:
@@ -59,12 +65,19 @@ class MuJoCoTyxActionSpec:
                 raise ValueError(name + " requires finite FP32 values for every action column")
             object.__setattr__(self, name, _frozen(value, np.float32))
         binding = json.dumps(
-            {"schema": "mujoco-tyx-action-map-v1", "ctrl": ctrl, "qfrc": qfrc,
-             "xfrc": xfrc, "squash": "tanh"}, sort_keys=True, separators=(",", ":"),
+            {
+                "schema": "mujoco-tyx-action-map-v1",
+                "ctrl": ctrl,
+                "qfrc": qfrc,
+                "xfrc": xfrc,
+                "squash": "tanh",
+            },
+            sort_keys=True,
+            separators=(",", ":"),
         ).encode()
-        object.__setattr__(self, "sha256", sha256(
-            binding + self.scale.tobytes() + self.bias.tobytes()
-        ).hexdigest())
+        object.__setattr__(
+            self, "sha256", sha256(binding + self.scale.tobytes() + self.bias.tobytes()).hexdigest()
+        )
 
     @property
     def width(self):
@@ -73,9 +86,20 @@ class MuJoCoTyxActionSpec:
 
 class MuJoCoTyxEnvError(RuntimeError):
     """No successful learner transition is implied by accepted physics."""
-    def __init__(self, message, *, phase, action_accepted=False, state_accepted=False,
-                 reset_accepted=False, action_receipt=None, accepted_worlds=None,
-                 needs_recovery=False, transition=None):
+
+    def __init__(
+        self,
+        message,
+        *,
+        phase,
+        action_accepted=False,
+        state_accepted=False,
+        reset_accepted=False,
+        action_receipt=None,
+        accepted_worlds=None,
+        needs_recovery=False,
+        transition=None,
+    ):
         super().__init__(message)
         self.phase = phase
         self.action_accepted = bool(action_accepted)
@@ -117,8 +141,10 @@ class MuJoCoTyxVectorEnv:
     HOST lengths and done-mask readback are explicit. A full reset is a fresh
     episode boundary, not learner checkpoint restoration.
     """
+
     def __init__(self, runtime, task_spec, action_spec, *, h, horizons):
         import torch
+
         from phymeo.backends.mujoco_task_workspace import MuJoCoTyxTaskSpec
 
         info = runtime.capabilities
@@ -141,16 +167,23 @@ class MuJoCoTyxVectorEnv:
             raise ValueError("horizons must be positive i32 counts in frozen world order")
         self.horizons = _frozen(values, np.int64)
         self._nu, self._nv, self._nbody = (info[key] for key in ("nu", "nv", "nbody"))
-        if any(i >= self._nu for i in action_spec.ctrl_indices) or any(
-            i >= self._nv for i in action_spec.qfrc_indices
-        ) or any(body >= self._nbody for body, _ in action_spec.xfrc_indices):
+        if (
+            any(i >= self._nu for i in action_spec.ctrl_indices)
+            or any(i >= self._nv for i in action_spec.qfrc_indices)
+            or any(body >= self._nbody for body, _ in action_spec.xfrc_indices)
+        ):
             raise ValueError("action address exceeds the compiled native layout")
         self._lock, self._closed, self._needs_recovery = RLock(), False, False
         self._length = np.zeros(self.num_envs, np.int64)
         self._episode_id = np.zeros(self.num_envs, np.int64)
         self._sequence, self.last_transition, self.last_failure = 0, None, None
-        self._counts = dict(transitions=0, physical_steps=0, resets=0,
-                            termination_readback_bytes=0, action_finite_scalar_readbacks=0)
+        self._counts = dict(
+            transitions=0,
+            physical_steps=0,
+            resets=0,
+            termination_readback_bytes=0,
+            action_finite_scalar_readbacks=0,
+        )
         self.workspace = runtime.prepare_task_workspace(task_spec)
         try:
             self.device = torch.device("cuda", self.workspace.binding["device"])
@@ -158,16 +191,22 @@ class MuJoCoTyxVectorEnv:
             self._bias = torch.tensor(action_spec.bias.copy(), device=self.device)
             self._returns = torch.zeros(self.num_envs, dtype=torch.float32, device=self.device)
             self._frame, self._observation, _, _ = self._export()
-            self.binding = MappingProxyType({
-                "schema": "mujoco-tyx-vector-env-v1", "world_keys": self.world_keys,
-                "task": task_spec.sha256, "action": action_spec.sha256,
-                "task_source": self.workspace.binding, "h": self.h,
-                "horizons": tuple(values), "decimation": 1,
-                "runtime_ownership": "borrowed-exclusive-mutation",
-                "physics_diagnostics": "complete-HOST-validation-retained",
-                "episode_bookkeeping": "HOST-lengths-and-done-mask",
-                "restore": "training-composition-not-provided-in-N2",
-            })
+            self.binding = MappingProxyType(
+                {
+                    "schema": "mujoco-tyx-vector-env-v1",
+                    "world_keys": self.world_keys,
+                    "task": task_spec.sha256,
+                    "action": action_spec.sha256,
+                    "task_source": self.workspace.binding,
+                    "h": self.h,
+                    "horizons": tuple(values),
+                    "decimation": 1,
+                    "runtime_ownership": "borrowed-exclusive-mutation",
+                    "physics_diagnostics": "complete-HOST-validation-retained",
+                    "episode_bookkeeping": "HOST-lengths-and-done-mask",
+                    "restore": "training-composition-not-provided-in-N2",
+                }
+            )
         except BaseException:
             self.workspace.close()
             self._closed = True
@@ -194,8 +233,9 @@ class MuJoCoTyxVectorEnv:
     @property
     def counters(self):
         with self._lock:
-            return MappingProxyType({**self._counts,
-                "runtime": self.runtime.counters, "task": self.workspace.counters})
+            return MappingProxyType(
+                {**self._counts, "runtime": self.runtime.counters, "task": self.workspace.counters}
+            )
 
     def _ready(self):
         if self._closed:
@@ -204,7 +244,9 @@ class MuJoCoTyxVectorEnv:
             raise RuntimeError("device VecEnv requires explicit full recovery reset")
         if self.runtime.checkpoint_revision != self._frame.revision:
             self._needs_recovery = True
-            raise RuntimeError("external runtime mutation requires recovery; exclusive owner violated")
+            raise RuntimeError(
+                "external runtime mutation requires recovery; exclusive owner violated"
+            )
 
     def _export(self):
         frame = self.workspace.refresh(expected_revision=self.runtime.checkpoint_revision)
@@ -271,16 +313,21 @@ class MuJoCoTyxVectorEnv:
                 producer = stream_from_torch(stream, backend="cuda")
                 borrowed.callback(producer.close)
                 receipt = self.runtime.set_controls_from_device(
-                    views[0], qfrc_applied=views[1], xfrc_applied=views[2],
-                    producer_stream=producer, expected_revision=revision,
+                    views[0],
+                    qfrc_applied=views[1],
+                    xfrc_applied=views[2],
+                    producer_stream=producer,
+                    expected_revision=revision,
                 )
             return receipt
         except Exception as error:
             if receipt is not None:
                 raise MuJoCoTyxEnvError(
                     "device action committed; borrowed-view cleanup failed",
-                    phase="action-publication", action_accepted=True,
-                    action_receipt=receipt, needs_recovery=True,
+                    phase="action-publication",
+                    action_accepted=True,
+                    action_receipt=receipt,
+                    needs_recovery=True,
                 ) from error
             raise
 
@@ -289,13 +336,21 @@ class MuJoCoTyxVectorEnv:
 
         with self._lock:
             self._ready()
-            phase, action_accepted, state_accepted, reset_accepted = "action-preflight", False, False, False
+            phase, action_accepted, state_accepted, reset_accepted = (
+                "action-preflight",
+                False,
+                False,
+                False,
+            )
             receipt, reset_revision = None, None
             accepted = dict.fromkeys(self.world_keys, False)
             input_frame = self._frame
             try:
-                stream = (torch.cuda.current_stream(self.device)
-                          if producer_stream is None else producer_stream)
+                stream = (
+                    torch.cuda.current_stream(self.device)
+                    if producer_stream is None
+                    else producer_stream
+                )
                 # Invalid streams must fail before entering torch.cuda.stream.
                 if not isinstance(stream, torch.cuda.Stream) or stream.device != self.device:
                     raise ValueError("producer stream type/device")
@@ -332,7 +387,9 @@ class MuJoCoTyxVectorEnv:
                 ids = self._episode_id.copy()
                 next_lengths, next_ids = lengths.copy(), ids.copy()
                 next_returns = returns.clone()
-                keys = tuple(key for key, done in zip(self.world_keys, done_host, strict=True) if done)
+                keys = tuple(
+                    key for key, done in zip(self.world_keys, done_host, strict=True) if done
+                )
                 if keys:
                     phase = "subset-reset"
                     reset_revision = self.runtime.checkpoint_revision
@@ -346,10 +403,24 @@ class MuJoCoTyxVectorEnv:
                     next_returns[final_mask] = 0
                 phase = "transition-publication"
                 transition = MuJoCoTyxTransition(
-                    self._sequence + 1, self.world_keys, input_frame, output_frame,
-                    observation, reward, terminated, time_outs, final_observation, final_mask,
-                    _frozen(ids, np.int64), _frozen(lengths, np.int64), returns,
-                    saved_action, channels, receipt, MappingProxyType(accepted), states,
+                    self._sequence + 1,
+                    self.world_keys,
+                    input_frame,
+                    output_frame,
+                    observation,
+                    reward,
+                    terminated,
+                    time_outs,
+                    final_observation,
+                    final_mask,
+                    _frozen(ids, np.int64),
+                    _frozen(lengths, np.int64),
+                    returns,
+                    saved_action,
+                    channels,
+                    receipt,
+                    MappingProxyType(accepted),
+                    states,
                 )
                 # Internal observation/return owners cannot be mutated via a returned transition.
                 current_observation = observation.clone()
@@ -362,15 +433,22 @@ class MuJoCoTyxVectorEnv:
             except Exception as error:
                 if isinstance(error, MuJoCoTyxEnvError) and error.action_accepted:
                     action_accepted, receipt = True, error.action_receipt
-                if reset_revision is not None and self.runtime.checkpoint_revision != reset_revision:
+                if (
+                    reset_revision is not None
+                    and self.runtime.checkpoint_revision != reset_revision
+                ):
                     reset_accepted = True
                 recovery = action_accepted or state_accepted or reset_accepted
                 self._needs_recovery = self._needs_recovery or recovery
                 failure = MuJoCoTyxEnvError(
-                    "device rollout stopped at " + phase, phase=phase,
-                    action_accepted=action_accepted, state_accepted=state_accepted,
-                    reset_accepted=reset_accepted, action_receipt=receipt,
-                    accepted_worlds=accepted, needs_recovery=self._needs_recovery,
+                    "device rollout stopped at " + phase,
+                    phase=phase,
+                    action_accepted=action_accepted,
+                    state_accepted=state_accepted,
+                    reset_accepted=reset_accepted,
+                    action_receipt=receipt,
+                    accepted_worlds=accepted,
+                    needs_recovery=self._needs_recovery,
                 )
                 self.last_failure = failure
                 raise failure from error
@@ -407,8 +485,10 @@ class MuJoCoTyxVectorEnv:
                 changed = self.runtime.checkpoint_revision != revision
                 self._needs_recovery = self._needs_recovery or changed
                 failure = MuJoCoTyxEnvError(
-                    "explicit reset failed; no training restoration claimed", phase="explicit-reset",
-                    reset_accepted=changed, needs_recovery=self._needs_recovery,
+                    "explicit reset failed; no training restoration claimed",
+                    phase="explicit-reset",
+                    reset_accepted=changed,
+                    needs_recovery=self._needs_recovery,
                 )
                 self.last_failure = failure
                 raise failure from error

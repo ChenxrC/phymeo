@@ -3,6 +3,7 @@
 Import explicitly with the optional CUDA training profile. No legacy HOST
 VecEnv, PPO implementation, learner restore or automatic recovery is wrapped.
 """
+
 from importlib.metadata import version
 
 import torch
@@ -53,11 +54,15 @@ class RslMuJoCoTyxVecEnv(VecEnv):
 
     def _ready(self):
         if self.needs_recovery:
-            raise RuntimeError("learner requires explicit full recovery reset; discard pending rollout")
+            raise RuntimeError(
+                "learner requires explicit full recovery reset; discard pending rollout"
+            )
 
     def _observations(self, value):
-        if value.device != self.device or value.dtype != torch.float32 or tuple(value.shape) != (
-            self.num_envs, self.env.task_spec.width
+        if (
+            value.device != self.device
+            or value.dtype != torch.float32
+            or tuple(value.shape) != (self.num_envs, self.env.task_spec.width)
         ):
             raise ValueError("task observation device/dtype/shape changed")
         return TensorDict({"policy": value}, batch_size=[self.num_envs], device=self.device)
@@ -69,7 +74,9 @@ class RslMuJoCoTyxVecEnv(VecEnv):
     def step(self, actions):
         self._ready()
         transition = self.env.step(
-            actions, world_keys=self.env.world_keys, expected_frame=self.env.current_frame,
+            actions,
+            world_keys=self.env.world_keys,
+            expected_frame=self.env.current_frame,
             producer_stream=torch.cuda.current_stream(self.device),
         )
         try:
@@ -81,7 +88,9 @@ class RslMuJoCoTyxVecEnv(VecEnv):
                 "final_observation": final_observation,
                 "final_mask": transition.final_mask,
                 "episode_id": torch.tensor(transition.episode_id.copy(), device=self.device),
-                "episode_length": torch.tensor(transition.episode_length.copy(), device=self.device),
+                "episode_length": torch.tensor(
+                    transition.episode_length.copy(), device=self.device
+                ),
                 "episode_return": transition.episode_return,
                 "transition_sequence": transition.sequence,
             }
@@ -89,10 +98,14 @@ class RslMuJoCoTyxVecEnv(VecEnv):
         except Exception as error:
             self._poisoned = True
             raise MuJoCoTyxEnvError(
-                "wrapper transition accepted; RSL publication failed", phase="adapter-publication",
-                action_accepted=True, state_accepted=True, needs_recovery=True,
+                "wrapper transition accepted; RSL publication failed",
+                phase="adapter-publication",
+                action_accepted=True,
+                state_accepted=True,
+                needs_recovery=True,
                 action_receipt=transition.action_receipt,
-                accepted_worlds=transition.accepted_worlds, transition=transition,
+                accepted_worlds=transition.accepted_worlds,
+                transition=transition,
             ) from error
         self.last_transition = transition
         return observations, transition.reward, done, extras
@@ -137,7 +150,9 @@ def ppo_config(*, steps=16, recurrent=False):
         **network,
         "distribution_cfg": {
             "class_name": "rsl_rl.modules.distribution.GaussianDistribution",
-            "init_std": 0.1, "std_type": "log", "learn_std": True,
+            "init_std": 0.1,
+            "std_type": "log",
+            "learn_std": True,
         },
     }
     return {
@@ -147,15 +162,26 @@ def ppo_config(*, steps=16, recurrent=False):
         "critic": dict(network),
         "algorithm": {
             "class_name": "rsl_rl.algorithms.PPO",
-            "num_learning_epochs": 1, "num_mini_batches": 1,
-            "clip_param": 0.2, "gamma": 0.99, "lam": 0.95,
-            "value_loss_coef": 1.0, "entropy_coef": 0.01,
-            "learning_rate": 0.0003, "max_grad_norm": 1.0, "optimizer": "adam",
-            "use_clipped_value_loss": True, "schedule": "fixed", "desired_kl": None,
+            "num_learning_epochs": 1,
+            "num_mini_batches": 1,
+            "clip_param": 0.2,
+            "gamma": 0.99,
+            "lam": 0.95,
+            "value_loss_coef": 1.0,
+            "entropy_coef": 0.01,
+            "learning_rate": 0.0003,
+            "max_grad_norm": 1.0,
+            "optimizer": "adam",
+            "use_clipped_value_loss": True,
+            "schedule": "fixed",
+            "desired_kl": None,
             "normalize_advantage_per_mini_batch": False,
-            "use_mixed_precision": False, "rnd_cfg": None, "symmetry_cfg": None,
+            "use_mixed_precision": False,
+            "rnd_cfg": None,
+            "symmetry_cfg": None,
         },
-        "multi_gpu": None, "torch_compile_mode": None,
+        "multi_gpu": None,
+        "torch_compile_mode": None,
     }
 
 
@@ -166,16 +192,18 @@ def make_ppo(env, *, steps=16, recurrent=False):
     if not isinstance(env, RslMuJoCoTyxVecEnv):
         raise TypeError("requires the device RSL adapter")
     return PPO.construct_algorithm(
-        env.get_observations(), env, ppo_config(steps=steps, recurrent=recurrent),
+        env.get_observations(),
+        env,
+        ppo_config(steps=steps, recurrent=recurrent),
         str(env.device),
     )
 
 
 def optimization_evidence(algorithm):
     """Explicit diagnostic HOST reads after an upstream update."""
-    parameters = list(dict.fromkeys(
-        list(algorithm.actor.parameters()) + list(algorithm.critic.parameters())
-    ))
+    parameters = list(
+        dict.fromkeys(list(algorithm.actor.parameters()) + list(algorithm.critic.parameters()))
+    )
     gradients = [parameter.grad for parameter in parameters if parameter.requires_grad]
     if not gradients or any(gradient is None for gradient in gradients):
         raise RuntimeError("an optimized parameter has no gradient evidence")
@@ -187,6 +215,9 @@ def optimization_evidence(algorithm):
         raise RuntimeError("nonfinite gradients or inconsistent/absent optimizer steps")
     if not all(parameter.is_cuda for parameter in parameters):
         raise RuntimeError("upstream optimization parameter left CUDA")
-    return {"finite_gradient": finite, "optimizer_step": steps[0],
-            "parameter_count": sum(parameter.numel() for parameter in parameters),
-            "gradient_norms": tuple(float(torch.linalg.vector_norm(g).item()) for g in gradients)}
+    return {
+        "finite_gradient": finite,
+        "optimizer_step": steps[0],
+        "parameter_count": sum(parameter.numel() for parameter in parameters),
+        "gradient_norms": tuple(float(torch.linalg.vector_norm(g).item()) for g in gradients),
+    }

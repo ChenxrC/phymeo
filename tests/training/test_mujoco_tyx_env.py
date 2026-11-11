@@ -1,4 +1,5 @@
 """N2 protocol tests; real CUDA physics, no old test-helper imports."""
+
 import importlib.util
 from contextlib import ExitStack
 from pathlib import Path
@@ -35,10 +36,14 @@ def test_continuous_device_rollout_matches_independent_host_entry(case, api, tmp
         env = owners.enter_context(api.make_environment(case, horizons=HORIZONS))
         source = n1.fixture_source(case)
         model = source.fresh_native_model()
-        reference = owners.enter_context(MuJoCoRuntime(
-            source, mode="cuda", world_keys=env.world_keys,
-            initial_states=n1.initial_states(case, model, env.world_keys),
-        ))
+        reference = owners.enter_context(
+            MuJoCoRuntime(
+                source,
+                mode="cuda",
+                world_keys=env.world_keys,
+                initial_states=n1.initial_states(case, model, env.world_keys),
+            )
+        )
         previous = env.get_observations()
         previous_copy = previous.clone()
         ended = []
@@ -66,17 +71,24 @@ def test_continuous_device_rollout_matches_independent_host_entry(case, api, tmp
                 )
                 # Observation is post-reset; reward/termination are pre-reset.
                 n1.task_oracle(
-                    transition.states, env.task_spec,
+                    transition.states,
+                    env.task_spec,
                     (transition.final_observation.cpu().numpy(), actual[1], actual[2]),
                 )
                 snapshot = env.runtime.snapshot()
-                raw = np.array([
-                    np.r_[state.q[list(env.task_spec.q_indices)],
-                          state.v[list(env.task_spec.v_indices)]]
-                    for state in snapshot.values()
-                ], np.float32)
-                np.testing.assert_allclose(actual[0], raw * env.task_spec.scale + env.task_spec.bias,
-                                           rtol=2e-5, atol=2e-6)
+                raw = np.array(
+                    [
+                        np.r_[
+                            state.q[list(env.task_spec.q_indices)],
+                            state.v[list(env.task_spec.v_indices)],
+                        ]
+                        for state in snapshot.values()
+                    ],
+                    np.float32,
+                )
+                np.testing.assert_allclose(
+                    actual[0], raw * env.task_spec.scale + env.task_spec.bias, rtol=2e-5, atol=2e-6
+                )
                 n1.append(log, {"event": "transition", **api.transition_record(transition)})
         assert (3, (env.world_keys[0],)) in ended
         assert (5, (env.world_keys[1],)) in ended
@@ -84,19 +96,23 @@ def test_continuous_device_rollout_matches_independent_host_entry(case, api, tmp
         assert env.counters["transitions"] == 8
         assert env.counters["termination_readback_bytes"] == 8 * len(env.world_keys)
         if case == "support-slide":
-            assert all(any(c.normal_force > 0 for c in state.last_step.contacts)
-                       for state in transition.states.values())
+            assert all(
+                any(c.normal_force > 0 for c in state.last_step.contacts)
+                for state in transition.states.values()
+            )
 
 
 def test_final_observation_and_terminated_over_timeout(api):
     from phymeo.backends.mujoco_task_workspace import MuJoCoTyxTaskSpec
 
     spec = MuJoCoTyxTaskSpec((), (1,), weight=(1,), lower=(-1,), upper=(0.05,))
-    with api.make_environment("hinge-slide", task_spec=spec,
-                              horizons=(1, 1, 9, 11, 13, 15, 17, 19)) as env:
+    with api.make_environment(
+        "hinge-slide", task_spec=spec, horizons=(1, 1, 9, 11, 13, 15, 17, 19)
+    ) as env:
         start = env.get_observations()
-        transition = env.step(zeros(api, env), world_keys=env.world_keys,
-                              expected_frame=env.current_frame)
+        transition = env.step(
+            zeros(api, env), world_keys=env.world_keys, expected_frame=env.current_frame
+        )
         assert transition.time_outs[0].item() and not transition.terminated[0].item()
         assert transition.terminated[1].item() and not transition.time_outs[1].item()
         assert transition.terminated.cpu().tolist() == [False] + [True] * 7
@@ -124,8 +140,9 @@ def test_action_preflight_does_not_commit(api, bad):
         elif bad == "shape":
             value = value[:, :-1].contiguous()
         elif bad == "stride":
-            value = torch.zeros((len(env.world_keys), 2 * env.num_actions),
-                                device=env.device)[:, ::2]
+            value = torch.zeros((len(env.world_keys), 2 * env.num_actions), device=env.device)[
+                :, ::2
+            ]
         elif bad == "nan":
             value[0, 0] = float("nan")
         else:
@@ -139,8 +156,11 @@ def test_action_preflight_does_not_commit(api, bad):
         assert not env.needs_recovery and env.last_transition is None
         assert env.runtime.checkpoint_revision == revision
         assert env.runtime.checkpoint().to_bytes() == before
-        assert all(env.step(zeros(api, env), world_keys=env.world_keys,
-                            expected_frame=env.current_frame).accepted_worlds.values())
+        assert all(
+            env.step(
+                zeros(api, env), world_keys=env.world_keys, expected_frame=env.current_frame
+            ).accepted_worlds.values()
+        )
 
 
 @pytest.mark.parametrize("bad", ("world-order", "old-frame"))
@@ -149,13 +169,18 @@ def test_label_and_frame_identity_refused(api, bad):
 
     with api.make_environment("hinge-slide") as env:
         old = env.current_frame
-        assert all(env.step(zeros(api, env), world_keys=env.world_keys,
-                            expected_frame=old).accepted_worlds.values())
+        assert all(
+            env.step(
+                zeros(api, env), world_keys=env.world_keys, expected_frame=old
+            ).accepted_worlds.values()
+        )
         before = env.runtime.checkpoint().to_bytes()
         with pytest.raises(MuJoCoTyxEnvError) as caught:
-            env.step(zeros(api, env),
-                     world_keys=env.world_keys[::-1] if bad == "world-order" else env.world_keys,
-                     expected_frame=old if bad == "old-frame" else env.current_frame)
+            env.step(
+                zeros(api, env),
+                world_keys=env.world_keys[::-1] if bad == "world-order" else env.world_keys,
+                expected_frame=old if bad == "old-frame" else env.current_frame,
+            )
         assert not caught.value.action_accepted
         assert env.runtime.checkpoint().to_bytes() == before
         assert env.last_transition.sequence == 1
@@ -167,12 +192,13 @@ def test_physics_failure_retains_new_action_but_no_transition(api, monkeypatch):
     with api.make_environment("hinge-slide") as env:
         before = env.runtime.snapshot()
         original = env.runtime.step
+
         def fail(h):
             raise RuntimeError("injected public physical failure")
+
         monkeypatch.setattr(env.runtime, "step", fail)
         with pytest.raises(MuJoCoTyxEnvError) as caught:
-            env.step(zeros(api, env), world_keys=env.world_keys,
-                     expected_frame=env.current_frame)
+            env.step(zeros(api, env), world_keys=env.world_keys, expected_frame=env.current_frame)
         failure = caught.value
         assert failure.phase == "physics" and failure.action_accepted
         assert not failure.state_accepted and env.needs_recovery
@@ -186,8 +212,11 @@ def test_physics_failure_retains_new_action_but_no_transition(api, monkeypatch):
             env.get_observations()
         monkeypatch.setattr(env.runtime, "step", original)
         env.reset()
-        assert all(env.step(zeros(api, env), world_keys=env.world_keys,
-                            expected_frame=env.current_frame).accepted_worlds.values())
+        assert all(
+            env.step(
+                zeros(api, env), world_keys=env.world_keys, expected_frame=env.current_frame
+            ).accepted_worlds.values()
+        )
 
 
 def test_post_physics_export_failure_is_not_rollback(api, monkeypatch):
@@ -195,12 +224,13 @@ def test_post_physics_export_failure_is_not_rollback(api, monkeypatch):
 
     with api.make_environment("hinge-slide") as env:
         original = env.workspace.to_torch
+
         def fail(frame):
             raise RuntimeError("injected task export failure")
+
         monkeypatch.setattr(env.workspace, "to_torch", fail)
         with pytest.raises(MuJoCoTyxEnvError) as caught:
-            env.step(zeros(api, env), world_keys=env.world_keys,
-                     expected_frame=env.current_frame)
+            env.step(zeros(api, env), world_keys=env.world_keys, expected_frame=env.current_frame)
         assert caught.value.phase == "task-export"
         assert caught.value.action_accepted and caught.value.state_accepted
         assert env.needs_recovery and env.last_transition is None
@@ -217,13 +247,14 @@ def test_late_subset_reset_failure_reports_accepted_reset(api, monkeypatch):
 
     with api.make_environment("hinge-slide", horizons=(1, 9, 9, 9, 9, 9, 9, 9)) as env:
         original = env.runtime.reset
+
         def late(keys=None):
             original(keys)
             raise RuntimeError("injected post-commit reset cleanup failure")
+
         monkeypatch.setattr(env.runtime, "reset", late)
         with pytest.raises(MuJoCoTyxEnvError) as caught:
-            env.step(zeros(api, env), world_keys=env.world_keys,
-                     expected_frame=env.current_frame)
+            env.step(zeros(api, env), world_keys=env.world_keys, expected_frame=env.current_frame)
         assert caught.value.phase == "subset-reset"
         assert caught.value.state_accepted and caught.value.reset_accepted
         assert env.last_transition is None and env.needs_recovery
@@ -246,27 +277,30 @@ def test_close_borrows_runtime_and_keeps_exported_tensor_alive(api):
 
 
 def test_action_borrow_cleanup_failure_reports_real_commit(api, monkeypatch):
-    from phymeo.training.mujoco_tyx_env import MuJoCoTyxEnvError
     import tyx
     import tyx.torch as bridge
+
+    from phymeo.training.mujoco_tyx_env import MuJoCoTyxEnvError
 
     with api.make_environment("hinge-slide") as env:
         original_borrow, original_free = bridge.from_torch, tyx.CudaArray.free
         borrowed_ids, failed = set(), []
+
         def borrow(*args, **kwargs):
             value = original_borrow(*args, **kwargs)
             borrowed_ids.add(id(value))
             return value
+
         def close_once(value):
             original_free(value)
             if id(value) in borrowed_ids and not failed:
                 failed.append(True)
                 raise RuntimeError("injected post-submit borrowed-view cleanup failure")
+
         monkeypatch.setattr(bridge, "from_torch", borrow)
         monkeypatch.setattr(tyx.CudaArray, "free", close_once)
         with pytest.raises(MuJoCoTyxEnvError) as caught:
-            env.step(zeros(api, env), world_keys=env.world_keys,
-                     expected_frame=env.current_frame)
+            env.step(zeros(api, env), world_keys=env.world_keys, expected_frame=env.current_frame)
         assert failed and caught.value.action_accepted
         assert caught.value.phase == "action-publication"
         assert caught.value.action_receipt is not None
@@ -290,5 +324,8 @@ def test_external_runtime_mutation_cannot_be_adopted_by_subset_reset(api):
         env.reset()
         assert not env.needs_recovery
         api.load_n1().assert_exact(initial, env.runtime.snapshot())
-        assert all(env.step(zeros(api, env), world_keys=env.world_keys,
-                            expected_frame=env.current_frame).accepted_worlds.values())
+        assert all(
+            env.step(
+                zeros(api, env), world_keys=env.world_keys, expected_frame=env.current_frame
+            ).accepted_worlds.values()
+        )

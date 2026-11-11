@@ -1,4 +1,5 @@
 """Upstream RSL5.5.2 optimization and recurrent timeout protocol."""
+
 import importlib.util
 import json
 from pathlib import Path
@@ -100,8 +101,10 @@ def test_adapter_packaging_failure_stops_learner_after_real_step(api, monkeypatc
     with api.make_environment("hinge-slide") as env:
         adapter = RslMuJoCoTyxVecEnv(env)
         original = adapter._observations
+
         def fail(value):
             raise RuntimeError("injected TensorDict packaging failure")
+
         monkeypatch.setattr(adapter, "_observations", fail)
         with pytest.raises(MuJoCoTyxEnvError) as caught:
             adapter.step(torch.zeros((8, env.num_actions), device=env.device))

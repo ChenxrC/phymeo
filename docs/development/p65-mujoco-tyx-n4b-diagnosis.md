@@ -208,3 +208,176 @@ historical authoring snapshot):
 
 Repair handoff status: CODE_READY_TESTS_PENDING / ANALYSIS_UNEXECUTED /
 AUTHORING_SLOT_RELEASED. The parent retains the sole execution slot.
+
+## Actual nine-trace diagnosis and bounded follow-up (2026-11-12)
+
+This section supersedes the preceding pending-execution status; the earlier
+checkpoints remain historical. Parent run37 used source15704211 and completed
+PASS_SAVED_DIAGNOSIS_ONLY, runs=9, RAW_EXIT0, from00:10:19 to00:13:27+08.
+Its final.json records unchanged before/after source hashes. Parent48/49 Ruff
+and format checks returned0; parent50 completed all47 HOST tests in1.10s with
+RAW_EXIT0. These are the parent's executions, not author executions.
+
+The authoritative diagnostic is
+`artifacts/p65-parity-n4b-rob2a-col-stop-20261111-01/37-diag-fixed-nine/result/summary.json`
+in the parent checkout, with the adjacent final.json, stdout.log and RAW_EXIT.txt.
+This author read bounded projections of that completed JSON and those small
+receipts only. No original gzip, policy forward, numerical script, retraining
+or physics replay was run for this interpretation. The nine original N4a
+128x32x8 runs and their three bound learning summaries remain the inputs.
+The analysis passing does not change the learning outcome: S passes, J/R remain
+FIXED_BUDGET_NOT_LEARNED. Installation/package qualification is owned separately
+by the parent and is not asserted here.
+
+### Observed learning and zero-action comparison
+
+Costs below are copied from the diagnostic, rounded only for display. Each
+row's untrained actor uses the same seed and fixed held-out states as its learned
+actor. Zero is the one original first-seed diagnostic shared within that task;
+null zero fields in later runs do not mean those runs created another zero trace.
+
+| Task/seed | Untrained cost | Learned cost | Learned minus zero |
+|---|---:|---:|---:|
+| J14011 |0.0798635333|0.0740519219|+0.0103567849|
+| J14012 |0.0651763097|0.0647360449|+0.0010409079|
+| J14013 |0.0669394627|0.0631858401|-0.0005092969|
+| S14111 |0.0369562417|0.0271977548|-0.0011449393|
+| S14112 |0.0299416978|0.0238532838|-0.0044894103|
+| S14113 |0.0271564944|0.0177158286|-0.0106268656|
+| R14211 |0.1456878237|0.1452686509|+0.0316434204|
+| R14212 |0.1936347145|0.1285030184|+0.0148777879|
+| R14213 |0.1317695218|0.1209998391|+0.0073746086|
+
+Original median learned/untrained ratios remain J0.9439251168,
+S0.7359448237 and R0.9182687886. R14212 improves substantially over its own
+untrained actor but still loses to zero; that distinction prevents calling a
+favourable initialization-relative ratio a competent controller. Only J14013
+slightly beats zero in task mean. Every S seed beats zero separately in all
+eight saved worlds, not only after averaging them.
+
+### Where J/R differ: coordinates, time and actual controls
+
+These are descriptions of saved trajectories, not proofs of an optimizer cause.
+World order is5,41,77,113,149,185,221,257. Full per-world/per-joint arrays remain
+in the diagnostic; the examples below use fixed named seed/world identities so
+the quoted contrasts are reviewable. Each q cost entry is the original squared
+normalized position error, and each v entry already includes the original0.01
+weight; the task cost then averages over coordinates and worlds.
+
+- J is dominated by its position terms. For J14011/world257, q terms are
+  (0.26512665,0.06025492), whereas v terms are
+  (0.000138685,0.0000235332). Its saved native q-error RMS is
+  (0.1029809,0.0490938)m, with velocity RMS(0.1177646,0.0485110)m/s.
+  This world's cost grows from0.107237 in the first64-step quarter to0.238979
+  in the last. The small mean improvement therefore does not imply convergence
+  of all retained initial states.
+- J14011's j0 mean ctrl is negative in all eight worlds, including both signs
+  of initial position error. Its learned-minus-zero per-world costs are
+  negative for worlds5/41/149/185 and positive for77/113/221/257.
+  J14012 has positive j0 mean ctrl in all eight worlds and reverses those four
+  positive/negative groups. J14013 is mixed and retains j1 mean ctrl negative
+  in every world. This is visible state-group asymmetry, not evidence that the
+  action sign or joint mapping in the engine is reversed.
+- R shows the same need to inspect branches separately. R14211/world149 has
+  q terms(0.35325748,0.31089453,0.17761971), versus
+  v terms(0.000742158,0.00153248,0.00110661). Its native q-error RMS is
+  (0.1485887,0.1393948,0.1053624)rad. Its quarter cost rises from0.176363 to
+  0.430084. For R14212/world257 the largest q term is j1=0.36325869
+  (j0=0.25522629,j2=0.05732761); R14213/world149 also has j1 largest at
+  0.33700935. A single scalar loss would conceal this shift between branches.
+- R14211's root-joint mean ctrl is positive for every world, while R14213's
+  is negative for every world. Corresponding endpoint ctrl*error products and
+  restoring-direction fractions differ between opposite initial groups.
+  These endpoint products are correlations; they are not integrated physical
+  work and cannot prove that an individual torque is wrong for a coupled tree.
+- All learned J/R per-world/per-joint fractions in the predeclared >=95% action
+  scale bin are0. The actual learned ctrl RMS values are well below the2-unit
+  bound (for example J14011/world257=(0.310379,0.140781),
+  R14211/world149=(0.586503,0.184033,0.182328)). The saved evidence does not
+  support saturation as the limiting mechanism in these evaluation windows.
+  This does not establish ideal action authority for every unvisited state.
+
+The source already exports centered, scaled q errors and scaled v using the
+original q_scale/v_scale; actor and critic use that public task observation.
+A proposal to simply add that same normalization would duplicate existing work.
+The9trace pass also binds requested actions, native channels, stored controls,
+state/world/tick and saved clocks, and verifies the original reward formula.
+That excludes those specific evidence mismatches; it does not establish that
+all learning-protocol choices are effective.
+
+### Updates happened; remaining unknowns
+
+All nine runs reach saved Adam step128. The saved actor tensors change in all
+1284 J scalars,1186 S scalars and1382 R scalars. Corresponding critic tensor
+counts are1249,1185 and1313. These counts cover all saved model-state tensors,
+not an inferred parameter-only subset. Relative actor L2 changes are
+J=(0.0172466,0.00799560,0.0142780),
+S=(0.0234978,0.0177171,0.0336046),
+R=(0.0121762,0.0303421,0.0232114).
+The saved final-update combined post-clip norms are nonzero:
+J=(1.1388783,1.4142132,1.4142130),
+S=(1.0933258,0.6569128,1.0205169),
+R=(1.4142132,1.4142132,1.4142130).
+Thus near-zero scalar surrogate loss cannot be used to claim no gradient,
+no optimizer step, or an unchanged actor. These combined norms pool the saved
+parameter order; they do not identify actor versus critic contributions.
+
+Pre-clip norms, gradient directions, per-transition values/returns/advantages,
+log probabilities and KL remain UNKNOWN. Neither the relatively larger critic
+change nor first/last value-loss differences prove an actor-credit problem:
+those losses come from different rollout states and episode phases. The weak
+J/R gains may involve learned offset versus useful feedback, sampling/credit
+assignment or optimizer configuration; this analysis distinguishes none of
+those as an established cause.
+
+S remains an actual loaded-contact positive control. In every learned S world,
+all four sites have positive normal force for all192 tail samples. Per-world
+tail means span the recorded ranges19.9359..20.2357N for seed14111,
+21.2160..21.4371N for14112, and24.2165..24.2488N for14113;
+peak forces are22.9244,23.3532,25.2539N respectively. These are actual receipt
+forces and satisfy the existing S gate; a different mean support force is not
+by itself an extra reward or energy result. No S gate or tolerance is changed.
+
+### Proposed next protocol: one bounded saved-policy response test
+
+This is a proposal for parent approval, not newly authorized implementation or
+an executed result. Before any further training, distinguish a policy dominated
+by its offset from useful state feedback using the already-saved initial/final
+MLPs for **all nine original identities**, with S retained as a positive control.
+No new policy, reward, target, seed, training horizon, budget or learning gate is
+selected from these results.
+
+1. Read the two saved model records and original public config/task/action
+   bindings with the existing bounded decoder. Verify the original whole-policy
+   hash (actor plus critic) against each bound summary, then retain the actor
+   state. Load the actual pinned MLP class; preserve caller RNG and run
+   deterministic actor inference. No optimizer, environment or physics step
+   is involved. Reject missing fields rather than reconstructing an old policy.
+2. Freeze the input grid before reading outputs: the original eight held-out
+   initial observations; the target with v=0; and for every coordinate j,
+   q=q_target +/-q_scale[j]/4 with all other errors and v zero, then
+   v_j=+/-v_scale[j]/4 with all q errors zero. Use the same existing public
+   scaling/bias and action mapping. These are bounded counterfactual policy
+   observations, not new physical trajectories or proofs of state reachability.
+3. Save every raw deterministic action and mapped ctrl. Separately report the
+   target offset, paired even component, paired odd response and full cross-joint
+   response for both checkpoints. Keep each seed separate and preserve zero
+   denominators explicitly; do not choose a best seed or add a new success
+   threshold. For uncoupled J at v=0, this directly tests whether opposite
+   position errors receive opposite restoring commands. R's full coupled
+   response is descriptive, not a per-joint sign proof; S need not have zero
+   equilibrium ctrl.
+4. Completion means exact model/config/input identity, finite complete outputs
+   for the fixed grid and a discriminating report. If the saved mapping differs
+   from the public mapping, stop and fix that concrete defect first. If a dominant
+   even offset is supported, use that evidence to preregister one initialization/
+   feedback ablation at the unchanged original learning budget and all three
+   seeds. If the probe does not distinguish the hypothesis, stop this probe;
+   do not expand the grid or repeat training. A separate bounded instrumentation
+   proposal would then have to capture the missing actor-gradient/advantage/KL
+   evidence before selecting a learning change.
+
+This next step is deliberately one fixed inference experiment rather than an
+open-ended search. It cannot upgrade J/R to learned, prove controller stability,
+or replace the existing physical and learning acceptance gates. This report
+change is docs-only; all code/tests and source hashes above remain unchanged.

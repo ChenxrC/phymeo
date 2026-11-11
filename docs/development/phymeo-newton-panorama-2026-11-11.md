@@ -1,6 +1,6 @@
 # Phymeo / Newton 功能差异全景（2026-11-11）
 
-2026-11-11更新：N2已打通真实CUDA PPO更新，ROB1b已打通同world双自由体共同响应与原子发布。COL1a的8个曲面EPA容量反例已解决，完整新矩阵interpret为127通过/4失败、CUDA为125通过/6失败，仍未完整接受。训练与规模保持最高主线，按节点推进，无固定截止。此前安装包验收d6a5c383、产品e3d15707只按原范围复用；本批没有新wheel。见[N2结果](p65-mujoco-tyx-n2-report.md)、[ROB1b结果](p65-resident-multi-participant-report.md)、[COL1a实际边界](p65-device-convex-support-family-report.md)、[本批记录](p65-parity-batch-n2-rob1b-col1a.md)。
+2026-11-11更新：N3已通过同配置真实CUDA组合续训24项；ROB1c两后端均有20个节点通过，两个双臂工具案例保留加速度精度失败；COL已补齐六个失败入口的实际迭代诊断，未改变几何失败结论。训练与规模保持最高主线，按节点推进，无固定截止。此前安装包验收d6a5c383、产品e3d15707只按原范围复用，本批没有新wheel。见[N3结果](p65-mujoco-tyx-n3-report.md)、[ROB1c结果](p65-resident-multi-participant-robots-report.md)、[碰撞实际诊断](p65-convex-query-trace-findings-20261111.md)、[本批记录](p65-parity-batch-n3-rob1c-col-trace.md)。
 
 [上一批实际记录](p65-parity-2026-11-11-progress.md) · [持续推进计划](../superpowers/plans/2026-11-11-newton-parity-continuous.md) · [上一连接批架构快照](../architecture/phymeo-newton-parity-2026-11-11.html)
 
@@ -8,10 +8,10 @@
 
 | 连接 | 当前证据 | 仍然存在的边界 |
 |---|---|---|
-| 物理状态 → 中途检查点 → 原样继续 | 公共 checkpoint/restore；固定根/自由根、完整接受状态与控制、CAS 和失败回滚；恢复后下一步状态与收据一致 | 上层策略/RNN/随机数状态须明确组合；不是完整训练作业快照 |
+| 物理状态 → 组合训练检查点 → 原样继续 | N3实际组合物理/控制、episode、PPO/Adam、normalizer、RNG及GRU hidden；恢复后下一次真实更新一致，晚失败语义已验 | 同设备/配置、完整update边界；不是任意时刻、任意learner或跨平台快照 |
 | 四类机器人 → 真实受载多世界分页 | W127/128/129/256，world 不拆页，所有载荷汇总，每 storage 一次求解、全批共同发布；两后端专项已过 | 默认仍走HOST patch；显式设备patch分页已另行验收。材料点转换/载荷装配与诊断仍有HOST工作 |
-| 已接受设备状态 → VecEnv → CUDA PPO | N2两任务各W8、512真实转移、4次实际Adam更新；23项通过，另有GRU更新、final_obs/timeout/局部reset/晚失败协议 | 只证明训练链路可运行；学习有效性、组合训练恢复、随机化及机器人规模仍待验证 |
-| 同world独立参与者 → 共同载荷 → 一次发布 | ROB1b ordinary floating公共场景；W1/W2/W4双自由体40步，interpret/CUDA各11项；完整world拒步/reset/restore | <=8参与者、<=33物理body/world；HOST候选/patch，非跨树隐式QP；机械臂推盒、双臂工具及混合来源待验 |
+| 已接受设备状态 → VecEnv → CUDA PPO | N2两任务W8真实Adam更新；N3实际MLP/GRU恢复和下一次更新重现，局部reset/晚失败已验 | 学习有效性、随机化及真实机器人训练规模仍待N4验证 |
+| 同world独立参与者 → 共同载荷 → 一次发布 | ROB1c真实机械臂/自由盒、四类树及图、W1/W2/W4、混合五参与者四storage和整world拒步/reset/restore通过 | <=8参与者、<=33物理body/world；HOST候选/patch，非跨树隐式QP；双臂R03两个精度门仍失败，新安装包待ROB1d |
 | 设备策略输出 → 三类控制 → 物理推进 | 公共设备 action packet；ctrl、qfrc_applied、xfrc_applied，完整字节审计、流同步、CAS；29 执行器宽度已测 | 当前仍保留 HOST 控制审计和完整物理诊断读回，不是零往返环 |
 | 设备凸体 patch → 原材料点 → 真实载荷 | 新十类无序 S/C/OBB/H 组合资格、四类树来源；单页各67项/47份保存；分页另各29项/28份保存，完整力/COM力矩、逐世界拒步、异常回滚与新wheel均通过 | 此 resident 路径与 MuJoCo-TYX 分开；是设备几何加 HOST 力装配，尚非广泛 mesh/变形窄相或 CCD |
 | G1 策略 → 正确 IMU-site 角速度 | 新版16项语义测试；原条件2秒各1000个 CUDA/独立CPU步骤与保存审计均过 | 新版于46.29秒触发设备1米参考XY门，独立CPU同时0.99978米，无设备拒步；未完成131.48秒。旧版112.372秒失败另保留 |
@@ -40,10 +40,10 @@ CPU 编译不是 CPU 代跑 CUDA 物理。默认 CUDA 使用 MuJoCo-TYX；MuJoCo
 
 | 方向 | 已有通用基础 | 确实尚缺或覆盖不足 | 后续可验节点 |
 |---|---|---|---|
-| 01 场景与机器人 | URDF/MJCF/USD、统一编译接口、PD/IK、四类树、工具/根惯量、双方反力、中途恢复；ROB1b普通浮根双体共同场景 | 更广关节/闭环/传动，复杂执行器，混合来源同world响应；完整抓取释放 | ROB1c机械臂推盒/双臂工具、ROB1d集成；ROB2球关节/执行器及夹爪、Panda工作流 |
-| 02 碰撞检测与响应 | RR/RD/DD、有限面边、多形状patch、部分凹体/CCD；设备S/C/OBB/H消费；新三曲面device support与内切球重叠界 | 新查询仍有4个圆柱法向失败及2个CUDA HN分离失败；曲面device patch/load、广泛mesh/变形窄相/CCD、跨特征历史、SDF/hydroelastic | COL1a先诊断失败迭代再修复；通过后COL1b/c；COL2设备mesh/变形，COL3首触 |
-| 03 GPU 与多场景 | 四类树、W256受载分页、设备几何、MuJoCo-TYX混合约束、公共设备口；W8实际PPO、有限多participant共同发布 | HOST转换/装配/诊断开销、异构批次/约束规模、混合participant；真实机器人训练规模尚缺 | N4 W1/8/32/64/128/256实际链路资格和端到端指标；256当前只是task接口上限，不能倒灌resident结果 |
-| 04 训练与可微（最高主线） | CPU PPO三任务、ONNX、设备task/action/物理checkpoint；N2 device VecEnv及上游RSL CUDA PPO、GRU短更新 | 完整训练恢复/RNG/RNN状态、随机化、可重复学习收益；多步物理梯度/辨识 | N3更新边界组合恢复→N4三类任务/三种子学习与规模；物理可微另立梯度对照 |
+| 01 场景与机器人 | URDF/MJCF/USD、统一编译接口、PD/IK、四类树、双方反力；ROB1c混合来源同world共同响应与恢复 | 双臂R03小净加速度精度；更广关节/闭环/传动、复杂执行器和完整抓取释放 | ROB1d已合格范围安装集成；R03有界PD算术复现；ROB2球关节/执行器、Panda工作流 |
+| 02 碰撞检测与响应 | RR/RD/DD、有限面边、多形状patch、部分凹体/CCD；设备S/C/OBB/H消费；三曲面support、内切球界及bounded实际迭代诊断 | 仍有4个圆柱法向失败及2个CUDA HN分离失败；曲面device patch/load、广泛mesh/变形窄相/CCD、跨特征历史、SDF/hydroelastic | 从已保存trace检验通用仿射重建与法向停止；通过后COL1b/c；COL2设备mesh/变形，COL3首触 |
+| 03 GPU 与多场景 | 四类树、W256受载分页、设备几何、MuJoCo-TYX混合约束、公共设备口；W8实际PPO和恢复、混合participant共同发布 | HOST转换/装配/诊断开销、异构批次/约束规模；真实机器人训练规模尚缺 | N4 W1/8/32/64/128/256实际链路资格和端到端指标；256当前只是task接口上限，不能倒灌resident结果 |
+| 04 训练与可微（最高主线） | CPU PPO三任务、ONNX、device VecEnv、上游RSL CUDA PPO；N3同配置完整MLP/GRU更新边界续训 | 随机化、可重复学习收益、任意时刻/跨配置恢复；多步物理梯度/辨识 | N4三类任务/三种子学习与规模；物理可微另立梯度对照 |
 | 05 传感与交互 | 深度/法线/ID、TYX射线、IMU基础、真实轨迹Three.js；G1示例明确传感器坐标绑定 | RGB/材质/光照、更广相机、批量传感和编辑生态；示例 gyro 修正不是通用传感子系统完工 | 同一真实场景的多传感器、时序/坐标协议及交互输入 |
 | 06 跨域求解编排 | 事务、点端口、域图与指定刚–布–软体组合 | 通用按区域选择后端、界面力/约束、耦合调度与共同失败恢复 | 两个异构后端的完整界面载荷、能量与回滚案例 |
 | 07 布与体软体 | 拉伸/剪切/弯曲、自接触、StVK四面体、双向载荷、递布基础 | 密集折叠、持续静摩擦/换特征、软块抓捏；目标软布放台仍有留出 | 多网格/刚度/初态的支撑、抓捏、折叠、放台；递布必要但不充分 |
@@ -55,13 +55,13 @@ CPU 编译不是 CPU 代跑 CUDA 物理。默认 CUDA 使用 MuJoCo-TYX；MuJoCo
 
 | 下一批次 | 主线与并行工作 | 成功判断 |
 |---|---|---|
-| 本批已执行 | N2真实CUDA PPO 23pass；ROB1b两后端各11pass；COL内切球重叠修复 | COL最终interpret 127pass/4fail、CUDA125pass/6fail；旧受影响路径各18pass，明确未完整接受 |
-| 下一批 | N3组合训练恢复；ROB1c机械臂推盒/双臂工具；COL失败迭代诊断 | 恢复后真实继续一致；双方完整力/力矩与事务；先确认GJK具体停滞再修复，不猜阈值 |
-| 之后 | ROB1d新stage集成/源码外包；COL1a通过后才进COL1b/c | 新公共入口安装调用；曲面patch/载荷分别验收 |
+| 本批已执行 | N3真实CUDA续训24pass；ROB1c两后端各20pass/2精度fail；COL六失败诊断 | 同配置续训已验；混合响应限域接受；COL几何失败仍保留，实际原因已缩小 |
+| 下一批 | N4任务/种子/规模资格；ROB1d新stage安装集成；COL通用仿射simplex修复 | 已合格公共入口源码外调用；真实训练指标；六原输入先检验修复，保留原门 |
+| 独立后继 | R03已保存入步的PD算术复现；COL1a通过后才进COL1b/c | 不为微小精度缺口阻塞训练；曲面patch/载荷分别验收 |
 | 后继扩域 | ROB2关节/执行器；COL2再COL3 | 多案例关节控制；设备mesh/变形与首触边界 |
 | 4及以后 | N4多任务学习/规模；后续机器人、碰撞和其它物理族 | 预定种子/预算下可重复改善；相同条件的资源与吞吐报告 |
 
-批次允许独立分支先行，具体硬依赖见[总计划](../superpowers/plans/2026-11-11-newton-parity-continuous.md)。三个原agent分别负责训练、机器人、碰撞，当前作者任务均已交接；父负责共享接口与唯一串行执行。[ROB1合同](../superpowers/plans/2026-11-11-resident-multi-participant.md)的ROB1b有限域已通过，采用共同入步载荷、各机械块一次求解和完整world一次发布，不是跨树隐式KKT。[COL1a合同](../superpowers/plans/2026-11-11-device-convex-support-family.md)仍未完整验收，patch/受力另验。N3与ROB1c不受这项数值缺口阻塞。
+批次允许独立分支先行，具体硬依赖见[总计划](../superpowers/plans/2026-11-11-newton-parity-continuous.md)。三个原agent分别负责训练、机器人、碰撞，当前作者任务均已交接；父负责共享接口与唯一串行执行。[ROB1合同](../superpowers/plans/2026-11-11-resident-multi-participant.md)的混合来源限域已通过，采用共同入步载荷、各机械块一次求解和完整world一次发布，不是跨树隐式KKT；R03精度缺口单列。[COL1a合同](../superpowers/plans/2026-11-11-device-convex-support-family.md)仍未完整验收，patch/受力另验。这些缺口不阻塞N4训练主线。
 
 G1保持兼容侧线：来源绑定与保存输入的接触边界诊断，不自动重跑完整动作，也不阻塞训练。接受预先声明的工程精度，不为零margin位级一致无限推导。性能按同模型、初态、精度和输出比较；HOST诊断成本单列，生产快速模式的检查契约须明示。
 

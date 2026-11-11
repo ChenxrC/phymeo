@@ -1,6 +1,6 @@
 # Newton 功能对齐：持续推进计划
 
-日期：2026-11-11。用户已取消08:00截止，按节点验收持续推进。本批N2真实CUDA PPO两任务更新和episode协议23pass；ROB1b同world双自由体响应/事务interpret与CUDA各11pass。COL内切球方案解决8个原EPA容量反例，完整新矩阵interpret 127pass/4fail、CUDA125pass/6fail；未完整接受，曲面patch/load仍不支持。见[N2实际结果](../../development/p65-mujoco-tyx-n2-report.md)、[ROB1b](../../development/p65-resident-multi-participant-report.md)、[COL1a反例与边界](../../development/p65-device-convex-support-family-report.md)。现有用户Torch是活跃依赖，保留；五个退役环境已清，不重复清理。此前物理/安装验收d6a5c383、产品e3d15707只按原范围复用，本批无新wheel。
+日期：2026-11-11。用户已取消08:00截止，按节点验收持续推进。最新批N3真实CUDA组合续训24pass；ROB1c两后端均20个节点通过、两个双臂工具精度失败保留，旧入口各11项回归通过，公共CUDA推盒40步通过；COL诊断协议及六个固定失败入口采集完成，几何失败没有改写为通过。见[本批记录](../../development/p65-parity-batch-n3-rob1c-col-trace.md)、[N3](../../development/p65-mujoco-tyx-n3-report.md)、[ROB1c](../../development/p65-resident-multi-participant-robots-report.md)、[COL记录发现](../../development/p65-convex-query-trace-findings-20261111.md)。现有用户Torch是活跃依赖，保留；退役环境已清，不重复清理。此前物理/安装资格只按原source复用，本批无新wheel。
 
 入口：[当前全景](../../development/phymeo-newton-panorama-2026-11-11.md)、[架构与路线图](../../architecture/phymeo-newton-parity-2026-11-11.html)、[上一批验收](../../benchmarks/p65-parity-20261111-connections.md)。原[限时计划](2026-11-11-newton-parity-until-0800.md)仅保留历史计划和结果，不再约束后续。
 
@@ -10,9 +10,9 @@
 
 | 批次 | 训练主线 | 机器人分支 | 碰撞分支 | 启动条件 |
 |---|---|---|---|---|
-| 本批已交付 | N2 device VecEnv、两任务真实CUDA PPO及GRU短更新 | ROB1b双自由体共同响应、world原子发布及恢复 | 保留内切球重叠修复；两后端全新矩阵/旧路径回归完成，失败如实保留 | 不把COL部分通过当完整资格 |
-| 下一可执行批 | N3更新边界组合训练恢复 | ROB1c机械臂推盒、双臂工具、混合来源范围 | 为4个圆柱法向/2个CUDA HN失败补迭代证据，再选通用修复 | 三支线独立；N3/ROB1c不受COL缺口阻塞 |
-| 后续集成 | N3实际续训/负控与公共调用 | ROB1d集成、一次新stage源码外安装包 | COL1a通过后COL1b曲面patch、COL1c真实受力 | 各支线只继承自身前置资格；失败COL不能混入已接受标签 |
+| 本批已交付 | N3同配置MLP/GRU完整更新边界恢复 | ROB1c四family混合响应/事务限域通过；R03精度缺口保留 | bounded trace协议和六个原失败的实际迭代诊断 | 不把诊断成功当几何修复，不称R03全窗已通过 |
+| 下一可执行批 | N4任务/三种子/预算与规模测量冻结 | ROB1d已合格范围集成与新stage源码外安装；R03保存入步的有界PD算术复现 | 通用仿射simplex重建，随后同一outgoing candidate法向停止条件 | 三支独立；保留原门/预算，失败不阻塞训练主线 |
+| 后续集成 | N4学习和端到端规模分别验收 | ROB2前置接口和案例；完整R03仍单列 | COL1a通过后COL1b曲面patch、COL1c真实受力 | 各支线只继承自身前置资格；失败COL不能混入已接受标签 |
 | 后继扩域 | N4任务/种子/预算冻结与学习验证 | ROB2a关节/执行器；ROB2b工作流随依赖接入 | COL2 mesh/变形窄相，随后COL3连续检测 | 实际状态归属与前序公共接口稳定 |
 | 后续批次 | N4 学习有效性，再测规模/热点 | 更多约束、传动、闭环与工具 | 跨特征历史；SDF/hydroelastic 独立研究立项 | 先有功能证据，再扩域和性能优化 |
 
@@ -33,7 +33,7 @@
 
 **N2｜中高｜短更新资格已通过。** 独立 device VecEnv和薄RSL适配已实现；final_obs、timeout、局部reset、动作已提交后的失败语义均有实际验证。两任务各完成4次更新×16步×8world，真实Adam步数/参数改变和全部有效转移已核；GRU另完成一次更新。完整23项通过。此门只证明PPO链路，不能称“已经学会”；组合训练恢复属于N3。发生物理或后处理失败时报告真实已推进阶段，不伪回滚。
 
-**N3｜高｜依赖 N2 的实际状态归属。** 在更新边界、空 rollout 时组合物理、policy、optimizer、normalizer、RNG、RNN 和 episode 状态。中途保存后继续，再恢复到同一实例继续，对比控制、物理和 learner 后继。缺字段、错模型、过期对象和晚失败均有负控；首版不承诺任意步/cross-platform bitwise 恢复。现在可以准备 manifest，不提前编造未定接口。
+**N3｜高｜同配置资格已完成。** 在更新边界、空rollout时组合物理、policy、optimizer、normalizer、RNG、GRU hidden和episode状态。两原W8任务在更新2保存并重现更新3，GRU在非零hidden的更新1保存并重现更新2；完整24项通过，CAS前拒绝与CAS后poison已验。首版不承诺任意步、任意learner或跨配置/平台恢复。不重跑既过N3来替代N4学习证据。
 
 **N4｜高｜训练有效性与性能分开。** 三类任务：独立关节控制、持续接触支撑、受支持的分支关节机器人。运行前固定每任务的三个种子、训练预算、未训练基线和成功指标；评价可重复改善，不挑种子或临时改任务。随后测 W1/8/32/64/128/256 的端到端有效 transitions/s、更新耗时、显存峰值、传输字节、同步和 HOST 审计占比。256 是当前 task 接口上限，不是本训练流水线已合格规模；容量不足必须明确拒绝，不能丢 world。
 
@@ -43,7 +43,7 @@
 
 **ROB1｜高｜同 world 多参与者共同响应。** [冻结合同](2026-11-11-resident-multi-participant.md)采用 additive participant/layout/scene API。首版 resident 在同一入步状态装配跨参与者接触载荷，完整 J 投影，各机械块一次求解，全 world 一次发布；复用现有柔顺接触律，不宣称跨树隐式 KKT/QP。W1/W2/W4、每 world 1–8 participant，原几何/站点预算保持。固定双自由体、机械臂推自由盒、双臂工具三类，核双方力/力矩、分离/重入、完整 world reset/restore 和最后参与者晚失败。不能分别 step 后拼状态。MuJoCo-TYX 多自由根另设映射和原生对照资格，不继承 resident 结果。
 
-当前ROB1b只接受ordinary floating、<=33物理body/world的R01双自由体与有界事务，HOST候选/patch仍明确。R02/R03/R04、晚restore上传/检查故障和ROB1d安装调用未验；下一项从实际公共service扩案例/来源，不重写积分器或绕过world原子发布。
+当前ROB1c已把原四类storage接入同一公共service，R02/R04/R05/R06与晚restore故障在两后端通过；R03两输入保留FP32 PD力相消后的加速度精度失败。HOST候选/patch、<=33物理body/world范围仍明确。下一ROB1d只包装已合格公共能力，不把完整双臂抓取或R03全128步倒灌为通过；不重写积分器或绕过world原子发布。
 
 **ROB2a｜高｜关节/执行器扩域。** 在已有 scalar joints、free root、PD、惯量/阻尼和限位上，先定义球关节 q/v、第一阶执行器状态、显式传动映射。球铰受矩、反向传动、阶跃/饱和/卸载及含执行器状态的恢复为基础库。闭环与 tendon 是后继独立节点，不一次塞进首片。
 
@@ -57,7 +57,7 @@
 
 [COL1a 冻结合同](2026-11-11-device-convex-support-family.md)先补18类 device query，复用同一 support/GJK/EPA。父先接曲面来源准入、保守 AABB 和完整旋转 frame。负例的布置重叠量不是通用最小穿透深度，tests-first 必须逐族提供独立 depth/witness oracle。新曲面 patch 明确 UNSUPPORTED，真实受载拒绝，不能 HOST fallback；COL1b/c 后续另验。
 
-本批严格FW法向门在完整矩阵中引入10个分离资源回归，已撤下；内切球重叠界保留。当前剩余为两后端4个圆柱法向失败和CUDA独有2个HN分离资源失败。下一步先冻结失败迭代的bounded scratch证据（simplex/weights、q、support、终止量），保持同输入和预算定位原因，再修复。现有保存输出不足以宣称已找到算术根因，不继续猜测阈值；两后端原18项受影响旧路径通过不等于全部新曲面资格。
+此前严格FW门新增10个分离资源回归，已撤下；内切球重叠界保留。最新六个固定失败的完整trace已采集：Y的distance退出不能保证outgoing normal；HN的单纯形仿射重建偏离常量平面1ULP，候选比较落败后重复同一状态到64次预算。下一项先检验通用仿射重建/投影，再单列同一候选的法向停止条件；两项只是由记录支持的修复假设，尚未实现验证。原输入、资源与门保持，不加预算或恢复旧FW门追绿，详[实际字段与源码位置](../../development/p65-convex-query-trace-findings-20261111.md)。
 
 **COL2｜高｜设备 mesh 窄相及变形来源。** 接已有 BVH，补有限三角面/边窄相、材料地址和有界 contact reduction。固定球/杆越有限边、凸体进入凹槽、薄壳正反面、固定拓扑变形面、双面交叉；检查漏检、重复刚度、完整力矩、错源及容量拒绝。先验变形几何，再接独立柔体响应消费者；不因几何通过称所有机器人树/柔体已联通。
 

@@ -1,12 +1,12 @@
 # ROB1：驻留设备上的同世界多参与者接触响应
 
-日期：2026-11-11。状态：**ROB1a_HOST_QUALIFIED / ROB1b_R01_INTERPRET_CUDA_QUALIFIED**。注册层33项按原证据复用；新共同响应/事务组interpret与CUDA各11项通过，四个R01窗口各40步。产品08042d21，详[实现与实际验证](../../development/p65-resident-multi-participant-report.md)。首片执行仅普通floating、每world最多33个physical bodies、显式HOST候选/patch；下面完整四family/更大world规划尚未全部实现。下一步ROB1c机械臂推盒/工具/图变体与剩余故障，再ROB1d包装，父继续唯一串行执行。原研究基线 `95212cff12cd6437566fdce80b93ddc7c4b64fe7` 保留。主入口：[持续计划](2026-11-11-newton-parity-continuous.md)、[当前全景](../../development/phymeo-newton-panorama-2026-11-11.md)。
+日期：2026-11-11。状态：**ROB1c_PARTIALLY_QUALIFIED / R03_PRECISION_FAILURE_RETAINED**。最新四family服务、机械臂/自由盒、W1/W2/W4及混合world事务在两后端各20个节点通过；两个R03精度失败保留。原R01/事务因共享接缝变更做了两后端各11项回归，公共CUDA推盒40步也通过。详[ROB1c实际结果](../../development/p65-resident-multi-participant-robots-report.md)。每world<=8参与者/<=33 physical bodies、HOST候选/patch边界保持，不能称所有大场景或隐式跨树求解已支持。下一步ROB1d已合格范围包装和独立的R03保存入步PD算术诊断。原研究基线 `95212cff12cd6437566fdce80b93ddc7c4b64fe7` 及下方设计保留；历史未实现项以本段与实际报告为准。主入口：[持续计划](2026-11-11-newton-parity-continuous.md)、[当前全景](../../development/phymeo-newton-panorama-2026-11-11.md)。
 
 ## 1. 要补的能力与已有事实
 
 一个逻辑 world 中，两台独立机器人、自由刚体和静态环境在同一入步状态上生成接触；双方真实运动及关节/根反力随之更新；整个 world 只有一次接受和可见发布。多案例通过才接受，不能由 G1、Panda 或一个对称静止例代替。
 
-| 当前代码 | 已有能力 | ROB1 的真实缺口 |
+| 研究时基线代码（不是最新实现状态） | 当时已有能力 | 本合同要补的缺口 |
 |---|---|---|
 | [multi_robot_scene.py](../../../src/phymeo/runtime/multi_robot_scene.py) 的 `build_multi_robot_scene/step` | HOST 多固定/浮根树及自由刚体，共同采样、逐参与者计算、全场景一次发布 | 构造明确拒绝非 HOST；不是驻留设备多参与者 |
 | [scene_compiler.py](../../../src/phymeo/builders/scene_compiler.py) 的 `SceneDeclaration/CompiledScene` | 普通、affine、浮根、浮根 affine 导入及编译；每 world 一个 articulation | declaration 要求 world 唯一，不能登记同 world 两个独立模型 |

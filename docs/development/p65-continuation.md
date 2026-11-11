@@ -1,6 +1,18 @@
 # P6.5 人工续作入口
 
-## 当前续作（2026-11-11，N2 / ROB1b完成，COL有限改进）
+## 当前续作（2026-11-11，N3恢复完成，ROB1c限域，COL诊断完成）
+
+先读[本批记录](p65-parity-batch-n3-rob1c-col-trace.md)、[当前全景](phymeo-newton-panorama-2026-11-11.md)和[持续计划](../superpowers/plans/2026-11-11-newton-parity-continuous.md)。下面旧pending不覆盖本节；不建周期任务或新deadline，不重复清理活跃Torch环境或旧证据Junction。
+
+**N3已完成同配置真实CUDA续训资格**：24项通过，两原W8任务更新2保存并重现更新3，GRU非零hidden保存并重现更新2；完整物理/控制、episode、PPO/Adam、normalizer、CPU/CUDA及自有RNG、RNN均绑定。CAS前拒绝保原状态，CAS后失败明确poison。只限同设备/依赖/配置、完整更新边界，不冒学习有效性、任意时刻或跨平台恢复。见[N3报告](p65-mujoco-tyx-n3-report.md)。下一训练主线N4任务/种子/预算与规模测量。
+
+**ROB1c部分资格**：解释按受影响补测联合覆盖20通过/2精度失败，CUDA完整22节点也是20通过/2失败。真实机械臂推自由盒、四类树/图、W1/W2/W4、混合五参与者四storage、整world拒步、晚恢复故障及真实恢复重放均通过；两个双臂工具窗口仍在小净加速度门失败（约2.40e-5/2.44e-5）。已定位实际FP32 PD力与接触力相消，不改载荷/阈值/迭代预算。不能称R03完整128步已通过。见[ROB1c报告](p65-resident-multi-participant-robots-report.md)。
+
+**COL诊断能力已完成**：解释18通过、CUDA14通过；固定六个CUDA失败入口全部成功采集，同状态开启/关闭记录的几何结果一致。四Y是距离退出时法向仍不准；两HN是仿射simplex重建偏离平面1ULP后反复丢弃新支持点，iteration3..63全部float记录相同。几何失败仍在。见[协议](p65-convex-query-failure-diagnostics.md)和[实际发现](p65-convex-query-trace-findings-20261111.md)。下一次修复必须从这两类记录出发，不加容量、不重新盲挂旧FW门。
+
+本批canonical evidence：`artifacts/p65-parity-n3-rob1c-col-trace-20261111-01`。原三个作者均已交接；父继续管理共享接口和唯一串行执行。旧K1三个未跟踪文件保持原样。原安装包资格只按原source复用，本批无新wheel、远程CI、push或发包，整个P6.5/Newton对齐未完成。G1仍沿用下面原46.29秒失败，不重复长窗。
+
+## 历史基线（2026-11-11，N2 / ROB1b完成，COL有限改进）
 
 先读[本批实际结果](p65-parity-batch-n2-rob1b-col1a.md)、[持续推进计划](../superpowers/plans/2026-11-11-newton-parity-continuous.md)、[八方向全景](phymeo-newton-panorama-2026-11-11.md)。用户取消固定截止，按节点验收推进，不建周期任务。原物理/安装验收d6a5c383、产品e3d15707只按原范围复用；本批没有新wheel或远程CI，不重跑旧全套。
 

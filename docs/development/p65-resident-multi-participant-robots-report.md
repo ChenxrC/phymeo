@@ -1,9 +1,68 @@
-# ROB1c articulated participants: authoring handoff
+# ROB1c articulated participants: implementation and qualification
 
-Status: **CODE_READY_TESTS_PENDING / AUTHORING_RELEASE**. This lane ran no
-project import, collection, numerical probe, test, formatter, linter, native
-kernel, build or installation. A text review and Git diff check are not execution
-acceptance. The parent owns the sole execution slot.
+Status: **PARTIALLY_QUALIFIED / R03_PRECISION_FAILURE_RETAINED**. Parent product
+integration uses the original four mechanical solvers; final test source is
+`5af243aa`. No solver, fixture, force, iteration cap or numeric tolerance was
+changed to obtain these results. The authoring-only history below remains history.
+
+## Parent execution results
+
+The canonical evidence root is
+`artifacts/p65-parity-n3-rob1c-col-trace-20261111-01`.
+Interpret coverage combines run38 (R02: 2 passes, symmetric R03 failure),
+run45 (5 further passes, asymmetric R03 and harness failures), run48 (12 repaired
+interface/identity passes) and run51 (the remaining wrong-world negative).
+This is **20 distinct passing nodes and 2 retained R03 failures**, not a claim
+that a final complete interpret invocation passed. CUDA run39 executed all
+22 nodes once after the harness fixes: **20 passed, 2 failed / 195.83 s**.
+
+Qualified cases include the real 40-step eccentric arm/box response with and
+without friction; all four fixed/affine/floating/floating-affine families;
+full physical loads and graph reactions; sparse W1/W2/W4 comparison;
+explicit affine sibling and direct-parent cases; a mixed five-participant,
+four-storage world; whole-world rejection, late publication/restore failures,
+tick19 restore and 21-step successor replay, partial reset and identity rejection.
+The existing <=8 participants / <=33 physical bodies per world and HOST patch
+scope remain. This is not an implicit inter-tree constraint solve.
+
+Both R03 inputs retain the separately frozen small-net-acceleration error gate.
+For the symmetric input at tick113 -> 114, actual motor effort
+1.4364216327667236 N and contact -1.4988677501678467 N produce acceleration
+-0.06244611740112305 versus independent -0.06242212653160095. The FP32 motor
+solve accepts its original normalized PD gate after 512 iterations, but this
+2.39908695e-5 difference fails the additional acceleration comparison.
+The asymmetric input has a corresponding 2.4439086e-5 difference. CUDA reproduces
+these two failures. Acceleration is computed from M inverse times the actual
+published loads, not reconstructed from a velocity difference. No evidence
+supports changing collision routing or hiding the difference in a diagnostic.
+The full 128-step R03 separation/reentry qualification therefore remains open.
+The saved final receipt does not identify an internal solver fixed point or cycle.
+
+First failures are preserved: run20 compared an absolute control diagnostic
+to a dimensionless threshold. The test now independently evaluates both PD
+expressions, clips at the original limits and checks each row's original
+normalized 5e-5 gate. Run45 exposed a non-existent fixed-affine constructor
+keyword and an equality check that included distinct scene ownership; those
+tests now use the existing public binding API and compare all physical
+participants/controls while retaining separate CAS identities. Run48's
+wrong-world capsule was rejected during construction; run51 verifies both
+that rejection and restore rejection of a valid capsule under the wrong key.
+These are harness corrections, not changed physical cases or relaxed budgets.
+
+Affected original ROB1b regression: run40 interpret **11 passed / 57.98 s**,
+run41 CUDA **11 passed / 35.31 s**. They were rerun because the original shared
+transaction/finalization/restore seams changed, not to repeat a same-source
+green suite. The public-only `resident_arm_push.py` example ran its original
+40-step, friction0.25 CUDA window in run42: PASS, complete trajectory saved,
+owned device bytes zero after close. No new wheel qualification is claimed.
+
+`rob-evidence-index.json` SHA256
+`a0af3e60aa110cc95ff5949a9dd1b199ffbbfbd11f3e690fa4d9cfe20f9ab979`
+binds nine actual functional attempts, their raw exits/logs, original input
+snapshots and 89 saved files, including first failures. Execution before/after
+inputs have zero drift. Later current test hashes remain separately recorded;
+old runs are not relabelled as running the repaired source. This was file I/O
+only, with no certificate/producer/integrator rerun or decompressed copies.
 
 ## Implementation boundary
 
@@ -133,7 +192,7 @@ bank access, position prescription or HOST integrator is used. It saves full
 inputs, public states, control/force receipts, all diagnostics, counters and
 failure details, then verifies owned device bytes are zero after close.
 
-Pending, to be run only by the parent's sole serial runner:
+Original authoring command examples (the actual executed coverage is above):
 
 ```text
 python -B -m pytest tests/scale/test_resident_multi_participant_robots.py tests/scale/test_resident_multi_participant_restore.py -q -x --tb=short -p no:cacheprovider

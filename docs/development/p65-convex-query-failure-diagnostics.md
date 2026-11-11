@@ -1,6 +1,28 @@
 # Bounded convex query failure diagnostics
 
-Status: AUTHORING / UNEXECUTED. Parent is the sole serial execution owner.
+Status: **DIAGNOSTIC_PROTOCOL_QUALIFIED / GEOMETRY_FAILURES_REMAIN**.
+Parent tested source `e7c247c1`: run27 interpret 18 passed / 11.08 s
+(14 TYX plus 4 HOST), run28 CUDA 14 passed / 39.89 s (4 already qualified HOST
+nodes deselected). Runs29–34 captured all six predeclared CUDA inputs; all
+returned RAW_EXIT0 and exact same-state ordinary/diagnostic geometry equality.
+No geometry repair is claimed. The canonical root is
+`artifacts/p65-parity-n3-rob1c-col-trace-20261111-01`.
+See [recorded decisions and bounded next hypotheses](p65-convex-query-trace-findings-20261111.md):
+the four Y cases exit on distance before normal accuracy; the two HN cases
+repeat an identical affine-simplex reduction state through the original budget.
+The original 0.002 normal gate and all resource caps remain unchanged.
+
+The changed kernel ABI/default path also passed the frozen affected old
+query/patch/source regression: run43 interpret **18 passed / 10.33 s**, run44
+CUDA **18 passed / 61.32 s**. No complete old geometry matrix was rerun.
+`col-evidence-index.json` SHA256
+`fc683830e6777aee9a4fa99b31706e41c031982e42f97f1aaee698e546a17abb`
+binds the ten actual runs, raw exits/logs, before/after input snapshots and
+42 saved gzip files (six new complete captures plus 36 regression records).
+Execution input drift is zero. Protocol assertions run in the tests themselves;
+the index is file I/O only, not a second geometry verification.
+
+The following interface and wire contract was frozen before execution.
 Baseline: ed6f6d847c3d64abb13ab28f5f7042832c5b2f3e (product 0ea0fee2).
 This node records actual device GJK execution; it does not repair GJK, change
 the 0.002 independent normal gate, or increase any existing resource limit.
@@ -118,8 +140,8 @@ not an oracle. A saved diagnostic does not certify that geometry passed.
 Each invocation writes one fresh gzip with dtype/shape/raw bytes, full query,
 trace, inputs, independent oracle and source hashes. It never reruns the matrix.
 
-Tests first, manually enumerated **14 TYX protocol nodes per backend +4 HOST
-validation nodes**, UNCOLLECTED:
+Tests-first inventory was **14 TYX protocol nodes per backend +4 HOST
+validation nodes**; actual execution counts appear above:
 2 off/on geometry paths, 1 eight-pair selection, 1 bad/nonmember selection,
 2 exact/short memory budgets, 3 late allocation/read/construction faults with
 retry, 3 owner/stale/binding faults, 1 zero-GJK analytic result, 1 closed plan.

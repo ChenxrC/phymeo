@@ -35,6 +35,25 @@ def _rotation(wxyz):
     return quaternion_matrix(np.asarray(wxyz)[None, [1, 2, 3, 0]])[0]
 
 
+def compile_ball_model(mj, model, *, allow_activation=False):
+    """Compose admitted BALL mechanics with existing declared contact solvers."""
+    from ._constraint_model import compile_constraint_model
+    from ._model import _mix_contact
+    from ._normal_model import compile_normal_model, possible_pairs
+
+    # This structural pass is deliberate: contact wrappers select a floating
+    # base for any FREE joint, so BALL must be checked before that dispatch.
+    base = compile_tree_model(
+        mj, model, allow_normal_contacts=True, allow_activation=allow_activation
+    )
+    pairs = possible_pairs(model)
+    if not pairs:
+        return base
+    if any(_mix_contact(model, left, right, mj)[0] == 3 for left, right in pairs):
+        return compile_constraint_model(mj, model, pairs, allow_activation=allow_activation)
+    return compile_normal_model(mj, model, pairs, allow_activation=allow_activation)
+
+
 def compile_tree_model(
     mj, model, *, allow_normal_contacts=False, allow_constraints=False, allow_activation=False
 ):
@@ -73,6 +92,21 @@ def compile_tree_model(
                     issue("ball-spring", "quaternion springs are a separate capability")
                 if int(model.body_jntnum[int(model.jnt_bodyid[joint])]) != 1:
                     issue("ball-same-body", "BALL1 requires a ball to be its body's only joint")
+        if allow_normal_contacts:
+            from ._constraint_model import PAIR_SLOTS
+            from ._model import _mix_contact
+            from ._normal_model import possible_pairs
+
+            pairs = possible_pairs(model)
+            slots = sum(
+                PAIR_SLOTS.get(tuple(map(int, model.geom_type[list(pair)])), 0) for pair in pairs
+            )
+            if pairs and (model.ngeom > 128 or len(pairs) > 16 or slots > 32):
+                issue("ball-contact-capacity", "ball contact permits 128 geoms/16 pairs/32 slots")
+            if pairs and int(model.opt.cone) != int(mj.mjtCone.mjCONE_PYRAMIDAL):
+                issue("ball-contact-cone", "ball contact requires a pyramidal source cone")
+            if any(_mix_contact(model, left, right, mj)[0] not in (1, 3) for left, right in pairs):
+                issue("ball-contact-dimension", "ball contact permits mixed native condim1/3 only")
     if model.nbody > MAX_BODIES:
         issue("body-capacity", "T1 preserves every body and supports at most 128 native bodies")
     for field, code in (
@@ -145,7 +179,7 @@ def compile_tree_model(
             if (int(model.geom_contype[left]) & int(model.geom_conaffinity[right])) or (
                 int(model.geom_contype[right]) & int(model.geom_conaffinity[left])
             ):
-                if has_ball or not allow_normal_contacts:
+                if not allow_normal_contacts:
                     issue("contact-domain", f"T1 has a possible native contact pair {left}/{right}")
                 break
     if issues:

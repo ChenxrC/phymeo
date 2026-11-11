@@ -344,6 +344,26 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
             )
             self._capabilities = MappingProxyType(info)
 
+        if np.any(self._model.jnt_type == self._mj.mjtJoint.mjJNT_BALL) and (
+            getattr(self._plan, "normal_contact", False)
+            or getattr(self._plan, "constraint_contact", False)
+        ):
+            pyramidal = bool(getattr(self._plan, "constraint_contact", False))
+            family = "pyramidal" if pyramidal else "normal"
+            activation = "-filterexact" if hasattr(self._plan, "activation") else ""
+            info.update(
+                domain=f"fixed-ball-scalar-{family}-contact{activation}-v1",
+                contact_dimensions=(1, 3) if pyramidal else (1,),
+                limits="unsupported",
+                joint_limits_supported=False,
+                dry_friction_supported=False,
+                friction="pyramidal-condim1-3-only" if pyramidal else "none",
+                mixed_articulated_constraints_supported=False,
+                floating_mixed_constraints_supported=False,
+                g1_supported=False,
+            )
+            self._capabilities = MappingProxyType(info)
+
     @property
     def counters(self):
         return MappingProxyType({**self._device.counts, **self._extra_counts})

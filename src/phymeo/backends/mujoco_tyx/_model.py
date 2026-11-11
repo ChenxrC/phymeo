@@ -92,15 +92,15 @@ def compile_model(mj, model):
     from ._normal_model import compile_normal_model, possible_pairs
 
     if np.any(model.jnt_type == mj.mjtJoint.mjJNT_BALL):
-        # BALL structure keeps precedence over contact/free routes. Only the
-        # existing scalar actuator stage may compose with this mechanical tree.
+        # Validate BALL structure before choosing its declared contact route;
+        # FREE/limits/direct ball motors cannot bypass the fixed-tree gates.
         if model.na:
             from ._actuator_model import compile_activation_model
 
             return compile_activation_model(mj, model)
-        from ._tree_model import compile_tree_model
+        from ._tree_model import compile_ball_model
 
-        return compile_tree_model(mj, model)
+        return compile_ball_model(mj, model)
     if model.na:
         from ._actuator_model import compile_activation_model
 

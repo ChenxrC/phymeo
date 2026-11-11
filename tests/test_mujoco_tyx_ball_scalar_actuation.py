@@ -411,10 +411,10 @@ def negative_source(feature):
             "<worldbody>",
             '<worldbody><body name="free-owner"><freejoint name="free"/><inertial mass="1" pos="0 0 0" diaginertia=".1 .1 .1"/>',
         ).replace("</worldbody>", "</body></worldbody>")
-    if feature == "contact":
-        return text.replace("<worldbody>", '<worldbody><geom type="plane" size="1 1 .1"/>').replace(
-            'contype="0" conaffinity="0"', 'contype="1" conaffinity="1"'
-        )
+    if feature == "contact-condim4":
+        return text.replace(
+            "<worldbody>", '<worldbody><geom type="plane" size="1 1 .1" condim="4"/>'
+        ).replace('contype="0" conaffinity="0"', 'contype="1" conaffinity="1"')
     if feature in ("scalar-limit", "scalar-dry"):
         extra = 'limited="true" range="-1 1"' if feature == "scalar-limit" else 'frictionloss=".1"'
         return text.replace('name="hinge" type="hinge"', f'name="hinge" type="hinge" {extra}')
@@ -441,7 +441,7 @@ NEGATIVES = (
     "ball-target-none",
     "ball-target-filter",
     "free-target",
-    "contact",
+    "contact-condim4",
     "scalar-limit",
     "scalar-dry",
     "ball-spring",

@@ -358,10 +358,10 @@ NEGATIVE_XML = (
         ),
     ),
     (
-        "contact",
-        ROTOR.replace("<worldbody>", '<worldbody><geom type="plane" size="1 1 .1"/>').replace(
-            'contype="0" conaffinity="0"', 'contype="1" conaffinity="1"'
-        ),
+        "contact-condim4",
+        ROTOR.replace(
+            "<worldbody>", '<worldbody><geom type="plane" size="1 1 .1" condim="4"/>'
+        ).replace('contype="0" conaffinity="0"', 'contype="1" conaffinity="1"'),
     ),
     (
         "three-balls",

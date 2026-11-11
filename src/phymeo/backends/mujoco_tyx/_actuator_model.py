@@ -8,7 +8,7 @@ import numpy as np
 
 from . import MuJoCoTyxIssue, MuJoCoTyxUnsupported
 from ._model import fp32
-from ._tree_model import TyxTreeModel, compile_tree_model
+from ._tree_model import TyxTreeModel, compile_ball_model, compile_tree_model
 
 MAX_ACTUATORS = 32
 MAX_ACTIVATIONS = 32
@@ -126,9 +126,8 @@ def compile_activation_model(mj, model):
 
     candidate_pairs = constraint_pairs(model)
     if np.any(model.jnt_type == mj.mjtJoint.mjJNT_BALL):
-        # Do not let actuator admission route a forbidden BALL contact/free
-        # composition around the fixed-tree structural gates.
-        base = compile_tree_model(mj, model, allow_activation=True)
+        # Preserve fixed BALL structural gates before contact composition.
+        base = compile_ball_model(mj, model, allow_activation=True)
     elif needs_constraints(mj, model, candidate_pairs):
         base = compile_constraint_model(mj, model, candidate_pairs, allow_activation=True)
     else:

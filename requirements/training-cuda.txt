@@ -1,14 +1,22 @@
-# Candidate N1 profile: Windows x86-64 / CPython 3.11 / CUDA 12.6.
-# NOT QUALIFIED: installation and CUDA execution are blocked by disk capacity.
-# Install only into a new isolated environment; preserve .venv-training and all
-# existing physics environments. This is not a complete transitive lock file.
-# Official wheel index/hash checked 2026-11-11; compressed wheel: 2602753280 B.
-torch @ https://download-r2.pytorch.org/whl/cu126/torch-2.14.1%2Bcu126-cp311-cp311-win_amd64.whl#sha256=4cff57ddd28c8bdf8bf2fc473f149c1b5f0063b1a6bd57593288e0bf18459adb
+# N1 local profile: Windows x86-64 / CPython 3.13.3 / CUDA Torch 12.6.
+# Reuse the existing user-site Torch through an isolated venv; do not process
+# that directory's editable .pth files or replace the existing physics pin.
+# See docs/development/p65-environment-refresh-20261111.md for exact provisioning.
+# Provisioned and Torch CUDA arithmetic passed; full N1 qualification pending.
+# This is a version manifest, not a complete transitive/hash lock file.
+--extra-index-url https://download.pytorch.org/whl/cu126
+torch==2.12.0+cu126
 tensordict==0.15.5
 rsl-rl-lib==5.5.2
 numpy==2.4.6
 mujoco==3.3.7
+cuda-python==12.9.10
+cuda-bindings==12.9.10
+cuda-pathfinder==1.8.4
+nvidia-cuda-runtime-cu12==12.9.79
+pytest==9.1.1
 # Provision TYX separately at the existing project pin:
 # 99f6df7c0fd8fdeef77f97df83914da27b64b7ee.
-# Verify its Python ABI, native extension and import origin in the new profile.
+# TYX is pure Python at this pin; CUDA bindings must use the cp313 wheels.
+# Verify all actual import origins before executing N1.
 # N1 does not require torchvision or torchaudio.

@@ -1,4 +1,12 @@
-# N1 CUDA profile：环境资格与当前阻塞
+# N1 CUDA profile：环境资格
+
+## 当前：复用现有 Python 3.13 CUDA Torch
+
+2026-11-11 用户指出现有 Python313 Torch 并授权清理。实际 Torch 2.12.0+cu126 在 GPU 非默认 stream 的矩阵运算已通过，保留用户目录；五个退役 P65 venv 已安全清理，观察回收约0.48GB。父 `.venv-training-cuda313` 已建立，覆盖安装当前合同版本及 cp313 CUDA bindings，保持 TYX 99f6。完整 import/来源/driver/NVRTC 与 N1 物理矩阵仍待串行执行，不能只凭 Torch 运算称 N1 通过。
+
+详见[环境复用与清理记录](p65-environment-refresh-20261111.md)及[当前版本清单](../../requirements/training-cuda.txt)。新环境借用用户 site 的 Torch 文件，用户目录现在是显式依赖；旧 cp311 下载候选不再是当前安装路线，以下历史容量判断保留。
+
+## 历史：新下载 cp311 Torch 的容量阻塞
 
 2026-11-11。状态：PREINSTALL_BLOCKED_DISK；未下载 wheel、未安装环境、未执行 CUDA Torch 或 N1 正负案例。这里只记录真实预检，不把版本/驱动的静态相容判断当作运行资格。
 

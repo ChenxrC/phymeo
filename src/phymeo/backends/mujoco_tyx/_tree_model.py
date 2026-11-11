@@ -6,6 +6,7 @@
 """Static native tree fields only: no configuration-specific M/J/bias freezing."""
 
 from dataclasses import dataclass
+from dataclasses import field as dataclass_field
 
 import numpy as np
 
@@ -26,6 +27,8 @@ class TyxTreeModel(TyxModel):
     joint_data: np.ndarray
     ancestors: np.ndarray
     gravity: np.ndarray
+    # Keyword-only default preserves the independent floating-tree constructor.
+    dof_ids: np.ndarray | None = dataclass_field(default=None, kw_only=True)
 
 
 def _rotation(wxyz):
@@ -40,12 +43,27 @@ def compile_tree_model(
     def issue(code, detail):
         issues.append(Issue(code, detail))
 
+    has_ball = bool(np.any(model.jnt_type == mj.mjtJoint.mjJNT_BALL))
+    allowed = (mj.mjtJoint.mjJNT_HINGE, mj.mjtJoint.mjJNT_SLIDE, mj.mjtJoint.mjJNT_BALL)
     if (
         not 1 <= model.nv <= WIDTH
-        or model.nq != model.nv
-        or not np.all(np.isin(model.jnt_type, [mj.mjtJoint.mjJNT_HINGE, mj.mjtJoint.mjJNT_SLIDE]))
+        or not np.all(np.isin(model.jnt_type, allowed))
+        or (not has_ball and model.nq != model.nv)
+        or (has_ball and model.nq > 10)
     ):
-        issue("joint-domain", "T1 requires fixed-root 1..8 hinge/slide native DOFs")
+        issue("joint-domain", "fixed-root hinge/slide/ball requires nv<=8 and nq<=10")
+    if has_ball:
+        # BALL1 is deliberately not forwarded into any old contact/actuator path.
+        if model.nu or model.na:
+            issue("ball-actuator-domain", "BALL1 has no actuator transmission or activation")
+        if np.any(model.jnt_limited) or np.any(model.dof_frictionloss):
+            issue("ball-constraint-domain", "BALL1 excludes every joint limit and dry-friction row")
+        for joint in range(model.njnt):
+            if model.jnt_type[joint] == mj.mjtJoint.mjJNT_BALL:
+                if model.jnt_stiffness[joint]:
+                    issue("ball-spring", "quaternion springs are a separate capability")
+                if int(model.body_jntnum[int(model.jnt_bodyid[joint])]) != 1:
+                    issue("ball-same-body", "BALL1 requires a ball to be its body's only joint")
     if model.nbody > MAX_BODIES:
         issue("body-capacity", "T1 preserves every body and supports at most 128 native bodies")
     for field, code in (
@@ -118,7 +136,7 @@ def compile_tree_model(
             if (int(model.geom_contype[left]) & int(model.geom_conaffinity[right])) or (
                 int(model.geom_contype[right]) & int(model.geom_conaffinity[left])
             ):
-                if not allow_normal_contacts:
+                if has_ball or not allow_normal_contacts:
                     issue("contact-domain", f"T1 has a possible native contact pair {left}/{right}")
                 break
     if issues:
@@ -135,25 +153,27 @@ def compile_tree_model(
         ).reshape(-1)
     joint_ids = np.empty((model.njnt, 4), np.int32)
     joint_data = np.empty((model.njnt, 7))
-    vectors = np.zeros((9, WIDTH))
+    dof_ids = np.full((WIDTH, 3), -1, np.int32)
+    vectors = np.zeros((9, max(WIDTH, int(model.nq))))
     vectors[4, : model.nq] = model.qpos0
     vectors[7, :] = -np.inf
     vectors[8, :] = np.inf
     for joint in range(model.njnt):
         q, dof = int(model.jnt_qposadr[joint]), int(model.jnt_dofadr[joint])
-        joint_ids[joint] = (
-            int(model.jnt_type[joint] == mj.mjtJoint.mjJNT_HINGE),
-            q,
-            dof,
-            int(model.jnt_bodyid[joint]),
-        )
+        ball = model.jnt_type[joint] == mj.mjtJoint.mjJNT_BALL
+        kind = 2 if ball else int(model.jnt_type[joint] == mj.mjtJoint.mjJNT_HINGE)
+        joint_ids[joint] = (kind, q, dof, int(model.jnt_bodyid[joint]))
         joint_data[joint, :3] = model.jnt_axis[joint]
         joint_data[joint, 3:6] = model.jnt_pos[joint]
         joint_data[joint, 6] = model.qpos0[q]
-        vectors[1, dof] = model.dof_damping[dof]
-        vectors[2, dof] = model.jnt_stiffness[joint]
-        vectors[3, dof] = model.qpos_spring[q]
-        vectors[5, dof] = model.dof_armature[dof]
+        width = 3 if ball else 1
+        for column in range(dof, dof + width):
+            dof_ids[column] = (int(kind != 0), -1 if ball else q, joint)
+            vectors[1, column] = model.dof_damping[column]
+            vectors[5, column] = model.dof_armature[column]
+        if not ball:
+            vectors[2, dof] = model.jnt_stiffness[joint]
+            vectors[3, dof] = model.qpos_spring[q]
         if model.jnt_limited[joint] and not allow_constraints:
             low, high = model.jnt_range[joint]
             margin = model.jnt_margin[joint]
@@ -166,7 +186,9 @@ def compile_tree_model(
         while cursor:
             start = int(model.body_jntadr[cursor])
             for joint in range(start, start + int(model.body_jntnum[cursor])):
-                ancestors[body, int(model.jnt_dofadr[joint])] = 1
+                dof = int(model.jnt_dofadr[joint])
+                width = 3 if model.jnt_type[joint] == mj.mjtJoint.mjJNT_BALL else 1
+                ancestors[body, dof : dof + width] = 1
             cursor = int(model.body_parentid[cursor])
     actuator_ids = np.zeros((max(model.nu, 1), 3), np.int32)
     actuator_values = np.zeros((max(model.nu, 1), 10))
@@ -218,6 +240,7 @@ def compile_tree_model(
         body_joint_range=ranges,
         body_data=fp32(body_data, "native body inertias/frames"),
         joint_ids=joint_ids,
+        dof_ids=dof_ids,
         joint_data=fp32(joint_data, "native joint anchors/axes/refs"),
         ancestors=ancestors,
         gravity=fp32(model.opt.gravity, "gravity"),

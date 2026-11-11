@@ -655,32 +655,140 @@ def test_rotational_step_cannot_call_cpu_warp_or_host_dynamics(mode, monkeypatch
 
 
 @pytest.mark.parametrize("mode", MODES)
-def test_limit_crossing_rejects_whole_coupled_batch_without_stop_repair(mode, tmp_path):
-    _deps()
+def test_limit_crossing_uses_native_soft_limit_without_stop_repair(mode, tmp_path):
+    import test_mujoco_tyx_constraints as mixed
+
+    mj = _deps()
     xml = PENDULUM_XML.replace(
         'ref=".125"', 'ref=".125" limited="true" range="-1 .46" margin=".005"'
     )
     limited = TreeCase("strict-limit", xml, (0.329,), (8.0,), "pendulum")
     keys = (5, 91)
     initial = {5: MuJoCoInitialState([0.454], [8.0]), 91: MuJoCoInitialState([0.2], [0.25])}
+    model = mj.MjModel.from_xml_string(xml)
+    packet = MuJoCoControl(
+        np.zeros(model.nu),
+        qfrc_applied=np.zeros(model.nv),
+        xfrc_applied=np.zeros((model.nbody, 6)),
+    )
+    path = tmp_path / "native-limit-crossing.jsonl"
     with MuJoCoTyxRuntime(
         _compile(limited), mode=mode, world_keys=keys, initial_states=initial
     ) as runtime:
-        before = runtime.snapshot()
-        with pytest.raises(PhysicsStepFailure) as caught:
-            runtime.step(H)
-        assert caught.value.accepted_worlds == dict.fromkeys(keys, False)
-        _assert_same_published(before, runtime.snapshot())
+        assert runtime.capabilities["limits"] == "native-scalar-soft-constraints"
+        start = runtime.snapshot()
+        references = {key: mj.MjData(model) for key in keys}
+        for key, reference in references.items():
+            reference.qpos[:], reference.qvel[:], reference.time = (
+                start[key].q,
+                start[key].v,
+                start[key].time,
+            )
+            _set_native(reference, packet)
         _append(
-            tmp_path / "limit-rejection.jsonl",
-            {
-                "source_xml": xml,
-                "initial": initial,
-                "before": before,
-                "after": runtime.snapshot(),
-                "accepted_worlds": caught.value.accepted_worlds,
-            },
+            path,
+            dict(
+                source_xml=xml,
+                initial=initial,
+                stored_start=start,
+                held_zero_control=packet,
+                steps=2,
+                tolerances=TOL,
+                q_atol=SHORT_Q_ATOL,
+                v_atol=SHORT_V_ATOL,
+                time_atol=TIME_ATOL,
+            ),
         )
+        for tick in range(2):
+            before = runtime.snapshot()
+            expected = {
+                key: mixed.native(mj, model, before[key].q, before[key].v, packet, before[key].time)
+                for key in keys
+            }
+            for reference in references.values():
+                mj.mj_step(model, reference)
+            try:
+                accepted = runtime.step(H)
+                after = runtime.snapshot()
+                _append(
+                    path,
+                    dict(
+                        step=tick + 1,
+                        before=before,
+                        native=expected,
+                        after=after,
+                        accepted_worlds=accepted,
+                        continuous_cpu={
+                            key: dict(q=ref.qpos.copy(), v=ref.qvel.copy(), time=float(ref.time))
+                            for key, ref in references.items()
+                        },
+                    ),
+                )
+                assert accepted == dict.fromkeys(keys, True)
+                for key in keys:
+                    row, oracle = after[key].last_step, expected[key]
+                    np.testing.assert_array_equal(row.input_q, before[key].q)
+                    np.testing.assert_array_equal(row.input_v, before[key].v)
+                    for name in ("ctrl", "qfrc_applied", "xfrc_applied"):
+                        np.testing.assert_array_equal(
+                            getattr(row.stored_control, name), getattr(packet, name)
+                        )
+                    assert row.tick == after[key].tick == tick + 1
+                    assert row.input_time == before[key].time
+                    assert row.output_time == after[key].time
+                    # Complete current T4 row/force/KKT schema, followed by the
+                    # stricter original T1 dynamics and trajectory gates.
+                    mixed.assert_receipt(row, oracle, model)
+                    for name, (rtol, atol) in TOL.items():
+                        actual = (
+                            row.integration_acceleration
+                            if name == "integration_acceleration"
+                            else getattr(row.dynamics, name)
+                        )
+                        np.testing.assert_allclose(
+                            actual, oracle[name], rtol=rtol, atol=atol, err_msg=name
+                        )
+                    np.testing.assert_allclose(row.qacc, oracle["qacc"], rtol=5e-4, atol=8e-4)
+                    np.testing.assert_allclose(
+                        after[key].q, references[key].qpos, rtol=0, atol=SHORT_Q_ATOL
+                    )
+                    np.testing.assert_allclose(
+                        after[key].v, references[key].qvel, rtol=0, atol=SHORT_V_ATOL
+                    )
+                    assert after[key].time == pytest.approx(references[key].time, abs=TIME_ATOL)
+                    if tick == 0 or key == 91:
+                        assert not row.constraints and not oracle["rows"]
+                        np.testing.assert_array_equal(row.qfrc_constraint, np.zeros(model.nv))
+                    else:
+                        assert len(row.constraints) == len(oracle["rows"]) == 1
+                        limit = row.constraints[0]
+                        assert (
+                            limit.constraint_type,
+                            limit.source_id,
+                            limit.side_or_edge,
+                            limit.dof,
+                        ) == (3, 0, 1, 0)
+                        np.testing.assert_array_equal(limit.jacobian, [-1.0])
+                        assert limit.force > 0 and row.qfrc_constraint[0] < 0
+                        assert oracle["rows"][0]["force"] > 0
+                        assert oracle["qfrc_constraint"][0] < 0
+                # A native soft constraint is not an endpoint position clamp.
+                assert after[5].q[0] > model.jnt_range[0, 1]
+            except Exception:
+                _append(
+                    path,
+                    dict(
+                        failure_step=tick + 1,
+                        before=before,
+                        native=expected,
+                        published=runtime.snapshot(),
+                        continuous_cpu={
+                            key: dict(q=ref.qpos.copy(), v=ref.qvel.copy(), time=float(ref.time))
+                            for key, ref in references.items()
+                        },
+                    ),
+                )
+                raise
 
 
 @pytest.mark.parametrize("mode", MODES)
@@ -713,10 +821,6 @@ def test_invalid_control_batch_keeps_all_previous_packets(mode):
             PENDULUM_XML.replace('type="hinge"', 'type="ball"').replace('ref=".125"', ""),
             "ball-actuator-domain",
         ),
-        (
-            FORK_XML.replace('contype="0" conaffinity="0"', 'contype="1" conaffinity="1"'),
-            "contact-domain",
-        ),
     ],
 )
 def test_native_valid_unsupported_features_have_construction_diagnostics(xml, code):
@@ -727,6 +831,91 @@ def test_native_valid_unsupported_features_have_construction_diagnostics(xml, co
     with pytest.raises(MuJoCoTyxUnsupported) as caught:
         MuJoCoTyxRuntime(compilation, mode="interpret")
     assert code in {issue.code for issue in caught.value.issues}
+
+
+@pytest.mark.parametrize("mode", MODES)
+def test_native_sibling_boxes_are_admitted_with_full_tree_dynamics(mode, tmp_path):
+    import test_mujoco_tyx_constraints as mixed
+
+    from phymeo.builders.mujoco_compiler import compile_mujoco_xml
+
+    mj = _deps()
+    # This is exactly the former unsupported XML/default initial state. Its
+    # left/right sibling boxes are separated; the direct-parent pairs remain
+    # filtered. This tests the admitted candidate route, not a new impact case.
+    xml = FORK_XML.replace('contype="0" conaffinity="0"', 'contype="1" conaffinity="1"')
+    compiled = compile_mujoco_xml(xml, require_asset=False)
+    model = mj.MjModel.from_xml_string(xml)
+    packet = MuJoCoControl(
+        np.zeros(model.nu), qfrc_applied=np.zeros(model.nv), xfrc_applied=np.zeros((model.nbody, 6))
+    )
+    reference = mj.MjData(model)
+    path = tmp_path / "admitted-sibling-boxes.jsonl"
+    with MuJoCoTyxRuntime(compiled, mode=mode) as runtime:
+        assert runtime.capabilities["domain"] == "tree-pyramidal-mixed-constraints-v1"
+        assert runtime.capabilities["possible_contact_pairs"] == 1
+        start = runtime.snapshot()[0]
+        reference.qpos[:], reference.qvel[:], reference.time = start.q, start.v, start.time
+        _set_native(reference, packet)
+        _append(
+            path,
+            dict(source_xml=xml, initial=start, held_zero_control=packet, steps=2, tolerances=TOL),
+        )
+        for tick in range(2):
+            before = runtime.snapshot()[0]
+            expected = mixed.native(mj, model, before.q, before.v, packet, before.time)
+            mj.mj_step(model, reference)
+            try:
+                assert runtime.step(H) == {0: True}
+                after = runtime.snapshot()[0]
+                row = after.last_step
+                _append(
+                    path,
+                    dict(
+                        step=tick + 1,
+                        before=before,
+                        native=expected,
+                        after=after,
+                        continuous_q=reference.qpos.copy(),
+                        continuous_v=reference.qvel.copy(),
+                        continuous_time=float(reference.time),
+                    ),
+                )
+                np.testing.assert_array_equal(row.input_q, before.q)
+                np.testing.assert_array_equal(row.input_v, before.v)
+                for name in ("ctrl", "qfrc_applied", "xfrc_applied"):
+                    np.testing.assert_array_equal(
+                        getattr(row.stored_control, name), getattr(packet, name)
+                    )
+                assert row.tick == after.tick == tick + 1
+                assert row.input_time == before.time and row.output_time == after.time
+                mixed.assert_receipt(row, expected, model)
+                _assert_dynamics(row, expected)  # Original stricter T1 field gates.
+                assert row.contacts == () and not expected["contacts"]
+                assert row.constraints == () and not expected["rows"]
+                np.testing.assert_array_equal(row.qfrc_constraint, np.zeros(model.nv))
+                np.testing.assert_allclose(after.q, reference.qpos, rtol=0, atol=SHORT_Q_ATOL)
+                np.testing.assert_allclose(after.v, reference.qvel, rtol=0, atol=SHORT_V_ATOL)
+                assert after.time == pytest.approx(reference.time, abs=TIME_ATOL)
+                # Both original dynamic branches move under their real gravity
+                # and shared-parent dynamics; neither body is fixed for this test.
+                for joint_name in ("j1", "j2"):
+                    jid = mj.mj_name2id(model, mj.mjtObj.mjOBJ_JOINT, joint_name)
+                    dof = int(model.jnt_dofadr[jid])
+                    assert reference.qvel[dof] != 0 and after.v[dof] != 0
+            except Exception:
+                _append(
+                    path,
+                    dict(
+                        failure_step=tick + 1,
+                        before=before,
+                        native=expected,
+                        published=runtime.snapshot(),
+                        continuous_q=reference.qpos.copy(),
+                        continuous_v=reference.qvel.copy(),
+                    ),
+                )
+                raise
 
 
 @pytest.mark.parametrize("mode", MODES)

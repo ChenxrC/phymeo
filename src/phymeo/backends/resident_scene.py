@@ -1,7 +1,8 @@
 """Resident same-world participant registration and bounded common response.
 
-ROB1a layout covers four tree families. ROB1b execution deliberately accepts only
-ordinary floating trees and explicit HOST patch sampling; dynamics stays TYX.
+Four tree families use their existing resident mechanics and explicit HOST patch
+sampling. All mechanical blocks share one entry and world publication; this is
+not an implicit contact-force solve across independent mechanical trees.
 The shared transaction owns every device bank, solve and atomic world publish.
 """
 

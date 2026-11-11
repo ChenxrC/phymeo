@@ -196,6 +196,14 @@ def test_parameter_changes_separate_actor_and_critic():
         parameter_changes(initial, final)
 
 
+def policy_hash(value):
+    digest = hashlib.sha256()
+    for owner in ("actor", "critic"):
+        for name, tensor in sorted(value[owner].items()):
+            digest.update((owner+":"+name+":"+tensor.dtype.str+":"+str(tensor.shape)).encode())
+            digest.update(tensor.tobytes())
+    return digest.hexdigest()
+
 def seed_fixture(tmp_path, *, missing_gradient=False):
     root = tmp_path / "seed"
     root.mkdir()
@@ -212,7 +220,8 @@ def seed_fixture(tmp_path, *, missing_gradient=False):
                             (phase + ".independent", {"tick": tick, "cost": array([0.0104]*2),
                                                      "inspection": None})])
     checks = []
-    hashes = ["1"*64, "2"*64, "3"*64]
+    final_policy = {"actor": {"weight": array([1.1])}, "critic": {"weight": array([2.1])}}
+    hashes = [policy_hash(initial), "2"*64, policy_hash(final_policy)]
     for index in range(2):
         optimization = {"finite_gradient": True, "optimizer_step": index + 1}
         if not missing_gradient:
@@ -236,7 +245,7 @@ def seed_fixture(tmp_path, *, missing_gradient=False):
                                                 "inspection": None})])
     records.extend([("final_policy_and_adam", {"actor": {"weight": array([1.1])},
                                               "critic": {"weight": array([2.1])},
-                                              "optimizer": {"state": {}}, "next_iteration": 2}),
+                                              "optimizer": {"state": {0: {"step": array(2.0, np.float32)}}}, "next_iteration": 2}),
                     ("completion", {"status": "COMPLETE_N4A_SEED", "task": "fixture"})])
     receipt = write_records(root / "trace.jsonl.gz", records)
     common = {"task": "fixture", "seed": 7, "protocol_binding": protocol(),
@@ -282,3 +291,57 @@ def test_seed_refuses_wrong_identity_and_changed_bindings(tmp_path, defect):
         binding["summary_sha256"] = "0"*64
     with pytest.raises(ValueError):
         diagnose_seed(root, binding, expected_task=task, expected_seed=7, budget=budget)
+
+
+def rebind_synthetic_trace(root, binding, edit):
+    path = root / "trace.jsonl.gz"
+    records = [json.loads(line) for line in gzip.decompress(path.read_bytes()).splitlines()]
+    edit(records)
+    for ordinal, record in enumerate(records):
+        record["ordinal"] = ordinal
+    raw = b"".join((json.dumps(record, separators=(",", ":"))+"\n").encode() for record in records)
+    compressed = gzip.compress(raw, mtime=0)
+    path.write_bytes(compressed)
+    receipt = dict(binding["evidence"], records=len(records), logical_bytes=len(raw),
+                   logical_sha256=hashlib.sha256(raw).hexdigest(),
+                   compressed_bytes=len(compressed),
+                   compressed_sha256=hashlib.sha256(compressed).hexdigest())
+    summary = json.loads((root/"summary.json").read_text())
+    summary["evidence"] = receipt
+    payload = json.dumps(summary, sort_keys=True).encode()
+    (root/"summary.json").write_bytes(payload)
+    digest = hashlib.sha256(payload).hexdigest()
+    (root/"publication.json").write_text(json.dumps({"summary_sha256": digest}))
+    binding.update(evidence=receipt, summary_sha256=digest)
+
+
+@pytest.mark.parametrize("defect", ["missing_phase_record", "extra_completion", "request_mismatch"])
+def test_bound_but_structurally_invalid_stream_cannot_return_success(tmp_path, defect):
+    root, binding, budget = seed_fixture(tmp_path)
+    def edit(records):
+        if defect == "missing_phase_record":
+            index = next(i for i, record in enumerate(records) if record["kind"] == "untrained.independent")
+            records.pop(index)
+        elif defect == "extra_completion":
+            records.append(records[-1].copy())
+        else:
+            index = next(i for i, record in enumerate(records) if record["kind"] == "untrained.requested_action")
+            records[index]["payload"] = wire({"tick": 1, "action": np.full((2, 1), 0.5, np.float32)})
+    rebind_synthetic_trace(root, binding, edit)
+    with pytest.raises(ValueError):
+        diagnose_seed(root, binding, expected_task="fixture", expected_seed=7, budget=budget)
+
+
+def test_support_metrics_consume_actual_step_force_rows():
+    stats = PhaseAccumulator(protocol(), (5, 41), steps=2, horizon=2)
+    for tick in (1, 2):
+        value = transition(tick, end=tick == 2)
+        for state in value["states"].values():
+            state["last_step"]["contacts"] = tuple(
+                {"geometry_ids": (0, 1), "active": True, "normal_force": 3.0}
+                for _ in range(4))
+        stats.add(value, support=True)
+    result = stats.finish()["actual_step_support"]
+    assert result["peak_force_N"] == 12.0
+    assert result["tail_step_samples"] == 0
+    assert result["tail_mean_force_N"] is None

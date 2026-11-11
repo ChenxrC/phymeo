@@ -9,7 +9,9 @@ from ._device import TyxDevice
 
 
 class TyxFloatingDevice(TyxDevice):
-    def __init__(self, plan, mode, cache_root, q, v, time, nbody, h, capacities, *, activation=None):
+    def __init__(
+        self, plan, mode, cache_root, q, v, time, nbody, h, capacities, *, activation=None
+    ):
         import tyx as tx
 
         from . import _floating_kernels as kernels

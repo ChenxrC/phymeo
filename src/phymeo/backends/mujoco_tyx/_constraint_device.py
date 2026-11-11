@@ -9,11 +9,15 @@ from ._tree_device import TyxTreeDevice
 
 
 class TyxConstraintDevice(TyxDevice):
-    def __init__(self, plan, mode, cache_root, q, v, time, nbody, h, capacities, *, activation=None):
+    def __init__(
+        self, plan, mode, cache_root, q, v, time, nbody, h, capacities, *, activation=None
+    ):
         from . import _constraint_rows, _constraint_solver, _normal_geometry
 
         self._base_type = TyxFloatingDevice if plan.base.kind == 3 else TyxTreeDevice
-        self._base_type.__init__(self, plan, mode, cache_root, q, v, time, nbody, h, capacities, activation=activation)
+        self._base_type.__init__(
+            self, plan, mode, cache_root, q, v, time, nbody, h, capacities, activation=activation
+        )
         self.capacities = tuple(map(int, capacities))
         self.contacts = (_normal_geometry.contacts, _normal_geometry.contacts_other)
         self.assemble = (_constraint_rows.assemble, _constraint_rows.assemble_other)

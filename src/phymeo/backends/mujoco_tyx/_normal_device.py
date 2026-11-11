@@ -11,7 +11,9 @@ from ._tree_device import TyxTreeDevice
 class TyxNormalDevice(TyxDevice):
     """Cold-start normal QP, five/six launches, one publication boundary."""
 
-    def __init__(self, plan, mode, cache_root, q, v, time, nbody, h, capacities, *, activation=None):
+    def __init__(
+        self, plan, mode, cache_root, q, v, time, nbody, h, capacities, *, activation=None
+    ):
         from . import _normal_geometry, _normal_solver
 
         extended_contacts = None
@@ -20,7 +22,9 @@ class TyxNormalDevice(TyxDevice):
 
             extended_contacts = _normal_extended_geometry.extended_contacts
         self._base_type = TyxFloatingDevice if plan.base.kind == 3 else TyxTreeDevice
-        self._base_type.__init__(self, plan, mode, cache_root, q, v, time, nbody, h, capacities, activation=activation)
+        self._base_type.__init__(
+            self, plan, mode, cache_root, q, v, time, nbody, h, capacities, activation=activation
+        )
         self.capacities = tuple(map(int, capacities))
         self.contacts = (_normal_geometry.contacts, _normal_geometry.contacts_other)
         self.normal_solve = _normal_solver.solve

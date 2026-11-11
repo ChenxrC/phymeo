@@ -35,7 +35,9 @@ def allocate(device, activation):
     device.activation_values = device._buffer(device.plan.activation.values)
     device.activation_derivative = device._buffer(np.zeros_like(activation))
     device.integration_derivative = device._buffer(np.zeros_like(activation))
-    device.actuator_fields = device._buffer(np.zeros((device.nworld, device.plan.nu, 4), np.float32))
+    device.actuator_fields = device._buffer(
+        np.zeros((device.nworld, device.plan.nu, 4), np.float32)
+    )
 
 
 def advance(device, old, new):
@@ -43,11 +45,24 @@ def advance(device, old, new):
     if not device.activation_enabled:
         return
     device.activation_kernels[old](
-        device.nworld, device.plan.nu, device.plan.activation.na, device.plan.nv,
-        device.h, device.activation_ids, device.activation_values,
-        device.q[old], device.v[old], device.controls, device.act[old], device.act[new],
-        device.activation_derivative, device.integration_derivative,
-        device.actuator_fields, device.actuator, device.applied, device.status,
+        device.nworld,
+        device.plan.nu,
+        device.plan.activation.na,
+        device.plan.nv,
+        device.h,
+        device.activation_ids,
+        device.activation_values,
+        device.q[old],
+        device.v[old],
+        device.controls,
+        device.act[old],
+        device.act[new],
+        device.activation_derivative,
+        device.integration_derivative,
+        device.actuator_fields,
+        device.actuator,
+        device.applied,
+        device.status,
         mode=device.mode,
     )
     device.counts["completed_kernels"] += 1
@@ -56,12 +71,15 @@ def advance(device, old, new):
 def download(device, result, old, target):
     """Return actual owned bytes; accepted publication stays in the runtime."""
     if device.activation_enabled:
-        result.update({
-            name: device._get(buffer)
-            for name, buffer in (
-                ("act", device.act[target]), ("input_act", device.act[old]),
-                ("activation_derivative", device.activation_derivative),
-                ("integration_derivative", device.integration_derivative),
-                ("actuator_fields", device.actuator_fields),
-            )
-        })
+        result.update(
+            {
+                name: device._get(buffer)
+                for name, buffer in (
+                    ("act", device.act[target]),
+                    ("input_act", device.act[old]),
+                    ("activation_derivative", device.activation_derivative),
+                    ("integration_derivative", device.integration_derivative),
+                    ("actuator_fields", device.actuator_fields),
+                )
+            }
+        )

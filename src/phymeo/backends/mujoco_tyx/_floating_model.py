@@ -22,7 +22,9 @@ class TyxFloatingModel(TyxTreeModel):
     root_body: int
 
 
-def compile_floating_model(mj, model, *, allow_normal_contacts=False, allow_constraints=False, allow_activation=False):
+def compile_floating_model(
+    mj, model, *, allow_normal_contacts=False, allow_constraints=False, allow_activation=False
+):
     issues = []
 
     def issue(code, detail):
@@ -99,9 +101,11 @@ def compile_floating_model(mj, model, *, allow_normal_contacts=False, allow_cons
         if (
             model.actuator_trntype[actuator] != mj.mjtTrn.mjTRN_JOINT
             or not 1 <= joint < model.njnt
-            or model.actuator_dyntype[actuator] not in (
+            or model.actuator_dyntype[actuator]
+            not in (
                 (mj.mjtDyn.mjDYN_NONE, mj.mjtDyn.mjDYN_FILTEREXACT)
-                if allow_activation else (mj.mjtDyn.mjDYN_NONE,)
+                if allow_activation
+                else (mj.mjtDyn.mjDYN_NONE,)
             )
             or model.actuator_gaintype[actuator] != mj.mjtGain.mjGAIN_FIXED
             or model.actuator_biastype[actuator]

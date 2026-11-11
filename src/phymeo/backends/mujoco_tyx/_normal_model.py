@@ -111,9 +111,13 @@ def compile_normal_model(mj, model, pairs, *, allow_activation=False):
     if issues:
         raise MuJoCoTyxUnsupported(issues)
     base = (
-        compile_floating_model(mj, model, allow_normal_contacts=True, allow_activation=allow_activation)
+        compile_floating_model(
+            mj, model, allow_normal_contacts=True, allow_activation=allow_activation
+        )
         if np.any(model.jnt_type == mj.mjtJoint.mjJNT_FREE)
-        else compile_tree_model(mj, model, allow_normal_contacts=True, allow_activation=allow_activation)
+        else compile_tree_model(
+            mj, model, allow_normal_contacts=True, allow_activation=allow_activation
+        )
     )
     geom_data = np.zeros((model.ngeom, 15))
     for geom in range(model.ngeom):

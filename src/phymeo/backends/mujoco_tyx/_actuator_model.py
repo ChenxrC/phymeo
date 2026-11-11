@@ -52,7 +52,9 @@ def compile_activation_model(mj, model):
         issues.append(MuJoCoTyxIssue(code, detail))
 
     if not 1 <= int(model.nu) <= MAX_ACTUATORS or not 1 <= int(model.na) <= MAX_ACTIVATIONS:
-        issue("activation-capacity", "stateful TYX requires 1..32 actors and activation coordinates")
+        issue(
+            "activation-capacity", "stateful TYX requires 1..32 actors and activation coordinates"
+        )
     if issues:
         raise MuJoCoTyxUnsupported(issues)
     ids = np.zeros((int(model.nu), 9), np.int32)

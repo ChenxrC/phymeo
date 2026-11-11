@@ -174,6 +174,7 @@ def test_host_fake_release_retains_unknown_owner(phase,ownership,monkeypatch,tmp
     import gc
     import json
     import weakref
+    from types import SimpleNamespace
     from phymeo.backends.mujoco_tyx._resources import quarantined_resources
     events=[]
     runtime=_FakeReleaseOwner("runtime",events)
@@ -188,7 +189,8 @@ def test_host_fake_release_retains_unknown_owner(phase,ownership,monkeypatch,tmp
     data=reference().make_case("face_above")
     extra={} if ownership=="owned" else {"runtime":runtime}
     batch=new_batch("cuda",data,**extra)
-    previous=object()  # HOST protocol sentinel, not a claimed physical packet.
+    # HOST protocol sentinel, not a claimed physical packet.
+    previous=SimpleNamespace(pair_origins_relative_m=np.empty((0,3)),inputs={},uploaded={},conversion_deltas={},raw={})
     batch._last_packet=previous
     resources=batch._new_query_resources()
     for _ in range(3):
@@ -208,6 +210,7 @@ def test_host_fake_release_retains_unknown_owner(phase,ownership,monkeypatch,tmp
         with pytest.raises(BaseExceptionGroup,match="UNKNOWN_RELEASE"):
             operation()
     assert all(buffer.calls==1 for buffer in buffers)
+    assert buffers[0].released and buffers[2].released
     assert runtime.calls==0 and batch.last_packet is previous
     assert resources in quarantined_resources()
     assert resources._runtime.owner.runtime is runtime
@@ -217,7 +220,7 @@ def test_host_fake_release_retains_unknown_owner(phase,ownership,monkeypatch,tmp
                 ledger=resources.state,runtime_calls=runtime.calls,buffer_calls=[b.calls for b in buffers],
                 side_effect_completed=buffers[1].released,old_packet_retained=True)
     # Global ledger quarantine, not this batch variable, keeps opaque owners.
-    del batch,proxy,buffers,runtime,resources
+    del operation,extra,batch,proxy,buffers,runtime,resources
     gc.collect()
     assert retained() is not None and retained_runtime() is not None
     (tmp_path/"fake-release.json").write_text(json.dumps(record),encoding="utf-8")
@@ -238,7 +241,7 @@ def test_cuda_post_free_error_is_sticky_and_does_not_publish(monkeypatch,tmp_pat
         def capture(resources,owner):
             if resources is batch._query_resources:
                 captured.append(owner)
-                if not selected:
+                if len(captured)==4 and not selected:
                     selected.append(owner)
                     real_free=owner.array.free
                     def late_free():
@@ -260,7 +263,7 @@ def test_cuda_post_free_error_is_sticky_and_does_not_publish(monkeypatch,tmp_pat
             assert resources.failures[0].owner is selected[0]
             assert all(owner.released for owner in captured if owner is not selected[0])
             assert not selected[0].released
-            assert batch.stats["live_bytes"]==data["candidates"].shape[0]*5*3*4
+            assert batch.stats["live_bytes"]==data["candidates"].shape[0]*2*4
             assert not actual_runtime.closed
             for operation in (lambda:batch.query(**data),batch.close,batch.close):
                 with pytest.raises(BaseExceptionGroup,match="UNKNOWN_RELEASE"):

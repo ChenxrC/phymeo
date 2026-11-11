@@ -3,7 +3,6 @@
 No collision response or closed-solid classification. A packet describes the
 supplied candidate membership, not a certificate that a broad phase was complete.
 """
-from contextlib import ExitStack
 from dataclasses import dataclass
 import hashlib
 import json
@@ -11,6 +10,7 @@ from threading import RLock
 from types import MappingProxyType
 import uuid
 import numpy as np
+from .mujoco_tyx._resources import DeviceResources
 
 
 _U=2.0**-24
@@ -53,6 +53,30 @@ def _binding(metadata,arrays):
         digest.update(json.dumps(value.shape).encode())
         digest.update(value.tobytes())
     return digest.hexdigest()
+
+
+class _RuntimeLease:
+    """Keep the actual runtime alive while a query owns dependent buffers."""
+    def __init__(self,runtime):
+        self.runtime=runtime
+        self.closed=False
+    def close(self):
+        # Query cleanup releases this lease, never the batch/caller runtime.
+        self.closed=True
+
+
+class _BufferLease:
+    """Only a normally returned opaque free establishes released byte count."""
+    def __init__(self,array,is_cuda,size,counts):
+        self.array,self.is_cuda,self.size,self.counts=array,is_cuda,size,counts
+        self.released=False
+    def free(self):
+        if self.released:
+            return
+        if self.is_cuda:
+            self.array.free()
+        self.released=True
+        self.counts["live_bytes"]-=self.size
 
 
 @dataclass(frozen=True)
@@ -106,6 +130,9 @@ class DeviceTriangleDistanceBatch:
         self._capacities=capacities
         self._owned_runtime=runtime is None
         self._runtime=runtime if runtime is not None else tx.Runtime(backend="cuda" if mode=="cuda" else "cpu",cache_root=cache_root)
+        self._runtime_resources=DeviceResources()
+        self._runtime_resources.set_runtime(self._runtime if self._owned_runtime else _RuntimeLease(self._runtime))
+        self._query_resources=None
         self._owner=uuid.uuid4().hex
         self._generation=0
         self._lock=RLock()
@@ -139,11 +166,25 @@ class DeviceTriangleDistanceBatch:
     def __exit__(self,*_):
         self.close()
 
+    def _check_release(self):
+        if self._query_resources is not None and not self._query_resources.closed:
+            # UNKNOWN_RELEASE reports the original error without retrying free.
+            self._query_resources.close()
+        if self._runtime_resources.state=="UNKNOWN_RELEASE":
+            self._runtime_resources.close()
+
+    def _new_query_resources(self):
+        self._check_release()
+        resources=DeviceResources()
+        resources.set_runtime(_RuntimeLease(self._runtime))
+        self._query_resources=resources
+        return resources
+
     def close(self):
         with self._lock:
+            self._check_release()
             if not self._closed:
-                if self._owned_runtime:
-                    self._runtime.close()
+                self._runtime_resources.close()
                 self._closed=True
 
     def _prepare(self,*,mesh_key,revision,vertex_ids,facet_ids,faces,vertices,segment_ids,segments,radii,candidates,origin_m,snapshot_id):
@@ -214,7 +255,7 @@ class DeviceTriangleDistanceBatch:
         metadata=dict(mesh_key=mesh_key,revision=revision,snapshot_id=snapshot_id)
         return metadata,arrays,_binding(metadata,arrays),uploaded,deltas,frames,scales
 
-    def _allocate(self,stack,value=None,*,shape=None,dtype=None):
+    def _allocate(self,resources,value=None,*,shape=None,dtype=None):
         if value is not None:
             shape,dtype=value.shape,value.dtype
         size=int(np.prod(shape,dtype=np.int64))*np.dtype(dtype).itemsize
@@ -225,12 +266,8 @@ class DeviceTriangleDistanceBatch:
         self._counts["allocations"]+=1
         self._counts["live_bytes"]+=size
         self._counts["peak_owned_bytes"]=max(self._counts["peak_owned_bytes"],self._counts["live_bytes"])
-        def release():
-            try:
-                if self._mode=="cuda": array.free()
-            finally:
-                self._counts["live_bytes"]-=size
-        stack.callback(release)
+        resources.add_buffer(_BufferLease(array,self._mode=="cuda",size,self._counts))
+
         if self._mode=="cuda" and value is not None:
             self._counts["uploads"]+=1
             self._counts["uploaded_bytes"]+=size
@@ -345,6 +382,7 @@ class DeviceTriangleDistanceBatch:
 
     def query(self,**inputs):
         with self._lock:
+            self._check_release()
             if self._closed:
                 raise RuntimeError("batch is closed")
             prepared=self._prepare(**inputs)
@@ -355,16 +393,17 @@ class DeviceTriangleDistanceBatch:
             self._counts["attempts"]+=1
             self._last_attempt_raw=None
             raw={}
+            resources=self._new_query_resources()
             try:
-                with ExitStack() as stack:
+                try:
                     with self._tx.use_runtime(self._runtime):
                         if count:
                             from ._tyx_triangle_distance import triangle_distances
-                            device={key:self._allocate(stack,value) for key,value in prepared[3].items()}
-                            outputs={"candidates":self._allocate(stack,shape=(count,18,11),dtype=np.float32),
-                                     "valid":self._allocate(stack,shape=(count,18),dtype=np.int32),
-                                     "summary":self._allocate(stack,shape=(count,16),dtype=np.float32),
-                                     "meta":self._allocate(stack,shape=(count,7),dtype=np.int32)}
+                            device={key:self._allocate(resources,value) for key,value in prepared[3].items()}
+                            outputs={"candidates":self._allocate(resources,shape=(count,18,11),dtype=np.float32),
+                                     "valid":self._allocate(resources,shape=(count,18),dtype=np.int32),
+                                     "summary":self._allocate(resources,shape=(count,16),dtype=np.float32),
+                                     "meta":self._allocate(resources,shape=(count,7),dtype=np.int32)}
                             self._counts["launches"]+=1
                             triangle_distances(count,generation,device["geometry"],device["radii"],device["scales"],device["owners"],
                                                outputs["candidates"],outputs["valid"],outputs["summary"],outputs["meta"],mode=self._mode)
@@ -380,6 +419,8 @@ class DeviceTriangleDistanceBatch:
                                  "summary":np.empty((0,16),np.float32),"meta":np.empty((0,7),np.int32)}
                             self._last_attempt_raw=_mapping(raw)
                         packet=self._build(prepared,raw,generation)
+                finally:
+                    resources.close()
                 # Resource cleanup and every read/validation must succeed first.
                 self._last_packet=packet
                 self._generation=generation
@@ -391,6 +432,7 @@ class DeviceTriangleDistanceBatch:
 
     def require_current(self,packet,**inputs):
         with self._lock:
+            self._check_release()
             if self._closed:
                 raise RuntimeError("batch is closed")
             if not isinstance(packet,TriangleDistancePacket) or packet.owner!=self._owner:

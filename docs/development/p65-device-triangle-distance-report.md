@@ -54,17 +54,18 @@ The adapter checks original owner/generation, all slot validity, finite paramete
 
 ## Authored node map, not collection
 
-Manual enumeration: **24 geometry + 20 protocol identities per backend = 44 per backend / 88 with both modes**, UNCOLLECTED. Geometry contains declared conditioning/degenerate negatives, not 24 claims of resolved geometry.
+Original enumeration was 24 geometry +20 protocol identities per backend (88 total). Following the pre-execution resource finding, the current manual enumeration is **44 interpret +45 CUDA +4 HOST-only fake-owner identities =93 total**, UNCOLLECTED. Geometry contains declared conditioning/degenerate negatives, not 24 claims of resolved geometry.
 
 - D01 six: face_above, face_below, edge, vertex, beyond_edge, zero_axis.
 - D02 six: parallel_face, oblique_endpoint, edge_edge, extension_miss, through_face, parallel_edge.
 - D03 six: rotation, large_translation with distant caller origin, reverse_winding, shared_edge, crease, deformed_snapshot.
 - D04 six: bvh_pruned with two co-nearest original facets and six pruned faces, concave_faces, near_parallel_clear, near_parallel_conditioning, zero_area, distinct_segment_owners.
-- Protocol20: capacity4, malformed/preflight8, real late-failure/retry3, snapshot+owner1, conversion/resolution1, no-HOST-search+coplanar/direction-band1, empty1, borrowed-runtime1.
+- Original protocol20 per backend: capacity4, malformed/preflight8, real late-failure/retry3, snapshot+owner1, conversion/resolution1, no-HOST-search+coplanar/direction-band1, empty1, borrowed-runtime1.
+- Added resource protocol: HOST-only fake owner before/after free side effect crossed with owned/borrowed runtime (4); actual CUDA successful free followed by an injected exception (1). These are additional nodes, not claimed to fit the original44.
 
 The ordinary positives independently check full finite memberships, original IDs, all candidate reconstructions and ties, distance, both witnesses and normal when defined. Geometry fixtures are not changed to obtain a status. Fixed late failures tamper ownership or barycentrics, or fail the final download; none use a fake physics result as a successful retry.
 
-Expected complete saved inventory if the authored suite passes: **33 gzip JSON files per backend**: geometry24, capacity4, late-failure3, conversion/resolution1, no-HOST-search1. The other11 protocol identities have no promised trajectory artifact. Every saved array uses exact dtype/shape/byte encoding, including actual rejected raw buffers; no nonfinite-to-finite substitution. The same BVH readback and its leaf/query arrays, IDs and device counters are embedded in the bvh_pruned record.
+Original geometry/protocol inventory remains **33 gzip JSON files per backend**: geometry24, capacity4, late-failure3, conversion/resolution1, no-HOST-search1. The other11 original protocol identities have no promised trajectory artifact. The additional resource nodes save four HOST `fake-release.json` records and one CUDA `cuda_release_unknown.json.gz`: current totals are33 interpret gzip,34 CUDA gzip, plus4 HOST JSON. Every saved array uses exact dtype/shape/byte encoding, including actual rejected raw buffers; no nonfinite-to-finite substitution. The same BVH readback and its leaf/query arrays, IDs and device counters are embedded in the bvh_pruned record.
 
 ## Source-only checkpoints and next commands
 
@@ -76,10 +77,22 @@ Source snapshot before final report commit:
 
 | File | SHA256 |
 |---|---|
-| src/phymeo/backends/_device_triangle_distance.py | 85304c97ab93be0bfd8e754655f42a03b849f18ecaf2e9cc05c4dd3e8b24a854 |
+| src/phymeo/backends/_device_triangle_distance.py | 68c1a086c863edcc9b65b035124880079ae361ee12d998857a8ac48793461a56 |
 | src/phymeo/backends/_tyx_triangle_distance.py | 820ab1e3fe0e384a72d0117ba0affd7e749f677c9ee58086bb46552eb14b3c94 |
 | tests/reference_newton/rr/device_triangle_distance_reference.py | af95f6e2019d25a5fd74a458e9758e61e94cc5c7ec6eff3192c00f8efebc5a32 |
 | tests/collision/test_device_triangle_distance.py | 0510b9929daf1718ff888a3d343866328aa47f8b8608acee9d983db0d6e72fb2 |
-| tests/collision/test_device_triangle_distance_protocol.py | 657ebbcfdeb15e9913b6ae888a150d278ef3b2e0a16e57ece4e282cd76f6901b |
+| tests/collision/test_device_triangle_distance_protocol.py | 1dec223ff692a1c75a794701b62edb1b188b894218e576915d7a8593405310b9 |
 
 Only the six approved NEW files differ from base. No old source/test/pin/export or rejected B-point implementation changed. Final validation and limited acceptance belong to the parent; no authoring result here means device qualification or complete COL2.
+
+## Pre-execution resource review correction
+
+Parent identified that the original ExitStack callback subtracted live bytes in a finally block even when opaque `array.free()` threw, losing the owner and allowing later runtime close. This was a source-review finding before any execution, not a failed numerical test. `2ad6c988` first authored the five additional resource nodes. The narrow product change imports the already accepted `mujoco_tyx._resources.DeviceResources` without modifying that module.
+
+Each query now owns one DeviceResources ledger. Its runtime owner is a no-op lease retaining the actual batch runtime; normal query cleanup does not close that runtime. Buffer proxy `free()` calls the actual native free and decreases `live_bytes` only after normal return. If free throws before or after an unknown native side effect, DeviceResources retains the proxy/actual owner in its existing global quarantine, retains the runtime lease, attempts independent siblings, and reports sticky UNKNOWN_RELEASE. `live_bytes` conservatively includes those unknown owners; it is not a claim that an injected post-free fault physically leaked the same number of bytes.
+
+Later query, require_current and close first consult the retained ledger, report its original unknown release, and do not retry free or close the dependent runtime. Batch runtime ownership is also recorded in DeviceResources; owned runtime-close ambiguity is sticky through the same accepted mechanism. Borrowed runtime close uses only a no-op lease. Successful normal cleanup and the original late-readback retry path retain their behavior.
+
+The four HOST fake-owner nodes exercise before/after native-side-effect uncertainty with both ownership modes, three independent buffers, nonzero uncertain bytes, old-packet retention, no duplicate callback and strong quarantine ownership after dropping the batch. They use a clearly marked HOST packet sentinel, not fake accepted geometry. The CUDA node first produces an actual accepted packet, then injects an error only after the fourth buffer's real free has returned; later independent siblings must still free normally and the old packet must remain published. All future batch query/close attempts stay sticky. Only test-side knowledge that every real free completed permits explicitly retiring its held actual runtime after assertions; production does not recover or clear the unknown ledger.
+
+Parent should run the4 HOST fake nodes once (name filter `host_fake_release`), then the mode selections. The original `-k interpret` selects44; `-k cuda` now selects45 including the additional resource seam. The kernel, geometry literals, independent oracle, capacities and original distance/witness/normal gates did not change in this correction. All additional checks remain UNEXECUTED.

@@ -1,5 +1,44 @@
 # BALL-C fixed-root contact composition qualification
 
+## Parent acceptance — 2026-11-12 06:10
+
+**ACCEPTED within the declared fixed-root BALL contact composition.** The authoring
+history below remains unchanged; its TESTS_PENDING status is historical.
+
+Parent product/test snapshot `1ce57489` composes the existing normal/pyramidal
+solvers with the existing complete BALL mechanics and scalar actuator stage.
+It changes admission, dispatch and capability labels; it adds no mathematical
+kernel, hidden CPU physics fallback, new iteration budget or relaxed gate.
+
+- run284: 33 HOST/interpret passed, 19 CUDA nodes deselected, 42.03 s.
+- run285: 19 CUDA passed, 33 HOST/interpret nodes deselected, 16.70 s.
+- run286: six affected old no-contact/admission cases passed, 2.02 s.
+- run287/288: a fresh external wheel was built and installed. run289 confirms
+  all 509 product files are byte-identical between source, wheel and installation.
+- run291/292: the independent installed consumer passed in interpret and CUDA,
+  each with 64 actual worldsteps and all Phymeo imports under the installation.
+  These include continuous contact, force/motion/activation checks, clone,
+  restore/A-B, selected reset and stale-CAS refusal. Device late-failure injection
+  is covered by the source C6 tests, not claimed as installed fault injection.
+
+All original C1–C6 declarations and numerical gates were fixed before execution.
+The only pre-test changes were import sorting/formatting; the old blanket contact
+rejections were replaced by still-unsupported condim4 negatives. First lint/format
+failures (277/278) remain recorded. Task283 stopped during source snapshot creation
+because two guessed kernel filenames were absent; no Python/test process started.
+The corrected complete selection ran once in284/285, with no physics failure or
+fixture tuning. Final static checks281/282 passed for all nine changed Python files.
+
+Evidence: `artifacts/p65-parity-until-0720-20261112-01`, runs277–292 and
+`wheel-source-staging-02.json` / `wheel-parity-02/summary.json`. The final wheel
+snapshot also includes the separately qualified control-window evaluator repair;
+run290 passed its 192-worldstep installed CUDA consumer.
+
+This adds primitive condim1/pyramidal3 contacts to fixed-root BALL/HINGE/SLIDE
+trees with the declared scalar NONE/FILTEREXACT actors. Limits, dry friction,
+direct BALL motors, FREE+BALL, broader mesh contact and G1 trajectory completion
+remain outside this acceptance. It does not complete Newton parity.
+
 Status: CODE_READY_TESTS_PENDING / AUTHORING_SLOT_RELEASED after final report commit.
 2026-11-12. No import, collection, numerical probe, pytest, formatter, lint,
 build or native execution was performed by this author. Parent owns four product

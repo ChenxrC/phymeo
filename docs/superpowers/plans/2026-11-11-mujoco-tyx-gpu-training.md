@@ -1,7 +1,7 @@
 # GPU 训练连接：后续实施计划
 
 日期：2026-11-11。状态：**N1_QUALIFIED_INFERENCE / N2_SHORT_CUDA_PPO_QUALIFIED**；N3–N4 尚未实施。N2完整新组23pass，两个W8任务各4次真实PPO更新/512 transitions，另GRU8步/64 transitions及一次更新通过；详[实际N2结果](../../development/p65-mujoco-tyx-n2-report.md)。下一训练节点为N3组合checkpoint，下面N2条目保留原验收合同。
-用户已取消08:00截止，本计划是[持续推进总计划](2026-11-11-newton-parity-continuous.md)的主线。父复用现有 Python313 CUDA Torch，建立隔离 profile，N1 实际完成22 passed、1单GPU硬件条件未测，八条轨迹共784个设备 world-steps。见[实际验收与范围](../../benchmarks/p65-cuda-policy-n1.md)；[早期准备记录](../../benchmarks/p65-cuda-policy-n1-preparation.md)及原容量失败仅作历史。CPU训练环境、TYX pin和原物理预算保持。下一节点为N2真实device VecEnv/RSL PPO；N1推理闭环不等于优化器训练。父在既有授权内冻结文件归属并调度唯一串行执行槽，隔离工作树可按明确边界并行纯编码。
+用户已取消08:00截止，本计划是[持续推进总计划](2026-11-11-newton-parity-continuous.md)的主线。父复用现有 Python313 CUDA Torch，建立隔离 profile，N1 实际完成22 passed、1单GPU硬件条件未测，八条轨迹共784个设备 world-steps。见[实际验收与范围](../../benchmarks/p65-cuda-policy-n1.md)；[早期准备记录](../../benchmarks/p65-cuda-policy-n1-preparation.md)及原容量失败仅作历史。CPU训练环境、TYX pin和原物理预算保持。N2真实device VecEnv/RSL PPO已通过本页顶部的有限资格；下一节点N3验证组合训练恢复。父在既有授权内冻结文件归属并调度唯一串行执行槽，隔离工作树可按明确边界并行纯编码。
 
 依据：[已审阅的源码调研](../../development/mujoco-tyx-gpu-training-research.md)。原方案制定只读取该报告及相关源码，调研基线 d9e5bf33、接口核对基线19feafc2；本批新环境来源与静态结果另见上述准备结果。以下源码路径均相对父仓库 C:/Users/38347/.codex/worktrees/p65-parallel-integration/phymeo；具体验收绑定执行时冻结源码。
 

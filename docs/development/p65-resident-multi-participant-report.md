@@ -1,6 +1,18 @@
-# ROB1a participant registration and layout
+# Resident participant registration and common response
 
-Current parent status (2026-11-11): **HOST_QUALIFIED_REGISTRATION**. The complete
+## ROB1b parent qualification — 2026-11-11
+
+**ROB1b_R01_INTERPRET_CUDA_QUALIFIED.** Product `08042d21` adds the shared transaction service and public `ResidentSceneBatch` API. The complete new two-file group passed **11 interpret tests / 53.59 s** and **11 CUDA tests / 32.79 s**, RAW_EXIT=0, on each backend's first functional run. Parent review also found and repaired stale-source validation blocking resource release; its new regression passed in both groups. Initial import/format failures are retained and final static checks passed.
+
+Four continuous R01 variants each run 40 steps, covering W1/W2/W4, sparse identities, reversed registration and a common rigid transform: 320 logical-world steps per backend, with two independently moving bodies per world. Tests independently check the radial spring law, initial 2 N opposing forces, actual nonzero incoming velocities, M/J/b, complete device diagnostics, momentum and state/tick history. Each storage performs one entry mechanics stage, one solve and one finalize per step. This is common-entry known contact loading with block-diagonal participant mass, not an implicit unknown-force cross-tree QP.
+
+Late participant rejection retains every participant in its logical world while an unaffected world advances. Late receipt exceptions retain the entire batch and previously submitted controls. Tests cover actual retry, shared site capacity, global candidate preflight, complete-world restore and replay, selected reset, source/owner/CAS failures, and close after source invalidation. Ten full gzip evidence payloads per backend and all 15 input file bindings are indexed by `artifacts/p65-parity-n2-rob1b-col1a-20261111-01/rob1b-evidence-index.json`; this index performs file I/O only, with physical assertions belonging to the original tests.
+
+Current execution domain: ordinary floating trees, <=8 participants and <=33 physical bodies per world, explicit HOST full allowed-pair candidates and HOST patch sampling. All actual mechanics, J projection and integration remain TYX. Only R01 and the stated transaction cases are qualified; R02 arm/free-box, R03 two arms/tool, R04 mixed graph families, late restore upload/check faults and ROB1d package consumption remain later nodes. No broad general-robot or device-patch qualification is inferred. Earlier registration and authoring records below are history.
+
+## ROB1a historical qualification
+
+Earlier parent status (2026-11-11): **HOST_QUALIFIED_REGISTRATION**. The complete
 focused file passed **33 tests in 1.13 s, RAW_EXIT=0** (run09). All three new Python
 files passed final Ruff/format checks; `b6a6534d` contains the formatting-only
 normalization. Source snapshots, raw logs and the source/evidence receipt are in

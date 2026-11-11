@@ -84,4 +84,3 @@ The example records every transition, full physical receipts, original controls,
 episodes/frames, raw policy actions, and each update's loss, parameter hashes,
 finite gradient checks and actual optimizer steps. CPU diagnostics are labelled
 separately from device policy input. No N2 result is claimed by this document.
-

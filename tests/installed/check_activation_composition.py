@@ -329,57 +329,94 @@ def native_fields(mj, model, data):
 
 def provenance(installed_root, *, preflight=False):
     """Fail on checkout discovery without rewriting the caller's environment."""
+
     def is_source_entry(path):
-        return (
-            (path / "pyproject.toml").is_file() and (path / "src" / "phymeo").is_dir()
-        ) or (
-            path.name.lower() == "src" and (path / "phymeo").is_dir()
+        return ((path / "pyproject.toml").is_file() and (path / "src" / "phymeo").is_dir()) or (
+            path.name.lower() == "src"
+            and (path / "phymeo").is_dir()
             and (path.parent / "pyproject.toml").is_file()
         )
 
-    require((installed_root / "phymeo" / "__init__.py").is_file(), "actual installed package required")
+    require(
+        (installed_root / "phymeo" / "__init__.py").is_file(), "actual installed package required"
+    )
     resolved_paths = [Path(entry or Path.cwd()).resolve() for entry in sys.path]
-    require(not any(is_source_entry(path) for path in resolved_paths), "checkout source entry in sys.path")
+    require(
+        not any(is_source_entry(path) for path in resolved_paths),
+        "checkout source entry in sys.path",
+    )
     if preflight:
         for origin in (Path.cwd().resolve(), Path(__file__).resolve().parent):
-            require(not any(is_source_entry(parent) for parent in (origin, *origin.parents)),
-                    "consumer and cwd must be outside checkout sources")
+            require(
+                not any(is_source_entry(parent) for parent in (origin, *origin.parents)),
+                "consumer and cwd must be outside checkout sources",
+            )
     import phymeo
 
     paths = modules()
-    require("phymeo" in paths and Path(phymeo.__file__).resolve().is_relative_to(installed_root), "installed phymeo provenance")
+    require(
+        "phymeo" in paths and Path(phymeo.__file__).resolve().is_relative_to(installed_root),
+        "installed phymeo provenance",
+    )
     loaded = {}
     for name, filename in paths.items():
         actual = Path(filename).resolve(strict=True)
         require(actual.is_relative_to(installed_root), "noninstalled module " + name)
-        loaded[name] = dict(path=str(actual), sha256=hashlib.sha256(actual.read_bytes()).hexdigest())
-    return dict(installed_root=str(installed_root), cwd=str(Path.cwd().resolve()),
-                consumer=str(Path(__file__).resolve()), sys_path=[str(p) for p in resolved_paths], loaded=loaded)
+        loaded[name] = dict(
+            path=str(actual), sha256=hashlib.sha256(actual.read_bytes()).hexdigest()
+        )
+    return dict(
+        installed_root=str(installed_root),
+        cwd=str(Path.cwd().resolve()),
+        consumer=str(Path(__file__).resolve()),
+        sys_path=[str(p) for p in resolved_paths],
+        loaded=loaded,
+    )
 
 
 def compare_constraints(receipt, expected):
-    require(len(receipt.contacts) == len(expected["contacts"]), "complete native contact membership")
+    require(
+        len(receipt.contacts) == len(expected["contacts"]), "complete native contact membership"
+    )
     for contact, native in zip(receipt.contacts, expected["contacts"], strict=True):
         for name in ("geometry_ids", "body_ids", "dimension", "active"):
             require(getattr(contact, name) == native[name], "contact identity " + name)
         for name in ("position", "frame", "distance", "include_margin"):
             np.testing.assert_allclose(getattr(contact, name), native[name], rtol=3e-5, atol=4e-5)
         np.testing.assert_allclose(contact.jacobian, native["jacobian"], rtol=2e-4, atol=5e-5)
-        np.testing.assert_allclose(contact.wrench_contact_frame, native["wrench_contact_frame"], rtol=3e-3, atol=3e-3)
-        np.testing.assert_allclose(contact.force_on_geometry1_world + contact.force_on_geometry2_world, 0, rtol=0, atol=1e-12)
+        np.testing.assert_allclose(
+            contact.wrench_contact_frame, native["wrench_contact_frame"], rtol=3e-3, atol=3e-3
+        )
+        np.testing.assert_allclose(
+            contact.force_on_geometry1_world + contact.force_on_geometry2_world,
+            0,
+            rtol=0,
+            atol=1e-12,
+        )
         for side, sign in ((1, -1), (2, 1)):
             body = contact.body_ids[side - 1]
             force = getattr(contact, f"force_on_geometry{side}_world")
             couple = sign * contact.frame.T @ contact.wrench_contact_frame[3:]
-            target = np.r_[force, couple + np.cross(contact.position - receipt.dynamics.body_com[body], force)]
-            np.testing.assert_allclose(getattr(contact, f"wrench_on_body{side}_world"), target, rtol=3e-5, atol=4e-5)
+            target = np.r_[
+                force, couple + np.cross(contact.position - receipt.dynamics.body_com[body], force)
+            ]
+            np.testing.assert_allclose(
+                getattr(contact, f"wrench_on_body{side}_world"), target, rtol=3e-5, atol=4e-5
+            )
     require(len(receipt.constraints) == len(expected["efc_type"]), "complete native EFC membership")
     for i, row in enumerate(receipt.constraints):
-        require(row.constraint_type == expected["efc_type"][i] and row.source_id == expected["efc_id"][i], "EFC identity")
+        require(
+            row.constraint_type == expected["efc_type"][i]
+            and row.source_id == expected["efc_id"][i],
+            "EFC identity",
+        )
         np.testing.assert_allclose(row.jacobian, expected["efc_J"][i], rtol=2e-4, atol=5e-5)
         for name, native in (("regularization", "efc_R"), ("reference_acceleration", "efc_aref")):
-            np.testing.assert_allclose(getattr(row, name), expected[native][i], rtol=5e-4, atol=4e-4)
+            np.testing.assert_allclose(
+                getattr(row, name), expected[native][i], rtol=5e-4, atol=4e-4
+            )
         np.testing.assert_allclose(row.force, expected["efc_force"][i], rtol=3e-3, atol=3e-3)
+
 
 def advance(runtime, mj, model, packets, reference, journal, label):
     full_entry, entry = observations(runtime, mj)
@@ -444,12 +481,18 @@ def advance(runtime, mj, model, packets, reference, journal, label):
         require(abs(state.time - entry[key].time - H) <= TIME_ATOL, "step clock")
         np.testing.assert_array_equal(a.input_act, entry[key].act)
         np.testing.assert_array_equal(a.output_act, state.act)
-        require(type(receipt).__name__ == "MuJoCoTyxActivationStepReceipt", "complete stateful receipt schema")
+        require(
+            type(receipt).__name__ == "MuJoCoTyxActivationStepReceipt",
+            "complete stateful receipt schema",
+        )
         require(a.schema == "native-scalar-filterexact-actuation-v1", "actuation schema")
         np.testing.assert_array_equal(receipt.input_q, entry[key].q)
         np.testing.assert_array_equal(receipt.input_v, entry[key].v)
         for name in ("ctrl", "qfrc_applied", "xfrc_applied"):
-            np.testing.assert_array_equal(getattr(receipt.stored_control, name), np.asarray(getattr(packets[key], name), np.float32))
+            np.testing.assert_array_equal(
+                getattr(receipt.stored_control, name),
+                np.asarray(getattr(packets[key], name), np.float32),
+            )
         for name, target in analytic_expected[key].items():
             act_channel = name in ("output_act", "activation_derivative")
             np.testing.assert_allclose(
@@ -459,7 +502,9 @@ def advance(runtime, mj, model, packets, reference, journal, label):
                 atol=ACT_ATOL if act_channel else FORCE_ATOL,
             )
         expected_entry = expected[key]["dynamics"]
-        np.testing.assert_allclose(a.activation_derivative, expected_entry["derivative"], rtol=ACT_RTOL, atol=ACT_ATOL)
+        np.testing.assert_allclose(
+            a.activation_derivative, expected_entry["derivative"], rtol=ACT_RTOL, atol=ACT_ATOL
+        )
         np.testing.assert_allclose(
             a.scalar_force, expected_entry["scalar_force"], rtol=FORCE_RTOL, atol=FORCE_ATOL
         )
@@ -471,15 +516,23 @@ def advance(runtime, mj, model, packets, reference, journal, label):
         )
         np.testing.assert_array_equal(a.generalized_force, receipt.qfrc_actuator)
         for name, rtol, atol in (
-            ("body_position", 3e-5, 4e-5), ("body_rotation", 3e-5, 4e-5),
-            ("body_com", 3e-5, 4e-5), ("jacobian_com", 2e-4, 5e-5),
-            ("mass_matrix", 3e-4, 5e-5), ("bias", 4e-4, 4e-4),
-            ("passive", 4e-4, 4e-4), ("applied", 4e-4, 4e-4),
+            ("body_position", 3e-5, 4e-5),
+            ("body_rotation", 3e-5, 4e-5),
+            ("body_com", 3e-5, 4e-5),
+            ("jacobian_com", 2e-4, 5e-5),
+            ("mass_matrix", 3e-4, 5e-5),
+            ("bias", 4e-4, 4e-4),
+            ("passive", 4e-4, 4e-4),
+            ("applied", 4e-4, 4e-4),
             ("smooth_acceleration", 2e-3, 4e-3),
         ):
-            np.testing.assert_allclose(getattr(receipt.dynamics, name), expected_entry[name], rtol=rtol, atol=atol)
+            np.testing.assert_allclose(
+                getattr(receipt.dynamics, name), expected_entry[name], rtol=rtol, atol=atol
+            )
         np.testing.assert_allclose(receipt.qacc, expected_entry["qacc"], rtol=3e-3, atol=1e-2)
-        np.testing.assert_allclose(receipt.qfrc_constraint, expected_entry["qfrc_constraint"], rtol=3e-3, atol=3e-3)
+        np.testing.assert_allclose(
+            receipt.qfrc_constraint, expected_entry["qfrc_constraint"], rtol=3e-3, atol=3e-3
+        )
         np.testing.assert_array_equal(receipt.qfrc_actuator[:6], np.zeros(6))
         compare_constraints(receipt, expected_entry)
         for lane in ("output", "continuous"):
@@ -506,9 +559,14 @@ def run(mode, output, journal, installed_root):
     initial = {}
     for slot, key in enumerate(KEYS):
         q = model.qpos0.copy()
-        q[7:9] = [.205, .02]
-        initial[key] = MuJoCoInitialState(q, np.full(model.nv, -.015 - slot * .002),
-            act=np.full(model.na, .34 + slot * .01), time=.125)
+        q[7:9] = [0.205, 0.02]
+        initial[key] = MuJoCoInitialState(
+            q,
+            np.full(model.nv, -0.015 - slot * 0.002),
+            act=np.full(model.na, 0.34 + slot * 0.01),
+            time=0.125,
+        )
+
     def fresh_native(key):
         data = mj.MjData(model)
         for name, value in (
@@ -527,7 +585,7 @@ def run(mode, output, journal, installed_root):
         wrench = np.zeros((model.nbody, 6))
         wrench[-1] = [0.02, -0.015, 0.01, 0.005, -0.003, 0.004]
         # No residual command offset during the predeclared unloading phase.
-        ctrl = np.full(model.nu, command + (slot * .015 if command else 0.0))
+        ctrl = np.full(model.nu, command + (slot * 0.015 if command else 0.0))
         return MuJoCoControl(ctrl, qfrc_applied=np.full(model.nv, 0.012), xfrc_applied=wrench)
 
     def packets(tick):
@@ -556,19 +614,39 @@ def run(mode, output, journal, installed_root):
     clone = None
     main_calls = clone_calls = 0
     try:
-        require(runtime.capabilities["domain"] == "tree-pyramidal-mixed-filterexact-v1", "composed capability domain")
-        require(runtime.capabilities["checkpoint"] == "exact-accepted-tyx-batch-v2", "stateful exact checkpoint capability")
-        journal.emit("initial", capabilities=runtime.capabilities,
-                     observations=observations(runtime, mj), modules=provenance(installed_root))
+        require(
+            runtime.capabilities["domain"] == "tree-pyramidal-mixed-filterexact-v1",
+            "composed capability domain",
+        )
+        require(
+            runtime.capabilities["checkpoint"] == "exact-accepted-tyx-batch-v2",
+            "stateful exact checkpoint capability",
+        )
+        journal.emit(
+            "initial",
+            capabilities=runtime.capabilities,
+            observations=observations(runtime, mj),
+            modules=provenance(installed_root),
+        )
         seen = {key: set() for key in KEYS}
         for tick in range(16):
-            current = advance(runtime, mj, model, packets(tick), reference, journal, "main-" + str(tick))
+            current = advance(
+                runtime, mj, model, packets(tick), reference, journal, "main-" + str(tick)
+            )
             for key, state in current.items():
-                if any(c.normal_force > 0 for c in state.last_step.contacts): seen[key].add("contact")
-                if any(r.constraint_type == 3 and r.force > 0 for r in state.last_step.constraints): seen[key].add("limit")
-                if any(r.constraint_type == 1 and abs(r.force) > 0 for r in state.last_step.constraints): seen[key].add("dry")
+                if any(c.normal_force > 0 for c in state.last_step.contacts):
+                    seen[key].add("contact")
+                if any(r.constraint_type == 3 and r.force > 0 for r in state.last_step.constraints):
+                    seen[key].add("limit")
+                if any(
+                    r.constraint_type == 1 and abs(r.force) > 0 for r in state.last_step.constraints
+                ):
+                    seen[key].add("dry")
             main_calls += 1
-        require(all(value == {"contact", "limit", "dry"} for value in seen.values()), "each world exercised all three real constraint classes")
+        require(
+            all(value == {"contact", "limit", "dry"} for value in seen.values()),
+            "each world exercised all three real constraint classes",
+        )
         held = packets(16)
         runtime.set_controls(held)
         checkpoint = runtime.checkpoint()

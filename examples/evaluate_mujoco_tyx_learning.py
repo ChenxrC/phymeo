@@ -174,16 +174,23 @@ def _finish(context, result):
     writer = context["writer"]
     writer.write("completion", {"status": result["status"], "task": result["task"]})
     writer.close()
+    trace_closed_at = time.perf_counter()
     hash_started = time.perf_counter()
     result["evidence"] = writer.receipt()
     result["final_evidence_hash_io_s"] = time.perf_counter() - hash_started
     if "scale_write_start" in context:
         timing = result["timing"]
         timing["evidence_write_s"] = writer.write_seconds - context["scale_write_start"]
+        wall = trace_closed_at - context["scale_wall_start"]
+        if not math.isfinite(wall) or wall <= 0:
+            raise ValueError("positive complete measured-region wall time required")
+        timing["measured_loop_to_trace_close_s"] = wall
         timing["transitions_per_s_with_full_trace_delivery"] = result["measured_world_steps"] / (
-            timing["compute_and_mandatory_diagnostics_s"]
-            + timing["post_update_independent_audit_s"]
-            + timing["evidence_write_s"]
+            wall
+        )
+        timing["delivery_timing_scope"] = (
+            "three complete updates, all measurement/audit/write work and environment close; "
+            "cold construction/warmup and final hash/summary publication excluded"
         )
         timing.pop("transitions_per_s_with_current_audit_and_write", None)
     summary_started = time.perf_counter()
@@ -497,6 +504,7 @@ def run_scale(name, seed, worlds, output):
             warmup_write_seconds = writer.write_seconds
             context["scale_write_start"] = warmup_write_seconds
             measured, accepted = [], 0
+            context["scale_wall_start"] = time.perf_counter()
             for index in range(1, 4):
                 context["phase"] = "unprofiled-measured-update-" + str(index)
                 record, timing = evaluation.measure_update(session, observe=False)

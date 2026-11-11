@@ -307,3 +307,9 @@ Existing validate_update writes the complete record before finite objective/loss
 checks. Six HOST regression nodes cover reset counters, unknown fields, two late
 failure stages with32 actual adapter calls, the finite-audit write order and owner
 close order. No old preflight, model, reward, seed, optimizer or128×32 budget changes.
+
+## 8. Scale delivery timing boundary before first scale execution
+
+The parent source review found that adding update compute, validation and trace-write subtimers omitted measurement setup/postprocessing and cell close. No scale cell had executed. Keep those subtimers as descriptive components; do not call their sum end-to-end time. The formal scale timer now starts after the already-budgeted warmup and its evidence, immediately before the three measured updates, and stops immediately after the completion record and gzip close. It includes all update setup/postprocessing, audits, full trace delivery, public exit snapshot and environment cleanup. Construction/warmup and final compressed-file hash/summary publication stay explicitly separate. Do not label the residual between subtimers and wall time as exclusive HOST cost. The numerator remains exactly96W, with no extra update, parameter or acceptance gate.
+
+This change is authored only in the parent CLI and its new HOST timing test while the isolated a4c4e2bc learning runs remain byte-stable. Those learning results keep their original source bindings; scale gets its own final source binding. The test uses intentionally unequal component sums and a controlled clock to catch omission of region overhead. It is initially unexecuted and will run in the parent's serial slot before scale.

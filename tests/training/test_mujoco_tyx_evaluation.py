@@ -499,3 +499,35 @@ def test_failure_context_captures_public_counters_before_owner_close(api, monkey
     assert (
         context["owner_exit"]["counter_snapshot"]["counts"]["runtime"]["completed_kernels"] == 100
     )
+
+
+def test_scale_delivery_uses_full_wall_region_not_sum_of_subtimers(api, tmp_path, monkeypatch):
+    events = []
+    clock = iter((110.0, 111.0, 114.0, 115.0, 117.0))
+    monkeypatch.setattr(api.time, "perf_counter", lambda: next(clock))
+
+    class Writer:
+        write_seconds = 5.0
+
+        def write(self, kind, payload):
+            events.append(kind)
+
+        def close(self):
+            events.append("closed")
+
+        def receipt(self):
+            assert events[-1] == "closed"
+            events.append("hash")
+            return {"scope": "fake file IO for timing boundary only"}
+
+    context = {"writer": Writer(), "path": tmp_path, "scale_write_start": 1.0,
+               "scale_wall_start": 100.0}
+    result = {"status": "PASS_N4A_SCALE_CELL", "task": "J", "measured_world_steps": 768,
+              "timing": {"compute_and_mandatory_diagnostics_s": 2.0,
+                         "post_update_independent_audit_s": 1.0}}
+    api._finish(context, result)
+    assert result["timing"]["measured_loop_to_trace_close_s"] == 10.0
+    assert result["timing"]["transitions_per_s_with_full_trace_delivery"] == 76.8
+    assert result["timing"]["evidence_write_s"] == 4.0
+    assert result["final_evidence_hash_io_s"] == 3.0
+    assert events == ["completion", "closed", "hash"]

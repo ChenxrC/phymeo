@@ -98,6 +98,12 @@ with compile_scene(declaration, backend="cuda") as runtime:
 
 浮根资产使用 `FloatingRobotState` 和 `FloatingRobotCommand(RobotCommand(...))`。静态环境通过 `FiniteStaticShape` 及显式材料加入声明。编译记录的 `unlowered_world_geom_ids` 必须单独处理；`.asset` 本身不是完整环境。
 
+原生编译记录另提供 `collision_source`，保留固定根融合前的 body/geom 身份与编译后
+native geom ID。`instance` / `world` 编译参数只限定该来源命名空间，不复制模型或
+更改 resident layout。`collision_source.plan_exclusions(...)` 仅校验并生成显式排除
+计划，尚未接入 runtime 过滤；不能把计划生成成功当作接触已被排除。
+调用、身份范围和已验证版本见[碰撞规则 C0 合同](../development/robot-collision-rules.md#9-c0-已实现合同2026-11-11)。
+
 选择原生 MuJoCo 物理时保留原生坐标、控制和接触律：
 
 ```python

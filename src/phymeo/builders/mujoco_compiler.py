@@ -21,6 +21,12 @@ from ..core.robot import RobotModel
 from ..dynamics.floating_robot import FloatingRobotModel
 from ..dynamics.rotation import matrix_quaternion, quaternion_matrix
 from ._robot_asset import RobotAsset, make_collider
+from .collision_sources import (
+    CollisionSourceMapping,
+    capture_source_geometry,
+    freeze_source_geometry,
+    validate_scope,
+)
 from .floating_urdf import FloatingRobotAsset
 
 
@@ -165,6 +171,7 @@ class MuJoCoCompilation:
     asset_scope: str = (
         "articulation-only; environment and contact law require explicit scene assembly"
     )
+    collision_source: CollisionSourceMapping | None = None
 
     def fresh_native_model(self):
         """Fresh MjModel, including geometry/assets/options/keys, without source IO."""
@@ -262,44 +269,66 @@ def _source(mj, spec, model, primary_xml, origin):
     )
 
 
-def compile_mujoco(path, *, require_asset=True):
+def compile_mujoco(path, *, require_asset=True, instance="model", world=0):
     """Compile a local MJCF/URDF using native MjSpec, then lower its admitted tree.
 
     Relative includes/resources use MuJoCo's own path semantics. The native MJB
     result is snapshotted before returning; no later runtime needs source files.
+    instance/world scope collision-source metadata only, not model replication
+    or resident world layout. Exclusion plans do not apply runtime filtering.
     """
     mj = _mujoco()
     if not isinstance(require_asset, bool):
         raise TypeError("require_asset must be bool")
+    world = validate_scope(instance, world)
     path = Path(path).resolve()
     try:
         primary = path.read_bytes()
         spec = mj.MjSpec.from_file(str(path))
+        captured, source_issues = capture_source_geometry(spec, world)
         model = spec.compile()
         source = _source(mj, spec, model, primary, str(path))
     except (OSError, ValueError, RuntimeError) as exc:
         raise MuJoCoCompilationError(f"MuJoCo compilation failed for {path}: {exc}") from exc
-    return _compilation(mj, spec, model, source, require_asset)
+    record = _compilation(mj, spec, model, source, require_asset)
+    return replace(
+        record,
+        collision_source=freeze_source_geometry(
+            captured, source_issues, model, source, instance, world
+        ),
+    )
 
 
-def compile_mujoco_xml(xml, *, assets=None, includes=None, require_asset=True):
+def compile_mujoco_xml(
+    xml, *, assets=None, includes=None, require_asset=True, instance="model", world=0
+):
     """Compile XML with owned explicit virtual resources (no fallback physics).
 
     assets maps native resource names to bytes; includes is the MjSpec include
     mapping. MuJoCo resolves defaults, include expansion, body inertia and names.
+    instance/world scope collision-source metadata only. Names retained from an
+    expanded spec do not imply original include-file or XML-element provenance.
     """
     mj = _mujoco()
     if not isinstance(xml, str) or not isinstance(require_asset, bool):
         raise TypeError("xml must be str and require_asset must be bool")
+    world = validate_scope(instance, world)
     resources = {str(name): bytes(value) for name, value in (assets or {}).items()}
     include = {str(name): bytes(value) for name, value in (includes or {}).items()}
     try:
         spec = mj.MjSpec.from_string(xml, assets=resources, include=include)
+        captured, source_issues = capture_source_geometry(spec, world)
         model = spec.compile()
         source = _source(mj, spec, model, xml.encode("utf-8"), "<xml>")
     except (OSError, ValueError, RuntimeError) as exc:
         raise MuJoCoCompilationError(f"MuJoCo XML compilation failed: {exc}") from exc
-    return _compilation(mj, spec, model, source, require_asset)
+    record = _compilation(mj, spec, model, source, require_asset)
+    return replace(
+        record,
+        collision_source=freeze_source_geometry(
+            captured, source_issues, model, source, instance, world
+        ),
+    )
 
 
 def _tree_layout(mj, model):

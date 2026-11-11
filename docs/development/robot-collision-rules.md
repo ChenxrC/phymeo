@@ -1,6 +1,6 @@
 # 机器人碰撞规则补齐方案
 
-2026-11-11，设计节点，尚未实现。适用于独立实验分支
+2026-11-11，设计节点；后续 C0 已实现的范围见第 9 节，C1–C3 尚未实现。适用于独立实验分支
 `feature/wh/phymeo-physolve-integration`。审查基线 PHYMEO `50a50bfd`、
 codedev `6bb483ee`、TYX `7272d3df`、P2PE `1edba631`。
 本方案补齐 PHYMEO 自身的模型声明和原生执行适配，不复制 Newton 源码、测试或默认策略。
@@ -151,3 +151,83 @@ PHYMEO 全库文档检查仍失败于 479 条缺失目标，日志与 B5 修改�
 已按默认兼容、来源身份、显式 pair 优先级、sensor 独立语义、冷准备复杂度和资源所有权
 完成自审及第二轮复核；均由同一执行者完成，不记作独立审查人签字。
 本批未运行物理、GPU、Graph、C ABI 或 GUI 测试，不产生新的运行时资格结论。
+
+## 9. C0 已实现合同（2026-11-11）
+
+`compile_mujoco` / `compile_mujoco_xml` 返回的 `collision_source` 是来源映射快照。
+本批选择更小的实现：保留 MjSpec 原生 geom 对象引用，编译前记录所属 body、名称和
+局部序号，编译后读取对象的原生 ID。实际覆盖静态融合造成的 geom 重排，不按输出
+数组顺序匹配，不重命名、不重编译一份带标签的模型，也不添加第二套 URDF 物理解析。
+
+```python
+from phymeo.builders.mujoco_compiler import compile_mujoco
+
+record = compile_mujoco("robot.urdf", require_asset=False, instance="arm", world=0)
+source = record.collision_source
+if source.issues:
+    raise ValueError(source.issues)
+# 由调用方从来源清单明确选择，不靠 name 的隐式模糊匹配。
+for row in source.geoms:
+    print(row.key, row.body_name, row.geom_name, row.native_geom_id)
+# first_key / second_key 必须来自上面的来源清单。
+# plan = source.plan_exclusions(
+#     [(first_key, second_key)], source_identity=source.identity
+# )
+```
+
+`CollisionKey.world` 为显式来源 scope；body 是导入后、融合前 MjSpec body 的序号，
+shape 是该 body 内导入 geom 的序号，包含保留下来的 visual geom。它不是原 URDF
+`<collision>` 元素序号、native body ID 或 resident articulation key。body/geom 名称
+是来源提示，可为空；名称不参与隐式查找。URDF 保留原 link 名；MJCF include/default
+展开后只声明 MjSpec 来源，不声明已恢复原 include 文件/行号或原 XML 元素身份。
+
+每份编译记录代表一个模板；`instance` / `world` 只作用于来源命名空间，不改变模型、
+resident shape key 或 Runtime world 分配。相同模板的 N-world 运行不在本批建立 N
+份来源表。不同模板、实例或 world 的键不能脱离 `source.identity` 复用。
+identity 包含原主文件字节散列、完整编译 MJB 散列、MuJoCo 版本、来源 scope 和映射；
+include/资源改变编译结果时身份失效。原始主文件换行变化也会使身份失效。
+
+`plan_exclusions(excluded, source_identity=...)` 接收既有 CollisionKey pair 形式，
+冻结为 `CollisionExclusionPlan`：规范化 `excluded`、对应 `native_geom_pairs`、
+`source_identity` 和规则 `fingerprint`。反向重复、自配对、未知键、跨 world、过期
+身份、错误 pair 形状以及原生显式 contact pair 冲突均失败。输入 list 后续变化不能
+修改计划；编译记录中可变 native model/spec 后续变化也不能改写快照和计划。
+
+**这是编译合同，不是已生效的过滤配置。** 本批不向编译器或 runtime 提供会被忽略的
+`exclude=` 参数；计划未附着到运行期模型，也不改变 masks/contact pair/source MJB。
+C1 将另行增加显式消费入口，并验证计划与实际模型身份、后端能力及全部派生表。
+CPU、MuJoCo-TYX、PhySolve 和 resident 路径目前都继续使用原来的执行配置。
+
+来源对象接口缺失或 native ID 不能形成一一映射时，保留无规则编译行为，
+`collision_source.issues` 明示缺口，规则规划拒绝继续。当前对象映射资格实测版本为
+MuJoCo 3.8.0 / Windows / CPython 3.13.13；未声明其他版本已通过。
+没有新全局缓存或可变 owner；准备复杂度为 O(B+G+P log P)，规划为
+O(G+P+E log E)，其中 B/G/P/E 分别为 body/geom/原生显式 pair/新增排除数。
+没有每 world 重编译，step 热路径没有新增解析、复制、同步或分配。
+
+### C0 实际验证与审查
+
+- 编译/来源合同及 Panda/FANUC 逐字段测试 57/57 通过；其中两机器人无规则编译与
+  直接原生导入的所有可枚举字段保持原有精确对照，MJB signature 的既有例外不变。
+  新增有名/无名、多形状、静态融合及 geom 重排、多实例/world、include 变化、
+  非法规则、不可变快照和显式 pair 冲突测试；原生 CPU 四步状态/接触精确一致。
+- 最终扩大 CPU/interpret 回归 112 pass / 1 fail / 3 deselected，无 skip。
+  唯一失败是已有 `test_gpu_mode_never_silently_falls_back_to_cpu`：测试期待旧
+  `mode="warp"` 抛 NotImplementedError，当前运行时抛 ValueError。隔离进程加载
+  修改前 `2d9915f3` 的 compiler 后复现相同失败，保留原断言，未将其改为通过。
+  三项未选为另行执行的 CUDA FANUC 定向诊断。
+- 实际 PhySolve CUDA direct 10/10 通过：自由落体与 forward/reset N=1/8/64，
+  关节外力/原子预检/失败恢复 N=1/8/64，接触/容量 1 项，既有 FANUC 定向诊断
+  N=1/8/64。最后三项沿用 B5 的测试用 mask，不是新计划已经施加到后端的证明。
+- 首轮一个新增测试因 Windows 写文本将 LF 变为 CRLF，导致原始字节身份与字符串
+  输入不同；改用精确字节测试输入后通过，保留首轮失败日志。没有改容差或源身份规则。
+- 无 Newton/Warp/MuJoCo-Warp 安装或导入；六件 CUBIN 与 Host 的 SHA256 全部与
+  冻结基线相同。TYX 的现有 AST 弃用警告未关闭。没有新的 Graph/C ABI/GUI/安装资格。
+- 全库 docs 检查仍有 479 条已有缺失目标，日志散列与 B5 基线相同；diff 空白检查通过。
+  完整源码与测试 diff 自审及第二轮复核检查了来源/输出 ID 分离、mutable native
+  对象与冻结快照、整批预检、显式 pair 冲突、无规则兼容、复杂度及未执行能力边界。
+  两轮由同一执行者完成，不记作独立审查人签字。
+
+证据保留于独立实验根 `evidence/c0-*`：最终 CPU/GPU JUnit 与日志、依赖/载荷身份、
+原基线失败复现、首轮失败日志、文档检查。C0 通过本批定向资格，扩大回归仍含上述
+已有失败；完整机器人资格未完成。下一节点 C1 才将计划接入 codedev 前端冷候选准备。

@@ -61,3 +61,26 @@ def test_robot_every_native_field_survives_compilation_snapshot(name):
     v = np.linspace(-.1, .1, len(q))
     np.testing.assert_allclose(record.qvel_to_v(q, record.v_to_qvel(q, v)), v,
                                atol=2e-12, rtol=0)
+
+
+@pytest.mark.parametrize("name", ["panda", "fanuc"])
+def test_robot_source_mapping_covers_native_meshes_without_resident_lowering(name):
+    record = compile_mujoco(robot_path(name), require_asset=False, instance=name)
+    source = record.collision_source
+    assert not source.issues
+    assert {row.native_geom_id for row in source.geoms} == set(range(record.mj_model.ngeom))
+    assert len({row.key for row in source.geoms}) == record.mj_model.ngeom
+    assert all(row.body_name for row in source.geoms)
+    if name == "fanuc":
+        base = [row for row in source.geoms if row.body_name == "base_link"]
+        link = [row for row in source.geoms if row.body_name == "link_1"]
+        assert len(base) == len(link) == 1
+        assert base[0].native_body_id == 0
+        assert base[0].key.body != link[0].key.body
+        plan = source.plan_exclusions([(base[0].key, link[0].key)], source_identity=source.identity)
+        assert plan.native_geom_pairs == ((base[0].native_geom_id, link[0].native_geom_id),)
+        # C0 resolves a contract only. Neither masks nor actual contacts change.
+        import mujoco
+        data = mujoco.MjData(record.mj_model)
+        mujoco.mj_forward(record.mj_model, data)
+        assert plan.native_geom_pairs[0] in {tuple(sorted(c.geom)) for c in data.contact}

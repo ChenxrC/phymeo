@@ -103,7 +103,8 @@ GUI、安装包与性能资格仍未推进。六件 CUBIN 和 Host 保持冻结�
 ## FANUC 碰撞模型审计（B5）
 
 后续设计见[机器人碰撞规则补齐方案](robot-collision-rules.md)：复用 PHYMEO 现有
-形状身份和显式排除机制，分别资格化 resident 与完整 native 路线；目前尚未实施。
+形状身份和显式排除机制，分别资格化 resident 与完整 native 路线。
+C0 已实现来源映射和排除计划合同，尚未将计划施加到运行期候选碰撞表；执行过滤属于 C1。
 
 本轮独立使用用户原始 URDF/STL 和 `fanuc.zip`，不采用 Newton 导出模型或过滤
 配置作为标准。归档与 16 件文件散列一致。底座和第一节的 collision STL 在 URDF

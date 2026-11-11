@@ -268,7 +268,7 @@ def run_case(case, count, stream_kind, output):
                 last_public = {"device": start, "reference": reference.snapshot()}
                 loaded = [0] * count
                 all_cuda = True
-                action_readback = task_readback = 0
+                action_readback = task_readback = policy_readback = 0
                 for tick in range(STEPS):
                     action_accepted = state_accepted = reference_accepted = False
                     phase = "task-and-policy"
@@ -286,6 +286,8 @@ def run_case(case, count, stream_kind, output):
                     # These explicit diagnostic copies are separate from the GPU action ingress.
                     host_values = tuple(value.detach().cpu().numpy().copy() for value in values)
                     task_values = tuple(value.detach().cpu().numpy().copy() for value in exported)
+                    policy_values = raw_action.detach().cpu().numpy().copy()
+                    policy_readback += policy_values.nbytes
                     action_readback += sum(value.nbytes for value in host_values)
                     task_readback += sum(value.nbytes for value in task_values)
                     task_oracle(before, spec, task_values)
@@ -297,7 +299,7 @@ def run_case(case, count, stream_kind, output):
                     host_submit(reference, host_values)
                     append(log, {"event": "attempt", "tick": tick + 1, "before": before, "task_frame": frame,
                         "task_outputs": task_values, "native_action": host_values, "action_receipt": control_receipt,
-                        "raw_policy_output": raw_action.detach().cpu().numpy(), "action_accepted": True})
+                        "raw_policy_output": policy_values, "action_accepted": True})
                     phase = "device-physics"
                     accepted = runtime.step(H[case])
                     state_accepted = bool(accepted) and all(accepted.values())
@@ -316,7 +318,7 @@ def run_case(case, count, stream_kind, output):
                         assert abs(after[key].time - (tick + 1) * float(np.float32(H[case]))) <= 2e-6
                         loaded[i] += int(any(contact.normal_force > 0 for contact in after[key].last_step.contacts))
                     append(log, {"event": "step", "tick": tick + 1, "before": before, "task_frame": frame,
-                        "task_outputs": task_values, "raw_policy_output": raw_action.detach().cpu().numpy(),
+                        "task_outputs": task_values, "raw_policy_output": policy_values,
                         "native_action": host_values, "action_receipt": control_receipt, "device": after, "reference": expected,
                         "device_counters": runtime.counters, "reference_counters": reference.counters, "task_counters": workspace.counters})
                 moved = [int(not np.array_equal(start[key].q, after[key].q) or not np.array_equal(start[key].v, after[key].v)) for key in keys]
@@ -330,6 +332,8 @@ def run_case(case, count, stream_kind, output):
                     "loaded_contact_steps_by_world": loaded, "device_counters": dict(runtime.counters),
                     "reference_counters": dict(reference.counters), "task_counters": dict(workspace.counters),
                     "diagnostic_action_readback_bytes": action_readback, "diagnostic_task_readback_bytes": task_readback,
+                    "diagnostic_policy_readback_bytes": policy_readback,
+                    "diagnostic_parameter_readback_bytes": sum(value.nbytes for value in parameters.values()),
                     "module_origins": module_origins(), "cross_device": "separate-hardware-conditional-negative-test"}
                 assert summary["all_parameters_cuda"] and all_cuda
                 phase = "owner-cleanup"

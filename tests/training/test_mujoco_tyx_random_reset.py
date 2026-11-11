@@ -26,6 +26,7 @@ def example():
 
 
 def plan(case="J", **kwargs):
+    pytest.importorskip("mujoco")
     return example().components(case, keys=KEYS, **kwargs)["reset_plan"]
 
 
@@ -84,6 +85,17 @@ def test_sampler_subset_order_and_unused_streams(case):
     empty = p.prepare((), union.next_indices)
     assert dict(empty.next_indices) == dict(union.next_indices)
     assert empty.requested == {}
+    from phymeo.training.mujoco_tyx_reset import MuJoCoTyxResetPlan
+    parts = example().components(case)
+    reordered = MuJoCoTyxResetPlan(
+        parts["compilation"], dict(reversed(tuple(p.anchors.items()))),
+        q_indices=p.q_indices, q_bounds=p.q_bounds,
+        v_indices=p.v_indices, v_bounds=p.v_bounds, seed=p.seed, namespace=p.namespace,
+    )
+    other = reordered.prepare((103, 7), counters)
+    assert reordered.sha256 != p.sha256  # Full order binding is deliberately distinct.
+    for key in union.world_keys:
+        assert sig(other.requested[key]) == sig(union.requested[key])
     before_numpy, before_python = np.random.get_state(), random.getstate()
     for index in range(3):
         p.prepare(KEYS, dict.fromkeys(KEYS, index))
@@ -166,7 +178,11 @@ def test_actual_manual_and_automatic_random_reset(case, tmp_path):
     with api.make_environment(case) as env:
         original = env.get_observations()
         state = env.runtime.snapshot()
+        cpu_rng = torch.get_rng_state().clone()
+        cuda_rng = torch.cuda.get_rng_state(env.device).clone()
         env.reset((103, 7))
+        assert torch.equal(torch.get_rng_state(), cpu_rng)
+        assert torch.equal(torch.cuda.get_rng_state(env.device), cuda_rng)
         assert dict(env.reset_indices) == {7: 1, 31: 0, 103: 1, 4096: 0}
         for key in (31, 4096):
             assert sig(env.runtime.snapshot()[key]) == sig(state[key])

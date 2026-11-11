@@ -240,3 +240,6 @@ free root/ball随机化、任意时刻训练恢复、全GPU reset或学习改善
 共有backend收据与Env之间采用原单owner/CAS合同；外部绕过Env并发改runtime
 不被本新增功能承诺支持。任何晚失败都应以真实已提交状态处理并停止消费，
 不能为“原子”外观回退正确物理或重复抽样。
+
+
+执行前补充：原 HOST subset 节点还对反序完整 world 计划核每 key 的同样样本，同时完整 plan hash 必须不同；原 CUDA 手动 reset 节点另核 Torch CPU/current CUDA RNG 字节不变。未新增物理窗口或节点，仍50个手工枚举节点；上述只是同节点断言补全，未执行。

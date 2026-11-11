@@ -1,17 +1,22 @@
 """Bounded opt-in GJK trace protocol; no new geometry acceptance threshold."""
-from dataclasses import replace
-from contextlib import ExitStack
-import json
+
 import copy
+import json
+from contextlib import ExitStack
+from dataclasses import replace
 
 import numpy as np
 import pytest
-import phymeo as ph
 import test_device_convex_query as k0
 import test_device_convex_support_family as family
 
+import phymeo as ph
 from phymeo.backends._device_convex_query_trace import (
-    SCHEMA, FLOAT_WIDTH, INT_WIDTH, normalize_trace_pairs, _TraceCapture,
+    FLOAT_WIDTH,
+    INT_WIDTH,
+    SCHEMA,
+    _TraceCapture,
+    normalize_trace_pairs,
 )
 
 
@@ -54,8 +59,9 @@ def assert_trace(trace, plan, count):
     for j, row_index in enumerate(trace.pair_rows):
         row = trace.query.rows[int(row_index)]
         assert row.pair == trace.pairs[j]
-        np.testing.assert_array_equal(trace.shape_rows[j], [
-            trace.query.shape_keys.index(key) for key in row.pair])
+        np.testing.assert_array_equal(
+            trace.shape_rows[j], [trace.query.shape_keys.index(key) for key in row.pair]
+        )
         used = int(trace.query.raw["meta"][int(row_index), 4])
         assert np.all(trace.integers[j, :used, 0] == 1)
         assert np.all(trace.integers[j, used:] == 0)
@@ -64,7 +70,7 @@ def assert_trace(trace, plan, count):
             np.testing.assert_array_equal(trace.integers[j, :used, 3], np.arange(used))
             assert np.all(trace.integers[j, :used, 1] == trace.query.attempt_tag)
             assert np.all(trace.integers[j, :used, 2] == row_index)
-            assert trace.integers[j, used-1, 9] in range(1, 9)
+            assert trace.integers[j, used - 1, 9] in range(1, 9)
             assert np.all(trace.integers[j, :used, 4:6] >= 0)
             assert np.all(trace.integers[j, :used, 4:6] <= 4)
 
@@ -87,7 +93,10 @@ def test_trace_off_on_default_geometry_and_accounting(identity, tyx_mode, tmp_pa
         same_geometry(trace.query, again)
         assert plan.last_diagnostics is trace
         assert plan.stats["allocations"] == off_before["allocations"]
-        assert again.stats["attempt_delta"]["query_launches"] == plain.stats["attempt_delta"]["query_launches"]
+        assert (
+            again.stats["attempt_delta"]["query_launches"]
+            == plain.stats["attempt_delta"]["query_launches"]
+        )
 
 
 @pytest.mark.tyx
@@ -98,19 +107,28 @@ def test_eight_selected_pairs_are_bounded_and_query_order_bound(tyx_mode, tmp_pa
         data["world"] = world
         data["keys"] = tuple((world, key[1], key[2]) for key in data["keys"])
         declarations.append(data)
-    trees = [(d["world"], k0.ordinary_forest(
-        anchor=d["centers"][0], orientation=d["body_quaternion"])) for d in declarations]
+    trees = [
+        (d["world"], k0.ordinary_forest(anchor=d["centers"][0], orientation=d["body_quaternion"]))
+        for d in declarations
+    ]
     with ph.TyxWorldBatch(trees, tyx_mode, cache_root=tmp_path) as batch:
         shapes, bindings, pairs = [], [], []
         states = batch.snapshot()
         for data in declarations:
             a, b = family.shape_for(data, 0), family.shape_for(data, 1)
             shapes.extend((a, b))
-            bindings.extend((
-                ph.ResidentTreeBinding(a.key, data["world"], 0, data["local"][0],
-                    topology=states[data["world"]].topology),
-                ph.ResidentStaticBinding(b.key, ph.CollisionMotion(data["points"][1])),
-            ))
+            bindings.extend(
+                (
+                    ph.ResidentTreeBinding(
+                        a.key,
+                        data["world"],
+                        0,
+                        data["local"][0],
+                        topology=states[data["world"]].topology,
+                    ),
+                    ph.ResidentStaticBinding(b.key, ph.CollisionMotion(data["points"][1])),
+                )
+            )
             pairs.append((a.key, b.key))
         with batch.prepare_collision(ph.CollisionModel(tuple(shapes)), tuple(bindings)) as broad:
             with ExitStack() as stack:
@@ -125,9 +143,12 @@ def test_eight_selected_pairs_are_bounded_and_query_order_bound(tyx_mode, tmp_pa
 @pytest.mark.parametrize("bad", ("empty", "duplicate", "nine", "malformed"))
 def test_trace_selection_host_validation(bad):
     a, b = ph.CollisionKey(1, 2, 3), ph.CollisionKey(1, 2, 4)
-    values = dict(empty=(), duplicate=((a, b), (b, a)),
-                  nine=tuple((ph.CollisionKey(i, 2, 3), ph.CollisionKey(i, 2, 4))
-                             for i in range(9)), malformed=((a,),))
+    values = dict(
+        empty=(),
+        duplicate=((a, b), (b, a)),
+        nine=tuple((ph.CollisionKey(i, 2, 3), ph.CollisionKey(i, 2, 4)) for i in range(9)),
+        malformed=((a,),),
+    )
     with pytest.raises((ValueError, TypeError)):
         normalize_trace_pairs(values[bad])
     if bad == "malformed":
@@ -135,17 +156,20 @@ def test_trace_selection_host_validation(bad):
         encoded = k0.encode(raw)
         json.dumps(encoded, allow_nan=False)
         assert encoded["bytes_hex"] == raw.tobytes().hex()
-        assert encoded["values"] == [{"nonfinite": "nan"},
-                                     {"nonfinite": "inf"}, {"nonfinite": "-inf"}]
-
+        assert encoded["values"] == [
+            {"nonfinite": "nan"},
+            {"nonfinite": "inf"},
+            {"nonfinite": "-inf"},
+        ]
 
 
 @pytest.mark.tyx
 def test_bad_or_nonmember_pair_preserves_both_results(tyx_mode, tmp_path):
     data = family.reference().case("BE", "sep")
     with family.prepared(data, tyx_mode, tmp_path) as (batch, broad, plan):
-        first = plan.query_with_diagnostics(pairs=((ph.CollisionKey(*data["keys"][0]),
-                                                   ph.CollisionKey(*data["keys"][1])),))
+        first = plan.query_with_diagnostics(
+            pairs=((ph.CollisionKey(*data["keys"][0]), ph.CollisionKey(*data["keys"][1])),)
+        )
         old_broad = broad.last_result
         p = first.pairs[0]
         for bad in ((), (p, p), ((p[0], ph.CollisionKey(p[0].world, 999, 999)),)):
@@ -170,8 +194,9 @@ def test_temporary_owned_capacity_is_exact_and_freed(short, tyx_mode, tmp_path):
     with family.prepared(data, tyx_mode, tmp_path / "measure") as (_, _, initial):
         resident = initial.stats["live_bytes"]
     needed = 64 * 512 * 4 + 8
-    with family.prepared(data, tyx_mode, tmp_path / "bounded",
-                         memory_limit_bytes=resident + needed - int(short)) as (_, _, plan):
+    with family.prepared(
+        data, tyx_mode, tmp_path / "bounded", memory_limit_bytes=resident + needed - int(short)
+    ) as (_, _, plan):
         plain = plan.query()
         before = dict(plan.stats)
         if short:
@@ -190,24 +215,29 @@ def test_temporary_owned_capacity_is_exact_and_freed(short, tyx_mode, tmp_path):
 def test_late_trace_failure_is_atomic_and_retryable(fault, tyx_mode, tmp_path, monkeypatch):
     data = family.reference().case("BE", "sep")
     with family.prepared(data, tyx_mode, tmp_path) as (batch, broad, plan):
-        first = plan.query_with_diagnostics(pairs=((ph.CollisionKey(*data["keys"][0]),
-                                                   ph.CollisionKey(*data["keys"][1])),))
+        first = plan.query_with_diagnostics(
+            pairs=((ph.CollisionKey(*data["keys"][0]), ph.CollisionKey(*data["keys"][1])),)
+        )
         old_broad, live = broad.last_result, plan.stats["live_bytes"]
         with monkeypatch.context() as patch:
             if fault == "allocation":
                 original, calls = plan._allocate, [0]
+
                 def fail_allocate(*args, **kwargs):
                     calls[0] += 1
                     if calls[0] == 2:
                         raise RuntimeError("injected trace allocation")
                     return original(*args, **kwargs)
+
                 patch.setattr(plan, "_allocate", fail_allocate)
             else:
                 name = "readback" if fault == "read" else "build"
                 original = getattr(_TraceCapture, name)
+
                 def fail_after(self, *args, **kwargs):
                     original(self, *args, **kwargs)
                     raise RuntimeError("injected late trace " + fault)
+
                 patch.setattr(_TraceCapture, name, fail_after)
             with pytest.raises(RuntimeError, match="injected"):
                 plan.query_with_diagnostics(pairs=first.pairs)
@@ -224,10 +254,11 @@ def test_late_trace_failure_is_atomic_and_retryable(fault, tyx_mode, tmp_path, m
 def test_trace_source_owner_epoch_and_policy_binding(fault, tyx_mode, tmp_path):
     data = family.reference().case("BE", "sep")
     with family.prepared(data, tyx_mode, tmp_path) as (batch, _, plan):
-        trace = plan.query_with_diagnostics(pairs=((ph.CollisionKey(*data["keys"][0]),
-                                                   ph.CollisionKey(*data["keys"][1])),))
+        trace = plan.query_with_diagnostics(
+            pairs=((ph.CollisionKey(*data["keys"][0]), ph.CollisionKey(*data["keys"][1])),)
+        )
         if fault == "stale":
-            assert all(batch.step(1/1024).values())
+            assert all(batch.step(1 / 1024).values())
             with pytest.raises(ValueError, match="stale"):
                 plan.require_current_diagnostics(trace)
         elif fault == "owner":

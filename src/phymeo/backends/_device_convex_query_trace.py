@@ -1,4 +1,5 @@
 """Owned opt-in GJK trace transport. No geometry solver or HOST oracle lives here."""
+
 from collections.abc import Mapping
 from contextlib import ExitStack
 from dataclasses import dataclass
@@ -13,6 +14,7 @@ MAX_PAIRS = 8
 
 def normalize_trace_pairs(pairs):
     from ._device_convex_query import _canonical
+
     if type(pairs) not in (tuple, list):
         raise TypeError("diagnostic pairs must be an explicit tuple or list")
     if not 1 <= len(pairs) <= MAX_PAIRS:
@@ -25,11 +27,17 @@ def normalize_trace_pairs(pairs):
 
 def _policy(plan):
     return dict(
-        gjk_iterations=plan._gjk, epa_iterations=plan._epa,
-        epa_vertex_capacity=plan._vertices, epa_face_capacity=plan._faces,
-        selected_pair_limit=MAX_PAIRS, float_width=FLOAT_WIDTH, int_width=INT_WIDTH,
-        memory_limit_bytes=plan._memory_limit, pair_capacity=plan._capacity,
-        schema=SCHEMA, fw_dot_role="diagnostic-only-not-a-gate",
+        gjk_iterations=plan._gjk,
+        epa_iterations=plan._epa,
+        epa_vertex_capacity=plan._vertices,
+        epa_face_capacity=plan._faces,
+        selected_pair_limit=MAX_PAIRS,
+        float_width=FLOAT_WIDTH,
+        int_width=INT_WIDTH,
+        memory_limit_bytes=plan._memory_limit,
+        pair_capacity=plan._capacity,
+        schema=SCHEMA,
+        fw_dot_role="diagnostic-only-not-a-gate",
     )
 
 
@@ -48,6 +56,7 @@ class ConvexQueryTrace:
 
     def __post_init__(self):
         from ._device_convex_query import _freeze, _owned
+
         object.__setattr__(self, "pairs", tuple(tuple(pair) for pair in self.pairs))
         # Preserve input dtypes: validation rejects forged wrong types, not casts.
         for name in ("pair_rows", "shape_rows", "floats", "integers"):
@@ -69,7 +78,8 @@ def validate_trace(plan, trace):
     plan.require_current(trace.query)
     d, h = len(canonical), plan._gjk
     layouts = (
-        (trace.pair_rows, np.int32, (d,)), (trace.shape_rows, np.int32, (d, 2)),
+        (trace.pair_rows, np.int32, (d,)),
+        (trace.shape_rows, np.int32, (d, 2)),
         (trace.floats, np.float32, (d, h, FLOAT_WIDTH)),
         (trace.integers, np.int32, (d, h, INT_WIDTH)),
     )
@@ -97,12 +107,17 @@ def validate_trace(plan, trace):
             if tuple(item[:4]) != (1, trace.query.attempt_tag, row, iteration):
                 raise ValueError("diagnostic attempt/iteration binding differs")
             if (
-                not 0 <= item[4] <= 4 or not 0 <= item[5] <= 4
-                or item[6] not in (-1, 0, 1) or not 0 <= item[7] <= 4
-                or not 0 <= item[8] <= 15 or not 1 <= item[9] <= 8
+                not 0 <= item[4] <= 4
+                or not 0 <= item[5] <= 4
+                or item[6] not in (-1, 0, 1)
+                or not 0 <= item[7] <= 4
+                or not 0 <= item[8] <= 15
+                or not 1 <= item[9] <= 8
                 or item[14] != iteration + 1
-                or item[20] not in (0, 1) or not 0 <= item[21] <= 4
-                or item[22] not in (0, 1) or item[23] != 0
+                or item[20] not in (0, 1)
+                or not 0 <= item[21] <= 4
+                or item[22] not in (0, 1)
+                or item[23] != 0
                 or np.any(item[93:] != 0)
             ):
                 raise ValueError("invalid diagnostic iteration protocol")
@@ -113,9 +128,7 @@ def validate_trace(plan, trace):
                 origin = trace.query.source["pair_origins_relative_m"][row]
                 if not np.array_equal(fv[iteration, 412:415], origin):
                     raise ValueError("diagnostic pair anchor differs from accepted source")
-            elif iteration and not np.array_equal(
-                fv[iteration, 412:415], fv[0, 412:415]
-            ):
+            elif iteration and not np.array_equal(fv[iteration, 412:415], fv[0, 412:415]):
                 raise ValueError("diagnostic kernel anchor changes within a query")
             for side, shape in enumerate(expected):
                 slot = int(item[16 + side])
@@ -125,19 +138,21 @@ def validate_trace(plan, trace):
                     raise ValueError("diagnostic support material ID differs")
                 for count_index, slot_start in ((4, 24), (5, 36)):
                     for k in range(int(item[count_index])):
-                        slot = int(item[slot_start + 2*k + side])
-                        if not offsets[shape] <= slot < offsets[shape+1]:
+                        slot = int(item[slot_start + 2 * k + side])
+                        if not offsets[shape] <= slot < offsets[shape + 1]:
                             raise ValueError("diagnostic simplex material slot differs")
             subsets = item[48:93].reshape(15, 3)
             if (
-                np.any(subsets[:, 0] < 0) or np.any(subsets[:, 0] > 4)
+                np.any(subsets[:, 0] < 0)
+                or np.any(subsets[:, 0] > 4)
                 or np.any((subsets[:, 1] != 0) & (subsets[:, 1] != 1))
-                or np.any(subsets[:, 2] < 0) or np.any(subsets[:, 2] > 3)
+                or np.any(subsets[:, 2] < 0)
+                or np.any(subsets[:, 2] > 3)
             ):
                 raise ValueError("invalid diagnostic subset flags")
         # Nonfinite intermediate floats are valid evidence of an arithmetic failure.
         # They are retained as original bytes, never used to validate geometry.
-    expected_bytes = d*h*(FLOAT_WIDTH+INT_WIDTH)*4 + d*2*4
+    expected_bytes = d * h * (FLOAT_WIDTH + INT_WIDTH) * 4 + d * 2 * 4
     if (
         trace.stats["owned_bytes"] != expected_bytes
         or trace.stats["readback_bytes"] != expected_bytes
@@ -151,6 +166,7 @@ def validate_trace(plan, trace):
 
 class _TraceCapture:
     """A temporary transaction, owned under the existing batch lock."""
+
     def __init__(self, plan, pairs):
         self.plan = plan
         self.pairs = normalize_trace_pairs(pairs)
@@ -164,7 +180,9 @@ class _TraceCapture:
         self.read_stats = None
         self.allocation_stats = None
         self.clear_launches = 0
-        self.owned_bytes = len(self.pairs)*plan._gjk*(FLOAT_WIDTH+INT_WIDTH)*4 + len(self.pairs)*8
+        self.owned_bytes = (
+            len(self.pairs) * plan._gjk * (FLOAT_WIDTH + INT_WIDTH) * 4 + len(self.pairs) * 8
+        )
 
     def __enter__(self):
         return self
@@ -180,29 +198,49 @@ class _TraceCapture:
         if plan._counts["live_bytes"] + self.owned_bytes > plan._memory_limit:
             raise MemoryError("convex query diagnostic exceeds owned memory limit")
         self.pair_rows = np.asarray([rows[pair] for pair in self.pairs], dtype=np.int32)
-        self.shape_rows = np.asarray([
-            [plan._shape_index[key] for key in pair] for pair in self.pairs], dtype=np.int32)
+        self.shape_rows = np.asarray(
+            [[plan._shape_index[key] for key in pair] for pair in self.pairs], dtype=np.int32
+        )
         d, h = len(self.pairs), plan._gjk
         before = dict(plan._counts)
         self.buffers["pairs"] = plan._allocate(
-            (d, 2), np.int32, self.shape_rows, resources=self.resources)
+            (d, 2), np.int32, self.shape_rows, resources=self.resources
+        )
         self.buffers["floats"] = plan._allocate(
-            (d, h, FLOAT_WIDTH), np.float32, resources=self.resources)
+            (d, h, FLOAT_WIDTH), np.float32, resources=self.resources
+        )
         self.buffers["integers"] = plan._allocate(
-            (d, h, INT_WIDTH), np.int32, resources=self.resources)
-        plan._launch(plan._kernels["trace_clear"], "query_launches", d*h, h,
-                     self.buffers["floats"], self.buffers["integers"])
+            (d, h, INT_WIDTH), np.int32, resources=self.resources
+        )
+        plan._launch(
+            plan._kernels["trace_clear"],
+            "query_launches",
+            d * h,
+            h,
+            self.buffers["floats"],
+            self.buffers["integers"],
+        )
         self.clear_launches += 1
         if sum(value.nbytes for value in self.buffers.values()) != self.owned_bytes:
             raise RuntimeError("diagnostic allocation byte layout differs")
         self.allocation_stats = {
-            name: plan._counts[name]-before[name]
-            for name in ("allocations", "host_upload_bytes", "uploaded_bytes", "static_uploads", "launches")
+            name: plan._counts[name] - before[name]
+            for name in (
+                "allocations",
+                "host_upload_bytes",
+                "uploaded_bytes",
+                "static_uploads",
+                "launches",
+            )
         }
 
     def arguments(self):
-        return (len(self.pairs), self.buffers["pairs"],
-                self.buffers["floats"], self.buffers["integers"])
+        return (
+            len(self.pairs),
+            self.buffers["pairs"],
+            self.buffers["floats"],
+            self.buffers["integers"],
+        )
 
     def readback(self):
         plan = self.plan
@@ -223,8 +261,10 @@ class _TraceCapture:
         if not np.array_equal(values["pairs"], self.shape_rows):
             raise RuntimeError("diagnostic uploaded pair rows differ")
         self.raw = values
-        self.read_stats = {name: plan._counts[name]-before[name]
-                           for name in ("downloads", "downloaded_bytes", "host_read_bytes")}
+        self.read_stats = {
+            name: plan._counts[name] - before[name]
+            for name in ("downloads", "downloaded_bytes", "host_read_bytes")
+        }
 
     def release(self):
         if not self.released:
@@ -239,16 +279,30 @@ class _TraceCapture:
             raise RuntimeError("diagnostic must read and release before publication")
         d, h = len(self.pairs), self.plan._gjk
         result = ConvexQueryTrace(
-            SCHEMA, self.plan._trace_owner, query, self.pairs, self.pair_rows,
-            self.raw["pairs"], self.raw["floats"], self.raw["integers"], _policy(self.plan),
-            dict(self.allocation_stats, **self.read_stats, owned_bytes=self.owned_bytes,
-                 readback_bytes=sum(value.nbytes for value in self.raw.values()),
-                 clear_launches=self.clear_launches, released=True,
-                 host_payload_bytes=sum(value.nbytes for value in self.raw.values())
-                                    + self.pair_rows.nbytes,
-                 temporary_layout=(("pairs", (d,2), np.dtype(np.int32).str),
-                                   ("floats", (d,h,FLOAT_WIDTH), np.dtype(np.float32).str),
-                                   ("integers", (d,h,INT_WIDTH), np.dtype(np.int32).str))),
+            SCHEMA,
+            self.plan._trace_owner,
+            query,
+            self.pairs,
+            self.pair_rows,
+            self.raw["pairs"],
+            self.raw["floats"],
+            self.raw["integers"],
+            _policy(self.plan),
+            dict(
+                self.allocation_stats,
+                **self.read_stats,
+                owned_bytes=self.owned_bytes,
+                readback_bytes=sum(value.nbytes for value in self.raw.values()),
+                clear_launches=self.clear_launches,
+                released=True,
+                host_payload_bytes=sum(value.nbytes for value in self.raw.values())
+                + self.pair_rows.nbytes,
+                temporary_layout=(
+                    ("pairs", (d, 2), np.dtype(np.int32).str),
+                    ("floats", (d, h, FLOAT_WIDTH), np.dtype(np.float32).str),
+                    ("integers", (d, h, INT_WIDTH), np.dtype(np.int32).str),
+                ),
+            ),
         )
         self.result = validate_trace(self.plan, result)
         return self.result

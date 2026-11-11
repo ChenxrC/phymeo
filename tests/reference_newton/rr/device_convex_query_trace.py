@@ -3,18 +3,23 @@
 Uses existing independent fixture declarations, never product geometry as oracle.
 The runner records geometry failure measures; it does not turn them into passes.
 """
+
 import argparse
-from contextlib import closing
 import gzip
 import hashlib
 import importlib
 import json
-from pathlib import Path
 import sys
+from contextlib import closing
+from pathlib import Path
 
 IDENTITIES = (
-    "Y-ordinary", "Y-affine", "Y-floating", "Y-floating_affine",
-    "sep-HN", "rotated-reversed-HN",
+    "Y-ordinary",
+    "Y-affine",
+    "Y-floating",
+    "Y-floating_affine",
+    "sep-HN",
+    "rotated-reversed-HN",
 )
 
 
@@ -32,6 +37,7 @@ def helpers():
 def same_state_geometry(normal, traced, encode):
     """Exact stored equality. Counters are retained, but are not geometry fields."""
     from dataclasses import fields
+
     import numpy as np
 
     assert normal.owner is traced.owner and normal.registration is traced.registration
@@ -59,36 +65,60 @@ def run(identity, mode, output, cache_root):
     output.parent.mkdir(parents=True, exist_ok=True)
     k0, family, sources = helpers()
     import numpy as np
+
     import phymeo as ph
 
     product = Path(__file__).resolve().parents[3] / "src/phymeo/backends"
-    source_paths = (Path(__file__), Path(k0.__file__), Path(family.__file__),
-                    Path(sources.__file__), Path(family.reference().__file__),
-                    product / "_device_convex_query.py",
-                    product / "_device_convex_query_trace.py",
-                    product / "_tyx_convex_query_kernels.py")
-    record = dict(schema="COL1-GJK-failure-diagnostic-v1", identity=identity, mode=mode,
-                  source=[dict(path=str(p), sha256=hashlib.sha256(p.read_bytes()).hexdigest())
-                          for p in source_paths], trace=None, completed=False, failure=None)
+    source_paths = (
+        Path(__file__),
+        Path(k0.__file__),
+        Path(family.__file__),
+        Path(sources.__file__),
+        Path(family.reference().__file__),
+        product / "_device_convex_query.py",
+        product / "_device_convex_query_trace.py",
+        product / "_tyx_convex_query_kernels.py",
+    )
+    record = dict(
+        schema="COL1-GJK-failure-diagnostic-v1",
+        identity=identity,
+        mode=mode,
+        source=[
+            dict(path=str(p), sha256=hashlib.sha256(p.read_bytes()).hexdigest())
+            for p in source_paths
+        ],
+        trace=None,
+        completed=False,
+        failure=None,
+    )
     try:
         if identity.startswith("Y-"):
             layout = identity[2:]
             trees = tuple(sources.declaration(layout, i) for i in range(4))
             with ph.TyxWorldBatch(
                 list(zip(sources.WORLDS, trees, strict=True))[::-1],
-                mode, cache_root=cache_root,
+                mode,
+                cache_root=cache_root,
             ) as batch:
                 shapes, bindings, declarations, pairs = [], [], {}, []
                 for index, (world, tree) in enumerate(zip(sources.WORLDS, trees, strict=True)):
-                    shape, binding, declared = sources.install(batch, tree, layout, "Y", world, index)
+                    shape, binding, declared = sources.install(
+                        batch, tree, layout, "Y", world, index
+                    )
                     shapes.extend(shape)
                     bindings.extend(binding)
                     declarations[world] = declared
                     pairs.append(tuple(item.key for item in shape))
-                record.update(initial=batch.snapshot(), declarations=declarations,
-                              selected_world=17, physical_step_h=sources.H)
+                record.update(
+                    initial=batch.snapshot(),
+                    declarations=declarations,
+                    selected_world=17,
+                    physical_step_h=sources.H,
+                )
                 # This is exactly the original first real continuing step. No reset.
-                with batch.prepare_collision(ph.CollisionModel(tuple(shapes)), tuple(bindings)) as broad:
+                with batch.prepare_collision(
+                    ph.CollisionModel(tuple(shapes)), tuple(bindings)
+                ) as broad:
                     with closing(batch.prepare_convex_query(broad, pairs=tuple(pairs))) as plan:
                         stepped = batch.step(sources.H)
                         record.update(physical_step_result=stepped, accepted=batch.snapshot())
@@ -102,22 +132,27 @@ def run(identity, mode, output, cache_root):
                         oracles = {}
                         for row in trace.query.rows:
                             world = row.pair[0].world
-                            data = sources.current_case(record["accepted"][world], layout,
-                                                        declarations[world])
+                            data = sources.current_case(
+                                record["accepted"][world], layout, declarations[world]
+                            )
                             truth = family.reference().oracle(data)
                             oracles[world] = dict(
-                                input=data, truth=truth, status=row.status,
-                                normal_error=float(np.linalg.norm(np.asarray(row.normal)-truth["normal"])),
+                                input=data,
+                                truth=truth,
+                                status=row.status,
+                                normal_error=float(
+                                    np.linalg.norm(np.asarray(row.normal) - truth["normal"])
+                                ),
                                 normal_gate=0.002,
-                                gap_error=abs(row.gap_m-truth["gap_m"]),
-                                gap_gate=1e-4*truth["scale_m"],
+                                gap_error=abs(row.gap_m - truth["gap_m"]),
+                                gap_gate=1e-4 * truth["scale_m"],
                             )
                         record["independent_oracles"] = oracles
                         same_state_geometry(normal, trace.query, k0.encode)
                         record["same_state_geometry_equal"] = True
                         plan.require_current_diagnostics(trace)
         else:
-            data = family.reference().case("HN", "sep", cycle=identity=="rotated-reversed-HN")
+            data = family.reference().case("HN", "sep", cycle=identity == "rotated-reversed-HN")
             record["input"] = data
             with family.prepared(data, mode, cache_root) as (batch, _, plan):
                 record["accepted"] = batch.snapshot()

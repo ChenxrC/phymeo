@@ -237,6 +237,8 @@ NEGATIVE_XML = (
     ("ball-motor", ROTOR.replace('</mujoco>', '<actuator><motor joint="ball" gear="1 2 3 0 0 0"/></actuator></mujoco>')),
     ("contact", ROTOR.replace('<worldbody>', '<worldbody><geom type="plane" size="1 1 .1"/>').replace('contype="0" conaffinity="0"', 'contype="1" conaffinity="1"')),
     ("three-balls", xml("over-cap", body("a", joint("a"), body("b", joint("b"), body("c", joint("c")))))),
+    ("scalar-motor-with-ball", HINGE_BALL_SLIDE.replace('</mujoco>', '<actuator><motor joint="hinge"/></actuator></mujoco>')),
+    ("free-and-ball", xml("free-and-ball", body("free", '<freejoint/>', body("ball-child", joint("ball"))))),
     ("scalar-limit", HINGE_BALL_SLIDE.replace('name="hinge" type="hinge"', 'name="hinge" type="hinge" limited="true" range="-1 1"')),
 )
 
@@ -265,3 +267,29 @@ def test_ball_bad_initial_quaternion_rejects(kind):
         q[2] = np.nan
     with pytest.raises(ValueError):
         MuJoCoTyxRuntime(compile_mujoco_xml(ROTOR, require_asset=False), mode="interpret", initial_states={0: MuJoCoInitialState(q, np.zeros(3))})
+
+
+def test_ball_static_native_addresses_and_full_qpos_reference():
+    mj = deps()
+    from phymeo.backends.mujoco_tyx._tree_model import compile_tree_model
+    model = mj.MjModel.from_xml_string(MAXIMUM)
+    plan = compile_tree_model(mj, model)
+    assert (plan.nq, plan.nv, plan.vectors.shape) == (10, 8, (9, 10))
+    np.testing.assert_array_equal(plan.vectors[4], model.qpos0.astype(np.float32))
+    for joint_id in range(model.njnt):
+        qa, da, body_id = map(int, (model.jnt_qposadr[joint_id], model.jnt_dofadr[joint_id], model.jnt_bodyid[joint_id]))
+        is_ball = model.jnt_type[joint_id] == mj.mjtJoint.mjJNT_BALL
+        expected_kind = 2 if is_ball else int(model.jnt_type[joint_id] == mj.mjtJoint.mjJNT_HINGE)
+        np.testing.assert_array_equal(plan.joint_ids[joint_id], [expected_kind, qa, da, body_id])
+        for column in range(da, da + (3 if is_ball else 1)):
+            np.testing.assert_array_equal(plan.dof_ids[column], [int(expected_kind != 0), -1 if is_ball else qa, joint_id])
+    expected_ancestors = np.zeros((model.nbody, 8), np.int32)
+    for body_id in range(1, model.nbody):
+        cursor = body_id
+        while cursor:
+            for joint_id in range(model.body_jntadr[cursor], model.body_jntadr[cursor] + model.body_jntnum[cursor]):
+                start = model.jnt_dofadr[joint_id]
+                count = 3 if model.jnt_type[joint_id] == mj.mjtJoint.mjJNT_BALL else 1
+                expected_ancestors[body_id, start:start + count] = 1
+            cursor = int(model.body_parentid[cursor])
+    np.testing.assert_array_equal(plan.ancestors, expected_ancestors)

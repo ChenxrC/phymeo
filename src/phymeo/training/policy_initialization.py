@@ -201,6 +201,8 @@ def center_initial_mean(actor, observation, *, critic, optimizer, expected_polic
             except BaseException as rollback_error:
                 raise BaseExceptionGroup("initialization and bias rollback both failed",
                                          [error, rollback_error]) from error
+        receipt["status"] = "FAILED_ROLLED_BACK" if rolled_back else "FAILED_BEFORE_PUBLICATION"
+        receipt["publication_started"] = publication_started
         if isinstance(error, Exception):
             raise InitializationFailure(error, rolled_back=rolled_back, receipt=receipt) from error
         raise

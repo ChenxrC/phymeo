@@ -172,6 +172,8 @@ def test_injected_failure_restores_all_original_model_state(monkeypatch, stage, 
     with pytest.raises(initialization.InitializationFailure) as caught:
         invoke(actor, critic, optimizer, obs)
     assert caught.value.rolled_back == (stage != "candidate")
+    assert caught.value.receipt["status"] == (
+        "FAILED_BEFORE_PUBLICATION" if stage == "candidate" else "FAILED_ROLLED_BACK")
     assert policy_hash(actor, critic) == before_hash
     assert not optimizer.state
     same_rng(before_rng)

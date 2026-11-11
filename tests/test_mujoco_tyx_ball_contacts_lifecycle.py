@@ -1,5 +1,5 @@
 """BALL-C C5/C6 exact accepted-state lifecycle, tests first."""
-import numpy as np
+from contextlib import ExitStack
 import pytest
 from test_mujoco_tyx_ball_contacts import MODES, case
 
@@ -76,20 +76,20 @@ def test_ball_contact_late_failure_exact_retention(name, fault, mode, monkeypatc
 
 @pytest.mark.parametrize("mode", MODES)
 def test_ball_contact_wrong_checkpoint_binding(mode, tmp_path):
-    mj, model, compiled, starts, runtime = case.fixture("c3-early", mode, (7, 41))
-    _, _, _, _, other = case.fixture("c3-late", mode, (7, 41))
     journal = case.Journal(tmp_path / "wrong-binding.jsonl.gz")
     try:
-        before = runtime.checkpoint().to_bytes()
-        revision = runtime.checkpoint_revision
-        foreign = other.checkpoint()
-        with pytest.raises(ValueError):
-            runtime.restore(foreign, expected_revision=revision)
-        assert runtime.checkpoint().to_bytes() == before
-        assert runtime.checkpoint_revision == revision
-        journal.emit("rejected", before=before, foreign=foreign.to_bytes(),
-                     retained=runtime.integration_snapshot())
+        with ExitStack() as owners:
+            mj, model, compiled, starts, runtime = case.fixture("c3-early", mode, (7, 41))
+            owners.callback(runtime.close)
+            _, _, _, _, other = case.fixture("c3-late", mode, (7, 41))
+            owners.callback(other.close)
+            before = runtime.checkpoint().to_bytes()
+            revision = runtime.checkpoint_revision
+            foreign = other.checkpoint()
+            with pytest.raises(ValueError):
+                runtime.restore(foreign, expected_revision=revision)
+            assert runtime.checkpoint().to_bytes() == before
+            assert runtime.checkpoint_revision == revision
+            journal.emit("rejected", before=before, foreign=foreign.to_bytes(), retained=runtime.integration_snapshot())
     finally:
-        runtime.close()
-        other.close()
         journal.close()

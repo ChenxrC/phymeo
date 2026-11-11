@@ -2,7 +2,6 @@
 import importlib.util
 from pathlib import Path
 
-import numpy as np
 import pytest
 
 _SPEC = importlib.util.spec_from_file_location("ball_contact_consumer", Path(__file__).parent / "installed" / "check_ball_contacts.py")
@@ -37,6 +36,7 @@ def test_ball_contact_domain_rejected_before_device(negative, monkeypatch, tmp_p
     xml = case.negative_source(negative)
     # Native compilation establishes that this is a valid native declaration.
     model = mj.MjModel.from_xml_string(xml)
+    assert model.nq >= 4 and model.nv >= 3
     compiled = compile_mujoco_xml(xml, require_asset=False)
     calls = []
     def forbidden(*args, **kwargs):
@@ -63,5 +63,12 @@ def test_ball_contact_exact_static_capacity(family, mode, tmp_path):
             journal.emit("capacity", xml=xml, dimensions=(model.nq, model.nv), capabilities=runtime.capabilities,
                          initial=runtime.integration_snapshot())
             assert runtime.capabilities["domain"] == "fixed-ball-scalar-normal-contact-v1"
+            expected_slots = 16 if family == "pairs" else 32
+            assert runtime.capabilities["normal_candidate_slots"] == expected_slots
+            entry = runtime.integration_snapshot()
+            refs = case.references(mj, model, entry)
+            packets = {k: case.control(model, 0, i) for i, k in enumerate(runtime.world_keys)}
+            result = case.advance(runtime, mj, model, packets, refs, journal, "exact-capacity-step")
+            assert len(result[0].last_step.raw_contact_fields["slot_ids"]) == expected_slots
         finally:
             journal.close()

@@ -144,8 +144,7 @@ def test_ball_bad_last_control_is_rejected_before_any_held_update(mode, tmp_path
         runtime.step(H)
         before = runtime.integration_snapshot()
         good = control(model, 8)
-        bad_force = np.asarray(control(model, 8, 1).qfrc_applied).copy()
-        bad_force[-1] = np.nan
+        bad_force = np.zeros(model.nv + 1)  # finite packet, rejected by real batch submission
         with pytest.raises(ValueError):
             runtime.set_controls({keys[0]: good, keys[1]: MuJoCoControl([], qfrc_applied=bad_force)})
         same(before, runtime.integration_snapshot())

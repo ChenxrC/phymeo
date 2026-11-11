@@ -924,8 +924,13 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
         revision = self._checkpoint_revision
         if not selected:
             return MuJoCoTyxResetReceipt(
-                "mujoco-tyx-reset-v1", revision, revision, (), digest,
-                MappingProxyType({}), MappingProxyType({}),
+                "mujoco-tyx-reset-v1",
+                revision,
+                revision,
+                (),
+                digest,
+                MappingProxyType({}),
+                MappingProxyType({}),
                 _frozen(np.empty((0, 2)), dtype=np.float32),
             )
         proposed, controls = dict(self._data), dict(self._controls)
@@ -956,8 +961,10 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                     or packed[1][index, : self._plan.nv].astype(np.float64).tobytes()
                     != original.qvel.tobytes()
                     or float(packed[2][index, 0]) - float(packed[2][index, 1]) != original.time
-                    or (len(packed) == 4 and packed[3][index].astype(np.float64).tobytes()
-                        != original.act.tobytes())
+                    or (
+                        len(packed) == 4
+                        and packed[3][index].astype(np.float64).tobytes() != original.act.tobytes()
+                    )
                 ):
                     raise RuntimeError("reset unselected accepted mirror differs")
                 continue
@@ -975,8 +982,13 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
             data = proposed[key]
             stored[key] = MuJoCoInitialState(data.qpos, data.qvel, act=data.act, time=data.time)
         result = MuJoCoTyxResetReceipt(
-            "mujoco-tyx-reset-v1", revision, revision + 1, selected, digest,
-            MappingProxyType(dict(states)), MappingProxyType(stored),
+            "mujoco-tyx-reset-v1",
+            revision,
+            revision + 1,
+            selected,
+            digest,
+            MappingProxyType(dict(states)),
+            MappingProxyType(stored),
             _frozen(packed[2][rows], dtype=np.float32),
         )
         retired_controls = retirement_list(self)
@@ -1001,7 +1013,12 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
         for key, value in old.counts.items():
             replacement.counts[key] += value
         self._device = replacement
-        self._data, self._controls, self._ticks, self._receipts = proposed, controls, ticks, receipts
+        self._data, self._controls, self._ticks, self._receipts = (
+            proposed,
+            controls,
+            ticks,
+            receipts,
+        )
         self._checkpoint_revision = revision + 1
         self._checkpoint_retired, self._control_retired = old_retirement, retired_controls
         invalidate(self)

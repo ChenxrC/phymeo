@@ -142,7 +142,17 @@ class MuJoCoTyxVectorEnv:
     episode boundary, not learner checkpoint restoration.
     """
 
-    def __init__(self, runtime, task_spec, action_spec, *, h, horizons, observation_mode="full"):
+    def __init__(
+        self,
+        runtime,
+        task_spec,
+        action_spec,
+        *,
+        h,
+        horizons,
+        observation_mode="full",
+        reset_plan=None,
+    ):
         import torch
 
         from phymeo.backends.mujoco_task_workspace import MuJoCoTyxTaskSpec
@@ -167,6 +177,15 @@ class MuJoCoTyxVectorEnv:
         self.world_keys = tuple(runtime.world_keys)
         self.num_envs, self.num_actions = len(self.world_keys), action_spec.width
         self.h = float(h)
+        if reset_plan is not None:
+            from .mujoco_tyx_reset import MuJoCoTyxResetPlan
+
+            if type(reset_plan) is not MuJoCoTyxResetPlan:
+                raise TypeError("random reset requires immutable MuJoCoTyxResetPlan")
+            reset_plan.validate_runtime(runtime)
+        self._reset_plan = reset_plan
+        self._reset_indices = MappingProxyType(dict.fromkeys(self.world_keys, 0))
+        self._reset_last_sample, self._last_reset_receipt = None, None
         values = tuple(horizons)
         if len(values) != self.num_envs or any(
             type(value) is not int or not 1 <= value <= np.iinfo(np.int32).max for value in values
@@ -216,12 +235,55 @@ class MuJoCoTyxVectorEnv:
                     "state_observation": self.observation_mode,
                     "episode_bookkeeping": "HOST-lengths-and-done-mask",
                     "restore": "explicit-N3-update-boundary-composition",
+                    **(
+                        {"random_reset": reset_plan.training_binding()}
+                        if reset_plan is not None
+                        else {}
+                    ),
                 }
             )
         except BaseException:
             self.workspace.close()
             self._closed = True
             raise
+
+    @property
+    def reset_plan(self):
+        """Optional immutable scalar q/v plan; no late replacement is supported."""
+        return self._reset_plan
+
+    @property
+    def reset_indices(self):
+        """Committed next indices, including reset commits followed by export failure."""
+        with self._lock:
+            return self._reset_indices
+
+    @property
+    def last_reset_receipt(self):
+        """Actual backend receipt, or None before reset/after composition restore."""
+        with self._lock:
+            return self._last_reset_receipt
+
+    def _reset_selected(self, keys, revision):
+        if self._reset_plan is None:
+            self.runtime.reset(keys)
+            return
+        sample = self._reset_plan.prepare(keys, self._reset_indices)
+        last = {"world_keys": sample.world_keys, "indices": dict(sample.indices)}
+        receipt = self.runtime.reset_states(sample.requested, expected_revision=revision)
+        # All allocation is before the physical CAS. The consumed stream ledger
+        # must be installed before any task export or other late fallible work.
+        self._reset_indices = sample.next_indices
+        self._reset_last_sample = last
+        self._last_reset_receipt = receipt
+        if (
+            receipt.schema != "mujoco-tyx-reset-v1"
+            or receipt.source_revision != revision
+            or receipt.destination_revision != revision + 1
+            or receipt.world_keys != sample.world_keys
+            or self.runtime.checkpoint_revision != receipt.destination_revision
+        ):
+            raise RuntimeError("accepted reset receipt/source binding differs")
 
     @property
     def current_frame(self):
@@ -410,7 +472,7 @@ class MuJoCoTyxVectorEnv:
                 if keys:
                     phase = "subset-reset"
                     reset_revision = self.runtime.checkpoint_revision
-                    self.runtime.reset(keys)
+                    self._reset_selected(keys, reset_revision)
                     reset_accepted = True
                     self._counts["resets"] += len(keys)
                     phase = "reset-task-export"
@@ -490,8 +552,6 @@ class MuJoCoTyxVectorEnv:
                 return self._observation.clone()
             revision = self.runtime.checkpoint_revision
             try:
-                self.runtime.reset(selected)
-                frame, observation, _, _ = self._export()
                 mask = np.array([key in selected for key in self.world_keys])
                 lengths, ids = self._length.copy(), self._episode_id.copy()
                 lengths[mask] = 0
@@ -500,6 +560,8 @@ class MuJoCoTyxVectorEnv:
                 returns[torch.tensor(mask, device=self.device)] = 0
                 previous_action = self._previous_action.clone()
                 previous_action[torch.tensor(mask, device=self.device)] = 0
+                self._reset_selected(selected, revision)
+                frame, observation, _, _ = self._export()
                 torch.cuda.current_stream(self.device).synchronize()
             except Exception as error:
                 changed = self.runtime.checkpoint_revision != revision
@@ -548,12 +610,14 @@ class MuJoCoTyxVectorEnv:
         # mode must never silently load a checkpoint with a different contract.
         if self.observation_mode != "full":
             binding["state_observation"] = self.observation_mode
+        if self._reset_plan is not None:
+            binding["random_reset"] = self._reset_plan.training_binding()
         return binding
 
     def capture_training_state(self):
         """Owned HOST copies at a synchronous accepted boundary."""
         with self.training_boundary():
-            return {
+            state = {
                 "sequence": self._sequence,
                 "length": self._length.copy(),
                 "episode_id": self._episode_id.copy(),
@@ -561,6 +625,16 @@ class MuJoCoTyxVectorEnv:
                 "observation": self._observation.detach().cpu().clone(),
                 "previous_action": self._previous_action.detach().cpu().clone(),
             }
+            if self._reset_plan is not None:
+                last = self._reset_last_sample
+                state["random_reset"] = {
+                    "plan_sha256": self._reset_plan.sha256,
+                    "next_indices": dict(self._reset_indices),
+                    "last_sample": None
+                    if last is None
+                    else {"world_keys": last["world_keys"], "indices": dict(last["indices"])},
+                }
+            return state
 
     def invalidate_training_state(self, reason):
         """A composition failed after physics accepted; no rollback is implied."""
@@ -590,8 +664,13 @@ class MuJoCoTyxVectorEnv:
                 "observation",
                 "previous_action",
             }
+            if self._reset_plan is not None:
+                required.add("random_reset")
             if type(state) is not dict or set(state) != required:
                 raise ValueError("training environment state schema")
+            reset_state = None
+            if self._reset_plan is not None:
+                reset_state = self._reset_plan.validate_training_state(state["random_reset"])
             sequence = state["sequence"]
             if type(sequence) is not int or not 0 <= sequence <= 2**63 - 1:
                 raise ValueError("training transition sequence")
@@ -631,6 +710,11 @@ class MuJoCoTyxVectorEnv:
                 raise ValueError("stale training physics CAS revision")
             try:
                 receipt = self.runtime.restore(checkpoint, expected_revision=expected_revision)
+                if reset_state is not None:
+                    # Saved semantic stream state belongs to the accepted physical
+                    # capsule even if the following task publication fails.
+                    self._reset_indices, self._reset_last_sample = reset_state
+                    self._last_reset_receipt = None
                 frame, observation, _, _ = self._export()
                 if not torch.equal(
                     observation.view(torch.uint8), tensors["observation"].view(torch.uint8)

@@ -1,11 +1,10 @@
 """Resident T2 scratch/state banks; same original atomic publication boundary."""
 
-from contextlib import ExitStack
-
 import numpy as np
 
 from . import _actuator_device
 from ._device import TyxDevice
+from ._resources import DeviceResources
 
 
 class TyxFloatingDevice(TyxDevice):
@@ -21,11 +20,11 @@ class TyxFloatingDevice(TyxDevice):
         self.nbody, self.nworld, self.h = nbody, len(q), float(h)
         width = max(8, plan.nv)
         self.active = 0
-        self.resources = ExitStack()
+        self.resources = DeviceResources()
         self.runtime = tx.Runtime(
             backend="cuda" if mode == "cuda" else "cpu", cache_root=cache_root
         )
-        self.resources.callback(self.runtime.close)
+        self.resources.set_runtime(self.runtime)
         self.counts = dict(
             completed_kernels=0,
             synchronizations=0,

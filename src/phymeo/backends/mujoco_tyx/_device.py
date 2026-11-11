@@ -1,8 +1,8 @@
 """Owned TYX resident buffers and atomic candidate bank; no host physics step."""
 
-from contextlib import ExitStack
-
 import numpy as np
+
+from ._resources import DeviceResources
 
 
 class TyxDevice:
@@ -15,11 +15,11 @@ class TyxDevice:
         self.plan, self.mode, self.h = plan, mode, float(h)
         self.nbody, self.capacities = nbody, capacities
         self.nworld = len(q)
-        self.resources = ExitStack()
+        self.resources = DeviceResources()
         self.runtime = tx.Runtime(
             backend="cuda" if mode == "cuda" else "cpu", cache_root=cache_root
         )
-        self.resources.callback(self.runtime.close)
+        self.resources.set_runtime(self.runtime)
         self.active = 0
         self.counts = dict(
             completed_kernels=0,
@@ -60,7 +60,7 @@ class TyxDevice:
         if self.mode == "interpret":
             return value.copy()
         result = self.tx.cuda_array(value)
-        self.resources.callback(result.free)
+        self.resources.add_buffer(result)
         self.counts["device_allocations"] += 1
         self.counts["static_uploaded_bytes"] += value.nbytes
         return result

@@ -370,7 +370,7 @@ def _session(env):
     return MuJoCoTyxPpoSession(RslMuJoCoTyxVecEnv(env), steps=32)
 
 
-def run_learning(name, seed, output):
+def run_learning(name, seed, output, *, initializer=None):
     definitions = tasks()
     item = definitions.task(name)
     if type(seed) is not int or seed not in item.seeds:
@@ -381,8 +381,14 @@ def run_learning(name, seed, output):
         with _observed_environment(context, name) as env:
             context.update(env=env, phase="construct-original-upstream-PPO")
             session = _session(env)
+            initializer_receipt = None
+            if initializer is not None:
+                context["phase"] = "declared-policy-initializer"
+                initializer_receipt = initializer(session, env, name, seed)
             manifest = _manifest(env, name, seed, "learn")
             manifest["ppo_config"] = session.config
+            if initializer is not None:
+                manifest["initializer"] = evaluation.encode(initializer_receipt)
             evaluation.json_write(context["path"] / "manifest.json", manifest)
             writer = context["writer"]
             writer.write(
@@ -392,6 +398,8 @@ def run_learning(name, seed, output):
                     "critic": session.algorithm.critic.state_dict(),
                 },
             )
+            if initializer is not None:
+                writer.write("initializer_receipt", initializer_receipt)
             initial_hash = evaluation.parameter_hash(session.algorithm)
             context["phase"] = "untrained-deterministic-held-out-256"
             baseline = _held_out(session.algorithm.actor, name, writer, "untrained")
@@ -472,6 +480,8 @@ def run_learning(name, seed, output):
                 "source_files": manifest["source_files"],
                 "dependencies": manifest["dependencies"],
             }
+            if initializer is not None:
+                result["initializer"] = evaluation.encode(initializer_receipt)
         context["env"] = None
         return _finish(context, result)
 

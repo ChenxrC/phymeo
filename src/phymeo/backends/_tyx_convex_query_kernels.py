@@ -39,6 +39,84 @@ def affine_simplex_coordinate(
     )
 
 
+@tx.func
+def retained_candidate_fixed(
+    duplicate: tx.i32,
+    appended: tx.i32,
+    entry_count: tx.i32,
+    reduced_count: tx.i32,
+    entry_x: tx.f32,
+    entry_y: tx.f32,
+    entry_z: tx.f32,
+    entry_square: tx.f32,
+    reduced_x: tx.f32,
+    reduced_y: tx.f32,
+    reduced_z: tx.f32,
+    reduced_square: tx.f32,
+    entry_w0: tx.f32,
+    entry_w1: tx.f32,
+    entry_w2: tx.f32,
+    entry_w3: tx.f32,
+    reduced_w0: tx.f32,
+    reduced_w1: tx.f32,
+    reduced_w2: tx.f32,
+    reduced_w3: tx.f32,
+    selected0: tx.i32,
+    selected1: tx.i32,
+    selected2: tx.i32,
+    selected3: tx.i32,
+) -> tx.i32:
+    return (
+        1
+        if duplicate == 1
+        and appended == 0
+        and entry_count >= 1
+        and entry_count <= 4
+        and reduced_count == entry_count
+        and tx.isfinite(entry_x)
+        and tx.isfinite(entry_y)
+        and tx.isfinite(entry_z)
+        and tx.isfinite(entry_square)
+        and entry_square > 0.0
+        and reduced_x == entry_x
+        and reduced_y == entry_y
+        and reduced_z == entry_z
+        and reduced_square == entry_square
+        and selected0 == 0
+        and tx.isfinite(entry_w0)
+        and entry_w0 >= 0.0
+        and reduced_w0 == entry_w0
+        and (
+            entry_count < 2
+            or (
+                selected1 == 1
+                and tx.isfinite(entry_w1)
+                and entry_w1 >= 0.0
+                and reduced_w1 == entry_w1
+            )
+        )
+        and (
+            entry_count < 3
+            or (
+                selected2 == 2
+                and tx.isfinite(entry_w2)
+                and entry_w2 >= 0.0
+                and reduced_w2 == entry_w2
+            )
+        )
+        and (
+            entry_count < 4
+            or (
+                selected3 == 3
+                and tx.isfinite(entry_w3)
+                and entry_w3 >= 0.0
+                and reduced_w3 == entry_w3
+            )
+        )
+        else 0
+    )
+
+
 def gather_convex_pose(
     count: tx.i32,
     selected_layout: tx.i32,
@@ -456,6 +534,26 @@ def query_convex_pairs(
             oz = points[a0, 2]
             for iteration in range(gjk_budget):
                 if status == 0 and need_epa == 0:
+                    # Snapshot only the valid retained candidate. A duplicate
+                    # cannot append or mutate its vertices/material slots.
+                    entry_count = simplex_n
+                    entry_x = cx
+                    entry_y = cy
+                    entry_z = cz
+                    entry_square = closest_square
+                    entry_w0 = 0.0
+                    entry_w1 = 0.0
+                    entry_w2 = 0.0
+                    entry_w3 = 0.0
+                    if entry_count > 0:
+                        entry_w0 = weights[lane, 0]
+                    if entry_count > 1:
+                        entry_w1 = weights[lane, 1]
+                    if entry_count > 2:
+                        entry_w2 = weights[lane, 2]
+                    if entry_count > 3:
+                        entry_w3 = weights[lane, 3]
+                    candidate_appended = 0
                     if trace_slot >= 0:
                         trace_i[trace_slot, iteration, 0] = 1
                         trace_i[trace_slot, iteration, 1] = attempt
@@ -766,8 +864,8 @@ def query_convex_pairs(
                                     trace_i[trace_slot, iteration, 9] = 7
                                     trace_i[trace_slot, iteration, 7] = 1
 
+                    duplicate = 0
                     if status == 0:
-                        duplicate = 0
                         for k in range(simplex_n):
                             ex = px - vertices[lane, k, 0]
                             ey = py - vertices[lane, k, 1]
@@ -776,7 +874,35 @@ def query_convex_pairs(
                                 duplicate = 1
                         if trace_slot >= 0:
                             trace_i[trace_slot, iteration, 6] = duplicate
+                        # The support plane was queried in direction -current q.
+                        # Publish only that retained candidate and its weights;
+                        # an outgoing reducer candidate needs its own next call.
+                        if simplex_n > 0 and closest_square > 0.0:
+                            distance = tx.sqrt(closest_square)
+                            if distance > 1e-5 or (
+                                distance > 8e-7 and full_surface == 0 and (ka < 2 or kb < 2)
+                            ):
+                                if distance - bound <= 8e-7:
+                                    status = 1
+                                    valid = 7
+                                    nx = -cx / distance
+                                    ny = -cy / distance
+                                    nz = -cz / distance
+                                    signed_gap = distance * scale - ra - rb
+                                    lower_gap = tx.min(signed_gap, bound * scale - ra - rb)
+                                    upper_gap = signed_gap
+                                    active_count = simplex_n
+                                    if trace_slot >= 0:
+                                        trace_i[trace_slot, iteration, 7] = simplex_n
+                                        # mask=0: this iteration has no subset reduction.
+                                        trace_i[trace_slot, iteration, 9] = 2
+                                        trace_i[trace_slot, iteration, 21] = simplex_n
+                                        trace_f[trace_slot, iteration, 21] = distance
+                                        trace_f[trace_slot, iteration, 22] = distance - bound
+
+                    if status == 0:
                         if simplex_n < 4 and duplicate == 0:
+                            candidate_appended = 1
                             vertex_slots[lane, simplex_n, 0] = ia
                             vertex_slots[lane, simplex_n, 1] = ib
                             vertices[lane, simplex_n, 0] = px
@@ -1017,24 +1143,50 @@ def query_convex_pairs(
                                     need_epa = 1
                                     if trace_slot >= 0:
                                         trace_i[trace_slot, iteration, 9] = 4
-                            elif distance - bound <= 8e-7 or duplicate != 0:
-                                # A repeated support is already a simplex vertex, so
-                                # another iteration cannot add one. Float32 can miss
-                                # the plane certificate even when this closest point
-                                # is already the separating distance.
+                            elif (
+                                retained_candidate_fixed(
+                                    duplicate,
+                                    candidate_appended,
+                                    entry_count,
+                                    best_count,
+                                    entry_x,
+                                    entry_y,
+                                    entry_z,
+                                    entry_square,
+                                    cx,
+                                    cy,
+                                    cz,
+                                    closest_square,
+                                    entry_w0,
+                                    entry_w1,
+                                    entry_w2,
+                                    entry_w3,
+                                    weights[lane, 0],
+                                    weights[lane, 1],
+                                    weights[lane, 2],
+                                    weights[lane, 3],
+                                    indices[lane, 0],
+                                    indices[lane, 1],
+                                    indices[lane, 2],
+                                    indices[lane, 3],
+                                )
+                                != 0
+                            ):
+                                # This is the existing engineering stagnation
+                                # route restricted to one complete fixed candidate,
+                                # not a claim that its plane width passed 8e-7.
+                                # Keep the current support bracket unmodified.
                                 status = 1
                                 valid = 7
-                                nx = -cx / distance
-                                ny = -cy / distance
-                                nz = -cz / distance
+                                nx = -entry_x / distance
+                                ny = -entry_y / distance
+                                nz = -entry_z / distance
                                 signed_gap = distance * scale - ra - rb
                                 lower_gap = tx.min(signed_gap, bound * scale - ra - rb)
                                 upper_gap = signed_gap
                                 active_count = best_count
                                 if trace_slot >= 0:
                                     trace_i[trace_slot, iteration, 9] = 3
-                                    if distance - bound <= 8e-7:
-                                        trace_i[trace_slot, iteration, 9] = 2
                             # Compact only after retaining the complete closest face.
                             for k in tx.static_range(4):
                                 selected = indices[lane, k]

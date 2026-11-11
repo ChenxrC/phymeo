@@ -17,32 +17,62 @@ def models(device="cpu"):
     pytest.importorskip("rsl_rl")
     from rsl_rl.models import MLPModel
     from tensordict import TensorDict
+
     if device == "cuda" and not torch.cuda.is_available():
         pytest.skip("N4d CUDA qualification requires a real device")
     devices = list(range(torch.cuda.device_count())) if torch.cuda.is_available() else []
     with torch.random.fork_rng(devices=devices):
         torch.manual_seed(14011)
-        obs = TensorDict({"policy": torch.zeros((1, 4), dtype=torch.float32, device=device)},
-                         batch_size=[1], device=device)
+        obs = TensorDict(
+            {"policy": torch.zeros((1, 4), dtype=torch.float32, device=device)},
+            batch_size=[1],
+            device=device,
+        )
         groups = {"actor": ["policy"], "critic": ["policy"]}
-        actor = MLPModel(obs, groups, "actor", 2, hidden_dims=[32, 32], activation="tanh",
-                         obs_normalization=False, distribution_cfg={
-                             "class_name": "rsl_rl.modules.GaussianDistribution",
-                             "init_std": .1, "std_type": "log", "learn_std": True}).to(device)
-        critic = MLPModel(obs, groups, "critic", 1, hidden_dims=[32, 32], activation="tanh",
-                          obs_normalization=False).to(device)
-    optimizer = torch.optim.Adam(list(actor.parameters()) + list(critic.parameters()), lr=.0003)
+        actor = MLPModel(
+            obs,
+            groups,
+            "actor",
+            2,
+            hidden_dims=[32, 32],
+            activation="tanh",
+            obs_normalization=False,
+            distribution_cfg={
+                "class_name": "rsl_rl.modules.GaussianDistribution",
+                "init_std": 0.1,
+                "std_type": "log",
+                "learn_std": True,
+            },
+        ).to(device)
+        critic = MLPModel(
+            obs,
+            groups,
+            "critic",
+            1,
+            hidden_dims=[32, 32],
+            activation="tanh",
+            obs_normalization=False,
+        ).to(device)
+    optimizer = torch.optim.Adam(list(actor.parameters()) + list(critic.parameters()), lr=0.0003)
     return actor, critic, optimizer, obs
 
 
 def rng():
     import torch
-    return (random.getstate(), np.random.get_state(), torch.get_rng_state().clone(),
-            [value.clone() for value in torch.cuda.get_rng_state_all()] if torch.cuda.is_available() else [])
+
+    return (
+        random.getstate(),
+        np.random.get_state(),
+        torch.get_rng_state().clone(),
+        [value.clone() for value in torch.cuda.get_rng_state_all()]
+        if torch.cuda.is_available()
+        else [],
+    )
 
 
 def same_rng(before):
     import torch
+
     after = rng()
     assert before[0] == after[0]
     assert before[1][0] == after[1][0]
@@ -59,7 +89,10 @@ def policy_hash(actor, critic):
 
 def invoke(actor, critic, optimizer, obs, expected=None):
     return initialization.center_initial_mean(
-        actor, obs, critic=critic, optimizer=optimizer,
+        actor,
+        obs,
+        critic=critic,
+        optimizer=optimizer,
         expected_policy_hash=policy_hash(actor, critic) if expected is None else expected,
     )
 
@@ -74,6 +107,7 @@ def assert_only_bias(actor, critic, before, key):
 
 def test_real_cpu_model_only_bias_changes_and_remains_trainable():
     import torch
+
     actor, critic, optimizer, obs = models()
     actor.train()
     modes = {name: item.training for name, item in actor.named_modules()}
@@ -90,7 +124,9 @@ def test_real_cpu_model_only_bias_changes_and_remains_trainable():
     assert np.array_equal(bias.detach().numpy(), expected)
     assert np.array_equal(actor(obs).detach().numpy(), result["mean_after"])
     assert modes == {name: item.training for name, item in actor.named_modules()}
-    assert all(parameter.grad is None for parameter in list(actor.parameters()) + list(critic.parameters()))
+    assert all(
+        parameter.grad is None for parameter in list(actor.parameters()) + list(critic.parameters())
+    )
     old_bias = bias.detach().clone()
     (actor(obs).sum() + critic(obs).sum()).backward()
     optimizer.step()
@@ -99,11 +135,25 @@ def test_real_cpu_model_only_bias_changes_and_remains_trainable():
     assert np.array_equal(result["proposed_bias"], old_bias.numpy())
 
 
-@pytest.mark.parametrize("fault", ("hash", "dtype", "nonfinite", "batch", "normalizer",
-                                  "distribution", "adam", "owner", "gradient", "parameter"))
+@pytest.mark.parametrize(
+    "fault",
+    (
+        "hash",
+        "dtype",
+        "nonfinite",
+        "batch",
+        "normalizer",
+        "distribution",
+        "adam",
+        "owner",
+        "gradient",
+        "parameter",
+    ),
+)
 def test_validation_refuses_before_any_model_publication(fault):
     import torch
     from tensordict import TensorDict
+
     actor, critic, optimizer, obs = models()
     expected = policy_hash(actor, critic)
     if fault == "hash":
@@ -123,31 +173,37 @@ def test_validation_refuses_before_any_model_publication(fault):
         optimizer.step()
         optimizer.zero_grad(set_to_none=True)
     elif fault == "owner":
-        optimizer = torch.optim.Adam(critic.parameters(), lr=.0003)
+        optimizer = torch.optim.Adam(critic.parameters(), lr=0.0003)
     elif fault == "gradient":
         next(actor.parameters()).grad = torch.zeros_like(next(actor.parameters()))
     else:
         with torch.no_grad():
             next(actor.parameters()).flatten()[0] = float("inf")
-    before = {owner: {name: value.detach().clone() for name, value in model.state_dict().items()}
-              for owner, model in (("actor", actor), ("critic", critic))}
+    before = {
+        owner: {name: value.detach().clone() for name, value in model.state_dict().items()}
+        for owner, model in (("actor", actor), ("critic", critic))
+    }
     before_rng = rng()
     with pytest.raises((ValueError, TypeError)):
         invoke(actor, critic, optimizer, obs, expected)
     same_rng(before_rng)
     for owner, model in (("actor", actor), ("critic", critic)):
-        assert all(torch.equal(value, before[owner][name]) for name, value in model.state_dict().items())
+        assert all(
+            torch.equal(value, before[owner][name]) for name, value in model.state_dict().items()
+        )
 
 
 @pytest.mark.parametrize("stage", ("candidate", "copy", "verify"))
 @pytest.mark.parametrize("device", ("cpu", pytest.param("cuda", marks=pytest.mark.cuda)))
 def test_injected_failure_restores_all_original_model_state(monkeypatch, stage, device):
     import torch
+
     actor, critic, optimizer, obs = models(device)
     before_hash, before_rng = policy_hash(actor, critic), rng()
     if stage == "candidate":
         original = initialization._mean
         calls = []
+
         def fail(*args):
             calls.append(None)
             if len(calls) == 2:
@@ -158,29 +214,38 @@ def test_injected_failure_restores_all_original_model_state(monkeypatch, stage, 
                     torch.rand(1, device=device)
                 raise RuntimeError("injected candidate")
             return original(*args)
+
         monkeypatch.setattr(initialization, "_mean", fail)
     elif stage == "copy":
         original = initialization._publish_bias
+
         def fail(*args):
             original(*args)
             raise RuntimeError("injected partial publication")
+
         monkeypatch.setattr(initialization, "_publish_bias", fail)
     else:
+
         def fail(*args):
             raise RuntimeError("injected post-copy verification")
+
         monkeypatch.setattr(initialization, "_verify_published", fail)
     with pytest.raises(initialization.InitializationFailure) as caught:
         invoke(actor, critic, optimizer, obs)
     assert caught.value.rolled_back == (stage != "candidate")
     assert caught.value.receipt["status"] == (
-        "FAILED_BEFORE_PUBLICATION" if stage == "candidate" else "FAILED_ROLLED_BACK")
+        "FAILED_BEFORE_PUBLICATION" if stage == "candidate" else "FAILED_ROLLED_BACK"
+    )
     assert policy_hash(actor, critic) == before_hash
     assert not optimizer.state
     same_rng(before_rng)
 
 
 def example():
-    path = Path(__file__).resolve().parents[2] / "examples/evaluate_mujoco_tyx_initialization_ablation.py"
+    path = (
+        Path(__file__).resolve().parents[2]
+        / "examples/evaluate_mujoco_tyx_initialization_ablation.py"
+    )
     spec = importlib.util.spec_from_file_location("initialization_ablation_test", path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
@@ -191,22 +256,36 @@ def example():
 def test_wrapper_uses_only_three_original_runs_and_gate(monkeypatch, tmp_path, failed_seed):
     module = example()
     calls, summaries = [], []
-    originals = {seed: {"parameter_hash_before": "0" * 64, "baseline": {"cost": 2.0},
-                       "learned": {"cost": 1.8}, "zero_action_diagnostic":
-                       {"cost": 1.7} if seed == 14011 else None}
-                 for seed in module.SEEDS}
+    originals = {
+        seed: {
+            "parameter_hash_before": "0" * 64,
+            "baseline": {"cost": 2.0},
+            "learned": {"cost": 1.8},
+            "zero_action_diagnostic": {"cost": 1.7} if seed == 14011 else None,
+        }
+        for seed in module.SEEDS
+    }
     monkeypatch.setattr(module, "load_originals", lambda root: ({"hash": "bound"}, originals))
     monkeypatch.setattr(module, "make_initializer", lambda *args, **kwargs: object())
+
     def run(name, seed, output, *, initializer=None):
         assert name == "J" and initializer is not None
         calls.append(seed)
         if seed == failed_seed:
             raise RuntimeError("fixed synthetic seed failure")
-        return {"baseline": {"cost": 1.0}, "learned": {"cost": .75}, "initializer": {"schema": "fixture"}}
+        return {
+            "baseline": {"cost": 1.0},
+            "learned": {"cost": 0.75},
+            "initializer": {"schema": "fixture"},
+        }
+
     def summarize(name, inputs, output):
         summaries.append((name, list(inputs)))
         return {"outcome": {"classification": "PASS_FIXED_LEARNING_GATE"}}
-    monkeypatch.setattr(module, "learning_api", lambda: SimpleNamespace(run_learning=run, summarize_task=summarize))
+
+    monkeypatch.setattr(
+        module, "learning_api", lambda: SimpleNamespace(run_learning=run, summarize_task=summarize)
+    )
     result = module.run_ablation(tmp_path / "old", tmp_path / "new")
     assert calls == list(module.SEEDS)
     assert len(summaries) == int(failed_seed is None)
@@ -221,6 +300,7 @@ def test_wrapper_uses_only_three_original_runs_and_gate(monkeypatch, tmp_path, f
 @pytest.mark.cuda
 def test_real_cuda_centering_and_target_features():
     import torch
+
     actor, critic, optimizer, obs = models("cuda")
     module = example()
     api = module.learning_api()
@@ -246,26 +326,47 @@ def test_real_cuda_centering_and_target_features():
 def test_original_metadata_binding_is_complete_and_read_only(monkeypatch, tmp_path, fault):
     import hashlib
     import json
+
     module = example()
     root = tmp_path / "old"
     root.mkdir()
-    anchor = {"task": "J", "seeds": list(module.SEEDS), "outcome": {"classification": "FIXED_BUDGET_NOT_LEARNED"},
-              "protocol_binding": {"task": "fixed"}, "source_bindings": {}}
+    anchor = {
+        "task": "J",
+        "seeds": list(module.SEEDS),
+        "outcome": {"classification": "FIXED_BUDGET_NOT_LEARNED"},
+        "protocol_binding": {"task": "fixed"},
+        "source_bindings": {},
+    }
     for seed in module.SEEDS:
         directory = root / str(seed)
         directory.mkdir()
-        value = {"task": "J", "seed": seed, "status": "COMPLETE_N4A_SEED", "updates": 128,
-                 "accepted_world_steps": 32768, "worlds": 8,
-                 "protocol_binding": anchor["protocol_binding"], "ppo_config": {}, "source_files": {},
-                 "dependencies": {}, "baseline": {"cost": 2., "world_steps": 2048},
-                 "learned": {"cost": 1.8, "world_steps": 2048}, "evidence": {"accepted_old_trace": True}}
+        value = {
+            "task": "J",
+            "seed": seed,
+            "status": "COMPLETE_N4A_SEED",
+            "updates": 128,
+            "accepted_world_steps": 32768,
+            "worlds": 8,
+            "protocol_binding": anchor["protocol_binding"],
+            "ppo_config": {},
+            "source_files": {},
+            "dependencies": {},
+            "baseline": {"cost": 2.0, "world_steps": 2048},
+            "learned": {"cost": 1.8, "world_steps": 2048},
+            "evidence": {"accepted_old_trace": True},
+        }
         raw = json.dumps(value).encode()
         digest = hashlib.sha256(raw).hexdigest()
         (directory / "summary.json").write_bytes(raw)
         (directory / "manifest.json").write_text(json.dumps(value), encoding="utf-8")
-        (directory / "publication.json").write_text(json.dumps({"summary_sha256": digest}), encoding="utf-8")
+        (directory / "publication.json").write_text(
+            json.dumps({"summary_sha256": digest}), encoding="utf-8"
+        )
         anchor["source_bindings"][str(seed)] = {
-            "directory": str(directory), "summary_sha256": digest, "evidence": value["evidence"]}
+            "directory": str(directory),
+            "summary_sha256": digest,
+            "evidence": value["evidence"],
+        }
     path = root / module.ANCHOR
     path.parent.mkdir(parents=True)
     if fault == "seed":
@@ -298,46 +399,72 @@ def test_original_learning_hook_order_and_default_output(monkeypatch, tmp_path, 
     held_calls, hooks, sessions = [], [], []
     env = SimpleNamespace(counters={})
     task = SimpleNamespace(seeds=(14011, 14012, 14013), cost=lambda: None)
-    monkeypatch.setattr(api, "tasks", lambda: SimpleNamespace(
-        task=lambda name: task, seed_all=lambda seed: None, UPDATES=128, ROLLOUT=32))
+    monkeypatch.setattr(
+        api,
+        "tasks",
+        lambda: SimpleNamespace(
+            task=lambda name: task, seed_all=lambda seed: None, UPDATES=128, ROLLOUT=32
+        ),
+    )
+
     @contextmanager
     def owner(context, name):
         yield env
+
     monkeypatch.setattr(api, "_observed_environment", owner)
 
     def new_session(env):
-        algorithm = SimpleNamespace(bias=1., iteration=0)
-        algorithm.actor = SimpleNamespace(state_dict=lambda: {"bias": np.asarray([algorithm.bias], np.float32)})
-        algorithm.critic = SimpleNamespace(state_dict=lambda: {"weight": np.asarray([2.], np.float32)})
+        algorithm = SimpleNamespace(bias=1.0, iteration=0)
+        algorithm.actor = SimpleNamespace(
+            state_dict=lambda: {"bias": np.asarray([algorithm.bias], np.float32)}
+        )
+        algorithm.critic = SimpleNamespace(
+            state_dict=lambda: {"weight": np.asarray([2.0], np.float32)}
+        )
         algorithm.optimizer = SimpleNamespace(state_dict=lambda: {"state": {}})
         session = SimpleNamespace(algorithm=algorithm, config={"fixed": True}, next_iteration=0)
         sessions.append(session)
         return session
+
     monkeypatch.setattr(api, "_session", new_session)
     monkeypatch.setattr(api, "protocol_binding", lambda name: {"name": name})
     monkeypatch.setattr(api, "_manifest", lambda *args: {"source_files": {}, "dependencies": {}})
+
     def state_hash(algorithm):
         return hashlib.sha256(repr((algorithm.bias, algorithm.iteration)).encode()).hexdigest()
+
     monkeypatch.setattr(api.evaluation, "parameter_hash", state_hash)
+
     def held(actor, name, writer, label, **kwargs):
         held_calls.append(label)
-        return {"cost": 2. if label == "untrained" else 1., "world_steps": 2048}
+        return {"cost": 2.0 if label == "untrained" else 1.0, "world_steps": 2048}
+
     monkeypatch.setattr(api, "_held_out", held)
+
     def measure(session):
         index = session.next_iteration
         session.next_iteration += 1
         session.algorithm.iteration += 1
         return {"transitions": tuple(range(32)), "iteration": index}, {}
+
     monkeypatch.setattr(api.evaluation, "measure_update", measure)
-    monkeypatch.setattr(api.evaluation, "validate_update", lambda record, *args, **kwargs:
-                        {"accepted_world_steps": 256, "optimizer_step": record["iteration"] + 1})
+    monkeypatch.setattr(
+        api.evaluation,
+        "validate_update",
+        lambda record, *args, **kwargs: {
+            "accepted_world_steps": 256,
+            "optimizer_step": record["iteration"] + 1,
+        },
+    )
+
     def initialize(session, actual_env, name, seed):
         hooks.append((session.next_iteration, name, seed))
         assert actual_env is env and session.next_iteration == 0
         if mode == "failure":
             raise RuntimeError("synthetic initializer refusal")
-        session.algorithm.bias = 0.
+        session.algorithm.bias = 0.0
         return {"factor": "fixture"}
+
     destination = tmp_path / mode
     options = {} if mode == "default" else {"initializer": initialize}
     if mode == "failure":

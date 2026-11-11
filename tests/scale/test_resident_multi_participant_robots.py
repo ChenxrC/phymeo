@@ -556,6 +556,26 @@ def drives(data, tick):
     return result
 
 
+def normalized_pd_residual(spec, entry, accepted, drive, effort):
+    """Independent public PD law; raw diagnostic has units of effort."""
+    floating = spec["family"].startswith("floating")
+    q0 = np.asarray(entry.position)[7 if floating else 0 :]
+    q1 = np.asarray(accepted.position)[7 if floating else 0 :]
+    v1 = np.asarray(accepted.velocity)[6 if floating else 0 :]
+    kp, kd, cap = (np.asarray(spec[k], np.float32).astype(float) for k in ("kp", "kd", "caps"))
+    held = np.asarray(drive, np.float32).astype(float)
+    tau = np.asarray(effort, float)
+    assert q0.shape == q1.shape == v1.shape == kp.shape == tau.shape
+    assert np.isfinite(tau).all() and np.all(abs(tau) <= cap)
+    target, rate, ff = held.T
+    before_rounding = ff + kp * (target - q0 - H * v1) + kd * (rate - v1)
+    published = ff + kp * (target - q1) + kd * (rate - v1)
+    first, second = (np.clip(x, -cap, cap) for x in (before_rounding, published))
+    residual = np.maximum(abs(tau - first), abs(tau - second))
+    scale = np.maximum(1.0, np.maximum(abs(tau), np.maximum(abs(first), abs(second))))
+    return float(np.max(residual / scale, initial=0.0))
+
+
 def audit_receipt(data, built, world, before, after, receipt, current_drives):
     actual_states = {
         key.participant: (np.asarray(p.position), np.asarray(p.velocity))
@@ -596,7 +616,11 @@ def audit_receipt(data, built, world, before, after, receipt, current_drives):
         close(d.external, truth["external"] + truth["contact"])
         close(d.acceleration, truth["acceleration"], atol=2e-5)
         close(d.drive, truth["motor"], atol=5e-5)
-        assert d.equation_residual <= 2e-5 and d.control_residual <= 5e-5
+        assert d.equation_residual <= 2e-5 and np.isfinite(d.control_residual)
+        truth["control_residual_normalized"] = normalized_pd_residual(
+            s, item.entry_state, item.accepted_state, current_drives[pid], d.drive
+        )
+        assert truth["control_residual_normalized"] <= 5e-5
         if s["family"] in ("affine", "floating_affine"):
             close(d.full_acceleration, truth["full_acceleration"], atol=2e-5)
             close(d.constraint_effort_full, truth["reaction"], atol=2e-5)

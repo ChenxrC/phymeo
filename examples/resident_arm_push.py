@@ -130,6 +130,15 @@ def build():
         local_sphere=local_sphere,
         local_box=local_box,
         controls=control,
+        actuator=dict(
+            key=arm_key,
+            kp=program.kp,
+            kd=program.kd,
+            cap=program.effort_limit,
+            target=q + 1 / 64,
+            rate=np.array([1 / 64, -1 / 128]),
+            feedforward=np.array([1 / 32, 1 / 16]),
+        ),
         h=1 / 1024,
     )
     return (arm_owner, box_owner), shapes, bindings, control, (first, second), inputs
@@ -191,8 +200,29 @@ def run(mode, steps, friction, output):
                                 raise RuntimeError("force and motion are not jointly published")
                             if item.diagnostic.equation_residual > 2e-5:
                                 raise RuntimeError("physical mass equation residual exceeded")
-                            if item.diagnostic.control_residual > 5e-5:
-                                raise RuntimeError("bounded actuator residual exceeded")
+                            if not np.isfinite(item.diagnostic.control_residual):
+                                raise RuntimeError("nonfinite actuator diagnostic")
+                            if key == inputs["actuator"]["key"]:
+                                a = inputs["actuator"]
+                                kp, kd, cap, target, rate, ff = (
+                                    np.asarray(a[name], np.float32).astype(float)
+                                    for name in ("kp", "kd", "cap", "target", "rate", "feedforward")
+                                )
+                                q0 = np.asarray(item.entry_state.position)
+                                q1 = np.asarray(item.accepted_state.position)
+                                v1 = np.asarray(item.accepted_state.velocity)
+                                tau = np.asarray(item.diagnostic.drive)
+                                raw = ff + kp * (target - q0 - inputs["h"] * v1) + kd * (rate - v1)
+                                published = ff + kp * (target - q1) + kd * (rate - v1)
+                                first, second = (np.clip(x, -cap, cap) for x in (raw, published))
+                                residual = np.maximum(abs(tau - first), abs(tau - second))
+                                scale = np.maximum(
+                                    1.0, np.maximum(abs(tau), np.maximum(abs(first), abs(second)))
+                                )
+                                if np.any(abs(tau) > cap) or np.any(residual / scale > 5e-5):
+                                    raise RuntimeError(
+                                        "normalized bounded actuator residual exceeded"
+                                    )
                         if tick == 0:
                             if (
                                 np.linalg.norm(

@@ -1,7 +1,7 @@
 # MuJoCo-TYX N4a learning results and partial qualification
 
 Status: **LEARNING_PROTOCOLS_COMPLETE / PARTIAL_LEARNING_QUALIFICATION /
-SCALE_PENDING / WHEEL_PENDING / AUTHORING_SLOT_RELEASED**.
+SCALE_MATRIX_PASSED / WHEEL_PENDING / AUTHORING_SLOT_RELEASED**.
 The parent executed validation; this author only read the closed reports and
 updated this document. The current results below supersede historical pending
 labels, without assigning new results to earlier source snapshots.
@@ -63,15 +63,97 @@ Source evidence under `artifacts/p65-parity-n4a-rob1d-col-reducer-20261111-01`:
   [R summary](../../artifacts/p65-parity-n4a-rob1d-col-reducer-20261111-01/52-n4-summary-r/result/summary.json)
   retain all per-seed costs, ratios, zero comparisons and bindings.
 
-Scale qualification and the new wheel remain **PENDING** at this report update.
+### Prior learning-report publication state (historical)
+
+Scale qualification and the new wheel remained **PENDING** at that report update.
 The parent's root-only scale timing correction is source `06a19790`, not the
 child's learning source `a4c4e2bc`. Parent commands43–48 completed its static and
-one new HOST timing check; run49 scale is still active and has no final result
+one new HOST timing check; run49 scale was still active and had no final result
 claimed here. That correction measures real wall time from the formal measured
 loop through final gzip close, rather than summing partial timings; final file
 hashing/summary publication remain separate. Historical timing descriptions below
 are not proof of complete scale throughput. No scale capacity or new installed
 wheel claim is inferred from the nine learning runs.
+
+## Actual scale matrix results
+
+Parent run49 completed **18 passed in 530.94s / RAW_EXIT0** on tested root source
+`06a197900ad300f11092aa5e926e0aaed3221b2f`. This is separate from the nine learning
+runs at `a4c4e2bc3ce7636c798b4f869e442b28aa91ba20`; the root CLI includes the
+actual-loop-to-trace-close timing correction. All 18 closed cell summaries report
+PASS_N4A_SCALE_CELL. The dependency records identify MuJoCo3.3.7, RSL5.5.2,
+TensorDict0.15.5, Torch2.12.0+cu126, NumPy2.4.6 and tyx-compute0.1.0a0.
+
+Each cell ran its one fixed 32-step warmup, followed by three complete unprofiled
+32-step updates. The measured numerator is 96W accepted world transitions, not
+optimizer steps or the warmup transitions. The full-trace wall interval starts
+before the first formal update and ends after gzip close. It includes complete
+public updates, CUDA completion, HOST physics diagnostics, measurement/accounting
+work, independent transition checks, lossless trace encoding/compression/writes
+and environment close. Cold construction and warmup are outside this interval;
+final compressed-file hashing and summary publication are also outside it and
+are separately reported. The 530.94s pytest total is not any cell's denominator.
+
+The following values are copied from each summary's timing fields. Update/diagnostic
+throughput uses only compute_and_mandatory_diagnostics_s and is shown as a narrower
+subtotal; full-trace throughput uses measured_loop_to_trace_close_s directly. The
+latter is not reconstructed by adding partial timers.
+
+| Task | Worlds | Measured transitions | Full-trace wall s | Full-trace transitions/s | Update/diagnostic transitions/s |
+|---|---:|---:|---:|---:|---:|
+| J |1|96|0.6402476001530886|149.94199115630514|176.67477109047164|
+| J |8|768|1.8714569001458585|410.3754673378496|490.3483107425137|
+| J |32|3072|5.123485600110143|599.591809125795|765.3766714420666|
+| J |64|6144|9.357303000055254|656.5994496452365|837.0687617641521|
+| J |128|12288|17.266282099764794|711.676082262515|933.8728708816335|
+| J |256|24576|35.446579799987376|693.3250016975898|914.78655990966|
+| S |1|96|1.651651999913156|58.123624107891786|69.14050927307541|
+| S |8|768|6.729629199951887|114.12218670316794|148.5901407696375|
+| S |32|3072|16.257074700202793|188.963885363809|313.80081265574034|
+| S |64|6144|28.300352700054646|217.0997678056548|403.58661592006035|
+| S |128|12288|53.957941599655896|227.7329274561942|461.16099164630043|
+| S |256|24576|112.1638683998026|219.10799217801633|454.1496770854403|
+| R |1|96|0.7665200000628829|125.24135050895536|147.9607541044334|
+| R |8|768|2.592518000397831|296.2370945475201|382.2772486314242|
+| R |32|3072|6.363001000136137|482.79106037139934|689.5318913170034|
+| R |64|6144|11.567475599702448|531.1444097758065|776.3148168682994|
+| R |128|12288|21.641610000282526|567.7950947198283|847.4255064052694|
+| R |256|24576|43.84875479992479|560.4720159588694|841.8363364801237|
+
+Evidence root: [closed scale run49](../../artifacts/p65-parity-n4a-rob1d-col-reducer-20261111-01/49-n4-scale/final.json).
+For each table row, its complete summary is under
+`49-n4-scale/basetemp/test_fixed_scale_cell_{W}_{task}_0/{task}{W}/summary.json`
+relative to artifacts/p65-parity-n4a-rob1d-col-reducer-20261111-01.
+The original summary also preserves
+three per-update records, warmup observation, counter snapshots/accounting, actual
+reset counts, memory readings, dependencies, source bindings and trace identity.
+This document update read those JSON records and raw completion files only; it
+did not rerun a cell, recompute physics or execute a saved-evidence audit.
+
+Measurement limits remain explicit:
+
+- Runtime/action/task HOST and device transfers and named synchronization sites
+  keep their own recorded scopes. Complete current HOST action/physics audits
+  remain in the path; these are not zero-HOST or device-kernel-only timings.
+- The bounded observer runs only in the existing warmup. Its inclusive call times
+  overlap and cannot be added into an exclusive cost breakdown. Formal updates
+  have no profiler. Internal Torch synchronizations and exclusive CPU physics
+  validation time are UNKNOWN, not zero.
+- Device-owner counters can restart on resets. Their signed before/after snapshot
+  differences are not cumulative work; total device work across resets and an
+  unexposed device generation are UNKNOWN. Public revision is not generation.
+- Torch peak allocated/reserved memory and CUDA free-memory net changes retain
+  their original scope. TYX-only peak memory is UNKNOWN.
+- This is one fixed bounded measurement per task/world cell, with three formal
+  updates. It is not a repeated statistical performance comparison. W256 passes
+  capacity for these J/S/R tasks; its measured full-trace throughput is lower than
+  W128 in all three tasks. This does not identify a unique bottleneck by itself.
+
+These are the declared two-joint, finite-support and three-joint branching tasks,
+not 256 G1 humanoids. No same-protocol Newton performance baseline was run, so this
+result makes no faster-than-Newton claim. It does not change the J/R fixed-budget
+learning refusals or expand the already-defined model domain. The **new wheel
+remains PENDING** for the parent to qualify separately.
 
 ## Historical authoring scope and handoff
 

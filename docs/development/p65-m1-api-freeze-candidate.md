@@ -56,7 +56,7 @@ mode/runtime/cache 继承 batch，不另建 runtime；limits/memory_limit_bytes 
 
 **关闭是必要共享 delta，当前未具备。** TyxWorldBatch.close:904 先置 closed，finally 无条件父 ExitStack.close 并把 device_owned_bytes=0；仅 no-op lease 不能阻止提前关 runtime。父最小新增 _boundary_plans 与强引用 registry，以及 lock 内 _register_boundary_runtime_lease(lease)、_release_boundary_runtime_lease(token)、_quarantine_boundary_runtime_lease(token, ledger) 三个私有 hook。每个 persistent/query DeviceResources 在分配首 buffer 前注册 lease；它强持 batch/runtime/token，正常 ledger runtime-close 回调只注销、不关 runtime。任何 buffer free 抛异常，ledger 的全局 quarantine 保 lease→batch/runtime，父 registry 也保 ledger；不减失败 buffer live bytes。
 
-accepted bank 的 _Lease.active 是**查询 scope**，runtime lease 是**数组生命周期**，两者不能混用。query finally 使 bank loan 到期，但 UNKNOWN runtime lease 必须继续存活。batch.close 在进入现有 close 主体/父 ExitStack 前先查 sticky unknown，正常时尝试关闭全部新 boundary plans（独立 siblings 仍清理），再核 **registry 全部已正常注销**；unknown 或未决 lease 均阻止父栈关闭，保全部父资源/计数，标 unavailable 并抛原错误。UNKNOWN 后的 query/step/close 只拒绝、不重试 free；不依赖最后一条 Python局部引用。仅全部已注销时才走原普通 close；不能用清父 siblings 触发其 runtime callback。M15/M16 验此新共享保护，旧 COL2 自有 runtime 测试不能代替。
+accepted bank 的 _Lease.active 是**查询 scope**，runtime lease 是**数组生命周期**，两者不能混用。query finally 使 bank loan 到期，但 UNKNOWN runtime lease 必须继续存活。batch.close 在进入现有 close 主体/父 ExitStack 前先查 sticky unknown，正常时尝试关闭全部新 boundary plans（独立 siblings 仍清理），再核 **registry 全部已正常注销**；unknown 或未决 lease 均阻止父栈关闭，保全部父资源/计数，标 unavailable 并抛原错误。实际进入 free 后的 UNKNOWN：query/step/close sticky 拒绝，不重试回调，也不依赖最后一条 Python局部引用。**尚未进入 ledger.close 就被外层异常拦住的 PENDING 不等于 UNKNOWN**：保 registry/父栈，阻止恢复 step/query，但明确允许后续 close 再尝试未执行的 cleanup，不做永久 quarantine。仅全部 token 已正常注销时才走原普通 close；不能用清父 siblings 触发其 runtime callback。M15/M16 验此新共享保护，旧 COL2 自有 runtime 测试不能代替。
 
 ## 精确范围与父裁定项
 

@@ -161,7 +161,7 @@ def check_wire_rows(result):
         "SOURCE_PRECISION",
         "STALLED",
     )
-    phase = ("NONE", "ANALYTIC_ROUND", "GJK_CORE", "GJK_POLYTOPE", "EPA", "GJK_SUPPORT")
+    phase = ("NONE", "ANALYTIC_ROUND", "GJK_CORE", "GJK_POLYTOPE", "EPA", "GJK_SUPPORT", "SUPPORT_BALL")
     for index, row in enumerate(result.rows):
         meta = result.raw["meta"][index]
         assert (
@@ -453,9 +453,16 @@ def test_original_iteration_and_capacity_limits_are_not_bypassed(options, tyx_mo
         with prepared(data, tyx_mode, tmp_path, **options) as (batch, broad, plan):
             result = k0.query_attempt(batch, plan, record, "bounded")
             check_raw(result)
-            assert result.rows[0].status == "RESOURCE_LIMIT"
-            assert result.rows[0].reason in ("GJK_LIMIT", "EPA_CAPACITY")
-            assert not result.rows[0].witness_valid
+            row = result.rows[0]
+            if "epa_vertex_capacity" in options and row.status == "RESOLVED":
+                assert row.phase == "SUPPORT_BALL"
+                record["checks"] = check_result(result, data)
+                assert row.vertices_used <= options["epa_vertex_capacity"]
+                assert row.epa_used == 0 and row.faces_used == 0
+            else:
+                assert row.status == "RESOURCE_LIMIT"
+                assert row.reason in ("GJK_LIMIT", "EPA_CAPACITY")
+                assert not row.witness_valid
 
 
 @pytest.mark.tyx
@@ -594,3 +601,94 @@ def test_exact_large_common_translation_preserves_relative_curved_support(tyx_mo
                     np.testing.assert_allclose(
                         closure, expected_gap * np.array((1, 0, 0)), atol=2e-4 * length, rtol=0
                     )
+
+
+@pytest.mark.tyx
+@pytest.mark.parametrize("family", ("NE", "EE"))
+def test_rotated_shallow_overlap_keeps_independent_depth(family, tyx_mode, tmp_path):
+    data = reference().case(family, "overlap", cycle=True)
+    with saved(tmp_path, family + "-rotated-overlap", tyx_mode, data) as record:
+        record["independent_oracle"] = reference().oracle(data)
+        with prepared(data, tyx_mode, tmp_path) as (batch, broad, plan):
+            result = k0.query_attempt(batch, plan, record, "rotated-overlap")
+            record["checks"] = check_result(result, data)
+            check_source(result)
+            assert result.rows[0].phase == "SUPPORT_BALL"
+
+
+@pytest.mark.tyx
+@pytest.mark.parametrize("case_name", ("eccentric", "contained", "concentric", "near_concentric"))
+def test_round_support_ball_unique_and_degenerate_boundaries(case_name, tyx_mode, tmp_path):
+    # Isotropic E is an exact sphere; the oracle uses sum-of-radii minus
+    # centre distance, not product support/EPA or the new certificate formula.
+    direction = np.array((2.0, 3.0, 6.0)) / 7
+    separation = {
+        "eccentric": 11 / 32,
+        "contained": 1 / 32,
+        "concentric": 0.0,
+        "near_concentric": 2.0**-20,
+    }[case_name]
+    centers = (np.zeros(3), separation * direction)
+    data = reference().case("ES", "overlap")
+    data.update(
+        centers=centers,
+        points=tuple(center[None] for center in centers),
+        dimensions=((1 / 4, 1 / 4, 1 / 4), ()),
+        expected_gap_m=separation - 3 / 8,
+        normal=direction,
+    )
+    options = dict(gjk_iterations=1) if case_name == "near_concentric" else {}
+    with saved(tmp_path, "round-ball-" + case_name, tyx_mode, data) as record:
+        record["independent_oracle"] = dict(
+            kind="two-exact-spheres",
+            radii_m=(1 / 4, 1 / 8),
+            center_distance_m=separation,
+            signed_distance_m=separation - 3 / 8,
+            unique_normal=case_name != "concentric",
+        )
+        with prepared(data, tyx_mode, tmp_path, **options) as (batch, broad, plan):
+            result = k0.query_attempt(batch, plan, record, "round-ball")
+            check_raw(result)
+            check_source(result)
+            row = result.rows[0]
+            if case_name == "concentric":
+                assert row.status in ("UNKNOWN", "RESOURCE_LIMIT")
+                assert not row.normal_valid and row.phase != "SUPPORT_BALL"
+            elif case_name == "near_concentric":
+                assert row.status == "RESOURCE_LIMIT" and row.reason == "GJK_LIMIT"
+                assert not row.normal_valid and row.gjk_used == 1
+            else:
+                assert row.status == "RESOLVED" and row.phase == "SUPPORT_BALL"
+                assert row.relation == "OVERLAP"
+                assert abs(row.gap_m - (separation - 3 / 8)) <= 1e-4
+                assert row.gap_lower_m <= separation - 3 / 8 <= row.gap_upper_m
+                assert np.linalg.norm(np.asarray(row.normal) - direction) <= 2e-3
+                for side, witness in enumerate((row.first, row.second)):
+                    radius = (1 / 4, 1 / 8)[side]
+                    surface = np.asarray(row.origin_m) + witness.surface_relative_m
+                    offset = surface - centers[side]
+                    wanted = (1 if side == 0 else -1) * radius * direction
+                    assert abs(np.linalg.norm(offset) - radius) <= 2e-4
+                    assert np.linalg.norm(offset - wanted) <= 2e-4
+                    assert witness.vertex_ids == data["ids"][side]
+                    assert tuple(witness.weights) == (1.0,)
+                assert row.epa_used == 0 and row.faces_used == 0
+                assert row.vertices_used == 1
+                assert row.support_calls == row.gjk_used
+                record["checks"] = dict(
+                    gap_error_m=abs(row.gap_m - (separation - 3 / 8)),
+                    normal_error=float(np.linalg.norm(np.asarray(row.normal) - direction)),
+                )
+
+
+@pytest.mark.tyx
+def test_nonrolling_pair_retains_true_epa_capacity_failure(tyx_mode, tmp_path):
+    data = reference().case("NN", "overlap")
+    with saved(tmp_path, "nonrolling-cap4", tyx_mode, data) as record:
+        with prepared(data, tyx_mode, tmp_path, epa_vertex_capacity=4) as (batch, broad, plan):
+            result = k0.query_attempt(batch, plan, record, "capacity")
+            check_raw(result)
+            row = result.rows[0]
+            assert row.status == "RESOURCE_LIMIT" and row.reason == "EPA_CAPACITY"
+            assert row.vertices_used <= 4 and not row.witness_valid
+            assert row.phase != "SUPPORT_BALL"

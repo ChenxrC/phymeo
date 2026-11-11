@@ -142,16 +142,18 @@ def test_four_layouts_four_sparse_worlds_continue_three_real_steps(layout, kind,
 @pytest.mark.parametrize("dynamic_second", (False, True))
 def test_extended_surface_broad_phase_keeps_nonoverlapping_centers(kind, dynamic_second, tyx_mode, tmp_path):
     ref = family.reference()
-    direction = np.array((1.0, 0, 0))
-    surface = ref.support(kind, direction)
+    asset_q = ref.TILT_Q if kind == "E" else (0.0, 0.0, 0.0, 1.0)
+    asset_R = ref.rotation(asset_q)
+    direction = asset_R@np.array((1.0, 0, 0))
+    surface = asset_R@ref.support(kind, asset_R.T@direction)
     sphere_center = surface+(1/8-1/64)*direction
     world = 17
     tree = k0.ordinary_forest(n=2 if dynamic_second else 1)
-    with family.saved(tmp_path, "broad-"+kind+"-"+str(dynamic_second), tyx_mode, dict(kind=kind, sphere_center=sphere_center, dynamic_second=dynamic_second)) as record:
+    with family.saved(tmp_path, "broad-"+kind+"-"+str(dynamic_second), tyx_mode, dict(kind=kind, asset_q=asset_q, sphere_center=sphere_center, dynamic_second=dynamic_second)) as record:
         with ph.TyxWorldBatch([(world, tree)], tyx_mode, cache_root=tmp_path) as batch:
             state = batch.snapshot()[world]
             keys = (ph.CollisionKey(world, 11, 1), ph.CollisionKey(world, 22, 2))
-            shapes = (ph.CollisionShape(keys[0], family.KIND[kind], (101,), curved=ph.CurvedSolid(family.KIND[kind], ref.primitive(kind)[2])),
+            shapes = (ph.CollisionShape(keys[0], family.KIND[kind], (101,), curved=ph.CurvedSolid(family.KIND[kind], ref.primitive(kind)[2], asset_q)),
                       ph.CollisionShape(keys[1], "sphere", (201,), radius=1/8))
             second = ph.ResidentTreeBinding(keys[1], world, 1, sphere_center[None], topology=state.topology) if dynamic_second else ph.ResidentStaticBinding(keys[1], ph.CollisionMotion(sphere_center[None]))
             bindings = (ph.ResidentTreeBinding(keys[0], world, 0, np.zeros((1, 3)), topology=state.topology), second)
@@ -261,3 +263,58 @@ def test_curved_required_load_rejects_without_host_fallback_or_partial_step(tyx_
         if created is not None:
             assert not created.last_accepted and created.last_device_query is None
         assert k0.canonical(batch.snapshot()) == k0.canonical(before)
+
+@pytest.mark.tyx
+def test_independent_static_body_frame_is_rejected_before_query_allocation(tyx_mode, tmp_path):
+    data = family.reference().case("SE", "sep")
+    with family.prepared(data, tyx_mode, tmp_path) as (batch, broad, plan):
+        bindings = list(broad._convex_bindings)
+        second = bindings[1]
+        motion = ph.CollisionMotion(second.motion.start, body_orientation_xyzw=(.5, .5, .5, .5))
+        bindings[1] = ph.ResidentStaticBinding(second.key, motion)
+        with batch.prepare_collision(broad._model, tuple(bindings)) as explicit_frame:
+            before = dict(batch.stats())
+            with pytest.raises(ValueError, match="independent static curved body orientation"):
+                batch.prepare_convex_query(explicit_frame)
+            after = dict(batch.stats())
+            assert after["convex_query_plan_live_count"] == before["convex_query_plan_live_count"]
+            assert after["convex_query_live_bytes"] == before["convex_query_live_bytes"]
+
+
+@pytest.mark.tyx
+@pytest.mark.parametrize("field", ("declared_dimensions_m", "uploaded_asset_rotation", "support_family_schema"))
+def test_curved_metadata_cannot_be_rebound(field, tyx_mode, tmp_path):
+    data = family.reference().case("NE", "sep")
+    with family.prepared(data, tyx_mode, tmp_path) as (batch, broad, plan):
+        result = batch.convex_query(plan)
+        changed = dict(result.source)
+        if field == "support_family_schema":
+            changed[field] = "unrelated-source"
+        else:
+            changed[field] = changed[field].copy()
+            changed[field].flat[0] += .25
+        with pytest.raises(ValueError, match="source binding"):
+            plan.require_current(replace(result, source=changed))
+
+
+@pytest.mark.tyx
+def test_last_effective_frame_failure_is_atomic(tyx_mode, tmp_path, monkeypatch):
+    data = family.reference().case("NE", "overlap")
+    with family.saved(tmp_path, "late-effective-frame", tyx_mode, data) as record:
+        with family.prepared(data, tyx_mode, tmp_path, pairs=None) as (batch, broad, plan):
+            accepted = k0.query_attempt(batch, plan, record, "before")
+            before, previous_broad = batch.snapshot(), broad.last_result
+            original = plan._read
+            def broken(buffer):
+                value = original(buffer)
+                if buffer is plan._buffers["shape_rotation"]:
+                    value[-1, 0, 0] += .25
+                return value
+            monkeypatch.setattr(plan, "_read", broken)
+            with pytest.raises(RuntimeError, match="rotation"):
+                k0.query_attempt(batch, plan, record, "bad-frame")
+            assert plan.last_result is accepted and broad.last_result is previous_broad
+            assert k0.canonical(batch.snapshot()) == k0.canonical(before)
+            monkeypatch.setattr(plan, "_read", original)
+            retry = k0.query_attempt(batch, plan, record, "retry")
+            family.check_result(retry, data)

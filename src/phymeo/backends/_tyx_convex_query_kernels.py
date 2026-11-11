@@ -220,6 +220,9 @@ def query_convex_pairs(
         ox = 0.0
         oy = 0.0
         oz = 0.0
+        px = 0.0
+        py = 0.0
+        pz = 0.0
         relation = 0
         reason = 0
         phase = 0
@@ -657,7 +660,25 @@ def query_convex_pairs(
                                     + w3 * vertices[lane, i3, 2]
                                 )
                                 square = dot3(qx, qy, qz, qx, qy, qz)
-                                if square < best_square:
+                                # A smooth support can improve the tangential
+                                # residual while the dominant normal square
+                                # rounds to the same FP32 value. Compare the
+                                # difference of squares without subtracting
+                                # two already-rounded squared norms on that tie.
+                                better = square < best_square
+                                if full_surface != 0 and square == best_square:
+                                    better = (
+                                        dot3(
+                                            qx - cx,
+                                            qy - cy,
+                                            qz - cz,
+                                            qx + cx,
+                                            qy + cy,
+                                            qz + cz,
+                                        )
+                                        < 0.0
+                                    )
+                                if better:
                                     best_square = square
                                     best_count = count_s
                                     cx = qx

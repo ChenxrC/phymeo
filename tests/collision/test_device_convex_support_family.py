@@ -15,6 +15,11 @@ import test_device_convex_query as k0
 import tyx as tx
 
 import phymeo as ph
+from phymeo.backends._tyx_convex_support_family import (
+    curved_support_x,
+    curved_support_y,
+    curved_support_z,
+)
 
 
 @lru_cache(maxsize=1)
@@ -49,7 +54,6 @@ NEW_PAIRS = (
     "NE",
     "EE",
 )
-family_x = family_y = family_z = None
 KIND = dict(S="sphere", C="capsule", B="hull", H="hull", Y="cylinder", N="cone", E="ellipsoid")
 
 
@@ -351,13 +355,13 @@ def _support_samples(
     output: tx.ndarray(tx.f32, 2),
 ):
     for i in tx.range(count):
-        output[i, 0] = family_x(
+        output[i, 0] = curved_support_x(
             kind, directions[i, 0], directions[i, 1], directions[i, 2], dims[0], dims[1], dims[2]
         )
-        output[i, 1] = family_y(
+        output[i, 1] = curved_support_y(
             kind, directions[i, 0], directions[i, 1], directions[i, 2], dims[0], dims[1], dims[2]
         )
-        output[i, 2] = family_z(
+        output[i, 2] = curved_support_z(
             kind, directions[i, 0], directions[i, 1], directions[i, 2], dims[0], dims[1], dims[2]
         )
 
@@ -366,14 +370,6 @@ def _support_samples(
 @pytest.mark.parametrize("kind", ("Y", "N", "E"))
 @pytest.mark.parametrize("quaternion", ((0, 0, 0, 1), (0, 0.6, 0, 0.8)))
 def test_support_function_values_and_ties(kind, quaternion, tyx_mode, tmp_path):
-    global family_x, family_y, family_z
-    from phymeo.backends._tyx_convex_support_family import (
-        curved_support_x,
-        curved_support_y,
-        curved_support_z,
-    )
-
-    family_x, family_y, family_z = curved_support_x, curved_support_y, curved_support_z
     ref = reference()
     R = ref.rotation(quaternion)
     world_directions = np.asarray(ref.DIRECTIONS, float)
@@ -476,7 +472,8 @@ def test_no_host_geometry_search_and_zero_pair_tail(tyx_mode, tmp_path, monkeypa
             assert k0.query_attempt(batch, plan, record, "nonempty").rows[0].status == "RESOLVED"
             with closing(batch.prepare_convex_query(broad, pairs=())) as empty:
                 result = k0.query_attempt(batch, empty, record, "empty")
-                assert result.rows == () and len(result.raw["meta"]) == 0
+                assert result.rows == () and result.stats["logical_pairs"] == 0
+                assert len(result.raw["meta"]) == result.stats["padded_pairs"]
                 check_raw(result)
 
 

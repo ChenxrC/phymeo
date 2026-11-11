@@ -59,7 +59,11 @@ def independent_last_pose(checkpoint, layout):
     # Explicit URDF premise: two +X sibling sliders at +/- .25; follower is last.
     q = np.asarray(checkpoint.full_position if "affine" in layout else checkpoint.position)
     if layout.startswith("floating"):
-        R = family.reference().rotation(q[3:7])
+        # Accepted root quaternions are stored FP32. Reconstruct their
+        # normalized rotation rather than requiring their squared norm to
+        # retain the exact-literal reference's FP64 unit-roundoff accuracy.
+        raw_q = np.asarray(q[3:7], dtype=np.float64)
+        R = family.reference().rotation(raw_q / np.linalg.norm(raw_q))
         return q[:3] + R @ np.array((0.25 + q[-1], 0, 0)), R, 2
     return np.array((0.25 + q[-1], 0, 0)), np.eye(3), 1
 
@@ -393,7 +397,8 @@ def test_curved_required_load_rejects_without_host_fallback_or_partial_step(
             pair = tuple(ph.CollisionKey(*key) for key in data["keys"])
             created = None
             with pytest.raises(
-                (ValueError, RuntimeError), match="patch|unsupported|UNSUPPORTED|curved"
+                (ValueError, RuntimeError),
+                match="contact geometry must be a finite sphere, capsule or unrounded hull",
             ):
                 with batch.prepare_contacts(
                     broad._model,

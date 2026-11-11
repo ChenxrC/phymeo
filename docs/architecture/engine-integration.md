@@ -86,6 +86,34 @@ contact 借用、resident 及实际 C ABI 尚未因此获得资格。并发仅�
 
 ## 分批验收
 
+### 接触测量 v1
+
+`contact_observations=True` 冷准备启用，缺省 False 保持原成本。消费者检查
+`contact_observation_contract_version=1`，通过同一 RuntimeStorage 借用接触字段。
+position 为世界系接触中点，frame 为 row-major 法线/两切向，distance 为有符号距离；
+wrench/local 为 `[force,torque]`，单位 N/N*m、参考点是中点，作用在 geom pair 第二侧。
+world 为 0-based，geom 为本次编译原生 geom，须经编译身份映射转换为消费者 ID。
+
+只有前 contact_count 行有效；position/frame/distance/wrench 是共享 float32 packed
+记录的 strided 借用（每行 25 个 float），world/geom/dim 是每行 4 个 int32 的借用。
+未用尾部不保证清零；不允许将行号当持续 contact ID。contact_count_by_world 是 world
+索引，contact_count 是共享池总数。contact_sample_time 是每 world 的求解时刻秒数：
+Euler/implicitfast 的 step 在最后子步前以一次 `4*N` 字节 D2D 捕获实际原生时间，
+forward/reset 使用对应当前时刻；
+命令更新和 masked reset 的未选 world 保留原测量及原采样时刻，不冒充步后 body 数据。
+
+适配复用锁定 frontend.contact_force，检查 world/geom/dim、EFC 有效行及容量后提取，
+并将有限值错误并入同一 4 字节发布 gate。每次 enqueue_step 只在最后子步提取一次，
+没有新增 collision/forward/solve、CPU 物理或逐 world dispatch。纯命令更新 D2D 保留
+旧测量；masked reset 用新 selected 与旧 unselected 记录在设备上合并，保持记录值，
+不承诺行序。联合记录超过共享 C 容量明确拒绝整个候选，不截断或增大原生接触池。
+
+runtime 拥有两份发布记录、一份 reset scratch、force/ID scratch 与各 world 计数/时间；
+存储为 `376*C + 20*N + 12` 字节，C 是原生共享容量，不再乘 N。update/merge/copy
+均 O(C+N)，计数由 execution_costs 披露；这是派生测量副本，不是第二份物理状态。
+关闭失败保留全部 owner，旧 binding 在成功关闭后 stale。此合同本身不授予 Graph、
+SensorView 或 D2D C ABI 资格；这些后续沿同一公共存储消费。
+
 ### 标量控制与字段更新
 
 `NativeTemplate.scalar_controls` 绑定公开关节名、原生 actuator、增益和初始目标。

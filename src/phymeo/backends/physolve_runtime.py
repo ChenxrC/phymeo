@@ -47,6 +47,7 @@ class PhySolveRuntime:
     """
 
     body_observation_contract_version = 1
+    contact_observation_contract_version = 1
 
     def __init__(
         self,
@@ -60,9 +61,12 @@ class PhySolveRuntime:
         initial_state=None,
         scalar_controls=(),
         body_observations=False,
+        contact_observations=False,
     ):
         if type(body_observations) is not bool:
             raise TypeError("body_observations must be bool")
+        if type(contact_observations) is not bool:
+            raise TypeError("contact_observations must be bool")
         world = compilation if isinstance(compilation, CompiledMuJoCoWorld) else None
         if world is not None:
             if initial_state is not None or world.binding_version != 1:
@@ -101,6 +105,7 @@ class PhySolveRuntime:
         self._reset = None
         self._controls_binding = None
         self._body_observations = None
+        self._contact_observations = None
         self._validation = self._storage = None
         self._storage_generation = 1
         self._pending = None
@@ -169,6 +174,15 @@ class PhySolveRuntime:
                         extra_banks=None if self._body_observations is None else self._body_observations.banks,
                     )
                     self._validation.prepare(self._stream)
+                    if contact_observations:
+                        from ._physolve_contacts import PreparedContacts
+
+                        self._contact_observations = PreparedContacts(
+                            self._model, self._banks, selected, self._validation.flags
+                        )
+                        self._contact_observations.prepare(self._stream, self._reset.all_mask)
+                        self._validation.read(self._stream)
+                        self._validation.readbacks = 0
                     if scalar_controls:
                         from ._physolve_controls import PreparedControls
                         self._controls_binding = PreparedControls(
@@ -179,6 +193,7 @@ class PhySolveRuntime:
                         self, self._banks, self._stream, selected, self._storage_generation,
                         self._controls_binding,
                         self._body_observations,
+                        self._contact_observations,
                     )
                     self._complete()
         except Exception as error:
@@ -315,11 +330,16 @@ class PhySolveRuntime:
         """Explicit validation transfers; native Host internal work is additional."""
         with self._scope():
             bodies = self._body_observations
+            contacts = self._contact_observations
             return {"validation_readbacks": self._validation.readbacks,
                     "validation_d2h_bytes": 4 * self._validation.readbacks,
                     "endpoint_kinematics_passes": 0 if bodies is None else bodies.kinematics_passes,
                     "body_observation_publications": 0 if bodies is None else bodies.publications,
                     "body_observation_device_bytes": 0 if bodies is None else bodies.allocated_bytes,
+                    "contact_measurement_device_bytes": 0 if contacts is None else contacts.allocated_bytes,
+                    "contact_measurement_extractions": 0 if contacts is None else contacts.extractions,
+                    "contact_measurement_merges": 0 if contacts is None else contacts.merges,
+                    "contact_measurement_copies": 0 if contacts is None else contacts.copies,
                     "native_direct_conditional_sync": True}
 
     @property
@@ -371,12 +391,16 @@ class PhySolveRuntime:
             index = self._require_ticket(ticket, "prepared")
             self._pending["phase"] = "enqueued"
             try:
-                for _ in range(steps):
+                for substep in range(steps):
+                    if self._contact_observations is not None and substep == steps - 1:
+                        self._contact_observations.capture_time(index, self._stream)
                     self._native._step_runtime(self._handles[index])
                     self._validation.enqueue(index, self._stream, include_extra=False)
                 if self._body_observations is not None:
                     self._body_observations.update(index, self._stream, integrated=True)
                     self._validation.enqueue_extra(index, self._stream)
+                if self._contact_observations is not None:
+                    self._contact_observations.update(index, self._stream, integrated=True)
             except Exception:
                 self._pending["phase"] = "failed"
                 raise
@@ -390,6 +414,8 @@ class PhySolveRuntime:
                 if self._body_observations is not None:
                     self._body_observations.update(index, self._stream, integrated=False)
                 self._validation.enqueue(index, self._stream)
+                if self._contact_observations is not None:
+                    self._contact_observations.update(index, self._stream)
             except Exception:
                 self._pending["phase"] = "failed"
                 raise
@@ -428,6 +454,11 @@ class PhySolveRuntime:
                     if self._body_observations is not None:
                         self._body_observations.copy(self._active, index, self._stream)
                 self._validation.enqueue(index, self._stream)
+                if self._contact_observations is not None:
+                    if refresh_state:
+                        self._contact_observations.update(index, self._stream)
+                    else:
+                        self._contact_observations.copy(self._active, index, self._stream)
             except Exception:
                 self._pending["phase"] = "failed"
                 raise
@@ -452,6 +483,11 @@ class PhySolveRuntime:
                     self._body_observations.update(index, self._stream, integrated=False)
                 # Error bits latch before unselected observations overwrite qacc.
                 self._validation.enqueue(index, self._stream)
+                if self._contact_observations is not None:
+                    self._contact_observations.update(
+                        index, self._stream,
+                        mask=None if mask is None or mask.all() else self._reset.mask,
+                    )
                 if mask is not None and not mask.all():
                     self._reset.preserve_observations(index, self._stream)
                     if self._body_observations is not None:
@@ -520,6 +556,7 @@ class PhySolveRuntime:
             self._reset = None
             self._controls_binding = None
             self._body_observations = None
+            self._contact_observations = None
             self._model = None
             self._closed = True
 

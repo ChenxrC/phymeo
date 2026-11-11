@@ -2,13 +2,197 @@
 
 import numpy as np
 import pytest
-from test_physolve_runtime import FREE, SLIDER
+from test_physolve_runtime import CONTACT, FREE, SLIDER
 from test_physolve_runtime import payload as payload_fixture
 
 from phymeo import PhySolveRuntime
 from phymeo.builders.mujoco_compiler import compile_mujoco_xml
 
 payload = payload_fixture
+
+
+def contact_records(runtime):
+    storage = runtime.storage_binding()
+    def read(name):
+        return storage.borrow(name, runtime.active_bank).numpy(stream=storage.stream).copy()
+    count = int(read('contact_count')[0])
+    return {name: read(name)[:count] for name in (
+        'contact_world', 'contact_geom', 'contact_dim', 'contact_position',
+        'contact_frame', 'contact_distance', 'contact_wrench', 'contact_wrench_local')}
+
+
+@pytest.mark.cuda
+@pytest.mark.parametrize('nworld', [1, 8, 64])
+def test_contact_measurements_force_and_masked_publication(payload, nworld, monkeypatch):
+    import tyx as tx
+    with PhySolveRuntime(compile_mujoco_xml(CONTACT, require_asset=False), payload=payload,
+                        nworld=nworld, contact_observations=True) as runtime:
+        initial = contact_records(runtime)
+        assert len(initial['contact_world']) == nworld
+        np.testing.assert_array_equal(initial['contact_geom'], np.tile([0, 1], (nworld, 1)))
+        assert np.all(initial['contact_wrench'][:, 2] > 0)  # force on the ball
+        np.testing.assert_allclose(initial['contact_wrench'][:, :2], 0, atol=1e-6, rtol=0)
+        np.testing.assert_allclose(initial['contact_wrench_local'][:, 0], initial['contact_wrench'][:, 2], atol=1e-6, rtol=0)
+        def forbidden(*args, **kwargs):
+            raise AssertionError('contact publication must not allocate/read full host arrays')
+        with monkeypatch.context() as patch:
+            patch.setattr(tx.Array, 'numpy', forbidden)
+            patch.setattr(tx, 'empty', forbidden)
+            ticket = runtime.begin_execution()
+            runtime.enqueue_step(ticket, steps=4)
+            runtime.complete_execution(ticket)
+            runtime.accept_execution(ticket)
+        before = contact_records(runtime)
+        times = runtime.storage_binding().borrow('contact_sample_time', runtime.active_bank).numpy()
+        np.testing.assert_allclose(times, .006, atol=1e-9, rtol=0)
+        assert runtime.execution_costs()['contact_measurement_extractions'] == 1
+        assert runtime.execution_costs()['validation_d2h_bytes'] == 4
+        ticket = runtime.begin_execution()
+        runtime.enqueue_update(ticket)
+        runtime.complete_execution(ticket)
+        runtime.accept_execution(ticket)
+        for name, value in before.items():
+            np.testing.assert_array_equal(contact_records(runtime)[name], value)
+        mask = np.arange(nworld) % 2 == 0
+        runtime.reset(mask)
+        after = contact_records(runtime)
+        times = runtime.storage_binding().borrow('contact_sample_time', runtime.active_bank).numpy()
+        np.testing.assert_allclose(times, np.where(mask, 0., .006), atol=1e-9, rtol=0)
+        for world in range(nworld):
+            expected = initial if mask[world] else before
+            selection = after['contact_world'][:, 0] == world
+            reference = expected['contact_world'][:, 0] == world
+            for name in after:
+                np.testing.assert_array_equal(after[name][selection], expected[name][reference])
+        counts = runtime.storage_binding().borrow('contact_count_by_world', runtime.active_bank).numpy()
+        np.testing.assert_array_equal(counts, np.bincount(after['contact_world'][:, 0], minlength=nworld))
+        runtime.forward()
+        assert np.isfinite(contact_records(runtime)['contact_wrench']).all()
+        print('B3G_CONTACT_COST', nworld, runtime.execution_costs())
+
+
+@pytest.mark.cuda
+def test_contact_validation_rejects_candidate_and_recovers(payload, monkeypatch):
+    with PhySolveRuntime(compile_mujoco_xml(CONTACT, require_asset=False), payload=payload,
+                        contact_observations=True) as runtime:
+        original = contact_records(runtime)
+        operation = runtime._contact_observations.update
+        for fault in ('index', 'address', 'nan'):
+            def injected(index, stream, **kwargs):
+                data = runtime._banks[index]
+                if fault == 'index':
+                    data.contact.worldid.assign(np.full(data.contact.worldid.shape, 9, np.int32), stream=stream)
+                elif fault == 'address':
+                    data.contact.efc_address.assign(np.full(data.contact.efc_address.shape, 100, np.int32), stream=stream)
+                else:
+                    data.contact.pos.view(runtime._tx.f32).assign(
+                        np.full((data.naconmax, 3), np.nan, np.float32), stream=stream)
+                operation(index, stream, **kwargs)
+            ticket = runtime.begin_execution()
+            with monkeypatch.context() as patch:
+                patch.setattr(runtime._contact_observations, 'update', injected)
+                runtime.enqueue_forward(ticket)
+                with pytest.raises(RuntimeError, match='contact'):
+                    runtime.complete_execution(ticket)
+            for name, value in original.items():
+                np.testing.assert_array_equal(contact_records(runtime)[name], value)
+            runtime.discard_execution(ticket)
+        runtime.forward()
+        assert np.isfinite(contact_records(runtime)['contact_wrench']).all()
+
+
+@pytest.mark.cuda
+def test_contact_empty_stale_and_mixed_observation_capacity(payload):
+    with PhySolveRuntime(compile_mujoco_xml(FREE, require_asset=False), payload=payload,
+                        contact_observations=True) as runtime:
+        storage = runtime.storage_binding()
+        assert not storage.fields['contact_wrench'].writable
+        runtime.step()
+        assert contact_records(runtime)['contact_world'].size == 0
+    with pytest.raises(RuntimeError, match='stale'):
+        storage.borrow('contact_wrench', 0)
+    with PhySolveRuntime(compile_mujoco_xml(CONTACT, require_asset=False), payload=payload,
+                        nworld=2, nconmax=1, contact_observations=True) as runtime:
+        # Synthetic accepted observations fill the shared capacity in the
+        # unselected world. A selected new record cannot silently truncate it.
+        values, ids, count, by_world = runtime._contact_observations.raw[runtime.active_bank]
+        old_ids = ids.numpy().copy()
+        old_ids[:, 0] = 1
+        ids.assign(old_ids, stream=runtime.storage_binding().stream)
+        before = contact_records(runtime)
+        with pytest.raises(RuntimeError, match='mixed contact observation capacity'):
+            runtime.reset(np.array([True, False]))
+        for name, value in before.items():
+            np.testing.assert_array_equal(contact_records(runtime)[name], value)
+        assert runtime.pending_execution is None
+        runtime.reset()
+        assert len(contact_records(runtime)['contact_world']) == 2
+
+
+@pytest.mark.cuda
+def test_multiple_contact_records_preserve_unselected_set(payload):
+    xml = CONTACT.replace('<geom type="sphere" size=".1" mass="1"/>',
+        '<geom type="sphere" size=".1" pos="-.2 0 0" mass=".5"/>'
+        '<geom type="sphere" size=".1" pos=".2 0 0" mass=".5"/>')
+    with PhySolveRuntime(compile_mujoco_xml(xml, require_asset=False), payload=payload,
+                        nworld=8, contact_observations=True) as runtime:
+        runtime.step()
+        before = contact_records(runtime)
+        runtime.reset(np.arange(8) % 2 == 0)
+        after = contact_records(runtime)
+        for world in (1, 3, 5, 7):
+            a = np.flatnonzero(after['contact_world'][:, 0] == world)
+            b = np.flatnonzero(before['contact_world'][:, 0] == world)
+            assert len(a) == len(b) == 2
+            a = a[np.argsort(after['contact_geom'][a, 1])]
+            b = b[np.argsort(before['contact_geom'][b, 1])]
+            for field in after:
+                np.testing.assert_array_equal(after[field][a], before[field][b])
+
+
+@pytest.mark.cuda
+def test_contact_sixdim_rotated_frame(payload):
+    xml = CONTACT.replace('type="plane"', 'type="plane" quat=".923879532511 0 .382683432365 0" condim="6"')
+    xml = xml.replace('pos="0 0 .08"', 'pos=".056568542495 0 .056568542495"')
+    xml = xml.replace('type="sphere"', 'type="sphere" condim="6"')
+    with PhySolveRuntime(compile_mujoco_xml(xml, require_asset=False), payload=payload,
+                        contact_observations=True) as runtime:
+        storage = runtime.storage_binding()
+        ticket = runtime.begin_execution()
+        storage.borrow('qvel', runtime.writable_bank, write=True).assign(
+            np.array([[0., 0., 0., 0., 0., 2.]], np.float32), stream=storage.stream)
+        runtime.enqueue_update(ticket, refresh_state=True)
+        runtime.complete_execution(ticket)
+        runtime.accept_execution(ticket)
+        record = contact_records(runtime)
+        np.testing.assert_array_equal(record['contact_dim'], [[6]])
+        frame = record['contact_frame'][0].reshape(3, 3)
+        np.testing.assert_allclose(record['contact_wrench'][0].reshape(2, 3),
+            record['contact_wrench_local'][0].reshape(2, 3) @ frame, atol=1e-6, rtol=1e-6)
+        assert record['contact_wrench'][0, 5] < 0  # opposes imposed positive spin
+
+
+@pytest.mark.cuda
+def test_contact_prepare_close_failure_retains_measurement_owner(payload, monkeypatch):
+    from phymeo.backends._physolve_contacts import PreparedContacts
+    prepare = PreparedContacts.prepare
+    native = payload.load()
+    with monkeypatch.context() as patch:
+        def fail_prepare(self, *args):
+            prepare(self, *args)
+            raise RuntimeError('injected contact prepare')
+        def fail_close(*args):
+            raise RuntimeError('injected contact close')
+        patch.setattr(PreparedContacts, 'prepare', fail_prepare)
+        patch.setattr(native, '_close_runtime', fail_close)
+        with pytest.raises(RuntimeError, match='contact prepare') as captured:
+            PhySolveRuntime(compile_mujoco_xml(CONTACT, require_asset=False), payload=payload,
+                            contact_observations=True)
+        retained = captured.value.runtime
+        assert retained._contact_observations is not None
+        assert retained._contact_observations.raw[0][0].ptr
+    retained.close()
+    assert retained._closed and retained._contact_observations is None
 
 
 @pytest.mark.cuda

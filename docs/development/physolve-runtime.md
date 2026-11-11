@@ -586,3 +586,17 @@ owner 保留。四子步只增加一次端点运动学；forward/reset 不重复
 对应 P2PE 实际 DLL 资格单独记录于其 `docs/phymeo-cabi.md`，跨仓完整来源、提交和
 哈希见实验根 `evidence/b3f-summary.json`。复用 env-b1j 源码入口，不声称安装升级。
 全仓文档检查仍有历史缺失目标，日志与 B3b 的 SHA256 相同；本批不扩展无关修复。
+
+## B3g：接触测量与受控发布
+
+新增可选接触观测合同 v1，见[公共合同](../architecture/engine-integration.md#接触测量-v1)。
+它复用锁定 physolve_tyx.contact_force，保持求解 Host/六 CUBIN、生产排序和现有容差。
+设备端提取最后子步测量，命令不重新求解，masked reset 合并未选旧记录；错误归入
+现有固定完成 gate。具体采样时刻按 world 保持，不与 body 积分端点混淆。
+首轮专项 4 项通过，后续增加有效 EFC 行、空接触/stale、联合容量与多接触记录测试，
+并由独立代理复审；逐项结果与配套实际 DLL 验证在实验根 `evidence/b3g-summary.json`。
+继续复用 env-b1j 源码验证，不宣称 wheel 安装或 Graph/传感器资格；旧数值失败保留。
+
+实际执行套件先有 26 项通过；审查收尾修正采样捕获/初始化 owner 后，接触专项
+8 项全部通过（含新增 6D 斜面 wrench 转换/摩擦方向及 prepare/close 双失败），
+其余 20 项未重复运行。全仓文档仍有 479 条历史缺失链接，日志散列与 B3f 完全相同。

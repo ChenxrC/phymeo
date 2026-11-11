@@ -3,7 +3,7 @@
 from ..core.runtime_storage import RuntimeField, RuntimeStorage
 
 
-def bind_storage(owner, banks, stream, device, generation, controls=None, bodies=None):
+def bind_storage(owner, banks, stream, device, generation, controls=None, bodies=None, contacts=None):
     import tyx as tx
 
     # q, DOF and body index spaces are deliberately distinct. The compiled
@@ -38,6 +38,23 @@ def bind_storage(owner, banks, stream, device, generation, controls=None, bodies
             array.update(bank)
     fields = tuple(RuntimeField(name, tuple(arrays[0][name].shape), "float32", *spec)
                    for name, spec in semantics.items())
+    if contacts is not None:
+        for array, bank in zip(arrays, contacts.banks):
+            array.update(bank)
+        for name in contacts.banks[0]:
+            floating = name in contacts.float_fields or name == 'contact_sample_time'
+            unit, frame = (contacts.float_fields[name][2:] if name in contacts.float_fields else
+                           ("index/count", "native geom / 0-based world; rows are not persistent IDs"))
+            space = 'native_contact'
+            if name in ('contact_count_by_world', 'contact_sample_time'):
+                space = 'world'
+            elif name == 'contact_count':
+                space = 'global_count'
+            if name == 'contact_sample_time':
+                unit, frame = 's', 'simulation clock of the retained solver evaluation'
+            fields += (RuntimeField(name, tuple(arrays[0][name].shape),
+                                    "float32" if floating else "int32", unit, frame,
+                                    space, "solver evaluation; unselected reset worlds retain last sample"),)
     return RuntimeStorage(owner=owner, generation=generation, fields=fields,
                           banks=arrays,
                           stream=stream, device=str(device))

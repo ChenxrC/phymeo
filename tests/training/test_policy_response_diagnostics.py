@@ -6,6 +6,7 @@ import gzip
 import hashlib
 import json
 import random
+from contextlib import contextmanager
 from importlib.metadata import version
 from pathlib import Path
 
@@ -298,11 +299,55 @@ def assert_random_unchanged(before):
     assert all(torch.equal(a, b) for a, b in zip(before[3], after[3], strict=True))
 
 
+def computation_flags():
+    import torch
+    return {
+        "matmul_allow_tf32": torch.backends.cuda.matmul.allow_tf32,
+        "cudnn_allow_tf32": torch.backends.cudnn.allow_tf32,
+        "float32_matmul_precision": torch.get_float32_matmul_precision(),
+    }
+
+
+@contextmanager
+def caller_computation(precision, cudnn):
+    import torch
+    previous = computation_flags()
+    try:
+        torch.set_float32_matmul_precision(precision)
+        torch.backends.cudnn.allow_tf32 = cudnn
+        yield computation_flags()
+    finally:
+        torch.backends.cuda.matmul.allow_tf32 = previous["matmul_allow_tf32"]
+        torch.backends.cudnn.allow_tf32 = previous["cudnn_allow_tf32"]
+        torch.set_float32_matmul_precision(previous["float32_matmul_precision"])
+
+
+def assert_original_computation():
+    assert computation_flags() == {
+        "matmul_allow_tf32": False,
+        "cudnn_allow_tf32": False,
+        "float32_matmul_precision": "highest",
+    }
+
+
 @pytest.mark.cuda
-def test_actual_cuda_feature_and_pinned_models_restore_rng():
+def test_actual_cuda_feature_and_pinned_models_restore_rng(monkeypatch):
     pair = cuda_pair()
     before = random_state()
-    result = response.evaluate_pair(pair)
+    original = response._infer_model
+    observed = []
+
+    def infer(*args, **kwargs):
+        assert_original_computation()
+        observed.append(computation_flags())
+        return original(*args, **kwargs)
+
+    with caller_computation("medium", True) as caller:
+        monkeypatch.setattr(response, "_infer_model", infer)
+        result = response.evaluate_pair(pair)
+        assert computation_flags() == caller
+        assert len(observed) == 2
+        assert result["computation_flags"] == observed[0] == observed[1]
     assert_random_unchanged(before)
     assert result["status"] == "PASS_FIXED_POLICY_RESPONSE"
     assert result["features"]["kernel_calls"] == 1
@@ -357,6 +402,7 @@ def test_actual_failure_restores_rng_closes_runtime_and_allows_retry(monkeypatch
         return original_close(owner)
 
     def fail(*args, **kwargs):
+        assert_original_computation()
         random.random()
         np.random.random()
         torch.rand(1)
@@ -364,15 +410,19 @@ def test_actual_failure_restores_rng_closes_runtime_and_allows_retry(monkeypatch
         raise RuntimeError("injected response stage failure")
 
     before = random_state()
-    with monkeypatch.context() as patch:
-        patch.setattr(tx.Runtime, "close", close)
-        if stage == "feature":
-            patch.setattr(_task_kernels, "evaluate", fail)
-        else:
-            patch.setattr(response, "_infer_model", fail)
-        with pytest.raises(RuntimeError, match="injected"):
-            response.evaluate_pair(pair)
-    assert_random_unchanged(before)
-    assert closes
-    assert response.evaluate_pair(pair)["status"] == "PASS_FIXED_POLICY_RESPONSE"
-    assert_random_unchanged(before)
+    precision, cudnn = ("high", True) if stage == "feature" else ("medium", False)
+    with caller_computation(precision, cudnn) as caller:
+        with monkeypatch.context() as patch:
+            patch.setattr(tx.Runtime, "close", close)
+            if stage == "feature":
+                patch.setattr(_task_kernels, "evaluate", fail)
+            else:
+                patch.setattr(response, "_infer_model", fail)
+            with pytest.raises(RuntimeError, match="injected"):
+                response.evaluate_pair(pair)
+        assert_random_unchanged(before)
+        assert computation_flags() == caller
+        assert closes
+        assert response.evaluate_pair(pair)["status"] == "PASS_FIXED_POLICY_RESPONSE"
+        assert computation_flags() == caller
+        assert_random_unchanged(before)

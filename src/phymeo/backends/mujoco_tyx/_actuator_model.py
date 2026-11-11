@@ -1,7 +1,9 @@
 # Copyright 2026 Phymeo contributors
 # Native actuator semantics follow MuJoCo 3.3.7 (Apache-2.0).
 """Bounded static filterexact layout; no state update or HOST dynamics."""
+
 from dataclasses import dataclass, fields
+
 import numpy as np
 
 from . import MuJoCoTyxIssue, MuJoCoTyxUnsupported
@@ -34,6 +36,7 @@ class TyxActivationTreeModel(TyxTreeModel):
 
 def compile_activation_model(mj, model):
     issues = []
+
     def issue(code, detail):
         issues.append(MuJoCoTyxIssue(code, detail))
 
@@ -67,21 +70,33 @@ def compile_activation_model(mj, model):
         if not 0 <= joint < model.njnt:
             issue("activation-transmission", f"actor {actor} has no scalar joint target")
             continue
-        ids[actor] = (int(model.jnt_qposadr[joint]), int(model.jnt_dofadr[joint]), joint, adr,
-                      int(model.actuator_actearly[actor]),
-                      int(bool(model.opt.disableactuator & (1 << int(model.actuator_group[actor])))),
-                      int(model.actuator_ctrllimited[actor]), int(model.actuator_actlimited[actor]),
-                      int(model.actuator_forcelimited[actor]))
-        bias = model.actuator_biasprm[actor, :3] if model.actuator_biastype[actor] == mj.mjtBias.mjBIAS_AFFINE else np.zeros(3)
+        ids[actor] = (
+            int(model.jnt_qposadr[joint]),
+            int(model.jnt_dofadr[joint]),
+            joint,
+            adr,
+            int(model.actuator_actearly[actor]),
+            int(bool(model.opt.disableactuator & (1 << int(model.actuator_group[actor])))),
+            int(model.actuator_ctrllimited[actor]),
+            int(model.actuator_actlimited[actor]),
+            int(model.actuator_forcelimited[actor]),
+        )
+        bias = (
+            model.actuator_biasprm[actor, :3]
+            if model.actuator_biastype[actor] == mj.mjtBias.mjBIAS_AFFINE
+            else np.zeros(3)
+        )
         values[actor, :5] = (model.actuator_gear[actor, 0], model.actuator_gainprm[actor, 0], *bias)
-        for mask_column, offset, ranges in ((6, 5, model.actuator_ctrlrange),
-                                            (7, 10, model.actuator_actrange),
-                                            (8, 7, model.actuator_forcerange)):
+        for mask_column, offset, ranges in (
+            (6, 5, model.actuator_ctrlrange),
+            (7, 10, model.actuator_actrange),
+            (8, 7, model.actuator_forcerange),
+        ):
             if ids[actor, mask_column]:
                 interval = np.asarray(ranges[actor], dtype=np.float64)
                 if not np.isfinite(interval).all() or interval[0] > interval[1]:
                     issue("activation-range", f"actor {actor} has an invalid enabled interval")
-                values[actor, offset:offset+2] = interval
+                values[actor, offset : offset + 2] = interval
     if sorted(addresses) != list(range(int(model.na))):
         issue("activation-layout", "activation addresses must cover native na exactly once")
     if not np.isfinite(values).all():
@@ -91,5 +106,9 @@ def compile_activation_model(mj, model):
     # This validates all original body/joint/option/contact/transmission gates.
     # Only the explicit dyntype/na gate is extended, never by a failed fallback.
     base = compile_tree_model(mj, model, allow_activation=True)
-    layout = TyxActuatorLayout(int(model.na), _immutable(ids), _immutable(fp32(values, "activation parameters")))
-    return TyxActivationTreeModel(**{field.name: getattr(base, field.name) for field in fields(base)}, activation=layout)
+    layout = TyxActuatorLayout(
+        int(model.na), _immutable(ids), _immutable(fp32(values, "activation parameters"))
+    )
+    return TyxActivationTreeModel(
+        **{field.name: getattr(base, field.name) for field in fields(base)}, activation=layout
+    )

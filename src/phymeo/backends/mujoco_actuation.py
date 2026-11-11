@@ -1,5 +1,7 @@
 """Public immutable device actuation evidence for the ROB2a native T1 domain."""
+
 from dataclasses import dataclass
+
 import numpy as np
 
 from ._mujoco_tyx_runtime import MuJoCoTyxStepReceipt
@@ -21,6 +23,7 @@ class MuJoCoTyxActuation:
     ids columns: qpos,dof,joint,actadr,early,disabled,ctrl/act/force-limited.
     parameters columns: gear,gain,bias[3],ctrl[2],force[2],tau_eff,act[2].
     """
+
     ids: np.ndarray
     parameters: np.ndarray
     input_act: np.ndarray
@@ -38,7 +41,11 @@ class MuJoCoTyxActuation:
     def __post_init__(self):
         for name in self.__dataclass_fields__:
             if name not in ("schema", "phase"):
-                object.__setattr__(self, name, _freeze(getattr(self, name), np.int32 if name == "ids" else np.float32))
+                object.__setattr__(
+                    self,
+                    name,
+                    _freeze(getattr(self, name), np.int32 if name == "ids" else np.float32),
+                )
         nu, na = self.ids.shape[0], self.input_act.size
         if self.ids.shape != (nu, 9) or self.parameters.shape != (nu, 12):
             raise ValueError("actuation source layout")
@@ -50,7 +57,10 @@ class MuJoCoTyxActuation:
                 raise ValueError("actuator publication shape")
         if self.generalized_force.ndim != 1:
             raise ValueError("generalized actuator force shape")
-        if self.schema != "native-scalar-filterexact-actuation-v1" or self.phase != "tyx-euler-entry-actuation-and-next-activation":
+        if (
+            self.schema != "native-scalar-filterexact-actuation-v1"
+            or self.phase != "tyx-euler-entry-actuation-and-next-activation"
+        ):
             raise ValueError("actuation publication schema")
 
 
@@ -62,13 +72,17 @@ class MuJoCoTyxActivationStepReceipt(MuJoCoTyxStepReceipt):
 def publish_actuation(plan, result, index):
     """Bind actual downloaded arrays; never recompute a force or state."""
     layout = plan.activation
-    actor = result["actuator_fields"][index, :plan.nu]
+    actor = result["actuator_fields"][index, : plan.nu]
     return MuJoCoTyxActuation(
-        ids=layout.ids, parameters=layout.values,
-        input_act=result["input_act"][index, :layout.na],
-        output_act=result["act"][index, :layout.na],
-        activation_derivative=result["activation_derivative"][index, :layout.na],
-        integration_derivative=result["integration_derivative"][index, :layout.na],
-        clamped_control=actor[:, 0], force_input=actor[:, 1], raw_force=actor[:, 2],
-        scalar_force=actor[:, 3], generalized_force=result["actuator"][index, :plan.nv],
+        ids=layout.ids,
+        parameters=layout.values,
+        input_act=result["input_act"][index, : layout.na],
+        output_act=result["act"][index, : layout.na],
+        activation_derivative=result["activation_derivative"][index, : layout.na],
+        integration_derivative=result["integration_derivative"][index, : layout.na],
+        clamped_control=actor[:, 0],
+        force_input=actor[:, 1],
+        raw_force=actor[:, 2],
+        scalar_force=actor[:, 3],
+        generalized_force=result["actuator"][index, : plan.nv],
     )

@@ -36,10 +36,13 @@ def _records():
         MuJoCoTyxNormalContact,
         MuJoCoTyxStepReceipt,
     )
+    from .mujoco_actuation import MuJoCoTyxActivationStepReceipt, MuJoCoTyxActuation
     from .mujoco_runtime import MuJoCoControl, MuJoCoInitialState
     from .mujoco_tyx._constraint_publication import MuJoCoTyxConstraintRow
 
     classes = (
+        MuJoCoTyxActuation,
+        MuJoCoTyxActivationStepReceipt,
         MuJoCoControl,
         MuJoCoInitialState,
         MuJoCoTyxContact,
@@ -214,7 +217,7 @@ def _make_checkpoint(binding, revision, state):
 def _model_binding(runtime):
     source, plan, model = runtime._compilation.source, runtime._plan, runtime._model
     _require(len(runtime.world_keys) <= MAX_WORLDS, "at most 256 checkpoint worlds")
-    return {
+    binding = {
         "schema": "mujoco-tyx-exact-checkpoint-v1",
         "primary_sha256": hashlib.sha256(source.primary_xml).hexdigest(),
         "archive_sha256": hashlib.sha256(source.archive_bytes).hexdigest(),
@@ -237,6 +240,24 @@ def _model_binding(runtime):
         "state_precision": "fp32-raw-bank; compensated-clock-high-minus-low",
         "solver_history": "cold-per-step; no-integrator-warmstart-or-contact-history",
     }
+    if hasattr(plan, "activation"):
+        binding.update(
+            schema="mujoco-tyx-exact-checkpoint-v2",
+            layout=(*binding["layout"], plan.activation.na),
+            activation_layout={
+                "schema": plan.activation.schema,
+                "ids_sha256": hashlib.sha256(plan.activation.ids.tobytes()).hexdigest(),
+                "parameters_sha256": hashlib.sha256(plan.activation.values.tobytes()).hexdigest(),
+            },
+        )
+    return binding
+
+
+def _bank_shapes(binding, count):
+    shapes = ((count, binding["layout"][0]), (count, binding["layout"][1]), (count, 2))
+    if binding["schema"] == "mujoco-tyx-exact-checkpoint-v2":
+        shapes += ((count, binding["layout"][3]),)
+    return shapes
 
 
 def _accepted_bank(device):
@@ -244,9 +265,10 @@ def _accepted_bank(device):
     with device.tx.use_runtime(device.runtime):
         device.runtime.sync()
         device.counts["synchronizations"] += 1
-        return tuple(
-            device._get(buffers[device.active]) for buffers in (device.q, device.v, device.time)
-        )
+        banks = (device.q, device.v, device.time)
+        if getattr(device, "activation_enabled", False):
+            banks += (device.act,)
+        return tuple(device._get(buffers[device.active]) for buffers in banks)
 
 
 def _verify_bank(device, packed):
@@ -278,11 +300,7 @@ def capture(runtime):
     packed = _accepted_bank(runtime._device)
     for got, shape in zip(
         packed,
-        (
-            (len(runtime.world_keys), binding["layout"][0]),
-            (len(runtime.world_keys), binding["layout"][1]),
-            (len(runtime.world_keys), 2),
-        ),
+        _bank_shapes(binding, len(runtime.world_keys)),
         strict=True,
     ):
         _require(
@@ -306,6 +324,11 @@ def capture(runtime):
             float(packed[2][index, 0]) - float(packed[2][index, 1]) == data.time,
             "accepted clock mirror differs",
         )
+        if hasattr(runtime._plan, "activation"):
+            _require(
+                packed[3][index].astype(np.float64).tobytes() == data.act.tobytes(),
+                "accepted activation mirror differs",
+            )
         cpu_state = np.empty(binding["cpu_state_size"], dtype=np.float64)
         runtime._mj.mj_getState(
             runtime._model, data, cpu_state, runtime._mj.mjtState.mjSTATE_INTEGRATION
@@ -322,11 +345,10 @@ def capture(runtime):
                 "receipt": runtime._receipts[key],
             }
         )
-    return _make_checkpoint(
-        binding,
-        runtime._checkpoint_revision,
-        {"q": packed[0], "v": packed[1], "clock": packed[2], "worlds": worlds},
-    )
+    state = {"q": packed[0], "v": packed[1], "clock": packed[2], "worlds": worlds}
+    if hasattr(runtime._plan, "activation"):
+        state["act"] = packed[3]
+    return _make_checkpoint(binding, runtime._checkpoint_revision, state)
 
 
 def restore(runtime, checkpoint, expected_revision):
@@ -340,14 +362,14 @@ def restore(runtime, checkpoint, expected_revision):
     _require(type(checkpoint) is MuJoCoTyxCheckpoint, "expected MuJoCoTyxCheckpoint")
     binding = _model_binding(runtime)
     saved = checkpoint._read(binding)
-    _require(
-        isinstance(saved, Mapping) and set(saved) == {"q", "v", "clock", "worlds"}, "state fields"
-    )
+    stateful = hasattr(runtime._plan, "activation")
+    expected_fields = {"q", "v", "clock", "worlds"} | ({"act"} if stateful else set())
+    _require(isinstance(saved, Mapping) and set(saved) == expected_fields, "state fields")
     nw = len(runtime.world_keys)
     packed = (saved["q"], saved["v"], saved["clock"])
-    for value, shape in zip(
-        packed, ((nw, binding["layout"][0]), (nw, binding["layout"][1]), (nw, 2)), strict=True
-    ):
+    if stateful:
+        packed += (saved["act"],)
+    for value, shape in zip(packed, _bank_shapes(binding, nw), strict=True):
         _require(
             isinstance(value, np.ndarray)
             and value.dtype == np.float32
@@ -426,12 +448,22 @@ def restore(runtime, checkpoint, expected_revision):
                 actual.tobytes() == values[index, :width].astype(np.float64).tobytes(),
                 "raw state/mirror binding",
             )
+        if stateful:
+            _require(
+                candidate.act.tobytes() == packed[3][index].astype(np.float64).tobytes(),
+                "raw activation/mirror binding",
+            )
         runtime._finite_state(candidate)
         receipt = item["receipt"]
+        receipt_type = MuJoCoTyxStepReceipt
+        if stateful:
+            from .mujoco_actuation import MuJoCoTyxActivationStepReceipt
+
+            receipt_type = MuJoCoTyxActivationStepReceipt
         _require(
             (receipt is None and tick == 0)
             or (
-                type(receipt) is MuJoCoTyxStepReceipt
+                type(receipt) is receipt_type
                 and receipt.world == key
                 and receipt.tick == tick
                 and receipt.output_time == clock
@@ -439,6 +471,17 @@ def restore(runtime, checkpoint, expected_revision):
             ),
             "last receipt binding",
         )
+        if stateful and receipt is not None:
+            actuation = receipt.actuation
+            _require(
+                actuation.output_act.astype(np.float64).tobytes() == candidate.act.tobytes()
+                and actuation.generalized_force.astype(np.float64).tobytes()
+                == candidate.qfrc_actuator.tobytes()
+                and actuation.input_act.shape == (runtime._plan.activation.na,)
+                and actuation.ids.tobytes() == runtime._plan.activation.ids.tobytes()
+                and actuation.parameters.tobytes() == runtime._plan.activation.values.tobytes(),
+                "stateful receipt/source/accepted activation binding",
+            )
         data[key], controls[key], ticks[key], receipts[key], initial[key] = (
             candidate,
             control,

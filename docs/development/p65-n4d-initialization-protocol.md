@@ -41,8 +41,8 @@ loading, RNN, normalizer updates, state-dependent standard deviation and trained
 optimizer state are rejected.
 
 Full validation and independent candidate inference precede the unique real
-bias copy. Candidate mutation never touches the actor. Caller RNG and temporary
-model modes are restored before publication. A late copy/completion/hash failure
+bias copy. Candidate mutation never touches the actor. Caller RNG/computation flags are restored before publication; original model
+modes are unchanged. A late copy/completion/hash failure
 rolls the real bias back; rollback failure is explicit and cannot be called an
 atomic refusal. No physics/optimizer step is part of this operation. Complete
 before/after state tensors, hashes, original mean, candidate mean/residual and
@@ -99,6 +99,7 @@ Tests do not execute the 128-update experiment themselves; the parent owns that
 single fixed execution and all static/collection/test/build commands.
 
 No implementation or learning result is claimed by this preregistration.
+
 ## Final authoring handoff (2026-11-12)
 
 All four new files are authored, not executed by this author. Product commits

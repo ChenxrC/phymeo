@@ -884,15 +884,33 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                 constraint_capacity=self._constraint_capacity,
                 cache_root=self._cache_root,
             )
-            proposed = {key: copy.copy(self._data[key]) for key in selected}
-            replacement = cloned._build_device(proposed)
-            cloned._device.close()
-            cloned._device = replacement
-            cloned._data = proposed
-            cloned._controls = {key: self._controls[key] for key in selected}
-            cloned._ticks = {key: self._ticks[key] for key in selected}
-            cloned._receipts = {key: self._receipts[key] for key in selected}
-            return cloned
+            try:
+                proposed = {key: copy.copy(self._data[key]) for key in selected}
+                replacement = cloned._build_device(proposed)
+                previous = cloned._device
+                # Own both banks before retirement: a failed close must not
+                # abandon the replacement or the original clone allocation.
+                cloned._checkpoint_retired.append(previous)
+                cloned._device = replacement
+                previous.close()
+                cloned._checkpoint_retired.remove(previous)
+                cloned._data = proposed
+                cloned._controls = {key: self._controls[key] for key in selected}
+                cloned._ticks = {key: self._ticks[key] for key in selected}
+                cloned._receipts = {key: self._receipts[key] for key in selected}
+                return cloned
+            except BaseException as error:
+                try:
+                    cloned.close()
+                except BaseException as cleanup:
+                    # The clone never escapes to a caller. Retain a retryable
+                    # cleanup owner without changing this source's physical bank.
+                    self._checkpoint_retired.append(cloned)
+                    raise BaseExceptionGroup(
+                        "TYX clone failed and cleanup needs retry on source.close()",
+                        [error, cleanup],
+                    ) from None
+                raise
 
     def close(self):
         with self._lock:

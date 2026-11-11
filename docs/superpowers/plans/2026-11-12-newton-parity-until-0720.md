@@ -127,3 +127,9 @@ BALL-A 与 COL3 的新源码矩阵及受影响接口已通过。剩余时间优�
 
 先完成新协议测试和J8实际两模式资格，才执行S128/256；任何共同状态差异/资源拒绝立即停止扩大，保真实失败，不降world数/放宽门追绿。顺序构造限制native内存峰值；记录native构造/copy、设备/物理调用、process commit/RSS及端到端时间，计时分update与完整证据关闭。仅本机同配置/不同输出模式比较，没有Newton同输出性能优势声明。06:20仍停止新增长任务；若未完成，保已过格及明确未启动格，不影响已验产品的wheel资格。
 
+
+## 05:35 BALL-C 后继组合：按源码合同做一次有界开发
+
+已全文审阅 [BALL-C 源码合同](../../development/p65-ball-next-composition-contract.md)。父独立确认现有 normal/constraint wrappers 已传完整球关节 DOF 表和 quaternion integrator；本片只接固定根 BALL 树与现有 contact 路由，原 kernel/solver/预算不改。原 source 作者在隔离树先 author NEW tests/test_mujoco_tyx_ball_contacts.py、tests/test_mujoco_tyx_ball_contacts_lifecycle.py、tests/installed/check_ball_contacts.py 和 docs/development/p65-ball-contact-composition-report.md；父独占合同四个既有产品文件。C1–C6 的 XML、输入、24步时序和原误差门必须在首次执行前登记，不调 fixture 追绿。nv<=8/nq<=10、scalar NONE/FILTEREXACT、condim1/pyramidal3、最多16 pairs/32 slots；FREE、直接球电机、limits/dry、condim4/6仍拒绝，完整结构检查不能被路由绕过。
+
+本授权先为纯编码。目标06:00前交接，父全文审阅后才在唯一串行槽执行。若证据或剩余时间不足，保隔离 authoring，不把未验代码带入最终 wheel；06:20不启动新长验证和07:20交接边界保持。N7正在跑的source不改，accounting新发现先完成诊断与受影响修复。

@@ -711,7 +711,7 @@ def test_invalid_control_batch_keeps_all_previous_packets(mode):
         (_chain(9), "joint-domain"),
         (
             PENDULUM_XML.replace('type="hinge"', 'type="ball"').replace('ref=".125"', ""),
-            "joint-domain",
+            "ball-actuator-domain",
         ),
         (
             FORK_XML.replace('contype="0" conaffinity="0"', 'contype="1" conaffinity="1"'),

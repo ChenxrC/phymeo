@@ -453,6 +453,18 @@ def _accepted_physical_counts(entry):
         or len(window.substeps) != window.completed
     ):
         raise ValueError("accounting requires a complete control window")
+    action = entry.action_receipt
+    recorded_action = window.action_receipt
+    if (
+        action is None
+        or recorded_action is None
+        or action.source_revision != entry.input_frame.revision
+        or action.revision != action.source_revision + 1
+        or recorded_action.source_revision != action.source_revision
+        or recorded_action.revision != action.revision
+    ):
+        raise ValueError("accounting control-window action publication differs")
+    input_ticks = dict(zip(keys, entry.input_frame.ticks, strict=True))
     accepted = 0
     previous = None
     for ordinal, sub in enumerate(window.substeps):
@@ -466,6 +478,11 @@ def _accepted_physical_counts(entry):
             or sub.exit_revision != sub.entry_revision + 1
         ):
             raise ValueError("accounting requires complete accepted substep worlds")
+        if previous is None and (
+            sub.entry_revision != action.revision
+            or any(sub.states[key].tick != input_ticks[key] + 1 for key in keys)
+        ):
+            raise ValueError("accounting control-window entry differs")
         if previous is not None and (
             sub.entry_revision != previous.exit_revision
             or any(sub.states[key].tick != previous.states[key].tick + 1 for key in keys)
@@ -476,6 +493,15 @@ def _accepted_physical_counts(entry):
     if previous is None or any(previous.states[key].tick != entry.states[key].tick for key in keys):
         raise ValueError("accounting control-window endpoint differs")
     return len(window.substeps), accepted
+
+
+def _accounting_frame(frame):
+    return {
+        "revision": frame.revision,
+        "epoch": frame.epoch,
+        "ticks": list(frame.ticks),
+        "times": list(frame.times),
+    }
 
 
 def counter_accounting(before, after, transitions):
@@ -511,9 +537,18 @@ def counter_accounting(before, after, transitions):
         ),
         "task": counter_delta(a["task"], b["task"]),
     }
+    explicit_windows = tuple(
+        getattr(entry, "control_window", None) is not None for entry in transitions
+    )
+    if any(explicit_windows) and not all(explicit_windows):
+        raise ValueError("accounting cannot mix default and explicit control windows")
+    bind_windows = any(explicit_windows)
+    previous_frame = before["frame"]
     reset_events, accepted, physical_steps = [], 0, 0
     for entry in transitions:
         keys = tuple(entry.world_keys)
+        if bind_windows and _accounting_frame(entry.input_frame) != previous_frame:
+            raise ValueError("accounting control-window input frame differs")
         step_count, world_count = _accepted_physical_counts(entry)
         physical_steps += step_count
         accepted += world_count
@@ -532,6 +567,14 @@ def counter_accounting(before, after, transitions):
                     "output_revision": entry.output_frame.revision,
                 }
             )
+        if bind_windows:
+            if entry.output_frame.revision != entry.control_window.substeps[
+                -1
+            ].exit_revision + bool(reset_keys):
+                raise ValueError("accounting control-window output revision differs")
+            previous_frame = _accounting_frame(entry.output_frame)
+    if bind_windows and previous_frame != after["frame"]:
+        raise ValueError("accounting control-window final frame differs")
     reset_worlds = sum(len(entry["world_keys"]) for entry in reset_events)
     if (
         monotonic["environment"]["transitions"] != len(transitions)

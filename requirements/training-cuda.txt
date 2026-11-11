@@ -2,7 +2,8 @@
 # Reuse the existing user-site Torch through an isolated venv; do not process
 # that directory's editable .pth files or replace the existing physics pin.
 # See docs/development/p65-environment-refresh-20261111.md for exact provisioning.
-# Provisioned and Torch CUDA arithmetic passed; full N1 qualification pending.
+# N1 qualified: 22 passed, one cross-GPU case untested on this single-GPU host.
+# See docs/benchmarks/p65-cuda-policy-n1.md; PPO/N2 is not yet qualified.
 # This is a version manifest, not a complete transitive/hash lock file.
 --extra-index-url https://download.pytorch.org/whl/cu126
 torch==2.12.0+cu126

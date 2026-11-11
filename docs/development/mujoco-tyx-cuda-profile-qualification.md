@@ -2,7 +2,7 @@
 
 ## 当前：复用现有 Python 3.13 CUDA Torch
 
-2026-11-11 用户指出现有 Python313 Torch 并授权清理。实际 Torch 2.12.0+cu126 在 GPU 非默认 stream 的矩阵运算已通过，保留用户目录；五个退役 P65 venv 已安全清理，观察回收约0.48GB。父 `.venv-training-cuda313` 已建立，覆盖安装当前合同版本及 cp313 CUDA bindings，保持 TYX 99f6。完整 import/来源/driver/NVRTC 与 N1 物理矩阵仍待串行执行，不能只凭 Torch 运算称 N1 通过。
+2026-11-11 用户指出现有 Python313 Torch 并授权清理。实际 Torch 2.12.0+cu126 可用并保留用户目录；五个退役 P65 venv 已安全清理，观察回收约0.48GB。父 `.venv-training-cuda313` 已建立，独立安装当前合同版本及 cp313 CUDA bindings，保持 TYX 99f6。完整 import/来源/driver/NVRTC 已通过；N1 focused 组22 passed、1单GPU硬件条件未测，八条实际CUDA策略/物理轨迹共784个world-steps。详[实际结果](../benchmarks/p65-cuda-policy-n1.md)。这是推理闭环资格，N2 PPO尚未运行。
 
 详见[环境复用与清理记录](p65-environment-refresh-20261111.md)及[当前版本清单](../../requirements/training-cuda.txt)。新环境借用用户 site 的 Torch 文件，用户目录现在是显式依赖；旧 cp311 下载候选不再是当前安装路线，以下历史容量判断保留。
 

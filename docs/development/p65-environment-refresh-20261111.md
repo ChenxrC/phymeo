@@ -33,3 +33,5 @@
 这是本机复用 profile，不是自包含可移植环境；原用户 Torch 目录是显式依赖，不能在后续清理中删除。项目运行需 `PYTHONNOUSERSITE=1`、`PYTHONDONTWRITEBYTECODE=1`、显式父 `src`、单线程与 pytest no-autoload。后续须先通过完整 import/来源/CUDA driver/NVRTC 门，再运行 N1 固定连续物理矩阵。此处不提前宣布 N1 或 PPO 通过。
 
 原始命令、环境 metadata、清理事务、源包复制清单及首次失败保存在父 `artifacts/p65-env-refresh-20261111-01`。run04 的 PowerShell 文件数组拼接错误发生在 Python 启动前，原记录保留；run05 修正任务描述，产品源码和测试未因此修改。
+
+后续实际结果：run05全部import/来源/driver/NVRTC门通过；run11固定N1完整组22pass/1跨GPU硬件未测，八条连续轨迹共784world-steps。已有Torch因此足以支撑当前N1，无需删除或替换；实际PPO更新仍待N2。详见[N1验收](../benchmarks/p65-cuda-policy-n1.md)。

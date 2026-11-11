@@ -455,3 +455,46 @@ def test_memory_step_allocation_gate_and_original_failure_restore_wrappers(opera
     assert row["original_call_failed"] is (operation == "throw")
     assert row["constructor_calls"] == int(operation == "construct")
     assert row["copy_calls"] == int(operation == "copy")
+
+
+def test_memory_constructor_failure_unwinds_both_public_proxies(tmp_path):
+    import copy
+    from types import SimpleNamespace
+
+    module = api()
+    data_type, model = native_fixture()
+    model.fail = True
+    native_module = SimpleNamespace(MjData=data_type)
+    original_copy = SimpleNamespace(copy=copy.copy)
+    target = SimpleNamespace(copy=original_copy)
+    observer = module.MemoryObservation(tmp_path, 1, process_sample=lambda: {})
+    with pytest.raises(MemoryError, match="original public constructor"):
+        with observer.install(target, data_type, native_module=native_module):
+            observer.begin_mode("integration")
+            native_module.MjData(model)
+    observer.finish_construction(failed=True)
+    assert native_module.MjData is data_type and target.copy is original_copy
+    snapshot = observer.snapshot()
+    assert snapshot["constructor_failures"] == 1
+    assert snapshot["phase_accounting"]["integration"]["construct"]["failures"] == 1
+
+
+def test_memory_layout_records_only_owned_reference_counts(tmp_path):
+    import weakref
+    from types import SimpleNamespace
+
+    module = api()
+    data_type, model = native_fixture()
+    compact_type = type("NativeMirror", (), {"__module__": "phymeo.backends._mujoco_tyx_mirror"})
+    compact, scratch = compact_type(), data_type(model)
+    runtime = SimpleNamespace(_data={7: compact}, _observer_data=scratch)
+    observer = module.MemoryObservation(tmp_path, 1, process_sample=lambda: {})
+    observer.begin_mode("full")
+    row = observer.runtime_layout(runtime, data_type)
+    assert row["compact_worlds"] == 1 and row["accepted_native_records"] == 0
+    assert row["observer_scratch_present"] == 1 and row["observer_is_native"]
+    compact_ref, scratch_ref = weakref.ref(compact), weakref.ref(scratch)
+    del compact, scratch, runtime
+    assert compact_ref() is None and scratch_ref() is None
+    observer.finish_construction()
+    assert observer.snapshot()["runtime_layouts"][0] == row

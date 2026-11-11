@@ -208,15 +208,60 @@ def process_memory():
 
 
 class MemoryObservation:
-    """Bounded S256 diagnostic. Never retains a native object or invokes physics."""
+    """Bounded, process-local diagnostic; saved values never own native objects."""
 
     def __init__(self, target, worlds, *, process_sample=process_memory):
         self.target, self.worlds, self.process_sample = Path(target), worlds, process_sample
         self.mode, self.step, self.step_copies = None, 0, 0
         self.copy_calls, self.copy_failures, self.events = 0, 0, []
+        self.constructor_calls, self.constructor_failures = 0, 0
         self.maximum_copies = 2 * 48 * worlds + 2 * worlds + 64
-        self.maximum_events = 512
+        self.maximum_constructors, self.maximum_events = 8 * worlds + 128, 512
         self.native_ranges, self.files = {}, []
+        self.phase, self.phase_accounting = "other", {}
+        self.physics_steps, self.runtime_layouts = [], []
+        self._construct_start, self._construct_children = None, 0.0
+        self._active_scope = None
+
+    def _bucket(self, phase=None):
+        mode = self.phase_accounting.setdefault(str(self.mode), {})
+        return mode.setdefault(
+            self.phase if phase is None else phase,
+            dict.fromkeys(
+                ("calls", "failures", "constructor_calls", "constructor_failures",
+                 "copy_calls", "copy_failures", "constructor_seconds", "copy_seconds",
+                 "wall_seconds_inclusive", "wall_seconds_exclusive"), 0,
+            ),
+        )
+
+    def _record_native(self, value):
+        native = {
+            "data_narena_bytes": int(value.narena),
+            "data_nbuffer_bytes": int(value.nbuffer),
+            "data_maxuse_arena_bytes": int(value.maxuse_arena),
+            "model_narena_bytes": int(value.model.narena),
+            "model_nbuffer_bytes": int(value.model.nbuffer),
+        }
+        optional = {"maxuse_stack": "data_maxuse_stack_bytes",
+                    "maxuse_threadstack": "data_maxuse_threadstack_bytes",
+                    "maxuse_con": "data_maxuse_contacts", "maxuse_efc": "data_maxuse_efc"}
+        unavailable = []
+        for attribute, key in optional.items():
+            if not hasattr(value, attribute):
+                unavailable.append(attribute)
+            elif attribute == "maxuse_threadstack":
+                native[key] = [int(item) for item in getattr(value, attribute)]
+            else:
+                native[key] = int(getattr(value, attribute))
+        for name, number in native.items():
+            values = enumerate(number) if isinstance(number, list) else ((None, number),)
+            for index, item in values:
+                key = name if index is None else name + "/" + str(index)
+                bounds = self.native_ranges.setdefault(key, [item, item])
+                bounds[0], bounds[1] = min(bounds[0], item), max(bounds[1], item)
+        if unavailable:
+            native["unavailable_optional_fields"] = unavailable
+        return native
 
     def event(self, stage, *, native=None, **fields):
         if len(self.events) >= self.maximum_events:
@@ -226,21 +271,50 @@ class MemoryObservation:
         except Exception as error:
             process = {"status": "UNKNOWN", "reason": type(error).__name__ + ": " + str(error)}
         self.events.append(
-            {
-                "stage": stage,
-                "mode": self.mode,
-                "step": self.step,
-                "copy_ordinal": self.copy_calls,
-                "copy_in_step": self.step_copies,
-                "process": process,
-                **fields,
-                **({"native": dict(native)} if native is not None else {}),
-            }
+            {"stage": stage, "mode": self.mode, "step": self.step, "phase": self.phase,
+             "copy_ordinal": self.copy_calls, "copy_in_step": self.step_copies,
+             "constructor_ordinal": self.constructor_calls, "process": process, **fields,
+             **({"native": dict(native)} if native is not None else {})}
         )
 
     def begin_mode(self, mode):
+        if self._construct_start is not None:
+            raise RuntimeError("previous construction observation not closed")
         self.mode, self.step, self.step_copies = mode, 0, 0
+        self.phase, self._construct_start = "construct", perf_counter()
+        self._construct_children = 0.0
+        self._bucket()["calls"] += 1
         self.event("construct-enter")
+
+    def finish_construction(self, *, failed=False):
+        if self._construct_start is not None:
+            elapsed = perf_counter() - self._construct_start
+            row = self._bucket("construct")
+            row["wall_seconds_inclusive"] += elapsed
+            row["wall_seconds_exclusive"] += elapsed - self._construct_children
+            row["failures"] += int(failed)
+            self._construct_start, self.phase = None, "other"
+
+    @contextmanager
+    def _phase(self, name):
+        previous, parent = self.phase, self._active_scope
+        self.phase, self._active_scope = name, {"children": 0.0}
+        frame, row, start = self._active_scope, self._bucket(), perf_counter()
+        row["calls"] += 1
+        try:
+            yield
+        except BaseException:
+            row["failures"] += 1
+            raise
+        finally:
+            elapsed = perf_counter() - start
+            row["wall_seconds_inclusive"] += elapsed
+            row["wall_seconds_exclusive"] += elapsed - frame["children"]
+            if parent is not None:
+                parent["children"] += elapsed
+            elif previous == "construct":
+                self._construct_children += elapsed
+            self.phase, self._active_scope = previous, parent
 
     def begin_step(self):
         self.step += 1
@@ -257,8 +331,7 @@ class MemoryObservation:
     @contextmanager
     def observe_steps(self, adapter):
         sentinel = object()
-        previous = vars(adapter).get("step", sentinel)
-        original = adapter.step
+        previous, original = vars(adapter).get("step", sentinel), adapter.step
 
         def step(actions):
             self.begin_step()
@@ -279,70 +352,162 @@ class MemoryObservation:
             else:
                 adapter.step = previous
 
+    def runtime_layout(self, runtime, data_type):
+        # Read-only, runtime-owned references, not a process-wide live census.
+        kinds, natives, compact = {}, 0, 0
+        for value in runtime._data.values():
+            kind = type(value).__module__ + "." + type(value).__qualname__
+            kinds[kind] = kinds.get(kind, 0) + 1
+            natives += int(isinstance(value, data_type))
+            compact += int(kind == "phymeo.backends._mujoco_tyx_mirror.NativeMirror")
+        scratch = runtime._observer_data
+        row = {"mode": self.mode, "step": self.step, "accepted_records": len(runtime._data),
+               "accepted_record_types": kinds, "accepted_native_records": natives,
+               "compact_worlds": compact, "observer_scratch_present": int(scratch is not None),
+               "observer_is_native": bool(isinstance(scratch, data_type)),
+               "scope": "this-runtime-owned-references-only-not-process-live-natives"}
+        if scratch is not None:
+            row["observer_native"] = self._record_native(scratch)
+        self.runtime_layouts.append(row)
+        if natives or compact != self.worlds or (scratch is not None and not row["observer_is_native"]):
+            raise AssertionError("compact runtime ownership observation differs")
+        return row
+
     @contextmanager
-    def install(self, module, data_type):
+    def observe_runtime(self, runtime, data_type):
+        """Wrap exact physical step, separately from env/adapter observation."""
+        sentinel, previous = object(), {}
+
+        def wrapped(original, phase):
+            def call(*args, **kwargs):
+                before = {"constructor_calls": self.constructor_calls, "copy_calls": self.copy_calls}
+                failed = False
+                try:
+                    with self._phase(phase):
+                        result = original(*args, **kwargs)
+                except BaseException:
+                    failed = True
+                    raise
+                finally:
+                    if phase == "physics-step":
+                        delta = {key: getattr(self, key) - before[key] for key in before}
+                        step = {"mode": self.mode, "step": self.step,
+                                "original_call_failed": failed, **delta,
+                                "zero_native_allocation": not any(delta.values())}
+                        if len(self.physics_steps) >= 96:
+                            raise RuntimeError("fixed physical step observation bound exceeded")
+                        self.physics_steps.append(step)
+                    if phase == "full-observer":
+                        scratch = getattr(runtime, "_observer_data", None)
+                        if isinstance(scratch, data_type):
+                            self._record_native(scratch)
+                if phase == "physics-step" and not step["zero_native_allocation"]:
+                    raise AssertionError("native allocation or runtime copy occurred inside physics step")
+                return result
+            return call
+
+        try:
+            for name, phase in (("step", "physics-step"), ("snapshot", "full-observer"),
+                                ("integration_snapshot", "integration-observer")):
+                original = getattr(runtime, name)
+                previous[name] = vars(runtime).get(name, sentinel)
+                setattr(runtime, name, wrapped(original, phase))
+            yield
+        finally:
+            for name, value in previous.items():
+                if value is sentinel:
+                    delattr(runtime, name)
+                else:
+                    setattr(runtime, name, value)
+
+    @contextmanager
+    def install(self, module, data_type, *, native_module=None):
         from types import SimpleNamespace
 
         original = module.copy
+        original_factory = native_module.MjData if native_module is not None else None
+        if original_factory is not None and original_factory is not data_type:
+            raise RuntimeError("public native constructor already replaced")
         observer = self
 
         def copied(value):
             if not isinstance(value, data_type):
                 return original.copy(value)
+            row = observer._bucket()
             observer.copy_calls += 1
             observer.step_copies += 1
+            row["copy_calls"] += 1
             if observer.copy_calls > observer.maximum_copies:
                 raise RuntimeError("fixed memory diagnostic copy bound exceeded")
-            # model is a documented public MjData property; no private bank read.
-            native = {
-                "data_narena_bytes": int(value.narena),
-                "data_nbuffer_bytes": int(value.nbuffer),
-                "data_maxuse_arena_bytes": int(value.maxuse_arena),
-                "model_narena_bytes": int(value.model.narena),
-                "model_nbuffer_bytes": int(value.model.nbuffer),
-            }
-            for name, number in native.items():
-                bounds = observer.native_ranges.setdefault(name, [number, number])
-                bounds[0], bounds[1] = min(bounds[0], number), max(bounds[1], number)
+            native = observer._record_native(value)
             if observer.step_copies == 1:
                 observer.event("copy-first-before", native=native)
+            start = perf_counter()
             try:
                 result = original.copy(value)
             except BaseException as error:
                 observer.copy_failures += 1
-                observer.event(
-                    "copy-failed", native=native, error_type=type(error).__name__, error=str(error)
-                )
+                row["copy_failures"] += 1
+                observer.event("copy-failed", native=native,
+                               error_type=type(error).__name__, error=str(error))
                 raise
+            finally:
+                row["copy_seconds"] += perf_counter() - start
             if observer.step_copies == observer.worlds:
                 observer.event("copy-last-complete", native=native)
             return result
 
-        # The actual module has only copy.copy call sites. Do not modify the
-        # shared stdlib copy module object, any physical bank or native value.
+        def constructed(*args, **kwargs):
+            row = observer._bucket()
+            observer.constructor_calls += 1
+            row["constructor_calls"] += 1
+            if observer.constructor_calls > observer.maximum_constructors:
+                raise RuntimeError("fixed memory diagnostic constructor bound exceeded")
+            start = perf_counter()
+            try:
+                result = original_factory(*args, **kwargs)
+            except BaseException as error:
+                observer.constructor_failures += 1
+                row["constructor_failures"] += 1
+                observer.event("constructor-failed", error_type=type(error).__name__, error=str(error))
+                raise
+            finally:
+                row["constructor_seconds"] += perf_counter() - start
+            native = observer._record_native(result)
+            if row["constructor_calls"] in (1, observer.worlds):
+                observer.event("constructor-complete", native=native,
+                               constructor_in_phase=row["constructor_calls"])
+            return result
+
+        # Save the original real type before replacing only the public factory.
+        # No subclass, native pointer access, copied argument, or owner retention.
         module.copy = SimpleNamespace(copy=copied)
         try:
+            if native_module is not None:
+                native_module.MjData = constructed
             yield
         finally:
+            if native_module is not None:
+                native_module.MjData = original_factory
             module.copy = original
 
     def snapshot(self):
         return summary_only(
-            {
-                "schema": "bounded-native-allocation-observation-v1",
-                "process_metric_scope": "whole-process-not-exclusive-native",
-                "copy_scope": "TYX runtime copy.copy only; full snapshot copies are not intercepted",
-                "model_scope": "actual copied MjData.model, not a fresh or dummy model",
-                "copy_calls": self.copy_calls,
-                "copy_failures": self.copy_failures,
-                "maximum_copies": self.maximum_copies,
-                "maximum_events": self.maximum_events,
-                "native_ranges": self.native_ranges,
-                "events": self.events,
-                "previous_snapshots": list(self.files),
-                "performance_eligible": False,
-                "leak_causality": "NOT_ESTABLISHED",
-            }
+            {"schema": "bounded-native-allocation-observation-v2",
+             "process_metric_scope": "whole-process-not-exclusive-native",
+             "copy_scope": "TYX runtime copy.copy only; full snapshot copies are not intercepted",
+             "model_scope": "actual constructed/copied MjData.model, not a fresh or dummy model",
+             "constructor_scope": "public mujoco.MjData factory during this isolated diagnostic only",
+             "legacy_v1": "copy fields retain v1 scope; absent v1 constructor counts are UNKNOWN, not zero",
+             "copy_calls": self.copy_calls, "copy_failures": self.copy_failures,
+             "constructor_calls": self.constructor_calls,
+             "constructor_failures": self.constructor_failures,
+             "maximum_copies": self.maximum_copies, "maximum_constructors": self.maximum_constructors,
+             "maximum_events": self.maximum_events, "native_ranges": self.native_ranges,
+             "phase_accounting": self.phase_accounting, "physics_steps": self.physics_steps,
+             "runtime_layouts": self.runtime_layouts, "events": self.events,
+             "previous_snapshots": list(self.files), "performance_eligible": False,
+             "leak_causality": "NOT_ESTABLISHED"}
         )
 
     def flush(self):
@@ -382,7 +547,8 @@ def _run_mode(name, worlds, mode, target, tasks, torch, seed, *, memory=None):
 
         from phymeo.backends import _mujoco_tyx_runtime
 
-        diagnostic = memory.install(_mujoco_tyx_runtime, mujoco.MjData)
+        data_type = mujoco.MjData
+        diagnostic = memory.install(_mujoco_tyx_runtime, data_type, native_module=mujoco)
     try:
         with diagnostic:
             if memory is not None:
@@ -393,6 +559,8 @@ def _run_mode(name, worlds, mode, target, tasks, torch, seed, *, memory=None):
                         tasks.make_environment(name, count=worlds, scale=True)
                     )
                     runtime = base.runtime
+                    if memory is not None:
+                        owners.enter_context(memory.observe_runtime(runtime, data_type))
                     base.close()
                     env = owners.enter_context(
                         make_env(
@@ -411,9 +579,12 @@ def _run_mode(name, worlds, mode, target, tasks, torch, seed, *, memory=None):
                             compiler_model={
                                 "narena_bytes": int(model.narena),
                                 "nbuffer_bytes": int(model.nbuffer),
-                                "scope": "public compilation model; runtime model observed on actual data copy",
+                                "scope": "public compilation model; runtime model observed on actual native construction/copy",
                             },
                         )
+                    if memory is not None:
+                        memory.runtime_layout(runtime, data_type)
+                        memory.finish_construction()
                     tasks.seed_all(seed)
                     adapter = make_adapter(env)
                     if memory is not None:
@@ -474,8 +645,16 @@ def _run_mode(name, worlds, mode, target, tasks, torch, seed, *, memory=None):
                     if session.next_iteration != 3:
                         raise ValueError("actual complete updates differ")
                     counters = evidence.plain_counters(env.counters)
+                    if memory is not None:
+                        steps = [row for row in memory.physics_steps if row["mode"] == mode]
+                        if [row["step"] for row in steps] != list(range(1, 49)):
+                            raise AssertionError("diagnostic did not enclose all 48 physical steps")
+                        if any(row["original_call_failed"] or not row["zero_native_allocation"] for row in steps):
+                            raise AssertionError("physical step allocation/failure diagnostic differs")
+                        memory.runtime_layout(runtime, data_type)
             finally:
                 if memory is not None:
+                    memory.finish_construction(failed=True)
                     # Owners above were all attempted by ExitStack before this.
                     memory.event("mode-close-after-owner-attempts")
                     memory.flush()
@@ -551,6 +730,7 @@ def run_pair(name, worlds, output, *, memory_diagnostic=False):
             "excluded_identity": ["workspace_owner", "runtime_owner"],
             "newton_performance_comparison": False,
             "memory_diagnostic": memory_diagnostic,
+            "memory_observation_schema": "bounded-native-allocation-observation-v2" if memory_diagnostic else None,
             "performance_eligible": not memory_diagnostic,
             "source_files": {
                 **api._sources(),
@@ -587,6 +767,7 @@ def run_pair(name, worlds, output, *, memory_diagnostic=False):
             "newton_performance_claim": False,
             "rng_comparison": "Torch CPU and current CUDA device only",
             "memory_diagnostic": memory_diagnostic,
+            "memory_observation_schema": "bounded-native-allocation-observation-v2" if memory_diagnostic else None,
             "performance_eligible": not memory_diagnostic,
         }
         evidence.json_write(target / "summary.json", summary)

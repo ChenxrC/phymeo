@@ -10,8 +10,8 @@
 - `NativeAssetInstance` 以实例名区分同一资产的不同参与者；实例 pose 为 XYZ/XYZW。
   所有参与者 attach 到同一模型，保留跨参与者碰撞，不拆成独立仿真。
 - `drive_mode=preserve` 保留原生 actuator/equality/contact/resource 引用，不接受
-  joints 或 joint_defaults。`scalar_pd` 只接 URDF 标量关节；已有 actuator、mimic、
-  URDF dynamics 必须明确拒绝，不能删掉或重复增加驱动。
+  joints 或 joint_defaults。`scalar_pd` 只接 URDF 标量关节，已有 actuator 拒绝，
+  不重复增加驱动。B3e 补齐标准 dynamics 和仿射 mimic，合同见下节。
 - gravity/timestep 来自 assembly；`integrator` 显式接受 `euler` / `implicitfast`，
   缺省保持 Euler。源默认 Euler 可采用 assembly 选择，非默认源积分器必须与选择
   一致，否则拒绝；其他非默认源 option 仍拒绝。此 profile 使用
@@ -33,6 +33,32 @@ URDF 的 scalar_pd 使用 `kp*(target-q)+kd*(target_velocity-v)`；初始 target
 才取初始 q。effort_limit=None 保留资产额定值，显式 0 在这个原生 profile 表示不限力。
 不改变 resident/ArticulationWorld 中 0 表示零驱动的含义。applied_force 独立写
 qfrc_applied，不受 actuator cap 限制。被动 damping、armature、frictionloss 分开。
+
+### 标准 dynamics 与 mimic（B3e）
+
+NativeJointInput 的可选增益、被动参数和速度以 None 表示未提供；解析优先级为
+逐关节显式值 → asset.joint_defaults → 源 URDF 标准 damping/friction → profile
+缺省（kp=500、kd=50、armature=.01、damping=0、frictionloss=1e-5）。源中明确
+friction=0 保留零；没有 dynamics 的旧模型缺省不变。D、K、mu_coulomb、mu_viscous
+等非标准扩展不被 MuJoCo 3.8 解释，逐项进入 import_diagnostics，不冒充已实现。
+
+mimic 采用 PHYMEO 已有严格 XML 提取，再在专用适配中生成 native joint equality。
+关系为 `q_follower = multiplier*q_driver + offset`；转换系数包含原生 ref 修正，
+支持同类型标量关节、非零有限比例、非零偏移及无环链。循环、未知引用、类型冲突
+与 FP32 无法表示的系数拒绝。所有关节保留 q/DOF；只有独立根关节生成 actuator。
+约束是求解器的软 equality，不做逐步强制坐标投影，不承诺每步物理 q/qvel 严格相等。
+直接外加力仍可作用在任意物理 DOF，follower 不拥有独立 drive/target/effort_limit。
+初态从 driver 传播到未提供的 follower；显式冲突 q/v 拒绝，不通过 stepping 修正。
+标量初始 q 超出原生限位时记录 initial_position_outside_limit diagnostic，保持原值，
+不 clamp 或自动选择另一姿态；消费者需要明确提供任务初态。
+
+`target_contract_version=1` 的 `target_bindings` 给出每个公共关节到独立命令列的
+multiplier/position offset；速度不含 offset。`scalar_controls` 与 runtime 目标
+bank 只存独立命令，不重复维护 follower 目标。消费方可批量派生完整目标读回，
+但不能把派生命令当作 measured 状态。native 原始 q/qvel 和反力仍由 Host 求解。
+空间开销为冷绑定 O(J+M)，装配时拓扑解析 O(J+M)；未增加每步 CPU 物理工作。
+系数语义依据 [MuJoCo 3.8 joint equality](https://mujoco.readthedocs.io/en/3.8.0/XMLreference.html#equality-joint)，
+本机 3.8 URDF 导入的 mimic 补齐由本适配负责；不继承未来版本导入器的行为。
 
 ## 初态、reset 和 owner
 

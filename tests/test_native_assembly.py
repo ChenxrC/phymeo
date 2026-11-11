@@ -113,7 +113,7 @@ def test_unknown_joint_and_mimic_are_not_dropped(urdf, tmp_path):
         compile_native_template((asset,), timestep=0.002, gravity=(0, 0, 0))
     path = tmp_path / "mimic.urdf"
     path.write_text(URDF.replace("<axis", '<mimic joint="slide"/><axis'))
-    with pytest.raises(NotImplementedError, match="mimic"):
+    with pytest.raises(ValueError, match="mimic"):
         compile_native_template(
             (replace(asset, path=str(path), joints=()),), timestep=0.002, gravity=(0, 0, 0)
         )

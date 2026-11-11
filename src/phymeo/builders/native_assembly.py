@@ -8,7 +8,6 @@ from dataclasses import dataclass, field
 from hashlib import sha256
 from numbers import Integral
 from pathlib import Path
-from xml.etree import ElementTree as ET
 
 import numpy as np
 
@@ -28,15 +27,15 @@ def _vector(value, size, name):
 class NativeJointInput:
     name: str
     position: float | None = None
-    velocity: float = 0.0
+    velocity: float | None = None
     target_position: float | None = None
-    target_velocity: float = 0.0
+    target_velocity: float | None = None
     applied_force: float = 0.0
-    kp: float = 500.0
-    kd: float = 50.0
-    armature: float = 0.01
-    damping: float = 0.0
-    frictionloss: float = 1e-5
+    kp: float | None = None
+    kd: float | None = None
+    armature: float | None = None
+    damping: float | None = None
+    frictionloss: float | None = None
     # None keeps URDF motor rating; explicit zero means unlimited in this
     # *native profile*. ArticulationWorld's zero-cap semantics do not change.
     effort_limit: float | None = None
@@ -95,6 +94,8 @@ class NativeAssetInstance:
             "frictionloss",
         }:
             raise ValueError("invalid scalar joint defaults")
+        if any(value is None for value in defaults.values()):
+            raise ValueError("scalar joint defaults must contain explicit finite values")
         NativeJointInput("validation", **defaults)
         object.__setattr__(self, "joint_defaults", tuple(defaults.items()))
         if (
@@ -152,6 +153,10 @@ class NativeTemplate:
     collision_plans: tuple = ()
     # (public joint, native actuator, kp, kd, initial target q, initial target qd).
     scalar_controls: tuple = ()
+    # (public joint, independent command index, multiplier, position offset).
+    target_bindings: tuple = ()
+    target_contract_version: int = 1
+    import_diagnostics: tuple = ()
     # Private cold compiler owner. XML serialization rounds native authoring
     # values; the public compilation.mj_spec is caller-mutable. Never expose or
     # edit this snapshot, only copy it for a newly requested rule compilation.
@@ -205,48 +210,6 @@ class HomogeneousNativeBinding:
         )
 
 
-def _scalar_drives(mj, spec, asset):
-    if spec.actuators:
-        raise ValueError(f"{asset.name}: scalar_pd cannot replace or duplicate source actuators")
-    root = ET.parse(asset.path).getroot()
-    if root.tag != "robot":
-        raise ValueError("scalar_pd profile currently requires URDF; MJCF uses preserve")
-    ratings = {}
-    for joint in root.findall("joint"):
-        if joint.find("mimic") is not None:
-            raise NotImplementedError("URDF mimic requires an explicit affine control binding")
-        if joint.find("dynamics") is not None:
-            raise NotImplementedError("URDF dynamics require explicit source/override precedence")
-        limit = joint.find("limit")
-        ratings[joint.get("name")] = 0.0 if limit is None else float(limit.get("effort", "0"))
-    actual = {j.name: j for j in spec.joints}
-    supplied = {j.name: j for j in asset.joints}
-    if set(supplied) - set(actual):
-        raise ValueError(
-            f"{asset.name}: unknown joint inputs {sorted(set(supplied) - set(actual))}"
-        )
-    rows = []
-    for name, joint in actual.items():
-        if joint.type not in (mj.mjtJoint.mjJNT_HINGE, mj.mjtJoint.mjJNT_SLIDE):
-            raise NotImplementedError("scalar_pd admits scalar hinge/slide joints only")
-        row = supplied.get(name, NativeJointInput(name, **dict(asset.joint_defaults)))
-        joint.armature, joint.frictionloss = row.armature, row.frictionloss
-        joint.damping[:] = [row.damping, 0.0, 0.0]
-        cap = ratings.get(name, 0.0) if row.effort_limit is None else row.effort_limit
-        if not np.isfinite(cap) or cap < 0:
-            raise ValueError("invalid asset motor rating")
-        actuator = spec.add_actuator(name=f"__drive_{name}")
-        actuator.trntype, actuator.target = mj.mjtTrn.mjTRN_JOINT, name
-        actuator.gaintype, actuator.biastype = mj.mjtGain.mjGAIN_FIXED, mj.mjtBias.mjBIAS_AFFINE
-        actuator.gainprm[0] = 1.0
-        actuator.biasprm[:3] = [0.0, -row.kp, -row.kd]
-        actuator.forcelimited = bool(cap)
-        if cap:
-            actuator.forcerange = [-cap, cap]
-        rows.append(row)
-    return rows
-
-
 def compile_native_template(assets, *, timestep, gravity, static_shapes=(), integrator="euler"):
     """Compile a same-world assembly once; retain admitted asset-local semantics.
 
@@ -282,7 +245,7 @@ def compile_native_template(assets, *, timestep, gravity, static_shapes=(), inte
     spec.option.integrator = native_integrator
     spec.option.solver = mj.mjtSolver.mjSOL_NEWTON
     spec.option.jacobian = mj.mjtJacobian.mjJAC_DENSE
-    pending, sources = [], []
+    pending, sources, target_maps, diagnostics = [], [], {}, []
     for asset in assets:
         child = mj.MjSpec.from_file(asset.path)
         default = mj.MjSpec().option
@@ -317,13 +280,24 @@ def compile_native_template(assets, *, timestep, gravity, static_shapes=(), inte
             for i, a in enumerate(bodies):
                 for b in bodies[i + 1 :]:
                     child.add_exclude(bodyname1=a.name, bodyname2=b.name)
-        rows = _scalar_drives(mj, child, asset) if asset.drive_mode == "scalar_pd" else []
+        rows, targets = (), {}
+        if asset.drive_mode == "scalar_pd":
+            from ._native_drives import prepare_scalar_drives
+
+            rows, targets, notes = prepare_scalar_drives(mj, child, asset, NativeJointInput)
+            diagnostics.extend(notes)
         prefix = asset.name + "::"
         q = asset.orientation_xyzw
         frame = spec.worldbody.add_frame(pos=asset.position, quat=(q[3], *q[:3]))
         spec.attach(child, prefix=prefix, frame=frame)
         bind_attached_resources(spec, resources, prefix)
         pending.extend((prefix, row) for row in rows)
+        target_maps.update(
+            {
+                prefix + name: (prefix + leader, ratio, offset)
+                for name, (leader, ratio, offset) in targets.items()
+            }
+        )
         sources.append((asset.name, asset.path, sha256(Path(asset.path).read_bytes()).hexdigest()))
     for shape in static_shapes:
         q = shape.orientation_xyzw
@@ -348,14 +322,18 @@ def compile_native_template(assets, *, timestep, gravity, static_shapes=(), inte
         qa, va = int(joint.qposadr[0]), int(joint.dofadr[0])
         if row.position is not None:
             data.qpos[qa] = row.position
-        data.qvel[va] = row.velocity
+        data.qvel[va] = 0.0 if row.velocity is None else row.velocity
+        data.qfrc_applied[va] = row.applied_force
+        if target_maps[prefix + row.name][0] != prefix + row.name:
+            continue
         target = data.qpos[qa] if row.target_position is None else row.target_position
         actuator = model.actuator(prefix + "__drive_" + row.name)
-        data.ctrl[actuator.id] = row.kp * target + row.kd * row.target_velocity
-        data.qfrc_applied[va] = row.applied_force
+        target_velocity = 0.0 if row.target_velocity is None else row.target_velocity
+        data.ctrl[actuator.id] = row.kp * target + row.kd * target_velocity
         actuator_ids[joint.id] = actuator.id
-        scalar_controls.append((prefix + row.name, actuator.id, row.kp, row.kd,
-                                float(target), row.target_velocity))
+        scalar_controls.append(
+            (prefix + row.name, actuator.id, row.kp, row.kd, float(target), target_velocity)
+        )
     joints = tuple(
         (
             model.joint(i).name,
@@ -366,6 +344,23 @@ def compile_native_template(assets, *, timestep, gravity, static_shapes=(), inte
         )
         for i in range(model.njnt)
     )
+    control_ids = {row[0]: i for i, row in enumerate(scalar_controls)}
+    for i in range(model.njnt):
+        if model.jnt_limited[i] and model.jnt_type[i] in (mj.mjtJoint.mjJNT_HINGE, mj.mjtJoint.mjJNT_SLIDE):
+            q = float(data.qpos[model.jnt_qposadr[i]])
+            lo, hi = model.jnt_range[i]
+            if not lo <= q <= hi:
+                diagnostics.append(f"initial_position_outside_limit: {model.joint(i).name}: {q} outside [{lo}, {hi}]; unchanged")
+    target_bindings = tuple(
+        (name, control_ids[root], ratio, offset)
+        for name, (root, ratio, offset) in target_maps.items()
+    )
+    for name, index, ratio, offset in target_bindings:
+        with np.errstate(over="ignore", invalid="ignore"):
+            q = np.float32(scalar_controls[index][4]) * np.float32(ratio) + np.float32(offset)
+            v = np.float32(scalar_controls[index][5]) * np.float32(ratio)
+        if not np.isfinite((q, v)).all():
+            raise ValueError(f"{name}: initial derived target must be finite in FP32")
     return NativeTemplate(
         compilation,
         NativeInitialState.from_data(compilation, data),
@@ -374,5 +369,7 @@ def compile_native_template(assets, *, timestep, gravity, static_shapes=(), inte
         tuple((model.geom(i).name, i) for i in range(model.ngeom)),
         tuple(sources),
         scalar_controls=tuple(scalar_controls),
+        target_bindings=target_bindings,
+        import_diagnostics=tuple(diagnostics),
         _source_spec=compilation.mj_spec.copy(),
     )

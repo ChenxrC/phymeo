@@ -2,6 +2,29 @@
 
 本层将资产编译、场景装配和求解后端分开。MuJoCo 编译是可选的 CPU 前端；已有 URDF/MJCF 加载器和 TYX 主线继续保留。对应[实施计划](../superpowers/plans/2026-11-10-unified-scene-compilation.md)。
 
+## PhySolve 编译兼容实验
+
+P2PE 接入分支另用 `requirements/physolve-compiler.txt` 固定 NumPy 2.2.6、
+CPU MuJoCo 3.8.0，独立于原 `mujoco` / `mujoco-warp` extras；不得共装这两套
+版本配置。此 profile 只准备模型，不提供 PhySolve 求解、TYX 执行或 C ABI 资格。
+2026-11-11 在 Windows x64 / CPython 3.13.13 新环境运行原编译测试 31/31 通过，
+未改算法或容差。新增多自由根、显式接触对/过滤及 MJB owner 隔离用例单独记录结果。
+
+新增用例后同环境 33/33 通过，禁止 Newton/Warp/MuJoCo-Warp 导入的独立进程也
+33/33 通过；两个原 host 编译/控制消费者通过。Panda（9 q/9 DOF）与 FANUC
+（6 q/6 DOF）原生模型编译探针通过，但 resident lowering 仍报告几何/参数限制，
+没有声明其 PhySolve 或 GPU 可运行。此时 Phymeo 为隔离 editable 开发安装，
+不是独立 wheel 验收。证据位于实验根 `evidence/b1-*`。
+
+基线检查限制：dev 文档检查有 479 行缺失本地目标报告（历史 artifacts 和未跟踪
+文档不随 worktree），公共 TYX 导入检查拒绝原 `mujoco_task_workspace.py` 的
+`from tyx.torch import to_torch`；对应产品文件与检查器未改，不在本次放宽规则。
+这两项保留失败，不将定向编译通过记成 PHYMEO 全仓合格。
+
+外部 solver 可通过 `require_asset=False` 消费完整原生编译快照，必须检查原生模型
+的实际能力；`asset=None` / `lowering_issues` 仍明确表示 resident 转换未成立。
+此选项不绕过 PhySolve 后续能力/容量预检，也不将 CPU `mj_forward` 对照称为设备求解。
+
 ```mermaid
 flowchart TD
   A[URDF / MJCF / 程序构造资产] --> B[Phymeo 原加载器与公共资产]

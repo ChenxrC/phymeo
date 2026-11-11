@@ -1,0 +1,5 @@
+# Isolated P2PE/PhySolve compiler qualification profile (Windows CPython 3.13).
+# Install Phymeo core separately; do not combine with the mujoco/mujoco-warp extras.
+# This does not install or qualify the PhySolve runtime, TYX, or CUDA kernels.
+numpy==2.2.6
+mujoco==3.8.0

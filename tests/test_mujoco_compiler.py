@@ -1,7 +1,7 @@
 """Optional CPU compiler admission and independent MuJoCo kinematic/dynamic oracles.
 
-AUTHORING_ONLY: these cases have not been imported, collected or executed by the author.
 Missing MuJoCo skips only native oracle cases; dependency failure remains testable.
+Version-specific execution evidence is recorded in the compiler documentation.
 """
 
 import importlib
@@ -58,6 +58,56 @@ def xml_tree(floating=False, actuators=False, extra=""):
 
 def native():
     return pytest.importorskip("mujoco", reason="optional CPU MuJoCo oracle is not installed")
+
+
+@pytest.mark.parametrize("explicit_pair", [False, True])
+def test_native_only_multi_root_keeps_contact_filters_and_owned_model(explicit_pair):
+    """A solver may consume the full native model without resident tree lowering.
+
+    CPU forward is a compiler oracle here, not evidence of PhySolve execution.
+    An explicit pair must override zero affinity without losing its material.
+    """
+    mj = native()
+    contact = (
+        '<contact><pair geom1="ground" geom2="ball" condim="3" '
+        'friction=".6 .6 .01 .001 .001"/></contact>'
+        if explicit_pair else ""
+    )
+    xml = f"""<mujoco><option timestep=".002" gravity="0 0 -9.81"/>
+      <worldbody>
+        <geom name="ground" type="plane" size="2 2 .1" contype="0" conaffinity="0"/>
+        <body name="payload" pos="0 0 .09"><freejoint name="payload_root"/>
+          <geom name="ball" type="sphere" size=".1" mass="2" contype="0" conaffinity="0"/>
+        </body>
+        <body name="other" pos="1 0 1"><freejoint name="other_root"/>
+          <geom name="box" type="box" size=".1 .2 .3" mass="3"/>
+        </body>
+      </worldbody>{contact}</mujoco>"""
+    record = compiler.compile_mujoco_xml(xml, require_asset=False)
+    assert record.asset is None
+    assert record.lowering_issues
+    with pytest.raises(compiler.MuJoCoLoweringError):
+        compiler.compile_mujoco_xml(xml)
+    first, second = record.fresh_native_model(), record.fresh_native_model()
+    assert (first.nq, first.nv, first.nbody, first.ngeom) == (14, 12, 3, 3)
+    assert first.npair == int(explicit_pair)
+    np.testing.assert_array_equal(first.body_mass, [0, 2, 3])
+    np.testing.assert_array_equal(first.geom_contype[:2], [0, 0])
+    np.testing.assert_array_equal(first.geom_conaffinity[:2], [0, 0])
+    if explicit_pair:
+        np.testing.assert_array_equal(first.pair_friction[0], [.6, .6, .01, .001, .001])
+    data = mj.MjData(first)
+    mj.mj_forward(first, data)
+    assert data.ncon == int(explicit_pair)
+    if explicit_pair:
+        assert {int(data.contact[0].geom1), int(data.contact[0].geom2)} == {0, 1}
+        assert data.contact[0].dist == pytest.approx(-.01, abs=1e-14)
+    first.body_mass[1] = 7
+    first.opt.timestep = .01
+    record.mj_model.body_mass[1] = 11
+    assert second.body_mass[1] == 2
+    assert record.fresh_native_model().body_mass[1] == 2
+    assert second.opt.timestep == .002
 
 
 def test_missing_optional_dependency_has_explicit_error(monkeypatch, tmp_path):

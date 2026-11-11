@@ -1,10 +1,10 @@
 # COL same-candidate separation publication
 
-Status: **CODE_READY_TESTS_PENDING / UNEXECUTED**. Baseline `847b8ee3`.
+Current status: **NOT_ACCEPTED / EXPERIMENT_STOPPED**. See the actual parent validation section below. Historical authoring baseline: `847b8ee3`.
 Parent alone owns all project execution. This is one bounded hypothesis after
 [the actual six captures](p65-convex-query-trace-findings-20261111.md) and
 [the validated affine reducer](p65-convex-affine-reconstruction-report.md).
-It is not a demonstrated repair of the four remaining Y normal failures.
+The four Y normal entries pass on this experimental source, but the wider regression rejects the change; details are recorded below.
 
 ## Product scope and manual argument
 
@@ -112,3 +112,89 @@ Gram/reducer arithmetic, clamping, EPA and final witnesses, is unchanged.
 `git diff --check` passed. No import, collection, numerical probe, pytest,
 lint, formatter, compile or build was run in this lane.
 Status: **CODE_READY_TESTS_PENDING / AUTHORING_SLOT_RELEASED**.
+
+## Actual parent validation and bounded rejection (2026-11-11)
+
+**NOT_ACCEPTED / EXPERIMENT_STOPPED.** The original six affected entries and
+the new local tests pass on both backends, but the changed stop policy causes
+nine resource-limit regressions in the wider interpret matrix. This branch
+is retained as an experiment; it is not authorized for integration into the
+parent product, and the parent's accepted algorithm remains unchanged.
+
+Authoring product checkpoint:
+`93a8d950dc8e153c217a25a38c714f6377be9fd4`.
+Style-only tested checkpoint:
+`b4f632e9aa1f583509bddf91286e9c804fb000e2`.
+The actual run receipts identify the tested kernel SHA256 as
+`4d75b7c68f86090bae4fbdd248beeccc4b9e290716124002e29def5545de5492`
+and the new test SHA256 as
+`8c9b00a4e5cb4152b01faadabfef29978d4d81f7825bf3684134a58b34a3d1b2`.
+These are the formatted tested bytes, not a retroactive claim about execution
+of the original authoring checkpoint.
+
+Canonical evidence root:
+`C:/Users/38347/.codex/worktrees/p65-parallel-integration/phymeo/artifacts/p65-parity-n4b-rob2a-col-stop-20261111-01`.
+Each run below retains `final.json`, `RAW_EXIT.txt`, `stdout.log`,
+`stderr.log`, its actual source snapshots and original basetemp evidence.
+This report update read the existing receipts and logs only; it did not rerun
+any query, numerical analysis, test or source audit.
+
+| Original run directory | Actual result | pytest duration | RAW_EXIT |
+| --- | --- | --- | --- |
+| 24-col-six-interpret | original six: 6 passed | 11.79 s | 0 |
+| 25-col-six-cuda | original six: 6 passed | 19.97 s | 0 |
+| 26-col-candidate-interpret | new candidate tests: 6 passed | 4.03 s | 0 |
+| 27-col-candidate-cuda | new candidate tests: 6 passed | 18.49 s | 0 |
+| 28-col-matrix-interpret | 273 passed, 9 failed, 12 deselected | 130.04 s | 1 |
+
+The original six consist of the four Y source-layout entries and the two HN
+entries. Their success establishes the result on those fixed inputs only.
+The 12 deselections in run28 are those six entries already tested in run24
+and six unchanged HOST-only parameter nodes; they are not concealed failures.
+No complete CUDA affected matrix was started after the interpret regression.
+
+The nine actual failures all return `RESOURCE_LIMIT` where the unchanged
+query/patch qualification requires `RESOLVED`:
+
+- `test_k0_family_gap_witness[K0-Q01-CB-sep]`;
+- `test_k0_family_gap_witness[K0-Q01-CB-overlap]`;
+- `test_k0_family_gap_witness[K0-Q01-BH-sep]`;
+- `test_k0_frame_and_identity[K0-Q03-CB-reverse]`;
+- `test_k0_frame_and_identity[K0-Q03-CB-cycle]`;
+- `test_k0_frame_and_identity[K0-Q03-CB-tilt]`;
+- `test_k0_frame_and_identity[K0-Q03-CB-permute]`;
+- `test_k0_frame_and_identity[K0-Q03-CB-cycle_reverse_ids]`;
+- `test_affected_k1_identity[cb_cycle_reverse_ids_segment]`.
+
+The first eight are in `tests/collision/test_device_convex_query.py`; the
+last is in `tests/collision/test_device_convex_patch_qualification.py`.
+Original physical inputs, expected geometry, resource caps and numerical
+gates remain unchanged. Passing four Y entries does not outweigh regression
+of already supported finite/round-core families.
+
+### Source-only interpretation, not a new measured diagnosis
+
+In the tested kernel, lines769-803 detect duplicate support and require the
+retained candidate's depth-plane gap to pass. Lines805-806 skip adding a
+duplicate point, while lines1019-1065 reduce/compact the retained simplex and
+update the search direction. The former post-reduction
+`distance-bound <= 8e-7 or duplicate != 0` success exit was removed.
+
+Consequently, when the retained candidate misses the plane gate and a repeated
+support cannot enlarge the simplex, the new path has no duplicate-only
+success exit. A persistent unchanged reduction can consume the original
+iteration budget. This is a concrete control-flow difference and a plausible
+regression mechanism, not a claim that each of the nine saved failures has
+been individually traced to that exact sequence. No new trace or numerical
+probe was authorized to turn this hypothesis into evidence in this batch.
+The overlap label can also occur on a positive-distance round-core problem
+after skin subtraction; it does not by itself identify an EPA failure.
+
+The one-hypothesis stop condition is now exercised: preserve this experiment
+and its failed results, do not enlarge capacities or relax gates, do not
+special-case Y/CB/BH, and do not try another algorithm in this grant. Any later
+repair requires a separate decision covering both candidate consistency and
+the existing duplicate/stagnation behavior.
+
+Only this report changes after validation. Product and test bytes remain at
+the tested checkpoint. Status: **NOT_ACCEPTED / AUTHORING_SLOT_RELEASED**.

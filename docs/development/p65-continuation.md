@@ -2,13 +2,15 @@
 
 ## 当前续作（2026-11-11，已取消 08:00 截止）
 
-先读[持续推进计划](../superpowers/plans/2026-11-11-newton-parity-continuous.md)、[八方向全景](phymeo-newton-panorama-2026-11-11.md)与[上一批正式验收](../benchmarks/p65-parity-20261111-connections.md)。用户取消固定截止，后续按节点验收推进，不建周期任务。规划核对基线为父/已同步dev的d6a5c383，产品/测试仍冻结e3d15707；本次只更新计划与图，未新增物理测试、安装或实现。所有项目执行仍父唯一串行owner。
+先读[本批准备结果](../benchmarks/p65-cuda-policy-n1-preparation.md)、[持续推进计划](../superpowers/plans/2026-11-11-newton-parity-continuous.md)、[八方向全景](phymeo-newton-panorama-2026-11-11.md)。用户取消固定截止，后续按节点验收推进，不建周期任务。上一批正式物理/安装验收d6a5c383、产品e3d15707继续复用。本批N1示例/测试源872473aa已完成lint/格式检查，实际CUDA资格未执行；未改旧src/。三个原作者和父静态执行均已释放，当前没有项目执行owner。
 
-本批已完成公共中途恢复、真实受载W256分页、设备task/action与29执行器宽度、十类设备凸体patch资格、单页和分页真实力消费。B2各67节点/47保存，B3各29节点/28保存；最终新wheel483产品成员同源，十组源码外公共调用全过。113/124两个环境预检首错、父汇总JSONL抽取错误均保留，正式wheel汇总为v2，不重复旧绿组或112字节审计。resident与MuJoCo-TYX两条物理路径分别验收，HOST装配/诊断仍保留，不称全GPU训练。
+上一批已完成公共中途恢复、真实受载W256分页、设备task/action与29执行器宽度、十类设备凸体patch资格、单页和分页真实力消费。B2各67节点/47保存，B3各29节点/28保存；最终新wheel483产品成员同源，十组源码外公共调用全过。113/124两个环境预检首错、父汇总JSONL抽取错误均保留，正式wheel汇总为v2，不重复旧绿组或112字节审计。resident与MuJoCo-TYX两条物理路径分别验收，HOST装配/诊断仍保留，不称全GPU训练。
 
 G1 v2 run93完整尝试在46.29秒/23145步触发设备原1米参考XY门，未完成131.48秒；无设备拒步/reset。106失败保存审计、123全前缀离线诊断已结束。两条独立轨迹直接XY差最大17.30mm、末步3.29mm，双方相对参考均近1m；126已把同输入峰值定位到零margin附近的接触检出集合不同：device3点/30行，native4点/40行；native多出约-33nm间隙的右足胶囊接触。设备拒绝距离未保存，精确误差来源仍unknown；不是已证明的同问题QP差异或长期漂移原因。原v1失败亦保留，不重跑全窗/改模型或门。见[G1诊断](g1-drift-diagnosis-20261111.md)。该有限诊断已结束/放槽；下一项是计划中的GPU训练资格。
 
-下一主线为[GPU训练N1–N3](../superpowers/plans/2026-11-11-mujoco-tyx-gpu-training.md)，再N4学习有效性/规模：独立CUDA Torch环境与真实策略→两任务PPO→训练边界恢复→多任务固定种子与吞吐。原三作者已完成只读规划核对；N1可进入下一批，尚未安装/实现。并行分支为ROB1同world多参与者联解、ROB2关节/执行器与工作流，以及COL1七形状通用支持矩阵、COL2设备mesh/变形窄相、COL3连续检测。各分支先固定接口/案例/独占文件，由父在持续授权内调度；不是已开始编码。G1为有界旁路兼容案例，不阻塞训练。交付仍用codex/dev，不自动合main/发包。三份旧K1未跟踪WIP保留；下方历史截止与pending不覆盖本节，已验grant不重开。
+训练主线为[GPU N1–N3](../superpowers/plans/2026-11-11-mujoco-tyx-gpu-training.md)，再N4学习有效性/规模。N1三文件已导入，23身份仅手工预登记，未collection/pytest；CUDA Torch独立环境仍未安装。[容量预检](mujoco-tyx-cuda-profile-qualification.md)记录wheel＋展开下界6.794GB；10:43磁盘free6.196GB，建议8–10GB后再核依赖峰值，本批未删除文件。01 lint0、02 guard内存失败未启动format、03首format1、04repair0、05/06最终静态0均留证。不得重跑已绿静态，也不能把它当N1运行通过；N1通过前不启动N2。
+
+可独立进入下一批的是[ROB1a身份/layout](../superpowers/plans/2026-11-11-resident-multi-participant.md)和[COL1a十八类新增设备query](../superpowers/plans/2026-11-11-device-convex-support-family.md)，两合同已父审阅冻结、尚未派产品编码。ROB1采用共同入步载荷、各机械块一次求解、全world一次发布，不是跨树隐式KKT；COL1a曲面patch/受力为后继。沿用原作者隔离worktree，父负责共享服务/绑定和后续唯一串行验证；先查实时HEAD/WIP，不覆盖作者树。G1兼容侧线不重跑全窗。交付仍用codex/dev，不自动合main/发包。三份旧K1未跟踪WIP保留；下方历史截止与pending不覆盖本节，已验grant不重开。
 
 ## 历史基线（2026-11-11，MuJoCo-TYX T4与G1有限持续支撑已验收）
 

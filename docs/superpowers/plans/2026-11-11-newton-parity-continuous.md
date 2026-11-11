@@ -1,6 +1,6 @@
 # Newton 功能对齐：持续推进计划
 
-日期：2026-11-11。用户已取消 08:00 截止；后续按节点验收推进，不设新的时间截止或周期任务。本次为计划更新，以下新增节点均未实施/未执行。验收基线为父 d6a5c383，产品/测试 e3d15707；此前通过项直接复用，不重跑同源组。
+日期：2026-11-11。用户已取消 08:00 截止；后续按节点验收推进，不设新的时间截止或周期任务。当前批次已加入 N1 CUDA 策略示例/测试，实际 CUDA 资格受独立环境磁盘空间阻塞；ROB1、COL1a 合同已审阅冻结，尚未实施。此前物理验收基线为父 d6a5c383、产品/测试 e3d15707；直接复用，不重跑同源组。新批次状态见[准备结果](../../benchmarks/p65-cuda-policy-n1-preparation.md)。
 
 入口：[当前全景](../../development/phymeo-newton-panorama-2026-11-11.md)、[架构与路线图](../../architecture/phymeo-newton-parity-2026-11-11.html)、[上一批验收](../../benchmarks/p65-parity-20261111-connections.md)。原[限时计划](2026-11-11-newton-parity-until-0800.md)仅保留历史计划和结果，不再约束后续。
 
@@ -10,8 +10,9 @@
 
 | 批次 | 训练主线 | 机器人分支 | 碰撞分支 | 启动条件 |
 |---|---|---|---|---|
-| 下一批 | N1 CUDA Torch 环境资格与实际策略闭环 | ROB1 多参与者接口与案例冻结 | COL1 现有证据归并、七形状矩阵与设备实现边界冻结 | N1 已有详细方案；另两项先交短接口/案例/独占文件表 |
-| 第二批 | N2 两任务真实 PPO | ROB1 独立工作树编码与多案例联解 | COL1 设备支持族、几何/patch/受力分层开发 | N1 通过；分支接口与文件归属已冻结 |
+| 本批已交付 | N1 代码与候选 profile；CUDA 运行资格待空间解除 | ROB1 合同冻结 | COL1a 十八类新增 device query 合同冻结 | 未把 N1 代码/静态通过当运行验收 |
+| 下一可执行批 | 空间解除后验 N1；N1 通过才启 N2 | ROB1a 身份/layout，再 ROB1b 双自由体 | COL1a tests-first/support/source，再几何矩阵 | ROB/COL 可独立先行，不受 Torch 安装阻塞 |
+| 后续批 | N2 两任务真实 PPO | ROB1c 多案例共同响应、ROB1d 集成 | COL1b 曲面 patch、COL1c 真实受力 | 各支线只继承自身前置资格 |
 | 第三批 | N3 更新边界训练恢复 | ROB2a 关节/执行器；ROB2b 工作流随依赖接入 | COL2 mesh/变形窄相，随后 COL3 连续检测 | 实际状态归属与前序公共接口稳定 |
 | 后续批次 | N4 学习有效性，再测规模/热点 | 更多约束、传动、闭环与工具 | 跨特征历史；SDF/hydroelastic 独立研究立项 | 先有功能证据，再扩域和性能优化 |
 
@@ -24,11 +25,11 @@
 | /root/mtyx_t2_tests | COL1–COL3 通用碰撞与案例矩阵 | 不改机器人求解器或训练状态 |
 | 父集成 | 共享身份/状态/事务接口、集成与唯一执行队列、验收/文档 | 不覆盖作者 WIP，不并发项目执行 |
 
-本次三个作者已完成只读规划建议；上表是后续分工，不是已启动编码的状态。所有编码使用隔离工作树和明确文件表。安装、import、collection、pytest、数值/离线分析、lint、formatter、build、profile 均在父管理的唯一串行槽执行，启动前检查真实入口。无远程 CI、main 合并或发包。
+本批三个原作者已交接：N1 三文件已导入；ROB1/COL1a 合同已导入并冻结，产品实现尚未派发。所有编码使用隔离工作树和明确文件表。安装、import、collection、pytest、数值/离线分析、lint、formatter、build、profile 均在父管理的唯一串行槽执行，启动前检查真实入口。无远程 CI、main 合并或发包。
 
 ## N1–N4：真实训练与规模
 
-**N1｜中等｜可直接进入下一批。** 沿[详细 GPU 计划](2026-11-11-mujoco-tyx-gpu-training.md)创建独立 CUDA Torch profile，保留现有环境和 TYX pin。两类模型完成实际 CUDA MLP→设备 action→连续物理→设备 observation，含默认/非默认 stream、所有权/CAS/生命周期负控。不是 toy TYX consumer 或 CPU fallback。收齐版本/模块来源/输入绑定/复制与同步计数；兼容 wheel 或容量不满足时明确停在环境资格。
+**N1｜中等｜代码已备，环境资格受容量阻塞。** [候选 profile 与实测空间下界](../../development/mujoco-tyx-cuda-profile-qualification.md)已记录；未安装 CUDA Torch，未运行新案例。沿[详细 GPU 计划](2026-11-11-mujoco-tyx-gpu-training.md)在独立环境验证两模型的实际 CUDA MLP→设备 action→连续物理→设备 observation，含默认/非默认 stream、所有权/CAS/生命周期负控。保留既有环境和 TYX pin；收齐版本/模块来源/输入绑定/复制与同步计数。不能用 CPU fallback 或静态检查代替此门。
 
 **N2｜中高｜依赖 N1。** 独立 device VecEnv 和薄 RSL 适配；先冻结 final_obs、timeout、局部 reset、动作已提交后的失败语义。两任务各实际完成 4 次更新×16 步×8 world，核 GPU 参数确实更新和全部有效转移。此门只证明 PPO 链路，不能称“已经学会”。发生物理或后处理失败时报告真实已推进阶段，不伪回滚。
 
@@ -40,7 +41,7 @@
 
 ## ROB1–ROB2：场景与机器人
 
-**ROB1｜高｜同 world 多参与者共同响应。** 现有四类单树与隔离 world 分页不等于多独立机器人联解。首版优先 resident：公共场景稳定 participant/body/shape 身份、各自状态地址、完整接触 Jacobian、共同求解、全 world 一次发布。固定双自由体碰撞、机械臂推自由盒、双臂与工具接触三类案例；核双方力/力矩与运动、分离/重入、部分 reset、身份冲突及最后参与者晚失败。不能分别 step 后拼状态。MuJoCo-TYX 多自由根另设映射和原生对照资格，不继承 resident 结果。
+**ROB1｜高｜同 world 多参与者共同响应。** [冻结合同](2026-11-11-resident-multi-participant.md)采用 additive participant/layout/scene API。首版 resident 在同一入步状态装配跨参与者接触载荷，完整 J 投影，各机械块一次求解，全 world 一次发布；复用现有柔顺接触律，不宣称跨树隐式 KKT/QP。W1/W2/W4、每 world 1–8 participant，原几何/站点预算保持。固定双自由体、机械臂推自由盒、双臂工具三类，核双方力/力矩、分离/重入、完整 world reset/restore 和最后参与者晚失败。不能分别 step 后拼状态。MuJoCo-TYX 多自由根另设映射和原生对照资格，不继承 resident 结果。
 
 **ROB2a｜高｜关节/执行器扩域。** 在已有 scalar joints、free root、PD、惯量/阻尼和限位上，先定义球关节 q/v、第一阶执行器状态、显式传动映射。球铰受矩、反向传动、阶跃/饱和/卸载及含执行器状态的恢复为基础库。闭环与 tendon 是后继独立节点，不一次塞进首片。
 
@@ -51,6 +52,8 @@
 **COL1｜中高｜统一凸支持族与能力表。** 复用现有[能力台账](../../development/collision-capability-matrix.md)和 backend×operation×owner×unordered-pair registry。球、胶囊、盒、凸包、圆柱、圆锥、椭球形成 28 类无序组合；后面三族已有有限 HOST support-map，不能称从零开发。先归并原设备 S/C/OBB/H 十类证据，补设备来源和通用 support 实现，不逐 pair 复制 solver。
 
 新增组合固定分离/接触/浅交、反序、旋转和包含案例；距离/见证、完整 patch、真实载荷分别验收。矩阵每格记录后端、操作、所有者、范围、证据或明确不支持原因；几何通过不能自动授予 patch/双侧受力资格。圆滑支撑域与接触归并门在执行前冻结。
+
+[COL1a 冻结合同](2026-11-11-device-convex-support-family.md)先补18类 device query，复用同一 support/GJK/EPA。父先接曲面来源准入、保守 AABB 和完整旋转 frame。负例的布置重叠量不是通用最小穿透深度，tests-first 必须逐族提供独立 depth/witness oracle。新曲面 patch 明确 UNSUPPORTED，真实受载拒绝，不能 HOST fallback；COL1b/c 后续另验。
 
 **COL2｜高｜设备 mesh 窄相及变形来源。** 接已有 BVH，补有限三角面/边窄相、材料地址和有界 contact reduction。固定球/杆越有限边、凸体进入凹槽、薄壳正反面、固定拓扑变形面、双面交叉；检查漏检、重复刚度、完整力矩、错源及容量拒绝。先验变形几何，再接独立柔体响应消费者；不因几何通过称所有机器人树/柔体已联通。
 

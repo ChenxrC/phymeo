@@ -137,14 +137,14 @@ body{font-family:'Cascadia Mono','Microsoft YaHei',monospace}.container{max-widt
 <div class="container">
 <header class="header"><div class="header-row"><span class="pulse-dot"></span><h1>Phymeo / Newton · 功能连接全景</h1></div>
 <p class="subtitle">2026-11-11 · 取消 08:00 截止，按节点验收持续推进 · 对照 Newton 1.7.0</p></header>
-<div class="banner">训练与规模优先；机器人、通用碰撞按依赖并行。<strong>下面虚线框全部是计划，尚未实施。</strong>绿色架构框只表示已验的限定能力。resident 与 MuJoCo-TYX 分别验收，G1 保留兼容侧线。</div>
+<div class="banner">训练与规模优先；机器人、通用碰撞按依赖并行。<strong>虚线框尚未完成运行验收；N1代码与静态已备，环境受空间阻塞。</strong>绿色架构框只表示已验的限定能力。resident 与 MuJoCo-TYX 分别验收，G1 保留兼容侧线。</div>
 <h2>后续路线 · 多案例 → 差异模块 → 实际验收</h2>
 <section class="diagram-container roadmap">
 <svg viewBox="0 0 1120 340" role="img" aria-label="持续推进计划，训练N1至N4主线，机器人与碰撞独立分支，G1兼容侧线">
 <defs><marker id="plan-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8" fill="#fbbf24"/></marker></defs>
 <text x="24" y="29" fill="#fbbf24" font-size="14">最高主线 · 箭头表示前置依赖</text>
 <g fill="none" stroke="#fbbf24" stroke-width="1.6" marker-end="url(#plan-arrow)"><path d="M254 91H292"/><path d="M530 91H568"/><path d="M806 91H844"/></g>
-<g class="box planned"><rect x="24" y="52" width="230" height="78"/><text x="139" y="82">N1 · CUDA 策略闭环</text><text class="sub" x="139" y="108">环境资格 / 真实设备推理</text></g>
+<g class="box planned"><rect x="24" y="52" width="230" height="78"/><text x="139" y="82">N1 · CUDA 策略闭环</text><text class="sub" x="139" y="108">代码已备 / 待环境运行资格</text></g>
 <g class="box planned"><rect x="300" y="52" width="230" height="78"/><text x="415" y="82">N2 · 两任务 PPO</text><text class="sub" x="415" y="108">device VecEnv / 参数真实更新</text></g>
 <g class="box planned"><rect x="576" y="52" width="230" height="78"/><text x="691" y="82">N3 · 训练恢复</text><text class="sub" x="691" y="108">物理 / 策略 / 优化器 / RNG</text></g>
 <g class="box planned"><rect x="852" y="52" width="244" height="78"/><text x="974" y="82">N4 · 学习与规模</text><text class="sub" x="974" y="108">三类任务 / 固定种子 / 吞吐</text></g>
@@ -154,7 +154,7 @@ body{font-family:'Cascadia Mono','Microsoft YaHei',monospace}.container{max-widt
 <g class="box planned"><rect x="760" y="193" width="336" height="81"/><text x="928" y="222">G1 · 有界兼容侧线</text><text class="sub" x="928" y="247">来源绑定 / 接触激活边界；不阻塞训练</text></g>
 <text x="560" y="316" text-anchor="middle" fill="#cbd5e1" font-size="14">原三个 agent 分线编码 · 父负责共享接口 · 所有项目执行严格串行</text>
 </svg>
-<p class="roadmap-note">N1 方案已具备；ROB1 / COL1 下一批先交接口、案例和文件边界。N2 的优化器更新不等于学会任务；N4 单独验证学习改善。W256 已验隔离受载分页，尚非 256 台机器人训练。</p>
+<p class="roadmap-note">N1代码及静态检查完成，CUDA环境待足够空间；ROB1 / COL1a 合同已冻结，可独立进入开发。ROB1先做共同入步载荷与整世界发布；COL1a先补18类device query，曲面patch另验。N2依赖N1实际通过；W256尚非256台机器人训练。</p>
 </section>
 <h2 class="section-title">已实现架构 · 两条物理路径分别验收</h2>
 <section class="diagram-container">
@@ -203,8 +203,8 @@ body{font-family:'Cascadia Mono','Microsoft YaHei',monospace}.container{max-widt
 <tr><td>07 布与体软体</td><td>布拉伸/剪切/弯曲/自接触，StVK四面体与双向载荷</td><td>密集折叠、持续静摩擦/换特征、软块抓捏与软布放台稳健性</td></tr>
 <tr><td>08 杆缆 / MPM / 流体</td><td>连杆、粒子与弹性体基础</td><td>完整弯扭杆缆、粒子–网格、塑性/流动、双向边界</td></tr>
 </tbody></table></section>
-<footer class="footer">已取消固定截止 · 虚线：尚未实施的计划 · 绿色：已验限定能力 · 不按测试数计算完成百分比<br>
-<a href="../development/phymeo-newton-panorama-2026-11-11.md">当前详细全景</a> · <a href="../benchmarks/p65-parity-20261111-connections.md">本批正式验收</a> · <a href="../development/g1-drift-diagnosis-20261111.md">G1失败诊断</a> ·
+<footer class="footer">已取消固定截止 · 虚线：待运行验收 · 绿色：已验限定能力 · 不按测试数计算完成百分比<br>
+<a href="../development/phymeo-newton-panorama-2026-11-11.md">当前详细全景</a> · <a href="../benchmarks/p65-parity-20261111-connections.md">上一批正式验收</a> · <a href="../benchmarks/p65-cuda-policy-n1-preparation.md">本批准备结果</a> · <a href="../development/g1-drift-diagnosis-20261111.md">G1失败诊断</a> ·
 <a href="../superpowers/plans/2026-11-11-newton-parity-continuous.md">持续推进总计划</a> ·
 <a href="../superpowers/plans/2026-11-11-mujoco-tyx-gpu-training.md">GPU训练后续节点</a> ·
 <a href="https://newton-physics.github.io/newton/1.7.0/solvers/index.html">Newton 1.7 求解器矩阵</a><br>

@@ -1,9 +1,9 @@
 # GPU 训练连接：后续实施计划
 
-日期：2026-11-11。状态：PLANNED / SOURCE_RESEARCH_REVIEWED / NOT_IMPLEMENTED / NOT_EXECUTED。
-父已完成源码调研与计划审阅；用户已取消08:00截止，本计划是[持续推进总计划](2026-11-11-newton-parity-continuous.md)的下一批主线。当前仍未安装GPU环境或实现这些节点，CPU训练环境与原物理预算保持。父在既有持续授权内冻结每节点文件归属、调度唯一串行执行槽；独立工作树可按明确边界并行纯编码，无需再次请求用户逐阶段许可。N1→N2→N3之后的N4学习有效性与规模协议见总计划。
+日期：2026-11-11。状态：N1_CODE_AUTHORED / CUDA_QUALIFICATION_PENDING / PREINSTALL_BLOCKED_DISK；N2–N4 尚未实施。
+父已完成源码调研与计划审阅；用户已取消08:00截止，本计划是[持续推进总计划](2026-11-11-newton-parity-continuous.md)的主线。N1 公共策略示例、focused 测试及候选依赖清单已加入，见[本批准备结果](../../benchmarks/p65-cuda-policy-n1-preparation.md)；未安装 GPU 环境、未通过 CUDA 案例，CPU训练环境与原物理预算保持。父在既有持续授权内冻结每节点文件归属、调度唯一串行执行槽；独立工作树可按明确边界并行纯编码，无需再次请求用户逐阶段许可。N1→N2→N3之后的N4学习有效性与规模协议见总计划。
 
-依据：[已审阅的源码调研](../../development/mujoco-tyx-gpu-training-research.md)。本稿只读取该报告及相关本地源码，未新增网络调研或项目执行。以下源码路径均相对父仓库 C:/Users/38347/.codex/worktrees/p65-parallel-integration/phymeo；调研基线 d9e5bf33，本次只读接口核对父 HEAD 19feafc2，具体验收仍绑定执行时冻结源码。
+依据：[已审阅的源码调研](../../development/mujoco-tyx-gpu-training-research.md)。原方案制定只读取该报告及相关源码，调研基线 d9e5bf33、接口核对基线19feafc2；本批新环境来源与静态结果另见上述准备结果。以下源码路径均相对父仓库 C:/Users/38347/.codex/worktrees/p65-parallel-integration/phymeo；具体验收绑定执行时冻结源码。
 
 ## 目标与已有边界
 

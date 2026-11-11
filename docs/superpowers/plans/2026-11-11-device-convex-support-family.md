@@ -1,6 +1,6 @@
 # COL1a：统一设备凸支持族与十八类新增查询
 
-**状态：接口/案例冻结草案；未实施、未执行。** 基线 `95212cff12cd6437566fdce80b93ddc7c4b64fe7`。本页只授权下一可编码片的范围设计，实际编码/唯一串行验证由父派发。服从[持续总计划](2026-11-11-newton-parity-continuous.md)。
+**状态：PARENT_REVIEWED_CONTRACT_FROZEN；未实施、未执行。** 基线 `95212cff12cd6437566fdce80b93ddc7c4b64fe7`。父已全文审阅作者 `dd3bbd4a` 并接受 `7625c874` 的穿透深度 oracle 修正；以下接口、案例及文件范围冻结，实际编码/唯一串行验证由父派发。服从[持续总计划](2026-11-11-newton-parity-continuous.md)。
 
 ## 1. 目标、复用与边界
 

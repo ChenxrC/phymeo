@@ -237,6 +237,7 @@ NEGATIVE_XML = (
     ("ball-motor", ROTOR.replace('</mujoco>', '<actuator><motor joint="ball" gear="1 2 3 0 0 0"/></actuator></mujoco>')),
     ("contact", ROTOR.replace('<worldbody>', '<worldbody><geom type="plane" size="1 1 .1"/>').replace('contype="0" conaffinity="0"', 'contype="1" conaffinity="1"')),
     ("three-balls", xml("over-cap", body("a", joint("a"), body("b", joint("b"), body("c", joint("c")))))),
+    ("same-body-slide-ball", xml("same-body-slide-ball", body("mixed", joint("slide", "slide") + joint("ball")))),
     ("scalar-motor-with-ball", HINGE_BALL_SLIDE.replace('</mujoco>', '<actuator><motor joint="hinge"/></actuator></mujoco>')),
     ("free-and-ball", xml("free-and-ball", body("free", '<freejoint/>', body("ball-child", joint("ball"))))),
     ("scalar-limit", HINGE_BALL_SLIDE.replace('name="hinge" type="hinge"', 'name="hinge" type="hinge" limited="true" range="-1 1"')),

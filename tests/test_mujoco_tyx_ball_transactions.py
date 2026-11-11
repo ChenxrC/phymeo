@@ -131,3 +131,22 @@ def test_ball_step_and_integration_observation_have_no_cpu_dynamics(mode, monkey
         assert runtime.counters["completed_kernels"] == count + 3
         assert_dynamics(after.last_step, expected)
         save(tmp_path / "no-fallback.jsonl", dict(before=before, after=after, native=expected, counters=runtime.counters))
+
+
+@pytest.mark.parametrize("mode", MODES)
+def test_ball_bad_last_control_is_rejected_before_any_held_update(mode, tmp_path):
+    from phymeo.backends.mujoco_runtime import MuJoCoControl
+    mj = deps()
+    model = mj.MjModel.from_xml_string(MAXIMUM)
+    keys = (7, 113)
+    with MuJoCoTyxRuntime(compile_mujoco_xml(MAXIMUM, require_asset=False), mode=mode, world_keys=keys, initial_states={key: initial(mj, model, slot) for slot, key in enumerate(keys)}) as runtime:
+        runtime.set_controls({key: control(model, 0, slot) for slot, key in enumerate(keys)})
+        runtime.step(H)
+        before = runtime.integration_snapshot()
+        good = control(model, 8)
+        bad_force = np.asarray(control(model, 8, 1).qfrc_applied).copy()
+        bad_force[-1] = np.nan
+        with pytest.raises(ValueError):
+            runtime.set_controls({keys[0]: good, keys[1]: MuJoCoControl([], qfrc_applied=bad_force)})
+        same(before, runtime.integration_snapshot())
+        save(tmp_path / "invalid-control.jsonl", dict(before=before, retained=runtime.integration_snapshot(), invalid_world=keys[-1]))

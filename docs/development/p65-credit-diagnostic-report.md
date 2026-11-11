@@ -1,5 +1,25 @@
 # Fixed credit diagnostic authoring report
 
+## Parent execution — 2026-11-12 06:42
+
+**ACTUAL_FIXED_CAPTURE_PASSED; saved-payload independent audit pending.** Author5970a4cc was fully read by parent and the original independent reviewer. Parent00e13f03 changed only imports/format; run299 proved equal non-import AST and equal scoped import multisets. Runs293/294 retain the first style failures (3 I001,49 E701,19 E702; two files needing format). Runs297/298 final static and300 all30 HOST synthetic nodes passed (6.82s,1 actual CUDA node deselected).
+
+Parent chose the CLI **once**, run301, 06:39:25–06:40:31, RAW_EXIT0. J14011/R14211/S14111 each completed32 real W8/D1 transitions: **768 world-transitions, zero new optimizer steps, all saved Adam steps128→128**. Caller RNG/precision/Distribution states were restored exactly. No source CUDA node, second sampling stream, training update or product/wheel change was executed.
+
+| Fixed task | Ordered branch | Actor pre-clip norm | Actual post/pre norm factor | Critic / reward GAE norms | Ratio clipping |
+| --- | --- | --- | --- | --- | --- |
+| J14011 | D_ACTOR_CLIPPING_ACTIVE | 1.941065409 | 0.515180706 | 1.511892971 / 19.648909275 | 0/256 |
+| R14211 | D_ACTOR_CLIPPING_ACTIVE | 2.497713642 | 0.400366009 | 1.591344588 / 31.150740686 | 0/256 |
+| S14111 | E_INCONCLUSIVE | 0.179271374 | 1.000000000 | 2.411285130 / 10.056343563 | 0/256 |
+
+All three actor mean gradients were nonzero; replay ratios remained near1 and mean KL was0. These are measurements of the newly declared single batch. They do not establish a clipping cause for the old J/R learning failures, justify a new threshold/lr, or turn S into a new learning experiment. J/R remain NOT_LEARNED and S retains only its original gate.
+
+The same-run gzip has297 complete typed records,19,730,675 logical bytes and2,936,668 compressed bytes; logical SHA `06d2d22b1ef80dc4440c276dcb4bf6f86b0e9a353e9aff416754163dc2336aeb`, compressed SHA `0fc8fef48afa3a0015476ad7487346e5655db2daf4564d7367fd70ccc0766a66`. Summary SHA `28172b1f4c319f9bb476609959fcb12d29a58213f681266765165f00ffff0365`.
+
+Parent source audit checked the48 selected entries across300/301: before/after/snapshot/current all matched. Receipt `artifacts/p65-parity-until-0720-20261112-01/n8-parent-source-audit-01.json`, SHA `b23f840a0be27cb0398ee7f18f91a49529bd06c0bd7be809c6eb018920c90b2e`. This is source identity, not the pending independent saved-array audit. No old N4 stream or accepted product suite is rerun for this audit.
+
+## Original authoring record
+
 Status: **CODE_READY_TESTS_PENDING / UNEXECUTED**. This report describes the
 new diagnostic, not an execution result. Parent owns every import, static check,
 HOST test and CUDA execution. Original J/R learning remains NOT_LEARNED; the

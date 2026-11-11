@@ -25,12 +25,14 @@ from phymeo.backends.mujoco_checkpoint import MuJoCoTyxCheckpoint
 from phymeo.backends.mujoco_runtime import MuJoCoRuntime
 from phymeo.training.resident_stepper import PhysicsStepFailure
 
-
 LIFECYCLES = (("stateless", (7, 103)), ("filter-early", (3, 19, 91, 203)))
 FAULTS = (
-    ("stateless", "late-readback"), ("stateless", "last-world-status"),
-    ("filter-early", "late-readback"), ("filter-early", "last-world-status"),
-    ("filter-early", "input-act"), ("filter-early", "restore-readback"),
+    ("stateless", "late-readback"),
+    ("stateless", "last-world-status"),
+    ("filter-early", "late-readback"),
+    ("filter-early", "last-world-status"),
+    ("filter-early", "input-act"),
+    ("filter-early", "restore-readback"),
 )
 
 
@@ -50,11 +52,17 @@ def advance_checked(mj, model, runtime, history):
         independent = analytic(model, state, packet)
         mj.mj_step(model, native)
         oracles[key] = (native, expected, independent)
-    history["pending"] = dict(entry=entry, native={
-        key: dict(fields=fields, analytic=independent,
-                  output=(native.qpos.copy(), native.qvel.copy(), native.act.copy(), native.time))
-        for key, (native, fields, independent) in oracles.items()
-    })
+    history["pending"] = dict(
+        entry=entry,
+        native={
+            key: dict(
+                fields=fields,
+                analytic=independent,
+                output=(native.qpos.copy(), native.qvel.copy(), native.act.copy(), native.time),
+            )
+            for key, (native, fields, independent) in oracles.items()
+        },
+    )
     before = runtime.counters["completed_kernels"]
     assert runtime.step(H) == dict.fromkeys(runtime.world_keys, True)
     result = runtime.integration_snapshot()
@@ -106,12 +114,19 @@ def test_ball_scalar_checkpoint_clone_partial_reset_successors(mode, case, keys,
             runtime.reset((selected,))
             reset = runtime.integration_snapshot()
             assert reset[selected].tick == 0 and reset[selected].last_step is None
-            np.testing.assert_array_equal(reset[selected].act, np.asarray(starts[selected].act, np.float32))
+            np.testing.assert_array_equal(
+                reset[selected].act, np.asarray(starts[selected].act, np.float32)
+            )
             for key in keys[:-1]:
                 same(reset[key], successor[key])
             history["reset"] = reset
-            with MuJoCoRuntime(compiled, mode=mode, implementation="tyx", world_keys=(selected,),
-                               initial_states={selected: starts[selected]}) as fresh:
+            with MuJoCoRuntime(
+                compiled,
+                mode=mode,
+                implementation="tyx",
+                world_keys=(selected,),
+                initial_states={selected: starts[selected]},
+            ) as fresh:
                 packets = {key: control(model, 16, slot) for slot, key in enumerate(keys)}
                 runtime.set_controls(packets)
                 clone.set_controls(packets)
@@ -144,9 +159,13 @@ def test_ball_scalar_late_failure_retains_and_real_retry(mode, case, fault, monk
     mj, model, _, starts, runtime = fixture(case, mode, (7, 91))
     history = dict(source=source(case), mode=mode, case=case, fault=fault, starts=starts, events=[])
     try:
-        runtime.set_controls({key: control(model, 0, slot) for slot, key in enumerate(runtime.world_keys)})
+        runtime.set_controls(
+            {key: control(model, 0, slot) for slot, key in enumerate(runtime.world_keys)}
+        )
         advance_checked(mj, model, runtime, history)
-        runtime.set_controls({key: control(model, 8, slot) for slot, key in enumerate(runtime.world_keys)})
+        runtime.set_controls(
+            {key: control(model, 8, slot) for slot, key in enumerate(runtime.world_keys)}
+        )
         before = runtime.integration_snapshot()
         capsule = runtime.checkpoint()
         checkpoint_bytes = capsule.to_bytes()
@@ -156,6 +175,7 @@ def test_ball_scalar_late_failure_retains_and_real_retry(mode, case, fault, monk
         with runtime.clone() as reference:
             with monkeypatch.context() as patch:
                 if fault == "restore-readback":
+
                     def bad_restore(*args, **kwargs):
                         raise RuntimeError("BALL-A late restore candidate readback")
 
@@ -172,7 +192,7 @@ def test_ball_scalar_late_failure_retains_and_real_retry(mode, case, fault, monk
                         if fault == "last-world-status":
                             result["status"][-1] = 2
                         else:
-                            result["input_act"][-1, 0] += .25
+                            result["input_act"][-1, 0] += 0.25
                         return result
 
                     patch.setattr(runtime._device, "download", bad_download)
@@ -202,7 +222,9 @@ def test_ball_scalar_late_failure_retains_and_real_retry(mode, case, fault, monk
 
 @pytest.mark.parametrize("mode", MODES)
 @pytest.mark.parametrize("case", ("stateless", "filter-early"))
-def test_ball_scalar_step_and_integration_observation_are_device_only(mode, case, monkeypatch, tmp_path):
+def test_ball_scalar_step_and_integration_observation_are_device_only(
+    mode, case, monkeypatch, tmp_path
+):
     mj, model, _, starts, runtime = fixture(case, mode)
     history = dict(source=source(case), mode=mode, case=case, starts=starts)
     try:

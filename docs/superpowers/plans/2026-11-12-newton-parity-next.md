@@ -23,6 +23,8 @@ M1 的[固定案例库](../../development/p65-m1-case-library-20261112.md)现已
 
 诊断若完成，严格按其A–E顺序决定下一工作：绑定失败先修观察；无mean credit查实际路径；critic主导只另登记一次校准研究；clip活跃先量化而不直接调阈值；无区分原因就停止这个采样，不追加rollout。S保原成功任务对照，R未证可达，不能套用J的控制结论。
 
+**06:46结果与下一决定**：run301已完成原768转移/0更新；J/R是D（actor范数裁剪活跃），S是E；所有mean梯度非零、ratio clipping0。见[实际报告](../../development/p65-credit-diagnostic-report.md)与[基于原Adam源码的后继裁定](../../development/p65-credit-diagnostic-next-decision.md)。D不等于因果：原m128/v128不随当前梯度共同缩放，Adam参数步不能按0.515/0.400直接推算。后继首先只用同次保存的pre/post梯度和原moments做两条明确标识的虚拟129代数比较，完整ID绑定、原group参数和0真实更新；没有可检验预测则停止该假设，继续框架模块。新阈值/学习率/额外训练均未授权为自动下一步。
+
 规模优化从原N7实际分项成本选一个开销节点。必须先固定模型、精度、输出、reset/观察协议再计时；现有full/integration和旧进程commit观察不等于Newton等输出性能优势。不得通过少保存字段、缩小arena、去掉检查或降低world数制造“优化”。
 
 ## 后继依赖

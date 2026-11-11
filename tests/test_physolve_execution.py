@@ -13,6 +13,53 @@ payload = payload_fixture
 
 @pytest.mark.cuda
 @pytest.mark.parametrize('nworld', [1, 8, 64])
+def test_device_reset_selection_and_observation_preservation(payload, nworld, monkeypatch):
+    import tyx as tx
+    with PhySolveRuntime(compile_mujoco_xml(CONTACT, require_asset=False), payload=payload,
+                        nworld=nworld, body_observations=True, contact_observations=True) as runtime:
+        storage = runtime.storage_binding()
+        names = ('qpos', 'qvel', 'qacc', 'qfrc_actuator', 'qfrc_constraint',
+                 'body_position', 'body_com_twist', 'contact_sample_time')
+        def read():
+            return {name: storage.borrow(name, runtime.active_bank).numpy(stream=storage.stream).copy() for name in names}
+        runtime.reset()
+        initial = read()
+        initial_contacts = contact_records(runtime)
+        for mask in (np.arange(nworld) % 2 == 0, np.zeros(nworld, bool), np.ones(nworld, bool)):
+            runtime.step()
+            before, old_contacts = read(), contact_records(runtime)
+            selected = tx.Array(mask, device=storage.device)
+            ticket = runtime.begin_execution()
+            assign = tx.Array.assign
+            def no_host(array, values, *args, **kwargs):
+                assert not isinstance(values, np.ndarray), 'reset H2D'
+                return assign(array, values, *args, **kwargs)
+            with monkeypatch.context() as patch:
+                patch.setattr(tx.Array, 'assign', no_host)
+                patch.setattr(tx.Array, 'numpy', lambda *a, **k: pytest.fail('hot snapshot'))
+                patch.setattr(tx, 'empty', lambda *a, **k: pytest.fail('hot allocation'))
+                runtime.enqueue_reset(ticket, selected_worlds=selected)
+                runtime.complete_execution(ticket)
+                runtime.accept_execution(ticket)
+            for name, actual in read().items():
+                np.testing.assert_array_equal(actual[mask], initial[name][mask])
+                np.testing.assert_array_equal(actual[~mask], before[name][~mask])
+            after = contact_records(runtime)
+            for world in range(nworld):
+                reference = initial_contacts if mask[world] else old_contacts
+                actual_rows = after['contact_world'].reshape(-1) == world
+                expected_rows = reference['contact_world'].reshape(-1) == world
+                for name in after:
+                    np.testing.assert_array_equal(after[name][actual_rows], reference[name][expected_rows])
+        for invalid in (np.ones(nworld, bool), tx.zeros(nworld, tx.i32, device=storage.device)):
+            ticket = runtime.begin_execution()
+            with pytest.raises(ValueError, match='bool'):
+                runtime.enqueue_reset(ticket, selected_worlds=invalid)
+            runtime.discard_execution(ticket)
+
+
+@pytest.mark.cuda
+@pytest.mark.parametrize('nworld', [1, 8, 64])
 def test_device_selected_update_preserves_unselected_observations(payload, nworld, monkeypatch):
     import tyx as tx
     with PhySolveRuntime(compile_mujoco_xml(CONTACT, require_asset=False), payload=payload,

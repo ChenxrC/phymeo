@@ -49,6 +49,7 @@ class PhySolveRuntime:
     body_observation_contract_version = 1
     contact_observation_contract_version = 1
     selected_update_contract_version = 1
+    device_reset_contract_version = 1
 
     def __init__(
         self,
@@ -496,19 +497,31 @@ class PhySolveRuntime:
                 self._pending["phase"] = "failed"
                 raise
 
-    def enqueue_reset(self, ticket, mask=None):
+    def enqueue_reset(self, ticket, mask=None, *, selected_worlds=None):
         with self._scope():
             index = self._require_ticket(ticket, "prepared")
+            if selected_worlds is not None:
+                import tyx as tx
+                if mask is not None:
+                    raise ValueError('host and device reset masks are mutually exclusive')
+                if (not isinstance(selected_worlds, tx.Array) or
+                    selected_worlds.dtype != tx.bool1 or
+                    tuple(selected_worlds.shape) != (self.nworld,) or
+                    tuple(selected_worlds.strides) != (1,) or
+                    str(selected_worlds.device) != str(self._storage.device)):
+                    raise ValueError('selected_worlds requires canonical-device bool[nworld]')
+                self._pending['selected_worlds'] = selected_worlds
             if mask is not None:
                 mask = np.asarray(mask)
                 if mask.dtype != np.bool_ or mask.shape != (self.nworld,):
                     raise ValueError("reset mask must be bool[nworld]")
             self._pending["phase"] = "enqueued"
             try:
-                self._reset.restore(index, mask, self._stream)
+                selector = self._reset.restore(index, mask, self._stream, device_mask=selected_worlds)
+                partial = selected_worlds is not None or (mask is not None and not mask.all())
                 if self._controls_binding is not None:
                     self._controls_binding.reset(
-                        index, self._reset.all_mask if mask is None else self._reset.mask,
+                        index, selector,
                         self._stream,
                     )
                 self._native._forward_runtime(self._handles[index])
@@ -519,12 +532,12 @@ class PhySolveRuntime:
                 if self._contact_observations is not None:
                     self._contact_observations.update(
                         index, self._stream,
-                        mask=None if mask is None or mask.all() else self._reset.mask,
+                        mask=selector if partial else None,
                     )
-                if mask is not None and not mask.all():
-                    self._reset.preserve_observations(index, self._stream)
+                if partial:
+                    self._reset.preserve_observations(index, self._stream, selector)
                     if self._body_observations is not None:
-                        self._body_observations.preserve(index, self._reset.mask, self._stream)
+                        self._body_observations.preserve(index, selector, self._stream)
             except Exception:
                 self._pending["phase"] = "failed"
                 raise

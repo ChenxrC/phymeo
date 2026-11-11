@@ -79,13 +79,14 @@ class PreparedReset:
         for source, target, width in self.preserve_plans[0]:
             _preserve_float(self.all_mask, source, target, width, mode="cuda", stream=stream)
 
-    def restore(self, index, mask, stream):
-        selector = self.all_mask
+    def restore(self, index, mask, stream, *, device_mask=None):
+        selector = self.all_mask if device_mask is None else device_mask
         if mask is not None:
             self.mask.assign(mask, stream=stream)
             selector = self.mask
         for kernel, source, target, width in self.plans[index]:
             kernel(selector, source, target, width, mode="cuda", stream=stream)
+        return selector
 
     def preserve_observations(self, index, stream, mask=None):
         """After successful forward validation, retain unselected solve-time values."""

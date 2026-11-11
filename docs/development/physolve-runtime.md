@@ -619,3 +619,13 @@ enqueue_update 可借用 bool[nworld] 设备 mask，执行一次 forward 后保�
 以及既有延迟发布、reset 和紧凑校验回归。接触按 world 身份比较，不把 GPU 行顺序
 作为身份；不改生产排序或容差。首轮测试误用 step 参数已修正，原始日志保留。
 Host、TYX、六 CUBIN 不变；没有新环境/SDK 副本，证据为配套 evidence/b3j-native-final.log。
+
+## B3l：设备 reset
+
+新增公开设备 mask 入口，保留到事务结束；不经 NumPy 或 host 转换。复用已有原生
+reset/forward 和未选观测保持，没有修改 Host 或六 CUBIN。合同见
+[设备 reset v1](../architecture/engine-integration.md#设备-reset-v1)。
+原生 CUDA 9 项通过，覆盖 N=1/8/64 全选/空选/局部 reset、接触及力/body 保持，
+并回归 selected update 和 host masked reset。热阶段禁止 host assign、numpy 和
+tx.empty；记录为配套实验根 evidence/b3l-native.log。实际 C ABI 由 P2PE 配套验证，
+不以本测试替代 Graph、安装、GUI 或完整发行资格。

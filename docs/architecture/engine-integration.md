@@ -145,6 +145,16 @@ URDF dynamics/mimic 的 scalar_pd 转换在 B3e 承接，见[原生装配](nativ
 qpos/qvel 更新仍执行一次批量 forward，随后保留未选世界旧力/body/接触观测；
 纯命令仍不做 forward。没有参数时沿用原行为，不改 Host、CUBIN 或碰撞排序。
 
+### 设备 reset v1
+
+`device_reset_contract_version=1` 允许 `enqueue_reset(ticket, selected_worlds=mask)`，
+mask 为 canonical device 上连续 TYX bool[nworld]，与 host `mask` 参数互斥。
+runtime 保留借用直到 complete/accept/discard；调用方负责 canonical stream 顺序及
+期间不改变 mask 内容。恢复 integration、control 和 warm-start 后执行一次批量
+forward，未选世界保留旧派生观测和接触；设备全选/空选不读回 mask 判定。
+本接口不增加 H2D 或 host snapshot，完成仍检查紧凑状态；原生 direct 条件同步存在。
+host reset 不传 selected_worlds 时保持原路径。该合同不是 Graph 或并发资格声明。
+
 ### 候选设备观测执行 v1
 
 `observation_execution_contract_version=1` 增加只读 `observation_bank`：idle 返回

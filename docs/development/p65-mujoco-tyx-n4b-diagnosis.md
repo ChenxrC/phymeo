@@ -117,8 +117,8 @@ of evidence and no automatic corrective run. Interruption still propagates.
 ## Tests and parent execution
 
 Tests were authored first at406238c0; later synthetic completeness negatives and
-final source binding requirements extend those declarations. Current manual
-count is33 HOST nodes, uncollected and unexecuted: data-only decoder; malformed
+final source binding requirements extend those declarations. Original manual
+count was33 HOST nodes, then uncollected and unexecuted: data-only decoder; malformed
 dtype/base64/hash/shape; ambiguous JSON; gzip/logical/count/ordinal/truncation;
 known q/v/action decomposition; world/control/reward/done/missing-window rejection;
 real-vs-missing gradient norm semantics; separate actor/critic tensor changes;
@@ -152,3 +152,59 @@ The first staged Git whitespace check rejected one extra blank line at the
 tests-first file's EOF; it was removed before that commit. This was text
 verification, not an executed test failure. No old source/test/contract was
 changed, and no complete original trace was read by the author.
+
+## R1/R2 schema review repair (2026-11-12)
+
+The parent imported and formatted the original four files at
+fdba57d22b2788fe6a387fe861a93f6b89ff5f6d. Its original 33 HOST tests passed
+in 1.35 seconds; the initial import-order/format failures and subsequent static
+passes are retained by the parent. That result predates this repair. The fixed
+nine real traces have not been analyzed. No old result is assigned to the new
+source below.
+
+Independent text review found two missing bindings. The original accumulator
+accepted any last_step dictionary with the correct backend string, and the
+training reader did not consume the already-saved step_requests. The repair is
+limited to this module, its synthetic tests and this report. The CLI and parent
+formatting remain unchanged; the N4a source, physics, objectives, horizons,
+seeds, budgets and acceptance gates are unchanged.
+
+R1 now requires the actual saved MuJoCoTyxStepReceipt and MuJoCoControl type
+identities. Each receipt must name its world and current state tick, publish
+output_time equal to state.time and preserve the declared h. Its input_time
+and previous tick bind to the transition's actual MuJoCoTyxTaskFrame, and its
+contact_time equals input_time. The two saved times must be finite and advance.
+The check deliberately does not reconstruct time as tick*h: device integration
+uses compensated FP32 clock words, whereas the receipt h is the original public
+step size. All three stored_control channels must exactly equal their saved
+native_channels and thus the already-bound state control arrays. Synthetic
+receipts now carry the real dataclass field schema instead of fixture.Step;
+these remain independent synthetic evidence, not native execution results.
+
+R2 checks one complete request per rollout transition, the exact four writer
+fields, ordinal order, accepted status, and transition_index. Each finite,
+shape-checked requested_action is supplied to the existing transition action
+binding. Missing, reordered or changed requests fail before successful analysis
+publication. The writer schema was read directly from
+mujoco_tyx_evaluation.measure_update; no new field was invented.
+
+Tests were committed first at 32d0bc0f, followed by implementation 3182a3f7.
+There are 14 new manually enumerated negative cases: receipt type/world/tick,
+input/output clock, h, each of three stored channels; then missing/order/action/
+status/index for training requests. The current total is 47 HOST nodes,
+UNEXECUTED by this author and pending the parent's serial validation. Existing
+33 nodes and all original synthetic trace integrity checks remain. No complete
+original trace was read, no project module imported, and no test, static tool,
+numerical script or training run executed by this author.
+
+Current repaired code/test working bytes (the earlier table remains the original
+historical authoring snapshot):
+
+| Path | SHA256 | Git blob |
+|---|---|---|
+| src/phymeo/training/learning_diagnostics.py |23e49408e1c533a29975bae2f0384ae60916b0b830cc1ffa7f2d8d43060e4dd5|fc6dd874b892a3c6e1532a1f8e2cb0179d825d1e|
+| tests/training/test_learning_diagnostics.py |bfeef7b5ebefa33d7f0dcf1aa8551b78b38156f53e8330e5efe8d933d43301a7|7f6b35d711b97ffea31f283fe30e0475241ce824|
+| examples/diagnose_mujoco_tyx_learning.py (unchanged from fdba57d2) |a2647bc865eed19c3561be542adc6768c8dccdfd77aed58f4dbddf0d5b076c45|99810abc160b13005b650ef5251a3adff9a7623c|
+
+Repair handoff status: CODE_READY_TESTS_PENDING / ANALYSIS_UNEXECUTED /
+AUTHORING_SLOT_RELEASED. The parent retains the sole execution slot.

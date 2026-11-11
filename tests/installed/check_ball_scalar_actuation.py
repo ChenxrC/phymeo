@@ -731,6 +731,20 @@ def main():
         excluded="ball motors/limits/springs, free-root/contact composition, G1, training",
     )
     installed_root = None
+    primary = None
+    primary_traceback = None
+    finalization_errors = []
+    summary["finalization_errors"] = []
+
+    def remember_finalization(stage, error):
+        # Keep original exception objects for the final group, not just strings.
+        finalization_errors.append(error)
+        summary["status"] = "FAIL"
+        summary["finalization_errors"].append(dict(
+            stage=stage, type=type(error).__name__, message=str(error),
+            traceback="".join(traceback.format_exception(type(error), error, error.__traceback__)),
+        ))
+
     try:
         require(args.installed_root.is_absolute(), "installed-root must be absolute")
         installed_root = args.installed_root.resolve(strict=True)
@@ -739,33 +753,50 @@ def main():
         summary.update(run(args.mode, output, journal, installed_root))
         summary["status"] = "PASS"
     except BaseException as error:
+        primary, primary_traceback = error, error.__traceback__
         summary["status"] = "FAIL"
         summary["exception"] = dict(
             type=type(error).__name__, message=str(error), traceback=traceback.format_exc()
         )
-        (output / "failure.txt").write_text(summary["exception"]["traceback"], encoding="utf-8")
-        journal.emit("failure", summary=summary)
-        raise
+        try:
+            (output / "failure.txt").write_text(summary["exception"]["traceback"], encoding="utf-8")
+        except BaseException as failure:
+            remember_finalization("primary-traceback-file", failure)
+        try:
+            journal.emit("failure", summary=summary)
+        except BaseException as failure:
+            remember_finalization("failure-journal", failure)
     finally:
+        # Independent attempts: provenance/emit failure cannot bypass stream close
+        # or the separate summary file, and none can replace the primary error.
         try:
             if installed_root is not None:
                 summary["final_provenance"] = provenance(installed_root)
+        except BaseException as failure:
+            remember_finalization("final-provenance", failure)
+        try:
             journal.emit("summary", summary=summary)
-        except BaseException:
-            summary["status"] = "FAIL"
-            summary["final_evidence_error"] = traceback.format_exc()
-            raise
-        finally:
-            try:
-                summary["trace"] = journal.close()
-            except BaseException:
-                summary["status"] = "FAIL"
-                summary["trace_close_error"] = traceback.format_exc()
-                raise
-            finally:
-                (output / "summary.json").write_text(
-                    json.dumps(summary, indent=2, allow_nan=False), encoding="utf-8")
-        print(json.dumps(summary, allow_nan=False))
+        except BaseException as failure:
+            remember_finalization("summary-journal", failure)
+        try:
+            summary["trace"] = journal.close()
+        except BaseException as failure:
+            remember_finalization("journal-close-and-hash", failure)
+        try:
+            (output / "summary.json").write_text(
+                json.dumps(summary, indent=2, allow_nan=False), encoding="utf-8")
+        except BaseException as failure:
+            remember_finalization("summary-file", failure)
+        try:
+            print(json.dumps(summary, allow_nan=False))
+        except BaseException as failure:
+            remember_finalization("summary-stdout", failure)
+
+    if finalization_errors:
+        members = ([primary] if primary is not None else []) + finalization_errors
+        raise BaseExceptionGroup("BALL-A primary/finalization failures", members)
+    if primary is not None:
+        raise primary.with_traceback(primary_traceback)
 
 
 if __name__ == "__main__":

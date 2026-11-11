@@ -101,3 +101,20 @@ or implicitly rerun. Product parameters, tolerance, pin and capacity are unchang
 This does not qualify ball-target motors, free/contact/limit/dry/ball-spring
 composition, JOINTINPARENT, G1, training, or any Newton speed comparison.
 Consumer author SHA256: `8907edc12180d1bfdeaeea8163e96c9c5035a0b0c336943130e16cdd7d3489df`.
+
+## Outer finalization review correction (still unexecuted)
+
+The parent identified that outer provenance/journal finalization could replace an
+already recorded primary exception. The consumer now retains the original
+exception object and traceback, independently attempts failure-file/journal
+publication, final provenance, summary journal, journal close/hash, disk summary
+and stdout summary, and collects every finalization exception by stage. It raises
+the original primary error when it is alone, or a BaseExceptionGroup containing
+it and all finalization errors. The in-memory summary retains every traceback;
+if an output channel itself fails, the exception group remains the authoritative
+failure report rather than claiming that unavailable file was written. A summary
+already written before a later stdout failure does not imply command success:
+the command must also return RAW_EXIT0. No close is skipped because another
+finalization stage failed. Model, oracle, gates and all physical call counts are
+unchanged. This remains text-only authoring; the parent owns static/runtime checks.
+Final consumer author SHA256: `1898c8e3aa887ec0b69153a1afb387742666bd667f15ba9f2e6cec10f5d9842a`.

@@ -132,13 +132,16 @@ def _output(path):
             writer.write("failed_update_complete_attempts", error.attempts)
             detail["failed_update_compute_s"] = error.compute_seconds
             detail["original_error_type"] = error.original_type
-        env = context["env"]
-        if env is not None:
-            try:
-                writer.write("failure.last_transition", env.last_transition)
-                detail["counter_end"] = evaluation.plain_counters(env.counters)
-            except Exception as recording_error:
-                detail["secondary_recording_error"] = repr(recording_error)
+            writer.write("failed_update_completed_record", error.completed_record)
+            detail["failed_measurement_phase"] = error.measurement_phase
+            detail["counter_snapshot_before"] = error.counter_snapshot_before
+            detail["counter_snapshot_after"] = error.counter_snapshot_after
+        owner_exit = context.get("owner_exit")
+        if owner_exit is not None:
+            writer.write("failure.owner_exit", owner_exit)
+            detail["counter_exit_snapshot"] = owner_exit.get("counter_snapshot")
+            if "counter_capture_error" in owner_exit:
+                detail["counter_capture_error"] = owner_exit["counter_capture_error"]
         try:
             writer.write("failure", detail)
         finally:
@@ -148,6 +151,23 @@ def _output(path):
         raise
     finally:
         writer.close()
+
+
+@contextmanager
+def _observed_environment(context, name, **options):
+    """Capture public evidence while owners are live, before their close unwinds."""
+    with tasks().make_environment(name, **options) as env:
+        context["env"] = env
+        try:
+            yield env
+        finally:
+            saved = {"last_transition": env.last_transition}
+            try:
+                saved["counter_snapshot"] = evaluation.measurement_counter_snapshot(env)
+            except Exception as error:
+                saved["counter_capture_error"] = repr(error)
+            context["owner_exit"] = saved
+            context["env"] = None
 
 
 def _finish(context, result):
@@ -263,7 +283,7 @@ def run_preflight(name, output):
     item = definitions.task(name)
     with _output(output) as context:
         definitions.seed_all(item.seeds[0])
-        with definitions.make_environment(name) as env:
+        with _observed_environment(context, name) as env:
             context.update(env=env, phase="fixed-first-32-step-preflight")
             manifest = _manifest(env, name, item.seeds[0], "preflight")
             evaluation.json_write(context["path"] / "manifest.json", manifest)
@@ -351,7 +371,7 @@ def run_learning(name, seed, output):
     with _output(output) as context:
         definitions.seed_all(seed)
         started = time.perf_counter()
-        with definitions.make_environment(name) as env:
+        with _observed_environment(context, name) as env:
             context.update(env=env, phase="construct-original-upstream-PPO")
             session = _session(env)
             manifest = _manifest(env, name, seed, "learn")
@@ -457,7 +477,7 @@ def run_scale(name, seed, worlds, output):
     with _output(output) as context:
         definitions.seed_all(seed)
         cold_started = time.perf_counter()
-        with definitions.make_environment(name, count=worlds, scale=True) as env:
+        with _observed_environment(context, name, count=worlds, scale=True) as env:
             context.update(env=env, phase="scale-construction")
             session = _session(env)
             definitions.require_cuda().cuda.synchronize(env.device)

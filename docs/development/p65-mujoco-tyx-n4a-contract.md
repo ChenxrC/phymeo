@@ -266,3 +266,44 @@ an explicit one-time phase, never automatically repeated inside learn or scale.
 New training code,
 whole-grid performance, learning quality and W256 remain UNEXECUTED/UNQUALIFIED
 until the original frozen runs and evidence checks actually finish.
+
+## 7. Counter lifecycle correction after first J learning attempt
+
+This is an accounting/evidence correction, not a changed learning contract.
+Parent source5a3957a6 passed the20 HOST nodes and three fixed CUDA preflights.
+The original J14011 run31 reached upstream-update-7 after the first256-step
+all-world horizon reset. The physical/upstream update returned, but measurement
+incorrectly required current-device counters to be monotonic across replacement.
+Its old update7 complete payload was not saved. Preserve that failure and missing
+payload as recorded; no reconstruction or new evidence is assigned to run31.
+
+Current `runtime.counters` combines two lifetimes: current-device counts
+(`completed_kernels`, synchronization/allocation/upload/download and device control
+transport fields) with runtime-owned extra counters. A public reset replaces the
+whole device even if only some worlds reset. The task workspace is separately
+owned and is not replaced by this reset. Public checkpoint revision and task epoch
+are transaction/publication identities, **not** underlying device generation IDs.
+
+The corrected measurement keeps complete before/after public snapshots and owner
+bindings. Exact source-defined lists identify monotonic environment, runtime-extra
+and same-task-workspace fields. Unknown fields or unexpected owner/schema changes
+are rejected with the already-completed update evidence retained. Device fields
+are only signed snapshot differences, explicitly NOT cumulative work; absent
+optional fields remain None, not zero. Underlying absolute generation and device
+work across replacements are UNKNOWN. Negative differences are neither clipped
+nor used as bandwidth/synchronization totals.
+
+Reset calls/worlds are separately derived from each actual accepted pre-reset
+state.tick versus output_frame.ticks, and checked against the wrapper's reset-world
+counter. One call may reset many worlds; these receipt events do not recover any
+hidden device work. Counter schema/source distinctions never change physical state.
+
+The update failure boundary now includes post-update synchronization, counter
+reads, profile/memory diagnostics and accounting. It retains all requested-action
+copies/accepted transitions and the complete returned update record when available.
+The CLI snapshots public counters and last transition while the environment is
+still open; its outer failure writer consumes that saved value after close.
+Existing validate_update writes the complete record before finite objective/loss
+checks. Six HOST regression nodes cover reset counters, unknown fields, two late
+failure stages with32 actual adapter calls, the finite-audit write order and owner
+close order. No old preflight, model, reward, seed, optimizer or128×32 budget changes.

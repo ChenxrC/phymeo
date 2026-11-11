@@ -1,6 +1,5 @@
 """Fixed N7 protocol, complete comparison and bounded failure evidence."""
 
-import copy
 import importlib.util
 from dataclasses import make_dataclass
 from pathlib import Path
@@ -123,6 +122,32 @@ def test_owning_observer_copies_rsl_outputs():
     assert owned["a"][0] == .25
     assert not np.shares_memory(value["b"][0],owned["b"][0])
 
+
+
+def test_post_acceptance_evidence_failure_keeps_actual_transition():
+    module = api()
+    class Adapter:
+        calls = 0
+        def step(self, action):
+            self.calls += 1
+            self.last_transition = "real-accepted-publication"
+            return (np.array([1.]),np.array([2.]),np.array([False]),{})
+    def failed_capture():
+        raise RuntimeError("post-acceptance evidence failure")
+    adapter = Adapter()
+    env = SimpleNamespace(last_reset_receipt=None,capture_training_state=failed_capture)
+    with module.observe_windows(adapter,env) as attempts:
+        with pytest.raises(RuntimeError,match="post-acceptance"):
+            adapter.step(np.array([.1]))
+    assert adapter.calls == 1
+    assert attempts[0]["transition"] == "real-accepted-publication"
+    assert attempts[0]["status"] == "failed"
+    assert attempts[0]["rsl_output"][0][0] == 1.
+
+
+def test_mode_boundary_rejects_live_owners():
+    with pytest.raises(TypeError):
+        api().mode_summary({"owner":object()})
 
 @pytest.mark.cuda
 @pytest.mark.parametrize("task,worlds", (("J",8),("S",128),("S",256)))

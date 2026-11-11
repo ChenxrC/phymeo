@@ -575,3 +575,14 @@ P2PE文档/政策18项、Ruff及diff门禁通过；PHYMEO文档479条历史缺�
 
 该节点没有授予 P2PE 物理 C ABI、resident、Graph、外部 stream、传感器、安装或 GUI
 资格。后续先接公开字段转换、candidate owner 与错误门禁，再完成实际 C ABI 数据闭环。
+
+## B3f：端点 body 观测
+
+公开合同与派生资源成本见[集成合同](../architecture/engine-integration.md#步后-body-观测-v1)。
+只复用已有 TYX 运动学计算，不修改 Host、求解 CUBIN、排序或既有物理容差。
+原生执行套件 20 项通过：原 13 项保持，新增自由落体 N=1/8/64、偏心 COM 速度、
+多 branch/固定子 body、NaN/执行失败不发布与 discard 恢复、prepare/close 双失败
+owner 保留。四子步只增加一次端点运动学；forward/reset 不重复 FK，命令不做 FK。
+对应 P2PE 实际 DLL 资格单独记录于其 `docs/phymeo-cabi.md`，跨仓完整来源、提交和
+哈希见实验根 `evidence/b3f-summary.json`。复用 env-b1j 源码入口，不声称安装升级。
+全仓文档检查仍有历史缺失目标，日志与 B3b 的 SHA256 相同；本批不扩展无关修复。

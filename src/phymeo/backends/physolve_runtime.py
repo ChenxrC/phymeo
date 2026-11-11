@@ -46,6 +46,8 @@ class PhySolveRuntime:
     state (no keyframe selected), then performs native forward.
     """
 
+    body_observation_contract_version = 1
+
     def __init__(
         self,
         compilation,
@@ -57,7 +59,10 @@ class PhySolveRuntime:
         device="cuda:0",
         initial_state=None,
         scalar_controls=(),
+        body_observations=False,
     ):
+        if type(body_observations) is not bool:
+            raise TypeError("body_observations must be bool")
         world = compilation if isinstance(compilation, CompiledMuJoCoWorld) else None
         if world is not None:
             if initial_state is not None or world.binding_version != 1:
@@ -95,6 +100,7 @@ class PhySolveRuntime:
         self._stream = self._model = None
         self._reset = None
         self._controls_binding = None
+        self._body_observations = None
         self._validation = self._storage = None
         self._storage_generation = 1
         self._pending = None
@@ -148,10 +154,20 @@ class PhySolveRuntime:
                         self._banks, self.nworld, selected, OBSERVATION_FIELDS
                     )
                     self._reset.prepare(self._stream)
+                    if body_observations:
+                        from ._physolve_bodies import PreparedBodyObservations
+
+                        self._body_observations = PreparedBodyObservations(
+                            self._model, self._banks, selected
+                        )
+                        self._body_observations.prepare(self._stream, self._reset.all_mask)
                     from ._physolve_binding import bind_storage
                     from ._physolve_validation import PreparedValidation
 
-                    self._validation = PreparedValidation(self._banks, selected)
+                    self._validation = PreparedValidation(
+                        self._banks, selected,
+                        extra_banks=None if self._body_observations is None else self._body_observations.banks,
+                    )
                     self._validation.prepare(self._stream)
                     if scalar_controls:
                         from ._physolve_controls import PreparedControls
@@ -162,6 +178,7 @@ class PhySolveRuntime:
                     self._storage = bind_storage(
                         self, self._banks, self._stream, selected, self._storage_generation,
                         self._controls_binding,
+                        self._body_observations,
                     )
                     self._complete()
         except Exception as error:
@@ -297,8 +314,12 @@ class PhySolveRuntime:
     def execution_costs(self):
         """Explicit validation transfers; native Host internal work is additional."""
         with self._scope():
+            bodies = self._body_observations
             return {"validation_readbacks": self._validation.readbacks,
                     "validation_d2h_bytes": 4 * self._validation.readbacks,
+                    "endpoint_kinematics_passes": 0 if bodies is None else bodies.kinematics_passes,
+                    "body_observation_publications": 0 if bodies is None else bodies.publications,
+                    "body_observation_device_bytes": 0 if bodies is None else bodies.allocated_bytes,
                     "native_direct_conditional_sync": True}
 
     @property
@@ -352,7 +373,10 @@ class PhySolveRuntime:
             try:
                 for _ in range(steps):
                     self._native._step_runtime(self._handles[index])
-                    self._validation.enqueue(index, self._stream)
+                    self._validation.enqueue(index, self._stream, include_extra=False)
+                if self._body_observations is not None:
+                    self._body_observations.update(index, self._stream, integrated=True)
+                    self._validation.enqueue_extra(index, self._stream)
             except Exception:
                 self._pending["phase"] = "failed"
                 raise
@@ -363,6 +387,8 @@ class PhySolveRuntime:
             self._pending["phase"] = "enqueued"
             try:
                 self._native._forward_runtime(self._handles[index])
+                if self._body_observations is not None:
+                    self._body_observations.update(index, self._stream, integrated=False)
                 self._validation.enqueue(index, self._stream)
             except Exception:
                 self._pending["phase"] = "failed"
@@ -389,6 +415,8 @@ class PhySolveRuntime:
                     self._controls_binding.compose(index, self._stream)
                 if refresh_state:
                     self._native._forward_runtime(self._handles[index])
+                    if self._body_observations is not None:
+                        self._body_observations.update(index, self._stream, integrated=False)
                 else:
                     # Capacity counts belong to the preserved solve-time result,
                     # not a previous discarded candidate in this bank.
@@ -397,6 +425,8 @@ class PhySolveRuntime:
                             getattr(self._banks[index], name).assign(
                                 getattr(self._banks[self._active], name), stream=self._stream
                             )
+                    if self._body_observations is not None:
+                        self._body_observations.copy(self._active, index, self._stream)
                 self._validation.enqueue(index, self._stream)
             except Exception:
                 self._pending["phase"] = "failed"
@@ -418,10 +448,14 @@ class PhySolveRuntime:
                         self._stream,
                     )
                 self._native._forward_runtime(self._handles[index])
+                if self._body_observations is not None:
+                    self._body_observations.update(index, self._stream, integrated=False)
                 # Error bits latch before unselected observations overwrite qacc.
                 self._validation.enqueue(index, self._stream)
                 if mask is not None and not mask.all():
                     self._reset.preserve_observations(index, self._stream)
+                    if self._body_observations is not None:
+                        self._body_observations.preserve(index, self._reset.mask, self._stream)
             except Exception:
                 self._pending["phase"] = "failed"
                 raise
@@ -485,6 +519,7 @@ class PhySolveRuntime:
             self._storage_generation += 1
             self._reset = None
             self._controls_binding = None
+            self._body_observations = None
             self._model = None
             self._closed = True
 

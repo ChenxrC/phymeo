@@ -13,6 +13,169 @@ payload = payload_fixture
 
 @pytest.mark.cuda
 @pytest.mark.parametrize("nworld", [1, 8, 64])
+def test_endpoint_bodies_keep_solver_time_and_masked_observations(payload, nworld, monkeypatch):
+    import tyx as tx
+    with PhySolveRuntime(compile_mujoco_xml(FREE, require_asset=False), payload=payload,
+                        nworld=nworld, body_observations=True) as runtime:
+        storage = runtime.storage_binding()
+        assert storage.fields['body_position'].sample == 'integration endpoint'
+        def read(name):
+            return storage.borrow(name, runtime.active_bank).numpy(stream=storage.stream).copy()
+        initial = {name: read(name) for name in ('body_position', 'body_rotation_wxyz', 'body_com_twist')}
+        def forbidden(*args, **kwargs):
+            raise AssertionError('endpoint execution must not allocate/read whole host state')
+        with monkeypatch.context() as patch:
+            patch.setattr(tx.Array, 'numpy', forbidden)
+            patch.setattr(tx, 'empty', forbidden)
+            ticket = runtime.begin_execution()
+            runtime.enqueue_step(ticket, steps=4)
+            runtime.complete_execution(ticket)
+            runtime.accept_execution(ticket)
+        q = read('qpos')
+        body = read('body_position')
+        np.testing.assert_allclose(body[:, 1], q[:, :3], atol=1e-6, rtol=0)
+        np.testing.assert_allclose(read('body_com_twist')[:, 1, 2], -9.81*.002*4, atol=1e-6, rtol=0)
+        assert np.all(read('xpos')[:, 1, 2] != body[:, 1, 2])
+        assert runtime.execution_costs()['endpoint_kinematics_passes'] == 1
+        before = {name: read(name) for name in initial}
+        runtime.reset(np.arange(nworld) % 2 == 0)
+        for name in initial:
+            after = read(name)
+            np.testing.assert_array_equal(after[::2], initial[name][::2])
+            np.testing.assert_array_equal(after[1::2], before[name][1::2])
+        assert runtime.execution_costs()['endpoint_kinematics_passes'] == 1
+        runtime.forward()
+        assert runtime.execution_costs()['endpoint_kinematics_passes'] == 1
+
+
+@pytest.mark.cuda
+def test_endpoint_body_com_velocity_and_command_only_preservation(payload):
+    xml = '''<mujoco><option timestep=".002" gravity="0 0 0"/>
+    <worldbody><body name="hinge"><joint axis="0 0 1"/>
+    <inertial pos=".2 0 0" mass="2" diaginertia=".1 .1 .1"/>
+    <geom type="sphere" size=".1" contype="0" conaffinity="0"/>
+    </body></worldbody></mujoco>'''
+    with PhySolveRuntime(compile_mujoco_xml(xml, require_asset=False), payload=payload,
+                        nworld=8, body_observations=True) as runtime:
+        storage = runtime.storage_binding()
+        ticket = runtime.begin_execution()
+        storage.borrow('qvel', runtime.writable_bank, write=True).assign(np.full((8, 1), 2., np.float32), stream=storage.stream)
+        runtime.enqueue_step(ticket, steps=4)
+        runtime.complete_execution(ticket)
+        runtime.accept_execution(ticket)
+        def read(name):
+            return storage.borrow(name, runtime.active_bank).numpy(stream=storage.stream).copy()
+        q = read('qpos')[:, 0]
+        twist = read('body_com_twist')[:, 1]
+        np.testing.assert_allclose(twist[:, :3], np.stack((-.4*np.sin(q), .4*np.cos(q), np.zeros(8)), axis=1), atol=1e-6, rtol=0)
+        np.testing.assert_allclose(twist[:, 3:], np.tile([0., 0., 2.], (8, 1)), atol=1e-6, rtol=0)
+        before = {name: read(name) for name in ('body_position', 'body_rotation_wxyz', 'body_com_twist')}
+        ticket = runtime.begin_execution()
+        runtime.enqueue_update(ticket)
+        runtime.complete_execution(ticket)
+        runtime.accept_execution(ticket)
+        for name, value in before.items():
+            np.testing.assert_array_equal(read(name), value)
+        assert runtime.execution_costs()['endpoint_kinematics_passes'] == 1
+
+
+@pytest.mark.cuda
+def test_endpoint_failure_never_publishes_and_discard_recovers(payload, monkeypatch):
+    with PhySolveRuntime(compile_mujoco_xml(SLIDER, require_asset=False), payload=payload,
+                        body_observations=True) as runtime:
+        storage = runtime.storage_binding()
+        active = runtime.active_bank
+        before = storage.borrow('body_position', active).numpy().copy()
+        operation = runtime._body_observations.update
+        for fault in ('nan', 'enqueue'):
+            def injected(index, stream, *, integrated):
+                operation(index, stream, integrated=integrated)
+                if fault == 'enqueue':
+                    raise RuntimeError('injected endpoint enqueue')
+                target = runtime._body_observations.banks[index]['body_position']
+                target.assign(np.full(target.shape, np.nan, np.float32), stream=stream)
+            ticket = runtime.begin_execution()
+            with monkeypatch.context() as patch:
+                patch.setattr(runtime._body_observations, 'update', injected)
+                with pytest.raises(RuntimeError, match='body_position|endpoint enqueue'):
+                    runtime.enqueue_step(ticket)
+                    runtime.complete_execution(ticket)
+            assert runtime.active_bank == active
+            np.testing.assert_array_equal(storage.borrow('body_position', active).numpy(), before)
+            with pytest.raises(RuntimeError, match='completed'):
+                runtime.accept_execution(ticket)
+            runtime.discard_execution(ticket)
+        runtime.step()
+        assert runtime.active_bank != active
+        assert np.isfinite(storage.borrow('body_position', runtime.active_bank).numpy()).all()
+
+
+@pytest.mark.cuda
+def test_endpoint_prepare_and_close_failure_retains_owner(payload, monkeypatch):
+    from phymeo.backends._physolve_bodies import PreparedBodyObservations
+    native = payload.load()
+    operation = PreparedBodyObservations.prepare
+    def failed_prepare(self, stream, mask):
+        operation(self, stream, mask)
+        raise RuntimeError('injected endpoint prepare')
+    def failed_close(*args):
+        raise RuntimeError('injected endpoint cleanup')
+    with monkeypatch.context() as patch:
+        patch.setattr(PreparedBodyObservations, 'prepare', failed_prepare)
+        patch.setattr(native, '_close_runtime', failed_close)
+        with pytest.raises(RuntimeError, match='endpoint prepare') as captured:
+            PhySolveRuntime(compile_mujoco_xml(SLIDER, require_asset=False), payload=payload,
+                            body_observations=True)
+    owner = captured.value.runtime
+    assert owner._body_observations is not None
+    assert owner._handles
+    owner.close()
+    assert owner._body_observations is None
+
+
+@pytest.mark.cuda
+def test_endpoint_multibranch_fixed_child_matches_kinematic_reference(payload):
+    import mujoco
+    xml = '''<mujoco><compiler fusestatic="false"/><option timestep=".002" gravity="0 0 0"/>
+    <worldbody><body name="a" pos=".4 -.2 .3"><joint axis="0 0 1"/>
+    <geom type="sphere" size=".1" mass="1" contype="0" conaffinity="0"/>
+    <body name="fixed" pos=".1 .2 0" euler=".3 .2 .1">
+    <inertial pos=".05 .02 0" mass="1" diaginertia=".1 .1 .1"/>
+    <geom type="sphere" size=".05" contype="0" conaffinity="0"/></body></body>
+    <body name="b" pos="-.3 .1 .2"><joint type="slide" axis="1 0 0"/>
+    <geom type="sphere" size=".1" mass="2" contype="0" conaffinity="0"/>
+    </body></worldbody></mujoco>'''
+    record = compile_mujoco_xml(xml, require_asset=False)
+    cpu = record.fresh_native_model()
+    data = mujoco.MjData(cpu)
+    with PhySolveRuntime(record, payload=payload, nworld=8, body_observations=True) as runtime:
+        storage = runtime.storage_binding()
+        ticket = runtime.begin_execution()
+        index = runtime.writable_bank
+        q = np.stack((np.linspace(-.4, .4, 8), np.linspace(.1, .3, 8)), axis=1).astype(np.float32)
+        storage.borrow('qpos', index, write=True).assign(q, stream=storage.stream)
+        storage.borrow('qvel', index, write=True).assign(np.tile([.3, .5], (8, 1)).astype(np.float32), stream=storage.stream)
+        runtime.enqueue_step(ticket, steps=4)
+        runtime.complete_execution(ticket)
+        runtime.accept_execution(ticket)
+        def read(name):
+            return storage.borrow(name, runtime.active_bank).numpy(stream=storage.stream)
+        q, v = read('qpos'), read('qvel')
+        positions, rotations, twists = read('body_position'), read('body_rotation_wxyz'), read('body_com_twist')
+        for world in range(8):
+            data.qpos[:], data.qvel[:] = q[world], v[world]
+            mujoco.mj_kinematics(cpu, data)
+            mujoco.mj_comPos(cpu, data)
+            mujoco.mj_comVel(cpu, data)
+            np.testing.assert_allclose(positions[world], data.xpos, atol=1e-6, rtol=0)
+            np.testing.assert_allclose(rotations[world], data.xquat, atol=1e-6, rtol=0)
+            expected = data.cvel[:, 3:] + np.cross(data.cvel[:, :3], data.xipos-data.subtree_com[cpu.body_rootid])
+            np.testing.assert_allclose(twists[world, :, :3], expected, atol=1e-6, rtol=0)
+            np.testing.assert_allclose(twists[world, :, 3:], data.cvel[:, :3], atol=1e-6, rtol=0)
+
+
+@pytest.mark.cuda
+@pytest.mark.parametrize("nworld", [1, 8, 64])
 def test_public_storage_and_delayed_publication(payload, nworld):
     with PhySolveRuntime(compile_mujoco_xml(SLIDER, require_asset=False),
                         payload=payload, nworld=nworld) as runtime:

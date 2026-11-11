@@ -104,7 +104,30 @@ contact 借用、resident 及实际 C ABI 尚未因此获得资格。并发仅�
 保留 qacc、actuator/constraint force、xpos/xquat 和三个容量计数。复制量随 world
 和相应字段宽度线性增长，主机调用次数不随 world 数增长；这不是零复制动作。
 没有整批 host snapshot，完成仍是一次 4 字节检查读回；原生 direct 内部同步另计。
-URDF dynamics/mimic 的 scalar_pd 转换尚未承接，不能把拒绝视为机器人资格通过。
+URDF dynamics/mimic 的 scalar_pd 转换在 B3e 承接，见[原生装配](native-assembly.md)；
+转换通过仍不能替代机器人运动资格。
+
+### 步后 body 观测 v1
+
+PhySolveRuntime 的 `body_observations=True` 在冷准备启用端点观测，默认 False
+保留原有成本。消费者检查 `body_observation_contract_version=1`，从同一
+RuntimeStorage 借用 body_position、body_rotation_wxyz、body_com_twist。
+索引为 native_body，位置是 body origin，旋转为 body-to-world WXYZ；twist 为
+世界系 `[linear_at_body_COM,angular]`，单位分别 m/s、rad/s。采样为 integration
+endpoint，与原 xpos/xquat 的 solver evaluation 区分，不改变旧字段含义。
+
+适配复用锁定 physolve_tyx 的 kinematics/com_pos/com_vel，每次 enqueue_step 的
+最后子步后运行一次，不执行接触、动力学或完整 forward。forward/reset 已有正确
+运动学输出时只转换到端点输出；命令写入只复制旧输出。masked reset 保持未选
+端点输出逐位不变。新输出进入同一设备有限值 gate，完成失败不允许发布。
+
+Runtime 拥有一份共享的派生 workspace 和两组只读端点输出；只借 q/v/mocap，
+不再维护积分状态。workspace 包含 body/geom/site frame、subtree COM、cinert、
+cdof、cvel 和 cdof_dot，这是复用现有算法的额外计算/存储成本，不是只算 pose。
+输出成本为 `2*N*nbody*13*4` 字节；workspace 按实际数组容量另计。execution_costs
+披露端点运动学次数、输出生成次数与总设备存储字节。纯命令更新增加三个输出
+数组 D2D，读回不需要 host snapshot；原生 direct 条件同步和显式完成仍保留。
+准备失败和清理失败必须保留这些 owner；关闭成功后借用与原 storage 一同失效。
 
 B1 先实现公共表达到原生输入的最小转换，并用 resident 小样证明其不依赖 PhySolve
 格式；覆盖固定/自由根、偏心 COM、多 shape、初态/控制、来源和 world 映射。

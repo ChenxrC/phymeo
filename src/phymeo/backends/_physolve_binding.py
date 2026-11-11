@@ -3,7 +3,7 @@
 from ..core.runtime_storage import RuntimeField, RuntimeStorage
 
 
-def bind_storage(owner, banks, stream, device, generation, controls=None):
+def bind_storage(owner, banks, stream, device, generation, controls=None, bodies=None):
     import tyx as tx
 
     # q, DOF and body index spaces are deliberately distinct. The compiled
@@ -27,6 +27,14 @@ def bind_storage(owner, banks, stream, device, generation, controls=None):
                             ("target_velocity", "m/s or rad/s by scalar joint")):
             semantics[name] = (units, "joint", "scalar_control", "persistent command", True)
         for array, bank in zip(arrays, controls.banks):
+            array.update(bank)
+    if bodies is not None:
+        semantics.update({
+            "body_position": ("m", "world; body frame origin, not COM", "native_body", "integration endpoint", False),
+            "body_rotation_wxyz": ("unit quaternion", "body-to-world WXYZ", "native_body", "integration endpoint", False),
+            "body_com_twist": ("m/s,rad/s", "world; linear at body COM, then angular", "native_body", "integration endpoint", False),
+        })
+        for array, bank in zip(arrays, bodies.banks):
             array.update(bank)
     fields = tuple(RuntimeField(name, tuple(arrays[0][name].shape), "float32", *spec)
                    for name, spec in semantics.items())

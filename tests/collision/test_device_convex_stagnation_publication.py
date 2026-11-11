@@ -76,10 +76,20 @@ def predicate_inputs():
     add("fixed-clamped-zero-weight", base_i, zero, 1)
 
     for name in (
-        "not-duplicate", "appended", "count-dropped", "count-added",
-        "empty", "count-overflow", "same-square-different-q", "different-square",
-        "different-normalized-weights", "different-order", "active-nan-q",
-        "active-nan-weight", "infinite-q", "negative-weight",
+        "not-duplicate",
+        "appended",
+        "count-dropped",
+        "count-added",
+        "empty",
+        "count-overflow",
+        "same-square-different-q",
+        "different-square",
+        "different-normalized-weights",
+        "different-order",
+        "active-nan-q",
+        "active-nan-weight",
+        "infinite-q",
+        "negative-weight",
     ):
         integers, floats = base_i.copy(), base_f.copy()
         if name == "not-duplicate":
@@ -122,12 +132,30 @@ def _predicate_samples(
 ):
     for row in tx.range(count):
         actual[row] = retained_candidate_fixed(
-            integers[row, 0], integers[row, 1], integers[row, 2], integers[row, 3],
-            floats[row, 0], floats[row, 1], floats[row, 2], floats[row, 3],
-            floats[row, 4], floats[row, 5], floats[row, 6], floats[row, 7],
-            floats[row, 8], floats[row, 9], floats[row, 10], floats[row, 11],
-            floats[row, 12], floats[row, 13], floats[row, 14], floats[row, 15],
-            integers[row, 4], integers[row, 5], integers[row, 6], integers[row, 7],
+            integers[row, 0],
+            integers[row, 1],
+            integers[row, 2],
+            integers[row, 3],
+            floats[row, 0],
+            floats[row, 1],
+            floats[row, 2],
+            floats[row, 3],
+            floats[row, 4],
+            floats[row, 5],
+            floats[row, 6],
+            floats[row, 7],
+            floats[row, 8],
+            floats[row, 9],
+            floats[row, 10],
+            floats[row, 11],
+            floats[row, 12],
+            floats[row, 13],
+            floats[row, 14],
+            floats[row, 15],
+            integers[row, 4],
+            integers[row, 5],
+            integers[row, 6],
+            integers[row, 7],
         )
 
 
@@ -135,11 +163,14 @@ def _predicate_samples(
 def test_actual_shared_fixed_candidate_predicate(tyx_mode, tmp_path):
     names, integers, floats, expected = predicate_inputs()
     with family.saved(
-        tmp_path, "stagnation-shared-predicate", tyx_mode,
+        tmp_path,
+        "stagnation-shared-predicate",
+        tyx_mode,
         dict(names=names, integers=integers, floats=floats, expected=expected),
     ) as record:
         with ph.TyxWorldBatch([(17, k0.ordinary_forest())], tyx_mode, cache_root=tmp_path) as batch:
             with ExitStack() as resources:
+
                 def upload(value):
                     if tyx_mode == "cuda":
                         buffer = batch._tx.cuda_array(value)
@@ -148,7 +179,8 @@ def test_actual_shared_fixed_candidate_predicate(tyx_mode, tmp_path):
                     return value.copy()
 
                 buffers = (
-                    upload(integers), upload(floats),
+                    upload(integers),
+                    upload(floats),
                     upload(np.full(len(names), -1, np.int32)),
                 )
                 batch._launch(tx.kernel(_predicate_samples), len(names), *buffers)
@@ -217,8 +249,10 @@ def assert_fixed_publication(trace, mode):
                 expected_weights[key] = expected_weights.get(key, 0.0) + weight
         assert tuple(witness.vertex_ids) == tuple(sorted(expected_weights))
         np.testing.assert_allclose(
-            witness.weights, [expected_weights[key] for key in witness.vertex_ids],
-            atol=64 * 2**-23, rtol=0,
+            witness.weights,
+            [expected_weights[key] for key in witness.vertex_ids],
+            atol=64 * 2**-23,
+            rtol=0,
         )
         core = weights @ before_vertices[:n, 3 + 3 * side : 6 + 3 * side].astype(float)
         skin = (1 if side == 0 else -1) * radii[side] * normal
@@ -226,7 +260,11 @@ def assert_fixed_publication(trace, mode):
         point = core + skin
         error = float(np.linalg.norm(point - witness.surface_relative_m))
         assert error <= 2e-4 * row.scale_m
-        material.append(dict(expected_weights=expected_weights, core=core, skin=skin, point=point, error_m=error))
+        material.append(
+            dict(
+                expected_weights=expected_weights, core=core, skin=skin, point=point, error_m=error
+            )
+        )
     a = np.asarray(row.first.surface_relative_m) - row.first.offset_m
     b = np.asarray(row.second.surface_relative_m) - row.second.offset_m
     core_q_error = float(np.linalg.norm(a - b - row.scale_m * q))
@@ -236,18 +274,30 @@ def assert_fixed_publication(trace, mode):
     # This rounding allowance checks the FP32 wire arithmetic, not geometry.
     upper = float(f[21]) * row.scale_m - float(radii.sum())
     lower = min(upper, float(f[11]) * row.scale_m - float(radii.sum()))
-    arithmetic_roundoff = 4 * 2**-23 * (
-        row.scale_m * (abs(float(f[21])) + abs(float(f[11]))) + 2 * float(radii.sum())
+    arithmetic_roundoff = (
+        4
+        * 2**-23
+        * (row.scale_m * (abs(float(f[21])) + abs(float(f[11]))) + 2 * float(radii.sum()))
     )
     np.testing.assert_allclose(
-        (row.gap_lower_m, row.gap_upper_m), (lower, upper),
-        atol=arithmetic_roundoff, rtol=0,
+        (row.gap_lower_m, row.gap_upper_m),
+        (lower, upper),
+        atol=arithmetic_roundoff,
+        rtol=0,
     )
     return dict(
-        entry_q=f[:4], retained_q=f[4:8], weights=weights, selected_mask=int(i[8]),
-        decision=int(i[9]), width=float(f[22]), current_bound=float(f[11]),
-        published_bracket=(row.gap_lower_m, row.gap_upper_m), expected_bracket=(lower, upper),
-        arithmetic_roundoff_m=arithmetic_roundoff, material=material, core_q_error_m=core_q_error,
+        entry_q=f[:4],
+        retained_q=f[4:8],
+        weights=weights,
+        selected_mask=int(i[8]),
+        decision=int(i[9]),
+        width=float(f[22]),
+        current_bound=float(f[11]),
+        published_bracket=(row.gap_lower_m, row.gap_upper_m),
+        expected_bracket=(lower, upper),
+        arithmetic_roundoff_m=arithmetic_roundoff,
+        material=material,
+        core_q_error_m=core_q_error,
     )
 
 
@@ -260,7 +310,10 @@ def test_nine_original_regressions_keep_one_complete_candidate(identity, tyx_mod
         record.update(original_node=original_node, expected_patch=expected_patch)
         record["independent_literal_oracle"] = k0.reference().literal_parallel_precondition(case)
         with frozen.prepared(case, expected_patch, tyx_mode, tmp_path, k0, qualification) as (
-            batch, broad, plan, before,
+            batch,
+            broad,
+            plan,
+            before,
         ):
             record["before"] = before
             keys = tuple(ph.CollisionKey(*key) for key in case["keys"])
@@ -275,7 +328,9 @@ def test_nine_original_regressions_keep_one_complete_candidate(identity, tyx_mod
             k0.check_raw(trace.query)
             k0.check_source(trace.query, model, bindings, before, case=case)
             if expected_patch is None:
-                record["geometry"] = k0.check_case_row(trace.query.rows[0], case, trace.query.source)
+                record["geometry"] = k0.check_case_row(
+                    trace.query.rows[0], case, trace.query.source
+                )
             else:
                 qualification._affected_patch_geometry(trace.query.rows[0], expected_patch)
                 normal = np.asarray(trace.query.rows[0].normal)

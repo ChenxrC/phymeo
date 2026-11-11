@@ -88,18 +88,30 @@ def retained_candidate_fixed(
         and reduced_w0 == entry_w0
         and (
             entry_count < 2
-            or (selected1 == 1 and tx.isfinite(entry_w1)
-                and entry_w1 >= 0.0 and reduced_w1 == entry_w1)
+            or (
+                selected1 == 1
+                and tx.isfinite(entry_w1)
+                and entry_w1 >= 0.0
+                and reduced_w1 == entry_w1
+            )
         )
         and (
             entry_count < 3
-            or (selected2 == 2 and tx.isfinite(entry_w2)
-                and entry_w2 >= 0.0 and reduced_w2 == entry_w2)
+            or (
+                selected2 == 2
+                and tx.isfinite(entry_w2)
+                and entry_w2 >= 0.0
+                and reduced_w2 == entry_w2
+            )
         )
         and (
             entry_count < 4
-            or (selected3 == 3 and tx.isfinite(entry_w3)
-                and entry_w3 >= 0.0 and reduced_w3 == entry_w3)
+            or (
+                selected3 == 3
+                and tx.isfinite(entry_w3)
+                and entry_w3 >= 0.0
+                and reduced_w3 == entry_w3
+            )
         )
         else 0
     )
@@ -1131,16 +1143,35 @@ def query_convex_pairs(
                                     need_epa = 1
                                     if trace_slot >= 0:
                                         trace_i[trace_slot, iteration, 9] = 4
-                            elif retained_candidate_fixed(
-                                duplicate, candidate_appended, entry_count, best_count,
-                                entry_x, entry_y, entry_z, entry_square,
-                                cx, cy, cz, closest_square,
-                                entry_w0, entry_w1, entry_w2, entry_w3,
-                                weights[lane, 0], weights[lane, 1],
-                                weights[lane, 2], weights[lane, 3],
-                                indices[lane, 0], indices[lane, 1],
-                                indices[lane, 2], indices[lane, 3],
-                            ) != 0:
+                            elif (
+                                retained_candidate_fixed(
+                                    duplicate,
+                                    candidate_appended,
+                                    entry_count,
+                                    best_count,
+                                    entry_x,
+                                    entry_y,
+                                    entry_z,
+                                    entry_square,
+                                    cx,
+                                    cy,
+                                    cz,
+                                    closest_square,
+                                    entry_w0,
+                                    entry_w1,
+                                    entry_w2,
+                                    entry_w3,
+                                    weights[lane, 0],
+                                    weights[lane, 1],
+                                    weights[lane, 2],
+                                    weights[lane, 3],
+                                    indices[lane, 0],
+                                    indices[lane, 1],
+                                    indices[lane, 2],
+                                    indices[lane, 3],
+                                )
+                                != 0
+                            ):
                                 # This is the existing engineering stagnation
                                 # route restricted to one complete fixed candidate,
                                 # not a claim that its plane width passed 8e-7.

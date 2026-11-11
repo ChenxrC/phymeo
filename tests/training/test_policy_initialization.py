@@ -1,6 +1,5 @@
 """N4d one-shot initialization cases; no full learning experiment in this suite."""
 
-import copy
 import importlib.util
 import random
 from pathlib import Path
@@ -234,3 +233,121 @@ def test_real_cuda_centering_and_target_features():
     assert result["model_hash_after"] == policy_hash(actor, critic)
     assert_only_bias(actor, critic, result["model_before"], result["bias_name"])
     same_rng(before_rng)
+
+
+@pytest.mark.parametrize("fault", (None, "summary-hash", "manifest", "seed", "truncated"))
+def test_original_metadata_binding_is_complete_and_read_only(monkeypatch, tmp_path, fault):
+    import hashlib
+    import json
+    module = example()
+    root = tmp_path / "old"
+    root.mkdir()
+    anchor = {"task": "J", "seeds": list(module.SEEDS), "outcome": {"classification": "FIXED_BUDGET_NOT_LEARNED"},
+              "protocol_binding": {"task": "fixed"}, "source_bindings": {}}
+    for seed in module.SEEDS:
+        directory = root / str(seed)
+        directory.mkdir()
+        value = {"task": "J", "seed": seed, "status": "COMPLETE_N4A_SEED", "updates": 128,
+                 "accepted_world_steps": 32768, "worlds": 8,
+                 "protocol_binding": anchor["protocol_binding"], "ppo_config": {}, "source_files": {},
+                 "dependencies": {}, "baseline": {"cost": 2., "world_steps": 2048},
+                 "learned": {"cost": 1.8, "world_steps": 2048}, "evidence": {"accepted_old_trace": True}}
+        raw = json.dumps(value).encode()
+        digest = hashlib.sha256(raw).hexdigest()
+        (directory / "summary.json").write_bytes(raw)
+        (directory / "manifest.json").write_text(json.dumps(value), encoding="utf-8")
+        (directory / "publication.json").write_text(json.dumps({"summary_sha256": digest}), encoding="utf-8")
+        anchor["source_bindings"][str(seed)] = {
+            "directory": str(directory), "summary_sha256": digest, "evidence": value["evidence"]}
+    path = root / module.ANCHOR
+    path.parent.mkdir(parents=True)
+    if fault == "seed":
+        anchor["seeds"] = [14011, 14011, 14013]
+    raw = json.dumps(anchor).encode()
+    path.write_bytes(raw)
+    monkeypatch.setattr(module, "ANCHOR_SHA256", hashlib.sha256(raw).hexdigest())
+    if fault == "summary-hash":
+        (root / "14012/summary.json").write_text("{}", encoding="utf-8")
+    elif fault == "manifest":
+        (root / "14012/manifest.json").write_text("{}", encoding="utf-8")
+    elif fault == "truncated":
+        path.write_bytes(raw[:-1])
+    if fault is None:
+        bindings, rows = module.load_originals(root)
+        assert tuple(rows) == module.SEEDS and len(bindings["source_bindings"]) == 3
+    else:
+        with pytest.raises((ValueError, KeyError)):
+            module.load_originals(root)
+
+
+@pytest.mark.parametrize("mode", ("default", "center", "failure"))
+def test_original_learning_hook_order_and_default_output(monkeypatch, tmp_path, mode):
+    import gzip
+    import hashlib
+    import json
+    from contextlib import contextmanager
+
+    api = example().learning_api()
+    held_calls, hooks, sessions = [], [], []
+    env = SimpleNamespace(counters={})
+    task = SimpleNamespace(seeds=(14011, 14012, 14013), cost=lambda: None)
+    monkeypatch.setattr(api, "tasks", lambda: SimpleNamespace(
+        task=lambda name: task, seed_all=lambda seed: None, UPDATES=128, ROLLOUT=32))
+    @contextmanager
+    def owner(context, name):
+        yield env
+    monkeypatch.setattr(api, "_observed_environment", owner)
+
+    def new_session(env):
+        algorithm = SimpleNamespace(bias=1., iteration=0)
+        algorithm.actor = SimpleNamespace(state_dict=lambda: {"bias": np.asarray([algorithm.bias], np.float32)})
+        algorithm.critic = SimpleNamespace(state_dict=lambda: {"weight": np.asarray([2.], np.float32)})
+        algorithm.optimizer = SimpleNamespace(state_dict=lambda: {"state": {}})
+        session = SimpleNamespace(algorithm=algorithm, config={"fixed": True}, next_iteration=0)
+        sessions.append(session)
+        return session
+    monkeypatch.setattr(api, "_session", new_session)
+    monkeypatch.setattr(api, "_manifest", lambda *args: {"source_files": {}, "dependencies": {}})
+    def state_hash(algorithm):
+        return hashlib.sha256(repr((algorithm.bias, algorithm.iteration)).encode()).hexdigest()
+    monkeypatch.setattr(api.evaluation, "parameter_hash", state_hash)
+    def held(actor, name, writer, label, **kwargs):
+        held_calls.append(label)
+        return {"cost": 2. if label == "untrained" else 1., "world_steps": 2048}
+    monkeypatch.setattr(api, "_held_out", held)
+    def measure(session):
+        index = session.next_iteration
+        session.next_iteration += 1
+        session.algorithm.iteration += 1
+        return {"transitions": tuple(range(32)), "iteration": index}, {}
+    monkeypatch.setattr(api.evaluation, "measure_update", measure)
+    monkeypatch.setattr(api.evaluation, "validate_update", lambda record, *args, **kwargs:
+                        {"accepted_world_steps": 256, "optimizer_step": record["iteration"] + 1})
+    def initialize(session, actual_env, name, seed):
+        hooks.append((session.next_iteration, name, seed))
+        assert actual_env is env and session.next_iteration == 0
+        if mode == "failure":
+            raise RuntimeError("synthetic initializer refusal")
+        session.algorithm.bias = 0.
+        return {"factor": "fixture"}
+    destination = tmp_path / mode
+    options = {} if mode == "default" else {"initializer": initialize}
+    if mode == "failure":
+        with pytest.raises(RuntimeError, match="initializer refusal"):
+            api.run_learning("J", 14011, destination, **options)
+        assert not held_calls and sessions[0].next_iteration == 0
+        failure = json.loads((destination / "failure.json").read_text())
+        assert failure["phase"] == "declared-policy-initializer"
+        assert not (destination / "summary.json").exists()
+    else:
+        result = api.run_learning("J", 14011, destination, **options)
+        assert held_calls == ["untrained", "zero", "learned"]
+        assert sessions[0].next_iteration == 128
+        assert ("initializer" in result) == (mode == "center")
+        assert hooks == ([] if mode == "default" else [(0, "J", 14011)])
+        with gzip.open(destination / "trace.jsonl.gz", "rt") as stream:
+            records = [json.loads(line)["kind"] for line in stream]
+        assert records[0] == "initial_policy"
+        assert records.count("initializer_receipt") == int(mode == "center")
+        if mode == "center":
+            assert records[1] == "initializer_receipt"

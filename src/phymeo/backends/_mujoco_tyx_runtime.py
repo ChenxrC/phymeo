@@ -144,6 +144,9 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
     Rotational domain: fixed-root 1..8 hinge/slide DOFs, complete live M/J/bias,
     welded bodies and off-center world wrenches. Both tree domains admit the
     bounded primitive condim=1 manifold with coupled normal forces.
+    Ball extension: fixed-root ball/hinge/slide with at most 8 velocity and 10
+    position coordinates, complete SO(3) integration and full M/J/bias. This
+    extension excludes actuators, contact, joint limits and dry friction.
     Original domain: 1..8 all-prismatic native DOFs with full coupled static
     mass, stateless direct/affine motors, scalar stiffness/armature/damping; or
     one centered isotropic free body, with native local angular coordinates and
@@ -213,6 +216,8 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                 if getattr(self._plan, "normal_contact", False)
                 else "free-root-hinge-slide-no-contact-v1"
                 if self._plan.kind == 3
+                else "fixed-ball-hinge-slide-no-contact-v1"
+                if np.any(self._model.jnt_type == self._mj.mjtJoint.mjJNT_BALL)
                 else "fixed-hinge-slide-no-contact-v1"
                 if self._plan.kind == 2
                 else "prismatic-or-isotropic-free/one-normal-pair-v1"
@@ -336,7 +341,7 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
             v[index, : self._plan.nv] = fp32(original.qvel, "initial qvel")
             clock[index, 0] = fp32(original.time, "initial time").item()
             clock[index, 1] = np.float32(float(clock[index, 0]) - original.time)
-            if self._plan.kind == 3:
+            if self._plan.kind in (2, 3):
                 scalar = np.flatnonzero(
                     np.isin(
                         self._model.jnt_type,

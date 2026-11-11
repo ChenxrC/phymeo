@@ -91,6 +91,12 @@ def compile_model(mj, model):
     from ._constraint_model import compile_constraint_model, constraint_pairs, needs_constraints
     from ._normal_model import compile_normal_model, possible_pairs
 
+    if np.any(model.jnt_type == mj.mjtJoint.mjJNT_BALL):
+        # Structural dispatch before activation/contact routes: the fixed-root
+        # ball compiler must reject unsupported compositions, never fall back.
+        from ._tree_model import compile_tree_model
+
+        return compile_tree_model(mj, model)
     if model.na:
         from ._actuator_model import compile_activation_model
 

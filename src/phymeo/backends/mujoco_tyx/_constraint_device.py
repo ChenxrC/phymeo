@@ -125,7 +125,7 @@ class TyxConstraintDevice(TyxDevice):
                 self.plan.nv,
                 0 if self.activation_enabled else self.plan.nu,
                 self.body_data,
-                self.joints,
+                self.joints if self.plan.base.kind == 3 else self.dofs,
                 self.ancestors,
                 self.vectors,
                 self.gravity,
@@ -283,10 +283,14 @@ class TyxConstraintDevice(TyxDevice):
             # Existing solve computes M^-1(total RHS), then (M+hD)^-1(total RHS),
             # and integrates the original native coordinates. Its cleared
             # constraint/rows buffers are deliberately disposable here.
+            solve_args = [self.nworld, self.plan.nv]
+            if self.plan.base.kind == 2:
+                solve_args.extend((self.plan.nq, len(self.plan.joint_ids)))
+            solve_args.append(self.h)
+            if self.plan.base.kind == 2:
+                solve_args.append(self.joints)
             self.solve[old](
-                self.nworld,
-                self.plan.nv,
-                self.h,
+                *solve_args,
                 self.vectors,
                 self.mass,
                 self.bias,

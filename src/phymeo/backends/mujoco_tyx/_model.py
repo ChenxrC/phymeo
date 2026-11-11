@@ -91,6 +91,10 @@ def compile_model(mj, model):
     from ._constraint_model import compile_constraint_model, constraint_pairs, needs_constraints
     from ._normal_model import compile_normal_model, possible_pairs
 
+    if model.na:
+        from ._actuator_model import compile_activation_model
+
+        return compile_activation_model(mj, model)
     candidate_pairs = constraint_pairs(model)
     if needs_constraints(mj, model, candidate_pairs):
         return compile_constraint_model(mj, model, candidate_pairs)

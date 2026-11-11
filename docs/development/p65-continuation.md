@@ -1,5 +1,18 @@
 # P6.5 人工续作入口
 
+## 当前状态：2026-11-12 00:35
+
+先读[07:20执行计划](../superpowers/plans/2026-11-12-newton-parity-until-0720.md)、[上一批实际记录](p65-parity-batch-n4b-rob2a-col-stop.md)与[八方向全景](phymeo-newton-panorama-2026-11-11.md)。用户最新要求执行到北京时间11月12日07:20，本节覆盖历史deadline/pending。原历史验收保留在各报告/Git，不重跑同源绿组。
+
+上一批已关闭：N4b固定九份保存学习诊断成功（S通过、J/R仍未学得）；ROB2a固定根一阶执行器力/运动/act共同发布及源码外安装通过；integration observation显式选择资格通过。499产品文件与新wheel/安装相同，解释/CUDA安装消费者各40 world-steps。COL同候选停止实验9个旧资源回归，NOT_ACCEPTED、产品未合入，四Y原缺口仍在。
+
+当前下一批：原source做N4c固定策略响应诊断；原audit做执行器与自由根/接触约束组合；原tests先查9个COL实际trace再决定一个通用修复；父做实际PPO完整链的显式integration观测规模与共享集成。三支纯编码并行，所有项目执行父唯一串行，guard后执行。详计划中的成功/停止规则。
+
+上一批证据已索引并释放：artifacts/p65-parity-n4b-rob2a-col-stop-20261111-01，52实际命令/1366文件。新批证据独立，不重审旧索引。用户Torch、当前venv/pins、旧证据Junction和三个K1未跟踪WIP保留。无CI/push/mainmerge/发包。G1原46.29s参考XY失败、131.48s未通过、R03两小净加速度精度失败均仍开放，不阻塞独立功能。整个P6.5/Newton对齐未完成。
+
+## 历史入口
+
+以下是历史状态，仅用于追溯；已经关闭的任务不再派发。当前以本节及07:20计划为准。
 ## 当前续作（2026-11-11，N4a完成评价、ROB1d新包通过、COL两HN修复）
 
 先读[本批实际记录](p65-parity-batch-n4a-rob1d-col-reducer.md)、[当前全景](phymeo-newton-panorama-2026-11-11.md)与[持续计划](../superpowers/plans/2026-11-11-newton-parity-continuous.md)。本节优先于下面历史pending；无截止或周期任务。用户Torch和当前环境继续保留，旧证据Junction不动。

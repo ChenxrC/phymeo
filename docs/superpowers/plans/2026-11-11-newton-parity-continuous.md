@@ -1,5 +1,7 @@
 # Newton 功能对齐：持续推进计划
 
+当前更新（2026-11-12）：N4b/ROB2a/显式integration观测已关闭验收；COL实验未接受。本轮按用户最新要求执行到07:20，详[新执行计划](2026-11-12-newton-parity-until-0720.md)。下面旧无截止与下一批表为历史，不能据此重派已完成工作。
+
 日期：2026-11-11。用户已取消08:00截止，按节点验收持续推进。最新N4a九次训练完成：持续支撑S原学习门通过，J/R未达；18格W1–W256规模全部完成。ROB1d新wheel源码外两后端通过；COL通用仿射重建修复两个HN，四个Y法向失败保留。见[本批结果](../../development/p65-parity-batch-n4a-rob1d-col-reducer.md)、[N4a](../../development/p65-mujoco-tyx-n4a-report.md)、[ROB1d](../../development/p65-resident-rob1d-installed-report.md)、[COL修复](../../development/p65-convex-affine-reconstruction-report.md)。494产品文件源码/新wheel/安装相同。现有用户Torch保留，退役环境不重复清理。
 
 入口：[当前全景](../../development/phymeo-newton-panorama-2026-11-11.md)、[架构与路线图](../../architecture/phymeo-newton-parity-2026-11-11.html)、[上一批验收](../../benchmarks/p65-parity-20261111-connections.md)。原[限时计划](2026-11-11-newton-parity-until-0800.md)仅保留历史计划和结果，不再约束后续。

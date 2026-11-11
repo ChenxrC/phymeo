@@ -32,7 +32,9 @@ def _rotation(wxyz):
     return quaternion_matrix(np.asarray(wxyz)[None, [1, 2, 3, 0]])[0]
 
 
-def compile_tree_model(mj, model, *, allow_normal_contacts=False, allow_constraints=False):
+def compile_tree_model(
+    mj, model, *, allow_normal_contacts=False, allow_constraints=False, allow_activation=False
+):
     issues = []
 
     def issue(code, detail):
@@ -58,7 +60,7 @@ def compile_tree_model(mj, model, *, allow_normal_contacts=False, allow_constrai
     ):
         if int(getattr(model, field, 0)) and not (allow_constraints and field == "nexclude"):
             issue(code, f"native {field} is not migrated in T1")
-    if model.na:
+    if model.na and not allow_activation:
         issue("actuator-state", "activation dynamics are not migrated")
     if int(model.opt.integrator) != int(mj.mjtIntegrator.mjINT_EULER):
         issue("integrator", "T1 ports native Euler only")
@@ -87,7 +89,13 @@ def compile_tree_model(mj, model, *, allow_normal_contacts=False, allow_constrai
         if (
             model.actuator_trntype[actuator] != mj.mjtTrn.mjTRN_JOINT
             or not 0 <= joint < model.njnt
-            or model.actuator_dyntype[actuator] != mj.mjtDyn.mjDYN_NONE
+            or (
+                model.actuator_dyntype[actuator] != mj.mjtDyn.mjDYN_NONE
+                and not (
+                    allow_activation
+                    and model.actuator_dyntype[actuator] == mj.mjtDyn.mjDYN_FILTEREXACT
+                )
+            )
             or model.actuator_gaintype[actuator] != mj.mjtGain.mjGAIN_FIXED
             or model.actuator_biastype[actuator]
             not in (mj.mjtBias.mjBIAS_NONE, mj.mjtBias.mjBIAS_AFFINE)

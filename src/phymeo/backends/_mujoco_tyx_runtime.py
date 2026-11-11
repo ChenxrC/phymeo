@@ -285,6 +285,14 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
             )
             self._capabilities = MappingProxyType(info)
 
+        if hasattr(self._plan, "activation"):
+            info.update(
+                domain="fixed-hinge-slide-filterexact-v1",
+                actuator_state="native-filterexact-device-bank-v1",
+                checkpoint="exact-accepted-tyx-batch-v2",
+            )
+            self._capabilities = MappingProxyType(info)
+
     @property
     def counters(self):
         return MappingProxyType({**self._device.counts, **self._extra_counts})
@@ -317,6 +325,11 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                     q[index, : self._plan.nq] >= high
                 ):
                     raise ValueError("initial native q is outside the strict joint-limit interior")
+        if hasattr(self._plan, "activation"):
+            act = np.empty((len(self._world_keys), self._plan.activation.na), np.float32)
+            for index, key in enumerate(self._world_keys):
+                act[index] = fp32(data[key].act, "initial native activation")
+            return q, v, clock, act
         return q, v, clock
 
     def _build_device(self, data, *, packed=None):
@@ -339,14 +352,19 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
             from .mujoco_tyx._floating_device import TyxFloatingDevice
 
             device_type = TyxFloatingDevice
+        packed_state = self._pack_states(data) if packed is None else packed
+        activation_args = (
+            {"activation": packed_state[3]} if hasattr(self._plan, "activation") else {}
+        )
         device = device_type(
             self._plan,
             self._mode,
             self._cache_root,
-            *(self._pack_states(data) if packed is None else packed),
+            *packed_state[:3],
             self._model.nbody,
             self._timestep,
             (self._contact_capacity, self._constraint_capacity),
+            **activation_args,
         )
         # All device subclasses expose the same transport counters, including
         # fresh replacement owners used by A1's exact checkpoint continuation.
@@ -355,11 +373,14 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
         return device
 
     def _quantize_mirrors(self):
-        q, v, time = self._pack_states(self._data)
+        packed = self._pack_states(self._data)
+        q, v, time = packed[:3]
         for index, key in enumerate(self._world_keys):
             self._data[key].qpos[:] = q[index, : self._plan.nq]
             self._data[key].qvel[:] = v[index, : self._plan.nv]
             self._data[key].time = float(time[index, 0]) - float(time[index, 1])
+            if hasattr(self._plan, "activation"):
+                self._data[key].act[:] = packed[3][index]
 
     def set_controls(self, mapping):
         with self._lock:
@@ -589,7 +610,13 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                         )
                     ):
                         raise RuntimeError("TYX input state does not match its accepted world")
+                    if hasattr(self._plan, "activation") and not np.array_equal(
+                        result["input_act"][index], original.act
+                    ):
+                        raise RuntimeError("TYX input activation does not match its accepted world")
                     candidate = copy.copy(original)
+                    if hasattr(self._plan, "activation"):
+                        candidate.act[:] = result["act"][index]
                     candidate.qpos[:] = result["q"][index, : self._plan.nq]
                     candidate.qvel[:] = result["v"][index, : self._plan.nv]
                     candidate.qacc[:] = result["qacc"][index, : self._plan.nv]
@@ -644,7 +671,17 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                     else:
                         contacts = self._contacts_from_row(row)
                         raw_fields = MappingProxyType({"device_row": _frozen(row)})
-                    receipts[key] = MuJoCoTyxStepReceipt(
+                    receipt_type = MuJoCoTyxStepReceipt
+                    receipt_extra = {}
+                    if hasattr(self._plan, "activation"):
+                        from .mujoco_actuation import (
+                            MuJoCoTyxActivationStepReceipt,
+                            publish_actuation,
+                        )
+
+                        receipt_type = MuJoCoTyxActivationStepReceipt
+                        receipt_extra = {"actuation": publish_actuation(self._plan, result, index)}
+                    receipts[key] = receipt_type(
                         world=key,
                         tick=ticks[key],
                         input_time=float(original.time),
@@ -677,6 +714,7 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                         constraints=constraints,
                         contact_law=self._capabilities["contact_law"],
                         backend=f"mujoco-tyx-{self._mode}",
+                        **receipt_extra,
                     )
                     data[key] = candidate
             except Exception as error:
@@ -690,6 +728,34 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
             self._extra_counts["completed_steps"] += 1
             self._extra_counts["accepted_world_steps"] += len(self._world_keys)
             return MappingProxyType(dict.fromkeys(self._world_keys, True))
+
+    def integration_snapshot(self, keys=None):
+        """Copy accepted integration state without CPU endpoint reconstruction.
+
+        Physics validation and the complete last-step receipt are unchanged.
+        This explicitly narrower observation does not replace snapshot().
+        """
+        from .mujoco_tyx_state import MuJoCoTyxIntegrationState
+
+        with self._lock:
+            self._check_open()
+            result = {}
+            for key in self._select(keys):
+                data = self._data[key]
+                result[key] = MuJoCoTyxIntegrationState(
+                    world=key,
+                    q=_frozen(data.qpos),
+                    v=_frozen(data.qvel),
+                    act=_frozen(data.act),
+                    ctrl=_frozen(data.ctrl),
+                    time=float(data.time),
+                    tick=self._ticks[key],
+                    qfrc_applied=_frozen(data.qfrc_applied),
+                    xfrc_applied=_frozen(data.xfrc_applied),
+                    held_control=self._controls[key],
+                    last_step=self._receipts[key],
+                )
+            return MappingProxyType(result)
 
     def snapshot(self, keys=None):
         states = super().snapshot(keys)

@@ -308,6 +308,17 @@ def _training_factories():
     return MuJoCoTyxVectorEnv, RslMuJoCoTyxVecEnv, MuJoCoTyxPpoSession
 
 
+
+@contextmanager
+def _mode_owners(memory):
+    with ExitStack() as owners:
+        try:
+            yield owners
+        finally:
+            if memory is not None:
+                memory.event("mode-close-enter")
+
+
 def _run_mode(name, worlds, mode, target, tasks, torch, seed, *, memory=None):
     """All mode-specific owners/rollouts remain local to this one call."""
     make_env, make_adapter, make_session = _training_factories()
@@ -325,7 +336,7 @@ def _run_mode(name, worlds, mode, target, tasks, torch, seed, *, memory=None):
             if memory is not None:
                 memory.begin_mode(mode)
             try:
-                with ExitStack() as owners:
+                with _mode_owners(memory) as owners:
                     base = owners.enter_context(tasks.make_environment(name, count=worlds, scale=True))
                     runtime = base.runtime
                     base.close()
@@ -383,8 +394,6 @@ def _run_mode(name, worlds, mode, target, tasks, torch, seed, *, memory=None):
                     if session.next_iteration != 3:
                         raise ValueError("actual complete updates differ")
                     counters = evidence.plain_counters(env.counters)
-                    if memory is not None:
-                        memory.event("mode-close-enter")
             finally:
                 if memory is not None:
                     # Owners above were all attempted by ExitStack before this.

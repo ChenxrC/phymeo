@@ -16,6 +16,8 @@ from types import MappingProxyType
 
 import numpy as np
 
+from ._mujoco_tyx_mirror import MIRROR_FIELDS
+
 MAGIC = b"PHYMEOTYXCP1\n"
 MAX_BYTES = 128 * 1024 * 1024
 MAX_WORLDS = 256
@@ -282,18 +284,6 @@ def _verify_bank(device, packed):
         )
 
 
-MIRROR_FIELDS = (
-    "qpos",
-    "qvel",
-    "act",
-    "ctrl",
-    "qacc",
-    "qfrc_actuator",
-    "qfrc_constraint",
-    "qfrc_applied",
-    "xfrc_applied",
-)
-
 
 def capture(runtime):
     binding = _model_binding(runtime)
@@ -329,10 +319,7 @@ def capture(runtime):
                 packed[3][index].astype(np.float64).tobytes() == data.act.tobytes(),
                 "accepted activation mirror differs",
             )
-        cpu_state = np.empty(binding["cpu_state_size"], dtype=np.float64)
-        runtime._mj.mj_getState(
-            runtime._model, data, cpu_state, runtime._mj.mjtState.mjSTATE_INTEGRATION
-        )
+        cpu_state = data.cpu_state.copy()
         worlds.append(
             {
                 "cpu_state": cpu_state,
@@ -405,7 +392,6 @@ def restore(runtime, checkpoint, expected_revision):
         # Only original reset declarations pass the unchanged FP64 initial gate.
         # The accepted checkpoint q is assigned below without this gate/repair.
         runtime._initial_data(item["initial"])
-        candidate = runtime._mj.MjData(runtime._model)
         cpu_state = item["cpu_state"]
         _require(
             isinstance(cpu_state, np.ndarray)
@@ -414,31 +400,10 @@ def restore(runtime, checkpoint, expected_revision):
             and np.isfinite(cpu_state).all(),
             "CPU observer integration-state dimensions",
         )
-        runtime._mj.mj_setState(
-            runtime._model, candidate, cpu_state.copy(), runtime._mj.mjtState.mjSTATE_INTEGRATION
-        )
-        mirror = item["mirror"]
-        _require(isinstance(mirror, Mapping) and set(mirror) == set(MIRROR_FIELDS), "mirror schema")
-        for name in MIRROR_FIELDS:
-            value, destination = mirror[name], getattr(candidate, name)
-            _require(
-                isinstance(value, np.ndarray)
-                and value.dtype == np.float64
-                and value.shape == destination.shape
-                and np.isfinite(value).all(),
-                "mirror dimensions: " + name,
-            )
-            destination[:] = value
-        # The CPU integration packet and explicit published channels must agree.
-        check = runtime._mj.MjData(runtime._model)
-        runtime._mj.mj_setState(
-            runtime._model, check, cpu_state.copy(), runtime._mj.mjtState.mjSTATE_INTEGRATION
-        )
-        for name in ("qpos", "qvel", "act", "ctrl", "qfrc_applied", "xfrc_applied"):
-            _require(
-                getattr(check, name).tobytes() == getattr(candidate, name).tobytes(),
-                "CPU observer state/mirror binding: " + name,
-            )
+        # The codec retains all native integration components, including
+        # warmstart. Shared components must equal explicit mirror bytes before
+        # any replacement device or detached observer is prepared.
+        candidate = runtime._mirror_layout.from_parts(cpu_state, item["mirror"])
         _require(candidate.time == clock, "CPU observer clock binding")
         for actual, values, width in (
             (candidate.qpos, packed[0], runtime._plan.nq),
@@ -493,14 +458,10 @@ def restore(runtime, checkpoint, expected_revision):
     try:
         replacement = runtime._build_device(data, packed=packed)
         _verify_bank(replacement, packed)
-        # All observers are prepared on copies before the single publication.
+        # All observers use detached scratch before the single publication.
         # mj_forward cannot supply q/v or physics to the restored device.
-        import copy
-
         for candidate in data.values():
-            observed = copy.copy(candidate)
-            runtime._mj.mj_forward(runtime._model, observed)
-            runtime._finite_state(observed)
+            runtime._observe_native(candidate)
     except BaseException:
         if replacement is not None:
             try:

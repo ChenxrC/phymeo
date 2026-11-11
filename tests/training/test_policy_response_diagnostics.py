@@ -412,8 +412,11 @@ def caller_computation(precision, cudnn):
         # occur only outside the diagnostic's new-API computation context.
         torch.set_float32_matmul_precision(precision)
         torch.backends.cudnn.allow_tf32 = cudnn
-        yield {"effective": computation_flags(), "legacy_precision": precision,
-               "legacy_cudnn": cudnn}
+        yield {
+            "effective": computation_flags(),
+            "legacy_precision": precision,
+            "legacy_cudnn": cudnn,
+        }
     finally:
         torch.set_float32_matmul_precision(previous_precision)
         torch.backends.cudnn.allow_tf32 = previous_cudnn
@@ -436,6 +439,7 @@ def assert_original_computation():
         "cudnn_conv_fp32_precision": "ieee",
         "cudnn_rnn_fp32_precision": "ieee",
     }
+
 
 @pytest.mark.cuda
 def test_actual_cuda_feature_and_pinned_models_restore_rng(monkeypatch):

@@ -376,6 +376,7 @@ def _preserved_execution_state(torch):
         if errors:
             raise BaseExceptionGroup("caller RNG/computation restoration failed", errors)
 
+
 def _load_network(model, saved, torch, device):
     expected = model.state_dict()
     require(

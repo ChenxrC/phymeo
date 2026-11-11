@@ -51,3 +51,16 @@ Pending commands, for the parent's sole serial slot only: the exact nine changed
 ## Remaining boundary
 
 This is fixed-root scalar T1 only. No free/ball activation, contact-coupled activation, joint-wide force cap, tendon/site transmission, other actuator dynamics, resident four-family activation or implicit cross-tree solve is accepted. Native limits/constraints are refused, not removed from source. Invalid or nonfinite intermediate state rejects the complete attempted publication. The input law and physical tolerances remain unchanged; further qualification requires actual parent execution and recorded resource/state evidence.
+
+## Parent source qualification (2026-11-12)
+
+The parent integrated the authoring, all three shared patches and its existing explicit integration observation. Tested product is parent `9369d061`; later `404c62f0` only records the rejected collision experiment. The final ball-joint negative was retained when resolving a formatting overlap in the test file. The original stateless receipt and v1 checkpoint remain separate.
+
+- `45-rob-interpret`: 26 passed, 26 other-backend nodes deselected, 8.70 s, exit 0.
+- `46-rob-cuda`: 26 passed, 26 other-backend nodes deselected, 7.96 s, exit 0.
+- `47-rob-stateless-compat`: 14 passed, 17.95 s, exit 0. Covers original analytic eccentric tree dynamics, disabled scalar-force clamping, all four original checkpoint domains (prismatic/fixed/floating/mixed), and late restore failure in both modes.
+- First lint/format findings were import ordering and formatting; exact nine-file repair and final checks passed in commands 38–43. The first functional launch 44 used the old collision environment, which does not contain MuJoCo, and failed at import before physical construction. Command 45 uses the existing training CUDA313 environment with MuJoCo 3.3.7 and unchanged TYX pin. No installation or physics change was used to fix that runner selection.
+
+Evidence is `artifacts/p65-parity-n4b-rob2a-col-stop-20261111-01`. Original failures and all before/after source bindings remain. Both modes exercised the actual four device stages, full force/motion/activation assertions, complete-window native and analytic comparisons, immutable observations, exact restore successors and atomic failure retry. The device-only test forbids CPU `mj_step` and `mj_forward` during physical advancement and integration observation. Separate source-only shared-seam review found no blocking issue.
+
+Status: **SOURCE_QUALIFIED_FIXED_T1_FILTEREXACT; FRESH_INSTALLED_CONSUMER_PENDING**. This does not enable free-root, contacts, constraints or ball-joint activation and does not qualify complete G1 or arbitrary robot learning.

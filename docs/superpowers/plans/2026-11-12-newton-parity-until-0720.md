@@ -92,6 +92,20 @@ GPU内存改进转为完整compact HOST mirror+单native观察scratch，已通�
 
 预登记验证：J 四世界 D=1/2/4 各8窗口、S 四世界 D=4 共8窗口；独立 held-action HOST/public-runtime 对照、逐步完整接触诊断、endpoint任务公式及 N5 部分重置。J 原 GRU D=2、8步 rollout 的实际更新/save/A/restore/B，保完整 Adam/RNG/hidden/物理与 reset stream；跨 D checkpoint 必须在物理 CAS 前拒绝。第二次 physics 失败、第二次诊断失败、末端 export/reset-export 失败、同线程 step/reset/capture/restore 重入均有真实故障例。新功能不更改原学习预算、fixture、精度门，也不声称 PPO 已学会。原 06:20/07:20 截止和安装包计划保持。
 
+## 04:23 两个已调研的组合节点
+
+N6 新40项与受影响41项已完成（原过时reset观察计数首失败保留）。根据[球树驱动调研](../../development/p65-ball-actuation-next.md)与[三角面dispatch调研](../../development/p65-triangle-dispatch-next.md)，剩余开发窗口执行以下两项；06:20后不再扩域，优先把已过内容放入新包。
+
+**BALL-A / 中高**：保fixed BALL/hinge/slide nv<=8/nq<=10，最多32个scalar JOINT执行器、32 activation。NONE或FILTEREXACT只能指向真实hinge/slide；球通过完整M/J/b被动耦合运动。父只改_model/_tree_model/_actuator_model/_mujoco_tyx_runtime四既有文件的结构dispatch/准入/能力名，复用原三/四stage kernel、bank和checkpoint。原audit作者在原隔离树先写NEW测试及报告。冻结研究中的四组多案例、24连续步反向/卸载、qa!=dof、mixed/disabled/clamps/actearly、稀疏world恢复/clone/reset/晚失败。完整native与独立scalar期望、原BALL/ROB2a数值门保持。真实ball-target motor、free/contact/limit/dry/spring/JOINTINPARENT仍拒绝；遇需要数学kernel/ABI变化的反例停在原边界。
+
+**COL3 / 高**：原COL作者只NEW geometry/_triangle_distance_dispatch.py、NEW tests/collision/test_triangle_distance_dispatch.py、NEW报告；父只接CollisionWorkspace的boundary_distances(motion, *, margin=0.0, limits=None)、last_boundary_distances、require_boundary_distances及close。复用现注册/过滤和同次实际BVH；独立拥有COL2 runtime，不借旧engine的native pointer。返回typed aggregate与全部候选/原facet映射、完整同次raw packets/bitsets；旧detect/last_result/force语义不改。
+
+COL3仅interpret/CUDA当前快照，全部模型/原material顺序motion/半径/filter/revision完整绑定；拒非恒定end、turn、非零surface skin与模型中本切片不支持的shape类型。注册sphere/capsule/triangle/mesh；同族或过滤对明确列出状态，不伪造跨族结果。margin为有限非负工程邻近带：axis AABB向外扩radius+margin，所有能够落带的facet必须成为候选；空带不证明闭mesh内部物体已分离，也不保证带外全局最近面。每surface最多512vertices/128faces/64segments，整个query最多32groups/8192候选，limits只能收紧；超限报告真实所需数，不截断。保留每coincident/shared-edge原facet和CONDITIONING/DEGENERATE/undefined-normal，不以HOST closest fallback补结果。
+
+公共publication与pending BVH layout沿workspace.transaction一起提交，最后组失败保旧aggregate；已进行的私有kernel计数/失败诊断不抹掉。require_boundary_distances按完整当前输入再绑定，不仅信query_id。独立query资源UNKNOWN_RELEASE沿原ledger保留、不盲retry；正常close尝试独立siblings，失败不能冒已释放。
+
+COL3冻结三组：sphere/capsule对有限面face/edge/vertex/outside/front/back；concave/shared-edge/co-nearest与真实pruned facets及closedmesh内球的正boundary-distance语义；两个稀疏world/重用localID/存储排列/变形快照/filter、exact/one-less容量、末组晚readback与外层transaction拒绝。只有新公共调用与受影响接口资格通过才claim集成，不重跑COL2全绿矩阵。resident mesh设备顶点源、实体CCD、curved point和真实载荷消费仍后继。
+
 
 ## 03:18 后继功能节点
 

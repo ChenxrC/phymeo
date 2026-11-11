@@ -115,3 +115,131 @@ These are pending commands, not results. Existing PYTHONPATH/pin/environment and
 unique serial execution rules apply. No old green suite or G1 rerun is required
 for this pure registration increment. ROB1b still needs the parent shared batch
 service, source-aware collision adapter and world-atomic candidate publication.
+
+
+## ROB1b first authoring increment — 2026-11-11
+
+Status: **CODE_READY_TESTS_PENDING / AUTHORING_SLOT_RELEASED**.
+The parent alone owns all project execution. No import, collection, numerical
+probe, pytest, lint, formatter, compile, build or install was run in this lane.
+The prior ROB1a HOST qualification remains distinct; this section adds no pass.
+
+Base: `63614090`. Tests were authored and committed first as
+`dda12400fd7c9d0eb3c90ab47d97b29b36ba9cd4`; source checkpoint is
+`95984bc4c0bba158b0a0e50da736ef52f1f25392`.
+The final report-only commit does not change those source/test bytes.
+
+### Executable scope authored
+
+`ResidentSceneBatch` is additive and uses the parent's new
+`_resident_batch_transaction.ResidentBatchTransaction` service. The child does
+not copy that service or read/write its private batch banks. Registration/layout
+continues to describe all four existing tree families. **ROB1b execution admits
+only ordinary FloatingRobotTree**, with at most 33 physical bodies in a complete
+world and the original maximum eight participants. R01 positives exercise two
+zero-child free roots; articulated/affine qualification is still pending.
+
+The scene offers held typed controls, free step/contact step, complete world
+snapshot, expected-epoch restore, partial-world-set reset, statistics and close.
+A world checkpoint retains all original participant checkpoint fields, including
+control/history/local origin, and its scene owner plus registry fingerprint.
+Partial participant restore, foreign owner and stale epoch are rejected before
+physical mutation. `static_body_ids=()` is an explicit optional constructor
+registration, reusing ROB1a's static-owner preflight.
+
+The first contact route is explicitly `host_patch` with conservative enumeration
+of **all allowed pairs**, not device BVH or device patch. Candidate capacity is
+checked against that complete domain before creating the plan. Materials exactly
+cover its filtered canonical pairs. Same-body, mask/exclusion, static-static and
+cross-world filtering remain explicit; equal local body indices in different
+participants never suppress a cross-participant pair. Optional same-participant
+pairs still require actual non-adjacent physical bodies.
+
+Body-local material points remain the registered original values. Current
+position, rotation, COM and twists come from the shared service's actual device
+FK packet; the adapter does not evaluate HOST FK/M/J. The existing finite patch,
+normal/friction law and work transport are reused without changing their gates.
+One world-wide body-wrench array is sliced by ROB1a's explicit body offsets, then
+the parent projects each participant's full Jv/Jw and solves its original block.
+This is an entry-force explicit coupling, not a cross-tree implicit contact QP.
+
+### Atomic publication and evidence
+
+The new `_tyx_participant_transaction.py` kernel has one lane per logical world.
+It scans that world's explicit storage rows; if any original status is nonzero
+or geometry flag is not one, it sets only still-successful members to status 6.
+Existing failures keep their original code. Different lanes write disjoint rows.
+The existing floating finalize alone retains root/state/applied/FK/twist/energy/
+ticks and chooses per-row acceptance; no integration or state copy is duplicated.
+
+All participant receipts, world frames/sites, transported material/application
+work, statuses and world checkpoints are constructed before the parent's single
+bank/epoch commit. Scene-side publication is assignment-only under the same
+owner lock. A site-capacity failure rejects every participant of that world;
+candidate preflight overflow or a late receipt exception publishes no partial
+batch. A prior successful held-control submission remains held through failure.
+
+Receipts preserve the actual entry M/b/Jv/Jw/input external, original complete
+checkpoints/geometry, FP64 law wrench, submitted FP32 wrench, device projected
+generalized load and full original FloatingTreeDiagnostic. The FP32 wrench field
+is the exact host value submitted through the agreed conversion, not a new
+readback claim. Raw matrix/response diagnostics retain the actual device fields.
+HOST sampling, readback and assembly are explicit costs; no zero-readback or
+throughput claim is made.
+
+### Frozen tests authored, unexecuted
+
+Two full test files contain six test functions and ten authored parameter
+instances per backend; these counts have not been collected or executed.
+
+- R01: W1, transformed/reversed W1, transformed W2 and reversed W4; each is 40
+  uninterrupted steps with the original nonzero incoming velocities. Literal
+  first-step forces are (-2,+2) N and accelerations (-1,+2) m/s^2. An independent
+  radial spring plus semi-implicit advance supplies the full-window oracle.
+- Every participant's q/v, angular motion, mass/J, generalized force, original
+  controls and tick are checked; momentum and world isolation are checked.
+  Storage entry/solve/finalize counters must each increase once per physical step,
+  independently of participant/world count.
+- The first or last world's last participant is rejected at the named internal
+  pre-finalize seam; its entire world is retained, the unrelated world advances,
+  and a real retry subsequently succeeds.
+- A late fully-constructed-receipt exception preserves all old publications,
+  bank/epoch/state and previously committed controls, followed by a real retry.
+- Candidate capacity rejects globally at prepare; world site capacity rejects
+  only its complete world. Full world restore/CAS, repeated continuation, partial
+  reset, stale receipt, wrong owner and bad last control are covered.
+
+Evidence files preserve complete authored inputs, all step states/receipts,
+diagnostics, counters, byte-bearing immutable fingerprints and failures using a
+lossless array dtype/shape/raw-byte codec in gzip JSON. This is not a saved-audit
+result. The tests do **not** cover R02/R03/R04, the complete ROB1c multi-arm/tool
+matrix, device_patch, old bundle scale, or late restore upload/check injection.
+
+### Child file manifest and pending parent validation
+
+Exactly six changed paths relative to the base; layout and its old tests remain
+unchanged. The two new source modules and two new tests plus resident_scene have
+these source-checkpoint SHA256 values:
+
+| Path | SHA256 |
+|---|---|
+| `src/phymeo/backends/resident_scene.py` | `14668dc2bb86bad2df55d2dc1963f929e9795fc1bac0b307815e89dfbd1a0e3d` |
+| `src/phymeo/backends/_resident_participant_contacts.py` | `25617667fed98cd7d08cf17a104b633269ae0a55ecfaf34aa389a32761492c95` |
+| `src/phymeo/backends/_tyx_participant_transaction.py` | `6bc16093a25b1edfc8ab624530ec8d333e58deb99204aebf2d934b32b7928e34` |
+| `tests/scale/test_resident_multi_participant.py` | `7709d89934ebeead9c206b8fd9f8c2f5643342352adb689d40a7312ef002f6df` |
+| `tests/scale/test_resident_multi_participant_transactions.py` | `45412c436fc00ac263cf13923c810814f04bf1dc1a57d0dbd47482cadc02e19a` |
+
+The sixth path is this append-only report. Parent owns the shared service, root
+exports, integration and every actual check. After source integration and its
+fresh global execution guard, pending full new tests are:
+
+```text
+python -B -m pytest tests/scale/test_resident_multi_participant.py tests/scale/test_resident_multi_participant_transactions.py --tyx-mode=interpret -q -x --tb=short -p no:cacheprovider
+python -B -m pytest tests/scale/test_resident_multi_participant.py tests/scale/test_resident_multi_participant_transactions.py --tyx-mode=cuda -q -x --tb=short -p no:cacheprovider
+```
+
+Parent should first run exact changed-Python Ruff/format checks including its
+shared service/export seam. No old full green suite is requested. The original
+untracked T1 review remains untouched. Two read-only authoring observations about
+the parent service (dict input versus pair iterable, and stats after close) were
+reported and corrected by parent before execution; no runtime failure is claimed.

@@ -86,7 +86,7 @@ def save(path, payload):
 
 
 def fixture(xml, mode, keys=(17,)):
-    mj = pytest.importorskip("mujoco")
+    import mujoco as mj
     assert mj.__version__ == "3.3.7"
     model = mj.MjModel.from_xml_string(xml)
     compiled = compile_mujoco_xml(xml, require_asset=False)
@@ -199,10 +199,10 @@ def test_activation_force_motion_native_continuous(mode, case, early, tau, disab
             a = receipt.actuation
             np.testing.assert_array_equal(a.input_act, entry.act)
             np.testing.assert_array_equal(a.output_act, state.act)
-            for actual, target in zip((a.output_act, a.activation_derivative, a.clamped_control,
-                                       a.force_input, a.raw_force, a.scalar_force, a.generalized_force), independent, strict=True):
-                np.testing.assert_allclose(actual, target, rtol=ACT_RTOL if actual.shape == state.act.shape else FORCE_RTOL,
-                                           atol=ACT_ATOL if actual.shape == state.act.shape else FORCE_ATOL)
+            for channel, (actual, target) in enumerate(zip((a.output_act, a.activation_derivative, a.clamped_control,
+                                       a.force_input, a.raw_force, a.scalar_force, a.generalized_force), independent, strict=True)):
+                np.testing.assert_allclose(actual, target, rtol=ACT_RTOL if channel < 2 else FORCE_RTOL,
+                                           atol=ACT_ATOL if channel < 2 else FORCE_ATOL)
                 with pytest.raises(ValueError):
                     actual.setflags(write=True)
             np.testing.assert_allclose(a.scalar_force, expected["scalar_force"], rtol=FORCE_RTOL, atol=FORCE_ATOL)
@@ -220,6 +220,7 @@ def test_activation_force_motion_native_continuous(mode, case, early, tau, disab
                 np.testing.assert_allclose(a.scalar_force, .1, rtol=0, atol=2e-8)
                 # Native raw derivative is nonzero even though integration uses zero.
                 assert np.any(a.activation_derivative != 0)
+                np.testing.assert_array_equal(a.integration_derivative, np.zeros(model.na))
             assert receipt.contacts == ()
     except BaseException as error:
         history["failure"] = repr(error)
@@ -350,3 +351,67 @@ def test_stateless_path_keeps_three_launches_and_v1_checkpoint(mode):
         assert type(state.last_step).__name__ == "MuJoCoTyxStepReceipt"
         assert not hasattr(state.last_step, "actuation")
         assert runtime.checkpoint().binding["schema"] == "mujoco-tyx-exact-checkpoint-v1"
+
+@pytest.mark.parametrize("mode", MODES)
+def test_activation_step_uses_device_not_native_forward(mode, monkeypatch):
+    mj, model, _, _, runtime = fixture(source("coupled", early=True), mode)
+    with runtime:
+        packet = control(model, 0)
+        before = runtime.integration_snapshot()[17]
+        runtime.set_controls({17: packet})
+        def forbidden(*args, **kwargs):
+            raise AssertionError("native dynamics called during TYX activation step")
+        with monkeypatch.context() as patch:
+            patch.setattr(mj, "mj_step", forbidden)
+            patch.setattr(mj, "mj_forward", forbidden)
+            runtime.step(H)
+            after = runtime.integration_snapshot()[17]
+            assert np.any(after.act != before.act)
+            assert np.any(after.v != before.v)
+            np.testing.assert_array_equal(after.act, after.last_step.actuation.output_act)
+
+
+@pytest.mark.parametrize("mode", MODES)
+@pytest.mark.parametrize("bad", ("shape", "nonfinite", "bank-order", "source"))
+def test_activation_state_identity_rejects_before_replacement(mode, bad, monkeypatch):
+    import phymeo.backends.mujoco_checkpoint as checkpoint_module
+    xml = source("coupled")
+    _, _, compiled, initial, runtime = fixture(xml, mode)
+    with runtime:
+        if bad in ("shape", "nonfinite"):
+            value = [0.] if bad == "shape" else [0., float("nan"), 0.]
+            with pytest.raises(ValueError):
+                MuJoCoRuntime(compiled, mode=mode, initial_states={0: MuJoCoInitialState(act=value)})
+            return
+        runtime.step(H)
+        cp = runtime.checkpoint()
+        destination = runtime
+        other = None
+        if bad == "bank-order":
+            saved = cp._read(cp.binding)
+            saved = dict(saved)
+            # Corrupt only authoritative act bytes; unchanged mirrors/receipt
+            # make the swap detectable. Unlabelled full-state changes are not
+            # claimed to be inferable by an engine from values alone.
+            altered = saved["act"].copy()
+            altered[:, [0, 1]] = altered[:, [1, 0]]
+            if np.array_equal(altered, saved["act"]):
+                altered[0, 0] += .125
+            saved["act"] = altered
+            cp = checkpoint_module._make_checkpoint(cp.binding, cp.source_revision, saved)
+        else:
+            changed = compile_mujoco_xml(xml.replace('dynprm="0.004"', 'dynprm="0.005"'), require_asset=False)
+            other = MuJoCoRuntime(changed, world_keys=(17,), mode=mode, initial_states=initial)
+            destination = other
+        try:
+            before = encode(destination.snapshot())
+            def forbidden(*args, **kwargs):
+                raise AssertionError("invalid activation identity reached replacement allocation")
+            with monkeypatch.context() as patch:
+                patch.setattr(destination, "_build_device", forbidden)
+                with pytest.raises(ValueError):
+                    destination.restore(cp, expected_revision=destination.checkpoint_revision)
+            assert encode(destination.snapshot()) == before
+        finally:
+            if other is not None:
+                other.close()

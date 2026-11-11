@@ -112,7 +112,7 @@ def test_four_layouts_four_sparse_worlds_continue_three_real_steps(layout, kind,
                         assert all(batch.step(H).values())
                         state = batch.snapshot()
                         result = k0.query_attempt(batch, plan, record, "continuing-"+str(tick))
-                        k0.check_raw(result)
+                        family.check_raw(result)
                         family.check_source(result)
                         checked = {}
                         for row in result.rows:

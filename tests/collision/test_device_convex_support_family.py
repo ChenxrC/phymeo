@@ -4,6 +4,7 @@ import gzip
 import hashlib
 import importlib.util
 import json
+from collections.abc import Mapping
 from contextlib import ExitStack, closing, contextmanager
 from functools import lru_cache
 from pathlib import Path
@@ -77,9 +78,121 @@ def prepared(data, mode, path, **options):
                 yield batch, broad, plan
 
 
+# Preserve the K0 wire checks locally; its old phase table intentionally stops at EPA.
+def check_raw(result):
+    assert isinstance(result.raw, Mapping) and set(k0.RAW_SHAPES) <= set(result.raw)
+    n = len(result.rows)
+    for name, tail in k0.RAW_SHAPES.items():
+        value = result.raw[name]
+        assert isinstance(value, np.ndarray) and value.shape[1:] == tail and len(value) >= n
+        assert value.dtype == np.dtype(np.int32 if name in ("meta", "material_ids") else np.float32)
+        assert not value.flags.writeable
+        if value.dtype.kind == "f":
+            assert np.isfinite(value).all()
+    meta = result.raw["meta"][:n]
+    for name, value in result.raw.items():
+        assert np.all(value[n:] == (-1 if name == "material_ids" else 0))
+    assert np.all((meta[:, 0] >= 1) & (meta[:, 0] <= 4))
+    assert np.all(meta[:, 14:] == 0)
+    assert np.all(meta[:, 12] == result.attempt_tag)
+    np.testing.assert_array_equal(meta[:, 13], np.arange(n))
+    assert isinstance(result.source, Mapping) and result.source
+    assert {"attempt_delta", "broadphase_delta", "logical_pairs", "padded_pairs"} <= set(
+        result.stats
+    )
+    assert result.stats["logical_pairs"] == n and result.stats["padded_pairs"] == len(
+        result.raw["meta"]
+    )
+    check_wire_rows(result)
+
+
+def check_wire_rows(result):
+    status = ("UNWRITTEN", "RESOLVED", "UNKNOWN", "UNSUPPORTED", "RESOURCE_LIMIT")
+    relation = ("UNDETERMINED", "SEPARATED", "OVERLAP", "CONTACT_BAND")
+    reason = (
+        "OK",
+        "NEAR_ZERO",
+        "NORMAL_NONUNIQUE",
+        "CORE_CONTAINMENT",
+        "GJK_LIMIT",
+        "EPA_LIMIT",
+        "DEGENERATE_SIMPLEX",
+        "EPA_CAPACITY",
+        "UNSUPPORTED_SHAPE",
+        "SOURCE_PRECISION",
+        "STALLED",
+    )
+    phase = ("NONE", "ANALYTIC_ROUND", "GJK_CORE", "GJK_POLYTOPE", "EPA", "GJK_SUPPORT")
+    for index, row in enumerate(result.rows):
+        meta = result.raw["meta"][index]
+        assert (
+            0 <= int(meta[1]) < len(relation)
+            and 0 <= int(meta[2]) < len(reason)
+            and 0 <= int(meta[3]) < len(phase)
+        )
+        assert np.all(meta[4:9] >= 0)
+        assert row.status == status[int(meta[0])]
+        assert row.relation == relation[int(meta[1])]
+        assert row.reason == reason[int(meta[2])]
+        assert row.phase == phase[int(meta[3])]
+        assert 0 <= int(meta[9]) <= 7
+        assert (row.gap_valid, row.normal_valid, row.witness_valid) == tuple(
+            bool(meta[9] & flag) for flag in (1, 2, 4)
+        )
+        assert tuple(float(x) for x in result.raw["gap"][index]) == (
+            row.gap_m,
+            row.gap_lower_m,
+            row.gap_upper_m,
+            row.scale_m,
+        )
+        np.testing.assert_array_equal(row.normal, result.raw["normal"][index])
+        assert tuple(int(x) for x in meta[4:9]) == (
+            row.gjk_used,
+            row.epa_used,
+            row.support_calls,
+            row.vertices_used,
+            row.faces_used,
+        )
+        assert (
+            row.gjk_used <= 64
+            and row.epa_used <= 192
+            and row.vertices_used <= 64
+            and row.faces_used <= 128
+        )
+        for side, witness in enumerate((row.first, row.second)):
+            count = int(meta[10 + side])
+            assert 0 <= count <= 4 and witness.key == row.pair[side]
+            assert np.all(result.raw["material_ids"][index, side, count:] == -1)
+            assert np.all(result.raw["barycentric"][index, side, count:] == 0)
+            if not row.witness_valid:
+                assert np.all(result.raw["surface"][index, side] == 0) and np.all(
+                    result.raw["skin_offset"][index, side] == 0
+                )
+            assert witness.valid == row.witness_valid
+            assert tuple(int(x) for x in result.raw["material_ids"][index, side, :count]) == tuple(
+                witness.vertex_ids
+            )
+            assert tuple(float(x) for x in result.raw["barycentric"][index, side, :count]) == tuple(
+                witness.weights
+            )
+            np.testing.assert_array_equal(witness.offset_m, result.raw["skin_offset"][index, side])
+            np.testing.assert_array_equal(
+                witness.surface_relative_m, result.raw["surface"][index, side]
+            )
+        if not row.gap_valid:
+            assert (row.gap_m, row.gap_lower_m, row.gap_upper_m) == (0, 0, 0)
+        if not row.normal_valid:
+            assert np.all(result.raw["normal"][index] == 0)
+        if row.status == "RESOLVED":
+            assert row.gap_valid and row.normal_valid and row.witness_valid
+    for value in result.raw.values():
+        with pytest.raises(ValueError):
+            value.setflags(write=True)
+
+
 def check_result(result, data):
     truth = reference().oracle(data)
-    k0.check_raw(result)
+    check_raw(result)
     assert len(result.rows) == 1
     row = result.rows[0]
     assert row.pair == tuple(ph.CollisionKey(*key) for key in data["keys"])
@@ -240,7 +353,7 @@ def test_original_iteration_and_capacity_limits_are_not_bypassed(options, tyx_mo
     with saved(tmp_path, "resource-"+next(iter(options)), tyx_mode, dict(case=data, options=options)) as record:
         with prepared(data, tyx_mode, tmp_path, **options) as (batch, broad, plan):
             result = k0.query_attempt(batch, plan, record, "bounded")
-            k0.check_raw(result)
+            check_raw(result)
             assert result.rows[0].status == "RESOURCE_LIMIT"
             assert result.rows[0].reason in ("GJK_LIMIT", "EPA_CAPACITY")
             assert not result.rows[0].witness_valid
@@ -249,15 +362,17 @@ def test_original_iteration_and_capacity_limits_are_not_bypassed(options, tyx_mo
 @pytest.mark.tyx
 def test_no_host_geometry_search_and_zero_pair_tail(tyx_mode, tmp_path, monkeypatch):
     data = reference().case("NE", "sep")
-    with prepared(data, tyx_mode, tmp_path) as (batch, broad, plan):
-        from phymeo.geometry import _convex_support
-        def forbidden(*args, **kwargs):
-            raise AssertionError("device family query called HOST support")
-        monkeypatch.setattr(_convex_support._Body, "support", forbidden)
-        assert batch.convex_query(plan).rows[0].status == "RESOLVED"
-        with closing(batch.prepare_convex_query(broad, pairs=())) as empty:
-            result = batch.convex_query(empty)
-            assert result.rows == () and len(result.raw["meta"]) == 0
+    with saved(tmp_path, "no-host-empty-tail", tyx_mode, data) as record:
+        with prepared(data, tyx_mode, tmp_path) as (batch, broad, plan):
+            from phymeo.geometry import _convex_support
+            def forbidden(*args, **kwargs):
+                raise AssertionError("device family query called HOST support")
+            monkeypatch.setattr(_convex_support._Body, "support", forbidden)
+            assert k0.query_attempt(batch, plan, record, "nonempty").rows[0].status == "RESOLVED"
+            with closing(batch.prepare_convex_query(broad, pairs=())) as empty:
+                result = k0.query_attempt(batch, empty, record, "empty")
+                assert result.rows == () and len(result.raw["meta"]) == 0
+                check_raw(result)
 
 
 @pytest.mark.parametrize("kind,dimensions,quaternion", (
@@ -300,7 +415,45 @@ def test_deep_coincident_centers_do_not_invent_a_unique_normal(tyx_mode, tmp_pat
     with saved(tmp_path, "deep-symmetric", tyx_mode, data) as record:
         with prepared(data, tyx_mode, tmp_path) as (batch, broad, plan):
             result = k0.query_attempt(batch, plan, record, "deep")
-            k0.check_raw(result)
+            check_raw(result)
             row = result.rows[0]
             assert row.status in ("UNKNOWN", "RESOURCE_LIMIT")
             assert not row.normal_valid and row.relation != "SEPARATED"
+
+@pytest.mark.tyx
+def test_exact_large_common_translation_preserves_relative_curved_support(tyx_mode, tmp_path):
+    """All source words are exact FP32; small support offsets must stay relative."""
+    translation = float(2**24)
+    centers = (np.array((translation, 0.0, 0.0)), np.array((translation+4.0, 0.0, 0.0)))
+    keys = (ph.CollisionKey(17, 11, 3), ph.CollisionKey(17, 29, 7))
+    expected_gap, length = 29/8, 4.0
+    inputs = dict(centers=centers, dimensions=(1/4, 1/4, 1/4), radius=1/8,
+                  anchor=np.zeros(3), expected_gap_m=expected_gap, normal=(1, 0, 0))
+    with saved(tmp_path, "large-common-local-translation", tyx_mode, inputs) as record:
+        with ph.TyxWorldBatch([(17, k0.ordinary_forest())], tyx_mode, cache_root=tmp_path) as batch:
+            state = batch.snapshot()[17]
+            shapes = (ph.CollisionShape(keys[0], "ellipsoid", (101,), curved=ph.CurvedSolid("ellipsoid", (1/4, 1/4, 1/4))),
+                      ph.CollisionShape(keys[1], "sphere", (201,), radius=1/8))
+            bindings = (ph.ResidentTreeBinding(keys[0], 17, 0, centers[0][None], topology=state.topology),
+                        ph.ResidentStaticBinding(keys[1], ph.CollisionMotion(centers[1][None])))
+            with batch.prepare_collision(ph.CollisionModel(shapes), bindings) as broad:
+                with closing(batch.prepare_convex_query(broad, pairs=(keys,))) as plan:
+                    result = k0.query_attempt(batch, plan, record, "large-relative-source")
+                    check_raw(result)
+                    check_source(result)
+                    np.testing.assert_array_equal(result.source["world_origins_m"], np.zeros((1, 3)))
+                    np.testing.assert_array_equal(result.source["uploaded_local_points_m"], np.asarray(centers, np.float32))
+                    row = result.rows[0]
+                    assert row.status == "RESOLVED" and row.relation == "SEPARATED"
+                    assert abs(row.scale_m-length) <= 1e-4*length
+                    assert abs(row.gap_m-expected_gap) <= 1e-4*length
+                    np.testing.assert_allclose(row.normal, (1, 0, 0), atol=2e-3, rtol=0)
+                    for side, witness in enumerate((row.first, row.second)):
+                        offset = np.array((1/4 if side == 0 else -1/8, 0.0, 0.0))
+                        assert witness.vertex_ids == ((101,) if side == 0 else (201,))
+                        assert abs(sum(witness.weights)-1) <= 64*2**-23
+                        np.testing.assert_allclose(witness.offset_m, offset, atol=2e-4*length, rtol=0)
+                        world_point = np.asarray(row.origin_m)+np.asarray(witness.surface_relative_m)
+                        np.testing.assert_allclose(world_point, centers[side]+offset, atol=2e-4*length, rtol=0)
+                    closure = np.asarray(row.second.surface_relative_m)-np.asarray(row.first.surface_relative_m)
+                    np.testing.assert_allclose(closure, expected_gap*np.array((1, 0, 0)), atol=2e-4*length, rtol=0)

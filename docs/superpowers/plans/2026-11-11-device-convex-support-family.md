@@ -36,6 +36,8 @@
 
 **frame：** 固定asset R可HOST一次验证/上传；动态有效R必须由device用本次accepted body R合成，static用asset R。不每步HOST FK。维度、orientation、原key/revision/group/world/layout、lease/bank/epoch及原材料完整绑定。
 
+父 authoring 裁定（2026-11-11）：首片曲面 static binding 只接受 `CollisionMotion.body_orientation_xyzw is None`，使用声明的 asset R；独立 static body orientation 明确在 source admission、设备分配前拒绝。非 identity asset R 和动态 accepted body R×asset R 仍须通过。旧 S/C/H 的 static 行为不扩改。这是首片来源域的明确边界，不允许忽略已声明的旋转。
+
 **source证据：** 保 `resident-convex-source-v1` 原必需字段；含新族时添加 `support_family_schema="resident-convex-support-family-v1"` 以及按shape排列的：
 `declared_dimensions_m/uploaded_dimensions_m/dimension_quantization_error_m`，
 `declared_orientation_xyzw`，

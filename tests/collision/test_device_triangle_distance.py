@@ -124,16 +124,16 @@ def assert_packet(data,packet):
             assert abs(b0+b1+b2-1)<=8*ref.U
             x=seg[0]+s*(seg[1]-seg[0])
             y=np.array((b0,b1,b2))@tri
-            np.testing.assert_allclose(values[index,5:8],x,atol=2e-4*length,rtol=0)
-            np.testing.assert_allclose(values[index,8:11],y,atol=2e-4*length,rtol=0)
+            np.testing.assert_allclose(values[index,5:8]+packet.pair_origins_relative_m[ordinal],x,atol=2e-4*length,rtol=0)
+            np.testing.assert_allclose(values[index,8:11]+packet.pair_origins_relative_m[ordinal],y,atol=2e-4*length,rtol=0)
             assert abs(d2-float((y-x)@(y-x)))<=2e-4*length*length
             assert d2+1e-4*length*length>=best
             if abs(d2-best)<=ref.TIE_ERROR*length*length:
                 assert int(index) in row.tied_candidates
         if data["snapshot_id"] in ("parallel_face","parallel_edge"):
             np.testing.assert_allclose(row.axis_span,np.array(expected["axis_span"],float),atol=2e-4,rtol=0)
-        assert np.max(np.abs(packet.conversion_deltas["vertices"][data["faces"][fi]]))<=ref.SOURCE_ERROR*length
-        assert np.max(np.abs(packet.conversion_deltas["segments"][si]))<=ref.SOURCE_ERROR*length
+        assert np.max(np.abs(packet.conversion_deltas["geometry"][ordinal]))<=ref.SOURCE_ERROR*length
+        np.testing.assert_array_equal(packet.pair_origins_relative_m[ordinal],tri[0])
 
 
 @pytest.mark.parametrize("name",reference().NAMES)

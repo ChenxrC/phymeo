@@ -52,6 +52,7 @@ def make_case(name):
         origin = np.array((2**24,-2**24,2**24), dtype=np.float64)
         vertices += origin
         segments += origin
+        origin = np.zeros(3)  # Pair frame must handle a distant caller origin too.
     if name == "reverse_winding":
         faces = np.array(((2,1,0),), dtype=np.int64)
     if name == "shared_edge":

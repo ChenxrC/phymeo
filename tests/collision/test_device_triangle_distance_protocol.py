@@ -81,8 +81,9 @@ def test_snapshot_and_owner_binding(mode):
 
 def test_source_conversion_cannot_use_world_translation_as_scale(mode):
     data=reference().make_case("face_above")
-    data["vertices"]+=2**24
-    data["segments"]+=2**24
+    # Pre-execution correction: common translation is representable in a pair
+    # frame. A distant small segment instead loses .25 relative to this triangle.
+    data["segments"][:,:,0]+=2**24
     with new_batch(mode,data) as batch:
         with pytest.raises(ValueError,match="precision"): batch.query(**data)
         assert batch.stats["launches"]==0

@@ -48,7 +48,7 @@ Author modified files (8):
 
 Author NEW files (4): `_actuator_device.py` in the same package; `tests/test_mujoco_tyx_activation_composed.py`; this design; `docs/development/p65-rob2b-actuator-composition-report.md`.
 
-No `_tree_kernels.py`, `_floating_kernels.py`, `_actuator_kernels.py`, geometry or solver modifications. No old tests/results rewritten. Parent alone applies a reviewed ignored-artifact runtime capability patch; no direct child edits to `_mujoco_tyx_runtime.py`, `_model.py` or `mujoco_checkpoint.py`.
+No `_tree_kernels.py`, `_floating_kernels.py`, `_actuator_kernels.py`, geometry or solver modifications. No old results rewritten. Parent subsequently authorized the exact compatibility update to `tests/test_mujoco_tyx_activation.py`: retire only the old free-root and scalar-limit unsupported parameters and their dead fixture branches; all remaining negative/positive gates remain unchanged. This adds one old-test MOD to the author allowlist. Parent alone applies a reviewed ignored-artifact runtime capability patch; no direct child edits to `_mujoco_tyx_runtime.py`, `_model.py` or `mujoco_checkpoint.py`.
 
 ## Predeclared independent cases
 

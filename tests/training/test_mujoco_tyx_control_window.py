@@ -300,3 +300,22 @@ def test_actual_gru_update_restore_and_cross_decimation_rejection(tmp_path):
     assert result["nonzero_hidden"] and result["partial_done_masks"]
     assert result["cross_decimation_refused"] and result["next_random_reset_equal"]
     assert result["policy_transitions"] == 32 and result["physical_world_steps"] == 64
+
+
+@pytest.mark.cuda
+@pytest.mark.tyx
+def test_endpoint_mode_does_not_latch_an_intermediate_task_bound():
+    from phymeo.backends.mujoco_task_workspace import MuJoCoTyxTaskSpec
+
+    helper = api()
+    torch = helper.require_cuda()
+    # Original J: v(k)=.04*(1+.1*.002/1.01)^(-k). This fixed bound
+    # lies below v(1) and above v(4); no mass/action/initial-state change.
+    task = MuJoCoTyxTaskSpec((), (0,), lower=(-1,), upper=(0.03998,), weight=(1,))
+    with helper.make_environment("J", 4, task_spec=task, horizons=(100,) * 4) as env:
+        tr = env.step(torch.zeros((4, 2), device=env.device), world_keys=KEYS, expected_frame=env.current_frame)
+        assert tr.control_window.substeps[0].states[7].v[0] > task.upper[0]
+        assert tr.control_window.substeps[-1].states[7].v[0] < task.upper[0]
+        assert not tr.final_mask.any().item()
+        assert dict(env.reset_indices) == dict.fromkeys(KEYS, 0)
+        assert all(s.tick == 4 for s in env.runtime.snapshot().values())

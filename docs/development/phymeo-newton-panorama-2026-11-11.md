@@ -1,5 +1,6 @@
 # Phymeo / Newton 功能差异全景（2026-11-11）
 
+2026-11-12当前增量：N4b九份完整保存诊断已完成，J/R弱收益原因未定；固定根NONE/FILTEREXACT执行器与act/力/运动共同发布、新显式integration observation及499产品新包安装已通过。COL同候选停止实验新增9个资源回归，未合入。当前执行到07:20，见[本轮计划](../superpowers/plans/2026-11-12-newton-parity-until-0720.md)与[实际批次](p65-parity-batch-n4b-rob2a-col-stop.md)。以下旧N4a数量为历史，不覆盖本段。
 2026-11-11最新：N4a九次固定预算训练完成，持续支撑S通过学习门，中位成本下降26.4%；J/R下降5.6%/8.2%，未达原门。三任务W1–W256共18格规模通过；ROB1d新wheel源码外interpret/CUDA均通过；通用仿射重建修复两个HN失败，四个Y法向失败保留。训练与规模仍为最高主线，无固定截止。见[N4a](p65-mujoco-tyx-n4a-report.md)、[ROB1d](p65-resident-rob1d-installed-report.md)、[COL修复](p65-convex-affine-reconstruction-report.md)、[本批结果与后续](p65-parity-batch-n4a-rob1d-col-reducer.md)。
 
 [上一批实际记录](p65-parity-2026-11-11-progress.md) · [持续推进计划](../superpowers/plans/2026-11-11-newton-parity-continuous.md) · [上一连接批架构快照](../architecture/phymeo-newton-parity-2026-11-11.html)
@@ -40,10 +41,10 @@ CPU 编译不是 CPU 代跑 CUDA 物理。默认 CUDA 使用 MuJoCo-TYX；MuJoCo
 
 | 方向 | 已有通用基础 | 确实尚缺或覆盖不足 | 后续可验节点 |
 |---|---|---|---|
-| 01 场景与机器人 | URDF/MJCF/USD、统一编译接口、PD/IK、四类树、双方反力；混合来源同world响应/恢复和ROB1d新安装资格 | 双臂R03小净加速度精度；更广关节/闭环/传动、复杂执行器和完整抓取释放 | R03有界PD算术复现；ROB2球关节/执行器、Panda工作流 |
+| 01 场景与机器人 | URDF/MJCF/USD、统一编译接口、PD/IK、四类树、双方反力；混合来源同world响应/恢复和ROB1d新安装资格 | 双臂R03小净加速度精度；更广关节/闭环/传动、复杂执行器和完整抓取释放 | R03有界PD算术复现；ROB2固定根一阶执行器已验；下一接自由根/接触约束，球关节与Panda工作流另验 |
 | 02 碰撞检测与响应 | RR/RD/DD、有限面边、多形状patch、部分凹体/CCD；设备S/C/OBB/H消费；三曲面support、内切球界、迭代诊断；通用仿射重建已修复2HN | 4个圆柱Y法向失败；曲面device patch/load、广泛mesh/变形窄相/CCD、跨特征历史、SDF/hydroelastic | 同候选停止/见证发布假设；通过后COL1b/c；COL2设备mesh/变形，COL3首触 |
 | 03 GPU 与多场景 | 四类树、W256受载分页、设备几何、MuJoCo-TYX混合约束、公共设备口；N4a三任务18格真实PPO规模和完整trace计时 | 物理推进/状态快照/诊断开销、异构批次/约束规模；256复杂机器人训练尚缺 | 按已有profile拆热点，明确快速模式与reference对照；同精度/输出Newton比较另立基线 |
-| 04 训练与可微（最高主线） | CPU PPO三任务、ONNX、device VecEnv、上游RSL CUDA PPO；N3同配置续训；N4a持续支撑S三种子改善通过 | J/R固定预算弱收益、随机化、任意时刻/跨配置恢复；多步物理梯度/辨识 | N4b先复盘已保存行为/优化证据，再冻结后继协议；物理可微另立梯度对照 |
+| 04 训练与可微（最高主线） | CPU PPO三任务、ONNX、device VecEnv、上游RSL CUDA PPO；N3同配置续训；N4a持续支撑S三种子改善通过 | J/R固定预算弱收益、随机化、任意时刻/跨配置恢复；多步物理梯度/辨识 | N4b已诊断；N4c固定已存策略响应，再依证据冻结单次后继；物理可微另立梯度对照 |
 | 05 传感与交互 | 深度/法线/ID、TYX射线、IMU基础、真实轨迹Three.js；G1示例明确传感器坐标绑定 | RGB/材质/光照、更广相机、批量传感和编辑生态；示例 gyro 修正不是通用传感子系统完工 | 同一真实场景的多传感器、时序/坐标协议及交互输入 |
 | 06 跨域求解编排 | 事务、点端口、域图与指定刚–布–软体组合 | 通用按区域选择后端、界面力/约束、耦合调度与共同失败恢复 | 两个异构后端的完整界面载荷、能量与回滚案例 |
 | 07 布与体软体 | 拉伸/剪切/弯曲、自接触、StVK四面体、双向载荷、递布基础 | 密集折叠、持续静摩擦/换特征、软块抓捏；目标软布放台仍有留出 | 多网格/刚度/初态的支撑、抓捏、折叠、放台；递布必要但不充分 |

@@ -329,3 +329,18 @@ def test_unresolved_rows_are_complete_public_boundary_evidence(mode,status,tmp_p
             assert result.groups[0].packet.rows[0].status==status
             assert result.groups[0].packet.rows[0].normal is None
             assert_group(result.groups[0])
+
+def test_owner_and_margin_binding(mode,tmp_path):
+    model,motion=flat()
+    with CollisionWorkspace(model,backend=mode) as first, CollisionWorkspace(model,backend=mode) as second:
+        with saved(tmp_path,"owner",first,motion) as record:
+            packet=first.boundary_distances(motion,margin=.5)
+            other=second.boundary_distances(motion,margin=.5)
+            record.update(packet=packet,other=other)
+            with pytest.raises(ValueError,match="owner"):
+                second.require_boundary_distances(packet,motion,margin=.5)
+            with pytest.raises(ValueError,match="binding"):
+                first.require_boundary_distances(packet,motion,margin=.25)
+            with pytest.raises(TypeError,match="Limits"):
+                first.boundary_distances(motion,margin=.5,limits={})
+            assert first.last_boundary_distances is packet

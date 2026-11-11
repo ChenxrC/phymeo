@@ -1,6 +1,7 @@
 """HOST-only reference arithmetic and failure records; no CUDA physical rerun."""
 
 import importlib.util
+import json
 from dataclasses import replace
 from hashlib import sha256
 from pathlib import Path
@@ -82,7 +83,7 @@ def test_inverse_tanh_mapping_is_not_linear_raw(api):
     assert np.max(np.abs(schedule["mapped_reference_v"][-1])) < api.V_ATOL
 
 
-@pytest.mark.parametrize("fault", ("shape", "nonfinite", "force", "bounds"))
+@pytest.mark.parametrize("fault", ("shape", "nonfinite", "force", "bounds", "not-fp32"))
 def test_infeasible_schedule_never_clips_or_changes_switch(api, fault):
     q, v = inputs(api)
     if fault == "shape":
@@ -91,6 +92,9 @@ def test_infeasible_schedule_never_clips_or_changes_switch(api, fault):
         v[0, 0] = np.inf
     elif fault == "force":
         q[0, 0] = .9
+    elif fault == "not-fp32":
+        q = q.astype(np.float64)
+        q[0, 0] = .04
     else:
         q[0, 0] = 1.1
     with pytest.raises(api.ReferenceInfeasible):
@@ -277,3 +281,80 @@ def test_post_step_evidence_failure_keeps_transition_and_no_cost(api):
     assert caught.value.detail["cost"] is None
     assert caught.value.detail["transitions_saved"] == 1
     assert [k for k, _ in writer.records].count("transition") == 1
+
+
+def synthetic_history(api, root, monkeypatch):
+    protocol = api.protocol_binding()
+    seeds = [14011, 14012, 14013]
+    original_binding = {"anchor_sha256": "a"*64, "source_bindings": {}}
+    zero = {"status": "COMPLETE_DIAGNOSTIC", "world_steps": 2048, "cost": .5}
+    originals, rows, bindings = {}, [], {}
+
+    def write(path, value):
+        raw = json.dumps(value, sort_keys=True).encode()
+        path.write_bytes(raw)
+        return sha256(raw).hexdigest()
+
+    for seed in seeds:
+        directory = root / ("J-"+str(seed))
+        directory.mkdir()
+        original = {
+            "protocol_binding": protocol, "baseline": {"cost": 1.2}, "learned": {"cost": 1.1},
+            "source_files": {"original.py": "b"*64}, "dependencies": {"mujoco": "3.3.7"},
+            "zero_action_diagnostic": {"cost": .6},
+        }
+        originals[seed] = original
+        saved = {
+            "task": "J", "seed": seed, "status": "COMPLETE_N4A_SEED", "updates": 128,
+            "worlds": 8, "accepted_world_steps": 32768, "evidence": {"logical_sha256": "c"*64},
+            "protocol_binding": protocol, "ppo_config": {"fixed": True},
+            "source_files": {"variant.py": "d"*64}, "dependencies": original["dependencies"],
+            "baseline": {"cost": 1., "world_steps": 2048},
+            "learned": {"cost": 1., "world_steps": 2048}, "zero_action_diagnostic": zero,
+        }
+        digest = write(directory / "summary.json", saved)
+        write(directory / "publication.json", {"summary_sha256": digest})
+        write(directory / "manifest.json", {name: saved[name] for name in
+              ("task", "seed", "protocol_binding", "ppo_config", "source_files", "dependencies")})
+        bindings[str(seed)] = {"directory": str(directory), "summary_sha256": digest, "evidence": saved["evidence"]}
+        rows.append({"seed": seed, "directory": str(directory), "status": "COMPLETE", "baseline_cost": 1.,
+                     "final_cost": 1., "original_baseline_cost": 1.2, "original_final_cost": 1.1})
+    variant = {
+        "schema": "n4d-j-ablation-comparison-v1", "classification": "FIXED_BUDGET_NOT_LEARNED",
+        "original_classification": "FIXED_BUDGET_NOT_LEARNED", "original_bindings": original_binding,
+        "rows": rows, "variant_three_seed": {
+            "task": "J", "seeds": seeds, "protocol_binding": protocol,
+            "outcome": {"classification": "FIXED_BUDGET_NOT_LEARNED"},
+            "source_bindings": bindings, "zero_action_diagnostic": zero,
+        },
+    }
+    monkeypatch.setattr(api, "N4D_SHA256", write(root / "summary.json", variant))
+    original_loader = api._example
+    monkeypatch.setattr(api, "_example", lambda name: SimpleNamespace(load_originals=lambda path: (original_binding, originals))
+                        if name == "evaluate_mujoco_tyx_initialization_ablation.py" else original_loader(name))
+    return protocol
+
+
+def test_history_keeps_distinct_source_and_zero_comparisons(api, tmp_path, monkeypatch):
+    protocol = synthetic_history(api, tmp_path, monkeypatch)
+    result = api.load_history(tmp_path, tmp_path, protocol)
+    assert len(result["rows"]) == 3
+    assert result["original_zero_cost"] == .6 and result["centered_zero_cost"] == .5
+    assert result["rows"][0]["original_source_files"] != result["rows"][0]["variant_source_files"]
+
+
+@pytest.mark.parametrize("fault", ("manifest", "publication", "protocol"))
+def test_history_binding_failure_prevents_a_window(api, tmp_path, monkeypatch, fault):
+    protocol = synthetic_history(api, tmp_path, monkeypatch)
+    if fault == "protocol":
+        protocol = {**protocol, "h": .001}
+    else:
+        path = tmp_path / "J-14012" / (fault+".json")
+        value = json.loads(path.read_text())
+        if fault == "manifest":
+            value["source_files"] = {"changed.py": "e"*64}
+        else:
+            value["summary_sha256"] = "0"*64
+        path.write_text(json.dumps(value))
+    with pytest.raises(ValueError):
+        api.load_history(tmp_path, tmp_path, protocol)

@@ -99,6 +99,7 @@ class MuJoCoTyxEnvError(RuntimeError):
         accepted_worlds=None,
         needs_recovery=False,
         transition=None,
+        control_window=None,
     ):
         super().__init__(message)
         self.phase = phase
@@ -109,6 +110,7 @@ class MuJoCoTyxEnvError(RuntimeError):
         self.accepted_worlds = MappingProxyType(dict(accepted_worlds or {}))
         self.needs_recovery = bool(needs_recovery)
         self.transition = transition
+        self.control_window = control_window
 
 
 @dataclass(frozen=True)
@@ -133,6 +135,13 @@ class MuJoCoTyxTransition:
     states: object
 
 
+@dataclass(frozen=True)
+class MuJoCoTyxWindowTransition(MuJoCoTyxTransition):
+    """Opt-in endpoint transition with every attempted physical substep."""
+
+    control_window: object
+
+
 class MuJoCoTyxVectorEnv:
     """Synchronous CUDA VecEnv with borrowed runtime and owned output workspace.
 
@@ -152,6 +161,7 @@ class MuJoCoTyxVectorEnv:
         horizons,
         observation_mode="full",
         reset_plan=None,
+        control_window=None,
     ):
         import torch
 
@@ -177,6 +187,14 @@ class MuJoCoTyxVectorEnv:
         self.world_keys = tuple(runtime.world_keys)
         self.num_envs, self.num_actions = len(self.world_keys), action_spec.width
         self.h = float(h)
+        if control_window is not None:
+            from .mujoco_tyx_control_window import MuJoCoTyxControlWindowSpec
+
+            if type(control_window) is not MuJoCoTyxControlWindowSpec:
+                raise TypeError("control window requires immutable MuJoCoTyxControlWindowSpec")
+            control_window.binding(self.h)
+        self._control_window = control_window
+        self._window_busy = False
         if reset_plan is not None:
             from .mujoco_tyx_reset import MuJoCoTyxResetPlan
 
@@ -229,7 +247,7 @@ class MuJoCoTyxVectorEnv:
                     "task_source": self.workspace.binding,
                     "h": self.h,
                     "horizons": tuple(values),
-                    "decimation": 1,
+                    "decimation": self.decimation,
                     "runtime_ownership": "borrowed-exclusive-mutation",
                     "physics_diagnostics": "complete-HOST-validation-retained",
                     "state_observation": self.observation_mode,
@@ -240,12 +258,29 @@ class MuJoCoTyxVectorEnv:
                         if reset_plan is not None
                         else {}
                     ),
+                    **(
+                        {"control_window": control_window.binding(self.h)}
+                        if control_window is not None
+                        else {}
+                    ),
                 }
             )
         except BaseException:
             self.workspace.close()
             self._closed = True
             raise
+
+    @property
+    def control_window(self):
+        return self._control_window
+
+    @property
+    def decimation(self):
+        return 1 if self._control_window is None else self._control_window.physics_steps
+
+    @property
+    def policy_dt_s(self):
+        return self.h * self.decimation
 
     @property
     def reset_plan(self):
@@ -311,6 +346,8 @@ class MuJoCoTyxVectorEnv:
             )
 
     def _ready(self):
+        if self._window_busy:
+            raise RuntimeError("a control window is already in progress")
         if self._closed:
             raise RuntimeError("device VecEnv is closed")
         if self._needs_recovery:
@@ -393,7 +430,7 @@ class MuJoCoTyxVectorEnv:
                     expected_revision=revision,
                 )
             return receipt
-        except Exception as error:
+        except BaseException as error:
             if receipt is not None:
                 raise MuJoCoTyxEnvError(
                     "device action committed; borrowed-view cleanup failed",
@@ -418,6 +455,21 @@ class MuJoCoTyxVectorEnv:
             receipt, reset_revision = None, None
             accepted = dict.fromkeys(self.world_keys, False)
             input_frame = self._frame
+            substeps, completed, failed_substep = [], 0, None
+            window_record = None
+            if self._control_window is not None:
+                from .mujoco_tyx_control_window import (
+                    MuJoCoTyxControlWindowRecord,
+                    MuJoCoTyxSubstepRecord,
+                )
+
+                def window_record(phase):
+                    return MuJoCoTyxControlWindowRecord(
+                        self._control_window.sha256, self.decimation, len(substeps),
+                        completed, tuple(substeps), receipt, phase, failed_substep,
+                    )
+
+            self._window_busy = True
             try:
                 stream = (
                     torch.cuda.current_stream(self.device)
@@ -434,19 +486,43 @@ class MuJoCoTyxVectorEnv:
                     phase = "action-publication"
                     receipt = self._submit(channels, stream, input_frame.revision)
                     action_accepted = True
-                phase = "physics"
-                result = self.runtime.step(self.h)
-                accepted = dict(result)
-                state_accepted = accepted == dict.fromkeys(self.world_keys, True)
-                if not state_accepted:
-                    raise RuntimeError("physical batch did not accept every declared world")
-                self._counts["physical_steps"] += 1
-                phase = "physical-diagnostics"
-                states = (
-                    self.runtime.snapshot()
-                    if self.observation_mode == "full"
-                    else self.runtime.integration_snapshot()
-                )
+                for ordinal in range(self.decimation):
+                    phase = "physics"
+                    entry_revision = self.runtime.checkpoint_revision
+                    accepted = dict.fromkeys(self.world_keys, False)
+                    if window_record is not None:
+                        # Install the attempt before calling a fallible backend. A
+                        # later diagnostic failure cannot erase an accepted step.
+                        substeps.append(MuJoCoTyxSubstepRecord(
+                            ordinal, entry_revision, entry_revision, accepted, None, False
+                        ))
+                        failed_substep = ordinal
+                    result = self.runtime.step(self.h)
+                    accepted = dict(result)
+                    whole_batch = accepted == dict.fromkeys(self.world_keys, True)
+                    state_accepted = state_accepted or any(accepted.values())
+                    if whole_batch:
+                        completed += 1
+                        self._counts["physical_steps"] += 1
+                    if window_record is not None:
+                        substeps[-1] = MuJoCoTyxSubstepRecord(
+                            ordinal, entry_revision, self.runtime.checkpoint_revision,
+                            accepted, None, False,
+                        )
+                    if not whole_batch:
+                        raise RuntimeError("physical batch did not accept every declared world")
+                    phase = "physical-diagnostics"
+                    states = (
+                        self.runtime.snapshot()
+                        if self.observation_mode == "full"
+                        else self.runtime.integration_snapshot()
+                    )
+                    if window_record is not None:
+                        substeps[-1] = MuJoCoTyxSubstepRecord(
+                            ordinal, entry_revision, self.runtime.checkpoint_revision,
+                            accepted, states, True,
+                        )
+                        failed_substep = None
                 phase = "task-export"
                 final_frame, final_obs, reward, raw_terminated = self._export()
                 phase = "episode-bookkeeping"
@@ -481,7 +557,10 @@ class MuJoCoTyxVectorEnv:
                     next_ids[done_host] += 1
                     next_returns[final_mask] = 0
                 phase = "transition-publication"
-                transition = MuJoCoTyxTransition(
+                transition_type = (
+                    MuJoCoTyxTransition if window_record is None else MuJoCoTyxWindowTransition
+                )
+                transition = transition_type(
                     self._sequence + 1,
                     self.world_keys,
                     input_frame,
@@ -500,6 +579,7 @@ class MuJoCoTyxVectorEnv:
                     receipt,
                     MappingProxyType(accepted),
                     states,
+                    **({"control_window": window_record("complete")} if window_record else {}),
                 )
                 # Internal observation/return owners cannot be mutated via a returned transition.
                 current_observation = observation.clone()
@@ -510,7 +590,7 @@ class MuJoCoTyxVectorEnv:
                 self._sequence, self.last_transition = transition.sequence, transition
                 self._counts["transitions"] += 1
                 return transition
-            except Exception as error:
+            except BaseException as error:
                 if isinstance(error, MuJoCoTyxEnvError) and error.action_accepted:
                     action_accepted, receipt = True, error.action_receipt
                 if (
@@ -520,6 +600,13 @@ class MuJoCoTyxVectorEnv:
                     reset_accepted = True
                 recovery = action_accepted or state_accepted or reset_accepted
                 self._needs_recovery = self._needs_recovery or recovery
+                if window_record is not None and failed_substep is not None:
+                    old = substeps[-1]
+                    substeps[-1] = MuJoCoTyxSubstepRecord(
+                        old.ordinal, old.entry_revision, self.runtime.checkpoint_revision,
+                        old.accepted_worlds, old.states, old.diagnostics_complete,
+                        type(error).__name__ + ": " + str(error),
+                    )
                 failure = MuJoCoTyxEnvError(
                     "device rollout stopped at " + phase,
                     phase=phase,
@@ -529,15 +616,20 @@ class MuJoCoTyxVectorEnv:
                     action_receipt=receipt,
                     accepted_worlds=accepted,
                     needs_recovery=self._needs_recovery,
+                    control_window=window_record(phase) if window_record else None,
                 )
                 self.last_failure = failure
                 raise failure from error
+            finally:
+                self._window_busy = False
 
     def reset(self, world_keys=None):
         """Explicit fresh episodes; full batch required after a partial transaction."""
         import torch
 
         with self._lock:
+            if self._window_busy:
+                raise RuntimeError("a control window is already in progress")
             if self._closed:
                 raise RuntimeError("device VecEnv is closed")
             if self.runtime.checkpoint_revision != self._frame.revision:
@@ -612,6 +704,8 @@ class MuJoCoTyxVectorEnv:
             binding["state_observation"] = self.observation_mode
         if self._reset_plan is not None:
             binding["random_reset"] = self._reset_plan.training_binding()
+        if self._control_window is not None:
+            binding["control_window"] = self._control_window.binding(self.h)
         return binding
 
     def capture_training_state(self):
@@ -741,6 +835,8 @@ class MuJoCoTyxVectorEnv:
 
     def close(self):
         with self._lock:
+            if self._window_busy:
+                raise RuntimeError("a control window is already in progress")
             if not self._closed:
                 self._closed = True
                 self.workspace.close()

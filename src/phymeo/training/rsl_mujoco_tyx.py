@@ -25,18 +25,24 @@ class RslMuJoCoTyxVecEnv(VecEnv):
         self.num_envs, self.num_actions = env.num_envs, env.num_actions
         self.max_episode_length = torch.tensor(env.horizons.copy(), device=self.device)
         self._poisoned = False
+        self._step_busy = False
         self.last_transition = None
         self.cfg = {
             "adapter": "phymeo-mujoco-tyx-rsl-v1",
             "rsl_rl": SUPPORTED_RSL_RL,
             "world_keys": list(env.world_keys),
             "physical_dt_s": env.h,
-            "decimation": 1,
+            "decimation": env.decimation,
             "policy_observations": "device-task-copy-owned-CUDA",
             "actions": "device-native-CAS-with-complete-HOST-bit-audit",
             "physics_diagnostics": "complete-HOST-validation-retained",
             "timeout_bootstrap": "RSL5.5.2-entry-act-values",
         }
+        if env.control_window is not None:
+            self.cfg.update(
+                policy_dt_s=env.policy_dt_s,
+                control_window=env.control_window.binding(env.h),
+            )
 
     @property
     def needs_recovery(self):
@@ -53,6 +59,8 @@ class RslMuJoCoTyxVecEnv(VecEnv):
         )
 
     def _ready(self):
+        if self._step_busy:
+            raise RuntimeError("an adapter control window is already in progress")
         if self.needs_recovery:
             raise RuntimeError(
                 "learner requires explicit full recovery reset; discard pending rollout"
@@ -73,6 +81,13 @@ class RslMuJoCoTyxVecEnv(VecEnv):
 
     def step(self, actions):
         self._ready()
+        self._step_busy = True
+        try:
+            return self._step(actions)
+        finally:
+            self._step_busy = False
+
+    def _step(self, actions):
         transition = self.env.step(
             actions,
             world_keys=self.env.world_keys,
@@ -94,8 +109,10 @@ class RslMuJoCoTyxVecEnv(VecEnv):
                 "episode_return": transition.episode_return,
                 "transition_sequence": transition.sequence,
             }
+            if self.env.control_window is not None:
+                extras["control_window"] = transition.control_window
             done = transition.terminated | transition.time_outs
-        except Exception as error:
+        except BaseException as error:
             self._poisoned = True
             raise MuJoCoTyxEnvError(
                 "wrapper transition accepted; RSL publication failed",
@@ -106,6 +123,7 @@ class RslMuJoCoTyxVecEnv(VecEnv):
                 action_receipt=transition.action_receipt,
                 accepted_worlds=transition.accepted_worlds,
                 transition=transition,
+                control_window=getattr(transition, "control_window", None),
             ) from error
         self.last_transition = transition
         return observations, transition.reward, done, extras
@@ -129,6 +147,8 @@ class RslMuJoCoTyxVecEnv(VecEnv):
         self.env.invalidate_training_state(reason)
 
     def reset(self, indices=None):
+        if self._step_busy:
+            raise RuntimeError("an adapter control window is already in progress")
         if indices is None:
             keys = None
         else:

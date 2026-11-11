@@ -255,6 +255,9 @@ class DeviceTriangleDistanceBatch:
             if not isinstance(value,np.ndarray) or value.shape!=shape or value.dtype!=dtype or not np.all(np.isfinite(value)):
                 raise RuntimeError(f"invalid device {key} readback")
         rows=[]
+        deltas=dict(deltas)
+        deltas["published_axis"]=np.zeros((count,3),np.float64)
+        deltas["published_triangle"]=np.zeros((count,3),np.float64)
         for i,(sid,fid) in enumerate(inputs["candidates"]):
             state,selected,mask,normal_defined,tag,si,fi=map(int,raw["meta"][i])
             if tag!=generation or (si,fi)!=tuple(map(int,uploaded["owners"][i])):
@@ -324,11 +327,17 @@ class DeviceTriangleDistanceBatch:
                 normal=tuple(map(float,summary[12:15]))
             elif np.any(summary[12:15]!=0):
                 raise RuntimeError("unexpected normal for unresolved row")
+            axis_point=frames[i]+summary[6:9].astype(np.float64)
+            triangle_point=frames[i]+summary[9:12].astype(np.float64)
+            deltas["published_axis"][i]=(axis_point-frames[i])-summary[6:9]
+            deltas["published_triangle"][i]=(triangle_point-frames[i])-summary[9:12]
+            if np.linalg.norm(deltas["published_axis"][i])>2e-4*length or np.linalg.norm(deltas["published_triangle"][i])>2e-4*length:
+                raise RuntimeError("pair frame publication loses local witness")
             rows.append(TriangleDistanceRow(
                 int(sid),int(fid),tuple(map(int,inputs["vertex_ids"][inputs["faces"][fi]])),
                 {1:"RESOLVED",2:"CONDITIONING",3:"DEGENERATE"}[state],float(summary[0]),float(summary[1]),
                 float(summary[2]),tuple(map(float,summary[3:6])),
-                tuple(map(float,frames[i]+summary[6:9])),tuple(map(float,frames[i]+summary[9:12])),
+                tuple(map(float,axis_point)),tuple(map(float,triangle_point)),
                 normal,selected,ties,span))
         return TriangleDistancePacket("phymeo-device-triangle-distance-v1",self._owner,generation,
             metadata["mesh_key"],metadata["revision"],metadata["snapshot_id"],binding,MappingProxyType(inputs),

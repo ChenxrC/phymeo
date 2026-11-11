@@ -372,12 +372,6 @@ NEGATIVE_XML = (
         xml("same-body-slide-ball", body("mixed", joint("slide", "slide") + joint("ball"))),
     ),
     (
-        "scalar-motor-with-ball",
-        HINGE_BALL_SLIDE.replace(
-            "</mujoco>", '<actuator><motor joint="hinge"/></actuator></mujoco>'
-        ),
-    ),
-    (
         "free-and-ball",
         xml("free-and-ball", body("free", "<freejoint/>", body("ball-child", joint("ball")))),
     ),

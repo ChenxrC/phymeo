@@ -53,9 +53,16 @@ def compile_tree_model(
     ):
         issue("joint-domain", "fixed-root hinge/slide/ball requires nv<=8 and nq<=10")
     if has_ball:
-        # BALL1 is deliberately not forwarded into any old contact/actuator path.
-        if model.nu or model.na:
-            issue("ball-actuator-domain", "BALL1 has no actuator transmission or activation")
+        if model.nu > 32 or model.na > 32:
+            issue("ball-actuator-capacity", "ball trees permit at most 32 scalar actors/activations")
+        for actor in range(model.nu):
+            joint = int(model.actuator_trnid[actor, 0])
+            if (
+                model.actuator_trntype[actor] != mj.mjtTrn.mjTRN_JOINT
+                or not 0 <= joint < model.njnt
+                or model.jnt_type[joint] not in (mj.mjtJoint.mjJNT_HINGE, mj.mjtJoint.mjJNT_SLIDE)
+            ):
+                issue("ball-actuator-domain", "ball trees admit only scalar JOINT actuator targets")
         if np.any(model.jnt_limited) or np.any(model.dof_frictionloss):
             issue("ball-constraint-domain", "BALL1 excludes every joint limit and dry-friction row")
         for joint in range(model.njnt):

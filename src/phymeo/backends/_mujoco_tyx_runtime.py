@@ -175,7 +175,8 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
     bounded primitive condim=1 manifold with coupled normal forces.
     Ball extension: fixed-root ball/hinge/slide with at most 8 velocity and 10
     position coordinates, complete SO(3) integration and full M/J/bias. This
-    extension excludes actuators, contact, joint limits and dry friction.
+    extension permits scalar JOINT actors and excludes ball-target actors,
+    contact, joint limits and dry friction.
     Original domain: 1..8 all-prismatic native DOFs with full coupled static
     mass, stateless direct/affine motors, scalar stiffness/armature/damping; or
     one centered isotropic free body, with native local angular coordinates and
@@ -245,6 +246,8 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                 if getattr(self._plan, "normal_contact", False)
                 else "free-root-hinge-slide-no-contact-v1"
                 if self._plan.kind == 3
+                else "fixed-ball-scalar-actuation-no-contact-v1"
+                if self._model.nu and np.any(self._model.jnt_type == self._mj.mjtJoint.mjJNT_BALL)
                 else "fixed-ball-hinge-slide-no-contact-v1"
                 if np.any(self._model.jnt_type == self._mj.mjtJoint.mjJNT_BALL)
                 else "fixed-hinge-slide-no-contact-v1"
@@ -330,6 +333,8 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                 if getattr(self._plan, "normal_contact", False)
                 else "free-root-scalar-filterexact-v1"
                 if self._plan.kind == 3
+                else "fixed-ball-scalar-filterexact-no-contact-v1"
+                if np.any(self._model.jnt_type == self._mj.mjtJoint.mjJNT_BALL)
                 else "fixed-hinge-slide-filterexact-v1"
             )
             info.update(

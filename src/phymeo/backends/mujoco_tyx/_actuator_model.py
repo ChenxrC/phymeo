@@ -125,7 +125,11 @@ def compile_activation_model(mj, model):
     from ._normal_model import compile_normal_model, possible_pairs
 
     candidate_pairs = constraint_pairs(model)
-    if needs_constraints(mj, model, candidate_pairs):
+    if np.any(model.jnt_type == mj.mjtJoint.mjJNT_BALL):
+        # Do not let actuator admission route a forbidden BALL contact/free
+        # composition around the fixed-tree structural gates.
+        base = compile_tree_model(mj, model, allow_activation=True)
+    elif needs_constraints(mj, model, candidate_pairs):
         base = compile_constraint_model(mj, model, candidate_pairs, allow_activation=True)
     else:
         pairs = possible_pairs(model)

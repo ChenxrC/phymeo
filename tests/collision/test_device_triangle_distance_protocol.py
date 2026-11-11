@@ -79,7 +79,7 @@ def test_snapshot_and_owner_binding(mode):
         with pytest.raises(TypeError): current.inputs["new"]=1
 
 
-def test_source_conversion_cannot_use_world_translation_as_scale(mode):
+def test_source_conversion_cannot_use_world_translation_as_scale(mode,tmp_path):
     data=reference().make_case("face_above")
     # Pre-execution correction: common translation is representable in a pair
     # frame. A distant small segment instead loses .25 relative to this triangle.
@@ -87,6 +87,16 @@ def test_source_conversion_cannot_use_world_translation_as_scale(mode):
     with new_batch(mode,data) as batch:
         with pytest.raises(ValueError,match="precision"): batch.query(**data)
         assert batch.stats["launches"]==0
+        # Exactly representable but very distant data still cannot promise an
+        # absolute distance error scaled only by the small local triangle.
+        distant=reference().make_case("face_above")
+        distant["snapshot_id"]="distant-resolution"
+        distant["segments"][:]=(2**24,0,0)
+        with saved(tmp_path,"distant_resolution",mode,distant,batch) as record:
+            packet=batch.query(**distant)
+            record["packet"]=packet
+            assert packet.rows[0].status=="CONDITIONING"
+            assert packet.rows[0].normal is None
 
 
 def test_no_host_distance_search(mode,monkeypatch,tmp_path):

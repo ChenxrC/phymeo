@@ -520,11 +520,21 @@ def test_scale_delivery_uses_full_wall_region_not_sum_of_subtimers(api, tmp_path
             events.append("hash")
             return {"scope": "fake file IO for timing boundary only"}
 
-    context = {"writer": Writer(), "path": tmp_path, "scale_write_start": 1.0,
-               "scale_wall_start": 100.0}
-    result = {"status": "PASS_N4A_SCALE_CELL", "task": "J", "measured_world_steps": 768,
-              "timing": {"compute_and_mandatory_diagnostics_s": 2.0,
-                         "post_update_independent_audit_s": 1.0}}
+    context = {
+        "writer": Writer(),
+        "path": tmp_path,
+        "scale_write_start": 1.0,
+        "scale_wall_start": 100.0,
+    }
+    result = {
+        "status": "PASS_N4A_SCALE_CELL",
+        "task": "J",
+        "measured_world_steps": 768,
+        "timing": {
+            "compute_and_mandatory_diagnostics_s": 2.0,
+            "post_update_independent_audit_s": 1.0,
+        },
+    }
     api._finish(context, result)
     assert result["timing"]["measured_loop_to_trace_close_s"] == 10.0
     assert result["timing"]["transitions_per_s_with_full_trace_delivery"] == 76.8

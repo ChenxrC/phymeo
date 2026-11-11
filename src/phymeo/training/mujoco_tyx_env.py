@@ -382,6 +382,8 @@ class MuJoCoTyxVectorEnv:
         with self._lock:
             if self._closed:
                 raise RuntimeError("device VecEnv is closed")
+            if self.runtime.checkpoint_revision != self._frame.revision:
+                self._needs_recovery = True
             selected = self.world_keys if world_keys is None else tuple(world_keys)
             if len(set(selected)) != len(selected) or not set(selected) <= set(self.world_keys):
                 raise ValueError("reset keys must be unique members of frozen world order")

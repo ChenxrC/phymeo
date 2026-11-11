@@ -228,9 +228,19 @@ class MemoryObservation:
         return mode.setdefault(
             self.phase if phase is None else phase,
             dict.fromkeys(
-                ("calls", "failures", "constructor_calls", "constructor_failures",
-                 "copy_calls", "copy_failures", "constructor_seconds", "copy_seconds",
-                 "wall_seconds_inclusive", "wall_seconds_exclusive"), 0,
+                (
+                    "calls",
+                    "failures",
+                    "constructor_calls",
+                    "constructor_failures",
+                    "copy_calls",
+                    "copy_failures",
+                    "constructor_seconds",
+                    "copy_seconds",
+                    "wall_seconds_inclusive",
+                    "wall_seconds_exclusive",
+                ),
+                0,
             ),
         )
 
@@ -242,9 +252,12 @@ class MemoryObservation:
             "model_narena_bytes": int(value.model.narena),
             "model_nbuffer_bytes": int(value.model.nbuffer),
         }
-        optional = {"maxuse_stack": "data_maxuse_stack_bytes",
-                    "maxuse_threadstack": "data_maxuse_threadstack_bytes",
-                    "maxuse_con": "data_maxuse_contacts", "maxuse_efc": "data_maxuse_efc"}
+        optional = {
+            "maxuse_stack": "data_maxuse_stack_bytes",
+            "maxuse_threadstack": "data_maxuse_threadstack_bytes",
+            "maxuse_con": "data_maxuse_contacts",
+            "maxuse_efc": "data_maxuse_efc",
+        }
         unavailable = []
         for attribute, key in optional.items():
             if not hasattr(value, attribute):
@@ -271,10 +284,18 @@ class MemoryObservation:
         except Exception as error:
             process = {"status": "UNKNOWN", "reason": type(error).__name__ + ": " + str(error)}
         self.events.append(
-            {"stage": stage, "mode": self.mode, "step": self.step, "phase": self.phase,
-             "copy_ordinal": self.copy_calls, "copy_in_step": self.step_copies,
-             "constructor_ordinal": self.constructor_calls, "process": process, **fields,
-             **({"native": dict(native)} if native is not None else {})}
+            {
+                "stage": stage,
+                "mode": self.mode,
+                "step": self.step,
+                "phase": self.phase,
+                "copy_ordinal": self.copy_calls,
+                "copy_in_step": self.step_copies,
+                "constructor_ordinal": self.constructor_calls,
+                "process": process,
+                **fields,
+                **({"native": dict(native)} if native is not None else {}),
+            }
         )
 
     def begin_mode(self, mode):
@@ -361,15 +382,25 @@ class MemoryObservation:
             natives += int(isinstance(value, data_type))
             compact += int(kind == "phymeo.backends._mujoco_tyx_mirror.NativeMirror")
         scratch = runtime._observer_data
-        row = {"mode": self.mode, "step": self.step, "accepted_records": len(runtime._data),
-               "accepted_record_types": kinds, "accepted_native_records": natives,
-               "compact_worlds": compact, "observer_scratch_present": int(scratch is not None),
-               "observer_is_native": bool(isinstance(scratch, data_type)),
-               "scope": "this-runtime-owned-references-only-not-process-live-natives"}
+        row = {
+            "mode": self.mode,
+            "step": self.step,
+            "accepted_records": len(runtime._data),
+            "accepted_record_types": kinds,
+            "accepted_native_records": natives,
+            "compact_worlds": compact,
+            "observer_scratch_present": int(scratch is not None),
+            "observer_is_native": bool(isinstance(scratch, data_type)),
+            "scope": "this-runtime-owned-references-only-not-process-live-natives",
+        }
         if scratch is not None:
             row["observer_native"] = self._record_native(scratch)
         self.runtime_layouts.append(row)
-        if natives or compact != self.worlds or (scratch is not None and not row["observer_is_native"]):
+        if (
+            natives
+            or compact != self.worlds
+            or (scratch is not None and not row["observer_is_native"])
+        ):
             raise AssertionError("compact runtime ownership observation differs")
         return row
 
@@ -380,7 +411,10 @@ class MemoryObservation:
 
         def wrapped(original, phase):
             def call(*args, **kwargs):
-                before = {"constructor_calls": self.constructor_calls, "copy_calls": self.copy_calls}
+                before = {
+                    "constructor_calls": self.constructor_calls,
+                    "copy_calls": self.copy_calls,
+                }
                 failed = False
                 try:
                     with self._phase(phase):
@@ -391,9 +425,13 @@ class MemoryObservation:
                 finally:
                     if phase == "physics-step":
                         delta = {key: getattr(self, key) - before[key] for key in before}
-                        step = {"mode": self.mode, "step": self.step,
-                                "original_call_failed": failed, **delta,
-                                "zero_native_allocation": not any(delta.values())}
+                        step = {
+                            "mode": self.mode,
+                            "step": self.step,
+                            "original_call_failed": failed,
+                            **delta,
+                            "zero_native_allocation": not any(delta.values()),
+                        }
                         if len(self.physics_steps) >= 96:
                             raise RuntimeError("fixed physical step observation bound exceeded")
                         self.physics_steps.append(step)
@@ -402,13 +440,19 @@ class MemoryObservation:
                         if isinstance(scratch, data_type):
                             self._record_native(scratch)
                 if phase == "physics-step" and not step["zero_native_allocation"]:
-                    raise AssertionError("native allocation or runtime copy occurred inside physics step")
+                    raise AssertionError(
+                        "native allocation or runtime copy occurred inside physics step"
+                    )
                 return result
+
             return call
 
         try:
-            for name, phase in (("step", "physics-step"), ("snapshot", "full-observer"),
-                                ("integration_snapshot", "integration-observer")):
+            for name, phase in (
+                ("step", "physics-step"),
+                ("snapshot", "full-observer"),
+                ("integration_snapshot", "integration-observer"),
+            ):
                 original = getattr(runtime, name)
                 previous[name] = vars(runtime).get(name, sentinel)
                 setattr(runtime, name, wrapped(original, phase))
@@ -448,8 +492,9 @@ class MemoryObservation:
             except BaseException as error:
                 observer.copy_failures += 1
                 row["copy_failures"] += 1
-                observer.event("copy-failed", native=native,
-                               error_type=type(error).__name__, error=str(error))
+                observer.event(
+                    "copy-failed", native=native, error_type=type(error).__name__, error=str(error)
+                )
                 raise
             finally:
                 row["copy_seconds"] += perf_counter() - start
@@ -469,14 +514,19 @@ class MemoryObservation:
             except BaseException as error:
                 observer.constructor_failures += 1
                 row["constructor_failures"] += 1
-                observer.event("constructor-failed", error_type=type(error).__name__, error=str(error))
+                observer.event(
+                    "constructor-failed", error_type=type(error).__name__, error=str(error)
+                )
                 raise
             finally:
                 row["constructor_seconds"] += perf_counter() - start
             native = observer._record_native(result)
             if row["constructor_calls"] in (1, observer.worlds):
-                observer.event("constructor-complete", native=native,
-                               constructor_in_phase=row["constructor_calls"])
+                observer.event(
+                    "constructor-complete",
+                    native=native,
+                    constructor_in_phase=row["constructor_calls"],
+                )
             return result
 
         # Save the original real type before replacing only the public factory.
@@ -493,21 +543,29 @@ class MemoryObservation:
 
     def snapshot(self):
         return summary_only(
-            {"schema": "bounded-native-allocation-observation-v2",
-             "process_metric_scope": "whole-process-not-exclusive-native",
-             "copy_scope": "TYX runtime copy.copy only; full snapshot copies are not intercepted",
-             "model_scope": "actual constructed/copied MjData.model, not a fresh or dummy model",
-             "constructor_scope": "public mujoco.MjData factory during this isolated diagnostic only",
-             "legacy_v1": "copy fields retain v1 scope; absent v1 constructor counts are UNKNOWN, not zero",
-             "copy_calls": self.copy_calls, "copy_failures": self.copy_failures,
-             "constructor_calls": self.constructor_calls,
-             "constructor_failures": self.constructor_failures,
-             "maximum_copies": self.maximum_copies, "maximum_constructors": self.maximum_constructors,
-             "maximum_events": self.maximum_events, "native_ranges": self.native_ranges,
-             "phase_accounting": self.phase_accounting, "physics_steps": self.physics_steps,
-             "runtime_layouts": self.runtime_layouts, "events": self.events,
-             "previous_snapshots": list(self.files), "performance_eligible": False,
-             "leak_causality": "NOT_ESTABLISHED"}
+            {
+                "schema": "bounded-native-allocation-observation-v2",
+                "process_metric_scope": "whole-process-not-exclusive-native",
+                "copy_scope": "TYX runtime copy.copy only; full snapshot copies are not intercepted",
+                "model_scope": "actual constructed/copied MjData.model, not a fresh or dummy model",
+                "constructor_scope": "public mujoco.MjData factory during this isolated diagnostic only",
+                "legacy_v1": "copy fields retain v1 scope; absent v1 constructor counts are UNKNOWN, not zero",
+                "copy_calls": self.copy_calls,
+                "copy_failures": self.copy_failures,
+                "constructor_calls": self.constructor_calls,
+                "constructor_failures": self.constructor_failures,
+                "maximum_copies": self.maximum_copies,
+                "maximum_constructors": self.maximum_constructors,
+                "maximum_events": self.maximum_events,
+                "native_ranges": self.native_ranges,
+                "phase_accounting": self.phase_accounting,
+                "physics_steps": self.physics_steps,
+                "runtime_layouts": self.runtime_layouts,
+                "events": self.events,
+                "previous_snapshots": list(self.files),
+                "performance_eligible": False,
+                "leak_causality": "NOT_ESTABLISHED",
+            }
         )
 
     def flush(self):
@@ -649,8 +707,13 @@ def _run_mode(name, worlds, mode, target, tasks, torch, seed, *, memory=None):
                         steps = [row for row in memory.physics_steps if row["mode"] == mode]
                         if [row["step"] for row in steps] != list(range(1, 49)):
                             raise AssertionError("diagnostic did not enclose all 48 physical steps")
-                        if any(row["original_call_failed"] or not row["zero_native_allocation"] for row in steps):
-                            raise AssertionError("physical step allocation/failure diagnostic differs")
+                        if any(
+                            row["original_call_failed"] or not row["zero_native_allocation"]
+                            for row in steps
+                        ):
+                            raise AssertionError(
+                                "physical step allocation/failure diagnostic differs"
+                            )
                         memory.runtime_layout(runtime, data_type)
             finally:
                 if memory is not None:
@@ -730,7 +793,9 @@ def run_pair(name, worlds, output, *, memory_diagnostic=False):
             "excluded_identity": ["workspace_owner", "runtime_owner"],
             "newton_performance_comparison": False,
             "memory_diagnostic": memory_diagnostic,
-            "memory_observation_schema": "bounded-native-allocation-observation-v2" if memory_diagnostic else None,
+            "memory_observation_schema": "bounded-native-allocation-observation-v2"
+            if memory_diagnostic
+            else None,
             "performance_eligible": not memory_diagnostic,
             "source_files": {
                 **api._sources(),
@@ -767,7 +832,9 @@ def run_pair(name, worlds, output, *, memory_diagnostic=False):
             "newton_performance_claim": False,
             "rng_comparison": "Torch CPU and current CUDA device only",
             "memory_diagnostic": memory_diagnostic,
-            "memory_observation_schema": "bounded-native-allocation-observation-v2" if memory_diagnostic else None,
+            "memory_observation_schema": "bounded-native-allocation-observation-v2"
+            if memory_diagnostic
+            else None,
             "performance_eligible": not memory_diagnostic,
         }
         evidence.json_write(target / "summary.json", summary)

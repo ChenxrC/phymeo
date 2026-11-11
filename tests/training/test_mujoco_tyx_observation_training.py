@@ -377,12 +377,15 @@ def test_memory_physics_interval_excludes_full_observer_and_retains_no_runtime(t
     runtime = Runtime()
 
     class Adapter:
+        def __init__(self, owner):
+            self.runtime = owner
+
         def step(self, actions):
-            accepted = runtime.step(0.002)
-            full = runtime.snapshot()
+            accepted = self.runtime.step(0.002)
+            full = self.runtime.snapshot()
             return accepted, full, actions
 
-    adapter = Adapter()
+    adapter = Adapter(runtime)
     observer = module.MemoryObservation(tmp_path, 2, process_sample=lambda: {})
     with observer.install(target, data_type, native_module=native_module):
         observer.begin_mode("full")

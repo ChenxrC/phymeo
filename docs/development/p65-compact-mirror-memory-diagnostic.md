@@ -69,3 +69,7 @@ The old `test_memory_copy_facade_delegates_and_restores_without_native_owners`
 is the focused compatibility selection (2 cases); broader old suites are not
 required by this diagnostic-only increment. Parent performs static checks and
 these HOST cases before one fixed S256 run with `--memory-diagnostic`.
+
+## Parent qualification before the fixed S256 measurement
+
+118/119 retained first Ruff/format failures: two F821 reports from a test closure whose local owner was explicitly deleted, and one unformatted example. The test adapter now owns an explicit runtime reference; deleting the adapter still checks owner release. 121 formatter, 122 Ruff and 123 format-check passed. 120 selected all eight new fake-owner cases plus the two existing copy-facade cases: 10 passed in 1.13s, RAW_EXIT=0. No physical benchmark has run for this source yet.

@@ -110,6 +110,24 @@ class RslMuJoCoTyxVecEnv(VecEnv):
         self.last_transition = transition
         return observations, transition.reward, done, extras
 
+    def restore_training_state(self, checkpoint, state, *, expected_revision):
+        """Explicit composition seam; upstream storage must be empty at caller."""
+        self._ready()
+        try:
+            receipt = self.env.restore_training_state(
+                checkpoint, state, expected_revision=expected_revision
+            )
+        except BaseException:
+            if self.env.needs_recovery:
+                self._poisoned = True
+            raise
+        self.last_transition = None
+        return receipt
+
+    def invalidate_training_state(self, reason):
+        self._poisoned = True
+        self.env.invalidate_training_state(reason)
+
     def reset(self, indices=None):
         if indices is None:
             keys = None

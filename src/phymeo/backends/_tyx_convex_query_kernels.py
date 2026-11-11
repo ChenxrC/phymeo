@@ -17,6 +17,28 @@ from ._tyx_convex_support_family import (
 )
 
 
+@tx.func
+def affine_simplex_coordinate(
+    count: tx.i32,
+    pivot: tx.f32,
+    edge1: tx.f32,
+    edge2: tx.f32,
+    edge3: tx.f32,
+    weight1: tx.f32,
+    weight2: tx.f32,
+    weight3: tx.f32,
+) -> tx.f32:
+    return (
+        pivot
+        if count == 1
+        else pivot + weight1 * edge1
+        if count == 2
+        else (pivot + weight1 * edge1) + weight2 * edge2
+        if count == 3
+        else ((pivot + weight1 * edge1) + weight2 * edge2) + weight3 * edge3
+    )
+
+
 def gather_convex_pose(
     count: tx.i32,
     selected_layout: tx.i32,
@@ -896,23 +918,14 @@ def query_convex_pairs(
                                     w1 = w1 / total
                                     w2 = w2 / total
                                     w3 = w3 / total
-                                    qx = (
-                                        w0 * x0
-                                        + w1 * vertices[lane, i1, 0]
-                                        + w2 * vertices[lane, i2, 0]
-                                        + w3 * vertices[lane, i3, 0]
+                                    qx = affine_simplex_coordinate(
+                                        count_s, x0, ex, fx, gx, w1, w2, w3
                                     )
-                                    qy = (
-                                        w0 * y0
-                                        + w1 * vertices[lane, i1, 1]
-                                        + w2 * vertices[lane, i2, 1]
-                                        + w3 * vertices[lane, i3, 1]
+                                    qy = affine_simplex_coordinate(
+                                        count_s, y0, ey, fy, gy, w1, w2, w3
                                     )
-                                    qz = (
-                                        w0 * z0
-                                        + w1 * vertices[lane, i1, 2]
-                                        + w2 * vertices[lane, i2, 2]
-                                        + w3 * vertices[lane, i3, 2]
+                                    qz = affine_simplex_coordinate(
+                                        count_s, z0, ez, fz, gz, w1, w2, w3
                                     )
                                     square = dot3(qx, qy, qz, qx, qy, qz)
                                     # A smooth support can improve the tangential

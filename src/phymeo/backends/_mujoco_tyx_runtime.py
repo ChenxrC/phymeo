@@ -286,8 +286,17 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
             self._capabilities = MappingProxyType(info)
 
         if hasattr(self._plan, "activation"):
+            domain = (
+                "tree-pyramidal-mixed-filterexact-v1"
+                if getattr(self._plan, "constraint_contact", False)
+                else "tree-normal-contact-filterexact-v1"
+                if getattr(self._plan, "normal_contact", False)
+                else "free-root-scalar-filterexact-v1"
+                if self._plan.kind == 3
+                else "fixed-hinge-slide-filterexact-v1"
+            )
             info.update(
-                domain="fixed-hinge-slide-filterexact-v1",
+                domain=domain,
                 actuator_state="native-filterexact-device-bank-v1",
                 checkpoint="exact-accepted-tyx-batch-v2",
             )

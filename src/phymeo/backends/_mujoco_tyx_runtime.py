@@ -9,6 +9,9 @@ single-normal domain remains a separate route.
 """
 
 import copy
+import hashlib
+import json
+from collections.abc import Mapping
 from dataclasses import dataclass
 from numbers import Integral
 from types import MappingProxyType
@@ -17,12 +20,38 @@ import numpy as np
 
 from ..training.resident_stepper import PhysicsStepFailure
 from ._mujoco_tyx_mirror import MIRROR_FIELDS, NativeStateLayout
-from .mujoco_runtime import MuJoCoControl, MuJoCoRuntime, MuJoCoState, _contacts, _frozen
+from .mujoco_runtime import (
+    MuJoCoControl,
+    MuJoCoInitialState,
+    MuJoCoRuntime,
+    MuJoCoState,
+    _contacts,
+    _frozen,
+)
 from .mujoco_tyx import MuJoCoTyxUnsupported as MuJoCoTyxUnsupported
 from .mujoco_tyx._model import compile_model, fp32
 
 LAW = "mujoco-soft-normal-constraint-v1"
 MIXED_LAW = "mujoco-pyramidal-joint-constraint-v1"
+
+
+@dataclass(frozen=True)
+class MuJoCoTyxResetReceipt:
+    """One committed reset boundary; requested and stored native states differ.
+
+    Cleanup failures describe retired owners, never a rejected publication.
+    This receipt is not a general per-step state-write or training checkpoint.
+    """
+
+    schema: str
+    source_revision: int
+    destination_revision: int
+    world_keys: tuple
+    binding_sha256: str
+    requested: object
+    stored: object
+    clock: np.ndarray
+    cleanup_errors: tuple = ()
 
 
 def _capacity(value, name):
@@ -830,34 +859,158 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
             return MappingProxyType(states)
 
     def reset(self, keys=None):
+        """Reset to original declarations, retaining their original times."""
         with self._lock:
             self._check_open()
             selected = self._select(keys)
             if not selected:
                 return
-            proposed, controls = dict(self._data), dict(self._controls)
-            ticks, receipts = dict(self._ticks), dict(self._receipts)
-            for key in selected:
-                proposed[key] = self._initial_data(self._initial[key])
-                controls[key] = self._validated_control(MuJoCoControl(np.zeros(self._model.nu)))
-                ticks[key], receipts[key] = 0, None
-            from .mujoco_device_controls import invalidate, retirement_list
+            self._reset_states_locked({key: self._initial[key] for key in selected})
 
-            retired_controls = retirement_list(self)
-            quantized = self._quantized_mirrors(proposed)
-            replacement = self._build_device(proposed)
-            old = self._device
-            self._device = replacement
-            self._data, self._controls, self._ticks, self._receipts = (
-                quantized,
-                controls,
-                ticks,
-                receipts,
+    def reset_states(self, states, *, expected_revision):
+        """Atomically reset a selected native-state mapping at an episode boundary.
+
+        Explicit states require time zero and pass the original initial-state
+        admission. The default reset templates remain unchanged. Unselected
+        worlds retain their full mirrors, controls and exact device clock bits.
+        Empty mappings are a validated no-op and do not advance the revision.
+        """
+        with self._lock:
+            self._check_open()
+            if type(expected_revision) is not int or expected_revision != self._checkpoint_revision:
+                raise ValueError("stale reset destination revision")
+            if not isinstance(states, Mapping):
+                raise TypeError("reset states must be a world-key mapping")
+            self._select(states)
+            prepared = {}
+            for key in self._world_keys:
+                if key not in states:
+                    continue
+                packet = states[key]
+                if type(packet) is not MuJoCoInitialState:
+                    raise TypeError("reset states require MuJoCoInitialState values")
+                if packet.time != 0.0:
+                    raise ValueError("explicit episode reset time must be zero")
+                prepared[key] = MuJoCoInitialState(packet.q, packet.v, act=packet.act)
+            return self._reset_states_locked(prepared)
+
+    def _reset_states_locked(self, states):
+        from .mujoco_checkpoint import _accepted_bank, _verify_bank
+        from .mujoco_device_controls import invalidate, retirement_list
+
+        selected = tuple(key for key in self._world_keys if key in states)
+        source = self._compilation.source
+        binding = {
+            "schema": "mujoco-tyx-reset-binding-v1",
+            "model_sha256": hashlib.sha256(source.model_binary).hexdigest(),
+            "archive_sha256": hashlib.sha256(source.archive_bytes).hexdigest(),
+            "mujoco_version": source.mujoco_version,
+            "mode": self._mode,
+            "world_keys": self._world_keys,
+            "dimensions": tuple(
+                int(getattr(self._model, key)) for key in ("nq", "nv", "nu", "na", "nbody")
+            ),
+            "layout": (max(8, self._plan.nq), max(8, self._plan.nv), 2),
+            "domain": self.capabilities["domain"],
+        }
+        digest = hashlib.sha256(
+            json.dumps(binding, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        ).hexdigest()
+        revision = self._checkpoint_revision
+        if not selected:
+            return MuJoCoTyxResetReceipt(
+                "mujoco-tyx-reset-v1", revision, revision, (), digest,
+                MappingProxyType({}), MappingProxyType({}),
+                _frozen(np.empty((0, 2)), dtype=np.float32),
             )
-            self._checkpoint_revision += 1
-            self._control_retired = retired_controls
-            invalidate(self)
+        proposed, controls = dict(self._data), dict(self._controls)
+        ticks, receipts = dict(self._ticks), dict(self._receipts)
+        for key in selected:
+            proposed[key] = self._initial_data(states[key])
+            controls[key] = self._validated_control(MuJoCoControl(np.zeros(self._model.nu)))
+            ticks[key], receipts[key] = 0, None
+        # Admission/packing occurs before allocating a replacement. Only the
+        # selected rows use this packing; all other rows come from the actual
+        # accepted bank, including both compensated-clock components.
+        proposed_packed = self._pack_states(proposed)
+        packed = tuple(value.copy() for value in _accepted_bank(self._device))
+        if len(packed) != len(proposed_packed):
+            raise RuntimeError("reset accepted bank schema differs")
+        for old, new in zip(packed, proposed_packed, strict=True):
+            if old.dtype != new.dtype or old.shape != new.shape or not np.isfinite(old).all():
+                raise RuntimeError("reset accepted bank layout differs")
+        rows = []
+        stored = {}
+        for index, key in enumerate(self._world_keys):
+            if key not in states:
+                # Refuse a corrupt mirror before carrying it into another bank.
+                original = self._data[key]
+                if (
+                    packed[0][index, : self._plan.nq].astype(np.float64).tobytes()
+                    != original.qpos.tobytes()
+                    or packed[1][index, : self._plan.nv].astype(np.float64).tobytes()
+                    != original.qvel.tobytes()
+                    or float(packed[2][index, 0]) - float(packed[2][index, 1]) != original.time
+                    or (len(packed) == 4 and packed[3][index].astype(np.float64).tobytes()
+                        != original.act.tobytes())
+                ):
+                    raise RuntimeError("reset unselected accepted mirror differs")
+                continue
+            rows.append(index)
+            for old, new in zip(packed, proposed_packed, strict=True):
+                old[index] = new[index]
+            updates = dict(
+                qpos=packed[0][index, : self._plan.nq],
+                qvel=packed[1][index, : self._plan.nv],
+                time=float(packed[2][index, 0]) - float(packed[2][index, 1]),
+            )
+            if len(packed) == 4:
+                updates["act"] = packed[3][index]
+            proposed[key] = proposed[key].changed(**updates)
+            data = proposed[key]
+            stored[key] = MuJoCoInitialState(data.qpos, data.qvel, act=data.act, time=data.time)
+        result = MuJoCoTyxResetReceipt(
+            "mujoco-tyx-reset-v1", revision, revision + 1, selected, digest,
+            MappingProxyType(dict(states)), MappingProxyType(stored),
+            _frozen(packed[2][rows], dtype=np.float32),
+        )
+        retired_controls = retirement_list(self)
+        old = self._device
+        old_retirement = [*self._checkpoint_retired, old]
+        replacement = None
+        try:
+            replacement = self._build_device(proposed, packed=packed)
+            _verify_bank(replacement, packed)
+            for key in selected:
+                self._observe_native(proposed[key])
+        except BaseException as error:
+            if replacement is not None:
+                try:
+                    replacement.close()
+                except BaseException as cleanup:
+                    self._checkpoint_retired.append(replacement)
+                    raise BaseExceptionGroup(
+                        "reset candidate failed; cleanup owner retained", [error, cleanup]
+                    ) from None
+            raise
+        for key, value in old.counts.items():
+            replacement.counts[key] += value
+        self._device = replacement
+        self._data, self._controls, self._ticks, self._receipts = proposed, controls, ticks, receipts
+        self._checkpoint_revision = revision + 1
+        self._checkpoint_retired, self._control_retired = old_retirement, retired_controls
+        invalidate(self)
+        errors = list(self._control_cleanup_errors)
+        try:
             old.close()
+        except BaseException as error:
+            errors.append(repr(error))
+        else:
+            self._checkpoint_retired.remove(old)
+        # The frozen record has not escaped yet; finalize resource diagnostics
+        # without turning an accepted physics reset into a false refusal.
+        object.__setattr__(result, "cleanup_errors", tuple(errors))
+        return result
 
     @property
     def checkpoint_revision(self):

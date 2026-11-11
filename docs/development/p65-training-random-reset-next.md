@@ -156,3 +156,87 @@ runtime.clone 只复制物理，不自动复制 episode/随机流。首片同 wo
 模型参数随机化另设后继，需要重编译/缓存刷新与模型绑定变化，不能搭本次reset
 偷偷修改质量、摩擦或动力学。G1训练、ball/root姿态随机化、更多奖励和全GPU
 采样均不在首片承诺内。
+
+
+## 7. N5 纯编码交接（2026-11-12，尚未执行）
+
+当前阶段为 CODE_READY_TESTS_PENDING；前六节保留原研究和执行前协议。
+本作者没有 import、collection、pytest、数值采样/探针、lint、formatter、
+构建、安装或训练执行。父为唯一执行 owner；本节不声称实际随机 reset 已通过。
+
+### 实际 API 与所有权
+
+- 父共享 API 独立提交 ed725fa3，子树仅 cherry-pick 为 fd979f9f：
+  reset_states(states, expected_revision) 返回冻结 MuJoCoTyxResetReceipt；
+  原 reset(keys) 也使用该事务并保留原 nonzero initial.time/None 返回。
+  作者未修改这一个 backend 文件。
+- MuJoCoTyxResetPlan(compilation, anchors, q_indices, q_bounds,
+  v_indices, v_bounds, seed=6511, namespace="N5") 为不可变模型/原生布局/
+  world-order/anchor/bounds 绑定。anchors 按插入顺序定义 world 顺序；原
+  MuJoCoInitialState 的 root/quaternion/act anchor 保留 FP64 声明，最终合法性
+  仍由原 runtime 初态门检验，采样器不修复 quaternion。
+- prepare(selected, counters) 只生成 owned 不可变 requested states、使用过的
+  indices 与下一 ledger；无 global RNG、无 runtime mutation。
+  q/v 映射仅允许原生 hinge/slide 地址。每个计数是 u64，MAX不能再推进；
+  未选 world 与空 subset 不消耗计数，不以 clamp 或重采掩盖坏样本。
+- 版本编码精确固定为 ASCII `phymeo-reset-v1\0`、namespace UTF8 字节长度
+  u16 LE、namespace bytes、seed u64 LE、world u32 LE、index u64 LE、
+  单字节 q/v、native index u32 LE。世界 key 限原生非负 i32。
+  SHA256 前8字节 little-endian 右移11，乘2^-53；先 FP64 计算差值、乘积、
+  再相加，最后一次 FP32 cast。非有限或 subnormal 非零样本提交前拒绝。
+  具体编码有独立 literal bytes 向量；预期样本用独立 hashlib 公式重建，
+  没有执行前计算产品输出填入“golden”。
+- Env 的新只读属性是 reset_plan / reset_indices / last_reset_receipt。
+  reset_plan=None 保持旧 binding 和六字段训练状态；opt-in 时才加入
+  random_reset binding 和状态。reset_states 成功返回后，先装入预分配
+  ledger/last_sample/真实 receipt，之后才能 task export。export 失败保留已
+  消费账本并 poison；恢复 reset 不把这次消费假装撤销。
+- N3 保存 random_reset={plan_sha256,next_indices,last_sample}。
+  last_sample 只含稳定 keys 和实际使用 indices，目的 revision 等运行身份
+  不倒退，也不混入可复现语义比较。恢复前严格校验全部 fields/keys/计数；
+  physics CAS 后先切该账本，再刷新 task。刷新失败账本仍对应已接受 capsule。
+  last_reset_receipt 是本运行实际 reset 的诊断收据；组合 restore 后设为 None，
+  不伪造一张新 reset 收据，last_sample 历史身份在训练状态中完整保留。
+- 不改 N3 checkpoint 模块、RSL/PPO、物理核、原任务/XML/学习门/奖励。
+  例子借用外部 runtime 时不关闭它，自己的 Env/task workspace 独立关闭。
+
+### 执行前固定案例与计数
+
+测试先提交 c0ea57d6，activation/晚准备故障补充 7b4ac854；
+主体 sampler/Env/example 为 b8dba52c，严格保存身份/旧frame负控为1231b1b8。
+这些是 authoring 源身份，不是 tested 身份。
+
+手工枚举当前两个新测试文件：**24 backend 节点、16 HOST sampler/schema
+节点、10 CUDA Env/N3 节点，共50**；实际 collection 由父执行后记录。
+backend 24由12个参数化case分别 interpret/CUDA构成，不能把两后端声明数
+当执行数。可选训练依赖仅在真实 CUDA 测试/例子调用时导入。
+
+| 范围 | 固定检查 |
+|---|---|
+| J/S W4，keys=(7,31,103,4096) | 原 h/模型/原生动作；J q±.1/v±.04，S q[.00065,.00085]/v±.002；seed6511；实际 reset 后至少两步，S 核 actual last_step normal force |
+| HOST采样 | 编码literal、独立hash公式、重建/顺序/分subset与并集、未选流、空集、Python/NumPy RNG；坏key/计数/overflow/地址/bounds/anchor与seed/namespace/state binding |
+| backend事务 | 空/stale、末world错误、candidate构建前错误、真实构建后readback或最后observer错误；selected storedbytes、未选完整world记录和raw双clock、原_default初态不变、旧taskframe拒绝 |
+| FILTEREXACT | 复用原ROB2a hinge参数，非零activation及三通道先推进；部分reset后未选 act/rawclock/full mirror/control/receipt完全保留，selected act按显式anchor重置，再两真实后继 |
+| 退役资源 | old owner.close一次失败不误报reset拒绝，cleanup_errors可见，关闭时重试 |
+| CUDA Env | 手动和自动subset、final_obs在reset前、下一obs在随机后；CAS前不消费、CAS后export失败消费并poison、full恢复；外部mutation不能绕过partialreset门 |
+| N3组合 | J/S MLP及J GRU，W4、8step原upstream更新：warm一次、保存、A一次、恢复、B一次。核完整training/Adam/RNG/流账本与每步action/obs/reward/done/physics；目的revision/epoch/resource计数排除原因明确。GRU非零hidden+部分done；另真实runtime.clone后组合恢复 |
+| 负控恢复 | 错plan hash/不完整或坏counter在CAS前拒；CAS后task刷新错误保已恢复账本并poison；不使用private runtime state写入 |
+
+父拟执行入口（命令仅列出，作者未执行）：
+
+```text
+pytest tests/test_mujoco_tyx_reset_states.py tests/training/test_mujoco_tyx_random_reset.py
+```
+
+其中CUDA组必须在已资格training profile执行；不能靠skip/CPU fallback当成功。
+独立例子提供 --case J|S --output PATH [--recurrent]，只有J启用recurrent。
+pytest中的N3三节点直接调用同一公共例子，不再重复CLI作为额外物理组。
+
+### 风险和止损
+
+这是同profile、固定模型域内的工程可复现reset，不是任意硬件的hash后浮点
+舍入定理；采样在HOST且原完整HOST物理审计保持。没有质量/摩擦随机化、
+free root/ball随机化、任意时刻训练恢复、全GPU reset或学习改善承诺。
+共有backend收据与Env之间采用原单owner/CAS合同；外部绕过Env并发改runtime
+不被本新增功能承诺支持。任何晚失败都应以真实已提交状态处理并停止消费，
+不能为“原子”外观回退正确物理或重复抽样。

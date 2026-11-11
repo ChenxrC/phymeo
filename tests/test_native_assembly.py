@@ -10,6 +10,7 @@ from phymeo.builders.native_assembly import (
     NativeAssetInstance,
     NativeJointInput,
     NativeStaticShape,
+    NativeRigidShape,
     compile_native_template,
 )
 
@@ -232,3 +233,83 @@ def test_nondefault_source_integrator_requires_matching_request(tmp_path):
     result = compile_native_template((asset,), timestep=.002, gravity=(0, 0, 0),
                                      integrator="implicitfast")
     assert result.compilation.fresh_native_model().opt.integrator == mujoco.mjtIntegrator.mjINT_IMPLICITFAST
+
+
+def test_rigid_only_mass_inertia_and_native_coordinate_bindings():
+    import mujoco
+
+    result = compile_native_template((), timestep=.002, gravity=(0,0,-9.81), rigid_shapes=(
+        NativeRigidShape('ball','sphere',(.2,),position=(1,2,3),mass=2,density=900),
+        NativeRigidShape('box','box',(.1,.2,.3),position=(-1,0,2),density=500),
+    ), static_shapes=(NativeStaticShape('floor','box',(3,3,.1)),))
+    model = result.compilation.fresh_native_model()
+    assert (model.nq,model.nv,model.njnt) == (14,12,2)
+    assert result.joint_dimensions == ((7,6),(7,6))
+    assert result.scalar_joint_bindings == ()
+    np.testing.assert_allclose(model.body_mass[1:], [2,24], rtol=0, atol=1e-12)
+    np.testing.assert_allclose(model.body_inertia[1], np.full(3,.032), rtol=0, atol=1e-12)
+    data = mujoco.MjData(model)
+    result.initial_state.apply(result.compilation,data)
+    np.testing.assert_allclose(data.qpos[[0,1,2,7,8,9]], [1,2,3,-1,0,2], atol=1e-12)
+    assert result.compilation.collision_source is not None
+
+
+def test_floating_asset_preserves_internal_scalar_addresses(urdf):
+    import mujoco
+
+    path = Path(urdf)
+    path.write_text(URDF.replace('<link name="base"/>', '<link name="base"><inertial><mass value="1"/><inertia ixx=".1" iyy=".1" izz=".1" ixy="0" ixz="0" iyz="0"/></inertial></link>'))
+    base = NativeAssetInstance('arm',urdf,position=(1,2,3),drive_mode='scalar_pd',
+                               joints=(NativeJointInput('slide',position=.125,velocity=.25),))
+    fixed = compile_native_template((base,),timestep=.002,gravity=(0,0,0))
+    floating = compile_native_template((replace(base,floating=True),),timestep=.002,gravity=(0,0,0))
+    assert fixed.joint_dimensions == ((1,1),)
+    assert floating.joint_dimensions == ((7,6),(1,1))
+    assert floating.scalar_joint_bindings[0][2:4] == (7,6)
+    model = floating.compilation.fresh_native_model()
+    data = mujoco.MjData(model)
+    floating.initial_state.apply(floating.compilation,data)
+    mujoco.mj_forward(model,data)
+    np.testing.assert_allclose(data.xpos[model.body('arm::link').id], [1.125,2,3], atol=1e-12)
+    np.testing.assert_array_equal(data.qvel, [0,0,0,0,0,0,.25])
+    assert floating.target_bindings == fixed.target_bindings
+
+
+def test_empty_native_template_and_invalid_rigid_values():
+    result = compile_native_template((),timestep=.002,gravity=(0,0,-9.81))
+    assert result.scalar_joint_bindings == result.body_bindings == ()
+    for values in (dict(mass=0),dict(mass=-1),dict(density=0),dict(density=None),dict(mass=np.inf)):
+        with pytest.raises(ValueError):
+            NativeRigidShape('body','sphere',(.1,),**values)
+    with pytest.raises(TypeError,match='static_shapes'):
+        compile_native_template((),timestep=.002,gravity=(0,0,0),
+                                static_shapes=(NativeRigidShape('body','sphere',(.1,)),))
+
+
+def test_two_floating_assets_and_rigid_keep_rotated_identity(urdf):
+    import mujoco
+
+    Path(urdf).write_text(URDF.replace('<link name="base"/>',
+        '<link name="base"><inertial><mass value="1"/><inertia ixx=".1" iyy=".1" '
+        'izz=".1" ixy="0" ixz="0" iyz="0"/></inertial></link>'))
+    rotation = (0., 0., np.sqrt(.5), np.sqrt(.5))
+    first = NativeAssetInstance('first', urdf, drive_mode='scalar_pd', floating=True,
+        joints=(NativeJointInput('slide', position=.125, velocity=.25),))
+    second = replace(first, name='second', position=(2., 3., 4.), orientation_xyzw=rotation)
+    result = compile_native_template((first, second), timestep=.002, gravity=(0, 0, 0),
+        rigid_shapes=(NativeRigidShape('ball', 'sphere', (.1,), mass=1.),))
+    assert [row[2:4] for row in result.scalar_joint_bindings] == [(7, 6), (15, 13)]
+    assert result.joint_dimensions == ((7, 6), (1, 1), (7, 6), (1, 1), (7, 6))
+    model = result.compilation.fresh_native_model()
+    data = mujoco.MjData(model)
+    result.initial_state.apply(result.compilation, data)
+    mujoco.mj_forward(model, data)
+    np.testing.assert_allclose(data.xpos[model.body('first::link').id], [.125, 0., 0.], atol=1e-12)
+    np.testing.assert_allclose(data.xpos[model.body('second::link').id], [2., 3.125, 4.], atol=1e-12)
+    np.testing.assert_array_equal(data.qvel[[6, 13]], .25)
+    for candidate, message in ((replace(result, coordinate_contract_version=2), 'contract'),
+                               (replace(result, joint_dimensions=()), 'contract')):
+        with pytest.raises(ValueError, match=message):
+            _ = candidate.scalar_joint_bindings
+    with pytest.raises(NotImplementedError, match='ball or multi-DOF'):
+        _ = replace(result, joint_dimensions=((4, 3),) + result.joint_dimensions[1:]).scalar_joint_bindings

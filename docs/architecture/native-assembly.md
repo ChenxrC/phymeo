@@ -336,3 +336,30 @@ CPU审计确认只有指定候选对消失，非排除数值数组、option、�
 第六步qvel差1.4305115e-6。完整失败字段见原始日志；发生早期数值分歧后的阶段
 只用于诊断，不能解释为独立合格轨迹。首轮N=8/64失败亦完整保留，不择优取值。
 这些结果说明规则转换通过，但未解决完整数值资格，B1g无规则失败仍然成立。
+
+## B3n：动态参与者与原生坐标绑定
+
+`compile_native_template` 接受独立 `rigid_shapes`，元素为 `NativeRigidShape`。
+每个 solid primitive 生成一个真实 FREE body；显式正质量优先，否则使用正密度，
+惯量由原生几何编译计算。尺寸沿用 NativeStaticShape，box 为半尺寸；静态几何
+不接受动态类型。资产、静态和动态参与者共享一次同 world 编译及碰撞来源映射。
+空资产列表可表达纯程序化模型、纯环境或空模板；不增加隐式机器人或人工质量。
+
+`NativeAssetInstance(floating=True)` 目前仅接受 scalar_pd URDF：在导入/标量驱动
+准备完成后，为唯一且无既有关节的根添加 FREE joint，再施加实例 pose。缺失合法
+惯量仍由编译器拒绝；不把无质量根偷偷补成动态物体。默认 floating=False 行为保持。
+
+编译结果增加 `coordinate_contract_version=1` 和与完整 `joint_bindings` 对齐的
+`joint_dimensions`，按实际原生 q/DOF 地址记录宽度。公共 `scalar_joint_bindings`
+仅取 (1,1)，忽略 (7,6) FREE 根，其他多 DOF 类型明确拒绝。原完整映射保留，
+不将 FREE 根伪装为标量，也不改变内部 qpos/qvel 顺序。P2PE 的自由根通过 body
+字段公开；PHYMEO 本身不依赖该消费方的 public joint 列表约定。
+
+本批没有新运行期 bank、全模型副本、逐 world 调用或求解算法；新增身份/宽度计算
+只在冷编译发生。原生数组生命周期与现有 storage/执行合同不变。实际测试、载荷
+散列和独立审查结果见实验根 `evidence/b3n-summary.json`；body 写入消费仍另行接入。
+
+冷编译/排除/mimic 合同 36 项通过，包括两浮根资产混合刚体、非单位旋转 placement
+与原生地址偏移；实际 DLL 的四个新增用例覆盖 N=1/8/64 的落体、接触、浮根标量
+host/设备访问及空场景。独立只读复审无阻断。全文档检查仍为 479 条历史缺失链接，
+输出散列不变；没有重新构建或安装 wheel，不据源码消费结果宣称独立安装资格。

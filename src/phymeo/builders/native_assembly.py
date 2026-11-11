@@ -69,6 +69,7 @@ class NativeAssetInstance:
     drive_mode: str = "preserve"
     self_collision: bool = True
     joint_defaults: tuple = ()
+    floating: bool = False
 
     def __post_init__(self):
         if not isinstance(self.name, str) or not self.name or "::" in self.name:
@@ -105,6 +106,10 @@ class NativeAssetInstance:
             raise ValueError("explicit drive_mode/self_collision required")
         if self.drive_mode == "preserve" and (rows or defaults):
             raise ValueError("preserve mode cannot silently ignore joint overrides")
+        if type(self.floating) is not bool:
+            raise TypeError("floating must be bool")
+        if self.floating and self.drive_mode != "scalar_pd":
+            raise NotImplementedError("floating assembly currently requires scalar_pd URDF")
 
 
 @dataclass(frozen=True)
@@ -140,6 +145,27 @@ class NativeStaticShape:
 
 
 @dataclass(frozen=True)
+class NativeRigidShape(NativeStaticShape):
+    """One native solid primitive with a genuine FREE root; explicit mass wins."""
+
+    mass: float | None = None
+    density: float = 1000.0
+
+    def __post_init__(self):
+        super().__post_init__()
+        for name, value in (("mass", self.mass), ("density", self.density)):
+            if value is not None and (
+                isinstance(value, (bool, np.bool_))
+                or not np.isfinite(value)
+                or value <= 0
+                or value > np.finfo(np.float32).max
+            ):
+                raise ValueError(f"rigid {name} requires positive finite FP32 value")
+        if self.density is None:
+            raise ValueError("rigid density requires a positive value")
+
+
+@dataclass(frozen=True)
 class NativeTemplate:
     compilation: object
     initial_state: NativeInitialState
@@ -157,10 +183,25 @@ class NativeTemplate:
     target_bindings: tuple = ()
     target_contract_version: int = 1
     import_diagnostics: tuple = ()
+    # Widths aligned with joint_bindings; native FREE coordinates are not scalar joints.
+    joint_dimensions: tuple = ()
+    coordinate_contract_version: int = 1
     # Private cold compiler owner. XML serialization rounds native authoring
     # values; the public compilation.mj_spec is caller-mutable. Never expose or
     # edit this snapshot, only copy it for a newly requested rule compilation.
     _source_spec: object = field(default=None, repr=False, compare=False)
+
+    @property
+    def scalar_joint_bindings(self):
+        if self.coordinate_contract_version != 1 or len(self.joint_dimensions) != len(
+            self.joint_bindings
+        ):
+            raise ValueError("native coordinate binding contract is missing or unsupported")
+        if any(width not in ((1, 1), (7, 6)) for width in self.joint_dimensions):
+            raise NotImplementedError("scalar consumer does not admit ball or multi-DOF joints")
+        return tuple(
+            row for row, width in zip(self.joint_bindings, self.joint_dimensions) if width == (1, 1)
+        )
 
     def with_collision_exclusions(self, plan):
         """Return a separately compiled template with an exact explicit rule.
@@ -210,7 +251,9 @@ class HomogeneousNativeBinding:
         )
 
 
-def compile_native_template(assets, *, timestep, gravity, static_shapes=(), integrator="euler"):
+def compile_native_template(
+    assets, *, timestep, gravity, static_shapes=(), rigid_shapes=(), integrator="euler"
+):
     """Compile a same-world assembly once; retain admitted asset-local semantics.
 
     Asset timestep/gravity are replaced by explicit assembly options. A source
@@ -222,12 +265,14 @@ def compile_native_template(assets, *, timestep, gravity, static_shapes=(), inte
     """
     import mujoco as mj
 
-    assets, static_shapes = tuple(assets), tuple(static_shapes)
-    if not assets or any(not isinstance(a, NativeAssetInstance) for a in assets):
+    assets, static_shapes, rigid_shapes = tuple(assets), tuple(static_shapes), tuple(rigid_shapes)
+    if any(not isinstance(a, NativeAssetInstance) for a in assets):
         raise TypeError("native template requires asset instances")
-    if any(not isinstance(s, NativeStaticShape) for s in static_shapes):
+    if any(type(s) is not NativeStaticShape for s in static_shapes):
         raise TypeError("static_shapes requires NativeStaticShape")
-    names = [a.name for a in (*assets, *static_shapes)]
+    if any(not isinstance(s, NativeRigidShape) for s in rigid_shapes):
+        raise TypeError("rigid_shapes requires NativeRigidShape")
+    names = [a.name for a in (*assets, *static_shapes, *rigid_shapes)]
     if len(set(names)) != len(names):
         raise ValueError("duplicate assembly instance name")
     if not np.isfinite(timestep) or timestep <= 0:
@@ -286,6 +331,15 @@ def compile_native_template(assets, *, timestep, gravity, static_shapes=(), inte
 
             rows, targets, notes = prepare_scalar_drives(mj, child, asset, NativeJointInput)
             diagnostics.extend(notes)
+        if asset.floating:
+            roots = [
+                body
+                for body in child.bodies
+                if body is not child.worldbody and body.parent == child.worldbody
+            ]
+            if len(roots) != 1 or list(roots[0].joints):
+                raise NotImplementedError("floating URDF requires one unconstrained retained root")
+            roots[0].add_freejoint(name="__assembly_free")
         prefix = asset.name + "::"
         q = asset.orientation_xyzw
         frame = spec.worldbody.add_frame(pos=asset.position, quat=(q[3], *q[:3]))
@@ -309,6 +363,19 @@ def compile_native_template(assets, *, timestep, gravity, static_shapes=(), inte
             quat=(q[3], *q[:3]),
             friction=shape.friction,
             condim=shape.contact_dim,
+        )
+    for shape in rigid_shapes:
+        q = shape.orientation_xyzw
+        body = spec.worldbody.add_body(name=shape.name, pos=shape.position, quat=(q[3], *q[:3]))
+        body.add_freejoint(name=shape.name + "::__assembly_free")
+        physical = dict(density=shape.density) if shape.mass is None else dict(mass=shape.mass)
+        body.add_geom(
+            name=shape.name,
+            type=getattr(mj.mjtGeom, f"mjGEOM_{shape.kind.upper()}"),
+            size=(*shape.size, *(0.0,) * (3 - len(shape.size))),
+            friction=shape.friction,
+            condim=shape.contact_dim,
+            **physical,
         )
     compilation = compile_mujoco_spec(spec, instance="assembly")
     model = compilation.fresh_native_model()
@@ -371,5 +438,18 @@ def compile_native_template(assets, *, timestep, gravity, static_shapes=(), inte
         scalar_controls=tuple(scalar_controls),
         target_bindings=target_bindings,
         import_diagnostics=tuple(diagnostics),
+        joint_dimensions=tuple(
+            (
+                int(
+                    (model.jnt_qposadr[i + 1] if i + 1 < model.njnt else model.nq)
+                    - model.jnt_qposadr[i]
+                ),
+                int(
+                    (model.jnt_dofadr[i + 1] if i + 1 < model.njnt else model.nv)
+                    - model.jnt_dofadr[i]
+                ),
+            )
+            for i in range(model.njnt)
+        ),
         _source_spec=compilation.mj_spec.copy(),
     )

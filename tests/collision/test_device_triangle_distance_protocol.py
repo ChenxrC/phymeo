@@ -149,3 +149,132 @@ def test_borrowed_runtime_survives_batch_close(mode):
             assert_packet(data,next_batch.query(**data))
     finally:
         runtime.close()
+
+class _FakeReleaseOwner:
+    def __init__(self,name,events,phase=None):
+        self.name,self.events,self.phase=name,events,phase
+        self.calls=0
+        self.released=False
+    def free(self):
+        self.calls+=1
+        self.events.append(self.name)
+        if self.phase=="before":
+            raise RuntimeError("authored before release")
+        assert not self.released
+        self.released=True
+        if self.phase=="after":
+            raise RuntimeError("authored after release")
+    def close(self):
+        self.free()
+
+
+@pytest.mark.parametrize("phase",("before","after"))
+@pytest.mark.parametrize("ownership",("owned","borrowed"))
+def test_host_fake_release_retains_unknown_owner(phase,ownership,monkeypatch,tmp_path):
+    import gc
+    import json
+    import weakref
+    from phymeo.backends.mujoco_tyx._resources import quarantined_resources
+    events=[]
+    runtime=_FakeReleaseOwner("runtime",events)
+    monkeypatch.setattr(tx,"Runtime",lambda **kwargs:runtime)
+    buffers=[]
+    def allocate(shape,dtype):
+        del shape,dtype
+        buffer=_FakeReleaseOwner(f"buffer-{len(buffers)}",events,phase if len(buffers)==1 else None)
+        buffers.append(buffer)
+        return buffer
+    monkeypatch.setattr(tx,"cuda_empty",allocate)
+    data=reference().make_case("face_above")
+    extra={} if ownership=="owned" else {"runtime":runtime}
+    batch=new_batch("cuda",data,**extra)
+    previous=object()  # HOST protocol sentinel, not a claimed physical packet.
+    batch._last_packet=previous
+    resources=batch._new_query_resources()
+    for _ in range(3):
+        batch._allocate(resources,shape=(2,3),dtype=np.float32)
+    assert batch.stats["live_bytes"]==72
+    with pytest.raises(BaseExceptionGroup,match="UNKNOWN_RELEASE"):
+        resources.close()
+    assert resources.state=="UNKNOWN_RELEASE" and resources.runtime_pending
+    assert resources.pending_buffer_count==0
+    assert len(resources.failures)==1
+    proxy=resources.failures[0].owner
+    assert proxy.array is buffers[1]
+    assert buffers[1].released is (phase=="after")
+    assert batch.stats["live_bytes"]==24
+    assert events==["buffer-2","buffer-1","buffer-0"]
+    for operation in (lambda:batch.query(**data),batch.close,batch.close):
+        with pytest.raises(BaseExceptionGroup,match="UNKNOWN_RELEASE"):
+            operation()
+    assert all(buffer.calls==1 for buffer in buffers)
+    assert runtime.calls==0 and batch.last_packet is previous
+    assert resources in quarantined_resources()
+    assert resources._runtime.owner.runtime is runtime
+    retained=weakref.ref(buffers[1])
+    retained_runtime=weakref.ref(runtime)
+    record=dict(phase=phase,ownership=ownership,events=list(events),live_unknown_bytes=24,
+                ledger=resources.state,runtime_calls=runtime.calls,buffer_calls=[b.calls for b in buffers],
+                side_effect_completed=buffers[1].released,old_packet_retained=True)
+    # Global ledger quarantine, not this batch variable, keeps opaque owners.
+    del batch,proxy,buffers,runtime,resources
+    gc.collect()
+    assert retained() is not None and retained_runtime() is not None
+    (tmp_path/"fake-release.json").write_text(json.dumps(record),encoding="utf-8")
+
+
+@pytest.mark.cuda
+def test_cuda_post_free_error_is_sticky_and_does_not_publish(monkeypatch,tmp_path):
+    from phymeo.backends.mujoco_tyx._resources import DeviceResources, quarantined_resources
+    data=reference().make_case("face_above")
+    batch=new_batch("cuda",data)
+    actual_runtime=batch._runtime
+    state=dict(calls=0,completed=False)
+    captured=[]
+    original_add=DeviceResources.add_buffer
+    selected=[]
+    try:
+        old=batch.query(**data)
+        def capture(resources,owner):
+            if resources is batch._query_resources:
+                captured.append(owner)
+                if not selected:
+                    selected.append(owner)
+                    real_free=owner.array.free
+                    def late_free():
+                        state["calls"]+=1
+                        real_free()
+                        state["completed"]=True
+                        raise RuntimeError("authored after actual CUDA free")
+                    monkeypatch.setattr(owner.array,"free",late_free)
+            return original_add(resources,owner)
+        monkeypatch.setattr(DeviceResources,"add_buffer",capture)
+        with saved(tmp_path,"cuda_release_unknown","cuda",data,batch) as record:
+            with pytest.raises(BaseExceptionGroup,match="UNKNOWN_RELEASE"):
+                batch.query(**data)
+            resources=batch._query_resources
+            assert len(captured)==8 and state["calls"]==1 and state["completed"]
+            assert batch.last_packet is old
+            assert resources.state=="UNKNOWN_RELEASE" and resources.runtime_pending
+            assert resources in quarantined_resources()
+            assert resources.failures[0].owner is selected[0]
+            assert all(owner.released for owner in captured if owner is not selected[0])
+            assert not selected[0].released
+            assert batch.stats["live_bytes"]==data["candidates"].shape[0]*5*3*4
+            assert not actual_runtime.closed
+            for operation in (lambda:batch.query(**data),batch.close,batch.close):
+                with pytest.raises(BaseExceptionGroup,match="UNKNOWN_RELEASE"):
+                    operation()
+            assert state["calls"]==1 and not actual_runtime.closed
+            record["release"]=dict(ledger=resources.state,calls=state["calls"],completed=state["completed"],
+                                   siblings_released=7,unknown_owned_bytes=batch.stats["live_bytes"],old_packet_retained=True)
+    finally:
+        # Test-only knowledge: the selected free returned normally before our
+        # exception, and all independent siblings completed. No production path
+        # infers this or retries the ambiguous free; its ledger remains sticky.
+        if state["completed"] and len(captured)==8 and all(owner.released for owner in captured if owner is not selected[0]):
+            actual_runtime.close()
+        try:
+            batch.close()
+        except BaseExceptionGroup:
+            pass

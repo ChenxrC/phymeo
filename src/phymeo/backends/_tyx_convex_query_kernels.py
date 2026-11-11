@@ -782,9 +782,7 @@ def query_convex_pairs(
                         if simplex_n > 0 and closest_square > 0.0:
                             distance = tx.sqrt(closest_square)
                             if distance > 1e-5 or (
-                                distance > 8e-7
-                                and full_surface == 0
-                                and (ka < 2 or kb < 2)
+                                distance > 8e-7 and full_surface == 0 and (ka < 2 or kb < 2)
                             ):
                                 if distance - bound <= 8e-7:
                                     status = 1

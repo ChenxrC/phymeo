@@ -34,20 +34,20 @@ def assert_same_candidate(trace, data):
     np.testing.assert_array_equal(floats[:4], floats[4:8])
     np.testing.assert_array_equal(floats[32:68], floats[72:108])
     np.testing.assert_array_equal(floats[68:72], floats[108:112])
-    np.testing.assert_array_equal(ints[24:24 + 2*n], ints[36:36 + 2*n])
-    np.testing.assert_array_equal(ints[32:32 + n], ints[44:44 + n])
+    np.testing.assert_array_equal(ints[24 : 24 + 2 * n], ints[36 : 36 + 2 * n])
+    np.testing.assert_array_equal(ints[32 : 32 + n], ints[44 : 44 + n])
     assert floats[21] > 0 and floats[22] <= np.float32(8e-7)
     assert floats[22] == np.float32(floats[21] - floats[11])
     # duplicate is diagnostic only; it cannot authorize a wider plane gap.
     assert ints[6] in (0, 1)
-    assert np.all(floats[68:68 + n] >= 0)
-    assert abs(float(floats[68:68 + n].sum(dtype=np.float64)) - 1) <= 64*2**-23
+    assert np.all(floats[68 : 68 + n] >= 0)
+    assert abs(float(floats[68 : 68 + n].sum(dtype=np.float64)) - 1) <= 64 * 2**-23
 
     q = floats[:3].astype(float)
     normal = -q / np.linalg.norm(q)
     np.testing.assert_allclose(row.normal, normal, atol=2e-4, rtol=0)
     vertices = floats[32:68].reshape(4, 9)[:n].astype(float)
-    weights = floats[68:68 + n].astype(float)
+    weights = floats[68 : 68 + n].astype(float)
     source_ids = result.source["vertex_ids"]
     slots = ints[24:32].reshape(4, 2)[:n]
     material_checks = []
@@ -59,22 +59,26 @@ def assert_same_candidate(trace, data):
                 expected_weights[original_id] = expected_weights.get(original_id, 0.0) + weight
         assert tuple(witness.vertex_ids) == tuple(sorted(expected_weights))
         np.testing.assert_allclose(
-            witness.weights, [expected_weights[key] for key in witness.vertex_ids],
-            atol=64*2**-23, rtol=0,
+            witness.weights,
+            [expected_weights[key] for key in witness.vertex_ids],
+            atol=64 * 2**-23,
+            rtol=0,
         )
         # For the chosen BB/BE cases the trace support representation is the
         # published witness frame (zero old-core skin, or full-surface support).
-        expected_point = weights @ vertices[:, 3 + 3*side:6 + 3*side]
+        expected_point = weights @ vertices[:, 3 + 3 * side : 6 + 3 * side]
         actual_point = np.asarray(witness.surface_relative_m)
         error = float(np.linalg.norm(expected_point - actual_point))
-        assert error <= 2e-4*row.scale_m
-        material_checks.append(dict(expected_weights=expected_weights,
-                                    expected_point=expected_point, error_m=error))
+        assert error <= 2e-4 * row.scale_m
+        material_checks.append(
+            dict(expected_weights=expected_weights, expected_point=expected_point, error_m=error)
+        )
     difference = np.asarray(row.first.surface_relative_m) - row.second.surface_relative_m
-    q_witness_error = float(np.linalg.norm(difference - row.scale_m*q))
-    assert q_witness_error <= 2e-4*row.scale_m
-    return dict(geometry=checks, retained_material=material_checks,
-                q_witness_error_m=q_witness_error)
+    q_witness_error = float(np.linalg.norm(difference - row.scale_m * q))
+    assert q_witness_error <= 2e-4 * row.scale_m
+    return dict(
+        geometry=checks, retained_material=material_checks, q_witness_error_m=q_witness_error
+    )
 
 
 @pytest.mark.tyx
@@ -146,9 +150,9 @@ def test_independent_validator_rejects_mixed_candidate_and_duplicate_excuse(tyx_
         for name in ("outgoing-q", "different-weights", "duplicate-wide-plane"):
             floats, integers = trace.floats.copy(), trace.integers.copy()
             if name == "outgoing-q":
-                floats[0, last, 4] += np.float32(1/64)
+                floats[0, last, 4] += np.float32(1 / 64)
             elif name == "different-weights":
-                floats[0, last, 108] *= np.float32(1/2)
+                floats[0, last, 108] *= np.float32(1 / 2)
             else:
                 integers[0, last, 6] = 1
                 floats[0, last, 11] = 0

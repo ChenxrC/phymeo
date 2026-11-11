@@ -4,15 +4,17 @@ from contextlib import ExitStack
 
 import numpy as np
 
+from . import _actuator_device
 from ._device import TyxDevice
 
 
 class TyxFloatingDevice(TyxDevice):
-    def __init__(self, plan, mode, cache_root, q, v, time, nbody, h, capacities):
+    def __init__(self, plan, mode, cache_root, q, v, time, nbody, h, capacities, *, activation=None):
         import tyx as tx
 
         from . import _floating_kernels as kernels
 
+        self.activation_enabled = _actuator_device.validate(plan, activation, len(q))
         self.tx, self.mode, self.plan = tx, mode, plan
         self.nbody, self.nworld, self.h = nbody, len(q), float(h)
         width = max(8, plan.nv)
@@ -48,6 +50,7 @@ class TyxFloatingDevice(TyxDevice):
                 self.q = (self._buffer(q), self._buffer(q))
                 self.v = (self._buffer(v), self._buffer(v))
                 self.time = (self._buffer(time), self._buffer(time))
+                _actuator_device.allocate(self, activation)
                 self.controls = self._buffer(np.zeros((self.nworld, max(plan.nu, 1)), np.float32))
                 self.applied_input = self._buffer(np.zeros((self.nworld, width), np.float32))
                 self.body_force = self._buffer(np.zeros((self.nworld, nbody, 6), np.float32))
@@ -109,7 +112,7 @@ class TyxFloatingDevice(TyxDevice):
                 self.nworld,
                 self.nbody,
                 self.plan.nv,
-                self.plan.nu,
+                0 if self.activation_enabled else self.plan.nu,
                 self.body_data,
                 self.joints,
                 self.ancestors,
@@ -138,6 +141,7 @@ class TyxFloatingDevice(TyxDevice):
                 mode=self.mode,
             )
             self.counts["completed_kernels"] += 1
+            _actuator_device.advance(self, old, new)
             self.solve[old](
                 self.nworld,
                 self.plan.nv,
@@ -194,6 +198,7 @@ class TyxFloatingDevice(TyxDevice):
                     ("input_time", self.time[old]),
                 )
             }
+            _actuator_device.download(self, result, old, target)
             result["body_position"] = motion[:, :, 0, :]
             result["body_com"] = motion[:, :, 5, :]
             result["smooth_acceleration"] = result["qacc"]

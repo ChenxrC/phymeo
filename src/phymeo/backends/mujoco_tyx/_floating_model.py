@@ -22,7 +22,7 @@ class TyxFloatingModel(TyxTreeModel):
     root_body: int
 
 
-def compile_floating_model(mj, model, *, allow_normal_contacts=False, allow_constraints=False):
+def compile_floating_model(mj, model, *, allow_normal_contacts=False, allow_constraints=False, allow_activation=False):
     issues = []
 
     def issue(code, detail):
@@ -70,7 +70,7 @@ def compile_floating_model(mj, model, *, allow_normal_contacts=False, allow_cons
     ):
         if int(getattr(model, field, 0)) and not (allow_constraints and field == "nexclude"):
             issue(code, f"native {field} is not migrated in T2")
-    if model.na:
+    if model.na and not allow_activation:
         issue("actuator-state", "activation dynamics are not migrated")
     if int(model.opt.integrator) != int(mj.mjtIntegrator.mjINT_EULER):
         issue("integrator", "T2 ports native Euler only")
@@ -99,7 +99,10 @@ def compile_floating_model(mj, model, *, allow_normal_contacts=False, allow_cons
         if (
             model.actuator_trntype[actuator] != mj.mjtTrn.mjTRN_JOINT
             or not 1 <= joint < model.njnt
-            or model.actuator_dyntype[actuator] != mj.mjtDyn.mjDYN_NONE
+            or model.actuator_dyntype[actuator] not in (
+                (mj.mjtDyn.mjDYN_NONE, mj.mjtDyn.mjDYN_FILTEREXACT)
+                if allow_activation else (mj.mjtDyn.mjDYN_NONE,)
+            )
             or model.actuator_gaintype[actuator] != mj.mjtGain.mjGAIN_FIXED
             or model.actuator_biastype[actuator]
             not in (mj.mjtBias.mjBIAS_NONE, mj.mjtBias.mjBIAS_AFFINE)
@@ -107,7 +110,7 @@ def compile_floating_model(mj, model, *, allow_normal_contacts=False, allow_cons
             or np.any(model.actuator_gainprm[actuator, 1:])
             or np.any(model.actuator_biasprm[actuator, 3:])
         ):
-            issue("actuator-domain", f"actuator {actuator} is not a scalar stateless affine motor")
+            issue("actuator-domain", f"actuator {actuator} is not an admitted scalar affine motor")
     if np.any(model.jnt_actfrclimited):
         issue("joint-actuator-limits", "joint-wide summed force clamps are not migrated")
     # Test potential pairs, not just collisions at the source initial pose.

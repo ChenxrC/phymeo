@@ -183,14 +183,16 @@ world 障碍物的接触仍存在；该外部平面没有单独做 GPU 物理资
 
 冻结求解核以 float32 原子累加代价，并按
 `(prev_cost-cost)/(meaninertia*nv) < tolerance` **或**归一化梯度小于容差停止。
-本模型 solver tolerance 原值为 `1e-8`。公开原生 context 的固定输入探针实际得到：
+本模型CPU solver tolerance原值为 `1e-8`。两套GPU前端会将其提升至至少 `1e-6`，
+B1j另存实际GPU opt并核实此转换；这与测试的绝对误差门槛是不同概念。
+公开原生 context 的固定输入探针实际得到：
 
 | 量 | 原生 PhySolve context | 官方 MuJoCo-Warp context |
 | --- | --- | --- |
 | 结束时代价 | 约 `1.3938153e10` | 约 `1.3938154e10` |
 | `prev_cost-cost` | 0 或 -1024 | 0 或 -1024 |
 | 归一化梯度 | 约 0.11109 | 约 4.80971 |
-| 梯度是否达到 `1e-8` | 否 | 否 |
+| 梯度是否达到实际GPU容差 `1e-6` | 否 | 否 |
 
 因此这些样本确实由代价差条件停止，不能称为达到梯度收敛；原生 context 的八次
 qacc 最大变化 `7.6293945e-6`，已超过原测试门槛。上述探针复用了现有求解入口，
@@ -347,3 +349,116 @@ masked/full reset和精确replay。日志/JUnit为 `evidence/b1i-limits-host.log
 solver_niter最大差1，逆映射efc.force最大差1.0681152e-4。它证明该固定输入上的
 限位排列敏感性，但使用的是步后快照再次solve，不冒充原第二步pre-solve的精确
 重建。完整输入、排列、输出及模型来源散列见 `evidence/b1i-limit-order*`。
+
+## B1j 官方与原生同条件对照
+
+正式pytest入口为 `tests/test_native_comparison.py`，显式设置
+`PHYMEO_COMPARISON_ROUTE=warp|physolve|runtime`、`PHYMEO_COMPARISON_CASE`、
+`PHYMEO_COMPARISON_OUTPUT`；后两路线还需要 `PHYMEO_PHYSOLVE_SOURCES`。
+未选择此可选矩阵时跳过，显式选择后缺依赖、缺证据或未知路线均硬失败。
+离线跨路线检查使用 `tests/test_native_comparison_results.py`，证据目录通过
+`PHYMEO_COMPARISON_RESULTS` 指定；属于同一正式pytest体系，不替代既有机器人门禁。
+
+在实验根先冻结B1h显式九对排除的Panda MJB、完整11项integration初态及N=1/8/64
+动作数组。原始无规则模型的B1g失败继续单独保留。两套独立安装分别固定官方
+MuJoCo-Warp 3.8.0.3/Warp 1.13.0和现有无三包PhySolve载荷，CPU MuJoCo 3.8.0、
+NumPy 2.2.6、CPython 3.13.13相同；不导入Newton、不修改六CUBIN或生产排序。
+
+三条路线分别是官方原生单Data、PhySolve原生单Data、PHYMEO Runtime双bank。
+每档三次独立实例，固定Euler、dense、pyramidal、2ms、六步、nconmax=128、
+njmax=256；均使用各自唯一owned canonical stream。`graph_conditional=True`
+只选择求解循环实现，不表示捕获整步Graph；本批无整步捕获和control回调。
+每次实例保存全部实际GPU opt，离线比较必须逐字段相等且不能含未处理类型。
+CPU模型参数、转换后GPU参数和验收容差分别记录，不能只由MJB相同推定完全同条件。
+
+各路线在相同观测点完成绑定stream并保存OBS、integration、原始contact/EFC与
+必要派生诊断数组。首轮和replay均每步使用相同采样节奏；有限差异保留到最终硬
+失败，shape/dtype、非有限值、容量和执行错误立即失败。原1e-6绝对容差与精确
+qpos/qvel/time replay要求不变，保留每world实际运动及12ms时间推进负控制。
+
+两条原生路线的masked/full reset由测试工具显式恢复初始GPU integration快照，
+执行forward并保留未选OBS；含host读写和同步，不是官方masked-reset产品能力。
+Runtime路线使用生产reset，选中世界完整11字段精确恢复、未选OBS逐位不变分别
+检查。raw contact/EFC仍是全量forward结果，不冒充未选contact发布合同。
+Runtime构建两bank会执行两次初始化GPU forward，原生路线每实例一次；Runtime
+还具有自身完成/检查。这些组织差异如实保留，不能把跨路线差异直接归为求解核。
+
+本矩阵不测吞吐，诊断快照会影响调度；同机另有RC7测试任务，未干预其进程。
+同实现的跨实例差异与跨实现差异分别判定，官方也失败不关闭候选失败，差异范围
+重叠也不证明同一根因。没有验证的阶段或能力继续保持未通过/未执行状态。
+
+### 重复性及跨实现结果
+
+27项实际GPU opt在三条路线、三档规模和三次重复间全部相等；包含转换后的
+float32 tolerance约1e-6、ls_tolerance约0.01及graph_conditional。各原生DOF按
+对应SI单位比较，保留原绝对门槛，不根据候选误差重新选择容差。
+
+三条路线的正式重复性用例均为N=1通过、N=8/64失败，共3通过、6失败、无跳过。
+以下是同一路线新实例相对其第一次实例的qacc最大绝对差，不是跨实现误差：
+
+| 路线 | N | 初态 | 六步中的最大差 | forward |
+| --- | --- | --- | --- | --- |
+| 官方MuJoCo-Warp | 8 | 0 | 9.15527e-5 | 4.57764e-4 |
+| 原生PhySolve | 8 | 6.10352e-5 | 6.10352e-5 | 1.52588e-5 |
+| PHYMEO Runtime | 8 | 6.10352e-5 | 6.10352e-5 | 2.28882e-5 |
+| 官方MuJoCo-Warp | 64 | 6.10352e-5 | 5.67627e-3 | 1.83868e-3 |
+| 原生PhySolve | 64 | 1.22070e-4 | 7.32422e-4 | 1.84631e-3 |
+| PHYMEO Runtime | 64 | 1.52588e-5 | 6.71387e-4 | 1.83105e-3 |
+
+N=1各路线跨重复的全部OBS均精确相同。三条路线均通过所检查的forward积分状态
+保持、selected/full完整integration恢复和未选OBS精确保留；N=8/64仍有派生值
+超门槛及精确replay失败。原生两路线的这些reset结果只资格化本诊断恢复工具。
+
+离线跨路线正式用例为1通过、5失败、无跳过：官方与原生PhySolve的三档全部失败；
+原生PhySolve与Runtime的N=1全部OBS精确一致，N=8/64失败。主要qacc差为：
+
+| 比较 | N | 初态 | 六步中的最大差 | forward |
+| --- | --- | --- | --- | --- |
+| 官方—原生PhySolve | 1 | 6.10352e-5 | 5.02014e-3 | 6.10352e-4 |
+| 官方—原生PhySolve | 8 | 1.22070e-4 | 4.94385e-3 | 5.95093e-4 |
+| 官方—原生PhySolve | 64 | 1.83105e-4 | 5.92041e-3 | 2.51770e-3 |
+| 原生PhySolve—Runtime | 8 | 0 | 6.10352e-5 | 2.28882e-5 |
+| 原生PhySolve—Runtime | 64 | 6.10352e-5 | 7.17163e-4 | 1.84631e-3 |
+
+共同限制已有直接证据：三条路线N=64的r1相对r0初态，语义匹配的contact及
+J/D/aref等内容相同、qM和warm-start等已采输入相同，但原始行序和qacc不同。
+这不是完全相同的有序输入，也不证明固定输入求解核非确定。
+
+另有跨实现残余：N=1各自稳定，但官方与PhySolve之间已有qM约7.45e-9、qLD约
+1.49e-8、qacc_smooth约1.91e-6，以及contact frame/J的微小差异；该样本语义
+行序相同，不能把所有差异归为重复性波动。它继续阻断原跨实现门槛，尚不能仅凭
+这些幅度判定为迁移代码缺陷或无害舍入。Runtime的N=1与原生PhySolve完全相同，
+且未发现本矩阵中的状态/控制恢复或未选OBS合同破坏；不扩展为全部owner正确性证明。
+
+### 冷态输入定位与原门禁复测
+
+另起N=1进程，在put_model/put_data之后、原生prepare/首次GPU forward之前保存
+全部可见GPU数组：432项逐位相同，shape/dtype/stride、标量、实际选项及block_dim
+元数据均相同。CPU的780项数值数组/标量仅两个未使用的稀疏efc_AR行索引工作区
+不同；本模型采用dense，efc_AR及colind为空。这些未初始化工作区不作为物理差异。
+
+首次GPU forward后，ximat最大差8.94070e-8、geom_xmat为2.98023e-8、cinert为
+3.72529e-9，crb/qM为7.45058e-9，qLD为1.49012e-8；qacc_smooth为1.90735e-6，
+qacc为6.10352e-5。由此排除已采上传值/布局不一致，收窄到GPU执行实现的派生
+计算差异。完整forward快照不定位时间上最先不同的算子，不证明所有qacc差都由
+ximat导致，也没有覆盖Host私有描述符或冻结CUBIN编译选项。不能据此判定TYX
+编译器缺陷、认定无害舍入，或把当前codedev源码当作冻结二进制的完整来源证明。
+原始输入、布局和结果见 `evidence/b1j-cold-*`。
+
+原有未插桩 `test_panda_collision_model.py` / `test_panda_collision_runtime.py`
+最后复跑为4通过、2失败、无跳过：三个模型审计及N=1通过，N=8/64仍在原数值和
+精确replay门槛失败。原文件未改。对照新增的采样节奏不替代这一门禁。
+
+两套环境pip check及载荷身份检查通过。首次官方环境预检曾把工作区同名目录识别
+为namespace；两次冷态探针分别缺少Warp初始化、误用Stream完成方法，均在首次
+物理forward前中止。测试工具修正后重跑成功，前置失败保留而不记为solver失败。
+
+下一步先做N=1旋转矩阵/惯量变换的最小算子及实际二进制来源对照，区分浮点执行
+与实现错误；约束行序问题独立保持。没有依据增加生产同步、改变owner、降低
+容差或直接投入排序。B1/B2仍部分完成，未完成C ABI、整步Graph、传感器、GUI、
+完整release或性能验收；本批没有生产开销或性能改善声明。
+
+完整diff自审及独立代理只读复审完成，证据索引为实验根
+`evidence/b1j-summary.json`，意见与采用情况为 `evidence/b1j-review.md`。
+针对新增测试的Ruff检查通过；PHYMEO文档检查仍为479条历史缺失目标，输出散列
+与原基线一致，保持失败。提交仅含测试及本主题记录，不推送、不合并。

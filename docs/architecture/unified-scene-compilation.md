@@ -173,10 +173,10 @@ T4保留原pyramidal condim1/3/4/6、scalar soft joint limits、DOF dry friction
 
 | 当前增量 | 已连接入口与范围 | 仍不跨越的边界 |
 | --- | --- | --- |
-| BALL1 / BALL-A 与 ROB2b | MuJoCo-TYX 原生运行路径。BALL-A 在固定 BALL/HINGE/SLIDE 树中复用最多32个合法标量 NONE/FILTEREXACT 执行器；球经完整 M/J 耦合运动。ROB2b 在独立自由根标量树/接触域复用执行器 | BALL-A 不是直接球 motor，不自动支持 FREE+BALL/球树接触，不扩 Phymeo asset lowering。BALL-C 球树接触组合此更新时**仍执行中、尚未验收** |
+| BALL1 / BALL-A / BALL-C 与 ROB2b | MuJoCo-TYX 原生运行路径。BALL-A在固定 BALL/HINGE/SLIDE 树中复用合法scalar NONE/FILTEREXACT执行器；BALL-C另验primitive condim1/pyramidal3接触组合。ROB2b在独立自由根标量树/接触域复用执行器 | BALL-C已完成源码和第二包两后端各64worldsteps，但仍限nv8/nq10，不是直接球motor、FREE+BALL、球限位/干摩擦，不扩Phymeo asset lowering。组合资格各自记录 |
 | N5 / N6 / N7 | MuJoCo-TYX VecEnv/RSL 训练路径：可复现 q/v 随机 reset，D=1..8 控制窗口，真实完整子步和 endpoint 任务；N7 J8/GRU、S128/S256 两模式的固定更新/共同状态资格已通过 | 状态随机化不是质量/摩擦随机化；实际 GPU PPO 不等于全流水线零 HOST 往返或物理可微。原 J/R 学习门仍失败，N7 不替代学习有效性验收 |
 | COL3 | 公共 `CollisionWorkspace.boundary_distances`、`require_boundary_distances` 与公开 limits/result 类型；[使用说明](triangle-boundary-query.md)给出当前 sphere/capsule 对 triangle/mesh 邻近边界查询及事务 | 来源仍是完整 HOST 当前快照，TYX BVH/有限距离核完成设备计算；不是 resident device mesh loan、实心内外/CCD或力学接触。不会自动进入 MuJoCo-TYX primitive 求解器或 SceneDeclaration 的材料响应 |
 
 前文“尚未建立全设备训练”的旧阶段描述不再代表没有真实 CUDA PPO：N5/N6/N7 已有实际设备策略/物理更新证据，但 HOST 采样、观察与审计边界仍明示。G1 原46.29秒参考XY门与完整131.48秒窗口、R03两项小净加速度门仍开放；能力名与模型准入不代替这些轨迹结果。
 
-此节最初更新时首包 `85caed4e` 的509产品成员及七个安装消费者已完成，BALL-C和最终增量包尚待验。**06:30状态补充**：BALL-C已完成52个新节点及6项受影响兼容；最终产品快照 `1ce57489` 的509个成员通过source/wheel/installed字节核对。新版评价器安装CUDA192worldsteps与BALL-C安装解释/CUDA各64worldsteps均通过。上表BALL-C“仍执行中”是此节初稿历史状态，以本补充及当前全景为准。设备mesh来源、直接球motor、FREE+BALL和整个Newton对齐仍未完成；不将首包资格倒灌到后续源。
+**当前安装状态**：首包 `85caed4e` 的509产品成员及七个安装消费者已完成；后继BALL-C的52个新节点及6项受影响兼容也已通过。最终产品快照 `1ce57489` 的509个成员通过source/wheel/installed字节核对。新版评价器安装CUDA192worldsteps与BALL-C安装解释/CUDA各64worldsteps均通过。N8后续只是可选诊断example，实际768转移/0更新和保存审计已验，不改变此wheel或学习门。设备mesh来源、直接球motor、FREE+BALL和整个Newton对齐仍未完成；不将首包资格倒灌到后续源。

@@ -165,6 +165,13 @@ from .geometry._curved_solids import CurvedContact, CurvedEvent
 from .geometry._heightfield import HeightfieldEvent, HeightfieldFace, HeightfieldTrace
 from .geometry._mesh_mesh import MeshMeshPose, MeshMeshSupport, MeshMeshTrace
 from .geometry._mesh_round import MeshRoundEvent, MeshRoundPose, MeshRoundSupport, MeshRoundTrace
+from .geometry._triangle_distance_dispatch import (
+    BoundaryDistanceCapacityError,
+    BoundaryDistanceGroup,
+    BoundaryDistanceLimits,
+    BoundaryDistancePair,
+    BoundaryDistances,
+)
 from .geometry.batched_collision import WorldCollisionWorkspace
 from .geometry.collision_pipeline import (
     CollisionBounds,
@@ -728,6 +735,11 @@ __all__ += [
     "DeformableFeatureLoadSystem",
     "query_deformable_features",
     "CollisionWorkspace",
+    "BoundaryDistanceCapacityError",
+    "BoundaryDistanceGroup",
+    "BoundaryDistanceLimits",
+    "BoundaryDistancePair",
+    "BoundaryDistances",
     "WorldCollisionWorkspace",
     "CompactContactBuffer",
     "CompactWorldContactWorkspace",

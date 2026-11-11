@@ -421,6 +421,10 @@ def test_explicit_domain_rejection(mode, bad):
 
 
 def test_limits_reject_boolean_expansion_and_untyped_mapping():
+    import phymeo as ph
+
+    assert ph.BoundaryDistanceLimits is BoundaryDistanceLimits
+    assert ph.BoundaryDistanceCapacityError is BoundaryDistanceCapacityError
     for field, value in (
         ("groups", True),
         ("candidates", 8193),

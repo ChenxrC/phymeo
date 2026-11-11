@@ -54,7 +54,9 @@ def compile_tree_model(
         issue("joint-domain", "fixed-root hinge/slide/ball requires nv<=8 and nq<=10")
     if has_ball:
         if model.nu > 32 or model.na > 32:
-            issue("ball-actuator-capacity", "ball trees permit at most 32 scalar actors/activations")
+            issue(
+                "ball-actuator-capacity", "ball trees permit at most 32 scalar actors/activations"
+            )
         for actor in range(model.nu):
             joint = int(model.actuator_trnid[actor, 0])
             if (

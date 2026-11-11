@@ -11,11 +11,11 @@ import gzip
 import hashlib
 import json
 import math
-from contextlib import ExitStack
 import struct
 import sys
 import traceback
 from collections.abc import Mapping
+from contextlib import ExitStack
 from dataclasses import fields, is_dataclass
 from pathlib import Path
 from unittest.mock import patch
@@ -65,7 +65,9 @@ XML = """<mujoco model="hinge-ball-slide"><compiler angle="radian" fusestatic="f
 ACT = dict(rtol=3e-5, atol=3e-6)
 FORCE = dict(rtol=3e-4, atol=2e-4)
 # Original BALL-A filter-early declaration; only scalar JOINT transmissions.
-XML = XML.replace("</mujoco>", """<actuator>
+XML = XML.replace(
+    "</mujoco>",
+    """<actuator>
 <motor name="direct" joint="hinge" gear="-.5"/>
 <general name="filter-slide" joint="slide" gear="-2" dyntype="filterexact"
  dynprm=".004" gainprm="1.2" biastype="affine" biasprm=".01 -.3 -.04"
@@ -76,7 +78,8 @@ XML = XML.replace("</mujoco>", """<actuator>
  forcelimited="true" forcerange="-.7 .7"/>
 <general name="shared-hinge" joint="hinge" gear="-.25"
  dyntype="filterexact" dynprm=".008" gainprm=".6"/>
-</actuator></mujoco>""")
+</actuator></mujoco>""",
+)
 
 
 def require(condition, message):
@@ -193,8 +196,10 @@ def provenance(installed_root, *, preflight=False):
         "checkout source entry in sys.path",
     )
     if preflight:
-        require(not any(name == "phymeo" or name.startswith("phymeo.") for name in sys.modules),
-                "product imported before installed-origin preflight")
+        require(
+            not any(name == "phymeo" or name.startswith("phymeo.") for name in sys.modules),
+            "product imported before installed-origin preflight",
+        )
         for origin in (Path.cwd().resolve(), Path(__file__).resolve().parent, installed_root):
             require(
                 not any(is_source_entry(parent) for parent in (origin, *origin.parents)),
@@ -239,18 +244,18 @@ def initial(mj, model, slot):
     v = np.array(
         [(-1 if i % 2 else 1) * (0.2 + 0.07 * i + 0.01 * slot) for i in range(model.nv)], np.float32
     )
-    return MuJoCoInitialState(q, v, act=np.full(model.na, .34 + .01 * slot), time=.125)
+    return MuJoCoInitialState(q, v, act=np.full(model.na, 0.34 + 0.01 * slot), time=0.125)
 
 
 def control(model, tick, slot):
     from phymeo.backends.mujoco_runtime import MuJoCoControl
 
-    command = .8 if tick < 8 else (-.75 if tick < 16 else 0.)
-    u = np.full(model.nu, command + (.015 * slot if command else 0.), np.float32)
+    command = 0.8 if tick < 8 else (-0.75 if tick < 16 else 0.0)
+    u = np.full(model.nu, command + (0.015 * slot if command else 0.0), np.float32)
     sign = 1 if tick < 8 else -1
-    force = np.array([sign * .03 * (i + 1) for i in range(model.nv)], np.float32)
+    force = np.array([sign * 0.03 * (i + 1) for i in range(model.nv)], np.float32)
     wrench = np.zeros((model.nbody, 6), np.float32)
-    wrench[-1] = np.array([.3, -.2, .4, .01, -.03, .02]) * (1 + .2 * slot)
+    wrench[-1] = np.array([0.3, -0.2, 0.4, 0.01, -0.03, 0.02]) * (1 + 0.2 * slot)
     if tick >= 16:
         force.fill(0)
         wrench.fill(0)
@@ -445,7 +450,10 @@ def advance(runtime, mj, model, packets, references, journal, label):
         counters=dict(runtime.counters),
     )
     require(dict(accepted) == dict.fromkeys(KEYS, True), "whole-batch acceptance")
-    require(runtime.counters["completed_kernels"] == launches + 4, "BALL-A activation plus original tree stages")
+    require(
+        runtime.counters["completed_kernels"] == launches + 4,
+        "BALL-A activation plus original tree stages",
+    )
     for key in KEYS:
         row, before, after, oracle = output[key].last_step, entry[key], output[key], expected[key]
         require(row.tick == after.tick == before.tick + 1, "one logical successor")
@@ -484,27 +492,46 @@ def advance(runtime, mj, model, packets, references, journal, label):
         exact(a.generalized_force, row.qfrc_actuator, "joint force publication")
         for name, target in oracle["analytic"].items():
             actual = getattr(a, name)
-            np.testing.assert_allclose(actual, target, **(ACT if name in ("output_act", "activation_derivative") else FORCE))
+            np.testing.assert_allclose(
+                actual,
+                target,
+                **(ACT if name in ("output_act", "activation_derivative") else FORCE),
+            )
             require(not actual.flags.writeable, "immutable actuation " + name)
         np.testing.assert_allclose(a.scalar_force, oracle["actuator_force"], **FORCE)
         np.testing.assert_allclose(a.activation_derivative, oracle["act_dot"], **ACT)
         np.testing.assert_allclose(a.integration_derivative, a.activation_derivative, **ACT)
         for actor in range(model.nu):
             j = int(model.actuator_trnid[actor, 0])
-            qa, dof, adr = int(model.jnt_qposadr[j]), int(model.jnt_dofadr[j]), int(model.actuator_actadr[actor])
+            qa, dof, adr = (
+                int(model.jnt_qposadr[j]),
+                int(model.jnt_dofadr[j]),
+                int(model.actuator_actadr[actor]),
+            )
             require(int(model.jnt_type[j]) in (2, 3), "scalar actor targets")
-            np.testing.assert_array_equal(a.ids[actor], [qa, dof, j, adr,
-                int(model.actuator_actearly[actor]), 0, int(model.actuator_ctrllimited[actor]),
-                int(model.actuator_actlimited[actor]), int(model.actuator_forcelimited[actor])])
+            np.testing.assert_array_equal(
+                a.ids[actor],
+                [
+                    qa,
+                    dof,
+                    j,
+                    adr,
+                    int(model.actuator_actearly[actor]),
+                    0,
+                    int(model.actuator_ctrllimited[actor]),
+                    int(model.actuator_actlimited[actor]),
+                    int(model.actuator_forcelimited[actor]),
+                ],
+            )
         for j in range(model.njnt):
             if int(model.jnt_type[j]) == 1:
                 dof = int(model.jnt_dofadr[j])
-                np.testing.assert_array_equal(row.qfrc_actuator[dof:dof+3], np.zeros(3))
+                np.testing.assert_array_equal(row.qfrc_actuator[dof : dof + 3], np.zeros(3))
         for native in (oracle["native_successor"], oracle["continuous"]):
             np.testing.assert_allclose(after.q, native["q"], rtol=0, atol=Q_ATOL)
             np.testing.assert_allclose(after.v, native["v"], rtol=0, atol=V_ATOL)
             np.testing.assert_allclose(after.act, native["act"], **ACT)
-            require(abs(after.time - native["time"] ) <= TIME_ATOL, "continuous/native clock")
+            require(abs(after.time - native["time"]) <= TIME_ATOL, "continuous/native clock")
         for joint in range(model.njnt):
             if model.jnt_type[joint] == mj.mjtJoint.mjJNT_BALL:
                 qa = int(model.jnt_qposadr[joint])
@@ -528,9 +555,14 @@ def run(mode, output_path, journal, installed_root):
     require(
         (model.nq, model.nv, model.nu, model.na) == (6, 5, 4, 3), "declared ball/R/P dimensions"
     )
-    require(any(int(model.jnt_qposadr[j]) != int(model.jnt_dofadr[j])
-                for j in range(model.njnt) if int(model.jnt_type[j]) in (2, 3)),
-            "real scalar qpos/DOF address mismatch")
+    require(
+        any(
+            int(model.jnt_qposadr[j]) != int(model.jnt_dofadr[j])
+            for j in range(model.njnt)
+            if int(model.jnt_type[j]) in (2, 3)
+        ),
+        "real scalar qpos/DOF address mismatch",
+    )
     initials = {key: initial(mj, model, slot) for slot, key in enumerate(KEYS)}
     compiled = compile_mujoco_xml(XML, require_asset=False)
     runtime = MuJoCoRuntime(
@@ -547,7 +579,12 @@ def run(mode, output_path, journal, installed_root):
         references = {}
         for key in KEYS:
             value = mj.MjData(model)
-            value.qpos[:], value.qvel[:], value.act[:], value.time = start[key].q, start[key].v, start[key].act, start[key].time
+            value.qpos[:], value.qvel[:], value.act[:], value.time = (
+                start[key].q,
+                start[key].v,
+                start[key].act,
+                start[key].time,
+            )
             references[key] = value
         journal.emit(
             "declaration",
@@ -558,14 +595,17 @@ def run(mode, output_path, journal, installed_root):
             initial=initials,
             stored_initial=start,
             capabilities=runtime.capabilities,
-            tolerances=TOL, compilation_source=compiled.source,
+            tolerances=TOL,
+            compilation_source=compiled.source,
             q_atol=Q_ATOL,
             v_atol=V_ATOL,
             time_atol=TIME_ATOL,
             native_joint_type=model.jnt_type.copy(),
             native_qadr=model.jnt_qposadr.copy(),
             native_dadr=model.jnt_dofadr.copy(),
-            continuous_steps=24, activation_gate=ACT, force_gate=FORCE,
+            continuous_steps=24,
+            activation_gate=ACT,
+            force_gate=FORCE,
         )
         for tick in range(24):
             held = {key: control(model, tick, slot) for slot, key in enumerate(KEYS)}
@@ -577,7 +617,10 @@ def run(mode, output_path, journal, installed_root):
         raw = capsule.to_bytes()
         (output_path / "accepted-checkpoint.bin").write_bytes(raw)
         capsule = MuJoCoTyxCheckpoint.from_bytes(raw)
-        require(capsule.binding["schema"] == "mujoco-tyx-exact-checkpoint-v2", "activation checkpoint schema")
+        require(
+            capsule.binding["schema"] == "mujoco-tyx-exact-checkpoint-v2",
+            "activation checkpoint schema",
+        )
         saved = runtime.integration_snapshot()
         saved_references = {key: copy.copy(value) for key, value in references.items()}
         journal.emit(
@@ -601,11 +644,18 @@ def run(mode, output_path, journal, installed_root):
         try:
             runtime.restore(capsule, expected_revision=restore_revision)
         except ValueError as error:
-            journal.emit("stale-restore-rejected", error=str(error), expected_revision=restore_revision,
-                         current_revision=runtime.checkpoint_revision)
+            journal.emit(
+                "stale-restore-rejected",
+                error=str(error),
+                expected_revision=restore_revision,
+                current_revision=runtime.checkpoint_revision,
+            )
         else:
             raise AssertionError("stale restore accepted")
-        require(runtime.checkpoint().to_bytes() == restored_bytes, "stale restore leaves all state untouched")
+        require(
+            runtime.checkpoint().to_bytes() == restored_bytes,
+            "stale restore leaves all state untouched",
+        )
         exact(runtime.integration_snapshot(), saved, "restored accepted state")
         references = {key: copy.copy(value) for key, value in saved_references.items()}
         repeated = advance(runtime, mj, model, held, references, journal, "restored-successor")
@@ -617,7 +667,9 @@ def run(mode, output_path, journal, installed_root):
         exact(after_reset[KEYS[0]], before_reset[KEYS[0]], "unselected complete state retained")
         selected = after_reset[KEYS[-1]]
         require(
-            selected.tick == 0 and selected.last_step is None and selected.time == initials[KEYS[-1]].time,
+            selected.tick == 0
+            and selected.last_step is None
+            and selected.time == initials[KEYS[-1]].time,
             "selected original reset",
         )
         np.testing.assert_array_equal(selected.q, np.asarray(initials[KEYS[-1]].q, np.float32))
@@ -633,7 +685,9 @@ def run(mode, output_path, journal, installed_root):
             "partial-original-reset", selected=(KEYS[-1],), before=before_reset, after=after_reset
         )
         for retry in range(2):
-            final = advance(runtime, mj, model, held, references, journal, f"partial-reset-successor-{retry}")
+            final = advance(
+                runtime, mj, model, held, references, journal, f"partial-reset-successor-{retry}"
+            )
             main_calls += 1
         counts, clone_counts = dict(runtime.counters), dict(clone.counters)
         require(main_calls == 28 and clone_calls == 1, "actual calls not rewound ticks")
@@ -699,18 +753,26 @@ def run(mode, output_path, journal, installed_root):
                     owner.close()
                 except BaseException as error:
                     failures.append((name, error))
-        close_record = dict(main_calls=main_calls, clone_calls=clone_calls,
-                            failures=[dict(owner=name, type=type(error).__name__, message=str(error))
-                                      for name, error in failures])
+        close_record = dict(
+            main_calls=main_calls,
+            clone_calls=clone_calls,
+            failures=[
+                dict(owner=name, type=type(error).__name__, message=str(error))
+                for name, error in failures
+            ],
+        )
         try:
             journal.emit("closed", **close_record)
         except BaseException as error:
             failures.append(("close-evidence", error))
         if failures:
             (output_path / "cleanup-failure.json").write_text(
-                json.dumps(close_record, indent=2, allow_nan=False), encoding="utf-8")
+                json.dumps(close_record, indent=2, allow_nan=False), encoding="utf-8"
+            )
             if primary is None:
-                raise BaseExceptionGroup("installed BALL-A cleanup failed", [error for _, error in failures])
+                raise BaseExceptionGroup(
+                    "installed BALL-A cleanup failed", [error for _, error in failures]
+                )
 
 
 def main():
@@ -740,10 +802,16 @@ def main():
         # Keep original exception objects for the final group, not just strings.
         finalization_errors.append(error)
         summary["status"] = "FAIL"
-        summary["finalization_errors"].append(dict(
-            stage=stage, type=type(error).__name__, message=str(error),
-            traceback="".join(traceback.format_exception(type(error), error, error.__traceback__)),
-        ))
+        summary["finalization_errors"].append(
+            dict(
+                stage=stage,
+                type=type(error).__name__,
+                message=str(error),
+                traceback="".join(
+                    traceback.format_exception(type(error), error, error.__traceback__)
+                ),
+            )
+        )
 
     try:
         require(args.installed_root.is_absolute(), "installed-root must be absolute")
@@ -784,7 +852,8 @@ def main():
             remember_finalization("journal-close-and-hash", failure)
         try:
             (output / "summary.json").write_text(
-                json.dumps(summary, indent=2, allow_nan=False), encoding="utf-8")
+                json.dumps(summary, indent=2, allow_nan=False), encoding="utf-8"
+            )
         except BaseException as failure:
             remember_finalization("summary-file", failure)
         try:

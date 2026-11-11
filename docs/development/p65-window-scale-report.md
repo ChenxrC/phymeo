@@ -1,5 +1,26 @@
 # N7 control-window and random-reset scale qualification
 
+## Parent qualification — 2026-11-12 05:44
+
+Current status: **ALL_THREE_DECLARED_CUDA_PAIRS_PASSED**. This is connection/resource qualification, not learned-policy quality or Newton performance parity.
+
+| Actual run | Fixed cell | Complete pytest time | Physical worldsteps per mode | Result |
+|---|---|---:|---:|---|
+| 265 | J8 / D2 / GRU | 15.95 s | 384 | full/integration common physics, reset stream, learner/Adam/RNG/hidden identical |
+| 266 | S128 / D4 / MLP | 349.52 s | 12,288 | same complete common-state/update comparison |
+| 267 | S256 / D4 / MLP | 688.55 s | 24,576 | same comparison; 1,088 reset-world events per mode, no failed batch |
+
+Every mode completed the original 24 policy windows and three real updates (one warmup and two measured). Full and integration retain different endpoint observation scopes; both complete raw histories remain saved. S force-to-motion checks use actual published force, not a second contact-law solution. Measured S256 update/mandatory-diagnostic sums were 26.4571/20.7445 s; measured loop-through-trace-close was 259.4871/192.1622 s. These scopes differ and include substantial evidence work. They are not standalone physics throughput or a same-output Newton comparison.
+
+Parent changes were necessary: evaluation 2412210d distinguishes real substeps/worldsteps from policy windows and preserves failed control-window evidence. The 47 relevant HOST/protocol checks passed in runs 260/261. Run 262 first completed only the full J8 mode, then failed because success and finally both exclusively created its summary. The one-line finalization repair (667e58b5) was qualified by runs 265–267; the failed run remains intact.
+
+A subsequent read-only review found that a whole internally consistent revision chain could be shifted without binding its external publication. Run 268 first exposed an invalid new test helper type; after using an immutable receipt, run 269 reproduced the actual missing rejection. Repair 4118f2ec binds action/source/input, the first accepted substep, the endpoint plus one reset, and before/across/after frame metadata. Run 275: 30 window-accounting plus two existing HOST checks passed. Run 276: the affected J8 complete pair passed again in 14.00 s with the stricter checker. S128/S256 physical evidence is reused from 266/267; those large grids were not rerun under the later checker and are not relabeled as such.
+
+Evidence: artifacts/p65-parity-until-0720-20261112-01, including first failures, commands, before/after source snapshots, complete gzip payloads, summaries and raw exits. The final installed evaluator/control-window consumer is a separate pending qualification in the parent batch report.
+
+### Historical authoring protocol
+
+
 Status: AUTHORING_ONLY / CODE_READY_TESTS_PENDING. This is a fixed connection and
 resource experiment, not a learning-quality experiment. Parent alone executes.
 Only this report, `examples/mujoco_tyx_window_scale.py` and

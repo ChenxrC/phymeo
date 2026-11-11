@@ -3,7 +3,8 @@
 `builders.mujoco_scene.compile_mujoco_world` 将现有 `ArticulationWorld` 编译为
 `CompiledMuJoCoWorld`，属于专用 solver 适配，不增加第二套模型/状态，也不导入 Newton、
 Warp 或 MuJoCo-Warp。resident 继续使用同一声明与原 `compile_scene`，不需要原生模型。
-本入口只完成冷编译，尚未接入 P2PE Stage/C ABI 或 PhySolve 运行期初始化。
+本入口完成冷编译；PhySolveRuntime 已可消费完整结果。P2PE Stage 的原生资产切片
+见[装配与初态](native-assembly.md)，两个入口均未取得 C ABI 资格。
 
 ## 输入与物理语义
 
@@ -47,8 +48,8 @@ Panda 验证以 `load_panda()` 的公共资产为输入，不宣称原始 URDF �
 折叠资产的碰撞点从 authored link frame 转到物理 owner frame；圆柱/椭球轴同步转换。
 
 `fresh_native_data()` 从 MJB 创建独立 model/data，并写入三个初始数组，不执行 forward。
-仅把 `.compilation` 交给当前 PhySolveRuntime 会丢失非零初态/控制；在 B2 接入完整结果
-以前不得这样消费。MJB 的 qpos0 是结构参考，不能为设置初态改写它。
+仅把 `.compilation` 交给 Runtime 仍会丢失该声明的非零初态/控制，必须直接传完整
+CompiledMuJoCoWorld。MJB 的 qpos0 是结构参考，不能为设置初态改写它。
 
 冷编译复杂度为 O(B+J+S+R×E)，R/E 为机器人/环境 shape 数；显式 pair 数影响原生容量。
 不创建运行时、设备数组或 Graph，不增加每步复制/同步。批量同构运行必须复用模板编译，

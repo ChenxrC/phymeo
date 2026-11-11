@@ -14,16 +14,21 @@ from types import MappingProxyType
 import numpy as np
 
 from ..builders.mujoco_compiler import MuJoCoCompilation
+from ..builders.mujoco_scene import CompiledMuJoCoWorld
+from .physolve_initial import INTEGRATION_FIELDS, NativeInitialState
 from .physolve_payload import PhySolvePayload
 
-
-INTEGRATION_FIELDS = (
-    "time", "qpos", "qvel", "act", "qacc_warmstart", "ctrl", "qfrc_applied",
-    "xfrc_applied", "eq_active", "mocap_pos", "mocap_quat",
-)
 OBSERVATION_FIELDS = (
-    "qpos", "qvel", "qacc", "time", "ctrl", "qfrc_applied",
-    "qfrc_actuator", "qfrc_constraint", "xpos", "xquat",
+    "qpos",
+    "qvel",
+    "qacc",
+    "time",
+    "ctrl",
+    "qfrc_applied",
+    "qfrc_actuator",
+    "qfrc_constraint",
+    "xpos",
+    "xquat",
 )
 
 
@@ -41,8 +46,22 @@ class PhySolveRuntime:
     state (no keyframe selected), then performs native forward.
     """
 
-    def __init__(self, compilation, *, payload, nworld=1, nconmax=64, njmax=256,
-                 device="cuda:0"):
+    def __init__(
+        self,
+        compilation,
+        *,
+        payload,
+        nworld=1,
+        nconmax=64,
+        njmax=256,
+        device="cuda:0",
+        initial_state=None,
+    ):
+        world = compilation if isinstance(compilation, CompiledMuJoCoWorld) else None
+        if world is not None:
+            if initial_state is not None or world.binding_version != 1:
+                raise ValueError("compiled world owns its versioned initial state")
+            compilation = world.compilation
         if not isinstance(compilation, MuJoCoCompilation):
             raise TypeError("a Phymeo MuJoCoCompilation is required")
         if not isinstance(payload, PhySolvePayload):
@@ -54,17 +73,33 @@ class PhySolveRuntime:
         import physolve_tyx as frontend
         import tyx as tx
 
+        # Initialize/validate before loading the native library or allocating GPU owners.
+        if world is None:
+            cpu = compilation.fresh_native_model()
+            initial = mujoco.MjData(cpu)
+            initial.qpos[:] = compilation.native_initial_qpos
+            initial.qvel[:] = compilation.native_initial_qvel
+        else:
+            cpu, initial = world.fresh_native_data()
+        if initial_state is not None and not isinstance(initial_state, NativeInitialState):
+            raise TypeError("initial_state requires NativeInitialState")
+        initial_state = initial_state or NativeInitialState.from_data(compilation, initial)
+        initial_state.apply(compilation, initial)
+
         self._lock = RLock()
         self._tx, self._frontend = tx, frontend
         self._native = payload.load()
         self._closed, self._closing, self._active = False, False, 0
         self._banks, self._handles = [], []
         self._stream = self._model = None
+        self._reset = None
         self._compilation = compilation
-        self._cpu_model = compilation.fresh_native_model()
+        self._cpu_model = cpu
         cpu = self._cpu_model
         if cpu.nuserdata or cpu.nplugin or cpu.nflex or cpu.nsensor:
-            raise NotImplementedError("PhySolve profile excludes userdata, plugins, flex and sensors")
+            raise NotImplementedError(
+                "PhySolve profile excludes userdata, plugins, flex and sensors"
+            )
         if cpu.opt.integrator != mujoco.mjtIntegrator.mjINT_EULER:
             raise NotImplementedError("this direct qualification profile requires Euler")
         if cpu.opt.solver != mujoco.mjtSolver.mjSOL_NEWTON:
@@ -82,21 +117,26 @@ class PhySolveRuntime:
             with tx.use_device(selected):
                 self._stream = tx.CudaStream(device=selected.ordinal)
                 with tx.use_stream(self._stream):
-                    initial = mujoco.MjData(cpu)
                     mujoco.mj_forward(cpu, initial)
                     if initial.ncon > self.nconmax or initial.nefc > self.njmax:
                         raise ValueError("initial model exceeds contact/constraint capacity")
                     self._model = frontend.put_model(cpu)
                     self._model.opt.graph_conditional = True
                     for _ in range(2):
-                        data = frontend.put_data(cpu, initial, nworld=self.nworld,
-                                                 nconmax=self.nconmax, njmax=self.njmax)
+                        data = frontend.put_data(
+                            cpu, initial, nworld=self.nworld, nconmax=self.nconmax, njmax=self.njmax
+                        )
                         self._banks.append(data)
                         handle = self._native._create_runtime(self._model, data, "tyx", "tyx")
                         self._handles.append(handle)
                         self._native._prepare_runtime(handle)
                         self._native._forward_runtime(handle)
                         self._validate(data)
+                    from ._physolve_reset import PreparedReset
+
+                    self._reset = PreparedReset(self._banks, self.nworld, selected)
+                    self._reset.prepare(self._stream)
+                    self._complete()
         except Exception as error:
             try:
                 self.close()
@@ -117,16 +157,19 @@ class PhySolveRuntime:
         for handle in self._handles:
             if handle is not None:
                 self._native._synchronize_runtime_stream(
-                    handle, int(self._device.context), int(self._stream.handle))
+                    handle, int(self._device.context), int(self._stream.handle)
+                )
                 return
         if self._stream is not None:
             self._stream.synchronize()
 
     def _validate(self, data):
         self._complete()
-        if (int(data.nacon.numpy()[0]) > data.naconmax
-                or int(data.ncollision.numpy()[0]) > data.naconmax
-                or np.any(data.nefc.numpy() > data.njmax)):
+        if (
+            int(data.nacon.numpy()[0]) > data.naconmax
+            or int(data.ncollision.numpy()[0]) > data.naconmax
+            or np.any(data.nefc.numpy() > data.njmax)
+        ):
             raise RuntimeError("PhySolve contact/constraint capacity exceeded; not published")
         for name in ("qpos", "qvel", "qacc", "time"):
             if not np.isfinite(getattr(data, name).numpy()).all():
@@ -141,8 +184,10 @@ class PhySolveRuntime:
 
     def _controls(self, controls):
         result = {}
-        shapes = {"ctrl": (self.nworld, self._cpu_model.nu),
-                  "qfrc_applied": (self.nworld, self._cpu_model.nv)}
+        shapes = {
+            "ctrl": (self.nworld, self._cpu_model.nu),
+            "qfrc_applied": (self.nworld, self._cpu_model.nv),
+        }
         for name, value in controls.items():
             if value is None:
                 continue
@@ -179,16 +224,14 @@ class PhySolveRuntime:
     def reset(self, mask=None):
         """Reset all or a boolean world mask; unselected integration state stays."""
         with self._scope():
-            selector = None
             if mask is not None:
                 mask = np.asarray(mask)
                 if mask.dtype != np.bool_ or mask.shape != (self.nworld,):
                     raise ValueError("reset mask must be bool[nworld]")
                 if not mask.any():
                     return
-                selector = self._tx.Array(mask.copy(), dtype=self._tx.bool1, device=self._device)
             index, data = self._candidate()
-            self._frontend.reset_data(self._model, data, selector)
+            self._reset.restore(index, mask, self._stream)
             self._native._forward_runtime(self._handles[index])
             self._validate(data)
             self._active = index
@@ -201,7 +244,9 @@ class PhySolveRuntime:
             fields = {}
             for name in OBSERVATION_FIELDS:
                 array = getattr(data, name).numpy(stream=self._stream)
-                fields[name] = np.frombuffer(array.tobytes(), dtype=array.dtype).reshape(array.shape)
+                fields[name] = np.frombuffer(array.tobytes(), dtype=array.dtype).reshape(
+                    array.shape
+                )
             return MappingProxyType(fields)
 
     def close(self):
@@ -219,6 +264,7 @@ class PhySolveRuntime:
                 self._stream.destroy()
                 self._stream = None
             self._banks.clear()
+            self._reset = None
             self._model = None
             self._closed = True
 

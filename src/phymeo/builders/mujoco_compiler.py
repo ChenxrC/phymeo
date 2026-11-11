@@ -331,6 +331,27 @@ def compile_mujoco_xml(
     )
 
 
+def compile_mujoco_spec(spec, *, instance="model", world=0):
+    """Snapshot an assembled native spec without claiming resident lowering.
+
+    The adapter supplies an owned spec; compilation and source capture use the
+    same identity boundary as file/XML inputs, including complete VFS assets.
+    """
+    mj = _mujoco()
+    if not isinstance(spec, mj.MjSpec):
+        raise TypeError("native assembly requires MjSpec")
+    world = validate_scope(instance, world)
+    spec = spec.copy()
+    captured, issues = capture_source_geometry(spec, world)
+    model = spec.compile()
+    source = _source(mj, spec, model, spec.to_xml().encode(), "<assembly>")
+    record = _compilation(mj, spec, model, source, False)
+    return replace(
+        record,
+        collision_source=freeze_source_geometry(captured, issues, model, source, instance, world),
+    )
+
+
 def _tree_layout(mj, model):
     issues = []
     kinds = np.asarray(model.jnt_type)

@@ -48,7 +48,8 @@ joint force 和 reaction wrench 契约需要下一阶段显式适配，不能直
 模型只在准备时转换；CPU MuJoCo forward 仅用于初始 data 准备。
 
 当前 API 是同步 direct 验证接口：有明确的 stream completion、容量和有限值 host 检查，
-快照包含 D2H，host 控制写入包含 H2D，reset mask 创建临时 device selector。
+快照包含 D2H，host 控制写入包含 H2D；reset 使用持久 device selector 和完整积分备份，
+完整初态和未选观测限制见[原生装配](../architecture/native-assembly.md)。
 复制工作随 N×状态宽度增长。这些成本公开保留，不能作为 P2PE 高频 executor 或性能结果。
 后续应与 P2PE execution epoch gate 和 device 检查接合，避免第二套事务与同步。
 关闭失败保留未释放资源可重试；进入关闭状态后拒绝再次推进。

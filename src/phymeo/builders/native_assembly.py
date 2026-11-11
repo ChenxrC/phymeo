@@ -1,0 +1,339 @@
+"""PhySolve-specific asset assembly; native-only, never a resident declaration.
+
+Uses the existing native compiler and runtime contracts. No P2PE objects or
+Newton compatibility model are introduced. All participants share one model.
+"""
+
+from dataclasses import dataclass
+from hashlib import sha256
+from numbers import Integral
+from pathlib import Path
+from xml.etree import ElementTree as ET
+
+import numpy as np
+
+from ..backends.physolve_initial import NativeInitialState
+from .mujoco_compiler import compile_mujoco_spec
+
+
+def _vector(value, size, name):
+    a = np.asarray(value, dtype=float)
+    if a.shape != (size,) or not np.isfinite(a).all():
+        raise ValueError(f"{name} requires finite shape ({size},)")
+    return tuple(float(x) for x in a)
+
+
+@dataclass(frozen=True)
+class NativeJointInput:
+    name: str
+    position: float | None = None
+    velocity: float = 0.0
+    target_position: float | None = None
+    target_velocity: float = 0.0
+    applied_force: float = 0.0
+    kp: float = 500.0
+    kd: float = 50.0
+    armature: float = 0.01
+    damping: float = 0.0
+    frictionloss: float = 1e-5
+    # None keeps URDF motor rating; explicit zero means unlimited in this
+    # *native profile*. ArticulationWorld's zero-cap semantics do not change.
+    effort_limit: float | None = None
+
+    def __post_init__(self):
+        if not isinstance(self.name, str) or not self.name or "::" in self.name:
+            raise ValueError("joint input requires an asset-local name")
+        for key, value in vars(self).items():
+            if key == "name" or value is None:
+                continue
+            if (
+                isinstance(value, (bool, np.bool_))
+                or not np.isfinite(value)
+                or abs(value) > np.finfo(np.float32).max
+            ):
+                raise ValueError(f"joint {self.name}.{key} requires a finite scalar")
+            if (
+                key in {"kp", "kd", "armature", "damping", "frictionloss", "effort_limit"}
+                and value < 0
+            ):
+                raise ValueError(f"joint {self.name}.{key} must be nonnegative")
+
+
+@dataclass(frozen=True)
+class NativeAssetInstance:
+    name: str
+    path: str
+    position: tuple = (0.0, 0.0, 0.0)
+    orientation_xyzw: tuple = (0.0, 0.0, 0.0, 1.0)
+    joints: tuple[NativeJointInput, ...] = ()
+    drive_mode: str = "preserve"
+    self_collision: bool = True
+    joint_defaults: tuple = ()
+
+    def __post_init__(self):
+        if not isinstance(self.name, str) or not self.name or "::" in self.name:
+            raise ValueError("instance requires a unique unscoped name")
+        object.__setattr__(self, "path", str(Path(self.path).resolve()))
+        object.__setattr__(self, "position", _vector(self.position, 3, "position"))
+        q = _vector(self.orientation_xyzw, 4, "orientation")
+        if abs(np.linalg.norm(q) - 1) > 1e-10:
+            raise ValueError("orientation requires unit XYZW")
+        object.__setattr__(self, "orientation_xyzw", q)
+        rows = tuple(self.joints)
+        if any(not isinstance(row, NativeJointInput) for row in rows):
+            raise TypeError("joints requires NativeJointInput")
+        if len({r.name for r in rows}) != len(rows):
+            raise ValueError("duplicate joint input")
+        object.__setattr__(self, "joints", rows)
+        defaults = dict(self.joint_defaults)
+        if len(defaults) != len(self.joint_defaults) or set(defaults) - {
+            "kp",
+            "kd",
+            "armature",
+            "damping",
+            "frictionloss",
+        }:
+            raise ValueError("invalid scalar joint defaults")
+        NativeJointInput("validation", **defaults)
+        object.__setattr__(self, "joint_defaults", tuple(defaults.items()))
+        if (
+            self.drive_mode not in {"preserve", "scalar_pd"}
+            or type(self.self_collision) is not bool
+        ):
+            raise ValueError("explicit drive_mode/self_collision required")
+        if self.drive_mode == "preserve" and (rows or defaults):
+            raise ValueError("preserve mode cannot silently ignore joint overrides")
+
+
+@dataclass(frozen=True)
+class NativeStaticShape:
+    name: str
+    kind: str
+    size: tuple
+    position: tuple = (0.0, 0.0, 0.0)
+    orientation_xyzw: tuple = (0.0, 0.0, 0.0, 1.0)
+    friction: tuple = (1.0, 0.005, 0.0001)
+    contact_dim: int = 6
+
+    def __post_init__(self):
+        widths = {"sphere": 1, "box": 3, "capsule": 2, "cylinder": 2}
+        if self.kind not in widths or not self.name or "::" in self.name:
+            raise ValueError("native static requires a named finite primitive")
+        object.__setattr__(self, "size", _vector(self.size, widths[self.kind], "size"))
+        if min(self.size) <= 0:
+            raise ValueError("shape dimensions must be positive")
+        object.__setattr__(self, "position", _vector(self.position, 3, "position"))
+        q = _vector(self.orientation_xyzw, 4, "orientation")
+        if abs(np.linalg.norm(q) - 1) > 1e-10:
+            raise ValueError("orientation requires unit XYZW")
+        object.__setattr__(self, "orientation_xyzw", q)
+        object.__setattr__(self, "friction", _vector(self.friction, 3, "friction"))
+        if min(self.friction) < 0:
+            raise ValueError("friction must be nonnegative")
+        if type(self.contact_dim) is not int or self.contact_dim not in (1, 3, 4, 6):
+            raise ValueError("contact_dim requires 1, 3, 4 or 6")
+        active = {1: 0, 3: 1, 4: 2, 6: 3}[self.contact_dim]
+        if any(self.friction[active:]):
+            raise ValueError("contact_dim would ignore nonzero friction")
+
+
+@dataclass(frozen=True)
+class NativeTemplate:
+    compilation: object
+    initial_state: NativeInitialState
+    # Names are public scope; native indices are this compilation only.
+    joint_bindings: tuple  # (name, joint id, qpos address, DOF address, actuator id)
+    body_bindings: tuple
+    shape_bindings: tuple
+    asset_sources: tuple  # instance, path, primary SHA256
+    qualification: str = "native-only/physolve; resident-unqualified"
+    contract_version: int = 1
+
+    def bind(self, nworld):
+        if isinstance(nworld, bool) or not isinstance(nworld, Integral) or nworld <= 0:
+            raise ValueError("homogeneous binding requires positive integer nworld")
+        return HomogeneousNativeBinding(self, int(nworld))
+
+
+@dataclass(frozen=True)
+class HomogeneousNativeBinding:
+    """Reuse one compiled template; world-local native indices, no env replicas.
+
+    Runtime data remains [nworld, width]. Public identity is (world, name), not
+    a flattened fictitious body index. bind performs no file IO/compilation.
+    """
+
+    template: NativeTemplate
+    nworld: int
+
+    def __post_init__(self):
+        if not isinstance(self.template, NativeTemplate):
+            raise TypeError("homogeneous binding requires NativeTemplate")
+        if type(self.nworld) is not int or self.nworld <= 0:
+            raise ValueError("homogeneous binding requires positive integer nworld")
+
+    def create_runtime(self, *, payload, **options):
+        from ..backends.physolve_runtime import PhySolveRuntime
+
+        if self.template.contract_version != 1:
+            raise ValueError("unsupported native integration contract")
+        return PhySolveRuntime(
+            self.template.compilation,
+            payload=payload,
+            initial_state=self.template.initial_state,
+            nworld=self.nworld,
+            **options,
+        )
+
+
+def _scalar_drives(mj, spec, asset):
+    if spec.actuators:
+        raise ValueError(f"{asset.name}: scalar_pd cannot replace or duplicate source actuators")
+    root = ET.parse(asset.path).getroot()
+    if root.tag != "robot":
+        raise ValueError("scalar_pd profile currently requires URDF; MJCF uses preserve")
+    ratings = {}
+    for joint in root.findall("joint"):
+        if joint.find("mimic") is not None:
+            raise NotImplementedError("URDF mimic requires an explicit affine control binding")
+        if joint.find("dynamics") is not None:
+            raise NotImplementedError("URDF dynamics require explicit source/override precedence")
+        limit = joint.find("limit")
+        ratings[joint.get("name")] = 0.0 if limit is None else float(limit.get("effort", "0"))
+    actual = {j.name: j for j in spec.joints}
+    supplied = {j.name: j for j in asset.joints}
+    if set(supplied) - set(actual):
+        raise ValueError(
+            f"{asset.name}: unknown joint inputs {sorted(set(supplied) - set(actual))}"
+        )
+    rows = []
+    for name, joint in actual.items():
+        if joint.type not in (mj.mjtJoint.mjJNT_HINGE, mj.mjtJoint.mjJNT_SLIDE):
+            raise NotImplementedError("scalar_pd admits scalar hinge/slide joints only")
+        row = supplied.get(name, NativeJointInput(name, **dict(asset.joint_defaults)))
+        joint.armature, joint.frictionloss = row.armature, row.frictionloss
+        joint.damping[:] = [row.damping, 0.0, 0.0]
+        cap = ratings.get(name, 0.0) if row.effort_limit is None else row.effort_limit
+        if not np.isfinite(cap) or cap < 0:
+            raise ValueError("invalid asset motor rating")
+        actuator = spec.add_actuator(name=f"__drive_{name}")
+        actuator.trntype, actuator.target = mj.mjtTrn.mjTRN_JOINT, name
+        actuator.gaintype, actuator.biastype = mj.mjtGain.mjGAIN_FIXED, mj.mjtBias.mjBIAS_AFFINE
+        actuator.gainprm[0] = 1.0
+        actuator.biasprm[:3] = [0.0, -row.kp, -row.kd]
+        actuator.forcelimited = bool(cap)
+        if cap:
+            actuator.forcerange = [-cap, cap]
+        rows.append(row)
+    return rows
+
+
+def compile_native_template(assets, *, timestep, gravity, static_shapes=()):
+    """Compile a same-world assembly once; retain admitted asset-local semantics.
+
+    Asset timestep/gravity are replaced by explicit assembly options. Other
+    non-default global options are rejected until represented by this profile.
+    Source actuator/equality/contact/resource references are attached together.
+    Native MuJoCo collision rules apply; explicit pair policies remain separate.
+    """
+    import mujoco as mj
+
+    assets, static_shapes = tuple(assets), tuple(static_shapes)
+    if not assets or any(not isinstance(a, NativeAssetInstance) for a in assets):
+        raise TypeError("native template requires asset instances")
+    if any(not isinstance(s, NativeStaticShape) for s in static_shapes):
+        raise TypeError("static_shapes requires NativeStaticShape")
+    names = [a.name for a in (*assets, *static_shapes)]
+    if len(set(names)) != len(names):
+        raise ValueError("duplicate assembly instance name")
+    if not np.isfinite(timestep) or timestep <= 0:
+        raise ValueError("timestep must be positive finite seconds")
+    gravity = _vector(gravity, 3, "gravity")
+    spec = mj.MjSpec()
+    spec.compiler.fusestatic = False
+    spec.option.timestep, spec.option.gravity = timestep, gravity
+    spec.option.integrator = mj.mjtIntegrator.mjINT_EULER
+    spec.option.solver = mj.mjtSolver.mjSOL_NEWTON
+    spec.option.jacobian = mj.mjtJacobian.mjJAC_DENSE
+    pending, sources = [], []
+    for asset in assets:
+        child = mj.MjSpec.from_file(asset.path)
+        default = mj.MjSpec().option
+        for name in dir(default):
+            if name.startswith("_") or name in {"gravity", "timestep"}:
+                continue
+            value, expected = getattr(child.option, name), getattr(default, name)
+            if isinstance(expected, (int, float, np.ndarray)) and not np.array_equal(
+                value, expected
+            ):
+                raise NotImplementedError(
+                    f"{asset.name}: source option {name} needs an assembly profile"
+                )
+        child.compiler.fusestatic = False
+        # Namespace unnamed elements deterministically before native attachment.
+        for kind in ("bodies", "joints", "geoms"):
+            for i, element in enumerate(getattr(child, kind)):
+                if not element.name:
+                    element.name = f"__{kind}_{i}"
+        if not asset.self_collision:
+            if child.pairs:
+                raise NotImplementedError(
+                    "self_collision=False conflicts with native explicit pairs"
+                )
+            bodies = list(child.bodies)[1:]
+            for i, a in enumerate(bodies):
+                for b in bodies[i + 1 :]:
+                    child.add_exclude(bodyname1=a.name, bodyname2=b.name)
+        rows = _scalar_drives(mj, child, asset) if asset.drive_mode == "scalar_pd" else []
+        prefix = asset.name + "::"
+        q = asset.orientation_xyzw
+        frame = spec.worldbody.add_frame(pos=asset.position, quat=(q[3], *q[:3]))
+        spec.attach(child, prefix=prefix, frame=frame)
+        pending.extend((prefix, row) for row in rows)
+        sources.append((asset.name, asset.path, sha256(Path(asset.path).read_bytes()).hexdigest()))
+    for shape in static_shapes:
+        q = shape.orientation_xyzw
+        spec.worldbody.add_geom(
+            name=shape.name,
+            type=getattr(mj.mjtGeom, f"mjGEOM_{shape.kind.upper()}"),
+            size=(*shape.size, *(0.0,) * (3 - len(shape.size))),
+            pos=shape.position,
+            quat=(q[3], *q[:3]),
+            friction=shape.friction,
+            condim=shape.contact_dim,
+        )
+    compilation = compile_mujoco_spec(spec, instance="assembly")
+    model = compilation.fresh_native_model()
+    if model.nsensor or model.nplugin or model.nflex or model.nuserdata:
+        raise NotImplementedError("PhySolve template excludes native sensors/plugins/flex/userdata")
+    data = mj.MjData(model)
+    actuator_ids = {}
+    for prefix, row in pending:
+        joint = model.joint(prefix + row.name)
+        qa, va = int(joint.qposadr[0]), int(joint.dofadr[0])
+        if row.position is not None:
+            data.qpos[qa] = row.position
+        data.qvel[va] = row.velocity
+        target = data.qpos[qa] if row.target_position is None else row.target_position
+        actuator = model.actuator(prefix + "__drive_" + row.name)
+        data.ctrl[actuator.id] = row.kp * target + row.kd * row.target_velocity
+        data.qfrc_applied[va] = row.applied_force
+        actuator_ids[joint.id] = actuator.id
+    joints = tuple(
+        (
+            model.joint(i).name,
+            i,
+            int(model.jnt_qposadr[i]),
+            int(model.jnt_dofadr[i]),
+            actuator_ids.get(i),
+        )
+        for i in range(model.njnt)
+    )
+    return NativeTemplate(
+        compilation,
+        NativeInitialState.from_data(compilation, data),
+        joints,
+        tuple((model.body(i).name, i) for i in range(1, model.nbody)),
+        tuple((model.geom(i).name, i) for i in range(model.ngeom)),
+        tuple(sources),
+    )

@@ -63,3 +63,15 @@ accepted bank 的 _Lease.active 是**查询 scope**，runtime lease 是**数组�
 **NEW**（src/phymeo/backends/）：_resident_boundary_source.py、_resident_boundary_query.py、_tyx_boundary_source.py；NEW tests/reference_newton/rr/resident_boundary_source_reference.py、tests/collision/test_resident_boundary_query.py、test_resident_boundary_query_protocol.py；源资格后 NEW tests/installed/check_resident_boundary_query.py。**MOD**：COL 仅 _tyx_collision_bvh.py、_device_triangle_distance.py；父仅 tyx_world_batch.py、phymeo/__init__.py。四 binding/storage、_resident_convex_source.py、旧凸体/triangle数学核与资源 ledger不改。
 
 待父一次裁定三点：(1) 上述 direct-topology 准入与新 packet/attempt 名字段；(2) M1 按 COL3 的显式 world/body/mask/excluded 过滤，**不继承**旧 convex 的 tree_dynamic_pairs 默认拒绝/隐式 joint邻接排除，需要排除的 link 用 model.excluded；M02 sibling 不受此差异影响；(3) 作者 tests-first 补精确 buffer 维度、anchor/bounds 内部表示及 memory 字节式，不能从运行峰值倒填。源码不能确定尚未实现的 buffer ABI；这三点确认后可发 S0/S1 grant。本稿无实现或项目执行。
+
+## 07:05 父裁定：公共面冻结，内部布局随首个 tests-first 提交固定
+
+父已全文审阅本候选、原17组案例及实际 binding/packet/close 源码，接受上列公共签名、三个新 schema、递归不可变保存和精确文件分工，作为下一批 M1 的公共合同；这是设计裁定，**不是实现或测试通过**。原65行候选历史保留，以下澄清优先。
+
+1. **拓扑分两层**：direct binding.topology 对照 full physical spec.topology，与现 compile_affine_tree_binding / compile_floating_affine_tree_binding 最后传入 spec.physical 的语义一致；accepted owner、registration 与 owning world spec 仍完整绑定。floating-affine 的显式 graph_token 另核 owning affine spec.graph_token。不能将 reduced affine checkpoint tuple 与 physical tuple 混用，或因只比 physical topology 而放弃本 batch/registration 的身份核验。
+2. **过滤由新来源决定**：M1 全部来源已声明为 rigid/static，same_rigid_body 按已验证 (world, body) 及其 group registry 判定，不能依赖全局 CollisionShape.rigid 标签（triangle 在旧模型中为 False）。之后完整保 mask/excluded；相邻不同 group 默认仍是 eligible，排除必须在 model.excluded 明示。不继承旧 convex 的 tree_dynamic_pairs 开关或隐式邻接排除，也不改变旧 API。现 CollisionModel 已拒同 body 的 triangle 与 sphere/capsule 混合 rigid 标签，M1 保留这个输入拒绝；单个 triangle 与 round 安装在同一 body 的混合声明仍不受支持；现 mesh 构造也要求至少4个原面，不能虚构单面 mesh 或复制面绕过。已有合法 mesh+round 同 body 仍按完整原面表过滤；更广声明扩展另列，不改 compiler 或材料身份绕过准入。M08/M10 添加这两类断言，原17组及固定正控不变。
+3. **数组 ABI 不是另一次开放研究**：下一批 S0 tests/schema 首提交须写出各 buffer 的 dtype/shape/容量、anchor-relative bounds 外向规则及注册/持久/query/暂存字节公式，含空输入、exact/one-less、失败峰值与所有同时存活的 buffers；父文本核对后进入同一节点 S1 实现。不得用执行测量倒填预算，不重开案例选型或降低原几何门。若 TYX 实际 buffer API 有具体矛盾，报最小源码依据并只改该接缝。
+4. **资源保护为必要交付**：接受两种 lease 与 PENDING/UNKNOWN 区分；父在 tyx_world_batch.py 接预关闭保护及强 owner registry。普通 PENDING close 可重试，已发生 opaque free 的 UNKNOWN 不重试，二者都不能让物理 step/query 恢复运行或先释放 runtime。正常关闭全部注销后才走原父栈。该改变必须由 M15/M16 及受影响 batch-close 案例验证，不能仅靠旧 ledger 单元测试称完成。
+5. 本轮07:20收尾不启动 M1 项目执行或新产品编码。后继按[下一批计划](../superpowers/plans/2026-11-12-newton-parity-next.md)开展现有三作者的互不交叉源码工作，父仍是共享接缝与唯一串行执行 owner；不需要再请用户逐阶段批准常规实现选择。
+
+原 bounds/距离/见证/normal 门、容量、未决行、HOST控制往返披露、M2/CCD/载荷边界全部不变。

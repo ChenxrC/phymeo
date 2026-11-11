@@ -2,11 +2,11 @@
 
 The runtime is borrowed and must be mutated exclusively through this wrapper
 during a rollout. Physics, policy/optimizer and wrapper metadata have separate
-transactions. N2 deliberately does not expose a training restore API.
+transactions. N3 adds an explicit update-boundary composition seam.
 """
 
 import json
-from contextlib import ExitStack
+from contextlib import ExitStack, contextmanager
 from dataclasses import dataclass
 from hashlib import sha256
 from threading import RLock
@@ -190,6 +190,7 @@ class MuJoCoTyxVectorEnv:
             self._scale = torch.tensor(action_spec.scale.copy(), device=self.device)
             self._bias = torch.tensor(action_spec.bias.copy(), device=self.device)
             self._returns = torch.zeros(self.num_envs, dtype=torch.float32, device=self.device)
+            self._previous_action = torch.zeros((self.num_envs, self.num_actions), dtype=torch.float32, device=self.device)
             self._frame, self._observation, _, _ = self._export()
             self.binding = MappingProxyType(
                 {
@@ -204,7 +205,7 @@ class MuJoCoTyxVectorEnv:
                     "runtime_ownership": "borrowed-exclusive-mutation",
                     "physics_diagnostics": "complete-HOST-validation-retained",
                     "episode_bookkeeping": "HOST-lengths-and-done-mask",
-                    "restore": "training-composition-not-provided-in-N2",
+                    "restore": "explicit-N3-update-boundary-composition",
                 }
             )
         except BaseException:
@@ -387,6 +388,8 @@ class MuJoCoTyxVectorEnv:
                 ids = self._episode_id.copy()
                 next_lengths, next_ids = lengths.copy(), ids.copy()
                 next_returns = returns.clone()
+                next_action = saved_action.clone()
+                next_action[final_mask] = 0
                 keys = tuple(
                     key for key, done in zip(self.world_keys, done_host, strict=True) if done
                 )
@@ -427,6 +430,7 @@ class MuJoCoTyxVectorEnv:
                 torch.cuda.current_stream(self.device).synchronize()
                 self._length, self._episode_id, self._returns = next_lengths, next_ids, next_returns
                 self._frame, self._observation = output_frame, current_observation
+                self._previous_action = next_action
                 self._sequence, self.last_transition = transition.sequence, transition
                 self._counts["transitions"] += 1
                 return transition
@@ -480,6 +484,8 @@ class MuJoCoTyxVectorEnv:
                 ids[mask] += 1
                 returns = self._returns.clone()
                 returns[torch.tensor(mask, device=self.device)] = 0
+                previous_action = self._previous_action.clone()
+                previous_action[torch.tensor(mask, device=self.device)] = 0
                 torch.cuda.current_stream(self.device).synchronize()
             except Exception as error:
                 changed = self.runtime.checkpoint_revision != revision
@@ -493,10 +499,114 @@ class MuJoCoTyxVectorEnv:
                 self.last_failure = failure
                 raise failure from error
             self._length, self._episode_id, self._returns = lengths, ids, returns
+            self._previous_action = previous_action
             self._frame, self._observation = frame, observation
             self._counts["resets"] += len(selected)
             self._needs_recovery, self.last_failure = False, None
             return observation.clone()
+
+    @contextmanager
+    def training_boundary(self):
+        """Serialize composed owners without exposing a physical bank or lock."""
+        with self._lock:
+            self._ready()
+            yield self
+
+    def training_binding(self):
+        """Stable owner-free binding; runtime/source binding lives in its capsule."""
+        return {
+            "schema": "mujoco-tyx-training-env-v1",
+            "world_keys": list(self.world_keys), "task": self.task_spec.sha256,
+            "action": self.action_spec.sha256, "h": self.h,
+            "horizons": self.horizons.tolist(), "device": str(self.device),
+            "num_actions": self.num_actions, "observation_width": self.task_spec.width,
+        }
+
+    def capture_training_state(self):
+        """Owned HOST copies at a synchronous accepted boundary."""
+        with self.training_boundary():
+            return {
+                "sequence": self._sequence, "length": self._length.copy(),
+                "episode_id": self._episode_id.copy(),
+                "returns": self._returns.detach().cpu().clone(),
+                "observation": self._observation.detach().cpu().clone(),
+                "previous_action": self._previous_action.detach().cpu().clone(),
+            }
+
+    def invalidate_training_state(self, reason):
+        """A composition failed after physics accepted; no rollback is implied."""
+        with self._lock:
+            self._needs_recovery = True
+            self.last_failure = MuJoCoTyxEnvError(
+                str(reason), phase="training-restore", state_accepted=True,
+                needs_recovery=True,
+            )
+
+    def restore_training_state(self, checkpoint, state, *, expected_revision):
+        """Validate/allocate first, then public physics CAS and task publication.
+
+        Failure before CAS leaves this owner unchanged. Failure after CAS poisons
+        this owner and reports accepted physics. Operational counters never rewind.
+        """
+        import torch
+
+        with self.training_boundary():
+            required = {"sequence", "length", "episode_id", "returns",
+                        "observation", "previous_action"}
+            if type(state) is not dict or set(state) != required:
+                raise ValueError("training environment state schema")
+            sequence = state["sequence"]
+            if type(sequence) is not int or not 0 <= sequence <= 2**63 - 1:
+                raise ValueError("training transition sequence")
+            arrays = {}
+            for name in ("length", "episode_id"):
+                value = state[name]
+                if not isinstance(value, np.ndarray) or value.dtype != np.int64 or (
+                    value.shape != (self.num_envs,) or np.any(value < 0)
+                ):
+                    raise ValueError("training " + name + " layout/value")
+                arrays[name] = value.copy()
+            if np.any(arrays["length"] >= self.horizons):
+                raise ValueError("training length must precede next episode limit")
+            tensors = {}
+            for name, shape in (
+                ("returns", (self.num_envs,)),
+                ("observation", (self.num_envs, self.task_spec.width)),
+                ("previous_action", (self.num_envs, self.num_actions)),
+            ):
+                value = state[name]
+                if not isinstance(value, torch.Tensor) or value.device.type != "cpu" or (
+                    value.dtype != torch.float32 or tuple(value.shape) != shape
+                    or not bool(torch.isfinite(value).all().item())
+                ):
+                    raise ValueError("training " + name + " layout/value")
+                tensors[name] = value.to(self.device).clone()
+            torch.cuda.synchronize(self.device)
+            revision = self.runtime.checkpoint_revision
+            if type(expected_revision) is not int or revision != expected_revision:
+                raise ValueError("stale training physics CAS revision")
+            try:
+                receipt = self.runtime.restore(checkpoint, expected_revision=expected_revision)
+                frame, observation, _, _ = self._export()
+                if not torch.equal(observation.view(torch.uint8),
+                                   tensors["observation"].view(torch.uint8)):
+                    raise ValueError("restored task observation differs from saved bits")
+                torch.cuda.synchronize(self.device)
+            except BaseException as error:
+                changed = self.runtime.checkpoint_revision != revision
+                if changed:
+                    self.invalidate_training_state("physics restored; task publication failed")
+                    raise MuJoCoTyxEnvError(
+                        "physics restored; training task publication failed",
+                        phase="training-restore", state_accepted=True, needs_recovery=True,
+                    ) from error
+                raise
+            self._sequence = sequence
+            self._length, self._episode_id = arrays["length"], arrays["episode_id"]
+            self._returns, self._previous_action = tensors["returns"], tensors["previous_action"]
+            self._frame, self._observation = frame, observation
+            self.last_transition, self.last_failure = None, None
+            return receipt
 
     def close(self):
         with self._lock:

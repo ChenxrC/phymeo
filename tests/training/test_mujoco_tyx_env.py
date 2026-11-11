@@ -329,3 +329,26 @@ def test_external_runtime_mutation_cannot_be_adopted_by_subset_reset(api):
                 zeros(api, env), world_keys=env.world_keys, expected_frame=env.current_frame
             ).accepted_worlds.values()
         )
+
+def test_training_state_previous_action_and_episode_reset_ownership(api):
+    torch = api.require_cuda()
+    with api.make_environment("hinge-slide", horizons=(1, 3, 5, 7, 9, 11, 13, 15)) as env:
+        initial = env.capture_training_state()
+        assert not torch.count_nonzero(initial["previous_action"]).item()
+        action = zeros(api, env) + 0.125
+        transition = env.step(action, world_keys=env.world_keys, expected_frame=env.current_frame)
+        assert all(transition.accepted_worlds.values())
+        saved = env.capture_training_state()
+        expected = action.detach().cpu().clone()
+        expected[transition.final_mask.detach().cpu()] = 0
+        assert torch.equal(saved["previous_action"], expected)
+        assert torch.equal(saved["observation"], transition.observation.detach().cpu())
+        assert np.array_equal(saved["episode_id"], env.episode_id)
+        # Returned training copies do not alias the wrapper's owned tensors.
+        saved["previous_action"].fill_(123)
+        assert torch.equal(env.capture_training_state()["previous_action"], expected)
+        env.reset((env.world_keys[1],))
+        expected[1] = 0
+        restored = env.capture_training_state()
+        assert torch.equal(restored["previous_action"], expected)
+        assert restored["length"][1] == 0 and restored["episode_id"][1] == 1

@@ -1,6 +1,6 @@
-# COL affine simplex reconstruction — authoring report
+# COL affine simplex reconstruction — implementation and validation report
 
-Status: **CODE_READY_TESTS_PENDING / UNEXECUTED**. Baseline
+Status: **VALIDATED_BOUNDED_REDUCER / COL1A_PARTIAL**. Authoring baseline
 `ff478eaa6ee570562b229491cb25c95e17783740`. Parent alone owns project execution.
 This is one bounded arithmetic hypothesis motivated by
 [the six actual trace findings](p65-convex-query-trace-findings-20261111.md).
@@ -52,7 +52,7 @@ all selected indices come from the current nonempty simplex. The helper adds
 no array read and no scratch allocation. Tests poison all unused input slots
 and helper terms, and exercise every count.
 
-## Tests-first declaration
+## Tests-first declaration (historical, before execution)
 
 NEW `tests/collision/test_device_convex_simplex_reconstruction.py` declares
 **6 TYX nodes per backend, UNCOLLECTED**:
@@ -89,7 +89,7 @@ regressions are selected by parent from the existing matrices. Original
 64 GJK /192 EPA /64 vertices /128 faces and all prior geometry gates remain.
 No blind third arithmetic alternative follows if this one fails.
 
-## Authoring handoff
+## Authoring handoff (historical, before parent validation)
 
 Tests-first checkpoint: `5628e958`. Product arithmetic is now authored.
 Pure source review confirmed that the only product delta is the helper plus
@@ -116,3 +116,72 @@ same-run source and saved inputs/results/traces. A remaining Y normal failure
 does not justify changing stopping rules in this patch. If the HN hypothesis
 fails, preserve the new trace and report the observed limitation; do not add
 another algorithm or change gates inside this grant.
+
+## Actual parent validation — 2026-11-11
+
+Current result: **the bounded affine reducer change is validated; COL1a remains
+PARTIAL because all four Y source-layout normal failures remain**. The two
+recorded HN budget failures are resolved on interpret and real CUDA. This
+does not claim that every hull–cone placement, smooth normal, patch or load
+operation is supported.
+
+Tested source is `90741b39d128dec70a828d08d269ed4b07fb8df2`, after the
+tests-first and arithmetic checkpoints. The parent changed only the new test's
+import ordering and formatting in that commit. Run07 reports
+`import_multiset_equal=true` and `nonimport_ast_equal=true`; this is the
+qualified style proof, not a claim of identical raw import-order AST.
+The kernel remains the arithmetic source with SHA256
+`c86c4565aa8d2556e062f32c71d4d84b558a320abd171756b0ca3318296ccd26`.
+The six functional run receipts bind that tested HEAD and source snapshot.
+
+The parent evidence root is
+`artifacts/p65-parity-n4a-rob1d-col-reducer-20261111-01`.
+This report was updated by reading its actual `final.json`,
+`RAW_EXIT.txt` and `stdout.log`; no query, geometry oracle or test was
+re-executed to prepare the report.
+
+| Run | Backend and scope | Actual result | Pytest time | Raw exit |
+| --- | --- | --- | --- | --- |
+| [08](../../artifacts/p65-parity-n4a-rob1d-col-reducer-20261111-01/08-col-affine-interpret/stdout.log) | interpret, all six new arithmetic/witness nodes | 6 passed | 3.31 s | 0 |
+| [09](../../artifacts/p65-parity-n4a-rob1d-col-reducer-20261111-01/09-col-affine-cuda/stdout.log) | real CUDA, same six nodes | 6 passed | 9.43 s | 0 |
+| [10](../../artifacts/p65-parity-n4a-rob1d-col-reducer-20261111-01/10-col-six-interpret/stdout.log) | interpret, the six original affected entries | 2 HN passed; 4 Y failed | 5.71 s | 1 |
+| [11](../../artifacts/p65-parity-n4a-rob1d-col-reducer-20261111-01/11-col-six-cuda/stdout.log) | real CUDA, same six entries | 2 HN passed; 4 Y failed | 19.33 s | 1 |
+| [12](../../artifacts/p65-parity-n4a-rob1d-col-reducer-20261111-01/12-col-matrix-interpret/stdout.log) | interpret, remaining affected matrix | 258 passed; 12 deselected | 119.05 s | 0 |
+| [13](../../artifacts/p65-parity-n4a-rob1d-col-reducer-20261111-01/13-col-matrix-cuda/stdout.log) | real CUDA, remaining affected matrix | 258 passed; 12 deselected | 559.63 s | 0 |
+
+The matrix's 12 deselections are explicit: the six original entries already
+run in 10/11, plus six unchanged HOST-only identities under
+`test_invalid_curved_registration_is_not_a_separation` and
+`test_literal_matrix_and_all_negative_certificates`. They are not new passes,
+skips, unvisited physical trajectories or grounds for claiming an all-green
+COL1a suite.
+
+The two repaired entries are the original
+`test_eighteen_new_family_three_states[sep-HN]` and
+`test_rotated_reversed_queries[HN]`. Their original fixtures and independent
+geometry/material gates were retained. The passing six new nodes also retain
+the count1–4 poisoned-padding checks, independent Fraction expectations,
+nonnegative/sum constraints on stored weights, and actual q-to-bilateral
+witness checks. The remaining matrix includes the selected old query,
+patch and source regressions; it does not extend curved patch or force-consumer
+admission.
+
+The still-failing entries are kind Y with ordinary, affine, floating and
+floating_affine source layouts. Both backend logs retain their normal-oracle
+failures; the recorded ordinary value is
+`0.0031187900921125196 > 0.002`. The affine reducer did not change the
+distance-versus-normal termination policy. All four failures remain open
+for a separately scoped stopping-rule decision, using their retained
+actual trace evidence. No tolerance, GJK/EPA/support capacity, fixture,
+budget, source representation or UNKNOWN/RESOLVED rule was changed to hide
+these failures.
+
+Static history is retained in the same evidence root: 01 first Ruff and 02
+first format each exited1; 03 import repair and 04 formatting exited0; 05
+final Ruff, 06 final format and 07 the qualified style proof exited0.
+These were test-only style changes, with no numerical repair between the
+six functional runs.
+
+This lane is released after a documentation-only update. Parent remains the
+integration owner; no further execution or follow-up algorithm is authorized
+by this report.

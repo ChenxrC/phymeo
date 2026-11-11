@@ -6,15 +6,16 @@ moments +(3/16)ez and -(1/8)ez for mu=0. R03 uses held controls
 All oracles use transform derivatives and small exhaustive PD active faces;
 no production FK/contact/integrator supplies the expected trajectory.
 """
+
 import importlib.util
 from itertools import combinations, product
 from pathlib import Path
 
 import numpy as np
 import pytest
+from test_resident_multi_participant import close, save
 
 import phymeo as ph
-from test_resident_multi_participant import close, save
 
 H = 1 / 1024
 WORLDS = (503, 91, 1207, 6)
@@ -24,8 +25,11 @@ _REFS = {}
 
 def reference(name):
     if name not in _REFS:
-        path = Path(__file__).parents[1] / "reference_newton" / "robot" / (
-            "resident_" + name + "_reference.py"
+        path = (
+            Path(__file__).parents[1]
+            / "reference_newton"
+            / "robot"
+            / ("resident_" + name + "_reference.py")
         )
         spec = importlib.util.spec_from_file_location("rob1c_" + name, path)
         module = importlib.util.module_from_spec(spec)
@@ -45,18 +49,30 @@ def quat_z(angle):
 
 def model(parents, kinds, offsets, axes, masses, centers):
     return dict(
-        parents=np.asarray(parents, int), kinds=tuple(kinds),
+        parents=np.asarray(parents, int),
+        kinds=tuple(kinds),
         offsets=np.asarray(offsets, float).reshape(-1, 3),
         orientations=np.tile([0.0, 0, 0, 1], (len(parents), 1)),
-        axes=np.asarray(axes, float).reshape(-1, 3), mass=np.asarray(masses, float),
+        axes=np.asarray(axes, float).reshape(-1, 3),
+        mass=np.asarray(masses, float),
         com=np.asarray(centers, float).reshape(-1, 3),
-        inertia=np.full((len(parents), 3), 1 / 8), gravity=np.zeros(3),
+        inertia=np.full((len(parents), 3), 1 / 8),
+        gravity=np.zeros(3),
     )
 
 
 def robot_model(m):
-    return ph.RobotModel(m["parents"], m["kinds"], m["offsets"], m["orientations"],
-        m["axes"], m["mass"], m["com"], m["inertia"], m["gravity"])
+    return ph.RobotModel(
+        m["parents"],
+        m["kinds"],
+        m["offsets"],
+        m["orientations"],
+        m["axes"],
+        m["mass"],
+        m["com"],
+        m["inertia"],
+        m["gravity"],
+    )
 
 
 def spec(family, m, q, v, *, projection=None, offset=None, root_mass=4.0):
@@ -69,41 +85,77 @@ def spec(family, m, q, v, *, projection=None, offset=None, root_mass=4.0):
         S[:6, :6], S[6:, 6:] = np.eye(6), P
     bodies = n + int(floating)
     return dict(
-        family=family, model=m, q=np.asarray(q, float), v=np.asarray(v, float),
-        P=P, c=np.zeros(n) if offset is None else np.asarray(offset, float), S=S,
-        root_mass=root_mass, root_inertia=np.full(3, 1 / 8), root_com=np.zeros(3),
+        family=family,
+        model=m,
+        q=np.asarray(q, float),
+        v=np.asarray(v, float),
+        P=P,
+        c=np.zeros(n) if offset is None else np.asarray(offset, float),
+        S=S,
+        root_mass=root_mass,
+        root_inertia=np.full(3, 1 / 8),
+        root_com=np.zeros(3),
         root_inertia_frame=np.array([0.0, 0, 0, 1]),
-        kp=np.full(k, 4.0), kd=np.full(k, 0.5), caps=np.full(k, 64.0),
-        drive=np.zeros((k, 3)), force=np.zeros((bodies, 3)),
-        torque=np.zeros((bodies, 3)), effort=np.zeros(n), shapes=[],
+        kp=np.full(k, 4.0),
+        kd=np.full(k, 0.5),
+        caps=np.full(k, 64.0),
+        drive=np.zeros((k, 3)),
+        force=np.zeros((bodies, 3)),
+        torque=np.zeros((bodies, 3)),
+        effort=np.zeros(n),
+        shapes=[],
     )
 
 
 def free_box(position, *, angle=0.0, eccentric=True, mass=1.0):
     m = model([], [], [], [], [], [])
-    result = spec("floating", m, np.r_[position, quat_z(angle)],
-        [-1 / 64, 1 / 32, 0, 0, 0, 1 / 128], root_mass=mass)
-    result["shapes"] = [dict(body=0, kind="hull", center=np.array([0, 1 / 16, 0])
-        if eccentric else np.zeros(3), half=np.array([1 / 8, 3 / 16, 1 / 8]))]
+    result = spec(
+        "floating",
+        m,
+        np.r_[position, quat_z(angle)],
+        [-1 / 64, 1 / 32, 0, 0, 0, 1 / 128],
+        root_mass=mass,
+    )
+    result["shapes"] = [
+        dict(
+            body=0,
+            kind="hull",
+            center=np.array([0, 1 / 16, 0]) if eccentric else np.zeros(3),
+            half=np.array([1 / 8, 3 / 16, 1 / 8]),
+        )
+    ]
     return result
 
 
 def r02(mu=0.0):
-    m = model([-1, 0], ("revolute", "prismatic"),
-        [[0, 0, 0], [0, 1 / 4, 0]], [[0, 0, 1], [1, 0, 0]],
-        [2, 1], [[1 / 8, 0, 0], [1 / 16, 1 / 32, 0]])
+    m = model(
+        [-1, 0],
+        ("revolute", "prismatic"),
+        [[0, 0, 0], [0, 1 / 4, 0]],
+        [[0, 0, 1], [1, 0, 0]],
+        [2, 1],
+        [[1 / 8, 0, 0], [1 / 16, 1 / 32, 0]],
+    )
     arm = spec("fixed", m, [1 / 16, 1 / 32], [1 / 32, -1 / 64])
-    arm["drive"] = np.array([[1 / 16 + 1 / 64, 1 / 64, 1 / 32],
-                            [1 / 32 + 1 / 64, -1 / 128, 1 / 16]])
-    arm["shapes"] = [dict(body=1, kind="sphere", center=np.array([1 / 8, 1 / 8, 0]),
-                          radius=1 / 8)]
+    arm["drive"] = np.array(
+        [[1 / 16 + 1 / 64, 1 / 64, 1 / 32], [1 / 32 + 1 / 64, -1 / 128, 1 / 16]]
+    )
+    arm["shapes"] = [dict(body=1, kind="sphere", center=np.array([1 / 8, 1 / 8, 0]), radius=1 / 8)]
     R = rz(1 / 16)
     sphere = R @ np.array([1 / 32 + 1 / 8, 3 / 8, 0])
     box_center = sphere + R @ np.array([7 / 32, 0, 0])
     box = free_box(box_center - R @ np.array([0, 1 / 16, 0]), angle=1 / 16)
     box["force"][0] = [0, 1 / 32, 0]
-    return dict(name="R02", specs={7: arm, 29: box}, pairs=((7, 0, 29, 0),),
-                stiffness=64.0, friction=mu, slip_speed=1 / 16, steps=40, switch=None)
+    return dict(
+        name="R02",
+        specs={7: arm, 29: box},
+        pairs=((7, 0, 29, 0),),
+        stiffness=64.0,
+        friction=mu,
+        slip_speed=1 / 16,
+        steps=40,
+        switch=None,
+    )
 
 
 def r03(asymmetric=False):
@@ -113,15 +165,24 @@ def r03(asymmetric=False):
     for side, key in ((-1, 7), (1, 17)):
         x = side * 31 / 128
         y = (1 / 32 if side < 0 else -1 / 64) if asymmetric else 0.0
-        m = model([-1, 0], ("revolute", "prismatic"),
-            [[x, y, 0], [0, 0, 0]], [[1, 0, 0], [1, 0, 0]],
-            [2, 1], [[0, 0, 0], [0, 0, 0]])
+        m = model(
+            [-1, 0],
+            ("revolute", "prismatic"),
+            [[x, y, 0], [0, 0, 0]],
+            [[1, 0, 0], [1, 0, 0]],
+            [2, 1],
+            [[0, 0, 0], [0, 0, 0]],
+        )
         arm = spec("fixed", m, [1 / 32, 0], [side / 64, 0])
         arm["kp"] = np.array([1.0, 0.0])
         arm["kd"] = np.array([0.5, 1024.0])
         arm["caps"] = np.array([8.0, 4096.0])
-        arm["drive"] = np.array([[1 / 32, side / 64, side / 128],
-                                [0, side * (3 / 4 if asymmetric and side > 0 else 1), 0]])
+        arm["drive"] = np.array(
+            [
+                [1 / 32, side / 64, side / 128],
+                [0, side * (3 / 4 if asymmetric and side > 0 else 1), 0],
+            ]
+        )
         arm["shapes"] = [dict(body=1, kind="sphere", center=np.zeros(3), radius=1 / 8)]
         arm["side"] = side
         specs[key] = arm
@@ -132,17 +193,30 @@ def r03(asymmetric=False):
     specs[29] = tool
     # Initial depth1/128. Outward travel~48/1024>depth by >5x;
     # subsequent inward travel80/1024 exceeds outward travel by1/32.
-    return dict(name="R03", specs=specs, pairs=((7, 0, 29, 0), (17, 0, 29, 0)),
-        stiffness=64.0, friction=0.0, slip_speed=1 / 16, steps=128, switch=48,
-        asymmetric=asymmetric)
+    return dict(
+        name="R03",
+        specs=specs,
+        pairs=((7, 0, 29, 0), (17, 0, 29, 0)),
+        stiffness=64.0,
+        friction=0.0,
+        slip_speed=1 / 16,
+        steps=128,
+        switch=48,
+        asymmetric=asymmetric,
+    )
 
 
 def r04(family):
     affine = family in ("affine", "floating_affine")
     floating = family.startswith("floating")
-    m = model([-1, -1], ("prismatic", "prismatic"),
+    m = model(
+        [-1, -1],
+        ("prismatic", "prismatic"),
         [[-7 / 32 - 1 / 32, -1 / 16, 0], [-7 / 32 + 1 / 32, 1 / 16, 0]],
-        [[1, 0, 0], [1, 0, 0]], [1, 1], [[0, 0, 0], [0, 0, 0]])
+        [[1, 0, 0], [1, 0, 0]],
+        [1, 1],
+        [[0, 0, 0], [0, 0, 0]],
+    )
     P = np.array([[1.0], [-1.0]]) if affine else np.eye(2)
     scalar_q = np.array([1 / 32]) if affine else np.array([1 / 32, -1 / 32])
     scalar_v = np.array([1 / 64]) if affine else np.array([1 / 64, -1 / 64])
@@ -150,12 +224,22 @@ def r04(family):
     v = np.r_[np.zeros(6), scalar_v] if floating else scalar_v
     arm = spec(family, m, q, v, projection=P)
     arm["drive"] = np.column_stack((scalar_q + 1 / 128, scalar_v, np.full(len(scalar_q), 1 / 16)))
-    arm["shapes"] = [dict(body=i + int(floating), kind="sphere",
-        center=np.zeros(3), radius=1 / 8) for i in range(2)]
+    arm["shapes"] = [
+        dict(body=i + int(floating), kind="sphere", center=np.zeros(3), radius=1 / 8)
+        for i in range(2)
+    ]
     box = free_box([0, 0, 0], eccentric=False)
     box["v"][:] = 0
-    return dict(name="R04", specs={7: arm, 29: box}, pairs=((7, 0, 29, 0), (7, 1, 29, 0)),
-        stiffness=64.0, friction=0.0, slip_speed=1 / 16, steps=16, switch=None)
+    return dict(
+        name="R04",
+        specs={7: arm, 29: box},
+        pairs=((7, 0, 29, 0), (7, 1, 29, 0)),
+        stiffness=64.0,
+        friction=0.0,
+        slip_speed=1 / 16,
+        steps=16,
+        switch=None,
+    )
 
 
 def urdf(s):
@@ -163,12 +247,16 @@ def urdf(s):
     root = f'<link name="base"><inertial><mass value="{s["root_mass"]}"/><inertia ixx="0.125" iyy="0.125" izz="0.125" ixy="0" ixz="0" iyz="0"/></inertial></link>'
     links, joints = [], []
     for i in range(2):
-        links.append(f'<link name="link{i}"><inertial><mass value="1"/><inertia ixx="0.125" iyy="0.125" izz="0.125" ixy="0" ixz="0" iyz="0"/></inertial></link>')
+        links.append(
+            f'<link name="link{i}"><inertial><mass value="1"/><inertia ixx="0.125" iyy="0.125" izz="0.125" ixy="0" ixz="0" iyz="0"/></inertial></link>'
+        )
         xyz = " ".join(str(float(x)) for x in m["offsets"][i])
         mimic = '<mimic joint="joint0" multiplier="-1" offset="0"/>' if i else ""
         parent = "base" if m["parents"][i] < 0 else "link" + str(m["parents"][i])
-        joints.append(f'<joint name="joint{i}" type="prismatic"><parent link="{parent}"/><child link="link{i}"/><origin xyz="{xyz}"/><axis xyz="1 0 0"/><limit lower="-2" upper="2" effort="64" velocity="10"/>{mimic}</joint>')
-    return '<robot name="rob1c_graph">' + root + "".join(links + joints) + '</robot>'
+        joints.append(
+            f'<joint name="joint{i}" type="prismatic"><parent link="{parent}"/><child link="link{i}"/><origin xyz="{xyz}"/><axis xyz="1 0 0"/><limit lower="-2" upper="2" effort="64" velocity="10"/>{mimic}</joint>'
+        )
+    return '<robot name="rob1c_graph">' + root + "".join(links + joints) + "</robot>"
 
 
 def declaration(s, directory):
@@ -188,14 +276,24 @@ def declaration(s, directory):
     elif floating:
         physical = ph.FloatingRobotModel(
             ph.RigidBodyModel(np.array([1 / s["root_mass"]]), s["root_inertia"][None], np.zeros(3)),
-            s["root_com"], None if not len(m["mass"]) else robot_model(m))
-        tree = ph.FloatingRobotTree(physical, ph.FloatingRobotState(s["q"], s["v"]),
-            kp=s["kp"], kd=s["kd"], effort_limit=s["caps"])
+            s["root_com"],
+            None if not len(m["mass"]) else robot_model(m),
+        )
+        tree = ph.FloatingRobotTree(
+            physical,
+            ph.FloatingRobotState(s["q"], s["v"]),
+            kp=s["kp"],
+            kd=s["kd"],
+            effort_limit=s["caps"],
+        )
         owner = tree
     else:
-        owner = ph.DrivenRobotProgram(robot_model(m), kp=s["kp"], kd=s["kd"], effort_limit=s["caps"])
-        tree = ph.FixedRobotTree(owner, owner.initial_state(ph.RobotState(s["q"], s["v"])),
-                                 control_max_iterations=512)
+        owner = ph.DrivenRobotProgram(
+            robot_model(m), kp=s["kp"], kd=s["kd"], effort_limit=s["caps"]
+        )
+        tree = ph.FixedRobotTree(
+            owner, owner.initial_state(ph.RobotState(s["q"], s["v"])), control_max_iterations=512
+        )
     return tree, owner
 
 
@@ -217,15 +315,29 @@ def build(data, directory, *, worlds=WORLDS[:1], reverse=False):
             p = ph.ResidentParticipant(key, tree, tuple(100 * pid + j for j in range(b)))
             participants.append(p)
             controls[key], owners[key] = command(s, controller), controller
-            binding_class = dict(fixed=ph.ResidentTreeBinding, affine=ph.ResidentAffineTreeBinding,
-                floating=ph.ResidentFloatingTreeBinding, floating_affine=ph.ResidentFloatingAffineTreeBinding)[s["family"]]
+            binding_class = dict(
+                fixed=ph.ResidentTreeBinding,
+                affine=ph.ResidentAffineTreeBinding,
+                floating=ph.ResidentFloatingTreeBinding,
+                floating_affine=ph.ResidentFloatingAffineTreeBinding,
+            )[s["family"]]
             for si, shape in enumerate(s["shapes"]):
                 group = shape["body"]
                 c = ph.CollisionKey(world, p.body_ids[group], 10 + si)
-                local = shape["center"][None] if shape["kind"] == "sphere" else (
-                    np.array(list(product((-1, 1), repeat=3))) * shape["half"] + shape["center"])
-                registered = ph.CollisionShape(c, shape["kind"], tuple(range(31, 31 + len(local))),
-                    shape.get("radius", 0.0), revision=1)
+                local = (
+                    shape["center"][None]
+                    if shape["kind"] == "sphere"
+                    else (
+                        np.array(list(product((-1, 1), repeat=3))) * shape["half"] + shape["center"]
+                    )
+                )
+                registered = ph.CollisionShape(
+                    c,
+                    shape["kind"],
+                    tuple(range(31, 31 + len(local))),
+                    shape.get("radius", 0.0),
+                    revision=1,
+                )
                 kwargs = dict(topology=p.compiled.topology)
                 if p.graph_token is not None:
                     kwargs["graph_token"] = p.graph_token
@@ -235,22 +347,37 @@ def build(data, directory, *, worlds=WORLDS[:1], reverse=False):
                 keys[world, pid, si] = c
         for a, ai, b, bi in data["pairs"]:
             pair = tuple(sorted((keys[world, a, ai], keys[world, b, bi])))
-            laws[pair] = ph.RobotContactMaterial(data["stiffness"], 0, data["friction"],
-                                                data["slip_speed"])
-    excluded = tuple((a.key, b.key) for a, b in combinations(shapes, 2)
-                     if a.key.world == b.key.world and a.key.body != b.key.body
-                     and tuple(sorted((a.key, b.key))) not in laws)
+            laws[pair] = ph.RobotContactMaterial(
+                data["stiffness"], 0, data["friction"], data["slip_speed"]
+            )
+    excluded = tuple(
+        (a.key, b.key)
+        for a, b in combinations(shapes, 2)
+        if a.key.world == b.key.world
+        and a.key.body != b.key.body
+        and tuple(sorted((a.key, b.key))) not in laws
+    )
     if reverse:
         participants.reverse()
         bindings.reverse()
         shapes.reverse()
-    return dict(participants=tuple(participants), controls=controls, controllers=owners,
-        model=ph.CollisionModel(tuple(shapes), excluded), bindings=tuple(bindings), laws=laws,
-        keys=keys, worlds=tuple(sorted(worlds)), data=data)
+    return dict(
+        participants=tuple(participants),
+        controls=controls,
+        controllers=owners,
+        model=ph.CollisionModel(tuple(shapes), excluded),
+        bindings=tuple(bindings),
+        laws=laws,
+        keys=keys,
+        worlds=tuple(sorted(worlds)),
+        data=data,
+    )
 
 
 def prepare(scene, built, **overrides):
-    kwargs = dict(candidate_capacity=len(built["laws"]), site_capacity=128, narrow_phase="host_patch")
+    kwargs = dict(
+        candidate_capacity=len(built["laws"]), site_capacity=128, narrow_phase="host_patch"
+    )
     kwargs["intra_participant_pairs"] = built["data"].get("intra", False)
     kwargs.update(overrides)
     return scene.prepare_contacts(built["model"], built["bindings"], built["laws"], **kwargs)
@@ -265,9 +392,14 @@ def expand(s, q, v):
 def mechanics(s, q, v):
     full_q, full_v = expand(s, np.asarray(q), np.asarray(v))
     if s["family"].startswith("floating"):
-        data = dict(children=s["model"], root_mass=s["root_mass"], root_com=s["root_com"],
-            root_inertia=s["root_inertia"], root_inertia_frame=s["root_inertia_frame"],
-            gravity=s["model"]["gravity"])
+        data = dict(
+            children=s["model"],
+            root_mass=s["root_mass"],
+            root_com=s["root_com"],
+            root_inertia=s["root_inertia"],
+            root_inertia_frame=s["root_inertia_frame"],
+            gravity=s["model"]["gravity"],
+        )
         result = reference("floating").mechanics(data, full_q, full_v)
     else:
         result = reference("affine").oracle(s["model"], full_q, full_v)
@@ -308,20 +440,33 @@ def independent_contacts(data, states):
         velocities = []
         for pid, shape in ((a, sa), (b, sb)):
             t, body = terms[pid], shape["body"]
-            velocities.append(t["com_velocity"][body] +
-                np.cross(t["angular_velocity"][body], point - t["com_position"][body]))
+            velocities.append(
+                t["com_velocity"][body]
+                + np.cross(t["angular_velocity"][body], point - t["com_position"][body])
+            )
         relative = velocities[0] - velocities[1]
         tangent = relative - (relative @ normal) * normal
         normal_load = data["stiffness"] * max(0.0, -gap)
         force = -normal_load * normal - data["friction"] * normal_load * tangent / max(
-            data["slip_speed"], np.linalg.norm(tangent))
+            data["slip_speed"], np.linalg.norm(tangent)
+        )
         for pid, shape, f in ((a, sa, force), (b, sb, -force)):
             body = shape["body"]
             wrenches[pid][body, :3] += f
             wrenches[pid][body, 3:] += np.cross(point - terms[pid]["com_position"][body], f)
-        sites.append(dict(ident=(a, ai, b, bi), gap=gap, normal=normal, point=point,
-            first_force=force, tangent=tangent, first_velocity=velocities[0],
-            second_velocity=velocities[1], normal_load=normal_load))
+        sites.append(
+            dict(
+                ident=(a, ai, b, bi),
+                gap=gap,
+                normal=normal,
+                point=point,
+                first_force=force,
+                tangent=tangent,
+                first_velocity=velocities[0],
+                second_velocity=velocities[1],
+                normal_load=normal_load,
+            )
+        )
     return terms, wrenches, sites
 
 
@@ -361,8 +506,12 @@ def bounded_motor(s, M, free_rhs, q, v, drive):
         if np.any(abs(x) > s["caps"][moving] + 1e-10):
             continue
         g = A @ x - b
-        if any((sign == 0 and abs(value) > 1e-9) or (sign < 0 and value < -1e-9)
-               or (sign > 0 and value > 1e-9) for sign, value in zip(signs, g, strict=True)):
+        if any(
+            (sign == 0 and abs(value) > 1e-9)
+            or (sign < 0 and value < -1e-9)
+            or (sign > 0 and value > 1e-9)
+            for sign, value in zip(signs, g, strict=True)
+        ):
             continue
         tau[moving] = x
         return tau
@@ -378,7 +527,7 @@ def advance_one(s, q, v, t, wrench, drive):
     start = 6 if s["family"].startswith("floating") else 0
     actuator = np.zeros(len(t["bias"]))
     # Independent motor is attached to authored independent physical joints.
-    actuator[start:start + len(motor)] = motor
+    actuator[start : start + len(motor)] = motor
     acceleration = np.linalg.solve(M, S.T @ (external + contact + actuator) - b)
     next_v = v + H * acceleration
     if start:
@@ -387,9 +536,15 @@ def advance_one(s, q, v, t, wrench, drive):
         next_q = q + H * next_v
     full_acceleration = S @ acceleration
     reaction = t["mass"] @ full_acceleration + t["bias"] - external - contact - actuator
-    return (next_q, next_v), dict(external=external, contact=contact, motor=motor,
-        acceleration=acceleration, full_acceleration=full_acceleration,
-        reaction=reaction, reduced_mass=M)
+    return (next_q, next_v), dict(
+        external=external,
+        contact=contact,
+        motor=motor,
+        acceleration=acceleration,
+        full_acceleration=full_acceleration,
+        reaction=reaction,
+        reduced_mass=M,
+    )
 
 
 def drives(data, tick):
@@ -402,8 +557,10 @@ def drives(data, tick):
 
 
 def audit_receipt(data, built, world, before, after, receipt, current_drives):
-    actual_states = {key.participant: (np.asarray(p.position), np.asarray(p.velocity))
-                     for key, p in before.participants.items()}
+    actual_states = {
+        key.participant: (np.asarray(p.position), np.asarray(p.velocity))
+        for key, p in before.participants.items()
+    }
     terms, wrench, sites = independent_contacts(data, actual_states)
     expected = {}
     assert receipt.entry_tick == before.tick and receipt.exit_tick == after.tick == before.tick + 1
@@ -424,7 +581,9 @@ def audit_receipt(data, built, world, before, after, receipt, current_drives):
         close(item.entry_angular, terms[pid]["angular_jacobian"])
         close(item.entry_body_twist[:, :3], terms[pid]["com_velocity"])
         close(item.entry_body_twist[:, 3:], terms[pid]["angular_velocity"])
-        accepted_terms = mechanics(s, np.asarray(item.accepted_state.position), np.asarray(item.accepted_state.velocity))
+        accepted_terms = mechanics(
+            s, np.asarray(item.accepted_state.position), np.asarray(item.accepted_state.velocity)
+        )
         close(item.accepted_body_twist[:, :3], accepted_terms["com_velocity"])
         close(item.accepted_body_twist[:, 3:], accepted_terms["angular_velocity"])
         close(item.input_external, truth["external"])
@@ -442,8 +601,12 @@ def audit_receipt(data, built, world, before, after, receipt, current_drives):
             close(d.full_acceleration, truth["full_acceleration"], atol=2e-5)
             close(d.constraint_effort_full, truth["reaction"], atol=2e-5)
             close(s["S"].T @ d.constraint_effort_full, np.zeros(s["S"].shape[1]), atol=2e-5)
-        for value in (item.entry_mass, item.law_wrench_fp64, item.uploaded_wrench_fp32,
-                      item.contact_generalized):
+        for value in (
+            item.entry_mass,
+            item.law_wrench_fp64,
+            item.uploaded_wrench_fp32,
+            item.contact_generalized,
+        ):
             assert not value.flags.writeable
     assert len(receipt.sites) == len(sites)
     by_pair = {site.pair: site for site in receipt.sites}
@@ -472,45 +635,104 @@ def run_window(data, built, mode, directory, *, steps=None):
             try:
                 for tick in range(count):
                     selected = drives(data, tick)
-                    scene.set_controls({key: command(data["specs"][key.participant], owner,
-                        selected[key.participant]) for key, owner in built["controllers"].items()})
+                    scene.set_controls(
+                        {
+                            key: command(
+                                data["specs"][key.participant], owner, selected[key.participant]
+                            )
+                            for key, owner in built["controllers"].items()
+                        }
+                    )
                     before = scene.snapshot()
                     entry_terms, entry_wrench, entry_sites = independent_contacts(data, states)
-                    next_states = {pid: advance_one(s, *states[pid], entry_terms[pid],
-                        entry_wrench[pid], selected[pid])[0] for pid, s in data["specs"].items()}
+                    next_states = {
+                        pid: advance_one(
+                            s, *states[pid], entry_terms[pid], entry_wrench[pid], selected[pid]
+                        )[0]
+                        for pid, s in data["specs"].items()
+                    }
                     assert scene.step_contacts(H, plan) == dict.fromkeys(built["worlds"], True)
                     after = scene.snapshot()
                     audited = {}
                     for world in built["worlds"]:
-                        audited[world] = audit_receipt(data, built, world, before[world], after[world],
-                            plan.last_accepted[world], selected)
+                        audited[world] = audit_receipt(
+                            data,
+                            built,
+                            world,
+                            before[world],
+                            after[world],
+                            plan.last_accepted[world],
+                            selected,
+                        )
                         for pid in data["specs"]:
                             key = ph.ResidentParticipantKey(world, pid)
-                            close(after[world].participants[key].position, next_states[pid][0], atol=2e-4)
-                            close(after[world].participants[key].velocity, next_states[pid][1], atol=2e-4)
-                    rows.append(dict(entry=before, accepted=after, receipts=plan.last_accepted,
-                        status=plan.last_status, controls=selected, oracle_same_entry=audited,
-                        oracle_continuous=dict(entry=states, accepted=next_states, sites=entry_sites),
-                        scene_stats=scene.stats(), plan_stats=plan.stats()))
+                            close(
+                                after[world].participants[key].position,
+                                next_states[pid][0],
+                                atol=2e-4,
+                            )
+                            close(
+                                after[world].participants[key].velocity,
+                                next_states[pid][1],
+                                atol=2e-4,
+                            )
+                    rows.append(
+                        dict(
+                            entry=before,
+                            accepted=after,
+                            receipts=plan.last_accepted,
+                            status=plan.last_status,
+                            controls=selected,
+                            oracle_same_entry=audited,
+                            oracle_continuous=dict(
+                                entry=states, accepted=next_states, sites=entry_sites
+                            ),
+                            scene_stats=scene.stats(),
+                            plan_stats=plan.stats(),
+                        )
+                    )
                     states = next_states
                 final_stats = scene.stats()
                 used = set(s["family"] for s in data["specs"].values())
-                labels = dict(fixed="tree", floating="floating_tree", affine="affine",
-                              floating_affine="floating_affine")
+                labels = dict(
+                    fixed="tree",
+                    floating="floating_tree",
+                    affine="affine",
+                    floating_affine="floating_affine",
+                )
                 for family in used:
                     name = labels[family]
-                    for field in ("entry_mechanics_stages", "candidate_solve_stages",
-                                  "candidate_finalize_stages"):
-                        assert final_stats["storage_stage_counts"][name][field] - initial_stats[
-                            "storage_stage_counts"][name][field] == count
+                    for field in (
+                        "entry_mechanics_stages",
+                        "candidate_solve_stages",
+                        "candidate_finalize_stages",
+                    ):
+                        assert (
+                            final_stats["storage_stage_counts"][name][field]
+                            - initial_stats["storage_stage_counts"][name][field]
+                            == count
+                        )
             except BaseException as error:
                 failure = dict(type=type(error).__name__, message=str(error))
                 raise
             finally:
-                save(directory, "robot-window", dict(inputs=data, world_order=built["worlds"],
-                    initial_stats=initial_stats, final_stats=scene.stats(), rows=rows,
-                    failure=failure, retained=scene.snapshot(), status=plan.last_status,
-                    last_entry=before, last_controls=selected, last_receipts=plan.last_accepted))
+                save(
+                    directory,
+                    "robot-window",
+                    dict(
+                        inputs=data,
+                        world_order=built["worlds"],
+                        initial_stats=initial_stats,
+                        final_stats=scene.stats(),
+                        rows=rows,
+                        failure=failure,
+                        retained=scene.snapshot(),
+                        status=plan.last_status,
+                        last_entry=before,
+                        last_controls=selected,
+                        last_receipts=plan.last_accepted,
+                    ),
+                )
     assert scene.stats()["device_owned_bytes"] == 0
     return rows
 
@@ -547,20 +769,33 @@ def test_r03_two_arms_free_tool_separate_and_reenter(asymmetric, tyx_mode, tmp_p
         assert any(np.linalg.norm(site.first_force_n) == 0 for site in live[32:48])
         assert any(np.linalg.norm(site.first_force_n) > 1 / 32 for site in live[96:])
     if asymmetric:
-        assert any(abs(row["accepted"][WORLDS[0]].participants[
-            ph.ResidentParticipantKey(WORLDS[0], 29)].velocity[5]) > 1e-6 for row in rows)
+        assert any(
+            abs(
+                row["accepted"][WORLDS[0]]
+                .participants[ph.ResidentParticipantKey(WORLDS[0], 29)]
+                .velocity[5]
+            )
+            > 1e-6
+            for row in rows
+        )
     else:
         for row in rows:
-            close(row["accepted"][WORLDS[0]].participants[
-                ph.ResidentParticipantKey(WORLDS[0], 29)].position[:3], [0, 0, 0], atol=2e-4)
+            close(
+                row["accepted"][WORLDS[0]]
+                .participants[ph.ResidentParticipantKey(WORLDS[0], 29)]
+                .position[:3],
+                [0, 0, 0],
+                atol=2e-4,
+            )
 
 
 @pytest.mark.tyx
 @pytest.mark.parametrize("family", FAMILIES)
 def test_r04_full_physical_projection_each_family(family, tyx_mode, tmp_path):
     data = r04(family)
-    terms, wrench, _ = independent_contacts(data, {p: (s["q"], s["v"])
-                                                  for p, s in data["specs"].items()})
+    terms, wrench, _ = independent_contacts(
+        data, {p: (s["q"], s["v"]) for p, s in data["specs"].items()}
+    )
     s = data["specs"][7]
     _, contact = full_load(s, terms[7], wrench[7])
     assert np.linalg.norm(contact) > 1
@@ -576,10 +811,16 @@ def test_r05_sparse_coincident_worlds_reverse_registration(count, tyx_mode, tmp_
     singles = []
     for world in WORLDS[:count]:
         directory = tmp_path / f"single-{world}"
-        singles.append(run_window(data, build(data, directory, worlds=(world,)),
-                                  tyx_mode, directory, steps=3))
-    batch = run_window(data, build(data, tmp_path / "batch", worlds=WORLDS[:count], reverse=True),
-                       tyx_mode, tmp_path / "batch", steps=3)
+        singles.append(
+            run_window(data, build(data, directory, worlds=(world,)), tyx_mode, directory, steps=3)
+        )
+    batch = run_window(
+        data,
+        build(data, tmp_path / "batch", worlds=WORLDS[:count], reverse=True),
+        tyx_mode,
+        tmp_path / "batch",
+        steps=3,
+    )
     for wi, world in enumerate(WORLDS[:count]):
         for tick in range(3):
             assert batch[tick]["accepted"][world] == singles[wi][tick]["accepted"][world]
@@ -614,5 +855,8 @@ def test_explicit_intra_affine_direct_parent_still_requires_exclusion(family, ty
         with pytest.raises(ValueError, match="direct parent-child"):
             prepare(scene, built)
         assert scene.snapshot() == before
-        save(tmp_path, "intra-direct-parent-rejection", dict(inputs=data, before=before,
-            after=scene.snapshot(), stats=scene.stats()))
+        save(
+            tmp_path,
+            "intra-direct-parent-rejection",
+            dict(inputs=data, before=before, after=scene.snapshot(), stats=scene.stats()),
+        )

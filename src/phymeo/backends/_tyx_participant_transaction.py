@@ -4,6 +4,7 @@ Every mechanical row owns one global slot. Collects from different storages
 never overlap. One reduction lane owns a whole logical world; scatter preserves
 the original failed member's code. Existing finalizers perform state retention.
 """
+
 from types import SimpleNamespace
 
 import tyx as tx

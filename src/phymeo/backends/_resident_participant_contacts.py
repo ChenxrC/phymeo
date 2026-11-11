@@ -104,7 +104,10 @@ class ResidentParticipantReceipt:
         ):
             object.__setattr__(self, name, _owned(getattr(self, name), np.float64))
         count = len(self.entry_linear)
-        if self.entry_body_twist.shape != (count, 6) or self.accepted_body_twist.shape != (count, 6):
+        if self.entry_body_twist.shape != (count, 6) or self.accepted_body_twist.shape != (
+            count,
+            6,
+        ):
             raise ValueError("participant twists require every full physical body")
         object.__setattr__(
             self, "uploaded_wrench_fp32", _owned(self.uploaded_wrench_fp32, np.float32)

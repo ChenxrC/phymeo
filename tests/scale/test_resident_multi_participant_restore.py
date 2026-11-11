@@ -1,14 +1,24 @@
 """ROB1c mixed-storage world commit and real late-restore fault coverage."""
+
 from dataclasses import replace
 
 import pytest
+from test_resident_multi_participant import save
+from test_resident_multi_participant_robots import (
+    FAMILIES,
+    WORLDS,
+    H,
+    audit_receipt,
+    build,
+    command,
+    drives,
+    free_box,
+    prepare,
+    r04,
+)
 
 import phymeo as ph
 from phymeo.backends import _resident_batch_transaction as transaction
-from test_resident_multi_participant import save
-from test_resident_multi_participant_robots import (
-    FAMILIES, H, WORLDS, audit_receipt, build, command, drives, free_box, prepare, r04,
-)
 
 
 def mixed_case():
@@ -19,13 +29,27 @@ def mixed_case():
     box = free_box([0, 0, 0], eccentric=False, mass=4.0)
     box["v"][:] = 0
     specs[59] = box
-    return dict(name="R05-R06-four-storage", specs=specs, pairs=tuple(pairs),
-        stiffness=64.0, friction=0.0, slip_speed=1 / 16, steps=40, switch=None)
+    return dict(
+        name="R05-R06-four-storage",
+        specs=specs,
+        pairs=tuple(pairs),
+        stiffness=64.0,
+        friction=0.0,
+        slip_speed=1 / 16,
+        steps=40,
+        switch=None,
+    )
 
 
 def capture(scene, plan):
-    return dict(states=scene.snapshot(), receipts=plan.last_accepted, status=plan.last_status,
-        epoch=scene.state_epoch, bank=scene.stats()["current_buffer"], stats=scene.stats())
+    return dict(
+        states=scene.snapshot(),
+        receipts=plan.last_accepted,
+        status=plan.last_status,
+        epoch=scene.state_epoch,
+        bank=scene.stats()["current_buffer"],
+        stats=scene.stats(),
+    )
 
 
 def retained(scene, plan, previous):
@@ -40,10 +64,22 @@ def step(scene, plan, data, built, history):
     before = scene.snapshot()
     assert scene.step_contacts(H, plan) == dict.fromkeys(built["worlds"], True)
     after = scene.snapshot()
-    checks = {w: audit_receipt(data, built, w, before[w], after[w], plan.last_accepted[w],
-        drives(data, before[w].tick)) for w in built["worlds"]}
-    history.append(dict(entry=before, accepted=after, receipts=plan.last_accepted,
-        status=plan.last_status, checks=checks, stats=scene.stats()))
+    checks = {
+        w: audit_receipt(
+            data, built, w, before[w], after[w], plan.last_accepted[w], drives(data, before[w].tick)
+        )
+        for w in built["worlds"]
+    }
+    history.append(
+        dict(
+            entry=before,
+            accepted=after,
+            receipts=plan.last_accepted,
+            status=plan.last_status,
+            checks=checks,
+            stats=scene.stats(),
+        )
+    )
 
 
 @pytest.mark.tyx
@@ -61,10 +97,12 @@ def test_mixed_storage_last_member_rejects_whole_world_then_retry(
             step(scene, plan, data, built, history)
             previous = capture(scene, plan)
             seen = []
+
             def reject(service, attempt):
                 seen.append(tuple(attempt["rows"]))
                 assert set(attempt["rows"]) == set(built["controls"])
                 return {target: 6}
+
             with monkeypatch.context() as patch:
                 patch.setattr(transaction.ResidentBatchTransaction, "_before_finalize", reject)
                 result = scene.step_contacts(H, plan)
@@ -80,8 +118,17 @@ def test_mixed_storage_last_member_rejects_whole_world_then_retry(
             history.append(dict(injected=target, before=previous, observed=now, accepted=result))
             step(scene, plan, data, built, history)
             assert scene.snapshot()[target_world].tick == 2
-            save(tmp_path, "mixed-reject-retry", dict(inputs=data, target=target, seen=seen,
-                history=history, final=capture(scene, plan)))
+            save(
+                tmp_path,
+                "mixed-reject-retry",
+                dict(
+                    inputs=data,
+                    target=target,
+                    seen=seen,
+                    history=history,
+                    final=capture(scene, plan),
+                ),
+            )
 
 
 @pytest.mark.tyx
@@ -103,12 +150,14 @@ def test_mixed_storage_final_publication_exception_has_no_partial_commit(
             previous = capture(scene, plan)
             original = transaction.ResidentBatchTransaction._prepare_publication
             seen = []
+
             def fail(service, *args):
                 result = original(service, *args)
                 assert len(result.receipts) == 2
                 assert all(len(r.participants) == 5 for r in result.receipts.values())
                 seen.append(result)
                 raise RuntimeError("ROB1c after complete four-storage receipts")
+
             with monkeypatch.context() as patch:
                 patch.setattr(transaction.ResidentBatchTransaction, "_prepare_publication", fail)
                 with pytest.raises(RuntimeError, match="after complete"):
@@ -116,10 +165,21 @@ def test_mixed_storage_final_publication_exception_has_no_partial_commit(
             assert len(seen) == 1
             retained(scene, plan, previous)
             assert scene.step_contacts(H, plan) == dict.fromkeys(built["worlds"], True)
-            assert scene.snapshot()[key.world].participants[key].control == previous[
-                "states"][key.world].participants[key].control
-            save(tmp_path, "mixed-late-publication", dict(inputs=data, previous=previous,
-                failed_publications=seen, after=capture(scene, plan), history=history))
+            assert (
+                scene.snapshot()[key.world].participants[key].control
+                == previous["states"][key.world].participants[key].control
+            )
+            save(
+                tmp_path,
+                "mixed-late-publication",
+                dict(
+                    inputs=data,
+                    previous=previous,
+                    failed_publications=seen,
+                    after=capture(scene, plan),
+                    history=history,
+                ),
+            )
 
 
 @pytest.mark.tyx
@@ -147,11 +207,23 @@ def test_r06_tick19_checkpoint_replays21_and_partial_world_reset(tyx_mode, tmp_p
             scene.reset((world,))
             assert scene.snapshot()[world].tick == 0
             assert scene.snapshot()[built["worlds"][1]] == before_reset[built["worlds"][1]]
-            scene.set_controls({key: value for key, value in built["controls"].items() if key.world == world})
+            scene.set_controls(
+                {key: value for key, value in built["controls"].items() if key.world == world}
+            )
             step(scene, plan, data, built, history)
             assert scene.snapshot()[world].tick == 1
-            save(tmp_path, "tick19-restore-reset", dict(inputs=data, checkpoint=checkpoint,
-                expected=expected, before_reset=before_reset, history=history, final=capture(scene, plan)))
+            save(
+                tmp_path,
+                "tick19-restore-reset",
+                dict(
+                    inputs=data,
+                    checkpoint=checkpoint,
+                    expected=expected,
+                    before_reset=before_reset,
+                    history=history,
+                    final=capture(scene, plan),
+                ),
+            )
 
 
 @pytest.mark.tyx
@@ -169,9 +241,11 @@ def test_late_restore_after_all_upload_checks_keeps_banks_and_real_retry(
                 step(scene, plan, data, built, history)
             previous = capture(scene, plan)
             calls = []
+
             def fail(service):
                 calls.append(service.state_epoch)
                 raise RuntimeError("ROB1c after actual restore stage upload and check")
+
             with monkeypatch.context() as patch:
                 patch.setattr(transaction.ResidentBatchTransaction, "_before_restore_commit", fail)
                 with pytest.raises(RuntimeError, match="actual restore"):
@@ -181,8 +255,18 @@ def test_late_restore_after_all_upload_checks_keeps_banks_and_real_retry(
             scene.restore(checkpoint, expected_epoch=scene.state_epoch)
             assert scene.snapshot() == checkpoint
             step(scene, plan, data, built, history)
-            save(tmp_path, "late-restore", dict(inputs=data, checkpoint=checkpoint,
-                previous=previous, failure_calls=calls, history=history, final=capture(scene, plan)))
+            save(
+                tmp_path,
+                "late-restore",
+                dict(
+                    inputs=data,
+                    checkpoint=checkpoint,
+                    previous=previous,
+                    failure_calls=calls,
+                    history=history,
+                    final=capture(scene, plan),
+                ),
+            )
 
 
 @pytest.mark.tyx
@@ -209,5 +293,15 @@ def test_mixed_checkpoint_rejects_incomplete_identity_before_upload(fault, tyx_m
             with pytest.raises((ValueError, RuntimeError)):
                 scene.restore({world: checkpoint}, expected_epoch=epoch)
             retained(scene, plan, previous)
-            save(tmp_path, "identity-rejection", dict(inputs=data, fault=fault, previous=previous,
-                attempted=checkpoint, expected_epoch=epoch, after=capture(scene, plan)))
+            save(
+                tmp_path,
+                "identity-rejection",
+                dict(
+                    inputs=data,
+                    fault=fault,
+                    previous=previous,
+                    attempted=checkpoint,
+                    expected_epoch=epoch,
+                    after=capture(scene, plan),
+                ),
+            )

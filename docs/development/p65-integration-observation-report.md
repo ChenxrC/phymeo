@@ -16,3 +16,7 @@
 | 128 | 77.91–91.00 | 2.63–3.68 |
 
 这是显式少做端点重算后的局部操作对比，非同输出工作量的求解器加速，也不是Newton性能比较或训练总吞吐改进证明。默认full reference和完整step检查都保留；后续需单独测声明此观测模式的端到端训练。三条完整配对gzip、两timing JSON及原失败/raw/source在 `artifacts/p65-parity-n4b-rob2a-col-stop-20261111-01`，新包资格待本批统一构建。
+# Fresh installed result (2026-11-12)
+
+Commands 57–61 in `artifacts/p65-parity-n4b-rob2a-col-stop-20261111-01` qualified the fresh 499-product wheel. Its interpret/CUDA consumers each passed 40 logical-world steps, including actual activation, force and motion, full/integration observation identity, checkpoint/clone successor and partial reset. Module provenance is entirely the installed site. This supplies the previously pending installed runtime-observation qualification; it does not change the default full VecEnv observation or claim a PPO throughput improvement.
+

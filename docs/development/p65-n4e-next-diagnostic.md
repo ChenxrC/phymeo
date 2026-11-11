@@ -140,3 +140,73 @@ then executes exactly the one fixed J CUDA window; no old full trace is reopened
 This proposal was written from source and already-computed summary metadata.
 No import, numerical evaluation, policy inference, physical step, test or training
 was performed, and no result is predicted as passed.
+
+## Implemented authoring handoff (execution still pending)
+
+Parent approved exactly two NEW Python files and this append. Baseline
+`81500dc8` contains the independently qualified compact mirrors; this work does
+not modify those runtime/checkpoint files. Tests-first commit `07b8320e`,
+additional metadata/precision cases `ddd59f8d`, and CLI implementation `1cc1e4bf`
+are pure authoring. No project import, collection, numerical calculation, test,
+lint, formatter, build, policy inference or physical step was run by this author.
+
+The CLI reuses `evaluate_mujoco_tyx_learning.py` and its original task registry,
+not copied task XML or an alternative environment. It never constructs a learner.
+Its three required arguments are `--evidence-root`, `--ablation-root`, `--output`;
+output must be fresh. N4a's accepted J anchor plus all three original summaries,
+publications and manifests are checked by the existing bounded metadata reader.
+Run97's summary is fixed to SHA256
+`107a2fbfd55b889b2e174f4900db9ab767547575e88450342febe58089e5b193`;
+its three complete summaries/publications/manifests and shared protocol are bound.
+Original and centered zero costs remain separate historical values. No old trace
+is opened, no old source files are overwritten, and no old result is reclassified.
+
+`make_schedule(q,v)` accepts actual stored FP32-representable 8x2 coordinates,
+solves the single fixed two-pulse system, checks strict force and full-trajectory
+bounds, and publishes owned immutable arrays including both ideal and FP32-raw
+HOST-tanh preflight paths. `run_window` receives each actual public transition,
+records it before checking, binds all three native channels to the action and
+physical receipts, and advances the independent FP64 recurrence with the actual
+stored control. Source dynamics can use the original kind0 precomputed inverse
+and Euler operators; the reference deliberately does not copy their FP32 operation
+sequence. The native source parameters, stored representations and both clocks
+are saved so this arithmetic boundary stays explicit.
+
+The final q/v and cost use `transition256.states`, not the already-reset live
+state. All eight final timeouts and resets are checked. A step, publication,
+recording or independent-check failure retains requests and every available
+accepted transition, with `cost=None`; no shortened score is published. If a
+transition record itself cannot be written, the failure detail retains that
+received transition for the final failure record. Public counters are captured
+before cleanup; complete package/example source hashes must match before/after.
+The successful summary explicitly leaves learning classification unchanged.
+
+The manual, uncollected test count is **26 HOST nodes**, with **zero CUDA physical
+pytest nodes**. They comprise protocol1; independent recurrence/symmetry/mapping3;
+infeasibility5; bounded/hash/duplicate-JSON metadata1; full-window and failure
+publication12; complete historical source/zero binding4. Synthetic steps use the
+actual public publication dataclasses and an independently written scalar Euler
+loop. These are not actual TYX physics results. The only proposed CUDA physical
+execution is the one CLI window below.
+
+```text
+<qualified-training-python> -m pytest tests/training/test_mujoco_tyx_reachability.py -q -x
+<qualified-training-python> examples/diagnose_mujoco_tyx_reachability.py --evidence-root <parent>/artifacts/p65-parity-n4a-rob1d-col-reducer-20261111-01 --ablation-root <parent>/artifacts/p65-parity-until-0720-20261112-01/97-n4d-fixed-three/ablation --output <fresh-N4e-directory>
+```
+
+The complete stream contains protocol/history, native entry/model metadata,
+reference schedule, each request/transition/independent result, completion,
+owner-exit and final source bindings; failure adds its actual phase and available
+transaction flags. `manifest.json`, `summary.json` plus hash publication (success),
+or `failure.json` (failure), bind the compressed stream. This is not a performance
+benchmark or a Newton comparison. Numerical feasibility, endpoint success and
+cost improvement remain **UNKNOWN until the parent executes the fixed window**.
+
+| Authored Python path | SHA256 | Git blob |
+|---|---|---|
+| examples/diagnose_mujoco_tyx_reachability.py | 9d80edca63930ae84737df8d270b2639c2d83add8f49e19fe3570ba5ac0255c0 | be6d7fb7305e51e113ddeff7ce08a3b9fe191ca8 |
+| tests/training/test_mujoco_tyx_reachability.py | 9b72a327866e0e191ecc097d1a2b12cc2dec280bf91298be7878a4b7fbfdcd3a | 7f14aece48e703e0667e3a803ca3cec52633eae9 |
+
+CODE_READY_TESTS_PENDING. AUTHORING_SLOT_RELEASED after the final documentation
+commit; parent retains sole execution ownership and may perform focused static
+checks and the declared tests/window. No follow-on optimizer experiment is started.

@@ -73,7 +73,7 @@ affine/floating-affine现委托基础binding，先复用，具体缺口另报父
 
 | 身份 | 输入与独立验收 |
 |---|---|
-| G01，18×3=54 | 轴为z，按上下支持高度摆放gap=+1/32、0、-1/64。正负gap必须RESOLVED/正确符号；touch沿原CONTACT_BAND/明确unknown，不能误判SEPARATED。独立支持平面/包含关系，不只看product witness |
+| G01，18×3=54 | 轴为z，按上下支持高度设置轴向布置参数s=+1/32、0、-1/64。s>0的共同支持面给出精确gap=s；s<0仅为placement overlap，不直接充当EPA最小平移signed_distance。正负例仍须RESOLVED/正确符号；touch沿原CONTACT_BAND/明确unknown，不能误判SEPARATED |
 | G02，18 | G01正gap整体以q=(1/2,1/2,1/2,1/2)循环旋转、平移(4,-2,1)，同时反向请求；gap不变、法向反号、双方材料与requested mapping完整 |
 | G03，YE/NE/EH | n=(2,3,6)/7，gap=+1/32；中心差固定为独立解析sA(n)−sB(-n)+gap*n。支持平面证明分离最近距离，不采样拟合曲面 |
 | G04，每新族 | 方向表为±三轴、(1,±1,0)、(0,1,±1)、(1,0,±1)、(2,3,6)，identity及非identity asset R；核支持值、集合成员、方向缩放与tie |
@@ -84,13 +84,13 @@ affine/floating-affine现委托基础binding，先复用，具体缺口另报父
 | S04，边界/兼容 | 曲面距离＋site_capacity得到UNSUPPORTED patch；必要受载不HOST fallback/不部分发布；旧默认HOST及同页旧族不变 |
 | S05，受影响旧节点 | 从原reference选每旧族一个非零gap，及实际受改影响的CB/CH cycle_reverse_ids、partial face、clear/晚失败；保原literal/gates，不重跑无关旧绿全套 |
 
-G01非零例是必须通过的有限域，不能整批unknown算成功。G05深穿入只核诚实状态，不宣称任意深穿入已支持。手工身份数不冒充实际pytest节点数。
+G01非零例是必须通过的有限域，不能整批unknown算成功。负例须独立证明真实interior overlap及正确符号；首次tests提交前逐族列明depth/witness oracle：采用独立解析、边界/支持判据或语义匹配的外部参照，实际核对穿透深度与见证，不能只核负号。轴向重叠量不普遍等于最小平移穿透深度，不能把-1/64或其绝对值当作通用depth期望，也不能只拿product自报normal/witness自证。G05深穿入只核诚实状态，不宣称任意深穿入已支持。手工身份数不冒充实际pytest节点数。
 
 ## 6. 固定工程门与执行顺序
 
 L为独立输入的max(1m、两体真实直径界、中心间距)，不含绝对世界坐标；Y/N直径界2(r+h)，E为2max(a,b,c)，旧族原定义。期望不能从result.scale反推。
 
-沿原device门：gap误差≤1e-4 L；surface/材料重构/闭合≤2e-4 L；normal L2≤2e-3、norm误差≤2e-4；scale误差≤1e-4 L；bary sum误差≤64×2^-23及非负/完整ID。G04支持值误差≤1e-4 L||d||、集合/表面距离≤2e-4 L。多解点/法向核合法集合，不硬套唯一点。量化差分完整保存；原patch权重/一阶矩门不动。
+沿原device门：gap误差≤1e-4 L，相对上述独立距离/depth oracle，绝不相对负例轴向布置参数s；surface/材料重构/闭合≤2e-4 L；normal L2≤2e-3、norm误差≤2e-4；scale误差≤1e-4 L；bary sum误差≤64×2^-23及非负/完整ID。G04支持值误差≤1e-4 L||d||、集合/表面距离≤2e-4 L。多解点/法向核合法集合，不硬套唯一点。量化差分完整保存；原patch权重/一阶矩门不动。
 
 父唯一串行执行：共享binding接缝→全文review/source绑定→必要静态→短support/source→新矩阵interpret→真实CUDA。只针对失败节点修复后跑新源受影响组，不调fixture、gap或预算。Newton固定1.7.0作为外部参照，cutoff/tie/contact-reduction差异单列；首oracle仍为独立解析/literal，不以输出点数相同替代同一数学对象。
 

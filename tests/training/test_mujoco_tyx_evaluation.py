@@ -295,52 +295,78 @@ def test_summary_rejects_changed_publication_before_cost_aggregation(api, tmp_pa
 def _counter_fixture():
     return {
         "counts": {
-            "transitions": 0, "physical_steps": 0, "resets": 0,
-            "termination_readback_bytes": 0, "action_finite_scalar_readbacks": 0,
+            "transitions": 0,
+            "physical_steps": 0,
+            "resets": 0,
+            "termination_readback_bytes": 0,
+            "action_finite_scalar_readbacks": 0,
             "runtime": {
-                "completed_steps": 0, "accepted_world_steps": 0, "failed_batches": 0,
-                "device_control_submissions": 0, "device_control_refusals": 0,
-                "control_copy_d2d_bytes": 0, "control_audit_downloaded_bytes": 0,
-                "control_status_downloaded_bytes": 0, "control_initial_uploaded_bytes": 0,
+                "completed_steps": 0,
+                "accepted_world_steps": 0,
+                "failed_batches": 0,
+                "device_control_submissions": 0,
+                "device_control_refusals": 0,
+                "control_copy_d2d_bytes": 0,
+                "control_audit_downloaded_bytes": 0,
+                "control_status_downloaded_bytes": 0,
+                "control_initial_uploaded_bytes": 0,
                 "control_pack_kernels": 0,
-                "completed_kernels": 100, "synchronizations": 80,
-                "device_allocations": 20, "static_uploaded_bytes": 200,
-                "uploaded_bytes": 400, "downloaded_bytes": 800,
+                "completed_kernels": 100,
+                "synchronizations": 80,
+                "device_allocations": 20,
+                "static_uploaded_bytes": 200,
+                "uploaded_bytes": 400,
+                "downloaded_bytes": 800,
                 "device_control_d2d_bytes": 128,
             },
             "task": {
-                "task_kernels": 0, "source_synchronizations": 0,
-                "task_status_downloaded_bytes": 0, "explicit_output_readback_bytes": 0,
-                "output_d2d_bytes": 0, "published_frames": 0, "failed_refreshes": 0,
+                "task_kernels": 0,
+                "source_synchronizations": 0,
+                "task_status_downloaded_bytes": 0,
+                "explicit_output_readback_bytes": 0,
+                "output_d2d_bytes": 0,
+                "published_frames": 0,
+                "failed_refreshes": 0,
             },
         },
         "owners": {"environment": 1, "runtime": 2, "workspace": "task-owner"},
-        "frame": {"revision": 60, "epoch": 30, "ticks": [30, 30], "times": [.06, .06]},
+        "frame": {"revision": 60, "epoch": 30, "ticks": [30, 30], "times": [0.06, 0.06]},
     }
 
 
 def test_resettable_device_counter_drop_is_signed_snapshot_not_work():
     from copy import deepcopy
+
     from phymeo.training.mujoco_tyx_evaluation import counter_accounting
+
     before = _counter_fixture()
     after = deepcopy(before)
     after["counts"].update(transitions=2, physical_steps=2, resets=2)
-    after["counts"]["runtime"].update(completed_steps=2, accepted_world_steps=4,
-                                      completed_kernels=0, downloaded_bytes=64)
+    after["counts"]["runtime"].update(
+        completed_steps=2, accepted_world_steps=4, completed_kernels=0, downloaded_bytes=64
+    )
     del after["counts"]["runtime"]["device_control_d2d_bytes"]
     after["counts"]["task"].update(task_kernels=3, published_frames=3)
-    after["frame"] = {"revision": 65, "epoch": 33, "ticks": [0, 0], "times": [0., 0.]}
-    transitions = tuple(SimpleNamespace(
-        sequence=index, world_keys=(5, 41), accepted_worlds={5: True, 41: True},
-        states={key: SimpleNamespace(tick=30 + index) for key in (5, 41)},
-        output_frame=SimpleNamespace(ticks=(31, 31) if index == 1 else (0, 0),
-                                     revision=62 if index == 1 else 65),
-    ) for index in (1, 2))
+    after["frame"] = {"revision": 65, "epoch": 33, "ticks": [0, 0], "times": [0.0, 0.0]}
+    transitions = tuple(
+        SimpleNamespace(
+            sequence=index,
+            world_keys=(5, 41),
+            accepted_worlds={5: True, 41: True},
+            states={key: SimpleNamespace(tick=30 + index) for key in (5, 41)},
+            output_frame=SimpleNamespace(
+                ticks=(31, 31) if index == 1 else (0, 0), revision=62 if index == 1 else 65
+            ),
+        )
+        for index in (1, 2)
+    )
     result = counter_accounting(before, after, transitions)
     assert result["monotonic_delta"]["environment"]["resets"] == 2
     assert result["monotonic_delta"]["runtime"]["accepted_world_steps"] == 4
     assert result["device_snapshot"]["signed_difference_not_work"]["completed_kernels"] == -100
-    assert result["device_snapshot"]["signed_difference_not_work"]["device_control_d2d_bytes"] is None
+    assert (
+        result["device_snapshot"]["signed_difference_not_work"]["device_control_d2d_bytes"] is None
+    )
     assert result["device_snapshot"]["cumulative_device_work"] == "UNKNOWN"
     assert result["receipt_events"]["reset_calls"] == 1
     assert result["receipt_events"]["reset_worlds"] == 2
@@ -350,7 +376,9 @@ def test_resettable_device_counter_drop_is_signed_snapshot_not_work():
 
 def test_unknown_counter_field_cannot_be_silently_called_monotonic():
     from copy import deepcopy
+
     from phymeo.training.mujoco_tyx_evaluation import counter_accounting
+
     before = _counter_fixture()
     after = deepcopy(before)
     after["counts"]["runtime"]["new_unclassified_counter"] = 1
@@ -361,43 +389,56 @@ def test_unknown_counter_field_cannot_be_silently_called_monotonic():
 @pytest.mark.parametrize("fault", ("post-counter-read", "final-cuda-completion"))
 def test_post_update_failure_retains_all_32_public_step_attempts(monkeypatch, fault):
     import sys
+
     from phymeo.training import mujoco_tyx_evaluation as module
 
     class Action:
         def __init__(self, value):
             self.value = value
+
         def detach(self):
             return self
+
         def clone(self):
             return Action(self.value)
 
     class Adapter:
         def __init__(self):
             self.calls, self.last_transition = 0, None
+
         def step(self, action):
             self.calls += 1
             self.last_transition = {"sequence": self.calls, "action": action.value}
             return self.last_transition
 
     adapter = Adapter()
-    record = {"transitions": None, "loss": {"value": 0.}, "iteration": 0, "next_iteration": 1}
+    record = {"transitions": None, "loss": {"value": 0.0}, "iteration": 0, "next_iteration": 1}
+
     def update():
         record["transitions"] = tuple(adapter.step(Action(i)) for i in range(32))
         return record
+
     session = SimpleNamespace(env=SimpleNamespace(device="cuda:0"), adapter=adapter, update=update)
     reads, syncs = [], []
+
     def snapshot(_):
         reads.append(1)
         if len(reads) == 2 and fault == "post-counter-read":
             raise RuntimeError("injected post-update counter read")
         return _counter_fixture()
+
     def synchronize(_):
         syncs.append(1)
         if len(syncs) == 2 and fault == "final-cuda-completion":
             raise RuntimeError("injected final CUDA completion")
-    cuda = SimpleNamespace(synchronize=synchronize, mem_get_info=lambda _: (1000, 2000),
-                           reset_peak_memory_stats=lambda _: None,
-                           max_memory_allocated=lambda _: 1, max_memory_reserved=lambda _: 2)
+
+    cuda = SimpleNamespace(
+        synchronize=synchronize,
+        mem_get_info=lambda _: (1000, 2000),
+        reset_peak_memory_stats=lambda _: None,
+        max_memory_allocated=lambda _: 1,
+        max_memory_reserved=lambda _: 2,
+    )
     monkeypatch.setitem(sys.modules, "torch", SimpleNamespace(cuda=cuda))
     monkeypatch.setattr(module, "measurement_counter_snapshot", snapshot)
     with pytest.raises(module.UpdateCaptureError) as caught:
@@ -413,8 +454,14 @@ def test_post_update_failure_retains_all_32_public_step_attempts(monkeypatch, fa
 
 def test_post_update_finite_audit_writes_complete_record_before_refusal():
     from phymeo.training.mujoco_tyx_evaluation import validate_update
-    record = {"iteration": 0, "next_iteration": 1, "transitions": tuple(range(32)),
-              "optimization": {"optimizer_step": 1, "finite_gradient": False}, "loss": {"value": 0.}}
+
+    record = {
+        "iteration": 0,
+        "next_iteration": 1,
+        "transitions": tuple(range(32)),
+        "optimization": {"optimizer_step": 1, "finite_gradient": False},
+        "loss": {"value": 0.0},
+    }
     written = []
     writer = SimpleNamespace(write=lambda kind, payload: written.append((kind, payload)))
     with pytest.raises(ValueError, match="nonfinite optimization"):
@@ -424,18 +471,22 @@ def test_post_update_finite_audit_writes_complete_record_before_refusal():
 
 def test_failure_context_captures_public_counters_before_owner_close(api, monkeypatch):
     from contextlib import contextmanager
+
     closed, reads = [], []
     env = SimpleNamespace(last_transition={"sequence": 32})
+
     @contextmanager
     def make_environment(*args, **kwargs):
         try:
             yield env
         finally:
             closed.append(True)
+
     def snapshot(value):
         assert value is env and not closed
         reads.append(True)
         return _counter_fixture()
+
     monkeypatch.setattr(api.tasks(), "make_environment", make_environment)
     monkeypatch.setattr(api.evaluation, "measurement_counter_snapshot", snapshot)
     context = {}
@@ -445,4 +496,6 @@ def test_failure_context_captures_public_counters_before_owner_close(api, monkey
     assert closed == [True] and reads == [True]
     assert context["env"] is None
     assert context["owner_exit"]["last_transition"] is env.last_transition
-    assert context["owner_exit"]["counter_snapshot"]["counts"]["runtime"]["completed_kernels"] == 100
+    assert (
+        context["owner_exit"]["counter_snapshot"]["counts"]["runtime"]["completed_kernels"] == 100
+    )

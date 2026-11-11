@@ -362,21 +362,52 @@ def plain_counters(value):
 
 # Explicit source-defined lifecycle classes. New counter names are not silently
 # promoted into either a cumulative measurement or a physical work estimate.
-ENV_COUNTERS = frozenset(("transitions", "physical_steps", "resets",
-                         "termination_readback_bytes", "action_finite_scalar_readbacks"))
-RUNTIME_COUNTERS = frozenset((
-    "completed_steps", "accepted_world_steps", "failed_batches", "device_control_submissions",
-    "device_control_refusals", "control_copy_d2d_bytes", "control_audit_downloaded_bytes",
-    "control_status_downloaded_bytes", "control_initial_uploaded_bytes", "control_pack_kernels",
-))
-TASK_COUNTERS = frozenset((
-    "task_kernels", "source_synchronizations", "task_status_downloaded_bytes",
-    "explicit_output_readback_bytes", "output_d2d_bytes", "published_frames", "failed_refreshes",
-))
-DEVICE_COUNTERS = frozenset((
-    "completed_kernels", "synchronizations", "device_allocations", "static_uploaded_bytes",
-    "uploaded_bytes", "downloaded_bytes", "device_control_d2d_bytes", "control_host_uploaded_bytes",
-))
+ENV_COUNTERS = frozenset(
+    (
+        "transitions",
+        "physical_steps",
+        "resets",
+        "termination_readback_bytes",
+        "action_finite_scalar_readbacks",
+    )
+)
+RUNTIME_COUNTERS = frozenset(
+    (
+        "completed_steps",
+        "accepted_world_steps",
+        "failed_batches",
+        "device_control_submissions",
+        "device_control_refusals",
+        "control_copy_d2d_bytes",
+        "control_audit_downloaded_bytes",
+        "control_status_downloaded_bytes",
+        "control_initial_uploaded_bytes",
+        "control_pack_kernels",
+    )
+)
+TASK_COUNTERS = frozenset(
+    (
+        "task_kernels",
+        "source_synchronizations",
+        "task_status_downloaded_bytes",
+        "explicit_output_readback_bytes",
+        "output_d2d_bytes",
+        "published_frames",
+        "failed_refreshes",
+    )
+)
+DEVICE_COUNTERS = frozenset(
+    (
+        "completed_kernels",
+        "synchronizations",
+        "device_allocations",
+        "static_uploaded_bytes",
+        "uploaded_bytes",
+        "downloaded_bytes",
+        "device_control_d2d_bytes",
+        "control_host_uploaded_bytes",
+    )
+)
 
 
 def measurement_counter_snapshot(env):
@@ -384,10 +415,17 @@ def measurement_counter_snapshot(env):
     frame = env.current_frame
     return {
         "counts": plain_counters(env.counters),
-        "owners": {"environment": id(env), "runtime": id(env.runtime),
-                   "workspace": frame.binding["workspace_owner"]},
-        "frame": {"revision": env.runtime.checkpoint_revision, "epoch": frame.epoch,
-                  "ticks": list(frame.ticks), "times": list(frame.times)},
+        "owners": {
+            "environment": id(env),
+            "runtime": id(env.runtime),
+            "workspace": frame.binding["workspace_owner"],
+        },
+        "frame": {
+            "revision": env.runtime.checkpoint_revision,
+            "epoch": frame.epoch,
+            "ticks": list(frame.ticks),
+            "times": list(frame.times),
+        },
         "device_generation": "UNKNOWN: not exposed by the public runtime",
     }
 
@@ -402,24 +440,35 @@ def counter_accounting(before, after, transitions):
         if set(value["task"]) != TASK_COUNTERS:
             raise ValueError("unclassified task counter schema")
         runtime_keys = set(value["runtime"])
-        required_device = DEVICE_COUNTERS - {"device_control_d2d_bytes", "control_host_uploaded_bytes"}
-        if (not (RUNTIME_COUNTERS | required_device) <= runtime_keys
-                or runtime_keys - RUNTIME_COUNTERS - DEVICE_COUNTERS):
+        required_device = DEVICE_COUNTERS - {
+            "device_control_d2d_bytes",
+            "control_host_uploaded_bytes",
+        }
+        if (
+            not (RUNTIME_COUNTERS | required_device) <= runtime_keys
+            or runtime_keys - RUNTIME_COUNTERS - DEVICE_COUNTERS
+        ):
             raise ValueError("unclassified runtime counter schema")
         for group in ({k: value[k] for k in ENV_COUNTERS}, value["task"], value["runtime"]):
             if any(type(number) is not int or number < 0 for number in group.values()):
                 raise ValueError("counter snapshot must contain nonnegative integers")
     a, b = before["counts"], after["counts"]
     monotonic = {
-        "environment": counter_delta({k: a[k] for k in ENV_COUNTERS}, {k: b[k] for k in ENV_COUNTERS}),
-        "runtime": counter_delta({k: a["runtime"][k] for k in RUNTIME_COUNTERS},
-                                 {k: b["runtime"][k] for k in RUNTIME_COUNTERS}),
+        "environment": counter_delta(
+            {k: a[k] for k in ENV_COUNTERS}, {k: b[k] for k in ENV_COUNTERS}
+        ),
+        "runtime": counter_delta(
+            {k: a["runtime"][k] for k in RUNTIME_COUNTERS},
+            {k: b["runtime"][k] for k in RUNTIME_COUNTERS},
+        ),
         "task": counter_delta(a["task"], b["task"]),
     }
     reset_events, accepted = [], 0
     for entry in transitions:
         keys = tuple(entry.world_keys)
-        if set(entry.states) != set(keys) or dict(entry.accepted_worlds) != dict.fromkeys(keys, True):
+        if set(entry.states) != set(keys) or dict(entry.accepted_worlds) != dict.fromkeys(
+            keys, True
+        ):
             raise ValueError("accounting requires complete accepted transition worlds")
         reset_keys = []
         for key, output_tick in zip(keys, entry.output_frame.ticks, strict=True):
@@ -430,22 +479,36 @@ def counter_accounting(before, after, transitions):
                 raise ValueError("output frame differs from accepted state without a reset")
         accepted += len(keys)
         if reset_keys:
-            reset_events.append({"sequence": entry.sequence, "world_keys": tuple(reset_keys),
-                                 "output_revision": entry.output_frame.revision})
+            reset_events.append(
+                {
+                    "sequence": entry.sequence,
+                    "world_keys": tuple(reset_keys),
+                    "output_revision": entry.output_frame.revision,
+                }
+            )
     reset_worlds = sum(len(entry["world_keys"]) for entry in reset_events)
-    if (monotonic["environment"]["transitions"] != len(transitions)
-            or monotonic["environment"]["physical_steps"] != len(transitions)
-            or monotonic["environment"]["resets"] != reset_worlds
-            or monotonic["runtime"]["completed_steps"] != len(transitions)
-            or monotonic["runtime"]["accepted_world_steps"] != accepted):
+    if (
+        monotonic["environment"]["transitions"] != len(transitions)
+        or monotonic["environment"]["physical_steps"] != len(transitions)
+        or monotonic["environment"]["resets"] != reset_worlds
+        or monotonic["runtime"]["completed_steps"] != len(transitions)
+        or monotonic["runtime"]["accepted_world_steps"] != accepted
+    ):
         raise ValueError("public receipt events disagree with lifecycle counters")
     device_keys = sorted((set(a["runtime"]) | set(b["runtime"])) & DEVICE_COUNTERS)
-    signed = {key: (b["runtime"][key] - a["runtime"][key]
-                    if key in a["runtime"] and key in b["runtime"] else None)
-              for key in device_keys}
+    signed = {
+        key: (
+            b["runtime"][key] - a["runtime"][key]
+            if key in a["runtime"] and key in b["runtime"]
+            else None
+        )
+        for key in device_keys
+    }
     return {
-        "owners_before": before["owners"], "owners_after": after["owners"],
-        "transaction_before": before["frame"], "transaction_after": after["frame"],
+        "owners_before": before["owners"],
+        "owners_after": after["owners"],
+        "transaction_before": before["frame"],
+        "transaction_after": after["frame"],
         "monotonic_delta": monotonic,
         "monotonic_scope": "same public environment/runtime/workspace lifetimes; categories may overlap",
         "device_snapshot": {
@@ -453,18 +516,34 @@ def counter_accounting(before, after, transitions):
             "signed_difference_not_work": signed,
             "before": {key: a["runtime"].get(key) for key in device_keys},
             "after": {key: b["runtime"].get(key) for key in device_keys},
-            "cumulative_device_work": "UNKNOWN", "absolute_device_generation": "UNKNOWN",
+            "cumulative_device_work": "UNKNOWN",
+            "absolute_device_generation": "UNKNOWN",
             "missing_field": "None means not exposed in that owner snapshot, not zero",
         },
-        "receipt_events": {"accepted_world_steps": accepted, "reset_calls": len(reset_events),
-                           "reset_worlds": reset_worlds, "resets": tuple(reset_events),
-                           "scope": "public post-reset tick publication; no internal work inference"},
+        "receipt_events": {
+            "accepted_world_steps": accepted,
+            "reset_calls": len(reset_events),
+            "reset_worlds": reset_worlds,
+            "resets": tuple(reset_events),
+            "scope": "public post-reset tick publication; no internal work inference",
+        },
     }
+
 
 class UpdateCaptureError(RuntimeError):
     """A failed update retains accepted transitions; it does not imply rollback."""
 
-    def __init__(self, error, attempts, seconds, *, completed_record=None, before=None, after=None, measurement_phase=None):
+    def __init__(
+        self,
+        error,
+        attempts,
+        seconds,
+        *,
+        completed_record=None,
+        before=None,
+        after=None,
+        measurement_phase=None,
+    ):
         super().__init__("upstream update failed: " + str(error))
         self.attempts = tuple(attempts)
         self.compute_seconds = seconds
@@ -538,7 +617,7 @@ def measure_update(session, *, observe=False):
 
     env = session.env
     attempts, record, before, after = [], None, None, None
-    profile, elapsed, phase = None, 0., "measurement-setup"
+    profile, elapsed, phase = None, 0.0, "measurement-setup"
     try:
         before = measurement_counter_snapshot(env)
         torch.cuda.synchronize(env.device)
@@ -560,7 +639,8 @@ def measure_update(session, *, observe=False):
             elapsed = time.perf_counter() - started
         phase = "post-update-measurement"
         if len(attempts) != len(record["transitions"]) or any(
-            entry.get("transition") is not record["transitions"][i] for i, entry in enumerate(attempts)
+            entry.get("transition") is not record["transitions"][i]
+            for i, entry in enumerate(attempts)
         ):
             raise ValueError("public step observer and session transition history disagree")
         free_after, _ = torch.cuda.mem_get_info(env.device)
@@ -570,11 +650,13 @@ def measure_update(session, *, observe=False):
             "compute_and_mandatory_diagnostics_s": elapsed,
             "profiled": observe,
             "observer": None if profile is None else _visible_profile(profile),
-            "counters_before": before["counts"], "counters_after": after["counts"],
+            "counters_before": before["counts"],
+            "counters_after": after["counts"],
             "counter_accounting": accounting,
             "torch_peak_allocated_bytes": torch.cuda.max_memory_allocated(env.device),
             "torch_peak_reserved_bytes": torch.cuda.max_memory_reserved(env.device),
-            "cuda_free_before_bytes": free_before, "cuda_free_after_bytes": free_after,
+            "cuda_free_before_bytes": free_before,
+            "cuda_free_after_bytes": free_after,
             "cuda_total_bytes": total_memory,
             "cuda_net_used_change_bytes_not_tyx_peak": free_before - free_after,
             "outer_explicit_completion_calls": 2,
@@ -582,13 +664,26 @@ def measure_update(session, *, observe=False):
         }
         published_record = dict(record)
         published_record["step_requests"] = tuple(
-            {"ordinal": i, "status": entry["status"], "requested_action": entry["requested_action"],
-             "transition_index": i} for i, entry in enumerate(attempts)
+            {
+                "ordinal": i,
+                "status": entry["status"],
+                "requested_action": entry["requested_action"],
+                "transition_index": i,
+            }
+            for i, entry in enumerate(attempts)
         )
         return published_record, measurement
     except BaseException as error:
-        raise UpdateCaptureError(error, attempts, elapsed, completed_record=record,
-                                 before=before, after=after, measurement_phase=phase) from error
+        raise UpdateCaptureError(
+            error,
+            attempts,
+            elapsed,
+            completed_record=record,
+            before=before,
+            after=after,
+            measurement_phase=phase,
+        ) from error
+
 
 def validate_update(record, env, *, expected_iteration, cost, writer):
     """Save every transition first; independent cost and learning checks follow."""

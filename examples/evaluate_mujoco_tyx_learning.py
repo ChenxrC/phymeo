@@ -169,6 +169,7 @@ def _observed_environment(context, name, **options):
             context["owner_exit"] = saved
             context["env"] = None
 
+
 def _finish(context, result):
     writer = context["writer"]
     writer.write("completion", {"status": result["status"], "task": result["task"]})

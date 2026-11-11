@@ -1,6 +1,6 @@
 # COL1a curved-query convergence
 
-Status: AUTHORING / UNEXECUTED. Baseline `63614090`; parent owns all execution. This is one bounded successor to the saved 110/122 interpret result, not new geometry acceptance.
+Status: CODE_READY_TESTS_PENDING / UNEXECUTED. Baseline `63614090`; parent owns all execution. This is one bounded successor to the saved 110/122 interpret result, not new geometry acceptance.
 
 ## Evidence and choice
 
@@ -32,7 +32,7 @@ For the ellipsoid support h(n)=sqrt(n^T Q n), tangent t perpendicular to n satis
 
 `t^T Hess(h) t = min_alpha (t+alpha*n)^T Q (t+alpha*n) / h(n) >= min(a)^2/max(a) * |t|^2`.
 
-Thus h-r|.| is convex homogeneous and the tangent ball lies inside the ellipsoid. This applies at every support direction, including nonprincipal directions.
+Thus h-r|.| is convex homogeneous and the tangent ball lies inside the ellipsoid. This applies at every support direction, including nonprincipal directions. Equivalently the Minkowski body is L plus a radius-r ball for a convex L. A checked d<r gives h_L(n)<0, so the origin lies outside L. The closest point of convex L is unique; its direction is the unique penetration normal. The separate angular bound controls approximation to that direction, while d>=r provides no such uniqueness argument.
 
 Set d=n.s, tangent v=s-d*n and m=r-d. For m>0:
 
@@ -73,3 +73,9 @@ Exact source scope: `_tyx_convex_query_kernels.py`, existing `_tyx_convex_suppor
 
 
 Before any execution, parent approved replacing the initially proposed 8u/L1 engineering allowance with fixed 4u/Euclidean norms. The 8u proposal made independently exact normalized spheres fail only its bookkeeping margin. This is explicitly an engineering choice, not a directed-rounding proof. No later test-output-dependent guard reduction is allowed. A false success or independent normal-gate failure stops this acceleration's expansion for this batch. Nine new TYX identities are authored; not collected or executed.
+
+## Authoring handoff
+
+Tests-first ec8f56b0 and 44bf7c48 fix nine extra identities before product execution. Implementation checks the new ball condition at both existing GJK and EPA support sites. A ball success uses one real bilateral support pair; existing EPA consumption is retained if refinement already happened. GJK publishes its old compact simplex only after the same iteration's new support establishes both bounds. Old ten-family exits and EPA fallback equations are unchanged. Radius work is skipped before an existing source-precision rejection, so it cannot divide by an already lost uploaded dimension.
+
+No project commands have run in this lane. Parent should first run static checks on the three changed product files and changed test file, then the original twelve failures plus the nine new identities, followed by the parent-selected affected interpret/CUDA groups. Existing source fixtures, previous failures and raw artifacts remain intact. If actual false success or independent normal error appears, keep that evidence and stop expansion of this acceleration for this batch; do not reduce the fixed guard or alter geometry/caps to turn it green.

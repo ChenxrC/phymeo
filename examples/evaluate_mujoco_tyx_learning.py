@@ -3,19 +3,20 @@
 Use the qualified CUDA profile. Each command owns a fresh output directory.
 No command silently repeats preflight or replaces a failed seed/cell.
 """
+
 import argparse
-from contextlib import contextmanager
-from dataclasses import asdict
-from hashlib import sha256
-from importlib import metadata
 import importlib.util
 import json
 import math
-from pathlib import Path
 import platform
 import sys
 import time
 import traceback
+from contextlib import contextmanager
+from dataclasses import asdict
+from hashlib import sha256
+from importlib import metadata
+from pathlib import Path
 
 import numpy as np
 
@@ -41,38 +42,65 @@ def protocol_binding(name):
     definitions = tasks()
     value = asdict(definitions.task(name))
     value["xml_sha256"] = sha256(value["xml"].encode()).hexdigest()
-    value.update(schema="mujoco-tyx-n4a-protocol-v1", training_templates=definitions.templates(name, held_out=False),
-                 held_out_templates=definitions.templates(name, held_out=True), updates=128, rollout=32,
-                 learning_worlds=8, horizon=256, action_squash="tanh", decimation=1,
-                 evaluation="all-256-pre-reset-states-deterministic-actor",
-                 zero_baseline="first-predeclared-seed-only-diagnostic",
-                 quality_gate={"max_ratio": 1.05, "at_least_two_ratio": .90, "median_ratio": .80})
+    value.update(
+        schema="mujoco-tyx-n4a-protocol-v1",
+        training_templates=definitions.templates(name, held_out=False),
+        held_out_templates=definitions.templates(name, held_out=True),
+        updates=128,
+        rollout=32,
+        learning_worlds=8,
+        horizon=256,
+        action_squash="tanh",
+        decimation=1,
+        evaluation="all-256-pre-reset-states-deterministic-actor",
+        zero_baseline="first-predeclared-seed-only-diagnostic",
+        quality_gate={"max_ratio": 1.05, "at_least_two_ratio": 0.90, "median_ratio": 0.80},
+    )
     # Canonical JSON types allow exact comparison with independently loaded summaries.
     return json.loads(json.dumps(value, sort_keys=True, allow_nan=False))
 
 
 def _sources():
-    paths = {Path(__file__).resolve(), Path(tasks().__file__).resolve(), Path(evaluation.__file__).resolve()}
+    paths = {
+        Path(__file__).resolve(),
+        Path(tasks().__file__).resolve(),
+        Path(evaluation.__file__).resolve(),
+    }
     # Bind the same full package source set regardless of optional modules loaded
     # by earlier independent CLI/pytest cases in the process.
     import phymeo
+
     paths.update(Path(phymeo.__file__).resolve().parent.rglob("*.py"))
     return {str(path): sha256(path.read_bytes()).hexdigest() for path in sorted(paths)}
 
 
 def _manifest(env, name, seed, phase):
     import torch
-    versions = {key: metadata.version(key) for key in
-                ("numpy", "torch", "rsl-rl-lib", "tensordict", "mujoco", "tyx-compute")}
-    return {"schema": "mujoco-tyx-n4a-run-v1", "phase": phase, "task": name, "seed": seed,
-            "protocol_binding": protocol_binding(name), "source_files": _sources(),
-            "dependencies": versions, "python": platform.python_version(),
-            "device": {"name": torch.cuda.get_device_name(env.device), "index": env.device.index,
-                       "torch_cuda": torch.version.cuda},
-            "world_keys": list(env.world_keys), "env_binding": evaluation.encode(env.binding),
-            "capabilities": evaluation.encode(env.runtime.capabilities),
-            "counter_start": evaluation.plain_counters(env.counters),
-            "measurement_coverage": evaluation.COVERAGE}
+
+    versions = {
+        key: metadata.version(key)
+        for key in ("numpy", "torch", "rsl-rl-lib", "tensordict", "mujoco", "tyx-compute")
+    }
+    return {
+        "schema": "mujoco-tyx-n4a-run-v1",
+        "phase": phase,
+        "task": name,
+        "seed": seed,
+        "protocol_binding": protocol_binding(name),
+        "source_files": _sources(),
+        "dependencies": versions,
+        "python": platform.python_version(),
+        "device": {
+            "name": torch.cuda.get_device_name(env.device),
+            "index": env.device.index,
+            "torch_cuda": torch.version.cuda,
+        },
+        "world_keys": list(env.world_keys),
+        "env_binding": evaluation.encode(env.binding),
+        "capabilities": evaluation.encode(env.runtime.capabilities),
+        "counter_start": evaluation.plain_counters(env.counters),
+        "measurement_coverage": evaluation.COVERAGE,
+    }
 
 
 @contextmanager
@@ -84,10 +112,20 @@ def _output(path):
     try:
         yield context
     except BaseException as error:
-        detail = {"status": "FAIL_N4A_RETAINED", "phase": context["phase"],
-                  "error_type": type(error).__name__, "message": str(error),
-                  "traceback": traceback.format_exc()}
-        for key in ("phase", "action_accepted", "state_accepted", "needs_recovery", "accepted_worlds"):
+        detail = {
+            "status": "FAIL_N4A_RETAINED",
+            "phase": context["phase"],
+            "error_type": type(error).__name__,
+            "message": str(error),
+            "traceback": traceback.format_exc(),
+        }
+        for key in (
+            "phase",
+            "action_accepted",
+            "state_accepted",
+            "needs_recovery",
+            "accepted_worlds",
+        ):
             if hasattr(error, key):
                 detail["error_" + key] = evaluation.encode(getattr(error, key))
         if isinstance(error, evaluation.UpdateCaptureError):
@@ -123,28 +161,34 @@ def _finish(context, result):
         timing = result["timing"]
         timing["evidence_write_s"] = writer.write_seconds - context["scale_write_start"]
         timing["transitions_per_s_with_full_trace_delivery"] = result["measured_world_steps"] / (
-            timing["compute_and_mandatory_diagnostics_s"] + timing["post_update_independent_audit_s"]
-            + timing["evidence_write_s"])
+            timing["compute_and_mandatory_diagnostics_s"]
+            + timing["post_update_independent_audit_s"]
+            + timing["evidence_write_s"]
+        )
         timing.pop("transitions_per_s_with_current_audit_and_write", None)
     summary_started = time.perf_counter()
     evaluation.json_write(context["path"] / "summary.json", result)
-    evaluation.json_write(context["path"] / "publication.json", {
-        "summary_encode_write_s": time.perf_counter() - summary_started,
-        "scope": "summary publication and final file hash are outside training/trace throughput",
-        "summary_sha256": sha256((context["path"] / "summary.json").read_bytes()).hexdigest(),
-    })
+    evaluation.json_write(
+        context["path"] / "publication.json",
+        {
+            "summary_encode_write_s": time.perf_counter() - summary_started,
+            "scope": "summary publication and final file hash are outside training/trace throughput",
+            "summary_sha256": sha256((context["path"] / "summary.json").read_bytes()).hexdigest(),
+        },
+    )
     return result
 
 
 class SupportInspection:
     """Read actual force rows used in the accepted step, not endpoint CPU contacts."""
+
     def __init__(self, count):
         self.seen = np.zeros(count, bool)
         self.positive = np.zeros(count, np.int64)
         self.total = np.zeros(count, np.float64)
         self.tail_steps = 0
-        self.peak = 0.
-        self.max_geometric_overlap = 0.
+        self.peak = 0.0
+        self.max_geometric_overlap = 0.0
 
     def __call__(self, tick, transition):
         rows = []
@@ -157,31 +201,57 @@ class SupportInspection:
             positive = [row for row in contacts if row.active and row.normal_force > 0]
             load = float(sum(row.normal_force for row in positive))
             if not math.isfinite(load) or len(positive) > 4:
-                raise ValueError("support force/count does not match declared four-row native model")
+                raise ValueError(
+                    "support force/count does not match declared four-row native model"
+                )
             self.seen[i] |= bool(positive)
             self.peak = max(self.peak, load)
-            geometric_in, geometric_out = float(receipt.input_q[0]) - .001, float(state.q[0]) - .001
-            self.max_geometric_overlap = max(self.max_geometric_overlap, -geometric_in, -geometric_out)
+            geometric_in, geometric_out = (
+                float(receipt.input_q[0]) - 0.001,
+                float(state.q[0]) - 0.001,
+            )
+            self.max_geometric_overlap = max(
+                self.max_geometric_overlap, -geometric_in, -geometric_out
+            )
             if tick >= 65:
                 self.positive[i] += int(len(positive) == 4)
                 self.total[i] += load
-            rows.append({"world_key": key, "positive_rows": len(positive), "normal_force_N": load,
-                         "native_distances_m": tuple(row.distance for row in contacts),
-                         "geometric_input_gap_m": geometric_in, "geometric_output_gap_m": geometric_out,
-                         "input_time": receipt.input_time, "output_time": receipt.output_time,
-                         "contact_time": receipt.contact_time})
+            rows.append(
+                {
+                    "world_key": key,
+                    "positive_rows": len(positive),
+                    "normal_force_N": load,
+                    "native_distances_m": tuple(row.distance for row in contacts),
+                    "geometric_input_gap_m": geometric_in,
+                    "geometric_output_gap_m": geometric_out,
+                    "input_time": receipt.input_time,
+                    "output_time": receipt.output_time,
+                    "contact_time": receipt.contact_time,
+                }
+            )
         if tick >= 65:
             self.tail_steps += 1
         return rows
 
     def summary(self, *, require_support):
-        result = {"contact_seen": self.seen.tolist(), "tail_steps": self.tail_steps,
-                  "peak_normal_force_N": self.peak, "maximum_geometric_overlap_m": self.max_geometric_overlap}
+        result = {
+            "contact_seen": self.seen.tolist(),
+            "tail_steps": self.tail_steps,
+            "peak_normal_force_N": self.peak,
+            "maximum_geometric_overlap_m": self.max_geometric_overlap,
+        }
         if self.tail_steps:
             fraction, mean = self.positive / self.tail_steps, self.total / self.tail_steps
-            result.update(four_positive_fraction=fraction.tolist(), mean_normal_force_N=mean.tolist(),
-                          mean_weight_ratio=(mean / (2*9.81)).tolist())
-            if require_support and (np.any(fraction < .95) or np.any(mean < .5*2*9.81) or np.any(mean > 3*2*9.81)):
+            result.update(
+                four_positive_fraction=fraction.tolist(),
+                mean_normal_force_N=mean.tolist(),
+                mean_weight_ratio=(mean / (2 * 9.81)).tolist(),
+            )
+            if require_support and (
+                np.any(fraction < 0.95)
+                or np.any(mean < 0.5 * 2 * 9.81)
+                or np.any(mean > 3 * 2 * 9.81)
+            ):
                 raise ValueError("fixed continuous-support evaluation gate failed")
         elif require_support:
             raise ValueError("support tail is absent")
@@ -199,16 +269,34 @@ def run_preflight(name, output):
             evaluation.json_write(context["path"] / "manifest.json", manifest)
             inspect = SupportInspection(env.num_envs) if name == "S" else None
             torch = definitions.require_cuda()
+
             def zero(_):
                 return torch.zeros((env.num_envs, env.num_actions), device=env.device)
-            outcome = evaluation.evaluate_window(env, zero, item.cost(), steps=32,
-                                                  writer=context["writer"], label="preflight", inspect=inspect)
+
+            outcome = evaluation.evaluate_window(
+                env,
+                zero,
+                item.cost(),
+                steps=32,
+                writer=context["writer"],
+                label="preflight",
+                inspect=inspect,
+            )
             support = {} if inspect is None else inspect.summary(require_support=False)
             if inspect is not None and not all(support["contact_seen"]):
-                raise ValueError("fixed support preflight did not detect actual positive force in every world")
-            result = {"status": "PASS_N4A_PREFLIGHT", "task": name, "worlds": 8, "steps": 32,
-                      "accepted_world_steps": outcome["world_steps"], "objective": outcome,
-                      "counter_end": evaluation.plain_counters(env.counters), **support}
+                raise ValueError(
+                    "fixed support preflight did not detect actual positive force in every world"
+                )
+            result = {
+                "status": "PASS_N4A_PREFLIGHT",
+                "task": name,
+                "worlds": 8,
+                "steps": 32,
+                "accepted_world_steps": outcome["world_steps"],
+                "objective": outcome,
+                "counter_end": evaluation.plain_counters(env.counters),
+                **support,
+            }
         context["env"] = None
         return _finish(context, result)
 
@@ -218,19 +306,27 @@ def _held_out(actor, name, writer, label, *, zero=False):
     item = definitions.task(name)
     torch = definitions.require_cuda()
     from tensordict import TensorDict
+
     with evaluation.preserved_rng():
         modes = tuple((module, module.training) for module in actor.modules())
         try:
             actor.eval()
             with definitions.make_environment(name, held_out=True) as env:
                 inspect = SupportInspection(env.num_envs) if name == "S" else None
+
                 def action(observation):
                     if zero:
                         return torch.zeros((env.num_envs, env.num_actions), device=env.device)
-                    return actor(TensorDict({"policy": observation}, batch_size=[env.num_envs], device=env.device),
-                                 stochastic_output=False)
-                result = evaluation.evaluate_window(env, action, item.cost(), steps=256,
-                                                    writer=writer, label=label, inspect=inspect)
+                    return actor(
+                        TensorDict(
+                            {"policy": observation}, batch_size=[env.num_envs], device=env.device
+                        ),
+                        stochastic_output=False,
+                    )
+
+                result = evaluation.evaluate_window(
+                    env, action, item.cost(), steps=256, writer=writer, label=label, inspect=inspect
+                )
                 if inspect is not None:
                     result["support"] = inspect.summary(require_support=not zero)
                 result["counter_end"] = evaluation.plain_counters(env.counters)
@@ -243,6 +339,7 @@ def _held_out(actor, name, writer, label, *, zero=False):
 def _session(env):
     from phymeo.training.mujoco_tyx_checkpoint import MuJoCoTyxPpoSession
     from phymeo.training.rsl_mujoco_tyx import RslMuJoCoTyxVecEnv
+
     return MuJoCoTyxPpoSession(RslMuJoCoTyxVecEnv(env), steps=32)
 
 
@@ -261,8 +358,13 @@ def run_learning(name, seed, output):
             manifest["ppo_config"] = session.config
             evaluation.json_write(context["path"] / "manifest.json", manifest)
             writer = context["writer"]
-            writer.write("initial_policy", {"actor": session.algorithm.actor.state_dict(),
-                                            "critic": session.algorithm.critic.state_dict()})
+            writer.write(
+                "initial_policy",
+                {
+                    "actor": session.algorithm.actor.state_dict(),
+                    "critic": session.algorithm.critic.state_dict(),
+                },
+            )
             initial_hash = evaluation.parameter_hash(session.algorithm)
             context["phase"] = "untrained-deterministic-held-out-256"
             baseline = _held_out(session.algorithm.actor, name, writer, "untrained")
@@ -273,10 +375,15 @@ def run_learning(name, seed, output):
                     zero = _held_out(session.algorithm.actor, name, writer, "zero", zero=True)
                     zero["status"] = "COMPLETE_DIAGNOSTIC"
                 except Exception as error:
-                    zero = {"status": "FAIL_DIAGNOSTIC", "cost": None, "world_steps": None,
-                            "error_type": type(error).__name__, "error": str(error),
-                            "traceback": traceback.format_exc(),
-                            "scope": "complete available prefix retained; no shortened cost"}
+                    zero = {
+                        "status": "FAIL_DIAGNOSTIC",
+                        "cost": None,
+                        "world_steps": None,
+                        "error_type": type(error).__name__,
+                        "error": str(error),
+                        "traceback": traceback.format_exc(),
+                        "scope": "complete available prefix retained; no shortened cost",
+                    }
                     writer.write("zero.failure", zero)
             if evaluation.parameter_hash(session.algorithm) != initial_hash:
                 raise ValueError("evaluation mutated actor/critic parameters")
@@ -287,13 +394,19 @@ def run_learning(name, seed, output):
                 record, measurement = evaluation.measure_update(session)
                 if len(record["transitions"]) != definitions.ROLLOUT:
                     raise ValueError("rollout length differs from fixed budget")
-                checked = evaluation.validate_update(record, env, expected_iteration=index,
-                                                     cost=item.cost(), writer=writer)
+                checked = evaluation.validate_update(
+                    record, env, expected_iteration=index, cost=item.cost(), writer=writer
+                )
                 after = evaluation.parameter_hash(session.algorithm)
                 if before == after:
                     raise ValueError("actual update left every actor/critic parameter unchanged")
-                row = {"iteration": index, "parameter_hash_before": before,
-                       "parameter_hash_after": after, **checked, "measurement": measurement}
+                row = {
+                    "iteration": index,
+                    "parameter_hash_before": before,
+                    "parameter_hash_after": after,
+                    **checked,
+                    "measurement": measurement,
+                }
                 updates.append(row)
                 accepted += checked["accepted_world_steps"]
                 writer.write("update_checks", row)
@@ -302,19 +415,36 @@ def run_learning(name, seed, output):
             final_hash = evaluation.parameter_hash(session.algorithm)
             context["phase"] = "trained-deterministic-held-out-256"
             learned = _held_out(session.algorithm.actor, name, writer, "learned")
-            writer.write("final_policy_and_adam", {
-                "actor": session.algorithm.actor.state_dict(), "critic": session.algorithm.critic.state_dict(),
-                "optimizer": session.algorithm.optimizer.state_dict(), "next_iteration": session.next_iteration,
-            })
-            result = {"status": "COMPLETE_N4A_SEED", "learning_quality": "THREE_SEED_SUMMARY_REQUIRED",
-                      "task": name, "seed": seed, "updates": 128, "worlds": 8,
-                      "accepted_world_steps": accepted, "protocol_binding": protocol_binding(name),
-                      "ppo_config": session.config, "baseline": baseline, "learned": learned,
-                      "zero_action_diagnostic": zero,
-                      "parameter_hash_before": initial_hash, "parameter_hash_after": final_hash,
-                      "update_evidence": updates, "counter_end": evaluation.plain_counters(env.counters),
-                      "elapsed_including_evaluation_and_evidence_s": time.perf_counter() - started,
-                      "source_files": manifest["source_files"], "dependencies": manifest["dependencies"]}
+            writer.write(
+                "final_policy_and_adam",
+                {
+                    "actor": session.algorithm.actor.state_dict(),
+                    "critic": session.algorithm.critic.state_dict(),
+                    "optimizer": session.algorithm.optimizer.state_dict(),
+                    "next_iteration": session.next_iteration,
+                },
+            )
+            result = {
+                "status": "COMPLETE_N4A_SEED",
+                "learning_quality": "THREE_SEED_SUMMARY_REQUIRED",
+                "task": name,
+                "seed": seed,
+                "updates": 128,
+                "worlds": 8,
+                "accepted_world_steps": accepted,
+                "protocol_binding": protocol_binding(name),
+                "ppo_config": session.config,
+                "baseline": baseline,
+                "learned": learned,
+                "zero_action_diagnostic": zero,
+                "parameter_hash_before": initial_hash,
+                "parameter_hash_after": final_hash,
+                "update_evidence": updates,
+                "counter_end": evaluation.plain_counters(env.counters),
+                "elapsed_including_evaluation_and_evidence_s": time.perf_counter() - started,
+                "source_files": manifest["source_files"],
+                "dependencies": manifest["dependencies"],
+            }
         context["env"] = None
         return _finish(context, result)
 
@@ -340,8 +470,9 @@ def run_scale(name, seed, worlds, output):
             record, warmup = evaluation.measure_update(session, observe=True)
             if len(record["transitions"]) != 32:
                 raise ValueError("warmup length changed")
-            warmup_checks = evaluation.validate_update(record, env, expected_iteration=0,
-                                                       cost=item.cost(), writer=writer)
+            warmup_checks = evaluation.validate_update(
+                record, env, expected_iteration=0, cost=item.cost(), writer=writer
+            )
             writer.write("warmup_measurement", warmup)
             warmup_write_seconds = writer.write_seconds
             context["scale_write_start"] = warmup_write_seconds
@@ -353,31 +484,51 @@ def run_scale(name, seed, worlds, output):
                     raise ValueError("measured rollout length changed")
                 audit_started = time.perf_counter()
                 write_before = writer.write_seconds
-                checked = evaluation.validate_update(record, env, expected_iteration=index,
-                                                      cost=item.cost(), writer=writer)
-                extra_audit_seconds = time.perf_counter() - audit_started - (writer.write_seconds - write_before)
-                row = {"iteration": index, **checked, **timing,
-                       "post_update_independent_audit_s": max(0., extra_audit_seconds)}
+                checked = evaluation.validate_update(
+                    record, env, expected_iteration=index, cost=item.cost(), writer=writer
+                )
+                extra_audit_seconds = (
+                    time.perf_counter() - audit_started - (writer.write_seconds - write_before)
+                )
+                row = {
+                    "iteration": index,
+                    **checked,
+                    **timing,
+                    "post_update_independent_audit_s": max(0.0, extra_audit_seconds),
+                }
                 writer.write("measured_update_checks", row)
                 accepted += checked["accepted_world_steps"]
                 measured.append(row)
-            if accepted != 96*worlds or session.next_iteration != 4:
+            if accepted != 96 * worlds or session.next_iteration != 4:
                 raise ValueError("complete scale budget was not consumed")
             compute = sum(row["compute_and_mandatory_diagnostics_s"] for row in measured)
             audits = sum(row["post_update_independent_audit_s"] for row in measured)
             write_seconds = writer.write_seconds - warmup_write_seconds
-            result = {"status": "PASS_N4A_SCALE_CELL", "task": name, "seed": seed, "worlds": worlds,
-                      "protocol_binding": protocol_binding(name), "ppo_config": session.config,
-                      "cold_construction_s": cold_seconds, "warmup": warmup,
-                      "warmup_checks": warmup_checks, "measured": measured,
-                      "measured_world_steps": accepted,
-                      "timing": {"compute_and_mandatory_diagnostics_s": compute,
-                                 "post_update_independent_audit_s": audits,
-                                 "evidence_write_s": write_seconds,
-                                 "transitions_per_s_compute_and_diagnostics": accepted / compute,
-                                 "transitions_per_s_with_current_audit_and_write": accepted / (compute + audits + write_seconds)},
-                      "coverage": evaluation.COVERAGE, "counter_end": evaluation.plain_counters(env.counters),
-                      "source_files": manifest["source_files"], "dependencies": manifest["dependencies"]}
+            result = {
+                "status": "PASS_N4A_SCALE_CELL",
+                "task": name,
+                "seed": seed,
+                "worlds": worlds,
+                "protocol_binding": protocol_binding(name),
+                "ppo_config": session.config,
+                "cold_construction_s": cold_seconds,
+                "warmup": warmup,
+                "warmup_checks": warmup_checks,
+                "measured": measured,
+                "measured_world_steps": accepted,
+                "timing": {
+                    "compute_and_mandatory_diagnostics_s": compute,
+                    "post_update_independent_audit_s": audits,
+                    "evidence_write_s": write_seconds,
+                    "transitions_per_s_compute_and_diagnostics": accepted / compute,
+                    "transitions_per_s_with_current_audit_and_write": accepted
+                    / (compute + audits + write_seconds),
+                },
+                "coverage": evaluation.COVERAGE,
+                "counter_end": evaluation.plain_counters(env.counters),
+                "source_files": manifest["source_files"],
+                "dependencies": manifest["dependencies"],
+            }
         context["env"] = None
         result = _finish(context, result)
         # Full final gzip close/write is reported separately in the evidence receipt.
@@ -388,11 +539,11 @@ def run_scale(name, seed, worlds, output):
 def _read_summary(directory):
     directory = Path(directory)
     path = directory / "summary.json"
-    if not path.is_file() or path.stat().st_size > 16*1024*1024:
+    if not path.is_file() or path.stat().st_size > 16 * 1024 * 1024:
         raise ValueError("bounded complete seed summary required")
     raw = path.read_bytes()
     summary = json.loads(raw)
-    for filename, maximum in (("manifest.json", 4*1024*1024), ("publication.json", 16384)):
+    for filename, maximum in (("manifest.json", 4 * 1024 * 1024), ("publication.json", 16384)):
         sibling = directory / filename
         if not sibling.is_file() or sibling.stat().st_size > maximum:
             raise ValueError("complete bounded run binding missing")
@@ -401,8 +552,15 @@ def _read_summary(directory):
     if publication.get("summary_sha256") != sha256(raw).hexdigest():
         raise ValueError("summary publication hash differs")
     if manifest.get("phase") != "learn" or any(
-        summary.get(key) != manifest.get(key) for key in
-        ("task", "seed", "protocol_binding", "ppo_config", "source_files", "dependencies")
+        summary.get(key) != manifest.get(key)
+        for key in (
+            "task",
+            "seed",
+            "protocol_binding",
+            "ppo_config",
+            "source_files",
+            "dependencies",
+        )
     ):
         raise ValueError("summary and original run manifest differ")
     receipt = summary.get("evidence", {})
@@ -413,12 +571,15 @@ def _read_summary(directory):
         raise ValueError("complete bound evidence file missing")
     digest = sha256()
     with payload.open("rb") as stream:
-        for block in iter(lambda: stream.read(1024*1024), b""):
+        for block in iter(lambda: stream.read(1024 * 1024), b""):
             digest.update(block)
     if digest.hexdigest() != receipt.get("compressed_sha256"):
         raise ValueError("seed evidence hash differs")
-    return summary, {"directory": str(directory.resolve()), "summary_sha256": sha256(raw).hexdigest(),
-                     "evidence": receipt}
+    return summary, {
+        "directory": str(directory.resolve()),
+        "summary_sha256": sha256(raw).hexdigest(),
+        "evidence": receipt,
+    }
 
 
 def summarize_task(name, inputs, output):
@@ -435,13 +596,21 @@ def summarize_task(name, inputs, output):
             raise ValueError("missing, duplicate or wrong-task predeclared seed")
         if value.get("status") != "COMPLETE_N4A_SEED" or value.get("protocol_binding") != expected:
             raise ValueError("incomplete or changed learning contract")
-        if value.get("updates") != 128 or value.get("accepted_world_steps") != 32768 or value.get("worlds") != 8:
+        if (
+            value.get("updates") != 128
+            or value.get("accepted_world_steps") != 32768
+            or value.get("worlds") != 8
+        ):
             raise ValueError("learning budget differs")
         if any(value.get(key, {}).get("world_steps") != 2048 for key in ("baseline", "learned")):
             raise ValueError("complete held-out windows required")
         evidence = value.get("update_evidence", ())
-        if len(evidence) != 128 or any(row.get("iteration") != i or row.get("optimizer_step") != i + 1
-                                      or row.get("accepted_world_steps") != 256 for i, row in enumerate(evidence)):
+        if len(evidence) != 128 or any(
+            row.get("iteration") != i
+            or row.get("optimizer_step") != i + 1
+            or row.get("accepted_world_steps") != 256
+            for i, row in enumerate(evidence)
+        ):
             raise ValueError("full update sequence/Adam evidence required")
         if value["parameter_hash_before"] == value["parameter_hash_after"]:
             raise ValueError("unchanged learner")
@@ -451,24 +620,32 @@ def summarize_task(name, inputs, output):
         if any(value[key] != first[key] for key in ("ppo_config", "source_files", "dependencies")):
             raise ValueError("source/config/dependency binding differs across seeds")
     zero = first.get("zero_action_diagnostic") or {}
-    if zero.get("status") not in ("COMPLETE_DIAGNOSTIC", "FAIL_DIAGNOSTIC") or any(
-        rows[seed].get("zero_action_diagnostic") is not None for seed in item.seeds[1:]
-    ) or (zero["status"] == "COMPLETE_DIAGNOSTIC" and zero.get("world_steps") != 2048) or (
-        zero["status"] == "FAIL_DIAGNOSTIC" and zero.get("cost") is not None
+    if (
+        zero.get("status") not in ("COMPLETE_DIAGNOSTIC", "FAIL_DIAGNOSTIC")
+        or any(rows[seed].get("zero_action_diagnostic") is not None for seed in item.seeds[1:])
+        or (zero["status"] == "COMPLETE_DIAGNOSTIC" and zero.get("world_steps") != 2048)
+        or (zero["status"] == "FAIL_DIAGNOSTIC" and zero.get("cost") is not None)
     ):
         raise ValueError("exactly one bound first-seed zero-action diagnostic required")
     baseline = [rows[seed]["baseline"]["cost"] for seed in item.seeds]
     learned = [rows[seed]["learned"]["cost"] for seed in item.seeds]
-    result = {"schema": "mujoco-tyx-n4a-three-seed-summary-v1", "task": name,
-              "seeds": list(item.seeds), "protocol_binding": expected,
-              "outcome": evaluation.learning_outcome(baseline, learned),
-              "zero_action_diagnostic": zero,
-              "learned_vs_zero": None if zero["status"] == "FAIL_DIAGNOSTIC" else {
-                  "cost_difference": [value - zero["cost"] for value in learned],
-                  "lower_cost": [value < zero["cost"] for value in learned],
-                  "acceptance_gate": False,
-              },
-              "source_bindings": bindings, "scope": "saved-fixed-budget-quality-no-new-physical-execution"}
+    result = {
+        "schema": "mujoco-tyx-n4a-three-seed-summary-v1",
+        "task": name,
+        "seeds": list(item.seeds),
+        "protocol_binding": expected,
+        "outcome": evaluation.learning_outcome(baseline, learned),
+        "zero_action_diagnostic": zero,
+        "learned_vs_zero": None
+        if zero["status"] == "FAIL_DIAGNOSTIC"
+        else {
+            "cost_difference": [value - zero["cost"] for value in learned],
+            "lower_cost": [value < zero["cost"] for value in learned],
+            "acceptance_gate": False,
+        },
+        "source_bindings": bindings,
+        "scope": "saved-fixed-budget-quality-no-new-physical-execution",
+    }
     path = Path(output)
     path.mkdir(parents=True, exist_ok=False)
     evaluation.json_write(path / "summary.json", result)
@@ -477,7 +654,9 @@ def summarize_task(name, inputs, output):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--phase", required=True, choices=("preflight", "learn", "scale", "summarize"))
+    parser.add_argument(
+        "--phase", required=True, choices=("preflight", "learn", "scale", "summarize")
+    )
     parser.add_argument("--task", required=True, choices=("J", "S", "R"))
     parser.add_argument("--seed", type=int)
     parser.add_argument("--worlds", type=int)
@@ -500,8 +679,16 @@ def main():
         if args.inputs is None or args.seed is not None or args.worlds is not None:
             parser.error("summarize requires exactly three --inputs")
         result = summarize_task(args.task, args.inputs, args.output)
-    print(json.dumps({"phase": args.phase, "task": args.task, "output": str(args.output.resolve()),
-                      "status": result.get("status", result.get("outcome", {}).get("classification"))}))
+    print(
+        json.dumps(
+            {
+                "phase": args.phase,
+                "task": args.task,
+                "output": str(args.output.resolve()),
+                "status": result.get("status", result.get("outcome", {}).get("classification")),
+            }
+        )
+    )
     if args.phase == "summarize" and not result["outcome"]["passed"]:
         raise SystemExit(1)
 

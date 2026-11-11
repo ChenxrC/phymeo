@@ -3,12 +3,7 @@
 No learning algorithm or physical solver is implemented here. Array encoding is
 lossless evidence, not checkpoint deserialization. CUDA imports remain lazy.
 """
-from base64 import b64encode
-from collections.abc import Mapping
-from contextlib import contextmanager
-from dataclasses import dataclass, fields, is_dataclass
-from hashlib import sha256
-from pathlib import Path
+
 import cProfile
 import gzip
 import json
@@ -16,6 +11,12 @@ import math
 import random
 import sys
 import time
+from base64 import b64encode
+from collections.abc import Mapping
+from contextlib import contextmanager
+from dataclasses import dataclass, fields, is_dataclass
+from hashlib import sha256
+from pathlib import Path
 
 import numpy as np
 
@@ -33,9 +34,12 @@ class QuadraticCost:
             if not value or not all(math.isfinite(x) for x in value):
                 raise ValueError("finite nonempty cost coordinates required")
             object.__setattr__(self, name, value)
-        if len(self.q_target) != len(self.q_scale) or any(
-            x <= 0 for x in self.q_scale + self.v_scale
-        ) or not math.isfinite(self.velocity_weight) or self.velocity_weight < 0:
+        if (
+            len(self.q_target) != len(self.q_scale)
+            or any(x <= 0 for x in self.q_scale + self.v_scale)
+            or not math.isfinite(self.velocity_weight)
+            or self.velocity_weight < 0
+        ):
             raise ValueError("positive scales and nonnegative velocity weight required")
 
 
@@ -59,8 +63,8 @@ def native_cost(states, world_keys, cost):
             raise ValueError("native coordinate dimensions differ from objective")
         if not np.isfinite(q).all() or not np.isfinite(v).all():
             raise ValueError("finite native coordinates required")
-        value = np.mean(((q - cost.q_target) / cost.q_scale)**2)
-        value += cost.velocity_weight * np.mean((v / cost.v_scale)**2)
+        value = np.mean(((q - cost.q_target) / cost.q_scale) ** 2)
+        value += cost.velocity_weight * np.mean((v / cost.v_scale) ** 2)
         if not math.isfinite(float(value)):
             raise ValueError("finite native objective required")
         values.append(float(value))
@@ -69,29 +73,37 @@ def native_cost(states, world_keys, cost):
 
 def learning_outcome(baseline, learned):
     """Fixed three-seed gate; never pick a best seed or divide by zero."""
-    b, l = tuple(map(float, baseline)), tuple(map(float, learned))
-    if len(b) != 3 or len(l) != 3:
+    b, learned_costs = tuple(map(float, baseline)), tuple(map(float, learned))
+    if len(b) != 3 or len(learned_costs) != 3:
         raise ValueError("exactly three predeclared seeds required")
-    result = {"baseline": b, "learned": l, "ratios": None, "passed": False}
-    if not all(math.isfinite(x) and x >= 0 for x in b + l):
+    result = {"baseline": b, "learned": learned_costs, "ratios": None, "passed": False}
+    if not all(math.isfinite(x) and x >= 0 for x in b + learned_costs):
         result["classification"] = "NONFINITE_OR_NEGATIVE_COST"
     elif any(x == 0 for x in b):
         result["classification"] = "BASELINE_DEGENERATE"
     else:
-        ratios = tuple(y/x for x, y in zip(b, l, strict=True))
+        ratios = tuple(y / x for x, y in zip(b, learned_costs, strict=True))
         median = sorted(ratios)[1]
-        passed = max(ratios) <= 1.05 and sum(x <= .90 for x in ratios) >= 2 and median <= .80
-        result.update(ratios=ratios, median_ratio=median, passed=passed,
-                      classification="PASS_FIXED_LEARNING_GATE" if passed else "FIXED_BUDGET_NOT_LEARNED")
+        passed = max(ratios) <= 1.05 and sum(x <= 0.90 for x in ratios) >= 2 and median <= 0.80
+        result.update(
+            ratios=ratios,
+            median_ratio=median,
+            passed=passed,
+            classification="PASS_FIXED_LEARNING_GATE" if passed else "FIXED_BUDGET_NOT_LEARNED",
+        )
     return result
 
 
 def check_window_transition(transition, world_keys, tick, steps):
     if type(tick) is not int or not 1 <= tick <= steps:
         raise ValueError("invalid complete-window tick")
-    if set(transition.states) != set(world_keys) or dict(transition.accepted_worlds) != dict.fromkeys(world_keys, True):
+    if set(transition.states) != set(world_keys) or dict(
+        transition.accepted_worlds
+    ) != dict.fromkeys(world_keys, True):
         raise ValueError("physical world missing or refused")
-    terminated, timeout = (host_array(getattr(transition, key)) for key in ("terminated", "time_outs"))
+    terminated, timeout = (
+        host_array(getattr(transition, key)) for key in ("terminated", "time_outs")
+    )
     if terminated.shape != (len(world_keys),) or timeout.shape != terminated.shape:
         raise ValueError("done-mask layout")
     if terminated.any() or (tick < steps and timeout.any()):
@@ -107,7 +119,11 @@ def counter_delta(before, after):
         if isinstance(a, Mapping):
             output[key] = counter_delta(a, b)
         else:
-            if not isinstance(a, (int, np.integer)) or not isinstance(b, (int, np.integer)) or b < a:
+            if (
+                not isinstance(a, (int, np.integer))
+                or not isinstance(b, (int, np.integer))
+                or b < a
+            ):
                 raise ValueError("counter is not monotonic integer: " + str(key))
             output[key] = int(b - a)
     return output
@@ -123,20 +139,29 @@ def encode(value):
             raise TypeError("object array cannot be serialized as evidence")
         array = np.ascontiguousarray(value)
         raw = array.tobytes()
-        return {"array_dtype": array.dtype.str, "shape": list(array.shape),
-                "bytes_base64": b64encode(raw).decode("ascii"), "sha256": sha256(raw).hexdigest()}
+        return {
+            "array_dtype": array.dtype.str,
+            "shape": list(array.shape),
+            "bytes_base64": b64encode(raw).decode("ascii"),
+            "sha256": sha256(raw).hexdigest(),
+        }
     if isinstance(value, np.generic):
         return encode(value.item())
     if is_dataclass(value) and not isinstance(value, type):
-        return {"dataclass": type(value).__module__ + "." + type(value).__qualname__,
-                "fields": {field.name: encode(getattr(value, field.name)) for field in fields(value)}}
+        return {
+            "dataclass": type(value).__module__ + "." + type(value).__qualname__,
+            "fields": {field.name: encode(getattr(value, field.name)) for field in fields(value)},
+        }
     if isinstance(value, Mapping):
         # Native world IDs remain typed keys; do not collapse int5 and string'5'.
         return {"mapping": [[encode(k), encode(v)] for k, v in value.items()]}
     if isinstance(value, (tuple, list)):
         return {"sequence_type": type(value).__name__, "items": [encode(x) for x in value]}
     if isinstance(value, bytes):
-        return {"bytes_base64": b64encode(value).decode("ascii"), "sha256": sha256(value).hexdigest()}
+        return {
+            "bytes_base64": b64encode(value).decode("ascii"),
+            "sha256": sha256(value).hexdigest(),
+        }
     if value is None or isinstance(value, (str, bool, int)):
         return value
     if isinstance(value, float):
@@ -152,17 +177,24 @@ def json_write(path, value):
 
 class EvidenceWriter:
     """One fresh gzip stream, complete transition payloads, no temporary plain copy."""
+
     def __init__(self, path):
         self.path = Path(path)
         self._raw = self.path.open("xb")
         self._zip = gzip.GzipFile(fileobj=self._raw, mode="wb", mtime=0)
         self._hash, self.logical_bytes, self.records = sha256(), 0, 0
-        self.write_seconds, self.closed = 0., False
+        self.write_seconds, self.closed = 0.0, False
 
     def write(self, kind, payload):
         started = time.perf_counter()
-        raw = (json.dumps({"ordinal": self.records, "kind": kind, "payload": encode(payload)},
-                          separators=(",", ":"), allow_nan=False) + "\n").encode()
+        raw = (
+            json.dumps(
+                {"ordinal": self.records, "kind": kind, "payload": encode(payload)},
+                separators=(",", ":"),
+                allow_nan=False,
+            )
+            + "\n"
+        ).encode()
         self._zip.write(raw)
         self._hash.update(raw)
         self.logical_bytes += len(raw)
@@ -184,18 +216,24 @@ class EvidenceWriter:
             raise RuntimeError("finish complete evidence stream first")
         digest = sha256()
         with self.path.open("rb") as stream:
-            for block in iter(lambda: stream.read(1024*1024), b""):
+            for block in iter(lambda: stream.read(1024 * 1024), b""):
                 digest.update(block)
-        return {"path": self.path.name, "records": self.records,
-                "logical_bytes": self.logical_bytes, "logical_sha256": self._hash.hexdigest(),
-                "compressed_bytes": self.path.stat().st_size, "compressed_sha256": digest.hexdigest(),
-                "write_seconds": self.write_seconds}
+        return {
+            "path": self.path.name,
+            "records": self.records,
+            "logical_bytes": self.logical_bytes,
+            "logical_sha256": self._hash.hexdigest(),
+            "compressed_bytes": self.path.stat().st_size,
+            "compressed_sha256": digest.hexdigest(),
+            "write_seconds": self.write_seconds,
+        }
 
 
 @contextmanager
 def preserved_rng():
     """Evaluation construction and deterministic actor calls cannot advance training RNG."""
     import torch
+
     python_state, numpy_state = random.getstate(), np.random.get_state()
     cpu_state, cuda_states = torch.get_rng_state(), torch.cuda.get_rng_state_all()
     try:
@@ -212,7 +250,9 @@ def parameter_hash(algorithm):
     for owner, model in (("actor", algorithm.actor), ("critic", algorithm.critic)):
         for key, tensor in sorted(model.state_dict().items()):
             array = tensor.detach().cpu().contiguous().numpy()
-            digest.update((owner + ":" + key + ":" + array.dtype.str + ":" + str(array.shape)).encode())
+            digest.update(
+                (owner + ":" + key + ":" + array.dtype.str + ":" + str(array.shape)).encode()
+            )
             digest.update(array.tobytes())
     return digest.hexdigest()
 
@@ -220,23 +260,32 @@ def parameter_hash(algorithm):
 def evaluate_window(env, action, cost, *, steps, writer, label, inspect=None):
     """All declared pre-reset states contribute; no success by early stopping."""
     import torch
+
     total = np.zeros(env.num_envs, np.float64)
     counts = np.zeros(env.num_envs, np.int64)
-    reward_error = 0.
+    reward_error = 0.0
     for tick in range(1, steps + 1):
         with torch.inference_mode():
             commands = action(env.get_observations())
-            writer.write(label + ".requested_action", {"tick": tick, "action": commands,
-                                                       "input_frame": env.current_frame})
-            transition = env.step(commands, world_keys=env.world_keys, expected_frame=env.current_frame,
-                                  producer_stream=torch.cuda.current_stream(env.device))
+            writer.write(
+                label + ".requested_action",
+                {"tick": tick, "action": commands, "input_frame": env.current_frame},
+            )
+            transition = env.step(
+                commands,
+                world_keys=env.world_keys,
+                expected_frame=env.current_frame,
+                producer_stream=torch.cuda.current_stream(env.device),
+            )
         # Preserve the actual transition even if its evaluation checks then fail.
         writer.write(label + ".transition", transition)
         check_window_transition(transition, env.world_keys, tick, steps)
         values = native_cost(transition.states, env.world_keys, cost)
         reward = host_array(transition.reward).astype(np.float64)
-        if reward.shape != values.shape or not np.isfinite(reward).all() or not np.allclose(
-            reward, -values, rtol=2e-5, atol=2e-6
+        if (
+            reward.shape != values.shape
+            or not np.isfinite(reward).all()
+            or not np.allclose(reward, -values, rtol=2e-5, atol=2e-6)
         ):
             raise ValueError("device objective differs from independent native cost")
         reward_error = max(reward_error, float(np.max(np.abs(reward + values))))
@@ -246,15 +295,36 @@ def evaluate_window(env, action, cost, *, steps, writer, label, inspect=None):
         writer.write(label + ".independent", {"tick": tick, "cost": values, "inspection": detail})
     if not np.all(counts == steps):
         raise ValueError("incomplete evaluation window")
-    return {"world_steps": int(counts.sum()), "steps": steps,
-            "cost": float(np.mean(total / steps)), "per_world_cost": (total / steps).tolist(),
-            "reward_max_absolute_difference": reward_error}
+    return {
+        "world_steps": int(counts.sum()),
+        "steps": steps,
+        "cost": float(np.mean(total / steps)),
+        "per_world_cost": (total / steps).tolist(),
+        "reward_max_absolute_difference": reward_error,
+    }
 
-VISIBLE_CALLS = frozenset({
-    "set_controls_from_device", "step", "snapshot", "reset", "refresh", "to_torch",
-    "synchronize", "copy_to", "copy_from", "to_numpy", "update", "process_env_step",
-    "compute_returns", "act", "_audit", "_validate_step", "_advance",
-})
+
+VISIBLE_CALLS = frozenset(
+    {
+        "set_controls_from_device",
+        "step",
+        "snapshot",
+        "reset",
+        "refresh",
+        "to_torch",
+        "synchronize",
+        "copy_to",
+        "copy_from",
+        "to_numpy",
+        "update",
+        "process_env_step",
+        "compute_returns",
+        "act",
+        "_audit",
+        "_validate_step",
+        "_advance",
+    }
+)
 
 
 def _visible_profile(profile):
@@ -271,25 +341,40 @@ def _visible_profile(profile):
             )
             identity = path + ":" + str(code.co_firstlineno) + ":" + code.co_name
         if selected:
-            rows.append({"call": identity, "calls": entry.callcount,
-                         "recursive_calls": entry.reccallcount,
-                         "inclusive_s": entry.totaltime, "self_python_s": entry.inlinetime})
+            rows.append(
+                {
+                    "call": identity,
+                    "calls": entry.callcount,
+                    "recursive_calls": entry.reccallcount,
+                    "inclusive_s": entry.totaltime,
+                    "self_python_s": entry.inlinetime,
+                }
+            )
     return sorted(rows, key=lambda row: row["call"])
 
 
 def plain_counters(value):
-    return {key: plain_counters(item) if isinstance(item, Mapping) else int(item)
-            for key, item in value.items()}
+    return {
+        key: plain_counters(item) if isinstance(item, Mapping) else int(item)
+        for key, item in value.items()
+    }
 
 
 class UpdateCaptureError(RuntimeError):
     """A failed update retains accepted transitions; it does not imply rollback."""
+
     def __init__(self, error, attempts, seconds):
         super().__init__("upstream update failed: " + str(error))
         self.attempts = tuple(attempts)
         self.compute_seconds = seconds
         self.original_type = type(error).__name__
-        for key in ("phase", "action_accepted", "state_accepted", "needs_recovery", "accepted_worlds"):
+        for key in (
+            "phase",
+            "action_accepted",
+            "state_accepted",
+            "needs_recovery",
+            "accepted_worlds",
+        ):
             if hasattr(error, key):
                 setattr(self, key, getattr(error, key))
 
@@ -320,8 +405,15 @@ def capture_adapter_steps(adapter):
         except BaseException as error:
             entry["status"] = "failed"
             entry["error_type"], entry["error"] = type(error).__name__, str(error)
-            for key in ("phase", "action_accepted", "state_accepted", "needs_recovery",
-                        "accepted_worlds", "action_receipt", "transition"):
+            for key in (
+                "phase",
+                "action_accepted",
+                "state_accepted",
+                "needs_recovery",
+                "accepted_worlds",
+                "action_receipt",
+                "transition",
+            ):
                 if hasattr(error, key):
                     entry[key] = getattr(error, key)
             raise
@@ -339,6 +431,7 @@ def capture_adapter_steps(adapter):
 def measure_update(session, *, observe=False):
     """Measure the complete public update, including accepted-prefix retention."""
     import torch
+
     env = session.env
     before = plain_counters(env.counters)
     torch.cuda.synchronize(env.device)
@@ -368,19 +461,28 @@ def measure_update(session, *, observe=False):
         raise UpdateCaptureError(error, attempts, elapsed) from error
     record = dict(record)
     # Each successful transition has one complete copy, referenced by ordinal.
-    record["step_requests"] = tuple({"ordinal": i, "status": entry["status"],
-                                     "requested_action": entry["requested_action"], "transition_index": i}
-                                    for i, entry in enumerate(attempts))
+    record["step_requests"] = tuple(
+        {
+            "ordinal": i,
+            "status": entry["status"],
+            "requested_action": entry["requested_action"],
+            "transition_index": i,
+        }
+        for i, entry in enumerate(attempts)
+    )
     free_after, _ = torch.cuda.mem_get_info(env.device)
     after = plain_counters(env.counters)
     measurement = {
         "compute_and_mandatory_diagnostics_s": elapsed,
-        "profiled": observe, "observer": None if profile is None else _visible_profile(profile),
-        "counters_before": before, "counters_after": after,
+        "profiled": observe,
+        "observer": None if profile is None else _visible_profile(profile),
+        "counters_before": before,
+        "counters_after": after,
         "counter_delta": counter_delta(before, after),
         "torch_peak_allocated_bytes": torch.cuda.max_memory_allocated(env.device),
         "torch_peak_reserved_bytes": torch.cuda.max_memory_reserved(env.device),
-        "cuda_free_before_bytes": free_before, "cuda_free_after_bytes": free_after,
+        "cuda_free_before_bytes": free_before,
+        "cuda_free_after_bytes": free_after,
         "cuda_total_bytes": total_memory,
         "cuda_net_used_change_bytes_not_tyx_peak": free_before - free_after,
         "outer_explicit_completion_calls": 2,
@@ -388,11 +490,15 @@ def measure_update(session, *, observe=False):
     }
     return record, measurement
 
+
 def validate_update(record, env, *, expected_iteration, cost, writer):
     """Save every transition first; independent cost and learning checks follow."""
     transitions = record["transitions"]
     writer.write("update", record)
-    if record["iteration"] != expected_iteration or record["next_iteration"] != expected_iteration + 1:
+    if (
+        record["iteration"] != expected_iteration
+        or record["next_iteration"] != expected_iteration + 1
+    ):
         raise ValueError("upstream update sequence changed")
     if not transitions or record["optimization"]["optimizer_step"] != expected_iteration + 1:
         raise ValueError("actual Adam step differs from one-epoch single-minibatch protocol")
@@ -400,7 +506,7 @@ def validate_update(record, env, *, expected_iteration, cost, writer):
         math.isfinite(float(x)) for x in record["loss"].values()
     ):
         raise ValueError("nonfinite optimization")
-    ended, timeout, total_cost = 0, 0, 0.
+    ended, timeout, total_cost = 0, 0, 0.0
     for entry in transitions:
         if dict(entry.accepted_worlds) != dict.fromkeys(env.world_keys, True):
             raise ValueError("training physical step was refused")
@@ -413,11 +519,14 @@ def validate_update(record, env, *, expected_iteration, cost, writer):
         total_cost += float(np.sum(values))
     if ended:
         raise ValueError("physical task bounds terminated a training/scale world")
-    return {"accepted_world_steps": len(transitions)*env.num_envs,
-            "terminated_worlds": ended, "timeout_reset_worlds": timeout,
-            "mean_native_cost": total_cost / (len(transitions)*env.num_envs),
-            "loss": {key: float(value) for key, value in record["loss"].items()},
-            "optimizer_step": int(record["optimization"]["optimizer_step"])}
+    return {
+        "accepted_world_steps": len(transitions) * env.num_envs,
+        "terminated_worlds": ended,
+        "timeout_reset_worlds": timeout,
+        "mean_native_cost": total_cost / (len(transitions) * env.num_envs),
+        "loss": {key: float(value) for key, value in record["loss"].items()},
+        "optimizer_step": int(record["optimization"]["optimizer_step"]),
+    }
 
 
 COVERAGE = {

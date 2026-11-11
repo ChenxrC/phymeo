@@ -1122,6 +1122,8 @@ class CollisionWorkspace:
         self._draft = None
         self._closed = False
         self._last = None
+        self._boundary_dispatcher = None
+        self._boundary_close_errors = ()
         self._engine = None
         if backend != "host":
             from ..backends.tyx_collision import TyxCollisionBatch
@@ -1140,6 +1142,38 @@ class CollisionWorkspace:
         with self._lock:
             return self._last
 
+    def boundary_distances(self, motion, *, margin=0.0, limits=None):
+        """Current sphere/capsule-to-surface boundary proximity on TYX.
+
+        Candidates cover the declared boundary band. This does not classify
+        solid interiors, compute swept contacts, or publish force sites.
+        """
+        with self._lock:
+            if self._closed:
+                raise RuntimeError("collision workspace is closed")
+            if self._backend not in ("interpret", "cuda"):
+                raise ValueError("boundary distance dispatch requires interpret or cuda")
+            if self._boundary_dispatcher is None:
+                from ._triangle_distance_dispatch import BoundaryDistanceDispatcher
+
+                self._boundary_dispatcher = BoundaryDistanceDispatcher(self)
+            return self._boundary_dispatcher.query(motion, margin=margin, limits=limits)
+
+    @property
+    def last_boundary_distances(self):
+        """Last committed boundary aggregate, separate from ordinary detection."""
+        with self._lock:
+            return None if self._boundary_dispatcher is None else self._boundary_dispatcher.last
+
+    def require_boundary_distances(self, packet, motion, *, margin=0.0):
+        """Reject old, foreign or unpublished boundary results for these inputs."""
+        with self._lock:
+            if self._closed:
+                raise RuntimeError("collision workspace is closed")
+            if self._boundary_dispatcher is None:
+                raise ValueError("no boundary distance query has been published")
+            return self._boundary_dispatcher.require_current(packet, motion, margin=margin)
+
     @contextmanager
     def transaction(self):
         """Publish a group of geometry queries and associated physical frames on success.
@@ -1154,7 +1188,7 @@ class CollisionWorkspace:
             draft = (
                 _QueryDraft(self._trees.layouts, self._last)
                 if parent is None
-                else _QueryDraft(parent.layouts, parent.result)
+                else _QueryDraft(parent.layouts, parent.result, parent.publications.copy())
             )
             self._draft = draft
             try:
@@ -1247,10 +1281,29 @@ class CollisionWorkspace:
             raise
 
     def _close_locked(self):
+        if self._closed and self._boundary_close_errors:
+            raise BaseExceptionGroup(
+                "boundary workspace cleanup remains unresolved", list(self._boundary_close_errors)
+            )
         if not self._closed:
             self._closed = True
             self._validated_meshes.clear()
             self._validated_hulls.clear()
+            if self._boundary_dispatcher is not None:
+                # These are independent owners. Attempt each once even when a
+                # sibling reports an opaque release failure; never retry it.
+                errors = []
+                for owner in (self._boundary_dispatcher, self._engine):
+                    if owner is None:
+                        continue
+                    try:
+                        owner.close()
+                    except BaseException as error:
+                        errors.append(error)
+                self._boundary_close_errors = tuple(errors)
+                if errors:
+                    raise BaseExceptionGroup("boundary workspace cleanup failed", errors)
+                return
             if self._engine is not None:
                 self._engine.close()
 

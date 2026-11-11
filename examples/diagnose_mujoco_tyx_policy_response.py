@@ -12,9 +12,24 @@ from phymeo.training.learning_diagnostics import require, strict_json
 from phymeo.training.policy_response_diagnostics import evaluate_pair, read_policy_pair
 
 ANCHORS = (
-    ("J", (14011, 14012, 14013), "50-n4-summary-j", "50020100fe49b7d6220f766281fcb72c159a810a2d09af2e048661fdeb2e4153"),
-    ("S", (14111, 14112, 14113), "51-n4-summary-s", "60a27613183f0ec96b92e288694dc02a005b62a6388d9765fc7c52f08c6e128d"),
-    ("R", (14211, 14212, 14213), "52-n4-summary-r", "bdbf77e984eb0ddbd27f8364110b7aedcdaef7a79b15c5bdab1af86339a2d808"),
+    (
+        "J",
+        (14011, 14012, 14013),
+        "50-n4-summary-j",
+        "50020100fe49b7d6220f766281fcb72c159a810a2d09af2e048661fdeb2e4153",
+    ),
+    (
+        "S",
+        (14111, 14112, 14113),
+        "51-n4-summary-s",
+        "60a27613183f0ec96b92e288694dc02a005b62a6388d9765fc7c52f08c6e128d",
+    ),
+    (
+        "R",
+        (14211, 14212, 14213),
+        "52-n4-summary-r",
+        "bdbf77e984eb0ddbd27f8364110b7aedcdaef7a79b15c5bdab1af86339a2d808",
+    ),
 )
 
 
@@ -22,9 +37,13 @@ def _encode(value):
     if isinstance(value, np.ndarray):
         require(not value.dtype.hasobject and np.isfinite(value).all(), "finite output array")
         raw = value.tobytes(order="C")
-        return {"dtype": value.dtype.str, "shape": list(value.shape),
-                "bytes_base64": base64.b64encode(raw).decode("ascii"),
-                "sha256": hashlib.sha256(raw).hexdigest(), "values": value.tolist()}
+        return {
+            "dtype": value.dtype.str,
+            "shape": list(value.shape),
+            "bytes_base64": base64.b64encode(raw).decode("ascii"),
+            "sha256": hashlib.sha256(raw).hexdigest(),
+            "values": value.tolist(),
+        }
     if isinstance(value, np.generic):
         return value.item()
     if isinstance(value, dict):
@@ -40,11 +59,14 @@ def _anchor(root, task, seeds, name, digest):
     raw = path.read_bytes()
     require(hashlib.sha256(raw).hexdigest() == digest, "original three-seed summary hash")
     value = strict_json(raw)
-    require(value.get("schema") == "mujoco-tyx-n4a-three-seed-summary-v1"
-            and value.get("task") == task and value.get("seeds") == list(seeds)
-            and value["protocol_binding"]["name"] == task
-            and set(value.get("source_bindings", {})) == {str(seed) for seed in seeds},
-            "fixed task/three-seed identity")
+    require(
+        value.get("schema") == "mujoco-tyx-n4a-three-seed-summary-v1"
+        and value.get("task") == task
+        and value.get("seeds") == list(seeds)
+        and value["protocol_binding"]["name"] == task
+        and set(value.get("source_bindings", {})) == {str(seed) for seed in seeds},
+        "fixed task/three-seed identity",
+    )
     return value
 
 
@@ -58,8 +80,11 @@ def diagnose_fixed_policies(evidence_root, output, *, device="cuda:0"):
         selected, anchors = [], {}
         for task, seeds, name, digest in ANCHORS:
             anchor = _anchor(root, task, seeds, name, digest)
-            anchors[task] = {"path": str(root / name / "result" / "summary.json"),
-                             "sha256": digest, "learning_outcome_unchanged": anchor["outcome"]}
+            anchors[task] = {
+                "path": str(root / name / "result" / "summary.json"),
+                "sha256": digest,
+                "learning_outcome_unchanged": anchor["outcome"],
+            }
             for seed in seeds:
                 binding = anchor["source_bindings"][str(seed)]
                 directory = Path(binding["directory"]).resolve()
@@ -71,7 +96,9 @@ def diagnose_fixed_policies(evidence_root, output, *, device="cuda:0"):
             phase = f"extract-{task}-{seed}"
             pair = read_policy_pair(directory, binding, expected_task=task, expected_seed=seed)
             require(pair["protocol"] == protocol, "policy differs from anchored task protocol")
-            signature = {name: pair[name] for name in ("source_files", "dependencies", "ppo_config")}
+            signature = {
+                name: pair[name] for name in ("source_files", "dependencies", "ppo_config")
+            }
             if common is None:
                 common = signature
             require(signature == common, "nine-run source/dependency/config mismatch")
@@ -88,19 +115,30 @@ def diagnose_fixed_policies(evidence_root, output, *, device="cuda:0"):
             runs.append(run)
         result = {
             "schema": "mujoco-tyx-n4c-fixed-policy-response-v1",
-            "status": "PASS_FIXED_POLICY_RESPONSE_ONLY", "runs": runs, "anchors": anchors,
+            "status": "PASS_FIXED_POLICY_RESPONSE_ONLY",
+            "runs": runs,
+            "anchors": anchors,
             "fixed_grid": "original eight starts, target/v0, each q +/-qscale/4, each v +/-vscale/4",
-            "execution": {"training_updates": 0, "physics_steps": 0,
-                          "feature_kernel_calls": 9, "deterministic_actor_calls": 18},
+            "execution": {
+                "training_updates": 0,
+                "physics_steps": 0,
+                "feature_kernel_calls": 9,
+                "deterministic_actor_calls": 18,
+            },
             "scope": "new finite input inference on original saved models; no new learning gate or causal proof",
             "source_sha256": {
-                str(Path(__file__).resolve()): hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+                str(Path(__file__).resolve()): hashlib.sha256(
+                    Path(__file__).read_bytes()
+                ).hexdigest(),
                 str(Path(read_policy_pair.__code__.co_filename).resolve()): hashlib.sha256(
-                    Path(read_policy_pair.__code__.co_filename).read_bytes()).hexdigest(),
+                    Path(read_policy_pair.__code__.co_filename).read_bytes()
+                ).hexdigest(),
             },
         }
         phase = "atomic-response-publication"
-        raw = (json.dumps(_encode(result), indent=2, sort_keys=True, allow_nan=False) + "\n").encode()
+        raw = (
+            json.dumps(_encode(result), indent=2, sort_keys=True, allow_nan=False) + "\n"
+        ).encode()
         with pending.open("xb") as stream:
             stream.write(raw)
         require(pending.read_bytes() == raw, "response output readback")
@@ -110,10 +148,18 @@ def diagnose_fixed_policies(evidence_root, output, *, device="cuda:0"):
         if pending.exists():
             pending.unlink()
         with (destination / "failure.json").open("x", encoding="utf-8") as stream:
-            json.dump({"status": "FAILED_POLICY_RESPONSE_NOT_PUBLISHED", "phase": phase,
-                       "error_type": type(error).__name__, "error": str(error),
-                       "scope": "original evidence unchanged; no optimizer/physical step"},
-                      stream, indent=2, allow_nan=False)
+            json.dump(
+                {
+                    "status": "FAILED_POLICY_RESPONSE_NOT_PUBLISHED",
+                    "phase": phase,
+                    "error_type": type(error).__name__,
+                    "error": str(error),
+                    "scope": "original evidence unchanged; no optimizer/physical step",
+                },
+                stream,
+                indent=2,
+                allow_nan=False,
+            )
         raise
 
 

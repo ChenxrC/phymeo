@@ -32,16 +32,21 @@ DIST_CLASS = "rsl_rl.modules.distribution.GaussianDistribution"
 
 def validate_model_config(config):
     """Only the actually saved N4a architecture; never resolve arbitrary names."""
-    network = {"class_name": MLP_CLASS, "hidden_dims": [32, 32],
-               "activation": "tanh", "obs_normalization": False}
-    distribution = {"class_name": DIST_CLASS, "init_std": 0.1,
-                    "std_type": "log", "learn_std": True}
+    network = {
+        "class_name": MLP_CLASS,
+        "hidden_dims": [32, 32],
+        "activation": "tanh",
+        "obs_normalization": False,
+    }
+    distribution = {"class_name": DIST_CLASS, "init_std": 0.1, "std_type": "log", "learn_std": True}
     require(type(config) is dict, "saved model config")
-    require(config.get("actor") == {**network, "distribution_cfg": distribution}
-            and config.get("critic") == network
-            and config.get("obs_groups") == {"actor": ["policy"], "critic": ["policy"]}
-            and config.get("num_steps_per_env") == 32,
-            "only original N4a MLP/Identity normalizer/config is admitted")
+    require(
+        config.get("actor") == {**network, "distribution_cfg": distribution}
+        and config.get("critic") == network
+        and config.get("obs_groups") == {"actor": ["policy"], "critic": ["policy"]}
+        and config.get("num_steps_per_env") == 32,
+        "only original N4a MLP/Identity normalizer/config is admitted",
+    )
 
 
 def check_dependencies(saved):
@@ -54,8 +59,11 @@ def check_dependencies(saved):
 
 def _feature_source(source_files):
     path = Path(__file__).resolve().parents[1] / "backends" / "mujoco_tyx" / "_task_kernels.py"
-    matches = [(name, digest) for name, digest in source_files.items()
-               if name.replace("\\", "/").endswith(FEATURE_SUFFIX)]
+    matches = [
+        (name, digest)
+        for name, digest in source_files.items()
+        if name.replace("\\", "/").endswith(FEATURE_SUFFIX)
+    ]
     require(len(matches) == 1, "one originally bound feature source required")
     digest = hashlib.sha256(path.read_bytes()).hexdigest()
     require(digest == matches[0][1], "feature source differs from original evidence")
@@ -70,15 +78,32 @@ def _protocol_arrays(protocol):
     vscale = np.asarray(protocol["v_scale"], np.float64)
     lower = np.asarray(protocol["q_lower"], np.float64)
     upper = np.asarray(protocol["q_upper"], np.float64)
-    require(all(a.shape == (width,) and np.isfinite(a).all()
-                for a in (target, qscale, vscale, lower, upper)), "task parameter shape/finite")
-    require(np.all(qscale > 0) and np.all(vscale > 0) and np.all(lower <= target)
-            and np.all(target <= upper), "task scale/target bounds")
-    require(math.isfinite(float(protocol["v_bound"])) and protocol["v_bound"] > 0
-            and math.isfinite(float(protocol["action_scale"])) and protocol["action_scale"] > 0
-            and math.isfinite(float(protocol["h"])) and protocol["h"] > 0
-            and protocol["horizon"] == 256 and protocol["decimation"] == 1
-            and protocol["action_squash"] == "tanh", "original task protocol")
+    require(
+        all(
+            a.shape == (width,) and np.isfinite(a).all()
+            for a in (target, qscale, vscale, lower, upper)
+        ),
+        "task parameter shape/finite",
+    )
+    require(
+        np.all(qscale > 0)
+        and np.all(vscale > 0)
+        and np.all(lower <= target)
+        and np.all(target <= upper),
+        "task scale/target bounds",
+    )
+    require(
+        math.isfinite(float(protocol["v_bound"]))
+        and protocol["v_bound"] > 0
+        and math.isfinite(float(protocol["action_scale"]))
+        and protocol["action_scale"] > 0
+        and math.isfinite(float(protocol["h"]))
+        and protocol["h"] > 0
+        and protocol["horizon"] == 256
+        and protocol["decimation"] == 1
+        and protocol["action_squash"] == "tanh",
+        "original task protocol",
+    )
     return target, qscale, vscale, lower, upper
 
 
@@ -87,13 +112,19 @@ def fixed_grid(protocol, entry):
     target, qs, vs, lower, upper = _protocol_arrays(protocol)
     width = len(target)
     templates = np.asarray(protocol["held_out_templates"], np.float64)
-    require(templates.shape == (8, 2, width) and np.isfinite(templates).all(), "eight held-out templates")
+    require(
+        templates.shape == (8, 2, width) and np.isfinite(templates).all(),
+        "eight held-out templates",
+    )
     expected = templates.astype(np.float32)
     require(np.isfinite(expected).all(), "stored held-out template range")
     q_entry, v_entry = _array(entry["q"], (8, width)), _array(entry["v"], (8, width))
     require(q_entry.dtype == v_entry.dtype == np.float32, "actual stored entry dtype")
-    require(q_entry.tobytes() == expected[:, 0].tobytes()
-            and v_entry.tobytes() == expected[:, 1].tobytes(), "held-out template/stored entry bits")
+    require(
+        q_entry.tobytes() == expected[:, 0].tobytes()
+        and v_entry.tobytes() == expected[:, 1].tobytes(),
+        "held-out template/stored entry bits",
+    )
     qs_list, vs_list = list(q_entry.astype(np.float64)), list(v_entry.astype(np.float64))
     labels = ["held-out-" + str(i) for i in range(8)]
     qs_list.append(target.copy())
@@ -116,34 +147,60 @@ def fixed_grid(protocol, entry):
             pairs[family].append(tuple(indices))
     q, v = np.asarray(qs_list, np.float32), np.asarray(vs_list, np.float32)
     require(np.isfinite(q).all() and np.isfinite(v).all(), "finite stored grid")
-    require(np.all(q >= lower) and np.all(q <= upper)
-            and np.all(np.abs(v) <= protocol["v_bound"]), "fixed native grid outside original bounds")
+    require(
+        np.all(q >= lower) and np.all(q <= upper) and np.all(np.abs(v) <= protocol["v_bound"]),
+        "fixed native grid outside original bounds",
+    )
     for family, values in (("q", q), ("v", v)):
-        require(all(values[a, j] > values[b, j] for j, (a, b) in enumerate(pairs[family])),
-                "symmetric pair collapses in stored FP32")
-    return {"q": q, "v": v, "labels": tuple(labels), "target_index": 8,
-            "q_pairs": tuple(pairs["q"]), "v_pairs": tuple(pairs["v"])}
+        require(
+            all(values[a, j] > values[b, j] for j, (a, b) in enumerate(pairs[family])),
+            "symmetric pair collapses in stored FP32",
+        )
+    return {
+        "q": q,
+        "v": v,
+        "labels": tuple(labels),
+        "target_index": 8,
+        "q_pairs": tuple(pairs["q"]),
+        "v_pairs": tuple(pairs["v"]),
+    }
 
 
 def _first_entry(transition, request, protocol, keys):
     value = _type(transition, "phymeo.training.mujoco_tyx_env.MuJoCoTyxTransition")
     width = len(protocol["q_target"])
-    require(tuple(value["world_keys"]) == keys and set(value["states"]) == set(keys), "first-input world order")
+    require(
+        tuple(value["world_keys"]) == keys and set(value["states"]) == set(keys),
+        "first-input world order",
+    )
     action = _array(request["action"], (8, width))
-    require(request["tick"] == 1 and action.dtype == np.float32
-            and np.array_equal(action, _array(value["action"], (8, width))), "first held-out request binding")
+    require(
+        request["tick"] == 1
+        and action.dtype == np.float32
+        and np.array_equal(action, _array(value["action"], (8, width))),
+        "first held-out request binding",
+    )
     rows = {"q": [], "v": []}
     for key in keys:
         state = _type(value["states"][key], "phymeo.backends.mujoco_runtime.MuJoCoState")
-        receipt = _type(state["last_step"], "phymeo.backends._mujoco_tyx_runtime.MuJoCoTyxStepReceipt")
-        require(state["world"] == receipt["world"] == key
-                and state["tick"] == receipt["tick"] == 1
-                and receipt["input_time"] == 0.0 and receipt["h"] == protocol["h"], "first receipt identity/clock")
+        receipt = _type(
+            state["last_step"], "phymeo.backends._mujoco_tyx_runtime.MuJoCoTyxStepReceipt"
+        )
+        require(
+            state["world"] == receipt["world"] == key
+            and state["tick"] == receipt["tick"] == 1
+            and receipt["input_time"] == 0.0
+            and receipt["h"] == protocol["h"],
+            "first receipt identity/clock",
+        )
         for kind in ("q", "v"):
             original = _array(receipt["input_" + kind], (width,))
             stored = original.astype(np.float32)
-            require(np.isfinite(stored).all() and np.array_equal(stored.astype(original.dtype), original),
-                    "first native input is not exact stored FP32")
+            require(
+                np.isfinite(stored).all()
+                and np.array_equal(stored.astype(original.dtype), original),
+                "first native input is not exact stored FP32",
+            )
             rows[kind].append(stored)
     return {kind: np.asarray(values, np.float32) for kind, values in rows.items()}, action.copy()
 
@@ -154,23 +211,40 @@ def read_policy_pair(directory, binding, *, expected_task, expected_seed):
     summary, digest = _bounded_json(directory / "summary.json", 16 * 1024**2)
     publication, _ = _bounded_json(directory / "publication.json", 16384)
     manifest, manifest_digest = _bounded_json(directory / "manifest.json", 4 * 1024**2)
-    require(Path(binding["directory"]).resolve() == directory
-            and digest == binding["summary_sha256"] == publication.get("summary_sha256"), "summary directory/publication binding")
-    require(summary.get("task") == expected_task and summary.get("seed") == expected_seed
-            and summary.get("status") == "COMPLETE_N4A_SEED", "task/seed/status identity")
+    require(
+        Path(binding["directory"]).resolve() == directory
+        and digest == binding["summary_sha256"] == publication.get("summary_sha256"),
+        "summary directory/publication binding",
+    )
+    require(
+        summary.get("task") == expected_task
+        and summary.get("seed") == expected_seed
+        and summary.get("status") == "COMPLETE_N4A_SEED",
+        "task/seed/status identity",
+    )
     for name in ("task", "seed", "protocol_binding", "ppo_config", "dependencies", "source_files"):
         require(summary.get(name) == manifest.get(name), "manifest/summary mismatch: " + name)
-    require(manifest.get("phase") == "learn" and summary.get("updates") == 128
-            and summary.get("worlds") == 8 and summary.get("accepted_world_steps") == 32768,
-            "original complete training budget")
+    require(
+        manifest.get("phase") == "learn"
+        and summary.get("updates") == 128
+        and summary.get("worlds") == 8
+        and summary.get("accepted_world_steps") == 32768,
+        "original complete training budget",
+    )
     keys = tuple(manifest["world_keys"])
-    require(len(keys) == len(set(keys)) == 8 and all(type(k) is int for k in keys), "original eight world IDs")
+    require(
+        len(keys) == len(set(keys)) == 8 and all(type(k) is int for k in keys),
+        "original eight world IDs",
+    )
     protocol = summary["protocol_binding"]
     _protocol_arrays(protocol)
     validate_model_config(summary["ppo_config"])
     _feature_source(summary["source_files"])
     evidence = summary["evidence"]
-    require(evidence == binding["evidence"] and Path(evidence["path"]).name == evidence["path"], "complete stream binding/path")
+    require(
+        evidence == binding["evidence"] and Path(evidence["path"]).name == evidence["path"],
+        "complete stream binding/path",
+    )
     models, requests, entries, references = {}, {}, {}, {}
     final_index = completion_index = None
     records = read_records(directory / evidence["path"], evidence)
@@ -179,41 +253,74 @@ def read_policy_pair(directory, binding, *, expected_task, expected_seed):
             if ordinal == 0:
                 require(kind == "initial_policy", "initial model must be first")
             if kind == "initial_policy":
-                require("initial" not in models and set(value) == {"actor", "critic"}, "unique complete initial model")
+                require(
+                    "initial" not in models and set(value) == {"actor", "critic"},
+                    "unique complete initial model",
+                )
                 models["initial"] = value
             elif kind == "final_policy_and_adam":
-                require("final" not in models and value["next_iteration"] == 128,
-                        "unique complete final model/update")
+                require(
+                    "final" not in models and value["next_iteration"] == 128,
+                    "unique complete final model/update",
+                )
                 models["final"] = {name: value[name] for name in ("actor", "critic")}
                 final_index = ordinal
             elif kind == "completion":
-                require(completion_index is None and value == {"status": "COMPLETE_N4A_SEED", "task": expected_task},
-                        "completion identity")
+                require(
+                    completion_index is None
+                    and value == {"status": "COMPLETE_N4A_SEED", "task": expected_task},
+                    "completion identity",
+                )
                 completion_index = ordinal
             else:
                 for phase, stage in (("untrained", "initial"), ("learned", "final")):
                     if kind == phase + ".requested_action" and value.get("tick") == 1:
                         require(stage not in requests, "duplicate first request")
                         requests[stage] = value
-                    elif kind == phase + ".transition" and stage in requests and stage not in entries:
-                        entries[stage], references[stage] = _first_entry(value, requests[stage], protocol, keys)
-        require(final_index == evidence["records"] - 2 and completion_index == evidence["records"] - 1,
-                "final model/completion suffix")
+                    elif (
+                        kind == phase + ".transition" and stage in requests and stage not in entries
+                    ):
+                        entries[stage], references[stage] = _first_entry(
+                            value, requests[stage], protocol, keys
+                        )
+        require(
+            final_index == evidence["records"] - 2 and completion_index == evidence["records"] - 1,
+            "final model/completion suffix",
+        )
     finally:
         records.close()
-    require(set(models) == set(entries) == {"initial", "final"}, "both models and held-out starts required")
+    require(
+        set(models) == set(entries) == {"initial", "final"},
+        "both models and held-out starts required",
+    )
     hashes = {stage: _policy_hash(model) for stage, model in models.items()}
-    require(hashes["initial"] == summary["parameter_hash_before"]
-            and hashes["final"] == summary["parameter_hash_after"], "whole actor/critic model hash")
+    require(
+        hashes["initial"] == summary["parameter_hash_before"]
+        and hashes["final"] == summary["parameter_hash_after"],
+        "whole actor/critic model hash",
+    )
     for kind in ("q", "v"):
-        require(entries["initial"][kind].tobytes() == entries["final"][kind].tobytes(), "held-out initial/final native input identity")
+        require(
+            entries["initial"][kind].tobytes() == entries["final"][kind].tobytes(),
+            "held-out initial/final native input identity",
+        )
     fixed_grid(protocol, entries["initial"])
-    return {"task": expected_task, "seed": expected_seed, "protocol": protocol,
-            "models": models, "hashes": hashes, "entry": entries["initial"],
-            "reference_actions": references, "world_keys": keys,
-            "ppo_config": summary["ppo_config"], "dependencies": summary["dependencies"],
-            "source_files": summary["source_files"], "summary_sha256": digest,
-            "manifest_sha256": manifest_digest, "evidence": evidence}
+    return {
+        "task": expected_task,
+        "seed": expected_seed,
+        "protocol": protocol,
+        "models": models,
+        "hashes": hashes,
+        "entry": entries["initial"],
+        "reference_actions": references,
+        "world_keys": keys,
+        "ppo_config": summary["ppo_config"],
+        "dependencies": summary["dependencies"],
+        "source_files": summary["source_files"],
+        "summary_sha256": digest,
+        "manifest_sha256": manifest_digest,
+        "evidence": evidence,
+    }
 
 
 def _computation_flags(torch):
@@ -234,8 +341,10 @@ def _preserved_execution_state(torch):
         torch.backends.cuda.matmul.allow_tf32 = False
         torch.backends.cudnn.allow_tf32 = False
         actual = _computation_flags(torch)
-        require(not actual["matmul_allow_tf32"] and not actual["cudnn_allow_tf32"],
-                "original task computation flags")
+        require(
+            not actual["matmul_allow_tf32"] and not actual["cudnn_allow_tf32"],
+            "original task computation flags",
+        )
         yield actual
     finally:
         # Try every restoration even if one API unexpectedly fails. Restore the
@@ -265,7 +374,10 @@ def _preserved_execution_state(torch):
 
 def _load_network(model, saved, torch, device):
     expected = model.state_dict()
-    require(type(saved) is dict and set(saved) == set(expected), "strict complete model/normalizer tensor keys")
+    require(
+        type(saved) is dict and set(saved) == set(expected),
+        "strict complete model/normalizer tensor keys",
+    )
     values = {}
     for name, reference in expected.items():
         value = _array(saved[name], tuple(reference.shape))
@@ -282,8 +394,11 @@ def _models(pair, torch, device):
 
     width = len(pair["protocol"]["q_target"])
     config = pair["ppo_config"]
-    example = TensorDict({"policy": torch.zeros((8, 2 * width), dtype=torch.float32, device=device)},
-                         batch_size=[8], device=device)
+    example = TensorDict(
+        {"policy": torch.zeros((8, 2 * width), dtype=torch.float32, device=device)},
+        batch_size=[8],
+        device=device,
+    )
     actors, bindings = {}, {}
     for stage in ("initial", "final"):
         saved = pair["models"][stage]
@@ -293,26 +408,38 @@ def _models(pair, torch, device):
             options = copy.deepcopy(config[owner])
             options.pop("class_name")
             # The only class path consumed by upstream is the already-whitelisted Gaussian.
-            network = MLPModel(example, config["obs_groups"], owner, output_width, **options).to(device)
+            network = MLPModel(example, config["obs_groups"], owner, output_width, **options).to(
+                device
+            )
             loaded[owner] = _load_network(network, saved[owner], torch, device)
             networks[owner] = network
         require(_policy_hash(loaded) == pair["hashes"][stage], "loaded actor/critic bytes differ")
         actors[stage] = networks["actor"]
-        bindings[stage] = {owner: {name: {"dtype": value.dtype.str, "shape": list(value.shape),
-                                        "sha256": hashlib.sha256(value.tobytes()).hexdigest()}
-                                  for name, value in state.items()} for owner, state in loaded.items()}
+        bindings[stage] = {
+            owner: {
+                name: {
+                    "dtype": value.dtype.str,
+                    "shape": list(value.shape),
+                    "sha256": hashlib.sha256(value.tobytes()).hexdigest(),
+                }
+                for name, value in state.items()
+            }
+            for owner, state in loaded.items()
+        }
     return actors, bindings
 
 
 def _features_cuda(protocol, grid, device_index):
     import tyx as tx
+
     from phymeo.backends.mujoco_task_workspace import MuJoCoTyxTaskSpec
     from phymeo.backends.mujoco_tyx import _task_kernels
 
     target, qs, vs, lower, upper = _protocol_arrays(protocol)
     width, count = len(target), len(grid["labels"])
     spec = MuJoCoTyxTaskSpec(
-        tuple(range(width)), tuple(range(width)),
+        tuple(range(width)),
+        tuple(range(width)),
         scale=tuple(1 / x for x in qs) + tuple(1 / x for x in vs),
         bias=tuple(-q / x for q, x in zip(target, qs, strict=True)) + (0.0,) * width,
         target=tuple(target) + (0.0,) * width,
@@ -321,14 +448,18 @@ def _features_cuda(protocol, grid, device_index):
         upper=tuple(upper) + (protocol["v_bound"],) * width,
     )
     ids = np.asarray([(0, i) for i in range(width)] + [(1, i) for i in range(width)], np.int32)
-    parameters = np.column_stack(tuple(getattr(spec, name) for name in
-                                      ("scale", "bias", "target", "weight", "lower", "upper")))
+    parameters = np.column_stack(
+        tuple(
+            getattr(spec, name) for name in ("scale", "bias", "target", "weight", "lower", "upper")
+        )
+    )
     with ExitStack() as owners:
         runtime = tx.Runtime(backend="cuda", device=device_index)
         owners.callback(runtime.close)
         stream = tx.CudaStream(device=device_index)
         owners.callback(stream.close)
         with tx.use_runtime(runtime):
+
             def owned(value):
                 array = tx.CudaArray(value, device=device_index)
                 owners.callback(array.free)
@@ -341,24 +472,53 @@ def _features_cuda(protocol, grid, device_index):
             terminated = owned(np.zeros(count, np.int32))
             status = owned(np.zeros(count, np.int32))
             try:
-                _task_kernels.evaluate(count, 2 * width, source_ids, source_parameters, q, v,
-                                       observation, reward, terminated, status, mode="cuda", stream=stream)
+                _task_kernels.evaluate(
+                    count,
+                    2 * width,
+                    source_ids,
+                    source_parameters,
+                    q,
+                    v,
+                    observation,
+                    reward,
+                    terminated,
+                    status,
+                    mode="cuda",
+                    stream=stream,
+                )
                 stream.synchronize()
-                outputs = [array.to_numpy(stream=stream) for array in (observation, reward, terminated, status)]
+                outputs = [
+                    array.to_numpy(stream=stream)
+                    for array in (observation, reward, terminated, status)
+                ]
                 stream.synchronize()
             finally:
                 # Complete any submitted feature work before buffers/stream/runtime retire.
                 stream.synchronize()
     observed, rewards, done, flags = outputs
-    require(observed.shape == (count, 2 * width) and observed.dtype == np.float32
-            and np.isfinite(observed).all() and np.isfinite(rewards).all()
-            and not done.any() and not flags.any(), "device feature status/output contract")
-    return {"observation": observed, "reward": rewards, "terminated": done, "status": flags,
-            "ids": ids, "parameters": parameters, "spec_sha256": spec.sha256,
-            "kernel_calls": 1, "physics_steps": 0,
-            "input_origin": "saved native FP32 entry plus fixed counterfactual grid",
-            "precision": "actual original TYX feature kernel, not saved observation bytes",
-            "transport": "explicit diagnostic HOST feature readback then Torch upload"}
+    require(
+        observed.shape == (count, 2 * width)
+        and observed.dtype == np.float32
+        and np.isfinite(observed).all()
+        and np.isfinite(rewards).all()
+        and not done.any()
+        and not flags.any(),
+        "device feature status/output contract",
+    )
+    return {
+        "observation": observed,
+        "reward": rewards,
+        "terminated": done,
+        "status": flags,
+        "ids": ids,
+        "parameters": parameters,
+        "spec_sha256": spec.sha256,
+        "kernel_calls": 1,
+        "physics_steps": 0,
+        "input_origin": "saved native FP32 entry plus fixed counterfactual grid",
+        "precision": "actual original TYX feature kernel, not saved observation bytes",
+        "transport": "explicit diagnostic HOST feature readback then Torch upload",
+    }
 
 
 def _infer_model(actor, observation):
@@ -379,14 +539,26 @@ def response_components(raw_action, mapped_ctrl, grid):
             require(len(pairs) == width, "complete response coordinate pairs")
             plus = np.asarray([values[a] for a, _ in pairs])
             minus = np.asarray([values[b] for _, b in pairs])
-            denominator = np.asarray([float(grid[family][a, j]) - float(grid[family][b, j])
-                                      for j, (a, b) in enumerate(pairs)])
-            require(np.isfinite(denominator).all() and np.all(denominator > 0), "noncollapsed response pair")
+            denominator = np.asarray(
+                [
+                    float(grid[family][a, j]) - float(grid[family][b, j])
+                    for j, (a, b) in enumerate(pairs)
+                ]
+            )
+            require(
+                np.isfinite(denominator).all() and np.all(denominator > 0),
+                "noncollapsed response pair",
+            )
             even, odd = (plus + minus) / 2, (plus - minus) / 2
-            item[family] = {"plus": plus, "minus": minus, "even": even, "odd": odd,
-                            "even_minus_target": even - center,
-                            "native_pair_separation": denominator,
-                            "secant_native": (plus - minus) / denominator[:, None]}
+            item[family] = {
+                "plus": plus,
+                "minus": minus,
+                "even": even,
+                "odd": odd,
+                "even_minus_target": even - center,
+                "native_pair_separation": denominator,
+                "secant_native": (plus - minus) / denominator[:, None],
+            }
         result[name] = item
     result["scope"] = "finite fixed-input secants/correlations, not derivative or stability proof"
     return result
@@ -401,7 +573,9 @@ def evaluate_pair(pair, *, device="cuda:0"):
     dependencies = check_dependencies(pair["dependencies"])
     feature_source = _feature_source(pair["source_files"])
     selected = torch.device(device)
-    require(selected.type == "cuda" and torch.cuda.is_available(), "real CUDA training profile required")
+    require(
+        selected.type == "cuda" and torch.cuda.is_available(), "real CUDA training profile required"
+    )
     index = torch.cuda.current_device() if selected.index is None else selected.index
     require(0 <= index < torch.cuda.device_count(), "CUDA device ordinal")
     selected = torch.device("cuda", index)
@@ -414,40 +588,68 @@ def evaluate_pair(pair, *, device="cuda:0"):
             cls = type(component)
             source = Path(inspect.getfile(cls)).resolve()
             implementations[cls.__module__ + "." + cls.__qualname__] = {
-                "path": str(source), "sha256": hashlib.sha256(source.read_bytes()).hexdigest()
+                "path": str(source),
+                "sha256": hashlib.sha256(source.read_bytes()).hexdigest(),
             }
         features = _features_cuda(pair["protocol"], grid, index)
-        obs = TensorDict({"policy": torch.from_numpy(features["observation"].copy()).to(selected)},
-                         batch_size=[len(grid["labels"])], device=selected)
+        obs = TensorDict(
+            {"policy": torch.from_numpy(features["observation"].copy()).to(selected)},
+            batch_size=[len(grid["labels"])],
+            device=selected,
+        )
         checkpoints = {}
         with torch.inference_mode():
             for stage in ("initial", "final"):
                 action = _infer_model(actors[stage], obs)
-                require(tuple(action.shape) == (len(grid["labels"]), len(pair["protocol"]["q_target"]))
-                        and action.dtype == torch.float32 and action.device == selected
-                        and bool(torch.isfinite(action).all()), "actual deterministic action layout/finite")
-                scale = torch.as_tensor(pair["protocol"]["action_scale"], dtype=torch.float32, device=selected)
+                require(
+                    tuple(action.shape) == (len(grid["labels"]), len(pair["protocol"]["q_target"]))
+                    and action.dtype == torch.float32
+                    and action.device == selected
+                    and bool(torch.isfinite(action).all()),
+                    "actual deterministic action layout/finite",
+                )
+                scale = torch.as_tensor(
+                    pair["protocol"]["action_scale"], dtype=torch.float32, device=selected
+                )
                 mapped = torch.zeros_like(action) + scale * torch.tanh(action)
                 torch.cuda.current_stream(selected).synchronize()
-                raw, control = action.detach().cpu().numpy().copy(), mapped.detach().cpu().numpy().copy()
+                raw, control = (
+                    action.detach().cpu().numpy().copy(),
+                    mapped.detach().cpu().numpy().copy(),
+                )
                 require(np.isfinite(control).all(), "mapped ctrl nonfinite")
                 reference = _array(pair["reference_actions"][stage], (8, raw.shape[1]))
                 checkpoints[stage] = {
-                    "loaded_model_hash": pair["hashes"][stage], "loaded_state_bindings": state_bindings[stage],
-                    "raw_action": raw, "mapped_ctrl": control,
+                    "loaded_model_hash": pair["hashes"][stage],
+                    "loaded_state_bindings": state_bindings[stage],
+                    "raw_action": raw,
+                    "mapped_ctrl": control,
                     "response": response_components(raw, control, grid),
                     "original_held_out_requested_action": reference.copy(),
                     "held_out_action_difference": raw[:8].astype(np.float64) - reference,
                     "reference_scope": "original deterministic held-out request only; no equality gate; new batch GEMM may round differently",
                 }
-        return {"status": "PASS_FIXED_POLICY_RESPONSE", "task": pair["task"], "seed": pair["seed"],
-                "device": str(selected), "dependencies": dependencies, "implementation_sources": implementations,
-                "computation_flags": computation_flags,
-                "source_binding": {"summary_sha256": pair["summary_sha256"],
-                                   "manifest_sha256": pair["manifest_sha256"], "evidence": pair["evidence"],
-                                   "feature_source": feature_source},
-                "protocol_binding": pair["protocol"], "ppo_config": pair["ppo_config"],
-                "world_keys": pair["world_keys"], "grid": grid, "features": features,
-                "checkpoints": checkpoints, "rng": "Python/NumPy/Torch CPU/all CUDA restored in finally",
-                "learning_quality": "UNCHANGED_NOT_TESTED_BY_THIS_EXPERIMENT",
-                "normalizer": "original Identity; all model state keys strictly checked"}
+        return {
+            "status": "PASS_FIXED_POLICY_RESPONSE",
+            "task": pair["task"],
+            "seed": pair["seed"],
+            "device": str(selected),
+            "dependencies": dependencies,
+            "implementation_sources": implementations,
+            "computation_flags": computation_flags,
+            "source_binding": {
+                "summary_sha256": pair["summary_sha256"],
+                "manifest_sha256": pair["manifest_sha256"],
+                "evidence": pair["evidence"],
+                "feature_source": feature_source,
+            },
+            "protocol_binding": pair["protocol"],
+            "ppo_config": pair["ppo_config"],
+            "world_keys": pair["world_keys"],
+            "grid": grid,
+            "features": features,
+            "checkpoints": checkpoints,
+            "rng": "Python/NumPy/Torch CPU/all CUDA restored in finally",
+            "learning_quality": "UNCHANGED_NOT_TESTED_BY_THIS_EXPERIMENT",
+            "normalizer": "original Identity; all model state keys strictly checked",
+        }

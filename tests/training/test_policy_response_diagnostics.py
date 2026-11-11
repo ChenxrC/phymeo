@@ -18,27 +18,39 @@ from phymeo.training import policy_response_diagnostics as response
 
 def protocol(width=2):
     return {
-        "name": "fixture", "q_target": [0.0] * width,
-        "q_scale": [0.2] * width, "v_scale": [1.0] * width,
-        "q_lower": [-1.0] * width, "q_upper": [1.0] * width,
-        "v_bound": 8.0, "action_scale": 2.0, "action_squash": "tanh",
-        "decimation": 1, "h": 0.002, "horizon": 256,
-        "held_out_templates": [
-            [[(i - 3) / 100] * width, [0.02] * width] for i in range(8)
-        ],
+        "name": "fixture",
+        "q_target": [0.0] * width,
+        "q_scale": [0.2] * width,
+        "v_scale": [1.0] * width,
+        "q_lower": [-1.0] * width,
+        "q_upper": [1.0] * width,
+        "v_bound": 8.0,
+        "action_scale": 2.0,
+        "action_squash": "tanh",
+        "decimation": 1,
+        "h": 0.002,
+        "horizon": 256,
+        "held_out_templates": [[[(i - 3) / 100] * width, [0.02] * width] for i in range(8)],
     }
 
 
 def config():
     network = {
-        "class_name": "rsl_rl.models.MLPModel", "hidden_dims": [32, 32],
-        "activation": "tanh", "obs_normalization": False,
+        "class_name": "rsl_rl.models.MLPModel",
+        "hidden_dims": [32, 32],
+        "activation": "tanh",
+        "obs_normalization": False,
     }
     return {
-        "actor": {**network, "distribution_cfg": {
-            "class_name": "rsl_rl.modules.distribution.GaussianDistribution",
-            "init_std": 0.1, "std_type": "log", "learn_std": True,
-        }},
+        "actor": {
+            **network,
+            "distribution_cfg": {
+                "class_name": "rsl_rl.modules.distribution.GaussianDistribution",
+                "init_std": 0.1,
+                "std_type": "log",
+                "learn_std": True,
+            },
+        },
         "critic": network.copy(),
         "obs_groups": {"actor": ["policy"], "critic": ["policy"]},
         "num_steps_per_env": 32,
@@ -53,13 +65,18 @@ def entry(proto):
 def wire(value):
     if isinstance(value, np.ndarray):
         raw = value.tobytes()
-        return {"array_dtype": value.dtype.str, "shape": list(value.shape),
-                "bytes_base64": base64.b64encode(raw).decode(),
-                "sha256": hashlib.sha256(raw).hexdigest()}
+        return {
+            "array_dtype": value.dtype.str,
+            "shape": list(value.shape),
+            "bytes_base64": base64.b64encode(raw).decode(),
+            "sha256": hashlib.sha256(raw).hexdigest(),
+        }
     if isinstance(value, dict):
         if "__type__" in value:
-            return {"dataclass": value["__type__"], "fields": {
-                k: wire(v) for k, v in value.items() if k != "__type__"}}
+            return {
+                "dataclass": value["__type__"],
+                "fields": {k: wire(v) for k, v in value.items() if k != "__type__"},
+            }
         return {"mapping": [[wire(k), wire(v)] for k, v in value.items()]}
     if isinstance(value, (tuple, list)):
         return {"sequence_type": type(value).__name__, "items": [wire(x) for x in value]}
@@ -70,7 +87,9 @@ def policy_hash(model):
     digest = hashlib.sha256()
     for owner in ("actor", "critic"):
         for name, value in sorted(model[owner].items()):
-            digest.update((owner + ":" + name + ":" + value.dtype.str + ":" + str(value.shape)).encode())
+            digest.update(
+                (owner + ":" + name + ":" + value.dtype.str + ":" + str(value.shape)).encode()
+            )
             digest.update(value.tobytes())
     return digest.hexdigest()
 
@@ -84,46 +103,95 @@ def source_bindings():
 def fixture(tmp_path, *, edit=None):
     proto, keys = protocol(), tuple(5 + 36 * i for i in range(8))
     native = entry(proto)
-    initial = {"actor": {"weight": np.asarray([1.0], np.float32)},
-               "critic": {"weight": np.asarray([2.0], np.float32)}}
-    final = {"actor": {"weight": np.asarray([1.5], np.float32)},
-             "critic": {"weight": np.asarray([2.5], np.float32)}}
+    initial = {
+        "actor": {"weight": np.asarray([1.0], np.float32)},
+        "critic": {"weight": np.asarray([2.0], np.float32)},
+    }
+    final = {
+        "actor": {"weight": np.asarray([1.5], np.float32)},
+        "critic": {"weight": np.asarray([2.5], np.float32)},
+    }
     action = np.zeros((8, 2), np.float32)
-    states = {key: {
-        "__type__": "phymeo.backends.mujoco_runtime.MuJoCoState", "world": key, "tick": 1,
-        "last_step": {
-            "__type__": "phymeo.backends._mujoco_tyx_runtime.MuJoCoTyxStepReceipt",
-            "world": key, "tick": 1, "input_time": 0.0, "h": 0.002,
-            "input_q": native["q"][i].astype(np.float64),
-            "input_v": native["v"][i].astype(np.float64),
-        }} for i, key in enumerate(keys)}
-    transition = {"__type__": "phymeo.training.mujoco_tyx_env.MuJoCoTyxTransition",
-                  "world_keys": keys, "states": states, "action": action}
+    states = {
+        key: {
+            "__type__": "phymeo.backends.mujoco_runtime.MuJoCoState",
+            "world": key,
+            "tick": 1,
+            "last_step": {
+                "__type__": "phymeo.backends._mujoco_tyx_runtime.MuJoCoTyxStepReceipt",
+                "world": key,
+                "tick": 1,
+                "input_time": 0.0,
+                "h": 0.002,
+                "input_q": native["q"][i].astype(np.float64),
+                "input_v": native["v"][i].astype(np.float64),
+            },
+        }
+        for i, key in enumerate(keys)
+    }
+    transition = {
+        "__type__": "phymeo.training.mujoco_tyx_env.MuJoCoTyxTransition",
+        "world_keys": keys,
+        "states": states,
+        "action": action,
+    }
     records = [("initial_policy", initial)]
     for phase in ("untrained", "learned"):
-        records += [(phase + ".requested_action", {"tick": 1, "action": action}),
-                    (phase + ".transition", transition)]
-    records += [("final_policy_and_adam", {**final, "optimizer": {}, "next_iteration": 128}),
-                ("completion", {"status": "COMPLETE_N4A_SEED", "task": "fixture"})]
+        records += [
+            (phase + ".requested_action", {"tick": 1, "action": action}),
+            (phase + ".transition", transition),
+        ]
+    records += [
+        ("final_policy_and_adam", {**final, "optimizer": {}, "next_iteration": 128}),
+        ("completion", {"status": "COMPLETE_N4A_SEED", "task": "fixture"}),
+    ]
     if edit is not None:
         edit(records)
-    raw = b"".join((json.dumps({"ordinal": i, "kind": k, "payload": wire(v)}) + "\n").encode()
-                   for i, (k, v) in enumerate(records))
+    raw = b"".join(
+        (json.dumps({"ordinal": i, "kind": k, "payload": wire(v)}) + "\n").encode()
+        for i, (k, v) in enumerate(records)
+    )
     packed = gzip.compress(raw, mtime=0)
     (tmp_path / "trace.jsonl.gz").write_bytes(packed)
-    evidence = {"path": "trace.jsonl.gz", "records": len(records),
-                "logical_bytes": len(raw), "logical_sha256": hashlib.sha256(raw).hexdigest(),
-                "compressed_bytes": len(packed), "compressed_sha256": hashlib.sha256(packed).hexdigest()}
-    common = {"task": "fixture", "seed": 7, "protocol_binding": proto, "ppo_config": config(),
-              "source_files": source_bindings(), "dependencies": {"fixture": "synthetic"}}
-    summary = {**common, "status": "COMPLETE_N4A_SEED", "evidence": evidence,
-               "parameter_hash_before": policy_hash(initial), "parameter_hash_after": policy_hash(final),
-               "updates": 128, "worlds": 8, "accepted_world_steps": 32768}
+    evidence = {
+        "path": "trace.jsonl.gz",
+        "records": len(records),
+        "logical_bytes": len(raw),
+        "logical_sha256": hashlib.sha256(raw).hexdigest(),
+        "compressed_bytes": len(packed),
+        "compressed_sha256": hashlib.sha256(packed).hexdigest(),
+    }
+    common = {
+        "task": "fixture",
+        "seed": 7,
+        "protocol_binding": proto,
+        "ppo_config": config(),
+        "source_files": source_bindings(),
+        "dependencies": {"fixture": "synthetic"},
+    }
+    summary = {
+        **common,
+        "status": "COMPLETE_N4A_SEED",
+        "evidence": evidence,
+        "parameter_hash_before": policy_hash(initial),
+        "parameter_hash_after": policy_hash(final),
+        "updates": 128,
+        "worlds": 8,
+        "accepted_world_steps": 32768,
+    }
     encoded = json.dumps(summary).encode()
     (tmp_path / "summary.json").write_bytes(encoded)
-    (tmp_path / "publication.json").write_text(json.dumps({"summary_sha256": hashlib.sha256(encoded).hexdigest()}))
-    (tmp_path / "manifest.json").write_text(json.dumps({**common, "phase": "learn", "world_keys": keys}))
-    return {"directory": str(tmp_path), "summary_sha256": hashlib.sha256(encoded).hexdigest(), "evidence": evidence}
+    (tmp_path / "publication.json").write_text(
+        json.dumps({"summary_sha256": hashlib.sha256(encoded).hexdigest()})
+    )
+    (tmp_path / "manifest.json").write_text(
+        json.dumps({**common, "phase": "learn", "world_keys": keys})
+    )
+    return {
+        "directory": str(tmp_path),
+        "summary_sha256": hashlib.sha256(encoded).hexdigest(),
+        "evidence": evidence,
+    }
 
 
 @pytest.mark.parametrize("width,points", [(1, 13), (2, 17), (3, 21)])
@@ -180,7 +248,10 @@ def test_complete_bound_policy_pair_extraction(tmp_path):
     assert pair["world_keys"] == tuple(5 + 36 * i for i in range(8))
 
 
-@pytest.mark.parametrize("defect", ["missing_initial", "duplicate_initial", "missing_final", "hash", "entry", "first_request"])
+@pytest.mark.parametrize(
+    "defect",
+    ["missing_initial", "duplicate_initial", "missing_final", "hash", "entry", "first_request"],
+)
 def test_extractor_rejects_bound_schema_corruption(tmp_path, defect):
     def edit(records):
         if defect == "missing_initial":
@@ -195,6 +266,7 @@ def test_extractor_rejects_bound_schema_corruption(tmp_path, defect):
             records[2][1]["states"][5]["last_step"]["input_q"][0] = 0.25
         else:
             records[1][1]["action"] = np.ones((8, 2), np.float32)
+
     binding = fixture(tmp_path, edit=edit)
     if defect == "hash":
         # The trusted expected model hash must remain the originally authored value.
@@ -222,7 +294,9 @@ def test_extractor_rejects_identity_and_integrity_failures(tmp_path, defect):
         manifest["source_files"] = {}
         (tmp_path / "manifest.json").write_text(json.dumps(manifest))
     with pytest.raises(ValueError):
-        response.read_policy_pair(tmp_path, binding, expected_task="fixture", expected_seed=8 if defect == "seed" else 7)
+        response.read_policy_pair(
+            tmp_path, binding, expected_task="fixture", expected_seed=8 if defect == "seed" else 7
+        )
 
 
 @pytest.mark.parametrize("defect", ["class", "normalizer", "distribution", "groups"])
@@ -264,31 +338,48 @@ def cuda_pair():
             options = copy.deepcopy(cfg[owner])
             options.pop("class_name")
             model = MLPModel(obs, cfg["obs_groups"], owner, width, **options)
-            models[owner] = {key: value.detach().cpu().numpy().copy() for key, value in model.state_dict().items()}
+            models[owner] = {
+                key: value.detach().cpu().numpy().copy()
+                for key, value in model.state_dict().items()
+            }
     changed = copy.deepcopy(models)
     last_bias = [name for name in changed["actor"] if name.endswith(".bias")][-1]
     changed["actor"][last_bias] += np.float32(0.125)
     return {
-        "task": "fixture", "seed": 17401, "protocol": proto, "ppo_config": cfg,
+        "task": "fixture",
+        "seed": 17401,
+        "protocol": proto,
+        "ppo_config": cfg,
         "models": {"initial": models, "final": changed},
         "hashes": {"initial": policy_hash(models), "final": policy_hash(changed)},
         "dependencies": {name: version(name) for name in response.DEPENDENCIES},
-        "source_files": source_bindings(), "entry": entry(proto),
-        "reference_actions": {"initial": np.zeros((8, 2), np.float32), "final": np.zeros((8, 2), np.float32)},
+        "source_files": source_bindings(),
+        "entry": entry(proto),
+        "reference_actions": {
+            "initial": np.zeros((8, 2), np.float32),
+            "final": np.zeros((8, 2), np.float32),
+        },
         "world_keys": tuple(5 + 36 * i for i in range(8)),
-        "summary_sha256": "synthetic-actual-model", "manifest_sha256": "synthetic-actual-model",
+        "summary_sha256": "synthetic-actual-model",
+        "manifest_sha256": "synthetic-actual-model",
         "evidence": {"scope": "test-only actual upstream models"},
     }
 
 
 def random_state():
     import torch
-    return (random.getstate(), np.random.get_state(), torch.get_rng_state().clone(),
-            [value.clone() for value in torch.cuda.get_rng_state_all()])
+
+    return (
+        random.getstate(),
+        np.random.get_state(),
+        torch.get_rng_state().clone(),
+        [value.clone() for value in torch.cuda.get_rng_state_all()],
+    )
 
 
 def assert_random_unchanged(before):
     import torch
+
     after = random_state()
     assert before[0] == after[0]
     assert before[1][0] == after[1][0]
@@ -301,6 +392,7 @@ def assert_random_unchanged(before):
 
 def computation_flags():
     import torch
+
     return {
         "matmul_allow_tf32": torch.backends.cuda.matmul.allow_tf32,
         "cudnn_allow_tf32": torch.backends.cudnn.allow_tf32,
@@ -311,6 +403,7 @@ def computation_flags():
 @contextmanager
 def caller_computation(precision, cudnn):
     import torch
+
     previous = computation_flags()
     try:
         torch.set_float32_matmul_precision(precision)
@@ -363,8 +456,9 @@ def test_actual_cuda_feature_and_pinned_models_restore_rng(monkeypatch):
         assert values["raw_action"].shape == values["mapped_ctrl"].shape == (17, 2)
         assert np.isfinite(values["raw_action"]).all()
         assert np.isfinite(values["mapped_ctrl"]).all()
-    assert not np.array_equal(result["checkpoints"]["initial"]["raw_action"],
-                              result["checkpoints"]["final"]["raw_action"])
+    assert not np.array_equal(
+        result["checkpoints"]["initial"]["raw_action"], result["checkpoints"]["final"]["raw_action"]
+    )
 
 
 @pytest.mark.cuda
@@ -392,6 +486,7 @@ def test_actual_failure_restores_rng_closes_runtime_and_allows_retry(monkeypatch
     pair = cuda_pair()
     import torch
     import tyx as tx
+
     from phymeo.backends.mujoco_tyx import _task_kernels
 
     closes = []

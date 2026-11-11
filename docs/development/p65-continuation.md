@@ -1,18 +1,18 @@
 # P6.5 人工续作入口
 
-## 当前续作（2026-11-11，N1环境与下一批实际验证）
+## 当前续作（2026-11-11，N2 / ROB1b完成，COL有限改进）
 
-先读[N1实际结果](../benchmarks/p65-cuda-policy-n1.md)、[持续推进计划](../superpowers/plans/2026-11-11-newton-parity-continuous.md)、[八方向全景](phymeo-newton-panorama-2026-11-11.md)。用户取消固定截止，按节点验收推进，不建周期任务。原物理/安装验收d6a5c383、产品e3d15707按原范围复用；本批没有新wheel或远程CI，不重跑旧全套。
+先读[本批实际结果](p65-parity-batch-n2-rob1b-col1a.md)、[持续推进计划](../superpowers/plans/2026-11-11-newton-parity-continuous.md)、[八方向全景](phymeo-newton-panorama-2026-11-11.md)。用户取消固定截止，按节点验收推进，不建周期任务。原物理/安装验收d6a5c383、产品e3d15707只按原范围复用；本批没有新wheel或远程CI，不重跑旧全套。
 
 用户指定的Python313 Torch2.12.0+cu126实际可用，保留；父`.venv-training-cuda313`借用它并隔离NumPy/MuJoCo/RSL/TensorDict/cp313 CUDA bindings，TYX保持99f6。五个明确退役的P65环境已清理，观察释放约0.48GB，事务后C盘约24.15GB；此前大幅背景增长不归功于本次清理。原环境、pins、源码、构建及证据保留，旧Temp Junction不动。详[清理/环境记录](p65-environment-refresh-20261111.md)。不能再删除被新profile借用的用户Torch目录。
 
-**N1推理闭环已通过**：完整focused组22pass、1单GPU硬件条件未测；八条预登记轨迹784world-steps，默认/非默认producer stream、真实CUDA MLP、真实MuJoCo-TYX物理及独立同后端HOST控制入口对照通过。run06闭view异常类型首错、run11最终结果和全部八份轨迹保留。测试981bd76d，验收文档94e795e3。不是PPO、N2 VecEnv或G1全动作完成。下一训练节点N2可在原计划边界内进入实现，不再以磁盘/Torch资格阻塞。
+**N2真实CUDA PPO已通过**：完整两文件23pass/78.68s，tested3b0f7486。两个原W8任务各4次真实上游PPO更新/512物理转移，实际Adam步数和参数变化已核；GRU另有1次更新/64转移，final_obs、timeout、局部reset和晚失败语义通过。五份完整JSONL及9输入绑定已索引，不重跑。只证明优化链路可运行，不冒学习有效性/吞吐或N3恢复。原N1资格继续复用。下一主线是更新边界组合物理、episode、learner、optimizer、normalizer、RNG/RNN的训练恢复。详[N2报告](p65-mujoco-tyx-n2-report.md)。
 
-**ROB1a注册/layout通过**：四个新文件集成，HOST33pass/1.13s，最终静态通过；文档0adf165d。只接受不可变参与者身份、四来源layout、完整body映射和source预检，不含多参与者设备共同step。下一步ROB1b共同入步、各机械块候选求解、world一次发布。
+**ROB1b共同响应已通过**：产品08042d21，interpret11pass/53.59s、CUDA11pass/32.79s。四个双自由体40步变体覆盖每后端320 logical-world steps；共同入步实际M/J/b、双方力/COM力矩、各storage一次求解/发布、整world拒步/restore/reset和晚故障已核。执行域为ordinary floating、每world<=8参与者/<=33物理body，HOST候选与patch，非跨树隐式QP。每后端10份完整gzip及15输入绑定已索引。R02机械臂推盒、R03双臂工具、R04混合来源、晚restore故障及ROB1d新包仍待后继。详[ROB报告](p65-resident-multi-participant-report.md)。
 
-**COL1a实现已集成，尚未验收**：父共享curved binding/保守半径/from_asset预检HOST11pass，新constructor/reference HOST6pass。122个interpret身份全部访问，分组与针对性修复后110通过、12失败；8个为曲面EPA容量相关，4个为四来源圆柱法向精度约0.003119超过原0.002门。旧受影响query/patch/source的interpret/CUDA各18回归通过，新CUDA六support及大平移/BE修复8项通过；没有执行完整新122 CUDA矩阵或验收/build。产品修复c7f24353保原阈值/容量，只稳定equal-square候选比较、TYX初始化/函数绑定，测试修正真实padded/FP32 source/显式拒绝语义。详[完整首错与后继](p65-device-convex-support-family-report.md)。下一碰撞节点是针对这两类实际反例的通用收敛/法向改进，不提高容量/改fixture追绿；曲面patch/load、mesh/CCD均未新增资格。
+**COL1a仍部分通过**：最终产品0ea0fee2保留通用内切球重叠界，原8个EPA容量反例和新增9个身份在两后端通过；完整新矩阵interpret127pass/4fail，CUDA125pass/6fail，各6个既过HOST节点不重跑。四来源圆柱法向误差约0.003119仍超过0.002，CUDA另有sep-HN及rotated-reversed HN资源失败。严格FW法向门曾新增10个分离回归，已撤下，原失败记录保留；旧受影响query/patch/source最终各18pass。下一项先补失败simplex/weights/support/终止值证据，再从实际差异选通用修复，不猜阈值、不提高容量。曲面patch/load仍明确unsupported，不能冒完整COL1a或新包资格。详[COL报告](p65-device-convex-support-family-report.md)。
 
-本批证据统一在`artifacts/p65-env-refresh-20261111-01`。N1/ROB/binding已完核对见`n1-rob-binding-acceptance-receipt.json`；COL各次原stdout/RAW_EXIT/完整gzip和源码快照保留，不重复运行producer补计数。原三个作者已交接释放，后继仍用隔离工作树；父保全部共享接缝与唯一串行执行。先查live agents/Git/WIP和本批owner收据再授新slot。三份旧K1未跟踪WIP保留。未push/mainmerge/发包，整个P6.5与Newton对齐未完成。
+本批证据在`artifacts/p65-parity-n2-rob1b-col1a-20261111-01`：N2/ROB各自evidence-index、COL六run/429gzip索引（含实验失败）及release.json。全部项目执行结束，fresh匹配执行0，owner已释放；不重启旧session、不重跑已绿同源或已完索引。原三个作者均completed，后继仍沿用原隔离工作树。父保共享接缝与下一唯一串行执行；先查live agents/Git/WIP再授新slot。三份旧K1未跟踪WIP保留。未push/mainmerge/发包，整个P6.5与Newton对齐未完成。
 
 G1兼容侧线保持原46.29秒/23145步的1米参考XY门失败，原完整131.48秒未通过；同输入额外native接触约-33nm只定位到激活集合差异，未证明长期漂移因果。不重跑长前缀或改变模型追绿，见[G1诊断](g1-drift-diagnosis-20261111.md)。下面历史pending与截止不覆盖本节。
 

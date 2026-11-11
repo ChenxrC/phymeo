@@ -230,3 +230,50 @@ not improved learning. Failure does not trigger a second sample stream. Two
 nonproductive instrumentation rounds stop with a minimal example. Any actual
 follow-on learning experiment requires a new single-factor preregistration
 using these results; neither larger budgets nor bias centering are preapproved.
+
+
+## Exact upstream interception boundary for parent review
+
+For each task, call the installed PPO.act and PPO.process_env_step exactly32
+times through the public adapter; then call PPO.compute_returns exactly once.
+Do not call session.update, which would automatically enter an optimizer update.
+Capture storage immediately before and after compute_returns, including
+storage.rewards/values/returns/advantages/actions/actions_log_prob and all
+distribution_params. Last bootstrap comes from the original critic evaluation
+inside compute_returns, observed once without a second critic forward.
+
+Then call original PPO.update once. Its actual
+storage.mini_batch_generator(num_mini_batches=1,num_epochs=1) selects the whole
+256-sample batch in one original randperm order; observe that yielded batch
+without substituting an order or advancing RNG again. The actor recomputation
+inside the original update is retained (including its normal RNG side effect);
+no additional stochastic actor call is made for diagnosis. Parameter hooks
+capture the real loss.backward gradients before the original two
+clip_grad_norm_ calls. Optimizer.register_step_pre_hook is the proposed public
+pre-mutation stop: capture the resulting clipped gradients and raise only the
+dedicated expected sentinel. Any other exception remains a failure, and any
+parameter/Adam mutation invalidates the zero-update claim. Saved Adam step128
+must remain128, not be relabelled as an optimizer with step0.
+
+Original PPO.update_normalization calls occur after the optimizer loop and are
+not reached after this intentional stop. The admitted saved normalizers are
+Identity; verify their complete state before/after anyway. Do not replace or
+retrain normalizers, apply centering twice, reset learned log std, or perform a
+normalizer update manually during cleanup.
+
+Use exactly the public task observations: original FP32 q/v scale and bias,
+no extra observation clipping. PPO stores raw Gaussian actions/log probabilities;
+the public Env applies its existing tanh and the original per-channel scale,
+and MuJoCo retains its original declared ctrl/force clamps. Record all three
+representations; do not compute log probability of the tanh/native force as
+though it were the sampled Gaussian action.
+
+The adapter's done is terminated OR time_outs, with termination priority already
+established by Env. It returns final_observation separately, but the installed
+PPO process_env_step uses gamma times the stored **entry** value on timeout;
+this is the original accepted protocol, not a new final-state bootstrap.
+The fresh32-step windows cannot normally timeout at256. If an actual early
+terminal/refusal occurs, retain it and stop the fixed capture; never continue
+a truncated batch after reset. The ordinary final nonterminal observation at
+step32 supplies compute_returns' last value. This experiment neither modifies
+timeout semantics nor claims to requalify their old tests.

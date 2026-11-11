@@ -28,6 +28,8 @@ from .backends._resident_floating_tree import (
 from .backends._resident_revolute_binding import ResidentRevoluteBinding
 from .backends._resident_slider_binding import ResidentSliderBinding
 from .backends._resident_tree_binding import ResidentTreeBinding
+from .backends.physolve_payload import PhySolvePayload
+from .backends.physolve_runtime import PhySolveRuntime
 from .backends.tyx import TyxSemiImplicitSolver
 from .backends.tyx_articulated import (
     TyxArticulatedCouplingProgram,
@@ -377,6 +379,8 @@ from .validation.terminal_impulse import TerminalImpulseLedger
 from .validation.thick_contact_mapping import ThickContactMappingLedger
 
 __all__ = [
+    "PhySolvePayload",
+    "PhySolveRuntime",
     "RobotPlaneCollider",
     "DynamicRobotNormalContactProgram",
     "DynamicRobotFrictionContactProgram",

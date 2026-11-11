@@ -1,0 +1,14 @@
+# Candidate N1 profile: Windows x86-64 / CPython 3.11 / CUDA 12.6.
+# NOT QUALIFIED: installation and CUDA execution are blocked by disk capacity.
+# Install only into a new isolated environment; preserve .venv-training and all
+# existing physics environments. This is not a complete transitive lock file.
+# Official wheel index/hash checked 2026-11-11; compressed wheel: 2602753280 B.
+torch @ https://download-r2.pytorch.org/whl/cu126/torch-2.14.1%2Bcu126-cp311-cp311-win_amd64.whl#sha256=4cff57ddd28c8bdf8bf2fc473f149c1b5f0063b1a6bd57593288e0bf18459adb
+tensordict==0.15.5
+rsl-rl-lib==5.5.2
+numpy==2.4.6
+mujoco==3.3.7
+# Provision TYX separately at the existing project pin:
+# 99f6df7c0fd8fdeef77f97df83914da27b64b7ee.
+# Verify its Python ABI, native extension and import origin in the new profile.
+# N1 does not require torchvision or torchaudio.

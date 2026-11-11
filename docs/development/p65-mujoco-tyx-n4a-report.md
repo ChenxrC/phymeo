@@ -1,7 +1,7 @@
 # MuJoCo-TYX N4a learning results and partial qualification
 
 Status: **LEARNING_PROTOCOLS_COMPLETE / PARTIAL_LEARNING_QUALIFICATION /
-SCALE_MATRIX_PASSED / WHEEL_PENDING / AUTHORING_SLOT_RELEASED**.
+SCALE_MATRIX_PASSED / INSTALLED_HOST_EVALUATION_PASSED / AUTHORING_SLOT_RELEASED**.
 The parent executed validation; this author only read the closed reports and
 updated this document. The current results below supersede historical pending
 labels, without assigning new results to earlier source snapshots.
@@ -152,8 +152,33 @@ Measurement limits remain explicit:
 These are the declared two-joint, finite-support and three-joint branching tasks,
 not 256 G1 humanoids. No same-protocol Newton performance baseline was run, so this
 result makes no faster-than-Newton claim. It does not change the J/R fixed-budget
-learning refusals or expand the already-defined model domain. The **new wheel
-remains PENDING** for the parent to qualify separately.
+learning refusals or expand the already-defined model domain. At the scale-author
+handoff the wheel was still pending; the subsequent parent result follows.
+
+## Parent installed qualification
+
+Parent commands80/81 built and installed a fresh source-external wheel. Command82
+compared all494 package products byte-for-byte between tracked source, wheel and
+installed target, with no issues. Package source is `7964d1b`; later root changes
+are CLI/tests/docs and do not alter packaged members. Wheel SHA256 is
+`aca8054872902a050865c4c5b0ac9b083435dd1cc7743d959fe5f115699ce1e5`
+(1552449 bytes). Nothing was published remotely.
+
+Command88 completed **PASS_INSTALLED_EVALUATION_HOST / RAW_EXIT0** outside every
+checkout. It checks the public QuadraticCost/native_cost result (0.65625), missing
+world refusal, positive/negative three-seed gates, installed module provenance
+and HOST import without Torch. This is installed API qualification, not a new
+learning run. The same wheel also passed ROB1d interpret/CUDA consumers (86/87),
+whose mechanical scope is documented separately.
+
+The first ROB consumer launch83 rejected the Windows virtualenv-root sys.path
+entry before any physical scenario. Bootstrap v2 removes only the exact known
+editable source and interpreter-root entries, retaining dependency site-packages
+and all consumer provenance checks. Neither product nor consumer was changed.
+The original failure remains. Canonical complete installed outputs and scripts
+are in `artifacts/p65-parity-n4a-rob1d-col-reducer-20261111-01/installed-evidence`;
+the archive receipt binds all199 files, including failure evidence, without
+decompression or physical reruns.
 
 ## Historical authoring scope and handoff
 

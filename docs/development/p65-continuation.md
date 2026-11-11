@@ -1,6 +1,20 @@
 # P6.5 人工续作入口
 
-## 当前续作（2026-11-11，N3恢复完成，ROB1c限域，COL诊断完成）
+## 当前续作（2026-11-11，N4a完成评价、ROB1d新包通过、COL两HN修复）
+
+先读[本批实际记录](p65-parity-batch-n4a-rob1d-col-reducer.md)、[当前全景](phymeo-newton-panorama-2026-11-11.md)与[持续计划](../superpowers/plans/2026-11-11-newton-parity-continuous.md)。本节优先于下面历史pending；无截止或周期任务。用户Torch和当前环境继续保留，旧证据Junction不动。
+
+**N4a学习与规模已分别评价**：三任务各三种子全部完成原128更新，共294912训练转移。持续接触支撑S通过原学习门，中位成本下降26.4%；关节J下降5.6%、分支机器人R下降8.2%，两者未达原门。保留所有种子及zero诊断，不追加预算追绿。W1/8/32/64/128/256的18格规模均通过；含完整trace关闭的W256吞吐约J693、S219、R560 transitions/s，三任务均低于W128。本机单次有界测量，不是256台G1或Newton性能优势。详[N4报告](p65-mujoco-tyx-n4a-report.md)。
+
+**ROB1d源码外安装通过**：新wheel的494个产品文件与源码、安装目录相同；interpret/CUDA各完成机械臂推盒和混合四storage的13次调用/21个logical-world steps，完整双侧力矩、恢复后继、局部reset与错owner拒绝均过。已安装N4公共HOST评价接口亦通过；未重训PPO。首次启动器将Windows虚拟环境根路径误当源码入口，在物理前失败；仅移除精确已知搜索入口后通过，产品与消费者未改。R03两个小净加速度精度失败仍开放，HOST patch/每world<=33 body等范围不扩大。详[ROB1d报告](p65-resident-rob1d-installed-report.md)。
+
+**COL通用仿射重建已集成**：同一pivot+edges算术修复count1–4单纯形；新6项与原两个HN在两后端通过，其余受影响矩阵各258通过。四个圆柱Y法向门仍失败；下一项是同一候选的距离、法向、见证共同停止/发布，而非再加容量或恢复旧FW门。详[COL报告](p65-convex-affine-reconstruction-report.md)。
+
+下一批：训练先从已保存J/R行为、梯度/价值和timeout证据定位固定预算弱收益，再预登记后继协议；规模优先核物理推进/状态快照/诊断的热点及可声明快速模式；机器人推进ROB2a接口与多案例，R03只做有界算术复现；碰撞做有界一致停止假设。三支独立，项目执行仍父唯一串行。原G1 46.29s参考XY门失败、完整131.48s未通过，不重跑旧长窗。
+
+本批证据：`artifacts/p65-parity-n4a-rob1d-col-reducer-20261111-01`。全部本批项目执行已结束；原作者只报告收尾，未授新执行。保留三个旧K1未跟踪WIP，无CI、push/main合并、发包或全P6.5完成声明。新安装资格不补齐曲面patch/载荷、任意机器人训练或其它物理族。
+
+## 历史基线（2026-11-11，N3恢复完成，ROB1c限域，COL诊断完成）
 
 先读[本批记录](p65-parity-batch-n3-rob1c-col-trace.md)、[当前全景](phymeo-newton-panorama-2026-11-11.md)和[持续计划](../superpowers/plans/2026-11-11-newton-parity-continuous.md)。下面旧pending不覆盖本节；不建周期任务或新deadline，不重复清理活跃Torch环境或旧证据Junction。
 

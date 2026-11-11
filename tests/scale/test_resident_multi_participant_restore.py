@@ -287,7 +287,10 @@ def test_mixed_checkpoint_rejects_incomplete_identity_before_upload(fault, tyx_m
                 subset.pop(next(reversed(subset)))
                 checkpoint = replace(checkpoint, participants=subset)
             elif fault == "wrong_world":
-                checkpoint = replace(checkpoint, world=built["worlds"][0])
+                with pytest.raises(ValueError, match="same-world"):
+                    replace(checkpoint, world=built["worlds"][0])
+                # A valid capsule supplied under another world's key must also reject.
+                world = built["worlds"][0]
             else:
                 epoch -= 1
             with pytest.raises((ValueError, RuntimeError)):
@@ -301,6 +304,7 @@ def test_mixed_checkpoint_rejects_incomplete_identity_before_upload(fault, tyx_m
                     fault=fault,
                     previous=previous,
                     attempted=checkpoint,
+                    attempted_world=world,
                     expected_epoch=epoch,
                     after=capture(scene, plan),
                 ),

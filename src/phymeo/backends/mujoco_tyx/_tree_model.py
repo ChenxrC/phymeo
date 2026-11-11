@@ -5,7 +5,7 @@
 
 """Static native tree fields only: no configuration-specific M/J/bias freezing."""
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field as dataclass_field
 
 import numpy as np
 
@@ -27,7 +27,7 @@ class TyxTreeModel(TyxModel):
     ancestors: np.ndarray
     gravity: np.ndarray
     # Keyword-only default preserves the independent floating-tree constructor.
-    dof_ids: np.ndarray | None = field(default=None, kw_only=True)
+    dof_ids: np.ndarray | None = dataclass_field(default=None, kw_only=True)
 
 
 def _rotation(wxyz):

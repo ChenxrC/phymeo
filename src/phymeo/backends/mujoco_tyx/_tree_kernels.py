@@ -185,9 +185,21 @@ def geometry(
                             r21 = 2.0 * (qy * qz + qw * qx)
                             r22 = 1.0 - 2.0 * (qx * qx + qy * qy)
                             for i in range(3):
-                                work_rotation[w, i, 0] = rotation[w, b, i, 0] * r00 + rotation[w, b, i, 1] * r10 + rotation[w, b, i, 2] * r20
-                                work_rotation[w, i, 1] = rotation[w, b, i, 0] * r01 + rotation[w, b, i, 1] * r11 + rotation[w, b, i, 2] * r21
-                                work_rotation[w, i, 2] = rotation[w, b, i, 0] * r02 + rotation[w, b, i, 1] * r12 + rotation[w, b, i, 2] * r22
+                                work_rotation[w, i, 0] = (
+                                    rotation[w, b, i, 0] * r00
+                                    + rotation[w, b, i, 1] * r10
+                                    + rotation[w, b, i, 2] * r20
+                                )
+                                work_rotation[w, i, 1] = (
+                                    rotation[w, b, i, 0] * r01
+                                    + rotation[w, b, i, 1] * r11
+                                    + rotation[w, b, i, 2] * r21
+                                )
+                                work_rotation[w, i, 2] = (
+                                    rotation[w, b, i, 0] * r02
+                                    + rotation[w, b, i, 1] * r12
+                                    + rotation[w, b, i, 2] * r22
+                                )
                         else:
                             cosine = tx.cos(displacement)
                             sine = tx.sin(displacement)
@@ -196,7 +208,9 @@ def geometry(
                                     work_rotation[w, i, j] = 0.0
                                     for k in range(3):
                                         value = (
-                                            (1.0 - cosine) * joint_data[joint, k] * joint_data[joint, j]
+                                            (1.0 - cosine)
+                                            * joint_data[joint, k]
+                                            * joint_data[joint, j]
                                         )
                                         if k == j:
                                             value = value + cosine
@@ -223,12 +237,19 @@ def geometry(
                                 for column in range(3):
                                     axes[w, dof + column, i] = rotation[w, b, i, column]
                                     anchors[w, dof + column, i] = anchors[w, dof, i]
-                                    work[w, 7, i] = work[w, 7, i] + rotation[w, b, i, column] * v[w, dof + column]
+                                    work[w, 7, i] = (
+                                        work[w, 7, i]
+                                        + rotation[w, b, i, column] * v[w, dof + column]
+                                    )
                             for i in range(3):
                                 j = (i + 1) % 3
                                 k = (i + 2) % 3
                                 work[w, 3, i] = motion[w, b, 2, i] + work[w, 7, i]
-                                work[w, 4, i] = motion[w, b, 4, i] + motion[w, b, 2, j] * work[w, 7, k] - motion[w, b, 2, k] * work[w, 7, j]
+                                work[w, 4, i] = (
+                                    motion[w, b, 4, i]
+                                    + motion[w, b, 2, j] * work[w, 7, k]
+                                    - motion[w, b, 2, k] * work[w, 7, j]
+                                )
                         for i in range(3):
                             j = (i + 1) % 3
                             k = (i + 2) % 3

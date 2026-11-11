@@ -31,6 +31,8 @@ def encode(value):
                     bytes_hex=value.tobytes(order="C").hex(), values=value.tolist())
     if isinstance(value, np.generic):
         return encode(value.item())
+    if isinstance(value, bytes):
+        return dict(bytes_hex=value.hex())
     if type(value) is object:
         return dict(opaque_process_identity=True)
     if is_dataclass(value):

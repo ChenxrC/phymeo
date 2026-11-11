@@ -165,8 +165,11 @@ def test_complete_world_restore_cas_replay_and_partial_reset(tyx_mode, tmp_path)
                                                    next(iter(saved[world].participants.values()))})
                 scene.restore({world: incomplete}, expected_epoch=scene.state_epoch)
             assert_retained(scene, plan, current)
+            old_receipt = plan.last_accepted[world]
             scene.restore(saved, expected_epoch=scene.state_epoch)
             assert scene.snapshot() == saved
+            with pytest.raises(ValueError, match="stale"):
+                plan.require_current(old_receipt)
             replay = []
             for index in range(3):
                 before = scene.snapshot()

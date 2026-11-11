@@ -75,6 +75,19 @@ def test_complete_transition_equivalence_with_partial_reset(name, tmp_path, monk
                     return original(model, data)
 
                 monkeypatch.setattr(runtime._mj, "mj_forward", observed)
+                reset_phases = {"initial": 0, "stored": 0}
+                initial_data, observe_native = runtime._initial_data, runtime._observe_native
+
+                def initial(packet):
+                    reset_phases["initial"] += 1
+                    return initial_data(packet)
+
+                def stored(packet):
+                    reset_phases["stored"] += 1
+                    return observe_native(packet)
+
+                monkeypatch.setattr(runtime, "_initial_data", initial)
+                monkeypatch.setattr(runtime, "_observe_native", stored)
 
                 def forbidden(*args, **kwargs):
                     raise AssertionError("integration mode invoked full snapshot")
@@ -91,11 +104,17 @@ def test_complete_transition_equivalence_with_partial_reset(name, tmp_path, monk
                             action, world_keys=full.world_keys, expected_frame=full.current_frame
                         )
                         before = len(calls)
+                        before_reset = dict(reset_phases)
                         b = fast.step(
                             action, world_keys=fast.world_keys, expected_frame=fast.current_frame
                         )
-                        # Reset initialization still legitimately uses CPU forward.
-                        assert len(calls) - before == int(b.final_mask.sum().item())
+                        # N5 verifies both requested reset input and the actual
+                        # stored FP32 candidate before CAS. Ordinary physical
+                        # steps still perform neither native observation.
+                        selected_count = int(b.final_mask.sum().item())
+                        assert reset_phases["initial"] - before_reset["initial"] == selected_count
+                        assert reset_phases["stored"] - before_reset["stored"] == selected_count
+                        assert len(calls) - before == 2 * selected_count
                         for field in (
                             "observation",
                             "reward",

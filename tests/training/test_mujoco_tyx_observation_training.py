@@ -213,3 +213,20 @@ def test_memory_diagnostic_only_failed_s256(name, worlds, tmp_path):
     with pytest.raises(ValueError, match="S256"):
         api().run_pair(name, worlds, tmp_path / "refused", memory_diagnostic=True)
     assert not (tmp_path / "refused").exists()
+
+
+def test_common_transition_hash_includes_stable_frame_binding():
+    from types import SimpleNamespace
+    module = api()
+    frame = SimpleNamespace(binding=task_binding(), revision=1, epoch=2, ticks=(1, 1), times=(.002, .002))
+    values = dict.fromkeys(module.TRANSITION_FIELDS)
+    values.update(states={}, input_frame=frame, output_frame=frame)
+    transition = SimpleNamespace(**values)
+    record = {key: None for key in (
+        "iteration", "next_iteration", "loss", "optimization", "recurrent_masks", "step_requests")}
+    record["transitions"] = (transition,)
+    first = module.digest(module.common_update(record))
+    frame.binding = {**frame.binding, "workspace_owner": "new-opaque", "runtime_owner": 999}
+    assert module.digest(module.common_update(record)) == first
+    frame.binding = {**frame.binding, "source_sha256": "wrong-model-source"}
+    assert module.digest(module.common_update(record)) != first

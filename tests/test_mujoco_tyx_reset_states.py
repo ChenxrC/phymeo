@@ -221,3 +221,113 @@ def test_bad_free_anchor_is_not_normalized_or_written(mode):
                 expected_revision=engine.checkpoint_revision,
             )
         assert engine.checkpoint().to_bytes() == before
+
+
+# Original ROB2a hinge FILTEREXACT model/parameters, inline independent fixture.
+FILTER_XML = """<mujoco model="rob2a-hinge"><compiler angle="radian"/>
+<option timestep=".001" gravity=".1 -.2 -1" integrator="Euler"/>
+<worldbody><body name="base" pos=".04 .02 .3">
+<joint name="joint" type="hinge" axis="0 1 0" armature=".04" damping=".12"/>
+<inertial pos=".03 .01 -.02" mass="1.1" diaginertia=".04 .05 .06"/>
+<geom size=".04" contype="0" conaffinity="0"/>
+</body></worldbody><actuator>
+<general name="filter" joint="joint" gear="1.5" group="1"
+dyntype="filterexact" dynprm=".004" gainprm="1.4"
+biastype="affine" biasprm=".03 -.2 -.05" actearly="false"
+ctrllimited="true" ctrlrange="-.4 .4" actlimited="true" actrange="-.2 .3"
+forcelimited="true" forcerange="-.7 .7"/>
+</actuator></mujoco>"""
+
+
+@pytest.mark.tyx
+@pytest.mark.parametrize("mode", MODES)
+def test_filterexact_full_activation_and_three_held_channels_survive_subset(mode, tmp_path):
+    pytest.importorskip("mujoco")
+    compiled = compile_mujoco_xml(FILTER_XML, require_asset=False)
+    initial = {
+        key: MuJoCoInitialState([0.06], [-0.035], act=[0.34 + i * 0.01], time=0.125)
+        for i, key in enumerate(KEYS)
+    }
+    wrench = np.zeros((2, 6))
+    wrench[1] = [0.02, -0.015, 0.01, 0.005, -0.003, 0.004]
+    packets = {
+        key: MuJoCoControl([0.8 + i * 0.015], qfrc_applied=[0.012], xfrc_applied=wrench)
+        for i, key in enumerate(KEYS)
+    }
+    with MuJoCoRuntime(compiled, mode=mode, world_keys=KEYS, initial_states=initial) as engine:
+        engine.set_controls(packets)
+        for _ in range(3):
+            assert all(engine.step(0.001).values())
+        before = payload(engine)
+        snapshots = engine.snapshot()
+        assert all(s.act[0] != 0 for s in snapshots.values())
+        receipt = engine.reset_states(
+            {31: MuJoCoInitialState([0.04], [0.02], act=[-0.05])},
+            expected_revision=engine.checkpoint_revision,
+        )
+        after = payload(engine)
+        for index in (0, 2, 3):
+            assert after["worlds"][index] == before["worlds"][index]
+            for name in ("q", "v", "clock", "act"):
+                assert bank_row(after[name], index) == bank_row(before[name], index)
+            assert signature(engine.snapshot()[KEYS[index]]) == signature(snapshots[KEYS[index]])
+        assert receipt.stored[31].act.tobytes() == np.asarray([-0.05], np.float32).astype(
+            np.float64
+        ).tobytes()
+        assert engine.snapshot()[31].act.tobytes() == receipt.stored[31].act.tobytes()
+        engine.set_controls(packets)
+        for _ in range(2):
+            assert all(engine.step(0.001).values())
+        (tmp_path / f"activation-{mode}.json").write_text(
+            json.dumps({"before": before, "after": after}), encoding="utf-8"
+        )
+
+
+@pytest.mark.tyx
+@pytest.mark.parametrize("mode", MODES)
+@pytest.mark.parametrize("fault", ("readback", "last-observer"))
+def test_real_replacement_is_closed_on_late_precommit_failure(mode, fault, monkeypatch):
+    from phymeo.backends import mujoco_checkpoint
+
+    compiled = source("J")
+    with MuJoCoRuntime(compiled, mode=mode, world_keys=KEYS) as engine:
+        engine.set_controls(controls("J"))
+        assert all(engine.step(0.002).values())
+        before = engine.checkpoint().to_bytes()
+        built, closed = [], []
+        build = engine._build_device
+
+        def capture(*args, **kwargs):
+            result = build(*args, **kwargs)
+            built.append(result)
+            original_close = result.close
+            def close():
+                closed.append(result)
+                return original_close()
+            monkeypatch.setattr(result, "close", close)
+            return result
+
+        monkeypatch.setattr(engine, "_build_device", capture)
+        if fault == "readback":
+            verify = mujoco_checkpoint._verify_bank
+            def fail(device, packed):
+                verify(device, packed)
+                raise RuntimeError("injected failure after real candidate readback")
+            monkeypatch.setattr(mujoco_checkpoint, "_verify_bank", fail)
+        else:
+            observe = engine._observe_native
+            visits = []
+            def fail(data):
+                value = observe(data)
+                visits.append(True)
+                if len(visits) == len(KEYS):
+                    raise RuntimeError("injected final selected observer failure")
+                return value
+            monkeypatch.setattr(engine, "_observe_native", fail)
+        with pytest.raises(RuntimeError, match="injected"):
+            engine.reset_states(
+                {key: state("J", i) for i, key in enumerate(KEYS)},
+                expected_revision=engine.checkpoint_revision,
+            )
+        assert len(built) == 1 and closed == built
+        assert engine.checkpoint().to_bytes() == before

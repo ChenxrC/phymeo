@@ -288,3 +288,170 @@ def test_common_transition_hash_includes_stable_frame_binding():
     assert module.digest(module.common_update(record)) == first
     frame.binding = {**frame.binding, "source_sha256": "wrong-model-source"}
     assert module.digest(module.common_update(record)) != first
+
+
+def native_fixture():
+    from types import SimpleNamespace
+
+    class Data:
+        def __init__(self, model, *, marker=None):
+            if model.fail:
+                raise MemoryError("original public constructor failed")
+            self.model, self.marker = model, marker
+            self.narena, self.nbuffer = model.narena, 512
+            self.maxuse_arena, self.maxuse_stack = 128, 32
+            self.maxuse_threadstack, self.maxuse_con, self.maxuse_efc = (16, 32), 2, 6
+
+    model = SimpleNamespace(narena=4096, nbuffer=256, fail=False)
+    return Data, model
+
+
+@pytest.mark.parametrize("fails", (False, True))
+def test_memory_public_constructor_preserves_real_type_failure_and_restoration(fails, tmp_path):
+    import copy
+    import weakref
+    from types import SimpleNamespace
+
+    module = api()
+    data_type, model = native_fixture()
+    native_module = SimpleNamespace(MjData=data_type)
+    original_copy = SimpleNamespace(copy=copy.copy)
+    target = SimpleNamespace(copy=original_copy)
+    observer = module.MemoryObservation(tmp_path, 2, process_sample=lambda: {})
+    model.fail = fails
+    with observer.install(target, data_type, native_module=native_module):
+        observer.begin_mode("full")
+        if fails:
+            with pytest.raises(MemoryError, match="original public constructor"):
+                native_module.MjData(model, marker="unchanged")
+        else:
+            data = native_module.MjData(model, marker="unchanged")
+            assert type(data) is data_type
+            assert data.model is model and data.marker == "unchanged"
+            reference = weakref.ref(data)
+            del data
+            assert reference() is None
+        observer.finish_construction()
+    assert native_module.MjData is data_type
+    assert target.copy is original_copy
+    saved = observer.snapshot()
+    assert saved["schema"] == "bounded-native-allocation-observation-v2"
+    assert saved["constructor_calls"] == 1
+    assert saved["constructor_failures"] == int(fails)
+    assert saved["copy_calls"] == 0
+    assert saved["phase_accounting"]["full"]["construct"]["constructor_calls"] == 1
+    assert saved["performance_eligible"] is False
+    if not fails:
+        assert saved["native_ranges"]["data_maxuse_stack_bytes"] == [32, 32]
+        assert saved["native_ranges"]["data_maxuse_threadstack_bytes/1"] == [32, 32]
+
+
+def test_memory_physics_interval_excludes_full_observer_and_retains_no_runtime(tmp_path):
+    import copy
+    import weakref
+    from types import SimpleNamespace
+
+    module = api()
+    data_type, model = native_fixture()
+    native_module = SimpleNamespace(MjData=data_type)
+    target = SimpleNamespace(copy=SimpleNamespace(copy=copy.copy))
+
+    class Runtime:
+        def __init__(self):
+            self._data = {7: SimpleNamespace(), 91: SimpleNamespace()}
+            self._observer_data = None
+
+        def step(self, h):
+            assert h == 0.002
+            return {7: True, 91: True}
+
+        def snapshot(self):
+            if self._observer_data is None:
+                self._observer_data = native_module.MjData(model)
+            self._observer_data.maxuse_arena = 192
+            return {"marker": "actual-observer-result"}
+
+        def integration_snapshot(self):
+            return {"marker": "integration-result"}
+
+    runtime = Runtime()
+
+    class Adapter:
+        def step(self, actions):
+            accepted = runtime.step(0.002)
+            full = runtime.snapshot()
+            return accepted, full, actions
+
+    adapter = Adapter()
+    observer = module.MemoryObservation(tmp_path, 2, process_sample=lambda: {})
+    with observer.install(target, data_type, native_module=native_module):
+        observer.begin_mode("full")
+        initial = native_module.MjData(model)
+        del initial
+        with observer.observe_runtime(runtime, data_type), observer.observe_steps(adapter):
+            observer.finish_construction()
+            for _ in range(2):
+                result = adapter.step((1.0, -2.0))
+                assert result[1] == {"marker": "actual-observer-result"}
+            runtime.integration_snapshot()
+        assert "step" not in vars(runtime) and "snapshot" not in vars(runtime)
+        assert "integration_snapshot" not in vars(runtime) and "step" not in vars(adapter)
+    saved = observer.snapshot()
+    ledger = saved["phase_accounting"]["full"]
+    assert ledger["construct"]["constructor_calls"] == 1
+    assert ledger["full-observer"]["constructor_calls"] == 1
+    assert ledger["full-observer"]["calls"] == 2
+    assert ledger["physics-step"]["calls"] == 2
+    assert ledger["physics-step"]["constructor_calls"] == 0
+    assert ledger["physics-step"]["copy_calls"] == 0
+    assert len(saved["physics_steps"]) == 2
+    assert all(row["zero_native_allocation"] for row in saved["physics_steps"])
+    assert saved["native_ranges"]["data_maxuse_arena_bytes"] == [128, 192]
+    runtime_ref, scratch_ref = weakref.ref(runtime), weakref.ref(runtime._observer_data)
+    del runtime, adapter
+    assert runtime_ref() is None and scratch_ref() is None
+
+
+@pytest.mark.parametrize("operation", ("construct", "copy", "throw"))
+def test_memory_step_allocation_gate_and_original_failure_restore_wrappers(operation, tmp_path):
+    import copy
+    from types import SimpleNamespace
+
+    module = api()
+    data_type, model = native_fixture()
+    native_module = SimpleNamespace(MjData=data_type)
+    target = SimpleNamespace(copy=SimpleNamespace(copy=copy.copy))
+    seed = data_type(model)
+
+    class Runtime:
+        def step(self, h):
+            if operation == "construct":
+                native_module.MjData(model)
+            elif operation == "copy":
+                target.copy.copy(seed)
+            else:
+                raise LookupError("original step error")
+
+        def snapshot(self):
+            return {}
+
+        def integration_snapshot(self):
+            return {}
+
+    runtime = Runtime()
+    observer = module.MemoryObservation(tmp_path, 1, process_sample=lambda: {})
+    expected = LookupError if operation == "throw" else AssertionError
+    match = "original step error" if operation == "throw" else "native allocation"
+    with pytest.raises(expected, match=match):
+        with observer.install(target, data_type, native_module=native_module):
+            observer.begin_mode("integration")
+            observer.finish_construction()
+            with observer.observe_runtime(runtime, data_type):
+                observer.begin_step()
+                runtime.step(0.002)
+    assert native_module.MjData is data_type
+    assert "step" not in vars(runtime)
+    row = observer.snapshot()["physics_steps"][0]
+    assert row["original_call_failed"] is (operation == "throw")
+    assert row["constructor_calls"] == int(operation == "construct")
+    assert row["copy_calls"] == int(operation == "copy")

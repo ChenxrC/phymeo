@@ -29,7 +29,7 @@ F0 固定布局顺序 ordinary、affine、floating、floating_affine。世界 ID
 
 - driver-local triangle T_x=((0,0,0),(0,2,0),(0,0,2))，vertex IDs=(11,37,91)。这是 F2 原 T=((0,0,0),(2,0,0),(0,2,0)) 的 cyclic rotation。
 - follower-local sphere 中心 a=(-1/4,1/2,1/2)，radius=1/8；capsule 端点 a、a+(1/4,0,0)，IDs=(11,37)，radius=1/8。球只保一个原材料 ID；核内部零轴不得冒成两个原球材料点。
-- triangle key=(world,101,0)，sphere=(world,202,0)，capsule=(world,203,0)。sphere/capsule 是同一 follower 上两个只读资产，round–round/same-body 等完整过滤记录仍保存。
+- triangle key=(world,101,0)，sphere=(world,202,0)，capsule=(world,202,1)。sphere/capsule是同一真实follower/body上的两个shape。06:53源码复核纠正原capsule body203元数据：原`_resident_collision_plan.py`要求(world,body)与物理group双向唯一；两个shape不能给同一group制造两个body。几何、运动、节点数和验收门均未变，测试尚未执行；round–round/same-body等完整过滤记录仍保存。
 - 固定根 driver/follower physical group 为 0/1，浮根为 1/2；必须由实际 topology/asset 证明核对。M02 triangle 装 driver、round 装 follower；M01 triangle 固定在已声明初始 driver 世界姿态，round 仍来自真实 follower。
 - 静态坐标允许由上述初始 literals 的 R/t 一次计算。禁止每步下载当前 pose 再上传静态点。新 boundary binding 类型由父冻结，不能把 triangle 冒充 hull 塞入旧 convex binding。保存真实 checkpoint.topology；floating-affine 继续绑定原 tree.inputs 零 drive 所得 graph_token，不手造 reduced/physical 图身份。
 

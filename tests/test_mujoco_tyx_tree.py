@@ -667,7 +667,8 @@ def test_limit_crossing_uses_native_soft_limit_without_stop_repair(mode, tmp_pat
     initial = {5: MuJoCoInitialState([0.454], [8.0]), 91: MuJoCoInitialState([0.2], [0.25])}
     model = mj.MjModel.from_xml_string(xml)
     packet = MuJoCoControl(
-        np.zeros(model.nu), qfrc_applied=np.zeros(model.nv),
+        np.zeros(model.nu),
+        qfrc_applied=np.zeros(model.nv),
         xfrc_applied=np.zeros((model.nbody, 6)),
     )
     path = tmp_path / "native-limit-crossing.jsonl"
@@ -679,17 +680,29 @@ def test_limit_crossing_uses_native_soft_limit_without_stop_repair(mode, tmp_pat
         references = {key: mj.MjData(model) for key in keys}
         for key, reference in references.items():
             reference.qpos[:], reference.qvel[:], reference.time = (
-                start[key].q, start[key].v, start[key].time
+                start[key].q,
+                start[key].v,
+                start[key].time,
             )
             _set_native(reference, packet)
-        _append(path, dict(source_xml=xml, initial=initial, stored_start=start,
-            held_zero_control=packet, steps=2, tolerances=TOL,
-            q_atol=SHORT_Q_ATOL, v_atol=SHORT_V_ATOL, time_atol=TIME_ATOL))
+        _append(
+            path,
+            dict(
+                source_xml=xml,
+                initial=initial,
+                stored_start=start,
+                held_zero_control=packet,
+                steps=2,
+                tolerances=TOL,
+                q_atol=SHORT_Q_ATOL,
+                v_atol=SHORT_V_ATOL,
+                time_atol=TIME_ATOL,
+            ),
+        )
         for tick in range(2):
             before = runtime.snapshot()
             expected = {
-                key: mixed.native(mj, model, before[key].q, before[key].v,
-                                  packet, before[key].time)
+                key: mixed.native(mj, model, before[key].q, before[key].v, packet, before[key].time)
                 for key in keys
             }
             for reference in references.values():
@@ -697,19 +710,29 @@ def test_limit_crossing_uses_native_soft_limit_without_stop_repair(mode, tmp_pat
             try:
                 accepted = runtime.step(H)
                 after = runtime.snapshot()
-                _append(path, dict(step=tick + 1, before=before, native=expected,
-                    after=after, accepted_worlds=accepted,
-                    continuous_cpu={key: dict(q=ref.qpos.copy(), v=ref.qvel.copy(),
-                                             time=float(ref.time))
-                                    for key, ref in references.items()}))
+                _append(
+                    path,
+                    dict(
+                        step=tick + 1,
+                        before=before,
+                        native=expected,
+                        after=after,
+                        accepted_worlds=accepted,
+                        continuous_cpu={
+                            key: dict(q=ref.qpos.copy(), v=ref.qvel.copy(), time=float(ref.time))
+                            for key, ref in references.items()
+                        },
+                    ),
+                )
                 assert accepted == dict.fromkeys(keys, True)
                 for key in keys:
                     row, oracle = after[key].last_step, expected[key]
                     np.testing.assert_array_equal(row.input_q, before[key].q)
                     np.testing.assert_array_equal(row.input_v, before[key].v)
                     for name in ("ctrl", "qfrc_applied", "xfrc_applied"):
-                        np.testing.assert_array_equal(getattr(row.stored_control, name),
-                                                      getattr(packet, name))
+                        np.testing.assert_array_equal(
+                            getattr(row.stored_control, name), getattr(packet, name)
+                        )
                     assert row.tick == after[key].tick == tick + 1
                     assert row.input_time == before[key].time
                     assert row.output_time == after[key].time
@@ -717,27 +740,34 @@ def test_limit_crossing_uses_native_soft_limit_without_stop_repair(mode, tmp_pat
                     # stricter original T1 dynamics and trajectory gates.
                     mixed.assert_receipt(row, oracle, model)
                     for name, (rtol, atol) in TOL.items():
-                        actual = (row.integration_acceleration
-                                  if name == "integration_acceleration"
-                                  else getattr(row.dynamics, name))
-                        np.testing.assert_allclose(actual, oracle[name], rtol=rtol,
-                                                   atol=atol, err_msg=name)
-                    np.testing.assert_allclose(row.qacc, oracle["qacc"],
-                                               rtol=5e-4, atol=8e-4)
-                    np.testing.assert_allclose(after[key].q, references[key].qpos,
-                                               rtol=0, atol=SHORT_Q_ATOL)
-                    np.testing.assert_allclose(after[key].v, references[key].qvel,
-                                               rtol=0, atol=SHORT_V_ATOL)
-                    assert after[key].time == pytest.approx(references[key].time,
-                                                            abs=TIME_ATOL)
+                        actual = (
+                            row.integration_acceleration
+                            if name == "integration_acceleration"
+                            else getattr(row.dynamics, name)
+                        )
+                        np.testing.assert_allclose(
+                            actual, oracle[name], rtol=rtol, atol=atol, err_msg=name
+                        )
+                    np.testing.assert_allclose(row.qacc, oracle["qacc"], rtol=5e-4, atol=8e-4)
+                    np.testing.assert_allclose(
+                        after[key].q, references[key].qpos, rtol=0, atol=SHORT_Q_ATOL
+                    )
+                    np.testing.assert_allclose(
+                        after[key].v, references[key].qvel, rtol=0, atol=SHORT_V_ATOL
+                    )
+                    assert after[key].time == pytest.approx(references[key].time, abs=TIME_ATOL)
                     if tick == 0 or key == 91:
                         assert not row.constraints and not oracle["rows"]
                         np.testing.assert_array_equal(row.qfrc_constraint, np.zeros(model.nv))
                     else:
                         assert len(row.constraints) == len(oracle["rows"]) == 1
                         limit = row.constraints[0]
-                        assert (limit.constraint_type, limit.source_id,
-                                limit.side_or_edge, limit.dof) == (3, 0, 1, 0)
+                        assert (
+                            limit.constraint_type,
+                            limit.source_id,
+                            limit.side_or_edge,
+                            limit.dof,
+                        ) == (3, 0, 1, 0)
                         np.testing.assert_array_equal(limit.jacobian, [-1.0])
                         assert limit.force > 0 and row.qfrc_constraint[0] < 0
                         assert oracle["rows"][0]["force"] > 0
@@ -745,11 +775,19 @@ def test_limit_crossing_uses_native_soft_limit_without_stop_repair(mode, tmp_pat
                 # A native soft constraint is not an endpoint position clamp.
                 assert after[5].q[0] > model.jnt_range[0, 1]
             except Exception:
-                _append(path, dict(failure_step=tick + 1, before=before,
-                    native=expected, published=runtime.snapshot(),
-                    continuous_cpu={key: dict(q=ref.qpos.copy(), v=ref.qvel.copy(),
-                                             time=float(ref.time))
-                                    for key, ref in references.items()}))
+                _append(
+                    path,
+                    dict(
+                        failure_step=tick + 1,
+                        before=before,
+                        native=expected,
+                        published=runtime.snapshot(),
+                        continuous_cpu={
+                            key: dict(q=ref.qpos.copy(), v=ref.qvel.copy(), time=float(ref.time))
+                            for key, ref in references.items()
+                        },
+                    ),
+                )
                 raise
 
 
@@ -798,6 +836,7 @@ def test_native_valid_unsupported_features_have_construction_diagnostics(xml, co
 @pytest.mark.parametrize("mode", MODES)
 def test_native_sibling_boxes_are_admitted_with_full_tree_dynamics(mode, tmp_path):
     import test_mujoco_tyx_constraints as mixed
+
     from phymeo.builders.mujoco_compiler import compile_mujoco_xml
 
     mj = _deps()
@@ -807,8 +846,9 @@ def test_native_sibling_boxes_are_admitted_with_full_tree_dynamics(mode, tmp_pat
     xml = FORK_XML.replace('contype="0" conaffinity="0"', 'contype="1" conaffinity="1"')
     compiled = compile_mujoco_xml(xml, require_asset=False)
     model = mj.MjModel.from_xml_string(xml)
-    packet = MuJoCoControl(np.zeros(model.nu), qfrc_applied=np.zeros(model.nv),
-                          xfrc_applied=np.zeros((model.nbody, 6)))
+    packet = MuJoCoControl(
+        np.zeros(model.nu), qfrc_applied=np.zeros(model.nv), xfrc_applied=np.zeros((model.nbody, 6))
+    )
     reference = mj.MjData(model)
     path = tmp_path / "admitted-sibling-boxes.jsonl"
     with MuJoCoTyxRuntime(compiled, mode=mode) as runtime:
@@ -817,8 +857,10 @@ def test_native_sibling_boxes_are_admitted_with_full_tree_dynamics(mode, tmp_pat
         start = runtime.snapshot()[0]
         reference.qpos[:], reference.qvel[:], reference.time = start.q, start.v, start.time
         _set_native(reference, packet)
-        _append(path, dict(source_xml=xml, initial=start, held_zero_control=packet,
-                          steps=2, tolerances=TOL))
+        _append(
+            path,
+            dict(source_xml=xml, initial=start, held_zero_control=packet, steps=2, tolerances=TOL),
+        )
         for tick in range(2):
             before = runtime.snapshot()[0]
             expected = mixed.native(mj, model, before.q, before.v, packet, before.time)
@@ -827,14 +869,24 @@ def test_native_sibling_boxes_are_admitted_with_full_tree_dynamics(mode, tmp_pat
                 assert runtime.step(H) == {0: True}
                 after = runtime.snapshot()[0]
                 row = after.last_step
-                _append(path, dict(step=tick + 1, before=before, native=expected,
-                    after=after, continuous_q=reference.qpos.copy(),
-                    continuous_v=reference.qvel.copy(), continuous_time=float(reference.time)))
+                _append(
+                    path,
+                    dict(
+                        step=tick + 1,
+                        before=before,
+                        native=expected,
+                        after=after,
+                        continuous_q=reference.qpos.copy(),
+                        continuous_v=reference.qvel.copy(),
+                        continuous_time=float(reference.time),
+                    ),
+                )
                 np.testing.assert_array_equal(row.input_q, before.q)
                 np.testing.assert_array_equal(row.input_v, before.v)
                 for name in ("ctrl", "qfrc_applied", "xfrc_applied"):
-                    np.testing.assert_array_equal(getattr(row.stored_control, name),
-                                                  getattr(packet, name))
+                    np.testing.assert_array_equal(
+                        getattr(row.stored_control, name), getattr(packet, name)
+                    )
                 assert row.tick == after.tick == tick + 1
                 assert row.input_time == before.time and row.output_time == after.time
                 mixed.assert_receipt(row, expected, model)
@@ -852,9 +904,17 @@ def test_native_sibling_boxes_are_admitted_with_full_tree_dynamics(mode, tmp_pat
                     dof = int(model.jnt_dofadr[jid])
                     assert reference.qvel[dof] != 0 and after.v[dof] != 0
             except Exception:
-                _append(path, dict(failure_step=tick + 1, before=before, native=expected,
-                    published=runtime.snapshot(), continuous_q=reference.qpos.copy(),
-                    continuous_v=reference.qvel.copy()))
+                _append(
+                    path,
+                    dict(
+                        failure_step=tick + 1,
+                        before=before,
+                        native=expected,
+                        published=runtime.snapshot(),
+                        continuous_q=reference.qpos.copy(),
+                        continuous_v=reference.qvel.copy(),
+                    ),
+                )
                 raise
 
 

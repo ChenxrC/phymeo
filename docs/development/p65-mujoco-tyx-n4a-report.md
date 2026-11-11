@@ -1,0 +1,184 @@
+# MuJoCo-TYX N4a authoring handoff
+
+Status: **CODE_READY_TESTS_PENDING / UNEXECUTED / AUTHORING_SLOT_RELEASED**.
+This author wrote source, test declarations and documentation only. No project
+import, collection, arithmetic probe, pytest, Ruff, formatter, build, install,
+profile or physical run was performed. The parent owns all execution.
+
+Base: `ff478eaa6ee570562b229491cb25c95e17783740`.
+Branch: `codex/p65-n4a-learning-scale-20261111` in the reused isolated
+`C:/Users/38347/.codex/worktrees/p65-h1-support/phymeo`.
+Contract: [frozen N4a protocol](p65-mujoco-tyx-n4a-contract.md).
+
+## Scope and source ownership
+
+Exactly six NEW files relative to the base:
+
+- `src/phymeo/training/mujoco_tyx_evaluation.py`: optional generic objective,
+  complete-window checks, full evidence encoding, upstream update observation,
+  measurement and three-seed gate. No task XML or engine task switch.
+- `examples/mujoco_tyx_learning_tasks.py`: frozen J/S/R models, independent grids,
+  seeds, budgets and public runtime/environment construction.
+- `examples/evaluate_mujoco_tyx_learning.py`: explicit preflight/learn/scale/
+  summarize entry. No import from tests and no hidden preflight repeat.
+- `tests/training/test_mujoco_tyx_evaluation.py`: declarations and new scope only.
+- The contract above and this handoff report.
+
+Old N1/N2/N3, physics kernels, runtime, upstream PPO, exports and pins are unchanged.
+The session is original `MuJoCoTyxPpoSession` with 32 rollout steps and original
+RSL5.5.2 configuration; the code does not implement an optimizer or PPO variant.
+
+## Public entry and fixed execution units
+
+`run_preflight(task, NEWDIR)` advances the fixed W8 zero-action training-grid
+prefix for32 steps. S reads actual step contact forces and requires a positive
+contact in every world somewhere in the prefix. This is not the full support
+window gate. Parent executes this once per task, by pytest **or** CLI.
+
+`run_learning(task, seed, NEWDIR)` constructs one W8 learner, evaluates its
+untrained deterministic mean actor on8 disjoint held-out states, performs exactly
+128×32 steps, and evaluates the final actor on the same held-out grid. Each
+held-out window is256 complete steps; early termination/refusal is failure,
+never a lower cost from truncation. The first declared seed also performs the
+one zero-action diagnostic per task in a separate environment with RNG restored.
+A diagnostic ordinary exception records FAIL_DIAGNOSTIC/cost=None and its available
+full prefix; it adds no learning gate. Interrupt/SystemExit still propagate.
+
+`run_scale(task, first_seed, worlds, NEWDIR)` supports only the declared
+W1/8/32/64/128/256 matrix. It creates a fresh learner, performs one32-step warmup
+with bounded source-aware observer, then exactly three unprofiled32-step updates.
+Only the96W measured transitions enter throughput. Variable declared horizons
+64+8*(row%8) exercise actual subset resets; learning horizons remain256.
+
+`summarize_task(task, [three seed directories], NEWDIR)` is saved-value-only.
+It binds manifest, summary publication SHA and complete compressed evidence SHA,
+requires the exact distinct seeds/config/source/dependencies/budgets and applies
+all three fixed ratios. It does not replay physics or infer quality from a lucky
+seed. Successful zero-action comparisons are reported separately; failed zero
+has no cost/ratio. A completed seed is not a three-seed learning success.
+
+The CLI exposes `--phase preflight|learn|scale|summarize`, `--task J|S|R`,
+`--seed`, `--worlds`, `--inputs DIR DIR DIR` and `--output NEWDIR`, with phase
+argument validation. Each run refuses an existing output directory.
+
+## State, force and failure evidence
+
+Device observations and native action submission use the accepted public N2/C2
+interfaces. Complete current HOST physics validation remains. Independent cost
+uses the actual pre-reset native q/v in every returned transition. Device reward
+is checked against this FP64 algebra at the existing N1 rtol2e-5/atol2e-6 gate.
+This objective is a task metric, not physical energy.
+
+S force inspection uses `state.last_step.contacts`, with backend
+`mujoco-tyx-cuda`, original platform/moving geometry pair, full force rows and
+matching input/output times. Endpoint CPU observer contacts are retained in the
+complete state evidence but never substituted for the integrated step force.
+The source retains native box face half-distance and separately reports the
+geometric q-.001 separation; no thickness or force-law change was made.
+
+A temporary observer wraps the public adapter.step during every measured/learning
+update. Each request gets an owned CUDA clone, the original public step is called
+once, and each accepted transition is retained. On a mid-rollout or optimizer
+failure, `UpdateCaptureError` carries the whole accepted prefix plus failing
+request and public error state to the writer. The original method is restored
+in finally. No private physics bank is read and no failed update is rolled back.
+On success, requests reference the complete session transitions by same-record
+ordinal rather than duplicating full physical payloads. The clone/observer cost
+is inside the full update timer. Preflight/evaluation save each request before
+its step and the complete returned transition afterward.
+
+Each fresh run writes complete gzip JSONL using typed arrays with shape/dtype,
+base64 bytes and SHA; mapping keys retain their types. No full plain duplicate
+is created. It retains all transition fields, actions, dynamics, contact/constraint
+rows, rewards/done/final observations, parameter hashes per update, Adam steps,
+finite losses/gradients and final actor/critic/Adam state. No restore or checkpoint
+qualification is repeated. Failures keep their actual phase and full available
+prefix. This file encoding is evidence, not a deserializer or new checkpoint API.
+
+Successful output files: `manifest.json`, `trace.jsonl.gz`, `summary.json`,
+`publication.json`. Failure retains `failure.json` and the closed partial stream.
+A summarize result has its own `summary.json`, bound to the three source runs.
+
+## Timing and accounting
+
+Primary measured wall time includes the full public session.update and final
+CUDA completion: actual policy rollout, request copies/audit, physics and full
+HOST diagnostics, task publication, reset bookkeeping, returns, backward/Adam,
+finite gradient evidence and transition/request retention. The profiler exists
+only for the already-budgeted warmup; no extra update is inserted.
+
+Post-update independent audits and lossless serialization/compression/write are
+separately timed. Delivered throughput includes the measured window's complete
+trace writes and final gzip close; warmup trace work remains outside that numerator.
+Final compressed-file hashing and summary publication are separately reported
+outside training/trace throughput. `publication.json` records summary encode/write
+seconds and summary SHA; it is not called optimizer or simulation time.
+
+Counters retain their original owner categories: runtime upload/download,
+action raw-bit audit/D2D/status, task D2D/status, wrapper done-mask/finite reads,
+kernels and named synchronization sites. Categories may overlap and are not
+summed into an invented total. Torch peak allocated/reserved memory and CUDA
+free-memory net change are reported; the latter is not TYX-only peak allocation.
+Unobserved internal Torch synchronizations and exclusive CPU physics-validation
+cost remain explicitly UNKNOWN. No zero-HOST or GPU-PPO-throughput claim is made.
+
+## Test declaration and execution handoff
+
+Manual declaration count is **50 nodes, uncollected**:
+
+| Group | Nodes | Purpose |
+|---|---:|---|
+| HOST contract/objective/ratio/window/counter and evidence |20| Exact original S XML literal via ast.literal_eval, disjoint grids, no truncated evaluation, full bit encoding, second-step failure prefix/entry restoration, saved summary binding |
+| First preflight |3| One fixed32-step actual CUDA task prefix each |
+| Fixed learning |9| Three tasks × three seeds, original128 updates |
+| Scale |18| Three tasks × six world counts |
+
+Only existing `cuda`/`tyx` markers are used; no unregistered slow marker. Optional
+Torch/RSL/CUDA imports are lazy for HOST declaration checks. Parent must explicitly
+qualify CUDA and cannot count a skip/fallback as N4a execution. The learning tests
+assert completed fixed protocols; task success still requires three-seed summarize.
+
+Suggested serial selection, not executed by this author:
+
+```text
+pytest tests/training/test_mujoco_tyx_evaluation.py -m "not cuda" -q -x --tb=short
+pytest tests/training/test_mujoco_tyx_evaluation.py::test_fixed_first_preflight -q -x --tb=short
+```
+
+Thereafter use each fixed learning/scale node **or** equivalent CLI exactly once;
+do not execute both. Example phases (the qualified interpreter/PYTHONPATH belong
+to the parent execution receipt):
+
+```text
+examples/evaluate_mujoco_tyx_learning.py --phase learn --task J --seed 14011 --output NEWDIR
+examples/evaluate_mujoco_tyx_learning.py --phase scale --task J --seed 14011 --worlds 256 --output NEWDIR
+examples/evaluate_mujoco_tyx_learning.py --phase summarize --task J --inputs J14011 J14012 J14013 --output NEWDIR
+```
+
+Run preflight before eligible learning/scale cells. Do not rerun old complete
+N2/N3. Poor quality after128 updates remains a fixed-budget result, not permission
+to add epochs/rewards/seeds. W256 capacity, learning improvement, throughput and
+all new runtime outcomes remain unqualified until actual serial execution.
+
+## Authoring checkpoints and bindings
+
+- `82839958`: first complete pre-execution contract.
+- `c7539c25`: tests-first declarations.
+- `b2a77bee`: parent review findings, exact XML, failure-prefix and binding tests.
+- `c4bd7bc7`: implementation and final zero-diagnostic scope.
+
+Working-byte hashes at the frozen implementation checkpoint (Git blobs are
+newline-normalized separately). The final manifest includes this report too:
+
+| Path | SHA256 | Git blob |
+|---|---|---|
+| src/phymeo/training/mujoco_tyx_evaluation.py | bca4a9c9bcddac67416058f166d125841ff8c58ab96d693716dff50d583596ea | 89b9975161dd470fda262fec32ca8f8d89aefae2 |
+| examples/mujoco_tyx_learning_tasks.py | e01c9e91adc7d3aae35da1eef848b271c55e087ef5f38e60066cc15a8086bd9a | 9de86777ca512e39bda9941e46519d1dee494449 |
+| examples/evaluate_mujoco_tyx_learning.py | 0c0e9e00809063f9925b73a7465c596f9b4bb6e5d4dd4ecc967796dd4c6318fd | 0de269bf38540e9f5bc2e433612a98b1f787eb08 |
+| tests/training/test_mujoco_tyx_evaluation.py | 4bdfa8437b66ac6f90e16e99aee85cd4b74a4cab4fd9dd7b493faafbff9d5646 | 7e37d7c075e61149ff793c190f07da0819dce70a |
+| docs/development/p65-mujoco-tyx-n4a-contract.md | ced1fb6d5a65645d7861bb35116139dd11267fa785835dac6cea09cc67699ec2 | d385b26a16657a039223bef7c2743076adcfeaf1 |
+
+Only text/manual reasoning, exact file reads/hashes and small Git commits were
+used. A PowerShell hash-list command initially had a parser error before any
+read; the corrected file-I/O command produced the bindings above. No product
+failure or verification result is inferred from authoring checks.

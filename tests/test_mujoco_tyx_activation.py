@@ -415,7 +415,7 @@ def test_activation_late_failure_retains_and_retries(mode, fault, monkeypatch, t
 
 
 @pytest.mark.parametrize("mode", MODES)
-@pytest.mark.parametrize("feature", ("filter", "integrator", "free", "limit", "capacity"))
+@pytest.mark.parametrize("feature", ("filter", "integrator", "free", "ball", "limit", "capacity"))
 def test_activation_unsupported_preallocation(mode, feature, monkeypatch):
     from phymeo.backends.mujoco_tyx import MuJoCoTyxUnsupported, _tree_device
 
@@ -427,6 +427,8 @@ def test_activation_unsupported_preallocation(mode, feature, monkeypatch):
             '<body name="base"',
             '<body name="floating"><freejoint/><inertial mass="1" pos="0 0 0" diaginertia=".1 .1 .1"/><body name="base"',
         ).replace("</worldbody>", "</body></worldbody>")
+    elif feature == "ball":
+        xml = xml.replace('type="hinge"', 'type="ball"')
     elif feature == "limit":
         xml = xml.replace('armature=".04"', 'limited="true" range="-1 1" armature=".04"')
     else:

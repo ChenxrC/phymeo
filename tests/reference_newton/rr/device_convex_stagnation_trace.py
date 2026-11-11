@@ -53,16 +53,14 @@ def declaration(identity, k0, qualification):
         return (
             ref.family_case(family, ref.GAPS[phase]),
             None,
-            "tests/collision/test_device_convex_query.py::test_k0_family_gap_witness"
-            f"[{identity}]",
+            f"tests/collision/test_device_convex_query.py::test_k0_family_gap_witness[{identity}]",
         )
     if identity.startswith("K0-Q03-"):
         family, variant = identity.removeprefix("K0-Q03-").split("-", 1)
         return (
             ref.transformed(ref.family_case(family, -0.01), variant),
             None,
-            "tests/collision/test_device_convex_query.py::test_k0_frame_and_identity"
-            f"[{identity}]",
+            f"tests/collision/test_device_convex_query.py::test_k0_frame_and_identity[{identity}]",
         )
     expected = qualification.reference().cb_overlap()
     case = ref.transformed(
@@ -88,9 +86,7 @@ def prepared(case, expected_patch, mode, cache_root, k0, qualification):
     import phymeo as ph
 
     world = case["keys"][0][0]
-    tree = k0.ordinary_forest(
-        anchor=case["positions"][0], orientation=k0.case_quaternion(case)
-    )
+    tree = k0.ordinary_forest(anchor=case["positions"][0], orientation=k0.case_quaternion(case))
     with ph.TyxWorldBatch([(world, tree)], mode, cache_root=cache_root) as batch:
         before = batch.snapshot()
         model, bindings = k0.registrations(case, before[world].topology)
@@ -158,6 +154,7 @@ def run(identity, mode, role, output, cache_root):
     output.parent.mkdir(parents=True, exist_ok=True)
     k0, qualification, trace_runner = helpers()
     import numpy as np
+
     import phymeo as ph
 
     repository = Path(__file__).resolve().parents[3]
@@ -169,9 +166,13 @@ def run(identity, mode, role, output, cache_root):
     if hashlib.sha256(kernel.read_bytes()).hexdigest() != KERNEL_SHA256[role]:
         raise RuntimeError("selected product kernel does not match comparison role")
     paths = (
-        Path(__file__), Path(trace_runner.__file__), Path(k0.__file__),
-        Path(qualification.__file__), Path(k0.reference().__file__),
-        Path(qualification.reference().__file__), kernel,
+        Path(__file__),
+        Path(trace_runner.__file__),
+        Path(k0.__file__),
+        Path(qualification.__file__),
+        Path(k0.reference().__file__),
+        Path(qualification.reference().__file__),
+        kernel,
         product / "_device_convex_query.py",
         product / "_device_convex_query_trace.py",
         product / "_tyx_convex_patch_kernels.py",
@@ -201,7 +202,10 @@ def run(identity, mode, role, output, cache_root):
     try:
         record["independent_literal_oracle"] = k0.reference().literal_parallel_precondition(case)
         with prepared(case, expected_patch, mode, cache_root, k0, qualification) as (
-            batch, broad, plan, before
+            batch,
+            broad,
+            plan,
+            before,
         ):
             record["before"] = before
             keys = tuple(ph.CollisionKey(*key) for key in case["keys"])

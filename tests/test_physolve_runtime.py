@@ -195,8 +195,12 @@ def test_robot_dual_bank_matches_native_single_bank(payload, name, nworld):
 
 
 @pytest.mark.cuda
-def test_close_failure_retains_owner_for_retry(payload, monkeypatch):
-    runtime = PhySolveRuntime(compile_mujoco_xml(SLIDER, require_asset=False), payload=payload)
+@pytest.mark.parametrize("integrator", [None, "implicitfast"])
+def test_close_failure_retains_owner_for_retry(payload, monkeypatch, integrator):
+    xml = SLIDER if integrator is None else SLIDER.replace(
+        "<option ", f'<option integrator="{integrator}" '
+    )
+    runtime = PhySolveRuntime(compile_mujoco_xml(xml, require_asset=False), payload=payload)
     close = runtime._native._close_runtime
     calls = []
     def fail_second(handle, complete):

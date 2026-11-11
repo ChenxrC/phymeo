@@ -12,8 +12,10 @@
 - `drive_mode=preserve` 保留原生 actuator/equality/contact/resource 引用，不接受
   joints 或 joint_defaults。`scalar_pd` 只接 URDF 标量关节；已有 actuator、mimic、
   URDF dynamics 必须明确拒绝，不能删掉或重复增加驱动。
-- gravity/timestep 来自 assembly；其他非默认源 option 明确拒绝。此 profile 使用
-  Euler、Newton 约束算法、dense Jacobian、默认原生 pyramidal 接触，不承诺与源
+- gravity/timestep 来自 assembly；`integrator` 显式接受 `euler` / `implicitfast`，
+  缺省保持 Euler。源默认 Euler 可采用 assembly 选择，非默认源积分器必须与选择
+  一致，否则拒绝；其他非默认源 option 仍拒绝。此 profile 使用
+  Newton 约束算法、dense Jacobian、默认原生 pyramidal 接触，不承诺与源
   自定义全局选项、resident 或旧 Newton 导出行为等价。
 - 默认保留 native 自碰撞和 pair/exclude 规则。显式 self_collision=false 在冷装配
   生成实例内 body exclude，保留外部相互作用；有显式原生 pair 时拒绝冲突请求。
@@ -203,3 +205,37 @@ geom/dist 精确一致，pos 最大差2.98e-8 m，frame 最大差3.37e-7。Compu
 TYX 本地修复为 `e70781aa`；本仓生产源码未改变，候选仍使用 a6 前端及冻结 Host。
 扩大安装回归132通过、14个历史机器人项未选；后者不计通过。原有479个文档缺失
 引用的输出散列与B1d相同，继续记失败。完整diff自审与独立只读复审已完成。
+
+## B1f 显式积分器与驱动合同
+
+原生 Host 已具有 implicitfast 分支及对应工作区，但 assembly 曾固定 Euler、Runtime
+也只准入 Euler。旧 P2PE Newton 路径默认 implicitfast；只承接相同 kp/kd 并不代表
+承接了相同离散系统。本批增加显式编译选项，不自动改变任何已冻结的 Euler 用例。
+`compile_native_template(..., integrator="implicitfast")` 生成新的 MJB 身份，原模板不变；
+切换必须重新编译及创建 model、双 bank、Host，不能在运行期只改一个 enum。
+源默认 Euler 允许采用装配选择；非默认源选项须匹配选择，冲突明确拒绝。
+RK4 和 implicit 仍未资格化并被拒绝。这里不新增 resident 的全局积分器合同。
+
+新正式入口 `tests/test_physolve_integrator.py` 在独立 `env-b1f` 安装中7项通过：
+N=1/8/64 的一自由度驱动使用独立离散递推（M=.01、kp=500、kd=50、dt=.002 s），
+100步逐步比较 q/v；FANUC 显式 implicitfast 配置保持原驱动、步长、初态与显式
+base_link/link_1 规则，250步逐步与同模型 CPU MuJoCo 对照，绝对容差1e-6、rtol=0。
+CPU 无 warning，最终时间 .5 s；forward 不改变 q/v/time，masked reset 未选世界
+全部 snapshot 字段精确保持，full reset 后250步重放通过。该时间窗口不是长时稳定性证明。
+
+运行时所有权、11字段候选复制和显式完成/验证读回边界不变。implicitfast 使用既有
+Host 隐式速度求解工作区和计算，dense 矩阵容量随 N×nv² 增长；本批未测吞吐或峰值
+显存，不声称与 Euler 同成本。没有新增 P2PE/PHYMEO 逐步封装、全设备同步或状态镜像。
+原 Euler 高刚度失败及无规则 FANUC 失败保留；本批不授予 Graph、接触力或完整 B2
+资格。来源、测试命令、失败与制品散列集中于实验根 `evidence/b1f-summary.json`。
+
+Panda 原接触点几何 CPU/CUDA 两项与 N=1 forward/reset 本批复测通过；dual-bank
+原生对照仍失败于初始 qacc（最大差1.5258789e-5 > 原1e-6），未改原测试或容差。
+N=8/64 的 Panda 推进矩阵未在本批执行，不以单项通过代替完整机器人验收。
+
+最终安装扩大回归141通过、14个历史机器人项未选（其中本批独立复测结果如上，
+不重复计为通过）；工作区/reset 24通过，新增 implicitfast Host 准备/清理失败与
+关闭重试仍保留 owner。冻结碰撞及模型身份3通过。原 Euler 用例、接触几何参考、
+1e-6门限未改。PHYMEO 文档仍有479个历史缺失引用，日志散列与B1e一致，保持失败。
+完整diff自审及独立代理两轮只读复审完成，实际GPU测试由主执行者执行。
+最终wheel只安装到 `env-b1f`，pip check通过；原环境与原工作目录不变，不推送或合并。

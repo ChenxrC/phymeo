@@ -143,7 +143,8 @@ def test_collision_workspace_reuse_contact_disappear_return(payload):
 
 
 @pytest.mark.cuda
-def test_workspace_owner_survives_host_prepare_and_cleanup_failure(payload, monkeypatch):
+@pytest.mark.parametrize("integrator", ["Euler", "implicitfast"])
+def test_workspace_owner_survives_host_prepare_and_cleanup_failure(payload, monkeypatch, integrator):
     native = payload.load()
     prepare, close = native._prepare_runtime, native._close_runtime
 
@@ -157,7 +158,8 @@ def test_workspace_owner_survives_host_prepare_and_cleanup_failure(payload, monk
     monkeypatch.setattr(native, "_prepare_runtime", failed_prepare)
     monkeypatch.setattr(native, "_close_runtime", failed_close)
     with pytest.raises(RuntimeError, match="prepared Host failure") as captured:
-        PhySolveRuntime(compile_mujoco_xml(FREE, require_asset=False), payload=payload)
+        xml = FREE.replace('integrator="Euler"', f'integrator="{integrator}"')
+        PhySolveRuntime(compile_mujoco_xml(xml, require_asset=False), payload=payload)
     retained = captured.value.runtime
     try:
         assert retained._handles[0] is not None

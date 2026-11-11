@@ -244,10 +244,12 @@ def _scalar_drives(mj, spec, asset):
     return rows
 
 
-def compile_native_template(assets, *, timestep, gravity, static_shapes=()):
+def compile_native_template(assets, *, timestep, gravity, static_shapes=(), integrator="euler"):
     """Compile a same-world assembly once; retain admitted asset-local semantics.
 
-    Asset timestep/gravity are replaced by explicit assembly options. Other
+    Asset timestep/gravity are replaced by explicit assembly options. A source
+    default Euler integrator can adopt the assembly selection; a nondefault
+    source integrator must match it. Other
     non-default global options are rejected until represented by this profile.
     Source actuator/equality/contact/resource references are attached together.
     Native MuJoCo collision rules apply; explicit pair policies remain separate.
@@ -264,11 +266,17 @@ def compile_native_template(assets, *, timestep, gravity, static_shapes=()):
         raise ValueError("duplicate assembly instance name")
     if not np.isfinite(timestep) or timestep <= 0:
         raise ValueError("timestep must be positive finite seconds")
+    if not isinstance(integrator, str) or integrator.lower() not in {"euler", "implicitfast"}:
+        raise ValueError("native template integrator requires euler or implicitfast")
+    native_integrator = {
+        "euler": mj.mjtIntegrator.mjINT_EULER,
+        "implicitfast": mj.mjtIntegrator.mjINT_IMPLICITFAST,
+    }[integrator.lower()]
     gravity = _vector(gravity, 3, "gravity")
     spec = mj.MjSpec()
     spec.compiler.fusestatic = False
     spec.option.timestep, spec.option.gravity = timestep, gravity
-    spec.option.integrator = mj.mjtIntegrator.mjINT_EULER
+    spec.option.integrator = native_integrator
     spec.option.solver = mj.mjtSolver.mjSOL_NEWTON
     spec.option.jacobian = mj.mjtJacobian.mjJAC_DENSE
     pending, sources = [], []
@@ -279,6 +287,8 @@ def compile_native_template(assets, *, timestep, gravity, static_shapes=()):
             if name.startswith("_") or name in {"gravity", "timestep"}:
                 continue
             value, expected = getattr(child.option, name), getattr(default, name)
+            if name == "integrator" and value == native_integrator:
+                continue
             if isinstance(expected, (int, float, np.ndarray)) and not np.array_equal(
                 value, expected
             ):

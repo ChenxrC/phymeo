@@ -182,3 +182,53 @@ def test_source_global_options_cannot_be_silently_discarded(tmp_path, option):
         compile_native_template(
             (NativeAssetInstance("a", str(path)),), timestep=0.001, gravity=(0, 0, 0)
         )
+
+
+def test_integrator_selection_changes_only_compiled_option(urdf):
+    import mujoco
+
+    asset = NativeAssetInstance("a", urdf, drive_mode="scalar_pd")
+    base = dict(timestep=0.002, gravity=(0, 0, -9.81))
+    default = compile_native_template((asset,), **base)
+    explicit = compile_native_template((asset,), **base, integrator="Euler")
+    implicit = compile_native_template((asset,), **base, integrator="implicitfast")
+    assert default.compilation.source.model_sha256 == explicit.compilation.source.model_sha256
+    assert default.compilation.source.model_sha256 != implicit.compilation.source.model_sha256
+    model = implicit.compilation.fresh_native_model()
+    assert model.opt.integrator == mujoco.mjtIntegrator.mjINT_IMPLICITFAST
+    for name in dir(default.compilation.mj_model):
+        if not name.startswith("_"):
+            value = getattr(default.compilation.mj_model, name)
+            if isinstance(value, np.ndarray):
+                np.testing.assert_array_equal(value, getattr(model, name), err_msg=name)
+    for field in ("qpos", "qvel", "ctrl", "qfrc_applied"):
+        first, second = mujoco.MjData(default.compilation.mj_model), mujoco.MjData(model)
+        default.initial_state.apply(default.compilation, first)
+        implicit.initial_state.apply(implicit.compilation, second)
+        np.testing.assert_array_equal(getattr(first, field), getattr(second, field))
+
+
+@pytest.mark.parametrize("integrator", [None, True, 3, "rk4", "implicit", "unknown"])
+def test_unknown_integrator_rejected_before_source_read(urdf, integrator, monkeypatch):
+    import mujoco
+
+    def forbidden(*args, **kwargs):
+        raise AssertionError("must reject integrator before reading asset")
+    monkeypatch.setattr(mujoco.MjSpec, "from_file", forbidden)
+    with pytest.raises(ValueError, match="integrator"):
+        compile_native_template((NativeAssetInstance("a", urdf),), timestep=.002,
+                                gravity=(0, 0, 0), integrator=integrator)
+
+
+def test_nondefault_source_integrator_requires_matching_request(tmp_path):
+    import mujoco
+
+    path = tmp_path / "implicit.xml"
+    path.write_text('<mujoco><option integrator="implicitfast"/><worldbody>'
+                    '<body><joint/><geom size=".1"/></body></worldbody></mujoco>')
+    asset = NativeAssetInstance("a", str(path))
+    with pytest.raises(NotImplementedError, match="source option integrator"):
+        compile_native_template((asset,), timestep=.002, gravity=(0, 0, 0))
+    result = compile_native_template((asset,), timestep=.002, gravity=(0, 0, 0),
+                                     integrator="implicitfast")
+    assert result.compilation.fresh_native_model().opt.integrator == mujoco.mjtIntegrator.mjINT_IMPLICITFAST

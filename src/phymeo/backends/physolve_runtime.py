@@ -100,8 +100,10 @@ class PhySolveRuntime:
             raise NotImplementedError(
                 "PhySolve profile excludes userdata, plugins, flex and sensors"
             )
-        if cpu.opt.integrator != mujoco.mjtIntegrator.mjINT_EULER:
-            raise NotImplementedError("this direct qualification profile requires Euler")
+        if cpu.opt.integrator not in (
+            mujoco.mjtIntegrator.mjINT_EULER, mujoco.mjtIntegrator.mjINT_IMPLICITFAST
+        ):
+            raise NotImplementedError("this direct qualification profile requires Euler or implicitfast")
         if cpu.opt.solver != mujoco.mjtSolver.mjSOL_NEWTON:
             raise NotImplementedError("PhySolve requires the Newton constraint solve algorithm")
         # This first profile deliberately fixes dense Jacobians; sparse capacity

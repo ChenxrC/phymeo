@@ -84,25 +84,38 @@ def initial_states(case, model, keys):
 def task_spec(model):
     width = model.nq + model.nv
     return MuJoCoTyxTaskSpec(
-        tuple(range(model.nq)), tuple(range(model.nv)),
-        scale=[1 + i / 8 for i in range(width)], bias=[0.05] * width,
-        target=[0] * width, weight=[1] * width, lower=[-2] * width, upper=[2] * width,
+        tuple(range(model.nq)),
+        tuple(range(model.nv)),
+        scale=[1 + i / 8 for i in range(width)],
+        bias=[0.05] * width,
+        target=[0] * width,
+        weight=[1] * width,
+        lower=[-2] * width,
+        upper=[2] * width,
     )
 
 
 def make_policy(model, device):
     import torch
 
-    network = torch.nn.Sequential(
-        torch.nn.Linear(model.nq + model.nv, 8), torch.nn.Tanh(),
-        torch.nn.Linear(8, model.nu + model.nv + 6), torch.nn.Tanh(),
-    ).to(device=device, dtype=torch.float32).eval()
+    network = (
+        torch.nn.Sequential(
+            torch.nn.Linear(model.nq + model.nv, 8),
+            torch.nn.Tanh(),
+            torch.nn.Linear(8, model.nu + model.nv + 6),
+            torch.nn.Tanh(),
+        )
+        .to(device=device, dtype=torch.float32)
+        .eval()
+    )
     # Fixed small nonzero weights, independent of runtime results or random seeds.
     with torch.no_grad():
         for layer in (network[0], network[2]):
             sequence = torch.arange(layer.weight.numel(), device=device, dtype=torch.float32)
             layer.weight.copy_(((sequence.remainder(5) - 2) * 0.01).reshape_as(layer.weight))
-            layer.bias.copy_(0.01 + 0.001 * torch.arange(layer.bias.numel(), device=device, dtype=torch.float32))
+            layer.bias.copy_(
+                0.01 + 0.001 * torch.arange(layer.bias.numel(), device=device, dtype=torch.float32)
+            )
     # Construction may occur outside the later producer-stream context.
     torch.cuda.current_stream(device).synchronize()
     return network
@@ -115,10 +128,15 @@ def native_channels(output, model):
         raise ValueError("policy output must be a CUDA FP32 tensor")
     if output.ndim != 2 or output.shape[1] != model.nu + model.nv + 6 or output.shape[0] <= 0:
         raise ValueError("policy output width/world count differs from native channel layout")
-    ctrl = (0.01 + 0.02 * output[:, :model.nu]).contiguous()
-    force = (0.005 + 0.01 * output[:, model.nu:model.nu + model.nv]).contiguous()
-    wrench = torch.zeros((output.shape[0], model.nbody, 6), dtype=torch.float32, device=output.device)
-    wrench[:, -1, :] = 0.001 * (torch.arange(6, device=output.device, dtype=torch.float32) + 1) + 0.01 * output[:, -6:]
+    ctrl = (0.01 + 0.02 * output[:, : model.nu]).contiguous()
+    force = (0.005 + 0.01 * output[:, model.nu : model.nu + model.nv]).contiguous()
+    wrench = torch.zeros(
+        (output.shape[0], model.nbody, 6), dtype=torch.float32, device=output.device
+    )
+    wrench[:, -1, :] = (
+        0.001 * (torch.arange(6, device=output.device, dtype=torch.float32) + 1)
+        + 0.01 * output[:, -6:]
+    )
     return ctrl, force, wrench
 
 
@@ -134,7 +152,10 @@ def submit_torch_controls(runtime, tensors, producer_stream, *, expected_revisio
 
     if not isinstance(tensors, (tuple, list)) or len(tensors) != 3:
         raise ValueError("exactly ctrl, qfrc_applied and xfrc_applied are required")
-    if runtime.capabilities.get("implementation") != "tyx" or runtime.capabilities.get("mode") != "cuda":
+    if (
+        runtime.capabilities.get("implementation") != "tyx"
+        or runtime.capabilities.get("mode") != "cuda"
+    ):
         raise ValueError("policy input requires the public TYX CUDA runtime")
     if not isinstance(producer_stream, torch.cuda.Stream):
         raise ValueError("an explicit Torch CUDA producer stream is required")
@@ -156,16 +177,21 @@ def submit_torch_controls(runtime, tensors, producer_stream, *, expected_revisio
         stream = stream_from_torch(producer_stream, backend="cuda")
         owners.callback(stream.close)
         return runtime.set_controls_from_device(
-            views[0], qfrc_applied=views[1], xfrc_applied=views[2],
-            expected_revision=expected_revision, producer_stream=stream,
+            views[0],
+            qfrc_applied=views[1],
+            xfrc_applied=views[2],
+            expected_revision=expected_revision,
+            producer_stream=stream,
         )
 
 
 def host_submit(runtime, values):
-    runtime.set_controls({
-        key: MuJoCoControl(values[0][i], qfrc_applied=values[1][i], xfrc_applied=values[2][i])
-        for i, key in enumerate(runtime.world_keys)
-    })
+    runtime.set_controls(
+        {
+            key: MuJoCoControl(values[0][i], qfrc_applied=values[1][i], xfrc_applied=values[2][i])
+            for i, key in enumerate(runtime.world_keys)
+        }
+    )
 
 
 def assert_exact(left, right, path="state"):
@@ -177,7 +203,9 @@ def assert_exact(left, right, path="state"):
     elif is_dataclass(left):
         assert type(left) is type(right), path
         for field in fields(left):
-            assert_exact(getattr(left, field.name), getattr(right, field.name), path + "." + field.name)
+            assert_exact(
+                getattr(left, field.name), getattr(right, field.name), path + "." + field.name
+            )
     elif isinstance(left, Mapping):
         assert set(left) == set(right), path
         for key in left:
@@ -193,9 +221,17 @@ def assert_exact(left, right, path="state"):
 def encoded(value):
     if isinstance(value, np.ndarray):
         raw = value.tobytes()
-        return {"dtype": value.dtype.str, "shape": list(value.shape), "hex": raw.hex(), "sha256": hashlib.sha256(raw).hexdigest()}
+        return {
+            "dtype": value.dtype.str,
+            "shape": list(value.shape),
+            "hex": raw.hex(),
+            "sha256": hashlib.sha256(raw).hexdigest(),
+        }
     if is_dataclass(value):
-        return {"type": type(value).__module__ + "." + type(value).__name__, "fields": {field.name: encoded(getattr(value, field.name)) for field in fields(value)}}
+        return {
+            "type": type(value).__module__ + "." + type(value).__name__,
+            "fields": {field.name: encoded(getattr(value, field.name)) for field in fields(value)},
+        }
     if isinstance(value, Mapping):
         return {str(key): encoded(item) for key, item in value.items()}
     if isinstance(value, (tuple, list)):
@@ -211,7 +247,13 @@ def append(stream, value):
 
 
 def task_oracle(states, spec, actual):
-    raw = np.array([np.r_[state.q[list(spec.q_indices)], state.v[list(spec.v_indices)]] for state in states.values()], dtype=np.float32)
+    raw = np.array(
+        [
+            np.r_[state.q[list(spec.q_indices)], state.v[list(spec.v_indices)]]
+            for state in states.values()
+        ],
+        dtype=np.float32,
+    )
     observation = raw * spec.scale + spec.bias
     reward = -np.sum(spec.weight * (raw - spec.target) ** 2, axis=1)
     terminated = np.any((raw < spec.lower) | (raw > spec.upper), axis=1).astype(np.int32)
@@ -221,12 +263,22 @@ def task_oracle(states, spec, actual):
 
 
 def module_origins():
-    return {name: str(module.__file__) for name, module in sorted(sys.modules.items()) if (name == "torch" or name == "mujoco" or name == "tyx" or name.startswith("phymeo.")) and getattr(module, "__file__", None)}
+    return {
+        name: str(module.__file__)
+        for name, module in sorted(sys.modules.items())
+        if (name == "torch" or name == "mujoco" or name == "tyx" or name.startswith("phymeo."))
+        and getattr(module, "__file__", None)
+    }
 
 
 def run_case(case, count, stream_kind, output):
     """Run the predeclared eight-step qualification, saving full public evidence."""
-    if type(count) is not int or case not in MATRIX or count not in MATRIX[case] or stream_kind not in ("default", "nondefault"):
+    if (
+        type(count) is not int
+        or case not in MATRIX
+        or count not in MATRIX[case]
+        or stream_kind not in ("default", "nondefault")
+    ):
         raise ValueError("case/world/stream is outside the frozen N1 matrix")
     output = Path(output)
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -247,21 +299,54 @@ def run_case(case, count, stream_kind, output):
             initial = initial_states(case, model, keys)
             spec = task_spec(model)
             network = make_policy(model, torch.device("cuda:0"))
-            producer = torch.cuda.default_stream(0) if stream_kind == "default" else torch.cuda.Stream(device=0)
-            parameters = {name: parameter.detach().cpu().numpy().copy() for name, parameter in network.named_parameters()}
-            append(log, {"event": "configuration", "case": case, "world_keys": keys, "h": H[case], "steps": STEPS,
-                "xml": XML[case], "xml_sha256": hashlib.sha256(XML[case].encode()).hexdigest(),
-                "compiled_model_sha256": hashlib.sha256(source.source.model_binary).hexdigest(),
-                "source_archive_sha256": hashlib.sha256(source.source.archive_bytes).hexdigest(),
-                "script_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
-                "native_layout": (model.nq, model.nv, model.nu, model.nbody), "initial": initial, "task": spec,
-                "policy": {"architecture": str(network), "parameters": parameters, "devices": {name: str(p.device) for name, p in network.named_parameters()}},
-                "torch_version": torch.__version__, "cuda_build": torch.version.cuda, "device_name": torch.cuda.get_device_name(0),
-                "producer_stream": stream_kind, "producer_handle": int(producer.cuda_stream),
-                "reference_route": "independent-TYX-CUDA-with-HOST-controls", "scope": "inference-not-PPO; complete-physics-HOST-diagnostics-retained"})
+            producer = (
+                torch.cuda.default_stream(0)
+                if stream_kind == "default"
+                else torch.cuda.Stream(device=0)
+            )
+            parameters = {
+                name: parameter.detach().cpu().numpy().copy()
+                for name, parameter in network.named_parameters()
+            }
+            append(
+                log,
+                {
+                    "event": "configuration",
+                    "case": case,
+                    "world_keys": keys,
+                    "h": H[case],
+                    "steps": STEPS,
+                    "xml": XML[case],
+                    "xml_sha256": hashlib.sha256(XML[case].encode()).hexdigest(),
+                    "compiled_model_sha256": hashlib.sha256(source.source.model_binary).hexdigest(),
+                    "source_archive_sha256": hashlib.sha256(
+                        source.source.archive_bytes
+                    ).hexdigest(),
+                    "script_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+                    "native_layout": (model.nq, model.nv, model.nu, model.nbody),
+                    "initial": initial,
+                    "task": spec,
+                    "policy": {
+                        "architecture": str(network),
+                        "parameters": parameters,
+                        "devices": {name: str(p.device) for name, p in network.named_parameters()},
+                    },
+                    "torch_version": torch.__version__,
+                    "cuda_build": torch.version.cuda,
+                    "device_name": torch.cuda.get_device_name(0),
+                    "producer_stream": stream_kind,
+                    "producer_handle": int(producer.cuda_stream),
+                    "reference_route": "independent-TYX-CUDA-with-HOST-controls",
+                    "scope": "inference-not-PPO; complete-physics-HOST-diagnostics-retained",
+                },
+            )
             with ExitStack() as owners:
-                runtime = owners.enter_context(MuJoCoRuntime(source, mode="cuda", world_keys=keys, initial_states=initial))
-                reference = owners.enter_context(MuJoCoRuntime(source, mode="cuda", world_keys=keys, initial_states=initial))
+                runtime = owners.enter_context(
+                    MuJoCoRuntime(source, mode="cuda", world_keys=keys, initial_states=initial)
+                )
+                reference = owners.enter_context(
+                    MuJoCoRuntime(source, mode="cuda", world_keys=keys, initial_states=initial)
+                )
                 workspace = owners.enter_context(runtime.prepare_task_workspace(spec))
                 start = runtime.snapshot()
                 assert_exact(start, reference.snapshot())
@@ -272,16 +357,23 @@ def run_case(case, count, stream_kind, output):
                 for tick in range(STEPS):
                     action_accepted = state_accepted = reference_accepted = False
                     phase = "task-and-policy"
-                    before = runtime.snapshot()  # Detached diagnostic reference, never policy input.
+                    before = (
+                        runtime.snapshot()
+                    )  # Detached diagnostic reference, never policy input.
                     revision = runtime.checkpoint_revision
                     frame = workspace.refresh(expected_revision=revision)
                     with torch.cuda.stream(producer), torch.inference_mode():
                         exported = workspace.to_torch(frame)
                         raw_action = network(exported[0])
                         values = native_channels(raw_action, model)
-                    all_cuda = all_cuda and all(value.is_cuda and value.device.index == 0 for value in (*exported, raw_action, *values))
+                    all_cuda = all_cuda and all(
+                        value.is_cuda and value.device.index == 0
+                        for value in (*exported, raw_action, *values)
+                    )
                     phase = "action-publication"
-                    control_receipt = submit_torch_controls(runtime, values, producer, expected_revision=revision)
+                    control_receipt = submit_torch_controls(
+                        runtime, values, producer, expected_revision=revision
+                    )
                     action_accepted = True
                     # These explicit diagnostic copies are separate from the GPU action ingress.
                     host_values = tuple(value.detach().cpu().numpy().copy() for value in values)
@@ -292,14 +384,29 @@ def run_case(case, count, stream_kind, output):
                     task_readback += sum(value.nbytes for value in task_values)
                     task_oracle(before, spec, task_values)
                     for i, key in enumerate(keys):
-                        for name, expected in zip(("ctrl", "qfrc_applied", "xfrc_applied"), host_values, strict=True):
-                            actual = np.asarray(getattr(control_receipt.controls[key], name), dtype=np.float32)
+                        for name, expected in zip(
+                            ("ctrl", "qfrc_applied", "xfrc_applied"), host_values, strict=True
+                        ):
+                            actual = np.asarray(
+                                getattr(control_receipt.controls[key], name), dtype=np.float32
+                            )
                             assert actual.tobytes() == expected[i].tobytes(), name
                     phase = "host-control-publication"
                     host_submit(reference, host_values)
-                    append(log, {"event": "attempt", "tick": tick + 1, "before": before, "task_frame": frame,
-                        "task_outputs": task_values, "native_action": host_values, "action_receipt": control_receipt,
-                        "raw_policy_output": policy_values, "action_accepted": True})
+                    append(
+                        log,
+                        {
+                            "event": "attempt",
+                            "tick": tick + 1,
+                            "before": before,
+                            "task_frame": frame,
+                            "task_outputs": task_values,
+                            "native_action": host_values,
+                            "action_receipt": control_receipt,
+                            "raw_policy_output": policy_values,
+                            "action_accepted": True,
+                        },
+                    )
                     phase = "device-physics"
                     accepted = runtime.step(H[case])
                     state_accepted = bool(accepted) and all(accepted.values())
@@ -307,7 +414,9 @@ def run_case(case, count, stream_kind, output):
                     last_public["device"] = runtime.snapshot()
                     phase = "reference-physics"
                     accepted_reference = reference.step(H[case])
-                    reference_accepted = bool(accepted_reference) and all(accepted_reference.values())
+                    reference_accepted = bool(accepted_reference) and all(
+                        accepted_reference.values()
+                    )
                     assert dict(accepted_reference) == dict.fromkeys(keys, True)
                     last_public["reference"] = reference.snapshot()
                     phase = "complete-comparison"
@@ -315,33 +424,88 @@ def run_case(case, count, stream_kind, output):
                     assert_exact(after, expected)
                     for i, key in enumerate(keys):
                         assert after[key].tick == tick + 1
-                        assert abs(after[key].time - (tick + 1) * float(np.float32(H[case]))) <= 2e-6
-                        loaded[i] += int(any(contact.normal_force > 0 for contact in after[key].last_step.contacts))
-                    append(log, {"event": "step", "tick": tick + 1, "before": before, "task_frame": frame,
-                        "task_outputs": task_values, "raw_policy_output": policy_values,
-                        "native_action": host_values, "action_receipt": control_receipt, "device": after, "reference": expected,
-                        "device_counters": runtime.counters, "reference_counters": reference.counters, "task_counters": workspace.counters})
-                moved = [int(not np.array_equal(start[key].q, after[key].q) or not np.array_equal(start[key].v, after[key].v)) for key in keys]
+                        assert (
+                            abs(after[key].time - (tick + 1) * float(np.float32(H[case]))) <= 2e-6
+                        )
+                        loaded[i] += int(
+                            any(
+                                contact.normal_force > 0
+                                for contact in after[key].last_step.contacts
+                            )
+                        )
+                    append(
+                        log,
+                        {
+                            "event": "step",
+                            "tick": tick + 1,
+                            "before": before,
+                            "task_frame": frame,
+                            "task_outputs": task_values,
+                            "raw_policy_output": policy_values,
+                            "native_action": host_values,
+                            "action_receipt": control_receipt,
+                            "device": after,
+                            "reference": expected,
+                            "device_counters": runtime.counters,
+                            "reference_counters": reference.counters,
+                            "task_counters": workspace.counters,
+                        },
+                    )
+                moved = [
+                    int(
+                        not np.array_equal(start[key].q, after[key].q)
+                        or not np.array_equal(start[key].v, after[key].v)
+                    )
+                    for key in keys
+                ]
                 assert all(moved)
                 if case == "support-slide":
                     assert all(loaded), "support fixture must carry actual device contact load"
-                summary = {"status": "PASS_N1_INFERENCE_ONLY", "case": case, "steps": STEPS, "world_steps": count * STEPS,
-                    "h": H[case], "producer_stream": stream_kind, "policy_device": "cuda:0",
-                    "all_parameters_cuda": all(parameter.is_cuda for parameter in network.parameters()), "all_inputs_outputs_cuda": all_cuda,
-                    "state_and_receipt_comparison": "exact-complete-same-FP32-input", "moved_worlds": moved,
-                    "loaded_contact_steps_by_world": loaded, "device_counters": dict(runtime.counters),
-                    "reference_counters": dict(reference.counters), "task_counters": dict(workspace.counters),
-                    "diagnostic_action_readback_bytes": action_readback, "diagnostic_task_readback_bytes": task_readback,
+                summary = {
+                    "status": "PASS_N1_INFERENCE_ONLY",
+                    "case": case,
+                    "steps": STEPS,
+                    "world_steps": count * STEPS,
+                    "h": H[case],
+                    "producer_stream": stream_kind,
+                    "policy_device": "cuda:0",
+                    "all_parameters_cuda": all(
+                        parameter.is_cuda for parameter in network.parameters()
+                    ),
+                    "all_inputs_outputs_cuda": all_cuda,
+                    "state_and_receipt_comparison": "exact-complete-same-FP32-input",
+                    "moved_worlds": moved,
+                    "loaded_contact_steps_by_world": loaded,
+                    "device_counters": dict(runtime.counters),
+                    "reference_counters": dict(reference.counters),
+                    "task_counters": dict(workspace.counters),
+                    "diagnostic_action_readback_bytes": action_readback,
+                    "diagnostic_task_readback_bytes": task_readback,
                     "diagnostic_policy_readback_bytes": policy_readback,
-                    "diagnostic_parameter_readback_bytes": sum(value.nbytes for value in parameters.values()),
-                    "module_origins": module_origins(), "cross_device": "separate-hardware-conditional-negative-test"}
+                    "diagnostic_parameter_readback_bytes": sum(
+                        value.nbytes for value in parameters.values()
+                    ),
+                    "module_origins": module_origins(),
+                    "cross_device": "separate-hardware-conditional-negative-test",
+                }
                 assert summary["all_parameters_cuda"] and all_cuda
                 phase = "owner-cleanup"
             append(log, {"event": "summary", **summary, "owners_closed": True})
             return summary
         except BaseException as error:
-            evidence = {"event": "failure", "phase": phase, "type": type(error).__name__, "message": str(error), "traceback": traceback.format_exc()}
-            evidence.update(last_public=last_public, action_accepted=action_accepted, state_accepted=state_accepted, reference_accepted=reference_accepted)
+            evidence = {
+                "event": "failure",
+                "phase": phase,
+                "type": type(error).__name__,
+                "message": str(error),
+                "traceback": traceback.format_exc(),
+            }
+            evidence.update(
+                last_public=last_public,
+                action_accepted=action_accepted,
+                state_accepted=state_accepted,
+                reference_accepted=reference_accepted,
+            )
             for name, owner in (("device", runtime), ("reference", reference)):
                 if owner is not None:
                     try:
@@ -360,7 +524,11 @@ def main():
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     result = run_case(args.case, args.worlds, args.stream, args.output)
-    print(json.dumps({key: result[key] for key in ("status", "case", "steps", "world_steps")}, sort_keys=True))
+    print(
+        json.dumps(
+            {key: result[key] for key in ("status", "case", "steps", "world_steps")}, sort_keys=True
+        )
+    )
 
 
 if __name__ == "__main__":

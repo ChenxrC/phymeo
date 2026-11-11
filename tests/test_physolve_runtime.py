@@ -220,6 +220,41 @@ def test_close_failure_retains_owner_for_retry(payload, monkeypatch):
 
 
 @pytest.mark.cuda
+@pytest.mark.parametrize('device', ['cpu', 'cuda:0'])
+def test_panda_finger_box_contacts_match_cpu_geometry(payload, device):
+    import mujoco
+    from tyx.compat import warp as wp
+    from physolve_tyx._src.collision_primitive_core import box_box
+    from test_physolve_models import robot_path
+
+    @wp.kernel
+    def contacts(p: wp.array[wp.vec3], r: wp.array[wp.mat33], s: wp.array[wp.vec3],
+                 positions: wp.array[wp.vec3], distances: wp.array[float]):
+        dist, pos, normal = box_box(p[0], r[0], s[0], p[1], r[1], s[1])
+        for index in range(8):
+            positions[index] = pos[index]
+            distances[index] = dist[index]
+
+    model = mujoco.MjModel.from_xml_path(str(robot_path('panda')))
+    data = mujoco.MjData(model)
+    mujoco.mj_forward(model, data)
+    pair = [36, 40]
+    expected = np.array([c.pos.copy() for c in data.contact if list(c.geom) == pair])
+    assert len(expected) > 0
+    p = wp.array(data.geom_xpos[pair].astype(np.float32), dtype=wp.vec3, device=device)
+    r = wp.array(data.geom_xmat[pair].reshape(2, 3, 3).astype(np.float32), dtype=wp.mat33, device=device)
+    s = wp.array(model.geom_size[pair].astype(np.float32), dtype=wp.vec3, device=device)
+    pos, dist = wp.zeros(8, dtype=wp.vec3, device=device), wp.zeros(8, device=device)
+    wp.launch(contacts, 1, inputs=[p, r, s, pos, dist], device=device)
+    actual = pos.numpy()[dist.numpy() < 0]
+    assert len(actual) > 0
+    # Contact ordering/duplicate points can differ. Every produced point must
+    # still lie at a CPU geometric contact, at the existing absolute tolerance.
+    nearest = np.min(np.max(np.abs(actual[:, None] - expected[None]), axis=2), axis=1)
+    np.testing.assert_array_less(nearest, 1e-6)
+
+
+@pytest.mark.cuda
 def test_actuator_control_and_two_runtime_isolation(payload):
     xml = SLIDER.replace('<joint type=', '<joint name="axis" type=')
     xml = xml.replace('</mujoco>', '<actuator><motor joint="axis"/></actuator></mujoco>')

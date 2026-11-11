@@ -1,8 +1,9 @@
 # PhySolve 原生运行时实验
 
 **资格状态：未通过机器人验收，不可用于消费者部署。** 本批简单模型通过，但
-机器人原生对照存在超过既定 1e-6 门限的数值差异，独立 native handle 复现且
-后续 FANUC 探针出现 CUDA 719。未缩小验收范围或放宽门限；详见配套 P2PE
+机器人原生对照存在超过既定 1e-6 门限的数值差异。B3 修复两处 TYX 初始化
+标记缺陷后，接触点几何回归通过、原 FANUC CUDA 719 在完整矩阵中不再出现，
+但 FANUC step 后速度全零，与 CPU 参照不符。未缩小验收范围或放宽门限；详见配套 P2PE
 `docs/phymeo-integration.md` 与实验 evidence。本入口保留用于定位，不能据可调用
 step/forward/reset 认定整条物理链路正确。
 
@@ -73,3 +74,8 @@ userdata 或原生 sensor。内部条件 Graph 服务约束求解，不代表整
 首次 forward 的 qacc 对照，最大差 296.59686，容差仍为 atol=1e-6、rtol=0。
 已安装 TYX wheel 的相关七模块 101/101 通过，但不足以覆盖下游碰撞/约束组合。
 Panda 指尖接触点另有约 0.413 m 几何越界证据，保持失败，不作为舍入误差豁免。
+
+后续 B3 安装环境矩阵：50 通过、9 失败，无 skip。Panda/FANUC N=1/8/64
+均实际执行，Panda 的独立 step/forward/masked/full reset 三项通过，CPU/CUDA
+指尖接触点对照通过；六项原生对照与三项 FANUC 运动检查仍失败。
+FANUC 的同配置 CPU 参照确实运动，不能删除 motion 检查让静止结果通过。

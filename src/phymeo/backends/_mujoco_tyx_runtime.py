@@ -691,6 +691,34 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
             self._extra_counts["accepted_world_steps"] += len(self._world_keys)
             return MappingProxyType(dict.fromkeys(self._world_keys, True))
 
+    def integration_snapshot(self, keys=None):
+        """Copy accepted integration state without CPU endpoint reconstruction.
+
+        Physics validation and the complete last-step receipt are unchanged.
+        This explicitly narrower observation does not replace snapshot().
+        """
+        from .mujoco_tyx_state import MuJoCoTyxIntegrationState
+
+        with self._lock:
+            self._check_open()
+            result = {}
+            for key in self._select(keys):
+                data = self._data[key]
+                result[key] = MuJoCoTyxIntegrationState(
+                    world=key,
+                    q=_frozen(data.qpos),
+                    v=_frozen(data.qvel),
+                    act=_frozen(data.act),
+                    ctrl=_frozen(data.ctrl),
+                    time=float(data.time),
+                    tick=self._ticks[key],
+                    qfrc_applied=_frozen(data.qfrc_applied),
+                    xfrc_applied=_frozen(data.xfrc_applied),
+                    held_control=self._controls[key],
+                    last_step=self._receipts[key],
+                )
+            return MappingProxyType(result)
+
     def snapshot(self, keys=None):
         states = super().snapshot(keys)
         return MappingProxyType(

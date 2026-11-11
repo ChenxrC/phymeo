@@ -142,11 +142,18 @@ class MuJoCoTyxVectorEnv:
     episode boundary, not learner checkpoint restoration.
     """
 
-    def __init__(self, runtime, task_spec, action_spec, *, h, horizons):
+    def __init__(self, runtime, task_spec, action_spec, *, h, horizons, observation_mode="full"):
         import torch
 
         from phymeo.backends.mujoco_task_workspace import MuJoCoTyxTaskSpec
 
+        if observation_mode not in ("full", "integration"):
+            raise ValueError("observation_mode must be full or integration")
+        if observation_mode == "integration" and not callable(
+            getattr(runtime, "integration_snapshot", None)
+        ):
+            raise TypeError("runtime must expose integration_snapshot for integration mode")
+        self._observation_mode = observation_mode
         info = runtime.capabilities
         if info.get("implementation") != "tyx" or info.get("mode") != "cuda":
             raise ValueError("device VecEnv requires admitted MuJoCo-TYX CUDA runtime")
@@ -206,6 +213,7 @@ class MuJoCoTyxVectorEnv:
                     "decimation": 1,
                     "runtime_ownership": "borrowed-exclusive-mutation",
                     "physics_diagnostics": "complete-HOST-validation-retained",
+                    "state_observation": self.observation_mode,
                     "episode_bookkeeping": "HOST-lengths-and-done-mask",
                     "restore": "explicit-N3-update-boundary-composition",
                 }
@@ -372,7 +380,11 @@ class MuJoCoTyxVectorEnv:
                     raise RuntimeError("physical batch did not accept every declared world")
                 self._counts["physical_steps"] += 1
                 phase = "physical-diagnostics"
-                states = self.runtime.snapshot()
+                states = (
+                    self.runtime.snapshot()
+                    if self.observation_mode == "full"
+                    else self.runtime.integration_snapshot()
+                )
                 phase = "task-export"
                 final_frame, final_obs, reward, raw_terminated = self._export()
                 phase = "episode-bookkeeping"
@@ -514,9 +526,14 @@ class MuJoCoTyxVectorEnv:
             self._ready()
             yield self
 
+    @property
+    def observation_mode(self):
+        """Read-only observation contract; full remains the default."""
+        return self._observation_mode
+
     def training_binding(self):
         """Stable owner-free binding; runtime/source binding lives in its capsule."""
-        return {
+        binding = {
             "schema": "mujoco-tyx-training-env-v1",
             "world_keys": list(self.world_keys),
             "task": self.task_spec.sha256,
@@ -527,6 +544,11 @@ class MuJoCoTyxVectorEnv:
             "num_actions": self.num_actions,
             "observation_width": self.task_spec.width,
         }
+        # Preserve existing full-mode checkpoint bindings. The explicit reduced
+        # mode must never silently load a checkpoint with a different contract.
+        if self.observation_mode != "full":
+            binding["state_observation"] = self.observation_mode
+        return binding
 
     def capture_training_state(self):
         """Owned HOST copies at a synchronous accepted boundary."""

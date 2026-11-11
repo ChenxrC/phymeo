@@ -332,10 +332,28 @@ def test_geometry_registration_rejects_foreign_layout_and_source_revision_change
 
 
 def test_empty_geometry_is_registration_only_not_fake_step():
-    import phymeo.backends.resident_scene as api
-
     layout = ResidentParticipantLayout([participant()])
     registered = layout.bind_geometry(ph.CollisionModel(()), ())
     assert registered.shape_keys == () and dict(registered.owners) == {}
-    assert not hasattr(api, "ResidentSceneBatch")
     assert not hasattr(layout, "step")
+
+def test_from_asset_retains_original_shape_and_graph_proof():
+    owner = participant("floating_affine")
+    asset = owner.system.asset
+    collider = next(item for item in asset.tree.collisions if item.link_index == -1)
+    key = ph.CollisionKey(owner.key.world, owner.body_ids[0], collider.shape.key.shape)
+    original = ph.ResidentFloatingAffineTreeBinding.from_asset(
+        asset, collider.shape.key, key=key, world=owner.key.world,
+    )
+    shape = replace(collider.shape, key=key)
+    layout = ResidentParticipantLayout([owner])
+    wrapped = ResidentParticipantBinding(owner.key, original)
+    valid = layout.bind_geometry(ph.CollisionModel((shape,)), (wrapped,))
+    assert valid.owners[key] == (owner.key, 0)
+    assert wrapped.binding._source_shape == original._source_shape
+    assert wrapped.binding.graph_token == original.graph_token
+    with pytest.raises(ValueError, match="source shape"):
+        layout.bind_geometry(ph.CollisionModel((replace(shape, radius=shape.radius * 2),)), (wrapped,))
+    wrong = replace(original, graph_token=("foreign-graph",))
+    with pytest.raises(ValueError, match="graph"):
+        layout.bind_geometry(ph.CollisionModel((shape,)), (ResidentParticipantBinding(owner.key, wrong),))

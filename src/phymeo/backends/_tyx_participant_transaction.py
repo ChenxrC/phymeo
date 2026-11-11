@@ -3,6 +3,7 @@
 One lane owns all rows of a logical world. No dynamics, state copy, bank choice
 or publication occurs here; the old finalize retains every rejected row.
 """
+
 from types import SimpleNamespace
 
 import tyx as tx

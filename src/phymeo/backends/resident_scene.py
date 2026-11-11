@@ -4,6 +4,7 @@ ROB1a layout covers four tree families. ROB1b execution deliberately accepts onl
 ordinary floating trees and explicit HOST patch sampling; dynamics stays TYX.
 The shared transaction owns every device bank, solve and atomic world publish.
 """
+
 from collections.abc import Mapping
 from types import MappingProxyType
 
@@ -32,8 +33,9 @@ class ResidentSceneBatch:
     def __init__(self, participants, *, mode="cuda", cache_root=None, static_body_ids=()):
         if mode not in ("interpret", "cuda"):
             raise ValueError("resident scene mode must be interpret or cuda")
-        self._layout = ResidentParticipantLayout(tuple(participants),
-                                               static_body_ids=tuple(static_body_ids))
+        self._layout = ResidentParticipantLayout(
+            tuple(participants), static_body_ids=tuple(static_body_ids)
+        )
         self._owner = object()
         self._closed = False
         self._plans = set()
@@ -74,7 +76,9 @@ class ResidentSceneBatch:
         if worlds is None:
             return self.world_keys
         selected = tuple(_integer(world, "world") for world in worlds)
-        if len(set(selected)) != len(selected) or any(world not in self.layout.worlds for world in selected):
+        if len(set(selected)) != len(selected) or any(
+            world not in self.layout.worlds for world in selected
+        ):
             raise ValueError("unknown or duplicate logical world")
         return tuple(world for world in self.world_keys if world in selected)
 
@@ -112,17 +116,32 @@ class ResidentSceneBatch:
                 raise ValueError("controls must map registered participant identities")
             self._service.set_controls(controls)
 
-    def prepare_contacts(self, model, bindings, materials_by_pair, *,
-                         candidate_capacity=4096, site_capacity=128,
-                         sampling="discrete_entry", intra_participant_pairs=False,
-                         narrow_phase="host_patch", device_patch_site_capacity=None):
+    def prepare_contacts(
+        self,
+        model,
+        bindings,
+        materials_by_pair,
+        *,
+        candidate_capacity=4096,
+        site_capacity=128,
+        sampling="discrete_entry",
+        intra_participant_pairs=False,
+        narrow_phase="host_patch",
+        device_patch_site_capacity=None,
+    ):
         with self._service.locked():
             self._check_open()
             plan = ResidentParticipantContactPlan(
-                self, model, tuple(bindings), materials_by_pair,
-                candidate_capacity=candidate_capacity, site_capacity=site_capacity,
-                sampling=sampling, intra_participant_pairs=intra_participant_pairs,
-                narrow_phase=narrow_phase, device_patch_site_capacity=device_patch_site_capacity,
+                self,
+                model,
+                tuple(bindings),
+                materials_by_pair,
+                candidate_capacity=candidate_capacity,
+                site_capacity=site_capacity,
+                sampling=sampling,
+                intra_participant_pairs=intra_participant_pairs,
+                narrow_phase=narrow_phase,
+                device_patch_site_capacity=device_patch_site_capacity,
             )
             self._plans.add(plan)
             return plan
@@ -160,19 +179,26 @@ class ResidentSceneBatch:
             staged = {}
             for world in worlds:
                 packet = checkpoints[world]
-                if (type(packet) is not ResidentSceneCheckpoint or packet.owner is not self._owner
-                        or packet.registry_fingerprint != self.layout.fingerprint
-                        or packet.world != world):
+                if (
+                    type(packet) is not ResidentSceneCheckpoint
+                    or packet.owner is not self._owner
+                    or packet.registry_fingerprint != self.layout.fingerprint
+                    or packet.world != world
+                ):
                     raise ValueError("checkpoint belongs to another owner or registry source")
                 keys = self.layout.worlds[world].participant_keys
                 if set(packet.participants) != set(keys):
                     raise ValueError("world restore requires complete participant membership")
-                if any(point.world != world or point.tick != packet.tick
-                       for point in packet.participants.values()):
+                if any(
+                    point.world != world or point.tick != packet.tick
+                    for point in packet.participants.values()
+                ):
                     raise ValueError("checkpoint participant world or tick differs")
                 staged.update(packet.participants)
-            invalidated = [(plan, plan._prepare_invalidation(worlds))
-                           for plan in (*self._plans, self._free_plan)]
+            invalidated = [
+                (plan, plan._prepare_invalidation(worlds))
+                for plan in (*self._plans, self._free_plan)
+            ]
             self._service.restore(staged, expected_epoch=epoch)
             for plan, prepared in invalidated:
                 plan._invalidate(prepared)
@@ -183,8 +209,10 @@ class ResidentSceneBatch:
         with self._service.locked():
             self._check_open()
             selected = self._worlds(worlds)
-            invalidated = [(plan, plan._prepare_invalidation(selected))
-                           for plan in (*self._plans, self._free_plan)]
+            invalidated = [
+                (plan, plan._prepare_invalidation(selected))
+                for plan in (*self._plans, self._free_plan)
+            ]
             self._service.reset(selected)
             for plan, prepared in invalidated:
                 plan._invalidate(prepared)
@@ -192,13 +220,14 @@ class ResidentSceneBatch:
                 self._last_publication = None
 
     def stats(self):
-        return dict(self._service.stats(), scene_closed=self._closed,
-                    contact_plan_count=len(self._plans))
+        return dict(
+            self._service.stats(), scene_closed=self._closed, contact_plan_count=len(self._plans)
+        )
 
     def close(self):
         if self._closed:
             return
-        with self._service.locked():
+        with self._service.closing():
             for plan in tuple(self._plans):
                 plan.close()
             self._free_plan.close()

@@ -1,26 +1,38 @@
 """ROB1b world-complete failure, retry, reset and restore; authoring only."""
+
 from dataclasses import replace
 
 import pytest
+from test_resident_multi_participant import (
+    PARTICIPANTS,
+    H,
+    encode,
+    inputs,
+    physical_state,
+    record,
+    save,
+)
 
 import phymeo as ph
 from phymeo.backends import _resident_batch_transaction as transaction
-from test_resident_multi_participant import (
-    H, PARTICIPANTS, encode, inputs, physical_state, record, save,
-)
 
 
 def prepare(scene, data, **kwargs):
-    options = dict(candidate_capacity=len(data["worlds"]), site_capacity=128,
-                   narrow_phase="host_patch")
+    options = dict(
+        candidate_capacity=len(data["worlds"]), site_capacity=128, narrow_phase="host_patch"
+    )
     options.update(kwargs)
     return scene.prepare_contacts(data["model"], data["bindings"], data["laws"], **options)
 
 
 def snapshot(scene, plan):
-    return dict(states=scene.snapshot(), receipts=plan.last_accepted,
-                status=plan.last_status, epoch=scene.state_epoch,
-                bank=scene.stats()["current_buffer"])
+    return dict(
+        states=scene.snapshot(),
+        receipts=plan.last_accepted,
+        status=plan.last_status,
+        epoch=scene.state_epoch,
+        bank=scene.stats()["current_buffer"],
+    )
 
 
 def assert_retained(scene, plan, previous):
@@ -34,7 +46,8 @@ def assert_retained(scene, plan, previous):
 @pytest.mark.tyx
 @pytest.mark.parametrize("last_world", (False, True))
 def test_last_participant_rejection_retains_entire_world_then_real_retry(
-        last_world, tyx_mode, tmp_path, monkeypatch):
+    last_world, tyx_mode, tmp_path, monkeypatch
+):
     data = inputs(2, reverse=True, external=True)
     target_world = data["worlds"][-1 if last_world else 0]
     target = ph.ResidentParticipantKey(target_world, PARTICIPANTS[-1])
@@ -71,13 +84,17 @@ def test_last_participant_rejection_retains_entire_world_then_real_retry(
             assert after[target_world].tick == 2
             assert all(p.tick == 2 for p in after[target_world].participants.values())
             rows.append(record(scene, plan, retained))
-            save(tmp_path, "last-participant-reject-retry",
-                 dict(inputs=data, target=target, injected_rows=seen, before=before, rows=rows))
+            save(
+                tmp_path,
+                "last-participant-reject-retry",
+                dict(inputs=data, target=target, injected_rows=seen, before=before, rows=rows),
+            )
 
 
 @pytest.mark.tyx
 def test_late_receipt_exception_keeps_every_world_and_committed_controls(
-        tyx_mode, tmp_path, monkeypatch):
+    tyx_mode, tmp_path, monkeypatch
+):
     data = inputs(2)
     with ph.ResidentSceneBatch(data["participants"], mode=tyx_mode, cache_root=tmp_path) as scene:
         scene.set_controls(data["controls"])
@@ -95,8 +112,11 @@ def test_late_receipt_exception_keeps_every_world_and_committed_controls(
                 raise RuntimeError("ROB1b injected final receipt failure")
 
             with monkeypatch.context() as patch:
-                patch.setattr(transaction.ResidentBatchTransaction, "_prepare_publication",
-                              fail_after_full_receipt)
+                patch.setattr(
+                    transaction.ResidentBatchTransaction,
+                    "_prepare_publication",
+                    fail_after_full_receipt,
+                )
                 with pytest.raises(RuntimeError, match="injected final receipt"):
                     scene.step_contacts(H, plan)
             assert len(called) == 1
@@ -106,9 +126,17 @@ def test_late_receipt_exception_keeps_every_world_and_committed_controls(
             for world in data["worlds"]:
                 for key, state in after[world].participants.items():
                     assert state.control == before["states"][world].participants[key].control
-            save(tmp_path, "late-receipt-retain-retry",
-                 dict(inputs=data, submitted_controls=changed, before=before,
-                      prepared_unpublished=called, retry=record(scene, plan, before["states"])))
+            save(
+                tmp_path,
+                "late-receipt-retain-retry",
+                dict(
+                    inputs=data,
+                    submitted_controls=changed,
+                    before=before,
+                    prepared_unpublished=called,
+                    retry=record(scene, plan, before["states"]),
+                ),
+            )
 
 
 @pytest.mark.tyx
@@ -133,9 +161,16 @@ def test_world_site_capacity_is_shared_and_candidate_overflow_is_global(tyx_mode
         with prepare(scene, data) as full:
             assert scene.step_contacts(H, full) == dict.fromkeys(data["worlds"], True)
             assert scene.snapshot()[bad].tick == 1
-            save(tmp_path, "site-capacity-world-scope",
-                 dict(inputs=data, capacities=caps, rejected=rejected,
-                      retry=record(scene, full, after)))
+            save(
+                tmp_path,
+                "site-capacity-world-scope",
+                dict(
+                    inputs=data,
+                    capacities=caps,
+                    rejected=rejected,
+                    retry=record(scene, full, after),
+                ),
+            )
 
 
 @pytest.mark.tyx
@@ -160,9 +195,14 @@ def test_complete_world_restore_cas_replay_and_partial_reset(tyx_mode, tmp_path)
             assert_retained(scene, plan, current)
             world = data["worlds"][-1]
             with pytest.raises(ValueError, match="participant|complete|membership"):
-                incomplete = replace(saved[world],
-                                     participants={next(iter(saved[world].participants)):
-                                                   next(iter(saved[world].participants.values()))})
+                incomplete = replace(
+                    saved[world],
+                    participants={
+                        next(iter(saved[world].participants)): next(
+                            iter(saved[world].participants.values())
+                        )
+                    },
+                )
                 scene.restore({world: incomplete}, expected_epoch=scene.state_epoch)
             assert_retained(scene, plan, current)
             old_receipt = plan.last_accepted[world]
@@ -176,9 +216,14 @@ def test_complete_world_restore_cas_replay_and_partial_reset(tyx_mode, tmp_path)
                 assert scene.step_contacts(H, plan) == dict.fromkeys(data["worlds"], True)
                 row = record(scene, plan, before)
                 replay.append(row)
-                assert physical_state(row["accepted"]) == physical_state(continuation[index]["accepted"])
+                assert physical_state(row["accepted"]) == physical_state(
+                    continuation[index]["accepted"]
+                )
                 for world in data["worlds"]:
-                    actual, expected = row["receipts"][world], continuation[index]["receipts"][world]
+                    actual, expected = (
+                        row["receipts"][world],
+                        continuation[index]["receipts"][world],
+                    )
                     assert encode(actual.sites) == encode(expected.sites)
                     assert encode(actual.participants) == encode(expected.participants)
             before_reset = scene.snapshot()
@@ -188,18 +233,30 @@ def test_complete_world_restore_cas_replay_and_partial_reset(tyx_mode, tmp_path)
             assert reset[reset_world] == initial[reset_world]
             assert reset[kept_world] == before_reset[kept_world]
             assert scene.step_contacts(H, plan) == dict.fromkeys(data["worlds"], True)
-            save(tmp_path, "restore-replay-and-partial-reset",
-                 dict(inputs=data, saved=saved, continuation=continuation, replay=replay,
-                      before_reset=before_reset, reset=reset,
-                      next=record(scene, plan, reset)))
+            save(
+                tmp_path,
+                "restore-replay-and-partial-reset",
+                dict(
+                    inputs=data,
+                    saved=saved,
+                    continuation=continuation,
+                    replay=replay,
+                    before_reset=before_reset,
+                    reset=reset,
+                    next=record(scene, plan, reset),
+                ),
+            )
 
 
 @pytest.mark.tyx
 def test_bad_last_control_and_foreign_world_checkpoint_are_atomic(tyx_mode, tmp_path):
     data = inputs(2)
-    with ph.ResidentSceneBatch(data["participants"], mode=tyx_mode, cache_root=tmp_path / "a") as scene:
-        with ph.ResidentSceneBatch(data["participants"], mode=tyx_mode,
-                                  cache_root=tmp_path / "b") as other:
+    with ph.ResidentSceneBatch(
+        data["participants"], mode=tyx_mode, cache_root=tmp_path / "a"
+    ) as scene:
+        with ph.ResidentSceneBatch(
+            data["participants"], mode=tyx_mode, cache_root=tmp_path / "b"
+        ) as other:
             before = scene.snapshot()
             controls = dict(data["controls"])
             controls[max(controls)] = object()
@@ -214,6 +271,39 @@ def test_bad_last_control_and_foreign_world_checkpoint_are_atomic(tyx_mode, tmp_
                     other.step_contacts(H, plan)
                 assert other.snapshot() != {}
                 assert scene.snapshot() == before
-                save(tmp_path, "bad-source-and-control",
-                     dict(inputs=data, initial=before, retained=scene.snapshot(),
-                          other=other.snapshot(), stats=scene.stats()))
+                save(
+                    tmp_path,
+                    "bad-source-and-control",
+                    dict(
+                        inputs=data,
+                        initial=before,
+                        retained=scene.snapshot(),
+                        other=other.snapshot(),
+                        stats=scene.stats(),
+                    ),
+                )
+
+
+@pytest.mark.tyx
+def test_invalid_source_still_allows_plan_and_scene_resource_release(
+    tyx_mode, tmp_path, monkeypatch
+):
+    data = inputs(1)
+    scene = ph.ResidentSceneBatch(data["participants"], mode=tyx_mode, cache_root=tmp_path)
+    plan = prepare(scene, data)
+
+    def invalid_source(layout):
+        raise ValueError("injected stale participant source")
+
+    try:
+        with monkeypatch.context() as patch:
+            patch.setattr(type(scene.layout), "require_current", invalid_source)
+            with pytest.raises(ValueError, match="stale participant source"):
+                scene.step_contacts(H, plan)
+            plan.close()
+            scene.close()
+            assert plan.stats()["closed"]
+            assert scene.stats()["scene_closed"]
+            assert scene.stats()["device_owned_bytes"] == 0
+    finally:
+        scene.close()

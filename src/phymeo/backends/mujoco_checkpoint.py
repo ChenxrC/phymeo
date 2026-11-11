@@ -284,7 +284,6 @@ def _verify_bank(device, packed):
         )
 
 
-
 def capture(runtime):
     binding = _model_binding(runtime)
     packed = _accepted_bank(runtime._device)

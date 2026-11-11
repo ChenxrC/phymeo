@@ -9,7 +9,8 @@ from types import SimpleNamespace
 
 import numpy as np
 import pytest
-from test_mujoco_tyx_activation import save, source as activation_source
+from test_mujoco_tyx_activation import save
+from test_mujoco_tyx_activation import source as activation_source
 from test_mujoco_tyx_checkpoint import CASES, exact, initial, packet
 
 from phymeo.backends import _mujoco_tyx_runtime as implementation
@@ -34,8 +35,9 @@ def fixture(case, mode):
     starts = {}
     for key in KEYS:
         base = initial(compiled, key)
-        starts[key] = MuJoCoInitialState(base.q, base.v, time=base.time,
-                                        act=np.linspace(.05, .15, model.na))
+        starts[key] = MuJoCoInitialState(
+            base.q, base.v, time=base.time, act=np.linspace(0.05, 0.15, model.na)
+        )
     engine = MuJoCoRuntime(compiled, mode=mode, world_keys=KEYS, initial_states=starts)
     return mj, model, compiled, starts, engine
 
@@ -60,11 +62,14 @@ def controls(compiled, tick):
     model = compiled.fresh_native_model()
     result = {}
     from phymeo.backends.mujoco_runtime import MuJoCoControl
+
     for key in KEYS:
         old = packet(compiled, tick, key)
-        result[key] = MuJoCoControl(np.full(model.nu, old.ctrl[0]),
-                                    qfrc_applied=old.qfrc_applied,
-                                    xfrc_applied=old.xfrc_applied)
+        result[key] = MuJoCoControl(
+            np.full(model.nu, old.ctrl[0]),
+            qfrc_applied=old.qfrc_applied,
+            xfrc_applied=old.xfrc_applied,
+        )
     return result
 
 
@@ -72,32 +77,55 @@ def compare_native_snapshot(mj, model, native, state):
     endpoint = copy.copy(native)
     mj.mj_forward(model, endpoint)
     for published, native_name in (
-        ("q", "qpos"), ("v", "qvel"), ("act", "act"), ("ctrl", "ctrl"),
-        ("qfrc_applied", "qfrc_applied"), ("xfrc_applied", "xfrc_applied"),
+        ("q", "qpos"),
+        ("v", "qvel"),
+        ("act", "act"),
+        ("ctrl", "ctrl"),
+        ("qfrc_applied", "qfrc_applied"),
+        ("xfrc_applied", "xfrc_applied"),
     ):
         assert getattr(state, published).tobytes() == getattr(native, native_name).tobytes()
     for published, native_name in (
-        ("body_positions", "xpos"), ("body_quaternions", "xquat"),
-        ("geometry_positions", "geom_xpos"), ("geometry_matrices", "geom_xmat"),
-        ("qacc", "qacc"), ("qfrc_actuator", "qfrc_actuator"),
-        ("qfrc_passive", "qfrc_passive"), ("qfrc_constraint", "qfrc_constraint"),
-        ("sensordata", "sensordata"), ("energy", "energy"),
+        ("body_positions", "xpos"),
+        ("body_quaternions", "xquat"),
+        ("geometry_positions", "geom_xpos"),
+        ("geometry_matrices", "geom_xmat"),
+        ("qacc", "qacc"),
+        ("qfrc_actuator", "qfrc_actuator"),
+        ("qfrc_passive", "qfrc_passive"),
+        ("qfrc_constraint", "qfrc_constraint"),
+        ("sensordata", "sensordata"),
+        ("energy", "energy"),
     ):
         assert getattr(state, published).tobytes() == getattr(endpoint, native_name).tobytes()
     assert state.time == native.time and state.contact_time == native.time
     assert len(state.contacts) == endpoint.ncon
     for actual, expected in zip(state.contacts, endpoint.contact, strict=True):
-        for published, native_name in (("distance", "dist"), ("position", "pos"),
-                                       ("frame", "frame"), ("friction", "friction"),
-                                       ("solref", "solref"), ("solimp", "solimp"),
-                                       ("solref_friction", "solreffriction"),
-                                       ("include_margin", "includemargin"),
-                                       ("regularized_mu", "mu"), ("cone_hessian", "H")):
-            assert np.asarray(getattr(actual, published)).tobytes() == np.asarray(
-                getattr(expected, native_name)).tobytes()
-        for published, native_name in (("geometry_ids", "geom"), ("flex_ids", "flex"),
-                                       ("element_ids", "elem"), ("vertex_ids", "vert")):
-            assert getattr(actual, published) == tuple(int(x) for x in getattr(expected, native_name))
+        for published, native_name in (
+            ("distance", "dist"),
+            ("position", "pos"),
+            ("frame", "frame"),
+            ("friction", "friction"),
+            ("solref", "solref"),
+            ("solimp", "solimp"),
+            ("solref_friction", "solreffriction"),
+            ("include_margin", "includemargin"),
+            ("regularized_mu", "mu"),
+            ("cone_hessian", "H"),
+        ):
+            assert (
+                np.asarray(getattr(actual, published)).tobytes()
+                == np.asarray(getattr(expected, native_name)).tobytes()
+            )
+        for published, native_name in (
+            ("geometry_ids", "geom"),
+            ("flex_ids", "flex"),
+            ("element_ids", "elem"),
+            ("vertex_ids", "vert"),
+        ):
+            assert getattr(actual, published) == tuple(
+                int(x) for x in getattr(expected, native_name)
+            )
         assert actual.dimension == expected.dim and actual.excluded == expected.exclude
         assert actual.constraint_address == expected.efc_address
         wrench = np.empty(6, np.float64)
@@ -111,13 +139,13 @@ def test_public_native_state_roundtrip_preserves_warmstart_and_owned_bytes(case)
     xml = activation_source("coupled") if case == "activation" else CASES[case]
     model = mj.MjModel.from_xml_string(xml)
     data = mj.MjData(model)
-    data.qvel[:] = np.linspace(.025, -.015, model.nv)
-    data.act[:] = np.linspace(.1, .2, model.na)
-    data.ctrl[:] = np.linspace(.03, -.02, model.nu)
-    data.qfrc_applied[:] = np.linspace(.01, .02, model.nv)
-    data.xfrc_applied[-1] = [.01, -.02, .03, .004, -.005, .006]
-    data.qacc_warmstart[:] = np.linspace(.3, -.2, model.nv)
-    data.time = .123
+    data.qvel[:] = np.linspace(0.025, -0.015, model.nv)
+    data.act[:] = np.linspace(0.1, 0.2, model.na)
+    data.ctrl[:] = np.linspace(0.03, -0.02, model.nu)
+    data.qfrc_applied[:] = np.linspace(0.01, 0.02, model.nv)
+    data.xfrc_applied[-1] = [0.01, -0.02, 0.03, 0.004, -0.005, 0.006]
+    data.qacc_warmstart[:] = np.linspace(0.3, -0.2, model.nv)
+    data.time = 0.123
     mj.mj_forward(model, data)
     layout = NativeStateLayout(mj, model)
     mirror = layout.capture(data)
@@ -133,7 +161,7 @@ def test_public_native_state_roundtrip_preserves_warmstart_and_owned_bytes(case)
         assert not getattr(mirror, name).flags.writeable
     duplicate = copy.copy(mirror)
     assert duplicate is not mirror and duplicate.cpu_state.tobytes() == before
-    data.qpos[:] += .01
+    data.qpos[:] += 0.01
     data.qacc_warmstart[:] = 0
     assert mirror.cpu_state.tobytes() == before
     with pytest.raises(ValueError):
@@ -167,15 +195,18 @@ def test_native_observer_rejects_another_model_owner_before_mutation():
     layout = NativeStateLayout(mj, first)
     mirror = layout.capture(mj.MjData(first))
     other = mj.MjData(second)
-    other.qvel[:] = .125
+    other.qvel[:] = 0.125
     before = other.qvel.tobytes()
     with pytest.raises(ValueError, match="model identity"):
         layout.materialize(mirror, other)
     assert other.qvel.tobytes() == before
 
+
 @pytest.mark.parametrize("mode", MODES)
 @pytest.mark.parametrize("case", CASES_TO_RUN)
-def test_step_copy_elimination_full_snapshot_and_exact_continuation(case, mode, monkeypatch, tmp_path):
+def test_step_copy_elimination_full_snapshot_and_exact_continuation(
+    case, mode, monkeypatch, tmp_path
+):
     mj, model, compiled, starts, engine = fixture(case, mode)
     saved = []
     try:
@@ -185,8 +216,10 @@ def test_step_copy_elimination_full_snapshot_and_exact_continuation(case, mode, 
         observer_id = id(engine._observer_data)
         for tick in range(3):
             engine.set_controls(controls(compiled, tick))
+
             def forbidden(*args, **kwargs):
                 raise AssertionError("ordinary TYX step allocated/copied native data")
+
             with monkeypatch.context() as patch:
                 patch.setattr(implementation, "copy", SimpleNamespace(copy=forbidden))
                 patch.setattr(mj, "MjData", forbidden)
@@ -238,8 +271,16 @@ def test_step_copy_elimination_full_snapshot_and_exact_continuation(case, mode, 
         engine.reset((KEYS[0],))
         assert exact(engine.integration_snapshot()[KEYS[1]]) == untouched
         assert all(engine.step(engine.timestep).values())
-        save(tmp_path / "mirror-storage.json.gz", {"mode": mode, "case": case,
-             "states": saved, "checkpoint": cp.to_bytes().hex(), "after_reset": engine.snapshot()})
+        save(
+            tmp_path / "mirror-storage.json.gz",
+            {
+                "mode": mode,
+                "case": case,
+                "states": saved,
+                "checkpoint": cp.to_bytes().hex(),
+                "after_reset": engine.snapshot(),
+            },
+        )
     finally:
         engine.close()
     assert engine._observer_data is None and not engine._data
@@ -259,23 +300,31 @@ def test_late_world_failure_preserves_all_accepted_records(mode, fault, monkeypa
         with monkeypatch.context() as patch:
             if fault == "clock":
                 download = engine._device.download
+
                 def corrupt():
                     result = download()
                     result["time"][-1, 0] += np.float32(1)
                     return result
+
                 patch.setattr(engine._device, "download", corrupt)
             else:
-                target, name = ((engine, "_finite_state") if fault == "finite" else
-                                (implementation, "MuJoCoTyxStepReceipt") if fault == "receipt" else
-                                (NativeMirror, "changed"))
+                target, name = (
+                    (engine, "_finite_state")
+                    if fault == "finite"
+                    else (implementation, "MuJoCoTyxStepReceipt")
+                    if fault == "receipt"
+                    else (NativeMirror, "changed")
+                )
                 original = getattr(target, name)
                 calls = 0
+
                 def reject(*args, **kwargs):
                     nonlocal calls
                     calls += 1
                     if calls == 2:
                         raise MemoryError("authored last-world " + fault)
                     return original(*args, **kwargs)
+
                 patch.setattr(target, name, reject)
             with pytest.raises(PhysicsStepFailure):
                 engine.step(engine.timestep)
@@ -300,6 +349,7 @@ def test_last_observer_failure_is_detached_and_retryable(mode, operation, monkey
         revision, active = engine.checkpoint_revision, engine._device.active
         original = mj.mj_forward
         calls = 0
+
         def failure(model, data):
             nonlocal calls
             calls += 1
@@ -307,6 +357,7 @@ def test_last_observer_failure_is_detached_and_retryable(mode, operation, monkey
             # Restore also validates two original initial declarations first.
             if calls == (4 if operation == "restore" else 2):
                 raise RuntimeError("authored detached last-world observer failure")
+
         with monkeypatch.context() as patch:
             patch.setattr(mj, "mj_forward", failure)
             with pytest.raises(RuntimeError, match="detached last-world"):

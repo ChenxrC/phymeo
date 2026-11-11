@@ -118,3 +118,10 @@ Parent selects directly affected existing checkpoint/clone checks. No old S256
 trajectory or audit has been repeated. Allocation pressure, complete equivalence
 and any timing benefit require actual future measurements. The original closed
 run64 values are only the motivation; they are not results of this change.
+
+
+## Parent qualification
+
+The author-only status above is historical. Parent sole-owner runs114/115 passed 19 HOST/interpret and 10 CUDA cases (6.30s/4.61s). Directly affected original checkpoint/clone run116 passed55/21.16s; actual training checkpoint (MLP/GRU), post-CAS failure and full/integration continuation run117 passed9/42.53s. All RAW_EXIT=0. These qualifications compare complete old native copy-and-patch observations with the compact representation; they do not add new physical model domains. One import-order finding and four formatting changes were retained in runs108/109, repaired110/111, final112/113 succeeded. Native kernels and CPU runtime stepping stayed unchanged.
+
+The S256 allocation/commit/RSS follow-up is separate and pending. No measured memory reduction or Newton throughput superiority follows from the correctness tests alone.

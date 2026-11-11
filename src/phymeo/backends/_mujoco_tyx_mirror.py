@@ -11,8 +11,15 @@ from types import MappingProxyType
 import numpy as np
 
 MIRROR_FIELDS = (
-    "qpos", "qvel", "act", "ctrl", "qacc", "qfrc_actuator",
-    "qfrc_constraint", "qfrc_applied", "xfrc_applied",
+    "qpos",
+    "qvel",
+    "act",
+    "ctrl",
+    "qacc",
+    "qfrc_actuator",
+    "qfrc_constraint",
+    "qfrc_applied",
+    "xfrc_applied",
 )
 _STATE_FIELDS = (
     ("mjSTATE_TIME", "time"),
@@ -100,21 +107,33 @@ class NativeStateLayout:
         _require(position == self.size, "native state component layout")
         self.slices = MappingProxyType(slices)
         shapes = {name: (part.stop - part.start,) for name, part in slices.items()}
-        shapes.update(xfrc_applied=(model.nbody, 6), mocap_pos=(model.nmocap, 3),
-                      mocap_quat=(model.nmocap, 4))
+        shapes.update(
+            xfrc_applied=(model.nbody, 6), mocap_pos=(model.nmocap, 3), mocap_quat=(model.nmocap, 4)
+        )
         self.state_shapes = MappingProxyType(shapes)
-        self.mirror_shapes = MappingProxyType({
-            "qpos": (model.nq,), "qvel": (model.nv,), "act": (model.na,),
-            "ctrl": (model.nu,), "qacc": (model.nv,),
-            "qfrc_actuator": (model.nv,), "qfrc_constraint": (model.nv,),
-            "qfrc_applied": (model.nv,), "xfrc_applied": (model.nbody, 6),
-        })
+        self.mirror_shapes = MappingProxyType(
+            {
+                "qpos": (model.nq,),
+                "qvel": (model.nv,),
+                "act": (model.na,),
+                "ctrl": (model.nu,),
+                "qacc": (model.nv,),
+                "qfrc_actuator": (model.nv,),
+                "qfrc_constraint": (model.nv,),
+                "qfrc_applied": (model.nv,),
+                "xfrc_applied": (model.nbody, 6),
+            }
+        )
 
     def from_parts(self, cpu_state, values):
         """Validate the existing checkpoint representation, then own all bytes."""
-        _require(isinstance(cpu_state, np.ndarray) and cpu_state.dtype == np.float64
-                 and cpu_state.shape == (self.size,) and np.isfinite(cpu_state).all(),
-                 "CPU integration-state dimensions/finite")
+        _require(
+            isinstance(cpu_state, np.ndarray)
+            and cpu_state.dtype == np.float64
+            and cpu_state.shape == (self.size,)
+            and np.isfinite(cpu_state).all(),
+            "CPU integration-state dimensions/finite",
+        )
         _require(isinstance(values, Mapping) and set(values) == set(MIRROR_FIELDS), "mirror schema")
         cpu = _owned(cpu_state)
         eq = cpu[self.slices["eq_active"]]
@@ -122,9 +141,13 @@ class NativeStateLayout:
         prepared = {}
         for name in MIRROR_FIELDS:
             value = values[name]
-            _require(isinstance(value, np.ndarray) and value.dtype == np.float64
-                     and value.shape == self.mirror_shapes[name] and np.isfinite(value).all(),
-                     "mirror dimensions/finite: " + name)
+            _require(
+                isinstance(value, np.ndarray)
+                and value.dtype == np.float64
+                and value.shape == self.mirror_shapes[name]
+                and np.isfinite(value).all(),
+                "mirror dimensions/finite: " + name,
+            )
             if name in self.slices:
                 state = cpu[self.slices[name]].reshape(value.shape)
                 _require(state.tobytes() == value.tobytes(), "CPU state/mirror binding: " + name)

@@ -406,9 +406,11 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
         q, v, time = packed[:3]
         prepared = {}
         for index, key in enumerate(self._world_keys):
-            updates = dict(qpos=q[index, : self._plan.nq],
-                           qvel=v[index, : self._plan.nv],
-                           time=float(time[index, 0]) - float(time[index, 1]))
+            updates = dict(
+                qpos=q[index, : self._plan.nq],
+                qvel=v[index, : self._plan.nv],
+                time=float(time[index, 0]) - float(time[index, 1]),
+            )
             if hasattr(self._plan, "activation"):
                 updates["act"] = packed[3][index]
             prepared[key] = data[key].changed(**updates)
@@ -800,9 +802,12 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                 endpoint = self._observe_native(committed)
                 states[key] = MuJoCoState(
                     world=key,
-                    q=_frozen(committed.qpos), v=_frozen(committed.qvel),
-                    act=_frozen(committed.act), ctrl=_frozen(committed.ctrl),
-                    time=float(committed.time), tick=self._ticks[key],
+                    q=_frozen(committed.qpos),
+                    v=_frozen(committed.qvel),
+                    act=_frozen(committed.act),
+                    ctrl=_frozen(committed.ctrl),
+                    time=float(committed.time),
+                    tick=self._ticks[key],
                     body_positions=_frozen(endpoint.xpos),
                     body_quaternions=_frozen(endpoint.xquat),
                     geometry_positions=_frozen(endpoint.geom_xpos),
@@ -813,9 +818,11 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                     qfrc_constraint=_frozen(endpoint.qfrc_constraint),
                     qfrc_applied=_frozen(committed.qfrc_applied),
                     xfrc_applied=_frozen(committed.xfrc_applied),
-                    sensordata=_frozen(endpoint.sensordata), energy=_frozen(endpoint.energy),
+                    sensordata=_frozen(endpoint.sensordata),
+                    energy=_frozen(endpoint.energy),
                     contacts=_contacts(self._mj, self._model, endpoint),
-                    contact_time=float(committed.time), held_control=self._controls[key],
+                    contact_time=float(committed.time),
+                    held_control=self._controls[key],
                     last_step=self._receipts[key],
                     contact_law=self._capabilities["contact_law"],
                     contact_phase="endpoint-cpu-forward-recomputed",
@@ -932,7 +939,8 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                 for key in selected:
                     copied = copy.copy(self._data[key])
                     proposed[key] = cloned._mirror_layout.from_parts(
-                        copied.cpu_state, {name: getattr(copied, name) for name in MIRROR_FIELDS})
+                        copied.cpu_state, {name: getattr(copied, name) for name in MIRROR_FIELDS}
+                    )
                 replacement = cloned._build_device(proposed)
                 previous = cloned._device
                 # Own both banks before retirement: a failed close must not

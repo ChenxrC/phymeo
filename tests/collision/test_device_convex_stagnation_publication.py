@@ -158,7 +158,7 @@ def test_actual_shared_fixed_candidate_predicate(tyx_mode, tmp_path):
         np.testing.assert_array_equal(actual, expected)
 
 
-def assert_fixed_publication(trace):
+def assert_fixed_publication(trace, mode):
     row = trace.query.rows[0]
     assert row.status == "RESOLVED" and row.epa_used == 0
     assert row.gjk_used <= trace.policy["gjk_iterations"]
@@ -167,8 +167,22 @@ def assert_fixed_publication(trace):
     f = trace.floats[0, row.gjk_used - 1]
     n = int(i[4])
     assert 1 <= n <= 4 and tuple(i[[5, 7, 21]]) == (n, n, n)
-    assert i[6] == 1 and i[20] == 0 and i[9] == 3
-    assert i[8] == (1 << n) - 1  # A real unchanged full-subset reduction occurred.
+    assert i[20] == 0
+    decision = int(i[9])
+    if mode == "interpret":
+        # These nine actual paired captures froze this backend's stagnation exit.
+        assert decision == 3
+    else:
+        # CUDA rounding can satisfy the earlier plane gate on the same input.
+        # It still must publish that plane's complete entry candidate.
+        assert mode == "cuda" and decision in (2, 3)
+    if decision == 3:
+        assert i[6] == 1
+        assert i[8] == (1 << n) - 1  # Real unchanged full-subset reduction.
+    else:
+        assert i[6] in (0, 1) and i[8] == 0
+        np.testing.assert_array_equal(i[48:93], 0)
+        np.testing.assert_array_equal(f[112:412], 0)
     np.testing.assert_array_equal(f[:4], f[4:8])
     before_vertices, after_vertices = f[32:68].reshape(4, 9), f[72:108].reshape(4, 9)
     np.testing.assert_array_equal(before_vertices[:n], after_vertices[:n])
@@ -177,10 +191,14 @@ def assert_fixed_publication(trace):
     np.testing.assert_array_equal(i[32 : 32 + n], np.arange(n))
     np.testing.assert_array_equal(i[44 : 44 + n], np.arange(n))
     assert f[21] > 0 and f[22] == np.float32(f[21] - f[11])
-    # This is the original engineering stagnation route, NOT a plane certificate.
-    # In all nine frozen captures the real width misses the unchanged plane gate.
-    assert f[22] > np.float32(8e-7)
-    assert row.gap_lower_m < row.gap_upper_m and row.gap_m == row.gap_upper_m
+    if decision == 3:
+        # Stagnation is NOT a plane certificate; never clamp its honest width.
+        assert f[22] > np.float32(8e-7)
+        assert row.gap_lower_m < row.gap_upper_m
+    else:
+        assert f[22] <= np.float32(8e-7)
+        assert row.gap_lower_m <= row.gap_upper_m
+    assert row.gap_m == row.gap_upper_m
 
     weights = f[68 : 68 + n].astype(float)
     assert np.all(weights >= 0) and abs(float(weights.sum()) - 1) <= 64 * 2**-23
@@ -264,7 +282,7 @@ def test_nine_original_regressions_keep_one_complete_candidate(identity, tyx_mod
                 assert abs(np.linalg.norm(normal) - 1) <= 2e-4
                 assert np.linalg.norm(normal - expected_patch["normal"]) <= 2e-3
                 record["geometry"] = dict(original_complete_patch_oracle=True)
-            record["candidate"] = assert_fixed_publication(trace)
+            record["candidate"] = assert_fixed_publication(trace, tyx_mode)
             record["after"] = batch.snapshot()
             assert k0.canonical(before) == k0.canonical(record["after"])
             record["stats"] = dict(plan.stats)

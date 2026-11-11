@@ -161,7 +161,15 @@ def check_wire_rows(result):
         "SOURCE_PRECISION",
         "STALLED",
     )
-    phase = ("NONE", "ANALYTIC_ROUND", "GJK_CORE", "GJK_POLYTOPE", "EPA", "GJK_SUPPORT", "SUPPORT_BALL")
+    phase = (
+        "NONE",
+        "ANALYTIC_ROUND",
+        "GJK_CORE",
+        "GJK_POLYTOPE",
+        "EPA",
+        "GJK_SUPPORT",
+        "SUPPORT_BALL",
+    )
     for index, row in enumerate(result.rows):
         meta = result.raw["meta"][index]
         assert (
@@ -617,9 +625,17 @@ def test_rotated_shallow_overlap_keeps_independent_depth(family, tyx_mode, tmp_p
 
 
 @pytest.mark.tyx
-@pytest.mark.parametrize("case_name", (
-    "eccentric", "contained", "contained_scaled", "concentric", "near_concentric", "guard_limited",
-))
+@pytest.mark.parametrize(
+    "case_name",
+    (
+        "eccentric",
+        "contained",
+        "contained_scaled",
+        "concentric",
+        "near_concentric",
+        "guard_limited",
+    ),
+)
 def test_round_support_ball_unique_and_degenerate_boundaries(case_name, tyx_mode, tmp_path):
     # Isotropic E is an exact sphere; the oracle uses sum-of-radii minus
     # centre distance, not product support/EPA or the new certificate formula.

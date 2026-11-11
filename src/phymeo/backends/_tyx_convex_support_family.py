@@ -103,8 +103,7 @@ def support_ball_normal_bound(
     reach: tx.f32, tangent_square: tx.f32, radius: tx.f32, rounding: tx.f32
 ) -> tx.f32:
     return (
-        2.0 * (tx.sqrt(tx.max(0.0, tangent_square)) + 2.0 * rounding)
-        / (radius - reach - rounding)
+        2.0 * (tx.sqrt(tx.max(0.0, tangent_square)) + 2.0 * rounding) / (radius - reach - rounding)
         if radius - reach > rounding
         else 1e30
     )

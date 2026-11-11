@@ -9,8 +9,11 @@ import tyx as tx
 
 from ._tyx_convex_support import clamp01, det3, dot3
 from ._tyx_convex_support_family import (
-    curved_support_x, curved_support_y, curved_support_z,
-    support_ball_depth_width, support_ball_normal_bound,
+    curved_support_x,
+    curved_support_y,
+    curved_support_z,
+    support_ball_depth_width,
+    support_ball_normal_bound,
 )
 
 
@@ -245,13 +248,26 @@ def query_convex_pairs(
                         frame_defect = tx.max(frame_defect, defect_row)
                     frame_defect = frame_defect + 3.814697265625e-6
                     if frame_defect < 0.25:
-                        min_axis = tx.min(dimensions[ball_shape, 0],
-                            tx.min(dimensions[ball_shape, 1], dimensions[ball_shape, 2])) / scale
-                        max_axis = tx.max(dimensions[ball_shape, 0],
-                            tx.max(dimensions[ball_shape, 1], dimensions[ball_shape, 2])) / scale
+                        min_axis = (
+                            tx.min(
+                                dimensions[ball_shape, 0],
+                                tx.min(dimensions[ball_shape, 1], dimensions[ball_shape, 2]),
+                            )
+                            / scale
+                        )
+                        max_axis = (
+                            tx.max(
+                                dimensions[ball_shape, 0],
+                                tx.max(dimensions[ball_shape, 1], dimensions[ball_shape, 2]),
+                            )
+                            / scale
+                        )
                         rolling_radius = rolling_radius + (
-                            min_axis * (min_axis / max_axis) * (1.0 - frame_defect)
-                            / tx.sqrt(1.0 + frame_defect) * 0.9999990463256836
+                            min_axis
+                            * (min_axis / max_axis)
+                            * (1.0 - frame_defect)
+                            / tx.sqrt(1.0 + frame_defect)
+                            * 0.9999990463256836
                         )
 
         meta[out, 12] = attempt
@@ -575,8 +591,10 @@ def query_convex_pairs(
                         fw_y = cy - py
                         fw_z = cz - pz
                         fw_padding = 2.384185791015625e-7 * (
-                            closest_square + tx.abs(cx * fw_x)
-                            + tx.abs(cy * fw_y) + tx.abs(cz * fw_z)
+                            closest_square
+                            + tx.abs(cx * fw_x)
+                            + tx.abs(cy * fw_y)
+                            + tx.abs(cz * fw_z)
                         )
                         fw_numerator = tx.max(0.0, dot3(cx, cy, cz, fw_x, fw_y, fw_z)) + fw_padding
                         if (
@@ -589,9 +607,10 @@ def query_convex_pairs(
                             ny = -cy / previous_distance
                             nz = -cz / previous_distance
                             signed_gap = previous_distance * scale
-                            lower_gap = tx.max(
-                                0.0, previous_distance - fw_numerator / previous_distance
-                            ) * scale
+                            lower_gap = (
+                                tx.max(0.0, previous_distance - fw_numerator / previous_distance)
+                                * scale
+                            )
                             upper_gap = signed_gap
                             active_count = simplex_n
                     # A global tangent-ball lower bound can certify a smooth
@@ -602,7 +621,9 @@ def query_convex_pairs(
                             ball_x = dx / ball_direction_scale
                             ball_y = dy / ball_direction_scale
                             ball_z = dz / ball_direction_scale
-                            ball_length = tx.sqrt(dot3(ball_x, ball_y, ball_z, ball_x, ball_y, ball_z))
+                            ball_length = tx.sqrt(
+                                dot3(ball_x, ball_y, ball_z, ball_x, ball_y, ball_z)
+                            )
                             ball_x = ball_x / ball_length
                             ball_y = ball_y / ball_length
                             ball_z = ball_z / ball_length
@@ -616,14 +637,23 @@ def query_convex_pairs(
                                 ball_support_x = support_points[lane, ball_support_side, 0] / scale
                                 ball_support_y = support_points[lane, ball_support_side, 1] / scale
                                 ball_support_z = support_points[lane, ball_support_side, 2] / scale
-                                ball_rounding = ball_rounding + tx.sqrt(dot3(
-                                    ball_support_x, ball_support_y, ball_support_z,
-                                    ball_support_x, ball_support_y, ball_support_z))
+                                ball_rounding = ball_rounding + tx.sqrt(
+                                    dot3(
+                                        ball_support_x,
+                                        ball_support_y,
+                                        ball_support_z,
+                                        ball_support_x,
+                                        ball_support_y,
+                                        ball_support_z,
+                                    )
+                                )
                             ball_rounding = ball_rounding * 2.384185791015625e-7
                             ball_width = support_ball_depth_width(
-                                ball_reach, ball_square, rolling_radius, ball_rounding)
+                                ball_reach, ball_square, rolling_radius, ball_rounding
+                            )
                             ball_normal_error = support_ball_normal_bound(
-                                ball_reach, ball_square, rolling_radius, ball_rounding)
+                                ball_reach, ball_square, rolling_radius, ball_rounding
+                            )
                             if (
                                 ball_reach + ball_rounding - ball_width > 0.0
                                 and ball_width <= 8e-7
@@ -650,8 +680,12 @@ def query_convex_pairs(
                                 vertex_slots[lane, 0, 0] = ia
                                 vertex_slots[lane, 0, 1] = ib
                                 for ball_axis in tx.static_range(3):
-                                    vertices[lane, 0, 3 + ball_axis] = support_points[lane, 0, ball_axis]
-                                    vertices[lane, 0, 6 + ball_axis] = support_points[lane, 1, ball_axis]
+                                    vertices[lane, 0, 3 + ball_axis] = support_points[
+                                        lane, 0, ball_axis
+                                    ]
+                                    vertices[lane, 0, 6 + ball_axis] = support_points[
+                                        lane, 1, ball_axis
+                                    ]
                                 for ball_slot in tx.static_range(4):
                                     weights[lane, ball_slot] = 0.0
                                     indices[lane, ball_slot] = 0
@@ -756,9 +790,18 @@ def query_convex_pairs(
                                     if tx.abs(determinant) <= 1e-12:
                                         usable = 0
                                     else:
-                                        w1 = det3(-x0, -y0, -z0, fx, fy, fz, gx, gy, gz) / determinant
-                                        w2 = det3(ex, ey, ez, -x0, -y0, -z0, gx, gy, gz) / determinant
-                                        w3 = det3(ex, ey, ez, fx, fy, fz, -x0, -y0, -z0) / determinant
+                                        w1 = (
+                                            det3(-x0, -y0, -z0, fx, fy, fz, gx, gy, gz)
+                                            / determinant
+                                        )
+                                        w2 = (
+                                            det3(ex, ey, ez, -x0, -y0, -z0, gx, gy, gz)
+                                            / determinant
+                                        )
+                                        w3 = (
+                                            det3(ex, ey, ez, fx, fy, fz, -x0, -y0, -z0)
+                                            / determinant
+                                        )
                                         w0 = 1.0 - w1 - w2 - w3
                                 if w0 < -1e-6 or w1 < -1e-6 or w2 < -1e-6 or w3 < -1e-6:
                                     usable = 0
@@ -862,7 +905,9 @@ def query_convex_pairs(
                                 for c in tx.static_range(9):
                                     simplex_copy[lane, k, c] = vertices[lane, selected, c]
                                 for side in tx.static_range(2):
-                                    simplex_slots[lane, k, side] = vertex_slots[lane, selected, side]
+                                    simplex_slots[lane, k, side] = vertex_slots[
+                                        lane, selected, side
+                                    ]
                             for k in tx.static_range(4):
                                 for c in tx.static_range(9):
                                     vertices[lane, k, c] = simplex_copy[lane, k, c]
@@ -1472,20 +1517,37 @@ def query_convex_pairs(
                                     ball_tx = px - ball_reach * ball_x
                                     ball_ty = py - ball_reach * ball_y
                                     ball_tz = pz - ball_reach * ball_z
-                                    ball_square = dot3(ball_tx, ball_ty, ball_tz, ball_tx, ball_ty, ball_tz)
+                                    ball_square = dot3(
+                                        ball_tx, ball_ty, ball_tz, ball_tx, ball_ty, ball_tz
+                                    )
                                     ball_rounding = rolling_radius
                                     for ball_support_side in tx.static_range(2):
-                                        ball_support_x = support_points[lane, ball_support_side, 0] / scale
-                                        ball_support_y = support_points[lane, ball_support_side, 1] / scale
-                                        ball_support_z = support_points[lane, ball_support_side, 2] / scale
-                                        ball_rounding = ball_rounding + tx.sqrt(dot3(
-                                            ball_support_x, ball_support_y, ball_support_z,
-                                            ball_support_x, ball_support_y, ball_support_z))
+                                        ball_support_x = (
+                                            support_points[lane, ball_support_side, 0] / scale
+                                        )
+                                        ball_support_y = (
+                                            support_points[lane, ball_support_side, 1] / scale
+                                        )
+                                        ball_support_z = (
+                                            support_points[lane, ball_support_side, 2] / scale
+                                        )
+                                        ball_rounding = ball_rounding + tx.sqrt(
+                                            dot3(
+                                                ball_support_x,
+                                                ball_support_y,
+                                                ball_support_z,
+                                                ball_support_x,
+                                                ball_support_y,
+                                                ball_support_z,
+                                            )
+                                        )
                                     ball_rounding = ball_rounding * 2.384185791015625e-7
                                     ball_width = support_ball_depth_width(
-                                        ball_reach, ball_square, rolling_radius, ball_rounding)
+                                        ball_reach, ball_square, rolling_radius, ball_rounding
+                                    )
                                     ball_normal_error = support_ball_normal_bound(
-                                        ball_reach, ball_square, rolling_radius, ball_rounding)
+                                        ball_reach, ball_square, rolling_radius, ball_rounding
+                                    )
                                     if (
                                         ball_reach + ball_rounding - ball_width > 0.0
                                         and ball_width <= 8e-7
@@ -1501,7 +1563,9 @@ def query_convex_pairs(
                                         nz = ball_z
                                         signed_gap = -ball_reach * scale
                                         lower_gap = -(ball_reach + ball_rounding) * scale
-                                        upper_gap = -(ball_reach + ball_rounding - ball_width) * scale
+                                        upper_gap = (
+                                            -(ball_reach + ball_rounding - ball_width) * scale
+                                        )
                                         active_count = 1
                                         # Reuse one owned slot; retain peak EPA
                                         # vertex/face counts already consumed.
@@ -1511,8 +1575,12 @@ def query_convex_pairs(
                                         vertex_slots[lane, 0, 0] = ia
                                         vertex_slots[lane, 0, 1] = ib
                                         for ball_axis in tx.static_range(3):
-                                            vertices[lane, 0, 3 + ball_axis] = support_points[lane, 0, ball_axis]
-                                            vertices[lane, 0, 6 + ball_axis] = support_points[lane, 1, ball_axis]
+                                            vertices[lane, 0, 3 + ball_axis] = support_points[
+                                                lane, 0, ball_axis
+                                            ]
+                                            vertices[lane, 0, 6 + ball_axis] = support_points[
+                                                lane, 1, ball_axis
+                                            ]
                                         for ball_slot in tx.static_range(4):
                                             weights[lane, ball_slot] = 0.0
                                             indices[lane, ball_slot] = 0

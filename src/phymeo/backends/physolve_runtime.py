@@ -134,7 +134,9 @@ class PhySolveRuntime:
                         self._validate(data)
                     from ._physolve_reset import PreparedReset
 
-                    self._reset = PreparedReset(self._banks, self.nworld, selected)
+                    self._reset = PreparedReset(
+                        self._banks, self.nworld, selected, OBSERVATION_FIELDS
+                    )
                     self._reset.prepare(self._stream)
                     self._complete()
         except Exception as error:
@@ -222,7 +224,7 @@ class PhySolveRuntime:
             self._active = index
 
     def reset(self, mask=None):
-        """Reset all or a boolean world mask; unselected integration state stays."""
+        """Reset selected worlds; keep unselected integration and snapshot values."""
         with self._scope():
             if mask is not None:
                 mask = np.asarray(mask)
@@ -234,6 +236,11 @@ class PhySolveRuntime:
             self._reset.restore(index, mask, self._stream)
             self._native._forward_runtime(self._handles[index])
             self._validate(data)
+            if mask is not None and not mask.all():
+                # Validate *before* overwriting qacc: a failed forward on an
+                # unselected world must not be hidden by its previous values.
+                self._reset.preserve_observations(index, self._stream)
+                self._complete()
             self._active = index
 
     def snapshot(self):

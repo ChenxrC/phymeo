@@ -17,7 +17,7 @@
   自定义全局选项、resident 或旧 Newton 导出行为等价。
 - 默认保留 native 自碰撞和 pair/exclude 规则。显式 self_collision=false 在冷装配
   生成实例内 body exclude，保留外部相互作用；有显式原生 pair 时拒绝冲突请求。
-  尚未接公共 CollisionKey 排除计划，P2PE 显式规则请求仍拒绝。
+  B1c 另接公共 CollisionKey 显式排除计划，限定转换范围见下文。
 - 静态形状目前是有限球、盒、胶囊和圆柱；size 使用原生半尺寸，支持显式
   contact_dim=1/3/4/6，不能传入会被维度忽略的非零摩擦分量。
 - 完整 MJB 和 VFS 资源由原编译快照持有。主文件散列只描述该文件；完整编译身份
@@ -47,13 +47,21 @@ Runtime 为完整 reset 保存一份积分备份，准备两个 bank 的扁平�
 mask 缓冲复用；full reset 无 mask 上传，masked reset 仅显式上传 N 个 bool。
 Runtime 接管 reset owner 后在创建阶段预热所需内核签名并完成确认，首个 reset 不 JIT。
 恢复只在 TYX device 内核中执行，没有按 world 的 Python 调度或 host 状态中转。
-恢复后仍由 Host 整批 forward，验证完成才发布。**未选积分输入不变，不保证未选
-派生观测仍是先前求解时刻的值**；不能据此授予 P2PE masked reset 全字段资格。
+恢复后仍由 Host 整批 forward，先完成并验证，再从旧 bank 在 device 上恢复未选
+`OBSERVATION_FIELDS` 的派生观测，确认复制完成才发布。旧积分输入和 solver-time
+snapshot 保持不变；这不等于全局 packed contact/SensorView 的发布合同已经实现。
 
 成本：冷编译 O(资产/关节/几何规模)，显式关闭自碰撞的 body pair 为 O(B²)；
 绑定 N 不编译。两个已有候选 bank 加一份 O(N×积分宽度) reset 备份及两个 N-byte
 mask；每步仍复制 11 个积分字段，验证仍有一次显式 completion 和 7 组 host 读回。
+局部 reset 增加一次 stream completion；掩码内核扫描 O(N×派生观测宽度)，只写入
+未选 world。没有新增 host 状态快照、派生量备份或全设备同步。借用视图及内核在创建时准备。
 snapshot 另有 completion 和观测 D2H。Host 条件求解循环自身同步成本另计。
+分配拦截另发现既有 codedev 前端 `smooth.transmission` 的 `moment_nnz: int32[N]`
+和 `sensor_acc` 的 `weld_geom_count: int32[N,nbody]`；后者还创建 weld_geom_list。
+扩展的 empty/full 跟踪也观察到 collision context 与 sensor_pos 工作数组。
+本批未改 codedev；这些成本不属于新增 reset 复制，也不能
+宣称完整 reset 零分配。资格化高频执行/Graph 前仍需由 solver 工作区 owner 承接。
 本入口是同步 direct 验证接口，不是 Graph/异步/D2D 高频 executor 的性能资格。
 
 ## 验证与限制
@@ -64,7 +72,7 @@ snapshot 另有 completion 和观测 D2H。Host 条件求解循环自身同步�
 P2PE 正式测试清单登记 `tests.test_phymeo_stage`，验证真实 SceneModel 物化字段。
 
 尚未完成：Stage 的自由根/动态刚体、程序化 tree、MJCF 控制和实例语义、mimic、
-显式碰撞排除、完整字段/传感器/render 绑定、实际 C ABI 和 GUI。原 Panda/FANUC
+任意形状对排除、完整字段/传感器/render 绑定、实际 C ABI 和 GUI。原 Panda/FANUC
 求解数值失败未因此关闭，不能用编译或简单滑块通过替代机器人资格。
 
 2026-11-11 B1b 最终 wheel 安装选择集 116 通过、14 个旧机器人项未选，禁止三包导入。
@@ -72,3 +80,62 @@ P2PE 正式测试清单登记 `tests.test_phymeo_stage`，验证真实 SceneMode
 检查；后续 forward/reset 未到达。原始 mesh、geom pose 和初始 contact 集合的冷
 保真测试通过；不通过关闭自碰撞、修改初态或放宽门限处理此失败。
 全库文档检查仍为 479 个历史缺失目标，与 B0 日志 SHA256 相同。
+
+## B1c 显式排除与观测保持
+
+`template.with_collision_exclusions(plan)` 消费原 `collision_source.plan_exclusions`
+返回的计划，重新核对 source identity、规范化内容和 fingerprint。无规则不修改模型。
+只允许把声明的形状对无损编码为原生 body exclude：两端必须是保留的非 world body，
+双方所有 geom 的笛卡尔积必须全部在声明中。多形状的部分排除、world、同 body、
+过期/伪造计划及与显式原生 contact pair 冲突均拒绝；不重写 mask 或修改 codedev。
+固定根 weldid=0 可接受，但 bodyid=0 不可；不会连带屏蔽其他 world 障碍物。
+
+FANUC 使用显式 base_link—link_1 来源形状对规则；不按资产路径或名称自动添加。
+原始无规则模型的停滞失败仍保留，不把有规则通过表述为原始资产已修好。
+新模板持有规则记录和新的编译来源身份；旧模板、初态和调用方输入不被修改。
+
+原 `MjSpec.to_zip()` 不自动拥有磁盘 mesh；装配现在先把单文件 mesh/texture/hfield
+资源收入 VFS，按内容生成唯一资源键，并显式绑定 attach 后的引用，避免目录中同名
+文件混用；hfield 服从原生 meshdir，路径剥离服从原生 strippath。
+六面 cube texture 尚未资格化，提前明确拒绝。
+无规则模型与 B1b 安装版本对比的
+508 项数组/option/初态中，507 项精确相同；唯一变化是 VFS 路径变长导致的
+mesh_pathadr 元数据。物理参数与候选不变。
+XML 归档重新解析会舍入原生 authoring 数值，不能用于精确规则重编译。因此模板
+额外持有一个私有 MjSpec 深复制（含资源），只复制它来编辑新规则；不借用公开
+可变 mj_spec，也不重读源目录。它是冷编译 owner，成本随单模板和资源规模增长，
+与 N 无关。已测试删除源文件、修改公开 mj_spec/mj_model 后仍使用原精确内容。
+该内存快照不冒充可跨进程序列化的精度保真编译格式，MJB 仍是运行模型事实源。
+
+规则转换预建 body→geom 索引；除原生编译外成本 O(G+展开的形状对数)，非逐 world。
+新旧非排除数值数组/option 必须完全相同，排除签名恰好为旧集合加声明集合；
+name-table offsets/hash slots 允许因新增 exclude 槽变化，但实体名/数量与索引
+必须不变。初态全字段验证后才绑定新 MJB hash；未知编译漂移直接拒绝。
+
+reset 验证先于观测恢复，防止旧 qacc 掩盖未选 world 的 NaN。失败保留旧发布 bank。
+内部 packed contact/constraint 工作区仍是本次整批 forward 的结果，不公开为与保留
+snapshot 同一时刻的接触观测；后续 contact/SensorView 接入必须补独立发布合同。
+正式新增入口为 `test_native_exclusions.py`、`test_native_resources.py`、
+`test_native_exclusions_runtime.py`、`test_masked_observations.py`；原无规则 FANUC
+motion 用例和容差不删除、不改 xfail。
+
+B1c 最终 wheel 安装回归 132 通过、14 个历史机器人项未选；另行独立进程验证显式
+FANUC 配置 N=1/8/64，三项全部通过，包括逐 world motion、forward 不推进 q/v/time、
+full/masked reset、未选 snapshot 精确保持及未选世界下一步与不中断轨迹的 1e-6 对照。
+无规则 FANUC 的三个原用例仍全部失败于 motion，后续 forward/reset 未到达；这三项
+不记为通过。障碍物接触保留有 CPU 接触集合和生产前端完整/压缩候选表证据，尚不
+等于完整动态障碍物接触力资格。已有 Panda 求解数值问题仍未关闭。
+
+来源记录为实验根 `sources.json`，安装/过程/负例日志为 `evidence/b1c-*`，最终矩阵
+与制品散列为 `b1c-final-matrix-progress.json` 和 `b1c-summary.json`。禁止三包安装和
+导入的检查通过；原生 Host 与六 CUBIN 散列保持冻结值。数值测试文件/容差未变。
+独立只读复审及主执行者完整 diff 自审完成；初态身份、资源目录/strippath 和所有权
+问题修正后才构建最终 wheel。完整 C ABI、Graph、D2D、SensorView 和 GUI 未执行。
+
+masked reset 功能 8 项通过（自由落体/接触 N=1/8/64、错误抑制和失败后重试）；
+新增相对成本用例单独复测 1 项通过。N=8 自由根的 forward 共观察到 11 次公共
+zeros/full/empty 调用，包含零尺寸数组；partial/full reset 与该记录逐项一致，
+新增 restore/preserve 内禁用这些工厂及 clone 后仍通过。它不是所有底层分配的统计。
+局部 reset 完成确认 2 次、full reset 1 次；借用绑定身份不变。三份新增计数仪器
+中间失败日志保留，错误依次为全局零分配假设、单项分配假设及来源全集假设；修正
+仪器不改生产包、原功能断言或容差。既有分配仍阻止稳态性能资格，不以测试通过豁免。

@@ -1,5 +1,10 @@
 # 机器人碰撞规则补齐方案
 
+后续职责审查与 B1c 实施采用更小的原生转换：仅在能证明形状对集合完全等价时，
+PHYMEO 生成既有 body exclude，codedev 不变。详见[当前合同](../architecture/native-assembly.md#b1c-显式排除与观测保持)。
+下文保留最初方案和阶段历史；其中预定新增 codedev 排除入口尚未实施，不是当前方案。
+无法精确编码的形状组合仍拒绝，不能据本切片宣称原 C1–C3 全部完成。
+
 2026-11-11，设计节点；后续 C0 已实现的范围见第 9 节，C1–C3 尚未实现。适用于独立实验分支
 `feature/wh/phymeo-physolve-integration`。审查基线 PHYMEO `50a50bfd`、
 codedev `6bb483ee`、TYX `7272d3df`、P2PE `1edba631`。

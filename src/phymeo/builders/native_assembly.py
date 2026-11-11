@@ -4,7 +4,7 @@ Uses the existing native compiler and runtime contracts. No P2PE objects or
 Newton compatibility model are introduced. All participants share one model.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from hashlib import sha256
 from numbers import Integral
 from pathlib import Path
@@ -14,6 +14,7 @@ import numpy as np
 
 from ..backends.physolve_initial import NativeInitialState
 from .mujoco_compiler import compile_mujoco_spec
+from .native_resources import bind_attached_resources, own_spec_resources
 
 
 def _vector(value, size, name):
@@ -148,6 +149,21 @@ class NativeTemplate:
     asset_sources: tuple  # instance, path, primary SHA256
     qualification: str = "native-only/physolve; resident-unqualified"
     contract_version: int = 1
+    collision_plans: tuple = ()
+    # Private cold compiler owner. XML serialization rounds native authoring
+    # values; the public compilation.mj_spec is caller-mutable. Never expose or
+    # edit this snapshot, only copy it for a newly requested rule compilation.
+    _source_spec: object = field(default=None, repr=False, compare=False)
+
+    def with_collision_exclusions(self, plan):
+        """Return a separately compiled template with an exact explicit rule.
+
+        Unsupported shape/body combinations fail closed. No default adjacency
+        policy is inferred; an empty plan returns this unchanged template.
+        """
+        from .native_exclusions import exclude_template_pairs
+
+        return exclude_template_pairs(self, plan)
 
     def bind(self, nworld):
         if isinstance(nworld, bool) or not isinstance(nworld, Integral) or nworld <= 0:
@@ -270,6 +286,10 @@ def compile_native_template(assets, *, timestep, gravity, static_shapes=()):
                     f"{asset.name}: source option {name} needs an assembly profile"
                 )
         child.compiler.fusestatic = False
+        # MjSpec.to_zip only stores VFS assets, not files loaded implicitly from
+        # disk. Own them before attachment (which namespaces their paths too),
+        # so a later explicit rule compile never rereads the source directory.
+        resources = own_spec_resources(child)
         # Namespace unnamed elements deterministically before native attachment.
         for kind in ("bodies", "joints", "geoms"):
             for i, element in enumerate(getattr(child, kind)):
@@ -289,6 +309,7 @@ def compile_native_template(assets, *, timestep, gravity, static_shapes=()):
         q = asset.orientation_xyzw
         frame = spec.worldbody.add_frame(pos=asset.position, quat=(q[3], *q[:3]))
         spec.attach(child, prefix=prefix, frame=frame)
+        bind_attached_resources(spec, resources, prefix)
         pending.extend((prefix, row) for row in rows)
         sources.append((asset.name, asset.path, sha256(Path(asset.path).read_bytes()).hexdigest()))
     for shape in static_shapes:
@@ -336,4 +357,5 @@ def compile_native_template(assets, *, timestep, gravity, static_shapes=()):
         tuple((model.body(i).name, i) for i in range(1, model.nbody)),
         tuple((model.geom(i).name, i) for i in range(model.ngeom)),
         tuple(sources),
+        _source_spec=compilation.mj_spec.copy(),
     )

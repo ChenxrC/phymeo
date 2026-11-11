@@ -1,7 +1,7 @@
 """Common-entry contact assembly for bounded resident participants.
 
-HOST finite patch sampling is explicit. Device FK/J/M and the original floating
-solver remain the sole mechanical source. This module does not integrate state.
+HOST finite patch sampling is explicit. Device FK/J/M and the existing four-family
+solvers remain the sole mechanical source. This module does not integrate state.
 """
 
 from collections.abc import Mapping
@@ -78,6 +78,8 @@ class ResidentParticipantReceipt:
     accepted_state: object
     entry_geometry: object
     accepted_geometry: object
+    entry_body_twist: np.ndarray
+    accepted_body_twist: np.ndarray
     entry_mass: np.ndarray
     entry_bias: np.ndarray
     entry_linear: np.ndarray
@@ -90,6 +92,8 @@ class ResidentParticipantReceipt:
 
     def __post_init__(self):
         for name in (
+            "entry_body_twist",
+            "accepted_body_twist",
             "entry_mass",
             "entry_bias",
             "entry_linear",
@@ -99,6 +103,9 @@ class ResidentParticipantReceipt:
             "contact_generalized",
         ):
             object.__setattr__(self, name, _owned(getattr(self, name), np.float64))
+        count = len(self.entry_linear)
+        if self.entry_body_twist.shape != (count, 6) or self.accepted_body_twist.shape != (count, 6):
+            raise ValueError("participant twists require every full physical body")
         object.__setattr__(
             self, "uploaded_wrench_fp32", _owned(self.uploaded_wrench_fp32, np.float32)
         )
@@ -291,8 +298,8 @@ class ResidentParticipantContactPlan:
                     position,
                     rotation,
                     actual.com_position_m[local],
-                    actual.linear_velocity_m_s[local],
-                    actual.angular_velocity_rad_s[local],
+                    packets[participant]["body_twist"][local, :3],
+                    packets[participant]["body_twist"][local, 3:],
                 )
             result[shape.key.world][shape.key] = frame
         return {world: _map(frames) for world, frames in result.items()}
@@ -418,6 +425,8 @@ class ResidentParticipantContactPlan:
                     after["state"],
                     before["geometry"],
                     after["geometry"],
+                    before["body_twist"],
+                    after["body_twist"],
                     before["mass"],
                     before["bias"],
                     before["linear"],

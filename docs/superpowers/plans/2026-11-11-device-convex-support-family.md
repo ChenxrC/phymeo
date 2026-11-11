@@ -53,6 +53,8 @@ E为 `dims²*d/||dims*d||`；Y为半径r的径向点＋h sign(dz)，径向零取
 
 **材料/wire：** 原wire尺寸不变，scratch保实际support点；最终曲面为单中心ID、weight1、offset=实际见证−中心。混合侧按原ID/bary聚合实际支持坐标，先聚合坐标再合ID，不能塌回中心。独立表面/包含与见证闭合门同时检查；重构正确本身不证明点在真实边界。
 
+父源码审阅补充（2026-11-11）：原草稿在绝对 FP32 坐标中先加曲面offset再减公共原点，会在可表示的大公共平移下丢失半径。固定反例为 E 半轴均1/4、S半径1/8，中心分别 `(2^24,0,0)` 与 `(2^24+4,0,0)`，真实gap=29/8。新增full-surface pair改以本次device gather首个A点作pair anchor，support/simplex/material/surface始终在该相对frame；typed row.origin为原world origin加pair anchor，新增immutable `pair_origins_relative_m` 完整绑定query pair顺序和accepted epoch。读取按真实D2H计费，只做HOST验证，不HOST重算几何/补丢失offset；旧十类frame不改，曲面patch仍UNSUPPORTED。先提交反例测试再修复，原草稿与门保留。
+
 **patch隔离：** `fill_convex_patch` 遇tag4..6明确UNSUPPORTED、零sites、完整性flags=false；几何可以RESOLVED。必要受载候选因此拒步，保全部旧发布，无HOST fallback。原十类patch和默认HOST曲面能力不改。
 
 ## 4. 独占文件范围

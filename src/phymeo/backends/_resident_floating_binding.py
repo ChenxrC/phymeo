@@ -12,7 +12,13 @@ import numpy as np
 from ..constraints.collision_shapes import CollisionKey, CollisionMotion, CollisionShape
 from ..dynamics.rotation import quaternion_matrix
 from ._resident_floating_tree import FloatingTreeWorldSpec, floating_model_token
-from ._resident_tree_binding import _outward_positive, _points, _token
+from ._resident_tree_binding import (
+    _FINITE_SHAPES,
+    _outward_positive,
+    _points,
+    _shape_radius_upper,
+    _token,
+)
 from ._resident_tree_world import _owned
 from ._world_step_layout import as_fp32
 
@@ -68,11 +74,13 @@ class ResidentFloatingTreeBinding:
                 "floating source must identify exactly one complete registered collider"
             )
         collider = colliders[0]
-        if collider.shape.kind not in ("sphere", "capsule", "hull"):
-            raise ValueError("floating source supports finite sphere, capsule or hull only")
+        if collider.shape.kind not in _FINITE_SHAPES:
+            raise ValueError("floating source requires a supported finite convex shape")
         group = collider.link_index + 1
         points = np.asarray(collider.local_vertices, dtype=float)
         if isinstance(asset, FoldedFloatingRobotAsset):
+            if collider.shape.curved is not None:
+                raise ValueError("folded curved source orientation is not yet supported")
             site = asset.sites.get(collider.link_name)
             if site is None or site.body_index != group:
                 raise ValueError("floating authored site and collider owner disagree")
@@ -129,8 +137,8 @@ def compile_floating_tree_binding(shape, binding, spec):
         raise TypeError("floating binding compilation needs shape, binding and owned spec")
     if shape.key != binding.key or shape.key.world != binding.world:
         raise ValueError("floating shape key/world differs from its binding")
-    if shape.kind not in ("sphere", "capsule", "hull") or not shape.rigid:
-        raise ValueError("floating resident shape must be a finite rigid sphere, capsule or hull")
+    if shape.kind not in _FINITE_SHAPES or not shape.rigid:
+        raise ValueError("floating shape must be a supported finite convex solid")
     if binding.group_index >= spec.b:
         raise ValueError("floating group is outside this physical model")
     if len(shape.vertex_ids) != len(binding.local_points_m):
@@ -147,7 +155,7 @@ def compile_floating_tree_binding(shape, binding, spec):
     local_reach = float(np.max(np.sum(abs(points), axis=1)))
     geometry = _owned(
         [
-            _outward_positive(shape.radius, "floating skin"),
+            _shape_radius_upper(shape),
             _outward_positive(local_reach, "floating local reach"),
             _outward_positive(reach, "floating path reach"),
             np.float32(depth),

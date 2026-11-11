@@ -15,6 +15,8 @@ from ..dynamics.rotation import quaternion_matrix
 from ._resident_tree_world import MAX_TREE_JOINTS, TreeWorldSpec, _owned, tree_model_token
 from ._world_step_layout import as_fp32
 
+_FINITE_SHAPES = ("sphere", "capsule", "hull", "cylinder", "cone", "ellipsoid")
+
 
 def _points(value):
     raw = np.asarray(value)
@@ -102,10 +104,12 @@ class ResidentTreeBinding:
         shapes = [s for s in asset.collision_model.shapes if s.key == source_key]
         if len(shapes) != 1 or shapes[0] != collider.shape:
             raise ValueError("tree source shape disagrees with its material registration")
-        if collider.shape.kind not in ("sphere", "capsule", "hull"):
-            raise ValueError("tree source supports only finite sphere, capsule or hull")
+        if collider.shape.kind not in _FINITE_SHAPES:
+            raise ValueError("tree source requires a supported finite convex shape")
         local = np.asarray(collider.local_vertices, dtype=np.float64)
         if isinstance(asset, FoldedURDFAsset):
+            if collider.shape.curved is not None:
+                raise ValueError("folded curved source orientation is not yet supported")
             site = asset.sites.get(collider.link_name)
             if site is None:
                 raise ValueError("folded tree source lacks its authored owner site")
@@ -144,6 +148,21 @@ def _outward_positive(value, name):
     if not np.isfinite(rounded):
         raise ValueError(f"tree {name} cannot form finite FP32 geometry")
     return rounded
+
+
+def _shape_radius_upper(shape):
+    """Conservative broad bound only; never replace narrow geometry or skin."""
+    if shape.curved is None:
+        return _outward_positive(shape.radius, "skin radius")
+    dimensions = shape.curved.dimensions_m
+    if shape.kind == "ellipsoid":
+        extent = max(dimensions)
+    else:
+        # Account for FP64 addition before the outward FP32 conversion.
+        # Tiny positive height must not disappear when radius is exactly FP32.
+        with np.errstate(over="ignore", invalid="ignore"):
+            extent = np.nextafter(np.float64(dimensions[0]) + dimensions[1], np.inf)
+    return _outward_positive(extent, "curved solid broad radius")
 
 
 def _zero_pose_and_path(spec, group, points):
@@ -188,8 +207,8 @@ def compile_tree_binding(shape, binding, spec):
         raise TypeError("tree compilation requires a shape, binding and owned tree spec")
     if shape.key != binding.key or shape.key.world != binding.world:
         raise ValueError("tree shape key/world differs from its binding")
-    if shape.kind not in ("sphere", "capsule", "hull") or not shape.rigid:
-        raise ValueError("tree shape must be a finite sphere, capsule or hull")
+    if shape.kind not in _FINITE_SHAPES or not shape.rigid:
+        raise ValueError("tree shape must be a supported finite convex solid")
     if binding.group_index >= spec.n:
         raise ValueError("tree binding group is outside its actual model")
     if len(shape.vertex_ids) != len(binding.local_points_m):
@@ -207,7 +226,7 @@ def compile_tree_binding(shape, binding, spec):
         local_reach = float(np.max(np.sum(np.abs(points), axis=1)))
     geometry = _owned(
         [
-            _outward_positive(shape.radius, "skin radius"),
+            _shape_radius_upper(shape),
             _outward_positive(local_reach, "local reach"),
             _outward_positive(path_reach, "fixed path reach"),
             np.float32(depth),

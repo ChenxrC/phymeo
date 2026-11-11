@@ -87,7 +87,8 @@ class PreparedReset:
         for kernel, source, target, width in self.plans[index]:
             kernel(selector, source, target, width, mode="cuda", stream=stream)
 
-    def preserve_observations(self, index, stream):
+    def preserve_observations(self, index, stream, mask=None):
         """After successful forward validation, retain unselected solve-time values."""
         for source, target, width in self.preserve_plans[index]:
-            _preserve_float(self.mask, source, target, width, mode="cuda", stream=stream)
+            _preserve_float(self.mask if mask is None else mask, source, target, width,
+                            mode="cuda", stream=stream)

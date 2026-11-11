@@ -609,3 +609,13 @@ owner 保留。四子步只增加一次端点运动学；forward/reset 不重复
 实际 CUDA 定向测试 4 项通过：N=1/8/64 的 bank/权限/stale/延迟发布，以及错误
 锁存、discard 清 gate 和恢复；日志为配套实验根 evidence/b3i-native.log。
 继续复用 env-b1j 源码验证，不声明独立安装、Graph 或 GUI 已通过。
+
+## B3j：设备选择更新
+
+enqueue_update 可借用 bool[nworld] 设备 mask，执行一次 forward 后保留未选
+世界的旧派生观测和接触记录。调用方仍负责正确选择写入；公共合同见
+[选择世界更新](../architecture/engine-integration.md#选择世界更新-v1)。
+原生 CUDA 9 项通过，包含 N=1/8/64 的选中 q 修改、未选 q/v/力/body/接触采样保持，
+以及既有延迟发布、reset 和紧凑校验回归。接触按 world 身份比较，不把 GPU 行顺序
+作为身份；不改生产排序或容差。首轮测试误用 step 参数已修正，原始日志保留。
+Host、TYX、六 CUBIN 不变；没有新环境/SDK 副本，证据为配套 evidence/b3j-native-final.log。

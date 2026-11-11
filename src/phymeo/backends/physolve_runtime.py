@@ -48,6 +48,7 @@ class PhySolveRuntime:
 
     body_observation_contract_version = 1
     contact_observation_contract_version = 1
+    selected_update_contract_version = 1
 
     def __init__(
         self,
@@ -437,7 +438,8 @@ class PhySolveRuntime:
                 self._pending["phase"] = "failed"
                 raise
 
-    def enqueue_update(self, ticket, *, refresh_state=False, compose_controls=False):
+    def enqueue_update(self, ticket, *, refresh_state=False, compose_controls=False,
+                       selected_worlds=None):
         """Accept prepared field edits without advancing time.
 
         Command-only updates retain existing solve-time observations using D2D
@@ -450,6 +452,16 @@ class PhySolveRuntime:
         """
         with self._scope():
             index = self._require_ticket(ticket, "prepared")
+            if selected_worlds is not None:
+                import tyx as tx
+                if (not isinstance(selected_worlds, tx.Array) or
+                    selected_worlds.dtype != tx.bool1 or
+                    tuple(selected_worlds.shape) != (self.nworld,) or
+                    tuple(selected_worlds.strides) != (1,) or
+                    str(selected_worlds.device) != str(self._storage.device)):
+                    raise ValueError("selected_worlds requires canonical-device bool[nworld]")
+                # Keep caller-owned selection alive through complete/accept/discard.
+                self._pending['selected_worlds'] = selected_worlds
             self._pending["phase"] = "enqueued"
             try:
                 if compose_controls:
@@ -473,9 +485,13 @@ class PhySolveRuntime:
                 self._validation.enqueue(index, self._stream)
                 if self._contact_observations is not None:
                     if refresh_state:
-                        self._contact_observations.update(index, self._stream)
+                        self._contact_observations.update(index, self._stream, mask=selected_worlds)
                     else:
                         self._contact_observations.copy(self._active, index, self._stream)
+                if refresh_state and selected_worlds is not None:
+                    self._reset.preserve_observations(index, self._stream, selected_worlds)
+                    if self._body_observations is not None:
+                        self._body_observations.preserve(index, selected_worlds, self._stream)
             except Exception:
                 self._pending["phase"] = "failed"
                 raise

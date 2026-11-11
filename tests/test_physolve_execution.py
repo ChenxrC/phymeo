@@ -11,6 +11,50 @@ from phymeo.builders.mujoco_compiler import compile_mujoco_xml
 payload = payload_fixture
 
 
+@pytest.mark.cuda
+@pytest.mark.parametrize('nworld', [1, 8, 64])
+def test_device_selected_update_preserves_unselected_observations(payload, nworld, monkeypatch):
+    import tyx as tx
+    with PhySolveRuntime(compile_mujoco_xml(CONTACT, require_asset=False), payload=payload,
+                        nworld=nworld, body_observations=True, contact_observations=True) as runtime:
+        runtime.step()
+        storage = runtime.storage_binding()
+        names = ('qpos', 'qvel', 'qacc', 'qfrc_actuator', 'qfrc_constraint',
+                 'body_position', 'body_com_twist', 'contact_sample_time')
+        before = {name: storage.borrow(name, runtime.active_bank).numpy(stream=storage.stream).copy() for name in names}
+        contacts = contact_records(runtime)
+        mask = np.arange(nworld) % 2 == 0
+        device_mask = tx.Array(mask, device=storage.device)
+        ticket = runtime.begin_execution()
+        bank = runtime.writable_bank
+        q = before['qpos'].copy()
+        q[mask, 2] += .2
+        storage.borrow('qpos', bank, write=True).assign(q, stream=storage.stream)
+        with monkeypatch.context() as patch:
+            patch.setattr(tx, 'empty', lambda *a, **k: pytest.fail('hot allocation'))
+            patch.setattr(tx.Array, 'numpy', lambda *a, **k: pytest.fail('hot snapshot'))
+            runtime.enqueue_update(ticket, refresh_state=True, selected_worlds=device_mask)
+            runtime.complete_execution(ticket)
+            runtime.accept_execution(ticket)
+        for name, old in before.items():
+            actual = storage.borrow(name, runtime.active_bank).numpy(stream=storage.stream)
+            np.testing.assert_array_equal(actual[~mask], old[~mask])
+        np.testing.assert_array_equal(storage.borrow('qpos', runtime.active_bank).numpy(), q)
+        after = contact_records(runtime)
+        # Contact row order is not an identity contract; this model has one
+        # pair per world. Compare retained records by world, without sorting production.
+        old_rows = np.flatnonzero(~mask[contacts['contact_world'].reshape(-1)])
+        new_rows = np.flatnonzero(~mask[after['contact_world'].reshape(-1)])
+        old_rows = old_rows[np.argsort(contacts['contact_world'].reshape(-1)[old_rows])]
+        new_rows = new_rows[np.argsort(after['contact_world'].reshape(-1)[new_rows])]
+        for name in contacts:
+            np.testing.assert_array_equal(after[name][new_rows], contacts[name][old_rows])
+        ticket = runtime.begin_execution()
+        with pytest.raises(ValueError, match='bool'):
+            runtime.enqueue_update(ticket, selected_worlds=mask)
+        runtime.discard_execution(ticket)
+
+
 def contact_records(runtime):
     storage = runtime.storage_binding()
     def read(name):

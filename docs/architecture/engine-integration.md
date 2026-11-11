@@ -135,6 +135,16 @@ SensorView 或 D2D C ABI 资格；这些后续沿同一公共存储消费。
 URDF dynamics/mimic 的 scalar_pd 转换在 B3e 承接，见[原生装配](native-assembly.md)；
 转换通过仍不能替代机器人运动资格。
 
+### 选择世界更新 v1
+
+`selected_update_contract_version=1` 为 `enqueue_update` 增加可选
+`selected_worlds`，必须是 canonical device 上连续的 TYX bool[nworld]。
+这是观测保持范围，不替代调用方正确的 masked scatter：调用方仍负责只修改
+选中世界并在设备预检通过后写入。mask 内容和存储保持到 complete/accept/discard，
+所有写入与更新使用 canonical stream；runtime 保留 mask owner 到事务结束。
+qpos/qvel 更新仍执行一次批量 forward，随后保留未选世界旧力/body/接触观测；
+纯命令仍不做 forward。没有参数时沿用原行为，不改 Host、CUBIN 或碰撞排序。
+
 ### 候选设备观测执行 v1
 
 `observation_execution_contract_version=1` 增加只读 `observation_bank`：idle 返回

@@ -153,117 +153,121 @@ def run_pair(name, worlds, output):
         },
     )
     try:
-        with tasks.make_environment(name, count=worlds, scale=True) as base:
-            for mode in order:
-                writer = evidence.EvidenceWriter(target / (mode + ".jsonl.gz"))
-                signatures, timings, checks = [], [], []
-                start_cold = perf_counter()
-                try:
-                    with ExitStack() as owners:
-                        runtime = owners.enter_context(base.runtime.clone())
-                        env = owners.enter_context(
-                            MuJoCoTyxVectorEnv(
-                                runtime,
-                                base.task_spec,
-                                base.action_spec,
-                                h=base.h,
-                                horizons=tuple(int(x) for x in base.horizons),
-                                observation_mode=mode,
-                            )
+        for mode in order:
+            writer = evidence.EvidenceWriter(target / (mode + ".jsonl.gz"))
+            signatures, timings, checks = [], [], []
+            start_cold = perf_counter()
+            try:
+                with ExitStack() as owners:
+                    base = owners.enter_context(
+                        tasks.make_environment(name, count=worlds, scale=True)
+                    )
+                    runtime = base.runtime
+                    # Release the unused task workspace, retaining its borrowed runtime.
+                    base.close()
+                    env = owners.enter_context(
+                        MuJoCoTyxVectorEnv(
+                            runtime,
+                            base.task_spec,
+                            base.action_spec,
+                            h=base.h,
+                            horizons=tuple(int(x) for x in base.horizons),
+                            observation_mode=mode,
                         )
-                        tasks.seed_all(seed)
-                        session = MuJoCoTyxPpoSession(RslMuJoCoTyxVecEnv(env), steps=16)
-                        initial = learner_state(session)
-                        initial_hash = digest(initial)
-                        writer.write("initial_policy", initial)
-                        initial_observation = env.get_observations()
-                        observation_hash = digest(initial_observation)
-                        writer.write("initial_observation", initial_observation)
-                        writer.write(
-                            "bindings",
+                    )
+                    tasks.seed_all(seed)
+                    session = MuJoCoTyxPpoSession(RslMuJoCoTyxVecEnv(env), steps=16)
+                    initial = learner_state(session)
+                    initial_hash = digest(initial)
+                    writer.write("initial_policy", initial)
+                    initial_observation = env.get_observations()
+                    observation_hash = digest(initial_observation)
+                    writer.write("initial_observation", initial_observation)
+                    writer.write(
+                        "bindings",
+                        {
+                            "environment": env.binding,
+                            "config": session.config,
+                            "runtime": runtime.capabilities,
+                            "mode": mode,
+                        },
+                    )
+                    cold_seconds = perf_counter() - start_cold
+                    measured_start = None
+                    for iteration in range(3):
+                        if iteration == 1:
+                            measured_start = perf_counter()
+                            write_start = writer.write_seconds
+                        record, timing = evidence.measure_update(session, observe=False)
+                        checked = evidence.validate_update(
+                            record,
+                            env,
+                            expected_iteration=iteration,
+                            cost=item.cost(),
+                            writer=writer,
+                        )
+                        if len(record["transitions"]) != 16:
+                            raise ValueError("rollout count differs")
+                        learned = learner_state(session)
+                        rng = {
+                            "cpu": torch.get_rng_state(),
+                            "cuda": torch.cuda.get_rng_state(env.device),
+                        }
+                        signatures.append(
                             {
-                                "environment": env.binding,
-                                "config": session.config,
-                                "runtime": runtime.capabilities,
-                                "mode": mode,
-                            },
-                        )
-                        cold_seconds = perf_counter() - start_cold
-                        measured_start = None
-                        for iteration in range(3):
-                            if iteration == 1:
-                                measured_start = perf_counter()
-                                write_start = writer.write_seconds
-                            record, timing = evidence.measure_update(session, observe=False)
-                            checked = evidence.validate_update(
-                                record,
-                                env,
-                                expected_iteration=iteration,
-                                cost=item.cost(),
-                                writer=writer,
-                            )
-                            if len(record["transitions"]) != 16:
-                                raise ValueError("rollout count differs")
-                            learned = learner_state(session)
-                            rng = {
-                                "cpu": torch.get_rng_state(),
-                                "cuda": torch.cuda.get_rng_state(env.device),
+                                "iteration": iteration,
+                                "common": digest(common_update(record)),
+                                "learner": digest(learned),
+                                "rng": digest(rng),
                             }
-                            signatures.append(
-                                {
-                                    "iteration": iteration,
-                                    "common": digest(common_update(record)),
-                                    "learner": digest(learned),
-                                    "rng": digest(rng),
-                                }
-                            )
-                            writer.write("learner_and_rng", {"learner": learned, "rng": rng})
-                            writer.write("measurement", timing)
-                            if iteration:
-                                timings.append(timing)
-                                checks.append(checked)
-                        if session.next_iteration != 3:
-                            raise ValueError("actual complete updates differ")
-                        counters = evidence.plain_counters(env.counters)
-                    writer.close()
-                    # Includes complete measured updates, their evidence and owner close.
-                    wall = perf_counter() - measured_start
-                    row = {
-                        "initial_policy_hash": initial_hash,
-                        "signatures": signatures,
-                        "initial_observation_hash": observation_hash,
-                        "cold_clone_environment_learner_s": cold_seconds,
-                        "measured_updates": timings,
-                        "checks": checks,
-                        "measured_world_steps": 32 * worlds,
-                        "compute_and_mandatory_diagnostics_s": sum(
-                            entry["compute_and_mandatory_diagnostics_s"] for entry in timings
-                        ),
-                        "loop_to_trace_close_s": wall,
-                        "evidence_write_s": writer.write_seconds - write_start,
-                        "transitions_per_s_with_trace": 32 * worlds / wall,
-                        "counter_end": counters,
-                        "evidence": writer.receipt(),
-                    }
-                    evidence.json_write(target / (mode + "-summary.json"), row)
-                    rows[mode] = row
-                    comparable = {
-                        "initial": initial_hash,
-                        "observation": observation_hash,
-                        "updates": signatures,
-                    }
-                    if reference is None:
-                        reference = comparable
-                    elif comparable != reference:
-                        raise AssertionError(
-                            "paired physics/learning/optimizer/RNG differs; inspect saved signatures"
                         )
-                except evidence.UpdateCaptureError as error:
-                    writer.write("failed_update_attempts", error.attempts)
-                    writer.write("failed_update_record", error.completed_record)
-                    raise
-                finally:
-                    writer.close()
+                        writer.write("learner_and_rng", {"learner": learned, "rng": rng})
+                        writer.write("measurement", timing)
+                        if iteration:
+                            timings.append(timing)
+                            checks.append(checked)
+                    if session.next_iteration != 3:
+                        raise ValueError("actual complete updates differ")
+                    counters = evidence.plain_counters(env.counters)
+                writer.close()
+                # Includes complete measured updates, their evidence and owner close.
+                wall = perf_counter() - measured_start
+                row = {
+                    "initial_policy_hash": initial_hash,
+                    "signatures": signatures,
+                    "initial_observation_hash": observation_hash,
+                    "cold_environment_learner_s": cold_seconds,
+                    "measured_updates": timings,
+                    "checks": checks,
+                    "measured_world_steps": 32 * worlds,
+                    "compute_and_mandatory_diagnostics_s": sum(
+                        entry["compute_and_mandatory_diagnostics_s"] for entry in timings
+                    ),
+                    "loop_to_trace_close_s": wall,
+                    "evidence_write_s": writer.write_seconds - write_start,
+                    "transitions_per_s_with_trace": 32 * worlds / wall,
+                    "counter_end": counters,
+                    "evidence": writer.receipt(),
+                }
+                evidence.json_write(target / (mode + "-summary.json"), row)
+                rows[mode] = row
+                comparable = {
+                    "initial": initial_hash,
+                    "observation": observation_hash,
+                    "updates": signatures,
+                }
+                if reference is None:
+                    reference = comparable
+                elif comparable != reference:
+                    raise AssertionError(
+                        "paired physics/learning/optimizer/RNG differs; inspect saved signatures"
+                    )
+            except evidence.UpdateCaptureError as error:
+                writer.write("failed_update_attempts", error.attempts)
+                writer.write("failed_update_record", error.completed_record)
+                raise
+            finally:
+                writer.close()
         summary = {
             "status": "PASS_PAIRED_PPO_OBSERVATION",
             "task": name,

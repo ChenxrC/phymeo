@@ -465,8 +465,14 @@ class MuJoCoTyxVectorEnv:
 
                 def window_record(phase):
                     return MuJoCoTyxControlWindowRecord(
-                        self._control_window.sha256, self.decimation, len(substeps),
-                        completed, tuple(substeps), receipt, phase, failed_substep,
+                        self._control_window.sha256,
+                        self.decimation,
+                        len(substeps),
+                        completed,
+                        tuple(substeps),
+                        receipt,
+                        phase,
+                        failed_substep,
                     )
 
             self._window_busy = True
@@ -493,9 +499,11 @@ class MuJoCoTyxVectorEnv:
                     if window_record is not None:
                         # Install the attempt before calling a fallible backend. A
                         # later diagnostic failure cannot erase an accepted step.
-                        substeps.append(MuJoCoTyxSubstepRecord(
-                            ordinal, entry_revision, entry_revision, accepted, None, False
-                        ))
+                        substeps.append(
+                            MuJoCoTyxSubstepRecord(
+                                ordinal, entry_revision, entry_revision, accepted, None, False
+                            )
+                        )
                         failed_substep = ordinal
                     result = self.runtime.step(self.h)
                     accepted = dict(result)
@@ -506,8 +514,12 @@ class MuJoCoTyxVectorEnv:
                         self._counts["physical_steps"] += 1
                     if window_record is not None:
                         substeps[-1] = MuJoCoTyxSubstepRecord(
-                            ordinal, entry_revision, self.runtime.checkpoint_revision,
-                            accepted, None, False,
+                            ordinal,
+                            entry_revision,
+                            self.runtime.checkpoint_revision,
+                            accepted,
+                            None,
+                            False,
                         )
                     if not whole_batch:
                         raise RuntimeError("physical batch did not accept every declared world")
@@ -519,8 +531,12 @@ class MuJoCoTyxVectorEnv:
                     )
                     if window_record is not None:
                         substeps[-1] = MuJoCoTyxSubstepRecord(
-                            ordinal, entry_revision, self.runtime.checkpoint_revision,
-                            accepted, states, True,
+                            ordinal,
+                            entry_revision,
+                            self.runtime.checkpoint_revision,
+                            accepted,
+                            states,
+                            True,
                         )
                         failed_substep = None
                 phase = "task-export"
@@ -603,8 +619,12 @@ class MuJoCoTyxVectorEnv:
                 if window_record is not None and failed_substep is not None:
                     old = substeps[-1]
                     substeps[-1] = MuJoCoTyxSubstepRecord(
-                        old.ordinal, old.entry_revision, self.runtime.checkpoint_revision,
-                        old.accepted_worlds, old.states, old.diagnostics_complete,
+                        old.ordinal,
+                        old.entry_revision,
+                        self.runtime.checkpoint_revision,
+                        old.accepted_worlds,
+                        old.states,
+                        old.diagnostics_complete,
                         type(error).__name__ + ": " + str(error),
                     )
                 failure = MuJoCoTyxEnvError(

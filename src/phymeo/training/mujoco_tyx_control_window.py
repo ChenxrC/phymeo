@@ -15,7 +15,6 @@ from types import MappingProxyType
 
 import numpy as np
 
-
 _SEMANTICS = {
     "schema": "mujoco-tyx-control-window-v1",
     "action_hold": "native_channels",
@@ -151,8 +150,7 @@ class MuJoCoTyxControlWindowRecord:
             if type(item) is not MuJoCoTyxSubstepRecord or item.ordinal != ordinal:
                 raise ValueError("substeps must be complete ordered records starting at zero")
         completed = sum(
-            bool(item.accepted_worlds) and all(item.accepted_worlds.values())
-            for item in substeps
+            bool(item.accepted_worlds) and all(item.accepted_worlds.values()) for item in substeps
         )
         if completed != self.completed:
             raise ValueError("completed count must follow actual whole-batch acceptance")

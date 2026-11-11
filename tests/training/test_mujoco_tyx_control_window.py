@@ -112,8 +112,14 @@ def test_record_rejects_inconsistent_evidence(fault):
             fault == "complete",
         )
         Window(
-            Spec(2).sha256, 2, 1, 0 if fault == "counts" else 1,
-            (sub,), None, "physics", 1 if fault == "failed-index" else 0,
+            Spec(2).sha256,
+            2,
+            1,
+            0 if fault == "counts" else 1,
+            (sub,),
+            None,
+            "physics",
+            1 if fault == "failed-index" else 0,
         )
 
 
@@ -151,7 +157,9 @@ def test_default_transition_and_binding_stay_unchanged():
             assert helper.json_text(tr.states) == helper.json_text(other.states)
             for name in ("observation", "reward", "terminated", "time_outs", "final_observation"):
                 assert torch.equal(getattr(tr, name), getattr(other, name))
-            assert explicit.training_binding()["control_window"] == explicit.control_window.binding(explicit.h)
+            assert explicit.training_binding()["control_window"] == explicit.control_window.binding(
+                explicit.h
+            )
 
 
 @pytest.mark.cuda
@@ -164,7 +172,11 @@ def test_endpoint_termination_precedes_timeout_and_final_obs_precedes_reset(tmp_
     # J first four velocities have signs +,-,+,-. Large preserved margin separates them.
     task = MuJoCoTyxTaskSpec((), (0,), lower=(-1,), upper=(0,), weight=(1,))
     with helper.make_environment("J", 4, task_spec=task, horizons=(1, 1, 1, 1)) as env:
-        tr = env.step(torch.zeros((4, 2), device=env.device), world_keys=KEYS, expected_frame=env.current_frame)
+        tr = env.step(
+            torch.zeros((4, 2), device=env.device),
+            world_keys=KEYS,
+            expected_frame=env.current_frame,
+        )
         assert tr.terminated.cpu().tolist() == [True, False, True, False]
         assert tr.time_outs.cpu().tolist() == [False, True, False, True]
         assert tr.final_mask.all().item()
@@ -172,14 +184,21 @@ def test_endpoint_termination_precedes_timeout_and_final_obs_precedes_reset(tmp_
         assert all(s.tick == 4 for s in tr.states.values())
         assert all(s.tick == 0 for s in env.runtime.snapshot().values())
         assert dict(env.reset_indices) == dict.fromkeys(KEYS, 1)
-        assert torch.allclose(tr.final_observation[:, 0], torch.tensor([s.v[0] for s in tr.states.values()], device=env.device, dtype=torch.float32))
+        assert torch.allclose(
+            tr.final_observation[:, 0],
+            torch.tensor(
+                [s.v[0] for s in tr.states.values()], device=env.device, dtype=torch.float32
+            ),
+        )
         assert not torch.equal(tr.final_observation, tr.observation)
         (tmp_path / "endpoint.json").write_text(helper.json_text(tr), encoding="utf-8")
 
 
 @pytest.mark.cuda
 @pytest.mark.tyx
-@pytest.mark.parametrize("fault", ("physics-second", "snapshot-second", "endpoint-export", "reset-export"))
+@pytest.mark.parametrize(
+    "fault", ("physics-second", "snapshot-second", "endpoint-export", "reset-export")
+)
 def test_late_failure_keeps_complete_actual_prefix(fault, monkeypatch, tmp_path):
     from phymeo.training.mujoco_tyx_env import MuJoCoTyxEnvError
 
@@ -187,7 +206,11 @@ def test_late_failure_keeps_complete_actual_prefix(fault, monkeypatch, tmp_path)
     torch = helper.require_cuda()
     horizons = (1,) * 4 if fault == "reset-export" else (100,) * 4
     with helper.make_environment("J", 4, horizons=horizons) as env:
-        original_step, original_snapshot, original_export = env.runtime.step, env.runtime.snapshot, env._export
+        original_step, original_snapshot, original_export = (
+            env.runtime.step,
+            env.runtime.snapshot,
+            env._export,
+        )
         calls = {"step": 0, "snapshot": 0, "export": 0}
 
         def step(h):
@@ -204,7 +227,9 @@ def test_late_failure_keeps_complete_actual_prefix(fault, monkeypatch, tmp_path)
 
         def export():
             calls["export"] += 1
-            if (fault == "endpoint-export" and calls["export"] == 1) or (fault == "reset-export" and calls["export"] == 2):
+            if (fault == "endpoint-export" and calls["export"] == 1) or (
+                fault == "reset-export" and calls["export"] == 2
+            ):
                 raise RuntimeError("fixed task publication failed")
             return original_export()
 
@@ -212,7 +237,11 @@ def test_late_failure_keeps_complete_actual_prefix(fault, monkeypatch, tmp_path)
         monkeypatch.setattr(env.runtime, "snapshot", snapshot)
         monkeypatch.setattr(env, "_export", export)
         with pytest.raises(MuJoCoTyxEnvError) as caught:
-            env.step(torch.full((4, 2), 0.1, device=env.device), world_keys=KEYS, expected_frame=env.current_frame)
+            env.step(
+                torch.full((4, 2), 0.1, device=env.device),
+                world_keys=KEYS,
+                expected_frame=env.current_frame,
+            )
         failure = caught.value
         window = failure.control_window
         expected = 1 if fault == "physics-second" else 2 if fault == "snapshot-second" else 4
@@ -236,8 +265,13 @@ def test_late_failure_keeps_complete_actual_prefix(fault, monkeypatch, tmp_path)
             assert failure.reset_accepted and dict(env.reset_indices) == dict.fromkeys(KEYS, 1)
         else:
             assert dict(env.reset_indices) == dict.fromkeys(KEYS, 0)
-        assert all(s.tick == (0 if fault == "reset-export" else expected) for s in original_snapshot().values())
-        (tmp_path / (fault + ".json")).write_text(helper.json_text({"window": window, "state": original_snapshot()}), encoding="utf-8")
+        assert all(
+            s.tick == (0 if fault == "reset-export" else expected)
+            for s in original_snapshot().values()
+        )
+        (tmp_path / (fault + ".json")).write_text(
+            helper.json_text({"window": window, "state": original_snapshot()}), encoding="utf-8"
+        )
         with pytest.raises(RuntimeError):
             env.reset((7,))
 
@@ -284,7 +318,9 @@ def test_same_thread_reentrancy_is_rejected_inside_window(operation, monkeypatch
                     elif operation == "close":
                         env.close()
                     else:
-                        env.restore_training_state(capsule, state, expected_revision=env.runtime.checkpoint_revision)
+                        env.restore_training_state(
+                            capsule, state, expected_revision=env.runtime.checkpoint_revision
+                        )
                 checked.append(True)
             return original(h)
 
@@ -315,7 +351,11 @@ def test_endpoint_mode_does_not_latch_an_intermediate_task_bound():
     # lies below v(1) and above v(4); no mass/action/initial-state change.
     task = MuJoCoTyxTaskSpec((), (0,), lower=(-1,), upper=(0.03998,), weight=(1,))
     with helper.make_environment("J", 4, task_spec=task, horizons=(100,) * 4) as env:
-        tr = env.step(torch.zeros((4, 2), device=env.device), world_keys=KEYS, expected_frame=env.current_frame)
+        tr = env.step(
+            torch.zeros((4, 2), device=env.device),
+            world_keys=KEYS,
+            expected_frame=env.current_frame,
+        )
         assert tr.control_window.substeps[0].states[7].v[0] > task.upper[0]
         assert tr.control_window.substeps[-1].states[7].v[0] < task.upper[0]
         assert not tr.final_mask.any().item()
@@ -391,13 +431,17 @@ def test_real_action_commit_survives_post_release_baseexception(monkeypatch, tmp
             assert env.counters["physical_steps"] == env.counters["transitions"] == 0
             window = failure.control_window
             assert window.attempted == window.completed == 0 and window.substeps == ()
-            assert helper.json_text(window.action_receipt) == helper.json_text(failure.action_receipt)
+            assert helper.json_text(window.action_receipt) == helper.json_text(
+                failure.action_receipt
+            )
             after = env.runtime.snapshot()
             for key in KEYS:
                 np.testing.assert_array_equal(after[key].q, before[key].q)
                 np.testing.assert_array_equal(after[key].v, before[key].v)
                 assert after[key].tick == before[key].tick == 0
-                assert helper.json_text(after[key].held_control) == helper.json_text(failure.action_receipt.controls[key])
+                assert helper.json_text(after[key].held_control) == helper.json_text(
+                    failure.action_receipt.controls[key]
+                )
             (tmp_path / "post-release-interrupt.json").write_text(
                 helper.json_text({"window": window, "state": after, "release_order": released}),
                 encoding="utf-8",

@@ -47,10 +47,16 @@ def make_environment(case, physics_steps=1, *, horizons=HORIZONS, task_spec=None
 
     require_cuda()
     parts = source().components(case, keys=KEYS, seed=6511, namespace="N6")
-    options = {} if physics_steps is None else {"control_window": MuJoCoTyxControlWindowSpec(physics_steps)}
+    options = (
+        {}
+        if physics_steps is None
+        else {"control_window": MuJoCoTyxControlWindowSpec(physics_steps)}
+    )
     with ExitStack() as owners:
         runtime = owners.enter_context(
-            MuJoCoRuntime(parts["compilation"], mode="cuda", world_keys=KEYS, initial_states=parts["anchors"])
+            MuJoCoRuntime(
+                parts["compilation"], mode="cuda", world_keys=KEYS, initial_states=parts["anchors"]
+            )
         )
         env = owners.enter_context(
             MuJoCoTyxVectorEnv(
@@ -72,13 +78,18 @@ def _assert_same(actual, expected, label):
 
 
 def _endpoint_oracle(transition, spec):
-    raw = np.array([
-        np.r_[state.q[list(spec.q_indices)], state.v[list(spec.v_indices)]]
-        for state in transition.states.values()
-    ], dtype=np.float32)
+    raw = np.array(
+        [
+            np.r_[state.q[list(spec.q_indices)], state.v[list(spec.v_indices)]]
+            for state in transition.states.values()
+        ],
+        dtype=np.float32,
+    )
     np.testing.assert_allclose(
-        transition.final_observation.cpu().numpy(), raw * spec.scale + spec.bias,
-        rtol=2e-5, atol=2e-6,
+        transition.final_observation.cpu().numpy(),
+        raw * spec.scale + spec.bias,
+        rtol=2e-5,
+        atol=2e-6,
     )
     reward = -np.sum(spec.weight * (raw - spec.target) ** 2, axis=1)
     np.testing.assert_allclose(transition.reward.cpu().numpy(), reward, rtol=2e-5, atol=2e-6)
@@ -114,20 +125,54 @@ def run_case(case, physics_steps, output):
     with (output / (name + ".jsonl")).open("x", encoding="utf-8") as log:
         with ExitStack() as owners:
             env = owners.enter_context(make_environment(case, physics_steps))
-            reference = owners.enter_context(MuJoCoRuntime(
-                parts["compilation"], mode="cuda", world_keys=KEYS, initial_states=parts["anchors"]
-            ))
+            reference = owners.enter_context(
+                MuJoCoRuntime(
+                    parts["compilation"],
+                    mode="cuda",
+                    world_keys=KEYS,
+                    initial_states=parts["anchors"],
+                )
+            )
             contact_count = 0
             try:
-                log.write(json_text({"event": "initial", "binding": env.training_binding(), "states": env.runtime.snapshot(), "source": parts["compilation"].source.archive_sha256}) + "\n")
+                log.write(
+                    json_text(
+                        {
+                            "event": "initial",
+                            "binding": env.training_binding(),
+                            "states": env.runtime.snapshot(),
+                            "source": parts["compilation"].source.archive_sha256,
+                        }
+                    )
+                    + "\n"
+                )
                 for policy_step in range(8):
-                    action = torch.full((4, env.num_actions), (policy_step + 1) / 100, device=env.device)
-                    log.write(json_text({"event": "request", "ordinal": policy_step, "action": action}) + "\n")
+                    action = torch.full(
+                        (4, env.num_actions), (policy_step + 1) / 100, device=env.device
+                    )
+                    log.write(
+                        json_text({"event": "request", "ordinal": policy_step, "action": action})
+                        + "\n"
+                    )
                     transition = env.step(action, world_keys=KEYS, expected_frame=env.current_frame)
                     # Save accepted work before any independent comparison can fail.
-                    log.write(json_text({"event": "transition", "ordinal": policy_step, "value": transition, "reset": env.last_reset_receipt}) + "\n")
+                    log.write(
+                        json_text(
+                            {
+                                "event": "transition",
+                                "ordinal": policy_step,
+                                "value": transition,
+                                "reset": env.last_reset_receipt,
+                            }
+                        )
+                        + "\n"
+                    )
                     window = transition.control_window
-                    if not all(transition.accepted_worlds.values()) or window.completed != physics_steps or window.attempted != physics_steps:
+                    if (
+                        not all(transition.accepted_worlds.values())
+                        or window.completed != physics_steps
+                        or window.attempted != physics_steps
+                    ):
                         raise AssertionError("incomplete physical control window")
                     if env.decimation != physics_steps or env.policy_dt_s != physics_steps * env.h:
                         raise AssertionError("public frequency metadata differs")
@@ -135,53 +180,121 @@ def run_case(case, physics_steps, output):
                     previous = reference.snapshot()
                     reference_states = []
                     for ordinal, sub in enumerate(window.substeps):
-                        if sub.ordinal != ordinal or not sub.diagnostics_complete or not all(sub.accepted_worlds.values()):
+                        if (
+                            sub.ordinal != ordinal
+                            or not sub.diagnostics_complete
+                            or not all(sub.accepted_worlds.values())
+                        ):
                             raise AssertionError("incomplete ordered substep evidence")
                         if not all(reference.step(env.h).values()):
                             raise AssertionError("independent held-input physical step refused")
                         expected = reference.snapshot()
                         reference_states.append(expected)
-                        _assert_same(sub.states, expected, "complete substep physics differs from held HOST route")
+                        _assert_same(
+                            sub.states,
+                            expected,
+                            "complete substep physics differs from held HOST route",
+                        )
                         for key, state in sub.states.items():
-                            if state.tick != previous[key].tick + 1 or state.last_step.tick != state.tick:
+                            if (
+                                state.tick != previous[key].tick + 1
+                                or state.last_step.tick != state.tick
+                            ):
                                 raise AssertionError("physical tick/receipt does not advance once")
-                            if state.time != state.last_step.output_time or state.last_step.input_time != previous[key].time:
+                            if (
+                                state.time != state.last_step.output_time
+                                or state.last_step.input_time != previous[key].time
+                            ):
                                 raise AssertionError("actual physical clock/receipt differs")
-                            _assert_same(state.last_step.stored_control, transition.action_receipt.controls[key], "held native channels changed")
-                            contact_count += int(any(c.normal_force > 0 for c in state.last_step.contacts))
+                            _assert_same(
+                                state.last_step.stored_control,
+                                transition.action_receipt.controls[key],
+                                "held native channels changed",
+                            )
+                            contact_count += int(
+                                any(c.normal_force > 0 for c in state.last_step.contacts)
+                            )
                         if case == "J":
                             _joint_recurrence(previous, sub.states, env.h)
                         previous = expected
-                    log.write(json_text({"event": "reference", "ordinal": policy_step, "substeps": reference_states}) + "\n")
-                    _assert_same(transition.states, window.substeps[-1].states, "transition is not last physical endpoint")
+                    log.write(
+                        json_text(
+                            {
+                                "event": "reference",
+                                "ordinal": policy_step,
+                                "substeps": reference_states,
+                            }
+                        )
+                        + "\n"
+                    )
+                    _assert_same(
+                        transition.states,
+                        window.substeps[-1].states,
+                        "transition is not last physical endpoint",
+                    )
                     _endpoint_oracle(transition, env.task_spec)
                     if not np.all(transition.episode_length >= 1):
                         raise AssertionError("episode counter did not advance")
-                    selected = tuple(key for key, flag in zip(KEYS, transition.final_mask.cpu().tolist(), strict=True) if flag)
+                    selected = tuple(
+                        key
+                        for key, flag in zip(
+                            KEYS, transition.final_mask.cpu().tolist(), strict=True
+                        )
+                        if flag
+                    )
                     if selected:
                         receipt = env.last_reset_receipt
                         if receipt.world_keys != selected:
                             raise AssertionError("endpoint subset reset identity differs")
-                        reference.reset_states(receipt.stored, expected_revision=reference.checkpoint_revision)
-                    _assert_same(env.runtime.snapshot(), reference.snapshot(), "post-window/reset state differs")
+                        reference.reset_states(
+                            receipt.stored, expected_revision=reference.checkpoint_revision
+                        )
+                    _assert_same(
+                        env.runtime.snapshot(),
+                        reference.snapshot(),
+                        "post-window/reset state differs",
+                    )
                 if case == "S" and contact_count != 4 * 8 * physics_steps:
                     raise AssertionError("continuous support missing an actual substep contact")
                 submissions = env.runtime.counters["device_control_submissions"]
-                if submissions != 8 or env.counters["transitions"] != 8 or env.counters["physical_steps"] != 8 * physics_steps:
+                if (
+                    submissions != 8
+                    or env.counters["transitions"] != 8
+                    or env.counters["physical_steps"] != 8 * physics_steps
+                ):
                     raise AssertionError("physical/policy/action counter scopes differ")
                 consumed = any(env.reset_indices.values())
                 if not consumed:
                     raise AssertionError("fixed horizon did not exercise random reset")
                 summary.update(
-                    status="PASS_CONTROL_WINDOW", policy_steps=8, physical_steps=8 * physics_steps,
-                    compared_world_substeps=4 * 8 * physics_steps, action_submissions=submissions,
-                    contact_world_substeps=contact_count, random_reset_consumed=consumed,
-                    reset_indices=dict(env.reset_indices), binding=env.training_binding(),
-                    physics_and_policy_rates={"physics_hz": 1 / env.h, "policy_hz": 1 / env.policy_dt_s},
+                    status="PASS_CONTROL_WINDOW",
+                    policy_steps=8,
+                    physical_steps=8 * physics_steps,
+                    compared_world_substeps=4 * 8 * physics_steps,
+                    action_submissions=submissions,
+                    contact_world_substeps=contact_count,
+                    random_reset_consumed=consumed,
+                    reset_indices=dict(env.reset_indices),
+                    binding=env.training_binding(),
+                    physics_and_policy_rates={
+                        "physics_hz": 1 / env.h,
+                        "policy_hz": 1 / env.policy_dt_s,
+                    },
                 )
             except BaseException as error:
                 failure = env.last_failure
-                log.write(json_text({"event": "failure", "error": repr(error), "needs_recovery": env.needs_recovery, "control_window": None if failure is None else failure.control_window, "counters": env.counters}) + "\n")
+                log.write(
+                    json_text(
+                        {
+                            "event": "failure",
+                            "error": repr(error),
+                            "needs_recovery": env.needs_recovery,
+                            "control_window": None if failure is None else failure.control_window,
+                            "counters": env.counters,
+                        }
+                    )
+                    + "\n"
+                )
                 raise
             finally:
                 (output / (name + "-summary.json")).write_text(json_text(summary), encoding="utf-8")
@@ -193,13 +306,22 @@ def _semantic_transition(transition):
     result = source()._comparable_transition(transition)
     window = transition.control_window
     result["control_window"] = {
-        "spec_sha256": window.spec_sha256, "physics_steps": window.physics_steps,
-        "attempted": window.attempted, "completed": window.completed,
-        "phase": window.phase, "failed_substep": window.failed_substep,
-        "substeps": tuple({
-            "ordinal": item.ordinal, "accepted_worlds": item.accepted_worlds,
-            "states": item.states, "diagnostics_complete": item.diagnostics_complete, "error": item.error,
-        } for item in window.substeps),
+        "spec_sha256": window.spec_sha256,
+        "physics_steps": window.physics_steps,
+        "attempted": window.attempted,
+        "completed": window.completed,
+        "phase": window.phase,
+        "failed_substep": window.failed_substep,
+        "substeps": tuple(
+            {
+                "ordinal": item.ordinal,
+                "accepted_worlds": item.accepted_worlds,
+                "states": item.states,
+                "diagnostics_complete": item.diagnostics_complete,
+                "error": item.error,
+            }
+            for item in window.substeps
+        ),
         "action_receipt": result["action_receipt"],
     }
     return result
@@ -214,7 +336,12 @@ def continuation(output):
     source().tasks().seed_all(6511)
     output = Path(output)
     output.mkdir(parents=True, exist_ok=True)
-    summary = {"status": "FAILED_CONTROL_WINDOW_CONTINUATION", "seed": 6511, "case": "J", "decimation": 2}
+    summary = {
+        "status": "FAILED_CONTROL_WINDOW_CONTINUATION",
+        "seed": 6511,
+        "case": "J",
+        "decimation": 2,
+    }
     with (output / "J-d2-gru.jsonl").open("x", encoding="utf-8") as log:
         with make_environment("J", 2) as env:
             try:
@@ -222,36 +349,67 @@ def continuation(output):
                 session = MuJoCoTyxPpoSession(RslMuJoCoTyxVecEnv(env), steps=8, recurrent=True)
                 warm = session.update()
                 log.write(json_text({"event": "warm", "value": warm}) + "\n")
-                nonzero = all(bool(torch.count_nonzero(value)) for value in session.training_state()["hidden"].values())
+                nonzero = all(
+                    bool(torch.count_nonzero(value))
+                    for value in session.training_state()["hidden"].values()
+                )
                 if not nonzero:
                     raise AssertionError("actual actor/critic hidden state must be nonzero")
                 checkpoint = output / "J-d2-gru-bundle"
                 saved = session.save_checkpoint(checkpoint)
                 a = session.update()
                 train_a, physical_a = session.training_state(), env.runtime.snapshot()
-                log.write(json_text({"event": "A", "value": a, "training": train_a, "physics": physical_a}) + "\n")
+                log.write(
+                    json_text(
+                        {"event": "A", "value": a, "training": train_a, "physics": physical_a}
+                    )
+                    + "\n"
+                )
                 env.reset((103, 7))
                 next_a = (env.runtime.snapshot(), env.capture_training_state()["random_reset"])
-                session.restore_checkpoint(checkpoint, expected_revision=env.runtime.checkpoint_revision)
+                session.restore_checkpoint(
+                    checkpoint, expected_revision=env.runtime.checkpoint_revision
+                )
                 b = session.update()
                 train_b, physical_b = session.training_state(), env.runtime.snapshot()
-                log.write(json_text({"event": "B", "value": b, "training": train_b, "physics": physical_b}) + "\n")
-                _assert_same(train_a, train_b, "complete learner/Adam/RNG/RNN/reset continuation differs")
+                log.write(
+                    json_text(
+                        {"event": "B", "value": b, "training": train_b, "physics": physical_b}
+                    )
+                    + "\n"
+                )
+                _assert_same(
+                    train_a, train_b, "complete learner/Adam/RNG/RNN/reset continuation differs"
+                )
                 _assert_same(physical_a, physical_b, "physical continuation differs")
-                _assert_same(tuple(map(_semantic_transition, a["transitions"])), tuple(map(_semantic_transition, b["transitions"])), "complete control-window continuation differs")
+                _assert_same(
+                    tuple(map(_semantic_transition, a["transitions"])),
+                    tuple(map(_semantic_transition, b["transitions"])),
+                    "complete control-window continuation differs",
+                )
                 _assert_same(a["loss"], b["loss"], "upstream loss differs")
                 env.reset((7, 103))
                 next_b = (env.runtime.snapshot(), env.capture_training_state()["random_reset"])
                 _assert_same(next_a, next_b, "next subset sample after restore differs")
-                masks = source()._mask_checks(warm) + source()._mask_checks(a) + source()._mask_checks(b)
+                masks = (
+                    source()._mask_checks(warm)
+                    + source()._mask_checks(a)
+                    + source()._mask_checks(b)
+                )
                 if masks == 0:
-                    raise AssertionError("fixed recurrent trajectory did not exercise partial reset")
+                    raise AssertionError(
+                        "fixed recurrent trajectory did not exercise partial reset"
+                    )
                 with make_environment("J", 4) as wrong_env:
-                    other = MuJoCoTyxPpoSession(RslMuJoCoTyxVecEnv(wrong_env), steps=8, recurrent=True)
+                    other = MuJoCoTyxPpoSession(
+                        RslMuJoCoTyxVecEnv(wrong_env), steps=8, recurrent=True
+                    )
                     before = wrong_env.runtime.checkpoint().to_bytes()
                     other_before = other.training_state()
                     try:
-                        other.restore_checkpoint(checkpoint, expected_revision=wrong_env.runtime.checkpoint_revision)
+                        other.restore_checkpoint(
+                            checkpoint, expected_revision=wrong_env.runtime.checkpoint_revision
+                        )
                     except (ValueError, RuntimeError) as error:
                         if "binding" not in str(error):
                             raise
@@ -259,17 +417,41 @@ def continuation(output):
                         raise AssertionError("cross-decimation restore was accepted")
                     if wrong_env.runtime.checkpoint().to_bytes() != before:
                         raise AssertionError("cross-D rejection changed physical state")
-                    _assert_same(other.training_state(), other_before, "cross-D rejection changed learner/RNG")
+                    _assert_same(
+                        other.training_state(),
+                        other_before,
+                        "cross-D rejection changed learner/RNG",
+                    )
                 summary.update(
-                    status="PASS_CONTROL_WINDOW_CONTINUATION", nonzero_hidden=bool(nonzero),
-                    partial_done_masks=masks, cross_decimation_refused=True, next_random_reset_equal=True,
-                    policy_transitions=32, physical_world_steps=64, save=saved,
+                    status="PASS_CONTROL_WINDOW_CONTINUATION",
+                    nonzero_hidden=bool(nonzero),
+                    partial_done_masks=masks,
+                    cross_decimation_refused=True,
+                    next_random_reset_equal=True,
+                    policy_transitions=32,
+                    physical_world_steps=64,
+                    save=saved,
                     binding=env.training_binding(),
-                    exclusions=["monotonic runtime revision", "task epoch", "action publication revision/epoch", "resource counters"],
+                    exclusions=[
+                        "monotonic runtime revision",
+                        "task epoch",
+                        "action publication revision/epoch",
+                        "resource counters",
+                    ],
                 )
             except BaseException as error:
                 failure = env.last_failure
-                log.write(json_text({"event": "failure", "error": repr(error), "needs_recovery": env.needs_recovery, "control_window": None if failure is None else failure.control_window}) + "\n")
+                log.write(
+                    json_text(
+                        {
+                            "event": "failure",
+                            "error": repr(error),
+                            "needs_recovery": env.needs_recovery,
+                            "control_window": None if failure is None else failure.control_window,
+                        }
+                    )
+                    + "\n"
+                )
                 raise
             finally:
                 (output / "J-d2-gru-summary.json").write_text(json_text(summary), encoding="utf-8")

@@ -1,6 +1,6 @@
 # Newton 功能对齐：持续推进计划
 
-日期：2026-11-11。用户已取消 08:00 截止；后续按节点验收推进，不设新的时间截止或周期任务。当前批次已加入 N1 CUDA 策略示例/测试，实际 CUDA 资格受独立环境磁盘空间阻塞；ROB1、COL1a 合同已审阅冻结，尚未实施。此前物理验收基线为父 d6a5c383、产品/测试 e3d15707；直接复用，不重跑同源组。新批次状态见[准备结果](../../benchmarks/p65-cuda-policy-n1-preparation.md)。
+日期：2026-11-11。用户已取消08:00截止，按节点验收持续推进。现有Python313 CUDA Torch已验证可复用，五个退役环境清理完成；N1真实策略/物理闭环22pass、1跨GPU未测，ROB1a注册/layout33pass。COL1a已实现并进入验证，interpret尚有12个失败，不能宣称十八类设备查询全部通过。见[N1实际结果](../../benchmarks/p65-cuda-policy-n1.md)、[ROB1a](../../development/p65-resident-multi-participant-report.md)、[COL1a反例与边界](../../development/p65-device-convex-support-family-report.md)。此前物理验收d6a5c383、产品e3d15707继续按原范围复用。
 
 入口：[当前全景](../../development/phymeo-newton-panorama-2026-11-11.md)、[架构与路线图](../../architecture/phymeo-newton-parity-2026-11-11.html)、[上一批验收](../../benchmarks/p65-parity-20261111-connections.md)。原[限时计划](2026-11-11-newton-parity-until-0800.md)仅保留历史计划和结果，不再约束后续。
 
@@ -10,9 +10,9 @@
 
 | 批次 | 训练主线 | 机器人分支 | 碰撞分支 | 启动条件 |
 |---|---|---|---|---|
-| 本批已交付 | N1 代码与候选 profile；CUDA 运行资格待空间解除 | ROB1 合同冻结 | COL1a 十八类新增 device query 合同冻结 | 未把 N1 代码/静态通过当运行验收 |
-| 下一可执行批 | 空间解除后验 N1；N1 通过才启 N2 | ROB1a 身份/layout，再 ROB1b 双自由体 | COL1a tests-first/support/source，再几何矩阵 | ROB/COL 可独立先行，不受 Torch 安装阻塞 |
-| 后续批 | N2 两任务真实 PPO | ROB1c 多案例共同响应、ROB1d 集成 | COL1b 曲面 patch、COL1c 真实受力 | 各支线只继承自身前置资格 |
+| 本批已交付 | N1实际CUDA推理/物理闭环及隔离profile | ROB1a身份/layout的HOST资格 | COL1a实现、首轮矩阵、两个明确数值缺口；旧路径回归通过 | 不把COL部分通过当完整资格 |
+| 下一可执行批 | N2 device VecEnv/两任务真实PPO | ROB1b双自由体共同响应 | 保持原反例，修复通用曲面EPA收敛/法向质量，再完成CUDA矩阵 | 三支线独立；N2不受COL缺口阻塞 |
+| 后续批 | N3组合训练恢复 | ROB1c多案例共同响应、ROB1d集成 | COL1a通过后COL1b曲面patch、COL1c真实受力 | 各支线只继承自身前置资格 |
 | 第三批 | N3 更新边界训练恢复 | ROB2a 关节/执行器；ROB2b 工作流随依赖接入 | COL2 mesh/变形窄相，随后 COL3 连续检测 | 实际状态归属与前序公共接口稳定 |
 | 后续批次 | N4 学习有效性，再测规模/热点 | 更多约束、传动、闭环与工具 | 跨特征历史；SDF/hydroelastic 独立研究立项 | 先有功能证据，再扩域和性能优化 |
 
@@ -25,11 +25,11 @@
 | /root/mtyx_t2_tests | COL1–COL3 通用碰撞与案例矩阵 | 不改机器人求解器或训练状态 |
 | 父集成 | 共享身份/状态/事务接口、集成与唯一执行队列、验收/文档 | 不覆盖作者 WIP，不并发项目执行 |
 
-本批三个原作者已交接：N1 三文件已导入；ROB1/COL1a 合同已导入并冻结，产品实现尚未派发。所有编码使用隔离工作树和明确文件表。安装、import、collection、pytest、数值/离线分析、lint、formatter、build、profile 均在父管理的唯一串行槽执行，启动前检查真实入口。无远程 CI、main 合并或发包。
+本批三个原作者已交接并释放：N1、ROB1a、COL1a产品均已导入；父完成上述实际验证。后继编码继续隔离工作树和明确文件表，不重派已完成节点。安装、import、collection、pytest、数值/离线分析、lint、formatter、build、profile均在父管理的唯一串行槽执行，启动前检查真实入口。无远程CI、main合并或发包。
 
 ## N1–N4：真实训练与规模
 
-**N1｜中等｜代码已备，环境资格受容量阻塞。** [候选 profile 与实测空间下界](../../development/mujoco-tyx-cuda-profile-qualification.md)已记录；未安装 CUDA Torch，未运行新案例。沿[详细 GPU 计划](2026-11-11-mujoco-tyx-gpu-training.md)在独立环境验证两模型的实际 CUDA MLP→设备 action→连续物理→设备 observation，含默认/非默认 stream、所有权/CAS/生命周期负控。保留既有环境和 TYX pin；收齐版本/模块来源/输入绑定/复制与同步计数。不能用 CPU fallback 或静态检查代替此门。
+**N1｜中等｜推理闭环已通过。** [当前profile](../../development/mujoco-tyx-cuda-profile-qualification.md)复用已有Torch2.12.0+cu126，保留原TYX pin。两模型、W1/8/32、默认/非默认stream八条连续轨迹共784world-steps；22项通过，只有真实第二GPU负控未测。复制、同步及HOST诊断仍在链上，不称零往返；这是N2前置资格，不是PPO优化。
 
 **N2｜中高｜依赖 N1。** 独立 device VecEnv 和薄 RSL 适配；先冻结 final_obs、timeout、局部 reset、动作已提交后的失败语义。两任务各实际完成 4 次更新×16 步×8 world，核 GPU 参数确实更新和全部有效转移。此门只证明 PPO 链路，不能称“已经学会”。发生物理或后处理失败时报告真实已推进阶段，不伪回滚。
 

@@ -30,7 +30,7 @@
 
 自身安装 NumPy 2.4.6、MuJoCo 3.3.7、cuda-python/cuda-bindings 12.9.10、cuda-pathfinder 1.8.4、nvidia-cuda-runtime-cu12 12.9.79、RSL 5.5.2、TensorDict 0.15.5、pytest 9.1.1。run02 建环境和 run03 安装均 RAW_EXIT=0，原用户目录的软件未卸载或升级。TYX 从已验物理环境复制纯 Python 包及 provenance，逐文件字节匹配，保持 `99f6df7c0fd8fdeef77f97df83914da27b64b7ee`；CUDA bindings 使用新 cp313 wheel。
 
-这是本机复用 profile，不是自包含可移植环境；原用户 Torch 目录是显式依赖，不能在后续清理中删除。项目运行需 `PYTHONNOUSERSITE=1`、`PYTHONDONTWRITEBYTECODE=1`、显式父 `src`、单线程与 pytest no-autoload。后续须先通过完整 import/来源/CUDA driver/NVRTC 门，再运行 N1 固定连续物理矩阵。此处不提前宣布 N1 或 PPO 通过。
+这是本机复用 profile，不是自包含可移植环境；原用户 Torch 目录是显式依赖，不能在后续清理中删除。项目运行需 `PYTHONNOUSERSITE=1`、`PYTHONDONTWRITEBYTECODE=1`、显式父 `src`、单线程与 pytest no-autoload。完整 import/来源/CUDA driver/NVRTC 门和 N1 固定连续物理矩阵现已通过，详见下文；PPO仍待N2。
 
 原始命令、环境 metadata、清理事务、源包复制清单及首次失败保存在父 `artifacts/p65-env-refresh-20261111-01`。run04 的 PowerShell 文件数组拼接错误发生在 Python 启动前，原记录保留；run05 修正任务描述，产品源码和测试未因此修改。
 

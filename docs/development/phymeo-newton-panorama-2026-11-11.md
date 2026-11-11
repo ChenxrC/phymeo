@@ -1,6 +1,6 @@
 # Phymeo / Newton 功能差异全景（2026-11-11）
 
-2026-11-11更新：用户已取消08:00限制，改为按节点验收持续推进。上一批功能/保存/安装包验收基线d6a5c383、产品/测试e3d15707继续复用。本批 N1 CUDA 策略示例/测试已编写并通过 lint/格式检查，实际 CUDA 环境资格受磁盘空间阻塞；ROB1、COL1a 合同已冻结，产品实现未开始。对照固定为 Newton 1.7.0，不把不同求解器能力合成一套默认保证。训练与规模是当前最高主线，场景/机器人、碰撞和GPU/多场景仍是前三个基础方向。见[本批准备结果](../benchmarks/p65-cuda-policy-n1-preparation.md)。
+2026-11-11更新：用户已取消08:00限制，按节点验收持续推进。N1已复用现有CUDA Torch并完成真实推理/物理闭环，ROB1a身份/layout通过33项HOST测试；COL1a已实现，interpret矩阵尚有12个失败，完整新CUDA资格未通过。上一批功能/保存/安装包验收d6a5c383、产品e3d15707继续按原范围复用；本批未构建新wheel。对照固定Newton1.7.0，训练与规模仍是最高主线。见[N1结果](../benchmarks/p65-cuda-policy-n1.md)、[COL1a反例](p65-device-convex-support-family-report.md)、[环境清理](p65-environment-refresh-20261111.md)。
 
 [上一批实际记录](p65-parity-2026-11-11-progress.md) · [持续推进计划](../superpowers/plans/2026-11-11-newton-parity-continuous.md) · [架构与后续路线图](../architecture/phymeo-newton-parity-2026-11-11.html)
 
@@ -10,7 +10,7 @@
 |---|---|---|
 | 物理状态 → 中途检查点 → 原样继续 | 公共 checkpoint/restore；固定根/自由根、完整接受状态与控制、CAS 和失败回滚；恢复后下一步状态与收据一致 | 上层策略/RNN/随机数状态须明确组合；不是完整训练作业快照 |
 | 四类机器人 → 真实受载多世界分页 | W127/128/129/256，world 不拆页，所有载荷汇总，每 storage 一次求解、全批共同发布；两后端专项已过 | 默认仍走HOST patch；显式设备patch分页已另行验收。材料点转换/载荷装配与诊断仍有HOST工作 |
-| 已接受设备状态 → 观测/奖励/终止 | 公共 MuJoCo-TYX task workspace，真实 TYX consumer，reset/restore 后旧数据失效 | 固定显式 q/v 映射和二次任务；未实现通用 CUDA Torch/PPO、随机化或全部传感器 |
+| 已接受设备状态 → 观测/奖励/终止 | 公共MuJoCo-TYX task workspace；N1真实CUDA Torch MLP→action→连续物理→observation，两模型八轨迹通过 | 固定显式q/v映射和二次任务；N2实际PPO、随机化及完整传感器仍待实现 |
 | 设备策略输出 → 三类控制 → 物理推进 | 公共设备 action packet；ctrl、qfrc_applied、xfrc_applied，完整字节审计、流同步、CAS；29 执行器宽度已测 | 当前仍保留 HOST 控制审计和完整物理诊断读回，不是零往返环 |
 | 设备凸体 patch → 原材料点 → 真实载荷 | 新十类无序 S/C/OBB/H 组合资格、四类树来源；单页各67项/47份保存；分页另各29项/28份保存，完整力/COM力矩、逐世界拒步、异常回滚与新wheel均通过 | 此 resident 路径与 MuJoCo-TYX 分开；是设备几何加 HOST 力装配，尚非广泛 mesh/变形窄相或 CCD |
 | G1 策略 → 正确 IMU-site 角速度 | 新版16项语义测试；原条件2秒各1000个 CUDA/独立CPU步骤与保存审计均过 | 新版于46.29秒触发设备1米参考XY门，独立CPU同时0.99978米，无设备拒步；未完成131.48秒。旧版112.372秒失败另保留 |
@@ -42,7 +42,7 @@ CPU 编译不是 CPU 代跑 CUDA 物理。默认 CUDA 使用 MuJoCo-TYX；MuJoCo
 | 01 场景与机器人 | URDF/MJCF/USD、统一编译接口、PD/IK、普通/浮根/affine、工具/根惯量、双方反力、中途恢复 | 更广关节/闭环/传动，复杂执行器，同world独立participant设备联解；完整抓取释放 | ROB1双自由体/机械臂推盒/双臂工具；ROB2球关节/执行器及夹爪、Panda工作流 |
 | 02 碰撞检测与响应 | RR/RD/DD、有限面边、多形状patch、部分凹体/CCD；设备S/C/OBB/H消费；圆柱/圆锥/椭球有限HOST support-map | 后三形状的设备完整消费；广泛mesh/变形窄相/CCD；跨特征摩擦历史；SDF/hydroelastic管线 | COL1七形状28类矩阵，旧十类复用；COL2设备mesh/变形；COL3首触；其后历史/SDF独立节点 |
 | 03 GPU 与多场景 | 四类树、W256运动和受载分页，设备几何、MuJoCo-TYX混合约束、公共设备数据口 | HOST转换/装配/诊断开销、异构批次/约束规模、跨participant联解；真实机器人训练规模尚缺 | N4 W1/8/32/64/128/256实际链路资格和端到端指标；256当前只是task接口上限，不能倒灌resident结果 |
-| 04 训练与可微（最高主线） | 公共向量ENV、接受mask/final observation/reset、CPU PPO三任务、ONNX、设备task/action与物理checkpoint | 真实CUDA Torch/PPO；完整训练恢复/RNN/随机化；多步梯度/辨识 | N1真实GPU策略→N2两任务PPO→N3训练恢复→N4三类任务/三种子学习；物理可微另立梯度对照 |
+| 04 训练与可微（最高主线） | 公共向量ENV、CPU PPO三任务、ONNX、设备task/action/checkpoint；N1真实CUDA策略/物理闭环已过 | device VecEnv与真实CUDA PPO；完整训练恢复/RNN/随机化；多步梯度/辨识 | N2两任务PPO→N3训练恢复→N4三类任务/三种子学习；物理可微另立梯度对照 |
 | 05 传感与交互 | 深度/法线/ID、TYX射线、IMU基础、真实轨迹Three.js；G1示例明确传感器坐标绑定 | RGB/材质/光照、更广相机、批量传感和编辑生态；示例 gyro 修正不是通用传感子系统完工 | 同一真实场景的多传感器、时序/坐标协议及交互输入 |
 | 06 跨域求解编排 | 事务、点端口、域图与指定刚–布–软体组合 | 通用按区域选择后端、界面力/约束、耦合调度与共同失败恢复 | 两个异构后端的完整界面载荷、能量与回滚案例 |
 | 07 布与体软体 | 拉伸/剪切/弯曲、自接触、StVK四面体、双向载荷、递布基础 | 密集折叠、持续静摩擦/换特征、软块抓捏；目标软布放台仍有留出 | 多网格/刚度/初态的支撑、抓捏、折叠、放台；递布必要但不充分 |
@@ -54,13 +54,13 @@ CPU 编译不是 CPU 代跑 CUDA 物理。默认 CUDA 使用 MuJoCo-TYX；MuJoCo
 
 | 下一批次 | 主线与并行工作 | 成功判断 |
 |---|---|---|
-| 本批 | N1代码/静态完成、环境待空间；ROB1/COL1a合同已冻结 | 尚无N1运行通过；两独立分支已有明确开发边界 |
-| 下一批 | ROB1a身份/layout、COL1a通用支持族隔离编码；条件具备时恢复N1 | 完整地址/拒绝预检；十八类新增设备query；N1实际CUDA闭环 |
-| 之后 | N1通过再N2 PPO；ROB1共同响应；COL1b/c曲面patch与受力 | 实际优化器更新；多参与者双方受力/一次发布；曲面分层资格 |
+| 本批 | N1推理/物理22pass＋1硬件未测；ROB1a33pass；曲面binding11pass | COL1a尚有12个interpret失败；旧受影响路径两后端各18通过 |
+| 下一批 | N2 device VecEnv/PPO；ROB1b共同响应；COL1a EPA/法向通用修复 | 实际优化器更新；多参与者一次发布；原曲面反例通过后验完整CUDA矩阵 |
+| 之后 | N3训练恢复；ROB1更多共同响应；COL1a通过后才进COL1b/c | 真实续训一致；双方受力与事务；曲面patch/载荷分层资格 |
 | 3 | N3训练恢复；ROB2关节/执行器；COL2再COL3 | 恢复后真实继续一致；多案例关节控制；设备mesh/变形与首触边界 |
 | 4及以后 | N4多任务学习/规模；后续机器人、碰撞和其它物理族 | 预定种子/预算下可重复改善；相同条件的资源与吞吐报告 |
 
-批次允许独立分支先行，具体硬依赖见[总计划](../superpowers/plans/2026-11-11-newton-parity-continuous.md)。三个原agent分别负责训练、机器人、碰撞；父负责共享接口与唯一串行执行。[ROB1合同](../superpowers/plans/2026-11-11-resident-multi-participant.md)采用共同入步载荷、各机械块一次求解和完整world一次发布，不是跨树隐式KKT；[COL1a合同](../superpowers/plans/2026-11-11-device-convex-support-family.md)先补十八类设备查询，曲面patch/受力另验。它们可不依赖Torch安装开始开发；当前尚未派发这两项产品编码。
+批次允许独立分支先行，具体硬依赖见[总计划](../superpowers/plans/2026-11-11-newton-parity-continuous.md)。三个原agent分别负责训练、机器人、碰撞，当前作者任务均已交接；父负责共享接口与唯一串行执行。[ROB1合同](../superpowers/plans/2026-11-11-resident-multi-participant.md)采用共同入步载荷、各机械块一次求解和完整world一次发布，不是跨树隐式KKT；目前只ROB1a注册层通过。[COL1a合同](../superpowers/plans/2026-11-11-device-convex-support-family.md)的曲面实现已集成但未完整验收，patch/受力另验。训练N2可独立推进，不受曲面数值缺口阻塞。
 
 G1保持兼容侧线：来源绑定与保存输入的接触边界诊断，不自动重跑完整动作，也不阻塞训练。接受预先声明的工程精度，不为零margin位级一致无限推导。性能按同模型、初态、精度和输出比较；HOST诊断成本单列，生产快速模式的检查契约须明示。
 

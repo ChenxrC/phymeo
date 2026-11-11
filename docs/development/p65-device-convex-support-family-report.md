@@ -1,5 +1,64 @@
 # COL1a device convex support-family authoring handoff
 
+## Current parent validation: partial, not accepted
+
+The parent integrated the eight-file handoff and its shared curved binding
+prerequisite. This increment is **PARTIAL_VALIDATION / NOT_ACCEPTED**. The
+authoring-only labels below remain historical; they do not override these results.
+Evidence is under `artifacts/p65-env-refresh-20261111-01`.
+`col1a-partial-validation-receipt.json` binds20 new command receipts, their
+unchanged execution snapshots and187 saved gzip files. This is file/source
+provenance and inventory, not a successful full-geometry saved audit.
+
+- Shared finite-shape admission, outward broad radius and asset provenance:
+  **11 HOST passed**, run21. New constructor/reference tests: **6 HOST passed**,
+  run26. ROB1a's separate 33 registration tests are not curved-query evidence.
+- Interpret's 122 predeclared identities have all been visited. The disjoint
+  runs29/35/36, with the eight targeted harness corrections in run37, currently
+  give **110 passing identities and 12 unresolved failures**. This is a union of
+  recorded groups, not a claimed all-green final full-file execution.
+- Eight failures exercise smooth EPA capacity: mandatory SE/NE/EE shallow
+  overlap, E patch-boundary, two E broad-phase cases, exact-memory query and
+  late-frame retry. The original SE counterexample uses GJK2/EPA61/support77,
+  vertices64/faces124 and returns `RESOURCE_LIMIT/EPA_CAPACITY`. The radius,
+  geometry, 64/128 capacities, 192 EPA iterations and numerical gates are unchanged.
+- Four failures are the cylinder source case across ordinary/affine/floating/
+  floating-affine layouts: published normal error is about0.003119 against the
+  predeclared0.002 gate. No output-dependent tolerance relaxation was made.
+- Bounded changed-source regression of the old ten families, affected patches
+  and four source layouts passed **18 interpret and18 true CUDA** (run40/41).
+  It preserves prior limited acceptance; it does not qualify new curved pairs.
+- True CUDA's six analytic support cases, large-translation counterexample and
+  repaired BE separation passed **8 tests in8.43s** (run42). This focused group
+  verifies these repairs; the full122-case CUDA matrix has not been run.
+
+The first new failures were preserved and diagnosed: TYX requires original
+function names instead of aliases, and branch-assigned px/py/pz need lane-scope
+initializers. The large common-translation counterexample then passed. BE
+separation stalled because a common normal squared term hid the tangential
+improvement in FP32; only equal-square full-surface candidates now compare the
+complete `(q-c) dot (q+c)`, retaining original acceptance thresholds. The original
+BE node passed after this repair and was included in the subsequent matrix.
+run33 reads only the same failed fixed case's scratch; it is diagnostic evidence,
+not another oracle or parameter search.
+
+Three test-harness contracts were corrected without changing physical inputs:
+empty logical pairs retain a padded raw lane; accepted FP32 root quaternions are
+normalized when reconstructing their independent rotation; the required-load
+negative checks the actual explicit finite-shape admission error. run37 then
+passed6 identities and exposed the same cylinder-normal failure in the two
+floating layouts. Every initial failure remains in its original directory.
+
+Next collision work is a bounded generic smooth-support convergence/normal
+refinement design, using these exact saved counterexamples and the existing
+Newton/TYX source references. Choose an algorithm and independently check its
+error/capacity contract before further implementation; do not raise capacity or
+change fixtures to chase the matrix. Full new CUDA qualification, saved acceptance
+and a new wheel are deferred until interpret's mandatory cases pass. Curved
+patch/load/CCD remain unsupported. N2 training and ROB1b can proceed independently.
+
+## Original author handoff
+
 Status: **CODE_READY_TESTS_PENDING / AUTHORING_SLOT_RELEASED**. No project import, collection, numeric probe, test, lint, formatter, compile, build, installation or native execution was performed by this lane. The parent retains the sole execution slot. Git text diff checks are not functional validation.
 
 Contract: [device convex support-family plan](../superpowers/plans/2026-11-11-device-convex-support-family.md), frozen parent `a33a09ef911ddd974ba1ff999b93a3b76c9b0cc7`. Branch `codex/p65-col1a-20261111`, isolated `p65-h1-actuator/phymeo`. Existing K1 untracked material was not used or changed.

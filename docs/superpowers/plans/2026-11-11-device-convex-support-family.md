@@ -1,6 +1,6 @@
 # COL1a：统一设备凸支持族与十八类新增查询
 
-**状态：PARENT_REVIEWED_CONTRACT_FROZEN；未实施、未执行。** 基线 `95212cff12cd6437566fdce80b93ddc7c4b64fe7`。父已全文审阅作者 `dd3bbd4a` 并接受 `7625c874` 的穿透深度 oracle 修正；以下接口、案例及文件范围冻结，实际编码/唯一串行验证由父派发。服从[持续总计划](2026-11-11-newton-parity-continuous.md)。
+**状态：IMPLEMENTED_PARTIAL_VALIDATION / NOT_ACCEPTED。** 八文件实现及父共享binding已集成；新HOST6项、共享binding11项通过。122个interpret身份全部访问，按分组与针对性修复汇总110通过、12失败，剩曲面EPA容量及四来源圆柱法向精度问题。旧受影响路径interpret/CUDA各18回归通过；不据此宣称新十八类CUDA资格。详[实际执行、反例和下一修复边界](../../development/p65-device-convex-support-family-report.md)。原基线 `95212cff12cd6437566fdce80b93ddc7c4b64fe7` 及合同保留，完整CUDA/验收/build待mandatory interpret矩阵通过。服从[持续总计划](2026-11-11-newton-parity-continuous.md)。
 
 ## 1. 目标、复用与边界
 

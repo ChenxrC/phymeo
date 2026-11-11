@@ -1,16 +1,20 @@
 # P6.5 人工续作入口
 
-## 当前续作（2026-11-11，已取消 08:00 截止）
+## 当前续作（2026-11-11，N1环境与下一批实际验证）
 
-先读[本批准备结果](../benchmarks/p65-cuda-policy-n1-preparation.md)、[持续推进计划](../superpowers/plans/2026-11-11-newton-parity-continuous.md)、[八方向全景](phymeo-newton-panorama-2026-11-11.md)。用户取消固定截止，后续按节点验收推进，不建周期任务。上一批正式物理/安装验收d6a5c383、产品e3d15707继续复用。本批N1示例/测试源872473aa已完成lint/格式检查，实际CUDA资格未执行；未改旧src/。三个原作者和父静态执行均已释放，当前没有项目执行owner。
+先读[N1实际结果](../benchmarks/p65-cuda-policy-n1.md)、[持续推进计划](../superpowers/plans/2026-11-11-newton-parity-continuous.md)、[八方向全景](phymeo-newton-panorama-2026-11-11.md)。用户取消固定截止，按节点验收推进，不建周期任务。原物理/安装验收d6a5c383、产品e3d15707按原范围复用；本批没有新wheel或远程CI，不重跑旧全套。
 
-上一批已完成公共中途恢复、真实受载W256分页、设备task/action与29执行器宽度、十类设备凸体patch资格、单页和分页真实力消费。B2各67节点/47保存，B3各29节点/28保存；最终新wheel483产品成员同源，十组源码外公共调用全过。113/124两个环境预检首错、父汇总JSONL抽取错误均保留，正式wheel汇总为v2，不重复旧绿组或112字节审计。resident与MuJoCo-TYX两条物理路径分别验收，HOST装配/诊断仍保留，不称全GPU训练。
+用户指定的Python313 Torch2.12.0+cu126实际可用，保留；父`.venv-training-cuda313`借用它并隔离NumPy/MuJoCo/RSL/TensorDict/cp313 CUDA bindings，TYX保持99f6。五个明确退役的P65环境已清理，观察释放约0.48GB，事务后C盘约24.15GB；此前大幅背景增长不归功于本次清理。原环境、pins、源码、构建及证据保留，旧Temp Junction不动。详[清理/环境记录](p65-environment-refresh-20261111.md)。不能再删除被新profile借用的用户Torch目录。
 
-G1 v2 run93完整尝试在46.29秒/23145步触发设备原1米参考XY门，未完成131.48秒；无设备拒步/reset。106失败保存审计、123全前缀离线诊断已结束。两条独立轨迹直接XY差最大17.30mm、末步3.29mm，双方相对参考均近1m；126已把同输入峰值定位到零margin附近的接触检出集合不同：device3点/30行，native4点/40行；native多出约-33nm间隙的右足胶囊接触。设备拒绝距离未保存，精确误差来源仍unknown；不是已证明的同问题QP差异或长期漂移原因。原v1失败亦保留，不重跑全窗/改模型或门。见[G1诊断](g1-drift-diagnosis-20261111.md)。该有限诊断已结束/放槽；下一项是计划中的GPU训练资格。
+**N1推理闭环已通过**：完整focused组22pass、1单GPU硬件条件未测；八条预登记轨迹784world-steps，默认/非默认producer stream、真实CUDA MLP、真实MuJoCo-TYX物理及独立同后端HOST控制入口对照通过。run06闭view异常类型首错、run11最终结果和全部八份轨迹保留。测试981bd76d，验收文档94e795e3。不是PPO、N2 VecEnv或G1全动作完成。下一训练节点N2可在原计划边界内进入实现，不再以磁盘/Torch资格阻塞。
 
-训练主线为[GPU N1–N3](../superpowers/plans/2026-11-11-mujoco-tyx-gpu-training.md)，再N4学习有效性/规模。N1三文件已导入，23身份仅手工预登记，未collection/pytest；CUDA Torch独立环境仍未安装。[容量预检](mujoco-tyx-cuda-profile-qualification.md)记录wheel＋展开下界6.794GB；10:43磁盘free6.196GB，建议8–10GB后再核依赖峰值，本批未删除文件。01 lint0、02 guard内存失败未启动format、03首format1、04repair0、05/06最终静态0均留证。不得重跑已绿静态，也不能把它当N1运行通过；N1通过前不启动N2。
+**ROB1a注册/layout通过**：四个新文件集成，HOST33pass/1.13s，最终静态通过；文档0adf165d。只接受不可变参与者身份、四来源layout、完整body映射和source预检，不含多参与者设备共同step。下一步ROB1b共同入步、各机械块候选求解、world一次发布。
 
-可独立进入下一批的是[ROB1a身份/layout](../superpowers/plans/2026-11-11-resident-multi-participant.md)和[COL1a十八类新增设备query](../superpowers/plans/2026-11-11-device-convex-support-family.md)，两合同已父审阅冻结、尚未派产品编码。ROB1采用共同入步载荷、各机械块一次求解、全world一次发布，不是跨树隐式KKT；COL1a曲面patch/受力为后继。沿用原作者隔离worktree，父负责共享服务/绑定和后续唯一串行验证；先查实时HEAD/WIP，不覆盖作者树。G1兼容侧线不重跑全窗。交付仍用codex/dev，不自动合main/发包。三份旧K1未跟踪WIP保留；下方历史截止与pending不覆盖本节，已验grant不重开。
+**COL1a实现已集成，尚未验收**：父共享curved binding/保守半径/from_asset预检HOST11pass，新constructor/reference HOST6pass。122个interpret身份全部访问，分组与针对性修复后110通过、12失败；8个为曲面EPA容量相关，4个为四来源圆柱法向精度约0.003119超过原0.002门。旧受影响query/patch/source的interpret/CUDA各18回归通过，新CUDA六support及大平移/BE修复8项通过；没有执行完整新122 CUDA矩阵或验收/build。产品修复c7f24353保原阈值/容量，只稳定equal-square候选比较、TYX初始化/函数绑定，测试修正真实padded/FP32 source/显式拒绝语义。详[完整首错与后继](p65-device-convex-support-family-report.md)。下一碰撞节点是针对这两类实际反例的通用收敛/法向改进，不提高容量/改fixture追绿；曲面patch/load、mesh/CCD均未新增资格。
+
+本批证据统一在`artifacts/p65-env-refresh-20261111-01`。N1/ROB/binding已完核对见`n1-rob-binding-acceptance-receipt.json`；COL各次原stdout/RAW_EXIT/完整gzip和源码快照保留，不重复运行producer补计数。原三个作者已交接释放，后继仍用隔离工作树；父保全部共享接缝与唯一串行执行。先查live agents/Git/WIP和本批owner收据再授新slot。三份旧K1未跟踪WIP保留。未push/mainmerge/发包，整个P6.5与Newton对齐未完成。
+
+G1兼容侧线保持原46.29秒/23145步的1米参考XY门失败，原完整131.48秒未通过；同输入额外native接触约-33nm只定位到激活集合差异，未证明长期漂移因果。不重跑长前缀或改变模型追绿，见[G1诊断](g1-drift-diagnosis-20261111.md)。下面历史pending与截止不覆盖本节。
 
 ## 历史基线（2026-11-11，MuJoCo-TYX T4与G1有限持续支撑已验收）
 

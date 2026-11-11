@@ -53,7 +53,7 @@ The uploaded/effective R is not assumed exactly orthogonal. Bound the symmetric 
 
 A final factor 1-2^-20 rounds the radius inward. Invalid or excessive defect disables this acceleration; it does not broaden source admission.
 
-Use pair-relative support coordinates throughout. The ball depth arithmetic uses the rationalized width above, avoiding cancellation of r and |s-r*n|. A local FP32 guard is charged to both depth endpoints and tangent residual: 8 unit-roundoffs times the two normalized pair-relative support L1 magnitudes plus r. This is a fixed engineering arithmetic allowance, not an interval-arithmetic or exact-native-rounding theorem. It is never a replacement for the original independent support/surface/normal gates. With guard e, require m>e, use tangent upper |v|+2e, depth lower d-e-(|v|+2e)^2/(2*(m-e)), upper d+e, and normal bound 2*(|v|+2e)/(m-e). Reserve part of the normal gate by requiring this bound <=1e-3. The original 2e-3 independent gate is unchanged.
+Use pair-relative support coordinates throughout. The ball depth arithmetic uses the rationalized width above, avoiding cancellation of r and |s-r*n|. A local FP32 guard is charged to both depth endpoints and tangent residual: 4 unit-roundoffs times the sum of the two normalized pair-relative support Euclidean norms and r. This is a fixed engineering arithmetic allowance, not an interval-arithmetic or exact-native-rounding theorem. It is never a replacement for the original independent support/surface/normal gates. With guard e, require m>e, use tangent upper |v|+2e, depth lower d-e-(|v|+2e)^2/(2*(m-e)), upper d+e, and normal bound 2*(|v|+2e)/(m-e). Reserve part of the normal gate by requiring this bound <=1e-3. The original 2e-3 independent gate is unchanged.
 
 All support calls count toward the existing loops. No additional support/refinement loop, CPU geometry, allocation, vertex/face default, source precision relaxation or device-to-HOST fallback is introduced. The new phase SUPPORT_BALL uses the existing bracket, witness and actual resource fields. Curved patch/load remain unsupported.
 
@@ -62,7 +62,7 @@ All support calls count toward the existing loops. No additional support/refinem
 First rerun the original twelve failing identities on their unchanged fixtures and gates; parent decides the final affected groups. Add only:
 
 1. Rotated shallow NE and EE overlap using the existing independent tangent-ball oracle.
-2. Isotropic E plus S with an oblique eccentric center: analytically two spheres, exact least depth and unique normal.
+2. Isotropic E plus S with oblique eccentric and contained centers: analytically two spheres, exact least depth and unique normal. The contained positive also has a uniform 4x scale variant; a 4x eccentric one-support case has guard width strictly above 8e-7 and must remain resource-limited.
 3. Same-center isotropic E plus S: all directions tie, no SUPPORT_BALL or invented unique normal.
 4. Near-concentric eccentric E plus S with a one-support budget: the ball direction is too weak to certify; retain resource failure.
 5. NN shallow overlap with four EPA vertices: no positive rolling radius, genuine EPA capacity negative.
@@ -70,3 +70,6 @@ First rerun the original twelve failing identities on their unchanged fixtures a
 Keep the existing NE/cap4 input. Resource limits constrain actual usage: it may now succeed by SUPPORT_BALL only if the original independent depth, normal, both support witnesses and <=4 actual vertices pass; otherwise retain the original RESOURCE_LIMIT outcome. Do not disable the algorithm when cap=4 just to reproduce an obsolete exhaustion expectation. GJK1/YE separation remains a mandatory negative.
 
 Exact source scope: `_tyx_convex_query_kernels.py`, existing `_tyx_convex_support_family.py` only if needed, `_device_convex_query.py` for appended phase. Tests remain in the three COL1a new files; this note is the sole additional document. No patch, binding, source registration, original K0 fixture, schema or training/robotics change. All authoring checkpoints are UNEXECUTED until the parent's sole serial slot validates them.
+
+
+Before any execution, parent approved replacing the initially proposed 8u/L1 engineering allowance with fixed 4u/Euclidean norms. The 8u proposal made independently exact normalized spheres fail only its bookkeeping margin. This is explicitly an engineering choice, not a directed-rounding proof. No later test-output-dependent guard reduction is allowed. A false success or independent normal-gate failure stops this acceleration's expansion for this batch. Nine new TYX identities are authored; not collected or executed.

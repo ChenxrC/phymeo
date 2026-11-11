@@ -1,6 +1,6 @@
 # GPU 训练连接：后续实施计划
 
-日期：2026-11-11。状态：**N1_QUALIFIED_INFERENCE**；N2–N4 尚未实施。
+日期：2026-11-11。状态：**N1_QUALIFIED_INFERENCE / N2_SHORT_CUDA_PPO_QUALIFIED**；N3–N4 尚未实施。N2完整新组23pass，两个W8任务各4次真实PPO更新/512 transitions，另GRU8步/64 transitions及一次更新通过；详[实际N2结果](../../development/p65-mujoco-tyx-n2-report.md)。下一训练节点为N3组合checkpoint，下面N2条目保留原验收合同。
 用户已取消08:00截止，本计划是[持续推进总计划](2026-11-11-newton-parity-continuous.md)的主线。父复用现有 Python313 CUDA Torch，建立隔离 profile，N1 实际完成22 passed、1单GPU硬件条件未测，八条轨迹共784个设备 world-steps。见[实际验收与范围](../../benchmarks/p65-cuda-policy-n1.md)；[早期准备记录](../../benchmarks/p65-cuda-policy-n1-preparation.md)及原容量失败仅作历史。CPU训练环境、TYX pin和原物理预算保持。下一节点为N2真实device VecEnv/RSL PPO；N1推理闭环不等于优化器训练。父在既有授权内冻结文件归属并调度唯一串行执行槽，隔离工作树可按明确边界并行纯编码。
 
 依据：[已审阅的源码调研](../../development/mujoco-tyx-gpu-training-research.md)。原方案制定只读取该报告及相关源码，调研基线 d9e5bf33、接口核对基线19feafc2；本批新环境来源与静态结果另见上述准备结果。以下源码路径均相对父仓库 C:/Users/38347/.codex/worktrees/p65-parallel-integration/phymeo；具体验收绑定执行时冻结源码。
@@ -14,7 +14,7 @@
 | MuJoCo-TYX CUDA 物理、公开 action/task、物理 checkpoint/CAS；已声明有限模型域 | 独立 MuJoCo-TYX device VecEnv、真实 CUDA Torch→物理→RSL PPO 整体资格 |
 | TaskSpec 的 FP32 仿射 observation、负二次 reward、区间 terminated；每次 export 是 Torch-owned D2D copy | 任意接触/传感/history reward DSL、物理 scratch 的零复制训练 view |
 | action 接受 TYX CudaArray 与 producer stream；复制成 owned packet，HOST 全字节审计后 CAS 提交 | 完整流程无 D2H/无同步/全 GPU 控制流 |
-| 原CPU训练环境；新增独立Python3.13/Torch2.12.0+cu126、RSL5.5.2、TensorDict0.15.5的N1运行资格 | 新device VecEnv/RSL PPO仍待N2；现有RslRlVecEnv的NumPy/HOST路径不等于新device路径 |
+| 原CPU训练环境；独立Python3.13/Torch2.12.0+cu126、RSL5.5.2、TensorDict0.15.5；新device VecEnv/RSL短程真实PPO已过N2 | 组合训练恢复待N3，规模/性能待N4；现有RslRlVecEnv的NumPy/HOST路径不等于新device路径 |
 
 复用数据流：task refresh → to_torch(copy=True) → CUDA policy → FP32 contiguous action → 固定 TYX from_torch/stream_from_torch → set_controls_from_device → 一次真实物理 step → 新 task frame → episode/rollout。保留 HOST 审计和同步并分别计数；不为速度删诊断，不承诺超越 Newton。
 

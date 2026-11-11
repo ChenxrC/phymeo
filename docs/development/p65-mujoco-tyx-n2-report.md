@@ -1,5 +1,15 @@
 # MuJoCo-TYX N2: device VecEnv and upstream CUDA PPO
 
+## Parent qualification — 2026-11-11
+
+**N2_SHORT_CUDA_PPO_QUALIFIED.** Parent tested `3b0f7486e5bee2214a1a9c03b1ff45f8dad0b40e`: the complete two-file group passed **23 tests in 78.68 s**, RAW_EXIT=0, on its first functional run. Author product/test snapshot `be9a3126` was integrated; parent only normalized five import groups and formatting before execution. Initial style-check failures and repairs are retained. The historical authoring status below describes the earlier unexecuted handoff.
+
+The two original eight-world tasks each completed four real upstream PPO updates and 512 physical world-transitions. Each update advanced Adam's actual step, changed parameter bytes, and retained finite loss/gradient evidence. The GRU case completed eight steps / 64 transitions and one update, checking both actor and critic done-column resets. Two additional independent same-backend HOST-control-entry comparisons covered eight steps each, including selected episode reset. The scope is functioning optimization and episode/transaction semantics, not a learned task or throughput result.
+
+Parent evidence: `artifacts/p65-parity-n2-rob1b-col1a-20261111-01/09-n2-first-cuda`. The same run saved five complete JSONL streams: two PPO streams (each 64 transitions, four return blocks and four updates), two protocol streams (eight transitions each), and one GRU stream (eight transitions). `n2-evidence-index.json` binds their exact bytes and nine run input files; it is a file-I/O/source-binding index, not a rerun of physics or PPO. Original complete HOST physics/input audits and their costs remain explicit. No new package, remote CI, N3 training checkpoint or large-scale performance claim is included.
+
+Next training node: N3 combined learner/environment/physics/RNG restore at completed update boundaries. The borrowed user Python313 Torch installation is now an active dependency and must remain installed.
+
 Status: CODE_READY_TESTS_PENDING / UNEXECUTED. Parent base 63614090. No project import,
 collection, numerical probe, tests, lint, formatter, installation or build is
 authorized in this author lane. Parent owns the sole execution slot.

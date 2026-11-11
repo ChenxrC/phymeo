@@ -1,5 +1,108 @@
 # ROB1d installed resident participant consumer
 
+Status: **QUALIFIED_INSTALLED_INTERPRET_AND_CUDA / EXECUTION_SLOT_RELEASED**.
+
+The two bounded public installed cases passed on both backends on 2026-11-11.
+This qualifies the installed integration slice described below; ROB1c's two R03
+numerical failures remain open. The author lane only read bounded metadata and
+updated this report. It did not execute a project command, read the large traces,
+repeat the package audit or rerun any accepted case.
+
+## Actual installed qualification
+
+Parent package source: 7964d1b192917821a919d8a6a065be5a6ac2bc32.
+The parent reports no subsequent product-source change in this batch.
+
+The tested consumer is the parent-formatted version at 29d74d79:
+SHA256 b4d5e3ab68ad829a4c90b91dd0fb70f13b88b2fbee0e9505cba4765a0e77de3c.
+Its original author version and pending commands remain in the historical
+section below; that older hash is not the tested consumer hash.
+
+Parent evidence root:
+artifacts/p65-parity-n4a-rob1d-col-reducer-20261111-01.
+
+| Actual command | Result | Meaning |
+| --- | --- | --- |
+| 80-build | RAW_EXIT 0 | New batch wheel built once. |
+| 81-install | RAW_EXIT 0 | New wheel installed into the fresh target. |
+| 82-wheel-parity | RAW_EXIT 0; BYTE_IDENTICAL; 494 products; 0 issues | Parent source, wheel members and installed product bytes agree. |
+| 83-rob-installed-interpret | RAW_EXIT 1 before physics | Original environment preflight rejected the Windows sys.prefix virtualenv-root path as a checkout entry. Retained first failure. |
+| 86-rob-installed-interpret-v2 | RAW_EXIT 0; PASS | Actual source-external interpret integration completed. |
+| 87-rob-installed-cuda-v2 | RAW_EXIT 0; PASS | Actual source-external CUDA integration completed. |
+
+Run 83's rejected path was
+C:/Users/38347/Documents/ChatGPT/phymeo/.venv. It was not a physical rejection or
+numerical failure. The parent changed only the external bootstrap: v2 removes
+the explicitly known main/src entry and sys.prefix root entry, retains existing
+dependency site-packages, and leaves the consumer's source-path guard and
+all-module provenance checks intact. Neither product nor consumer changed for
+this correction. The actual v2 bootstrap SHA256 is
+d1f6cc0909dc06ccabd3e5c8d43907b98a6fff2871b935ca496251be4eda41ce.
+Both final command receipts bind unchanged bootstrap/consumer before-after
+hashes. Run 83 and its original stderr remain evidence rather than being
+relabelled as a passing run.
+
+Actual execution cwd and installation were outside source:
+C:/Users/38347/AppData/Local/Temp/phymeo-parity-n4a-rob1d-wheel-20261111-01,
+with the installation under its site/ directory. Final module provenance lists
+297 loaded Phymeo modules per backend, all under that expected installation.
+
+| Saved successful result | interpret-v2 | cuda-v2 |
+| --- | ---: | ---: |
+| Main-scene physical step calls | 13 | 13 |
+| Accepted logical-world steps | 21 | 21 |
+| Complete typed trace events | 53 | 53 |
+| Logical trace bytes | 19,286,317 | 19,287,592 |
+| Compressed trace bytes | 731,975 | 733,214 |
+| Closed main-scene device-owned bytes (arm / mixed) | 0 / 0 | 0 / 0 |
+
+The output summaries are in the outside-source results/rob-interpret-v2 and
+results/rob-cuda-v2 directories. The full typed stream includes the separate
+foreign-owner negative scene's close check. Each PASS requires the public
+contact checks, full participant receipts, actual checkpoint successors,
+partial reset, foreign-owner rejection and resource checks described in the
+historical contract.
+
+The count is cumulative real work, not the final restored clock: R02 makes five
+calls in one world; the mixed case makes 3+2+2+1=8 calls in two worlds. Restore
+and reset change selected state/ticks but do not roll back cumulative accepted
+work. Thus each backend has 13 calls and 5+16=21 logical-world steps even though
+the two mixed worlds finish at ticks 1 and 6.
+
+The existing parent package-parity summary SHA256 is
+0520f4d2135109677db495ffa092345b41320cc8fc22fd342433c6080df78e17.
+Saved trace identities, copied from the actual successful summaries:
+
+- interpret logical SHA256: eeb8f460596e7f1104237362ef70cf65882ca427a8546c74b62901024a64ef55;
+  compressed SHA256: 7908b86a2446e3d21e8efb04a8e072bb41ec9032b4ad4951b138d7f59321e2cc.
+- CUDA logical SHA256: d66134b413513a0fe31cf0ec1738c2a922a3e1a3b3a32fc9cefc355ef8147dc7;
+  compressed SHA256: 6bf6885a320550f320888fe5a9c6ab7f357a5c367a8fc410fad7cfe21036e43d.
+
+Canonical evidence copying and the batch's final index remain parent-owned;
+this report update neither duplicates the archives nor independently rehashes
+the already-audited package or complete saved payload.
+
+## Accepted boundary
+
+The actual acceptance covers the declared R02 short window and the mixed
+R04/R06 installed transaction slice, using fixed, affine, floating and
+floating-affine mechanics. The mixed case uses two worlds, five participants
+and eleven full physical bodies per world, within the original <=33-body limit.
+Collision sampling remains HOST finite patches on one page; dynamics uses the
+selected TYX interpret or CUDA backend. Complete double-sided COM wrenches,
+full Jacobian load projection and the original diagnostic gates remain in force.
+
+R03's two existing numerical failures are explicitly excluded. This is not a
+claim of full ROB1c acceptance, arbitrary robot manipulation, larger participant
+or body/page capacities, device-only collision sampling, CCD, a cross-tree
+implicit KKT solve, or Newton functional/performance parity.
+
+## Historical authoring record (retained)
+
+The following record predates the successful parent executions above. Its
+pending commands and original author hash describe that historical checkpoint,
+not the current installed qualification.
+
 Status: **CODE_READY_TESTS_PENDING / AUTHORING_SLOT_RELEASED**.
 
 This authoring checkpoint adds an installed-package integration consumer, not a

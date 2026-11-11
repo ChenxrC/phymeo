@@ -34,6 +34,11 @@ Evidence: `artifacts/p65-parity-until-0720-20261112-01`, runs277–292 and
 snapshot also includes the separately qualified control-window evaluator repair;
 run290 passed its 192-worldstep installed CUDA consumer.
 
+The one-time parent audit binds all 37 unique source/config files from284/285/286:
+every run's before/after hashes and the current bytes agree, with zero mismatches.
+Receipt `ballc-parent-source-audit-01.json` SHA
+`a5836f33e023081367674a277acc6b3d3b96cf8df21683a045fb9f049a76aa88`.
+
 This adds primitive condim1/pyramidal3 contacts to fixed-root BALL/HINGE/SLIDE
 trees with the declared scalar NONE/FILTEREXACT actors. Limits, dry friction,
 direct BALL motors, FREE+BALL, broader mesh contact and G1 trajectory completion

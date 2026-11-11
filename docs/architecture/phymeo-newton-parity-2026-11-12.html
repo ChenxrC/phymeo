@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Phymeo / Newton 功能连接全景 · 2026-11-12</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'JetBrains Mono', monospace;
+      background: #020617;
+      min-height: 100vh;
+      padding: 2rem;
+      color: white;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    
+    .header {
+      margin-bottom: 2rem;
+    }
+    
+    .header-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 0.5rem;
+    }
+    
+    .pulse-dot {
+      width: 12px;
+      height: 12px;
+      background: #22d3ee;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: -0.025em;
+    }
+    
+    .subtitle {
+      color: #94a3b8;
+      font-size: 0.875rem;
+      margin-left: 1.75rem;
+    }
+    
+    .diagram-container {
+      background: rgba(15, 23, 42, 0.5);
+      border-radius: 1rem;
+      border: 1px solid #1e293b;
+      padding: 1.5rem;
+      overflow-x: auto;
+    }
+    
+    svg {
+      width: 100%;
+      min-width: 900px;
+      display: block;
+    }
+    
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+    
+    .card {
+      background: rgba(15, 23, 42, 0.5);
+      border-radius: 0.75rem;
+      border: 1px solid #1e293b;
+      padding: 1.25rem;
+    }
+    
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
+    }
+    
+    .card-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+    
+    .card-dot.cyan { background: #22d3ee; }
+    .card-dot.emerald { background: #34d399; }
+    .card-dot.violet { background: #a78bfa; }
+    .card-dot.amber { background: #fbbf24; }
+    .card-dot.rose { background: #fb7185; }
+    
+    .card h3 {
+      font-size: 0.875rem;
+      font-weight: 600;
+    }
+    
+    .card ul {
+      list-style: none;
+      color: #94a3b8;
+      font-size: 0.75rem;
+    }
+    
+    .card li {
+      margin-bottom: 0.375rem;
+    }
+    
+    .footer {
+      text-align: center;
+      margin-top: 1.5rem;
+      color: #475569;
+      font-size: 0.75rem;
+    }
+  
+body{font-family:system-ui,"Microsoft YaHei",sans-serif}.container{max-width:1440px}.subtitle{line-height:1.8;margin-left:0}.title{font-size:15px;font-weight:650}.sub{font-size:12px;fill:#cbd5e1}.pulse-dot{animation:none}.diagram-container{padding:18px}.legend{display:flex;gap:22px;flex-wrap:wrap;margin:20px 0;color:#cbd5e1;font-size:13px}.legend b{margin-right:6px}h2{font-size:20px;margin:28px 0 14px}.card p{font-size:14px;color:#cbd5e1;line-height:1.8}.card h3{font-size:16px;margin-bottom:12px}table{border-collapse:collapse;width:100%;font-size:14px;line-height:1.65}th,td{border:1px solid #334155;padding:14px;text-align:left;vertical-align:top}th{background:#0f172a;color:#e2e8f0}td{color:#cbd5e1}td:first-child{width:17%;color:#e2e8f0;font-weight:600}td:nth-child(2){width:41%}a{color:#67e8f9}.footer{color:#94a3b8;line-height:1.8}.status{color:#fbbf24;font-weight:600}.table-wrap{overflow-x:auto}@media(max-width:700px){body{padding:14px}h1{font-size:22px}td,th{min-width:200px}.subtitle{font-size:14px}}@media print{body{background:white;color:#111}.container{max-width:none}.cards{break-inside:avoid}.diagram-container{break-inside:avoid}table{font-size:11px}td,th{color:#222}}
+</style>
+</head>
+<body><div class="container"><header class="header"><div class="header-row"><span class="pulse-dot"></span><h1>Phymeo / Newton 功能连接全景</h1></div><p class="subtitle">2026-11-12 · 00:35–07:20 执行窗口 · <span id="snapshot-time">06:12 实际资格快照</span><br>功能域与证据分开记录。两条物理实现各自验收，不能互相借用支持声明。</p><p class="status" id="batch-status">已验：球树驱动与接触组合、公共三角边界查询、随机重置与控制窗口规模；最终增量安装包已通过。</p></header>
+<div class="legend"><span><b style="color:#34d399">●</b>本批新增且已验范围</span><span><b style="color:#94a3b8">●</b>复用既有范围</span><span><b style="color:#fbbf24">●</b>后继缺口</span><span><b style="color:#fb7185">●</b>真实失败保留</span></div>
+<main><div class="diagram-container"><svg viewBox="0 0 1200 950" role="img" aria-label="两条物理路径与训练工具的当前连接">
+<defs><marker id="arrowhead" markerWidth="8" markerHeight="7" refX="7" refY="3.5" orient="auto"><path d="M0 0 L8 3.5 L0 7Z" fill="#64748b"/></marker><pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse"><path d="M24 0 H0 V24" fill="none" stroke="#1e293b" stroke-width=".4"/></pattern></defs>
+<rect width="1200" height="950" fill="url(#grid)"/>
+<path d="M300,96 L300,160" stroke="#64748b" fill="none" stroke-width="1.5" marker-end="url(#arrowhead)"/><path d="M900,96 L900,160" stroke="#64748b" fill="none" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<path d="M300,236 L300,286" stroke="#64748b" fill="none" stroke-width="1.5" marker-end="url(#arrowhead)"/><path d="M900,236 L900,286" stroke="#64748b" fill="none" stroke-width="1.5" marker-end="url(#arrowhead)"/><path d="M300,362 L300,412" stroke="#64748b" fill="none" stroke-width="1.5" marker-end="url(#arrowhead)"/><path d="M900,362 L900,412" stroke="#64748b" fill="none" stroke-width="1.5" marker-end="url(#arrowhead)"/><path d="M300,488 L300,538" stroke="#64748b" fill="none" stroke-width="1.5" marker-end="url(#arrowhead)"/><path d="M900,488 L900,538" stroke="#64748b" fill="none" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+<path d="M900 614 H1185 V800 H600 V820" fill="none" stroke="#64748b" marker-end="url(#arrowhead)"/>
+<rect x="20" y="126" width="560" height="514" rx="12" stroke="#334155" fill="none"/><rect x="620" y="126" width="560" height="514" rx="12" stroke="#334155" fill="none"/>
+<g><rect x="30" y="20" width="540" height="76" rx="6" fill="#0f172a" stroke="#22d3ee" stroke-width="1.5"/><text x="46" y="44" class="title" fill="#22d3ee">统一场景入口 · resident lowering</text><text x="46" y="63" class="sub">URDF / MJCF / USD / 程序模型</text><text x="46" y="79" class="sub">SceneDeclaration 单资产/world；ROB1 另有多参与者入口</text></g>
+<g><rect x="630" y="20" width="540" height="76" rx="6" fill="#0f172a" stroke="#22d3ee" stroke-width="1.5"/><text x="646" y="44" class="title" fill="#22d3ee">CPU MuJoCo 编译</text><text x="646" y="63" class="sub">原 MjSpec / MjModel → 固定 native 模型映射</text><text x="646" y="79" class="sub">CPU 编译；默认 CUDA 物理选择 MuJoCo-TYX</text></g>
+<g><rect x="40" y="160" width="520" height="76" rx="6" fill="#0f172a" stroke="#94a3b8" stroke-width="1.5"/><text x="56" y="184" class="title" fill="#94a3b8">Phymeo resident 机器人</text><text x="56" y="203" class="sub">ordinary / affine / floating / floating-affine</text><text x="56" y="219" class="sub">多个机械参与者共享 world、完整 Jacobian 与反作用</text></g>
+<g><rect x="640" y="160" width="520" height="76" rx="6" fill="#0f172a" stroke="#34d399" stroke-width="1.5"/><text x="656" y="184" class="title" fill="#34d399">MuJoCo-TYX 机器人</text><text x="656" y="203" class="sub">固定 BALL 树 / 单自由根标量树；完整 M / J / bias</text><text x="656" y="219" class="sub">NONE / FILTEREXACT；BALL-C 固定球树接触已验</text></g>
+<g><rect x="40" y="286" width="520" height="76" rx="6" fill="#0f172a" stroke="#34d399" stroke-width="1.5"/><text x="56" y="310" class="title" fill="#34d399">设备凸体检测与既有载荷接缝</text><text x="56" y="329" class="sub">FK / AABB / BVH / 凸体查询与既有有限 patch</text><text x="56" y="345" class="sub">已有有限 patch → 材料点/J；COL3 独立查询见下方</text></g>
+<g><rect x="640" y="286" width="520" height="76" rx="6" fill="#0f172a" stroke="#94a3b8" stroke-width="1.5"/><text x="656" y="310" class="title" fill="#94a3b8">原生接触与共同求解</text><text x="656" y="329" class="sub">标量/自由根：condim 1/3/4/6、soft limits、dry friction</text><text x="656" y="345" class="sub">固定球树：condim 1/3；未含球 motor / FREE+BALL / limits</text></g>
+<g><rect x="40" y="412" width="520" height="76" rx="6" fill="#0f172a" stroke="#94a3b8" stroke-width="1.5"/><text x="56" y="436" class="title" fill="#94a3b8">完整载荷与一次 world 发布</text><text x="56" y="455" class="sub">当前仍有 HOST 材料点 / 力装配；设备完整动力学</text><text x="56" y="471" class="sub">W256 分页；双臂 R03 两项精度失败保留</text></g>
+<g><rect x="640" y="412" width="520" height="76" rx="6" fill="#0f172a" stroke="#34d399" stroke-width="1.5"/><text x="656" y="436" class="title" fill="#34d399">紧凑状态 + 唯一观察 scratch</text><text x="656" y="455" class="sub">本批：普通 step 不复制 MjData；完整 integration state</text><text x="656" y="471" class="sub">force / act / q / v 共同发布；原检查点与续训已验</text></g>
+<g><rect x="40" y="538" width="520" height="76" rx="6" fill="#0f172a" stroke="#94a3b8" stroke-width="1.5"/><text x="56" y="562" class="title" fill="#94a3b8">公共交互与回放</text><text x="56" y="581" class="sub">PolicyRunner / resident VecEnv / Three.js</text><text x="56" y="597" class="sub">抓取、递布与 G1 是组合案例，不替代模块验收</text></g>
+<g><rect x="640" y="538" width="520" height="76" rx="6" fill="#0f172a" stroke="#34d399" stroke-width="1.5"/><text x="656" y="562" class="title" fill="#34d399">显式 full / integration observation</text><text x="656" y="581" class="sub">共同物理 / 训练输入 / 更新 / RNG 一致性已验</text><text x="656" y="597" class="sub">N7：J8 / S128 / S256 共同物理与更新一致</text></g>
+<g><rect x="210" y="820" width="780" height="76" rx="6" fill="#0f172a" stroke="#22d3ee" stroke-width="1.5"/><text x="226" y="844" class="title" fill="#22d3ee">CUDA 训练与恢复 · MuJoCo-TYX 路径</text><text x="226" y="863" class="sub">RSL PPO / Adam / RNG；N5 随机重置、N6 控制窗口、N7 规模组合已验</text><text x="226" y="879" class="sub">S 原学习门通过；J 控制可达但 PPO 弱收益、R 学习门仍开放</text></g>
+<g><rect x="40" y="665" width="1120" height="100" rx="8" fill="#0f172a" stroke="#34d399" stroke-width="1.5"/><text x="56" y="692" class="title" fill="#34d399">独立公共查询 · COL3（不连接上方载荷箭头）</text><text x="56" y="715" class="sub">HOST 当前快照 → TYX BVH 候选 → 球/胶囊与三角面/mesh 的有限边界距离 → 完整原 facet / 事务发布</text><text x="56" y="737" class="sub">尚缺：M1 真实刚体设备来源、M2 真实变形 bank、连续碰撞与力学消费。空邻近带不证明实心物体分离。</text></g></svg></div>
+<div class="cards">
+<section class="card"><h3 style="color:#34d399">本批实质增量</h3><p id="delivered">固定球树 + 标量 NONE/FILTEREXACT + primitive 接触；公共有限三角边界查询；紧凑 native 镜像；随机重置与 D 步控制窗口、S128/S256 更新链；509 产品最终包及增量安装调用通过。</p></section>
+<section class="card"><h3 style="color:#fb7185">未被测试数掩盖的问题</h3><p id="failed">J 居中消融仍未学得；曲面 touch-SE 点表示未通过；G1 原 131.48 秒动作、R03 两项精度门仍未完成。不为追绿增加迭代或改案例。</p></section>
+<section class="card"><h3 style="color:#fbbf24">接下来按依赖补齐</h3><p id="next">M1 补刚体设备 mesh 来源；机器人按共享模型/传动缺口选择下一组合。M2 先建真实变形顶点 bank；J/R 先补可区分的优化诊断，停止无假设训练。</p></section>
+</div>
+<h2>八方向差异：大模块，不换算为完成百分比</h2>
+<div class="table-wrap"><table><thead><tr><th>方向</th><th>已有基础 / 已声明域</th><th>确实尚缺或不足</th></tr></thead><tbody><tr><td>场景与机器人</td><td>单自由根、固定 BALL+scalar+contact、合法标量执行器、多参与者</td><td>直接球驱动、FREE+BALL、统一多参与者装配、闭环/tendon/复杂传动、完整抓取释放</td></tr><tr><td>碰撞检测与响应</td><td>设备凸距离与有限 patch、BVH；公共有限 segment–triangle 邻近查询</td><td>曲面载荷桥；真实设备 mesh/变形来源、持续接触与广泛 CCD</td></tr><tr><td>GPU 与多场景</td><td>W256 小任务与分页；紧凑镜像；随机重置+D 窗口 S256 实测</td><td>复杂机器人异构规模、减少审计往返、同协议性能基线</td></tr><tr><td>训练与可微</td><td>真实 CUDA PPO/GRU 与续训；N5 状态随机化、N6 控制频率；S 已学会</td><td>J/R 学习质量、模型随机化/多任务；物理多步梯度另缺</td></tr><tr><td>传感与交互</td><td>深度/法线/ID、射线、基础 IMU 与真实回放</td><td>RGB/材质、批量传感、编辑与交互生态</td></tr><tr><td>跨域求解编排</td><td>事务、点端口、指定刚/布/软体组合</td><td>通用区域后端选择、界面耦合与共同失败恢复</td></tr><tr><td>布与体软体</td><td>拉伸/剪切/弯曲、自接触、四面体与双向载荷</td><td>密集折叠、持续静摩擦/换特征、稳健抓捏与放台</td></tr><tr><td>杆缆、MPM/流体</td><td>刚性连杆、粒子及弹性体基础</td><td>弯扭杆缆、粒子网格转移/塑性/流动、流固边界</td></tr></tbody></table></div>
+<h2>怎样判断推进有效</h2><p style="line-height:1.9;color:#cbd5e1">应交付可调用模块、多案例证据、保留的失败与安装入口。连续两次有针对性的尝试没有新信息，或仅靠调阈值、加预算、重复绿套，就停止该支线并换独立模块。性能仅报告同模型、精度、输出和观测条件；当前没有证明整体快于 Newton。</p>
+</main><footer class="footer">来源：<a href="../development/p65-parity-until-0720-20261112.md">本批实际结果</a> · <a href="../superpowers/plans/2026-11-12-newton-parity-until-0720.md">执行计划</a> · <a href="../development/phymeo-newton-panorama-2026-11-12.md">文字全景与固定 Newton 参照</a><br>模板基础：Cocoon AI MIT，许可随附于 <a href="licenses/architecture-diagram-template-MIT.txt">MIT 许可</a>。离线 HTML / 内嵌 SVG，无外部脚本或图片。</footer></div></body></html>

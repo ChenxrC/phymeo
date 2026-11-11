@@ -30,7 +30,7 @@ _REASON = (
     "SOURCE_PRECISION",
     "STALLED",
 )
-_PHASE = ("NONE", "ANALYTIC_ROUND", "GJK_CORE", "GJK_POLYTOPE", "EPA")
+_PHASE = ("NONE", "ANALYTIC_ROUND", "GJK_CORE", "GJK_POLYTOPE", "EPA", "GJK_SUPPORT")
 _PATCH_STATUS = ("ABSENT", "RESOLVED", "UNRESOLVED", "UNSUPPORTED", "RESOURCE_LIMIT")
 _WIRE = {
     "meta": (np.int32, (16,)),
@@ -246,6 +246,7 @@ class ConvexQueryPlan:
         self._last_result = None
         self._attempt_tag = 0
         self._attempt_ticks = None
+        self._attempt_shape_rotation = None
         self._buffers = {}
         self._kernels = None
         self._gjk = _integer(gjk_iterations, "gjk_iterations", 1, 64)
@@ -334,6 +335,7 @@ class ConvexQueryPlan:
     def _compile_source(self, view):
         from ..core.capabilities import SolverFailure
         from ..geometry._convex_hull import HullShape
+        from ..dynamics.rotation import quaternion_matrix
         from ._resident_collision_plan import ResidentStaticBinding
         from ._resident_convex_source import _DYNAMIC_BINDINGS, _LAYOUT_NAMES
 
@@ -349,6 +351,7 @@ class ConvexQueryPlan:
         self._world_index = {world: i for i, world in enumerate(keys)}
         offsets, ids, declared, uploaded, errors, frames = [0], [], [], [], [], []
         radii, stored_radii, radius_errors, kinds, tags, precision = [], [], [], [], [], []
+        dimensions, stored_dimensions, quaternions, rotations, stored_rotations = [], [], [], [], []
         source_rows = np.asarray(view.shape_rows, dtype=np.int32)
         source_groups = np.asarray(view.shape_groups, dtype=np.int32)
         shape_world_rows = []
@@ -373,7 +376,27 @@ class ConvexQueryPlan:
                 raise ValueError("unsupported convex source binding")
             if points.shape != (len(shape.vertex_ids), 3) or not np.isfinite(points).all():
                 raise ValueError("convex source material coordinates are invalid")
-            kind = {"sphere": 0, "capsule": 1, "hull": 2}.get(shape.kind, 3)
+            kind = {"sphere": 0, "capsule": 1, "hull": 2, "cylinder": 4, "cone": 5, "ellipsoid": 6}.get(shape.kind, 3)
+            dims = np.zeros(3, dtype=np.float64)
+            quaternion = np.asarray((0.0, 0.0, 0.0, 1.0), dtype=np.float64)
+            if kind >= 4:
+                if shape.curved is None or len(points) != 1 or shape.radius != 0:
+                    raise ValueError("curved convex source requires one original centre and no skin")
+                if type(binding) is ResidentStaticBinding and binding.motion.body_orientation_xyzw is not None:
+                    raise ValueError("independent static curved body orientation is unsupported")
+                dims[:len(shape.curved.dimensions_m)] = shape.curved.dimensions_m
+                quaternion = np.asarray(shape.curved.orientation_xyzw, dtype=np.float64)
+            asset_rotation = quaternion_matrix(quaternion[None])[0]
+            with np.errstate(over="ignore", under="ignore", invalid="ignore"):
+                stored_dims = np.asarray(dims, dtype=np.float32)
+                stored_rotation = np.asarray(asset_rotation, dtype=np.float32)
+            if not np.isfinite(stored_dims).all() or not np.isfinite(stored_rotation).all():
+                raise ValueError("curved dimensions or orientation cannot be represented in FP32")
+            dimensions.append(dims)
+            stored_dimensions.append(stored_dims)
+            quaternions.append(quaternion)
+            rotations.append(asset_rotation)
+            stored_rotations.append(stored_rotation)
             if kind == 2:
                 try:
                     HullShape(shape, CollisionMotion(points))
@@ -404,6 +427,10 @@ class ConvexQueryPlan:
             lost = lost or bool(np.any((local != 0) & (stored == 0)))
             lost = lost or bool(radius != 0 and abs(radius) < tiny)
             lost = lost or bool(shape.radius != 0 and radius == 0)
+            lost = lost or bool(np.any((dims != 0) & (stored_dims == 0)))
+            lost = lost or bool(np.any((stored_dims != 0) & (np.abs(stored_dims) < tiny)))
+            lost = lost or bool(np.any((asset_rotation != 0) & (stored_rotation == 0)))
+            lost = lost or bool(np.any((stored_rotation != 0) & (np.abs(stored_rotation) < tiny)))
             if kind == 2 and shape.radius != 0:
                 kind = 3
             begin = offsets[-1]
@@ -446,6 +473,22 @@ class ConvexQueryPlan:
             radius_quantization_error_m=np.asarray(radius_errors, dtype=np.float64),
             allowed_pairs=self._allowed,
         )
+        self._has_curved = any(kind in ("cylinder", "cone", "ellipsoid") for kind in kinds)
+        self._shape_dimensions = np.asarray(stored_dimensions, dtype=np.float32).reshape(-1, 3)
+        self._asset_rotation = np.asarray(stored_rotations, dtype=np.float32).reshape(-1, 3, 3)
+        if self._has_curved:
+            original_dims = np.asarray(dimensions, dtype=np.float64).reshape(-1, 3)
+            original_rotations = np.asarray(rotations, dtype=np.float64).reshape(-1, 3, 3)
+            self._source.update(
+                support_family_schema="resident-convex-support-family-v1",
+                declared_dimensions_m=original_dims,
+                uploaded_dimensions_m=self._shape_dimensions,
+                dimension_quantization_error_m=self._shape_dimensions.astype(np.float64)-original_dims,
+                declared_orientation_xyzw=np.asarray(quaternions, dtype=np.float64).reshape(-1, 4),
+                declared_asset_rotation=original_rotations,
+                uploaded_asset_rotation=self._asset_rotation,
+                asset_rotation_quantization_error=self._asset_rotation.astype(np.float64)-original_rotations,
+            )
         self._tags = np.asarray(tags, dtype=np.int32).reshape(-1, 4)
         self._precision = np.asarray(precision, dtype=np.int32)
 
@@ -466,12 +509,16 @@ class ConvexQueryPlan:
             "ids": self._source["vertex_ids"],
             "radius": self._source["uploaded_radius_m"],
             "precision": self._precision,
+            "dimensions": self._shape_dimensions,
+            "asset_rotation": self._asset_rotation,
         }
         layouts = {name: (array.shape, array.dtype, array) for name, array in static.items()}
         scratch = {
             "pose": ((s, 12), np.float32),
             "stamp": ((s, 3), np.int32),
             "world_points": ((v, 3), np.float32),
+            "shape_rotation": ((s, 3, 3), np.float32),
+            "support_points": ((t, 2, 3), np.float32),
             "pairs": ((p, 2), np.int32),
             "vertices": ((t, self._vertices, 9), np.float32),
             "vertex_slots": ((t, self._vertices, 2), np.int32),
@@ -623,6 +670,16 @@ class ConvexQueryPlan:
             raise RuntimeError("invalid convex pose readback")
         if stamp.shape != (s, 3) or stamp.dtype != np.int32:
             raise RuntimeError("invalid convex pose stamp")
+        if self._has_curved:
+            frame = self._attempt_shape_rotation
+            if frame is None or frame.shape != (s, 3, 3) or frame.dtype != np.float32 or not np.isfinite(frame).all():
+                raise RuntimeError("invalid curved effective shape rotation")
+            expected = pose[:, 3:].astype(np.float64).reshape(s, 3, 3) @ self._asset_rotation.astype(np.float64)
+            error = 8*np.finfo(np.float32).eps*np.maximum(
+                1.0, np.abs(pose[:, 3:].astype(np.float64).reshape(s, 3, 3)) @ np.abs(self._asset_rotation.astype(np.float64))
+            )
+            if np.any(np.abs(frame.astype(np.float64)-expected) > error):
+                raise RuntimeError("curved effective rotation differs from accepted body and asset")
         expected_ticks = {}
         for i, key in enumerate(self._shape_keys):
             slot = view.accepted.slots[key.world]
@@ -944,6 +1001,8 @@ class ConvexQueryPlan:
             accepted_slots=dict(view.accepted.slots),
             owned_buffer_layout=self._owned_layout,
         )
+        if self._has_curved:
+            source["effective_shape_rotation"] = self._attempt_shape_rotation
         stats = {
             "attempt_delta": dict(attempt_delta),
             "broadphase_delta": dict(broadphase_delta),
@@ -1057,6 +1116,8 @@ class ConvexQueryPlan:
                                 b["pose"],
                                 b["stamp"],
                                 b["world_points"],
+                                b["asset_rotation"],
+                                b["shape_rotation"],
                             )
                         if self._capacity:
                             self._upload_pairs(pairs)
@@ -1082,6 +1143,9 @@ class ConvexQueryPlan:
                                     b["radius"],
                                     b["precision"],
                                     b["world_points"],
+                                    b["dimensions"],
+                                    b["shape_rotation"],
+                                    b["support_points"],
                                     b["pairs"],
                                     b["vertices"],
                                     b["vertex_slots"],
@@ -1146,6 +1210,8 @@ class ConvexQueryPlan:
                                 base += int(written[index, 2]) if int(written[index, 0]) == 1 else 0
                         self._sync()
                         pose, stamp = self._read(b["pose"]), self._read(b["stamp"])
+                        if self._has_curved:
+                            self._attempt_shape_rotation = self._read(b["shape_rotation"])
                         self._attempt_ticks = self._read(view.accepted.ticks)
                         if self._attempt_ticks.dtype != np.int32 or self._attempt_ticks.shape != (
                             len(view.accepted.world_keys),
@@ -1183,6 +1249,7 @@ class ConvexQueryPlan:
                 raise
             finally:
                 self._attempt_ticks = None
+                self._attempt_shape_rotation = None
 
     def _publish_staged(self, result):
         """Assignment-only publication; all geometry construction precedes swap."""

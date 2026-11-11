@@ -99,7 +99,10 @@ def fill_convex_patch(
         status = 2
         dimension = -1
         count = 0
-        if distance_meta[out, 0] == 1 and scale >= 1.0:
+        if kind_a >= 4 or kind_b >= 4:
+            # A support witness is not a complete curved contact patch.
+            status = 3
+        elif distance_meta[out, 0] == 1 and scale >= 1.0:
             if kind_a == 0 and kind_b == 0 and a1 == a0 + 1 and b1 == b0 + 1:
                 ax = points[a0, 0]
                 ay = points[a0, 1]

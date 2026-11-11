@@ -8,6 +8,7 @@ all material weights refer to actual original vertex IDs. No response is solved.
 import tyx as tx
 
 from ._tyx_convex_support import clamp01, det3, dot3
+from ._tyx_convex_support_family import curved_support_x, curved_support_y, curved_support_z
 
 
 def gather_convex_pose(
@@ -26,6 +27,8 @@ def gather_convex_pose(
     pose: tx.ndarray(tx.f32, 2),
     stamp: tx.ndarray(tx.i32, 2),
     points: tx.ndarray(tx.f32, 2),
+    asset_rotation: tx.ndarray(tx.f32, 3),
+    shape_rotation: tx.ndarray(tx.f32, 3),
 ):
     for shape in tx.range(count):
         if layouts[shape] == selected_layout:
@@ -54,6 +57,14 @@ def gather_convex_pose(
             for c in tx.static_range(12):
                 if not tx.isfinite(pose[shape, c]):
                     stamp[shape, 0] = 0
+            for axis in tx.static_range(3):
+                for column in tx.static_range(3):
+                    entry = 0.0
+                    for inner in tx.static_range(3):
+                        entry = tx.add_rn(entry, tx.mul_rn(pose[shape, 3+3*axis+inner], asset_rotation[shape, inner, column]))
+                    shape_rotation[shape, axis, column] = entry
+                    if not tx.isfinite(entry):
+                        stamp[shape, 0] = 0
             for i in range(offsets[shape], offsets[shape + 1]):
                 for a in tx.static_range(3):
                     value = pose[shape, a]
@@ -103,6 +114,9 @@ def query_convex_pairs(
     radii: tx.ndarray(tx.f32, 1),
     precision: tx.ndarray(tx.i32, 1),
     points: tx.ndarray(tx.f32, 2),
+    dimensions: tx.ndarray(tx.f32, 2),
+    shape_rotation: tx.ndarray(tx.f32, 3),
+    support_points: tx.ndarray(tx.f32, 3),
     pairs: tx.ndarray(tx.i32, 2),
     vertices: tx.ndarray(tx.f32, 3),
     vertex_slots: tx.ndarray(tx.i32, 3),
@@ -131,6 +145,9 @@ def query_convex_pairs(
         b1 = tags[b, 2]
         ka = tags[a, 0]
         kb = tags[b, 0]
+        full_surface = 0
+        if ka >= 4 or kb >= 4:
+            full_surface = 1
         ra = radii[a]
         rb = radii[b]
         scale = 1.0
@@ -150,6 +167,10 @@ def query_convex_pairs(
                 y = points[i, 1] - points[j, 1]
                 z = points[i, 2] - points[j, 2]
                 diameter = tx.max(diameter, tx.sqrt(dot3(x, y, z, x, y, z)))
+        if ka == 4 or ka == 5:
+            diameter = 2.0*(dimensions[a, 0]+dimensions[a, 1])
+        elif ka == 6:
+            diameter = 2.0*tx.max(dimensions[a, 0], tx.max(dimensions[a, 1], dimensions[a, 2]))
         scale = tx.max(scale, diameter + 2.0 * ra)
         diameter = 0.0
         for i in range(b0, b1):
@@ -161,12 +182,29 @@ def query_convex_pairs(
                 y = points[i, 1] - points[j, 1]
                 z = points[i, 2] - points[j, 2]
                 diameter = tx.max(diameter, tx.sqrt(dot3(x, y, z, x, y, z)))
+        if kb == 4 or kb == 5:
+            diameter = 2.0*(dimensions[b, 0]+dimensions[b, 1])
+        elif kb == 6:
+            diameter = 2.0*tx.max(dimensions[b, 0], tx.max(dimensions[b, 1], dimensions[b, 2]))
         scale = tx.max(scale, diameter + 2.0 * rb)
         dx = bcx - acx
         dy = bcy - acy
         dz = bcz - acz
         scale = tx.max(scale, tx.sqrt(dot3(dx, dy, dz, dx, dy, dz)))
         gap[out, 3] = scale
+        curved_precision = 0
+        for side in tx.static_range(2):
+            shape = a
+            if side == 1:
+                shape = b
+            if tags[shape, 0] >= 4:
+                for axis in tx.static_range(3):
+                    if dimensions[shape, axis] > 0.0 and dimensions[shape, axis]/scale < 1.0842021724855044e-19:
+                        curved_precision = 1
+        if full_surface != 0:
+            # Full support already includes the round side's skin.
+            ra = 0.0
+            rb = 0.0
         meta[out, 12] = attempt
         meta[out, 13] = out
         status = 0
@@ -189,10 +227,10 @@ def query_convex_pairs(
         for k in tx.static_range(4):
             weights[lane, k] = 0.0
             indices[lane, k] = 0
-        if precision[a] != 0 or precision[b] != 0:
+        if precision[a] != 0 or precision[b] != 0 or curved_precision != 0:
             status = 3
             reason = 9
-        elif ka > 2 or kb > 2:
+        elif ka == 3 or kb == 3 or ka < 0 or kb < 0 or ka > 6 or kb > 6:
             status = 3
             reason = 8
         elif ka < 2 and kb < 2:
@@ -283,7 +321,9 @@ def query_convex_pairs(
                         vertices[lane, k, 6 + c] = points[bi, c]
         else:
             phase = 3
-            if ka < 2 or kb < 2:
+            if full_surface != 0:
+                phase = 5
+            elif ka < 2 or kb < 2:
                 phase = 2
             simplex_n = 0
             cx = 0.0
@@ -326,11 +366,55 @@ def query_convex_pairs(
                         ):
                             best_b = value
                             ib = j
+                    # All three support sites share this full-surface adapter.
+                    for support_side in tx.static_range(2):
+                        support_shape = a
+                        support_slot = ia
+                        direction_sign = 1.0
+                        if support_side == 1:
+                            support_shape = b
+                            support_slot = ib
+                            direction_sign = -1.0
+                        offset_x = 0.0
+                        offset_y = 0.0
+                        offset_z = 0.0
+                        if full_surface != 0:
+                            direction_scale = tx.max(tx.abs(dx), tx.max(tx.abs(dy), tx.abs(dz)))
+                            if direction_scale == 0.0:
+                                direction_scale = 1.0
+                            direction_x = direction_sign*dx/direction_scale
+                            direction_y = direction_sign*dy/direction_scale
+                            direction_z = direction_sign*dz/direction_scale
+                            if tags[support_shape, 0] >= 4:
+                                local_x = dot3(shape_rotation[support_shape, 0, 0], shape_rotation[support_shape, 1, 0], shape_rotation[support_shape, 2, 0], direction_x, direction_y, direction_z)
+                                local_y = dot3(shape_rotation[support_shape, 0, 1], shape_rotation[support_shape, 1, 1], shape_rotation[support_shape, 2, 1], direction_x, direction_y, direction_z)
+                                local_z = dot3(shape_rotation[support_shape, 0, 2], shape_rotation[support_shape, 1, 2], shape_rotation[support_shape, 2, 2], direction_x, direction_y, direction_z)
+                                dim_x = dimensions[support_shape, 0]/scale
+                                dim_y = dimensions[support_shape, 1]/scale
+                                dim_z = dimensions[support_shape, 2]/scale
+                                point_x = curved_support_x(tags[support_shape, 0], local_x, local_y, local_z, dim_x, dim_y, dim_z)
+                                point_y = curved_support_y(tags[support_shape, 0], local_x, local_y, local_z, dim_x, dim_y, dim_z)
+                                point_z = curved_support_z(tags[support_shape, 0], local_x, local_y, local_z, dim_x, dim_y, dim_z)
+                                offset_x = scale*dot3(shape_rotation[support_shape, 0, 0], shape_rotation[support_shape, 0, 1], shape_rotation[support_shape, 0, 2], point_x, point_y, point_z)
+                                offset_y = scale*dot3(shape_rotation[support_shape, 1, 0], shape_rotation[support_shape, 1, 1], shape_rotation[support_shape, 1, 2], point_x, point_y, point_z)
+                                offset_z = scale*dot3(shape_rotation[support_shape, 2, 0], shape_rotation[support_shape, 2, 1], shape_rotation[support_shape, 2, 2], point_x, point_y, point_z)
+                            else:
+                                direction_length = tx.sqrt(dot3(direction_x, direction_y, direction_z, direction_x, direction_y, direction_z))
+                                if direction_length > 0.0:
+                                    offset_x = radii[support_shape]*direction_x/direction_length
+                                    offset_y = radii[support_shape]*direction_y/direction_length
+                                    offset_z = radii[support_shape]*direction_z/direction_length
+                        for support_axis in tx.static_range(3):
+                            support_points[lane, support_side, support_axis] = points[support_slot, support_axis]
+                        if full_surface != 0:
+                            support_points[lane, support_side, 0] = support_points[lane, support_side, 0]+offset_x
+                            support_points[lane, support_side, 1] = support_points[lane, support_side, 1]+offset_y
+                            support_points[lane, support_side, 2] = support_points[lane, support_side, 2]+offset_z
                     support_calls = support_calls + 1
                     gjk_used = iteration + 1
-                    px = ((points[ia, 0] - ox) - (points[ib, 0] - ox)) / scale
-                    py = ((points[ia, 1] - oy) - (points[ib, 1] - oy)) / scale
-                    pz = ((points[ia, 2] - oz) - (points[ib, 2] - oz)) / scale
+                    px = ((support_points[lane, 0, 0] - ox) - (support_points[lane, 1, 0] - ox)) / scale
+                    py = ((support_points[lane, 0, 1] - oy) - (support_points[lane, 1, 1] - oy)) / scale
+                    pz = ((support_points[lane, 0, 2] - oz) - (support_points[lane, 1, 2] - oz)) / scale
                     bound = 0.0
                     if closest_square > 0.0:
                         bound = tx.max(0.0, dot3(cx, cy, cz, px, py, pz) / tx.sqrt(closest_square))
@@ -348,8 +432,8 @@ def query_convex_pairs(
                         vertices[lane, simplex_n, 1] = py
                         vertices[lane, simplex_n, 2] = pz
                         for c in tx.static_range(3):
-                            vertices[lane, simplex_n, 3 + c] = points[ia, c]
-                            vertices[lane, simplex_n, 6 + c] = points[ib, c]
+                            vertices[lane, simplex_n, 3 + c] = support_points[lane, 0, c]
+                            vertices[lane, simplex_n, 6 + c] = support_points[lane, 1, c]
                         simplex_n = simplex_n + 1
                     # Enumerate the finite simplex's nonempty faces. Gram solves
                     # are at most 3x3; no approximate support point is fabricated.
@@ -487,13 +571,13 @@ def query_convex_pairs(
                     else:
                         closest_square = best_square
                         distance = tx.sqrt(best_square)
-                        if distance <= 8e-7 or (distance <= 1e-5 and ka >= 2 and kb >= 2):
+                        if distance <= 8e-7 or (distance <= 1e-5 and ((ka >= 2 and kb >= 2) or full_surface != 0)):
                             # A tilted shallow overlap can stop just outside the
                             # origin. Polytopes within 1e-5 go to EPA instead of
                             # publishing that residual as separation. A round
                             # core inside that same plane tolerance is contained:
                             # the leftover is not a surface gap.
-                            if ka < 2 or kb < 2:
+                            if full_surface == 0 and (ka < 2 or kb < 2):
                                 status = 3
                                 reason = 3
                             else:
@@ -590,10 +674,54 @@ def query_convex_pairs(
                             ):
                                 best_b = value
                                 ib = j
+                        # All three support sites share this full-surface adapter.
+                        for support_side in tx.static_range(2):
+                            support_shape = a
+                            support_slot = ia
+                            direction_sign = 1.0
+                            if support_side == 1:
+                                support_shape = b
+                                support_slot = ib
+                                direction_sign = -1.0
+                            offset_x = 0.0
+                            offset_y = 0.0
+                            offset_z = 0.0
+                            if full_surface != 0:
+                                direction_scale = tx.max(tx.abs(dx), tx.max(tx.abs(dy), tx.abs(dz)))
+                                if direction_scale == 0.0:
+                                    direction_scale = 1.0
+                                direction_x = direction_sign*dx/direction_scale
+                                direction_y = direction_sign*dy/direction_scale
+                                direction_z = direction_sign*dz/direction_scale
+                                if tags[support_shape, 0] >= 4:
+                                    local_x = dot3(shape_rotation[support_shape, 0, 0], shape_rotation[support_shape, 1, 0], shape_rotation[support_shape, 2, 0], direction_x, direction_y, direction_z)
+                                    local_y = dot3(shape_rotation[support_shape, 0, 1], shape_rotation[support_shape, 1, 1], shape_rotation[support_shape, 2, 1], direction_x, direction_y, direction_z)
+                                    local_z = dot3(shape_rotation[support_shape, 0, 2], shape_rotation[support_shape, 1, 2], shape_rotation[support_shape, 2, 2], direction_x, direction_y, direction_z)
+                                    dim_x = dimensions[support_shape, 0]/scale
+                                    dim_y = dimensions[support_shape, 1]/scale
+                                    dim_z = dimensions[support_shape, 2]/scale
+                                    point_x = curved_support_x(tags[support_shape, 0], local_x, local_y, local_z, dim_x, dim_y, dim_z)
+                                    point_y = curved_support_y(tags[support_shape, 0], local_x, local_y, local_z, dim_x, dim_y, dim_z)
+                                    point_z = curved_support_z(tags[support_shape, 0], local_x, local_y, local_z, dim_x, dim_y, dim_z)
+                                    offset_x = scale*dot3(shape_rotation[support_shape, 0, 0], shape_rotation[support_shape, 0, 1], shape_rotation[support_shape, 0, 2], point_x, point_y, point_z)
+                                    offset_y = scale*dot3(shape_rotation[support_shape, 1, 0], shape_rotation[support_shape, 1, 1], shape_rotation[support_shape, 1, 2], point_x, point_y, point_z)
+                                    offset_z = scale*dot3(shape_rotation[support_shape, 2, 0], shape_rotation[support_shape, 2, 1], shape_rotation[support_shape, 2, 2], point_x, point_y, point_z)
+                                else:
+                                    direction_length = tx.sqrt(dot3(direction_x, direction_y, direction_z, direction_x, direction_y, direction_z))
+                                    if direction_length > 0.0:
+                                        offset_x = radii[support_shape]*direction_x/direction_length
+                                        offset_y = radii[support_shape]*direction_y/direction_length
+                                        offset_z = radii[support_shape]*direction_z/direction_length
+                            for support_axis in tx.static_range(3):
+                                support_points[lane, support_side, support_axis] = points[support_slot, support_axis]
+                            if full_surface != 0:
+                                support_points[lane, support_side, 0] = support_points[lane, support_side, 0]+offset_x
+                                support_points[lane, support_side, 1] = support_points[lane, support_side, 1]+offset_y
+                                support_points[lane, support_side, 2] = support_points[lane, support_side, 2]+offset_z
                         support_calls = support_calls + 1
-                        px = ((points[ia, 0] - ox) - (points[ib, 0] - ox)) / scale
-                        py = ((points[ia, 1] - oy) - (points[ib, 1] - oy)) / scale
-                        pz = ((points[ia, 2] - oz) - (points[ib, 2] - oz)) / scale
+                        px = ((support_points[lane, 0, 0] - ox) - (support_points[lane, 1, 0] - ox)) / scale
+                        py = ((support_points[lane, 0, 1] - oy) - (support_points[lane, 1, 1] - oy)) / scale
+                        pz = ((support_points[lane, 0, 2] - oz) - (support_points[lane, 1, 2] - oz)) / scale
                         duplicate = 0
                         for k in range(vertex_count):
                             ex = px - vertices[lane, k, 0]
@@ -612,8 +740,8 @@ def query_convex_pairs(
                                 vertices[lane, vertex_count, 1] = py
                                 vertices[lane, vertex_count, 2] = pz
                                 for c in tx.static_range(3):
-                                    vertices[lane, vertex_count, 3 + c] = points[ia, c]
-                                    vertices[lane, vertex_count, 6 + c] = points[ib, c]
+                                    vertices[lane, vertex_count, 3 + c] = support_points[lane, 0, c]
+                                    vertices[lane, vertex_count, 6 + c] = support_points[lane, 1, c]
                                 vertex_count = vertex_count + 1
                 found = 0
                 # Boundary-containing tetrahedra are useful for a true contact
@@ -795,10 +923,54 @@ def query_convex_pairs(
                                 ):
                                     best_b = value
                                     ib = j
+                            # All three support sites share this full-surface adapter.
+                            for support_side in tx.static_range(2):
+                                support_shape = a
+                                support_slot = ia
+                                direction_sign = 1.0
+                                if support_side == 1:
+                                    support_shape = b
+                                    support_slot = ib
+                                    direction_sign = -1.0
+                                offset_x = 0.0
+                                offset_y = 0.0
+                                offset_z = 0.0
+                                if full_surface != 0:
+                                    direction_scale = tx.max(tx.abs(dx), tx.max(tx.abs(dy), tx.abs(dz)))
+                                    if direction_scale == 0.0:
+                                        direction_scale = 1.0
+                                    direction_x = direction_sign*dx/direction_scale
+                                    direction_y = direction_sign*dy/direction_scale
+                                    direction_z = direction_sign*dz/direction_scale
+                                    if tags[support_shape, 0] >= 4:
+                                        local_x = dot3(shape_rotation[support_shape, 0, 0], shape_rotation[support_shape, 1, 0], shape_rotation[support_shape, 2, 0], direction_x, direction_y, direction_z)
+                                        local_y = dot3(shape_rotation[support_shape, 0, 1], shape_rotation[support_shape, 1, 1], shape_rotation[support_shape, 2, 1], direction_x, direction_y, direction_z)
+                                        local_z = dot3(shape_rotation[support_shape, 0, 2], shape_rotation[support_shape, 1, 2], shape_rotation[support_shape, 2, 2], direction_x, direction_y, direction_z)
+                                        dim_x = dimensions[support_shape, 0]/scale
+                                        dim_y = dimensions[support_shape, 1]/scale
+                                        dim_z = dimensions[support_shape, 2]/scale
+                                        point_x = curved_support_x(tags[support_shape, 0], local_x, local_y, local_z, dim_x, dim_y, dim_z)
+                                        point_y = curved_support_y(tags[support_shape, 0], local_x, local_y, local_z, dim_x, dim_y, dim_z)
+                                        point_z = curved_support_z(tags[support_shape, 0], local_x, local_y, local_z, dim_x, dim_y, dim_z)
+                                        offset_x = scale*dot3(shape_rotation[support_shape, 0, 0], shape_rotation[support_shape, 0, 1], shape_rotation[support_shape, 0, 2], point_x, point_y, point_z)
+                                        offset_y = scale*dot3(shape_rotation[support_shape, 1, 0], shape_rotation[support_shape, 1, 1], shape_rotation[support_shape, 1, 2], point_x, point_y, point_z)
+                                        offset_z = scale*dot3(shape_rotation[support_shape, 2, 0], shape_rotation[support_shape, 2, 1], shape_rotation[support_shape, 2, 2], point_x, point_y, point_z)
+                                    else:
+                                        direction_length = tx.sqrt(dot3(direction_x, direction_y, direction_z, direction_x, direction_y, direction_z))
+                                        if direction_length > 0.0:
+                                            offset_x = radii[support_shape]*direction_x/direction_length
+                                            offset_y = radii[support_shape]*direction_y/direction_length
+                                            offset_z = radii[support_shape]*direction_z/direction_length
+                                for support_axis in tx.static_range(3):
+                                    support_points[lane, support_side, support_axis] = points[support_slot, support_axis]
+                                if full_surface != 0:
+                                    support_points[lane, support_side, 0] = support_points[lane, support_side, 0]+offset_x
+                                    support_points[lane, support_side, 1] = support_points[lane, support_side, 1]+offset_y
+                                    support_points[lane, support_side, 2] = support_points[lane, support_side, 2]+offset_z
                             support_calls = support_calls + 1
-                            px = ((points[ia, 0] - ox) - (points[ib, 0] - ox)) / scale
-                            py = ((points[ia, 1] - oy) - (points[ib, 1] - oy)) / scale
-                            pz = ((points[ia, 2] - oz) - (points[ib, 2] - oz)) / scale
+                            px = ((support_points[lane, 0, 0] - ox) - (support_points[lane, 1, 0] - ox)) / scale
+                            py = ((support_points[lane, 0, 1] - oy) - (support_points[lane, 1, 1] - oy)) / scale
+                            pz = ((support_points[lane, 0, 2] - oz) - (support_points[lane, 1, 2] - oz)) / scale
                             reach = dot3(dx, dy, dz, px, py, pz)
                             duplicate = 0
                             for k in range(vertex_count):
@@ -924,8 +1096,8 @@ def query_convex_pairs(
                                 vertex_slots[lane, new_vertex, 0] = ia
                                 vertex_slots[lane, new_vertex, 1] = ib
                                 for c in tx.static_range(3):
-                                    vertices[lane, new_vertex, 3 + c] = points[ia, c]
-                                    vertices[lane, new_vertex, 6 + c] = points[ib, c]
+                                    vertices[lane, new_vertex, 3 + c] = support_points[lane, 0, c]
+                                    vertices[lane, new_vertex, 6 + c] = support_points[lane, 1, c]
                                 vertex_count = vertex_count + 1
                                 edge_count = 0
                                 visible_count = 0
@@ -1041,12 +1213,19 @@ def query_convex_pairs(
             # IDs. At most four simplex members contribute to either shape.
             for side in tx.static_range(2):
                 used = 0
+                core_x = 0.0
+                core_y = 0.0
+                core_z = 0.0
                 for k in range(active_count):
                     weight = weights[lane, k]
                     selected = indices[lane, k]
                     if weight > 0.0:
                         slot = vertex_slots[lane, selected, side]
                         node = original_ids[slot]
+                        if full_surface != 0:
+                            core_x = core_x + weight*points[slot, 0]
+                            core_y = core_y + weight*points[slot, 1]
+                            core_z = core_z + weight*points[slot, 2]
                         target = -1
                         for j in range(used):
                             if material_ids[out, side, j] == node:
@@ -1078,11 +1257,16 @@ def query_convex_pairs(
                 radius = ra
                 if side == 1:
                     radius = -rb
-                skin_offset[out, side, 0] = radius * nx
-                skin_offset[out, side, 1] = radius * ny
-                skin_offset[out, side, 2] = radius * nz
-                for c in tx.static_range(3):
-                    surface[out, side, c] = surface[out, side, c] + skin_offset[out, side, c]
+                if full_surface != 0:
+                    skin_offset[out, side, 0] = surface[out, side, 0]-core_x
+                    skin_offset[out, side, 1] = surface[out, side, 1]-core_y
+                    skin_offset[out, side, 2] = surface[out, side, 2]-core_z
+                else:
+                    skin_offset[out, side, 0] = radius * nx
+                    skin_offset[out, side, 1] = radius * ny
+                    skin_offset[out, side, 2] = radius * nz
+                    for c in tx.static_range(3):
+                        surface[out, side, c] = surface[out, side, c] + skin_offset[out, side, c]
         meta[out, 0] = status
         meta[out, 1] = relation
         meta[out, 2] = reason

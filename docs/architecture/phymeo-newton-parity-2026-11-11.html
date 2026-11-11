@@ -131,12 +131,32 @@
   </style>
 <style>
 body{font-family:'Cascadia Mono','Microsoft YaHei',monospace}.container{max-width:1320px}.pulse-dot{animation:none}.banner{padding:18px 22px;margin-bottom:24px;background:#0f172a;border-left:3px solid #fbbf24;color:#cbd5e1;line-height:1.8}.box rect{rx:6;fill:#0f172a;stroke-width:1.5}.box text{text-anchor:middle;fill:#f8fafc;font-size:15px;font-weight:600}.box .sub{fill:#94a3b8;font-size:12px;font-weight:400}.cyan rect{stroke:#22d3ee}.green rect{stroke:#34d399}.violet rect{stroke:#a78bfa}.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:8px}.amber{background:#fbbf24}.card p{color:#cbd5e1;font-size:13px;line-height:1.85;margin-top:14px}.matrix{margin-top:36px}h2{font-size:20px;margin-bottom:18px}table{border-collapse:collapse;width:100%;font-size:13px;line-height:1.8}td,th{text-align:left;border:1px solid #1e293b;padding:13px 16px;vertical-align:top}th{color:#22d3ee;background:#0f172a}td{color:#cbd5e1}td:first-child{width:180px;color:#f8fafc}.footer{line-height:2;color:#94a3b8}a{color:#7dd3fc}.diagram-container{padding:12px}svg{min-width:900px}
+.planned rect{stroke:#fbbf24;stroke-dasharray:6 4}.planned .sub{fill:#cbd5e1}.section-title{margin-top:32px}.roadmap{margin-bottom:32px}.roadmap svg{min-width:900px}.roadmap-note{color:#cbd5e1;font-size:13px;line-height:1.9;padding:8px 14px}.tag{color:#fbbf24}
 </style></head>
 <body>
 <div class="container">
 <header class="header"><div class="header-row"><span class="pulse-dot"></span><h1>Phymeo / Newton · 功能连接全景</h1></div>
-<p class="subtitle">2026-11-11 · 本批功能与安装已验 · 对照 Newton 1.7.0</p></header>
-<div class="banner">本轮主线：训练规模优先，机器人、碰撞、GPU 三线并行。绿色只表示已验的限定范围；黄色为待补齐能力，表中列明后继缺口。各后端能力不互相倒灌。</div>
+<p class="subtitle">2026-11-11 · 取消 08:00 截止，按节点验收持续推进 · 对照 Newton 1.7.0</p></header>
+<div class="banner">训练与规模优先；机器人、通用碰撞按依赖并行。<strong>下面虚线框全部是计划，尚未实施。</strong>绿色架构框只表示已验的限定能力。resident 与 MuJoCo-TYX 分别验收，G1 保留兼容侧线。</div>
+<h2>后续路线 · 多案例 → 差异模块 → 实际验收</h2>
+<section class="diagram-container roadmap">
+<svg viewBox="0 0 1120 340" role="img" aria-label="持续推进计划，训练N1至N4主线，机器人与碰撞独立分支，G1兼容侧线">
+<defs><marker id="plan-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8" fill="#fbbf24"/></marker></defs>
+<text x="24" y="29" fill="#fbbf24" font-size="14">最高主线 · 箭头表示前置依赖</text>
+<g fill="none" stroke="#fbbf24" stroke-width="1.6" marker-end="url(#plan-arrow)"><path d="M254 91H292"/><path d="M530 91H568"/><path d="M806 91H844"/></g>
+<g class="box planned"><rect x="24" y="52" width="230" height="78"/><text x="139" y="82">N1 · CUDA 策略闭环</text><text class="sub" x="139" y="108">环境资格 / 真实设备推理</text></g>
+<g class="box planned"><rect x="300" y="52" width="230" height="78"/><text x="415" y="82">N2 · 两任务 PPO</text><text class="sub" x="415" y="108">device VecEnv / 参数真实更新</text></g>
+<g class="box planned"><rect x="576" y="52" width="230" height="78"/><text x="691" y="82">N3 · 训练恢复</text><text class="sub" x="691" y="108">物理 / 策略 / 优化器 / RNG</text></g>
+<g class="box planned"><rect x="852" y="52" width="244" height="78"/><text x="974" y="82">N4 · 学习与规模</text><text class="sub" x="974" y="108">三类任务 / 固定种子 / 吞吐</text></g>
+<text x="24" y="173" fill="#94a3b8" font-size="14">独立分支 · 先冻结接口与案例，再隔离编码；无需等待所有分支齐步</text>
+<g class="box planned"><rect x="24" y="193" width="330" height="81"/><text x="189" y="222">ROB1 → ROB2 · 场景与机器人</text><text class="sub" x="189" y="247">多参与者共同响应 → 关节 / 执行器 / 抓放</text></g>
+<g class="box planned"><rect x="392" y="193" width="330" height="81"/><text x="557" y="222">COL1 → COL2 → COL3 · 碰撞</text><text class="sub" x="557" y="247">七形状矩阵 → mesh / 变形 → 连续检测</text></g>
+<g class="box planned"><rect x="760" y="193" width="336" height="81"/><text x="928" y="222">G1 · 有界兼容侧线</text><text class="sub" x="928" y="247">来源绑定 / 接触激活边界；不阻塞训练</text></g>
+<text x="560" y="316" text-anchor="middle" fill="#cbd5e1" font-size="14">原三个 agent 分线编码 · 父负责共享接口 · 所有项目执行严格串行</text>
+</svg>
+<p class="roadmap-note">N1 方案已具备；ROB1 / COL1 下一批先交接口、案例和文件边界。N2 的优化器更新不等于学会任务；N4 单独验证学习改善。W256 已验隔离受载分页，尚非 256 台机器人训练。</p>
+</section>
+<h2 class="section-title">已实现架构 · 两条物理路径分别验收</h2>
 <section class="diagram-container">
 <svg viewBox="0 0 1120 900" role="img" aria-label="资产编译、两条TYX力学路径与公共环境及训练连接">
 <defs>
@@ -168,24 +188,24 @@ body{font-family:'Cascadia Mono','Microsoft YaHei',monospace}.container{max-widt
 </svg>
 </section>
 <section class="cards">
-<div class="card"><h3><span class="dot amber"></span>A · 机器人与工作流</h3><p id="lane-a">已验公共中途 checkpoint/restore 与继续推进。G1于46.29秒触发原1米参考XY门，未完成131.48秒；无设备拒步。两轨迹XY差最大17.30mm；局部峰值已定位为零margin附近接触集不同，长期漂移原因仍待查。</p></div>
-<div class="card"><h3><span class="dot amber"></span>B · 通用碰撞</h3><p id="lane-b">设备十类凸体配对、四类树来源、单页与分页真实受力均已验。B3两端各29项及28份保存；新wheel两端公共调用通过。HOST材料点转换与力装配仍保留。</p></div>
-<div class="card"><h3><span class="dot amber"></span>C · GPU 与训练规模</h3><p id="lane-c">W256隔离slider/support设备接触分页已验，非256台G1训练。设备task/action与29执行器宽度已验；下一步是CUDA策略→两任务PPO→训练恢复。此三节点尚未实现。</p></div>
+<div class="card"><h3><span class="dot amber"></span>机器人 · 已有与下一缺口</h3><p id="lane-a">四类树、双侧载荷、物理 checkpoint/restore 已验。下一步是同 world 独立参与者联解，再补球关节、执行器状态与公共抓放流程。G1 原131.48秒动作未通过；它是兼容案例，不代表整个机器人框架。</p></div>
+<div class="card"><h3><span class="dot amber"></span>碰撞 · 统一矩阵扩域</h3><p id="lane-b">设备十类 S/C/OBB/H 组合与真实受力已验。圆柱、圆锥、椭球已有有限 HOST 几何，下一步补设备端，形成七形状28类矩阵；再接 mesh、变形和连续检测。旧证据复用，不逐 pair 复制求解器。</p></div>
+<div class="card"><h3><span class="dot amber"></span>GPU / 训练 · 当前最高主线</h3><p id="lane-c">设备 task/action、29执行器宽度与限定 W256 受载分页已验。尚缺真实 CUDA Torch/PPO、组合训练恢复及实际学习/规模资格。HOST 转换、力装配和诊断仍存在；性能优化按端到端测量排序。</p></div>
 </section>
 <section class="matrix"><h2>八方向差异台账</h2>
 <table><thead><tr><th>方向</th><th>当前已验基础</th><th>仍需补齐的大颗粒能力</th></tr></thead><tbody>
-<tr><td>01 场景与机器人</td><td>资产、PD/IK、fixed/floating/affine、工具/双方反力、物理中途恢复</td><td>广泛关节/闭环/传动；持续抓放工作流；同world独立participants设备联合求解</td></tr>
-<tr><td>02 碰撞</td><td>RR/RD/DD、有限面边、部分CCD、设备逐面候选；限定设备凸体patch真实受力</td><td>通用设备mesh/凹体/变形组合、广泛CCD、跨特征材料身份与持续摩擦</td></tr>
-<tr><td>03 GPU 与多场景</td><td>四类树与W256设备接触分页；MuJoCo-TYX混合约束</td><td>异构机器人/约束容量、HOST转换/装配/诊断热点、真实训练规模与同条件吞吐</td></tr>
-<tr><td>04 训练 / 可微</td><td>公共ENV、CPU PPO三任务、设备task/action端口、物理检查点</td><td>真实GPU策略/PPO、随机化/RNN与完整训练resume；多步梯度/辨识</td></tr>
+<tr><td>01 场景与机器人</td><td>资产、PD/IK、fixed/floating/affine、工具/双方反力、物理中途恢复</td><td><span class="tag">ROB1 / ROB2</span>：同world多参与者联解；球关节、执行器与抓放；后续闭环/传动</td></tr>
+<tr><td>02 碰撞</td><td>RR/RD/DD、有限面边、部分CCD、逐面候选；设备凸体patch受力；曲面族有限HOST几何</td><td><span class="tag">COL1–COL3</span>：七形状设备矩阵、mesh/变形窄相、连续检测；其后摩擦历史、SDF/hydroelastic</td></tr>
+<tr><td>03 GPU 与多场景</td><td>四类树与W256限定设备接触分页；MuJoCo-TYX混合约束</td><td><span class="tag">N4</span>：真实训练规模/异构容量；HOST转换/装配/诊断热点；同条件端到端吞吐</td></tr>
+<tr><td>04 训练 / 可微</td><td>公共ENV、CPU PPO三任务、设备task/action端口、物理检查点</td><td><span class="tag">N1→N2→N3→N4</span>：GPU策略/PPO、训练恢复、学习有效性；随机化与物理梯度另验</td></tr>
 <tr><td>05 传感与交互</td><td>深度/法线/ID、TYX射线、IMU、Three.js真实回放</td><td>RGB/材质光照、广泛相机、批量传感与编辑生态</td></tr>
 <tr><td>06 跨域求解编排</td><td>事务/点端口/域图与指定刚–布–软体共同推进</td><td>通用多后端耦合调度、界面约束与统一失败恢复</td></tr>
 <tr><td>07 布与体软体</td><td>布拉伸/剪切/弯曲/自接触，StVK四面体与双向载荷</td><td>密集折叠、持续静摩擦/换特征、软块抓捏与软布放台稳健性</td></tr>
 <tr><td>08 杆缆 / MPM / 流体</td><td>连杆、粒子与弹性体基础</td><td>完整弯扭杆缆、粒子–网格、塑性/流动、双向边界</td></tr>
 </tbody></table></section>
-<footer class="footer">绿色：已验限定能力 · 黄色：待补齐能力 · G1完整动作未通过 · 不按测试数计算完成百分比<br>
+<footer class="footer">已取消固定截止 · 虚线：尚未实施的计划 · 绿色：已验限定能力 · 不按测试数计算完成百分比<br>
 <a href="../development/phymeo-newton-panorama-2026-11-11.md">当前详细全景</a> · <a href="../benchmarks/p65-parity-20261111-connections.md">本批正式验收</a> · <a href="../development/g1-drift-diagnosis-20261111.md">G1失败诊断</a> ·
-<a href="../superpowers/plans/2026-11-11-newton-parity-until-0800.md">本轮计划</a> ·
+<a href="../superpowers/plans/2026-11-11-newton-parity-continuous.md">持续推进总计划</a> ·
 <a href="../superpowers/plans/2026-11-11-mujoco-tyx-gpu-training.md">GPU训练后续节点</a> ·
 <a href="https://newton-physics.github.io/newton/1.7.0/solvers/index.html">Newton 1.7 求解器矩阵</a><br>
 模板基础：Cocoon AI MIT，许可随附于 licenses/architecture-diagram-template-MIT.txt</footer>

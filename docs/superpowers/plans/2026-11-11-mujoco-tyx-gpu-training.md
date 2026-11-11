@@ -1,7 +1,7 @@
 # GPU 训练连接：后续实施计划
 
 日期：2026-11-11。状态：PLANNED / SOURCE_RESEARCH_REVIEWED / NOT_IMPLEMENTED / NOT_EXECUTED。
-父已完成源码调研与计划审阅。本计划列为下一批入口；本夜先完成当前已冻结增量的验收，不插入 GPU 环境安装或训练实现。当前 CPU 训练环境与原物理预算保持。父唯一串行项目执行，隔离工作树只可在另行授权后并行纯编码。
+父已完成源码调研与计划审阅；用户已取消08:00截止，本计划是[持续推进总计划](2026-11-11-newton-parity-continuous.md)的下一批主线。当前仍未安装GPU环境或实现这些节点，CPU训练环境与原物理预算保持。父在既有持续授权内冻结每节点文件归属、调度唯一串行执行槽；独立工作树可按明确边界并行纯编码，无需再次请求用户逐阶段许可。N1→N2→N3之后的N4学习有效性与规模协议见总计划。
 
 依据：[已审阅的源码调研](../../development/mujoco-tyx-gpu-training-research.md)。本稿只读取该报告及相关本地源码，未新增网络调研或项目执行。以下源码路径均相对父仓库 C:/Users/38347/.codex/worktrees/p65-parallel-integration/phymeo；调研基线 d9e5bf33，本次只读接口核对父 HEAD 19feafc2，具体验收仍绑定执行时冻结源码。
 

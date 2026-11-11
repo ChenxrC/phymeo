@@ -133,3 +133,19 @@ BALL-A 与 COL3 的新源码矩阵及受影响接口已通过。剩余时间优�
 已全文审阅 [BALL-C 源码合同](../../development/p65-ball-next-composition-contract.md)。父独立确认现有 normal/constraint wrappers 已传完整球关节 DOF 表和 quaternion integrator；本片只接固定根 BALL 树与现有 contact 路由，原 kernel/solver/预算不改。原 source 作者在隔离树先 author NEW tests/test_mujoco_tyx_ball_contacts.py、tests/test_mujoco_tyx_ball_contacts_lifecycle.py、tests/installed/check_ball_contacts.py 和 docs/development/p65-ball-contact-composition-report.md；父独占合同四个既有产品文件。C1–C6 的 XML、输入、24步时序和原误差门必须在首次执行前登记，不调 fixture 追绿。nv<=8/nq<=10、scalar NONE/FILTEREXACT、condim1/pyramidal3、最多16 pairs/32 slots；FREE、直接球电机、limits/dry、condim4/6仍拒绝，完整结构检查不能被路由绕过。
 
 本授权先为纯编码。目标06:00前交接，父全文审阅后才在唯一串行槽执行。若证据或剩余时间不足，保隔离 authoring，不把未验代码带入最终 wheel；06:20不启动新长验证和07:20交接边界保持。N7正在跑的source不改，accounting新发现先完成诊断与受影响修复。
+
+## 06:20 收尾期间的有界训练诊断作者任务
+
+新功能与最终wheel已全部通过，产品快照1ce57489冻结，不再扩物理模型域。
+根据[原记录与实际上游源码研究](../../development/p65-jr-learning-next-diagnosis-20261112.md)，旧N4记录缺价值/GAE和preclip梯度；继续学习调参没有足够证据。只授权原source作者在隔离树tests-first新增
+`examples/diagnose_mujoco_tyx_credit.py`、`tests/training/test_mujoco_tyx_credit_diagnostic.py`、`docs/development/p65-credit-diagnostic-report.md`。
+不改任何产品、上游RSL、原案例/预算/报告或已冻结wheel；其余原agents仍只文档。
+
+原协议的J14011/R14211/S14111原final权重、W8/D1/32步、原task seed新诊断流、完整actual upstream backward、public optimizer pre-hook在第一次Adam前停止均固定。
+总量768实际world-transitions、0完成optimizer步骤；不是新学习实验，不加warmup/rollout/重试或改normalizer。
+用现有bounded decoder读取所需原保存策略并绑定来源；不得猜缺失历史RNG。观察原upstream方法的真实数据，不替换PPO/梯度或私有physics bank。
+Synthetic tests覆盖schema/归一/GAE、完整batch permutation与重复歧义、异常hook/RNG清理、意外mutation和固定A–E分类。
+
+目标06:45代码交接，06:50仍未交接则只保authoring待后批。父全文审阅、静态/合成资格后才可另授一次短实际诊断；预计只原三格，不启长训练。
+若07:05前无法启动，或一次实际诊断遇到物理/绑定失败，保完整前缀并停止，不挤占07:20交接。
+这项仅补缺失可观测量，不修改已验产品域；06:20不启新长实验的规则保持。已通过最终包无需为此example重建。

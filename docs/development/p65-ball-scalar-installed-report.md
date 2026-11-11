@@ -1,5 +1,14 @@
 # BALL-A independent installed consumer
 
+## Parent actual result — 2026-11-12
+
+**PASS in interpret and CUDA**, runs 245/246 against fresh 85caed4e installed wheel. Each run completed 58 physical worldsteps, original continuous force/activation/motion comparisons and same-source restore/clone/partial reset. Actual packet types and all loaded package origins were checked outside every checkout. RAW_EXIT=0.
+
+First run 240 failed at the new consumer's dtype-sensitive entry-activation comparison: device arrays are FP32, public state arrays are exact FP64 lifts. Three assertions now promote the device arrays exactly to FP64; no public value is rounded down and no tolerance is relaxed. Original failure trace/gzip remains. Runs 241–244 checked the consumer-only repair; final consumer 4b16b7ed. The wheel's 509 source/install product members were byte-identical in run 235. No CPU step/forward implemented actual TYX integration.
+
+### Historical authoring protocol
+
+
 Status: **CODE_READY_TESTS_PENDING / AUTHORING_ONLY**. No import, collection,
 Python execution, numerical probe, lint, formatter, build or installation has
 been run by this author. The parent owns the only execution slot. This report

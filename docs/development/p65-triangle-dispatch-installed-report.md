@@ -1,5 +1,14 @@
 # COL3 installed public dispatch consumer
 
+## Parent actual result — 2026-11-12
+
+**PASS in interpret and CUDA**, runs 249/250 on the fresh 85caed4e wheel; 509 product members match source and installed bytes (run 235). Each backend used the public exported limits/result types and four aggregate queries over the declared sparse worlds: original, independent owner, changed geometry in an aborted transaction, and changed successor. The original facet maps, raw device candidate bits, full COL2 records, bounded errors and source/stale refusal checks passed. RAW_EXIT=0; full saved payload and origins remain in the parent batch evidence.
+
+No installed source/test/example imports, no fallback geometry, no solid/CCD/load extension. The later evaluation-only source change is qualified separately; it does not relabel this snapshot.
+
+### Historical authoring protocol
+
+
 Status: CODE_READY_TESTS_PENDING / UNEXECUTED / AUTHORING_SLOT_RELEASED.
 
 NEW `tests/installed/check_triangle_dispatch.py` is a standalone, source-external consumer. Copy the file outside every checkout and invoke the existing installed profile:

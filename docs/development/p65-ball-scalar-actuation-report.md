@@ -1,5 +1,14 @@
 # BALL-A scalar actuation authoring report
 
+## Parent qualification — 2026-11-12
+
+Current status: **SOURCE_AND_INSTALLED_SUBSET_QUALIFIED**. Parent runs 212/213: 29 HOST/interpret and 16 CUDA passed; run 220 original admission compatibility: 19 passed. Full scalar NONE/FILTEREXACT, capacity 32 nu/na, continuous 24-step cases and lifecycle/late failure are covered. Product seams are 3b9072e4/87f2a021; final test style d2d16cdc. The domain remains fixed BALL trees driven only at hinge/slide transmissions, not direct BALL motors or BALL contact/free-root composition.
+
+Fresh 85caed4e wheel: 509 product members byte-identical to source/install. Installed runs 245/246 each 58 actual worldsteps passed, including 24 continuous steps, native/scalar comparisons and restore/clone/reset. The first consumer run 240 failed because raw FP32 evidence was compared against FP64 public-state encoding; only exact FP64 lifting in the consumer was corrected. No physical tolerances, source dynamics or inputs changed. All first failures and source/raw records remain in artifacts/p65-parity-until-0720-20261112-01. The later training-evaluation-only increment is tracked separately in the parent batch report.
+
+### Historical authoring report
+
+
 Status: **CODE_READY_TESTS_PENDING / AUTHORING_SLOT_RELEASED**.
 2026-11-12. This report records test authoring only. No project import,
 collection, numerical probe, test, lint, format, compile, build or install was

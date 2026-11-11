@@ -1,5 +1,14 @@
 # COL3 boundary distance dispatch
 
+## Parent qualification — 2026-11-12
+
+Current status: **SOURCE_AND_INSTALLED_BOUNDARY_QUERY_QUALIFIED**. Final product 1c796893: run 221 had 38 HOST/interpret passes; run 222 had 37 CUDA passes. Runs 223/224/225 had 11 passes for existing publication/filter/capacity neighbors. Public type exports ac23a86d have a separate HOST check in run 232. Parent fixes preserve nested transaction publication sequence and make actual BVH failure close the complete workspace; late failures and UNKNOWN_RELEASE/sticky independent sibling cleanup have actual tests.
+
+Fresh 85caed4e wheel has 509 byte-identical product members. Runs 249/250 independently exercised four public aggregate queries per backend, sparse worlds, genuine pruned facets and changed geometry, source/stale bindings and an aborted outer transaction. Both RAW_EXIT=0. Complete raw BVH bits and COL2 payloads are saved. This is HOST-snapshot-fed current boundary distance in a finite band; no closed-solid inside/outside, device vertex borrowing, CCD or contact force is implied. Author history below is retained rather than relabeled as executed.
+
+### Historical authoring report
+
+
 Status: CODE_READY_TESTS_PENDING / UNEXECUTED / AUTHORING_SLOT_RELEASED.
 
 This authoring slice connects original CollisionModel registrations and complete HOST motion snapshots to the accepted COL2 finite segment–triangle query. The parent owns the four CollisionWorkspace forwarding methods and sibling close integration. No old product, BVH, COL2 kernel, physics consumer or geometry threshold was changed in this author branch.

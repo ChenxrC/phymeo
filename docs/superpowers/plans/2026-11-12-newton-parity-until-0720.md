@@ -116,3 +116,14 @@ COL3冻结三组：sphere/capsule对有限面face/edge/vertex/outside/front/back
 - N5（中高，原source作者）：先调研原Newton随机重置和本项目事务/checkpoint接口，冻结按stable world和reset index的独立采样；父拥有runtime/env共享接缝。仅状态随机化，不暗加模型质量/摩擦随机化。
 
 BALL1目标05:30交接，COL2目标06:00；06:20后不启新长验证。任一实现无法保原兼容或独立验收即明确保留未完成，不把已编写称通过。
+
+## 04:55 N7：已连接训练功能的批次规模资格
+
+BALL-A 与 COL3 的新源码矩阵及受影响接口已通过。剩余时间优先验证 N5 随机重置、N6 控制窗口和真实上游 RSL 更新在同一批次运行；不继续 J/R 学习调参，不改变原物理门或模型。原 source 作者只新增 `examples/mujoco_tyx_window_scale.py`、`tests/training/test_mujoco_tyx_window_scale.py`、`docs/development/p65-window-scale-report.md`，父保全部共享接口及唯一串行执行。
+
+冻结三格：J/W8/D2/GRU 作为首格；S/W128/D4/MLP；S/W256/D4/MLP。每格 full 与 integration 两模式依次独立构造/关闭，复用原 J/S 模型、步长、任务/动作尺度和原 N5 q/v 采样界。stable world keys 为 7+13*i，anchors 使用原8模板按 i%8 映射，seed=6511、namespace="N7"；horizons 按 3/5/7/11 循环。每模式固定1次8-policy-step warmup及2次8-step测量更新，使用原 N3 learner/optimizer 配置；J recurrent 只选择既有 GRU，禁止调整隐藏宽度/学习率/奖励或增加预算。两模式开始前恢复同一 CPU/CUDA/owned RNG。它证明更新连接和规模，不是学习有效性实验。
+
+每个真实控制窗口保存请求、逐物理步完整接受状态与原收据、真实reset索引和episode、endpoint任务与RSL输出；actual attempts/accepted worldsteps不按reset后的tick猜。完整 learner/Adam/normalizer/RNG及GRU hidden按允许的owner标识差异比较，full独有观察字段单独列明，所有共同物理/动作/任务/更新须相同。HOST sampling和端点观察仍明示，CPU step不代跑物理。S独立检查发布接触力与原动量公式；不是重新求接触律的独立oracle。
+
+先完成新协议测试和J8实际两模式资格，才执行S128/256；任何共同状态差异/资源拒绝立即停止扩大，保真实失败，不降world数/放宽门追绿。顺序构造限制native内存峰值；记录native构造/copy、设备/物理调用、process commit/RSS及端到端时间，计时分update与完整证据关闭。仅本机同配置/不同输出模式比较，没有Newton同输出性能优势声明。06:20仍停止新增长任务；若未完成，保已过格及明确未启动格，不影响已验产品的wheel资格。
+

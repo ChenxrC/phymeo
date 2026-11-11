@@ -50,16 +50,11 @@ def test_frozen_encoding_and_independent_hash_sampling():
     from phymeo.training.mujoco_tyx_reset import encoded_reset_key
 
     # Fixed bytes, not generated through the product encoder.
-    golden = (
-        b"phymeo-reset-v1\0\x02\x00N5"
-        b"\x6f\x19\0\0\0\0\0\0"
-        b"\x07\0\0\0"
-        b"\0\0\0\0\0\0\0\0q\0\0\0\0"
-    )
+    golden = b"phymeo-reset-v1\0\x02\x00N5\x6f\x19\0\0\0\0\0\0\x07\0\0\0\0\0\0\0\0\0\0\0q\0\0\0\0"
     assert encoded_reset_key("N5", 6511, 7, 0, "q", 0) == golden
     sampled = plan(namespace="N5").prepare((7,), dict.fromkeys(KEYS, 0))
     z = int.from_bytes(hashlib.sha256(golden).digest()[:8], "little") >> 11
-    expected = np.float32(-0.1 + (z * 2.0 ** -53) * (0.1 - (-0.1)))
+    expected = np.float32(-0.1 + (z * 2.0**-53) * (0.1 - (-0.1)))
     assert sampled.requested[7].q[0] == float(expected)
     # Separate rebuild produces the same complete immutable sample.
     assert sig(sampled) == sig(plan(namespace="N5").prepare((7,), dict.fromkeys(KEYS, 0)))
@@ -86,11 +81,17 @@ def test_sampler_subset_order_and_unused_streams(case):
     assert dict(empty.next_indices) == dict(union.next_indices)
     assert empty.requested == {}
     from phymeo.training.mujoco_tyx_reset import MuJoCoTyxResetPlan
+
     parts = example().components(case)
     reordered = MuJoCoTyxResetPlan(
-        parts["compilation"], dict(reversed(tuple(p.anchors.items()))),
-        q_indices=p.q_indices, q_bounds=p.q_bounds,
-        v_indices=p.v_indices, v_bounds=p.v_bounds, seed=p.seed, namespace=p.namespace,
+        parts["compilation"],
+        dict(reversed(tuple(p.anchors.items()))),
+        q_indices=p.q_indices,
+        q_bounds=p.q_bounds,
+        v_indices=p.v_indices,
+        v_bounds=p.v_bounds,
+        seed=p.seed,
+        namespace=p.namespace,
     )
     other = reordered.prepare((103, 7), counters)
     assert reordered.sha256 != p.sha256  # Full order binding is deliberately distinct.
@@ -124,15 +125,22 @@ def test_bad_sample_does_not_consume_any_state(fault):
     assert counters == before
 
 
-@pytest.mark.parametrize("fault", ("q-address", "v-address", "shape", "nonfinite", "anchor", "time"))
+@pytest.mark.parametrize(
+    "fault", ("q-address", "v-address", "shape", "nonfinite", "anchor", "time")
+)
 def test_bad_plan_rejected_without_runtime(fault):
     from phymeo.backends.mujoco_runtime import MuJoCoInitialState
     from phymeo.training.mujoco_tyx_reset import MuJoCoTyxResetPlan
 
     parts = example().components("J", keys=KEYS)
-    args = dict(q_indices=(0, 1), q_bounds=((-0.1, 0.1),) * 2,
-                v_indices=(0, 1), v_bounds=((-0.04, 0.04),) * 2,
-                seed=6511, namespace="N5")
+    args = dict(
+        q_indices=(0, 1),
+        q_bounds=((-0.1, 0.1),) * 2,
+        v_indices=(0, 1),
+        v_bounds=((-0.04, 0.04),) * 2,
+        seed=6511,
+        namespace="N5",
+    )
     anchors = dict(parts["anchors"])
     if fault == "q-address":
         args["q_indices"] = (0, 9)
@@ -161,8 +169,7 @@ def test_root_quaternion_and_velocity_are_not_randomizable():
         require_asset=False,
     )
     for channel in ("q", "v"):
-        args = dict(q_indices=(), q_bounds=(), v_indices=(), v_bounds=(), seed=6511,
-                    namespace="N5")
+        args = dict(q_indices=(), q_bounds=(), v_indices=(), v_bounds=(), seed=6511, namespace="N5")
         args[channel + "_indices"] = (0,)
         args[channel + "_bounds"] = ((-0.1, 0.1),)
         with pytest.raises(ValueError, match="scalar|hinge|slide"):
@@ -196,19 +203,27 @@ def test_actual_manual_and_automatic_random_reset(case, tmp_path):
             for row, key in enumerate(KEYS):
                 raw = np.r_[tr.states[key].q, tr.states[key].v].astype(np.float32)
                 expected = raw * env.task_spec.scale + env.task_spec.bias
-                np.testing.assert_allclose(tr.final_observation[row].cpu(), expected,
-                                           rtol=2e-5, atol=2e-6)
+                np.testing.assert_allclose(
+                    tr.final_observation[row].cpu(), expected, rtol=2e-5, atol=2e-6
+                )
                 if bool(tr.final_mask[row]):
                     assert env.runtime.snapshot()[key].tick == 0
                     assert not torch.equal(tr.observation[row], tr.final_observation[row])
             if case == "S":
-                assert all(any(c.normal_force > 0 for c in s.last_step.contacts)
-                           for s in tr.states.values())
+                assert all(
+                    any(c.normal_force > 0 for c in s.last_step.contacts)
+                    for s in tr.states.values()
+                )
         assert any(bool(t.final_mask.any()) and not bool(t.final_mask.all()) for t in transitions)
         assert env.reset_indices[7] > 1
         (tmp_path / (case + ".json")).write_text(
-            api.json_text({"binding": dict(env.binding), "transitions": transitions,
-                           "random_reset": env.capture_training_state()["random_reset"]}),
+            api.json_text(
+                {
+                    "binding": dict(env.binding),
+                    "transitions": transitions,
+                    "random_reset": env.capture_training_state()["random_reset"],
+                }
+            ),
             encoding="utf-8",
         )
 
@@ -224,13 +239,17 @@ def test_failed_reset_rng_ledger_matches_real_commit(phase, monkeypatch):
         indices = dict(env.reset_indices)
         if phase == "before-cas":
             original = env.runtime.reset_states
+
             def fail(*args, **kwargs):
                 raise RuntimeError("injected pre-CAS reset failure")
+
             monkeypatch.setattr(env.runtime, "reset_states", fail)
         else:
             original = env._export
+
             def fail():
                 raise RuntimeError("injected post-CAS export failure")
+
             monkeypatch.setattr(env, "_export", fail)
         with pytest.raises(MuJoCoTyxEnvError) as caught:
             env.reset((7,))
@@ -300,8 +319,10 @@ def test_saved_counter_bad_binding_and_late_restore(monkeypatch):
             assert env.runtime.checkpoint().to_bytes() == before
         env.reset()
         original = env._export
+
         def fail():
             raise RuntimeError("injected restored physics export failure")
+
         monkeypatch.setattr(env, "_export", fail)
         with pytest.raises(MuJoCoTyxEnvError) as caught:
             env.restore_training_state(
@@ -333,8 +354,11 @@ def test_clone_composition_preserves_next_sample():
 def test_seed_namespace_and_saved_counter_identity_are_bound():
     original = plan()
     sample = original.prepare((7,), dict.fromkeys(KEYS, 0))
-    saved = {"plan_sha256": original.sha256, "next_indices": dict(sample.next_indices),
-             "last_sample": {"world_keys": sample.world_keys, "indices": dict(sample.indices)}}
+    saved = {
+        "plan_sha256": original.sha256,
+        "next_indices": dict(sample.next_indices),
+        "last_sample": {"world_keys": sample.world_keys, "indices": dict(sample.indices)},
+    }
     original.validate_training_state(saved)
     for other in (plan(seed=6512), plan(namespace="N5-other")):
         assert other.sha256 != original.sha256

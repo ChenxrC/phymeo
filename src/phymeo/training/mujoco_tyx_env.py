@@ -142,7 +142,17 @@ class MuJoCoTyxVectorEnv:
     episode boundary, not learner checkpoint restoration.
     """
 
-    def __init__(self, runtime, task_spec, action_spec, *, h, horizons, observation_mode="full", reset_plan=None):
+    def __init__(
+        self,
+        runtime,
+        task_spec,
+        action_spec,
+        *,
+        h,
+        horizons,
+        observation_mode="full",
+        reset_plan=None,
+    ):
         import torch
 
         from phymeo.backends.mujoco_task_workspace import MuJoCoTyxTaskSpec
@@ -225,7 +235,11 @@ class MuJoCoTyxVectorEnv:
                     "state_observation": self.observation_mode,
                     "episode_bookkeeping": "HOST-lengths-and-done-mask",
                     "restore": "explicit-N3-update-boundary-composition",
-                    **({"random_reset": reset_plan.training_binding()} if reset_plan is not None else {}),
+                    **(
+                        {"random_reset": reset_plan.training_binding()}
+                        if reset_plan is not None
+                        else {}
+                    ),
                 }
             )
         except BaseException:
@@ -616,9 +630,9 @@ class MuJoCoTyxVectorEnv:
                 state["random_reset"] = {
                     "plan_sha256": self._reset_plan.sha256,
                     "next_indices": dict(self._reset_indices),
-                    "last_sample": None if last is None else {
-                        "world_keys": last["world_keys"], "indices": dict(last["indices"])
-                    },
+                    "last_sample": None
+                    if last is None
+                    else {"world_keys": last["world_keys"], "indices": dict(last["indices"])},
                 }
             return state
 

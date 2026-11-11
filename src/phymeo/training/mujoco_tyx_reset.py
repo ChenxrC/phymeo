@@ -44,8 +44,9 @@ def encoded_reset_key(namespace, seed, world, index, channel, native_index):
         b"phymeo-reset-v1\0"
         + struct.pack("<H", len(encoded))
         + encoded
-        + struct.pack("<QIQ", _uint(seed, 64, "seed"), _world(world),
-                      _uint(index, 64, "reset index"))
+        + struct.pack(
+            "<QIQ", _uint(seed, 64, "seed"), _world(world), _uint(index, 64, "reset index")
+        )
         + channel.encode("ascii")
         + struct.pack("<I", _uint(native_index, 32, "native index"))
     )
@@ -67,8 +68,11 @@ def _source_binding(compilation):
 
 def _bounds(indices, bounds, legal, name):
     values = tuple(indices)
-    if (len(values) > 35 or any(type(i) is not int or i not in legal for i in values)
-            or len(set(values)) != len(values)):
+    if (
+        len(values) > 35
+        or any(type(i) is not int or i not in legal for i in values)
+        or len(set(values)) != len(values)
+    ):
         raise ValueError(name + " requires distinct supported scalar hinge/slide addresses")
     array = np.asarray(bounds, dtype=np.float64)
     if not values and array.size == 0:
@@ -107,8 +111,18 @@ class MuJoCoTyxResetPlan:
     binding: object
     sha256: str
 
-    def __init__(self, compilation, anchors, *, q_indices, q_bounds, v_indices,
-                 v_bounds, seed=6511, namespace="N5"):
+    def __init__(
+        self,
+        compilation,
+        anchors,
+        *,
+        q_indices,
+        q_bounds,
+        v_indices,
+        v_bounds,
+        seed=6511,
+        namespace="N5",
+    ):
         if not isinstance(anchors, Mapping) or not 1 <= len(anchors) <= 256:
             raise ValueError("reset anchors require 1..256 stable worlds")
         keys = tuple(_world(key) for key in anchors)
@@ -129,7 +143,9 @@ class MuJoCoTyxResetPlan:
                 raise ValueError("reset anchor requires MuJoCoInitialState at time zero")
             arrays = []
             for name, size, default in (
-                ("q", nq, model.qpos0), ("v", nv, np.zeros(nv)), ("act", na, np.zeros(na))
+                ("q", nq, model.qpos0),
+                ("v", nv, np.zeros(nv)),
+                ("act", na, np.zeros(na)),
             ):
                 value = getattr(state, name)
                 array = np.asarray(default if value is None else value, np.float64)
@@ -142,10 +158,17 @@ class MuJoCoTyxResetPlan:
             # Preserve full legal anchor precision, in particular free quaternion.
             owned[key] = MuJoCoInitialState(arrays[0], arrays[1], act=arrays[2])
         identity = {
-            "schema": SCHEMA, "algorithm": ALGORITHM,
+            "schema": SCHEMA,
+            "algorithm": ALGORITHM,
             **_source_binding(compilation),
-            "world_keys": keys, "nq": nq, "nv": nv, "na": na,
-            "q_indices": q, "v_indices": v, "seed": seed, "namespace": namespace,
+            "world_keys": keys,
+            "nq": nq,
+            "nv": nv,
+            "na": na,
+            "q_indices": q,
+            "v_indices": v,
+            "seed": seed,
+            "namespace": namespace,
             "joint_type": tuple(int(i) for i in model.jnt_type),
             "joint_qadr": tuple(int(i) for i in model.jnt_qposadr),
             "joint_dadr": tuple(int(i) for i in model.jnt_dofadr),
@@ -157,10 +180,16 @@ class MuJoCoTyxResetPlan:
             for name in ("q", "v", "act"):
                 digest.update(getattr(state, name).tobytes())
         for name, value in (
-            ("world_keys", keys), ("anchors", MappingProxyType(owned)),
-            ("q_indices", q), ("q_bounds", qb), ("v_indices", v), ("v_bounds", vb),
-            ("seed", seed), ("namespace", namespace),
-            ("binding", MappingProxyType(identity)), ("sha256", digest.hexdigest()),
+            ("world_keys", keys),
+            ("anchors", MappingProxyType(owned)),
+            ("q_indices", q),
+            ("q_bounds", qb),
+            ("v_indices", v),
+            ("v_bounds", vb),
+            ("seed", seed),
+            ("namespace", namespace),
+            ("binding", MappingProxyType(identity)),
+            ("sha256", digest.hexdigest()),
         ):
             object.__setattr__(self, name, value)
 
@@ -183,9 +212,9 @@ class MuJoCoTyxResetPlan:
             raise ValueError("reset counters must cover exact stable worlds")
         if any(type(key) is not int for key in counters):
             raise ValueError("reset counter key type")
-        return MappingProxyType({
-            key: _uint(counters[key], 64, "next reset index") for key in self.world_keys
-        })
+        return MappingProxyType(
+            {key: _uint(counters[key], 64, "next reset index") for key in self.world_keys}
+        )
 
     def prepare(self, selected, counters):
         """Pure candidate sampling: no counters advance until the caller commits."""
@@ -207,11 +236,11 @@ class MuJoCoTyxResetPlan:
                 for native, limits in zip(
                     getattr(self, name + "_indices"), getattr(self, name + "_bounds"), strict=True
                 ):
-                    raw = sha256(encoded_reset_key(
-                        self.namespace, self.seed, key, index, name, native
-                    )).digest()
+                    raw = sha256(
+                        encoded_reset_key(self.namespace, self.seed, key, index, name, native)
+                    ).digest()
                     z = int.from_bytes(raw[:8], "little") >> 11
-                    unit = z * 2.0 ** -53
+                    unit = z * 2.0**-53
                     delta = float(limits[1]) - float(limits[0])
                     scaled = unit * delta
                     value = np.float32(float(limits[0]) + scaled)
@@ -220,18 +249,24 @@ class MuJoCoTyxResetPlan:
                     ):
                         raise ValueError("sample cannot be stored as finite normal-or-zero FP32")
                     arrays[name][native] = float(value)
-            requested[key] = MuJoCoInitialState(
-                arrays["q"], arrays["v"], act=self.anchors[key].act
-            )
+            requested[key] = MuJoCoInitialState(arrays["q"], arrays["v"], act=self.anchors[key].act)
             indices[key], after[key] = index, index + 1
         return MuJoCoTyxResetSample(
-            self.sha256, keys, MappingProxyType(indices),
-            MappingProxyType(requested), MappingProxyType(after),
+            self.sha256,
+            keys,
+            MappingProxyType(indices),
+            MappingProxyType(requested),
+            MappingProxyType(after),
         )
 
     def training_binding(self):
-        return {"schema": SCHEMA, "algorithm": ALGORITHM, "plan_sha256": self.sha256,
-                "seed": self.seed, "namespace": self.namespace}
+        return {
+            "schema": SCHEMA,
+            "algorithm": ALGORITHM,
+            "plan_sha256": self.sha256,
+            "seed": self.seed,
+            "namespace": self.namespace,
+        }
 
     def validate_training_state(self, state):
         """Validate saved stream state before any public physics CAS."""
@@ -250,8 +285,11 @@ class MuJoCoTyxResetPlan:
             if keys != tuple(key for key in self.world_keys if key in keys):
                 raise ValueError("random reset last sample order")
             indices = last["indices"]
-            if (not isinstance(indices, Mapping) or set(indices) != set(keys)
-                    or any(type(key) is not int for key in indices)):
+            if (
+                not isinstance(indices, Mapping)
+                or set(indices) != set(keys)
+                or any(type(key) is not int for key in indices)
+            ):
                 raise ValueError("random reset last sample indices")
             copied = {}
             for key in keys:

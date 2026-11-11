@@ -4,9 +4,9 @@ import base64
 import hashlib
 import importlib.util
 import json
+from collections.abc import Mapping
 from dataclasses import fields, is_dataclass
 from pathlib import Path
-from collections.abc import Mapping
 
 import numpy as np
 import pytest
@@ -24,6 +24,7 @@ def tasks():
     spec = importlib.util.spec_from_file_location("n5_reset_tasks", path)
     module = importlib.util.module_from_spec(spec)
     import sys
+
     sys.modules[spec.name] = module
     spec.loader.exec_module(module)
     return module
@@ -44,19 +45,17 @@ def state(case, index, *, time=0.0):
 
 
 def controls(case):
-    return {
-        key: MuJoCoControl([0.15, -0.12] if case == "J" else [19.62])
-        for key in KEYS
-    }
+    return {key: MuJoCoControl([0.15, -0.12] if case == "J" else [19.62]) for key in KEYS}
 
 
 def signature(value):
     if isinstance(value, np.ndarray):
         return (value.dtype.str, value.shape, value.tobytes())
     if is_dataclass(value):
-        return (type(value).__name__, tuple(
-            (f.name, signature(getattr(value, f.name))) for f in fields(value)
-        ))
+        return (
+            type(value).__name__,
+            tuple((f.name, signature(getattr(value, f.name))) for f in fields(value)),
+        )
     if isinstance(value, Mapping):
         return tuple((key, signature(item)) for key, item in value.items())
     if isinstance(value, (list, tuple)):
@@ -84,7 +83,10 @@ def test_public_subset_reset_keeps_full_unselected_state(case, mode, tmp_path):
     compiled = source(case)
     initial = {key: state(case, i, time=0.125) for i, key in enumerate(KEYS)}
     h = tasks().task(case).h
-    with MuJoCoRuntime(compiled, world_keys=KEYS, mode=mode, initial_states=initial) as engine, engine.prepare_task_workspace(MuJoCoTyxTaskSpec((0,), (0,))) as workspace:
+    with (
+        MuJoCoRuntime(compiled, world_keys=KEYS, mode=mode, initial_states=initial) as engine,
+        engine.prepare_task_workspace(MuJoCoTyxTaskSpec((0,), (0,))) as workspace,
+    ):
         engine.set_controls(controls(case))
         for _ in range(3):
             assert all(engine.step(h).values())
@@ -129,20 +131,30 @@ def test_public_subset_reset_keeps_full_unselected_state(case, mode, tmp_path):
         for _ in range(2):
             assert all(engine.step(h).values())
         if case == "S":
-            assert all(any(c.normal_force > 0 for c in value.last_step.contacts)
-                       for value in engine.snapshot().values())
+            assert all(
+                any(c.normal_force > 0 for c in value.last_step.contacts)
+                for value in engine.snapshot().values()
+            )
         # reset_states never replaces the original reset declaration.
         assert engine.reset() is None
         for key in KEYS:
             assert engine.snapshot()[key].time == float(np.float32(0.125))
-            assert engine.snapshot()[key].q.tobytes() == initial[key].q.astype(
-                np.float32
-            ).astype(np.float64).tobytes()
-        (tmp_path / f"reset-{case}-{mode}.json").write_text(json.dumps({
-            "schema": receipt.schema, "keys": receipt.world_keys,
-            "binding": receipt.binding_sha256,
-            "before": before, "after": after,
-        }), encoding="utf-8")
+            assert (
+                engine.snapshot()[key].q.tobytes()
+                == initial[key].q.astype(np.float32).astype(np.float64).tobytes()
+            )
+        (tmp_path / f"reset-{case}-{mode}.json").write_text(
+            json.dumps(
+                {
+                    "schema": receipt.schema,
+                    "keys": receipt.world_keys,
+                    "binding": receipt.binding_sha256,
+                    "before": before,
+                    "after": after,
+                }
+            ),
+            encoding="utf-8",
+        )
 
 
 @pytest.mark.tyx
@@ -165,8 +177,10 @@ def test_reset_states_precommit_refusal_is_atomic(mode, fault, monkeypatch):
         elif fault == "late-world":
             wanted[KEYS[-1]] = MuJoCoInitialState([0.1], [0.1])
         else:
+
             def fail(*args, **kwargs):
                 raise RuntimeError("injected replacement build failure")
+
             monkeypatch.setattr(engine, "_build_device", fail)
         with pytest.raises((ValueError, RuntimeError, KeyError)):
             engine.reset_states(wanted, expected_revision=revision)
@@ -275,9 +289,10 @@ def test_filterexact_full_activation_and_three_held_channels_survive_subset(mode
             for name in ("q", "v", "clock", "act"):
                 assert bank_row(after[name], index) == bank_row(before[name], index)
             assert signature(engine.snapshot()[KEYS[index]]) == signature(snapshots[KEYS[index]])
-        assert receipt.stored[31].act.tobytes() == np.asarray([-0.05], np.float32).astype(
-            np.float64
-        ).tobytes()
+        assert (
+            receipt.stored[31].act.tobytes()
+            == np.asarray([-0.05], np.float32).astype(np.float64).tobytes()
+        )
         assert engine.snapshot()[31].act.tobytes() == receipt.stored[31].act.tobytes()
         engine.set_controls(packets)
         for _ in range(2):
@@ -305,28 +320,34 @@ def test_real_replacement_is_closed_on_late_precommit_failure(mode, fault, monke
             result = build(*args, **kwargs)
             built.append(result)
             original_close = result.close
+
             def close():
                 closed.append(result)
                 return original_close()
+
             monkeypatch.setattr(result, "close", close)
             return result
 
         monkeypatch.setattr(engine, "_build_device", capture)
         if fault == "readback":
             verify = mujoco_checkpoint._verify_bank
+
             def fail(device, packed):
                 verify(device, packed)
                 raise RuntimeError("injected failure after real candidate readback")
+
             monkeypatch.setattr(mujoco_checkpoint, "_verify_bank", fail)
         else:
             observe = engine._observe_native
             visits = []
+
             def fail(data):
                 value = observe(data)
                 visits.append(True)
                 if len(visits) == len(KEYS):
                     raise RuntimeError("injected final selected observer failure")
                 return value
+
             monkeypatch.setattr(engine, "_observe_native", fail)
         with pytest.raises(RuntimeError, match="injected"):
             engine.reset_states(

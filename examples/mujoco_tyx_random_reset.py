@@ -47,31 +47,42 @@ def components(case, *, keys=KEYS, seed=6511, namespace="N5"):
     compiled = compile_mujoco_xml(item.xml, require_asset=False)
     width = len(item.q_target)
     initial = original.templates(case, held_out=False)
-    anchors = {
-        key: MuJoCoInitialState(*initial[index]) for index, key in enumerate(keys)
-    }
+    anchors = {key: MuJoCoInitialState(*initial[index]) for index, key in enumerate(keys)}
     q_bounds = ((-0.1, 0.1),) * width if case == "J" else ((0.00065, 0.00085),)
     v_bounds = ((-0.04, 0.04),) * width if case == "J" else ((-0.002, 0.002),)
     reset_plan = MuJoCoTyxResetPlan(
-        compiled, anchors, q_indices=tuple(range(width)), q_bounds=q_bounds,
-        v_indices=tuple(range(width)), v_bounds=v_bounds, seed=seed, namespace=namespace,
+        compiled,
+        anchors,
+        q_indices=tuple(range(width)),
+        q_bounds=q_bounds,
+        v_indices=tuple(range(width)),
+        v_bounds=v_bounds,
+        seed=seed,
+        namespace=namespace,
     )
     spec = MuJoCoTyxTaskSpec(
-        tuple(range(width)), tuple(range(width)),
+        tuple(range(width)),
+        tuple(range(width)),
         scale=tuple(1 / x for x in item.q_scale) + tuple(1 / x for x in item.v_scale),
         bias=tuple(-q / x for q, x in zip(item.q_target, item.q_scale, strict=True))
-             + (0.0,) * width,
+        + (0.0,) * width,
         target=item.q_target + (0.0,) * width,
         weight=tuple(1 / (width * x * x) for x in item.q_scale)
-               + tuple(0.01 / (width * x * x) for x in item.v_scale),
+        + tuple(0.01 / (width * x * x) for x in item.v_scale),
         lower=item.q_lower + (-item.v_bound,) * width,
         upper=item.q_upper + (item.v_bound,) * width,
     )
     action = MuJoCoTyxActionSpec(
         tuple(range(width)), scale=[item.action_scale] * width, bias=[0.0] * width
     )
-    return {"compilation": compiled, "anchors": anchors, "reset_plan": reset_plan,
-            "task_spec": spec, "action_spec": action, "h": item.h}
+    return {
+        "compilation": compiled,
+        "anchors": anchors,
+        "reset_plan": reset_plan,
+        "task_spec": spec,
+        "action_spec": action,
+        "h": item.h,
+    }
 
 
 @contextmanager
@@ -83,14 +94,24 @@ def make_environment(case, *, runtime=None, seed=6511, namespace="N5", horizons=
     parts = components(case, seed=seed, namespace=namespace)
     with ExitStack() as owners:
         if runtime is None:
-            runtime = owners.enter_context(MuJoCoRuntime(
-                parts["compilation"], mode="cuda", world_keys=KEYS,
-                initial_states=parts["anchors"],
-            ))
-        env = owners.enter_context(MuJoCoTyxVectorEnv(
-            runtime, parts["task_spec"], parts["action_spec"],
-            h=parts["h"], horizons=horizons, reset_plan=parts["reset_plan"],
-        ))
+            runtime = owners.enter_context(
+                MuJoCoRuntime(
+                    parts["compilation"],
+                    mode="cuda",
+                    world_keys=KEYS,
+                    initial_states=parts["anchors"],
+                )
+            )
+        env = owners.enter_context(
+            MuJoCoTyxVectorEnv(
+                runtime,
+                parts["task_spec"],
+                parts["action_spec"],
+                h=parts["h"],
+                horizons=horizons,
+                reset_plan=parts["reset_plan"],
+            )
+        )
         yield env
 
 
@@ -98,11 +119,16 @@ def _encode(value):
     if type(value).__module__.startswith("torch") and hasattr(value, "detach"):
         value = value.detach().cpu().numpy()
     if isinstance(value, np.ndarray):
-        return {"dtype": value.dtype.str, "shape": list(value.shape),
-                "data_hex": value.tobytes().hex()}
+        return {
+            "dtype": value.dtype.str,
+            "shape": list(value.shape),
+            "data_hex": value.tobytes().hex(),
+        }
     if is_dataclass(value):
-        return {"record": type(value).__name__,
-                "fields": {f.name: _encode(getattr(value, f.name)) for f in fields(value)}}
+        return {
+            "record": type(value).__name__,
+            "fields": {f.name: _encode(getattr(value, f.name)) for f in fields(value)},
+        }
     if isinstance(value, Mapping):
         return {str(key): _encode(item) for key, item in value.items()}
     if isinstance(value, (tuple, list)):
@@ -158,18 +184,29 @@ def continuation(case, output, *, recurrent=False):
     output = Path(output)
     output.mkdir(parents=True, exist_ok=True)
     name = case + ("-gru" if recurrent else "-mlp")
-    result = {"status": "FAILED_RANDOM_RESET_CONTINUATION", "case": case,
-              "recurrent": recurrent, "seed": 6511, "scope": "same-profile-exact-continuation"}
+    result = {
+        "status": "FAILED_RANDOM_RESET_CONTINUATION",
+        "case": case,
+        "recurrent": recurrent,
+        "seed": 6511,
+        "scope": "same-profile-exact-continuation",
+    }
     with (output / (name + ".jsonl")).open("x", encoding="utf-8") as log:
         with make_environment(case) as env:
             try:
                 env.reset()
-                session = MuJoCoTyxPpoSession(
-                    RslMuJoCoTyxVecEnv(env), steps=8, recurrent=recurrent
-                )
+                session = MuJoCoTyxPpoSession(RslMuJoCoTyxVecEnv(env), steps=8, recurrent=recurrent)
                 warm = session.update()
-                log.write(json_text({"event": "warm-update", "record": warm,
-                                     "random_reset": env.capture_training_state()["random_reset"]}) + "\n")
+                log.write(
+                    json_text(
+                        {
+                            "event": "warm-update",
+                            "record": warm,
+                            "random_reset": env.capture_training_state()["random_reset"],
+                        }
+                    )
+                    + "\n"
+                )
                 before = session.training_state()
                 nonzero = recurrent and all(
                     bool(torch.count_nonzero(value)) for value in before["hidden"].values()
@@ -182,23 +219,41 @@ def continuation(case, output, *, recurrent=False):
                 record_a = session.update()
                 final_a = session.training_state()
                 physical_a = env.runtime.snapshot()
-                log.write(json_text({"event": "A", "record": record_a,
-                                     "training": final_a, "physics": physical_a}) + "\n")
+                log.write(
+                    json_text(
+                        {
+                            "event": "A",
+                            "record": record_a,
+                            "training": final_a,
+                            "physics": physical_a,
+                        }
+                    )
+                    + "\n"
+                )
                 restored = session.restore_checkpoint(
                     checkpoint, expected_revision=env.runtime.checkpoint_revision
                 )
                 record_b = session.update()
                 final_b = session.training_state()
                 physical_b = env.runtime.snapshot()
-                log.write(json_text({"event": "B", "record": record_b,
-                                     "training": final_b, "physics": physical_b}) + "\n")
+                log.write(
+                    json_text(
+                        {
+                            "event": "B",
+                            "record": record_b,
+                            "training": final_b,
+                            "physics": physical_b,
+                        }
+                    )
+                    + "\n"
+                )
                 if json_text(final_a) != json_text(final_b):
                     raise AssertionError("complete training/Adam/RNG/reset state differs")
                 if json_text(physical_a) != json_text(physical_b):
                     raise AssertionError("complete physical snapshot differs")
-                if json_text(tuple(map(_comparable_transition, record_a["transitions"]))) != json_text(
-                    tuple(map(_comparable_transition, record_b["transitions"]))
-                ):
+                if json_text(
+                    tuple(map(_comparable_transition, record_a["transitions"]))
+                ) != json_text(tuple(map(_comparable_transition, record_b["transitions"]))):
                     raise AssertionError("complete continuation transitions differ")
                 if json_text(record_a["loss"]) != json_text(record_b["loss"]):
                     raise AssertionError("upstream losses differ")
@@ -209,17 +264,32 @@ def continuation(case, output, *, recurrent=False):
                 result.update(
                     status="PASS_RANDOM_RESET_CONTINUATION",
                     transitions=len(record_b["transitions"]) * len(KEYS),
-                    reset_count_advanced=advanced, nonzero_hidden=bool(nonzero),
-                    partial_done_masks=masks, save=saved, restore=restored,
+                    reset_count_advanced=advanced,
+                    nonzero_hidden=bool(nonzero),
+                    partial_done_masks=masks,
+                    save=saved,
+                    restore=restored,
                     reset_indices=dict(env.reset_indices),
                     binding=env.training_binding(),
-                    exclusions=["destination-CAS-revision", "task-epoch", "resource-counters",
-                                "action-receipt-publication-revision/epoch"],
+                    exclusions=[
+                        "destination-CAS-revision",
+                        "task-epoch",
+                        "resource-counters",
+                        "action-receipt-publication-revision/epoch",
+                    ],
                 )
             except BaseException as error:
-                log.write(json_text({"event": "failure", "error": repr(error),
-                                     "needs_recovery": env.needs_recovery,
-                                     "reset_indices": dict(env.reset_indices)}) + "\n")
+                log.write(
+                    json_text(
+                        {
+                            "event": "failure",
+                            "error": repr(error),
+                            "needs_recovery": env.needs_recovery,
+                            "reset_indices": dict(env.reset_indices),
+                        }
+                    )
+                    + "\n"
+                )
                 raise
             finally:
                 (output / (name + "-summary.json")).write_text(json_text(result), encoding="utf-8")

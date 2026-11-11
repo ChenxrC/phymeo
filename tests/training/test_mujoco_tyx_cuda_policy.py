@@ -4,6 +4,7 @@ No old test helpers are imported. CUDA absence is a qualification failure,
 not a CPU fallback or a silently skipped positive matrix.
 """
 
+import hashlib
 import importlib.util
 from contextlib import ExitStack
 from pathlib import Path
@@ -18,9 +19,10 @@ SPEC = importlib.util.spec_from_file_location("n1_cuda_policy_example", ROOT / "
 example = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(example)
 
-pytestmark = pytest.mark.cuda
+pytestmark = [pytest.mark.cuda, pytest.mark.tyx]
 CASES = tuple(("hinge-slide", count, stream) for count in (1, 8, 32) for stream in ("default", "nondefault")) + tuple(("support-slide", 8, stream) for stream in ("default", "nondefault"))
 STEPS = 8
+XML_SHA256 = {"hinge-slide": "8596be527027c85f5c6f4f17d64ababf5820a75771943da71e18509347cb16e7", "support-slide": "bf4eb00b8d0eb00ac26be3f5fa31c2972fcde895ce5290bc5bdde60d45d11e92"}
 EXPECTED_LAYOUT = {"hinge-slide": (2, 2, 1, 3), "support-slide": (1, 1, 1, 2)}
 EXPECTED_H = {"hinge-slide": 0.002, "support-slide": 0.001}
 Q_ATOL, V_ATOL = 2e-4, 3e-3
@@ -68,6 +70,7 @@ def unchanged(runtime, before, revision):
 
 @pytest.mark.parametrize("case,count,stream", CASES)
 def test_actual_cuda_mlp_continuous_physics_and_complete_host_route(case, count, stream, tmp_path):
+    assert hashlib.sha256(example.XML[case].encode()).hexdigest() == XML_SHA256[case]
     summary = example.run_case(case, count, stream, tmp_path / "trajectory.jsonl")
     assert summary["steps"] == STEPS
     assert summary["world_steps"] == count * STEPS
@@ -112,7 +115,7 @@ def test_torch_bad_input_preserves_previous_accepted_packet(bad):
         with pytest.raises((ValueError, TypeError, RuntimeError)):
             example.submit_torch_controls(runtime, tuple(invalid), stream, expected_revision=revision)
         unchanged(runtime, before, revision)
-        runtime.step(EXPECTED_H["support-slide"])
+        assert dict(runtime.step(EXPECTED_H["support-slide"])) == dict.fromkeys(runtime.world_keys, True)
         for index, state in enumerate(runtime.snapshot().values()):
             np.testing.assert_array_equal(state.last_step.stored_control.ctrl, good[0][index].cpu().numpy())
 
@@ -137,6 +140,7 @@ def test_closed_borrowed_torch_handle_preserves_accepted_state(closed):
         tensors = actions(torch, model)
         views = borrow(stack, tensors)
         producer = torch.cuda.Stream()
+        producer.wait_stream(torch.cuda.current_stream())
         wrapped = stream_from_torch(producer, backend="cuda")
         stack.callback(wrapped.close)
         if closed == "view":
@@ -169,7 +173,7 @@ def test_stale_revision_and_frame_refused_then_fresh_step():
         unchanged(runtime, before, revision + 1)
         with pytest.raises(ValueError, match="stale"):
             workspace.to_torch(frame)
-        runtime.step(EXPECTED_H["support-slide"])
+        assert dict(runtime.step(EXPECTED_H["support-slide"])) == dict.fromkeys(runtime.world_keys, True)
         fresh = workspace.refresh(expected_revision=runtime.checkpoint_revision)
         assert workspace.to_torch(fresh)[0].is_cuda
 
@@ -193,14 +197,14 @@ def test_owned_observation_and_submitted_actions_outlive_borrowed_owners():
         producer.synchronize()
         host_values = tuple(value.cpu().numpy().copy() for value in values)
         example.host_submit(reference, host_values)
-        with torch.cuda.stream(producer):
+        with torch.cuda.stream(producer), torch.inference_mode():
             for value in values:
                 value.fill_(17)
         producer.synchronize()
         del values, output
         for _ in range(2):
-            runtime.step(EXPECTED_H["support-slide"])
-            reference.step(EXPECTED_H["support-slide"])
+            assert dict(runtime.step(EXPECTED_H["support-slide"])) == dict.fromkeys(runtime.world_keys, True)
+            assert dict(reference.step(EXPECTED_H["support-slide"])) == dict.fromkeys(reference.world_keys, True)
             example.assert_exact(runtime.snapshot(), reference.snapshot())
         assert torch.equal(observation, saved_observation)
         assert reward.is_cuda and terminated.is_cuda
@@ -216,7 +220,7 @@ def test_negative_zero_word_is_preserved_in_native_control_receipt():
         receipt = example.submit_torch_controls(runtime, values, torch.cuda.default_stream(), expected_revision=runtime.checkpoint_revision)
         stored = np.asarray(receipt.controls[runtime.world_keys[0]].ctrl, dtype=np.float32)
         assert stored.view(np.uint32)[0] == 0x80000000
-        runtime.step(EXPECTED_H["support-slide"])
+        assert dict(runtime.step(EXPECTED_H["support-slide"])) == dict.fromkeys(runtime.world_keys, True)
 
 
 def test_real_second_device_input_refused_when_hardware_exists():

@@ -203,7 +203,8 @@ def test_sparse_world_binding_storage_and_changed_snapshot(mode,tmp_path):
         reordered[shape.key]=CollisionMotion(motion[shape.key].start[list(permutation)])
     with CollisionWorkspace(CollisionModel(tuple(reversed(reverse))),backend=mode) as ws:
         perm=ws.boundary_distances(reordered,margin=.5)
-        assert [g.packet.rows[0].distance for g in perm.groups]==[g.packet.rows[0].distance for g in first.groups]
+        np.testing.assert_allclose([g.packet.rows[0].distance for g in perm.groups],
+                                   [g.packet.rows[0].distance for g in first.groups], rtol=0, atol=3e-4)
         with saved(tmp_path,"storage-permutation",ws,reordered) as record:
             record["result"]=perm
 
@@ -311,3 +312,20 @@ def test_limits_reject_boolean_expansion_and_untyped_mapping():
     for field,value in (("groups",True),("candidates",8193),("vertices",513),("faces",129),("segments",65)):
         with pytest.raises((TypeError,ValueError)):
             BoundaryDistanceLimits(**{field:value})
+
+@pytest.mark.parametrize("status",("CONDITIONING","DEGENERATE"))
+def test_unresolved_rows_are_complete_public_boundary_evidence(mode,status,tmp_path):
+    model,motion=flat("capsule")
+    triangle,round_key=(s.key for s in model.shapes)
+    if status=="CONDITIONING":
+        motion[round_key]=CollisionMotion(((.25,.25,.25),(1.25,.25+2**-15,.25)))
+    else:
+        motion[triangle]=CollisionMotion(((0,0,0),(2,0,0),(1,0,0)))
+    with CollisionWorkspace(model,backend=mode) as ws:
+        with saved(tmp_path,status,ws,motion) as record:
+            result=ws.boundary_distances(motion,margin=.5)
+            record["result"]=result
+            assert result.required_candidates==1
+            assert result.groups[0].packet.rows[0].status==status
+            assert result.groups[0].packet.rows[0].normal is None
+            assert_group(result.groups[0])

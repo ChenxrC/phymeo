@@ -2,17 +2,18 @@
 
 import numpy as np
 
+from . import _actuator_device
 from ._device import TyxDevice
 from ._floating_device import TyxFloatingDevice
 from ._tree_device import TyxTreeDevice
 
 
 class TyxConstraintDevice(TyxDevice):
-    def __init__(self, plan, mode, cache_root, q, v, time, nbody, h, capacities):
+    def __init__(self, plan, mode, cache_root, q, v, time, nbody, h, capacities, *, activation=None):
         from . import _constraint_rows, _constraint_solver, _normal_geometry
 
         self._base_type = TyxFloatingDevice if plan.base.kind == 3 else TyxTreeDevice
-        self._base_type.__init__(self, plan, mode, cache_root, q, v, time, nbody, h, capacities)
+        self._base_type.__init__(self, plan, mode, cache_root, q, v, time, nbody, h, capacities, activation=activation)
         self.capacities = tuple(map(int, capacities))
         self.contacts = (_normal_geometry.contacts, _normal_geometry.contacts_other)
         self.assemble = (_constraint_rows.assemble, _constraint_rows.assemble_other)
@@ -118,7 +119,7 @@ class TyxConstraintDevice(TyxDevice):
                 self.nworld,
                 self.nbody,
                 self.plan.nv,
-                self.plan.nu,
+                0 if self.activation_enabled else self.plan.nu,
                 self.body_data,
                 self.joints,
                 self.ancestors,
@@ -147,6 +148,7 @@ class TyxConstraintDevice(TyxDevice):
                 mode=self.mode,
             )
             self.counts["completed_kernels"] += 1
+            _actuator_device.advance(self, old, new)
             if self.extended_contacts is not None:
                 self.extended_contacts(
                     self.nworld,

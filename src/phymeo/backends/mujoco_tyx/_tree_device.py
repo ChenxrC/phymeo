@@ -4,6 +4,7 @@ from contextlib import ExitStack
 
 import numpy as np
 
+from . import _actuator_device
 from ._device import TyxDevice
 
 
@@ -15,17 +16,7 @@ class TyxTreeDevice(TyxDevice):
 
         from . import _tree_kernels as kernels
 
-        self.activation_enabled = hasattr(plan, "activation")
-        if self.activation_enabled:
-            if (
-                not isinstance(activation, np.ndarray)
-                or activation.dtype != np.float32
-                or activation.shape != (len(q), plan.activation.na)
-                or not np.isfinite(activation).all()
-            ):
-                raise ValueError("stateful T1 requires the complete FP32 activation bank")
-        elif activation is not None:
-            raise ValueError("stateless T1 cannot receive an activation bank")
+        self.activation_enabled = _actuator_device.validate(plan, activation, len(q))
         self.tx, self.mode, self.plan = tx, mode, plan
         self.nbody, self.nworld, self.h = nbody, len(q), float(h)
         self.active = 0
@@ -60,21 +51,7 @@ class TyxTreeDevice(TyxDevice):
                 self.q = (self._buffer(q), self._buffer(q))
                 self.v = (self._buffer(v), self._buffer(v))
                 self.time = (self._buffer(time), self._buffer(time))
-                if self.activation_enabled:
-                    from . import _actuator_kernels
-
-                    self.activation_kernels = (
-                        _actuator_kernels.update,
-                        _actuator_kernels.update_other,
-                    )
-                    self.act = (self._buffer(activation), self._buffer(activation))
-                    self.activation_ids = self._buffer(plan.activation.ids)
-                    self.activation_values = self._buffer(plan.activation.values)
-                    self.activation_derivative = self._buffer(np.zeros_like(activation))
-                    self.integration_derivative = self._buffer(np.zeros_like(activation))
-                    self.actuator_fields = self._buffer(
-                        np.zeros((self.nworld, plan.nu, 4), np.float32)
-                    )
+                _actuator_device.allocate(self, activation)
                 self.controls = self._buffer(np.zeros((self.nworld, max(plan.nu, 1)), np.float32))
                 self.applied_input = self._buffer(np.zeros((self.nworld, 8), np.float32))
                 self.body_force = self._buffer(np.zeros((self.nworld, nbody, 6), np.float32))
@@ -164,29 +141,7 @@ class TyxTreeDevice(TyxDevice):
                 mode=self.mode,
             )
             self.counts["completed_kernels"] += 1
-            if self.activation_enabled:
-                self.activation_kernels[old](
-                    self.nworld,
-                    self.plan.nu,
-                    self.plan.activation.na,
-                    self.plan.nv,
-                    self.h,
-                    self.activation_ids,
-                    self.activation_values,
-                    self.q[old],
-                    self.v[old],
-                    self.controls,
-                    self.act[old],
-                    self.act[new],
-                    self.activation_derivative,
-                    self.integration_derivative,
-                    self.actuator_fields,
-                    self.actuator,
-                    self.applied,
-                    self.status,
-                    mode=self.mode,
-                )
-                self.counts["completed_kernels"] += 1
+            _actuator_device.advance(self, old, new)
             self.solve[old](
                 self.nworld,
                 self.plan.nv,
@@ -243,19 +198,7 @@ class TyxTreeDevice(TyxDevice):
                     ("input_time", self.time[old]),
                 )
             }
-            if self.activation_enabled:
-                result.update(
-                    {
-                        name: self._get(buffer)
-                        for name, buffer in (
-                            ("act", self.act[target]),
-                            ("input_act", self.act[old]),
-                            ("activation_derivative", self.activation_derivative),
-                            ("integration_derivative", self.integration_derivative),
-                            ("actuator_fields", self.actuator_fields),
-                        )
-                    }
-                )
+            _actuator_device.download(self, result, old, target)
             result["body_position"] = motion[:, :, 0, :]
             result["body_com"] = motion[:, :, 5, :]
             result["smooth_acceleration"] = result["qacc"]

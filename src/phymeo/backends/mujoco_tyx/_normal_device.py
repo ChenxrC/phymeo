@@ -2,6 +2,7 @@
 
 import numpy as np
 
+from . import _actuator_device
 from ._device import TyxDevice
 from ._floating_device import TyxFloatingDevice
 from ._tree_device import TyxTreeDevice
@@ -10,7 +11,7 @@ from ._tree_device import TyxTreeDevice
 class TyxNormalDevice(TyxDevice):
     """Cold-start normal QP, five/six launches, one publication boundary."""
 
-    def __init__(self, plan, mode, cache_root, q, v, time, nbody, h, capacities):
+    def __init__(self, plan, mode, cache_root, q, v, time, nbody, h, capacities, *, activation=None):
         from . import _normal_geometry, _normal_solver
 
         extended_contacts = None
@@ -19,7 +20,7 @@ class TyxNormalDevice(TyxDevice):
 
             extended_contacts = _normal_extended_geometry.extended_contacts
         self._base_type = TyxFloatingDevice if plan.base.kind == 3 else TyxTreeDevice
-        self._base_type.__init__(self, plan, mode, cache_root, q, v, time, nbody, h, capacities)
+        self._base_type.__init__(self, plan, mode, cache_root, q, v, time, nbody, h, capacities, activation=activation)
         self.capacities = tuple(map(int, capacities))
         self.contacts = (_normal_geometry.contacts, _normal_geometry.contacts_other)
         self.normal_solve = _normal_solver.solve
@@ -108,7 +109,7 @@ class TyxNormalDevice(TyxDevice):
                 self.nworld,
                 self.nbody,
                 self.plan.nv,
-                self.plan.nu,
+                0 if self.activation_enabled else self.plan.nu,
                 self.body_data,
                 self.joints,
                 self.ancestors,
@@ -137,6 +138,7 @@ class TyxNormalDevice(TyxDevice):
                 mode=self.mode,
             )
             self.counts["completed_kernels"] += 1
+            _actuator_device.advance(self, old, new)
             if self.extended_contacts is not None:
                 self.extended_contacts(
                     self.nworld,

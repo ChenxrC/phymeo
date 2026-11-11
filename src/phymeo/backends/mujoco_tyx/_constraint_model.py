@@ -82,7 +82,7 @@ class TyxConstraintModel:
         return getattr(self.base, name)
 
 
-def compile_constraint_model(mj, model, pairs):
+def compile_constraint_model(mj, model, pairs, *, allow_activation=False):
     from ._floating_model import compile_floating_model
     from ._tree_model import compile_tree_model
 
@@ -171,7 +171,7 @@ def compile_constraint_model(mj, model, pairs):
         if np.any(model.jnt_type == mj.mjtJoint.mjJNT_FREE)
         else compile_tree_model
     )
-    base = compile_base(mj, model, allow_normal_contacts=True, allow_constraints=True)
+    base = compile_base(mj, model, allow_normal_contacts=True, allow_constraints=True, allow_activation=allow_activation)
     geom_data = np.zeros((max(1, model.ngeom), 15))
     geom_ids = np.zeros((max(1, model.ngeom), 2), dtype=np.int32)
     for geom in range(model.ngeom):

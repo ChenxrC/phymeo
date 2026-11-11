@@ -55,7 +55,7 @@ class TyxNormalModel:
         return getattr(self.base, name)
 
 
-def compile_normal_model(mj, model, pairs):
+def compile_normal_model(mj, model, pairs, *, allow_activation=False):
     from ._floating_model import compile_floating_model
     from ._tree_model import compile_tree_model
 
@@ -111,9 +111,9 @@ def compile_normal_model(mj, model, pairs):
     if issues:
         raise MuJoCoTyxUnsupported(issues)
     base = (
-        compile_floating_model(mj, model, allow_normal_contacts=True)
+        compile_floating_model(mj, model, allow_normal_contacts=True, allow_activation=allow_activation)
         if np.any(model.jnt_type == mj.mjtJoint.mjJNT_FREE)
-        else compile_tree_model(mj, model, allow_normal_contacts=True)
+        else compile_tree_model(mj, model, allow_normal_contacts=True, allow_activation=allow_activation)
     )
     geom_data = np.zeros((model.ngeom, 15))
     for geom in range(model.ngeom):

@@ -1,4 +1,5 @@
-"""N4a fixed declarations before execution; expensive nodes are explicit slow CUDA."""
+"""N4a fixed declarations before execution; expensive nodes are explicit learning/scale CUDA entries."""
+import ast
 import importlib.util
 from pathlib import Path
 from types import SimpleNamespace
@@ -32,7 +33,8 @@ def test_fixed_contract_has_disjoint_grids_and_declared_budget(name, seeds, api)
     train = tasks.templates(name, held_out=False)
     held = tasks.templates(name, held_out=True)
     assert len(train) == len(held) == 8
-    identities = lambda rows: {tuple(q) + tuple(v) for q, v in rows}
+    def identities(rows):
+        return {tuple(q) + tuple(v) for q, v in rows}
     assert len(identities(train)) == len(identities(held)) == 8
     assert identities(train).isdisjoint(identities(held))
     for q, v in train + held:
@@ -46,7 +48,11 @@ def test_fixed_contract_has_disjoint_grids_and_declared_budget(name, seeds, api)
 def test_support_reuses_original_source_and_target_not_rejected_proposal(api):
     original = ROOT / "examples" / "mujoco_tyx_cuda_policy.py"
     # XML binding is compared as authored text without importing that backend module.
-    assert original.is_file()
+    tree = ast.parse(original.read_text(encoding="utf-8-sig"))
+    literal = next(node.value for node in tree.body if isinstance(node, ast.Assign)
+                   and any(isinstance(target, ast.Name) and target.id == "XML" for target in node.targets))
+    original_xml = ast.literal_eval(literal)["support-slide"]
+    assert api.tasks().task("S").xml == original_xml
     task = api.tasks().task("S")
     assert task.q_target == (0.00075,) and task.h == 0.001
     assert 'fullinertia=".08 .10 .12 .002 -.001 .003"' in task.xml
@@ -132,7 +138,7 @@ def test_fixed_first_preflight(name, api, tmp_path):
     ("S", 14111), ("S", 14112), ("S", 14113),
     ("R", 14211), ("R", 14212), ("R", 14213),
 ))
-@pytest.mark.slow
+
 @pytest.mark.cuda
 @pytest.mark.tyx
 def test_fixed_learning_seed(name, seed, api, tmp_path):
@@ -147,7 +153,7 @@ def test_fixed_learning_seed(name, seed, api, tmp_path):
 
 @pytest.mark.parametrize("name", ("J", "S", "R"))
 @pytest.mark.parametrize("worlds", (1, 8, 32, 64, 128, 256))
-@pytest.mark.slow
+
 @pytest.mark.cuda
 @pytest.mark.tyx
 def test_fixed_scale_cell(name, worlds, api, tmp_path):
@@ -159,3 +165,81 @@ def test_fixed_scale_cell(name, worlds, api, tmp_path):
     assert result["timing"]["compute_and_mandatory_diagnostics_s"] > 0
     assert result["timing"]["evidence_write_s"] >= 0
     assert result["coverage"]["unobserved_torch_internal_sync"] == "UNKNOWN"
+
+
+def test_second_public_step_failure_retains_owned_prefix_and_restores_entry():
+    from phymeo.training.mujoco_tyx_evaluation import capture_adapter_steps
+
+    class Action:
+        def __init__(self, value):
+            self.value = np.array(value, np.float32)
+        def detach(self):
+            return self
+        def clone(self):
+            return Action(self.value.copy())
+
+    class Adapter:
+        def __init__(self):
+            self.calls, self.last_transition = 0, None
+        def step(self, action):
+            self.calls += 1
+            if self.calls == 2:
+                raise RuntimeError("injected second physical publication refusal")
+            self.last_transition = {"sequence": self.calls, "value": action.value.copy()}
+            return self.last_transition
+
+    adapter, action = Adapter(), Action([[.1]])
+    original = adapter.step
+    with pytest.raises(RuntimeError, match="second physical"):
+        with capture_adapter_steps(adapter) as attempts:
+            first = adapter.step(action)
+            action.value[:] = .2
+            adapter.step(action)
+    action.value[:] = .9
+    assert adapter.calls == 2 and len(attempts) == 2
+    assert attempts[0]["transition"] is first
+    assert attempts[0]["status"] == "accepted" and attempts[1]["status"] == "failed"
+    np.testing.assert_array_equal(attempts[0]["requested_action"].value, np.array([[.1]], np.float32))
+    np.testing.assert_array_equal(attempts[1]["requested_action"].value, np.array([[.2]], np.float32))
+    assert "step" not in vars(adapter) and adapter.step == original
+    adapter.step(action)
+    assert adapter.calls == 3 and len(attempts) == 2
+
+
+def test_lossless_evidence_preserves_array_bits_and_full_mapping(tmp_path):
+    from base64 import b64decode
+    from hashlib import sha256
+    import gzip
+    import json
+    from phymeo.training.mujoco_tyx_evaluation import EvidenceWriter
+
+    bits = np.array([0x80000000, 0x3F800000], np.uint32)
+    path = tmp_path / "complete.jsonl.gz"
+    writer = EvidenceWriter(path)
+    writer.write("full", {5: bits.view(np.float32), "5": {"failure": "retained"}})
+    writer.close()
+    receipt = writer.receipt()
+    raw = gzip.decompress(path.read_bytes())
+    assert sha256(raw).hexdigest() == receipt["logical_sha256"]
+    payload = json.loads(raw)["payload"]["mapping"]
+    assert payload[0][0] == 5 and payload[1][0] == "5"
+    assert b64decode(payload[0][1]["bytes_base64"]) == bits.tobytes()
+    assert receipt["records"] == 1 and receipt["logical_bytes"] == len(raw)
+
+
+@pytest.mark.parametrize("inputs", (("a", "a", "b"), ("a", "b")))
+def test_summary_requires_exact_distinct_seed_inputs(api, tmp_path, inputs):
+    with pytest.raises(ValueError, match="three distinct"):
+        api.summarize_task("J", [tmp_path / name for name in inputs], tmp_path / "result")
+    assert not (tmp_path / "result").exists()
+
+
+def test_summary_rejects_changed_publication_before_cost_aggregation(api, tmp_path):
+    import json
+    directory = tmp_path / "saved"
+    directory.mkdir()
+    (directory / "summary.json").write_text(json.dumps({"task": "J"}), encoding="utf-8")
+    (directory / "manifest.json").write_text("{}", encoding="utf-8")
+    (directory / "publication.json").write_text(json.dumps({"summary_sha256": "0"*64}), encoding="utf-8")
+    with pytest.raises(ValueError, match="publication hash"):
+        api._read_summary(directory)

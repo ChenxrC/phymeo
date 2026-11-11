@@ -214,8 +214,8 @@ evidence throughput). Optimizer-only speed is a labeled submetric, never total.
 Every cell records cold startup, warmup, each full update, actual accepted
 transitions, terminal/reset counts, complete counter deltas and current source/
 dependency/device/seed/model hashes. Optional bounded observer samples the fixed
-first measured update only, separately from primary timing; do not mix profiler
-overhead with the main throughput claim.
+existing warmup update only, with observer overhead explicitly included. The three
+formal measured updates remain unprofiled; no extra profile update is run.
 
 Existing exact counters cover runtime uploaded/downloaded/static bytes,
 control D2D/raw audit/status bytes, task D2D/status/explicit-readback bytes,
@@ -236,24 +236,30 @@ Complete public step timing and HOST diagnostic cost retain their actual boundar
 no private physics bank access, solver edit or skipped validation is authorized.
 A later production mode or Newton comparison needs a separately matched contract.
 
-## 6. Proposed implementation ownership
+## 6. Frozen implementation ownership
 
-After parent code grant, suggested NEW files only:
+Parent authorized exactly these six NEW paths:
 
 1. `src/phymeo/training/mujoco_tyx_evaluation.py`: optional reusable deterministic
    evaluation, cost/complete-window validation and bounded timing/counter helper;
    accepts task callbacks/specs, no task names or XML in the engine.
 2. `examples/mujoco_tyx_learning_tasks.py`: immutable model/task/seed/grid registry
    and public runtime/env/session construction, independent of tests.
-3. `examples/benchmark_mujoco_tyx_training.py`: explicit CLI
-   --phase preflight|learn|scale --task J|S|R --seed INT --worlds INT --output NEWDIR;
+3. `examples/evaluate_mujoco_tyx_learning.py`: explicit CLI
+   --phase preflight|learn|scale|summarize --task J|S|R --seed INT --worlds INT --output NEWDIR;
    validates each fixed matrix cell and preserves per-task failures.
-4. `tests/training/test_mujoco_tyx_learning_scale.py`: frozen declaration/grid,
+4. `tests/training/test_mujoco_tyx_evaluation.py`: frozen declaration/grid,
    cost/ratio/window refusal, accounting coverage and actual first-slice entry
    tests; parent chooses focused serial execution, not old complete N2/N3 reruns.
-5. This contract and a final separate report if parent requests it.
+5. This contract: `docs/development/p65-mujoco-tyx-n4a-contract.md`.
+6. `docs/development/p65-mujoco-tyx-n4a-report.md`: precise authoring and handoff scope.
 
 No old solver, wrapper, session, exports or RSL implementation change is proposed.
-Parent will freeze exact file allowance before implementation. New training code,
+The fixed three-seed `summarize` phase reads bound saved summaries/evidence only,
+rejects missing/duplicate/changed input bindings, and performs no physical replay.
+The zero-action diagnostic is run once by the first predeclared seed per task;
+other seeds reference it through that final three-seed aggregation. Preflight is
+an explicit one-time phase, never automatically repeated inside learn or scale.
+New training code,
 whole-grid performance, learning quality and W256 remain UNEXECUTED/UNQUALIFIED
 until the original frozen runs and evidence checks actually finish.

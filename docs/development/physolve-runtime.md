@@ -2,6 +2,7 @@
 
 **资格状态：未通过完整机器人验收，不可用于消费者部署。**
 Panda 的 B1g 固定输入与官方参考复测见[初始加速度诊断](#b1g-panda-初始加速度诊断)。
+后续 B1h 的独立几何审计与显式配置见[Panda连接处规则](../architecture/native-assembly.md#b1h-panda-显式连接处规则)；不改原始无规则失败。
 后续 B1c 已增加显式连接处排除配置和 snapshot 的 masked reset 保持，见
 [装配合同](../architecture/native-assembly.md#b1c-显式排除与观测保持)；以下无规则
 机器人历史失败仍保留，不自动推广到完整机器人、C ABI 或 Graph 资格。
@@ -216,3 +217,36 @@ PHYMEO owner 或 Host 互操作调整保证原门槛。改变归约精度/停止
 则需单独评审求解数值实现的范围变更。不能关闭接触、改初态、重复求解挑结果、
 强制迭代或放宽容差来关闭本项。正式 N=1/8/64 结果、独立复审与制品身份见
 配套 P2PE Stage 批次记录及实验根 `evidence/b1g-summary.json`。
+
+## B1h 显式规则后的剩余数值差异
+
+本节只分析显式底座连接规则配置；原始模型的B1g结论保持独立。
+正式N=1/8/64结果见[模型与规则记录](../architecture/native-assembly.md#b1h-panda-显式连接处规则)。
+
+N=64固定约束实验在同一个既有原生实例直接调用8次 `mw_phycore_solve`，不执行
+完整forward、不切换bank、不重新生成接触。每次采集的qacc及其他结果完全相同，
+并逐位确认qpos/qvel/warmstart、控制/外力、质量矩阵及分解、无约束加速度/力、
+约束J/D/aref等输入没有变化。证据为 `b1h-fixed-solver.json` 与对应NPZ。
+因此不能把正式矩阵差异直接归因于固定输入下的求解核不确定性，也不能由这8次
+观察承诺所有输入下求解确定。
+
+该快照64个世界各有25条约束；J/D/aref内容按行排序后完全相同，原行序仅51个
+世界与world0相同。其余13个世界均出现qacc差6.1035156e-5，其他已采集积分输入、
+控制、质量矩阵及无约束加速度/力逐位相同。这是约束行序与差异的关联证据，
+不是已经证明某个特定kernel错误；需结合完整forward前后边界继续定位。
+
+完整forward的control回调采样在新进程完成：两个bank及随后4次forward的最终
+qacc完全一致，没有复现正式无采样矩阵的数值失败。全局contact槽位/world排列、
+efc.id及contact.efc_address发生变化，但按world/geom/距离/位置/frame/dim组成的
+接触记录排序后内容一致；每world的J/D/aref/type联合行序也完全一致。创建第二bank
+及reset准备均未改变第一bank已采集输出。证据为 `b1h-trace.json`、
+`b1h-trace-analysis.json` 及原始NPZ。
+
+该回调包含同步host读取，会改变调度；它只能证明这次采样下接触槽位重排没有
+改变物理内容，不能覆盖正式失败或排除未采样路径的行序变化。回调位于
+fwd_velocity之后、actuation/acceleration/solve之前，其中旧qacc_smooth、qLD等
+尚未刷新，不能把重复回调与冷回调的这些差值称为本轮求解输入的首个错误。
+
+下一步应以完整约束输入冻结和一致的排列/逆排列对照验证行序的因果作用，再判断
+是否存在可行修复及其所属层；尚无依据改动P2PE状态owner、TYX数组复制或
+加入生产同步。不能增加采样同步、重复求解挑结果或更改容差来使正式矩阵通过。

@@ -244,3 +244,69 @@ N=8/64 的 Panda 推进矩阵未在本批执行，不以单项通过代替完整
 输入排查及尚未关闭的停止条件数值阻断见
 [PhySolve 运行时诊断](../development/physolve-runtime.md#b1g-panda-初始加速度诊断)。
 该节点未更改模型、公共装配合同或生产实现，不继承为机器人资格通过。
+
+## B1h Panda 显式连接处规则
+
+原始 URDF 不携带 `load_panda()` 在 Python 中声明的父子刚体排除。后者还合并
+capsule 代理、转换刚体表达，不能把它与完整 native 路线整包视为等价。本批只
+审查并显式选择底座—第一节这一个连接处，不自动复制所有相邻过滤政策。
+
+原 URDF 的 link1 柱体/球心与 joint1 的 z 轴同轴，其几何集合不随该关节转角
+变化。独立解析计算和 CPU 全范围九点扫描一致：底座两个端球与第一节柱体的
+穿透为0.06/0.03 m，与下端球的穿透约0.035147186/0.011833462 m；法向关节
+Jacobian 为零（检查1e-12）。这类连接处代理重叠不是关节可运动消除的法向接触。
+该依据不等于制造商真实几何认证，也不授权过滤其他邻接或非邻接接触。
+
+使用既有公共入口显式配置，`panda_path` 指向调用方确认的资产：
+
+```python
+from itertools import product
+from phymeo.builders.native_assembly import NativeAssetInstance, compile_native_template
+
+template = compile_native_template(
+    (NativeAssetInstance("panda", panda_path),),
+    timestep=0.002, gravity=(0, 0, -9.81),
+)
+source = template.compilation.collision_source
+groups = [
+    [g for g in source.geoms if g.body_name == name]
+    for name in ("panda::panda_link0_sc", "panda::panda_link1_sc")
+]
+if [len(g) for g in groups] != [3, 3]:
+    raise ValueError("review this asset's source identities before applying the rule")
+plan = source.plan_exclusions(
+    [(a.key, b.key) for a, b in product(*groups)], source_identity=source.identity,
+)
+configured = template.with_collision_exclusions(plan)
+```
+
+保留静态 body 的 native 装配中，形状属于 `_sc` 固定子 body；不能猜它们直接属于
+`panda_link0/1`，也不能把 native geom 编号当公共身份。上述9对声明完整覆盖两端
+各3个形状，现有 exact lowering 可原样编码为一个 body exclude。没有添加新的
+碰撞表机制、特殊机器人分支或热路径解析；codedev、TYX、六CUBIN不需改动。
+
+CPU审计确认只有指定候选对消失，非排除数值数组、option、初态完全相同。link5
+与hand、两个finger pad、外部obstacle与link1的接触仍存在；零初态的joint4仍超出
+其上限-0.0698 rad，限位行保留。此次未更改初态、驱动、积分器、摩擦或容差。
+无规则模板仍没有新增exclude；B1g原始无规则数值失败不因新配置而关闭。
+
+正式入口为 `tests/test_panda_collision_model.py` 和
+`tests/test_panda_collision_runtime.py`，由现有pytest清单收集。CUDA矩阵的最终结果
+与审查记录见实验根 `evidence/b1h-summary.json`；N=1探针的一致性不代替N=8/64资格。
+同载荷单bank对照只验证原生运行组织，没有据此声明CPU数值一致、接触力完整物理
+验收、长期稳定、C ABI、Graph、传感器或GUI通过。
+
+复审后正式矩阵为4通过、2失败（模型3项通过，CUDA N=1通过，N=8/64失败），
+无跳过。原 `atol=1e-6, rtol=0` 保持；reset核心状态和轨迹replay保持逐位要求。
+
+| N | 初态qacc差 | 六步中最大qacc差 | forward qacc差 | reset及replay |
+| --- | --- | --- | --- | --- |
+| 1 | 通过 | 通过 | 通过 | 全部通过 |
+| 8 | 通过 | 9.1552734e-5 | 7.6293945e-5 | selected qacc失败；精确replay失败 |
+| 64 | 6.1035156e-5 | 6.7138672e-4 | 1.7852783e-3 | selected/full qacc失败；精确replay失败 |
+
+三种规模的reset核心 `qpos/qvel/time/qfrc_applied/ctrl`、未选世界全部snapshot字段
+以及forward自身不改变 `qpos/qvel/time` 的检查通过。N=8/64另有约束力差异，N=64
+第六步qvel差1.4305115e-6。完整失败字段见原始日志；发生早期数值分歧后的阶段
+只用于诊断，不能解释为独立合格轨迹。首轮N=8/64失败亦完整保留，不择优取值。
+这些结果说明规则转换通过，但未解决完整数值资格，B1g无规则失败仍然成立。

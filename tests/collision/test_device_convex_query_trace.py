@@ -1,6 +1,7 @@
 """Bounded opt-in GJK trace protocol; no new geometry acceptance threshold."""
 from dataclasses import replace
 from contextlib import ExitStack
+import json
 import copy
 
 import numpy as np
@@ -40,6 +41,10 @@ def assert_trace(trace, plan, count):
     assert trace.stats["owned_bytes"] == count * plan._gjk * 512 * 4 + count * 2 * 4
     assert trace.stats["readback_bytes"] == trace.stats["owned_bytes"]
     assert trace.stats["clear_launches"] == 1
+    assert trace.stats["allocations"] == 3
+    assert trace.stats["host_upload_bytes"] == count * 8
+    assert trace.stats["uploaded_bytes"] == (count * 8 if plan._batch._mode == "cuda" else 0)
+
     assert trace.stats["host_read_bytes"] == trace.stats["readback_bytes"]
     assert trace.stats["downloads"] == (3 if plan._batch._mode == "cuda" else 0)
     for array in (trace.floats, trace.integers, trace.shape_rows, trace.pair_rows):
@@ -125,12 +130,20 @@ def test_trace_selection_host_validation(bad):
                              for i in range(9)), malformed=((a,),))
     with pytest.raises((ValueError, TypeError)):
         normalize_trace_pairs(values[bad])
+    if bad == "malformed":
+        raw = np.asarray([np.nan, np.inf, -np.inf], dtype=np.float32)
+        encoded = k0.encode(raw)
+        json.dumps(encoded, allow_nan=False)
+        assert encoded["bytes_hex"] == raw.tobytes().hex()
+        assert encoded["values"] == [{"nonfinite": "nan"},
+                                     {"nonfinite": "inf"}, {"nonfinite": "-inf"}]
+
 
 
 @pytest.mark.tyx
 def test_bad_or_nonmember_pair_preserves_both_results(tyx_mode, tmp_path):
     data = family.reference().case("BE", "sep")
-    with family.prepared(data, tyx_mode, tmp_path) as (_, broad, plan):
+    with family.prepared(data, tyx_mode, tmp_path) as (batch, broad, plan):
         first = plan.query_with_diagnostics(pairs=((ph.CollisionKey(*data["keys"][0]),
                                                    ph.CollisionKey(*data["keys"][1])),))
         old_broad = broad.last_result
@@ -140,6 +153,14 @@ def test_bad_or_nonmember_pair_preserves_both_results(tyx_mode, tmp_path):
                 plan.query_with_diagnostics(pairs=bad)
             assert plan.last_result is first.query
             assert plan.last_diagnostics is first and broad.last_result is old_broad
+        # A legal registered pair can still be absent from this query membership.
+        with ExitStack() as stack:
+            empty = batch.prepare_convex_query(broad, pairs=())
+            stack.callback(empty.close)
+            no_rows = empty.query()
+            with pytest.raises(ValueError, match="not present"):
+                empty.query_with_diagnostics(pairs=(p,))
+            assert empty.last_result is no_rows and empty.last_diagnostics is None
 
 
 @pytest.mark.tyx
@@ -168,7 +189,7 @@ def test_temporary_owned_capacity_is_exact_and_freed(short, tyx_mode, tmp_path):
 @pytest.mark.parametrize("fault", ("read", "construct", "allocation"))
 def test_late_trace_failure_is_atomic_and_retryable(fault, tyx_mode, tmp_path, monkeypatch):
     data = family.reference().case("BE", "sep")
-    with family.prepared(data, tyx_mode, tmp_path) as (_, broad, plan):
+    with family.prepared(data, tyx_mode, tmp_path) as (batch, broad, plan):
         first = plan.query_with_diagnostics(pairs=((ph.CollisionKey(*data["keys"][0]),
                                                    ph.CollisionKey(*data["keys"][1])),))
         old_broad, live = broad.last_result, plan.stats["live_bytes"]
@@ -214,7 +235,10 @@ def test_trace_source_owner_epoch_and_policy_binding(fault, tyx_mode, tmp_path):
                 with pytest.raises(ValueError, match="owner"):
                     other.require_current_diagnostics(trace)
         else:
+            bad_frame = trace.floats.copy()
+            bad_frame[0, 0, 412] += np.float32(1)
             forged = (
+                replace(trace, floats=bad_frame),
                 replace(trace, pairs=tuple((b, a) for a, b in trace.pairs)),
                 replace(trace, policy=dict(trace.policy, gjk_iterations=1)),
                 replace(trace, pair_rows=np.full_like(trace.pair_rows, -1)),

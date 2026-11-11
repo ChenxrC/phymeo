@@ -29,6 +29,27 @@ def helpers():
     )
 
 
+def same_state_geometry(normal, traced, encode):
+    """Exact stored equality. Counters are retained, but are not geometry fields."""
+    from dataclasses import fields
+    import numpy as np
+
+    assert normal.owner is traced.owner and normal.registration is traced.registration
+    for item in fields(normal):
+        if item.name in ("stats", "attempt_tag", "raw", "owner", "registration"):
+            continue
+        assert encode(getattr(normal, item.name)) == encode(getattr(traced, item.name)), item.name
+    assert tuple(normal.raw) == tuple(traced.raw)
+    for name in normal.raw:
+        first, second = np.array(normal.raw[name]), np.array(traced.raw[name])
+        if name == "meta":
+            # Only the documented per-attempt identity differs.
+            first[:, 12] = 0
+            second[:, 12] = 0
+        assert first.dtype == second.dtype and first.shape == second.shape
+        assert first.tobytes(order="C") == second.tobytes(order="C"), "raw." + name
+
+
 def run(identity, mode, output, cache_root):
     if identity not in IDENTITIES or mode not in ("interpret", "cuda"):
         raise ValueError("not one of the six predeclared diagnostic identities")
@@ -40,8 +61,12 @@ def run(identity, mode, output, cache_root):
     import numpy as np
     import phymeo as ph
 
+    product = Path(__file__).resolve().parents[3] / "src/phymeo/backends"
     source_paths = (Path(__file__), Path(k0.__file__), Path(family.__file__),
-                    Path(sources.__file__), Path(family.reference().__file__))
+                    Path(sources.__file__), Path(family.reference().__file__),
+                    product / "_device_convex_query.py",
+                    product / "_device_convex_query_trace.py",
+                    product / "_tyx_convex_query_kernels.py")
     record = dict(schema="COL1-GJK-failure-diagnostic-v1", identity=identity, mode=mode,
                   source=[dict(path=str(p), sha256=hashlib.sha256(p.read_bytes()).hexdigest())
                           for p in source_paths], trace=None, completed=False, failure=None)
@@ -70,6 +95,8 @@ def run(identity, mode, output, cache_root):
                         if not all(stepped.values()):
                             raise RuntimeError("original accepted physical step failed")
                         selected_pair = next(pair for pair in pairs if pair[0].world == 17)
+                        normal = plan.query()
+                        record["normal_query"] = normal
                         trace = plan.query_with_diagnostics(pairs=(selected_pair,))
                         record["trace"] = trace
                         oracles = {}
@@ -86,6 +113,8 @@ def run(identity, mode, output, cache_root):
                                 gap_gate=1e-4*truth["scale_m"],
                             )
                         record["independent_oracles"] = oracles
+                        same_state_geometry(normal, trace.query, k0.encode)
+                        record["same_state_geometry_equal"] = True
                         plan.require_current_diagnostics(trace)
         else:
             data = family.reference().case("HN", "sep", cycle=identity=="rotated-reversed-HN")
@@ -93,9 +122,13 @@ def run(identity, mode, output, cache_root):
             with family.prepared(data, mode, cache_root) as (batch, _, plan):
                 record["accepted"] = batch.snapshot()
                 pair = tuple(ph.CollisionKey(*key) for key in data["keys"])
+                normal = plan.query()
+                record["normal_query"] = normal
                 trace = plan.query_with_diagnostics(pairs=(pair,))
                 record["trace"] = trace
                 record["independent_oracle"] = family.reference().oracle(data)
+                same_state_geometry(normal, trace.query, k0.encode)
+                record["same_state_geometry_equal"] = True
                 plan.require_current_diagnostics(trace)
         record["completed"] = True
     except BaseException as error:

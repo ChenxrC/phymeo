@@ -252,6 +252,8 @@ class ConvexQueryPlan:
         self._counts = dict.fromkeys(_COUNTERS, 0)
         self._closed = False
         self._last_result = None
+        self._last_diagnostics = None
+        self._trace_owner = object()
         self._attempt_tag = 0
         self._attempt_ticks = None
         self._attempt_shape_rotation = None
@@ -327,6 +329,10 @@ class ConvexQueryPlan:
     @property
     def last_result(self):
         return self._last_result
+
+    @property
+    def last_diagnostics(self):
+        return self._last_diagnostics
 
     @property
     def stats(self):
@@ -586,7 +592,7 @@ class ConvexQueryPlan:
             if device:
                 self._batch._counts["device_owned_bytes"] -= byte_count
 
-    def _allocate(self, shape, dtype, initial=None):
+    def _allocate(self, shape, dtype, initial=None, *, resources=None):
         """Fault seam: a successful return already belongs to the ExitStack."""
         batch = self._batch
         device = batch._mode == "cuda"
@@ -601,7 +607,8 @@ class ConvexQueryPlan:
                 np.empty(shape, dtype=dtype) if initial is None else np.array(initial, copy=True)
             )
         size = int(result.nbytes)
-        self._resources.callback(self._free, result, size, device)
+        target_resources = self._resources if resources is None else resources
+        target_resources.callback(self._free, result, size, device)
         self._counts["allocations"] += 1
         self._counts["live_bytes"] += size
         self._counts["peak_owned_bytes"] = max(
@@ -1104,7 +1111,7 @@ class ConvexQueryPlan:
             patch,
         )
 
-    def _stage_query(self, staged_broadphase=None):
+    def _stage_query(self, staged_broadphase=None, *, diagnostic=None):
         """Build owned geometry without publishing either query.
 
         Contact passes its just-staged broad result, pending layouts and entry
@@ -1166,6 +1173,8 @@ class ConvexQueryPlan:
                         raise ConvexQueryCapacityExceeded(
                             len(pairs), self._capacity, Counter(pair[0].world for pair in pairs)
                         )
+                    if diagnostic is not None:
+                        diagnostic.prepare(pairs)
                     if self._shape_keys:
                         b = self._buffers
                         for layout in self._source_layouts:
@@ -1229,6 +1238,11 @@ class ConvexQueryPlan:
                                     b["simplex_copy"],
                                     b["simplex_slots"],
                                     *(b[name] for name in _WIRE),
+                                    *(
+                                        (0, b["pairs"], b["vertices"], b["vertex_slots"])
+                                        if diagnostic is None
+                                        else diagnostic.arguments()
+                                    ),
                                 )
                         # Patch sites need canonical padding even when no pairs are allowed.
                         if self._patch_kernels is not None:
@@ -1308,6 +1322,9 @@ class ConvexQueryPlan:
                         self._attempt_ticks = np.empty(0, dtype=np.int32)
                     raw = self._read_raw()
                     patch_raw = self._read_patch() if self._patch_kernels is not None else None
+                    if diagnostic is not None:
+                        diagnostic.readback()
+                        diagnostic.release()
                     broad_after = dict(self._broad.stats())
                     broad_delta = {
                         key: value - broad_before[key]
@@ -1329,6 +1346,8 @@ class ConvexQueryPlan:
                             for i, world in enumerate(result.world_keys)
                         ):
                             raise ValueError("staged broad phase ticks differ from convex entry")
+                    if diagnostic is not None:
+                        diagnostic.build(result)
                     return result, broad_result, pending
             except BaseException:
                 self._counts["failed_queries"] += 1
@@ -1350,6 +1369,29 @@ class ConvexQueryPlan:
                 self._broad._publish_query(broad_result, pending)
             self._publish_staged(result)
             return result
+
+    def query_with_diagnostics(self, *, pairs):
+        """Explicit bounded GJK capture; errors publish neither query nor trace."""
+        from ._device_convex_query_trace import _TraceCapture
+
+        with self._batch._lock:
+            self._check_open()
+            with _TraceCapture(self, pairs) as diagnostic:
+                result, broad_result, pending = self._stage_query(diagnostic=diagnostic)
+                trace = diagnostic.result
+            # All device readback, validation, construction and cleanup completed.
+            if broad_result is not None:
+                self._broad._publish_query(broad_result, pending)
+            self._publish_staged(result)
+            self._last_diagnostics = trace
+            return trace
+
+    def require_current_diagnostics(self, trace):
+        from ._device_convex_query_trace import validate_trace
+
+        with self._batch._lock:
+            self._check_open()
+            return validate_trace(self, trace)
 
     def require_current(self, result):
         with self._batch._lock:

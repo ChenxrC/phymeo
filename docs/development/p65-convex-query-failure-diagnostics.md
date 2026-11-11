@@ -131,3 +131,33 @@ Stop condition: any diagnostic failure to bind source/raw data or default-path
 geometry change must be fixed before interpreting the six snapshots. The
 resulting evidence may justify one later generic fix, which needs a separate
 parent decision. This grant contains no algorithm or tolerance changes.
+
+## Authoring completion and bounded validation handoff
+
+The implementation records all original GJK assignments without substituting
+trace values into the original algorithm. The kernel diff is additive except
+for four explicit trace parameters. Default placeholders have matching ranks
+and scalar trace_count=0, so no diagnostic array is accessed.
+The helper validates full-surface anchor and scale against the same query's
+actual gathered origin and raw scale; original material slots and IDs are
+checked against that immutable source. Nonfinite *intermediate* arithmetic is
+retained rather than rejected as missing evidence. k0.encode recursively tags
+nonfinite values while bytes_hex retains every original FP32 bit; a HOST
+assertion checks this serialization with allow_nan=False.
+
+Each fixed runner entry now performs one ordinary query then one opt-in query
+at the **same accepted state**, with no intervening physical step. It saves both
+complete results. Every source/geometry field and raw byte must agree, except
+the explicitly identified query.attempt_tag and raw.meta[:,12]. Pure statistics
+counters are retained in both records and excluded from geometry equality
+because diagnostic launches/transfers are additional real work. A mismatch is
+saved as a failure, not normalized away. This pairing is necessary validation
+of the new instrumented kernel, not a repeat of the old full matrix.
+
+Parent-only proposed order: the four HOST validation nodes, 14 interpret
+protocol nodes, 14 CUDA protocol nodes, then the six named fixed-input captures
+in the parent-selected failing backends. Parent may capture both modes for a
+specific original failure when needed to compare actual arithmetic; no full
+COL matrix is requested. Fresh outputs and original failed evidence remain.
+No imports, collection, functional tests, numerical probes, lint, formatter,
+build or profile were executed by this authoring lane.

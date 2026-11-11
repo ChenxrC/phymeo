@@ -141,3 +141,42 @@ T4保留原pyramidal condim1/3/4/6、scalar soft joint limits、DOF dry friction
 
 最新G1使用原primitive资产、502可能配对/942几何槽、原非零初态和原策略。F1三姿态在解释/CUDA通过；当前最终源码已完成原策略20秒/10000步、h=.001两秒/2000步及正反推扰各两秒/1000步，全部原工程门通过，未重置或拒步。最终210项通用矩阵、源码外双后端wheel和完整保存审计均已通过，476产品文件同源。实际验收持续更新到上面的混合约束报告；原HOST/resident的131.48秒结果不属于这条新后端。Mesh部署、椭圆cone、equality/tendon、GPU native sensors及完整舞蹈仍需独立扩展。
 公开能力使用 mixed_articulated_constraints_supported 与 floating_mixed_constraints_supported 描述当前模型准入域；旧 g1_supported 是后者的弃用兼容别名。capability_scope 明确 admitted-model-domain; trajectory-validation-separate，支持此模型域不等于某个策略、时长或所有人形机器人都通过。
+
+
+## 2026-11-12 当前入口与能力分层
+
+上文保留各阶段的设计、原测试与历史边界，不把新结果倒灌到旧版本。当前功能盘点见[11-12 差异全景](../development/phymeo-newton-panorama-2026-11-12.md)，实际批次与已保留失败见[本轮记录](../development/p65-parity-until-0720-20261112.md)，后续资格以[当前计划](../superpowers/plans/2026-11-12-newton-parity-until-0720.md)为准。本次更新只解释现有层次，没有扩展资产 lowering 或执行文档示例。
+
+### 编译模型与运行后端是两个决定
+
+`compile_mujoco/compile_mujoco_xml` 仍在 CPU 调用 MuJoCo 编译并拥有原生模型/MJB 及映射；这一步不决定后续每步物理由 CPU 执行，也不意味着全部原生模型都能转换为 Phymeo asset。
+
+| 入口 | 当前选择与含义 |
+| --- | --- |
+| `MuJoCoRuntime(compilation, mode="cpu")` | 原生 CPU MuJoCo `mj_step`，保原坐标/控制。不能将它的通过算作 TYX 算法通过 |
+| `MuJoCoRuntime(compilation, mode="cuda")` | 默认 MuJoCo-TYX；先核显式模型准入，真实设备动力学/接触/约束推进，无 CPU/Warp 静默物理回退 |
+| `MuJoCoRuntime(compilation, mode="interpret")` | TYX 的解释验证路径，使用同一受限 TYX 模型语义；不是原生 `mj_step` |
+| `MuJoCoRuntime(compilation, mode="cuda", implementation="warp")` | 显式 MuJoCo-Warp 路径，独立能力与精度资格，不由 TYX 新功能自动扩展 |
+| `compile_scene(SceneDeclaration(...), backend=...)` | Phymeo 资产/场景装配到原 HOST 或 resident TYX 路径；并不是把任意 SceneDeclaration 重新输出为 MjSpec |
+
+原生编译成功、Phymeo asset lowering 成功、某个 runtime 模型准入、具体轨迹验收是四件事。Native TYX 新增球关节运行不改变上文 MuJoCo→Phymeo asset 转换的球关节拒绝；`require_asset=False` 只允许保留原生模型走相应 runtime，不绕过其能力检查。
+
+### SceneDeclaration 的共同域与 ROB1 组合域不同
+
+当前 `builders/scene_compiler.py` 的 `ArticulationWorld` 拥有**一个**现有 ordinary/affine、fixed/floating 资产、对应独立 q/v、控制和有限静态环境。`SceneDeclaration.worlds` 必须非空，成员只能是 ArticulationWorld，world ID 不得重复；多个成员表达多个独立 world，不表达同 world 多机器人。
+
+`scene_capabilities` 仍明确报告共同装配域的不支持项，如 self_collision、multi_articulation_world、moving_environment、CCD；具体 shape/filter/根部反力限制也继续生效。不能通过重复 world ID、隐式拆成独立步进或忽略报告来获得“联合场景”。
+
+独立[resident ROB1 多参与者接口](../development/p65-resident-multi-participant-robots-report.md)已支持声明范围内同 world 多个参与者、混合四类 storage、共同入步载荷与整 world 发布；[ROB1d 安装资格](../development/p65-resident-rob1d-installed-report.md)保留实际调用证据。它不等于 SceneDeclaration 已能表达/编译这些组合，也不是跨树隐式 KKT。若要统一入口，后继须明确参与者图、world 内资产/材料身份、控制 schema 与失败语义，另立 lowering/编译测试。
+
+### 新能力各自接在哪一层
+
+| 当前增量 | 已连接入口与范围 | 仍不跨越的边界 |
+| --- | --- | --- |
+| BALL1 / BALL-A 与 ROB2b | MuJoCo-TYX 原生运行路径。BALL-A 在固定 BALL/HINGE/SLIDE 树中复用最多32个合法标量 NONE/FILTEREXACT 执行器；球经完整 M/J 耦合运动。ROB2b 在独立自由根标量树/接触域复用执行器 | BALL-A 不是直接球 motor，不自动支持 FREE+BALL/球树接触，不扩 Phymeo asset lowering。BALL-C 球树接触组合此更新时**仍执行中、尚未验收** |
+| N5 / N6 / N7 | MuJoCo-TYX VecEnv/RSL 训练路径：可复现 q/v 随机 reset，D=1..8 控制窗口，真实完整子步和 endpoint 任务；N7 J8/GRU、S128/S256 两模式的固定更新/共同状态资格已通过 | 状态随机化不是质量/摩擦随机化；实际 GPU PPO 不等于全流水线零 HOST 往返或物理可微。原 J/R 学习门仍失败，N7 不替代学习有效性验收 |
+| COL3 | 公共 `CollisionWorkspace.boundary_distances`、`require_boundary_distances` 与公开 limits/result 类型；[使用说明](triangle-boundary-query.md)给出当前 sphere/capsule 对 triangle/mesh 邻近边界查询及事务 | 来源仍是完整 HOST 当前快照，TYX BVH/有限距离核完成设备计算；不是 resident device mesh loan、实心内外/CCD或力学接触。不会自动进入 MuJoCo-TYX primitive 求解器或 SceneDeclaration 的材料响应 |
+
+前文“尚未建立全设备训练”的旧阶段描述不再代表没有真实 CUDA PPO：N5/N6/N7 已有实际设备策略/物理更新证据，但 HOST 采样、观察与审计边界仍明示。G1 原46.29秒参考XY门与完整131.48秒窗口、R03两项小净加速度门仍开放；能力名与模型准入不代替这些轨迹结果。
+
+本次更新时首包 `85caed4e` 的509产品成员及七个安装消费者已完成；后续评价器 `4118f2ec` 和新消费者对应的**最终增量包仍待验**。不将首包资格赋给后续源，也不因本文追加而声称 BALL-C、设备 mesh 来源或整个 Newton 对齐已完成。

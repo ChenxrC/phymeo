@@ -146,13 +146,13 @@ def test_reset_prepared_bindings_and_completion_cost(payload, monkeypatch):
             monkeypatch.setattr(
                 runtime._reset, name, without_allocations(getattr(runtime._reset, name))
             )
-        # Attribute the actual native transmission/sensor scratch baseline rather
-        # than assume a count. This is not a whole-path zero-allocation claim.
+        # Prepared common scratch and no-output sensor dispatch remove the B1c
+        # factory calls. This is not a whole-path low-level allocator claim.
         runtime.forward()
         assert count == 1
         baseline = tuple(allocations)
         print("native forward factory baseline", baseline)
-        assert {"transmission", "sensor_acc"} <= {row[3] for row in baseline}
+        assert baseline == ()
         allocations.clear()
         count = 0
         runtime.reset(np.arange(8) % 2 == 0)

@@ -21,7 +21,7 @@ MuJoCo 编译快照送入独立 PhySolve Host。Newton、Warp、MuJoCo-Warp 不�
 
 使用 `requirements/physolve-runtime.txt` 专用清单，不混用原 MuJoCo extras。
 限定 Windows x64、标准 CPython 3.13.13、MuJoCo 3.8.0、TYX 0.1.0a0、
-PhySolve TYX frontend 0.0.0a5 和本批验证的 sm_120 载荷。
+PhySolve TYX frontend 0.0.0a6 和本批验证的 sm_120 载荷。
 `PhySolvePayload(native_path, cubin_directory, native_sha256, cubin_sha256)`
 接收一件 Host 和六件 CUBIN 的冻结散列；这不是正式 SDK 安装 manifest 的替代品。
 

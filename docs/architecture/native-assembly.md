@@ -139,3 +139,34 @@ zeros/full/empty 调用，包含零尺寸数组；partial/full reset 与该记�
 局部 reset 完成确认 2 次、full reset 1 次；借用绑定身份不变。三份新增计数仪器
 中间失败日志保留，错误依次为全局零分配假设、单项分配假设及来源全集假设；修正
 仪器不改生产包、原功能断言或容差。既有分配仍阻止稳态性能资格，不以测试通过豁免。
+
+## B1d 原生前端工作区
+
+PhySolve 专用清单与载荷版本门禁锁定 frontend 0.0.0a6。Runtime 创建每个 Data
+bank 后、创建 Host handle 前调用其公共 `prepare_workspace`，资源仍由该 bank
+拥有；不增加 PHYMEO 状态镜像、全局缓存或跨 runtime 锁。准备失败进入原 candidate
+清理；关闭失败仍保留原 bank/Host owner 以便重试。
+
+前端持久化三个 collision 临时数组和一个 transmission 计数数组，空 sensor
+调度只在没有 callback/energy/RNE 副作用时跳过。未准备的原生 Data 保留旧路径；
+Graph、SAP、非零 sensor、并发和完整 allocator 行为不从本切片自动继承资格。
+每 bank 额外持久逻辑容量为 `20*naconmax + 4*nworld` 字节，替代对应逐调用分配；
+不包含 allocator 对齐和原 Host workspace。reset 的两次/一次完成边界不变。
+
+正式测试入口新增 `tests/test_physolve_workspace.py`：已安装旧 a5 的冻结短轨迹与
+候选 a6 对照，要求 `PHYMEO_WORKSPACE_BASELINE` 显式指向参考目录；无参考时 skip，
+不计通过。覆盖自由落体/接触/显式规则 FANUC N=1/8/64，原容差 `1e-6, rtol=0`。
+另测工厂禁用下的连续 step/forward/reset、接触数减少后恢复及独立 runtime/bank。
+原 `test_masked_observations.py` 仅加强成本断言，功能/数值断言不变。
+
+冻结旧安装版时，FANUC 在新增连续计时窗口复现 CUDA 719，原日志保留于实验根
+`evidence/b1d-baseline.log`。短闭环通过不能关闭长轨迹失败，本批不改其物理配置或
+载荷来消除错误。Panda 和原无规则 FANUC 的历史失败仍未关闭；完整 B1/B2、C ABI、
+Graph、传感器、GUI 资格均未完成。来源与最终实测索引为 `evidence/b1d-summary.json`。
+
+B1d 最终安装专项 23 项通过，扩大回归 132 通过、14 个历史机器人项未选，P2PE
+Stage 消费 8 项及10个子测试通过。N=8 自由根的原生 forward 公共数组工厂调用由
+B1c 的11次降为0，full/masked reset 保持0；这不是全路径底层 allocator 统计。
+原功能容差不变、Host及六 CUBIN 哈希不变，源码安装逐文件一致；pip check 通过。
+独立两轮只读复审无剩余阻断，GPU实测由主执行者完成。依赖先提交 codedev
+`4d462fa1`，TYX `7272d3d` 未改；原环境保留 a5，新安装仅在 `env-b1d`。

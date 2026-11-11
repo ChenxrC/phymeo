@@ -127,6 +127,8 @@ class PhySolveRuntime:
                             cpu, initial, nworld=self.nworld, nconmax=self.nconmax, njmax=self.njmax
                         )
                         self._banks.append(data)
+                        # Each bank owns its frontend scratch before Host prepare/capture.
+                        frontend.prepare_workspace(self._model, data)
                         handle = self._native._create_runtime(self._model, data, "tyx", "tyx")
                         self._handles.append(handle)
                         self._native._prepare_runtime(handle)

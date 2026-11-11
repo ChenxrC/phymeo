@@ -5,12 +5,11 @@ actual accepted TYX state, not a second solver or a numerical fixture search.
 """
 
 import copy
-from dataclasses import fields
 from types import SimpleNamespace
 
 import numpy as np
 import pytest
-from test_mujoco_tyx_activation import encode, save, source as activation_source
+from test_mujoco_tyx_activation import save, source as activation_source
 from test_mujoco_tyx_checkpoint import CASES, exact, initial, packet
 
 from phymeo.backends import _mujoco_tyx_runtime as implementation
@@ -21,7 +20,7 @@ from phymeo.builders.mujoco_compiler import compile_mujoco_xml
 from phymeo.training.resident_stepper import PhysicsStepFailure
 
 MODES = ("interpret", pytest.param("cuda", marks=pytest.mark.cuda))
-CASES_TO_RUN = ("fixed-tree", "floating-tree", "activation")
+CASES_TO_RUN = ("fixed-tree", "floating-tree", "floating-mixed", "activation")
 KEYS = (4, 31)
 
 
@@ -90,9 +89,20 @@ def compare_native_snapshot(mj, model, native, state):
     for actual, expected in zip(state.contacts, endpoint.contact, strict=True):
         for published, native_name in (("distance", "dist"), ("position", "pos"),
                                        ("frame", "frame"), ("friction", "friction"),
-                                       ("solref", "solref"), ("solimp", "solimp")):
+                                       ("solref", "solref"), ("solimp", "solimp"),
+                                       ("solref_friction", "solreffriction"),
+                                       ("include_margin", "includemargin"),
+                                       ("regularized_mu", "mu"), ("cone_hessian", "H")):
             assert np.asarray(getattr(actual, published)).tobytes() == np.asarray(
                 getattr(expected, native_name)).tobytes()
+        for published, native_name in (("geometry_ids", "geom"), ("flex_ids", "flex"),
+                                       ("element_ids", "elem"), ("vertex_ids", "vert")):
+            assert getattr(actual, published) == tuple(int(x) for x in getattr(expected, native_name))
+        assert actual.dimension == expected.dim and actual.excluded == expected.exclude
+        assert actual.constraint_address == expected.efc_address
+        wrench = np.empty(6, np.float64)
+        mj.mj_contactForce(model, endpoint, actual.index, wrench)
+        assert actual.wrench_contact_frame.tobytes() == wrench.tobytes()
 
 
 @pytest.mark.parametrize("case", CASES_TO_RUN)
@@ -150,6 +160,19 @@ def test_native_mirror_refuses_invalid_complete_state(fault):
         layout.from_parts(cpu_state, values)
 
 
+def test_native_observer_rejects_another_model_owner_before_mutation():
+    mj = pytest.importorskip("mujoco")
+    first = mj.MjModel.from_xml_string(CASES["fixed-tree"])
+    second = mj.MjModel.from_xml_string(CASES["fixed-tree"])
+    layout = NativeStateLayout(mj, first)
+    mirror = layout.capture(mj.MjData(first))
+    other = mj.MjData(second)
+    other.qvel[:] = .125
+    before = other.qvel.tobytes()
+    with pytest.raises(ValueError, match="model identity"):
+        layout.materialize(mirror, other)
+    assert other.qvel.tobytes() == before
+
 @pytest.mark.parametrize("mode", MODES)
 @pytest.mark.parametrize("case", CASES_TO_RUN)
 def test_step_copy_elimination_full_snapshot_and_exact_continuation(case, mode, monkeypatch, tmp_path):
@@ -193,6 +216,11 @@ def test_step_copy_elimination_full_snapshot_and_exact_continuation(case, mode, 
             saved.append(full)
         assert exact(held) == held_signature
         cp = engine.checkpoint()
+        decoded = cp._read(cp.binding)
+        for key, item in zip(KEYS, decoded["worlds"], strict=True):
+            assert item["cpu_state"].tobytes() == engine._data[key].cpu_state.tobytes()
+            for name in capsule.MIRROR_FIELDS:
+                assert item["mirror"][name].tobytes() == getattr(native[key], name).tobytes()
         before = exact(engine.snapshot())
         assert all(engine.step(engine.timestep).values())
         continued = exact(engine.snapshot())

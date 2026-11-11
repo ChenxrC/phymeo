@@ -1,6 +1,27 @@
 # COL1a device convex support-family authoring handoff
 
-## Current parent validation: partial, not accepted
+## Current parent refinement — 2026-11-11
+
+**PARTIAL_VALIDATION / NOT_FULLY_ACCEPTED.** Final product `0ea0fee2` retains the generic support-ball overlap bound and restores the prior separation exit. It does not add a pair-specific solver, raise GJK/EPA capacities, change the original fixtures, relax the independent normal gate, or introduce HOST geometry fallback. Curved patch and required load remain explicitly unsupported.
+
+| Final source execution | Actual result | Saved gzip payloads |
+| --- | --- | ---: |
+| run28 complete new TYX matrix, interpret | 127 passed, 4 failed, 6 HOST tests deselected; 69.50 s; RAW_EXIT=1 | 131 |
+| run29 complete new TYX matrix, CUDA | 125 passed, 6 failed, 6 HOST tests deselected; 283.26 s; RAW_EXIT=1 | 131 |
+| run30 affected old query/patch/source, interpret | 18 passed; 10.30 s; RAW_EXIT=0 | 18 |
+| run31 affected old query/patch/source, CUDA | 18 passed; 59.04 s; RAW_EXIT=0 | 18 |
+
+The original eight EPA-capacity failures now pass on both backends. The nine added rotated/contained/isotropic/degenerate/resource identities also pass, retaining the original independent depth, surface, witness, normal and actual resource assertions. The six unchanged HOST identities reuse their prior run; they were deliberately not rerun.
+
+Four source-layout cylinder cases still publish normal error about 0.003119 against the original 0.002 gate. They are failures, not qualified normal results. CUDA additionally returns `RESOURCE_LIMIT` for `sep-HN` and `rotated_reversed_queries[HN]`; these pass interpret. This is the first complete new CUDA matrix, so these two failures are newly observed coverage, not a claim that a previously passing complete CUDA matrix regressed. Their arithmetic root cause is not yet established.
+
+The experimental strict same-iteration Frank-Wolfe gate in `f4c66662` was withdrawn: run24 gave 21 passed / 2 failed; run25's disjoint remainder gave 98 passed / 10 failed. The latter introduced ten separation resource regressions. Final source removes that gate only, retains the support-ball work, and eliminates those interpret regressions. Both failed experimental runs and all first style-check failures remain saved. Final exact-scope Ruff and format checks pass. See [algorithm, engineering allowance and withdrawn gate](p65-curved-query-convergence.md).
+
+Evidence root: `artifacts/p65-parity-n2-rob1b-col1a-20261111-01`. `col1a-refinement-evidence-index.json` binds six functional run receipts, 429 complete gzip files (including failed experimental records), original logs, before/after source snapshots and final current-source bytes. This is file-I/O/source provenance, not another geometry execution or a successful full-matrix certificate. No new wheel or full COL1a acceptance is claimed.
+
+Next collision node is bounded saved-state instrumentation for the cylinder-normal and CUDA HN failures: preserve failed simplex vertices/weights, support direction/point and termination values, then choose a general repair from the actual discrepancy. Do not retry speculative thresholds. Complete query qualification precedes COL1b curved patches and COL1c loading. N3 training recovery and ROB1c multi-body cases continue independently.
+
+## Previous parent validation: partial, not accepted
 
 The parent integrated the eight-file handoff and its shared curved binding
 prerequisite. This increment is **PARTIAL_VALIDATION / NOT_ACCEPTED**. The

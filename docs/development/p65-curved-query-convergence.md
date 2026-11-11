@@ -1,6 +1,8 @@
 # COL1a curved-query convergence
 
-Status: CODE_READY_TESTS_PENDING / UNEXECUTED. Baseline `63614090`; parent owns all execution. This is one bounded successor to the saved 110/122 interpret result, not new geometry acceptance.
+Status: **PARTIAL_VALIDATION / NOT_FULLY_ACCEPTED**. Final retained product `0ea0fee2` keeps the interior-ball overlap refinement and withdraws the experimental strict GJK normal gate. Interpret: 127 passed / 4 failed; CUDA: 125 passed / 6 failed. The affected old query/patch/source regression passes 18 tests per backend. Full results and limitations are in the [parent report](p65-device-convex-support-family-report.md). Baseline `63614090` and the original authoring proposal below remain historical evidence.
+
+The original eight smooth-EPA capacity cases and all nine added identities pass on both backends without larger capacities or relaxed geometric gates. Four cylinder-source normal failures remain on both backends; two HN separation cases additionally exhaust resources on CUDA. Curved patch/load remain unsupported. This is a bounded retained improvement, not completion of COL1a.
 
 ## Evidence and choice
 
@@ -14,7 +16,9 @@ Fixed local Newton 1.7.0 primary source, under the parent's `.venv-newton-1.7.0/
 
 Copying an MPR hit does not establish this API's globally least penetration or unique normal. The selected change keeps the existing hull EPA fallback and adds a generic interior-ball bound at already charged support calls. No pair-name, test identity, world, fixed axis or capacity value selects a shortcut.
 
-## Separated distance and normal
+## Withdrawn experiment: separated distance and normal
+
+This proposed gate is **not in the final retained source**. Targeted run24 passed 21 cases and left two floating-cylinder resource failures. The disjoint remaining matrix in run25 exposed ten new separation resource regressions. Parent removed only this gate and restored the prior distance/duplicate-support termination, leaving the interior-ball code unchanged. The mathematical relationship below does not establish that the FP32 simplex iteration can reach its stricter gate within the existing budget. No output-dependent guard adjustment or extra iteration budget was used. A subsequent attempt must first capture and diagnose failed simplex/support/weight/FW state; the present saved payload does not establish an arithmetic root cause.
 
 For a nonempty current Minkowski simplex, let q be its closest point, U=|q|, and w the support in -q. Both belong to the same current support problem. L=q.w/U is a global distance lower bound when positive. Let q* be the true nearest point. Projection optimality gives q*.q >= |q*|^2, hence cos(angle(q,q*)) >= L/U and
 
@@ -57,7 +61,7 @@ Use pair-relative support coordinates throughout. The ball depth arithmetic uses
 
 All support calls count toward the existing loops. No additional support/refinement loop, CPU geometry, allocation, vertex/face default, source precision relaxation or device-to-HOST fallback is introduced. The new phase SUPPORT_BALL uses the existing bracket, witness and actual resource fields. Curved patch/load remain unsupported.
 
-## Fixed tests and scope
+## Fixed tests and original authoring scope
 
 First rerun the original twelve failing identities on their unchanged fixtures and gates; parent decides the final affected groups. Add only:
 
@@ -74,7 +78,7 @@ Exact source scope: `_tyx_convex_query_kernels.py`, existing `_tyx_convex_suppor
 
 Before any execution, parent approved replacing the initially proposed 8u/L1 engineering allowance with fixed 4u/Euclidean norms. The 8u proposal made independently exact normalized spheres fail only its bookkeeping margin. This is explicitly an engineering choice, not a directed-rounding proof. No later test-output-dependent guard reduction is allowed. A false success or independent normal-gate failure stops this acceleration's expansion for this batch. Nine new TYX identities are authored; not collected or executed.
 
-## Authoring handoff
+## Historical authoring handoff
 
 Tests-first ec8f56b0 and 44bf7c48 fix nine extra identities before product execution. Implementation checks the new ball condition at both existing GJK and EPA support sites. A ball success uses one real bilateral support pair; existing EPA consumption is retained if refinement already happened. GJK publishes its old compact simplex only after the same iteration's new support establishes both bounds. Old ten-family exits and EPA fallback equations are unchanged. Radius work is skipped before an existing source-precision rejection, so it cannot divide by an already lost uploaded dimension.
 

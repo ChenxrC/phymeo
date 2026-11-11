@@ -1,9 +1,83 @@
-# MuJoCo-TYX N4a authoring handoff
+# MuJoCo-TYX N4a learning results and partial qualification
 
-Status: **CODE_READY_TESTS_PENDING / UNEXECUTED / AUTHORING_SLOT_RELEASED**.
-This author wrote source, test declarations and documentation only. No project
-import, collection, arithmetic probe, pytest, Ruff, formatter, build, install,
-profile or physical run was performed. The parent owns all execution.
+Status: **LEARNING_PROTOCOLS_COMPLETE / PARTIAL_LEARNING_QUALIFICATION /
+SCALE_PENDING / WHEEL_PENDING / AUTHORING_SLOT_RELEASED**.
+The parent executed validation; this author only read the closed reports and
+updated this document. The current results below supersede historical pending
+labels, without assigning new results to earlier source snapshots.
+
+## Actual learning results
+
+The repaired learning source is `a4c4e2bc3ce7636c798b4f869e442b28aa91ba20`.
+Each declared seed completed the original **128 updates × 32 steps × 8 worlds**:
+32,768 training transitions per run, nine completed runs and **294,912 training
+transitions** in total. Each untrained and learned held-out evaluation covers all
+256 steps in eight worlds. No extra update, seed, reward change or budget increase
+was used to obtain these results. The failed original run31 is excluded from
+these completed-run totals and remains retained as described below.
+
+The values below are copied from the actual three-seed summaries. Lower cost is
+better; ratio is learned cost divided by that seed's untrained deterministic
+actor cost. A completed training run alone does not pass the learning gate.
+
+| Task | Seed | Untrained cost | Learned cost | Ratio | Better than zero action? |
+|---|---:|---:|---:|---:|---|
+| J: joint control |14011|0.07986353326689878|0.07405192191321378|0.9272307257648748|No|
+| J |14012|0.06517630966803778|0.06473604490144086|0.9932450184915452|No|
+| J |14013|0.06693946266999315|0.06318584011928716|0.9439251167997704|Yes, slightly|
+| S: continuous contact support |14111|0.03695624173391796|0.027197754806520428|0.7359448236739582|Yes|
+| S |14112|0.029941697820910537|0.023853283820822663|0.7966576900046103|Yes|
+| S |14113|0.027156494447525728|0.017715828556652435|0.6523606568912856|Yes|
+| R: branching robot |14211|0.1456878236563657|0.14526865089763472|0.9971228016987906|No|
+| R |14212|0.19363471446867714|0.1285030183783298|0.6636362634196814|No|
+| R |14213|0.13176952176094292|0.12099983911820782|0.9182687885725689|No|
+
+The unchanged formal gate requires all three ratios <=1.05, at least two <=0.90,
+and median <=0.80. The parent executed the complete source/seed bindings and gate:
+
+| Task | Median ratio | Formal result | Summary command exit |
+|---|---:|---|---:|
+| J |0.9439251167997704|FIXED_BUDGET_NOT_LEARNED|1|
+| S |0.7359448236739582|PASS_FIXED_LEARNING_GATE|0|
+| R |0.9182687885725689|FIXED_BUDGET_NOT_LEARNED|1|
+
+J/R exit1 is the declared learning-quality refusal after complete training, not
+an incomplete rollout or failed optimizer invocation. S passes this fixed task
+and budget, including its actual step-contact support checks; this does not
+qualify general locomotion, G1 dance or arbitrary robot learning.
+
+The independent zero-action diagnostics all completed 2,048 world steps. Their
+costs are J `0.063695137045106`, S `0.028342694125254343`, and R
+`0.11362523048658707`. S's three learned actors all improve on zero action; J only
+seed14013 does, by the saved cost difference `-0.0005092969258188446`; none of R's
+three actors does. Zero action remains diagnostic and was not substituted for
+the frozen untrained-policy acceptance baseline.
+
+Source evidence under `artifacts/p65-parity-n4a-rob1d-col-reducer-20261111-01`:
+
+- `39-n4-repair-host`: eight affected HOST checks passed, 48 deselected, 1.21s.
+- `40-n4-learning-j14011-fixed`: the one fresh original-seed restart passed,
+  210.47s; `41-n4-learning-remaining`: the remaining eight runs passed, 1448.97s.
+- [J summary](../../artifacts/p65-parity-n4a-rob1d-col-reducer-20261111-01/50-n4-summary-j/result/summary.json),
+  [S summary](../../artifacts/p65-parity-n4a-rob1d-col-reducer-20261111-01/51-n4-summary-s/result/summary.json),
+  [R summary](../../artifacts/p65-parity-n4a-rob1d-col-reducer-20261111-01/52-n4-summary-r/result/summary.json)
+  retain all per-seed costs, ratios, zero comparisons and bindings.
+
+Scale qualification and the new wheel remain **PENDING** at this report update.
+The parent's root-only scale timing correction is source `06a19790`, not the
+child's learning source `a4c4e2bc`. Parent commands43–48 completed its static and
+one new HOST timing check; run49 scale is still active and has no final result
+claimed here. That correction measures real wall time from the formal measured
+loop through final gzip close, rather than summing partial timings; final file
+hashing/summary publication remain separate. Historical timing descriptions below
+are not proof of complete scale throughput. No scale capacity or new installed
+wheel claim is inferred from the nine learning runs.
+
+## Historical authoring scope and handoff
+
+The original handoff status was CODE_READY_TESTS_PENDING / UNEXECUTED. This author
+performed only source/test/doc authoring, text/file reads and Git operations;
+all actual project execution above belongs to the parent.
 
 Base: `ff478eaa6ee570562b229491cb25c95e17783740`.
 Branch: `codex/p65-n4a-learning-scale-20261111` in the reused isolated
@@ -99,7 +173,7 @@ Successful output files: `manifest.json`, `trace.jsonl.gz`, `summary.json`,
 `publication.json`. Failure retains `failure.json` and the closed partial stream.
 A summarize result has its own `summary.json`, bound to the three source runs.
 
-## Timing and accounting
+## Historical timing and accounting (scale correction above takes precedence)
 
 Primary measured wall time includes the full public session.update and final
 CUDA completion: actual policy rollout, request copies/audit, physics and full
@@ -122,9 +196,10 @@ free-memory net change are reported; the latter is not TYX-only peak allocation.
 Unobserved internal Torch synchronizations and exclusive CPU physics-validation
 cost remain explicitly UNKNOWN. No zero-HOST or GPU-PPO-throughput claim is made.
 
-## Test declaration and execution handoff
+## Historical test declaration and execution handoff
 
-Manual declaration count is **50 nodes, uncollected**:
+At the original authoring checkpoint, the manual declaration count was
+**50 nodes, uncollected**:
 
 | Group | Nodes | Purpose |
 |---|---:|---|
@@ -158,7 +233,8 @@ examples/evaluate_mujoco_tyx_learning.py --phase summarize --task J --inputs J14
 Run preflight before eligible learning/scale cells. Do not rerun old complete
 N2/N3. Poor quality after128 updates remains a fixed-budget result, not permission
 to add epochs/rewards/seeds. W256 capacity, learning improvement, throughput and
-all new runtime outcomes remain unqualified until actual serial execution.
+all new runtime outcomes were unqualified at that historical authoring checkpoint;
+actual learning results and remaining qualifications are recorded above.
 
 ## Authoring checkpoints and bindings
 
@@ -183,7 +259,7 @@ used. A PowerShell hash-list command initially had a parser error before any
 read; the corrected file-I/O command produced the bindings above. No product
 failure or verification result is inferred from authoring checks.
 
-## Post-run31 repair handoff (supersedes only accounting claims above)
+## Retained run31 failure and historical repair handoff
 
 Parent tested source5a3957a6: HOST20 and the three fixed CUDA preflights passed.
 Original J14011 learning run31 failed at upstream-update-7 after its first
@@ -195,7 +271,8 @@ FAIL_N4A_RETAINED and its full update7 payload is missing. This repair does not
 backfill it or call that attempt a completed fixed-budget learning run.
 
 Pure-author repair base is5a3957a6. Tests-first5ba721bb adds six HOST nodes;
-current manual total is56 (HOST26, CUDA30), still uncollected for this revision.
+the repair authoring checkpoint had manual total56 (HOST26, CUDA30), then
+uncollected; actual affected validation is recorded above.
 The three already-passed physical preflights are not a rerun requirement.
 
 Implementation changes stay in the original NEW helper/CLI/tests and two docs:
@@ -217,6 +294,6 @@ Implementation changes stay in the original NEW helper/CLI/tests and two docs:
 
 No numerical/policy/physical parameter or budget was changed. The tasks registry
 is byte-unchanged. The author ran no import, collection, tests, arithmetic probe,
-lint, formatter or physical execution. Parent owns focused affected HOST checks
-and the single fresh restart of the original J14011 full fixed budget. Historical
+lint, formatter or physical execution. The parent subsequently completed the focused affected HOST checks
+and the single fresh restart of the original J14011 full fixed budget (runs39/40 above). Historical
 hashes above remain the original implementation checkpoint, not this repair.

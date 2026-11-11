@@ -241,3 +241,34 @@ def test_close_borrows_runtime_and_keeps_exported_tensor_alive(api):
         assert all(runtime.step(env.h).values())
         with pytest.raises(RuntimeError, match="closed"):
             env.get_observations()
+
+
+def test_action_borrow_cleanup_failure_reports_real_commit(api, monkeypatch):
+    from phymeo.training.mujoco_tyx_env import MuJoCoTyxEnvError
+    import tyx
+    import tyx.torch as bridge
+
+    with api.make_environment("hinge-slide") as env:
+        original_borrow, original_free = bridge.from_torch, tyx.CudaArray.free
+        borrowed_ids, failed = set(), []
+        def borrow(*args, **kwargs):
+            value = original_borrow(*args, **kwargs)
+            borrowed_ids.add(id(value))
+            return value
+        def close_once(value):
+            original_free(value)
+            if id(value) in borrowed_ids and not failed:
+                failed.append(True)
+                raise RuntimeError("injected post-submit borrowed-view cleanup failure")
+        monkeypatch.setattr(bridge, "from_torch", borrow)
+        monkeypatch.setattr(tyx.CudaArray, "free", close_once)
+        with pytest.raises(MuJoCoTyxEnvError) as caught:
+            env.step(zeros(api, env), world_keys=env.world_keys,
+                     expected_frame=env.current_frame)
+        assert failed and caught.value.action_accepted
+        assert caught.value.phase == "action-publication"
+        assert caught.value.action_receipt is not None
+        assert not caught.value.state_accepted
+        assert env.needs_recovery and env.last_transition is None
+        assert all(state.tick == 0 for state in env.runtime.snapshot().values())
+        assert env.runtime.counters["device_control_submissions"] == 1

@@ -243,3 +243,9 @@ free root/ball随机化、任意时刻训练恢复、全GPU reset或学习改善
 
 
 执行前补充：原 HOST subset 节点还对反序完整 world 计划核每 key 的同样样本，同时完整 plan hash 必须不同；原 CUDA 手动 reset 节点另核 Torch CPU/current CUDA RNG 字节不变。未新增物理窗口或节点，仍50个手工枚举节点；上述只是同节点断言补全，未执行。
+
+## Parent N5 execution (2026-11-12)
+
+Final author/stylec6c4a08c: run152 HOST/interpret28passed/22deselected,6.74s; run154 CUDA22passed/28deselected,23.67s; all raw0. The actual MLP J/S and GRU J update/save/A/restore/B paths and reset stream equality passed. run153 had an invalid runner selector and collected no tests, raw4; it is retained as a command configuration failure. First style failures and fixes also remain in the canonical evidence, not presented as numerical failures.
+
+Parent normalmerge afc4893f plus BALL merge preserved the public reset_states CAS and exact unselected state/raw-clock ownership; run16914 merged reset/clone/default-Env checks passed. Later N6 modifies Env/RSL and receives separate affected validation; original N5 results are not retroactively assigned to untested shared edits. The standalone immutable scalar reset sampler and original50-node qualification remain reusable. This does not add model parameter randomization, free/BALL quaternion sampling, GPU reset generation or a learning claim. Installed check_random_reset.py qualification is pending the new wheel.

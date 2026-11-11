@@ -129,3 +129,11 @@ Affected scalar fixed-tree, activation and normal/constraint call sites require
 focused regression after the final shared ABI is integrated; old floating code
 was not changed. New installed qualification is still pending. No G1, PPO,
 contact-ball or general MuJoCo capability follows from this source handoff.
+
+## Parent execution and integration (2026-11-12)
+
+BALL1 source284e3c51 and parent shared routing completed run141 HOST/interpret27passed/13deselected,14.34s and run142 CUDA13passed/27deselected,6.32s, both raw0. Original gates and five24-step cases were unchanged. The source scope is fixed-root BALL+hinge/slide, nv<=8/nq<=10, no actuators/contact/limits/dry friction or ball springs; it is not floating BALL or G1 qualification.
+
+run144 old compatibility stopped after26pass at an obsolete pre-T4 hard-limit-refusal assertion. Source review confirmed T4 already handles soft limit rows. The same original two-world XML/q/v/h now checks two native-matched steps: first crossing has no row at entry, second has the native inward limit row, without clipping. The old sibling-box rejection likewise became a positive full-tree case using the identical separated source. Other negative admission gates remain. run145 validates the46 not-yet-run selected compatibility nodes, and run166 validates the7 changed domain nodes; all raw0. Parent normalmerge a6cffc07 and merged reset/clone seam run16914passed/20.85s complete source integration. No prior green group was repeated merely to collect another pass.
+
+Canonical receipts are artifacts/p65-parity-until-0720-20261112-01. ball-reset-triangle-source-qualification.json verifies all selected before/after and saved source bytes with zero mismatches and explicitly lists later file differences. Package consumer check_ball_tree.py is authored and statically checked; installed execution remains pending until the final new wheel.

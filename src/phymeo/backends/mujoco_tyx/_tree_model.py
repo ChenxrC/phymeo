@@ -5,7 +5,8 @@
 
 """Static native tree fields only: no configuration-specific M/J/bias freezing."""
 
-from dataclasses import dataclass, field as dataclass_field
+from dataclasses import dataclass
+from dataclasses import field as dataclass_field
 
 import numpy as np
 

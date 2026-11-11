@@ -542,6 +542,7 @@ def continuation(output, journal):
     import torch
 
     from phymeo.training.mujoco_tyx_checkpoint import MuJoCoTyxPpoSession
+    from phymeo.training.mujoco_tyx_evaluation import measure_update
     from phymeo.training.rsl_mujoco_tyx import RslMuJoCoTyxVecEnv
 
     random.seed(SEED)
@@ -580,6 +581,19 @@ def continuation(output, journal):
                 return result
 
             session.adapter.step = observed_step
+
+            def measured_update():
+                record, measurement = measure_update(session)
+                journal.emit("gru-measured-update", phase=update_phase[0], measurement=measurement)
+                events = measurement["counter_accounting"]["receipt_events"]
+                require(
+                    events["policy_transitions"] == 4
+                    and events["physical_batch_steps"] == 8
+                    and events["accepted_world_steps"] == 32,
+                    "installed evaluator counts physical substeps independently from policy windows",
+                )
+                return record
+
             journal.emit(
                 "gru-initial",
                 xml=parts["xml"],
@@ -589,7 +603,7 @@ def continuation(output, journal):
                 physics=env.runtime.snapshot(),
                 reset=env.last_reset_receipt,
             )
-            warm = session.update()
+            warm = measured_update()
             journal.emit(
                 "gru-warm",
                 record=warm,
@@ -616,7 +630,7 @@ def continuation(output, journal):
                 physical_capsule=env.runtime.checkpoint().to_bytes(),
             )
             update_phase[0] = "A"
-            a = session.update()
+            a = measured_update()
             train_a, physical_a = session.training_state(), env.runtime.snapshot()
             journal.emit(
                 "gru-A", record=a, training=train_a, physics=physical_a, counters=env.counters
@@ -637,7 +651,7 @@ def continuation(output, journal):
             exact(session.training_state(), saved_training, "healthy complete training restoration")
             exact(env.runtime.snapshot(), saved_physics, "healthy complete physics restoration")
             update_phase[0] = "B"
-            b = session.update()
+            b = measured_update()
             train_b, physical_b = session.training_state(), env.runtime.snapshot()
             journal.emit(
                 "gru-B", record=b, training=train_b, physics=physical_b, counters=env.counters

@@ -9,14 +9,15 @@ single-normal domain remains a separate route.
 """
 
 import copy
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from numbers import Integral
 from types import MappingProxyType
 
 import numpy as np
 
 from ..training.resident_stepper import PhysicsStepFailure
-from .mujoco_runtime import MuJoCoControl, MuJoCoRuntime, _frozen
+from ._mujoco_tyx_mirror import MIRROR_FIELDS, NativeStateLayout
+from .mujoco_runtime import MuJoCoControl, MuJoCoRuntime, MuJoCoState, _contacts, _frozen
 from .mujoco_tyx import MuJoCoTyxUnsupported as MuJoCoTyxUnsupported
 from .mujoco_tyx._model import compile_model, fp32
 
@@ -172,6 +173,7 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
         self._contact_capacity = _capacity(contact_capacity, "contact_capacity")
         self._constraint_capacity = _capacity(constraint_capacity, "constraint_capacity")
         self._mode, self._cache_root = mode, cache_root
+        self._mirror_layout, self._observer_data = None, None
         super().__init__(
             compilation, world_keys=world_keys, initial_states=initial_states, mode="cpu"
         )
@@ -195,8 +197,9 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
             control_initial_uploaded_bytes=0,
             control_pack_kernels=0,
         )
+        quantized = self._quantized_mirrors(self._data)
         self._device = self._build_device(self._data)
-        self._quantize_mirrors()
+        self._data = quantized
         info = dict(self._capabilities)
         info.update(
             backend=f"mujoco-tyx-{mode}",
@@ -306,6 +309,23 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
     def counters(self):
         return MappingProxyType({**self._device.counts, **self._extra_counts})
 
+    def _initial_data(self, packet):
+        # Preserve the original FP64 declaration checks and native initial
+        # observer, then release that one arena before constructing another world.
+        native = super()._initial_data(packet)
+        if self._mirror_layout is None:
+            self._mirror_layout = NativeStateLayout(self._mj, self._model)
+        return self._mirror_layout.capture(native)
+
+    def _observe_native(self, mirror):
+        # Called only while the runtime lock is held. No native view escapes.
+        if self._observer_data is None:
+            self._observer_data = self._mj.MjData(self._model)
+        observed = self._mirror_layout.materialize(mirror, self._observer_data)
+        self._mj.mj_forward(self._model, observed)
+        self._finite_state(observed)
+        return observed
+
     def _pack_states(self, data):
         q = np.zeros((len(self._world_keys), max(8, self._plan.nq)), np.float32)
         v = np.zeros((len(self._world_keys), max(8, self._plan.nv)), np.float32)
@@ -381,15 +401,20 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
         device.counts["control_host_uploaded_bytes"] = 0
         return device
 
-    def _quantize_mirrors(self):
-        packed = self._pack_states(self._data)
+    def _quantized_mirrors(self, data):
+        packed = self._pack_states(data)
         q, v, time = packed[:3]
+        prepared = {}
         for index, key in enumerate(self._world_keys):
-            self._data[key].qpos[:] = q[index, : self._plan.nq]
-            self._data[key].qvel[:] = v[index, : self._plan.nv]
-            self._data[key].time = float(time[index, 0]) - float(time[index, 1])
+            updates = dict(
+                qpos=q[index, : self._plan.nq],
+                qvel=v[index, : self._plan.nv],
+                time=float(time[index, 0]) - float(time[index, 1]),
+            )
             if hasattr(self._plan, "activation"):
-                self._data[key].act[:] = packed[3][index]
+                updates["act"] = packed[3][index]
+            prepared[key] = data[key].changed(**updates)
+        return prepared
 
     def set_controls(self, mapping):
         with self._lock:
@@ -623,20 +648,22 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                         result["input_act"][index], original.act
                     ):
                         raise RuntimeError("TYX input activation does not match its accepted world")
-                    candidate = copy.copy(original)
-                    if hasattr(self._plan, "activation"):
-                        candidate.act[:] = result["act"][index]
-                    candidate.qpos[:] = result["q"][index, : self._plan.nq]
-                    candidate.qvel[:] = result["v"][index, : self._plan.nv]
-                    candidate.qacc[:] = result["qacc"][index, : self._plan.nv]
-                    candidate.ctrl[:] = stored[key].ctrl
-                    candidate.qfrc_applied[:] = stored[key].qfrc_applied
-                    candidate.xfrc_applied[:] = stored[key].xfrc_applied
-                    candidate.qfrc_actuator[:] = result["actuator"][index, : self._plan.nv]
-                    candidate.qfrc_constraint[:] = result["constraint"][index, : self._plan.nv]
                     old_clock = result["input_time"][index]
                     new_clock = result["time"][index]
-                    candidate.time = float(new_clock[0]) - float(new_clock[1])
+                    updates = dict(
+                        qpos=result["q"][index, : self._plan.nq],
+                        qvel=result["v"][index, : self._plan.nv],
+                        qacc=result["qacc"][index, : self._plan.nv],
+                        ctrl=stored[key].ctrl,
+                        qfrc_applied=stored[key].qfrc_applied,
+                        xfrc_applied=stored[key].xfrc_applied,
+                        qfrc_actuator=result["actuator"][index, : self._plan.nv],
+                        qfrc_constraint=result["constraint"][index, : self._plan.nv],
+                        time=float(new_clock[0]) - float(new_clock[1]),
+                    )
+                    if hasattr(self._plan, "activation"):
+                        updates["act"] = result["act"][index]
+                    candidate = original.changed(**updates)
                     self._finite_state(candidate)
                     increment = np.float32(np.float32(self._timestep) - old_clock[1])
                     total = np.float32(old_clock[0] + increment)
@@ -767,17 +794,40 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
             return MappingProxyType(result)
 
     def snapshot(self, keys=None):
-        states = super().snapshot(keys)
-        return MappingProxyType(
-            {
-                key: replace(
-                    state,
+        with self._lock:
+            self._check_open()
+            states = {}
+            for key in self._select(keys):
+                committed = self._data[key]
+                endpoint = self._observe_native(committed)
+                states[key] = MuJoCoState(
+                    world=key,
+                    q=_frozen(committed.qpos),
+                    v=_frozen(committed.qvel),
+                    act=_frozen(committed.act),
+                    ctrl=_frozen(committed.ctrl),
+                    time=float(committed.time),
+                    tick=self._ticks[key],
+                    body_positions=_frozen(endpoint.xpos),
+                    body_quaternions=_frozen(endpoint.xquat),
+                    geometry_positions=_frozen(endpoint.geom_xpos),
+                    geometry_matrices=_frozen(endpoint.geom_xmat.reshape(-1, 3, 3)),
+                    qacc=_frozen(endpoint.qacc),
+                    qfrc_actuator=_frozen(endpoint.qfrc_actuator),
+                    qfrc_passive=_frozen(endpoint.qfrc_passive),
+                    qfrc_constraint=_frozen(endpoint.qfrc_constraint),
+                    qfrc_applied=_frozen(committed.qfrc_applied),
+                    xfrc_applied=_frozen(committed.xfrc_applied),
+                    sensordata=_frozen(endpoint.sensordata),
+                    energy=_frozen(endpoint.energy),
+                    contacts=_contacts(self._mj, self._model, endpoint),
+                    contact_time=float(committed.time),
+                    held_control=self._controls[key],
+                    last_step=self._receipts[key],
                     contact_law=self._capabilities["contact_law"],
                     contact_phase="endpoint-cpu-forward-recomputed",
                 )
-                for key, state in states.items()
-            }
-        )
+            return MappingProxyType(states)
 
     def reset(self, keys=None):
         with self._lock:
@@ -794,16 +844,16 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
             from .mujoco_device_controls import invalidate, retirement_list
 
             retired_controls = retirement_list(self)
+            quantized = self._quantized_mirrors(proposed)
             replacement = self._build_device(proposed)
             old = self._device
             self._device = replacement
             self._data, self._controls, self._ticks, self._receipts = (
-                proposed,
+                quantized,
                 controls,
                 ticks,
                 receipts,
             )
-            self._quantize_mirrors()
             self._checkpoint_revision += 1
             self._control_retired = retired_controls
             invalidate(self)
@@ -885,7 +935,12 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                 cache_root=self._cache_root,
             )
             try:
-                proposed = {key: copy.copy(self._data[key]) for key in selected}
+                proposed = {}
+                for key in selected:
+                    copied = copy.copy(self._data[key])
+                    proposed[key] = cloned._mirror_layout.from_parts(
+                        copied.cpu_state, {name: getattr(copied, name) for name in MIRROR_FIELDS}
+                    )
                 replacement = cloned._build_device(proposed)
                 previous = cloned._device
                 # Own both banks before retirement: a failed close must not
@@ -935,6 +990,7 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
             self._control_retired, self._checkpoint_retired = failed_controls, failed_physical
             self._control_cleanup_errors = tuple(repr(error) for error in errors)
             self._device = None
+            self._observer_data = None
             super().close()
             if errors:
                 raise BaseExceptionGroup(

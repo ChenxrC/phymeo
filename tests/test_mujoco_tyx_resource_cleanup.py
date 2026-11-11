@@ -206,21 +206,29 @@ def compiled(family):
         joints = '<joint name="j" type="slide" axis="0 0 1"/>'
         bodies = joints + '<geom type="sphere" size=".08" mass="1"/>'
     elif family == "tree":
-        bodies = ('<joint name="j" type="hinge" damping=".1"/>'
-                  '<geom type="sphere" pos=".2 0 0" size=".08" mass="1"/>')
+        bodies = (
+            '<joint name="j" type="hinge" damping=".1"/>'
+            '<geom type="sphere" pos=".2 0 0" size=".08" mass="1"/>'
+        )
     else:
-        bodies = ('<freejoint/><geom type="sphere" size=".08" mass="1"/>'
-                  '<body pos=".2 0 0"><joint name="j" type="hinge" damping=".1"/>'
-                  '<geom type="sphere" pos=".1 0 0" size=".04" mass=".2"/></body>')
-    xml = ('<mujoco><option timestep=".001" gravity="0 0 0"/>'
-           '<worldbody>' + root + bodies + '</body></worldbody>'
-           '<actuator><motor joint="j"/></actuator></mujoco>')
+        bodies = (
+            '<freejoint/><geom type="sphere" size=".08" mass="1"/>'
+            '<body pos=".2 0 0"><joint name="j" type="hinge" damping=".1"/>'
+            '<geom type="sphere" pos=".1 0 0" size=".04" mass=".2"/></body>'
+        )
+    xml = (
+        '<mujoco><option timestep=".001" gravity="0 0 0"/>'
+        "<worldbody>" + root + bodies + "</body></worldbody>"
+        '<actuator><motor joint="j"/></actuator></mujoco>'
+    )
     return compile_mujoco_xml(xml, require_asset=False)
 
 
 @pytest.mark.parametrize("mode", MODES)
 @pytest.mark.parametrize("family", FAMILIES)
-def test_actual_constructor_early_failure_closes_registered_resources(mode, family, monkeypatch, tmp_path):
+def test_actual_constructor_early_failure_closes_registered_resources(
+    mode, family, monkeypatch, tmp_path
+):
     from phymeo.backends.mujoco_runtime import MuJoCoRuntime
     from phymeo.backends.mujoco_tyx._device import TyxDevice
 
@@ -249,20 +257,34 @@ def test_actual_constructor_early_failure_closes_registered_resources(mode, fami
     assert resources.closed and runtime.closed
     assert resources.failures == () and resources.pending_buffer_count == 0
     assert not resources.runtime_pending and resources not in quarantined_resources()
-    (tmp_path / "constructor-cleanup.json").write_text(json.dumps({
-        "mode": mode, "family": family, "calls": calls,
-        "resources_state": resources.state, "runtime_closed": runtime.closed,
-        "failure": "authored allocation entry failure", "no_physics_step": True,
-    }), encoding="utf-8")
+    (tmp_path / "constructor-cleanup.json").write_text(
+        json.dumps(
+            {
+                "mode": mode,
+                "family": family,
+                "calls": calls,
+                "resources_state": resources.state,
+                "runtime_closed": runtime.closed,
+                "failure": "authored allocation entry failure",
+                "no_physics_step": True,
+            }
+        ),
+        encoding="utf-8",
+    )
 
 
-@pytest.mark.parametrize("mode,fault", (
-    ("interpret", "runtime"),
-    pytest.param("cuda", "runtime", marks=pytest.mark.cuda),
-    pytest.param("cuda", "buffer", marks=pytest.mark.cuda),
-))
+@pytest.mark.parametrize(
+    "mode,fault",
+    (
+        ("interpret", "runtime"),
+        pytest.param("cuda", "runtime", marks=pytest.mark.cuda),
+        pytest.param("cuda", "buffer", marks=pytest.mark.cuda),
+    ),
+)
 @pytest.mark.parametrize("family", FAMILIES)
-def test_actual_release_completed_then_error_is_not_retried(mode, fault, family, monkeypatch, tmp_path):
+def test_actual_release_completed_then_error_is_not_retried(
+    mode, fault, family, monkeypatch, tmp_path
+):
     from phymeo.backends.mujoco_runtime import MuJoCoControl, MuJoCoRuntime
 
     state = {"armed": False, "completed": False, "calls": 0}
@@ -306,8 +328,8 @@ def test_actual_release_completed_then_error_is_not_retried(mode, fault, family,
     monkeypatch.setattr(DeviceResources, "add_buffer", capture_buffer)
     try:
         runtime = MuJoCoRuntime(compiled(family), mode=mode, world_keys=(7, 91))
-        runtime.set_controls({7: MuJoCoControl([.2]), 91: MuJoCoControl([-.15])})
-        runtime.step(.001)
+        runtime.set_controls({7: MuJoCoControl([0.2]), 91: MuJoCoControl([-0.15])})
+        runtime.step(0.001)
         record["accepted_world_steps"] = runtime.counters["accepted_world_steps"]
         assert record["accepted_world_steps"] == 2
         assert len(captured) == 1
@@ -328,9 +350,14 @@ def test_actual_release_completed_then_error_is_not_retried(mode, fault, family,
             # production cannot infer this phase and must retain UNKNOWN_RELEASE.
             actual_runtime.close()
         assert actual_runtime.closed
-        record.update(ledger=resources.state, actual_runtime_closed=actual_runtime.closed,
-                      callback_calls=state["calls"], real_release_completed=state["completed"],
-                      quarantine_retained=True, automatic_recovery=False)
+        record.update(
+            ledger=resources.state,
+            actual_runtime_closed=actual_runtime.closed,
+            callback_calls=state["calls"],
+            real_release_completed=state["completed"],
+            quarantine_retained=True,
+            automatic_recovery=False,
+        )
     except BaseException as error:
         record["failure"] = repr(error)
         raise

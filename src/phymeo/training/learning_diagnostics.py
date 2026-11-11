@@ -22,6 +22,9 @@ MAX_LOGICAL_BYTES = 4 * 1024**3
 MAX_COMPRESSED_BYTES = 1024**3
 TRANSITION_TYPE = "phymeo.training.mujoco_tyx_env.MuJoCoTyxTransition"
 STATE_TYPE = "phymeo.backends.mujoco_runtime.MuJoCoState"
+STEP_TYPE = "phymeo.backends._mujoco_tyx_runtime.MuJoCoTyxStepReceipt"
+CONTROL_TYPE = "phymeo.backends.mujoco_runtime.MuJoCoControl"
+FRAME_TYPE = "phymeo.backends.mujoco_task_workspace.MuJoCoTyxTaskFrame"
 
 
 def require(condition, message):
@@ -373,6 +376,14 @@ class PhaseAccumulator:
             and not xforces.any(),
             "declared zero applied-force channels",
         )
+        frame = _type(value["input_frame"], FRAME_TYPE)
+        require(
+            type(frame["ticks"]) in (tuple, list)
+            and type(frame["times"]) in (tuple, list)
+            and len(frame["ticks"]) == n
+            and len(frame["times"]) == n,
+            "actual input frame clock coverage",
+        )
         q, v, force, positive = [], [], [], []
         for row, key in enumerate(self.keys):
             state = _type(value["states"][key], STATE_TYPE)
@@ -385,10 +396,34 @@ class PhaseAccumulator:
                 and np.array_equal(_array(state["xfrc_applied"]), xforces[row]),
                 "actual state/native-channel binding",
             )
-            receipt = state["last_step"]
+            receipt = _type(state["last_step"], STEP_TYPE)
             require(
-                type(receipt) is dict and receipt.get("backend") == "mujoco-tyx-cuda",
-                "actual TYX step evidence",
+                receipt["backend"] == "mujoco-tyx-cuda"
+                and receipt["world"] == key
+                and receipt["tick"] == state["tick"],
+                "actual TYX step identity",
+            )
+            # Native clocks are compensated FP32 pairs. Bind the saved public
+            # input/output times; do not substitute a nominal tick * h clock.
+            require(
+                frame["ticks"][row] == length - 1
+                and math.isfinite(float(frame["times"][row]))
+                and math.isfinite(float(state["time"]))
+                and receipt["input_time"] == frame["times"][row]
+                and receipt["output_time"] == state["time"]
+                and 0 <= receipt["input_time"] < receipt["output_time"]
+                and receipt["contact_time"] == receipt["input_time"]
+                and receipt["h"] == self.h,
+                "actual TYX step/input-frame clock binding",
+            )
+            stored = _type(receipt["stored_control"], CONTROL_TYPE)
+            require(
+                np.array_equal(_array(stored["ctrl"], (d,)), channels[0][row])
+                and np.array_equal(_array(stored["qfrc_applied"], (d,)), qforces[row])
+                and np.array_equal(
+                    _array(stored["xfrc_applied"], xforces[row].shape), xforces[row]
+                ),
+                "actual stored-control/native-channel binding",
             )
             if support:
                 contacts = [c for c in receipt["contacts"] if set(c["geometry_ids"]) == {0, 1}]
@@ -709,8 +744,26 @@ def _analyze_trace(
             horizon=budget.horizon,
             offset=index * budget.rollout,
         )
-        for transition in record["transitions"]:
-            stats.add(transition, support=expected_task == "S")
+        requests = record.get("step_requests")
+        require(
+            type(requests) in (tuple, list) and len(requests) == budget.rollout,
+            "complete rollout request coverage",
+        )
+        for ordinal, (transition, request) in enumerate(
+            zip(record["transitions"], requests, strict=True)
+        ):
+            require(
+                type(request) is dict
+                and set(request) == {"ordinal", "status", "requested_action", "transition_index"}
+                and type(request["ordinal"]) is int
+                and request["ordinal"] == ordinal
+                and request["status"] == "accepted"
+                and type(request["transition_index"]) is int
+                and request["transition_index"] == ordinal,
+                "ordered accepted rollout request identity",
+            )
+            requested = _array(request["requested_action"], (len(keys), stats.width))
+            stats.add(transition, expected_action=requested, support=expected_task == "S")
         behavior = stats.finish()
         check = cursor.take("update_checks")
         require(

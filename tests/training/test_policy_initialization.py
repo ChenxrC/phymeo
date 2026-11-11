@@ -95,6 +95,8 @@ def test_real_cpu_model_only_bias_changes_and_remains_trainable():
     (actor(obs).sum() + critic(obs).sum()).backward()
     optimizer.step()
     assert bias.requires_grad and not torch.equal(old_bias, bias)
+    assert np.array_equal(result["model_after"]["actor"][result["bias_name"]], old_bias.numpy())
+    assert np.array_equal(result["proposed_bias"], old_bias.numpy())
 
 
 @pytest.mark.parametrize("fault", ("hash", "dtype", "nonfinite", "batch", "normalizer",
@@ -138,9 +140,10 @@ def test_validation_refuses_before_any_model_publication(fault):
 
 
 @pytest.mark.parametrize("stage", ("candidate", "copy", "verify"))
-def test_injected_failure_restores_all_original_model_state(monkeypatch, stage):
+@pytest.mark.parametrize("device", ("cpu", pytest.param("cuda", marks=pytest.mark.cuda)))
+def test_injected_failure_restores_all_original_model_state(monkeypatch, stage, device):
     import torch
-    actor, critic, optimizer, obs = models()
+    actor, critic, optimizer, obs = models(device)
     before_hash, before_rng = policy_hash(actor, critic), rng()
     if stage == "candidate":
         original = initialization._mean
@@ -151,6 +154,8 @@ def test_injected_failure_restores_all_original_model_state(monkeypatch, stage):
                 random.random()
                 np.random.random()
                 torch.rand(1)
+                if device == "cuda":
+                    torch.rand(1, device=device)
                 raise RuntimeError("injected candidate")
             return original(*args)
         monkeypatch.setattr(initialization, "_mean", fail)
@@ -307,6 +312,7 @@ def test_original_learning_hook_order_and_default_output(monkeypatch, tmp_path, 
         sessions.append(session)
         return session
     monkeypatch.setattr(api, "_session", new_session)
+    monkeypatch.setattr(api, "protocol_binding", lambda name: {"name": name})
     monkeypatch.setattr(api, "_manifest", lambda *args: {"source_files": {}, "dependencies": {}})
     def state_hash(algorithm):
         return hashlib.sha256(repr((algorithm.bias, algorithm.iteration)).encode()).hexdigest()

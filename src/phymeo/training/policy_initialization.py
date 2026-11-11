@@ -168,6 +168,7 @@ def center_initial_mean(actor, observation, *, critic, optimizer, expected_polic
                                            for name, value in observation.items()},
                     mean_before=mean_before.cpu().numpy().copy(),
                     mean_after=mean_after.cpu().numpy().copy(),
+                    mean_after_origin="independent candidate inference; published tensor hash checked exactly",
                     proposed_bias=proposed_bias.cpu().numpy().copy(),
                     computation_flags=dict(flags),
                 )

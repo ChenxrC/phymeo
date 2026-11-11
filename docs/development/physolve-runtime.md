@@ -99,3 +99,48 @@ FANUC 的四个初始自接触形成 16 条约束，总代价约 3.28e10。实�
 证据为实验根 `evidence/b4-*`，详细矩阵和后续边界以配套 P2PE 集成记录为准。
 本批没有新增运行时结构优化，也未重新执行完整 B3 验收矩阵；C ABI、整步 Graph、
 GUI、安装包与性能资格仍未推进。六件 CUBIN 和 Host 保持冻结。
+
+## FANUC 碰撞模型审计（B5）
+
+本轮独立使用用户原始 URDF/STL 和 `fanuc.zip`，不采用 Newton 导出模型或过滤
+配置作为标准。归档与 16 件文件散列一致。底座和第一节的 collision STL 在 URDF
+初始坐标下本身相交：竖直重叠约 0.06700005 m，三个点的封闭网格绕数与独立
+射线奇偶检验均确认位于两者内部。这不是仅由凸包填充产生的假象。相应 visual STL
+在 z 方向有约 0.00098456 m 间隙；visual 只能作为资产表达的参照，不是制造商 CAD 认证。
+
+原生 MuJoCo、PHYMEO 编译模型和 MJB 恢复模型的 592 个可枚举字段一致（MJB
+signature 的已记录例外不变），两个 mesh 的世界顶点与独立 URDF/STL 坐标误差
+小于既有 1e-6。PHYMEO 未引入额外偏移或穿透；`require_asset=False` 使用完整原生
+模型，未借用 resident articulation-only 碰撞实现。
+
+第一轴全范围取 9 点，均保留四个约 -0.067 m 的接触；接触法向雅可比最大绝对值
+约 3.44e-15，没有可用关节速度消除该法向穿透。因此将这对代理重叠当作应被推开的
+关节连接处接触约束，不适合作为正常机器人动作场景。资产未说明是否刻意依赖相邻
+过滤，不能据此宣称原 STL 作者的意图或全部机械几何已经验收。
+
+MuJoCo 原生 URDF 导入把固定根融合到 world，PHYMEO 保持该语义。即使诊断性关闭
+fusestatic、保留 `base_link` body，它仍属于 world weld（weldid=0），接触保持不变。
+当前父子自动过滤不适用于 world weld，所以仅保留 body 名称不足以解决问题。需要明确的
+robot link/geom 级碰撞关系；不能用 world 与 link_1 的 body-wide exclude，否则
+可能同时屏蔽地面/障碍物。该规则尚未进入生产导入器。
+
+正式 pytest 新增 `tests/test_fanuc_collision_model.py`，四项 CPU 几何/导入/过滤
+审计和既有两项模型逐字段测试全部通过。定向 GPU 诊断仅用 mask 移除底座—第一节
+这一对，断言其他 geom pair 的 mask 关系保持不变；复用原测试的 0.03 N/N·m、
+三步、forward 和 masked/full reset 断言，N=1/8/64 三项均通过。未放宽容差、
+未禁用 warmstart/全部接触、未更改 CUBIN。CPU 外部平面负控制确认 link_1 与
+world 障碍物的接触仍存在；该外部平面没有单独做 GPU 物理资格。
+
+同批保留的原始 FANUC 配置三项 GPU 用例仍失败于速度全零，整体为 3 pass/3 fail，
+24 项未选；不能把定向诊断当作原始配置或完整机器人资格通过。B4 对数值敏感性的
+观察仍保留，但“先修改求解内核”的优先级判断由本轮纠正：先确定模型/场景碰撞
+契约，不以旧 Newton 配置为真值。Panda、C ABI、Graph、GUI 和完整 release 未复测。
+证据在实验根 `evidence/b5-*`；本轮只增加测试和记录，生产默认行为未变。
+
+追加定向 GPU 复测 3/3 通过，逐 world 检查均运动，同构 qpos/qvel 在原 1e-6
+门限内一致；原有 forward 和 reset 精确比较保留。运动恢复不等于原始模型全部
+动力学参数或机器人资格合格。六件 CUBIN 和 Host 的 B5 散列复核均与基线一致。
+
+全库 `scripts/check_docs.py` 检出 479 条缺失目标，当前输出与本批修改前 HEAD
+内容的检查逐行相同，均为已有 artifact/页面缺失；该门禁仍记失败。本轮不补造历史
+制品或改动无关页面。修改文档中的路径/事实、测试源和全部 diff 已另行复核。

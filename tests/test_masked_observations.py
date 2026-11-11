@@ -104,7 +104,7 @@ def test_reset_prepared_bindings_and_completion_cost(payload, monkeypatch):
             for view in (source, target)
         )
         count = 0
-        complete = runtime._complete
+        complete = runtime._validation.read
         factories = {name: getattr(runtime._tx, name) for name in ("zeros", "full", "empty")}
         allocations = []
 
@@ -121,10 +121,10 @@ def test_reset_prepared_bindings_and_completion_cost(payload, monkeypatch):
 
             return tracked
 
-        def counted():
+        def counted(stream):
             nonlocal count
             count += 1
-            complete()
+            complete(stream)
 
         def allocation_forbidden(*args, **kwargs):
             raise AssertionError("prepared reset cannot allocate a state bank or scratch")
@@ -138,7 +138,7 @@ def test_reset_prepared_bindings_and_completion_cost(payload, monkeypatch):
 
             return checked
 
-        monkeypatch.setattr(runtime, "_complete", counted)
+        monkeypatch.setattr(runtime._validation, "read", counted)
         monkeypatch.setattr(runtime._tx, "clone", allocation_forbidden)
         for name in factories:
             monkeypatch.setattr(runtime._tx, name, tracked_factory(name))
@@ -156,11 +156,11 @@ def test_reset_prepared_bindings_and_completion_cost(payload, monkeypatch):
         allocations.clear()
         count = 0
         runtime.reset(np.arange(8) % 2 == 0)
-        assert count == 2  # forward validation, then ordered observation copy completion
+        assert count == 1  # one compact read completes forward and observation preservation
         assert tuple(allocations) == baseline
         allocations.clear()
         runtime.reset()
-        assert count == 3  # full reset needs no preservation copy or extra completion
+        assert count == 2  # full reset also has one compact completion
         assert tuple(allocations) == baseline
         print("reset inherited native forward allocations", baseline)
         assert bindings == tuple(

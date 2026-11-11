@@ -1,8 +1,8 @@
-"""Synchronous direct PhySolve integration over a Phymeo compilation record.
+"""Owned PhySolve runtime with explicit candidate execution and publication.
 
-Two persistent device banks make publication transactional. All methods here
-are explicit completion boundaries with host validation; this is not an async,
-Graph, zero-readback, or P2PE C ABI qualification. CPU MuJoCo only prepares the
+Two persistent device banks make publication transactional. Synchronous helpers
+use the same begin/enqueue/complete/accept contract. Completion reads a compact
+device validation result; this is not Graph or P2PE C ABI qualification. CPU MuJoCo prepares
 initial data. Native coordinates are preserved, including WXYZ free-root qpos.
 """
 
@@ -93,6 +93,10 @@ class PhySolveRuntime:
         self._banks, self._handles = [], []
         self._stream = self._model = None
         self._reset = None
+        self._validation = self._storage = None
+        self._storage_generation = 1
+        self._pending = None
+        self._execution_epoch = 0
         self._compilation = compilation
         self._cpu_model = cpu
         cpu = self._cpu_model
@@ -142,6 +146,14 @@ class PhySolveRuntime:
                         self._banks, self.nworld, selected, OBSERVATION_FIELDS
                     )
                     self._reset.prepare(self._stream)
+                    from ._physolve_binding import bind_storage
+                    from ._physolve_validation import PreparedValidation
+
+                    self._validation = PreparedValidation(self._banks, selected)
+                    self._validation.prepare(self._stream)
+                    self._storage = bind_storage(
+                        self, self._banks, self._stream, selected, self._storage_generation
+                    )
                     self._complete()
         except Exception as error:
             try:
@@ -170,6 +182,10 @@ class PhySolveRuntime:
             self._stream.synchronize()
 
     def _validate(self, data):
+        if self._validation is not None:
+            self._validation.read(self._stream)
+            return
+        # Cold construction validation before persistent device checks exist.
         self._complete()
         if (
             int(data.nacon.numpy()[0]) > data.naconmax
@@ -212,40 +228,176 @@ class PhySolveRuntime:
         """Advance one compiled timestep; controls persist until changed/reset."""
         with self._scope():
             controls = self._controls(dict(ctrl=ctrl, qfrc_applied=qfrc_applied))
-            index, data = self._candidate()
-            for name, value in controls.items():
-                getattr(data, name).assign(value, stream=self._stream)
-            self._native._step_runtime(self._handles[index])
-            self._validate(data)
-            self._active = index
+            with self._synchronous_execution() as ticket:
+                for name, value in controls.items():
+                    getattr(self._banks[ticket[1]], name).assign(value, stream=self._stream)
+                self.enqueue_step(ticket)
 
     def forward(self):
         """Refresh derived values without advancing time or changing qpos/qvel."""
         with self._scope():
-            index, data = self._candidate()
-            self._native._forward_runtime(self._handles[index])
-            self._validate(data)
-            self._active = index
+            with self._synchronous_execution() as ticket:
+                self.enqueue_forward(ticket)
 
     def reset(self, mask=None):
         """Reset selected worlds; keep unselected integration and snapshot values."""
         with self._scope():
+            self._require_idle()
             if mask is not None:
                 mask = np.asarray(mask)
                 if mask.dtype != np.bool_ or mask.shape != (self.nworld,):
                     raise ValueError("reset mask must be bool[nworld]")
                 if not mask.any():
                     return
-            index, data = self._candidate()
-            self._reset.restore(index, mask, self._stream)
-            self._native._forward_runtime(self._handles[index])
-            self._validate(data)
-            if mask is not None and not mask.all():
-                # Validate *before* overwriting qacc: a failed forward on an
-                # unselected world must not be hidden by its previous values.
-                self._reset.preserve_observations(index, self._stream)
-                self._complete()
+            with self._synchronous_execution() as ticket:
+                self.enqueue_reset(ticket, mask)
+
+    @contextmanager
+    def _synchronous_execution(self):
+        # Refuse someone else's pending transaction before entering cleanup scope.
+        self._require_idle()
+        try:
+            ticket = self.begin_execution()
+            yield ticket
+            self.complete_execution(ticket)
+            self.accept_execution(ticket)
+        except Exception as primary:
+            ticket = self.pending_execution
+            if ticket is not None:
+                try:
+                    self.discard_execution(ticket)
+                except Exception as cleanup:
+                    raise primary from cleanup
+            raise
+
+    @property
+    def storage_generation(self):
+        return self._storage_generation if not self._closing else -1
+
+    @property
+    def active_bank(self):
+        return self._active
+
+    @property
+    def pending_execution(self):
+        """Recovery ticket, including a failure during candidate preparation."""
+        return self._pending["ticket"] if self._pending else None
+
+    def execution_costs(self):
+        """Explicit validation transfers; native Host internal work is additional."""
+        with self._scope():
+            return {"validation_readbacks": self._validation.readbacks,
+                    "validation_d2h_bytes": 4 * self._validation.readbacks,
+                    "native_direct_conditional_sync": True}
+
+    @property
+    def writable_bank(self):
+        pending = self._pending
+        return pending["ticket"][1] if pending and pending["phase"] == "prepared" else None
+
+    def storage_binding(self, *, contract_version=1):
+        """Borrow prepared fields/stream; no native model, Data or Host escapes."""
+        with self._scope():
+            if contract_version != 1:
+                raise ValueError("unsupported runtime storage contract")
+            return self._storage
+
+    def _require_idle(self):
+        if self._pending is not None:
+            raise RuntimeError("an execution is pending; accept or discard it first")
+
+    def _require_ticket(self, ticket, phase=None):
+        if self._pending is None or self._pending["ticket"] is not ticket:
+            raise RuntimeError("stale or foreign execution ticket")
+        if phase is not None and self._pending["phase"] != phase:
+            raise RuntimeError(f"execution requires {phase} phase")
+        return ticket[1]
+
+    def begin_execution(self):
+        """Copy integration once; caller may now enqueue candidate field writes."""
+        with self._scope():
+            self._require_idle()
+            self._execution_epoch += 1
+            ticket = (self._execution_epoch, 1 - self._active)
+            self._pending = {"ticket": ticket, "phase": "preparing"}
+            # On failure retain the candidate until discard/close confirms completion.
+            self._validation.clear(self._stream)
+            self._candidate()
+            self._pending["phase"] = "prepared"
+            return ticket
+
+    def enqueue_step(self, ticket, *, steps=1):
+        """Advance one candidate for all substeps; no publication or host readback here.
+
+        Native direct conditional loops may synchronize internally; this API
+        separates publication and does not promise a nonblocking Host solver.
+        """
+        steps = _positive(steps, "steps")
+        with self._scope():
+            index = self._require_ticket(ticket, "prepared")
+            self._pending["phase"] = "enqueued"
+            try:
+                for _ in range(steps):
+                    self._native._step_runtime(self._handles[index])
+                    self._validation.enqueue(index, self._stream)
+            except Exception:
+                self._pending["phase"] = "failed"
+                raise
+
+    def enqueue_forward(self, ticket):
+        with self._scope():
+            index = self._require_ticket(ticket, "prepared")
+            self._pending["phase"] = "enqueued"
+            try:
+                self._native._forward_runtime(self._handles[index])
+                self._validation.enqueue(index, self._stream)
+            except Exception:
+                self._pending["phase"] = "failed"
+                raise
+
+    def enqueue_reset(self, ticket, mask=None):
+        with self._scope():
+            index = self._require_ticket(ticket, "prepared")
+            if mask is not None:
+                mask = np.asarray(mask)
+                if mask.dtype != np.bool_ or mask.shape != (self.nworld,):
+                    raise ValueError("reset mask must be bool[nworld]")
+            self._pending["phase"] = "enqueued"
+            try:
+                self._reset.restore(index, mask, self._stream)
+                self._native._forward_runtime(self._handles[index])
+                # Error bits latch before unselected observations overwrite qacc.
+                self._validation.enqueue(index, self._stream)
+                if mask is not None and not mask.all():
+                    self._reset.preserve_observations(index, self._stream)
+            except Exception:
+                self._pending["phase"] = "failed"
+                raise
+
+    def complete_execution(self, ticket):
+        """Wait for the canonical stream and check 4 bytes; do not publish."""
+        with self._scope():
+            index = self._require_ticket(ticket, "enqueued")
+            try:
+                self._validate(self._banks[index])
+            except Exception:
+                self._pending["phase"] = "failed"
+                raise
+            self._pending["phase"] = "completed"
+
+    def accept_execution(self, ticket):
+        """Publish only this completed candidate, once; no GPU work."""
+        with self._scope():
+            index = self._require_ticket(ticket, "completed")
             self._active = index
+            self._pending = None
+
+    def discard_execution(self, ticket):
+        """Keep the accepted bank; failed completion retains all owners for retry."""
+        with self._scope():
+            self._require_ticket(ticket)
+            self._complete()
+            self._pending = None
 
     def snapshot(self):
         """Independent read-only host arrays, explicitly synchronous D2H."""
@@ -275,6 +427,10 @@ class PhySolveRuntime:
                 self._stream.destroy()
                 self._stream = None
             self._banks.clear()
+            if self._storage is not None:
+                self._storage._release()
+            self._storage = self._validation = self._pending = None
+            self._storage_generation += 1
             self._reset = None
             self._model = None
             self._closed = True

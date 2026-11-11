@@ -1,6 +1,6 @@
 # 外部接口层与多求解器集成
 
-本页是 `feature/wh/phymeo-engine-integration` 的集成设计约束，不宣布新接口已经实现。
+本页是 `feature/wh/phymeo-engine-integration` 的集成合同，仅文中明确标记的接口已实现。
 现有公共入口和支持范围见 [场景编译](unified-scene-compilation.md)，原生实验缺口见
 [PhySolve 运行时](../development/physolve-runtime.md)。P2PE 的 ABI/schema/handle 不进入本仓库。
 
@@ -42,8 +42,8 @@ CPU MuJoCo 3.8.0 仅作为本实验 solver profile 的模型编译、初始化�
 
 ## 执行与演进
 
-目前 PhySolveRuntime 是同步验证入口；包含 H2D 控制写入、D2H 校验/快照和候选 bank
-复制，不能直接包装成高频 executor。需要延迟完成、受控发布及明确错误归并入口。
+PhySolveRuntime 提供版本 1 的字段借用和候选执行入口；同步 step/forward/reset 复用
+同一事务，snapshot 仍为显式全量 D2H。执行阶段与限制见下节，不以快照包装高频接口。
 resident 公共入口的部分 world 发布行为同样必须补齐共同发布/恢复边界后才授予外部
 事务契约资格。不能由 P2PE 每步整批 host 快照补偿底层合同缺失。
 
@@ -52,8 +52,37 @@ resident 公共入口的部分 world 发布行为同样必须补齐共同发布/
 Graph 捕获资源完整保活，同一 stream 包装复用；捕获失败不 fallback direct。
 
 公共集成合同、包版本、源提交、TYX 互操作、原生 ABI 和载荷身份分别管理。
-合同版本化实现尚待后续批次；不能从此文档推断任意版本组合已兼容。字段语义、采样
+字段借用合同首版为 1；完整跨 solver 合同仍待后续资格，不能推断任意版本组合已兼容。字段语义、采样
 时刻和存储有效期变化要显式迁移；升级使用实际旧包和新候选跑同一测试套件。
+
+### 字段借用与候选执行 v1
+
+`storage_binding(contract_version=1)` 返回固定字段描述及两个 bank 的 TYX 标量视图，
+描述含 shape/dtype、单位、frame、native index space、采样时刻和写权限。
+字段含义以描述为事实来源；这不是 P2PE 的公共字段布局，消费适配仍须转换身份和坐标。
+不暴露原生 model/Data/Host；字段借用本身不复制物理状态，不要求 resident 使用 MuJoCo 表达。
+
+顺序为 `begin_execution → enqueue_step/forward/reset → complete_execution → accept_execution`。
+begin 每事务复制一次 integration 字段；多个子步推进同一候选 bank。完成只确认和检查，
+accept 才发布。外部消费者只在 prepared 阶段写候选，不能写 accepted bank；同一实例
+只允许一个 pending 事务，异实例/过期 ticket 拒绝。出错后使用 pending_execution 取回
+恢复 ticket，再 discard 或 close；完成/清理失败保留 owner 与资源以便重试。
+
+借用数组与 canonical stream 在冷准备时创建；读写均使用该 stream，消费期间不得关闭
+owner。owner 关闭后 binding 失效；原始指针
+不能被 Python 撤销，消费者必须在准入处检查 generation，不能长期越权使用已缓存指针。
+写入前由调用方验证有限值、四元数及物理坐标约束。设备端输出检查只阻止错误候选发布，
+不代替输入预检，也尚不抑制错误之后的原生子步；P2PE execution epoch gate 仍待接入。
+
+每子步将容量及有限值错误累积到固定 int32，完成时一次 4 字节 D2H 和 stream 同步。
+masked reset 的未选观测保留与 forward 检查在同一 stream 完成，无第二次主机等待。
+检查复杂度为 O(substeps × worlds × (q + DOF + controls))，主机 dispatch 随字段/子步数
+增长，不逐 world 调用；候选复制为 O(worlds × integration width)，不复制完整模型。
+原生 direct 条件循环仍可能内部同步，enqueue 不承诺完全非阻塞；Graph、外部 stream、
+contact 借用、resident 及实际 C ABI 尚未因此获得资格。并发仅有实例锁，TYX 跨线程能力
+另行资格化，本批不声称线程安全或吞吐提升。
+校验预热当前执行 bank 0；bank 1 的 TYX 指针绑定首次使用成本尚未独立计数，不宣称
+两 bank 的所有底层 launch 缓存均已预热。设备数组视图本身由准备阶段固定复用。
 
 ## 分批验收
 

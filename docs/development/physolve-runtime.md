@@ -548,3 +548,30 @@ stress N=64官方—PhySolve角差由首0.5s最大1.064e-5rad增长至末态5.74
 无生产修改，无新环境安装；仅复用两套隔离安装。已完成自审及独立只读复审，
 P2PE文档/政策18项、Ruff及diff门禁通过；PHYMEO文档479条历史缺失目标保持失败，
 日志散列与原基线一致。本节点不推送、不合并。
+
+## B3b：公开存储与候选执行
+
+接口和职责以[引擎集成合同](../architecture/engine-integration.md#字段借用与候选执行-v1)
+为准。本批只改 PHYMEO 的适配和公共借用描述，原生 Host、TYX 和六个 CUBIN 不变。
+同步 step/forward/reset 保持入口，改为复用候选事务；不改生产排序和数值容差。
+
+既有 env-b1j 从工作分支源码运行，进程同时检查三包未安装并禁止三包导入；不声称
+已更新安装 wheel。`test_physolve_execution.py` 的 13 项真实 CUDA 测试覆盖 N=1/8/64、
+四子步统一发布、借用权限/stale、丢弃、异常锁存及准备/清理失败恢复；与既有 masked
+观测、工作区测试合计 28 通过。9 项历史 installed B1c 对照因未配置参考而跳过，
+不记为通过，没有为此新建环境或复制历史大制品。证据见实验根 `evidence/b3b-*`。
+原同步入口定向回归另有 11 项通过：落体/forward/reset、命令力原子性、接触响应、
+清理重试、驱动控制和双实例隔离。没有重跑机器人严格跨实现数值调查。
+
+执行结构中 begin 只复制一次 integration 字段；计数实测四子步完成仅校验读回 4 字节；
+局部 reset 的 forward 与未选观测保持共用一次完成读回。测试禁止准备后调用数组
+工厂，禁止新执行路径 `.numpy()` 全量校验；不把这些计数写作完整 CUDA 分配或性能资格。
+原生 direct 内部条件同步、CPU 冷初始化和显式 host snapshot 成本仍存在。
+
+独立代理两轮只读复审，已修复准备失败 pending 残留及校验预热失败 owner 保留，
+没有剩余阻断。审查者未运行 GPU。Ruff 与 diff 检查通过；全仓文档仍有 479 条历史
+缺失目标，日志与 B0 相同；公开 TYX 导入检查仍拒绝已有 mujoco_task_workspace.py
+的 tyx.torch 导入，本批未修改该模块，不借机扩展整理范围。
+
+该节点没有授予 P2PE 物理 C ABI、resident、Graph、外部 stream、传感器、安装或 GUI
+资格。后续先接公开字段转换、candidate owner 与错误门禁，再完成实际 C ABI 数据闭环。

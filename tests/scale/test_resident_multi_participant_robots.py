@@ -166,7 +166,8 @@ def urdf(s):
         links.append(f'<link name="link{i}"><inertial><mass value="1"/><inertia ixx="0.125" iyy="0.125" izz="0.125" ixy="0" ixz="0" iyz="0"/></inertial></link>')
         xyz = " ".join(str(float(x)) for x in m["offsets"][i])
         mimic = '<mimic joint="joint0" multiplier="-1" offset="0"/>' if i else ""
-        joints.append(f'<joint name="joint{i}" type="prismatic"><parent link="base"/><child link="link{i}"/><origin xyz="{xyz}"/><axis xyz="1 0 0"/><limit lower="-2" upper="2" effort="64" velocity="10"/>{mimic}</joint>')
+        parent = "base" if m["parents"][i] < 0 else "link" + str(m["parents"][i])
+        joints.append(f'<joint name="joint{i}" type="prismatic"><parent link="{parent}"/><child link="link{i}"/><origin xyz="{xyz}"/><axis xyz="1 0 0"/><limit lower="-2" upper="2" effort="64" velocity="10"/>{mimic}</joint>')
     return '<robot name="rob1c_graph">' + root + "".join(links + joints) + '</robot>'
 
 
@@ -250,6 +251,7 @@ def build(data, directory, *, worlds=WORLDS[:1], reverse=False):
 
 def prepare(scene, built, **overrides):
     kwargs = dict(candidate_capacity=len(built["laws"]), site_capacity=128, narrow_phase="host_patch")
+    kwargs["intra_participant_pairs"] = built["data"].get("intra", False)
     kwargs.update(overrides)
     return scene.prepare_contacts(built["model"], built["bindings"], built["laws"], **kwargs)
 
@@ -284,17 +286,25 @@ def independent_contacts(data, states):
     sites = []
     for a, ai, b, bi in data["pairs"]:
         sa, sb = data["specs"][a]["shapes"][ai], data["specs"][b]["shapes"][bi]
-        assert sa["kind"] == "sphere" and sb["kind"] == "hull"
+        assert sa["kind"] == "sphere" and sb["kind"] in ("sphere", "hull")
         center, _ = shape_pose(data["specs"][a], terms[a], sa)
         box, R = shape_pose(data["specs"][b], terms[b], sb)
-        local = R.T @ (center - box)
-        closest = box + R @ np.clip(local, -sb["half"], sb["half"])
-        delta = closest - center
-        distance = np.linalg.norm(delta)
-        assert distance > 0, "frozen oracle requires sphere center outside finite box"
-        normal = delta / distance
-        gap = distance - sa["radius"]
-        point = (center + sa["radius"] * normal + closest) / 2
+        if sb["kind"] == "sphere":
+            delta = box - center
+            distance = np.linalg.norm(delta)
+            assert distance > 0
+            normal = delta / distance
+            gap = distance - sa["radius"] - sb["radius"]
+            point = (center + sa["radius"] * normal + box - sb["radius"] * normal) / 2
+        else:
+            local = R.T @ (center - box)
+            closest = box + R @ np.clip(local, -sb["half"], sb["half"])
+            delta = closest - center
+            distance = np.linalg.norm(delta)
+            assert distance > 0, "frozen oracle requires sphere center outside finite box"
+            normal = delta / distance
+            gap = distance - sa["radius"]
+            point = (center + sa["radius"] * normal + closest) / 2
         velocities = []
         for pid, shape in ((a, sa), (b, sb)):
             t, body = terms[pid], shape["body"]
@@ -458,6 +468,7 @@ def run_window(data, built, mode, directory, *, steps=None):
         with prepare(scene, built) as plan:
             initial_stats = scene.stats()
             failure = None
+            before, selected = scene.snapshot(), drives(data, 0)
             try:
                 for tick in range(count):
                     selected = drives(data, tick)
@@ -498,7 +509,8 @@ def run_window(data, built, mode, directory, *, steps=None):
             finally:
                 save(directory, "robot-window", dict(inputs=data, world_order=built["worlds"],
                     initial_stats=initial_stats, final_stats=scene.stats(), rows=rows,
-                    failure=failure, retained=scene.snapshot(), status=plan.last_status))
+                    failure=failure, retained=scene.snapshot(), status=plan.last_status,
+                    last_entry=before, last_controls=selected, last_receipts=plan.last_accepted))
     assert scene.stats()["device_owned_bytes"] == 0
     return rows
 
@@ -574,3 +586,33 @@ def test_r05_sparse_coincident_worlds_reverse_registration(count, tyx_mode, tmp_
             for key, item in batch[tick]["receipts"][world].participants.items():
                 other = singles[wi][tick]["receipts"][world].participants[key]
                 close(item.contact_generalized, other.contact_generalized, atol=0, rtol=0)
+
+
+@pytest.mark.tyx
+@pytest.mark.parametrize("family", ("affine", "floating_affine"))
+def test_explicit_intra_affine_siblings_use_full_physical_parent_table(family, tyx_mode, tmp_path):
+    data = r04(family)
+    data["pairs"] += ((7, 0, 7, 1),)
+    data["intra"] = True
+    states = {pid: (s["q"], s["v"]) for pid, s in data["specs"].items()}
+    _, _, sites = independent_contacts(data, states)
+    close(sites[-1]["first_force"], [0, -8, 0], atol=1e-12, rtol=0)
+    rows = run_window(data, build(data, tmp_path), tyx_mode, tmp_path, steps=3)
+    assert len(rows[0]["receipts"][WORLDS[0]].sites) == 3
+
+
+@pytest.mark.tyx
+@pytest.mark.parametrize("family", ("affine", "floating_affine"))
+def test_explicit_intra_affine_direct_parent_still_requires_exclusion(family, tyx_mode, tmp_path):
+    data = r04(family)
+    data["specs"][7]["model"]["parents"][1] = 0
+    data["pairs"] += ((7, 0, 7, 1),)
+    data["intra"] = True
+    built = build(data, tmp_path)
+    with ph.ResidentSceneBatch(built["participants"], mode=tyx_mode, cache_root=tmp_path) as scene:
+        before = scene.snapshot()
+        with pytest.raises(ValueError, match="direct parent-child"):
+            prepare(scene, built)
+        assert scene.snapshot() == before
+        save(tmp_path, "intra-direct-parent-rejection", dict(inputs=data, before=before,
+            after=scene.snapshot(), stats=scene.stats()))

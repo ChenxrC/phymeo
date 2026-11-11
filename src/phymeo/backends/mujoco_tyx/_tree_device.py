@@ -15,6 +15,8 @@ class TyxTreeDevice(TyxDevice):
 
         from . import _tree_kernels as kernels
 
+        if plan.dof_ids is None:
+            raise ValueError('fixed-tree native DOF mapping is required')
         self.activation_enabled = _actuator_device.validate(plan, activation, len(q))
         self.tx, self.mode, self.plan = tx, mode, plan
         self.nbody, self.nworld, self.h = nbody, len(q), float(h)
@@ -41,6 +43,7 @@ class TyxTreeDevice(TyxDevice):
                 self.ranges = self._buffer(plan.body_joint_range)
                 self.body_data = self._buffer(plan.body_data)
                 self.joints = self._buffer(plan.joint_ids)
+                self.dofs = self._buffer(plan.dof_ids)
                 self.joint_data = self._buffer(plan.joint_data)
                 self.ancestors = self._buffer(plan.ancestors)
                 self.gravity = self._buffer(plan.gravity)
@@ -113,7 +116,7 @@ class TyxTreeDevice(TyxDevice):
                 self.plan.nv,
                 0 if self.activation_enabled else self.plan.nu,
                 self.body_data,
-                self.joints,
+                self.dofs,
                 self.ancestors,
                 self.vectors,
                 self.gravity,
@@ -144,7 +147,10 @@ class TyxTreeDevice(TyxDevice):
             self.solve[old](
                 self.nworld,
                 self.plan.nv,
+                self.plan.nq,
+                len(self.plan.joint_ids),
                 self.h,
+                self.joints,
                 self.vectors,
                 self.mass,
                 self.bias,

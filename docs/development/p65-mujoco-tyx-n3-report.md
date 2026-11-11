@@ -1,7 +1,32 @@
 # MuJoCo-TYX N3 update-boundary checkpoint
 
-Status: AUTHORING_ONLY / UNEXECUTED. Base ed6f6d847c3d64abb13ab28f5f7042832c5b2f3e.
-Parent alone owns execution; this author performs source/text/file/Git work only.
+Current status: **N3_SAME_PROFILE_CUDA_CONTINUATION_QUALIFIED**. Parent tested
+`b83a91fb` in run `12-n3-first-cuda`: **24 passed in 41.60s / RAW_EXIT=0**.
+This is the full 22-node N3 group, the new previous-action/reset ownership node,
+and the directly affected final-observation/termination-over-timeout neighbor.
+The original complete N2 PPO group was not rerun. Authoring history below keeps
+its original unexecuted labels; those labels are not the current result.
+
+The two W8 MLP tasks saved after update 2 and reproduced update 3; the W8 GRU
+saved nonzero hidden after update 1 and reproduced update 2. The saved and
+successor physical states, controls/clocks, transitions, episodes, parameters,
+Adam, global/registered RNG and hidden states compared exactly. Late task
+refresh and RNG-install faults explicitly reported restored physics and poisoned
+the combined session. No input, tolerance, cap or functional source repair was
+needed: three import-order findings and formatting were corrected before tests.
+
+Same-run evidence: `artifacts/p65-parity-n3-rob1c-col-trace-20261111-01/`.
+`n3-evidence-index.json` binds all 11 test inputs with zero before/after/current
+source differences and 12 positive saved files (three complete JSONL logs and
+three three-file checkpoint bundles), including bundle size/hash checks.
+Index SHA256: `2992e4f6e1262f1b2e66745c6f24652b81ed6f14c49ad0e7c8387c1e60e5cf0a`.
+Existing failure fixtures, raw first style findings and final receipts remain.
+
+Scope is the fixed upstream RSL 5.5.2 session on the qualified same CUDA
+device/config/dependency profile. Learning quality, arbitrary learner/config
+migration, throughput, device-only physics audit and N4 scale remain unqualified.
+
+Authoring base: ed6f6d847c3d64abb13ab28f5f7042832c5b2f3e. Parent alone owns execution.
 
 ## Frozen public surface
 

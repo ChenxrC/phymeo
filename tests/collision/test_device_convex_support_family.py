@@ -228,7 +228,8 @@ def check_source(result):
                   declared_asset_rotation=(np.float64, (n, 3, 3)),
                   uploaded_asset_rotation=(np.float32, (n, 3, 3)),
                   asset_rotation_quantization_error=(np.float64, (n, 3, 3)),
-                  effective_shape_rotation=(np.float32, (n, 3, 3)))
+                  effective_shape_rotation=(np.float32, (n, 3, 3)),
+                  pair_origins_relative_m=(np.float32, (len(result.rows), 3)))
     for name, (dtype, shape) in arrays.items():
         value = src[name]
         assert value.shape == shape and value.dtype == dtype and np.isfinite(value).all()
@@ -241,6 +242,9 @@ def check_source(result):
     ):
         np.testing.assert_array_equal(src[b], np.asarray(src[a], np.float32))
         np.testing.assert_array_equal(src[error], src[b].astype(float)-src[a])
+    for i, row in enumerate(result.rows):
+        world = src["world_keys"].index(row.pair[0].world)
+        np.testing.assert_array_equal(row.origin_m, src["world_origins_m"][world]+src["pair_origins_relative_m"][i].astype(float))
     for i, shape in enumerate(src["model"].shapes):
         expected = np.zeros(3)
         if shape.curved is not None:

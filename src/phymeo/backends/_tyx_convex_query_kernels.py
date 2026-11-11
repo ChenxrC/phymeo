@@ -208,6 +208,9 @@ def query_convex_pairs(
         meta[out, 12] = attempt
         meta[out, 13] = out
         status = 0
+        ox = 0.0
+        oy = 0.0
+        oz = 0.0
         relation = 0
         reason = 0
         phase = 0
@@ -407,14 +410,19 @@ def query_convex_pairs(
                         for support_axis in tx.static_range(3):
                             support_points[lane, support_side, support_axis] = points[support_slot, support_axis]
                         if full_surface != 0:
-                            support_points[lane, support_side, 0] = support_points[lane, support_side, 0]+offset_x
-                            support_points[lane, support_side, 1] = support_points[lane, support_side, 1]+offset_y
-                            support_points[lane, support_side, 2] = support_points[lane, support_side, 2]+offset_z
+                            support_points[lane, support_side, 0] = (support_points[lane, support_side, 0]-ox)+offset_x
+                            support_points[lane, support_side, 1] = (support_points[lane, support_side, 1]-oy)+offset_y
+                            support_points[lane, support_side, 2] = (support_points[lane, support_side, 2]-oz)+offset_z
                     support_calls = support_calls + 1
                     gjk_used = iteration + 1
-                    px = ((support_points[lane, 0, 0] - ox) - (support_points[lane, 1, 0] - ox)) / scale
-                    py = ((support_points[lane, 0, 1] - oy) - (support_points[lane, 1, 1] - oy)) / scale
-                    pz = ((support_points[lane, 0, 2] - oz) - (support_points[lane, 1, 2] - oz)) / scale
+                    if full_surface != 0:
+                        px = (support_points[lane, 0, 0]-support_points[lane, 1, 0])/scale
+                        py = (support_points[lane, 0, 1]-support_points[lane, 1, 1])/scale
+                        pz = (support_points[lane, 0, 2]-support_points[lane, 1, 2])/scale
+                    else:
+                        px = ((support_points[lane, 0, 0]-ox)-(support_points[lane, 1, 0]-ox))/scale
+                        py = ((support_points[lane, 0, 1]-oy)-(support_points[lane, 1, 1]-oy))/scale
+                        pz = ((support_points[lane, 0, 2]-oz)-(support_points[lane, 1, 2]-oz))/scale
                     bound = 0.0
                     if closest_square > 0.0:
                         bound = tx.max(0.0, dot3(cx, cy, cz, px, py, pz) / tx.sqrt(closest_square))
@@ -715,13 +723,18 @@ def query_convex_pairs(
                             for support_axis in tx.static_range(3):
                                 support_points[lane, support_side, support_axis] = points[support_slot, support_axis]
                             if full_surface != 0:
-                                support_points[lane, support_side, 0] = support_points[lane, support_side, 0]+offset_x
-                                support_points[lane, support_side, 1] = support_points[lane, support_side, 1]+offset_y
-                                support_points[lane, support_side, 2] = support_points[lane, support_side, 2]+offset_z
+                                support_points[lane, support_side, 0] = (support_points[lane, support_side, 0]-ox)+offset_x
+                                support_points[lane, support_side, 1] = (support_points[lane, support_side, 1]-oy)+offset_y
+                                support_points[lane, support_side, 2] = (support_points[lane, support_side, 2]-oz)+offset_z
                         support_calls = support_calls + 1
-                        px = ((support_points[lane, 0, 0] - ox) - (support_points[lane, 1, 0] - ox)) / scale
-                        py = ((support_points[lane, 0, 1] - oy) - (support_points[lane, 1, 1] - oy)) / scale
-                        pz = ((support_points[lane, 0, 2] - oz) - (support_points[lane, 1, 2] - oz)) / scale
+                        if full_surface != 0:
+                            px = (support_points[lane, 0, 0]-support_points[lane, 1, 0])/scale
+                            py = (support_points[lane, 0, 1]-support_points[lane, 1, 1])/scale
+                            pz = (support_points[lane, 0, 2]-support_points[lane, 1, 2])/scale
+                        else:
+                            px = ((support_points[lane, 0, 0]-ox)-(support_points[lane, 1, 0]-ox))/scale
+                            py = ((support_points[lane, 0, 1]-oy)-(support_points[lane, 1, 1]-oy))/scale
+                            pz = ((support_points[lane, 0, 2]-oz)-(support_points[lane, 1, 2]-oz))/scale
                         duplicate = 0
                         for k in range(vertex_count):
                             ex = px - vertices[lane, k, 0]
@@ -964,13 +977,18 @@ def query_convex_pairs(
                                 for support_axis in tx.static_range(3):
                                     support_points[lane, support_side, support_axis] = points[support_slot, support_axis]
                                 if full_surface != 0:
-                                    support_points[lane, support_side, 0] = support_points[lane, support_side, 0]+offset_x
-                                    support_points[lane, support_side, 1] = support_points[lane, support_side, 1]+offset_y
-                                    support_points[lane, support_side, 2] = support_points[lane, support_side, 2]+offset_z
+                                    support_points[lane, support_side, 0] = (support_points[lane, support_side, 0]-ox)+offset_x
+                                    support_points[lane, support_side, 1] = (support_points[lane, support_side, 1]-oy)+offset_y
+                                    support_points[lane, support_side, 2] = (support_points[lane, support_side, 2]-oz)+offset_z
                             support_calls = support_calls + 1
-                            px = ((support_points[lane, 0, 0] - ox) - (support_points[lane, 1, 0] - ox)) / scale
-                            py = ((support_points[lane, 0, 1] - oy) - (support_points[lane, 1, 1] - oy)) / scale
-                            pz = ((support_points[lane, 0, 2] - oz) - (support_points[lane, 1, 2] - oz)) / scale
+                            if full_surface != 0:
+                                px = (support_points[lane, 0, 0]-support_points[lane, 1, 0])/scale
+                                py = (support_points[lane, 0, 1]-support_points[lane, 1, 1])/scale
+                                pz = (support_points[lane, 0, 2]-support_points[lane, 1, 2])/scale
+                            else:
+                                px = ((support_points[lane, 0, 0]-ox)-(support_points[lane, 1, 0]-ox))/scale
+                                py = ((support_points[lane, 0, 1]-oy)-(support_points[lane, 1, 1]-oy))/scale
+                                pz = ((support_points[lane, 0, 2]-oz)-(support_points[lane, 1, 2]-oz))/scale
                             reach = dot3(dx, dy, dz, px, py, pz)
                             duplicate = 0
                             for k in range(vertex_count):
@@ -1223,9 +1241,9 @@ def query_convex_pairs(
                         slot = vertex_slots[lane, selected, side]
                         node = original_ids[slot]
                         if full_surface != 0:
-                            core_x = core_x + weight*points[slot, 0]
-                            core_y = core_y + weight*points[slot, 1]
-                            core_z = core_z + weight*points[slot, 2]
+                            core_x = core_x + weight*(points[slot, 0]-ox)
+                            core_y = core_y + weight*(points[slot, 1]-oy)
+                            core_z = core_z + weight*(points[slot, 2]-oz)
                         target = -1
                         for j in range(used):
                             if material_ids[out, side, j] == node:

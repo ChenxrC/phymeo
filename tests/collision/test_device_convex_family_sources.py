@@ -211,90 +211,102 @@ def test_source_failure_keeps_every_publication_and_retries(fault, tyx_mode, tmp
 @pytest.mark.tyx
 def test_new_buffers_count_towards_exact_memory_and_pair_capacity(tyx_mode, tmp_path):
     data = family.reference().case("NE", "overlap")
-    with family.prepared(data, tyx_mode, tmp_path) as (batch, broad, plan):
-        required = plan.stats["live_bytes"]
-        with closing(batch.prepare_convex_query(broad, pairs=(tuple(ph.CollisionKey(*k) for k in data["keys"]),), memory_limit_bytes=required)) as exact:
-            assert batch.convex_query(exact).rows[0].status == "RESOLVED"
-        with pytest.raises(MemoryError):
-            batch.prepare_convex_query(broad, memory_limit_bytes=required-1)
-        with closing(batch.prepare_convex_query(broad, pair_capacity=0)) as small:
-            before, last = batch.snapshot(), broad.last_result
-            with pytest.raises(ValueError, match="capacity"):
-                batch.convex_query(small)
-            assert small.last_result is None and broad.last_result is last
-            assert k0.canonical(batch.snapshot()) == k0.canonical(before)
+    with family.saved(tmp_path, "exact-memory-and-pair-cap", tyx_mode, data) as record:
+        with family.prepared(data, tyx_mode, tmp_path) as (batch, broad, plan):
+            required = plan.stats["live_bytes"]
+            with closing(batch.prepare_convex_query(broad, pairs=(tuple(ph.CollisionKey(*k) for k in data["keys"]),), memory_limit_bytes=required)) as exact:
+                assert k0.query_attempt(batch, exact, record, "exact-memory").rows[0].status == "RESOLVED"
+            with pytest.raises(MemoryError):
+                batch.prepare_convex_query(broad, memory_limit_bytes=required-1)
+            with closing(batch.prepare_convex_query(broad, pair_capacity=0)) as small:
+                before, last = batch.snapshot(), broad.last_result
+                with pytest.raises(ValueError, match="capacity"):
+                    k0.query_attempt(batch, small, record, "pair-overflow")
+                assert small.last_result is None and broad.last_result is last
+                assert k0.canonical(batch.snapshot()) == k0.canonical(before)
+
 
 
 @pytest.mark.tyx
 def test_copied_checkpoint_next_step_and_owner_do_not_alias(tyx_mode, tmp_path):
     data = family.reference().case("NE", "sep")
-    with family.prepared(data, tyx_mode, tmp_path/"first") as (batch, broad, plan):
-        assert batch.step(H) == {17: True}
-        checkpoint = batch.snapshot()
-        old = batch.convex_query(plan)
-        with family.prepared(data, tyx_mode, tmp_path/"second") as (clone, clone_broad, clone_plan):
-            clone.restore(checkpoint)
-            with pytest.raises(ValueError, match="another|stale"):
-                clone_plan.require_current(old)
-            assert batch.step(H) == clone.step(H) == {17: True}
-            a, b = batch.convex_query(plan), clone.convex_query(clone_plan)
-            np.testing.assert_array_equal(batch.snapshot()[17].position, clone.snapshot()[17].position)
-            np.testing.assert_array_equal(batch.snapshot()[17].velocity, clone.snapshot()[17].velocity)
-            np.testing.assert_array_equal(a.raw["gap"], b.raw["gap"])
+    with family.saved(tmp_path, "copied-checkpoint-next-step", tyx_mode, data) as record:
+        with family.prepared(data, tyx_mode, tmp_path/"first") as (batch, broad, plan):
+            assert batch.step(H) == {17: True}
+            checkpoint = batch.snapshot()
+            old = k0.query_attempt(batch, plan, record, "initial")
+            with family.prepared(data, tyx_mode, tmp_path/"second") as (clone, clone_broad, clone_plan):
+                clone.restore(checkpoint)
+                with pytest.raises(ValueError, match="another|stale"):
+                    clone_plan.require_current(old)
+                assert batch.step(H) == clone.step(H) == {17: True}
+                a = k0.query_attempt(batch, plan, record, "original-next")
+                b = k0.query_attempt(clone, clone_plan, record, "clone-next")
+                np.testing.assert_array_equal(batch.snapshot()[17].position, clone.snapshot()[17].position)
+                np.testing.assert_array_equal(batch.snapshot()[17].velocity, clone.snapshot()[17].velocity)
+                np.testing.assert_array_equal(a.raw["gap"], b.raw["gap"])
+
 
 
 @pytest.mark.tyx
 def test_curved_required_load_rejects_without_host_fallback_or_partial_step(tyx_mode, tmp_path, monkeypatch):
     from phymeo.backends import _resident_contact_bridge
     data = family.reference().case("SE", "overlap")
-    with family.prepared(data, tyx_mode, tmp_path) as (batch, broad, query):
-        before = batch.snapshot()
-        def forbidden(*args, **kwargs):
-            raise AssertionError("curved device patch fell back to HOST")
-        monkeypatch.setattr(_resident_contact_bridge, "contact_patch_sample", forbidden)
-        pair = tuple(ph.CollisionKey(*key) for key in data["keys"])
-        created = None
-        with pytest.raises((ValueError, RuntimeError), match="patch|unsupported|UNSUPPORTED|curved"):
-            with batch.prepare_contacts(broad._model, broad._convex_bindings,
-                                        {pair: ph.RobotContactMaterial(stiffness=64, damping=0, friction=0)},
-                                        narrow_phase="device_patch") as plan:
-                created = plan
-                batch.step_contacts(plan, H)
-        if created is not None:
-            assert not created.last_accepted and created.last_device_query is None
-        assert k0.canonical(batch.snapshot()) == k0.canonical(before)
+    with family.saved(tmp_path, "required-load-rejected", tyx_mode, data) as record:
+        with family.prepared(data, tyx_mode, tmp_path) as (batch, broad, query):
+            before = batch.snapshot()
+            def forbidden(*args, **kwargs):
+                raise AssertionError("curved device patch fell back to HOST")
+            monkeypatch.setattr(_resident_contact_bridge, "contact_patch_sample", forbidden)
+            pair = tuple(ph.CollisionKey(*key) for key in data["keys"])
+            created = None
+            with pytest.raises((ValueError, RuntimeError), match="patch|unsupported|UNSUPPORTED|curved"):
+                with batch.prepare_contacts(broad._model, broad._convex_bindings,
+                                            {pair: ph.RobotContactMaterial(stiffness=64, damping=0, friction=0)},
+                                            narrow_phase="device_patch") as plan:
+                    created = plan
+                    batch.step_contacts(plan, H)
+            if created is not None:
+                assert not created.last_accepted and created.last_device_query is None
+            assert k0.canonical(batch.snapshot()) == k0.canonical(before)
+
+
 
 @pytest.mark.tyx
 def test_independent_static_body_frame_is_rejected_before_query_allocation(tyx_mode, tmp_path):
     data = family.reference().case("SE", "sep")
-    with family.prepared(data, tyx_mode, tmp_path) as (batch, broad, plan):
-        bindings = list(broad._convex_bindings)
-        second = bindings[1]
-        motion = ph.CollisionMotion(second.motion.start, body_orientation_xyzw=(.5, .5, .5, .5))
-        bindings[1] = ph.ResidentStaticBinding(second.key, motion)
-        with batch.prepare_collision(broad._model, tuple(bindings)) as explicit_frame:
-            before = dict(batch.stats())
-            with pytest.raises(ValueError, match="independent static curved body orientation"):
-                batch.prepare_convex_query(explicit_frame)
-            after = dict(batch.stats())
-            assert after["convex_query_plan_live_count"] == before["convex_query_plan_live_count"]
-            assert after["convex_query_live_bytes"] == before["convex_query_live_bytes"]
+    with family.saved(tmp_path, "static-body-frame-rejected", tyx_mode, data) as record:
+        with family.prepared(data, tyx_mode, tmp_path) as (batch, broad, plan):
+            bindings = list(broad._convex_bindings)
+            second = bindings[1]
+            motion = ph.CollisionMotion(second.motion.start, body_orientation_xyzw=(.5, .5, .5, .5))
+            bindings[1] = ph.ResidentStaticBinding(second.key, motion)
+            with batch.prepare_collision(broad._model, tuple(bindings)) as explicit_frame:
+                before = dict(batch.stats())
+                with pytest.raises(ValueError, match="independent static curved body orientation"):
+                    batch.prepare_convex_query(explicit_frame)
+                after = dict(batch.stats())
+                assert after["convex_query_plan_live_count"] == before["convex_query_plan_live_count"]
+                assert after["convex_query_live_bytes"] == before["convex_query_live_bytes"]
+
 
 
 @pytest.mark.tyx
-@pytest.mark.parametrize("field", ("declared_dimensions_m", "uploaded_asset_rotation", "support_family_schema"))
+@pytest.mark.parametrize("field", ("declared_dimensions_m", "uploaded_asset_rotation", "support_family_schema", "pair_origins_relative_m"))
 def test_curved_metadata_cannot_be_rebound(field, tyx_mode, tmp_path):
     data = family.reference().case("NE", "sep")
-    with family.prepared(data, tyx_mode, tmp_path) as (batch, broad, plan):
-        result = batch.convex_query(plan)
-        changed = dict(result.source)
-        if field == "support_family_schema":
-            changed[field] = "unrelated-source"
-        else:
-            changed[field] = changed[field].copy()
-            changed[field].flat[0] += .25
-        with pytest.raises(ValueError, match="source binding"):
-            plan.require_current(replace(result, source=changed))
+    with family.saved(tmp_path, "metadata-rejected-"+field, tyx_mode, data) as record:
+        with family.prepared(data, tyx_mode, tmp_path) as (batch, broad, plan):
+            result = k0.query_attempt(batch, plan, record, "original")
+            changed = dict(result.source)
+            if field == "support_family_schema":
+                changed[field] = "unrelated-source"
+            else:
+                changed[field] = changed[field].copy()
+                changed[field].flat[0] += .25
+            with pytest.raises(ValueError, match="source binding"):
+                plan.require_current(replace(result, source=changed))
+
 
 
 @pytest.mark.tyx

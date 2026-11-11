@@ -247,6 +247,7 @@ class ConvexQueryPlan:
         self._attempt_tag = 0
         self._attempt_ticks = None
         self._attempt_shape_rotation = None
+        self._attempt_pair_origins = None
         self._buffers = {}
         self._kernels = None
         self._gjk = _integer(gjk_iterations, "gjk_iterations", 1, 64)
@@ -664,6 +665,27 @@ class ConvexQueryPlan:
     def __exit__(self, *_):
         self.close()
 
+    def _check_pair_origins(self, pose, pairs, actual):
+        """Bind a read device frame; no shape search or fresh HOST FK is performed."""
+        if not isinstance(pose, np.ndarray) or pose.dtype != np.float32 or pose.shape != (len(self._shape_keys), 12) or not np.isfinite(pose).all():
+            raise ValueError("invalid pair origin pose binding")
+        if not isinstance(actual, np.ndarray) or actual.dtype != np.float32 or actual.shape != (len(pairs), 3) or not np.isfinite(actual).all():
+            raise ValueError("invalid pair origin source binding")
+        expected = np.zeros((len(pairs), 3), dtype=np.float32)
+        for i, pair in enumerate(pairs):
+            first, second = (self._shape_index[key] for key in pair)
+            if self._tags[first, 0] >= 4 or self._tags[second, 0] >= 4:
+                local = self._source["uploaded_local_points_m"][self._tags[first, 1]]
+                # Match the existing gather's separately rounded multiply and add.
+                for axis in range(3):
+                    value = pose[first, axis]
+                    for inner in range(3):
+                        product = np.float32(pose[first, 3+3*axis+inner]*local[inner])
+                        value = np.float32(value+product)
+                    expected[i, axis] = value
+        if not np.array_equal(actual, expected):
+            raise ValueError("pair origin differs from its gathered source binding")
+
     def _validate(self, view, raw, pose, stamp, pairs):
         s, p, logical = len(self._shape_keys), self._capacity, len(pairs)
         if pose.shape != (s, 12) or pose.dtype != np.float32 or not np.isfinite(pose).all():
@@ -671,6 +693,7 @@ class ConvexQueryPlan:
         if stamp.shape != (s, 3) or stamp.dtype != np.int32:
             raise RuntimeError("invalid convex pose stamp")
         if self._has_curved:
+            self._check_pair_origins(pose, pairs, self._attempt_pair_origins)
             frame = self._attempt_shape_rotation
             if frame is None or frame.shape != (s, 3, 3) or frame.dtype != np.float32 or not np.isfinite(frame).all():
                 raise RuntimeError("invalid curved effective shape rotation")
@@ -776,9 +799,10 @@ class ConvexQueryPlan:
                     for vertex, weight in zip(ids[:count], weights[:count], strict=True):
                         slot = start + registered.index(int(vertex))
                         local = self._source["uploaded_local_points_m"][slot].astype(np.float64)
-                        point += float(weight) * (
-                            pose[shape_index, :3].astype(np.float64) + rotation @ local
-                        )
+                        mapped = pose[shape_index, :3].astype(np.float64) + rotation @ local
+                        if self._has_curved:
+                            mapped = mapped-self._attempt_pair_origins[i].astype(np.float64)
+                        point += float(weight)*mapped
                     point += raw["skin_offset"][i, side].astype(np.float64)
                     if np.linalg.norm(point - raw["surface"][i, side]) > 2e-4 * scale:
                         raise RuntimeError(
@@ -971,6 +995,8 @@ class ConvexQueryPlan:
                     )
                 )
             origin = self._source["world_origins_m"][self._world_index[pair[0].world]]
+            if self._has_curved:
+                origin = origin+self._attempt_pair_origins[i].astype(np.float64)
             rows.append(
                 ConvexQueryRow(
                     pair,
@@ -1003,6 +1029,7 @@ class ConvexQueryPlan:
         )
         if self._has_curved:
             source["effective_shape_rotation"] = self._attempt_shape_rotation
+            source["pair_origins_relative_m"] = self._attempt_pair_origins
         stats = {
             "attempt_delta": dict(attempt_delta),
             "broadphase_delta": dict(broadphase_delta),
@@ -1212,6 +1239,14 @@ class ConvexQueryPlan:
                         pose, stamp = self._read(b["pose"]), self._read(b["stamp"])
                         if self._has_curved:
                             self._attempt_shape_rotation = self._read(b["shape_rotation"])
+                            gathered = self._read(b["world_points"])
+                            if gathered.dtype != np.float32 or gathered.shape != self._source["uploaded_local_points_m"].shape or not np.isfinite(gathered).all():
+                                raise RuntimeError("invalid gathered pair origin source")
+                            self._attempt_pair_origins = np.zeros((len(pairs), 3), dtype=np.float32)
+                            for pair_row, pair in enumerate(pairs):
+                                first, second = (self._shape_index[key] for key in pair)
+                                if self._tags[first, 0] >= 4 or self._tags[second, 0] >= 4:
+                                    self._attempt_pair_origins[pair_row] = gathered[self._tags[first, 1]]
                         self._attempt_ticks = self._read(view.accepted.ticks)
                         if self._attempt_ticks.dtype != np.int32 or self._attempt_ticks.shape != (
                             len(view.accepted.world_keys),
@@ -1250,6 +1285,7 @@ class ConvexQueryPlan:
             finally:
                 self._attempt_ticks = None
                 self._attempt_shape_rotation = None
+                self._attempt_pair_origins = None
 
     def _publish_staged(self, result):
         """Assignment-only publication; all geometry construction precedes swap."""
@@ -1300,6 +1336,14 @@ class ConvexQueryPlan:
                     valid = actual == expected
                 if not valid:
                     raise ValueError("convex result immutable source binding differs: " + key)
+            if self._has_curved:
+                pairs = tuple(row.pair for row in result.rows)
+                origins = result.source.get("pair_origins_relative_m")
+                self._check_pair_origins(result.source.get("pose"), pairs, origins)
+                for i, row in enumerate(result.rows):
+                    original = self._source["world_origins_m"][self._world_index[row.pair[0].world]]
+                    if not np.array_equal(np.asarray(row.origin_m), original+origins[i].astype(np.float64)):
+                        raise ValueError("convex row origin differs from its source binding")
             return result
 
 

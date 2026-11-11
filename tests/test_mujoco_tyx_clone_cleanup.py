@@ -19,14 +19,16 @@ gainprm="1"/></actuator></mujoco>"""
 
 @pytest.mark.parametrize("mode", MODES)
 @pytest.mark.parametrize("fault", ("native_copy", "replacement", "retire", "cleanup_retry"))
-def test_failed_clone_closes_owned_resources_and_preserves_source(mode, fault, monkeypatch, tmp_path):
+def test_failed_clone_closes_owned_resources_and_preserves_source(
+    mode, fault, monkeypatch, tmp_path
+):
     compilation = compile_mujoco_xml(XML, require_asset=False)
     runtime = MuJoCoRuntime(compilation, mode=mode, world_keys=(7, 91))
     clones, banks, closed = [], [], []
     record = {"mode": mode, "fault": fault}
     try:
-        runtime.set_controls({7: MuJoCoControl([.6]), 91: MuJoCoControl([-.2])})
-        runtime.step(.001)
+        runtime.set_controls({7: MuJoCoControl([0.6]), 91: MuJoCoControl([-0.2])})
+        runtime.step(0.001)
         before = runtime.snapshot()
         checkpoint = runtime.checkpoint().to_bytes()
         record.update(before=before, checkpoint=checkpoint.hex())
@@ -53,7 +55,11 @@ def test_failed_clone_closes_owned_resources_and_preserves_source(mode, fault, m
 
                 def close():
                     nonlocal failed_close_once
-                    if ordinal == 1 and fault in ("retire", "cleanup_retry") and not failed_close_once:
+                    if (
+                        ordinal == 1
+                        and fault in ("retire", "cleanup_retry")
+                        and not failed_close_once
+                    ):
                         failed_close_once = True
                         raise RuntimeError("authored first cleanup failure")
                     close_bank()
@@ -72,8 +78,10 @@ def test_failed_clone_closes_owned_resources_and_preserves_source(mode, fault, m
             with monkeypatch.context() as patch:
                 patch.setattr(implementation.MuJoCoTyxRuntime, "_build_device", build)
                 patch.setattr(implementation, "copy", SimpleNamespace(copy=copied))
-                expected = BaseExceptionGroup if fault == "cleanup_retry" else (
-                    RuntimeError if fault == "retire" else MemoryError
+                expected = (
+                    BaseExceptionGroup
+                    if fault == "cleanup_retry"
+                    else (RuntimeError if fault == "retire" else MemoryError)
                 )
                 with pytest.raises(expected) as caught:
                     runtime.clone()
@@ -93,13 +101,17 @@ def test_failed_clone_closes_owned_resources_and_preserves_source(mode, fault, m
                 assert set(closed) == {id(bank) for bank in banks}
             assert encode(runtime.snapshot()) == encode(before)
             assert runtime.checkpoint().to_bytes() == checkpoint
-            runtime.step(.001)
-            reference.step(.001)
+            runtime.step(0.001)
+            reference.step(0.001)
             assert encode(runtime.snapshot()) == encode(reference.snapshot())
             with runtime.clone() as retry:
                 assert encode(retry.snapshot()) == encode(runtime.snapshot())
-            record.update(after_retry=runtime.snapshot(), source_counters=dict(runtime.counters),
-                          built_banks=len(banks), closed_before_source_close=len(set(closed)))
+            record.update(
+                after_retry=runtime.snapshot(),
+                source_counters=dict(runtime.counters),
+                built_banks=len(banks),
+                closed_before_source_close=len(set(closed)),
+            )
         runtime.close()
         assert set(closed) == {id(bank) for bank in banks}
         assert not runtime._checkpoint_retired

@@ -430,6 +430,54 @@ def measurement_counter_snapshot(env):
     }
 
 
+def _accepted_physical_counts(entry):
+    """Count accepted public substeps, never infer physical work from policy calls."""
+    keys = tuple(entry.world_keys)
+    if (
+        len(set(keys)) != len(keys)
+        or set(entry.states) != set(keys)
+        or dict(entry.accepted_worlds) != dict.fromkeys(keys, True)
+    ):
+        raise ValueError("accounting requires complete accepted transition worlds")
+    window = getattr(entry, "control_window", None)
+    if window is None:
+        return 1, len(keys)
+    from .mujoco_tyx_control_window import MuJoCoTyxControlWindowRecord
+
+    if (
+        type(window) is not MuJoCoTyxControlWindowRecord
+        or window.phase != "complete"
+        or window.failed_substep is not None
+        or window.completed != window.attempted
+        or window.completed != window.physics_steps
+        or len(window.substeps) != window.completed
+    ):
+        raise ValueError("accounting requires a complete control window")
+    accepted = 0
+    previous = None
+    for ordinal, sub in enumerate(window.substeps):
+        if (
+            sub.ordinal != ordinal
+            or not sub.diagnostics_complete
+            or sub.error is not None
+            or sub.states is None
+            or set(sub.states) != set(keys)
+            or dict(sub.accepted_worlds) != dict.fromkeys(keys, True)
+            or sub.exit_revision != sub.entry_revision + 1
+        ):
+            raise ValueError("accounting requires complete accepted substep worlds")
+        if previous is not None and (
+            sub.entry_revision != previous.exit_revision
+            or any(sub.states[key].tick != previous.states[key].tick + 1 for key in keys)
+        ):
+            raise ValueError("accounting control-window publication chain differs")
+        accepted += len(sub.accepted_worlds)
+        previous = sub
+    if previous is None or any(previous.states[key].tick != entry.states[key].tick for key in keys):
+        raise ValueError("accounting control-window endpoint differs")
+    return len(window.substeps), accepted
+
+
 def counter_accounting(before, after, transitions):
     """Keep replaceable device snapshots signed; accumulate only proven scopes."""
     if before["owners"] != after["owners"]:
@@ -463,13 +511,12 @@ def counter_accounting(before, after, transitions):
         ),
         "task": counter_delta(a["task"], b["task"]),
     }
-    reset_events, accepted = [], 0
+    reset_events, accepted, physical_steps = [], 0, 0
     for entry in transitions:
         keys = tuple(entry.world_keys)
-        if set(entry.states) != set(keys) or dict(entry.accepted_worlds) != dict.fromkeys(
-            keys, True
-        ):
-            raise ValueError("accounting requires complete accepted transition worlds")
+        step_count, world_count = _accepted_physical_counts(entry)
+        physical_steps += step_count
+        accepted += world_count
         reset_keys = []
         for key, output_tick in zip(keys, entry.output_frame.ticks, strict=True):
             accepted_tick = entry.states[key].tick
@@ -477,7 +524,6 @@ def counter_accounting(before, after, transitions):
                 reset_keys.append(key)
             elif output_tick != accepted_tick:
                 raise ValueError("output frame differs from accepted state without a reset")
-        accepted += len(keys)
         if reset_keys:
             reset_events.append(
                 {
@@ -489,9 +535,9 @@ def counter_accounting(before, after, transitions):
     reset_worlds = sum(len(entry["world_keys"]) for entry in reset_events)
     if (
         monotonic["environment"]["transitions"] != len(transitions)
-        or monotonic["environment"]["physical_steps"] != len(transitions)
+        or monotonic["environment"]["physical_steps"] != physical_steps
         or monotonic["environment"]["resets"] != reset_worlds
-        or monotonic["runtime"]["completed_steps"] != len(transitions)
+        or monotonic["runtime"]["completed_steps"] != physical_steps
         or monotonic["runtime"]["accepted_world_steps"] != accepted
     ):
         raise ValueError("public receipt events disagree with lifecycle counters")
@@ -521,6 +567,8 @@ def counter_accounting(before, after, transitions):
             "missing_field": "None means not exposed in that owner snapshot, not zero",
         },
         "receipt_events": {
+            "physical_batch_steps": physical_steps,
+            "policy_transitions": len(transitions),
             "accepted_world_steps": accepted,
             "reset_calls": len(reset_events),
             "reset_worlds": reset_worlds,
@@ -557,6 +605,7 @@ class UpdateCaptureError(RuntimeError):
             "state_accepted",
             "needs_recovery",
             "accepted_worlds",
+            "control_window",
         ):
             if hasattr(error, key):
                 setattr(self, key, getattr(error, key))
@@ -596,6 +645,7 @@ def capture_adapter_steps(adapter):
                 "accepted_worlds",
                 "action_receipt",
                 "transition",
+                "control_window",
             ):
                 if hasattr(error, key):
                     entry[key] = getattr(error, key)
@@ -701,9 +751,13 @@ def validate_update(record, env, *, expected_iteration, cost, writer):
     ):
         raise ValueError("nonfinite optimization")
     ended, timeout, total_cost = 0, 0, 0.0
+    physical_steps, accepted_world_steps = 0, 0
     for entry in transitions:
         if dict(entry.accepted_worlds) != dict.fromkeys(env.world_keys, True):
             raise ValueError("training physical step was refused")
+        batch_steps, world_steps = _accepted_physical_counts(entry)
+        physical_steps += batch_steps
+        accepted_world_steps += world_steps
         values = native_cost(entry.states, env.world_keys, cost)
         reward = host_array(entry.reward).astype(np.float64)
         if not np.allclose(reward, -values, rtol=2e-5, atol=2e-6):
@@ -714,7 +768,9 @@ def validate_update(record, env, *, expected_iteration, cost, writer):
     if ended:
         raise ValueError("physical task bounds terminated a training/scale world")
     return {
-        "accepted_world_steps": len(transitions) * env.num_envs,
+        "accepted_world_steps": accepted_world_steps,
+        "physical_batch_steps": physical_steps,
+        "policy_world_transitions": len(transitions) * env.num_envs,
         "terminated_worlds": ended,
         "timeout_reset_worlds": timeout,
         "mean_native_cost": total_cost / (len(transitions) * env.num_envs),

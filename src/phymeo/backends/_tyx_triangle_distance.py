@@ -232,12 +232,14 @@ def triangle_distances(
         mask = 0
         normal_defined = 0
         if selected >= 0:
+            tie_bit = 1
             for candidate in range(18):
                 if (
                     valid[row, candidate] != 0
                     and tx.abs(values[row, candidate, 4] - best) <= tie_error * length2
                 ):
-                    mask = mask | (1 << candidate)
+                    mask = mask | tie_bit
+                tie_bit = tie_bit * 2
             distance = tx.sqrt(tx.max(0.0, best))
             summary[row, 0] = distance
             summary[row, 1] = distance - radii[row]

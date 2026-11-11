@@ -35,20 +35,34 @@ MAX_PARTICIPANTS_PER_WORLD = 8
 _I32_MAX = 2**31 - 1
 _FAMILIES = {
     FixedRobotTree: ("fixed", compile_tree_world, ResidentTreeBinding, compile_tree_binding),
-    AffineRobotTree: ("affine", compile_affine_tree_world, ResidentAffineTreeBinding,
-                     compile_affine_tree_binding),
-    FloatingRobotTree: ("floating", compile_floating_tree_world, ResidentFloatingTreeBinding,
-                       compile_floating_tree_binding),
+    AffineRobotTree: (
+        "affine",
+        compile_affine_tree_world,
+        ResidentAffineTreeBinding,
+        compile_affine_tree_binding,
+    ),
+    FloatingRobotTree: (
+        "floating",
+        compile_floating_tree_world,
+        ResidentFloatingTreeBinding,
+        compile_floating_tree_binding,
+    ),
     FloatingAffineRobotTree: (
-        "floating_affine", compile_floating_affine_tree_world,
-        ResidentFloatingAffineTreeBinding, compile_floating_affine_tree_binding,
+        "floating_affine",
+        compile_floating_affine_tree_world,
+        ResidentFloatingAffineTreeBinding,
+        compile_floating_affine_tree_binding,
     ),
 }
 _BINDING_TYPES = tuple(value[2] for value in _FAMILIES.values())
 
 
 def _integer(value, name):
-    if isinstance(value, (bool, np.bool_)) or not isinstance(value, Integral) or not 0 <= value <= _I32_MAX:
+    if (
+        isinstance(value, (bool, np.bool_))
+        or not isinstance(value, Integral)
+        or not 0 <= value <= _I32_MAX
+    ):
         raise ValueError(f"{name} must be a nonnegative i32 integer")
     return int(value)
 
@@ -69,11 +83,15 @@ def _freeze(value):
         return _freeze(value.item())
     if is_dataclass(value) and not isinstance(value, type):
         return (
-            type(value).__module__, type(value).__qualname__,
+            type(value).__module__,
+            type(value).__qualname__,
             tuple((item.name, _freeze(getattr(value, item.name))) for item in fields(value)),
         )
     if isinstance(value, Mapping):
-        return ("mapping", tuple(sorted((_freeze(key), _freeze(item)) for key, item in value.items())))
+        return (
+            "mapping",
+            tuple(sorted((_freeze(key), _freeze(item)) for key, item in value.items())),
+        )
     if isinstance(value, (tuple, list)):
         return tuple(_freeze(item) for item in value)
     if value is None or isinstance(value, (str, bool, int, float, bytes)):
@@ -83,13 +101,21 @@ def _freeze(value):
 
 def _source_signature(system):
     if type(system) is FixedRobotTree:
-        return _freeze((system.program.problem_signature(), system.state, system.control_max_iterations))
+        return _freeze(
+            (system.program.problem_signature(), system.state, system.control_max_iterations)
+        )
     # Physical and graph sources are already retained in the compiled token.
-    return _freeze((
-        system.state, system.kp, system.kd, system.effort_limit,
-        system.delay_steps, system.control_max_iterations,
-        getattr(system, "_graph_token", None),
-    ))
+    return _freeze(
+        (
+            system.state,
+            system.kp,
+            system.kd,
+            system.effort_limit,
+            system.delay_steps,
+            system.control_max_iterations,
+            getattr(system, "_graph_token", None),
+        )
+    )
 
 
 def _compile(system):
@@ -157,14 +183,21 @@ class ResidentParticipant:
             raise ValueError("body IDs must cover every full physical body exactly once")
         signature = (_freeze(compiled), _source_signature(self.system))
         for name, value in (
-            ("body_ids", ids), ("family", family), ("configuration_count", nq),
-            ("velocity_count", nv), ("body_count", body_count),
+            ("body_ids", ids),
+            ("family", family),
+            ("configuration_count", nq),
+            ("velocity_count", nv),
+            ("body_count", body_count),
             ("physical_configuration_count", physical.n + (7 if floating else 0)),
             ("physical_velocity_count", physical.n + (6 if floating else 0)),
             ("model_token", physical.model_token),
             ("graph_token", getattr(compiled, "graph_token", None)),
-            ("_compiled", compiled), ("_source", signature),
-            ("fingerprint", ("resident-participant-v1", self.key.world, self.key.participant, ids, signature)),
+            ("_compiled", compiled),
+            ("_source", signature),
+            (
+                "fingerprint",
+                ("resident-participant-v1", self.key.world, self.key.participant, ids, signature),
+            ),
         ):
             object.__setattr__(self, name, value)
 
@@ -195,7 +228,10 @@ class ResidentParticipantBinding:
             raise TypeError("binding needs a ResidentParticipantKey")
         if type(self.binding) not in _BINDING_TYPES:
             raise TypeError("participant binding requires an original resident tree binding")
-        if self.binding.world != self.participant.world or self.binding.key.world != self.participant.world:
+        if (
+            self.binding.world != self.participant.world
+            or self.binding.key.world != self.participant.world
+        ):
             raise ValueError("participant binding world differs from its logical owner")
         object.__setattr__(self, "binding", _copy_binding(self.binding))
 
@@ -284,11 +320,20 @@ class ResidentParticipantLayout:
                     inverse[(item.key, group)] = identity
                 family = families[item.family]
                 entries[item.key] = ResidentParticipantLayoutEntry(
-                    item.key, item.family, len(family),
-                    item.configuration_count, item.velocity_count, item.body_count,
-                    item.physical_configuration_count, item.physical_velocity_count,
-                    q_offset, v_offset, body_offset, item.compiled.topology,
-                    item.model_token, item.graph_token,
+                    item.key,
+                    item.family,
+                    len(family),
+                    item.configuration_count,
+                    item.velocity_count,
+                    item.body_count,
+                    item.physical_configuration_count,
+                    item.physical_velocity_count,
+                    q_offset,
+                    v_offset,
+                    body_offset,
+                    item.compiled.topology,
+                    item.model_token,
+                    item.graph_token,
                 )
                 family.append(item.key)
                 q_offset += item.configuration_count
@@ -297,8 +342,14 @@ class ResidentParticipantLayout:
                 if max(q_offset, v_offset, body_offset, len(entries)) > _I32_MAX:
                     raise ValueError("participant layout address capacity exceeds i32")
             worlds[world] = ResidentParticipantWorldLayout(
-                world, tuple(item.key for item in members), start_q, start_v, start_body,
-                q_offset - start_q, v_offset - start_v, body_offset - start_body,
+                world,
+                tuple(item.key for item in members),
+                start_q,
+                start_v,
+                start_body,
+                q_offset - start_q,
+                v_offset - start_v,
+                body_offset - start_body,
             )
 
         static = []
@@ -312,13 +363,29 @@ class ResidentParticipantLayout:
             static.append(identity)
         static = tuple(sorted(static))
         for name, value in (
-            ("participants", participants), ("static_body_ids", static),
-            ("participant_keys", tuple(entries)), ("world_keys", tuple(worlds)),
-            ("entries", MappingProxyType(entries)), ("worlds", MappingProxyType(worlds)),
-            ("family_rows", MappingProxyType({key: tuple(value) for key, value in families.items()})),
-            ("body_owners", MappingProxyType(bodies)), ("body_keys", MappingProxyType(inverse)),
-            ("configuration_count", q_offset), ("velocity_count", v_offset), ("body_count", body_offset),
-            ("fingerprint", ("resident-participant-layout-v1", tuple(item.fingerprint for item in participants), static)),
+            ("participants", participants),
+            ("static_body_ids", static),
+            ("participant_keys", tuple(entries)),
+            ("world_keys", tuple(worlds)),
+            ("entries", MappingProxyType(entries)),
+            ("worlds", MappingProxyType(worlds)),
+            (
+                "family_rows",
+                MappingProxyType({key: tuple(value) for key, value in families.items()}),
+            ),
+            ("body_owners", MappingProxyType(bodies)),
+            ("body_keys", MappingProxyType(inverse)),
+            ("configuration_count", q_offset),
+            ("velocity_count", v_offset),
+            ("body_count", body_offset),
+            (
+                "fingerprint",
+                (
+                    "resident-participant-layout-v1",
+                    tuple(item.fingerprint for item in participants),
+                    static,
+                ),
+            ),
         ):
             object.__setattr__(self, name, value)
 
@@ -396,15 +463,25 @@ def _bind_geometry(layout, model, bindings):
         key, value = shape.key, by_key[shape.key]
         if key.world not in layout.worlds:
             raise ValueError("shape world has no registered participants")
-        if shape.kind not in ("sphere", "capsule", "hull") or not shape.rigid or (shape.kind == "hull" and shape.radius != 0):
+        if (
+            shape.kind not in ("sphere", "capsule", "hull")
+            or not shape.rigid
+            or (shape.kind == "hull" and shape.radius != 0)
+        ):
             raise ValueError("geometry requires finite sphere, capsule or unrounded hull")
         if type(value) is ResidentStaticBinding:
             if (key.world, key.body) not in layout.static_body_ids:
                 raise ValueError("static shape requires an explicit non-dynamic static owner")
             motion = value.motion
-            if motion.end is not None or motion.turn is not None or len(motion.start) != len(shape.vertex_ids):
+            if (
+                motion.end is not None
+                or motion.turn is not None
+                or len(motion.start) != len(shape.vertex_ids)
+            ):
                 raise ValueError("static binding must contain every vertex at one fixed pose")
-            owned_motion = CollisionMotion(motion.start, body_orientation_xyzw=motion.body_orientation_xyzw)
+            owned_motion = CollisionMotion(
+                motion.start, body_orientation_xyzw=motion.body_orientation_xyzw
+            )
             registered.append(ResidentStaticBinding(key, owned_motion))
             owners[key], compiled[key] = None, owned_motion
             continue
@@ -427,10 +504,23 @@ def _bind_geometry(layout, model, bindings):
     signature = (_freeze(model), _freeze(source_bindings))
     result = object.__new__(ResidentParticipantGeometry)
     for name, value in (
-        ("model", owned_model), ("bindings", tuple(registered)), ("shape_keys", shape_keys),
-        ("owners", MappingProxyType(owners)), ("compiled_bindings", MappingProxyType(compiled)),
-        ("fingerprint", ("resident-participant-geometry-v1", layout.fingerprint, _freeze(owned_model), _freeze(tuple(registered)))),
-        ("_layout", layout), ("_model_source", model), ("_binding_sources", source_bindings),
+        ("model", owned_model),
+        ("bindings", tuple(registered)),
+        ("shape_keys", shape_keys),
+        ("owners", MappingProxyType(owners)),
+        ("compiled_bindings", MappingProxyType(compiled)),
+        (
+            "fingerprint",
+            (
+                "resident-participant-geometry-v1",
+                layout.fingerprint,
+                _freeze(owned_model),
+                _freeze(tuple(registered)),
+            ),
+        ),
+        ("_layout", layout),
+        ("_model_source", model),
+        ("_binding_sources", source_bindings),
         ("_source_signature", signature),
     ):
         object.__setattr__(result, name, value)

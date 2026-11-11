@@ -30,10 +30,15 @@ def fixed():
         np.zeros(3),
     )
     program = ph.DrivenRobotProgram(
-        model, kp=np.array([3.0, 4.0]), kd=np.array([0.5, 0.75]),
-        effort_limit=np.array([8.0, 9.0]), delay_steps=1,
+        model,
+        kp=np.array([3.0, 4.0]),
+        kd=np.array([0.5, 0.75]),
+        effort_limit=np.array([8.0, 9.0]),
+        delay_steps=1,
     )
-    state = program.initial_state(ph.RobotState(np.array([0.125, 0.03125]), np.array([0.25, -0.125])))
+    state = program.initial_state(
+        ph.RobotState(np.array([0.125, 0.03125]), np.array([0.25, -0.125]))
+    )
     return ph.FixedRobotTree(program, state)
 
 
@@ -47,15 +52,23 @@ def floating():
         np.array([0.125, 0, 0, 0, 0.25, 0]),
     )
     return ph.FloatingRobotTree(
-        model, state, kp=np.zeros(0), kd=np.zeros(0), effort_limit=np.zeros(0),
+        model,
+        state,
+        kp=np.zeros(0),
+        kd=np.zeros(0),
+        effort_limit=np.zeros(0),
     )
 
 
 def affine():
     asset = ph.load_mimic_urdf(ASSET, gravity=(0.0, 0.0, 0.0))
     return ph.AffineRobotTree(
-        asset, ph.RobotState(np.array([0.001]), np.array([0.01])),
-        np.array([2.0]), np.array([0.25]), np.array([1.0]), delay_steps=1,
+        asset,
+        ph.RobotState(np.array([0.001]), np.array([0.01])),
+        np.array([2.0]),
+        np.array([0.25]),
+        np.array([1.0]),
+        delay_steps=1,
     )
 
 
@@ -66,8 +79,12 @@ def floating_affine():
         np.array([0.125, 0, 0, 0, 0.25, 0, 0.01]),
     )
     return ph.FloatingAffineRobotTree(
-        asset, state, kp=np.array([2.0]), kd=np.array([0.25]),
-        effort_limit=np.array([1.0]), delay_steps=1,
+        asset,
+        state,
+        kp=np.array([2.0]),
+        kd=np.array([0.25]),
+        effort_limit=np.array([1.0]),
+        delay_steps=1,
     )
 
 
@@ -96,7 +113,9 @@ def sphere_binding(owner, *, group=0, shape=7, body=None, topology=None):
     return collision, ResidentParticipantBinding(owner.key, bound)
 
 
-@pytest.mark.parametrize("world,identity", [(True, 1), (1, False), (-1, 1), (1, -1), (1.0, 1), (1, 2**31)])
+@pytest.mark.parametrize(
+    "world,identity", [(True, 1), (1, False), (-1, 1), (1, -1), (1.0, 1), (1, 2**31)]
+)
 def test_key_rejects_non_i32_identity(world, identity):
     with pytest.raises(ValueError):
         ResidentParticipantKey(world, identity)
@@ -112,16 +131,24 @@ def test_key_is_ordered_and_immutable():
 
 
 @pytest.mark.parametrize(
-    "kind,counts", [("fixed", (2, 2, 2, 2, 2)), ("affine", (1, 1, 2, 2, 2)),
-                   ("floating", (7, 6, 1, 7, 6)), ("floating_affine", (8, 7, 3, 9, 8))]
+    "kind,counts",
+    [
+        ("fixed", (2, 2, 2, 2, 2)),
+        ("affine", (1, 1, 2, 2, 2)),
+        ("floating", (7, 6, 1, 7, 6)),
+        ("floating_affine", (8, 7, 3, 9, 8)),
+    ],
 )
 def test_all_families_keep_independent_and_physical_dimensions(kind, counts):
     owner = participant(kind)
     layout = ResidentParticipantLayout([owner])
     row = layout.entries[owner.key]
     assert (
-        row.configuration_count, row.velocity_count, row.body_count,
-        row.physical_configuration_count, row.physical_velocity_count,
+        row.configuration_count,
+        row.velocity_count,
+        row.body_count,
+        row.physical_configuration_count,
+        row.physical_velocity_count,
     ) == counts
     assert row.family == kind and row.storage_row == 0
     assert row.configuration_offset == row.velocity_offset == row.body_offset == 0
@@ -141,12 +168,18 @@ def test_sparse_worlds_have_separate_q_v_body_offsets_and_storage_rows():
     assert layout.world_keys == (503, 901)
     rows = [layout.entries[key] for key in layout.participant_keys]
     assert [(r.configuration_offset, r.velocity_offset, r.body_offset) for r in rows] == [
-        (0, 0, 0), (2, 2, 2), (9, 8, 3), (10, 9, 5),
+        (0, 0, 0),
+        (2, 2, 2),
+        (9, 8, 3),
+        (10, 9, 5),
     ]
     assert (layout.configuration_count, layout.velocity_count, layout.body_count) == (18, 16, 8)
     assert layout.worlds[503].participant_keys == (a.key, b.key)
-    assert (layout.worlds[901].configuration_offset, layout.worlds[901].velocity_offset,
-            layout.worlds[901].body_offset) == (9, 8, 3)
+    assert (
+        layout.worlds[901].configuration_offset,
+        layout.worlds[901].velocity_offset,
+        layout.worlds[901].body_offset,
+    ) == (9, 8, 3)
     assert layout.body_owners[(901, 21)] == (d.key, 1)
     assert layout.body_keys[(d.key, 1)] == (901, 21)
     assert layout.body_slot(d.key, 1) == 3
@@ -270,11 +303,15 @@ def test_geometry_rejects_wrong_participant_group_body_and_topology():
     layout = ResidentParticipantLayout([a])
     shape, bound = sphere_binding(a)
     with pytest.raises(ValueError, match="participant"):
-        layout.bind_geometry(ph.CollisionModel((shape,)), (
-            ResidentParticipantBinding(ResidentParticipantKey(503, 99), bound.binding),))
+        layout.bind_geometry(
+            ph.CollisionModel((shape,)),
+            (ResidentParticipantBinding(ResidentParticipantKey(503, 99), bound.binding),),
+        )
     with pytest.raises(ValueError, match="body"):
         wrong = replace(bound.binding, group_index=1)
-        layout.bind_geometry(ph.CollisionModel((shape,)), (ResidentParticipantBinding(a.key, wrong),))
+        layout.bind_geometry(
+            ph.CollisionModel((shape,)), (ResidentParticipantBinding(a.key, wrong),)
+        )
     bad_shape, bad_binding = sphere_binding(a, topology=("wrong",))
     with pytest.raises(ValueError, match="topology"):
         layout.bind_geometry(ph.CollisionModel((bad_shape,)), (bad_binding,))
@@ -292,7 +329,8 @@ def test_geometry_requires_exact_binding_membership_and_family():
     with pytest.raises(ValueError):
         layout.bind_geometry(model, (bound, bound))
     wrong = ph.ResidentFloatingTreeBinding(
-        shape.key, 503, 0, np.zeros((1, 3)), topology=a.compiled.topology)
+        shape.key, 503, 0, np.zeros((1, 3)), topology=a.compiled.topology
+    )
     with pytest.raises(TypeError, match="family"):
         layout.bind_geometry(model, (ResidentParticipantBinding(a.key, wrong),))
 
@@ -337,13 +375,17 @@ def test_empty_geometry_is_registration_only_not_fake_step():
     assert registered.shape_keys == () and dict(registered.owners) == {}
     assert not hasattr(layout, "step")
 
+
 def test_from_asset_retains_original_shape_and_graph_proof():
     owner = participant("floating_affine")
     asset = owner.system.asset
     collider = next(item for item in asset.tree.collisions if item.link_index == -1)
     key = ph.CollisionKey(owner.key.world, owner.body_ids[0], collider.shape.key.shape)
     original = ph.ResidentFloatingAffineTreeBinding.from_asset(
-        asset, collider.shape.key, key=key, world=owner.key.world,
+        asset,
+        collider.shape.key,
+        key=key,
+        world=owner.key.world,
     )
     shape = replace(collider.shape, key=key)
     layout = ResidentParticipantLayout([owner])
@@ -353,7 +395,11 @@ def test_from_asset_retains_original_shape_and_graph_proof():
     assert wrapped.binding._source_shape == original._source_shape
     assert wrapped.binding.graph_token == original.graph_token
     with pytest.raises(ValueError, match="source shape"):
-        layout.bind_geometry(ph.CollisionModel((replace(shape, radius=shape.radius * 2),)), (wrapped,))
+        layout.bind_geometry(
+            ph.CollisionModel((replace(shape, radius=shape.radius * 2),)), (wrapped,)
+        )
     wrong = replace(original, graph_token=("foreign-graph",))
     with pytest.raises(ValueError, match="graph"):
-        layout.bind_geometry(ph.CollisionModel((shape,)), (ResidentParticipantBinding(owner.key, wrong),))
+        layout.bind_geometry(
+            ph.CollisionModel((shape,)), (ResidentParticipantBinding(owner.key, wrong),)
+        )

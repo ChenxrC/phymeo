@@ -213,4 +213,3 @@ def test_memory_diagnostic_only_failed_s256(name, worlds, tmp_path):
     with pytest.raises(ValueError, match="S256"):
         api().run_pair(name, worlds, tmp_path / "refused", memory_diagnostic=True)
     assert not (tmp_path / "refused").exists()
-

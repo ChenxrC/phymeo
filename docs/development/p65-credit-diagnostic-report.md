@@ -134,3 +134,11 @@ collection, static checker, formatter, test or GPU action has been executed by
 this author. Only source reading, text authoring and explicit Git checks were
 used. Parent execution outcomes must be appended later and cannot be inferred
 from these proposed checks.
+
+Parent pre-execution review added complete owned caller before/after RNG,
+effective precision and Distribution-default receipts at the actual restoration
+boundary, with an exact digest gate even on failure. The after-seed rollout RNG
+is separately labelled. The same captured arrays also supply original .2 ratio
+clipping masks/count/fraction and actual actor/critic post/pre norm factors;
+zero pre-norm reports factor unavailable rather than dividing by zero. No
+additional inference, sampling, physics or optimizer call is introduced.

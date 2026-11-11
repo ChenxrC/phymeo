@@ -165,10 +165,39 @@ def learner_digest(algorithm):
     return tree_digest(learner_state(algorithm))
 
 
+def caller_state(torch, response):
+    return owned({"python": random.getstate(), "numpy": np.random.get_state(),
+                  "torch_cpu": torch.get_rng_state(), "torch_cuda_all": torch.cuda.get_rng_state_all(),
+                  "computation_flags": response._computation_flags(torch),
+                  "distribution_default_validate_args": torch.distributions.Distribution._validate_args})
+
+
 @contextmanager
-def preserved_caller(torch, response):
-    with response._preserved_execution_state(torch) as flags, preserved_distribution_default(torch):
-        yield flags
+def preserved_caller(torch, response, receipt=None):
+    record = {} if receipt is None else receipt
+    record["before"] = caller_state(torch, response)
+    record["before_sha256"] = tree_digest(record["before"])
+    errors = []
+    try:
+        with response._preserved_execution_state(torch) as flags, preserved_distribution_default(torch):
+            try:
+                yield flags
+            except BaseException as exc:
+                errors.append(exc)
+    except BaseException as exc:
+        errors.append(exc)
+    finally:
+        try:
+            record["after"] = caller_state(torch, response)
+            record["after_sha256"] = tree_digest(record["after"])
+            record["exact_restored"] = record["before_sha256"] == record["after_sha256"]
+            require(record["exact_restored"], "caller RNG/precision/distribution changed after finally")
+        except BaseException as exc:
+            errors.append(exc)
+        record["errors"] = [repr(exc) for exc in errors]
+    if errors:
+        if len(errors) == 1: raise errors[0]
+        raise BaseExceptionGroup("credit caller execution/restoration errors", errors)
 
 
 class _BeforeAdam(BaseException):
@@ -332,6 +361,8 @@ def _analyze_credit(storage, bootstrap, captured, task, pair):
                "mean_score": score_grid, "normalized_advantage_score": term_grid,
                "reward_component_score": raw_reward_terms, "critic_component_score": critic_terms,
                "per_world_joint_sum": sums, "per_world_joint_absolute_sum": abs_sums,
+               "ratio_clipped_mask": (ratio < .8) | (ratio > 1.2),
+               "ratio_clipped_values": np.clip(ratio, .8, 1.2),
                "cancellation_ratio": cancellation, "gradient_norms": gradients,
                "component_norms": component_norms}
     if task == "J":
@@ -341,14 +372,23 @@ def _analyze_credit(storage, bootstrap, captured, task, pair):
     mean_norm = gradients["preclip"]["actor_mean"]
     label = classify(True, mean_norm, component_norms["critic_gae"],
                      component_norms["reward_gae"], gradients["preclip"]["actor_all"])
+    clipping_factors = {
+        owner: (gradients["postclip"][owner]/gradients["preclip"][owner]
+                if gradients["preclip"][owner] != 0 else None)
+        for owner in ("actor_all", "critic")}
+    details["actual_norm_clipping_factors"] = clipping_factors
     metrics = {"classification": label, "gradient_norms": gradients,
                "component_norms": component_norms, "ratio_min": float(ratio.min()),
                "ratio_max": float(ratio.max()), "kl_mean": float(kl.mean()),
                "score_per_joint_sum": term_grid.sum(axis=(0, 1)).tolist(),
+               "original_clip_param": .2,
+               "ratio_clipping_count": int(np.count_nonzero((ratio < .8) | (ratio > 1.2))),
+               "ratio_clipping_fraction": float(np.mean((ratio < .8) | (ratio > 1.2))),
+               "actual_norm_clipping_factors": clipping_factors,
                "scope": "single fresh fixed-seed batch; not a learning result or unique cause"}
     return metrics, details
 
-def _run_case(pair, optimizer_state, writer, progress):
+def _run_case(pair, optimizer_state, writer, progress, caller_receipt):
     import torch
     from phymeo.training import mujoco_tyx_evaluation as evidence
     from phymeo.training import policy_response_diagnostics as response
@@ -361,7 +401,7 @@ def _run_case(pair, optimizer_state, writer, progress):
     dependencies = response.check_dependencies(pair["dependencies"])
     captured, phase, errors = {}, "construct-original-task", []
     result = None
-    with preserved_caller(torch, response) as computation_flags:
+    with preserved_caller(torch, response, caller_receipt) as computation_flags:
         try:
             with tasks.make_environment(name, count=WORLDS) as env:
                 require(tuple(env.world_keys) == pair["world_keys"], "original stable world order")
@@ -568,7 +608,22 @@ def run_fixed(evidence_root, output):
         try:
             for pair, optimizer in pending:
                 phase = "capture-"+pair["task"]+"-"+str(pair["seed"])
-                result["runs"].append(_run_case(pair, optimizer, writer, progress))
+                caller_receipt, case_errors, case_result = {}, [], None
+                try:
+                    case_result = _run_case(pair, optimizer, writer, progress, caller_receipt)
+                except BaseException as exc:
+                    case_errors.append(exc)
+                try:
+                    writer.write("caller_restoration", {"task": pair["task"], "seed": pair["seed"],
+                                                        "receipt": caller_receipt})
+                except BaseException as exc:
+                    case_errors.append(exc)
+                if case_errors:
+                    if len(case_errors) == 1: raise case_errors[0]
+                    raise BaseExceptionGroup("case capture/caller receipt errors", case_errors)
+                case_result["caller_restoration_sha256"] = caller_receipt["after_sha256"]
+                case_result["caller_exact_restored"] = caller_receipt["exact_restored"]
+                result["runs"].append(case_result)
         finally:
             torch.cuda.set_device(device_before)
         require(progress["accepted_world_steps"] == 768 and len(result["runs"]) == 3,

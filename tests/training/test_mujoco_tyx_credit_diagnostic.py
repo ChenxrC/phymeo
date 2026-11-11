@@ -175,14 +175,16 @@ def test_rng_precision_distribution_defaults_restore(failure):
             cudnn=types.SimpleNamespace(conv=flags[1],rnn=flags[2])),
         distributions=torch.distributions)
     default=torch.distributions.Distribution._validate_args
+    receipt={}
     try:
         with pytest.raises(RuntimeError) if failure else credit.nullcontext():
-            with credit.preserved_caller(fake,response) as actual:
+            with credit.preserved_caller(fake,response,receipt) as actual:
                 assert set(actual.values())=={"ieee"}
                 random.seed(456); np.random.seed(456); torch.manual_seed(456)
                 cuda_states[0][0]=0
                 torch.distributions.Distribution.set_default_validate_args(not default)
                 if failure: raise RuntimeError("injected after construct")
+        assert receipt["exact_restored"] and receipt["before_sha256"]==receipt["after_sha256"]
         assert random.getstate()==python_before
         after=np.random.get_state()
         assert after[0]==numpy_before[0] and after[2:]==numpy_before[2:]

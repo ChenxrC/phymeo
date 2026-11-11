@@ -163,3 +163,45 @@ remain failed regardless of successful extraction/inference.
 
 AUTHORING_SLOT_RELEASED. Parent review/execution results must be appended with
 their actual tested source; no success result is claimed in this handoff.
+
+## Pre-execution computation-flag correction
+
+The parent text review found that preserving only RNG did not reproduce the
+original task computation configuration when a caller enabled TF32. This was
+corrected before any N4c project execution. Tests-first commit 9b8afe28 and
+implementation a6847fb8 modify only the existing N4c NEW test/module.
+
+Original `examples/mujoco_tyx_learning_tasks.py::seed_all` assigns
+`torch.backends.cuda.matmul.allow_tf32=False` and
+`torch.backends.cudnn.allow_tf32=False`. The response context now performs these
+same two assignments before constructing/loading the upstream models or running
+features/inference. Each result records the actual two flags and the public
+`torch.get_float32_matmul_precision()` value observed inside that context.
+
+The installed Torch 2.12.0 source documents `highest` as the default/equivalent
+of matmul TF32 disabled; `high` and `medium` both permit TF32. No separate
+precision enum is imposed for inference and no new numerical acceptance limit
+is added. Because restoring only the old bool can collapse a caller's `medium`
+setting to `high`, the context also captures/restores the exact public precision
+enum. It attempts all RNG/flag restorations in finally, verifies restored flag
+values, and refuses successful publication on a restoration error. No arbitrary
+other backend settings, concurrent caller mutation or allocator rollback is
+claimed; evaluation still requires exclusive synchronous caller ownership.
+
+The existing successful CUDA test now starts with caller precision `medium`
+and cuDNN TF32 enabled, checks both actual actor calls see the original disabled
+flags, checks result metadata and exact caller restoration. Existing injected
+feature/inference failures start from `high`/cuDNN enabled and
+`medium`/cuDNN disabled respectively; both check original flags inside the
+failing call, restored flags/RNG afterward, and an unmodified successful retry.
+The manual count remains 25 HOST + 6 CUDA = 31; all remain UNEXECUTED by this
+author. Git diff whitespace checks only were performed. The earlier working
+byte table is historical; current module/test byte bindings follow below.
+
+| Path | SHA256 | Git blob |
+|---|---|---|
+| src/phymeo/training/policy_response_diagnostics.py | 4ddfa84fb12c3657336d607ef09f1263e8d79687fad50b4736217c913bd3cf86 | 94837d2c397a75c2bc2c3b933ceb00c6757832fe |
+| tests/training/test_policy_response_diagnostics.py | 6c90e95d2e374c16eac6ca3b14b74accbf3f2b17163aec72ca78b6636787a9ae | 1f9654b537779eab89370497248aea05fee2ae21 |
+| examples/diagnose_mujoco_tyx_policy_response.py | 939a257e462ff79e7ef584b7701fd920d0cad93794826ef20e9f4da4edc297e7 | da0a3b26e5227a6efbfdaca86371e039c455403b |
+
+CODE_READY_TESTS_PENDING; AUTHORING_SLOT_RELEASED. Parent remains sole execution owner.

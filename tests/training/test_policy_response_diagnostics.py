@@ -394,9 +394,9 @@ def computation_flags():
     import torch
 
     return {
-        "matmul_allow_tf32": torch.backends.cuda.matmul.allow_tf32,
-        "cudnn_allow_tf32": torch.backends.cudnn.allow_tf32,
-        "float32_matmul_precision": torch.get_float32_matmul_precision(),
+        "cuda_matmul_fp32_precision": torch.backends.cuda.matmul.fp32_precision,
+        "cudnn_conv_fp32_precision": torch.backends.cudnn.conv.fp32_precision,
+        "cudnn_rnn_fp32_precision": torch.backends.cudnn.rnn.fp32_precision,
     }
 
 
@@ -405,23 +405,37 @@ def caller_computation(precision, cudnn):
     import torch
 
     previous = computation_flags()
+    previous_precision = torch.get_float32_matmul_precision()
+    previous_cudnn = torch.backends.cudnn.allow_tf32
     try:
+        # Deliberately exercise callers using high/medium. Legacy reads/writes
+        # occur only outside the diagnostic's new-API computation context.
         torch.set_float32_matmul_precision(precision)
         torch.backends.cudnn.allow_tf32 = cudnn
-        yield computation_flags()
+        yield {"effective": computation_flags(), "legacy_precision": precision,
+               "legacy_cudnn": cudnn}
     finally:
-        torch.backends.cuda.matmul.allow_tf32 = previous["matmul_allow_tf32"]
-        torch.backends.cudnn.allow_tf32 = previous["cudnn_allow_tf32"]
-        torch.set_float32_matmul_precision(previous["float32_matmul_precision"])
+        torch.set_float32_matmul_precision(previous_precision)
+        torch.backends.cudnn.allow_tf32 = previous_cudnn
+        torch.backends.cuda.matmul.fp32_precision = previous["cuda_matmul_fp32_precision"]
+        torch.backends.cudnn.conv.fp32_precision = previous["cudnn_conv_fp32_precision"]
+        torch.backends.cudnn.rnn.fp32_precision = previous["cudnn_rnn_fp32_precision"]
+
+
+def assert_caller_computation(caller):
+    import torch
+
+    assert computation_flags() == caller["effective"]
+    assert torch.get_float32_matmul_precision() == caller["legacy_precision"]
+    assert torch.backends.cudnn.allow_tf32 == caller["legacy_cudnn"]
 
 
 def assert_original_computation():
     assert computation_flags() == {
-        "matmul_allow_tf32": False,
-        "cudnn_allow_tf32": False,
-        "float32_matmul_precision": "highest",
+        "cuda_matmul_fp32_precision": "ieee",
+        "cudnn_conv_fp32_precision": "ieee",
+        "cudnn_rnn_fp32_precision": "ieee",
     }
-
 
 @pytest.mark.cuda
 def test_actual_cuda_feature_and_pinned_models_restore_rng(monkeypatch):
@@ -438,7 +452,7 @@ def test_actual_cuda_feature_and_pinned_models_restore_rng(monkeypatch):
     with caller_computation("medium", True) as caller:
         monkeypatch.setattr(response, "_infer_model", infer)
         result = response.evaluate_pair(pair)
-        assert computation_flags() == caller
+        assert_caller_computation(caller)
         assert len(observed) == 2
         assert result["computation_flags"] == observed[0] == observed[1]
     assert_random_unchanged(before)
@@ -516,8 +530,8 @@ def test_actual_failure_restores_rng_closes_runtime_and_allows_retry(monkeypatch
             with pytest.raises(RuntimeError, match="injected"):
                 response.evaluate_pair(pair)
         assert_random_unchanged(before)
-        assert computation_flags() == caller
+        assert_caller_computation(caller)
         assert closes
         assert response.evaluate_pair(pair)["status"] == "PASS_FIXED_POLICY_RESPONSE"
-        assert computation_flags() == caller
+        assert_caller_computation(caller)
         assert_random_unchanged(before)

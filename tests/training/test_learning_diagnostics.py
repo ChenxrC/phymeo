@@ -1,4 +1,5 @@
 """Independent saved-only diagnostics fixtures; no runtime, CUDA, or learner."""
+
 import base64
 import gzip
 import hashlib
@@ -8,21 +9,32 @@ import numpy as np
 import pytest
 
 from phymeo.training.learning_diagnostics import (
-    OfflineBudget, PhaseAccumulator, decode_evidence, diagnose_seed,
-    gradient_evidence, parameter_changes, read_records, strict_json,
+    OfflineBudget,
+    PhaseAccumulator,
+    decode_evidence,
+    diagnose_seed,
+    gradient_evidence,
+    parameter_changes,
+    read_records,
+    strict_json,
 )
 
 
 def wire(value):
     if isinstance(value, np.ndarray):
         raw = value.tobytes()
-        return {"array_dtype": value.dtype.str, "shape": list(value.shape),
-                "bytes_base64": base64.b64encode(raw).decode(),
-                "sha256": hashlib.sha256(raw).hexdigest()}
+        return {
+            "array_dtype": value.dtype.str,
+            "shape": list(value.shape),
+            "bytes_base64": base64.b64encode(raw).decode(),
+            "sha256": hashlib.sha256(raw).hexdigest(),
+        }
     if isinstance(value, dict):
         if "__type__" in value:
-            return {"dataclass": value["__type__"],
-                    "fields": {k: wire(v) for k, v in value.items() if k != "__type__"}}
+            return {
+                "dataclass": value["__type__"],
+                "fields": {k: wire(v) for k, v in value.items() if k != "__type__"},
+            }
         return {"mapping": [[wire(k), wire(v)] for k, v in value.items()]}
     if isinstance(value, (tuple, list)):
         return {"sequence_type": type(value).__name__, "items": [wire(x) for x in value]}
@@ -42,19 +54,33 @@ def transition(tick, *, action=0.25, end=False, episode=0):
     for key in keys:
         states[key] = {
             "__type__": "phymeo.backends.mujoco_runtime.MuJoCoState",
-            "world": key, "q": q.copy(), "v": v.copy(), "ctrl": ctrl.copy(),
-            "qfrc_applied": array([0.0]), "xfrc_applied": np.zeros((2, 6)),
-            "tick": tick, "time": tick * 0.1,
-            "last_step": {"__type__": "fixture.Step", "backend": "mujoco-tyx-cuda",
-                          "contacts": (), "input_q": q.copy()},
+            "world": key,
+            "q": q.copy(),
+            "v": v.copy(),
+            "ctrl": ctrl.copy(),
+            "qfrc_applied": array([0.0]),
+            "xfrc_applied": np.zeros((2, 6)),
+            "tick": tick,
+            "time": tick * 0.1,
+            "last_step": {
+                "__type__": "fixture.Step",
+                "backend": "mujoco-tyx-cuda",
+                "contacts": (),
+                "input_q": q.copy(),
+            },
         }
     return {
         "__type__": "phymeo.training.mujoco_tyx_env.MuJoCoTyxTransition",
-        "sequence": episode * 2 + tick, "world_keys": keys, "states": states,
+        "sequence": episode * 2 + tick,
+        "world_keys": keys,
+        "states": states,
         "accepted_worlds": dict.fromkeys(keys, True),
         "action": np.full((2, 1), action, np.float32),
-        "native_channels": (np.full((2, 1), action, np.float32),
-                            np.zeros((2, 1), np.float32), np.zeros((2, 2, 6), np.float32)),
+        "native_channels": (
+            np.full((2, 1), action, np.float32),
+            np.zeros((2, 1), np.float32),
+            np.zeros((2, 2, 6), np.float32),
+        ),
         "reward": array([-0.0104, -0.0104], np.float32),
         "terminated": array([False, False], bool),
         "time_outs": array([end, end], bool),
@@ -64,21 +90,35 @@ def transition(tick, *, action=0.25, end=False, episode=0):
 
 
 def protocol():
-    return {"q_target": [0.0], "q_scale": [1.0], "v_scale": [1.0],
-            "action_scale": 1.0, "h": 0.1, "horizon": 2,
-            "action_squash": "tanh", "decimation": 1}
+    return {
+        "q_target": [0.0],
+        "q_scale": [1.0],
+        "v_scale": [1.0],
+        "action_scale": 1.0,
+        "h": 0.1,
+        "horizon": 2,
+        "action_squash": "tanh",
+        "decimation": 1,
+    }
 
 
 def write_records(path, records):
-    raw = b"".join((json.dumps({"ordinal": i, "kind": k, "payload": wire(v)},
-                             separators=(",", ":")) + "\n").encode()
-                   for i, (k, v) in enumerate(records))
+    raw = b"".join(
+        (
+            json.dumps({"ordinal": i, "kind": k, "payload": wire(v)}, separators=(",", ":")) + "\n"
+        ).encode()
+        for i, (k, v) in enumerate(records)
+    )
     compressed = gzip.compress(raw, mtime=0)
     path.write_bytes(compressed)
-    return {"path": path.name, "records": len(records), "logical_bytes": len(raw),
-            "logical_sha256": hashlib.sha256(raw).hexdigest(),
-            "compressed_bytes": len(compressed),
-            "compressed_sha256": hashlib.sha256(compressed).hexdigest()}
+    return {
+        "path": path.name,
+        "records": len(records),
+        "logical_bytes": len(raw),
+        "logical_sha256": hashlib.sha256(raw).hexdigest(),
+        "compressed_bytes": len(compressed),
+        "compressed_sha256": hashlib.sha256(compressed).hexdigest(),
+    }
 
 
 def test_decoder_is_data_only_and_preserves_typed_keys():
@@ -134,8 +174,10 @@ def test_stream_refuses_corruption_and_partial_prefix(tmp_path, defect):
     else:
         raw = b'{"ordinal":1,"kind":"one","payload":1}\n'
         path.write_bytes(gzip.compress(raw, mtime=0))
-        receipt.update(compressed_bytes=path.stat().st_size,
-                       compressed_sha256=hashlib.sha256(path.read_bytes()).hexdigest())
+        receipt.update(
+            compressed_bytes=path.stat().st_size,
+            compressed_sha256=hashlib.sha256(path.read_bytes()).hexdigest(),
+        )
     with pytest.raises(ValueError):
         list(read_records(path, receipt))
 
@@ -173,8 +215,9 @@ def test_phase_refuses_wrong_world_control_reward_and_incomplete_window(defect):
 
 
 def test_gradient_norms_are_post_clip_and_missing_is_unknown():
-    known = gradient_evidence({"finite_gradient": True, "optimizer_step": 3,
-                               "gradient_norms": (0.3, 0.4)}, 3)
+    known = gradient_evidence(
+        {"finite_gradient": True, "optimizer_step": 3, "gradient_norms": (0.3, 0.4)}, 3
+    )
     assert known["combined_post_clip_norm"] == pytest.approx(0.5)
     assert known["pre_clip_norm"] == "UNKNOWN"
     missing = gradient_evidence({"finite_gradient": True, "optimizer_step": 3}, 3)
@@ -200,9 +243,12 @@ def policy_hash(value):
     digest = hashlib.sha256()
     for owner in ("actor", "critic"):
         for name, tensor in sorted(value[owner].items()):
-            digest.update((owner+":"+name+":"+tensor.dtype.str+":"+str(tensor.shape)).encode())
+            digest.update(
+                (owner + ":" + name + ":" + tensor.dtype.str + ":" + str(tensor.shape)).encode()
+            )
             digest.update(tensor.tobytes())
     return digest.hexdigest()
+
 
 def seed_fixture(tmp_path, *, missing_gradient=False):
     root = tmp_path / "seed"
@@ -210,56 +256,112 @@ def seed_fixture(tmp_path, *, missing_gradient=False):
     budget = OfflineBudget(updates=2, rollout=2, evaluation_steps=2, horizon=2)
     initial = {"actor": {"weight": array([1.0])}, "critic": {"weight": array([2.0])}}
     records = [("initial_policy", initial)]
-    summary_phase = {"world_steps": 4, "steps": 2, "cost": 0.0104,
-                     "per_world_cost": [0.0104, 0.0104]}
+    summary_phase = {
+        "world_steps": 4,
+        "steps": 2,
+        "cost": 0.0104,
+        "per_world_cost": [0.0104, 0.0104],
+    }
     for phase in ("untrained", "zero"):
         for tick in (1, 2):
             item = transition(tick, action=0.0 if phase == "zero" else 0.25, end=tick == 2)
-            records.extend([(phase + ".requested_action", {"tick": tick, "action": item["action"]}),
-                            (phase + ".transition", item),
-                            (phase + ".independent", {"tick": tick, "cost": array([0.0104]*2),
-                                                     "inspection": None})])
+            records.extend(
+                [
+                    (phase + ".requested_action", {"tick": tick, "action": item["action"]}),
+                    (phase + ".transition", item),
+                    (
+                        phase + ".independent",
+                        {"tick": tick, "cost": array([0.0104] * 2), "inspection": None},
+                    ),
+                ]
+            )
     checks = []
     final_policy = {"actor": {"weight": array([1.1])}, "critic": {"weight": array([2.1])}}
-    hashes = [policy_hash(initial), "2"*64, policy_hash(final_policy)]
+    hashes = [policy_hash(initial), "2" * 64, policy_hash(final_policy)]
     for index in range(2):
         optimization = {"finite_gradient": True, "optimizer_step": index + 1}
         if not missing_gradient:
             optimization["gradient_norms"] = (0.3, 0.4)
         loss = {"value": 1.0, "surrogate": 0.0, "entropy": -1.0}
-        records.append(("update", {"iteration": index, "next_iteration": index+1,
-                                  "transitions": tuple(transition(t, end=t == 2, episode=index)
-                                                       for t in (1, 2)),
-                                  "loss": loss, "optimization": optimization}))
-        check = {"iteration": index, "optimizer_step": index+1, "accepted_world_steps": 4,
-                 "mean_native_cost": 0.0104, "terminated_worlds": 0, "timeout_reset_worlds": 2,
-                 "loss": loss, "parameter_hash_before": hashes[index],
-                 "parameter_hash_after": hashes[index+1]}
+        records.append(
+            (
+                "update",
+                {
+                    "iteration": index,
+                    "next_iteration": index + 1,
+                    "transitions": tuple(transition(t, end=t == 2, episode=index) for t in (1, 2)),
+                    "loss": loss,
+                    "optimization": optimization,
+                },
+            )
+        )
+        check = {
+            "iteration": index,
+            "optimizer_step": index + 1,
+            "accepted_world_steps": 4,
+            "mean_native_cost": 0.0104,
+            "terminated_worlds": 0,
+            "timeout_reset_worlds": 2,
+            "loss": loss,
+            "parameter_hash_before": hashes[index],
+            "parameter_hash_after": hashes[index + 1],
+        }
         checks.append(check)
         records.append(("update_checks", check))
     for tick in (1, 2):
         item = transition(tick, end=tick == 2)
-        records.extend([("learned.requested_action", {"tick": tick, "action": item["action"]}),
-                        ("learned.transition", item),
-                        ("learned.independent", {"tick": tick, "cost": array([0.0104]*2),
-                                                "inspection": None})])
-    records.extend([("final_policy_and_adam", {"actor": {"weight": array([1.1])},
-                                              "critic": {"weight": array([2.1])},
-                                              "optimizer": {"state": {0: {"step": array(2.0, np.float32)}}}, "next_iteration": 2}),
-                    ("completion", {"status": "COMPLETE_N4A_SEED", "task": "fixture"})])
+        records.extend(
+            [
+                ("learned.requested_action", {"tick": tick, "action": item["action"]}),
+                ("learned.transition", item),
+                (
+                    "learned.independent",
+                    {"tick": tick, "cost": array([0.0104] * 2), "inspection": None},
+                ),
+            ]
+        )
+    records.extend(
+        [
+            (
+                "final_policy_and_adam",
+                {
+                    "actor": {"weight": array([1.1])},
+                    "critic": {"weight": array([2.1])},
+                    "optimizer": {"state": {0: {"step": array(2.0, np.float32)}}},
+                    "next_iteration": 2,
+                },
+            ),
+            ("completion", {"status": "COMPLETE_N4A_SEED", "task": "fixture"}),
+        ]
+    )
     receipt = write_records(root / "trace.jsonl.gz", records)
-    common = {"task": "fixture", "seed": 7, "protocol_binding": protocol(),
-              "ppo_config": {"algorithm": "fixture"}, "source_files": {"fixture": "a"*64},
-              "dependencies": {"numpy": "fixture"}}
-    summary = {**common, "status": "COMPLETE_N4A_SEED", "updates": 2, "worlds": 2,
-               "accepted_world_steps": 8, "baseline": summary_phase, "learned": summary_phase,
-
-               "zero_action_diagnostic": {**summary_phase, "status": "COMPLETE_DIAGNOSTIC"},
-               "update_evidence": checks, "parameter_hash_before": hashes[0],
-               "parameter_hash_after": hashes[-1], "evidence": receipt}
+    common = {
+        "task": "fixture",
+        "seed": 7,
+        "protocol_binding": protocol(),
+        "ppo_config": {"algorithm": "fixture"},
+        "source_files": {"fixture": "a" * 64},
+        "dependencies": {"numpy": "fixture"},
+    }
+    summary = {
+        **common,
+        "status": "COMPLETE_N4A_SEED",
+        "updates": 2,
+        "worlds": 2,
+        "accepted_world_steps": 8,
+        "baseline": summary_phase,
+        "learned": summary_phase,
+        "zero_action_diagnostic": {**summary_phase, "status": "COMPLETE_DIAGNOSTIC"},
+        "update_evidence": checks,
+        "parameter_hash_before": hashes[0],
+        "parameter_hash_after": hashes[-1],
+        "evidence": receipt,
+    }
     raw = json.dumps(summary, sort_keys=True).encode()
     (root / "summary.json").write_bytes(raw)
-    (root / "manifest.json").write_text(json.dumps({**common, "phase": "learn", "world_keys": [5,41]}))
+    (root / "manifest.json").write_text(
+        json.dumps({**common, "phase": "learn", "world_keys": [5, 41]})
+    )
     digest = hashlib.sha256(raw).hexdigest()
     (root / "publication.json").write_text(json.dumps({"summary_sha256": digest}))
     binding = {"directory": str(root), "summary_sha256": digest, "evidence": receipt}
@@ -267,7 +369,9 @@ def seed_fixture(tmp_path, *, missing_gradient=False):
 
 
 @pytest.mark.parametrize("missing_gradient", [False, True])
-def test_complete_synthetic_seed_is_streamed_and_missing_gradient_not_invented(tmp_path, missing_gradient):
+def test_complete_synthetic_seed_is_streamed_and_missing_gradient_not_invented(
+    tmp_path, missing_gradient
+):
     root, binding, budget = seed_fixture(tmp_path, missing_gradient=missing_gradient)
     result = diagnose_seed(root, binding, expected_task="fixture", expected_seed=7, budget=budget)
     assert result["status"] == "PASS_SAVED_DIAGNOSIS_ONLY"
@@ -288,7 +392,7 @@ def test_seed_refuses_wrong_identity_and_changed_bindings(tmp_path, defect):
         value["protocol_binding"]["h"] = 0.2
         (root / "manifest.json").write_text(json.dumps(value))
     elif defect == "summary_binding":
-        binding["summary_sha256"] = "0"*64
+        binding["summary_sha256"] = "0" * 64
     with pytest.raises(ValueError):
         diagnose_seed(root, binding, expected_task=task, expected_seed=7, budget=budget)
 
@@ -299,34 +403,50 @@ def rebind_synthetic_trace(root, binding, edit):
     edit(records)
     for ordinal, record in enumerate(records):
         record["ordinal"] = ordinal
-    raw = b"".join((json.dumps(record, separators=(",", ":"))+"\n").encode() for record in records)
+    raw = b"".join(
+        (json.dumps(record, separators=(",", ":")) + "\n").encode() for record in records
+    )
     compressed = gzip.compress(raw, mtime=0)
     path.write_bytes(compressed)
-    receipt = dict(binding["evidence"], records=len(records), logical_bytes=len(raw),
-                   logical_sha256=hashlib.sha256(raw).hexdigest(),
-                   compressed_bytes=len(compressed),
-                   compressed_sha256=hashlib.sha256(compressed).hexdigest())
-    summary = json.loads((root/"summary.json").read_text())
+    receipt = dict(
+        binding["evidence"],
+        records=len(records),
+        logical_bytes=len(raw),
+        logical_sha256=hashlib.sha256(raw).hexdigest(),
+        compressed_bytes=len(compressed),
+        compressed_sha256=hashlib.sha256(compressed).hexdigest(),
+    )
+    summary = json.loads((root / "summary.json").read_text())
     summary["evidence"] = receipt
     payload = json.dumps(summary, sort_keys=True).encode()
-    (root/"summary.json").write_bytes(payload)
+    (root / "summary.json").write_bytes(payload)
     digest = hashlib.sha256(payload).hexdigest()
-    (root/"publication.json").write_text(json.dumps({"summary_sha256": digest}))
+    (root / "publication.json").write_text(json.dumps({"summary_sha256": digest}))
     binding.update(evidence=receipt, summary_sha256=digest)
 
 
 @pytest.mark.parametrize("defect", ["missing_phase_record", "extra_completion", "request_mismatch"])
 def test_bound_but_structurally_invalid_stream_cannot_return_success(tmp_path, defect):
     root, binding, budget = seed_fixture(tmp_path)
+
     def edit(records):
         if defect == "missing_phase_record":
-            index = next(i for i, record in enumerate(records) if record["kind"] == "untrained.independent")
+            index = next(
+                i for i, record in enumerate(records) if record["kind"] == "untrained.independent"
+            )
             records.pop(index)
         elif defect == "extra_completion":
             records.append(records[-1].copy())
         else:
-            index = next(i for i, record in enumerate(records) if record["kind"] == "untrained.requested_action")
-            records[index]["payload"] = wire({"tick": 1, "action": np.full((2, 1), 0.5, np.float32)})
+            index = next(
+                i
+                for i, record in enumerate(records)
+                if record["kind"] == "untrained.requested_action"
+            )
+            records[index]["payload"] = wire(
+                {"tick": 1, "action": np.full((2, 1), 0.5, np.float32)}
+            )
+
     rebind_synthetic_trace(root, binding, edit)
     with pytest.raises(ValueError):
         diagnose_seed(root, binding, expected_task="fixture", expected_seed=7, budget=budget)
@@ -338,8 +458,8 @@ def test_support_metrics_consume_actual_step_force_rows():
         value = transition(tick, end=tick == 2)
         for state in value["states"].values():
             state["last_step"]["contacts"] = tuple(
-                {"geometry_ids": (0, 1), "active": True, "normal_force": 3.0}
-                for _ in range(4))
+                {"geometry_ids": (0, 1), "active": True, "normal_force": 3.0} for _ in range(4)
+            )
         stats.add(value, support=True)
     result = stats.finish()["actual_step_support"]
     assert result["peak_force_N"] == 12.0

@@ -13,6 +13,7 @@ U = 2.0**-24
 CONDITION = 32 * U
 SOURCE_ERROR = 8 * U
 TIE_ERROR = 16 * U
+NORMAL_FLOOR = 32 * U  # u=2^-24, half FP32 machine epsilon.
 NAMES = (
     "face_above", "face_below", "edge", "vertex", "beyond_edge", "zero_axis",
     "parallel_face", "oblique_endpoint", "edge_edge", "extension_miss", "through_face", "parallel_edge",

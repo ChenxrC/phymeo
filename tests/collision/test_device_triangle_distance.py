@@ -108,7 +108,7 @@ def assert_packet(data,packet):
         np.testing.assert_allclose(row.axis_point_relative_m,ap,atol=2e-4*length,rtol=0)
         np.testing.assert_allclose(row.triangle_point_relative_m,tp,atol=2e-4*length,rtol=0)
         assert abs(float(np.linalg.norm(tp-ap))-distance)<=2e-4*length
-        if distance==0:
+        if distance<=ref.NORMAL_FLOOR*length:
             assert row.normal is None
         else:
             delta=np.array(expected["witnesses"][0][4],float)-np.array(expected["witnesses"][0][3],float)

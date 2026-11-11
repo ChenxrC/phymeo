@@ -3,7 +3,7 @@ import copy
 import numpy as np
 import pytest
 import tyx as tx
-from test_device_triangle_distance import assert_packet, mode, new_batch, reference, saved
+from test_device_triangle_distance import assert_packet, mode as mode, new_batch, reference, saved
 
 
 @pytest.mark.parametrize("field",("vertex_capacity","face_capacity","segment_capacity","pair_capacity"))
@@ -89,7 +89,7 @@ def test_source_conversion_cannot_use_world_translation_as_scale(mode):
         assert batch.stats["launches"]==0
 
 
-def test_no_host_distance_search(mode,monkeypatch):
+def test_no_host_distance_search(mode,monkeypatch,tmp_path):
     import phymeo.geometry._capsule_triangle_sweep as host
     def forbidden(*args,**kwargs): raise AssertionError("HOST closest-point search")
     monkeypatch.setattr(host,"segment_minimum",forbidden)
@@ -97,8 +97,26 @@ def test_no_host_distance_search(mode,monkeypatch):
     monkeypatch.setattr(np.linalg,"lstsq",forbidden)
     data=reference().make_case("parallel_face")
     with new_batch(mode,data) as batch:
-        packet=batch.query(**data)
-        assert packet.rows[0].status=="RESOLVED" and batch.stats["completed_launches"]==1
+        with saved(tmp_path,"no_host_search",mode,data,batch) as record:
+            packet=batch.query(**data)
+            assert packet.rows[0].status=="RESOLVED" and packet.rows[0].normal is not None
+            record["parallel"]=packet
+            coplanar=copy.deepcopy(data)
+            coplanar["snapshot_id"]="coplanar"
+            coplanar["segments"][:,:,2]=0
+            point=batch.query(**coplanar)
+            assert_packet(coplanar,point)
+            assert point.rows[0].status=="RESOLVED" and point.rows[0].normal is None
+            record["coplanar"]=point
+            band=copy.deepcopy(data)
+            band["snapshot_id"]="direction-band"
+            band["segments"][:,:,2]=2**-20
+            close=batch.query(**band)
+            assert_packet(band,close)
+            assert close.rows[0].status=="RESOLVED" and close.rows[0].normal is None
+            assert close.rows[0].distance>0
+            record["direction_band"]=close
+            assert batch.stats["completed_launches"]==3
 
 
 def test_empty_candidate_packet_has_no_launch(mode):

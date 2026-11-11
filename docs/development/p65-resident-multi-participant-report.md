@@ -1,5 +1,15 @@
 # ROB1a participant registration and layout
 
+Current parent status (2026-11-11): **HOST_QUALIFIED_REGISTRATION**. The complete
+focused file passed **33 tests in 1.13 s, RAW_EXIT=0** (run09). All three new Python
+files passed final Ruff/format checks; `b6a6534d` contains the formatting-only
+normalization. Source snapshots, raw logs and the source/evidence receipt are in
+`artifacts/p65-env-refresh-20261111-01/n1-rob-binding-acceptance-receipt.json`.
+The accepted scope is immutable registration/layout/source preflight only: no
+multi-participant device dynamics, shared step or ROB1b acceptance is claimed.
+No fresh wheel was built for this increment. ROB1b is the next dependent node.
+The original authoring handoff below is retained as history.
+
 Status: **CODE_READY_TESTS_PENDING / AUTHORING_SLOT_RELEASED**. No project import,
 collection, numerical probe, pytest, static check, formatter, compiler or device
 execution was performed by this author. Parent alone owns validation.

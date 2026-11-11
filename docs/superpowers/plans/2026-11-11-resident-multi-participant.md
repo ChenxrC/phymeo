@@ -1,6 +1,6 @@
 # ROB1：驻留设备上的同世界多参与者接触响应
 
-日期：2026-11-11。状态：**PARENT_REVIEWED_CONTRACT_FROZEN / IMPLEMENTATION_NOT_STARTED**。父已全文审阅并导入作者 `230c0258`，冻结以下接口、案例及文件范围。后续先派 ROB1a，执行仍由父单独排队；本文不报告新运行结果。研究基线为父 `95212cff12cd6437566fdce80b93ddc7c4b64fe7`。主入口：[持续计划](2026-11-11-newton-parity-continuous.md)、[当前全景](../../development/phymeo-newton-panorama-2026-11-11.md)。
+日期：2026-11-11。状态：**ROB1a_HOST_QUALIFIED / ROB1b_PENDING**。四个新文件已集成，完整身份/layout/来源预检33 passed（1.13s，RAW_EXIT=0），静态检查通过；只接受注册与编译快照，不含设备共同动力学或ROB1完整验收。见[实现与实际验证](../../development/p65-resident-multi-participant-report.md)。下一步ROB1b共同入步/候选求解/全world一次发布，仍由父管理串行执行。原研究基线 `95212cff12cd6437566fdce80b93ddc7c4b64fe7` 保留。主入口：[持续计划](2026-11-11-newton-parity-continuous.md)、[当前全景](../../development/phymeo-newton-panorama-2026-11-11.md)。
 
 ## 1. 要补的能力与已有事实
 

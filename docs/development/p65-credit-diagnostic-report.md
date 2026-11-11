@@ -6,7 +6,7 @@ HOST test and CUDA execution. Original J/R learning remains NOT_LEARNED; the
 accepted S learning result and completed N7 connection tests are unchanged.
 
 The exact declaration is [the accepted single-diagnostic protocol](p65-jr-learning-next-diagnosis-20261112.md)
-and the parent plan's 06:12 authoring grant. This slice has only three NEW files:
+and the parent plan's 06:20 authoring grant. This slice has only three NEW files:
 
 - `examples/diagnose_mujoco_tyx_credit.py`
 - `tests/training/test_mujoco_tyx_credit_diagnostic.py`

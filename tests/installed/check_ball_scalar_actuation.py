@@ -487,9 +487,11 @@ def advance(runtime, mj, model, packets, references, journal, label):
         require(type(row).__name__ == "MuJoCoTyxActivationStepReceipt", "stateful receipt")
         require(a.schema == "native-scalar-filterexact-actuation-v1", "activation schema")
         require(a.phase == "tyx-euler-entry-actuation-and-next-activation", "actuation phase")
-        exact(a.input_act, before.act, "entry activation")
-        exact(a.output_act, after.act, "accepted activation")
-        exact(a.generalized_force, row.qfrc_actuator, "joint force publication")
+        # Device evidence is FP32; public state/step arrays are exact FP64 lifts.
+        # Compare the lifted bits without rounding the public arrays down.
+        exact(a.input_act.astype(np.float64), before.act, "entry activation")
+        exact(a.output_act.astype(np.float64), after.act, "accepted activation")
+        exact(a.generalized_force.astype(np.float64), row.qfrc_actuator, "joint force publication")
         for name, target in oracle["analytic"].items():
             actual = getattr(a, name)
             np.testing.assert_allclose(

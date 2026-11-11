@@ -149,7 +149,10 @@ comparison tolerances. No CPU forward/step supplies policy observations.
 
 Also run one deterministic zero-raw-action evaluation per task on the same held-out
 grid. This is diagnostic only and shared across that task's three seeds;
-it adds no new learning acceptance gate. Report whether learning also beats zero
+it adds no new learning acceptance gate. An ordinary exception in that independent
+diagnostic retains its complete available prefix and FAIL_DIAGNOSTIC with cost=None;
+training may continue after its separate owners close and RNG is restored.
+KeyboardInterrupt/SystemExit are never swallowed. No shortened diagnostic cost is used. Report whether learning also beats zero
 action, but never relabel a poorer learned policy as better than this baseline.
 
 ## 4. Acceptance and failure classification

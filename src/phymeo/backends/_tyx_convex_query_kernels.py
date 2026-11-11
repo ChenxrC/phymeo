@@ -766,8 +766,8 @@ def query_convex_pairs(
                                     trace_i[trace_slot, iteration, 9] = 7
                                     trace_i[trace_slot, iteration, 7] = 1
 
+                    duplicate = 0
                     if status == 0:
-                        duplicate = 0
                         for k in range(simplex_n):
                             ex = px - vertices[lane, k, 0]
                             ey = py - vertices[lane, k, 1]
@@ -776,6 +776,35 @@ def query_convex_pairs(
                                 duplicate = 1
                         if trace_slot >= 0:
                             trace_i[trace_slot, iteration, 6] = duplicate
+                        # The support plane was queried in direction -current q.
+                        # Publish only that retained candidate and its weights;
+                        # an outgoing reducer candidate needs its own next call.
+                        if simplex_n > 0 and closest_square > 0.0:
+                            distance = tx.sqrt(closest_square)
+                            if distance > 1e-5 or (
+                                distance > 8e-7
+                                and full_surface == 0
+                                and (ka < 2 or kb < 2)
+                            ):
+                                if distance - bound <= 8e-7:
+                                    status = 1
+                                    valid = 7
+                                    nx = -cx / distance
+                                    ny = -cy / distance
+                                    nz = -cz / distance
+                                    signed_gap = distance * scale - ra - rb
+                                    lower_gap = tx.min(signed_gap, bound * scale - ra - rb)
+                                    upper_gap = signed_gap
+                                    active_count = simplex_n
+                                    if trace_slot >= 0:
+                                        trace_i[trace_slot, iteration, 7] = simplex_n
+                                        # mask=0: this iteration has no subset reduction.
+                                        trace_i[trace_slot, iteration, 9] = 2
+                                        trace_i[trace_slot, iteration, 21] = simplex_n
+                                        trace_f[trace_slot, iteration, 21] = distance
+                                        trace_f[trace_slot, iteration, 22] = distance - bound
+
+                    if status == 0:
                         if simplex_n < 4 and duplicate == 0:
                             vertex_slots[lane, simplex_n, 0] = ia
                             vertex_slots[lane, simplex_n, 1] = ib
@@ -1017,24 +1046,6 @@ def query_convex_pairs(
                                     need_epa = 1
                                     if trace_slot >= 0:
                                         trace_i[trace_slot, iteration, 9] = 4
-                            elif distance - bound <= 8e-7 or duplicate != 0:
-                                # A repeated support is already a simplex vertex, so
-                                # another iteration cannot add one. Float32 can miss
-                                # the plane certificate even when this closest point
-                                # is already the separating distance.
-                                status = 1
-                                valid = 7
-                                nx = -cx / distance
-                                ny = -cy / distance
-                                nz = -cz / distance
-                                signed_gap = distance * scale - ra - rb
-                                lower_gap = tx.min(signed_gap, bound * scale - ra - rb)
-                                upper_gap = signed_gap
-                                active_count = best_count
-                                if trace_slot >= 0:
-                                    trace_i[trace_slot, iteration, 9] = 3
-                                    if distance - bound <= 8e-7:
-                                        trace_i[trace_slot, iteration, 9] = 2
                             # Compact only after retaining the complete closest face.
                             for k in tx.static_range(4):
                                 selected = indices[lane, k]

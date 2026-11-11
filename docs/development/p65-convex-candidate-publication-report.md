@@ -1,6 +1,6 @@
 # COL same-candidate separation publication
 
-Status: **TESTS_FIRST / UNEXECUTED**. Baseline `847b8ee3`.
+Status: **CODE_READY_TESTS_PENDING / UNEXECUTED**. Baseline `847b8ee3`.
 Parent alone owns all project execution. This is one bounded hypothesis after
 [the actual six captures](p65-convex-query-trace-findings-20261111.md) and
 [the validated affine reducer](p65-convex-affine-reconstruction-report.md).
@@ -90,3 +90,25 @@ counts can truthfully expose a resource limit; they do not justify raising a
 cap or suppressing an old negative. If this bounded hypothesis does not reduce
 the remaining obstacle, retain its evidence and stop rather than adding a
 second speculative algorithm in this grant.
+
+## Authoring handoff
+
+Tests-first checkpoint: `6bb2d435`. The implementation adds the current-
+candidate exit before append/reduction, removes the old post-reduction
+plane/duplicate success branch, and moves duplicate's zero initialization to
+the surrounding iteration scope so both guarded blocks have a defined scalar.
+No new allocation, helper, launch, support evaluation or trace field is added.
+
+The positive-separation eligibility condition is the finite-value complement
+of the unchanged near-origin gate: d>1e-5, or d>8e-7 for the existing non-full-
+surface round-core branch. It does not move near-origin cases into separation.
+On success the retained simplex is already compacted from the previous
+iteration, so its indices identify the same vertices and weights consumed by
+the unchanged final material coalescing and bilateral witness publication.
+
+The actual kernel text was compared with the baseline plus exactly these
+three scoped replacements. All remaining kernel text, including support-ball,
+Gram/reducer arithmetic, clamping, EPA and final witnesses, is unchanged.
+`git diff --check` passed. No import, collection, numerical probe, pytest,
+lint, formatter, compile or build was run in this lane.
+Status: **CODE_READY_TESTS_PENDING / AUTHORING_SLOT_RELEASED**.

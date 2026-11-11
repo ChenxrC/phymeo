@@ -583,36 +583,6 @@ def query_convex_pairs(
                     bound = 0.0
                     if closest_square > 0.0:
                         bound = tx.max(0.0, dot3(cx, cy, cz, px, py, pz) / tx.sqrt(closest_square))
-                    # Certify the CURRENT compact simplex, before adding w.
-                    # An absolute distance gate alone does not bound its normal.
-                    if full_surface != 0 and simplex_n > 0 and closest_square > 1e-10:
-                        previous_distance = tx.sqrt(closest_square)
-                        fw_x = cx - px
-                        fw_y = cy - py
-                        fw_z = cz - pz
-                        fw_padding = 2.384185791015625e-7 * (
-                            closest_square
-                            + tx.abs(cx * fw_x)
-                            + tx.abs(cy * fw_y)
-                            + tx.abs(cz * fw_z)
-                        )
-                        fw_numerator = tx.max(0.0, dot3(cx, cy, cz, fw_x, fw_y, fw_z)) + fw_padding
-                        if (
-                            fw_numerator <= 1e-6 * closest_square
-                            and fw_numerator <= 8e-7 * previous_distance
-                        ):
-                            status = 1
-                            valid = 7
-                            nx = -cx / previous_distance
-                            ny = -cy / previous_distance
-                            nz = -cz / previous_distance
-                            signed_gap = previous_distance * scale
-                            lower_gap = (
-                                tx.max(0.0, previous_distance - fw_numerator / previous_distance)
-                                * scale
-                            )
-                            upper_gap = signed_gap
-                            active_count = simplex_n
                     # A global tangent-ball lower bound can certify a smooth
                     # penetration without tessellating its entire curved cap.
                     if full_surface != 0 and status == 0 and rolling_radius > 0.0:
@@ -885,7 +855,7 @@ def query_convex_pairs(
                                     reason = 3
                                 else:
                                     need_epa = 1
-                            elif full_surface == 0 and (distance - bound <= 8e-7 or duplicate != 0):
+                            elif distance - bound <= 8e-7 or duplicate != 0:
                                 # A repeated support is already a simplex vertex, so
                                 # another iteration cannot add one. Float32 can miss
                                 # the plane certificate even when this closest point

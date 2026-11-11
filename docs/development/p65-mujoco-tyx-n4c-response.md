@@ -1,6 +1,6 @@
 # N4c fixed saved-policy response diagnosis
 
-Status: AUTHORING / UNEXECUTED. Parent is the only project execution owner.
+Status: CODE_READY_TESTS_PENDING / UNEXECUTED / AUTHORING_SLOT_RELEASED. Parent is the only project execution owner.
 Base is the accepted a18305cf plan, normally merged into the existing support
 worktree without reset or lost work. Deadline is2026-11-12 07:20+08; this slice
 contains no new training and does not change the N4a learning gates.
@@ -82,7 +82,7 @@ stochastic_output=False and eval mode. No PPO code is copied or reimplemented.
 Python, NumPy, Torch CPU and all CUDA RNG states are restored in finally, even
 if model loading, feature launch or inference fails. This preserves random
 state, not CUDA initialization, allocator/cache state or execution timing.
-Strict dependency versions and full loaded model states are saved in the result.
+Strict dependency versions and every loaded model tensor layout/hash are saved in the result.
 All old scalar learning outcomes remain unchanged.
 
 J's paired restoring direction is descriptive for its uncoupled direct-force
@@ -110,3 +110,56 @@ injected feature/inference failure followed by a successful clean retry. CUDA
 availability is mandatory for this slice; optional dependency absence may skip
 ordinary HOST collection but cannot count as N4c qualification. Exact manual
 node count and executed parent results will be appended at handoff/acceptance.
+
+## Authoring handoff
+
+Tests/case contract were committed first at57d449bc; implementation/CLI at
+73dd299d. Manual node count is31:25 HOST and6 actual CUDA. No node was collected
+or run by this author; no import, lint/formatter, numerical probe, policy call,
+original gzip read, build or install was performed. Git whitespace checks passed.
+All source remains within the four NEW paths and all existing N4a/N4b files are
+unchanged. The original parent source was merged normally; no reset/force/push.
+
+The parent can run the following in its one serial slot using the qualified
+Python313 CUDA training profile (the dedicated CUDA qualification must not
+count skips or CPU fallback):
+
+    pytest tests/training/test_policy_response_diagnostics.py -m "not cuda" -q -x --tb=short -p no:cacheprovider
+    pytest tests/training/test_policy_response_diagnostics.py -m cuda -q -x --tb=short -p no:cacheprovider
+    python examples/diagnose_mujoco_tyx_policy_response.py --evidence-root C:/Users/38347/.codex/worktrees/p65-parallel-integration/phymeo/artifacts/p65-parity-n4a-rob1d-col-reducer-20261111-01 --output NEW_OUTPUT_DIRECTORY --device cuda:0
+
+The one CLI command uses all original nine identities and refuses an existing
+output directory. All streams are fully checked before inference begins; only
+then can a complete summary.json be published. Ordinary failure emits failure.json
+with phase/error and no successful summary. Output arrays retain dtype/shape,
+exact base64 bytes and SHA256 plus readable values. Current upstream MLP/MLP
+layers/Gaussian/Identity implementation paths and hashes are also recorded;
+these are current installed-source observations, not invented historical
+installed-source hashes. Dependency versions must exactly equal the saved ones.
+
+Resource/RNG boundary: the feature stage owns Runtime, stream and every device
+array, synchronizes before retirement, and closes all registered resources even
+on exceptions. It never borrows a physical bank. Torch receives an explicit
+copied feature array; this diagnostic does not test device training throughput.
+RNG restoration attempts every global owner even if another restoration fails;
+any restoration error prevents successful publication. No arbitrary caller
+Generator state or CUDA allocator/cache rollback is claimed.
+
+There is one unchanged TYX feature launch per successfully evaluated pair and
+two deterministic actor forwards. The finite-difference outputs are secants on
+a fixed grid, not analytic derivatives or stability certificates. The eight
+held-out requested actions are retained as references; possible batched GEMM
+rounding differences are recorded without inventing a new equality tolerance.
+S nonzero equilibrium action is legal. J/R's existing failed learning gates
+remain failed regardless of successful extraction/inference.
+
+### Frozen working bytes before parent execution
+
+| Path | SHA256 | Git blob |
+|---|---|---|
+| src/phymeo/training/policy_response_diagnostics.py |304265457b18f772132a21e8f5e4960e34ac6e921a56ad230195005f6f298fbb|3a15651093c88b7877cf6144e8faf7e6db2b0cde|
+| examples/diagnose_mujoco_tyx_policy_response.py |939a257e462ff79e7ef584b7701fd920d0cad93794826ef20e9f4da4edc297e7|da0a3b26e5227a6efbfdaca86371e039c455403b|
+| tests/training/test_policy_response_diagnostics.py |e9b92a31c823d6732b0c1054ea5d8aa3195bf2fcbfba72129821e20fc13d17c8|6e6d18e6bf31be7ded3aaf1a6ca0cddf9271cd41|
+
+AUTHORING_SLOT_RELEASED. Parent review/execution results must be appended with
+their actual tested source; no success result is claimed in this handoff.

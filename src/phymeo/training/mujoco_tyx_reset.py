@@ -250,7 +250,8 @@ class MuJoCoTyxResetPlan:
             if keys != tuple(key for key in self.world_keys if key in keys):
                 raise ValueError("random reset last sample order")
             indices = last["indices"]
-            if not isinstance(indices, Mapping) or set(indices) != set(keys):
+            if (not isinstance(indices, Mapping) or set(indices) != set(keys)
+                    or any(type(key) is not int for key in indices)):
                 raise ValueError("random reset last sample indices")
             copied = {}
             for key in keys:

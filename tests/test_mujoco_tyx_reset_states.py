@@ -12,6 +12,7 @@ import numpy as np
 import pytest
 
 from phymeo.backends.mujoco_runtime import MuJoCoControl, MuJoCoInitialState, MuJoCoRuntime
+from phymeo.backends.mujoco_task_workspace import MuJoCoTyxTaskSpec
 from phymeo.builders.mujoco_compiler import compile_mujoco_xml
 
 MODES = ("interpret", pytest.param("cuda", marks=pytest.mark.cuda))
@@ -83,15 +84,18 @@ def test_public_subset_reset_keeps_full_unselected_state(case, mode, tmp_path):
     compiled = source(case)
     initial = {key: state(case, i, time=0.125) for i, key in enumerate(KEYS)}
     h = tasks().task(case).h
-    with MuJoCoRuntime(compiled, world_keys=KEYS, mode=mode, initial_states=initial) as engine:
+    with MuJoCoRuntime(compiled, world_keys=KEYS, mode=mode, initial_states=initial) as engine, engine.prepare_task_workspace(MuJoCoTyxTaskSpec((0,), (0,))) as workspace:
         engine.set_controls(controls(case))
         for _ in range(3):
             assert all(engine.step(h).values())
         before = payload(engine)
         snapshots = engine.snapshot()
+        frame = workspace.refresh(expected_revision=engine.checkpoint_revision)
         revision = engine.checkpoint_revision
         requested = {KEYS[3]: state(case, 1), KEYS[1]: state(case, 2)}
         receipt = engine.reset_states(requested, expected_revision=revision)
+        with pytest.raises((ValueError, RuntimeError)):
+            workspace.readback(frame)
         assert receipt.schema == "mujoco-tyx-reset-v1"
         assert receipt.world_keys == (KEYS[1], KEYS[3])
         assert receipt.source_revision == revision

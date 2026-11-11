@@ -3,7 +3,6 @@
 import hashlib
 import importlib.util
 import random
-import struct
 import sys
 from collections.abc import Mapping
 from dataclasses import fields, is_dataclass
@@ -313,3 +312,18 @@ def test_clone_composition_preserves_next_sample():
                 other.reset((7, 31))
                 assert sig(env.runtime.snapshot()) == sig(other.runtime.snapshot())
                 assert sig(env.capture_training_state()) == sig(other.capture_training_state())
+
+
+def test_seed_namespace_and_saved_counter_identity_are_bound():
+    original = plan()
+    sample = original.prepare((7,), dict.fromkeys(KEYS, 0))
+    saved = {"plan_sha256": original.sha256, "next_indices": dict(sample.next_indices),
+             "last_sample": {"world_keys": sample.world_keys, "indices": dict(sample.indices)}}
+    original.validate_training_state(saved)
+    for other in (plan(seed=6512), plan(namespace="N5-other")):
+        assert other.sha256 != original.sha256
+        with pytest.raises(ValueError, match="binding"):
+            other.validate_training_state(saved)
+    bad = {**saved, "last_sample": {"world_keys": (7,), "indices": {7: 5}}}
+    with pytest.raises(ValueError, match="counter"):
+        original.validate_training_state(bad)

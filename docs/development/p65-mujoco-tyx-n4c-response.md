@@ -205,3 +205,53 @@ byte table is historical; current module/test byte bindings follow below.
 | examples/diagnose_mujoco_tyx_policy_response.py | 939a257e462ff79e7ef584b7701fd920d0cad93794826ef20e9f4da4edc297e7 | da0a3b26e5227a6efbfdaca86371e039c455403b |
 
 CODE_READY_TESTS_PENDING; AUTHORING_SLOT_RELEASED. Parent remains sole execution owner.
+
+## CUDA first-failure correction: public precision API (author-only)
+
+Parent run `43-n4c-cuda` ended RAW1 on the first actual CUDA case, before feature
+or model inference. It failed at `_computation_flags` calling
+`torch.get_float32_matmul_precision()` after legacy flag changes. The original
+raw trace/source snapshot remains evidence; the earlier 25 HOST passes are not
+reclassified as CUDA success.
+
+Read-only inspection of the actually used Torch `2.12.0+cu126`, git version
+`7661cd9c6b841b62b7f411aa52ec51f05457263b`, confirmed the three public properties:
+`cuda.matmul.fp32_precision` in `torch/backends/cuda/__init__.py`,
+`cudnn.conv.fp32_precision` in `torch/backends/cudnn/__init__.py`, and
+`cudnn.rnn.fp32_precision` in the imported `torch/backends/cudnn/rnn.py`.
+The last property is a submodule property, not an absent cuDNN API.
+
+The [fixed Torch 2.12 CUDA documentation](https://docs.pytorch.org/docs/2.12/notes/cuda.html#tensorfloat-32-tf32-on-ampere-and-later-devices)
+warns against mixing the old and new controls. The
+[fixed source Context.cpp](https://github.com/pytorch/pytorch/blob/v2.12.0/aten/src/ATen/Context.cpp#L300-L391)
+shows why the old sequence failed: the legacy matmul enum setter also adjusts
+MKLDNN precision, whereas `allow_tf32=False` changes the enum and CUDA setting
+without restoring that other backend. A later global precision getter can then
+reject the inconsistent legacy/new representation.
+
+The replacement context saves, sets to `ieee`, and restores only those three
+new public operator properties. It never calls a legacy precision getter,
+setter or `allow_tf32` property inside its lifetime. The new setters leave the
+legacy high/medium enum and MKLDNN settings untouched. Result metadata records
+three effective new precision strings. The CUDA MLP therefore executes with
+IEEE matmul, matching the original task's effective TF32-disabled requirement;
+no policy, grid, feature kernel, model, physics, learning gate or tolerance is
+changed.
+
+These public getters resolve inherited values. The promise is restoration of
+the caller's currently observable effective configuration and untouched legacy
+enum, not reconstruction of hidden raw `none` inheritance provenance or the
+same behavior after a future unrelated global-setting change. No private
+Torch API is used to claim otherwise. The fixed MLP/tanh workload remains the
+only admitted architecture; this is not a general concurrent Torch settings
+manager.
+
+Tests-first `594abbf7` changes the existing successful and both injected-failure
+CUDA cases to check new properties inside computation and exact high/medium
+legacy enum plus effective values after exit and retry. Legacy test setup and
+checks occur outside the diagnostic context. RNG/resource assertions and all
+six CUDA nodes remain intact. The 25 HOST nodes are unchanged. This repair has
+only been authored and text-reviewed; it has not been imported, executed,
+formatted, linted or numerically probed by this agent. Parent must append the
+actual serial validation result. Only the original N4c module/test/report are
+modified by this repair.

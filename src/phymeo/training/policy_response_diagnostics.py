@@ -324,10 +324,12 @@ def read_policy_pair(directory, binding, *, expected_task, expected_seed):
 
 
 def _computation_flags(torch):
+    # Public getters report effective per-operator precision. No legacy API is
+    # read here: a caller may retain a high/medium enum while these are IEEE.
     return {
-        "matmul_allow_tf32": torch.backends.cuda.matmul.allow_tf32,
-        "cudnn_allow_tf32": torch.backends.cudnn.allow_tf32,
-        "float32_matmul_precision": torch.get_float32_matmul_precision(),
+        "cuda_matmul_fp32_precision": torch.backends.cuda.matmul.fp32_precision,
+        "cudnn_conv_fp32_precision": torch.backends.cudnn.conv.fp32_precision,
+        "cudnn_rnn_fp32_precision": torch.backends.cudnn.rnn.fp32_precision,
     }
 
 
@@ -336,28 +338,31 @@ def _preserved_execution_state(torch):
     python_state, numpy_state = random.getstate(), np.random.get_state()
     cpu_state, cuda_states = torch.get_rng_state(), torch.cuda.get_rng_state_all()
     flags = _computation_flags(torch)
+    owners = (
+        (torch.backends.cuda.matmul, "cuda_matmul_fp32_precision"),
+        (torch.backends.cudnn.conv, "cudnn_conv_fp32_precision"),
+        (torch.backends.cudnn.rnn, "cudnn_rnn_fp32_precision"),
+    )
     try:
-        # Exactly the two computation assignments in original tasks.seed_all.
-        torch.backends.cuda.matmul.allow_tf32 = False
-        torch.backends.cudnn.allow_tf32 = False
+        # The task's TF32-disabled operation policy, expressed exclusively with
+        # Torch 2.12's new API. Its setter does not alter the caller's legacy
+        # matmul enum or the separate MKLDNN settings.
+        for owner, _ in owners:
+            owner.fp32_precision = "ieee"
         actual = _computation_flags(torch)
-        require(
-            not actual["matmul_allow_tf32"] and not actual["cudnn_allow_tf32"],
-            "original task computation flags",
-        )
+        require(all(value == "ieee" for value in actual.values()), "original task IEEE computation")
         yield actual
     finally:
-        # Try every restoration even if one API unexpectedly fails. Restore the
-        # precision enum last: a bool alone cannot preserve caller medium/high.
+        # Attempt every owner even if another restore fails. Public getters
+        # resolve inheritance, so restore effective values, not hidden raw
+        # hierarchy provenance or future global-setting behavior.
         errors = []
         restorations = (
             (random.setstate, (python_state,)),
             (np.random.set_state, (numpy_state,)),
             (torch.set_rng_state, (cpu_state,)),
             (torch.cuda.set_rng_state_all, (cuda_states,)),
-            (setattr, (torch.backends.cuda.matmul, "allow_tf32", flags["matmul_allow_tf32"])),
-            (setattr, (torch.backends.cudnn, "allow_tf32", flags["cudnn_allow_tf32"])),
-            (torch.set_float32_matmul_precision, (flags["float32_matmul_precision"],)),
+            *((setattr, (owner, "fp32_precision", flags[name])) for owner, name in owners),
         )
         for restore, arguments in restorations:
             try:
@@ -365,12 +370,11 @@ def _preserved_execution_state(torch):
             except BaseException as error:
                 errors.append(error)
         try:
-            require(_computation_flags(torch) == flags, "caller computation flag restoration")
+            require(_computation_flags(torch) == flags, "caller effective precision restoration")
         except BaseException as error:
             errors.append(error)
         if errors:
             raise BaseExceptionGroup("caller RNG/computation restoration failed", errors)
-
 
 def _load_network(model, saved, torch, device):
     expected = model.state_dict()

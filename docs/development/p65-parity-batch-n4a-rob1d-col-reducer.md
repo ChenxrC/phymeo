@@ -15,3 +15,11 @@ N4a 作者先交 `p65-mujoco-tyx-n4a-contract.md`，父结合实际任务/learne
 三个交接完成后，在最终集成源码上构建一次新 wheel，安装到新源码外 target；核产品成员一致，再运行公共消费者。构建/安装/运行均串行。复用现有依赖，不清理活跃环境，不远程 CI、不 push/main merge、不发包。新增通用修复若失败两次且没有缩小原因，保留反例并拆出未解决条件。
 
 结果将写回本页、各节点报告、[当前入口](p65-continuation.md)和[全景](phymeo-newton-panorama-2026-11-11.md)。本批不代表 G1 完整舞蹈、任意机器人训练或整个 Newton 功能对齐已完成。
+
+## 本批执行记录
+
+- COL 仿射重建已集成：新六项在 interpret/CUDA 均通过；原两个 HN 失败在两后端通过；其余受影响矩阵各258通过。四个 Y 法向失败保留，不能称全部曲面查询通过。见[正式限域报告](p65-convex-affine-reconstruction-report.md)。
+- N4a 20项HOST及三个固定CUDA预检通过。首次 J/14011 到第8个update后的计数统计失败：episode reset重建设备，使当前设备计数归零。原失败和当时缺失的update7完整payload如实保留；作者正修复计数作用域与测量后处理失败的前缀记录。奖励、种子、物理门及预算不改。
+- ROB1d 两个公共消费者已集成并通过静态检查；源码外新包实际运行仍待后续唯一串行槽。13次真实调用/21个logical-world steps按累计收据统计，不能用restore后的最终tick代替工作量。
+
+证据根：`artifacts/p65-parity-n4a-rob1d-col-reducer-20261111-01`。29是无效pytest选项的启动错误，未运行预检；30才是三个实际预检。31是首次学习尝试，不能因评估器修复而删除或改写失败。当前批次尚未全部完成。

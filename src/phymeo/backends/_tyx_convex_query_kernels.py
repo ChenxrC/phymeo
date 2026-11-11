@@ -113,6 +113,21 @@ def clear_convex_output(
                 skin_offset[i, side, a] = 0.0
 
 
+def clear_convex_trace(
+    count: tx.i32,
+    history: tx.i32,
+    trace_f: tx.ndarray(tx.f32, 3),
+    trace_i: tx.ndarray(tx.i32, 3),
+):
+    for flat in tx.range(count):
+        selected = flat // history
+        iteration = flat % history
+        for field in range(416):
+            trace_f[selected, iteration, field] = 0.0
+        for field in range(96):
+            trace_i[selected, iteration, field] = 0
+
+
 def query_convex_pairs(
     count: tx.i32,
     first_pair: tx.i32,
@@ -146,11 +161,19 @@ def query_convex_pairs(
     material_ids: tx.ndarray(tx.i32, 3),
     barycentric: tx.ndarray(tx.f32, 3),
     skin_offset: tx.ndarray(tx.f32, 3),
+    trace_count: tx.i32,
+    trace_pairs: tx.ndarray(tx.i32, 2),
+    trace_f: tx.ndarray(tx.f32, 3),
+    trace_i: tx.ndarray(tx.i32, 3),
 ):
     for lane in tx.range(count):
         out = first_pair + lane
         a = pairs[out, 0]
         b = pairs[out, 1]
+        trace_slot = -1
+        for trace_candidate in range(trace_count):
+            if trace_pairs[trace_candidate, 0] == a and trace_pairs[trace_candidate, 1] == b:
+                trace_slot = trace_candidate
         a0 = tags[a, 1]
         a1 = tags[a, 2]
         b0 = tags[b, 1]
@@ -411,6 +434,33 @@ def query_convex_pairs(
             oz = points[a0, 2]
             for iteration in range(gjk_budget):
                 if status == 0 and need_epa == 0:
+                    if trace_slot >= 0:
+                        trace_i[trace_slot, iteration, 0] = 1
+                        trace_i[trace_slot, iteration, 1] = attempt
+                        trace_i[trace_slot, iteration, 2] = out
+                        trace_i[trace_slot, iteration, 3] = iteration
+                        trace_i[trace_slot, iteration, 4] = simplex_n
+                        trace_i[trace_slot, iteration, 6] = -1
+                        trace_i[trace_slot, iteration, 22] = full_surface
+                        trace_f[trace_slot, iteration, 0] = cx
+                        trace_f[trace_slot, iteration, 1] = cy
+                        trace_f[trace_slot, iteration, 2] = cz
+                        trace_f[trace_slot, iteration, 3] = closest_square
+                        trace_f[trace_slot, iteration, 8] = dx
+                        trace_f[trace_slot, iteration, 9] = dy
+                        trace_f[trace_slot, iteration, 10] = dz
+                        trace_f[trace_slot, iteration, 30] = scale
+                        trace_f[trace_slot, iteration, 412] = ox
+                        trace_f[trace_slot, iteration, 413] = oy
+                        trace_f[trace_slot, iteration, 414] = oz
+                        trace_f[trace_slot, iteration, 415] = rolling_radius
+                        for trace_vertex in range(simplex_n):
+                            for trace_field in tx.static_range(9):
+                                trace_f[trace_slot, iteration, 32+9*trace_vertex+trace_field] = vertices[lane, trace_vertex, trace_field]
+                            trace_f[trace_slot, iteration, 68+trace_vertex] = weights[lane, trace_vertex]
+                            trace_i[trace_slot, iteration, 32+trace_vertex] = indices[lane, trace_vertex]
+                            for trace_side in tx.static_range(2):
+                                trace_i[trace_slot, iteration, 24+2*trace_vertex+trace_side] = vertex_slots[lane, trace_vertex, trace_side]
                     ia = a0
                     ib = b0
                     best_a = dot3(
@@ -481,6 +531,10 @@ def query_convex_pairs(
                                     direction_y,
                                     direction_z,
                                 )
+                                if trace_slot >= 0:
+                                    trace_f[trace_slot, iteration, 24+3*support_side] = local_x
+                                    trace_f[trace_slot, iteration, 25+3*support_side] = local_y
+                                    trace_f[trace_slot, iteration, 26+3*support_side] = local_z
                                 dim_x = dimensions[support_shape, 0] / scale
                                 dim_y = dimensions[support_shape, 1] / scale
                                 dim_z = dimensions[support_shape, 2] / scale
@@ -583,6 +637,20 @@ def query_convex_pairs(
                     bound = 0.0
                     if closest_square > 0.0:
                         bound = tx.max(0.0, dot3(cx, cy, cz, px, py, pz) / tx.sqrt(closest_square))
+                    if trace_slot >= 0:
+                        trace_f[trace_slot, iteration, 11] = bound
+                        trace_f[trace_slot, iteration, 18] = px
+                        trace_f[trace_slot, iteration, 19] = py
+                        trace_f[trace_slot, iteration, 20] = pz
+                        # New expression is trace-only, never a solver gate.
+                        trace_f[trace_slot, iteration, 23] = dot3(cx, cy, cz, cx-px, cy-py, cz-pz)
+                        trace_i[trace_slot, iteration, 16] = ia
+                        trace_i[trace_slot, iteration, 17] = ib
+                        trace_i[trace_slot, iteration, 18] = original_ids[ia]
+                        trace_i[trace_slot, iteration, 19] = original_ids[ib]
+                        for trace_side in tx.static_range(2):
+                            for trace_axis in tx.static_range(3):
+                                trace_f[trace_slot, iteration, 12+3*trace_side+trace_axis] = support_points[lane, trace_side, trace_axis]
                     # A global tangent-ball lower bound can certify a smooth
                     # penetration without tessellating its entire curved cap.
                     if full_surface != 0 and status == 0 and rolling_radius > 0.0:
@@ -660,6 +728,9 @@ def query_convex_pairs(
                                     weights[lane, ball_slot] = 0.0
                                     indices[lane, ball_slot] = 0
                                 weights[lane, 0] = 1.0
+                                if trace_slot >= 0:
+                                    trace_i[trace_slot, iteration, 9] = 7
+                                    trace_i[trace_slot, iteration, 7] = 1
 
                     if status == 0:
                         duplicate = 0
@@ -669,6 +740,8 @@ def query_convex_pairs(
                             ez = pz - vertices[lane, k, 2]
                             if dot3(ex, ey, ez, ex, ey, ez) <= 1e-16:
                                 duplicate = 1
+                        if trace_slot >= 0:
+                            trace_i[trace_slot, iteration, 6] = duplicate
                         if simplex_n < 4 and duplicate == 0:
                             vertex_slots[lane, simplex_n, 0] = ia
                             vertex_slots[lane, simplex_n, 1] = ib
@@ -679,6 +752,10 @@ def query_convex_pairs(
                                 vertices[lane, simplex_n, 3 + c] = support_points[lane, 0, c]
                                 vertices[lane, simplex_n, 6 + c] = support_points[lane, 1, c]
                             simplex_n = simplex_n + 1
+                            if trace_slot >= 0:
+                                trace_i[trace_slot, iteration, 20] = 1
+                        if trace_slot >= 0:
+                            trace_i[trace_slot, iteration, 21] = simplex_n
                         # Enumerate the finite simplex's nonempty faces. Gram solves
                         # are at most 3x3; no approximate support point is fabricated.
                         best_square = 1e30
@@ -741,6 +818,12 @@ def query_convex_pairs(
                                 ff = dot3(fx, fy, fz, fx, fy, fz)
                                 re = -dot3(x0, y0, z0, ex, ey, ez)
                                 rf = -dot3(x0, y0, z0, fx, fy, fz)
+                                if trace_slot >= 0:
+                                    trace_f[trace_slot, iteration, 112+20*(mask-1)] = ee
+                                    trace_f[trace_slot, iteration, 113+20*(mask-1)] = ef
+                                    trace_f[trace_slot, iteration, 114+20*(mask-1)] = ff
+                                    trace_f[trace_slot, iteration, 115+20*(mask-1)] = re
+                                    trace_f[trace_slot, iteration, 116+20*(mask-1)] = rf
                                 if count_s == 2:
                                     if ee <= 1e-20:
                                         usable = 0
@@ -749,6 +832,8 @@ def query_convex_pairs(
                                         w0 = 1.0 - w1
                                 elif count_s == 3:
                                     denominator = ee * ff - ef * ef
+                                    if trace_slot >= 0:
+                                        trace_f[trace_slot, iteration, 117+20*(mask-1)] = denominator
                                     if denominator <= 1e-12 * ee * ff:
                                         usable = 0
                                     else:
@@ -757,6 +842,8 @@ def query_convex_pairs(
                                         w0 = 1.0 - w1 - w2
                                 elif count_s == 4:
                                     determinant = det3(ex, ey, ez, fx, fy, fz, gx, gy, gz)
+                                    if trace_slot >= 0:
+                                        trace_f[trace_slot, iteration, 118+20*(mask-1)] = determinant
                                     if tx.abs(determinant) <= 1e-12:
                                         usable = 0
                                     else:
@@ -773,8 +860,16 @@ def query_convex_pairs(
                                             / determinant
                                         )
                                         w0 = 1.0 - w1 - w2 - w3
+                                if trace_slot >= 0:
+                                    trace_f[trace_slot, iteration, 119+20*(mask-1)] = w0
+                                    trace_f[trace_slot, iteration, 120+20*(mask-1)] = w1
+                                    trace_f[trace_slot, iteration, 121+20*(mask-1)] = w2
+                                    trace_f[trace_slot, iteration, 122+20*(mask-1)] = w3
                                 if w0 < -1e-6 or w1 < -1e-6 or w2 < -1e-6 or w3 < -1e-6:
                                     usable = 0
+                                if trace_slot >= 0:
+                                    trace_i[trace_slot, iteration, 48+3*(mask-1)] = count_s
+                                    trace_i[trace_slot, iteration, 49+3*(mask-1)] = usable
                                 if usable != 0:
                                     w0 = tx.max(0.0, w0)
                                     w1 = tx.max(0.0, w1)
@@ -822,9 +917,27 @@ def query_convex_pairs(
                                             )
                                             < 0.0
                                         )
+                                    if trace_slot >= 0:
+                                        trace_f[trace_slot, iteration, 123+20*(mask-1)] = qx
+                                        trace_f[trace_slot, iteration, 124+20*(mask-1)] = qy
+                                        trace_f[trace_slot, iteration, 125+20*(mask-1)] = qz
+                                        trace_f[trace_slot, iteration, 126+20*(mask-1)] = square
+                                        # Diagnostic expression is not reused by the tie branch.
+                                        trace_f[trace_slot, iteration, 127+20*(mask-1)] = dot3(qx-cx, qy-cy, qz-cz, qx+cx, qy+cy, qz+cz)
+                                        trace_f[trace_slot, iteration, 128+20*(mask-1)] = best_square
+                                        trace_f[trace_slot, iteration, 129+20*(mask-1)] = cx
+                                        trace_f[trace_slot, iteration, 130+20*(mask-1)] = cy
+                                        trace_f[trace_slot, iteration, 131+20*(mask-1)] = cz
+                                        if better:
+                                            trace_i[trace_slot, iteration, 50+3*(mask-1)] = 1
+                                        if full_surface != 0 and square == best_square:
+                                            trace_i[trace_slot, iteration, 50+3*(mask-1)] = trace_i[trace_slot, iteration, 50+3*(mask-1)] + 2
                                     if better:
                                         best_square = square
                                         best_count = count_s
+                                        if trace_slot >= 0:
+                                            trace_i[trace_slot, iteration, 7] = count_s
+                                            trace_i[trace_slot, iteration, 8] = mask
                                         cx = qx
                                         cy = qy
                                         cz = qz
@@ -839,9 +952,14 @@ def query_convex_pairs(
                         if best_count == 0:
                             status = 2
                             reason = 6
+                            if trace_slot >= 0:
+                                trace_i[trace_slot, iteration, 9] = 6
                         else:
                             closest_square = best_square
                             distance = tx.sqrt(best_square)
+                            if trace_slot >= 0:
+                                trace_f[trace_slot, iteration, 21] = distance
+                                trace_f[trace_slot, iteration, 22] = distance-bound
                             if distance <= 8e-7 or (
                                 distance <= 1e-5 and ((ka >= 2 and kb >= 2) or full_surface != 0)
                             ):
@@ -853,8 +971,12 @@ def query_convex_pairs(
                                 if full_surface == 0 and (ka < 2 or kb < 2):
                                     status = 3
                                     reason = 3
+                                    if trace_slot >= 0:
+                                        trace_i[trace_slot, iteration, 9] = 5
                                 else:
                                     need_epa = 1
+                                    if trace_slot >= 0:
+                                        trace_i[trace_slot, iteration, 9] = 4
                             elif distance - bound <= 8e-7 or duplicate != 0:
                                 # A repeated support is already a simplex vertex, so
                                 # another iteration cannot add one. Float32 can miss
@@ -869,6 +991,10 @@ def query_convex_pairs(
                                 lower_gap = tx.min(signed_gap, bound * scale - ra - rb)
                                 upper_gap = signed_gap
                                 active_count = best_count
+                                if trace_slot >= 0:
+                                    trace_i[trace_slot, iteration, 9] = 3
+                                    if distance-bound <= 8e-7:
+                                        trace_i[trace_slot, iteration, 9] = 2
                             # Compact only after retaining the complete closest face.
                             for k in tx.static_range(4):
                                 selected = indices[lane, k]
@@ -888,12 +1014,37 @@ def query_convex_pairs(
                             dx = -cx
                             dy = -cy
                             dz = -cz
+                    if trace_slot >= 0:
+                        trace_i[trace_slot, iteration, 5] = simplex_n
+                        if trace_i[trace_slot, iteration, 9] == 0:
+                            trace_i[trace_slot, iteration, 9] = 1
+                        trace_i[trace_slot, iteration, 10] = status
+                        trace_i[trace_slot, iteration, 11] = reason
+                        trace_i[trace_slot, iteration, 12] = phase
+                        trace_i[trace_slot, iteration, 13] = need_epa
+                        trace_i[trace_slot, iteration, 14] = gjk_used
+                        trace_i[trace_slot, iteration, 15] = support_calls
+                        trace_f[trace_slot, iteration, 4] = cx
+                        trace_f[trace_slot, iteration, 5] = cy
+                        trace_f[trace_slot, iteration, 6] = cz
+                        trace_f[trace_slot, iteration, 7] = closest_square
+                        for trace_vertex in range(simplex_n):
+                            for trace_field in tx.static_range(9):
+                                trace_f[trace_slot, iteration, 72+9*trace_vertex+trace_field] = vertices[lane, trace_vertex, trace_field]
+                            trace_f[trace_slot, iteration, 108+trace_vertex] = weights[lane, trace_vertex]
+                            trace_i[trace_slot, iteration, 44+trace_vertex] = indices[lane, trace_vertex]
+                            for trace_side in tx.static_range(2):
+                                trace_i[trace_slot, iteration, 36+2*trace_vertex+trace_side] = vertex_slots[lane, trace_vertex, trace_side]
             vertex_count = simplex_n
             if ball_peak_vertices > vertex_count:
                 vertex_count = ball_peak_vertices
             if status == 0 and need_epa == 0:
                 status = 4
                 reason = 4
+                if trace_slot >= 0 and gjk_used > 0:
+                    trace_i[trace_slot, gjk_used-1, 9] = 8
+                    trace_i[trace_slot, gjk_used-1, 10] = status
+                    trace_i[trace_slot, gjk_used-1, 11] = reason
             if need_epa != 0 and status == 0:
                 phase = 4
                 # A lower-dimensional intersection simplex is not an EPA
@@ -1861,5 +2012,6 @@ def make_convex_query_kernels():
     return {
         "gather": (tx.kernel(gather_convex_pose), tx.kernel(gather_convex_pose)),
         "clear": tx.kernel(clear_convex_output),
+        "trace_clear": tx.kernel(clear_convex_trace),
         "query": tx.kernel(query_convex_pairs),
     }

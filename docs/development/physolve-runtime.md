@@ -3,7 +3,9 @@
 **资格状态：未通过机器人验收，不可用于消费者部署。** 本批简单模型通过，但
 机器人原生对照存在超过既定 1e-6 门限的数值差异。B3 修复两处 TYX 初始化
 标记缺陷后，接触点几何回归通过、原 FANUC CUDA 719 在完整矩阵中不再出现，
-但 FANUC step 后速度全零，与 CPU 参照不符。未缩小验收范围或放宽门限；详见配套 P2PE
+但 FANUC step 后速度全零，与 CPU 参照不符。B4 的同载荷 Warp 和官方求解函数
+对照也复现该停滞；固定输入的 Panda 求解存在顺序敏感性。尚无满足冻结载荷与原
+门限的修复，不能将失败豁免为通过。未缩小验收范围或放宽门限；详见配套 P2PE
 `docs/phymeo-integration.md` 与实验 evidence。本入口保留用于定位，不能据可调用
 step/forward/reset 认定整条物理链路正确。
 
@@ -52,7 +54,9 @@ joint force 和 reaction wrench 契约需要下一阶段显式适配，不能直
 关闭失败保留未释放资源可重试；进入关闭状态后拒绝再次推进。
 
 当前限定 Euler、Newton 约束算法、dense Jacobian、同构 world；不接受插件、flex、
-userdata 或原生 sensor。内部条件 Graph 服务约束求解，不代表整步 CUDA Graph 已资格化。
+userdata 或原生 sensor。`graph_conditional=True` 选择内部约束循环：未处于捕获时，
+Host 读取 device 条件并同步 stream 后继续循环；实际捕获时才登记条件 Graph。
+因此此 direct 验证入口不能称为已经执行或资格化整步 CUDA Graph。
 外部 stream、异步/D2D 接口、任意状态写入、传感器、整步 Graph 与 P2PE C ABI 尚未接入。
 `require_asset=False` 保留完整原生碰撞/接触数据，不意味着 resident articulation lowering
 已支持所有 geom、equality 或 actuator。
@@ -79,3 +83,19 @@ Panda 指尖接触点另有约 0.413 m 几何越界证据，保持失败，不�
 均实际执行，Panda 的独立 step/forward/masked/full reset 三项通过，CPU/CUDA
 指尖接触点对照通过；六项原生对照与三项 FANUC 运动检查仍失败。
 FANUC 的同配置 CPU 参照确实运动，不能删除 motion 检查让静止结果通过。
+
+B4 未修改生产代码，只做阶段归因与固定输入重放。Panda 两 bank 的质量矩阵、
+无约束力/加速度完全一致；接触 geom/dist/pos/frame 与约束 J/D/aref/pos 按内容
+排序后也一致，原始顺序不同。固定约束输入交给冻结求解 CUBIN，保持顺序重复仍有
+约 6.10e-5 的 qacc 差，反转同类型约束行产生约 5.7604 的差；官方 Warp 求解函数
+也复现。排序不能据此被当作完整修复，更不能放宽 1e-6 原生对照门限。
+
+FANUC 的四个初始自接触形成 16 条约束，总代价约 3.28e10。实测原生和官方求解
+均在首轮 alpha=0、前后 float32 代价相同的情况下停止。NumPy 重建目标函数时，
+从零加速度到无约束加速度的 float64 改进约 471.96，float32 代价 ULP 为 2048，
+改进被舍入为零。该重建不是 CUDA 归约的逐位仿真，需与实际 solver context 证据
+共同解读。禁用接触或 warmstart 的运动恢复仅为诊断，不进入产品默认行为。
+
+证据为实验根 `evidence/b4-*`，详细矩阵和后续边界以配套 P2PE 集成记录为准。
+本批没有新增运行时结构优化，也未重新执行完整 B3 验收矩阵；C ABI、整步 Graph、
+GUI、安装包与性能资格仍未推进。六件 CUBIN 和 Host 保持冻结。

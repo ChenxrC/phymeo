@@ -8,7 +8,10 @@ all material weights refer to actual original vertex IDs. No response is solved.
 import tyx as tx
 
 from ._tyx_convex_support import clamp01, det3, dot3
-from ._tyx_convex_support_family import curved_support_x, curved_support_y, curved_support_z
+from ._tyx_convex_support_family import (
+    curved_support_x, curved_support_y, curved_support_z,
+    support_ball_depth_width, support_ball_normal_bound,
+)
 
 
 def gather_convex_pose(
@@ -214,6 +217,43 @@ def query_convex_pairs(
             # Full support already includes the round side's skin.
             ra = 0.0
             rb = 0.0
+        rolling_radius = 0.0
+        ball_peak_vertices = 0
+        if full_surface != 0 and precision[a] == 0 and precision[b] == 0 and curved_precision == 0:
+            for ball_side in tx.static_range(2):
+                ball_shape = a
+                if ball_side == 1:
+                    ball_shape = b
+                if tags[ball_shape, 0] < 2:
+                    rolling_radius = rolling_radius + radii[ball_shape] / scale
+                elif tags[ball_shape, 0] == 6:
+                    # Gershgorin bound on the stored frame's Gram defect.
+                    # No exact-orthogonality assumption or repaired frame.
+                    frame_defect = 0.0
+                    for gram_row in tx.static_range(3):
+                        defect_row = 0.0
+                        for gram_col in tx.static_range(3):
+                            entry = 0.0
+                            for gram_axis in tx.static_range(3):
+                                entry = entry + (
+                                    shape_rotation[ball_shape, gram_axis, gram_row]
+                                    * shape_rotation[ball_shape, gram_axis, gram_col]
+                                )
+                            if gram_row == gram_col:
+                                entry = entry - 1.0
+                            defect_row = defect_row + tx.abs(entry)
+                        frame_defect = tx.max(frame_defect, defect_row)
+                    frame_defect = frame_defect + 3.814697265625e-6
+                    if frame_defect < 0.25:
+                        min_axis = tx.min(dimensions[ball_shape, 0],
+                            tx.min(dimensions[ball_shape, 1], dimensions[ball_shape, 2])) / scale
+                        max_axis = tx.max(dimensions[ball_shape, 0],
+                            tx.max(dimensions[ball_shape, 1], dimensions[ball_shape, 2])) / scale
+                        rolling_radius = rolling_radius + (
+                            min_axis * (min_axis / max_axis) * (1.0 - frame_defect)
+                            / tx.sqrt(1.0 + frame_defect) * 0.9999990463256836
+                        )
+
         meta[out, 12] = attempt
         meta[out, 13] = out
         status = 0
@@ -527,222 +567,315 @@ def query_convex_pairs(
                     bound = 0.0
                     if closest_square > 0.0:
                         bound = tx.max(0.0, dot3(cx, cy, cz, px, py, pz) / tx.sqrt(closest_square))
-                    duplicate = 0
-                    for k in range(simplex_n):
-                        ex = px - vertices[lane, k, 0]
-                        ey = py - vertices[lane, k, 1]
-                        ez = pz - vertices[lane, k, 2]
-                        if dot3(ex, ey, ez, ex, ey, ez) <= 1e-16:
-                            duplicate = 1
-                    if simplex_n < 4 and duplicate == 0:
-                        vertex_slots[lane, simplex_n, 0] = ia
-                        vertex_slots[lane, simplex_n, 1] = ib
-                        vertices[lane, simplex_n, 0] = px
-                        vertices[lane, simplex_n, 1] = py
-                        vertices[lane, simplex_n, 2] = pz
-                        for c in tx.static_range(3):
-                            vertices[lane, simplex_n, 3 + c] = support_points[lane, 0, c]
-                            vertices[lane, simplex_n, 6 + c] = support_points[lane, 1, c]
-                        simplex_n = simplex_n + 1
-                    # Enumerate the finite simplex's nonempty faces. Gram solves
-                    # are at most 3x3; no approximate support point is fabricated.
-                    best_square = 1e30
-                    best_count = 0
-                    for mask in range(1, 16):
-                        # TYX has no shift operator. simplex_n is at most 4,
-                        # so these powers of two are the same subset limit.
-                        limit = 1
-                        if simplex_n > 0:
-                            limit = 2
-                        if simplex_n > 1:
-                            limit = 4
-                        if simplex_n > 2:
-                            limit = 8
-                        if simplex_n > 3:
-                            limit = 16
-                        if mask < limit:
-                            count_s = 0
-                            i0 = 0
-                            i1 = 0
-                            i2 = 0
-                            i3 = 0
-                            for k in tx.static_range(4):
-                                bit = 1
-                                if k == 1:
-                                    bit = 2
-                                elif k == 2:
-                                    bit = 4
-                                elif k == 3:
-                                    bit = 8
-                                if (mask & bit) != 0:
-                                    if count_s == 0:
-                                        i0 = k
-                                    elif count_s == 1:
-                                        i1 = k
-                                    elif count_s == 2:
-                                        i2 = k
-                                    else:
-                                        i3 = k
-                                    count_s = count_s + 1
-                            x0 = vertices[lane, i0, 0]
-                            y0 = vertices[lane, i0, 1]
-                            z0 = vertices[lane, i0, 2]
-                            ex = vertices[lane, i1, 0] - x0
-                            ey = vertices[lane, i1, 1] - y0
-                            ez = vertices[lane, i1, 2] - z0
-                            fx = vertices[lane, i2, 0] - x0
-                            fy = vertices[lane, i2, 1] - y0
-                            fz = vertices[lane, i2, 2] - z0
-                            gx = vertices[lane, i3, 0] - x0
-                            gy = vertices[lane, i3, 1] - y0
-                            gz = vertices[lane, i3, 2] - z0
-                            w0 = 1.0
-                            w1 = 0.0
-                            w2 = 0.0
-                            w3 = 0.0
-                            usable = 1
-                            ee = dot3(ex, ey, ez, ex, ey, ez)
-                            ef = dot3(ex, ey, ez, fx, fy, fz)
-                            ff = dot3(fx, fy, fz, fx, fy, fz)
-                            re = -dot3(x0, y0, z0, ex, ey, ez)
-                            rf = -dot3(x0, y0, z0, fx, fy, fz)
-                            if count_s == 2:
-                                if ee <= 1e-20:
-                                    usable = 0
-                                else:
-                                    w1 = re / ee
-                                    w0 = 1.0 - w1
-                            elif count_s == 3:
-                                denominator = ee * ff - ef * ef
-                                if denominator <= 1e-12 * ee * ff:
-                                    usable = 0
-                                else:
-                                    w1 = (re * ff - rf * ef) / denominator
-                                    w2 = (rf * ee - re * ef) / denominator
-                                    w0 = 1.0 - w1 - w2
-                            elif count_s == 4:
-                                determinant = det3(ex, ey, ez, fx, fy, fz, gx, gy, gz)
-                                if tx.abs(determinant) <= 1e-12:
-                                    usable = 0
-                                else:
-                                    w1 = det3(-x0, -y0, -z0, fx, fy, fz, gx, gy, gz) / determinant
-                                    w2 = det3(ex, ey, ez, -x0, -y0, -z0, gx, gy, gz) / determinant
-                                    w3 = det3(ex, ey, ez, fx, fy, fz, -x0, -y0, -z0) / determinant
-                                    w0 = 1.0 - w1 - w2 - w3
-                            if w0 < -1e-6 or w1 < -1e-6 or w2 < -1e-6 or w3 < -1e-6:
-                                usable = 0
-                            if usable != 0:
-                                w0 = tx.max(0.0, w0)
-                                w1 = tx.max(0.0, w1)
-                                w2 = tx.max(0.0, w2)
-                                w3 = tx.max(0.0, w3)
-                                total = w0 + w1 + w2 + w3
-                                w0 = w0 / total
-                                w1 = w1 / total
-                                w2 = w2 / total
-                                w3 = w3 / total
-                                qx = (
-                                    w0 * x0
-                                    + w1 * vertices[lane, i1, 0]
-                                    + w2 * vertices[lane, i2, 0]
-                                    + w3 * vertices[lane, i3, 0]
-                                )
-                                qy = (
-                                    w0 * y0
-                                    + w1 * vertices[lane, i1, 1]
-                                    + w2 * vertices[lane, i2, 1]
-                                    + w3 * vertices[lane, i3, 1]
-                                )
-                                qz = (
-                                    w0 * z0
-                                    + w1 * vertices[lane, i1, 2]
-                                    + w2 * vertices[lane, i2, 2]
-                                    + w3 * vertices[lane, i3, 2]
-                                )
-                                square = dot3(qx, qy, qz, qx, qy, qz)
-                                # A smooth support can improve the tangential
-                                # residual while the dominant normal square
-                                # rounds to the same FP32 value. Compare the
-                                # difference of squares without subtracting
-                                # two already-rounded squared norms on that tie.
-                                better = square < best_square
-                                if full_surface != 0 and square == best_square:
-                                    better = (
-                                        dot3(
-                                            qx - cx,
-                                            qy - cy,
-                                            qz - cz,
-                                            qx + cx,
-                                            qy + cy,
-                                            qz + cz,
-                                        )
-                                        < 0.0
-                                    )
-                                if better:
-                                    best_square = square
-                                    best_count = count_s
-                                    cx = qx
-                                    cy = qy
-                                    cz = qz
-                                    indices[lane, 0] = i0
-                                    indices[lane, 1] = i1
-                                    indices[lane, 2] = i2
-                                    indices[lane, 3] = i3
-                                    weights[lane, 0] = w0
-                                    weights[lane, 1] = w1
-                                    weights[lane, 2] = w2
-                                    weights[lane, 3] = w3
-                    if best_count == 0:
-                        status = 2
-                        reason = 6
-                    else:
-                        closest_square = best_square
-                        distance = tx.sqrt(best_square)
-                        if distance <= 8e-7 or (
-                            distance <= 1e-5 and ((ka >= 2 and kb >= 2) or full_surface != 0)
+                    # Certify the CURRENT compact simplex, before adding w.
+                    # An absolute distance gate alone does not bound its normal.
+                    if full_surface != 0 and simplex_n > 0 and closest_square > 1e-10:
+                        previous_distance = tx.sqrt(closest_square)
+                        fw_x = cx - px
+                        fw_y = cy - py
+                        fw_z = cz - pz
+                        fw_padding = 2.384185791015625e-7 * (
+                            closest_square + tx.abs(cx * fw_x)
+                            + tx.abs(cy * fw_y) + tx.abs(cz * fw_z)
+                        )
+                        fw_numerator = tx.max(0.0, dot3(cx, cy, cz, fw_x, fw_y, fw_z)) + fw_padding
+                        if (
+                            fw_numerator <= 1e-6 * closest_square
+                            and fw_numerator <= 8e-7 * previous_distance
                         ):
-                            # A tilted shallow overlap can stop just outside the
-                            # origin. Polytopes within 1e-5 go to EPA instead of
-                            # publishing that residual as separation. A round
-                            # core inside that same plane tolerance is contained:
-                            # the leftover is not a surface gap.
-                            if full_surface == 0 and (ka < 2 or kb < 2):
-                                status = 3
-                                reason = 3
-                            else:
-                                need_epa = 1
-                        elif distance - bound <= 8e-7 or duplicate != 0:
-                            # A repeated support is already a simplex vertex, so
-                            # another iteration cannot add one. Float32 can miss
-                            # the plane certificate even when this closest point
-                            # is already the separating distance.
                             status = 1
                             valid = 7
-                            nx = -cx / distance
-                            ny = -cy / distance
-                            nz = -cz / distance
-                            signed_gap = distance * scale - ra - rb
-                            lower_gap = tx.min(signed_gap, bound * scale - ra - rb)
+                            nx = -cx / previous_distance
+                            ny = -cy / previous_distance
+                            nz = -cz / previous_distance
+                            signed_gap = previous_distance * scale
+                            lower_gap = tx.max(
+                                0.0, previous_distance - fw_numerator / previous_distance
+                            ) * scale
                             upper_gap = signed_gap
-                            active_count = best_count
-                        # Compact only after retaining the complete closest face.
-                        for k in tx.static_range(4):
-                            selected = indices[lane, k]
-                            for c in tx.static_range(9):
-                                simplex_copy[lane, k, c] = vertices[lane, selected, c]
-                            for side in tx.static_range(2):
-                                simplex_slots[lane, k, side] = vertex_slots[lane, selected, side]
-                        for k in tx.static_range(4):
-                            for c in tx.static_range(9):
-                                vertices[lane, k, c] = simplex_copy[lane, k, c]
-                            for side in tx.static_range(2):
-                                vertex_slots[lane, k, side] = simplex_slots[lane, k, side]
-                            indices[lane, k] = k
-                        simplex_n = best_count
-                        dx = -cx
-                        dy = -cy
-                        dz = -cz
+                            active_count = simplex_n
+                    # A global tangent-ball lower bound can certify a smooth
+                    # penetration without tessellating its entire curved cap.
+                    if full_surface != 0 and status == 0 and rolling_radius > 0.0:
+                        ball_direction_scale = tx.max(tx.abs(dx), tx.max(tx.abs(dy), tx.abs(dz)))
+                        if ball_direction_scale > 0.0:
+                            ball_x = dx / ball_direction_scale
+                            ball_y = dy / ball_direction_scale
+                            ball_z = dz / ball_direction_scale
+                            ball_length = tx.sqrt(dot3(ball_x, ball_y, ball_z, ball_x, ball_y, ball_z))
+                            ball_x = ball_x / ball_length
+                            ball_y = ball_y / ball_length
+                            ball_z = ball_z / ball_length
+                            ball_reach = dot3(ball_x, ball_y, ball_z, px, py, pz)
+                            ball_tx = px - ball_reach * ball_x
+                            ball_ty = py - ball_reach * ball_y
+                            ball_tz = pz - ball_reach * ball_z
+                            ball_square = dot3(ball_tx, ball_ty, ball_tz, ball_tx, ball_ty, ball_tz)
+                            ball_rounding = rolling_radius
+                            for ball_support_side in tx.static_range(2):
+                                ball_support_x = support_points[lane, ball_support_side, 0] / scale
+                                ball_support_y = support_points[lane, ball_support_side, 1] / scale
+                                ball_support_z = support_points[lane, ball_support_side, 2] / scale
+                                ball_rounding = ball_rounding + tx.sqrt(dot3(
+                                    ball_support_x, ball_support_y, ball_support_z,
+                                    ball_support_x, ball_support_y, ball_support_z))
+                            ball_rounding = ball_rounding * 2.384185791015625e-7
+                            ball_width = support_ball_depth_width(
+                                ball_reach, ball_square, rolling_radius, ball_rounding)
+                            ball_normal_error = support_ball_normal_bound(
+                                ball_reach, ball_square, rolling_radius, ball_rounding)
+                            if (
+                                ball_reach + ball_rounding - ball_width > 0.0
+                                and ball_width <= 8e-7
+                                and ball_normal_error <= 1e-3
+                                and tx.sqrt(ball_square) + 2.0 * ball_rounding <= 2e-4
+                            ):
+                                status = 1
+                                valid = 7
+                                phase = 6
+                                nx = ball_x
+                                ny = ball_y
+                                nz = ball_z
+                                signed_gap = -ball_reach * scale
+                                lower_gap = -(ball_reach + ball_rounding) * scale
+                                upper_gap = -(ball_reach + ball_rounding - ball_width) * scale
+                                ball_peak_vertices = 1
+                                if simplex_n > ball_peak_vertices:
+                                    ball_peak_vertices = simplex_n
+                                active_count = 1
+                                simplex_n = 1
+                                vertices[lane, 0, 0] = px
+                                vertices[lane, 0, 1] = py
+                                vertices[lane, 0, 2] = pz
+                                vertex_slots[lane, 0, 0] = ia
+                                vertex_slots[lane, 0, 1] = ib
+                                for ball_axis in tx.static_range(3):
+                                    vertices[lane, 0, 3 + ball_axis] = support_points[lane, 0, ball_axis]
+                                    vertices[lane, 0, 6 + ball_axis] = support_points[lane, 1, ball_axis]
+                                for ball_slot in tx.static_range(4):
+                                    weights[lane, ball_slot] = 0.0
+                                    indices[lane, ball_slot] = 0
+                                weights[lane, 0] = 1.0
+
+                    if status == 0:
+                        duplicate = 0
+                        for k in range(simplex_n):
+                            ex = px - vertices[lane, k, 0]
+                            ey = py - vertices[lane, k, 1]
+                            ez = pz - vertices[lane, k, 2]
+                            if dot3(ex, ey, ez, ex, ey, ez) <= 1e-16:
+                                duplicate = 1
+                        if simplex_n < 4 and duplicate == 0:
+                            vertex_slots[lane, simplex_n, 0] = ia
+                            vertex_slots[lane, simplex_n, 1] = ib
+                            vertices[lane, simplex_n, 0] = px
+                            vertices[lane, simplex_n, 1] = py
+                            vertices[lane, simplex_n, 2] = pz
+                            for c in tx.static_range(3):
+                                vertices[lane, simplex_n, 3 + c] = support_points[lane, 0, c]
+                                vertices[lane, simplex_n, 6 + c] = support_points[lane, 1, c]
+                            simplex_n = simplex_n + 1
+                        # Enumerate the finite simplex's nonempty faces. Gram solves
+                        # are at most 3x3; no approximate support point is fabricated.
+                        best_square = 1e30
+                        best_count = 0
+                        for mask in range(1, 16):
+                            # TYX has no shift operator. simplex_n is at most 4,
+                            # so these powers of two are the same subset limit.
+                            limit = 1
+                            if simplex_n > 0:
+                                limit = 2
+                            if simplex_n > 1:
+                                limit = 4
+                            if simplex_n > 2:
+                                limit = 8
+                            if simplex_n > 3:
+                                limit = 16
+                            if mask < limit:
+                                count_s = 0
+                                i0 = 0
+                                i1 = 0
+                                i2 = 0
+                                i3 = 0
+                                for k in tx.static_range(4):
+                                    bit = 1
+                                    if k == 1:
+                                        bit = 2
+                                    elif k == 2:
+                                        bit = 4
+                                    elif k == 3:
+                                        bit = 8
+                                    if (mask & bit) != 0:
+                                        if count_s == 0:
+                                            i0 = k
+                                        elif count_s == 1:
+                                            i1 = k
+                                        elif count_s == 2:
+                                            i2 = k
+                                        else:
+                                            i3 = k
+                                        count_s = count_s + 1
+                                x0 = vertices[lane, i0, 0]
+                                y0 = vertices[lane, i0, 1]
+                                z0 = vertices[lane, i0, 2]
+                                ex = vertices[lane, i1, 0] - x0
+                                ey = vertices[lane, i1, 1] - y0
+                                ez = vertices[lane, i1, 2] - z0
+                                fx = vertices[lane, i2, 0] - x0
+                                fy = vertices[lane, i2, 1] - y0
+                                fz = vertices[lane, i2, 2] - z0
+                                gx = vertices[lane, i3, 0] - x0
+                                gy = vertices[lane, i3, 1] - y0
+                                gz = vertices[lane, i3, 2] - z0
+                                w0 = 1.0
+                                w1 = 0.0
+                                w2 = 0.0
+                                w3 = 0.0
+                                usable = 1
+                                ee = dot3(ex, ey, ez, ex, ey, ez)
+                                ef = dot3(ex, ey, ez, fx, fy, fz)
+                                ff = dot3(fx, fy, fz, fx, fy, fz)
+                                re = -dot3(x0, y0, z0, ex, ey, ez)
+                                rf = -dot3(x0, y0, z0, fx, fy, fz)
+                                if count_s == 2:
+                                    if ee <= 1e-20:
+                                        usable = 0
+                                    else:
+                                        w1 = re / ee
+                                        w0 = 1.0 - w1
+                                elif count_s == 3:
+                                    denominator = ee * ff - ef * ef
+                                    if denominator <= 1e-12 * ee * ff:
+                                        usable = 0
+                                    else:
+                                        w1 = (re * ff - rf * ef) / denominator
+                                        w2 = (rf * ee - re * ef) / denominator
+                                        w0 = 1.0 - w1 - w2
+                                elif count_s == 4:
+                                    determinant = det3(ex, ey, ez, fx, fy, fz, gx, gy, gz)
+                                    if tx.abs(determinant) <= 1e-12:
+                                        usable = 0
+                                    else:
+                                        w1 = det3(-x0, -y0, -z0, fx, fy, fz, gx, gy, gz) / determinant
+                                        w2 = det3(ex, ey, ez, -x0, -y0, -z0, gx, gy, gz) / determinant
+                                        w3 = det3(ex, ey, ez, fx, fy, fz, -x0, -y0, -z0) / determinant
+                                        w0 = 1.0 - w1 - w2 - w3
+                                if w0 < -1e-6 or w1 < -1e-6 or w2 < -1e-6 or w3 < -1e-6:
+                                    usable = 0
+                                if usable != 0:
+                                    w0 = tx.max(0.0, w0)
+                                    w1 = tx.max(0.0, w1)
+                                    w2 = tx.max(0.0, w2)
+                                    w3 = tx.max(0.0, w3)
+                                    total = w0 + w1 + w2 + w3
+                                    w0 = w0 / total
+                                    w1 = w1 / total
+                                    w2 = w2 / total
+                                    w3 = w3 / total
+                                    qx = (
+                                        w0 * x0
+                                        + w1 * vertices[lane, i1, 0]
+                                        + w2 * vertices[lane, i2, 0]
+                                        + w3 * vertices[lane, i3, 0]
+                                    )
+                                    qy = (
+                                        w0 * y0
+                                        + w1 * vertices[lane, i1, 1]
+                                        + w2 * vertices[lane, i2, 1]
+                                        + w3 * vertices[lane, i3, 1]
+                                    )
+                                    qz = (
+                                        w0 * z0
+                                        + w1 * vertices[lane, i1, 2]
+                                        + w2 * vertices[lane, i2, 2]
+                                        + w3 * vertices[lane, i3, 2]
+                                    )
+                                    square = dot3(qx, qy, qz, qx, qy, qz)
+                                    # A smooth support can improve the tangential
+                                    # residual while the dominant normal square
+                                    # rounds to the same FP32 value. Compare the
+                                    # difference of squares without subtracting
+                                    # two already-rounded squared norms on that tie.
+                                    better = square < best_square
+                                    if full_surface != 0 and square == best_square:
+                                        better = (
+                                            dot3(
+                                                qx - cx,
+                                                qy - cy,
+                                                qz - cz,
+                                                qx + cx,
+                                                qy + cy,
+                                                qz + cz,
+                                            )
+                                            < 0.0
+                                        )
+                                    if better:
+                                        best_square = square
+                                        best_count = count_s
+                                        cx = qx
+                                        cy = qy
+                                        cz = qz
+                                        indices[lane, 0] = i0
+                                        indices[lane, 1] = i1
+                                        indices[lane, 2] = i2
+                                        indices[lane, 3] = i3
+                                        weights[lane, 0] = w0
+                                        weights[lane, 1] = w1
+                                        weights[lane, 2] = w2
+                                        weights[lane, 3] = w3
+                        if best_count == 0:
+                            status = 2
+                            reason = 6
+                        else:
+                            closest_square = best_square
+                            distance = tx.sqrt(best_square)
+                            if distance <= 8e-7 or (
+                                distance <= 1e-5 and ((ka >= 2 and kb >= 2) or full_surface != 0)
+                            ):
+                                # A tilted shallow overlap can stop just outside the
+                                # origin. Polytopes within 1e-5 go to EPA instead of
+                                # publishing that residual as separation. A round
+                                # core inside that same plane tolerance is contained:
+                                # the leftover is not a surface gap.
+                                if full_surface == 0 and (ka < 2 or kb < 2):
+                                    status = 3
+                                    reason = 3
+                                else:
+                                    need_epa = 1
+                            elif full_surface == 0 and (distance - bound <= 8e-7 or duplicate != 0):
+                                # A repeated support is already a simplex vertex, so
+                                # another iteration cannot add one. Float32 can miss
+                                # the plane certificate even when this closest point
+                                # is already the separating distance.
+                                status = 1
+                                valid = 7
+                                nx = -cx / distance
+                                ny = -cy / distance
+                                nz = -cz / distance
+                                signed_gap = distance * scale - ra - rb
+                                lower_gap = tx.min(signed_gap, bound * scale - ra - rb)
+                                upper_gap = signed_gap
+                                active_count = best_count
+                            # Compact only after retaining the complete closest face.
+                            for k in tx.static_range(4):
+                                selected = indices[lane, k]
+                                for c in tx.static_range(9):
+                                    simplex_copy[lane, k, c] = vertices[lane, selected, c]
+                                for side in tx.static_range(2):
+                                    simplex_slots[lane, k, side] = vertex_slots[lane, selected, side]
+                            for k in tx.static_range(4):
+                                for c in tx.static_range(9):
+                                    vertices[lane, k, c] = simplex_copy[lane, k, c]
+                                for side in tx.static_range(2):
+                                    vertex_slots[lane, k, side] = simplex_slots[lane, k, side]
+                                indices[lane, k] = k
+                            simplex_n = best_count
+                            dx = -cx
+                            dy = -cy
+                            dz = -cz
             vertex_count = simplex_n
+            if ball_peak_vertices > vertex_count:
+                vertex_count = ball_peak_vertices
             if status == 0 and need_epa == 0:
                 status = 4
                 reason = 4
@@ -1328,7 +1461,64 @@ def query_convex_pairs(
                                 ez = pz - vertices[lane, k, 2]
                                 if dot3(ex, ey, ez, ex, ey, ez) <= 1e-16:
                                     duplicate = 1
-                            if reach - depth <= 8e-7:
+                            ball_accepted = 0
+                            if full_surface != 0 and rolling_radius > 0.0:
+                                ball_length = tx.sqrt(dot3(dx, dy, dz, dx, dy, dz))
+                                if ball_length > 0.0:
+                                    ball_x = dx / ball_length
+                                    ball_y = dy / ball_length
+                                    ball_z = dz / ball_length
+                                    ball_reach = dot3(ball_x, ball_y, ball_z, px, py, pz)
+                                    ball_tx = px - ball_reach * ball_x
+                                    ball_ty = py - ball_reach * ball_y
+                                    ball_tz = pz - ball_reach * ball_z
+                                    ball_square = dot3(ball_tx, ball_ty, ball_tz, ball_tx, ball_ty, ball_tz)
+                                    ball_rounding = rolling_radius
+                                    for ball_support_side in tx.static_range(2):
+                                        ball_support_x = support_points[lane, ball_support_side, 0] / scale
+                                        ball_support_y = support_points[lane, ball_support_side, 1] / scale
+                                        ball_support_z = support_points[lane, ball_support_side, 2] / scale
+                                        ball_rounding = ball_rounding + tx.sqrt(dot3(
+                                            ball_support_x, ball_support_y, ball_support_z,
+                                            ball_support_x, ball_support_y, ball_support_z))
+                                    ball_rounding = ball_rounding * 2.384185791015625e-7
+                                    ball_width = support_ball_depth_width(
+                                        ball_reach, ball_square, rolling_radius, ball_rounding)
+                                    ball_normal_error = support_ball_normal_bound(
+                                        ball_reach, ball_square, rolling_radius, ball_rounding)
+                                    if (
+                                        ball_reach + ball_rounding - ball_width > 0.0
+                                        and ball_width <= 8e-7
+                                        and ball_normal_error <= 1e-3
+                                        and tx.sqrt(ball_square) + 2.0 * ball_rounding <= 2e-4
+                                    ):
+                                        ball_accepted = 1
+                                        status = 1
+                                        valid = 7
+                                        phase = 6
+                                        nx = ball_x
+                                        ny = ball_y
+                                        nz = ball_z
+                                        signed_gap = -ball_reach * scale
+                                        lower_gap = -(ball_reach + ball_rounding) * scale
+                                        upper_gap = -(ball_reach + ball_rounding - ball_width) * scale
+                                        active_count = 1
+                                        # Reuse one owned slot; retain peak EPA
+                                        # vertex/face counts already consumed.
+                                        vertices[lane, 0, 0] = px
+                                        vertices[lane, 0, 1] = py
+                                        vertices[lane, 0, 2] = pz
+                                        vertex_slots[lane, 0, 0] = ia
+                                        vertex_slots[lane, 0, 1] = ib
+                                        for ball_axis in tx.static_range(3):
+                                            vertices[lane, 0, 3 + ball_axis] = support_points[lane, 0, ball_axis]
+                                            vertices[lane, 0, 6 + ball_axis] = support_points[lane, 1, ball_axis]
+                                        for ball_slot in tx.static_range(4):
+                                            weights[lane, ball_slot] = 0.0
+                                            indices[lane, ball_slot] = 0
+                                        weights[lane, 0] = 1.0
+
+                            if ball_accepted == 0 and reach - depth <= 8e-7:
                                 # A polygonal face may be triangulated. Locate
                                 # the actual coplanar triangle owning its foot,
                                 # not arbitrary barycentrics on the first facet.
@@ -1421,7 +1611,7 @@ def query_convex_pairs(
                                     nx = dx
                                     ny = dy
                                     nz = dz
-                            elif duplicate != 0 and reach - depth > 1e-3:
+                            elif ball_accepted == 0 and duplicate != 0 and reach - depth > 1e-3:
                                 # The repeated vertex lies well outside this plane,
                                 # so the plane is not a face of the convex hull.
                                 faces[lane, closest_face, 0] = -1
@@ -1431,13 +1621,13 @@ def query_convex_pairs(
                                 if face_count <= 0:
                                     status = 2
                                     reason = 10
-                            elif duplicate != 0:
+                            elif ball_accepted == 0 and duplicate != 0:
                                 status = 2
                                 reason = 10
-                            elif vertex_count >= vertex_capacity:
+                            elif ball_accepted == 0 and vertex_count >= vertex_capacity:
                                 status = 4
                                 reason = 7
-                            else:
+                            elif ball_accepted == 0:
                                 new_vertex = vertex_count
                                 vertices[lane, new_vertex, 0] = px
                                 vertices[lane, new_vertex, 1] = py

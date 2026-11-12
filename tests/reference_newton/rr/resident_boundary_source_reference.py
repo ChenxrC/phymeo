@@ -193,7 +193,9 @@ def assert_row(row, triangle, segment, radius, origin, *, state="RESOLVED"):
     assert np.min(bary) >= 0 and abs(float(sum(bary)) - 1) <= 8 * U
     assert 0 <= row.axis_parameter <= 1
     ap = seg[0] + row.axis_parameter * (seg[1] - seg[0])
-    tp = bary @ tri
+    # Affine reconstruction in the independently authored triangle frame.
+    # Do not amplify the admitted FP32 sum residual by a common world translation.
+    tp = tri[0] + bary @ (tri - tri[0])
     np.testing.assert_allclose(
         np.asarray(row.axis_point_relative_m) + origin, ap, atol=2e-4 * length, rtol=0
     )

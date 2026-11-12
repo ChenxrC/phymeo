@@ -30,13 +30,13 @@
 
 ## 后续从这里开始
 
-后续统一按[三主线计划](../superpowers/plans/2026-11-12-scene-deformable-scale-roadmap.md)推进，优先级和共享集成顺序如下；本轮仅更新计划，尚未启动这些产品节点。
+后续统一按[三主线计划](../superpowers/plans/2026-11-12-scene-deformable-scale-roadmap.md)推进。当前已启动[Batch A](../superpowers/plans/2026-11-12-three-track-batch-a.md)隔离开发：S1/S2场景设备来源、D1持久变形节点、R1/首R2直接BALL执行器动态；尚无本批执行通过结论。
 
 1. **统一场景到设备碰撞（S1–S3）**：ParticipantScene逻辑world/participant到真实多bank的身份、同入步状态及lease映射 → 设备查询桥接 → 公共场景入口和源码外多案例。覆盖多机器人、工具、物体，M1-A单资产资格不代替该组合。
 2. **真实变形状态到连续载荷（D1–D5）**：M2-P持久设备状态 → M2-Q真实顶点查询 → 合法接触表示/双向力与运动共同发布 → 持续支撑、摩擦/换面、卸载 → 统一场景和安装验收。M2-P、M2-Q只算各自子节点，不能提前称刚柔响应完成。
 3. **机器人组合与GPU规模（R1–R2、G1–G4）**：更新能力矩阵，分别补direct BALL activation、FREE+BALL等组合 → 异构world功能/容量 → 同模型、同输出、同质量门的Newton性能基线 → 根据热点优化。功能优先，超越性能为附加目标。
 
-下一开发批：原三个agent分别负责场景adapter、M2-P、机器人下一组合，可隔离纯编码；父独占共享协议与集成，全部项目执行串行。M2-Q依赖真实producer，响应依赖合法接触表示/物理端口；性能测量等待相关功能格通过。本轮没有发产品编码或执行任务。
+当前开发批：原三个agent已分别接管场景adapter、M2-P、直接BALL FILTEREXACT组合的隔离纯编码；父独占共享协议与集成，全部项目执行串行。M2-Q依赖真实producer，响应依赖合法接触表示/物理端口；性能测量等待相关功能格通过。旧批次已释放状态不覆盖本批作者状态。
 
 训练N8诊断保留为第三线需要时的支撑项，沿原saved数据分析，不成为三条主线前置；其它八方向缺口仍列全景。允许事先声明的工程精度损失，以多案例稳定流程、载荷与运动一致为验收，不恢复精确相触/无限精度的旧障碍。
 
@@ -48,7 +48,7 @@ J/R原学习门、G1原46.29秒参考XY门及完整131.48秒动作、R03两项�
 
 ## 所有权与证据
 
-父目录C:/Users/38347/.codex/worktrees/p65-parallel-integration/phymeo，分支codex/p65-parallel-modules，本批本地未push。原三名作者与审阅均已释放；本批项目执行已结束。下一片仍用隔离worktree作者，父是共享接缝唯一owner；所有import/collection/数值/pytest/离线分析/lint/formatter/build/install/profile由唯一串行owner在fresh entrypoint-aware guard后执行。
+父目录C:/Users/38347/.codex/worktrees/p65-parallel-integration/phymeo，分支codex/p65-parallel-modules，本地未push。上一批作者与项目执行已释放；当前Batch A原三位作者已重新接管各自隔离范围，父是共享接缝唯一owner和本批唯一项目执行owner。所有import/collection/数值/pytest/离线分析/lint/formatter/build/install/profile在fresh entrypoint-aware guard后串行执行。
 
 新证据artifacts/p65-parity-motor-asset-20261112-01，installed-wheel-01共61文件，installed-close.json绑定516产品/四消费者。上一批证据artifacts/p65-parity-m1-assembly-20261112-01与旧07:20证据保留，不重审、不恢复旧session、不全解压。
 

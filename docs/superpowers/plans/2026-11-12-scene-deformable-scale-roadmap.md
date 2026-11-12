@@ -1,6 +1,6 @@
 # 后续三主线计划：统一场景、真实变形、机器人与GPU规模
 
-状态：**PLANNED / 尚未启动本计划的产品开发与执行**。2026-11-12按用户指定的三点调整，基线cf0bad0a。无新截止；本文件取代旧全景中分散的后续优先级，不改变已验收范围和原失败记录。功能对齐优先，性能争取提升，不以必须超过Newton作为功能完成条件。
+状态：**BATCH_A_AUTHORING / 第一开发批已启动，尚无新验证结论**。2026-11-12按用户指定的三点调整；实施基线79e3e089。无新截止；本文件取代旧全景中分散的后续优先级，不改变已验收范围和原失败记录。功能对齐优先，性能争取提升，不以必须超过Newton作为功能完成条件。当前所有权与执行见[Batch A](2026-11-12-three-track-batch-a.md)。
 
 ## 1. 三条主线与整体完成条件
 
@@ -88,7 +88,7 @@ D1先限定已调研的原生FP32固定拓扑节点域，完整缓冲预算在�
 
 这些是依赖顺序，不是固定工期或一次提交。某格实质阻塞时，继续不依赖它的其它格；不宣称本轮写计划即开工或通过。
 
-沿用原三个agent：mtyx_t2_tests负责场景/查询adapter独立范围，mtyx_t2_source负责M2 producer，mtyx_t2_audit负责机器人组合/规模工具。实施时复用各自隔离worktree、从当时父基线建立新分支并保留WIP；本轮没有发产品编码任务。每批仍需列精确文件所有权，不能仅凭此表同时编辑共享文件。
+沿用原三个agent：mtyx_t2_tests负责场景/查询adapter独立范围，mtyx_t2_source负责M2 producer，mtyx_t2_audit负责机器人组合/规模工具。Batch A已从父基线79e3e089在原三个隔离worktree建立分支并发出纯编码任务，原WIP保留。精确所有权见Batch A；所有项目执行归父唯一串行槽。
 
 父独占统一来源协议、_resident_boundary_source/_query、ResidentSceneBatch及transaction借用接缝、公共导出和跨线集成。MuJoCo runtime/共享ABI由父协调后明确单owner；M2只先新增producer文件，旧物理核和SceneStepper语义不顺手改。作者可并行纯编码；全部项目import、collection、数值、pytest、离线分析、lint/formatter、compile/build/install/profile和Newton比较严格单一串行owner、fresh entrypoint-aware guard。不得并行跑基准、偷偷collection或重跑同源绿套。
 

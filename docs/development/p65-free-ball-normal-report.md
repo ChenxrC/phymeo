@@ -176,3 +176,7 @@ Status: **SOURCE_VERIFIED_INSTALL_PENDING**. This is not yet the unified wheel
 acceptance. Original native reference, numerical gates, rejected combinations,
 capacity bounds and transaction requirements remain unchanged. Evidence is in
 `artifacts/p65-feature-until-0730-20261113-01`.
+Run31 then passed all seven selected affected compatibility nodes in15.65s:
+FREE+BALL without contact, fixed BALL motor normal contact, original FREE/scalar
+two-foot normal contact (both modes), and the unchanged old pyramidal FREE
+negative. This does not rerun or broaden the old accepted full suites.

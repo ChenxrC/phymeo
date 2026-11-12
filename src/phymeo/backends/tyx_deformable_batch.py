@@ -1,0 +1,792 @@
+"""Persistent, transactional FP32 node banks using the existing ordered TYX solver.
+
+D1 publishes real changing vertex states. It does not implement collision queries,
+self contact, contact response, cloth bending, or a general soft-body material.
+"""
+from contextlib import contextmanager
+from dataclasses import dataclass
+from hashlib import sha256
+import json
+from threading import RLock
+from types import MappingProxyType
+from collections.abc import Mapping
+
+import numpy as np
+
+from phymeo.constraints.distance import DistanceConstraints, distance_residual
+from phymeo.core.model import ParticleModel
+from phymeo.core.scene import StepSettings
+from phymeo.core.state import ParticleState, StepInputs
+
+from ._tyx_deformable_buffers import DeformableBuffers
+
+
+def _owned(value, dtype=None):
+    array = np.ascontiguousarray(value, dtype=dtype)
+    return np.frombuffer(array.tobytes(), dtype=array.dtype).reshape(array.shape)
+
+
+def _integer(value, name, minimum=0):
+    if isinstance(value, (bool, np.bool_)) or not isinstance(value, (int, np.integer)):
+        raise TypeError(f"{name} must be an integer")
+    value = int(value)
+    if value < minimum or value > np.iinfo(np.int64).max:
+        raise ValueError(f"{name} is outside the stable int64 ID domain")
+    return value
+
+
+def _native(value, shape, name, *, exact=False):
+    source = np.asarray(value)
+    if source.shape != shape or source.dtype.kind != "f":
+        raise ValueError(f"{name} has an invalid floating shape")
+    if exact and source.dtype != np.dtype(np.float32):
+        raise TypeError(f"{name} must already be native float32")
+    if not np.all(np.isfinite(source)):
+        raise ValueError(f"{name} must be finite")
+    with np.errstate(over="ignore", under="ignore"):
+        result = source.astype(np.float32)
+    if not np.all(np.isfinite(result)):
+        raise ValueError(f"{name} is not representable in float32")
+    tiny = np.finfo(np.float32).tiny
+    if np.any((result != 0) & (np.abs(result) < tiny)) or np.any((source != 0) & (result == 0)):
+        raise ValueError(f"{name} contains unsupported subnormal/underflow values")
+    return _owned(result)
+
+
+def _ids(value, shape, name):
+    array = np.asarray(value)
+    if array.dtype != np.dtype(np.int64) or array.shape != shape or np.any(array < 0):
+        raise ValueError(f"{name} must be a nonnegative int64 array of shape {shape}")
+    return _owned(array)
+
+
+@dataclass(frozen=True, eq=False)
+class DeformableSurface:
+    key: int
+    facet_ids: np.ndarray
+    oriented_point_ids: np.ndarray
+
+
+@dataclass(frozen=True, eq=False)
+class DeformableNodeWorld:
+    key: int
+    model: ParticleModel
+    initial_state: ParticleState
+    constraints: DistanceConstraints
+    point_ids: np.ndarray
+    surfaces: tuple[DeformableSurface, ...] = ()
+
+
+@dataclass(frozen=True, eq=False)
+class DeformableSurfaceBinding:
+    key: int
+    facet_ids: np.ndarray
+    oriented_point_ids: np.ndarray
+    native_indices: np.ndarray
+
+
+@dataclass(frozen=True)
+class DeformableMemoryRequirements:
+    device_bytes: int
+    host_peak_bytes: int
+    total_bytes: int
+    # This is a budget of owned array payloads, not a Python/driver/RSS limit.
+    accounting: str = "owned-array-reservation-v1"
+
+
+@dataclass(frozen=True, eq=False)
+class DeformableWorldStep:
+    world: int
+    input_position: np.ndarray
+    input_velocity: np.ndarray
+    input_clock: np.ndarray
+    input_tick: int
+    force: np.ndarray
+    h: float
+    predicted_position: np.ndarray
+    predicted_velocity: np.ndarray
+    alpha: np.ndarray
+    multipliers: np.ndarray
+    sweeps: int
+    residual: float
+    max_constraint: float
+    trace: tuple[np.ndarray, ...]
+
+
+@dataclass(frozen=True, eq=False)
+class DeformableAcceptedState:
+    world: int
+    position: np.ndarray
+    velocity: np.ndarray
+    clock: np.ndarray
+    tick: int
+    time: float
+    last_step: DeformableWorldStep | None
+
+
+@dataclass(frozen=True, eq=False)
+class DeformableStepReceipt:
+    schema: str
+    binding_sha256: str
+    source_revision: int
+    destination_revision: int
+    active_bank: int
+    accepted: bool
+    worlds: Mapping
+    states: Mapping
+
+
+@dataclass(frozen=True, eq=False)
+class DeformableCheckpoint:
+    schema: str
+    binding_sha256: str
+    owner_id: object
+    active_bank: int
+    worlds: Mapping
+    last_step: DeformableStepReceipt | None
+    content_sha256: str
+
+
+@dataclass(frozen=True, eq=False)
+class _World:
+    key: int
+    n: int
+    e: int
+    p: int
+    initial_position: np.ndarray
+    initial_velocity: np.ndarray
+    weights: np.ndarray
+    gravity: np.ndarray
+    edges: np.ndarray
+    rest: np.ndarray
+    compliance: np.ndarray
+    point_ids: np.ndarray
+    surfaces: tuple[DeformableSurfaceBinding, ...]
+
+    @property
+    def indices(self):
+        return self.edges[:self.e]
+
+    @property
+    def rest_length(self):
+        return self.rest[:self.e]
+
+
+def _geometry(model, position):
+    # Validation only; these HOST calculations never generate candidate vertices.
+    for surface in model.surfaces:
+        tri = position[surface.native_indices].astype(np.float64)
+        cross = np.cross(tri[:, 1] - tri[:, 0], tri[:, 2] - tri[:, 0])
+        if not np.all(np.isfinite(cross)) or np.any(np.max(np.abs(cross), axis=1) == 0):
+            raise ValueError("surface contains a degenerate/nonfinite triangle")
+
+
+def _compile(worlds, settings, trace):
+    if not isinstance(settings, StepSettings) or settings.substeps != 1:
+        raise ValueError("D1 requires one physics substep per explicit step()")
+    if settings.position_iterations > 200:
+        raise ValueError("D1 position iteration hard ceiling is 200")
+    if not isinstance(trace, bool):
+        raise TypeError("trace must be bool")
+    bounded_worlds = []
+    for world in worlds:
+        bounded_worlds.append(world)
+        if len(bounded_worlds) > 8:
+            raise ValueError("D1 world capacity is 1..8")
+    worlds = tuple(bounded_worlds)
+    if not 1 <= len(worlds) <= 8:
+        raise ValueError("D1 world capacity is 1..8")
+    compiled = {}
+    device = constant = receipt = 0
+    for source in worlds:
+        if not isinstance(source, DeformableNodeWorld):
+            raise TypeError("expected DeformableNodeWorld")
+        key = _integer(source.key, "world")
+        if key in compiled:
+            raise ValueError("duplicate world identity")
+        if not isinstance(source.model, ParticleModel) or not isinstance(source.initial_state, ParticleState):
+            raise TypeError("expected ParticleModel and ParticleState")
+        if not isinstance(source.constraints, DistanceConstraints):
+            raise TypeError("D1 accepts DistanceConstraints only")
+        n = source.model.particle_count
+        if not 1 <= n <= 512:
+            raise ValueError("D1 node capacity is 1..512 per world")
+        e = len(source.constraints.indices)
+        if e > 1536:
+            raise ValueError("D1 distance capacity is 1536 per world")
+        p = max(1, e)
+        x = _native(source.initial_state.position, (n, 3), "initial position", exact=True)
+        v = _native(source.initial_state.velocity, (n, 3), "initial velocity", exact=True)
+        weights = _native(source.model.inverse_mass, (n,), "inverse mass")
+        gravity = _native(source.model.gravity, (3,), "gravity")
+        if np.any(weights < 0) or np.any(v[weights == 0] != 0):
+            raise ValueError("fixed nodes require exactly zero initial velocity")
+        point_ids = _ids(source.point_ids, (n,), "point IDs")
+        if len(np.unique(point_ids)) != n:
+            raise ValueError("point IDs must be unique")
+        source_edges = np.asarray(source.constraints.indices)
+        if source_edges.shape != (e, 2) or np.any(source_edges < 0) or np.any(source_edges >= n):
+            raise ValueError("distance endpoint outside the registered node domain")
+        edges = np.zeros((p, 2), np.int32)
+        edges[:e] = source_edges
+        rest = np.zeros(p, np.float32)
+        rest[:e] = _native(source.constraints.rest_length, (e,), "rest lengths")
+        compliance = np.zeros(p, np.float32)
+        compliance[:e] = _native(source.constraints.compliance, (e,), "compliance")
+        if np.any(rest < 0) or np.any(compliance < 0):
+            raise ValueError("rest/compliance must be nonnegative")
+        lookup = {int(stable): row for row, stable in enumerate(point_ids)}
+        surfaces = []
+        surface_keys = set()
+        total_facets = 0
+        for surface in source.surfaces:
+            if not isinstance(surface, DeformableSurface):
+                raise TypeError("expected DeformableSurface")
+            surface_key = _integer(surface.key, "surface")
+            if surface_key in surface_keys:
+                raise ValueError("duplicate surface key")
+            surface_keys.add(surface_key)
+            count = len(surface.facet_ids)
+            if count < 1:
+                raise ValueError("registered surfaces must contain at least one facet")
+            total_facets += count
+            if total_facets > 128:
+                raise ValueError("D1 facet capacity is 128 per world")
+            ids = _ids(surface.facet_ids, (count,), "facet IDs")
+            points = _ids(surface.oriented_point_ids, (count, 3), "oriented point IDs")
+            if len(np.unique(ids)) != count:
+                raise ValueError("duplicate facet ID")
+            if any(len(set(map(int, row))) != 3 for row in points):
+                raise ValueError("a facet must reference three distinct points")
+            try:
+                native = np.asarray([[lookup[int(i)] for i in row] for row in points], np.int32)
+            except KeyError as error:
+                raise ValueError("unknown stable point in facet") from error
+            canonical = [tuple(sorted(map(int, row))) for row in points]
+            if len(set(canonical)) != len(canonical):
+                raise ValueError("duplicate facet topology")
+            surfaces.append(DeformableSurfaceBinding(surface_key, ids, points, _owned(native)))
+        model = _World(key, n, e, p, x, v, weights, gravity, _owned(edges), _owned(rest),
+                       _owned(compliance), point_ids, tuple(surfaces))
+        _geometry(model, x)
+        compiled[key] = model
+        device += 88 * n + 32 * p + 40 + (72 * p if trace else 0)
+        constant += 36 * n + 16 * p + 44 * total_facets + 12
+        receipt += 84 * n + 8 * e + 16 + (72 * e * settings.position_iterations if trace else 0)
+    host = constant + 3 * receipt + 2 * device
+    return compiled, DeformableMemoryRequirements(device, host, device + host)
+
+
+def _binding(worlds, settings, trace, mode):
+    digest = sha256()
+    digest.update(json.dumps({"schema": "tyx-deformable-bank-v1", "mode": mode,
+                              "settings": vars(settings), "trace": trace},
+                             sort_keys=True, separators=(",", ":")).encode())
+    for key, world in worlds.items():
+        digest.update(str(key).encode() + b":")
+        for array in (world.initial_position, world.initial_velocity, world.weights, world.gravity,
+                      world.edges, world.rest, world.compliance, world.point_ids):
+            digest.update(str((array.dtype.str, array.shape)).encode())
+            digest.update(array.tobytes())
+        for surface in world.surfaces:
+            digest.update(str(surface.key).encode() + b":")
+            for array in (surface.facet_ids, surface.oriented_point_ids, surface.native_indices):
+                digest.update(array.tobytes())
+    return digest.hexdigest()
+
+
+def _checkpoint_hash(binding, states, last_step):
+    digest = sha256(binding.encode())
+    def array_bytes(array):
+        digest.update(str((array.dtype.str, array.shape)).encode())
+        digest.update(array.tobytes())
+    if last_step is not None:
+        digest.update(str((last_step.schema, last_step.binding_sha256, last_step.source_revision,
+                           last_step.destination_revision, last_step.active_bank, last_step.accepted,
+                           tuple(last_step.worlds), tuple(last_step.states))).encode())
+    else:
+        digest.update(b"no-batch-receipt")
+    for key, state in states.items():
+        digest.update(str((key, state.world, state.tick, state.time)).encode())
+        for array in (state.position, state.velocity, state.clock):
+            array_bytes(array)
+        row = state.last_step
+        digest.update(b"none" if row is None else b"step")
+        if row is not None:
+            digest.update(str((row.world, row.input_tick, row.h, row.sweeps,
+                               row.residual, row.max_constraint)).encode())
+            for array in (row.input_position, row.input_velocity, row.input_clock, row.force,
+                          row.predicted_position, row.predicted_velocity, row.alpha, row.multipliers):
+                array_bytes(array)
+            for frame in row.trace:
+                array_bytes(frame)
+    return digest.hexdigest()
+
+
+class _VertexLoan:
+    """Scoped source descriptor, protocol-read-only (not hardware write protection)."""
+    def __init__(self, owner):
+        self._owner = owner
+        self._live = True
+        self._revision = owner.revision
+        self._bank = owner._active
+
+    def _check(self):
+        if not self._live or self._owner._loan is not self:
+            raise RuntimeError("vertex loan is expired")
+        self._owner._require_open()
+        if self._revision != self._owner.revision or self._bank != self._owner._active:
+            raise RuntimeError("vertex loan no longer names the accepted bank")
+
+    @property
+    def revision(self):
+        self._check()
+        return self._revision
+
+    @property
+    def active_bank(self):
+        self._check()
+        return self._bank
+
+    @property
+    def world_keys(self):
+        self._check()
+        return self._owner.world_keys
+
+    @property
+    def binding_sha256(self):
+        self._check()
+        return self._owner.binding_sha256
+
+    @property
+    def mode(self):
+        self._check()
+        return self._owner.mode
+
+    @property
+    def runtime(self):
+        self._check()
+        return self._owner._buffers.runtime
+
+    def position(self, world):
+        self._check()
+        return self._owner._buffers.worlds[world][f"x{self._bank}"]
+
+    def velocity(self, world):
+        self._check()
+        return self._owner._buffers.worlds[world][f"v{self._bank}"]
+
+    def point_ids(self, world):
+        self._check()
+        return self._owner._models[world].point_ids
+
+    def surfaces(self, world):
+        self._check()
+        return self._owner._models[world].surfaces
+
+
+class TyxDeformableBatch:
+    """A bounded, all-world atomic device producer with explicit CAS operations."""
+
+    def __init__(self, worlds, *, mode="interpret", settings=None, trace=False,
+                 memory_limit_bytes=256 * 1024 * 1024, cache_root=None):
+        self._lock = RLock()
+        self._busy = False
+        self._loan = None
+        self._close_pending = False
+        self._poisoned = False
+        self._revision = 0
+        self._owner_id = object()
+        self._active = 0
+        if mode not in ("interpret", "cuda"):
+            raise ValueError("D1 mode must be interpret or cuda")
+        settings = StepSettings(substeps=1) if settings is None else settings
+        self._models, self.memory_requirements = _compile(worlds, settings, trace)
+        limit = _integer(memory_limit_bytes, "memory_limit_bytes")
+        if self.memory_requirements.total_bytes > limit:
+            raise MemoryError("D1 owned device plus HOST array reservation exceeds memory_limit_bytes")
+        self.mode, self.settings, self.trace = mode, settings, trace
+        self.world_keys = tuple(self._models)
+        self.binding_sha256 = _binding(self._models, settings, trace, mode)
+        self._states = MappingProxyType({key: self._initial_state(model)
+                                        for key, model in self._models.items()})
+        self.last_step = None
+        self._buffers = DeformableBuffers(self._models, mode, trace, cache_root)
+        self._state_uploaded_bytes = sum(2 * (24 * model.n + 12) for model in self._models.values())
+        self._force_uploaded_bytes = 0
+        self._successful_steps = 0
+        self._replacements = 0
+        if self._buffers.native_bytes != self.memory_requirements.device_bytes:
+            primary = RuntimeError("D1 buffer allocation differs from its declared resource table")
+            try:
+                self._buffers.close()
+            except BaseException as cleanup:
+                error = BaseExceptionGroup("D1 allocation table and cleanup failed", [primary, cleanup])
+                error.resource_owner = self
+                raise error
+            raise primary
+
+    @staticmethod
+    def requirements(worlds, *, settings=None, trace=False):
+        return _compile(worlds, StepSettings(substeps=1) if settings is None else settings, trace)[1]
+
+    @property
+    def revision(self):
+        return self._revision
+
+    @property
+    def resource_state(self):
+        state = self._buffers.resources.state
+        if state == "OPEN" and self._close_pending:
+            return "PENDING_CLOSE"
+        return state
+
+    @staticmethod
+    def _initial_state(model):
+        return DeformableAcceptedState(model.key, model.initial_position, model.initial_velocity,
+                                       _owned(np.zeros(2, np.float32)), 0, 0.0, None)
+
+    def _require_open(self):
+        if self.resource_state != "OPEN" or self._poisoned:
+            raise RuntimeError("deformable owner is closed, close-only, or synchronization-poisoned")
+
+    def _ready(self, expected_revision):
+        self._require_open()
+        if self._busy or self._loan is not None:
+            raise RuntimeError("deformable mutation cannot reenter a transaction or vertex loan")
+        if _integer(expected_revision, "expected_revision") != self._revision:
+            raise ValueError("stale deformable revision")
+
+    @contextmanager
+    def _transaction(self, expected_revision):
+        with self._lock:
+            self._ready(expected_revision)
+            self._busy = True
+            try:
+                with self._buffers.context():
+                    yield
+            except BaseException as primary:
+                try:
+                    self._buffers.sync()
+                except BaseException as synchronization:
+                    self._poisoned = True
+                    raise BaseExceptionGroup("deformable operation and recovery synchronization failed",
+                                             [primary, synchronization])
+                raise
+            finally:
+                self._busy = False
+
+    def snapshot(self):
+        with self._lock:
+            self._require_open()
+            if self._busy:
+                raise RuntimeError("snapshot cannot reenter a pending transaction")
+            return self._states
+
+    def stats(self):
+        with self._lock:
+            return MappingProxyType({
+                "allocations": self._buffers.allocations,
+                "native_buffer_bytes": self._buffers.native_bytes,
+                "host_reserved_bytes": self.memory_requirements.host_peak_bytes,
+                "state_uploaded_bytes": self._state_uploaded_bytes,
+                "force_uploaded_bytes": self._force_uploaded_bytes,
+                "uploaded_bytes": self._buffers.uploaded_bytes,
+                "downloaded_bytes": self._buffers.downloaded_bytes,
+                "kernels": self._buffers.kernels, "synchronizations": self._buffers.syncs,
+                "successful_steps": self._successful_steps, "replacements": self._replacements,
+            })
+
+    def _read_candidate(self, key, bank):
+        model, arrays = self._models[key], self._buffers.worlds[key]
+        x = _native(self._buffers.read(arrays[f"x{bank}"]), (model.n, 3), "candidate position", exact=True)
+        v = _native(self._buffers.read(arrays[f"v{bank}"]), (model.n, 3), "candidate velocity", exact=True)
+        clock = _native(self._buffers.read(arrays[f"clock{bank}"]), (2,), "candidate clock", exact=True)
+        tick_array = self._buffers.read(arrays[f"tick{bank}"])
+        if tick_array.dtype != np.dtype(np.int32) or tick_array.shape != (1,) or tick_array[0] < 0:
+            raise ValueError("candidate tick is invalid")
+        _geometry(model, x)
+        if np.any(v[model.weights == 0] != 0):
+            raise ValueError("candidate moved a fixed velocity")
+        if not np.array_equal(x[model.weights == 0], model.initial_position[model.weights == 0]):
+            raise ValueError("candidate moved a fixed point")
+        return x, v, clock, int(tick_array[0])
+
+    def _make_receipt(self, rows, states, bank):
+        return DeformableStepReceipt("tyx-deformable-step-v1", self.binding_sha256,
+                                     self._revision, self._revision + 1, bank, True,
+                                     MappingProxyType(dict(rows)), MappingProxyType(dict(states)))
+
+    def step(self, inputs, h, *, expected_revision):
+        from ._tyx_kernels import integrate_particles
+        from ._tyx_math_kernels import axpy_kernel
+        from ._tyx_node_kernels import project_node_distances, reconstruct_nodes
+        from ._tyx_deformable_state import begin_candidate, advance_clock
+        with self._transaction(expected_revision):
+            if not isinstance(inputs, Mapping) or set(inputs) != set(self.world_keys):
+                raise ValueError("one explicit StepInputs force packet is required for every world")
+            if isinstance(h, (bool, np.bool_)) or not np.isscalar(h):
+                raise TypeError("h must be a positive scalar")
+            native_h = _native(np.asarray([h], dtype=np.float64), (1,), "h")[0]
+            if native_h <= 0:
+                raise ValueError("h must be positive")
+            factor = _native(np.asarray([1.0 / float(native_h)]), (1,), "inverse h")[0]
+            packets = {}
+            for key, model in self._models.items():
+                if not isinstance(inputs[key], StepInputs):
+                    raise TypeError("expected StepInputs")
+                packets[key] = _native(inputs[key].force, (model.n, 3), "force", exact=True)
+                if self._states[key].tick >= np.iinfo(np.int32).max:
+                    raise ValueError("D1 device tick capacity exceeded")
+            bank = 1 - self._active
+            rows, states = {}, {}
+            for key, model in self._models.items():
+                a = self._buffers.worlds[key]
+                entry = self._states[key]
+                self._buffers.upload(a["force"], packets[key])
+                self._force_uploaded_bytes += packets[key].nbytes
+                self._buffers.call(integrate_particles, model.n, native_h,
+                                   a[f"x{self._active}"], a[f"v{self._active}"], a["force"],
+                                   a["weights"], a["gravity"], a["predicted_x"], a["predicted_v"])
+                self._buffers.call(begin_candidate, model.n, model.p, a["predicted_x"],
+                                   a[f"x{bank}"], a["multipliers"], a["status"])
+                # Preserve the original two native axpy evaluations of compliance / h / h.
+                self._buffers.call(axpy_kernel, model.p, factor, a["zero"],
+                                   a["compliance"], a["alpha_tmp"])
+                self._buffers.call(axpy_kernel, model.p, factor, a["zero"], a["alpha_tmp"], a["alpha"])
+                self._buffers.sync()
+                px = _native(self._buffers.read(a["predicted_x"]), (model.n, 3), "predictor", exact=True)
+                pv = _native(self._buffers.read(a["predicted_v"]), (model.n, 3), "predictor velocity", exact=True)
+                alpha = _native(self._buffers.read(a["alpha"])[:model.e], (model.e,), "alpha", exact=True)
+                frames = []
+                residual = maximum = 0.0
+                sweeps = 0
+                multipliers = _owned(np.zeros(model.e, np.float32))
+                if model.e:
+                    for sweep in range(self.settings.position_iterations):
+                        if self.trace:
+                            from ._tyx_distance_trace import project_node_distances_traced
+                            self._buffers.call(project_node_distances_traced, model.e, a["edges"],
+                                               a["rest"], a["alpha"], a["weights"], a[f"x{bank}"],
+                                               a["multipliers"], a["trace"])
+                        else:
+                            self._buffers.call(project_node_distances, model.e, a["edges"], a["rest"],
+                                               a["alpha"], a["weights"], a[f"x{bank}"], a["multipliers"])
+                        self._buffers.sync()
+                        candidate_x = _native(self._buffers.read(a[f"x{bank}"]), (model.n, 3),
+                                              "projected position", exact=True)
+                        multipliers = _native(self._buffers.read(a["multipliers"])[:model.e],
+                                              (model.e,), "multipliers", exact=True)
+                        if self.trace:
+                            frames.append(_native(self._buffers.read(a["trace"])[:model.e],
+                                                  (model.e, 18), "ordered trace", exact=True))
+                        residual, maximum = distance_residual(candidate_x, model, alpha, multipliers,
+                                                              self.settings.reference_length)
+                        sweeps = sweep + 1
+                        if not np.isfinite(residual) or not np.isfinite(maximum):
+                            raise ValueError("nonfinite distance audit")
+                        if residual <= self.settings.tolerance:
+                            break
+                    if residual > self.settings.tolerance:
+                        raise RuntimeError("D1 ordered projection exhausted the original iteration budget")
+                self._buffers.call(reconstruct_nodes, model.n, native_h, a["predicted_x"],
+                                   a["predicted_v"], a[f"x{bank}"], a["weights"], a[f"v{bank}"])
+                self._buffers.call(advance_clock, native_h, a[f"clock{self._active}"],
+                                   a[f"tick{self._active}"], a[f"clock{bank}"], a[f"tick{bank}"], a["status"])
+                self._buffers.sync()
+                if np.any(self._buffers.read(a["status"])):
+                    raise ValueError("D1 clock/tick publication failed")
+                x, v, clock, tick = self._read_candidate(key, bank)
+                if tick != entry.tick + 1:
+                    raise ValueError("candidate tick is not the immediate successor")
+                row = DeformableWorldStep(key, entry.position, entry.velocity, entry.clock, entry.tick,
+                                          packets[key], float(native_h), px, pv, alpha, multipliers,
+                                          sweeps, float(residual), float(maximum), tuple(frames))
+                rows[key] = row
+                states[key] = DeformableAcceptedState(key, x, v, clock, tick, float(clock[0]), row)
+            receipt = self._make_receipt(rows, states, bank)
+            # All validation/readback/receipt work precedes this single all-world publication.
+            self._active, self._states, self.last_step = bank, receipt.states, receipt
+            self._revision += 1
+            self._successful_steps += 1
+            return receipt
+
+    def checkpoint(self):
+        with self._lock:
+            self._require_open()
+            if self._busy or self._loan is not None:
+                raise RuntimeError("checkpoint cannot reenter a transaction or vertex loan")
+            return DeformableCheckpoint("tyx-deformable-checkpoint-v1", self.binding_sha256,
+                                        self._owner_id, self._active, self._states, self.last_step,
+                                        _checkpoint_hash(self.binding_sha256, self._states, self.last_step))
+
+    @staticmethod
+    def _is_owned(array):
+        base = array
+        while isinstance(base, np.ndarray):
+            if base.flags.writeable:
+                return False
+            base = base.base
+        return isinstance(base, bytes)
+
+    def _checkpoint_state(self, key, state):
+        model = self._models[key]
+        if not isinstance(state, DeformableAcceptedState) or state.world != key:
+            raise ValueError("checkpoint state identity mismatch")
+        frozen = []
+        unchanged = True
+        for value, shape, name in ((state.position, (model.n, 3), "position"),
+                                   (state.velocity, (model.n, 3), "velocity"),
+                                   (state.clock, (2,), "clock")):
+            safe = _native(value, shape, "checkpoint " + name, exact=True)
+            trusted = self._is_owned(value)
+            frozen.append(value if trusted else safe)
+            unchanged = unchanged and trusted
+        if _integer(state.tick, "checkpoint tick") > np.iinfo(np.int32).max or state.time != float(frozen[2][0]):
+            raise ValueError("checkpoint clock/tick mismatch")
+        row = state.last_step
+        if row is not None:
+            if not isinstance(row, DeformableWorldStep) or row.world != key:
+                raise ValueError("checkpoint step identity mismatch")
+            if row.input_tick + 1 != state.tick or not 0 <= row.sweeps <= self.settings.position_iterations:
+                raise ValueError("checkpoint step/tick/count mismatch")
+            if len(row.trace) != (row.sweeps if self.trace else 0):
+                raise ValueError("checkpoint trace count mismatch")
+            if not np.isfinite([row.h, row.residual, row.max_constraint]).all() or row.h <= 0:
+                raise ValueError("checkpoint step scalars invalid")
+            values = []
+            row_owned = True
+            for name, shape in (("input_position", (model.n, 3)), ("input_velocity", (model.n, 3)),
+                                ("input_clock", (2,)), ("force", (model.n, 3)),
+                                ("predicted_position", (model.n, 3)), ("predicted_velocity", (model.n, 3)),
+                                ("alpha", (model.e,)), ("multipliers", (model.e,))):
+                value = getattr(row, name)
+                safe = _native(value, shape, "checkpoint " + name, exact=True)
+                trusted = self._is_owned(value)
+                values.append(value if trusted else safe)
+                row_owned = row_owned and trusted
+            frames = []
+            for frame in row.trace:
+                safe = _native(frame, (model.e, 18), "checkpoint trace", exact=True)
+                trusted = self._is_owned(frame)
+                frames.append(frame if trusted else safe)
+                row_owned = row_owned and trusted
+            if not row_owned:
+                row = DeformableWorldStep(key, values[0], values[1], values[2], row.input_tick,
+                                          values[3], row.h, values[4], values[5], values[6], values[7],
+                                          row.sweeps, row.residual, row.max_constraint, tuple(frames))
+            unchanged = unchanged and row_owned
+        if not unchanged:
+            raise ValueError("D1 checkpoints require their original immutable array payloads")
+        return state
+
+    def _validate_checkpoint(self, checkpoint):
+        if not isinstance(checkpoint, DeformableCheckpoint) or checkpoint.schema != "tyx-deformable-checkpoint-v1":
+            raise TypeError("expected a D1 in-memory checkpoint")
+        if checkpoint.owner_id is not self._owner_id:
+            raise ValueError("checkpoint belongs to another owner")
+        if checkpoint.binding_sha256 != self.binding_sha256 or tuple(checkpoint.worlds) != self.world_keys:
+            raise ValueError("checkpoint model/layout/backend binding mismatch")
+        if checkpoint.active_bank not in (0, 1):
+            raise ValueError("invalid checkpoint bank")
+        states = {key: self._checkpoint_state(key, state) for key, state in checkpoint.worlds.items()}
+        receipt = checkpoint.last_step
+        if receipt is not None:
+            if (not isinstance(receipt, DeformableStepReceipt)
+                    or receipt.schema != "tyx-deformable-step-v1"
+                    or receipt.binding_sha256 != self.binding_sha256 or receipt.accepted is not True
+                    or tuple(receipt.worlds) != self.world_keys or tuple(receipt.states) != self.world_keys
+                    or receipt.destination_revision != receipt.source_revision + 1
+                    or receipt.active_bank not in (0, 1)):
+                raise ValueError("checkpoint batch receipt binding mismatch")
+            for key, state in checkpoint.worlds.items():
+                if receipt.states[key] is not state or receipt.worlds[key] is not state.last_step:
+                    raise ValueError("checkpoint receipt does not bind the complete saved state")
+        if _checkpoint_hash(self.binding_sha256, states, receipt) != checkpoint.content_sha256:
+            raise ValueError("checkpoint content hash mismatch")
+        return MappingProxyType(states)
+
+    def _verify_replacement(self, expected, bank):
+        for key, state in expected.items():
+            x, v, clock, tick = self._read_candidate(key, bank)
+            if tick != state.tick:
+                raise ValueError("replacement device tick differs")
+            for actual, wanted in ((x, state.position), (v, state.velocity), (clock, state.clock)):
+                if actual.tobytes() != wanted.tobytes():
+                    raise ValueError("replacement device state differs from its exact requested bytes")
+
+    def _replace(self, selected, expected, last_step=None):
+        from ._tyx_deformable_state import copy_state
+        bank = 1 - self._active
+        for key, model in self._models.items():
+            a = self._buffers.worlds[key]
+            if key in selected:
+                state = expected[key]
+                for name, value in ((f"x{bank}", state.position), (f"v{bank}", state.velocity),
+                                    (f"clock{bank}", state.clock),
+                                    (f"tick{bank}", np.asarray([state.tick], np.int32))):
+                    self._buffers.upload(a[name], value)
+                    self._state_uploaded_bytes += value.nbytes
+            else:
+                self._buffers.call(copy_state, model.n, a[f"x{self._active}"], a[f"v{self._active}"],
+                                   a[f"clock{self._active}"], a[f"tick{self._active}"],
+                                   a[f"x{bank}"], a[f"v{bank}"], a[f"clock{bank}"], a[f"tick{bank}"])
+        self._buffers.sync()
+        self._verify_replacement(expected, bank)
+        publication = MappingProxyType(dict(expected))
+        self._active, self._states, self.last_step = bank, publication, last_step
+        self._revision += 1
+        self._replacements += 1
+
+    def reset(self, worlds, *, expected_revision):
+        with self._transaction(expected_revision):
+            keys = tuple(_integer(key, "reset world") for key in worlds)
+            if len(set(keys)) != len(keys) or any(key not in self._models for key in keys):
+                raise ValueError("reset world identities must be unique and registered")
+            if not keys:
+                return
+            expected = dict(self._states)
+            for key in keys:
+                expected[key] = self._initial_state(self._models[key])
+            self._replace(set(keys), expected)
+
+    def restore(self, checkpoint, *, expected_revision):
+        with self._transaction(expected_revision):
+            states = self._validate_checkpoint(checkpoint)
+            self._replace(set(self.world_keys), states, checkpoint.last_step)
+
+    @contextmanager
+    def borrow_vertices(self, *, expected_revision):
+        with self._lock:
+            self._ready(expected_revision)
+            loan = _VertexLoan(self)
+            self._loan = loan
+            try:
+                self._buffers.sync()
+                yield loan
+            finally:
+                loan._live = False
+                self._loan = None
+
+    def close(self):
+        with self._lock:
+            if self._busy or self._loan is not None:
+                raise RuntimeError("close cannot reenter an operation or active vertex loan")
+            if self.resource_state == "CLOSED":
+                return
+            self._close_pending = True
+            self._buffers.close()
+
+    def __enter__(self):
+        with self._lock:
+            self._require_open()
+        return self
+
+    def __exit__(self, kind, value, traceback):
+        try:
+            self.close()
+        except BaseException as cleanup:
+            if value is not None:
+                raise BaseExceptionGroup("deformable operation and cleanup both failed", [value, cleanup])
+            raise
+        return False

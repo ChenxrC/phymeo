@@ -256,3 +256,17 @@ def test_no_cpu_projection_fallback(tyx_mode, monkeypatch):
             raise AssertionError("CPU projection used to produce device state")
         monkeypatch.setattr(distance, "project_distances", forbidden)
         assert batch.step(forces((spec,)), H, expected_revision=0).accepted
+
+
+@pytest.mark.parametrize("trace", [False, True])
+def test_nonempty_edge_trace_budget_exact_boundary(trace, tyx_mode):
+    spec = world(square=True)
+    need = TyxDeformableBatch.requirements((spec,), settings=SETTINGS, trace=trace)
+    assert need.device_bytes == 88*4 + 32*5 + 40 + (72*5 if trace else 0)
+    with TyxDeformableBatch((spec,), mode=tyx_mode, settings=SETTINGS, trace=trace,
+                           memory_limit_bytes=need.total_bytes) as batch:
+        assert batch.step(forces((spec,)), H, expected_revision=0).accepted
+        assert batch.stats()["native_buffer_bytes"] == need.device_bytes
+    with pytest.raises(MemoryError):
+        TyxDeformableBatch((spec,), mode=tyx_mode, settings=SETTINGS, trace=trace,
+                          memory_limit_bytes=need.total_bytes-1)

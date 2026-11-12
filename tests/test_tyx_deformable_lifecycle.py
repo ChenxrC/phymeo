@@ -123,6 +123,19 @@ def test_nonfinite_force_stale_cas_and_duplicate_reset_refused(tyx_mode):
     specs=(world(),)
     with TyxDeformableBatch(specs, mode=tyx_mode, settings=SETTINGS) as batch:
         saved=batch.snapshot()
+        before_kernels = batch.stats()["kernels"]
+        for bad in (float("nan"), float("inf")):
+            packet = forces(specs)
+            packet[7].force[0,0] = bad
+            with pytest.raises(ValueError):
+                batch.step(packet,H,expected_revision=0)
+            arrays_equal(batch.snapshot(),saved)
+            assert batch.stats()["kernels"] == before_kernels
+        packet = forces(specs)
+        packet[7].force = np.zeros((2,3),np.float32)
+        with pytest.raises(ValueError):
+            batch.step(packet,H,expected_revision=0)
+        assert batch.stats()["kernels"] == before_kernels
         with pytest.raises(ValueError):
             batch.step(forces(specs),H,expected_revision=1)
         with pytest.raises(ValueError):
@@ -167,3 +180,69 @@ def test_unknown_release_never_retries_opaque_callback(tyx_mode):
     assert owner.calls==1
     with pytest.raises(RuntimeError):
         batch.snapshot()
+
+
+@pytest.mark.parametrize("where", ["first-before", "last-after"])
+def test_real_kernel_failure_keeps_bank_and_allows_known_python_retry(where, tyx_mode, monkeypatch):
+    specs = (world(), world(31, square=True, fixed=True))
+    with TyxDeformableBatch(specs, mode=tyx_mode, settings=SETTINGS) as batch, \
+         TyxDeformableBatch(specs, mode=tyx_mode, settings=SETTINGS) as twin:
+        for owner in (batch, twin):
+            owner.step(forces(specs), H, expected_revision=0)
+        saved = batch.snapshot()
+        revision = batch.revision
+        bank = batch.checkpoint().active_bank
+        original = batch._buffers.call
+        calls = []
+        clocks = []
+        def fail(kernel, *args):
+            name = getattr(kernel, "__name__", None)
+            # TYX Kernel wrappers expose the original function through .fn in some pins;
+            # function identity is authoritative and needs no private execution state.
+            from phymeo.backends._tyx_kernels import integrate_particles
+            from phymeo.backends._tyx_deformable_state import advance_clock
+            calls.append(name)
+            if where == "first-before" and kernel is integrate_particles:
+                raise RuntimeError("known Python fault before first physical kernel")
+            result = original(kernel, *args)
+            if kernel is advance_clock:
+                clocks.append(True)
+                if where == "last-after" and len(clocks) == 2:
+                    batch._buffers.sync()
+                    raise RuntimeError("known Python fault after actual last clock kernel")
+            return result
+        with monkeypatch.context() as patch:
+            patch.setattr(batch._buffers, "call", fail)
+            with pytest.raises(RuntimeError, match="known Python fault"):
+                batch.step(forces(specs, 1), H, expected_revision=revision)
+        arrays_equal(batch.snapshot(), saved)
+        assert batch.revision == revision and batch.checkpoint().active_bank == bank
+        assert calls and (where != "last-after" or len(clocks) == 2)
+        assert batch.step(forces(specs, 1), H, expected_revision=revision).accepted
+        assert twin.step(forces(specs, 1), H, expected_revision=twin.revision).accepted
+        for key in batch.world_keys:
+            for field in ("position", "velocity", "clock"):
+                assert getattr(batch.snapshot()[key], field).tobytes() == getattr(twin.snapshot()[key], field).tobytes()
+
+
+@pytest.mark.parametrize("bad", ["owner", "world", "topology", "hash"])
+def test_checkpoint_binding_and_content_reject_before_launch(bad, tyx_mode):
+    from types import MappingProxyType
+    from dataclasses import replace
+    specs = (world(),)
+    with TyxDeformableBatch(specs, mode=tyx_mode, settings=SETTINGS) as batch, \
+         TyxDeformableBatch((world(square=True),), mode=tyx_mode, settings=SETTINGS) as other:
+        capsule = batch.checkpoint()
+        if bad == "owner":
+            capsule = replace(capsule, owner_id=other.checkpoint().owner_id)
+        elif bad == "world":
+            capsule = replace(capsule, worlds=MappingProxyType({31:capsule.worlds[7]}))
+        elif bad == "topology":
+            capsule = replace(capsule, binding_sha256=other.binding_sha256)
+        else:
+            capsule = replace(capsule, content_sha256="0"*64)
+        saved, count = batch.snapshot(), batch.stats()["kernels"]
+        with pytest.raises(ValueError):
+            batch.restore(capsule, expected_revision=0)
+        arrays_equal(batch.snapshot(), saved)
+        assert batch.stats()["kernels"] == count and batch.revision == 0

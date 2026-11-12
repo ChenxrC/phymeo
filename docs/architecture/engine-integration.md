@@ -271,3 +271,29 @@ consumer stream handle. TYX `CudaStream.validate_context` is required; this
 contract does not qualify fixed Graph, cross-context streams, or concurrent
 mutation of one runtime. Locks remain per runtime. Native direct conditional
 readbacks and explicit completion costs remain visible.
+
+## Fixed step Graph v1
+
+`step_graph_contract_version=1` adds `prepare_step_graph(steps=4)` and
+`enqueue_step(ticket, steps=4, execution_mode="cuda_graph")`. Capture is cold,
+requires idle execution, and does not advance physics. `step_graph_ready`
+reports actual preparation. The runtime owns two TYX native stream Graphs;
+each borrows one native bank, shared prepared observations and error checks.
+Direct remains explicit and Graph failures never fall back to direct.
+
+Begin/candidate preparation and completion/publication keep their existing
+contracts. Every Graph contains four native advances, per-step validation,
+endpoint body measurements and last-substep contact sampling. Capture does not
+increment physical observation counters; runtime capture/replay counters are
+cumulative. Forward, updates and reset remain direct operations.
+
+Successful stream rebinding retires Graphs before native Host resources and
+requires preparation again. Failed native rebinding restores the previous
+Graph after successful rollback; failure of that restoration permits close
+retry only. Close completes the stream, destroys Graphs, then closes Host
+handles and releases storage/streams. Failed Graph destruction retains owners.
+
+Borrowed native writable inputs still require caller-validated finite values.
+Compact execution errors prevent publication, but arbitrary invalid raw input
+or a fatal CUDA context error does not promise in-process recovery. Consumers
+must prevalidate input; P2PE tests its finite-value rejection separately.

@@ -673,3 +673,18 @@ rebind，同指针不增加。原生 Host 与六 CUBIN 不变，不追加物理�
 TYX 新增 validate_context，实际候选测试使用隔离仓源码，未改旧安装环境；
 现有 direct 条件读回同步保持。证据：配套根 evidence/b4b-native-{final,counters}.log。
 完整库、Graph 推进、安装和 GUI 不由本批继承资格。
+
+## B5a：固定四子步 Graph
+
+step_graph v1 定义见[固定 Graph 合同](../architecture/engine-integration.md#fixed-step-graph-v1)。
+仅改 PHYMEO 运行组织，复用 TYX native stream capture 与既有 Host，六 CUBIN 不变。
+主案例 4×10 ms；两 bank 原生捕获不推进，无预热 rollout 或全状态恢复副本。
+正式测试 test_physolve_graph 验证简单控制/接触 N=1/8/64、body/contact 观测、
+局部 reset、GC、换流、捕获失败、关闭重试、错误不发布和显存采样。
+
+初轮综合运行 9 通过、2 失败：直接注入 raw NaN 超出借用输入的有限值前提，
+触发 CUDA 719 并连带阻断后续采样；保留 evidence/b5a-native-final.log，不宣称
+原生 CUBIN 已修复或支持此恢复。改用紧凑错误位故障注入验证发布门禁，并由
+P2PE 正式输入测试验证 NaN 拒绝。两项后续均通过，见 b5a-native-gates-memory.log。
+8 次交替流捕获/重放的 free memory 均为 7240417280 字节（共享 GPU 观测）；
+此规模未观察到持续增长，不等同长期/机器人峰值显存或完整 Graph 资格。

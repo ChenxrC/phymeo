@@ -162,7 +162,7 @@ class PreparedContacts:
         self.update(0, stream, mask=all_mask)
         self.extractions = self.merges = self.copies = 0
 
-    def update(self, index, stream, *, mask=None, integrated=False):
+    def update(self, index, stream, *, mask=None, integrated=False, record=True):
         native = self.native[index]
         target = index if mask is None else 2
         inputs = self.inputs[index]
@@ -173,7 +173,8 @@ class PreparedContacts:
         self.raw[target][3].zero_(stream=stream)
         _measure(native.nacon, self.ids, *inputs, self.force_flat, *self.flat[target],
                  self.flags, mode="cuda", stream=stream)
-        self.extractions += 1
+        if record:
+            self.extractions += 1
         if not integrated:
             _sample_time(native.time, self.sample_times[1-index], self.sample_times[index],
                          self.all_mask if mask is None else mask, mode="cuda", stream=stream)
@@ -182,7 +183,8 @@ class PreparedContacts:
             self.raw[index][3].zero_(stream=stream)
             _merge(*self.flat[1-index][:3], *self.flat[2][:3], mask, *self.flat[index],
                    self.flags, mode="cuda", stream=stream)
-            self.merges += 1
+            if record:
+                self.merges += 1
 
     def capture_time(self, index, stream):
         # Snapshot the actual last substep start; subtraction after integration

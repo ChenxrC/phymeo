@@ -94,15 +94,17 @@ class PreparedBodyObservations:
             self.preserve(index, all_mask, stream)
         self.kinematics_passes = self.publications = 0
 
-    def update(self, index, stream, *, integrated):
+    def update(self, index, stream, *, integrated, record=True):
         inputs = self.native_inputs[index]
         if integrated:
             for operation in self.operations:
                 operation(self.model, self.inputs[index])
-            self.kinematics_passes += 1
+            if record:
+                self.kinematics_passes += 1
             inputs = self.derived_inputs
         _publish(*inputs, *self.flat_outputs[index], mode="cuda", stream=stream)
-        self.publications += 1
+        if record:
+            self.publications += 1
 
     def copy(self, source, target, stream):
         for name in self.field_names:

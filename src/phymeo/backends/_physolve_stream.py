@@ -30,6 +30,16 @@ def bind_stream(runtime, handle, owner):
             if candidate is not default:
                 candidate.destroy()
             raise
+        had_graph = runtime.step_graph_ready
+        try:
+            runtime._release_step_graphs()
+        except Exception as error:
+            if candidate is not default:
+                candidate.destroy()
+            runtime._closing = True
+            error.runtime = runtime
+            error.stream_bindings_changed = True
+            raise
         # Keep both wrappers until native retired sessions and any submitted
         # preparation work have been released. A failed phase keeps this list.
         runtime._stream_retained = [old, candidate]
@@ -50,6 +60,8 @@ def bind_stream(runtime, handle, owner):
                 if candidate is not default:
                     candidate.destroy()
                 runtime._stream_retained.clear()
+                if had_graph:
+                    runtime.prepare_step_graph()
             except Exception as cleanup:
                 runtime._closing = True
                 error.runtime = runtime

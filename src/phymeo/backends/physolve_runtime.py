@@ -57,6 +57,7 @@ class PhySolveRuntime:
     free_body_update_contract_version = 1
     free_body_component_contract_version = 1
     stream_binding_contract_version = 1
+    step_graph_contract_version = 1
 
     def __init__(
         self,
@@ -114,6 +115,9 @@ class PhySolveRuntime:
         self._owned_stream = None
         self._stream_retained = []
         self._stream_rebindings = 0
+        self._step_graphs = None
+        self._graph_captures = 0
+        self._graph_replays = 0
         self._reset = None
         self._controls_binding = None
         self._body_observations = None
@@ -252,6 +256,46 @@ class PhySolveRuntime:
         from ._physolve_stream import bind_stream
         return bind_stream(self, handle, owner)
 
+    @property
+    def step_graph_ready(self):
+        return self._step_graphs is not None and self._step_graphs.ready
+
+    def _release_step_graphs(self):
+        if self._step_graphs is not None:
+            self._step_graphs.close()
+            self._step_graphs = None
+
+    def prepare_step_graph(self, *, steps=4):
+        """Capture both banks without executing physics; fixed four-step profile.
+
+        No warmup rollout, physical state clone, or implicit direct fallback.
+        Stream rebind retires these Graphs and requires explicit preparation.
+        """
+        if _positive(steps, 'steps') != 4:
+            raise ValueError('fixed step Graph v1 requires four substeps')
+        with self._scope():
+            self._require_idle()
+            if self.step_graph_ready:
+                return False
+            if self._stream.is_capturing:
+                raise RuntimeError('cannot prepare step Graph during another capture')
+            self._complete()
+            self._release_step_graphs()
+            from ._physolve_graph import PreparedStepGraphs
+            self._step_graphs = PreparedStepGraphs(self, steps)
+            try:
+                self._step_graphs.prepare()
+                self._graph_captures += 2
+            except Exception as error:
+                try:
+                    self._release_step_graphs()
+                except Exception as cleanup:
+                    self._closing = True
+                    error.runtime = self
+                    raise error from cleanup
+                raise
+            return True
+
     def _validate(self, data):
         if self._validation is not None:
             self._validation.read(self._stream)
@@ -388,6 +432,9 @@ class PhySolveRuntime:
                     "contact_measurement_copies": 0 if contacts is None else contacts.copies,
                     "free_body_update_device_bytes": 0 if self._free_body_updates is None else self._free_body_updates.allocated_bytes,
                     "stream_rebindings": self._stream_rebindings,
+                    "step_graph_captures": self._graph_captures,
+                    "step_graph_ready": self.step_graph_ready,
+                    "step_graph_replays": self._graph_replays,
                     "native_direct_conditional_sync": True}
 
     @property
@@ -428,7 +475,7 @@ class PhySolveRuntime:
             self._pending["phase"] = "prepared"
             return ticket
 
-    def enqueue_step(self, ticket, *, steps=1):
+    def enqueue_step(self, ticket, *, steps=1, execution_mode='direct'):
         """Advance one candidate for all substeps; no publication or host readback here.
 
         Native direct conditional loops may synchronize internally; this API
@@ -437,21 +484,31 @@ class PhySolveRuntime:
         steps = _positive(steps, "steps")
         with self._scope():
             index = self._require_ticket(ticket, "prepared")
+            if execution_mode not in ('direct', 'cuda_graph'):
+                raise ValueError('unknown step execution mode')
+            if execution_mode == 'cuda_graph' and (not self.step_graph_ready or steps != 4):
+                raise RuntimeError('fixed four-step Graph must be prepared before replay')
             self._pending["phase"] = "enqueued"
             try:
-                for substep in range(steps):
-                    if self._contact_observations is not None and substep == steps - 1:
-                        self._contact_observations.capture_time(index, self._stream)
-                    self._native._step_runtime(self._handles[index])
-                    self._validation.enqueue(index, self._stream, include_extra=False)
-                if self._body_observations is not None:
-                    self._body_observations.update(index, self._stream, integrated=True)
-                    self._validation.enqueue_extra(index, self._stream)
-                if self._contact_observations is not None:
-                    self._contact_observations.update(index, self._stream, integrated=True)
+                if execution_mode == 'cuda_graph':
+                    self._step_graphs.replay(index)
+                else:
+                    self._enqueue_step_work(index, steps)
             except Exception:
                 self._pending["phase"] = "failed"
                 raise
+
+    def _enqueue_step_work(self, index, steps, *, record=True):
+        for substep in range(steps):
+            if self._contact_observations is not None and substep == steps - 1:
+                self._contact_observations.capture_time(index, self._stream)
+            self._native._step_runtime(self._handles[index])
+            self._validation.enqueue(index, self._stream, include_extra=False)
+        if self._body_observations is not None:
+            self._body_observations.update(index, self._stream, integrated=True, record=record)
+            self._validation.enqueue_extra(index, self._stream)
+        if self._contact_observations is not None:
+            self._contact_observations.update(index, self._stream, integrated=True, record=record)
 
     def enqueue_forward(self, ticket):
         with self._scope():
@@ -676,6 +733,7 @@ class PhySolveRuntime:
             self._complete()
             for stream in self._stream_retained:
                 self._synchronize_stream(stream)
+            self._release_step_graphs()
             for index, handle in enumerate(self._handles):
                 if handle is not None:
                     self._native._close_runtime(handle, True)

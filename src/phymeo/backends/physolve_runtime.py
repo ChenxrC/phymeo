@@ -64,6 +64,7 @@ class PhySolveRuntime:
     stream_binding_contract_version = 1
     step_graph_contract_version = 1
     configuration_readback_contract_version = 1
+    capacity_info_contract_version = 1
     body_wrench_contract_version = 1
 
     def __init__(
@@ -330,6 +331,32 @@ class PhySolveRuntime:
         """
         from ._physolve_stream import bind_stream
         return bind_stream(self, handle, owner)
+
+    def capacity_info(self):
+        """Owned metadata for allocated Contact/Constraint array spans in both banks.
+
+        No device read, wait or device allocation. This excludes model, Host workspace,
+        observations, allocator overhead and Graph resources; it is not total VRAM.
+        Capacities are allocation facts, not a guarantee about future trajectories.
+        """
+        from dataclasses import fields
+
+        with self._scope():
+            banks = []
+            for bank in self._banks:
+                arrays = {
+                    f"{name}.{field.name}": int(getattr(group, field.name).capacity)
+                    for name, group in (("contact", bank.contact), ("constraint", bank.efc))
+                    for field in fields(group)
+                }
+                banks.append(dict(nworld=int(bank.nworld), naconmax=int(bank.naconmax),
+                                  njmax=int(bank.njmax), array_bytes=arrays,
+                                  partial_buffer_bytes=sum(arrays.values())))
+            return dict(contract_version=1, nworld=self.nworld, nconmax=self.nconmax,
+                        njmax=self.njmax, banks=banks,
+                        partial_buffer_bytes=sum(b['partial_buffer_bytes'] for b in banks),
+                        scope='allocated_contact_and_constraint_arrays_both_banks',
+                        total_device_memory=False)
 
     def configuration_info(self):
         """Cold, synchronous readback of the native execution configuration.

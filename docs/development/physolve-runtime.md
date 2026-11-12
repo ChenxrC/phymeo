@@ -1,5 +1,17 @@
 # PhySolve 原生运行时实验
 
+## Capacity metadata v1
+
+`PhySolveRuntime.capacity_info_contract_version=1` 与 `capacity_info()` 返回双 bank
+已分配 Contact/Constraint 数组的逐字段可访问字节数、实际 nworld/naconmax/njmax
+和部分缓冲总和。包括 packed component 与原生 padding，不再次乘 world 数。
+这是独立持有的冷 metadata，无设备读回、等待、设备分配或物理推进；不含 model、
+Host 工作区、观测/备份、allocator 开销及 Graph，不是总显存或未来容量保证。
+预算阈值和用户预警属于接口层；运行时不因预算改变实际分配。其余资格限制见下文。
+正式原生4项通过（26.84s），覆盖N=1/8/64逐数组字节核验、step/reset保持、
+无设备工作、返回值所有权与既有配置读回。独立只读复审完成，六CUBIN/Host不改；
+全库文档仍479条历史缺失，日志散列与B8k一致。证据为配套根evidence/b8n-*。
+
 **资格状态：未通过完整机器人验收，不可用于消费者部署。**
 Panda 的 B1g 固定输入与官方参考复测见[初始加速度诊断](#b1g-panda-初始加速度诊断)。
 后续 B1h 的独立几何审计与显式配置见[Panda连接处规则](../architecture/native-assembly.md#b1h-panda-显式连接处规则)；不改原始无规则失败。

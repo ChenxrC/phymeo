@@ -42,6 +42,37 @@ def test_runtime_requires_compilation_and_explicit_payload():
         PhySolveRuntime(None, payload=None)
 
 
+@pytest.mark.parametrize('nworld', [1, 8, 64])
+def test_capacity_metadata_is_owned_and_requires_no_device_work(payload, nworld, monkeypatch):
+    import tyx as tx
+    from dataclasses import fields
+    from tyx.cuda_stream import CudaStream
+
+    record = compile_mujoco_xml(SLIDER, require_asset=False)
+    with PhySolveRuntime(record, payload=payload, nworld=nworld, nconmax=32, njmax=96) as runtime:
+        expected = sum(getattr(group, field.name).storage.nbytes
+                       for bank in runtime._banks for group in (bank.contact, bank.efc)
+                       for field in fields(group))
+        def forbidden(*args, **kwargs):
+            raise AssertionError('capacity metadata performed device work')
+        with monkeypatch.context() as patch:
+            patch.setattr(tx.Array, 'numpy', forbidden)
+            patch.setattr(tx.Array, 'copy_to_host', forbidden)
+            patch.setattr(CudaStream, 'synchronize', forbidden)
+            patch.setattr(tx, 'empty', forbidden)
+            report = runtime.capacity_info()
+            assert report['partial_buffer_bytes'] == expected
+            assert len(report['banks']) == 2
+            assert [b['naconmax'] for b in report['banks']] == [32*nworld]*2
+            report['banks'][0]['array_bytes'].clear()
+            assert runtime.capacity_info()['banks'][0]['array_bytes']
+        runtime.step()
+        runtime.reset()
+        assert runtime.capacity_info()['partial_buffer_bytes'] == expected
+    with pytest.raises(RuntimeError, match='closed'):
+        runtime.capacity_info()
+
+
 def test_configuration_readback_is_owned_idle_only_and_capture_safe(payload):
     import tyx as tx
 

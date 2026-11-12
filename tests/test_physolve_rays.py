@@ -66,6 +66,15 @@ def test_selected_rays_endpoint_step_reset(nworld, payload, monkeypatch):
             tx, worlds, [[0, 0, 2], [3, 0, 2], [8, 0, 2]], [[0, 0, -1], [0, 0, -1], [0, 0, 1]]
         )
 
+        # Persistent capacity is larger than the selected rows for N=8/64.
+        args = (
+            *args[:3],
+            *(
+                tx.Array(np.broadcast_to(a.numpy()[0], (nworld, 3, 3)).copy(), device="cuda:0")
+                for a in args[3:]
+            ),
+        )
+
         def sample():
             plan.sample(*args, rows=len(worlds), far=10.0)
             plan.storage.stream.synchronize()

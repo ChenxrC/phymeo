@@ -758,3 +758,15 @@ TYX 冷构造先注册嵌套资源 owner 再提交异步工作，异常后由 ru
 未变；公共导入检查的 mujoco_task_workspace 既有违规未变；既有 AST 弃用告警保留。
 不改六 CUBIN、Host、现有容差或生产排序；不开展跨求解器微差调查。
 证据、来源与提交统一记录配套实验根 `evidence/b6e-summary.json`。
+
+## B6f：持久射线容量与消费方接入
+
+prepared_ray_capacity_rows 明示 sample 可使用容量首维大于 selected rows 的输入；
+仅计算选中前缀，输出仍是 compact row/ray 顺序。消费者可复用持久 buffer，不需
+在热路径重建 view；max_rays 与 int32 容量门禁保持。N=1/8/64 的正式原生 endpoint、
+step/reset 测试改用完整容量输入，3 项通过（26.60 s）。旧的精确 rows 输入仍兼容。
+
+P2PE 用一个最大容量 query 为所有 Camera/LiDAR batch 顺序 sample→gather，避免
+复制几何/BVH；PHYMEO 仍拥有 query 生命周期，P2PE 只拥有挂载和字段转换 scratch。
+本批不改求解器、六 CUBIN、Host 或容差；Panda 原始 ray ID 对照失败仍保留。
+配套 C ABI 结果及最终来源统一见实验根 `evidence/b6f-summary.json`，不替代安装资格。

@@ -142,7 +142,7 @@ class PreparedRayQuery:
         Caller prevalidates unique IDs/count==rows in stream order, retains input
         arrays, prevents overlap with plan resources and concurrent mutation/close.
         Read errors after completion before publishing hits. Inputs have shape
-        [rows, rays_per_world, 3] and world-local physical coordinates (no display
+        [capacity >= rows, rays_per_world, 3] and world-local physical coordinates (no display
         world offsets). Every ray is computed only for its selected world.
         """
         self.storage.require_valid()
@@ -155,7 +155,7 @@ class PreparedRayQuery:
         shape = tuple(origins.shape)
         if (
             len(shape) != 3
-            or shape[0] != rows
+            or not rows <= shape[0] <= self.nworld
             or shape[2] != 3
             or not 1 <= shape[1] <= self.max_rays
             or tuple(directions.shape) != shape

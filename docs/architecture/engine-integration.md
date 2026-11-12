@@ -415,7 +415,9 @@ performed. Geometry is not rebuilt or re-uploaded while stepping or sampling.
 
 `sample(selected, count, gate, origins, directions, rows=..., near=..., far=...)`
 accepts same-device contiguous int32 selection/count/gate and float32
-`[rows,rays_per_world,3]` origins/unit directions. Coordinates are physical-world
+`[capacity,rays_per_world,3]` origins/unit directions, with rows <= capacity <= nworld.
+The `prepared_ray_capacity_rows` capability permits persistent input capacity;
+only the selected prefix is read and dispatched. Coordinates are physical-world
 coordinates without display/env-origin offsets. It emits only selected rays;
 there is no render-all-then-gather. Caller prevalidates unique selectors and
 count==rows, excludes alias with plan resources, retains inputs and prevents

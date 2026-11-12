@@ -56,6 +56,7 @@ class PhySolveRuntime:
     body_measurement_contract_version = 1
     site_measurement_contract_version = 1
     prepared_ray_contract_version = 1
+    prepared_ray_capacity_rows = True
     selected_update_contract_version = 1
     device_reset_contract_version = 1
     free_body_update_contract_version = 1

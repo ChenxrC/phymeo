@@ -224,39 +224,82 @@ def test_wrong_public_asset_model_rejected_before_allocation(layout,tyx_mode,tmp
 
 @pytest.mark.tyx
 @pytest.mark.parametrize("layout",("affine","floating_affine"))
-def test_wrong_original_graph_rejected(layout,tyx_mode,tmp_path):
+def test_wrong_original_graph_rejected(layout,tyx_mode,tmp_path,monkeypatch):
+    from phymeo.backends._resident_boundary_query import ResidentBoundaryQueryPlan
     _,tree,_=prepare(tmp_path/"owned",layout)
     wrong,_,_=prepare(tmp_path/"wrong",layout,multiplier="-.5")
     shapes,bindings=install(wrong,layout,7)
+    model=ph.CollisionModel(tuple(shapes))
+    allocations=[]
+    def denied(*args,**kwargs):
+        allocations.append((args,kwargs))
+        raise AssertionError("graph admission must precede owned allocation")
+    monkeypatch.setattr(ResidentBoundaryQueryPlan,"_allocate",denied)
     with ph.TyxWorldBatch([(7,tree)],tyx_mode,cache_root=tmp_path) as batch:
-        with pytest.raises(ValueError,match="graph"):
-            batch.prepare_boundary_query(ph.CollisionModel(tuple(shapes)),bindings,
-                limits=ph.BoundaryDistanceLimits(),memory_limit_bytes=BUDGET)
+        before=batch.snapshot()
+        with m1.saved(tmp_path,"asset-wrong-graph-"+layout,tyx_mode,
+                      inputs=dict(stage="registration",reason="original .*graph differs",model=model,bindings=bindings)) as record:
+            with pytest.raises(ValueError,match="original .*graph differs") as caught:
+                batch.prepare_boundary_query(model,bindings,
+                    limits=ph.BoundaryDistanceLimits(),memory_limit_bytes=BUDGET)
+            record["rejection"]=dict(stage="registration",error_type=type(caught.value).__name__,
+                                     message=str(caught.value),allocation_calls=len(allocations))
+            assert not allocations
+            assert k0.canonical(batch.snapshot())==k0.canonical(before)
 
 
 @pytest.mark.tyx
-@pytest.mark.parametrize("fault",("revision","radius","ids","winding","missing-face","none-direct","body-alias","source-key","hull"))
-def test_asset_material_and_installation_rejections(fault,tyx_mode,tmp_path):
-    asset,tree,_=prepare(tmp_path/"asset","ordinary")
+@pytest.mark.parametrize("fault,stage,reason",(
+    ("revision","registration","source shape IDs, facets, radius, revision or filters changed"),
+    ("radius","registration","source shape IDs, facets, radius, revision or filters changed"),
+    ("ids","registration","source shape IDs, facets, radius, revision or filters changed"),
+    ("winding","registration","source shape IDs, facets, radius, revision or filters changed"),
+    ("missing-face","source-constructor","closed mesh face count outside limits"),
+    ("none-direct","registration","direct complete physical topology"),
+    ("body-alias","registration","one boundary body cannot alias"),
+    ("source-key","factory","source key must identify exactly one collider"),
+    ("hull","registration","supports only triangle/mesh against sphere/capsule"),
+))
+def test_asset_material_and_installation_rejections(fault,stage,reason,tyx_mode,tmp_path,monkeypatch):
+    from phymeo.backends._resident_boundary_query import ResidentBoundaryQueryPlan
+    asset,tree,data=prepare(tmp_path/"asset","ordinary")
     shapes,bindings=install(asset,"ordinary",7,body_alias=fault=="body-alias")
+    # Legitimate wrong-source shapes must be constructed before the raises block.
+    if fault=="revision": shapes[0]=replace(shapes[0],revision=19)
+    elif fault=="radius": shapes[1]=replace(shapes[1],radius=.25)
+    elif fault=="ids":
+        shapes[0]=replace(shapes[0],vertex_ids=(10,11,12,13),
+            triangles=tuple(tuple(i+10 for i in face) for face in shapes[0].triangles))
+    elif fault=="winding":
+        shapes[0]=replace(shapes[0],triangles=tuple(tuple(reversed(f)) for f in shapes[0].triangles))
+    elif fault=="none-direct":
+        bindings[1]=ph.ResidentTreeBinding(bindings[1].key,7,1,bindings[1].local_points_m,topology=None)
+    elif fault=="hull":
+        shapes[0]=ph.CollisionShape(shapes[0].key,"hull",shapes[0].vertex_ids)
+    model=ph.CollisionModel(tuple(shapes))
+    allocations=[]
+    def denied(*args,**kwargs):
+        allocations.append((args,kwargs))
+        raise AssertionError("source admission must precede owned allocation")
+    monkeypatch.setattr(ResidentBoundaryQueryPlan,"_allocate",denied)
     with ph.TyxWorldBatch([(7,tree)],tyx_mode,cache_root=tmp_path) as batch:
-        with pytest.raises(ValueError):
-            if fault=="revision": shapes[0]=replace(shapes[0],revision=19)
-            elif fault=="radius": shapes[1]=replace(shapes[1],radius=.25)
-            elif fault=="ids":
-                shapes[0]=replace(shapes[0],vertex_ids=(10,11,12,13),
-                    triangles=tuple(tuple(i+10 for i in face) for face in shapes[0].triangles))
-            elif fault=="winding":
-                shapes[0]=replace(shapes[0],triangles=tuple(tuple(reversed(f)) for f in shapes[0].triangles))
-            elif fault=="missing-face": shapes[0]=replace(shapes[0],triangles=shapes[0].triangles[:-1])
-            elif fault=="none-direct":
-                bindings[1]=ph.ResidentTreeBinding(bindings[1].key,7,1,bindings[1].local_points_m,topology=None)
-            elif fault=="source-key":
-                ph.ResidentTreeBinding.from_asset(asset,ph.CollisionKey(0,999,0),key=shapes[1].key,world=7)
-            elif fault=="hull":
-                shapes[0]=ph.CollisionShape(shapes[0].key,"hull",shapes[0].vertex_ids)
-            batch.prepare_boundary_query(ph.CollisionModel(tuple(shapes)),bindings,
-                limits=ph.BoundaryDistanceLimits(),memory_limit_bytes=BUDGET)
+        before=batch.snapshot()
+        with m1.saved(tmp_path,"asset-admission-"+fault,tyx_mode,
+                      inputs=dict(data=data,stage=stage,reason=reason,model=model,bindings=bindings)) as record:
+            with pytest.raises(ValueError,match=reason) as caught:
+                if stage=="source-constructor":
+                    # Three faces violate CollisionShape before factory/M1 admission.
+                    # This is a source-constructor control, not an adapter rejection.
+                    replace(shapes[0],triangles=shapes[0].triangles[:-1])
+                elif stage=="factory":
+                    ph.ResidentTreeBinding.from_asset(asset,ph.CollisionKey(0,999,0),key=shapes[1].key,world=7)
+                else:
+                    batch.prepare_boundary_query(model,bindings,
+                        limits=ph.BoundaryDistanceLimits(),memory_limit_bytes=BUDGET)
+            record["rejection"]=dict(stage=stage,error_type=type(caught.value).__name__,
+                                     message=str(caught.value),allocation_calls=len(allocations))
+            assert not allocations
+            assert k0.canonical(batch.snapshot())==k0.canonical(before)
 
 
 @pytest.mark.tyx

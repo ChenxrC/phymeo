@@ -310,3 +310,18 @@ reset-state checks. Its execution is still pending at this checkpoint.
 Evidence: `artifacts/p65-three-track-b-20261112-01`; source snapshots, inputs,
 actual returns and all first failures are retained. This qualifies the D2 source
 query connection only; unresolved capsule rows cannot be used for contact force.
+
+## 9. Parent installed qualification
+
+Unified product `0321c5a4`, 522 source/wheel/installed identical members. Runs
+`39/40` passed interpret/CUDA: each 16 batch steps / 32 worldsteps, 19 checked
+queries, 102 RESOLVED and 12 CONDITIONING rows, zero HOST projection calls.
+Original trajectories, gates and all-edge deformation checks are retained.
+Each complete trace has 133 records; `47-close-installed` independently checked
+its original logical bytes and archived the compressed evidence. The CLI requires
+an explicit absolute installation root (the `--installed-root` alias also allows
+the outside bootstrap to forward it unambiguously).
+
+D2/M2-Q query connection is accepted. Static round geometry, open material
+surfaces and conservative unresolved rows remain explicit. Motion of another
+device owner, contact law/force, CCD and continuous load are D3/D4 work.

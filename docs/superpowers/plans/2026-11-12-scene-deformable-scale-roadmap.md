@@ -1,20 +1,20 @@
 # 后续三主线计划：统一场景、真实变形、机器人与GPU规模
 
-状态：**BATCH_A_QUALIFIED / BATCH_B_AUTHORING**。2026-11-12按用户指定的三点调整；实施基线79e3e089，Batch A最终产品d2a18bee。S1/S2、D1及direct BALL FILTEREXACT这一R2格已完成源码与六个源码外解释/CUDA消费者，520产品成员同源；详见[实际结果](../../development/p65-three-track-batch-a-20261112.md)。无新截止；原失败保持，功能优先，性能超越非强制。[Batch A](2026-11-12-three-track-batch-a.md)已关闭；[Batch B](2026-11-12-three-track-batch-b.md)从c45a0174启动新隔离开发，尚无本批执行结论。
+状态：**BATCH_A / BATCH_B_QUALIFIED（有限范围）**。2026-11-12按用户指定三条主线推进；Batch B产品0321c5a4、522成员同源，S3、D2/M2-Q、FREE+BALL基础格和六个安装消费者已通过，详见[实际结果](../../development/p65-three-track-batch-b-20261112.md)。无新截止，原失败保持，功能优先。下一批C：D3双向响应与G1已验域的异构功能；共享接缝和全部项目执行归父串行。
 
 ## 1. 三条主线与整体完成条件
 
 | 顺序 | 主线 | 完成时用户获得什么 | 当前起点 |
 | --- | --- | --- | --- |
-| 1 | 统一场景到设备碰撞 | 多机器人、工具、物体通过一致的场景状态和查询入口运行；材点、参与者与碰撞结果能可靠对应 | S1/S2多参与者设备来源及公共batch查询已通过；补S3编译声明自动装配及第二类独立安装场景 |
-| 2 | 真实变形状态→查询→响应→连续载荷 | 物理求解产生的变形直接进入碰撞；接触力影响变形体及运动刚体，持续支撑、滑动、卸载能够连续运行 | D1/M2-P持久真实变形节点已通过；下一片D2/M2-Q查询，响应和持续载荷仍未连接 |
-| 3 | 机器人组合→异构GPU规模→公平性能比较 | 更广机器人/约束组合可在同批场景运行，给出明确容量、数值质量和端到端速度边界 | fixed direct BALL FILTEREXACT＋原normal/pyramidal已通过；FREE+BALL等下一格及异构规模仍待补 |
+| 1 | 统一场景到设备碰撞 | 多机器人、工具、物体通过一致的场景状态和查询入口运行；材点、参与者与碰撞结果能可靠对应 | S1–S3已通过；公共编译接线及第二类独立安装场景已补齐，后续供D5响应复用 |
+| 2 | 真实变形状态→查询→响应→连续载荷 | 物理求解产生的变形直接进入碰撞；接触力影响变形体及运动刚体，持续支撑、滑动、卸载能够连续运行 | D1/M2-P和D2/M2-Q查询已通过；下一片D3双向响应，持续载荷仍未连接 |
+| 3 | 机器人组合→异构GPU规模→公平性能比较 | 更广机器人/约束组合可在同批场景运行，给出明确容量、数值质量和端到端速度边界 | fixed direct BALL FILTEREXACT＋原接触、FREE+BALL基础格已通过；异构功能/规模及更广组合仍待补 |
 
 按此顺序安排共享接缝、集成和串行验证；没有代码依赖的作者工作可并行。第一条的查询接口不冒充接触载荷，第二条不能以M2-P或M2-Q通过提前关闭。
 
 ## 2. 调研依据与不重复事项
 
-- [当前Batch A结果](../../development/p65-three-track-batch-a-20261112.md)：新增520成员包及六消费者；[上一批](../../development/p65-parity-motor-asset-20261112.md)BALL-MC/M1-A和515/516成员历史包保原资格，不重跑同源绿集。
+- [当前Batch B结果](../../development/p65-three-track-batch-b-20261112.md)：522成员包及六消费者；[Batch A](../../development/p65-three-track-batch-a-20261112.md)520成员包及[上一批](../../development/p65-parity-motor-asset-20261112.md)BALL-MC/M1-A和515/516成员历史包保原资格，不重跑同源绿集。
 - [M2生产者调研](../../development/p65-m2-producer-bank-design.md)：现有TyxMath/节点/coupled临时设备数组不能直接借作持久accepted状态；复用原ordered节点核，新增明确owner。
 - 当前源码：ResidentSceneBatch已通过明确source协议借用真实TyxWorldBatch的accepted状态，检查完整participant、一致tick、原资产身份并转换不同anchor；不伪造bank或HOST回填。当前未支持任意跨runtime/device组合。
 - [机器人组合研究](../../development/p65-robot-next-compositions-20261112.md)中的BALL-M1、场景装配及后继BALL-MC已完成。只复用其原生关节地址、独立oracle及FREE+BALL缺口分析，不恢复旧NOT_IMPLEMENTED标签或重派旧案例。
@@ -36,7 +36,7 @@
 - 独立查询失败只保留原query publication，不倒滚已经成功的物理步。只有未来放进同一候选事务的碰撞响应才能谈共同物理回滚。
 - HOST可读取证据和独立参考；当前几何来自真实设备状态，不能由HOST重建再上传作为新路径的输入。
 
-**当前进度**：S1/S2已通过，公共batch入口和一个混合多参与者安装场景也已提供。S3剩高层编译声明自动接线、公共流程整合及第二类不同场景；不能仅再跑同一consumer关闭S3。
+**当前进度**：S1–S3已通过。Batch B新增公共编译查询接线和mimic固定网格工具＋自由物体安装场景，与Batch A不同。两个后端的真实后继、身份和失败路径通过；本条当前查询连接目标关闭，后续响应仍另验。
 
 **主线一关闭条件**：S1–S3通过，至少两个不同公共多参与者场景在安装包运行；单个Panda或单个递布成功不充分。
 
@@ -80,19 +80,19 @@ D1先限定已调研的原生FP32固定拓扑节点域，完整缓冲预算在�
 
 ## 6. 分批推进、作者与共享接缝
 
-当前D1/M2-P已完成真实设备双bank、资源表、借用同步和源码外后继验证；D2–D5仍未实现。R1能力表已按本批direct BALL FILTEREXACT实际结果更新，R2只关闭这一fixed树格；FREE+BALL、limits/dry等不自动组合通过。节点表保留完整目标，实际关闭以本段和批次结果为准。
+当前D1/M2-P与D2/M2-Q已完成源码/安装；D3–D5仍未实现。R2已关闭fixed direct BALL FILTEREXACT与单FREE+BALL/NONE电机基础格；新浮根球树的contact/activation/limits/dry仍不能自动组合。节点表保留完整目标，实际关闭以本段和批次结果为准。
 
 | 批次 | 主线一 | 主线二 | 主线三 |
 | --- | --- | --- | --- |
 | A，已完成有限交付 | S1/S2，公共batch查询及首个混合场景安装资格 | D1/M2-P真实节点与完整事务/资源/安装 | R1现有能力表更新；首R2 direct BALL FILTEREXACT＋原接触 |
-| B，下一开发批 | S3编译接线及第二类公共安装场景 | D2/M2-Q真实变形查询 | R2的FREE+BALL基础及第一异构小批设计 |
+| B，已完成有限交付 | S3编译接线及第二类公共安装场景 | D2/M2-Q真实变形查询，显式保守未解析行 | R2单FREE+BALL/NONE电机基础；异构小批进入C |
 | C | 维护已验统一入口 | D3双向接触力和共同发布 | G1刚性异构功能；只包含已经通过的组合 |
 | D | 多参与者响应集成 | D4连续载荷、D5安装场景 | G2规模；含变形格等待D5 |
 | E | 受影响兼容 | 受影响兼容 | G3公平基线、G4按实测热点优化 |
 
 这些是依赖顺序，不是固定工期或一次提交。某格实质阻塞时，继续不依赖它的其它格；不宣称本轮写计划即开工或通过。
 
-沿用原三个agent：mtyx_t2_tests负责场景/查询adapter独立范围，mtyx_t2_source负责M2 producer/后继查询，mtyx_t2_audit负责机器人组合/规模工具。Batch A从父基线79e3e089在原隔离worktree完成纯编码，父整合至d2a18bee；原WIP保留，作者与执行槽现均释放。下一批先登记精确路径和共享接缝，所有项目执行仍归父唯一串行槽。
+沿用原三个agent：mtyx_t2_tests负责场景/查询adapter独立范围，mtyx_t2_source负责M2 producer/后继查询，mtyx_t2_audit负责机器人组合/规模工具。Batch A从父基线79e3e089在原隔离worktree完成纯编码，父整合至d2a18bee；原WIP保留，作者与执行槽现均释放。Batch B也已完成并释放，统一产品0321c5a4/522成员、六安装消费者通过。下一批C先登记D3/G1精确路径和共享接缝，所有项目执行仍归父唯一串行槽。
 
 父独占统一来源协议、_resident_boundary_source/_query、ResidentSceneBatch及transaction借用接缝、公共导出和跨线集成。MuJoCo runtime/共享ABI由父协调后明确单owner；M2只先新增producer文件，旧物理核和SceneStepper语义不顺手改。作者可并行纯编码；全部项目import、collection、数值、pytest、离线分析、lint/formatter、compile/build/install/profile和Newton比较严格单一串行owner、fresh entrypoint-aware guard。不得并行跑基准、偷偷collection或重跑同源绿套。
 

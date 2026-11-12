@@ -187,3 +187,20 @@ The already accepted source positive used the correct group-local independent
 reference and had no equivalent raw-vertex assertion. This commit changes only
 this consumer and this report. Correction is `UNEXECUTED` by the author; parent
 owns the fresh installation retry.
+
+## Parent final qualification
+
+Source `05-s3-source-interpret`: 27 passed / 45.36 s; `06-s3-source-cuda`:
+20 passed, seven HOST cases deselected / 89.75 s, both RAW_EXIT0. Product source
+remained byte-identical during the later consumer-only coordinate correction.
+
+Unified product `0321c5a4` has 522 source/wheel/installed identical members.
+Installed `45/46` passed interpret/CUDA: each eight logical worldsteps, sixteen
+participant steps, five queries, sixty independently checked rows, three stale
+rejections and one capacity rejection followed by a fresh-plan retry. All product
+module origins are installed-only. The original `37` zero-step consumer failure
+is retained. Both lossless traces have 51 records; final `47-close-installed`
+verified original logical bytes and archived the complete stored evidence.
+
+S3's current public query connection is accepted. Mesh contact response, CCD,
+arbitrary cross-runtime state and D3 deformable coupling remain outside scope.

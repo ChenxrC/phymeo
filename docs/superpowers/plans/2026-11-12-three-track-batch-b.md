@@ -1,6 +1,6 @@
 # 三主线 Batch B：公共场景、变形查询、浮根球关节
 
-状态：AUTHORING / TESTS_PENDING。基线 `c45a0174`（产品 `d2a18bee`），2026-11-12，用户授权继续下一批，无新截止。沿[三主线路线](2026-11-12-scene-deformable-scale-roadmap.md)，复用[Batch A资格](../../development/p65-three-track-batch-a-20261112.md)，不重跑同源已绿组。
+状态：**SOURCE_AND_INSTALLED_QUALIFIED（本批有限范围）**。基线 `c45a0174`（产品 `d2a18bee`），最终产品 `0321c5a4`，2026-11-12。S3、D2/M2-Q、FREE＋BALL基础格已完成源码、受影响兼容及六个安装消费者；522产品成员同源。实际结果和全部首失败见[Batch B报告](../../development/p65-three-track-batch-b-20261112.md)。下文保留原开发合同，待验证措辞属于执行前记录，不覆盖本段。整个P6.5未完成，无新截止。
 
 ## 并行交付与所有权
 

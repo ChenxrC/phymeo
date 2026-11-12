@@ -104,3 +104,16 @@ and the two retained FREE+BALL activation/contact admission rejections. Both
 device backends are covered by the functional nodes. This is the declared narrow
 compatibility selection, not a rerun or claim of the entire legacy suite.
 
+## Parent installed qualification
+
+Runs `41/42` passed interpret/CUDA against the single unified `0321c5a4` wheel
+(522 byte-identical product members). Each backend completed both declared
+structures, 112 accepted worldsteps: each structure 27 main calls plus one clone
+call, with same-entry and independently continuous native oracles. Original gates,
+complete typed fields, restore/reset successors and installed-only imports passed.
+Each trace has 294 records. `47-close-installed` checked original logical stream
+bytes and archived complete compressed results, scripts and wheel.
+
+The finite FREE+BALL/NONE-JOINT-motor composition is accepted. Broader contact,
+activation, limits/dry, heterogeneous scale and performance remain separate work.
+

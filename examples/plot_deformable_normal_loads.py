@@ -89,22 +89,35 @@ def json_write(path, value):
         stream.write("\n")
 
 
-def load_window(directory):
+def load_window(directory, *, domain="d4"):
+    """Read only a declared closed domain; the default preserves the D4 CLI."""
+    domains = {
+        "d4": ("d4-normal-window-v1", "n1_sphere", "normal-load.jsonl.gz"),
+        "d6b-c4096-n1-interpret": (
+            "d6b-damped-normal-window-v1", "d6b_n1_sphere_c4096", "damped-normal-load.jsonl.gz"
+        ),
+    }
+    require(domain in domains, "unknown explicit window domain")
+    schema, case, filename = domains[domain]
     directory = Path(directory)
     require(directory.is_absolute(), "input window must be absolute")
     directory = directory.resolve(strict=True)
-    summary_path, trace_path = directory / "summary.json", directory / "normal-load.jsonl.gz"
+    summary_path, trace_path = directory / "summary.json", directory / filename
     summary_raw = summary_path.read_bytes()
     summary = json.loads(summary_raw)
-    require(summary["schema"] == "d4-normal-window-v1", "unknown window schema")
+    require(summary["schema"] == schema, "unknown window schema")
     require(summary["status"] == "FAIL", "this comparison must retain the original FAIL")
-    require(summary["case"] == "n1_sphere", "this tool is scoped to the original N1 windows")
+    require(summary["case"] == case, "window outside explicitly selected domain")
     require(summary["mode"] in ("interpret", "cuda"), "unknown backend")
     require(summary["qualification"] == "DIAGNOSTIC_ONLY", "unexpected qualification")
     steps, h, duration = summary["planned_steps"], summary["h"], summary["T"]
     require(type(steps) is int and steps > 0, "invalid planned steps")
     require(finite(h) and h > 0 and finite(duration), "invalid step or duration")
     require(steps * h == duration == 3.0, "incomplete or changed planned physical window")
+    if domain != "d4":
+        require(summary["mode"] == "interpret", "D6-B selected run is interpret only")
+        require((steps, h) == (3072, 1 / 1024), "changed D6-B coarse N1 grid")
+        require(summary["trace"]["records"] == 30742, "not the complete fixed D6-B capture")
     progress = summary["progress"]
     for key in ("steps_attempted", "steps_returned", "steps_checked", "worldsteps"):
         require(type(progress[key]) is int and progress[key] == steps, "incomplete " + key)
@@ -155,6 +168,13 @@ def load_window(directory):
                 )
                 for key, expected in ORIGINAL_GATES.items():
                     require(gates[key] == expected, "changed original gate " + key)
+                if domain != "d4":
+                    require(declared["base_name"] == "n1_sphere", "wrong original D6-B case")
+                    coefficient = declared["dissipation"]["coefficients_ns_per_m"]
+                    require(coefficient == {"dtype": "<f8", "shape": [4],
+                            "bytes_hex": "000000000000b040" * 4}, "changed radial coefficients")
+                    for key, expected in (("position", 0.002), ("velocity", 0.01), ("angle", 0.002)):
+                        require(gates[key] == expected, "changed original long gate " + key)
             elif event == "control-attempt":
                 payload = mapping(record["payload"])
                 controls.append((payload["step"], payload["time"]))

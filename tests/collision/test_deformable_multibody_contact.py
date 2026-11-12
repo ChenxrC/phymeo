@@ -107,7 +107,7 @@ def test_late_complete_attempt_keeps_all_bodies_and_retries(seam, tyx_mode, tmp_
                 patch.setattr(response, attribute, reject)
                 journal.emit("fault-attempt", input=case.forces(items), h=case.H,
                              expected_revision=revision, before=before, checkpoint=checkpoint)
-                with pytest.raises((ValueError, RuntimeError, case.ph.SolverFailure)) as caught:
+                with pytest.raises((ValueError, RuntimeError, FloatingPointError, case.ph.SolverFailure)) as caught:
                     scene.step(case.forces(items), case.H, expected_revision=revision)
                 journal.emit("fault-return", error=caught.value, last_attempt=scene.last_attempt)
                 assert len(completed) == 1
@@ -213,3 +213,107 @@ def test_original_asset_installation_rejected_before_response_allocation(bad, mo
         declared = replace(case.declaration((item,)), articulations=tuple(rows))
         case.ph.compile_participant_scene(declared, mode="interpret")
     assert calls == []
+
+
+def test_device_transpose_complete_slots_cross_world_guard_and_zero_clear(tyx_mode, tmp_path):
+    import tyx as tx
+
+    from phymeo.backends._tyx_deformable_multibody import transpose_multibody_response
+    from phymeo.backends.mujoco_tyx._resources import DeviceResources
+
+    resources = DeviceResources()
+    runtime = tx.Runtime(backend="cuda" if tyx_mode == "cuda" else "cpu", cache_root=tmp_path / "cache")
+    resources.set_runtime(runtime)
+    base_ids = np.array(((0, 0, 1, 2, 0), (0, 0, 1, 2, 0),
+                         (0, 0, 1, 2, 1), (1, 3, 4, 5, 2)), np.int32)
+    bary = np.array(((.5, .25, .25),) * 4, np.float32)
+    lever = np.array(((1, 0, 0), (0, 1, 0), (0, 0, 1), (1, 1, 0)), np.float32)
+    force = np.array(((0, 0, 1, 2, 3), (0, 0, -1, 0, 1),
+                      (0, 0, .5, .5, 0), (0, 0, 0, 0, 2)), np.float32)
+    try:
+        with case.saved(tmp_path / "transpose.jsonl.gz") as journal:
+            for variant in ("valid", "cross-world", "outside", "zero-sites"):
+                ids = base_ids.copy()
+                if variant in ("cross-world", "outside"):
+                    ids[0, 4] = 2 if variant == "cross-world" else 99
+                count = 0 if variant == "zero-sites" else 4
+                arrays = dict(offsets=np.array((0, 3, 6), np.int32),
+                              body_offsets=np.array((0, 2, 3), np.int32), identities=ids,
+                              barycentric=bary, levers=lever, forces=force,
+                              node_force=np.full((6, 3), 123, np.float32),
+                              body_wrench=np.full((3, 6), 123, np.float32),
+                              status=np.full(2, -1, np.int32))
+                with tx.use_runtime(runtime):
+                    native = {}
+                    for name, array in arrays.items():
+                        native[name] = tx.cuda_array(array) if tyx_mode == "cuda" else array.copy()
+                        if tyx_mode == "cuda":
+                            resources.add_buffer(native[name])
+                    transpose_multibody_response(2, count, *(native[name] for name in (
+                        "offsets", "body_offsets", "identities", "barycentric", "levers", "forces",
+                        "node_force", "body_wrench", "status")), mode=tyx_mode)
+                    runtime.sync()
+                    out = {name: value.to_numpy() if tyx_mode == "cuda" else value.copy()
+                           for name, value in native.items()}
+                journal.emit("actual-kernel-return", variant=variant, sites=count, input=arrays, output=out)
+                expected_node, expected_body = np.zeros((6, 3)), np.zeros((3, 6))
+                for site in range(count):
+                    world, *_, body = ids[site]
+                    expected_node[ids[site, 1:4]] += bary[site, :, None] * force[site, 2:]
+                    if (world == 0 and 0 <= body < 2) or (world == 1 and body == 2):
+                        f = -force[site, 2:].astype(float)
+                        expected_body[body] += np.r_[f, np.cross(lever[site], f)]
+                np.testing.assert_array_equal(out["node_force"], expected_node)
+                np.testing.assert_array_equal(out["body_wrench"], expected_body)
+                np.testing.assert_array_equal(out["status"],
+                    (0, 1) if variant in ("cross-world", "outside") else (1, 1))
+                for name in ("offsets", "body_offsets", "identities", "barycentric", "levers", "forces"):
+                    np.testing.assert_array_equal(out[name], arrays[name])
+    finally:
+        resources.close()
+
+
+def test_zero_response_sites_advance_every_registered_body(tyx_mode, tmp_path):
+    items = (case.fixture("A", world=7), case.fixture("A", world=31))
+    declaration = case.declaration(items)
+    declaration = replace(declaration, materials_by_pair={key: None for key in declaration.materials_by_pair})
+    with case.saved(tmp_path / "zero-response-sites.jsonl.gz") as journal:
+        with case.ph.compile_participant_scene(declaration, mode=tyx_mode) as scene:
+            for step in range(2):
+                before, revision, stats = scene.snapshot(), scene.revision, scene.stats()
+                journal.emit("zero-site-attempt", before=before, h=case.H, declaration=declaration,
+                             inputs=case.forces(items), revision=revision)
+                receipt = scene.step(case.forces(items), case.H, expected_revision=revision)
+                journal.emit("zero-site-return", receipt=receipt)
+                after = scene.snapshot()
+                journal.emit("zero-site-state", state=after, stats=scene.stats())
+                assert receipt.schema == "tyx-deformable-multibody-contact-step-v1"
+                assert scene.stats()["response"]["launches"] == stats["response"]["launches"] + 2
+                assert set(receipt.rigid_publication["candidate"]) == set(scene.participant_keys)
+                for item in items:
+                    world = item["world"]
+                    observed, node = receipt.worlds[world], receipt.node_receipt.worlds[world]
+                    assert observed["sites"] == ()
+                    np.testing.assert_array_equal(observed["node_contact_force"], 0)
+                    assert after[world].node.tick == before[world].node.tick + 1 == after[world].rigid.tick
+                    expected_x, expected_v, _ = case.material_step(
+                        item, before[world].node.position.astype(float), before[world].node.velocity.astype(float),
+                        np.zeros((4, 3)), case.H, node.sweeps)
+                    case.close(after[world].node.position, expected_x, atol=2e-5, rtol=2e-5)
+                    case.close(after[world].node.velocity, expected_v, atol=2e-5, rtol=2e-5)
+                    for body in item["bodies"]:
+                        key = body["key"]
+                        record = observed["rigid_participants"][key]
+                        np.testing.assert_array_equal(record["rigid_wrench"], np.zeros((1, 6)))
+                        np.testing.assert_array_equal(record["uploaded_rigid_wrench"], np.zeros((1, 6)))
+                        np.testing.assert_array_equal(receipt.rigid_publication["projected"][key], 0)
+                        previous = before[world].rigid.participants[key]
+                        actual = after[world].rigid.participants[key]
+                        q, v = case.rigid_step(body, np.asarray(previous.position), np.asarray(previous.velocity),
+                                               np.zeros(6), case.H)
+                        case.close(actual.position[:3], q[:3])
+                        case.close(actual.velocity, v)
+                        assert actual.tick == after[world].node.tick
+                        assert np.any(np.asarray(actual.position) != previous.position)
+                # This qualifies zero response sites. The saved actual query
+                # decides whether candidate rows were empty; no fabricated claim.

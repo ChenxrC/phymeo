@@ -128,3 +128,9 @@ python ABS_OUTSIDE/check_resident_boundary_assets.py --mode cuda --installed-roo
 - 证据位于 artifacts/p65-parity-motor-asset-20261112-01，独立源码/消费者审阅见 [审阅记录](p65-resident-boundary-asset-source-review.md)。作者与审阅槽已释放；父仍持唯一串行构建/安装验证槽。
 
 本节只接受四类资产到原M1设备查询的源码资格；统一wheel及源码外消费者尚待完成。不包括ParticipantScene多bank、M2、CCD、接触力或闭实体内外。
+
+## 父统一安装资格完成（2026-11-12）
+
+状态：**SOURCE_AND_INSTALLED_QUALIFIED**。统一产品d362799f的516个source/wheel/installed成员字节一致。045/046源码外interpret/CUDA首次均PASS、RAW_EXIT0，各6worldsteps、3完整query、24facet rows、2旧epoch结果拒绝，完整23events gzip保留。全部302个已加载Phymeo模块来自本次installed site。
+
+原源码2HOST+37interpret+37CUDA以及旧direct/static各8节点资格保持；上述两处参考/期望文本首错与036运行目录setup首错均留存，没有修改物理门。完整报告、61文件安装归档及同源receipt见[本批实际结果](p65-parity-motor-asset-20261112.md)。ParticipantScene多bank来源、M2、CCD、mesh载荷及实体内外仍未由此完成。

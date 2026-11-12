@@ -212,3 +212,9 @@ correction, not an executed failure or pass.
 - [独立文本审阅](p65-ball-mc-independent-review-20261112.md)唯一消费者双错保全 finding 已在首执行前关闭；审阅本身不计执行资格。
 
 本次新源码资格覆盖该有限组合。统一新 wheel 和源码外两个消费者尚未执行；FREE+BALL、direct BALL activation、limits/dry 与完整 G1 等边界保持。
+
+## 父统一安装资格完成（2026-11-12）
+
+状态：**SOURCE_AND_INSTALLED_QUALIFIED**。统一产品d362799f与516个source/wheel/installed成员字节一致；本批043/044源码外interpret/CUDA首次均PASS、RAW_EXIT0，每后端112worldsteps（normal48、mixed连续48、生命周期16），完整120events gzip保存。全部320个已加载Phymeo模块来自新installed site，consumer SHA256为5aab93bfc98f5078117e941e347bd7ecc9c3a10c7a32db1efb74c1739308bbdc。
+
+原源码51+6资格、静态首错及有限准入保持；没有为安装结果重跑源码绿套。安装记录、完整压缩轨迹及同源receipt见[本批实际报告](p65-parity-motor-asset-20261112.md)。本次完成的是直接BALL stateless motor与原primitive接触组合，不是activation、FREE+BALL、完整G1或Newton全域。

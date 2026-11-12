@@ -1,6 +1,6 @@
 # Phymeo / Newton 功能差异全景（2026-11-12）
 
-本页更新至 **2026-11-12 13:28**。[新增批次](p65-parity-m1-assembly-20261112.md)完成直接BALL电机、多参与者资产装配和resident设备边界查询，三条源码矩阵及六个源码外解释/CUDA消费者通过；产品 `2f5f19d6` 的515成员source/wheel/installed同源。旧[07:20结果](p65-parity-until-0720-20261112.md)的首包 `85caed4e`、增量包 `1ce57489`、N7与N8按原版本复用，不倒灌为新包全量回归。J/R学习门和其他保留失败没有因此关闭。[旧11-11全景](phymeo-newton-panorama-2026-11-11.md)及07:20架构HTML保留历史；HTML尚未画入本批三个模块，当前以本页为准。
+本页更新至 **2026-11-12 本批源码与安装收尾**。[最新批次](p65-parity-motor-asset-20261112.md)完成直接BALL电机与原接触组合（BALL-MC）、四类原资产设备边界来源（M1-A）；四个源码外解释/CUDA消费者通过，产品 `d362799f` 的516成员source/wheel/installed同源。M2只完成真实producer设计。[上一批](p65-parity-m1-assembly-20261112.md)的BALL-M1、多参与者装配、direct M1及515成员/六消费者保持原资格。旧[07:20结果](p65-parity-until-0720-20261112.md)的首包 `85caed4e`、增量包 `1ce57489`、N7与N8按原版本复用，不倒灌为新包全量回归。J/R学习门和其他保留失败没有因此关闭。[旧11-11全景](phymeo-newton-panorama-2026-11-11.md)及07:20架构HTML保留历史；HTML尚未画入近期新增模块，当前以本页为准。
 
 比较对象固定为 **Newton 1.7.0** 官方文档及本地已固定源码，不声称调查了后续最新版本。这里按公共能力、适用范围和可复用案例判断差距，不按测试数或清单数计算总体完成百分比。
 
@@ -8,7 +8,7 @@
 
 Phymeo 已连接模型编译、受限机器人动力学、设备接触与约束、批量环境、真实 CUDA PPO 和恢复流程。当前主要差距集中在**能力的组合范围与案例覆盖**：更广关节和传动、设备 mesh/变形接触到载荷的连接、复杂机器人训练及批量传感；可微物理、跨域通用编排、密集软体和杆缆/MPM/流体仍各有独立模块缺口。
 
-此前已解决四个圆柱Y查询法向失败，增加BALL1/A/C、COL2/COL3和紧凑native镜像。本批进一步连接通用JOINT moment表、显式多参与者装配和真实accepted设备FK边界查询。随机重置、D步窗口与PPO的原N7组合资格保持。曲面触点表示、J/R学习门、G1长轨迹、变形来源及查询到载荷的缺口仍开放。
+此前已解决四个圆柱Y查询法向失败，增加BALL1/A/C、COL2/COL3和紧凑native镜像，随后连接JOINT moment表、显式多参与者装配和真实accepted设备FK。本批将直接球电机接入原normal/pyramidal接触，并让四类原资产来源进入设备边界查询。随机重置、D步窗口与PPO的原N7组合资格保持。曲面触点表示、J/R学习门、G1长轨迹、变形来源及查询到载荷的缺口仍开放。
 
 ## 两条路径必须分别看
 
@@ -17,7 +17,7 @@ Phymeo 已连接模型编译、受限机器人动力学、设备接触与约束�
 | Phymeo resident | 程序/资产模型 → ordinary、affine、floating、floating-affine 树 → TYX FK/宽相/设备凸体查询 → 默认 HOST patch 或限定 S/C/OBB/H 设备 patch → 原材料点、完整 J/M、双方力与 COM 力矩 → 共同发布 | 已验受载分页和混合参与者；材料点转换、载荷装配与诊断仍有 HOST 工作。曲面查询的新能力不会自动成为曲面 patch 或载荷能力 |
 | MuJoCo-TYX | 统一模型入口 → CPU MuJoCo 3.3.7 编译模型 → 明确的数据映射 → TYX 树动力学、primitive 接触和混合约束 → Runtime/VecEnv → CUDA RSL PPO | CPU 编译不代替设备物理步。CUDA 默认 MuJoCo-TYX，显式 MuJoCo-Warp 是另一实现；各关节/执行器/接触组合有独立准入，不能把固定球树和自由根接触域任意拼接 |
 | 公共 CollisionWorkspace 边界查询 | 完整 HOST 当前快照 → 原过滤/注册和 TYX BVH 候选 → COL2 有限线段–三角距离 → typed aggregate 与事务发布 | 新 COL3 是独立查询接口；不是 resident 设备顶点借用、实心内外判定、CCD 或接触力通道。此公共接口也不会自动扩展 MuJoCo-TYX primitive 求解器 |
-| 新 resident M1 边界查询 | 四类显式完整拓扑树的真实accepted设备FK → gather/bounds → BVH/pair pack → 原有限边界核 → typed事务发布 | 保留HOST读回/校验和整数候选控制；from_asset拓扑装配、M2变形、CCD、实体内外和接触载荷仍未连接。与COL3输入路径及MuJoCo-TYX求解器分别资格 |
+| 新 resident M1 边界查询 | 四类direct完整拓扑或from_asset原资产树的真实accepted设备FK → gather/bounds → BVH/pair pack → 原有限边界核 → typed事务发布 | 保留HOST读回/校验和整数候选控制；ParticipantScene多bank映射、M2变形、CCD、实体内外和接触载荷仍未连接。与COL3输入路径及MuJoCo-TYX求解器分别资格 |
 
 ## 本轮实质更新与保留失败
 
@@ -37,7 +37,9 @@ Phymeo 已连接模型编译、受限机器人动力学、设备接触与约束�
 | BALL-M1 直接球电机 | 统一native JOINT CSR映射、同次实际scalar/广义力与运动、checkpoint恢复；47新源码节点+9兼容节点；安装解释/CUDA各56worldsteps | fixed BALL/HINGE/SLIDE、直接BALL只JOINT/NONE/FIXED/BIAS_NONE、na0；无直接球电机的activation/contact、FREE+BALL、limits/dry |
 | Participant scene | 显式资产/参与者/控制/完整材料对表连接原四类resident树；HOST19+interpret19+CUDA19；安装各24worldsteps | 有HOST离散接触采样；不是新求解器、MuJoCo-TYX BALL导入、跨树隐式KKT或R03通过 |
 | M1 resident boundary | 实际accepted设备来源与runtime lease已实现；4HOST+67interpret+68CUDA独立节点、20兼容节点；安装各6worldsteps/3queries/12rows | 限刚性完整拓扑direct constructor。不是零HOST、M2、CCD、实体内外、带外全局最近面或接触力 |
-| M2 后继 | [设备来源合同](p65-device-mesh-source-next-contract.md)仍是前置设计，未实现 | 真实deformable accepted/candidate producer bank、提交所有权与lease仍缺失；不能以M1刚性FK或HOST两帧替代 |
+| BALL-MC 直接球电机接触 | 源码51新节点+6兼容通过；统一包解释/CUDA各112worldsteps。原normal/pyramidal接触与真实JOINT motor的力、广义力、运动共同发布 | 限fixed BALL/HINGE/SLIDE、JOINT/NONE/FIXED/BIAS_NONE、na0、nq10/nv8/nu32；无direct BALL activation、FREE+BALL、limits/dry或任意组合 |
+| M1-A 原资产设备来源 | 四类from_asset完整model/shape/graph/group/原材点进入M1；2HOST+37interpret+37CUDA、旧direct/static各8兼容；安装各6worldsteps/3queries/24rows/2stale拒绝 | 是TyxWorldBatch原资产接线；ParticipantScene另一个多bank owner未接通。不扩展闭实体、CCD、接触力或变形 |
+| M2 后继 | [真实producer设计](p65-m2-producer-bank-design.md)已核现有TYX生命周期及固定Newton 1.7 State，拆为M2-P持久节点owner与M2-Q查询；尚未实现 | accepted/candidate bank、提交所有权、lease及数组预算需落实；复用原ordered节点核，不能以HOST两帧替代 |
 | J/R 学习与 N4e | 原 J/R 固定预算学习门仍失败。J 偏置居中三种子完成但未过门，已停止该因素；N4e 独立控制器在固定窗口可达 | 控制可达不是 PPO 学习成功；不追加种子、预算或改原门制造改善 |
 | N8 信用分配诊断 | 原final J14011/R14211/S14111各32步W8，实际768转移/0更新及297条保存审计通过。J/R actor范数裁剪活跃、S未给区分原因；三者ratio clipping均0 | 只是本次固定采样的证据。裁剪因子不等于带原Adam历史的参数步缩放，不证明弱学习原因，不授权自动改clip/lr或新增训练 |
 | G1 / R03 | G1 原 46.29 s 参考 XY 门及完整 131.48 s 动作未通过；R03 两项小净加速度门仍开放 | 已有短窗、驱动/传感修正和两侧响应不能替代这些原验收 |
@@ -48,8 +50,8 @@ Phymeo 已连接模型编译、受限机器人动力学、设备接触与约束�
 
 | 用户方向 | Phymeo 已有基础与本轮变化 | 与固定 Newton 能力版图相比仍需补齐的模块 |
 | --- | --- | --- |
-| **01 场景与机器人** | URDF/MJCF/USD/程序场景、统一编译、PD/IK、四类resident树及新增显式多参与者装配；MuJoCo-TYX自由根标量树、BALL1/A/C、ROB2b与直接BALL JOINT电机 | 更广关节/闭环/传动；直接球电机的activation/contact、FREE+BALL与limits/dry组合；资产装配到新设备边界源的接缝、更广多机器人/工具和抓取释放库。单个Panda/G1不替代组合矩阵 |
-| **02 碰撞检测与响应** | 既有RR/RD/DD有限域、S/C/OBB/H设备patch与载荷、七形状support-map查询；COL2/COL3有限边界核，新M1连接刚性真实设备FK来源 | M1资产拓扑装配、M2真实变形bank、mesh/变形查询到持续载荷、曲面patch表示、跨特征身份/摩擦历史、通用CCD响应。预计算SDF、SDF接触缩减和hydroelastic仍独立缺失 |
+| **01 场景与机器人** | URDF/MJCF/USD/程序场景、统一编译、PD/IK、四类resident树及新增显式多参与者装配；MuJoCo-TYX自由根标量树、BALL1/A/C、ROB2b与直接BALL JOINT电机及其原接触组合 | 更广关节/闭环/传动；直接球电机activation、FREE+BALL与limits/dry组合；ParticipantScene多bank到新设备边界源的接缝、更广多机器人/工具和抓取释放库。单个Panda/G1不替代组合矩阵 |
+| **02 碰撞检测与响应** | 既有RR/RD/DD有限域、S/C/OBB/H设备patch与载荷、七形状support-map查询；COL2/COL3有限边界核，新M1/M1-A连接direct与原资产的刚性真实设备FK来源 | ParticipantScene逻辑参与者/多bank到M1、M2真实变形bank、mesh/变形查询到持续载荷、曲面patch表示、跨特征身份/摩擦历史、通用CCD响应。预计算SDF、SDF接触缩减和hydroelastic仍独立缺失 |
 | **03 GPU 与多场景** | TYX批量动力学/约束、W129/W256受载分页、设备action、真实GPU PPO；紧凑镜像、N7 S128/S256两模式；新M1直接使用accepted设备FK | 更广异构资产/约束规模、减少现存HOST装配/观察/候选控制往返、变形bank及端到端规模；峰值资源与吞吐基线。尚无Newton同模型/精度/输出性能比较 |
 | **04 可微仿真与训练工具** | 实际 CUDA RSL PPO、MLP/GRU、组合 checkpoint、S 持续支撑学习成功、N5 随机状态重置、N6 控制频率窗口与 N7 组合规模资格 | J/R 仍未达学习门；更广机器人训练、模型/环境随机化、可复用任务库。多步物理梯度、辨识与梯度对照仍是独立能力，不能由 PPO 能运行推导已可微 |
 | **05 传感与交互** | 深度/法线/ID、TYX 射线、IMU 基础、真实轨迹 Three.js、G1 传感坐标绑定 | 批量、多传感器时序/坐标协议，更广 RGB/材质/光照和交互编辑工具。单个 gyro 修正不代表完整传感生态 |
@@ -65,18 +67,18 @@ Newton 本身也按 solver/backend 配置提供能力；上表不把所有 Newto
 
 | 优先级 / 难度 | 下一可交付节点 | 最小多案例与成功条件 | 停止边界 / 依赖 |
 | --- | --- | --- | --- |
-| **本批已关闭 / 高** | BALL-M1、Participant scene、M1统一wheel | 产品2f5f19d6、515成员parity；六个源码外消费者两后端通过，分别56/24/6worldsteps每后端 | 完成各自有限域。不能把三个模块的独立资格写成任意跨路径组合已通过 |
-| **P1-机器人 / 高** | 直接BALL电机与接触的下一有限组合 | 复用新moment表与原BALL-C；多模型同入步native/独立连续轨迹、完整力矩与运动、事务、安装消费者 | 先冻结具体组合；更广activation、FREE+BALL、limits/dry另做准入，不能直接删除guard |
-| **P1-场景/碰撞连接 / 中高** | 显式资产装配→M1完整物理拓扑来源 | 从原asset映射到真实body/point/facet身份，覆盖四家族、静态工具、双运动体、source过滤、恢复和旧结果拒绝 | 当前M1仅direct完整拓扑，from_asset路径尚未接；禁止HOST当前坐标再上传伪装device source。CCD/载荷另接 |
+| **最新批已关闭 / 高** | BALL-MC、M1-A统一wheel；M2设计 | 产品d362799f、516成员parity；四个源码外消费者两后端通过，分别112/6worldsteps每后端 | 两项实现有限接受，M2只设计；前批三模块资格复用，不冒任意跨路径组合 |
+| **P1-机器人 / 高** | 从十组合同选择direct BALL activation或FREE+BALL等下一有限组合 | 复用已有moment/contact路径；多模型同入步native/独立连续轨迹、完整力矩与运动、事务、安装消费者 | BALL-MC已关闭，不重派。先冻结下一组合，limits/dry等不直接删除guard |
+| **P1-场景/碰撞连接 / 中高** | ParticipantScene→M1多bank来源 | 明确逻辑world/participant与内部机械row/group、多bank lease/共同epoch；四家族、多机器人/工具、反注册次序、过滤、恢复与晚失败 | 原资产from_asset已接通；ResidentSceneBatch和TyxWorldBatch是不同owner，不能复用单bank假设。禁止HOST当前坐标回填，CCD/载荷另接 |
 | **P2-训练 / 高** | 对N8同次saved梯度与原Adam历史做两候选虚拟更新比较，再决定是否值得新单因素实验 | 完整参数ID/原moments/group绑定，pre/post两条虚拟129的范数、方向与历史/eps贡献；不执行optimizer/物理或修改模型 | N8已完成，不能重复采样；没有可检验预测就停止当前假设。J/R原三种子门保持，不直接更改clip/lr或加预算 |
-| **P2-变形来源 / 高** | **M2：真实 deformable accepted/candidate 顶点 bank 与 lease**，再复用 M1 查询协议 | 实际物理推进导致边长改变、稳定 point/facet IDs、完整失败不换 accepted bank、来源/epoch/同步与 UNKNOWN_RELEASE | 当前 node/composite/coupled 没有可直接借的持久 accepted bank；先冻结 producer 所有权/提交接缝，不能靠两次 HOST 手写快照声称设备变形支持 |
+| **P1-变形来源 / 高** | **M2-P持久节点producer**，随后M2-Q复用M1查询 | 实际物理推进导致边长改变、稳定 point/facet IDs、完整失败不换 accepted bank、来源/epoch/同步与 UNKNOWN_RELEASE | 调研已完成；下一步冻结M2-P数组预算/API并实现accepted/candidate owner。首片不迁移完整复合布/R7/coupled，不靠HOST手写快照声称设备变形支持 |
 | **P2-表示 / 高** | 重新冻结曲面 selected-normal 点离散与查询见证之间的表示合同 | 原 touch-SE 最小反例加九族/四来源；明确哪些法向和表面点共同发布，原材料地址、力/COM 力矩与拒绝语义 | 先定工程表示取舍与独立验收，不继续本夜 B-point 原候选；未完成几何资格不接 C-point 载荷，不新写九个形状专用 solver |
 | **P2-规模 / 中高** | 基于 N7 与已知热点选择一个端到端开销节点，再建立等输出比较 | J/S/R 与混合约束/异构场景，记录 step、观察、reset、策略、保存分别的耗时和资源；共同结果先过再比较 | 不用单个 kernel、不同输出模式或观察阶段内存推导超越 Newton；性能优化不得覆盖用户现有环境或降精度域 |
 | **P3 / 分别立项** | 传感/交互 → 通用跨域 → 布/体软体 → 杆缆/MPM/流体 | 每族先多案例库、现存差异模块、独立失败/恢复与实际运行；传感选同场景时序，软体选支撑/抓捏/折叠，杆缆/流体分开 | 不借机器人或单个递布通过替代这些独立模块；物理梯度另立对照，不混入 PPO 成功判据 |
 
 每个开发片应有一份短合同、明确公共 API/文件所有权、预先登记的正负案例、实际执行结果和安装消费者。通用算法先用矩阵覆盖，不能以不断追加单个 shape pair 代替统一模块。
 
-[原后继设计](../superpowers/plans/2026-11-12-newton-parity-next.md)中的直接BALL、M1和资产装配已经按[本批执行计划](../superpowers/plans/2026-11-12-parity-m1-assembly.md)完成有限域开发与安装资格，不再重派原实施任务。[十组机器人案例](p65-robot-next-compositions-20261112.md)和[M1的17组来源案例](p65-m1-case-library-20261112.md)继续作为回归设计依据。下一片按上表收窄到尚缺的组合/资产来源接缝。[N8诊断](p65-credit-diagnostic-report.md)保持768转移/0更新，后继只沿[保存数据与Adam历史裁定](p65-credit-diagnostic-next-decision.md)补辨别量，不自动调clip/lr或再训练。
+[原后继设计](../superpowers/plans/2026-11-12-newton-parity-next.md)中的直接BALL、M1和资产装配已经按[本批执行计划](../superpowers/plans/2026-11-12-parity-m1-assembly.md)完成有限域开发与安装资格，不再重派原实施任务。[十组机器人案例](p65-robot-next-compositions-20261112.md)和[M1的17组来源案例](p65-m1-case-library-20261112.md)继续作为回归设计依据。本批BALL-MC与M1-A已按[新计划](../superpowers/plans/2026-11-12-parity-motor-contact-asset.md)完成；下一片按上表处理ParticipantScene多bank接缝与M2-P，不重做原资产准入。[N8诊断](p65-credit-diagnostic-report.md)保持768转移/0更新，后继只沿[保存数据与Adam历史裁定](p65-credit-diagnostic-next-decision.md)补辨别量，不自动调clip/lr或再训练。
 
 ## 如何识别成功与无效循环
 
@@ -94,12 +96,13 @@ Newton 本身也按 solver/backend 配置提供能力；上表不把所有 Newto
 | 新评价器 `4118f2ec` | **源码及最终包 PASSED** | 275 HOST32、276 J8实际pair；第二包290 CUDA192worldsteps。完整action/input/output跨窗口绑定，不倒灌首包 |
 | BALL-C | **SOURCE_AND_INSTALLED_PASSED** | 284/285共52新节点，286兼容6；291/292源码外各64worldsteps。范围见[BALL-C报告](p65-ball-contact-composition-report.md) |
 | BALL-M1 / Participant scene / M1 | **SOURCE_AND_INSTALLED_QUALIFIED** | 515成员同源；061–066六消费者通过。新增72文件安装归档及installed-close.json；详细源码矩阵、修复与首失败见本批报告 |
-| M2 | **CONTRACT_ONLY / NOT_IMPLEMENTED** | 缺真实物理producer顶点bank与提交/lease。M1刚性查询不替代变形、CCD或载荷 |
-| 本批关闭与架构图 | **13:28本批功能关闭** | 当前Markdown已更新；07:20HTML仍是历史快照，未新增绘图资格。G1、J/R、R03、B-point及其余模块仍开放 |
+| BALL-MC / M1-A | **SOURCE_AND_INSTALLED_QUALIFIED** | d362799f的516成员parity；043–046四消费者通过。61文件安装归档与installed-close.json保留完整压缩表示 |
+| M2 | **RESEARCH_AND_DESIGN_ONLY / NOT_IMPLEMENTED** | M2-P/M2-Q分片已完成调研；真实producer状态、提交/lease及查询尚未实现，不以M1刚性查询替代 |
+| 本批关闭与架构图 | **BALL-MC与M1-A功能关闭，M2仅设计** | 当前Markdown已更新；07:20HTML仍是历史快照。G1、J/R、R03、B-point及其余模块仍开放 |
 
 ## 固定依据与入口
 
-- [最新实际批次与保存证据](p65-parity-m1-assembly-20261112.md)、[本批计划](../superpowers/plans/2026-11-12-parity-m1-assembly.md)、[旧07:20记录](p65-parity-until-0720-20261112.md)；父执行事实优先于旧作者TESTS_PENDING标签。
+- [最新实际批次与保存证据](p65-parity-motor-asset-20261112.md)、[本批计划](../superpowers/plans/2026-11-12-parity-motor-contact-asset.md)、[上一批](p65-parity-m1-assembly-20261112.md)、[旧07:20记录](p65-parity-until-0720-20261112.md)；父执行事实优先于旧作者TESTS_PENDING标签。
 - [公共三角边界查询](../architecture/triangle-boundary-query.md)、[COL2 报告](p65-device-triangle-distance-report.md)、[COL3 报告](p65-triangle-distance-dispatch-report.md)。
 - [BALL-C 后继合同](p65-ball-next-composition-contract.md)、[M1/M2 设备来源合同](p65-device-mesh-source-next-contract.md)、[N7 组合规模](p65-window-scale-report.md)。
 - [ROB2b 组合](p65-rob2b-actuator-composition-report.md)、[BALL1](p65-native-ball-joint-report.md)、[BALL-A](p65-ball-scalar-actuation-report.md)。

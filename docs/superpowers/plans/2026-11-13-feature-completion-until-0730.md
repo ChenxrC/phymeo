@@ -206,3 +206,9 @@ unsuccessful diagnoses of the same issue freeze that defect; the original
 
 R3-A已完成完整117新源码节点＋6兼容节点、第三包532成员parity、164/165安装每后端352worldsteps，见正式报告。D6-B稳态FAIL保持，不继续扫描系数。
 下一批M-B1按[冻结合同](../../development/p65-multibody-deformable-implementation-20261113.md)仅补同一节点片多个独立浮体的稳定地址、逐body载荷与共同发布。三原作者纯编码，父共享接缝/唯一serial验证；M-B2关节树与BALL limits/dry仅提案。06:15冻结、07:30收口保持。
+
+## 05:30 已实现功能的容量资格收口
+
+M-B1 新源码28唯一节点及旧兼容各8已通过；G2-R0真实恢复晚失败清理缺口经178 RED、185完整12 GREEN完成窄修。统一wheel04产品固定23757ae6，源码/包/安装534成员相同；安装消费者串行进行。
+
+最后新增的验证范围只有M-B1已实现容量，不增加产品能力：S8为四独立world(7,31,43,97)各原A两body，共8participants，4连续步；43/97仅重标原7/31的world和安装key，几何/anchor/质量/速度/外载/门保持。M3为world7原A首body、world31原A双body，验证混合单/多body布局，4步。完整原独立oracle/逐body来源/力矩/连续运动/一次发布；预期每后端24worldsteps/44participantsteps。不是性能、W32或稳态资格。两NEW tests/consumer由原测试作者纯编码，父唯一串行验证；执行后不调fixture或阈值追绿。06:15之后不增功能。

@@ -1,15 +1,15 @@
 # 当前功能连接架构草稿：2026-11-13
 
-状态：**架构草稿，供父任务最终收尾更新**。文本依据为父源码80204636及
-本轮可读共享WIP、当前计划和父已报告的源码结果；没有执行项目、数值、
-保存审计或安装消费者。本文件不替换最终结果报告，不能用于宣称D4严格
-通过、本轮统一wheel通过或任意求解器耦合。
+状态：**当前连接架构草稿，供父任务收尾引用**。产品依据为父快照ec0e2997，
+资格依据为父已报告的源码结果和同次安装summary顶层字段。此更新只读取文本、
+JSON与Git，没有执行项目、数值、保存审计或安装消费者。安装结果只授予对应
+有限范围；D4持续稳态支撑失败、D6原弹性严格精度失败与待执行项分别保留。
 
-现有[统一编译架构](../architecture/unified-scene-compilation.md)保留历史阶段；
+现有[统一编译架构](../architecture/unified-scene-compilation.md)、
 [续作入口](p65-continuation.md)与[全景](phymeo-newton-panorama-2026-11-12.md)
-目前主要记到Batch C。下述图明确加入本轮源码接线，并逐项区分历史安装、
-当前源码验证与尚未通过的轨迹。[本轮计划](../superpowers/plans/2026-11-13-feature-completion-until-0730.md)
-仍以07:30为窗口上限，不代表整个P6.5完成。
+由父任务统一更新，本文件不覆盖它们。[本轮计划](../superpowers/plans/2026-11-13-feature-completion-until-0730.md)
+的07:30窗口也不表示整个P6.5完成。下图的三条runtime路径各有自己的来源、
+准入和发布事务，不能把它们的支持表相乘成任意耦合。
 
 ## 1. 三条实际路径，不把同名step画成任意联合求解
 
@@ -27,7 +27,7 @@ flowchart TD
   RScene --> M1["真实accepted设备FK<br/>gather → bounds/BVH → 有限边界查询"]
   RScene --> RResponse["既有刚体材料接触路径<br/>完整J/M → 共同发布"]
 
-  NodeDecl["ParticipantDeformable<br/>D1节点/距离材料/初态/稳定point与facet IDs"]
+  NodeDecl["ParticipantDeformable<br/>D1节点/距离材料/可选D6耗散/稳定point与facet IDs"]
   NodeDecl --> Factory
   Factory --> D5["deformable_normal<br/>静态lowering和原资产来源核验"]
   D5 --> Joint["唯一 TyxDeformableContactBatch<br/>同runtime节点与单浮体owner"]
@@ -36,14 +36,17 @@ flowchart TD
   D2 --> Law["仅合法RESOLVED近接触<br/>原离散facet NormalLayer"]
   Law --> NodeCandidate["节点外力+接触力<br/>原integrate / ordered材料 / reconstruct候选"]
   Law --> RigidCandidate["反向COM wrench<br/>原6DOF J/M与刚体候选"]
-  NodeCandidate --> Commit["所有候选与完整receipt先验证<br/>一次共同发布两个accepted bank"]
+  NodeCandidate --> D6Choice{"显式非零 DistanceDissipation？"}
+  D6Choice -->|是| D6["保存reconstructed v → 一次ordered轴向速度耗散<br/>设备status + 完整phase观察/验证"]
+  D6Choice -->|None或全零，保持原路径| Commit["所有候选与完整receipt先验证<br/>一次共同发布两个accepted bank"]
+  D6 --> Commit
   RigidCandidate --> Commit
-  Commit --> Public["状态 / 力与矩 / 材料反力<br/>checkpoint / subset reset / restore"]
+  Commit --> Public["状态 / 力与矩 / 弹性与耗散冲量 / 固定反力<br/>checkpoint / subset reset / restore"]
 
   Native["原MJCF/URDF及assets"]
   Native --> Compile["CPU MuJoCo 3.3.7编译<br/>原模型/MJB/来源与坐标记录"]
   Compile --> Admission["MuJoCo-TYX显式模型准入"]
-  Admission --> NativeTYX["原TYX动力学 / primitive接触 / 约束"]
+  Admission --> NativeTYX["原TYX动力学 / primitive接触 / 约束<br/>R3-N normal与R3-P condim3明确分域"]
   NativeTYX --> NativeRuntime["MuJoCoRuntime<br/>controls / step / snapshot / checkpoint"]
   NativeRuntime --> Train["VecEnv / task-action设备接口<br/>随机reset / control windows / RSL PPO"]
   Compile --> Buckets["MuJoCoTyxHeterogeneousBatch<br/>完整来源分桶，同模型原runtime"]
@@ -63,7 +66,8 @@ compile_participant_scene，保留旧host_patch/none模式。
 D5-A新增显式deformable_normal模式：
 
 1. ParticipantArticulation保存资产、真实初态、控制、完整body/collider安装。
-2. ParticipantDeformable保存D1模型、材料、初态、稳定point/facet与surface安装。
+2. ParticipantDeformable保存D1模型、材料、初态、稳定point/facet与surface安装；
+   各DeformableNodeWorld可显式声明DistanceDissipation，D5保留该声明与来源身份。
 3. 静态lowering复用原资产/控制编译和完整model-token/source-shape检查；
    from_asset binding不会被去掉来源后伪装成direct binding。
 4. 完整允许pair必须有NormalLayer或显式None；原mask/exclusion仍有效，
@@ -100,14 +104,48 @@ D3同一次入步查询还借用运动浮体accepted FK。原NormalLayer按facet
 
 当前公开距离行的selected witnesses已经包含pair-local frame。响应只应再加
 packet.origin_m；再加pair_origins会重复平移。本轮D4实际失败揭示并促成这条
-共享坐标修复，不能由修复本身推导全部连续轨迹通过。新坐标回归仍有严格速度
-误差失败，原证据和门保留。
+共享坐标修复，不能由修复本身推导全部连续轨迹通过。新坐标回归及旧弹性重构
+的严格速度误差失败保留，不因后续功能资格改写。
+
+### D6插在节点候选内部，不在发布后修状态
+
+DistanceDissipation按原材料边顺序绑定稳定point IDs，每边系数c单位N·s/m。
+D1直接声明与D5场景透传使用同一实现。非零配置在原integrate、ordered弹性
+projection、reconstruct全部完成后，先设备复制reconstructed velocity，再执行
+**一次**ordered轴向耗散；各边只使用一次h，不随弹性迭代次数重复。它只改变
+未发布候选速度，不修改候选位置、接触法则、质量或初态。None/全零配置仍走
+原数值路径，不增加耗散核/phase；显式零参数仍属于模型来源身份。
+
+每条边以当次位置方向和注册后实际FP32 inverse mass计算隐式轴向速度冲量，
+分母保留实际存储方向的g²。整段是**一阶分裂、按边有序**的材料耗散，不是
+整个网络的同时隐式解，也不是全局速度缩放。刚体瞬时平移/转动零模不应被阻尼；
+平膜的法向一阶运动可能仍是轴向零模，不能据此承诺弯曲耗散或所有振型衰减。
+
+耗散status、逐边32列trace、完整速度链、有限值和phase记录都在共同发布前
+检查。任何世界候选失败不发布两侧新状态。HOST observer只读实际设备输出，
+不生成替换速度；checkpoint绑定完整phase及accepted速度，restore不再执行
+耗散。下一真实物理步才消费已经接受的新速度，D3本步的entry-sampled力不会
+因耗散完成而重算成隐式接触。
+
+| 记录 | 含义及用途 | 不可混称 |
+| --- | --- | --- |
+| phase.node_impulse / D3 damping_impulse | 对trace中实际FP32 requested j·n按边正负散射，再以FP64累计；包含固定节点收到的请求冲量 | 不等于最终速度变化反推的冲量 |
+| phase.node_velocity_impulse | 对自由节点用实际stored速度差除以注册FP32 inverse mass；固定节点为零 | 不使用未舍入的声明质量，不强制与requested逐字相等 |
+| fixed_reaction_impulse | 固定约束抵消外力/接触冲量、全部ordered弹性冲量以及requested耗散冲量；是N·s，除以h才是平均反力 | 固定v=0不代表反力为零；不能把自由节点的舍入差全归给支座 |
+| kinetic_change / ideal_work / rounding_work | 每边实际stored动能变化、由实际n/g²/j/weights推导的理想功、两者有符号差 | 不能用跨边负能抵消遮盖单边误差，不能用D6通过覆盖旧弹性精度失败 |
+
+D3的material_impulse仍专指原弹性材料项，damping_impulse另列。固定反力
+按完整原弹性trace累计后，再减对应requested耗散冲量，避免漏项或重复记账。
+声明参数和校准边界见[用法指南](p65-distance-dissipation-usage.md)，算法/记录
+见[源码报告](p65-distance-dissipation-report.md)。
 
 主要源码：
 [tyx_deformable_batch.py](../../src/phymeo/backends/tyx_deformable_batch.py)、
 [_deformable_boundary_source.py](../../src/phymeo/backends/_deformable_boundary_source.py)、
 [_deformable_response_source.py](../../src/phymeo/backends/_deformable_response_source.py)、
-[tyx_deformable_contact.py](../../src/phymeo/backends/tyx_deformable_contact.py)。
+[tyx_deformable_contact.py](../../src/phymeo/backends/tyx_deformable_contact.py)、
+[deformable_dissipation.py](../../src/phymeo/backends/deformable_dissipation.py)、
+[_tyx_distance_dissipation.py](../../src/phymeo/backends/_tyx_distance_dissipation.py)。
 
 ## 4. 共同发布和生命周期为何不是顺序step的包装
 
@@ -132,19 +170,22 @@ held controls和历史保留；restore不回退单调revision。失败后不是�
 [_resident_batch_transaction.py](../../src/phymeo/backends/_resident_batch_transaction.py)、
 [_deformable_runtime_lease.py](../../src/phymeo/backends/_deformable_runtime_lease.py)。
 
-## 5. FREE+BALL正常接触属于另一套原生语义路径
+## 5. FREE+BALL法向/摩擦接触属于另一套原生语义路径
 
 CPU MuJoCo编译只负责解析/defaults/原生模型与MJB，不在TYX step里代跑物理。
 原native坐标、完整M/J/bias、JOINT CSR、电机力与功、物理M和Euler M+hD以及
 FREE/child BALL四元数积分均由原TYX实现消费。
 
-本轮R3-N路由先完整检查FREE+BALL结构，再按完整potential pairs选择原normal
-wrapper。只接受原primitive与混合condim1，保nv35/nq45、body128、actor32、
-geom128/pair16/rawslot32边界。无接触模型继续原floating路径；失败不会fallback。
+路由先完整检查FREE+BALL及R/P结构和原native地址，再按完整potential pairs
+选择wrapper。R3-N的condim1保留原normal路径；R3-P增加NONE JOINT电机下的
+primitive pyramidal condim3，允许明确的condim1/3混合。仅当存在condim3时要求
+pyramidal cone；原纯condim1仍保原准入。完整四边EFC、原物理M及共同约束求解
+复用已有核，不是把法向力独立扩成摩擦力后再积分。
 
-FREE+BALL/NONE JOINT电机的法向接触不扩大为pyramidal friction、FILTEREXACT、
-joint limits、dry friction、任意transmission、多FREE、任意shape。固定BALL已有
-其它独立组合资格，不能把两个支持表作笛卡尔积。
+两域都保nv35/nq45、body128、actor32、geom128/pair16/rawslot32边界。
+无接触模型继续原floating路径；失败不会fallback。R3-P不扩展activation或
+FILTEREXACT、joint limits、dry friction、condim4/6、任意transmission、多FREE
+或新shape。固定BALL已有其它独立组合资格，不能把支持表作笛卡尔积。
 
 这条路径没有把BALL模型转换成D5 ordinary单body资产，也没有让原生机器人
 与D1节点共用D3事务。扩展这些连接需要新的模型/关节/材料来源和共同载荷合同。
@@ -153,7 +194,7 @@ joint limits、dry friction、任意transmission、多FREE、任意shape。固�
 [_model.py](../../src/phymeo/backends/mujoco_tyx/_model.py)、
 [_floating_model.py](../../src/phymeo/backends/mujoco_tyx/_floating_model.py)、
 [_mujoco_tyx_runtime.py](../../src/phymeo/backends/_mujoco_tyx_runtime.py)。
-实际组合边界见[R3报告](p65-free-ball-normal-report.md)。
+实际组合边界见[R3-N报告](p65-free-ball-normal-report.md)及[R3-P报告](p65-free-ball-pyramidal-report.md)。
 
 ## 6. 异构GPU分桶连接的是多个独立模型world
 
@@ -162,13 +203,15 @@ MuJoCoTyxHeterogeneousBatch先按完整XML/archive/MJB、native版本、mode和�
 一次发布聚合状态。迟到的末桶失败保留全部accepted world，reset/restore沿原
 叶checkpoint替换事务进行。
 
-现有公开上限8模型/16world、相同原生h；已接受的Batch C实际正控3模型6world。
-G2a原容量内更大矩阵仍需自己的当前结果，不由旧同构S256或上限常量推导。
+公开上限仍为8模型/16world、相同原生h。G2a源矩阵已完整执行，首包中的
+W16B3和W16B8均已在interpret/CUDA通过；这是16个独立world、3或8个模型桶，
+没有把上限扩成256world，也不是256台G1。既有同构S256结果属于不同合同。
 没有单异构kernel、跨桶碰撞或不同h联合积分的承诺。
 
-异构能力可以消费各原生runtime准入的模型，但R3-N加入一个新的可准入域，
-并不自动证明R3-N与所有异构生命周期/规模组合。本轮无同模型、同质量门、
-同完整输出的Newton实测，不能宣布更快。累计上传/分配量也不是live/peak内存。
+异构能力消费各原生runtime准入的模型，但R3-N/R3-P新增可准入域不自动证明
+它们与全部异构生命周期/规模组合。D5/D6节点共同事务也不经此原生模型分桶。
+本轮没有同模型、同质量门、同完整输出的Newton实测，不能宣布更快。
+累计上传/分配量不是live/peak内存，完整HOST观察成本仍需计入性能结论。
 
 源码：[mujoco_heterogeneous.py](../../src/phymeo/backends/mujoco_heterogeneous.py)、
 [mujoco_heterogeneous_checkpoint.py](../../src/phymeo/backends/mujoco_heterogeneous_checkpoint.py)。
@@ -177,12 +220,14 @@ G2a原容量内更大矩阵仍需自己的当前结果，不由旧同构S256或�
 
 | 功能 | 当前可依据事实 | 仍须保留的边界 |
 | --- | --- | --- |
-| D1/D2/D3原有限范围 | Batch A/B/C各有源码与历史安装资格 | 不等于本轮新源码新包全量验收 |
-| D5-A公共声明 | 父已报告新源码26及受影响5每后端通过 | 本轮安装仍待父闭环；多刚体/关节刚柔不在首片 |
-| R3-N FREE+BALL normal | 父报告run22完整55源码节点及run31七兼容节点通过 | 本轮安装未在此草稿宣布通过；friction/activation/limits/dry仍拒绝 |
-| D4-N持续载荷 | 父run50诊断解释完成原3072步/3秒，入层、卸载、离层、再接触均发生 | 严格短速度门及原稳态支撑/速度门失败；持续稳态支撑尚未资格，不是只有精度问题 |
-| 新坐标回归 | 已固定非零浮根anchor/变形pair frame的真实共同步 | 严格速度门失败保留，不改输入或放宽门 |
-| 异构分桶 | Batch C完整源码/安装及原8模型16world容量合同 | G2a新规模结果、完整峰值预算和公平Newton性能比较另验 |
+| D1/D2/D3原有限范围 | Batch A/B/C各有源码与历史安装资格，D5继续复用同一共同事务 | 不等于任意刚柔、摩擦、CCD或整个阶段验收 |
+| D5-A公共声明 | 源码26及受影响5每后端通过；首包双端通过；第二包132/133的interpret/CUDA summary均为PASS | 只覆盖原声明/短窗/生命周期；每world单ordinary浮体，多刚体/关节刚柔不在首片 |
+| R3-N / R3-P | normal资格保留；R3-P源码69及兼容4完成，包外130/131双端PASS | FREE+BALL+R/P、NONE JOINT、primitive condim1/3；activation、limits/dry和condim4/6未扩展 |
+| G2a异构分桶 | 源矩阵完整，首包77–80的W16B3/W16B8双端PASS | 上限仍8模型16world；不是新任意模型组合或公平Newton性能比较 |
+| D6-A轴向材料耗散 | 源码功能检查完成；包外128/129双端FUNCTIONAL_PASS，各22 batch steps/44 worldsteps | 两包外summary同时保留strict_elastic_precision=FAIL_RECORDED；不授予D4稳态支撑 |
+| D4-N持续载荷 | run50诊断解释完成3072步/3秒，入层、卸载、离层、再接触均发生 | 严格短速度门及原稳态支撑/速度门失败；不是只有精度问题 |
+| D6-B持续载荷应用 | 固定c4096应用尚待执行 | PENDING；不能从D6-A耗散功能或事件发生推导稳态支撑通过 |
+| 新坐标回归 | 已固定非零浮根anchor/变形pair frame的真实共同步 | 严格速度失败保留，不改输入或放宽门 |
 
 D4诊断只允许记录原短position/velocity/multiplier门失败并继续相同轨迹；
 原force/geometry、stored arithmetic、长窗误差、原侧、防贯穿、峰值、
@@ -192,14 +237,27 @@ state来制造功能结果。父run50已完成整条诊断轨迹：几何、原�
 未达原门。事件发生和完整走完3秒，不等于持续承载功能合格；D4严格FAIL保留。
 此处仅引用父同次结果，不在作者树另算、改参数或重跑。
 
+D6-A的功能资格与精度资格是两个字段：新的耗散phase、真实FP32原弹性路径、
+连续运动工程门及事务检查有通过证据；原理想总动量/弹性重构严格门的run104、
+run112失败保留。包外128/129记录的旧弹性重构速度最大差约1.253865e-4 m/s，
+因此summary明确为FUNCTIONAL_PASS且strict_elastic_precision=FAIL_RECORDED，
+不是把原严格门改为通过。耗散自身有效也不能消去D4两个稳态窗的功能失败。
+
+本次文档核阅只读取以下已闭summary的顶层状态：首包74/81（D5）、77–80（G2a）；
+第二包128/129（D6）、130/131（R3-P）、132/133（D5）。133在任务发出时尚待
+执行，本次读取其summary已为PASS。父源记录位于
+artifacts/p65-feature-until-0730-20261113-01，安装summary位于对应outside结果目录。
+这不是另一次保存审计，也不据这些有限消费者宣称统一包的全部功能已验收。
+D6-B在本草稿状态截点仍为PENDING，后续只能据其独立结果更新。
+
 ## 8. 后继连接仍应独立登记
 
 - D5-A之后：同world多刚体/关节资产与变形节点的共同载荷，不能只放开构造guard。
-- D4之后：切向摩擦、换面测度/历史和连续碰撞；法向短窗不替代这些模块。
+- D4/D6之后：先单独判断固定持续载荷应用，再扩切向摩擦、换面测度/历史和CCD；耗散phase通过不替代持续支撑。
 - 原节点模型之后：弯曲、密集布和体软体等材料/拓扑，不能用五条距离行代表全部软体。
-- R3之后：pyramidal、activation、limits/dry等具体组合，逐项复用真实原生参考。
+- R3-P之后：activation、limits/dry、condim4/6等具体组合，逐项登记真实原生参考；不重复已通过的NONE JOINT condim3域。
 - G2之后：完整生命周期资源/吞吐，再进行同模型同输出的Newton性能比较。
 - 训练/人形：现有真实CUDA PPO和N5/N6/N7连接保留；J/R学习门、G1完整动作、
   传感与可微物理等问题不会由场景装配或法向接触通过自动关闭。
 
-本草稿只增加架构解释，没有产品改动、旧文档覆盖、项目执行或新的通过声明。
+本次只更新这一架构草稿，记录已存在的有限结果；没有产品改动、其它共享文档覆盖、项目执行或自行授予的新资格。

@@ -68,6 +68,7 @@ class PhySolveRuntime:
     body_wrench_contract_version = 1
     scalar_drive_parameter_contract_version = 1
     staged_update_contract_version = 1
+    command_continuation_contract_version = 1
 
     def __init__(
         self,
@@ -613,6 +614,26 @@ class PhySolveRuntime:
         pending = self._pending
         return pending["ticket"][1] if pending and pending["phase"] == "prepared" else None
 
+    @property
+    def state_editable(self):
+        """State/reset edits need an unmaterialized candidate or a new ticket."""
+        return self._pending is None or (
+            self._pending['phase'] == 'prepared' and
+            not self._pending.get('observations_ready', False))
+
+    def prepare_command_update(self, ticket):
+        """Continue command-only edits on the same stream and unpublished bank.
+
+        Existing provisional observations remain valid at their recorded time.
+        No completion, publication, rollback-baseline copy or error clear occurs.
+        The caller must not mutate state/reset fields through borrowed arrays.
+        """
+        with self._scope():
+            self._require_ticket(ticket)
+            if self._pending['phase'] not in {'prepared', 'enqueued'}:
+                raise ValueError('command continuation requires prepared/enqueued execution')
+            self._pending['phase'] = 'prepared'
+
     def storage_binding(self, *, contract_version=1):
         """Borrow prepared fields/stream; no native model, Data or Host escapes."""
         with self._scope():
@@ -654,7 +675,9 @@ class PhySolveRuntime:
         """
         steps = _positive(steps, "steps")
         with self._scope():
-            index = self._require_ticket(ticket, "prepared")
+            index = self._require_ticket(ticket)
+            if self._pending['phase'] not in {'prepared', 'enqueued'}:
+                raise ValueError('step requires prepared/enqueued execution')
             if execution_mode not in ('direct', 'cuda_graph'):
                 raise ValueError('unknown step execution mode')
             if execution_mode == 'cuda_graph' and (not self.step_graph_ready or steps != 4):
@@ -666,6 +689,7 @@ class PhySolveRuntime:
                     self._step_graphs.replay(index)
                 else:
                     self._enqueue_step_work(index, steps)
+                self._pending['observations_ready'] = True
             except Exception:
                 self._pending["phase"] = "failed"
                 raise
@@ -711,6 +735,7 @@ class PhySolveRuntime:
                     self._contact_observations.update(index, self._stream)
                 if self._body_measurements is not None:
                     self._body_measurements.update(index, self._stream)
+                self._pending['observations_ready'] = True
             except Exception:
                 self._pending["phase"] = "failed"
                 raise
@@ -735,6 +760,8 @@ class PhySolveRuntime:
         """
         with self._scope():
             index = self._require_ticket(ticket, "prepared")
+            if refresh_state and not self.state_editable:
+                raise ValueError('state edits require completion before another refresh')
             if not defer_refresh and 'updates' in self._pending:
                 raise RuntimeError('flush_updates is required for accumulated edits')
             if selected_worlds is not None:
@@ -767,7 +794,7 @@ class PhySolveRuntime:
                     self._native._forward_runtime(self._handles[index])
                     if self._body_observations is not None:
                         self._body_observations.update(index, self._stream, integrated=False)
-                else:
+                elif not self._pending.get('observations_ready', False):
                     # Capacity counts belong to the preserved solve-time result,
                     # not a previous discarded candidate in this bank.
                     for name in (*OBSERVATION_FIELDS, "nacon", "ncollision", "nefc"):
@@ -781,7 +808,7 @@ class PhySolveRuntime:
                 if self._contact_observations is not None:
                     if refresh_state:
                         self._contact_observations.update(index, self._stream, mask=selected_worlds)
-                    else:
+                    elif not self._pending.get('observations_ready', False):
                         self._contact_observations.copy(self._active, index, self._stream)
                 if refresh_state and selected_worlds is not None:
                     self._reset.preserve_observations(index, self._stream, selected_worlds)
@@ -790,8 +817,9 @@ class PhySolveRuntime:
                 if self._body_measurements is not None:
                     if refresh_state:
                         self._body_measurements.update(index, self._stream, mask=selected_worlds)
-                    else:
+                    elif not self._pending.get('observations_ready', False):
                         self._body_measurements.copy(self._active, index, self._stream)
+                self._pending['observations_ready'] = True
             except Exception:
                 self._pending["phase"] = "failed"
                 raise
@@ -831,6 +859,8 @@ class PhySolveRuntime:
         state/control edits; compose_controls applies once in the same forward.
         """
         with self._scope():
+            if not self.state_editable:
+                raise ValueError('state edits require completion before free-body conversion')
             index = self._require_ticket(ticket, 'prepared')
             plan = self._free_body_updates
             if plan is None or not plan.ready:
@@ -859,6 +889,8 @@ class PhySolveRuntime:
 
     def enqueue_reset(self, ticket, mask=None, *, selected_worlds=None, defer_refresh=False):
         with self._scope():
+            if not self.state_editable:
+                raise ValueError('state reset requires completion before another refresh')
             index = self._require_ticket(ticket, "prepared")
             if not defer_refresh and 'updates' in self._pending:
                 raise RuntimeError('accumulated edits require a deferred reset or completion')
@@ -911,6 +943,7 @@ class PhySolveRuntime:
                         self._body_observations.preserve(index, selector, self._stream)
                 if self._body_measurements is not None:
                     self._body_measurements.update(index, self._stream, mask=selector if partial else None)
+                self._pending['observations_ready'] = True
             except Exception:
                 self._pending["phase"] = "failed"
                 raise

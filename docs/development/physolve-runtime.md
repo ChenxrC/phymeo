@@ -852,7 +852,7 @@ Stage回滚及立即host/D2D读取，不以snapshot替代正式字段执行门�
 
 `flush_updates(ticket)` 刷新一次观测但不等待/发布；`complete_execution` 自动
 flush。`enqueue_step`/`enqueue_forward` 直接消费 prepared 编辑，step 不额外
-forward。materialized/enqueued 后不再追加编辑，须 complete/accept 或 discard。
+forward。materialized/enqueued 后的命令续写见下节；状态/reset 仍要求先完成。
 只有状态/reset 涉及的 world 加入刷新 mask，command-only world 保留求解时刻观测。
 reset 仍恢复原初态和控制，之后同 ticket 的写入按顺序覆盖，不重新复制接受 bank。
 
@@ -864,3 +864,28 @@ scalar-control 输入错误（包括组合）可 discard 后恢复，其他原�
 
 正式测试在 `tests/test_physolve_runtime.py`；配套实际 C ABI 测试与记录见实验根
 `evidence/b8q-*`。六 CUBIN、原生 Host、TYX/codedev 与既有数值容差保持不变。
+
+## Command continuation v1
+
+`command_continuation_contract_version=1` 提供 `prepare_command_update(ticket)`，
+把已有 prepared/enqueued ticket 置为可写命令阶段；只能写控制目标、广义力和
+body外力，不能通过借用数组写物理状态。`state_editable` 明示是否仍能写状态/reset。
+已刷新/推进后的状态/reset 在任何转换、restore 或 forward 前拒绝；后续完整支持
+需要保护当前候选未选世界观测，不能用原 accepted bank 代替。
+
+同一 ticket 可重复 enqueue_step，使用同一 bank/canonical stream，最终一次
+complete/accept 或 discard。错误标志持续累积；中途不清零、不复制 rollback
+baseline、不新增 forward/同步或设备 buffer。command-only flush 保留候选已有
+的 endpoint、solve-time 接触/测量及时刻，不能重新复制旧 accepted 观测。
+设备观测读取仍为 provisional；调用者仅在最终完成成功后将其视作有效发布，
+发生任何完成错误须丢弃本 ticket 结果。允许同stream read→command→read排序。
+
+原生与实际 C ABI 测试分别在既有 runtime/cabi 文件登记：四次命令/子步一次完成、
+direct/固定Graph、N=1/8/64、观测保持、晚期输入错误、状态拒绝后继续及释放。
+没有新增持久内存或规模相关host循环；原生direct Host内部条件循环的同步成本仍在。
+证据见配套实验根 `evidence/b8r-*`，不授予全部交错状态/reset或完整GUI资格。
+
+B8r 原生continuation/staged共13项通过（79.63s），one-substep外力、延迟发布及
+foreign ticket/失败恢复6项通过（37.02s）。对照为同一实现不同完成边界，容差
+沿用1e-6；不是跨solver数值专项。独立只读复审无生产阻断。PHYMEO文档479项
+历史缺失链接及日志SHA保持，仍失败；消费方安装/GUI结果由配套记录单独发布。

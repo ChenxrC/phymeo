@@ -196,6 +196,67 @@ def test_staged_updates_share_candidate_masks_reset_and_step(payload, tmp_path, 
         assert runtime.execution_costs()['staged_update_materializations'] == 1
 
 
+@pytest.mark.parametrize('nworld', [1, 8, 64])
+@pytest.mark.parametrize('graph', [False, True])
+def test_command_continuation_preserves_candidate_observations(payload, tmp_path, nworld, graph, monkeypatch):
+    import tyx as tx
+    binding = _drive_binding(tmp_path, nworld)
+    with binding.create_runtime(payload=payload) as runtime, binding.create_runtime(payload=payload) as reference:
+        if graph:
+            runtime.prepare_step_graph(steps=4)
+            reference.prepare_step_graph(steps=4)
+        mode, steps = ('cuda_graph', 4) if graph else ('direct', 1)
+        storage = runtime.storage_binding()
+        target = np.full((nworld, 1), .4, np.float32)
+        before = runtime.execution_costs()
+        ticket = runtime.begin_execution()
+        bank = runtime.writable_bank
+        def forbidden(*args, **kwargs):
+            raise AssertionError('continued command allocated, copied baseline or forwarded')
+        with monkeypatch.context() as patch:
+            patch.setattr(runtime, '_candidate', forbidden)
+            patch.setattr(runtime._native, '_forward_runtime', forbidden)
+            for _ in range(4):
+                runtime.prepare_command_update(ticket)
+                storage.borrow('target_position', bank, write=True).assign(target, stream=storage.stream)
+                runtime.enqueue_update(ticket, compose_controls=True, defer_refresh=True)
+                with patch.context() as hot:
+                    hot.setattr(tx, 'empty', forbidden)
+                    runtime.enqueue_step(ticket, steps=steps, execution_mode=mode)
+            assert runtime.execution_costs()['validation_readbacks'] == before['validation_readbacks']
+            observed = storage.borrow('qfrc_actuator', runtime.observation_bank).numpy(stream=storage.stream)
+            runtime.prepare_command_update(ticket)
+            storage.borrow('target_position', bank, write=True).assign(target, stream=storage.stream)
+            runtime.enqueue_update(ticket, compose_controls=True, defer_refresh=True)
+            runtime.flush_updates(ticket)
+            np.testing.assert_array_equal(storage.borrow('qfrc_actuator', runtime.observation_bank).numpy(stream=storage.stream), observed)
+        runtime.complete_execution(ticket)
+        runtime.accept_execution(ticket)
+        for _ in range(4):
+            other = reference.begin_execution()
+            refstorage = reference.storage_binding()
+            refstorage.borrow('target_position', reference.writable_bank, write=True).assign(target, stream=refstorage.stream)
+            reference.enqueue_update(other, compose_controls=True, defer_refresh=True)
+            reference.enqueue_step(other, steps=steps, execution_mode=mode)
+            reference.complete_execution(other)
+            reference.accept_execution(other)
+        actual, expected = runtime.snapshot(), reference.snapshot()
+        for name in ('qpos', 'qvel', 'qacc', 'time', 'qfrc_actuator'):
+            np.testing.assert_allclose(actual[name], expected[name], rtol=0, atol=1e-6)
+        costs = runtime.execution_costs()
+        assert costs['contact_measurement_copies'] == before['contact_measurement_copies']
+        assert costs['body_measurement_copies'] == before['body_measurement_copies']
+        # Refusing state/reset after materialization must leave a completable ticket.
+        ticket = runtime.begin_execution()
+        runtime.enqueue_step(ticket, steps=steps, execution_mode=mode)
+        runtime.prepare_command_update(ticket)
+        with pytest.raises(ValueError, match='completion'):
+            runtime.enqueue_reset(ticket, defer_refresh=True)
+        runtime.enqueue_step(ticket, steps=steps, execution_mode=mode)
+        runtime.complete_execution(ticket)
+        runtime.accept_execution(ticket)
+
+
 def test_staged_updates_preparation_failure_keeps_launched_mask_owner(payload, monkeypatch):
     from phymeo.backends._physolve_updates import PreparedUpdates
     native = payload.load()

@@ -29,6 +29,14 @@ def urdf(tmp_path):
     return str(path)
 
 
+def test_source_joint_catalog_needs_no_mesh_or_native_model(urdf):
+    from phymeo.builders.native_resources import read_urdf_joint_catalog
+    snapshot = URDF.replace('<box size=".2 .2 .2"/>', '<mesh filename="missing.stl"/>')
+    asset = NativeAssetInstance('arm', urdf, urdf_xml=snapshot)
+    Path(urdf).unlink()
+    assert read_urdf_joint_catalog(asset) == (('slide', 'prismatic', -1., 1.),)
+
+
 def test_body_friction_targets_direct_source_shapes_without_changing_other_parameters(tmp_path):
     source = tmp_path / "material.xml"
     source.write_text('''<mujoco><worldbody><body name="base">

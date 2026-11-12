@@ -6,6 +6,27 @@ from pathlib import Path
 from xml.etree import ElementTree as ET
 
 
+def read_urdf_joint_catalog(asset):
+    """Source-only joint identity/limits; no mesh loading, solver or device work."""
+    raw = asset.urdf_xml if asset.urdf_xml is not None else Path(asset.path).read_bytes()
+    root = ET.fromstring(raw)
+    if root.tag != 'robot':
+        raise NotImplementedError('native source joint catalog currently requires URDF')
+    rows = []
+    names = set()
+    for joint in root.findall('joint'):
+        name, kind = joint.get('name', ''), joint.get('type', '')
+        if not name or name in names:
+            raise ValueError('source joint names must be nonempty and unique')
+        names.add(name)
+        lower, upper = -float('inf'), float('inf')
+        limit = joint.find('limit')
+        if kind in ('revolute', 'prismatic') and limit is not None:
+            lower, upper = float(limit.get('lower', '0')), float(limit.get('upper', '0'))
+        rows.append((name, 'revolute' if kind == 'continuous' else kind, lower, upper))
+    return tuple(rows)
+
+
 def load_asset_source(asset):
     """Read one authoritative source; share its XML across physics and visuals.
 

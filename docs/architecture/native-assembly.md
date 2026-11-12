@@ -454,3 +454,10 @@ None，不扩大已有非URDF路径的要求。已请求且为空的模型返回
 装配、visual、排除与mimic共78项通过（2.00s），覆盖旋转轴、非零COM、固定关节、
 多个实例和文件删除后的绑定。首轮未设置资产来源有5项skip，补齐显式来源后全过。
 真实消费者Stage冷编译得到14个body frame和13个逻辑关节；不将冷编译当作GUI通过。
+
+`native_resources.read_urdf_joint_catalog(asset)` 提供源关节名称、类型和上下限的
+不可变 tuple，URDF snapshot 优先于 locator；不加载 mesh、不编译模型或触发
+设备工作。continuous 映射为无限范围 revolute，固定关节仍保留来源身份。
+非 URDF、空名或重复名拒绝。用于消费者冷 authoring 预检，不能代替编译绑定
+或依据来源顺序猜原生关节下标。正式 native assembly 测试覆盖删除来源文件后
+使用 snapshot、缺失 mesh 时仍可读取目录。

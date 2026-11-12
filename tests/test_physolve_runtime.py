@@ -42,6 +42,101 @@ def test_runtime_requires_compilation_and_explicit_payload():
         PhySolveRuntime(None, payload=None)
 
 
+def _drive_binding(tmp_path, nworld, target=.1):
+    from phymeo.builders.native_assembly import NativeAssetInstance, NativeJointInput, compile_native_template
+    source = tmp_path / 'drive.urdf'
+    source.write_text('''<robot name="slider"><link name="base"/><link name="link">
+      <inertial><mass value="2"/><inertia ixx=".1" iyy=".1" izz=".1" ixy="0" ixz="0" iyz="0"/></inertial>
+      <collision><geometry><sphere radius=".1"/></geometry></collision></link>
+      <joint name="slide" type="prismatic"><parent link="base"/><child link="link"/>
+      <axis xyz="1 0 0"/><limit lower="-1" upper="1" effort="0" velocity="2"/></joint></robot>''')
+    asset = NativeAssetInstance('arm', str(source), drive_mode='scalar_pd',
+        joint_defaults=(('kp', 10.), ('kd', 0.), ('armature', 0.), ('frictionloss', 0.)),
+        joints=(NativeJointInput('slide', target_position=target),))
+    return compile_native_template((asset,), timestep=.002, gravity=(0, 0, 0)).bind(nworld)
+
+
+@pytest.mark.parametrize('nworld', [1, 8, 64])
+@pytest.mark.parametrize('graph', [False, True])
+def test_scalar_drive_parameter_update_rollback_reset_and_graph(payload, tmp_path, nworld, graph, monkeypatch):
+    binding = _drive_binding(tmp_path, nworld)
+    with binding.create_runtime(payload=payload) as runtime:
+        if graph:
+            runtime.prepare_step_graph(steps=4)
+        baseline = runtime.execution_costs()
+        runtime.update_scalar_drive_parameters({'arm::slide': {'kp': 80., 'kd': 2., 'effort_limit': 1.}})
+        np.testing.assert_allclose(runtime.snapshot()['qfrc_actuator'], 1., rtol=0, atol=1e-6)
+        runtime.update_scalar_drive_parameters({'arm::slide': {'effort_limit': 0.}})
+        np.testing.assert_allclose(runtime.snapshot()['qfrc_actuator'], 8., rtol=0, atol=1e-6)
+        metadata = runtime.scalar_drive_parameters()
+        snapshot = runtime.snapshot()
+        with monkeypatch.context() as patch:
+            def reject(*args, **kwargs):
+                raise RuntimeError('injected parameter forward failure')
+            patch.setattr(runtime, 'enqueue_update', reject)
+            with pytest.raises(RuntimeError, match='injected'):
+                runtime.update_scalar_drive_parameters({'arm::slide': {'kp': 20.}})
+        assert runtime.scalar_drive_parameters() == metadata
+        for name in ('qpos', 'qvel', 'time', 'qfrc_actuator'):
+            np.testing.assert_array_equal(runtime.snapshot()[name], snapshot[name])
+        ticket = runtime.begin_execution()
+        with pytest.raises(RuntimeError, match='pending'):
+            runtime.update_scalar_drive_parameters({'arm::slide': {'kp': 30.}})
+        runtime.enqueue_step(ticket, steps=4, execution_mode='cuda_graph' if graph else 'direct')
+        runtime.complete_execution(ticket)
+        runtime.accept_execution(ticket)
+        assert np.all(runtime.snapshot()['qvel'] > 0.)
+        mask = np.arange(nworld) % 2 == 0
+        before = runtime.snapshot()
+        runtime.reset(mask)
+        after = runtime.snapshot()
+        np.testing.assert_array_equal(after['qpos'][mask], 0.)
+        np.testing.assert_array_equal(after['qpos'][~mask], before['qpos'][~mask])
+        np.testing.assert_allclose(after['qfrc_actuator'][mask], 8., rtol=0, atol=1e-6)
+        assert runtime.scalar_drive_parameters() == metadata
+        costs = runtime.execution_costs()
+        assert costs['drive_parameter_updates'] == 2
+        assert costs['drive_parameter_rollbacks'] == 1
+        assert costs['step_graph_captures'] == baseline['step_graph_captures']
+        assert costs['step_graph_replays'] == int(graph)
+
+
+def test_scalar_drive_parameter_capture_and_derived_overflow_admission(payload, tmp_path, monkeypatch):
+    import tyx as tx
+
+    with _drive_binding(tmp_path, 8, target=4.).create_runtime(payload=payload) as runtime:
+        expected = runtime.scalar_drive_parameters()
+        storage = runtime.storage_binding()
+        graph = tx.Graph(stream=storage.stream, mode='cuda_stream')
+        try:
+            with graph:
+                with pytest.raises(RuntimeError, match='capture'):
+                    runtime.update_scalar_drive_parameters({'arm::slide': {'kp': 20.}})
+        finally:
+            graph.destroy()
+        assert runtime.scalar_drive_parameters() == expected
+        for target in (4., 0.):  # second case isolates the reset baseline
+            ticket = runtime.begin_execution()
+            storage.borrow('target_position', runtime.writable_bank, write=True).assign(
+                np.full((8, 1), target, np.float32), stream=storage.stream)
+            runtime.enqueue_update(ticket, compose_controls=True)
+            runtime.complete_execution(ticket)
+            runtime.accept_execution(ticket)
+            before = runtime.snapshot()
+            with monkeypatch.context() as patch:
+                def forbidden(*args):
+                    raise AssertionError('invalid derived ctrl reached native forward')
+                patch.setattr(runtime._native, '_forward_runtime', forbidden)
+                with pytest.raises(RuntimeError, match='non-finite PhySolve ctrl'):
+                    runtime.update_scalar_drive_parameters({'arm::slide': {'kp': 3e38}})
+            assert runtime.scalar_drive_parameters() == expected
+            for name, values in before.items():
+                np.testing.assert_array_equal(runtime.snapshot()[name], values)
+        runtime.update_scalar_drive_parameters({'arm::slide': {'kp': 20.}})
+        runtime.reset()
+        np.testing.assert_allclose(runtime.snapshot()['ctrl'], 80., rtol=0, atol=1e-6)
+
+
 @pytest.mark.parametrize('nworld', [1, 8, 64])
 def test_capacity_metadata_is_owned_and_requires_no_device_work(payload, nworld, monkeypatch):
     import tyx as tx

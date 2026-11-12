@@ -3,7 +3,7 @@
 import numpy as np
 import tyx as tx
 
-from ._physolve_reset import _restore_float
+from ._physolve_reset import _restore_float, _preserve_float
 
 
 @tx.kernel(gradient="unsupported")
@@ -29,6 +29,8 @@ class PreparedControls:
     def __init__(self, rows, banks, model, nworld, device):
         self.names = tuple(row[0] for row in rows)
         ids = [row[1] for row in rows]
+        self.native_actuators = tuple(ids)
+        self.recompose_reset = False
         if len(set(self.names)) != len(rows) or len(set(ids)) != len(ids):
             raise ValueError("scalar control bindings must be unique")
         for name, actuator, kp, kd, q, qd in rows:
@@ -107,3 +109,9 @@ class PreparedControls:
             _restore_float(
                 mask, self.initial_flat[name], array, self.width, mode="cuda", stream=stream
             )
+        if self.recompose_reset:
+            # Model gain edits persist across reset. Initial targets are still
+            # authoritative, whereas the original compiled ctrl is now stale.
+            self.compose(index, stream)
+            _preserve_float(mask, self.native[1-index], self.native[index],
+                            self.native_width, mode="cuda", stream=stream)

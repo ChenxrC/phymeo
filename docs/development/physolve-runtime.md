@@ -815,3 +815,29 @@ forward 不消费；one_substep 只用于下一次物理推进的第一个子步
 正式 tests/test_physolve_execution.py 登记 N=1/8/64 direct/Graph、独立球体 F/m 与
 T/I 参照、forward/局部 reset/discard 和测量时刻用例。六 CUBIN、Host、原容差和排序
 保持；没有开展 GPU 微差对照，实验记录见配套根 evidence/b8j-*。
+
+## Shared scalar drive parameters v1
+
+`scalar_drive_parameter_contract_version=1` 提供 `scalar_drive_parameters()` 冷
+host 元数据及 `update_scalar_drive_parameters({name: {kp, kd, effort_limit}})`。
+仅限 managed independent scalar actuator；参数全 world 共享，单位遵循原关节
+SI/PD 合同，零限额为不限幅，不修改 qfrc_applied。目标、reset 初始命令及拓扑
+不变；armature、摩擦、per-world 参数和控制模式转换不属于该入口。
+
+Runtime 在 idle、非 capture 状态全量预检，原位上传 bias/force range/系数，
+用 TYX 检查当前与 reset 目标组合不会生成非有限 ctrl，再执行一次候选 forward
+并接受；错误恢复设备参数、系数和 validation gate，恢复失败保留 owner 并进入
+close-only。host model 元数据仅成功后更新。固定 Graph 继续借用同一组指针。
+增益修改后 reset 从原始目标与当前系数重算 ctrl，精确保留未选世界的 ctrl。
+
+冷成本 O(actuator) 参数 journal 与上传，O(world×control) device 预检，新加
+一次4字节显式读回；成功更新/失败回滚的参数上传字节和次数可由 execution_costs
+查询。无新持久 device buffer、逐 world Python 调用或 step 开销；改增益后的
+reset 增加两次 device launch。正式 tests/test_physolve_runtime.py 覆盖 direct/
+Graph N=1/8/64、实际 actuator 输出、原位 Graph、局部 reset、失败回滚、捕获拒绝
+及当前/reset 目标溢出阻止 forward；结果见配套根 evidence/b8p-*。
+
+本批7项实际GPU测试通过（44.28s），来源目录与装配56项通过（1.13s）。
+独立只读复审后补齐捕获拒绝、派生ctrl预检及失败gate清除；消费方另验证
+Stage回滚及立即host/D2D读取，不以snapshot替代正式字段执行门禁。
+六CUBIN及Host散列相同。既有TYX AST弃用警告保留；未修改求解器数值容差或排序。

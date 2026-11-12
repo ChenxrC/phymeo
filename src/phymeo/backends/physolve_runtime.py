@@ -66,6 +66,7 @@ class PhySolveRuntime:
     configuration_readback_contract_version = 1
     capacity_info_contract_version = 1
     body_wrench_contract_version = 1
+    scalar_drive_parameter_contract_version = 1
 
     def __init__(
         self,
@@ -139,6 +140,9 @@ class PhySolveRuntime:
         self._contact_observations = None
         self._body_measurements = None
         self._body_parameters = None
+        self._drive_parameter_updates = 0
+        self._drive_parameter_rollbacks = 0
+        self._drive_parameter_upload_bytes = 0
         self._site_measurements = []
         self._ray_queries = []
         self._free_body_updates = None
@@ -486,6 +490,23 @@ class PhySolveRuntime:
             with self._synchronous_execution() as ticket:
                 self.enqueue_forward(ticket)
 
+    def scalar_drive_parameters(self):
+        """Owned host metadata for shared-model kp/kd/effort limits; no device read."""
+        from ._physolve_drive_parameters import parameters
+        with self._scope():
+            return parameters(self)
+
+    def update_scalar_drive_parameters(self, updates):
+        """Synchronous all-world parameter transaction, with one native forward.
+
+        Independent scalar actuators only; zero effort limit means unlimited.
+        Changes survive reset, whose target/force initial commands are unchanged.
+        No topology, target, armature or per-world parameter edits are implied.
+        """
+        from ._physolve_drive_parameters import update
+        with self._scope():
+            return update(self, updates)
+
     def reset(self, mask=None):
         """Reset selected worlds; keep unselected integration and snapshot values."""
         with self._scope():
@@ -572,6 +593,9 @@ class PhySolveRuntime:
                     "step_graph_ready": self.step_graph_ready,
                     "step_graph_substeps": self._step_graphs.steps if self.step_graph_ready else 0,
                     "step_graph_replays": self._graph_replays,
+                    "drive_parameter_updates": self._drive_parameter_updates,
+                    "drive_parameter_rollbacks": self._drive_parameter_rollbacks,
+                    "drive_parameter_upload_bytes": self._drive_parameter_upload_bytes,
                     "native_direct_conditional_sync": True}
 
     @property

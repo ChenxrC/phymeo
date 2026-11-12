@@ -23,7 +23,11 @@ MuJoCo 编译快照送入独立 PhySolve Host。Newton、Warp、MuJoCo-Warp 不�
 
 使用 `requirements/physolve-runtime.txt` 专用清单，不混用原 MuJoCo extras。
 限定 Windows x64、标准 CPython 3.13.13、MuJoCo 3.8.0、TYX 0.1.0a0、
-PhySolve TYX frontend 0.0.0a6 和本批验证的 sm_120 载荷。
+PhySolve TYX frontend 0.0.0a7 和本批验证的 sm_120 载荷。
+安装批次 B8a 将旧 a6 门禁更新到已有 `PostConstraintWorkspace` 的 a7，
+对应 codedev `e6b2a5b2`；它提供已接入的求解时刻 RNE 工作区，不改变六 CUBIN。
+先前源码注入测试环境的 distribution metadata 仍为 a6，不能充当 a7 wheel 安装证明。
+安装态与 C ABI 验证单独记录到配套 P2PE B8a 证据；未知/旧 frontend 继续明确拒绝。
 `PhySolvePayload(native_path, cubin_directory, native_sha256, cubin_sha256)`
 接收一件 Host 和六件 CUBIN 的冻结散列；这不是正式 SDK 安装 manifest 的替代品。
 

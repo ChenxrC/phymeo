@@ -2,4 +2,4 @@
 # The native Host and six CUBINs are separately supplied and hash-validated.
 -r physolve-compiler.txt
 tyx-compute==0.1.0a0
-physolve-tyx-frontend==0.0.0a6
+physolve-tyx-frontend==0.0.0a7

@@ -42,6 +42,31 @@ def test_runtime_requires_compilation_and_explicit_payload():
         PhySolveRuntime(None, payload=None)
 
 
+def test_payload_installed_dependency_contract(tmp_path, monkeypatch):
+    import hashlib
+    from phymeo.backends import physolve_payload as module
+
+    versions = {"mujoco": "3.8.0", "physolve-tyx-frontend": "0.0.0a7",
+                "tyx-compute": "0.1.0a0"}
+    monkeypatch.setattr(module.metadata, "version", versions.__getitem__)
+    digest = hashlib.sha256(b"identity-only fixture, never loaded").hexdigest()
+    for name in (*module.CUBINS, "host.pyd"):
+        (tmp_path / name).write_bytes(b"identity-only fixture, never loaded")
+    value = PhySolvePayload(str(tmp_path / "host.pyd"), str(tmp_path), digest,
+                           tuple((name, digest) for name in module.CUBINS))
+    assert value.validate() == ((tmp_path / "host.pyd").resolve(), tmp_path.resolve())
+    for name, rejected in (("physolve-tyx-frontend", "0.0.0a6"),
+                           ("physolve-tyx-frontend", "0.0.0a8"), ("mujoco", "3.7.0")):
+        previous = versions[name]
+        versions[name] = rejected
+        with pytest.raises(RuntimeError, match="requires"):
+            value.validate()
+        versions[name] = previous
+    (tmp_path / module.CUBINS[0]).write_bytes(b"modified")
+    with pytest.raises(RuntimeError, match="frozen payload mismatch"):
+        value.validate()
+
+
 @pytest.mark.cuda
 @pytest.mark.parametrize("nworld", [1, 8, 64])
 def test_freefall_forward_reset_and_masked_worlds(payload, nworld, monkeypatch):

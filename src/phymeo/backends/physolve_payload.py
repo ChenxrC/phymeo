@@ -35,7 +35,7 @@ class PhySolvePayload:
             raise RuntimeError("PhySolve requires Windows CPython 3.13.13")
         if struct.calcsize("P") != 8 or not sys._is_gil_enabled():
             raise RuntimeError("PhySolve requires standard x64 CPython")
-        for name, version in (("mujoco", "3.8.0"), ("physolve-tyx-frontend", "0.0.0a6"),
+        for name, version in (("mujoco", "3.8.0"), ("physolve-tyx-frontend", "0.0.0a7"),
                               ("tyx-compute", "0.1.0a0")):
             if metadata.version(name) != version:
                 raise RuntimeError(f"PhySolve requires {name}=={version}")

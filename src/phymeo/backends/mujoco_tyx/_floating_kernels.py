@@ -193,26 +193,74 @@ def geometry(
                                 motion[w, b, 2, j] * axes[w, dof, k]
                                 - motion[w, b, 2, k] * axes[w, dof, j]
                             )
-                        cosine = tx.cos(displacement)
-                        sine = tx.sin(displacement)
-                        for i in range(3):
-                            for j in range(3):
-                                work_rotation[w, i, j] = 0.0
-                                for k in range(3):
-                                    value = (
-                                        (1.0 - cosine) * joint_data[joint, k] * joint_data[joint, j]
-                                    )
-                                    if k == j:
-                                        value = value + cosine
-                                    else:
-                                        axis = 3 - k - j
-                                        if (k + 1) % 3 == j:
-                                            value = value - sine * joint_data[joint, axis]
+                        if joints[joint, 0] == 2:
+                            # Native ball qvel is local angular velocity. All three
+                            # axes are taken from the same post-joint frame below.
+                            qw = q[w, qa]
+                            qx = q[w, qa + 1]
+                            qy = q[w, qa + 2]
+                            qz = q[w, qa + 3]
+                            square = qw * qw + qx * qx + qy * qy + qz * qz
+                            length = tx.sqrt(square)
+                            if (
+                                not tx.isfinite(length)
+                                or length <= 0.0
+                                or tx.abs(square - 1.0) > 0.00000095367431640625
+                            ):
+                                status[w] = 2
+                                length = 1.0
+                            qw = qw / length
+                            qx = qx / length
+                            qy = qy / length
+                            qz = qz / length
+                            r00 = 1.0 - 2.0 * (qy * qy + qz * qz)
+                            r01 = 2.0 * (qx * qy - qw * qz)
+                            r02 = 2.0 * (qx * qz + qw * qy)
+                            r10 = 2.0 * (qx * qy + qw * qz)
+                            r11 = 1.0 - 2.0 * (qx * qx + qz * qz)
+                            r12 = 2.0 * (qy * qz - qw * qx)
+                            r20 = 2.0 * (qx * qz - qw * qy)
+                            r21 = 2.0 * (qy * qz + qw * qx)
+                            r22 = 1.0 - 2.0 * (qx * qx + qy * qy)
+                            for i in range(3):
+                                work_rotation[w, i, 0] = (
+                                    rotation[w, b, i, 0] * r00
+                                    + rotation[w, b, i, 1] * r10
+                                    + rotation[w, b, i, 2] * r20
+                                )
+                                work_rotation[w, i, 1] = (
+                                    rotation[w, b, i, 0] * r01
+                                    + rotation[w, b, i, 1] * r11
+                                    + rotation[w, b, i, 2] * r21
+                                )
+                                work_rotation[w, i, 2] = (
+                                    rotation[w, b, i, 0] * r02
+                                    + rotation[w, b, i, 1] * r12
+                                    + rotation[w, b, i, 2] * r22
+                                )
+                        else:
+                            cosine = tx.cos(displacement)
+                            sine = tx.sin(displacement)
+                            for i in range(3):
+                                for j in range(3):
+                                    work_rotation[w, i, j] = 0.0
+                                    for k in range(3):
+                                        value = (
+                                            (1.0 - cosine)
+                                            * joint_data[joint, k]
+                                            * joint_data[joint, j]
+                                        )
+                                        if k == j:
+                                            value = value + cosine
                                         else:
-                                            value = value + sine * joint_data[joint, axis]
-                                    work_rotation[w, i, j] = (
-                                        work_rotation[w, i, j] + rotation[w, b, i, k] * value
-                                    )
+                                            axis = 3 - k - j
+                                            if (k + 1) % 3 == j:
+                                                value = value - sine * joint_data[joint, axis]
+                                            else:
+                                                value = value + sine * joint_data[joint, axis]
+                                        work_rotation[w, i, j] = (
+                                            work_rotation[w, i, j] + rotation[w, b, i, k] * value
+                                        )
                         for i in range(3):
                             work[w, 5, i] = 0.0
                             for j in range(3):
@@ -220,6 +268,25 @@ def geometry(
                                 work[w, 5, i] = (
                                     work[w, 5, i]
                                     - work_rotation[w, i, j] * joint_data[joint, 3 + j]
+                                )
+                        if joints[joint, 0] == 2:
+                            for i in range(3):
+                                work[w, 7, i] = 0.0
+                                for column in range(3):
+                                    axes[w, dof + column, i] = rotation[w, b, i, column]
+                                    anchors[w, dof + column, i] = anchors[w, dof, i]
+                                    work[w, 7, i] = (
+                                        work[w, 7, i]
+                                        + rotation[w, b, i, column] * v[w, dof + column]
+                                    )
+                            for i in range(3):
+                                j = (i + 1) % 3
+                                k = (i + 2) % 3
+                                work[w, 3, i] = motion[w, b, 2, i] + work[w, 7, i]
+                                work[w, 4, i] = (
+                                    motion[w, b, 4, i]
+                                    + motion[w, b, 2, j] * work[w, 7, k]
+                                    - motion[w, b, 2, k] * work[w, 7, j]
                                 )
                         for i in range(3):
                             j = (i + 1) % 3
@@ -277,12 +344,17 @@ def mechanics(
     nv: tx.i32,
     nu: tx.i32,
     body_data: tx.ndarray(tx.f32, 2),
-    joints: tx.ndarray(tx.i32, 2),
+    dofs: tx.ndarray(tx.i32, 2),
     ancestors: tx.ndarray(tx.i32, 2),
     vectors: tx.ndarray(tx.f32, 2),
     gravity: tx.ndarray(tx.f32, 1),
     act_ids: tx.ndarray(tx.i32, 2),
     act_values: tx.ndarray(tx.f32, 2),
+    transmission_enabled: tx.i32,
+    transmission_offsets: tx.ndarray(tx.i32, 1),
+    transmission_dofs: tx.ndarray(tx.i32, 1),
+    transmission_moment: tx.ndarray(tx.f32, 1),
+    transmission_fields: tx.ndarray(tx.f32, 3),
     controls: tx.ndarray(tx.f32, 2),
     applied_input: tx.ndarray(tx.f32, 2),
     body_force: tx.ndarray(tx.f32, 3),
@@ -313,25 +385,66 @@ def mechanics(
         for i in range(nv):
             mass[w, i, i] = vectors[5, i]
             passive[w, i] = -vectors[1, i] * v[w, i]
-            if i >= 6:
-                passive[w, i] = passive[w, i] - vectors[2, i] * (q[w, i + 1] - vectors[3, i])
+            qa = dofs[i, 1]
+            if qa >= 0:
+                passive[w, i] = passive[w, i] - vectors[2, i] * (q[w, qa] - vectors[3, i])
             applied[w, i] = applied_input[w, i]
-        for a in range(nu):
-            value = 0.0
-            qa = act_ids[a, 0]
-            dof = act_ids[a, 1]
-            gear = act_values[a, 0]
-            if act_ids[a, 2] == 0:
-                ctrl = tx.min(act_values[a, 6], tx.max(act_values[a, 5], controls[w, a]))
-                value = (
-                    act_values[a, 1] * ctrl
-                    + act_values[a, 2]
-                    + act_values[a, 3] * gear * q[w, qa]
-                    + act_values[a, 4] * gear * v[w, dof]
+        if transmission_enabled == 0:
+            for a in range(nu):
+                value = 0.0
+                qa = act_ids[a, 0]
+                dof = act_ids[a, 1]
+                gear = act_values[a, 0]
+                if act_ids[a, 2] == 0:
+                    ctrl = tx.min(act_values[a, 6], tx.max(act_values[a, 5], controls[w, a]))
+                    value = (
+                        act_values[a, 1] * ctrl
+                        + act_values[a, 2]
+                        + act_values[a, 3] * gear * q[w, qa]
+                        + act_values[a, 4] * gear * v[w, dof]
+                    )
+                # CPU 3.3.7 clamps all actuator forces, including disabled-group zero.
+                value = tx.min(act_values[a, 8], tx.max(act_values[a, 7], value))
+                actuator[w, dof] = actuator[w, dof] + gear * value
+        else:
+            for actor in range(nu):
+                begin = transmission_offsets[actor]
+                end = transmission_offsets[actor + 1]
+                motor_control = tx.min(
+                    act_values[actor, 6], tx.max(act_values[actor, 5], controls[w, actor])
                 )
-            # CPU 3.3.7 clamps all actuator forces, including disabled-group zero.
-            value = tx.min(act_values[a, 8], tx.max(act_values[a, 7], value))
-            actuator[w, dof] = actuator[w, dof] + gear * value
+                raw_force = 0.0
+                if act_ids[actor, 2] == 0:
+                    if end - begin == 1:
+                        scalar_qa = act_ids[actor, 0]
+                        scalar_dof = act_ids[actor, 1]
+                        scalar_gear = act_values[actor, 0]
+                        raw_force = (
+                            act_values[actor, 1] * motor_control
+                            + act_values[actor, 2]
+                            + act_values[actor, 3] * scalar_gear * q[w, scalar_qa]
+                            + act_values[actor, 4] * scalar_gear * v[w, scalar_dof]
+                        )
+                    else:
+                        # BALL BIAS_NONE never reads quaternion qpos as length.
+                        raw_force = act_values[actor, 1] * motor_control
+                motor_force = tx.min(act_values[actor, 8], tx.max(act_values[actor, 7], raw_force))
+                transmission_fields[w, actor, 0] = motor_control
+                transmission_fields[w, actor, 1] = raw_force
+                transmission_fields[w, actor, 2] = motor_force
+                if (
+                    not tx.isfinite(motor_control)
+                    or not tx.isfinite(raw_force)
+                    or not tx.isfinite(motor_force)
+                ):
+                    status[w] = 2
+                for moment_index in range(begin, end):
+                    column = transmission_dofs[moment_index]
+                    actuator[w, column] = (
+                        actuator[w, column] + transmission_moment[moment_index] * motor_force
+                    )
+                    if not tx.isfinite(actuator[w, column]):
+                        status[w] = 2
         for b in range(nbody):
             for i in range(3):
                 for j in range(3):
@@ -365,7 +478,7 @@ def mechanics(
                     for i in range(3):
                         j = (i + 1) % 3
                         k = (i + 2) % 3
-                        if joints[d, 0] == 1:
+                        if dofs[d, 0] == 1:
                             jacobian[w, b, i, d] = axes[w, d, j] * (
                                 motion[w, b, 5, k] - anchors[w, d, k]
                             ) - axes[w, d, k] * (motion[w, b, 5, j] - anchors[w, d, j])
@@ -441,9 +554,16 @@ def solve(
     constraint: tx.ndarray(tx.f32, 2),
     rows: tx.ndarray(tx.f32, 2),
     status: tx.ndarray(tx.i32, 1),
+    native_joint_layout: tx.i32,
+    nq: tx.i32,
+    njnt: tx.i32,
+    joints: tx.ndarray(tx.i32, 2),
 ):
     for w in tx.range(count):
-        for i in range(nv + 1):
+        qcount = nv + 1
+        if native_joint_layout != 0:
+            qcount = nq
+        for i in range(qcount):
             qnext[w, i] = q[w, i]
         for i in range(nv):
             vnext[w, i] = v[w, i]
@@ -492,7 +612,7 @@ def solve(
                     integration_acc[w, i] = value / factor[w, i, i]
         for i in range(nv):
             vnext[w, i] = v[w, i] + h * integration_acc[w, i]
-            if i >= 6:
+            if native_joint_layout == 0 and i >= 6:
                 qnext[w, i + 1] = q[w, i + 1] + h * vnext[w, i]
                 if qnext[w, i + 1] <= vectors[7, i] or qnext[w, i + 1] >= vectors[8, i]:
                     status[w] = 3
@@ -541,7 +661,61 @@ def solve(
         qnext[w, 4] = nx / length
         qnext[w, 5] = ny / length
         qnext[w, 6] = nz / length
-        for i in range(nv + 1):
+        if native_joint_layout != 0:
+            for joint in range(1, njnt):
+                qa = joints[joint, 1]
+                dof = joints[joint, 2]
+                if joints[joint, 0] != 2:
+                    qnext[w, qa] = q[w, qa] + h * vnext[w, dof]
+                    if qnext[w, qa] <= vectors[7, dof] or qnext[w, qa] >= vectors[8, dof]:
+                        status[w] = 3
+                    if not tx.isfinite(qnext[w, qa]):
+                        status[w] = 2
+                else:
+                    # Native local angular velocity integrates by right multiplication.
+                    qw = q[w, qa]
+                    qx = q[w, qa + 1]
+                    qy = q[w, qa + 2]
+                    qz = q[w, qa + 3]
+                    length = tx.sqrt(qw * qw + qx * qx + qy * qy + qz * qz)
+                    if not tx.isfinite(length) or length <= 0.0:
+                        status[w] = 2
+                        length = 1.0
+                    qw = qw / length
+                    qx = qx / length
+                    qy = qy / length
+                    qz = qz / length
+                    wx = vnext[w, dof]
+                    wy = vnext[w, dof + 1]
+                    wz = vnext[w, dof + 2]
+                    speed = tx.sqrt(wx * wx + wy * wy + wz * wz)
+                    dw = 1.0
+                    scale = 0.0
+                    if not tx.isfinite(speed):
+                        status[w] = 2
+                    elif speed > 0.0:
+                        angle = 0.5 * h * speed
+                        dw = tx.cos(angle)
+                        scale = tx.sin(angle) / speed
+                    dx = scale * wx
+                    dy = scale * wy
+                    dz = scale * wz
+                    ow = qw * dw - qx * dx - qy * dy - qz * dz
+                    ox = qw * dx + qx * dw + qy * dz - qz * dy
+                    oy = qw * dy - qx * dz + qy * dw + qz * dx
+                    oz = qw * dz + qx * dy - qy * dx + qz * dw
+                    out_length = tx.sqrt(ow * ow + ox * ox + oy * oy + oz * oz)
+                    if not tx.isfinite(out_length) or out_length <= 0.0:
+                        status[w] = 2
+                        out_length = 1.0
+                    qnext[w, qa] = ow / out_length
+                    qnext[w, qa + 1] = ox / out_length
+                    qnext[w, qa + 2] = oy / out_length
+                    qnext[w, qa + 3] = oz / out_length
+                    for component in range(4):
+                        if not tx.isfinite(qnext[w, qa + component]):
+                            status[w] = 2
+        for i in range(qcount):
             if not tx.isfinite(qnext[w, i]):
                 status[w] = 2
         # Kahan clock: keep the rounding compensation in the transaction buffer.

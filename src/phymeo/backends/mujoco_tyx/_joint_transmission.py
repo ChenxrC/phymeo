@@ -36,7 +36,7 @@ def _immutable(value):
     return np.frombuffer(array.tobytes(), dtype=array.dtype).reshape(array.shape)
 
 
-def compile_joint_transmission(mj, model):
+def compile_joint_transmission(mj, model, *, capacity=(8, 10)):
     """Compile static moments, never configuration-specific M/J or motor length.
 
     The mechanical compiler separately checks the complete model/law domain.
@@ -47,9 +47,17 @@ def compile_joint_transmission(mj, model):
     def reject(code, detail):
         raise MuJoCoTyxUnsupported((MuJoCoTyxIssue(code, detail),))
 
+    if (
+        type(capacity) is not tuple
+        or len(capacity) != 2
+        or any(type(item) is not int for item in capacity)
+        or capacity not in ((8, 10), (35, 45))
+    ):
+        reject("joint-transmission-capacity", "unregistered native JOINT capacity")
+    max_nv, max_nq = capacity
     nu, nv, nq = int(model.nu), int(model.nv), int(model.nq)
-    if not 1 <= nu <= MAX_ACTUATORS or not 1 <= nv <= 8 or not 1 <= nq <= 10:
-        reject("joint-transmission-capacity", "joint CSR requires nu<=32/nv<=8/nq<=10")
+    if not 1 <= nu <= MAX_ACTUATORS or not 1 <= nv <= max_nv or not 1 <= nq <= max_nq:
+        reject("joint-transmission-capacity", f"joint CSR requires nu<=32/nv<={max_nv}/nq<={max_nq}")
     rows = []
     nnz = 0
     for actor in range(nu):

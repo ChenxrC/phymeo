@@ -15,6 +15,9 @@ class TyxFloatingDevice(TyxDevice):
 
         from . import _floating_kernels as kernels
 
+        if plan.dof_ids is None:
+            raise ValueError("floating native DOF mapping is required")
+        self.transmission_enabled = plan.joint_transmission is not None
         self.activation_enabled = _actuator_device.validate(plan, activation, len(q))
         self.tx, self.mode, self.plan = tx, mode, plan
         self.nbody, self.nworld, self.h = nbody, len(q), float(h)
@@ -42,6 +45,7 @@ class TyxFloatingDevice(TyxDevice):
                 self.ranges = self._buffer(plan.body_joint_range)
                 self.body_data = self._buffer(plan.body_data)
                 self.joints = self._buffer(plan.joint_ids)
+                self.dofs = self._buffer(plan.dof_ids)
                 self.joint_data = self._buffer(plan.joint_data)
                 self.ancestors = self._buffer(plan.ancestors)
                 self.gravity = self._buffer(plan.gravity)
@@ -55,6 +59,18 @@ class TyxFloatingDevice(TyxDevice):
                 self.controls = self._buffer(np.zeros((self.nworld, max(plan.nu, 1)), np.float32))
                 self.applied_input = self._buffer(np.zeros((self.nworld, width), np.float32))
                 self.body_force = self._buffer(np.zeros((self.nworld, nbody, 6), np.float32))
+                self.transmission_offsets = self.parents
+                self.transmission_dofs = self.parents
+                self.transmission_moment = self.gravity
+                self.transmission_fields = self.body_force
+                if self.transmission_enabled:
+                    layout = plan.joint_transmission
+                    self.transmission_offsets = self._buffer(layout.row_offsets)
+                    self.transmission_dofs = self._buffer(layout.dof_indices)
+                    self.transmission_moment = self._buffer(layout.moment)
+                    self.transmission_fields = self._buffer(
+                        np.zeros((self.nworld, plan.nu, 3), np.float32)
+                    )
                 self.motion = self._buffer(np.zeros((self.nworld, nbody, 7, 3), np.float32))
                 self.rotation = self._buffer(np.zeros((self.nworld, nbody, 3, 3), np.float32))
                 self.axes = self._buffer(np.zeros((self.nworld, width, 3), np.float32))
@@ -115,12 +131,17 @@ class TyxFloatingDevice(TyxDevice):
                 self.plan.nv,
                 0 if self.activation_enabled else self.plan.nu,
                 self.body_data,
-                self.joints,
+                self.dofs,
                 self.ancestors,
                 self.vectors,
                 self.gravity,
                 self.act_ids,
                 self.act_values,
+                int(self.transmission_enabled),
+                self.transmission_offsets,
+                self.transmission_dofs,
+                self.transmission_moment,
+                self.transmission_fields,
                 self.controls,
                 self.applied_input,
                 self.body_force,
@@ -166,6 +187,10 @@ class TyxFloatingDevice(TyxDevice):
                 self.constraint,
                 self.rows,
                 self.status,
+                int(self.plan.native_joint_layout),
+                self.plan.nq,
+                len(self.plan.joint_ids),
+                self.joints,
                 mode=self.mode,
             )
             self.counts["completed_kernels"] += 1
@@ -200,6 +225,8 @@ class TyxFloatingDevice(TyxDevice):
                 )
             }
             _actuator_device.download(self, result, old, target)
+            if self.transmission_enabled:
+                result["joint_transmission_fields"] = self._get(self.transmission_fields)
             result["body_position"] = motion[:, :, 0, :]
             result["body_com"] = motion[:, :, 5, :]
             result["smooth_acceleration"] = result["qacc"]

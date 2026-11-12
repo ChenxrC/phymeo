@@ -770,3 +770,14 @@ P2PE 用一个最大容量 query 为所有 Camera/LiDAR batch 顺序 sample→ga
 复制几何/BVH；PHYMEO 仍拥有 query 生命周期，P2PE 只拥有挂载和字段转换 scratch。
 本批不改求解器、六 CUBIN、Host 或容差；Panda 原始 ray ID 对照失败仍保留。
 配套 C ABI 结果及最终来源统一见实验根 `evidence/b6f-summary.json`，不替代安装资格。
+
+## B6h：公共 visual 快照
+
+新增独立冷显示快照，来源/尺寸/所有权见
+[Cold visual scene v1](../architecture/engine-integration.md#cold-visual-scene-v1)。
+原生编译与 visual 合同 29 项通过，含真实 Panda/FANUC 所有原生 ndarray 不变、
+多形状、相对 mesh、源文件移除、旋转有限平面、UV 独立索引及纹理显式拒绝。
+Panda 本夹具无 visual，明确发布 collision_geometry fallback；FANUC 保留真实 visual。
+未变更求解器、六 CUBIN、Host、容差或生产排序。初轮测试路径及断言错误保留。
+消费方实际 DLL 结果及各仓提交统一见配套实验根 `evidence/b6h-summary.json`；
+这些源码验证不代表完整纹理、resident、安装或真实 GUI 资格。

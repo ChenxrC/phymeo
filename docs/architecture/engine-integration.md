@@ -486,3 +486,33 @@ O(contact_capacity + N*B); the existing contact byte metric includes this
 allocation. No new collision solve, FK, host readback or per-world dispatch is
 introduced. The reference is a prerequisite for consumer sensor moments, not
 an implementation or qualification of SensorView itself.
+
+## Cold visual scene v1
+
+`compile_native_template(..., capture_visuals=True)` optionally captures a
+`geometry.visual.VisualScene` at compilation. `NativeTemplate.compile_visual_scene()`
+returns that owned immutable snapshot without reopening sources or re-running FK.
+Instances name public physical bodies, not native geom indices. A null body means
+static world geometry. Position is metres; rotation is xyzw; dimensions are native
+half extents/radii, with local Z as the capsule/cylinder axis. Mesh vertices are
+local metres, triangles int32, and optional float32 UVs share the vertex index space.
+UV values retain the native compiled convention, not an unverified texture contract.
+
+URDF visuals must be retained before MuJoCo parses the file. A separate display-only
+spec preserves named bodies and removes collision geoms; it never enters the solver.
+The existing physical compilation is unchanged. Assets without any URDF visual use
+explicit `collision_geometry` fallback; empty visual links acquire no placeholder.
+Finite native planes export zero-thickness rectangle meshes, including their rotation;
+fully infinite planes retain native display spacing. A partly infinite rectangle,
+unsupported geom or texture rejects the optional visual query with a diagnostic.
+URDF texture declarations are checked before the importer can discard them.
+Physical compilation and execution can continue after that optional refusal.
+
+The snapshot owns bytes-backed readonly buffers; consumers cannot re-enable writes.
+Native UV corner indices expand once at compilation, without changing physics mesh
+topology. P2PE borrows these buffers and copies only requested caller output. Assets
+are per template, not per world; complexity and storage are O(visual vertices + faces
++ instances), with one additional cold URDF display compilation per visual asset.
+No per-step parsing, model copy, device allocation or synchronization is introduced.
+The native adapter's optional CPU MuJoCo dependency does not enter the geometry types.
+Textured display, generic resident export and installed/GUI qualification remain pending.

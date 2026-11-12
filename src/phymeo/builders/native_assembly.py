@@ -186,6 +186,8 @@ class NativeTemplate:
     # Widths aligned with joint_bindings; native FREE coordinates are not scalar joints.
     joint_dimensions: tuple = ()
     coordinate_contract_version: int = 1
+    visual_scene: object = None
+    visual_diagnostics: tuple = ()
     # Private cold compiler owner. XML serialization rounds native authoring
     # values; the public compilation.mj_spec is caller-mutable. Never expose or
     # edit this snapshot, only copy it for a newly requested rule compilation.
@@ -230,6 +232,14 @@ class NativeTemplate:
 
         return compile_ray_scene(self)
 
+    def compile_visual_scene(self):
+        """Return the owned cold display snapshot; never reparse source files."""
+        if self.visual_scene is None:
+            if self.visual_diagnostics:
+                raise NotImplementedError("; ".join(self.visual_diagnostics))
+            raise RuntimeError("compile_native_template requires capture_visuals=True")
+        return self.visual_scene
+
 
 @dataclass(frozen=True)
 class HomogeneousNativeBinding:
@@ -264,7 +274,14 @@ class HomogeneousNativeBinding:
 
 
 def compile_native_template(
-    assets, *, timestep, gravity, static_shapes=(), rigid_shapes=(), integrator="euler"
+    assets,
+    *,
+    timestep,
+    gravity,
+    static_shapes=(),
+    rigid_shapes=(),
+    integrator="euler",
+    capture_visuals=False,
 ):
     """Compile a same-world assembly once; retain admitted asset-local semantics.
 
@@ -276,6 +293,9 @@ def compile_native_template(
     Native MuJoCo collision rules apply; explicit pair policies remain separate.
     """
     import mujoco as mj
+
+    if type(capture_visuals) is not bool:
+        raise TypeError("capture_visuals must be bool")
 
     assets, static_shapes, rigid_shapes = tuple(assets), tuple(static_shapes), tuple(rigid_shapes)
     if any(not isinstance(a, NativeAssetInstance) for a in assets):
@@ -303,7 +323,18 @@ def compile_native_template(
     spec.option.solver = mj.mjtSolver.mjSOL_NEWTON
     spec.option.jacobian = mj.mjtJacobian.mjJAC_DENSE
     pending, sources, target_maps, diagnostics = [], [], {}, []
+    captured_visuals = {}
+    visual_diagnostics = []
     for asset in assets:
+        if capture_visuals:
+            from .native_visuals import capture_urdf_visuals
+
+            try:
+                visual = capture_urdf_visuals(asset)
+                if visual is not None:
+                    captured_visuals[asset.name] = visual
+            except (ValueError, NotImplementedError) as error:
+                visual_diagnostics.append(f"{asset.name}: visual export unavailable: {error}")
         child = mj.MjSpec.from_file(asset.path)
         default = mj.MjSpec().option
         for name in dir(default):
@@ -425,11 +456,16 @@ def compile_native_template(
     )
     control_ids = {row[0]: i for i, row in enumerate(scalar_controls)}
     for i in range(model.njnt):
-        if model.jnt_limited[i] and model.jnt_type[i] in (mj.mjtJoint.mjJNT_HINGE, mj.mjtJoint.mjJNT_SLIDE):
+        if model.jnt_limited[i] and model.jnt_type[i] in (
+            mj.mjtJoint.mjJNT_HINGE,
+            mj.mjtJoint.mjJNT_SLIDE,
+        ):
             q = float(data.qpos[model.jnt_qposadr[i]])
             lo, hi = model.jnt_range[i]
             if not lo <= q <= hi:
-                diagnostics.append(f"initial_position_outside_limit: {model.joint(i).name}: {q} outside [{lo}, {hi}]; unchanged")
+                diagnostics.append(
+                    f"initial_position_outside_limit: {model.joint(i).name}: {q} outside [{lo}, {hi}]; unchanged"
+                )
     target_bindings = tuple(
         (name, control_ids[root], ratio, offset)
         for name, (root, ratio, offset) in target_maps.items()
@@ -440,6 +476,14 @@ def compile_native_template(
             v = np.float32(scalar_controls[index][5]) * np.float32(ratio)
         if not np.isfinite((q, v)).all():
             raise ValueError(f"{name}: initial derived target must be finite in FP32")
+    visual_scene = None
+    if capture_visuals and not visual_diagnostics:
+        from .native_visuals import assemble_visual_scene
+
+        try:
+            visual_scene = assemble_visual_scene(model, captured_visuals, assets)
+        except (ValueError, NotImplementedError) as error:
+            visual_diagnostics.append(f"visual export unavailable: {error}")
     return NativeTemplate(
         compilation,
         NativeInitialState.from_data(compilation, data),
@@ -464,4 +508,6 @@ def compile_native_template(
             for i in range(model.njnt)
         ),
         _source_spec=compilation.mj_spec.copy(),
+        visual_scene=visual_scene,
+        visual_diagnostics=tuple(visual_diagnostics),
     )

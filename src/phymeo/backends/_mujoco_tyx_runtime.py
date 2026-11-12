@@ -246,6 +246,8 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
                 if getattr(self._plan, "normal_contact", False)
                 else "free-root-hinge-slide-no-contact-v1"
                 if self._plan.kind == 3
+                else "fixed-ball-joint-motor-no-contact-v1"
+                if getattr(self._plan, "joint_transmission", None) is not None
                 else "fixed-ball-scalar-actuation-no-contact-v1"
                 if self._model.nu and np.any(self._model.jnt_type == self._mj.mjtJoint.mjJNT_BALL)
                 else "fixed-ball-hinge-slide-no-contact-v1"
@@ -776,6 +778,18 @@ class MuJoCoTyxRuntime(MuJoCoRuntime):
 
                         receipt_type = MuJoCoTyxActivationStepReceipt
                         receipt_extra = {"actuation": publish_actuation(self._plan, result, index)}
+                    elif getattr(self._plan, "joint_transmission", None) is not None:
+                        from .mujoco_joint_transmission import (
+                            MuJoCoTyxJointMotorStepReceipt,
+                            publish_joint_transmission,
+                        )
+
+                        receipt_type = MuJoCoTyxJointMotorStepReceipt
+                        receipt_extra = {
+                            "transmission": publish_joint_transmission(
+                                self._plan, result, index, self._controls[key].ctrl
+                            )
+                        }
                     receipts[key] = receipt_type(
                         world=key,
                         tick=ticks[key],

@@ -438,7 +438,6 @@ def negative_source(feature):
 
 
 NEGATIVES = (
-    "ball-target-none",
     "ball-target-filter",
     "free-target",
     "contact-condim4",

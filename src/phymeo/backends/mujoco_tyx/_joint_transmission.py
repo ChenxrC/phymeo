@@ -1,6 +1,7 @@
 # Copyright 2026 Phymeo contributors
 # Native JOINT transmission semantics follow MuJoCo 3.3.7 (Apache-2.0).
 """Owned native-address CSR for scalar and BALL JOINT actuator moments."""
+
 from dataclasses import dataclass
 
 import numpy as np
@@ -53,7 +54,10 @@ def compile_joint_transmission(mj, model):
     nnz = 0
     for actor in range(nu):
         joint = int(model.actuator_trnid[actor, 0])
-        if int(model.actuator_trntype[actor]) != int(mj.mjtTrn.mjTRN_JOINT) or not 0 <= joint < model.njnt:
+        if (
+            int(model.actuator_trntype[actor]) != int(mj.mjtTrn.mjTRN_JOINT)
+            or not 0 <= joint < model.njnt
+        ):
             reject("joint-transmission-target", f"actor {actor} requires a native JOINT target")
         kind = int(model.jnt_type[joint])
         if kind == int(mj.mjtJoint.mjJNT_BALL):
@@ -63,7 +67,7 @@ def compile_joint_transmission(mj, model):
         else:
             reject("joint-transmission-target", f"actor {actor} has an unsupported target kind")
         qa, dof = int(model.jnt_qposadr[joint]), int(model.jnt_dofadr[joint])
-        if not 0 <= qa <= nq-qwidth or not 0 <= dof <= nv-width:
+        if not 0 <= qa <= nq - qwidth or not 0 <= dof <= nv - width:
             reject("joint-transmission-address", f"actor {actor} exceeds native qpos/DOF storage")
         gear = model.actuator_gear[actor]
         if not np.isfinite(gear).all() or np.any(gear[width:]):
@@ -75,17 +79,20 @@ def compile_joint_transmission(mj, model):
     if nnz > MAX_MOMENTS:
         reject("joint-transmission-capacity", "complete moments exceed 96 entries")
     ids = np.asarray(rows, dtype=np.int32)
-    offsets = np.zeros(nu+1, dtype=np.int32)
+    offsets = np.zeros(nu + 1, dtype=np.int32)
     columns = np.empty(nnz, dtype=np.int32)
     moments = np.empty(nnz, dtype=np.float32)
     cursor = 0
     for actor, _, _, _, dof, width in rows:
         for axis in range(width):
-            columns[cursor] = dof+axis
+            columns[cursor] = dof + axis
             moments[cursor] = model.actuator_gear[actor, axis]
             cursor += 1
-        offsets[actor+1] = cursor
+        offsets[actor + 1] = cursor
     return TyxJointTransmission(
-        ids=_immutable(ids), gear=_immutable(np.asarray(model.actuator_gear, dtype=np.float64)),
-        row_offsets=_immutable(offsets), dof_indices=_immutable(columns), moment=_immutable(moments),
+        ids=_immutable(ids),
+        gear=_immutable(np.asarray(model.actuator_gear, dtype=np.float64)),
+        row_offsets=_immutable(offsets),
+        dof_indices=_immutable(columns),
+        moment=_immutable(moments),
     )

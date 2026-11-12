@@ -46,3 +46,9 @@ M1的S0必须给可计算的注册/持久/query/暂存buffer字节式和失败�
 ### 父所有权首片资格
 
 2026-11-12 首次精确两文件 Ruff 与 format-check 均 0；新生命周期文件 11 节点和两个受影响旧 empty/close 节点同次 13 passed / 1.34s / RAW_EXIT 0。证据为本批 001–003，源前后 SHA 未变。测试使用 synthetic owner 验证 UNKNOWN 强保留、独立 sibling 清理、PENDING 重试、借用期拒绝重入；真实设备 M1 仍未完成。没有项目物理或 CUDA 通过声明，也未重跑旧全组。
+
+## 父 BALL-M1 连接补充
+
+父把同次 transmission 的 typed receipt 注册到现有 mujoco_checkpoint.py 白名单，恢复时绑定原静态 CSR/gear、原请求控制、accepted qfrc 和 receipt force；没有新 checkpoint 格式或激活状态。该文件是必要既有共享接缝，纳入父范围。原 tests/test_mujoco_tyx_ball.py 的 ball-motor 和 test_mujoco_tyx_ball_scalar_actuation.py 的 ball-target-none 两个 stateless 拒绝项由 NEW exact-source 两步两后端正控替代；含接触 BALL-C 的拒绝项保持。
+
+场景作者另增 tests/installed/check_participant_scene.py，自含资产级 W2、多步控制和 checkpoint/reset 后继，源码外消费公共API，不导入 tests/helper。没有新增算法域。

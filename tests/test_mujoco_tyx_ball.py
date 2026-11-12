@@ -352,12 +352,6 @@ NEGATIVE_XML = (
     ("ball-limit", ROTOR.replace('type="ball"', 'type="ball" limited="true" range="0 .5"')),
     ("dry", ROTOR.replace('type="ball"', 'type="ball" frictionloss=".1"')),
     (
-        "ball-motor",
-        ROTOR.replace(
-            "</mujoco>", '<actuator><motor joint="ball" gear="1 2 3 0 0 0"/></actuator></mujoco>'
-        ),
-    ),
-    (
         "contact-condim4",
         ROTOR.replace(
             "<worldbody>", '<worldbody><geom type="plane" size="1 1 .1" condim="4"/>'

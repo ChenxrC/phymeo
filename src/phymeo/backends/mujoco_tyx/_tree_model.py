@@ -13,8 +13,12 @@ import numpy as np
 from ...dynamics.rotation import quaternion_matrix
 from . import MuJoCoTyxIssue as Issue
 from . import MuJoCoTyxUnsupported
+from ._joint_transmission import (
+    TyxJointTransmission,
+    compile_joint_transmission,
+    has_ball_transmission,
+)
 from ._model import WIDTH, TyxModel, fp32
-from ._joint_transmission import TyxJointTransmission, compile_joint_transmission, has_ball_transmission
 
 MAX_BODIES = 128
 
@@ -87,10 +91,15 @@ def compile_tree_model(
                 model.actuator_trntype[actor] != mj.mjtTrn.mjTRN_JOINT
                 or not 0 <= joint < model.njnt
                 or model.jnt_type[joint] not in allowed
-                or (model.jnt_type[joint] == mj.mjtJoint.mjJNT_BALL
-                    and model.actuator_biastype[actor] != mj.mjtBias.mjBIAS_NONE)
+                or (
+                    model.jnt_type[joint] == mj.mjtJoint.mjJNT_BALL
+                    and model.actuator_biastype[actor] != mj.mjtBias.mjBIAS_NONE
+                )
             ):
-                issue("ball-actuator-domain", "ball trees require JOINT targets and BIAS_NONE for BALL")
+                issue(
+                    "ball-actuator-domain",
+                    "ball trees require JOINT targets and BIAS_NONE for BALL",
+                )
         if np.any(model.jnt_limited) or np.any(model.dof_frictionloss):
             issue("ball-constraint-domain", "BALL1 excludes every joint limit and dry-friction row")
         for joint in range(model.njnt):
@@ -154,7 +163,11 @@ def compile_tree_model(
         issue("passive", "negative reflected inertia/damping is outside T1")
     for actuator in range(model.nu):
         joint = int(model.actuator_trnid[actuator, 0])
-        width = 3 if (0 <= joint < model.njnt and model.jnt_type[joint] == mj.mjtJoint.mjJNT_BALL) else 1
+        width = (
+            3
+            if (0 <= joint < model.njnt and model.jnt_type[joint] == mj.mjtJoint.mjJNT_BALL)
+            else 1
+        )
         if (
             model.actuator_trntype[actuator] != mj.mjtTrn.mjTRN_JOINT
             or not 0 <= joint < model.njnt
@@ -188,7 +201,10 @@ def compile_tree_model(
                 int(model.geom_contype[right]) & int(model.geom_conaffinity[left])
             ):
                 if ball_target:
-                    issue("joint-motor-contact", f"direct BALL motor has a possible contact pair {left}/{right}")
+                    issue(
+                        "joint-motor-contact",
+                        f"direct BALL motor has a possible contact pair {left}/{right}",
+                    )
                 elif not allow_normal_contacts:
                     issue("contact-domain", f"T1 has a possible native contact pair {left}/{right}")
                 break

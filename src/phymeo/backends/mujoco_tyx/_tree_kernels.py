@@ -390,13 +390,15 @@ def mechanics(
                     else:
                         # BALL BIAS_NONE never reads quaternion qpos as length.
                         raw_force = act_values[actor, 1] * motor_control
-                motor_force = tx.min(
-                    act_values[actor, 8], tx.max(act_values[actor, 7], raw_force)
-                )
+                motor_force = tx.min(act_values[actor, 8], tx.max(act_values[actor, 7], raw_force))
                 transmission_fields[w, actor, 0] = motor_control
                 transmission_fields[w, actor, 1] = raw_force
                 transmission_fields[w, actor, 2] = motor_force
-                if not tx.isfinite(motor_control) or not tx.isfinite(raw_force) or not tx.isfinite(motor_force):
+                if (
+                    not tx.isfinite(motor_control)
+                    or not tx.isfinite(raw_force)
+                    or not tx.isfinite(motor_force)
+                ):
                     status[w] = 2
                 for moment_index in range(begin, end):
                     column = transmission_dofs[moment_index]

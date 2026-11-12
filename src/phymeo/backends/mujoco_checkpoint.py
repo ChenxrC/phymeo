@@ -39,12 +39,18 @@ def _records():
         MuJoCoTyxStepReceipt,
     )
     from .mujoco_actuation import MuJoCoTyxActivationStepReceipt, MuJoCoTyxActuation
+    from .mujoco_joint_transmission import (
+        MuJoCoTyxJointMotorStepReceipt,
+        MuJoCoTyxJointTransmission,
+    )
     from .mujoco_runtime import MuJoCoControl, MuJoCoInitialState
     from .mujoco_tyx._constraint_publication import MuJoCoTyxConstraintRow
 
     classes = (
         MuJoCoTyxActuation,
         MuJoCoTyxActivationStepReceipt,
+        MuJoCoTyxJointMotorStepReceipt,
+        MuJoCoTyxJointTransmission,
         MuJoCoControl,
         MuJoCoInitialState,
         MuJoCoTyxContact,
@@ -424,6 +430,10 @@ def restore(runtime, checkpoint, expected_revision):
             from .mujoco_actuation import MuJoCoTyxActivationStepReceipt
 
             receipt_type = MuJoCoTyxActivationStepReceipt
+        elif getattr(runtime._plan, "joint_transmission", None) is not None:
+            from .mujoco_joint_transmission import MuJoCoTyxJointMotorStepReceipt
+
+            receipt_type = MuJoCoTyxJointMotorStepReceipt
         _require(
             (receipt is None and tick == 0)
             or (
@@ -445,6 +455,22 @@ def restore(runtime, checkpoint, expected_revision):
                 and actuation.ids.tobytes() == runtime._plan.activation.ids.tobytes()
                 and actuation.parameters.tobytes() == runtime._plan.activation.values.tobytes(),
                 "stateful receipt/source/accepted activation binding",
+            )
+        if getattr(runtime._plan, "joint_transmission", None) is not None and receipt is not None:
+            transmission = receipt.transmission
+            layout = runtime._plan.joint_transmission
+            _require(
+                all(
+                    getattr(transmission, name).tobytes() == getattr(layout, name).tobytes()
+                    and getattr(transmission, name).shape == getattr(layout, name).shape
+                    and getattr(transmission, name).dtype == getattr(layout, name).dtype
+                    for name in ("ids", "gear", "row_offsets", "dof_indices", "moment")
+                )
+                and transmission.input_control.tobytes() == receipt.control.ctrl.tobytes()
+                and transmission.generalized_force.astype(np.float64).tobytes()
+                == candidate.qfrc_actuator.tobytes()
+                and np.array_equal(transmission.generalized_force, receipt.qfrc_actuator),
+                "joint transmission receipt/source/accepted force binding",
             )
         data[key], controls[key], ticks[key], receipts[key], initial[key] = (
             candidate,

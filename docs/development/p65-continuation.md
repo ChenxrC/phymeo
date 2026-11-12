@@ -1,6 +1,6 @@
 # Phymeo 当前续作入口
 
-更新：2026-11-12 07:20。本轮按用户要求执行至北京时间07:20并收束；**整个P6.5/Newton功能对齐仍未完成**。本页只保存当前状态，旧阶段记录在[历史入口](p65-continuation-history-through-20261112-0035.md)，历史pending/deadline不覆盖本页。
+更新：2026-11-12 12:05。当前正执行用户授权的[下一批](../superpowers/plans/2026-11-12-parity-m1-assembly.md)：BALL-M1、设备 M1、资产级多参与者场景，无新截止。07:20批次已收束；**整个P6.5/Newton功能对齐仍未完成**。本页只保存当前状态，旧阶段记录在[历史入口](p65-continuation-history-through-20261112-0035.md)，历史pending/deadline不覆盖本页。
 
 ## 当前入口
 
@@ -36,7 +36,7 @@ J/R原学习门、G1原46.29秒参考XY门及完整131.48秒动作、R03两项�
 
 ## 所有权与证据
 
-父：`C:/Users/38347/.codex/worktrees/p65-parallel-integration/phymeo`，分支`codex/p65-parallel-modules`，本轮提交均在本地，未push。父拥有全部既有共享接缝；原三个隔离作者已交接并释放，无新任务，全部项目执行已结束。下一批仍沿用原作者，独立worktree可并行编码，所有import/collection/数值/pytest/离线分析/lint/formatter/build/install/profile严格串行，由父fresh entrypoint-aware guard后运行。
+父：`C:/Users/38347/.codex/worktrees/p65-parallel-integration/phymeo`，分支`codex/p65-parallel-modules`，本轮提交均在本地，未push。父拥有全部既有共享接缝；原三个隔离作者已在新分支开始本批纯编码；父单一串行执行。当前证据根为 artifacts/p65-parity-m1-assembly-20261112-01。仍沿用原作者，独立worktree可并行编码，所有import/collection/数值/pytest/离线分析/lint/formatter/build/install/profile严格串行，由父fresh entrypoint-aware guard后运行。
 
 证据根：`artifacts/p65-parity-until-0720-20261112-01`。两份安装归档在`installed-wheel-01/02`，N8原记录在`301-n8-fixed-credit-cuda`，独立保存审计在`302-n8-saved-audit`；最终关闭收据为`batch-close-0720.json`。旧同源绿套/审计不重跑，不恢复已关闭session，不全量解压旧证据。
 

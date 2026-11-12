@@ -121,6 +121,11 @@ class TyxNormalDevice(TyxDevice):
                 self.gravity,
                 self.act_ids,
                 self.act_values,
+                *(
+                    (0, self.parents, self.parents, self.gravity, self.body_force)
+                    if self.plan.base.kind != 3
+                    else ()
+                ),
                 self.controls,
                 self.applied_input,
                 self.body_force,

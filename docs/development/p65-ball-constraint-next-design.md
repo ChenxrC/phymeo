@@ -141,7 +141,7 @@ and three-column publication are specified; do not grow both modules at once.
 D5 multibody rigid–deformable support is the larger missing public capability and
 has higher overall value than repeatedly subdividing BALL angular-stop cases.
 It can proceed independently alongside the bounded coordinate-constraint module.
-Current `builders/deformable_scene_lowering.py:129–150` admits exactly one ordinary
+At this proposal's original source checkpoint, `builders/deformable_scene_lowering.py:129–150` admitted exactly one ordinary
 one-body floating participant per node world and root-owned round geometry. Real
 multibody support needs complete body ownership, actual COM frames and J-transpose
 wrench projection, all original mechanical blocks advanced once, and common
@@ -154,3 +154,55 @@ capability work; conversely multibody assembly cannot be called a remedy for tho
 failures. Stop a proposed module if it requires unplanned solver/ABI changes or
 repeated unchanged failures; report the concrete gap instead of expanding budgets
 or tuning a robot. This document authorizes no implementation or execution.
+
+## Closing source review: concrete composition seams, still not granted
+
+The final text-only review by the original source and test authors found no
+source requirement for a new row kernel, solver or device ABI in the first
+scalar-limit / native-DOF-dry composition. This is a feasibility finding, not a
+runtime result. M-B1 has meanwhile completed its independent-single-body scope;
+see the [accepted report](p65-multibody-deformable-report-20261113.md). Non-root
+articulated rigid-deformable coupling remains the separate M-B2 gap.
+
+Three compiler seams need a future bounded change:
+
+1. `_tree_model.py` and `_floating_model.py` must retain rejection of limited
+   BALL joints while admitting supported scalar limits and DOF dry rows via the
+   existing constrained structural checks. Keep explicit excludes rejected for
+   BALL trees. Explicitly require finite nonnegative frictionloss: testing only
+   `frictionloss > 0` would silently miss NaN after the old blanket guard changes.
+2. `compile_ball_model` must finish all BALL structural, shape and capacity
+   checks before `needs_constraints`; that dispatch must precede the no-contact
+   early return. Joint-only and condim1-with-joint-row models still need T4.
+3. FREE activation compilation in `_actuator_model` and the stateless `_model`
+   route need the same complete dispatch. Parent runtime capability labels must
+   reflect actual limit/dry/contact rows, not unconditionally report BALL limits
+   and dry unsupported or label a joint-only wrapper as contact. Preserve the
+   existing T4 pyramidal-cone rule even when no contacts are present.
+
+`needs_constraints` recognizes a broader domain than this proposal. It must not
+be used to bypass BALL exclusions, capacities, shape checks or the condim4/6
+guard. A discovered need to change row mathematics, solver or ABI stops this
+narrow composition and requires a separately specified module.
+
+The test work is more than cloning an R3-A XML. Its current checker assumes
+contact type6 rows, contact-start zero and the contact working set; it cannot
+validate mixed dry type1, scalar-limit type3 and signed bounds. Reuse the
+independent full-EFC oracle in `tests/test_mujoco_tyx_constraints.py` (native
+row decoding and `assert_receipt`) together with R3-A activation observation and
+its independently advanced continuous CPU reference. The former alone omits
+activation state; the latter alone misses mixed-row semantics.
+
+The proposed four physical fixtures are fixed BALL with scalar lower/upper
+limits and no contact; FREE+BALL scalar limits with FILTEREXACT; signed dry
+slip/sticking/zero-absence; and condim3 plus activation, limits and dry rows.
+Retain the original five qualification families above, including overlapping
+margin rows, sparse-world ownership, late failure and true recovery. Exact XML,
+all inputs, unchanged applicable numerical gates and source/installed selection
+must be frozen before execution. No new fixture, node count or successful case
+is claimed here.
+
+This work was not started before the 06:15 feature freeze: completing and
+reviewing the mixed checker plus both backends and installation would risk an
+unfinished domain. The result is a concrete next implementation boundary, not
+an extra grant or a reason to rerun accepted R3-A tests.

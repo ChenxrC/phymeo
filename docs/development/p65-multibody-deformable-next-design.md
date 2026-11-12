@@ -1,6 +1,6 @@
 # 多刚体与单关节机构的刚柔响应：下一最小设计
 
-状态：**PROPOSAL_NOT_GRANTED**。2026-11-13；仅源码研究，没有实现、数值计算或执行资格。
+原提案状态：**PROPOSAL_NOT_GRANTED**。2026-11-13；以下保留初次源码研究。当前M-B1已由[独立实施合同](p65-multibody-deformable-implementation-20261113.md)及[源码/安装报告](p65-multibody-deformable-report-20261113.md)完成有限验收；M-B2仍是未冻结实施的下一模块。本提案本身不授予M-B2执行资格。
 
 本文据父工作树 `117a4f2e` 及当次既有 D3/D5 源码读取；父 R3-A 仍在独占串行验证。R3-A 的 MuJoCo-TYX 能力与这里的 resident 刚柔路径分别准入，不能相乘为任意耦合。D4、D6-B 的持续稳态支撑失败不由本提案覆盖。
 

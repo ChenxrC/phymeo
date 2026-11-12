@@ -57,7 +57,7 @@
 - `tests/test_mujoco_tyx_clone_cleanup.py:22–123` 覆盖clone copy/build/retire/cleanup_retry和source持有失败clone；不是restore替代覆盖。
 - `tests/test_mujoco_tyx_checkpoint.py:312–333` 的late readback失败没有同时让replacement.close失败；468–548覆盖postcommit旧owner退休与公共close，而不是precommit候选清理失败。
 
-因此这一条可先成为独立生命周期修复及小回归，无须等预算系统或W32，也不需重跑G2a完整物理矩阵。父随后已以276eb933单独冻结 [G2-R0 tests-first合同](p65-restore-cleanup-ownership-20261113.md)，正在准备新测试与该失败分支窄修；本文件不提前声称已修复或通过。该单独授权不扩大本预算提案的PROPOSAL_NOT_GRANTED状态。
+因此这一条先成为独立生命周期修复及小回归，无须等预算系统或W32，也不需重跑G2a完整物理矩阵。父随后以276eb933单独冻结 [G2-R0 tests-first合同](p65-restore-cleanup-ownership-20261113.md)，现已完成178预期RED、185源码12GREEN、第四包193源码外12GREEN；见[正式报告](p65-restore-cleanup-report-20261113.md)。上文是修复前的源码发现，不再代表当前缺陷仍开放。该单独验收不扩大本预算提案的PROPOSAL_NOT_GRANTED状态。
 
 ## 4. 随后的可实现预算与公开口径
 
@@ -80,7 +80,7 @@
 
 | 节点 | 固定验证家族 | 成功/停止条件 |
 | --- | --- | --- |
-| G2-R0，单独tests-first授权，尚未验收 | 新候选真实建立后verify/末world observer失败；候选close成功、外层before-call失败、cleanup非Exception；原真实UNKNOWN资格复用，不重新注入 | primary+cleanup完整保留，原accepted/state/control/clock/receipt/CAS精确不变；OPEN可恢复关闭，UNKNOWN无二次free；原same-input真实后继通过。先关闭此小缺口 |
+| G2-R0，已单独源码/安装验收 | 新候选真实建立后verify/末world observer失败；候选close成功、外层before-call失败、cleanup非Exception；原真实UNKNOWN资格复用，不重新注入 | primary+cleanup完整保留，原accepted/state/control/clock/receipt/CAS精确不变；OPEN可恢复关闭，UNKNOWN无二次free；原same-input真实后继通过。复用已有结果 |
 | G2b-1，原8/16容量内manifest与reservation | 原三已验模型族；零logical contact/EFCpadding；activation/CSR on/off；同bytes合桶/不同caps分桶；constructor、普通step、partial reset、whole restore及最后owner清理失败 | 独立shape表核实际alloc/free事件，不拿产品manifest自证；budget恰好够/少1字节在分配前拒绝；step无新device allocation；跨桶待提交HOST数据完整。只增资源行为和必要短后继，不重复原G2a24步矩阵 |
 | G2b-2，另行冻结W32 | 先B3功能，再B8同W；保原三族非零输入/完整same-entry+continuous oracle、不同接触密度、晚桶失败与真实恢复 | 只有上两节点通过且所有登记payload phase纳入预算、隐藏项明确UNKNOWN后才授权；models仍8，W33明确拒绝，原per-leafcaps/数值/输出不改。不顺延到W128/256或声称单kernel |
 

@@ -2,6 +2,8 @@
 
 更新：2026-11-12，**三主线 Batch B 已完成源码与安装资格**。S3 公共场景接线、D2/M2-Q 真实变形查询、R2 FREE＋BALL 基础组合已交付。统一产品快照 `0321c5a4`，522 成员同源，六个源码外解释/CUDA消费者通过。整个 P6.5 / Newton 功能对齐仍未完成，无新截止。
 
+当前已开始[Batch C](../superpowers/plans/2026-11-12-three-track-batch-c.md)：D3真实刚柔响应与G1异构分桶功能。原三位作者隔离编码，父独占共享接缝与串行执行；当前新批为IMPLEMENTING / TESTS_PENDING，不覆盖Batch B已验事实。
+
 ## 当前入口
 
 1. [Batch B 实际结果](p65-three-track-batch-b-20261112.md)：当前能力、全部实际执行、首失败与下一步。

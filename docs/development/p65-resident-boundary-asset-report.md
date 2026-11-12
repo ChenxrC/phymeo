@@ -116,3 +116,15 @@ python ABS_OUTSIDE/check_resident_boundary_assets.py --mode cuda --installed-roo
 父已回报 HOST-only 两节点通过。首完整 interpret run024 在13节点通过后，固定根 MJCF capsule 的独立参考地址顺序发生首失败：原 fixed importer `_fromto` 使用 z=(start−end)/length，而 `_robot_asset` 以 center−/+half 生成顶点，因此其原 material IDs 对应 **end,start**；floating importer 直接保 fromto，对应 **start,end**。设备发布的两轴端点完整，不能把静态几何轴的相同集合误说成产品丢点或错误运动。
 
 父仅在 NEW reference 增加固定根显式 `FIXED_CAPSULE=((0,.5,.5),(-.25,.5,.5))`，固定根测试改用该原 importer 地址约定；floating/CAPSULE、原 XML、产品和原工程门不变。首失败原 raw 保存，已通过13节点不重跑；剩余24 interpret 和完整37 CUDA由父继续。此增量不在本报告上表作者历史 SHA 中，最终验证必须绑定父修后 commit。作者不编辑已移交的三源文件，不凭这条回报宣称完整矩阵通过。
+
+## 父源码资格：2026-11-12 当前批次
+
+状态：**SOURCE_QUALIFIED / INSTALLED_PENDING**。父共享接线及最终 source 以本节所在提交为准；上文作者 UNEXECUTED 与旧 SHA 是历史，未倒灌为测试结果。
+
+- run023 两个 HOST 节点通过；interpret 原37节点分 run024 已过13、run027 已过5、run028 剩余19完成；run029 CUDA完整37通过。已过同源节点没有重复执行。
+- run027 的第二个首错仅是 floating-affine wrong-model 负控的期望文本：原 full graph token 包含 model，既有前置检查先报“boundary floating affine graph differs”。测试按原 family 的准确拒绝阶段检查；产品检查顺序、模型绑定和物理门不变。
+- 受影响旧 direct/static 八节点：run035 interpret 8通过，run037 CUDA 8通过。run036 的 basetemp 错写为未创建的035-cuda目录，pytest setup报WinError3、没有物理步；原日志保留，037只修运行目录。
+- 新三文件首Ruff/format失败、import排序及排版均保留；最终检查通过。消费者首排版失败亦保留，run033/034消费者与修改后测试静态检查通过。fixed-capsule参考修正、floating-affine错误文本修正均未改原XML、几何、产品或精度门。
+- 证据位于 artifacts/p65-parity-motor-asset-20261112-01，独立源码/消费者审阅见 [审阅记录](p65-resident-boundary-asset-source-review.md)。作者与审阅槽已释放；父仍持唯一串行构建/安装验证槽。
+
+本节只接受四类资产到原M1设备查询的源码资格；统一wheel及源码外消费者尚待完成。不包括ParticipantScene多bank、M2、CCD、接触力或闭实体内外。

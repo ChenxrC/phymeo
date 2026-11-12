@@ -149,11 +149,11 @@ def provenance(installed_root, *, preflight=False):
 
 H = 1 / 1024
 WORLDS = (7, 4096)
-VERTICES = np.array(((0,0,0),(0,2,0),(0,0,2),(-1,0,0)),np.float64)
-FACES = ((0,1,2),(0,2,3),(0,3,1),(1,3,2))
-SPHERE = np.array(((-.25,.5,.5),),np.float64)
-RADIUS = 1/8
-MARGIN = .5
+VERTICES = np.array(((0, 0, 0), (0, 2, 0), (0, 0, 2), (-1, 0, 0)), np.float64)
+FACES = ((0, 1, 2), (0, 2, 3), (0, 3, 1), (1, 3, 2))
+SPHERE = np.array(((-0.25, 0.5, 0.5),), np.float64)
+RADIUS = 1 / 8
+MARGIN = 0.5
 
 
 def exact(left, right, message):
@@ -185,177 +185,278 @@ def make_scene(output):
 
     # Original F0 mechanics and an actual OBJ asset, never a hull relabeled mesh.
     obj = "".join("v " + " ".join(str(float(x)) for x in row) + "\n" for row in VERTICES)
-    obj += "".join("f " + " ".join(str(i+1) for i in face) + "\n" for face in FACES)
-    (output / "surface.obj").write_text(obj,encoding="utf-8")
-    xml = '''<robot name="m1_asset_f0">
+    obj += "".join("f " + " ".join(str(i + 1) for i in face) + "\n" for face in FACES)
+    (output / "surface.obj").write_text(obj, encoding="utf-8")
+    xml = """<robot name="m1_asset_f0">
 <link name="base"><inertial><mass value="2"/><inertia ixx=".2" iyy=".3" izz=".4" ixy="0" ixz="0" iyz="0"/></inertial></link>
 <link name="left_jaw"><inertial><mass value="1"/><inertia ixx=".0625" iyy=".078125" izz=".09375" ixy="0" ixz="0" iyz="0"/></inertial><collision name="surface"><geometry><mesh filename="surface.obj"/></geometry></collision></link>
 <joint name="driver" type="prismatic"><parent link="base"/><child link="left_jaw"/><origin xyz="-.25 0 0"/><axis xyz="1 0 0"/><limit lower="-.1" upper=".1" effort="1.5" velocity=".2"/></joint>
 <link name="right_jaw"><inertial><mass value="2"/><inertia ixx=".09375" iyy=".109375" izz=".125" ixy="0" ixz="0" iyz="0"/></inertial><collision name="round"><origin xyz="-.25 .5 .5"/><geometry><sphere radius=".125"/></geometry></collision></link>
-<joint name="follower" type="prismatic"><parent link="base"/><child link="right_jaw"/><origin xyz=".25 0 0"/><axis xyz="1 0 0"/><limit lower="-.1" upper=".1" effort=".125" velocity=".08"/><mimic joint="driver" multiplier="-1" offset=".004"/></joint></robot>'''
-    path=output / "input-f0.urdf"
-    path.write_text(xml,encoding="utf-8")
-    asset=ph.load_mimic_urdf(path,gravity=np.zeros(3)).tree
-    require(asset.joint_names==("driver","follower"),"original full F0 joint identities")
-    surface=next(c for c in asset.collisions if c.name=="surface")
-    require(surface.shape.kind=="mesh" and surface.shape.triangles==FACES,"original OBJ facets")
-    np.testing.assert_array_equal(surface.local_vertices,VERTICES)
-    trees,initial={},{}
-    for index,world in enumerate(WORLDS):
-        q=np.array(((index+1)/512,.004-(index+1)/512),np.float64)
-        v=np.array(((index+1)/1024,-(index+1)/1024),np.float64)
-        program=ph.DrivenRobotProgram(asset.model,kp=np.zeros(2),kd=np.zeros(2),
-                                     effort_limit=np.ones(2),delay_steps=0)
-        trees[world]=ph.FixedRobotTree(program,program.initial_state(ph.RobotState(q,v)))
-        initial[world]=dict(q=q,v=v)
-    inputs=dict(xml=xml,obj=obj,path=str(path),
-                xml_sha256=hashlib.sha256(path.read_bytes()).hexdigest(),
-                obj_sha256=hashlib.sha256((output/"surface.obj").read_bytes()).hexdigest())
-    return trees,initial,inputs,asset
+<joint name="follower" type="prismatic"><parent link="base"/><child link="right_jaw"/><origin xyz=".25 0 0"/><axis xyz="1 0 0"/><limit lower="-.1" upper=".1" effort=".125" velocity=".08"/><mimic joint="driver" multiplier="-1" offset=".004"/></joint></robot>"""
+    path = output / "input-f0.urdf"
+    path.write_text(xml, encoding="utf-8")
+    asset = ph.load_mimic_urdf(path, gravity=np.zeros(3)).tree
+    require(asset.joint_names == ("driver", "follower"), "original full F0 joint identities")
+    surface = next(c for c in asset.collisions if c.name == "surface")
+    require(
+        surface.shape.kind == "mesh" and surface.shape.triangles == FACES, "original OBJ facets"
+    )
+    np.testing.assert_array_equal(surface.local_vertices, VERTICES)
+    trees, initial = {}, {}
+    for index, world in enumerate(WORLDS):
+        q = np.array(((index + 1) / 512, 0.004 - (index + 1) / 512), np.float64)
+        v = np.array(((index + 1) / 1024, -(index + 1) / 1024), np.float64)
+        program = ph.DrivenRobotProgram(
+            asset.model, kp=np.zeros(2), kd=np.zeros(2), effort_limit=np.ones(2), delay_steps=0
+        )
+        trees[world] = ph.FixedRobotTree(program, program.initial_state(ph.RobotState(q, v)))
+        initial[world] = dict(q=q, v=v)
+    inputs = dict(
+        xml=xml,
+        obj=obj,
+        path=str(path),
+        xml_sha256=hashlib.sha256(path.read_bytes()).hexdigest(),
+        obj_sha256=hashlib.sha256((output / "surface.obj").read_bytes()).hexdigest(),
+    )
+    return trees, initial, inputs, asset
 
 
 def register(asset):
     import phymeo as ph
 
-    shapes,bindings=[],[]
+    shapes, bindings = [], []
     for world in WORLDS:
-        for name,body,ordinal in (("surface",101,0),("round",202,1)):
-            source=next(c.shape for c in asset.collisions if c.name==name)
-            key=ph.CollisionKey(world,body,ordinal)
-            shapes.append(replace(source,key=key))
-            binding=ph.ResidentTreeBinding.from_asset(asset,source.key,key=key,world=world)
-            require(binding.topology is None,"factory provenance, not fabricated direct topology")
+        for name, body, ordinal in (("surface", 101, 0), ("round", 202, 1)):
+            source = next(c.shape for c in asset.collisions if c.name == name)
+            key = ph.CollisionKey(world, body, ordinal)
+            shapes.append(replace(source, key=key))
+            binding = ph.ResidentTreeBinding.from_asset(asset, source.key, key=key, world=world)
+            require(binding.topology is None, "factory provenance, not fabricated direct topology")
             bindings.append(binding)
-    return ph.CollisionModel(tuple(shapes)),tuple(bindings)
+    return ph.CollisionModel(tuple(shapes)), tuple(bindings)
 
 
-def closest_point(point,triangle):
+def closest_point(point, triangle):
     """Independent complete finite point/triangle candidates for this OBJ oracle.
 
     The interior orthogonal projection and all three closed edge projections are
     compared. No device candidate, product query or product geometry is reused.
     """
-    a,b,c=triangle
-    e,f=b-a,c-a
-    ee,ef,ff=float(e@e),float(e@f),float(f@f)
-    pe,pf=float((point-a)@e),float((point-a)@f)
-    determinant=ee*ff-ef*ef
-    require(determinant>0,"authored finite nondegenerate triangle")
-    beta=(pe*ff-pf*ef)/determinant
-    gamma=(pf*ee-pe*ef)/determinant
-    candidates=[]
-    if beta>=0 and gamma>=0 and beta+gamma<=1:
-        weights=np.array((1-beta-gamma,beta,gamma))
-        candidates.append((weights@triangle,weights))
-    for first,second in ((0,1),(1,2),(2,0)):
-        edge=triangle[second]-triangle[first]
-        t=min(1.,max(0.,float((point-triangle[first])@edge)/float(edge@edge)))
-        weights=np.zeros(3); weights[first]=1-t; weights[second]=t
-        candidates.append((triangle[first]+t*edge,weights))
-    nearest,weights=min(candidates,key=lambda item:float((item[0]-point)@(item[0]-point)))
-    distance=float(np.linalg.norm(nearest-point))
-    require(distance>0,"fixed consumer remains away from zero-direction band")
-    return distance,nearest,weights,(nearest-point)/distance
+    a, b, c = triangle
+    e, f = b - a, c - a
+    ee, ef, ff = float(e @ e), float(e @ f), float(f @ f)
+    pe, pf = float((point - a) @ e), float((point - a) @ f)
+    determinant = ee * ff - ef * ef
+    require(determinant > 0, "authored finite nondegenerate triangle")
+    beta = (pe * ff - pf * ef) / determinant
+    gamma = (pf * ee - pe * ef) / determinant
+    candidates = []
+    if beta >= 0 and gamma >= 0 and beta + gamma <= 1:
+        weights = np.array((1 - beta - gamma, beta, gamma))
+        candidates.append((weights @ triangle, weights))
+    for first, second in ((0, 1), (1, 2), (2, 0)):
+        edge = triangle[second] - triangle[first]
+        t = min(1.0, max(0.0, float((point - triangle[first]) @ edge) / float(edge @ edge)))
+        weights = np.zeros(3)
+        weights[first] = 1 - t
+        weights[second] = t
+        candidates.append((triangle[first] + t * edge, weights))
+    nearest, weights = min(
+        candidates, key=lambda item: float((item[0] - point) @ (item[0] - point))
+    )
+    distance = float(np.linalg.norm(nearest - point))
+    require(distance > 0, "fixed consumer remains away from zero-direction band")
+    return distance, nearest, weights, (nearest - point) / distance
 
 
 def public_model_identity(model):
     """Decode the documented ordinary model-token fields from public source data."""
+
     def nested(value):
-        return tuple(nested(item) for item in value) if isinstance(value,list) else value
-    return (tuple(int(value) for value in model.parents),tuple(model.joint_types),
-            *(nested(np.asarray(getattr(model,name)).tolist()) for name in
-              ("joint_position","joint_orientation","joint_axis","mass","com","inertia_diagonal","gravity")))
+        return tuple(nested(item) for item in value) if isinstance(value, list) else value
+
+    return (
+        tuple(int(value) for value in model.parents),
+        tuple(model.joint_types),
+        *(
+            nested(np.asarray(getattr(model, name)).tolist())
+            for name in (
+                "joint_position",
+                "joint_orientation",
+                "joint_axis",
+                "mass",
+                "com",
+                "inertia_diagonal",
+                "gravity",
+            )
+        ),
+    )
 
 
-def verify(packet,states,initial,tick,bindings,source_asset):
+def verify(packet, states, initial, tick, bindings, source_asset):
     import phymeo as ph
 
-    require(packet.schema=="phymeo-resident-boundary-distances-v1","M1 aggregate schema")
-    require(packet.source_kind=="resident-rigid-device-v1","accepted device geometry source")
-    require(packet.semantics=="threshold-limited-boundary-distance","boundary-only semantics")
-    require(packet.world_keys==WORLDS and packet.margin==MARGIN,"world/margin binding")
-    np.testing.assert_array_equal(packet.ticks,(tick,tick))
-    require(len(packet.groups)==2 and packet.required_candidates==8,"complete two-world facets")
-    require(len(packet.pairs)==2 and all(p.status=="boundary_candidates" for p in packet.pairs),
-            "all within-world original pairs")
-    require(len(packet.source_binding)==64,"full source binding")
+    require(packet.schema == "phymeo-resident-boundary-distances-v1", "M1 aggregate schema")
+    require(packet.source_kind == "resident-rigid-device-v1", "accepted device geometry source")
+    require(packet.semantics == "threshold-limited-boundary-distance", "boundary-only semantics")
+    require(packet.world_keys == WORLDS and packet.margin == MARGIN, "world/margin binding")
+    np.testing.assert_array_equal(packet.ticks, (tick, tick))
+    require(
+        len(packet.groups) == 2 and packet.required_candidates == 8, "complete two-world facets"
+    )
+    require(
+        len(packet.pairs) == 2 and all(p.status == "boundary_candidates" for p in packet.pairs),
+        "all within-world original pairs",
+    )
+    require(len(packet.source_binding) == 64, "full source binding")
     immutable(packet)
-    definitions={item["key"]:item for item in packet.source["bindings"]}
-    originals={collider.name:collider for collider in source_asset.collisions}
-    original_model=public_model_identity(source_asset.model)
+    definitions = {item["key"]: item for item in packet.source["bindings"]}
+    originals = {collider.name: collider for collider in source_asset.collisions}
+    original_model = public_model_identity(source_asset.model)
     for binding in bindings:
-        definition=definitions[binding.key]
-        require(definition["admission"]=="asset","asset admission branch recorded")
-        proof=definition["provenance"]
-        require(proof["schema"]=="phymeo-boundary-asset-admission-v1","asset source schema")
-        require(proof["binding_family"]=="ordinary" and proof["graph_token"] is None,
-                "honest ordinary factory provenance")
-        name="surface" if binding.key.body==101 else "round"
-        original=originals[name]
-        require(proof["source_shape"]==original.shape,"full public original asset source")
-        require(proof["source_shape"].key!=binding.key,"original and registered keys distinguished")
-        require(proof["model_token"]==original_model,"full public original FP64 model identity")
-        require(proof["physical_topology"]==definition["topology"] and definition["topology"] is not None,
-                "validated full physical topology, not original None")
-        require(proof["physical_topology"]==states[binding.world].topology,"actual accepted public topology")
-        require(proof["group_index"]==binding.group_index==(0 if name=="surface" else 1),
-                "declared F0 material owner group")
-        np.testing.assert_array_equal(proof["local_points_m"],original.local_vertices)
-        np.testing.assert_array_equal(binding.local_points_m,original.local_vertices)
-    checks={}
+        definition = definitions[binding.key]
+        require(definition["admission"] == "asset", "asset admission branch recorded")
+        proof = definition["provenance"]
+        require(proof["schema"] == "phymeo-boundary-asset-admission-v1", "asset source schema")
+        require(
+            proof["binding_family"] == "ordinary" and proof["graph_token"] is None,
+            "honest ordinary factory provenance",
+        )
+        name = "surface" if binding.key.body == 101 else "round"
+        original = originals[name]
+        require(proof["source_shape"] == original.shape, "full public original asset source")
+        require(
+            proof["source_shape"].key != binding.key, "original and registered keys distinguished"
+        )
+        require(proof["model_token"] == original_model, "full public original FP64 model identity")
+        require(
+            proof["physical_topology"] == definition["topology"]
+            and definition["topology"] is not None,
+            "validated full physical topology, not original None",
+        )
+        require(
+            proof["physical_topology"] == states[binding.world].topology,
+            "actual accepted public topology",
+        )
+        require(
+            proof["group_index"] == binding.group_index == (0 if name == "surface" else 1),
+            "declared F0 material owner group",
+        )
+        np.testing.assert_array_equal(proof["local_points_m"], original.local_vertices)
+        np.testing.assert_array_equal(binding.local_points_m, original.local_vertices)
+    checks = {}
     for group in packet.groups:
-        world=group.surface.world
-        state=states[world]
-        q,v=np.asarray(state.position),np.asarray(state.velocity)
-        np.testing.assert_allclose(q,initial[world]["q"]+tick*H*initial[world]["v"],atol=3e-6,rtol=0)
-        np.testing.assert_allclose(v,initial[world]["v"],atol=3e-6,rtol=0)
-        require(state.tick==tick and np.any(v!=0),"three actual nonzero-velocity steps")
-        surface=VERTICES+np.array((-.25+q[0],0,0))
-        axis=SPHERE[0]+np.array((.25+q[1],0,0))
-        anchor=np.asarray(packet.source["world_anchors"][world])
-        np.testing.assert_array_equal(group.candidates,np.array(((0,0),(0,1),(0,2),(0,3)),np.int64))
-        require(group.facet_vertices==FACES,"all original OBJ material facets")
-        require(group.round_keys==(ph.CollisionKey(world,202,1),),"original sphere ownership")
-        require(group.bvh_raw.shape==(1,4) and group.bvh_raw.dtype==np.int32,"complete K+3 BVH data")
-        require(group.bvh_raw[0,0]==15 and np.all(group.bvh_raw[0,1:3]>=1),"all four selected bits and traversal")
-        require(group.bvh_raw[0,3]==2*len(FACES)-1,"complete BVH root escape/stop node")
-        narrow=group.packet
-        require(narrow.schema=="phymeo-resident-triangle-distance-v1","resident packed packet")
-        require(narrow.source_binding==packet.source_binding,"same accepted source for every facet")
-        np.testing.assert_array_equal(narrow.origin_m,anchor)
-        require(len(narrow.rows)==4,"no facet result truncation")
-        for name,shape,dtype in (("candidates",(4,18,11),np.float32),("valid",(4,18),np.int32),
-                                 ("summary",(4,16),np.float32),("meta",(4,7),np.int32)):
-            require(narrow.raw[name].shape==shape and narrow.raw[name].dtype==dtype,"complete raw "+name)
-        np.testing.assert_array_equal(narrow.packed["owners"],group.candidates)
-        facet_checks=[]
-        for ordinal,row in enumerate(narrow.rows):
-            face=FACES[ordinal]
-            require(row.status=="RESOLVED" and row.segment_id==0 and row.facet_id==ordinal
-                    and row.vertex_ids==face,"original complete finite ownership")
-            triangle=surface[list(face)]
-            length=max(float(np.linalg.norm(triangle[j]-triangle[i])) for i,j in ((0,1),(1,2),(2,0)))
-            length=max(length,RADIUS)
-            distance,nearest,weights,normal=closest_point(axis,triangle)
-            require(abs(row.distance-distance)<=DISTANCE_GATE*length,"independent distance")
-            require(abs(row.gap-(distance-RADIUS))<=DISTANCE_GATE*length,"original radius law")
-            require(0<=row.axis_parameter<=1,"finite sphere's zero-length axis address")
-            np.testing.assert_allclose(row.barycentric,weights,atol=WITNESS_GATE,rtol=0)
-            np.testing.assert_allclose(np.asarray(row.axis_point_relative_m)+anchor,axis,
-                                       atol=WITNESS_GATE*length,rtol=0)
-            np.testing.assert_allclose(np.asarray(row.triangle_point_relative_m)+anchor,nearest,
-                                       atol=WITNESS_GATE*length,rtol=0)
-            np.testing.assert_allclose(row.normal,normal,atol=NORMAL_GATE,rtol=0)
-            facet_checks.append(dict(facet=face,distance=distance,axis=axis,triangle=nearest,
-                                     barycentric=weights,normal=normal,local_length=length))
-        for key,expected in ((group.surface,surface),(group.round_keys[0],axis.reshape(1,3))):
-            np.testing.assert_allclose(packet.source["gathered_points"][key],expected-anchor,
-                                       atol=WITNESS_GATE*np.sqrt(8.),rtol=0)
-        checks[world]=facet_checks
-    require(packet.counters["live_bytes"]==packet.counters["persistent_bytes"],"temporary cleanup complete")
-    require(packet.counters["launches"]==packet.counters["completed_launches"],"all submissions completed")
-    if packet.backend=="cuda":
-        require(packet.counters["downloads"]>0 and packet.counters["downloaded_bytes"]>0,"real transfers counted")
+        world = group.surface.world
+        state = states[world]
+        q, v = np.asarray(state.position), np.asarray(state.velocity)
+        np.testing.assert_allclose(
+            q, initial[world]["q"] + tick * H * initial[world]["v"], atol=3e-6, rtol=0
+        )
+        np.testing.assert_allclose(v, initial[world]["v"], atol=3e-6, rtol=0)
+        require(state.tick == tick and np.any(v != 0), "three actual nonzero-velocity steps")
+        surface = VERTICES + np.array((-0.25 + q[0], 0, 0))
+        axis = SPHERE[0] + np.array((0.25 + q[1], 0, 0))
+        anchor = np.asarray(packet.source["world_anchors"][world])
+        np.testing.assert_array_equal(
+            group.candidates, np.array(((0, 0), (0, 1), (0, 2), (0, 3)), np.int64)
+        )
+        require(group.facet_vertices == FACES, "all original OBJ material facets")
+        require(group.round_keys == (ph.CollisionKey(world, 202, 1),), "original sphere ownership")
+        require(
+            group.bvh_raw.shape == (1, 4) and group.bvh_raw.dtype == np.int32,
+            "complete K+3 BVH data",
+        )
+        require(
+            group.bvh_raw[0, 0] == 15 and np.all(group.bvh_raw[0, 1:3] >= 1),
+            "all four selected bits and traversal",
+        )
+        require(group.bvh_raw[0, 3] == 2 * len(FACES) - 1, "complete BVH root escape/stop node")
+        narrow = group.packet
+        require(narrow.schema == "phymeo-resident-triangle-distance-v1", "resident packed packet")
+        require(
+            narrow.source_binding == packet.source_binding, "same accepted source for every facet"
+        )
+        np.testing.assert_array_equal(narrow.origin_m, anchor)
+        require(len(narrow.rows) == 4, "no facet result truncation")
+        for name, shape, dtype in (
+            ("candidates", (4, 18, 11), np.float32),
+            ("valid", (4, 18), np.int32),
+            ("summary", (4, 16), np.float32),
+            ("meta", (4, 7), np.int32),
+        ):
+            require(
+                narrow.raw[name].shape == shape and narrow.raw[name].dtype == dtype,
+                "complete raw " + name,
+            )
+        np.testing.assert_array_equal(narrow.packed["owners"], group.candidates)
+        facet_checks = []
+        for ordinal, row in enumerate(narrow.rows):
+            face = FACES[ordinal]
+            require(
+                row.status == "RESOLVED"
+                and row.segment_id == 0
+                and row.facet_id == ordinal
+                and row.vertex_ids == face,
+                "original complete finite ownership",
+            )
+            triangle = surface[list(face)]
+            length = max(
+                float(np.linalg.norm(triangle[j] - triangle[i]))
+                for i, j in ((0, 1), (1, 2), (2, 0))
+            )
+            length = max(length, RADIUS)
+            distance, nearest, weights, normal = closest_point(axis, triangle)
+            require(abs(row.distance - distance) <= DISTANCE_GATE * length, "independent distance")
+            require(
+                abs(row.gap - (distance - RADIUS)) <= DISTANCE_GATE * length, "original radius law"
+            )
+            require(0 <= row.axis_parameter <= 1, "finite sphere's zero-length axis address")
+            np.testing.assert_allclose(row.barycentric, weights, atol=WITNESS_GATE, rtol=0)
+            np.testing.assert_allclose(
+                np.asarray(row.axis_point_relative_m) + anchor,
+                axis,
+                atol=WITNESS_GATE * length,
+                rtol=0,
+            )
+            np.testing.assert_allclose(
+                np.asarray(row.triangle_point_relative_m) + anchor,
+                nearest,
+                atol=WITNESS_GATE * length,
+                rtol=0,
+            )
+            np.testing.assert_allclose(row.normal, normal, atol=NORMAL_GATE, rtol=0)
+            facet_checks.append(
+                dict(
+                    facet=face,
+                    distance=distance,
+                    axis=axis,
+                    triangle=nearest,
+                    barycentric=weights,
+                    normal=normal,
+                    local_length=length,
+                )
+            )
+        for key, expected in ((group.surface, surface), (group.round_keys[0], axis.reshape(1, 3))):
+            np.testing.assert_allclose(
+                packet.source["gathered_points"][key],
+                expected - anchor,
+                atol=WITNESS_GATE * np.sqrt(8.0),
+                rtol=0,
+            )
+        checks[world] = facet_checks
+    require(
+        packet.counters["live_bytes"] == packet.counters["persistent_bytes"],
+        "temporary cleanup complete",
+    )
+    require(
+        packet.counters["launches"] == packet.counters["completed_launches"],
+        "all submissions completed",
+    )
+    if packet.backend == "cuda":
+        require(
+            packet.counters["downloads"] > 0 and packet.counters["downloaded_bytes"] > 0,
+            "real transfers counted",
+        )
     return checks
 
 
@@ -398,45 +499,57 @@ def run(mode, journal, installed_root, output):
         last = None
         for tick in (1, 2, 3):
             before = batch.snapshot()
-            step_attempt = dict(kind="physical-step",tick=tick,h=H,before=before,
-                                before_stats=batch.stats())
+            step_attempt = dict(
+                kind="physical-step", tick=tick, h=H, before=before, before_stats=batch.stats()
+            )
             attempts.append(step_attempt)
-            journal.emit("physical-step-attempt",**step_attempt)
-            step_error=None
-            capture_errors=[]
+            journal.emit("physical-step-attempt", **step_attempt)
+            step_error = None
+            capture_errors = []
             try:
-                step_result=batch.step(H)
-                step_attempt["result"]=step_result
-                step_attempt["returned_worlds"]=len(step_result)
-                step_attempt["accepted_worlds"]=sum(bool(value) for value in step_result.values())
+                step_result = batch.step(H)
+                step_attempt["result"] = step_result
+                step_attempt["returned_worlds"] = len(step_result)
+                step_attempt["accepted_worlds"] = sum(bool(value) for value in step_result.values())
                 try:
-                    journal.emit("physical-step-return",tick=tick,h=H,result=step_result,
-                                 returned_worlds=step_attempt["returned_worlds"],
-                                 accepted_worlds=step_attempt["accepted_worlds"])
+                    journal.emit(
+                        "physical-step-return",
+                        tick=tick,
+                        h=H,
+                        result=step_result,
+                        returned_worlds=step_attempt["returned_worlds"],
+                        accepted_worlds=step_attempt["accepted_worlds"],
+                    )
                 except BaseException as error:
                     capture_errors.append(error)
             except BaseException as error:
-                step_error=error
-                step_attempt["step_error"]=dict(type=type(error).__name__,message=str(error),
-                                                traceback=traceback.format_exc())
-            for name,reader in (("after",batch.snapshot),("after_stats",batch.stats)):
+                step_error = error
+                step_attempt["step_error"] = dict(
+                    type=type(error).__name__, message=str(error), traceback=traceback.format_exc()
+                )
+            for name, reader in (("after", batch.snapshot), ("after_stats", batch.stats)):
                 try:
-                    step_attempt[name]=reader()
+                    step_attempt[name] = reader()
                 except BaseException as error:
                     capture_errors.append(error)
-                    step_attempt[name+"_error"]=dict(type=type(error).__name__,message=str(error),
-                                                     traceback=traceback.format_exc())
+                    step_attempt[name + "_error"] = dict(
+                        type=type(error).__name__,
+                        message=str(error),
+                        traceback=traceback.format_exc(),
+                    )
             try:
-                journal.emit("physical-step-outcome",**step_attempt)
+                journal.emit("physical-step-outcome", **step_attempt)
             except BaseException as error:
                 capture_errors.append(error)
             if step_error is not None:
                 if capture_errors:
-                    raise BaseExceptionGroup("physical step and capture failed",[step_error,*capture_errors])
+                    raise BaseExceptionGroup(
+                        "physical step and capture failed", [step_error, *capture_errors]
+                    )
                 raise step_error
             if capture_errors:
-                raise BaseExceptionGroup("physical step result capture failed",capture_errors)
-            states=step_attempt["after"]
+                raise BaseExceptionGroup("physical step result capture failed", capture_errors)
+            states = step_attempt["after"]
             require(all(step_result.values()), "real accepted physical step")
             if last is not None:
                 rejection = dict(tick=tick, previous_sequence=last.sequence)

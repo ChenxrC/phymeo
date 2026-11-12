@@ -1,7 +1,7 @@
 """Registered rigid boundary materials borrowed from one accepted physical bank.
 
 No HOST FK, current bounds, closest-point calculation, or device ownership.
-Only direct full-topology installations are admitted in the M1 source domain.
+Direct topology and original asset provenance bind the same physical M1 source.
 """
 
 from contextlib import contextmanager
@@ -181,6 +181,7 @@ def compile_registration(plan, model, bindings):
         physical_owners = {}
         definitions = []
         for shape, binding in zip(model.shapes, plan._bindings, strict=True):
+            asset_admission = None
             if shape.kind not in ("triangle", "mesh", "sphere", "capsule"):
                 raise ValueError("M1 supports only triangle/mesh against sphere/capsule")
             if shape.kind in ("triangle", "mesh") and shape.radius != 0:
@@ -205,15 +206,23 @@ def compile_registration(plan, model, bindings):
                 group = binding.group_index
                 if binding.world != world or not 0 <= group < count:
                     raise ValueError("boundary physical world/group differs")
-                if binding.topology is None or binding.topology != spec.topology:
-                    raise ValueError("M1 requires direct complete physical topology installation")
                 owning = accepted.bindings[slot].tree_spec
                 if layout == 3 and binding.graph_token != owning.graph_token:
                     raise ValueError("boundary floating affine graph differs")
                 if getattr(binding, "_source_shape", None) is not None:
-                    raise ValueError("M1 asset lowering is not part of direct installation")
+                    from ._resident_boundary_asset import admit_boundary_asset
+
+                    asset_admission = admit_boundary_asset(
+                        shape, binding, physical_spec=spec, owning_spec=owning
+                    )
+                    points = np.asarray(asset_admission.local_points_m, np.float64)
+                else:
+                    if binding.topology is None or binding.topology != spec.topology:
+                        raise ValueError(
+                            "M1 requires direct complete physical topology installation"
+                        )
+                    points = np.asarray(binding.local_points_m, np.float64)
                 row = int(source.rows[world])
-                points = np.asarray(binding.local_points_m, np.float64)
                 coordinates = points
                 owner = (layout, row, group)
                 previous = physical_owners.setdefault((world, *owner), body)
@@ -248,21 +257,28 @@ def compile_registration(plan, model, bindings):
             rows.append(row)
             groups.append(group)
             layouts.append(layout)
-            definitions.append(
-                dict(
-                    key=shape.key,
-                    world=world,
-                    body=shape.key.body,
-                    layout=layout,
-                    row=row,
-                    group=group,
-                    point_range=(begin, end),
-                    point_ids=shape.vertex_ids,
-                    topology=None if row < 0 else binding.topology,
-                    graph_token=getattr(binding, "graph_token", None),
-                    frame="static_anchor" if row < 0 else "body_local",
-                )
+            definition = dict(
+                key=shape.key,
+                world=world,
+                body=shape.key.body,
+                layout=layout,
+                row=row,
+                group=group,
+                point_range=(begin, end),
+                point_ids=shape.vertex_ids,
+                topology=(
+                    spec.topology
+                    if asset_admission is not None
+                    else None
+                    if row < 0
+                    else binding.topology
+                ),
+                graph_token=getattr(binding, "graph_token", None),
+                frame="static_anchor" if row < 0 else "body_local",
             )
+            if asset_admission is not None:
+                definition.update(admission="asset", provenance=asset_admission.provenance)
+            definitions.append(definition)
         plan._shape_rows = owned(rows, np.int32)
         plan._shape_groups = owned(groups, np.int32)
         plan._shape_layouts = owned(layouts, np.int32)

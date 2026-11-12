@@ -104,8 +104,10 @@ class ResidentTreeBinding:
         shapes = [s for s in asset.collision_model.shapes if s.key == source_key]
         if len(shapes) != 1 or shapes[0] != collider.shape:
             raise ValueError("tree source shape disagrees with its material registration")
-        if collider.shape.kind not in _FINITE_SHAPES:
-            raise ValueError("tree source requires a supported finite convex shape")
+        # Source ownership also serves finite-boundary queries. The separate
+        # convex compiler retains its original narrower geometry admission.
+        if collider.shape.kind not in (*_FINITE_SHAPES, "triangle", "mesh"):
+            raise ValueError("tree source requires a supported finite material shape")
         local = np.asarray(collider.local_vertices, dtype=np.float64)
         if isinstance(asset, FoldedURDFAsset):
             if collider.shape.curved is not None:

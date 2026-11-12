@@ -74,8 +74,10 @@ class ResidentFloatingTreeBinding:
                 "floating source must identify exactly one complete registered collider"
             )
         collider = colliders[0]
-        if collider.shape.kind not in _FINITE_SHAPES:
-            raise ValueError("floating source requires a supported finite convex shape")
+        # Preserve original finite-surface provenance without admitting these
+        # shapes into the independent convex compiler below.
+        if collider.shape.kind not in (*_FINITE_SHAPES, "triangle", "mesh"):
+            raise ValueError("floating source requires a supported finite material shape")
         group = collider.link_index + 1
         points = np.asarray(collider.local_vertices, dtype=float)
         if isinstance(asset, FoldedFloatingRobotAsset):

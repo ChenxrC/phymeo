@@ -924,7 +924,14 @@ def continuous(name, mode, journal):
                      counters=dict(runtime.counters), both_moments=both_moments)
         return dict(name=name, accepted_world_steps=48, steps=24)
     finally:
-        runtime.close()
+        primary = sys.exc_info()[1]
+        try:
+            runtime.close()
+        except BaseException as cleanup:
+            raise BaseExceptionGroup(
+                "BALL-MC continuous trajectory and cleanup failures",
+                ([primary] if primary is not None else []) + [cleanup],
+            ) from None
 
 
 def legacy_default(xml, mode, journal):

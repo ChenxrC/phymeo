@@ -188,3 +188,15 @@ Stop rather than tune if a declared native/physical comparison fails. Parent
 preserves the first failure and identifies implementation, oracle, API or saving
 layer before any revision. Two unproductive diagnosis rounds trigger the plan's
 bounded stopping rule. This report and code do not assert a test or physical pass.
+
+## Final text-review correction
+
+Independent review found that continuous() could replace its original trajectory
+exception if runtime.close() also raised. The final narrow correction groups both
+original exception objects, matching lifecycle cleanup. No fixture, comparison,
+node count, physics input or successful close path changes. A fixture constructor
+that never returns an owner still propagates its own exception unchanged; its
+internal allocation cleanup remains the existing runtime/device responsibility,
+not a new consumer recovery promise. The standalone main already preserves
+independent final provenance, journal and summary failures. This is a source-review
+correction, not an executed failure or pass.

@@ -226,7 +226,7 @@ W16B3和W16B8均已在interpret/CUDA通过；这是16个独立world、3或8个�
 | G2a异构分桶 | 源矩阵完整，首包77–80的W16B3/W16B8双端PASS | 上限仍8模型16world；不是新任意模型组合或公平Newton性能比较 |
 | D6-A轴向材料耗散 | 源码功能检查完成；包外128/129双端FUNCTIONAL_PASS，各22 batch steps/44 worldsteps | 两包外summary同时保留strict_elastic_precision=FAIL_RECORDED；不授予D4稳态支撑 |
 | D4-N持续载荷 | run50诊断解释完成3072步/3秒，入层、卸载、离层、再接触均发生 | 严格短速度门及原稳态支撑/速度门失败；不是只有精度问题 |
-| D6-B持续载荷应用 | 固定c4096应用尚待执行 | PENDING；不能从D6-A耗散功能或事件发生推导稳态支撑通过 |
+| D6-B持续载荷应用 | run143粗N1 interpret完成3072步/3秒，逐步law/phase/算术/长参考通过 | 两稳态窗支撑/速度RMS均FAIL，DIAGNOSTIC_ONLY；停止该系数的CUDA和其余格，不扫描参数 |
 | 新坐标回归 | 已固定非零浮根anchor/变形pair frame的真实共同步 | 严格速度失败保留，不改输入或放宽门 |
 
 D4诊断只允许记录原短position/velocity/multiplier门失败并继续相同轨迹；
@@ -248,7 +248,7 @@ run112失败保留。包外128/129记录的旧弹性重构速度最大差约1.25
 执行，本次读取其summary已为PASS。父源记录位于
 artifacts/p65-feature-until-0730-20261113-01，安装summary位于对应outside结果目录。
 这不是另一次保存审计，也不据这些有限消费者宣称统一包的全部功能已验收。
-D6-B在本草稿状态截点仍为PENDING，后续只能据其独立结果更新。
+D6-B现按闭合run143更新为功能FAIL；[独立结果](p65-damped-normal-load-result-20261113.md)保留原门、完整轨迹和7项旧弹性短精度记录。saved-only run148将原D4 CSV与新D6-B轨迹绘成对比图，没有重新运行物理或改写任何资格。
 
 ## 8. 后继连接仍应独立登记
 

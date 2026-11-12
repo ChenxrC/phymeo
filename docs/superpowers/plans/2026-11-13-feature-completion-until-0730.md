@@ -182,3 +182,22 @@ once before assigning another independent feature; do not scan c or alter
 time windows, masses or acceptance gates. All project work remains root's
 single guarded execution queue. Architecture and qualification documents
 are being updated independently in the original author worktrees.
+
+### 04:30 queue: retain D6-B failure; qualify R3-A composition
+
+Run143 finished 3072 returned/checked steps with both steady windows FAIL.
+The c4096 application expansion is stopped as predeclared; run148 only renders
+the saved old/new observations, with no new physical stepping. See the
+[closed result](../../development/p65-damped-normal-load-result-20261113.md).
+
+The independent R3-A source investigation and narrow seven-product-file grant
+are frozen in [the design](../../development/p65-free-ball-activation-next-design.md).
+Original three agents author compiler routing, six fixed-source/native consumer
+and transactions separately; root owns five shared seams and every guarded
+project command. Four exact old unsupported activation XMLs become explicit
+two-step positives; unrelated negatives and numerical gates stay. Next queue:
+focused static checks, complete new interpret/CUDA source and transaction
+matrix, affected old routes, then fresh wheel and installed consumers.
+No kernel/device ABI or capacity change is authorized by this slice. Two
+unsuccessful diagnoses of the same issue freeze that defect; the original
+06:15 feature cutoff and 07:30 result overview remain unchanged.

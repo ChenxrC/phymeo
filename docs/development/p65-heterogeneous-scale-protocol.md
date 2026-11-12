@@ -1,6 +1,6 @@
 # G2a heterogeneous scale protocol — 2026-11-13
 
-Status: CODE_AUTHORING / UNEXECUTED. Optional after the deadline plan's P0/P1;
+Status: CODE_READY_TESTS_PENDING / UNEXECUTED. Optional after the deadline plan's P0/P1;
 a source-only handoff is not a scale qualification. No product/capacity change.
 
 ## Frozen sources and six cells
@@ -29,7 +29,8 @@ B3 source assignment repeats scalar/BALL/FREE; original per-source slot
 0/1 starts and controls repeat alternately, rather than extrapolating slots.
 B8 source family order is scalar/BALL/FREE/scalar/BALL/FREE/scalar/BALL;
 first eight worlds use source slots 0, next eight use the same sources slot 1.
-For B8 only the XML root `model` name changes to a fixed unique identity.
+For B8 only the XML root `model` name changes to a fixed unique identity; the
+original anonymous BALL root receives this documentary attribute.
 Restoring that one name must give the original XML byte-for-byte. Each source
 is independently compiled, and all XML/archive/MJB hashes and physical native
 model dimensions are saved. Actual layout must expose eight distinct buckets
@@ -106,3 +107,21 @@ Source command (parent serial owner only):
 Parent may execute selected cells while reporting the others UNEXECUTED.
 Any real force/state/reference or transaction failure preserves evidence and
 stops that qualification; this authoring grant does not authorize tuning.
+
+## Author handoff
+
+Three NEW files only: this protocol, the source scale test, and the installed
+scale consumer. Product source, original tests, pinned reference consumer,
+capacities, and public exports are unchanged. The two consumer files must both
+be copied to the outside scripts directory; the wrapper verifies the dependency
+SHA before any Phymeo import. Module origins are checked before construction and
+after close for every loaded Phymeo module. Source tests use the same wrapper
+without the installed-root assertion, retaining the same physical oracle.
+
+Suggested parent order is the three W1 cells, W8/B3, W16/B3, W16/B8, then the
+bounded scaled transaction/admission nodes. Installed runs may select a complete
+cell with --cell; the 24-step main trajectory and three boundary successors have
+no truncation argument. Status and timing are recorded per cell, not inferred
+from another cell or from previous G1. Authoring performed only text/file IO and
+Git checks; no imports, collection, numerical evaluations, static tools or tests
+were executed. Parent exclusively owns any subsequent execution and style repair.

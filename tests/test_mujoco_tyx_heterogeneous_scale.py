@@ -69,6 +69,7 @@ def test_scaled_last_bucket_failure_retains_and_retries(mode, cell, fault, monke
                     return actual
 
                 scoped.setattr(target, "download", broken)
+            run.progress["attempted_calls"] += 1
             with pytest.raises(PhysicsStepFailure) as caught:
                 with run.forbid_native_step():
                     run.batch.step(runner.H)

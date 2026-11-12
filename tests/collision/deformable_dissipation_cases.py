@@ -11,7 +11,7 @@ import json
 import math
 from collections.abc import Mapping
 from contextlib import contextmanager
-from dataclasses import fields, is_dataclass, replace
+from dataclasses import fields, is_dataclass
 
 import numpy as np
 

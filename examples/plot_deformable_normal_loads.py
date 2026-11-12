@@ -94,7 +94,9 @@ def load_window(directory, *, domain="d4"):
     domains = {
         "d4": ("d4-normal-window-v1", "n1_sphere", "normal-load.jsonl.gz"),
         "d6b-c4096-n1-interpret": (
-            "d6b-damped-normal-window-v1", "d6b_n1_sphere_c4096", "damped-normal-load.jsonl.gz"
+            "d6b-damped-normal-window-v1",
+            "d6b_n1_sphere_c4096",
+            "damped-normal-load.jsonl.gz",
         ),
     }
     require(domain in domains, "unknown explicit window domain")
@@ -171,9 +173,16 @@ def load_window(directory, *, domain="d4"):
                 if domain != "d4":
                     require(declared["base_name"] == "n1_sphere", "wrong original D6-B case")
                     coefficient = declared["dissipation"]["coefficients_ns_per_m"]
-                    require(coefficient == {"dtype": "<f8", "shape": [4],
-                            "bytes_hex": "000000000000b040" * 4}, "changed radial coefficients")
-                    for key, expected in (("position", 0.002), ("velocity", 0.01), ("angle", 0.002)):
+                    require(
+                        coefficient
+                        == {"dtype": "<f8", "shape": [4], "bytes_hex": "000000000000b040" * 4},
+                        "changed radial coefficients",
+                    )
+                    for key, expected in (
+                        ("position", 0.002),
+                        ("velocity", 0.01),
+                        ("angle", 0.002),
+                    ):
                         require(gates[key] == expected, "changed original long gate " + key)
             elif event == "control-attempt":
                 payload = mapping(record["payload"])

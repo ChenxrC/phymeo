@@ -1,12 +1,12 @@
 # Phymeo 当前续作入口
 
-更新：2026-11-12 本批收尾。**直接球电机接触（BALL-MC）和原资产设备边界来源（M1-A）已完成源码与安装资格**；M2只完成调研设计。没有新截止，整个P6.5/Newton功能对齐仍未完成。旧阶段见[历史入口](p65-continuation-history-through-20261112-0035.md)，历史pending/deadline不覆盖本页。
+更新：2026-11-12 三主线后续计划已调整。**直接球电机接触（BALL-MC）和原资产设备边界来源（M1-A）已完成源码与安装资格**；M2只完成调研设计。没有新截止，整个P6.5/Newton功能对齐仍未完成。旧阶段见[历史入口](p65-continuation-history-through-20261112-0035.md)，历史pending/deadline不覆盖本页。
 
 ## 当前入口
 
 1. [八方向差异全景](phymeo-newton-panorama-2026-11-12.md)：当前已有、限域、缺口和优先级。
 2. [本批实际结果](p65-parity-motor-asset-20261112.md)：两项实现、源码/安装证据、首错、边界及下一片。
-3. [本批计划](../superpowers/plans/2026-11-12-parity-motor-contact-asset.md)：本批已关闭，原作者/共享接缝责任保留。
+3. [后续三主线计划](../superpowers/plans/2026-11-12-scene-deformable-scale-roadmap.md)：当前行动顺序、节点依赖和验收；[上一批计划](../superpowers/plans/2026-11-12-parity-motor-contact-asset.md)已关闭。
 4. [M2生产者调研与设计](p65-m2-producer-bank-design.md)：先持久变形状态M2-P，再查询M2-Q；尚未实现。
 5. [统一编译架构](../architecture/unified-scene-compilation.md)：CPU MuJoCo编译、CPU/TYX/显式Warp与resident路径。
 6. [07:20架构快照](../architecture/phymeo-newton-parity-2026-11-12.html)：历史图，尚未绘入后续直接BALL、资产装配、M1/M1-A；当前以本页和全景为准。
@@ -30,12 +30,17 @@
 
 ## 后续从这里开始
 
-1. **场景/碰撞连接**：ParticipantScene→M1仍缺逻辑world/participant到另一组物理bank、row/group和多bank lease的明确映射。M1-A只解决单资产来源资格，不能称多参与者已组合通过。先冻结这个接缝和多机器人/工具、过滤、恢复/晚失败案例，再实施。
-2. **M2-P持久变形状态**：沿[已完成调研](p65-m2-producer-bank-design.md)冻结API和数组容量，复用原ordered节点物理核，实现accepted/candidate bank、真实边长改变、失败保旧与lease。与场景线可隔离编码；M2-Q随后依赖该状态接入原查询。
-3. **机器人后继组合**：沿[十组合同](p65-robot-next-compositions-20261112.md)选择activation或FREE+BALL等尚缺的有限组合，保持独立native/完整力矩/连续轨迹；本批BALL-MC不重派。
-4. **训练诊断**：只沿[原saved梯度/Adam历史](p65-credit-diagnostic-next-decision.md)做虚拟更新比较。没有可检验预测不追加物理采样、128更新或改超参。
+后续统一按[三主线计划](../superpowers/plans/2026-11-12-scene-deformable-scale-roadmap.md)推进，优先级和共享集成顺序如下；本轮仅更新计划，尚未启动这些产品节点。
 
-按多案例→差异模块→受影响验证→源码外消费者推进。同源已绿范围复用，两次针对尝试不缩小问题就保存最小反例、调整假设；不回到无限精确手推或单个shape pair追加。
+1. **统一场景到设备碰撞（S1–S3）**：ParticipantScene逻辑world/participant到真实多bank的身份、同入步状态及lease映射 → 设备查询桥接 → 公共场景入口和源码外多案例。覆盖多机器人、工具、物体，M1-A单资产资格不代替该组合。
+2. **真实变形状态到连续载荷（D1–D5）**：M2-P持久设备状态 → M2-Q真实顶点查询 → 合法接触表示/双向力与运动共同发布 → 持续支撑、摩擦/换面、卸载 → 统一场景和安装验收。M2-P、M2-Q只算各自子节点，不能提前称刚柔响应完成。
+3. **机器人组合与GPU规模（R1–R2、G1–G4）**：更新能力矩阵，分别补direct BALL activation、FREE+BALL等组合 → 异构world功能/容量 → 同模型、同输出、同质量门的Newton性能基线 → 根据热点优化。功能优先，超越性能为附加目标。
+
+下一开发批：原三个agent分别负责场景adapter、M2-P、机器人下一组合，可隔离纯编码；父独占共享协议与集成，全部项目执行串行。M2-Q依赖真实producer，响应依赖合法接触表示/物理端口；性能测量等待相关功能格通过。本轮没有发产品编码或执行任务。
+
+训练N8诊断保留为第三线需要时的支撑项，沿原saved数据分析，不成为三条主线前置；其它八方向缺口仍列全景。允许事先声明的工程精度损失，以多案例稳定流程、载荷与运动一致为验收，不恢复精确相触/无限精度的旧障碍。
+
+按多案例→差异模块→受影响验证→源码外消费者推进。同源已绿范围复用，两次针对尝试不缩小问题就保存最小反例、调整假设。
 
 ## 保留的失败和缺口
 

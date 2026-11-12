@@ -52,3 +52,7 @@ BALL-MC原作者S0确定六个固定连续案例MC1–MC6：sphere-plane normal/
 资产两次源码首错分别为独立fixed-capsule材点ID顺序、floating-affine前置拒绝文本；产品/输入/门不改。036 compatibility basetemp目录编号错误只在setup失败，037修目录后通过。各首静态失败和原日志保留，详情见[本批结果](../../development/p65-parity-motor-asset-20261112.md)。
 
 下一批优先明确ParticipantScene逻辑participant到真实多bank M1来源的lease/epoch映射，以及按已完成调研冻结M2-P数组预算并实现持久节点状态。这两支可隔离编码，父共享接缝和验证串行。原BALL-MC、M1-A、已过源码/安装矩阵及本批证据审计不重复派做。
+
+## 后续路线更新
+
+2026-11-12用户将后续明确为三条主线：统一场景到设备碰撞 → 真实变形状态/查询/接触响应/连续载荷 → 机器人组合与异构GPU规模及公平性能比较。当前行动以[三主线计划](2026-11-12-scene-deformable-scale-roadmap.md)为准；本文件的本批关闭与证据保持，旧局部后续建议不覆盖新顺序。

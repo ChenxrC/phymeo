@@ -678,6 +678,9 @@ class FloatingTreeDeviceStorage:
             self.fk[active],
         )
 
+    def _host_controls(self):
+        return (self._held_drive, self._held_effort, self._held_loads)
+
     def close(self):
         # Actual buffers belong to the parent's existing resource stack.
         self._closed = True

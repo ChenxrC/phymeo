@@ -121,3 +121,8 @@ resident 清理改动同时运行 `tests/scale/test_resident_cleanup.py`：真�
 不得由 mock 成功替代；成功释放继续使用真实驱动。选测既有 readback、collision、
 contact bundle 的构造/关闭用例与通用 collision pipeline，确认 owner 释放顺序和
 正常路径。合同见[清理重试](../architecture/engine-integration.md#resident-cleanup-retry)。
+
+resident caller-buffer 读取使用 `tests/scale/test_resident_field_read.py`，测试自身覆盖
+interpret/实际 CUDA 与 N=1/8/64，记录所选数据传输量、分配/同步及接受状态。
+拒绝推进的 world 必须读回既有值/tick；不能为数据接口测试放宽物理容差。
+字段与成本合同见[caller buffer](../architecture/engine-integration.md#resident-caller-buffer-fields-v1)。

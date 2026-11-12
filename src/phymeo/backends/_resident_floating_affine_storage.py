@@ -770,6 +770,14 @@ class FloatingAffineTreeDeviceStorage:
         self._check()
         return self.physical.borrow_geometry(active)
 
+    def _host_controls(self):
+        return (
+            *self.physical._host_controls(),
+            self._held_drive,
+            self._held_effort,
+            self._held_loads,
+        )
+
     def close(self):
         # All buffers are on the original batch stack. No borrowed runtime close.
         self._closed = True

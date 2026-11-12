@@ -567,3 +567,46 @@ TYX 原有 runtime/module 关闭内部同步保持不变。无新物理 bank、�
 嵌套构造失败，N=1/8/64 的推进后清理，以及读回、凸查询、树接触和 bundle。
 原有关闭测试改为验证保留依赖和重试，数值断言与容差不变。测试/审查和源码身份
 见配套实验根 evidence/b7b-summary.json；这仍不是 resident 实际 C ABI 或安装资格。
+
+## Resident caller-buffer fields v1
+
+`TyxWorldBatch.prepare_field_read(keys=None, fields=("position", "velocity"))` 冷准备
+`ResidentFieldReadPlan`。只支持球体、标量移动/转动关节和普通固定根树的同构选择。
+不同坐标布局混选、仿射/浮根树字段明确拒绝；原有 snapshot、kinematics 不改变。
+keys 默认注册顺序，显式 keys 固定选择及顺序，重复/未知 world 拒绝。空选择布局
+为 `(0, 0)`，不启动计算；非空布局由同构坐标数和 fields 顺序确定。
+
+plan.layout 是不可变冷 metadata：contract_version、world_keys、shape、float32、
+coordinate_types，以及各 field 的 offset/width/units/frame/reference/sample/source。
+每一行是一个所选 world，每个 field 的完整坐标连续存放；普通树保持模型 joint
+顺序。球体 position/velocity 是 world COM 的 m、m/s；关节是 m 或 rad 及对应速度。
+`applied_effort` 读取最近接受子步的量：球体为外加 COM 力，关节为 actuator drive
+实际输出；不包括额外广义负载或接触，不是 held command，也不是 P2PE joint_force。
+初态为零，显式恢复可恢复历史实际值。控制更新本身不重写该测量。
+
+`plan.read_into(values, ticks=None)` 接受精确 layout shape 的 writable C-contiguous
+float32 NumPy caller buffer；可选 ticks 为 int32 `(selected_count,)`，计数已接受子步。
+返回当前接受状态 epoch；不返回逐 world 包装或完整快照。所有 buffer 先验证，再
+启动写入；dtype/shape/stride/只读/输出互相别名及物理/控制缓存别名均拒绝。HOST
+缓存检查覆盖 CUDA 模式和 owner 替换。plan 和 batch 必须保持开启，同 owner 使用
+原有 RLock；不新建跨实例锁，也不授予异步或外部 stream 资格。
+
+准备阶段建立索引、输出 scratch 并预热两 bank 读取 kernel。一次读取只选择当前
+接受 bank，按冻结索引 gather，不再次 FK、mechanics、checkpoint 或解析字段。
+interpret 直接写 caller，不建立中间 values 矩阵；CUDA 先确认 gather 完成，然后
+一次 values D2H，只有请求 ticks 时再一次 ticks D2H。正常 CUDA 读有一次显式完成
+同步，blocking D2H 的完成成本另计，不声称零同步。HOST 本来就可能只读被接受的
+world；拒绝推进的 world 保留其旧值/tick，读取不冒充新的成功推进。
+
+CUDA 持久空间为 `4*S*W + 12*S + 8*W` bytes，分别是 values、ticks、world 索引和
+字段列索引；S 为所选 world 数，W 为 packed 行宽。CPU 仅留索引/ticks，values
+预热临时矩阵在构造返回时释放。索引准备 O(S+W)，执行 O(S*W)，无逐 world Python
+读写；解释器 HOST alias registry 只保留既有数组引用，不复制物理状态。
+一旦 transfer 失败，caller 输出可能部分写入，不能消费；异常不改变物理接受
+状态，恢复后可重读。cleanup 沿前节失败重试合同，无静默 snapshot fallback。
+
+正式 tests/scale/test_resident_field_read.py 验证 N=1/8/64、字段与 world 顺序、
+双 bank、局部 reset、caller 边界、别名/失效、传输失败和清理重试。测试的多 world
+固定树控制组合存在原路径部分拒绝，单列记录而非修改容差或追加 solver 调查。
+这只是公共数据前置；P2PE resident 编译/控制/reset、完整 body/contact 字段、
+实际 C ABI 和独立安装资格仍待完成。证据见配套实验根 evidence/b7c-summary.json。

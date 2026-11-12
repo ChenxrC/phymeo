@@ -541,6 +541,9 @@ class TreeDeviceStorage:
             self.fk[active],
         )
 
+    def _host_controls(self):
+        return (self._held,)
+
     def close(self):
         # Every device buffer belongs to batch._resources. Never close its runtime
         # here and never try to free a borrowed active handle independently.

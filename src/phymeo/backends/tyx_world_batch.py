@@ -75,6 +75,7 @@ class TyxWorldBatch:
         self._unavailable = False
         self._cleanup_drained = False
         self._resources = ReleaseStack()
+        self._host_buffers = []
         self._readback_plans = set()
         self._collision_plans = set()
         self._contact_bundles = set()
@@ -309,7 +310,9 @@ class TyxWorldBatch:
             None if initial is None else np.asarray(initial, dtype=dtype, order="C").reshape(shape)
         )
         if self._mode == "interpret":
-            return np.empty(shape, dtype=dtype) if host is None else host.copy()
+            result = np.empty(shape, dtype=dtype) if host is None else host.copy()
+            self._host_buffers.append(result)
+            return result
         dev = self._tx.cuda_empty(shape, dtype) if host is None else self._tx.cuda_array(host)
         self._resources.callback(self._free_buffer, dev, dev.nbytes)
         self._counts["device_allocations"] += 1
@@ -321,6 +324,13 @@ class TyxWorldBatch:
     def _free_buffer(self, buffer, size):
         buffer.free()
         self._counts["device_owned_bytes"] -= size
+
+    def _host_alias_arrays(self):
+        """Current HOST owners, including unselected coordinate families."""
+        yield from self._host_buffers
+        yield self._held
+        for _, storage in self._tree_storages():
+            yield from storage._host_controls()
 
     def _ensure_cleanup_ready(self):
         # Only a failed recovery sync needs another completion attempt. Normal
@@ -791,6 +801,12 @@ class TyxWorldBatch:
 
         return WorldReadbackPlan(self, keys, kind=kind)
 
+    def prepare_field_read(self, keys=None, *, fields=("position", "velocity")):
+        """Freeze a homogeneous physical field layout for direct caller HOST output."""
+        from ._resident_field_read import ResidentFieldReadPlan
+
+        return ResidentFieldReadPlan(self, keys, fields)
+
     def readback(self, plan):
         """Read an owned frame from a plan bound to this exact batch instance."""
         from ._world_readback_plan import readback_for
@@ -952,5 +968,6 @@ class TyxWorldBatch:
                 for plan in tuple(owners):
                     plan.close()
             self._resources.close()
+            self._host_buffers.clear()
             self._closed = True
             self._closing = False

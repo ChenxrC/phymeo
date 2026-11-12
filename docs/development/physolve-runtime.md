@@ -662,3 +662,14 @@ PhySolveInputError 仅表示独立输入转换失败，未发布候选可丢弃�
 非零 COM、未选分量保持及既有负例。Host、TYX、六 CUBIN 与容差不变；没有新增
 原生工作区容量，未扩充排序或微小数值诊断。配套证据为 evidence/b3o-native.log；
 实际 DLL 由 P2PE 另行验证，不表示独立安装、Graph 或 GUI 资格。
+
+## B4b：外部 stream 原生绑定
+
+stream binding v1 的定义见[集成合同](../architecture/engine-integration.md#stream-binding-v1)。
+实际无 Newton/Warp/MuJoCo-Warp 进程 7 项通过，含 N=1/8/64 控制/step/forward/
+masked reset、旧/候选真实 CUDA 捕获拒绝、双 bank 第二次准备失败恢复、退休失败、
+回滚失败与 close 重试。另三规模原生计数复测通过；每次实际换流固定两个 bank
+rebind，同指针不增加。原生 Host 与六 CUBIN 不变，不追加物理排序或数值差异调查。
+TYX 新增 validate_context，实际候选测试使用隔离仓源码，未改旧安装环境；
+现有 direct 条件读回同步保持。证据：配套根 evidence/b4b-native-{final,counters}.log。
+完整库、Graph 推进、安装和 GUI 不由本批继承资格。

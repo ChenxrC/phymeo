@@ -56,6 +56,7 @@ class PhySolveRuntime:
     device_reset_contract_version = 1
     free_body_update_contract_version = 1
     free_body_component_contract_version = 1
+    stream_binding_contract_version = 1
 
     def __init__(
         self,
@@ -110,6 +111,9 @@ class PhySolveRuntime:
         self._closed, self._closing, self._active = False, False, 0
         self._banks, self._handles = [], []
         self._stream = self._model = None
+        self._owned_stream = None
+        self._stream_retained = []
+        self._stream_rebindings = 0
         self._reset = None
         self._controls_binding = None
         self._body_observations = None
@@ -144,6 +148,7 @@ class PhySolveRuntime:
         try:
             with tx.use_device(selected):
                 self._stream = tx.CudaStream(device=selected.ordinal)
+                self._owned_stream = self._stream
                 with tx.use_stream(self._stream):
                     mujoco.mj_forward(cpu, initial)
                     if initial.ncon > self.nconmax or initial.nefc > self.njmax:
@@ -223,14 +228,29 @@ class PhySolveRuntime:
                 yield
 
     def _complete(self):
+        self._synchronize_stream(self._stream)
+
+    def _synchronize_stream(self, stream):
         for handle in self._handles:
             if handle is not None:
                 self._native._synchronize_runtime_stream(
-                    handle, int(self._device.context), int(self._stream.handle)
+                    handle, int(self._device.context), int(stream.handle)
                 )
                 return
-        if self._stream is not None:
-            self._stream.synchronize()
+        if stream is not None:
+            stream.synchronize()
+
+    def bind_stream(self, handle=0, *, owner=None):
+        """Bind a borrowed same-context stream, or restore the owned stream (0).
+
+        Cold and synchronous: callers must finish/accept pending execution first
+        and retain external handles through unbind/close. Storage and prepared
+        field plans stay valid and must use storage.stream on every submission.
+        Preparation failure restores old bindings; failed recovery permits close
+        retry only. Returns whether the canonical stream changed.
+        """
+        from ._physolve_stream import bind_stream
+        return bind_stream(self, handle, owner)
 
     def _validate(self, data):
         if self._validation is not None:
@@ -367,6 +387,7 @@ class PhySolveRuntime:
                     "contact_measurement_merges": 0 if contacts is None else contacts.merges,
                     "contact_measurement_copies": 0 if contacts is None else contacts.copies,
                     "free_body_update_device_bytes": 0 if self._free_body_updates is None else self._free_body_updates.allocated_bytes,
+                    "stream_rebindings": self._stream_rebindings,
                     "native_direct_conditional_sync": True}
 
     @property
@@ -653,13 +674,28 @@ class PhySolveRuntime:
                 return
             self._closing = True
             self._complete()
+            for stream in self._stream_retained:
+                self._synchronize_stream(stream)
             for index, handle in enumerate(self._handles):
                 if handle is not None:
                     self._native._close_runtime(handle, True)
                     self._handles[index] = None
+            while self._stream_retained:
+                stream = self._stream_retained[-1]
+                stream.destroy()
+                self._stream_retained.pop()
+                if stream is self._stream:
+                    self._stream = None
+                if stream is self._owned_stream:
+                    self._owned_stream = None
             if self._stream is not None:
                 self._stream.destroy()
+                if self._stream is self._owned_stream:
+                    self._owned_stream = None
                 self._stream = None
+            if self._owned_stream is not None:
+                self._owned_stream.destroy()
+                self._owned_stream = None
             self._banks.clear()
             if self._storage is not None:
                 self._storage._release()

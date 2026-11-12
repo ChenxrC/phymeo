@@ -247,3 +247,27 @@ resident 本轮限定受支持简单模型的 C ABI direct/host、动作、状�
 实际 Host、六 CUBIN 哈希保存在配套实验根 sources/evidence，原始载荷未修改。
 全仓文档检查仍失败：479 个缺失本地目标与旧检查点逐行相同，没有新增链接错误。
 此次只增文档，未改变运行接口、数值或碰撞行为；完整 CUDA/C ABI/Graph/GUI 资格待后续。
+
+## Stream binding v1
+
+`PhySolveRuntime.stream_binding_contract_version=1` declares cold
+`bind_stream(handle=0, owner=None)`. A nonzero handle requires a lifetime owner
+and must belong to the selected TYX CUDA context. Zero restores the runtime's
+own stream. The caller must finish and accept/discard pending execution first;
+capture on the old or new stream is rejected. The caller keeps external stream
+handles alive until successful unbind or close, including cleanup retries.
+
+Binding completes the old stream, prepares both native banks on the candidate,
+completes preparation, publishes the canonical stream, and releases retired
+native sessions. Physical arrays and storage generation do not change. All
+borrowers must use `RuntimeStorage.stream` at submission time or update their
+cold launch bindings when the operation returns. An unchanged handle reuses
+the existing wrapper without preparing native resources again.
+
+Preparation failure restores both old bank bindings without advancing physics.
+Failed rollback or retirement retains both stream wrappers and permits close
+retry only (`error.stream_bindings_changed=True`). Close never destroys a
+consumer stream handle. TYX `CudaStream.validate_context` is required; this
+contract does not qualify fixed Graph, cross-context streams, or concurrent
+mutation of one runtime. Locks remain per runtime. Native direct conditional
+readbacks and explicit completion costs remain visible.
